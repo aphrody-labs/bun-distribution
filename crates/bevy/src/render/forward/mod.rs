@@ -1,8 +1,8 @@
 use crate::{render::*, asset::*, render::mesh::*, math};
 use legion::prelude::*;
-use std::{mem, sync::Arc};
+use std::mem;
 use zerocopy::{AsBytes, FromBytes};
-use wgpu::{Buffer, CommandEncoder, Device, BindGroupLayout, VertexBufferDescriptor, SwapChainDescriptor, SwapChainOutput};
+use wgpu::{Buffer, CommandEncoder, Device, VertexBufferDescriptor, SwapChainDescriptor, SwapChainOutput};
 
 #[repr(C)]
 #[derive(Clone, Copy, AsBytes, FromBytes)]
@@ -15,12 +15,11 @@ pub struct ForwardPass {
     pub pipeline: wgpu::RenderPipeline,
     pub bind_group: wgpu::BindGroup,
     pub forward_uniform_buffer: wgpu::Buffer,
-    pub light_uniform_buffer: Arc::<UniformBuffer>,
     pub depth_texture: wgpu::TextureView,
 }
 
 impl Pass for ForwardPass {
-    fn render(&mut self, device: &Device, frame: &SwapChainOutput, encoder: &mut CommandEncoder, world: &mut World) { 
+    fn render(&mut self, device: &Device, frame: &SwapChainOutput, encoder: &mut CommandEncoder, world: &mut World, _: &RenderResources) { 
         let mut mesh_query = <(Read<Material>, Read<Handle<Mesh>>)>::query();
         let mut pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
             color_attachments: &[wgpu::RenderPassColorAttachmentDescriptor {
@@ -49,15 +48,29 @@ impl Pass for ForwardPass {
         pass.set_bind_group(0, &self.bind_group, &[]);
 
         let mut mesh_storage = world.resources.get_mut::<AssetStorage<Mesh, MeshType>>().unwrap();
+        let mut last_mesh_id = None;
         for (entity, mesh) in mesh_query.iter_immutable(world) {
-            if let Some(mesh_asset) = mesh_storage.get(*mesh.id.read().unwrap()) {
-                mesh_asset.setup_buffers(device);
-                pass.set_bind_group(1, entity.bind_group.as_ref().unwrap(), &[]);
-                pass.set_index_buffer(mesh_asset.index_buffer.as_ref().unwrap(), 0);
-                pass.set_vertex_buffers(0, &[(&mesh_asset.vertex_buffer.as_ref().unwrap(), 0)]);
-                pass.draw_indexed(0 .. mesh_asset.indices.len() as u32, 0, 0 .. 1);
+            let current_mesh_id = *mesh.id.read().unwrap();
 
+            let mut should_load_mesh = last_mesh_id == None;
+            if let Some(last) = last_mesh_id {
+                should_load_mesh = last != current_mesh_id;
+            }
+
+            if should_load_mesh {
+                if let Some(mesh_asset) = mesh_storage.get(*mesh.id.read().unwrap()) {
+                    mesh_asset.setup_buffers(device);
+                    pass.set_index_buffer(mesh_asset.index_buffer.as_ref().unwrap(), 0);
+                    pass.set_vertex_buffers(0, &[(&mesh_asset.vertex_buffer.as_ref().unwrap(), 0)]);
+                };
+            }
+
+            if let Some(ref mesh_asset) = mesh_storage.get(*mesh.id.read().unwrap()) {
+                pass.set_bind_group(1, entity.bind_group.as_ref().unwrap(), &[]);
+                pass.draw_indexed(0 .. mesh_asset.indices.len() as u32, 0, 0 .. 1);
             };
+
+            last_mesh_id = Some(current_mesh_id); 
         }
     }
     
@@ -72,8 +85,8 @@ impl Pass for ForwardPass {
 
 impl ForwardPass {
     pub const DEPTH_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Depth32Float;
-    
-    pub fn new(device: &Device, world: &World, light_uniform_buffer: Arc::<UniformBuffer>, shadow_pass: &shadow::ShadowPass, vertex_buffer_descriptor: VertexBufferDescriptor, local_bind_group_layout: &BindGroupLayout, swap_chain_descriptor: &SwapChainDescriptor) -> ForwardPass {
+ 
+    pub fn new(device: &Device, world: &World, render_resources: &RenderResources, vertex_buffer_descriptor: VertexBufferDescriptor, swap_chain_descriptor: &SwapChainDescriptor) -> Self {
         let vs_bytes = shader::load_glsl(
             include_str!("forward.vert"),
             shader::ShaderStage::Vertex,
@@ -95,20 +108,7 @@ impl ForwardPass {
                     binding: 1, // lights
                     visibility: wgpu::ShaderStage::VERTEX | wgpu::ShaderStage::FRAGMENT,
                     ty: wgpu::BindingType::UniformBuffer { dynamic: false },
-                },
-                wgpu::BindGroupLayoutBinding {
-                    binding: 2,
-                    visibility: wgpu::ShaderStage::FRAGMENT,
-                    ty: wgpu::BindingType::SampledTexture {
-                        multisampled: false,
-                        dimension: wgpu::TextureViewDimension::D2Array,
-                    },
-                },
-                wgpu::BindGroupLayoutBinding {
-                    binding: 3,
-                    visibility: wgpu::ShaderStage::FRAGMENT,
-                    ty: wgpu::BindingType::Sampler,
-                },
+                }
             ],
         });
 
@@ -138,24 +138,15 @@ impl ForwardPass {
                 wgpu::Binding {
                     binding: 1,
                     resource: wgpu::BindingResource::Buffer {
-                        buffer: &light_uniform_buffer.buffer,
-                        range: 0 .. light_uniform_buffer.size,
+                        buffer: &render_resources.light_uniform_buffer.buffer,
+                        range: 0 .. render_resources.light_uniform_buffer.size,
                     },
-                },
-                wgpu::Binding {
-                    binding: 2,
-                    resource: wgpu::BindingResource::TextureView(&shadow_pass.shadow_view),
-                },
-                wgpu::Binding {
-                    binding: 3,
-                    resource: wgpu::BindingResource::Sampler(&shadow_pass.shadow_sampler),
-                },
+                }
             ],
         });
 
-
         let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
-            bind_group_layouts: &[&bind_group_layout, local_bind_group_layout],
+            bind_group_layouts: &[&bind_group_layout, &render_resources.local_bind_group_layout],
         });
 
         let vs_module = device.create_shader_module(&vs_bytes);
@@ -207,11 +198,10 @@ impl ForwardPass {
             pipeline,
             bind_group,
             forward_uniform_buffer,
-            light_uniform_buffer,
             depth_texture: Self::get_depth_texture(device, swap_chain_descriptor)
         }
     }
-
+    
     fn get_depth_texture(device: &Device, swap_chain_descriptor: &SwapChainDescriptor) -> wgpu::TextureView {
         let texture = device.create_texture(&wgpu::TextureDescriptor {
             size: wgpu::Extent3d {
