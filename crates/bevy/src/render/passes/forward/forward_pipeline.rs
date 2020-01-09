@@ -127,7 +127,7 @@ impl Pipeline for ForwardPipeline {
         let mut mesh_query =
             <(Read<Material>, Read<Handle<Mesh>>)>::query()
             .filter(!component::<Instanced>());
-        for (entity, mesh) in mesh_query.iter_immutable(world) {
+        for (material, mesh) in mesh_query.iter_immutable(world) {
             let current_mesh_id = *mesh.id.read().unwrap();
 
             let mut should_load_mesh = last_mesh_id == None;
@@ -144,7 +144,7 @@ impl Pipeline for ForwardPipeline {
             }
 
             if let Some(ref mesh_asset) = mesh_storage.get(*mesh.id.read().unwrap()) {
-                pass.set_bind_group(1, entity.bind_group.as_ref().unwrap(), &[]);
+                pass.set_bind_group(1, material.bind_group.as_ref().unwrap(), &[]);
                 pass.draw_indexed(0 .. mesh_asset.indices.len() as u32, 0, 0 .. 1);
             };
 
