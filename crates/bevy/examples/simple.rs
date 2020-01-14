@@ -23,7 +23,7 @@ fn setup(world: &mut World) {
         (),
         vec![(
             plane_handle.clone(),
-            Material::new(math::vec4(0.1, 0.2, 0.1, 1.0)),
+            Material::new(Albedo::Color(math::vec4(0.1, 0.2, 0.1, 1.0))),
             LocalToWorld::identity(),
             Translation::new(0.0, 0.0, 0.0),
         )],
@@ -34,7 +34,7 @@ fn setup(world: &mut World) {
         (),
         vec![(
             cube_handle,
-            Material::new(math::vec4(0.5, 0.3, 0.3, 1.0)),
+            Material::new(Albedo::Color(math::vec4(0.5, 0.3, 0.3, 1.0))),
             LocalToWorld::identity(),
             Translation::new(0.0, 0.0, 1.0),
         )],
