@@ -13,33 +13,24 @@ fn setup(world: &mut World) {
         (mesh_storage.add(cube), mesh_storage.add(plane))
     };
 
-    // plane
-    world.insert(
-        (),
-        vec![(
-            plane_handle.clone(),
-            Material::new(Albedo::Color(math::vec4(0.1, 0.2, 0.1, 1.0))),
-            LocalToWorld::identity(),
-            Translation::new(0.0, 0.0, 0.0),
-        )],
-    );
-
-    // cube
-    world.insert(
-        (),
-        vec![(
-            cube_handle,
-            Material::new(Albedo::Color(math::vec4(0.5, 0.3, 0.3, 1.0))),
-            LocalToWorld::identity(),
-            Translation::new(0.0, 0.0, 1.0),
-        )],
-    );
-
-    // light
-    world.insert(
-        (),
-        vec![(
-            Light {
+    world.build()
+        // plane
+        .build_archetype(MeshEntity {
+            mesh: plane_handle.clone(),
+            material: Material::new(Albedo::Color(math::vec4(0.1, 0.2, 0.1, 1.0))),
+            local_to_world: LocalToWorld::identity(),
+            translation: Translation::new(0.0, 0.0, 0.0),
+        })
+        // cube
+        .build_archetype(MeshEntity {
+            mesh: cube_handle,
+            material: Material::new(Albedo::Color(math::vec4(0.5, 0.3, 0.3, 1.0))),
+            local_to_world: LocalToWorld::identity(),
+            translation: Translation::new(0.0, 0.0, 1.0),
+        })
+        // light
+        .build_archetype(LightEntity {
+            light: Light {
                 color: wgpu::Color {
                     r: 0.8,
                     g: 0.8,
@@ -50,28 +41,24 @@ fn setup(world: &mut World) {
                 depth: 0.1..50.0,
                 target_view: None,
             },
-            LocalToWorld::identity(),
-            Translation::new(4.0, -4.0, 5.0),
-            Rotation::from_euler_angles(0.0, 0.0, 0.0),
-        )],
-    );
-
-    // camera
-    world.insert(
-        (),
-        vec![(
-            Camera::new(CameraType::Projection {
+            local_to_world: LocalToWorld::identity(),
+            translation: Translation::new(4.0, -4.0, 5.0),
+            rotation: Rotation::from_euler_angles(0.0, 0.0, 0.0),
+        })
+        // camera
+        .build_archetype(CameraEntity {
+            camera: Camera::new(CameraType::Projection {
                 fov: std::f32::consts::PI / 4.0,
                 near: 1.0,
                 far: 1000.0,
                 aspect_ratio: 1.0,
             }),
-            ActiveCamera,
-            LocalToWorld(Mat4::look_at_rh(
+            active_camera: ActiveCamera,
+            local_to_world: LocalToWorld(Mat4::look_at_rh(
                 Vec3::new(3.0, 8.0, 5.0),
                 Vec3::new(0.0, 0.0, 0.0),
                 Vec3::new(0.0, 0.0, 1.0),
             )),
-        )],
-    );
+        })
+    .build();
 }
