@@ -11,8 +11,6 @@ pub struct ModuleAttributeArgs {
     #[darling(default)]
     pub bevy_core: Option<String>,
     #[darling(default)]
-    pub bevy_property: Option<String>,
-    #[darling(default)]
     pub bevy_app: Option<String>,
     #[darling(default)]
     pub legion: Option<String>,
@@ -27,7 +25,6 @@ pub struct Modules {
     pub bevy_render: String,
     pub bevy_asset: String,
     pub bevy_core: String,
-    pub bevy_property: String,
     pub bevy_app: String,
     pub legion: String,
 }
@@ -38,7 +35,6 @@ impl Modules {
             bevy_asset: "bevy::asset".to_string(),
             bevy_render: "bevy::render".to_string(),
             bevy_core: "bevy::core".to_string(),
-            bevy_property: "bevy::property".to_string(),
             bevy_app: "bevy::app".to_string(),
             legion: "bevy".to_string(),
         }
@@ -49,7 +45,6 @@ impl Modules {
             bevy_asset: "bevy_asset".to_string(),
             bevy_render: "bevy_render".to_string(),
             bevy_core: "bevy_core".to_string(),
-            bevy_property: "bevy_property".to_string(),
             bevy_app: "bevy_app".to_string(),
             legion: "legion".to_string(),
         }
@@ -62,7 +57,6 @@ impl Default for ModuleAttributeArgs {
             bevy_asset: None,
             bevy_render: None,
             bevy_core: None,
-            bevy_property: None,
             bevy_app: None,
             legion: None,
             meta: true,
@@ -94,10 +88,6 @@ pub fn get_modules(ast: &DeriveInput) -> Modules {
 
         if let Some(path) = module_attribute_args.bevy_render {
             modules.bevy_render = path;
-        }
-
-        if let Some(path) = module_attribute_args.bevy_property {
-            modules.bevy_property = path;
         }
 
         if let Some(path) = module_attribute_args.bevy_core {
