@@ -1,11 +1,10 @@
-use crate::{ColorMaterial, Rect};
 use bevy_asset::{Assets, Handle};
 use bevy_render::{
     base_render_graph,
     draw_target::AssignedMeshesDrawTarget,
     pipeline::{state_descriptors::*, PipelineDescriptor},
     render_graph::{
-        nodes::{AssetUniformNode, PassNode, UniformNode, CameraNode},
+        nodes::{CameraNode, PassNode},
         RenderGraph,
     },
     shader::{Shader, ShaderStage, ShaderStages},
@@ -62,9 +61,7 @@ pub fn build_ui_pipeline(shaders: &mut Assets<Shader>) -> PipelineDescriptor {
 }
 
 pub mod node {
-    pub const COLOR_MATERIAL: &'static str = "color_material";
     pub const UI_CAMERA: &'static str = "ui_camera";
-    pub const RECT: &'static str = "rect";
 }
 
 pub mod uniform {
@@ -77,21 +74,9 @@ pub trait UiRenderGraphBuilder {
 
 impl UiRenderGraphBuilder for RenderGraph {
     fn add_ui_graph(&mut self, resources: &Resources) -> &mut Self {
-        self.add_system_node(
-            node::COLOR_MATERIAL,
-            AssetUniformNode::<ColorMaterial>::new(false),
-        );
-        self.add_node_edge(node::COLOR_MATERIAL, base_render_graph::node::MAIN_PASS)
-            .unwrap();
-
         self.add_system_node(node::UI_CAMERA, CameraNode::new(uniform::UI_CAMERA));
         self.add_node_edge(node::UI_CAMERA, base_render_graph::node::MAIN_PASS)
             .unwrap();
-
-        self.add_system_node(node::RECT, UniformNode::<Rect>::new(false));
-        self.add_node_edge(node::RECT, base_render_graph::node::MAIN_PASS)
-            .unwrap();
-
         let mut pipelines = resources.get_mut::<Assets<PipelineDescriptor>>().unwrap();
         let mut shaders = resources.get_mut::<Assets<Shader>>().unwrap();
         pipelines.set(UI_PIPELINE_HANDLE, build_ui_pipeline(&mut shaders));
