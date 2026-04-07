@@ -8,6 +8,7 @@ use bevy_ecs::{
     lifecycle::HookContext,
     message::MessageReader,
     system::{Res, ResMut},
+    template::FromTemplate,
     world::DeferredWorld,
 };
 use bevy_image::Image;
@@ -28,8 +29,8 @@ use wgpu_types::TextureFormat;
 ///
 /// The scale on [`GlobalTransform`] rescales the planet in world space. Tune it with the radius offset
 /// when your scene uses other units, like kilometer-sized scenes.
-#[derive(Clone, Component)]
-#[require(GlobalTransform::default())]
+#[derive(Clone, Component, FromTemplate)]
+#[require(GlobalTransform)]
 #[component(on_add = set_default_transform)]
 pub struct Atmosphere {
     /// Radius of the planet
