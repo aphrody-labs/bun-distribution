@@ -278,6 +278,7 @@ pub const DEFAULT_FILTER: &str = concat!(
     "symphonia_format_riff::demuxer=warn,",
     "symphonia_format_wav::demuxer=warn,",
     "calloop::loop_logic=error,",
+    "calloop::sources=debug,",
 );
 
 impl Default for LogPlugin {
