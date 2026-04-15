@@ -3,7 +3,7 @@
 use bevy::{
     color::palettes,
     feathers::{
-        constants::icons,
+        constants::{fonts, icons},
         containers::{
             flex_spacer, group, group_body, group_header, pane, pane_body, pane_header,
             pane_header_divider, subpane, subpane_body, subpane_header,
@@ -19,6 +19,7 @@ use bevy::{
         cursor::{EntityCursor, OverrideCursor},
         dark_theme::create_dark_theme,
         display::{icon, label, label_dim},
+        font_styles::InheritableFont,
         rounded_corners::RoundedCorners,
         theme::{ThemeBackgroundColor, ThemedText, UiTheme},
         tokens, FeathersPlugins,
@@ -413,13 +414,18 @@ fn demo_column_1() -> impl Scene {
                     (
                         :text_input_container
                         Node {
-                            flex_grow: 1.0,
+                            flex_grow: 0.
+                            padding: { px(4.).left().with_right(px(0.)) },
                         }
                         Children [
                             (
                                 text_input(TextInputProps {
+                                    visible_width: Some(10.),
                                     max_characters: Some(9),
                                 })
+                                InheritableFont {
+                                    font: fonts::MONO
+                                }
                                 HexColorInput
                                 on(handle_hex_color_change)
                             )
