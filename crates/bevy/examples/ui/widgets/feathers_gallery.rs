@@ -404,6 +404,7 @@ fn demo_column_1() -> impl Scene {
                 }
                 Children [
                     (toggle_switch() on(checkbox_self_update)),
+                    (toggle_switch() ActivateOnPress on(checkbox_self_update)),
                     (toggle_switch() InteractionDisabled on(checkbox_self_update)),
                     (toggle_switch() InteractionDisabled Checked on(checkbox_self_update)),
                     (disclosure_toggle() on(checkbox_self_update)),
