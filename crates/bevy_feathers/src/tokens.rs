@@ -69,9 +69,19 @@ pub const BUTTON_PLAIN_BG_PRESSED: ThemeToken =
 
 /// Background for slider
 pub const SLIDER_BG: ThemeToken = ThemeToken::new_static("feathers.slider.bg");
-/// Background for slider moving bar
+/// Background for slider (hovered)
+pub const SLIDER_BG_HOVER: ThemeToken = ThemeToken::new_static("feathers.slider.bg.hover");
+/// Background for slider (pressed)
+pub const SLIDER_BG_PRESSED: ThemeToken = ThemeToken::new_static("feathers.slider.bg.pressed");
+/// Background for slider (disabled)
+pub const SLIDER_BG_DISABLED: ThemeToken = ThemeToken::new_static("feathers.slider.bg.disabled");
+/// Fill color for slider
 pub const SLIDER_BAR: ThemeToken = ThemeToken::new_static("feathers.slider.bar");
-/// Background for slider moving bar (disabled)
+/// Fill color for slider (hovered)
+pub const SLIDER_BAR_HOVER: ThemeToken = ThemeToken::new_static("feathers.slider.bar.hover");
+/// Fill color for slider (pressed)
+pub const SLIDER_BAR_PRESSED: ThemeToken = ThemeToken::new_static("feathers.slider.bar.pressed");
+/// Fill color for slider (disabled)
 pub const SLIDER_BAR_DISABLED: ThemeToken = ThemeToken::new_static("feathers.slider.bar.disabled");
 /// Background for slider text
 pub const SLIDER_TEXT: ThemeToken = ThemeToken::new_static("feathers.slider.text");
