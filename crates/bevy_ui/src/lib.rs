@@ -232,7 +232,8 @@ fn build_text_interop(app: &mut App) {
                 .ambiguous_with(bevy_sprite::update_text2d_layout)
                 // We assume Text is on disjoint UI entities to ImageNode and UiTextureAtlasImage
                 // FIXME: Add an archetype invariant for this https://github.com/bevyengine/bevy/issues/1481.
-                .ambiguous_with(widget::update_image_content_size_system),
+                .ambiguous_with(widget::update_image_content_size_system)
+                .ambiguous_with(EditableTextSystems),
             widget::text_system
                 .in_set(UiSystems::PostLayout)
                 .after(bevy_text::load_font_assets_into_font_collection)
@@ -240,12 +241,21 @@ fn build_text_interop(app: &mut App) {
                 // Text2d and bevy_ui text are entirely on separate entities
                 .ambiguous_with(bevy_sprite::update_text2d_layout)
                 .ambiguous_with(bevy_sprite::calculate_bounds_text2d),
-            widget::update_editable_text_content_size
+            (
+                widget::update_editable_text_content_size,
+                widget::update_editable_text_styles,
+            )
+                .chain()
                 .in_set(UiSystems::Content)
+                .after(bevy_text::load_font_assets_into_font_collection)
+                .before(EditableTextSystems)
                 .ambiguous_with(widget::update_image_content_size_system)
                 .ambiguous_with(widget::measure_text_system)
                 .ambiguous_with(bevy_sprite::update_text2d_layout),
-            (widget::editable_text_system, widget::scroll_editable_text)
+            (
+                widget::update_editable_text_layout,
+                widget::scroll_editable_text,
+            )
                 .chain()
                 .in_set(UiSystems::PostLayout)
                 // This is unlikely to result in real conflicts,
@@ -281,5 +291,5 @@ fn build_text_interop(app: &mut App) {
     );
 
     // We cannot set this up in bevy_text as this would create a circular dependency between bevy_ui and bevy_text
-    app.configure_sets(PostUpdate, EditableTextSystems.in_set(UiSystems::Prepare));
+    app.configure_sets(PostUpdate, EditableTextSystems.in_set(UiSystems::Content));
 }
