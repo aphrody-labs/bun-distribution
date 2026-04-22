@@ -96,7 +96,7 @@ pub enum TrackClick {
 #[derive(Component, FromTemplate, Debug, Default, Clone)]
 #[require(
     AccessibilityNode(accesskit::Node::new(Role::Slider)),
-    CoreSliderDragState,
+    SliderDragState,
     SliderValue,
     SliderRange,
     SliderStep
@@ -238,7 +238,7 @@ impl SliderPrecision {
 /// Component used to manage the state of a slider during dragging.
 #[derive(Component, Default, Reflect)]
 #[reflect(Component)]
-pub struct CoreSliderDragState {
+pub struct SliderDragState {
     /// Whether the slider is currently being dragged.
     pub dragging: bool,
 
@@ -362,11 +362,7 @@ pub(crate) fn slider_on_pointer_down(
 pub(crate) fn slider_on_drag_start(
     mut drag_start: On<Pointer<DragStart>>,
     mut q_slider: Query<
-        (
-            &SliderValue,
-            &mut CoreSliderDragState,
-            Has<InteractionDisabled>,
-        ),
+        (&SliderValue, &mut SliderDragState, Has<InteractionDisabled>),
         With<Slider>,
     >,
 ) {
@@ -388,7 +384,7 @@ pub(crate) fn slider_on_drag(
             &SliderRange,
             Option<&SliderPrecision>,
             &UiGlobalTransform,
-            &CoreSliderDragState,
+            &SliderDragState,
             Has<InteractionDisabled>,
         ),
         With<Slider>,
@@ -432,7 +428,7 @@ pub(crate) fn slider_on_drag_end(
             &SliderRange,
             Option<&SliderPrecision>,
             &UiGlobalTransform,
-            &mut CoreSliderDragState,
+            &mut SliderDragState,
             Has<InteractionDisabled>,
         ),
         With<Slider>,
@@ -478,7 +474,7 @@ fn emit_slider_drag_value_change(
     range: &SliderRange,
     precision: Option<&SliderPrecision>,
     transform: &UiGlobalTransform,
-    drag: &CoreSliderDragState,
+    drag: &SliderDragState,
     q_thumb: &Query<&ComputedNode, With<SliderThumb>>,
     q_children: &Query<&Children>,
     ui_scale: &UiScale,
