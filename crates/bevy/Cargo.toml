@@ -187,6 +187,9 @@ default_platform = [
   "android-game-activity",
   "bevy_gilrs",
   "bevy_winit",
+  # Note: OS-integrated clipboard support is gated behind the `system_clipboard` feature,
+  # which is not enabled by default for security reasons.
+  "bevy_clipboard",
   "default_font",
   "multi_threaded",
   "webgl2",
@@ -395,6 +398,9 @@ bevy_log = ["bevy_internal/bevy_log"]
 # Enable input focus subsystem
 bevy_input_focus = ["bevy_internal/bevy_input_focus"]
 
+# Clipboard resource and management. See `system_clipboard` for OS-integrated clipboard support.
+bevy_clipboard = ["bevy_internal/bevy_clipboard"]
+
 # Headless widget collection for Bevy UI.
 bevy_ui_widgets = ["bevy_internal/bevy_ui_widgets"]
 
@@ -433,6 +439,12 @@ basis-universal = ["bevy_internal/basis-universal"]
 
 # Enables compressed KTX2 UASTC texture output on the asset processor
 compressed_image_saver = ["bevy_internal/compressed_image_saver"]
+
+# Enables system-level clipboard support.
+system_clipboard = ["bevy_clipboard", "bevy_internal/system_clipboard"]
+
+# Enables image copy/paste via the system clipboard. Not supported on WASM.
+clipboard_image = ["system_clipboard", "bevy_internal/clipboard_image"]
 
 # BMP image format support
 bmp = ["bevy_internal/bmp"]
@@ -3848,7 +3860,6 @@ name = "Overflow Clip Margin"
 description = "Simple example demonstrating the OverflowClipMargin style property"
 category = "UI (User Interface)"
 wasm = true
-
 
 [[example]]
 name = "overflow_debug"
