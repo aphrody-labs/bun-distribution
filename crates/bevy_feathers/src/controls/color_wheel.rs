@@ -181,55 +181,52 @@ impl FeathersColorWheel {
             ColorWheelValue
             ThemeBackgroundColor(tokens::COLOR_PLANE_BG)
             EntityCursor::System(bevy_window::SystemCursorIcon::Crosshair)
-            Children [(
+            Children [
                 Node {
                     align_self: AlignSelf::Stretch,
                     flex_grow: 1.0,
                 }
                 ColorWheelInner
                 Children [
-                    (
-                        Node {
-                            position_type: PositionType::Absolute,
-                            left: percent(0),
-                            top: percent(0),
-                            width: px(10),
-                            height: px(10),
-                            border: px(1),
-                            border_radius: BorderRadius::MAX,
-                        }
-                        ColorWheelTriangleThumb
-                        BorderColor::all(palette::WHITE)
-                        Outline {
-                            width: px(1),
-                            offset: px(0),
-                            color: palette::BLACK
-                        }
-                        Pickable::IGNORE
-                        UiTransform::from_translation(Val2::percent(-50., -50.),)
-                    ),
-                    (
-                        Node {
-                            position_type: PositionType::Absolute,
-                            left: percent(0),
-                            top: percent(0),
-                            width: px(10),
-                            height: px(10),
-                            border: px(1),
-                            border_radius: BorderRadius::MAX,
-                        }
-                        ColorWheelRingThumb
-                        BorderColor::all(palette::WHITE)
-                        Outline {
-                            width: px(1),
-                            offset: px(0),
-                            color: palette::BLACK
-                        }
-                        Pickable::IGNORE
-                        UiTransform::from_translation(Val2::percent(-50., -50.),)
-                    )
+                    Node {
+                        position_type: PositionType::Absolute,
+                        left: percent(0),
+                        top: percent(0),
+                        width: px(10),
+                        height: px(10),
+                        border: px(1),
+                        border_radius: BorderRadius::MAX,
+                    }
+                    ColorWheelTriangleThumb
+                    BorderColor::all(palette::WHITE)
+                    Outline {
+                        width: px(1),
+                        offset: px(0),
+                        color: palette::BLACK
+                    }
+                    Pickable::IGNORE
+                    UiTransform::from_translation(Val2::percent(-50., -50.),)
+                    --
+                    Node {
+                        position_type: PositionType::Absolute,
+                        left: percent(0),
+                        top: percent(0),
+                        width: px(10),
+                        height: px(10),
+                        border: px(1),
+                        border_radius: BorderRadius::MAX,
+                    }
+                    ColorWheelRingThumb
+                    BorderColor::all(palette::WHITE)
+                    Outline {
+                        width: px(1),
+                        offset: px(0),
+                        color: palette::BLACK
+                    }
+                    Pickable::IGNORE
+                    UiTransform::from_translation(Val2::percent(-50., -50.),)
                 ]
-            )]
+            ]
         }
     }
 }
