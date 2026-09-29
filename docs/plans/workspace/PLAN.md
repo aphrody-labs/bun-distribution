@@ -331,9 +331,17 @@ tests de rappel dans
 `aphrody-memory` reste sur une recherche exacte et un fichier JSONL ; une
 migration de format et un contrat de classement sont requis avant toute fusion
 de ces deux surfaces.
-Ces trois imports ne ferment ni le corpus gold BXC, ni les profils navigateur,
-ni les symboles FFI/Bun, ni les consommateurs AI/MCP dont l'import est encore
-en travail. Leur bascule et l'élimination des dépendances au checkout source
+Les crates `aphrody-web-chromium`, `obscura-net`, `aphrody-x` et
+`aphrody-x-algorithm` sont aussi importées avec hashes et tests ciblés. Le
+seul `aphrody-ffi` exporte désormais les 67 symboles C du catalogue Web v4,
+les noms canoniques réseau et les alias de transition. Son chargeur Bun ouvre
+la bibliothèque à la première utilisation et vérifie les ABI Aphrody et Web.
+`aphrody-mcp` expose déjà l'extraction HTML via le Rust partagé ; son catalogue
+Web restant délègue encore à un processus enfant. La couverture des symboles
+ne ferme ni le corpus gold, ni la parité navigateur/réseau, ni le basculement
+des consommateurs Bun/AI/MCP. Les deux autres chargeurs FFI Bun recensés dans
+le workspace doivent converger vers la façade unique avant suppression des
+anciens noms. Leur bascule et l'élimination des dépendances au checkout source
 restent des critères de sortie de P5.
 
 - [ ] Cartographier Obscura/JS, Chromium/CDP, V8 et JSC, leurs dépendances
