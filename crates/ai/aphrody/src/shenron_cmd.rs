@@ -71,7 +71,7 @@ pub(crate) enum ShenronAction {
 
 #[derive(Debug, Subcommand)]
 pub(crate) enum ShenronRagAction {
-    /// Search through the canonical Aphrody AI HTTP RAG API
+    /// Search the RAG engine selected by Shenron's RAG_BACKEND
     Search {
         /// Query string to search
         query: String,
@@ -85,7 +85,7 @@ pub(crate) enum ShenronRagAction {
         #[arg(long)]
         json: bool,
     },
-    /// Show statistics from the canonical Aphrody AI HTTP RAG API
+    /// Show statistics from Shenron's selected RAG engine
     Stats {
         /// Emit stats as JSON
         #[arg(long)]
@@ -330,6 +330,10 @@ fn config_alias(names: &[&str]) -> Option<String> {
     names.iter().find_map(|name| private_config(name))
 }
 
+fn rag_backend() -> &'static str {
+    if config_alias(&["RAG_BACKEND"]).as_deref() == Some("aphrody") { "aphrody" } else { "local" }
+}
+
 fn training_root() -> miette::Result<PathBuf> {
     let configured = std::env::var_os("APHRODY_ROOT").map(PathBuf::from);
     let compiled = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
@@ -350,6 +354,18 @@ fn shenron_training_dir() -> miette::Result<PathBuf> {
         .join("private")
         .join("training")
         .join("shenron"))
+}
+
+fn shenron_gold_path() -> Option<PathBuf> {
+    let root = locate_shenron()?;
+    let configured = config_alias(&["RAG_GOLD_PATH", "RAG_GOLD"]);
+    Some(match configured {
+        Some(value) => {
+            let path = PathBuf::from(value);
+            if path.is_absolute() { path } else { root.join(path) }
+        },
+        None => root.join("apps/bot/tests/rag-gold.jsonl"),
+    })
 }
 
 fn endpoint(value: String) -> miette::Result<reqwest::Url> {
@@ -425,6 +441,60 @@ async fn ai_get(route: &str, query: &[(&str, String)]) -> miette::Result<serde_j
     json_response(http_client()?.get(url).bearer_auth(token).query(query), route).await
 }
 
+async fn bot_get(route: &str, query: &[(&str, String)]) -> miette::Result<serde_json::Value> {
+    let url = bot_base()?.join(route).into_diagnostic()?;
+    json_response(http_client()?.get(url).query(query), route).await
+}
+
+async fn rag_search(
+    query: &str,
+    limit: usize,
+    kind: Option<&str>,
+) -> miette::Result<serde_json::Value> {
+    let mut params = vec![("q", query.to_owned()), ("limit", limit.to_string())];
+    if let Some(kind) = kind {
+        params.push(("kind", kind.to_owned()));
+    }
+    let response = if rag_backend() == "aphrody" {
+        ai_get("/api/v1/shenron/rag/search", &params).await?
+    } else {
+        bot_get("/api/public/rag/search", &params).await?
+    };
+    if response["error"].as_str().is_some() {
+        return Err(miette::miette!("Index RAG Shenron indisponible"));
+    }
+    if response["results"].as_array().is_none() {
+        return Err(miette::miette!("Réponse RAG invalide : results absent"));
+    }
+    Ok(response)
+}
+
+async fn rag_stats() -> miette::Result<serde_json::Value> {
+    if rag_backend() == "aphrody" {
+        let response = ai_get("/api/v1/shenron/rag/stats", &[]).await?;
+        if response["chunks"].as_u64().is_none() || response["vectors"].as_u64().is_none() {
+            return Err(miette::miette!("Statistiques RAG Aphrody invalides"));
+        }
+        return Ok(response);
+    }
+    let response = bot_get("/api/ia/status", &[]).await?;
+    if response["ok"] != true {
+        return Err(miette::miette!("Statistiques RAG du bot indisponibles"));
+    }
+    let rag = &response["rag"];
+    if rag["chunks"].as_u64().is_none() || rag["vectors"].as_u64().is_none() {
+        return Err(miette::miette!("Statistiques RAG du bot invalides"));
+    }
+    Ok(json!({
+        "chunks": rag["chunks"],
+        "vectors": rag["vectors"],
+        "mode": rag["mode"],
+        "builtAt": rag["builtAt"],
+        "ragReady": response["ragReady"],
+        "backend": "local"
+    }))
+}
+
 async fn ai_post(route: &str, body: serde_json::Value) -> miette::Result<serde_json::Value> {
     let url = ai_base()?.join(route).into_diagnostic()?;
     let token = ai_token()?;
@@ -454,6 +524,15 @@ async fn handle_doctor(json_output: bool) -> miette::Result<()> {
         },
         _ => json!({"configured": false, "reachable": false}),
     };
+    let serving_rag = match rag_stats().await {
+        Ok(stats) => json!({
+            "reachable": true,
+            "ready": stats["chunks"].as_u64().unwrap_or(0) > 0,
+            "chunks": stats["chunks"],
+            "vectors": stats["vectors"]
+        }),
+        Err(_) => json!({"reachable": false, "ready": false}),
+    };
     let workspace = aphrody_agent_home::paths::resolve_workspace(Some("dbfr"), None)
         .map_err(|error| miette::miette!("Agent Home: {error}"))?;
     let agent_home = match aphrody_agent_home::SyncSnapshot::capture(&workspace) {
@@ -464,13 +543,15 @@ async fn handle_doctor(json_output: bool) -> miette::Result<()> {
     };
     let operational = site["reachable"] == true
         && bot["reachable"] == true
-        && ai["reachable"] == true
+        && serving_rag["ready"] == true
         && agent_home["valid"] == true;
     let doc = json!({
         "status": if operational { "operational" } else { "degraded" },
         "shenron_root": locate_shenron().map(|p| p.display().to_string()),
         "site": site,
         "bot": bot,
+        "rag_backend": rag_backend(),
+        "serving_rag": serving_rag,
         "aphrody_ai_http": ai,
         "agent_home": agent_home
     });
@@ -480,6 +561,7 @@ async fn handle_doctor(json_output: bool) -> miette::Result<()> {
         println!("Shenron: {}", doc["status"].as_str().unwrap_or("unknown"));
         println!("  Site /wiki/personnages: {}", doc["site"]);
         println!("  Bot /api/health/check: {}", doc["bot"]);
+        println!("  RAG {}: {}", rag_backend(), doc["serving_rag"]);
         println!("  Aphrody AI /api/v1/shenron/health: {}", doc["aphrody_ai_http"]);
         println!("  Agent Home dbfr: {}", doc["agent_home"]);
     }
@@ -493,14 +575,13 @@ async fn handle_status(json_output: bool) -> miette::Result<()> {
 async fn handle_rag(action: ShenronRagAction) -> miette::Result<()> {
     match action {
         ShenronRagAction::Search { query, limit, kind, json } => {
-            if query.trim().is_empty() || query.len() > 512 || limit == 0 || limit > 100 {
-                return Err(miette::miette!("Requête RAG vide/trop longue ou limite hors 1..=100"));
+            let max_limit = if rag_backend() == "aphrody" { 100 } else { 25 };
+            if query.trim().len() < 2 || query.len() > 512 || limit == 0 || limit > max_limit {
+                return Err(miette::miette!(
+                    "Requête RAG hors limites (2..=512 caractères, limite 1..={max_limit})"
+                ));
             }
-            let mut params = vec![("q", query), ("limit", limit.to_string())];
-            if let Some(kind) = kind {
-                params.push(("kind", kind));
-            }
-            let response = ai_get("/api/v1/shenron/rag/search", &params).await?;
+            let response = rag_search(&query, limit, kind.as_deref()).await?;
             let hits = response["results"]
                 .as_array()
                 .ok_or_else(|| miette::miette!("Réponse RAG invalide : results absent"))?;
@@ -525,7 +606,7 @@ async fn handle_rag(action: ShenronRagAction) -> miette::Result<()> {
             }
         },
         ShenronRagAction::Stats { json } => {
-            let response = ai_get("/api/v1/shenron/rag/stats", &[]).await?;
+            let response = rag_stats().await?;
             if json {
                 println!("{}", serde_json::to_string_pretty(&response).into_diagnostic()?);
             } else {
@@ -585,11 +666,9 @@ async fn handle_train(action: ShenronTrainAction) -> miette::Result<()> {
                     "Fournir --input avec des passages JSONL exportés via l'API, hors Agent Home"
                 )
             })?;
-            let gold = gold
-                .or_else(|| locate_shenron().map(|root| root.join("apps/bot/tests/rag-gold.jsonl")))
-                .ok_or_else(|| {
-                    miette::miette!("Fournir --gold avec un jeu de référence tenu à l'écart")
-                })?;
+            let gold = gold.or_else(shenron_gold_path).ok_or_else(|| {
+                miette::miette!("Fournir --gold avec un jeu de référence tenu à l'écart")
+            })?;
             if !input.is_file() || !gold.is_file() {
                 return Err(miette::miette!("Entrée JSONL ou jeu gold introuvable"));
             }
@@ -723,16 +802,12 @@ async fn handle_persona(action: ShenronPersonaAction) -> miette::Result<()> {
     match action {
         ShenronPersonaAction::Prompt => println!("{prompt}"),
         ShenronPersonaAction::Ask { question } => {
-            if question.trim().is_empty() || question.len() > 512 {
+            if question.trim().len() < 2 || question.len() > 512 {
                 return Err(miette::miette!(
                     "Question vide ou trop longue (512 caractères maximum)"
                 ));
             }
-            let rag = ai_get(
-                "/api/v1/shenron/rag/search",
-                &[("q", question.clone()), ("limit", "5".to_owned())],
-            )
-            .await?;
+            let rag = rag_search(&question, 5, None).await?;
             let hits = rag["results"]
                 .as_array()
                 .ok_or_else(|| miette::miette!("Réponse RAG invalide : results absent"))?;
