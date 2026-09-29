@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 [workspace]
 resolver = "3"
-members = ["crates/iecode/ievr-data", "crates/infra/*", "crates/contracts/aphrody-kernel-client", "crates/ai/aphrody-agent-home", "crates/ai/aphrody-models", "crates/ai/aphrody-config", "crates/ai/aphrody-toolcall", "crates/ai/aphrody-patch", "crates/ai/aphrody-context", "crates/ai/aphrody-prompts", "crates/ai/aphrody-providers", "crates/ai/aphrody-ecosystem", "crates/ai/aphrody-gemini-runtime"]
+members = ["crates/iecode/ievr-data", "crates/infra/*", "crates/contracts/aphrody-kernel-client", "crates/ai/aphrody-agent-home", "crates/ai/aphrody-models", "crates/ai/aphrody-config", "crates/ai/aphrody-toolcall", "crates/ai/aphrody-patch", "crates/ai/aphrody-context", "crates/ai/aphrody-prompts", "crates/ai/aphrody-providers", "crates/ai/aphrody-ecosystem", "crates/ai/aphrody-gemini-runtime", "crates/ai/aphrody-antigravity", "crates/ai/aphrody-model-client", "crates/ai/aphrody-model-antigravity", "crates/ai/aphrody-llm-infra", "crates/ai/aphrody-router", "crates/ai/aphrody-mcp-oauth", "crates/ai/aphrody-toolcall-repair"]
 
 [workspace.package]
 version = "1.0.0"
@@ -17,9 +17,12 @@ serde = { version = "1", default-features = false, features = ["derive"] }
 serde_json = { version = "1", default-features = false }
 anyhow = "1.0"
 async-trait = "0.1"
+async-stream = "0.3"
 arc-swap = "1.7"
+axum = { version = "0.8", default-features = false, features = ["json", "query", "tokio", "http1", "http2"] }
 base64 = "0.22"
 blake3 = "1.5"
+bytes = "1"
 chrono = { version = "0.4", features = ["serde"] }
 clap = { version = "4.5", features = ["derive", "env"] }
 dashmap = "6"
@@ -27,6 +30,7 @@ dirs = "6"
 dunce = "1.0"
 futures-util = "0.3"
 futures = "0.3"
+data-encoding = "2.3.3"
 hex = "0.4"
 gix = { version = "0.83", default-features = false, features = ["sha1", "basic", "extras", "comfort", "max-performance-safe", "revision", "index", "worktree-mutation"] }
 globset = "0.4"
@@ -36,9 +40,12 @@ notify = "8"
 notify-debouncer-full = "0.6"
 octocrab = "0.50"
 parking_lot = "0.12"
+proptest = "1"
 regex = "1.11"
-reqwest = { version = "0.13", default-features = false, features = ["rustls-no-provider", "json", "stream"] }
+reqwest = { version = "0.13", default-features = false, features = ["rustls-no-provider", "json", "stream", "form", "query"] }
+rand = "0.8"
 ring = "0.17"
+rusqlite = { version = "0.40", features = ["bundled"] }
 sha2 = "0.10"
 sysinfo = { version = "0.39", default-features = false, features = ["system"] }
 rustls = { version = "0.23", default-features = false, features = ["ring", "std", "tls12"] }
@@ -52,15 +59,31 @@ url = "2"
 which = "8"
 criterion = "0.8"
 pretty_assertions = "1"
+webbrowser = "1"
 schemars = { version = "0.8", features = ["derive"] }
 similar = "3"
 minijinja = { version = "2", default-features = false, features = ["loader", "builtins", "macros", "multi_template", "deserialization", "serde"] }
 aphrody-models = { path = "crates/ai/aphrody-models" }
 aphrody-config = { path = "crates/ai/aphrody-config" }
+aphrody-toolcall = { path = "crates/ai/aphrody-toolcall" }
+aphrody-providers = { path = "crates/ai/aphrody-providers" }
+aphrody-antigravity = { path = "crates/ai/aphrody-antigravity" }
+aphrody-model-client = { path = "crates/ai/aphrody-model-client" }
+aphrody-model-antigravity = { path = "crates/ai/aphrody-model-antigravity" }
+aphrody-llm-infra = { path = "crates/ai/aphrody-llm-infra" }
+aphrody-router = { path = "crates/ai/aphrody-router" }
+aphrody-mcp-oauth = { path = "crates/ai/aphrody-mcp-oauth" }
+aphrody-toolcall-repair = { path = "crates/ai/aphrody-toolcall-repair" }
+aphrody-patch = { path = "crates/ai/aphrody-patch" }
 fast_rsync = "0.2"
 russh = { version = "0.63", default-features = false, features = ["ring", "flate2"] }
 russh-sftp = "3.0"
 opendal = { version = "0.59", default-features = false, features = ["executors-tokio", "services-fs"] }
+tonic = "0.14"
+tonic-prost = "0.14"
+tonic-prost-build = "0.14"
+prost = "0.14"
+protoc-bin-vendored = "3"
 
 [workspace.lints.rust]
 unsafe_op_in_unsafe_fn = "deny"

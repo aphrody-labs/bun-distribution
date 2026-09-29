@@ -1,0 +1,5 @@
+<tool_call><function=set_retry><parameter=attempts>
+3
+</parameter><parameter=backoff>
+1.5
+</parameter></function></tool_call>

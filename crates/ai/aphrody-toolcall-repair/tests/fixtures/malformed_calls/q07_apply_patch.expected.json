@@ -1,0 +1,1 @@
+[{"name": "apply_patch", "arguments": {"input": "*** Begin Patch\n*** Add File: hello.txt\n+hello world\n*** End Patch"}}]

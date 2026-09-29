@@ -117,6 +117,13 @@ source-closure, compatibility, installed-workflow, license, and rollback gate.
       source HEAD. All 10 files match their source hashes and modes; an offline
       check of both workspace members passes. See
       [`ai-runtime-crates-extraction.json`](docs/migration/ai-runtime-crates-extraction.json).
+- [x] Import the model and routing foundation (`aphrody-antigravity`,
+      `aphrody-model-client`, `aphrody-model-antigravity`, `aphrody-llm-infra`,
+      `aphrody-router`, `aphrody-mcp-oauth` and `aphrody-toolcall-repair`). All
+      138 tracked files match source SHA-256 and file modes at the same clean
+      `aphrody-ai` HEAD. The seven new workspace members pass one offline Cargo
+      check. See
+      [`ai-model-stack-extraction.json`](docs/migration/ai-model-stack-extraction.json).
 - [x] Stage IECODE's Bun packages and split its generic happy-dom host into
       `@aphrody/bun-test-dom`, retaining `@nie/plugin/happydom` as a compatibility
       export. `@aphrody/iecode-ffi`, `@aphrody/nie`, and `@nie/plugin` are private
