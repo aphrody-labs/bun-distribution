@@ -1,0 +1,58 @@
+{
+  "name": "@aphrody/web-test",
+  "version": "0.2.6",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/aphrody-code/aphrody-web.git",
+    "directory": "packages/web/aphrody-web-test"
+  },
+  "bugs": {
+    "url": "https://github.com/aphrody-code/aphrody-web/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "description": "Playwright-compatible browser and site test runner for Bun, backed by the shared Rust Obscura CDP server.",
+  "keywords": [
+    "aphrody",
+    "bun",
+    "playwright",
+    "test",
+    "e2e",
+    "cdp",
+    "locator",
+    "web-first-assertions"
+  ],
+  "files": [
+    "src/",
+    "!src/**/*.test.ts",
+    "!src/**/*.spec.ts",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "bun": ">=1.4.2"
+  },
+  "license": "Apache-2.0",
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./config": "./src/config.ts",
+    "./next": "./src/next/index.ts",
+    "./sites": "./src/sites/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "lint": "oxlint",
+    "test": "bun test test/"
+  },
+  "devDependencies": {
+    "@types/bun": "catalog:",
+    "typescript": "catalog:"
+  },
+  "dependencies": {
+    "@aphrody/agent-browser": "workspace:*"
+  }
+}

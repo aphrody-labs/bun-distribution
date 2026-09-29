@@ -5,7 +5,7 @@
  * The definitions are plain JSON Schema, so any tool-calling model endpoint can request them;
  * {@link XTools} fulfils the calls with the native cookie-authenticated {@link XClient} (no X API
  * key). This module owns the X side of such agent loops; the model client that drives a loop
- * belongs to its caller (bxc's `grok-x-research` actor, `@aphrody/xai` in aphrody-ai).
+ * belongs to its caller (`@aphrody/xai` in aphrody-ai).
  */
 
 import { XClient } from "../core/client";

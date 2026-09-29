@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
 import { spawnSync } from "node:child_process";
 import { existsSync, realpathSync } from "node:fs";
-import { delimiter, join, resolve } from "node:path";
+import { join, resolve } from "node:path";
+import { DEFAULT_OBSCURA_CDP_URL, WebCdpPage } from "./cdp.ts";
+export { DEFAULT_OBSCURA_CDP_URL } from "./cdp.ts";
 import type {
   ClickOptions,
   CommandResponse,
@@ -12,7 +14,6 @@ import type {
   SnapshotResult,
 } from "./types.ts";
 
-export const DEFAULT_OBSCURA_CDP_URL = "ws://127.0.0.1:9222/devtools/browser";
 const OWN_LAUNCHER = realpathSync(join(import.meta.dir, "../bin/agent-browser.js"));
 
 function hasFlag(args: readonly string[], flag: string): boolean {
@@ -39,7 +40,7 @@ export function resolveAgentBrowserBinary(): string {
 
   const ext = process.platform === "win32" ? ".exe" : "";
   const root = join(import.meta.dir, "../../../..");
-  const names = [`aphrody-agent-browser${ext}`, `agent-browser${ext}`];
+  const names = [`aphrody-agent-browser${ext}`];
   for (const profile of ["release", "debug"]) {
     for (const name of names) {
       const candidate = join(root, "target", profile, name);
@@ -47,13 +48,8 @@ export function resolveAgentBrowserBinary(): string {
     }
   }
 
-  for (const dir of (process.env.PATH ?? "").split(delimiter)) {
-    if (!dir) continue;
-    const installed = join(dir, `agent-browser${ext}`);
-    if (!existsSync(installed)) continue;
-    const binary = realpathSync(installed);
-    if (binary !== OWN_LAUNCHER) return binary;
-  }
+  const installed = Bun.which(`aphrody-agent-browser${ext}`);
+  if (installed) return realpathSync(installed);
   throw new Error("native agent-browser Rust CLI is unavailable; install it or set APHRODY_AGENT_BROWSER_BIN");
 }
 
@@ -127,17 +123,24 @@ function parseResponse(stdout: string, stderr: string, status: number): CommandR
 export class AgentBrowser {
   static async open(url?: string, options: LaunchOptions = {}): Promise<AgentPage> {
     const session = options.session ?? `sess-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
-    const page = new AgentPage(session, options);
-    if (url) await page.goto(url);
-    else await page.open();
-    return page;
+    const endpoint = options.cdpUrl ??
+      (options.port ? `ws://127.0.0.1:${options.port}/devtools/browser` : undefined) ??
+      process.env.APHRODY_BROWSER_CDP_URL ?? process.env.APHRODY_CDP_URL ?? DEFAULT_OBSCURA_CDP_URL;
+    const native = await WebCdpPage.connect(endpoint);
+    const page = new AgentPage(session, options, native);
+    try {
+      if (url) await page.goto(url);
+      return page;
+    } catch (error) {
+      await page.close();
+      throw error;
+    }
   }
 
   /** Compatibility path for callers requiring a synchronous command result. */
   static exec(args: string[], options: LaunchOptions = {}): CommandResponse {
     try {
-      const binary = resolveAgentBrowserBinary();
-      const result = spawnSync(binary, prepareAgentBrowserArgs(args, options), {
+      const result = spawnSync(process.execPath, [OWN_LAUNCHER, ...prepareAgentBrowserArgs(args, options)], {
         encoding: "utf8",
         timeout: options.timeoutMs ?? 30_000,
         windowsHide: true,
@@ -152,8 +155,7 @@ export class AgentBrowser {
   /** Browser actions use this path so a Rust CDP command cannot freeze Bun. */
   static async execAsync(args: string[], options: LaunchOptions = {}): Promise<CommandResponse> {
     try {
-      const binary = resolveAgentBrowserBinary();
-      const proc = Bun.spawn([binary, ...prepareAgentBrowserArgs(args, options)], {
+      const proc = Bun.spawn([process.execPath, OWN_LAUNCHER, ...prepareAgentBrowserArgs(args, options)], {
         stdout: "pipe",
         stderr: "pipe",
         windowsHide: true,
@@ -182,176 +184,206 @@ export class AgentBrowser {
 }
 
 export class AgentPage {
-	readonly session: string;
-	readonly options: LaunchOptions;
-	private currentUrl = "about:blank";
+  readonly session: string;
+  readonly options: LaunchOptions;
+  #native?: WebCdpPage;
+  #connecting?: Promise<WebCdpPage>;
+  readonly #refs = new Map<string, number>();
 
-	constructor(session: string, options: LaunchOptions = {}) {
-		this.session = session;
-		this.options = { ...options, session };
-	}
+  constructor(session: string, options: LaunchOptions = {}, native?: WebCdpPage) {
+    this.session = session;
+    this.options = { ...options, session };
+    this.#native = native;
+  }
 
-	url(): string {
-		return this.currentUrl;
-	}
+  get #page(): WebCdpPage {
+    if (!this.#native) throw new Error("AgentPage is not connected");
+    return this.#native;
+  }
 
-	async open(): Promise<void> {
-		const res = await AgentBrowser.execAsync(["open"], this.options);
-		if (!res.success && res.error) {
-			throw new Error(`agent-browser open failed: ${res.error}`);
-		}
-	}
+  url(): string { return this.#native?.url() ?? "about:blank"; }
 
-	async goto(url: string): Promise<void> {
-		this.currentUrl = url;
-		const res = await AgentBrowser.execAsync(["open", url], this.options);
-		if (!res.success && res.error) {
-			throw new Error(`agent-browser goto "${url}" failed: ${res.error}`);
-		}
-	}
+  async open(): Promise<void> {
+    if (this.#native) return;
+    const endpoint = this.options.cdpUrl ??
+      (this.options.port ? `ws://127.0.0.1:${this.options.port}/devtools/browser` : undefined) ??
+      process.env.APHRODY_BROWSER_CDP_URL ?? process.env.APHRODY_CDP_URL ?? DEFAULT_OBSCURA_CDP_URL;
+    this.#connecting ??= WebCdpPage.connect(endpoint);
+    try {
+      this.#native = await this.#connecting;
+    } finally {
+      this.#connecting = undefined;
+    }
+  }
 
-	async snapshot(): Promise<SnapshotResult> {
-		const res = await AgentBrowser.execAsync(["snapshot"], this.options);
-		if (!res.success && res.error) {
-			throw new Error(`agent-browser snapshot failed: ${res.error}`);
-		}
+  async goto(url: string): Promise<void> {
+    await this.open();
+    this.#refs.clear();
+    await this.#page.goto(url);
+  }
 
-		const raw = typeof res.data === "string" ? res.data : JSON.stringify(res.data ?? "");
-		const refs = new Map<string, RefEntry>();
+  async #resolve(target: string): Promise<number> {
+    const cached = this.#refs.get(target);
+    if (cached !== undefined) return cached;
+    if (target.startsWith("@e")) throw new Error(`Unknown snapshot reference: ${target}`);
+    const document = await this.#page._send("DOM.getDocument", { depth: 0 });
+    const root = document.root as { nodeId: number };
+    const matches = await this.#page._send("DOM.querySelectorAll", {
+      nodeId: root.nodeId,
+      selector: target,
+    });
+    const id = (matches.nodeIds as number[] | undefined)?.[0];
+    if (id === undefined) throw new Error(`Element not found: ${target}`);
+    return id;
+  }
 
-		// Parse @e1, @e2 references from the snapshot output
-		const refRegex = /\[ref=(@e\d+)\]/g;
-		const lineRegex = /^(\s*[-*]?\s*)(\w+)?\s*(?:"([^"]*)")?\s*.*\[ref=(@e\d+)\]/gm;
+  async #outerHtml(nodeId: number): Promise<string> {
+    const result = await this.#page._send("DOM.getOuterHTML", { nodeId });
+    return String(result.outerHTML ?? "");
+  }
 
-		let match: RegExpExecArray | null;
-		while ((match = lineRegex.exec(raw)) !== null) {
-			const role = match[2] || "element";
-			const name = match[3] || "";
-			const ref = match[4];
-			refs.set(ref, { ref, role, name });
-		}
+  async snapshot(): Promise<SnapshotResult> {
+    await this.open();
+    this.#refs.clear();
+    const document = await this.#page._send("DOM.getDocument", { depth: 0 });
+    const root = document.root as { nodeId: number };
+    const matches = await this.#page._send("DOM.querySelectorAll", {
+      nodeId: root.nodeId,
+      selector: "a,button,input,textarea,select,[role=button],[tabindex]",
+    });
+    const refs = new Map<string, RefEntry>();
+    const lines: string[] = [];
+    const nodes = (matches.nodeIds as number[] | undefined) ?? [];
+    const entries = await Promise.all(nodes.map(async (nodeId) => {
+      const [described, html] = await Promise.all([
+        this.#page._send("DOM.describeNode", { nodeId }),
+        this.#outerHtml(nodeId),
+      ]);
+      const node = described.node as { nodeName?: string; attributes?: string[] } | undefined;
+      const attrs = node?.attributes ?? [];
+      const attribute = (name: string): string | undefined => {
+        for (let i = 0; i + 1 < attrs.length; i += 2) if (attrs[i] === name) return attrs[i + 1];
+        return undefined;
+      };
+      const role = attribute("role") ?? node?.nodeName?.toLowerCase() ?? "element";
+      const name = attribute("aria-label") ?? attribute("placeholder") ??
+        html.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
+      return { nodeId, role, name };
+    }));
+    for (const [index, { nodeId, role, name }] of entries.entries()) {
+      const ref = `@e${index + 1}`;
+      this.#refs.set(ref, nodeId);
+      refs.set(ref, { ref, role, name, backendNodeId: nodeId });
+      lines.push(`- ${role} ${JSON.stringify(name)} [ref=${ref}]`);
+    }
+    return { raw: lines.join("\n"), refs, title: await this.#page.title(), url: this.url() };
+  }
 
-		// Fallback for simple refs
-		if (refs.size === 0) {
-			let simpleMatch: RegExpExecArray | null;
-			while ((simpleMatch = refRegex.exec(raw)) !== null) {
-				const ref = simpleMatch[1];
-				if (!refs.has(ref)) {
-					refs.set(ref, { ref, role: "element", name: "" });
-				}
-			}
-		}
+  async click(target: string, opts: ClickOptions = {}): Promise<void> {
+    await this.open();
+    const nodeId = await this.#resolve(target);
+    await this.#page._send("DOM.focus", { nodeId });
+    if (opts.button === undefined || opts.button === "left") {
+      await this.#page.evaluate<void>("document.activeElement.click()");
+      return;
+    }
+    const box = await this.#page._send("DOM.getBoxModel", { nodeId });
+    const quad = (box.model as { content: number[] }).content;
+    const x = ((quad[0] ?? 0) + (quad[2] ?? 0)) / 2;
+    const y = ((quad[1] ?? 0) + (quad[5] ?? 0)) / 2;
+    await this.#page._send("Input.dispatchMouseEvent", { type: "mousePressed", x, y, button: opts.button, clickCount: opts.clickCount ?? 1 });
+    await this.#page._send("Input.dispatchMouseEvent", { type: "mouseReleased", x, y, button: opts.button, clickCount: opts.clickCount ?? 1 });
+  }
 
-		return {
-			raw,
-			refs,
-			url: this.currentUrl,
-		};
-	}
+  async fill(target: string, text: string): Promise<void> {
+    await this.open();
+    await this.#page._send("DOM.focus", { nodeId: await this.#resolve(target) });
+    await this.#page.evaluate<void>("document.activeElement.value = ''");
+    await this.#page._send("Input.insertText", { text });
+  }
 
-	async click(target: string, opts?: ClickOptions): Promise<void> {
-		const args = ["click", target];
-		if (opts?.button) args.push("--button", opts.button);
-		if (opts?.clickCount) args.push("--click-count", String(opts.clickCount));
-		const res = await AgentBrowser.execAsync(args, this.options);
-		if (!res.success && res.error) {
-			throw new Error(`agent-browser click "${target}" failed: ${res.error}`);
-		}
-	}
+  async type(target: string, text: string): Promise<void> {
+    await this.open();
+    await this.#page._send("DOM.focus", { nodeId: await this.#resolve(target) });
+    await this.#page._send("Input.insertText", { text });
+  }
 
-	async fill(target: string, text: string): Promise<void> {
-		const res = await AgentBrowser.execAsync(["fill", target, text], this.options);
-		if (!res.success && res.error) {
-			throw new Error(`agent-browser fill "${target}" failed: ${res.error}`);
-		}
-	}
+  async press(key: string): Promise<void> {
+    await this.open();
+    await this.#page._send("Input.dispatchKeyEvent", { type: "keyDown", key });
+    await this.#page._send("Input.dispatchKeyEvent", { type: "keyUp", key });
+  }
 
-	async type(target: string, text: string): Promise<void> {
-		const res = await AgentBrowser.execAsync(["type", target, text], this.options);
-		if (!res.success && res.error) {
-			throw new Error(`agent-browser type "${target}" failed: ${res.error}`);
-		}
-	}
+  async hover(target: string): Promise<void> {
+    await this.open();
+    const box = await this.#page._send("DOM.getBoxModel", { nodeId: await this.#resolve(target) });
+    const quad = (box.model as { content: number[] }).content;
+    await this.#page._send("Input.dispatchMouseEvent", {
+      type: "mouseMoved",
+      x: ((quad[0] ?? 0) + (quad[2] ?? 0)) / 2,
+      y: ((quad[1] ?? 0) + (quad[5] ?? 0)) / 2,
+    });
+  }
 
-	async press(key: string): Promise<void> {
-		const res = await AgentBrowser.execAsync(["press", key], this.options);
-		if (!res.success && res.error) {
-			throw new Error(`agent-browser press "${key}" failed: ${res.error}`);
-		}
-	}
+  async select(target: string, value: string): Promise<void> {
+    await this.open();
+    await this.#page._send("DOM.focus", { nodeId: await this.#resolve(target) });
+    await this.#page.evaluate<void>(`document.activeElement.value = ${JSON.stringify(value)}; document.activeElement.dispatchEvent(new Event('change', { bubbles: true }))`);
+  }
 
-	async hover(target: string): Promise<void> {
-		const res = await AgentBrowser.execAsync(["hover", target], this.options);
-		if (!res.success && res.error) {
-			throw new Error(`agent-browser hover "${target}" failed: ${res.error}`);
-		}
-	}
+  async screenshot(path?: string, opts: ScreenshotOptions = {}): Promise<string> {
+    await this.open();
+    const result = await this.#page._send("Page.captureScreenshot", {
+      format: opts.format ?? "png",
+      captureBeyondViewport: opts.fullPage ?? false,
+      ...(opts.quality === undefined ? {} : { quality: opts.quality }),
+    });
+    const data = String(result.data ?? "");
+    if (path) { await Bun.write(path, Buffer.from(data, "base64")); return path; }
+    return data;
+  }
 
-	async select(target: string, value: string): Promise<void> {
-		const res = await AgentBrowser.execAsync(["select", target, value], this.options);
-		if (!res.success && res.error) {
-			throw new Error(`agent-browser select "${target}" failed: ${res.error}`);
-		}
-	}
+  async pdf(path?: string, opts: PdfOptions = {}): Promise<string> {
+    await this.open();
+    const result = await this.#page._send("Page.printToPDF", {
+      landscape: opts.landscape ?? false,
+      displayHeaderFooter: opts.displayHeaderFooter ?? false,
+      printBackground: opts.printBackground ?? false,
+      ...(opts.scale === undefined ? {} : { scale: opts.scale }),
+    });
+    const data = String(result.data ?? "");
+    if (path) { await Bun.write(path, Buffer.from(data, "base64")); return path; }
+    return data;
+  }
 
-	async screenshot(path?: string, opts?: ScreenshotOptions): Promise<string> {
-		const args = ["screenshot"];
-		if (path) args.push(path);
-		if (opts?.fullPage) args.push("--full-page");
-		const res = await AgentBrowser.execAsync(args, this.options);
-		if (!res.success && res.error) {
-			throw new Error(`agent-browser screenshot failed: ${res.error}`);
-		}
-		return typeof res.data === "string" ? res.data : JSON.stringify(res.data);
-	}
+  async getText(target: string): Promise<string> {
+    await this.open();
+    const html = await this.#outerHtml(await this.#resolve(target));
+    return html.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
+  }
 
-	async pdf(path?: string, opts?: PdfOptions): Promise<string> {
-		const args = ["pdf"];
-		if (path) args.push(path);
-		if (opts?.landscape) args.push("--landscape");
-		const res = await AgentBrowser.execAsync(args, this.options);
-		if (!res.success && res.error) {
-			throw new Error(`agent-browser pdf failed: ${res.error}`);
-		}
-		return typeof res.data === "string" ? res.data : JSON.stringify(res.data);
-	}
+  async getAttribute(target: string, name: string): Promise<string | null> {
+    await this.open();
+    const described = await this.#page._send("DOM.describeNode", { nodeId: await this.#resolve(target) });
+    const attrs = (described.node as { attributes?: string[] } | undefined)?.attributes ?? [];
+    for (let i = 0; i + 1 < attrs.length; i += 2) if (attrs[i] === name) return attrs[i + 1] ?? null;
+    return null;
+  }
 
-	async getText(target: string): Promise<string> {
-		const res = await AgentBrowser.execAsync(["get", "text", target], this.options);
-		if (!res.success && res.error) {
-			throw new Error(`agent-browser get text "${target}" failed: ${res.error}`);
-		}
-		return typeof res.data === "string" ? res.data : String(res.data ?? "");
-	}
+  async evaluate<T = unknown>(script: string): Promise<T> { await this.open(); return this.#page.evaluate<T>(script); }
 
-	async getAttribute(target: string, name: string): Promise<string | null> {
-		const res = await AgentBrowser.execAsync(["get", "attribute", target, name], this.options);
-		if (!res.success && res.error) {
-			throw new Error(`agent-browser get attribute "${target}" "${name}" failed: ${res.error}`);
-		}
-		return res.data !== undefined ? String(res.data) : null;
-	}
+  async waitFor(selectorOrMs: string | number): Promise<void> {
+    await this.open();
+    if (typeof selectorOrMs === "number") { await Bun.sleep(selectorOrMs); return; }
+    const deadline = Date.now() + (this.options.timeoutMs ?? 30_000);
+    while (Date.now() < deadline) {
+      try { await this.#resolve(selectorOrMs); return; } catch { await Bun.sleep(50); }
+    }
+    throw new Error(`Timeout waiting for ${selectorOrMs}`);
+  }
 
-	async evaluate<T = unknown>(script: string): Promise<T> {
-		const res = await AgentBrowser.execAsync(["eval", script], this.options);
-		if (!res.success && res.error) {
-			throw new Error(`agent-browser eval failed: ${res.error}`);
-		}
-		return res.data as T;
-	}
-
-	async waitFor(selectorOrMs: string | number): Promise<void> {
-		const arg = typeof selectorOrMs === "number" ? String(selectorOrMs) : selectorOrMs;
-		const res = await AgentBrowser.execAsync(["wait", arg], this.options);
-		if (!res.success && res.error) {
-			throw new Error(`agent-browser wait failed: ${res.error}`);
-		}
-	}
-
-	async close(): Promise<void> {
-		const res = await AgentBrowser.execAsync(["close"], this.options);
-		if (!res.success && res.error) {
-			// Ignore errors on close
-		}
-	}
+  async close(): Promise<void> {
+    const native = this.#native ?? await this.#connecting;
+    if (native) await native.close();
+  }
 }

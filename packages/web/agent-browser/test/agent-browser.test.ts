@@ -5,14 +5,13 @@ import {
   AgentBrowser,
   DEFAULT_OBSCURA_CDP_URL,
   prepareAgentBrowserArgs,
-  resolveAgentBrowserBinary,
 } from "../src/index.ts";
 
 describe("@aphrody/agent-browser", () => {
-	it("resolves the native agent-browser binary", () => {
-		const bin = resolveAgentBrowserBinary();
-		expect(typeof bin).toBe("string");
-		expect(bin.length).toBeGreaterThan(0);
+	it("runs the local Bun CLI without an external agent-browser binary", () => {
+		const res = AgentBrowser.exec(["--version"]);
+		expect(res.success).toBe(true);
+		expect(res.data).toContain("@aphrody/agent-browser");
 	});
 
 	it("executes --help cleanly", () => {

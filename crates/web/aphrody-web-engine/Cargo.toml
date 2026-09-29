@@ -18,9 +18,9 @@ name = "aphrody-web-worker"
 path = "src/worker.rs"
 
 [features]
-default = []
-# Obscura's renderer adds Taffy layout and raster/text dependencies.
-# Keep DOM/CDP builds lean; opt into layout and screenshots explicitly.
+default = ["render"]
+# The public browser includes layout and CDP screenshots by default.
+# Minimal DOM/CDP builds can use --no-default-features.
 render = ["aphrody-web-service/render", "obscura-browser/render", "obscura-cdp/render"]
 # Obscura documents stealth as a render+stealth build variant.
 stealth = ["render", "aphrody-web-service/stealth", "obscura-browser/stealth", "obscura-net/stealth"]
