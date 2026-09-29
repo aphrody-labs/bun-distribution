@@ -152,7 +152,7 @@ pub(crate) fn runtime_config(config: &Config, cwd: &Path) -> miette::Result<Runt
     // the BXC web/scrape/browser engine, and the no-human-in-the-loop YOLO
     // execution contract. Profile-, operator- and project-level instructions
     // are layered on top of it, so they can refine it but never lose it.
-    let mut instructions = vec![aphrody_prompts::APHRODY_BXC_YOLO_SYSTEM_PROMPT.to_owned()];
+    let mut instructions = vec![aphrody_prompts::APHRODY_UNIFIED_SYSTEM_PROMPT.to_owned()];
     instructions.extend(config.instructions.iter().cloned());
     instructions.extend(config.developer_instructions.iter().cloned());
     let docs = aphrody_project_doc::discover(
@@ -697,7 +697,7 @@ mod tests {
     }
 
     #[test]
-    fn runtime_config_leads_with_the_unified_bxc_yolo_doctrine() {
+    fn runtime_config_leads_with_the_unified_doctrine() {
         let cwd = std::env::current_dir().expect("cwd");
         let env = |_: &str| None;
         let layers = vec![ConfigLayer::new(
@@ -710,7 +710,7 @@ mod tests {
         let runtime = runtime_config(&config, &cwd).expect("runtime config");
         let prompt = runtime.system_prompt.as_deref().expect("system prompt");
         assert!(
-            prompt.starts_with(aphrody_prompts::APHRODY_BXC_YOLO_SYSTEM_PROMPT),
+            prompt.starts_with(aphrody_prompts::APHRODY_UNIFIED_SYSTEM_PROMPT),
             "the unified doctrine must lead the assembled system prompt"
         );
         // YOLO contract: the turn loop is never capped mid-objective.

@@ -15,7 +15,7 @@ Dépôts frères, clonés côte à côte dans le même répertoire parent :
 - `aphrody-ai` : CLI `aphrody`, MCP, agents, modèles, RAG, Bun, Python.
 - `aphrody-os` : système, kernel, sandbox, RE, WinClean (autorité Rust Windows).
 - `aphrody-ui` : design system Material 3, GUI, desktop.
-- `aphrody-web` : moteur navigateur Obscura, BXC (`apps/bxc`), site.
+- `aphrody-web` : capacités navigateur Obscura, extraction et site.
 - `aphrody-contracts` : contrats de protocole (A2A, app-protocol).
 - `aphrody-compat`, `aphrody-shell`, `aphrody-native` : N2B, terminal, ABI C.
 - `aphrody-infra` : infrastructure, déploiement, catalogue des services.

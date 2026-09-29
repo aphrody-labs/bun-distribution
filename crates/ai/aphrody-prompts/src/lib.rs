@@ -56,7 +56,7 @@ use minijinja::{Environment, UndefinedBehavior, Value as MjValue};
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
-pub use unified_system_prompt::APHRODY_BXC_YOLO_SYSTEM_PROMPT;
+pub use unified_system_prompt::APHRODY_UNIFIED_SYSTEM_PROMPT;
 
 // ---------------------------------------------------------------------------
 // Errors
