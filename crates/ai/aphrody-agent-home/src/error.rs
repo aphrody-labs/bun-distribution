@@ -56,6 +56,10 @@ pub enum HomeError {
     #[error("workspace-state json error: {0}")]
     Json(#[from] serde_json::Error),
 
+    /// The shared seven-file sync contract or its contents are invalid.
+    #[error("agent-home sync contract: {0}")]
+    SyncContract(String),
+
     /// Refused to overwrite an existing workspace without `--force`.
     #[error("workspace already configured at {0}; pass force to overwrite")]
     AlreadyConfigured(PathBuf),

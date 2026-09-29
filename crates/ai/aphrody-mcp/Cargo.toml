@@ -1,0 +1,200 @@
+[package]
+name = "aphrody-mcp"
+publish               = false
+version.workspace     = true
+edition.workspace     = true
+rust-version.workspace = true
+authors.workspace     = true
+license.workspace     = true
+homepage.workspace    = true
+repository.workspace  = true
+description           = "aphrody-mcp — unified Rust MCP stdio server. Pure Rust, sub-millisecond cold-start."
+
+# The crate stays named `google_mcp` (historical), but ships a single
+# binary named `aphrody-mcp` consumed by the Claude Code plugin.
+[[bin]]
+name = "aphrody-mcp"
+path = "src/main.rs"
+
+[features]
+# The Obscura browser (HTTP + DOM + V8, plus the layout/paint engine for
+# screenshots and PDF) served natively. On by default: V8 ships prebuilt for
+# Linux and Windows MSVC (the only Windows toolchain aphrody uses).
+default = ["native-browser", "dragonball", "nie"]
+koharu = ["aphrody-manga/koharu"]
+native-browser = ["dep:obscura-mcp", "obscura-mcp/render"]
+# Obscura stealth (fingerprint + tracker blocking, wreq TLS impersonation).
+browser-stealth = ["native-browser", "obscura-mcp/stealth"]
+
+# --- Local inference toolbox (docs/plans/local-inference-toolbox.md, step 7) ---
+# Opt-in because each tool pulls a backend the base MCP server has no use for.
+# CLAUDE.md §7: an opt-in feature is verified by nobody, so clippy/test/build
+# must be run explicitly WITH `--features toolbox`, not just the default set.
+
+# `aphrody_ocr` — vision-language OCR driven through llama.cpp, plus fast PP-OCRv5 ONNX.
+ocr       = [
+    "dep:aphrody-ocr",
+    "dep:aphrody-ocr-vlm",
+    "dep:aphrody-ocr-core",
+    "dep:aphrody-infer",
+    "dep:tempfile",
+]
+# `aphrody_transcribe` — fully local STT driven through whisper.cpp. Its
+# backend lives in `aphrody-voice`, already a hard dependency, so the cost is
+# only the tool surface; the feature exists so the local path and the
+# ElevenLabs/OpenAI path (`voice_transcribe`) can ship independently.
+stt-local = []
+# `aphrody_describe_image` — visual transcription (caption / regions / VQA).
+# Separate from `ocr` on purpose: the two tools grant the model different
+# permissions, and a deployment that must never receive a description of a
+# picture in place of a transcription can ship `ocr` without this.
+vision    = ["dep:aphrody-vision", "dep:tempfile"]
+# `aphrody_job_submit` / `aphrody_job_status` — persistent background queue.
+# Drags bundled libsqlite3 into the binary, hence opt-in.
+jobs      = ["dep:aphrody-jobs", "dep:chrono"]
+# `dbfr_*` — the Dragon Ball FR databooks API (read + guarded deposit). Only
+# HTTP, so it costs nothing but its own tool surface.
+dbfr      = []
+# `aphrody_rag_search` / `aphrody_rag_context` — the local aphrody-rag SQLite
+# index (`$APHRODY_RAG_DB`, default `~/.aphrody/rag/index.db`).
+rag       = ["dep:aphrody-rag"]
+# `dragonball.*` — the Dragon Ball tools of the single Aphrody MCP (ported from
+# the retired Bun `apps/shenron-mcp`): Shenron bot/site API proxies plus the
+# local corpus, persona and `APHRODY_AI_*` chat of `aphrody-rag::dragonball`.
+# On by default: aphrody-mcp is the one MCP the kernel plugin proxies.
+dragonball = ["dep:aphrody-rag"]
+# `nie.*` — the NIE (Inazuma Eleven Victory Road) tools that replace the retired `nie`
+# plugin's `nie-game` server. Transport only: a long-lived `nie-mcp` child over stdio
+# (`NIE_MCP_BIN`), because aphrody-ai must not link nie crates. No extra dependency.
+nie = []
+# Everything the toolbox exposes over MCP.
+toolbox   = ["ocr", "stt-local", "vision", "jobs", "dbfr", "rag", "dragonball", "nie"]
+
+# `winclean` — the 166 tools of aphrody-winclean (Windows computer use + OS control)
+# advertised and dispatched in-process via aphrody-winclean. Opt-in because the
+# WinClean Claude plugin already exposes the same catalog through
+# Winclean.Mcp.exe; enable it when aphrody-mcp is the single MCP server.
+# Windows-only at runtime; off Windows the tools are simply not advertised.
+winclean  = ["dep:aphrody-winclean"]
+
+[lints]
+workspace = true
+
+[dependencies]
+aphrody-jev        = { workspace = true }
+aphrody-models     = { workspace = true }
+# Canonical `APHRODY_AI_*` environment resolution (`ai_env`), used by
+# `http_rest.rs`'s shenron gateway to resolve the chat/vision/embed base URLs
+# it forwards to, replacing hardcoded `127.0.0.1:8080` fallbacks.
+aphrody-config     = { workspace = true }
+aphrody-kernel     = { workspace = true }
+rmcp               = { workspace = true }
+tokio-postgres     = { workspace = true }
+aphrody-a2a                = { workspace = true }
+aphrody-a2a-server         = { workspace = true }
+aphrody-git                = { workspace = true }
+anyhow             = { workspace = true }
+clap               = { workspace = true }
+tokio              = { workspace = true }
+serde              = { workspace = true }
+serde_json         = { workspace = true }
+tracing            = { workspace = true }
+tracing-subscriber = { workspace = true }
+reqwest            = { workspace = true }
+# Direct `rustls` dep enables `ring::default_provider()` in main() to satisfy
+# the `rustls-no-provider` contract on reqwest. `ring` requires a C compiler;
+# cross-compiling Windows→Linux requires `cargo zigbuild` (Zig as cc).
+rustls             = { workspace = true }
+schemars           = { workspace = true }
+axum               = { workspace = true }
+aphrody-http-error = { workspace = true }
+# Live Photoshop bridge: a local WebSocket server the in-app UXP plugin
+# connects to, letting the photoshop_live_* MCP tools drive the running
+# Photoshop from the inside (batchPlay / DOM). Standalone WS server (no axum
+# `ws` feature needed in this workspace).
+tokio-tungstenite  = { workspace = true }
+futures-util       = { workspace = true }
+sysinfo            = { workspace = true }
+aphrody-backend            = { workspace = true }
+# MCP client surface: reuse the production-tested implementation from
+# gemini-runtime (stdio + HTTP transports, Claude Desktop compatible config
+# loader). This is the same crate the gemini CLI runtime drives at runtime,
+# 59/59 unit tests green at the time of integration.
+aphrody-gemini-runtime     = { workspace = true }
+aphrody-google             = { workspace = true }
+# Adobe Firefly Services client — backs the firefly_generate MCP tool.
+aphrody-firefly    = { workspace = true }
+# Native screen/window capture — backs the screen_capture MCP tool.
+aphrody-capture    = { workspace = true }
+which              = { workspace = true }
+# The single door to bxc: direct fetch + in-process HTML→Markdown through the
+# runtime-loaded `bxc_rust_bridge` cdylib, and the driven `bxc` binary for
+# browser/stealth profiles. Retires the `https://r.jina.ai/` proxy that used to
+# back `universal_web_fetch` and `coding_style_guide`. Not optional: it resolves
+# bxc at runtime, so it builds and links on a machine without bxc installed and
+# answers with a typed error naming the fix.
+aphrody-web-bridge         = { workspace = true }
+aphrody-n2b-core           = { workspace = true }
+aphrody-n2b-report         = { workspace = true }
+aphrody-n2b-types          = { workspace = true }
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+# Voice MCP tool wiring (voice_synthesize + voice_transcribe). The voice_tools
+# module is `#[cfg(not(target_arch = "wasm32"))]`-gated so the deps follow the
+# same cfg. Both crates live in the workspace; here we re-export the path deps.
+aphrody-voice      = { workspace = true }
+# base64 STANDARD encoding for audio payload framing in voice_tools.
+base64             = { workspace = true }
+# Reverse engineering triage (re_triage MCP tool). Pure Rust, no GPL.
+aphrody-re         = { workspace = true }
+dirs               = { workspace = true }
+aphrody-gemini-web         = { workspace = true }
+obscura-mcp        = { workspace = true, optional = true }
+regex              = { workspace = true }
+# `sync_external_agents` — external agent session mirror (agy, Codex, Claude
+# Code) and its feed into the local memory store (sqlite is already linked
+# through aphrody-antigravity, so the `memory` feature adds no C library).
+aphrody-session    = { workspace = true, features = ["memory"] }
+aphrody-memory     = { workspace = true }
+aphrody-manga      = { workspace = true }
+# --- Toolbox backends (optional; see [features]) ---------------------------
+# Vision-language OCR: resolves an installed catalog model + llama-mtmd-cli.
+aphrody-ocr-vlm    = { workspace = true, optional = true }
+# Transcription audit (stuck generations, leaked control tokens, surviving
+# markup). The OCR tool annotates its output with these findings.
+aphrody-ocr-core   = { workspace = true, optional = true }
+# Unified OCR pipeline (PP-OCRv5 ONNX detector/recognizer + DocTags)
+aphrody-ocr        = { workspace = true, optional = true }
+# Local ONNX inference session config and provider selection
+aphrody-infer      = { workspace = true, optional = true }
+# Visual transcription (caption / dense regions / VQA) behind `aphrody_describe_image`.
+aphrody-vision     = { workspace = true, optional = true }
+# Persistent SQLite job queue rooted at ~/.aphrody/jobs.
+aphrody-jobs       = { workspace = true, optional = true }
+# RFC 3339 parsing for a job's `run_after`; same crate the queue stores with.
+chrono             = { workspace = true, optional = true }
+# Staging an inline base64 image on disk: the VLM runner hands a *path* to a
+# child process, so an inline payload has to become a real file.
+tempfile           = { workspace = true, optional = true }
+# WinClean catalog (feature `winclean`).
+aphrody-winclean   = { workspace = true, optional = true }
+# Local RAG index (feature `rag`).
+aphrody-rag        = { workspace = true, optional = true }
+
+[target.'cfg(target_os = "windows")'.dependencies]
+windows            = { workspace = true }
+
+[dev-dependencies]
+tempfile           = { workspace = true }
+# `initialize_handshake` bench — measures `aphrody-mcp` stdio handshake
+# p50/p95 (PLAN R-A R1.5). Same convention as `crates/aphrody/benches/cold_start.rs`.
+criterion          = { workspace = true }
+
+# --- MCP handshake benchmarks (native targets only) ------------------------
+# The bench harness spawns the freshly-built `aphrody-mcp` binary, so it
+# cannot run on wasm32 (no Command::output) and is gated implicitly via the
+# `gemini_runtime::McpClient::from_stdio` cfg in upstream. `harness = false`
+# disables libtest so criterion can install its own main() — same convention
+# as `crates/aphrody/benches/cold_start.rs`.
+[[bench]]
+name    = "initialize_handshake"
+harness = false

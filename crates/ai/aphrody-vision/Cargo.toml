@@ -1,0 +1,45 @@
+# SPDX-License-Identifier: Apache-2.0
+[package]
+name = "aphrody-vision"
+publish                = false
+version.workspace      = true
+edition.workspace      = true
+rust-version.workspace = true
+authors.workspace      = true
+homepage.workspace     = true
+repository.workspace   = true
+license.workspace      = true
+description            = "Visual transcription over local GGUF vision models: caption, dense-region description, full-page OCR and VQA."
+
+[lib]
+crate-type = ["rlib"]
+
+[lints]
+workspace = true
+
+[features]
+default = []
+# Screenshot input. Optional because aphrody-capture only has a real
+# implementation on Windows: making it mandatory would force every Linux
+# consumer to link a crate whose whole surface returns `Unsupported`.
+capture = ["dep:aphrody-capture", "dep:tempfile"]
+
+[dependencies]
+# The llama.cpp driver is reused wholesale: `VlmRunner` already resolves the
+# binary, both GGUF artefacts and spawns the process. Re-implementing that
+# here would give two places where a prompt or a flag could drift.
+aphrody-ocr-vlm  = { workspace = true }
+aphrody-ocr-core = { workspace = true }
+aphrody-models   = { workspace = true }
+# Not in [workspace.dependencies]: path-declared here so this stays a change
+# confined to the crate that opts into the screenshot surface.
+aphrody-capture  = { workspace = true, optional = true }
+serde            = { workspace = true }
+serde_json       = { workspace = true }
+tempfile         = { workspace = true, optional = true }
+thiserror        = { workspace = true }
+tracing          = { workspace = true }
+
+[dev-dependencies]
+tempfile = { workspace = true }
+image    = { workspace = true, features = ["png"] }

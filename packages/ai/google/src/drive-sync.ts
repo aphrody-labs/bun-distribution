@@ -5,10 +5,9 @@ import { homedir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import type { docs_v1, drive_v3 } from "googleapis";
 import { googleApi } from "./api.ts";
+import syncContract from "../../../../crates/ai/aphrody-agent-home/sync-contract.json";
 
-export const AGENT_HOME_DEFAULT_DOCS = [
-  "AGENTS.md", "BOOT.md", "HEARTBEAT.md", "IDENTITY.md", "SOUL.md", "TOOLS.md", "USER.md",
-] as const;
+export const AGENT_HOME_DEFAULT_DOCS: readonly string[] = syncContract;
 const DEFAULT_DOCS = new Set<string>(AGENT_HOME_DEFAULT_DOCS);
 const DOC_MIME = "application/vnd.google-apps.document";
 type RemoteDoc = { id: string; name: string; modifiedTime: string };

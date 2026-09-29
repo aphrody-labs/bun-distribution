@@ -1,0 +1,46 @@
+{
+ "produced_by": {
+  "script": "tests/fixtures/generate_rerank_reference.py",
+  "sentence_transformers": "6.0.1",
+  "transformers": "5.17.0",
+  "torch": "2.14.0+cpu",
+  "python": "3.14.4",
+  "note": "CrossEncoder(model_id, revision).predict(pairs); scores include the model's default activation (Identity for ms-marco, Sigmoid for bge-reranker)."
+ },
+ "pairs": [
+  [
+   "How many people live in Berlin?",
+   "Berlin had a population of 3,520,031 registered inhabitants in an area of 891.82 square kilometers."
+  ],
+  [
+   "How many people live in Berlin?",
+   "Berlin is well known for its museums, galleries and a vibrant nightlife scene."
+  ],
+  [
+   "what is a web crawler",
+   "A web crawler, sometimes called a spider, is an Internet bot that systematically browses the World Wide Web and is typically operated by search engines for the purpose of web indexing."
+  ]
+ ],
+ "cases": [
+  {
+   "model": "cross-encoder/ms-marco-MiniLM-L6-v2",
+   "revision": "233902d25c440f23af6f7d6e94d2946bac0bee0a",
+   "activation": "Identity",
+   "scores": [
+    8.6071415,
+    -2.8537803,
+    11.4255295
+   ]
+  },
+  {
+   "model": "BAAI/bge-reranker-base",
+   "revision": "2cfc18c9415c912f9d8155881c133215df768a70",
+   "activation": "Sigmoid",
+   "scores": [
+    0.9995348,
+    0.0121643,
+    0.9999655
+   ]
+  }
+ ]
+}

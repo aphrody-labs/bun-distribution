@@ -1,0 +1,50 @@
+# SPDX-License-Identifier: Apache-2.0
+[package]
+name = "aphrody-jev"
+publish                = false
+version.workspace      = true
+edition.workspace      = true
+rust-version.workspace = true
+authors.workspace      = true
+homepage.workspace     = true
+repository.workspace   = true
+license.workspace      = true
+description            = "Typed client for TypeSafe Jev System One decisions (Noul, Choice, Score) with SaaS, Cloudflare edge and local jeff routing and failover."
+
+[lib]
+crate-type = ["rlib"]
+
+[[bin]]
+name = "aphrody-jev"
+required-features = ["server"]
+
+[features]
+default = []
+# Jev-compatible HTTP server and the aphrody-jev binary.
+server = ["dep:axum", "tokio/rt-multi-thread", "tokio/macros", "tokio/net"]
+
+[lints]
+workspace = true
+
+[dependencies]
+aphrody-config = { workspace = true }
+axum           = { workspace = true, optional = true }
+futures        = { workspace = true }
+reqwest        = { workspace = true }
+rustls         = { workspace = true }
+serde          = { workspace = true }
+serde_json     = { workspace = true }
+thiserror      = { workspace = true }
+tokio          = { workspace = true, features = ["sync", "time"] }
+tracing        = { workspace = true }
+url            = { workspace = true }
+
+# Best-effort discovery of an already-running managed llama-server chat
+# endpoint (`crate::default_native_base_url`); host-only, so wasm32 targets
+# fall back to the canonical env / explicit URL only.
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+aphrody-llama-server = { workspace = true }
+
+[dev-dependencies]
+axum  = { workspace = true }
+tokio = { workspace = true, features = ["rt", "rt-multi-thread", "macros", "net", "sync", "time"] }

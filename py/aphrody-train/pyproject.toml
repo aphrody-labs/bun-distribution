@@ -1,0 +1,41 @@
+# SPDX-License-Identifier: Apache-2.0
+[project]
+name = "aphrody-train"
+version = "0.1.0"
+description = "Training surface for aphrody: dataset generation, embedding/reranker fine-tuning, LoRA"
+readme = "README.md"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "click>=8.1",
+]
+
+[project.optional-dependencies]
+full = [
+    "datasets>=2.18",
+    "sentence-transformers[onnx]>=5.0",
+    "optimum>=1.18",
+    "peft>=0.10",
+    "trl>=0.8",
+    # The resolved 2.14.0 Windows wheel failed to import torch.amp in the CPU smoke.
+    "torch==2.8.0",
+]
+
+# CUDA torch on Linux and Windows (the default PyPI wheel is CPU-only there).
+# cu129 runs on any driver >= 575; macOS keeps the PyPI wheel.
+[tool.uv.sources]
+torch = [{ index = "pytorch-cu129", marker = "sys_platform == 'linux' or sys_platform == 'win32'" }]
+
+[[tool.uv.index]]
+name = "pytorch-cu129"
+url = "https://download.pytorch.org/whl/cu129"
+explicit = true
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/aphrody_train"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]

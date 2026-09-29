@@ -1,0 +1,427 @@
+// SPDX-License-Identifier: Apache-2.0
+// SPDX-FileCopyrightText: 2026 aphrody contributors
+//
+//! `aphrody_job_submit` / `aphrody_job_status` — the background job queue over
+//! MCP, backed by [`aphrody_jobs`].
+//!
+//! # Submission executes nothing
+//!
+//! `aphrody_job_submit` writes one row to the `SQLite` queue under
+//! `~/.aphrody/jobs/jobs.db` and returns its id. It does not run a handler, it
+//! does not download weights, and it does not spawn a worker. That is the
+//! whole point of a queue: an MCP call must return in milliseconds, while the
+//! work it names may take an hour and must survive the caller going away. A
+//! tool that transparently ran the job would reintroduce the timeout it exists
+//! to avoid, and would tie the work's lifetime to the client's.
+//!
+//! Consequence a caller must understand: a submitted job stays `queued` until
+//! a worker (`aphrody job worker`) claims it. `aphrody_job_status` therefore
+//! reports the queue-wide stats alongside the job, so "nothing is happening"
+//! is visible rather than mistaken for slowness.
+//!
+//! # The queue is agnostic about the work
+//!
+//! `kind` names a handler and `payload` is opaque JSON. Validating `kind`
+//! against an enumeration here would mean this crate had to be recompiled for
+//! every new task type; instead a job whose kind no worker handles simply
+//! stays queued, which [`status`] makes visible.
+//!
+//! # Platform gating
+//!
+//! Native-only: the store is a `SQLite` file on a real filesystem.
+
+#![cfg(not(target_arch = "wasm32"))]
+
+use std::path::PathBuf;
+
+use aphrody_jobs::{JobLogs, JobSpec, JobStore, ListFilter};
+use rmcp::schemars::{self, JsonSchema};
+use serde::{Deserialize, Serialize};
+use serde_json::json;
+
+/// Hard cap on a job payload (256 KiB). A payload is an argument list, not a
+/// data channel: an image belongs on disk with its path in the payload. The
+/// cap also bounds the `SQLite` row, keeping `claim` cheap.
+const MAX_PAYLOAD_BYTES: usize = 256 * 1024;
+
+/// Ceiling on `max_attempts`. Retrying forever turns a permanently broken job
+/// into an infinite background load.
+const MAX_ATTEMPTS_CEILING: u32 = 16;
+
+/// Default number of log lines returned by `aphrody_job_status`.
+const DEFAULT_LOG_TAIL: usize = 20;
+
+/// Ceiling on the log tail, so one status call cannot pull a whole run's log
+/// through the MCP transport.
+const MAX_LOG_TAIL: usize = 500;
+
+/// Input schema for `aphrody_job_submit`.
+#[derive(Debug, Clone, Deserialize, Serialize, JsonSchema)]
+pub(crate) struct JobSubmitRequest {
+    /// Handler name, e.g. `transcribe`.
+    #[schemars(description = "Handler name the worker dispatches on (e.g. \"ocr\", \
+                              \"transcribe\"). The queue is agnostic: an unknown kind stays \
+                              queued until a worker registers a handler for it.")]
+    pub kind: String,
+
+    /// Opaque handler arguments. Max 256 KiB serialised.
+    #[schemars(description = "Handler-specific arguments, opaque JSON object. Max 256 KiB \
+                              serialised. Pass large inputs by path, not inline.")]
+    #[serde(default)]
+    pub payload: Option<serde_json::Value>,
+
+    /// Total runs allowed, including the first. 1 means no retry.
+    #[schemars(description = "Total runs allowed including the first (1-16, default 1).")]
+    #[serde(default)]
+    pub max_attempts: Option<u32>,
+
+    /// Higher runs first; ties stay FIFO.
+    #[schemars(description = "Scheduling priority; higher runs first, ties stay FIFO. Default 0.")]
+    #[serde(default)]
+    pub priority: Option<i64>,
+
+    /// RFC 3339 instant before which the job must not start.
+    #[schemars(description = "RFC 3339 timestamp; the job is held until then. Optional.")]
+    #[serde(default)]
+    pub run_after: Option<String>,
+}
+
+/// Input schema for `aphrody_job_status`.
+#[derive(Debug, Clone, Deserialize, Serialize, JsonSchema)]
+pub(crate) struct JobStatusRequest {
+    /// Job id returned by `aphrody_job_submit`. Omit to list recent jobs.
+    #[schemars(description = "Job id to inspect. Omit to list recent jobs instead.")]
+    #[serde(default)]
+    pub id: Option<String>,
+
+    /// Restrict a listing to one state.
+    #[schemars(description = "Filter a listing by state: queued, running, succeeded, failed, \
+                              cancelled. Ignored when `id` is set.")]
+    #[serde(default)]
+    pub state: Option<String>,
+
+    /// Restrict a listing to one handler kind.
+    #[schemars(description = "Filter a listing by handler kind. Ignored when `id` is set.")]
+    #[serde(default)]
+    pub kind: Option<String>,
+
+    /// Cap on listed rows (1..=200, default 20).
+    #[schemars(description = "Max rows returned by a listing (1-200, default 20).")]
+    #[serde(default)]
+    pub limit: Option<u32>,
+
+    /// Log lines to return for a single job (0..=500, default 20).
+    #[schemars(description = "Trailing NDJSON log lines to include for a single job (0-500, \
+                              default 20). Ignored for listings.")]
+    #[serde(default)]
+    pub log_tail: Option<u32>,
+}
+
+fn pretty(value: &serde_json::Value) -> String {
+    serde_json::to_string_pretty(value).unwrap_or_else(|_| value.to_string())
+}
+
+fn error_envelope(code: &str, reason: impl Into<String>) -> String {
+    pretty(&json!({ "error": code, "reason": reason.into() }))
+}
+
+/// Resolve the `~/.aphrody` root the same way `aphrody-models` does.
+///
+/// Duplicated rather than imported because the models crate keeps its resolver
+/// private, and because the jobs queue must not need a model store to exist
+/// before it can accept a submission.
+fn aphrody_root() -> Result<PathBuf, String> {
+    // Same authority the CLI uses, so `aphrody job list` and the MCP job
+    // tools address one queue rather than two.
+    aphrody_models::paths::state_dir()
+        .map_err(|_| "cannot locate the aphrody state directory: set APHRODY_HOME".to_owned())
+}
+
+/// Open the queue, creating `~/.aphrody/jobs/` on first use.
+fn open_store() -> Result<(JobStore, JobLogs), String> {
+    let root = aphrody_root()?;
+    let db = aphrody_jobs::default_db_path(&root);
+    if let Some(parent) = db.parent() {
+        std::fs::create_dir_all(parent)
+            .map_err(|e| format!("cannot create {}: {e}", parent.display()))?;
+    }
+    let store = JobStore::open(&db).map_err(|e| format!("cannot open {}: {e}", db.display()))?;
+    Ok((store, JobLogs::new(aphrody_jobs::default_log_dir(&root))))
+}
+
+/// Validate and build the [`JobSpec`] a request describes.
+fn build_spec(req: &JobSubmitRequest) -> Result<JobSpec, String> {
+    let kind = req.kind.trim();
+    if kind.is_empty() {
+        return Err("kind must be a non-empty string".to_owned());
+    }
+
+    let payload = req.payload.clone().unwrap_or_else(|| json!({}));
+    let encoded_len = serde_json::to_string(&payload).map_or(usize::MAX, |s| s.len());
+    if encoded_len > MAX_PAYLOAD_BYTES {
+        return Err(format!("payload is {encoded_len}B (> max {MAX_PAYLOAD_BYTES}B)"));
+    }
+
+    let mut spec = JobSpec::new(kind, payload);
+    if let Some(attempts) = req.max_attempts {
+        if attempts == 0 || attempts > MAX_ATTEMPTS_CEILING {
+            return Err(format!(
+                "max_attempts must be in 1..={MAX_ATTEMPTS_CEILING} (got {attempts})"
+            ));
+        }
+        spec = spec.with_max_attempts(attempts);
+    }
+    if let Some(priority) = req.priority {
+        spec = spec.with_priority(priority);
+    }
+    if let Some(raw) = req.run_after.as_deref() {
+        let when = chrono::DateTime::parse_from_rfc3339(raw)
+            .map_err(|e| format!("run_after {raw:?} is not RFC 3339: {e}"))?
+            .with_timezone(&chrono::Utc);
+        spec = spec.run_after(when);
+    }
+    Ok(spec)
+}
+
+fn stats_value(store: &JobStore) -> serde_json::Value {
+    store.stats().map_or_else(|e| json!({ "error": e.to_string() }), |s| json!(s))
+}
+
+/// Dispatch `aphrody_job_submit`.
+///
+/// Returns the assigned id immediately. Nothing is executed or downloaded.
+pub(crate) async fn submit(req: JobSubmitRequest) -> String {
+    let spec = match build_spec(&req) {
+        Ok(spec) => spec,
+        Err(reason) => return error_envelope("JOB_BAD_REQUEST", reason),
+    };
+
+    // `rusqlite` is synchronous; a write on the reactor thread would block
+    // every other tool sharing this runtime.
+    let joined = tokio::task::spawn_blocking(move || {
+        let (store, logs) = open_store()?;
+        let job = store.submit(&spec).map_err(|e| format!("submit failed: {e}"))?;
+        let log_path = logs.path_for(&job.id);
+        let stats = stats_value(&store);
+        let db = store.path().map(|p| p.display().to_string());
+        Ok::<_, String>((job, log_path, stats, db))
+    })
+    .await;
+
+    let (job, log_path, stats, db) = match joined {
+        Ok(Ok(tuple)) => tuple,
+        Ok(Err(reason)) => return error_envelope("JOB_STORE_ERROR", reason),
+        Err(err) => return error_envelope("JOB_INTERNAL", format!("submit task panicked: {err}")),
+    };
+
+    pretty(&json!({
+        "id": job.id,
+        "kind": job.kind,
+        "state": job.state.as_str(),
+        "priority": job.priority,
+        "max_attempts": job.max_attempts,
+        "created_at": job.created_at,
+        "run_after": job.run_after,
+        "log_path": log_path.display().to_string(),
+        "db_path": db,
+        "queue": stats,
+        // Stated on every submission because "queued forever" and "slow" look
+        // identical from the client side.
+        "note": "queued only; a worker (`aphrody job worker`) must be running for it to execute",
+    }))
+}
+
+/// Dispatch `aphrody_job_status`: one job with its logs, or a filtered listing.
+pub(crate) async fn status(req: JobStatusRequest) -> String {
+    let state = match req.state.as_deref().map(str::trim).filter(|s| !s.is_empty()) {
+        None => None,
+        Some(raw) => match aphrody_jobs::JobState::parse(&raw.to_ascii_lowercase()) {
+            Some(state) => Some(state),
+            None => {
+                return error_envelope(
+                    "JOB_BAD_REQUEST",
+                    format!(
+                        "unknown state {raw:?}; expected queued, running, succeeded, failed or \
+                         cancelled"
+                    ),
+                );
+            },
+        },
+    };
+    if let Some(limit) = req.limit {
+        if limit == 0 || limit > 200 {
+            return error_envelope(
+                "JOB_BAD_REQUEST",
+                format!("limit must be in 1..=200 (got {limit})"),
+            );
+        }
+    }
+    let tail = match req.log_tail {
+        None => DEFAULT_LOG_TAIL,
+        Some(n) if n as usize <= MAX_LOG_TAIL => n as usize,
+        Some(n) => {
+            return error_envelope(
+                "JOB_BAD_REQUEST",
+                format!("log_tail must be in 0..={MAX_LOG_TAIL} (got {n})"),
+            );
+        },
+    };
+
+    let id = req.id.clone().map(|s| s.trim().to_owned()).filter(|s| !s.is_empty());
+    let kind = req.kind.clone();
+    let limit = req.limit.unwrap_or(20);
+
+    let joined = tokio::task::spawn_blocking(move || {
+        let (store, logs) = open_store()?;
+        let stats = stats_value(&store);
+
+        if let Some(id) = id {
+            let job = store.get(&id).map_err(|e| format!("job {id}: {e}"))?;
+            // A best-effort read: a job that has not started yet has no log
+            // file, which is not an error.
+            let lines = if tail == 0 {
+                Vec::new()
+            } else {
+                logs.read(&job.id, Some(tail)).unwrap_or_default()
+            };
+            return Ok::<_, String>(json!({
+                "job": job,
+                "log_path": logs.path_for(&job.id),
+                "logs": lines,
+                "queue": stats,
+            }));
+        }
+
+        let mut filter = ListFilter::default().limit(limit);
+        if let Some(state) = state {
+            filter = filter.state(state);
+        }
+        if let Some(kind) = kind.as_deref().map(str::trim).filter(|k| !k.is_empty()) {
+            filter = filter.kind(kind);
+        }
+        let jobs = store.list(&filter).map_err(|e| format!("list failed: {e}"))?;
+        Ok(json!({ "count": jobs.len(), "jobs": jobs, "queue": stats }))
+    })
+    .await;
+
+    match joined {
+        Ok(Ok(value)) => pretty(&value),
+        Ok(Err(reason)) => error_envelope("JOB_STORE_ERROR", reason),
+        Err(err) => error_envelope("JOB_INTERNAL", format!("status task panicked: {err}")),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn req(kind: &str) -> JobSubmitRequest {
+        JobSubmitRequest {
+            kind: kind.to_owned(),
+            payload: None,
+            max_attempts: None,
+            priority: None,
+            run_after: None,
+        }
+    }
+
+    #[test]
+    fn both_schemas_expose_their_documented_fields() {
+        let submit = serde_json::to_string(&rmcp::schemars::schema_for!(JobSubmitRequest))
+            .expect("schema serialise");
+        for field in ["kind", "payload", "max_attempts", "priority", "run_after"] {
+            assert!(submit.contains(&format!("\"{field}\"")), "submit missing {field}");
+        }
+        let status = serde_json::to_string(&rmcp::schemars::schema_for!(JobStatusRequest))
+            .expect("schema serialise");
+        for field in ["id", "state", "kind", "limit", "log_tail"] {
+            assert!(status.contains(&format!("\"{field}\"")), "status missing {field}");
+        }
+    }
+
+    #[test]
+    fn an_empty_kind_is_refused() {
+        assert!(build_spec(&req("   ")).is_err());
+    }
+
+    #[test]
+    fn a_missing_payload_defaults_to_an_empty_object() {
+        let spec = build_spec(&req("ocr")).expect("spec");
+        assert_eq!(spec.payload, json!({}));
+        assert_eq!(spec.max_attempts, 1);
+        assert_eq!(spec.priority, 0);
+        assert!(spec.run_after.is_none());
+    }
+
+    #[test]
+    fn an_oversized_payload_is_refused() {
+        let mut r = req("ocr");
+        r.payload = Some(json!({ "blob": "x".repeat(MAX_PAYLOAD_BYTES) }));
+        let err = build_spec(&r).unwrap_err();
+        assert!(err.contains("max"), "unexpected reason: {err}");
+    }
+
+    #[test]
+    fn attempts_outside_the_ceiling_are_refused() {
+        let mut r = req("ocr");
+        r.max_attempts = Some(0);
+        assert!(build_spec(&r).is_err());
+        r.max_attempts = Some(MAX_ATTEMPTS_CEILING + 1);
+        assert!(build_spec(&r).is_err());
+        r.max_attempts = Some(3);
+        assert_eq!(build_spec(&r).expect("spec").max_attempts, 3);
+    }
+
+    #[test]
+    fn run_after_must_be_rfc_3339() {
+        let mut r = req("ocr");
+        r.run_after = Some("tomorrow".to_owned());
+        assert!(build_spec(&r).is_err());
+        r.run_after = Some("2026-09-07T10:00:00Z".to_owned());
+        assert!(build_spec(&r).expect("spec").run_after.is_some());
+    }
+
+    #[test]
+    fn submission_writes_a_row_and_runs_nothing() {
+        // The contract of the tool, asserted against a real store: after
+        // submitting, the job is `queued` — not running, not succeeded.
+        let dir = tempfile::tempdir().expect("tempdir");
+        let store = JobStore::open(dir.path().join("jobs.db")).expect("open");
+        let job = store.submit(&build_spec(&req("transcribe")).expect("spec")).expect("submit");
+        assert_eq!(job.state, aphrody_jobs::JobState::Queued);
+        assert_eq!(job.attempts, 0);
+        assert!(job.result.is_none());
+        assert_eq!(store.get(&job.id).expect("get").id, job.id);
+        assert_eq!(store.stats().expect("stats").queued, 1);
+    }
+
+    #[tokio::test(flavor = "current_thread")]
+    async fn a_bad_state_filter_is_refused() {
+        let request = JobStatusRequest {
+            id: None,
+            state: Some("banana".to_owned()),
+            kind: None,
+            limit: None,
+            log_tail: None,
+        };
+        let value: serde_json::Value =
+            serde_json::from_str(&status(request).await).expect("parse envelope");
+        assert_eq!(value["error"], "JOB_BAD_REQUEST");
+    }
+
+    #[tokio::test(flavor = "current_thread")]
+    async fn an_out_of_range_limit_is_refused() {
+        let request =
+            JobStatusRequest { id: None, state: None, kind: None, limit: Some(0), log_tail: None };
+        let value: serde_json::Value =
+            serde_json::from_str(&status(request).await).expect("parse envelope");
+        assert_eq!(value["error"], "JOB_BAD_REQUEST");
+    }
+
+    #[tokio::test(flavor = "current_thread")]
+    async fn an_empty_kind_reaches_the_caller_as_a_structured_error() {
+        let value: serde_json::Value =
+            serde_json::from_str(&submit(req("")).await).expect("parse envelope");
+        assert_eq!(value["error"], "JOB_BAD_REQUEST");
+    }
+}

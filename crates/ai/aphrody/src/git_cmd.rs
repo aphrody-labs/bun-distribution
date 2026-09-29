@@ -1,0 +1,356 @@
+// SPDX-License-Identifier: Apache-2.0
+//! `aphrody git` — native Git inspection, GitHub API, and ecosystem rollout.
+
+use std::{path::PathBuf, str::FromStr};
+
+use aphrody_git::{
+    ApiMethod, GitHubClient, GitHubRepository, InstallMode, audit_ecosystem_workflows,
+    inspect_repository, install_consumer_workflow, rollout_ecosystem_workflows,
+};
+use serde_json::{Value, json};
+
+/// Native Git/GitHub operations.
+#[derive(clap::Subcommand, Debug, Clone)]
+pub(crate) enum GitAction {
+    /// Inspect branch, HEAD, remotes and status with pure-Rust gix.
+    Inspect {
+        /// Any path inside the repository.
+        #[arg(default_value = ".")]
+        path: PathBuf,
+        /// Pretty-print JSON.
+        #[arg(long)]
+        pretty: bool,
+    },
+    /// Fetch canonical GitHub repository metadata.
+    Repo {
+        /// `owner/name` or GitHub remote URL. Inferred from `--path` if omitted.
+        repository: Option<String>,
+        /// Local repository used for inference.
+        #[arg(long, default_value = ".")]
+        path: PathBuf,
+        /// Pretty-print JSON.
+        #[arg(long)]
+        pretty: bool,
+    },
+    /// Call any GitHub REST endpoint through authenticated Octocrab.
+    Api {
+        /// HTTP method: GET, POST, PATCH, PUT, DELETE.
+        #[arg(long, default_value = "GET")]
+        method: String,
+        /// API route such as `/repos/aphrody-code/aphrody-ai/actions/runs`.
+        route: String,
+        /// JSON body, or `@path/to/body.json`.
+        #[arg(long)]
+        body: Option<String>,
+        /// Apply a mutating method. Without this flag, emit a plan only.
+        #[arg(long)]
+        apply: bool,
+        /// Pretty-print JSON.
+        #[arg(long)]
+        pretty: bool,
+    },
+    /// Call the GitHub GraphQL endpoint.
+    Graphql {
+        /// JSON payload, or `@path/to/payload.json`.
+        payload: String,
+        /// Required when the payload contains a GraphQL mutation.
+        #[arg(long)]
+        apply: bool,
+        /// Pretty-print JSON.
+        #[arg(long)]
+        pretty: bool,
+    },
+    /// Install the thin reusable-workflow caller into local repositories.
+    Install {
+        /// Repository roots to configure.
+        #[arg(required = true)]
+        repositories: Vec<PathBuf>,
+        /// Aphrody ref used by the reusable workflow (`main`, tag, or SHA).
+        #[arg(long, default_value = "main")]
+        source_ref: String,
+        /// Write changes. Without this flag, emit a plan only.
+        #[arg(long)]
+        apply: bool,
+        /// Pretty-print JSON.
+        #[arg(long)]
+        pretty: bool,
+    },
+    /// Audit managed CI coverage across all active repositories owned by an account.
+    Audit {
+        /// GitHub user or organization that owns the repositories.
+        #[arg(default_value = "aphrody-code")]
+        owner: String,
+        /// Aphrody ref expected by the reusable workflow.
+        #[arg(long, default_value = "main")]
+        source_ref: String,
+        /// Include forked repositories in the audit.
+        #[arg(long)]
+        include_forks: bool,
+        /// Pretty-print JSON.
+        #[arg(long)]
+        pretty: bool,
+    },
+    /// Roll out managed CI to active GitHub repositories owned by an account.
+    Rollout {
+        /// GitHub user or organization that owns the repositories.
+        #[arg(default_value = "aphrody-code")]
+        owner: String,
+        /// Limit rollout to these repository names; omitted means every eligible repository.
+        #[arg(long = "repository")]
+        repositories: Vec<String>,
+        /// Aphrody ref used by the reusable workflow (`main`, tag, or SHA).
+        #[arg(long, default_value = "main")]
+        source_ref: String,
+        /// Include forked repositories in the rollout.
+        #[arg(long)]
+        include_forks: bool,
+        /// Commit workflow changes through the GitHub Contents API.
+        #[arg(long)]
+        apply: bool,
+        /// Pretty-print JSON.
+        #[arg(long)]
+        pretty: bool,
+    },
+    /// Ingest a Git repository or local directory into a prompt-ready LLM digest (GitIngest standard).
+    Ingest {
+        /// Git repository URL or local directory path.
+        #[arg(default_value = ".")]
+        source: String,
+        /// Maximum allowed file size in bytes (default: 10MB).
+        #[arg(short = 's', long, default_value_t = 10_485_760)]
+        max_size: u64,
+        /// Include file patterns (e.g. --include "*.py" --include "*.rs").
+        #[arg(long = "include")]
+        include: Vec<String>,
+        /// Exclude file patterns (e.g. -e "tests/*").
+        #[arg(short = 'e', long = "exclude")]
+        exclude: Vec<String>,
+        /// Git branch to ingest.
+        #[arg(short = 'b', long)]
+        branch: Option<String>,
+        /// Git tag to ingest.
+        #[arg(long)]
+        tag: Option<String>,
+        /// Subpath within the repository.
+        #[arg(long)]
+        subpath: Option<String>,
+        /// Personal access token for private repositories.
+        #[arg(short = 't', long)]
+        token: Option<String>,
+        /// Output file path, or "-" for stdout (default: stdout).
+        #[arg(short = 'o', long)]
+        output: Option<String>,
+        /// Output structured JSON metadata instead of raw digest text.
+        #[arg(long)]
+        json: bool,
+    },
+    /// Search GitHub repositories for documentation, llms.txt, and code digests.
+    Search {
+        /// Search query (e.g. "gitingest", "ratatui", "tokio-rs").
+        query: String,
+        /// Max number of top repositories to inspect (default: 3).
+        #[arg(short = 'l', long, default_value_t = 3)]
+        limit: usize,
+        /// Include full GitIngest digest for repositories lacking llms.txt.
+        #[arg(short = 'd', long)]
+        digest: bool,
+        /// Pretty-print JSON instead of Markdown.
+        #[arg(long)]
+        json: bool,
+    },
+}
+
+pub(crate) async fn run(action: GitAction) -> miette::Result<()> {
+    match action {
+        GitAction::Inspect { path, pretty } => {
+            let snapshot = inspect_repository(path).map_err(to_report)?;
+            emit(&serde_json::to_value(snapshot).map_err(to_report)?, pretty)?;
+        },
+        GitAction::Repo { repository, path, pretty } => {
+            let repository = match repository {
+                Some(value) => GitHubRepository::parse(&value).map_err(to_report)?,
+                None => inspect_repository(path)
+                    .map_err(to_report)?
+                    .github
+                    .ok_or_else(|| miette::miette!("no GitHub remote found"))?,
+            };
+            let client = GitHubClient::from_env().map_err(to_report)?;
+            let metadata = client.repository(&repository).await.map_err(to_report)?;
+            emit(&metadata, pretty)?;
+        },
+        GitAction::Api { method, route, body, apply, pretty } => {
+            let method = ApiMethod::from_str(&method).map_err(to_report)?;
+            let body = body.as_deref().map(read_json).transpose()?;
+            if method.is_mutating() && !apply {
+                emit(
+                    &json!({
+                        "planned": true,
+                        "method": method,
+                        "route": route,
+                        "body": body,
+                        "hint": "pass --apply to execute this mutating request"
+                    }),
+                    pretty,
+                )?;
+            } else {
+                let client = GitHubClient::from_env().map_err(to_report)?;
+                let response =
+                    client.request(method, &route, body.as_ref()).await.map_err(to_report)?;
+                emit(&serde_json::to_value(response).map_err(to_report)?, pretty)?;
+            }
+        },
+        GitAction::Graphql { payload, apply, pretty } => {
+            let payload = read_json(&payload)?;
+            let is_mutation = graphql_may_mutate(&payload);
+            if is_mutation && !apply {
+                emit(
+                    &json!({
+                        "planned": true,
+                        "payload": payload,
+                        "hint": "pass --apply to execute this GraphQL mutation"
+                    }),
+                    pretty,
+                )?;
+            } else {
+                let client = GitHubClient::from_env().map_err(to_report)?;
+                let response = client.graphql(&payload).await.map_err(to_report)?;
+                emit(&response, pretty)?;
+            }
+        },
+        GitAction::Install { repositories, source_ref, apply, pretty } => {
+            let mode = if apply { InstallMode::Apply } else { InstallMode::Plan };
+            let outcomes = repositories
+                .into_iter()
+                .map(|repository| {
+                    install_consumer_workflow(repository, &source_ref, mode).map_err(to_report)
+                })
+                .collect::<miette::Result<Vec<_>>>()?;
+            emit(&serde_json::to_value(outcomes).map_err(to_report)?, pretty)?;
+        },
+        GitAction::Audit { owner, source_ref, include_forks, pretty } => {
+            let client = GitHubClient::from_env().map_err(to_report)?;
+            let outcomes = audit_ecosystem_workflows(&client, &owner, &source_ref, include_forks)
+                .await
+                .map_err(to_report)?;
+            emit(&serde_json::to_value(outcomes).map_err(to_report)?, pretty)?;
+        },
+        GitAction::Rollout { owner, repositories, source_ref, include_forks, apply, pretty } => {
+            let client = GitHubClient::from_env().map_err(to_report)?;
+            let mode = if apply { InstallMode::Apply } else { InstallMode::Plan };
+            let outcomes = rollout_ecosystem_workflows(
+                &client,
+                &owner,
+                &source_ref,
+                include_forks,
+                &repositories,
+                mode,
+            )
+            .await
+            .map_err(to_report)?;
+            emit(&serde_json::to_value(outcomes).map_err(to_report)?, pretty)?;
+        },
+        GitAction::Ingest {
+            source,
+            max_size,
+            include,
+            exclude,
+            branch,
+            tag,
+            subpath,
+            token,
+            output,
+            json,
+        } => {
+            let options = aphrody_git::IngestOptions {
+                max_file_size: max_size,
+                include_patterns: include,
+                exclude_patterns: exclude,
+                branch,
+                tag,
+                subpath,
+                token,
+                include_gitignored: false,
+                include_submodules: false,
+            };
+            let ingest_result = aphrody_git::ingest(&source, &options).map_err(to_report)?;
+            if json {
+                emit(&serde_json::to_value(&ingest_result).map_err(to_report)?, true)?;
+            } else {
+                let context = ingest_result.full_context();
+                if let Some(out_path) = output {
+                    if out_path == "-" {
+                        print!("{context}");
+                    } else {
+                        std::fs::write(&out_path, &context)
+                            .map_err(|e| miette::miette!("write output to `{out_path}`: {e}"))?;
+                        eprintln!(
+                            "Digest written to {} ({} files, {} tokens)",
+                            out_path, ingest_result.file_count, ingest_result.formatted_tokens
+                        );
+                    }
+                } else {
+                    print!("{context}");
+                }
+            }
+        },
+        GitAction::Search { query, limit, digest, json } => {
+            let report =
+                aphrody_git::search_github_docs(&query, limit, digest).await.map_err(to_report)?;
+            if json {
+                emit(&serde_json::to_value(&report).map_err(to_report)?, true)?;
+            } else {
+                println!("{}", report.to_markdown());
+            }
+        },
+    }
+    Ok(())
+}
+
+fn read_json(input: &str) -> miette::Result<Value> {
+    let text = if let Some(path) = input.strip_prefix('@') {
+        std::fs::read_to_string(path)
+            .map_err(|error| miette::miette!("read JSON file `{path}`: {error}"))?
+    } else {
+        input.to_owned()
+    };
+    serde_json::from_str(&text).map_err(|error| miette::miette!("parse JSON: {error}"))
+}
+
+fn graphql_may_mutate(payload: &Value) -> bool {
+    let Some(query) = payload.get("query").and_then(Value::as_str) else {
+        // Persisted queries cannot be classified locally, so require the explicit gate.
+        return true;
+    };
+    query
+        .split(|character: char| !(character.is_ascii_alphanumeric() || character == '_'))
+        .any(|token| token == "mutation")
+}
+
+fn emit(value: &Value, pretty: bool) -> miette::Result<()> {
+    let rendered =
+        if pretty { serde_json::to_string_pretty(value) } else { serde_json::to_string(value) }
+            .map_err(|error| miette::miette!("serialize JSON: {error}"))?;
+    println!("{rendered}");
+    Ok(())
+}
+
+fn to_report(error: impl std::fmt::Display) -> miette::Report {
+    miette::miette!("{error}")
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn graphql_mutation_gate_is_conservative() {
+        assert!(graphql_may_mutate(&json!({"extensions": {"persistedQuery": {}}})));
+        assert!(graphql_may_mutate(&json!({
+            "query": "# operation follows\nmutation Update { addStar(input: {}) { clientMutationId } }"
+        })));
+        assert!(graphql_may_mutate(&json!({
+            "query": "query Read { viewer { login } } mutation Write { __typename }"
+        })));
+        assert!(!graphql_may_mutate(&json!({"query": "{ viewer { login } }"})));
+    }
+}

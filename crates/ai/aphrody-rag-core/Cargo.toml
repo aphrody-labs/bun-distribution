@@ -1,0 +1,49 @@
+# SPDX-License-Identifier: Apache-2.0
+[package]
+name = "aphrody-rag-core"
+publish                = false
+version.workspace      = true
+edition.workspace      = true
+rust-version.workspace = true
+authors.workspace      = true
+homepage.workspace     = true
+repository.workspace   = true
+license.workspace      = true
+description            = "Pure, wasm32-safe core of the aphrody RAG layer: source-aware chunkers (Rust/JS-TS/Markdown/structural/prose), reciprocal-rank-fusion + MMR + vector helpers, and a bit-for-bit port of shenron's retrieval eval harness."
+
+[features]
+default = ["oxc"]
+# The JS/TS chunker depends on the oxc parser toolchain, which is not verified
+# to build for wasm32-unknown-unknown. Every other chunker (Rust/Markdown/
+# structural/prose) and the fusion/eval modules are pure and wasm-safe with
+# `--no-default-features`.
+oxc = ["dep:oxc_allocator", "dep:oxc_ast", "dep:oxc_parser", "dep:oxc_span"]
+
+[dependencies]
+serde        = { workspace = true, features = ["derive"] }
+serde_json   = { workspace = true }
+thiserror    = { workspace = true }
+blake3       = { workspace = true }
+syn          = { workspace = true, features = ["full", "extra-traits"] }
+proc-macro2  = { workspace = true, features = ["span-locations"] }
+regex        = { workspace = true }
+
+oxc_allocator = { workspace = true, optional = true }
+oxc_ast       = { workspace = true, optional = true }
+oxc_parser    = { workspace = true, optional = true }
+oxc_span      = { workspace = true, optional = true }
+
+[dev-dependencies]
+pretty_assertions = { workspace = true }
+
+[lints]
+workspace = true
+
+[package.metadata.cargo-machete]
+# `proc-macro2` is never named in a `use` here: it is declared only to force
+# Cargo's feature unification to turn on `span-locations` for the copy `syn`
+# itself depends on, which is what makes `syn::spanned::Spanned::span()`
+# return real line/column data (`rust_chunker.rs`) instead of a dummy
+# call-site span. Removing the dependency silently breaks line numbers
+# without a compile error, so it stays explicit and machete-ignored.
+ignored = ["proc-macro2"]

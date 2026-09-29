@@ -70,12 +70,15 @@ pub mod onboard;
 pub mod paths;
 pub mod services;
 pub mod soul;
+pub mod sync;
 pub mod tools;
 pub mod user;
 
-#[cfg(all(not(target_arch = "wasm32"), feature = "git"))] pub mod git;
+#[cfg(all(not(target_arch = "wasm32"), feature = "git"))]
+pub mod git;
 
-#[cfg(not(target_arch = "wasm32"))] pub mod watch;
+#[cfg(not(target_arch = "wasm32"))]
+pub mod watch;
 
 pub use crate::{
     assemble::{PromptSection, SystemPromptView},
@@ -90,6 +93,7 @@ pub use crate::{
     onboard::{OnboardOptions, SeedReport, UpgradeOptions, UpgradeReport, upgrade_workspace},
     services::{ProfileServiceContext, ServiceConfigError},
     soul::{Bluntness, Brevity, Humor, Soul},
+    sync::{SyncDocument, SyncSnapshot, sync_defaults},
     tools::ToolsDoc,
     user::UserProfile,
 };

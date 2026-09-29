@@ -1,0 +1,48 @@
+# SPDX-License-Identifier: Apache-2.0
+[package]
+name = "aphrody-llama-server"
+publish                = false
+version.workspace      = true
+edition.workspace      = true
+rust-version.workspace = true
+authors.workspace      = true
+homepage.workspace     = true
+repository.workspace   = true
+license.workspace      = true
+description            = "Managed local inference: a supervisor for llama.cpp's `llama-server`, driven as an external binary (never linked). Reads GGUF facts, probes what the installed build supports, plans the launch (context, KV precision, MoE/layer placement, LoRA), runs the server under a detached idle-timeout daemon that holds the GPU lease, and gives clients attach-or-spawn access to an OpenAI-compatible endpoint plus the tokenize / LoRA hot-swap / props side channels."
+
+[lints]
+workspace = true
+
+[features]
+# Builds the fake `llama-server` used by the integration tests.
+test-support = []
+
+[[bin]]
+name = "aphrody-llama-daemon"
+path = "src/bin/aphrody_llama_daemon.rs"
+
+[[bin]]
+name              = "aphrody-fake-llama-server"
+path              = "tests/support/fake_llama_server.rs"
+test              = false
+doc               = false
+required-features = ["test-support"]
+
+[dependencies]
+aphrody-models = { workspace = true }
+aphrody-proc   = { workspace = true }
+reqwest        = { workspace = true }
+rustls         = { workspace = true }
+serde          = { workspace = true }
+serde_json     = { workspace = true }
+thiserror      = { workspace = true }
+tokio          = { workspace = true, features = ["rt", "macros", "time", "fs"] }
+tracing        = { workspace = true }
+
+[dev-dependencies]
+aphrody-model-client = { workspace = true }
+futures              = { workspace = true }
+pretty_assertions    = { workspace = true }
+tempfile          = { workspace = true }
+tokio             = { workspace = true, features = ["rt", "rt-multi-thread", "macros", "time", "fs"] }

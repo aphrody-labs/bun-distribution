@@ -1,0 +1,33 @@
+# SPDX-License-Identifier: Apache-2.0
+[package]
+name = "aphrody-rag-eval"
+publish                = false
+version.workspace      = true
+edition.workspace      = true
+rust-version.workspace = true
+authors.workspace      = true
+homepage.workspace     = true
+repository.workspace   = true
+license.workspace      = true
+description            = "RAG evaluation harness benchmarked against shenron on dbfr (P9)."
+
+[lints]
+workspace = true
+
+[dependencies]
+aphrody-rag-core = { workspace = true }
+aphrody-rag      = { workspace = true }
+async-trait      = { workspace = true }
+clap             = { workspace = true, features = ["derive"] }
+reqwest          = { workspace = true, features = ["json"] }
+rustls           = { workspace = true }
+serde            = { workspace = true, features = ["derive"] }
+serde_json       = { workspace = true }
+thiserror        = { workspace = true }
+tokio            = { workspace = true, features = ["sync", "fs", "time"] }
+tracing          = { workspace = true }
+
+[dev-dependencies]
+pretty_assertions = { workspace = true }
+tempfile          = { workspace = true }
+tokio             = { workspace = true, features = ["macros", "rt-multi-thread"] }

@@ -25,26 +25,21 @@ use crate::{
 };
 
 /// Embedded workspace templates (compiled into the binary from plugins/aphrody/home).
-pub const AGENTS_TEMPLATE: &str =
-    include_str!("../templates/AGENTS.md");
+pub const AGENTS_TEMPLATE: &str = include_str!("../templates/AGENTS.md");
 /// Embedded `SOUL.md` template.
 pub const SOUL_TEMPLATE: &str = include_str!("../templates/SOUL.md");
 /// Embedded `IDENTITY.md` template.
-pub const IDENTITY_TEMPLATE: &str =
-    include_str!("../templates/IDENTITY.md");
+pub const IDENTITY_TEMPLATE: &str = include_str!("../templates/IDENTITY.md");
 /// Embedded `USER.md` template.
 pub const USER_TEMPLATE: &str = include_str!("../templates/USER.md");
 /// Embedded `TOOLS.md` template.
-pub const TOOLS_TEMPLATE: &str =
-    include_str!("../templates/TOOLS.md");
+pub const TOOLS_TEMPLATE: &str = include_str!("../templates/TOOLS.md");
 /// Embedded `HEARTBEAT.md` template.
-pub const HEARTBEAT_TEMPLATE: &str =
-    include_str!("../templates/HEARTBEAT.md");
+pub const HEARTBEAT_TEMPLATE: &str = include_str!("../templates/HEARTBEAT.md");
 /// Embedded `BOOT.md` template.
 pub const BOOT_TEMPLATE: &str = include_str!("../templates/BOOT.md");
 /// Embedded `BOOTSTRAP.md` template.
-pub const BOOTSTRAP_TEMPLATE: &str =
-    include_str!("../templates/BOOTSTRAP.md");
+pub const BOOTSTRAP_TEMPLATE: &str = include_str!("../templates/BOOTSTRAP.md");
 
 /// Options controlling [`seed_workspace`].
 #[derive(Debug, Clone)]
@@ -100,18 +95,6 @@ fn template_for(file: BootstrapFile) -> Option<&'static str> {
     })
 }
 
-/// The files seeded by default, in order. `BOOTSTRAP.md` is handled separately
-/// (only seeded for a brand-new workspace).
-const SEED_ORDER: [BootstrapFile; 7] = [
-    BootstrapFile::Agents,
-    BootstrapFile::Soul,
-    BootstrapFile::Identity,
-    BootstrapFile::User,
-    BootstrapFile::Tools,
-    BootstrapFile::Heartbeat,
-    BootstrapFile::Boot,
-];
-
 /// Whether a freshly-created workspace has no prior user content (so we should
 /// seed the one-shot BOOTSTRAP ritual). Mirrors openclaw `isBrandNewWorkspace`.
 fn is_brand_new(workspace: &Path) -> bool {
@@ -160,7 +143,7 @@ pub fn seed_workspace(opts: &OnboardOptions) -> Result<SeedReport, HomeError> {
 
     let mut report = SeedReport::default();
 
-    for file in SEED_ORDER {
+    for file in crate::sync::sync_defaults()? {
         if opts.skip_bootstrap && file.is_optional() {
             continue;
         }
@@ -314,7 +297,7 @@ pub fn upgrade_workspace(opts: &UpgradeOptions) -> Result<UpgradeReport, HomeErr
 
     let mut report = UpgradeReport::default();
 
-    for file in SEED_ORDER {
+    for file in crate::sync::sync_defaults()? {
         let Some(template) = template_for(file) else {
             continue;
         };
