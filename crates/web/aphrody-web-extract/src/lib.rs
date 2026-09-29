@@ -1,228 +1,118 @@
-// SPDX-License-Identifier: Apache-2.0
-//! Canonical, deterministic primitives for Aphrody Web extraction.
+//! # aphrody-web-extract
 //!
-//! This crate currently owns WHATWG-style URL resolution/normalization and
-//! document metadata extraction. It is an initial Rust owner, not yet a
-//! replacement for the complete BXC extraction pipeline, structural chunker,
-//! Markdown renderer, or near-duplicate index.
+//! Pure, dependency-light content processing for Aphrody Web:
+//!
+//! - [`extract_main`]: main-content extraction (text-density, link-density and DOM-distance
+//!   scoring, Readability / trafilatura class) with title, byline, publication date, language,
+//!   canonical URL, Markdown and structural blocks.
+//! - [`html_to_markdown`]: whole-document HTML → GitHub-flavoured Markdown, the single canonical
+//!   converter shared with [`extract_main`].
+//! - [`chunk_blocks`]: structure-aware chunking with heading paths.
+//! - [`simhash64`], [`hamming_distance`], [`is_near_duplicate`]: 64-bit Charikar SimHash
+//!   near-duplicate detection.
+//! - [`resolve_canonical`]: `<link rel=canonical>` / `og:url` resolution.
+//!
+//! Every public function accepts arbitrary input (NUL bytes, broken markup,
+//! huge documents) and never panics: HTML is parsed by html5ever through
+//! `obscura-dom`, all tree walks are iterative, and the top-level entry points
+//! additionally contain any unexpected panic and return an empty result.
 
-use scraper::{Html, Selector};
-use thiserror::Error;
-use url::{ParseError, Url};
+// The source workspace allows these style lints. Keep the imported algorithm
+// files byte-identical while applying the target workspace's strict gate.
+#![allow(
+    clippy::collapsible_if,
+    clippy::collapsible_match,
+    clippy::if_same_then_else,
+    clippy::manual_next_back,
+    clippy::needless_range_loop
+)]
 
-/// Options for normalizing a URL before it is stored or deduplicated.
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
-pub struct UrlNormalizationOptions {
-    /// Remove the query string. Leave false when query parameters may change
-    /// the resource representation.
-    pub drop_query: bool,
-    /// Remove trailing path slashes, except for the origin root.
-    pub trim_trailing_slash: bool,
-}
+mod canonical;
+mod chunk;
+mod date;
+mod dom;
+mod extract;
+mod meta;
+mod patterns;
+mod render;
+mod simhash;
+mod types;
+mod url_metadata;
 
-/// A URL that could not be normalized for a crawl or page record.
-#[derive(Debug, Error)]
-pub enum UrlNormalizationError {
-    /// A relative reference needs a base URL.
-    #[error("relative URL reference requires a base URL")]
-    MissingBase,
-    /// The reference or its base could not be parsed or resolved.
-    #[error("invalid URL: {0}")]
-    Invalid(#[from] ParseError),
-    /// Crawled page URLs must use HTTP or HTTPS.
-    #[error("unsupported URL scheme `{0}`; only http and https are accepted")]
-    UnsupportedScheme(String),
-    /// URLs containing credentials are not followed or stored.
-    #[error("URLs containing user information are not accepted")]
-    UserInformation,
-}
+use std::panic::{AssertUnwindSafe, catch_unwind};
 
-/// Resolves and normalizes an HTTP(S) URL using the WHATWG URL behavior of
-/// [`url::Url`]. Fragments are always removed. Query strings and trailing
-/// slashes are preserved unless explicitly disabled through `options`.
-pub fn normalize_page_url(
-    reference: &str,
-    base: Option<&Url>,
-    options: UrlNormalizationOptions,
-) -> Result<Url, UrlNormalizationError> {
-    let reference = reference.trim();
-    let mut url = match Url::parse(reference) {
-        Ok(url) => url,
-        Err(ParseError::RelativeUrlWithoutBase) => {
-            let base = base.ok_or(UrlNormalizationError::MissingBase)?;
-            base.join(reference)?
-        },
-        Err(error) => return Err(error.into()),
-    };
+pub use canonical::resolve_canonical;
+pub use chunk::chunk_blocks;
+pub use date::normalize_date;
+pub use extract::ExtractOptions;
+pub use simhash::{
+    DEFAULT_NEAR_DUPLICATE_BITS, hamming_distance, is_near_duplicate, normalize_text_for_hash,
+    simhash64, stable_hash64,
+};
+pub use types::{Block, BlockKind, Chunk, Extracted};
+pub use url_metadata::{
+    PageMetadata, UrlNormalizationError, UrlNormalizationOptions, extract_metadata,
+    normalize_page_url,
+};
 
-    if !matches!(url.scheme(), "http" | "https") {
-        return Err(UrlNormalizationError::UnsupportedScheme(url.scheme().to_owned()));
-    }
-    if !url.username().is_empty() || url.password().is_some() {
-        return Err(UrlNormalizationError::UserInformation);
-    }
-
-    url.set_fragment(None);
-    if options.drop_query {
-        url.set_query(None);
-    }
-    if options.trim_trailing_slash && url.path() != "/" && url.path().ends_with('/') {
-        let trimmed_path = url.path().trim_end_matches('/').to_owned();
-        url.set_path(&trimmed_path);
-    }
-
-    Ok(url)
-}
-
-/// Metadata extracted from a static HTML document.
-#[derive(Debug, Clone, Default, PartialEq, Eq)]
-pub struct PageMetadata {
-    /// The document title, with Open Graph and first heading fallbacks.
-    pub title: Option<String>,
-    /// The standard meta description, with Open Graph fallback.
-    pub description: Option<String>,
-    /// The resolved canonical link, when it is a valid HTTP(S) URL.
-    pub canonical_url: Option<Url>,
-}
-
-/// Extracts title, description, and canonical URL metadata from HTML.
+/// Extracts the main content of an HTML page with default options
+/// (comments dropped, images dropped from Markdown, links kept).
 ///
-/// A relative canonical link is resolved against `base_url`. Malformed HTML
-/// is parsed best-effort by `scraper`; absent or invalid metadata is returned
-/// as `None`.
-#[must_use]
-pub fn extract_metadata(html: &str, base_url: Option<&Url>) -> PageMetadata {
-    let document = Html::parse_document(html);
-    let title = first_text(&document, "title")
-        .or_else(|| first_meta_content(&document, "meta[property='og:title']"))
-        .or_else(|| first_text(&document, "h1"));
-    let description = first_meta_content(&document, "meta[name='description']")
-        .or_else(|| first_meta_content(&document, "meta[property='og:description']"));
-    let canonical_url = canonical_href(&document).and_then(|href| {
-        normalize_page_url(&href, base_url, UrlNormalizationOptions::default()).ok()
-    });
-
-    PageMetadata { title, description, canonical_url }
+/// `page_url` is used to resolve relative links and the canonical URL.
+pub fn extract_main(html: &str, page_url: Option<&str>) -> Extracted {
+    extract_main_with_options(html, page_url, &ExtractOptions::default())
 }
 
-fn first_text(document: &Html, selector_text: &str) -> Option<String> {
-    let selector = Selector::parse(selector_text).ok()?;
-    document.select(&selector).find_map(|element| clean_text(element.text().collect()))
+/// [`extract_main`] with explicit [`ExtractOptions`].
+pub fn extract_main_with_options(
+    html: &str,
+    page_url: Option<&str>,
+    options: &ExtractOptions,
+) -> Extracted {
+    catch_unwind(AssertUnwindSafe(|| extract::extract(html, page_url, options)))
+        .unwrap_or_else(|_| Extracted { simhash: format!("{:016x}", 0), ..Extracted::default() })
 }
 
-fn first_meta_content(document: &Html, selector_text: &str) -> Option<String> {
-    let selector = Selector::parse(selector_text).ok()?;
-    document
-        .select(&selector)
-        .find_map(|element| element.value().attr("content").map(str::to_owned).and_then(clean_text))
+/// Serializes [`extract_main`] as JSON (the FFI entry point).
+pub fn extract_main_json(html: &str, page_url: Option<&str>) -> String {
+    let extracted = extract_main(html, page_url);
+    serde_json::to_string(&extracted).unwrap_or_else(|_| "{}".to_string())
 }
 
-fn canonical_href(document: &Html) -> Option<String> {
-    let selector = Selector::parse("link[rel][href]").ok()?;
-    document.select(&selector).find_map(|element| {
-        let is_canonical = element
-            .value()
-            .attr("rel")?
-            .split_ascii_whitespace()
-            .any(|rel| rel.eq_ignore_ascii_case("canonical"));
-        is_canonical.then(|| element.value().attr("href").map(str::to_owned)).flatten()
-    })
-}
-
-fn clean_text(value: String) -> Option<String> {
-    let text = value.split_whitespace().collect::<Vec<_>>().join(" ");
-    (!text.is_empty()).then_some(text)
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn normalizes_absolute_url_and_removes_default_port_and_fragment() {
-        let url = normalize_page_url(
-            "HTTPS://Example.COM:443/Foo#section",
-            None,
-            UrlNormalizationOptions::default(),
-        )
-        .unwrap();
-
-        assert_eq!(url.as_str(), "https://example.com/Foo");
-    }
-
-    #[test]
-    fn resolves_and_normalizes_relative_reference_with_explicit_options() {
-        let base = Url::parse("https://example.com/guide/index.html").unwrap();
-        let url = normalize_page_url(
-            " ../api/v2/?utm_source=docs#intro ",
-            Some(&base),
-            UrlNormalizationOptions { drop_query: true, trim_trailing_slash: true },
-        )
-        .unwrap();
-
-        assert_eq!(url.as_str(), "https://example.com/api/v2");
-    }
-
-    #[test]
-    fn preserves_query_and_root_slash_by_default() {
-        let url = normalize_page_url(
-            "http://example.com/?page=2#top",
-            None,
-            UrlNormalizationOptions::default(),
-        )
-        .unwrap();
-
-        assert_eq!(url.as_str(), "http://example.com/?page=2");
-    }
-
-    #[test]
-    fn rejects_relative_without_base_credentials_and_non_http_schemes() {
-        assert!(matches!(
-            normalize_page_url("/relative", None, UrlNormalizationOptions::default()),
-            Err(UrlNormalizationError::MissingBase)
-        ));
-        assert!(matches!(
-            normalize_page_url(
-                "https://user:secret@example.com/",
-                None,
-                UrlNormalizationOptions::default()
-            ),
-            Err(UrlNormalizationError::UserInformation)
-        ));
-        assert!(matches!(
-            normalize_page_url("javascript:alert(1)", None, UrlNormalizationOptions::default()),
-            Err(UrlNormalizationError::UnsupportedScheme(_))
-        ));
-    }
-
-    #[test]
-    fn extracts_metadata_and_resolves_canonical_link() {
-        let base = Url::parse("https://example.com/catalog/item").unwrap();
-        let metadata = extract_metadata(
-            r#"<html><head>
-                <title>  Example   item </title>
-                <meta name="description" content=" A useful &amp; concise description ">
-                <link rel="alternate canonical" href="../item?sku=4#details">
-            </head><body><h1>Fallback title</h1></body></html>"#,
-            Some(&base),
+/// Converts a whole HTML document to GitHub-flavoured Markdown.
+///
+/// No main-content selection is performed; only `script`, `style`, `noscript`,
+/// `template`, `svg`, `head`, `iframe` (and other non-rendered embeds) are
+/// dropped. Links and images are resolved against `base_url` (and
+/// `<base href>`), `javascript:` links keep only their text, tables are
+/// emitted as unpadded GFM tables, and whitespace is collapsed outside `<pre>`.
+pub fn html_to_markdown(html: &str, base_url: Option<&str>) -> String {
+    catch_unwind(AssertUnwindSafe(|| {
+        let arena = dom::Arena::from_html(html);
+        let base_href = arena
+            .nodes
+            .iter()
+            .position(|n| n.kind == dom::Kind::Element && n.tag == dom::Tag::Base)
+            .and_then(|i| arena.attr_string(i as u32, "href"));
+        let page = base_url.and_then(|u| url::Url::parse(u.trim()).ok());
+        let base = match (&page, base_href.as_deref()) {
+            (Some(p), Some(b)) => p.join(b.trim()).ok().or_else(|| page.clone()),
+            (None, Some(b)) => url::Url::parse(b.trim()).ok(),
+            (p, None) => p.clone(),
+        };
+        let excluded = vec![false; arena.nodes.len()];
+        let root = if arena.body != dom::NONE { arena.body } else { 0 };
+        let rendered = render::render(
+            &arena,
+            &[root],
+            &excluded,
+            base.as_ref(),
+            render::RenderOptions { images: true, fragment_links: true, links: true },
         );
-
-        assert_eq!(metadata.title.as_deref(), Some("Example item"));
-        assert_eq!(metadata.description.as_deref(), Some("A useful & concise description"));
-        assert_eq!(metadata.canonical_url.unwrap().as_str(), "https://example.com/item?sku=4");
-    }
-
-    #[test]
-    fn falls_back_to_open_graph_and_heading_metadata() {
-        let metadata = extract_metadata(
-            r#"<meta property="og:title" content="Social title">
-               <meta property="og:description" content="Summary">
-               <h1>Heading title</h1>"#,
-            None,
-        );
-
-        assert_eq!(metadata.title.as_deref(), Some("Social title"));
-        assert_eq!(metadata.description.as_deref(), Some("Summary"));
-        assert_eq!(metadata.canonical_url, None);
-    }
+        rendered.markdown
+    }))
+    .unwrap_or_default()
 }
+
+#[cfg(feature = "profiling")]
+pub use extract::debug_trace;

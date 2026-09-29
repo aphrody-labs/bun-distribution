@@ -61,15 +61,21 @@ before importing.
 
 - `packages/web/x` contains `@aphrody/x`, a Bun/TypeScript client and its
   configuration, services, storage, and tests.
-- `crates/web/aphrody-web-extract` is now the first local Rust owner. It
-  implements opt-in URL normalization and static title/description/canonical
-  metadata extraction. Its six focused unit tests pass. It is not yet wired to
-  consumers and does not claim BXC parity.
+- `crates/web/aphrody-web-extract` now contains the source Rust implementation
+  of main-content extraction, Markdown, structural chunks and SimHash. The
+  earlier URL/metadata API remains as a wrapper on its shared DOM parser. The
+  imported source and adapted files are recorded in
+  [`aphrody-web-extract-import.json`](./aphrody-web-extract-import.json).
+- `crates/web/obscura-dom` supplies the imported HTML parser backend with the
+  source Obscura license. Its target manifest uses version `0.1.1` to coexist
+  with the source checkout's `0.1.0` until its remaining consumers move.
 - The root Cargo manifest still resolves `aphrody-web-bridge` and `obscura-mcp`
   through `../src/aphrody-web`; those are checkout dependencies, not extracted
   owners.
-- AI MCP, messaging, and application-server code already consume or route BXC
-  tools. Those are consumers to preserve while replacing the implementation.
+- The in-progress `aphrody-tools` worktree calls the local Rust extractor
+  directly for opt-in `web_fetch` Markdown. Its AI crate import is uncommitted;
+  clean-clone consumer cutover remains open. AI MCP, messaging, and
+  application-server code still consume or route BXC tools.
 - The generated ecosystem catalog previously described 22 Rust crates and six
   Bun manifests. The tables above are from the refreshed Infra map; refresh the
   catalog through its owner before changing generated catalog contents.
@@ -86,6 +92,22 @@ before importing.
 | Lightpanda | Optional external headless engine configured for `agent-browser` and BXC profiles | Keep an adapter/backend only where workload parity justifies it; do not fold an unmodified Zig upstream into Rust. |
 | Agent automation | `@aphrody/agent-browser` in the generated source catalog; installed host CLI is agent-browser 0.38.1 | Treat the installed CLI and the source package as separate artifacts; keep one supported agent-facing setup and document engine selection. |
 | BXC | Bun implementation and SDK, MCP/CLI consumers | Behavior migrates into canonical Rust owners before removing the compatibility facade. |
+
+## Verified extraction consumers and remaining cutover
+
+| Consumer | Source call or contract | Target status |
+| --- | --- | --- |
+| `aphrody-web-ffi` | `bxc_extract_main`, `bxc_html_to_markdown_with_base`, `bxc_simhash64` and `aphrody_web_*` aliases call source `aphrody-web-extract` | ABI symbols still reside in the source checkout; preserve the alias pairs when consolidating the FFI. |
+| `aphrody-web-service` and `aphrody-web-engine` | Re-export/call `extract_main` and `html_to_markdown` | Still source checkout dependencies; move after HTTP/service fixture gates. |
+| BXC Bun `src/rust/bridge.ts` | Loads `aphrody_web_extract_main`, `aphrody_web_html_to_markdown`, `aphrody_web_simhash64` | Keep export map and output JSON stable while switching the native library owner. |
+| `aphrody-web-bridge` | Loads legacy `bxc_html_to_markdown` for in-process Rust fetch | Still used for browser paths and shared User-Agent constants. |
+| Target `aphrody-tools` `web_fetch` | Opt-in HTML-to-Markdown with `rendering.kind` and `rendering.via` | Current AI worktree calls target `aphrody-web-extract` directly; `via` keeps the legacy value and `backend` identifies the Rust owner. Clean-clone import pending. |
+| Target AI MCP/client | Discovers and routes `bxc_*` tools through the BXC process | Discovery, schemas, auth and browser lifecycle not yet cut over. |
+
+The imported portable extractor passed 27 unit, seven extraction and 20
+Markdown tests offline. The BXC gold corpus and its 259 fixtures, browser
+profiles, native exports, and clean-clone consumer gates remain open. These
+results demonstrate the portable extraction slice only.
 
 The target plan already sets P5 acceptance in
 [`workspace/PLAN.md`](../plans/workspace/PLAN.md): web/JS/crawl parity, browser

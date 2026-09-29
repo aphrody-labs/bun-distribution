@@ -1,35 +1,26 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 # aphrody-web-extract
 
-Canonical Rust owner for Aphrody Web's static URL and metadata extraction
-primitives.
+Canonical Rust owner for Aphrody Web content processing. The source extractor
+from clean Aphrody Web commit `bbeb5ef4c497f7d27f546ad2cc15a250dcc93c83`
+is now here: main-content selection, HTML-to-Markdown, structural chunks,
+SimHash, dates and canonical URLs. The imported source files and tests are
+SHA-256 checked against `docs/migration/source-map.json`; see
+`docs/migration/aphrody-web-extract-import.json` for provenance and adaptations.
 
-```rust
-use aphrody_web_extract::{extract_metadata, normalize_page_url, UrlNormalizationOptions};
-use url::Url;
+The earlier target-only `normalize_page_url` and `extract_metadata` APIs remain
+available in `url_metadata.rs`. They now use the same Obscura DOM and metadata
+collector as the full extractor, so this crate has one HTML parser backend.
 
-fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let base = Url::parse("https://example.org/docs/start")?;
-    let _canonical = normalize_page_url(
-        "../api/?ref=docs#types",
-        Some(&base),
-        UrlNormalizationOptions { drop_query: false, trim_trailing_slash: true },
-    )?;
-    let _metadata = extract_metadata(
-        "<title>API</title><link rel=canonical href='/api'>",
-        Some(&base),
-    );
-    Ok(())
-}
-```
+`obscura-dom` is a vendored Apache-2.0 backend from the source checkout's
+Obscura tree. Its manifest version is `0.1.1` in the target workspace to avoid
+a Cargo lockfile collision with the still referenced source checkout's `0.1.0`.
+Its upstream license and attribution are in `crates/web/obscura-dom`.
 
-URL normalization uses `url::Url` parsing and resolution, removes fragments,
-rejects non-HTTP(S) schemes and user information, and only removes query
-strings or trailing slashes when requested. Metadata extraction reads the title,
-description, and canonical link from static HTML.
-
-This crate does not yet implement main-content scoring, structured-data
-extraction, structural chunks, HTML-to-Markdown conversion, SimHash, or the
-existing BXC compatibility APIs. Consumers must not claim full BXC parity from
-these primitives. Those paths move here only with source-backed fixtures and
-consumer cutover evidence.
+The in-progress `aphrody-tools` `web_fetch` Markdown cutover in the current
+AI worktree calls this crate in process. It is not part of this crate's clean
+clone until the AI workspace import is committed. Existing BXC FFI exports,
+CLI/MCP schemas, and Bun consumers still need cutover and parity checks. The
+source gold corpus test is pending fixture migration into the target; see the
+import record. This crate's unit and portable integration tests do not
+establish browser or full BXC parity.
