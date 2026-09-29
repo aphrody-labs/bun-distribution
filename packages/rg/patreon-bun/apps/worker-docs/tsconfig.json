@@ -1,0 +1,10 @@
+{
+	"compilerOptions": {
+		"resolveJsonModule": true,
+		"lib": ["ES2020"],
+		"skipLibCheck": true,
+		"types": ["@cloudflare/workers-types/2023-07-01", "bun", "node"],
+		"paths": { "@rosegriffon/patreon-bun": ["../../dist/index.d.ts"] }
+	},
+	"include": ["./src"]
+}

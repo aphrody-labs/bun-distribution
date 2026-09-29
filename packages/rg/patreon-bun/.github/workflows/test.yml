@@ -1,0 +1,32 @@
+name: Test
+on:
+  - push
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        bun-version: latest
+          - 22.x
+          - 24.x
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Install node.js v${{ matrix.node-version }}
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Run tsc
+        run: bun run prestart
+
+      - name: Run eslint
+        run: bun run lint
+
+      - name: Run tests
+        run: bun run test

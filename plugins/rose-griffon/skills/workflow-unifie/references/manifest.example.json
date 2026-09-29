@@ -1,0 +1,40 @@
+{
+  "run_id": "2026-09-07T120000Z-production-check",
+  "requested_scope": "probe one bounded production surface",
+  "tool_versions": {
+    "rose-griffon-mcp": "record tools/list or server version output",
+    "service": "record unit or endpoint version"
+  },
+  "inputs": [
+    {
+      "reference": "service-or-url",
+      "sha256": null,
+      "sensitivity": "public"
+    }
+  ],
+  "actions": [
+    {
+      "id": "health-probe",
+      "surface": "rose-griffon-mcp",
+      "call": "record exact MCP call or URL",
+      "exit_code": 0,
+      "started_at": "2026-09-07T12:00:00Z",
+      "finished_at": "2026-09-07T12:00:01Z"
+    }
+  ],
+  "outputs": [
+    {
+      "path": "results/health.json",
+      "sha256": "record-after-inspection",
+      "proof_level": "P3"
+    }
+  ],
+  "status": "complete",
+  "evidence": [
+    {
+      "path": "evidence/health-response.json",
+      "kind": "live-response",
+      "proof_level": "P3"
+    }
+  ]
+}

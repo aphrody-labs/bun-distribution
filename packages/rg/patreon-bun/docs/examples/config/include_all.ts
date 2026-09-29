@@ -1,0 +1,28 @@
+// @ts-expect-error duplicate-imports
+// #region config
+import { PatreonCreatorClient } from "@rosegriffon/patreon-bun";
+
+const client = new PatreonCreatorClient({
+	oauth: {
+		clientId: "id",
+		clientSecret: "secret",
+		// Configure your token
+	},
+	rest: {
+		includeAllQueries: true,
+	},
+});
+// #endregion config
+// @ts-expect-error duplicate-imports
+// #region difference
+import { PatreonCreatorClient } from "@rosegriffon/patreon-bun";
+
+declare const enabledClient: PatreonCreatorClient<true>;
+declare const disabledClient: PatreonCreatorClient;
+
+const completeCampaign = await enabledClient.fetchCampaign("id");
+console.log(completeCampaign.data.attributes);
+
+const emptyCampaign = await disabledClient.fetchCampaign("id");
+console.log(emptyCampaign.data.attributes);
+// #endregion difference

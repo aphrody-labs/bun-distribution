@@ -67,6 +67,15 @@ The consolidation command inventories current checkout heads, dirty paths, works
 
 `consolidation source-licenses-import` preserves root LICENSE, NOTICE and COPYING files from pinned non-UI source Git commits. It checks each worktree against the pinned blob, records raw and filtered hashes, and gives byte-identical files one canonical target with aliases in `docs/migration/source-licenses-import.json`. Missing root licenses and nested package licenses remain separate migration gates.
 
+`rg` is the Rose Griffon facade over this workspace and Aphrody Infra. `rg status` lists the staged applications and packages; `rg check` runs only scripts declared by those package manifests; `rg deploy` routes through the Rust RG deploy adapter and requires an explicit Infra target. `rg migrate` calls the existing consolidation workflows with the current workspace roots. See `docs/rg/MIGRATION-TO-APHRODY.md` for the migration sequence and exit gates.
+
+```bash
+bun packages/infra/aphrody-workspace/src/ops.ts rg status
+bun packages/infra/aphrody-workspace/src/ops.ts rg check lint
+bun packages/infra/aphrody-workspace/src/ops.ts rg migrate inventory
+bun packages/infra/aphrody-workspace/src/ops.ts rg deploy --target <infra-target>
+```
+
 ```bash
 bun packages/aphrody-workspace/src/ops.ts consolidation inventory --source-root /home/aphro/src --iecode-root /home/aphro/iecode --aphrody-root /home/aphro/aphrody --python-root /home/aphro/aphrody-py
 bun packages/aphrody-workspace/src/ops.ts consolidation submodules-inventory --source-root /home/aphro/src --iecode-root /home/aphro/iecode --aphrody-root /home/aphro/aphrody --python-root /home/aphro/aphrody-py

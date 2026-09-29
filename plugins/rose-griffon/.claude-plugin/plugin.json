@@ -1,0 +1,20 @@
+{
+	"name": "rose-griffon",
+	"version": "1.0.0",
+	"description": "Données du jeu Inazuma Eleven: Victory Road (wiki Azalée), exploitation du monorepo Rose Griffon et workflow multi-surfaces Aphrody/WinClean/niers/Ghidra : serveur MCP, skills de déploiement et de diagnostic, agents dédiés.",
+	"author": {
+		"name": "Rose Griffon",
+		"url": "https://rosegriffon.fr"
+	},
+	"homepage": "https://rosegriffon.fr/",
+	"repository": "https://github.com/rose-griffon/rg",
+	"license": "MIT",
+	"keywords": [
+		"rose-griffon",
+		"azalee",
+		"inazuma-eleven",
+		"mcp",
+		"monorepo",
+		"bun"
+	]
+}

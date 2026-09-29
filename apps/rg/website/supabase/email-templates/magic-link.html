@@ -1,0 +1,282 @@
+<!doctype html>
+<html lang="fr">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Connexion magique - Rose Griffon</title>
+		<style>
+			/* Reset styles */
+			body,
+			table,
+			td,
+			p,
+			a,
+			li,
+			blockquote {
+				-webkit-text-size-adjust: 100%;
+				-ms-text-size-adjust: 100%;
+			}
+			table,
+			td {
+				mso-table-lspace: 0pt;
+				mso-table-rspace: 0pt;
+			}
+			img {
+				-ms-interpolation-mode: bicubic;
+				border: 0;
+				height: auto;
+				line-height: 100%;
+				outline: none;
+				text-decoration: none;
+			}
+
+			/* Body styles */
+			body {
+				margin: 0;
+				padding: 0;
+				width: 100% !important;
+				height: 100% !important;
+				font-family:
+					-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+				background-color: #f5f5f5;
+			}
+
+			/* Container */
+			.email-container {
+				max-width: 600px;
+				margin: 0 auto;
+				background-color: #ffffff;
+			}
+
+			/* Header */
+			.header {
+				background: linear-gradient(135deg, #a14b3f 0%, #2f6e9c 100%);
+				padding: 40px 20px;
+				text-align: center;
+			}
+
+			.logo {
+				max-width: 120px;
+				height: auto;
+			}
+
+			.header-title {
+				color: #ffffff;
+				font-size: 24px;
+				font-weight: bold;
+				margin: 20px 0 0 0;
+				text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+			}
+
+			/* Content */
+			.content {
+				padding: 40px 30px;
+			}
+
+			.greeting {
+				font-size: 18px;
+				color: #333333;
+				margin-bottom: 20px;
+				font-weight: 600;
+			}
+
+			.message {
+				font-size: 16px;
+				color: #555555;
+				line-height: 1.6;
+				margin-bottom: 30px;
+			}
+
+			/* Button */
+			.button-container {
+				text-align: center;
+				margin: 40px 0;
+			}
+
+			.button {
+				display: inline-block;
+				padding: 16px 40px;
+				background: linear-gradient(135deg, #2f6e9c 0%, #4088b8 100%);
+				color: #ffffff !important;
+				text-decoration: none;
+				border-radius: 8px;
+				font-weight: 600;
+				font-size: 16px;
+				transition: transform 0.2s;
+				box-shadow: 0 4px 12px rgba(47, 110, 156, 0.3);
+			}
+
+			.button:hover {
+				transform: translateY(-2px);
+				box-shadow: 0 6px 16px rgba(47, 110, 156, 0.4);
+			}
+
+			/* Info box */
+			.info-box {
+				background-color: #fff3cd;
+				border-left: 4px solid #ff9800;
+				padding: 20px;
+				margin: 30px 0;
+				border-radius: 4px;
+			}
+
+			.info-box p {
+				margin: 0;
+				font-size: 14px;
+				color: #666666;
+				line-height: 1.5;
+			}
+
+			.security-note {
+				background-color: #f8f9fa;
+				padding: 20px;
+				margin: 30px 0;
+				border-radius: 4px;
+				border: 1px solid #e0e0e0;
+			}
+
+			/* Footer */
+			.footer {
+				background-color: #2d2d2d;
+				padding: 40px 20px;
+				text-align: center;
+				border-top: 4px solid #a14b3f;
+			}
+
+			.footer-text {
+				color: #999999;
+				font-size: 14px;
+				margin: 10px 0;
+				line-height: 1.5;
+			}
+
+			.footer-links {
+				margin: 20px 0;
+			}
+
+			.footer-link {
+				color: #ffffff;
+				text-decoration: none;
+				margin: 0 15px;
+				font-size: 14px;
+				font-weight: 500;
+				transition: color 0.2s;
+			}
+
+			.footer-link:hover {
+				color: #a14b3f;
+			}
+
+			.social-links {
+				margin-bottom: 20px;
+			}
+
+			/* Responsive */
+			@media only screen and (max-width: 600px) {
+				.content {
+					padding: 30px 20px !important;
+				}
+
+				.header-title {
+					font-size: 20px !important;
+				}
+
+				.button {
+					padding: 14px 30px !important;
+					font-size: 14px !important;
+				}
+			}
+		</style>
+	</head>
+	<body>
+		<table width="100%" cellspacing="0" cellpadding="0" border="0">
+			<tr>
+				<td align="center" style="padding: 20px 0">
+					<table class="email-container" cellspacing="0" cellpadding="0" border="0">
+						<tr>
+							<td class="header">
+								<img
+									src="https://mpfpbojuqtbjpehwlwfp.supabase.co/storage/v1/object/public/assets/RG_Logo_V2.5.webp"
+									alt="Rose Griffon"
+									class="logo"
+								/>
+								<h1 class="header-title">Connexion Magique ✨</h1>
+							</td>
+						</tr>
+
+						<tr>
+							<td class="content">
+								<p class="greeting">Bonjour ! 👋</p>
+
+								<p class="message">
+									Vous avez demandé à vous connecter à votre compte
+									<strong>Rose Griffon</strong>
+									sans mot de passe.
+								</p>
+
+								<p class="message">
+									Cliquez sur le bouton ci-dessous pour vous connecter instantanément :
+								</p>
+
+								<div class="button-container">
+									<a href="{{ .ConfirmationURL }}" class="button"> 🔐 Se connecter maintenant </a>
+								</div>
+
+								<div class="info-box">
+									<p style="margin: 0; font-size: 14px; color: #856404">
+										<strong>⚠️ Important :</strong><br />
+										Ce lien expire dans <strong>15 minutes</strong> et ne peut être utilisé qu'une
+										seule fois.
+									</p>
+								</div>
+
+								<div class="security-note">
+									<p style="margin: 0 0 10px 0; font-weight: 600; color: #333">
+										🔒 Conseils de sécurité :
+									</p>
+									<ul style="margin: 0; padding-left: 20px; color: #555; line-height: 1.6">
+										<li>Ne partagez jamais ce lien</li>
+										<li>Vérifiez l'URL : rosegriffon.fr</li>
+										<li>Si vous n'avez pas demandé cette connexion, ignorez cet e-mail</li>
+									</ul>
+								</div>
+
+								<p class="message" style="margin-top: 30px; font-size: 14px; color: #777">
+									<strong>Vous n'êtes pas à l'origine de cette demande ?</strong><br />
+									Votre compte est en sécurité. Ignorez simplement cet e-mail.
+								</p>
+
+								<p class="message" style="margin-top: 30px">
+									À très bientôt !<br />
+									<strong>— L'équipe Rose Griffon 🌹🦅</strong>
+								</p>
+							</td>
+						</tr>
+
+						<tr>
+							<td class="footer">
+								<div class="social-links">
+									<a href="https://x.com/rose_griffon" class="footer-link">X (Twitter)</a>
+									<a href="https://discord.gg/TYzQvbByv4" class="footer-link">Discord</a>
+									<a href="https://www.youtube.com/@RoseGriffon" class="footer-link">YouTube</a>
+								</div>
+								<p class="footer-text">
+									&copy; 2025 Rose Griffon - Association Loi 1901<br />
+									La communauté francophone Inazuma Eleven.
+								</p>
+								<div class="footer-links">
+									<a href="https://rosegriffon.fr" class="footer-link">Site Web</a>
+									<a href="https://rosegriffon.fr/contact" class="footer-link">Contact</a>
+								</div>
+								<p class="footer-text" style="font-size: 12px; margin-top: 20px; opacity: 0.7">
+									Vous recevez cet e-mail car vous avez demandé une connexion sans mot de passe sur
+									rosegriffon.fr
+								</p>
+							</td>
+						</tr>
+					</table>
+				</td>
+			</tr>
+		</table>
+	</body>
+</html>

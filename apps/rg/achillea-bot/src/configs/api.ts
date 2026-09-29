@@ -1,0 +1,6 @@
+import { env } from "@/env";
+
+export const apiConfig: APIConfigType = {
+	enabled: true, // re-enabled après refactor Server hors tsyringe (Server.start() static)
+	port: env.NODE_ENV === "development" ? (env.TEST_API_PORT ?? 4000) : (env.API_PORT ?? 4000), // the port on which the API server should be exposed
+};

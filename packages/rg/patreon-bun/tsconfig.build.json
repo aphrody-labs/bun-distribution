@@ -1,0 +1,20 @@
+{
+	"extends": "./tsconfig.json",
+	"compilerOptions": {
+		"emitDeclarationOnly": true,
+		"outDir": "dist",
+		"skipLibCheck": true,
+		"noUnusedLocals": false,
+		"noUnusedParameters": false
+	},
+	"include": ["src/**/*.ts"],
+	"exclude": [
+		"node_modules",
+		"dist",
+		"coverage",
+		"src/__tests__/**/*",
+		"src/scripts/**/*",
+		"src/schemas/v2/api/**/*",
+		"src/schemas/v2/mock/**/*"
+	]
+}

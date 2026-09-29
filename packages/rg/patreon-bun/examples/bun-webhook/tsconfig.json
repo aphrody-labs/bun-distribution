@@ -1,0 +1,13 @@
+{
+	"compilerOptions": {
+		"target": "ESNext",
+		"module": "Preserve",
+		"moduleResolution": "Bundler",
+		"strict": true,
+		"skipLibCheck": true,
+		"noEmit": true,
+		"types": ["bun"],
+		"paths": { "@rosegriffon/patreon-bun": ["../../dist/index.d.ts"] }
+	},
+	"include": ["src"]
+}

@@ -1,0 +1,6 @@
+[mcp_servers.shadcn]
+command = "bunx"
+args = [
+    "shadcn@4.17.0",
+    "mcp",
+]

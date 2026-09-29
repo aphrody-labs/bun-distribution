@@ -1,0 +1,43 @@
+# achillea-bot — config Bun
+# https://bun.sh/docs/runtime/bunfig
+
+[install]
+# Lockfile texte v1 (par défaut depuis 1.3)
+saveTextLockfile = true
+
+# Strict workspaces : refuse les versions divergentes
+exact = false
+
+# Toutes les deps sont publiques (scope @aphrody inclus) → aucun token
+registry = "https://registry.npmjs.org/"
+
+[run]
+# Charge automatiquement les .env même hors `bun run`
+auto = true
+
+# Affiche le nom du script avant exécution
+silent = false
+
+[test]
+# Pre-load test setup pour preset env + DB connection
+preload = ["./tests/setup.ts"]
+
+# Retry réseau flaky (E2E HTTP fetch)
+retry = 2
+
+# Concurrency : 8 tests en parallèle max (déf 20 trop pour fetch externe)
+concurrency = 8
+
+# Coverage off par défaut, activé via --coverage CLI
+coverage = false
+coverageReporter = ["text"]
+coverageDir = "coverage"
+
+# Threshold facultatif (commenté car ratio bas tant que TSed Server pas fix)
+# coverageThreshold = { line = 0.6, function = 0.7, statement = 0.6 }
+
+# Timeout par défaut 10s (vs 5s) car certaines E2E HTTP peuvent être lentes
+timeout = 10000
+
+[debug]
+editor = "code"

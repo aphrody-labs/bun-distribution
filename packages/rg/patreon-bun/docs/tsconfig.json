@@ -1,0 +1,19 @@
+{
+	"extends": "../tsconfig.json",
+	"compilerOptions": {
+		"target": "ES2022",
+		"module": "ES2022",
+		"moduleResolution": "Bundler",
+		"rootDir": ".",
+		"noEmit": true,
+		"noUnusedLocals": true,
+		"noUnusedParameters": true,
+		"allowUnusedLabels": true,
+		"noUncheckedIndexedAccess": false,
+		"paths": {
+			"@rosegriffon/patreon-bun": ["../dist/index.d.ts"]
+		}
+	},
+	"include": [".vitepress/**/*.ts"],
+	"exclude": [".vitepress/cache", ".vitepress/dist"]
+}

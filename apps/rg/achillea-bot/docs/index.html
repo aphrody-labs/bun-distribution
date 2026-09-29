@@ -1,0 +1,2940 @@
+<!doctype html>
+<html lang="fr">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Achillea Backend — Documentation</title>
+		<link rel="preconnect" href="https://fonts.googleapis.com" />
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+		<link
+			href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap"
+			rel="stylesheet"
+		/>
+		<link
+			href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css"
+			rel="stylesheet"
+		/>
+		<style>
+			/* ===== CSS Reset & Variables ===== */
+			*,
+			*::before,
+			*::after {
+				box-sizing: border-box;
+				margin: 0;
+				padding: 0;
+			}
+			:root {
+				--bg: #0f0f13;
+				--bg-card: rgba(255, 255, 255, 0.04);
+				--bg-card-hover: rgba(255, 255, 255, 0.07);
+				--bg-sidebar: #131318;
+				--bg-code: #1a1a24;
+				--bg-pre: #0d0d14;
+				--border: rgba(255, 255, 255, 0.08);
+				--border-hover: rgba(255, 255, 255, 0.15);
+				--text: #e4e4e7;
+				--text-muted: #a1a1aa;
+				--text-dim: #71717a;
+				--accent: #5865f2;
+				--accent-tsed: #4945ff;
+				--accent-glow: rgba(88, 101, 242, 0.15);
+				--green: #339933;
+				--blue-ts: #3178c6;
+				--discord: #5865f2;
+				--pg: #4169e1;
+				--orange: #e8811c;
+				--red: #ee2e24;
+				--socket: #010101;
+				--sidebar-w: 280px;
+				--header-h: 60px;
+				--radius: 12px;
+				--radius-sm: 8px;
+			}
+			html {
+				scroll-behavior: smooth;
+				scroll-padding-top: 80px;
+			}
+			body {
+				font-family:
+					"Inter",
+					-apple-system,
+					BlinkMacSystemFont,
+					sans-serif;
+				background: var(--bg);
+				color: var(--text);
+				line-height: 1.7;
+				-webkit-font-smoothing: antialiased;
+			}
+			a {
+				color: var(--accent);
+				text-decoration: none;
+				transition: color 0.2s;
+			}
+			a:hover {
+				color: #7983f5;
+			}
+
+			/* ===== Scrollbar ===== */
+			::-webkit-scrollbar {
+				width: 8px;
+			}
+			::-webkit-scrollbar-track {
+				background: var(--bg);
+			}
+			::-webkit-scrollbar-thumb {
+				background: rgba(255, 255, 255, 0.12);
+				border-radius: 4px;
+			}
+			::-webkit-scrollbar-thumb:hover {
+				background: rgba(255, 255, 255, 0.2);
+			}
+
+			/* ===== Sidebar ===== */
+			.sidebar {
+				position: fixed;
+				top: 0;
+				left: 0;
+				bottom: 0;
+				width: var(--sidebar-w);
+				background: var(--bg-sidebar);
+				border-right: 1px solid var(--border);
+				z-index: 100;
+				display: flex;
+				flex-direction: column;
+				transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+				overflow-y: auto;
+			}
+			.sidebar-brand {
+				padding: 24px 20px 16px;
+				border-bottom: 1px solid var(--border);
+			}
+			.sidebar-brand h2 {
+				font-size: 18px;
+				font-weight: 700;
+				color: #fff;
+				display: flex;
+				align-items: center;
+				gap: 8px;
+			}
+			.sidebar-brand h2::before {
+				content: "";
+				display: inline-block;
+				width: 8px;
+				height: 8px;
+				background: var(--accent);
+				border-radius: 50%;
+				box-shadow: 0 0 12px var(--accent);
+			}
+			.sidebar-brand p {
+				font-size: 12px;
+				color: var(--text-dim);
+				margin-top: 4px;
+			}
+			.sidebar-nav {
+				padding: 12px 0;
+				flex: 1;
+			}
+			.sidebar-nav a {
+				display: flex;
+				align-items: center;
+				gap: 10px;
+				padding: 10px 20px;
+				font-size: 13.5px;
+				font-weight: 500;
+				color: var(--text-muted);
+				border-left: 3px solid transparent;
+				transition: all 0.2s;
+			}
+			.sidebar-nav a:hover {
+				color: var(--text);
+				background: rgba(255, 255, 255, 0.03);
+			}
+			.sidebar-nav a.active {
+				color: var(--accent);
+				border-left-color: var(--accent);
+				background: var(--accent-glow);
+			}
+			.sidebar-nav a .nav-icon {
+				font-size: 16px;
+				width: 20px;
+				text-align: center;
+				opacity: 0.7;
+			}
+
+			/* ===== Hamburger ===== */
+			.hamburger {
+				display: none;
+				position: fixed;
+				top: 14px;
+				left: 14px;
+				z-index: 200;
+				width: 42px;
+				height: 42px;
+				background: var(--bg-sidebar);
+				border: 1px solid var(--border);
+				border-radius: var(--radius-sm);
+				cursor: pointer;
+				align-items: center;
+				justify-content: center;
+				flex-direction: column;
+				gap: 5px;
+			}
+			.hamburger span {
+				display: block;
+				width: 20px;
+				height: 2px;
+				background: var(--text);
+				border-radius: 1px;
+				transition: all 0.3s;
+			}
+			.hamburger.open span:nth-child(1) {
+				transform: rotate(45deg) translate(5px, 5px);
+			}
+			.hamburger.open span:nth-child(2) {
+				opacity: 0;
+			}
+			.hamburger.open span:nth-child(3) {
+				transform: rotate(-45deg) translate(5px, -5px);
+			}
+			.sidebar-overlay {
+				display: none;
+				position: fixed;
+				inset: 0;
+				background: rgba(0, 0, 0, 0.6);
+				z-index: 90;
+			}
+
+			/* ===== Main Content ===== */
+			.main {
+				margin-left: var(--sidebar-w);
+				min-height: 100vh;
+			}
+
+			/* ===== Hero ===== */
+			.hero {
+				padding: 80px 48px 60px;
+				text-align: center;
+				background: linear-gradient(180deg, rgba(88, 101, 242, 0.08) 0%, transparent 100%);
+				border-bottom: 1px solid var(--border);
+				position: relative;
+				overflow: hidden;
+			}
+			.hero::before {
+				content: "";
+				position: absolute;
+				top: -50%;
+				left: -50%;
+				width: 200%;
+				height: 200%;
+				background: radial-gradient(circle at 50% 0%, rgba(88, 101, 242, 0.1) 0%, transparent 50%);
+				pointer-events: none;
+			}
+			.hero h1 {
+				font-size: clamp(2rem, 5vw, 3.5rem);
+				font-weight: 800;
+				color: #fff;
+				letter-spacing: -1px;
+				position: relative;
+			}
+			.hero .subtitle {
+				font-size: clamp(1rem, 2.5vw, 1.25rem);
+				color: var(--text-muted);
+				margin-top: 12px;
+				font-weight: 400;
+				position: relative;
+			}
+			.hero .badges {
+				display: flex;
+				flex-wrap: wrap;
+				justify-content: center;
+				gap: 10px;
+				margin-top: 32px;
+				position: relative;
+			}
+			.badge {
+				display: inline-flex;
+				align-items: center;
+				gap: 6px;
+				padding: 6px 14px;
+				font-size: 12px;
+				font-weight: 600;
+				border-radius: 20px;
+				color: #fff;
+				border: 1px solid rgba(255, 255, 255, 0.1);
+				backdrop-filter: blur(8px);
+				transition:
+					transform 0.2s,
+					box-shadow 0.2s;
+			}
+			.badge:hover {
+				transform: translateY(-2px);
+				box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+			}
+			.badge-node {
+				background: rgba(51, 153, 51, 0.2);
+				border-color: rgba(51, 153, 51, 0.4);
+			}
+			.badge-ts {
+				background: rgba(49, 120, 198, 0.2);
+				border-color: rgba(49, 120, 198, 0.4);
+			}
+			.badge-discord {
+				background: rgba(88, 101, 242, 0.2);
+				border-color: rgba(88, 101, 242, 0.4);
+			}
+			.badge-pg {
+				background: rgba(65, 105, 225, 0.2);
+				border-color: rgba(65, 105, 225, 0.4);
+			}
+			.badge-mikro {
+				background: rgba(232, 129, 28, 0.2);
+				border-color: rgba(232, 129, 28, 0.4);
+			}
+			.badge-tsed {
+				background: rgba(73, 69, 255, 0.2);
+				border-color: rgba(73, 69, 255, 0.4);
+			}
+			.badge-bull {
+				background: rgba(238, 46, 36, 0.2);
+				border-color: rgba(238, 46, 36, 0.4);
+			}
+			.badge-socket {
+				background: rgba(255, 255, 255, 0.08);
+				border-color: rgba(255, 255, 255, 0.15);
+			}
+
+			/* ===== Sections ===== */
+			.content {
+				max-width: 960px;
+				margin: 0 auto;
+				padding: 40px 32px 80px;
+			}
+			.section {
+				padding-top: 32px;
+				margin-bottom: 56px;
+				opacity: 0;
+				transform: translateY(24px);
+				transition:
+					opacity 0.6s ease,
+					transform 0.6s ease;
+			}
+			.section.visible {
+				opacity: 1;
+				transform: translateY(0);
+			}
+			.section h2 {
+				font-size: 1.75rem;
+				font-weight: 700;
+				color: #fff;
+				margin-bottom: 24px;
+				padding-bottom: 12px;
+				border-bottom: 2px solid var(--accent);
+				display: inline-block;
+			}
+			.section h3 {
+				font-size: 1.2rem;
+				font-weight: 600;
+				color: #fff;
+				margin: 28px 0 14px;
+			}
+			.section h4 {
+				font-size: 1rem;
+				font-weight: 600;
+				color: var(--text-muted);
+				margin: 20px 0 10px;
+			}
+			.section p,
+			.section li {
+				color: var(--text-muted);
+				font-size: 15px;
+				line-height: 1.8;
+			}
+			.section ul,
+			.section ol {
+				padding-left: 24px;
+				margin: 12px 0;
+			}
+			.section li {
+				margin-bottom: 6px;
+			}
+			.section strong {
+				color: var(--text);
+				font-weight: 600;
+			}
+
+			/* ===== Cards ===== */
+			.card {
+				background: var(--bg-card);
+				border: 1px solid var(--border);
+				border-radius: var(--radius);
+				padding: 24px;
+				margin: 16px 0;
+				transition:
+					border-color 0.3s,
+					background 0.3s;
+			}
+			.card:hover {
+				border-color: var(--border-hover);
+				background: var(--bg-card-hover);
+			}
+
+			/* ===== Tables ===== */
+			.table-wrap {
+				overflow-x: auto;
+				margin: 16px 0;
+				border-radius: var(--radius);
+				border: 1px solid var(--border);
+			}
+			table {
+				width: 100%;
+				border-collapse: collapse;
+				font-size: 14px;
+			}
+			thead th {
+				background: rgba(88, 101, 242, 0.12);
+				color: var(--accent);
+				font-weight: 600;
+				text-align: left;
+				padding: 12px 16px;
+				white-space: nowrap;
+				border-bottom: 1px solid var(--border);
+			}
+			tbody td {
+				padding: 10px 16px;
+				border-bottom: 1px solid var(--border);
+				color: var(--text-muted);
+				vertical-align: top;
+			}
+			tbody tr:last-child td {
+				border-bottom: none;
+			}
+			tbody tr:hover {
+				background: rgba(255, 255, 255, 0.03);
+			}
+			td code,
+			th code {
+				background: var(--bg-code);
+				padding: 2px 6px;
+				border-radius: 4px;
+				font-size: 13px;
+				font-family: "JetBrains Mono", monospace;
+				color: var(--accent);
+			}
+
+			/* ===== Code blocks ===== */
+			pre[class*="language-"] {
+				background: var(--bg-pre) !important;
+				border: 1px solid var(--border);
+				border-radius: var(--radius);
+				padding: 20px 24px !important;
+				margin: 16px 0;
+				font-size: 13.5px;
+				line-height: 1.6;
+				overflow-x: auto;
+				position: relative;
+			}
+			code[class*="language-"] {
+				font-family: "JetBrains Mono", monospace !important;
+				font-size: 13.5px !important;
+			}
+			code:not([class]) {
+				background: var(--bg-code);
+				padding: 2px 7px;
+				border-radius: 4px;
+				font-size: 13px;
+				font-family: "JetBrains Mono", monospace;
+				color: #c4b5fd;
+			}
+
+			/* ===== ASCII diagrams ===== */
+			.ascii-diagram {
+				background: var(--bg-pre);
+				border: 1px solid rgba(88, 101, 242, 0.25);
+				border-radius: var(--radius);
+				padding: 24px;
+				margin: 16px 0;
+				overflow-x: auto;
+				font-family: "JetBrains Mono", monospace;
+				font-size: 13px;
+				line-height: 1.5;
+				color: var(--accent);
+				white-space: pre;
+			}
+
+			/* ===== Copy button ===== */
+			.code-wrapper {
+				position: relative;
+			}
+			.copy-btn {
+				position: absolute;
+				top: 10px;
+				right: 10px;
+				background: rgba(255, 255, 255, 0.08);
+				border: 1px solid var(--border);
+				color: var(--text-muted);
+				font-size: 12px;
+				font-family: "Inter", sans-serif;
+				padding: 5px 10px;
+				border-radius: 6px;
+				cursor: pointer;
+				transition: all 0.2s;
+				z-index: 5;
+			}
+			.copy-btn:hover {
+				background: rgba(255, 255, 255, 0.15);
+				color: #fff;
+			}
+			.copy-btn.copied {
+				color: #4ade80;
+				border-color: rgba(74, 222, 128, 0.3);
+			}
+
+			/* ===== Features grid ===== */
+			.features-grid {
+				display: grid;
+				grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+				gap: 16px;
+				margin: 20px 0;
+			}
+			.feature-card {
+				background: var(--bg-card);
+				border: 1px solid var(--border);
+				border-radius: var(--radius);
+				padding: 20px;
+				transition:
+					border-color 0.3s,
+					transform 0.2s;
+			}
+			.feature-card:hover {
+				border-color: var(--border-hover);
+				transform: translateY(-2px);
+			}
+			.feature-card h4 {
+				font-size: 15px;
+				font-weight: 600;
+				color: #fff;
+				margin: 0 0 8px;
+			}
+			.feature-card p {
+				font-size: 13.5px;
+				color: var(--text-dim);
+				line-height: 1.6;
+				margin: 0;
+			}
+
+			/* ===== Method badges ===== */
+			.method {
+				display: inline-block;
+				padding: 2px 8px;
+				border-radius: 4px;
+				font-size: 11px;
+				font-weight: 700;
+				font-family: "JetBrains Mono", monospace;
+				color: #fff;
+			}
+			.method-get {
+				background: #059669;
+			}
+			.method-post {
+				background: #2563eb;
+			}
+			.method-put {
+				background: #d97706;
+			}
+			.method-patch {
+				background: #7c3aed;
+			}
+			.method-delete {
+				background: #dc2626;
+			}
+
+			/* ===== Auth badges ===== */
+			.auth-badge {
+				display: inline-block;
+				padding: 2px 8px;
+				border-radius: 4px;
+				font-size: 11px;
+				font-weight: 600;
+			}
+			.auth-cookie {
+				background: rgba(251, 191, 36, 0.15);
+				color: #fbbf24;
+			}
+			.auth-none {
+				background: rgba(156, 163, 175, 0.1);
+				color: #9ca3af;
+			}
+			.auth-admin {
+				background: rgba(239, 68, 68, 0.15);
+				color: #ef4444;
+			}
+
+			/* ===== Footer ===== */
+			.footer {
+				border-top: 1px solid var(--border);
+				padding: 32px;
+				text-align: center;
+				color: var(--text-dim);
+				font-size: 14px;
+			}
+			.footer a {
+				color: var(--accent);
+			}
+			.footer .footer-links {
+				display: flex;
+				gap: 24px;
+				justify-content: center;
+				margin-bottom: 12px;
+			}
+
+			/* ===== Responsive ===== */
+			@media (max-width: 768px) {
+				.sidebar {
+					transform: translateX(-100%);
+				}
+				.sidebar.open {
+					transform: translateX(0);
+				}
+				.sidebar-overlay.open {
+					display: block;
+				}
+				.hamburger {
+					display: flex;
+				}
+				.main {
+					margin-left: 0;
+				}
+				.hero {
+					padding: 60px 20px 40px;
+				}
+				.content {
+					padding: 24px 16px 60px;
+				}
+				pre[class*="language-"] {
+					padding: 16px !important;
+					font-size: 12px;
+				}
+				.ascii-diagram {
+					font-size: 11px;
+					padding: 16px;
+				}
+				.features-grid {
+					grid-template-columns: 1fr;
+				}
+				table {
+					font-size: 13px;
+				}
+				thead th,
+				tbody td {
+					padding: 8px 10px;
+				}
+			}
+		</style>
+	</head>
+	<body>
+		<!-- Hamburger button (mobile) -->
+		<button class="hamburger" id="hamburger" aria-label="Menu">
+			<span></span><span></span><span></span>
+		</button>
+
+		<!-- Sidebar overlay (mobile) -->
+		<div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+		<!-- Sidebar -->
+		<aside class="sidebar" id="sidebar">
+			<div class="sidebar-brand">
+				<h2>Achillea</h2>
+				<p>Documentation Backend</p>
+			</div>
+			<nav class="sidebar-nav" id="sidebar-nav">
+				<a href="#presentation"><span class="nav-icon">&#9672;</span>Presentation</a>
+				<a href="#stack-technique"><span class="nav-icon">&#9881;</span>Stack technique</a>
+				<a href="#installation"><span class="nav-icon">&#9654;</span>Installation</a>
+				<a href="#architecture"><span class="nav-icon">&#9638;</span>Architecture</a>
+				<a href="#base-de-donnees"><span class="nav-icon">&#9707;</span>Base de donnees</a>
+				<a href="#api-rest"><span class="nav-icon">&#8644;</span>API REST</a>
+				<a href="#bot-discord"><span class="nav-icon">&#9670;</span>Bot Discord</a>
+				<a href="#websocket"><span class="nav-icon">&#8651;</span>WebSocket</a>
+				<a href="#services-metier"><span class="nav-icon">&#9733;</span>Services metier</a>
+				<a href="#auth-permissions"><span class="nav-icon">&#9889;</span>Auth et permissions</a>
+				<a href="#jobs-queues"><span class="nav-icon">&#9200;</span>Jobs et queues</a>
+				<a href="#i18n"><span class="nav-icon">&#9758;</span>Internationalisation</a>
+				<a href="#configuration"><span class="nav-icon">&#9874;</span>Configuration</a>
+				<a href="#deploiement"><span class="nav-icon">&#9729;</span>Deploiement</a>
+				<a href="#contribution"><span class="nav-icon">&#9998;</span>Contribution</a>
+			</nav>
+		</aside>
+
+		<!-- Main content -->
+		<div class="main">
+			<!-- Hero -->
+			<header class="hero">
+				<h1>Achillea Backend</h1>
+				<p class="subtitle">
+					Bot Discord + API REST + WebSocket &mdash; moteur de la plateforme Achillea
+				</p>
+				<div class="badges">
+					<span class="badge badge-node">Node.js 20+</span>
+					<span class="badge badge-ts">TypeScript 5.x</span>
+					<span class="badge badge-discord">Discord.js 14</span>
+					<span class="badge badge-pg">PostgreSQL 16</span>
+					<span class="badge badge-mikro">Mikro-ORM 6</span>
+					<span class="badge badge-tsed">TsED 7</span>
+					<span class="badge badge-bull">BullMQ 5</span>
+					<span class="badge badge-socket">Socket.io 4</span>
+				</div>
+			</header>
+
+			<div class="content">
+				<!-- ==================== PRESENTATION ==================== -->
+				<section class="section" id="presentation">
+					<h2>Presentation</h2>
+					<p>
+						<strong>Achillea Backend</strong> est le coeur de la plateforme Achillea. Un seul
+						processus Node.js combine trois roles :
+					</p>
+
+					<div class="ascii-diagram">
+						&#x250C;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2510;
+						&#x2502; AchilleaBackend &#x2502; &#x2502; &#x2502; &#x2502;
+						&#x250C;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2510;
+						&#x250C;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2510;
+						&#x250C;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2510;
+						&#x2502; &#x2502; &#x2502; Bot Discord &#x2502; &#x2502; API REST &#x2502; &#x2502;
+						WebSocket &#x2502; &#x2502; &#x2502; &#x2502; (discordx) &#x2502; &#x2502; (TsED)
+						&#x2502; &#x2502; (Socket.io) &#x2502; &#x2502; &#x2502; &#x2502; &#x2502; &#x2502;
+						&#x2502; &#x2502; &#x2502; &#x2502; &#x2502; &#x2502; Commandes &#x2502; &#x2502;
+						Controleurs &#x2502; &#x2502; Namespace &#x2502; &#x2502; &#x2502; &#x2502; Evenements
+						&#x2502; &#x2502; Middlewares &#x2502; &#x2502; /notifications &#x2502; &#x2502;
+						&#x2502; &#x2502; Boutons &#x2502; &#x2502; DTOs &#x2502; &#x2502; &#x2502; &#x2502;
+						&#x2502;
+						&#x2514;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x252C;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2518;
+						&#x2514;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x252C;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2518;
+						&#x2514;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x252C;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2518;
+						&#x2502; &#x2502; &#x2502; &#x2502; &#x2502; &#x2502; &#x2502;
+						&#x2514;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x252C;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2534;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2518;
+						&#x2502; &#x2502; &#x2502; &#x2502; &#x2502;
+						&#x250C;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2534;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2510;
+						&#x2502; &#x2502; &#x2502; Services DI &#x2502; (tsyringe - Singleton) &#x2502; &#x2502;
+						&#x2502; Mikro-ORM &#x2502; (PostgreSQL) &#x2502; &#x2502; &#x2502; BullMQ &#x2502;
+						(Redis) &#x2502; &#x2502;
+						&#x2514;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2518;
+						&#x2502;
+						&#x2514;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2518;
+					</div>
+
+					<p>
+						Le projet est base sur <strong>TSCord v2.4</strong>, un framework Discord.js/discordx
+						enrichi d'injection de dependances, d'un ORM et d'une API REST integree.
+					</p>
+
+					<h3>Fonctionnalites principales</h3>
+					<div class="features-grid">
+						<div class="feature-card">
+							<h4>Clans</h4>
+							<p>
+								Creation, gestion des membres (roles, distinctions), invitations, candidatures,
+								equipes, XP collectif
+							</p>
+						</div>
+						<div class="feature-card">
+							<h4>Tournois</h4>
+							<p>
+								Creation, inscriptions, seeding, brackets (single/double elim, round robin), scores,
+								check-in
+							</p>
+						</div>
+						<div class="feature-card">
+							<h4>Ranked</h4>
+							<p>Queue matchmaking 1v1/2v2, calcul Elo, lobbies automatiques, paliers de rang</p>
+						</div>
+						<div class="feature-card">
+							<h4>Interclans</h4>
+							<p>Matchs clan vs clan, lineups verrouillees, lobbies 1v1 par position</p>
+						</div>
+						<div class="feature-card">
+							<h4>Organisations</h4>
+							<p>Entites organisatrices de tournois, validation admin</p>
+						</div>
+						<div class="feature-card">
+							<h4>Votes</h4>
+							<p>Systeme de gouvernance (propositions, strategies unanimite/majorite/2-3)</p>
+						</div>
+						<div class="feature-card">
+							<h4>Notifications</h4>
+							<p>Push temps reel via WebSocket + messages Discord</p>
+						</div>
+					</div>
+				</section>
+
+				<!-- ==================== STACK TECHNIQUE ==================== -->
+				<section class="section" id="stack-technique">
+					<h2>Stack technique</h2>
+					<div class="table-wrap">
+						<table>
+							<thead>
+								<tr>
+									<th>Couche</th>
+									<th>Technologie</th>
+									<th>Version</th>
+									<th>Role</th>
+								</tr>
+							</thead>
+							<tbody>
+								<tr>
+									<td>Runtime</td>
+									<td><strong>Node.js</strong></td>
+									<td>20+</td>
+									<td>Serveur</td>
+								</tr>
+								<tr>
+									<td>Langage</td>
+									<td><strong>TypeScript</strong></td>
+									<td>5.x</td>
+									<td>Typage statique</td>
+								</tr>
+								<tr>
+									<td>Bot Discord</td>
+									<td><strong>discord.js</strong></td>
+									<td>14.21.0</td>
+									<td>API Discord, interactions</td>
+								</tr>
+								<tr>
+									<td>Framework Bot</td>
+									<td><strong>discordx</strong></td>
+									<td>11.12.5</td>
+									<td>
+										Decorateurs <code>@Slash</code>, <code>@Guard</code>,
+										<code>@ButtonComponent</code>
+									</td>
+								</tr>
+								<tr>
+									<td>API REST</td>
+									<td><strong>TsED</strong></td>
+									<td>7.84+</td>
+									<td>Controleurs Express avec decorateurs</td>
+								</tr>
+								<tr>
+									<td>ORM</td>
+									<td><strong>Mikro-ORM</strong></td>
+									<td>6.4.16</td>
+									<td>PostgreSQL, Unit of Work, Identity Map</td>
+								</tr>
+								<tr>
+									<td>WebSocket</td>
+									<td><strong>Socket.io</strong></td>
+									<td>4.8.1</td>
+									<td>Namespaces, rooms, notifications temps reel</td>
+								</tr>
+								<tr>
+									<td>Jobs</td>
+									<td><strong>BullMQ</strong></td>
+									<td>5.63.0</td>
+									<td>Queues Redis, taches differees et planifiees</td>
+								</tr>
+								<tr>
+									<td>Redis</td>
+									<td><strong>ioredis</strong></td>
+									<td>5.8.2</td>
+									<td>Backend BullMQ + cache</td>
+								</tr>
+								<tr>
+									<td>DI</td>
+									<td><strong>tsyringe</strong></td>
+									<td>&mdash;</td>
+									<td>Injection de dependances (singletons)</td>
+								</tr>
+								<tr>
+									<td>Auth</td>
+									<td><strong>jsonwebtoken</strong></td>
+									<td>9.0.2</td>
+									<td>JWT signe dans cookie HTTP-only</td>
+								</tr>
+								<tr>
+									<td>Validation</td>
+									<td><strong>Joi</strong> + <strong>class-validator</strong></td>
+									<td>&mdash;</td>
+									<td>Validation schemas et DTOs</td>
+								</tr>
+								<tr>
+									<td>Images</td>
+									<td><strong>canvas</strong> + <strong>sharp</strong></td>
+									<td>&mdash;</td>
+									<td>Generation et traitement d'images</td>
+								</tr>
+								<tr>
+									<td>Headless</td>
+									<td><strong>Puppeteer</strong></td>
+									<td>24.11.0</td>
+									<td>Rendu navigateur</td>
+								</tr>
+								<tr>
+									<td>Brackets</td>
+									<td><strong>brackets-manager</strong></td>
+									<td>1.8.2</td>
+									<td>Logique de brackets tournois</td>
+								</tr>
+								<tr>
+									<td>i18n</td>
+									<td><strong>typesafe-i18n</strong></td>
+									<td>5.26.2</td>
+									<td>Traductions type-safe (fr, en, ru, uk)</td>
+								</tr>
+								<tr>
+									<td>Process</td>
+									<td><strong>PM2</strong></td>
+									<td>&mdash;</td>
+									<td>Gestion de processus production</td>
+								</tr>
+							</tbody>
+						</table>
+					</div>
+				</section>
+
+				<!-- ==================== INSTALLATION ==================== -->
+				<section class="section" id="installation">
+					<h2>Installation</h2>
+
+					<h3>Prerequis</h3>
+					<ul>
+						<li><strong>Node.js</strong> >= 20</li>
+						<li><strong>PostgreSQL</strong> >= 14</li>
+						<li><strong>Redis</strong> >= 6</li>
+						<li>Un <strong>bot Discord</strong> configure (token + permissions)</li>
+					</ul>
+
+					<h3>Demarrage rapide</h3>
+					<div class="code-wrapper">
+						<button class="copy-btn" onclick="copyCode(this)">Copier</button>
+						<pre><code class="language-bash"># Cloner le repo
+git clone https://github.com/rose-griffon/AchilleaBackend.git
+cd AchilleaBackend
+
+# Installer les dependances
+npm install
+
+# Configurer l'environnement
+cp .env.example .env
+# Editer .env (voir section Configuration)
+
+# Appliquer les migrations
+npx mikro-orm migration:up
+
+# Mode developpement (hot reload)
+npm run dev
+
+# Mode production
+npm run build && npm start</code></pre>
+					</div>
+
+					<h3>Commandes disponibles</h3>
+					<div class="table-wrap">
+						<table>
+							<thead>
+								<tr>
+									<th>Commande</th>
+									<th>Description</th>
+								</tr>
+							</thead>
+							<tbody>
+								<tr>
+									<td><code>npm run dev</code></td>
+									<td>Developpement avec hot reload (nodemon + ts-node)</td>
+								</tr>
+								<tr>
+									<td><code>npm run build</code></td>
+									<td>Compilation TypeScript + resolution des alias de chemins</td>
+								</tr>
+								<tr>
+									<td><code>npm start</code></td>
+									<td>Production (depuis <code>build/main.js</code>)</td>
+								</tr>
+								<tr>
+									<td><code>npm run build:start</code></td>
+									<td>Build puis demarrage</td>
+								</tr>
+								<tr>
+									<td><code>npm run type:check</code></td>
+									<td>Verification de types TypeScript</td>
+								</tr>
+								<tr>
+									<td><code>npm run i18n</code></td>
+									<td>Generation des types i18n (typesafe-i18n)</td>
+								</tr>
+							</tbody>
+						</table>
+					</div>
+				</section>
+
+				<!-- ==================== ARCHITECTURE ==================== -->
+				<section class="section" id="architecture">
+					<h2>Architecture</h2>
+					<div class="code-wrapper">
+						<button class="copy-btn" onclick="copyCode(this)">Copier</button>
+						<pre><code class="language-bash">src/
+├── main.ts                         # Point d'entree (bot + API + socket)
+├── client.ts                       # Configuration du Client Discord.js
+│
+├── api/                            # Couche API REST (TsED)
+│   ├── server.ts                   # Serveur Express/TsED
+	│   ├── controllers/                # Controleurs REST
+	│   │   ├── auth.ts                 # Redirection vers Better Auth (OAuth possédé par le site)
+│   │   ├── clans.ts                # CRUD clans
+│   │   ├── users.ts                # Profils utilisateurs
+│   │   ├── tournaments.ts          # Tournois
+│   │   ├── organizations.ts        # Organisations
+│   │   └── health.ts               # Health check
+│   ├── middlewares/                 # Guards API (CookieAuthorize)
+│   └── models/
+│       ├── dtos/                   # Data Transfer Objects
+│       └── interfaces/             # Interfaces API
+│
+├── commands/                       # Commandes Discord (discordx)
+│   ├── General/                    # Commandes publiques (16 commandes)
+│   │   ├── create-clan.ts          # /create-clan
+│   │   ├── clan-manage.ts          # /clan-manage
+│   │   ├── interclan.ts            # /interclan
+│   │   └── ...
+│   └── Owner/                      # Commandes proprietaire (4 commandes)
+│       ├── blacklist.ts            # /blacklist
+│       ├── maintenance.ts          # /maintenance
+│       └── ...
+│
+├── events/                         # Evenements Discord
+│   ├── ready.ts                    # Bot connecte
+│   ├── interactionCreate.ts        # Dispatch interactions
+│   ├── components/                 # Handlers boutons/selects (10 fichiers)
+│   │   ├── vote-buttons.ts
+│   │   ├── clan-approval-buttons.ts
+│   │   ├── invite-buttons.ts
+│   │   ├── matchmaker-buttons.ts
+│   │   └── ...
+│   └── custom/                     # Evenements internes
+│
+├── services/                       # Services metier (24 services)
+│   ├── UserService.ts
+│   ├── ClanService.ts
+│   ├── TournamentsService.ts
+│   ├── RankedQueueService.ts
+│   ├── NotificationService.ts
+│   ├── BracketService.ts
+│   ├── Matchmaker.ts
+│   ├── VotingService.ts
+│   └── ...
+│
+├── entities/                       # Entites Mikro-ORM (47 entites)
+│   ├── User.ts
+│   ├── Clan.ts
+│   ├── Tournament.ts
+│   ├── Lobby.ts
+│   └── ...
+│
+├── guards/                         # Guards Discord (14 guards)
+├── jobs/                           # Workers BullMQ
+├── queues/                         # Definitions de queues Redis
+├── websockets/                     # Serveur Socket.io
+├── configs/                        # Configurations (DB, Redis, API, bot)
+├── i18n/                           # Traductions (fr, en, ru, uk)
+└── utils/
+    ├── enums/                      # Enums metier
+    ├── decorators/                 # @Service, @Guard, @Discord...
+    ├── errors/                     # Erreurs custom
+    └── functions/                  # Utilitaires</code></pre>
+					</div>
+
+					<h3>Patterns d'architecture</h3>
+					<div class="table-wrap">
+						<table>
+							<thead>
+								<tr>
+									<th>Pattern</th>
+									<th>Implementation</th>
+									<th>Description</th>
+								</tr>
+							</thead>
+							<tbody>
+								<tr>
+									<td><strong>Injection de dependances</strong></td>
+									<td><code>tsyringe</code> + <code>@Service()</code></td>
+									<td>Tous les services sont des singletons injectes automatiquement</td>
+								</tr>
+								<tr>
+									<td><strong>Unit of Work</strong></td>
+									<td>Mikro-ORM <code>em.flush()</code></td>
+									<td>Les changements sont accumules puis executes en transaction</td>
+								</tr>
+								<tr>
+									<td><strong>Identity Map</strong></td>
+									<td>Mikro-ORM</td>
+									<td>Chaque entite n'est chargee qu'une fois par contexte</td>
+								</tr>
+								<tr>
+									<td><strong>Repository</strong></td>
+									<td>Mikro-ORM repos</td>
+									<td>Acces aux donnees par entite</td>
+								</tr>
+								<tr>
+									<td><strong>DTO</strong></td>
+									<td><code>class-transformer</code></td>
+									<td>Serialisation/deserialisation controlee entre couches</td>
+								</tr>
+								<tr>
+									<td><strong>Guard/Middleware</strong></td>
+									<td><code>@Guard()</code> (discordx) + middlewares TsED</td>
+									<td>Protection declarative des commandes et routes</td>
+								</tr>
+								<tr>
+									<td><strong>Heritage</strong></td>
+									<td>
+										<code>Event</code> &rarr; <code>Tournament</code>/<code>Ranked</code>/<code
+											>Interclan</code
+										>
+									</td>
+									<td>Discriminateur de type sur l'entite abstraite</td>
+								</tr>
+								<tr>
+									<td><strong>Event-Driven</strong></td>
+									<td><code>EventManager</code> (RxJS)</td>
+									<td>Bus d'evenements internes pour decouplage</td>
+								</tr>
+							</tbody>
+						</table>
+					</div>
+				</section>
+
+				<!-- ==================== BASE DE DONNEES ==================== -->
+				<section class="section" id="base-de-donnees">
+					<h2>Base de donnees</h2>
+
+					<h3>Vue d'ensemble (47 entites, PostgreSQL)</h3>
+					<p>
+						Mikro-ORM utilise les patterns <strong>Unit of Work</strong> et
+						<strong>Identity Map</strong> :
+					</p>
+
+					<div class="code-wrapper">
+						<button class="copy-btn" onclick="copyCode(this)">Copier</button>
+						<pre><code class="language-typescript">// Les changements sont trackes automatiquement
+const user = await em.findOneOrFail(User, discordId);
+user.displayName = 'Nouveau nom';
+
+const clan = new Clan('Mon Clan');
+em.persist(clan);
+
+// flush() execute tout dans une transaction atomique
+await em.flush();</code></pre>
+					</div>
+
+					<h3>Schema des entites</h3>
+
+					<h4>Utilisateurs et authentification</h4>
+					<div class="table-wrap">
+						<table>
+							<thead>
+								<tr>
+									<th>Entite</th>
+									<th>Cle primaire</th>
+									<th>Description</th>
+								</tr>
+							</thead>
+							<tbody>
+								<tr>
+									<td><code>User</code></td>
+									<td>Discord ID (string)</td>
+									<td>Utilisateur Discord (role, avatar, displayName)</td>
+								</tr>
+								<tr>
+									<td><code>UserView</code></td>
+									<td>&mdash;</td>
+									<td>Vue materialisee optimisee (1 row par user)</td>
+								</tr>
+								<tr>
+									<td><code>UserConnection</code></td>
+									<td>auto</td>
+									<td>Connexions externes (Twitch, YouTube, Challonge)</td>
+								</tr>
+								<tr>
+									<td><code>UserElo</code></td>
+									<td>auto</td>
+									<td>Classement Elo par mode de jeu (1v1, 2v2)</td>
+								</tr>
+								<tr>
+									<td><code>UserExperience</code></td>
+									<td>auto</td>
+									<td>XP et niveaux individuels</td>
+								</tr>
+								<tr>
+									<td><code>UserExperienceLog</code></td>
+									<td>auto</td>
+									<td>Historique detaille des gains d'XP</td>
+								</tr>
+								<tr>
+									<td><code>UserNotification</code></td>
+									<td>auto</td>
+									<td>Notifications utilisateur</td>
+								</tr>
+								<tr>
+									<td><code>Blacklist</code></td>
+									<td>auto</td>
+									<td>Utilisateurs bannis (raison, date)</td>
+								</tr>
+							</tbody>
+						</table>
+					</div>
+
+					<h4>Clans</h4>
+					<div class="table-wrap">
+						<table>
+							<thead>
+								<tr>
+									<th>Entite</th>
+									<th>Cle primaire</th>
+									<th>Description</th>
+								</tr>
+							</thead>
+							<tbody>
+								<tr>
+									<td><code>Clan</code></td>
+									<td>auto-increment</td>
+									<td>Clan (nom, tag, bio, fame, reseaux, etat)</td>
+								</tr>
+								<tr>
+									<td><code>ClanMember</code></td>
+									<td>composite</td>
+									<td>Appartenance (user + clan, role, distinctions, fame)</td>
+								</tr>
+								<tr>
+									<td><code>ClanMemberHistory</code></td>
+									<td>auto</td>
+									<td>Archive des anciens membres</td>
+								</tr>
+								<tr>
+									<td><code>ClanApplication</code></td>
+									<td>auto</td>
+									<td>Candidatures en attente</td>
+								</tr>
+								<tr>
+									<td><code>ClanInvite</code></td>
+									<td>auto</td>
+									<td>Invitations envoyees (avec thread Discord)</td>
+								</tr>
+								<tr>
+									<td><code>ClanExperience</code></td>
+									<td>auto</td>
+									<td>XP collectif du clan</td>
+								</tr>
+								<tr>
+									<td><code>ClanExperienceLog</code></td>
+									<td>auto</td>
+									<td>Historique XP collectif</td>
+								</tr>
+								<tr>
+									<td><code>ClanTeam</code></td>
+									<td>auto</td>
+									<td>Equipes composees de membres</td>
+								</tr>
+								<tr>
+									<td><code>ClanTeamMember</code></td>
+									<td>auto</td>
+									<td>Membres d'une equipe</td>
+								</tr>
+							</tbody>
+						</table>
+					</div>
+
+					<h4>Evenements (heritage avec discriminateur)</h4>
+					<div class="ascii-diagram">
+						Event (abstract, type = discriminateur) ├── Tournament — type = 'TOURNAMENT' ├── Ranked
+						— type = 'RANKED' └── Interclan — type = 'INTERCLAN'
+					</div>
+
+					<div class="table-wrap">
+						<table>
+							<thead>
+								<tr>
+									<th>Entite</th>
+									<th>Description</th>
+								</tr>
+							</thead>
+							<tbody>
+								<tr>
+									<td><code>Event</code></td>
+									<td>Classe abstraite (nom, description, dates, type)</td>
+								</tr>
+								<tr>
+									<td><code>Tournament</code></td>
+									<td>Tournoi (type bracket, participants, organisation, phases)</td>
+								</tr>
+								<tr>
+									<td><code>Ranked</code></td>
+									<td>Session ranked (mode, queue, statut)</td>
+								</tr>
+								<tr>
+									<td><code>Interclan</code></td>
+									<td>Match clan vs clan (clanA, clanB, vainqueur, lineups)</td>
+								</tr>
+							</tbody>
+						</table>
+					</div>
+
+					<h4>Matchs et lobbies</h4>
+					<div class="table-wrap">
+						<table>
+							<thead>
+								<tr>
+									<th>Entite</th>
+									<th>Description</th>
+								</tr>
+							</thead>
+							<tbody>
+								<tr>
+									<td><code>Lobby</code></td>
+									<td>Salon de match (mode 1v1/2v2, etat, format, channel Discord)</td>
+								</tr>
+								<tr>
+									<td><code>LobbyUser</code></td>
+									<td>Joueur dans un lobby (equipe, score, forfait)</td>
+								</tr>
+								<tr>
+									<td><code>LobbyMatch</code></td>
+									<td>Partie dans un lobby (scores, validations par equipe + admin)</td>
+								</tr>
+								<tr>
+									<td><code>InterclanLineup</code></td>
+									<td>Lineup d'un clan pour un interclan (verrouillage 1h avant)</td>
+								</tr>
+								<tr>
+									<td><code>InterclanLineupMember</code></td>
+									<td>Membre d'une lineup (position)</td>
+								</tr>
+							</tbody>
+						</table>
+					</div>
+
+					<h4>Classement</h4>
+					<div class="table-wrap">
+						<table>
+							<thead>
+								<tr>
+									<th>Entite</th>
+									<th>Description</th>
+								</tr>
+							</thead>
+							<tbody>
+								<tr>
+									<td><code>Rank</code></td>
+									<td>
+										Palier de rang (Unranked &rarr; Bronze &rarr; Silver &rarr; Gold &rarr; Diamond
+										&rarr; Emerald &rarr; Immortal &rarr; Radiant)
+									</td>
+								</tr>
+								<tr>
+									<td><code>RankedQueueEntry</code></td>
+									<td>Entree dans la queue ranked (check-in, statut)</td>
+								</tr>
+							</tbody>
+						</table>
+					</div>
+
+					<h4>Organisations et tournois</h4>
+					<div class="table-wrap">
+						<table>
+							<thead>
+								<tr>
+									<th>Entite</th>
+									<th>Description</th>
+								</tr>
+							</thead>
+							<tbody>
+								<tr>
+									<td><code>Organization</code></td>
+									<td>Organisateur (nom, logo, description, owner, etat)</td>
+								</tr>
+								<tr>
+									<td><code>OrganizationManager</code></td>
+									<td>Gestionnaire d'organisation</td>
+								</tr>
+								<tr>
+									<td><code>OrganizationValidation</code></td>
+									<td>Validation admin d'une organisation</td>
+								</tr>
+								<tr>
+									<td><code>TournamentParticipant</code></td>
+									<td>Inscrit a un tournoi (seed, check-in, bracket ID)</td>
+								</tr>
+								<tr>
+									<td><code>TournamentSeries</code></td>
+									<td>Serie regroupant plusieurs tournois</td>
+								</tr>
+							</tbody>
+						</table>
+					</div>
+
+					<h4>Gouvernance</h4>
+					<div class="table-wrap">
+						<table>
+							<thead>
+								<tr>
+									<th>Entite</th>
+									<th>Description</th>
+								</tr>
+							</thead>
+							<tbody>
+								<tr>
+									<td><code>VoteProposal</code></td>
+									<td>Proposition de vote (type, strategie, expiration, votants eligibles)</td>
+								</tr>
+								<tr>
+									<td><code>Vote</code></td>
+									<td>Vote individuel (APPROVE / REJECT)</td>
+								</tr>
+							</tbody>
+						</table>
+					</div>
+
+					<h4>Divers</h4>
+					<div class="table-wrap">
+						<table>
+							<thead>
+								<tr>
+									<th>Entite</th>
+									<th>Description</th>
+								</tr>
+							</thead>
+							<tbody>
+								<tr>
+									<td><code>Guild</code></td>
+									<td>Serveur Discord (prefix, channels, config ranked)</td>
+								</tr>
+								<tr>
+									<td><code>Image</code></td>
+									<td>Image uploadee (Imgur ou local)</td>
+								</tr>
+								<tr>
+									<td><code>Notification</code></td>
+									<td>Notification systeme</td>
+								</tr>
+								<tr>
+									<td><code>EventAnnouncement</code></td>
+									<td>Annonce d'evenement</td>
+								</tr>
+								<tr>
+									<td><code>OauthCsrf</code></td>
+									<td>Token CSRF pour flux OAuth</td>
+								</tr>
+							</tbody>
+						</table>
+					</div>
+
+					<h3>Migrations</h3>
+					<div class="code-wrapper">
+						<button class="copy-btn" onclick="copyCode(this)">Copier</button>
+						<pre><code class="language-bash"># Appliquer les migrations en attente
+npx mikro-orm migration:up
+
+# Creer une nouvelle migration
+npx mikro-orm migration:create
+
+# Voir le statut
+npx mikro-orm migration:pending</code></pre>
+					</div>
+					<p>Les fichiers de migration sont dans <code>database/migrations/</code>.</p>
+				</section>
+
+				<!-- ==================== API REST ==================== -->
+				<section class="section" id="api-rest">
+					<h2>API REST</h2>
+					<p>
+						L'API est construite avec <strong>TsED</strong> (Express + decorateurs TypeScript).
+						Chaque controleur utilise <code>@Controller('/prefix')</code> et les routes protegees
+						utilisent le middleware <code>CookieAuthorize</code>.
+					</p>
+
+					<div class="code-wrapper">
+						<button class="copy-btn" onclick="copyCode(this)">Copier</button>
+						<pre><code class="language-typescript">// Exemple de controleur TsED
+@Controller('/clans')
+export class ClansController {
+  @Get('/')
+  async list(@QueryParams() query: PaginationParams) {
+    return this.clanService.findAll(query);
+  }
+
+  @Post('/create')
+  @Use(CookieAuthorize)
+  async create(@BodyParams() dto: CreateClanDTO) {
+    return this.clanService.create(dto);
+  }
+}</code></pre>
+					</div>
+
+					<h3>Authentification</h3>
+					<div class="table-wrap">
+						<table>
+							<thead>
+								<tr>
+									<th>Methode</th>
+									<th>Route</th>
+									<th>Auth</th>
+									<th>Description</th>
+								</tr>
+							</thead>
+							<tbody>
+								<tr>
+									<td><span class="method method-get">GET</span></td>
+									<td><code>/auth/me</code></td>
+									<td><span class="auth-badge auth-cookie">Cookie</span></td>
+									<td>Profil de l'utilisateur connecte</td>
+								</tr>
+								<tr>
+									<td><span class="method method-post">POST</span></td>
+									<td><code>/auth/logout</code></td>
+									<td><span class="auth-badge auth-cookie">Cookie</span></td>
+									<td>Deconnexion</td>
+								</tr>
+							</tbody>
+						</table>
+					</div>
+
+					<h3>Clans</h3>
+					<div class="table-wrap">
+						<table>
+							<thead>
+								<tr>
+									<th>Methode</th>
+									<th>Route</th>
+									<th>Auth</th>
+									<th>Description</th>
+								</tr>
+							</thead>
+							<tbody>
+								<tr>
+									<td><span class="method method-get">GET</span></td>
+									<td><code>/clans</code></td>
+									<td><span class="auth-badge auth-none">&mdash;</span></td>
+									<td>Liste paginee des clans</td>
+								</tr>
+								<tr>
+									<td><span class="method method-get">GET</span></td>
+									<td><code>/clans/:id</code></td>
+									<td><span class="auth-badge auth-none">&mdash;</span></td>
+									<td>Detail d'un clan</td>
+								</tr>
+								<tr>
+									<td><span class="method method-get">GET</span></td>
+									<td><code>/clans/:id/members</code></td>
+									<td><span class="auth-badge auth-none">&mdash;</span></td>
+									<td>Membres d'un clan</td>
+								</tr>
+								<tr>
+									<td><span class="method method-post">POST</span></td>
+									<td><code>/clans/create</code></td>
+									<td><span class="auth-badge auth-cookie">Cookie</span></td>
+									<td>Creer un clan</td>
+								</tr>
+								<tr>
+									<td><span class="method method-post">POST</span></td>
+									<td><code>/clans/updateMember</code></td>
+									<td><span class="auth-badge auth-cookie">Cookie</span></td>
+									<td>Modifier un membre (role, distinctions)</td>
+								</tr>
+								<tr>
+									<td><span class="method method-post">POST</span></td>
+									<td><code>/clans/kick/:id</code></td>
+									<td><span class="auth-badge auth-cookie">Cookie</span></td>
+									<td>Exclure un membre</td>
+								</tr>
+								<tr>
+									<td><span class="method method-get">GET</span></td>
+									<td><code>/clans/invites</code></td>
+									<td><span class="auth-badge auth-cookie">Cookie</span></td>
+									<td>Invitations du clan de l'utilisateur</td>
+								</tr>
+								<tr>
+									<td><span class="method method-post">POST</span></td>
+									<td><code>/clans/invites/create</code></td>
+									<td><span class="auth-badge auth-cookie">Cookie</span></td>
+									<td>Envoyer une invitation</td>
+								</tr>
+								<tr>
+									<td><span class="method method-post">POST</span></td>
+									<td><code>/clans/invites/revoke</code></td>
+									<td><span class="auth-badge auth-cookie">Cookie</span></td>
+									<td>Revoquer une invitation</td>
+								</tr>
+								<tr>
+									<td><span class="method method-post">POST</span></td>
+									<td><code>/clans/invites/notify</code></td>
+									<td><span class="auth-badge auth-cookie">Cookie</span></td>
+									<td>Relancer une invitation</td>
+								</tr>
+								<tr>
+									<td><span class="method method-get">GET</span></td>
+									<td><code>/clans/applications</code></td>
+									<td><span class="auth-badge auth-cookie">Cookie</span></td>
+									<td>Candidatures recues</td>
+								</tr>
+								<tr>
+									<td><span class="method method-post">POST</span></td>
+									<td><code>/clans/applications/create</code></td>
+									<td><span class="auth-badge auth-cookie">Cookie</span></td>
+									<td>Candidater a un clan</td>
+								</tr>
+								<tr>
+									<td><span class="method method-post">POST</span></td>
+									<td><code>/clans/applications/accept</code></td>
+									<td><span class="auth-badge auth-cookie">Cookie</span></td>
+									<td>Accepter une candidature</td>
+								</tr>
+								<tr>
+									<td><span class="method method-post">POST</span></td>
+									<td><code>/clans/applications/reject</code></td>
+									<td><span class="auth-badge auth-cookie">Cookie</span></td>
+									<td>Rejeter une candidature</td>
+								</tr>
+								<tr>
+									<td><span class="method method-get">GET</span></td>
+									<td><code>/clans/role</code></td>
+									<td><span class="auth-badge auth-cookie">Cookie</span></td>
+									<td>Role clan de l'utilisateur connecte</td>
+								</tr>
+							</tbody>
+						</table>
+					</div>
+
+					<h3>Utilisateurs</h3>
+					<div class="table-wrap">
+						<table>
+							<thead>
+								<tr>
+									<th>Methode</th>
+									<th>Route</th>
+									<th>Auth</th>
+									<th>Description</th>
+								</tr>
+							</thead>
+							<tbody>
+								<tr>
+									<td><span class="method method-get">GET</span></td>
+									<td><code>/users/:id</code></td>
+									<td><span class="auth-badge auth-none">&mdash;</span></td>
+									<td>Profil enrichi (stats ranked + interclan)</td>
+								</tr>
+							</tbody>
+						</table>
+					</div>
+
+					<h3>Tournois</h3>
+					<div class="table-wrap">
+						<table>
+							<thead>
+								<tr>
+									<th>Methode</th>
+									<th>Route</th>
+									<th>Auth</th>
+									<th>Description</th>
+								</tr>
+							</thead>
+							<tbody>
+								<tr>
+									<td><span class="method method-get">GET</span></td>
+									<td><code>/tournaments</code></td>
+									<td><span class="auth-badge auth-none">&mdash;</span></td>
+									<td>Liste des tournois (filtres)</td>
+								</tr>
+								<tr>
+									<td><span class="method method-get">GET</span></td>
+									<td><code>/tournaments/:id</code></td>
+									<td><span class="auth-badge auth-none">&mdash;</span></td>
+									<td>Detail + participants + bracket data</td>
+								</tr>
+								<tr>
+									<td><span class="method method-post">POST</span></td>
+									<td><code>/tournaments/create/achillea</code></td>
+									<td><span class="auth-badge auth-cookie">Cookie</span></td>
+									<td>Creer un tournoi</td>
+								</tr>
+								<tr>
+									<td><span class="method method-post">POST</span></td>
+									<td><code>/tournaments/participate/:id</code></td>
+									<td><span class="auth-badge auth-cookie">Cookie</span></td>
+									<td>S'inscrire</td>
+								</tr>
+								<tr>
+									<td><span class="method method-post">POST</span></td>
+									<td><code>/tournaments/unregister/:id</code></td>
+									<td><span class="auth-badge auth-cookie">Cookie</span></td>
+									<td>Se desinscrire</td>
+								</tr>
+								<tr>
+									<td><span class="method method-post">POST</span></td>
+									<td><code>/tournaments/remove-participant/:id</code></td>
+									<td><span class="auth-badge auth-cookie">Cookie</span></td>
+									<td>Retirer un participant</td>
+								</tr>
+								<tr>
+									<td><span class="method method-post">POST</span></td>
+									<td><code>/tournaments/set-participant-seeding/:id</code></td>
+									<td><span class="auth-badge auth-cookie">Cookie</span></td>
+									<td>Modifier le seed</td>
+								</tr>
+								<tr>
+									<td><span class="method method-post">POST</span></td>
+									<td><code>/tournaments/report-score</code></td>
+									<td><span class="auth-badge auth-cookie">Cookie</span></td>
+									<td>Reporter un score</td>
+								</tr>
+								<tr>
+									<td><span class="method method-post">POST</span></td>
+									<td><code>/tournaments/validate-score</code></td>
+									<td><span class="auth-badge auth-cookie">Cookie</span></td>
+									<td>Valider un score</td>
+								</tr>
+								<tr>
+									<td><span class="method method-post">POST</span></td>
+									<td><code>/tournaments/unvalidate-score</code></td>
+									<td><span class="auth-badge auth-cookie">Cookie</span></td>
+									<td>Invalider un score</td>
+								</tr>
+								<tr>
+									<td><span class="method method-post">POST</span></td>
+									<td><code>/tournaments/open-registrations/:id</code></td>
+									<td><span class="auth-badge auth-cookie">Cookie</span></td>
+									<td>Ouvrir les inscriptions</td>
+								</tr>
+								<tr>
+									<td><span class="method method-put">PUT</span></td>
+									<td><code>/tournaments/start/:id</code></td>
+									<td><span class="auth-badge auth-cookie">Cookie</span></td>
+									<td>Demarrer le tournoi</td>
+								</tr>
+								<tr>
+									<td><span class="method method-post">POST</span></td>
+									<td><code>/tournaments/generate-bracket/:id</code></td>
+									<td><span class="auth-badge auth-cookie">Cookie</span></td>
+									<td>Generer le bracket</td>
+								</tr>
+								<tr>
+									<td><span class="method method-post">POST</span></td>
+									<td><code>/tournaments/add-managers/:id</code></td>
+									<td><span class="auth-badge auth-cookie">Cookie</span></td>
+									<td>Ajouter des TOs</td>
+								</tr>
+								<tr>
+									<td><span class="method method-post">POST</span></td>
+									<td><code>/tournaments/remove-manager/:id</code></td>
+									<td><span class="auth-badge auth-cookie">Cookie</span></td>
+									<td>Retirer un TO</td>
+								</tr>
+								<tr>
+									<td><span class="method method-get">GET</span></td>
+									<td><code>/tournaments/lobby/:id</code></td>
+									<td><span class="auth-badge auth-cookie">Cookie</span></td>
+									<td>Detail d'un lobby</td>
+								</tr>
+							</tbody>
+						</table>
+					</div>
+
+					<h3>Organisations</h3>
+					<div class="table-wrap">
+						<table>
+							<thead>
+								<tr>
+									<th>Methode</th>
+									<th>Route</th>
+									<th>Auth</th>
+									<th>Description</th>
+								</tr>
+							</thead>
+							<tbody>
+								<tr>
+									<td><span class="method method-get">GET</span></td>
+									<td><code>/organizations</code></td>
+									<td><span class="auth-badge auth-none">&mdash;</span></td>
+									<td>Liste des organisations</td>
+								</tr>
+								<tr>
+									<td><span class="method method-get">GET</span></td>
+									<td><code>/organizations/:id</code></td>
+									<td><span class="auth-badge auth-none">&mdash;</span></td>
+									<td>Detail d'une organisation</td>
+								</tr>
+								<tr>
+									<td><span class="method method-post">POST</span></td>
+									<td><code>/organizations/create</code></td>
+									<td><span class="auth-badge auth-cookie">Cookie</span></td>
+									<td>Creer une organisation</td>
+								</tr>
+							</tbody>
+						</table>
+					</div>
+
+					<h3>Utilitaires</h3>
+					<div class="table-wrap">
+						<table>
+							<thead>
+								<tr>
+									<th>Methode</th>
+									<th>Route</th>
+									<th>Description</th>
+								</tr>
+							</thead>
+							<tbody>
+								<tr>
+									<td><span class="method method-get">GET</span></td>
+									<td><code>/health</code></td>
+									<td>Health check</td>
+								</tr>
+								<tr>
+									<td><span class="method method-get">GET</span></td>
+									<td><code>/stats</code></td>
+									<td>Statistiques globales</td>
+								</tr>
+								<tr>
+									<td><span class="method method-get">GET</span></td>
+									<td><code>/notifications/me</code></td>
+									<td>Notifications de l'utilisateur</td>
+								</tr>
+								<tr>
+									<td><span class="method method-patch">PATCH</span></td>
+									<td><code>/notifications/read/:id</code></td>
+									<td>Marquer comme lue</td>
+								</tr>
+							</tbody>
+						</table>
+					</div>
+				</section>
+
+				<!-- ==================== BOT DISCORD ==================== -->
+				<section class="section" id="bot-discord">
+					<h2>Bot Discord</h2>
+					<p>
+						Le bot utilise <strong>discordx</strong> qui ajoute une couche de decorateurs TypeScript
+						au-dessus de <strong>discord.js 14</strong> :
+					</p>
+
+					<div class="code-wrapper">
+						<button class="copy-btn" onclick="copyCode(this)">Copier</button>
+						<pre><code class="language-typescript">// Exemple de commande slash avec discordx
+@Discord()
+class ClanCommands {
+  @Slash({ description: 'Creer un clan', name: 'create-clan' })
+  @Guard(NotBot, Blacklist, NoClan, ClanEnabled)
+  async createClan(interaction: CommandInteraction) {
+    const modal = new ModalBuilder()
+      .setTitle('Creation de clan')
+      .setCustomId('create-clan-modal');
+    // ...
+    await interaction.showModal(modal);
+  }
+}</code></pre>
+					</div>
+
+					<h3>Commandes slash</h3>
+
+					<h4>Commandes publiques (16)</h4>
+					<div class="table-wrap">
+						<table>
+							<thead>
+								<tr>
+									<th>Commande</th>
+									<th>Description</th>
+									<th>Guards</th>
+								</tr>
+							</thead>
+							<tbody>
+								<tr>
+									<td><code>/create-clan</code></td>
+									<td>Creer un clan (modal avec nom, tag, bio)</td>
+									<td><code>NoClan</code>, <code>ClanEnabled</code></td>
+								</tr>
+								<tr>
+									<td><code>/clan-manage</code></td>
+									<td>Gerer son clan (sous-commandes)</td>
+									<td><code>ClanOnly</code>, <code>ClanRole(SubCaptain)</code></td>
+								</tr>
+								<tr>
+									<td><code>/clan-invite</code></td>
+									<td>Inviter un joueur dans le clan</td>
+									<td><code>ClanOnly</code>, <code>ClanRole(SubCaptain)</code></td>
+								</tr>
+								<tr>
+									<td><code>/clan-infos</code></td>
+									<td>Afficher les informations d'un clan</td>
+									<td>&mdash;</td>
+								</tr>
+								<tr>
+									<td><code>/clan-apply</code></td>
+									<td>Candidater a un clan</td>
+									<td><code>NoClan</code></td>
+								</tr>
+								<tr>
+									<td><code>/clan-leave</code></td>
+									<td>Quitter son clan</td>
+									<td><code>ClanOnly</code></td>
+								</tr>
+								<tr>
+									<td><code>/clan-teams</code></td>
+									<td>Gerer les equipes du clan</td>
+									<td><code>ClanOnly</code>, <code>ClanRole(SubCaptain)</code></td>
+								</tr>
+								<tr>
+									<td><code>/transfer-clan-ownership</code></td>
+									<td>Transferer le leadership</td>
+									<td><code>ClanOnly</code>, <code>ClanRole(Captain)</code></td>
+								</tr>
+								<tr>
+									<td><code>/disband-clan</code></td>
+									<td>Dissoudre le clan</td>
+									<td><code>ClanOnly</code>, <code>ClanRole(Captain)</code></td>
+								</tr>
+								<tr>
+									<td><code>/clan-approve</code></td>
+									<td>Approuver un clan (admin)</td>
+									<td><span class="auth-badge auth-admin">Admin</span></td>
+								</tr>
+								<tr>
+									<td><code>/interclan</code></td>
+									<td>Lancer ou gerer un interclan</td>
+									<td><code>ClanOnly</code></td>
+								</tr>
+								<tr>
+									<td><code>/player-infos</code></td>
+									<td>Informations sur un joueur</td>
+									<td>&mdash;</td>
+								</tr>
+								<tr>
+									<td><code>/settings</code></td>
+									<td>Parametres utilisateur</td>
+									<td>&mdash;</td>
+								</tr>
+								<tr>
+									<td><code>/guild-settings</code></td>
+									<td>Parametres du serveur Discord</td>
+									<td><code>GuildAdminOnly</code></td>
+								</tr>
+								<tr>
+									<td><code>/website</code></td>
+									<td>Lien vers le site web</td>
+									<td>&mdash;</td>
+								</tr>
+								<tr>
+									<td><code>/blacklist-view</code></td>
+									<td>Voir la blacklist (admin)</td>
+									<td><span class="auth-badge auth-admin">Admin</span></td>
+								</tr>
+							</tbody>
+						</table>
+					</div>
+
+					<h4>Commandes proprietaire (4)</h4>
+					<div class="table-wrap">
+						<table>
+							<thead>
+								<tr>
+									<th>Commande</th>
+									<th>Description</th>
+								</tr>
+							</thead>
+							<tbody>
+								<tr>
+									<td><code>/bot-role</code></td>
+									<td>Gerer les roles du bot</td>
+								</tr>
+								<tr>
+									<td><code>/blacklist</code></td>
+									<td>Blacklister un utilisateur</td>
+								</tr>
+								<tr>
+									<td><code>/maintenance</code></td>
+									<td>Activer/desactiver le mode maintenance</td>
+								</tr>
+								<tr>
+									<td><code>/resyncUsers</code></td>
+									<td>Resynchroniser les utilisateurs en base</td>
+								</tr>
+							</tbody>
+						</table>
+					</div>
+
+					<h3>Systeme de guards (14)</h3>
+					<p>
+						Les guards sont des middlewares qui s'executent <strong>avant</strong> le handler de
+						commande :
+					</p>
+
+					<div class="code-wrapper">
+						<button class="copy-btn" onclick="copyCode(this)">Copier</button>
+						<pre><code class="language-typescript">// Exemple de guard custom
+async function NoClan(interaction: CommandInteraction, client: Client, next: Function) {
+  const user = await em.findOne(ClanMember, { user: interaction.user.id });
+  if (user) {
+    return interaction.reply({ content: 'Vous etes deja dans un clan.', ephemeral: true });
+  }
+  next(); // Continuer vers le handler
+}</code></pre>
+					</div>
+
+					<div class="table-wrap">
+						<table>
+							<thead>
+								<tr>
+									<th>Guard</th>
+									<th>Description</th>
+								</tr>
+							</thead>
+							<tbody>
+								<tr>
+									<td><code>NotBot</code></td>
+									<td>Refuse les interactions de bots</td>
+								</tr>
+								<tr>
+									<td><code>Blacklist</code></td>
+									<td>Refuse les utilisateurs bannis</td>
+								</tr>
+								<tr>
+									<td><code>Maintenance</code></td>
+									<td>Refuse si le bot est en maintenance</td>
+								</tr>
+								<tr>
+									<td><code>NoClan</code></td>
+									<td>L'utilisateur ne doit pas avoir de clan</td>
+								</tr>
+								<tr>
+									<td><code>ClanOnly</code></td>
+									<td>L'utilisateur doit avoir un clan</td>
+								</tr>
+								<tr>
+									<td><code>ClanRole(role)</code></td>
+									<td>
+										Role clan minimum requis (Trial &rarr; Member &rarr; SubCaptain &rarr; Captain)
+									</td>
+								</tr>
+								<tr>
+									<td><code>ClanApprove</code></td>
+									<td>Le clan doit etre approuve</td>
+								</tr>
+								<tr>
+									<td><code>ClanEnabled</code></td>
+									<td>Les clans doivent etre actives sur le serveur</td>
+								</tr>
+								<tr>
+									<td><code>GuildOnly</code></td>
+									<td>Pas de messages prives</td>
+								</tr>
+								<tr>
+									<td><code>GuildAdminOnly</code></td>
+									<td>Administrateur du serveur requis</td>
+								</tr>
+								<tr>
+									<td><code>RequireBotRole</code></td>
+									<td>Role bot specifique requis</td>
+								</tr>
+								<tr>
+									<td><code>NSFW</code></td>
+									<td>Salon NSFW requis</td>
+								</tr>
+								<tr>
+									<td><code>ExtractLocale</code></td>
+									<td>Extraire la langue de l'interaction Discord</td>
+								</tr>
+								<tr>
+									<td><code>RequestContextIsolator</code></td>
+									<td>Isoler le contexte EntityManager Mikro-ORM</td>
+								</tr>
+							</tbody>
+						</table>
+					</div>
+
+					<h3>Handlers de composants (boutons, selects, modals)</h3>
+					<p>
+						Les interactions (boutons, menus de selection) sont gerees via les decorateurs
+						<code>@ButtonComponent</code> et <code>@SelectMenuComponent</code> :
+					</p>
+
+					<div class="code-wrapper">
+						<button class="copy-btn" onclick="copyCode(this)">Copier</button>
+						<pre><code class="language-typescript">@Discord()
+class InviteButtons {
+  @ButtonComponent({ id: /^accept-invite-\d+$/ })
+  async acceptInvite(interaction: ButtonInteraction) {
+    const inviteId = interaction.customId.split('-').pop();
+    // Logique d'acceptation...
+    await interaction.update({ content: 'Invitation acceptee !' });
+  }
+}</code></pre>
+					</div>
+
+					<div class="table-wrap">
+						<table>
+							<thead>
+								<tr>
+									<th>Fichier</th>
+									<th>Description</th>
+								</tr>
+							</thead>
+							<tbody>
+								<tr>
+									<td><code>vote-buttons.ts</code></td>
+									<td>Approbation/rejet de propositions</td>
+								</tr>
+								<tr>
+									<td><code>clan-approval-buttons.ts</code></td>
+									<td>Validation de creation de clan</td>
+								</tr>
+								<tr>
+									<td><code>invite-buttons.ts</code></td>
+									<td>Accepter/refuser une invitation</td>
+								</tr>
+								<tr>
+									<td><code>application-buttons.ts</code></td>
+									<td>Accepter/refuser une candidature</td>
+								</tr>
+								<tr>
+									<td><code>interclan-buttons.ts</code></td>
+									<td>Actions interclan (lineup, lancement)</td>
+								</tr>
+								<tr>
+									<td><code>matchmaker-buttons.ts</code></td>
+									<td>Lobby et matchmaking ranked</td>
+								</tr>
+								<tr>
+									<td><code>clan-management-buttons.ts</code></td>
+									<td>Gestion du clan</td>
+								</tr>
+								<tr>
+									<td><code>team-manager-buttons.ts</code></td>
+									<td>Gestion des equipes</td>
+								</tr>
+								<tr>
+									<td><code>guild-buttons.ts</code></td>
+									<td>Configuration du serveur Discord</td>
+								</tr>
+								<tr>
+									<td><code>miscellaneous-buttons.ts</code></td>
+									<td>Autres interactions</td>
+								</tr>
+							</tbody>
+						</table>
+					</div>
+				</section>
+
+				<!-- ==================== WEBSOCKET ==================== -->
+				<section class="section" id="websocket">
+					<h2>WebSocket</h2>
+					<p>
+						Le serveur <strong>Socket.io</strong> gere les notifications temps reel via le namespace
+						<code>/notifications</code> :
+					</p>
+
+					<div class="code-wrapper">
+						<button class="copy-btn" onclick="copyCode(this)">Copier</button>
+						<pre><code class="language-typescript">// Cote serveur — namespace avec middleware d'authentification
+const notificationsNs = io.of('/notifications');
+
+notificationsNs.use((socket, next) => {
+  // Verifier le cookie JWT
+  const token = parseCookie(socket.handshake.headers.cookie);
+  if (!verifyToken(token)) {
+    return next(new Error('Non autorise'));
+  }
+  next();
+});
+
+notificationsNs.on('connection', (socket) => {
+  socket.join(`user:${socket.data.userId}`);
+});
+
+// Emission ciblee vers un utilisateur
+notificationsNs.to(`user:${userId}`).emit('notification', {
+  title: 'Nouvelle invitation',
+  message: 'Vous avez ete invite dans le clan X',
+  type: NotificationType.CLAN_INVITE,
+  category: NotificationCategory.CLAN
+});</code></pre>
+					</div>
+
+					<div class="code-wrapper">
+						<button class="copy-btn" onclick="copyCode(this)">Copier</button>
+						<pre><code class="language-typescript">// Cote client (AchilleaWeb)
+const socket = io('/notifications', {
+  withCredentials: true,
+  transports: ['websocket', 'polling']  // WebSocket prioritaire
+});
+
+socket.on('notification', (data) => { /* ... */ });</code></pre>
+					</div>
+				</section>
+
+				<!-- ==================== SERVICES METIER ==================== -->
+				<section class="section" id="services-metier">
+					<h2>Services metier</h2>
+					<p>
+						Tous les services sont des <strong>singletons</strong> injectes via
+						<code>tsyringe</code> :
+					</p>
+
+					<div class="code-wrapper">
+						<button class="copy-btn" onclick="copyCode(this)">Copier</button>
+						<pre><code class="language-typescript">@Service()
+export class ClanService {
+  constructor(
+    private db: Database,
+    private client: Client,
+    private notifications: NotificationService
+  ) {}
+
+  async createClan(name: string, shortName: string, founders: string[]) {
+    const clan = new Clan(name, shortName);
+    this.db.em.persist(clan);
+    await this.db.em.flush(); // Transaction atomique
+    return clan;
+  }
+}</code></pre>
+					</div>
+
+					<div class="table-wrap">
+						<table>
+							<thead>
+								<tr>
+									<th>Service</th>
+									<th>Responsabilite</th>
+								</tr>
+							</thead>
+							<tbody>
+								<tr>
+									<td><strong>UserService</strong></td>
+									<td>Gestion utilisateurs, DTOs enrichis, stats ranked/interclan</td>
+								</tr>
+								<tr>
+									<td><strong>ClanService</strong></td>
+									<td>CRUD clans, membres, invitations, candidatures, equipes</td>
+								</tr>
+								<tr>
+									<td><strong>TournamentsService</strong></td>
+									<td>Gestion tournois, seeding, inscriptions, brackets</td>
+								</tr>
+								<tr>
+									<td><strong>RankedQueueService</strong></td>
+									<td>Queue ranked, matchmaking par Elo</td>
+								</tr>
+								<tr>
+									<td><strong>Matchmaker</strong></td>
+									<td>Algorithme de pairing joueurs par Elo</td>
+								</tr>
+								<tr>
+									<td><strong>BracketService</strong></td>
+									<td>Generation et gestion des brackets (brackets-manager)</td>
+								</tr>
+								<tr>
+									<td><strong>NotificationService</strong></td>
+									<td>Envoi de notifications (WebSocket + Discord)</td>
+								</tr>
+								<tr>
+									<td><strong>VotingService</strong></td>
+									<td>Gestion des propositions et votes</td>
+								</tr>
+								<tr>
+									<td><strong>OAuthService</strong></td>
+									<td>Flux OAuth (Discord, Twitch, YouTube)</td>
+								</tr>
+								<tr>
+									<td><strong>OrganizationService</strong></td>
+									<td>CRUD organisations</td>
+								</tr>
+								<tr>
+									<td><strong>CustomImagesUpload</strong></td>
+									<td>Upload d'images vers Imgur (ou local en fallback)</td>
+								</tr>
+								<tr>
+									<td><strong>Database</strong></td>
+									<td>Initialisation Mikro-ORM, EntityManager, migrations</td>
+								</tr>
+								<tr>
+									<td><strong>Logger</strong></td>
+									<td>Logging console + channels Discord dedies</td>
+								</tr>
+								<tr>
+									<td><strong>Store</strong></td>
+									<td>Etat global reactif (RxJS Subjects)</td>
+								</tr>
+								<tr>
+									<td><strong>Scheduler</strong></td>
+									<td>Taches cron planifiees</td>
+								</tr>
+								<tr>
+									<td><strong>EventManager</strong></td>
+									<td>Bus d'evenements internes (RxJS)</td>
+								</tr>
+								<tr>
+									<td><strong>ErrorHandler</strong></td>
+									<td>Gestion centralisee des erreurs (log + report Discord)</td>
+								</tr>
+								<tr>
+									<td><strong>Stats</strong></td>
+									<td>Statistiques globales de la plateforme</td>
+								</tr>
+								<tr>
+									<td><strong>AnnouncementService</strong></td>
+									<td>Annonces d'evenements</td>
+								</tr>
+								<tr>
+									<td><strong>Twitch</strong></td>
+									<td>Integration Twitch (live, connexion)</td>
+								</tr>
+								<tr>
+									<td><strong>ChallongeService</strong></td>
+									<td>Integration API Challonge (legacy)</td>
+								</tr>
+								<tr>
+									<td><strong>PluginsManager</strong></td>
+									<td>Chargement dynamique de plugins</td>
+								</tr>
+								<tr>
+									<td><strong>WorkerService</strong></td>
+									<td>Workers background</td>
+								</tr>
+								<tr>
+									<td><strong>Suggestions</strong></td>
+									<td>Autocompletion et recommandations</td>
+								</tr>
+							</tbody>
+						</table>
+					</div>
+				</section>
+
+				<!-- ==================== AUTH ET PERMISSIONS ==================== -->
+				<section class="section" id="auth-permissions">
+					<h2>Authentification et permissions</h2>
+
+					<h3>Flux OAuth (Discord)</h3>
+					<div class="ascii-diagram">
+						&#x250C;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2510;
+						&#x250C;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2510;
+						&#x250C;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2510;
+						&#x2502; Client &#x2502;&#x2500;&#x2500;&#x2500;&#x2500;&gt;&#x2502; GET /auth/
+						&#x2502;&#x2500;&#x2500;&#x2500;&#x2500;&gt;&#x2502; Discord &#x2502; &#x2502; (Web)
+						&#x2502; &#x2502; discord &#x2502; &#x2502; OAuth2 &#x2502;
+						&#x2514;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2518;
+						&#x2514;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2518;
+						&#x2514;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x252C;&#x2500;&#x2500;&#x2500;&#x2500;&#x2518;
+						&#x2502; Code
+						&#x250C;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2518;
+						v
+						&#x250C;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2510;
+						&#x250C;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2510;
+						&#x2502; Echange &#x2502;&#x2500;&#x2500;&#x2500;&#x2500;&gt;&#x2502; JWT signe &#x2502;
+						&#x2502; code&#x2192;token &#x2502; &#x2502; (cookie &#x2502; &#x2502; + upsert &#x2502;
+						&#x2502; HTTP-only) &#x2502; &#x2502; User en DB &#x2502;
+						&#x2514;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x252C;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2518;
+						&#x2514;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2518;
+						&#x2502; v
+						&#x250C;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2510;
+						&#x2502; Toutes les &#x2502; &#x2502; requetes API &#x2502; &#x2502; incluent le
+						&#x2502; &#x2502; cookie JWT &#x2502;
+						&#x2514;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2518;
+					</div>
+
+					<h3>Roles utilisateur (hierarchie)</h3>
+					<div class="code-wrapper">
+						<button class="copy-btn" onclick="copyCode(this)">Copier</button>
+						<pre><code class="language-typescript">enum UserRole {
+  User = 0,                // Utilisateur standard
+  Moderator = 1,           // Moderateur
+  Administrator = 2,       // Administrateur
+  SuperAdministrator = 3   // Super administrateur (proprietaire)
+}</code></pre>
+					</div>
+
+					<h3>Roles clan (hierarchie)</h3>
+					<div class="code-wrapper">
+						<button class="copy-btn" onclick="copyCode(this)">Copier</button>
+						<pre><code class="language-typescript">enum ClanMemberRole {
+  Trial = 0,       // Periode d'essai
+  Member = 1,      // Membre confirme
+  SubCaptain = 2,  // Vice-capitaine (gestion courante)
+  Captain = 3      // Capitaine (proprietaire du clan)
+}</code></pre>
+					</div>
+
+					<h3>Distinctions clan</h3>
+					<div class="code-wrapper">
+						<button class="copy-btn" onclick="copyCode(this)">Copier</button>
+						<pre><code class="language-typescript">enum ClanMemberDistinction {
+  Player,          // Joueur
+  Staff,           // Staff
+  Artist,          // Artiste
+  ContentCreator   // Createur de contenu
+}</code></pre>
+					</div>
+
+					<h3>Strategies de vote</h3>
+					<div class="table-wrap">
+						<table>
+							<thead>
+								<tr>
+									<th>Strategie</th>
+									<th>Regle</th>
+								</tr>
+							</thead>
+							<tbody>
+								<tr>
+									<td><code>UNANIMOUS</code></td>
+									<td>Tous les votants doivent approuver</td>
+								</tr>
+								<tr>
+									<td><code>MAJORITY</code></td>
+									<td>Majorite simple (&gt;50%)</td>
+								</tr>
+								<tr>
+									<td><code>SUPERMAJORITY_2_3</code></td>
+									<td>Super-majorite (&ge; 66.7%)</td>
+								</tr>
+							</tbody>
+						</table>
+					</div>
+				</section>
+
+				<!-- ==================== JOBS ET QUEUES ==================== -->
+				<section class="section" id="jobs-queues">
+					<h2>Jobs et queues</h2>
+					<p>
+						Le backend utilise <strong>BullMQ</strong> avec <strong>Redis</strong> pour les taches
+						asynchrones et differees :
+					</p>
+
+					<div class="code-wrapper">
+						<button class="copy-btn" onclick="copyCode(this)">Copier</button>
+						<pre><code class="language-typescript">import { Queue, Worker } from 'bullmq';
+
+const connection = { host: '127.0.0.1', port: 6379, db: 0 };
+
+// Definition de la queue
+const clanQueue = new Queue('clan', { connection });
+
+// Planifier une verification dans 24h
+await clanQueue.add('checkClanMemberCount', { clanId }, {
+  delay: 24 * 60 * 60 * 1000  // 24 heures
+});
+
+// Worker qui traite les jobs
+const worker = new Worker('clan', async (job) => {
+  if (job.name === 'checkClanMemberCount') {
+    const clan = await em.findOne(Clan, job.data.clanId, { populate: ['members'] });
+    if (clan && clan.members.length < 5) {
+      await disbandClan(clan);
+    }
+  }
+}, { connection });</code></pre>
+					</div>
+
+					<h3>Jobs actifs</h3>
+					<div class="table-wrap">
+						<table>
+							<thead>
+								<tr>
+									<th>Queue</th>
+									<th>Job</th>
+									<th>Description</th>
+									<th>Delai</th>
+								</tr>
+							</thead>
+							<tbody>
+								<tr>
+									<td><code>clan</code></td>
+									<td><code>checkClanMemberCount</code></td>
+									<td>Verifie qu'un clan a >= 5 membres, sinon dissolution</td>
+									<td>24h apres creation</td>
+								</tr>
+							</tbody>
+						</table>
+					</div>
+
+					<h3>Configuration Redis</h3>
+					<div class="table-wrap">
+						<table>
+							<thead>
+								<tr>
+									<th>Environnement</th>
+									<th>Host</th>
+									<th>Port</th>
+									<th>Base</th>
+								</tr>
+							</thead>
+							<tbody>
+								<tr>
+									<td>Production</td>
+									<td><code>127.0.0.1</code></td>
+									<td><code>6379</code></td>
+									<td><code>0</code></td>
+								</tr>
+								<tr>
+									<td>Developpement</td>
+									<td><code>127.0.0.1</code></td>
+									<td><code>6379</code></td>
+									<td><code>1</code></td>
+								</tr>
+							</tbody>
+						</table>
+					</div>
+				</section>
+
+				<!-- ==================== INTERNATIONALISATION ==================== -->
+				<section class="section" id="i18n">
+					<h2>Internationalisation</h2>
+					<p>
+						4 langues supportees via <strong>typesafe-i18n</strong> (types generes automatiquement)
+						:
+					</p>
+
+					<div class="table-wrap">
+						<table>
+							<thead>
+								<tr>
+									<th>Code</th>
+									<th>Langue</th>
+									<th>Statut</th>
+								</tr>
+							</thead>
+							<tbody>
+								<tr>
+									<td><code>fr</code></td>
+									<td>Francais</td>
+									<td>Langue par defaut</td>
+								</tr>
+								<tr>
+									<td><code>en</code></td>
+									<td>English</td>
+									<td>Complet</td>
+								</tr>
+								<tr>
+									<td><code>ru</code></td>
+									<td>Russe</td>
+									<td>Complet</td>
+								</tr>
+								<tr>
+									<td><code>uk</code></td>
+									<td>Ukrainien</td>
+									<td>Complet</td>
+								</tr>
+							</tbody>
+						</table>
+					</div>
+
+					<p>
+						Les traductions sont dans <code>src/i18n/{locale}/</code>. La langue est extraite
+						automatiquement de l'interaction Discord via le guard <code>ExtractLocale</code>.
+					</p>
+
+					<div class="code-wrapper">
+						<button class="copy-btn" onclick="copyCode(this)">Copier</button>
+						<pre><code class="language-bash"># Regenerer les types apres modification des traductions
+npm run i18n</code></pre>
+					</div>
+				</section>
+
+				<!-- ==================== CONFIGURATION ==================== -->
+				<section class="section" id="configuration">
+					<h2>Configuration</h2>
+
+					<h3>Variables d'environnement</h3>
+
+					<h4>Obligatoires</h4>
+					<div class="table-wrap">
+						<table>
+							<thead>
+								<tr>
+									<th>Variable</th>
+									<th>Description</th>
+								</tr>
+							</thead>
+							<tbody>
+								<tr>
+									<td><code>NODE_ENV</code></td>
+									<td><code>development</code> ou <code>production</code></td>
+								</tr>
+								<tr>
+									<td><code>BOT_TOKEN</code></td>
+									<td>Token du bot Discord (production)</td>
+								</tr>
+								<tr>
+									<td><code>DEV_BOT_TOKEN</code></td>
+									<td>Token du bot Discord (developpement)</td>
+								</tr>
+								<tr>
+									<td><code>TEST_GUILD_ID</code></td>
+									<td>ID du serveur Discord de test</td>
+								</tr>
+								<tr>
+									<td><code>BOT_OWNER_ID</code></td>
+									<td>ID Discord du proprietaire</td>
+								</tr>
+								<tr>
+									<td><code>DATABASE_HOST</code></td>
+									<td>Hote PostgreSQL</td>
+								</tr>
+								<tr>
+									<td><code>DATABASE_PORT</code></td>
+									<td>Port PostgreSQL</td>
+								</tr>
+								<tr>
+									<td><code>DATABASE_NAME</code></td>
+									<td>Nom de la base de donnees</td>
+								</tr>
+								<tr>
+									<td><code>DATABASE_USER</code></td>
+									<td>Utilisateur PostgreSQL</td>
+								</tr>
+								<tr>
+									<td><code>DATABASE_PASSWORD</code></td>
+									<td>Mot de passe PostgreSQL</td>
+								</tr>
+								<tr>
+									<td><code>JWT_SECRET_KEY</code></td>
+									<td>Cle de signature JWT</td>
+								</tr>
+								<tr>
+									<td><code>API_PORT</code></td>
+									<td>Port de l'API REST (defaut: 4000)</td>
+								</tr>
+								<tr>
+									<td><code>SOCKET_PORT</code></td>
+									<td>Port WebSocket</td>
+								</tr>
+							</tbody>
+						</table>
+					</div>
+
+					<h4>Optionnelles (integrations)</h4>
+					<div class="table-wrap">
+						<table>
+							<thead>
+								<tr>
+									<th>Variable</th>
+									<th>Description</th>
+								</tr>
+							</thead>
+							<tbody>
+								<tr>
+									<td><code>IMGUR_CLIENT_ID</code></td>
+									<td>Upload d'images vers Imgur</td>
+								</tr>
+								<tr>
+									<td><code>TWITCH_CLIENT_ID</code> / <code>TWITCH_SECRET</code></td>
+									<td>Integration Twitch</td>
+								</tr>
+								<tr>
+									<td><code>CHALLONGE_CLIENT_ID</code> / <code>CHALLONGE_API_KEY</code></td>
+									<td>Integration Challonge</td>
+								</tr>
+								<tr>
+									<td><code>IMAGE_SERVER_API_KEY</code></td>
+									<td>Serveur d'images custom</td>
+								</tr>
+							</tbody>
+						</table>
+					</div>
+
+					<h3>Fichiers de configuration</h3>
+					<div class="table-wrap">
+						<table>
+							<thead>
+								<tr>
+									<th>Fichier</th>
+									<th>Description</th>
+								</tr>
+							</thead>
+							<tbody>
+								<tr>
+									<td><code>src/configs/general.ts</code></td>
+									<td>Nom du bot, IDs developpeurs, guild principal, roles et channels Discord</td>
+								</tr>
+								<tr>
+									<td><code>src/configs/database.ts</code></td>
+									<td>Connexion PostgreSQL (host, port, credentials)</td>
+								</tr>
+								<tr>
+									<td><code>src/configs/redis.ts</code></td>
+									<td>Connexion Redis (host, port, base)</td>
+								</tr>
+								<tr>
+									<td><code>src/configs/api.ts</code></td>
+									<td>Activation/desactivation de l'API REST</td>
+								</tr>
+								<tr>
+									<td><code>src/configs/logs.ts</code></td>
+									<td>Configuration du logging</td>
+								</tr>
+								<tr>
+									<td><code>src/configs/stats.ts</code></td>
+									<td>Configuration des statistiques</td>
+								</tr>
+								<tr>
+									<td><code>mikro-orm.config.ts</code></td>
+									<td>Configuration Mikro-ORM (driver, entities, migrations)</td>
+								</tr>
+								<tr>
+									<td><code>pm2.config.json</code></td>
+									<td>Configuration PM2 (process manager)</td>
+								</tr>
+							</tbody>
+						</table>
+					</div>
+
+					<h3>Configuration Discord (general.ts)</h3>
+					<div class="code-wrapper">
+						<button class="copy-btn" onclick="copyCode(this)">Copier</button>
+						<pre><code class="language-typescript">export const generalConfig = {
+  name: 'AchilleaBot',
+  defaultLocale: 'fr',
+  devs: ['id1', 'id2', ...],
+  coreGuild: process.env.NODE_ENV === 'production'
+    ? '1055585286320554055'    // Serveur prod
+    : '1210166824918978600',   // Serveur dev
+};</code></pre>
+					</div>
+				</section>
+
+				<!-- ==================== DEPLOIEMENT ==================== -->
+				<section class="section" id="deploiement">
+					<h2>Deploiement</h2>
+
+					<h3>Docker</h3>
+					<div class="code-wrapper">
+						<button class="copy-btn" onclick="copyCode(this)">Copier</button>
+						<pre><code class="language-bash">docker compose up -d</code></pre>
+					</div>
+					<p>
+						Le <code>docker-compose.yml</code> configure le conteneur applicatif avec les volumes
+						necessaires :
+					</p>
+					<ul>
+						<li><code>database/</code> — fichiers de migration</li>
+						<li><code>logs/</code> — fichiers de log</li>
+						<li><code>assets/</code> — assets statiques</li>
+					</ul>
+
+					<h3>PM2 (production)</h3>
+					<div class="code-wrapper">
+						<button class="copy-btn" onclick="copyCode(this)">Copier</button>
+						<pre><code class="language-bash">npm run build
+pm2 start pm2.config.json
+pm2 save</code></pre>
+					</div>
+
+					<h3>Manuel</h3>
+					<div class="code-wrapper">
+						<button class="copy-btn" onclick="copyCode(this)">Copier</button>
+						<pre><code class="language-bash">npm run build
+NODE_ENV=production node build/main.js</code></pre>
+					</div>
+
+					<h3>Verification</h3>
+					<div class="code-wrapper">
+						<button class="copy-btn" onclick="copyCode(this)">Copier</button>
+						<pre><code class="language-bash"># Health check API
+curl http://localhost:4000/health
+
+# Logs PM2
+pm2 logs achillea</code></pre>
+					</div>
+				</section>
+
+				<!-- ==================== CONTRIBUTION ==================== -->
+				<section class="section" id="contribution">
+					<h2>Contribution</h2>
+
+					<h3>Conventions</h3>
+					<ul>
+						<li>
+							<strong>Commits</strong> : Conventional Commits en francais (<code
+								>feat: ajout du systeme de vote</code
+							>, <code>fix: correction du calcul Elo</code>)
+						</li>
+						<li>
+							<strong>Branches</strong> : <code>feature/</code>, <code>fix/</code>,
+							<code>chore/</code>
+						</li>
+						<li><strong>Linting</strong> : ESLint configure, lancer avant chaque commit</li>
+					</ul>
+
+					<h3>Structure d'une commande Discord</h3>
+					<div class="code-wrapper">
+						<button class="copy-btn" onclick="copyCode(this)">Copier</button>
+						<pre><code class="language-typescript">@Discord()
+class MaCommande {
+  @Slash({ description: 'Description', name: 'ma-commande' })
+  @Guard(NotBot, Blacklist, /* autres guards */)
+  async handler(
+    @SlashOption({
+      name: 'option',
+      description: 'Description de l\'option',
+      type: ApplicationCommandOptionType.String,
+      required: true
+    })
+    option: string,
+    interaction: CommandInteraction
+  ) {
+    // Logique...
+    await interaction.reply({ content: 'Reponse', ephemeral: true });
+  }
+}</code></pre>
+					</div>
+
+					<h3>Structure d'un controleur API</h3>
+					<div class="code-wrapper">
+						<button class="copy-btn" onclick="copyCode(this)">Copier</button>
+						<pre><code class="language-typescript">@Controller('/mon-endpoint')
+export class MonController {
+  @Inject() private monService: MonService;
+
+  @Get('/')
+  async list() { return this.monService.findAll(); }
+
+  @Post('/')
+  @Use(CookieAuthorize)
+  async create(@BodyParams() dto: CreateDTO) {
+    return this.monService.create(dto);
+  }
+}</code></pre>
+					</div>
+
+					<div class="card" style="margin-top: 32px; text-align: center">
+						<p style="font-size: 14px; color: var(--text-dim)">
+							MIT License &mdash; Base sur
+							<a href="https://github.com/barthofu/tscord" target="_blank" rel="noopener">TSCord</a>
+							par barthofu
+						</p>
+					</div>
+				</section>
+			</div>
+
+			<!-- Footer -->
+			<footer class="footer">
+				<div class="footer-links">
+					<a href="https://github.com/rose-griffon/AchilleaBackend" target="_blank" rel="noopener"
+						>GitHub</a
+					>
+					<a href="#presentation">Documentation</a>
+				</div>
+				<p>Rose Griffon &mdash; Achillea Backend</p>
+			</footer>
+		</div>
+
+		<!-- Prism.js CDN -->
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-typescript.min.js"></script>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-bash.min.js"></script>
+
+		<script>
+			// ===== Mobile sidebar toggle =====
+			const hamburger = document.getElementById("hamburger");
+			const sidebar = document.getElementById("sidebar");
+			const overlay = document.getElementById("sidebar-overlay");
+
+			function toggleSidebar() {
+				sidebar.classList.toggle("open");
+				overlay.classList.toggle("open");
+				hamburger.classList.toggle("open");
+			}
+			hamburger.addEventListener("click", toggleSidebar);
+			overlay.addEventListener("click", toggleSidebar);
+
+			// Close sidebar on nav link click (mobile)
+			document.querySelectorAll(".sidebar-nav a").forEach((link) => {
+				link.addEventListener("click", () => {
+					if (window.innerWidth <= 768) {
+						sidebar.classList.remove("open");
+						overlay.classList.remove("open");
+						hamburger.classList.remove("open");
+					}
+				});
+			});
+
+			// ===== Active nav highlight on scroll =====
+			const sections = document.querySelectorAll(".section[id]");
+			const navLinks = document.querySelectorAll(".sidebar-nav a");
+
+			function updateActiveNav() {
+				const scrollY = window.scrollY + 120;
+				let currentId = "";
+
+				sections.forEach((section) => {
+					const top = section.offsetTop;
+					const height = section.offsetHeight;
+					if (scrollY >= top && scrollY < top + height) {
+						currentId = section.getAttribute("id");
+					}
+				});
+
+				// If scrolled near bottom, activate last section
+				if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 100) {
+					currentId = sections[sections.length - 1].getAttribute("id");
+				}
+
+				navLinks.forEach((link) => {
+					link.classList.remove("active");
+					if (link.getAttribute("href") === "#" + currentId) {
+						link.classList.add("active");
+					}
+				});
+			}
+
+			window.addEventListener("scroll", updateActiveNav, { passive: true });
+			updateActiveNav();
+
+			// ===== Fade-in sections with IntersectionObserver =====
+			const observer = new IntersectionObserver(
+				(entries) => {
+					entries.forEach((entry) => {
+						if (entry.isIntersecting) {
+							entry.target.classList.add("visible");
+						}
+					});
+				},
+				{
+					threshold: 0.08,
+					rootMargin: "0px 0px -40px 0px",
+				}
+			);
+
+			sections.forEach((section) => observer.observe(section));
+
+			// ===== Copy button =====
+			function copyCode(btn) {
+				const pre = btn.parentElement.querySelector("pre");
+				const code = pre.querySelector("code");
+				const text = code.textContent || code.innerText;
+
+				navigator.clipboard
+					.writeText(text)
+					.then(() => {
+						btn.textContent = "Copie !";
+						btn.classList.add("copied");
+						setTimeout(() => {
+							btn.textContent = "Copier";
+							btn.classList.remove("copied");
+						}, 2000);
+					})
+					.catch(() => {
+						// Fallback for older browsers
+						const textarea = document.createElement("textarea");
+						textarea.value = text;
+						textarea.style.position = "fixed";
+						textarea.style.opacity = "0";
+						document.body.appendChild(textarea);
+						textarea.select();
+						document.execCommand("copy");
+						document.body.removeChild(textarea);
+						btn.textContent = "Copie !";
+						btn.classList.add("copied");
+						setTimeout(() => {
+							btn.textContent = "Copier";
+							btn.classList.remove("copied");
+						}, 2000);
+					});
+			}
+		</script>
+	</body>
+</html>

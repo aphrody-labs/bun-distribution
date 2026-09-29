@@ -1,0 +1,614 @@
+import paths from "../api/paths";
+import type { Route } from "../api/types";
+
+import { RouteBases, RequestMethod } from "../../../rest/v2/";
+
+import { shouldIncludeRequestBody } from "../../../rest/v2/oauth2/rest/client";
+
+import {
+	type ItemType,
+	QueryBuilder,
+	RelationshipFields,
+	RelationshipMap,
+	Type,
+	WriteResourcePayload,
+	WriteResourceResponse,
+	WriteResourceType,
+} from "../../../schemas/v2/";
+
+import { CacheStore, type CacheStoreOptions } from "../cache/";
+
+import {
+	PatreonMockData,
+	PatreonMockDataAttributes,
+	type PatreonMockDataOptions,
+	type PatreonMockDataQuery,
+} from "./data";
+
+import { findAPIPath, type PatreonMockRouteId } from "./paths";
+
+import { PatreonMockWebhooks, type PatreonMockWebhooksOptions } from "./webhooks";
+
+import type { If } from "../../../utils/";
+
+export interface PatreonMockHandlerOptions {
+	cache?: boolean | undefined;
+	random?: boolean | undefined;
+	statusCode?: number;
+
+	/**
+	 * The additional headers to send on requests.
+	 * @default {}
+	 */
+	headers?: Record<string, string>;
+}
+
+/**
+ * Options for mocking the Patreon API.
+ */
+export interface PatreonMockOptions {
+	/**
+	 * Options to validate your requests to the mocking service.
+	 */
+	validation?: {
+		/**
+		 * The required headers that must be present.
+		 * If given as an object, the values must also match.
+		 * @default []
+		 */
+		headers?: string[] | Record<string, string>;
+		/**
+		 * Whether to validate the query to check for correct relationships and attributes requested.
+		 * @default false
+		 */
+		query?: boolean;
+	};
+	/**
+	 * Options for replying from the mock service.
+	 */
+	responseOptions?: PatreonMockHandlerOptions & {
+		/**
+		 * When no cached item is found and random data is disabled,
+		 * the response body that is returned.
+		 * @default ''
+		 */
+		unknownCacheResponse?: string;
+	};
+	/**
+	 * Options for the cache.
+	 * Use a cache to persist your mocking data and act as a mock database.
+	 */
+	cache?: CacheStoreOptions;
+	/**
+	 * Options to return random data.
+	 * If no cache item is found, the mock service can return a randomly generated payload as response.
+	 *
+	 */
+	data?: PatreonMockData | PatreonMockDataOptions;
+
+	/**
+	 * Mock the Patreon webhooks implementation.
+	 */
+	webhooks?: PatreonMockWebhooksOptions;
+}
+
+export interface PatreonMockHandlerCallbackOptions {
+	path: string;
+	method: string;
+	origin?: string;
+	// `undici-types` est un paquet optionnel : on s'appuie sur les globales WHATWG de Bun.
+	// `{ toString(): string }` couvre les corps de requête exotiques (flux Node) que seul
+	// `toString()` consomme ici.
+	body?: Bun.BodyInit | { toString(): string } | null | undefined;
+	headers?: Headers | Record<string, string>;
+}
+
+/**
+ * Équivalent local de `MockInterceptor.MockReplyOptionsCallback` d'undici, reproduit ici pour
+ * éviter une dépendance sur le paquet optionnel `undici-types`.
+ */
+export type MockReplyOptionsCallback = (options: PatreonMockHandlerCallbackOptions) => {
+	statusCode: number;
+	data?: unknown;
+	responseOptions?: { headers?: Record<string, string> };
+};
+
+export interface PatreonMockHandlerDefaultResponse {
+	/**
+	 * The request body is only null for succesful requests with not a 200 status (e.g 201 or 204)
+	 */
+	body: string | null;
+	status: number;
+	headers: Record<string, string>;
+}
+
+export interface PatreonMockHandler<R = PatreonMockHandlerDefaultResponse> {
+	url: string;
+	method: Lowercase<RequestMethod>;
+	handler: (request: {
+		url: string;
+		headers: Record<string, string> | Headers;
+		text?: () => Promise<string>;
+	}) => Promise<R>;
+}
+
+interface ParsedRoute {
+	searchParams: URLSearchParams;
+	path: Route;
+	param: string | undefined;
+}
+
+function parseRequestBody<T>(body: string | null) {
+	return body ? <T>JSON.parse(body.toString()) : null;
+}
+
+/**
+ * A class with utitilies to mock the Patreon API
+ * @see https://patreon-api.pages.dev/guide/features/sandbox
+ */
+export class PatreonMock {
+	public cache: CacheStore<false>;
+	public data: PatreonMockData;
+	public webhooks: PatreonMockWebhooks;
+
+	public constructor(public options: PatreonMockOptions = {}) {
+		this.cache = new CacheStore(false, undefined, options.cache);
+
+		this.data =
+			options.data != undefined && options.data instanceof PatreonMockData
+				? options.data
+				: new PatreonMockData(options.data);
+
+		this.webhooks = new PatreonMockWebhooks(options.webhooks ?? {}, this.data, this.cache);
+	}
+
+	/**
+	 * The origin url for the Patreon API
+	 * @default 'https://patreon.com'
+	 */
+	public static origin = new URL(RouteBases.oauth2).origin;
+
+	/**
+	 * The API path that every route starts with
+	 * @default '/api/oauth2/v2'
+	 */
+	public static path = new URL(RouteBases.oauth2).pathname;
+
+	/**
+	 * A filter to check if a random path is an API route
+	 * @param path The path to check. Can include query parameters
+	 * @returns if the path is valid route for the V2 Patreon API
+	 */
+	public static pathFilter(path: string): boolean {
+		return (
+			findAPIPath(path, {
+				apiPath: PatreonMock.path,
+			}) != undefined
+		);
+	}
+
+	/**
+	 * Create a mocked route
+	 * @param path The request path to use: /api/oauth2/v2{path}
+	 * @param options Path options
+	 * @param options.includeOrigin Include the origin url (default false)
+	 * @param options.query The url query to append
+	 * @returns the mocked API route
+	 */
+	public static route(
+		path: string,
+		options?: {
+			includeOrigin?: boolean;
+			query?: string;
+		}
+	): string {
+		return (
+			(options?.includeOrigin ? PatreonMock.origin : "") +
+			PatreonMock.path +
+			path +
+			(options?.query ? (!options.query.startsWith("?") ? "?" : "") + options.query : "")
+		);
+	}
+
+	private static isWriteResourceType(type: Type | ItemType): type is WriteResourceType {
+		return [Type.Live, Type.Webhook].includes(<Type>type);
+	}
+
+	private validateHeaders(headers: Record<string, string> | Headers): void {
+		const validation = this.options.validation?.headers;
+		if (validation == undefined) return;
+		const headersRecord =
+			typeof headers.entries === "function"
+				? [...headers.entries()].reduce<Record<string, string>>(
+						(obj, [key, value]) => ({ ...obj, [key]: value }),
+						{}
+					)
+				: (headers as Record<string, string>);
+
+		const missing = (Array.isArray(validation) ? validation : Object.keys(validation)).filter(
+			(name) => !headersRecord[name] && !headersRecord[name.toLowerCase()]
+		);
+
+		if (missing.length > 0) {
+			throw new Error("Missing required header on mocked request: " + missing.join(","));
+		}
+
+		if (!Array.isArray(validation)) {
+			for (const [name, value] of Object.entries(validation)) {
+				const header = headersRecord[name] ?? headersRecord[name.toLowerCase()];
+				if (header !== value) throw new Error("Invalid header on mocked request: " + name);
+			}
+		}
+	}
+
+	private validateProperties(key: ItemType, attributes: string[]): void {
+		const { properties } = QueryBuilder["getResource"](key);
+
+		if (!attributes.every((a) => !properties.includes(<never>a))) {
+			throw new Error("Invalid properties found on " + key + ":" + attributes.join(","));
+		}
+	}
+
+	private parseQuery<T extends ItemType>(
+		params: URLSearchParams,
+		resource: T
+	): PatreonMockDataQuery<T, RelationshipFields<T>, RelationshipMap<T, RelationshipFields<T>>> {
+		const include: string[] = params.get("include")?.split(",") ?? [];
+		const { relationships } = QueryBuilder["getResource"](resource);
+		const includedKeys: ItemType[] = include
+			.map((key) => relationships.find((r) => r.name === key)?.resource)
+			.filter((n): n is NonNullable<typeof n> => n != undefined);
+
+		if (this.options.validation?.query && includedKeys.some((k) => k == undefined)) {
+			throw new Error("Unable to find relationships in query params: " + include.join(","));
+		}
+
+		const count = params.get("page[count]"),
+			cursor = params.get("page[cursor]");
+		const sort = params
+			.get("sort")
+			?.split(",")
+			.map((key) =>
+				key.startsWith("-") ? { key: key.slice(1), descending: true } : { key, descending: false }
+			);
+
+		return {
+			includes: <RelationshipFields<T>[]>include,
+			attributes: includedKeys.concat(resource).reduce<RelationshipMap<T, RelationshipFields<T>>>(
+				(obj, key) => {
+					const attributes: string[] = params.get(`fields[${key}]`)?.split(",") ?? [];
+
+					if (this.options.validation?.query) {
+						this.validateProperties(key, attributes);
+					}
+
+					return {
+						...obj,
+						[key]: attributes,
+					};
+				},
+				{} as RelationshipMap<T, RelationshipFields<T>>
+			),
+			requestOptions: {
+				...(count ? { count: +count } : {}),
+				...(cursor ? { cursor } : {}),
+				...(sort ? { sort } : {}),
+			},
+		};
+	}
+
+	private getDefaultResponseStatus(route: Route, method?: string) {
+		const options = route.methods.find((m) => {
+			return m.method.toLowerCase() === (method ?? RequestMethod.Get).toLowerCase();
+		});
+
+		return options && "responseStatus" in options
+			? options.responseStatus
+			: "response" in route &&
+				  "status" in route.response &&
+				  typeof route.response.status === "number"
+				? route.response.status
+				: 200;
+	}
+
+	private parseAPIPath(url: string): ParsedRoute {
+		const { pathname, searchParams } = new URL(url);
+
+		const apiPath = findAPIPath(pathname, {
+			apiPath: PatreonMock.path,
+		});
+		if (apiPath == undefined) throw new Error("No API route found to mock for: " + url);
+
+		return {
+			...apiPath,
+			searchParams,
+		} as ParsedRoute;
+	}
+
+	private buildResponseFromUrl(
+		route: ParsedRoute,
+		options?: PatreonMockHandlerOptions & {
+			resourceId?: string;
+		}
+	): string {
+		const { param, path, searchParams } = route;
+
+		const parsed = this.parseQuery(searchParams, path.resource);
+		// Add typed query?
+		const query = parsed as unknown as {
+			includes: never[];
+			attributes: RelationshipMap<Type, never>;
+		};
+		const id = options?.resourceId ?? param;
+
+		const { responseOptions } = this.options;
+		const unknownCacheResponse = responseOptions?.unknownCacheResponse ?? "";
+
+		const useCache = options?.cache ?? responseOptions?.cache ?? true;
+		const useRandom = options?.random ?? responseOptions?.random ?? true;
+
+		if (path.response?.array) {
+			// All current list endpoints are related to a resource
+			// E.g campaign members, campaign posts
+			const cached =
+				id && useCache
+					? this.cache.getRelatedToResource(
+							path.mainResource ?? Type.Campaign,
+							id,
+							path.resource as any
+						)
+					: null;
+
+			if (cached && cached.length > 0) {
+				const payload = this.data.getListResponsePayload(path.resource, query, {
+					items: cached.map(({ id, type }) => {
+						// eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+						const { item, relationships } = this.cache.get(type, id)!;
+						const included = this.cache.getRelationships(type, relationships).items.map(
+							(item) =>
+								<never>{
+									id: item.id,
+									type: item.type,
+									attributes: item.item.item,
+								}
+						);
+
+						return {
+							item: {
+								id,
+								attributes: item,
+							},
+							included,
+						};
+					}),
+				});
+
+				return JSON.stringify(payload);
+			} else if (useRandom) {
+				const payload = this.data.getListResponsePayload(path.resource, query, {
+					items: this.data.getAttributeItems(path.resource).map((item) => ({
+						item,
+						included: this.data.createRelatedItems(item.type),
+					})),
+				});
+
+				return JSON.stringify(payload);
+			} else return unknownCacheResponse;
+		} else {
+			const cached = id && useCache ? this.cache.getResource(path.resource, id) : null;
+
+			if (id && cached) {
+				const payload = this.data.getSingleResponsePayload(path.resource, query, {
+					id,
+					item: cached.data.attributes,
+					relatedItems: cached.included as never[],
+				});
+
+				return JSON.stringify(payload);
+			} else if (useRandom) {
+				const id = this.data.createId(path.resource);
+				const attributes = this.data.random[path.resource](id);
+
+				const payload = this.data.getSingleResponsePayload(path.resource, query, {
+					id,
+					item: attributes,
+					relatedItems: this.data.createRelatedItems(path.resource),
+				});
+
+				return JSON.stringify(payload);
+			} else return unknownCacheResponse;
+		}
+	}
+
+	private getResponseHeaders(headers?: Record<string, string>): Record<string, string> {
+		return {
+			...this.data.createHeaders(),
+			...(this.options.responseOptions?.headers ?? {}),
+			...(headers ?? {}),
+		};
+	}
+
+	protected handleMockRequest<T>(
+		request: {
+			url: string;
+			headers: Record<string, string> | Headers;
+			method: string;
+			body: string | null;
+		},
+		options: PatreonMockHandlerOptions,
+		transform: (response: PatreonMockHandlerDefaultResponse) => T
+	): T {
+		this.validateHeaders(request.headers);
+		const route = this.parseAPIPath(request.url);
+		const headers = this.getResponseHeaders(options.headers);
+		const status = options.statusCode ?? this.getDefaultResponseStatus(route.path, request.method);
+
+		const resourceType = route.path.resource;
+		// If no id is found in the route:
+		// - Assume that it is a GET/POST request to an array endpoint.
+		// - Assume that the GET method is excluded.
+		// And generate a new id for the resource.
+		const resourceId = route.param ?? this.data.createId(resourceType);
+		//@ts-expect-error TODO: Something is wrong
+		const mockAttributes: PatreonMockDataAttributes<WriteResourceType> =
+			PatreonMock.isWriteResourceType(resourceType)
+				? (this.data.options.mockAttributes?.[resourceType] ?? {})
+				: {};
+
+		if (PatreonMock.isWriteResourceType(resourceType)) {
+			this.cache.syncRequest<RequestMethod, WriteResourceType>(
+				{
+					method: request.method as RequestMethod,
+					body: parseRequestBody(request.body),
+				},
+				{
+					resource: resourceType,
+					id: resourceId,
+					mockAttributes,
+				}
+			);
+		}
+
+		// Return an error
+		if (options.statusCode != undefined && options.statusCode >= 400) {
+			return transform({
+				body: JSON.stringify({
+					errors: [this.data.createError(options.statusCode)],
+				}),
+				headers,
+				status,
+			});
+		} else if (request.method.toLowerCase() === "get") {
+			const responseBody =
+				status === 200
+					? this.buildResponseFromUrl(route, {
+							cache: options?.cache,
+							random: options?.random,
+							resourceId,
+						})
+					: null; // Using an empty body for 201 and 204 responses
+
+			return transform({
+				body: responseBody,
+				headers,
+				status,
+			});
+		} else {
+			const requestMethod = request.method.toUpperCase() as RequestMethod;
+			const requestBody = parseRequestBody<WriteResourcePayload<WriteResourceType, RequestMethod>>(
+				request.body
+			);
+			const mockedResponseBody: WriteResourceResponse<WriteResourceType> | undefined = requestBody
+				? mockAttributes[requestMethod]?.(requestBody)
+				: undefined;
+
+			return transform({
+				// TODO: the response body should be different from the request body, right?
+				body: (mockedResponseBody ? JSON.stringify(mockedResponseBody) : undefined) ?? request.body,
+				headers,
+				status,
+			});
+		}
+	}
+
+	/**
+	 * Note: the returned callback matches undici's `MockInterceptor.MockReplyOptionsCallback`
+	 * signature without importing the optional `undici-types` package.
+	 *
+	 * Creates a callback for an intercepted request on a mock agent.
+	 *
+	 * Note: for non-GET requests and if no mocked attributes are defined; the request body is returned as response body.
+	 * @param options Options for the mocked response
+	 * @param options.statusCode The status code the response should have, defaults to `200`
+	 * @param options.headers The headers to include in the response
+	 * @param options.random Whether to allow random generated responses if the resource is not found in the cache.
+	 * @param options.cache Whether to use a cache to search for the resource. When disabled, only generated items will be returned.
+	 * @returns the intercept callback
+	 */
+	public getMockAgentReplyCallback(options?: PatreonMockHandlerOptions) {
+		return ((callbackOptions: PatreonMockHandlerCallbackOptions) => {
+			return this.handleMockRequest(
+				{
+					body: callbackOptions.body?.toString() ?? null,
+					headers: (callbackOptions.headers ?? {}) as Record<string, string>,
+					method: callbackOptions.method,
+					url: (callbackOptions.origin ?? PatreonMock.origin) + callbackOptions.path,
+				},
+				options ?? {},
+				({ body, headers, status }) => ({
+					statusCode: status,
+					...(body ? { data: body } : {}),
+					responseOptions: { headers },
+				})
+			);
+		}) satisfies MockReplyOptionsCallback;
+	}
+
+	/**
+	 * Get handlers for mocking a route
+	 *
+	 * Note: for non-GET requests and if no mocked attributes are defined; the request body is returned as response body.
+	 * @param options Options for generating the routes
+	 * @param options.pathParam The path param template value, defaults to `*`
+	 * @param options.includeOrigin Whether to include the API origin in the url of the handler, defaults to `true`
+	 * @param options.transformToResponse Transform the response to the global `Response`. To use a custom transformers, use the {@link transformResponse}
+	 * @param options.transformResponse Method to transform the default response for a handler
+	 * @param options.random Whether to allow random generated responses if the resource is not found in the cache.
+	 * @param options.cache Whether to use a cache to search for the resource. When disabled, only generated items will be returned.
+	 * @see https://patreon-api.pages.dev/guide/features/sandbox#msw
+	 * @returns Handlers for each route that returns a successful response.
+	 */
+	public getMockHandlers<R = PatreonMockHandlerDefaultResponse, T extends boolean = false>(
+		options?: PatreonMockHandlerOptions & {
+			pathParam?: string;
+			includeOrigin?: boolean;
+			transformResponse?: (response: PatreonMockHandlerDefaultResponse) => R;
+			transformToResponse?: T;
+		}
+	) {
+		const { pathParam, includeOrigin, transformResponse, transformToResponse, ...handlerOptions } =
+			options ?? {};
+
+		type Handlers = Record<PatreonMockRouteId, PatreonMockHandler<If<T, Response, R>>>;
+
+		return paths.reduce<Handlers>((handlers, route) => {
+			return {
+				...handlers,
+				...route.methods.reduce<Handlers>((obj, { method, id }) => {
+					const handler: PatreonMockHandler<If<T, Response, R>>["handler"] = async (request) => {
+						return this.handleMockRequest(
+							{
+								body: shouldIncludeRequestBody(method.toUpperCase() as RequestMethod)
+									? ((await request.text?.()) ?? null)
+									: null,
+								headers: request.headers,
+								url: request.url,
+								method,
+							},
+							handlerOptions,
+							(data): If<T, Response, R> => {
+								return <If<T, Response, R>>(transformToResponse
+									? new Response(data.body, {
+											headers: data.headers,
+											status: data.status,
+										})
+									: (transformResponse?.(data) ?? <R>data));
+							}
+						);
+					};
+
+					return {
+						...obj,
+						[id]: {
+							handler,
+							method: method.toLowerCase(),
+							url: PatreonMock.route(route.route(pathParam ?? "*"), {
+								includeOrigin: includeOrigin ?? true,
+							}),
+						},
+					};
+				}, {} as never),
+			};
+		}, {} as never);
+	}
+}

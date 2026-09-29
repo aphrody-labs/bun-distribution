@@ -1,0 +1,46 @@
+apps:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "apps/*"
+          - "apps/**"
+documentation:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "docs/*"
+          - "docs/**"
+examples:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "examples/*"
+          - "examples/**"
+test:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "src/__tests__/*"
+          - "src/__tests__/**"
+          - "vitest.config.mts"
+webhooks:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "src/payloads/v2/webhooks.ts"
+          - "src/rest/v2/webhooks/*"
+          - "src/rest/v2/webhooks/**"
+oauth:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "src/rest/v2/oauth2/*"
+          - "src/rest/v2/oauth2/**"
+npm:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "package.json"
+          - "package-lock.json"
+github:
+  - changed-files:
+      - any-glob-to-any-file:
+          - ".github/*"
+          - ".github/**"
+openapi:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "openapi.json"

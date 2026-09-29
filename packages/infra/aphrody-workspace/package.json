@@ -49,7 +49,8 @@
     "./repository-health": "./src/repository-health.ts",
     "./workspace-repair": "./src/workspace-repair.ts",
     "./cargo-package-repair": "./src/cargo-package-repair.ts",
-    "./consolidation": "./src/consolidation.ts"
+    "./consolidation": "./src/consolidation.ts",
+    "./rg": "./src/rg.ts"
   },
   "scripts": {
     "build": "bun build ./src/cli.ts ./src/ops.ts --target=bun --outdir dist --sourcemap=linked",

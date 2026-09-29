@@ -1,0 +1,14 @@
+{
+	"compilerOptions": {
+		"checkJs": true,
+		"skipLibCheck": true,
+		"allowJs": true,
+		"noEmit": true,
+		"module": "Preserve",
+		"target": "ESNext",
+		"moduleResolution": "Bundler",
+		"types": ["bun"],
+		"paths": { "@rosegriffon/patreon-bun": ["../../dist/index.d.ts"] }
+	},
+	"include": ["./index.js"]
+}

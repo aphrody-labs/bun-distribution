@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="fr">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Confirmation de changement d'email - Rose Griffon</title>
+		<style>
+			body {
+				font-family:
+					-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+				line-height: 1.6;
+				color: #333;
+				max-width: 600px;
+				margin: 0 auto;
+				padding: 20px;
+				background-color: #f5f5f5;
+			}
+			.container {
+				background-color: #ffffff;
+				border-radius: 10px;
+				padding: 40px;
+				box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+			}
+			.logo {
+				text-align: center;
+				margin-bottom: 30px;
+			}
+			.logo h1 {
+				color: #a14b3f;
+				font-size: 28px;
+				margin: 0;
+			}
+			.content {
+				margin-bottom: 30px;
+			}
+			.button {
+				display: inline-block;
+				background: linear-gradient(135deg, #2f6e9c 0%, #4088b8 100%);
+				color: #ffffff !important;
+				padding: 14px 32px;
+				text-decoration: none;
+				border-radius: 8px;
+				font-weight: bold;
+				text-align: center;
+				margin: 20px 0;
+				transition: transform 0.2s;
+			}
+			.button:hover {
+				transform: translateY(-2px);
+			}
+			.warning {
+				background-color: #fff3cd;
+				border-left: 4px solid #ffc107;
+				padding: 15px;
+				border-radius: 5px;
+				margin: 20px 0;
+			}
+			.footer {
+				text-align: center;
+				color: #666;
+				font-size: 14px;
+				margin-top: 30px;
+				padding-top: 20px;
+				border-top: 1px solid #eee;
+			}
+			.footer a {
+				color: #2f6e9c;
+				text-decoration: none;
+			}
+		</style>
+	</head>
+	<body>
+		<div class="container">
+			<div class="logo">
+				<h1>🦅 Rose Griffon</h1>
+				<p style="color: #666; margin-top: 5px">Communauté Inazuma Eleven</p>
+			</div>
+
+			<div class="content">
+				<h2 style="color: #a14b3f">Changement d'adresse email</h2>
+				<p>Bonjour,</p>
+				<p>
+					Vous avez demandé à modifier l'adresse email associée à votre compte Rose Griffon. Pour
+					confirmer ce changement, veuillez cliquer sur le bouton ci-dessous :
+				</p>
+
+				<div style="text-align: center">
+					<a href="{{ .ConfirmationURL }}" class="button"> Confirmer la nouvelle adresse </a>
+				</div>
+
+				<p>Si le bouton ne fonctionne pas, copiez et collez ce lien dans votre navigateur :</p>
+				<p
+					style="
+						word-break: break-all;
+						color: #666;
+						font-size: 14px;
+						background-color: #f5f5f5;
+						padding: 10px;
+						border-radius: 5px;
+					"
+				>
+					{{ .ConfirmationURL }}
+				</p>
+
+				<div class="warning">
+					<strong>⚠️ Important :</strong>
+					<ul style="margin: 10px 0">
+						<li>Ce lien expirera dans 24 heures</li>
+						<li>Votre ancienne adresse email restera active jusqu'à confirmation</li>
+						<li>
+							Une fois confirmé, vous devrez utiliser votre nouvelle adresse pour vous connecter
+						</li>
+					</ul>
+				</div>
+			</div>
+
+			<div class="footer">
+				<p><strong>Vous n'avez pas demandé ce changement ?</strong></p>
+				<p>
+					Si vous n'êtes pas à l'origine de cette demande, veuillez
+					<a href="https://www.rosegriffon.fr/a-propos/contact">nous contacter immédiatement</a>
+					et modifier votre mot de passe.
+				</p>
+				<p style="margin-top: 20px">
+					<a href="https://www.rosegriffon.fr">Site web</a> •
+					<a href="https://discord.gg/TYzQvbByv4">Discord</a> •
+					<a href="https://www.rosegriffon.fr/cellule-de-mediation">Assistance</a>
+				</p>
+			</div>
+		</div>
+	</body>
+</html>

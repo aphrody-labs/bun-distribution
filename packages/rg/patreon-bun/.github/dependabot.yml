@@ -1,0 +1,65 @@
+version: 2
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    ignore:
+      - dependency-name: "*"
+        update-types:
+          - "version-update:semver-patch"
+          - "version-update:semver-minor"
+    labels:
+      - "dependencies"
+  - package-ecosystem: "npm"
+    versioning-strategy: increase
+    schedule:
+      interval: "monthly"
+    groups:
+      docs:
+        patterns:
+          - "*"
+    directories:
+      - "/docs/"
+    ignore:
+      - dependency-name: "@types/node"
+      - dependency-name: "*"
+        update-types:
+          - "version-update:semver-patch"
+    labels:
+      - "dependencies"
+  - package-ecosystem: "npm"
+    versioning-strategy: increase
+    schedule:
+      interval: "monthly"
+    groups:
+      cloudflare:
+        patterns:
+          - wrangler
+          - "@cloudflare/workers-types"
+      env:
+        patterns:
+          - dotenv
+      eslint:
+        patterns:
+          - "*eslint*"
+      ts:
+        patterns:
+          - ts*
+          - typescript
+      test:
+        patterns:
+          - vitest
+          - "@vitest/*"
+          - msw
+    directories:
+      - "/"
+      - "/apps/*/"
+      - "/examples/*/"
+    ignore:
+      - dependency-name: "@types/node"
+      - dependency-name: "*"
+        update-types:
+          - "version-update:semver-patch"
+    labels:
+      - "dependencies"

@@ -46,10 +46,14 @@ import { runRepositoryHealth } from "./repository-health.ts";
 import { runWorkspaceRepair } from "./workspace-repair.ts";
 import { runCargoPackageRepair } from "./cargo-package-repair.ts";
 import { runConsolidation } from "./consolidation.ts";
+import { runRg } from "./rg.ts";
 
 const [operation, ...rest] = process.argv.slice(2);
 if (operation === "consolidation") {
   process.exit(await runConsolidation(rest));
+}
+if (operation === "rg") {
+  process.exit(await runRg(rest));
 }
 if (operation === "bridge") {
   const [bridgeOperation, ...bridgeArgs] = rest;

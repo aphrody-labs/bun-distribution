@@ -1,0 +1,11 @@
+{
+	"extends": "../config/tsconfig-nextjs.json",
+	"compilerOptions": {
+		"types": ["react", "react-dom", "bun"],
+		"paths": {
+			"@/*": ["./src/*"]
+		}
+	},
+	"include": ["src/**/*.ts", "src/**/*.tsx", "test/**/*.ts"],
+	"exclude": ["node_modules", "dist"]
+}

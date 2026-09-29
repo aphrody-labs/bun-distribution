@@ -1,0 +1,117 @@
+name: Deploy
+on:
+  push:
+    paths:
+      # Examples
+      - "examples/cloudflare-webhook/**"
+      # Documentation
+      - "docs/**"
+      - "apps/worker-docs/**"
+      # Trigger when this file is updated
+      - ".github/workflows/deploy.yml"
+      # Trigger a new deploy when a release is made
+      - ".release-please-manifest.json"
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+env:
+  NODE_VERSION: 22.x
+jobs:
+  examples:
+    name: Deploy examples
+    runs-on: ubuntu-latest
+    if: github.ref_name == 'main' && github.ref_type == 'branch'
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Install node.js v${{ env.NODE_VERSION }}
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Run tsc
+        run: bun run prestart
+
+      - name: Run build
+        run: bun run build
+
+      - name: Install example dependencies
+        run: bun install
+        working-directory: ./examples/cloudflare-webhook/
+
+      - name: Deploy cloudflare-webhook
+        uses: cloudflare/wrangler-action@v3.6.0
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.CW_DISCORD_WEBHOOK_URL }}
+          HTML_MD_KEY: ${{ secrets.CW_HTML_MD_KEY }}
+          PATREON_WEBHOOK_SECRET: ${{ secrets.CW_PATREON_WEBHOOK_SECRET }}
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: ./examples/cloudflare-webhook/
+          # secrets: |
+          #   HTML_MD_KEY
+          #   PATREON_WEBHOOK_SECRET
+          #   DISCORD_WEBHOOK_URL
+  docs:
+    name: Deploy documentation
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      deployments: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Install node.js v${{ env.NODE_VERSION }}
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Run tsc
+        run: bun run prestart
+
+      - name: Run build
+        run: bun run build
+
+      - name: Install dependencies
+        run: bun install
+        working-directory: docs
+
+      - name: Build reference
+        run: bun run predocs
+        working-directory: docs
+
+      - name: Build documentation
+        run: bun run docs:build
+        working-directory: docs
+
+      - name: Install wrangler
+        run: bun add --dev wrangler --legacy-peer-deps
+
+      - name: Publish to Cloudflare Pages
+        uses: cloudflare/wrangler-action@v3.6.0
+        if: ${{ github.actor != 'dependabot[bot]' }}
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy docs/.vitepress/dist --project-name=patreon-api --commit-dirty=true
+
+      - name: Install worker dependencies
+        run: bun install
+        working-directory: ./apps/worker-docs
+
+      - name: Deploy patreon-docs worker
+        uses: cloudflare/wrangler-action@v3.6.0
+        if: ${{ github.actor != 'dependabot[bot]' }}
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: deploy -c ./apps/worker-docs/wrangler.toml

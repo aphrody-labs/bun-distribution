@@ -1,0 +1,39 @@
+{
+  "name": "@rosegriffon/bot",
+  "version": "1.0.1",
+  "private": true,
+  "description": "Bot Discord Rose Griffon — slash commands public + admin, sync members, canvas cards",
+  "type": "module",
+  "scripts": {
+    "dev": "bun --watch src/index.ts",
+    "start": "bun src/index.ts",
+    "build": "bun build src/index.ts --target=bun --packages=external --outdir=dist",
+    "type-check": "bun --bun tsc --noEmit",
+    "lint": "oxlint src",
+    "lint:fix": "oxlint --fix src",
+    "test": "bun test src",
+    "smoke:admin": "bun src/scripts/smoke-admin.ts",
+    "smoke:canvas": "bun src/scripts/smoke-canvas.ts"
+  },
+  "dependencies": {
+    "@rosegriffon/achillea-client": "workspace:*",
+    "@aphrody/canvas": "catalog:",
+    "@rosegriffon/azalee": "workspace:*",
+    "@rosegriffon/db": "workspace:*",
+    "@rosegriffon/types": "workspace:*",
+    "@rosegriffon/ui": "workspace:*",
+    "@rpbey/discordx": "catalog:",
+    "discord.js": "catalog:",
+    "reflect-metadata": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@rosegriffon/config": "workspace:*",
+    "@types/bun": "catalog:",
+    "oxlint": "catalog:",
+    "typescript": "catalog:"
+  },
+  "engines": {
+    "bun": ">=1.3.14"
+  }
+}

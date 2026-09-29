@@ -1,0 +1,10 @@
+{
+	"extends": ["./tsconfig.json"],
+	"compilerOptions": {
+		"rootDir": "../src",
+		"noUnusedLocals": false,
+		"noUnusedParameters": false
+	},
+	"exclude": ["../src/coverage", "../src/__tests__/**/*.test.ts"],
+	"include": ["../src/**.ts"]
+}

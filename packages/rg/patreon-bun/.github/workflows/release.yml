@@ -1,0 +1,39 @@
+name: release-please
+on:
+  push:
+    branches:
+      - main
+permissions:
+  contents: write
+  pull-requests: write
+  id-token: write
+env:
+  NODE_VERSION: 24.x
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: googleapis/release-please-action@v4
+        id: release
+        with:
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
+      - uses: actions/checkout@v6
+        if: ${{ steps.release.outputs.release_created }}
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+          registry-url: "https://registry.npmjs.org"
+        if: ${{ steps.release.outputs.release_created }}
+      - run: bun install --frozen-lockfile
+        if: ${{ steps.release.outputs.release_created }}
+      - run: bun run prestart
+        if: ${{ steps.release.outputs.release_created }}
+      - run: bun run test
+        if: ${{ steps.release.outputs.release_created }}
+      - run: bun run lint
+        if: ${{ steps.release.outputs.release_created }}
+      - run: bun run build
+        if: ${{ steps.release.outputs.release_created }}
+      - run: bun publish
+        if: ${{ steps.release.outputs.release_created }}

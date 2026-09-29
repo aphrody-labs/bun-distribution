@@ -1,0 +1,5 @@
+name = "patreon-docs"
+compatibility_date = "2025-04-01"
+main = "./src/index.ts"
+
+compatibility_flags = ["nodejs_compat"]

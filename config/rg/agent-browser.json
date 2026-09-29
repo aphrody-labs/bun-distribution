@@ -1,0 +1,9 @@
+{
+  "args": "--no-sandbox",
+  "contentBoundaries": true,
+  "hideScrollbars": true,
+  "idleTimeout": "0",
+  "pinTab": true,
+  "restoreSave": "auto",
+  "enable": ["react-devtools"]
+}

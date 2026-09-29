@@ -1,0 +1,17 @@
+{
+	"name": "@rosegriffon/patreon-bun-bun-esm",
+	"version": "1.0.0",
+	"private": true,
+	"description": "",
+	"keywords": [],
+	"license": "MIT",
+	"author": "ghostrider-05",
+	"type": "module",
+	"main": "./index.js",
+	"scripts": {
+		"start": "bun index.js"
+	},
+	"devDependencies": {
+		"@rosegriffon/patreon-bun": "workspace:*"
+	}
+}
