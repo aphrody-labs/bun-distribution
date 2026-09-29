@@ -9,6 +9,7 @@ use serde_json::{Value, json};
 const ARCHIVE_ORG: &str = "https://archive.org";
 const WAYBACK_CDX: &str = "https://web.archive.org/cdx/search/cdx";
 const GOOGLE_DOH: &str = "https://dns.google/resolve";
+const GOOGLE_SUGGEST: &str = "https://suggestqueries.google.com/complete/search";
 
 static CLIENT: LazyLock<reqwest::Client> = LazyLock::new(|| {
     reqwest::Client::builder()
@@ -63,6 +64,38 @@ static TOOLS: LazyLock<Vec<Tool>> = LazyLock::new(|| {
                 "required": ["name"], "additionalProperties": false
             }
         }),
+        json!({
+            "name": "aphrody_google_suggest",
+            "description": "Get real-time query suggestions from Google Autocomplete.",
+            "inputSchema": {
+                "type": "object", "properties": {
+                    "query": { "type": "string", "description": "Query prefix to suggest." },
+                    "client": { "type": "string", "default": "chrome", "description": "Client profile (chrome, firefox)." }
+                },
+                "required": ["query"], "additionalProperties": false
+            }
+        }),
+        json!({
+            "name": "aphrody_google_sheet_export",
+            "description": "Export a publicly shared Google Spreadsheet to CSV.",
+            "inputSchema": {
+                "type": "object", "properties": {
+                    "spreadsheetId": { "type": "string", "description": "Google Spreadsheet document ID." },
+                    "gid": { "type": "string", "description": "Sheet tab GID." }
+                },
+                "required": ["spreadsheetId"], "additionalProperties": false
+            }
+        }),
+        json!({
+            "name": "aphrody_google_doc_export",
+            "description": "Export a publicly shared Google Document to plain text.",
+            "inputSchema": {
+                "type": "object", "properties": {
+                    "documentId": { "type": "string", "description": "Google Document ID." }
+                },
+                "required": ["documentId"], "additionalProperties": false
+            }
+        }),
     ]
     .into_iter()
     .map(|definition| serde_json::from_value(definition).expect("static public web tool schema"))
@@ -86,6 +119,10 @@ fn required_text<'a>(args: &'a Value, key: &str) -> Result<&'a str, String> {
         .and_then(Value::as_str)
         .filter(|value| !value.is_empty())
         .ok_or_else(|| format!("{key} must be a non-empty string"))
+}
+
+fn text_arg<'a>(args: &'a Value, key: &str) -> Result<&'a str, String> {
+    args.get(key).and_then(Value::as_str).ok_or_else(|| format!("{key} must be a string"))
 }
 
 fn optional_text<'a>(args: &'a Value, key: &str) -> Result<Option<&'a str>, String> {
@@ -165,7 +202,37 @@ fn google_dns_url(name: &str, record_type: &str) -> reqwest::Url {
     url
 }
 
-async fn get_json(url: reqwest::Url, service: &str) -> Result<Value, String> {
+fn google_suggest_url(query: &str, client: &str) -> reqwest::Url {
+    let mut url = reqwest::Url::parse(GOOGLE_SUGGEST).expect("static URL");
+    url.query_pairs_mut().append_pair("client", client).append_pair("q", query);
+    url
+}
+
+fn google_sheet_url(spreadsheet_id: &str, gid: Option<&str>) -> reqwest::Url {
+    let mut url = reqwest::Url::parse("https://docs.google.com").expect("static URL");
+    url.path_segments_mut().expect("HTTPS URL").extend([
+        "spreadsheets",
+        "d",
+        spreadsheet_id,
+        "export",
+    ]);
+    let mut query = url.query_pairs_mut();
+    query.append_pair("format", "csv");
+    if let Some(gid) = gid.filter(|gid| !gid.is_empty()) {
+        query.append_pair("gid", gid);
+    }
+    drop(query);
+    url
+}
+
+fn google_doc_url(document_id: &str) -> reqwest::Url {
+    let mut url = reqwest::Url::parse("https://docs.google.com").expect("static URL");
+    url.path_segments_mut().expect("HTTPS URL").extend(["document", "d", document_id, "export"]);
+    url.query_pairs_mut().append_pair("format", "txt");
+    url
+}
+
+async fn get_text(url: reqwest::Url, service: &str) -> Result<String, String> {
     let response = CLIENT.get(url).send().await.map_err(|error| error.to_string())?;
     let status = response.status();
     let body = response.text().await.map_err(|error| error.to_string())?;
@@ -175,7 +242,33 @@ async fn get_json(url: reqwest::Url, service: &str) -> Result<Value, String> {
             body.chars().take(500).collect::<String>()
         ));
     }
+    Ok(body)
+}
+
+async fn get_json(url: reqwest::Url, service: &str) -> Result<Value, String> {
+    let body = get_text(url, service).await?;
     serde_json::from_str(&body).map_err(|error| format!("{service} JSON: {error}"))
+}
+
+fn suggestions(data: &Value) -> Value {
+    let items = data.as_array().and_then(|array| array.get(1)).and_then(Value::as_array);
+    Value::Array(items.map_or_else(Vec::new, |items| {
+        items
+            .iter()
+            .map(|item| {
+                Value::String(match item {
+                    Value::String(value) => value.clone(),
+                    Value::Object(_) => "[object Object]".to_owned(),
+                    Value::Array(array) => array
+                        .iter()
+                        .map(|item| item.as_str().map_or_else(|| item.to_string(), str::to_owned))
+                        .collect::<Vec<_>>()
+                        .join(","),
+                    other => other.to_string(),
+                })
+            })
+            .collect()
+    }))
 }
 
 fn captures(data: Value) -> Result<Value, String> {
@@ -201,19 +294,30 @@ fn captures(data: Value) -> Result<Value, String> {
     Ok(Value::Array(result))
 }
 
-async fn run(name: &str, args: &Value) -> Result<(Value, Value), String> {
+enum Output {
+    Json { value: Value, structured: Option<Value> },
+    Text(String),
+}
+
+impl Output {
+    fn json(value: Value) -> Self {
+        Self::Json { structured: value.is_object().then(|| value.clone()), value }
+    }
+}
+
+async fn run(name: &str, args: &Value) -> Result<Output, String> {
     match name {
         "aphrody_archive_item" => {
             let item =
                 get_json(item_url(required_text(args, "identifier")?), "Internet Archive").await?;
-            Ok((item.clone(), item))
+            Ok(Output::json(item))
         },
         "aphrody_archive_search" => {
             let query = required_text(args, "query")?;
             let rows = optional_count(args, "rows", 50, Some(1000))?;
             let page = optional_count(args, "page", 1, None)?;
             let result = get_json(search_url(query, rows, page), "Internet Archive").await?;
-            Ok((result.clone(), result))
+            Ok(Output::json(result))
         },
         "aphrody_archive_wayback" => {
             let page_url = required_text(args, "url")?;
@@ -223,7 +327,10 @@ async fn run(name: &str, args: &Value) -> Result<(Value, Value), String> {
             let to = optional_text(args, "to")?;
             let result =
                 captures(get_json(wayback_url(page_url, from, to, limit), "Wayback CDX").await?)?;
-            Ok((result.clone(), json!({ "captures": result })))
+            Ok(Output::Json {
+                value: result.clone(),
+                structured: Some(json!({ "captures": result })),
+            })
         },
         "aphrody_google_dns" => {
             let domain = args
@@ -232,7 +339,22 @@ async fn run(name: &str, args: &Value) -> Result<(Value, Value), String> {
                 .ok_or_else(|| "name must be a string".to_owned())?;
             let record_type = optional_text(args, "type")?.unwrap_or("A");
             let result = get_json(google_dns_url(domain, record_type), "Google DNS").await?;
-            Ok((result.clone(), result))
+            Ok(Output::json(result))
+        },
+        "aphrody_google_suggest" => {
+            let query = text_arg(args, "query")?;
+            let client = optional_text(args, "client")?.unwrap_or("chrome");
+            let data = get_json(google_suggest_url(query, client), "Google Suggest").await?;
+            Ok(Output::json(suggestions(&data)))
+        },
+        "aphrody_google_sheet_export" => {
+            let id = text_arg(args, "spreadsheetId")?;
+            let gid = optional_text(args, "gid")?;
+            Ok(Output::Text(get_text(google_sheet_url(id, gid), "Google Sheets").await?))
+        },
+        "aphrody_google_doc_export" => {
+            let id = text_arg(args, "documentId")?;
+            Ok(Output::Text(get_text(google_doc_url(id), "Google Docs").await?))
         },
         _ => Err(format!("unknown public web tool: {name}")),
     }
@@ -243,13 +365,14 @@ pub(crate) async fn call(request: &CallToolRequestParams) -> CallToolResult {
     let args =
         request.arguments.as_ref().map_or_else(|| json!({}), |map| Value::Object(map.clone()));
     match run(name, &args).await {
-        Ok((text, structured)) => {
+        Ok(Output::Json { value, structured }) => {
             let mut result = CallToolResult::success(vec![ContentBlock::text(
-                serde_json::to_string_pretty(&text).unwrap_or_else(|_| "null".to_owned()),
+                serde_json::to_string_pretty(&value).unwrap_or_else(|_| "null".to_owned()),
             )]);
-            result.structured_content = Some(structured);
+            result.structured_content = structured;
             result
         },
+        Ok(Output::Text(text)) => CallToolResult::success(vec![ContentBlock::text(text)]),
         Err(error) => CallToolResult::error(vec![ContentBlock::text(format!("{name}: {error}"))]),
     }
 }
@@ -265,10 +388,13 @@ mod tests {
             "aphrody_archive_search",
             "aphrody_archive_wayback",
             "aphrody_google_dns",
+            "aphrody_google_suggest",
+            "aphrody_google_sheet_export",
+            "aphrody_google_doc_export",
         ] {
             assert!(owns(name), "{name}");
         }
-        assert_eq!(TOOLS.len(), 4);
+        assert_eq!(TOOLS.len(), 7);
         let search = get("aphrody_archive_search").unwrap();
         assert_eq!(
             serde_json::to_value(search).unwrap()["inputSchema"]["properties"]["rows"]["default"],
@@ -296,6 +422,25 @@ mod tests {
                 ["type"]["default"],
             "A"
         );
+        let suggest = google_suggest_url("rust & bun", "firefox");
+        assert!(suggest.query_pairs().any(|(key, value)| key == "q" && value == "rust & bun"));
+        assert_eq!(
+            google_sheet_url("sheet-id", Some("123")).as_str(),
+            "https://docs.google.com/spreadsheets/d/sheet-id/export?format=csv&gid=123"
+        );
+        assert_eq!(
+            google_doc_url("doc-id").as_str(),
+            "https://docs.google.com/document/d/doc-id/export?format=txt"
+        );
+    }
+
+    #[test]
+    fn suggestion_payload_extracts_array_and_keeps_string_values() {
+        assert_eq!(
+            suggestions(&json!(["r", ["rust", "rust bun", 5]])),
+            json!(["rust", "rust bun", "5"])
+        );
+        assert_eq!(suggestions(&json!({ "unexpected": true })), json!([]));
     }
 
     #[test]
@@ -317,5 +462,8 @@ mod tests {
         assert!(
             run("aphrody_google_dns", &json!({ "name": "example.com", "type": 5 })).await.is_err()
         );
+        assert!(run("aphrody_google_suggest", &json!({})).await.is_err());
+        assert!(run("aphrody_google_sheet_export", &json!({})).await.is_err());
+        assert!(run("aphrody_google_doc_export", &json!({})).await.is_err());
     }
 }
