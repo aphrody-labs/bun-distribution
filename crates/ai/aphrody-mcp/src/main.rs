@@ -151,6 +151,14 @@ pub struct WebFetchRequest {
 }
 
 #[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+pub struct WebExtractHtmlRequest {
+    #[schemars(description = "HTML document to extract, supplied directly by the caller.")]
+    pub html: String,
+    #[schemars(description = "Optional page URL for resolving relative links and metadata.")]
+    pub url: Option<String>,
+}
+
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
 pub struct ScreenCaptureRequest {
     #[schemars(description = "Optional window title substring (case-insensitive). When omitted, \
                               the whole primary screen is captured.")]
@@ -801,6 +809,15 @@ impl GoogleMcpServer {
         Parameters(WebFetchRequest { url, profile }): Parameters<WebFetchRequest>,
     ) -> String {
         fetch_page(&url, profile.as_deref()).await
+    }
+
+    #[tool(description = "Extract article text, Markdown and metadata from supplied HTML using \
+                          the shared Aphrody Rust Web library. No browser subprocess is started.")]
+    async fn aphrody_web_extract_html(
+        &self,
+        Parameters(WebExtractHtmlRequest { html, url }): Parameters<WebExtractHtmlRequest>,
+    ) -> String {
+        aphrody_web_extract::extract_main_json(&html, url.as_deref())
     }
 
     // -----------------------------------------------------------------------
@@ -2086,7 +2103,7 @@ impl GoogleMcpServer {
         };
         let n2b = || {
             serde_json::from_str::<serde_json::Value>(include_str!(
-                "../../../../aphrody-contracts/schema/v2.json"
+                "../../../../docs/apis/contracts/v2.json"
             ))
             .unwrap_or_else(|error| json!({ "error": "N2B_SCHEMA", "reason": error.to_string() }))
         };
@@ -4043,6 +4060,19 @@ async fn run_server() -> Result<()> {
 mod cli_tests {
     use super::*;
 
+    #[tokio::test]
+    async fn native_web_extraction_is_in_the_single_mcp_catalog() {
+        assert!(GoogleMcpServer::all_tools().get("aphrody_web_extract_html").is_some());
+        let response = GoogleMcpServer
+            .aphrody_web_extract_html(Parameters(WebExtractHtmlRequest {
+                html: "<article><h1>Page</h1><p>A sufficiently long paragraph for extraction.</p></article>".to_owned(),
+                url: Some("https://example.test/page".to_owned()),
+            }))
+            .await;
+        let value: serde_json::Value = serde_json::from_str(&response).unwrap();
+        assert_eq!(value["title"], "Page");
+    }
+
     #[test]
     fn cli_clap_backward_compat_no_subcommand_means_server() {
         // Bare `aphrody-mcp` must parse to the implicit server mode so
@@ -4411,7 +4441,7 @@ mod aphrody_mcp_call_tests {
     #[test]
     fn bundled_n2b_schema_is_canonical_v2() {
         let schema: serde_json::Value =
-            serde_json::from_str(include_str!("../../../../aphrody-contracts/schema/v2.json"))
+            serde_json::from_str(include_str!("../../../../docs/apis/contracts/v2.json"))
                 .expect("valid schema");
         assert_eq!(schema["$schema"], "http://json-schema.org/draft-07/schema#");
         assert_eq!(schema["properties"]["schema_version"]["enum"][0], 2);

@@ -234,6 +234,29 @@ façades du plan précédent est abandonnée.
   vers le même code. Des anciens noms de DLL peuvent nécessiter des shims de
   transition ; aucune implémentation dupliquée permanente.
 
+**Critère de fermeture :** un seul crate `aphrody-ffi` produit la bibliothèque
+native publique, une seule façade Bun la charge, et un seul serveur MCP Aphrody
+héberge les outils de tous les domaines. Les anciens noms de symboles,
+packages, binaires, variables d'environnement et serveurs MCP sont retirés
+après migration des consommateurs. Le contrôle final recherche ces noms dans
+le code et la documentation actifs, vérifie les export maps et les chargeurs,
+puis construit les artefacts depuis un clone propre. Les instantanés de
+provenance conservent leurs empreintes sans servir de documentation produit.
+
+Le premier lot Web dans l'agrégateur importe les adaptateurs extraction et
+indexation comme modules de `aphrody-ffi`, liés aux crates Rust partagées. Il
+n'annonce pas l'ABI Web v4 complète : les autres symboles doivent être migrés
+avant le basculement du chargeur Bun. Les alias historiques sont supprimés
+après ce basculement et la qualification des consommateurs.
+
+Pour MCP, `aphrody-mcp` est l'hôte publié. Importer les outils du serveur Web
+Bun, du serveur Obscura/CDP et des autres domaines comme modules ou adaptateurs
+de cet hôte ; préserver leurs schémas pendant la bascule. Débrancher ensuite
+leurs points d'entrée autonomes et leurs configurations clientes. Une commande
+CLI ou une bibliothèque cliente peut rester, mais elle ne doit pas publier un
+deuxième serveur Aphrody. Vérifier qu'une seule configuration de lancement MCP
+et un seul catalogue d'outils sont distribués.
+
 ## 5. Fusion Web, runtimes JS et intégration au fork Bun
 
 La cible de capacité est **un `aphrody-web` complet**, avec modules internes

@@ -38,6 +38,13 @@ use crate::error::{BxcError, Result};
 /// Environment variable naming the `bxc_rust_bridge` shared library outright.
 pub const ENV_LIB: &str = "APHRODY_BXC_LIB";
 
+/// Unified Aphrody native library override, preferred over legacy Web paths.
+pub const ENV_UNIFIED_LIB: &str = "APHRODY_FFI_LIB";
+
+fn library_override_var() -> &'static str {
+    if non_empty_env(ENV_UNIFIED_LIB).is_some() { ENV_UNIFIED_LIB } else { ENV_LIB }
+}
+
 /// Environment variable naming the `bxc` executable outright.
 ///
 /// Kept as `BXC_BIN` rather than renamed to an `APHRODY_`-prefixed spelling:
@@ -68,6 +75,15 @@ pub const CARGO_LIB_NAME: &str = if cfg!(windows) {
     "libaphrody_web_ffi.dylib"
 } else {
     "libaphrody_web_ffi.so"
+};
+
+/// Platform filename of the single native Aphrody artifact.
+pub const UNIFIED_LIB_NAME: &str = if cfg!(windows) {
+    "aphrody_ffi.dll"
+} else if cfg!(target_vendor = "apple") {
+    "libaphrody_ffi.dylib"
+} else {
+    "libaphrody_ffi.so"
 };
 
 /// Platform file name of the bxc executable.
@@ -411,7 +427,7 @@ pub fn binary_attempt() -> Attempt {
 pub fn library_candidates() -> Vec<(PathBuf, fn(PathBuf) -> Source)> {
     let mut out: Vec<(PathBuf, fn(PathBuf) -> Source)> = Vec::new();
 
-    if let Some(explicit) = non_empty_env(ENV_LIB) {
+    if let Some(explicit) = non_empty_env(library_override_var()) {
         out.push((PathBuf::from(explicit), Source::Override as fn(PathBuf) -> Source));
     }
 
@@ -436,6 +452,7 @@ pub fn library_candidates() -> Vec<(PathBuf, fn(PathBuf) -> Source)> {
             root.join("target").join("x86_64-pc-windows-msvc").join("release"),
             root.join("target").join("debug"),
         ] {
+            out.push((directory.join(UNIFIED_LIB_NAME), Source::InTree as fn(PathBuf) -> Source));
             out.push((directory.join(CARGO_LIB_NAME), Source::InTree as fn(PathBuf) -> Source));
         }
         out.push((
@@ -512,7 +529,7 @@ pub fn library() -> Result<Source> {
 /// Locate the shared library, reporting the itinerary either way.
 #[must_use]
 pub fn library_attempt() -> Attempt {
-    resolve_one(ENV_LIB, library_candidates, &is_file)
+    resolve_one(library_override_var(), library_candidates, &is_file)
 }
 
 #[cfg(test)]

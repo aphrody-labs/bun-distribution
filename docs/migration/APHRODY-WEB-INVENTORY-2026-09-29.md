@@ -101,11 +101,11 @@ before importing.
 
 | Consumer | Source call or contract | Target status |
 | --- | --- | --- |
-| `aphrody-web-ffi` | `bxc_extract_main`, `bxc_html_to_markdown_with_base`, `bxc_simhash64` and `aphrody_web_*` aliases call source `aphrody-web-extract` | ABI symbols still reside in the source checkout; preserve the alias pairs when consolidating the FFI. |
+| `aphrody-web-ffi` | `bxc_extract_main`, `bxc_html_to_markdown_with_base`, `bxc_simhash64` and `aphrody_web_*` aliases call source `aphrody-web-extract` | Extraction adapters are copied into the single target `aphrody-ffi` and call the target extractor. The source checkout still serves the old Bun loader until the rest of its ABI is migrated. Historical aliases are temporary. |
 | `aphrody-web-service` and `aphrody-web-engine` | Re-export/call `extract_main` and `html_to_markdown` | Still source checkout dependencies; move after HTTP/service fixture gates. |
 | BXC Bun `src/rust/bridge.ts` | Loads `aphrody_web_extract_main`, `aphrody_web_html_to_markdown`, `aphrody_web_simhash64` | Keep export map and output JSON stable while switching the native library owner. |
-| `aphrody-web-bridge` | Historically loaded `bxc_html_to_markdown` for direct fetch | Imported locally; direct fetch and its public Markdown method use `aphrody-web-extract`. DOM/title/DNS and browser subprocess paths retain their compatibility behavior. |
-| `aphrody-web-ffi` index exports | Calls `aphrody_web_index::ffi_api` in the source checkout | Target HNSW library is imported; the C ABI and Bun callers are still on the source checkout. |
+| `aphrody-web-bridge` | Historically loaded `bxc_html_to_markdown` for direct fetch | Imported locally; direct fetch and its public Markdown method use `aphrody-web-extract`. The compatibility loader now prefers `APHRODY_FFI_LIB` and canonical title/DOM symbols, falling back to the older library during cutover. DNS and browser subprocess paths remain open. |
+| `aphrody-web-ffi` index exports | Calls `aphrody_web_index::ffi_api` in the source checkout | Target HNSW library and its C ABI adapters are imported into the single `aphrody-ffi`; the old Bun caller still loads the source library. |
 | `aphrody-memory` | `HnswBackend` stores JSONL records and ranks by exact cosine scan | Different persistence and ranking semantics; decide an explicit migration before sharing the BXC HNSW implementation. |
 | Target `aphrody-tools` `web_fetch` | Opt-in HTML-to-Markdown with `rendering.kind` and `rendering.via` | Current AI worktree calls target `aphrody-web-extract` directly; `via` keeps the legacy value and `backend` identifies the Rust owner. Clean-clone import pending. |
 | Target AI MCP/client | Discovers and routes `bxc_*` tools through the BXC process | Discovery, schemas, auth and browser lifecycle not yet cut over. |
@@ -117,6 +117,25 @@ loading the native library. The index passed its API and recall tests in the
 current worktree. The BXC gold corpus and its 259 fixtures, browser profiles,
 native exports, and clean-clone AI/Bun consumer gates remain open. These
 results demonstrate portable extraction, indexing and direct fetch only.
+
+The initial unified ABI adapters are recorded in
+[`aphrody-web-unified-ffi-import.json`](aphrody-web-unified-ffi-import.json).
+The single `aphrody-ffi` build exports extraction, text, DOM and index symbols;
+its 24 Rust unit tests and Bun native extraction and HNSW persistence smokes
+passed through the single `bun/index.ts` loader. The Rust Web
+bridge loaded that exact `libaphrody_ffi.so` through `APHRODY_FFI_LIB` and
+passed its title, Markdown and DOM tests. The Web v4 ABI, browser/network
+tools, final Bun loader and sole MCP endpoint are not yet cut over.
+
+The target `aphrody-mcp` now registers `aphrody_web_extract_html` directly from
+the shared extractor. Its no-default-features check passes after importing the
+versioned Contracts schema needed by that binary; its scoped suite passes 58
+unit and three integration tests. The dynamic Web tool catalog
+still uses a child process for capabilities not yet migrated, so this is one
+native tool migration rather than closure of the MCP work.
+The default-feature MCP check remains blocked by 22 Taffy API errors in the
+external `obscura-render` source checkout; the no-default-features target and
+tests above do not prove native browser parity.
 
 The target plan already sets P5 acceptance in
 [`workspace/PLAN.md`](../plans/workspace/PLAN.md): web/JS/crawl parity, browser

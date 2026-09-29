@@ -88,6 +88,7 @@ aphrody-models     = { workspace = true }
 # it forwards to, replacing hardcoded `127.0.0.1:8080` fallbacks.
 aphrody-config     = { workspace = true }
 aphrody-kernel     = { workspace = true }
+aphrody-web-extract = { workspace = true }
 rmcp               = { workspace = true }
 tokio-postgres     = { workspace = true }
 aphrody-a2a                = { workspace = true }

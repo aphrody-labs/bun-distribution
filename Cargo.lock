@@ -779,6 +779,7 @@ dependencies = [
 name = "aphrody-engine"
 version = "1.0.0"
 dependencies = [
+ "aphrody-agent-home",
  "aphrody-agent-proto",
  "aphrody-model-client",
  "aphrody-rollout",
@@ -1203,6 +1204,7 @@ dependencies = [
  "aphrody-vision",
  "aphrody-voice",
  "aphrody-web-bridge",
+ "aphrody-web-extract",
  "aphrody-winclean",
  "axum",
  "base64 0.22.1",

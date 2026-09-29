@@ -184,13 +184,28 @@ impl Bridge {
             }};
         }
 
-        let free_string = sym!(FnFree, "bxc_free_string");
-        let extract_title = sym!(FnStrToStr, "bxc_extract_title");
-        let strip_tags = sym!(FnStrToStr, "bxc_strip_tags");
-        let parse_html = sym!(FnParse, "bxc_parse_html");
-        let tree_destroy = sym!(FnDestroy, "bxc_tree_destroy");
-        let query_selector = sym!(FnQuery, "bxc_query_selector");
-        let query_selector_all = sym!(FnQuery, "bxc_query_selector_all");
+        macro_rules! sym_prefer {
+            ($t:ty, $canonical:literal, $legacy:literal) => {{
+                // The canonical name is present in the unified cdylib. The
+                // fallback keeps older installed Web libraries usable during
+                // the consumer cutover.
+                match unsafe { library.get::<$t>(concat!($canonical, "\0").as_bytes()) } {
+                    Ok(symbol) => *symbol,
+                    Err(_) => sym!($t, $legacy),
+                }
+            }};
+        }
+
+        let free_string = sym_prefer!(FnFree, "aphrody_web_free_string", "bxc_free_string");
+        let extract_title =
+            sym_prefer!(FnStrToStr, "aphrody_web_extract_title", "bxc_extract_title");
+        let strip_tags = sym_prefer!(FnStrToStr, "aphrody_web_strip_tags", "bxc_strip_tags");
+        let parse_html = sym_prefer!(FnParse, "aphrody_web_parse_html", "bxc_parse_html");
+        let tree_destroy = sym_prefer!(FnDestroy, "aphrody_web_tree_destroy", "bxc_tree_destroy");
+        let query_selector =
+            sym_prefer!(FnQuery, "aphrody_web_query_selector", "bxc_query_selector");
+        let query_selector_all =
+            sym_prefer!(FnQuery, "aphrody_web_query_selector_all", "bxc_query_selector_all");
 
         // SAFETY: same contract; absence is tolerated, so the error is dropped.
         let dns_recon = unsafe { library.get::<FnStrToStr>(b"bxc_dns_recon\0").map(|s| *s).ok() };
