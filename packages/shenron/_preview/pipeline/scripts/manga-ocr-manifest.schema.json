@@ -1,0 +1,90 @@
+{
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"$id": "https://dragonballfr.com/schemas/manga-ocr-manifest.v1.json",
+	"title": "Shenron Manga OCR Manifest",
+	"type": "object",
+	"additionalProperties": false,
+	"required": [
+		"schemaVersion",
+		"lot",
+		"lots",
+		"generatedAt",
+		"generator",
+		"selection",
+		"series",
+		"imagePipeline",
+		"entries",
+		"responseExpected"
+	],
+	"properties": {
+		"schemaVersion": { "const": 1 },
+		"lot": { "type": "integer", "minimum": 1 },
+		"lots": { "type": "integer", "minimum": 1 },
+		"generatedAt": { "type": "string", "format": "date-time" },
+		"generator": { "const": "apps/bot/scripts/export-manga-ocr.ts" },
+		"selection": { "enum": ["missing", "all", "ids"] },
+		"series": {
+			"type": "array",
+			"items": { "enum": ["DB", "DBS"] },
+			"minItems": 1,
+			"uniqueItems": true
+		},
+		"imagePipeline": {
+			"type": "object",
+			"additionalProperties": false,
+			"required": ["width", "quality", "format"],
+			"properties": {
+				"width": { "type": "integer", "minimum": 800, "maximum": 4000 },
+				"quality": { "type": "integer", "minimum": 40, "maximum": 100 },
+				"format": { "const": "jpeg" }
+			}
+		},
+		"entries": {
+			"type": "array",
+			"minItems": 1,
+			"items": {
+				"type": "object",
+				"additionalProperties": false,
+				"required": [
+					"id",
+					"series",
+					"collection",
+					"tome",
+					"planche",
+					"source",
+					"sourceSha256",
+					"sourceBytes",
+					"image",
+					"imageSha256",
+					"imageBytes",
+					"alreadyTranscribed"
+				],
+				"properties": {
+					"id": {
+						"type": "string",
+						"pattern": "^(DB|DBS):(?:vol|t|ch)[0-9]+:[1-9][0-9]*$"
+					},
+					"series": { "enum": ["DB", "DBS"] },
+					"collection": { "type": "string", "minLength": 1 },
+					"tome": { "type": "string", "pattern": "^(?:vol|t|ch)[0-9]+$" },
+					"planche": { "type": "integer", "minimum": 1 },
+					"source": { "type": "string", "pattern": "^assets/manga/(DB|DBS)/" },
+					"sourceSha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+					"sourceBytes": { "type": "integer", "minimum": 1 },
+					"image": { "type": "string", "pattern": "^images/.+\\.jpg$" },
+					"imageSha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+					"imageBytes": { "type": "integer", "minimum": 1 },
+					"alreadyTranscribed": { "type": "boolean" }
+				}
+			}
+		},
+		"responseExpected": {
+			"type": "object",
+			"required": ["format", "result"],
+			"properties": {
+				"format": { "const": "aphrody-ocr-jsonl" },
+				"result": { "type": "object" }
+			}
+		}
+	}
+}

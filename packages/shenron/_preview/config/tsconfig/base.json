@@ -1,0 +1,16 @@
+{
+	"compilerOptions": {
+		"target": "ESNext",
+		"module": "ESNext",
+		"moduleResolution": "Bundler",
+		"moduleDetection": "force",
+		"strict": true,
+		"isolatedModules": true,
+		"skipLibCheck": true,
+		"noEmit": true,
+		"resolveJsonModule": true,
+		"verbatimModuleSyntax": false,
+		"forceConsistentCasingInFileNames": true,
+		"noFallthroughCasesInSwitch": true
+	}
+}

@@ -1,0 +1,31 @@
+{
+	"$schema": "http://json-schema.org/draft-07/schema#",
+	"title": "Shenron Manga OCR Visual Review",
+	"type": "object",
+	"additionalProperties": false,
+	"required": ["schemaVersion", "pageId", "decision", "regions", "notes"],
+	"properties": {
+		"schemaVersion": { "type": "integer", "enum": [1] },
+		"pageId": { "type": "string" },
+		"decision": { "type": "string", "enum": ["accept", "none", "needs_human"] },
+		"regions": {
+			"type": "array",
+			"maxItems": 200,
+			"items": {
+				"type": "object",
+				"additionalProperties": false,
+				"required": ["order", "kind", "text", "confidence"],
+				"properties": {
+					"order": { "type": "integer", "minimum": 1 },
+					"kind": {
+						"type": "string",
+						"enum": ["dialogue", "caption", "sfx", "watermark", "page_number"]
+					},
+					"text": { "type": "string", "maxLength": 4000 },
+					"confidence": { "type": "string", "enum": ["high", "medium", "low"] }
+				}
+			}
+		},
+		"notes": { "type": "string", "maxLength": 1000 }
+	}
+}
