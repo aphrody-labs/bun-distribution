@@ -1,0 +1,68 @@
+{
+  "name": "@aphrody/workspace",
+  "version": "0.1.0",
+  "private": true,
+  "bin": {
+    "aphrody-ops": "./src/ops.ts",
+    "aphrody-workspace": "./src/cli.ts"
+  },
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./client": "./src/client.ts",
+    "./imports-exports": "./src/imports-exports.ts",
+    "./monorepo-audit": "./src/monorepo-audit.ts",
+    "./bun-workspace": "./src/bun-workspace.ts",
+    "./bun-docs": "./src/bun-docs.ts",
+    "./ui-verify": "./src/ui-verify.ts",
+    "./drive-upstream-audit": "./src/drive-upstream-audit.ts",
+    "./drive-daemon": "./src/drive-daemon.ts",
+    "./tauri": "./src/tauri.ts",
+    "./bun-native": "./src/bun-native.ts",
+    "./ui-dedup-manifest": "./src/ui-dedup-manifest.ts",
+    "./spaceui-icons": "./src/spaceui-icons.ts",
+    "./desktop-smoke": "./src/desktop-smoke.ts",
+    "./spaceui-to-m3": "./src/spaceui-to-m3.ts",
+    "./docs-links": "./src/docs-links.ts",
+    "./vendor-license-audit": "./src/vendor-license-audit.ts",
+    "./workspace-deps": "./src/workspace-deps.ts",
+    "./bun-upstream-docs": "./src/bun-upstream-docs.ts",
+    "./ecosystem-deps": "./src/ecosystem-deps.ts",
+    "./workspace-layout": "./src/workspace-layout.ts",
+    "./cargo-boundaries": "./src/cargo-boundaries.ts",
+    "./automation-inventory": "./src/automation-inventory.ts",
+    "./runtime-gate": "./src/runtime-gate.ts",
+    "./iecode-doctor": "./src/iecode-doctor.ts",
+    "./koharu-release": "./src/koharu-release.ts",
+    "./powershell-syntax": "./src/powershell-syntax.ts",
+    "./workspace-clean": "./src/workspace-clean.ts",
+    "./ai-release-gate": "./src/ai-release-gate.ts",
+    "./agent-home": "./src/agent-home.ts",
+    "./agent-plugin-sync": "./src/agent-plugin-sync.ts",
+    "./python-quality": "./src/python-quality.ts",
+    "./docs-overlaps": "./src/docs-overlaps.ts",
+    "./gitignored-audit": "./src/gitignored-audit.ts",
+    "./runtime-versions": "./src/runtime-versions.ts",
+    "./monorepo-gate": "./src/monorepo-gate.ts",
+    "./windows-paths": "./src/windows-paths.ts",
+    "./git-attribution": "./src/git-attribution.ts",
+    "./repository-health": "./src/repository-health.ts",
+    "./workspace-repair": "./src/workspace-repair.ts",
+    "./cargo-package-repair": "./src/cargo-package-repair.ts",
+    "./consolidation": "./src/consolidation.ts"
+  },
+  "scripts": {
+    "build": "bun build ./src/cli.ts ./src/ops.ts --target=bun --outdir dist --sourcemap=linked",
+    "typecheck": "bunx --bun tsc --project tsconfig.json",
+    "lint": "oxlint src test",
+    "format": "oxfmt src test package.json tsconfig.json",
+    "format:check": "oxfmt --check src test package.json tsconfig.json",
+    "test": "bun test test"
+  },
+  "dependencies": {
+    "@typescript/typescript6": "^6.0.2"
+  },
+  "engines": {
+    "bun": ">=1.4.2"
+  }
+}

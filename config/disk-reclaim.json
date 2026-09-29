@@ -1,0 +1,43 @@
+{
+  "schemaVersion": 1,
+  "owner": "aphrody-infra",
+  "purpose": "Allowlisted, rebuildable or discarded data reclaimed by `aphrody-infra reclaim`. Plan by default; deletion only with --apply.",
+  "policy": [
+    "paths are relative to the remote $HOME; absolute paths and '..' are rejected",
+    "never list data read by a running unit (nie-model-serve reads .local/share/Steam/iecode and nie/var/model-cache; nie-site runs from nie/target/release)",
+    "/tmp is tmpfs: reclaiming it frees RAM and swap, not disk"
+  ],
+  "targets": {
+    "vps": {
+      "sshAlias": "vps",
+      "paths": [
+        { "path": ".local/share/Trash", "reason": "desktop trash, already discarded" },
+        { "path": ".local/share/NuGet/http-cache", "reason": "NuGet download cache, re-fetched on demand" },
+        { "path": "vcpkg/buildtrees", "reason": "vcpkg intermediate build trees" },
+        { "path": "iecode/target", "reason": "cargo build output, rebuildable" },
+        { "path": "iecode/build", "reason": "CMake build output, rebuildable" },
+        { "path": ".rustup/toolchains/nightly-x86_64-unknown-linux-gnu", "reason": "floating nightly; the pinned channels are 1.98.1 (aphrody-* and aphrody-infra) and nightly-2026-05-17 (iecode)" },
+        { "path": ".rustup/toolchains/1.98.1-x86_64-pc-windows-gnu", "reason": "Windows cross toolchain; Windows builds run on the Windows host" },
+        { "path": "nie/target", "reason": "cargo build output, rebuildable (host reset, no unit runs from it)" },
+        { "path": "nie/node_modules", "reason": "node removed from host; reinstalled with bun on rebuild" },
+        { "path": "vcpkg/packages", "reason": "vcpkg package staging, rebuildable" },
+        { "path": "iecode/vcpkg_installed", "reason": "vcpkg install tree, rebuildable from the manifest" },
+        { "path": ".cargo/registry/cache", "reason": "crate download cache, re-fetched on demand" },
+        { "path": ".bun/install/cache", "reason": "Bun package download cache, re-fetched on demand; production release dependencies are stored under /srv" },
+        { "path": ".cache/sccache", "reason": "Rust compiler artifact cache, rebuilt on demand" },
+        { "path": "offsite-20260923", "reason": "off-host SQLite and PostgreSQL cold archive duplicates; SHA-256 matches verified Windows offload copies from 2026-09-23" },
+        { "path": "20260924T151641Z-62d6deff-da0a62b4.tar.gz", "reason": "deployment archive duplicate of retained rollback release; internal SHA256SUMS matches unpacked release" },
+        { "path": ".aphrody-shenron-e5.tar.gz", "reason": "model archive duplicate; all payload SHA-256 hashes match the active shared E5 model copy" },
+        { "path": ".rgfix-transfer", "reason": "stale Git transfer bundles; every bundled ref is present and reachable in clean local main branches" },
+        { "path": ".infra-reset-backup-20260922T235419Z.tar.gz", "reason": "obsolete host-reset recovery archive, explicitly requested for cleanup after rebuild" },
+        { "path": ".infra-reset-nodesource.sources.bak", "reason": "obsolete package-source backup from the completed 2026-09-22 host reset" },
+        { "path": ".bashrc.bak", "reason": "obsolete pre-reset shell profile backup" },
+        { "path": ".vscode-server", "reason": "VS Code remote server, reinstalled on next connection" }
+      ],
+      "tmp": {
+        "olderThanMinutes": 720,
+        "keepNamePatterns": ["systemd-private-*", ".X*", ".ICE-unix", ".font-unix", "tmux-*", "snap-private-tmp", "*quarantine*"]
+      }
+    }
+  }
+}

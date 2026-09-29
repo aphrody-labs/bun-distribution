@@ -1,0 +1,73 @@
+{
+  "source": "https://bun.com/llms.txt",
+  "bunVersion": "1.4.2",
+  "fetchedAt": "2026-09-28T17:16:04.536Z",
+  "files": [
+    {
+      "path": "llms.txt",
+      "url": "https://bun.com/llms.txt",
+      "bytes": 33721,
+      "sha256": "9509fb3ad753b6a6b8394554769046ae6b3d8d4822353e7fba45c8845ef88d97"
+    },
+    {
+      "path": "pm/workspaces.md",
+      "url": "https://bun.com/docs/pm/workspaces.md",
+      "bytes": 5928,
+      "sha256": "b037a6f6d5f1c204693dd2f0991f2bae316e24231f00986432af3268bfe740b9"
+    },
+    {
+      "path": "pm/catalogs.md",
+      "url": "https://bun.com/docs/pm/catalogs.md",
+      "bytes": 7901,
+      "sha256": "9270dda31ba8adc11540469392d407e581288e607d734037fd385690e3c48847"
+    },
+    {
+      "path": "pm/install.md",
+      "url": "https://bun.com/docs/pm/cli/install.md",
+      "bytes": 27619,
+      "sha256": "03b9e583a19242018af50969034c2bcdd563d09c1b0e816fef0a2f14f4117f5e"
+    },
+    {
+      "path": "pm/isolated-installs.md",
+      "url": "https://bun.com/docs/pm/isolated-installs.md",
+      "bytes": 11664,
+      "sha256": "14c35ee1fc5b2660c89223de167882197cf96b770afea308450a6c65816de51a"
+    },
+    {
+      "path": "pm/filter.md",
+      "url": "https://bun.com/docs/pm/filter.md",
+      "bytes": 7330,
+      "sha256": "24caff42967daa6e5001098b09a82ee5b1a2498bdec877fb343fed956f199c76"
+    },
+    {
+      "path": "pm/lockfile.md",
+      "url": "https://bun.com/docs/pm/lockfile.md",
+      "bytes": 1974,
+      "sha256": "9a940e050b92ba049b08b3a240493ecb63344fb48b80a09ef08a571d536e6cf6"
+    },
+    {
+      "path": "bundler/executables.md",
+      "url": "https://bun.com/docs/bundler/executables.md",
+      "bytes": 41892,
+      "sha256": "52c5874f8ebcff8bb2ce8ee2d51eed8925bc4499287784c92130d2cfa2dfd836"
+    },
+    {
+      "path": "runtime/child-process.md",
+      "url": "https://bun.com/docs/runtime/child-process.md",
+      "bytes": 25073,
+      "sha256": "9bbcc07b705e6b0ea4c5ef245867f0734f49800cd18e46b6ad2bf3414d44dbbd"
+    },
+    {
+      "path": "runtime/bun-apis.md",
+      "url": "https://bun.com/docs/runtime/bun-apis.md",
+      "bytes": 15150,
+      "sha256": "37ae521b0bb544863807296cae04418dee4a0b0a24ef0199e6a302296fe2e844"
+    },
+    {
+      "path": "runtime/toml.md",
+      "url": "https://bun.com/docs/runtime/toml.md",
+      "bytes": 7545,
+      "sha256": "106e3a128b7bfd360c682a693ba0b6c7174d8fdd53692eeb6e9a836446ae9a3f"
+    }
+  ]
+}

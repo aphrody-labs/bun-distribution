@@ -1,0 +1,36 @@
+# SPDX-License-Identifier: Apache-2.0
+[package]
+name = "aphrody-git"
+publish = false
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Native Git and GitHub integration for the Aphrody ecosystem."
+
+[dependencies]
+base64     = { workspace = true }
+gix        = { workspace = true }
+globset    = { workspace = true }
+ignore     = { workspace = true }
+octocrab   = { workspace = true }
+serde      = { workspace = true }
+serde_json = { workspace = true }
+tempfile   = { workspace = true }
+thiserror  = { workspace = true }
+url        = { workspace = true }
+
+
+[dev-dependencies]
+# rustls 0.23 refuses to pick a provider when both `ring` and `aws-lc-rs`
+# are reachable in the graph: the first `reqwest::Client` built in a test
+# panics with "Could not automatically determine the process-level
+# CryptoProvider". The binaries install one at startup; test binaries have
+# no startup, so each test target installs it itself (CLAUDE.md §7).
+rustls      = { workspace = true }
+tempfile = { workspace = true }
+tokio    = { workspace = true, features = ["macros", "rt"] }
+
+[lints]
+workspace = true

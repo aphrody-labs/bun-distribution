@@ -1,0 +1,5 @@
+[install]
+linker = "isolated"
+hoist = false
+saveTextLockfile = true
+minimumReleaseAge = 259200

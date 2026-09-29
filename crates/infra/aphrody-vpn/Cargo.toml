@@ -1,0 +1,22 @@
+# SPDX-License-Identifier: Apache-2.0
+[package]
+name = "aphrody-vpn"
+publish = false
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Native Mullvad VPN controller and auto-proxy/geo-unblock driver for Aphrody and agy."
+
+[dependencies]
+tokio = { workspace = true }
+reqwest = { workspace = true, features = ["socks"] }
+rustls = { workspace = true }
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+which = { workspace = true }
+
+[lints]
+workspace = true

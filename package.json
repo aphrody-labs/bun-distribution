@@ -1,0 +1,34 @@
+{
+  "name": "aphrody",
+  "private": true,
+  "workspaces": {
+    "packages": [
+      "packages/*/*",
+      "apps/*/*"
+    ],
+    "catalog": {
+      "@types/bun": "1.4.2",
+      "@types/node": "24.19.0",
+      "typescript": "7.0.2",
+      "oxlint": "1.85.0",
+      "oxfmt": "0.70.0",
+      "@happy-dom/global-registrator": "^20.10.1"
+    }
+  },
+  "type": "module",
+  "scripts": {
+    "typecheck": "bun run --filter @aphrody/workspace typecheck",
+    "test": "bun run --filter @aphrody/workspace test",
+    "lint": "bun run --filter @aphrody/workspace lint",
+    "format:check": "bun run --filter @aphrody/workspace format:check",
+    "workspace:doctor:iecode": "bun packages/infra/aphrody-workspace/src/ops.ts iecode-doctor --root ../iecode"
+  },
+  "devDependencies": {
+    "@types/bun": "catalog:",
+    "@types/node": "catalog:",
+    "oxfmt": "catalog:",
+    "oxlint": "catalog:",
+    "typescript": "catalog:"
+  },
+  "packageManager": "bun@1.4.2"
+}

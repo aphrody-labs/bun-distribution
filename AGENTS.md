@@ -1,0 +1,42 @@
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+
+# Aphrody monorepo rules
+
+This repository is the Rust + Bun source target. The active migration plan is
+[PLAN.md](PLAN.md); the source-to-target inventory is generated and owned by
+`aphrody-infra/packages/aphrody-workspace`.
+
+## Ownership and layout
+
+- Rust crates live under `crates/<domain>/<crate>`; Bun apps and packages live
+  under `apps/<domain>/<app>` and `packages/<domain>/<package>`.
+- Documentation is canonical under `docs/<category>/<domain>`. Categories are
+  `architecture`, `apis`, `decisions`, `guides`, `operations`, `plans`,
+  `products`, `reference`, and `research`.
+- Scripts live under `scripts/<category>`: `audit`, `build`, `dev`,
+  `migration`, `release`, or `tools`. Infra's `@aphrody/workspace` remains the
+  cross-monorepo orchestrator.
+- Keep the first-party Rust and Bun workspaces at this repository root. Keep
+  Bun, Oxc and other upstream forks in `upstream/` with pinned revisions and
+  their upstream workspaces/history.
+- Do not import `rg` or `shenron` until the root consolidation plan's stability
+  and closure gates pass.
+
+## Migration safety
+
+- Keep every source checkout intact until its mapped consumers pass from a
+  clean clone. Record source commit, dirty state, file hashes, licenses and
+  resulting paths in the Infra-generated migration map.
+- Do not delete or overwrite an existing target path during import. Resolve
+  collisions explicitly; exact duplicate documentation may share one canonical
+  copy only when the source-to-canonical alias is recorded.
+- Preserve package/crate names, APIs, CLI arguments, schemas, notices and
+  upstream attribution. Do not claim parity from a copy or successful build.
+- Secrets, game datasets, model weights, caches, generated binaries and user
+  databases stay in their existing protected stores.
+
+## Toolchain and checks
+
+Use the pinned Bun canary/nightly, TypeScript 7, Oxc, Rust toolchain and global
+`sccache` selected by the active root plan. Follow owner manifests for commands;
+run only the scoped gates required by the task and record skipped/failing checks.

@@ -1,0 +1,13 @@
+/target/
+/node_modules/
+/dist/
+/.turbo/
+/.cache/
+/.venv/
+/var/runs/
+__pycache__/
+*.py[cod]
+.env
+.env.*
+!.env.example
+!.env.*.example

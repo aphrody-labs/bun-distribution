@@ -1,0 +1,54 @@
+{
+  "schema": "aphrody.system-packages.v1",
+  "policy": "minimum-host-surface",
+  "note": "Aphrody fournit les binaires applicatifs et les facades Rust/Bun/uv; ces paquets restent des prerequis OS.",
+  "toolchains": {
+    "bun": { "version": "1.4.2", "owner": "aphrody-os", "install": "official-installer", "rootEnv": "BUN_INSTALL" },
+    "uv": { "version": "0.12.17", "owner": "aphrody-os", "install": "official-installer", "rootEnv": "UV_INSTALL_DIR" },
+    "rust": { "channel": "1.98.1", "owner": "rustup", "source": "rust-toolchain.toml" },
+    "nushell": { "owner": "cargo-binstall", "install": "cargo binstall nu", "reason": "not packaged by Ubuntu apt" }
+  },
+  "common": [
+    "ca-certificates",
+    "curl",
+    "git",
+    "openssh-client",
+    "pkg-config",
+    "build-essential",
+    "clang",
+    "cmake",
+    "ninja-build",
+    "libssl-dev",
+    "libsqlite3-dev",
+    "zlib1g-dev",
+    "liblzma-dev",
+    "libbz2-dev",
+    "libzstd-dev",
+    "protobuf-compiler",
+    "ffmpeg",
+    "ripgrep",
+    "fd-find",
+    "eza",
+    "bat",
+    "btop",
+    "jq",
+    "unzip",
+    "xz-utils"
+  ],
+  "cargoTools": ["cargo-nextest"],
+  "workstation": {
+    "note": "Windows/WSL only (iecode native and .NET builds); never installed on vps or dbfr.",
+    "dotnet-sdk": { "version": "10.0.102", "source": "../../iecode/global.json", "rollForward": "latestMinor" },
+    "vcpkg": { "rootEnv": "VCPKG_ROOT", "baseline": "../../iecode/vcpkg.json" },
+    "msvc": { "required": "x64 developer environment for the iecode CMake unified preset" },
+    "gh": { "purpose": "scripts/iecode/github-history-audit.sh" }
+  },
+  "vps": ["nginx", "systemd", "rsync", "postgresql-client", "redis-tools"],
+  "dbfr": ["nginx", "systemd", "rsync", "postgresql", "postgresql-client", "redis-server", "redis-tools"],
+  "wsl": ["systemd", "rsync", "postgresql-client", "redis-tools"],
+  "excluded": {
+    "desktop": ["libgtk-3-dev", "qtbase5-dev", "qt6-base-dev"],
+    "runtime": ["rustup", "bun", "uv", "nodejs", "npm", "chromium"],
+    "reason": "Installes par les toolchain managers ou fournis par Aphrody; ne pas dupliquer via APT."
+  }
+}

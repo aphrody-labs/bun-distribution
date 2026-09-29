@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "schemaVersion": 1,
+  "owner": "aphrody-infra",
+  "authority": "aphrody-kernel",
+  "shell": "aphrody-shell",
+  "policy": "one-canonical-cli-per-capability",
+  "tools": [
+    { "id": "rg", "role": "search", "runtime": "rust", "default": true },
+    { "id": "fd", "role": "filesystem-discovery", "runtime": "rust", "default": true },
+    { "id": "eza", "role": "directory-listing", "runtime": "rust", "default": true },
+    { "id": "bat", "role": "file-preview", "runtime": "rust", "default": true },
+    { "id": "sd", "role": "text-rewrite", "runtime": "rust", "default": true },
+    { "id": "dust", "role": "disk-usage", "runtime": "rust", "default": true },
+    { "id": "procs", "role": "processes", "runtime": "rust", "default": true },
+    { "id": "bottom", "role": "resource-monitor", "runtime": "rust", "default": true },
+    { "id": "gitui", "role": "git-ui", "runtime": "rust", "default": false },
+    { "id": "gh", "role": "github", "runtime": "native", "default": true },
+    { "id": "curl", "role": "http-transfer", "runtime": "native", "default": true },
+    { "id": "aphrody", "role": "agent-and-os", "runtime": "rust", "default": true }
+  ],
+  "forbiddenDuplicates": ["grep", "find", "cat", "du", "ps", "top", "npm", "npx", "node"],
+  "exceptions": {
+    "systemctl": "host-supervisor-only",
+    "ssh": "transport-only",
+    "pwsh": "Windows-bootstrap-only"
+  }
+}

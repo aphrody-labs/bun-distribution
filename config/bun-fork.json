@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "repository": "aphrody-code/bun",
+  "parent": "oven-sh/bun",
+  "branch": "main",
+  "commit": "a2671046afbfc818fba21a4925f384b75dc8e109",
+  "upstreamBranch": "main",
+  "upstreamCommit": "a4f1429148114ddc3bccc13764781be27a7a9523",
+  "module": "bun:aphrody",
+  "moduleVersion": 1,
+  "nativeAbi": {
+    "aphrody-ffi": 1,
+    "aphrody-n2b-native": 2,
+    "aphrody-oxc-bridge": 1
+  },
+  "verified": {
+    "target": "linux-x86_64-debug",
+    "moduleTestsPassed": 8,
+    "githubActionsRunId": 36481251183,
+    "githubActionsRunnable": false,
+    "crossPlatformRelease": false,
+    "consumerSelection": false
+  }
+}

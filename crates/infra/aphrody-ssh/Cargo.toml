@@ -1,0 +1,27 @@
+# SPDX-License-Identifier: Apache-2.0
+[package]
+name = "aphrody-ssh"
+publish = false
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Aphrody SSH operator: safe command execution and diagnostics for configured hosts."
+
+[dependencies]
+anyhow = { workspace = true }
+clap = { workspace = true, features = ["derive"] }
+fast_rsync = { workspace = true }
+russh = { workspace = true }
+russh-sftp = { workspace = true }
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+tokio = { workspace = true }
+reqwest = { workspace = true, features = ["socks"] }
+rustls = { workspace = true, features = ["ring"] }
+sysinfo = { workspace = true }
+
+[lints]
+workspace = true
