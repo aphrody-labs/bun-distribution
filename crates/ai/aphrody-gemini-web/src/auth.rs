@@ -21,7 +21,7 @@ use crate::error::{GeminiError, Result};
 /// (`httpOnly`, camel-case) spelling and the `aphrody chromium export-session`
 /// schema (`host_key` / `is_secure` / `is_httponly`), so a single struct
 /// deserialises either source.
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct SessionCookie {
     pub name: String,
     pub value: String,
@@ -38,6 +38,20 @@ pub struct SessionCookie {
     /// (google-session export).
     #[serde(default, alias = "httpOnly", alias = "is_httponly")]
     pub http_only: bool,
+}
+
+impl std::fmt::Debug for SessionCookie {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter
+            .debug_struct("SessionCookie")
+            .field("name", &self.name)
+            .field("value", &"[REDACTED]")
+            .field("domain", &self.domain)
+            .field("path", &self.path)
+            .field("secure", &self.secure)
+            .field("http_only", &self.http_only)
+            .finish()
+    }
 }
 
 fn default_path() -> String {
@@ -302,5 +316,28 @@ mod tests {
         let h = sapisidhash("SAPISIDVALUE", "https://gemini.google.com", 1_700_000_000);
         assert!(h.starts_with("1700000000_"));
         assert_eq!(h.len(), "1700000000_".len() + 64);
+    }
+
+    #[test]
+    fn debug_output_never_contains_cookie_value() {
+        let auth = Auth::from_cookie_editor_json(
+            r#"[{"name":"__Secure-1PSID","value":"test-secret-marker","domain":".google.com"}]"#,
+        )
+        .unwrap();
+        let output = format!("{auth:?}");
+        assert!(output.contains("[REDACTED]"));
+        assert!(!output.contains("test-secret-marker"));
+    }
+
+    #[cfg(not(target_arch = "wasm32"))]
+    #[tokio::test]
+    #[ignore = "requires APHRODY_GOOGLE_COOKIES_JSON pointing to a local session file"]
+    async fn configured_cookie_file_parses_without_network() {
+        let path = std::env::var_os("APHRODY_GOOGLE_COOKIES_JSON")
+            .filter(|value| !value.is_empty())
+            .expect("configured Google cookie path");
+        assert_eq!(crate::client::GeminiWebClient::default_cookie_path(), Some(path.clone().into()));
+        let auth = Auth::from_cookie_file(path).await.expect("valid local Google session");
+        assert!(auth.jar().get("__Secure-1PSID").is_some());
     }
 }

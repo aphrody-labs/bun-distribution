@@ -96,13 +96,14 @@ pub struct RichSearchResult {
     pub authenticated: bool,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 struct SearchCookie {
     name: String,
     value: String,
     domain: String,
     path: String,
     secure: bool,
+    host_only: bool,
 }
 
 pub fn is_google_domain(host: &str) -> bool {
@@ -163,6 +164,11 @@ fn cookies_dir() -> Option<PathBuf> {
 }
 
 fn default_cookie_path() -> Option<PathBuf> {
+    if let Some(path) =
+        std::env::var_os("APHRODY_GOOGLE_COOKIES_JSON").filter(|path| !path.is_empty())
+    {
+        return Some(PathBuf::from(path));
+    }
     let dir = cookies_dir()?;
     let json = dir.join("google.json");
     let text = dir.join("google.txt");
@@ -196,6 +202,7 @@ fn parse_cookies(payload: &str) -> Vec<SearchCookie> {
                     domain,
                     path: item.get("path").and_then(Value::as_str).unwrap_or("/").to_owned(),
                     secure: item.get("secure").and_then(Value::as_bool).unwrap_or(false),
+                    host_only: item.get("hostOnly").and_then(Value::as_bool).unwrap_or(false),
                 })
             })
             .collect();
@@ -218,6 +225,7 @@ fn parse_cookies(payload: &str) -> Vec<SearchCookie> {
                 domain: columns[0].to_ascii_lowercase(),
                 path: columns[2].to_owned(),
                 secure: columns[3].eq_ignore_ascii_case("true"),
+                host_only: !columns[0].starts_with('.'),
                 name: columns[5].to_owned(),
                 value: columns[6].to_owned(),
             })
@@ -235,9 +243,13 @@ fn now_milliseconds() -> i64 {
 }
 
 fn load_cookies(path: Option<&PathBuf>) -> Vec<SearchCookie> {
-    let path = path.cloned().or_else(default_cookie_path);
+    let path = resolve_cookie_path(path, default_cookie_path());
     path.and_then(|path| std::fs::read_to_string(path).ok())
         .map_or_else(Vec::new, |contents| parse_cookies(&contents))
+}
+
+fn resolve_cookie_path(explicit: Option<&PathBuf>, configured: Option<PathBuf>) -> Option<PathBuf> {
+    explicit.cloned().or(configured)
 }
 
 fn search_cookies(options: &SearchOptions) -> Vec<SearchCookie> {
@@ -253,7 +265,8 @@ fn cookie_header(url: &Url, cookies: &[SearchCookie], domain: &str) -> String {
         let original_google = matches!(cookie_domain, "google.com");
         let cookie_domain =
             if original_google && domain != "google.com" { domain } else { cookie_domain };
-        if (host == cookie_domain || host.ends_with(&format!(".{cookie_domain}")))
+        if (host == cookie_domain
+            || (!cookie.host_only && host.ends_with(&format!(".{cookie_domain}"))))
             && path.starts_with(&cookie.path)
             && (!cookie.secure || url.scheme() == "https")
         {
@@ -564,6 +577,31 @@ mod tests {
     }
 
     #[test]
+    fn source_google_specialization_domain_matrix() {
+        for domain in [
+            "gemini.google.com",
+            "geminicli.com",
+            "antigravity.google",
+            "design.google",
+            "m3.material.io",
+            "gemini.google",
+        ] {
+            assert!(is_google_domain(domain), "expected Google domain: {domain}");
+        }
+        for domain in ["google.com.attacker.invalid", "evilgoogle.com", "example.org"] {
+            assert!(!is_google_domain(domain), "unexpected Google domain: {domain}");
+        }
+    }
+
+    #[test]
+    fn source_serp_retry_shell_is_blocked_but_organic_page_is_allowed() {
+        let retry = r#"<html><title>Google Search</title><body><div id="yvlrue">If you're having trouble accessing Google Search</div><script>var x="SG_REL"</script></body></html>"#;
+        let organic = r#"<html><body><div id="search"><div class="g"><a href="https://example.com"><h3>Example</h3></a></div></div></body></html>"#;
+        assert!(is_blocked_serp_html(retry));
+        assert!(!is_blocked_serp_html(organic));
+    }
+
+    #[test]
     fn cookie_jar_and_blocked_response_match_source_rules() {
         let jar = parse_cookies(
             r#"[{"name":"SID","value":"token","domain":".google.com","path":"/","secure":true}]"#,
@@ -600,6 +638,52 @@ mod tests {
         let anonymous = SearchOptions { anonymous: true, ..options };
         assert!(search_cookies(&anonymous).is_empty());
         std::fs::remove_file(path).unwrap();
+    }
+
+    #[test]
+    fn explicit_cookie_path_precedes_environment_default() {
+        let explicit = PathBuf::from("/private/explicit.json");
+        let configured = PathBuf::from("/private/google.json");
+        assert_eq!(resolve_cookie_path(Some(&explicit), Some(configured.clone())), Some(explicit));
+        assert_eq!(resolve_cookie_path(None, Some(configured.clone())), Some(configured));
+        assert_eq!(resolve_cookie_path(None, None), None);
+    }
+
+    #[test]
+    fn cookie_editor_expiry_and_domain_scope() {
+        let json = format!(
+            r#"[{{"name":"CURRENT","value":"ok","domain":".google.com","path":"/","secure":true,"expirationDate":{}}},{{"name":"EXPIRED","value":"old","domain":".google.com","expirationDate":1}},{{"name":"SESSION","value":"session","domain":"www.google.com","hostOnly":true,"session":true,"expirationDate":1}}]"#,
+            now_seconds() + 3600
+        );
+        let jar = parse_cookies(&json);
+        assert_eq!(jar.len(), 2);
+        let root = cookie_header(
+            &Url::parse("https://www.google.com/search").unwrap(),
+            &jar,
+            "google.com",
+        );
+        assert!(root.contains("CURRENT=ok"));
+        assert!(root.contains("SESSION=session"));
+        assert!(!root.contains("EXPIRED="));
+        let subdomain = cookie_header(
+            &Url::parse("https://news.www.google.com/search").unwrap(),
+            &jar,
+            "google.com",
+        );
+        assert!(subdomain.contains("CURRENT=ok"));
+        assert!(!subdomain.contains("SESSION=session"));
+    }
+
+    #[test]
+    #[ignore = "requires APHRODY_GOOGLE_COOKIES_JSON pointing to a local session file"]
+    fn configured_cookie_file_loads_without_network() {
+        let path = std::env::var_os("APHRODY_GOOGLE_COOKIES_JSON")
+            .filter(|value| !value.is_empty())
+            .map(PathBuf::from)
+            .expect("configured Google cookie path");
+        assert_eq!(default_cookie_path(), Some(path));
+        let jar = search_cookies(&SearchOptions::default());
+        assert!(jar.iter().any(|cookie| cookie.name == "SID"));
     }
 
     #[test]

@@ -2,7 +2,8 @@
 //! [`GeminiWebClient`] — the public façade composing auth + bootstrap +
 //! transport into a scriptable Gemini web client.
 
-#[cfg(not(target_arch = "wasm32"))] use std::path::{Path, PathBuf};
+#[cfg(not(target_arch = "wasm32"))]
+use std::path::{Path, PathBuf};
 
 use serde_json::json;
 
@@ -28,13 +29,19 @@ pub struct GeminiWebClient {
 }
 
 impl GeminiWebClient {
-    /// Default cookie-jar location: `~/.aphrody/google-cookies.json`.
+    /// Default cookie-jar location: `APHRODY_GOOGLE_COOKIES_JSON`, falling
+    /// back to `~/.aphrody/google-cookies.json`.
     ///
     /// Resolves `HOME` (Unix) or `USERPROFILE` (Windows). Returns `None` when
     /// neither is set.
     #[must_use]
     #[cfg(not(target_arch = "wasm32"))]
     pub fn default_cookie_path() -> Option<PathBuf> {
+        if let Some(path) =
+            std::env::var_os("APHRODY_GOOGLE_COOKIES_JSON").filter(|path| !path.is_empty())
+        {
+            return Some(PathBuf::from(path));
+        }
         let home = std::env::var_os("HOME").or_else(|| std::env::var_os("USERPROFILE"))?;
         Some(PathBuf::from(home).join(".aphrody").join("google-cookies.json"))
     }
@@ -64,6 +71,11 @@ impl GeminiWebClient {
     /// errors as [`Self::from_cookie_file`].
     #[cfg(not(target_arch = "wasm32"))]
     pub async fn from_default_cookie_file(language: &str) -> Result<Self> {
+        if let Some(path) =
+            std::env::var_os("APHRODY_GOOGLE_COOKIES_JSON").filter(|path| !path.is_empty())
+        {
+            return Self::from_cookie_file(PathBuf::from(path), language).await;
+        }
         let home = std::env::var_os("HOME")
             .or_else(|| std::env::var_os("USERPROFILE"))
             .ok_or_else(|| {
