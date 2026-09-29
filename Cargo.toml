@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 [workspace]
 resolver = "3"
-members = ["crates/iecode/ievr-data", "crates/infra/*", "crates/contracts/aphrody-kernel-client", "crates/ai/aphrody-agent-home", "crates/ai/aphrody-models", "crates/ai/aphrody-config", "crates/ai/aphrody-toolcall", "crates/ai/aphrody-patch", "crates/ai/aphrody-context", "crates/ai/aphrody-prompts", "crates/ai/aphrody-providers"]
+members = ["crates/iecode/ievr-data", "crates/infra/*", "crates/contracts/aphrody-kernel-client", "crates/ai/aphrody-agent-home", "crates/ai/aphrody-models", "crates/ai/aphrody-config", "crates/ai/aphrody-toolcall", "crates/ai/aphrody-patch", "crates/ai/aphrody-context", "crates/ai/aphrody-prompts", "crates/ai/aphrody-providers", "crates/ai/aphrody-ecosystem", "crates/ai/aphrody-gemini-runtime"]
 
 [workspace.package]
 version = "1.0.0"
@@ -26,6 +26,7 @@ dashmap = "6"
 dirs = "6"
 dunce = "1.0"
 futures-util = "0.3"
+futures = "0.3"
 hex = "0.4"
 gix = { version = "0.83", default-features = false, features = ["sha1", "basic", "extras", "comfort", "max-performance-safe", "revision", "index", "worktree-mutation"] }
 globset = "0.4"
