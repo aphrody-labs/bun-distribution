@@ -53,6 +53,16 @@ locked offline Rust library suite passes all 52 tests. Its Git overview test
 now creates a temporary repository with one commit, so it verifies branch and
 history behavior independently of the target repository's commit state.
 Scoped Clippy with `-D warnings` passes after that change.
+
+The first local target commit, `d406f11`, was cloned to a fresh directory for
+the scoped Infra gate. From that clone, frozen offline Bun install and the
+`@aphrody/workspace` typecheck pass, the 52 Rust library tests pass, and the
+newly built CLI validates 23 services and 25 routes. `service catalog --json`
+returns 23 services. This verifies the committed Infra slice; the broader
+documentation and script imports are not in that commit. The same clone's
+pipeline check reports all 85 steps missing sibling repositories because the
+current configuration still points outside the new monorepo. No Git remote is
+configured for this target, so the local commit has not been pushed.
 `pipeline --stage check --json` finds 12 errors across 85 steps: the configured
 workspace root misses the sibling IECODE checkout, and NIE does not declare
 the four Bun scripts requested by the current pipeline. This remains a staged

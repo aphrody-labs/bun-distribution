@@ -43,6 +43,15 @@ source-closure, compatibility, installed-workflow, license, and rollback gate.
 ## Current state
 
 - [x] Created the local worktree at `/home/aphro/aphrody` and initialized Git.
+- [x] Recorded a local extraction baseline at `d406f11` with the root manifests,
+      staged first-party code, Infra catalogs, six service scripts and migration
+      evidence. A fresh local clone passed frozen offline Bun install,
+      `@aphrody/workspace` typecheck, all 52 Infra Rust library tests, and
+      `aphrody-infra validate` (23 services, 25 routes). The clone does not yet
+      contain the imported documentation corpus or general script import, and
+      the repository has no remote for a push. Its pipeline check reports all
+      85 steps missing sibling repositories; this is evidence that the
+      transitional pipeline still needs the consumer cutover.
 - [x] Added Infra `@aphrody/workspace` inventory, docs-import and script-import
       operations. The 2026-09-29 current inventory saw 19 direct worktrees, 77,859 tracked and
       untracked paths, and 7,040 documentation candidates; 6,538 documents are
