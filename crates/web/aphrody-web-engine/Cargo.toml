@@ -1,0 +1,44 @@
+[package]
+name = "aphrody-web-engine"
+description = "Aphrody Web browser engine binary: CDP server, fetch and scrape on Obscura."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish = false
+# La CLI publique est `aphrody-web`; aucune surface produit ne garde le nom
+# historique du moteur. Les capacités Chrome/V8 restent identiques.
+default-run = "aphrody-web"
+
+[[bin]]
+name = "aphrody-web"
+path = "src/main.rs"
+
+[[bin]]
+name = "aphrody-web-worker"
+path = "src/worker.rs"
+
+[features]
+default = []
+# Obscura's renderer adds Taffy layout and raster/text dependencies.
+# Keep DOM/CDP builds lean; opt into layout and screenshots explicitly.
+render = ["aphrody-web-service/render", "obscura-browser/render", "obscura-cdp/render"]
+# Obscura documents stealth as a render+stealth build variant.
+stealth = ["render", "aphrody-web-service/stealth", "obscura-browser/stealth", "obscura-net/stealth"]
+
+[dependencies]
+obscura-browser = { workspace = true }
+aphrody-web-service = { workspace = true }
+obscura-cdp = { workspace = true }
+obscura-net = { workspace = true }
+obscura-js = { workspace = true }
+tokio = { workspace = true }
+clap = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+anyhow = { workspace = true }
+url = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+
+[lints]
+workspace = true

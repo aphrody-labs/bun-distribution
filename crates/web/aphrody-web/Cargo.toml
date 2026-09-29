@@ -1,0 +1,21 @@
+# SPDX-License-Identifier: Apache-2.0
+[package]
+name = "aphrody-web"
+description = "Canonical Aphrody Web and browser surface: Obscura headless browser, CDP and scraping."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+publish = false
+
+[lints]
+workspace = true
+
+[dependencies]
+aphrody-web-bridge = { workspace = true }
+aphrody-web-extract = { workspace = true }
+aphrody-web-service = { workspace = true }
+aphrody-web-index = { workspace = true }
+obscura = { workspace = true }

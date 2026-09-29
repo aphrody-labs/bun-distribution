@@ -2127,6 +2127,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "aphrody-web"
+version = "1.0.0"
+dependencies = [
+ "aphrody-web-bridge",
+ "aphrody-web-extract",
+ "aphrody-web-index",
+ "aphrody-web-service",
+ "obscura",
+]
+
+[[package]]
 name = "aphrody-web-bridge"
 version = "1.0.0-canary"
 dependencies = [
@@ -2154,6 +2165,25 @@ dependencies = [
  "serde",
  "serde_json",
  "windows 0.62.2",
+]
+
+[[package]]
+name = "aphrody-web-engine"
+version = "1.0.0"
+dependencies = [
+ "anyhow",
+ "aphrody-web-service",
+ "clap",
+ "obscura-browser",
+ "obscura-cdp",
+ "obscura-js",
+ "obscura-net",
+ "serde",
+ "serde_json",
+ "tokio",
+ "tracing",
+ "tracing-subscriber",
+ "url",
 ]
 
 [[package]]
@@ -12680,6 +12710,20 @@ dependencies = [
  "walkdir",
  "wasm-bindgen-futures",
  "web-time",
+]
+
+[[package]]
+name = "obscura"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "obscura-browser",
+ "obscura-net",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.21",
+ "tokio",
+ "url",
 ]
 
 [[package]]
