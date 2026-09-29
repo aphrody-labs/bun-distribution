@@ -146,13 +146,6 @@ pub(crate) fn runtime_config(config: &Config, cwd: &Path) -> miette::Result<Runt
     // execution contract. Profile-, operator- and project-level instructions
     // are layered on top of it, so they can refine it but never lose it.
     let mut instructions = vec![aphrody_prompts::APHRODY_BXC_YOLO_SYSTEM_PROMPT.to_owned()];
-    if let Ok(home) = aphrody_agent_home::AgentHome::open(aphrody_agent_home::HomeOptions {
-        profile: config.active_profile.clone(),
-        ..aphrody_agent_home::HomeOptions::default()
-    }) {
-        instructions
-            .push(home.system_prompt(&aphrody_agent_home::BootstrapBudget::default()).render());
-    }
     instructions.extend(config.instructions.iter().cloned());
     instructions.extend(config.developer_instructions.iter().cloned());
     let docs = aphrody_project_doc::discover(
@@ -175,6 +168,7 @@ pub(crate) fn runtime_config(config: &Config, cwd: &Path) -> miette::Result<Runt
     .with_cwd(cwd)
     .with_computer_use(config.computer_use.clone())
     .with_system_prompt(instructions.join("\n\n"))
+    .with_live_agent_home_workspace(profile_workspace(config)?)
     .with_max_tool_iterations(0)
     .with_autonomy(if config.approval_policy == aphrody_config::AskForApproval::Never {
         aphrody_agent_runtime::AutonomyMode::FullAuto

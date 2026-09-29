@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 //! Agent session: the configuration plus the running conversation history.
 
+use aphrody_agent_home::{AgentHome, BootstrapBudget, HomeOptions};
 use aphrody_model_client::{ChatMessage, Part, Role};
 use serde_json::Value;
 
@@ -25,19 +26,32 @@ pub struct Session {
     /// Incremented whenever old messages are replaced by a compaction
     /// checkpoint, allowing rollout recording to write a replacement history.
     history_revision: u64,
+    last_live_home_prompt: Option<String>,
 }
 
 impl Session {
     /// Create an empty session driven by `config`.
     #[must_use]
     pub fn new(config: EngineConfig) -> Self {
-        Self { config, history: Vec::new(), recorded_context: None, history_revision: 0 }
+        Self {
+            config,
+            history: Vec::new(),
+            recorded_context: None,
+            history_revision: 0,
+            last_live_home_prompt: None,
+        }
     }
 
     /// Create a session that continues from a recorded `history` (resume, fork).
     #[must_use]
     pub fn with_history(config: EngineConfig, history: Vec<ChatMessage>) -> Self {
-        Self { config, history, recorded_context: None, history_revision: 0 }
+        Self {
+            config,
+            history,
+            recorded_context: None,
+            history_revision: 0,
+            last_live_home_prompt: None,
+        }
     }
 
     /// Note `fingerprint` as the turn context now on record; returns whether it
@@ -52,6 +66,28 @@ impl Session {
     #[must_use]
     pub fn config(&self) -> &EngineConfig {
         &self.config
+    }
+
+    /// Refresh the live persona and rules for the next turn. A transient
+    /// invalid edit keeps the previous valid revision in memory.
+    pub(crate) fn refresh_live_home_prompt(&mut self) -> Option<&str> {
+        let workspace = self.config.live_agent_home_workspace.as_ref()?;
+        match AgentHome::open(HomeOptions {
+            workspace: Some(workspace.clone()),
+            strict_soul: true,
+            ..HomeOptions::default()
+        }) {
+            Ok(home) => {
+                let prompt = home.system_prompt(&BootstrapBudget::default()).render();
+                if !prompt.trim().is_empty() {
+                    self.last_live_home_prompt = Some(prompt);
+                }
+            },
+            Err(error) => {
+                tracing::warn!(root = %workspace.display(), error = %error, "keeping last valid Agent Home prompt");
+            },
+        }
+        self.last_live_home_prompt.as_deref()
     }
 
     /// The full conversation history, oldest first.

@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 //! Engine configuration: model, system prompt, iteration budget, autonomy.
 
+use std::path::PathBuf;
+
 use serde_json::Value;
 
 /// How the engine treats tool calls with respect to human approval.
@@ -27,6 +29,8 @@ pub struct EngineConfig {
     pub model: String,
     /// Optional system instruction prepended to every model request.
     pub system_prompt: Option<String>,
+    /// Agent Home root reloaded at the start of every turn.
+    pub live_agent_home_workspace: Option<PathBuf>,
     /// JSON Schema sent with every model request in this turn.
     pub response_schema: Option<Value>,
     /// Maximum number of model<->tool round trips within a single turn before
@@ -50,6 +54,7 @@ impl Default for EngineConfig {
         Self {
             model: String::new(),
             system_prompt: None,
+            live_agent_home_workspace: None,
             response_schema: None,
             max_tool_iterations: DEFAULT_MAX_TOOL_ITERATIONS,
             auto_compact_token_limit: None,
@@ -69,6 +74,13 @@ impl EngineConfig {
     #[must_use]
     pub fn with_system_prompt(mut self, system_prompt: impl Into<String>) -> Self {
         self.system_prompt = Some(system_prompt.into());
+        self
+    }
+
+    /// Reload this Agent Home before every turn of a long-lived session.
+    #[must_use]
+    pub fn with_live_agent_home_workspace(mut self, workspace: impl Into<PathBuf>) -> Self {
+        self.live_agent_home_workspace = Some(workspace.into());
         self
     }
 

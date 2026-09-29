@@ -477,7 +477,13 @@ pub async fn run_turn_with_controls(
     steer: &SteerQueue,
 ) -> Result<TurnOutcome, EngineError> {
     let autonomy = session.config().autonomy;
-    let system = session.config().system_prompt.clone();
+    let mut system = session.config().system_prompt.clone();
+    if let Some(home) = session.refresh_live_home_prompt() {
+        system = Some(match system {
+            Some(base) if !base.is_empty() => format!("{base}\n\n{home}"),
+            _ => home.to_owned(),
+        });
+    }
     let response_schema = session.config().response_schema.clone();
     let max_iterations = session.config().max_tool_iterations;
     let capabilities = client.capabilities();

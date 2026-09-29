@@ -176,7 +176,11 @@ pub(crate) fn runtime(
     .with_yolo()
     .with_model_provider(config.provider.id.clone())
     .with_cwd(cwd)
-    .with_system_prompt(instructions.join("\n\n"));
+    .with_system_prompt(instructions.join("\n\n"))
+    .with_live_agent_home_workspace(
+        aphrody_agent_home::paths::resolve_workspace(config.active_profile.as_deref(), None)
+            .map_err(invalid)?,
+    );
     if let Some(limit) = config.model_auto_compact_token_limit {
         let limit = u64::try_from(limit)
             .map_err(|_| invalid("model_auto_compact_token_limit must be nonnegative"))?;

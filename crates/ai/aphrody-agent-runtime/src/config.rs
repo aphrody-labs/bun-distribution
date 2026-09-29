@@ -64,6 +64,8 @@ pub struct RuntimeConfig {
     pub model_provider: Option<String>,
     /// Optional system instruction prepended to every model request.
     pub system_prompt: Option<String>,
+    /// Agent Home root reloaded for each model turn.
+    pub live_agent_home_workspace: Option<PathBuf>,
     /// JSON Schema requested for the final model response.
     pub response_schema: Option<Value>,
     /// Tool-call approval policy. Defaults to
@@ -104,6 +106,7 @@ impl Default for RuntimeConfig {
             model: String::new(),
             model_provider: None,
             system_prompt: None,
+            live_agent_home_workspace: None,
             response_schema: None,
             // No human in the loop by default (CLAUDE.md §0.1).
             autonomy: AutonomyMode::FullAuto,
@@ -154,6 +157,13 @@ impl RuntimeConfig {
     #[must_use]
     pub fn with_system_prompt(mut self, system_prompt: impl Into<String>) -> Self {
         self.system_prompt = Some(system_prompt.into());
+        self
+    }
+
+    /// Use a live Agent Home for every turn, including interactive sessions.
+    #[must_use]
+    pub fn with_live_agent_home_workspace(mut self, workspace: impl Into<PathBuf>) -> Self {
+        self.live_agent_home_workspace = Some(workspace.into());
         self
     }
 
@@ -239,6 +249,7 @@ impl RuntimeConfig {
         EngineConfig {
             model: self.model.clone(),
             system_prompt: self.system_prompt.clone(),
+            live_agent_home_workspace: self.live_agent_home_workspace.clone(),
             response_schema: self.response_schema.clone(),
             max_tool_iterations: self.max_tool_iterations,
             auto_compact_token_limit: self.auto_compact_token_limit,
