@@ -477,7 +477,27 @@ async fn rag_stats() -> miette::Result<serde_json::Value> {
         }
         return Ok(response);
     }
-    let response = bot_get("/api/ia/status", &[]).await?;
+    let route = "/api/ia/status";
+    let url = bot_base()?.join(route).into_diagnostic()?;
+    let result = http_client()?
+        .get(url)
+        .send()
+        .await
+        .map_err(|_| miette::miette!("Bot Shenron indisponible : {route}"))?;
+    let status = result.status();
+    let response = result
+        .json::<serde_json::Value>()
+        .await
+        .map_err(|_| miette::miette!("Réponse JSON invalide : {route}"))?;
+    if !status.is_success() {
+        if response["error"]
+            .as_str()
+            .is_some_and(|error| error.starts_with("Aphrody compute unreachable"))
+        {
+            return Err(miette::miette!("Calcul Aphrody du bot Shenron indisponible"));
+        }
+        return Err(miette::miette!("Erreur HTTP {} : {route}", status.as_u16()));
+    }
     if response["ok"] != true {
         return Err(miette::miette!("Statistiques RAG du bot indisponibles"));
     }
@@ -531,7 +551,7 @@ async fn handle_doctor(json_output: bool) -> miette::Result<()> {
             "chunks": stats["chunks"],
             "vectors": stats["vectors"]
         }),
-        Err(_) => json!({"reachable": false, "ready": false}),
+        Err(error) => json!({"reachable": false, "ready": false, "reason": error.to_string()}),
     };
     let workspace = aphrody_agent_home::paths::resolve_workspace(Some("dbfr"), None)
         .map_err(|error| miette::miette!("Agent Home: {error}"))?;
