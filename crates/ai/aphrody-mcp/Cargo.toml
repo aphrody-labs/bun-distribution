@@ -89,6 +89,8 @@ aphrody-models     = { workspace = true }
 aphrody-config     = { workspace = true }
 aphrody-kernel     = { workspace = true }
 aphrody-web-extract = { workspace = true }
+aphrody-web-detect = { workspace = true }
+aphrody-web-crawl = { workspace = true }
 aphrody-x          = { workspace = true }
 aphrody-x-algorithm = { workspace = true }
 rmcp               = { workspace = true }

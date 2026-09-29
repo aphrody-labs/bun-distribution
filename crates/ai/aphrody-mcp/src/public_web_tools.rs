@@ -21,6 +21,16 @@ static CLIENT: LazyLock<reqwest::Client> = LazyLock::new(|| {
 static TOOLS: LazyLock<Vec<Tool>> = LazyLock::new(|| {
     [
         json!({
+            "name": "aphrody_detect_frameworks",
+            "description": "Detect web technologies, CDN and challenge evidence from a bounded HTTP response and DNS lookup.",
+            "inputSchema": {
+                "type": "object", "properties": {
+                    "url": { "type": "string", "format": "uri", "description": "HTTP or HTTPS URL to inspect." }
+                },
+                "required": ["url"], "additionalProperties": false
+            }
+        }),
+        json!({
             "name": "aphrody_archive_item",
             "description": "Retrieve an Internet Archive item's public metadata and file manifest without downloading media.",
             "inputSchema": {
@@ -375,6 +385,12 @@ impl Output {
 
 async fn run(name: &str, args: &Value) -> Result<Output, String> {
     match name {
+        "aphrody_detect_frameworks" => {
+            let url = required_text(args, "url")?;
+            let report =
+                aphrody_web_detect::detect_url(url).await.map_err(|error| error.to_string())?;
+            Ok(Output::json(serde_json::to_value(report).map_err(|error| error.to_string())?))
+        },
         "aphrody_archive_item" => {
             let item =
                 get_json(item_url(required_text(args, "identifier")?), "Internet Archive").await?;
@@ -466,6 +482,7 @@ mod tests {
     #[test]
     fn catalog_has_source_tool_names_and_schemas() {
         for name in [
+            "aphrody_detect_frameworks",
             "aphrody_archive_item",
             "aphrody_archive_search",
             "aphrody_archive_wayback",
@@ -478,12 +495,18 @@ mod tests {
         ] {
             assert!(owns(name), "{name}");
         }
-        assert_eq!(TOOLS.len(), 9);
+        assert_eq!(TOOLS.len(), 10);
         let search = get("aphrody_archive_search").unwrap();
         assert_eq!(
             serde_json::to_value(search).unwrap()["inputSchema"]["properties"]["rows"]["default"],
             50
         );
+    }
+
+    #[tokio::test]
+    async fn detection_rejects_non_web_url_before_network() {
+        let result = run("aphrody_detect_frameworks", &json!({ "url": "file:///tmp/a" })).await;
+        assert!(result.is_err());
     }
 
     #[test]

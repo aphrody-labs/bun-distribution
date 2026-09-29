@@ -30,7 +30,7 @@ use tokio::sync::Mutex;
 use crate::browser_tools;
 #[cfg(not(target_arch = "wasm32"))]
 use crate::{gemini_tools, search_tools};
-use crate::{public_web_tools, x_tools};
+use crate::{native_crawl_tools, public_web_tools, x_tools};
 
 /// Idle connected BXC children kept for reuse.
 const MAX_IDLE: usize = 4;
@@ -227,6 +227,7 @@ pub(crate) async fn owns(name: &str) -> bool {
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 enum DirectTool {
     PublicWeb,
+    Crawl,
     X,
     #[cfg(not(target_arch = "wasm32"))]
     Search,
@@ -240,6 +241,8 @@ fn direct_tool(name: &str) -> Option<(String, DirectTool)> {
     let public = public_name(name);
     let owner = if public_web_tools::owns(&public) {
         DirectTool::PublicWeb
+    } else if native_crawl_tools::owns(&public) {
+        DirectTool::Crawl
     } else if x_tools::owns(&public) {
         DirectTool::X
     } else {
@@ -272,6 +275,7 @@ async fn call_direct_raw(name: &str, arguments: Value) -> Option<Result<Value, S
     };
     let result = match owner {
         DirectTool::PublicWeb => public_web_tools::call(&request).await,
+        DirectTool::Crawl => native_crawl_tools::call(&request).await,
         DirectTool::X => x_tools::call(&request).await,
         #[cfg(not(target_arch = "wasm32"))]
         DirectTool::Search => search_tools::call(&request).await,
@@ -347,6 +351,8 @@ mod tests {
     fn native_owners_cover_source_and_public_names() {
         for (source, owner) in [
             ("bxc_google_supported_languages", DirectTool::PublicWeb),
+            ("bxc_detect_frameworks", DirectTool::PublicWeb),
+            ("aphrody_web_crawl", DirectTool::Crawl),
             ("aphrody_google_dns", DirectTool::PublicWeb),
             ("bxc_x_algorithm_rank", DirectTool::X),
             ("aphrody_x_client", DirectTool::X),
@@ -379,6 +385,22 @@ mod tests {
             .await
             .expect("native local ranking");
         assert_ne!(rank["isError"], true, "{rank}");
+
+        let detect = call_raw(
+            "bxc_detect_frameworks",
+            serde_json::json!({ "url": "file:///tmp/a" }),
+        )
+        .await
+        .expect("native detection dispatch");
+        assert_eq!(detect["isError"], true, "{detect}");
+
+        let crawl = call_raw(
+            "aphrody_web_crawl",
+            serde_json::json!({ "urls": ["file:///tmp/a"] }),
+        )
+        .await
+        .expect("native crawl dispatch");
+        assert_eq!(crawl["isError"], true, "{crawl}");
 
         #[cfg(not(target_arch = "wasm32"))]
         {

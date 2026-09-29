@@ -1,15 +1,16 @@
 // SPDX-License-Identifier: Apache-2.0
 mod client_cmd;
+#[cfg(not(target_arch = "wasm32"))]
+mod gemini_tools;
+mod http_rest;
+mod native_crawl_tools;
 mod public_web_tools;
 #[cfg(not(target_arch = "wasm32"))]
 mod search_tools;
 #[cfg(not(target_arch = "wasm32"))]
-mod gemini_tools;
-mod x_tools;
-mod http_rest;
-#[cfg(not(target_arch = "wasm32"))]
 mod shenron_gemini_web;
 mod shenron_vector;
+mod x_tools;
 // Voice MCP tools (TTS via aphrody-voice + STT via aphrody-voice-stt).
 // Native-only: the module itself is `#[cfg(not(target_arch = "wasm32"))]`.
 #[cfg(not(target_arch = "wasm32"))]
@@ -3594,6 +3595,9 @@ impl GoogleMcpServer {
         let taken: std::collections::HashSet<String> =
             tools.iter().map(|tool| tool.name.to_string()).collect();
         tools.extend(public_web_tools::list(|name| taken.contains(name)));
+        let taken: std::collections::HashSet<String> =
+            tools.iter().map(|tool| tool.name.to_string()).collect();
+        tools.extend(native_crawl_tools::list(|name| taken.contains(name)));
         #[cfg(not(target_arch = "wasm32"))]
         {
             let taken: std::collections::HashSet<String> =
@@ -3697,21 +3701,22 @@ impl ServerHandler for GoogleMcpServer {
         {
             return Ok(public_web_tools::call(&request).await.into());
         }
-        #[cfg(not(target_arch = "wasm32"))]
         if router.get(request.name.as_ref()).is_none()
-            && search_tools::owns(request.name.as_ref())
+            && native_crawl_tools::owns(request.name.as_ref())
+        {
+            return Ok(native_crawl_tools::call(&request).await.into());
+        }
+        #[cfg(not(target_arch = "wasm32"))]
+        if router.get(request.name.as_ref()).is_none() && search_tools::owns(request.name.as_ref())
         {
             return Ok(search_tools::call(&request).await.into());
         }
         #[cfg(not(target_arch = "wasm32"))]
-        if router.get(request.name.as_ref()).is_none()
-            && gemini_tools::owns(request.name.as_ref())
+        if router.get(request.name.as_ref()).is_none() && gemini_tools::owns(request.name.as_ref())
         {
             return Ok(gemini_tools::call(&request).await.into());
         }
-        if router.get(request.name.as_ref()).is_none()
-            && x_tools::owns(request.name.as_ref())
-        {
+        if router.get(request.name.as_ref()).is_none() && x_tools::owns(request.name.as_ref()) {
             return Ok(x_tools::call(&request).await.into());
         }
         #[cfg(all(feature = "winclean", windows))]
@@ -3761,6 +3766,7 @@ impl ServerHandler for GoogleMcpServer {
     fn get_tool(&self, name: &str) -> Option<rmcp::model::Tool> {
         let builtin = Self::all_tools().get(name).cloned();
         let builtin = builtin.or_else(|| public_web_tools::get(name));
+        let builtin = builtin.or_else(|| native_crawl_tools::get(name));
         #[cfg(not(target_arch = "wasm32"))]
         let builtin = builtin.or_else(|| search_tools::get(name));
         #[cfg(not(target_arch = "wasm32"))]
