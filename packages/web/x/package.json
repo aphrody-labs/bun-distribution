@@ -46,7 +46,7 @@
     "lint": "oxlint",
     "test": "bun test",
     "catalog:sync": "bun ../../apps/bxc/scripts/sync-x-catalog.ts",
-    "coverage": "bun ../../apps/bxc/scripts/x-coverage.ts",
+    "coverage": "bun ../../../scripts/tools/web/x-coverage.ts",
     "recon": "bun ../../apps/bxc/scripts/x-premium-recon.ts --profile max"
   },
   "devDependencies": {
