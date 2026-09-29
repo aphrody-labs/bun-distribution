@@ -38,7 +38,7 @@ use std::{path::Path, time::Duration};
 
 use crate::{
     error::{BxcError, Result},
-    resolve::{self, Source},
+    resolve::Source,
 };
 
 /// A bxc fetch profile.
@@ -176,7 +176,9 @@ impl BxcCli {
     ///
     /// [`BxcError::BinaryMissing`], listing every candidate that was probed.
     pub fn discover() -> Result<Self> {
-        Ok(Self { source: resolve::binary()? })
+        let path = std::env::current_exe()
+            .map_err(|error| BxcError::LibraryUnavailable { detail: error.to_string() })?;
+        Ok(Self { source: Source::InTree(path) })
     }
 
     /// Wrap an already-resolved path.
@@ -211,54 +213,112 @@ impl BxcCli {
     ///
     /// [`BxcError::Spawn`] when the process cannot be started.
     pub async fn run(&self, args: &[String], budget: Duration) -> Result<Run> {
-        use tokio::io::AsyncReadExt as _;
+        use serde_json::json;
 
-        let mut child = tokio::process::Command::new(self.path())
-            .args(args)
-            .stdin(std::process::Stdio::null())
-            .stdout(std::process::Stdio::piped())
-            .stderr(std::process::Stdio::piped())
-            // Without this a task cancelled mid-run leaves a 130 MB Bun
-            // standalone alive with nobody waiting on it.
-            .kill_on_drop(true)
-            .spawn()
-            .map_err(|source| BxcError::Spawn { bin: self.path().to_path_buf(), source })?;
-
-        let mut out = child.stdout.take().expect("stdout was piped");
-        let mut err = child.stderr.take().expect("stderr was piped");
-        let out_task = tokio::spawn(async move {
-            let mut buf = Vec::new();
-            let _ = out.read_to_end(&mut buf).await;
-            buf
-        });
-        let err_task = tokio::spawn(async move {
-            let mut buf = Vec::new();
-            let _ = err.read_to_end(&mut buf).await;
-            buf
-        });
-
-        let (code, timed_out) = match tokio::time::timeout(budget, child.wait()).await {
-            Ok(Ok(status)) => (status.code(), false),
-            Ok(Err(source)) => {
-                return Err(BxcError::Spawn { bin: self.path().to_path_buf(), source });
-            },
-            Err(_elapsed) => {
-                // Killing closes the pipes, which is what lets the two reader
-                // tasks below finish instead of hanging with the child.
-                let _ = child.kill().await;
-                (None, true)
-            },
+        let unsupported =
+            |detail| BxcError::NativeUnsupported { operation: args.join(" "), detail };
+        let arg = |flag: &str| {
+            args.iter()
+                .position(|part| part == flag)
+                .and_then(|position| args.get(position + 1))
+                .map(String::as_str)
         };
-
-        let stdout = out_task.await.unwrap_or_default();
-        let stderr = err_task.await.unwrap_or_default();
-
+        let (tool, arguments) = match args {
+            [flag] if flag == "--version" => {
+                return Ok(Run {
+                    args: args.to_vec(),
+                    code: Some(0),
+                    stdout: format!("aphrody-web-bridge {}", env!("CARGO_PKG_VERSION")),
+                    stderr: String::new(),
+                    timed_out: false,
+                });
+            },
+            [command, url, ..] if command == "recon" => {
+                let profile = arg("--profile").and_then(Profile::parse);
+                return self.recon(url, profile, budget).await.map(|(_, run)| run);
+            },
+            [command, url, ..] if command == "scrape" => {
+                let profile = arg("--profile").and_then(Profile::parse);
+                return self.scrape_markdown(url, profile, budget).await.map(|(_, run)| run);
+            },
+            [flag, expression] if flag == "-e" => {
+                ("browser_evaluate", json!({ "expression": expression }))
+            },
+            [group, command, ..] if group == "chrome" && command == "screenshot" => {
+                ("browser_screenshot", json!({}))
+            },
+            [group, command, ..] if group == "chrome" && command == "click" => {
+                let selector = arg("--selector").ok_or_else(|| {
+                    unsupported("coordinate clicks are not exposed by the shared browser session")
+                })?;
+                if args.iter().any(|part| part == "--double") {
+                    return Err(unsupported(
+                        "double-click is not exposed by the shared browser session",
+                    ));
+                }
+                ("browser_click", json!({ "selector": selector }))
+            },
+            [group, command, ..] if group == "chrome" && command == "type" => {
+                return Err(unsupported("typing requires an element selector or ref"));
+            },
+            [group, command, ..] if group == "chrome" && command == "key" => {
+                let key = arg("--key").ok_or_else(|| unsupported("missing --key"))?;
+                ("browser_press_key", json!({ "key": key }))
+            },
+            [group, command, ..] if group == "chrome" && command == "scroll" => {
+                let dx = arg("--dx")
+                    .unwrap_or("0")
+                    .parse::<i64>()
+                    .map_err(|_| unsupported("invalid --dx"))?;
+                let dy = arg("--dy")
+                    .unwrap_or("0")
+                    .parse::<i64>()
+                    .map_err(|_| unsupported("invalid --dy"))?;
+                if dx != 0 && dy != 0 {
+                    return Err(unsupported(
+                        "diagonal scroll is not exposed by the shared browser session",
+                    ));
+                }
+                let (direction, amount) = if dy > 0 {
+                    ("down", dy)
+                } else if dy < 0 {
+                    ("up", -dy)
+                } else if dx > 0 {
+                    ("right", dx)
+                } else {
+                    ("left", -dx)
+                };
+                ("browser_scroll", json!({ "direction": direction, "amount": amount }))
+            },
+            [group, command, ..] if group == "chrome" && command == "snapshot" => {
+                ("browser_snapshot", json!({}))
+            },
+            [group, command, ..] if group == "chrome" && command == "tabs" => {
+                ("browser_tab_list", json!({}))
+            },
+            [group, command, url, ..] if group == "chrome" && command == "navigate" => {
+                ("browser_navigate", json!({ "url": url }))
+            },
+            _ => return Err(unsupported("use a supported Rust Web API for this command")),
+        };
+        let result = if matches!(args, [flag, _] if flag == "-e") {
+            crate::native_session::call_isolated(tool, arguments, budget).await?
+        } else {
+            crate::native_session::call(tool, arguments, budget).await?
+        };
+        let stdout = if tool == "browser_screenshot" {
+            crate::native_session::image_data(&result)
+                .ok_or_else(|| unsupported("screenshot returned no PNG image"))?
+                .to_owned()
+        } else {
+            crate::native_session::text_content(&result)
+        };
         Ok(Run {
             args: args.to_vec(),
-            code,
-            stdout: String::from_utf8_lossy(&stdout).into_owned(),
-            stderr: String::from_utf8_lossy(&stderr).into_owned(),
-            timed_out,
+            code: Some(0),
+            stdout,
+            stderr: String::new(),
+            timed_out: false,
         })
     }
 
@@ -283,12 +343,25 @@ impl BxcCli {
             args.push("--profile".to_owned());
             args.push(p.as_str().to_owned());
         }
-        let run = self.run(&args, budget).await?;
-        let (body, _dropped) = strip_progress_lines(&run.stdout);
-
-        if body.trim().is_empty() {
-            return Err(self.explain_empty(&run, budget));
+        let mut request = crate::fetch::Request::new(url).with_timeout(budget);
+        if let Some(profile) = profile {
+            request = request.with_profile(profile);
         }
+        let page = crate::fetch::fetch(&request).await?;
+        let body = page.body;
+        if body.trim().is_empty() {
+            return Err(BxcError::Browser {
+                url: url.to_owned(),
+                detail: "native scraper returned an empty body".to_owned(),
+            });
+        }
+        let run = Run {
+            args,
+            code: Some(0),
+            stdout: body.clone(),
+            stderr: String::new(),
+            timed_out: false,
+        };
         Ok((body, run))
     }
 
@@ -312,22 +385,8 @@ impl BxcCli {
             args.push("--profile".to_owned());
             args.push(p.as_str().to_owned());
         }
-        let run = self.run(&args, budget).await?;
-        if !run.ok() {
-            return Err(self.explain_empty(&run, budget));
-        }
-        let (body, _dropped) = strip_progress_lines(&run.stdout);
-
-        // An exit of 0 is not proof that a report was produced. On a failing
-        // origin, `recon` escalates through all five profiles and writes only
-        // its `[recon] Probing target using profile: X` lines — which
-        // `strip_progress_lines` then removes, leaving nothing. Returning
-        // `Ok("")` there hands the caller an empty page under a success code:
-        // a body with no content and exit 0 is a false green, and the caller
-        // cannot tell it from a genuinely blank document.
-        if body.trim().is_empty() {
-            return Err(self.explain_empty(&run, budget));
-        }
+        let (body, mut run) = self.scrape_markdown(url, profile, budget).await?;
+        run.args = args;
         Ok((body, run))
     }
 
@@ -340,27 +399,54 @@ impl BxcCli {
     /// An exit of 65 with a well-formed empty body is **not** an error: bxc
     /// ran, and "no results" is a finding.
     pub async fn search(&self, query: &str, num: Option<u32>, budget: Duration) -> Result<Search> {
-        let mut args = vec!["search".to_owned(), query.to_owned(), "--json".to_owned()];
-        if let Some(n) = num {
-            args.push("--num".to_owned());
-            args.push(n.to_string());
+        if query.trim().is_empty() {
+            return Err(BxcError::NativeUnsupported {
+                operation: "search".to_owned(),
+                detail: "query must not be empty",
+            });
         }
-        let run = self.run(&args, budget).await?;
-        let (body, _dropped) = strip_progress_lines(&run.stdout);
-
-        if body.trim().is_empty() {
-            return Err(self.explain_empty(&run, budget));
+        obscura_net::ensure_rustls_crypto_provider();
+        let mut url =
+            reqwest::Url::parse("https://www.google.com/search").expect("static Google Search URL");
+        url.query_pairs_mut()
+            .append_pair("q", query)
+            .append_pair("num", &num.unwrap_or(10).min(100).to_string());
+        let client = reqwest::Client::builder()
+            .timeout(budget)
+            .user_agent(crate::fetch::USER_AGENT)
+            .build()
+            .map_err(|source| BxcError::Http { url: url.to_string(), source: Box::new(source) })?;
+        let response = client
+            .get(url.clone())
+            .send()
+            .await
+            .map_err(|source| BxcError::Http { url: url.to_string(), source: Box::new(source) })?;
+        let status = response.status();
+        if !status.is_success() {
+            return Err(BxcError::HttpStatus { url: url.to_string(), status: status.as_u16() });
         }
-        let value: serde_json::Value =
-            serde_json::from_str(body.trim()).map_err(|e| BxcError::CliOutput {
+        let html = response
+            .text()
+            .await
+            .map_err(|source| BxcError::Http { url: url.to_string(), source: Box::new(source) })?;
+        let hits = parse_google_results(&html, num.unwrap_or(10) as usize);
+        if hits.is_empty() {
+            return Err(BxcError::CliOutput {
                 bin: self.path().to_path_buf(),
-                expected: "JSON",
-                detail: format!(
-                    "{e}; body starts with {:?}",
-                    body.chars().take(160).collect::<String>()
-                ),
-            })?;
-        Ok(Search::from_json(&value, &run))
+                expected: "Google result headings with destination links",
+                detail: "the response contained no recognizable organic results; Google may have blocked this session".to_owned(),
+            });
+        }
+        Ok(Search {
+            query: query.to_owned(),
+            hits,
+            unreadable: 0,
+            partial: 0,
+            profile: Some("native-http".to_owned()),
+            authenticated: false,
+            from_cache: false,
+            exit_code: Some(0),
+        })
     }
 
     /// `bxc google translate <text> --target <target> [--source <source>]`.
@@ -374,24 +460,25 @@ impl BxcCli {
         source: Option<&str>,
         budget: Duration,
     ) -> Result<String> {
-        let mut args = vec![
-            "google".to_owned(),
-            "translate".to_owned(),
-            text.to_owned(),
-            "--target".to_owned(),
-            target.to_owned(),
-        ];
-        if let Some(src) = source {
-            args.push("--source".to_owned());
-            args.push(src.to_owned());
-        }
-        let run = self.run(&args, budget).await?;
-        let (body, _dropped) = strip_progress_lines(&run.stdout);
-        let trimmed = body.trim();
-        if trimmed.is_empty() {
-            return Err(self.explain_empty(&run, budget));
-        }
-        Ok(trimmed.to_string())
+        let translator = aphrody_translate::Translator::new(std::path::PathBuf::new(), None)
+            .map_err(|error| BxcError::Browser {
+                url: "Google Translate".to_owned(),
+                detail: error.to_string(),
+            })?
+            .with_backend(aphrody_translate::Backend::GoogleRpc);
+        tokio::time::timeout(
+            budget,
+            translator.translate_with_lang(text, source.unwrap_or("auto"), target),
+        )
+        .await
+        .map_err(|_| BxcError::BrowserTimeout {
+            url: "Google Translate".to_owned(),
+            secs: budget.as_secs(),
+        })?
+        .map_err(|error| BxcError::Browser {
+            url: "Google Translate".to_owned(),
+            detail: error.to_string(),
+        })
     }
 
     /// `bxc google search <query> [--profile <profile>]`.
@@ -401,18 +488,19 @@ impl BxcCli {
         profile: Option<Profile>,
         budget: Duration,
     ) -> Result<String> {
-        let mut args = vec!["google".to_owned(), "search".to_owned(), query.to_owned()];
-        if let Some(p) = profile {
-            args.push("--profile".to_owned());
-            args.push(p.as_str().to_owned());
+        if profile.is_some_and(Profile::needs_browser) {
+            return Err(BxcError::NativeUnsupported {
+                operation: "google search browser profile".to_owned(),
+                detail: "the native search client currently supports public HTTP search only",
+            });
         }
-        let run = self.run(&args, budget).await?;
-        let (body, _dropped) = strip_progress_lines(&run.stdout);
-        let trimmed = body.trim();
-        if trimmed.is_empty() {
-            return Err(self.explain_empty(&run, budget));
-        }
-        Ok(trimmed.to_string())
+        let result = self.search(query, Some(10), budget).await?;
+        Ok(result
+            .hits
+            .iter()
+            .map(|hit| format!("{}\n{}\n{}", hit.title, hit.link, hit.snippet))
+            .collect::<Vec<_>>()
+            .join("\n\n"))
     }
 
     /// `bxc google dns <name> [type]`.
@@ -422,17 +510,28 @@ impl BxcCli {
         record_type: Option<&str>,
         budget: Duration,
     ) -> Result<String> {
-        let mut args = vec!["google".to_owned(), "dns".to_owned(), name.to_owned()];
-        if let Some(t) = record_type {
-            args.push(t.to_owned());
+        obscura_net::ensure_rustls_crypto_provider();
+        let mut url =
+            reqwest::Url::parse("https://dns.google/resolve").expect("static Google DNS URL");
+        url.query_pairs_mut()
+            .append_pair("name", name)
+            .append_pair("type", record_type.unwrap_or("A"));
+        let response = reqwest::Client::builder()
+            .timeout(budget)
+            .build()
+            .map_err(|source| BxcError::Http { url: url.to_string(), source: Box::new(source) })?
+            .get(url.clone())
+            .send()
+            .await
+            .map_err(|source| BxcError::Http { url: url.to_string(), source: Box::new(source) })?;
+        let status = response.status();
+        if !status.is_success() {
+            return Err(BxcError::HttpStatus { url: url.to_string(), status: status.as_u16() });
         }
-        let run = self.run(&args, budget).await?;
-        let (body, _dropped) = strip_progress_lines(&run.stdout);
-        let trimmed = body.trim();
-        if trimmed.is_empty() {
-            return Err(self.explain_empty(&run, budget));
-        }
-        Ok(trimmed.to_string())
+        response
+            .text()
+            .await
+            .map_err(|source| BxcError::Http { url: url.to_string(), source: Box::new(source) })
     }
 
     /// `bxc google tts <text> [--target <target>] [--speed <speed>]`.
@@ -443,46 +542,11 @@ impl BxcCli {
         speed: Option<f64>,
         budget: Duration,
     ) -> Result<String> {
-        let mut args = vec!["google".to_owned(), "tts".to_owned(), text.to_owned()];
-        if let Some(t) = target {
-            args.push("--target".to_owned());
-            args.push(t.to_owned());
-        }
-        if let Some(s) = speed {
-            args.push("--speed".to_owned());
-            args.push(s.to_string());
-        }
-        let run = self.run(&args, budget).await?;
-        let (body, _dropped) = strip_progress_lines(&run.stdout);
-        let trimmed = body.trim();
-        if trimmed.is_empty() {
-            return Err(self.explain_empty(&run, budget));
-        }
-        Ok(trimmed.to_string())
-    }
-
-    /// Build the right error for a run that produced nothing usable.
-    fn explain_empty(&self, run: &Run, budget: Duration) -> BxcError {
-        if run.timed_out {
-            return BxcError::CliTimeout {
-                bin: self.path().to_path_buf(),
-                secs: budget.as_secs(),
-                bytes: run.stdout.len(),
-            };
-        }
-        let mut detail = run.stderr_excerpt();
-        if run.code == Some(65) {
-            detail.push_str(
-                "\nExit 65 is bxc for \"ran fine, produced nothing\": a dead host, or a browser \
-                 profile with no Chromium installed.",
-            );
-        }
-        BxcError::CliFailed {
-            bin: self.path().to_path_buf(),
-            args: run.args.join(" "),
-            code: run.code.map_or_else(|| "no exit code".to_owned(), |c| c.to_string()),
-            detail,
-        }
+        let _ = (text, target, speed, budget);
+        Err(BxcError::NativeUnsupported {
+            operation: "google tts".to_owned(),
+            detail: "no shared native Google TTS implementation is available",
+        })
     }
 }
 
@@ -525,6 +589,57 @@ pub struct Hit {
     pub link: String,
     /// Snippet, empty when bxc gave none.
     pub snippet: String,
+}
+
+fn parse_google_results(html: &str, limit: usize) -> Vec<Hit> {
+    let tree = obscura_dom::parse_html(html);
+    let Ok(headings) = tree.query_selector_all("h3") else {
+        return Vec::new();
+    };
+    let mut hits = Vec::new();
+    for heading in headings {
+        let title = tree.text_content(heading).trim().to_owned();
+        if title.is_empty() {
+            continue;
+        }
+        let Some(anchor) = tree.ancestors(heading).into_iter().find(|ancestor| {
+            tree.get_node(*ancestor)
+                .and_then(|node| node.as_element().map(|name| name.local.as_ref() == "a"))
+                .unwrap_or(false)
+        }) else {
+            continue;
+        };
+        let Some(href) =
+            tree.get_node(anchor).and_then(|node| node.get_attribute("href").map(str::to_owned))
+        else {
+            continue;
+        };
+        let link = if href.starts_with("/url?") {
+            reqwest::Url::parse("https://www.google.com")
+                .expect("static Google URL")
+                .join(&href)
+                .ok()
+                .and_then(|url| {
+                    url.query_pairs()
+                        .find(|(key, _)| key == "q")
+                        .map(|(_, value)| value.into_owned())
+                })
+                .unwrap_or_default()
+        } else {
+            href
+        };
+        if !matches!(reqwest::Url::parse(&link), Ok(url) if matches!(url.scheme(), "http" | "https"))
+        {
+            continue;
+        }
+        if !hits.iter().any(|hit: &Hit| hit.link == link) {
+            hits.push(Hit { title, link, snippet: String::new() });
+        }
+        if hits.len() >= limit {
+            break;
+        }
+    }
+    hits
 }
 
 /// A parsed `bxc search --json` answer.
@@ -746,5 +861,19 @@ mod tests {
         };
         assert!(!run.ok());
         assert!(run.stderr_excerpt().contains("redis"));
+    }
+
+    #[test]
+    fn native_google_parser_extracts_only_linked_headings() {
+        let html = r#"<html><body>
+          <a href="/url?q=https%3A%2F%2Frust-lang.org%2Flearn"><h3>Learn Rust</h3></a>
+          <a href="https://example.org/docs"><h3>Example Docs</h3></a>
+          <h3>Unlinked Heading</h3>
+        </body></html>"#;
+        let hits = parse_google_results(html, 10);
+        assert_eq!(hits.len(), 2);
+        assert_eq!(hits[0].title, "Learn Rust");
+        assert_eq!(hits[0].link, "https://rust-lang.org/learn");
+        assert_eq!(hits[1].link, "https://example.org/docs");
     }
 }

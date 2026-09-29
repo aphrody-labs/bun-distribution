@@ -19,6 +19,8 @@ workspace = true
 
 [dependencies]
 aphrody-web-extract = { workspace = true }
+aphrody-web-service = { workspace = true, features = ["render"] }
+aphrody-translate = { workspace = true }
 obscura = { workspace = true }
 obscura-dom = { workspace = true }
 obscura-net = { workspace = true }

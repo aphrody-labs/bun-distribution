@@ -24,6 +24,14 @@ fn bullets(paths: &[PathBuf]) -> String {
 #[derive(Debug, thiserror::Error)]
 #[non_exhaustive]
 pub enum BxcError {
+    /// The compatibility facade has no in-process implementation for this operation.
+    #[error("native Web operation {operation} is unavailable: {detail}")]
+    NativeUnsupported {
+        /// Requested operation.
+        operation: String,
+        /// Reason the operation cannot be served.
+        detail: &'static str,
+    },
     /// A CSS selector could not be parsed by the native DOM engine.
     #[error("invalid CSS selector {selector:?}: {detail}")]
     Selector {

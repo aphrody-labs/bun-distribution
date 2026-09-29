@@ -1186,7 +1186,7 @@ impl TerminalCommand for SearchCommand {
         println!(
             "\n{}",
             format!(
-                "via bxc ({}) · profil {profile} · {} · {}",
+                "via Aphrody Web Rust ({}) · profil {profile} · {} · {}",
                 cli.path().display(),
                 if results.from_cache { "cache" } else { "live" },
                 if results.authenticated { "authentifié" } else { "anonyme" }
@@ -1200,7 +1200,7 @@ impl TerminalCommand for SearchCommand {
         // answered, and with what code, to tell that apart from a block.
         if let Some(code) = results.exit_code {
             if code != 0 {
-                println!("{}", format!("code de sortie bxc : {code}").dimmed());
+                println!("{}", format!("code de sortie Web : {code}").dimmed());
             }
         }
 

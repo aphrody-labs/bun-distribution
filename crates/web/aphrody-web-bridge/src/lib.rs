@@ -54,6 +54,8 @@ pub mod cli;
 pub mod fetch;
 #[cfg(not(target_arch = "wasm32"))]
 pub mod ffi;
+#[cfg(not(target_arch = "wasm32"))]
+mod native_session;
 
 /// Canonical Rust client name for the Aphrody Web Browser executable.
 #[cfg(not(target_arch = "wasm32"))]
@@ -95,13 +97,13 @@ mod host {
         pub fn probe() -> Self {
             let mut missing = Vec::new();
 
-            let bin_attempt = resolve::binary_attempt();
-            if bin_attempt.found.is_none() {
-                // Goes through `resolve::binary` so a broken `$BXC_BIN` reports as
-                // a rejected override, not as "bxc is not installed" — the two
-                // call for different fixes.
-                missing.push(resolve::binary().err().map_or_else(String::new, |e| e.to_string()));
-            }
+            let binary = match super::BxcCli::discover() {
+                Ok(client) => Some(client.source().clone()),
+                Err(error) => {
+                    missing.push(error.to_string());
+                    None
+                },
+            };
 
             let library = match super::ffi::shared() {
                 Ok(bridge) => Some(bridge.source().clone()),
@@ -111,7 +113,7 @@ mod host {
                 },
             };
 
-            Self { binary: bin_attempt.found, library, missing }
+            Self { binary, library, missing }
         }
 
         /// Whether the in-process Rust DOM, title and DNS implementation is available.
@@ -146,7 +148,7 @@ mod tests {
         assert_eq!(a.missing.len(), absent, "every absence needs its own explanation: {a:?}");
         for message in &a.missing {
             assert!(
-                message.contains("BXC_BIN") || message.contains("current executable"),
+                message.contains("current executable"),
                 "an absence must name its override: {message}"
             );
             // Either the chain was walked (and lists what it probed), or an

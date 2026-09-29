@@ -82,8 +82,7 @@ impl ToolExecutor for WebSearchTool {
             Ok(c) => c,
             Err(e) => {
                 return Ok(ToolOutput::error(format!(
-                    "web_search: bxc executable unavailable ({e}); please install bxc or set \
-                     BXC_BIN"
+                    "web_search: native Web client unavailable ({e})"
                 )));
             },
         };
@@ -184,8 +183,7 @@ impl ToolExecutor for WebScrapeTool {
             Ok(c) => c,
             Err(e) => {
                 return Ok(ToolOutput::error(format!(
-                    "web_scrape: bxc executable unavailable ({e}); please install bxc or set \
-                     BXC_BIN"
+                    "web_scrape: native Web client unavailable ({e})"
                 )));
             },
         };
@@ -259,7 +257,7 @@ impl ToolExecutor for JsEvalTool {
             Ok(c) => c,
             Err(e) => {
                 return Ok(ToolOutput::error(format!(
-                    "js_eval: bxc executable unavailable ({e}); please install bxc or set BXC_BIN"
+                    "js_eval: native Web client unavailable ({e})"
                 )));
             },
         };
@@ -349,31 +347,31 @@ impl ToolExecutor for GoogleAiTool {
             ToolError::InvalidArguments { tool: "google_ai".into(), message: e.to_string() }
         })?;
 
-        let client = match aphrody_web_bridge::cli::BxcCli::discover() {
-            Ok(c) => c,
-            Err(e) => {
-                return Ok(ToolOutput::error(format!(
-                    "google_ai: bxc executable unavailable ({e}); please install bxc or set \
-                     BXC_BIN"
-                )));
-            },
-        };
-
-        let mut cli_args = vec!["gemini".to_string(), "ask".to_string(), args.prompt];
-        if let Some(m) = args.model {
-            cli_args.push("--model".to_string());
-            cli_args.push(m);
-        }
-
-        let run = client.run(&cli_args, Duration::from_secs(60)).await.map_err(|e| {
-            ToolError::Execution { tool: "google_ai".into(), message: e.to_string() }
+        obscura_net::ensure_rustls_crypto_provider();
+        let client = aphrody_gemini_web::GeminiWebClient::from_default_cookie_file("en")
+            .await
+            .map_err(|error| ToolError::Execution {
+                tool: "google_ai".into(),
+                message: error.to_string(),
+            })?;
+        let model = args.model.as_deref().map(|id| {
+            aphrody_gemini_web::GeminiModel::from_id(id)
+                .map_or_else(|| id.to_owned(), aphrody_gemini_web::GeminiModel::header)
+        });
+        let reply = tokio::time::timeout(
+            Duration::from_secs(60),
+            client.ask(&args.prompt, model.as_deref()),
+        )
+        .await
+        .map_err(|error| ToolError::Execution {
+            tool: "google_ai".into(),
+            message: error.to_string(),
+        })?
+        .map_err(|error| ToolError::Execution {
+            tool: "google_ai".into(),
+            message: error.to_string(),
         })?;
-
-        if run.ok() {
-            Ok(ToolOutput::ok(run.stdout))
-        } else {
-            Ok(ToolOutput::error(format!("google_ai error: {}", run.stderr)))
-        }
+        Ok(ToolOutput::ok(reply.text))
     }
 }
 

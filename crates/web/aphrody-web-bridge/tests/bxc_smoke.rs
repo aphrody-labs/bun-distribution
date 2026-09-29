@@ -89,91 +89,28 @@ fn the_cdylib_runs_selectors_over_an_owned_tree() {
     assert_eq!(bridge.extract_title("<title>T</title>").unwrap(), "T");
 }
 
-/// The `bxc` executable must be reachable through the shared chain, and a
-/// non-zero exit must never be read as "not installed" - `--help` exits 1.
+/// Native discovery resolves to the current process, without an external executable.
 #[tokio::test]
-async fn the_binary_is_reachable_and_a_nonzero_exit_is_not_an_absence() {
-    let Ok(cli) = aphrody_web_bridge::BxcCli::discover() else {
-        eprintln!("skipped: bxc executable not installed on this machine");
-        return;
-    };
-    eprintln!("binary {} ({})", cli.path().display(), cli.source().label());
-
+async fn the_native_client_is_reachable_without_an_external_binary() {
+    let cli = aphrody_web_bridge::BxcCli::discover().expect("current process");
+    assert!(cli.path().is_file());
     let run = cli
         .run(&["--version".to_owned()], std::time::Duration::from_secs(60))
         .await
-        .expect("spawning an installed bxc must succeed");
-    eprintln!("--version -> code {:?}, stdout {:?}", run.code, run.stdout.trim());
-    let version = run.stdout.to_lowercase();
-    assert!(
-        version.contains("bxc") || version.contains("aphrody web browser"),
-        "stdout: {:?}",
-        run.stdout
-    );
-
-    // Measured on 2026-09-07: help exits 1 while printing to stdout. A probe
-    // that treats exit != 0 as "missing" would report an installed bxc as
-    // absent.
-    let help = cli
-        .run(&["recon".to_owned(), "--help".to_owned()], std::time::Duration::from_secs(60))
-        .await
-        .expect("spawn must succeed");
-    eprintln!("recon --help -> code {:?}", help.code);
-    assert!(!help.stdout.is_empty(), "help must reach stdout even at exit {:?}", help.code);
-    assert!(
-        aphrody_web_bridge::BxcCli::discover().is_ok(),
-        "a non-zero exit must not change whether bxc is considered installed"
-    );
+        .expect("native version");
+    assert!(run.stdout.contains("aphrody-web-bridge"));
+    assert_eq!(run.code, Some(0));
 }
 
-/// A dead child must be bounded. `bxc scrape` writes its page and then hangs;
-/// the bridge kills it and keeps the output. This asserts the bound itself on
-/// a subcommand that is cheap to run.
+/// Unsupported legacy commands report a typed failure.
 #[tokio::test]
-async fn a_run_that_outlives_its_budget_is_killed_rather_than_awaited() {
-    let Ok(cli) = aphrody_web_bridge::BxcCli::discover() else {
-        eprintln!("skipped: bxc executable not installed on this machine");
-        return;
-    };
-    if !net_enabled() {
-        eprintln!("skipped: set {NET_ENV}=1 to exercise the timeout against a real fetch");
-        return;
-    }
-
-    // Deliberately the shipped budget, not a shorter one: the point of this
-    // case is that `SCRAPE_BUDGET` is long enough to see the output. A 20 s
-    // budget was measured to kill the child with **zero** bytes on stdout -
-    // bxc spends the first ~45 s waiting out its Redis reconnection back-off
-    // before it prints anything, so a budget tuned to "the content is already
-    // there" returns an empty page and calls it a hang.
-    let budget = aphrody_web_bridge::cli::SCRAPE_BUDGET;
-    let started = std::time::Instant::now();
-    let run = cli
-        .run(
-            &["scrape".to_owned(), "https://example.com".to_owned(), "--markdown".to_owned()],
-            budget,
-        )
+async fn unsupported_legacy_command_is_not_reported_as_success() {
+    let cli = aphrody_web_bridge::BxcCli::discover().expect("current process");
+    let error = cli
+        .run(&["actor".to_owned(), "list".to_owned()], std::time::Duration::from_secs(1))
         .await
-        .expect("spawn must succeed");
-    let elapsed = started.elapsed();
-    eprintln!(
-        "scrape -> timed_out {} after {:?}, {} bytes",
-        run.timed_out,
-        elapsed,
-        run.stdout.len()
-    );
-
-    assert!(
-        elapsed < budget + std::time::Duration::from_secs(30),
-        "the budget did not bound the child: {elapsed:?}"
-    );
-    assert!(
-        !run.stdout.is_empty(),
-        "SCRAPE_BUDGET ({}s) is too short for this machine: the child was killed with no output, \
-         which is indistinguishable from a failed fetch",
-        budget.as_secs()
-    );
-    assert!(run.stdout.contains("Example Domain"), "stdout: {:?}", run.stdout);
+        .expect_err("actor runtime is not in this Rust closure");
+    assert!(matches!(error, aphrody_web_bridge::BxcError::NativeUnsupported { .. }));
 }
 
 /// The whole point, end to end: a page fetched by aphrody itself, converted in

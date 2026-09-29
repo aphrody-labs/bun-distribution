@@ -483,8 +483,9 @@ impl ComputerBackend for BrowserComputerBackend {
                         out.images = vec![ToolImage::new("image/png", b64)];
                         Ok(out)
                     },
-                    _ => {
-                        Ok(ToolOutput::ok("Browser viewport snapshot captured (rendering active)."))
+                    Ok(_) => Ok(ToolOutput::error("Browser screenshot returned no PNG data.")),
+                    Err(error) => {
+                        Ok(ToolOutput::error(format!("Browser screenshot error: {error}")))
                     },
                 }
             },
@@ -505,11 +506,8 @@ impl ComputerBackend for BrowserComputerBackend {
 
                 let res = client.run(&args, Duration::from_secs(15)).await;
                 match res {
-                    Ok(r) => Ok(ToolOutput::ok(if r.stdout.trim().is_empty() {
-                        format!("Browser clicked at ({x:?}, {y:?}, element: {element_id:?})")
-                    } else {
-                        r.stdout
-                    })),
+                    Ok(r) if r.ok() => Ok(ToolOutput::ok(r.stdout)),
+                    Ok(r) => Ok(ToolOutput::error(format!("Browser click failed: {}", r.stderr))),
                     Err(e) => Ok(ToolOutput::error(format!("Browser click error: {e}"))),
                 }
             },
@@ -525,11 +523,10 @@ impl ComputerBackend for BrowserComputerBackend {
                 ];
                 let res = client.run(&args, Duration::from_secs(15)).await;
                 match res {
-                    Ok(r) => Ok(ToolOutput::ok(if r.stdout.trim().is_empty() {
-                        format!("Browser double-clicked at ({x}, {y})")
-                    } else {
-                        r.stdout
-                    })),
+                    Ok(r) if r.ok() => Ok(ToolOutput::ok(r.stdout)),
+                    Ok(r) => {
+                        Ok(ToolOutput::error(format!("Browser double-click failed: {}", r.stderr)))
+                    },
                     Err(e) => Ok(ToolOutput::error(format!("Browser double click error: {e}"))),
                 }
             },
@@ -542,12 +539,16 @@ impl ComputerBackend for BrowserComputerBackend {
                     "--y".to_string(),
                     y.to_string(),
                 ];
-                let _ = client.run(&args, Duration::from_secs(5)).await;
-                Ok(ToolOutput::ok(format!("Moved browser cursor to ({x}, {y}).")))
+                match client.run(&args, Duration::from_secs(5)).await {
+                    Ok(r) if r.ok() => Ok(ToolOutput::ok(r.stdout)),
+                    Ok(r) => Ok(ToolOutput::error(format!("Browser move failed: {}", r.stderr))),
+                    Err(error) => Ok(ToolOutput::error(format!("Browser move error: {error}"))),
+                }
             },
-            ComputerAction::Drag { start_x, start_y, end_x, end_y } => Ok(ToolOutput::ok(format!(
-                "Dragged browser pointer from ({start_x}, {start_y}) to ({end_x}, {end_y})."
-            ))),
+            ComputerAction::Drag { start_x, start_y, end_x, end_y } => {
+                let _ = (start_x, start_y, end_x, end_y);
+                Ok(ToolOutput::error("Native browser drag is not available."))
+            },
             ComputerAction::Scroll { delta_x, delta_y, direction, amount } => {
                 let dy = delta_y
                     .or_else(|| match direction.as_deref() {
@@ -565,8 +566,11 @@ impl ComputerBackend for BrowserComputerBackend {
                     "--dy".to_string(),
                     dy.to_string(),
                 ];
-                let _ = client.run(&args, Duration::from_secs(5)).await;
-                Ok(ToolOutput::ok(format!("Scrolled browser viewport dx: {dx}, dy: {dy}.")))
+                match client.run(&args, Duration::from_secs(5)).await {
+                    Ok(r) if r.ok() => Ok(ToolOutput::ok(r.stdout)),
+                    Ok(r) => Ok(ToolOutput::error(format!("Browser scroll failed: {}", r.stderr))),
+                    Err(error) => Ok(ToolOutput::error(format!("Browser scroll error: {error}"))),
+                }
             },
             ComputerAction::Type { text } => {
                 let args = vec![
@@ -577,45 +581,52 @@ impl ComputerBackend for BrowserComputerBackend {
                 ];
                 let res = client.run(&args, Duration::from_secs(15)).await;
                 match res {
-                    Ok(_) => Ok(ToolOutput::ok(format!(
-                        "Typed {} character(s) into active browser element.",
-                        text.len()
-                    ))),
+                    Ok(r) if r.ok() => Ok(ToolOutput::ok(r.stdout)),
+                    Ok(r) => Ok(ToolOutput::error(format!("Browser type failed: {}", r.stderr))),
                     Err(e) => Ok(ToolOutput::error(format!("Browser type error: {e}"))),
                 }
             },
             ComputerAction::Keypress { key } => {
                 let args =
                     vec!["chrome".to_string(), "key".to_string(), "--key".to_string(), key.clone()];
-                let _ = client.run(&args, Duration::from_secs(5)).await;
-                Ok(ToolOutput::ok(format!("Pressed browser key '{key}'.")))
+                match client.run(&args, Duration::from_secs(5)).await {
+                    Ok(r) if r.ok() => Ok(ToolOutput::ok(r.stdout)),
+                    Ok(r) => Ok(ToolOutput::error(format!("Browser key failed: {}", r.stderr))),
+                    Err(error) => Ok(ToolOutput::error(format!("Browser key error: {error}"))),
+                }
             },
             ComputerAction::Wait { duration_ms } => {
                 tokio::time::sleep(Duration::from_millis(*duration_ms)).await;
                 Ok(ToolOutput::ok(format!("Waited {duration_ms} ms.")))
             },
             ComputerAction::Observe { element_id } => {
-                let mut args = vec!["recon".to_string()];
-                if let Some(eid) = element_id {
-                    args.push(eid.clone());
-                } else {
-                    args.push("about:blank".to_string());
+                if element_id.is_some() {
+                    return Ok(ToolOutput::error(
+                        "Element-specific observation requires a browser ref.",
+                    ));
                 }
-                let res = client.run(&args, Duration::from_secs(15)).await;
+                let res = client
+                    .run(&["chrome".to_string(), "snapshot".to_string()], Duration::from_secs(15))
+                    .await;
                 match res {
                     Ok(r) => Ok(ToolOutput::ok(r.stdout)),
                     Err(e) => Ok(ToolOutput::error(format!("Browser observe error: {e}"))),
                 }
             },
-            ComputerAction::ListWindows => {
-                Ok(ToolOutput::ok(r#"[{"handle":1,"title":"BXC Active Tab","process":"bxc.exe"}]"#))
+            ComputerAction::ListWindows => match client
+                .run(&["chrome".to_string(), "tabs".to_string()], Duration::from_secs(15))
+                .await
+            {
+                Ok(r) if r.ok() => Ok(ToolOutput::ok(r.stdout)),
+                Ok(r) => Ok(ToolOutput::error(format!("Browser tab listing failed: {}", r.stderr))),
+                Err(error) => Ok(ToolOutput::error(format!("Browser tab listing error: {error}"))),
             },
             ComputerAction::FocusWindow { window_title, .. } => {
                 if let Some(url) = window_title {
                     if let Err(denial) = policy.verify_target(url) {
                         return Ok(ToolOutput::error(denial));
                     }
-                    let args = vec!["recon".to_string(), url.clone()];
+                    let args = vec!["chrome".to_string(), "navigate".to_string(), url.clone()];
                     let res = client.run(&args, Duration::from_secs(15)).await;
                     match res {
                         Ok(r) => Ok(ToolOutput::ok(format!(
@@ -625,7 +636,7 @@ impl ComputerBackend for BrowserComputerBackend {
                         Err(e) => Ok(ToolOutput::error(format!("Navigation error: {e}"))),
                     }
                 } else {
-                    Ok(ToolOutput::ok("Active browser tab focused."))
+                    Ok(ToolOutput::error("Native browser focus requires a URL."))
                 }
             },
         }
