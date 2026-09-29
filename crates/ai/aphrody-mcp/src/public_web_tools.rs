@@ -76,6 +76,26 @@ static TOOLS: LazyLock<Vec<Tool>> = LazyLock::new(|| {
             }
         }),
         json!({
+            "name": "aphrody_google_supported_languages",
+            "description": "List all 195 official supported Google Cloud Translation languages, optionally localized in target language.",
+            "inputSchema": {
+                "type": "object", "properties": {
+                    "target": { "type": "string", "description": "Optional target language code to localize language names (e.g. 'fr', 'en', 'ja')." }
+                },
+                "additionalProperties": false
+            }
+        }),
+        json!({
+            "name": "aphrody_google_calendar_public",
+            "description": "Fetch and parse events from any public Google iCalendar feed by ID.",
+            "inputSchema": {
+                "type": "object", "properties": {
+                    "calendarId": { "type": "string", "description": "The public Google Calendar ID or email." }
+                },
+                "required": ["calendarId"], "additionalProperties": false
+            }
+        }),
+        json!({
             "name": "aphrody_google_sheet_export",
             "description": "Export a publicly shared Google Spreadsheet to CSV.",
             "inputSchema": {
@@ -208,6 +228,18 @@ fn google_suggest_url(query: &str, client: &str) -> reqwest::Url {
     url
 }
 
+fn google_calendar_url(calendar_id: &str) -> reqwest::Url {
+    let mut url = reqwest::Url::parse("https://calendar.google.com").expect("static URL");
+    url.path_segments_mut().expect("HTTPS URL").extend([
+        "calendar",
+        "ical",
+        calendar_id,
+        "public",
+        "basic.ics",
+    ]);
+    url
+}
+
 fn google_sheet_url(spreadsheet_id: &str, gid: Option<&str>) -> reqwest::Url {
     let mut url = reqwest::Url::parse("https://docs.google.com").expect("static URL");
     url.path_segments_mut().expect("HTTPS URL").extend([
@@ -269,6 +301,42 @@ fn suggestions(data: &Value) -> Value {
             })
             .collect()
     }))
+}
+
+fn calendar_events(ics: &str) -> Value {
+    let mut lines: Vec<String> = Vec::new();
+    for raw in ics.split('\n') {
+        let line = raw.strip_suffix('\r').unwrap_or(raw);
+        if let Some(folded) = line.strip_prefix(' ').or_else(|| line.strip_prefix('\t')) {
+            if let Some(previous) = lines.last_mut() {
+                previous.push_str(folded);
+            }
+        } else {
+            lines.push(line.to_owned());
+        }
+    }
+    let mut events = Vec::new();
+    let mut current: Option<serde_json::Map<String, Value>> = None;
+    for line in lines {
+        if line.starts_with("BEGIN:VEVENT") {
+            current = Some(serde_json::Map::new());
+        } else if line.starts_with("END:VEVENT") {
+            if let Some(event) = current.take() {
+                events.push(Value::Object(event));
+            }
+        } else if let Some(event) = current.as_mut()
+            && let Some((key, value)) = line.split_once(':')
+        {
+            let key = key.split(';').next().unwrap_or_default().to_ascii_lowercase();
+            let value = value
+                .replace("\\,", ",")
+                .replace("\\;", ";")
+                .replace("\\n", "\n")
+                .replace("\\N", "\n");
+            event.insert(key, Value::String(value));
+        }
+    }
+    Value::Array(events)
 }
 
 fn captures(data: Value) -> Result<Value, String> {
@@ -347,6 +415,20 @@ async fn run(name: &str, args: &Value) -> Result<Output, String> {
             let data = get_json(google_suggest_url(query, client), "Google Suggest").await?;
             Ok(Output::json(suggestions(&data)))
         },
+        "aphrody_google_supported_languages" => {
+            let target = optional_text(args, "target")?;
+            let mut response =
+                serde_json::to_value(aphrody_google::languages::supported_languages(target))
+                    .map_err(|error| format!("Google language registry: {error}"))?;
+            let total = response["data"]["languages"].as_array().map_or(0, Vec::len);
+            response["total"] = json!(total);
+            Ok(Output::json(response))
+        },
+        "aphrody_google_calendar_public" => {
+            let id = text_arg(args, "calendarId")?;
+            let body = get_text(google_calendar_url(id), "Google Calendar").await?;
+            Ok(Output::json(calendar_events(&body)))
+        },
         "aphrody_google_sheet_export" => {
             let id = text_arg(args, "spreadsheetId")?;
             let gid = optional_text(args, "gid")?;
@@ -389,12 +471,14 @@ mod tests {
             "aphrody_archive_wayback",
             "aphrody_google_dns",
             "aphrody_google_suggest",
+            "aphrody_google_supported_languages",
+            "aphrody_google_calendar_public",
             "aphrody_google_sheet_export",
             "aphrody_google_doc_export",
         ] {
             assert!(owns(name), "{name}");
         }
-        assert_eq!(TOOLS.len(), 7);
+        assert_eq!(TOOLS.len(), 9);
         let search = get("aphrody_archive_search").unwrap();
         assert_eq!(
             serde_json::to_value(search).unwrap()["inputSchema"]["properties"]["rows"]["default"],
@@ -425,6 +509,10 @@ mod tests {
         let suggest = google_suggest_url("rust & bun", "firefox");
         assert!(suggest.query_pairs().any(|(key, value)| key == "q" && value == "rust & bun"));
         assert_eq!(
+            google_calendar_url("team@example.com").as_str(),
+            "https://calendar.google.com/calendar/ical/team@example.com/public/basic.ics"
+        );
+        assert_eq!(
             google_sheet_url("sheet-id", Some("123")).as_str(),
             "https://docs.google.com/spreadsheets/d/sheet-id/export?format=csv&gid=123"
         );
@@ -441,6 +529,31 @@ mod tests {
             json!(["rust", "rust bun", "5"])
         );
         assert_eq!(suggestions(&json!({ "unexpected": true })), json!([]));
+    }
+
+    #[test]
+    fn public_calendar_unfolds_lines_and_unescapes_event_fields() {
+        let ics = "BEGIN:VCALENDAR\r\nBEGIN:VEVENT\r\nSUMMARY;LANGUAGE=en:Team\\, plan\r\n ning\\; review\r\nDESCRIPTION:First\\nSecond\\NThird\r\nLOCATION:Paris\r\nEND:VEVENT\r\nBEGIN:VEVENT\r\nSUMMARY:Next\r\nEND:VEVENT\r\nEND:VCALENDAR\r\n";
+        assert_eq!(
+            calendar_events(ics),
+            json!([
+                {"summary": "Team, planning; review", "description": "First\nSecond\nThird", "location": "Paris"},
+                {"summary": "Next"}
+            ])
+        );
+        assert_eq!(calendar_events("BEGIN:VCALENDAR\nEND:VCALENDAR"), json!([]));
+    }
+
+    #[tokio::test]
+    async fn supported_languages_uses_shared_registry_without_network() {
+        let Output::Json { value, structured } =
+            run("aphrody_google_supported_languages", &json!({ "target": "fr-FR" })).await.unwrap()
+        else {
+            panic!("expected JSON output");
+        };
+        assert_eq!(value["total"], 195);
+        assert_eq!(value["data"]["languages"][0]["name"], "Abkhaze");
+        assert_eq!(structured, Some(value));
     }
 
     #[test]
@@ -463,6 +576,8 @@ mod tests {
             run("aphrody_google_dns", &json!({ "name": "example.com", "type": 5 })).await.is_err()
         );
         assert!(run("aphrody_google_suggest", &json!({})).await.is_err());
+        assert!(run("aphrody_google_supported_languages", &json!({ "target": 3 })).await.is_err());
+        assert!(run("aphrody_google_calendar_public", &json!({})).await.is_err());
         assert!(run("aphrody_google_sheet_export", &json!({})).await.is_err());
         assert!(run("aphrody_google_doc_export", &json!({})).await.is_err());
     }
