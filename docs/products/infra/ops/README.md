@@ -1,0 +1,34 @@
+# Host-wide operations
+
+Cross-repository and host-wide automation owned by `aphrody-infra`. Application repositories
+(`rg`, `nie`, `shenron`) keep only their own application units, crons and scripts; `aphrody`
+keeps the AI layer and `aphrody-os` the system layer. Nothing here is installed automatically.
+
+The Bun modules that serve multiple repositories are documented in
+[shared automation migration](../../../reference/infra/AUTOMATION-MIGRATION.md).
+
+| Path | Purpose | Formerly in |
+| --- | --- | --- |
+| `host/sysctl/99-zzz-rg-memoire.conf` | Kernel memory tuning (`/etc/sysctl.d`) | `rg/infra/sysctl` |
+| `host/logrotate/rsyslog` | Daily system log rotation (`/etc/logrotate.d`) | `rg/infra/logrotate` |
+| `host/privoxy/shenron-media.conf` + `scripts/shenron/install-media-vpn-proxy.sh` | Mullvad HTTP bridge (`:8119` -> `10.8.0.1:1080`) | `shenron/deploy/privoxy/` |
+| `systemd/rg-zram-swap.service` | Compressed zram swap, main VPS | `rg/infra/systemd` |
+| `systemd/nginx.service.d/*.conf` | nginx restart policy and CPU/IO priority | `rg/infra/systemd` |
+| `systemd/privoxy.service.d/*.conf` | Privoxy restart & WireGuard dependency drop-in | `shenron/deploy/privoxy/` |
+| `systemd/rg-watchdog@.{service,timer}` + `scripts/ops/rg-watchdog.sh` | Per-service HTTP/memory watchdog template | `rg` |
+| `systemd/rg-infra-monitor.{service,timer}` + `scripts/infra-status.ts` | Stack monitor (`status`/`check`/`plan`) | `rg`, `aphrody` (`stack.ts`) |
+| `systemd/rg-repo-sync.{service,timer}` + `scripts/ops/repo-sync.ts` | Explicit rg/nie Git sync, no autocommit — [REPO-SYNC.md](../../../reference/infra/ops/REPO-SYNC.md) | `rg` |
+| `systemd/aphrody-source-sync.service` + `scripts/source-sync.ts` | User service for first-party source fetch and fast-forward sync; preserves dirty and divergent worktrees | Aphrody development workstation |
+| `scripts/ops/ovh.py`, `scripts/ops/ovh-dns.ts` | OVH DNS API clients — [OVH.md](../../../reference/infra/ops/OVH.md); OVHcloud runbook [../ovh/README.md](../ovh/README.md) | `nie`, `shenron` |
+| `scripts/nie/model-serve-prewarm.sh` | 3D model prewarm pipeline on nie-model-serve (:8790) | `nie/scripts/ops/` |
+| `scripts/shenron/sync-bxc-crawls.ts` | BXC SQLite -> PostgreSQL crawl sync | `shenron/scripts/ops/` |
+| `scripts/rg/assemble-vps-release.sh` | Next.js 16 standalone release assembler | `rg/scripts/ops/` |
+| `crates/aphrody-infra/src/secrets/` + `scripts/secrets.ts` | Sovereign AES-256-GCM GitOps secrets & leak audit | `docs/SECRET-MANAGEMENT.md` |
+| `nginx/aphrody/` | `aphrody.com` vhost and includes | `aphrody/deploy/nginx`, `nie/deploy/nginx` |
+
+Unit names are unchanged so `config/service-catalog.json` and live hosts stay valid. After a
+move, reinstall the unit from this repository, `systemctl daemon-reload`, and check its timer.
+Commands in the moved docs are run from the `aphrody-infra` root. See [INFRA-UNIFICATION.md](../../../operations/infra/INFRA-UNIFICATION.md)
+for the exhaustive cross-repository map.
+
+Historical record: [secondary storage operations (August 2026)](../../../reference/infra/ops/stockage-secondaire.md).

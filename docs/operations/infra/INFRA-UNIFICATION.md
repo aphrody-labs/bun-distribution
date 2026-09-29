@@ -1,0 +1,119 @@
+# Unification & Centralisation de l'Infrastructure Aphrody
+
+Ce document établit la source de vérité unifiée et le bilan de consolidation de l'ensemble des scripts, configurations et documentations d'infrastructure pour l'écosystème Aphrody (`aphrody-infra`, `aphrody`, `aphrody-os`, `rg`, `shenron`, `nie`, `iecode`).
+
+---
+
+## 1. Principe d'Autorité Unique
+
+`aphrody-infra` est l'unique dépositaire et autorité d'exploitation pour :
+- **Supervision & Cycle de vie** : Définition des unités systemd, timers et drop-ins.
+- **Routage & Passerelle Web** : Vhosts Nginx, certificats Let's Encrypt et table de routes publiques (`config/nginx-routes.json`).
+- **Catalogue de Services** : Unique registre de tous les workloads applicatifs (`config/service-catalog.json`).
+- **Gestion des Réseaux & Proxies** : Mullvad WireGuard (`wg0`), passerelle Privoxy (`127.0.0.1:8119`), tunnels PostgreSQL (`15433`).
+- **Pipelines de Déploiement** : Assemblage d'artefacts scellés et bascules atomiques blue/green (`scripts/atomic-deploy*.sh`).
+- **Sauvegardes & Rétention** : Backups automatiques journaliers (PostgreSQL logique, SQLite WAL, synchronisation offsite).
+- **Gestion Souveraine des Secrets** : Chiffrement AES-256-GCM / PBKDF2 (`ring` et WebCrypto), masquage mémoire (`zeroize`), audits de fuites statiques (`secrets audit`).
+
+---
+
+## 2. Cartographie de Centralisation des Scripts
+
+| Domaine / Projet | Emplacement Centralisé (`aphrody-infra`) | Ancien Emplacement (Dépôt Sœur) | Rôle & Optimisations |
+|---|---|---|---|
+| **Shenron Media Bridge** | `scripts/shenron/install-media-vpn-proxy.sh`<br>`host/privoxy/shenron-media.conf`<br>`systemd/privoxy.service.d/shenron-media.conf` | `shenron/deploy/install-media-vpn-proxy.sh`<br>`shenron/deploy/privoxy/` | Pont Privoxy HTTP (`:8119`) vers SOCKS5 Mullvad (`10.8.0.1:1080`). Idempotence, tests automatiques de connectivité `am.i.mullvad.net`. |
+| **Shenron Crawl Sync** | `scripts/shenron/sync-bxc-crawls.ts` | `shenron/scripts/ops/sync-bxc-crawls-to-newvps.ts` | Synchronisation SQLite vers PostgreSQL via Bun pur. Modernisation de l'alias hôte (`vps`), modes `--dry-run` et `--json`. |
+| **Shenron Backups** | `scripts/ops/backup-shenron-pg.sh`<br>`scripts/ops/backup-shenron-sqlite.sh` | `shenron/scripts/backup-shenron-*.sh` | Dépotoir logique MVCC `pg_dump` compressé, manifestes SHA-256, purge différée après accusé de réception offsite Windows. |
+| **NIE 3D Model Prewarm** | `scripts/nie/model-serve-prewarm.sh` | `nie/scripts/ops/model-serve-prewarm.sh` | Pré-chauffage du cache 3D (`nie-model-serve` :8790) pour les modèles GLB et Keshin critiques. Support `--json` et paramétrage du port. |
+| **NIE Sync Main** | `scripts/nie/sync-main.ts` | `nie/scripts/workspace-transfer.ts` | Synchronisation de checkout entre station de travail et VPS. |
+| **RG Release Assembly** | `scripts/rg/assemble-vps-release.sh`<br>`scripts/atomic-deploy-rg.sh` | `rg/scripts/ops/assemble-vps-release.sh` | Empaquetage d'artefact immuable Next.js 16 standalone sous Docker/Node 22 + Bun, génération de manifestes cryptographiques et bascule atomique. |
+| **Kernel & VPS Tuning** | `host/sysctl/99-aphrody-tuning.conf`<br>`host/aphrody-os/VPS-TUNING.md` | `aphrody/docs/aphrody-os/vps_tuning.md`<br>`aphrody-os/docs/vps_tuning.md` | Configuration sysctl unifiée (BBR, FQ, somaxconn, buffers TCP), optimisation VirtIO KVM. |
+| **DNS OVH & Domaines** | `scripts/ops/ovh-dns.ts`<br>`crates/aphrody-ovh`<br>`packages/aphrody-ovh` | Scripts shell et Python OVH disparates | Gestion unifiée DNSSEC, records A/AAAA/CNAME/MX, bascules d'apex et audits de zones en Bun et Rust natifs. |
+
+---
+
+## 3. Structure des Répertoires `aphrody-infra`
+
+```text
+aphrody-infra/
+├── config/
+│   ├── service-catalog.json       # Unique registre des workloads (ports, unités, santé)
+│   ├── nginx-routes.json          # Table canonique des routes publiques
+│   ├── production-topology.json   # Répartition des hôtes vps (51.77.147.152) et dbfr (51.255.162.6)
+│   ├── pipeline.json              # Orchestration unifiée CI/CD (7 projets)
+│   └── secrets-contract.json      # Schéma de validation des variables d'environnement
+├── host/
+│   ├── privoxy/                   # Configuration du pont HTTP Mullvad (shenron-media.conf)
+│   ├── sysctl/                    # Réglages kernel 99-aphrody-tuning.conf
+│   ├── logrotate/                 # Règles de rotation des logs applicatifs
+│   └── aphrody-os/                # Documentation de référence du tuning système
+├── systemd/                       # Unités systemd (.service, .timer, drop-ins)
+├── nginx/                         # Gabarits de serveurs virtuels Nginx et errorpages
+├── scripts/
+│   ├── ops/                       # Scripts transversaux (watchdog, sync, backups, audit)
+│   ├── shenron/                   # Automatisation Shenron (media proxy, import de crawls)
+│   ├── nie/                       # Automatisation NIE (model pre-warming, sync main)
+│   ├── rg/                        # Automatisation RG (assemblage release, invalidation CDN)
+│   ├── aphrody/                   # Automatisation Aphrody Core & GCP
+│   └── aphrody-os/                # Automatisation réseau & namespace WireGuard
+└── crates/                        # Binaires et bibliothèques Rust d'infrastructure
+    ├── aphrody-infra              # CLI central, contrôle, secrets, pipeline, HTTP daemon
+    ├── aphrody-ssh                # SSH/SFTP in-process, rsync pur Rust, métriques système
+    ├── aphrody-ovh                # Moteur API OVH in-process
+    ├── aphrody-vpn                # Contrôleur Mullvad VPN
+    └── aphrody-git                # Primitives Git (gix) et workflows CI
+```
+
+---
+
+## 4. Matrice Consolidée des Workloads & Ports de Production
+
+| Service ID | Runtime | Hôte | Port Loopback | Endpoint Santé | Route Publique (Nginx) | Rôle |
+|---|---|---|---|---|---|---|
+| `aphrody-site` | Rust (Actix/Axum) | `vps` | `8083` | `/healthz` | `aphrody.com/` | Portail Aphrody, interface, documentation, docs RAG |
+| `aphrody-web-api` | Bun (Hono/Elysia) | `vps` | `3007` | `/health` | via `aphrody-site` `/api/v1/web/` | API de navigation, extraction et headless browser |
+| `aphrody-ai-http` | Rust | `vps` | `8789` | `/healthz` | `/api/v1/models`, `/api/v1/rag/*` | Moteur d'inférence RAG et agents A2A |
+| `aphrody-shenron-embed`| Rust (`aphrody-embed serve`) | `vps` | `8794` | `/health` | Interne | Service d'embeddings sémantiques E5 compatible OpenAI |
+| `aphrody-a2a` | Rust | `vps` | `8788` | `/ping` | `/.well-known/agent-card.json` | Routage d'enveloppes inter-agents A2A 1.0 |
+| `rg-website` | Next.js 16 Standalone| `vps` | `3004` | `/api/health` | `rosegriffon.fr/`, `www` | Portail communautaire Rose Griffon et wiki Azalée |
+| `rg-api` | Bun (Hono) | `vps` | `8800` | `/health` | `api.rosegriffon.fr/` | API Rose Griffon, sessions et stockage Azalée |
+| `rg-bot` | Bun | `vps` | — | Worker | — | Bot Discord Rose Griffon |
+| `rg-cron` | Bun | `vps` | — | Worker | — | Tâches de fond planifiées Rose Griffon |
+| `rg-achillea-bot` | Bun | `vps` | `4000, 4002, 4005` | `/health/check`| `achillea.rosegriffon.fr` | Bot de match et gestion de tournoi Inazuma |
+| `shenron-site` | Next.js 16 Standalone| `vps` | `5011` | `/api/health` | `dragonballfr.com/`, `www` | Portail Dragon Ball FR et Wiki encyclopédique |
+| `shenron-bot` | Bun | `vps` | `5006` | `/health` | `bot.dragonballfr.com/` | Bot Discord Shenron et API Hono montée |
+| `shenron-mcp` | — | retiré 2026-09-25 | `5010` | — | `mcp.dragonballfr.com/` (retiré) | Remplacé par les outils `dragonball.*` d'`aphrody-mcp` (`aphrody-ai-http`, `127.0.0.1:8789/mcp`) |
+| `shenron-pg-tunnel` | Autossh / SSH | `vps` | `15433` | TCP | Interne (`dbfr:5432`) | Tunnel sécurisé vers PostgreSQL sur `dbfr` |
+| `nie-site` | Rust | retiré 2026-09-25 | `8085` | `/healthz` | `nie.aphrody.com/` | Catalogue et recherche VFS Inazuma (pas de release VPS) |
+| `nie-model-serve` | Rust | retiré 2026-09-25 | `8790` | `/health` | via Nginx `/cdn/` | Serveur de géométrie 3D GLB, animations et textures (pas de release VPS) |
+
+---
+
+## 5. Automatisation & Commandes Disponibles
+
+### Inspection & Observabilité
+```bash
+# Rapport complet des unités, sondes HTTP/TCP, disque et ressources hôtes
+bun scripts/infra-status.ts status
+
+# Vérification stricte sans mutation
+aphrody-infra validate
+
+# Audit de sécurité statique des fuites de secrets dans le code
+aphrody-infra secrets audit
+
+# Validation des contrats de configuration pour un service
+aphrody-infra secrets check --service aphrody-web-api
+```
+
+### Déploiement & Pré-chauffage
+```bash
+# Déploiement atomique RG
+./scripts/atomic-deploy-rg.sh /srv/rg/releases/<COMMIT_SHA>
+
+# Pré-chauffage du cache de modèles 3D NIE
+./scripts/nie/model-serve-prewarm.sh --json
+
+# Synchronisation et import BXC Shenron
+bun scripts/shenron/sync-bxc-crawls.ts --dry-run
+```

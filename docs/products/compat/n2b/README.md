@@ -1,0 +1,97 @@
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+# docs/n2b — Bun + Node knowledge base for n2b
+
+Upstream documentation extracted to drive n2b coverage. **Source of truth for the rules**: what
+Bun supports, what Node exposes, what n2b must detect and rewrite.
+
+## Content
+
+| Folder | Source | Pinned version |
+|---|---|---|
+| `bun/` | `oven-sh/bun` · `docs/` | main `d316760e` (2026-09-06) |
+| `node/` | `nodejs/node` · `doc/api/` | LTS v24.15.1 (`9fe7634c`) |
+| `plugin/n2b/` | n2b plugin documentation (changelog, structure, research, WASM reports) | — |
+
+Full upstream clones live in `upstream/` at the repository root (gitignored). Only markdown is
+kept here; binary assets (images, icons, logos) are stripped.
+
+## Regenerate
+
+### `bun/` — automated
+
+```bash
+bun run docs:bun:update -- --ref <branch-or-tag>   # default ref: main
+```
+
+`scripts/n2b/update-bun-docs.sh` and `scripts/n2b/update-bun-docs.ps1` are compatible thin wrappers around
+the same Bun script. It clones or refreshes `upstream/bun` (shallow), re-extracts `docs/n2b/bun/`,
+strips assets by extension (no fixed folder list, so it survives an upstream reshuffle) and
+re-pins the `bun/` row above. Review the `docs/n2b/bun/` diff before committing: the script
+judges freshness, not relevance.
+
+### `node/` — manual
+
+```bash
+git -C upstream/node pull   # or re-clone with --depth 1
+
+rm -rf docs/n2b/node && mkdir -p docs/n2b/node
+cp -r upstream/node/doc/api/. docs/n2b/node/
+cp upstream/node/doc/changelogs/CHANGELOG_V24.md docs/n2b/node/
+```
+
+## Active Aphrody Bun/UV contract
+
+The Aphrody repositories use n2b as the Bun compatibility gate for first-party surfaces and
+imported third-party packages. `vendor/`, `node_modules/`, `target/` and archived trees stay
+read-only and are never migrated automatically.
+
+From the `aphrody-ai` checkout (it owns `packages/google` and the `runtime:check` script):
+
+```bash
+aphrody n2b rules
+aphrody n2b packages/google
+bun run runtime:check
+```
+
+`runtime:check` is the shared execution gate: it checks Bun, the tests and the bundle of
+`@aphrody/google`, then `uv --version`, the lockfiles of the maintained Python workspaces and the
+import of the `aphrody` facade. It makes no live Google call and reads no secret.
+
+Rules enforced on critical Bun packages:
+
+- `bun install` and `bun.lock` as the single manager and lockfile;
+- `bun test` as the runner;
+- `bun build` as bundler and CLI compiler;
+- `Bun.file`, `Bun.env`, `Bun.which` and `Bun.spawn` before their Node equivalents;
+- `engines.bun >= 1.4.2`, `type: module`, `moduleResolution: bundler`;
+- `oxlint`/`oxfmt` for lint and format, without reformatting third-party imports;
+- n2b audit before any migration, `--fix` only on first-party files, never `--migrate` on an
+  imported tree.
+
+The n2b scan of `aphrody-ai/packages/google` reports no error; the only remaining warning is
+`Bun.spawn`, already used natively by its CLI launcher. Known issue: `aphrody n2b audit` panics
+with `Cannot start a runtime from within a runtime` because `aphrody-ai`
+(`crates/aphrody/src/commands.rs`, `N2bCommand`) calls the synchronous `aphrody_n2b::run_from`
+from its async executor; it needs a `spawn_blocking` wrapper there. Rule and package scans are
+unaffected. Drop this note once that fix lands.
+
+## Key files for n2b coverage
+
+| File | Use |
+|---|---|
+| `bun/runtime/nodejs-compat.mdx` | Node→Bun compatibility matrix: which Node modules work, partially or not at all |
+| `bun/runtime/bun-apis.mdx` | Native `Bun.*` API surface: rewrite targets |
+| `bun/runtime/*.mdx` | Per-API detail (ffi, sqlite, shell, sql, redis, s3, glob, …) |
+| `bun/project/roadmap.mdx` | Bun roadmap, to anticipate future rules |
+| `node/*.md` | Full Node API surface (one file per module): what n2b must detect |
+| `node/CHANGELOG_V24.md` | Node v24 LTS changes |
+
+## Integration with the rule registry
+
+The five registry entry schemas (`crates/aphrody-n2b-registry/src/schema.rs`: `ApiEntry`,
+`PackageEntry`, `ModuleEntry`, `CliEntry`, `GlobalEntry`) all carry an optional `docs: String`
+field, a free-form citation into this folder (for example
+`docs = "absent from docs/bun/runtime/nodejs-compat.mdx (…)"`). The test
+`crates/aphrody-n2b-registry/src/registry.rs::tests::docs_field_citations_resolve` extracts every
+`docs/(bun|node)/*.md(x)` substring from those fields and fails if the cited file no longer exists
+under `docs/n2b/`: the guard against a `docs/n2b/bun/` refresh that silently moves a cited file.

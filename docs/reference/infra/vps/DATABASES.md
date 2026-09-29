@@ -1,0 +1,64 @@
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+# VPS databases and storage
+
+The VPS combines PostgreSQL (primary relational store), Redis (in-memory cache) and embedded
+SQLite files (bounded local caches and crawl indexes). Policy: PostgreSQL is primary, SQLite is a
+bounded local cache (`deduplication.database` in
+[`config/application-contracts.json`](../../config/application-contracts.json)). Ports and
+private paths are declared in [`config/production-topology.json`](../../config/production-topology.json)
+and the catalog; connection strings are operator secrets and never appear in this repository.
+Restored from the retired `aphrody` monolith (`docs/vps/DATABASES.md`); the remote database host
+it used to print was removed.
+
+## 1. PostgreSQL
+
+Distribution PostgreSQL (`postgresql@<major>-main.service`), reachable through the local Unix
+socket and loopback TCP only; the local `ubuntu` role uses `peer` authentication.
+
+| Database | Consumer | DSN variable |
+|---|---|---|
+| `aphrody_web` | `aphrody-site` and the BXC Web API (Web rankings, SEO) | `APHRODY_WEB_DATABASE_URL` |
+| `aphrody` | `aphrody-ai-http` RAG (`aphrody rag web-ingest`, `search`, `stats`) | `APHRODY_MCP_DATABASE_URL` |
+| RG databases | `rg-api`, `rg-bot`, `rg-cron` (Better Auth, Drizzle ORM) | defined by the `rg` release environment |
+| `shenron_site` | Shenron site and bot, on `dbfr`, reached through `shenron-pg-tunnel` | see [`docs/SHENRON-MIGRATION.md`](../SHENRON-MIGRATION.md) |
+
+DSNs live in the root-owned `/etc/<plane>/*.env` files (mode `0600`). The relationships between
+the Web and AI databases are described in [`docs/TOPOLOGY.md`](../TOPOLOGY.md).
+
+## 2. Redis
+
+`redis-server.service` on loopback, without a password for local clients. RG Discord services use
+it for the offline queue, distributed locks and transient Discord state (dedicated logical
+database); Shenron keys are prefixed `dbz:*`. Redis is a cache: nothing in it is the only copy of
+application data, and it is excluded from the backup data classes unless
+[`config/scheduler-policy.json`](../../config/scheduler-policy.json) says otherwise.
+
+## 3. SQLite
+
+Embedded `bun:sqlite` stores for crawl, inference and scraping logs.
+
+### A. `x-store.sqlite` (X crawling and RAG)
+
+- Path: `$HOME/.aphrody/x-store.sqlite` (resolved by `aphrody-web/packages/x/src/db/store.ts`).
+- WAL journal with `synchronous = NORMAL` for concurrent readers.
+- Tables: `tweets` (id, username, text, created_at, like/retweet/reply counts, conversation_id,
+  raw JSON), `users`, `edges` (`authored`, `liked`, `bookmarked`, `timeline`, `mention`),
+  `follows`, the FTS5 virtual table `tweets_fts`, and `tweet_embeddings` (`tweet_id` and a BLOB
+  of 768-dimensional `gemini-embedding-001` vectors).
+
+### B. BXC stores (`bxc.sqlite`, `bxc-memory.sqlite`)
+
+- Path: the shared Web state directory of the `aphrody` plane (`/srv/aphrody/shared/bxc`, see
+  `docs/TOPOLOGY.md`); crawler queues are under `BXC_STORAGE_DIR` next to it.
+- WAL journal, 5 s busy timeout, 16 MB page cache (`aphrody-web/apps/bxc/src/db/BxcDB.ts`).
+- Tables: `scrapes` (id, url, profile, status, content, metadata JSON, timestamp, canonical URL,
+  content hash and SimHash bands), `chunks`, and `cookie_jars` (browser cookie JSON by id). Indexes
+  cover URL, timestamp, canonical URL, content hash and each SimHash band.
+- Cookie jars are sensitive runtime state: they are never copied into Git or agent memory
+  ([`docs/COOKIE-OPERATIONS.md`](../../../operations/infra/COOKIE-OPERATIONS.md)).
+
+### C. Shenron local caches
+
+Bounded SQLite mirrors in the Shenron shared root (`sharedRoot` of `shenron-site` in the
+catalog), backed up by the Shenron timers under [`systemd/`](../../systemd/)
+(`shenron-backup`, `shenron-sqlite-replica-backup`).

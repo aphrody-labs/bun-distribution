@@ -1,0 +1,256 @@
+---
+title: Getting Started
+sidebar_position: 1
+---
+
+# &nbsp;
+
+<div>
+  <p align="center">
+    <img src="https://discordx.js.org/discordx.svg" width="564" />
+  </p>
+  <div align="center" class="badge-container">
+    <a href="https://discordx.js.org/discord">
+      <img
+        src="https://img.shields.io/discord/874802018361950248?color=5865F2&logo=discord&logoColor=white"
+        alt="Discord server"
+      />
+    </a>
+    <a href="https://www.npmjs.com/package/discordx">
+      <img
+        src="https://img.shields.io/npm/v/discordx.svg?maxAge=3600"
+        alt="NPM version"
+      />
+    </a>
+    <a href="https://www.npmjs.com/package/discordx">
+      <img
+        src="https://img.shields.io/npm/dt/discordx.svg?maxAge=3600"
+        alt="NPM downloads"
+      />
+    </a>
+    <a href="https://github.com/discordx-ts/discordx/actions">
+      <img
+        src="https://github.com/discordx-ts/discordx/workflows/Build/badge.svg"
+        alt="Build status"
+      />
+    </a>
+    <a href="https://www.paypal.me/vijayxmeena">
+      <img
+        src="https://img.shields.io/badge/donate-paypal-F96854.svg"
+        alt="paypal"
+      />
+    </a>
+  </div>
+  <p align="center">
+    <b> Create a discord bot with TypeScript and Decorators! </b>
+  </p>
+</div>
+
+## Introduction
+
+This module is an extension of **[discord.js](https://discord.js.org)**, so the internal behavior (methods, properties, ...) is the same.
+
+This library allows you to use TypeScript decorators on discord.**js**, it simplify your code and improve the readability !
+
+## Requirements
+
+| Name       | Version   |
+| ---------- | --------- |
+| Node.js    | >= 20.x.x |
+| TypeScript | >= 5.x.x  |
+
+## Easy setup - starter project
+
+1. Setup new project
+
+```
+npx create-discordx
+```
+
+2. Build
+
+```bash npm2yarn
+npm run build
+```
+
+3. Setup bot token
+
+<Tabs
+  defaultValue="win"
+  values={[
+    { label: "Windows", value: "win" },
+    { label: "Linux", value: "linux" },
+  ]}
+>
+<TabItem value="win">
+
+```bash
+// cmd
+set BOT_TOKEN=REPLACE_THIS_WITH_YOUR_BOT_TOKEN
+
+// powershell
+$ENV:BOT_TOKEN="REPLACE_THIS_WITH_YOUR_BOT_TOKEN"
+```
+
+</TabItem>
+
+<TabItem value="linux">
+
+```bash
+export BOT_TOKEN=REPLACE_THIS_WITH_YOUR_BOT_TOKEN
+```
+
+</TabItem>
+</Tabs>
+
+4. Run
+
+```bash npm2yarn
+npm run start
+```
+
+5. And you're done, everything has been done for you! 🚀
+
+## Installation
+
+Use [npm](https://www.npmjs.com/package/discordx) or [yarn](https://yarnpkg.com/package/discordx) to install **discordx** with **discord.js**
+
+```bash npm2yarn
+npm install discordx discord.js
+```
+
+Install your TypeScript dev dependencies too
+
+```bash npm2yarn
+npm install --save-dev typescript
+```
+
+And you should see this in your package.json
+
+```json title="package.json"
+{
+  // ...
+  "dependencies": {
+    "discordx": "^X.X.X",
+    "discord.js": "^X.X.X"
+  },
+  "devDependencies": {
+    "typescript": "^X.X.X"
+  }
+  // ...
+}
+```
+
+If you need to update again in the future just run:
+
+```bash npm2yarn
+npm install discordx discord.js
+```
+
+## Execution environment
+
+To start your bot you can compile your code into JavaScript with TypeScript using the `tsc` command or simple use [tsx](https://tsx.is).
+
+:::caution
+You must specify the .js files when you initialize your client if you compile your code into JavaScript with `tsc`
+:::
+
+```ts
+const client = new Client({
+  intents: [
+    IntentsBitField.Flags.Guilds,
+    IntentsBitField.Flags.GuildMessages,
+    IntentsBitField.Flags.GuildMembers,
+  ],
+  silent: false,
+});
+
+client.on(Events.ClientReady, async () => {
+  console.log(">> Bot started");
+
+  // to create/update/delete discord application commands
+  await client.initApplicationCommands();
+});
+
+client.login(BOT_TOKEN);
+```
+
+:::info
+Learn to structure your project and commands efficiently with [@discordx/importer](/docs/importer) for a well-organized directory.
+:::
+
+## tsconfig.json
+
+Your tsconfig.json file should look like this:
+
+<Tabs
+  defaultValue="esm"
+  values={[
+    { label: "ECMAScript", value: "esm" },
+    { label: "CommonJs", value: "cjs" },
+  ]}
+>
+<TabItem value="esm">
+
+```json title="package.json"
+{
+  ...
+  "type": "module",
+  ...
+}
+```
+
+```json title="tsconfig.json"
+{
+  "compilerOptions": {
+    "module": "ESNext", // required
+    "target": "ESNext", // required
+    "rootDir": "src",
+    "outDir": "dist",
+    "emitDecoratorMetadata": false, // required
+    "experimentalDecorators": true // required
+  }
+}
+```
+
+</TabItem>
+<TabItem value="cjs">
+
+```json title="package.json"
+{
+  ...
+  "type": "commonjs",
+  ...
+}
+```
+
+```json title="tsconfig.json"
+{
+  "compilerOptions": {
+    "module": "CommonJS", // required
+    "target": "ESNext", // required
+    "rootDir": "src",
+    "outDir": "dist",
+    "emitDecoratorMetadata": false, // required
+    "experimentalDecorators": true // required
+  }
+}
+```
+
+</TabItem>
+</Tabs>
+
+## Need help?
+
+**[discord server](https://discordx.js.org/discord)**
+
+You can also find help with [examples folder](https://github.com/discordx-ts/discordx/tree/main/packages/discordx/examples)
+
+## See also
+
+- [discord.js's documentation](https://discord.js.org)
+- [Discord's application command interactions](https://discord.com/developers/docs/interactions/application-commands)
+
+## Next step
+
+[Setup and start your application 🚀](/docs/discordx/basics/client)

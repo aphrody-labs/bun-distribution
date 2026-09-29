@@ -1,0 +1,66 @@
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+# Aphrody public surface
+
+## Canonical topology
+
+`aphrody-site` is the Aphrody OS Web origin for BXC and N2B. It serves
+the Web portal, Web REST APIs and Web MCP from Rust/Axum on
+`127.0.0.1:8083`. Nginx routes A2A and AI REST directly to the AI services
+on loopback.
+
+| Host | Origin | Contract |
+|---|---:|---|
+| `aphrody.com` | Nginx → site :8083 and AI :8788/:8789 | Web portal, Web APIs/MCP and separate AI discovery/REST |
+| `api.aphrody.com` | `aphrody-site :8083` | API-only alias; no HTML application |
+| `mcp.aphrody.com` | `aphrody-site :8083` | Alias for the canonical `/mcp` transport |
+| `bxc.aphrody.com` | `aphrody-site :8083` | Compatibility alias for `/api/v1/bxc/*` |
+| `n2b.aphrody.com` | `aphrody-site :8083` | Compatibility alias for `/api/v1/n2b/*` |
+| `nie.aphrody.com` | `nie-site :8085` | Niers application and game-asset workbench |
+| `cdn.aphrody.com` | `nie-model-serve :8790` | Bounded Niers derived-asset service |
+
+`bxc-site :8084` and `n2b-site :8086` are retired. BXC remains an internal
+browser/crawler backend and N2B remains an in-process Aphrody engine. Neither
+owns a public user interface or an independently deployed web binary.
+
+All origins bind to loopback. Nginx terminates TLS, applies connection limits,
+and preserves the canonical path when proxying. `dbfr` remains exclusively for
+Shenron and Dragon Ball FR workloads.
+
+## Interface boundary
+
+The root page contains only the animated Aphrody pet, the Niers-owned
+`nie-aphrody` 3D model, and the compact Codex interaction surface. BXC and N2B
+must never add dashboards, landing pages, navigation entries, or product
+shells. Their observable surface is JSON, JSON-RPC, schemas, health, and agent
+tool discovery.
+
+The 3D path uses the repository-owned Niers Rust/WebAssembly viewer and the
+measured `c01001900` GLB. A 2D spritesheet remains the deterministic fallback
+when WebAssembly, WebGPU, or WebGL 2 is unavailable.
+
+## Public contracts
+
+- `/api/v1/aphrody`: Aphrody namespace discovery; model and RAG routes remain under `/api/v1/*`.
+- `/api/v1/bxc/*`: browser, crawl, release, update, and capability contracts.
+- `/api/v1/n2b/*`: migration rules, analysis, and package contracts.
+- `/api/v1/schemas`: machine-readable schema index for all three namespaces.
+- `/.well-known/agent-card.json`: A2A discovery and declared capabilities.
+- `/api/v1/a2a`: A2A JSON-RPC endpoint.
+- `/mcp`: the single MCP JSON-RPC transport for Aphrody and BXC tools.
+- `/api/v1/openapi.json`: the complete OpenAPI 3.1 document.
+
+Every route is owned by `crates/aphrody-site`, versioned with the Aphrody
+binary, and tested without requiring an independently deployed BXC or N2B
+site. Compatibility hostnames may redirect or proxy to these canonical paths;
+they cannot introduce a second implementation.
+
+## Deployment gates
+
+1. `aphrody-site` builds from the exact `origin/main` commit.
+2. The standalone `bxc-site` and `n2b-site` services are disabled and their
+   artifacts are absent.
+3. Nginx configuration passes `nginx -t` before reload.
+4. Local health, public TLS, OpenAPI, A2A, MCP initialize, BXC schema, and N2B
+   schema probes all return their expected status and content type.
+5. The Niers WASM and GLB assets are immutable, MIME-correct, and retain their
+   measured hashes.

@@ -187,6 +187,13 @@ source-closure, compatibility, installed-workflow, license, and rollback gate.
       Six worktree files differ in raw bytes only through verified Git checkout
       filters. IECODE has no root license file at its pinned revision; nested
       package licenses and the broader rights boundary remain open.
+- [x] Commit 1,893 hash-verified documentation files from the 12 non-UI source
+      roots whose pinned root license or notice is recorded. A target-side audit
+      matched all 1,894 mapped document targets to their imported SHA-256 values;
+      one target was already tracked as source license evidence. The
+      [commit audit](docs/migration/DOCS-FIRST-PARTY-COMMIT.md) records the
+      scope. The remaining owners and 1,292 unresolved local Markdown links keep
+      the full documentation gate open.
 - [ ] Complete Infra's consumer and pipeline cutover without the transitional
       checkout. The Rust library suite now passes 52/52 after its Git overview
       test was isolated in a temporary repository. `pipeline --stage check --json` reports 12

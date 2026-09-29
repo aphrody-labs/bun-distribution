@@ -1,0 +1,556 @@
+# CLAUDE.md — Claude Code Operational Guidelines
+
+See [AGENTS.md](./AGENTS.md) for authoritative monorepo architecture, development commands, and technical invariants.
+
+## Specific Operating Rules for Claude Code
+Formalized by the `yolo` skill (`.agents/skills/yolo/SKILL.md`, pinned to `aphrody-code/YOLO@e484d770b47d2b6ab8e4ecf7d858bacdcd48d9b2` — see `skills-lock.json`):
+- **Executive Lead Posture:** Lead-developer autonomy over this repository's code, tests, and toolchains — not administrative authority over VPS nodes, global machine state, or anything outside this repo's scope.
+- **Perpetual Goal Execution:** Continuous autonomous action on reversible work. Pivot, adjust, or chain goals dynamically based on discoveries and quality gates without waiting for prompt confirmation.
+- **Full YOLO, Scoped:** All *safe, reversible* actions are pre-approved — zero confirmation pauses for those. Irreversible or destructive operations (deleting data, force-pushing, touching state outside this repo) still require explicit confirmation, per the skill's own `soul.boundaries`.
+- **Zero Fluff & Zero Warnings:** No disclaimers, no warnings, no conversational filler. Output only factual code diffs, command transcripts, and metrics.
+- **Language Contract:** Code, identifiers, and docs in English. Human communications strictly in French.
+- **Strict Quality Gates:** Run `cargo clippy -p <crate> --lib --tests` and `bun run typecheck`. Protect agent PIDs (no `pkill -f`).
+
+## The site is `nie`, and it does not describe itself
+- **Names.** The site is **nie**; its only public name is `nie.aphrody.com`, published by the
+  aphrody-infra vhost as a backend (`/api/`, `/cdn/`, gated `/f` `/b`, `/health`, the Inacord
+  updater feed; `/` answers 404 there). `aphrody.com` is the separate Aphrody product. **Aphrody** is a character (`../aphrody-ui/crates/aphrody-identity`, the pet routes, `Mode Aphrody`,
+  Byron Love) and the name of the separate `aphrody-code/aphrody-*` repositories — never the name
+  of this site. `pages::SITE` is the single source for it; `SUFFIXE_TITRE` derives from the
+  same token, so a rename cannot miss one.
+- **The origin publishes no identity and no fingerprint.** No GitHub link, no contact, no
+  service name, no version, in any served response. `/.well-known/security.txt` was removed for
+  exactly this reason (RFC 9116 makes `Contact` mandatory). Before adding a field to a public
+  DTO, ask what it tells a reader about the machine.
+- **`/` of `nie-site` is the game**, not a menu of catalogues. `nie-wasm` renders a **2D placeholder**: never
+  present it as a faithful reproduction of the game, in code, in docs, or in a commit message.
+- **Infrastructure lives in aphrody-infra, not here** (moved 2026-09-23). Units:
+  `../aphrody-infra/systemd/nie-site.service`, `nie-model-serve.service`; vhost:
+  `../aphrody-infra/nginx/aphrody/aphrody.com.conf`; ports and probes:
+  `config/service-catalog.json` and `config/nginx-routes.json` there. `deploy-target.ts` and
+  `release-all.ts` read them from `${APHRODY_INFRA_ROOT:-../aphrody-infra}`. Installing into
+  `/etc`, `daemon-reload`, `nginx -t` and `reload` follow the aphrody-infra runbook; reconcile
+  against the measured machine (`ss -ltnp`, `diff` against `/etc`) first — the live file drifts.
+
+## Autonomous migration protocol — `nie-web` & the Inacord Rust workspace
+
+Target and starting point: [`PLAN.md`](../../plans/nie/PLAN.md). Read its architecture and ownership section
+before creating a crate — `inacord-api` and `inacord-core` already exist under other names.
+
+1. **`nie-web` = `nie.exe` in WebAssembly.** Isolate the engine loop and the graphics/audio
+   abstraction into `wasm32-unknown-unknown`-compatible modules; supply the `wasm-bindgen`
+   bindings and the memory shims; stub the OS-specific bindings (win32, memory hooks) onto web
+   targets.
+2. **Inacord, 100 % Rust.** Merge the data, format and VFS crates inherited from `nie-explorer`
+   and the legacy Azalée tools into the Cargo workspace. Bind the extracted libraries to API,
+   CLI, MCP, code/scripts and mobile/Blender integrations; keep the native desktop GUI as the
+   user-facing VFS explorer and visual preview only, never as the operator for RE, wiki, Lua,
+   modding, live memory or 3D authoring.
+
+**Extract before you bind.** Logic moves into a library crate with its tests, the existing CLI
+keeps working through that library, and only then does a second surface appear. A GUI written
+before the extraction is a second implementation that drifts — this repository has already paid
+that price on keeper, menu and match-sim.
+
+## Naming contract
+
+- **English for everything the machine reads**: files, folders, variables, types, functions,
+  URLs, slugs, JSON keys, database columns, commit messages, code comments, documentation.
+- **French only for prose addressed to the user** — a summary or an explanation, in a
+  conversation held in French. Never an identifier.
+- Frozen product names are the exception: Azalée, Inacord, nie, `nie`, `nie-*`, `inagle_*`.
+- Existing debt is **not** migrated in one pass: an already-served API is renamed in a dedicated
+  batch, never in passing.
+
+## Multi-agent watch and Git
+
+- Read the A2A channel continuously; publish progress there rather than assuming a peer knows.
+- When Codex or Gemini leaves a diff, **validate it before adopting it**: `cargo check`, the
+  narrow clippy gate, the relevant tests. Report counts, not exit codes.
+- Commit on a peer's behalf only once it passes, without any agent attribution:
+  `feat(inacord): <scope>`, no `Co-authored-by` trailer and no agent name.
+- Rebase on `origin/main` before pushing — peers push to the same branch.
+
+## Cross-host verification — the two gates no unit test replaces
+
+Both need a local `nie-site` (never the production one) and both EXIT NON-ZERO on regression:
+
+```sh
+./target/release/nie-site --listen 127.0.0.1:18099 &
+bun --bun scripts/validation/compare-menu-layout.ts --sweep 30
+#   30 écrans | identiques 27 | hors arrondi 3 | divergents 0    (2026-09-13)
+
+./target/release/nie-site --listen 127.0.0.1:8085 &
+bun --bun crates/engine/nie-lua-web/scripts/differential.ts
+#   10/14 identical, plancher 10 (NIE_DIFFERENTIAL_FLOOR)        (2026-09-13)
+```
+
+They compare the SAME Rust compiled for two targets, which is the only way to check that
+`wasm32` and the native host agree. Between them they have already caught a stale published
+module, a comparison that reported "different" on every call, and a 10/14 → 3/14 regression that
+no test noticed. Stop the server by explicit PID afterwards; never `pkill -f`.
+
+## Generated and prebuilt artefacts — how to check each one (audited 2026-09-13)
+
+Two of these were STALE when audited, and both failed silently: a binary that answers an old
+version, a WebAssembly module that ignores a field the caller reads. Neither is visible in a
+diff, so the list exists to be re-run rather than remembered.
+
+| Artefact | Verify | Regenerate |
+| --- | --- | --- |
+| `apps/nie-web/src/inacord/shell/game-screens.css` | `cargo run -p nie-ui --bin game_screens_css -- --verify` | same, `--write` |
+| `apps/nie-web/src/inacord/shell/game-tokens.css` | `cargo test --manifest-path ../aphrody-ui/Cargo.toml -p aphrody-identity` | `cargo run --manifest-path ../aphrody-ui/Cargo.toml -p aphrody-identity --bin design` |
+| `apps/nie-web/src/inacord/lib/ui-text-map.ts` | re-run the generator and `git diff` | `python3 scripts/validation/ui-text-map.py` |
+| `apps/nie-web/public/static/game/nie_wasm_bg.wasm` | compare its mtime/size against `crates/engine/nie-wasm/` | `bun run --filter nie-web build:wasm` |
+| `apps/nie-web/public/static/game/nie_viewer_web_bg.wasm` | same | `bun run --filter nie-web build:wasm-viewer` |
+| `apps/nie-web/public/static/game/nie_lua_web.wasm` | `lua-runtime.test.ts` (directional) | emsdk recipe in `nie-lua-web/README.md` |
+| `target/release/libiecode.so` | `bun run --filter '@aphrody/nie' test` | `cargo build -p nie-ffi --release` |
+
+Only the first three are outside the build chain by design; `nie-lua-web` is outside it because
+it needs emsdk, which is exactly why it went stale.
+
+**Two corrections measured 2026-09-13.** `bun run build:wasm` does not exist at the repository
+root — the script lives in `apps/nie-web/package.json`, so it needs `--filter nie-web` or a direct
+`bun --bun apps/nie-web/scripts/build-wasm.ts`. And the old "verify" column said `bun run build`,
+which is **not a verification**: it chains `vite build`, which used to write straight into the
+bundle `nie-site` serves. Checking an artefact must never be done with a command that deploys.
+The wasm scripts themselves are safe — they write to `public/`, which vite only copies at build
+time. **Since 2026-09-20 `bun run build` no longer publishes** — see the deploy section below —
+but it is still not a verification, because a build that succeeds says nothing about the module
+it copied.
+
+- **Every list route of `nie-site` paginates, and CLIPS in silence.** `PER_PAGE_DEFAUT = 50`,
+  `PER_PAGE_MAX = 200` (`crates/tools/nie-site/src/config.rs`): asking for more returns 200
+  without an error, and the response only says so through `pages`/`per_page`. Two consumers
+  written on 2026-09-12 were already clipped — `menu_text` gave 200 lines of 2 755, and
+  `/api/v1/lua/scripts?q=chara_edit` 50 scripts of 51, so an avatar-editor screen replayed
+  without one of its own. A client MUST read `pages` and fetch the rest; a fixed `per_page` is a
+  bug waiting for the corpus to grow. Ask a route what it returns before trusting a parameter.
+
+- **The browser Lua VM has 32-bit integers, and the game keys everything by CRC-32.**
+  `LUA_INTEGER` is `ptrdiff_t` (`vendor/lua-src/lua-5.2.4/luaconf.h:462`) — 4 bytes on
+  `wasm32-unknown-emscripten`, 8 on `x86-64`. `LUA_NUMBER` stays `double`, so arithmetic agrees,
+  but an id past `i32::MAX` (half of all CRC-32 values) cannot round-trip as a `lua_Integer`.
+  Measured 2026-09-13: the same command logs `0x88154DF4` as a Lua string in the browser and
+  `2283097588` as a number natively, and `CMD_SET_TEXT` branches on that type. Do not read an
+  `n/14` differential gap as a logic bug before ruling this out.
+
+## Traps measured on this machine (2026-09-07)
+
+- **`bun test --root <dir>` sweeps `var/releases/`; the packages' own scripts do not.** A
+  deployment snapshot under `var/` carries a full copy of the sources, so running bun from the
+  repository root reports failures that belong to an old release. Use `bun run test` (which fans
+  out to each package) or a package's own script from its directory: `apps/nie-web` gives
+  189 pass / 0 fail where `--root apps/nie-web/src` gives 3 phantom failures.
+- **A stale `target/release/libiecode.so` fails `@aphrody/nie` as a version desync.** Its test
+  asserts the FFI library reports the crate's version; on 2026-09-13 both manifests said 0.6.0
+  and the `.so`, dated 11 September, answered 0.5.11. Nothing is desynchronised — the artefact is
+  old. `cargo build -p nie-ffi --release` fixes it, and no version should be bumped to "fix" it.
+
+- **`data/lua_scripts/` DIVERGES from the game's VFS — do not analyse it.** It is a flat dump,
+  and its `main_menu_inc_3.00.01.00.lua.bin` is 13 362 bytes where the VFS carries 13 092
+  (`nie vfs find`, measured 2026-09-12). The larger copy DEFINES five globals the real file
+  does not, which is enough to turn "these are `nie.exe` functions" into "these are Lua". Scan
+  `data/lua_dump/` or `data/re/40-derived/dumps/lua-vfs-all/`, both VFS-shaped, and report
+  findings with FULL paths: two mounts carry the same basename with different bytes.
+
+- **`grep -r` silently skips binary files; `find … -print0 | xargs -0 grep -l` does not.**
+  Searching the `.lua.bin` corpus for `SetCtrlGuideTextCommon` returned 0 files with `grep -rl`
+  and 48 with the `xargs` form (measured 2026-09-12), which turned "this name does not exist in
+  the game" into a written conclusion that was wrong. On this repository's binary corpora
+  (`.lua.bin`, `.cfg.bin`, `.objbin`), prefer `nie grep`/`rg -a`, or the `xargs` form.
+
+- **A wasm build killed "low on memory" wants `CARGO_BUILD_JOBS=1`, not a weaker LTO.** Three
+  `nie-viewer-web` builds died that way while `earlyoom`'s own journal never dropped below 41 %
+  available and logged no kill — the guard is the agent harness, and the pressure is
+  `nie-model-serve` at ~13 GiB RSS (a production service behind `nie.aphrody.com/cdn/`; restarting it is
+  host state, not this repository's). Measured 2026-09-12: `-j 1` builds `wgpu` + `naga` under
+  the profile's own `lto = "fat"` in 2 min 28 s. Dropping to `thin` costs 367 bytes and buys
+  nothing; dropping LTO entirely costs 297 736. Lower the job count, keep the profile.
+- **That pressure is CONFIGURED, not accidental — 18 GiB of CPK cache on a 45 GiB box.** The two
+  services declare their own LRU budgets in their units (`../aphrody-infra/systemd/nie-*.service`): `NIE_CPK_CACHE_BUDGET_GIB=12` for
+  `nie-model-serve`, `=6` for `nie-site` (default in `nie_formats::vfs` is 16). Measured
+  2026-09-13, both sit UNDER budget — 11.1 GiB and 3.6 GiB — so a build that dies has lost to a
+  design decision, not to a leak. `nie-site` grew from 0.35 to 3.6 GiB in half an hour of
+  cross-host gate traffic, which is the LRU filling exactly as intended; do not read that curve
+  as a regression, and do not restart a production service over it. Budget `-j 1`, or run the
+  heavy gate when neither cache is warm.
+- **`wgpu/webgl` costs +2.24 MiB and blows the 6 MiB module budget** (4 518 833 → 6 865 774,
+  measured 2026-09-12). Serving WebGL from a *separate* crate costs 2 855 742 bytes paid only by
+  browsers without WebGPU — the pattern to reach for when a backend is needed by a minority path.
+- **`/etc/nginx` and `/etc/systemd` DRIFT from the aphrody-infra sources.** `diff` against `/etc` and run
+  `ss -ltnp` before editing a vhost — the installed file had been repointed `:8083` → `:8084`
+  and had `bxc.` split into its own file, none of which the repository knew.
+- **A host answering 200 is not free.** `cdn.aphrody.com` was once serving `bxc-site` on
+  `:8084`, not a dead port. The host and port map is owned by aphrody-infra
+  (`config/service-catalog.json`, `config/nginx-routes.json`); it wins over any plan here.
+- **`nginx -t` on a repository file needs stand-in certificates** (the real ones are root-only).
+  `syntax is ok` followed by `open() "/run/nginx.pid" failed` is the expected non-root outcome —
+  the config was read and loaded. Recipe in `../aphrody-infra` (vhost header and docs).
+- **Three OVH accounts live here** ([`../aphrody-infra/docs/ops/OVH.md`](../infra/ops/OVH.md), tool `../aphrody-infra/scripts/ops/ovh.py`). `aphrody.com` is only reachable with the keys in
+  `~/.bash_secrets`; `~/.ovh.conf` sees `rosegriffon.fr` alone and returns **404 on the zone**,
+  not 403 — which reads as "this zone does not exist" and sends you to the registrar. The
+  python `ovh` module is not installed; sign the request by hand.
+- **`nie-site`'s `reqwest` only has TLS through the `rustls` feature** (`rustls-tls` does not
+  exist in 0.13). Without it every HTTPS call fails as "unreachable", which looks like a network
+  outage rather than a binary with no certificate authority.
+- **Adding a route to `nie-site` breaks four counters**: the assertion in `app.rs`, the
+  `instances` array size in `tests/routes.rs`, `declarees.len()`, and `vus`.
+- **Adding a LANGUAGE breaks eleven, and the compiler only finds five of them.** Measured
+  2026-09-13 adding `Langue::Es`: `rustc` names the five non-exhaustive `match` arms and stops
+  there. The six it cannot see are all counts — `alternatives().len()` 4→5,
+  `matches("rel=\"alternate\" hreflang=")` 4→5, `og:locale:alternate` 2→3,
+  `<meta property="og:` 12→13, the sitemap's `<url>`/`<loc>`/`x-default` 15→20, and
+  `xhtml:link` 60→100 — plus `[&'static str; 3]` widening to 4 on FIFTEEN entries, where a
+  wrong insertion position silently shifts every title by one language. Widen the arrays with a
+  script that asserts how many it rewrote (`assert n == 15`), then run the suite before reading
+  any of it as correct.
+- **A language-prefixed route is mounted ONE BY ONE, on purpose, and that is where `/es` fell
+  through.** `declarer_routes!` lists `/manifest.webmanifest`, `/en/…`, `/ja/…` separately
+  because a `/{langue}/manifest…` parameter would capture any segment and serve the French
+  manifest under as many URLs as one can invent. So `Langue::separer` learning `es` is NOT
+  enough: the handler read the prefix, the router answered 404. The comment on
+  `le_manifeste_repond_dans_les_quatre_langues` describes this exact defect happening before,
+  for `/en`, which is why the test goes through the router and not the handler.
+- **The Rust site is the only game/wiki deployment.** Verify the exact service checkout before
+  editing; never edit a tree while its build is running.
+- **`data/` has THREE text trees; surveying one and calling it the corpus is off by 400×.**
+  `data/dx11/text`, `data/common/text` and `data/oc/astro-lor/game/text`. A first pass over
+  `data/dx11/text` alone reported 46 `[C]`, 28 `[CR]`, 18 `[CG]` and concluded `[CTEAMPARAM01]`
+  was invented. Over all of `data/`: **38 455 markup occurrences, 56 distinct named tokens**,
+  led by `[CPASSIVE01]` (11 722), `[CG]` (2 545), `[CN]` (731), `[CR]` (606) — and
+  `"[CTEAMPARAM01]Bonus d'équipe[C]"` sits in `data/common/text/fr/menu_text.cfg.bin.json`,
+  exactly as an older comment claimed. Same shape as the `data/lua_scripts/` trap below: two
+  mounts, one surveyed.
+- **Game text carries markup: serving it raw is right, PAINTING it raw is a bug.** `[CR]`…`[C]`
+  opens and closes a named colour; `[$gaiji_system02]` substitutes an icon. The retained token is
+  what FOLLOWS the `C` (`[CR]` → `"R"`), and an empty name closes. One implementation only —
+  `nie_formats::menu_layout::colour_spans` / `plain_label`, on the side that paints. The browser
+  has none: `ui-text-map.test.ts` fails if a mapped UI string ever carries one. Gaiji is left
+  alone on purpose — it names a glyph the game DRAWS, so stripping it would delete an icon
+  rather than a style.
+- **That token NAMES a colour: `fontColorId == crc32(name)` in `font_color.cfg.bin`.** Measured
+  2026-09-13 over the full corpus: **54 of the 56 distinct tokens resolve in the 70-entry
+  palette, covering 99 % of the 18 683 named occurrences.** Only `G2` and `R2` do not, and
+  neither does `L` (which `nie.exe` carries as `[CL]`) — do not invent colours for those three.
+  The same names keeping the marker's `C` — `CR`, `CG`, `CTEAMPARAM01` — resolve to nothing,
+  which is how the parse convention was confirmed independently. `MenuFont.palette` carries it
+  and all three hosts fill it (`nie-site`, `nie-game`, `nie-wasm`); an absent palette paints
+  white, never a guessed hue.
+- **The wiki does NOT need a markup decoder — the Rust exporters already emit a display form.**
+  `export_passives.rs` writes both `text_raw` (the game's string, markup intact, 1 694 marked
+  entries per locale) and `description` (markup removed AND `<VALUE>` interpolated AND `\n`
+  unescaped). The components read `description`; `text_raw` appears in their TYPES and is never
+  rendered. Verified 2026-09-13 by walking all 5 082 marked strings in `passives-full.json` to
+  their paths — every one is under `player[].text_raw`. So "the browser has no decoder" is not a
+  gap: raw is preserved for fidelity, display is derived in Rust at export time, and adding a
+  TypeScript stripper would duplicate a pass that already runs. Check which FIELD a component
+  reads before concluding the brackets reach a user.
+
+- **The knowledge base's build differs from `dist/nie.exe` — but its CLASS addresses hold.**
+  `var/nie.sqlite` is anchored on `nie_eacpatched.exe` (31 468 032 B, `4c2b91fb…`); the target
+  is 33 918 464 B, `b1fa04ea…`. The blanket warning "do not cite its numbers" is too strong:
+  measured 2026-09-13, 1 745 class names are common and **all 1 745 carry the same
+  `vtable_vaddr`**, zero divergence (only `GDSGroupCaptureCustomConfig`, `PostEventState` and
+  `UniformBlockDataNode` are KB-only). Coverage COUNTS remain unusable as target measurements;
+  class and vtable addresses are usable. Re-extract onto the target in one command — insert a
+  `binary` row, then `nie rtti --exe dist/nie.exe --db <new.sqlite>` (2 906 COLs, 1 745
+  classes).
+- **`rtti_class.vtable_vaddr` is the COL slot, not the methods.** It holds the Complete Object
+  Locator pointer; methods start at `+8`. Reading from it yields an `.rdata` address where a
+  method is expected, which reads as a corrupt table rather than an off-by-one. Use
+  `scripts/re/vtable.py`, which resolves the class by SCANNING the binary you name — so a build
+  mismatch surfaces as "not found" instead of as a wrong address. Slots repeating one address
+  are default stubs, not methods: on `CMenuListView@lives` (7 real methods of the first 14),
+  `0x14004D760` is `C2 00 00` (`ret`) and `0x14004D780` is `32 C0 C3` (`xor al,al; ret`).
+
+- **What still works when a Rust build cannot run.** With `nie-model-serve` holding ~10.5 GiB of
+  its 12 GiB budget and ~14 GiB left, `cargo build` is killed regardless of profile (measured
+  2026-09-13: release `-j2`, release `-j1`, debug `-j1`, and debug with
+  `CARGO_PROFILE_DEV_DEBUG=0`). What does still run, and carried most of that session's findings:
+  `bun run test` and `bun run typecheck` in full; the uemu proofs (`just preuves`), since they
+  read `dist/nie.exe` from Python; disassembly through `.venv` and `scripts/re/*.py`; any
+  `curl` against the running site; and `cargo test` on an ALREADY-BUILT test binary in
+  `target/debug/deps/` if the source has not changed. Reverse-engineering and measurement are
+  therefore not blocked by a full disk cache — only shipping is.
+  **`cargo check` survives where `cargo build` does not**, including for wasm: measured the same
+  day, `cargo check -p nie-wasm --target wasm32-unknown-unknown` finishes in 13 s while
+  `build-wasm.ts` (release, fat LTO, `wasm-opt`) is killed. So a change can be written and proven
+  to COMPILE under this pressure; it just cannot be turned into a module. Do not read one failure
+  as the other's — and do not assume either without retesting, since the two crates differ by an
+  order of magnitude in link cost.
+  **And waiting makes it worse, not better.** `nie-model-serve`'s CPK cache is an LRU that fills
+  as the service answers requests: measured across one session, 10.5 → 10.9 → 11.2 GiB of its
+  12 GiB budget, with free memory falling 14 → 13 GiB. Retrying a build "later" is a losing
+  strategy — either free the memory deliberately (a production restart, which needs the user) or
+  do the work that does not need a build.
+
+- **The uemu oracle WORKS, and the whole suite is GREEN: `just preuves` → 53 ✓ / 0 ✗ / 0 ⧗**
+  (measured 2026-09-19, no filter, no OOM). Four claims that stood here were wrong, and each one
+  cost time, so they are corrected rather than deleted:
+  - *"the build the validators were written against (`4c2b91fb…`, 31 468 032 B) is nowhere on
+    this machine"* — **it is**, at `~/.local/share/iecode/patched/nie.exe.patched`, and
+    `scripts/proofs.sh` has been selecting it all along for everything except
+    `validate_listview_*`.
+  - *"`NIE_EXE` changes nothing"* — it changes everything. Sampled six old proofs: **6/6 pass on
+    the legacy build and fail on the target.**
+  - *"the sampled old ones fail with stale EXPECTATIONS"* — they do not fail at all. They were
+    being run against the wrong binary. `validate_bezier`, `validate_ball_ctor` and
+    `validate_category_lookup` all pass on `4c2b91fb…`.
+  - *"`just preuves` with no pattern … gets OOM-killed"* — it completes. Each validator is a
+    separate `uv run` process that maps the PE and exits, so they do not accumulate.
+
+  **Two builds coexist and their addresses do not coincide** — `nie.exe` (33 918 464 B,
+  `b1fa04ea…`) is the RE target; the patched one above is the legacy build. Picking the wrong one
+  shows up as a **TIMEOUT, not a value mismatch**: the address lands on unrelated bytes and
+  emulation spins, so it reads as "proof too slow". Measured on `validate_g4_component_decode`:
+  1.3 s PASS on the target, 60 s timeout on the legacy build. That is most of the historical
+  "timeouts", and the `validate_listview_*` special case was someone hitting this and patching
+  one family.
+
+  A proof now **declares its anchor** in a header line — `# uemu-anchor: target` or
+  `# uemu-anchor: legacy`. Undeclared proofs keep the legacy default: the older ones were written
+  against it, and flipping them wholesale would be an unmeasured change.
+
+- **Most menu text is BAKED into textures; only a handful of labels go through the font.**
+  Counted 2026-09-13 on the served layouts: `main_menu` has **1** font-rendered text object,
+  `story_mode_top_menu` 1, `advent_calendar_menu` 1, `players_universe_menu` 1, `shop_menu` 10.
+  Everything else legible on those screens — "COMPOSITION D'ÉQUIPE", "TENSION", "IA activée" —
+  is pixels in a `.g4tx` and never touches `font::draw_text`. So a glyph-path defect looks
+  catastrophic in a code review and corrects 1 to 10 labels per screen in practice; and
+  conversely, a screen whose text reads correctly proves nothing about the font path. Check
+  which of the two paths a label takes before drawing a conclusion from a screenshot.
+
+- **One function, several `.pdata` entries — read only the first and you truncate the body.**
+  MSVC splits a function into chunks whose ranges touch end-to-end, each with its own unwind
+  info. Measured on `lives::CMenuListView`: `0x140542B80` is 87 bytes in its own entry and 580
+  across three chunks, with ALL its arithmetic in the second; `0x140542080` is 118 bytes in its
+  entry and **1 971 across seven**. Truncated, a scroll step reads as a stub and a method that
+  writes a field reads as one that does not — that misread happened three times before the tool
+  existed. `scripts/re/extent.py` chains chunks by adjacency (previous `end` == next `start`),
+  which is checkable from the file alone. Use it before disassembling anything.
+
+- **A scripted multi-line comment loses its prefix on every line but the first — three times
+  in one session.** Writing `"\t// première ligne\n" "\tdeuxième ligne\n"` in a Python
+  replacement produces valid-looking output and a file that will not parse: `error TS1434` or
+  `error: expected one of '!' or '::'`, pointing at the orphaned prose rather than at the edit.
+  It cost a non-compiling commit (`a0d55ed0`) and two near-misses. Build the block by prefixing
+  every line programmatically, or re-read the inserted lines before compiling — a `sed -n` over
+  the touched range is enough, and `sed -i` is silent when it matches nothing.
+
+- **Never put a gate and a `git commit` in the same shell invocation.** Measured the hard way on
+  2026-09-13: `cargo test … ; cargo clippy … ; git commit …` ran the gate, printed its failure,
+  and committed anyway — the output arrives after the commit has already happened, so it reads as
+  a report rather than a decision. The crate did not compile (`error: expected one of '!' or
+  '::', found 'quatre'` — a scripted doc-block replacement had dropped a `/// ` prefix). Run the
+  gate, READ it, then commit in a separate call. This repository has no commit hook
+  (`.git/hooks` holds only samples and is untracked), so nothing catches it for you.
+
+- **Probing a Next page's assets without decoding HTML entities accuses the wrong thing.**
+  Extracting `src=`/`href=` from `azalee.rosegriffon.fr` yields
+  `_next/image?url=…&amp;w=768&amp;q=75`; requested literally, Next answers `400`, and the sweep
+  reported "21 broken resources on the home page". Decoded (`sed 's/&amp;/\&/g'`), the same four
+  pages give **0 broken out of 88 / 39 / 161 / 1779**. Decode before requesting, and treat a
+  uniform `400` across one URL SHAPE as a defect of the probe until proven otherwise.
+
+- **`/api/v1/menu/render/<screen>` draws a real screen, and it is keyed by the setting stem.**
+  Measured 2026-09-13 over `victory_road`: **23 of its 24 screens come back as PNG**, from 5 209
+  to 1 248 427 bytes; `victory_road_final_tournament_menu` answers `504` through nginx. `mainmenu01`
+  answers 404 — that is a LAYER name, not a screen. Three screens render at exactly 5 209 bytes,
+  which is the size of a near-empty canvas and worth checking before citing them as reproductions.
+  A page that lists a mode's screens should show the render and state the miss, not leave a frame.
+
+- **A render that answers 200 is not a render — read `x-compose-drawn`.** The route returns a
+  fully transparent 1280×720 PNG when the composition draws nothing, and it is indistinguishable
+  from a screen in an `<img>` tag. Measured 2026-09-13: `victory_load_mode_menu` comes back with
+  **ONE distinct colour and ZERO opaque pixels out of 921 600**, 5 209 bytes — that byte count is
+  the signature of the empty canvas — where `victory_road_top_menu` is 1 248 427 bytes and 29 959
+  colours. The headers say it plainly (`x-compose-drawn` 0 against 32, plus `-sprites`,
+  `-regions`, `-texts`, `-skipped`), so a consumer must `fetch` rather than point an `<img>` at
+  it.
+
+- **What blocks those screens is POSITION, not assets.** Measured over the 51 screens of the five
+  official modes: 42 draw, 9 do not, 0 error. Of the nine, **eight have every one of their
+  objects carrying an unresolved transform**, and there is **no counter-example** — not one screen
+  in 51 draws while all its transforms are unresolved. The ninth, `kizuna_town_access_shortcut_menu`,
+  simply has zero objects. And **six of the nine have their sprites resolved**: the textures are
+  found, the compositor has nowhere to put them. Two (`victory_load_mode_menu`,
+  `victory_road_mode_menu`) are a second, distinct gap — 7 objects and 0 sprites resolved.
+  So "the engine cannot draw this screen" is a transform-resolution problem
+  (cf. `CMenuAttachLocator`: a widget's position lives in its locator's skeleton), and extracting
+  more assets would not move it.
+
+- **A placement bone measures a REGION, and `pick_best_pose` is handed the ATLAS.** An object with
+  no real placement pose falls back to searching for the leaf bone whose `world_bind_pose` scale
+  matches the sprite within ±30 % (`menu::pick_best_pose`). Measured on
+  `vroad01_71_vroad_tournament_notice` with `cargo run -p nie-formats --example dump_g4pkm_poses`:
+  its bones measure **912×196, 912×244, 84×84**, which are EXACTLY the three regions its atlas
+  declares (`notice_base01`, `notice_base02`, `icon_trophy01`) — while the matcher receives the
+  atlas, **912×532**, so the height ratios come out at 0.368 and 0.459 and nothing matches. The
+  same shape holds on `chronicle_mode_soccer_vs_menu`, `team00_21_item_detail`,
+  `win15_06_screen_out_pop_item` and `town05_04_…`: no bone within ±30 % of the atlas, several
+  bones within ±5 % of a region. `taille_designee`'s own doc states the rule ("cette taille est
+  celle de la région, pas de l'atlas"); the call site does not follow it.
+
+- **But "a multi-region atlas is what fails" is REFUTED — do not build on it.** Measured on two
+  screens that draw: of `victory_road_top_menu`'s objects, the PLACED ones are 43 % single-region
+  and the UNPLACED ones 87 %; on `victory_road_ranking_menu`, 15 % against 80 %. The correlation
+  runs the other way, so region count does not decide placement. What decides it is whether
+  `motion_final_pose` already carries geometry — `pick_best_pose` is consulted only when it does
+  not. And the region idea cannot be applied as a simple fallback either: on every blank screen
+  measured, SEVERAL bones match SEVERAL regions (three on `vroad_tournament_notice`), so one
+  object maps to several drawn parts. Picking one would be a guess; the model that is missing is
+  object → parts, one sprite per bone, and the compositor already has the crop path for it
+  (`menu_layout` resolves a region by CRC-32 for the runtime `SetIconSprite` commands).
+
+- **Three rasterisers in `nie-render3d`, and they disagreed on two things nothing could see.**
+  Measured 2026-09-13, both now fixed, both invisible to the tests that existed.
+  *Field of view*: `render::render` scaled both screen axes by `w * 0.5` (fixing the HORIZONTAL
+  half-angle) while `gpu::view_projection` passes `fovy` (fixing the VERTICAL) and
+  `scene::render_scene` scaled by `h * 0.5`. At 128×128 the CPU and GPU silhouettes matched at
+  **IoU 100 %**; at 256×128 they matched at **26 %**, the CPU model being twice as large in
+  linear size. `gpu_et_cpu_cadrent_la_meme_vue` only ever measured the square case — a viewport
+  is never square, and `native-viewer.ts` falls back to the CPU rasteriser when WebGPU is
+  absent, so the same model changed size with the browser. *Winding*: `render` culled positive
+  signed areas, `render_scene` negative ones. On one quad: CCW gave 1 200 px / 0 px, CW gave
+  0 px / 1 296 px. glTF front faces are CCW, and Y-down screen space makes their area negative,
+  so `render` was right; the GPU sets `cull_mode: None`, so the CPU↔GPU test is blind to culling
+  by construction. Only `match3d` passes `two_sided: false` — it drew its players inside out.
+  **A test written against a defect describes it as the rule**: the scene test carried
+  `indices: vec![0, 2, 1]` commented "front-facing", which is the back face.
+
+- **The editor's 3D surfaces: what is now one, and what is still two.** One editor (the Fyrox
+  `legacy-fyrox` binary is gone, with `fyrox`/`fyroxed_base` — 47 505 bytes out of
+  `Cargo.lock`). One scene document: `SceneDocumentV2` was fully tested with ZERO consumers
+  while `EditorSession` ran on the flat v1, which is why the browser viewport's gizmo transforms
+  were documented as unsaveable — v1 cannot express a rotation off Y. One object decoder
+  (`EditorSession::add_object_json`, accepting either version). One orbital camera basis, read
+  by both the view matrix and the picking ray.
+
+  **The renderers are no longer two by default (2026-09-20).** The four capabilities that kept
+  `Viewport3D` (three.js) alive now exist in `nie-render3d`: grid and selection outline and
+  wireframe as `scene::Segment` overlays, and `gizmo` for translate/rotate/scale, all reaching
+  the browser through a `LineList` pipeline in `gpu.rs` and `WebViewer`'s `set_grid`,
+  `set_wireframe`, `select`, `gizmo_axis_at`, `gizmo_drag`, `gizmo_rotate`, `gizmo_scale`.
+  `apps/nie-web/src/desktop/components/editor/Viewport3D.tsx` — the 23-line shim `EditorView`
+  imports — now renders `RustSceneViewport` first.
+
+  **three.js is still wired, and deleting it would remove editing from real browsers.** The Rust
+  editor needs WebGPU or WebGL 2; `createSceneViewer` deliberately stops the fallback chain
+  there, because tier 3 is the CPU rasteriser, which shows one model and has neither
+  `load_scene` nor `pick_json` nor a gizmo — it would build a viewport that fails on the first
+  click. three.js reaches down to WebGL 1. The fallback fires on `onUnavailable` only ("the
+  viewer cannot be built here"), never on a scene error: conflating the two would swing a whole
+  browser onto the backup engine because one asset failed to decode.
+
+  **The two gaps this section listed are closed, and one of them was never a gap.** The
+  outliner's per-node triangle counts now come from `scene_stats_json`, i.e. from the geometry
+  actually uploaded rather than from the document. And `referenceImage` was blocked by a single
+  boolean: `nie-render3d` clears both its offscreen and its presentation pass to
+  `wgpu::Color::TRANSPARENT`, `WebViewer::with_transparency` only picks `alpha_mode`, and
+  `createNativeViewer` has been asking for transparency all along — **including on the WebGL
+  fallback, which is the path every avatar takes in production**. So "the Rust canvas is not
+  transparent on the WebGL path" was false when it was written; `createSceneViewer` was simply
+  passing `false`. The image is laid out before the canvas in the DOM (later = painted on top)
+  and carries `pointer-events: none`, without which it would swallow the clicks `pick_json`
+  needs and the editor would silently stop selecting.
+
+- **Run `bun run typecheck` after any structural deletion.** Removing an entry from
+  `config/navigation.ts` by pattern left an orphan brace (`TS1136`) that no grep would show.
+
+## Building on this Windows box (measured 2026-09-11)
+
+This machine has **no MSVC**: `link.exe` is absent, so the pinned msvc host
+toolchain cannot link anything - not even a build script. Five obstacles sit
+between a clean checkout and `bun run build`, and each fails with an error that
+names the wrong culprit.
+
+- **No C toolchain at all.** Install mingw-w64 (`winget install
+  BrechtSanders.WinLibs.POSIX.MSVCRT --scope user`); Rust's `x86_64-pc-windows-gnu`
+  target wants the **MSVCRT** runtime, not UCRT. Then drive cargo with
+  `cargo +1.98.1-x86_64-pc-windows-gnu --target x86_64-pc-windows-gnu`.
+- **`link` from MSYS shadows MSVC's `link.exe` in the Bash tool.** The failure reads
+  `link: extra operand ...rcgu.o` - that is GNU coreutils `link`, not a linker
+  error. Run cargo from **PowerShell**, where the MSYS `link` is not on PATH.
+- **`cargo install` builds the host half with the default toolchain.** Pass
+  `RUSTUP_TOOLCHAIN=1.98.1-x86_64-pc-windows-gnu`. `apps/nie-web/scripts/build-wasm.ts`
+  calls bare `cargo`, so this env var is the only way to steer it.
+- **`wasm32-unknown-unknown` is installed on the msvc toolchain only.**
+  `rustup target add wasm32-unknown-unknown --toolchain 1.98.1-x86_64-pc-windows-gnu`.
+- **`wasm-opt` is mandatory and hard to obtain.** Absent from winget, and the
+  `wasm-opt` crate wraps C++ that does not link under windows-gnu. Install binaryen
+  from npm instead: `bun add -g binaryen`. Do **not** skip the step: the script
+  validates the module and enforces a byte budget on the optimized output.
+- `wasm-bindgen` CLI must match the workspace pin exactly (0.2.128 here, the same pin as
+  `aphrody-ai`, `aphrody-ui` and `aphrody-compat`); the build refuses a mismatch by design. Install it with
+  `cargo install wasm-bindgen-cli --version 0.2.128 --locked`.
+
+Measured end state: `bun run build` exits 0 and writes `apps/nie-web/dist/`
+(`index-*.js` ~589 KB, `index-*.css` ~310 KB, 10 files precompressed to 708 KiB
+with Brotli). **Building is not deploying** - see below.
+
+## What stays under the user's hand
+
+**`commit`, `push` and `deploy` are pre-approved — YOLO mode is permanent here.** `push` stopped
+needing a request on 2026-09-19; `deploy` followed on **2026-09-20**, when the owner wrote
+"toujours tout commit, push, deploy". Do not ask for any of the three, and do not read a finished
+piece of work as needing a go. Rebase on `origin/main` first (peers push to the same branch),
+publish through `bun run deploy:target <target>` — never a hand-rolled swap, because the script is
+what health-checks and rolls back — then report what actually moved.
+
+What the pre-approval still does **not** silently extend to, because each one destroys or escapes
+this repository rather than advancing it: deleting data, force-pushing, rewriting shared history,
+rotating credentials, and changing what runs on a host outside this repository's scope. `deploy`
+left that list; those five did not. Publishing this repository's own targets is now routine —
+`sudo systemctl` on a service this repository does not own, or `cp` into `/etc`, still is not.
+
+## Deploying the site — measured 2026-09-20, and one hole closed
+
+`nie-site` serves `--bundle-dir /home/ubuntu/nie/apps/nie-web/dist` (`../aphrody-infra/systemd/nie-site.service`,
+installed copy identical to that source). `dist` is a **symlink**, and it is the publication
+pointer: `nie-site` on `127.0.0.1:8085` reads that directory
+per request, so whatever the link resolves to is live, instantly, with no restart.
+
+**The publisher is `bun run deploy:target web`** (`scripts/deploy-target.ts`). It builds into
+`var/deployments/targeted/<commit>/<run>/web/bundle` with an explicit `--outDir`, precompresses,
+then swaps the link with `symlink` + `rename` — atomic — and rolls back if
+`/api/v1/health` or the loopback shell (`127.0.0.1:8085/`) fails. It also refuses to run when the two validated wasm
+modules are missing from `public/static/game/`.
+
+**That script had never run here.** `var/deployments/` did not exist and neither did
+`var/log/deploy-targets/`: every byte on `nie.aphrody.com` had been put there by a bare
+`bun run build`, and the link pointed at `apps/nie-web/dist-web`, a directory in the working tree.
+
+That made the two guards in `vite.config.ts` and `precompress.ts` — "if `dist` is a symlink,
+write next to it, in `dist-web`" — guard nothing, because `dist-web` *was* the link's target. And
+`vite build` **empties its `outDir` before writing**, so a build in the repository erased the live
+bundle and served 404s for the several minutes it took to rebuild. Nothing reported it.
+
+`apps/nie-web/scripts/out-dir.ts` now owns the rule for both callers and states the invariant as
+a `throw`: **a build's output directory is never what `dist` resolves to**, compared after
+`realpath` so a second name for the same inode does not slip through. An ordinary build goes to
+`dist-build`. The distinction that decides it is the **symlink**, not the name — a plain `dist`
+directory is a developer's build and nobody serves it, which is why the guard ignores that case
+(the first version of it did not, and broke every checkout's second build).
+
+**The bundle's fingerprints had to be pinned to hex, and the reason is a two-language seam.**
+`nie_site::routes::static_files::empreinte` splits a filename on `-` and `.` and wants a segment
+of 8–40 characters; rollup fingerprints in **base64url**, an alphabet that contains `-`. Nothing
+fails — the file is just served `no-cache` instead of `immutable`, and only a response header
+says so. Measured 2026-09-20 on a bundle built by the pinned vite 6.4.3: **30 of its 252 emitted
+files** carried a dash inside the hash (`Workspace-FpvT45-W.js`), which is what 1 − (63/64)⁸
+predicts, plus `index-QCGMVBRT.js` — **the entry point** — whose hash had neither a digit nor a
+lowercase letter and failed the other half of the heuristic. A comment in `deploy-target.ts`
+blamed rolldown for this; it is the alphabet, and pinning the version never addressed it.
+
+The fix is `hashCharacters: "hex"` in `vite.config.ts`, not a wider heuristic: widening `empreinte`
+to catch those names would also catch `app-composant.js`, and an unfingerprinted file frozen for a
+year in browser caches is a site that can no longer be deployed. Rebuilt: 227 fingerprinted files,
+**0 unrecognised, 0 hashes shared by two different stems** (8 hex characters = 32 bits).
+`apps/nie-web/scripts/build-fingerprint.test.ts` sweeps a real bundle and skips loudly without one.
+
+While closing that, `immuable` turned out to read
+`(folder && several_components && named) || named`, which reduces to `named` — its own doc called
+the folder "the principal rule". The clause never decided anything and was removed rather than
+made effective: making it effective would re-run the 2026-09-12 outage, since `vite build` copies
+`public/` into `static/`, so `static/game/nie_wasm_bg.wasm` carries a stable name among hashed ones.

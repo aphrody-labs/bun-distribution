@@ -1,0 +1,8 @@
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+# Archived plan
+
+This historical agent-home delivery plan is complete and no longer drives implementation.
+
+The full plan, including its original evidence and decisions, is kept in the Git history of the former `aphrody` monorepo (`docs/archive/plans/agent-home.md`).
+
+Current work and acceptance evidence are tracked only in [PLAN.md](../_source/PLAN.md).
