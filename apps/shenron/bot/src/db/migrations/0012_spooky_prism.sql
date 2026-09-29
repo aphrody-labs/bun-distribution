@@ -1,0 +1,1 @@
+ALTER TABLE `db_characters` ADD `portrait_xv2` text;

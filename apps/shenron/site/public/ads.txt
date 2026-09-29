@@ -1,0 +1,6 @@
+# ads.txt — Authorized Digital Sellers (IAB Tech Lab)
+# Déclare Google comme unique vendeur autorisé de l'inventaire publicitaire de
+# dragonballfr.com. Sans ce fichier, AdSense signale « Gains menacés » et une
+# partie des acheteurs programmatiques cesse d'enchérir.
+# Doit rester servi en text/plain sur https://dragonballfr.com/ads.txt (racine).
+google.com, pub-9468354003771276, DIRECT, f08c47fec0942fa0

@@ -5,7 +5,10 @@
 /.cache/
 /.venv/
 /var/runs/
-/packages/discord/source/repository/packages/discordx/coverage/
+/upstream/discord/packages/discordx/coverage/
+/apps/shenron/*/node_modules/
+/packages/shenron/*/node_modules/
+/apps/shenron/*/.next-build/
 __pycache__/
 *.py[cod]
 .env

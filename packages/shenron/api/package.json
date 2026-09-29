@@ -1,0 +1,44 @@
+{
+  "name": "@shenron/api",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    "./contract": "./src/contract/index.ts",
+    "./client": "./src/client/index.ts",
+    "./http": "./src/http.ts",
+    "./server": "./src/server/index.ts",
+    "./next": "./src/next.ts",
+    "./openapi.json": "./openapi/public.json"
+  },
+  "scripts": {
+    "type-check": "tsc --noEmit",
+    "lint": "oxlint",
+    "test": "bun test",
+    "openapi": "bun scripts/openapi.ts",
+    "openapi:check": "bun scripts/openapi.ts --check"
+  },
+  "dependencies": {
+    "@hono/zod-openapi": "^1.6.0",
+    "@shenron/config": "workspace:*",
+    "@shenron/db": "workspace:*",
+    "hono": "^4.13.0",
+    "zod": "^4.6.4"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.4.0",
+    "drizzle-orm": "^0.45.3",
+    "typescript": "7.0.2"
+  },
+  "shenron": {
+    "runtime": {
+      "./contract": "pure",
+      "./client": "pure",
+      "./http": "pure",
+      "./server": "hono",
+      "./next": "server",
+      "./openapi.json": "json"
+    }
+  }
+}

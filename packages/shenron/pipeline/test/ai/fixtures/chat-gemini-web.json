@@ -1,0 +1,10 @@
+{
+	"$source": "aphrody-ai/crates/aphrody-mcp/src/http_rest.rs:1171",
+	"$anchor": "\"answer\":answer",
+	"route": "chat",
+	"schema": "ChatResponse",
+	"response": {
+		"answer": "Hmpf.",
+		"model": "gemini-web/flash"
+	}
+}

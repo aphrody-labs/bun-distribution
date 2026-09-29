@@ -1,0 +1,9 @@
+// Site lint config (oxlint only; ESLint and eslint-config-next removed in wave 1).
+// Baseline at creation: 0 errors, 491 warnings with the default categories.
+// No rule errors on the existing tree, so no rule had to be downgraded to "warn".
+{
+	"$schema": "../../node_modules/oxlint/configuration_schema.json",
+	"extends": ["../../.oxlintrc.json"],
+	"plugins": ["typescript", "unicorn", "oxc", "react", "nextjs", "jsx-a11y", "import"],
+	"ignorePatterns": ["public/**", ".next/**", ".next-build/**", ".next-dev/**"]
+}

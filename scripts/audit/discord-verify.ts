@@ -1,7 +1,15 @@
 // SPDX-License-Identifier: Apache-2.0
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { existsSync, mkdirSync, readFileSync, realpathSync, symlinkSync } from "node:fs";
+import {
+  existsSync,
+  lstatSync,
+  mkdirSync,
+  readFileSync,
+  realpathSync,
+  symlinkSync,
+  unlinkSync,
+} from "node:fs";
 import { resolve } from "node:path";
 
 interface ExtractedFile {
@@ -15,7 +23,7 @@ interface ExtractionRecord {
 }
 
 const root = resolve(import.meta.dir, "../..");
-const source = resolve(root, "packages/discord/source/repository");
+const source = resolve(root, "upstream/discord");
 const record = JSON.parse(
   readFileSync(resolve(root, "docs/migration/discord-complete-source-extraction.json"), "utf8"),
 ) as ExtractionRecord;
@@ -53,6 +61,11 @@ const typescript6 = resolve(source, "node_modules/@typescript/typescript6");
 const declaredTypescript6 = resolve(source, "packages/ui/node_modules/@typescript/typescript6");
 if (!existsSync(declaredTypescript6))
   throw new Error("Discord UI TypeScript 6 dependency is missing");
+try {
+  if (lstatSync(typescript6).isSymbolicLink() && !existsSync(typescript6)) unlinkSync(typescript6);
+} catch (error) {
+  if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
+}
 if (!existsSync(typescript6)) {
   mkdirSync(resolve(source, "node_modules/@typescript"), { recursive: true });
   symlinkSync(declaredTypescript6, typescript6, "dir");

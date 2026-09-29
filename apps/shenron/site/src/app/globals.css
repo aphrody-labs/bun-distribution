@@ -1,0 +1,9 @@
+@import "tailwindcss";
+@import "@shenron/ui/styles.css";
+@import "@shenron/ui/reader-styles.css";
+@import "@shenron/ui/reader-dragon-ball.css";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+@import "@shenron/ui/site.css";
+@import "@shenron/ui/toriyama.css";
+

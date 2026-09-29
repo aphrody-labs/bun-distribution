@@ -1,0 +1,45 @@
+{
+  "name": "@shenron/config",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    "./env": "./src/env.ts",
+    "./net": "./src/net.ts",
+    "./paths": "./src/paths.ts",
+    "./public-urls": "./src/public-urls.ts",
+    "./services": "./src/services.ts",
+    "./guards": "./src/guards.ts",
+    "./testing": "./src/testing.ts",
+    "./tsconfig/base.json": "./tsconfig/base.json",
+    "./tsconfig/bun.json": "./tsconfig/bun.json",
+    "./tsconfig/react.json": "./tsconfig/react.json"
+  },
+  "scripts": {
+    "type-check": "tsc --noEmit",
+    "lint": "oxlint",
+    "test": "bun test"
+  },
+  "dependencies": {
+    "zod": "^4.6.4"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.4.0",
+    "typescript": "7.0.2"
+  },
+  "shenron": {
+    "runtime": {
+      "./env": "pure",
+      "./net": "pure",
+      "./paths": "server",
+      "./public-urls": "pure",
+      "./services": "pure",
+      "./guards": "server",
+      "./testing": "pure",
+      "./tsconfig/base.json": "json",
+      "./tsconfig/bun.json": "json",
+      "./tsconfig/react.json": "json"
+    }
+  }
+}

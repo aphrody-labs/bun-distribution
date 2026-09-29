@@ -6,10 +6,12 @@
       "packages/ai/*",
       "packages/bun/*",
       "packages/discord/*",
+      "packages/shenron/*",
       "packages/iecode/*",
       "packages/infra/*",
       "packages/web/*",
-      "apps/web/*"
+      "apps/web/*",
+      "apps/shenron/*"
     ],
     "catalog": {
       "@types/bun": "1.4.2",
@@ -72,6 +74,7 @@
     "docs:translate": "bun packages/ai/doc-ai/src/cli.ts translate",
     "docs:ai": "bun packages/ai/doc-ai/src/cli.ts sync",
     "discord:verify": "bun scripts/audit/discord-verify.ts --full",
+    "shenron:verify": "bun scripts/audit/shenron-layout.ts && bun run --filter '@shenron/*' type-check",
     "n2b:google": "aphrody n2b packages/ai/google",
     "scan": "bash scripts/audit/ai/scripts/scan-repo.sh",
     "bench": "bun scripts/tools/ai/scripts/bench-all.ts",

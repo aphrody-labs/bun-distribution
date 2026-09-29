@@ -1,0 +1,13 @@
+-- Illustration des techniques.
+--
+-- La table n'avait AUCUNE colonne image : c'est la raison de fond pour laquelle
+-- la rubrique Techniques était la seule du wiki sans une seule vignette. La
+-- colonne a d'abord été posée à la main en production le 2026-08-27 ; ce
+-- fichier existe pour qu'une base recréée de zéro la porte aussi.
+--
+-- Le remplissage (594 des 825 fiches) vient du catalogue Xenoverse 2 : le
+-- portrait d'un personnage qui pratique la technique DANS LE JEU. C'est une
+-- illustration, pas une attribution — `creator_id` reste réservé à ce qu'une
+-- phrase de databook établit, et n'est pas touché ici (cf. la purge du
+-- 2026-08-26, où 117 lignes créditaient le Kaméhaméha à Bardock).
+ALTER TABLE bot.db_techniques ADD COLUMN IF NOT EXISTS image text;

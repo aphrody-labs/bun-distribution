@@ -8,7 +8,7 @@ frozen install of the nested Discord workspace, then runs its format, lint,
 build, typecheck, test, and external messaging package smoke checks. It also
 typechecks, tests, and builds the root `@aphrody/messaging` package.
 
-The nested source snapshot remains byte-identical to `aphrody-discord` HEAD
+The independent source workspace lives at `upstream/discord` and remains byte-identical to `aphrody-discord` HEAD
 `959abfab4d026eed23aa038c7a78d97fc2837fac`. Bun places the declared
 `@typescript/typescript6` dependency under `packages/ui/node_modules`; the
 verification command exposes that locked copy at the nested workspace root so

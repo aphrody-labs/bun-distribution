@@ -1,0 +1,10 @@
+{
+	"//": "Type-check des tests et des scripts, EXCLUS de tsconfig.json (dont l'`include` sert au build Next). Sans cette configuration, une erreur de type dans un test passait totalement inaperçue : `bun test` transpile sans vérifier, et `tsc --noEmit` ne regardait pas le dossier. Deux fabriques de test erronées ont été écrites de cette façon avant d'être attrapées à l'exécution.",
+	"extends": "./tsconfig.json",
+	"compilerOptions": {
+		"noEmit": true,
+		"types": ["bun"]
+	},
+	"include": ["tests/**/*.ts", "tests/**/*.tsx", "scripts/**/*.ts", "src/**/*.ts", "src/**/*.tsx"],
+	"exclude": ["node_modules"]
+}
