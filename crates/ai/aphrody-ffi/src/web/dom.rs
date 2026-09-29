@@ -1,7 +1,7 @@
 //! DOM tree handles: parse once, query many times.
 //!
 //! A tree is owned by the caller through the opaque pointer returned by
-//! [`bxc_parse_html`]. Nodes are addressed by their `u32` id inside that tree,
+//! [`web_internal_parse_html`]. Nodes are addressed by their `u32` id inside that tree,
 //! so nested queries (`element.querySelectorAll`) run against the existing
 //! tree instead of re-parsing the element's outer HTML.
 
@@ -14,9 +14,9 @@ use super::ffi_util::{borrow_str, error_json, guard, into_c_string};
 /// Scope value meaning "the whole document".
 pub const DOCUMENT_SCOPE: u32 = u32::MAX;
 
-/// Sentinel returned by [`bxc_query_selector_node`] when nothing matches.
+/// Sentinel returned by [`web_internal_query_selector_node`] when nothing matches.
 pub const NODE_NONE: i32 = -1;
-/// Sentinel returned by [`bxc_query_selector_node`] on invalid input.
+/// Sentinel returned by [`web_internal_query_selector_node`] on invalid input.
 pub const NODE_ERROR: i32 = -2;
 
 fn scope_node(tree: &DomTree, scope: u32) -> Option<NodeId> {
@@ -51,24 +51,22 @@ fn matching_descendants(
 ///
 /// `html_ptr` must be null or point to a readable, NUL-terminated C string for
 /// the duration of this call. A non-null result must eventually be passed
-/// exactly once to [`bxc_tree_destroy`].
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn bxc_parse_html(html_ptr: *const c_char) -> *mut DomTree {
+/// exactly once to [`web_internal_tree_destroy`].
+pub unsafe extern "C" fn web_internal_parse_html(html_ptr: *const c_char) -> *mut DomTree {
     guard(std::ptr::null_mut(), || match unsafe { borrow_str(html_ptr) } {
         Some(html) => Box::into_raw(Box::new(obscura_dom::parse_html(html))),
         None => std::ptr::null_mut(),
     })
 }
 
-/// Release a DOM tree returned by [`bxc_parse_html`].
+/// Release a DOM tree returned by [`web_internal_parse_html`].
 ///
 /// # Safety
 ///
 /// `tree_ptr` must be null or the exact live pointer returned by
-/// [`bxc_parse_html`]. It must not be used or destroyed again after this call,
+/// [`web_internal_parse_html`]. It must not be used or destroyed again after this call,
 /// and no concurrent access to the tree may be in progress.
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn bxc_tree_destroy(tree_ptr: *mut DomTree) {
+pub unsafe extern "C" fn web_internal_tree_destroy(tree_ptr: *mut DomTree) {
     guard((), || {
         if !tree_ptr.is_null() {
             drop(unsafe { Box::from_raw(tree_ptr) });
@@ -80,12 +78,11 @@ pub unsafe extern "C" fn bxc_tree_destroy(tree_ptr: *mut DomTree) {
 ///
 /// # Safety
 ///
-/// `tree_ptr` must point to a live tree returned by [`bxc_parse_html`] and must
+/// `tree_ptr` must point to a live tree returned by [`web_internal_parse_html`] and must
 /// not be mutated or destroyed during this call. `selector_ptr` must point to a
 /// readable, NUL-terminated C string. The returned string must be released
-/// exactly once with `bxc_free_string`.
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn bxc_query_selector(
+/// exactly once with `web_internal_free_string`.
+pub unsafe extern "C" fn web_internal_query_selector(
     tree_ptr: *mut DomTree,
     selector_ptr: *const c_char,
 ) -> *mut c_char {
@@ -108,9 +105,8 @@ pub unsafe extern "C" fn bxc_query_selector(
 ///
 /// # Safety
 ///
-/// Same contract as [`bxc_query_selector`].
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn bxc_query_selector_all(
+/// Same contract as [`web_internal_query_selector`].
+pub unsafe extern "C" fn web_internal_query_selector_all(
     tree_ptr: *mut DomTree,
     selector_ptr: *const c_char,
 ) -> *mut c_char {
@@ -139,11 +135,10 @@ pub unsafe extern "C" fn bxc_query_selector_all(
 ///
 /// # Safety
 ///
-/// `tree_ptr` must point to a live tree returned by [`bxc_parse_html`];
+/// `tree_ptr` must point to a live tree returned by [`web_internal_parse_html`];
 /// `selector_ptr` must point to a readable, NUL-terminated C string. The
-/// returned string must be released with `bxc_free_string`.
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn bxc_query_selector_all_nodes(
+/// returned string must be released with `web_internal_free_string`.
+pub unsafe extern "C" fn web_internal_query_selector_all_nodes(
     tree_ptr: *mut DomTree,
     scope: u32,
     selector_ptr: *const c_char,
@@ -174,9 +169,8 @@ pub unsafe extern "C" fn bxc_query_selector_all_nodes(
 ///
 /// # Safety
 ///
-/// Same contract as [`bxc_query_selector_all_nodes`].
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn bxc_query_selector_node(
+/// Same contract as [`web_internal_query_selector_all_nodes`].
+pub unsafe extern "C" fn web_internal_query_selector_node(
     tree_ptr: *mut DomTree,
     scope: u32,
     selector_ptr: *const c_char,
@@ -225,10 +219,12 @@ unsafe fn with_live_node(
 ///
 /// # Safety
 ///
-/// `tree_ptr` must point to a live tree returned by [`bxc_parse_html`]. The
-/// returned string must be released with `bxc_free_string`.
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn bxc_node_outer_html(tree_ptr: *mut DomTree, node: u32) -> *mut c_char {
+/// `tree_ptr` must point to a live tree returned by [`web_internal_parse_html`]. The
+/// returned string must be released with `web_internal_free_string`.
+pub unsafe extern "C" fn web_internal_node_outer_html(
+    tree_ptr: *mut DomTree,
+    node: u32,
+) -> *mut c_char {
     unsafe { with_live_node(tree_ptr, node, |tree, id| Some(tree.outer_html(id))) }
 }
 
@@ -236,9 +232,11 @@ pub unsafe extern "C" fn bxc_node_outer_html(tree_ptr: *mut DomTree, node: u32) 
 ///
 /// # Safety
 ///
-/// Same contract as [`bxc_node_outer_html`].
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn bxc_node_inner_html(tree_ptr: *mut DomTree, node: u32) -> *mut c_char {
+/// Same contract as [`web_internal_node_outer_html`].
+pub unsafe extern "C" fn web_internal_node_inner_html(
+    tree_ptr: *mut DomTree,
+    node: u32,
+) -> *mut c_char {
     unsafe { with_live_node(tree_ptr, node, |tree, id| Some(tree.inner_html(id))) }
 }
 
@@ -246,9 +244,11 @@ pub unsafe extern "C" fn bxc_node_inner_html(tree_ptr: *mut DomTree, node: u32) 
 ///
 /// # Safety
 ///
-/// Same contract as [`bxc_node_outer_html`].
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn bxc_node_text_content(tree_ptr: *mut DomTree, node: u32) -> *mut c_char {
+/// Same contract as [`web_internal_node_outer_html`].
+pub unsafe extern "C" fn web_internal_node_text_content(
+    tree_ptr: *mut DomTree,
+    node: u32,
+) -> *mut c_char {
     unsafe { with_live_node(tree_ptr, node, |tree, id| Some(tree.text_content(id))) }
 }
 
@@ -256,9 +256,11 @@ pub unsafe extern "C" fn bxc_node_text_content(tree_ptr: *mut DomTree, node: u32
 ///
 /// # Safety
 ///
-/// Same contract as [`bxc_node_outer_html`].
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn bxc_node_tag_name(tree_ptr: *mut DomTree, node: u32) -> *mut c_char {
+/// Same contract as [`web_internal_node_outer_html`].
+pub unsafe extern "C" fn web_internal_node_tag_name(
+    tree_ptr: *mut DomTree,
+    node: u32,
+) -> *mut c_char {
     unsafe {
         with_live_node(tree_ptr, node, |tree, id| {
             tree.with_node(id, |n| n.as_element().map(|q| q.local.as_ref().to_ascii_lowercase()))
@@ -272,9 +274,8 @@ pub unsafe extern "C" fn bxc_node_tag_name(tree_ptr: *mut DomTree, node: u32) ->
 /// # Safety
 ///
 /// `name_ptr` must point to a readable, NUL-terminated C string; otherwise the
-/// contract of [`bxc_node_outer_html`] applies.
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn bxc_node_attribute(
+/// contract of [`web_internal_node_outer_html`] applies.
+pub unsafe extern "C" fn web_internal_node_attribute(
     tree_ptr: *mut DomTree,
     node: u32,
     name_ptr: *const c_char,
@@ -293,9 +294,8 @@ pub unsafe extern "C" fn bxc_node_attribute(
 ///
 /// # Safety
 ///
-/// Same contract as [`bxc_node_outer_html`].
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn bxc_node_attributes_json(
+/// Same contract as [`web_internal_node_outer_html`].
+pub unsafe extern "C" fn web_internal_node_attributes_json(
     tree_ptr: *mut DomTree,
     node: u32,
 ) -> *mut c_char {
@@ -334,7 +334,7 @@ mod tests {
             return None;
         }
         let value = unsafe { CStr::from_ptr(ptr) }.to_string_lossy().into_owned();
-        unsafe { crate::bxc_free_string(ptr) };
+        unsafe { crate::web_internal_free_string(ptr) };
         Some(value)
     }
 
@@ -346,50 +346,69 @@ mod tests {
         )
         .unwrap();
         unsafe {
-            let tree = bxc_parse_html(html.as_ptr());
+            let tree = web_internal_parse_html(html.as_ptr());
             assert!(!tree.is_null());
             let ul_sel = CString::new("#b").unwrap();
-            let ul = bxc_query_selector_node(tree, DOCUMENT_SCOPE, ul_sel.as_ptr());
+            let ul = web_internal_query_selector_node(tree, DOCUMENT_SCOPE, ul_sel.as_ptr());
             assert!(ul >= 0);
 
             let li_sel = CString::new("li.x").unwrap();
             let all: Vec<u32> = serde_json::from_str(
-                &take(bxc_query_selector_all_nodes(tree, DOCUMENT_SCOPE, li_sel.as_ptr())).unwrap(),
+                &take(web_internal_query_selector_all_nodes(tree, DOCUMENT_SCOPE, li_sel.as_ptr()))
+                    .unwrap(),
             )
             .unwrap();
             assert_eq!(all.len(), 2);
             let scoped: Vec<u32> = serde_json::from_str(
-                &take(bxc_query_selector_all_nodes(tree, ul as u32, li_sel.as_ptr())).unwrap(),
+                &take(web_internal_query_selector_all_nodes(tree, ul as u32, li_sel.as_ptr()))
+                    .unwrap(),
             )
             .unwrap();
             assert_eq!(scoped.len(), 1);
-            assert_eq!(take(bxc_node_text_content(tree, scoped[0])).as_deref(), Some("Three"));
+            assert_eq!(
+                take(web_internal_node_text_content(tree, scoped[0])).as_deref(),
+                Some("Three")
+            );
 
             // Combinators may match ancestors outside the scope (DOM semantics).
             let desc_sel = CString::new("ul li").unwrap();
             let desc: Vec<u32> = serde_json::from_str(
-                &take(bxc_query_selector_all_nodes(tree, ul as u32, desc_sel.as_ptr())).unwrap(),
+                &take(web_internal_query_selector_all_nodes(tree, ul as u32, desc_sel.as_ptr()))
+                    .unwrap(),
             )
             .unwrap();
             assert_eq!(desc.len(), 1);
 
-            assert_eq!(take(bxc_node_text_content(tree, all[0])).as_deref(), Some("One & two"));
-            assert_eq!(take(bxc_node_tag_name(tree, all[0])).as_deref(), Some("li"));
+            assert_eq!(
+                take(web_internal_node_text_content(tree, all[0])).as_deref(),
+                Some("One & two")
+            );
+            assert_eq!(take(web_internal_node_tag_name(tree, all[0])).as_deref(), Some("li"));
             let key = CString::new("data-k").unwrap();
-            assert_eq!(take(bxc_node_attribute(tree, all[0], key.as_ptr())).as_deref(), Some("1"));
+            assert_eq!(
+                take(web_internal_node_attribute(tree, all[0], key.as_ptr())).as_deref(),
+                Some("1")
+            );
             let missing = CString::new("nope").unwrap();
-            assert!(bxc_node_attribute(tree, all[0], missing.as_ptr()).is_null());
-            let attrs: serde_json::Value =
-                serde_json::from_str(&take(bxc_node_attributes_json(tree, all[0])).unwrap())
-                    .unwrap();
+            assert!(web_internal_node_attribute(tree, all[0], missing.as_ptr()).is_null());
+            let attrs: serde_json::Value = serde_json::from_str(
+                &take(web_internal_node_attributes_json(tree, all[0])).unwrap(),
+            )
+            .unwrap();
             assert_eq!(attrs["class"], "x");
 
-            assert!(bxc_node_outer_html(tree, 9_999_999).is_null());
+            assert!(web_internal_node_outer_html(tree, 9_999_999).is_null());
             let bad = CString::new("li[").unwrap();
-            assert_eq!(bxc_query_selector_node(tree, DOCUMENT_SCOPE, bad.as_ptr()), NODE_ERROR);
+            assert_eq!(
+                web_internal_query_selector_node(tree, DOCUMENT_SCOPE, bad.as_ptr()),
+                NODE_ERROR
+            );
             let none = CString::new("table").unwrap();
-            assert_eq!(bxc_query_selector_node(tree, DOCUMENT_SCOPE, none.as_ptr()), NODE_NONE);
-            bxc_tree_destroy(tree);
+            assert_eq!(
+                web_internal_query_selector_node(tree, DOCUMENT_SCOPE, none.as_ptr()),
+                NODE_NONE
+            );
+            web_internal_tree_destroy(tree);
         }
     }
 }
@@ -501,9 +520,8 @@ pub(crate) fn extract_anchors(html: &str, base: Option<&url::Url>) -> Vec<serde_
 ///
 /// `html_ptr` must point to a readable, NUL-terminated C string; `base_url_ptr`
 /// may be null or satisfy the same requirement. The returned string must be
-/// released with `bxc_free_string`.
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn bxc_extract_anchors(
+/// released with `web_internal_free_string`.
+pub unsafe extern "C" fn web_internal_extract_anchors(
     html_ptr: *const c_char,
     base_url_ptr: *const c_char,
 ) -> *mut c_char {

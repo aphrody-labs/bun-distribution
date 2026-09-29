@@ -77,6 +77,8 @@ const SYMBOLS = {
   aphrody_string_free: { args: [FFIType.ptr], returns: FFIType.void },
   aphrody_last_error: { args: [], returns: FFIType.ptr },
   aphrody_web_extract_main: { args: [FFIType.ptr, FFIType.ptr, FFIType.ptr], returns: FFIType.ptr },
+  aphrody_web_media_extract: { args: [FFIType.ptr, FFIType.ptr], returns: FFIType.ptr },
+  aphrody_web_media_resolve_submit: { args: [FFIType.ptr, FFIType.ptr, FFIType.u32], returns: FFIType.u64_fast },
   aphrody_web_html_to_markdown: { args: [FFIType.ptr, FFIType.ptr], returns: FFIType.ptr },
   aphrody_web_simhash64: { args: [FFIType.ptr], returns: FFIType.ptr },
   aphrody_web_index_last_error: { args: [], returns: FFIType.ptr },
@@ -323,6 +325,29 @@ export function webGetChromiumCookies(
 /** Start a native HTTP fetch without blocking Bun's event loop. Poll via webJobTake. */
 export function webObscuraFetchSubmit(url: string, stealth = false, timeoutMs = 30000): number {
   return Number(loadLib().symbols.aphrody_web_obscura_fetch_submit(cstr(url), stealth ? 1 : 0, timeoutMs));
+}
+
+/** Extract media URLs from HTML or player JavaScript without a network request. */
+export function webMediaExtract(source: string, baseUrl: string): {
+  candidates: Array<Record<string, unknown>>;
+  poster: string | null;
+} {
+  const result = JSON.parse(readOwnedString(loadLib().symbols.aphrody_web_media_extract(
+    cstr(source), cstr(baseUrl),
+  ))) as { candidates?: Array<Record<string, unknown>>; poster?: string | null; error?: string };
+  if (result.error) throw new Error(result.error);
+  return { candidates: result.candidates ?? [], poster: result.poster ?? null };
+}
+
+/** Start native embed resolution; read the result with webJobTake. */
+export function webMediaResolveSubmit(
+  embedUrl: string,
+  options: { referer?: string; userAgent?: string; enumerateVariants?: boolean; maxHops?: number } = {},
+  timeoutMs = 30000,
+): number {
+  return Number(loadLib().symbols.aphrody_web_media_resolve_submit(
+    cstr(embedUrl), cstr(JSON.stringify(options)), timeoutMs,
+  ));
 }
 
 export function webDnsReconSubmit(domain: string, timeoutMs = 30000): number {

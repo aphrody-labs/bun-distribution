@@ -1,10 +1,10 @@
 //! Network-bound symbols: DNS OSINT, Gemini web and the X private API.
 //!
 //! Each operation has one async body shared by two entry points:
-//! - `bxc_*` (legacy, synchronous): blocks the caller on the shared runtime. Kept for ABI
+//! - `web_internal_*` (legacy, synchronous): blocks the caller on the shared runtime. Kept for ABI
 //!   compatibility; do not call it from an event loop.
-//! - `bxc_*_submit` (non-blocking): returns a job id immediately; the result is collected with
-//!   `bxc_job_take` (see `jobs.rs`).
+//! - `web_internal_*_submit` (non-blocking): returns a job id immediately; the result is collected with
+//!   `web_internal_job_take` (see `jobs.rs`).
 
 use std::{future::Future, os::raw::c_char};
 
@@ -57,23 +57,24 @@ async fn dns_recon_body(domain: String) -> String {
 ///
 /// `domain_ptr` must be null or point to a readable, NUL-terminated C string
 /// for the duration of this call. The returned string must be released exactly
-/// once with `bxc_free_string`.
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn bxc_dns_recon(domain_ptr: *const c_char) -> *mut c_char {
+/// once with `web_internal_free_string`.
+pub unsafe extern "C" fn web_internal_dns_recon(domain_ptr: *const c_char) -> *mut c_char {
     guard(std::ptr::null_mut(), || match owned(domain_ptr, "domain") {
         Ok(domain) => block_on_json(dns_recon_body(domain)),
         Err(_) => into_c_string("[]".to_string()),
     })
 }
 
-/// Non-blocking variant of [`bxc_dns_recon`]. Returns a job id.
+/// Non-blocking variant of [`web_internal_dns_recon`]. Returns a job id.
 ///
 /// # Safety
 ///
 /// `domain_ptr` must be null or point to a readable, NUL-terminated C string
 /// for the duration of this call.
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn bxc_dns_recon_submit(domain_ptr: *const c_char, timeout_ms: u32) -> u64 {
+pub unsafe extern "C" fn web_internal_dns_recon_submit(
+    domain_ptr: *const c_char,
+    timeout_ms: u32,
+) -> u64 {
     guard(0, || match owned(domain_ptr, "domain") {
         Ok(domain) => jobs::submit(timeout_ms, dns_recon_body(domain)),
         Err(e) => jobs::resolved(error_json_string(e)),
@@ -122,9 +123,8 @@ fn gemini_args(
 ///
 /// Every non-null pointer argument must point to a readable, NUL-terminated C
 /// string for the duration of this call. `model_ptr` may be null. The returned
-/// string must be released exactly once with `bxc_free_string`.
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn bxc_gemini_web_ask(
+/// string must be released exactly once with `web_internal_free_string`.
+pub unsafe extern "C" fn web_internal_gemini_web_ask(
     cookie_path_ptr: *const c_char,
     prompt_ptr: *const c_char,
     model_ptr: *const c_char,
@@ -137,13 +137,12 @@ pub unsafe extern "C" fn bxc_gemini_web_ask(
     })
 }
 
-/// Non-blocking variant of [`bxc_gemini_web_ask`]. Returns a job id.
+/// Non-blocking variant of [`web_internal_gemini_web_ask`]. Returns a job id.
 ///
 /// # Safety
 ///
-/// Same pointer contract as [`bxc_gemini_web_ask`].
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn bxc_gemini_web_ask_submit(
+/// Same pointer contract as [`web_internal_gemini_web_ask`].
+pub unsafe extern "C" fn web_internal_gemini_web_ask_submit(
     cookie_path_ptr: *const c_char,
     prompt_ptr: *const c_char,
     model_ptr: *const c_char,
@@ -234,9 +233,8 @@ async fn x_community_info_and_tweets_body(
 ///
 /// Every pointer argument must point to a readable, NUL-terminated C string for
 /// the duration of this call. The returned string must be released exactly once
-/// with `bxc_free_string`.
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn bxc_x_user_by_screen_name(
+/// with `web_internal_free_string`.
+pub unsafe extern "C" fn web_internal_x_user_by_screen_name(
     auth_token_ptr: *const c_char,
     ct0_ptr: *const c_char,
     handle_ptr: *const c_char,
@@ -247,13 +245,12 @@ pub unsafe extern "C" fn bxc_x_user_by_screen_name(
     })
 }
 
-/// Non-blocking variant of [`bxc_x_user_by_screen_name`]. Returns a job id.
+/// Non-blocking variant of [`web_internal_x_user_by_screen_name`]. Returns a job id.
 ///
 /// # Safety
 ///
-/// Same pointer contract as [`bxc_x_user_by_screen_name`].
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn bxc_x_user_by_screen_name_submit(
+/// Same pointer contract as [`web_internal_x_user_by_screen_name`].
+pub unsafe extern "C" fn web_internal_x_user_by_screen_name_submit(
     auth_token_ptr: *const c_char,
     ct0_ptr: *const c_char,
     handle_ptr: *const c_char,
@@ -271,9 +268,8 @@ pub unsafe extern "C" fn bxc_x_user_by_screen_name_submit(
 ///
 /// # Safety
 ///
-/// Same pointer contract as [`bxc_x_user_by_screen_name`].
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn bxc_x_user_tweets(
+/// Same pointer contract as [`web_internal_x_user_by_screen_name`].
+pub unsafe extern "C" fn web_internal_x_user_tweets(
     auth_token_ptr: *const c_char,
     ct0_ptr: *const c_char,
     handle_ptr: *const c_char,
@@ -285,13 +281,12 @@ pub unsafe extern "C" fn bxc_x_user_tweets(
     })
 }
 
-/// Non-blocking variant of [`bxc_x_user_tweets`]. Returns a job id.
+/// Non-blocking variant of [`web_internal_x_user_tweets`]. Returns a job id.
 ///
 /// # Safety
 ///
-/// Same pointer contract as [`bxc_x_user_by_screen_name`].
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn bxc_x_user_tweets_submit(
+/// Same pointer contract as [`web_internal_x_user_by_screen_name`].
+pub unsafe extern "C" fn web_internal_x_user_tweets_submit(
     auth_token_ptr: *const c_char,
     ct0_ptr: *const c_char,
     handle_ptr: *const c_char,
@@ -308,9 +303,8 @@ pub unsafe extern "C" fn bxc_x_user_tweets_submit(
 ///
 /// # Safety
 ///
-/// Same pointer contract as [`bxc_x_user_by_screen_name`].
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn bxc_x_community_by_rest_id(
+/// Same pointer contract as [`web_internal_x_user_by_screen_name`].
+pub unsafe extern "C" fn web_internal_x_community_by_rest_id(
     auth_token_ptr: *const c_char,
     ct0_ptr: *const c_char,
     community_id_ptr: *const c_char,
@@ -323,13 +317,12 @@ pub unsafe extern "C" fn bxc_x_community_by_rest_id(
     })
 }
 
-/// Non-blocking variant of [`bxc_x_community_by_rest_id`]. Returns a job id.
+/// Non-blocking variant of [`web_internal_x_community_by_rest_id`]. Returns a job id.
 ///
 /// # Safety
 ///
-/// Same pointer contract as [`bxc_x_user_by_screen_name`].
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn bxc_x_community_by_rest_id_submit(
+/// Same pointer contract as [`web_internal_x_user_by_screen_name`].
+pub unsafe extern "C" fn web_internal_x_community_by_rest_id_submit(
     auth_token_ptr: *const c_char,
     ct0_ptr: *const c_char,
     community_id_ptr: *const c_char,
@@ -345,9 +338,8 @@ pub unsafe extern "C" fn bxc_x_community_by_rest_id_submit(
 ///
 /// # Safety
 ///
-/// Same pointer contract as [`bxc_x_user_by_screen_name`].
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn bxc_x_community_tweets(
+/// Same pointer contract as [`web_internal_x_user_by_screen_name`].
+pub unsafe extern "C" fn web_internal_x_community_tweets(
     auth_token_ptr: *const c_char,
     ct0_ptr: *const c_char,
     community_id_ptr: *const c_char,
@@ -361,13 +353,12 @@ pub unsafe extern "C" fn bxc_x_community_tweets(
     })
 }
 
-/// Non-blocking variant of [`bxc_x_community_tweets`]. Returns a job id.
+/// Non-blocking variant of [`web_internal_x_community_tweets`]. Returns a job id.
 ///
 /// # Safety
 ///
-/// Same pointer contract as [`bxc_x_user_by_screen_name`].
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn bxc_x_community_tweets_submit(
+/// Same pointer contract as [`web_internal_x_user_by_screen_name`].
+pub unsafe extern "C" fn web_internal_x_community_tweets_submit(
     auth_token_ptr: *const c_char,
     ct0_ptr: *const c_char,
     community_id_ptr: *const c_char,
@@ -385,9 +376,8 @@ pub unsafe extern "C" fn bxc_x_community_tweets_submit(
 ///
 /// # Safety
 ///
-/// Same pointer contract as [`bxc_x_user_by_screen_name`].
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn bxc_x_community_info_and_tweets(
+/// Same pointer contract as [`web_internal_x_user_by_screen_name`].
+pub unsafe extern "C" fn web_internal_x_community_info_and_tweets(
     auth_token_ptr: *const c_char,
     ct0_ptr: *const c_char,
     community_id_ptr: *const c_char,
@@ -401,13 +391,12 @@ pub unsafe extern "C" fn bxc_x_community_info_and_tweets(
     })
 }
 
-/// Non-blocking variant of [`bxc_x_community_info_and_tweets`]. Returns a job id.
+/// Non-blocking variant of [`web_internal_x_community_info_and_tweets`]. Returns a job id.
 ///
 /// # Safety
 ///
-/// Same pointer contract as [`bxc_x_user_by_screen_name`].
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn bxc_x_community_info_and_tweets_submit(
+/// Same pointer contract as [`web_internal_x_user_by_screen_name`].
+pub unsafe extern "C" fn web_internal_x_community_info_and_tweets_submit(
     auth_token_ptr: *const c_char,
     ct0_ptr: *const c_char,
     community_id_ptr: *const c_char,
@@ -430,9 +419,8 @@ pub unsafe extern "C" fn bxc_x_community_info_and_tweets_submit(
 ///
 /// `candidates_json_ptr` must point to a readable, NUL-terminated C string;
 /// `context_json_ptr` may be null or satisfy the same requirement. The returned
-/// string must be released exactly once with `bxc_free_string`.
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn bxc_x_algorithm_rank(
+/// string must be released exactly once with `web_internal_free_string`.
+pub unsafe extern "C" fn web_internal_x_algorithm_rank(
     candidates_json_ptr: *const c_char,
     context_json_ptr: *const c_char,
     top_k: u32,

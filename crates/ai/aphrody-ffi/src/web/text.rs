@@ -13,8 +13,8 @@ use super::ffi_util::{guard, into_c_string};
 ///
 /// `html_ptr` must be null or point to a readable, NUL-terminated C string for
 /// the duration of this call. The returned string must be released exactly once
-/// with `bxc_free_string`.
-pub unsafe extern "C" fn bxc_extract_title(html_ptr: *const c_char) -> *mut c_char {
+/// with `web_internal_free_string`.
+pub unsafe extern "C" fn web_internal_extract_title(html_ptr: *const c_char) -> *mut c_char {
     guard(std::ptr::null_mut(), || {
         if html_ptr.is_null() {
             return std::ptr::null_mut();
@@ -55,8 +55,8 @@ pub unsafe extern "C" fn bxc_extract_title(html_ptr: *const c_char) -> *mut c_ch
 ///
 /// `html_ptr` must be null or point to a readable, NUL-terminated C string for
 /// the duration of this call. The returned string must be released exactly once
-/// with `bxc_free_string`.
-pub unsafe extern "C" fn bxc_strip_tags(html_ptr: *const c_char) -> *mut c_char {
+/// with `web_internal_free_string`.
+pub unsafe extern "C" fn web_internal_strip_tags(html_ptr: *const c_char) -> *mut c_char {
     guard(std::ptr::null_mut(), || {
         if html_ptr.is_null() {
             return std::ptr::null_mut();
@@ -93,8 +93,8 @@ pub unsafe extern "C" fn bxc_strip_tags(html_ptr: *const c_char) -> *mut c_char 
 ///
 /// `html_ptr` must be null or point to a readable, NUL-terminated C string for
 /// the duration of this call. The returned string must be released exactly once
-/// with `bxc_free_string`.
-pub unsafe extern "C" fn bxc_html_to_markdown(html_ptr: *const c_char) -> *mut c_char {
+/// with `web_internal_free_string`.
+pub unsafe extern "C" fn web_internal_html_to_markdown(html_ptr: *const c_char) -> *mut c_char {
     guard(std::ptr::null_mut(), || {
         if html_ptr.is_null() {
             return std::ptr::null_mut();
@@ -106,7 +106,7 @@ pub unsafe extern "C" fn bxc_html_to_markdown(html_ptr: *const c_char) -> *mut c
             Err(_) => return std::ptr::null_mut(),
         };
 
-        // One canonical converter for the whole code base (bxc-extract).
+        // One canonical converter for the whole code base (aphrody-web-extract).
         let markdown = aphrody_web_extract::html_to_markdown(html_payload, None);
         into_c_string(markdown)
     })
@@ -123,8 +123,8 @@ pub unsafe extern "C" fn bxc_html_to_markdown(html_ptr: *const c_char) -> *mut c
 ///
 /// `html_ptr` must be null or point to a readable, NUL-terminated C string.
 /// `base_url_ptr` may be null or point to a readable, NUL-terminated C string.
-/// The returned string must be released exactly once with `bxc_free_string`.
-pub unsafe extern "C" fn bxc_extract_links(
+/// The returned string must be released exactly once with `web_internal_free_string`.
+pub unsafe extern "C" fn web_internal_extract_links(
     html_ptr: *const c_char,
     base_url_ptr: *const c_char,
 ) -> *mut c_char {
@@ -231,8 +231,8 @@ pub unsafe extern "C" fn bxc_extract_links(
 /// # Safety
 ///
 /// `html_ptr` must be null or point to a readable, NUL-terminated C string.
-/// The returned string must be released exactly once with `bxc_free_string`.
-pub unsafe extern "C" fn bxc_extract_text(html_ptr: *const c_char) -> *mut c_char {
+/// The returned string must be released exactly once with `web_internal_free_string`.
+pub unsafe extern "C" fn web_internal_extract_text(html_ptr: *const c_char) -> *mut c_char {
     guard(std::ptr::null_mut(), || {
         if html_ptr.is_null() {
             return into_c_string(String::new());
@@ -373,8 +373,8 @@ pub unsafe extern "C" fn bxc_extract_text(html_ptr: *const c_char) -> *mut c_cha
 /// # Safety
 ///
 /// `url_ptr` must be null or point to a readable, NUL-terminated C string.
-/// The returned string must be released exactly once with `bxc_free_string`.
-pub unsafe extern "C" fn bxc_normalize_url(url_ptr: *const c_char) -> *mut c_char {
+/// The returned string must be released exactly once with `web_internal_free_string`.
+pub unsafe extern "C" fn web_internal_normalize_url(url_ptr: *const c_char) -> *mut c_char {
     guard(std::ptr::null_mut(), || {
         if url_ptr.is_null() {
             return into_c_string(String::new());

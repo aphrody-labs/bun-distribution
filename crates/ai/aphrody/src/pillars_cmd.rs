@@ -208,68 +208,8 @@ pub(crate) async fn handle_os(action: OsAction) -> miette::Result<()> {
     Ok(())
 }
 
-// --- 3. WEB PILLAR ---
-#[derive(Debug, Subcommand)]
-pub(crate) enum WebAction {
-    /// Inspect the linked Rust Web runtime
-    Status {
-        /// Emit status as JSON
-        #[arg(long)]
-        json: bool,
-    },
-    /// List the linked Rust Web capabilities
-    Capabilities {
-        /// Emit capabilities as JSON
-        #[arg(long)]
-        json: bool,
-    },
-    /// Fetch and convert a URL directly to clean Markdown
-    Fetch {
-        /// The URL to fetch and convert
-        url: String,
-        /// Fetch profile: static, http, fast, stealth or max
-        #[arg(long)]
-        profile: Option<String>,
-        /// Emit the complete fetch result as JSON
-        #[arg(long)]
-        json: bool,
-    },
-}
-
-pub(crate) async fn handle_web(action: WebAction) -> miette::Result<()> {
-    match action {
-        WebAction::Status { json } | WebAction::Capabilities { json } => {
-            let linked = aphrody_web_bridge::ffi::shared();
-            let status = serde_json::json!({
-                "layer": "web",
-                "status": if linked.is_ok() { "ready" } else { "unavailable" },
-                "runtime": "shared-rust",
-                "capabilities": ["http-fetch", "obscura-browser", "dom-extract", "markdown", "dns"],
-                "error": linked.as_ref().err().map(ToString::to_string),
-            });
-            if json {
-                println!("{}", serde_json::to_string_pretty(&status).into_diagnostic()?);
-            } else {
-                println!("{}", serde_json::to_string_pretty(&status).into_diagnostic()?);
-            }
-        },
-        WebAction::Fetch { url, profile, json } => {
-            let mut request = aphrody_web_bridge::fetch::Request::new(url);
-            if let Some(name) = profile {
-                let selected = aphrody_web_bridge::Profile::parse(&name)
-                    .ok_or_else(|| miette!("unknown Web profile: {name}"))?;
-                request = request.with_profile(selected);
-            }
-            let result = aphrody_web_bridge::fetch::fetch(&request).await.into_diagnostic()?;
-            if json {
-                println!("{}", serde_json::to_string_pretty(&result).into_diagnostic()?);
-            } else {
-                println!("{}", result.to_report());
-            }
-        },
-    }
-    Ok(())
-}
+mod web;
+pub(crate) use web::{WebAction, handle_web};
 
 // --- 4. INFRA PILLAR ---
 #[derive(Debug, Subcommand)]

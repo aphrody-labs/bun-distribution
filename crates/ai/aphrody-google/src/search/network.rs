@@ -62,6 +62,8 @@ pub struct SearchOptions {
     pub udm: Option<u16>,
     pub cache_ttl_ms: Option<u64>,
     pub cookie_path: Option<PathBuf>,
+    /// Never load account cookies, including from the default Aphrody store.
+    pub anonymous: bool,
     pub transport: SearchTransport,
 }
 
@@ -78,6 +80,7 @@ impl Default for SearchOptions {
             udm: None,
             cache_ttl_ms: None,
             cookie_path: None,
+            anonymous: false,
             transport: SearchTransport::Auto,
         }
     }
@@ -102,7 +105,7 @@ struct SearchCookie {
     secure: bool,
 }
 
-fn is_google_domain(host: &str) -> bool {
+pub fn is_google_domain(host: &str) -> bool {
     let host = host.to_ascii_lowercase();
     include_str!("google_domains.txt")
         .lines()
@@ -237,6 +240,10 @@ fn load_cookies(path: Option<&PathBuf>) -> Vec<SearchCookie> {
         .map_or_else(Vec::new, |contents| parse_cookies(&contents))
 }
 
+fn search_cookies(options: &SearchOptions) -> Vec<SearchCookie> {
+    if options.anonymous { Vec::new() } else { load_cookies(options.cookie_path.as_ref()) }
+}
+
 fn cookie_header(url: &Url, cookies: &[SearchCookie], domain: &str) -> String {
     let host = url.host_str().unwrap_or_default();
     let path = url.path();
@@ -265,7 +272,26 @@ fn cookie_header(url: &Url, cookies: &[SearchCookie], domain: &str) -> String {
     header.join("; ")
 }
 
+fn empty_serp_reason(html: &str) -> &'static str {
+    if html.contains("/httpservice/retry/enablejs") {
+        "Google JavaScript bootstrap"
+    } else if html.contains("consent.google.com") || html.contains("Before you continue") {
+        "Google consent interstitial"
+    } else if html.contains("recaptcha") || html.contains("unusual traffic") {
+        "Google anti-bot interstitial"
+    } else if !html.contains("<h3") {
+        "Google response has no result markup (JavaScript or interstitial page)"
+    } else {
+        "Google result markup is incompatible with the current parser"
+    }
+}
+
 pub fn is_blocked_serp_html(html: &str) -> bool {
+    // Google sometimes returns a large HTTP 200 JavaScript bootstrap instead of
+    // server-rendered search results. Its size bypasses the short-page guard.
+    if html.contains("/httpservice/retry/enablejs") && !html.contains("<h3") {
+        return true;
+    }
     static MARKERS: LazyLock<Regex> = LazyLock::new(|| {
         Regex::new(
         r#"(?i)<div[^>]+id=["'](?:search|rso|center_col)["']|<div[^>]+class=["'][^"']*\bg\b[^"']*["']|data-async-context=["']query:"#
@@ -381,6 +407,7 @@ async fn fetch_serp_html(
     url: &Url,
     cookies: &[SearchCookie],
     options: &SearchOptions,
+    query: &str,
 ) -> Result<(String, SearchTransport), String> {
     let transports: &[SearchTransport] = match options.transport {
         SearchTransport::Auto => &[SearchTransport::Fetch, SearchTransport::Http],
@@ -395,7 +422,18 @@ async fn fetch_serp_html(
             SearchTransport::Auto => unreachable!(),
         };
         match response {
-            Ok(html) if !is_blocked_serp_html(&html) => return Ok((html, *transport)),
+            Ok(html) if !is_blocked_serp_html(&html) => {
+                if !parse_serp(&html, query).organic.is_empty() {
+                    return Ok((html, *transport));
+                }
+                last_error = format!(
+                    "transport {} returned HTML with no organic results: {} (bytes={}, h3_tags={})",
+                    transport.as_str(),
+                    empty_serp_reason(&html),
+                    html.len(),
+                    html.matches("<h3").count(),
+                );
+            },
             Ok(_) => {
                 last_error =
                     format!("transport {} returned blocked/empty response", transport.as_str())
@@ -466,7 +504,7 @@ fn cache_set(key: &str, value: &RichSearchResult, ttl_ms: u64) -> Result<(), Str
 /// Fetch and parse a Google SERP with authenticated cookies when available.
 pub async fn search_rich(query: &str, options: &SearchOptions) -> Result<RichSearchResult, String> {
     let url = search_url(query, options)?;
-    let cookies = load_cookies(options.cookie_path.as_ref());
+    let cookies = search_cookies(options);
     let authenticated = !cookies.is_empty();
     let cache_key = format!("serp-rich:anonymous-v2:{url}");
     let cache_anonymous = !authenticated && options.cache_ttl_ms.is_some_and(|ttl| ttl > 0);
@@ -474,12 +512,12 @@ pub async fn search_rich(query: &str, options: &SearchOptions) -> Result<RichSea
         hit.served_from_cache = true;
         return Ok(hit);
     }
-    let (html, profile_used) = fetch_serp_html(&url, &cookies, options).await?;
+    let (html, profile_used) = fetch_serp_html(&url, &cookies, options, query).await?;
     let mut content = parse_serp(&html, query);
     if content.organic.is_empty() && options.udm.is_none() && !options.classic {
         let mut web_url = url.clone();
         web_url.query_pairs_mut().append_pair("udm", "14");
-        if let Ok((web_html, _)) = fetch_serp_html(&web_url, &cookies, options).await {
+        if let Ok((web_html, _)) = fetch_serp_html(&web_url, &cookies, options, query).await {
             let web = parse_serp(&web_html, query);
             if !web.organic.is_empty() {
                 content.organic = web.organic;
@@ -491,10 +529,11 @@ pub async fn search_rich(query: &str, options: &SearchOptions) -> Result<RichSea
     }
     let result =
         RichSearchResult { content, served_from_cache: false, profile_used, authenticated };
-    if cache_anonymous && !result.content.organic.is_empty() {
-        if let Some(ttl) = options.cache_ttl_ms {
-            let _ = cache_set(&cache_key, &result, ttl);
-        }
+    if cache_anonymous
+        && !result.content.organic.is_empty()
+        && let Some(ttl) = options.cache_ttl_ms
+    {
+        let _ = cache_set(&cache_key, &result, ttl);
     }
     Ok(result)
 }
@@ -536,6 +575,31 @@ mod tests {
         assert!(header.contains("SOCS="));
         assert!(is_blocked_serp_html("<title>Before you continue to Google</title>"));
         assert!(!is_blocked_serp_html("<div id='rso'><div class='MjjYud'></div></div>"));
+        let js_shell = format!(
+            "<title>Google Search</title><noscript><a href='/httpservice/retry/enablejs'>enable JS</a></noscript>{}",
+            "x".repeat(3000),
+        );
+        assert!(is_blocked_serp_html(&js_shell));
+        assert_eq!(empty_serp_reason(&js_shell), "Google JavaScript bootstrap");
+        assert_eq!(
+            empty_serp_reason("<title>Before you continue</title>"),
+            "Google consent interstitial",
+        );
+    }
+
+    #[test]
+    fn anonymous_overrides_explicit_cookie_file() {
+        let path = std::env::temp_dir().join(format!(
+            "aphrody-google-no-auth-{}-{}",
+            std::process::id(),
+            now_milliseconds(),
+        ));
+        std::fs::write(&path, r#"[{"name":"SID","value":"test","domain":".google.com"}]"#).unwrap();
+        let options = SearchOptions { cookie_path: Some(path.clone()), ..Default::default() };
+        assert_eq!(search_cookies(&options).len(), 1);
+        let anonymous = SearchOptions { anonymous: true, ..options };
+        assert!(search_cookies(&anonymous).is_empty());
+        std::fs::remove_file(path).unwrap();
     }
 
     #[test]
@@ -561,5 +625,15 @@ mod tests {
             .query_row("SELECT payload FROM cache WHERE key=?1", params!["key"], |row| row.get(0))
             .unwrap();
         assert_eq!(serde_json::from_slice::<RichSearchResult>(&decoded).unwrap(), result);
+    }
+
+    #[tokio::test]
+    #[ignore = "requires live Google Search access"]
+    async fn live_search_never_reports_empty_organic_as_success() {
+        let options = SearchOptions { anonymous: true, num: Some(3), ..Default::default() };
+        match search_rich("rust language", &options).await {
+            Ok(result) => assert!(!result.content.organic.is_empty()),
+            Err(error) => eprintln!("Google Search unavailable: {error}"),
+        }
     }
 }

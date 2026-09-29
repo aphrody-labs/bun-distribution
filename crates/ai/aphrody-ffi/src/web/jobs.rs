@@ -1,16 +1,16 @@
 //! Non-blocking job handles for network-bound work.
 //!
-//! The synchronous symbols (`bxc_dns_recon`, `bxc_gemini_web_ask`, `bxc_x_*`)
+//! The synchronous symbols (`web_internal_dns_recon`, `web_internal_gemini_web_ask`, `web_internal_x_*`)
 //! call `Runtime::block_on`, which freezes the caller's thread — in Bun that is
 //! the JavaScript event loop, so an MCP server stops answering for the whole
 //! request. The job API instead spawns the future on the shared runtime and
 //! returns an id immediately:
 //!
 //! ```text
-//! id = bxc_*_submit(args…, timeout_ms)   // never blocks
-//! bxc_job_completed_seq()                // cheap "anything finished?" probe
-//! bxc_job_take(id) -> JSON | NULL        // NULL while pending
-//! bxc_job_cancel(id)                     // abort + discard
+//! id = web_internal_*_submit(args…, timeout_ms)   // never blocks
+//! web_internal_job_completed_seq()                // cheap "anything finished?" probe
+//! web_internal_job_take(id) -> JSON | NULL        // NULL while pending
+//! web_internal_job_cancel(id)                     // abort + discard
 //! ```
 //!
 //! Every job resolves to a JSON string. Failures (invalid arguments, timeouts,
@@ -121,14 +121,12 @@ where
 
 /// Monotonic counter incremented every time a job completes. Callers poll this
 /// single integer and only scan their pending ids when it changes.
-#[unsafe(no_mangle)]
-pub extern "C" fn bxc_job_completed_seq() -> u64 {
+pub extern "C" fn web_internal_job_completed_seq() -> u64 {
     registry().completed_seq.load(Ordering::SeqCst)
 }
 
 /// Number of jobs that are still running.
-#[unsafe(no_mangle)]
-pub extern "C" fn bxc_job_pending_count() -> u32 {
+pub extern "C" fn web_internal_job_pending_count() -> u32 {
     guard(0, || {
         let count = lock_jobs(registry())
             .values()
@@ -139,8 +137,7 @@ pub extern "C" fn bxc_job_pending_count() -> u32 {
 }
 
 /// Job state: `0` pending, `1` done (result ready), `-1` unknown id.
-#[unsafe(no_mangle)]
-pub extern "C" fn bxc_job_status(id: u64) -> i32 {
+pub extern "C" fn web_internal_job_status(id: u64) -> i32 {
     guard(-1, || match lock_jobs(registry()).get(&id) {
         Some(JobState::Pending(_)) => 0,
         Some(JobState::Done(_)) => 1,
@@ -151,9 +148,8 @@ pub extern "C" fn bxc_job_status(id: u64) -> i32 {
 /// Take a finished job's JSON result, removing the job.
 ///
 /// Returns `NULL` while the job is pending and an `{"error": ...}` payload for
-/// unknown ids. A non-null result must be released with `bxc_free_string`.
-#[unsafe(no_mangle)]
-pub extern "C" fn bxc_job_take(id: u64) -> *mut c_char {
+/// unknown ids. A non-null result must be released with `web_internal_free_string`.
+pub extern "C" fn web_internal_job_take(id: u64) -> *mut c_char {
     guard(std::ptr::null_mut(), || {
         let mut jobs = lock_jobs(registry());
         match jobs.get(&id) {
@@ -168,8 +164,7 @@ pub extern "C" fn bxc_job_take(id: u64) -> *mut c_char {
 }
 
 /// Cancel a job and discard its result. Returns `1` when a job was removed.
-#[unsafe(no_mangle)]
-pub extern "C" fn bxc_job_cancel(id: u64) -> i32 {
+pub extern "C" fn web_internal_job_cancel(id: u64) -> i32 {
     guard(0, || match lock_jobs(registry()).remove(&id) {
         Some(JobState::Pending(Some(abort))) => {
             abort.abort();
@@ -188,10 +183,10 @@ mod tests {
 
     fn wait_for(id: u64) -> String {
         for _ in 0..500 {
-            let ptr = bxc_job_take(id);
+            let ptr = web_internal_job_take(id);
             if !ptr.is_null() {
                 let value = unsafe { CStr::from_ptr(ptr) }.to_string_lossy().into_owned();
-                unsafe { crate::bxc_free_string(ptr) };
+                unsafe { crate::web_internal_free_string(ptr) };
                 return value;
             }
             std::thread::sleep(Duration::from_millis(2));
@@ -201,16 +196,16 @@ mod tests {
 
     #[test]
     fn submit_returns_immediately_and_resolves() {
-        let seq = bxc_job_completed_seq();
+        let seq = web_internal_job_completed_seq();
         let id = submit(0, async {
             tokio::time::sleep(Duration::from_millis(30)).await;
             "{\"ok\":true}".to_string()
         });
-        assert_eq!(bxc_job_status(id), 0, "job must be pending right after submit");
-        assert!(bxc_job_take(id).is_null());
+        assert_eq!(web_internal_job_status(id), 0, "job must be pending right after submit");
+        assert!(web_internal_job_take(id).is_null());
         assert_eq!(wait_for(id), "{\"ok\":true}");
-        assert!(bxc_job_completed_seq() > seq);
-        assert_eq!(bxc_job_status(id), -1, "taken jobs are forgotten");
+        assert!(web_internal_job_completed_seq() > seq);
+        assert_eq!(web_internal_job_status(id), -1, "taken jobs are forgotten");
     }
 
     #[test]
@@ -238,17 +233,17 @@ mod tests {
             tokio::time::sleep(Duration::from_secs(5)).await;
             String::new()
         });
-        assert_eq!(bxc_job_cancel(id), 1);
-        assert_eq!(bxc_job_status(id), -1);
-        assert_eq!(bxc_job_cancel(id), 0);
+        assert_eq!(web_internal_job_cancel(id), 1);
+        assert_eq!(web_internal_job_status(id), -1);
+        assert_eq!(web_internal_job_cancel(id), 0);
     }
 
     #[test]
     fn unknown_job_yields_error_payload() {
-        let ptr = bxc_job_take(u64::MAX);
+        let ptr = web_internal_job_take(u64::MAX);
         assert!(!ptr.is_null());
         let value = unsafe { CStr::from_ptr(ptr) }.to_string_lossy().into_owned();
-        unsafe { crate::bxc_free_string(ptr) };
+        unsafe { crate::web_internal_free_string(ptr) };
         assert!(value.contains("unknown job"));
     }
 }

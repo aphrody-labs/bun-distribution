@@ -1,21 +1,14 @@
 // SPDX-License-Identifier: Apache-2.0
 
-// Preserve the imported parser's behavior while the source migration closes.
-#![allow(clippy::needless_borrow, clippy::ptr_arg, clippy::collapsible_if)]
+use std::{
+    fs,
+    path::{Path, PathBuf},
+    time::UNIX_EPOCH,
+};
 
-use std::{fs, path::PathBuf, time::UNIX_EPOCH};
-
-use aes_gcm::{Aes256Gcm, Key, KeyInit, Nonce, aead::Aead};
 use anyhow::{Result, anyhow};
-use base64::Engine;
+use rookie_cookies::{FromPathRequest, from_path};
 use serde::{Deserialize, Serialize};
-#[cfg(target_os = "windows")]
-use windows::Win32::Security::Cryptography::{CRYPT_INTEGER_BLOB, CryptUnprotectData};
-
-#[cfg(target_os = "windows")]
-unsafe extern "system" {
-    fn LocalFree(hmem: *mut std::ffi::c_void) -> *mut std::ffi::c_void;
-}
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Cookie {
@@ -72,14 +65,14 @@ pub fn discover_profiles() -> Vec<ChromiumProfile> {
             ChromiumParser::new(root.clone())
                 .get_profiles()
                 .into_iter()
-                .filter_map(move |profile_dir| profile_metadata(&browser, &root, profile_dir))
+                .filter_map(move |profile_dir| profile_metadata(browser, &root, profile_dir))
         })
         .collect::<Vec<_>>();
     sort_profiles(&mut profiles);
     profiles
 }
 
-fn profile_metadata(browser: &str, root: &PathBuf, profile_dir: String) -> Option<ChromiumProfile> {
+fn profile_metadata(browser: &str, root: &Path, profile_dir: String) -> Option<ChromiumProfile> {
     let path = root.join(&profile_dir);
     let last_write_unix_ms =
         fs::metadata(&path).ok()?.modified().ok()?.duration_since(UNIX_EPOCH).ok()?.as_millis();
@@ -92,7 +85,7 @@ fn profile_metadata(browser: &str, root: &PathBuf, profile_dir: String) -> Optio
 
     Some(ChromiumProfile {
         browser: browser.to_owned(),
-        user_data_dir: root.clone(),
+        user_data_dir: root.to_path_buf(),
         display_name: profile_display_name(root, &profile_dir),
         profile_dir,
         last_write_unix_ms,
@@ -100,7 +93,7 @@ fn profile_metadata(browser: &str, root: &PathBuf, profile_dir: String) -> Optio
     })
 }
 
-fn sort_profiles(profiles: &mut Vec<ChromiumProfile>) {
+fn sort_profiles(profiles: &mut [ChromiumProfile]) {
     profiles.sort_by(|a, b| {
         b.completeness_score
             .cmp(&a.completeness_score)
@@ -110,7 +103,7 @@ fn sort_profiles(profiles: &mut Vec<ChromiumProfile>) {
     });
 }
 
-fn profile_display_name(root: &PathBuf, profile: &str) -> Option<String> {
+fn profile_display_name(root: &Path, profile: &str) -> Option<String> {
     let preferences = root.join(profile).join("Preferences");
     let content = fs::read_to_string(preferences).ok()?;
     serde_json::from_str::<serde_json::Value>(&content)
@@ -121,58 +114,13 @@ fn profile_display_name(root: &PathBuf, profile: &str) -> Option<String> {
         .map(str::to_owned)
 }
 
-pub struct Crypto;
-
-impl Crypto {
-    #[cfg(target_os = "windows")]
-    pub fn decrypt_dpapi(data: &[u8]) -> Result<Vec<u8>> {
-        unsafe {
-            let input =
-                CRYPT_INTEGER_BLOB { cbData: data.len() as u32, pbData: data.as_ptr() as *mut u8 };
-            let mut output = CRYPT_INTEGER_BLOB::default();
-
-            if CryptUnprotectData(&input, None, None, None, None, 0, &mut output).is_ok() {
-                let result =
-                    std::slice::from_raw_parts(output.pbData, output.cbData as usize).to_vec();
-                let _ = LocalFree(output.pbData.cast());
-                Ok(result)
-            } else {
-                Err(anyhow!("DPAPI decryption failed"))
-            }
-        }
-    }
-
-    #[cfg(not(target_os = "windows"))]
-    pub fn decrypt_dpapi(_data: &[u8]) -> Result<Vec<u8>> {
-        Err(anyhow!("DPAPI is only supported on Windows"))
-    }
-
-    pub fn decrypt_aes_gcm(ciphertext: &[u8], key: &[u8]) -> Result<Vec<u8>> {
-        if ciphertext.len() < 15 {
-            return Err(anyhow!("Ciphertext too short"));
-        }
-
-        let nonce_bytes = &ciphertext[3..15];
-        let encrypted_data = &ciphertext[15..];
-
-        let key = Key::<Aes256Gcm>::from_slice(key);
-        let cipher = Aes256Gcm::new(key);
-        let nonce = Nonce::from_slice(nonce_bytes);
-
-        cipher
-            .decrypt(nonce, encrypted_data)
-            .map_err(|e| anyhow!("AES-GCM decryption failed: {}", e))
-    }
-}
-
 pub struct ChromiumParser {
     user_data_path: PathBuf,
-    master_key: Option<Vec<u8>>,
 }
 
 impl ChromiumParser {
     pub fn new(user_data_path: PathBuf) -> Self {
-        Self { user_data_path, master_key: None }
+        Self { user_data_path }
     }
 
     pub fn get_profiles(&self) -> Vec<String> {
@@ -184,11 +132,11 @@ impl ChromiumParser {
         let v: serde_json::Value = serde_json::from_str(&content).unwrap_or(serde_json::json!({}));
 
         let mut profiles = Vec::new();
-        if let Some(info_cache) = v.get("profile").and_then(|p| p.get("info_cache")) {
-            if let Some(obj) = info_cache.as_object() {
-                for key in obj.keys() {
-                    profiles.push(key.clone());
-                }
+        if let Some(info_cache) = v.get("profile").and_then(|p| p.get("info_cache"))
+            && let Some(obj) = info_cache.as_object()
+        {
+            for key in obj.keys() {
+                profiles.push(key.clone());
             }
         }
 
@@ -198,124 +146,103 @@ impl ChromiumParser {
         profiles
     }
 
-    pub fn load_master_key(&mut self) -> Result<()> {
-        let local_state_path = self.user_data_path.join("Local State");
-        let content = fs::read_to_string(local_state_path)?;
-        let v: serde_json::Value = serde_json::from_str(&content)?;
-
-        let b64_key = v["os_crypt"]["encrypted_key"]
-            .as_str()
-            .ok_or_else(|| anyhow!("Master key not found in Local State"))?;
-
-        let decoded = base64::engine::general_purpose::STANDARD
-            .decode(b64_key)
-            .map_err(|e| anyhow!("Base64 decode error: {}", e))?;
-
-        if decoded.len() < 5 || &decoded[0..5] != b"DPAPI" {
-            return Err(anyhow!("Invalid key format (expected DPAPI prefix)"));
-        }
-
-        let encrypted_key = &decoded[5..];
-        let master_key = Crypto::decrypt_dpapi(encrypted_key)?;
-
-        self.master_key = Some(master_key);
-        Ok(())
-    }
-
-    pub fn get_master_key(&self) -> Option<&Vec<u8>> {
-        self.master_key.as_ref()
-    }
-
     pub fn get_cookies(&self, profile: &str, host_key: &str) -> Result<Vec<(String, String)>> {
-        let master_key =
-            self.master_key.as_ref().ok_or_else(|| anyhow!("Master key not loaded"))?;
-
-        let cookies_path = self.user_data_path.join(profile).join("Network/Cookies");
-        if !cookies_path.exists() {
-            return Err(anyhow!("Cookies file not found: {}", cookies_path.display()));
-        }
-
-        let temp_cookies = std::env::temp_dir().join("aphrody_web_chromium_cookies_temp.db");
-        fs::copy(&cookies_path, &temp_cookies)?;
-
-        let conn = rusqlite::Connection::open(&temp_cookies)?;
-        let mut stmt =
-            conn.prepare("SELECT name, encrypted_value FROM cookies WHERE host_key LIKE ?")?;
-
-        let cookie_iter = stmt.query_map([format!("%{}%", host_key)], |row| {
-            let name: String = row.get(0)?;
-            let encrypted_value: Vec<u8> = row.get(1)?;
-            Ok((name, encrypted_value))
-        })?;
-
-        let mut results = Vec::new();
-        for cookie in cookie_iter {
-            let (name, encrypted_value) = cookie?;
-            if let Ok(decrypted) = Crypto::decrypt_aes_gcm(&encrypted_value, master_key) {
-                if let Ok(value) = String::from_utf8(decrypted) {
-                    results.push((name, value));
-                }
-            }
-        }
-
-        let _ = fs::remove_file(temp_cookies);
-        Ok(results)
+        Ok(self
+            .get_cookies_full(profile, host_key)?
+            .into_iter()
+            .map(|cookie| (cookie.name, cookie.value))
+            .collect())
     }
 
     pub fn get_cookies_full(&self, profile: &str, host_key_like: &str) -> Result<Vec<Cookie>> {
-        let master_key =
-            self.master_key.as_ref().ok_or_else(|| anyhow!("Master key not loaded"))?;
-
         let cookies_path = self.user_data_path.join(profile).join("Network/Cookies");
         if !cookies_path.exists() {
             return Err(anyhow!("Cookies file not found: {}", cookies_path.display()));
         }
+        let request = FromPathRequest::new(cookies_path).include_expired(true);
+        #[cfg(target_os = "windows")]
+        let request = request.chromium_local_state(self.user_data_path.join("Local State"));
+        #[cfg(not(target_os = "windows"))]
+        let request = request.chromium_browser_id(self.browser_id());
 
-        let temp_cookies = std::env::temp_dir().join("aphrody_web_chromium_cookies_full_temp.db");
-        fs::copy(&cookies_path, &temp_cookies)?;
+        let snapshot = from_path(request)?;
+        Ok(snapshot
+            .into_cookies()
+            .into_iter()
+            .filter(|cookie| cookie.domain.contains(host_key_like))
+            .map(Cookie::from)
+            .collect())
+    }
 
-        let conn = rusqlite::Connection::open(&temp_cookies)?;
-        let mut stmt = conn.prepare(
-            "SELECT host_key, name, encrypted_value, path, expires_utc, is_secure, is_httponly, \
-             samesite FROM cookies WHERE host_key LIKE ?",
-        )?;
-
-        let pattern = format!("%{}%", host_key_like);
-        let row_iter = stmt.query_map([pattern], |row| {
-            Ok((
-                row.get::<_, String>(0)?,
-                row.get::<_, String>(1)?,
-                row.get::<_, Vec<u8>>(2)?,
-                row.get::<_, String>(3)?,
-                row.get::<_, i64>(4)?,
-                row.get::<_, i64>(5)? != 0,
-                row.get::<_, i64>(6)? != 0,
-                row.get::<_, i64>(7).unwrap_or(0),
-            ))
-        })?;
-
-        let mut results = Vec::new();
-        for row in row_iter {
-            let (host_key, name, encrypted, path, expires_utc, is_secure, is_httponly, samesite) =
-                row?;
-            if let Ok(decrypted) = Crypto::decrypt_aes_gcm(&encrypted, master_key) {
-                if let Ok(value) = String::from_utf8(decrypted) {
-                    results.push(Cookie {
-                        host_key,
-                        name,
-                        value,
-                        path,
-                        expires_utc,
-                        is_secure,
-                        is_httponly,
-                        is_session: expires_utc == 0,
-                        samesite,
-                    });
-                }
-            }
+    #[cfg(not(target_os = "windows"))]
+    fn browser_id(&self) -> &'static str {
+        if self.user_data_path.to_string_lossy().to_ascii_lowercase().contains("chromium") {
+            "chromium"
+        } else {
+            "chrome"
         }
+    }
+}
 
-        let _ = fs::remove_file(temp_cookies);
-        Ok(results)
+impl From<rookie_cookies::enums::Cookie> for Cookie {
+    fn from(cookie: rookie_cookies::enums::Cookie) -> Self {
+        let expires_utc = cookie.expires.map_or(0, |unix_seconds| {
+            unix_seconds
+                .saturating_add(11_644_473_600)
+                .saturating_mul(1_000_000)
+                .min(i64::MAX as u64) as i64
+        });
+        Self {
+            host_key: cookie.domain,
+            name: cookie.name,
+            value: cookie.value,
+            path: cookie.path,
+            expires_utc,
+            is_secure: cookie.secure,
+            is_httponly: cookie.http_only,
+            is_session: cookie.expires.is_none(),
+            samesite: cookie.same_site,
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn rookie_cookie_keeps_existing_json_shape_and_chromium_epoch() {
+        let cookie = Cookie::from(rookie_cookies::enums::Cookie {
+            domain: ".example.com".into(),
+            path: "/".into(),
+            secure: true,
+            expires: Some(1_700_000_000),
+            name: "session".into(),
+            value: "secret".into(),
+            http_only: true,
+            same_site: 2,
+        });
+        assert_eq!(cookie.expires_utc, 13_344_473_600_000_000);
+        assert!(!cookie.is_session);
+        let json = serde_json::to_value(cookie).unwrap();
+        assert_eq!(json["host_key"], ".example.com");
+        assert_eq!(json["is_httponly"], true);
+        assert_eq!(json["samesite"], 2);
+    }
+
+    #[test]
+    fn rookie_session_cookie_keeps_zero_expiry() {
+        let cookie = Cookie::from(rookie_cookies::enums::Cookie {
+            domain: "example.com".into(),
+            path: "/".into(),
+            secure: false,
+            expires: None,
+            name: "session".into(),
+            value: String::new(),
+            http_only: false,
+            same_site: -1,
+        });
+        assert_eq!(cookie.expires_utc, 0);
+        assert!(cookie.is_session);
     }
 }

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-//! BXC embedding ABI backed by one persistent Aphrody AI process.
+//! Web embedding ABI backed by one persistent Aphrody AI process.
 //!
 //! The worker owns model inference and installation. This bridge preserves the
 //! Bun C ABI without linking an AI crate into the OS workspace.
@@ -117,8 +117,7 @@ fn parse_string_array(raw: &str) -> Result<Value, String> {
 ///
 /// # Safety
 /// The pointers must be null or valid NUL-terminated strings for this call.
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn bxc_embed_submit(
+pub unsafe extern "C" fn web_internal_embed_submit(
     texts_json_ptr: *const c_char,
     kind_ptr: *const c_char,
     timeout_ms: u32,
@@ -143,8 +142,7 @@ pub unsafe extern "C" fn bxc_embed_submit(
 ///
 /// # Safety
 /// The pointers must be null or valid NUL-terminated strings for this call.
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn bxc_rerank_submit(
+pub unsafe extern "C" fn web_internal_rerank_submit(
     query_ptr: *const c_char,
     passages_json_ptr: *const c_char,
     timeout_ms: u32,
@@ -169,8 +167,7 @@ pub unsafe extern "C" fn bxc_rerank_submit(
 }
 
 /// Inspect configured models without loading them or reaching the network.
-#[unsafe(no_mangle)]
-pub extern "C" fn bxc_embed_info() -> *mut c_char {
+pub extern "C" fn web_internal_embed_info() -> *mut c_char {
     guard(std::ptr::null_mut(), || {
         let runtime = match shared_runtime() {
             Ok(runtime) => runtime,
@@ -192,8 +189,7 @@ pub extern "C" fn bxc_embed_info() -> *mut c_char {
 ///
 /// # Safety
 /// `model_id_ptr` must be null or a valid NUL-terminated string for this call.
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn bxc_embed_install_submit(
+pub unsafe extern "C" fn web_internal_embed_install_submit(
     model_id_ptr: *const c_char,
     timeout_ms: u32,
 ) -> u64 {

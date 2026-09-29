@@ -119,6 +119,12 @@ scraper                   = { workspace = true }
 # The single door to bxc: SERP retrieval for `aphrody search`, the resolution
 # chain behind `aphrody bxc`, and the in-process HTML→Markdown cdylib.
 aphrody-web-bridge                = { workspace = true }
+aphrody-web-crawl                 = { workspace = true }
+aphrody-web-extract               = { workspace = true }
+aphrody-web-media                 = { workspace = true }
+aphrody-x                         = { workspace = true }
+obscura                           = { workspace = true }
+obscura-net                       = { workspace = true }
 aphrody-n2b                       = { workspace = true }
 aphrody-translate         = { workspace = true }
 aphrody-manga             = { workspace = true }

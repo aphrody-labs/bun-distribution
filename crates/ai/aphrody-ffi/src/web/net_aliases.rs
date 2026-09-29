@@ -3,7 +3,7 @@
 
 use std::ffi::c_char;
 
-/// Canonical alias for `bxc_dns_recon`.
+/// Canonical alias for `web_internal_dns_recon`.
 ///
 /// # Safety
 /// Every non-null pointer must reference a readable, NUL-terminated C string
@@ -11,10 +11,10 @@ use std::ffi::c_char;
 /// and must be released with `aphrody_string_free`.
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn aphrody_web_dns_recon(domain_ptr: *const c_char) -> *mut c_char {
-    unsafe { super::net::bxc_dns_recon(domain_ptr) }
+    unsafe { super::net::web_internal_dns_recon(domain_ptr) }
 }
 
-/// Canonical alias for `bxc_dns_recon_submit`.
+/// Canonical alias for `web_internal_dns_recon_submit`.
 ///
 /// # Safety
 /// Every non-null pointer must reference a readable, NUL-terminated C string
@@ -25,10 +25,10 @@ pub unsafe extern "C" fn aphrody_web_dns_recon_submit(
     domain_ptr: *const c_char,
     timeout_ms: u32,
 ) -> u64 {
-    unsafe { super::net::bxc_dns_recon_submit(domain_ptr, timeout_ms) }
+    unsafe { super::net::web_internal_dns_recon_submit(domain_ptr, timeout_ms) }
 }
 
-/// Canonical alias for `bxc_gemini_web_ask`.
+/// Canonical alias for `web_internal_gemini_web_ask`.
 ///
 /// # Safety
 /// Every non-null pointer must reference a readable, NUL-terminated C string
@@ -40,10 +40,10 @@ pub unsafe extern "C" fn aphrody_web_gemini_web_ask(
     prompt_ptr: *const c_char,
     model_ptr: *const c_char,
 ) -> *mut c_char {
-    unsafe { super::net::bxc_gemini_web_ask(cookie_path_ptr, prompt_ptr, model_ptr) }
+    unsafe { super::net::web_internal_gemini_web_ask(cookie_path_ptr, prompt_ptr, model_ptr) }
 }
 
-/// Canonical alias for `bxc_gemini_web_ask_submit`.
+/// Canonical alias for `web_internal_gemini_web_ask_submit`.
 ///
 /// # Safety
 /// Every non-null pointer must reference a readable, NUL-terminated C string
@@ -57,11 +57,16 @@ pub unsafe extern "C" fn aphrody_web_gemini_web_ask_submit(
     timeout_ms: u32,
 ) -> u64 {
     unsafe {
-        super::net::bxc_gemini_web_ask_submit(cookie_path_ptr, prompt_ptr, model_ptr, timeout_ms)
+        super::net::web_internal_gemini_web_ask_submit(
+            cookie_path_ptr,
+            prompt_ptr,
+            model_ptr,
+            timeout_ms,
+        )
     }
 }
 
-/// Canonical alias for `bxc_x_user_by_screen_name`.
+/// Canonical alias for `web_internal_x_user_by_screen_name`.
 ///
 /// # Safety
 /// Every non-null pointer must reference a readable, NUL-terminated C string
@@ -73,10 +78,10 @@ pub unsafe extern "C" fn aphrody_web_x_user_by_screen_name(
     ct0_ptr: *const c_char,
     handle_ptr: *const c_char,
 ) -> *mut c_char {
-    unsafe { super::net::bxc_x_user_by_screen_name(auth_token_ptr, ct0_ptr, handle_ptr) }
+    unsafe { super::net::web_internal_x_user_by_screen_name(auth_token_ptr, ct0_ptr, handle_ptr) }
 }
 
-/// Canonical alias for `bxc_x_user_by_screen_name_submit`.
+/// Canonical alias for `web_internal_x_user_by_screen_name_submit`.
 ///
 /// # Safety
 /// Every non-null pointer must reference a readable, NUL-terminated C string
@@ -90,7 +95,7 @@ pub unsafe extern "C" fn aphrody_web_x_user_by_screen_name_submit(
     timeout_ms: u32,
 ) -> u64 {
     unsafe {
-        super::net::bxc_x_user_by_screen_name_submit(
+        super::net::web_internal_x_user_by_screen_name_submit(
             auth_token_ptr,
             ct0_ptr,
             handle_ptr,
@@ -99,7 +104,7 @@ pub unsafe extern "C" fn aphrody_web_x_user_by_screen_name_submit(
     }
 }
 
-/// Canonical alias for `bxc_x_user_tweets`.
+/// Canonical alias for `web_internal_x_user_tweets`.
 ///
 /// # Safety
 /// Every non-null pointer must reference a readable, NUL-terminated C string
@@ -112,10 +117,10 @@ pub unsafe extern "C" fn aphrody_web_x_user_tweets(
     handle_ptr: *const c_char,
     count: u32,
 ) -> *mut c_char {
-    unsafe { super::net::bxc_x_user_tweets(auth_token_ptr, ct0_ptr, handle_ptr, count) }
+    unsafe { super::net::web_internal_x_user_tweets(auth_token_ptr, ct0_ptr, handle_ptr, count) }
 }
 
-/// Canonical alias for `bxc_x_user_tweets_submit`.
+/// Canonical alias for `web_internal_x_user_tweets_submit`.
 ///
 /// # Safety
 /// Every non-null pointer must reference a readable, NUL-terminated C string
@@ -130,11 +135,17 @@ pub unsafe extern "C" fn aphrody_web_x_user_tweets_submit(
     timeout_ms: u32,
 ) -> u64 {
     unsafe {
-        super::net::bxc_x_user_tweets_submit(auth_token_ptr, ct0_ptr, handle_ptr, count, timeout_ms)
+        super::net::web_internal_x_user_tweets_submit(
+            auth_token_ptr,
+            ct0_ptr,
+            handle_ptr,
+            count,
+            timeout_ms,
+        )
     }
 }
 
-/// Canonical alias for `bxc_x_community_by_rest_id`.
+/// Canonical alias for `web_internal_x_community_by_rest_id`.
 ///
 /// # Safety
 /// Every non-null pointer must reference a readable, NUL-terminated C string
@@ -146,10 +157,12 @@ pub unsafe extern "C" fn aphrody_web_x_community_by_rest_id(
     ct0_ptr: *const c_char,
     community_id_ptr: *const c_char,
 ) -> *mut c_char {
-    unsafe { super::net::bxc_x_community_by_rest_id(auth_token_ptr, ct0_ptr, community_id_ptr) }
+    unsafe {
+        super::net::web_internal_x_community_by_rest_id(auth_token_ptr, ct0_ptr, community_id_ptr)
+    }
 }
 
-/// Canonical alias for `bxc_x_community_by_rest_id_submit`.
+/// Canonical alias for `web_internal_x_community_by_rest_id_submit`.
 ///
 /// # Safety
 /// Every non-null pointer must reference a readable, NUL-terminated C string
@@ -163,7 +176,7 @@ pub unsafe extern "C" fn aphrody_web_x_community_by_rest_id_submit(
     timeout_ms: u32,
 ) -> u64 {
     unsafe {
-        super::net::bxc_x_community_by_rest_id_submit(
+        super::net::web_internal_x_community_by_rest_id_submit(
             auth_token_ptr,
             ct0_ptr,
             community_id_ptr,
@@ -172,7 +185,7 @@ pub unsafe extern "C" fn aphrody_web_x_community_by_rest_id_submit(
     }
 }
 
-/// Canonical alias for `bxc_x_community_tweets`.
+/// Canonical alias for `web_internal_x_community_tweets`.
 ///
 /// # Safety
 /// Every non-null pointer must reference a readable, NUL-terminated C string
@@ -185,10 +198,17 @@ pub unsafe extern "C" fn aphrody_web_x_community_tweets(
     community_id_ptr: *const c_char,
     count: u32,
 ) -> *mut c_char {
-    unsafe { super::net::bxc_x_community_tweets(auth_token_ptr, ct0_ptr, community_id_ptr, count) }
+    unsafe {
+        super::net::web_internal_x_community_tweets(
+            auth_token_ptr,
+            ct0_ptr,
+            community_id_ptr,
+            count,
+        )
+    }
 }
 
-/// Canonical alias for `bxc_x_community_tweets_submit`.
+/// Canonical alias for `web_internal_x_community_tweets_submit`.
 ///
 /// # Safety
 /// Every non-null pointer must reference a readable, NUL-terminated C string
@@ -203,7 +223,7 @@ pub unsafe extern "C" fn aphrody_web_x_community_tweets_submit(
     timeout_ms: u32,
 ) -> u64 {
     unsafe {
-        super::net::bxc_x_community_tweets_submit(
+        super::net::web_internal_x_community_tweets_submit(
             auth_token_ptr,
             ct0_ptr,
             community_id_ptr,
@@ -213,7 +233,7 @@ pub unsafe extern "C" fn aphrody_web_x_community_tweets_submit(
     }
 }
 
-/// Canonical alias for `bxc_x_community_info_and_tweets`.
+/// Canonical alias for `web_internal_x_community_info_and_tweets`.
 ///
 /// # Safety
 /// Every non-null pointer must reference a readable, NUL-terminated C string
@@ -227,7 +247,7 @@ pub unsafe extern "C" fn aphrody_web_x_community_info_and_tweets(
     count: u32,
 ) -> *mut c_char {
     unsafe {
-        super::net::bxc_x_community_info_and_tweets(
+        super::net::web_internal_x_community_info_and_tweets(
             auth_token_ptr,
             ct0_ptr,
             community_id_ptr,
@@ -236,7 +256,7 @@ pub unsafe extern "C" fn aphrody_web_x_community_info_and_tweets(
     }
 }
 
-/// Canonical alias for `bxc_x_community_info_and_tweets_submit`.
+/// Canonical alias for `web_internal_x_community_info_and_tweets_submit`.
 ///
 /// # Safety
 /// Every non-null pointer must reference a readable, NUL-terminated C string
@@ -251,7 +271,7 @@ pub unsafe extern "C" fn aphrody_web_x_community_info_and_tweets_submit(
     timeout_ms: u32,
 ) -> u64 {
     unsafe {
-        super::net::bxc_x_community_info_and_tweets_submit(
+        super::net::web_internal_x_community_info_and_tweets_submit(
             auth_token_ptr,
             ct0_ptr,
             community_id_ptr,
@@ -261,7 +281,7 @@ pub unsafe extern "C" fn aphrody_web_x_community_info_and_tweets_submit(
     }
 }
 
-/// Canonical alias for `bxc_x_algorithm_rank`.
+/// Canonical alias for `web_internal_x_algorithm_rank`.
 ///
 /// # Safety
 /// Every non-null pointer must reference a readable, NUL-terminated C string
@@ -273,5 +293,7 @@ pub unsafe extern "C" fn aphrody_web_x_algorithm_rank(
     context_json_ptr: *const c_char,
     top_k: u32,
 ) -> *mut c_char {
-    unsafe { super::net::bxc_x_algorithm_rank(candidates_json_ptr, context_json_ptr, top_k) }
+    unsafe {
+        super::net::web_internal_x_algorithm_rank(candidates_json_ptr, context_json_ptr, top_k)
+    }
 }

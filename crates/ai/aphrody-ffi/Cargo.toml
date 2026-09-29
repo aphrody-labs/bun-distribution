@@ -49,6 +49,8 @@ jobs      = ["aphrody/jobs"]
 aphrody    = { workspace = true }
 aphrody-manga = { workspace = true }
 aphrody-web-extract = { workspace = true }
+aphrody-web-media = { workspace = true }
+async-trait = { workspace = true }
 aphrody-web-index = { workspace = true }
 aphrody-web-chromium = { workspace = true }
 aphrody-gemini-web = { workspace = true }
@@ -58,6 +60,8 @@ base64     = { workspace = true }
 mimalloc   = { workspace = true }
 obscura-dom = { workspace = true }
 obscura-net = { workspace = true }
+reqwest    = { workspace = true }
+rustls     = { workspace = true }
 serde_json = { workspace = true }
 serde      = { workspace = true }
 # Shared cross-platform stdout/stderr capture (dup2 on unix / SetStdHandle on

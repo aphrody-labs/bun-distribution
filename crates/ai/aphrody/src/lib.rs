@@ -386,7 +386,7 @@ enum Commands {
         #[command(subcommand)]
         action: pillars_cmd::OsAction,
     },
-    /// Canonical Web engine: BXC browser bridge, Obscura headless automation, DOM scraping.
+    /// Canonical Web engine: Obscura browser automation, crawling and extraction.
     #[cfg(not(target_arch = "wasm32"))]
     Web {
         #[command(subcommand)]

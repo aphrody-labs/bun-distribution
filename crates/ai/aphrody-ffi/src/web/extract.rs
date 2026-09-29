@@ -1,5 +1,5 @@
 //! Main-content extraction, canonical Markdown, chunking and SimHash
-//! (`bxc-extract`) exposed over the C ABI.
+//! (`aphrody-web-extract`) exposed over the C ABI.
 
 use std::os::raw::c_char;
 
@@ -151,9 +151,8 @@ fn extract_response(
 ///
 /// `html_ptr` must point to a readable NUL-terminated C string; `url_ptr` and
 /// `options_json_ptr` may be null or satisfy the same requirement. The returned
-/// string must be released with `bxc_free_string`.
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn bxc_extract_main(
+/// string must be released with `web_internal_free_string`.
+pub unsafe extern "C" fn web_internal_extract_main(
     html_ptr: *const c_char,
     url_ptr: *const c_char,
     options_json_ptr: *const c_char,
@@ -175,7 +174,7 @@ pub unsafe extern "C" fn bxc_extract_main(
 ///
 /// # Safety
 ///
-/// Pointer requirements are identical to [`bxc_extract_main`].
+/// Pointer requirements are identical to [`web_internal_extract_main`].
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn aphrody_web_extract_main(
     html_ptr: *const c_char,
@@ -183,7 +182,7 @@ pub unsafe extern "C" fn aphrody_web_extract_main(
     options_json_ptr: *const c_char,
 ) -> *mut c_char {
     // SAFETY: the canonical alias preserves the exact legacy pointer contract.
-    unsafe { bxc_extract_main(html_ptr, url_ptr, options_json_ptr) }
+    unsafe { web_internal_extract_main(html_ptr, url_ptr, options_json_ptr) }
 }
 
 /// Convert a whole HTML document to GitHub-flavoured Markdown, resolving links
@@ -192,9 +191,8 @@ pub unsafe extern "C" fn aphrody_web_extract_main(
 /// # Safety
 ///
 /// `html_ptr` must point to a readable NUL-terminated C string; `base_url_ptr`
-/// may be null. The returned string must be released with `bxc_free_string`.
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn bxc_html_to_markdown_with_base(
+/// may be null. The returned string must be released with `web_internal_free_string`.
+pub unsafe extern "C" fn web_internal_html_to_markdown_with_base(
     html_ptr: *const c_char,
     base_url_ptr: *const c_char,
 ) -> *mut c_char {
@@ -211,7 +209,7 @@ pub unsafe extern "C" fn bxc_html_to_markdown_with_base(
 /// Canonical Aphrody Web ABI name for HTML-to-Markdown conversion.
 ///
 /// The returned string is allocated by this cdylib and must be released with
-/// `bxc_free_string` (or its canonical alias). The legacy `bxc_*` exports stay
+/// `web_internal_free_string` (or its canonical alias). The legacy `web_internal_*` exports stay
 /// available for existing Bun and Rust clients.
 ///
 /// # Safety
@@ -224,7 +222,7 @@ pub unsafe extern "C" fn aphrody_web_html_to_markdown(
     base_url_ptr: *const c_char,
 ) -> *mut c_char {
     // SAFETY: this is the same pointer contract as the retained legacy export.
-    unsafe { bxc_html_to_markdown_with_base(html_ptr, base_url_ptr) }
+    unsafe { web_internal_html_to_markdown_with_base(html_ptr, base_url_ptr) }
 }
 
 /// 64-bit SimHash of `text` as 16 lowercase hex digits.
@@ -232,9 +230,8 @@ pub unsafe extern "C" fn aphrody_web_html_to_markdown(
 /// # Safety
 ///
 /// `text_ptr` must point to a readable NUL-terminated C string. The returned
-/// string must be released with `bxc_free_string`.
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn bxc_simhash64(text_ptr: *const c_char) -> *mut c_char {
+/// string must be released with `web_internal_free_string`.
+pub unsafe extern "C" fn web_internal_simhash64(text_ptr: *const c_char) -> *mut c_char {
     guard(std::ptr::null_mut(), || {
         let text = unsafe { borrow_str(text_ptr) }.unwrap_or_default();
         into_c_string(format!("{:016x}", aphrody_web_extract::simhash64(text)))
@@ -246,11 +243,11 @@ pub unsafe extern "C" fn bxc_simhash64(text_ptr: *const c_char) -> *mut c_char {
 ///
 /// # Safety
 ///
-/// Pointer requirements are identical to [`bxc_simhash64`].
+/// Pointer requirements are identical to [`web_internal_simhash64`].
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn aphrody_web_simhash64(text_ptr: *const c_char) -> *mut c_char {
     // SAFETY: the canonical alias preserves the exact legacy pointer contract.
-    unsafe { bxc_simhash64(text_ptr) }
+    unsafe { web_internal_simhash64(text_ptr) }
 }
 
 #[cfg(test)]
@@ -267,13 +264,13 @@ mod tests {
         // freed with this cdylib's matching function.
         unsafe {
             let canonical = aphrody_web_html_to_markdown(html.as_ptr(), base.as_ptr());
-            let legacy = bxc_html_to_markdown_with_base(html.as_ptr(), base.as_ptr());
+            let legacy = web_internal_html_to_markdown_with_base(html.as_ptr(), base.as_ptr());
             assert!(!canonical.is_null());
             assert!(!legacy.is_null());
             let canonical_text = CStr::from_ptr(canonical).to_string_lossy().into_owned();
             let legacy_text = CStr::from_ptr(legacy).to_string_lossy().into_owned();
-            crate::bxc_free_string(canonical);
-            crate::bxc_free_string(legacy);
+            crate::web_internal_free_string(canonical);
+            crate::web_internal_free_string(legacy);
             assert_eq!(canonical_text, legacy_text);
             assert!(canonical_text.contains("https://example.test/guide"));
         }
@@ -294,9 +291,9 @@ mod tests {
         // released through this library's allocator-matched free function.
         unsafe {
             let canonical = aphrody_web_extract_main(html.as_ptr(), url.as_ptr(), options.as_ptr());
-            let legacy = bxc_extract_main(html.as_ptr(), url.as_ptr(), options.as_ptr());
+            let legacy = web_internal_extract_main(html.as_ptr(), url.as_ptr(), options.as_ptr());
             let canonical_hash = aphrody_web_simhash64(text.as_ptr());
-            let legacy_hash = bxc_simhash64(text.as_ptr());
+            let legacy_hash = web_internal_simhash64(text.as_ptr());
             assert!(!canonical.is_null());
             assert!(!legacy.is_null());
             assert!(!canonical_hash.is_null());
@@ -305,10 +302,10 @@ mod tests {
             let legacy_text = CStr::from_ptr(legacy).to_string_lossy().into_owned();
             let canonical_hash_text = CStr::from_ptr(canonical_hash).to_string_lossy().into_owned();
             let legacy_hash_text = CStr::from_ptr(legacy_hash).to_string_lossy().into_owned();
-            crate::bxc_free_string(canonical);
-            crate::bxc_free_string(legacy);
-            crate::bxc_free_string(canonical_hash);
-            crate::bxc_free_string(legacy_hash);
+            crate::web_internal_free_string(canonical);
+            crate::web_internal_free_string(legacy);
+            crate::web_internal_free_string(canonical_hash);
+            crate::web_internal_free_string(legacy_hash);
             assert_eq!(canonical_text, legacy_text);
             assert_eq!(canonical_hash_text, legacy_hash_text);
         }

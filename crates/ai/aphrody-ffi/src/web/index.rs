@@ -1,4 +1,4 @@
-//! Approximate nearest-neighbour vector index (`bxc-index`: HNSW with int8
+//! Approximate nearest-neighbour vector index (`aphrody-web-index`: HNSW with int8
 //! quantisation, mmap persistence) exposed over the C ABI.
 //!
 //! Indexes are addressed by opaque `u64` handles kept in a registry rather
@@ -62,8 +62,7 @@ unsafe fn f32_slice<'a>(ptr: *const f32, len: usize) -> Option<&'a [f32]> {
 
 /// Message of the last failed index call on this thread (JSON `{"error"}` or
 /// `{"error": null}`).
-#[unsafe(no_mangle)]
-pub extern "C" fn bxc_index_last_error() -> *mut c_char {
+pub extern "C" fn web_internal_index_last_error() -> *mut c_char {
     guard(std::ptr::null_mut(), || {
         LAST_ERROR.with(|cell| {
             let message = cell.borrow();
@@ -79,15 +78,14 @@ pub extern "C" fn bxc_index_last_error() -> *mut c_char {
 /// Open the index file at `path` (created on first save), with `dim` (0 =
 /// accept the stored dimension) and optional JSON params. Corrupt files are
 /// replaced by a fresh index when `rebuild_if_corrupt` is non-zero; the call
-/// then reports `corrupt` through `bxc_index_last_error` while succeeding.
+/// then reports `corrupt` through `web_internal_index_last_error` while succeeding.
 /// Returns a handle (> 0) or 0 on error.
 ///
 /// # Safety
 ///
 /// `path_ptr` must point to a readable NUL-terminated C string;
 /// `params_json_ptr` may be null.
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn bxc_index_open(
+pub unsafe extern "C" fn web_internal_index_open(
     path_ptr: *const c_char,
     dim: u32,
     params_json_ptr: *const c_char,
@@ -124,14 +122,12 @@ pub unsafe extern "C" fn bxc_index_open(
 }
 
 /// Number of live vectors, or -1 for an unknown handle.
-#[unsafe(no_mangle)]
-pub extern "C" fn bxc_index_len(handle_id: u64) -> i64 {
+pub extern "C" fn web_internal_index_len(handle_id: u64) -> i64 {
     guard(-1, || handle(handle_id).map(|h| ffi_api::len(&h) as i64).unwrap_or(-1))
 }
 
 /// Vector dimension, or 0 for an unknown handle.
-#[unsafe(no_mangle)]
-pub extern "C" fn bxc_index_dim(handle_id: u64) -> u32 {
+pub extern "C" fn web_internal_index_dim(handle_id: u64) -> u32 {
     guard(0, || handle(handle_id).map(|h| ffi_api::dim(&h) as u32).unwrap_or(0))
 }
 
@@ -140,8 +136,7 @@ pub extern "C" fn bxc_index_dim(handle_id: u64) -> u32 {
 /// # Safety
 ///
 /// `vector_ptr` must point to `dim` readable `f32` values.
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn bxc_index_add(
+pub unsafe extern "C" fn web_internal_index_add(
     handle_id: u64,
     key: u64,
     vector_ptr: *const f32,
@@ -169,8 +164,7 @@ pub unsafe extern "C" fn bxc_index_add(
 ///
 /// `keys_ptr` must point to `count` readable `u64` values and `flat_ptr` to
 /// `count * dim` readable `f32` values.
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn bxc_index_add_batch(
+pub unsafe extern "C" fn web_internal_index_add_batch(
     handle_id: u64,
     keys_ptr: *const u64,
     flat_ptr: *const f32,
@@ -203,9 +197,8 @@ pub unsafe extern "C" fn bxc_index_add_batch(
 /// # Safety
 ///
 /// `query_ptr` must point to `dim` readable `f32` values. The returned string
-/// must be released with `bxc_free_string`.
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn bxc_index_search(
+/// must be released with `web_internal_free_string`.
+pub unsafe extern "C" fn web_internal_index_search(
     handle_id: u64,
     query_ptr: *const f32,
     dim: u32,
@@ -225,8 +218,7 @@ pub unsafe extern "C" fn bxc_index_search(
 }
 
 /// Tombstone `key`. Returns 1 when removed, 0 when absent, -2 for an unknown handle.
-#[unsafe(no_mangle)]
-pub extern "C" fn bxc_index_remove(handle_id: u64, key: u64) -> i32 {
+pub extern "C" fn web_internal_index_remove(handle_id: u64, key: u64) -> i32 {
     guard(INDEX_ERROR, || match handle(handle_id) {
         Some(h) => i32::from(ffi_api::remove(&h, key)),
         None => INDEX_UNKNOWN_HANDLE,
@@ -234,8 +226,7 @@ pub extern "C" fn bxc_index_remove(handle_id: u64, key: u64) -> i32 {
 }
 
 /// Persist the index to its path (atomic replace).
-#[unsafe(no_mangle)]
-pub extern "C" fn bxc_index_save(handle_id: u64) -> i32 {
+pub extern "C" fn web_internal_index_save(handle_id: u64) -> i32 {
     guard(INDEX_ERROR, || {
         let Some(h) = handle(handle_id) else { return INDEX_UNKNOWN_HANDLE };
         match ffi_api::save(&h) {
@@ -249,8 +240,7 @@ pub extern "C" fn bxc_index_save(handle_id: u64) -> i32 {
 }
 
 /// Rebuild without tombstones.
-#[unsafe(no_mangle)]
-pub extern "C" fn bxc_index_compact(handle_id: u64) -> i32 {
+pub extern "C" fn web_internal_index_compact(handle_id: u64) -> i32 {
     guard(INDEX_ERROR, || {
         let Some(h) = handle(handle_id) else { return INDEX_UNKNOWN_HANDLE };
         match ffi_api::compact(&h) {
@@ -264,8 +254,7 @@ pub extern "C" fn bxc_index_compact(handle_id: u64) -> i32 {
 }
 
 /// JSON statistics (count, tombstones, dim, memory bytes, params).
-#[unsafe(no_mangle)]
-pub extern "C" fn bxc_index_stats(handle_id: u64) -> *mut c_char {
+pub extern "C" fn web_internal_index_stats(handle_id: u64) -> *mut c_char {
     guard(std::ptr::null_mut(), || match handle(handle_id) {
         Some(h) => into_c_string(ffi_api::stats_json(&h)),
         None => error_json("unknown index handle"),
@@ -274,8 +263,7 @@ pub extern "C" fn bxc_index_stats(handle_id: u64) -> *mut c_char {
 
 /// Release a handle. The index is dropped once in-flight calls finish.
 /// Returns 0, or -2 when the handle is unknown (already closed).
-#[unsafe(no_mangle)]
-pub extern "C" fn bxc_index_close(handle_id: u64) -> i32 {
+pub extern "C" fn web_internal_index_close(handle_id: u64) -> i32 {
     guard(INDEX_ERROR, || match lock().remove(&handle_id) {
         Some(_) => INDEX_OK,
         None => INDEX_UNKNOWN_HANDLE,
@@ -286,11 +274,11 @@ pub extern "C" fn bxc_index_close(handle_id: u64) -> i32 {
 // the transition does not create a second index implementation or file format.
 #[unsafe(no_mangle)]
 pub extern "C" fn aphrody_web_index_last_error() -> *mut c_char {
-    bxc_index_last_error()
+    web_internal_index_last_error()
 }
 
 /// # Safety
-/// Same pointer contract as [`bxc_index_open`].
+/// Same pointer contract as [`web_internal_index_open`].
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn aphrody_web_index_open(
     path_ptr: *const c_char,
@@ -298,21 +286,21 @@ pub unsafe extern "C" fn aphrody_web_index_open(
     params_json_ptr: *const c_char,
     rebuild_if_corrupt: i32,
 ) -> u64 {
-    unsafe { bxc_index_open(path_ptr, dim, params_json_ptr, rebuild_if_corrupt) }
+    unsafe { web_internal_index_open(path_ptr, dim, params_json_ptr, rebuild_if_corrupt) }
 }
 
 #[unsafe(no_mangle)]
 pub extern "C" fn aphrody_web_index_len(handle_id: u64) -> i64 {
-    bxc_index_len(handle_id)
+    web_internal_index_len(handle_id)
 }
 
 #[unsafe(no_mangle)]
 pub extern "C" fn aphrody_web_index_dim(handle_id: u64) -> u32 {
-    bxc_index_dim(handle_id)
+    web_internal_index_dim(handle_id)
 }
 
 /// # Safety
-/// Same pointer contract as [`bxc_index_add`].
+/// Same pointer contract as [`web_internal_index_add`].
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn aphrody_web_index_add(
     handle_id: u64,
@@ -320,11 +308,11 @@ pub unsafe extern "C" fn aphrody_web_index_add(
     vector_ptr: *const f32,
     dim: u32,
 ) -> i32 {
-    unsafe { bxc_index_add(handle_id, key, vector_ptr, dim) }
+    unsafe { web_internal_index_add(handle_id, key, vector_ptr, dim) }
 }
 
 /// # Safety
-/// Same pointer contract as [`bxc_index_add_batch`].
+/// Same pointer contract as [`web_internal_index_add_batch`].
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn aphrody_web_index_add_batch(
     handle_id: u64,
@@ -333,11 +321,11 @@ pub unsafe extern "C" fn aphrody_web_index_add_batch(
     count: u32,
     dim: u32,
 ) -> i32 {
-    unsafe { bxc_index_add_batch(handle_id, keys_ptr, flat_ptr, count, dim) }
+    unsafe { web_internal_index_add_batch(handle_id, keys_ptr, flat_ptr, count, dim) }
 }
 
 /// # Safety
-/// Same pointer contract as [`bxc_index_search`].
+/// Same pointer contract as [`web_internal_index_search`].
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn aphrody_web_index_search(
     handle_id: u64,
@@ -346,32 +334,32 @@ pub unsafe extern "C" fn aphrody_web_index_search(
     k: u32,
     ef: u32,
 ) -> *mut c_char {
-    unsafe { bxc_index_search(handle_id, query_ptr, dim, k, ef) }
+    unsafe { web_internal_index_search(handle_id, query_ptr, dim, k, ef) }
 }
 
 #[unsafe(no_mangle)]
 pub extern "C" fn aphrody_web_index_remove(handle_id: u64, key: u64) -> i32 {
-    bxc_index_remove(handle_id, key)
+    web_internal_index_remove(handle_id, key)
 }
 
 #[unsafe(no_mangle)]
 pub extern "C" fn aphrody_web_index_save(handle_id: u64) -> i32 {
-    bxc_index_save(handle_id)
+    web_internal_index_save(handle_id)
 }
 
 #[unsafe(no_mangle)]
 pub extern "C" fn aphrody_web_index_compact(handle_id: u64) -> i32 {
-    bxc_index_compact(handle_id)
+    web_internal_index_compact(handle_id)
 }
 
 #[unsafe(no_mangle)]
 pub extern "C" fn aphrody_web_index_stats(handle_id: u64) -> *mut c_char {
-    bxc_index_stats(handle_id)
+    web_internal_index_stats(handle_id)
 }
 
 #[unsafe(no_mangle)]
 pub extern "C" fn aphrody_web_index_close(handle_id: u64) -> i32 {
-    bxc_index_close(handle_id)
+    web_internal_index_close(handle_id)
 }
 
 #[cfg(test)]
@@ -382,41 +370,45 @@ mod tests {
 
     #[test]
     fn open_add_search_save_reopen_close() {
-        let dir = std::env::temp_dir().join(format!("bxc-index-ffi-{}", std::process::id()));
+        let dir =
+            std::env::temp_dir().join(format!("aphrody-web-index-ffi-{}", std::process::id()));
         std::fs::create_dir_all(&dir).unwrap();
         let path = CString::new(dir.join("t.hnsw").to_string_lossy().into_owned()).unwrap();
         unsafe {
-            let id = bxc_index_open(path.as_ptr(), 3, std::ptr::null(), 1);
+            let id = web_internal_index_open(path.as_ptr(), 3, std::ptr::null(), 1);
             assert!(id > 0);
-            assert_eq!(bxc_index_add(id, 7, [1.0f32, 0.0, 0.0].as_ptr(), 3), INDEX_OK);
+            assert_eq!(web_internal_index_add(id, 7, [1.0f32, 0.0, 0.0].as_ptr(), 3), INDEX_OK);
             let keys = [8u64, 9];
             let flat = [0.0f32, 1.0, 0.0, 0.0, 0.0, 1.0];
-            assert_eq!(bxc_index_add_batch(id, keys.as_ptr(), flat.as_ptr(), 2, 3), INDEX_OK);
-            assert_eq!(bxc_index_len(id), 3);
-            let hits = bxc_index_search(id, [0.9f32, 0.1, 0.0].as_ptr(), 3, 1, 64);
+            assert_eq!(
+                web_internal_index_add_batch(id, keys.as_ptr(), flat.as_ptr(), 2, 3),
+                INDEX_OK
+            );
+            assert_eq!(web_internal_index_len(id), 3);
+            let hits = web_internal_index_search(id, [0.9f32, 0.1, 0.0].as_ptr(), 3, 1, 64);
             let json = CStr::from_ptr(hits).to_string_lossy().into_owned();
-            crate::bxc_free_string(hits);
+            crate::web_internal_free_string(hits);
             assert!(json.contains("\"key\":7"), "{json}");
-            assert_eq!(bxc_index_save(id), INDEX_OK);
-            assert_eq!(bxc_index_close(id), INDEX_OK);
-            assert_eq!(bxc_index_close(id), INDEX_UNKNOWN_HANDLE);
-            assert_eq!(bxc_index_len(id), -1);
+            assert_eq!(web_internal_index_save(id), INDEX_OK);
+            assert_eq!(web_internal_index_close(id), INDEX_OK);
+            assert_eq!(web_internal_index_close(id), INDEX_UNKNOWN_HANDLE);
+            assert_eq!(web_internal_index_len(id), -1);
 
-            let reopened = bxc_index_open(path.as_ptr(), 0, std::ptr::null(), 0);
-            assert_eq!(bxc_index_len(reopened), 3);
-            assert_eq!(bxc_index_dim(reopened), 3);
-            assert_eq!(bxc_index_remove(reopened, 8), 1);
-            bxc_index_close(reopened);
+            let reopened = web_internal_index_open(path.as_ptr(), 0, std::ptr::null(), 0);
+            assert_eq!(web_internal_index_len(reopened), 3);
+            assert_eq!(web_internal_index_dim(reopened), 3);
+            assert_eq!(web_internal_index_remove(reopened, 8), 1);
+            web_internal_index_close(reopened);
 
             std::fs::write(dir.join("t.hnsw"), b"garbage").unwrap();
-            assert_eq!(bxc_index_open(path.as_ptr(), 3, std::ptr::null(), 0), 0);
-            let rebuilt = bxc_index_open(path.as_ptr(), 3, std::ptr::null(), 1);
+            assert_eq!(web_internal_index_open(path.as_ptr(), 3, std::ptr::null(), 0), 0);
+            let rebuilt = web_internal_index_open(path.as_ptr(), 3, std::ptr::null(), 1);
             assert!(rebuilt > 0);
-            assert_eq!(bxc_index_len(rebuilt), 0);
-            let err = bxc_index_last_error();
+            assert_eq!(web_internal_index_len(rebuilt), 0);
+            let err = web_internal_index_last_error();
             assert!(CStr::from_ptr(err).to_string_lossy().contains("corrupt"));
-            crate::bxc_free_string(err);
-            bxc_index_close(rebuilt);
+            crate::web_internal_free_string(err);
+            web_internal_index_close(rebuilt);
         }
         let _ = std::fs::remove_dir_all(dir);
     }

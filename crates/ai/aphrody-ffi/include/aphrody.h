@@ -307,12 +307,12 @@ APHRODY_NODISCARD APHRODY_MALLOC APHRODY_API char *manga_pipeline_run(const uint
  */
 APHRODY_API void manga_string_free(char *str);
 
-/* Web extraction and vector indexing share this native library. The bxc_*
- * names are temporary source-client aliases and will be removed at cutover.
+/* Web extraction and vector indexing share this native library.
  * Every returned char* below is owned by this library and must be freed with
- * aphrody_string_free, aphrody_web_free_string or bxc_free_string. */
+ * aphrody_string_free or aphrody_web_free_string. */
 APHRODY_API void aphrody_web_free_string(char *ptr);
-APHRODY_API void bxc_free_string(char *ptr);
+APHRODY_NODISCARD APHRODY_MALLOC APHRODY_API char *aphrody_web_media_extract(const char *source, const char *base_url);
+APHRODY_NODISCARD APHRODY_API uint64_t aphrody_web_media_resolve_submit(const char *embed_url, const char *options_json, uint32_t timeout_ms);
 
 APHRODY_NODISCARD APHRODY_MALLOC APHRODY_API char *aphrody_web_extract_main(const char *html, const char *url, const char *options_json);
 APHRODY_NODISCARD APHRODY_MALLOC APHRODY_API char *aphrody_web_html_to_markdown(const char *html, const char *base_url);
@@ -323,9 +323,6 @@ APHRODY_NODISCARD APHRODY_API void *aphrody_web_parse_html(const char *html);
 APHRODY_API void aphrody_web_tree_destroy(void *tree);
 APHRODY_NODISCARD APHRODY_MALLOC APHRODY_API char *aphrody_web_query_selector(void *tree, const char *selector);
 APHRODY_NODISCARD APHRODY_MALLOC APHRODY_API char *aphrody_web_query_selector_all(void *tree, const char *selector);
-APHRODY_NODISCARD APHRODY_MALLOC APHRODY_API char *bxc_extract_main(const char *html, const char *url, const char *options_json);
-APHRODY_NODISCARD APHRODY_MALLOC APHRODY_API char *bxc_html_to_markdown_with_base(const char *html, const char *base_url);
-APHRODY_NODISCARD APHRODY_MALLOC APHRODY_API char *bxc_simhash64(const char *text);
 
 /* Index handles are opaque u64 IDs. Return codes: 0 success, -1 error,
  * -2 unknown handle. String results are freed as above. */
@@ -342,18 +339,6 @@ APHRODY_NODISCARD APHRODY_API int32_t aphrody_web_index_compact(uint64_t handle)
 APHRODY_NODISCARD APHRODY_MALLOC APHRODY_API char *aphrody_web_index_stats(uint64_t handle);
 APHRODY_NODISCARD APHRODY_API int32_t aphrody_web_index_close(uint64_t handle);
 
-APHRODY_NODISCARD APHRODY_MALLOC APHRODY_API char *bxc_index_last_error(void);
-APHRODY_NODISCARD APHRODY_API uint64_t bxc_index_open(const char *path, uint32_t dim, const char *params_json, int32_t rebuild_if_corrupt);
-APHRODY_NODISCARD APHRODY_API int64_t bxc_index_len(uint64_t handle);
-APHRODY_NODISCARD APHRODY_API uint32_t bxc_index_dim(uint64_t handle);
-APHRODY_NODISCARD APHRODY_API int32_t bxc_index_add(uint64_t handle, uint64_t key, const float *vector, uint32_t dim);
-APHRODY_NODISCARD APHRODY_API int32_t bxc_index_add_batch(uint64_t handle, const uint64_t *keys, const float *flat, uint32_t count, uint32_t dim);
-APHRODY_NODISCARD APHRODY_MALLOC APHRODY_API char *bxc_index_search(uint64_t handle, const float *query, uint32_t dim, uint32_t k, uint32_t ef);
-APHRODY_NODISCARD APHRODY_API int32_t bxc_index_remove(uint64_t handle, uint64_t key);
-APHRODY_NODISCARD APHRODY_API int32_t bxc_index_save(uint64_t handle);
-APHRODY_NODISCARD APHRODY_API int32_t bxc_index_compact(uint64_t handle);
-APHRODY_NODISCARD APHRODY_MALLOC APHRODY_API char *bxc_index_stats(uint64_t handle);
-APHRODY_NODISCARD APHRODY_API int32_t bxc_index_close(uint64_t handle);
 
 /* Asynchronous jobs share the same Tokio runtime as the Aphrody command
  * surface. Take returns NULL while pending and an owned JSON string when done. */
@@ -367,26 +352,14 @@ APHRODY_NODISCARD APHRODY_API uint64_t aphrody_web_rerank_submit(const char *que
 APHRODY_NODISCARD APHRODY_MALLOC APHRODY_API char *aphrody_web_embed_info(void);
 APHRODY_NODISCARD APHRODY_API uint64_t aphrody_web_embed_install_submit(const char *model_id, uint32_t timeout_ms);
 
-APHRODY_NODISCARD APHRODY_API uint64_t bxc_job_completed_seq(void);
-APHRODY_NODISCARD APHRODY_API uint32_t bxc_job_pending_count(void);
-APHRODY_NODISCARD APHRODY_API int32_t bxc_job_status(uint64_t id);
-APHRODY_NODISCARD APHRODY_MALLOC APHRODY_API char *bxc_job_take(uint64_t id);
-APHRODY_NODISCARD APHRODY_API int32_t bxc_job_cancel(uint64_t id);
-APHRODY_NODISCARD APHRODY_API uint64_t bxc_embed_submit(const char *texts_json, const char *kind, uint32_t timeout_ms);
-APHRODY_NODISCARD APHRODY_API uint64_t bxc_rerank_submit(const char *query, const char *passages_json, uint32_t timeout_ms);
-APHRODY_NODISCARD APHRODY_MALLOC APHRODY_API char *bxc_embed_info(void);
-APHRODY_NODISCARD APHRODY_API uint64_t bxc_embed_install_submit(const char *model_id, uint32_t timeout_ms);
 
 APHRODY_NODISCARD APHRODY_MALLOC APHRODY_API char *aphrody_web_get_chromium_cookies(const char *user_data_path, const char *profile, const char *host_key);
-APHRODY_NODISCARD APHRODY_MALLOC APHRODY_API char *bxc_get_chromium_cookies(const char *user_data_path, const char *profile, const char *host_key);
 
 APHRODY_NODISCARD APHRODY_MALLOC APHRODY_API char *aphrody_web_obscura_fetch(const char *url, uint8_t stealth, uint32_t timeout_ms);
 APHRODY_NODISCARD APHRODY_API uint64_t aphrody_web_obscura_fetch_submit(const char *url, uint8_t stealth, uint32_t timeout_ms);
-APHRODY_NODISCARD APHRODY_MALLOC APHRODY_API char *bxc_obscura_fetch(const char *url, uint8_t stealth, uint32_t timeout_ms);
 
 /* Web ABI v4 and native network operations. */
 APHRODY_NODISCARD APHRODY_API uint32_t aphrody_web_bridge_abi_version(void);
-APHRODY_NODISCARD APHRODY_API uint32_t bxc_bridge_abi_version(void);
 APHRODY_NODISCARD APHRODY_MALLOC APHRODY_API char *aphrody_web_dns_recon(const char *domain_ptr);
 APHRODY_NODISCARD APHRODY_API uint64_t aphrody_web_dns_recon_submit(const char *domain_ptr, uint32_t timeout_ms);
 APHRODY_NODISCARD APHRODY_MALLOC APHRODY_API char *aphrody_web_gemini_web_ask(const char *cookie_path_ptr, const char *prompt_ptr, const char *model_ptr);

@@ -1,6 +1,6 @@
 //! Native Obscura HTTP transport exposed to Bun.
 //!
-//! This is the single low-level HTTP entrypoint for BXC. Plain requests use
+//! This is the single low-level HTTP entrypoint for Aphrody Web. Plain requests use
 //! `ObscuraHttpClient`; stealth requests use Obscura's Rust `wreq` transport
 //! and Chrome emulation. Neither path spawns curl, Bun, Node, or Deno.
 
@@ -81,9 +81,8 @@ async fn fetch_json(url: Url, stealth: u8, timeout_ms: u32) -> String {
 ///
 /// `stealth != 0` selects Obscura's Rust Chrome-emulated `wreq` path. The
 /// returned JSON owns its body as UTF-8-lossy text and is released with
-/// `bxc_free_string`.
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn bxc_obscura_fetch(
+/// `web_internal_free_string`.
+pub unsafe extern "C" fn web_internal_obscura_fetch(
     url_ptr: *const c_char,
     stealth: u8,
     timeout_ms: u32,
@@ -125,10 +124,10 @@ mod tests {
     #[test]
     fn rejects_non_http_without_network() {
         let url = CString::new("file:///tmp/nope").unwrap();
-        let ptr = unsafe { bxc_obscura_fetch(url.as_ptr(), 0, 1000) };
+        let ptr = unsafe { web_internal_obscura_fetch(url.as_ptr(), 0, 1000) };
         let value = unsafe { std::ffi::CStr::from_ptr(ptr) }.to_string_lossy();
         assert!(value.contains("only http and https"));
-        unsafe { crate::bxc_free_string(ptr) };
+        unsafe { crate::web_internal_free_string(ptr) };
     }
 
     #[test]
@@ -137,8 +136,8 @@ mod tests {
         // SAFETY: the URL is a live NUL-terminated string for the call.
         let id = unsafe { aphrody_web_obscura_fetch_submit(url.as_ptr(), 0, 1000) };
         assert!(id > 0);
-        assert_eq!(super::jobs::bxc_job_status(id), 1);
-        let ptr = super::jobs::bxc_job_take(id);
+        assert_eq!(super::jobs::web_internal_job_status(id), 1);
+        let ptr = super::jobs::web_internal_job_take(id);
         assert!(
             unsafe { std::ffi::CStr::from_ptr(ptr) }
                 .to_string_lossy()

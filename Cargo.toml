@@ -105,6 +105,8 @@ aphrody-vision = { path = "crates/ai/aphrody-vision", features = [] }
 aphrody-voice = { path = "crates/ai/aphrody-voice", features = [] }
 aphrody-vpn = { path = "crates/infra/aphrody-vpn", features = [] }
 aphrody-web-bridge = { path = "crates/web/aphrody-web-bridge", version = "1.0.0-canary", features = [] }
+aphrody-web-crawl = { path = "crates/web/aphrody-web-crawl", version = "1.0.0", features = [] }
+aphrody-web-media = { path = "crates/web/aphrody-web-media", version = "1.0.0", features = [] }
 aphrody-web-chromium = { path = "crates/web/aphrody-web-chromium", version = "1.0.0-canary", features = [] }
 aphrody-web-engine = { path = "crates/web/aphrody-web-engine", version = "1.0.0", features = [] }
 aphrody-web = { path = "crates/web/aphrody-web", version = "1.0.0" }
@@ -131,6 +133,7 @@ chrono = { version = "0.4", features = ["serde"] }
 clap = { version = "4.5", features = ["derive", "env", "color"] }
 clap_complete = { version = "4", features = [] }
 colored = { version = "3", features = [] }
+cookie = "=0.18.2"
 criterion = { version = "0.8", features = [] }
 dashmap = { version = "6", features = [] }
 data-encoding = { version = "2.3.3", features = [] }
@@ -192,6 +195,7 @@ reqwest = { version = "0.13", default-features = false, features = ["rustls-no-p
 ring = "0.17"
 rmcp = { version = "=3.4.1", features = ["server", "transport-io", "transport-streamable-http-server", "macros", "schemars"] }
 rusqlite = { version = "0.40", features = ["bundled"] }
+rookie-cookies = "=0.6.0"
 russh = { version = "0.63", default-features = false, features = ["ring", "flate2"] }
 russh-sftp = "3.0"
 rustls = { version = "0.23", default-features = false, features = ["ring", "std", "tls12"] }
@@ -249,3 +253,4 @@ perf = { level = "warn", priority = -1 }
 
 [patch.crates-io]
 taffy = { path = "crates/web/taffy" }
+simdutf = { path = "upstream/simdutf-rio" }

@@ -1,5 +1,6 @@
 use std::{collections::HashMap, sync::RwLock};
 
+use serde::Deserialize;
 use url::Url;
 
 const DEFAULT_SAME_SITE: &str = "Lax";
@@ -10,10 +11,55 @@ const DEFAULT_SAME_SITE: &str = "Lax";
 fn normalize_same_site(value: &str) -> String {
     match value.trim().to_ascii_lowercase().as_str() {
         "strict" => "Strict",
-        "none" => "None",
+        "none" | "no_restriction" => "None",
         _ => "Lax",
     }
     .to_string()
+}
+
+struct ParsedCookie {
+    name: String,
+    value: String,
+    domain_attr: Option<String>,
+    path: String,
+    secure: bool,
+    http_only: bool,
+    expires: Option<u64>,
+    same_site: String,
+}
+
+fn parse_cookie(input: &str, url: &Url) -> Option<ParsedCookie> {
+    let parsed = cookie::Cookie::parse(input.to_owned()).ok()?;
+    let now = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_secs();
+    // Max-Age takes precedence over Expires. Saturation prevents overflow.
+    let expires = if let Some(age) = parsed.max_age() {
+        let seconds = age.whole_seconds();
+        Some(if seconds <= 0 { 0 } else { now.saturating_add(seconds as u64) })
+    } else {
+        parsed.expires_datetime().map(|date| date.unix_timestamp().max(0) as u64)
+    };
+    let same_site = match parsed.same_site() {
+        Some(cookie::SameSite::Strict) => "Strict",
+        Some(cookie::SameSite::None) => "None",
+        _ => DEFAULT_SAME_SITE,
+    };
+    let path = parsed
+        .path()
+        .filter(|path| path.starts_with('/'))
+        .map_or_else(|| default_cookie_path(url.path()), str::to_string);
+    Some(ParsedCookie {
+        name: parsed.name().to_string(),
+        value: parsed.value().to_string(),
+        domain_attr: parsed.domain().map(canonical_domain),
+        path,
+        secure: parsed.secure().unwrap_or(false),
+        http_only: parsed.http_only().unwrap_or(false),
+        expires,
+        same_site: same_site.to_string(),
+    })
 }
 
 /// The jar key for a domain. RFC 6265 4.1.2.3 ignores a leading dot, and hosts are
@@ -63,65 +109,12 @@ impl CookieJar {
     }
 
     pub fn set_cookie(&self, set_cookie_str: &str, url: &Url) {
-        let parts: Vec<&str> = set_cookie_str.splitn(2, ';').collect();
-        let name_value = parts[0].trim();
-        let (name, value) = match name_value.split_once('=') {
-            Some((n, v)) => (n.trim().to_string(), v.trim().to_string()),
-            None => return,
+        let Some(parsed) = parse_cookie(set_cookie_str, url) else {
+            return;
         };
-
+        let ParsedCookie { name, value, domain_attr, path, secure, http_only, expires, same_site } =
+            parsed;
         let request_host = url.host_str().unwrap_or("").to_lowercase();
-        let mut domain_attr: Option<String> = None;
-        let mut path = default_cookie_path(url.path());
-        let mut secure = false;
-        let mut http_only = false;
-        let mut expires: Option<u64> = None;
-        let mut same_site = "Lax".to_string();
-
-        if parts.len() > 1 {
-            for attr in parts[1].split(';') {
-                let attr = attr.trim();
-                if let Some((key, val)) = attr.split_once('=') {
-                    match key.trim().to_lowercase().as_str() {
-                        "domain" => {
-                            domain_attr = Some(canonical_domain(val));
-                        },
-                        "path" => {
-                            path = val.trim().to_string();
-                        },
-                        "expires" => {
-                            if let Ok(ts) = parse_http_date(val.trim()) {
-                                expires = Some(ts);
-                            }
-                        },
-                        "max-age" => {
-                            if let Ok(secs) = val.trim().parse::<i64>() {
-                                if secs <= 0 {
-                                    expires = Some(0);
-                                } else {
-                                    let now = std::time::SystemTime::now()
-                                        .duration_since(std::time::UNIX_EPOCH)
-                                        .unwrap_or_default()
-                                        .as_secs();
-                                    expires = Some(now + secs as u64);
-                                }
-                            }
-                        },
-                        "samesite" => {
-                            same_site = normalize_same_site(val);
-                        },
-                        _ => {},
-                    }
-                } else {
-                    match attr.to_lowercase().as_str() {
-                        "secure" => secure = true,
-                        "httponly" => http_only = true,
-                        _ => {},
-                    }
-                }
-            }
-        }
-
         // Validate Domain against the response origin (RFC 6265): an unrelated
         // or public-suffix Domain rejects the cookie so a response from attacker.test
         // cannot scope a cookie to victim.test (GHSA-f22c-8v6q-v6h6).
@@ -263,6 +256,45 @@ impl CookieJar {
         result
     }
 
+    /// Export a Cookie-Editor compatible array without changing Obscura's
+    /// persisted cookie format or exposing its internal storage representation.
+    pub fn to_cookie_editor_json(&self) -> Result<String, serde_json::Error> {
+        let cookies = self.cookies.read().unwrap();
+        let now = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_secs();
+        let mut exported = Vec::new();
+        for domain_cookies in cookies.values() {
+            for entry in domain_cookies.values() {
+                if entry.expires.is_some_and(|expires| expires <= now) {
+                    continue;
+                }
+                exported.push(CookieEditorExport {
+                    name: &entry.name,
+                    value: &entry.value,
+                    domain: if entry.host_only {
+                        entry.domain.clone()
+                    } else {
+                        format!(".{}", entry.domain)
+                    },
+                    path: &entry.path,
+                    host_only: entry.host_only,
+                    http_only: entry.http_only,
+                    secure: entry.secure,
+                    session: entry.expires.is_none(),
+                    expiration_date: entry.expires.map(|expires| expires as f64),
+                    same_site: match entry.same_site.as_str() {
+                        "None" => "no_restriction",
+                        "Strict" => "strict",
+                        _ => "lax",
+                    },
+                });
+            }
+        }
+        serde_json::to_string_pretty(&exported)
+    }
+
     pub fn set_cookies_from_cdp(&self, cookies: Vec<CookieInfo>) {
         self.set_cookies_from_import(cookies.into_iter().map(|cookie| (cookie, false)));
     }
@@ -380,63 +412,12 @@ impl CookieJar {
     }
 
     pub fn set_cookie_from_js(&self, cookie_str: &str, url: &Url) {
-        let parts: Vec<&str> = cookie_str.splitn(2, ';').collect();
-        let name_value = parts[0].trim();
-        let (name, value) = match name_value.split_once('=') {
-            Some((n, v)) => (n.trim().to_string(), v.trim().to_string()),
-            None => return,
+        let Some(parsed) = parse_cookie(cookie_str, url) else {
+            return;
         };
-
+        let ParsedCookie { name, value, domain_attr, path, secure, expires, same_site, .. } =
+            parsed;
         let request_host = url.host_str().unwrap_or("").to_lowercase();
-        let mut domain_attr: Option<String> = None;
-        let mut path = default_cookie_path(url.path());
-        let mut secure = false;
-        let mut expires: Option<u64> = None;
-        let mut same_site = "Lax".to_string();
-
-        if parts.len() > 1 {
-            for attr in parts[1].split(';') {
-                let attr = attr.trim();
-                if let Some((key, val)) = attr.split_once('=') {
-                    match key.trim().to_lowercase().as_str() {
-                        "domain" => {
-                            domain_attr = Some(canonical_domain(val));
-                        },
-                        "path" => {
-                            path = val.trim().to_string();
-                        },
-                        "expires" => {
-                            if let Ok(ts) = parse_http_date(val.trim()) {
-                                expires = Some(ts);
-                            }
-                        },
-                        "max-age" => {
-                            if let Ok(secs) = val.trim().parse::<i64>() {
-                                if secs <= 0 {
-                                    expires = Some(0);
-                                } else {
-                                    let now = std::time::SystemTime::now()
-                                        .duration_since(std::time::UNIX_EPOCH)
-                                        .unwrap_or_default()
-                                        .as_secs();
-                                    expires = Some(now + secs as u64);
-                                }
-                            }
-                        },
-                        "samesite" => {
-                            same_site = normalize_same_site(val);
-                        },
-                        _ => {},
-                    }
-                } else {
-                    match attr.to_lowercase().as_str() {
-                        "secure" => secure = true,
-                        _ => {},
-                    }
-                }
-            }
-        }
-
         let (domain, host_only) = match resolve_cookie_domain(&request_host, domain_attr.as_deref())
         {
             Some(d) => d,
@@ -554,6 +535,7 @@ impl CookieJar {
                         expires: entry.expires.map(|e| e as i64),
                     },
                     host_only: Some(entry.host_only),
+                    session: None,
                 });
             }
         }
@@ -581,11 +563,12 @@ impl CookieJar {
         let cookies: Vec<PersistedCookie> = serde_json::from_str(&data)
             .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, e))?;
         let count = cookies.len();
-        self.set_cookies_from_import(
-            cookies
-                .into_iter()
-                .map(|persisted| (persisted.cookie, persisted.host_only.unwrap_or(false))),
-        );
+        self.set_cookies_from_import(cookies.into_iter().map(|mut persisted| {
+            if persisted.session == Some(true) {
+                persisted.cookie.expires = None;
+            }
+            (persisted.cookie, persisted.host_only.unwrap_or(false))
+        }));
         Ok(count)
     }
 }
@@ -605,9 +588,9 @@ pub struct CookieInfo {
     pub secure: bool,
     #[serde(rename = "httpOnly")]
     pub http_only: bool,
-    #[serde(default, rename = "sameSite")]
+    #[serde(default, rename = "sameSite", deserialize_with = "deserialize_same_site")]
     pub same_site: String,
-    #[serde(default)]
+    #[serde(default, alias = "expirationDate", deserialize_with = "deserialize_expiration")]
     pub expires: Option<i64>,
 }
 
@@ -620,41 +603,57 @@ struct PersistedCookie {
     /// distinction explicitly.
     #[serde(default, rename = "hostOnly", skip_serializing_if = "Option::is_none")]
     host_only: Option<bool>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    session: Option<bool>,
 }
 
-fn parse_http_date(s: &str) -> Result<u64, ()> {
-    let months =
-        ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
+#[derive(serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+struct CookieEditorExport<'a> {
+    name: &'a str,
+    value: &'a str,
+    domain: String,
+    path: &'a str,
+    host_only: bool,
+    http_only: bool,
+    secure: bool,
+    session: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    expiration_date: Option<f64>,
+    same_site: &'a str,
+}
 
-    let s = s.replace('-', " ");
-    let parts: Vec<&str> = s.split_whitespace().collect();
+fn deserialize_same_site<'de, D>(deserializer: D) -> Result<String, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    let value = Option::<String>::deserialize(deserializer)?;
+    Ok(value.map_or_else(String::new, |value| normalize_same_site(&value)))
+}
 
-    if parts.len() < 5 {
-        return Err(());
+fn deserialize_expiration<'de, D>(deserializer: D) -> Result<Option<i64>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    #[derive(serde::Deserialize)]
+    #[serde(untagged)]
+    enum ExpirationSeconds {
+        Integer(i64),
+        Fractional(f64),
     }
 
-    let day: u64 = parts[1].parse().map_err(|_| ())?;
-    let month =
-        months.iter().position(|m| parts[2].to_lowercase().starts_with(m)).ok_or(())? as u64 + 1;
-    let year: u64 = parts[3].parse().map_err(|_| ())?;
-
-    let time_parts: Vec<&str> = parts[4].split(':').collect();
-    let hour: u64 = time_parts.first().and_then(|s| s.parse().ok()).unwrap_or(0);
-    let minute: u64 = time_parts.get(1).and_then(|s| s.parse().ok()).unwrap_or(0);
-    let second: u64 = time_parts.get(2).and_then(|s| s.parse().ok()).unwrap_or(0);
-
-    let mut days_total: u64 = 0;
-    for y in 1970..year {
-        days_total += if y % 4 == 0 && (y % 100 != 0 || y % 400 == 0) { 366 } else { 365 };
+    match Option::<ExpirationSeconds>::deserialize(deserializer)? {
+        None => Ok(None),
+        Some(ExpirationSeconds::Integer(seconds)) => Ok(Some(seconds)),
+        Some(ExpirationSeconds::Fractional(seconds))
+            if seconds.is_finite() && seconds >= i64::MIN as f64 && seconds < i64::MAX as f64 =>
+        {
+            Ok(Some(seconds.trunc() as i64))
+        },
+        Some(ExpirationSeconds::Fractional(_)) => {
+            Err(serde::de::Error::custom("invalid cookie expiration timestamp"))
+        },
     }
-    let days_in_month = [0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
-    let is_leap = year % 4 == 0 && (year % 100 != 0 || year % 400 == 0);
-    for m in 1..month {
-        days_total += days_in_month[m as usize] + if m == 2 && is_leap { 1 } else { 0 };
-    }
-    days_total += day - 1;
-
-    Ok(days_total * 86400 + hour * 3600 + minute * 60 + second)
 }
 
 /// Resolve the storage domain and host-only flag for a cookie being set from
@@ -1572,5 +1571,87 @@ mod tests {
             "JS cookie not visible at sibling path: {}",
             jar.get_js_visible_cookies(&checkout)
         );
+    }
+
+    #[test]
+    fn cookie_editor_import_preserves_scope_and_same_site() {
+        let dir = tempfile::tempdir().unwrap();
+        let file = dir.path().join("cookies.json");
+        std::fs::write(
+            &file,
+            r#"[
+              {"name":"shared","value":"one","domain":".example.com","path":"/",
+               "secure":true,"httpOnly":true,"hostOnly":false,"session":false,
+               "sameSite":"no_restriction","expirationDate":4102444800.125},
+              {"name":"local","value":"two","domain":"www.example.com","path":"/",
+               "secure":true,"httpOnly":false,"hostOnly":true,"session":true,
+               "sameSite":null,"expirationDate":4102444800.125}
+            ]"#,
+        )
+        .unwrap();
+
+        let jar = CookieJar::new();
+        assert_eq!(jar.load_from_file(&file).unwrap(), 2);
+        let www = Url::parse("https://www.example.com/").unwrap();
+        let sub = Url::parse("https://sub.www.example.com/").unwrap();
+        assert_eq!(
+            jar.get_cookie_header_in_context(&www, SameSiteContext::CrossSite),
+            "shared=one"
+        );
+        assert!(jar.get_cookie_header_same_site(&www).contains("local=two"));
+        assert!(!jar.get_cookie_header_same_site(&sub).contains("local=two"));
+        assert_eq!(
+            jar.get_all_cookies().iter().find(|cookie| cookie.name == "local").unwrap().expires,
+            None
+        );
+        assert_eq!(
+            jar.get_all_cookies().iter().find(|cookie| cookie.name == "shared").unwrap().expires,
+            Some(4_102_444_800)
+        );
+    }
+
+    #[test]
+    fn cookie_editor_export_round_trips() {
+        let original = CookieJar::new();
+        let url = Url::parse("https://www.example.com/").unwrap();
+        original.set_cookie("shared=one; Domain=example.com; Path=/; Secure; SameSite=None", &url);
+        original.set_cookie("local=two; Path=/; Secure; HttpOnly", &url);
+
+        let exported = original.to_cookie_editor_json().unwrap();
+        let json: serde_json::Value = serde_json::from_str(&exported).unwrap();
+        let rows = json.as_array().unwrap();
+        assert_eq!(rows.len(), 2);
+        let shared = rows.iter().find(|row| row["name"] == "shared").unwrap();
+        assert_eq!(shared["domain"], ".example.com");
+        assert_eq!(shared["sameSite"], "no_restriction");
+        assert_eq!(shared["hostOnly"], false);
+        let local = rows.iter().find(|row| row["name"] == "local").unwrap();
+        assert_eq!(local["hostOnly"], true);
+        assert_eq!(local["session"], true);
+
+        let dir = tempfile::tempdir().unwrap();
+        let file = dir.path().join("cookies.json");
+        std::fs::write(&file, exported).unwrap();
+        let restored = CookieJar::new();
+        assert_eq!(restored.load_from_file(&file).unwrap(), 2);
+        assert_eq!(
+            restored.get_cookie_header_in_context(&url, SameSiteContext::CrossSite),
+            "shared=one"
+        );
+        assert!(
+            !restored
+                .get_cookie_header_same_site(&Url::parse("https://sub.www.example.com/").unwrap())
+                .contains("local=two")
+        );
+    }
+
+    #[test]
+    fn cookie_parser_honors_max_age_before_expires_and_validates_names() {
+        let jar = CookieJar::new();
+        let url = Url::parse("https://example.com/").unwrap();
+        jar.set_cookie("active=yes; Expires=Wed, 21 Oct 2099 07:28:00 GMT", &url);
+        jar.set_cookie("active=no; Expires=Wed, 21 Oct 2099 07:28:00 GMT; Max-Age=0", &url);
+        jar.set_cookie("=invalid", &url);
+        assert!(jar.get_all_cookies().is_empty());
     }
 }

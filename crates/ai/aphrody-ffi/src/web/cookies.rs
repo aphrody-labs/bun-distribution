@@ -11,8 +11,8 @@ use super::ffi_util::{guard, into_c_string};
 ///
 /// Every non-null pointer argument must point to a readable, NUL-terminated C
 /// string for the duration of this call. The returned string must be released
-/// exactly once with `bxc_free_string`.
-pub unsafe extern "C" fn bxc_get_chromium_cookies(
+/// exactly once with `web_internal_free_string`.
+pub unsafe extern "C" fn web_internal_get_chromium_cookies(
     user_data_path_ptr: *const c_char,
     profile_ptr: *const c_char,
     host_key_ptr: *const c_char,
@@ -39,15 +39,8 @@ pub unsafe extern "C" fn bxc_get_chromium_cookies(
             Err(_) => return into_c_string("[]".to_string()),
         };
 
-        let mut parser =
+        let parser =
             aphrody_web_chromium::ChromiumParser::new(std::path::PathBuf::from(user_data_path_str));
-        if let Err(e) = parser.load_master_key() {
-            let err_json = serde_json::json!({
-                "error": format!("Failed to load master key: {}", e)
-            });
-            return into_c_string(err_json.to_string());
-        }
-
         match parser.get_cookies_full(profile_str, host_key_str) {
             Ok(cookies) => {
                 let json = serde_json::to_string(&cookies).unwrap_or_else(|_| "[]".to_string());
