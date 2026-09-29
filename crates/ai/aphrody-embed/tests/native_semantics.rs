@@ -130,9 +130,9 @@ fn flat_facade_matches_embedder() {
     let Some(embedder) = default_embedder(4, 0) else {
         return;
     };
-    // The facade reads BXC_EMBED_MODEL; the default model is used when unset.
-    if std::env::var("BXC_EMBED_MODEL").is_ok() {
-        eprintln!("SKIPPED: BXC_EMBED_MODEL overrides the facade model");
+    // The facade reads APHRODY_EMBED_MODEL; the default model is used when unset.
+    if std::env::var("APHRODY_EMBED_MODEL").is_ok() {
+        eprintln!("SKIPPED: APHRODY_EMBED_MODEL overrides the facade model");
         return;
     }
     let texts = ["first text", "second, somewhat longer text about crawling"];

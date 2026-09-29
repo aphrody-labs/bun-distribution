@@ -1,8 +1,8 @@
-//! Key-less local sentence embeddings for BXC.
+//! Local sentence embeddings for Aphrody.
 //!
 //! - [`model_manifest`] lists supported BERT-family models with pinned Hugging Face revisions and
-//!   sha256 hashes; [`ensure_model`] installs them under `~/.bxc/models/<org>--<name>/` (or
-//!   `$BXC_MODELS_DIR`). Weights are never embedded in the binary.
+//!   sha256 hashes; [`ensure_model`] installs them under `~/.aphrody/models/<org>--<name>/` (or
+//!   `$APHRODY_MODELS_DIR`). Weights are never embedded in the binary.
 //! - [`Embedder`] tokenises, sorts inputs by length, runs a padding-free BERT forward pass on a
 //!   private thread pool, pools (mean or CLS) and L2-normalises. It is `Send + Sync`.
 //! - [`Reranker`] scores (query, passage) pairs with a cross-encoder (`ms-marco-MiniLM-L6-v2` by

@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-//! `aphrody-embed worker`: persistent length-prefixed JSON worker for the BXC
-//! native embedding ABI (spawned by `aphrody-web-ffi`).
+//! `aphrody-embed worker`: persistent length-prefixed JSON worker for Aphrody.
 //!
 //! Models are loaded lazily once per worker. No request data appears in argv.
 
@@ -29,8 +28,8 @@ fn selected(name: &str, default: &str) -> String {
 }
 
 fn info() -> Value {
-    let embed_id = selected("BXC_EMBED_MODEL", DEFAULT_MODEL_ID);
-    let rerank_id = selected("BXC_RERANK_MODEL", DEFAULT_RERANKER_ID);
+    let embed_id = selected("APHRODY_EMBED_MODEL", DEFAULT_MODEL_ID);
+    let rerank_id = selected("APHRODY_RERANK_MODEL", DEFAULT_RERANKER_ID);
     let embed = find_model(&embed_id).map(|spec| {
         json!({
             "id": spec.versioned_id(),

@@ -23,9 +23,9 @@ use super::{
 const DOWNLOAD_ATTEMPTS: usize = 3;
 const COPY_BUFFER: usize = 1 << 20;
 
-/// `true` when `BXC_OFFLINE` is set to a truthy value (`1`, `true`, `yes`).
+/// `true` when `APHRODY_OFFLINE` is set to a truthy value (`1`, `true`, `yes`).
 pub fn is_offline() -> bool {
-    std::env::var("BXC_OFFLINE")
+    std::env::var("APHRODY_OFFLINE")
         .map(|v| matches!(v.trim().to_ascii_lowercase().as_str(), "1" | "true" | "yes"))
         .unwrap_or(false)
 }
@@ -34,7 +34,7 @@ pub fn is_offline() -> bool {
 ///
 /// Existing files are accepted when their size matches the manifest (downloads are
 /// only renamed into place after a successful sha256 check). Returns `dir`.
-/// Honours `BXC_OFFLINE=1` by failing instead of downloading.
+/// Honours `APHRODY_OFFLINE=1` by failing instead of downloading.
 pub fn ensure_model<S: ModelFiles + ?Sized>(spec: &S, dir: &Path) -> Result<PathBuf> {
     // Serialise installs inside the process so concurrent callers (e.g. parallel tests or
     // FFI threads) wait for one download instead of each fetching the same files.
@@ -62,7 +62,7 @@ pub fn is_installed<S: ModelFiles + ?Sized>(spec: &S, dir: &Path) -> bool {
 }
 
 /// Return `dir` if `spec` is installed there, else [`Error::NotInstalled`]. No network I/O;
-/// use this on load paths and keep [`ensure_model`] for `bxc install`.
+/// use this on load paths and keep [`ensure_model`] for explicit installation.
 pub fn require_installed<S: ModelFiles + ?Sized>(spec: &S, dir: &Path) -> Result<PathBuf> {
     if is_installed(spec, dir) {
         Ok(dir.to_path_buf())

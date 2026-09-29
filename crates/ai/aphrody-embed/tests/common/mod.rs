@@ -8,14 +8,14 @@ use aphrody_embed::native::{
 };
 
 /// Resolve a model, downloading it when needed. Returns `None` (after printing why) only
-/// when the files are missing and `BXC_OFFLINE=1` forbids fetching them.
+/// when the files are missing and `APHRODY_OFFLINE=1` forbids fetching them.
 pub(crate) fn model_or_skip(id: &str) -> Option<(ModelSpec, std::path::PathBuf)> {
     let spec = find_model(id).expect("model in manifest");
     let dir = spec.default_dir();
     match ensure_model(&spec, &dir) {
         Ok(dir) => Some((spec, dir)),
         Err(err) if is_offline() => {
-            eprintln!("SKIPPED: {id} not installed and BXC_OFFLINE=1 ({err})");
+            eprintln!("SKIPPED: {id} not installed and APHRODY_OFFLINE=1 ({err})");
             None
         },
         Err(err) => panic!("cannot install {id}: {err}"),
@@ -40,7 +40,7 @@ pub(crate) fn reranker_or_skip(
     match ensure_model(&spec, &dir) {
         Ok(dir) => Some((spec, dir)),
         Err(err) if is_offline() => {
-            eprintln!("SKIPPED: {id} not installed and BXC_OFFLINE=1 ({err})");
+            eprintln!("SKIPPED: {id} not installed and APHRODY_OFFLINE=1 ({err})");
             None
         },
         Err(err) => panic!("cannot install {id}: {err}"),

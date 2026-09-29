@@ -11,10 +11,10 @@ pub enum Error {
     #[error("unknown model `{0}`")]
     UnknownModel(String),
 
-    #[error("model `{model}` is not installed in `{}`; run `bxc install` (crate::native::ensure_model)", dir.display())]
+    #[error("model `{model}` is not installed in `{}`; install it with aphrody_embed::native::ensure_model", dir.display())]
     NotInstalled { model: String, dir: PathBuf },
 
-    #[error("model file `{}` is missing and BXC_OFFLINE=1 forbids downloading it", .0.display())]
+    #[error("model file `{}` is missing and APHRODY_OFFLINE=1 forbids downloading it", .0.display())]
     Offline(PathBuf),
 
     #[error("download of `{url}` failed: {message}")]

@@ -67,7 +67,7 @@ fn default_reranker_matches_sentence_transformers() {
 
 #[test]
 fn optional_rerankers_match_sentence_transformers() {
-    let all = std::env::var("BXC_EMBED_TEST_ALL_MODELS").is_ok_and(|v| v == "1");
+    let all = std::env::var("APHRODY_EMBED_TEST_ALL_MODELS").is_ok_and(|v| v == "1");
     let reference = reference();
     let pairs = pairs(&reference);
     for case in reference["cases"].as_array().unwrap() {
@@ -76,7 +76,7 @@ fn optional_rerankers_match_sentence_transformers() {
             continue;
         }
         if !all && !common::reranker_installed(model) {
-            eprintln!("SKIPPED: {model} not installed (set BXC_EMBED_TEST_ALL_MODELS=1 to fetch)");
+            eprintln!("SKIPPED: {model} not installed (set APHRODY_EMBED_TEST_ALL_MODELS=1 to fetch)");
             continue;
         }
         check_parity(case, &pairs);
@@ -123,8 +123,8 @@ fn rerank_json_facade_sorts_descending() {
     if common::reranker_or_skip(DEFAULT_RERANKER_ID).is_none() {
         return;
     }
-    if std::env::var("BXC_RERANK_MODEL").is_ok() {
-        eprintln!("SKIPPED: BXC_RERANK_MODEL overrides the facade model");
+    if std::env::var("APHRODY_RERANK_MODEL").is_ok() {
+        eprintln!("SKIPPED: APHRODY_RERANK_MODEL overrides the facade model");
         return;
     }
     let passages = r#"["Bananas are yellow.", "Berlin has about 3.5 million inhabitants.", "Paris is in France."]"#;

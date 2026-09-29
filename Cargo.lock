@@ -339,6 +339,7 @@ dependencies = [
  "aphrody-vpn",
  "aphrody-web-bridge",
  "aphrody-web-crawl",
+ "aphrody-web-detect",
  "aphrody-web-extract",
  "aphrody-web-media",
  "aphrody-winclean",
@@ -2199,6 +2200,19 @@ dependencies = [
  "obscura-dom",
  "obscura-net",
  "rusqlite",
+ "tokio",
+ "url",
+]
+
+[[package]]
+name = "aphrody-web-detect"
+version = "1.0.0"
+dependencies = [
+ "reqwest 0.13.5",
+ "rustls",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.21",
  "tokio",
  "url",
 ]

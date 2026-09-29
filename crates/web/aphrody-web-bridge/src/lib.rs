@@ -10,7 +10,7 @@
 //! # Example
 //!
 //! ```no_run
-//! # async fn demo() -> Result<(), aphrody_web_bridge::BxcError> {
+//! # async fn demo() -> Result<(), aphrody_web_bridge::WebBrowserError> {
 //! let page = aphrody_web_bridge::fetch::fetch(&aphrody_web_bridge::fetch::Request::new(
 //!     "https://google.github.io/styleguide/cppguide.html",
 //! ))
@@ -43,7 +43,7 @@ pub mod error;
 pub mod resolve;
 
 #[cfg(not(target_arch = "wasm32"))]
-pub use error::{BxcError, Result};
+pub use error::{BxcError, Result, WebBrowserError};
 
 /// Programmatic access to the shared Aphrody Web Actor runtime.
 #[cfg(not(target_arch = "wasm32"))]
@@ -57,14 +57,8 @@ pub mod ffi;
 #[cfg(not(target_arch = "wasm32"))]
 mod native_session;
 
-/// Canonical Rust client name for the Aphrody Web Browser executable.
 #[cfg(not(target_arch = "wasm32"))]
-pub use cli::BxcCli as WebBrowserClient;
-#[cfg(not(target_arch = "wasm32"))]
-pub use cli::{BxcCli, Profile};
-/// Canonical Rust error name for the Aphrody Web Browser bridge.
-#[cfg(not(target_arch = "wasm32"))]
-pub use error::BxcError as WebBrowserError;
+pub use cli::{BxcCli, Profile, WebBrowserClient};
 #[cfg(not(target_arch = "wasm32"))]
 pub use ffi::Bridge;
 
@@ -97,7 +91,7 @@ mod host {
         pub fn probe() -> Self {
             let mut missing = Vec::new();
 
-            let binary = match super::BxcCli::discover() {
+            let binary = match super::WebBrowserClient::discover() {
                 Ok(client) => Some(client.source().clone()),
                 Err(error) => {
                     missing.push(error.to_string());

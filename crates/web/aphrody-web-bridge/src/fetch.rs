@@ -41,7 +41,7 @@ use std::{sync::OnceLock, time::Duration};
 
 use crate::{
     cli::Profile,
-    error::{BxcError, Result},
+    error::{Result, WebBrowserError},
 };
 
 /// Default per-request timeout.
@@ -250,9 +250,10 @@ fn client() -> Result<&'static reqwest::Client> {
             })
     }) {
         Ok(c) => Ok(c),
-        Err(detail) => {
-            Err(BxcError::Http { url: "<client init>".to_owned(), source: detail.clone().into() })
-        },
+        Err(detail) => Err(WebBrowserError::Http {
+            url: "<client init>".to_owned(),
+            source: detail.clone().into(),
+        }),
     }
 }
 
@@ -283,12 +284,12 @@ pub fn truncate(text: &str, max_bytes: usize) -> (String, bool) {
 ///
 /// # Errors
 ///
-/// [`BxcError::BadUrl`] for a non-http(s) URL, [`BxcError::Http`] /
-/// [`BxcError::HttpStatus`] on the direct path, and browser errors for
+/// [`WebBrowserError::BadUrl`] for a non-http(s) URL, [`WebBrowserError::Http`] /
+/// [`WebBrowserError::HttpStatus`] on the direct path, and browser errors for
 /// browser profiles.
 pub async fn fetch(request: &Request) -> Result<Fetched> {
     if !(request.url.starts_with("http://") || request.url.starts_with("https://")) {
-        return Err(BxcError::BadUrl { url: request.url.clone() });
+        return Err(WebBrowserError::BadUrl { url: request.url.clone() });
     }
     match request.profile {
         Some(Profile::Static | Profile::Http) => fetch_direct(request).await,
@@ -307,7 +308,7 @@ async fn fetch_direct(request: &Request) -> Result<Fetched> {
         .timeout(request.timeout)
         .send()
         .await
-        .map_err(|e| BxcError::Http { url: request.url.clone(), source: Box::new(e) })?;
+        .map_err(|e| WebBrowserError::Http { url: request.url.clone(), source: Box::new(e) })?;
 
     let status = response.status();
     let final_url = response.url().to_string();
@@ -321,13 +322,13 @@ async fn fetch_direct(request: &Request) -> Result<Fetched> {
     // The status is checked, unlike the proxy path this replaces, where a 402
     // from the reader arrived as page content.
     if !status.is_success() {
-        return Err(BxcError::HttpStatus { url: final_url, status: status.as_u16() });
+        return Err(WebBrowserError::HttpStatus { url: final_url, status: status.as_u16() });
     }
 
     let text = response
         .text()
         .await
-        .map_err(|e| BxcError::Http { url: request.url.clone(), source: Box::new(e) })?;
+        .map_err(|e| WebBrowserError::Http { url: request.url.clone(), source: Box::new(e) })?;
     let bytes_in = text.len();
 
     let (rendering, body) = if is_html(&content_type) || looks_like_html(&text) {
@@ -389,7 +390,7 @@ fn markdown_body(html: String, path_taken: &mut Vec<String>) -> (Rendering, Stri
 async fn fetch_browser(request: &Request, profile: Profile) -> Result<Fetched> {
     let stealth = matches!(profile, Profile::Stealth | Profile::Max);
     if stealth && !cfg!(feature = "stealth") {
-        return Err(BxcError::BrowserFeatureMissing { profile: profile.as_str() });
+        return Err(WebBrowserError::BrowserFeatureMissing { profile: profile.as_str() });
     }
 
     let url = request.url.clone();
@@ -428,19 +429,22 @@ async fn fetch_browser(request: &Request, profile: Profile) -> Result<Fetched> {
             })();
             let _ = sender.send(result);
         })
-        .map_err(|error| BxcError::Browser {
+        .map_err(|error| WebBrowserError::Browser {
             url: request.url.clone(),
             detail: error.to_string(),
         })?;
 
     let (html, final_url) = tokio::time::timeout(budget, receiver)
         .await
-        .map_err(|_| BxcError::BrowserTimeout { url: request.url.clone(), secs: budget.as_secs() })?
-        .map_err(|_| BxcError::Browser {
+        .map_err(|_| WebBrowserError::BrowserTimeout {
+            url: request.url.clone(),
+            secs: budget.as_secs(),
+        })?
+        .map_err(|_| WebBrowserError::Browser {
             url: request.url.clone(),
             detail: "browser worker ended without a result".to_owned(),
         })?
-        .map_err(|detail| BxcError::Browser { url: request.url.clone(), detail })?;
+        .map_err(|detail| WebBrowserError::Browser { url: request.url.clone(), detail })?;
 
     let bytes_in = html.len();
     let mut path_taken = vec![format!(
@@ -579,7 +583,7 @@ mod tests {
             .unwrap()
             .block_on(fetch(&Request::new("file:///etc/passwd")))
             .unwrap_err();
-        assert!(matches!(err, BxcError::BadUrl { .. }), "{err}");
+        assert!(matches!(err, WebBrowserError::BadUrl { .. }), "{err}");
     }
 
     /// The exact regression this pass fixes: the stylesheet of example.com

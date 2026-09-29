@@ -37,7 +37,7 @@
 use std::{path::Path, time::Duration};
 
 use crate::{
-    error::{BxcError, Result},
+    error::{Result, WebBrowserError},
     resolve::Source,
 };
 
@@ -165,19 +165,22 @@ impl Run {
 
 /// A located `bxc` executable.
 #[derive(Debug, Clone)]
-pub struct BxcCli {
+pub struct WebBrowserClient {
     source: Source,
 }
 
-impl BxcCli {
+/// Compatibility alias for callers still using the former browser client name.
+pub type BxcCli = WebBrowserClient;
+
+impl WebBrowserClient {
     /// Locate `bxc`.
     ///
     /// # Errors
     ///
-    /// [`BxcError::BinaryMissing`], listing every candidate that was probed.
+    /// [`WebBrowserError::BinaryMissing`], listing every candidate that was probed.
     pub fn discover() -> Result<Self> {
         let path = std::env::current_exe()
-            .map_err(|error| BxcError::LibraryUnavailable { detail: error.to_string() })?;
+            .map_err(|error| WebBrowserError::LibraryUnavailable { detail: error.to_string() })?;
         Ok(Self { source: Source::InTree(path) })
     }
 
@@ -211,12 +214,12 @@ impl BxcCli {
     ///
     /// # Errors
     ///
-    /// [`BxcError::Spawn`] when the process cannot be started.
+    /// [`WebBrowserError::Spawn`] when the process cannot be started.
     pub async fn run(&self, args: &[String], budget: Duration) -> Result<Run> {
         use serde_json::json;
 
         let unsupported =
-            |detail| BxcError::NativeUnsupported { operation: args.join(" "), detail };
+            |detail| WebBrowserError::NativeUnsupported { operation: args.join(" "), detail };
         let arg = |flag: &str| {
             args.iter()
                 .position(|part| part == flag)
@@ -330,8 +333,8 @@ impl BxcCli {
     ///
     /// # Errors
     ///
-    /// [`BxcError::CliTimeout`] when the deadline expired with **no** output,
-    /// [`BxcError::CliFailed`] when bxc exited non-zero with no output.
+    /// [`WebBrowserError::CliTimeout`] when the deadline expired with **no** output,
+    /// [`WebBrowserError::CliFailed`] when bxc exited non-zero with no output.
     pub async fn scrape_markdown(
         &self,
         url: &str,
@@ -350,7 +353,7 @@ impl BxcCli {
         let page = crate::fetch::fetch(&request).await?;
         let body = page.body;
         if body.trim().is_empty() {
-            return Err(BxcError::Browser {
+            return Err(WebBrowserError::Browser {
                 url: url.to_owned(),
                 detail: "native scraper returned an empty body".to_owned(),
             });
@@ -372,7 +375,7 @@ impl BxcCli {
     ///
     /// # Errors
     ///
-    /// [`BxcError::CliFailed`] on a non-zero exit, [`BxcError::CliTimeout`] on
+    /// [`WebBrowserError::CliFailed`] on a non-zero exit, [`WebBrowserError::CliTimeout`] on
     /// expiry.
     pub async fn recon(
         &self,
@@ -394,13 +397,13 @@ impl BxcCli {
     ///
     /// # Errors
     ///
-    /// [`BxcError::CliOutput`] when stdout is not the documented JSON object,
-    /// [`BxcError::CliTimeout`] on expiry, [`BxcError::Spawn`] on spawn failure.
+    /// [`WebBrowserError::CliOutput`] when stdout is not the documented JSON object,
+    /// [`WebBrowserError::CliTimeout`] on expiry, [`WebBrowserError::Spawn`] on spawn failure.
     /// An exit of 65 with a well-formed empty body is **not** an error: bxc
     /// ran, and "no results" is a finding.
     pub async fn search(&self, query: &str, num: Option<u32>, budget: Duration) -> Result<Search> {
         if query.trim().is_empty() {
-            return Err(BxcError::NativeUnsupported {
+            return Err(WebBrowserError::NativeUnsupported {
                 operation: "search".to_owned(),
                 detail: "query must not be empty",
             });
@@ -415,23 +418,27 @@ impl BxcCli {
             .timeout(budget)
             .user_agent(crate::fetch::USER_AGENT)
             .build()
-            .map_err(|source| BxcError::Http { url: url.to_string(), source: Box::new(source) })?;
-        let response = client
-            .get(url.clone())
-            .send()
-            .await
-            .map_err(|source| BxcError::Http { url: url.to_string(), source: Box::new(source) })?;
+            .map_err(|source| WebBrowserError::Http {
+                url: url.to_string(),
+                source: Box::new(source),
+            })?;
+        let response = client.get(url.clone()).send().await.map_err(|source| {
+            WebBrowserError::Http { url: url.to_string(), source: Box::new(source) }
+        })?;
         let status = response.status();
         if !status.is_success() {
-            return Err(BxcError::HttpStatus { url: url.to_string(), status: status.as_u16() });
+            return Err(WebBrowserError::HttpStatus {
+                url: url.to_string(),
+                status: status.as_u16(),
+            });
         }
-        let html = response
-            .text()
-            .await
-            .map_err(|source| BxcError::Http { url: url.to_string(), source: Box::new(source) })?;
+        let html = response.text().await.map_err(|source| WebBrowserError::Http {
+            url: url.to_string(),
+            source: Box::new(source),
+        })?;
         let hits = parse_google_results(&html, num.unwrap_or(10) as usize);
         if hits.is_empty() {
-            return Err(BxcError::CliOutput {
+            return Err(WebBrowserError::CliOutput {
                 bin: self.path().to_path_buf(),
                 expected: "Google result headings with destination links",
                 detail: "the response contained no recognizable organic results; Google may have blocked this session".to_owned(),
@@ -461,7 +468,7 @@ impl BxcCli {
         budget: Duration,
     ) -> Result<String> {
         let translator = aphrody_translate::Translator::new(std::path::PathBuf::new(), None)
-            .map_err(|error| BxcError::Browser {
+            .map_err(|error| WebBrowserError::Browser {
                 url: "Google Translate".to_owned(),
                 detail: error.to_string(),
             })?
@@ -471,11 +478,11 @@ impl BxcCli {
             translator.translate_with_lang(text, source.unwrap_or("auto"), target),
         )
         .await
-        .map_err(|_| BxcError::BrowserTimeout {
+        .map_err(|_| WebBrowserError::BrowserTimeout {
             url: "Google Translate".to_owned(),
             secs: budget.as_secs(),
         })?
-        .map_err(|error| BxcError::Browser {
+        .map_err(|error| WebBrowserError::Browser {
             url: "Google Translate".to_owned(),
             detail: error.to_string(),
         })
@@ -489,7 +496,7 @@ impl BxcCli {
         budget: Duration,
     ) -> Result<String> {
         if profile.is_some_and(Profile::needs_browser) {
-            return Err(BxcError::NativeUnsupported {
+            return Err(WebBrowserError::NativeUnsupported {
                 operation: "google search browser profile".to_owned(),
                 detail: "the native search client currently supports public HTTP search only",
             });
@@ -519,19 +526,28 @@ impl BxcCli {
         let response = reqwest::Client::builder()
             .timeout(budget)
             .build()
-            .map_err(|source| BxcError::Http { url: url.to_string(), source: Box::new(source) })?
+            .map_err(|source| WebBrowserError::Http {
+                url: url.to_string(),
+                source: Box::new(source),
+            })?
             .get(url.clone())
             .send()
             .await
-            .map_err(|source| BxcError::Http { url: url.to_string(), source: Box::new(source) })?;
+            .map_err(|source| WebBrowserError::Http {
+                url: url.to_string(),
+                source: Box::new(source),
+            })?;
         let status = response.status();
         if !status.is_success() {
-            return Err(BxcError::HttpStatus { url: url.to_string(), status: status.as_u16() });
+            return Err(WebBrowserError::HttpStatus {
+                url: url.to_string(),
+                status: status.as_u16(),
+            });
         }
-        response
-            .text()
-            .await
-            .map_err(|source| BxcError::Http { url: url.to_string(), source: Box::new(source) })
+        response.text().await.map_err(|source| WebBrowserError::Http {
+            url: url.to_string(),
+            source: Box::new(source),
+        })
     }
 
     /// `bxc google tts <text> [--target <target>] [--speed <speed>]`.
@@ -543,7 +559,7 @@ impl BxcCli {
         budget: Duration,
     ) -> Result<String> {
         let _ = (text, target, speed, budget);
-        Err(BxcError::NativeUnsupported {
+        Err(WebBrowserError::NativeUnsupported {
             operation: "google tts".to_owned(),
             detail: "no shared native Google TTS implementation is available",
         })

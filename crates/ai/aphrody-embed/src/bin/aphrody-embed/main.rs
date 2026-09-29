@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 //! `aphrody-embed`: local embedding processes over the pure-Rust engine.
 //!
-//! - `aphrody-embed worker`: BXC's framed stdio worker (spawned by `aphrody-web-ffi`).
+//! - `aphrody-embed worker`: framed stdio worker for the unified Aphrody bridge.
 //! - `aphrody-embed serve --port <port> [--host <ip>] [--model-dir <dir>] [--threads <n>]`:
 //!   OpenAI-compatible `/v1/embeddings` for the multilingual E5 space (the former
 //!   shenron-embed service). Port and host also come from `APHRODY_EMBED_PORT` /

@@ -10,7 +10,7 @@ use std::{
 use serde_json::Value;
 use tokio::sync::{mpsc, oneshot};
 
-use crate::error::{BxcError, Result};
+use crate::error::{Result, WebBrowserError};
 
 struct Request {
     tool: String,
@@ -69,9 +69,10 @@ fn sender() -> Result<&'static mpsc::UnboundedSender<Request>> {
         Ok(sender)
     }) {
         Ok(sender) => Ok(sender),
-        Err(detail) => {
-            Err(BxcError::Browser { url: "native session".to_owned(), detail: detail.clone() })
-        },
+        Err(detail) => Err(WebBrowserError::Browser {
+            url: "native session".to_owned(),
+            detail: detail.clone(),
+        }),
     }
 }
 
@@ -103,20 +104,26 @@ async fn call_inner(
             isolated,
             reply,
         })
-        .map_err(|_| BxcError::Browser {
+        .map_err(|_| WebBrowserError::Browser {
             url: tool.to_owned(),
             detail: "native browser worker stopped".to_owned(),
         })?;
     let result = tokio::time::timeout(budget, receiver)
         .await
-        .map_err(|_| BxcError::BrowserTimeout { url: tool.to_owned(), secs: budget.as_secs() })?
-        .map_err(|_| BxcError::Browser {
+        .map_err(|_| WebBrowserError::BrowserTimeout {
+            url: tool.to_owned(),
+            secs: budget.as_secs(),
+        })?
+        .map_err(|_| WebBrowserError::Browser {
             url: tool.to_owned(),
             detail: "native browser worker ended without a reply".to_owned(),
         })?
-        .map_err(|detail| BxcError::Browser { url: tool.to_owned(), detail })?;
+        .map_err(|detail| WebBrowserError::Browser { url: tool.to_owned(), detail })?;
     if result.get("isError").and_then(Value::as_bool).unwrap_or(false) {
-        return Err(BxcError::Browser { url: tool.to_owned(), detail: text_content(&result) });
+        return Err(WebBrowserError::Browser {
+            url: tool.to_owned(),
+            detail: text_content(&result),
+        });
     }
     Ok(result)
 }

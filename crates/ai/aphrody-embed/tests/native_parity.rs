@@ -2,7 +2,7 @@
 //!
 //! Reference vectors live in `tests/fixtures/reference.json` (see `generate_reference.py`).
 //! The default model is always checked (downloaded on demand); BGE and E5 are checked
-//! when already installed or when `BXC_EMBED_TEST_ALL_MODELS=1`.
+//! when already installed or when `APHRODY_EMBED_TEST_ALL_MODELS=1`.
 
 mod common;
 
@@ -59,7 +59,7 @@ fn default_model_matches_sentence_transformers() {
 
 #[test]
 fn optional_models_match_sentence_transformers() {
-    let all = std::env::var("BXC_EMBED_TEST_ALL_MODELS").is_ok_and(|v| v == "1");
+    let all = std::env::var("APHRODY_EMBED_TEST_ALL_MODELS").is_ok_and(|v| v == "1");
     let reference = reference();
     let sentences: Vec<&str> =
         reference["sentences"].as_array().unwrap().iter().map(|s| s.as_str().unwrap()).collect();
@@ -69,7 +69,7 @@ fn optional_models_match_sentence_transformers() {
             continue;
         }
         if !all && !common::installed(model) {
-            eprintln!("SKIPPED: {model} not installed (set BXC_EMBED_TEST_ALL_MODELS=1 to fetch)");
+            eprintln!("SKIPPED: {model} not installed (set APHRODY_EMBED_TEST_ALL_MODELS=1 to fetch)");
             continue;
         }
         check_case(case, &sentences, Backend::Native);

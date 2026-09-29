@@ -106,6 +106,7 @@ aphrody-voice = { path = "crates/ai/aphrody-voice", features = [] }
 aphrody-vpn = { path = "crates/infra/aphrody-vpn", features = [] }
 aphrody-web-bridge = { path = "crates/web/aphrody-web-bridge", version = "1.0.0-canary", features = [] }
 aphrody-web-crawl = { path = "crates/web/aphrody-web-crawl", version = "1.0.0", features = [] }
+aphrody-web-detect = { path = "crates/web/aphrody-web-detect", version = "1.0.0", features = [] }
 aphrody-web-media = { path = "crates/web/aphrody-web-media", version = "1.0.0", features = [] }
 aphrody-web-chromium = { path = "crates/web/aphrody-web-chromium", version = "1.0.0-canary", features = [] }
 aphrody-web-engine = { path = "crates/web/aphrody-web-engine", version = "1.0.0", features = [] }

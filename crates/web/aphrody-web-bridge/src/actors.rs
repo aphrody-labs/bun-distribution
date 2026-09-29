@@ -15,9 +15,9 @@ use serde::Deserialize;
 use serde_json::Value;
 
 use crate::{
-    BxcCli,
+    WebBrowserClient,
     cli::Run,
-    error::{BxcError, Result},
+    error::{Result, WebBrowserError},
 };
 
 /// Default deadline for Actor discovery.
@@ -71,7 +71,7 @@ pub struct ActorRunResult {
     pub output: Option<Value>,
 }
 
-impl BxcCli {
+impl WebBrowserClient {
     /// Discover Actors from Aphrody Web Browser and installed Web packages.
     ///
     /// # Errors
@@ -79,7 +79,7 @@ impl BxcCli {
     pub async fn list_actors(&self, budget: Duration) -> Result<Vec<ActorManifest>> {
         let run = self.run(&["actor".into(), "list".into(), "--json".into()], budget).await?;
         let body = checked_json(self, &run, budget)?;
-        serde_json::from_str(body).map_err(|error| BxcError::CliOutput {
+        serde_json::from_str(body).map_err(|error| WebBrowserError::CliOutput {
             bin: self.path().to_path_buf(),
             expected: "Actor manifest array JSON",
             detail: error.to_string(),
@@ -122,7 +122,7 @@ impl BxcCli {
         drop(input_file);
         let run = run?;
         let body = checked_json(self, &run, budget)?;
-        serde_json::from_str(body).map_err(|error| BxcError::CliOutput {
+        serde_json::from_str(body).map_err(|error| WebBrowserError::CliOutput {
             bin: self.path().to_path_buf(),
             expected: "Actor run result JSON",
             detail: error.to_string(),
@@ -130,9 +130,9 @@ impl BxcCli {
     }
 }
 
-fn checked_json<'a>(cli: &BxcCli, run: &'a Run, budget: Duration) -> Result<&'a str> {
+fn checked_json<'a>(cli: &WebBrowserClient, run: &'a Run, budget: Duration) -> Result<&'a str> {
     if run.timed_out {
-        return Err(BxcError::CliTimeout {
+        return Err(WebBrowserError::CliTimeout {
             bin: cli.path().to_path_buf(),
             secs: budget.as_secs(),
             bytes: run.stdout.len(),
@@ -141,7 +141,7 @@ fn checked_json<'a>(cli: &BxcCli, run: &'a Run, budget: Duration) -> Result<&'a 
     if !run.ok() {
         // Actor input can contain credentials. Never put CLI arguments or raw
         // child output into a public error.
-        return Err(BxcError::CliFailed {
+        return Err(WebBrowserError::CliFailed {
             bin: cli.path().to_path_buf(),
             args: "actor [input redacted]".into(),
             code: run.code.map_or_else(|| "no exit code".into(), |code| code.to_string()),
@@ -150,7 +150,7 @@ fn checked_json<'a>(cli: &BxcCli, run: &'a Run, budget: Duration) -> Result<&'a 
     }
     let body = run.stdout.trim();
     if body.is_empty() {
-        return Err(BxcError::CliOutput {
+        return Err(WebBrowserError::CliOutput {
             bin: cli.path().to_path_buf(),
             expected: "Actor JSON",
             detail: "empty stdout".into(),
@@ -176,11 +176,11 @@ fn create_storage_dir() -> Result<PathBuf> {
         match builder.create(&path) {
             Ok(()) => return Ok(path),
             Err(error) if error.kind() == std::io::ErrorKind::AlreadyExists => continue,
-            Err(source) => return Err(BxcError::ActorStorage { path, source }),
+            Err(source) => return Err(WebBrowserError::ActorStorage { path, source }),
         }
     }
     let path = std::env::temp_dir().join(format!("aphrody-actor-{}-{ticks}", std::process::id()));
-    Err(BxcError::ActorStorage {
+    Err(WebBrowserError::ActorStorage {
         path,
         source: std::io::Error::new(
             std::io::ErrorKind::AlreadyExists,
@@ -213,16 +213,16 @@ fn create_input_file(input: &Value) -> Result<ActorInputFile> {
             Ok(mut file) => {
                 let guard = ActorInputFile(path.clone());
                 file.write_all(input.to_string().as_bytes())
-                    .map_err(|source| BxcError::ActorInput { path, source })?;
+                    .map_err(|source| WebBrowserError::ActorInput { path, source })?;
                 return Ok(guard);
             },
             Err(error) if error.kind() == std::io::ErrorKind::AlreadyExists => continue,
-            Err(source) => return Err(BxcError::ActorInput { path, source }),
+            Err(source) => return Err(WebBrowserError::ActorInput { path, source }),
         }
     }
     let path = std::env::temp_dir()
         .join(format!("aphrody-actor-input-{}-{ticks}.json", std::process::id()));
-    Err(BxcError::ActorInput {
+    Err(WebBrowserError::ActorInput {
         path,
         source: std::io::Error::new(
             std::io::ErrorKind::AlreadyExists,
@@ -238,7 +238,7 @@ mod tests {
 
     #[test]
     fn malformed_and_failed_runs_keep_input_out_of_errors() {
-        let cli = BxcCli::from_source(Source::Path(PathBuf::from("bxc")));
+        let cli = WebBrowserClient::from_source(Source::Path(PathBuf::from("bxc")));
         let run = Run {
             args: vec!["actor".into(), "run".into(), "--input".into(), "secret-value".into()],
             code: Some(65),

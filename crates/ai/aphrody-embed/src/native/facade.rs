@@ -1,14 +1,14 @@
 //! Flat, process-wide API intended for the C ABI bridge.
 //!
 //! Instances are created lazily on first use from the environment and **never download**:
-//! a missing model yields [`Error::NotInstalled`] (install with [`ensure_model`] /
-//! `bxc install`). A failed initialisation is not cached, so a later call succeeds once
+//! a missing model yields [`Error::NotInstalled`] (install with [`ensure_model`]).
+//! A failed initialisation is not cached, so a later call succeeds once
 //! the files exist.
 //!
-//! - `BXC_EMBED_MODEL`: embedding model id (default `sentence-transformers/all-MiniLM-L6-v2`)
-//! - `BXC_RERANK_MODEL`: reranker id (default `cross-encoder/ms-marco-MiniLM-L6-v2`)
-//! - `BXC_MODELS_DIR`: models root (default `~/.bxc/models`)
-//! - `BXC_EMBED_THREADS`: worker threads for both (default: all cores)
+//! - `APHRODY_EMBED_MODEL`: embedding model id (default `sentence-transformers/all-MiniLM-L6-v2`)
+//! - `APHRODY_RERANK_MODEL`: reranker id (default `cross-encoder/ms-marco-MiniLM-L6-v2`)
+//! - `APHRODY_MODELS_DIR`: models root (default `~/.aphrody/models`)
+//! - `APHRODY_EMBED_THREADS`: worker threads for both (default: all cores)
 //!
 //! [`ensure_model`]: super::ensure_model
 
@@ -34,7 +34,7 @@ fn env_or(name: &str, default: &str) -> String {
 
 fn env_options() -> EmbedOptions {
     EmbedOptions {
-        threads: std::env::var("BXC_EMBED_THREADS")
+        threads: std::env::var("APHRODY_EMBED_THREADS")
             .ok()
             .and_then(|v| v.trim().parse().ok())
             .unwrap_or(0),
@@ -57,20 +57,20 @@ fn get_or_init<T>(
     Ok(cell.get_or_init(|| value))
 }
 
-/// The process-wide embedder (`BXC_EMBED_MODEL`), loaded on first call without network I/O.
+/// The process-wide embedder (`APHRODY_EMBED_MODEL`), loaded on first call without network I/O.
 pub fn global_embedder() -> Result<&'static Embedder> {
     get_or_init(&EMBEDDER, || {
-        let id = env_or("BXC_EMBED_MODEL", DEFAULT_MODEL_ID);
+        let id = env_or("APHRODY_EMBED_MODEL", DEFAULT_MODEL_ID);
         let spec = find_model(&id).ok_or_else(|| Error::UnknownModel(id.clone()))?;
         let dir = require_installed(&spec, &spec.default_dir())?;
         Embedder::load(&dir, &spec, env_options())
     })
 }
 
-/// The process-wide reranker (`BXC_RERANK_MODEL`), loaded on first call without network I/O.
+/// The process-wide reranker (`APHRODY_RERANK_MODEL`), loaded on first call without network I/O.
 pub fn global_reranker() -> Result<&'static Reranker> {
     get_or_init(&RERANKER, || {
-        let id = env_or("BXC_RERANK_MODEL", DEFAULT_RERANKER_ID);
+        let id = env_or("APHRODY_RERANK_MODEL", DEFAULT_RERANKER_ID);
         let spec = find_reranker(&id).ok_or_else(|| Error::UnknownModel(id.clone()))?;
         let dir = require_installed(&spec, &spec.default_dir())?;
         Reranker::load(&dir, &spec, env_options())

@@ -13,7 +13,7 @@
 use std::path::PathBuf;
 
 /// Result alias for this crate.
-pub type Result<T> = core::result::Result<T, BxcError>;
+pub type Result<T> = core::result::Result<T, WebBrowserError>;
 
 /// Render a candidate list for an error message, one per line.
 fn bullets(paths: &[PathBuf]) -> String {
@@ -23,7 +23,7 @@ fn bullets(paths: &[PathBuf]) -> String {
 /// Everything that can go wrong reaching bxc.
 #[derive(Debug, thiserror::Error)]
 #[non_exhaustive]
-pub enum BxcError {
+pub enum WebBrowserError {
     /// The compatibility facade has no in-process implementation for this operation.
     #[error("native Web operation {operation} is unavailable: {detail}")]
     NativeUnsupported {
@@ -280,14 +280,17 @@ pub enum BxcError {
     NoStateDir,
 }
 
-impl BxcError {
-    /// Build [`BxcError::LibraryMissing`] from the candidate list.
+/// Compatibility alias for callers still using the former error name.
+pub type BxcError = WebBrowserError;
+
+impl WebBrowserError {
+    /// Build [`WebBrowserError::LibraryMissing`] from the candidate list.
     #[must_use]
     pub fn library_missing(name: &'static str, tried: &[PathBuf]) -> Self {
         Self::LibraryMissing { name, tried: bullets(tried) }
     }
 
-    /// Build [`BxcError::BinaryMissing`] from the candidate list.
+    /// Build [`WebBrowserError::BinaryMissing`] from the candidate list.
     #[must_use]
     pub fn binary_missing(name: &'static str, tried: &[PathBuf]) -> Self {
         Self::BinaryMissing { name, tried: bullets(tried) }
@@ -320,7 +323,7 @@ mod tests {
 
     #[test]
     fn a_missing_library_names_the_override_and_every_candidate() {
-        let err = BxcError::library_missing(
+        let err = WebBrowserError::library_missing(
             "bxc_rust_bridge.dll",
             &[PathBuf::from("/a/bxc_rust_bridge.dll"), PathBuf::from("/b/bxc_rust_bridge.dll")],
         );
@@ -333,7 +336,7 @@ mod tests {
 
     #[test]
     fn a_missing_binary_names_bxc_bin() {
-        let err = BxcError::binary_missing("bxc.exe", &[PathBuf::from("/x/bxc.exe")]);
+        let err = WebBrowserError::binary_missing("bxc.exe", &[PathBuf::from("/x/bxc.exe")]);
         let text = err.to_string();
         assert!(text.contains("BXC_BIN"), "{text}");
         assert!(text.contains("/x/bxc.exe"), "{text}");
@@ -343,7 +346,7 @@ mod tests {
     /// conflating the two is how a broken install hides behind an empty result.
     #[test]
     fn a_refusal_from_an_installed_bxc_is_not_a_missing_install() {
-        let err = BxcError::CliFailed {
+        let err = WebBrowserError::CliFailed {
             bin: PathBuf::from("/x/bxc"),
             args: "search foo --json".into(),
             code: "65".into(),
@@ -357,7 +360,7 @@ mod tests {
     /// quietly resolve to whatever the next candidate happens to be.
     #[test]
     fn a_broken_override_is_its_own_error_and_names_the_variable() {
-        let err = BxcError::OverrideMissing {
+        let err = WebBrowserError::OverrideMissing {
             var: "APHRODY_BXC_LIB",
             path: PathBuf::from("/c/nonexistent/bxc_rust_bridge.dll"),
         };
@@ -370,7 +373,8 @@ mod tests {
 
     #[test]
     fn the_timeout_says_how_much_output_survived_the_kill() {
-        let err = BxcError::CliTimeout { bin: PathBuf::from("/x/bxc"), secs: 45, bytes: 177 };
+        let err =
+            WebBrowserError::CliTimeout { bin: PathBuf::from("/x/bxc"), secs: 45, bytes: 177 };
         let text = err.to_string();
         assert!(text.contains("45"), "{text}");
         assert!(text.contains("177"), "{text}");

@@ -76,7 +76,7 @@ impl Reranker {
             spec: spec.clone(),
             tokenizer,
             model,
-            pool: build_pool(threads, "bxc-rerank")?,
+            pool: build_pool(threads, "aphrody-rerank")?,
             max_seq_len,
             batch_size: if opts.batch_size == 0 {
                 super::embedder::DEFAULT_BATCH_SIZE

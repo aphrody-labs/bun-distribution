@@ -33,7 +33,7 @@
 
 use std::path::{Path, PathBuf};
 
-use crate::error::{BxcError, Result};
+use crate::error::{Result, WebBrowserError};
 
 /// Environment variable naming the `bxc_rust_bridge` shared library outright.
 pub const ENV_LIB: &str = "APHRODY_BXC_LIB";
@@ -255,25 +255,27 @@ pub struct Attempt {
     ///
     /// When this is `Some`, `tried` holds exactly that one path: the search
     /// stopped there rather than continuing down the chain. See
-    /// [`BxcError::OverrideMissing`] for why.
+    /// [`WebBrowserError::OverrideMissing`] for why.
     pub failed_override: Option<&'static str>,
 }
 
 impl Attempt {
     /// Turn a failed attempt into the typed error for an executable.
-    fn into_binary_error(self) -> BxcError {
-        self.override_error().unwrap_or_else(|| BxcError::binary_missing(BIN_NAME, &self.tried))
+    fn into_binary_error(self) -> WebBrowserError {
+        self.override_error()
+            .unwrap_or_else(|| WebBrowserError::binary_missing(WEB_BROWSER_BIN_NAME, &self.tried))
     }
 
     /// Turn a failed attempt into the typed error for the shared library.
-    fn into_library_error(self) -> BxcError {
-        self.override_error().unwrap_or_else(|| BxcError::library_missing(LIB_NAME, &self.tried))
+    fn into_library_error(self) -> WebBrowserError {
+        self.override_error()
+            .unwrap_or_else(|| WebBrowserError::library_missing(UNIFIED_LIB_NAME, &self.tried))
     }
 
     /// The override error, when the attempt died on one.
-    fn override_error(&self) -> Option<BxcError> {
+    fn override_error(&self) -> Option<WebBrowserError> {
         let var = self.failed_override?;
-        Some(BxcError::OverrideMissing {
+        Some(WebBrowserError::OverrideMissing {
             var,
             path: self.tried.first().cloned().unwrap_or_default(),
         })
@@ -406,7 +408,7 @@ pub fn binary_candidates() -> Vec<(PathBuf, fn(PathBuf) -> Source)> {
 ///
 /// # Errors
 ///
-/// [`BxcError::BinaryMissing`], carrying every candidate that was probed.
+/// [`WebBrowserError::BinaryMissing`], carrying every candidate that was probed.
 pub fn binary() -> Result<Source> {
     let attempt = binary_attempt();
     attempt.found.clone().ok_or_else(|| attempt.into_binary_error())
@@ -432,6 +434,10 @@ pub fn library_candidates() -> Vec<(PathBuf, fn(PathBuf) -> Source)> {
     }
 
     if let Some(home) = home() {
+        out.push((
+            home.join(".local").join("bin").join(UNIFIED_LIB_NAME),
+            Source::Home as fn(PathBuf) -> Source,
+        ));
         out.push((
             home.join(".local").join("bin").join(LIB_NAME),
             Source::Home as fn(PathBuf) -> Source,
@@ -474,6 +480,7 @@ pub fn library_candidates() -> Vec<(PathBuf, fn(PathBuf) -> Source)> {
     }
 
     for dir in path_dirs() {
+        out.push((dir.join(UNIFIED_LIB_NAME), Source::Path as fn(PathBuf) -> Source));
         out.push((dir.join(LIB_NAME), Source::Path as fn(PathBuf) -> Source));
     }
 
@@ -488,8 +495,10 @@ pub fn library_candidates() -> Vec<(PathBuf, fn(PathBuf) -> Source)> {
 /// crate keeps `unsafe` confined to [`crate::ffi`].
 #[must_use]
 pub fn managed_candidates_in(root: &Path) -> Vec<(PathBuf, fn(PathBuf) -> Source)> {
-    let mut out: Vec<(PathBuf, fn(PathBuf) -> Source)> =
-        vec![(root.join(LIB_NAME), Source::Managed as fn(PathBuf) -> Source)];
+    let mut out: Vec<(PathBuf, fn(PathBuf) -> Source)> = vec![
+        (root.join(UNIFIED_LIB_NAME), Source::Managed as fn(PathBuf) -> Source),
+        (root.join(LIB_NAME), Source::Managed as fn(PathBuf) -> Source),
+    ];
 
     let Ok(entries) = std::fs::read_dir(root) else { return out };
     let mut dirs: Vec<PathBuf> = entries
@@ -510,6 +519,7 @@ pub fn managed_candidates_in(root: &Path) -> Vec<(PathBuf, fn(PathBuf) -> Source
     for dir in dirs {
         for sub in ["", "lib", "bin"] {
             let base = if sub.is_empty() { dir.clone() } else { dir.join(sub) };
+            out.push((base.join(UNIFIED_LIB_NAME), Source::Managed as fn(PathBuf) -> Source));
             out.push((base.join(LIB_NAME), Source::Managed as fn(PathBuf) -> Source));
         }
     }
@@ -520,7 +530,7 @@ pub fn managed_candidates_in(root: &Path) -> Vec<(PathBuf, fn(PathBuf) -> Source
 ///
 /// # Errors
 ///
-/// [`BxcError::LibraryMissing`], carrying every candidate that was probed.
+/// [`WebBrowserError::LibraryMissing`], carrying every candidate that was probed.
 pub fn library() -> Result<Source> {
     let attempt = library_attempt();
     attempt.found.clone().ok_or_else(|| attempt.into_library_error())
@@ -661,7 +671,11 @@ mod tests {
         let paths: Vec<String> =
             candidates.iter().map(|(p, _)| p.display().to_string().replace('\\', "/")).collect();
 
-        assert!(paths[0].ends_with(LIB_NAME), "the root itself is a candidate: {:?}", paths[0]);
+        assert!(
+            paths[0].ends_with(UNIFIED_LIB_NAME),
+            "the unified library is first: {:?}",
+            paths[0]
+        );
         let idx_new = paths.iter().position(|p| p.contains("bxc-0.9.4")).expect("0.9.4 probed");
         let idx_old = paths.iter().position(|p| p.contains("bxc-0.9.1")).expect("0.9.1 probed");
         assert!(idx_new < idx_old, "the newest install must be probed first: {paths:?}");
@@ -677,7 +691,7 @@ mod tests {
     fn managed_scan_on_a_missing_root_is_an_answer_not_a_panic() {
         let dir = tempfile::tempdir().unwrap();
         let absent = dir.path().join("nope");
-        assert_eq!(managed_candidates_in(&absent).len(), 1, "only the root candidate");
+        assert_eq!(managed_candidates_in(&absent).len(), 2, "only flat root candidates");
     }
 
     #[test]

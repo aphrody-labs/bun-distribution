@@ -107,6 +107,12 @@ pub(crate) enum WebAction {
         #[arg(long)]
         json: bool,
     },
+    /// Detect site technologies and anti-bot challenges with the shared Rust engine
+    Detect {
+        url: String,
+        #[arg(long)]
+        json: bool,
+    },
     /// Ask Gemini through the shared authenticated Rust Web client
     Gemini {
         #[arg(required = true, num_args = 1..)]
@@ -537,6 +543,27 @@ pub(crate) async fn handle_web(action: WebAction) -> miette::Result<()> {
                 print_web_json(&serde_json::to_value(extracted).into_diagnostic()?)?;
             } else {
                 println!("{}", extracted.markdown);
+            }
+        },
+        WebAction::Detect { url, json } => {
+            let report = aphrody_web_detect::detect_url(&url)
+                .await
+                .map_err(|error| miette!("Web detection: {error}"))?;
+            if json {
+                print_web_json(&serde_json::to_value(report).into_diagnostic()?)?;
+            } else {
+                println!("{} [{}]", report.final_url, report.http_status);
+                for finding in &report.findings {
+                    println!(
+                        "- {} ({:?}, {:.0}%): {}",
+                        finding.name,
+                        finding.bucket,
+                        finding.confidence * 100.0,
+                        finding.evidence
+                    );
+                }
+                println!("Challenge: {:?}", report.challenge);
+                println!("Suggested profile: {:?}", report.strategy.profile);
             }
         },
         WebAction::Gemini { prompt, model, language, cookies, json } => {
@@ -1010,5 +1037,8 @@ mod web_cli_tests {
             browser.action,
             WebAction::Browser { action: WebBrowserAction::Snapshot { json: true, .. } }
         ));
+        let detect = Probe::try_parse_from(["web", "detect", "https://example.com", "--json"])
+            .expect("detect flags parse");
+        assert!(matches!(detect.action, WebAction::Detect { json: true, .. }));
     }
 }

@@ -8,10 +8,10 @@ use std::path::{Path, PathBuf};
 
 use serde::{Deserialize, Serialize};
 
-/// Model used when nothing else is requested (`BXC_EMBED_MODEL` unset).
+/// Model used when nothing else is requested (`APHRODY_EMBED_MODEL` unset).
 pub const DEFAULT_MODEL_ID: &str = "sentence-transformers/all-MiniLM-L6-v2";
 
-/// Cross-encoder used when nothing else is requested (`BXC_RERANK_MODEL` unset).
+/// Cross-encoder used when nothing else is requested (`APHRODY_RERANK_MODEL` unset).
 /// (Hugging Face renamed `ms-marco-MiniLM-L-6-v2` to this id; the old name is an alias.)
 pub const DEFAULT_RERANKER_ID: &str = "cross-encoder/ms-marco-MiniLM-L6-v2";
 
@@ -146,16 +146,15 @@ pub fn model_dir_name(id: &str) -> String {
     id.replace('/', "--")
 }
 
-/// Root directory holding all models: `$BXC_MODELS_DIR`, else `~/.bxc/models`.
+/// Root directory holding all models: `$APHRODY_MODELS_DIR`, else Aphrody's shared models directory.
 pub fn models_root() -> PathBuf {
-    if let Some(dir) = std::env::var_os("BXC_MODELS_DIR").filter(|v| !v.is_empty()) {
-        return PathBuf::from(dir);
-    }
-    let home = std::env::var_os("HOME")
-        .or_else(|| std::env::var_os("USERPROFILE"))
-        .map(PathBuf::from)
-        .unwrap_or_else(|| PathBuf::from("."));
-    home.join(".bxc").join("models")
+    let explicit = std::env::var_os("APHRODY_MODELS_DIR").filter(|v| !v.is_empty()).map(PathBuf::from);
+    let shared = aphrody_models::paths::models_dir().ok();
+    resolve_models_root(explicit, shared)
+}
+
+fn resolve_models_root(explicit: Option<PathBuf>, shared: Option<PathBuf>) -> PathBuf {
+    explicit.or(shared).unwrap_or_else(|| PathBuf::from(".aphrody").join("models"))
 }
 
 /// Look up a model by id (exact match, or match on the part after the slash).
@@ -418,6 +417,15 @@ impl ModelPaths {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn model_root_prefers_override_then_shared_state() {
+        let explicit = PathBuf::from("/custom/models");
+        let shared = PathBuf::from("/state/models");
+        assert_eq!(resolve_models_root(Some(explicit.clone()), Some(shared.clone())), explicit);
+        assert_eq!(resolve_models_root(None, Some(shared.clone())), shared);
+        assert_eq!(resolve_models_root(None, None), PathBuf::from(".aphrody/models"));
+    }
 
     #[test]
     fn manifest_is_well_formed() {

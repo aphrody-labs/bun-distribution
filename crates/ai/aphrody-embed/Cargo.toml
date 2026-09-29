@@ -28,14 +28,14 @@ default     = []
 embeddings  = ["dep:fastembed", "dep:ort"]
 # Pure-Rust CPU engine (formerly the `aphrody-web-embed` crate): padding-free
 # BERT on `gemm` kernels, pinned Hugging Face manifest with sha256 checks,
-# cross-encoder reranker. Serves BXC's worker and the E5 HTTP endpoint.
+# cross-encoder reranker. Serves the Aphrody worker and E5 HTTP endpoint.
 native      = [
     "dep:tokenizers", "dep:ureq", "dep:sha2", "dep:serde", "dep:serde_json",
     "dep:rayon", "dep:gemm", "dep:safetensors", "dep:memmap2", "dep:base64",
 ]
 # candle-transformers BERT as a reference backend for parity tests.
 candle      = ["native", "dep:candle-core", "dep:candle-nn", "dep:candle-transformers"]
-# The `aphrody-embed` binary: `worker` (BXC stdio frames) and `serve`
+# The `aphrody-embed` binary: `worker` (framed stdio) and `serve`
 # (OpenAI-compatible `/v1/embeddings`, the former shenron-embed contract).
 server      = ["native", "dep:axum", "dep:tokio", "dep:aphrody-http-error"]
 

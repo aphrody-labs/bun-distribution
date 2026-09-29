@@ -120,6 +120,7 @@ scraper                   = { workspace = true }
 # chain behind `aphrody bxc`, and the in-process HTML→Markdown cdylib.
 aphrody-web-bridge                = { workspace = true }
 aphrody-web-crawl                 = { workspace = true }
+aphrody-web-detect                = { workspace = true }
 aphrody-web-extract               = { workspace = true }
 aphrody-web-media                 = { workspace = true }
 aphrody-x                         = { workspace = true }

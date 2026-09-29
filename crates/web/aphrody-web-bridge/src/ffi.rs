@@ -6,7 +6,7 @@
 use std::{marker::PhantomData, path::Path, sync::OnceLock};
 
 use crate::{
-    error::{BxcError, Result},
+    error::{Result, WebBrowserError},
     resolve::Source,
 };
 
@@ -37,7 +37,7 @@ impl Bridge {
     /// Returns `LibraryUnavailable` if the current executable path cannot be read.
     pub fn load() -> Result<Self> {
         let path = std::env::current_exe()
-            .map_err(|error| BxcError::LibraryUnavailable { detail: error.to_string() })?;
+            .map_err(|error| WebBrowserError::LibraryUnavailable { detail: error.to_string() })?;
         Ok(Self { source: Source::InTree(path) })
     }
 
@@ -47,7 +47,7 @@ impl Bridge {
     /// Returns `OverrideMissing` when the named path does not exist.
     pub fn load_from(source: Source) -> Result<Self> {
         if !source.path().is_file() {
-            return Err(BxcError::OverrideMissing {
+            return Err(WebBrowserError::OverrideMissing {
                 var: "bridge source",
                 path: source.path().to_path_buf(),
             });
@@ -132,13 +132,13 @@ impl Bridge {
                 .map_err(|error| error.to_string())
         })
         .join()
-        .map_err(|_| BxcError::Browser {
+        .map_err(|_| WebBrowserError::Browser {
             url: domain.clone(),
             detail: "DNS worker panicked".to_owned(),
         })?
-        .map_err(|detail| BxcError::Browser { url: domain.clone(), detail })?;
+        .map_err(|detail| WebBrowserError::Browser { url: domain.clone(), detail })?;
         serde_json::to_string(&result)
-            .map_err(|error| BxcError::Browser { url: domain, detail: error.to_string() })
+            .map_err(|error| WebBrowserError::Browser { url: domain, detail: error.to_string() })
     }
 }
 
@@ -163,7 +163,7 @@ impl Dom<'_> {
         self.tree
             .query_selector(selector)
             .map(|node| node.map(|id| self.tree.outer_html(id)))
-            .map_err(|detail| BxcError::Selector { selector: selector.to_owned(), detail })
+            .map_err(|detail| WebBrowserError::Selector { selector: selector.to_owned(), detail })
     }
 
     /// Outer HTML of all matching elements.
@@ -174,7 +174,7 @@ impl Dom<'_> {
         self.tree
             .query_selector_all(selector)
             .map(|nodes| nodes.into_iter().map(|id| self.tree.outer_html(id)).collect())
-            .map_err(|detail| BxcError::Selector { selector: selector.to_owned(), detail })
+            .map_err(|detail| WebBrowserError::Selector { selector: selector.to_owned(), detail })
     }
 }
 
