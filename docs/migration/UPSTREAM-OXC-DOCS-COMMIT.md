@@ -13,3 +13,7 @@ commit, Git blob ID and SHA-256 in
 This imports documentation only. Oxc source and its upstream workspace remain
 independent under the migration plan; this does not claim source or build
 parity.
+
+A fresh clone of `bb5fb65` verified the expanded first-party, Bun and Oxc set:
+4,766 document targets and all 16 license records matched their recorded
+SHA-256 values, with no missing files.

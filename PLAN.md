@@ -210,6 +210,9 @@ source-closure, compatibility, installed-workflow, license, and rollback gate.
       [Oxc docs audit](docs/migration/UPSTREAM-OXC-DOCS-COMMIT.md) records zero
       missing files and zero hash mismatches. Oxc source remains an independent
       upstream workspace.
+- [x] Verify the expanded documentation set from a fresh clone of `bb5fb65`:
+      all 4,766 first-party, Bun and Oxc document targets and all 16 license
+      source records are present with matching SHA-256 values.
 - [ ] Complete Infra's consumer and pipeline cutover without the transitional
       checkout. The Rust library suite now passes 52/52 after its Git overview
       test was isolated in a temporary repository. `pipeline --stage check --json` reports 12
