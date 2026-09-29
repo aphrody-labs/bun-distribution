@@ -1,9 +1,11 @@
-/** Canonical Google/Gemini facade. Implementations remain in BXC. */
+/** Canonical Google/Gemini facade. Web integrations remain in BXC. */
 export * from "@aphrody/bxc/google";
 export * from "@aphrody/bxc/google/gemini-web";
 export * from "@aphrody/bxc/google/gemini-session";
 export * from "./runtime.ts";
 export * from "./vertex.ts";
+export * from "./api.ts";
+export * from "./drive-sync.ts";
 
 /** Google account authentication and data operations backed by the native
  * credential-store SDK. OAuth tokens never enter the Bun process. */

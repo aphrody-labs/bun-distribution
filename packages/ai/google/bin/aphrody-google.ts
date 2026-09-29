@@ -1,6 +1,17 @@
 #!/usr/bin/env bun
-/** Thin Bun entrypoint: the Rust binary remains the single authority. */
+/** Canonical Google CLI: Bun owns Drive sync; other commands use the Rust binary. */
 import { join } from "node:path";
+
+if (Bun.argv[2] === "drive") {
+	try {
+		const { runDriveCli } = await import("../src/drive-cli.ts");
+		await runDriveCli(Bun.argv.slice(3));
+	} catch (error) {
+		console.error(error instanceof Error ? error.message : String(error));
+		process.exitCode = 1;
+	}
+	process.exit();
+}
 
 async function resolveBinary(): Promise<string> {
 	const configured = Bun.env.APHRODY_GOOGLE_BIN;
