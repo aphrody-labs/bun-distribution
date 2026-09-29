@@ -124,8 +124,8 @@ The single `aphrody-ffi` build exports extraction, text, DOM and index symbols;
 its 24 Rust unit tests and Bun native extraction and HNSW persistence smokes
 passed through the single `bun/index.ts` loader. The Rust Web
 bridge loaded that exact `libaphrody_ffi.so` through `APHRODY_FFI_LIB` and
-passed its title, Markdown and DOM tests. The Web v4 ABI, browser/network
-tools, final Bun loader and sole MCP endpoint are not yet cut over.
+passed its title, Markdown and DOM tests. The source Web Bun and MCP consumers
+are not yet cut over.
 
 The next ABI slice moves asynchronous job handles and embedding worker
 adapters into the same library. It reuses the existing process-wide Tokio
@@ -149,6 +149,24 @@ the network adapter's invalid-URL checks exercise error handling without
 contacting an external service. Its 104 source tests and strict Clippy pass in
 the target workspace. Live browser, proxy, TLS and stealth behavior still
 require scoped integration checks.
+
+The Rust X client and ranking engine are imported as shared workspace crates,
+with source and target hashes in
+[`aphrody-x-import.json`](aphrody-x-import.json) and
+[`aphrody-x-algorithm-import.json`](aphrody-x-algorithm-import.json). The X
+client uses the root HTTP and SQLite versions; its source files and catalog
+data are unchanged. The last source Web network adapter is now inside the
+single `aphrody-ffi`, linked to those crates and Obscura DNS. A symbol inventory
+finds all 67 source Web ABI functions in the target and matching signatures
+for the 65 common functions; the remaining two are the v4 version exports now
+provided by the target. Historical aliases stay only for consumer cutover.
+This is ABI surface coverage, not browser or network behavior parity.
+The target X crates passed 71 imported unit tests, one new isolated TLS
+provider test, one integration test and three
+non-ignored doc tests, plus strict Clippy. The unified FFI passed 35 unit
+tests, built one cdylib, and its `nm -D` export audit found all 67 source Web
+symbols. A Bun smoke loaded that library without an override, checked Web ABI
+v4, and ranked an empty candidate set without network or credentials.
 
 The target `aphrody-mcp` now registers `aphrody_web_extract_html` directly from
 the shared extractor. Its no-default-features check passes after importing the

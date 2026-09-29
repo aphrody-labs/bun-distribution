@@ -1,7 +1,7 @@
 //! Web ABI adapters hosted by the single Aphrody native library.
 //!
-//! These are a compatible subset of the BXC v4 symbol catalog. Do not expose
-//! `aphrody_web_bridge_abi_version` until the entire v4 catalog is present.
+//! The source Web v4 symbol catalog is hosted by this one native library.
+//! Historical aliases remain during consumer migration.
 
 mod cookies;
 mod dom;
@@ -11,6 +11,8 @@ mod ffi_util;
 mod index;
 mod jobs;
 mod native_http;
+mod net;
+mod net_aliases;
 mod text;
 
 pub use cookies::*;
@@ -20,9 +22,23 @@ pub use extract::*;
 pub use index::*;
 pub use jobs::*;
 pub use native_http::*;
+pub use net::*;
+pub use net_aliases::*;
 pub use text::*;
 
 use std::ffi::c_char;
+
+pub const APHRODY_WEB_BRIDGE_ABI_VERSION: u32 = 4;
+
+#[unsafe(no_mangle)]
+pub extern "C" fn aphrody_web_bridge_abi_version() -> u32 {
+    APHRODY_WEB_BRIDGE_ABI_VERSION
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn bxc_bridge_abi_version() -> u32 {
+    APHRODY_WEB_BRIDGE_ABI_VERSION
+}
 
 /// Free an owned string returned by a Web ABI function in this library.
 ///
@@ -243,6 +259,39 @@ mod tests {
             );
             assert_eq!(CStr::from_ptr(result).to_str().unwrap(), "[]");
             aphrody_web_free_string(result);
+        }
+    }
+
+    #[test]
+    fn web_v4_version_and_network_jobs_share_one_library() {
+        assert_eq!(aphrody_web_bridge_abi_version(), 4);
+        assert_eq!(bxc_bridge_abi_version(), aphrody_web_bridge_abi_version());
+
+        // SAFETY: null pointers are rejected before network or credential access.
+        let ids = unsafe {
+            [
+                aphrody_web_dns_recon_submit(std::ptr::null(), 1000),
+                aphrody_web_gemini_web_ask_submit(
+                    std::ptr::null(),
+                    std::ptr::null(),
+                    std::ptr::null(),
+                    1000,
+                ),
+                aphrody_web_x_user_by_screen_name_submit(
+                    std::ptr::null(),
+                    std::ptr::null(),
+                    std::ptr::null(),
+                    1000,
+                ),
+            ]
+        };
+        for id in ids {
+            assert!(id > 0);
+            assert_eq!(aphrody_web_job_status(id), 1);
+            let result = aphrody_web_job_take(id);
+            assert!(!result.is_null());
+            assert!(unsafe { CStr::from_ptr(result) }.to_string_lossy().contains("error"));
+            unsafe { aphrody_web_free_string(result) };
         }
     }
 }

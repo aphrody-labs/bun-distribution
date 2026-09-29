@@ -840,6 +840,8 @@ dependencies = [
  "aphrody-web-chromium",
  "aphrody-web-extract",
  "aphrody-web-index",
+ "aphrody-x",
+ "aphrody-x-algorithm",
  "base64 0.22.1",
  "mimalloc",
  "obscura-dom 0.1.1",
@@ -2198,6 +2200,36 @@ dependencies = [
  "uiautomation",
  "vigem-rust",
  "windows 0.62.2",
+]
+
+[[package]]
+name = "aphrody-x"
+version = "0.3.1"
+dependencies = [
+ "anyhow",
+ "aphrody-x-algorithm",
+ "clap",
+ "dirs 6.0.0",
+ "json5",
+ "regex",
+ "reqwest 0.13.5",
+ "rusqlite",
+ "rustls",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.21",
+ "time",
+ "tokio",
+ "uuid",
+]
+
+[[package]]
+name = "aphrody-x-algorithm"
+version = "0.2.1"
+dependencies = [
+ "serde",
+ "serde_json",
+ "thiserror 2.0.21",
 ]
 
 [[package]]
@@ -9834,6 +9866,17 @@ dependencies = [
  "cfg-if",
  "futures-util",
  "wasm-bindgen",
+]
+
+[[package]]
+name = "json5"
+version = "0.4.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "96b0db21af676c1ce64250b5f40f3ce2cf27e4e47cb91ed91eb6fe9350b430c1"
+dependencies = [
+ "pest",
+ "pest_derive",
+ "serde",
 ]
 
 [[package]]
@@ -19308,6 +19351,7 @@ dependencies = [
  "atomic",
  "getrandom 0.4.3",
  "js-sys",
+ "rand 0.10.3",
  "serde_core",
  "wasm-bindgen",
 ]

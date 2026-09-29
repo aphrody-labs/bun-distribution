@@ -9,10 +9,12 @@
     "Move selected C ABI adapters into the one Aphrody FFI crate",
     "Use root workspace dependencies and shared Rust Web libraries",
     "Keep historical symbol aliases only during consumer cutover",
-    "Do not advertise Web ABI v4 before all source symbols are present",
     "Web job and embedding adapters reuse aphrody-ffi's existing process-wide Tokio runtime",
     "Chromium cookie adapter calls the locally imported shared profile parser; no credentials are imported",
-    "Native Obscura HTTP adapter now has a nonblocking job submit symbol using the shared runtime"
+    "Native Obscura HTTP adapter now has a nonblocking job submit symbol using the shared runtime",
+    "The final source net.rs adapter now links local aphrody-x and aphrody-x-algorithm crates",
+    "All 67 source Web ABI symbols and 65 shared signatures are present; Web ABI v4 is exported by the one cdylib",
+    "Canonical network aliases are generated in web/net_aliases.rs while historical aliases remain for cutover"
   ],
   "files": [
     {
@@ -69,6 +71,13 @@
       "target": "crates/ai/aphrody-ffi/src/web/native_http.rs",
       "source_sha256": "a99c65f7cc3cdcdc3e077db74b4cb0ef63e867eb73dbc37690d64b0a7fb4838f",
       "target_sha256": "82a3aa8461a8ff99fc464c7ff29fd5efa184bd2e721d078d677c8bea26447b3e",
+      "adapted": true
+    },
+    {
+      "source": "aphrody-web/crates/aphrody-web-ffi/src/net.rs",
+      "target": "crates/ai/aphrody-ffi/src/web/net.rs",
+      "source_sha256": "1b5379b305786eb74870a44081c30d62742ec5bf435adcc7dfdc3931e99ddf53",
+      "target_sha256": "41a658a30d30fb3649d8db4391b471eeb6b4400def1eb04f0c965dabaadafa35",
       "adapted": true
     }
   ]

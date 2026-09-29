@@ -384,6 +384,25 @@ APHRODY_NODISCARD APHRODY_MALLOC APHRODY_API char *aphrody_web_obscura_fetch(con
 APHRODY_NODISCARD APHRODY_API uint64_t aphrody_web_obscura_fetch_submit(const char *url, uint8_t stealth, uint32_t timeout_ms);
 APHRODY_NODISCARD APHRODY_MALLOC APHRODY_API char *bxc_obscura_fetch(const char *url, uint8_t stealth, uint32_t timeout_ms);
 
+/* Web ABI v4 and native network operations. */
+APHRODY_NODISCARD APHRODY_API uint32_t aphrody_web_bridge_abi_version(void);
+APHRODY_NODISCARD APHRODY_API uint32_t bxc_bridge_abi_version(void);
+APHRODY_NODISCARD APHRODY_MALLOC APHRODY_API char *aphrody_web_dns_recon(const char *domain_ptr);
+APHRODY_NODISCARD APHRODY_API uint64_t aphrody_web_dns_recon_submit(const char *domain_ptr, uint32_t timeout_ms);
+APHRODY_NODISCARD APHRODY_MALLOC APHRODY_API char *aphrody_web_gemini_web_ask(const char *cookie_path_ptr, const char *prompt_ptr, const char *model_ptr);
+APHRODY_NODISCARD APHRODY_API uint64_t aphrody_web_gemini_web_ask_submit(const char *cookie_path_ptr, const char *prompt_ptr, const char *model_ptr, uint32_t timeout_ms);
+APHRODY_NODISCARD APHRODY_MALLOC APHRODY_API char *aphrody_web_x_user_by_screen_name(const char *auth_token_ptr, const char *ct0_ptr, const char *handle_ptr);
+APHRODY_NODISCARD APHRODY_API uint64_t aphrody_web_x_user_by_screen_name_submit(const char *auth_token_ptr, const char *ct0_ptr, const char *handle_ptr, uint32_t timeout_ms);
+APHRODY_NODISCARD APHRODY_MALLOC APHRODY_API char *aphrody_web_x_user_tweets(const char *auth_token_ptr, const char *ct0_ptr, const char *handle_ptr, uint32_t count);
+APHRODY_NODISCARD APHRODY_API uint64_t aphrody_web_x_user_tweets_submit(const char *auth_token_ptr, const char *ct0_ptr, const char *handle_ptr, uint32_t count, uint32_t timeout_ms);
+APHRODY_NODISCARD APHRODY_MALLOC APHRODY_API char *aphrody_web_x_community_by_rest_id(const char *auth_token_ptr, const char *ct0_ptr, const char *community_id_ptr);
+APHRODY_NODISCARD APHRODY_API uint64_t aphrody_web_x_community_by_rest_id_submit(const char *auth_token_ptr, const char *ct0_ptr, const char *community_id_ptr, uint32_t timeout_ms);
+APHRODY_NODISCARD APHRODY_MALLOC APHRODY_API char *aphrody_web_x_community_tweets(const char *auth_token_ptr, const char *ct0_ptr, const char *community_id_ptr, uint32_t count);
+APHRODY_NODISCARD APHRODY_API uint64_t aphrody_web_x_community_tweets_submit(const char *auth_token_ptr, const char *ct0_ptr, const char *community_id_ptr, uint32_t count, uint32_t timeout_ms);
+APHRODY_NODISCARD APHRODY_MALLOC APHRODY_API char *aphrody_web_x_community_info_and_tweets(const char *auth_token_ptr, const char *ct0_ptr, const char *community_id_ptr, uint32_t count);
+APHRODY_NODISCARD APHRODY_API uint64_t aphrody_web_x_community_info_and_tweets_submit(const char *auth_token_ptr, const char *ct0_ptr, const char *community_id_ptr, uint32_t count, uint32_t timeout_ms);
+APHRODY_NODISCARD APHRODY_MALLOC APHRODY_API char *aphrody_web_x_algorithm_rank(const char *candidates_json_ptr, const char *context_json_ptr, uint32_t top_k);
+
 #ifdef __cplusplus
 } /* extern "C" */
 #endif

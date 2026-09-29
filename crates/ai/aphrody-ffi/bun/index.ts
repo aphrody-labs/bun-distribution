@@ -18,6 +18,7 @@ import { fileURLToPath } from "node:url";
 
 /** ABI version this binding is written against. */
 export const EXPECTED_ABI_VERSION = 1;
+export const EXPECTED_WEB_ABI_VERSION = 4;
 
 const ENCODER = new TextEncoder();
 
@@ -69,6 +70,7 @@ function resolveLibPath(): string {
 
 const SYMBOLS = {
   aphrody_abi_version: { args: [], returns: FFIType.u32 },
+  aphrody_web_bridge_abi_version: { args: [], returns: FFIType.u32 },
   aphrody_version: { args: [], returns: FFIType.cstring },
   aphrody_run_json: { args: [FFIType.cstring], returns: FFIType.i32 },
   aphrody_run_captured: { args: [FFIType.cstring], returns: FFIType.ptr },
@@ -100,6 +102,14 @@ const SYMBOLS = {
   aphrody_web_embed_install_submit: { args: [FFIType.ptr, FFIType.u32], returns: FFIType.u64_fast },
   aphrody_web_get_chromium_cookies: { args: [FFIType.ptr, FFIType.ptr, FFIType.ptr], returns: FFIType.ptr },
   aphrody_web_obscura_fetch_submit: { args: [FFIType.ptr, FFIType.u8, FFIType.u32], returns: FFIType.u64_fast },
+  aphrody_web_dns_recon_submit: { args: [FFIType.ptr, FFIType.u32], returns: FFIType.u64_fast },
+  aphrody_web_gemini_web_ask_submit: { args: [FFIType.ptr, FFIType.ptr, FFIType.ptr, FFIType.u32], returns: FFIType.u64_fast },
+  aphrody_web_x_user_by_screen_name_submit: { args: [FFIType.ptr, FFIType.ptr, FFIType.ptr, FFIType.u32], returns: FFIType.u64_fast },
+  aphrody_web_x_user_tweets_submit: { args: [FFIType.ptr, FFIType.ptr, FFIType.ptr, FFIType.u32, FFIType.u32], returns: FFIType.u64_fast },
+  aphrody_web_x_community_by_rest_id_submit: { args: [FFIType.ptr, FFIType.ptr, FFIType.ptr, FFIType.u32], returns: FFIType.u64_fast },
+  aphrody_web_x_community_tweets_submit: { args: [FFIType.ptr, FFIType.ptr, FFIType.ptr, FFIType.u32, FFIType.u32], returns: FFIType.u64_fast },
+  aphrody_web_x_community_info_and_tweets_submit: { args: [FFIType.ptr, FFIType.ptr, FFIType.ptr, FFIType.u32, FFIType.u32], returns: FFIType.u64_fast },
+  aphrody_web_x_algorithm_rank: { args: [FFIType.ptr, FFIType.ptr, FFIType.u32], returns: FFIType.ptr },
 } as const;
 
 type FfiLibrary = ReturnType<typeof dlopen<typeof SYMBOLS>>;
@@ -113,6 +123,13 @@ function loadLib(): FfiLibrary {
       loaded.close();
       throw new Error(
         `aphrody-ffi ABI mismatch: binding expects ${EXPECTED_ABI_VERSION}, library reports ${actual}`,
+      );
+    }
+    const webActual = loaded.symbols.aphrody_web_bridge_abi_version();
+    if (webActual !== EXPECTED_WEB_ABI_VERSION) {
+      loaded.close();
+      throw new Error(
+        `aphrody-ffi Web ABI mismatch: binding expects ${EXPECTED_WEB_ABI_VERSION}, library reports ${webActual}`,
       );
     }
     lib = loaded;
@@ -284,6 +301,53 @@ export function webGetChromiumCookies(
 /** Start a native HTTP fetch without blocking Bun's event loop. Poll via webJobTake. */
 export function webObscuraFetchSubmit(url: string, stealth = false, timeoutMs = 30000): number {
   return Number(loadLib().symbols.aphrody_web_obscura_fetch_submit(cstr(url), stealth ? 1 : 0, timeoutMs));
+}
+
+export function webDnsReconSubmit(domain: string, timeoutMs = 30000): number {
+  return Number(loadLib().symbols.aphrody_web_dns_recon_submit(cstr(domain), timeoutMs));
+}
+
+export function webGeminiAskSubmit(cookiePath: string, prompt: string, model?: string, timeoutMs = 30000): number {
+  return Number(loadLib().symbols.aphrody_web_gemini_web_ask_submit(
+    cstr(cookiePath), cstr(prompt), model === undefined ? null : cstr(model), timeoutMs,
+  ));
+}
+
+export function webXUserSubmit(authToken: string, ct0: string, handle: string, timeoutMs = 30000): number {
+  return Number(loadLib().symbols.aphrody_web_x_user_by_screen_name_submit(
+    cstr(authToken), cstr(ct0), cstr(handle), timeoutMs,
+  ));
+}
+
+export function webXTweetsSubmit(authToken: string, ct0: string, handle: string, count = 20, timeoutMs = 30000): number {
+  return Number(loadLib().symbols.aphrody_web_x_user_tweets_submit(
+    cstr(authToken), cstr(ct0), cstr(handle), count, timeoutMs,
+  ));
+}
+
+export function webXCommunitySubmit(authToken: string, ct0: string, communityId: string, timeoutMs = 30000): number {
+  return Number(loadLib().symbols.aphrody_web_x_community_by_rest_id_submit(
+    cstr(authToken), cstr(ct0), cstr(communityId), timeoutMs,
+  ));
+}
+
+export function webXCommunityTweetsSubmit(authToken: string, ct0: string, communityId: string, count = 20, timeoutMs = 30000): number {
+  return Number(loadLib().symbols.aphrody_web_x_community_tweets_submit(
+    cstr(authToken), cstr(ct0), cstr(communityId), count, timeoutMs,
+  ));
+}
+
+export function webXCommunityInfoAndTweetsSubmit(authToken: string, ct0: string, communityId: string, count = 20, timeoutMs = 30000): number {
+  return Number(loadLib().symbols.aphrody_web_x_community_info_and_tweets_submit(
+    cstr(authToken), cstr(ct0), cstr(communityId), count, timeoutMs,
+  ));
+}
+
+export function webXAlgorithmRank(candidates: unknown[], context: Record<string, unknown>, topK: number): unknown {
+  const result = readOwnedString(loadLib().symbols.aphrody_web_x_algorithm_rank(
+    cstr(JSON.stringify(candidates)), cstr(JSON.stringify(context)), topK,
+  ));
+  return JSON.parse(result) as unknown;
 }
 
 /** Native ABI version reported by the loaded library. */

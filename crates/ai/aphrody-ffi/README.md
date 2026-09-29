@@ -22,8 +22,8 @@ panics**, so running aphrody inside a host process never tears the host down.
 
 The Web extraction, DOM/text and HNSW index adapters also live in this crate
 and link the shared `aphrody-web-extract`, `obscura-dom` and `aphrody-web-index` libraries. The Web
-source bridge still has more symbols to migrate. Its historical aliases in
-this crate are temporary and do not imply complete Web ABI compatibility.
+source bridge's v4 symbol catalog now lives here. Historical aliases in
+this crate are temporary while Bun and MCP consumers move to canonical names.
 All owned strings use this library's `aphrody_string_free` allocator pair.
 Web jobs and embedding adapters reuse this crate's process-wide Tokio runtime.
 The Chromium cookie ABI calls the shared `aphrody-web-chromium` crate; profile
@@ -31,6 +31,8 @@ data remains in each user's protected browser store.
 The HTTP ABI calls the shared `obscura-net` crate. A submitted fetch uses the
 same job registry and Tokio runtime as embeddings; `native-stealth` enables
 the optional transport feature in this one library.
+The native X client and ranking adapters link shared Rust crates from
+`crates/web/`; the network calls have asynchronous job entry points.
 The Bun binding opens this library on first native use and checks the ABI then;
 importing its module does not require a built native library.
 

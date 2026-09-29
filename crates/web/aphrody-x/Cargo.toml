@@ -1,0 +1,50 @@
+# SPDX-License-Identifier: Apache-2.0
+# Workspace member of the unified Aphrody repository.
+# Shared dependencies are inherited from the root workspace.
+[package]
+name = "aphrody-x"
+version     = "0.3.1"
+edition     = "2024"
+publish     = false
+license     = "Apache-2.0"
+description = "X / Twitter native GraphQL + REST client (cookie auth, no API key required)"
+repository  = "https://github.com/aphrody-code/aphrody-web"
+
+[lints]
+workspace = true
+
+[[bin]]
+name = "x-cli"
+path = "src/main.rs"
+
+[lib]
+name = "aphrody_x"
+path = "src/lib.rs"
+
+[dependencies]
+# HTTP uses the root reqwest version to avoid a parallel client stack.
+reqwest.workspace = true
+# Shared with the workspace (single resolved version across the bridge).
+tokio       = { workspace = true }
+serde       = { workspace = true }
+serde_json  = { workspace = true, features = ["std"] }
+thiserror   = { workspace = true }
+anyhow      = { workspace = true }
+regex       = { workspace = true }
+rustls      = { workspace = true }
+# SQLite follows the root workspace's one linked sqlite3 version.
+rusqlite    = { workspace = true }
+# Additive features on top of the workspace declaration.
+uuid        = { workspace = true, features = ["fast-rng"] }
+clap        = { workspace = true, features = ["env"] }
+# X-client-specific (not used elsewhere in the workspace).
+dirs.workspace = true
+json5.workspace = true
+time.workspace = true
+
+# X For You algorithm (native ranking). Additive, used for optional local re-ranking
+# of this crate's Tweet/User results (timelines, search, etc). See `rank_tweets`,
+# `tweet_to_algo_candidate` and the re-exported `x_algorithm::*` types.
+aphrody-x-algorithm = { workspace = true }
+[dev-dependencies]
+tokio       = { workspace = true }

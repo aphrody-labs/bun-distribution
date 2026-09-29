@@ -108,6 +108,8 @@ aphrody-web-bridge = { path = "crates/web/aphrody-web-bridge", version = "1.0.0-
 aphrody-web-chromium = { path = "crates/web/aphrody-web-chromium", version = "1.0.0-canary", features = [] }
 aphrody-web-extract = { path = "crates/web/aphrody-web-extract", version = "1.0.0", features = [] }
 aphrody-web-index = { path = "crates/web/aphrody-web-index", version = "0.1.0", features = [] }
+aphrody-x = { path = "crates/web/aphrody-x", version = "0.3.1", features = [] }
+aphrody-x-algorithm = { path = "crates/web/aphrody-x-algorithm", version = "0.2.1", features = [] }
 aphrody-winclean = { path = "../src/aphrody-os/crates/aphrody-winclean", version = "1.0.0-canary", features = [] }
 arc-swap = { version = "1.7", features = [] }
 arrow-array = { version = "58", features = [] }
@@ -146,6 +148,7 @@ ignore = { version = "0.4", features = [] }
 image = { version = "0.25.8", default-features = false, features = [] }
 indicatif = { version = "0.18", features = [] }
 js-sys = { version = "0.3", features = [] }
+json5 = { version = "0.4.1", features = [] }
 jsonschema = { version = "0.35", default-features = false, features = [] }
 koharu-library = { path = "../src/aphrody-koharu/crates/koharu-library", features = [] }
 lancedb = { version = "0.29", default-features = false, features = [] }
