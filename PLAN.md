@@ -42,6 +42,12 @@ source-closure, compatibility, installed-workflow, license, and rollback gate.
 
 ## Current state
 
+- [x] Imported `@aphrody/messaging` from clean `aphrody-discord` HEAD
+      `959abfab` into `packages/discord/aphrody-messaging` with file hashes in
+      [`discord-messaging-extraction.json`](docs/migration/discord-messaging-extraction.json).
+      Frozen Bun install, package typecheck, nine tests and build pass. A root
+      Bun patch preserves REST cancellation behavior; standalone consumer
+      qualification remains open because that patch is scoped to this root.
 - [x] Created the local worktree at `/home/aphro/aphrody` and initialized Git.
 - [x] Recorded a local extraction baseline at `d406f11` with the root manifests,
       staged first-party code, Infra catalogs, six service scripts and migration
