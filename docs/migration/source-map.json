@@ -385317,7 +385317,12 @@
       "kind": "source-or-config",
       "size": 1119,
       "status": "clean",
-      "target": "upstream/oxc/LICENSE"
+      "target": "docs/migration/source-licenses/oxc/LICENSE",
+      "sha256": "95ced5ecf1133fbf41d409b5555c86c344f83f3b019926057ddbc07cfdcc27b3",
+      "sourceLicenseBlobSha256": "95ced5ecf1133fbf41d409b5555c86c344f83f3b019926057ddbc07cfdcc27b3",
+      "sourceLicenseTarget": "docs/migration/source-licenses/oxc/LICENSE",
+      "importedSha256": "95ced5ecf1133fbf41d409b5555c86c344f83f3b019926057ddbc07cfdcc27b3",
+      "importedSourceSha256": "95ced5ecf1133fbf41d409b5555c86c344f83f3b019926057ddbc07cfdcc27b3"
     },
     {
       "source": "oxc/MAINTENANCE.md",

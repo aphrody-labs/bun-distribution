@@ -62,7 +62,9 @@ export async function importSourceLicenses(
 
   for (const root of sourceMap.roots) {
     if (root.key === "aphrody-ui" || root.key === "src-root-docs") continue;
-    if (root.policy !== "extract" && root.policy !== "orchestrator-split") continue;
+    const pinnedUpstreamOxc = root.key === "oxc" && root.policy === "upstream-pinned";
+    if (root.policy !== "extract" && root.policy !== "orchestrator-split" && !pinnedUpstreamOxc)
+      continue;
     if (!/^[a-z0-9-]+$/.test(root.key) || !/^[0-9a-f]{40}$/.test(root.head))
       throw new Error(`invalid source root identity: ${root.key}`);
     const expectedPath = root.key === "iecode" ? "../iecode" : `src/${root.key}`;

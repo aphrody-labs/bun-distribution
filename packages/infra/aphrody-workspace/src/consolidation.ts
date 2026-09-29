@@ -211,24 +211,29 @@ async function rootSnapshot(
       (spec.mode === "extract" || spec.mode === "orchestrator-split") &&
       spec.key !== "aphrody-ui" &&
       /^(?:LICENSE|NOTICE|COPYING)(?:[.-][A-Za-z0-9._-]+)?$/i.test(path);
+    const upstreamLicense =
+      spec.key === "oxc" &&
+      spec.mode === "upstream-pinned" &&
+      /^LICENSE(?:[.-][A-Za-z0-9._-]+)?$/i.test(path);
     const infraOwnedControl =
       spec.mode === "orchestrator-split" &&
       (path.startsWith("scripts/") || path.startsWith("packages/aphrody-workspace/"));
-    const destination = rootLicense
-      ? `docs/migration/source-licenses/${spec.key}/${path}`
-      : infraCatalog
-        ? path
-        : spec.mode === "deferred" || spec.mode === "classify" || infraOwnedControl
-          ? null
-          : external
-            ? `upstream/${spec.owner}/${path}`
-            : spec.mode === "upstream-pinned" && info.kind !== "documentation"
+    const destination =
+      rootLicense || upstreamLicense
+        ? `docs/migration/source-licenses/${spec.key}/${path}`
+        : infraCatalog
+          ? path
+          : spec.mode === "deferred" || spec.mode === "classify" || infraOwnedControl
+            ? null
+            : external
               ? `upstream/${spec.owner}/${path}`
-              : targetPath(
-                  spec.mode === "upstream-pinned" ? `upstream-${spec.owner}` : spec.owner,
-                  path,
-                  info,
-                );
+              : spec.mode === "upstream-pinned" && info.kind !== "documentation"
+                ? `upstream/${spec.owner}/${path}`
+                : targetPath(
+                    spec.mode === "upstream-pinned" ? `upstream-${spec.owner}` : spec.owner,
+                    path,
+                    info,
+                  );
     entries.push({
       source: `${spec.key}/${path}`,
       kind: external && info.kind !== "documentation" ? "upstream-source" : info.kind,

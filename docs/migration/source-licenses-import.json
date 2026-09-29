@@ -1,9 +1,9 @@
 {
-  "observedAt": "2026-09-29T05:52:52.036Z",
+  "observedAt": "2026-09-29T06:02:15.281Z",
   "sourceRoot": "/home/aphro/src",
   "targetRoot": "/home/aphro/aphrody",
-  "sourceFileCount": 15,
-  "canonicalFileCount": 9,
+  "sourceFileCount": 16,
+  "canonicalFileCount": 10,
   "copied": 0,
   "missingRootLicense": [
     "iecode"
@@ -173,6 +173,17 @@
       "aliasOf": null,
       "sha256": "d1d5bababc6f60baed2ca4120b900fcbf2bde2b27d8025a79f4b8353583a3d3e",
       "worktreeSha256": "d1d5bababc6f60baed2ca4120b900fcbf2bde2b27d8025a79f4b8353583a3d3e",
+      "worktreeRelation": "raw"
+    },
+    {
+      "source": "oxc/LICENSE",
+      "sourceHead": "31d5266e150ff17af52f0c2fc798cc27dc9a5a59",
+      "sourceBlob": "444bffc00e5190817c0092e5e6fde787102977d2",
+      "sourceStatus": "clean",
+      "target": "docs/migration/source-licenses/oxc/LICENSE",
+      "aliasOf": null,
+      "sha256": "95ced5ecf1133fbf41d409b5555c86c344f83f3b019926057ddbc07cfdcc27b3",
+      "worktreeSha256": "95ced5ecf1133fbf41d409b5555c86c344f83f3b019926057ddbc07cfdcc27b3",
       "worktreeRelation": "raw"
     }
   ]

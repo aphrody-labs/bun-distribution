@@ -180,9 +180,9 @@ source-closure, compatibility, installed-workflow, license, and rollback gate.
       file and line: ten map to staged targets, while eight refer to the old
       checkout root. These scripts and unit paths remain unqualified for runtime
       cutover.
-- [x] Preserve root license and notice blobs for the non-UI extracted sources.
+- [x] Preserve root license and notice blobs for the non-UI source roots.
       The [license import report](docs/migration/source-licenses-import.json)
-      maps 15 pinned Git files to nine canonical copies and six exact-byte
+      maps 16 pinned Git files to ten canonical copies and six exact-byte
       aliases, with blob IDs, source heads, worktree hashes and target hashes.
       Six worktree files differ in raw bytes only through verified Git checkout
       filters. IECODE has no root license file at its pinned revision; nested
@@ -204,6 +204,12 @@ source-closure, compatibility, installed-workflow, license, and rollback gate.
       clone of `4eaf8c4`: all 4,169 mapped targets are present and match their
       recorded imported SHA-256 values. This proves file integrity for these
       batches; it does not close the remaining docs, link, or workspace gates.
+- [x] Commit 597 hash-verified Oxc documentation targets from pinned upstream
+      HEAD `31d5266e150ff17af52f0c2fc798cc27dc9a5a59`, with its root LICENSE
+      blob recorded in the source-license report. The
+      [Oxc docs audit](docs/migration/UPSTREAM-OXC-DOCS-COMMIT.md) records zero
+      missing files and zero hash mismatches. Oxc source remains an independent
+      upstream workspace.
 - [ ] Complete Infra's consumer and pipeline cutover without the transitional
       checkout. The Rust library suite now passes 52/52 after its Git overview
       test was isolated in a temporary repository. `pipeline --stage check --json` reports 12
