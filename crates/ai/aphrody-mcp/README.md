@@ -47,19 +47,20 @@ Then point your MCP client at the binary. Example `mcp.json` snippet:
 
 ## Exposed tools
 
-Source of truth: `crates/aphrody-mcp/src/main.rs` (`#[tool_router]` impl on
-`GoogleMcpServer`). The current registry exposes eight tools:
+The registry is assembled from feature-gated Rust modules and internal
+providers. `tools/list` from the running binary is the exact catalog; tool names
+and schemas can change with enabled features. Web's native crawl tool is
+`aphrody_web_crawl` and is served by this MCP or proxied by the unified kernel.
 
-| Tool | Description |
-|---|---|
-| `coding_style_guide` | Fetches the Google style guide for `cpp`, `python`, `typescript`, `java`, `shell`, `html`, `android_build`, or `chromium_build_win`. |
-| `universal_web_fetch` | Generic HTTP-to-Markdown fetcher via the Jina reader proxy for external docs. |
-| `dns_recon` | Runs the OSINT DNS pipeline from `backend::dns::DnsRecon`, returning deduplicated subdomains. |
-| `advanced_recon` | Native OS DNS resolution plus 200 ms TCP probes across user-supplied ports (defaults: 80/443/8080). |
-| `native_hooks` | OS state direct: `GetSystemInfo` + `GlobalMemoryStatusEx` on Windows, `/proc` via `sysinfo` on Linux/macOS. |
-| `start_dashboard` | Spawns an `axum` server in a background tokio task exposing `GET /health` and `GET /info`. |
-| `auth_extract` | Windows-only: DPAPI Chrome Canary cookie inspection via `backend::chromium::ChromiumParser`. |
-| `chrome_autopsy` | Windows-only: `OpenProcess` + `ReadProcessMemory` against a target PID, 4 KiB cap, hex+ASCII dump. |
+### Crawl limits
+
+`aphrody_web_crawl` validates HTTP(S) seed URLs, caps input URLs and allowed
+domains at 100, bounds depth, request count and concurrency, and obeys robots
+by default. Call execution has a 120-second budget. The response returns at
+most 100 pages (default 50) and 50 errors, with counts and truncation flags.
+Use `resultLimit` to request fewer pages. These limits bound the MCP response;
+`maxRequests` controls crawl work. Persistent SQLite frontier paths should be
+provided only when the caller intends to retain crawl state.
 
 ### Dragon Ball (`dragonball.*`, feature `dragonball`, on by default)
 

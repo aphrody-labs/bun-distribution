@@ -3,7 +3,7 @@
 
 use std::{
     sync::LazyLock,
-    time::{SystemTime, UNIX_EPOCH},
+    time::{Duration, SystemTime, UNIX_EPOCH},
 };
 
 use aphrody_web_crawl::{
@@ -11,6 +11,10 @@ use aphrody_web_crawl::{
 };
 use rmcp::model::{CallToolRequestParams, CallToolResult, ContentBlock, Tool};
 use serde_json::{Value, json};
+
+const MAX_PAGE_RESULTS: u64 = 100;
+const MAX_ERROR_RESULTS: usize = 50;
+const CRAWL_TIMEOUT: Duration = Duration::from_secs(120);
 
 static TOOL: LazyLock<Tool> = LazyLock::new(|| {
     serde_json::from_value(json!({
@@ -21,10 +25,11 @@ static TOOL: LazyLock<Tool> = LazyLock::new(|| {
         "properties": {
             "urls": { "type": "array", "items": { "type": "string", "format": "uri" }, "minItems": 1, "maxItems": 100 },
             "sqlitePath": { "type": "string", "description": "Optional persistent SQLite frontier path." },
-            "allowedDomains": { "type": "array", "items": { "type": "string" } },
+            "allowedDomains": { "type": "array", "items": { "type": "string" }, "maxItems": 100 },
             "maxDepth": { "type": "integer", "minimum": 0, "maximum": 20, "default": 2 },
             "maxRequests": { "type": "integer", "minimum": 1, "maximum": 1000, "default": 25 },
             "concurrency": { "type": "integer", "minimum": 1, "maximum": 32, "default": 4 },
+            "resultLimit": { "type": "integer", "minimum": 1, "maximum": 100, "default": 50 },
             "obeyRobots": { "type": "boolean", "default": true },
             "sitemaps": { "type": "boolean", "default": false }
         },
@@ -81,9 +86,11 @@ fn parse_urls(args: &Value) -> Result<Vec<String>, String> {
 async fn run(args: &Value) -> Result<Value, String> {
     let urls = parse_urls(args)?;
     let mut allowed_domains = args.get("allowedDomains").map_or(Ok(Vec::new()), |value| {
-        value
-            .as_array()
-            .ok_or("allowedDomains must be an array")?
+        let domains = value.as_array().ok_or("allowedDomains must be an array")?;
+        if domains.len() > 100 {
+            return Err("allowedDomains must contain no more than 100 entries".into());
+        }
+        domains
             .iter()
             .map(|entry| {
                 entry
@@ -135,19 +142,31 @@ async fn run(args: &Value) -> Result<Value, String> {
         ingest_sitemaps: flag(args, "sitemaps", false)?,
         ..CrawlOptions::default()
     };
-    let report = crawl_bounded(&mut frontier, &ObscuraTransport::default(), &options)
-        .await
-        .map_err(|error| error.to_string())?;
+    let result_limit = count(args, "resultLimit", 50, 1, MAX_PAGE_RESULTS)? as usize;
+    let report = tokio::time::timeout(
+        CRAWL_TIMEOUT,
+        crawl_bounded(&mut frontier, &ObscuraTransport::default(), &options),
+    )
+    .await
+    .map_err(|_| format!("crawl exceeded the {} second tool budget", CRAWL_TIMEOUT.as_secs()))?
+    .map_err(|error| error.to_string())?;
+    let page_count = report.pages.len();
+    let error_count = report.errors.len();
     Ok(json!({
         "attempts": report.attempts,
-        "pages": report.pages.iter().map(|page| json!({
+        "pagesFound": page_count,
+        "pagesReturned": page_count.min(result_limit),
+        "pagesTruncated": page_count > result_limit,
+        "pages": report.pages.iter().take(result_limit).map(|page| json!({
             "url": page.url, "depth": page.depth, "status": page.status,
             "title": page.extracted.title, "wordCount": page.extracted.word_count,
             "duplicate": page.duplicate, "discoveredLinks": page.discovered_links,
         })).collect::<Vec<_>>(),
         "exactDuplicates": report.exact_duplicates,
         "nearDuplicates": report.near_duplicates,
-        "errors": report.errors,
+        "errors": report.errors.iter().take(MAX_ERROR_RESULTS).collect::<Vec<_>>(),
+        "errorsFound": error_count,
+        "errorsTruncated": error_count > MAX_ERROR_RESULTS,
         "robotsFetched": report.robots_fetched,
         "robotsBlocked": report.robots_blocked,
         "sitemapsFetched": report.sitemaps_fetched,
@@ -185,6 +204,18 @@ mod tests {
         assert!(parse_urls(&json!({"urls": ["file:///tmp/a"]})).is_err());
         assert!(parse_urls(&json!({"urls": []})).is_err());
         assert!(count(&json!({"maxRequests": 1001}), "maxRequests", 25, 1, 1000).is_err());
+        assert!(
+            count(&json!({"resultLimit": 101}), "resultLimit", 50, 1, MAX_PAGE_RESULTS).is_err()
+        );
         assert!(flag(&json!({"obeyRobots": "yes"}), "obeyRobots", true).is_err());
+    }
+
+    #[test]
+    fn result_schema_is_small_and_bounded() {
+        let serialized = serde_json::to_value(get("aphrody_web_crawl").unwrap()).unwrap();
+        let schema = &serialized["inputSchema"]["properties"];
+        assert_eq!(schema["resultLimit"]["maximum"], 100);
+        assert_eq!(schema["allowedDomains"]["maxItems"], 100);
+        assert_eq!(schema["urls"]["maxItems"], 100);
     }
 }
