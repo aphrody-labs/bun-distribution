@@ -347,7 +347,11 @@ mod native {
             let q_str = match unsafe { CStr::from_ptr(query) }.to_str() {
                 Ok(s) => s.to_string(),
                 Err(_) => {
-                    return json_result(AphrodyStatus::Usage as i32, "", "query is not valid UTF-8");
+                    return json_result(
+                        AphrodyStatus::Usage as i32,
+                        "",
+                        "query is not valid UTF-8",
+                    );
                 },
             };
             let mut args = vec![
@@ -504,9 +508,9 @@ mod native {
             }
             let slice = unsafe { std::slice::from_raw_parts(image_bytes, image_len) };
             let options = aphrody_manga::MangaPipelineOptions::default();
-            match runtime().block_on(
-                aphrody_manga::MangaPipeline::detect_image_bytes(slice, &options)
-            ) {
+            match runtime()
+                .block_on(aphrody_manga::MangaPipeline::detect_image_bytes(slice, &options))
+            {
                 Ok(output) => {
                     let json =
                         serde_json::to_string(&output.result).unwrap_or_else(|_| "{}".to_string());
@@ -602,13 +606,17 @@ mod native {
             let mut options = aphrody_manga::MangaPipelineOptions::default();
             options.target_language = lang.to_string();
 
-            match runtime().block_on(
-                aphrody_manga::MangaPipeline::process_image_bytes(slice, &options)
-            ) {
+            match runtime()
+                .block_on(aphrody_manga::MangaPipeline::process_image_bytes(slice, &options))
+            {
                 Ok(output) => {
                     let page_result = output.result;
                     let Some(psd_bytes) = output.psd_bytes else {
-                        return json_result(AphrodyStatus::Software as i32, "", "Koharu did not export a PSD");
+                        return json_result(
+                            AphrodyStatus::Software as i32,
+                            "",
+                            "Koharu did not export a PSD",
+                        );
                     };
                     let b64_psd = base64::engine::general_purpose::STANDARD.encode(&psd_bytes);
                     let payload = serde_json::json!({

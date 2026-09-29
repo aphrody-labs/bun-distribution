@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-import catalogData from "./x-graphql-catalog.json";
+import catalogData from "../../../../../crates/web/aphrody-x/data/x-graphql-catalog.json";
 import gryphonCatalog from "./gryphon-graphql-catalog.json";
 
 export interface Operation {

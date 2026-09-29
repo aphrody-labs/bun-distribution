@@ -1,0 +1,20 @@
+{
+  "name": "@aphrody/bun",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "bun": ">=1.4.2"
+  },
+  "exports": {
+    "./web": "./src/web.ts"
+  },
+  "scripts": {
+    "typecheck": "bunx --bun tsc --project tsconfig.json --noEmit"
+  },
+  "devDependencies": {
+    "@types/bun": "catalog:",
+    "@types/node": "catalog:",
+    "typescript": "catalog:"
+  }
+}

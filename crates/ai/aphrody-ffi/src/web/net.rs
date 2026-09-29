@@ -6,10 +6,10 @@
 //! - `bxc_*_submit` (non-blocking): returns a job id immediately; the result is collected with
 //!   `bxc_job_take` (see `jobs.rs`).
 
-use std::{future::Future, os::raw::c_char, process::Stdio};
+use std::{future::Future, os::raw::c_char};
 
+use aphrody_gemini_web::{GeminiModel, GeminiWebClient};
 use aphrody_x::{XClient, XSession};
-use tokio::io::AsyncWriteExt;
 
 use super::{
     ffi_util::{
@@ -85,46 +85,27 @@ pub unsafe extern "C" fn bxc_dns_recon_submit(domain_ptr: *const c_char, timeout
 // ---------------------------------------------------------------------------
 
 async fn gemini_ask_body(cookie_path: String, prompt: String, model: Option<String>) -> String {
-    let binary = std::env::var_os("APHRODY_GEMINI_WEB_BIN")
-        .filter(|value| !value.is_empty())
-        .unwrap_or_else(|| "aphrody-gemini-web".into());
-    let mut child = match tokio::process::Command::new(binary)
-        .stdin(Stdio::piped())
-        .stdout(Stdio::piped())
-        .stderr(Stdio::null())
-        .kill_on_drop(true)
-        .spawn()
-    {
-        Ok(child) => child,
-        Err(error) => return error_json_string(format!("Gemini AI process unavailable: {error}")),
+    let client = match GeminiWebClient::from_cookie_file(&cookie_path, "en").await {
+        Ok(client) => client,
+        Err(error) => {
+            return error_json_string(format!("Failed to execute Gemini request: {error}"));
+        },
     };
-    let request = serde_json::json!({
-        "cookie_path": cookie_path,
-        "prompt": prompt,
-        "model": model,
-    })
-    .to_string();
-    match child.stdin.take() {
-        Some(mut stdin) => {
-            if let Err(error) = stdin.write_all(request.as_bytes()).await {
-                return error_json_string(format!("Gemini AI process input failed: {error}"));
-            }
-        },
-        _ => {
-            return error_json_string("Gemini AI process has no stdin");
-        },
+    let header = gemini_model_header(model);
+    match client.ask(&prompt, header.as_deref()).await {
+        Ok(reply) => serde_json::json!({
+            "text": reply.text,
+            "conversation_id": reply.metadata.conversation_id,
+            "response_id": reply.metadata.response_id,
+            "choice_id": reply.metadata.choice_id,
+        })
+        .to_string(),
+        Err(error) => error_json_string(format!("Failed to execute Gemini request: {error}")),
     }
-    let output = match child.wait_with_output().await {
-        Ok(output) if output.status.success() => output,
-        Ok(output) => {
-            return error_json_string(format!("Gemini AI process exited with {}", output.status));
-        },
-        Err(error) => return error_json_string(format!("Gemini AI process failed: {error}")),
-    };
-    match serde_json::from_slice::<serde_json::Value>(&output.stdout) {
-        Ok(value @ serde_json::Value::Object(_)) => value.to_string(),
-        _ => error_json_string("Gemini AI process returned invalid JSON"),
-    }
+}
+
+fn gemini_model_header(model: Option<String>) -> Option<String> {
+    model.map(|id| GeminiModel::from_id(&id).map_or(id, GeminiModel::header))
 }
 
 fn gemini_args(
@@ -469,4 +450,29 @@ pub unsafe extern "C" fn bxc_x_algorithm_rank(
             Err(e) => error_json(e),
         }
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn gemini_model_mapping_preserves_custom_header() {
+        assert_eq!(gemini_model_header(Some("flash".into())), Some(GeminiModel::Flash.header()));
+        assert_eq!(gemini_model_header(Some("custom".into())), Some("custom".into()));
+        assert_eq!(gemini_model_header(None), None);
+    }
+
+    #[test]
+    fn gemini_missing_cookie_file_returns_json_error() {
+        let missing =
+            std::env::temp_dir().join(format!("aphrody-ffi-missing-cookie-{}", std::process::id()));
+        let response = shared_runtime().unwrap().block_on(gemini_ask_body(
+            missing.display().to_string(),
+            "hello".into(),
+            None,
+        ));
+        let json: serde_json::Value = serde_json::from_str(&response).unwrap();
+        assert!(json["error"].as_str().is_some_and(|error| error.contains("Gemini")));
+    }
 }

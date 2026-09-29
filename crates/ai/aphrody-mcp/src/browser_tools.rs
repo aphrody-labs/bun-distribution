@@ -157,6 +157,27 @@ mod tests {
         assert_eq!(engine_name("aphrody_browser_click"), "browser_click");
     }
 
+    #[test]
+    fn native_catalog_claims_source_browser_aliases_before_child_catalog() {
+        for source_name in [
+            "bxc_browser_navigate",
+            "browser_snapshot",
+            "bxc_browser_click",
+            "browser_fill",
+            "bxc_browser_type",
+            "browser_press_key",
+            "bxc_browser_select_option",
+            "browser_evaluate",
+            "bxc_browser_wait_for",
+            "browser_screenshot",
+            "bxc_browser_pdf",
+            "browser_close",
+        ] {
+            let public = crate::bxc_tools::public_name(source_name);
+            assert!(owns(&public), "{source_name} should resolve to native {public}");
+        }
+    }
+
     /// Drives the in-process engine on a real page.
     ///
     /// Network-dependent (loads example.com). Also aborts inside V8 on Windows

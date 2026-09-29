@@ -15,6 +15,7 @@ impl Default for DnsRecon {
 
 impl DnsRecon {
     pub fn new() -> Self {
+        crate::ensure_rustls_crypto_provider();
         Self { client: Client::new() }
     }
 

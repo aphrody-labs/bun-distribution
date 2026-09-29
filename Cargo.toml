@@ -108,6 +108,7 @@ aphrody-web-bridge = { path = "crates/web/aphrody-web-bridge", version = "1.0.0-
 aphrody-web-chromium = { path = "crates/web/aphrody-web-chromium", version = "1.0.0-canary", features = [] }
 aphrody-web-extract = { path = "crates/web/aphrody-web-extract", version = "1.0.0", features = [] }
 aphrody-web-index = { path = "crates/web/aphrody-web-index", version = "0.1.0", features = [] }
+aphrody-web-service = { path = "crates/web/aphrody-web-service", version = "1.0.0", features = [] }
 aphrody-x = { path = "crates/web/aphrody-x", version = "0.3.1", features = [] }
 aphrody-x-algorithm = { path = "crates/web/aphrody-x-algorithm", version = "0.2.1", features = [] }
 aphrody-winclean = { path = "../src/aphrody-os/crates/aphrody-winclean", version = "1.0.0-canary", features = [] }
@@ -159,9 +160,13 @@ mimalloc = { version = "0.1", default-features = false, features = [] }
 minijinja = { version = "2", default-features = false, features = ["loader", "builtins", "macros", "multi_template", "deserialization", "serde"] }
 notify = { version = "8", features = [] }
 notify-debouncer-full = "0.6"
-obscura-mcp = { path = "../src/aphrody-web/crates/aphrody-obscura/crates/obscura-mcp", features = [] }
+obscura-mcp = { path = "crates/web/obscura-mcp", version = "0.1.0", features = [] }
+obscura-browser = { path = "crates/web/obscura-browser", version = "0.1.0", features = [] }
+obscura-cdp = { path = "crates/web/obscura-cdp", version = "0.1.0", features = [] }
 obscura-dom = { path = "crates/web/obscura-dom", version = "0.1.1", features = [] }
+obscura-js = { path = "crates/web/obscura-js", version = "0.1.0", features = [] }
 obscura-net = { path = "crates/web/obscura-net", version = "0.1.1", features = [] }
+obscura-render = { path = "crates/web/obscura-render", version = "0.1.0", features = [] }
 octocrab = { version = "0.50", features = [] }
 once_cell = { version = "1", features = [] }
 opendal = { version = "0.59", default-features = false, features = ["executors-tokio", "services-fs"] }
@@ -206,7 +211,7 @@ tokio = { version = "1.52", features = ["process", "rt-multi-thread", "macros", 
 tokio-postgres = { version = "0.7.18", features = [] }
 tokio-rustls = { version = "0.26", features = [] }
 tokio-stream = { version = "0.1", features = [] }
-tokio-tungstenite = { version = "0.24", features = [] }
+tokio-tungstenite = { version = "0.26", features = [] }
 toml = { version = "0.9", features = [] }
 toml_edit = { version = "0.22.27", features = [] }
 tonic = { version = "0.14", features = [] }
@@ -238,3 +243,6 @@ unimplemented = "deny"
 dbg_macro = "deny"
 correctness = { level = "warn", priority = -1 }
 perf = { level = "warn", priority = -1 }
+
+[patch.crates-io]
+taffy = { path = "crates/web/taffy" }

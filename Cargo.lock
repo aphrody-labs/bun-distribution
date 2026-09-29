@@ -835,6 +835,7 @@ name = "aphrody-ffi"
 version = "1.0.0"
 dependencies = [
  "aphrody",
+ "aphrody-gemini-web",
  "aphrody-manga",
  "aphrody-stdio-capture",
  "aphrody-web-chromium",
@@ -844,8 +845,8 @@ dependencies = [
  "aphrody-x-algorithm",
  "base64 0.22.1",
  "mimalloc",
- "obscura-dom 0.1.1",
- "obscura-net 0.1.1",
+ "obscura-dom",
+ "obscura-net",
  "serde",
  "serde_json",
  "tokio",
@@ -1210,6 +1211,8 @@ dependencies = [
  "aphrody-web-bridge",
  "aphrody-web-extract",
  "aphrody-winclean",
+ "aphrody-x",
+ "aphrody-x-algorithm",
  "axum",
  "base64 0.22.1",
  "chrono",
@@ -1229,7 +1232,7 @@ dependencies = [
  "tempfile",
  "tokio",
  "tokio-postgres",
- "tokio-tungstenite",
+ "tokio-tungstenite 0.26.2",
  "tracing",
  "tracing-subscriber",
  "which 8.0.6",
@@ -1957,7 +1960,7 @@ dependencies = [
  "serde_json",
  "thiserror 2.0.21",
  "tokio",
- "tokio-tungstenite",
+ "tokio-tungstenite 0.24.0",
  "tracing",
  "which 8.0.6",
 ]
@@ -2157,7 +2160,7 @@ dependencies = [
 name = "aphrody-web-extract"
 version = "1.0.0"
 dependencies = [
- "obscura-dom 0.1.1",
+ "obscura-dom",
  "regex",
  "serde",
  "serde_json",
@@ -2174,6 +2177,18 @@ dependencies = [
  "serde",
  "serde_json",
  "thiserror 2.0.21",
+]
+
+[[package]]
+name = "aphrody-web-service"
+version = "1.0.0"
+dependencies = [
+ "aphrody-web-extract",
+ "obscura-dom",
+ "obscura-mcp",
+ "serde",
+ "serde_json",
+ "url",
 ]
 
 [[package]]
@@ -7791,7 +7806,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1c91d8cffac8849493a82233811bd02b2b183b8cf39bf704de0fa0841b737595"
 dependencies = [
  "bstr",
- "hashbrown 0.17.1",
+ "hashbrown 0.16.1",
 ]
 
 [[package]]
@@ -12674,9 +12689,9 @@ dependencies = [
  "base64 0.22.1",
  "futures",
  "image",
- "obscura-dom 0.1.0",
+ "obscura-dom",
  "obscura-js",
- "obscura-net 0.1.0",
+ "obscura-net",
  "serde_json",
  "thiserror 2.0.21",
  "tokio",
@@ -12685,13 +12700,26 @@ dependencies = [
 ]
 
 [[package]]
-name = "obscura-dom"
+name = "obscura-cdp"
 version = "0.1.0"
 dependencies = [
- "cssparser 0.34.0",
- "html5ever",
- "precomputed-hash",
- "selectors 0.26.0",
+ "anyhow",
+ "base64 0.22.1",
+ "futures-util",
+ "image",
+ "libc",
+ "obscura-browser",
+ "obscura-dom",
+ "obscura-js",
+ "obscura-net",
+ "png 0.18.1",
+ "serde",
+ "serde_json",
+ "tokio",
+ "tokio-tungstenite 0.26.2",
+ "tracing",
+ "url",
+ "uuid",
 ]
 
 [[package]]
@@ -12719,8 +12747,8 @@ dependencies = [
  "hkdf 0.12.4",
  "hmac 0.12.1",
  "html5ever",
- "obscura-dom 0.1.0",
- "obscura-net 0.1.0",
+ "obscura-dom",
+ "obscura-net",
  "obscura-render",
  "pbkdf2 0.12.2",
  "psl",
@@ -12741,34 +12769,13 @@ dependencies = [
  "anyhow",
  "base64 0.22.1",
  "obscura-browser",
- "obscura-dom 0.1.0",
- "obscura-net 0.1.0",
+ "obscura-dom",
+ "obscura-net",
  "serde",
  "serde_json",
  "tokio",
  "tracing",
  "url",
-]
-
-[[package]]
-name = "obscura-net"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "async-trait",
- "encoding_rs",
- "futures-util",
- "psl",
- "reqwest 0.13.5",
- "serde",
- "serde_json",
- "tempfile",
- "thiserror 2.0.21",
- "tokio",
- "tracing",
- "url",
- "wreq",
- "wreq-util",
 ]
 
 [[package]]
@@ -12782,6 +12789,7 @@ dependencies = [
  "psl",
  "rcgen",
  "reqwest 0.13.5",
+ "rustls",
  "serde",
  "serde_json",
  "socket2",
@@ -12804,7 +12812,8 @@ dependencies = [
  "base64 0.22.1",
  "cssparser 0.34.0",
  "image",
- "obscura-dom 0.1.0",
+ "log",
+ "obscura-dom",
  "resvg",
  "swash",
  "taffy",
@@ -17910,12 +17919,14 @@ dependencies = [
 [[package]]
 name = "taffy"
 version = "0.12.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "73afc801dd6bd47529eaa7c7e90557f107527d1b7c9c7ed7d7803c7b8d0c357f"
 dependencies = [
  "arrayvec",
+ "cssparser 0.37.0",
+ "document-features",
  "grid",
+ "roxmltree",
  "serde",
+ "serde_json",
  "slotmap",
 ]
 
@@ -17955,7 +17966,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "32497e9a4c7b38532efcdebeef879707aa9f794296a4f0244f6f69e9bc8574bd"
 dependencies = [
  "fastrand",
- "getrandom 0.4.3",
+ "getrandom 0.3.4",
  "once_cell",
  "rustix 1.1.5",
  "windows-sys 0.61.2",
@@ -18506,7 +18517,19 @@ dependencies = [
  "futures-util",
  "log",
  "tokio",
- "tungstenite",
+ "tungstenite 0.24.0",
+]
+
+[[package]]
+name = "tokio-tungstenite"
+version = "0.26.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7a9daff607c6d2bf6c16fd681ccb7eecc83e4e2cdc1ca067ffaadfca5de7f084"
+dependencies = [
+ "futures-util",
+ "log",
+ "tokio",
+ "tungstenite 0.26.2",
 ]
 
 [[package]]
@@ -18938,12 +18961,29 @@ dependencies = [
 ]
 
 [[package]]
+name = "tungstenite"
+version = "0.26.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4793cb5e56680ecbb1d843515b23b6de9a75eb04b66643e256a396d43be33c13"
+dependencies = [
+ "bytes",
+ "data-encoding",
+ "http",
+ "httparse",
+ "log",
+ "rand 0.9.5",
+ "sha1 0.10.7",
+ "thiserror 2.0.21",
+ "utf-8",
+]
+
+[[package]]
 name = "twox-hash"
 version = "2.1.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5283634e518fe9e82c7b20520bb4bc209009fd16c82077c802f8111ecbb0117a"
 dependencies = [
- "rand 0.10.3",
+ "rand 0.9.5",
 ]
 
 [[package]]
@@ -20278,7 +20318,7 @@ dependencies = [
  "objc2-metal",
  "objc2-quartz-core",
  "once_cell",
- "ordered-float 5.5.0",
+ "ordered-float 4.6.0",
  "parking_lot",
  "portable-atomic",
  "portable-atomic-util",

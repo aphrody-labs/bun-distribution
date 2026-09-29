@@ -1,15 +1,6 @@
-/**
- * algo.ts — pure-TS adaptation of X For You feed ranking concepts
- * (from https://github.com/xai-org/x-algorithm, Apache-2.0).
- *
- * Mirrors the Rust x-algorithm crate so that the high-level @aphrody/x client
- * and `aphrody-web x` CLI can use local "For You" style re-ranking without the Rust FFI.
- *
- * This is intentionally the *classical* part of the algorithm (filters, weighted
- * scoring from observed signals, author diversity). The heavy Phoenix Grok
- * transformer (ML predictions for P(like), P(reply)...) lives in the Python
- * side of the original repo and requires the exported model checkpoint.
- */
+// SPDX-License-Identifier: Apache-2.0
+// X ranking is implemented once in aphrody-x-algorithm and exposed by aphrody-ffi.
+import { webXAlgorithmRank } from "@aphrody/bun/web";
 
 export interface PostCandidate {
   id: string;
@@ -24,7 +15,6 @@ export interface PostCandidate {
   is_reply?: boolean;
   is_repost?: boolean;
   has_media?: boolean;
-  /** true if we know this came from accounts the viewer follows */
   in_network?: boolean;
 }
 
@@ -44,59 +34,29 @@ export interface ScoredPost {
   reasons: string[];
 }
 
+/** Rank posts in the shared Rust implementation while preserving caller post shapes. */
 export function rankPosts(
   candidates: PostCandidate[],
   context: RankingContext = {},
   topK = 20,
 ): ScoredPost[] {
-  if (!candidates || candidates.length === 0) return [];
-
-  const ctx = hydrateContext(context);
-  let kept = [...candidates];
-
-  // DropDuplicatesFilter
-  {
-    const seen = new Set<string>();
-    kept = kept.filter((p) => {
-      if (seen.has(p.id)) return false;
-      seen.add(p.id);
-      return true;
-    });
+  if (!candidates?.length) return [];
+  const ranked = webXAlgorithmRank(candidates, { ...context }, topK);
+  if (!Array.isArray(ranked)) {
+    const error = ranked && typeof ranked === "object" && "error" in ranked
+      ? String(ranked.error)
+      : "invalid native ranking response";
+    throw new Error(`X ranking failed: ${error}`);
   }
 
-  // SelfpostFilter
-  if (ctx.viewer_id) {
-    kept = kept.filter((p) => p.author_id !== ctx.viewer_id);
+  const originals = new Map<string, PostCandidate>();
+  for (const post of candidates) {
+    if (!originals.has(post.id)) originals.set(post.id, post);
   }
-
-  // Blocked authors
-  if (ctx.blocked_author_ids && ctx.blocked_author_ids.length) {
-    const blk = new Set(ctx.blocked_author_ids);
-    kept = kept.filter((p) => !blk.has(p.author_id));
-  }
-
-  // Muted keywords (simple)
-  if (ctx.muted_keywords && ctx.muted_keywords.length) {
-    const mutes = ctx.muted_keywords.map((k) => k.toLowerCase());
-    kept = kept.filter((p) => {
-      const t = p.text.toLowerCase();
-      return !mutes.some((kw) => t.includes(kw));
-    });
-  }
-
-  // Age
-  const maxAge = ctx.max_age_secs ?? 7 * 24 * 3600;
-  kept = kept.filter((p) => Math.abs(ctx.now_unix - p.created_at) <= maxAge);
-
-  // Score
-  let scored: ScoredPost[] = kept.map((p) => computeScore(p, ctx));
-
-  // Author diversity attenuation (post-scoring)
-  applyAuthorDiversity(scored);
-
-  // sort + truncate
-  scored.sort((a, b) => b.score - a.score);
-  return scored.slice(0, topK || 20);
+  return (ranked as ScoredPost[]).map((scored) => {
+    scored.post = originals.get(scored.post.id) ?? scored.post;
+    return scored;
+  });
 }
 
 export async function rankPostsNative(
@@ -104,98 +64,7 @@ export async function rankPostsNative(
   context: RankingContext = {},
   topK = 20,
 ): Promise<ScoredPost[]> {
-  // The Rust bridge is a CLI/FFI concern owned by Aphrody Web. Keep the
-  // package portable and deterministic when loaded directly by Bun.
   return rankPosts(candidates, context, topK);
-}
-
-function hydrateContext(ctx: RankingContext): Required<RankingContext> & { now_unix: number } {
-  const now = ctx.now_unix && ctx.now_unix > 0
-    ? ctx.now_unix
-    : Math.floor(Date.now() / 1000);
-
-  return {
-    viewer_id: ctx.viewer_id ?? "",
-    followed_author_ids: Array.from(new Set(ctx.followed_author_ids ?? [])),
-    recent_engagement_author_ids: Array.from(new Set(ctx.recent_engagement_author_ids ?? [])),
-    muted_keywords: ctx.muted_keywords ?? [],
-    blocked_author_ids: Array.from(new Set(ctx.blocked_author_ids ?? [])),
-    now_unix: now,
-    max_age_secs: ctx.max_age_secs ?? 7 * 24 * 3600,
-  };
-}
-
-function computeScore(post: PostCandidate, ctx: ReturnType<typeof hydrateContext>): ScoredPost {
-  let score = 0;
-  const reasons: string[] = [];
-
-  // Proxy engagement (real system predicts these probs via transformer)
-  const likeW = 1.0;
-  const replyW = 3.0;
-  const repostW = 4.0;
-  const quoteW = 2.5;
-
-  const eng =
-    (post.like_count || 0) * likeW +
-    (post.reply_count || 0) * replyW +
-    (post.repost_count || 0) * repostW +
-    (post.quote_count || 0) * quoteW;
-
-  if (eng > 0) {
-    score += eng;
-    reasons.push(`engagement:${eng.toFixed(1)}`);
-  }
-
-  // In-network / followed boost
-  const isInNet = !!post.in_network || (ctx.followed_author_ids || []).includes(post.author_id);
-  if (isInNet) {
-    const bonus = post.in_network ? 120 : 80;
-    score += bonus;
-    reasons.push(`in_network:+${bonus}`);
-  }
-
-  // History affinity
-  if ((ctx.recent_engagement_author_ids || []).includes(post.author_id)) {
-    score += 45;
-    reasons.push("history_affinity:+45");
-  }
-
-  // Freshness (within ~48h window)
-  const ageH = Math.max(0, (ctx.now_unix - post.created_at) / 3600);
-  const fresh = Math.max(0, (48 - Math.min(48, ageH)) / 2);
-  if (fresh > 0.5) {
-    score += fresh;
-    reasons.push(`freshness:${fresh.toFixed(1)}`);
-  }
-
-  if (post.has_media) {
-    score += 8;
-    reasons.push("media:+8");
-  }
-  if (post.is_reply) {
-    score -= 5;
-    reasons.push("reply:-5");
-  }
-  if ((post.text || "").length > 40) score += 3;
-
-  return {
-    post: { ...post },
-    score: Math.max(0, score),
-    reasons,
-  };
-}
-
-function applyAuthorDiversity(scored: ScoredPost[]) {
-  const counts = new Map<string, number>();
-  for (const sp of scored) {
-    const c = (counts.get(sp.post.author_id) || 0) + 1;
-    counts.set(sp.post.author_id, c);
-    if (c > 1) {
-      const pen = 35 * (c - 1);
-      sp.score = Math.max(0, sp.score - pen);
-      sp.reasons.push(`diversity_penalty:-${pen}`);
-    }
-  }
 }
 
 import type { Tweet } from "./core/parse";

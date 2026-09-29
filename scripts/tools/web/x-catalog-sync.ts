@@ -1,7 +1,6 @@
 #!/usr/bin/env bun
 // SPDX-License-Identifier: Apache-2.0
-/** Sync the TypeScript and shared Rust X GraphQL catalogs from live bundles. */
-import { join } from "node:path";
+/** Sync the shared Rust X GraphQL catalog from live bundles. */
 import {
   DEFAULT_CATALOG_PATH,
   syncCatalogFromBundles,
@@ -15,10 +14,10 @@ function pathArg(flag: string, fallback: string): string {
   return value;
 }
 
-const rustCatalog = pathArg(
-  "--rust-catalog-path",
-  join(import.meta.dir, "../../../crates/web/aphrody-x/data/x-graphql-catalog.json"),
-);
-const catalogPath = pathArg("--catalog-path", DEFAULT_CATALOG_PATH);
-const report = await syncCatalogFromBundles({ catalogPath, rustCatalogPath: rustCatalog });
+const rustCatalog = pathArg("--rust-catalog-path", DEFAULT_CATALOG_PATH);
+const catalogPath = pathArg("--catalog-path", rustCatalog);
+const report = await syncCatalogFromBundles({
+  catalogPath,
+  ...(catalogPath !== rustCatalog ? { rustCatalogPath: rustCatalog } : {}),
+});
 console.log(JSON.stringify(report, null, 2));

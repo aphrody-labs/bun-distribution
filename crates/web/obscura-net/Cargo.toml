@@ -14,6 +14,7 @@ stealth = ["wreq", "wreq-util", "futures-util"]
 
 [dependencies]
 reqwest = { workspace = true }
+rustls = { workspace = true }
 tokio = { workspace = true }
 url = { workspace = true }
 serde = { workspace = true }

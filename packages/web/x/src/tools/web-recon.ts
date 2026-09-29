@@ -1,8 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-/**
- * Aphrody Web integration — renders the X SPA through the canonical V8 CLI.
- */
-
+import { webJobWait, webObscuraFetchSubmit } from "@aphrody/bun/web";
 import { X_RECON_URLS } from "../config/x-surface";
 
 export type WebReconProfile = "static" | "fast" | "http" | "stealth" | "max";
@@ -23,46 +20,56 @@ export interface XSurfaceReconReport {
   results: Record<string, ReconSummary>;
 }
 
-/** Render every URL through `aphrody-web`, emitting the shared page artifact. */
+interface NativeFetchResult {
+  ok?: boolean;
+  error?: string;
+  url?: string;
+  status?: number;
+  headers?: Record<string, string>;
+  body?: string;
+  transport?: string;
+}
+
+async function fetchNative(url: string): Promise<NativeFetchResult> {
+  const id = webObscuraFetchSubmit(url, false, 30_000);
+  if (!id) throw new Error("native Obscura fetch did not create a job");
+  return JSON.parse(await webJobWait(id, 35_000)) as NativeFetchResult;
+}
+
+/** Recon via the shared Rust HTTP transport. Browser profiles await Rust rendering. */
 export async function runXWebRecon(
   profile: WebReconProfile = "max",
   urls: readonly string[] = X_RECON_URLS,
 ): Promise<XSurfaceReconReport> {
-  const results: XSurfaceReconReport["results"] = {};
-
-  for (const url of urls) {
-    try {
-      const webBin = Bun.env.APHRODY_WEB_BIN || Bun.which("aphrody-web") || "aphrody-web";
-      const args = [webBin, "fetch", url, "--dump", "artifact", "--quiet", "--timeout", "90"];
-      if (profile === "stealth" || profile === "max") args.push("--stealth");
-      const proc = Bun.spawn({
-        cmd: args,
-        stdout: "pipe",
-        stderr: "pipe",
-      });
-      const code = await proc.exited;
-      const text = await new Response(proc.stdout).text();
-      if (code !== 0) {
-        const err = await new Response(proc.stderr).text();
-        results[url] = { url, error: err.trim() || `aphrody-web exit ${code}` };
-        continue;
-      }
-      const parsed = JSON.parse(text) as Record<string, unknown>;
-      results[url] = {
-        url,
-        finalUrl: parsed.url as string | undefined,
-        profile,
-        cdn: undefined,
-        raw: parsed,
-      };
-    } catch (err: unknown) {
-      results[url] = { url, error: err instanceof Error ? err.message : String(err) };
-    }
+  if (profile !== "http" && profile !== "static") {
+    throw new Error(`X recon profile '${profile}' requires the unified Rust browser renderer`);
   }
+
+  const entries = await Promise.all(urls.map(async (url): Promise<[string, ReconSummary]> => {
+    try {
+      const raw = await fetchNative(url);
+      if (raw.error || !raw.ok) {
+        return [url, { url, profile, error: raw.error ?? "native fetch failed", raw }];
+      }
+      return [url, {
+        url,
+        finalUrl: raw.url,
+        httpStatus: raw.status,
+        profile,
+        raw,
+      }];
+    } catch (error) {
+      return [url, {
+        url,
+        profile,
+        error: error instanceof Error ? error.message : String(error),
+      }];
+    }
+  }));
 
   return {
     generated_at: new Date().toISOString(),
     profile,
-    results,
+    results: Object.fromEntries(entries),
   };
 }

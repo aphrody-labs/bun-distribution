@@ -261,6 +261,28 @@ export function webJobCancel(id: number): boolean {
   return loadLib().symbols.aphrody_web_job_cancel(id) === 1;
 }
 
+/** Wait for a native job without blocking Bun, then release its handle. */
+export async function webJobWait(id: number, timeoutMs = 30_000): Promise<string> {
+  if (!Number.isSafeInteger(id) || id <= 0) throw new RangeError("native job id must be positive");
+  if (!Number.isFinite(timeoutMs) || timeoutMs < 0) {
+    throw new RangeError("native job timeout must be non-negative");
+  }
+  const deadline = Date.now() + timeoutMs;
+  try {
+    while (true) {
+      const result = webJobTake(id);
+      if (result !== null) return result;
+      const remaining = deadline - Date.now();
+      if (remaining <= 0) throw new Error(`native job ${id} timed out after ${timeoutMs} ms`);
+      // Each poll depends on the preceding native job state.
+      // eslint-disable-next-line no-await-in-loop
+      await Bun.sleep(Math.min(25, remaining));
+    }
+  } finally {
+    webJobCancel(id);
+  }
+}
+
 export function webJobCompletedSeq(): number {
   return Number(loadLib().symbols.aphrody_web_job_completed_seq());
 }

@@ -7,6 +7,14 @@ pub mod robots;
 #[cfg(feature = "stealth")]
 pub mod wreq_client;
 
+/// Configure the workspace's rustls provider before constructing a reqwest client.
+/// An existing provider remains authoritative when the host already installed one.
+pub fn ensure_rustls_crypto_provider() {
+    if rustls::crypto::CryptoProvider::get_default().is_none() {
+        let _ = rustls::crypto::ring::default_provider().install_default();
+    }
+}
+
 pub use blocklist::is_blocked as is_tracker_blocked;
 pub use client::{
     CallbackRegistry, ObscuraHttpClient, ObscuraNetError, RequestCallback, RequestCredentials,

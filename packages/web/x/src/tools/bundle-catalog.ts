@@ -21,8 +21,8 @@ export interface CatalogFile {
   >;
 }
 
-const PACKAGE_ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
-export const DEFAULT_CATALOG_PATH = join(PACKAGE_ROOT, "config/x-graphql-catalog.json");
+const REPO_ROOT = join(dirname(fileURLToPath(import.meta.url)), "../../../../..");
+export const DEFAULT_CATALOG_PATH = join(REPO_ROOT, "crates/web/aphrody-x/data/x-graphql-catalog.json");
 
 const BUNDLE_RE =
   /https:\/\/abs\.twimg\.com\/responsive-web\/client-web(?:-legacy)?\/[A-Za-z0-9.-]+\.js/g;
@@ -151,7 +151,7 @@ export function saveCatalog(catalog: CatalogFile, path = DEFAULT_CATALOG_PATH): 
   writeFileSync(path, `${JSON.stringify(catalog, null, 1)}\n`);
 }
 
-/** Full sync: scrape bundles → update catalog JSON (+ optional rust mirror path). */
+/** Full sync: scrape bundles and update the shared Rust catalog. */
 export async function syncCatalogFromBundles(opts?: {
   catalogPath?: string;
   rustCatalogPath?: string;

@@ -1121,6 +1121,7 @@ impl ObscuraHttpClient {
     async fn get_client(&self) -> &Client {
         self.client
             .get_or_init(|| async {
+                crate::ensure_rustls_crypto_provider();
                 let mut builder = Client::builder()
                 .redirect(Policy::none())
                 .timeout(self.timeout)

@@ -46,14 +46,14 @@
     "lint": "oxlint",
     "test": "bun test",
     "catalog:sync": "bun ../../../scripts/tools/web/x-catalog-sync.ts",
-    "coverage": "bun ../../../scripts/tools/web/x-coverage.ts",
-    "recon": "bun ../../apps/bxc/scripts/x-premium-recon.ts --profile max"
+    "coverage": "bun ../../../scripts/tools/web/x-coverage.ts"
   },
   "devDependencies": {
     "@types/bun": "^1.4.2",
     "typescript": "^7.0.2"
   },
   "dependencies": {
+    "@aphrody/bun": "workspace:*",
     "zod": "^4.6.4"
   },
   "peerDependencies": {}
