@@ -12,6 +12,19 @@
 - The Shenron source checkout and the earlier `_preview` package copy remain
   intact. Source SHA-256 values, target hashes, and remapped paths are recorded
   in `shenron-workspace-import.json`. Run `bun run shenron:verify` after edits.
+- The remaining tracked Shenron files follow the RG source-staging layout:
+  `scripts/shenron`, `docs/shenron`, `data/shenron`, `bin/shenron`,
+  `services/shenron`, `.claude/shenron`, `.github/shenron`, and
+  `config/shenron/deploy`. Shenron root files are preserved under
+  `docs/shenron/root`; root toolchain/config files also have a copy under
+  `config/shenron`, matching the RG snapshot convention. Source hashes, file
+  modes, exclusions, and destinations are listed in
+  `shenron-non-workspace-import.json`.
+- This is source preservation for the non-workspace files: copied scripts keep
+  their source-relative assumptions, `.github/shenron/workflows` is not
+  activated as Aphrody CI, and deploy files are not installed. No `.env`, local
+  database, cache, generated output, or ignored source file was imported. The
+  tracked proxy environment file was excluded.
 
 On 2026-09-29, root `bun install --frozen-lockfile`, nine Shenron typechecks,
 399 bot tests, and complete `config`, `api`, `auth`, `db`, `images`, and `ui`

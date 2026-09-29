@@ -1,0 +1,18 @@
+# Bun gère les deps npm côté code (bun update hebdomadaire via .github/workflows/update-deps.yml).
+# Dependabot ici gère uniquement les actions GitHub elles-mêmes.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: Europe/Paris
+    commit-message:
+      prefix: chore
+      include: scope
+    labels:
+      - dependencies
+      - github-actions
+    open-pull-requests-limit: 5

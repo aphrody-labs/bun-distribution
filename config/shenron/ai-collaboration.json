@@ -1,0 +1,72 @@
+{
+	"$schema": "https://a2a-protocol.org/latest/schema/agent-card.json",
+	"version": "1.0.0",
+	"name": "shenron-dragon-ball-factual-workflow",
+	"description": "Contrat local entre Shenron, Aphrody A2A et les sous-agents Codex Luna économes pour exploiter le manga et les databooks sans source web.",
+	"protocol": {
+		"version": "1.0",
+		"bindings": ["JSONRPC", "file+jsonl"]
+	},
+	"agents": [
+		{
+			"id": "shenron",
+			"role": "orchestrator-and-final-validator",
+			"skills": ["partition", "source-policy", "review", "wiki-proposals"]
+		},
+		{
+			"id": "aphrody",
+			"role": "coordination-peer",
+			"endpoint": "http://127.0.0.1:8788",
+			"skills": ["a2a", "heartbeat", "delivery-status"]
+		},
+		{
+			"id": "gpt-5.6-luna",
+			"role": "read-only-subagent-pool",
+			"transport": "codex-cli",
+			"model": "gpt-5.6-luna",
+			"reasoning_effort": "low",
+			"skills": ["inventory", "extract", "crosscheck", "draft", "review"]
+		}
+	],
+	"source_policy": {
+		"allowed": [
+			"local manga pages and metadata",
+			"local databook scans and transcriptions",
+			"local PostgreSQL or SQLite replicas used read-only",
+			"existing wiki only as an audit target"
+		],
+		"forbidden": [
+			"web search",
+			"Fandom",
+			"Wikipedia",
+			"AniList",
+			"Jikan",
+			"model memory presented as evidence"
+		],
+		"missing_evidence": "leave the target field empty",
+		"conflicts": "report every conflicting source without silently choosing one"
+	},
+	"workflows": {
+		"massive-source-grounded-wiki": {
+			"entrypoint": "bun scripts/workflow.ts",
+			"steps": [
+				"inventory-local-corpora",
+				"extract-databook-evidence",
+				"review-suspicious-databook-scans-visually",
+				"extract-manga-evidence",
+				"audit-database-gaps",
+				"crosscheck-source-references",
+				"draft-versionable-wiki-proposals",
+				"shenron-accept-or-reject"
+			],
+			"parallelism": "bounded within each step; steps remain ordered",
+			"approval": "simulation by default; --apply permits only guarded, backed-up, versioned writes accepted identically by at least 3 of 4 reviewers"
+		}
+	},
+	"coordination": {
+		"mailbox": ".coord",
+		"runtime_artifacts": "var/dragon-ball-workflow",
+		"message_methods": ["file+jsonl", "message/send"],
+		"honest_delivery": ["FAIT", "INCOMPLET", "NON_FAIT"]
+	}
+}
