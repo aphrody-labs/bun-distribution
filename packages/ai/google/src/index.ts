@@ -1,7 +1,4 @@
-/** Canonical Google/Gemini facade. Web integrations remain in BXC. */
-export * from "@aphrody/bxc/google";
-export * from "@aphrody/bxc/google/gemini-web";
-export * from "@aphrody/bxc/google/gemini-session";
+/** Canonical Google/Gemini facade backed by this workspace's own modules. */
 export * from "./runtime.ts";
 export * from "./vertex.ts";
 export * from "./api.ts";

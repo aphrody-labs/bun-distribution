@@ -3,7 +3,7 @@
   "version": "1.0.0-canary",
   "private": true,
   "type": "module",
-  "description": "Canonical Bun facade for Aphrody Google Cloud, Gemini and BXC Web integrations.",
+  "description": "Canonical Bun facade for Aphrody Google Cloud and Gemini.",
   "scripts": {
     "build": "bun build ./src/index.ts --outdir ./dist --target bun --format esm",
     "build:cli": "bun build ./bin/aphrody-google.ts --compile --outfile ./dist/aphrody-google-bun",
@@ -23,7 +23,6 @@
   },
   "dependencies": {
     "@ai-sdk/google-vertex": "5.0.89",
-    "@aphrody/bxc": "0.9.15",
     "ai": "6.0.286",
     "google-auth-library": "11.1.0",
     "googleapis": "182.0.0"
