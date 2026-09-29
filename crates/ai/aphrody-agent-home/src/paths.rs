@@ -6,7 +6,8 @@
 //! resolution on top:
 //!
 //! * `$APHRODY_WORKSPACE` — explicit override, wins over everything.
-//! * `$APHRODY_PROFILE` — selects `~/.aphrody/workspace-<profile>`.
+//! * `$APHRODY_PROFILE` — selects an existing `~/.aphrody/workspaces/<profile>`
+//!   when present, otherwise `~/.aphrody/workspace-<profile>`.
 //! * agent id — selects `~/.aphrody/workspace-<profile>` per agent when set via
 //!   [`HomeOptions::agent_id`].
 //! * default — `~/.aphrody/workspace`.
@@ -78,7 +79,8 @@ pub fn sanitize_profile(raw: &str) -> String {
 /// Resolution order (first match wins):
 /// 1. `$APHRODY_WORKSPACE` (verbatim override).
 /// 2. explicit `agent_id` -> `~/.aphrody/workspace-<agent>`.
-/// 3. `profile` arg or `$APHRODY_PROFILE` -> `~/.aphrody/workspace-<profile>`.
+/// 3. `profile` arg or `$APHRODY_PROFILE` -> existing
+///    `~/.aphrody/workspaces/<profile>`, else `~/.aphrody/workspace-<profile>`.
 /// 4. default -> `~/.aphrody/workspace`.
 ///
 /// # Errors
@@ -105,7 +107,10 @@ pub fn resolve_workspace(
         .map(|p| sanitize_profile(&p))
         .filter(|p| !p.is_empty());
     match prof {
-        Some(p) => Ok(base.join(format!("workspace-{p}"))),
+        Some(p) => {
+            let canonical = base.join("workspaces").join(&p);
+            if canonical.is_dir() { Ok(canonical) } else { Ok(base.join(format!("workspace-{p}"))) }
+        },
         None => Ok(base.join("workspace")),
     }
 }

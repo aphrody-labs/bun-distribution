@@ -22,7 +22,6 @@ use tokio_postgres::{Client, NoTls};
 
 const DB_TIMEOUT: Duration = Duration::from_millis(1500);
 const DB_ENV: &str = "APHRODY_MCP_DATABASE_URL";
-const SHENRON_TOKEN_ENV: &str = "APHRODY_SHENRON_API_TOKEN";
 const MAX_INGEST_BYTES: usize = 512 * 1024;
 const MAX_SEARCH_CONTENT_CHARS: usize = 8192;
 
@@ -135,7 +134,7 @@ pub(crate) fn router() -> Router {
 }
 
 fn shenron_auth(headers: &HeaderMap) -> Option<Response> {
-    let Ok(expected) = std::env::var(SHENRON_TOKEN_ENV) else {
+    let Some(expected) = aphrody_config::ai_env::HTTP_TOKEN.resolve() else {
         return Some(shenron_error(
             StatusCode::SERVICE_UNAVAILABLE,
             "Shenron API token is not configured",
@@ -155,12 +154,8 @@ fn shenron_auth(headers: &HeaderMap) -> Option<Response> {
 }
 
 fn shenron_error(status: StatusCode, message: &str) -> Response {
-    let mut response = aphrody_http_error::error_response(
-        status,
-        status.as_u16().to_string(),
-        message,
-        None,
-    );
+    let mut response =
+        aphrody_http_error::error_response(status, status.as_u16().to_string(), message, None);
     response
         .headers_mut()
         .insert(header::CACHE_CONTROL, axum::http::HeaderValue::from_static("no-store"));
@@ -930,8 +925,8 @@ async fn shenron_rag_ingest_core(doc: ShenronDocument) -> Response {
             let vector_indexed =
                 crate::shenron_vector::index_document(&client, &id, &doc.title, &doc.content).await;
             if !vector_indexed
-                && std::env::var("APHRODY_SHENRON_EMBED_MODEL")
-                    .ok()
+                && aphrody_config::ai_env::EMBED_MODEL
+                    .resolve()
                     .is_some_and(|model| !model.trim().is_empty())
             {
                 return shenron_error(

@@ -86,7 +86,14 @@ pub(crate) fn profile_state_root(config: &Config) -> miette::Result<PathBuf> {
 }
 
 fn profile_state_root_at(base: &Path, workspace: &Path, active_profile: Option<&str>) -> PathBuf {
-    if active_profile.is_some() { workspace.to_path_buf() } else { base.to_path_buf() }
+    if let Some(profile) = active_profile {
+        let profile = aphrody_agent_home::paths::sanitize_profile(profile);
+        if profile == "dbfr" && workspace == base.join("workspaces").join("dbfr") {
+            return base.join("profiles").join(profile);
+        }
+        return workspace.to_path_buf();
+    }
+    base.to_path_buf()
 }
 
 pub(crate) fn profile_sessions_dir(config: &Config) -> miette::Result<PathBuf> {
@@ -670,14 +677,16 @@ mod tests {
     }
 
     #[test]
-    fn profile_state_keeps_sessions_and_rag_under_the_profile_workspace() {
+    fn profile_state_keeps_sessions_and_rag_outside_the_agent_home() {
         let state = Path::new("state");
-        let shenron = state.join("workspace-shenron");
-        let root = profile_state_root_at(state, &shenron, Some("shenron"));
-        assert_eq!(root, shenron);
-        assert_eq!(root.join("sessions"), state.join("workspace-shenron/sessions"));
-        assert_eq!(root.join("rag/index.db"), state.join("workspace-shenron/rag/index.db"));
-        assert_eq!(profile_state_root_at(state, &shenron, None), state);
+        let dbfr = state.join("workspaces/dbfr");
+        let root = profile_state_root_at(state, &dbfr, Some("dbfr"));
+        assert_eq!(root, state.join("profiles/dbfr"));
+        assert_eq!(root.join("sessions"), state.join("profiles/dbfr/sessions"));
+        assert_eq!(root.join("rag/index.db"), state.join("profiles/dbfr/rag/index.db"));
+        let legacy = state.join("workspace-shenron");
+        assert_eq!(profile_state_root_at(state, &legacy, Some("shenron")), legacy);
+        assert_eq!(profile_state_root_at(state, &legacy, None), state);
     }
 
     #[test]
