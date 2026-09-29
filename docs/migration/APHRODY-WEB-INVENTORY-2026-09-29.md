@@ -3,23 +3,76 @@
 
 This is a target-repository inventory, not a claim that the referenced source
 checkout is current. The Infra-generated [`source-map.json`](./source-map.json)
-records `aphrody-web` at `6f966cc5cd56c01eb2a3d20e6ef518d5794b02d9`, clean,
-with 1,652 paths, 26 Rust manifests, and 6 Bun manifests. Recheck the source
-head, worktree, hashes, notices, and consumers through Infra before importing.
+records `aphrody-web` at `bbeb5ef4c497f7d27f546ad2cc15a250dcc93c83`, clean,
+with 1,653 paths. Reading only manifest paths listed by that map found 22
+product Rust crates, four other Cargo manifests (workspace root, Drive server,
+embedded scanner tool, and vendored Taffy), and six Bun manifests (workspace
+root, one app, and four packages). Recheck source heads, worktree, hashes,
+notices, and consumers through Infra before importing.
+
+## Current manifest inventory from Infra source map
+
+Product Rust crates and source paths:
+
+| Cargo package | Source path |
+| --- | --- |
+| `aphrody-browser` | `crates/aphrody-browser` |
+| `aphrody-site` | `crates/aphrody-site` |
+| `aphrody-web` | `crates/aphrody-web` |
+| `aphrody-web-bridge` | `crates/aphrody-web-bridge` |
+| `aphrody-web-chromium` | `crates/aphrody-web-chromium` |
+| `aphrody-web-engine` | `crates/aphrody-web-engine` |
+| `aphrody-web-extract` | `crates/aphrody-web-extract` |
+| `aphrody-web-ffi` | `crates/aphrody-web-ffi` |
+| `aphrody-web-index` | `crates/aphrody-web-index` |
+| `aphrody-web-render` | `crates/aphrody-web-render` |
+| `aphrody-web-service` | `crates/aphrody-web-service` |
+| `aphrody-x` | `crates/aphrody-x` |
+| `aphrody-x-algorithm` | `crates/aphrody-x-algorithm` |
+| `obscura` | `crates/aphrody-obscura/crates/obscura` |
+| `obscura-browser` | `crates/aphrody-obscura/crates/obscura-browser` |
+| `obscura-cdp` | `crates/aphrody-obscura/crates/obscura-cdp` |
+| `obscura-cli` | `crates/aphrody-obscura/crates/obscura-cli` |
+| `obscura-dom` | `crates/aphrody-obscura/crates/obscura-dom` |
+| `obscura-js` | `crates/aphrody-obscura/crates/obscura-js` |
+| `obscura-mcp` | `crates/aphrody-obscura/crates/obscura-mcp` |
+| `obscura-net` | `crates/aphrody-obscura/crates/obscura-net` |
+| `obscura-render` | `crates/aphrody-obscura/crates/obscura-render` |
+
+Bun application and package manifests:
+
+| Kind | Package | Source path |
+| --- | --- | --- |
+| Application | `@aphrody/bxc` | `apps/bxc` |
+| Package | `@aphrody/agent-browser` | `packages/agent-browser` |
+| Package | `@aphrody/bxc-test` | `packages/bxc-test` |
+| Package | `@aphrody/m3-tokens` | `packages/m3-tokens` |
+| Package | `@aphrody/x` | `packages/x` |
+| Workspace root | `aphrody-web` (private) | `.` |
+
+The other Cargo manifests are `apps/bxc/.agents/skills/rust-native-scanner`
+(`rust-native-scanner`), `drive-server` (`sd-server`), and vendored
+`crates/aphrody-obscura/vendor/taffy` (`taffy`). They are not product crates.
+Manifest presence alone does not prove workspace membership, an active target,
+or justify merging crate boundaries. Reconfirm license and dependency closure
+before importing.
 
 ## What is already in this target
 
 - `packages/web/x` contains `@aphrody/x`, a Bun/TypeScript client and its
   configuration, services, storage, and tests.
-- `crates/web` has no Rust source/manifests yet. The root Cargo manifest still
-  resolves `aphrody-web-bridge` and `obscura-mcp` through
-  `../src/aphrody-web`; that is a checkout dependency, not an extracted owner.
+- `crates/web/aphrody-web-extract` is now the first local Rust owner. It
+  implements opt-in URL normalization and static title/description/canonical
+  metadata extraction. Its six focused unit tests pass. It is not yet wired to
+  consumers and does not claim BXC parity.
+- The root Cargo manifest still resolves `aphrody-web-bridge` and `obscura-mcp`
+  through `../src/aphrody-web`; those are checkout dependencies, not extracted
+  owners.
 - AI MCP, messaging, and application-server code already consume or route BXC
   tools. Those are consumers to preserve while replacing the implementation.
-- The generated ecosystem catalog describes 22 Aphrody Web Rust crates and six
-  Bun packages: the `aphrody-web*` family, `aphrody-browser`, the Obscura
-  workspace, `@aphrody/agent-browser`, BXC, `@aphrody/bxc-test`, and `@aphrody/x`.
-  The catalog is generated evidence; it must be refreshed before migration.
+- The generated ecosystem catalog previously described 22 Rust crates and six
+  Bun manifests. The tables above are from the refreshed Infra map; refresh the
+  catalog through its owner before changing generated catalog contents.
 
 ## Browser and runtime ownership map
 

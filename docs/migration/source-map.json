@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "observedAt": "2026-09-29T05:00:17.087Z",
+  "observedAt": "2026-09-29T07:48:10.995Z",
   "scope": "Inventory only. Source checkouts are unchanged. Exact document duplicates are identified by SHA-256; semantic overlap is not auto-merged. Git histories remain in their source repositories until an explicit import gate.",
   "targets": {
     "aphrody": "/home/aphro/aphrody",
@@ -16,7 +16,7 @@
       "head": "c6a5b57ec90e98185c75f62e955bd6bfbd7a3620",
       "branch": "main",
       "dirty": true,
-      "dirtyPathCount": 11,
+      "dirtyPathCount": 12,
       "trackedAndUntrackedPathCount": 12,
       "documentationCount": 10,
       "rustManifestCount": 0,
@@ -91,8 +91,8 @@
       "head": "903dd9ae3162c2de404e4dc5a659fa5fd0b92f0b",
       "branch": "main",
       "dirty": true,
-      "dirtyPathCount": 11,
-      "trackedAndUntrackedPathCount": 431,
+      "dirtyPathCount": 18,
+      "trackedAndUntrackedPathCount": 437,
       "documentationCount": 74,
       "rustManifestCount": 7,
       "bunManifestCount": 3,
@@ -178,12 +178,12 @@
       "owner": "web",
       "policy": "extract",
       "sourcePath": "src/aphrody-web",
-      "head": "6f966cc5cd56c01eb2a3d20e6ef518d5794b02d9",
+      "head": "bbeb5ef4c497f7d27f546ad2cc15a250dcc93c83",
       "branch": "main",
       "dirty": false,
       "dirtyPathCount": 0,
-      "trackedAndUntrackedPathCount": 1652,
-      "documentationCount": 270,
+      "trackedAndUntrackedPathCount": 1653,
+      "documentationCount": 271,
       "rustManifestCount": 26,
       "bunManifestCount": 6,
       "pythonManifestCount": 0
@@ -296,18 +296,329 @@
   ],
   "totals": {
     "roots": 19,
-    "paths": 77859,
+    "paths": 77866,
     "byKind": {
       "bun-app": 8533,
       "bun-manifest": 765,
-      "bun-package": 6719,
+      "bun-package": 6724,
       "cargo-manifest": 797,
-      "documentation": 7040,
+      "documentation": 7041,
       "python-manifest": 13,
       "rust-source": 14031,
       "script": 1342,
-      "source-or-config": 37518,
+      "source-or-config": 37519,
       "upstream-source": 1101
+    }
+  },
+  "submodules": [
+    {
+      "root": "src-root-docs",
+      "path": "aphrody-ai",
+      "depth": 1,
+      "name": "aphrody-ai",
+      "url": "https://github.com/aphrody-code/aphrody-ai.git",
+      "indexPin": "3aa88791f49b963a00f073cb206677ea9d1957e1",
+      "headPin": "3aa88791f49b963a00f073cb206677ea9d1957e1",
+      "state": "matching-index",
+      "observedHead": "3aa88791f49b963a00f073cb206677ea9d1957e1",
+      "dirtyPathCount": 0
+    },
+    {
+      "root": "src-root-docs",
+      "path": "aphrody-ai/thirdparty/codex",
+      "depth": 2,
+      "name": "thirdparty/codex",
+      "url": "https://github.com/openai/codex.git",
+      "branch": "main",
+      "indexPin": "c6d48adc83b7a1f5675fef8634988d44fd76b986",
+      "headPin": "c6d48adc83b7a1f5675fef8634988d44fd76b986",
+      "state": "matching-index",
+      "observedHead": "c6d48adc83b7a1f5675fef8634988d44fd76b986",
+      "dirtyPathCount": 0
+    },
+    {
+      "root": "src-root-docs",
+      "path": "aphrody-compat",
+      "depth": 1,
+      "name": "aphrody-compat",
+      "url": "https://github.com/aphrody-code/aphrody-compat.git",
+      "indexPin": "a7854eba0cf606993c12c29a95510a2c97077841",
+      "headPin": "a7854eba0cf606993c12c29a95510a2c97077841",
+      "state": "head-differs-from-index",
+      "observedHead": "5c7bd3e1176f8709a8d91ebfc989bb2aba38b773",
+      "dirtyPathCount": 0
+    },
+    {
+      "root": "src-root-docs",
+      "path": "aphrody-compat/third_party/bun",
+      "depth": 2,
+      "name": "third_party/bun",
+      "url": "https://github.com/oven-sh/bun.git",
+      "indexPin": "bf80d21c69c355f6e5bae2749485674663ed13a1",
+      "headPin": "bf80d21c69c355f6e5bae2749485674663ed13a1",
+      "state": "uninitialized"
+    },
+    {
+      "root": "src-root-docs",
+      "path": "aphrody-contracts",
+      "depth": 1,
+      "name": "aphrody-contracts",
+      "url": "https://github.com/aphrody-code/aphrody-contracts.git",
+      "indexPin": "e244eb8fb24857b46319d766161f0aaa74262480",
+      "headPin": "e244eb8fb24857b46319d766161f0aaa74262480",
+      "state": "head-differs-from-index",
+      "observedHead": "4a22afb12b086573e6890e49a3bfbde7a96380ea",
+      "dirtyPathCount": 0
+    },
+    {
+      "root": "src-root-docs",
+      "path": "aphrody-discord",
+      "depth": 1,
+      "indexPin": "7d40cd148296dce042fa73a277bab99970f98af1",
+      "headPin": "7d40cd148296dce042fa73a277bab99970f98af1",
+      "state": "gitlink-without-declaration",
+      "observedHead": "326ca0beee7ec4a8563d1d7e05f046bdf13fe583",
+      "dirtyPathCount": 0
+    },
+    {
+      "root": "src-root-docs",
+      "path": "aphrody-infra",
+      "depth": 1,
+      "name": "aphrody-infra",
+      "url": "https://github.com/aphrody-code/aphrody-infra.git",
+      "branch": "main",
+      "indexPin": "903dd9ae3162c2de404e4dc5a659fa5fd0b92f0b",
+      "headPin": "903dd9ae3162c2de404e4dc5a659fa5fd0b92f0b",
+      "state": "matching-index",
+      "observedHead": "903dd9ae3162c2de404e4dc5a659fa5fd0b92f0b",
+      "dirtyPathCount": 18
+    },
+    {
+      "root": "src-root-docs",
+      "path": "aphrody-native",
+      "depth": 1,
+      "name": "aphrody-native",
+      "url": "https://github.com/aphrody-code/aphrody-native.git",
+      "indexPin": "1acd62e5f4b0f519754a0b3c33021896d4e590c1",
+      "headPin": "1acd62e5f4b0f519754a0b3c33021896d4e590c1",
+      "state": "matching-index",
+      "observedHead": "1acd62e5f4b0f519754a0b3c33021896d4e590c1",
+      "dirtyPathCount": 0
+    },
+    {
+      "root": "src-root-docs",
+      "path": "aphrody-os",
+      "depth": 1,
+      "name": "aphrody-os",
+      "url": "https://github.com/aphrody-code/aphrody-os.git",
+      "indexPin": "37e499fc69f2a1672707e44cf49db4a71fd3f066",
+      "headPin": "37e499fc69f2a1672707e44cf49db4a71fd3f066",
+      "state": "head-differs-from-index",
+      "observedHead": "5988533a5fe6088aba61389bd488f035ab61aa08",
+      "dirtyPathCount": 0
+    },
+    {
+      "root": "src-root-docs",
+      "path": "aphrody-os/third_party/uutils-diffutils",
+      "depth": 2,
+      "name": "third_party/uutils-diffutils",
+      "url": "https://github.com/aphrody-labs/diffutils.git",
+      "indexPin": "2e7f191ddfa3516b1920cffd7775d8f292977f07",
+      "headPin": "2e7f191ddfa3516b1920cffd7775d8f292977f07",
+      "state": "matching-index",
+      "observedHead": "2e7f191ddfa3516b1920cffd7775d8f292977f07",
+      "dirtyPathCount": 0
+    },
+    {
+      "root": "src-root-docs",
+      "path": "aphrody-os/third_party/uutils-findutils",
+      "depth": 2,
+      "name": "third_party/uutils-findutils",
+      "url": "https://github.com/aphrody-labs/findutils.git",
+      "indexPin": "6566e0ca5e46a0655445b051c03f2bf2fb2f1411",
+      "headPin": "6566e0ca5e46a0655445b051c03f2bf2fb2f1411",
+      "state": "matching-index",
+      "observedHead": "6566e0ca5e46a0655445b051c03f2bf2fb2f1411",
+      "dirtyPathCount": 0
+    },
+    {
+      "root": "src-root-docs",
+      "path": "aphrody-os/third_party/uutils-grep",
+      "depth": 2,
+      "name": "third_party/uutils-grep",
+      "url": "https://github.com/aphrody-labs/grep.git",
+      "indexPin": "dd8333976d5bc0adf6e2bccceb664d3d6da726c5",
+      "headPin": "dd8333976d5bc0adf6e2bccceb664d3d6da726c5",
+      "state": "matching-index",
+      "observedHead": "dd8333976d5bc0adf6e2bccceb664d3d6da726c5",
+      "dirtyPathCount": 0
+    },
+    {
+      "root": "src-root-docs",
+      "path": "aphrody-os/third_party/uutils-sed",
+      "depth": 2,
+      "name": "third_party/uutils-sed",
+      "url": "https://github.com/aphrody-labs/sed.git",
+      "indexPin": "4b44c66c6a166e3ec8242da46cea093eb2026bd2",
+      "headPin": "4b44c66c6a166e3ec8242da46cea093eb2026bd2",
+      "state": "matching-index",
+      "observedHead": "4b44c66c6a166e3ec8242da46cea093eb2026bd2",
+      "dirtyPathCount": 0
+    },
+    {
+      "root": "src-root-docs",
+      "path": "aphrody-os/third_party/uutils-tar",
+      "depth": 2,
+      "name": "third_party/uutils-tar",
+      "url": "https://github.com/aphrody-labs/tar.git",
+      "indexPin": "4fe9ce8d722815e9fa56c43fae53d67c74f90591",
+      "headPin": "4fe9ce8d722815e9fa56c43fae53d67c74f90591",
+      "state": "matching-index",
+      "observedHead": "4fe9ce8d722815e9fa56c43fae53d67c74f90591",
+      "dirtyPathCount": 0
+    },
+    {
+      "root": "src-root-docs",
+      "path": "aphrody-shell",
+      "depth": 1,
+      "name": "aphrody-shell",
+      "url": "https://github.com/aphrody-code/aphrody-shell.git",
+      "indexPin": "198b0244f6d899963449f70978da180580da5ace",
+      "headPin": "198b0244f6d899963449f70978da180580da5ace",
+      "state": "head-differs-from-index",
+      "observedHead": "2a829cd7be12a7de67e8e6c5ba65b4292f11c650",
+      "dirtyPathCount": 0
+    },
+    {
+      "root": "src-root-docs",
+      "path": "aphrody-ui",
+      "depth": 1,
+      "name": "aphrody-ui",
+      "url": "https://github.com/aphrody-code/aphrody-ui.git",
+      "indexPin": "dfdf720eb9116064bd7229582d36490964e30415",
+      "headPin": "dfdf720eb9116064bd7229582d36490964e30415",
+      "state": "delegated-uninspected"
+    },
+    {
+      "root": "src-root-docs",
+      "path": "aphrody-web",
+      "depth": 1,
+      "name": "aphrody-web",
+      "url": "https://github.com/aphrody-code/aphrody-web.git",
+      "indexPin": "6f966cc5cd56c01eb2a3d20e6ef518d5794b02d9",
+      "headPin": "6f966cc5cd56c01eb2a3d20e6ef518d5794b02d9",
+      "state": "head-differs-from-index",
+      "observedHead": "bbeb5ef4c497f7d27f546ad2cc15a250dcc93c83",
+      "dirtyPathCount": 0
+    },
+    {
+      "root": "src-root-docs",
+      "path": "aphrody-web/third_party/agent-browser",
+      "depth": 2,
+      "name": "third_party/agent-browser",
+      "url": "https://github.com/vercel-labs/agent-browser",
+      "indexPin": "0f1029392bc3843df15fa4204f0eaf63dfb75e61",
+      "headPin": "0f1029392bc3843df15fa4204f0eaf63dfb75e61",
+      "state": "matching-index",
+      "observedHead": "0f1029392bc3843df15fa4204f0eaf63dfb75e61",
+      "dirtyPathCount": 0
+    },
+    {
+      "root": "src-root-docs",
+      "path": "bun",
+      "depth": 1,
+      "indexPin": "a2671046afbfc818fba21a4925f384b75dc8e109",
+      "headPin": "a2671046afbfc818fba21a4925f384b75dc8e109",
+      "state": "gitlink-without-declaration",
+      "observedHead": "a2671046afbfc818fba21a4925f384b75dc8e109",
+      "dirtyPathCount": 0
+    },
+    {
+      "root": "src-root-docs",
+      "path": "nie",
+      "depth": 1,
+      "name": "nie",
+      "url": "https://github.com/aphrody-code/nie.git",
+      "branch": "main",
+      "indexPin": "94d88bc3993e7dabddf44ce9804d5b41ee5d4c4c",
+      "headPin": "94d88bc3993e7dabddf44ce9804d5b41ee5d4c4c",
+      "state": "head-differs-from-index",
+      "observedHead": "fd624e060a4180c988336bcc3f829bb1835cbf24",
+      "dirtyPathCount": 0
+    },
+    {
+      "root": "src-root-docs",
+      "path": "oxc",
+      "depth": 1,
+      "indexPin": "d82d3cb6cd6cb36a6b29ef07b3d965bda6a5faff",
+      "headPin": "d82d3cb6cd6cb36a6b29ef07b3d965bda6a5faff",
+      "state": "gitlink-without-declaration",
+      "observedHead": "31d5266e150ff17af52f0c2fc798cc27dc9a5a59",
+      "dirtyPathCount": 0
+    },
+    {
+      "root": "src-root-docs",
+      "path": "rg",
+      "depth": 1,
+      "name": "rg",
+      "url": "https://github.com/rose-griffon/rg.git",
+      "branch": "main",
+      "indexPin": "bfc8c490a0e35c61ca3960ec64c2aacd2b982629",
+      "headPin": "bfc8c490a0e35c61ca3960ec64c2aacd2b982629",
+      "state": "head-differs-from-index",
+      "observedHead": "14be66e6cf4dbb7350b0021cc7f83fe28f144583",
+      "dirtyPathCount": 0
+    },
+    {
+      "root": "src-root-docs",
+      "path": "shenron",
+      "depth": 1,
+      "name": "shenron",
+      "url": "https://github.com/aphrody-code/shenron.git",
+      "branch": "main",
+      "indexPin": "ddcbd8f5a9cce25afef5a0ab180f631032bd68b7",
+      "headPin": "ddcbd8f5a9cce25afef5a0ab180f631032bd68b7",
+      "state": "head-differs-from-index",
+      "observedHead": "e7438a6234407e445105c5a442577223e0bf7f67",
+      "dirtyPathCount": 0
+    }
+  ],
+  "missingRoots": [
+    {
+      "key": "bevy",
+      "path": "/home/aphro/src/bevy",
+      "state": "checkout-not-on-disk"
+    },
+    {
+      "key": "dust",
+      "path": "/home/aphro/src/dust",
+      "state": "checkout-not-on-disk"
+    },
+    {
+      "key": "emu.nintendo.wii.gecko",
+      "path": "/home/aphro/src/emu.nintendo.wii.gecko",
+      "state": "checkout-not-on-disk"
+    }
+  ],
+  "submoduleInventoryObservedAt": "2026-09-29T07:48:08.828Z",
+  "nestedSourceMap": "docs/migration/nested-source-map.json",
+  "nestedSourceMapObservedAt": "2026-09-29T07:48:10.964Z",
+  "nestedSourceTotals": {
+    "checkouts": 7,
+    "paths": 9583,
+    "parsedManifests": 192,
+    "manifestParseFailures": 0,
+    "declaredWorkspaces": 11,
+    "memberPatterns": 164,
+    "unresolvedMemberPatterns": 1,
+    "byKind": {
+      "documentation": 400,
+      "license": 14,
+      "manifest-or-lockfile": 213,
+      "package-file": 84,
+      "rust-source": 5131,
+      "script": 144,
+      "source-or-config": 3597
     }
   },
   "entries": [
@@ -854,11 +1165,8 @@
       "size": 10349,
       "status": "clean",
       "target": "docs/migration/source-licenses/aphrody-ai/LICENSE",
-      "sha256": "6d1d968fb225eca367cb7f0b8831ab012a35d92b547e945e17ef8e7b05c3e5cc",
-      "sourceLicenseTarget": "docs/migration/source-licenses/aphrody-ai/LICENSE",
       "importedSha256": "a6cba85bc92e0cff7a450b1d873c0eaa2e9fc96bf472df0247a26bec77bf3ff9",
-      "importedSourceSha256": "a6cba85bc92e0cff7a450b1d873c0eaa2e9fc96bf472df0247a26bec77bf3ff9",
-      "sourceLicenseBlobSha256": "a6cba85bc92e0cff7a450b1d873c0eaa2e9fc96bf472df0247a26bec77bf3ff9"
+      "importedSourceSha256": "a6cba85bc92e0cff7a450b1d873c0eaa2e9fc96bf472df0247a26bec77bf3ff9"
     },
     {
       "source": "aphrody-ai/MEMORY.md",
@@ -877,11 +1185,8 @@
       "size": 606,
       "status": "clean",
       "target": "docs/migration/source-licenses/aphrody-ai/NOTICE",
-      "sha256": "8ada1e46ed5127386bf3816ce54513f175de5890a167893303d0d88b44c766f0",
-      "sourceLicenseTarget": "docs/migration/source-licenses/aphrody-ai/NOTICE",
       "importedSha256": "8ada1e46ed5127386bf3816ce54513f175de5890a167893303d0d88b44c766f0",
-      "importedSourceSha256": "8ada1e46ed5127386bf3816ce54513f175de5890a167893303d0d88b44c766f0",
-      "sourceLicenseBlobSha256": "8ada1e46ed5127386bf3816ce54513f175de5890a167893303d0d88b44c766f0"
+      "importedSourceSha256": "8ada1e46ed5127386bf3816ce54513f175de5890a167893303d0d88b44c766f0"
     },
     {
       "source": "aphrody-ai/README.md",
@@ -17551,13 +17856,7 @@
       "kind": "source-or-config",
       "size": 10349,
       "status": "clean",
-      "target": "docs/migration/source-licenses/aphrody-ai/LICENSE",
-      "sha256": "6d1d968fb225eca367cb7f0b8831ab012a35d92b547e945e17ef8e7b05c3e5cc",
-      "sourceLicenseTarget": "docs/migration/source-licenses/aphrody-ai/LICENSE",
-      "sourceLicenseAliasOf": "aphrody-ai/LICENSE",
-      "importedSha256": "a6cba85bc92e0cff7a450b1d873c0eaa2e9fc96bf472df0247a26bec77bf3ff9",
-      "importedSourceSha256": "a6cba85bc92e0cff7a450b1d873c0eaa2e9fc96bf472df0247a26bec77bf3ff9",
-      "sourceLicenseBlobSha256": "a6cba85bc92e0cff7a450b1d873c0eaa2e9fc96bf472df0247a26bec77bf3ff9"
+      "target": "docs/migration/source-licenses/aphrody-compat/LICENSE"
     },
     {
       "source": "aphrody-compat/README.md",
@@ -24018,13 +24317,7 @@
       "kind": "source-or-config",
       "size": 10349,
       "status": "clean",
-      "target": "docs/migration/source-licenses/aphrody-ai/LICENSE",
-      "sha256": "6d1d968fb225eca367cb7f0b8831ab012a35d92b547e945e17ef8e7b05c3e5cc",
-      "sourceLicenseTarget": "docs/migration/source-licenses/aphrody-ai/LICENSE",
-      "sourceLicenseAliasOf": "aphrody-ai/LICENSE",
-      "importedSha256": "a6cba85bc92e0cff7a450b1d873c0eaa2e9fc96bf472df0247a26bec77bf3ff9",
-      "importedSourceSha256": "a6cba85bc92e0cff7a450b1d873c0eaa2e9fc96bf472df0247a26bec77bf3ff9",
-      "sourceLicenseBlobSha256": "a6cba85bc92e0cff7a450b1d873c0eaa2e9fc96bf472df0247a26bec77bf3ff9"
+      "target": "docs/migration/source-licenses/aphrody-contracts/LICENSE"
     },
     {
       "source": "aphrody-contracts/README.md",
@@ -25462,10 +25755,8 @@
       "status": "clean",
       "sha256": "74b0f63d1e60dec4edfaa7ffcec4aa16fcac0df4246e2bc563a45b25de804d48",
       "target": "docs/migration/source-licenses/aphrody-discord/LICENSE.txt",
-      "importedSourceSha256": "74b0f63d1e60dec4edfaa7ffcec4aa16fcac0df4246e2bc563a45b25de804d48",
-      "sourceLicenseTarget": "docs/migration/source-licenses/aphrody-discord/LICENSE.txt",
       "importedSha256": "74b0f63d1e60dec4edfaa7ffcec4aa16fcac0df4246e2bc563a45b25de804d48",
-      "sourceLicenseBlobSha256": "74b0f63d1e60dec4edfaa7ffcec4aa16fcac0df4246e2bc563a45b25de804d48"
+      "importedSourceSha256": "74b0f63d1e60dec4edfaa7ffcec4aa16fcac0df4246e2bc563a45b25de804d48"
     },
     {
       "source": "aphrody-discord/PLAN-BOT-SHENRON.md",
@@ -39272,7 +39563,7 @@
       "status": "clean",
       "sha256": "74b0f63d1e60dec4edfaa7ffcec4aa16fcac0df4246e2bc563a45b25de804d48",
       "target": null,
-      "duplicateOf": "docs/reference/discord/LICENSE.txt"
+      "duplicateOf": "docs/migration/source-licenses/aphrody-discord/LICENSE.txt"
     },
     {
       "source": "aphrody-discord/packages/importer/README.md",
@@ -39500,7 +39791,7 @@
       "status": "clean",
       "sha256": "74b0f63d1e60dec4edfaa7ffcec4aa16fcac0df4246e2bc563a45b25de804d48",
       "target": null,
-      "duplicateOf": "docs/reference/discord/LICENSE.txt"
+      "duplicateOf": "docs/migration/source-licenses/aphrody-discord/LICENSE.txt"
     },
     {
       "source": "aphrody-discord/packages/lava-player/README.md",
@@ -39724,7 +40015,7 @@
       "status": "clean",
       "sha256": "74b0f63d1e60dec4edfaa7ffcec4aa16fcac0df4246e2bc563a45b25de804d48",
       "target": null,
-      "duplicateOf": "docs/reference/discord/LICENSE.txt"
+      "duplicateOf": "docs/migration/source-licenses/aphrody-discord/LICENSE.txt"
     },
     {
       "source": "aphrody-discord/packages/lava-queue/README.md",
@@ -39820,7 +40111,7 @@
       "status": "clean",
       "sha256": "74b0f63d1e60dec4edfaa7ffcec4aa16fcac0df4246e2bc563a45b25de804d48",
       "target": null,
-      "duplicateOf": "docs/reference/discord/LICENSE.txt"
+      "duplicateOf": "docs/migration/source-licenses/aphrody-discord/LICENSE.txt"
     },
     {
       "source": "aphrody-discord/packages/music/README.md",
@@ -40235,7 +40526,7 @@
       "status": "clean",
       "sha256": "74b0f63d1e60dec4edfaa7ffcec4aa16fcac0df4246e2bc563a45b25de804d48",
       "target": null,
-      "duplicateOf": "docs/reference/discord/LICENSE.txt"
+      "duplicateOf": "docs/migration/source-licenses/aphrody-discord/LICENSE.txt"
     },
     {
       "source": "aphrody-discord/packages/pagination/README.md",
@@ -44449,7 +44740,7 @@
       "status": "clean",
       "sha256": "74b0f63d1e60dec4edfaa7ffcec4aa16fcac0df4246e2bc563a45b25de804d48",
       "target": null,
-      "duplicateOf": "docs/reference/discord/LICENSE.txt"
+      "duplicateOf": "docs/migration/source-licenses/aphrody-discord/LICENSE.txt"
     },
     {
       "source": "aphrody-discord/packages/utilities/README.md",
@@ -45783,11 +46074,8 @@
       "size": 10349,
       "status": "clean",
       "target": "docs/migration/source-licenses/aphrody-infra/LICENSE",
-      "sha256": "6d1d968fb225eca367cb7f0b8831ab012a35d92b547e945e17ef8e7b05c3e5cc",
-      "sourceLicenseTarget": "docs/migration/source-licenses/aphrody-infra/LICENSE",
       "importedSha256": "6d1d968fb225eca367cb7f0b8831ab012a35d92b547e945e17ef8e7b05c3e5cc",
-      "importedSourceSha256": "6d1d968fb225eca367cb7f0b8831ab012a35d92b547e945e17ef8e7b05c3e5cc",
-      "sourceLicenseBlobSha256": "6d1d968fb225eca367cb7f0b8831ab012a35d92b547e945e17ef8e7b05c3e5cc"
+      "importedSourceSha256": "6d1d968fb225eca367cb7f0b8831ab012a35d92b547e945e17ef8e7b05c3e5cc"
     },
     {
       "source": "aphrody-infra/README.md",
@@ -45844,290 +46132,290 @@
       "kind": "source-or-config",
       "size": 3026,
       "status": "clean",
-      "target": "config/a2a-peers.json",
       "sha256": "b91600b3d4c0e4978ec8c797f2b22b702ee277bffee88e46773b18949880884c",
-      "importedSourceSha256": "b91600b3d4c0e4978ec8c797f2b22b702ee277bffee88e46773b18949880884c",
-      "importedSha256": "b91600b3d4c0e4978ec8c797f2b22b702ee277bffee88e46773b18949880884c"
+      "target": "config/a2a-peers.json",
+      "importedSha256": "b91600b3d4c0e4978ec8c797f2b22b702ee277bffee88e46773b18949880884c",
+      "importedSourceSha256": "b91600b3d4c0e4978ec8c797f2b22b702ee277bffee88e46773b18949880884c"
     },
     {
       "source": "aphrody-infra/config/application-contracts.json",
       "kind": "source-or-config",
       "size": 4081,
       "status": "clean",
-      "target": "config/application-contracts.json",
       "sha256": "c1f29f44e79df3aaf692ab3b9c712c4510916c6a5636363c4e5737ed7f097875",
-      "importedSourceSha256": "c1f29f44e79df3aaf692ab3b9c712c4510916c6a5636363c4e5737ed7f097875",
-      "importedSha256": "c1f29f44e79df3aaf692ab3b9c712c4510916c6a5636363c4e5737ed7f097875"
+      "target": "config/application-contracts.json",
+      "importedSha256": "c1f29f44e79df3aaf692ab3b9c712c4510916c6a5636363c4e5737ed7f097875",
+      "importedSourceSha256": "c1f29f44e79df3aaf692ab3b9c712c4510916c6a5636363c4e5737ed7f097875"
     },
     {
       "source": "aphrody-infra/config/asset-catalog.json",
       "kind": "source-or-config",
       "size": 1985,
       "status": "clean",
-      "target": "config/asset-catalog.json",
       "sha256": "dd27d49441eb2359c0dd2252591736a4ec1349d88a679855ad92c966ebb01b70",
-      "importedSourceSha256": "dd27d49441eb2359c0dd2252591736a4ec1349d88a679855ad92c966ebb01b70",
-      "importedSha256": "dd27d49441eb2359c0dd2252591736a4ec1349d88a679855ad92c966ebb01b70"
+      "target": "config/asset-catalog.json",
+      "importedSha256": "dd27d49441eb2359c0dd2252591736a4ec1349d88a679855ad92c966ebb01b70",
+      "importedSourceSha256": "dd27d49441eb2359c0dd2252591736a4ec1349d88a679855ad92c966ebb01b70"
     },
     {
       "source": "aphrody-infra/config/bun-fork.json",
       "kind": "source-or-config",
       "size": 632,
       "status": "clean",
-      "target": "config/bun-fork.json",
       "sha256": "a7dc3a1353c2dd2050c195b4b374ee802ede72baa8964fd69f9584e686185ba0",
-      "importedSourceSha256": "a7dc3a1353c2dd2050c195b4b374ee802ede72baa8964fd69f9584e686185ba0",
-      "importedSha256": "a7dc3a1353c2dd2050c195b4b374ee802ede72baa8964fd69f9584e686185ba0"
+      "target": "config/bun-fork.json",
+      "importedSha256": "a7dc3a1353c2dd2050c195b4b374ee802ede72baa8964fd69f9584e686185ba0",
+      "importedSourceSha256": "a7dc3a1353c2dd2050c195b4b374ee802ede72baa8964fd69f9584e686185ba0"
     },
     {
       "source": "aphrody-infra/config/cli-catalog.json",
       "kind": "source-or-config",
       "size": 1442,
       "status": "clean",
-      "target": "config/cli-catalog.json",
       "sha256": "fe64a4adee07bbcceec78cc822bb493006921533ab8f37a80755267ed4e2aea8",
-      "importedSourceSha256": "fe64a4adee07bbcceec78cc822bb493006921533ab8f37a80755267ed4e2aea8",
-      "importedSha256": "fe64a4adee07bbcceec78cc822bb493006921533ab8f37a80755267ed4e2aea8"
+      "target": "config/cli-catalog.json",
+      "importedSha256": "fe64a4adee07bbcceec78cc822bb493006921533ab8f37a80755267ed4e2aea8",
+      "importedSourceSha256": "fe64a4adee07bbcceec78cc822bb493006921533ab8f37a80755267ed4e2aea8"
     },
     {
       "source": "aphrody-infra/config/cookie-layout.env.example",
       "kind": "source-or-config",
       "size": 511,
       "status": "clean",
-      "target": "config/cookie-layout.env.example",
       "sha256": "da4efbb424f8dd3e03cff41ca4b56342dd6992b7306ff641bf560c89295bb7c9",
-      "importedSourceSha256": "da4efbb424f8dd3e03cff41ca4b56342dd6992b7306ff641bf560c89295bb7c9",
-      "importedSha256": "da4efbb424f8dd3e03cff41ca4b56342dd6992b7306ff641bf560c89295bb7c9"
+      "target": "config/cookie-layout.env.example",
+      "importedSha256": "da4efbb424f8dd3e03cff41ca4b56342dd6992b7306ff641bf560c89295bb7c9",
+      "importedSourceSha256": "da4efbb424f8dd3e03cff41ca4b56342dd6992b7306ff641bf560c89295bb7c9"
     },
     {
       "source": "aphrody-infra/config/developer-cli-tools.json",
       "kind": "source-or-config",
       "size": 4369,
       "status": "clean",
-      "target": "config/developer-cli-tools.json",
       "sha256": "bb0d6553966fc72d8e464bbb1254ea58931d662bc5b49fdac62419c6e65d8dba",
-      "importedSourceSha256": "bb0d6553966fc72d8e464bbb1254ea58931d662bc5b49fdac62419c6e65d8dba",
-      "importedSha256": "bb0d6553966fc72d8e464bbb1254ea58931d662bc5b49fdac62419c6e65d8dba"
+      "target": "config/developer-cli-tools.json",
+      "importedSha256": "bb0d6553966fc72d8e464bbb1254ea58931d662bc5b49fdac62419c6e65d8dba",
+      "importedSourceSha256": "bb0d6553966fc72d8e464bbb1254ea58931d662bc5b49fdac62419c6e65d8dba"
     },
     {
       "source": "aphrody-infra/config/disk-reclaim.json",
       "kind": "source-or-config",
       "size": 3569,
       "status": "clean",
-      "target": "config/disk-reclaim.json",
       "sha256": "f93b916c20c667ab76d116d02bf0067b8c5e22061f624b0ba0b0267bd4dc20a1",
-      "importedSourceSha256": "f93b916c20c667ab76d116d02bf0067b8c5e22061f624b0ba0b0267bd4dc20a1",
-      "importedSha256": "f93b916c20c667ab76d116d02bf0067b8c5e22061f624b0ba0b0267bd4dc20a1"
+      "target": "config/disk-reclaim.json",
+      "importedSha256": "f93b916c20c667ab76d116d02bf0067b8c5e22061f624b0ba0b0267bd4dc20a1",
+      "importedSourceSha256": "f93b916c20c667ab76d116d02bf0067b8c5e22061f624b0ba0b0267bd4dc20a1"
     },
     {
       "source": "aphrody-infra/config/gcp-runtime.env.example",
       "kind": "source-or-config",
       "size": 579,
       "status": "clean",
-      "target": "config/gcp-runtime.env.example",
       "sha256": "ffae1499fea1a70a0c324152a77650066580f60414129b519dad611e59285d4e",
-      "importedSourceSha256": "ffae1499fea1a70a0c324152a77650066580f60414129b519dad611e59285d4e",
-      "importedSha256": "ffae1499fea1a70a0c324152a77650066580f60414129b519dad611e59285d4e"
+      "target": "config/gcp-runtime.env.example",
+      "importedSha256": "ffae1499fea1a70a0c324152a77650066580f60414129b519dad611e59285d4e",
+      "importedSourceSha256": "ffae1499fea1a70a0c324152a77650066580f60414129b519dad611e59285d4e"
     },
     {
       "source": "aphrody-infra/config/google-gemini-pipeline.json",
       "kind": "source-or-config",
       "size": 2504,
       "status": "clean",
-      "target": "config/google-gemini-pipeline.json",
       "sha256": "ef7929f5bae457fa8c6f9b3ef2048c2bc5c1d3325fc3ab974ca678a60f69ab4a",
-      "importedSourceSha256": "ef7929f5bae457fa8c6f9b3ef2048c2bc5c1d3325fc3ab974ca678a60f69ab4a",
-      "importedSha256": "ef7929f5bae457fa8c6f9b3ef2048c2bc5c1d3325fc3ab974ca678a60f69ab4a"
+      "target": "config/google-gemini-pipeline.json",
+      "importedSha256": "ef7929f5bae457fa8c6f9b3ef2048c2bc5c1d3325fc3ab974ca678a60f69ab4a",
+      "importedSourceSha256": "ef7929f5bae457fa8c6f9b3ef2048c2bc5c1d3325fc3ab974ca678a60f69ab4a"
     },
     {
       "source": "aphrody-infra/config/google-stack-release.json",
       "kind": "source-or-config",
       "size": 773,
       "status": "clean",
-      "target": "config/google-stack-release.json",
       "sha256": "48f64b233a631f9e7cfd8d005b3f4813fee9eacd2cb9ebf9c0ca7cad99b347cc",
-      "importedSourceSha256": "48f64b233a631f9e7cfd8d005b3f4813fee9eacd2cb9ebf9c0ca7cad99b347cc",
-      "importedSha256": "00c0b48bf013c190e7976f7ca7d914bc05b069cd2fdc5f5862930f7bc4804325"
+      "target": "config/google-stack-release.json",
+      "importedSha256": "00c0b48bf013c190e7976f7ca7d914bc05b069cd2fdc5f5862930f7bc4804325",
+      "importedSourceSha256": "48f64b233a631f9e7cfd8d005b3f4813fee9eacd2cb9ebf9c0ca7cad99b347cc"
     },
     {
       "source": "aphrody-infra/config/knowledge-scope.json",
       "kind": "source-or-config",
       "size": 806,
       "status": "clean",
-      "target": "config/knowledge-scope.json",
       "sha256": "e3ff7f4391821ac0cc9572b50072157dbe312219331500e15356814789a8de43",
-      "importedSourceSha256": "e3ff7f4391821ac0cc9572b50072157dbe312219331500e15356814789a8de43",
-      "importedSha256": "e3ff7f4391821ac0cc9572b50072157dbe312219331500e15356814789a8de43"
+      "target": "config/knowledge-scope.json",
+      "importedSha256": "e3ff7f4391821ac0cc9572b50072157dbe312219331500e15356814789a8de43",
+      "importedSourceSha256": "e3ff7f4391821ac0cc9572b50072157dbe312219331500e15356814789a8de43"
     },
     {
       "source": "aphrody-infra/config/live-audit.json",
       "kind": "source-or-config",
       "size": 2560,
       "status": "clean",
-      "target": "config/live-audit.json",
       "sha256": "5c06ae2d58e9a4f5246953e332efbe83a928fa2bc8e2a83d4d1ef7dfe4a01b8e",
-      "importedSourceSha256": "5c06ae2d58e9a4f5246953e332efbe83a928fa2bc8e2a83d4d1ef7dfe4a01b8e",
-      "importedSha256": "5c06ae2d58e9a4f5246953e332efbe83a928fa2bc8e2a83d4d1ef7dfe4a01b8e"
+      "target": "config/live-audit.json",
+      "importedSha256": "5c06ae2d58e9a4f5246953e332efbe83a928fa2bc8e2a83d4d1ef7dfe4a01b8e",
+      "importedSourceSha256": "5c06ae2d58e9a4f5246953e332efbe83a928fa2bc8e2a83d4d1ef7dfe4a01b8e"
     },
     {
       "source": "aphrody-infra/config/local-ai.env.example",
       "kind": "source-or-config",
       "size": 7958,
       "status": "clean",
-      "target": "config/local-ai.env.example",
       "sha256": "b123a909d2ca58434dd92dfbdd3c8e56a1a7f659bfa9fa30909cc07a0c56086d",
-      "importedSourceSha256": "b123a909d2ca58434dd92dfbdd3c8e56a1a7f659bfa9fa30909cc07a0c56086d",
-      "importedSha256": "b123a909d2ca58434dd92dfbdd3c8e56a1a7f659bfa9fa30909cc07a0c56086d"
+      "target": "config/local-ai.env.example",
+      "importedSha256": "b123a909d2ca58434dd92dfbdd3c8e56a1a7f659bfa9fa30909cc07a0c56086d",
+      "importedSourceSha256": "b123a909d2ca58434dd92dfbdd3c8e56a1a7f659bfa9fa30909cc07a0c56086d"
     },
     {
       "source": "aphrody-infra/config/local-ai.json",
       "kind": "source-or-config",
       "size": 14802,
       "status": "clean",
-      "target": "config/local-ai.json",
       "sha256": "f4b346cc8b7daa9fb32011054e2a8682864aea6edc8a4aeac54949e1415ab252",
-      "importedSourceSha256": "f4b346cc8b7daa9fb32011054e2a8682864aea6edc8a4aeac54949e1415ab252",
-      "importedSha256": "f4b346cc8b7daa9fb32011054e2a8682864aea6edc8a4aeac54949e1415ab252"
+      "target": "config/local-ai.json",
+      "importedSha256": "f4b346cc8b7daa9fb32011054e2a8682864aea6edc8a4aeac54949e1415ab252",
+      "importedSourceSha256": "f4b346cc8b7daa9fb32011054e2a8682864aea6edc8a4aeac54949e1415ab252"
     },
     {
       "source": "aphrody-infra/config/mcp-google-web.json",
       "kind": "source-or-config",
       "size": 726,
       "status": "clean",
-      "target": "config/mcp-google-web.json",
       "sha256": "263ab0c34d89581d17d05123689bdda0ab460bf22f417fdf09efa335df9719f7",
-      "importedSourceSha256": "263ab0c34d89581d17d05123689bdda0ab460bf22f417fdf09efa335df9719f7",
-      "importedSha256": "263ab0c34d89581d17d05123689bdda0ab460bf22f417fdf09efa335df9719f7"
+      "target": "config/mcp-google-web.json",
+      "importedSha256": "263ab0c34d89581d17d05123689bdda0ab460bf22f417fdf09efa335df9719f7",
+      "importedSourceSha256": "263ab0c34d89581d17d05123689bdda0ab460bf22f417fdf09efa335df9719f7"
     },
     {
       "source": "aphrody-infra/config/nginx-routes.json",
       "kind": "source-or-config",
       "size": 5416,
       "status": "clean",
-      "target": "config/nginx-routes.json",
       "sha256": "c5972515f4922ecabce56e2b5c1e556e2b9d941c0df54cd31a27791e066a2722",
-      "importedSourceSha256": "c5972515f4922ecabce56e2b5c1e556e2b9d941c0df54cd31a27791e066a2722",
-      "importedSha256": "c5972515f4922ecabce56e2b5c1e556e2b9d941c0df54cd31a27791e066a2722"
+      "target": "config/nginx-routes.json",
+      "importedSha256": "c5972515f4922ecabce56e2b5c1e556e2b9d941c0df54cd31a27791e066a2722",
+      "importedSourceSha256": "c5972515f4922ecabce56e2b5c1e556e2b9d941c0df54cd31a27791e066a2722"
     },
     {
       "source": "aphrody-infra/config/nhitl.env.example",
       "kind": "source-or-config",
       "size": 327,
       "status": "clean",
-      "target": "config/nhitl.env.example",
       "sha256": "e7e7ad87cb0398d9be753a7832d633ec7c46f312cc47a5de9832aab39a119d1d",
-      "importedSourceSha256": "e7e7ad87cb0398d9be753a7832d633ec7c46f312cc47a5de9832aab39a119d1d",
-      "importedSha256": "e7e7ad87cb0398d9be753a7832d633ec7c46f312cc47a5de9832aab39a119d1d"
+      "target": "config/nhitl.env.example",
+      "importedSha256": "e7e7ad87cb0398d9be753a7832d633ec7c46f312cc47a5de9832aab39a119d1d",
+      "importedSourceSha256": "e7e7ad87cb0398d9be753a7832d633ec7c46f312cc47a5de9832aab39a119d1d"
     },
     {
       "source": "aphrody-infra/config/pipeline.json",
       "kind": "source-or-config",
       "size": 7366,
       "status": "clean",
-      "target": "config/pipeline.json",
       "sha256": "37c78d01a52769510e5fb72092bc8b0e0744271d83b14b576fe92fc6cd64f15e",
-      "importedSourceSha256": "37c78d01a52769510e5fb72092bc8b0e0744271d83b14b576fe92fc6cd64f15e",
-      "importedSha256": "0e9ede6bc4f5310c931063a674d98315bcbd89cc9df4c2744446f00176eaada8"
+      "target": "config/pipeline.json",
+      "importedSha256": "0e9ede6bc4f5310c931063a674d98315bcbd89cc9df4c2744446f00176eaada8",
+      "importedSourceSha256": "37c78d01a52769510e5fb72092bc8b0e0744271d83b14b576fe92fc6cd64f15e"
     },
     {
       "source": "aphrody-infra/config/production-topology.json",
       "kind": "source-or-config",
       "size": 3341,
       "status": "clean",
-      "target": "config/production-topology.json",
       "sha256": "4345f5306005f93c47c34bc320ae5bb474bc0a39ac64bd7905cc8a0d2075c411",
-      "importedSourceSha256": "4345f5306005f93c47c34bc320ae5bb474bc0a39ac64bd7905cc8a0d2075c411",
-      "importedSha256": "4345f5306005f93c47c34bc320ae5bb474bc0a39ac64bd7905cc8a0d2075c411"
+      "target": "config/production-topology.json",
+      "importedSha256": "4345f5306005f93c47c34bc320ae5bb474bc0a39ac64bd7905cc8a0d2075c411",
+      "importedSourceSha256": "4345f5306005f93c47c34bc320ae5bb474bc0a39ac64bd7905cc8a0d2075c411"
     },
     {
       "source": "aphrody-infra/config/scheduler-policy.json",
       "kind": "source-or-config",
-      "size": 2551,
-      "status": "clean",
+      "size": 2763,
+      "status": "M",
+      "sha256": "057f50bad61b47be460b4a911b02f99260df54e55d2c72965c47d21b3dc25ef3",
       "target": "config/scheduler-policy.json",
-      "sha256": "9229adfd1b637faa4accc1c25e08502567fda7030d06825897fd009d1b04fa53",
-      "importedSourceSha256": "9229adfd1b637faa4accc1c25e08502567fda7030d06825897fd009d1b04fa53",
-      "importedSha256": "9229adfd1b637faa4accc1c25e08502567fda7030d06825897fd009d1b04fa53"
+      "importedSha256": "9229adfd1b637faa4accc1c25e08502567fda7030d06825897fd009d1b04fa53",
+      "importedSourceSha256": "9229adfd1b637faa4accc1c25e08502567fda7030d06825897fd009d1b04fa53"
     },
     {
       "source": "aphrody-infra/config/secrets-contract.json",
       "kind": "source-or-config",
       "size": 5166,
       "status": "clean",
-      "target": "config/secrets-contract.json",
       "sha256": "990a38f36e3dbaafa7a4910ed745833c6e610b2c8b769b63d6e1739d8dc43bf0",
-      "importedSourceSha256": "990a38f36e3dbaafa7a4910ed745833c6e610b2c8b769b63d6e1739d8dc43bf0",
-      "importedSha256": "990a38f36e3dbaafa7a4910ed745833c6e610b2c8b769b63d6e1739d8dc43bf0"
+      "target": "config/secrets-contract.json",
+      "importedSha256": "990a38f36e3dbaafa7a4910ed745833c6e610b2c8b769b63d6e1739d8dc43bf0",
+      "importedSourceSha256": "990a38f36e3dbaafa7a4910ed745833c6e610b2c8b769b63d6e1739d8dc43bf0"
     },
     {
       "source": "aphrody-infra/config/secrets.template.json",
       "kind": "source-or-config",
       "size": 613,
       "status": "clean",
-      "target": "config/secrets.template.json",
       "sha256": "3e68ecc7f0fac6c39a0ceac4affd4991bafad0bdd54c41d4d1343492fe642d67",
-      "importedSourceSha256": "3e68ecc7f0fac6c39a0ceac4affd4991bafad0bdd54c41d4d1343492fe642d67",
-      "importedSha256": "3e68ecc7f0fac6c39a0ceac4affd4991bafad0bdd54c41d4d1343492fe642d67"
+      "target": "config/secrets.template.json",
+      "importedSha256": "3e68ecc7f0fac6c39a0ceac4affd4991bafad0bdd54c41d4d1343492fe642d67",
+      "importedSourceSha256": "3e68ecc7f0fac6c39a0ceac4affd4991bafad0bdd54c41d4d1343492fe642d67"
     },
     {
       "source": "aphrody-infra/config/service-catalog.json",
       "kind": "source-or-config",
       "size": 13885,
       "status": "clean",
-      "target": "config/service-catalog.json",
       "sha256": "0709a31de4aa01c621d664c8723ac90f93842120763335c279026a018aec20eb",
-      "importedSourceSha256": "0709a31de4aa01c621d664c8723ac90f93842120763335c279026a018aec20eb",
-      "importedSha256": "0709a31de4aa01c621d664c8723ac90f93842120763335c279026a018aec20eb"
+      "target": "config/service-catalog.json",
+      "importedSha256": "0709a31de4aa01c621d664c8723ac90f93842120763335c279026a018aec20eb",
+      "importedSourceSha256": "0709a31de4aa01c621d664c8723ac90f93842120763335c279026a018aec20eb"
     },
     {
       "source": "aphrody-infra/config/shell-runtime.json",
       "kind": "source-or-config",
       "size": 746,
       "status": "clean",
-      "target": "config/shell-runtime.json",
       "sha256": "6b49842480e83f44494ed95f6ccf787e9d04d22310388c64b623178250f56978",
-      "importedSourceSha256": "6b49842480e83f44494ed95f6ccf787e9d04d22310388c64b623178250f56978",
-      "importedSha256": "6b49842480e83f44494ed95f6ccf787e9d04d22310388c64b623178250f56978"
+      "target": "config/shell-runtime.json",
+      "importedSha256": "6b49842480e83f44494ed95f6ccf787e9d04d22310388c64b623178250f56978",
+      "importedSourceSha256": "6b49842480e83f44494ed95f6ccf787e9d04d22310388c64b623178250f56978"
     },
     {
       "source": "aphrody-infra/config/stack-training.json",
       "kind": "source-or-config",
       "size": 6580,
       "status": "clean",
-      "target": "config/stack-training.json",
       "sha256": "97686a49fae4af2ac167fd12784fac5d6bcb8aea8f58bf31ea099906bf66d8a5",
-      "importedSourceSha256": "97686a49fae4af2ac167fd12784fac5d6bcb8aea8f58bf31ea099906bf66d8a5",
-      "importedSha256": "97686a49fae4af2ac167fd12784fac5d6bcb8aea8f58bf31ea099906bf66d8a5"
+      "target": "config/stack-training.json",
+      "importedSha256": "97686a49fae4af2ac167fd12784fac5d6bcb8aea8f58bf31ea099906bf66d8a5",
+      "importedSourceSha256": "97686a49fae4af2ac167fd12784fac5d6bcb8aea8f58bf31ea099906bf66d8a5"
     },
     {
       "source": "aphrody-infra/config/system-packages.json",
       "kind": "source-or-config",
       "size": 2112,
       "status": "clean",
-      "target": "config/system-packages.json",
       "sha256": "f84f3b3d8dcd39ac84c66f6e212f4dab60af942dd3961161a501cdb1960aa3fe",
-      "importedSourceSha256": "f84f3b3d8dcd39ac84c66f6e212f4dab60af942dd3961161a501cdb1960aa3fe",
-      "importedSha256": "f84f3b3d8dcd39ac84c66f6e212f4dab60af942dd3961161a501cdb1960aa3fe"
+      "target": "config/system-packages.json",
+      "importedSha256": "f84f3b3d8dcd39ac84c66f6e212f4dab60af942dd3961161a501cdb1960aa3fe",
+      "importedSourceSha256": "f84f3b3d8dcd39ac84c66f6e212f4dab60af942dd3961161a501cdb1960aa3fe"
     },
     {
       "source": "aphrody-infra/config/ui/wsl.env.example",
       "kind": "source-or-config",
       "size": 315,
       "status": "clean",
-      "target": "config/ui/wsl.env.example",
       "sha256": "0dd03192d06df98ea25d4a9b096ddc9af51f38ca84e5696a57625b03e55ab73d",
-      "importedSourceSha256": "0dd03192d06df98ea25d4a9b096ddc9af51f38ca84e5696a57625b03e55ab73d",
-      "importedSha256": "0dd03192d06df98ea25d4a9b096ddc9af51f38ca84e5696a57625b03e55ab73d"
+      "target": "config/ui/wsl.env.example",
+      "importedSha256": "0dd03192d06df98ea25d4a9b096ddc9af51f38ca84e5696a57625b03e55ab73d",
+      "importedSourceSha256": "0dd03192d06df98ea25d4a9b096ddc9af51f38ca84e5696a57625b03e55ab73d"
     },
     {
       "source": "aphrody-infra/config/yolo-authority.env.example",
       "kind": "source-or-config",
       "size": 281,
       "status": "clean",
-      "target": "config/yolo-authority.env.example",
       "sha256": "b11b8a576bacb3e8b56e5a8fba4e7e2803dd53c2932cde8fe35e11c67c67ad57",
-      "importedSourceSha256": "b11b8a576bacb3e8b56e5a8fba4e7e2803dd53c2932cde8fe35e11c67c67ad57",
-      "importedSha256": "b11b8a576bacb3e8b56e5a8fba4e7e2803dd53c2932cde8fe35e11c67c67ad57"
+      "target": "config/yolo-authority.env.example",
+      "importedSha256": "b11b8a576bacb3e8b56e5a8fba4e7e2803dd53c2932cde8fe35e11c67c67ad57",
+      "importedSourceSha256": "b11b8a576bacb3e8b56e5a8fba4e7e2803dd53c2932cde8fe35e11c67c67ad57"
     },
     {
       "source": "aphrody-infra/crates/aphrody-git/Cargo.toml",
@@ -47374,30 +47662,30 @@
       "kind": "source-or-config",
       "size": 3760,
       "status": "clean",
-      "target": "inventory/targets.json",
       "sha256": "93966e2f623907b43e3d353b21a890c57fa3e7f4ab5bf96b83e803b505e3122f",
-      "importedSourceSha256": "93966e2f623907b43e3d353b21a890c57fa3e7f4ab5bf96b83e803b505e3122f",
-      "importedSha256": "93966e2f623907b43e3d353b21a890c57fa3e7f4ab5bf96b83e803b505e3122f"
+      "target": "inventory/targets.json",
+      "importedSha256": "93966e2f623907b43e3d353b21a890c57fa3e7f4ab5bf96b83e803b505e3122f",
+      "importedSourceSha256": "93966e2f623907b43e3d353b21a890c57fa3e7f4ab5bf96b83e803b505e3122f"
     },
     {
       "source": "aphrody-infra/inventory/vps-source.json",
       "kind": "source-or-config",
       "size": 8543,
       "status": "clean",
-      "target": "inventory/vps-source.json",
       "sha256": "66392880728b6325bde36dab69168f8a67941ef85789d4117955eb4ec37d66de",
-      "importedSourceSha256": "66392880728b6325bde36dab69168f8a67941ef85789d4117955eb4ec37d66de",
-      "importedSha256": "66392880728b6325bde36dab69168f8a67941ef85789d4117955eb4ec37d66de"
+      "target": "inventory/vps-source.json",
+      "importedSha256": "66392880728b6325bde36dab69168f8a67941ef85789d4117955eb4ec37d66de",
+      "importedSourceSha256": "66392880728b6325bde36dab69168f8a67941ef85789d4117955eb4ec37d66de"
     },
     {
       "source": "aphrody-infra/inventory/vps-unit-catalog.json",
       "kind": "source-or-config",
       "size": 1525,
       "status": "clean",
-      "target": "inventory/vps-unit-catalog.json",
       "sha256": "ad2ce4a9694f85fdd07bf8670a1d10c7c02437ec9b68f61b604a71a36d005e36",
-      "importedSourceSha256": "ad2ce4a9694f85fdd07bf8670a1d10c7c02437ec9b68f61b604a71a36d005e36",
-      "importedSha256": "ad2ce4a9694f85fdd07bf8670a1d10c7c02437ec9b68f61b604a71a36d005e36"
+      "target": "inventory/vps-unit-catalog.json",
+      "importedSha256": "ad2ce4a9694f85fdd07bf8670a1d10c7c02437ec9b68f61b604a71a36d005e36",
+      "importedSourceSha256": "ad2ce4a9694f85fdd07bf8670a1d10c7c02437ec9b68f61b604a71a36d005e36"
     },
     {
       "source": "aphrody-infra/nginx/00-default.conf",
@@ -47775,9 +48063,9 @@
       "source": "aphrody-infra/packages/aphrody-workspace/README.md",
       "kind": "documentation",
       "category": "products",
-      "size": 5504,
+      "size": 7893,
       "status": "M",
-      "sha256": "690361d53383c8d4afeb2e393d9d2d4e67d93fa9fbe004223fc998d1430e7ede",
+      "sha256": "d1731a1341f20a8e86b0789be71da19d8f0a632abffe4eefdbf4c1fde47c830a",
       "target": null
     },
     {
@@ -47890,9 +48178,17 @@
     {
       "source": "aphrody-infra/packages/aphrody-workspace/package.json",
       "kind": "bun-manifest",
-      "size": 2729,
+      "size": 2859,
       "status": "M",
-      "sha256": "8e999102e88da641bd3fee5975ef9bd3fd2293dcc18214d8adad0d71f2e493e0",
+      "sha256": "fa7f6d8df0c8278744fcecaa0bca9b802360b5d384b979846d9929a1c0d16ed1",
+      "target": null
+    },
+    {
+      "source": "aphrody-infra/packages/aphrody-workspace/src/agent-home-drive-sync.ts",
+      "kind": "bun-package",
+      "size": 1487,
+      "status": "??",
+      "sha256": "319e336df2df3edc148015979c4b089d575bad213fe49f5e56d36f343729fae5",
       "target": null
     },
     {
@@ -48034,9 +48330,9 @@
     {
       "source": "aphrody-infra/packages/aphrody-workspace/src/consolidation.ts",
       "kind": "bun-package",
-      "size": 37371,
+      "size": 41506,
       "status": "??",
-      "sha256": "181d71fb27cffff74bf7a2e4b9df3b2684aac97f6fbb7b870f9184398f3c55ea",
+      "sha256": "e1ac62956c8dbdeb1c738e398ea3f759ef9ef63d3a155e6feb2234a28181ac0f",
       "target": null
     },
     {
@@ -48136,6 +48432,22 @@
       "target": null
     },
     {
+      "source": "aphrody-infra/packages/aphrody-workspace/src/infra-config-import.ts",
+      "kind": "bun-package",
+      "size": 10782,
+      "status": "??",
+      "sha256": "a188ebdf98051f8d721dc86b05d02589a86d43efa3ee77363fc5ee94e87d5a0e",
+      "target": null
+    },
+    {
+      "source": "aphrody-infra/packages/aphrody-workspace/src/infra-scripts-import.ts",
+      "kind": "bun-package",
+      "size": 4840,
+      "status": "??",
+      "sha256": "8ed488be4ecfacb1df0dd0b2c2f6972196ba3a94b2555743185cc7f675aa31c1",
+      "target": null
+    },
+    {
       "source": "aphrody-infra/packages/aphrody-workspace/src/koharu-release.ts",
       "kind": "bun-package",
       "size": 2466,
@@ -48232,6 +48544,14 @@
       "target": null
     },
     {
+      "source": "aphrody-infra/packages/aphrody-workspace/src/source-licenses-import.ts",
+      "kind": "bun-package",
+      "size": 6972,
+      "status": "??",
+      "sha256": "7e5330aed362cfb85c3142079a200879d24455a88804fa265cfc7b421de72800",
+      "target": null
+    },
+    {
       "source": "aphrody-infra/packages/aphrody-workspace/src/spaceui-icons.ts",
       "kind": "bun-package",
       "size": 9142,
@@ -48245,6 +48565,14 @@
       "size": 9995,
       "status": "clean",
       "sha256": "3a8e3f5edea634f00ed00a880a1f3719d2b422b4bc83f80285ac3cb38526e7ec",
+      "target": null
+    },
+    {
+      "source": "aphrody-infra/packages/aphrody-workspace/src/submodule-inventory.ts",
+      "kind": "bun-package",
+      "size": 16158,
+      "status": "??",
+      "sha256": "979da3efb27931566f21ed4bcb3554168822d7f2626fdbaebb68a5e7c71158dd",
       "target": null
     },
     {
@@ -48348,10 +48676,10 @@
       "kind": "source-or-config",
       "size": 774,
       "status": "clean",
-      "target": "rust-toolchain.toml",
       "sha256": "70f49b0ff7095565c109db87904b88da8d9913da682ac09da290b26112437785",
-      "importedSourceSha256": "70f49b0ff7095565c109db87904b88da8d9913da682ac09da290b26112437785",
-      "importedSha256": "70f49b0ff7095565c109db87904b88da8d9913da682ac09da290b26112437785"
+      "target": "rust-toolchain.toml",
+      "importedSha256": "70f49b0ff7095565c109db87904b88da8d9913da682ac09da290b26112437785",
+      "importedSourceSha256": "70f49b0ff7095565c109db87904b88da8d9913da682ac09da290b26112437785"
     },
     {
       "source": "aphrody-infra/scripts/aphrody-os/mullvad-netns-setup.sh",
@@ -48747,9 +49075,7 @@
       "size": 3415,
       "status": "clean",
       "sha256": "0fabe4cf73c1f526be7537160a02beb03fdf0f79d8bac9989102eb3d51439acc",
-      "target": "scripts/tools/infra/scripts/ops/backup-shenron-pg.sh",
-      "importedSha256": "0fabe4cf73c1f526be7537160a02beb03fdf0f79d8bac9989102eb3d51439acc",
-      "importedSourceSha256": "0fabe4cf73c1f526be7537160a02beb03fdf0f79d8bac9989102eb3d51439acc"
+      "target": null
     },
     {
       "source": "aphrody-infra/scripts/ops/backup-shenron-sqlite.sh",
@@ -48758,9 +49084,7 @@
       "size": 2476,
       "status": "clean",
       "sha256": "758a27f037ec342f91c40bb8b76551d2d11f8f1bea939d9f2ad2c46ab9a66afe",
-      "target": "scripts/tools/infra/scripts/ops/backup-shenron-sqlite.sh",
-      "importedSha256": "758a27f037ec342f91c40bb8b76551d2d11f8f1bea939d9f2ad2c46ab9a66afe",
-      "importedSourceSha256": "758a27f037ec342f91c40bb8b76551d2d11f8f1bea939d9f2ad2c46ab9a66afe"
+      "target": null
     },
     {
       "source": "aphrody-infra/scripts/ops/certbot-nginx-reload.sh",
@@ -48895,9 +49219,7 @@
       "size": 16721,
       "status": "clean",
       "sha256": "9ee7bda6130c271f7828e19ce190305ade2324f7470923ce18a1ce9397f79b58",
-      "target": "scripts/tools/infra/scripts/ops/repo-sync.ts",
-      "importedSha256": "9ee7bda6130c271f7828e19ce190305ade2324f7470923ce18a1ce9397f79b58",
-      "importedSourceSha256": "9ee7bda6130c271f7828e19ce190305ade2324f7470923ce18a1ce9397f79b58"
+      "target": null
     },
     {
       "source": "aphrody-infra/scripts/ops/rg-watchdog.sh",
@@ -48906,9 +49228,7 @@
       "size": 12286,
       "status": "clean",
       "sha256": "43c9e8627a49676b6264de54a08edae5a5083e014d67e986be334e8670fe3694",
-      "target": "scripts/dev/infra/scripts/ops/rg-watchdog.sh",
-      "importedSha256": "43c9e8627a49676b6264de54a08edae5a5083e014d67e986be334e8670fe3694",
-      "importedSourceSha256": "43c9e8627a49676b6264de54a08edae5a5083e014d67e986be334e8670fe3694"
+      "target": null
     },
     {
       "source": "aphrody-infra/scripts/prepare-release-workspace.sh",
@@ -48996,9 +49316,7 @@
       "size": 16050,
       "status": "clean",
       "sha256": "5c2d8f52b1c65bfc368f8c32ae69c4094e5c3102521adaa348e4b9f1b4fed23a",
-      "target": "scripts/tools/infra/scripts/rg/sauvegarde.ts",
-      "importedSha256": "5c2d8f52b1c65bfc368f8c32ae69c4094e5c3102521adaa348e4b9f1b4fed23a",
-      "importedSourceSha256": "5c2d8f52b1c65bfc368f8c32ae69c4094e5c3102521adaa348e4b9f1b4fed23a"
+      "target": null
     },
     {
       "source": "aphrody-infra/scripts/rg/sync-cron-secret.py",
@@ -49142,9 +49460,7 @@
       "size": 10270,
       "status": "clean",
       "sha256": "c47f9fc13931fad741598b47f7fdb5ea8e1d178114c9c1c2c3c4730417bd233f",
-      "target": "scripts/tools/infra/scripts/source-sync.ts",
-      "importedSha256": "c47f9fc13931fad741598b47f7fdb5ea8e1d178114c9c1c2c3c4730417bd233f",
-      "importedSourceSha256": "c47f9fc13931fad741598b47f7fdb5ea8e1d178114c9c1c2c3c4730417bd233f"
+      "target": null
     },
     {
       "source": "aphrody-infra/scripts/test-atomic-deploy-bundle.sh",
@@ -49205,390 +49521,398 @@
       "kind": "source-or-config",
       "size": 1067,
       "status": "clean",
-      "target": "systemd/aphrody-a2a.service.example",
       "sha256": "e8b571f8d1484c5e96ee617db536a899b08ca4194ec3eb471b976e118690b066",
-      "importedSourceSha256": "e8b571f8d1484c5e96ee617db536a899b08ca4194ec3eb471b976e118690b066",
-      "importedSha256": "e8b571f8d1484c5e96ee617db536a899b08ca4194ec3eb471b976e118690b066"
+      "target": "systemd/aphrody-a2a.service.example",
+      "importedSha256": "e8b571f8d1484c5e96ee617db536a899b08ca4194ec3eb471b976e118690b066",
+      "importedSourceSha256": "e8b571f8d1484c5e96ee617db536a899b08ca4194ec3eb471b976e118690b066"
     },
     {
       "source": "aphrody-infra/systemd/aphrody-ai-http.service.example",
       "kind": "source-or-config",
       "size": 830,
       "status": "clean",
-      "target": "systemd/aphrody-ai-http.service.example",
       "sha256": "cc757685cb7a6dfc7991903a3d5310acee02778f54b80d2eb85e8be2d5b7dea9",
-      "importedSourceSha256": "cc757685cb7a6dfc7991903a3d5310acee02778f54b80d2eb85e8be2d5b7dea9",
-      "importedSha256": "cc757685cb7a6dfc7991903a3d5310acee02778f54b80d2eb85e8be2d5b7dea9"
+      "target": "systemd/aphrody-ai-http.service.example",
+      "importedSha256": "cc757685cb7a6dfc7991903a3d5310acee02778f54b80d2eb85e8be2d5b7dea9",
+      "importedSourceSha256": "cc757685cb7a6dfc7991903a3d5310acee02778f54b80d2eb85e8be2d5b7dea9"
     },
     {
       "source": "aphrody-infra/systemd/aphrody-discord-dev.service",
       "kind": "source-or-config",
       "size": 973,
       "status": "clean",
-      "target": "systemd/aphrody-discord-dev.service",
       "sha256": "60e9f8c877554d779fc40bc76c55a320e1b34e9de25ef7dacce4bd9afb9fa3e0",
-      "importedSourceSha256": "60e9f8c877554d779fc40bc76c55a320e1b34e9de25ef7dacce4bd9afb9fa3e0",
-      "importedSha256": "60e9f8c877554d779fc40bc76c55a320e1b34e9de25ef7dacce4bd9afb9fa3e0"
+      "target": "systemd/aphrody-discord-dev.service",
+      "importedSha256": "60e9f8c877554d779fc40bc76c55a320e1b34e9de25ef7dacce4bd9afb9fa3e0",
+      "importedSourceSha256": "60e9f8c877554d779fc40bc76c55a320e1b34e9de25ef7dacce4bd9afb9fa3e0"
     },
     {
       "source": "aphrody-infra/systemd/aphrody-shenron-embed.service.example",
       "kind": "source-or-config",
       "size": 1158,
       "status": "clean",
-      "target": "systemd/aphrody-shenron-embed.service.example",
       "sha256": "7d09afbb33dd74a2295df8ef5172059c0d31b672ed508ae3f7cdef1442fdf79d",
-      "importedSourceSha256": "7d09afbb33dd74a2295df8ef5172059c0d31b672ed508ae3f7cdef1442fdf79d",
-      "importedSha256": "7d09afbb33dd74a2295df8ef5172059c0d31b672ed508ae3f7cdef1442fdf79d"
+      "target": "systemd/aphrody-shenron-embed.service.example",
+      "importedSha256": "7d09afbb33dd74a2295df8ef5172059c0d31b672ed508ae3f7cdef1442fdf79d",
+      "importedSourceSha256": "7d09afbb33dd74a2295df8ef5172059c0d31b672ed508ae3f7cdef1442fdf79d"
     },
     {
       "source": "aphrody-infra/systemd/aphrody-site-immutable.service.example",
       "kind": "source-or-config",
       "size": 957,
       "status": "clean",
-      "target": "systemd/aphrody-site-immutable.service.example",
       "sha256": "220ef38eb8d03493e93f93f9e813f0c458d207a486382c5696739d6fcce6829d",
-      "importedSourceSha256": "220ef38eb8d03493e93f93f9e813f0c458d207a486382c5696739d6fcce6829d",
-      "importedSha256": "220ef38eb8d03493e93f93f9e813f0c458d207a486382c5696739d6fcce6829d"
+      "target": "systemd/aphrody-site-immutable.service.example",
+      "importedSha256": "220ef38eb8d03493e93f93f9e813f0c458d207a486382c5696739d6fcce6829d",
+      "importedSourceSha256": "220ef38eb8d03493e93f93f9e813f0c458d207a486382c5696739d6fcce6829d"
     },
     {
       "source": "aphrody-infra/systemd/aphrody-site.service.example",
       "kind": "source-or-config",
       "size": 930,
       "status": "clean",
-      "target": "systemd/aphrody-site.service.example",
       "sha256": "8290b4c97bb8b8868b76caf3485d6b370a7385666cf7d76c8c8b13279fe623e8",
-      "importedSourceSha256": "8290b4c97bb8b8868b76caf3485d6b370a7385666cf7d76c8c8b13279fe623e8",
-      "importedSha256": "8290b4c97bb8b8868b76caf3485d6b370a7385666cf7d76c8c8b13279fe623e8"
+      "target": "systemd/aphrody-site.service.example",
+      "importedSha256": "8290b4c97bb8b8868b76caf3485d6b370a7385666cf7d76c8c8b13279fe623e8",
+      "importedSourceSha256": "8290b4c97bb8b8868b76caf3485d6b370a7385666cf7d76c8c8b13279fe623e8"
     },
     {
       "source": "aphrody-infra/systemd/aphrody-source-sync.service",
       "kind": "source-or-config",
       "size": 628,
       "status": "clean",
-      "target": "systemd/aphrody-source-sync.service",
       "sha256": "76a20e529f4e9987e911e5a076f605e2c7d5bb6ceefd228f716e3230090c5ac4",
-      "importedSourceSha256": "76a20e529f4e9987e911e5a076f605e2c7d5bb6ceefd228f716e3230090c5ac4",
-      "importedSha256": "76a20e529f4e9987e911e5a076f605e2c7d5bb6ceefd228f716e3230090c5ac4"
+      "target": "systemd/aphrody-source-sync.service",
+      "importedSha256": "76a20e529f4e9987e911e5a076f605e2c7d5bb6ceefd228f716e3230090c5ac4",
+      "importedSourceSha256": "76a20e529f4e9987e911e5a076f605e2c7d5bb6ceefd228f716e3230090c5ac4"
     },
     {
       "source": "aphrody-infra/systemd/aphrody-web-api.service.example",
       "kind": "source-or-config",
       "size": 1159,
       "status": "clean",
-      "target": "systemd/aphrody-web-api.service.example",
       "sha256": "07c952e48195a0223af137819b9e00d530598227821abc6286997e7af511ba21",
-      "importedSourceSha256": "07c952e48195a0223af137819b9e00d530598227821abc6286997e7af511ba21",
-      "importedSha256": "07c952e48195a0223af137819b9e00d530598227821abc6286997e7af511ba21"
+      "target": "systemd/aphrody-web-api.service.example",
+      "importedSha256": "07c952e48195a0223af137819b9e00d530598227821abc6286997e7af511ba21",
+      "importedSourceSha256": "07c952e48195a0223af137819b9e00d530598227821abc6286997e7af511ba21"
     },
     {
       "source": "aphrody-infra/systemd/nginx.service.d/20-site-priority.conf",
       "kind": "source-or-config",
       "size": 202,
       "status": "clean",
-      "target": "systemd/nginx.service.d/20-site-priority.conf",
       "sha256": "6909bcf2775cb4e514a98226c87e53d93a583a7d87a15c00bdab9598e9069797",
-      "importedSourceSha256": "6909bcf2775cb4e514a98226c87e53d93a583a7d87a15c00bdab9598e9069797",
-      "importedSha256": "6909bcf2775cb4e514a98226c87e53d93a583a7d87a15c00bdab9598e9069797"
+      "target": "systemd/nginx.service.d/20-site-priority.conf",
+      "importedSha256": "6909bcf2775cb4e514a98226c87e53d93a583a7d87a15c00bdab9598e9069797",
+      "importedSourceSha256": "6909bcf2775cb4e514a98226c87e53d93a583a7d87a15c00bdab9598e9069797"
     },
     {
       "source": "aphrody-infra/systemd/nginx.service.d/restart.conf",
       "kind": "source-or-config",
       "size": 165,
       "status": "clean",
-      "target": "systemd/nginx.service.d/restart.conf",
       "sha256": "f0aa15d0be7e20ac180bc45a805f54a21a5362ec334eaa72f5f9fc7ea8c6a86a",
-      "importedSourceSha256": "f0aa15d0be7e20ac180bc45a805f54a21a5362ec334eaa72f5f9fc7ea8c6a86a",
-      "importedSha256": "f0aa15d0be7e20ac180bc45a805f54a21a5362ec334eaa72f5f9fc7ea8c6a86a"
+      "target": "systemd/nginx.service.d/restart.conf",
+      "importedSha256": "f0aa15d0be7e20ac180bc45a805f54a21a5362ec334eaa72f5f9fc7ea8c6a86a",
+      "importedSourceSha256": "f0aa15d0be7e20ac180bc45a805f54a21a5362ec334eaa72f5f9fc7ea8c6a86a"
     },
     {
       "source": "aphrody-infra/systemd/nie-model-serve.service",
       "kind": "source-or-config",
       "size": 7549,
       "status": "clean",
-      "target": "systemd/nie-model-serve.service",
       "sha256": "fab1abe4a87eee9b366b82f3b3b9ae5dd27a41fefac8233bffb300917f4ed49a",
-      "importedSourceSha256": "fab1abe4a87eee9b366b82f3b3b9ae5dd27a41fefac8233bffb300917f4ed49a",
-      "importedSha256": "fab1abe4a87eee9b366b82f3b3b9ae5dd27a41fefac8233bffb300917f4ed49a"
+      "target": "systemd/nie-model-serve.service",
+      "importedSha256": "fab1abe4a87eee9b366b82f3b3b9ae5dd27a41fefac8233bffb300917f4ed49a",
+      "importedSourceSha256": "fab1abe4a87eee9b366b82f3b3b9ae5dd27a41fefac8233bffb300917f4ed49a"
     },
     {
       "source": "aphrody-infra/systemd/nie-site.service",
       "kind": "source-or-config",
       "size": 5471,
       "status": "clean",
-      "target": "systemd/nie-site.service",
       "sha256": "a973294a6a0a0f2de88a604220d17a89c4983dc49b833830a4c47b22e60480da",
-      "importedSourceSha256": "a973294a6a0a0f2de88a604220d17a89c4983dc49b833830a4c47b22e60480da",
-      "importedSha256": "a973294a6a0a0f2de88a604220d17a89c4983dc49b833830a4c47b22e60480da"
+      "target": "systemd/nie-site.service",
+      "importedSha256": "a973294a6a0a0f2de88a604220d17a89c4983dc49b833830a4c47b22e60480da",
+      "importedSourceSha256": "a973294a6a0a0f2de88a604220d17a89c4983dc49b833830a4c47b22e60480da"
     },
     {
       "source": "aphrody-infra/systemd/privoxy.service.d/shenron-media.conf",
       "kind": "source-or-config",
       "size": 896,
       "status": "clean",
-      "target": "systemd/privoxy.service.d/shenron-media.conf",
       "sha256": "2e5c8facc4ae81a92dbc6fe0bd3ea21158ae75eb9ef4cb0360f0122ba23e68b1",
-      "importedSourceSha256": "2e5c8facc4ae81a92dbc6fe0bd3ea21158ae75eb9ef4cb0360f0122ba23e68b1",
-      "importedSha256": "2e5c8facc4ae81a92dbc6fe0bd3ea21158ae75eb9ef4cb0360f0122ba23e68b1"
+      "target": "systemd/privoxy.service.d/shenron-media.conf",
+      "importedSha256": "2e5c8facc4ae81a92dbc6fe0bd3ea21158ae75eb9ef4cb0360f0122ba23e68b1",
+      "importedSourceSha256": "2e5c8facc4ae81a92dbc6fe0bd3ea21158ae75eb9ef4cb0360f0122ba23e68b1"
     },
     {
       "source": "aphrody-infra/systemd/rg-achillea-bot.service",
       "kind": "source-or-config",
       "size": 2469,
       "status": "clean",
-      "target": "systemd/rg-achillea-bot.service",
       "sha256": "f7cb9e03d436d21b95e597db39ad3628e70f26e3eb5cd89f43ad52eeb7aea882",
-      "importedSourceSha256": "f7cb9e03d436d21b95e597db39ad3628e70f26e3eb5cd89f43ad52eeb7aea882",
-      "importedSha256": "f7cb9e03d436d21b95e597db39ad3628e70f26e3eb5cd89f43ad52eeb7aea882"
+      "target": "systemd/rg-achillea-bot.service",
+      "importedSha256": "f7cb9e03d436d21b95e597db39ad3628e70f26e3eb5cd89f43ad52eeb7aea882",
+      "importedSourceSha256": "f7cb9e03d436d21b95e597db39ad3628e70f26e3eb5cd89f43ad52eeb7aea882"
     },
     {
       "source": "aphrody-infra/systemd/rg-api.service",
       "kind": "source-or-config",
       "size": 999,
       "status": "clean",
-      "target": "systemd/rg-api.service",
       "sha256": "2ec08caab77c1f970a027a7bd5ac4e8e8e507d5b67a7fa7baba73c29ba067d24",
-      "importedSourceSha256": "2ec08caab77c1f970a027a7bd5ac4e8e8e507d5b67a7fa7baba73c29ba067d24",
-      "importedSha256": "2ec08caab77c1f970a027a7bd5ac4e8e8e507d5b67a7fa7baba73c29ba067d24"
+      "target": "systemd/rg-api.service",
+      "importedSha256": "2ec08caab77c1f970a027a7bd5ac4e8e8e507d5b67a7fa7baba73c29ba067d24",
+      "importedSourceSha256": "2ec08caab77c1f970a027a7bd5ac4e8e8e507d5b67a7fa7baba73c29ba067d24"
     },
     {
       "source": "aphrody-infra/systemd/rg-bot.service",
       "kind": "source-or-config",
       "size": 4062,
       "status": "clean",
-      "target": "systemd/rg-bot.service",
       "sha256": "4a9f91810e346d835576289e1a83cc4645e3a463127ff4c6aa6223f4dab543de",
-      "importedSourceSha256": "4a9f91810e346d835576289e1a83cc4645e3a463127ff4c6aa6223f4dab543de",
-      "importedSha256": "4a9f91810e346d835576289e1a83cc4645e3a463127ff4c6aa6223f4dab543de"
+      "target": "systemd/rg-bot.service",
+      "importedSha256": "4a9f91810e346d835576289e1a83cc4645e3a463127ff4c6aa6223f4dab543de",
+      "importedSourceSha256": "4a9f91810e346d835576289e1a83cc4645e3a463127ff4c6aa6223f4dab543de"
     },
     {
       "source": "aphrody-infra/systemd/rg-cdn.service",
       "kind": "source-or-config",
       "size": 1211,
       "status": "clean",
-      "target": "systemd/rg-cdn.service",
       "sha256": "4413396fb488fc9903822ae99781b7d100f4c864d34de8eb834aaef6fccc68b3",
-      "importedSourceSha256": "4413396fb488fc9903822ae99781b7d100f4c864d34de8eb834aaef6fccc68b3",
-      "importedSha256": "4413396fb488fc9903822ae99781b7d100f4c864d34de8eb834aaef6fccc68b3"
+      "target": "systemd/rg-cdn.service",
+      "importedSha256": "4413396fb488fc9903822ae99781b7d100f4c864d34de8eb834aaef6fccc68b3",
+      "importedSourceSha256": "4413396fb488fc9903822ae99781b7d100f4c864d34de8eb834aaef6fccc68b3"
     },
     {
       "source": "aphrody-infra/systemd/rg-cron.service",
       "kind": "source-or-config",
       "size": 4431,
       "status": "clean",
-      "target": "systemd/rg-cron.service",
       "sha256": "16ac37ce4cdb88dfbc96b9dac55a893039852cd36f41f39e6f1d02775197dd77",
-      "importedSourceSha256": "16ac37ce4cdb88dfbc96b9dac55a893039852cd36f41f39e6f1d02775197dd77",
-      "importedSha256": "16ac37ce4cdb88dfbc96b9dac55a893039852cd36f41f39e6f1d02775197dd77"
+      "target": "systemd/rg-cron.service",
+      "importedSha256": "16ac37ce4cdb88dfbc96b9dac55a893039852cd36f41f39e6f1d02775197dd77",
+      "importedSourceSha256": "16ac37ce4cdb88dfbc96b9dac55a893039852cd36f41f39e6f1d02775197dd77"
     },
     {
       "source": "aphrody-infra/systemd/rg-infra-monitor.service",
       "kind": "source-or-config",
       "size": 720,
       "status": "clean",
-      "target": "systemd/rg-infra-monitor.service",
       "sha256": "aa23fc076286c81bd0968104943bd50f6d2e936a77a46db1b7e3612b8e33385a",
-      "importedSourceSha256": "aa23fc076286c81bd0968104943bd50f6d2e936a77a46db1b7e3612b8e33385a",
-      "importedSha256": "aa23fc076286c81bd0968104943bd50f6d2e936a77a46db1b7e3612b8e33385a"
+      "target": "systemd/rg-infra-monitor.service",
+      "importedSha256": "aa23fc076286c81bd0968104943bd50f6d2e936a77a46db1b7e3612b8e33385a",
+      "importedSourceSha256": "aa23fc076286c81bd0968104943bd50f6d2e936a77a46db1b7e3612b8e33385a"
     },
     {
       "source": "aphrody-infra/systemd/rg-infra-monitor.timer",
       "kind": "source-or-config",
       "size": 204,
       "status": "clean",
-      "target": "systemd/rg-infra-monitor.timer",
       "sha256": "4ea113f4b85a2f325db4bbfb0a921e15bea6ce7fdaa00f381f8d44db0f9cf72e",
-      "importedSourceSha256": "4ea113f4b85a2f325db4bbfb0a921e15bea6ce7fdaa00f381f8d44db0f9cf72e",
-      "importedSha256": "4ea113f4b85a2f325db4bbfb0a921e15bea6ce7fdaa00f381f8d44db0f9cf72e"
+      "target": "systemd/rg-infra-monitor.timer",
+      "importedSha256": "4ea113f4b85a2f325db4bbfb0a921e15bea6ce7fdaa00f381f8d44db0f9cf72e",
+      "importedSourceSha256": "4ea113f4b85a2f325db4bbfb0a921e15bea6ce7fdaa00f381f8d44db0f9cf72e"
     },
     {
       "source": "aphrody-infra/systemd/rg-realtime.service",
       "kind": "source-or-config",
       "size": 918,
       "status": "clean",
-      "target": "systemd/rg-realtime.service",
       "sha256": "196af7528952f3111193bd1db3c31db1b6d1d272ac5f6ea9a9245d7091416e15",
-      "importedSourceSha256": "196af7528952f3111193bd1db3c31db1b6d1d272ac5f6ea9a9245d7091416e15",
-      "importedSha256": "196af7528952f3111193bd1db3c31db1b6d1d272ac5f6ea9a9245d7091416e15"
+      "target": "systemd/rg-realtime.service",
+      "importedSha256": "196af7528952f3111193bd1db3c31db1b6d1d272ac5f6ea9a9245d7091416e15",
+      "importedSourceSha256": "196af7528952f3111193bd1db3c31db1b6d1d272ac5f6ea9a9245d7091416e15"
     },
     {
       "source": "aphrody-infra/systemd/rg-repo-sync.service",
       "kind": "source-or-config",
       "size": 979,
       "status": "clean",
-      "target": "systemd/rg-repo-sync.service",
       "sha256": "2690d4d642cdbb330d583a97e17f447a43e3e31c2f874911c4fffff83e8874ab",
-      "importedSourceSha256": "2690d4d642cdbb330d583a97e17f447a43e3e31c2f874911c4fffff83e8874ab",
-      "importedSha256": "2690d4d642cdbb330d583a97e17f447a43e3e31c2f874911c4fffff83e8874ab"
+      "target": "systemd/rg-repo-sync.service",
+      "importedSha256": "2690d4d642cdbb330d583a97e17f447a43e3e31c2f874911c4fffff83e8874ab",
+      "importedSourceSha256": "2690d4d642cdbb330d583a97e17f447a43e3e31c2f874911c4fffff83e8874ab"
     },
     {
       "source": "aphrody-infra/systemd/rg-repo-sync.timer",
       "kind": "source-or-config",
       "size": 210,
       "status": "clean",
-      "target": "systemd/rg-repo-sync.timer",
       "sha256": "25998501c916dea5118a5957677cc05c670f73febcf34f71a8547ba52a76d1ca",
-      "importedSourceSha256": "25998501c916dea5118a5957677cc05c670f73febcf34f71a8547ba52a76d1ca",
-      "importedSha256": "25998501c916dea5118a5957677cc05c670f73febcf34f71a8547ba52a76d1ca"
+      "target": "systemd/rg-repo-sync.timer",
+      "importedSha256": "25998501c916dea5118a5957677cc05c670f73febcf34f71a8547ba52a76d1ca",
+      "importedSourceSha256": "25998501c916dea5118a5957677cc05c670f73febcf34f71a8547ba52a76d1ca"
     },
     {
       "source": "aphrody-infra/systemd/rg-sauvegarde.service",
       "kind": "source-or-config",
       "size": 1076,
       "status": "clean",
-      "target": "systemd/rg-sauvegarde.service",
       "sha256": "e9037feb0a939d1ab67f1e29d4cc43338dbc26c16efb49bf13f47842ac1dd607",
-      "importedSourceSha256": "e9037feb0a939d1ab67f1e29d4cc43338dbc26c16efb49bf13f47842ac1dd607",
-      "importedSha256": "e9037feb0a939d1ab67f1e29d4cc43338dbc26c16efb49bf13f47842ac1dd607"
+      "target": "systemd/rg-sauvegarde.service",
+      "importedSha256": "e9037feb0a939d1ab67f1e29d4cc43338dbc26c16efb49bf13f47842ac1dd607",
+      "importedSourceSha256": "e9037feb0a939d1ab67f1e29d4cc43338dbc26c16efb49bf13f47842ac1dd607"
     },
     {
       "source": "aphrody-infra/systemd/rg-sauvegarde.timer",
       "kind": "source-or-config",
       "size": 434,
       "status": "clean",
-      "target": "systemd/rg-sauvegarde.timer",
       "sha256": "a104fbfb1ec5ea46379aa21430446655bc388f48e30a33c6e782d79400d5b847",
-      "importedSourceSha256": "a104fbfb1ec5ea46379aa21430446655bc388f48e30a33c6e782d79400d5b847",
-      "importedSha256": "a104fbfb1ec5ea46379aa21430446655bc388f48e30a33c6e782d79400d5b847"
+      "target": "systemd/rg-sauvegarde.timer",
+      "importedSha256": "a104fbfb1ec5ea46379aa21430446655bc388f48e30a33c6e782d79400d5b847",
+      "importedSourceSha256": "a104fbfb1ec5ea46379aa21430446655bc388f48e30a33c6e782d79400d5b847"
     },
     {
       "source": "aphrody-infra/systemd/rg-storage.service",
       "kind": "source-or-config",
       "size": 1345,
       "status": "clean",
-      "target": "systemd/rg-storage.service",
       "sha256": "f7c1db330014b371f684d490bba792e6e3e9cf8d7ba2cc67c24d3586141d434b",
-      "importedSourceSha256": "f7c1db330014b371f684d490bba792e6e3e9cf8d7ba2cc67c24d3586141d434b",
-      "importedSha256": "f7c1db330014b371f684d490bba792e6e3e9cf8d7ba2cc67c24d3586141d434b"
+      "target": "systemd/rg-storage.service",
+      "importedSha256": "f7c1db330014b371f684d490bba792e6e3e9cf8d7ba2cc67c24d3586141d434b",
+      "importedSourceSha256": "f7c1db330014b371f684d490bba792e6e3e9cf8d7ba2cc67c24d3586141d434b"
     },
     {
       "source": "aphrody-infra/systemd/rg-watchdog@.service",
       "kind": "source-or-config",
       "size": 1326,
       "status": "clean",
-      "target": "systemd/rg-watchdog@.service",
       "sha256": "fe9d1155c71bcbe5fe89625f4d70f80fab27bd6fcccfee593a21596bed0252d0",
-      "importedSourceSha256": "fe9d1155c71bcbe5fe89625f4d70f80fab27bd6fcccfee593a21596bed0252d0",
-      "importedSha256": "fe9d1155c71bcbe5fe89625f4d70f80fab27bd6fcccfee593a21596bed0252d0"
+      "target": "systemd/rg-watchdog@.service",
+      "importedSha256": "fe9d1155c71bcbe5fe89625f4d70f80fab27bd6fcccfee593a21596bed0252d0",
+      "importedSourceSha256": "fe9d1155c71bcbe5fe89625f4d70f80fab27bd6fcccfee593a21596bed0252d0"
     },
     {
       "source": "aphrody-infra/systemd/rg-watchdog@.timer",
       "kind": "source-or-config",
       "size": 792,
       "status": "clean",
-      "target": "systemd/rg-watchdog@.timer",
       "sha256": "f0275b2f92a9f961c19f3a255e26f9c76a735f3240e1d0659b4946d6974c57ed",
-      "importedSourceSha256": "f0275b2f92a9f961c19f3a255e26f9c76a735f3240e1d0659b4946d6974c57ed",
-      "importedSha256": "f0275b2f92a9f961c19f3a255e26f9c76a735f3240e1d0659b4946d6974c57ed"
+      "target": "systemd/rg-watchdog@.timer",
+      "importedSha256": "f0275b2f92a9f961c19f3a255e26f9c76a735f3240e1d0659b4946d6974c57ed",
+      "importedSourceSha256": "f0275b2f92a9f961c19f3a255e26f9c76a735f3240e1d0659b4946d6974c57ed"
     },
     {
       "source": "aphrody-infra/systemd/rg-website.service",
       "kind": "source-or-config",
       "size": 2417,
       "status": "clean",
-      "target": "systemd/rg-website.service",
       "sha256": "33fe60f6238dd01a04ca9c633a41b6fdda8265b46c4fad3452d8b79c8110c5ee",
-      "importedSourceSha256": "33fe60f6238dd01a04ca9c633a41b6fdda8265b46c4fad3452d8b79c8110c5ee",
-      "importedSha256": "33fe60f6238dd01a04ca9c633a41b6fdda8265b46c4fad3452d8b79c8110c5ee"
+      "target": "systemd/rg-website.service",
+      "importedSha256": "33fe60f6238dd01a04ca9c633a41b6fdda8265b46c4fad3452d8b79c8110c5ee",
+      "importedSourceSha256": "33fe60f6238dd01a04ca9c633a41b6fdda8265b46c4fad3452d8b79c8110c5ee"
     },
     {
       "source": "aphrody-infra/systemd/rg-zram-swap.service",
       "kind": "source-or-config",
       "size": 1628,
       "status": "clean",
-      "target": "systemd/rg-zram-swap.service",
       "sha256": "392dc7b77665c90c95ca2cbaa3408cb4e569e3cc6ca9b210436262d9c3343ece",
-      "importedSourceSha256": "392dc7b77665c90c95ca2cbaa3408cb4e569e3cc6ca9b210436262d9c3343ece",
-      "importedSha256": "392dc7b77665c90c95ca2cbaa3408cb4e569e3cc6ca9b210436262d9c3343ece"
+      "target": "systemd/rg-zram-swap.service",
+      "importedSha256": "392dc7b77665c90c95ca2cbaa3408cb4e569e3cc6ca9b210436262d9c3343ece",
+      "importedSourceSha256": "392dc7b77665c90c95ca2cbaa3408cb4e569e3cc6ca9b210436262d9c3343ece"
+    },
+    {
+      "source": "aphrody-infra/systemd/shenron-agent-home-drive-sync.service",
+      "kind": "source-or-config",
+      "size": 831,
+      "status": "??",
+      "sha256": "0f5db0ea909ca03a54813efae6f19dfd9a9900c22a6a2b2dd432918748d6293a",
+      "target": "systemd/shenron-agent-home-drive-sync.service"
     },
     {
       "source": "aphrody-infra/systemd/shenron-backup.service",
       "kind": "source-or-config",
       "size": 1866,
       "status": "clean",
-      "target": "systemd/shenron-backup.service",
       "sha256": "0fa33e8f7c547e7a48431cdb4b0f2a4a6bfeae019806f499e39ad567842e4acc",
-      "importedSourceSha256": "0fa33e8f7c547e7a48431cdb4b0f2a4a6bfeae019806f499e39ad567842e4acc",
-      "importedSha256": "0fa33e8f7c547e7a48431cdb4b0f2a4a6bfeae019806f499e39ad567842e4acc"
+      "target": "systemd/shenron-backup.service",
+      "importedSha256": "0fa33e8f7c547e7a48431cdb4b0f2a4a6bfeae019806f499e39ad567842e4acc",
+      "importedSourceSha256": "0fa33e8f7c547e7a48431cdb4b0f2a4a6bfeae019806f499e39ad567842e4acc"
     },
     {
       "source": "aphrody-infra/systemd/shenron-backup.timer",
       "kind": "source-or-config",
       "size": 459,
       "status": "clean",
-      "target": "systemd/shenron-backup.timer",
       "sha256": "274e528ff0d4d7013c68989b52baa02f926fe96ff12caacd6fd0b0261862eb8c",
-      "importedSourceSha256": "274e528ff0d4d7013c68989b52baa02f926fe96ff12caacd6fd0b0261862eb8c",
-      "importedSha256": "274e528ff0d4d7013c68989b52baa02f926fe96ff12caacd6fd0b0261862eb8c"
+      "target": "systemd/shenron-backup.timer",
+      "importedSha256": "274e528ff0d4d7013c68989b52baa02f926fe96ff12caacd6fd0b0261862eb8c",
+      "importedSourceSha256": "274e528ff0d4d7013c68989b52baa02f926fe96ff12caacd6fd0b0261862eb8c"
     },
     {
       "source": "aphrody-infra/systemd/shenron-bot.service",
       "kind": "source-or-config",
       "size": 2982,
       "status": "clean",
-      "target": "systemd/shenron-bot.service",
       "sha256": "2f3a0c43d2e83ec82a61f51410737c143a6e8bab1a5271ac7de37c4dfce39b32",
-      "importedSourceSha256": "2f3a0c43d2e83ec82a61f51410737c143a6e8bab1a5271ac7de37c4dfce39b32",
-      "importedSha256": "2f3a0c43d2e83ec82a61f51410737c143a6e8bab1a5271ac7de37c4dfce39b32"
+      "target": "systemd/shenron-bot.service",
+      "importedSha256": "2f3a0c43d2e83ec82a61f51410737c143a6e8bab1a5271ac7de37c4dfce39b32",
+      "importedSourceSha256": "2f3a0c43d2e83ec82a61f51410737c143a6e8bab1a5271ac7de37c4dfce39b32"
     },
     {
       "source": "aphrody-infra/systemd/shenron-pg-backup.service",
       "kind": "source-or-config",
       "size": 837,
       "status": "clean",
-      "target": "systemd/shenron-pg-backup.service",
       "sha256": "da78bc48725c146d5ae539a9dfa70ddd2ece3f048c4d3749388b9186972c884a",
-      "importedSourceSha256": "da78bc48725c146d5ae539a9dfa70ddd2ece3f048c4d3749388b9186972c884a",
-      "importedSha256": "da78bc48725c146d5ae539a9dfa70ddd2ece3f048c4d3749388b9186972c884a"
+      "target": "systemd/shenron-pg-backup.service",
+      "importedSha256": "da78bc48725c146d5ae539a9dfa70ddd2ece3f048c4d3749388b9186972c884a",
+      "importedSourceSha256": "da78bc48725c146d5ae539a9dfa70ddd2ece3f048c4d3749388b9186972c884a"
     },
     {
       "source": "aphrody-infra/systemd/shenron-pg-backup.timer",
       "kind": "source-or-config",
       "size": 175,
       "status": "clean",
-      "target": "systemd/shenron-pg-backup.timer",
       "sha256": "89bedb7f2d68886a202007c388276a149f00dfe19c5070e4de7348690f5b98aa",
-      "importedSourceSha256": "89bedb7f2d68886a202007c388276a149f00dfe19c5070e4de7348690f5b98aa",
-      "importedSha256": "89bedb7f2d68886a202007c388276a149f00dfe19c5070e4de7348690f5b98aa"
+      "target": "systemd/shenron-pg-backup.timer",
+      "importedSha256": "89bedb7f2d68886a202007c388276a149f00dfe19c5070e4de7348690f5b98aa",
+      "importedSourceSha256": "89bedb7f2d68886a202007c388276a149f00dfe19c5070e4de7348690f5b98aa"
     },
     {
       "source": "aphrody-infra/systemd/shenron-pg-tunnel.service",
       "kind": "source-or-config",
       "size": 1622,
       "status": "clean",
-      "target": "systemd/shenron-pg-tunnel.service",
       "sha256": "0901640d9fc0d4944ee0417fff37f9c4310a68e0002e0dbb6708b7de82a844fa",
-      "importedSourceSha256": "0901640d9fc0d4944ee0417fff37f9c4310a68e0002e0dbb6708b7de82a844fa",
-      "importedSha256": "0901640d9fc0d4944ee0417fff37f9c4310a68e0002e0dbb6708b7de82a844fa"
+      "target": "systemd/shenron-pg-tunnel.service",
+      "importedSha256": "0901640d9fc0d4944ee0417fff37f9c4310a68e0002e0dbb6708b7de82a844fa",
+      "importedSourceSha256": "0901640d9fc0d4944ee0417fff37f9c4310a68e0002e0dbb6708b7de82a844fa"
     },
     {
       "source": "aphrody-infra/systemd/shenron-site.service",
       "kind": "source-or-config",
       "size": 4182,
       "status": "clean",
-      "target": "systemd/shenron-site.service",
       "sha256": "d44c860dc1507f2daef76c9081ed42f95d24c4d35f1de8a1c34576925ce607aa",
-      "importedSourceSha256": "d44c860dc1507f2daef76c9081ed42f95d24c4d35f1de8a1c34576925ce607aa",
-      "importedSha256": "d44c860dc1507f2daef76c9081ed42f95d24c4d35f1de8a1c34576925ce607aa"
+      "target": "systemd/shenron-site.service",
+      "importedSha256": "d44c860dc1507f2daef76c9081ed42f95d24c4d35f1de8a1c34576925ce607aa",
+      "importedSourceSha256": "d44c860dc1507f2daef76c9081ed42f95d24c4d35f1de8a1c34576925ce607aa"
     },
     {
       "source": "aphrody-infra/systemd/shenron-sqlite-replica-backup.service",
       "kind": "source-or-config",
       "size": 951,
       "status": "clean",
-      "target": "systemd/shenron-sqlite-replica-backup.service",
       "sha256": "0c4bbdfb9c59643346ba9959c2a43da8246bf78f4af89d0da789bb37724ff491",
-      "importedSourceSha256": "0c4bbdfb9c59643346ba9959c2a43da8246bf78f4af89d0da789bb37724ff491",
-      "importedSha256": "0c4bbdfb9c59643346ba9959c2a43da8246bf78f4af89d0da789bb37724ff491"
+      "target": "systemd/shenron-sqlite-replica-backup.service",
+      "importedSha256": "0c4bbdfb9c59643346ba9959c2a43da8246bf78f4af89d0da789bb37724ff491",
+      "importedSourceSha256": "0c4bbdfb9c59643346ba9959c2a43da8246bf78f4af89d0da789bb37724ff491"
     },
     {
       "source": "aphrody-infra/systemd/shenron-sqlite-replica-backup.timer",
       "kind": "source-or-config",
       "size": 182,
       "status": "clean",
-      "target": "systemd/shenron-sqlite-replica-backup.timer",
       "sha256": "a4119f574dd51c1e53f066b6075a9e239814b3a88ae4a16479384f6741ac1d79",
-      "importedSourceSha256": "a4119f574dd51c1e53f066b6075a9e239814b3a88ae4a16479384f6741ac1d79",
-      "importedSha256": "a4119f574dd51c1e53f066b6075a9e239814b3a88ae4a16479384f6741ac1d79"
+      "target": "systemd/shenron-sqlite-replica-backup.timer",
+      "importedSha256": "a4119f574dd51c1e53f066b6075a9e239814b3a88ae4a16479384f6741ac1d79",
+      "importedSourceSha256": "a4119f574dd51c1e53f066b6075a9e239814b3a88ae4a16479384f6741ac1d79"
     },
     {
       "source": "aphrody-infra/tests/live/_lib.ts",
@@ -49857,11 +50181,8 @@
       "size": 11558,
       "status": "clean",
       "target": "docs/migration/source-licenses/aphrody-koharu/LICENSE-APACHE",
-      "sha256": "1eb85fc97224598dad1852b5d6483bbcf0aa8608790dcc657a5a2a761ae9c8c6",
-      "sourceLicenseTarget": "docs/migration/source-licenses/aphrody-koharu/LICENSE-APACHE",
       "importedSha256": "1eb85fc97224598dad1852b5d6483bbcf0aa8608790dcc657a5a2a761ae9c8c6",
-      "importedSourceSha256": "1eb85fc97224598dad1852b5d6483bbcf0aa8608790dcc657a5a2a761ae9c8c6",
-      "sourceLicenseBlobSha256": "1eb85fc97224598dad1852b5d6483bbcf0aa8608790dcc657a5a2a761ae9c8c6"
+      "importedSourceSha256": "1eb85fc97224598dad1852b5d6483bbcf0aa8608790dcc657a5a2a761ae9c8c6"
     },
     {
       "source": "aphrody-koharu/LICENSE-MIT",
@@ -49869,11 +50190,8 @@
       "size": 1121,
       "status": "clean",
       "target": "docs/migration/source-licenses/aphrody-koharu/LICENSE-MIT",
-      "sha256": "a92cc3408cc6d9c5d17f417ac5c424d6c8148b2512f86d95fa7acf3c9e132547",
-      "sourceLicenseTarget": "docs/migration/source-licenses/aphrody-koharu/LICENSE-MIT",
       "importedSha256": "a92cc3408cc6d9c5d17f417ac5c424d6c8148b2512f86d95fa7acf3c9e132547",
-      "importedSourceSha256": "a92cc3408cc6d9c5d17f417ac5c424d6c8148b2512f86d95fa7acf3c9e132547",
-      "sourceLicenseBlobSha256": "a92cc3408cc6d9c5d17f417ac5c424d6c8148b2512f86d95fa7acf3c9e132547"
+      "importedSourceSha256": "a92cc3408cc6d9c5d17f417ac5c424d6c8148b2512f86d95fa7acf3c9e132547"
     },
     {
       "source": "aphrody-koharu/README.md",
@@ -55647,13 +55965,7 @@
       "kind": "source-or-config",
       "size": 10173,
       "status": "clean",
-      "target": "docs/migration/source-licenses/aphrody-ai/LICENSE",
-      "sha256": "a6cba85bc92e0cff7a450b1d873c0eaa2e9fc96bf472df0247a26bec77bf3ff9",
-      "sourceLicenseTarget": "docs/migration/source-licenses/aphrody-ai/LICENSE",
-      "sourceLicenseAliasOf": "aphrody-ai/LICENSE",
-      "importedSha256": "a6cba85bc92e0cff7a450b1d873c0eaa2e9fc96bf472df0247a26bec77bf3ff9",
-      "importedSourceSha256": "a6cba85bc92e0cff7a450b1d873c0eaa2e9fc96bf472df0247a26bec77bf3ff9",
-      "sourceLicenseBlobSha256": "a6cba85bc92e0cff7a450b1d873c0eaa2e9fc96bf472df0247a26bec77bf3ff9"
+      "target": "docs/migration/source-licenses/aphrody-native/LICENSE"
     },
     {
       "source": "aphrody-native/README.md",
@@ -55894,13 +56206,7 @@
       "kind": "source-or-config",
       "size": 10349,
       "status": "clean",
-      "target": "docs/migration/source-licenses/aphrody-ai/LICENSE",
-      "sha256": "6d1d968fb225eca367cb7f0b8831ab012a35d92b547e945e17ef8e7b05c3e5cc",
-      "sourceLicenseTarget": "docs/migration/source-licenses/aphrody-ai/LICENSE",
-      "sourceLicenseAliasOf": "aphrody-ai/LICENSE",
-      "importedSha256": "a6cba85bc92e0cff7a450b1d873c0eaa2e9fc96bf472df0247a26bec77bf3ff9",
-      "importedSourceSha256": "a6cba85bc92e0cff7a450b1d873c0eaa2e9fc96bf472df0247a26bec77bf3ff9",
-      "sourceLicenseBlobSha256": "a6cba85bc92e0cff7a450b1d873c0eaa2e9fc96bf472df0247a26bec77bf3ff9"
+      "target": "docs/migration/source-licenses/aphrody-os/LICENSE"
     },
     {
       "source": "aphrody-os/README.md",
@@ -74302,13 +74608,7 @@
       "kind": "source-or-config",
       "size": 10349,
       "status": "clean",
-      "target": "docs/migration/source-licenses/aphrody-ai/LICENSE",
-      "sha256": "6d1d968fb225eca367cb7f0b8831ab012a35d92b547e945e17ef8e7b05c3e5cc",
-      "sourceLicenseTarget": "docs/migration/source-licenses/aphrody-ai/LICENSE",
-      "sourceLicenseAliasOf": "aphrody-ai/LICENSE",
-      "importedSha256": "a6cba85bc92e0cff7a450b1d873c0eaa2e9fc96bf472df0247a26bec77bf3ff9",
-      "importedSourceSha256": "a6cba85bc92e0cff7a450b1d873c0eaa2e9fc96bf472df0247a26bec77bf3ff9",
-      "sourceLicenseBlobSha256": "a6cba85bc92e0cff7a450b1d873c0eaa2e9fc96bf472df0247a26bec77bf3ff9"
+      "target": "docs/migration/source-licenses/aphrody-shell/LICENSE"
     },
     {
       "source": "aphrody-shell/README.md",
@@ -135333,13 +135633,7 @@
       "kind": "source-or-config",
       "size": 10349,
       "status": "clean",
-      "target": "docs/migration/source-licenses/aphrody-ai/LICENSE",
-      "sha256": "6d1d968fb225eca367cb7f0b8831ab012a35d92b547e945e17ef8e7b05c3e5cc",
-      "sourceLicenseTarget": "docs/migration/source-licenses/aphrody-ai/LICENSE",
-      "sourceLicenseAliasOf": "aphrody-ai/LICENSE",
-      "importedSha256": "a6cba85bc92e0cff7a450b1d873c0eaa2e9fc96bf472df0247a26bec77bf3ff9",
-      "importedSourceSha256": "a6cba85bc92e0cff7a450b1d873c0eaa2e9fc96bf472df0247a26bec77bf3ff9",
-      "sourceLicenseBlobSha256": "a6cba85bc92e0cff7a450b1d873c0eaa2e9fc96bf472df0247a26bec77bf3ff9"
+      "target": "docs/migration/source-licenses/aphrody-web/LICENSE"
     },
     {
       "source": "aphrody-web/README.md",
@@ -135829,9 +136123,9 @@
       "source": "aphrody-web/apps/bxc/AGENTS.md",
       "kind": "documentation",
       "category": "reference",
-      "size": 16818,
+      "size": 17261,
       "status": "clean",
-      "sha256": "dee6f15223e9848ddbe4d412904528cb2b1621545ca5d529af76f80329b4f775",
+      "sha256": "7405264941e54a107e7a5bdeaa85815958123e923b0dad0f1624b3089908e32b",
       "target": "docs/reference/web/apps/bxc/AGENTS.md",
       "importedSha256": "dee6f15223e9848ddbe4d412904528cb2b1621545ca5d529af76f80329b4f775",
       "importedSourceSha256": "dee6f15223e9848ddbe4d412904528cb2b1621545ca5d529af76f80329b4f775"
@@ -135893,9 +136187,9 @@
       "source": "aphrody-web/apps/bxc/MEGA-PLAN.md",
       "kind": "documentation",
       "category": "plans",
-      "size": 29858,
+      "size": 30116,
       "status": "clean",
-      "sha256": "d19a01da30daf5f993dc23ccb123392bb853bbfb62c7f43c122883c5cd8c9b78",
+      "sha256": "a727eecf48f388e5fc0fc3c8ee13fccd08f131d31c8da8e96788866c867c3b9d",
       "target": "docs/plans/web/apps/bxc/MEGA-PLAN.md",
       "importedSha256": "d19a01da30daf5f993dc23ccb123392bb853bbfb62c7f43c122883c5cd8c9b78",
       "importedSourceSha256": "d19a01da30daf5f993dc23ccb123392bb853bbfb62c7f43c122883c5cd8c9b78"
@@ -135904,9 +136198,9 @@
       "source": "aphrody-web/apps/bxc/PLAN.md",
       "kind": "documentation",
       "category": "plans",
-      "size": 21149,
+      "size": 24537,
       "status": "clean",
-      "sha256": "75ba7a0f55dd5b5c78daa0887ae7d49ed4683de2bdcd0dd7dc5d788f07786e18",
+      "sha256": "6610c60083865e91ae3a0565b00de55ee818f4b5598f4eeab15a7cb29fd9e7ee",
       "target": "docs/plans/web/apps/bxc/PLAN.md",
       "importedSha256": "75ba7a0f55dd5b5c78daa0887ae7d49ed4683de2bdcd0dd7dc5d788f07786e18",
       "importedSourceSha256": "75ba7a0f55dd5b5c78daa0887ae7d49ed4683de2bdcd0dd7dc5d788f07786e18"
@@ -140177,9 +140471,9 @@
     {
       "source": "aphrody-web/apps/bxc/src/embed/native-embedder.ts",
       "kind": "bun-app",
-      "size": 5505,
+      "size": 5545,
       "status": "clean",
-      "sha256": "f48023afc258f14afc705b765a98564f535e3861de5722dba8bb6e460d939315",
+      "sha256": "3f83a8c984cd60fe99f4b0887c5b8eedae25e44bf7f16c2b87e3e88614a54f05",
       "target": "apps/web/bxc/src/embed/native-embedder.ts",
       "importedSourceSha256": "f48023afc258f14afc705b765a98564f535e3861de5722dba8bb6e460d939315"
     },
@@ -141239,9 +141533,9 @@
     {
       "source": "aphrody-web/apps/bxc/src/rust/bridge.ts",
       "kind": "bun-app",
-      "size": 36925,
+      "size": 36996,
       "status": "clean",
-      "sha256": "f0c00f87a204b0b0c512bc7d3816a94216f4e116ddb8441121922d0e0c4a8c4c",
+      "sha256": "3dce4a69424d076ff7a41e29e662c09245cd7dd3b226107b1800950f85be28b9",
       "target": "apps/web/bxc/src/rust/bridge.ts",
       "importedSourceSha256": "f0c00f87a204b0b0c512bc7d3816a94216f4e116ddb8441121922d0e0c4a8c4c"
     },
@@ -147315,9 +147609,9 @@
     {
       "source": "aphrody-web/crates/aphrody-web-ffi/src/extract.rs",
       "kind": "rust-source",
-      "size": 8200,
+      "size": 12897,
       "status": "clean",
-      "sha256": "2df0fcae9167d10ce49e6fcb87152bdfd8c893d6cb0aaf351765bf8a16585d74",
+      "sha256": "c96fedc2e99a17b39377ee53afcfca868fac957accdd1b4224cece57bdf9b40a",
       "target": "crates/web/aphrody-web-ffi/src/extract.rs",
       "importedSourceSha256": "2df0fcae9167d10ce49e6fcb87152bdfd8c893d6cb0aaf351765bf8a16585d74"
     },
@@ -147351,9 +147645,9 @@
     {
       "source": "aphrody-web/crates/aphrody-web-ffi/src/lib.rs",
       "kind": "rust-source",
-      "size": 5858,
+      "size": 7264,
       "status": "clean",
-      "sha256": "d4159d1c1032869c2f5a82fac879069b9835f5c574469d11de83b9643c8c9dc6",
+      "sha256": "fd51eb723e18a549d63019b8c04c22a909b40285f3d7692fb53b0daf8c03f715",
       "target": "crates/web/aphrody-web-ffi/src/lib.rs",
       "importedSourceSha256": "d4159d1c1032869c2f5a82fac879069b9835f5c574469d11de83b9643c8c9dc6"
     },
@@ -148822,12 +149116,21 @@
       "source": "aphrody-web/docs/web/BXC-BRIDGE-PLAN.md",
       "kind": "documentation",
       "category": "plans",
-      "size": 16604,
+      "size": 16875,
       "status": "clean",
-      "sha256": "3ed25952478a858fb8405407d0cb939fc0eeb463e5e5a6f36db533a28aecf15e",
+      "sha256": "2ce886c6ed72346a17e16f1c72db748a61eab8b77de53cf85461c3b6412a01e8",
       "target": "docs/plans/web/web/BXC-BRIDGE-PLAN.md",
       "importedSha256": "aead5b4c782f9ac398d032c4cc04dea9fb8c162395955ff4bc0bf5fc192191cd",
       "importedSourceSha256": "3ed25952478a858fb8405407d0cb939fc0eeb463e5e5a6f36db533a28aecf15e"
+    },
+    {
+      "source": "aphrody-web/docs/web/BXC-RUST-MIGRATION-PLAN.md",
+      "kind": "documentation",
+      "category": "plans",
+      "size": 10864,
+      "status": "clean",
+      "sha256": "9fd3e6429de458c738e4e9f1fbf650e19d9f7c5897d6c3b59f19237e92b61ead",
+      "target": "docs/plans/web/web/BXC-RUST-MIGRATION-PLAN.md"
     },
     {
       "source": "aphrody-web/docs/web/CHROME-DEVTOOLS-MCP-ANALYSIS.md",
@@ -153515,11 +153818,8 @@
       "size": 5970,
       "status": "clean",
       "target": "docs/migration/source-licenses/nie/LICENSE",
-      "sha256": "8b36fe19cb3134348133db3676d8aeb4a800df6cb69f4ae38624df32a4873386",
-      "sourceLicenseTarget": "docs/migration/source-licenses/nie/LICENSE",
       "importedSha256": "8b36fe19cb3134348133db3676d8aeb4a800df6cb69f4ae38624df32a4873386",
-      "importedSourceSha256": "8b36fe19cb3134348133db3676d8aeb4a800df6cb69f4ae38624df32a4873386",
-      "sourceLicenseBlobSha256": "8b36fe19cb3134348133db3676d8aeb4a800df6cb69f4ae38624df32a4873386"
+      "importedSourceSha256": "8b36fe19cb3134348133db3676d8aeb4a800df6cb69f4ae38624df32a4873386"
     },
     {
       "source": "nie/LOCAL.md",
@@ -153538,11 +153838,8 @@
       "size": 2588,
       "status": "clean",
       "target": "docs/migration/source-licenses/nie/NOTICE",
-      "sha256": "a8f917388678ed632def258732e096137ef3aa2c1ca4cdee5215e7552805ea0c",
-      "sourceLicenseTarget": "docs/migration/source-licenses/nie/NOTICE",
       "importedSha256": "a8f917388678ed632def258732e096137ef3aa2c1ca4cdee5215e7552805ea0c",
-      "importedSourceSha256": "a8f917388678ed632def258732e096137ef3aa2c1ca4cdee5215e7552805ea0c",
-      "sourceLicenseBlobSha256": "a8f917388678ed632def258732e096137ef3aa2c1ca4cdee5215e7552805ea0c"
+      "importedSourceSha256": "a8f917388678ed632def258732e096137ef3aa2c1ca4cdee5215e7552805ea0c"
     },
     {
       "source": "nie/PLAN.md",
@@ -166242,11 +166539,8 @@
       "size": 11544,
       "status": "clean",
       "target": "docs/migration/source-licenses/fut/LICENSE",
-      "sha256": "d1d5bababc6f60baed2ca4120b900fcbf2bde2b27d8025a79f4b8353583a3d3e",
-      "sourceLicenseTarget": "docs/migration/source-licenses/fut/LICENSE",
       "importedSha256": "d1d5bababc6f60baed2ca4120b900fcbf2bde2b27d8025a79f4b8353583a3d3e",
-      "importedSourceSha256": "d1d5bababc6f60baed2ca4120b900fcbf2bde2b27d8025a79f4b8353583a3d3e",
-      "sourceLicenseBlobSha256": "d1d5bababc6f60baed2ca4120b900fcbf2bde2b27d8025a79f4b8353583a3d3e"
+      "importedSourceSha256": "d1d5bababc6f60baed2ca4120b900fcbf2bde2b27d8025a79f4b8353583a3d3e"
     },
     {
       "source": "fut/README.md",
@@ -385318,9 +385612,6 @@
       "size": 1119,
       "status": "clean",
       "target": "docs/migration/source-licenses/oxc/LICENSE",
-      "sha256": "95ced5ecf1133fbf41d409b5555c86c344f83f3b019926057ddbc07cfdcc27b3",
-      "sourceLicenseBlobSha256": "95ced5ecf1133fbf41d409b5555c86c344f83f3b019926057ddbc07cfdcc27b3",
-      "sourceLicenseTarget": "docs/migration/source-licenses/oxc/LICENSE",
       "importedSha256": "95ced5ecf1133fbf41d409b5555c86c344f83f3b019926057ddbc07cfdcc27b3",
       "importedSourceSha256": "95ced5ecf1133fbf41d409b5555c86c344f83f3b019926057ddbc07cfdcc27b3"
     },
@@ -647112,317 +647403,5 @@
       "status": "clean",
       "target": "migration/source-refs/iecode/workspace.manifest.json"
     }
-  ],
-  "submoduleInventory": "docs/migration/submodule-inventory.json",
-  "submoduleInventoryObservedAt": "2026-09-29T05:17:19.169Z",
-  "submodules": [
-    {
-      "root": "src-root-docs",
-      "path": "aphrody-ai",
-      "depth": 1,
-      "name": "aphrody-ai",
-      "url": "https://github.com/aphrody-code/aphrody-ai.git",
-      "indexPin": "3aa88791f49b963a00f073cb206677ea9d1957e1",
-      "headPin": "3aa88791f49b963a00f073cb206677ea9d1957e1",
-      "state": "matching-index",
-      "observedHead": "3aa88791f49b963a00f073cb206677ea9d1957e1",
-      "dirtyPathCount": 0
-    },
-    {
-      "root": "src-root-docs",
-      "path": "aphrody-ai/thirdparty/codex",
-      "depth": 2,
-      "name": "thirdparty/codex",
-      "url": "https://github.com/openai/codex.git",
-      "branch": "main",
-      "indexPin": "c6d48adc83b7a1f5675fef8634988d44fd76b986",
-      "headPin": "c6d48adc83b7a1f5675fef8634988d44fd76b986",
-      "state": "matching-index",
-      "observedHead": "c6d48adc83b7a1f5675fef8634988d44fd76b986",
-      "dirtyPathCount": 0
-    },
-    {
-      "root": "src-root-docs",
-      "path": "aphrody-compat",
-      "depth": 1,
-      "name": "aphrody-compat",
-      "url": "https://github.com/aphrody-code/aphrody-compat.git",
-      "indexPin": "a7854eba0cf606993c12c29a95510a2c97077841",
-      "headPin": "a7854eba0cf606993c12c29a95510a2c97077841",
-      "state": "head-differs-from-index",
-      "observedHead": "5c7bd3e1176f8709a8d91ebfc989bb2aba38b773",
-      "dirtyPathCount": 0
-    },
-    {
-      "root": "src-root-docs",
-      "path": "aphrody-compat/third_party/bun",
-      "depth": 2,
-      "name": "third_party/bun",
-      "url": "https://github.com/oven-sh/bun.git",
-      "indexPin": "bf80d21c69c355f6e5bae2749485674663ed13a1",
-      "headPin": "bf80d21c69c355f6e5bae2749485674663ed13a1",
-      "state": "uninitialized"
-    },
-    {
-      "root": "src-root-docs",
-      "path": "aphrody-contracts",
-      "depth": 1,
-      "name": "aphrody-contracts",
-      "url": "https://github.com/aphrody-code/aphrody-contracts.git",
-      "indexPin": "e244eb8fb24857b46319d766161f0aaa74262480",
-      "headPin": "e244eb8fb24857b46319d766161f0aaa74262480",
-      "state": "head-differs-from-index",
-      "observedHead": "4a22afb12b086573e6890e49a3bfbde7a96380ea",
-      "dirtyPathCount": 0
-    },
-    {
-      "root": "src-root-docs",
-      "path": "aphrody-discord",
-      "depth": 1,
-      "indexPin": "7d40cd148296dce042fa73a277bab99970f98af1",
-      "headPin": "7d40cd148296dce042fa73a277bab99970f98af1",
-      "state": "gitlink-without-declaration",
-      "observedHead": "326ca0beee7ec4a8563d1d7e05f046bdf13fe583",
-      "dirtyPathCount": 0
-    },
-    {
-      "root": "src-root-docs",
-      "path": "aphrody-infra",
-      "depth": 1,
-      "name": "aphrody-infra",
-      "url": "https://github.com/aphrody-code/aphrody-infra.git",
-      "branch": "main",
-      "indexPin": "903dd9ae3162c2de404e4dc5a659fa5fd0b92f0b",
-      "headPin": "903dd9ae3162c2de404e4dc5a659fa5fd0b92f0b",
-      "state": "matching-index",
-      "observedHead": "903dd9ae3162c2de404e4dc5a659fa5fd0b92f0b",
-      "dirtyPathCount": 12
-    },
-    {
-      "root": "src-root-docs",
-      "path": "aphrody-native",
-      "depth": 1,
-      "name": "aphrody-native",
-      "url": "https://github.com/aphrody-code/aphrody-native.git",
-      "indexPin": "1acd62e5f4b0f519754a0b3c33021896d4e590c1",
-      "headPin": "1acd62e5f4b0f519754a0b3c33021896d4e590c1",
-      "state": "matching-index",
-      "observedHead": "1acd62e5f4b0f519754a0b3c33021896d4e590c1",
-      "dirtyPathCount": 0
-    },
-    {
-      "root": "src-root-docs",
-      "path": "aphrody-os",
-      "depth": 1,
-      "name": "aphrody-os",
-      "url": "https://github.com/aphrody-code/aphrody-os.git",
-      "indexPin": "37e499fc69f2a1672707e44cf49db4a71fd3f066",
-      "headPin": "37e499fc69f2a1672707e44cf49db4a71fd3f066",
-      "state": "head-differs-from-index",
-      "observedHead": "5988533a5fe6088aba61389bd488f035ab61aa08",
-      "dirtyPathCount": 0
-    },
-    {
-      "root": "src-root-docs",
-      "path": "aphrody-os/third_party/uutils-diffutils",
-      "depth": 2,
-      "name": "third_party/uutils-diffutils",
-      "url": "https://github.com/aphrody-labs/diffutils.git",
-      "indexPin": "2e7f191ddfa3516b1920cffd7775d8f292977f07",
-      "headPin": "2e7f191ddfa3516b1920cffd7775d8f292977f07",
-      "state": "matching-index",
-      "observedHead": "2e7f191ddfa3516b1920cffd7775d8f292977f07",
-      "dirtyPathCount": 0
-    },
-    {
-      "root": "src-root-docs",
-      "path": "aphrody-os/third_party/uutils-findutils",
-      "depth": 2,
-      "name": "third_party/uutils-findutils",
-      "url": "https://github.com/aphrody-labs/findutils.git",
-      "indexPin": "6566e0ca5e46a0655445b051c03f2bf2fb2f1411",
-      "headPin": "6566e0ca5e46a0655445b051c03f2bf2fb2f1411",
-      "state": "matching-index",
-      "observedHead": "6566e0ca5e46a0655445b051c03f2bf2fb2f1411",
-      "dirtyPathCount": 0
-    },
-    {
-      "root": "src-root-docs",
-      "path": "aphrody-os/third_party/uutils-grep",
-      "depth": 2,
-      "name": "third_party/uutils-grep",
-      "url": "https://github.com/aphrody-labs/grep.git",
-      "indexPin": "dd8333976d5bc0adf6e2bccceb664d3d6da726c5",
-      "headPin": "dd8333976d5bc0adf6e2bccceb664d3d6da726c5",
-      "state": "matching-index",
-      "observedHead": "dd8333976d5bc0adf6e2bccceb664d3d6da726c5",
-      "dirtyPathCount": 0
-    },
-    {
-      "root": "src-root-docs",
-      "path": "aphrody-os/third_party/uutils-sed",
-      "depth": 2,
-      "name": "third_party/uutils-sed",
-      "url": "https://github.com/aphrody-labs/sed.git",
-      "indexPin": "4b44c66c6a166e3ec8242da46cea093eb2026bd2",
-      "headPin": "4b44c66c6a166e3ec8242da46cea093eb2026bd2",
-      "state": "matching-index",
-      "observedHead": "4b44c66c6a166e3ec8242da46cea093eb2026bd2",
-      "dirtyPathCount": 0
-    },
-    {
-      "root": "src-root-docs",
-      "path": "aphrody-os/third_party/uutils-tar",
-      "depth": 2,
-      "name": "third_party/uutils-tar",
-      "url": "https://github.com/aphrody-labs/tar.git",
-      "indexPin": "4fe9ce8d722815e9fa56c43fae53d67c74f90591",
-      "headPin": "4fe9ce8d722815e9fa56c43fae53d67c74f90591",
-      "state": "matching-index",
-      "observedHead": "4fe9ce8d722815e9fa56c43fae53d67c74f90591",
-      "dirtyPathCount": 0
-    },
-    {
-      "root": "src-root-docs",
-      "path": "aphrody-shell",
-      "depth": 1,
-      "name": "aphrody-shell",
-      "url": "https://github.com/aphrody-code/aphrody-shell.git",
-      "indexPin": "198b0244f6d899963449f70978da180580da5ace",
-      "headPin": "198b0244f6d899963449f70978da180580da5ace",
-      "state": "head-differs-from-index",
-      "observedHead": "2a829cd7be12a7de67e8e6c5ba65b4292f11c650",
-      "dirtyPathCount": 0
-    },
-    {
-      "root": "src-root-docs",
-      "path": "aphrody-ui",
-      "depth": 1,
-      "name": "aphrody-ui",
-      "url": "https://github.com/aphrody-code/aphrody-ui.git",
-      "indexPin": "dfdf720eb9116064bd7229582d36490964e30415",
-      "headPin": "dfdf720eb9116064bd7229582d36490964e30415",
-      "state": "delegated-uninspected"
-    },
-    {
-      "root": "src-root-docs",
-      "path": "aphrody-web",
-      "depth": 1,
-      "name": "aphrody-web",
-      "url": "https://github.com/aphrody-code/aphrody-web.git",
-      "indexPin": "6f966cc5cd56c01eb2a3d20e6ef518d5794b02d9",
-      "headPin": "6f966cc5cd56c01eb2a3d20e6ef518d5794b02d9",
-      "state": "matching-index",
-      "observedHead": "6f966cc5cd56c01eb2a3d20e6ef518d5794b02d9",
-      "dirtyPathCount": 0
-    },
-    {
-      "root": "src-root-docs",
-      "path": "aphrody-web/third_party/agent-browser",
-      "depth": 2,
-      "name": "third_party/agent-browser",
-      "url": "https://github.com/vercel-labs/agent-browser",
-      "indexPin": "0f1029392bc3843df15fa4204f0eaf63dfb75e61",
-      "headPin": "0f1029392bc3843df15fa4204f0eaf63dfb75e61",
-      "state": "matching-index",
-      "observedHead": "0f1029392bc3843df15fa4204f0eaf63dfb75e61",
-      "dirtyPathCount": 0
-    },
-    {
-      "root": "src-root-docs",
-      "path": "bun",
-      "depth": 1,
-      "indexPin": "a2671046afbfc818fba21a4925f384b75dc8e109",
-      "headPin": "a2671046afbfc818fba21a4925f384b75dc8e109",
-      "state": "gitlink-without-declaration",
-      "observedHead": "a2671046afbfc818fba21a4925f384b75dc8e109",
-      "dirtyPathCount": 0
-    },
-    {
-      "root": "src-root-docs",
-      "path": "nie",
-      "depth": 1,
-      "name": "nie",
-      "url": "https://github.com/aphrody-code/nie.git",
-      "branch": "main",
-      "indexPin": "94d88bc3993e7dabddf44ce9804d5b41ee5d4c4c",
-      "headPin": "94d88bc3993e7dabddf44ce9804d5b41ee5d4c4c",
-      "state": "head-differs-from-index",
-      "observedHead": "fd624e060a4180c988336bcc3f829bb1835cbf24",
-      "dirtyPathCount": 0
-    },
-    {
-      "root": "src-root-docs",
-      "path": "oxc",
-      "depth": 1,
-      "indexPin": "d82d3cb6cd6cb36a6b29ef07b3d965bda6a5faff",
-      "headPin": "d82d3cb6cd6cb36a6b29ef07b3d965bda6a5faff",
-      "state": "gitlink-without-declaration",
-      "observedHead": "31d5266e150ff17af52f0c2fc798cc27dc9a5a59",
-      "dirtyPathCount": 0
-    },
-    {
-      "root": "src-root-docs",
-      "path": "rg",
-      "depth": 1,
-      "name": "rg",
-      "url": "https://github.com/rose-griffon/rg.git",
-      "branch": "main",
-      "indexPin": "bfc8c490a0e35c61ca3960ec64c2aacd2b982629",
-      "headPin": "bfc8c490a0e35c61ca3960ec64c2aacd2b982629",
-      "state": "head-differs-from-index",
-      "observedHead": "14be66e6cf4dbb7350b0021cc7f83fe28f144583",
-      "dirtyPathCount": 0
-    },
-    {
-      "root": "src-root-docs",
-      "path": "shenron",
-      "depth": 1,
-      "name": "shenron",
-      "url": "https://github.com/aphrody-code/shenron.git",
-      "branch": "main",
-      "indexPin": "ddcbd8f5a9cce25afef5a0ab180f631032bd68b7",
-      "headPin": "ddcbd8f5a9cce25afef5a0ab180f631032bd68b7",
-      "state": "head-differs-from-index",
-      "observedHead": "e7438a6234407e445105c5a442577223e0bf7f67",
-      "dirtyPathCount": 0
-    }
-  ],
-  "missingRoots": [
-    {
-      "key": "bevy",
-      "path": "/home/aphro/src/bevy",
-      "state": "checkout-not-on-disk"
-    },
-    {
-      "key": "dust",
-      "path": "/home/aphro/src/dust",
-      "state": "checkout-not-on-disk"
-    },
-    {
-      "key": "emu.nintendo.wii.gecko",
-      "path": "/home/aphro/src/emu.nintendo.wii.gecko",
-      "state": "checkout-not-on-disk"
-    }
-  ],
-  "nestedSourceMap": "docs/migration/nested-source-map.json",
-  "nestedSourceMapObservedAt": "2026-09-29T05:17:20.111Z",
-  "nestedSourceTotals": {
-    "checkouts": 7,
-    "paths": 9583,
-    "parsedManifests": 192,
-    "manifestParseFailures": 0,
-    "declaredWorkspaces": 11,
-    "memberPatterns": 164,
-    "unresolvedMemberPatterns": 1,
-    "byKind": {
-      "documentation": 400,
-      "license": 14,
-      "manifest-or-lockfile": 213,
-      "package-file": 84,
-      "rust-source": 5131,
-      "script": 144,
-      "source-or-config": 3597
-    }
-  }
+  ]
 }

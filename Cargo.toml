@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 [workspace]
 resolver = "3"
-members = ["crates/iecode/ievr-data", "crates/infra/*", "crates/contracts/aphrody-kernel-client", "crates/ai/aphrody-agent-home", "crates/ai/aphrody-models", "crates/ai/aphrody-config", "crates/ai/aphrody-toolcall", "crates/ai/aphrody-patch", "crates/ai/aphrody-context", "crates/ai/aphrody-prompts", "crates/ai/aphrody-providers", "crates/ai/aphrody-ecosystem", "crates/ai/aphrody-gemini-runtime", "crates/ai/aphrody-antigravity", "crates/ai/aphrody-model-client", "crates/ai/aphrody-model-antigravity", "crates/ai/aphrody-llm-infra", "crates/ai/aphrody-router", "crates/ai/aphrody-mcp-oauth", "crates/ai/aphrody-toolcall-repair"]
+members = ["crates/iecode/ievr-data", "crates/infra/*", "crates/contracts/aphrody-kernel-client", "crates/ai/aphrody-agent-home", "crates/ai/aphrody-models", "crates/ai/aphrody-config", "crates/ai/aphrody-toolcall", "crates/ai/aphrody-patch", "crates/ai/aphrody-context", "crates/ai/aphrody-prompts", "crates/ai/aphrody-providers", "crates/ai/aphrody-ecosystem", "crates/ai/aphrody-gemini-runtime", "crates/ai/aphrody-antigravity", "crates/ai/aphrody-model-client", "crates/ai/aphrody-model-antigravity", "crates/ai/aphrody-llm-infra", "crates/ai/aphrody-router", "crates/ai/aphrody-mcp-oauth", "crates/ai/aphrody-toolcall-repair", "crates/web/*"]
 
 [workspace.package]
 version = "1.0.0"
@@ -13,6 +13,7 @@ authors = ["aphrody-code"]
 homepage = "https://github.com/aphrody-labs/aphrody"
 
 [workspace.dependencies]
+scraper = { version = "0.27", features = [] }
 serde = { version = "1", default-features = false, features = ["derive"] }
 serde_json = { version = "1", default-features = false }
 anyhow = "1.0"

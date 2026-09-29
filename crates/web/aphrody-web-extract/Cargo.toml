@@ -1,0 +1,20 @@
+# SPDX-License-Identifier: Apache-2.0
+[package]
+name = "aphrody-web-extract"
+publish = false
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+homepage.workspace = true
+repository.workspace = true
+license.workspace = true
+description = "Canonical Aphrody Web URL normalization and HTML metadata extraction."
+
+[lints]
+workspace = true
+
+[dependencies]
+scraper = { workspace = true }
+thiserror = { workspace = true }
+url = { workspace = true }
