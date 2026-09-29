@@ -180,6 +180,13 @@ source-closure, compatibility, installed-workflow, license, and rollback gate.
       file and line: ten map to staged targets, while eight refer to the old
       checkout root. These scripts and unit paths remain unqualified for runtime
       cutover.
+- [x] Preserve root license and notice blobs for the non-UI extracted sources.
+      The [license import report](docs/migration/source-licenses-import.json)
+      maps 15 pinned Git files to nine canonical copies and six exact-byte
+      aliases, with blob IDs, source heads, worktree hashes and target hashes.
+      Six worktree files differ in raw bytes only through verified Git checkout
+      filters. IECODE has no root license file at its pinned revision; nested
+      package licenses and the broader rights boundary remain open.
 - [ ] Complete Infra's consumer and pipeline cutover without the transitional
       checkout. The Rust library suite now passes 52/52 after its Git overview
       test was isolated in a temporary repository. `pipeline --stage check --json` reports 12

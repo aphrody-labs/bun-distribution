@@ -19,6 +19,13 @@ sources were formatted to the new workspace policy; path-based tests were
 adjusted for the deeper `crates/infra/` layout. The source repositories remain
 intact for rollback.
 
+The pinned Infra and Contracts root LICENSE blobs are preserved by the
+[source license import](source-licenses-import.json). Exact-byte duplicates
+share a canonical file with explicit aliases; the report distinguishes pinned
+blob bytes from worktree bytes when Git checkout filters change line endings.
+This records the source licenses for these crates without assigning one license
+to the entire mixed-source target repository.
+
 Measured gates: offline locked `cargo check -p aphrody-infra --all-targets`,
 locked offline Clippy with `-D warnings`, and `cargo fmt --all --check` pass.
 The new Bun Infra bridge resolves this Cargo root and its `infra --help`

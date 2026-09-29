@@ -65,11 +65,14 @@ The consolidation command inventories current checkout heads, dirty paths, works
 
 `consolidation infra-scripts-import` stages the six clean tracked Infra scripts named by the copied systemd units under categorized `scripts/` paths. It rejects source hash changes and target conflicts, then records the copies in `docs/migration/infra-scripts-import.json`. Copied script defaults and deployed unit paths still need runtime qualification.
 
+`consolidation source-licenses-import` preserves root LICENSE, NOTICE and COPYING files from pinned non-UI source Git commits. It checks each worktree against the pinned blob, records raw and filtered hashes, and gives byte-identical files one canonical target with aliases in `docs/migration/source-licenses-import.json`. Missing root licenses and nested package licenses remain separate migration gates.
+
 ```bash
 bun packages/aphrody-workspace/src/ops.ts consolidation inventory --source-root /home/aphro/src --iecode-root /home/aphro/iecode --aphrody-root /home/aphro/aphrody --python-root /home/aphro/aphrody-py
 bun packages/aphrody-workspace/src/ops.ts consolidation submodules-inventory --source-root /home/aphro/src --iecode-root /home/aphro/iecode --aphrody-root /home/aphro/aphrody --python-root /home/aphro/aphrody-py
 bun packages/aphrody-workspace/src/ops.ts consolidation infra-config-import --source-root /home/aphro/src --aphrody-root /home/aphro/aphrody
 bun packages/aphrody-workspace/src/ops.ts consolidation infra-scripts-import --source-root /home/aphro/src --aphrody-root /home/aphro/aphrody
+bun packages/aphrody-workspace/src/ops.ts consolidation source-licenses-import --source-root /home/aphro/src --aphrody-root /home/aphro/aphrody
 bun packages/aphrody-workspace/src/ops.ts consolidation docs-import --source-root /home/aphro/src --iecode-root /home/aphro/iecode --aphrody-root /home/aphro/aphrody --python-root /home/aphro/aphrody-py
 bun packages/aphrody-workspace/src/ops.ts consolidation scripts-import --source-root /home/aphro/src --iecode-root /home/aphro/iecode --aphrody-root /home/aphro/aphrody --python-root /home/aphro/aphrody-py
 ```

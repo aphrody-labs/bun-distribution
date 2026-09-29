@@ -8,6 +8,7 @@ import { basename, dirname, join, relative, resolve } from "node:path";
 import { inventoryNestedFiles, inventorySubmodules } from "./submodule-inventory.ts";
 import { importInfraConfig } from "./infra-config-import.ts";
 import { importInfraScripts } from "./infra-scripts-import.ts";
+import { importSourceLicenses } from "./source-licenses-import.ts";
 
 type Mode = "extract" | "orchestrator-split" | "upstream-pinned" | "deferred" | "classify";
 type RootSpec = { key: string; path: string; owner: string; mode: Mode; rootDocsOnly?: boolean };
@@ -206,22 +207,28 @@ async function rootSnapshot(
         path.startsWith("inventory/") ||
         path.startsWith("systemd/") ||
         path === "rust-toolchain.toml");
+    const rootLicense =
+      (spec.mode === "extract" || spec.mode === "orchestrator-split") &&
+      spec.key !== "aphrody-ui" &&
+      /^(?:LICENSE|NOTICE|COPYING)(?:[.-][A-Za-z0-9._-]+)?$/i.test(path);
     const infraOwnedControl =
       spec.mode === "orchestrator-split" &&
       (path.startsWith("scripts/") || path.startsWith("packages/aphrody-workspace/"));
-    const destination = infraCatalog
-      ? path
-      : spec.mode === "deferred" || spec.mode === "classify" || infraOwnedControl
-        ? null
-        : external
-          ? `upstream/${spec.owner}/${path}`
-          : spec.mode === "upstream-pinned" && info.kind !== "documentation"
+    const destination = rootLicense
+      ? `docs/migration/source-licenses/${spec.key}/${path}`
+      : infraCatalog
+        ? path
+        : spec.mode === "deferred" || spec.mode === "classify" || infraOwnedControl
+          ? null
+          : external
             ? `upstream/${spec.owner}/${path}`
-            : targetPath(
-                spec.mode === "upstream-pinned" ? `upstream-${spec.owner}` : spec.owner,
-                path,
-                info,
-              );
+            : spec.mode === "upstream-pinned" && info.kind !== "documentation"
+              ? `upstream/${spec.owner}/${path}`
+              : targetPath(
+                  spec.mode === "upstream-pinned" ? `upstream-${spec.owner}` : spec.owner,
+                  path,
+                  info,
+                );
     entries.push({
       source: `${spec.key}/${path}`,
       kind: external && info.kind !== "documentation" ? "upstream-source" : info.kind,
@@ -255,7 +262,7 @@ export async function runConsolidation(args: string[]): Promise<number> {
   const [action = "inventory", ...rest] = args;
   if (action === "--help" || action === "-h" || action === "help") {
     console.log(
-      "Usage: aphrody-ops consolidation <inventory|submodules-inventory|infra-config-import|infra-scripts-import|docs-import|scripts-import> [--source-root path] [--iecode-root path] [--aphrody-root path] [--python-root path]",
+      "Usage: aphrody-ops consolidation <inventory|submodules-inventory|infra-config-import|infra-scripts-import|source-licenses-import|docs-import|scripts-import> [--source-root path] [--iecode-root path] [--aphrody-root path] [--python-root path]",
     );
     return 0;
   }
@@ -264,11 +271,12 @@ export async function runConsolidation(args: string[]): Promise<number> {
     action !== "submodules-inventory" &&
     action !== "infra-config-import" &&
     action !== "infra-scripts-import" &&
+    action !== "source-licenses-import" &&
     action !== "docs-import" &&
     action !== "scripts-import"
   )
     throw new Error(
-      "Usage: aphrody-ops consolidation <inventory|submodules-inventory|infra-config-import|infra-scripts-import|docs-import|scripts-import> [options]",
+      "Usage: aphrody-ops consolidation <inventory|submodules-inventory|infra-config-import|infra-scripts-import|source-licenses-import|docs-import|scripts-import> [options]",
     );
   const options = argsOf(rest);
   const sourceRoot = resolve(options.get("--source-root") ?? "/home/aphro/src");
@@ -289,6 +297,11 @@ export async function runConsolidation(args: string[]): Promise<number> {
   }
   if (action === "infra-scripts-import") {
     const result = await importInfraScripts(sourceRoot, aphrodyRoot);
+    console.log(JSON.stringify(result, null, 2));
+    return 0;
+  }
+  if (action === "source-licenses-import") {
+    const result = await importSourceLicenses(sourceRoot, aphrodyRoot);
     console.log(JSON.stringify(result, null, 2));
     return 0;
   }

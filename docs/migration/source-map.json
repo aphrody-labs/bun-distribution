@@ -853,7 +853,12 @@
       "kind": "source-or-config",
       "size": 10349,
       "status": "clean",
-      "target": "migration/source-refs/ai/LICENSE"
+      "target": "docs/migration/source-licenses/aphrody-ai/LICENSE",
+      "sha256": "6d1d968fb225eca367cb7f0b8831ab012a35d92b547e945e17ef8e7b05c3e5cc",
+      "sourceLicenseTarget": "docs/migration/source-licenses/aphrody-ai/LICENSE",
+      "importedSha256": "a6cba85bc92e0cff7a450b1d873c0eaa2e9fc96bf472df0247a26bec77bf3ff9",
+      "importedSourceSha256": "a6cba85bc92e0cff7a450b1d873c0eaa2e9fc96bf472df0247a26bec77bf3ff9",
+      "sourceLicenseBlobSha256": "a6cba85bc92e0cff7a450b1d873c0eaa2e9fc96bf472df0247a26bec77bf3ff9"
     },
     {
       "source": "aphrody-ai/MEMORY.md",
@@ -871,7 +876,12 @@
       "kind": "source-or-config",
       "size": 606,
       "status": "clean",
-      "target": "migration/source-refs/ai/NOTICE"
+      "target": "docs/migration/source-licenses/aphrody-ai/NOTICE",
+      "sha256": "8ada1e46ed5127386bf3816ce54513f175de5890a167893303d0d88b44c766f0",
+      "sourceLicenseTarget": "docs/migration/source-licenses/aphrody-ai/NOTICE",
+      "importedSha256": "8ada1e46ed5127386bf3816ce54513f175de5890a167893303d0d88b44c766f0",
+      "importedSourceSha256": "8ada1e46ed5127386bf3816ce54513f175de5890a167893303d0d88b44c766f0",
+      "sourceLicenseBlobSha256": "8ada1e46ed5127386bf3816ce54513f175de5890a167893303d0d88b44c766f0"
     },
     {
       "source": "aphrody-ai/README.md",
@@ -17541,7 +17551,13 @@
       "kind": "source-or-config",
       "size": 10349,
       "status": "clean",
-      "target": "migration/source-refs/compat/LICENSE"
+      "target": "docs/migration/source-licenses/aphrody-ai/LICENSE",
+      "sha256": "6d1d968fb225eca367cb7f0b8831ab012a35d92b547e945e17ef8e7b05c3e5cc",
+      "sourceLicenseTarget": "docs/migration/source-licenses/aphrody-ai/LICENSE",
+      "sourceLicenseAliasOf": "aphrody-ai/LICENSE",
+      "importedSha256": "a6cba85bc92e0cff7a450b1d873c0eaa2e9fc96bf472df0247a26bec77bf3ff9",
+      "importedSourceSha256": "a6cba85bc92e0cff7a450b1d873c0eaa2e9fc96bf472df0247a26bec77bf3ff9",
+      "sourceLicenseBlobSha256": "a6cba85bc92e0cff7a450b1d873c0eaa2e9fc96bf472df0247a26bec77bf3ff9"
     },
     {
       "source": "aphrody-compat/README.md",
@@ -24002,7 +24018,13 @@
       "kind": "source-or-config",
       "size": 10349,
       "status": "clean",
-      "target": "migration/source-refs/contracts/LICENSE"
+      "target": "docs/migration/source-licenses/aphrody-ai/LICENSE",
+      "sha256": "6d1d968fb225eca367cb7f0b8831ab012a35d92b547e945e17ef8e7b05c3e5cc",
+      "sourceLicenseTarget": "docs/migration/source-licenses/aphrody-ai/LICENSE",
+      "sourceLicenseAliasOf": "aphrody-ai/LICENSE",
+      "importedSha256": "a6cba85bc92e0cff7a450b1d873c0eaa2e9fc96bf472df0247a26bec77bf3ff9",
+      "importedSourceSha256": "a6cba85bc92e0cff7a450b1d873c0eaa2e9fc96bf472df0247a26bec77bf3ff9",
+      "sourceLicenseBlobSha256": "a6cba85bc92e0cff7a450b1d873c0eaa2e9fc96bf472df0247a26bec77bf3ff9"
     },
     {
       "source": "aphrody-contracts/README.md",
@@ -25439,8 +25461,11 @@
       "size": 10814,
       "status": "clean",
       "sha256": "74b0f63d1e60dec4edfaa7ffcec4aa16fcac0df4246e2bc563a45b25de804d48",
-      "target": "docs/reference/discord/LICENSE.txt",
-      "importedSourceSha256": "74b0f63d1e60dec4edfaa7ffcec4aa16fcac0df4246e2bc563a45b25de804d48"
+      "target": "docs/migration/source-licenses/aphrody-discord/LICENSE.txt",
+      "importedSourceSha256": "74b0f63d1e60dec4edfaa7ffcec4aa16fcac0df4246e2bc563a45b25de804d48",
+      "sourceLicenseTarget": "docs/migration/source-licenses/aphrody-discord/LICENSE.txt",
+      "importedSha256": "74b0f63d1e60dec4edfaa7ffcec4aa16fcac0df4246e2bc563a45b25de804d48",
+      "sourceLicenseBlobSha256": "74b0f63d1e60dec4edfaa7ffcec4aa16fcac0df4246e2bc563a45b25de804d48"
     },
     {
       "source": "aphrody-discord/PLAN-BOT-SHENRON.md",
@@ -45757,7 +45782,12 @@
       "kind": "source-or-config",
       "size": 10349,
       "status": "clean",
-      "target": "migration/source-refs/infra/LICENSE"
+      "target": "docs/migration/source-licenses/aphrody-infra/LICENSE",
+      "sha256": "6d1d968fb225eca367cb7f0b8831ab012a35d92b547e945e17ef8e7b05c3e5cc",
+      "sourceLicenseTarget": "docs/migration/source-licenses/aphrody-infra/LICENSE",
+      "importedSha256": "6d1d968fb225eca367cb7f0b8831ab012a35d92b547e945e17ef8e7b05c3e5cc",
+      "importedSourceSha256": "6d1d968fb225eca367cb7f0b8831ab012a35d92b547e945e17ef8e7b05c3e5cc",
+      "sourceLicenseBlobSha256": "6d1d968fb225eca367cb7f0b8831ab012a35d92b547e945e17ef8e7b05c3e5cc"
     },
     {
       "source": "aphrody-infra/README.md",
@@ -49826,14 +49856,24 @@
       "kind": "source-or-config",
       "size": 11558,
       "status": "clean",
-      "target": "migration/source-refs/koharu/LICENSE-APACHE"
+      "target": "docs/migration/source-licenses/aphrody-koharu/LICENSE-APACHE",
+      "sha256": "1eb85fc97224598dad1852b5d6483bbcf0aa8608790dcc657a5a2a761ae9c8c6",
+      "sourceLicenseTarget": "docs/migration/source-licenses/aphrody-koharu/LICENSE-APACHE",
+      "importedSha256": "1eb85fc97224598dad1852b5d6483bbcf0aa8608790dcc657a5a2a761ae9c8c6",
+      "importedSourceSha256": "1eb85fc97224598dad1852b5d6483bbcf0aa8608790dcc657a5a2a761ae9c8c6",
+      "sourceLicenseBlobSha256": "1eb85fc97224598dad1852b5d6483bbcf0aa8608790dcc657a5a2a761ae9c8c6"
     },
     {
       "source": "aphrody-koharu/LICENSE-MIT",
       "kind": "source-or-config",
       "size": 1121,
       "status": "clean",
-      "target": "migration/source-refs/koharu/LICENSE-MIT"
+      "target": "docs/migration/source-licenses/aphrody-koharu/LICENSE-MIT",
+      "sha256": "a92cc3408cc6d9c5d17f417ac5c424d6c8148b2512f86d95fa7acf3c9e132547",
+      "sourceLicenseTarget": "docs/migration/source-licenses/aphrody-koharu/LICENSE-MIT",
+      "importedSha256": "a92cc3408cc6d9c5d17f417ac5c424d6c8148b2512f86d95fa7acf3c9e132547",
+      "importedSourceSha256": "a92cc3408cc6d9c5d17f417ac5c424d6c8148b2512f86d95fa7acf3c9e132547",
+      "sourceLicenseBlobSha256": "a92cc3408cc6d9c5d17f417ac5c424d6c8148b2512f86d95fa7acf3c9e132547"
     },
     {
       "source": "aphrody-koharu/README.md",
@@ -55607,7 +55647,13 @@
       "kind": "source-or-config",
       "size": 10173,
       "status": "clean",
-      "target": "migration/source-refs/native/LICENSE"
+      "target": "docs/migration/source-licenses/aphrody-ai/LICENSE",
+      "sha256": "a6cba85bc92e0cff7a450b1d873c0eaa2e9fc96bf472df0247a26bec77bf3ff9",
+      "sourceLicenseTarget": "docs/migration/source-licenses/aphrody-ai/LICENSE",
+      "sourceLicenseAliasOf": "aphrody-ai/LICENSE",
+      "importedSha256": "a6cba85bc92e0cff7a450b1d873c0eaa2e9fc96bf472df0247a26bec77bf3ff9",
+      "importedSourceSha256": "a6cba85bc92e0cff7a450b1d873c0eaa2e9fc96bf472df0247a26bec77bf3ff9",
+      "sourceLicenseBlobSha256": "a6cba85bc92e0cff7a450b1d873c0eaa2e9fc96bf472df0247a26bec77bf3ff9"
     },
     {
       "source": "aphrody-native/README.md",
@@ -55848,7 +55894,13 @@
       "kind": "source-or-config",
       "size": 10349,
       "status": "clean",
-      "target": "migration/source-refs/os/LICENSE"
+      "target": "docs/migration/source-licenses/aphrody-ai/LICENSE",
+      "sha256": "6d1d968fb225eca367cb7f0b8831ab012a35d92b547e945e17ef8e7b05c3e5cc",
+      "sourceLicenseTarget": "docs/migration/source-licenses/aphrody-ai/LICENSE",
+      "sourceLicenseAliasOf": "aphrody-ai/LICENSE",
+      "importedSha256": "a6cba85bc92e0cff7a450b1d873c0eaa2e9fc96bf472df0247a26bec77bf3ff9",
+      "importedSourceSha256": "a6cba85bc92e0cff7a450b1d873c0eaa2e9fc96bf472df0247a26bec77bf3ff9",
+      "sourceLicenseBlobSha256": "a6cba85bc92e0cff7a450b1d873c0eaa2e9fc96bf472df0247a26bec77bf3ff9"
     },
     {
       "source": "aphrody-os/README.md",
@@ -74250,7 +74302,13 @@
       "kind": "source-or-config",
       "size": 10349,
       "status": "clean",
-      "target": "migration/source-refs/shell/LICENSE"
+      "target": "docs/migration/source-licenses/aphrody-ai/LICENSE",
+      "sha256": "6d1d968fb225eca367cb7f0b8831ab012a35d92b547e945e17ef8e7b05c3e5cc",
+      "sourceLicenseTarget": "docs/migration/source-licenses/aphrody-ai/LICENSE",
+      "sourceLicenseAliasOf": "aphrody-ai/LICENSE",
+      "importedSha256": "a6cba85bc92e0cff7a450b1d873c0eaa2e9fc96bf472df0247a26bec77bf3ff9",
+      "importedSourceSha256": "a6cba85bc92e0cff7a450b1d873c0eaa2e9fc96bf472df0247a26bec77bf3ff9",
+      "sourceLicenseBlobSha256": "a6cba85bc92e0cff7a450b1d873c0eaa2e9fc96bf472df0247a26bec77bf3ff9"
     },
     {
       "source": "aphrody-shell/README.md",
@@ -135275,7 +135333,13 @@
       "kind": "source-or-config",
       "size": 10349,
       "status": "clean",
-      "target": "migration/source-refs/web/LICENSE"
+      "target": "docs/migration/source-licenses/aphrody-ai/LICENSE",
+      "sha256": "6d1d968fb225eca367cb7f0b8831ab012a35d92b547e945e17ef8e7b05c3e5cc",
+      "sourceLicenseTarget": "docs/migration/source-licenses/aphrody-ai/LICENSE",
+      "sourceLicenseAliasOf": "aphrody-ai/LICENSE",
+      "importedSha256": "a6cba85bc92e0cff7a450b1d873c0eaa2e9fc96bf472df0247a26bec77bf3ff9",
+      "importedSourceSha256": "a6cba85bc92e0cff7a450b1d873c0eaa2e9fc96bf472df0247a26bec77bf3ff9",
+      "sourceLicenseBlobSha256": "a6cba85bc92e0cff7a450b1d873c0eaa2e9fc96bf472df0247a26bec77bf3ff9"
     },
     {
       "source": "aphrody-web/README.md",
@@ -153450,7 +153514,12 @@
       "kind": "source-or-config",
       "size": 5970,
       "status": "clean",
-      "target": "migration/source-refs/nie/LICENSE"
+      "target": "docs/migration/source-licenses/nie/LICENSE",
+      "sha256": "8b36fe19cb3134348133db3676d8aeb4a800df6cb69f4ae38624df32a4873386",
+      "sourceLicenseTarget": "docs/migration/source-licenses/nie/LICENSE",
+      "importedSha256": "8b36fe19cb3134348133db3676d8aeb4a800df6cb69f4ae38624df32a4873386",
+      "importedSourceSha256": "8b36fe19cb3134348133db3676d8aeb4a800df6cb69f4ae38624df32a4873386",
+      "sourceLicenseBlobSha256": "8b36fe19cb3134348133db3676d8aeb4a800df6cb69f4ae38624df32a4873386"
     },
     {
       "source": "nie/LOCAL.md",
@@ -153468,7 +153537,12 @@
       "kind": "source-or-config",
       "size": 2588,
       "status": "clean",
-      "target": "migration/source-refs/nie/NOTICE"
+      "target": "docs/migration/source-licenses/nie/NOTICE",
+      "sha256": "a8f917388678ed632def258732e096137ef3aa2c1ca4cdee5215e7552805ea0c",
+      "sourceLicenseTarget": "docs/migration/source-licenses/nie/NOTICE",
+      "importedSha256": "a8f917388678ed632def258732e096137ef3aa2c1ca4cdee5215e7552805ea0c",
+      "importedSourceSha256": "a8f917388678ed632def258732e096137ef3aa2c1ca4cdee5215e7552805ea0c",
+      "sourceLicenseBlobSha256": "a8f917388678ed632def258732e096137ef3aa2c1ca4cdee5215e7552805ea0c"
     },
     {
       "source": "nie/PLAN.md",
@@ -166167,7 +166241,12 @@
       "kind": "source-or-config",
       "size": 11544,
       "status": "clean",
-      "target": "migration/source-refs/fut/LICENSE"
+      "target": "docs/migration/source-licenses/fut/LICENSE",
+      "sha256": "d1d5bababc6f60baed2ca4120b900fcbf2bde2b27d8025a79f4b8353583a3d3e",
+      "sourceLicenseTarget": "docs/migration/source-licenses/fut/LICENSE",
+      "importedSha256": "d1d5bababc6f60baed2ca4120b900fcbf2bde2b27d8025a79f4b8353583a3d3e",
+      "importedSourceSha256": "d1d5bababc6f60baed2ca4120b900fcbf2bde2b27d8025a79f4b8353583a3d3e",
+      "sourceLicenseBlobSha256": "d1d5bababc6f60baed2ca4120b900fcbf2bde2b27d8025a79f4b8353583a3d3e"
     },
     {
       "source": "fut/README.md",
