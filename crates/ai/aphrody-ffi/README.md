@@ -31,6 +31,8 @@ data remains in each user's protected browser store.
 The HTTP ABI calls the shared `obscura-net` crate. A submitted fetch uses the
 same job registry and Tokio runtime as embeddings; `native-stealth` enables
 the optional transport feature in this one library.
+The Bun binding opens this library on first native use and checks the ABI then;
+importing its module does not require a built native library.
 
 ## Exported symbols
 

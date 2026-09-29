@@ -33,7 +33,7 @@ function cstr(text: string): Uint8Array {
 
 function resolveLibPath(): string {
   const override = process.env.APHRODY_FFI_LIB;
-  if (override && existsSync(override)) return override;
+  if (override) return override;
 
   // On Windows the cdylib is `aphrody_ffi.dll`; elsewhere `libaphrody_ffi.{so,dylib}`.
   const prefix = process.platform === "win32" ? "" : "lib";
@@ -67,7 +67,7 @@ function resolveLibPath(): string {
   return fileName;
 }
 
-const lib = dlopen(resolveLibPath(), {
+const SYMBOLS = {
   aphrody_abi_version: { args: [], returns: FFIType.u32 },
   aphrody_version: { args: [], returns: FFIType.cstring },
   aphrody_run_json: { args: [FFIType.cstring], returns: FFIType.i32 },
@@ -100,20 +100,38 @@ const lib = dlopen(resolveLibPath(), {
   aphrody_web_embed_install_submit: { args: [FFIType.ptr, FFIType.u32], returns: FFIType.u64_fast },
   aphrody_web_get_chromium_cookies: { args: [FFIType.ptr, FFIType.ptr, FFIType.ptr], returns: FFIType.ptr },
   aphrody_web_obscura_fetch_submit: { args: [FFIType.ptr, FFIType.u8, FFIType.u32], returns: FFIType.u64_fast },
-});
+} as const;
+
+type FfiLibrary = ReturnType<typeof dlopen<typeof SYMBOLS>>;
+let lib: FfiLibrary | undefined;
+
+function loadLib(): FfiLibrary {
+  if (!lib) {
+    const loaded = dlopen(resolveLibPath(), SYMBOLS);
+    const actual = loaded.symbols.aphrody_abi_version();
+    if (actual !== EXPECTED_ABI_VERSION) {
+      loaded.close();
+      throw new Error(
+        `aphrody-ffi ABI mismatch: binding expects ${EXPECTED_ABI_VERSION}, library reports ${actual}`,
+      );
+    }
+    lib = loaded;
+  }
+  return lib;
+}
 
 function readOwnedString(ptr: bigint | Pointer | null): string {
   if (!ptr) throw new Error("aphrody-ffi returned a null string");
   try {
     return new CString(ptr).toString();
   } finally {
-    lib.symbols.aphrody_string_free(ptr);
+    loadLib().symbols.aphrody_string_free(ptr);
   }
 }
 
 /** Extract structured page content through the shared Rust extractor. */
 export function webExtractMain(html: string, url?: string, options: Record<string, unknown> = {}): Record<string, unknown> {
-  const result = readOwnedString(lib.symbols.aphrody_web_extract_main(
+  const result = readOwnedString(loadLib().symbols.aphrody_web_extract_main(
     cstr(html),
     url === undefined ? null : cstr(url),
     cstr(JSON.stringify(options)),
@@ -123,7 +141,7 @@ export function webExtractMain(html: string, url?: string, options: Record<strin
 
 /** Convert HTML with the same native library used by the Aphrody CLI. */
 export function webHtmlToMarkdown(html: string, baseUrl?: string): string {
-  return readOwnedString(lib.symbols.aphrody_web_html_to_markdown(
+  return readOwnedString(loadLib().symbols.aphrody_web_html_to_markdown(
     cstr(html),
     baseUrl === undefined ? null : cstr(baseUrl),
   ));
@@ -131,11 +149,11 @@ export function webHtmlToMarkdown(html: string, baseUrl?: string): string {
 
 /** Return the 64-bit SimHash as a sixteen-character lowercase hex string. */
 export function webSimhash64(text: string): string {
-  return readOwnedString(lib.symbols.aphrody_web_simhash64(cstr(text)));
+  return readOwnedString(loadLib().symbols.aphrody_web_simhash64(cstr(text)));
 }
 
 function webIndexError(): string {
-  const payload = JSON.parse(readOwnedString(lib.symbols.aphrody_web_index_last_error())) as { error: string | null };
+  const payload = JSON.parse(readOwnedString(loadLib().symbols.aphrody_web_index_last_error())) as { error: string | null };
   return payload.error ?? "unknown index error";
 }
 
@@ -148,7 +166,7 @@ export class WebVectorIndex {
   }
 
   static open(path: string, dim: number, params: Record<string, unknown> = {}): WebVectorIndex {
-    const handle = Number(lib.symbols.aphrody_web_index_open(cstr(path), dim, cstr(JSON.stringify(params)), 1));
+    const handle = Number(loadLib().symbols.aphrody_web_index_open(cstr(path), dim, cstr(JSON.stringify(params)), 1));
     if (!handle) throw new Error(`index open failed: ${webIndexError()}`);
     return new WebVectorIndex(handle, path, webIndexError().startsWith("corrupt"));
   }
@@ -158,12 +176,12 @@ export class WebVectorIndex {
     return this.#handle;
   }
 
-  get dim(): number { return lib.symbols.aphrody_web_index_dim(this.#id()); }
-  get size(): number { return Math.max(0, Number(lib.symbols.aphrody_web_index_len(this.#id()))); }
+  get dim(): number { return loadLib().symbols.aphrody_web_index_dim(this.#id()); }
+  get size(): number { return Math.max(0, Number(loadLib().symbols.aphrody_web_index_len(this.#id()))); }
 
   add(key: number, vector: Float32Array): void {
     if (!Number.isSafeInteger(key) || key < 0) throw new RangeError("index key must be a non-negative safe integer");
-    if (lib.symbols.aphrody_web_index_add(this.#id(), key, vector, vector.length) !== 0) {
+    if (loadLib().symbols.aphrody_web_index_add(this.#id(), key, vector, vector.length) !== 0) {
       throw new Error(`index add failed: ${webIndexError()}`);
     }
   }
@@ -180,74 +198,74 @@ export class WebVectorIndex {
       flat.set(vector, i * dim);
     });
     const nativeKeys = BigUint64Array.from(keys, (key) => BigInt(key));
-    if (lib.symbols.aphrody_web_index_add_batch(this.#id(), nativeKeys, flat, keys.length, dim) !== 0) {
+    if (loadLib().symbols.aphrody_web_index_add_batch(this.#id(), nativeKeys, flat, keys.length, dim) !== 0) {
       throw new Error(`index batch failed: ${webIndexError()}`);
     }
   }
 
   search(query: Float32Array, k: number, ef = Math.max(128, k * 2)): Array<{ key: number; score: number }> {
-    const result = JSON.parse(readOwnedString(lib.symbols.aphrody_web_index_search(
+    const result = JSON.parse(readOwnedString(loadLib().symbols.aphrody_web_index_search(
       this.#id(), query, query.length, k, ef,
     ))) as Array<{ key: number; score: number }> | { error: string };
     if (!Array.isArray(result)) throw new Error(`index search failed: ${result.error}`);
     return result;
   }
 
-  remove(key: number): boolean { return lib.symbols.aphrody_web_index_remove(this.#id(), key) === 1; }
+  remove(key: number): boolean { return loadLib().symbols.aphrody_web_index_remove(this.#id(), key) === 1; }
   save(): void {
-    if (lib.symbols.aphrody_web_index_save(this.#id()) !== 0) throw new Error(`index save failed: ${webIndexError()}`);
+    if (loadLib().symbols.aphrody_web_index_save(this.#id()) !== 0) throw new Error(`index save failed: ${webIndexError()}`);
   }
   compact(): void {
-    if (lib.symbols.aphrody_web_index_compact(this.#id()) !== 0) throw new Error(`index compact failed: ${webIndexError()}`);
+    if (loadLib().symbols.aphrody_web_index_compact(this.#id()) !== 0) throw new Error(`index compact failed: ${webIndexError()}`);
   }
   stats(): Record<string, unknown> {
-    return JSON.parse(readOwnedString(lib.symbols.aphrody_web_index_stats(this.#id()))) as Record<string, unknown>;
+    return JSON.parse(readOwnedString(loadLib().symbols.aphrody_web_index_stats(this.#id()))) as Record<string, unknown>;
   }
   close(): void {
     if (!this.#handle) return;
-    lib.symbols.aphrody_web_index_close(this.#handle);
+    loadLib().symbols.aphrody_web_index_close(this.#handle);
     this.#handle = 0;
   }
 }
 
 /** Inspect an asynchronous native job without blocking the Bun event loop. */
 export function webJobStatus(id: number): -1 | 0 | 1 {
-  return lib.symbols.aphrody_web_job_status(id) as -1 | 0 | 1;
+  return loadLib().symbols.aphrody_web_job_status(id) as -1 | 0 | 1;
 }
 
 /** Take a completed job result. Returns null while it is still pending. */
 export function webJobTake(id: number): string | null {
-  const result = lib.symbols.aphrody_web_job_take(id);
+  const result = loadLib().symbols.aphrody_web_job_take(id);
   return result ? readOwnedString(result) : null;
 }
 
 /** Cancel a job and discard its result. */
 export function webJobCancel(id: number): boolean {
-  return lib.symbols.aphrody_web_job_cancel(id) === 1;
+  return loadLib().symbols.aphrody_web_job_cancel(id) === 1;
 }
 
 export function webJobCompletedSeq(): number {
-  return Number(lib.symbols.aphrody_web_job_completed_seq());
+  return Number(loadLib().symbols.aphrody_web_job_completed_seq());
 }
 
 export function webJobPendingCount(): number {
-  return lib.symbols.aphrody_web_job_pending_count();
+  return loadLib().symbols.aphrody_web_job_pending_count();
 }
 
 export function webEmbedSubmit(texts: readonly string[], kind = "passage", timeoutMs = 30000): number {
-  return Number(lib.symbols.aphrody_web_embed_submit(cstr(JSON.stringify(texts)), cstr(kind), timeoutMs));
+  return Number(loadLib().symbols.aphrody_web_embed_submit(cstr(JSON.stringify(texts)), cstr(kind), timeoutMs));
 }
 
 export function webRerankSubmit(query: string, passages: readonly string[], timeoutMs = 30000): number {
-  return Number(lib.symbols.aphrody_web_rerank_submit(cstr(query), cstr(JSON.stringify(passages)), timeoutMs));
+  return Number(loadLib().symbols.aphrody_web_rerank_submit(cstr(query), cstr(JSON.stringify(passages)), timeoutMs));
 }
 
 export function webEmbedInfo(): Record<string, unknown> {
-  return JSON.parse(readOwnedString(lib.symbols.aphrody_web_embed_info())) as Record<string, unknown>;
+  return JSON.parse(readOwnedString(loadLib().symbols.aphrody_web_embed_info())) as Record<string, unknown>;
 }
 
 export function webEmbedInstallSubmit(modelId: string, timeoutMs = 600000): number {
-  return Number(lib.symbols.aphrody_web_embed_install_submit(cstr(modelId), timeoutMs));
+  return Number(loadLib().symbols.aphrody_web_embed_install_submit(cstr(modelId), timeoutMs));
 }
 
 /** Read cookies from an explicitly selected local Chromium profile. */
@@ -256,7 +274,7 @@ export function webGetChromiumCookies(
   profile: string,
   hostKey: string,
 ): Array<Record<string, unknown>> {
-  const value = JSON.parse(readOwnedString(lib.symbols.aphrody_web_get_chromium_cookies(
+  const value = JSON.parse(readOwnedString(loadLib().symbols.aphrody_web_get_chromium_cookies(
     cstr(userDataPath), cstr(profile), cstr(hostKey),
   ))) as Array<Record<string, unknown>> | { error: string };
   if (!Array.isArray(value)) throw new Error(value.error);
@@ -265,24 +283,24 @@ export function webGetChromiumCookies(
 
 /** Start a native HTTP fetch without blocking Bun's event loop. Poll via webJobTake. */
 export function webObscuraFetchSubmit(url: string, stealth = false, timeoutMs = 30000): number {
-  return Number(lib.symbols.aphrody_web_obscura_fetch_submit(cstr(url), stealth ? 1 : 0, timeoutMs));
+  return Number(loadLib().symbols.aphrody_web_obscura_fetch_submit(cstr(url), stealth ? 1 : 0, timeoutMs));
 }
 
 /** Native ABI version reported by the loaded library. */
 export function abiVersion(): number {
-  return lib.symbols.aphrody_abi_version();
+  return loadLib().symbols.aphrody_abi_version();
 }
 
 /** aphrody version string. */
 export function version(): string {
-  const value = lib.symbols.aphrody_version();
+  const value = loadLib().symbols.aphrody_version();
   if (value === null) throw new Error("aphrody-ffi returned a null version");
   return value.toString();
 }
 
 /** The last error recorded on this thread by the native library, if any. */
 export function lastError(): string | null {
-  const ptr = lib.symbols.aphrody_last_error();
+  const ptr = loadLib().symbols.aphrody_last_error();
   if (!ptr) return null;
   const text = new CString(ptr).toString();
   return text.length > 0 ? text : null;
@@ -293,7 +311,7 @@ export function lastError(): string | null {
  * Returns the exit code. Arguments exclude the program name.
  */
 export function run(args: string[]): number {
-  return lib.symbols.aphrody_run_json(cstr(JSON.stringify(args)));
+  return loadLib().symbols.aphrody_run_json(cstr(JSON.stringify(args)));
 }
 
 /** Structured result of a captured run. */
@@ -308,7 +326,7 @@ export interface CapturedResult {
  * exclude the program name, e.g. `runCaptured(["version", "--json"])`.
  */
 export function runCaptured(args: string[]): CapturedResult {
-  const resultPtr = lib.symbols.aphrody_run_captured(cstr(JSON.stringify(args)));
+  const resultPtr = loadLib().symbols.aphrody_run_captured(cstr(JSON.stringify(args)));
   if (!resultPtr) {
     return {
       code: 70,
@@ -319,7 +337,7 @@ export function runCaptured(args: string[]): CapturedResult {
   try {
     return JSON.parse(new CString(resultPtr).toString()) as CapturedResult;
   } finally {
-    lib.symbols.aphrody_string_free(resultPtr);
+    loadLib().symbols.aphrody_string_free(resultPtr);
   }
 }
 
@@ -335,5 +353,6 @@ export function assertCompatible(): void {
 
 /** Close the native library handle (optional; the process exit also frees it). */
 export function close(): void {
-  lib.close();
+  lib?.close();
+  lib = undefined;
 }
