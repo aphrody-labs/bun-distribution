@@ -127,6 +127,29 @@ bridge loaded that exact `libaphrody_ffi.so` through `APHRODY_FFI_LIB` and
 passed its title, Markdown and DOM tests. The Web v4 ABI, browser/network
 tools, final Bun loader and sole MCP endpoint are not yet cut over.
 
+The next ABI slice moves asynchronous job handles and embedding worker
+adapters into the same library. It reuses the existing process-wide Tokio
+runtime rather than creating another runtime. Its Rust unit tests, Bun type
+check, C header check and a Bun job completion smoke pass; the worker-backed
+model inference path still needs a real installed-worker test.
+
+The shared Chromium profile reader is imported under
+`crates/web/aphrody-web-chromium`, with source and target hashes in
+[`aphrody-web-chromium-import.json`](aphrody-web-chromium-import.json). The
+single FFI now calls that crate for cookie extraction. No cookie values or
+profile databases were copied into this repository; the adapter's null-input
+test exercises only the empty result.
+
+The shared Obscura HTTP transport is imported under `crates/web/obscura-net`,
+with source and target hashes in
+[`obscura-net-import.json`](obscura-net-import.json). The single FFI links its
+HTTP client and offers synchronous fetch plus an asynchronous job handle on
+the same process-wide Tokio runtime. The `native-stealth` feature compiles;
+the network adapter's invalid-URL checks exercise error handling without
+contacting an external service. Its 104 source tests and strict Clippy pass in
+the target workspace. Live browser, proxy, TLS and stealth behavior still
+require scoped integration checks.
+
 The target `aphrody-mcp` now registers `aphrody_web_extract_html` directly from
 the shared extractor. Its no-default-features check passes after importing the
 versioned Contracts schema needed by that binary; its scoped suite passes 58

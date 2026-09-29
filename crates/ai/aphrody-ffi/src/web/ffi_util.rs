@@ -44,3 +44,8 @@ pub(super) fn to_json_string<T: serde::Serialize>(value: &T) -> String {
     serde_json::to_string(value)
         .unwrap_or_else(|err| error_json_string(format!("serialization failed: {err}")))
 }
+
+/// Reuse the one process-wide runtime already owned by `aphrody-ffi`.
+pub(super) fn shared_runtime() -> Result<&'static tokio::runtime::Runtime, String> {
+    Ok(crate::native::runtime())
+}

@@ -3,15 +3,23 @@
 //! These are a compatible subset of the BXC v4 symbol catalog. Do not expose
 //! `aphrody_web_bridge_abi_version` until the entire v4 catalog is present.
 
+mod cookies;
 mod dom;
+mod embed;
 mod extract;
 mod ffi_util;
 mod index;
+mod jobs;
+mod native_http;
 mod text;
 
+pub use cookies::*;
 pub use dom::*;
+pub use embed::*;
 pub use extract::*;
 pub use index::*;
+pub use jobs::*;
+pub use native_http::*;
 pub use text::*;
 
 use std::ffi::c_char;
@@ -96,6 +104,100 @@ pub unsafe extern "C" fn aphrody_web_query_selector_all(
     unsafe { dom::bxc_query_selector_all(tree, selector) }
 }
 
+#[unsafe(no_mangle)]
+pub extern "C" fn aphrody_web_job_completed_seq() -> u64 {
+    jobs::bxc_job_completed_seq()
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn aphrody_web_job_pending_count() -> u32 {
+    jobs::bxc_job_pending_count()
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn aphrody_web_job_status(id: u64) -> i32 {
+    jobs::bxc_job_status(id)
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn aphrody_web_job_take(id: u64) -> *mut c_char {
+    jobs::bxc_job_take(id)
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn aphrody_web_job_cancel(id: u64) -> i32 {
+    jobs::bxc_job_cancel(id)
+}
+
+/// Submit an embedding job on the shared FFI runtime.
+///
+/// # Safety
+/// Input pointers must be null or readable, NUL-terminated C strings.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn aphrody_web_embed_submit(
+    texts_json: *const c_char,
+    kind: *const c_char,
+    timeout_ms: u32,
+) -> u64 {
+    unsafe { embed::bxc_embed_submit(texts_json, kind, timeout_ms) }
+}
+
+/// Submit a reranking job on the shared FFI runtime.
+///
+/// # Safety
+/// Input pointers must be null or readable, NUL-terminated C strings.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn aphrody_web_rerank_submit(
+    query: *const c_char,
+    passages_json: *const c_char,
+    timeout_ms: u32,
+) -> u64 {
+    unsafe { embed::bxc_rerank_submit(query, passages_json, timeout_ms) }
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn aphrody_web_embed_info() -> *mut c_char {
+    embed::bxc_embed_info()
+}
+
+/// Submit a model installation job on the shared FFI runtime.
+///
+/// # Safety
+/// `model_id` must be null or a readable, NUL-terminated C string.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn aphrody_web_embed_install_submit(
+    model_id: *const c_char,
+    timeout_ms: u32,
+) -> u64 {
+    unsafe { embed::bxc_embed_install_submit(model_id, timeout_ms) }
+}
+
+/// Read Chromium cookies using the shared Rust profile parser.
+///
+/// # Safety
+/// Input pointers must be null or readable, NUL-terminated C strings.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn aphrody_web_get_chromium_cookies(
+    user_data_path: *const c_char,
+    profile: *const c_char,
+    host_key: *const c_char,
+) -> *mut c_char {
+    unsafe { cookies::bxc_get_chromium_cookies(user_data_path, profile, host_key) }
+}
+
+/// Fetch a URL with the shared native Obscura HTTP transport.
+///
+/// # Safety
+/// `url` must be null or a readable, NUL-terminated C string.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn aphrody_web_obscura_fetch(
+    url: *const c_char,
+    stealth: u8,
+    timeout_ms: u32,
+) -> *mut c_char {
+    unsafe { native_http::bxc_obscura_fetch(url, stealth, timeout_ms) }
+}
+
 #[cfg(test)]
 mod tests {
     use std::ffi::{CStr, CString};
@@ -120,6 +222,27 @@ mod tests {
             assert!(CStr::from_ptr(found).to_str().unwrap().contains("Hello"));
             aphrody_web_free_string(found);
             aphrody_web_tree_destroy(tree);
+        }
+    }
+
+    #[test]
+    fn web_jobs_reuse_the_ffi_runtime() {
+        let web = super::ffi_util::shared_runtime().unwrap();
+        assert!(std::ptr::eq(web, crate::native::runtime()));
+    }
+
+    #[test]
+    fn cookie_adapter_rejects_missing_arguments_without_profile_access() {
+        // SAFETY: all inputs are null, a supported case returning an empty
+        // JSON array without opening any profile database.
+        unsafe {
+            let result = aphrody_web_get_chromium_cookies(
+                std::ptr::null(),
+                std::ptr::null(),
+                std::ptr::null(),
+            );
+            assert_eq!(CStr::from_ptr(result).to_str().unwrap(), "[]");
+            aphrody_web_free_string(result);
         }
     }
 }

@@ -9,7 +9,10 @@
     "Move selected C ABI adapters into the one Aphrody FFI crate",
     "Use root workspace dependencies and shared Rust Web libraries",
     "Keep historical symbol aliases only during consumer cutover",
-    "Do not advertise Web ABI v4 before all source symbols are present"
+    "Do not advertise Web ABI v4 before all source symbols are present",
+    "Web job and embedding adapters reuse aphrody-ffi's existing process-wide Tokio runtime",
+    "Chromium cookie adapter calls the locally imported shared profile parser; no credentials are imported",
+    "Native Obscura HTTP adapter now has a nonblocking job submit symbol using the shared runtime"
   ],
   "files": [
     {
@@ -38,6 +41,34 @@
       "target": "crates/ai/aphrody-ffi/src/web/dom.rs",
       "source_sha256": "064eb25ec83920d4bf3e157fd4cf22566fee8a506610d6424b30e3a6315fefb1",
       "target_sha256": "38901f022b53571dadc2b5c8df54c94e61ccff058c5e46e6f3f19f9757dcfeb4",
+      "adapted": true
+    },
+    {
+      "source": "aphrody-web/crates/aphrody-web-ffi/src/jobs.rs",
+      "target": "crates/ai/aphrody-ffi/src/web/jobs.rs",
+      "source_sha256": "6d227c2a5ee6a4ef8b78af49014fac19cb3f53ba7d0c354bc608bfd07250ffb0",
+      "target_sha256": "c52b502eab663e3204bf2a43f65f6ac368014cce4d335776c10946220f088954",
+      "adapted": true
+    },
+    {
+      "source": "aphrody-web/crates/aphrody-web-ffi/src/embed.rs",
+      "target": "crates/ai/aphrody-ffi/src/web/embed.rs",
+      "source_sha256": "c6088cf56466e102865eedbf7c788af9783214a0f1bdf8c926a7ff01c18ef857",
+      "target_sha256": "e7d0a720f05879c80d3ec1567502f1743fcd8a694c83bec36ea8f840cb53352d",
+      "adapted": true
+    },
+    {
+      "source": "aphrody-web/crates/aphrody-web-ffi/src/cookies.rs",
+      "target": "crates/ai/aphrody-ffi/src/web/cookies.rs",
+      "source_sha256": "a051bca4aaf067be983cc010faa531346d3132794df99c0b15b1870c105916e4",
+      "target_sha256": "46ba0eeacb2f76f6142f9de9c8528621d51d205875f67d4bec63587a747051d4",
+      "adapted": true
+    },
+    {
+      "source": "aphrody-web/crates/aphrody-web-ffi/src/native_http.rs",
+      "target": "crates/ai/aphrody-ffi/src/web/native_http.rs",
+      "source_sha256": "a99c65f7cc3cdcdc3e077db74b4cb0ef63e867eb73dbc37690d64b0a7fb4838f",
+      "target_sha256": "82a3aa8461a8ff99fc464c7ff29fd5efa184bd2e721d078d677c8bea26447b3e",
       "adapted": true
     }
   ]

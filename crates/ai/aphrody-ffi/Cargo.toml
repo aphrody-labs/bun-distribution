@@ -24,6 +24,7 @@ workspace = true
 
 [features]
 default = []
+native-stealth = ["obscura-net/stealth"]
 koharu    = ["aphrody/koharu", "aphrody-manga/koharu"]
 # Forward aphrody's opt-in command features so a feature-rich cdylib can be
 # built (e.g. `cargo build -p aphrody-ffi --features forensics`). Inactive by
@@ -49,9 +50,11 @@ aphrody    = { workspace = true }
 aphrody-manga = { workspace = true }
 aphrody-web-extract = { workspace = true }
 aphrody-web-index = { workspace = true }
+aphrody-web-chromium = { workspace = true }
 base64     = { workspace = true }
 mimalloc   = { workspace = true }
 obscura-dom = { workspace = true }
+obscura-net = { workspace = true }
 serde_json = { workspace = true }
 serde      = { workspace = true }
 # Shared cross-platform stdout/stderr capture (dup2 on unix / SetStdHandle on

@@ -88,6 +88,17 @@ const lib = dlopen(resolveLibPath(), {
   aphrody_web_index_compact: { args: [FFIType.u64], returns: FFIType.i32 },
   aphrody_web_index_stats: { args: [FFIType.u64], returns: FFIType.ptr },
   aphrody_web_index_close: { args: [FFIType.u64], returns: FFIType.i32 },
+  aphrody_web_job_completed_seq: { args: [], returns: FFIType.u64_fast },
+  aphrody_web_job_pending_count: { args: [], returns: FFIType.u32 },
+  aphrody_web_job_status: { args: [FFIType.u64], returns: FFIType.i32 },
+  aphrody_web_job_take: { args: [FFIType.u64], returns: FFIType.ptr },
+  aphrody_web_job_cancel: { args: [FFIType.u64], returns: FFIType.i32 },
+  aphrody_web_embed_submit: { args: [FFIType.ptr, FFIType.ptr, FFIType.u32], returns: FFIType.u64_fast },
+  aphrody_web_rerank_submit: { args: [FFIType.ptr, FFIType.ptr, FFIType.u32], returns: FFIType.u64_fast },
+  aphrody_web_embed_info: { args: [], returns: FFIType.ptr },
+  aphrody_web_embed_install_submit: { args: [FFIType.ptr, FFIType.u32], returns: FFIType.u64_fast },
+  aphrody_web_get_chromium_cookies: { args: [FFIType.ptr, FFIType.ptr, FFIType.ptr], returns: FFIType.ptr },
+  aphrody_web_obscura_fetch_submit: { args: [FFIType.ptr, FFIType.u8, FFIType.u32], returns: FFIType.u64_fast },
 });
 
 function readOwnedString(ptr: bigint | Pointer | null): string {
@@ -196,6 +207,64 @@ export class WebVectorIndex {
     lib.symbols.aphrody_web_index_close(this.#handle);
     this.#handle = 0;
   }
+}
+
+/** Inspect an asynchronous native job without blocking the Bun event loop. */
+export function webJobStatus(id: number): -1 | 0 | 1 {
+  return lib.symbols.aphrody_web_job_status(id) as -1 | 0 | 1;
+}
+
+/** Take a completed job result. Returns null while it is still pending. */
+export function webJobTake(id: number): string | null {
+  const result = lib.symbols.aphrody_web_job_take(id);
+  return result ? readOwnedString(result) : null;
+}
+
+/** Cancel a job and discard its result. */
+export function webJobCancel(id: number): boolean {
+  return lib.symbols.aphrody_web_job_cancel(id) === 1;
+}
+
+export function webJobCompletedSeq(): number {
+  return Number(lib.symbols.aphrody_web_job_completed_seq());
+}
+
+export function webJobPendingCount(): number {
+  return lib.symbols.aphrody_web_job_pending_count();
+}
+
+export function webEmbedSubmit(texts: readonly string[], kind = "passage", timeoutMs = 30000): number {
+  return Number(lib.symbols.aphrody_web_embed_submit(cstr(JSON.stringify(texts)), cstr(kind), timeoutMs));
+}
+
+export function webRerankSubmit(query: string, passages: readonly string[], timeoutMs = 30000): number {
+  return Number(lib.symbols.aphrody_web_rerank_submit(cstr(query), cstr(JSON.stringify(passages)), timeoutMs));
+}
+
+export function webEmbedInfo(): Record<string, unknown> {
+  return JSON.parse(readOwnedString(lib.symbols.aphrody_web_embed_info())) as Record<string, unknown>;
+}
+
+export function webEmbedInstallSubmit(modelId: string, timeoutMs = 600000): number {
+  return Number(lib.symbols.aphrody_web_embed_install_submit(cstr(modelId), timeoutMs));
+}
+
+/** Read cookies from an explicitly selected local Chromium profile. */
+export function webGetChromiumCookies(
+  userDataPath: string,
+  profile: string,
+  hostKey: string,
+): Array<Record<string, unknown>> {
+  const value = JSON.parse(readOwnedString(lib.symbols.aphrody_web_get_chromium_cookies(
+    cstr(userDataPath), cstr(profile), cstr(hostKey),
+  ))) as Array<Record<string, unknown>> | { error: string };
+  if (!Array.isArray(value)) throw new Error(value.error);
+  return value;
+}
+
+/** Start a native HTTP fetch without blocking Bun's event loop. Poll via webJobTake. */
+export function webObscuraFetchSubmit(url: string, stealth = false, timeoutMs = 30000): number {
+  return Number(lib.symbols.aphrody_web_obscura_fetch_submit(cstr(url), stealth ? 1 : 0, timeoutMs));
 }
 
 /** Native ABI version reported by the loaded library. */

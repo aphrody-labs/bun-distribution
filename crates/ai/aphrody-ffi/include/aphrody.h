@@ -355,6 +355,35 @@ APHRODY_NODISCARD APHRODY_API int32_t bxc_index_compact(uint64_t handle);
 APHRODY_NODISCARD APHRODY_MALLOC APHRODY_API char *bxc_index_stats(uint64_t handle);
 APHRODY_NODISCARD APHRODY_API int32_t bxc_index_close(uint64_t handle);
 
+/* Asynchronous jobs share the same Tokio runtime as the Aphrody command
+ * surface. Take returns NULL while pending and an owned JSON string when done. */
+APHRODY_NODISCARD APHRODY_API uint64_t aphrody_web_job_completed_seq(void);
+APHRODY_NODISCARD APHRODY_API uint32_t aphrody_web_job_pending_count(void);
+APHRODY_NODISCARD APHRODY_API int32_t aphrody_web_job_status(uint64_t id);
+APHRODY_NODISCARD APHRODY_MALLOC APHRODY_API char *aphrody_web_job_take(uint64_t id);
+APHRODY_NODISCARD APHRODY_API int32_t aphrody_web_job_cancel(uint64_t id);
+APHRODY_NODISCARD APHRODY_API uint64_t aphrody_web_embed_submit(const char *texts_json, const char *kind, uint32_t timeout_ms);
+APHRODY_NODISCARD APHRODY_API uint64_t aphrody_web_rerank_submit(const char *query, const char *passages_json, uint32_t timeout_ms);
+APHRODY_NODISCARD APHRODY_MALLOC APHRODY_API char *aphrody_web_embed_info(void);
+APHRODY_NODISCARD APHRODY_API uint64_t aphrody_web_embed_install_submit(const char *model_id, uint32_t timeout_ms);
+
+APHRODY_NODISCARD APHRODY_API uint64_t bxc_job_completed_seq(void);
+APHRODY_NODISCARD APHRODY_API uint32_t bxc_job_pending_count(void);
+APHRODY_NODISCARD APHRODY_API int32_t bxc_job_status(uint64_t id);
+APHRODY_NODISCARD APHRODY_MALLOC APHRODY_API char *bxc_job_take(uint64_t id);
+APHRODY_NODISCARD APHRODY_API int32_t bxc_job_cancel(uint64_t id);
+APHRODY_NODISCARD APHRODY_API uint64_t bxc_embed_submit(const char *texts_json, const char *kind, uint32_t timeout_ms);
+APHRODY_NODISCARD APHRODY_API uint64_t bxc_rerank_submit(const char *query, const char *passages_json, uint32_t timeout_ms);
+APHRODY_NODISCARD APHRODY_MALLOC APHRODY_API char *bxc_embed_info(void);
+APHRODY_NODISCARD APHRODY_API uint64_t bxc_embed_install_submit(const char *model_id, uint32_t timeout_ms);
+
+APHRODY_NODISCARD APHRODY_MALLOC APHRODY_API char *aphrody_web_get_chromium_cookies(const char *user_data_path, const char *profile, const char *host_key);
+APHRODY_NODISCARD APHRODY_MALLOC APHRODY_API char *bxc_get_chromium_cookies(const char *user_data_path, const char *profile, const char *host_key);
+
+APHRODY_NODISCARD APHRODY_MALLOC APHRODY_API char *aphrody_web_obscura_fetch(const char *url, uint8_t stealth, uint32_t timeout_ms);
+APHRODY_NODISCARD APHRODY_API uint64_t aphrody_web_obscura_fetch_submit(const char *url, uint8_t stealth, uint32_t timeout_ms);
+APHRODY_NODISCARD APHRODY_MALLOC APHRODY_API char *bxc_obscura_fetch(const char *url, uint8_t stealth, uint32_t timeout_ms);
+
 #ifdef __cplusplus
 } /* extern "C" */
 #endif

@@ -25,6 +25,12 @@ and link the shared `aphrody-web-extract`, `obscura-dom` and `aphrody-web-index`
 source bridge still has more symbols to migrate. Its historical aliases in
 this crate are temporary and do not imply complete Web ABI compatibility.
 All owned strings use this library's `aphrody_string_free` allocator pair.
+Web jobs and embedding adapters reuse this crate's process-wide Tokio runtime.
+The Chromium cookie ABI calls the shared `aphrody-web-chromium` crate; profile
+data remains in each user's protected browser store.
+The HTTP ABI calls the shared `obscura-net` crate. A submitted fetch uses the
+same job registry and Tokio runtime as embeddings; `native-stealth` enables
+the optional transport feature in this one library.
 
 ## Exported symbols
 

@@ -802,7 +802,7 @@ mod native {
 
     /// Process-wide tokio runtime, created lazily on first use, so repeated FFI
     /// calls do not pay the worker-thread spawn cost on every invocation.
-    fn runtime() -> &'static tokio::runtime::Runtime {
+    pub(crate) fn runtime() -> &'static tokio::runtime::Runtime {
         static RUNTIME: OnceLock<tokio::runtime::Runtime> = OnceLock::new();
         RUNTIME.get_or_init(|| {
             tokio::runtime::Builder::new_multi_thread()

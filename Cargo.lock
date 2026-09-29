@@ -837,11 +837,13 @@ dependencies = [
  "aphrody",
  "aphrody-manga",
  "aphrody-stdio-capture",
+ "aphrody-web-chromium",
  "aphrody-web-extract",
  "aphrody-web-index",
  "base64 0.22.1",
  "mimalloc",
  "obscura-dom 0.1.1",
+ "obscura-net 0.1.1",
  "serde",
  "serde_json",
  "tokio",
@@ -2134,6 +2136,19 @@ dependencies = [
  "thiserror 2.0.21",
  "tokio",
  "tracing",
+]
+
+[[package]]
+name = "aphrody-web-chromium"
+version = "1.0.0-canary"
+dependencies = [
+ "aes-gcm 0.10.3",
+ "anyhow",
+ "base64 0.22.1",
+ "rusqlite",
+ "serde",
+ "serde_json",
+ "windows 0.62.2",
 ]
 
 [[package]]
@@ -12618,7 +12633,7 @@ dependencies = [
  "image",
  "obscura-dom 0.1.0",
  "obscura-js",
- "obscura-net",
+ "obscura-net 0.1.0",
  "serde_json",
  "thiserror 2.0.21",
  "tokio",
@@ -12662,7 +12677,7 @@ dependencies = [
  "hmac 0.12.1",
  "html5ever",
  "obscura-dom 0.1.0",
- "obscura-net",
+ "obscura-net 0.1.0",
  "obscura-render",
  "pbkdf2 0.12.2",
  "psl",
@@ -12684,7 +12699,7 @@ dependencies = [
  "base64 0.22.1",
  "obscura-browser",
  "obscura-dom 0.1.0",
- "obscura-net",
+ "obscura-net 0.1.0",
  "serde",
  "serde_json",
  "tokio",
@@ -12707,6 +12722,30 @@ dependencies = [
  "tempfile",
  "thiserror 2.0.21",
  "tokio",
+ "tracing",
+ "url",
+ "wreq",
+ "wreq-util",
+]
+
+[[package]]
+name = "obscura-net"
+version = "0.1.1"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "encoding_rs",
+ "futures-util",
+ "psl",
+ "rcgen",
+ "reqwest 0.13.5",
+ "serde",
+ "serde_json",
+ "socket2",
+ "tempfile",
+ "thiserror 2.0.21",
+ "tokio",
+ "tokio-rustls",
  "tracing",
  "url",
  "wreq",
@@ -15280,6 +15319,19 @@ checksum = "22e18b0f0062d30d4230b2e85ff77fdfe4326feb054b9783a3460d8435c8ab91"
 dependencies = [
  "crossbeam-deque",
  "crossbeam-utils",
+]
+
+[[package]]
+name = "rcgen"
+version = "0.13.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "75e669e5202259b5314d1ea5397316ad400819437857b90861765f24c4cf80a2"
+dependencies = [
+ "pem",
+ "ring",
+ "rustls-pki-types",
+ "time",
+ "yasna",
 ]
 
 [[package]]
@@ -21204,6 +21256,15 @@ dependencies = [
  "protobuf",
  "protobuf-codegen",
  "yansi",
+]
+
+[[package]]
+name = "yasna"
+version = "0.5.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e17bb3549cc1321ae1296b9cdc2698e2b6cb1992adfa19a8c72e5b7a738f44cd"
+dependencies = [
+ "time",
 ]
 
 [[package]]
