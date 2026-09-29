@@ -5,6 +5,7 @@
 /.cache/
 /.venv/
 /var/runs/
+/packages/discord/source/repository/packages/discordx/coverage/
 __pycache__/
 *.py[cod]
 .env

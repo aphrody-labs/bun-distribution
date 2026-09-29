@@ -66,6 +66,7 @@
     "ai:fmt": "oxfmt packages/ai/ packages/web/x/",
     "docs:translate": "bun packages/ai/doc-ai/src/cli.ts translate",
     "docs:ai": "bun packages/ai/doc-ai/src/cli.ts sync",
+    "discord:verify": "bun scripts/audit/discord-verify.ts --full",
     "n2b:google": "aphrody n2b packages/ai/google",
     "scan": "bash scripts/audit/ai/scripts/scan-repo.sh",
     "bench": "bun scripts/tools/ai/scripts/bench-all.ts",
