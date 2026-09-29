@@ -160,6 +160,17 @@ function normalizeInternalUrl(href: string): string | null {
 	}
 }
 
+function safeHttpUrl(value: string): string | null {
+	try {
+		const url = new URL(value);
+		return url.protocol === "https:" || url.protocol === "http:"
+			? url.href
+			: null;
+	} catch {
+		return null;
+	}
+}
+
 function isDevPage(url: string): boolean {
 	const u = new URL(url);
 	return u.pathname.startsWith("/developers");
@@ -441,12 +452,14 @@ async function extractPage(
 			const href = el?.getAttribute("href") ?? "";
 			el?.destroy();
 			try {
-				const u = new URL(href);
+				const safeUrl = safeHttpUrl(href);
+				if (!safeUrl) continue;
+				const u = new URL(safeUrl);
 				if (
 					u.hostname !== "www.chromium.org" &&
 					u.hostname !== "chromium.org"
 				) {
-					externalLinks.push(href);
+					externalLinks.push(safeUrl);
 				}
 			} catch {
 				/* relative or invalid */
@@ -608,23 +621,36 @@ const CSS = `
   --surface: oklch(100% 0 0);
   --on-surface: oklch(20% 0.02 260);
   --primary: oklch(45% 0.18 250);
+  --on-primary: white;
   --primary-container: oklch(90% 0.06 250);
-  --secondary: oklch(55% 0.12 200);
-  --outline: oklch(75% 0.02 260);
+  --secondary: oklch(38% 0.1 200);
+  --outline: oklch(56% 0.02 260);
   --code-bg: oklch(94% 0.01 260);
   --radius: 12px;
 }
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme="light"]) {
     --bg: oklch(15% 0.02 260);
     --surface: oklch(20% 0.02 260);
     --on-surface: oklch(90% 0.01 260);
     --primary: oklch(75% 0.12 250);
+    --on-primary: oklch(15% 0.02 260);
     --primary-container: oklch(30% 0.08 250);
-    --secondary: oklch(70% 0.1 200);
-    --outline: oklch(35% 0.02 260);
+    --secondary: oklch(78% 0.08 200);
+    --outline: oklch(55% 0.02 260);
     --code-bg: oklch(25% 0.02 260);
   }
+}
+:root[data-theme="dark"] {
+  --bg: oklch(15% 0.02 260);
+  --surface: oklch(20% 0.02 260);
+  --on-surface: oklch(90% 0.01 260);
+  --primary: oklch(75% 0.12 250);
+  --on-primary: oklch(15% 0.02 260);
+  --primary-container: oklch(30% 0.08 250);
+  --secondary: oklch(78% 0.08 200);
+  --outline: oklch(55% 0.02 260);
+  --code-bg: oklch(25% 0.02 260);
 }
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 body {
@@ -632,28 +658,39 @@ body {
   background: var(--bg);
   color: var(--on-surface);
   line-height: 1.7;
-  font-size: 16px;
+  font-size: 1rem;
 }
-a { color: var(--primary); text-decoration: none; }
-a:hover { text-decoration: underline; }
+a { color: var(--primary); text-decoration: underline; text-underline-offset: 0.15em; }
+a[href] { overflow-wrap: anywhere; }
+:where(a, button, input):focus-visible { outline: 3px solid var(--primary); outline-offset: 3px; }
+.skip-link { position: absolute; inset-block-start: -10rem; inset-inline-start: 1rem; z-index: 1; padding: 0.5rem 1rem; background: var(--surface); }
+.skip-link:focus-visible { inset-block-start: 0.5rem; }
 header {
   background: var(--primary);
-  color: oklch(98% 0.01 260);
+  color: var(--on-primary);
   padding: 1.5rem 2rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
 }
 header h1 { font-size: 1.4rem; font-weight: 700; letter-spacing: -0.01em; }
+.site-name { font-size: 1.4rem; font-weight: 700; letter-spacing: -0.01em; color: inherit; }
 header .theme-toggle {
   cursor: pointer;
   background: transparent;
-  border: 1px solid oklch(80% 0.05 260 / 40%);
+  border: 2px solid currentColor;
   border-radius: 6px;
   color: inherit;
   padding: 0.3rem 0.7rem;
   font-size: 0.85rem;
+  min-block-size: 2.75rem;
+  min-inline-size: 2.75rem;
 }
+header :where(a, button):focus-visible { outline-color: var(--on-primary); }
+.search-label { display: block; font-weight: 600; margin-bottom: 0.5rem; }
+.search-count { margin-block: -1.25rem 1.25rem; }
 .container { max-width: 900px; margin: 0 auto; padding: 2rem 1.5rem; }
 .search-box {
   width: 100%;
@@ -667,7 +704,7 @@ header .theme-toggle {
 }
 .page-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));
   gap: 1.25rem;
 }
 .page-card {
@@ -679,10 +716,7 @@ header .theme-toggle {
 }
 .page-card:hover { box-shadow: 0 4px 20px oklch(20% 0.05 260 / 12%); }
 .page-card h2 { font-size: 1rem; font-weight: 600; margin-bottom: 0.5rem; }
-.page-card p { font-size: 0.875rem; color: oklch(45% 0.02 260); line-height: 1.5; }
-@media (prefers-color-scheme: dark) {
-  .page-card p { color: oklch(65% 0.02 260); }
-}
+.page-card p { font-size: 0.875rem; color: var(--secondary); line-height: 1.5; }
 .page-card .meta { font-size: 0.75rem; color: var(--secondary); margin-top: 0.75rem; }
 .tldr-box {
   background: var(--primary-container);
@@ -717,7 +751,8 @@ code { padding: 0.15em 0.4em; }
 .section-list li { padding: 0.4rem 0; border-bottom: 1px solid var(--outline); font-size: 0.9rem; }
 .section-list li::before { content: "— "; color: var(--secondary); }
 .breadcrumb { font-size: 0.85rem; color: var(--secondary); margin-bottom: 1.5rem; }
-.source-link { font-size: 0.8rem; color: var(--secondary); display: inline-block; margin-top: 1rem; }
+.source-link { font-size: 0.8rem; color: var(--secondary); display: inline-block; margin-top: 1rem; overflow-wrap: anywhere; }
+.last-updated { font-size: 0.8rem; color: var(--secondary); }
 footer {
   text-align: center;
   padding: 2rem;
@@ -736,18 +771,77 @@ footer {
   font-weight: 600;
   margin-left: 0.5rem;
 }
-.hidden { display: none !important; }
+[hidden] { display: none !important; }
+@media (prefers-reduced-motion: reduce) {
+  .page-card { transition: none; }
+}
+@media (forced-colors: active) {
+  .page-card, .search-box, .theme-toggle { border-color: CanvasText; }
+  :where(a, button, input):focus-visible { outline-color: Highlight; }
+}
+`;
+
+const APP_JS = `
+const root = document.documentElement;
+const themeButton = document.querySelector('.theme-toggle');
+const themeMeta = document.querySelector('meta[name="color-scheme"]');
+const darkPreference = matchMedia('(prefers-color-scheme: dark)');
+
+function updateThemeButton() {
+  const dark = root.dataset.theme === 'dark' || (!root.dataset.theme && darkPreference.matches);
+  themeButton?.setAttribute('aria-pressed', String(dark));
+}
+
+try {
+  const saved = localStorage.getItem('aphrody-reference-theme');
+  if (saved === 'light' || saved === 'dark') {
+    root.dataset.theme = saved;
+    root.style.colorScheme = saved;
+    if (themeMeta) themeMeta.setAttribute('content', saved);
+  }
+} catch { /* Storage may be disabled; the system theme still works. */ }
+updateThemeButton();
+darkPreference.addEventListener('change', updateThemeButton);
+
+themeButton?.addEventListener('click', () => {
+  const dark = themeButton.getAttribute('aria-pressed') === 'true';
+  const next = dark ? 'light' : 'dark';
+  root.dataset.theme = next;
+  root.style.colorScheme = next;
+  if (themeMeta) themeMeta.setAttribute('content', next);
+  updateThemeButton();
+  try { localStorage.setItem('aphrody-reference-theme', next); } catch { /* Optional. */ }
+});
+
+const search = document.getElementById('search');
+const count = document.getElementById('search-count');
+if (search && count) {
+  const cards = Array.from(document.querySelectorAll('.page-card'));
+  let announceTimer;
+  search.addEventListener('input', () => {
+    const query = search.value.toLocaleLowerCase().trim();
+    let visible = 0;
+    for (const card of cards) {
+      card.hidden = !!query && !card.dataset.title.includes(query);
+      if (!card.hidden) visible++;
+    }
+    clearTimeout(announceTimer);
+    announceTimer = setTimeout(() => {
+      count.textContent = visible === 1 ? '1 page found' : visible + ' pages found';
+    }, 200);
+  });
+}
 `;
 
 function renderIndexHtml(pages: RewrittenPage[]): string {
 	const cards = pages
 		.map(
 			(p) => `
-    <div class="page-card" data-title="${Bun.escapeHTML(p.title.toLowerCase())}">
-      <h2><a href="pages/${p.slug}.html">${Bun.escapeHTML(p.title)}</a></h2>
+    <article class="page-card" data-title="${Bun.escapeHTML(p.title.toLocaleLowerCase())}">
+      <h2><a href="pages/${Bun.escapeHTML(p.slug)}.html">${Bun.escapeHTML(p.title)}</a></h2>
       <p>${Bun.escapeHTML(clamp(p.tldr, 140))}</p>
       <div class="meta">${p.wordCount} words${p.geminiUsed ? ' <span class="badge">AI</span>' : ""}</div>
-    </div>`,
+    </article>`,
 		)
 		.join("\n");
 
@@ -756,32 +850,26 @@ function renderIndexHtml(pages: RewrittenPage[]): string {
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
 <title>Chromium Developers — AI Reference</title>
 <link rel="stylesheet" href="assets/style.css">
+<script defer src="assets/app.js"></script>
 </head>
 <body>
+<a class="skip-link" href="#content">Skip to content</a>
 <header>
   <h1>Chromium Developers — AI Reference</h1>
-  <button class="theme-toggle" onclick="document.documentElement.style.colorScheme=document.documentElement.style.colorScheme==='light'?'dark':'light'">Toggle theme</button>
+  <button class="theme-toggle" type="button" aria-pressed="false">Toggle color theme</button>
 </header>
-<main class="container">
-  <input class="search-box" type="search" placeholder="Search pages..." id="search" aria-label="Search pages">
+<main class="container" id="content" tabindex="-1">
+  <label class="search-label" for="search">Search pages</label>
+  <input class="search-box" type="search" placeholder="Search pages..." id="search" autocomplete="off">
+  <p class="search-count" id="search-count" role="status" aria-atomic="true">${pages.length} pages found</p>
   <div class="page-grid" id="grid">
 ${cards}
   </div>
 </main>
 <footer>Generated by AphrodyWeb &bull; Source: chromium.org (CC-BY 2.5) &bull; Re-styled and summarised by AI</footer>
-<script>
-  const input = document.getElementById('search');
-  const cards = Array.from(document.querySelectorAll('.page-card'));
-  input.addEventListener('input', () => {
-    const q = input.value.toLowerCase().trim();
-    cards.forEach(c => {
-      const match = !q || c.dataset.title.includes(q);
-      c.classList.toggle('hidden', !match);
-    });
-  });
-</script>
 </body>
 </html>`;
 }
@@ -796,6 +884,7 @@ function renderPageHtml(page: RewrittenPage): string {
 		.join("\n");
 
 	const externalLinksHtml = page.externalLinks
+		.filter((url) => safeHttpUrl(url) !== null)
 		.slice(0, 10)
 		.map(
 			(l) =>
@@ -812,16 +901,19 @@ function renderPageHtml(page: RewrittenPage): string {
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
 <title>${Bun.escapeHTML(page.title)} — Chromium Developers AI Reference</title>
 <meta name="description" content="${Bun.escapeHTML(clamp(page.tldr, 160))}">
 <link rel="stylesheet" href="../assets/style.css">
+<script defer src="../assets/app.js"></script>
 </head>
 <body>
+<a class="skip-link" href="#content">Skip to content</a>
 <header>
-  <h1><a href="../index.html" style="color:inherit">Chromium Developers — AI Reference</a></h1>
-  <button class="theme-toggle" onclick="document.documentElement.style.colorScheme=document.documentElement.style.colorScheme==='light'?'dark':'light'">Toggle theme</button>
+  <a class="site-name" href="../index.html">Chromium Developers — AI Reference</a>
+  <button class="theme-toggle" type="button" aria-pressed="false">Toggle color theme</button>
 </header>
-<main class="container">
+<main class="container" id="content" tabindex="-1">
   <nav class="breadcrumb"><a href="../index.html">Home</a> / ${Bun.escapeHTML(page.title)}</nav>
 
   <h1>${Bun.escapeHTML(page.title)}</h1>
@@ -843,9 +935,9 @@ function renderPageHtml(page: RewrittenPage): string {
 
   ${externalLinksHtml ? `<h2>External References</h2><ul>${externalLinksHtml}</ul>` : ""}
 
-  ${page.lastUpdated ? `<p style="font-size:0.8rem;color:var(--secondary)">Last updated: ${Bun.escapeHTML(page.lastUpdated)}</p>` : ""}
+  ${page.lastUpdated ? `<p class="last-updated">Last updated: ${Bun.escapeHTML(page.lastUpdated)}</p>` : ""}
 
-  <a class="source-link" href="${Bun.escapeHTML(page.url)}" rel="noopener noreferrer" target="_blank">View original on chromium.org</a>
+  <a class="source-link" href="${Bun.escapeHTML(safeHttpUrl(page.url) ?? ORIGIN)}" rel="noopener noreferrer" target="_blank">View original on chromium.org</a>
 </main>
 <footer>Generated by AphrodyWeb &bull; Source: chromium.org (CC-BY 2.5) &bull; Re-styled and summarised by AI</footer>
 </body>
@@ -875,6 +967,7 @@ async function main() {
 			const meta = JSON.parse(
 				await Bun.file(`${RAW_DIR}/${metaFile}`).text(),
 			) as RawMeta;
+			if (typeof meta.slug !== "string" || !/^[a-z0-9-]+$/.test(meta.slug)) continue;
 			if (!extractedPages.has(meta.slug)) {
 				const htmlPath = `${RAW_DIR}/${meta.slug}.html`;
 				if (await Bun.file(htmlPath).exists()) {
@@ -922,6 +1015,7 @@ async function main() {
 	// Stage 4 — Site generation
 	console.log("\n=== Stage 4: Site generation ===");
 	await Bun.write(`${SITE_DIR}/assets/style.css`, CSS);
+	await Bun.write(`${SITE_DIR}/assets/app.js`, APP_JS);
 
 	// Sort by wordCount desc for "top pages"
 	rewritten.sort((a, b) => b.wordCount - a.wordCount);

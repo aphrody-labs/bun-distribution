@@ -230,7 +230,8 @@ export interface CssFromSeedOptions extends SchemeOptions {
 }
 
 /**
- * Full stylesheet text: `:root` (light) + `:root[data-theme="dark"]` (dark),
+ * Full stylesheet text: system light/dark by default, with explicit
+ * `data-theme="light"` and `data-theme="dark"` overrides on `:root`,
  * ready to inline into a `<style>` for SSR or static theming. Apps whose mode
  * switch uses other selectors (e.g. a dark-by-default `:root, .dark` and a
  * `.light` class) pass `lightSelector` / `darkSelector`.
@@ -239,6 +240,14 @@ export function cssFromSeed(seedHex: string, opts: CssFromSeedOptions = {}): str
   const { lightSelector = ":root", darkSelector = ':root[data-theme="dark"]', ...scheme } = opts;
   const light = schemeFromSeed(seedHex, { ...scheme, dark: false });
   const dark = schemeFromSeed(seedHex, { ...scheme, dark: true });
+  if (lightSelector === ":root" && darkSelector === ':root[data-theme="dark"]') {
+    return (
+      `:root {\n  color-scheme: light dark;\n${declarations(light)}\n}\n\n` +
+      `@media (prefers-color-scheme: dark) {\n  :root:not([data-theme]) {\n${declarations(dark, "    ")}\n  }\n}\n\n` +
+      `:root[data-theme="light"] {\n  color-scheme: light;\n}\n\n` +
+      `${darkSelector} {\n  color-scheme: dark;\n${declarations(dark)}\n}\n`
+    );
+  }
   return (
     `${lightSelector} {\n  color-scheme: light;\n${declarations(light)}\n}\n\n` +
     `${darkSelector} {\n  color-scheme: dark;\n${declarations(dark)}\n}\n`

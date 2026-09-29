@@ -24,6 +24,14 @@ describe("m3-tokens.css runtime asset", () => {
     expect(css).toMatch(/:root\s*\{/);
   });
 
+  test("keeps elevation shadows when relative colors are unavailable", () => {
+    expect(css).toContain("@supports (color: rgb(from black r g b / 0.3))");
+    for (let level = 1; level <= 5; level++) {
+      expect(css.match(new RegExp(`--md-sys-elevation-level${level}:`, "g"))).toHaveLength(2);
+    }
+    expect(css).toContain("rgb(0 0 0 / 0.3)");
+  });
+
   test("declares a substantial, stable number of tokens", () => {
     const count = (css.match(/^\s*--md-sys-[a-z-]+\s*:/gm) ?? []).length;
     // ~37 `--md-sys-*` definitions (the documented "58 vars" also counts the

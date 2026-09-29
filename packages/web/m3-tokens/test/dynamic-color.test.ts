@@ -45,9 +45,13 @@ describe("schemeFromSeed", () => {
 });
 
 describe("cssFromSeed", () => {
-  test("contains :root light and [data-theme=dark] blocks", () => {
+  test("follows the system theme until an explicit theme is selected", () => {
     const css = cssFromSeed("#6750A4");
     expect(css).toContain(":root {");
+    expect(css).toContain("color-scheme: light dark");
+    expect(css).toContain("@media (prefers-color-scheme: dark)");
+    expect(css).toContain(":root:not([data-theme])");
+    expect(css).toContain(':root[data-theme="light"]');
     expect(css).toContain(':root[data-theme="dark"]');
     expect(css).toContain("--md-sys-color-primary:");
     expect(css).toContain("color-scheme: light");

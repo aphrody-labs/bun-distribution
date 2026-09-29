@@ -348,8 +348,11 @@ export async function muiThemeToTokens(
   parts.push(emitColorBlock(":root", lightRoles));
   if (misc) parts.push(misc);
   parts.push(
-    `@media (prefers-color-scheme: dark) {\n${indent(emitColorBlock(":root", darkRoles))}\n}`,
+    `@media (prefers-color-scheme: dark) {\n${indent(emitColorBlock(":root:not([data-theme])", darkRoles))}\n}`,
   );
+  parts.push(`:root[data-theme="light"] {\n  color-scheme: light;\n}`);
+  parts.push(`:root[data-theme="dark"] {\n  color-scheme: dark;\n}`);
+  parts.push(emitColorBlock(':root[data-theme="dark"]', darkRoles));
 
   return {
     css: parts.join("\n\n"),

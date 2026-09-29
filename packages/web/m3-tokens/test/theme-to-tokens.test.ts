@@ -34,6 +34,9 @@ describe("muiThemeToTokens", () => {
     const { css } = await muiThemeToTokens(theme);
     expect(css).toContain(":root {");
     expect(css).toContain("@media (prefers-color-scheme: dark)");
+    expect(css).toContain(":root:not([data-theme])");
+    expect(css).toContain(':root[data-theme="light"]');
+    expect(css).toContain(':root[data-theme="dark"]');
     expect(css).toContain("--md-sys-color-primary:");
   });
 
