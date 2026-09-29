@@ -1,40 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0
 // SPDX-FileCopyrightText: 2026 aphrody contributors
 
-//! `bxc-bridge` - aphrody's single door to the bxc engine.
+//! Aphrody Web compatibility client with shared Rust extraction and browser engines.
 //!
-//! # Two seams, and why the choice is not free
-//!
-//! * **HTML to Markdown** uses the canonical Rust `aphrody-web-extract` crate in process.
-//!   CSS selectors, title extraction and DNS still use the `bxc_rust_bridge` cdylib ([`ffi`]).
-//!   The library is `/MD` while aphrody forces `+crt-static` on MSVC, so a static link would put
-//!   two C runtimes in one process and make every cross-heap release undefined. Runtime loading is
-//!   not a convenience here, it is the only sound option - the same conclusion, and the same
-//!   mechanism, as `ort`'s `load-dynamic`.
-//! * **Browser, stealth, cache, orchestration** goes through the **`bxc` executable, spawned as a
-//!   child** ([`cli`]), exactly as `aphrody-infer` drives llama.cpp and `aphrody-voice` drives
-//!   whisper.cpp.
-//!
-//! # What is deliberately not here
-//!
-//! No `path` dependency on the bxc workspace. It would splice two workspaces
-//! with separate lockfiles, drag `deno_core`/V8 in the moment any path touches
-//! `obscura-js`, and pin a fast-moving build inside ours - the three reasons
-//! `CLAUDE.md` §7 already gives for not linking llama.cpp.
-//!
-//! Nor is anything routed through `crates/obscura-runtime`: there is no
-//! `obscura` binary. bxc-engine builds `bxc-engine` and `obscura-worker`; the
-//! `obscura-*` crates are internal libraries of bxc.
-//!
-//! # The contract callers can rely on
-//!
-//! Nothing degrades in silence. Either the call returns a typed
-//! [`BxcError`] that **names the command that fixes it**, or it returns a
-//! value that **carries the road it actually took** ([`fetch::Fetched::path_taken`],
-//! [`resolve::Source::label`]) - the shape `aphrody-infer` uses for its
-//! execution providers. The surface this crate replaces did the opposite: a
-//! missing capability quietly became a request to `https://r.jina.ai/`, and
-//! nobody could tell.
+//! DOM parsing, title extraction, Markdown conversion and DNS run in process.
+//! Fetch profiles use HTTP or the local Obscura browser. The legacy executable
+//! client remains available for callers whose commands are still being migrated.
 //!
 //! # Example
 //!
@@ -79,13 +50,9 @@ pub use error::{BxcError, Result};
 pub mod actors;
 #[cfg(not(target_arch = "wasm32"))]
 pub mod cli;
-// The one exemption in the crate. Every `unsafe` block in `bxc-bridge` lives
-// in this module, and the module header states who allocates and who frees for
-// each pointer that crosses.
 #[cfg(not(target_arch = "wasm32"))]
 pub mod fetch;
 #[cfg(not(target_arch = "wasm32"))]
-#[allow(unsafe_code)]
 pub mod ffi;
 
 /// Canonical Rust client name for the Aphrody Web Browser executable.
@@ -107,7 +74,7 @@ pub use ffi::Bridge;
 #[cfg(not(target_arch = "wasm32"))]
 mod host {
     use super::resolve;
-    /// Whether both halves of bxc are reachable, and by which road.
+    /// Availability of the linked Rust bridge and optional legacy executable.
     ///
     /// Built for `aphrody doctor`-style reporting: it answers with what is
     /// present, never with a bare boolean, so an operator reads the itinerary
@@ -116,7 +83,7 @@ mod host {
     pub struct Availability {
         /// The `bxc` executable, when found.
         pub binary: Option<resolve::Source>,
-        /// The `bxc_rust_bridge` shared library, when found.
+        /// Path of the process containing the linked Rust Web implementation.
         pub library: Option<resolve::Source>,
         /// Rendered reason for each half that is missing.
         pub missing: Vec<String>,
@@ -136,15 +103,18 @@ mod host {
                 missing.push(resolve::binary().err().map_or_else(String::new, |e| e.to_string()));
             }
 
-            let lib_attempt = resolve::library_attempt();
-            if lib_attempt.found.is_none() {
-                missing.push(resolve::library().err().map_or_else(String::new, |e| e.to_string()));
-            }
+            let library = match super::ffi::shared() {
+                Ok(bridge) => Some(bridge.source().clone()),
+                Err(error) => {
+                    missing.push(error.to_string());
+                    None
+                },
+            };
 
-            Self { binary: bin_attempt.found, library: lib_attempt.found, missing }
+            Self { binary: bin_attempt.found, library, missing }
         }
 
-        /// Whether the legacy DOM, title and DNS native library is available.
+        /// Whether the in-process Rust DOM, title and DNS implementation is available.
         #[must_use]
         pub const fn has_library(&self) -> bool {
             self.library.is_some()
@@ -176,7 +146,7 @@ mod tests {
         assert_eq!(a.missing.len(), absent, "every absence needs its own explanation: {a:?}");
         for message in &a.missing {
             assert!(
-                message.contains("BXC_BIN") || message.contains("APHRODY_BXC_LIB"),
+                message.contains("BXC_BIN") || message.contains("current executable"),
                 "an absence must name its override: {message}"
             );
             // Either the chain was walked (and lists what it probed), or an

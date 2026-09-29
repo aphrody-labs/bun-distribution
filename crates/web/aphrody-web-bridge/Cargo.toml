@@ -19,19 +19,15 @@ workspace = true
 
 [dependencies]
 aphrody-web-extract = { workspace = true }
+obscura = { workspace = true }
+obscura-dom = { workspace = true }
+obscura-net = { workspace = true }
 thiserror      = { workspace = true }
 tracing        = { workspace = true }
 serde          = { workspace = true }
 dirs           = { workspace = true }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
-# Runtime loading, not linking. aphrody forces `+crt-static` on MSVC
-# (.cargo/config.toml) while `bxc_rust_bridge.dll` imports VCRUNTIME140 /
-# api-ms-win-crt-*, i.e. it is `/MD`. Two CRTs in one process make any
-# cross-allocator `free()` undefined, so a static link is not merely
-# inconvenient — it is unsound. Same reasoning, same mechanism as `ort`'s
-# `load-dynamic` (Cargo.toml, workspace `ort` entry).
-libloading     = { version = "0.9" }
 reqwest        = { workspace = true }
 # Direct dep so `fetch::client` can install the `ring` provider itself. rustls
 # 0.23 with the workspace `rustls-no-provider` pin PANICS at first request when
@@ -41,6 +37,10 @@ reqwest        = { workspace = true }
 rustls         = { workspace = true }
 tokio          = { workspace = true }
 serde_json     = { workspace = true, features = ["std"] }
+
+[features]
+default = []
+stealth = ["obscura/stealth"]
 
 [dev-dependencies]
 tempfile       = { workspace = true }

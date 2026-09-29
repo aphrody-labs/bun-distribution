@@ -24,6 +24,38 @@ fn bullets(paths: &[PathBuf]) -> String {
 #[derive(Debug, thiserror::Error)]
 #[non_exhaustive]
 pub enum BxcError {
+    /// A CSS selector could not be parsed by the native DOM engine.
+    #[error("invalid CSS selector {selector:?}: {detail}")]
+    Selector {
+        /// Selector supplied by the caller.
+        selector: String,
+        /// Parser's diagnostic.
+        detail: String,
+    },
+    /// The in-process Obscura browser failed while loading a page.
+    #[error("browser navigation failed for {url}: {detail}")]
+    Browser {
+        /// Requested URL.
+        url: String,
+        /// Browser error without page contents or credentials.
+        detail: String,
+    },
+
+    /// The browser did not finish before the caller's deadline.
+    #[error("browser navigation for {url} exceeded {secs}s")]
+    BrowserTimeout {
+        /// Requested URL.
+        url: String,
+        /// Caller-supplied deadline in seconds.
+        secs: u64,
+    },
+
+    /// A requested browser capability was not compiled into this build.
+    #[error("browser profile {profile} requires the aphrody-web-bridge stealth feature")]
+    BrowserFeatureMissing {
+        /// Requested profile.
+        profile: &'static str,
+    },
     /// The `bxc_rust_bridge` shared library was not found anywhere.
     #[error(
         "bxc bridge library `{name}` not found.\nTried, in order:{tried}\nFix: install bxc (its \

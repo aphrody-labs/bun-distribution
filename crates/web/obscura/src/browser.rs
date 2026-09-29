@@ -24,22 +24,14 @@ impl Browser {
     }
 
     pub fn build(config: BrowserConfig) -> Result<Self, Error> {
-        let context = if let Some(ref dir) = config.storage_dir {
-            BrowserContext::with_storage_full(
-                "api".to_string(),
-                config.proxy,
-                config.stealth,
-                config.user_agent,
-                Some(dir.clone()),
-            )
-        } else {
-            BrowserContext::with_full_options(
-                "api".to_string(),
-                config.proxy,
-                config.stealth,
-                config.user_agent,
-            )
-        };
+        let context = BrowserContext::with_storage_and_network(
+            "api".to_string(),
+            config.proxy,
+            config.stealth,
+            config.user_agent,
+            config.storage_dir,
+            config.allow_private_network,
+        );
 
         let context = Arc::new(context);
         let cookie_jar = context.cookie_jar.clone();
@@ -83,6 +75,10 @@ impl BrowserBuilder {
     }
     pub fn storage_dir(mut self, dir: impl Into<std::path::PathBuf>) -> Self {
         self.config.storage_dir = Some(dir.into());
+        self
+    }
+    pub fn allow_private_network(mut self, allow: bool) -> Self {
+        self.config.allow_private_network = allow;
         self
     }
     pub fn build(self) -> Result<Browser, Error> {

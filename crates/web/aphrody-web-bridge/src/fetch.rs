@@ -28,11 +28,8 @@
 //! The only host contacted is the origin the caller asked for. No proxy, no
 //! reader service, no API key, nothing to rate-limit us.
 //!
-//! Browser-grade retrieval - JavaScript rendering, stealth, bxc cache - is a
-//! different job, and it is available by naming a [`Profile`]: that routes
-//! through the `bxc` executable instead. It is opt-in because it costs a
-//! browser launch, and because bxc escalates profiles on failure, which can
-//! turn one blocked request into five.
+//! Browser profiles render JavaScript through the in-process Obscura runtime.
+//! They are selected explicitly because they consume more resources.
 //!
 //! # Nothing degrades in silence
 //!
@@ -43,7 +40,7 @@
 use std::{sync::OnceLock, time::Duration};
 
 use crate::{
-    cli::{BxcCli, Profile, SCRAPE_BUDGET},
+    cli::Profile,
     error::{BxcError, Result},
 };
 
@@ -76,14 +73,12 @@ pub enum Transport {
         /// HTTP status.
         status: u16,
     },
-    /// The `bxc` executable fetched them.
-    BxcCli {
-        /// The executable that ran.
-        bin: String,
-        /// The profile requested (bxc may have escalated past it).
+    /// The in-process Obscura browser loaded the page.
+    Browser {
+        /// The profile requested.
         profile: Profile,
-        /// Whether the child had to be killed on the deadline.
-        killed_on_timeout: bool,
+        /// Final URL after navigation.
+        final_url: String,
     },
 }
 
@@ -167,12 +162,14 @@ impl Fetched {
 pub struct Request {
     /// The URL to read.
     pub url: String,
-    /// Ask bxc to fetch it with this profile instead of fetching directly.
+    /// Select an HTTP or in-process browser profile.
     pub profile: Option<Profile>,
     /// Per-request timeout for the direct path.
     pub timeout: Duration,
     /// Cap on the returned body.
     pub max_bytes: usize,
+    /// Permit browser navigation to loopback or private network addresses.
+    pub allow_private_network: bool,
 }
 
 impl Request {
@@ -184,22 +181,18 @@ impl Request {
             profile: None,
             timeout: DEFAULT_TIMEOUT,
             max_bytes: DEFAULT_MAX_BYTES,
+            allow_private_network: false,
         }
     }
 
-    /// Route through the `bxc` executable with this profile.
+    /// Select a profile while retaining the same request budget.
     #[must_use]
     pub fn with_profile(mut self, profile: Profile) -> Self {
         self.profile = Some(profile);
         self
     }
 
-    /// Override the request budget, on **both** paths.
-    ///
-    /// It bounds the direct rustls fetch and the `bxc` child alike, downward as
-    /// well as upward. On the `bxc` path a budget under [`SCRAPE_BUDGET`] is
-    /// obeyed and announced in [`Fetched::path_taken`], because `bxc scrape`
-    /// never exits on its own and cutting early can truncate the page.
+    /// Override the request budget on HTTP and browser paths.
     #[must_use]
     pub const fn with_timeout(mut self, timeout: Duration) -> Self {
         self.timeout = timeout;
@@ -210,6 +203,13 @@ impl Request {
     #[must_use]
     pub const fn with_max_bytes(mut self, max_bytes: usize) -> Self {
         self.max_bytes = max_bytes;
+        self
+    }
+
+    /// Permit an explicit browser fetch of a local or private service.
+    #[must_use]
+    pub const fn with_private_network(mut self, allow: bool) -> Self {
+        self.allow_private_network = allow;
         self
     }
 }
@@ -284,14 +284,15 @@ pub fn truncate(text: &str, max_bytes: usize) -> (String, bool) {
 /// # Errors
 ///
 /// [`BxcError::BadUrl`] for a non-http(s) URL, [`BxcError::Http`] /
-/// [`BxcError::HttpStatus`] on the direct path, and the `Cli*` family when a
-/// profile routed the request through the `bxc` executable.
+/// [`BxcError::HttpStatus`] on the direct path, and browser errors for
+/// browser profiles.
 pub async fn fetch(request: &Request) -> Result<Fetched> {
     if !(request.url.starts_with("http://") || request.url.starts_with("https://")) {
         return Err(BxcError::BadUrl { url: request.url.clone() });
     }
     match request.profile {
-        Some(profile) => fetch_via_bxc(request, profile).await,
+        Some(Profile::Static | Profile::Http) => fetch_direct(request).await,
+        Some(profile) => fetch_browser(request, profile).await,
         None => fetch_direct(request).await,
     }
 }
@@ -330,29 +331,7 @@ async fn fetch_direct(request: &Request) -> Result<Fetched> {
     let bytes_in = text.len();
 
     let (rendering, body) = if is_html(&content_type) || looks_like_html(&text) {
-        let (cleaned, noise_blocks) = strip_noise_blocks(&text);
-        // The converter is a local Rust library. Keep the serialized `via`
-        // marker for existing clients while recording the real backend here.
-        let md = aphrody_web_extract::html_to_markdown(&cleaned, None);
-        if noise_blocks > 0 {
-            path_taken.push(format!("dropped {noise_blocks} script/style/noscript block(s)"));
-        }
-        path_taken.push("aphrody-web-extract (in-process Rust)".to_owned());
-        if md.trim().is_empty() && !cleaned.trim().is_empty() {
-            path_taken
-                .push("markdown conversion returned an EMPTY body - raw HTML returned".to_owned());
-            (
-                Rendering::RawHtml {
-                    reason: format!(
-                        "bxc_html_to_markdown produced nothing from {} bytes of HTML",
-                        cleaned.len()
-                    ),
-                },
-                text,
-            )
-        } else {
-            (Rendering::Markdown { via: "bxc_rust_bridge:bxc_html_to_markdown".to_owned() }, md)
-        }
+        markdown_body(text, &mut path_taken)
     } else {
         path_taken.push(format!(
             "verbatim ({})",
@@ -382,72 +361,99 @@ async fn fetch_direct(request: &Request) -> Result<Fetched> {
     })
 }
 
-/// The opt-in path: the `bxc` executable does the retrieval and the rendering.
-async fn fetch_via_bxc(request: &Request, profile: Profile) -> Result<Fetched> {
-    let cli = BxcCli::discover()?;
+fn markdown_body(html: String, path_taken: &mut Vec<String>) -> (Rendering, String) {
+    let (cleaned, noise_blocks) = strip_noise_blocks(&html);
+    if noise_blocks > 0 {
+        path_taken.push(format!("dropped {noise_blocks} script/style/noscript block(s)"));
+    }
+    let markdown = aphrody_web_extract::html_to_markdown(&cleaned, None);
+    path_taken.push("aphrody-web-extract (in-process Rust)".to_owned());
+    if markdown.trim().is_empty() && !cleaned.trim().is_empty() {
+        path_taken
+            .push("markdown conversion returned an empty body - raw HTML returned".to_owned());
+        (
+            Rendering::RawHtml {
+                reason: format!(
+                    "aphrody-web-extract produced no text from {} HTML bytes",
+                    cleaned.len()
+                ),
+            },
+            html,
+        )
+    } else {
+        (Rendering::Markdown { via: "aphrody-web-extract".to_owned() }, markdown)
+    }
+}
 
-    // The caller's budget is honoured, including downward. An earlier version
-    // took `max(request.timeout, SCRAPE_BUDGET)`, which silently raised a
-    // 5-second request to 90 — measured: `budget_floor_probe` returned in
-    // 90.03 s for a 5 s budget. The floor exists for a real reason
-    // (see `SCRAPE_BUDGET`: `scrape` never exits, and cutting too early yields
-    // an empty body), but raising someone's deadline without telling them is
-    // the silent degradation this crate exists to remove. So we obey, and when
-    // the budget sits under the measured floor we say so in the itinerary —
-    // the caller then reads *why* the body came back short instead of guessing.
+/// Browser profiles render the page in the local Obscura V8 runtime.
+async fn fetch_browser(request: &Request, profile: Profile) -> Result<Fetched> {
+    let stealth = matches!(profile, Profile::Stealth | Profile::Max);
+    if stealth && !cfg!(feature = "stealth") {
+        return Err(BxcError::BrowserFeatureMissing { profile: profile.as_str() });
+    }
+
+    let url = request.url.clone();
     let budget = request.timeout;
-    let under_floor = budget < SCRAPE_BUDGET;
+    let allow_private_network = request.allow_private_network;
+    let (sender, receiver) = tokio::sync::oneshot::channel();
+    std::thread::Builder::new()
+        .name("aphrody-web-browser-fetch".to_owned())
+        .stack_size(64 * 1024 * 1024)
+        .spawn(move || {
+            let result = (|| {
+                let runtime = tokio::runtime::Builder::new_current_thread()
+                    .enable_all()
+                    .build()
+                    .map_err(|error| error.to_string())?;
+                runtime.block_on(async {
+                    let browser = obscura::Browser::builder()
+                        .stealth(stealth)
+                        .allow_private_network(allow_private_network)
+                        .build()
+                        .map_err(|error| error.to_string())?;
+                    let mut page = browser.new_page().await.map_err(|error| error.to_string())?;
+                    tokio::time::timeout(budget, page.goto(&url))
+                        .await
+                        .map_err(|_| "navigation deadline exceeded".to_owned())?
+                        .map_err(|error| error.to_string())?;
+                    if matches!(profile, Profile::Max) {
+                        page.settle(500).await;
+                    }
+                    let html = page.content();
+                    if html.trim().is_empty() {
+                        return Err("browser returned an empty document".to_owned());
+                    }
+                    Ok((html, page.url()))
+                })
+            })();
+            let _ = sender.send(result);
+        })
+        .map_err(|error| BxcError::Browser {
+            url: request.url.clone(),
+            detail: error.to_string(),
+        })?;
 
-    let (body, run) = cli.scrape_markdown(&request.url, Some(profile), budget).await?;
+    let (html, final_url) = tokio::time::timeout(budget, receiver)
+        .await
+        .map_err(|_| BxcError::BrowserTimeout { url: request.url.clone(), secs: budget.as_secs() })?
+        .map_err(|_| BxcError::Browser {
+            url: request.url.clone(),
+            detail: "browser worker ended without a result".to_owned(),
+        })?
+        .map_err(|detail| BxcError::Browser { url: request.url.clone(), detail })?;
 
+    let bytes_in = html.len();
     let mut path_taken = vec![format!(
-        "bxc scrape --markdown --profile {} ({})",
+        "obscura V8 browser ({} profile, {}s budget)",
         profile.as_str(),
-        cli.path().display()
+        budget.as_secs()
     )];
-    if under_floor {
-        path_taken.push(format!(
-            "caller budget {}s is below the measured {}s floor for `bxc scrape`: the page may be \
-             cut short",
-            budget.as_secs(),
-            SCRAPE_BUDGET.as_secs()
-        ));
-    }
-    if run.timed_out {
-        // Expected, not exceptional: `scrape` writes the page and then hangs.
-        path_taken.push(format!(
-            // Do not claim the output was complete. `scrape` never exits, so
-            // a kill is expected — but nothing here observed the end of the
-            // page, and the 20 s row of the SCRAPE_BUDGET table shows a kill
-            // that yielded zero bytes. Report what is known: it was killed,
-            // and how much arrived.
-            "child killed after {}s (bxc scrape never exits); {} bytes had arrived",
-            budget.as_secs(),
-            body.len()
-        ));
-    }
-    if profile.needs_browser() {
-        path_taken.push("browser profile: requires Chromium on this machine".to_owned());
-    }
-
-    let bytes_in = body.len();
-    let (body, cut_at_cap) = truncate(&body, request.max_bytes);
-    // A body cut short by the kill is truncated in every sense the caller
-    // cares about, so the flag has to say so. It used to report only the
-    // size cap, which meant `truncated == false` on a page the deadline had
-    // clipped — the prose in `path_taken` said one thing and the field a
-    // machine reads said another.
-    let truncated = cut_at_cap || run.timed_out;
+    let (rendering, body) = markdown_body(html, &mut path_taken);
+    let (body, truncated) = truncate(&body, request.max_bytes);
     Ok(Fetched {
         url: request.url.clone(),
-        transport: Transport::BxcCli {
-            bin: cli.path().display().to_string(),
-            profile,
-            killed_on_timeout: run.timed_out,
-        },
-        rendering: Rendering::Markdown {
-            via: format!("bxc scrape --markdown ({})", profile.as_str()),
-        },
+        transport: Transport::Browser { profile, final_url },
+        rendering,
         body,
         bytes_in,
         truncated,

@@ -10,11 +10,19 @@ pub struct BrowserConfig {
     pub user_agent: Option<String>,
     /// Directory for persistent cookie storage
     pub storage_dir: Option<PathBuf>,
+    /// Allow navigation to loopback and private network addresses.
+    pub allow_private_network: bool,
 }
 
 impl Default for BrowserConfig {
     fn default() -> Self {
-        Self { proxy: None, stealth: false, user_agent: None, storage_dir: None }
+        Self {
+            proxy: None,
+            stealth: false,
+            user_agent: None,
+            storage_dir: None,
+            allow_private_network: false,
+        }
     }
 }
 
@@ -47,6 +55,11 @@ impl BrowserConfigBuilder {
 
     pub fn storage_dir(mut self, dir: impl Into<PathBuf>) -> Self {
         self.config.storage_dir = Some(dir.into());
+        self
+    }
+
+    pub fn allow_private_network(mut self, allow: bool) -> Self {
+        self.config.allow_private_network = allow;
         self
     }
 
