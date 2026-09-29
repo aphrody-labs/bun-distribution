@@ -3,8 +3,14 @@
     "target": "ES2022",
     "module": "ESNext",
     "moduleResolution": "bundler",
-    "lib": ["ES2022", "DOM", "DOM.Iterable"],
-    "types": ["bun"],
+    "lib": [
+      "ES2022",
+      "DOM",
+      "DOM.Iterable"
+    ],
+    "types": [
+      "bun"
+    ],
     "strict": true,
     "skipLibCheck": true,
     "resolveJsonModule": true,
@@ -20,5 +26,6 @@
   },
   "include": [
     "src/**/*.ts"
-  ]
+  ],
+  "extends": "@aphrody/m3-config/tsconfig.json"
 }

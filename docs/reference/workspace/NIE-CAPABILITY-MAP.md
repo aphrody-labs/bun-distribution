@@ -27,11 +27,12 @@ reports 10 Aphrody category repositories, 92 Rust dependency edges, no cycles
 and no layer violations before migration.
 
 NIE [Cargo](../nie/Cargo.toml) specifies `publish = false` and a commercial
-`license-file`; [`@aphrody/nie`](../../../packages/iecode/nie/package.json) declares
-MIT. Resolve this metadata conflict, provenance and distribution scope before
-moving code into Apache/MIT workspaces. The two archived NIE crates are outside
-the active workspace. Untracked game assets and working databases are not
-covered by source migration.
+`license-file`. The former staged `@aphrody/nie` manifest under
+`packages/iecode/` declared MIT without a supporting grant; that staging package
+has been removed. Preserve the commercial boundary and verify source notices,
+fixtures and distribution scope before creating another Bun package. The two
+archived NIE crates are outside the active workspace. Untracked game assets
+and working databases are not covered by source migration.
 
 The ownership rule is **IECODE for every IEVR-specific rule, format, dataset,
 workflow and adapter; existing Aphrody repositories for reusable capability,
@@ -86,8 +87,8 @@ contains each manifest, binary and feature.
 | `packages/nie-game` (`@nie/game`) | IECODE game domain package | Game and Explorer; preserve formations/text/rules without a second TS game implementation. |
 | `packages/asset-source` (`@nie/asset-source`) | IECODE game asset client; Contracts only for messages crossing processes | `nie-web` and desktop loading consume OS Files/Web transport. Preserve `/f`, `/b` compatibility only behind the existing access policy. |
 | `packages/nie-bridge` (`@nie/bridge`) | IECODE IEVR command DTO; Contracts for neutral control envelope | AI/UI clients call the single MCP/Files APIs after migration. |
-| `packages/nie` (`@aphrody/nie`) | IECODE Bun FFI binding over its game libraries | Native decoding callers can reuse UI's `@aphrody/bun` bridge mechanics. Resolve MIT versus commercial Rust metadata first. |
-| `packages/nie-plugin` (`@nie/plugin`) | IECODE Bun loaders for game formats | Generic happy-dom/test preload may reuse Compat/UI tooling; it is not an agent plugin. |
+| IECODE `packages/nie` (`@aphrody/nie`) | IECODE Bun FFI binding over its game libraries; the copy staged in Aphrody was removed because its ABI and license boundary were not qualified | Reintroduce a Bun consumer only after matching the integrated Rust ABI and confirming redistribution rights. |
+| IECODE `packages/nie-plugin` (`@nie/plugin`) | IECODE Bun loaders for game formats; no Aphrody staging copy remains | Generic happy-dom/test preload is independently owned by `@aphrody/bun-test-dom`; keep game loaders out until data and ABI parity pass. |
 | `packages/nie-media` (`nie-media`) | IECODE episode/media domain logic | Aphrody Web supplies host/player transport; this package is no scraper, bot or encoder. |
 | `apps/nie-web` (`nie-web`) | IECODE IEVR pages, `/inacord` game views and browser game client | Web serves the bundle through `aphrody-site`; UI owns reusable Explorer/editor components and M3 shell. Current Vite alias `@nie/inacord-ui` has 109 users; `src/desktop/Workspace.tsx` mounts Explorer only. Migrate Radix/Rosegriffon imports to M3/Base UI before cutover. |
 | NIE Bun root `nie-monorepo` | No final runtime | Keep its lockfile/build scripts until consumers and reproducible builds are transferred. |

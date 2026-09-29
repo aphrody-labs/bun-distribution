@@ -3,5 +3,11 @@
   "compilerOptions": {
     "noEmit": true
   },
-  "include": ["src/**/*.ts"]
+  "include": [
+    "bindings",
+    "scripts",
+    "src",
+    "src/**/*.ts",
+    "test-ffi.ts"
+  ]
 }

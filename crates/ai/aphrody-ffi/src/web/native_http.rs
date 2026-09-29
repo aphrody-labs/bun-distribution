@@ -82,6 +82,10 @@ async fn fetch_json(url: Url, stealth: u8, timeout_ms: u32) -> String {
 /// `stealth != 0` selects Obscura's Rust Chrome-emulated `wreq` path. The
 /// returned JSON owns its body as UTF-8-lossy text and is released with
 /// `web_internal_free_string`.
+///
+/// # Safety
+/// `url_ptr` must be null or point to a readable, NUL-terminated C string for
+/// the duration of the call.
 pub unsafe extern "C" fn web_internal_obscura_fetch(
     url_ptr: *const c_char,
     stealth: u8,

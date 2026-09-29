@@ -1,6 +1,6 @@
 import type { ButtonInteraction } from "discord.js";
 import { MessageFlags } from "discord.js";
-import { ButtonComponent, Discord } from "@rpbey/discordx";
+import { ButtonComponent, Discord } from "@aphrody/discordx";
 
 import { PROFIL_ANNONCEUR } from "../lib/config";
 import { messageAnnonce, messagePing, urlTweet } from "../lib/tweets-format";

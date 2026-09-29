@@ -39,12 +39,10 @@ regenerate them from the package when that workspace is qualified.
   `packages/rg/*`, and the nested Patreon examples/docs/worker manifests. The
   RG module currently discovers 33 members; the root catalog includes the RG
   catalog entries, with Aphrody's existing values kept where names overlap.
-- Package scripts and imports are being retargeted to the copied layout. A
-  clean root install is not yet qualified: `@rpbey/discordx` returns 404 and
-  is still imported throughout the RG bot; the current Aphrody messaging
-  package does not implement its decorators or command discovery. The lockfile
-  must remain unchanged until the Discord owner supplies a behaviorally
-  compatible workspace API.
+- The root Bun install now passes with `@aphrody/discordx`; the RG bot imports
+  the Aphrody package and its `typecheck` passes. This verifies the TypeScript
+  surface only; runtime decorator discovery and command registration still
+  need their own parity checks before release.
 - A local link audit found 18 unresolved relative links across six copied RG
   Markdown files. Resolve those before promoting the docs to canonical
   Aphrody documentation.

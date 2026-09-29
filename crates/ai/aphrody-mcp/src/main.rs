@@ -36,7 +36,7 @@ mod dragonball_tools;
 #[cfg(all(feature = "jobs", not(target_arch = "wasm32")))]
 mod jobs_tools;
 #[cfg(all(feature = "nie", not(target_arch = "wasm32")))]
-mod nie_tools;
+use aphrody_mcp_nie_bridge as nie_tools;
 #[cfg(all(feature = "ocr", not(target_arch = "wasm32")))]
 mod ocr_tools;
 #[cfg(all(feature = "rag", not(target_arch = "wasm32")))]

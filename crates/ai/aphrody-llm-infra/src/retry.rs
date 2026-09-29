@@ -42,7 +42,7 @@ use std::{
 };
 
 use async_trait::async_trait;
-use rand::{Rng, SeedableRng, rngs::StdRng};
+use rand::{RngExt, SeedableRng, rngs::StdRng};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 use tracing::{debug, warn};
@@ -238,7 +238,7 @@ impl RetryClassifier<HttpError> for HttpStatusClassifier {
 /// which makes it deterministic under `tokio::time::pause`.
 #[must_use]
 pub fn next_delay(policy: &RetryPolicy, attempt: u32, classifier_hint: Option<u64>) -> Duration {
-    next_delay_with_rng(policy, attempt, classifier_hint, &mut StdRng::from_entropy(), None)
+    next_delay_with_rng(policy, attempt, classifier_hint, &mut StdRng::from_rng(&mut rand::rng()), None)
 }
 
 /// `next_delay` variant that lets the caller inject the RNG (for
@@ -270,12 +270,12 @@ pub fn next_delay_with_rng(
             if base_ms == 0 {
                 0
             } else {
-                rng.gen_range(0..=base_ms)
+                rng.random_range(0..=base_ms)
             }
         },
         JitterMode::Equal => {
             let half = base_ms / 2;
-            let extra = if half == 0 { 0 } else { rng.gen_range(0..=half) };
+            let extra = if half == 0 { 0 } else { rng.random_range(0..=half) };
             half + extra
         },
         JitterMode::Decorrelated => {
@@ -284,7 +284,7 @@ pub fn next_delay_with_rng(
             if upper <= policy.base_delay_ms {
                 policy.base_delay_ms
             } else {
-                rng.gen_range(policy.base_delay_ms..=upper)
+                rng.random_range(policy.base_delay_ms..=upper)
             }
         },
     };
@@ -387,7 +387,7 @@ where
 {
     policy.assert_sane();
 
-    let mut rng = StdRng::from_entropy();
+    let mut rng = StdRng::from_rng(&mut rand::rng());
     let mut total_sleep_ms = 0u64;
     let mut prev_delay_ms: Option<u64> = None;
     let max = policy.max_attempts.max(1);

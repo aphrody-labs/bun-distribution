@@ -52,7 +52,7 @@
  * se vérifie est vérifié par les tests purs de `lib/discord-admin.test.ts` et
  * par les signatures lues dans les typages de discord.js 14.26.
  */
-import { Discord, Slash, SlashChoice, SlashGroup, SlashOption } from "@rpbey/discordx";
+import { Discord, Slash, SlashChoice, SlashGroup, SlashOption } from "@aphrody/discordx";
 import {
 	ActionRowBuilder,
 	ApplicationCommandOptionType,

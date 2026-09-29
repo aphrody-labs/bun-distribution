@@ -3,13 +3,13 @@ name: aphrody-train
 description: "aphrody training pipeline: triple datasets, embedding/reranker fine-tuning, LoRA adapters, autonomous promotion."
 version: "1.0.0"
 metadata:
-  source: aphrody native — crates/aphrody-train & py/aphrody-train
+  source: aphrody native — crates/ai/aphrody-train & aphrody-py/packages/ai/py/aphrody-train
   since: "2026-09-19"
 ---
 
 # aphrody — Surface d'Entraînement (`train`)
 
-Aphrody intègre un pipeline complet d'adaptation locale piloté par un superviseur Rust (`aphrody-train`) et des sous-processus Python isolés (`py/aphrody-train`).
+Aphrody intègre un pipeline complet d'adaptation locale piloté par un superviseur Rust (`aphrody-train`) et le membre `aphrody-train` du workspace Python partagé `aphrody-py`.
 
 ## Pipeline d'Entraînement
 

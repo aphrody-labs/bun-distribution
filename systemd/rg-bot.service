@@ -1,5 +1,5 @@
 [Unit]
-# rg-bot — bot Discord du serveur Rose Griffon (Bun + @rpbey/discordx).
+# rg-bot — bot Discord du serveur Rose Griffon (Bun + @aphrody/discordx).
 #
 # Ce démon ne sert QUE les interactions : il enregistre les 15 slash commands
 # sur la guilde et y répond. Tout le reste du Discord (synchronisation des

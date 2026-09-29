@@ -1,0 +1,25 @@
+[package]
+name = "aphrody-n2b-github"
+description = "N2B GitHub client (octocrab, GH_TOKEN/GITHUB_TOKEN or .env) used by `n2b audit` to scan issues and pull requests."
+version = "0.6.2"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+readme = "README.md"
+keywords = ["bun", "nodejs", "n2b", "github", "octocrab"]
+categories = ["development-tools"]
+publish = true
+authors.workspace = true
+
+[lib]
+name = "aphrody_n2b_github"
+path = "src/lib.rs"
+
+[dependencies]
+anyhow = { workspace = true }
+octocrab.workspace = true
+
+[lints]
+workspace = true

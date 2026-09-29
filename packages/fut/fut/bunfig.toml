@@ -1,0 +1,13 @@
+smol = true
+
+[install]
+hoist = true
+linker = "hoisted"
+exact = false
+saveTextLockfile = true
+
+[run]
+bun = true
+
+[test]
+coverage = false

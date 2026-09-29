@@ -1,0 +1,29 @@
+[package]
+name = "aphrody-n2b-report"
+description = "N2B report renderers: text, JSON, JSONL, SARIF, Markdown, LLM prompt and report card."
+version = "0.6.2"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+readme = "README.md"
+keywords = ["bun", "nodejs", "n2b", "sarif", "report"]
+categories = ["development-tools"]
+publish = true
+authors.workspace = true
+
+[lib]
+name = "aphrody_n2b_report"
+path = "src/lib.rs"
+
+[dependencies]
+aphrody-n2b-types.workspace = true
+aphrody-n2b-ai.workspace = true
+aphrody-n2b-util.workspace = true
+serde = { workspace = true }
+serde_json = { workspace = true }
+colored.workspace = true
+
+[lints]
+workspace = true

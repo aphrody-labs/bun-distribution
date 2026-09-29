@@ -1,0 +1,34 @@
+{
+  "name": "@aphrody/n2b-shims",
+  "version": "0.6.2",
+  "description": "Polyfills Bun-natifs pour les APIs Node détectées par n2b (env, fs, path, shell).",
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./env": "./src/env.ts",
+    "./fs": "./src/fs.ts",
+    "./path": "./src/path.ts",
+    "./shell": "./src/shell.ts"
+  },
+  "files": [
+    "src"
+  ],
+  "scripts": {
+    "build": "bunx --bun tsc -b",
+    "typecheck": "bunx --bun tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/bun": "catalog:",
+    "typescript": "catalog:"
+  },
+  "engines": {
+    "bun": ">=1.4.2"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org"
+  },
+  "sideEffects": false
+}

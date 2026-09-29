@@ -26,7 +26,7 @@ iecode-core (Rust facade)
         +-- iecode-emu / geom / re / sql / tasks / video
         |
         +-- iecode-ffi (flat C ABI, cdylib + rlib)
-                 |-- packages/iecode-ffi (Bun bun:ffi)
+                 |-- future Bun bun:ffi consumer (not staged in this workspace)
                  |-- src/IECODE/Ffi (IECODE.Ffi, .NET 10 + Node API host)
                  +-- C/C++ and other native consumers
 ```

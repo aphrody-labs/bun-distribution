@@ -1,0 +1,11 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "extends": ["//"],
+  "tasks": {
+    // The sources import generated *.cssresult.js modules (sass -> css-to-ts), so the
+    // package's own build must run before tsc.
+    "typecheck": {
+      "dependsOn": ["^build", "build"]
+    }
+  }
+}

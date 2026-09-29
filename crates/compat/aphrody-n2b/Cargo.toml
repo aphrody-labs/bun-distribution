@@ -1,0 +1,48 @@
+[package]
+name = "aphrody-n2b"
+version = "0.6.2"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+description = "Node.js to Bun migration analyzer and codemod"
+readme = "README.md"
+authors.workspace = true
+keywords = ["bun", "nodejs", "migration", "codemod", "cli"]
+categories = ["command-line-utilities", "development-tools"]
+publish = true
+
+[[bin]]
+name = "n2b"
+path = "src/main.rs"
+
+[dependencies]
+aphrody-n2b-core.workspace = true
+aphrody-toolchains.workspace = true
+clap.workspace = true
+colored.workspace = true
+serde = { workspace = true }
+serde_json = { workspace = true }
+anyhow = { workspace = true }
+tokio.workspace = true
+octocrab.workspace = true
+which.workspace = true
+similar.workspace = true
+fastembed = { workspace = true, optional = true }
+
+[features]
+default = []
+# Active le crosslink ML dans `n2b analyze` (fastembed + AllMiniLML6V2).
+ai = ["dep:fastembed"]
+
+[dev-dependencies]
+# assert_cmd : tests d'intégration CLI-as-API. Rejoue les invocations
+# utilisées par rpb-dashboard (cf. tests/rpb-dashboard-baseline/INVOCATIONS.md).
+assert_cmd.workspace = true
+# jsonschema : valide la sortie JSON de n2b contre schema/v2.json.
+# Garantit que l'implémentation n'émet jamais une forme non-conforme.
+jsonschema.workspace = true
+
+[lints]
+workspace = true

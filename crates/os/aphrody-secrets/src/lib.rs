@@ -57,7 +57,7 @@ use aes_gcm::{
 use argon2::{Algorithm, Argon2, Params, Version};
 use async_trait::async_trait;
 use base64::{Engine as _, engine::general_purpose::STANDARD as B64};
-use rand::{RngCore, rngs::OsRng};
+use rand::RngExt as _;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 use zeroize::{Zeroize, Zeroizing};
@@ -586,12 +586,12 @@ impl EncryptedFileSecretStore {
         }
         // Fresh salt + nonce every write (deterministic ones would defeat AEAD).
         let mut salt = [0u8; 16];
-        OsRng.fill_bytes(&mut salt);
+        rand::rng().fill(&mut salt);
         let mut nonce_bytes = [0u8; 12];
         // AeadOsRng from aes-gcm internally uses the OS — re-route through
         // `rand::OsRng` for consistency and explicit auditing.
         let _ = AeadOsRng; // keep the import meaningful for cargo-machete
-        OsRng.fill_bytes(&mut nonce_bytes);
+        rand::rng().fill(&mut nonce_bytes);
 
         let kdf = KdfParams {
             algo: "argon2id".to_string(),

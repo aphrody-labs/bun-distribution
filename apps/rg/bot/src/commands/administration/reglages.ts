@@ -26,7 +26,7 @@
  * obligerait à sortir du groupe pour relire la valeur qu'on s'apprête à
  * remplacer. C'est la seule exception, et elle est bornée à ce groupe.
  */
-import { Discord, Slash, SlashGroup, SlashOption } from "@rpbey/discordx";
+import { Discord, Slash, SlashGroup, SlashOption } from "@aphrody/discordx";
 import {
 	ApplicationCommandOptionType,
 	type AutocompleteInteraction,

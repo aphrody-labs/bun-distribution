@@ -8,7 +8,7 @@
 
 import { execSync } from "node:child_process";
 import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
-import { basename, join } from "node:path";
+import { basename, join, resolve } from "node:path";
 import { extractStrings, parseLuaBytecode } from "@rosegriffon/inagle/core/lua-bytecode.ts";
 import { crc32StringHex } from "@rosegriffon/inagle/parsers/hash/crc32.ts";
 
@@ -131,13 +131,10 @@ function buildCrc32Dictionary(allStrings: Record<string, string[]>): Record<stri
 	}
 
 	// Add Ghidra strings if available
-	const ghidraStringsPath = join(
-		DATA_ROOT,
-		"../../../packages/iecode/docs/ghidra-export/strings.json"
-	);
-	if (existsSync(ghidraStringsPath)) {
+	const ghidraStringsPath = process.env.GHIDRA_STRINGS_PATH;
+	if (ghidraStringsPath && existsSync(resolve(ghidraStringsPath))) {
 		try {
-			const ghidraData = JSON.parse(readFileSync(ghidraStringsPath, "utf-8"));
+			const ghidraData = JSON.parse(readFileSync(resolve(ghidraStringsPath), "utf-8"));
 			const ghidraStrings: string[] = Array.isArray(ghidraData)
 				? ghidraData
 						.map((s: any) => s.value || s.string || s)

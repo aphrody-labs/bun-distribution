@@ -13,7 +13,7 @@
  * ce qui se consulte vit sous `/staff`. Chaque sous-commande garde sa garde
  * `requireRgAdmin` / `requireRgAdminStrict` — la racine ne protège rien.
  */
-import { Discord, SlashGroup } from "@rpbey/discordx";
+import { Discord, SlashGroup } from "@aphrody/discordx";
 import { PermissionFlagsBits } from "discord.js";
 
 @Discord()

@@ -1,5 +1,10 @@
 # `packages/` — les bibliothèques Bun/TypeScript
 
+Inventaire des packages source de NIE, pas du workspace Aphrody courant. Les
+copies `@aphrody/nie` et `@nie/plugin` qui avaient été déposées sous
+`aphrody/packages/iecode/` ont été retirées faute de parité FFI, données et
+licence; leurs contrats restent décrits dans les dossiers de migration.
+
 7 bibliothèques locales du workspace Bun, plus un dossier de configuration. Règle de rangement :
 **une bibliothèque va ici, une application avec un `bin` va dans [`apps/`](../apps)**. Un seul
 lockfile, à la racine.

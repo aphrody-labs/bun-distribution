@@ -18,7 +18,7 @@
  * écrit dans le code du bot : déplacer le salon des tickets ne doit pas demander
  * un déploiement.
  */
-import { Discord, Slash, SlashChoice, SlashGroup, SlashOption } from "@rpbey/discordx";
+import { Discord, Slash, SlashChoice, SlashGroup, SlashOption } from "@aphrody/discordx";
 import {
 	ApplicationCommandOptionType,
 	ChannelType,

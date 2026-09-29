@@ -66,7 +66,7 @@ dragonball = ["dep:aphrody-rag"]
 # `nie.*` — the NIE (Inazuma Eleven Victory Road) tools that replace the retired `nie`
 # plugin's `nie-game` server. Transport only: a long-lived `nie-mcp` child over stdio
 # (`NIE_MCP_BIN`), because aphrody-ai must not link nie crates. No extra dependency.
-nie = []
+nie = ["dep:aphrody-mcp-nie-bridge"]
 # Everything the toolbox exposes over MCP.
 toolbox   = ["ocr", "stt-local", "vision", "jobs", "dbfr", "rag", "dragonball", "nie"]
 
@@ -83,6 +83,7 @@ workspace = true
 [dependencies]
 aphrody-jev        = { workspace = true }
 aphrody-models     = { workspace = true }
+aphrody-mcp-nie-bridge = { workspace = true, optional = true }
 # Canonical `APHRODY_AI_*` environment resolution (`ai_env`), used by
 # `http_rest.rs`'s shenron gateway to resolve the chat/vision/embed base URLs
 # it forwards to, replacing hardcoded `127.0.0.1:8080` fallbacks.

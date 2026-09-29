@@ -1,0 +1,121 @@
+// SPDX-License-Identifier: Apache-2.0
+import { describe, expect, test } from "bun:test";
+import { existsSync } from "node:fs";
+import { readdir, readFile } from "node:fs/promises";
+import { join } from "node:path";
+import { buildM3 } from "../src/build.ts";
+import { bunfigHasPlugin, findWorkspaceRoot, parseArgs, runCli, sheetFlag, version } from "../src/cli.ts";
+import { BUNDLE_FILES, writeTokenBundle } from "../src/tokens.ts";
+import { FIXTURE, fakeCss, REPO_ROOT, tempDir } from "./helpers.ts";
+
+describe("parseArgs", () => {
+  test("commands, values, booleans and negations", () => {
+    expect(parseArgs(["dev", "--port", "4000", "--no-hmr"])).toEqual({
+      command: "dev",
+      flags: { port: "4000", hmr: false },
+      positionals: [],
+    });
+    expect(parseArgs(["tokens", "--seed=#ff0000", "--dark", "--sheet", "scheme", "-o", "out.css"]).flags).toEqual({
+      seed: "#ff0000",
+      dark: true,
+      sheet: "scheme",
+      out: "out.css",
+    });
+    expect(parseArgs(["tokens", "--bundle", "dir", "--contrast", "-0.5"]).flags).toEqual({ bundle: "dir", contrast: "-0.5" });
+  });
+
+  test("--tauri takes an optional directory", () => {
+    expect(parseArgs(["build", "--tauri"]).flags).toEqual({ tauri: true });
+    expect(parseArgs(["build", "--tauri", "--dev"]).flags).toEqual({ tauri: true, dev: true });
+    expect(parseArgs(["build", "--tauri", "../ui-dist"]).flags).toEqual({ tauri: "../ui-dist" });
+  });
+
+  test("help, version, errors and positionals", () => {
+    expect(parseArgs([]).command).toBe("help");
+    expect(parseArgs(["build", "-h"]).command).toBe("help");
+    expect(parseArgs(["--version"]).command).toBe("version");
+    expect(parseArgs(["check", "extra", "--", "--raw"]).positionals).toEqual(["extra", "--raw"]);
+    expect(() => parseArgs(["deploy"])).toThrow("unknown command deploy");
+    expect(() => parseArgs(["dev", "--port"])).toThrow("--port needs a value");
+  });
+
+  test("--sheet validation", () => {
+    expect(sheetFlag({})).toBe("tokens");
+    expect(sheetFlag({ sheet: "spaceui" })).toBe("spaceui");
+    expect(() => sheetFlag({ sheet: "nope" })).toThrow("--sheet must be one of");
+  });
+});
+
+describe("runCli", () => {
+  test("m3 build --tauri <dir> on the fixture app", async () => {
+    await using tmp = await tempDir();
+    const uiDist = join(tmp.dir, "ui");
+    // m3.plain.config.ts: the fixture without m3:theme.css (the CLI takes no generator injection).
+    expect(await runCli(["build", "--tauri", uiDist, "--config", "m3.plain.config.ts"], FIXTURE)).toBe(0);
+    expect((await readdir(uiDist)).toSorted()).toEqual(["app.css", "app.js", "fonts", "index.html"]);
+    // plain.html became index.html.
+    expect(await readFile(join(uiDist, "index.html"), "utf8")).toContain('src="./app.js"');
+  });
+
+  test("m3 build --tauri without a directory needs tauri.uiDist", async () => {
+    await using tmp = await tempDir();
+    await Bun.write(join(tmp.dir, "m3.config.ts"), 'export default { entry: "index.html" };\n');
+    await expect(runCli(["build", "--tauri"], tmp.dir)).rejects.toThrow("tauri.uiDist");
+  });
+
+  test("help and version", async () => {
+    expect(await runCli(["help"])).toBe(0);
+    expect(await version()).toBe((await Bun.file(join(import.meta.dir, "../package.json")).json()).version);
+  });
+
+  test("workspace discovery and bunfig detection", async () => {
+    expect(findWorkspaceRoot(FIXTURE)).toBe(REPO_ROOT);
+    await using tmp = await tempDir();
+    expect(await bunfigHasPlugin(tmp.dir)).toBe(false);
+    await Bun.write(join(tmp.dir, "bunfig.toml"), '[serve.static]\nplugins = ["@aphrody/m3/plugin"]\n');
+    expect(await bunfigHasPlugin(tmp.dir)).toBe(true);
+  });
+
+  test("m3 new scaffolds an M3 app and refuses to overwrite it", async () => {
+    await using tmp = await tempDir();
+    expect(await runCli(["new", "my-app"], tmp.dir)).toBe(0);
+    const project = join(tmp.dir, "my-app");
+    const manifest = await Bun.file(join(project, "package.json")).json();
+    expect(manifest).toMatchObject({
+      name: "my-app",
+      private: true,
+      scripts: { dev: "m3 dev", build: "m3 build" },
+      dependencies: { "@aphrody/m3": `^${await version()}` },
+    });
+    expect(await readFile(join(project, "bunfig.toml"), "utf8")).toContain('"@aphrody/m3/plugin"');
+    expect(await readFile(join(project, "m3.config.ts"), "utf8")).toContain('entry: "index.html"');
+    expect(await readFile(join(project, "index.html"), "utf8")).toContain('./src/main.ts');
+    expect(await readFile(join(project, "src/main.ts"), "utf8")).toContain('m3:theme.css');
+    const built = await buildM3({ entry: join(project, "index.html"), outdir: join(tmp.dir, "built"), cwd: project });
+    expect(built.outputs.some((output) => output.path === "index.html")).toBe(true);
+    await expect(runCli(["new", "my-app"], tmp.dir)).rejects.toThrow();
+    await expect(runCli(["new"], tmp.dir)).rejects.toThrow("expected one project directory");
+  });
+});
+
+describe("token bundle", () => {
+  test("writes every sheet, both schemes, the fonts and a manifest", async () => {
+    await using tmp = await tempDir();
+    const { css, calls } = fakeCss();
+    const files = await writeTokenBundle(tmp.dir, { css, seed: "#00ff00", root: REPO_ROOT });
+    expect(files).toEqual([...BUNDLE_FILES]);
+    for (const file of files) expect(existsSync(join(tmp.dir, file))).toBe(true);
+    expect(calls).toEqual([
+      { sheet: "tokens", seed: "#00ff00" },
+      { sheet: "tailwind", seed: "#00ff00" },
+      { sheet: "spaceui", seed: "#00ff00" },
+      { sheet: "scheme", seed: "#00ff00", dark: false },
+      { sheet: "scheme", seed: "#00ff00", dark: true },
+    ]);
+    const fonts = await readFile(join(tmp.dir, "fonts.css"), "utf8");
+    expect(fonts).toContain('url("./fonts/material-symbols-rounded.woff2")');
+    expect(fonts).toContain('url("./fonts/GoogleSansFlex-Variable.ttf")');
+    const manifest = await Bun.file(join(tmp.dir, "manifest.json")).json();
+    expect(manifest.theme).toEqual({ seed: "#00ff00" });
+  });
+});

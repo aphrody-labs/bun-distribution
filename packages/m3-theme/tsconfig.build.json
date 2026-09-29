@@ -1,0 +1,15 @@
+{
+  "extends": [
+    "./tsconfig.json",
+    "@aphrody/m3-config/tsconfig.build.json"
+  ],
+  "compilerOptions": {
+    "outDir": "dist",
+    "rootDir": "src"
+  },
+  "include": [
+    "src/index.ts",
+    "src/react.tsx",
+    "src/tauri.tsx"
+  ]
+}

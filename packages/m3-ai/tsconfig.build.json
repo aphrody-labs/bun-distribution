@@ -1,0 +1,18 @@
+{
+  "extends": [
+    "./tsconfig.json",
+    "@aphrody/m3-config/tsconfig.build.json"
+  ],
+  "compilerOptions": {
+    "outDir": "dist",
+    "rootDir": "src"
+  },
+  "include": [
+    "src/**/*"
+  ],
+  "exclude": [
+    "src/**/*.test.tsx",
+    "src/**/*.test.ts",
+    "src/**/*.stories.tsx"
+  ]
+}

@@ -41,7 +41,7 @@
 
 use std::{process::Stdio, sync::Arc, time::Duration};
 
-use rand::RngCore;
+use rand::RngExt as _;
 use rustls::{
     DigitallySignedStruct, Error as RustlsError, SignatureScheme,
     client::danger::{HandshakeSignatureValid, ServerCertVerified, ServerCertVerifier},
@@ -154,7 +154,7 @@ impl LaunchConfig {
 /// Generate a random 256-bit CSRF token, hex-encoded.
 fn generate_csrf_token() -> String {
     let mut bytes = [0u8; 32];
-    rand::rngs::OsRng.fill_bytes(&mut bytes);
+    rand::rng().fill(&mut bytes);
     let mut out = String::with_capacity(64);
     for b in bytes {
         use std::fmt::Write as _;

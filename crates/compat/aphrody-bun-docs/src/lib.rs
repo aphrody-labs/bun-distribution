@@ -443,9 +443,7 @@ impl BunDocsSubsystem {
         self.index
             .get_or_init(|| {
                 let root = self.root.clone().or_else(resolve_root).ok_or_else(|| {
-                    format!(
-                        "Bun docs not found: set {ROOT_ENV} to an upstream Bun docs directory"
-                    )
+                    format!("Bun docs not found: set {ROOT_ENV} to an upstream Bun docs directory")
                 })?;
                 DocsIndex::load(&root)
             })

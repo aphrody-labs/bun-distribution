@@ -27,7 +27,7 @@
  * « du 17 mai 2025 au 18 mai 2025 », ce qui est la donnée. On préfère la
  * justesse au pixel.
  */
-import { Discord, Slash, SlashChoice, SlashGroup, SlashOption } from "@rpbey/discordx";
+import { Discord, Slash, SlashChoice, SlashGroup, SlashOption } from "@aphrody/discordx";
 import {
 	ApplicationCommandOptionType,
 	type ChatInputCommandInteraction,

@@ -27,7 +27,7 @@
  * seule commande. Tout le reste — lecture des réglages, écriture de l'XP — est
  * derrière ce filtre.
  */
-import { type ArgsOf, Discord, On } from "@rpbey/discordx";
+import { type ArgsOf, Discord, On } from "@aphrody/discordx";
 import type { GuildMember, Message, TextBasedChannel } from "discord.js";
 
 import { formaterJetons } from "../lib/kizuna";

@@ -12,7 +12,7 @@
  * cherchant une commande anodine — il faut avoir tapé `/administration`.
  *
  * ── POURQUOI CE FICHIER EXISTE SÉPARÉMENT ──────────────────────────────────
- * Dans `@rpbey/discordx`, un sous-groupe (`@SlashGroup({ …, root: "staff" })`)
+ * Dans `@aphrody/discordx`, un sous-groupe (`@SlashGroup({ …, root: "staff" })`)
  * exige que la racine `staff` ait été déclarée quelque part, sur une classe
  * `@Discord()` : `groupSlashes()` lève « A subgroup declared without root »
  * sinon. La racine est donc déclarée ICI, une seule fois, et chaque fichier de
@@ -25,7 +25,7 @@
  * dépendre la description affichée par Discord de l'ordre des imports. On
  * préfère un endroit unique.
  */
-import { Discord, SlashGroup } from "@rpbey/discordx";
+import { Discord, SlashGroup } from "@aphrody/discordx";
 
 @Discord()
 @SlashGroup({

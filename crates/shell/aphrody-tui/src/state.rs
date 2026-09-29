@@ -534,9 +534,10 @@ mod tests {
         assert_eq!(s.input(), "hi");
         let action = s.on_key(KeyPress::Enter);
         match action {
-            Action::Submit(sub) => assert_eq!(sub.op, Op::UserInput {
-                items: vec![InputItem::Text { text: "hi".into() }]
-            }),
+            Action::Submit(sub) => assert_eq!(
+                sub.op,
+                Op::UserInput { items: vec![InputItem::Text { text: "hi".into() }] }
+            ),
             other => panic!("expected submit, got {other:?}"),
         }
         assert_eq!(s.input(), "");
@@ -584,10 +585,10 @@ mod tests {
         });
         assert!(s.pending_approval().is_some());
         match s.on_key(KeyPress::Char('y')) {
-            Action::Submit(sub) => assert_eq!(sub.op, Op::ExecApproval {
-                id: "req-1".into(),
-                decision: ReviewDecision::Approved
-            }),
+            Action::Submit(sub) => assert_eq!(
+                sub.op,
+                Op::ExecApproval { id: "req-1".into(), decision: ReviewDecision::Approved }
+            ),
             other => panic!("expected approval, got {other:?}"),
         }
         assert!(s.pending_approval().is_none());
@@ -601,10 +602,10 @@ mod tests {
             files: vec!["src/lib.rs".into()],
         });
         match s.on_key(KeyPress::Char('n')) {
-            Action::Submit(sub) => assert_eq!(sub.op, Op::PatchApproval {
-                id: "p1".into(),
-                decision: ReviewDecision::Denied
-            }),
+            Action::Submit(sub) => assert_eq!(
+                sub.op,
+                Op::PatchApproval { id: "p1".into(), decision: ReviewDecision::Denied }
+            ),
             other => panic!("expected denial, got {other:?}"),
         }
         assert!(s.pending_approval().is_none());
@@ -622,10 +623,10 @@ mod tests {
         assert_eq!(s.on_key(KeyPress::Char('z')), Action::None);
         assert_eq!(s.input(), "");
         match s.on_key(KeyPress::Char('a')) {
-            Action::Submit(sub) => assert_eq!(sub.op, Op::ExecApproval {
-                id: "req-2".into(),
-                decision: ReviewDecision::Abort
-            }),
+            Action::Submit(sub) => assert_eq!(
+                sub.op,
+                Op::ExecApproval { id: "req-2".into(), decision: ReviewDecision::Abort }
+            ),
             other => panic!("expected abort, got {other:?}"),
         }
     }

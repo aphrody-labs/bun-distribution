@@ -1,0 +1,21 @@
+[package]
+name = "iecode-geom"
+description = "Shared POD geometry types (Vec2/Vec3) and scalar math for the IECODE workspace."
+version = "1.0.0"
+edition = "2024"
+publish = true
+repository = "https://github.com/aphrody-code/iecode"
+rust-version = "1.97"
+
+[lints]
+workspace = true
+
+[features]
+default = ["std"]
+# Enables methods requiring `f32::sqrt`/`hypot` (length/normalize/len/norm).
+# Disabled, the crate remains strict `#![no_std]` for POD and scalar arithmetic consumers.
+std = []
+serde = ["dep:serde"]
+
+[dependencies]
+serde = { workspace = true, optional = true, features = ["derive"] }

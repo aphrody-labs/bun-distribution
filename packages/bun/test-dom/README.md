@@ -6,6 +6,7 @@ Shared Bun test preload for happy-dom. It registers DOM globals and restores
 Bun's native fetch, request, response and abort primitives so network tests and
 `Bun.serve` keep Bun-compatible behavior.
 
-The IECODE compatibility package `@nie/plugin/happydom` re-exports this entry
-while existing consumers migrate. The package is private and has no runtime
-native or game-data dependency.
+This package is the generic happy-dom host for Aphrody Bun workspaces. The
+former IECODE `@nie/plugin/happydom` compatibility re-export was removed with
+the unqualified IECODE staging packages. This package has no runtime native or
+game-data dependency.

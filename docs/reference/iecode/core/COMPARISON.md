@@ -79,7 +79,7 @@ model. The managed implementation remains testable independently.
 | Surface | Current owner | Core treatment |
 | --- | --- | --- |
 | Python/uv | Four workspace members: `Buscador-Inazuma`, `IEStrikers`, `InazumaElevenGoMapenv`, `inz_cond` | Keep research/tool adapters in uv; port only pure, measured algorithms into Rust with parity fixtures. |
-| Bun | `packages/iecode` | Keep media/URL adapters and generated FFI consumer outside the Rust crate; consume the shared schema. |
+| Bun | No IECODE Bun wrapper is staged in the Aphrody workspace | Reintroduce a generated FFI consumer only after validating the shared schema, source license and ABI end to end. |
 | C# applications | IESE, mod manager, ndsSharp, editors and tools | Applications stay applications; they call `IECODE.Core`/FFI and do not become core modules. |
 | C++ melonDS/IEStrikers | Emulator or game-specific source | Keep separate from portable IECODE core and expose only measured capability contracts. |
 

@@ -132,10 +132,11 @@ des conflits de manifests restent ouverts. `aphrody-mcp` demeure le seul
 endpoint configuré dans `nie/.mcp.json`. `nie-mcp` reste un binaire fin
 (`nie-cli::main_entry_with(["nie", "mcp"])`), avec l'implémentation dans
 `nie-cli/src/mcp.rs`. AI le relaie par un processus persistant et expose en
-plus ses outils typés. Le plugin IECODE `@nie/plugin` enregistre des loaders
-IEVR et dépend de `@aphrody/nie`, qui charge `iecode` via `bun:ffi`. Leur
-séparation/intégration exige le contrat FFI/API IECODE et une parité de
-capacités avant retrait du proxy.
+plus ses outils typés. Le package source IECODE `@nie/plugin` enregistre des
+loaders IEVR et dépend de l'ancien `@aphrody/nie`, qui charge `iecode` via
+`bun:ffi`. Le staging de ces wrappers dans Aphrody a été retiré faute de parité;
+leur réintroduction exige le contrat FFI/API IECODE et une parité de capacités
+avant le retrait du proxy MCP.
 `rg` et `shenron` restent entièrement dans `src`. Aucune app/package complète
 n'a encore passé son installation propre dans le workspace cible.
 
@@ -580,9 +581,10 @@ leurs preuves dans le dépôt propriétaire :
   suivis actuels. Inventorier aussi scripts, routes, bins, tests, documents,
   `include_str!`, workspaces et sources Python. Fixer une destination pour
   chaque fichier et un owner pour chaque consommateur.
-- [ ] Résoudre la licence commerciale des crates NIE, la déclaration MIT du
-  package `@aphrody/nie`, les notices amont et les droits des fixtures avant
-  publication ou transfert de sous-arbres.
+- [ ] Préserver la licence commerciale des crates NIE et vérifier les notices
+  amont et les droits des fixtures avant publication ou transfert de sous-arbres.
+  L'ancien staging `@aphrody/nie`, qui déclarait MIT sans grant établi, est
+  retiré du workspace; toute future binding doit être qualifiée à la source.
 - [ ] IECODE absorbe les capacités IEVR du format vers les bindings : formats,
   VFS/data/save, règles/Lua/runtime, forge, FFI/Wasm. Comparer les API et
   consommateurs avec les crates IECODE existantes ; préserver les aliases

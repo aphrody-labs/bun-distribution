@@ -42,7 +42,7 @@ import {
 	SlashChoice,
 	SlashGroup,
 	SlashOption,
-} from "@rpbey/discordx";
+} from "@aphrody/discordx";
 import {
 	ActionRowBuilder,
 	ApplicationCommandOptionType,

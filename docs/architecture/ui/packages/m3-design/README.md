@@ -4,7 +4,7 @@
 
 `@aphrody/m3-design` is the natural-language design compiler of the **material-web** Material Design 3 monorepo. It turns raw, natural-language design briefs directly into **Material Design 3 (M3)** React scaffolds, emitting a production-ready `index.tsx` layout tree built on `@aphrody/m3-react` components, plus an HCT tonal-palette theme stylesheet and W3C design-token JSON.
 
-It is meant to be a fast, deterministic scaffold generator for autonomous agents and tooling: it replaces manual visual-configuration forms with a semantic parser and an HCT-inspired tonal theme engine, so a single prompt yields a self-contained, type-checked React artifact.
+It is meant to be a fast, deterministic scaffold generator for autonomous agents and tooling: it replaces manual visual-configuration forms with a semantic parser and a native HCT tonal theme engine backed by the `aphrody-m3-tokens` Rust implementation.
 
 ---
 
@@ -41,9 +41,10 @@ Parses a raw natural-language prompt into structured design directives, extracti
 
 ### 2. HCT Theme Compiler (`src/hct.ts`)
 
-Implements an approximation of Google's **HCT (Hue, Chroma, Tone)** color space using dynamic HSL transformations:
+Builds M3 tonal palettes with Google's **HCT (Hue, Chroma, Tone)** color space through the native `@aphrody/bun` bindings:
 
-- **Sine Saturation Tuning**: drops saturation near tone boundaries (Tone 0 and Tone 100) to better match perceptual curves.
+- **CorePalette relationships**: primary, secondary, tertiary, neutral, neutral-variant, and error use the canonical Material Color Utilities hue/chroma relationships.
+- **Perceptual tone conversion**: each tone is converted by the shared Rust HCT engine instead of HSL saturation and lightness adjustments.
 - **Tonal Palettes**: computes 18 tone steps `[0, 6, 10, 12, 20, 22, 30, 40, 50, 60, 70, 80, 90, 94, 95, 98, 99, 100]` across 6 core keys: `primary`, `secondary`, `tertiary`, `error`, `neutral`, and `neutral-variant`.
 - **CSS Compilation**: maps palettes to M3 light and dark mode system tokens (e.g. `--md-sys-color-primary-container`, `--md-sys-color-surface-container`), matching the runtime `--md-sys-color-*` roles emitted by `@aphrody/material-web`.
 

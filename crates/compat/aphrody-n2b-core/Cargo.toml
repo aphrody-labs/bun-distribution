@@ -1,0 +1,54 @@
+[package]
+name = "aphrody-n2b-core"
+description = "N2B engine: audit, run orchestration, manifest handling, report card and llms.txt generation."
+version = "0.6.2"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+homepage.workspace = true
+readme = "README.md"
+keywords = ["bun", "nodejs", "migration", "codemod", "n2b"]
+categories = ["development-tools"]
+publish = true
+
+[lib]
+name = "aphrody_n2b_core"
+path = "src/lib.rs"
+
+[dependencies]
+aphrody-n2b-types.workspace = true
+aphrody-n2b-util.workspace = true
+aphrody-n2b-ai.workspace = true
+aphrody-n2b-github.workspace = true
+aphrody-n2b-report.workspace = true
+aphrody-n2b-rules.workspace = true
+aphrody-n2b-scanners.workspace = true
+serde = { workspace = true }
+serde_json = { workspace = true }
+serde_yaml.workspace = true
+anyhow = { workspace = true }
+regex = { workspace = true }
+once_cell = { workspace = true }
+memchr = { workspace = true }
+crossbeam-channel = { workspace = true }
+ignore.workspace = true
+globset.workspace = true
+colored.workspace = true
+url.workspace = true
+walkdir.workspace = true
+which.workspace = true
+reqwest.workspace = true
+octocrab.workspace = true
+tokio.workspace = true
+
+[dev-dependencies]
+proptest.workspace = true
+serde_json = { workspace = true }
+
+[features]
+default = []
+
+[lints]
+workspace = true

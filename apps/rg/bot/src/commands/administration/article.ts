@@ -44,7 +44,7 @@
  * publique, sans quoi un article fraîchement publié restait introuvable
  * pendant trois minutes.
  */
-import { Discord, Slash, SlashChoice, SlashGroup, SlashOption } from "@rpbey/discordx";
+import { Discord, Slash, SlashChoice, SlashGroup, SlashOption } from "@aphrody/discordx";
 import {
 	ApplicationCommandOptionType,
 	type AutocompleteInteraction,

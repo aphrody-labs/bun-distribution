@@ -31,7 +31,7 @@
  * colonnes tableau `tier_titles` / `tier_amounts_cents` de
  * `patreon_memberships`, seule source qui contienne réellement quelque chose.
  */
-import { Discord, Slash, SlashGroup } from "@rpbey/discordx";
+import { Discord, Slash, SlashGroup } from "@aphrody/discordx";
 import { MessageFlags, type ChatInputCommandInteraction } from "discord.js";
 
 import {

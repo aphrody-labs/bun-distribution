@@ -1,0 +1,34 @@
+# SPDX-License-Identifier: Apache-2.0
+# ============================================================================
+#  Bun-RS — High-Performance native FFI plugin for Bun (bun:ffi)
+# ============================================================================
+
+[package]
+name = "aphrody-bun"
+version = "1.0.0-canary"
+edition = "2024"
+publish = false
+license = "Apache-2.0"
+description = "High-performance native Rust plugin for Bun applications using bun:ffi."
+
+[lib]
+name = "bun_rs"
+crate-type = ["cdylib", "rlib"]
+
+[features]
+# Render 3D frames on the GPU (`wgpu`) when an adapter exists; without it
+# `bun_rs_render3d_png` always uses the deterministic CPU rasterizer.
+gpu = ["aphrody-render/gpu"]
+
+[dependencies]
+memchr.workspace = true
+aphrody-m3-tokens = { workspace = true }
+aphrody-m3-reproduce = { workspace = true, features = ["crawl", "network"] }
+aphrody-icons = { workspace = true, features = ["svg"] }
+aphrody-svg = { workspace = true, features = ["raster", "glyph", "m3"] }
+base64.workspace = true
+aphrody-render = { workspace = true }
+grass.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+ts-rs.workspace = true

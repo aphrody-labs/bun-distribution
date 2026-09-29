@@ -5,7 +5,7 @@
  * Mise en forme des embeds : `lib/achillea-format.ts`.
  */
 
-import { Discord, Slash, SlashGroup, SlashOption } from "@rpbey/discordx";
+import { Discord, Slash, SlashGroup, SlashOption } from "@aphrody/discordx";
 import { ApplicationCommandOptionType, type ChatInputCommandInteraction } from "discord.js";
 
 import {

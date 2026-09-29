@@ -1,0 +1,20 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "extends": ["//"],
+  "tasks": {
+    "build": {
+      "cache": false,
+      "outputs": []
+    },
+    "typecheck": {
+      "inputs": [
+        "src/**",
+        "bindings/**",
+        "scripts/**",
+        "test-ffi.ts",
+        "tsconfig.json",
+        "$TURBO_ROOT$/tsconfig.base.json"
+      ]
+    }
+  }
+}

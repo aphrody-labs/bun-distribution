@@ -1,20 +1,45 @@
 {
   "name": "@aphrody/bun",
-  "version": "0.1.0",
+  "version": "3.3.3",
   "private": true,
   "type": "module",
   "engines": {
     "bun": ">=1.4.2"
   },
   "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "bun": "./src/index.ts",
+      "default": "./src/index.ts"
+    },
+    "./src/*.js": "./src/*.ts",
+    "./src/*": "./src/*",
+    "./cli": "./src/cli.ts",
+    "./manga": "./src/manga.ts",
+    "./shenron": "./src/shenron.ts",
     "./web": "./src/web.ts"
   },
   "scripts": {
+    "build": "cargo build --release --locked -p aphrody-bun --features gpu -p aphrody-ffi",
+    "test": "cargo build --release --locked -p aphrody-bun --features gpu -p aphrody-ffi && bun run test-ffi.ts && bun run test-cli-only.ts",
     "typecheck": "bunx --bun tsc --project tsconfig.json --noEmit"
   },
   "devDependencies": {
     "@types/bun": "catalog:",
     "@types/node": "catalog:",
     "typescript": "catalog:"
+  },
+  "description": "Native Rust FFI wrappers for Bun.",
+  "license": "Apache-2.0",
+  "author": "aphrody-code",
+  "files": [
+    "src",
+    "bindings",
+    "native"
+  ],
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "publishConfig": {
+    "access": "public"
   }
 }

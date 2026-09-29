@@ -21,7 +21,7 @@
  * laisserait, sur une panne entre les deux, un joueur ajouté gratuitement — et
  * l'erreur ne se verrait jamais.
  */
-import { Discord, Slash, SlashGroup, SlashOption } from "@rpbey/discordx";
+import { Discord, Slash, SlashGroup, SlashOption } from "@aphrody/discordx";
 import {
 	ApplicationCommandOptionType,
 	AttachmentBuilder,

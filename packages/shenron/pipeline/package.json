@@ -3,39 +3,12 @@
   "version": "0.1.0",
   "private": true,
   "description": "Shenron compute clients and Dragon Ball data pipeline: AI, Aphrody services, BXC and OCR/RAG workflows",
-  "type": "module",
-  "main": "./src/index.ts",
   "bin": {
     "pipeline": "./src/cli.ts"
   },
-  "scripts": {
-    "pipeline": "bun src/cli.ts",
-    "build": "bun build src/cli.ts --target=bun --outfile=dist/pipeline",
-    "type-check": "tsc --noEmit && tsc --noEmit -p tsconfig.scripts.json",
-    "lint": "oxlint -c ../.oxlintrc.json",
-    "test": "bun test",
-    "typecheck": "tsgo -p tsconfig.json --noEmit"
-  },
-  "dependencies": {
-    "@ai-sdk/openai-compatible": "^3.0.0",
-    "@ai-sdk/provider": "4.0.17",
-    "ai": "catalog:",
-    "@shenron/config": "workspace:*",
-    "@shenron/db": "workspace:*",
-    "postgres": "^3.4.9",
-    "sharp": "catalog:",
-    "sqlite-vec": "^0.1.1",
-    "zod": "catalog:"
-  },
-  "devDependencies": {
-    "@types/bun": "catalog:",
-    "@types/node": "catalog:",
-    "oxlint": "catalog:",
-    "typescript": "catalog:"
-  },
-  "engines": {
-    "bun": ">=1.4.2"
-  },
+  "type": "module",
+  "sideEffects": false,
+  "main": "./src/index.ts",
   "exports": {
     ".": "./src/index.ts",
     "./ai/config": "./src/ai/config.ts",
@@ -82,6 +55,34 @@
     "./aphrody": "./src/aphrody/index.ts",
     "./bxc": "./src/bxc/index.ts",
     "./aphrody/embeddings": "./src/aphrody/shenron-embeddings.ts"
+  },
+  "scripts": {
+    "pipeline": "bun src/cli.ts",
+    "build": "bun build src/cli.ts --target=bun --outfile=dist/pipeline",
+    "type-check": "tsc --noEmit && tsc --noEmit -p tsconfig.scripts.json",
+    "lint": "oxlint -c ../.oxlintrc.json",
+    "test": "bun test",
+    "typecheck": "tsgo -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@ai-sdk/openai-compatible": "^3.0.0",
+    "@ai-sdk/provider": "4.0.18",
+    "@shenron/config": "workspace:*",
+    "@shenron/db": "workspace:*",
+    "ai": "catalog:",
+    "postgres": "^3.4.9",
+    "sharp": "catalog:",
+    "sqlite-vec": "^0.1.1",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@types/bun": "catalog:",
+    "@types/node": "catalog:",
+    "oxlint": "catalog:",
+    "typescript": "catalog:"
+  },
+  "engines": {
+    "bun": ">=1.4.2"
   },
   "shenron": {
     "runtime": {
@@ -131,6 +132,5 @@
       "./bxc": "bun",
       "./aphrody/embeddings": "server"
     }
-  },
-  "sideEffects": false
+  }
 }

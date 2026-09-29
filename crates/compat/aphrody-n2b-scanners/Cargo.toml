@@ -1,0 +1,30 @@
+[package]
+name = "aphrody-n2b-scanners"
+description = "N2B project scanners: bunfig, Cargo.toml, Dockerfile, compose, env, lockfiles, npmrc, JS configs."
+version = "0.6.2"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+readme = "README.md"
+keywords = ["bun", "nodejs", "migration", "n2b", "scanner"]
+categories = ["development-tools"]
+publish = true
+authors.workspace = true
+
+[lib]
+name = "aphrody_n2b_scanners"
+path = "src/lib.rs"
+
+[dependencies]
+aphrody-n2b-types.workspace = true
+aphrody-n2b-util.workspace = true
+aphrody-n2b-rules.workspace = true
+serde_json = { workspace = true }
+serde_yaml.workspace = true
+regex = { workspace = true }
+once_cell = { workspace = true }
+
+[lints]
+workspace = true

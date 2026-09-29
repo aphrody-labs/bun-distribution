@@ -46,7 +46,7 @@
  * de Discord : chaque membre lit l'heure dans SON fuseau, et la valeur reste
  * juste quand le message est relu des semaines plus tard.
  */
-import { Discord, Slash, SlashChoice, SlashGroup, SlashOption } from "@rpbey/discordx";
+import { Discord, Slash, SlashChoice, SlashGroup, SlashOption } from "@aphrody/discordx";
 import {
 	ApplicationCommandOptionType,
 	type AutocompleteInteraction,

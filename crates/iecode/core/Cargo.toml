@@ -1,0 +1,20 @@
+[package]
+name = "iecode-core"
+description = "Canonical IECODE capability facade"
+version = "1.0.0"
+edition = "2024"
+rust-version = "1.97"
+repository = "https://github.com/aphrody-code/iecode"
+publish = true
+
+[lints]
+workspace = true
+
+[dependencies]
+iecode-emu = { workspace = true }
+iecode-geom = { path = "../geom", version = "1.0.0" }
+iecode-pipeline = { path = "../pipeline", version = "1.0.0" }
+iecode-re = { path = "../re", version = "1.0.0" }
+iecode-sql = { path = "../sql", version = "1.0.0" }
+iecode-tasks = { path = "../tasks", version = "1.0.0" }
+iecode-video = { path = "../video", version = "1.0.0" }

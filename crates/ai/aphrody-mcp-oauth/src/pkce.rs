@@ -10,7 +10,7 @@
 //      `code_verifier` in the token exchange.
 
 use base64::{Engine as _, engine::general_purpose::URL_SAFE_NO_PAD};
-use rand::RngCore;
+use rand::RngExt as _;
 use sha2::{Digest, Sha256};
 
 /// Number of random bytes for the verifier.  After base64url encoding:
@@ -35,7 +35,7 @@ impl Pkce {
     #[must_use]
     pub fn new() -> Self {
         let mut raw = [0u8; VERIFIER_BYTES];
-        rand::thread_rng().fill_bytes(&mut raw);
+        rand::rng().fill(&mut raw);
         let code_verifier = URL_SAFE_NO_PAD.encode(raw);
         let code_challenge = derive_challenge(&code_verifier);
         Self { code_verifier, code_challenge }
@@ -55,7 +55,7 @@ pub fn derive_challenge(verifier: &str) -> String {
 #[must_use]
 pub fn generate_state() -> String {
     let mut raw = [0u8; 32];
-    rand::thread_rng().fill_bytes(&mut raw);
+    rand::rng().fill(&mut raw);
     URL_SAFE_NO_PAD.encode(raw)
 }
 

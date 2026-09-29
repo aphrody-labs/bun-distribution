@@ -38,7 +38,7 @@ impl Chunker for JsTsChunker {
         };
         let allocator = Allocator::default();
         let ret = Parser::new(&allocator, &normalized, source_type).parse();
-        if ret.panicked || ret.program.body.is_empty() {
+        if ret.fatal_error || ret.program.body.is_empty() {
             return StructuralChunker::new(Language::Unknown).chunk(path, &normalized, opts);
         }
 
@@ -166,13 +166,10 @@ fn collect_statement(
         Statement::TSInterfaceDeclaration(i) => out.push((Some(i.id.name.to_string()), start, end)),
         Statement::TSTypeAliasDeclaration(t) => out.push((Some(t.id.name.to_string()), start, end)),
         Statement::TSEnumDeclaration(e) => out.push((Some(e.id.name.to_string()), start, end)),
-        Statement::ExportNamedDeclaration(export) => {
-            if let Some(decl) = &export.declaration {
-                out.push((declaration_name(decl), start, end));
-            } else {
-                out.push((None, start, end));
-            }
+        Statement::ExportDeclaration(export) => {
+            out.push((declaration_name(&export.declaration), start, end));
         },
+        Statement::ExportNamedDeclaration(_) => out.push((None, start, end)),
         Statement::ExportDefaultDeclaration(export) => {
             let name = match &export.declaration {
                 ExportDefaultDeclarationKind::FunctionDeclaration(f) => {

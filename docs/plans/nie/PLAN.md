@@ -53,6 +53,11 @@ change les droits de distribution.
   typechecke pas sans le vrai `formations-full.json`. Aucun JSON vide ne
   remplace cette donnée. La source NIE restante dépend encore de données
   effacées ou ignorées.
+- Les trois packages Bun IECODE précédemment copiés dans `aphrody/packages/iecode/`
+  et leurs entrées workspace ont été retirés le 2026-09-29 faute de parité ABI,
+  données et licences. `@aphrody/bun-test-dom` reste le preload DOM générique;
+  aucun loader IEVR n'est actif dans ce monorepo. Le registre d'extraction Bun
+  conserve les hashes et chemins historiques.
 - La destination GitHub est `aphrody-labs` selon
   [Infra](../../reference/infra/GITHUB-OWNERSHIP.md). Le transfert d'un repo,
   le changement de remote et le push d'une release sont des étapes distinctes ;
@@ -131,9 +136,10 @@ au chantier NIE sont :
   locales inutiles. Terminer l'import `nie-pg` depuis l'installation
   autorisée et exposer shops, galeries et rosters par requêtes typées. Aucun
   fichier factice.
-- [ ] Régler la divergence entre `LICENSE` commercial des crates NIE et
-  `MIT` déclaré par `@aphrody/nie`, les notices des forks et les droits
-  des fixtures. Un paquet ne publie pas une licence qu'il ne possède pas.
+- [ ] Préserver le `license-file` commercial des crates NIE, examiner les
+  notices des forks et vérifier les droits des fixtures avant toute nouvelle
+  distribution. Le staging Aphrody qui déclarait MIT a été retiré; aucun
+  paquet ne publie une licence qu'il ne possède pas.
 - [ ] Geler une matrice exécutable ancienne → nouvelle par commandes, 19
   outils MCP, endpoints, vues, données, fixtures et hôtes. Chaque ligne a un
   propriétaire, un consommateur, un résultat ancien, un résultat nouveau,

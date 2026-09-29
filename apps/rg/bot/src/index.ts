@@ -8,7 +8,7 @@
  * Ici, on ne fait qu'exécuter la décision.
  *
  * ── POURQUOI LES IMPORTS SONT DYNAMIQUES ───────────────────────────────────
- * `@rpbey/discordx` construit son arbre de commandes à partir des décorateurs
+ * `@aphrody/discordx` construit son arbre de commandes à partir des décorateurs
  * exécutés à l'import : importer un module de commande, c'est l'enregistrer.
  * Une liste d'`import` statiques en tête de fichier enregistrerait donc TOUT
  * pour TOUT LE MONDE, et les deux bots — qui vivent sur le même serveur —
@@ -24,7 +24,7 @@
  * en retard, c'est une commande absente jusqu'au prochain redémarrage.
  */
 import "reflect-metadata";
-import { Client } from "@rpbey/discordx";
+import { Client } from "@aphrody/discordx";
 import { MessageFlags, Partials } from "discord.js";
 
 import { closeCache } from "./lib/cache";

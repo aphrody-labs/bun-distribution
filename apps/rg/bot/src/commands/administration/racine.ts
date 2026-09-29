@@ -22,13 +22,13 @@
  *    l'appelle, sans exception : c'est lui qui décide, jamais Discord.
  *
  * ── POURQUOI CE FICHIER EXISTE SÉPARÉMENT ──────────────────────────────────
- * `@rpbey/discordx` exige que la racine d'un sous-groupe soit déclarée sur une
+ * `@aphrody/discordx` exige que la racine d'un sous-groupe soit déclarée sur une
  * classe `@Discord()` avant que `groupSlashes()` ne l'assemble (« A subgroup
  * declared without root » sinon). On la déclare donc ICI, une seule fois, et
  * chaque fichier de groupe importe ce module pour effet de bord : l'ordre des
  * imports dans `src/index.ts` n'a alors plus d'importance.
  */
-import { Discord, SlashGroup } from "@rpbey/discordx";
+import { Discord, SlashGroup } from "@aphrody/discordx";
 import { PermissionFlagsBits } from "discord.js";
 
 @Discord()

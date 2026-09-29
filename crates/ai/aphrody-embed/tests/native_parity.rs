@@ -1,6 +1,7 @@
 //! Parity with the official sentence-transformers implementation.
 //!
-//! Reference vectors live in `tests/fixtures/reference.json` (see `generate_reference.py`).
+//! Reference vectors live in `tests/fixtures/reference.json`; regenerate them with
+//! `aphrody-embedding-fixtures` from the shared Python workspace.
 //! The default model is always checked (downloaded on demand); BGE and E5 are checked
 //! when already installed or when `APHRODY_EMBED_TEST_ALL_MODELS=1`.
 

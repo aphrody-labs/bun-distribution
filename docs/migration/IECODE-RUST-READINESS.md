@@ -134,3 +134,21 @@ The IECODE workspace explicitly excludes `engine/bevy`, `emulators/dust`,
 `emulators/gecko`, and `libraries/*`. They are not part of the 11-member Cargo
 workspace assessed here. No conclusion in this report covers their build,
 feature, ABI, or licensing readiness.
+
+## Target import follow-up (2026-09-29)
+
+The `iecode-ffi` boundary and its nine-crate first-party dependency closure were
+subsequently copied under `aphrody/crates/iecode/` from source HEAD
+`8fdab4b96014f70972c2855878cab49510ffe876`, including ten recorded uncommitted
+source paths. `iecode-geom`, `iecode-pipeline`, `iecode-emu`, `iecode-re`,
+`iecode-sql`, `iecode-tasks`, `iecode-video`, `iecode-core`, and `iecode-ffi`
+are root Cargo members alongside the previously imported `iecode-ievr-data`.
+Target package metadata was made explicit and the original workspace
+`LICENSES.md` was copied. This local transfer preserves source provenance and
+does not claim relicensing or authorize redistribution.
+
+`cargo check -p iecode-ffi --locked --offline` passes from the Aphrody target.
+No tests or Bun/.NET consumer parity were run. The current Bun wrapper's
+symbols match `iecode-ffi`; the separately staged `@aphrody/nie` adapter still
+requests the legacy `nie_*` API and remains incompatible. See
+[`iecode-ffi-rust-extraction.json`](iecode-ffi-rust-extraction.json).

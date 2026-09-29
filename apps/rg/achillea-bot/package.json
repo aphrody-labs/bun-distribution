@@ -58,7 +58,7 @@
     "@rosegriffon/achillea-types": "workspace:*",
     "@rosegriffon/auth": "workspace:*",
     "@aphrody/canvas": "catalog:",
-    "@aphrody/discordx": "^0.1.0",
+    "@aphrody/discordx": "catalog:",
     "@aphrody/importer": "^0.1.0",
     "@aphrody/utilities": "^0.1.0",
     "@casl/ability": "catalog:",

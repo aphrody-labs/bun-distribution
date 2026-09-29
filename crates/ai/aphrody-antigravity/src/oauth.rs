@@ -30,7 +30,7 @@
 //! ```
 
 use base64::{Engine as _, engine::general_purpose::URL_SAFE_NO_PAD};
-use rand::{Rng as _, distributions::Alphanumeric};
+use rand::{RngExt as _, distr::Alphanumeric};
 use sha2::{Digest, Sha256};
 
 use crate::{
@@ -84,8 +84,8 @@ impl PkcePair {
     /// Generate a fresh PKCE pair using the operating-system RNG.
     #[must_use]
     pub fn generate() -> Self {
-        let verifier: String = rand::thread_rng()
-            .sample_iter(&Alphanumeric)
+        let verifier: String = rand::rng()
+            .sample_iter(Alphanumeric)
             .take(VERIFIER_LEN)
             .map(char::from)
             .collect();
@@ -193,7 +193,7 @@ pub async fn login_with_timeout(timeout_secs: u64) -> Result<OAuthToken, SdkErro
 
     let pkce = PkcePair::generate();
     let state: String =
-        rand::thread_rng().sample_iter(&Alphanumeric).take(32).map(char::from).collect();
+        rand::rng().sample_iter(Alphanumeric).take(32).map(char::from).collect();
 
     let url = authorize_url(&pkce, &state);
 

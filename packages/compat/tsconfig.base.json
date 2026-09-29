@@ -1,0 +1,46 @@
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "types": [
+      "bun"
+    ],
+    "lib": [
+      "ESNext"
+    ],
+    "strict": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "noEmit": true,
+    "isolatedModules": true,
+    "moduleDetection": "force",
+    "verbatimModuleSyntax": false,
+    "allowImportingTsExtensions": true,
+    "paths": {
+      "@aphrody/n2b-core": [
+        "./n2b/src/index.ts"
+      ],
+      "@aphrody/n2b-core/*": [
+        "./n2b/src/*"
+      ],
+      "@aphrody/n2b-types": [
+        "./n2b-types/src/index.ts"
+      ],
+      "@aphrody/n2b-plugin": [
+        "./n2b-plugin/src/index.ts"
+      ],
+      "@aphrody/n2b-plugin/*": [
+        "./n2b-plugin/src/*"
+      ],
+      "@aphrody/n2b-shims": [
+        "./n2b-shims/src/index.ts"
+      ],
+      "@aphrody/n2b-shims/*": [
+        "./n2b-shims/src/*"
+      ]
+    }
+  }
+}

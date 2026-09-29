@@ -1,8 +1,9 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 # Aphrody training
 
-The Rust supervisor in `crates/aphrody-train` runs the Python project in
-`py/aphrody-train` through `uv`. Python 3.12 is pinned for the training
+The Rust supervisor in `crates/aphrody-train` runs the `aphrody-train` member
+of the shared `/home/aphro/aphrody-py` workspace (or `APHRODY_PY_ROOT`) through
+`uv`. Python 3.12 is pinned for the training
 environment. The worker sends JSONL `start`, `progress`, `eval`, `artifact`,
 `done`, and `error` events to the supervisor. The supervisor checks the job ID,
 artifact size, and SHA-256 digest before reporting success.
@@ -19,10 +20,10 @@ artifact size, and SHA-256 digest before reporting success.
 | `dry-run` | Runs a bounded CPU training and ONNX export probe. |
 | `lora` | Trains a full-precision PEFT LoRA adapter from guarded, prepared rollouts and exports a GGUF adapter. Requires `--input`, `--gold`, a local `--base-model`, and the official llama.cpp converter path. QLoRA 4-bit training is not implemented. |
 
-For `embed` and `rerank`, install the full Python extra through `aphrody uv
-sync --project py/aphrody-train --extra full --locked`. `aphrody runtime
-check --project py/aphrody-train` checks the project environment. Run the CLI
-from the repository root so it can locate the Python project.
+For `embed` and `rerank`, install the full Python extra through
+`uv sync --project /home/aphro/aphrody-py --package aphrody-train --extra full
+--locked`. Set `APHRODY_PY_ROOT` when the workspace is elsewhere. Run the CLI
+from the repository root; the Rust supervisor locates the shared workspace.
 
 The `--input` value is a chunks file for `triples`, a triples JSONL file for
 `embed`/`rerank`, and a rollout directory for the dataset jobs. `--allow-cpu`
@@ -127,7 +128,7 @@ commands are **planned work** and must not be claimed as runnable yet.
 
 ```sh
 cd /home/aphro/src/aphrody-ai
-uv sync --project py/aphrody-train --extra full --locked
+uv sync --project /home/aphro/aphrody-py --package aphrody-train --extra full --locked
 git -C ../bun rev-parse HEAD
 git -C ../bun status --porcelain=v1
 aphrody model pull qwen3-coder-30b-a3b-q4km

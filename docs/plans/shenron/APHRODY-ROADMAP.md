@@ -24,10 +24,12 @@ intact jusqu’à la qualification d’un clone propre et du cycle release/rollb
   depuis Aphrody sans remappage.
 - Le catalogue Aphrody est maintenant utilisé pour les versions Shenron
   compatibles : `typescript` 7.0.2, `@types/bun` 1.4.2, `oxlint` 1.85.0,
-  React 19.3 et Zod 4.6.4. Les écarts majeurs restants sont `ai` 7 contre
-  catalogue 6, `graphql` 17 contre 16, `motion` 13 contre 12, et
-  `@types/node` 26 contre 24. Ces écarts nécessitent une mise à niveau
-  coordonnée, pas une substitution aveugle.
+  React 19.3, Zod 4.6.4 et AI SDK 7. Le lockfile résout `ai@7.0.116` et le
+  provider Shenron `@ai-sdk/provider@4.0.18`; les workspaces Aphrody concernés
+  passent le typecheck sous cette famille. Les écarts majeurs restants sont
+  `graphql` 17 contre 16, `motion` 13 contre 12, et `@types/node` 26 contre 24.
+  Ces écarts nécessitent une mise à niveau coordonnée, pas une substitution
+  aveugle.
 - Aphrody Infra possède déjà le catalogue et les adaptateurs de déploiement
   Shenron, les services, l’environnement local, les sauvegardes et les scripts
   d’import de configuration. Le bot héberge l’API publique ; le service API

@@ -1,0 +1,32 @@
+{
+  "url": "https://example.test/app",
+  "html": "<main><h1>Example</h1></main><script type=\"module\">import fs from \"node:fs\";</script><script src=\"/assets/app.js\"></script>",
+  "extracted": {
+    "title": "Example",
+    "byline": null,
+    "published": null,
+    "lang": "en",
+    "canonical": "https://example.test/app",
+    "site_name": null,
+    "description": null,
+    "text": "Example",
+    "markdown": "# Example\n",
+    "blocks": [],
+    "simhash": "0000000000000000",
+    "word_count": 1
+  },
+  "scripts": [
+    {
+      "url": null,
+      "source": "import fs from \"node:fs\";",
+      "media_type": "module",
+      "module": true
+    },
+    {
+      "url": "https://example.test/assets/app.js",
+      "source": null,
+      "media_type": null,
+      "module": false
+    }
+  ]
+}

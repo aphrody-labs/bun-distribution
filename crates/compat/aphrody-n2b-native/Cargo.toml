@@ -1,0 +1,23 @@
+[package]
+name = "aphrody-n2b-native"
+description = "N2B C ABI helpers for Bun (bun:ffi), such as UTF-16 newline indexing."
+version = "0.2.0"
+edition.workspace = true
+license.workspace = true
+publish = false
+
+[lib]
+name = "aphrody_n2b_native"
+crate-type = ["cdylib"]
+
+[dependencies]
+aphrody-n2b-core = { workspace = true }
+memchr = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+
+[dev-dependencies]
+tempfile = { workspace = true }
+
+[lints]
+workspace = true

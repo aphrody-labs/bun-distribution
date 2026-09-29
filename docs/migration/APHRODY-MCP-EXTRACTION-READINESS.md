@@ -1,17 +1,26 @@
 # Aphrody MCP extraction readiness
 
-Audit date: 2026-09-29. Read-only review of source and target manifests, plans,
-and MCP adapters. No code was moved or built.
+Updated 2026-09-29 after the Aphrody AI extraction and NIE bridge split. The
+earlier read-only assessment is retained below as historical evidence; current
+target status is recorded first.
 
 ## Decision
 
-**The full `aphrody-mcp` crate is not ready to drop into this target workspace.**
-The target is a scaffold with no MCP crate, binary, `rmcp` dependency, or AI
-runtime dependency closure. The source crate is a binary-only, heavily coupled
-server, not an isolated transport library. The existing NIE bridge is the
-smallest useful seam: compile it first as a library with no server handler or
-binary, then add it to the existing `aphrody-mcp` endpoint when that server is
-imported. Do not register or publish a second endpoint.
+**The Aphrody MCP crate is integrated; protocol qualification is still partial.**
+The target includes the `aphrody-mcp` executable, its imported AI dependency
+closure, and the `rmcp` 3.4.1 dependency. `cargo check --offline -p aphrody-mcp`
+passes with its default `dragonball` and `nie` features. NIE's stdio transport
+now lives in the library-only `aphrody-mcp-nie-bridge` package and is wired into
+the same executable behind the `nie` feature. Its Unix fixture test verifies
+initialize, live catalog schema passthrough, and a forwarded tool result.
+
+There is still exactly one client-facing `aphrody-mcp` endpoint. That endpoint
+publishes `nie.tools`, `nie.call`, and typed compatibility wrappers, while the
+67-name child catalog remains dynamically discoverable through `nie.tools`.
+The fixture does not yet qualify all child names/schemas, error forms, size and
+timeout bounds, restart behavior, explorer lifecycle, or client configuration.
+Do not claim full protocol parity until those fixtures and the single-endpoint
+consumer check pass.
 
 The current AI implementation already has the right transitional shape: one
 `aphrody-mcp` process exposes `nie.tools`, `nie.call`, and typed `nie.*`
@@ -28,15 +37,15 @@ resolved.
 | Source `/home/aphro/src/aphrody-ai` | `3aa88791f49b963a00f073cb206677ea9d1957e1` | clean `main...origin/main`          |
 | NIE `/home/aphro/src/nie`           | `fd624e060a4180c988336bcc3f829bb1835cbf24` | clean `main...origin/main`          |
 | IECODE `/home/aphro/iecode`         | `8fdab4b96014f70972c2855878cab49510ffe876` | clean `main...origin/main`          |
-| Target `/home/aphro/aphrody`        | no commit yet                              | scaffold/import files are untracked |
+| Target `/home/aphro/aphrody`        | local extraction worktree                  | broad migration batch remains dirty |
 
-The target root `Cargo.toml` currently includes `crates/iecode/ievr-data`,
-`crates/infra/*`, and `crates/contracts/aphrody-kernel-client`. It has no
-`crates/ai/aphrody-mcp`, and `Cargo.lock` has no `aphrody-mcp` or `rmcp`
-package. The target dependency catalogue has basic `tokio`, `serde`,
-`serde_json`, etc., but no `rmcp` entry.
+The current target root includes the AI MCP workspace package and the NIE
+bridge library. The lock resolves both `aphrody-mcp` and `rmcp` 3.4.1. The
+source MCP crate remains binary-only; the transport seam is the separate
+library, not an added server handler or second executable.
 
-Source `aphrody-mcp/Cargo.toml` defines only `[[bin]] name = "aphrody-mcp"`
+Historical audit snapshot: source `aphrody-mcp/Cargo.toml` defines only
+`[[bin]] name = "aphrody-mcp"`
 (no `[lib]`). It is a member of the 60-plus crate AI workspace and directly
 depends on many AI siblings: `aphrody-config`, `aphrody-kernel`, `aphrody-a2a`,
 `aphrody-a2a-server`, `aphrody-git`, `aphrody-http-error`, `aphrody-backend`,
@@ -44,15 +53,13 @@ depends on many AI siblings: `aphrody-config`, `aphrody-kernel`, `aphrody-a2a`,
 `aphrody-capture`, `aphrody-web-bridge`, three `aphrody-n2b-*` crates,
 `aphrody-voice`, `aphrody-re`, `aphrody-gemini-web`, `aphrody-session`,
 `aphrody-memory`, and `aphrody-manga`, plus feature-gated RAG, OCR, jobs,
-vision, WinClean, and Obscura crates. Those AI members are not in the target
-workspace. `--no-default-features --features nie` can disable default tool
+vision, WinClean, and Obscura crates. Those AI members were outside the target
+workspace at audit time; their mapped closure is now imported. `--no-default-features --features nie` can disable default tool
 families, but it cannot remove the unconditional dependencies or turn this
 binary-only `main.rs` into an independently compilable NIE module.
 
-Both source workspaces currently pin/use `rmcp` 3.4.1 (AI pins exactly
-`=3.4.1`; NIE requests `3.4.1`). The target must add that reviewed version to
-its dependency catalogue and lock when it takes ownership. The existing target
-Cargo lock alone cannot resolve or verify this crate today.
+The integrated source and target use `rmcp` 3.4.1. The root lockfile now
+resolves it offline as part of the imported MCP crate and bridge.
 
 ## What the existing NIE integration actually exposes
 
@@ -115,40 +122,38 @@ IECODE's current `iecode-ffi` also does not replace the game-specific `nie_*`
 ABI; see the ABI findings in the NIE inventory and IECODE's FFI integration
 record.
 
-## First compilable tranche, with one endpoint
+## Completed transport tranche and remaining qualification
 
-1. In the target root, add `crates/ai/aphrody-mcp-nie-bridge` as a
+1. **Done.** Add `crates/ai/aphrody-mcp-nie-bridge` as a
    **library-only** member. Copy the current `nie_tools.rs` bridge and its
    request types into that package under the distinct package name
    `aphrody-mcp-nie-bridge`; do not add `[[bin]]`, `#[tool_handler]`, a second
    server, or a client-facing MCP registration. Keep the existing source
    `aphrody-mcp` executable as the configured endpoint during this tranche.
-2. Give the library only its required dependency slice: reviewed `rmcp` 3.4.1
+2. **Done.** Give the library only its required dependency slice: reviewed `rmcp` 3.4.1
    model/schema support, `tokio` process/IO/sync/time features, `serde` derive,
    and `serde_json`. Inherit target workspace metadata/lints. No NIE Cargo
    crate, native FFI library, game data, RAG, browser, OCR, or model crate is
    needed to compile the stdio adapter.
-3. After target library checks pass, point the existing source endpoint at this
+3. **Done.** After target library checks pass, point the existing source endpoint at this
    distinct path package and remove the duplicate module only after the source
    caller passes its checks. Keep its one public binary name and existing MCP
    configuration; do not install or activate a second `aphrody-mcp` executable
    concurrently.
-4. Add protocol-fixture tests using a fake stdio child: handshake and negotiated
-   version, `tools/list` reporting 67 names, schema passthrough with and without
-   `schemas=true`, representative exact `tools/call` forwarding, error results,
-   64 MiB line handling, timeout, child restart, and explorer bridge survival.
-   These tests need no game data. Real operation parity still needs the licensed
+4. **Partial.** A fake stdio child verifies handshake, schema passthrough and
+   representative `tools/call` result forwarding (3 bridge unit tests pass).
+   Still add fixtures for the full 67-name catalog, schemas hidden and shown,
+   error results, 64 MiB line handling, timeout, child restart and explorer
+   bridge survival. These tests need no game data. Real operation parity still needs the licensed
    local fixtures/runtime and must separately cover all 67 names, input schemas,
    error forms, side effects, and bounded responses.
-5. Only after source consumers pass and the root dependency closure is mapped,
-   import the full `aphrody-mcp` binary and its AI-owned libraries. Then route
-   it through the one existing endpoint; replace the child bridge only when
-   IECODE exposes equivalent game operations and the explorer lifecycle.
+5. **Open.** Qualify the single endpoint's client configuration and consumer
+   behavior. Keep the child bridge until IECODE exposes equivalent game
+   operations and the explorer lifecycle under resolved data and license terms.
 
-This tranche yields a real target Cargo build for the transport boundary while
-leaving a single registered endpoint and avoiding an unlicensed or unavailable
-game-data dependency. It does **not** claim full `aphrody-mcp` extraction or
-67-name `tools/list` parity.
+The target now builds the full imported `aphrody-mcp` package and the isolated
+transport boundary while keeping one configured endpoint. The bridge fixture
+does **not** claim 67-name parity or qualify the complete protocol/lifecycle.
 
 ## Evidence inspected
 
@@ -161,7 +166,9 @@ game-data dependency. It does **not** claim full `aphrody-mcp` extraction or
 - Target: root `Cargo.toml`, `Cargo.lock`, `PLAN.md`, and
   [`NIE-MCP-API-INVENTORY.md`](NIE-MCP-API-INVENTORY.md).
 
-No Cargo build, tests, live tool call, or dataset access was performed.
+The original audit performed no Cargo build or tests. Current evidence is the
+target command output recorded in `PLAN.md`; no live child tool call or dataset
+access was performed.
 
 ## Later IECODE wrapper follow-up
 

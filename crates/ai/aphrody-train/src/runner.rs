@@ -79,9 +79,7 @@ pub fn find_python_train_project(repo_root: &Path) -> PathBuf {
         }
     }
 
-    // Keep old checkouts usable while they are being cut over to aphrody-py.
-    let legacy = repo_root.join("py/aphrody-train");
-    if legacy.join("pyproject.toml").is_file() { legacy } else { repo_root.join("../aphrody-py") }
+    repo_root.join("../aphrody-py")
 }
 
 /// Execute a training job under an exclusive GPU lease.

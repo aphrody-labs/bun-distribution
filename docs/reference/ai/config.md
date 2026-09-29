@@ -152,8 +152,8 @@ ctx = 32768
 # ==============================================================================
 
 [train]
-# The `py/aphrody-train` uv project, if not the in-tree default.
-# python_project = "/path/to/aphrody-ai/py/aphrody-train"
+# The shared Aphrody Python workspace; also settable with APHRODY_PY_ROOT.
+# python_project = "/home/aphro/aphrody-py"
 
 # Directory where trained artifacts (ONNX, GGUF, event logs) are written.
 # output_dir = "~/.aphrody/train/output"

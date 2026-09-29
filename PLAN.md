@@ -155,40 +155,74 @@ explicitly requested; they do not close these gates or authorize cutover.
       Frozen Bun install, Turbo typecheck (8/8), and the Google package build
       passed. Tests were not run. Resolve remaining dependency/workspace closure
       before marking unified clean-clone integration complete.
-- [x] Stage IECODE's Bun packages and split its generic happy-dom host into
-      `@aphrody/bun-test-dom`, retaining `@nie/plugin/happydom` as a compatibility
-      export. `@aphrody/iecode-ffi`, `@aphrody/nie`, and `@nie/plugin` are private
-      packages with TypeScript 7 typechecks. Provenance and source hashes are in
-      [`iecode-bun-extraction.json`](docs/migration/iecode-bun-extraction.json).
-- [ ] Complete the native integration: the current IECODE `crates/ffi` exports
-      `iecode_*` symbols from target `iecode_ffi`; the older `@aphrody/nie` binding
-      requests `nie_*` symbols from `libiecode` and is incompatible. The staged
-      `@aphrody/iecode-ffi` wrapper matches the current symbol names, but its Rust
-      provider has not joined this Cargo workspace. Keep game loaders inactive
-      until the IEVR FFI/schema, data and license boundary are reconciled.
+- [x] Align the Aphrody and Shenron Bun AI surface on AI SDK `7.0.116` and
+      provider spec `4.0.18`; remove unused SDK 6 provider/gateway packages from
+      `@aphrody/doc-ai`. Frozen root install, all nine Shenron workspace
+      typechecks, doc-ai typecheck/build, Google build, and the Shenron pipeline
+      AI tests (120 pass, 4 skip) pass. Test paths that still assumed the old
+      Shenron directory layout were corrected. This scoped alignment does not
+      close other root dependency or Shenron portability gates.
+- [x] Remove the unqualified IECODE Bun staging packages from the Aphrody
+      workspace. The staged `@aphrody/nie` ABI did not match the current Rust
+      provider, while game-loader/data/license parity remained open. Remove
+      `packages/iecode/`, its workspace glob and lock entries; keep the generic
+      `@aphrody/bun-test-dom` host independently. Preserve the historical source
+      hashes in [`iecode-bun-extraction.json`](docs/migration/iecode-bun-extraction.json).
+      The optional Ghidra string import now uses `GHIDRA_STRINGS_PATH`, and the
+      happy-dom docs no longer claim a plugin re-export. Bun's JSONC parser sees
+      no IECODE workspace or resolution records. Full lock regeneration remains
+      open: Bun 1.4.2 `install --lockfile-only --ignore-scripts` exits unsuccessfully
+      on unresolved root catalog entries, minimum-release-age blocks and a 404
+      from the configured registry; no full-workspace install is claimed.
+- [x] Integrate IECODE's current `iecode-ffi` C ABI and its nine-crate Rust
+      library closure into `crates/iecode/` from source HEAD
+      `8fdab4b96014f70972c2855878cab49510ffe876` (including its 10 recorded dirty
+      source paths). `cargo check -p iecode-ffi --locked --offline` passes.
+      Package adjustments, file hashes and checks are in
+      [`iecode-ffi-rust-extraction.json`](docs/migration/iecode-ffi-rust-extraction.json).
+- [ ] Qualify the native ABI with Bun and .NET consumers. No IECODE Bun wrapper
+      is currently staged in Aphrody. Reintroduce one only after it matches the
+      Rust `iecode_*` contract and passes schema, data, license and consumer
+      parity checks. Keep game-data loaders inactive until then.
 - [x] Inventory current NIE MCP and Bun plugin contracts in
       [`NIE-MCP-API-INVENTORY.md`](docs/migration/NIE-MCP-API-INVENTORY.md): NIE's
       source router has 67 tools (48 `cli_*` adapters and 19 compatibility tools),
       MCP stdio transport, and a separate optional loopback explorer WebSocket.
       Its exact schema, bounds, side effects, and the FFI incompatibility are
       recorded from current heads.
-- [ ] Keep the existing single configured `aphrody-mcp` endpoint. The current
-      source adapter exposes 21 public Aphrody tools, with dynamic discovery and
-      dispatch for 67 child tools; this is not direct `tools/list` parity. The
-      full binary-only MCP crate cannot be imported into this target without its
-      AI workspace closure. First extract and qualify a library-only NIE stdio
-      bridge, then migrate the endpoint without registering another server.
-      Preserve schemas, errors, side-effect bounds and explorer lifecycle; use
-      protocol fixtures before replacing the persistent `nie-mcp` child bridge.
-      See [`APHRODY-MCP-EXTRACTION-READINESS.md`](docs/migration/APHRODY-MCP-EXTRACTION-READINESS.md).
-- [x] Import the nine absent crates from the clean Contracts workspace at
-      `4a22afb12b086573e6890e49a3bfbde7a96380ea`; all imported files match
-      source SHA-256 and modes. All ten Contracts crate directories now resolve
-      as root Cargo members, removing the six Contracts sibling path dependencies.
-      `cargo metadata --offline` resolves 102 workspace members and 1,301 packages.
-      The existing kernel-client manifest retains its target-local explicit version.
-      File-level provenance and remaining consumer/clean-clone limits are in
+- [ ] Keep the existing single configured `aphrody-mcp` endpoint. The full AI
+      MCP crate and its recorded AI dependency closure are now in the root Cargo
+      workspace; `cargo check --offline -p aphrody-mcp` passes with the default
+      `dragonball` and `nie` features. The 21 public NIE wrappers still discover
+      and dispatch to the 67 child tools rather than listing all 67 individually.
+      The stdio transport has been extracted to the library-only
+      `aphrody-mcp-nie-bridge`, wired behind the `nie` feature, and passes its
+      handshake/catalog/call fixture. Full catalog/schema/error/bounds/lifecycle
+      conformance and single-endpoint client qualification remain open. See
+      [`APHRODY-MCP-EXTRACTION-READINESS.md`](docs/migration/APHRODY-MCP-EXTRACTION-READINESS.md).
+- [x] Integrate all ten Contracts crates in the root Cargo workspace. Nine crates
+      were copied from clean source HEAD `4a22afb12b086573e6890e49a3bfbde7a96380ea`;
+      package versions are retained under target workspace metadata. The six
+      Contracts paths into `src` are gone. File-level hashes, target manifest
+      adjustments, and consumer/clean-clone limits are in
       [`contracts-rust-extraction.json`](docs/migration/contracts-rust-extraction.json).
+- [x] Integrate the complete OS Rust workspace (24 crates), Shell workspace
+      (4 crates), and Compat workspace (13 crates) from clean source revisions.
+      Excluded OS `drive` and `third_party` trees remain outside these copies.
+      Their package identities are retained, the Oxc dependencies use the
+      Compat-pinned fork revision, and Cargo no longer points to source checkouts
+      for Contracts/OS/Shell/Compat. Locked offline metadata resolves 143 members
+      and 1,521 packages; all 51 packages across those five domains pass locked
+      offline `cargo check` individually and scoped formatting. Hashes, source revisions,
+      explicit manifest/formatter adjustments and remaining gates are recorded in
+      [`native-rust-extraction.json`](docs/migration/native-rust-extraction.json).
+- [x] Integrate the 25-crate Koharu Rust workspace from clean source HEAD
+      `83ab7fde8d4d73c84f4e1746fc79ce3fa0a4486b`. Original `0.83.5` package
+      metadata and MIT/Apache notices are preserved; Cargo metadata resolves 169
+      workspace members. The focused library check is blocked by the host's
+      missing `fontconfig.pc`; tests are not run. Provenance and remaining gates:
+      [`koharu-rust-extraction.json`](docs/migration/koharu-rust-extraction.json).
+      Two source Cargo paths remain (UI x2); clean-clone and consumer parity are open.
 - [ ] Import all remaining first-party crates, apps and packages into valid
       Cargo/Bun root workspaces; resolve package/catalog versions, path dependencies,
       license and upstream-submodule boundaries before claiming a unified build.
@@ -322,37 +356,59 @@ explicitly requested; they do not close these gates or authorize cutover.
       passes. The earlier domain-scoped audit saw 92 Cargo members, of which 8
       were integrated in the requested non-AI/non-Web perimeter. After the
       subsequent Contracts/OS/Compat/Shell consolidation, current
-      `cargo metadata --no-deps` sees 134 members: 10 Contracts, 6 Infra, 24 OS,
-      4 Compat, 4 Shell and 1 IECODE data crate are in scope (49 total). The 64
-      AI and 21 Web members are excluded from that migration count.
-- [ ] Make the Rust workspace self-contained. The earlier source audit found
-      30 path references into `/home/aphro/src` before the latest batch. The
-      current root manifest still has 7 such dependencies: UI 2, Compat/N2B 3,
-      Native 1 and Koharu 1. Remaining source owners include Native, the rest of
-      Compat/N2B, UI/M3, Koharu, and NIE/IECODE FFI/bindings; only `ievr-data` is
-      currently integrated for NIE/IECODE. Infra has six of seven Rust manifests
-      integrated. No Rust source was identified for Fut. Re-run Infra's full
-      path audit after the source checkouts are available.
-- [ ] Complete the Bun workspace migration for the same perimeter. UI/M3,
-      Compat/N2B, OS, Shell, Koharu, Fut and NIE/IECODE application workspaces
-      are not present under their target owners. Reconcile Infra's remaining
-      source manifests. Bun/Oxc sources are not present under `upstream/` (only
-      Discord and simdutf-rio are); document references do not constitute a
-      source import. Central N2B/Oxc Bun/FFI packaging remains a boundary to
-      verify, with the implementation in the excluded AI domain.
+      `cargo metadata --no-deps` now sees 178 members. The non-AI/Web Rust
+      perimeter includes 10 Contracts, 6 Infra, 24 OS, 13 Compat, 4 Shell, 1
+      Native, 25 Koharu and 10 IECODE packages (93 total). The 64 AI and 21 Web
+      members are outside this extraction tally.
+- [ ] Make the Rust workspace self-contained and qualify a clean clone. The
+      current root manifest has two paths into `/home/aphro/src`, both UI crates
+      reserved to the UI owner. Native, Compat/N2B, Koharu and IECODE's data/FFI
+      Rust sources are now members. Infra's current source workspace has six
+      members and all six are integrated. NIE engine crates, UI Rust, remaining
+      IECODE Rust consumers, and end-to-end ABI parity are open. No Rust source
+      was identified for Fut.
+- [x] Import the four `@aphrody/n2b-*` Bun packages into `packages/compat/`
+      and add their workspace records to the root manifest and lock. Their four
+      scoped typechecks pass. Source hashes and target config adjustments are
+      recorded in [`compat-bun-extraction.json`](docs/migration/compat-bun-extraction.json).
+- [x] Import OS Bun clients `@aphrody/os` and `@aphrody-code/winclean` under
+      `packages/os/` and register both in the root workspace and lock. Scoped
+      typechecks are currently blocked by absent/broken package tool links in
+      `node_modules`; source provenance and adaptations are in
+      [`os-bun-extraction.json`](docs/migration/os-bun-extraction.json).
+- [x] Import Koharu's SDK, bridge and documentation workspaces under
+      `packages/koharu/`, with root workspace/catalog entries and source lock
+      records. The bridge typecheck passes; SDK typecheck passes with temporary
+      local links to its workspace and Tauri API dependencies. Hashes and path
+      adaptations are in [`koharu-bun-extraction.json`](docs/migration/koharu-bun-extraction.json).
+- [x] Import Fut's `@aphrody/fut` package under `packages/fut/fut/`. Its tracked
+      session credential was excluded and ignored. Typecheck is blocked by the
+      absent BXC peer and existing missing source modules; see
+      [`fut-bun-extraction.json`](docs/migration/fut-bun-extraction.json).
+- [x] Recount the live workspace against the attached migration audit:
+      `cargo metadata --no-deps --format-version 1` reports 178 workspace
+      members, and a path-dependency scan finds only two paths outside this
+      checkout, both into UI-owned crates. The attachment's 92-member and
+      30-path counts no longer describe this worktree. Source `aphrody-shell`
+      HEAD `2a829cd7` has no Bun workspace or package manifests; its README
+      confirms there is no Bun workspace to import.
+- [ ] Complete the remaining Bun workspace migration for the same perimeter.
+      UI/M3 is imported; NIE/IECODE application workspaces remain open.
+      Reconcile Infra's remaining source manifests. Bun/Oxc sources are not
+      present under `upstream/` (only Discord and simdutf-rio are); document
+      references do not constitute a source import. Central N2B/Oxc FFI
+      packaging remains a boundary to verify in the AI-owned domain.
 - [x] The root repository has no Git remote, so the consolidated batch was
       committed locally as `004540e1`; it cannot be pushed from this checkout.
-- [ ] Infra's Bun workspace audit initially found 150 manifest violations. Its
-      safe fixer repaired 149 (Bun engine floors, missing `typecheck` scripts,
-      and catalog references) across the 56 root-owned manifests. One remains:
-      `packages/web/m3-tokens` has no available `@aphrody/m3-config` package or
-      preset to extend. Workspace tests currently report 14/15 passing because
-      the repository-wide contract requires that missing M3 preset.
+- [x] The initial Infra Bun audit found 150 manifest violations and repaired
+      149. The remaining M3 config/preset gap was closed by importing the UI M3
+      packages. The current root audit covers 81 first-party manifests and
+      reports zero violations.
 - [ ] Restore clean-clone dependency closure before claiming a unified build:
-      `bun install --frozen-lockfile` currently fails on catalog references,
-      registry age restrictions for newly published versions, and a 404 for
-      `@rpbey/discordx`. The full `rg check all` exits non-zero: formatting and
-      typecheck gates fail, and the website build references the absent
+      the root Bun 1.4.2 frozen install now passes with `--ignore-scripts` after
+      catalog repairs and retargeting the RG bot to `@aphrody/discordx`. The
+      full `rg check all` still exits non-zero: formatting and typecheck gates
+      fail, and the website build references the absent
       `scripts/next-build.sh`. `packages/rg/inagle` also cannot resolve the new
       `@aphrody/agent-browser/cdp` package in the current installed workspace.
       Repair these manifests, workspace links and gates before production use.
@@ -369,5 +425,27 @@ explicitly requested; they do not close these gates or authorize cutover.
       consumer mappings, and clean-clone parity remain open.
 - [ ] Keep the consolidated agent work transitional until the gates above pass.
       Targeted agent reports cover native Web/MCP, Google cookies/search, browser
-      CDP, and RG scraping work, but the root-wide Bun install, Rust boundary,
+      CDP, and RG scraping work; the root Bun frozen install passes, but the Rust boundary,
       documentation-link, and RG quality gates have not passed.
+
+## M3 extraction checkpoint — 2026-09-29
+
+- [x] Import the Aphrody UI M3 Bun family and Rust M3 stack into the monorepo,
+      scoped to 18 M3 packages and seven crates. `@aphrody/canvas` was included
+      as a direct dependency of `@aphrody/material-web`; the SVG and render crates
+      are dependency closure for the Bun FFI crate. The existing `@aphrody/bun`
+      package was merged while keeping its `./web` entry point. Source HEAD,
+      per-file source/target hashes, explicit adaptations, license and exclusions
+      are recorded in [`ui-m3-extraction.json`](docs/migration/ui-m3-extraction.json).
+      The source checkout remains intact.
+- [x] Register `crates/ui/*`, move the root `aphrody-m3-tokens` dependency off
+      `/home/aphro/src`, and link M3 Bun packages to the local token/config
+      packages. Cargo metadata passes offline with the lockfile held fixed after
+      recording 49 new locked packages. The M3 token package now extends the
+      imported `@aphrody/m3-config` preset.
+- [x] Register the M3 Bun packages and their dependency-closure packages in the
+      root Bun workspace, correct DiscordX to `@aphrody/discordx`, align recent
+      catalog entries with the three-day release-age policy, and regenerate
+      `bun.lock`. A frozen root install passes and the Infra Bun audit reports
+      zero violations across 81 manifests. M3 package tests and builds remain
+      unrun; clean-clone qualification remains open.

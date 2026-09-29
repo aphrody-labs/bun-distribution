@@ -22,7 +22,7 @@
  * Il ne s'affiche pas dans un salon, même de staff : c'est une consultation
  * personnelle, et l'éphémère est exactement l'outil pour ça.
  */
-import { Discord, Slash, SlashGroup, SlashOption } from "@rpbey/discordx";
+import { Discord, Slash, SlashGroup, SlashOption } from "@aphrody/discordx";
 import {
 	ApplicationCommandOptionType,
 	type ChatInputCommandInteraction,

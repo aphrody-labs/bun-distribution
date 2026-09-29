@@ -265,12 +265,20 @@ mod native {
     }
 
     /// Free a string returned by any Shenron FFI function (alias of `aphrody_string_free`).
+    ///
+    /// # Safety
+    /// `ptr` must be null or a live string returned by a Shenron FFI function,
+    /// not previously freed.
     #[unsafe(no_mangle)]
     pub unsafe extern "C" fn shenron_string_free(ptr: *mut c_char) {
         unsafe { aphrody_string_free(ptr) };
     }
 
     /// Run any Shenron command with inherited stdio.
+    ///
+    /// # Safety
+    /// `argv` must point to `argc` valid NUL-terminated C strings, or be null
+    /// iff `argc == 0`; pointers are read only for this call.
     #[unsafe(no_mangle)]
     #[must_use]
     pub unsafe extern "C" fn shenron_run(argc: c_int, argv: *const *const c_char) -> c_int {
@@ -291,6 +299,9 @@ mod native {
     }
 
     /// Run any Shenron command from a JSON array of arguments with inherited stdio.
+    ///
+    /// # Safety
+    /// `args_json` must be null or a valid NUL-terminated UTF-8 C string.
     #[unsafe(no_mangle)]
     #[must_use]
     pub unsafe extern "C" fn shenron_run_json(args_json: *const c_char) -> c_int {
@@ -311,6 +322,10 @@ mod native {
     }
 
     /// Run any Shenron command with captured stdio, returning `{"code":0,"stdout":"...","stderr":"..."}` JSON.
+    ///
+    /// # Safety
+    /// `args_json` must be null or a valid NUL-terminated UTF-8 C string. A
+    /// non-null result must be released with `shenron_string_free`.
     #[unsafe(no_mangle)]
     #[must_use]
     pub unsafe extern "C" fn shenron_run_captured(args_json: *const c_char) -> *mut c_char {
@@ -333,6 +348,10 @@ mod native {
 
     /// Perform a high-speed RAG search on the Shenron index in-process.
     /// Returns a JSON string of results. Must be freed with `shenron_string_free` / `aphrody_string_free`.
+    ///
+    /// # Safety
+    /// `query` must be a valid NUL-terminated C string; `kind` may be null or a
+    /// valid NUL-terminated C string. A non-null result must be freed once.
     #[unsafe(no_mangle)]
     #[must_use]
     pub unsafe extern "C" fn shenron_rag_search(
@@ -363,13 +382,12 @@ mod native {
                 limit.max(1).to_string(),
                 "--json".to_string(),
             ];
-            if !kind.is_null() {
-                if let Ok(k_str) = unsafe { CStr::from_ptr(kind) }.to_str() {
-                    if !k_str.is_empty() {
-                        args.push("--kind".to_string());
-                        args.push(k_str.to_string());
-                    }
-                }
+            if !kind.is_null()
+                && let Ok(k_str) = unsafe { CStr::from_ptr(kind) }.to_str()
+                && !k_str.is_empty()
+            {
+                args.push("--kind".to_string());
+                args.push(k_str.to_string());
             }
             let _guard = capture_lock();
             let (code, out, err) = with_captured_stdio(|| run_argv(args));
@@ -449,6 +467,10 @@ mod native {
     }
 
     /// Query the sovereign Akira Toriyama / Shenron persona directly.
+    ///
+    /// # Safety
+    /// `question` must be a valid NUL-terminated C string. A non-null result
+    /// must be released with `shenron_string_free` exactly once.
     #[unsafe(no_mangle)]
     #[must_use]
     pub unsafe extern "C" fn shenron_persona_ask(question: *const c_char) -> *mut c_char {
@@ -492,6 +514,10 @@ mod native {
 
     /// Detect Koharu page regions on a raw PNG/JPEG/WebP image buffer.
     /// Returns a versioned JSON result with geometry and model provenance.
+    ///
+    /// # Safety
+    /// `image_bytes` must point to `image_len` readable bytes. A non-null result
+    /// must be released with `manga_string_free` exactly once.
     #[unsafe(no_mangle)]
     #[must_use]
     pub unsafe extern "C" fn manga_detect_bubbles(
@@ -532,6 +558,10 @@ mod native {
     }
 
     /// Calculate optimal typesetting layout and font fitting for text inside a bounding box.
+    ///
+    /// # Safety
+    /// `text` must be a valid NUL-terminated UTF-8 C string. A non-null result
+    /// must be released with `manga_string_free` exactly once.
     #[unsafe(no_mangle)]
     #[must_use]
     pub unsafe extern "C" fn manga_typeset_fit(
@@ -580,6 +610,11 @@ mod native {
 
     /// Execute the full manga pipeline and generate a multi-layer Photoshop (.psd) file.
     /// Returns a JSON string with metadata and base64-encoded PSD file bytes.
+    ///
+    /// # Safety
+    /// `image_bytes` must point to `image_len` readable bytes. `target_lang`
+    /// must be null or a valid NUL-terminated UTF-8 C string. A non-null result
+    /// must be released with `manga_string_free` exactly once.
     #[unsafe(no_mangle)]
     #[must_use]
     pub unsafe extern "C" fn manga_pipeline_run(
@@ -603,8 +638,10 @@ mod native {
             };
 
             let slice = unsafe { std::slice::from_raw_parts(image_bytes, image_len) };
-            let mut options = aphrody_manga::MangaPipelineOptions::default();
-            options.target_language = lang.to_string();
+            let options = aphrody_manga::MangaPipelineOptions {
+                target_language: lang.to_string(),
+                ..Default::default()
+            };
 
             match runtime()
                 .block_on(aphrody_manga::MangaPipeline::process_image_bytes(slice, &options))
@@ -642,6 +679,11 @@ mod native {
     }
 
     /// Stream and scanlate a manga plate directly from a CDN URL or relative path.
+    ///
+    /// # Safety
+    /// `url_or_path` must be a valid NUL-terminated UTF-8 C string. `target_lang`
+    /// may be null or a valid NUL-terminated UTF-8 C string. A non-null result
+    /// must be released with `manga_string_free` exactly once.
     #[unsafe(no_mangle)]
     #[must_use]
     pub unsafe extern "C" fn manga_scanlate_cdn(
@@ -670,8 +712,10 @@ mod native {
             };
 
             let rt = runtime();
-            let mut options = aphrody_manga::MangaPipelineOptions::default();
-            options.target_language = lang.to_string();
+            let options = aphrody_manga::MangaPipelineOptions {
+                target_language: lang.to_string(),
+                ..Default::default()
+            };
 
             let client = aphrody_manga::MangaCdnClient::new();
             match rt.block_on(client.scanlate_cdn_plate(url_str, &options)) {
@@ -701,6 +745,10 @@ mod native {
     }
 
     /// Stream and scanlate a databook plate directly from the Dragon Ball FR catalog by ID and plate number.
+    ///
+    /// # Safety
+    /// `target_lang` must be null or a valid NUL-terminated UTF-8 C string. A
+    /// non-null result must be released with `manga_string_free` exactly once.
     #[unsafe(no_mangle)]
     #[must_use]
     pub unsafe extern "C" fn manga_scanlate_databook(
@@ -717,8 +765,10 @@ mod native {
             };
 
             let rt = runtime();
-            let mut options = aphrody_manga::MangaPipelineOptions::default();
-            options.target_language = lang.to_string();
+            let options = aphrody_manga::MangaPipelineOptions {
+                target_language: lang.to_string(),
+                ..Default::default()
+            };
 
             let client = aphrody_manga::MangaCdnClient::new();
             match rt.block_on(client.scanlate_databook_plate(databook_id, plate_number, &options)) {
@@ -751,6 +801,10 @@ mod native {
     }
 
     /// Stream and scanlate a manga chapter plate directly from the Dragon Ball FR catalog.
+    ///
+    /// # Safety
+    /// `target_lang` must be null or a valid NUL-terminated UTF-8 C string. A
+    /// non-null result must be released with `manga_string_free` exactly once.
     #[unsafe(no_mangle)]
     #[must_use]
     pub unsafe extern "C" fn manga_scanlate_chapter(
@@ -767,8 +821,10 @@ mod native {
             };
 
             let rt = runtime();
-            let mut options = aphrody_manga::MangaPipelineOptions::default();
-            options.target_language = lang.to_string();
+            let options = aphrody_manga::MangaPipelineOptions {
+                target_language: lang.to_string(),
+                ..Default::default()
+            };
 
             let client = aphrody_manga::MangaCdnClient::new();
             match rt.block_on(client.scanlate_manga_plate(chapter_id, plate_number, &options)) {
@@ -801,6 +857,10 @@ mod native {
     }
 
     /// Free a string returned by any of the `manga_*` functions.
+    ///
+    /// # Safety
+    /// `ptr` must be null or a live string returned by a `manga_*` function,
+    /// not previously freed.
     #[unsafe(no_mangle)]
     pub unsafe extern "C" fn manga_string_free(ptr: *mut c_char) {
         unsafe { aphrody_string_free(ptr) };

@@ -59,11 +59,11 @@ fn lock_jobs(reg: &Registry) -> MutexGuard<'_, HashMap<u64, JobState>> {
 fn complete(id: u64, output: String) {
     let reg = registry();
     let mut jobs = lock_jobs(reg);
-    if let Some(state) = jobs.get_mut(&id) {
-        if matches!(state, JobState::Pending(_)) {
-            *state = JobState::Done(output);
-            reg.completed_seq.fetch_add(1, Ordering::SeqCst);
-        }
+    if let Some(state) = jobs.get_mut(&id)
+        && matches!(state, JobState::Pending(_))
+    {
+        *state = JobState::Done(output);
+        reg.completed_seq.fetch_add(1, Ordering::SeqCst);
     }
     // Missing entry: the job was cancelled; the output is simply dropped.
 }

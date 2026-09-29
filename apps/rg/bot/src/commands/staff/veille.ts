@@ -26,7 +26,7 @@
  * ronde : attendre moins que le verbe ne s'accorde produirait un faux « le
  * démon ne répond pas » alors qu'il travaille encore.
  */
-import { Discord, Slash, SlashGroup, SlashOption } from "@rpbey/discordx";
+import { Discord, Slash, SlashGroup, SlashOption } from "@aphrody/discordx";
 import { ApplicationCommandOptionType, type ChatInputCommandInteraction } from "discord.js";
 
 import { appelerCron } from "../../lib/cron-ipc";

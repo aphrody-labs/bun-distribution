@@ -1,0 +1,24 @@
+[package]
+name = "aphrody-n2b-ai"
+description = "N2B finding metadata for agents: rule categories, confidence, docs links and source context."
+version = "0.6.2"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+readme = "README.md"
+keywords = ["bun", "nodejs", "migration", "n2b", "llm"]
+categories = ["development-tools"]
+publish = true
+authors.workspace = true
+
+[lib]
+name = "aphrody_n2b_ai"
+path = "src/lib.rs"
+
+[dependencies]
+serde = { workspace = true }
+
+[lints]
+workspace = true

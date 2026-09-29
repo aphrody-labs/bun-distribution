@@ -24,6 +24,7 @@ type Entry = {
   importedSha256?: string;
   importedSourceSha256?: string;
   duplicateOf?: string;
+  targetReason?: string;
 };
 const DOC_EXTENSIONS = new Set([".md", ".mdx", ".rst", ".adoc", ".txt", ".pdf"]);
 const SCRIPT_EXTENSIONS = new Set([
@@ -40,6 +41,11 @@ const SCRIPT_EXTENSIONS = new Set([
   ".ps1",
 ]);
 const EXTERNAL_PARTS = new Set(["vendor", "third_party", "thirdparty", "upstream", "node_modules"]);
+const WITHDRAWN_IECODE_BUN_PATHS = [
+  "packages/nie/",
+  "packages/nie-plugin/",
+  "packages/iecode-ffi/",
+];
 
 function git(root: string, args: string[]): string {
   return execFileSync("git", ["-C", root, ...args], {
@@ -227,12 +233,19 @@ async function rootSnapshot(
     const infraOwnedControl =
       spec.mode === "orchestrator-split" &&
       (path.startsWith("scripts/") || path.startsWith("packages/aphrody-workspace/"));
+    const withdrawnIecodeBunStage =
+      spec.key === "iecode" &&
+      info.kind !== "documentation" &&
+      WITHDRAWN_IECODE_BUN_PATHS.some((prefix) => path.startsWith(prefix));
     const destination =
       rootLicense || upstreamLicense
         ? `docs/migration/source-licenses/${spec.key}/${path}`
         : infraCatalog
           ? path
-          : spec.mode === "deferred" || spec.mode === "classify" || infraOwnedControl
+          : spec.mode === "deferred" ||
+              spec.mode === "classify" ||
+              infraOwnedControl ||
+              withdrawnIecodeBunStage
             ? null
             : external
               ? `upstream/${spec.owner}/${path}`
@@ -251,6 +264,9 @@ async function rootSnapshot(
       status: exists ? (statuses.get(path) ?? "clean") : "missing",
       ...(sha256 ? { sha256 } : {}),
       target: destination,
+      ...(withdrawnIecodeBunStage
+        ? { targetReason: "withdrawn-unqualified-bun-stage-no-aphrody-consumer" }
+        : {}),
     });
   }
   const summary = {

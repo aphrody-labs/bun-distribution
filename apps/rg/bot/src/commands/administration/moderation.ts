@@ -43,7 +43,7 @@
  * recours devient impossible. L'échec de la remise n'annule pas la sanction —
  * il est simplement dit dans l'accusé de réception.
  */
-import { Discord, Slash, SlashGroup, SlashOption } from "@rpbey/discordx";
+import { Discord, Slash, SlashGroup, SlashOption } from "@aphrody/discordx";
 import {
 	ActionRowBuilder,
 	ApplicationCommandOptionType,

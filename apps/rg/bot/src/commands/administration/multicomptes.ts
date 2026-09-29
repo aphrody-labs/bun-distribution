@@ -28,7 +28,7 @@
  * personne. Publié dans un salon, même de staff, il devient une accusation que
  * personne n'a portée. L'éphémère est exactement l'outil pour ça.
  */
-import { ButtonComponent, Discord, Slash, SlashChoice, SlashGroup, SlashOption } from "@rpbey/discordx";
+import { ButtonComponent, Discord, Slash, SlashChoice, SlashGroup, SlashOption } from "@aphrody/discordx";
 import {
 	ApplicationCommandOptionType,
 	type ButtonInteraction,

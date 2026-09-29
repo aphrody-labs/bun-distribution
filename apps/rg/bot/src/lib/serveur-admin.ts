@@ -36,8 +36,8 @@
  *     leur garde et leur journal d'audit. Un port HTTP en boucle locale ne doit
  *     jamais être un raccourci vers la modération.
  */
-import type { Client } from "@rpbey/discordx";
-import { MetadataStorage } from "@rpbey/discordx";
+import type { Client } from "@aphrody/discordx";
+import { MetadataStorage } from "@aphrody/discordx";
 import { ChannelType, type Guild } from "discord.js";
 
 import {

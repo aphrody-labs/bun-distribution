@@ -23,7 +23,7 @@
  * sanction. C'est une information qui appartient au staff, et le journal
  * d'audit de Discord la porte déjà.
  */
-import { type ArgsOf, Discord, On } from "@rpbey/discordx";
+import { type ArgsOf, Discord, On } from "@aphrody/discordx";
 import { AttachmentBuilder, type GuildMember, type TextBasedChannel } from "discord.js";
 
 import { renderCarteAccueil } from "../lib/canvas/communaute";

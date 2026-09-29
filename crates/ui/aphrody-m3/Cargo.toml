@@ -1,0 +1,17 @@
+# SPDX-License-Identifier: Apache-2.0
+[package]
+name = "aphrody-m3"
+version = "1.0.0-canary"
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+homepage.workspace = true
+repository.workspace = true
+license.workspace = true
+description = "Unified Material 3 facade for Aphrody OS: tokens, adaptive layout, themes, motion, typography and platform contracts."
+
+[lints]
+workspace = true
+
+[dependencies]
+aphrody-m3-tokens = { workspace = true }

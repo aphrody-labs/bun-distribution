@@ -18,7 +18,7 @@ workspace = true
 portable-pty        = { workspace = true }
 rio-vt              = { workspace = true }
 tokio               = { workspace = true, features = ["rt-multi-thread", "macros", "io-util", "sync", "net", "fs", "time"] }
-tokio-tungstenite   = { workspace = true }
+tokio-tungstenite = { version = "0.24" }
 futures-util        = { workspace = true }
 anyhow              = { workspace = true }
 thiserror           = { workspace = true }
