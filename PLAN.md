@@ -194,6 +194,12 @@ source-closure, compatibility, installed-workflow, license, and rollback gate.
       [commit audit](docs/migration/DOCS-FIRST-PARTY-COMMIT.md) records the
       scope. The remaining owners and 1,292 unresolved local Markdown links keep
       the full documentation gate open.
+- [x] Commit 2,275 hash-verified Bun documentation targets from pinned upstream
+      HEAD `a2671046afbfc818fba21a4925f384b75dc8e109`. The imported Bun
+      `LICENSE.md` is included. The
+      [Bun docs audit](docs/migration/UPSTREAM-BUN-DOCS-COMMIT.md) records the
+      zero-missing, zero-mismatch result; Bun's upstream fork remains a separate
+      workspace and is not represented as imported code.
 - [ ] Complete Infra's consumer and pipeline cutover without the transitional
       checkout. The Rust library suite now passes 52/52 after its Git overview
       test was isolated in a temporary repository. `pipeline --stage check --json` reports 12
