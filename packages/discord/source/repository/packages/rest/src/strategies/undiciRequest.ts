@@ -1,0 +1,121 @@
+import { Buffer } from 'node:buffer';
+import { STATUS_CODES } from 'node:http';
+import { types } from 'node:util';
+import { type RequestInit, request, Headers, FormData as UndiciFormData, Agent } from 'undici';
+import type { IncomingHttpHeaders } from 'undici/types/header.js';
+import type { ResponseLike } from '../shared.js';
+
+export type RequestOptions = Exclude<Parameters<typeof request>[1], undefined>;
+
+let localAgent: Agent | null = null;
+
+export async function makeRequest(url: string, init: RequestInit): Promise<ResponseLike> {
+	// The cast is necessary because `headers` and `method` are narrower types in `undici.request`
+	// our request path guarantees they are of acceptable type for `undici.request`
+	const options = {
+		...init,
+		body: await resolveBody(init.body),
+	} as RequestOptions;
+
+	// Mismatched dispatchers from the Node.js-bundled undici and package-installed undici breaks file uploads.
+	// So we ensure that we always pass an Agent to request()
+	// https://github.com/nodejs/node/issues/59012
+	if (!options.dispatcher) {
+		localAgent ??= new Agent();
+		options.dispatcher = localAgent;
+	}
+
+	const res = await request(url, options);
+	return {
+		body: res.body,
+		async arrayBuffer() {
+			return res.body.arrayBuffer();
+		},
+		async json() {
+			return res.body.json();
+		},
+		async text() {
+			return res.body.text();
+		},
+		get bodyUsed() {
+			return res.body.bodyUsed;
+		},
+		headers: buildHeaders(res.headers),
+		status: res.statusCode,
+		statusText: STATUS_CODES[res.statusCode]!,
+		ok: res.statusCode >= 200 && res.statusCode < 300,
+	};
+}
+
+export async function resolveBody(body: RequestInit['body']): Promise<Exclude<RequestOptions['body'], undefined>> {
+	// eslint-disable-next-line no-eq-null, eqeqeq
+	if (body == null) {
+		return null;
+	} else if (typeof body === 'string') {
+		return body;
+	} else if (types.isUint8Array(body)) {
+		return body;
+	} else if (types.isArrayBuffer(body)) {
+		return new Uint8Array(body);
+	} else if (body instanceof URLSearchParams) {
+		return body.toString();
+	} else if (body instanceof DataView) {
+		return new Uint8Array(body.buffer);
+	} else if (body instanceof Blob) {
+		return new Uint8Array(await body.arrayBuffer());
+	} else if (body instanceof UndiciFormData) {
+		return body;
+	} else if (body instanceof FormData) {
+		return globalToUndiciFormData(body);
+	} else if ((body as Iterable<Uint8Array>)[Symbol.iterator]) {
+		const chunks = [...(body as Iterable<Uint8Array>)];
+
+		return Buffer.concat(chunks);
+	} else if ((body as AsyncIterable<Uint8Array>)[Symbol.asyncIterator]) {
+		const chunks: Uint8Array[] = [];
+
+		for await (const chunk of body as AsyncIterable<Uint8Array>) {
+			chunks.push(chunk);
+		}
+
+		return Buffer.concat(chunks);
+	}
+
+	throw new TypeError(`Unable to resolve body.`);
+}
+
+/**
+ * @privateRemarks
+ *
+ * Under HTTP/2, Node.js attaches the symbol `sensitiveHeaders` to the headers object,
+ * which the `Headers` constructor rejects. Hence the manual construction of the `Headers` object here.
+ */
+export function buildHeaders(headers: IncomingHttpHeaders): Headers {
+	const result = new Headers();
+
+	for (const [name, value] of Object.entries(headers)) {
+		if (Array.isArray(value)) {
+			for (const entry of value) {
+				result.append(name, `${entry}`);
+			}
+		} else {
+			result.append(name, `${value}`);
+		}
+	}
+
+	return result;
+}
+
+function globalToUndiciFormData(fd: globalThis.FormData): UndiciFormData {
+	const clone = new UndiciFormData();
+
+	for (const [name, value] of fd.entries()) {
+		if (typeof value === 'string') {
+			clone.append(name, value);
+		} else {
+			clone.append(name, value, value.name);
+		}
+	}
+
+	return clone;
+}

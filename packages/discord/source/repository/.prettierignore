@@ -1,0 +1,5 @@
+**/*.hbs
+**/.next/**
+**/dist/**
+**/dist-docs/**
+**/.turbo/**

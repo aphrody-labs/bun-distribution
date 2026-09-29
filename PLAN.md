@@ -42,6 +42,13 @@ source-closure, compatibility, installed-workflow, license, and rollback gate.
 
 ## Current state
 
+- [x] Preserve the complete clean `aphrody-discord` HEAD `959abfab` below
+      `packages/discord/source/repository`: all 2,232 tracked files, including
+      apps, packages, docs, tools, root configuration, CI and lockfile, match
+      source worktree SHA-256 values. See
+      [`discord-complete-source-extraction.json`](docs/migration/discord-complete-source-extraction.json).
+      The original workspace remains nested; root workspace integration and
+      consumer cutover are still open.
 - [x] Imported `@aphrody/messaging` from clean `aphrody-discord` HEAD
       `959abfab` into `packages/discord/aphrody-messaging` with file hashes in
       [`discord-messaging-extraction.json`](docs/migration/discord-messaging-extraction.json).

@@ -1,0 +1,19 @@
+{
+	"name": "@aphrody/carbon-example",
+	"private": true,
+	"type": "module",
+	"scripts": {
+		"build": "tsc --noEmit -p tsconfig.json",
+		"dev": "bun --env-file=../../.env --watch src/index.ts",
+		"start": "bun --env-file=../../.env src/index.ts",
+		"test": "bun test test",
+		"typecheck": "tsc --noEmit -p tsconfig.json"
+	},
+	"dependencies": {
+		"@buape/carbon": "catalog:"
+	},
+	"devDependencies": {
+		"@types/bun": "catalog:",
+		"typescript": "catalog:"
+	}
+}

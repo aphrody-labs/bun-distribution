@@ -1,0 +1,41 @@
+name: Feature request
+description: Request a new feature
+title: "[Feature]: "
+labels: [enhancement]
+assignees:
+  - vijayymmeena
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Describe the reusable capability and the consumer migration path.
+
+  - type: textarea
+    id: feature
+    attributes:
+      label: Feature?
+      description: Please describe the feature you are requesting in detail
+      placeholder: describe....
+    validations:
+      required: true
+
+  - type: dropdown
+    id: package
+    attributes:
+      label: Package
+      description: Please select the package that the requested feature pertains to.
+      options:
+        - "aphrody-messaging"
+        - "discord.js"
+        - "discordx"
+        - "@discordx/changelog"
+        - "@discordx/di"
+        - "@discordx/importer"
+        - "@discordx/internal"
+        - "@discordx/koa"
+        - "@discordx/lava-player"
+        - "@discordx/music"
+        - "@discordx/pagination"
+        - "@discordx/utilities"
+    validations:
+      required: true

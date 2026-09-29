@@ -1,0 +1,9 @@
+{
+	"name": "@aphrody/tsup-tool",
+	"version": "0.0.0",
+	"private": true,
+	"dependencies": {
+		"tsup": "8.5.1",
+		"typescript": "npm:@typescript/typescript6@6.0.2"
+	}
+}

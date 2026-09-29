@@ -1,0 +1,9 @@
+{
+	"name": "@aphrody/typedoc-tool",
+	"version": "0.0.0",
+	"private": true,
+	"dependencies": {
+		"typedoc": "0.28.20",
+		"typescript": "npm:@typescript/typescript6@6.0.2"
+	}
+}

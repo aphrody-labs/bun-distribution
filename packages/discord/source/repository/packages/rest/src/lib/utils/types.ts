@@ -1,0 +1,433 @@
+import type { Readable } from 'node:stream';
+import type { ReadableStream } from 'node:stream/web';
+import type { Collection } from '@discordjs/collection';
+import type { Awaitable, RawFile } from '@discordjs/util';
+import type { Agent, Dispatcher, Headers, RequestInit, BodyInit, Response } from 'undici';
+import type { IHandler } from '../interfaces/Handler.js';
+
+export interface RestEvents {
+	handlerSweep: [sweptHandlers: Collection<string, IHandler>];
+	hashSweep: [sweptHashes: Collection<string, HashData>];
+	invalidRequestWarning: [invalidRequestInfo: InvalidRequestWarningData];
+	rateLimited: [rateLimitInfo: RateLimitData];
+	response: [request: APIRequest, response: ResponseLike];
+	restDebug: [info: string];
+}
+
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+export interface RestEventsMap extends RestEvents {}
+
+/**
+ * Options to be passed when creating the REST instance
+ */
+export interface RESTOptions {
+	/**
+	 * The agent to set globally
+	 */
+	agent: Dispatcher | null;
+	/**
+	 * The base api path, without version
+	 *
+	 * @defaultValue `'https://discord.com/api'`
+	 */
+	api: string;
+	/**
+	 * The authorization prefix to use for requests, useful if you want to use
+	 * bearer tokens
+	 *
+	 * @defaultValue `'Bot'`
+	 */
+	authPrefix: 'Bearer' | 'Bot';
+	/**
+	 * The cdn path
+	 *
+	 * @defaultValue `'https://cdn.discordapp.com'`
+	 */
+	cdn: string;
+	/**
+	 * How many requests to allow sending per second (Infinity for unlimited, 50 for the standard global limit used by Discord)
+	 *
+	 * @defaultValue `50`
+	 */
+	globalRequestsPerSecond: number;
+	/**
+	 * The amount of time in milliseconds that passes between each hash sweep. (defaults to 1h)
+	 *
+	 * @defaultValue `3_600_000`
+	 */
+	handlerSweepInterval: number;
+	/**
+	 * The maximum amount of time a hash can exist in milliseconds without being hit with a request (defaults to 24h)
+	 *
+	 * @defaultValue `86_400_000`
+	 */
+	hashLifetime: number;
+	/**
+	 * The amount of time in milliseconds that passes between each hash sweep. (defaults to 4h)
+	 *
+	 * @defaultValue `14_400_000`
+	 */
+	hashSweepInterval: number;
+	/**
+	 * Additional headers to send for all API requests
+	 *
+	 * @defaultValue `{}`
+	 */
+	headers: Record<string, string>;
+	/**
+	 * The number of invalid REST requests (those that return 401, 403, or 429) in a 10 minute window between emitted warnings (0 for no warnings).
+	 * That is, if set to 500, warnings will be emitted at invalid request number 500, 1000, 1500, and so on.
+	 *
+	 * @defaultValue `0`
+	 */
+	invalidRequestWarningInterval: number;
+	/**
+	 * The method called to perform the actual HTTP request given a url and web `fetch` options
+	 * For example, to use global fetch, simply provide `makeRequest: fetch`
+	 */
+	makeRequest(url: string, init: RequestInit): Promise<ResponseLike>;
+	/**
+	 * The media proxy path
+	 *
+	 * @defaultValue `'https://media.discordapp.net'`
+	 */
+	mediaProxy: string;
+	/**
+	 * The extra offset to add to rate limits in milliseconds
+	 *
+	 * @defaultValue `50`
+	 */
+	offset: GetRateLimitOffsetFunction | number;
+	/**
+	 * The default policy determining how rate limiting and pre-emptive throttling should be handled.
+	 *
+	 * Pass `true` to throw a {@link RateLimitError} on every rate limit, `false` to wait every
+	 * rate limit out, or a filter to decide per rate limit.
+	 *
+	 * This can be overridden per request via the {@link RequestData.rejectOnRateLimit | rejectOnRateLimit} request option.
+	 *
+	 * @defaultValue `false`
+	 */
+	rejectOnRateLimit: RateLimitQueueFilter | boolean;
+	/**
+	 * The number of retries for errors with the 500 code, or errors
+	 * that timeout
+	 *
+	 * @defaultValue `3`
+	 */
+	retries: number;
+	/**
+	 * The time to exponentially add before retrying a 5xx or aborted request
+	 *
+	 * @defaultValue `0`
+	 */
+	retryBackoff: GetRetryBackoffFunction | number;
+	/**
+	 * The time to wait in milliseconds before a request is aborted
+	 *
+	 * @defaultValue `15_000`
+	 */
+	timeout: GetTimeoutFunction | number;
+	/**
+	 * Extra information to add to the user agent
+	 *
+	 * @defaultValue DefaultUserAgentAppendix
+	 */
+	userAgentAppendix: string;
+	/**
+	 * The version of the API to use
+	 *
+	 * @defaultValue `'10'`
+	 */
+	version: string;
+}
+
+/**
+ * Data emitted on `RESTEvents.RateLimited`
+ */
+export interface RateLimitData {
+	/**
+	 * Whether the rate limit that was reached was the global limit
+	 */
+	global: boolean;
+	/**
+	 * The bucket hash for this request
+	 */
+	hash: string;
+	/**
+	 * The amount of requests we can perform before locking requests
+	 */
+	limit: number;
+	/**
+	 * The major parameter of the route
+	 *
+	 * For example, in `/channels/x`, this will be `x`.
+	 * If there is no major parameter (e.g: `/bot/gateway`) this will be `global`.
+	 */
+	majorParameter: string;
+	/**
+	 * The HTTP method being performed
+	 */
+	method: string;
+	/**
+	 * The time, in milliseconds, that will need to pass before this specific request can be retried
+	 */
+	retryAfter: number;
+	/**
+	 * The route being hit in this request
+	 */
+	route: string;
+	/**
+	 * The scope of the rate limit that was hit.
+	 *
+	 * This can be `user` for rate limits that are per client, `global` for rate limits that affect all clients or `shared` for rate limits that
+	 * are shared per resource.
+	 */
+	scope: 'global' | 'shared' | 'user';
+	/**
+	 * The time, in milliseconds, that will need to pass before the sublimit lock for the route resets, and requests that fall under a sublimit
+	 * can be retried
+	 *
+	 * This is only present on certain sublimits, and `0` otherwise
+	 */
+	sublimitTimeout: number;
+	/**
+	 * The time, in milliseconds, until the route's request-lock is reset
+	 */
+	timeToReset: number;
+	/**
+	 * The full URL for this request
+	 */
+	url: string;
+}
+
+/**
+ * A function that determines whether the rate limit hit should throw an Error
+ */
+export type RateLimitQueueFilter = (rateLimitData: RateLimitData) => Awaitable<boolean>;
+
+/**
+ * A function that determines the rate limit offset for a given request.
+ */
+export type GetRateLimitOffsetFunction = (route: string) => number;
+
+/**
+ * A function that determines the backoff for a retry for a given request.
+ *
+ * @param route - The route that has encountered a server-side error
+ * @param statusCode - The status code received or `null` if aborted
+ * @param retryCount - The number of retries that have been attempted so far. The first call will be `0`
+ * @param requestBody - The body that was sent with the request
+ * @returns The delay for the current request or `null` to throw an error instead of retrying
+ */
+export type GetRetryBackoffFunction = (
+	route: string,
+	statusCode: number | null,
+	retryCount: number,
+	requestBody: unknown,
+) => number | null;
+
+/**
+ * A function that determines the timeout for a given request.
+ *
+ * @param route - The route that is being processed
+ * @param body - The body that will be sent with the request
+ */
+export type GetTimeoutFunction = (route: string, body: unknown) => number;
+
+export interface APIRequest {
+	/**
+	 * The data that was used to form the body of this request
+	 */
+	data: HandlerRequestData;
+	/**
+	 * The HTTP method used in this request
+	 */
+	method: string;
+	/**
+	 * Additional HTTP options for this request
+	 */
+	options: RequestInit;
+	/**
+	 * The full path used to make the request
+	 */
+	path: RouteLike;
+	/**
+	 * The number of times this request has been attempted
+	 */
+	retries: number;
+	/**
+	 * The API route identifying the ratelimit for this request
+	 */
+	route: string;
+}
+
+export interface ResponseLike extends Pick<
+	Response,
+	'arrayBuffer' | 'bodyUsed' | 'json' | 'ok' | 'status' | 'statusText' | 'text'
+> {
+	body: Readable | ReadableStream | null;
+	clone?(): ResponseLike;
+	headers: Pick<Headers, typeof Symbol.iterator | 'get' | 'has'>;
+}
+
+export interface InvalidRequestWarningData {
+	/**
+	 * Number of invalid requests that have been made in the window
+	 */
+	count: number;
+	/**
+	 * Time in milliseconds remaining before the count resets
+	 */
+	remainingTime: number;
+}
+
+export type { RawFile } from '@discordjs/util';
+
+export interface AuthData {
+	/**
+	 * The authorization prefix to use for this request, useful if you use this with bearer tokens
+	 *
+	 * @defaultValue `REST.options.authPrefix`
+	 */
+	prefix?: 'Bearer' | 'Bot';
+	/**
+	 * The authorization token to use for this request
+	 */
+	token: string;
+}
+
+/**
+ * Represents possible data to be given to an endpoint
+ */
+export interface RequestData {
+	/**
+	 * Whether to append JSON data to form data instead of `payload_json` when sending files
+	 */
+	appendToFormData?: boolean;
+	/**
+	 * Alternate authorization data to use for this request only, or `false` to disable the Authorization header.
+	 * When making a request to a route that includes a token (such as interactions or webhooks), set to `false`
+	 * to avoid accidentally unsetting the instance token if a 401 is encountered.
+	 *
+	 * @defaultValue `true`
+	 */
+	auth?: AuthData | boolean | undefined;
+	/**
+	 * The body to send to this request.
+	 * If providing as BodyInit, set `passThroughBody: true`
+	 */
+	body?: BodyInit | unknown;
+	/**
+	 * The {@link https://undici.nodejs.org/#/docs/api/Agent | Agent} to use for the request.
+	 */
+	dispatcher?: Agent;
+	/**
+	 * Files to be attached to this request
+	 */
+	files?: RawFile[] | undefined;
+	/**
+	 * Additional headers to add to this request
+	 */
+	headers?: Record<string, string>;
+	/**
+	 * Whether to pass-through the body property directly to `fetch()`.
+	 * <warn>This only applies when files is NOT present</warn>
+	 */
+	passThroughBody?: boolean;
+	/**
+	 * Query string parameters to append to the called endpoint
+	 */
+	query?: URLSearchParams;
+	/**
+	 * Reason to show in the audit logs
+	 */
+	reason?: string | undefined;
+	/**
+	 * Determines how a rate limit encountered while making this request should be handled.
+	 *
+	 * Pass `true` to throw a {@link RateLimitError} rather than wait, `false` to wait it out, or
+	 * a filter to decide based on rate limit data. Takes precedence over {@link RESTOptions.rejectOnRateLimit}, so
+	 * `false` opts this request out of an instance-wide policy. Leave it unset to inherit.
+	 *
+	 * @example
+	 * ```ts
+	 * // Fail rather than wait, no matter the rate limit
+	 * await rest.get(Routes.channel(channelId), { rejectOnRateLimit: true });
+	 *
+	 * // Give up rather than wait out a sublimit, which may be several minutes long
+	 * await rest.patch(Routes.channel(channelId), {
+	 * 	body: { name },
+	 * 	rejectOnRateLimit: (rateLimitData) => rateLimitData.sublimitTimeout > 0,
+	 * });
+	 *
+	 * // Spend at most 10 seconds waiting on rate limits
+	 * const deadline = Date.now() + 10_000;
+	 * await rest.get(Routes.channel(channelId), {
+	 * 	rejectOnRateLimit: (rateLimitData) => Date.now() + rateLimitData.retryAfter > deadline,
+	 * });
+	 * ```
+	 */
+	rejectOnRateLimit?: RateLimitQueueFilter | boolean | undefined;
+	/**
+	 * The signal to abort the queue entry or the REST call, where applicable
+	 */
+	signal?: AbortSignal | undefined;
+	/**
+	 * If this request should be versioned
+	 *
+	 * @defaultValue `true`
+	 */
+	versioned?: boolean;
+}
+
+/**
+ * Possible headers for an API call
+ */
+export interface RequestHeaders {
+	Authorization?: string;
+	'User-Agent': string;
+	'X-Audit-Log-Reason'?: string;
+}
+
+/**
+ * Possible API methods to be used when doing requests
+ */
+export enum RequestMethod {
+	Delete = 'DELETE',
+	Get = 'GET',
+	Patch = 'PATCH',
+	Post = 'POST',
+	Put = 'PUT',
+}
+
+export type RouteLike = `/${string}`;
+
+/**
+ * Internal request options
+ */
+export interface InternalRequest extends RequestData {
+	fullRoute: RouteLike;
+	method: RequestMethod;
+}
+
+export interface HandlerRequestData extends Pick<InternalRequest, 'body' | 'files' | 'rejectOnRateLimit' | 'signal'> {
+	auth: boolean | string;
+}
+
+/**
+ * Parsed route data for an endpoint
+ */
+export interface RouteData {
+	bucketRoute: string;
+	majorParameter: string;
+	original: RouteLike;
+}
+
+/**
+ * Represents a hash and its associated fields
+ */
+export interface HashData {
+	lastAccess: number;
+	value: string;
+}

@@ -1,0 +1,49 @@
+{
+  "name": "docusaurus",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "prepare": "bun scripts/prepare-doc.mjs",
+    "docusaurus": "docusaurus",
+    "start": "docusaurus start",
+    "build": "docusaurus build",
+    "swizzle": "docusaurus swizzle",
+    "deploy": "docusaurus deploy",
+    "clear": "docusaurus clear",
+    "serve": "docusaurus serve",
+    "write-translations": "docusaurus write-translations",
+    "write-heading-ids": "docusaurus write-heading-ids",
+    "dev": "docusaurus start"
+  },
+  "dependencies": {
+    "@docusaurus/core": "^3.10.2",
+    "@docusaurus/preset-classic": "^3.10.2",
+    "@docusaurus/remark-plugin-npm2yarn": "^3.10.2",
+    "@docusaurus/theme-search-algolia": "^3.10.2",
+    "@mdx-js/react": "^3.1.1",
+    "@svgr/webpack": "^8.1.0",
+    "@types/react": "19.2.17",
+    "ansi-regex": "^6.2.2",
+    "clsx": "^2.1.1",
+    "file-loader": "^6.2.0",
+    "nth-check": "^3.0.1",
+    "prism-react-renderer": "^2.4.1",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "typescript": "catalog:",
+    "url-loader": "^4.1.1"
+  },
+  "browserslist": {
+    "production": [
+      ">0.5%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  },
+  "description": "discordx documentation"
+}
