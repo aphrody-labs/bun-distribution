@@ -104,7 +104,7 @@ binding, or from `APHRODY_FFI_LIB` when set. A runnable smoke is in
 
 ```sh
 cargo build --release -p aphrody-ffi
-bun run crates/aphrody-ffi/bun/example.ts
+bun run crates/ai/aphrody-ffi/bun/example.ts
 ```
 
 ## Consumed by

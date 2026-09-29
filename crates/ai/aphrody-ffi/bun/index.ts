@@ -23,8 +23,9 @@ const ENCODER = new TextEncoder();
 
 /**
  * Encode a JS string as a NUL-terminated UTF-8 buffer for a `cstring` argument.
- * Bun does not auto-marshal a JS string into a pointer for FFI args, so we hand
- * it a `Uint8Array` (Bun passes its pointer, pinned for the synchronous call).
+ * Pass an explicit `Uint8Array` so the buffer remains owned by this call.
+ * Bun also accepts JS strings for `cstring` arguments, but these symbols use
+ * pointer arguments and share this helper across the ABI.
  */
 function cstr(text: string): Uint8Array {
   return ENCODER.encode(`${text}\0`);
@@ -39,8 +40,8 @@ function resolveLibPath(): string {
   const fileName = `${prefix}aphrody_ffi.${suffix}`;
 
   const here = dirname(fileURLToPath(import.meta.url));
-  // crates/aphrody-ffi/bun -> repo root is three levels up.
-  const targetDir = join(here, "..", "..", "..", "target");
+  // crates/ai/aphrody-ffi/bun -> repository root is four levels up.
+  const targetDir = join(here, "..", "..", "..", "..", "target");
 
   const candidates: string[] = [];
   for (const profile of ["release", "debug"]) {
