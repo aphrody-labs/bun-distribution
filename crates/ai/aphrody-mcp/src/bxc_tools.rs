@@ -23,7 +23,14 @@ use std::{sync::LazyLock, time::Duration};
 
 use aphrody_gemini_runtime::McpClient;
 use rmcp::model::{CallToolRequestParams, CallToolResult, ContentBlock, Tool};
+use serde_json::Value;
 use tokio::sync::Mutex;
+
+#[cfg(all(feature = "native-browser", not(target_arch = "wasm32")))]
+use crate::browser_tools;
+#[cfg(not(target_arch = "wasm32"))]
+use crate::{gemini_tools, search_tools};
+use crate::{public_web_tools, x_tools};
 
 /// Idle connected BXC children kept for reuse.
 const MAX_IDLE: usize = 4;
@@ -217,11 +224,73 @@ pub(crate) async fn owns(name: &str) -> bool {
     enabled() && catalog().await.is_ok_and(|tools| tools.iter().any(|tool| tool.name == name))
 }
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum DirectTool {
+    PublicWeb,
+    X,
+    #[cfg(not(target_arch = "wasm32"))]
+    Search,
+    #[cfg(not(target_arch = "wasm32"))]
+    Gemini,
+    #[cfg(all(feature = "native-browser", not(target_arch = "wasm32")))]
+    Browser,
+}
+
+fn direct_tool(name: &str) -> Option<(String, DirectTool)> {
+    let public = public_name(name);
+    let owner = if public_web_tools::owns(&public) {
+        DirectTool::PublicWeb
+    } else if x_tools::owns(&public) {
+        DirectTool::X
+    } else {
+        #[cfg(not(target_arch = "wasm32"))]
+        if search_tools::owns(&public) {
+            return Some((public, DirectTool::Search));
+        }
+        #[cfg(not(target_arch = "wasm32"))]
+        if gemini_tools::owns(&public) {
+            return Some((public, DirectTool::Gemini));
+        }
+        #[cfg(all(feature = "native-browser", not(target_arch = "wasm32")))]
+        if browser_tools::owns(&public) {
+            return Some((public, DirectTool::Browser));
+        }
+        return None;
+    };
+    Some((public, owner))
+}
+
+async fn call_direct_raw(name: &str, arguments: Value) -> Option<Result<Value, String>> {
+    let (public, owner) = direct_tool(name)?;
+    let request = serde_json::from_value::<CallToolRequestParams>(serde_json::json!({
+        "name": public,
+        "arguments": arguments,
+    }));
+    let request = match request {
+        Ok(request) => request,
+        Err(error) => return Some(Err(format!("{public}: invalid tool arguments: {error}"))),
+    };
+    let result = match owner {
+        DirectTool::PublicWeb => public_web_tools::call(&request).await,
+        DirectTool::X => x_tools::call(&request).await,
+        #[cfg(not(target_arch = "wasm32"))]
+        DirectTool::Search => search_tools::call(&request).await,
+        #[cfg(not(target_arch = "wasm32"))]
+        DirectTool::Gemini => gemini_tools::call(&request).await,
+        #[cfg(all(feature = "native-browser", not(target_arch = "wasm32")))]
+        DirectTool::Browser => browser_tools::call(&request).await,
+    };
+    Some(serde_json::to_value(result).map_err(|error| error.to_string()))
+}
+
 /// Calls a BXC tool and returns the raw JSON-RPC `result`.
 pub(crate) async fn call_raw(
     name: &str,
     arguments: serde_json::Value,
 ) -> Result<serde_json::Value, String> {
+    if let Some(result) = call_direct_raw(name, arguments.clone()).await {
+        return result;
+    }
     let mut client = checkout().await?;
     match client.call_tool(name, arguments).await {
         Ok(result) => {
@@ -273,6 +342,52 @@ pub(crate) async fn call(request: &CallToolRequestParams) -> CallToolResult {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn native_owners_cover_source_and_public_names() {
+        for (source, owner) in [
+            ("bxc_google_supported_languages", DirectTool::PublicWeb),
+            ("aphrody_google_dns", DirectTool::PublicWeb),
+            ("bxc_x_algorithm_rank", DirectTool::X),
+            ("aphrody_x_client", DirectTool::X),
+        ] {
+            assert_eq!(direct_tool(source).map(|(_, route)| route), Some(owner), "{source}");
+        }
+        #[cfg(not(target_arch = "wasm32"))]
+        for (source, owner) in
+            [("bxc_search", DirectTool::Search), ("bxc_gemini_rust", DirectTool::Gemini)]
+        {
+            assert_eq!(direct_tool(source).map(|(_, route)| route), Some(owner), "{source}");
+        }
+        #[cfg(all(feature = "native-browser", not(target_arch = "wasm32")))]
+        assert_eq!(
+            direct_tool("bxc_browser_click").map(|(_, route)| route),
+            Some(DirectTool::Browser)
+        );
+        assert!(direct_tool("bxc_unported_tool").is_none());
+    }
+
+    #[tokio::test]
+    async fn raw_gateway_calls_native_tools_without_child_process() {
+        let languages = call_raw("bxc_google_supported_languages", serde_json::json!({}))
+            .await
+            .expect("native languages");
+        assert_ne!(languages["isError"], true, "{languages}");
+        assert!(languages.to_string().contains("languages"), "{languages}");
+
+        let rank = call_raw("bxc_x_algorithm_rank", serde_json::json!({ "candidates": [] }))
+            .await
+            .expect("native local ranking");
+        assert_ne!(rank["isError"], true, "{rank}");
+
+        #[cfg(not(target_arch = "wasm32"))]
+        {
+            let search =
+                call_raw("bxc_search", serde_json::json!({})).await.expect("native search");
+            assert_eq!(search["isError"], true, "{search}");
+            assert!(search.to_string().contains("query must be a string"), "{search}");
+        }
+    }
 
     #[test]
     fn descriptor_converts_to_mcp_tool() {

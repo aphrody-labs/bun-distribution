@@ -29,3 +29,12 @@ clap = { workspace = true }
 tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
 rustls = { workspace = true }
 futures = { workspace = true }
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+obscura-dom = { workspace = true }
+regex = { workspace = true }
+reqwest = { workspace = true }
+url = { workspace = true }
+rusqlite = { workspace = true }
+obscura = { workspace = true }
+chrono = { workspace = true }

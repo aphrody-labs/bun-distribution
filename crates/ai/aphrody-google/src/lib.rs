@@ -9,6 +9,8 @@ pub use aphrody_gemini_runtime as gemini_runtime;
 pub use aphrody_gemini_web as gemini_web;
 pub use aphrody_model_client as model_client;
 pub mod languages;
+#[cfg(not(target_arch = "wasm32"))]
+pub mod search;
 use serde::{Deserialize, Serialize};
 
 /// Create an authenticated Antigravity client from the platform credential

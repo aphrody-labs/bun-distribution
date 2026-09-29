@@ -2,6 +2,8 @@
 mod client_cmd;
 mod public_web_tools;
 #[cfg(not(target_arch = "wasm32"))]
+mod search_tools;
+#[cfg(not(target_arch = "wasm32"))]
 mod gemini_tools;
 mod x_tools;
 mod http_rest;
@@ -3596,6 +3598,12 @@ impl GoogleMcpServer {
         {
             let taken: std::collections::HashSet<String> =
                 tools.iter().map(|tool| tool.name.to_string()).collect();
+            tools.extend(search_tools::list(|name| taken.contains(name)));
+        }
+        #[cfg(not(target_arch = "wasm32"))]
+        {
+            let taken: std::collections::HashSet<String> =
+                tools.iter().map(|tool| tool.name.to_string()).collect();
             tools.extend(gemini_tools::list(|name| taken.contains(name)));
         }
         let taken: std::collections::HashSet<String> =
@@ -3691,6 +3699,12 @@ impl ServerHandler for GoogleMcpServer {
         }
         #[cfg(not(target_arch = "wasm32"))]
         if router.get(request.name.as_ref()).is_none()
+            && search_tools::owns(request.name.as_ref())
+        {
+            return Ok(search_tools::call(&request).await.into());
+        }
+        #[cfg(not(target_arch = "wasm32"))]
+        if router.get(request.name.as_ref()).is_none()
             && gemini_tools::owns(request.name.as_ref())
         {
             return Ok(gemini_tools::call(&request).await.into());
@@ -3747,6 +3761,8 @@ impl ServerHandler for GoogleMcpServer {
     fn get_tool(&self, name: &str) -> Option<rmcp::model::Tool> {
         let builtin = Self::all_tools().get(name).cloned();
         let builtin = builtin.or_else(|| public_web_tools::get(name));
+        #[cfg(not(target_arch = "wasm32"))]
+        let builtin = builtin.or_else(|| search_tools::get(name));
         #[cfg(not(target_arch = "wasm32"))]
         let builtin = builtin.or_else(|| gemini_tools::get(name));
         let builtin = builtin.or_else(|| x_tools::get(name));

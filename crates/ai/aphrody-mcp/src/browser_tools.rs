@@ -7,7 +7,7 @@
 //! Every tool of its MCP surface (navigate, snapshot, click, fill, markdown,
 //! links, forms, tabs, cookies, storage state, scroll, extract, search,
 //! screenshot, pdf, ...) is published here as `aphrody_browser_*` and run
-//! in-process through `obscura_mcp::aphrody`, so the list follows the vendored
+//! in-process through `aphrody_web_service::WebSession`, so the list follows the vendored
 //! engine automatically and no tool is relayed to the TypeScript backend.
 //!
 //! The session holds a V8 isolate (`!Send`), so it lives on one dedicated OS
@@ -59,9 +59,9 @@ fn worker() -> Result<&'static mpsc::UnboundedSender<Job>, String> {
                 let proxy = std::env::var("APHRODY_BROWSER_PROXY").ok().filter(|p| !p.is_empty());
                 let stealth =
                     matches!(std::env::var("APHRODY_BROWSER_STEALTH").as_deref(), Ok("1" | "true"));
-                let mut state = obscura_mcp::BrowserState::new(proxy, None, stealth);
+                let mut state = aphrody_web_service::WebSession::new(proxy, None, stealth);
                 while let Some(job) = receiver.recv().await {
-                    let result = obscura_mcp::aphrody::call(&mut state, &job.tool, job.args).await;
+                    let result = state.call(&job.tool, job.args).await;
                     let _ = job.reply.send(result);
                 }
             });
@@ -72,7 +72,7 @@ fn worker() -> Result<&'static mpsc::UnboundedSender<Job>, String> {
 
 /// The engine's tool catalog as public MCP tools (built once; pure data, no V8).
 static CATALOG: LazyLock<Vec<Tool>> = LazyLock::new(|| {
-    obscura_mcp::aphrody::tools()
+    aphrody_web_service::WebSession::tools()
         .into_iter()
         .filter_map(|tool| {
             let name = tool.get("name")?.as_str()?;
@@ -145,6 +145,7 @@ mod tests {
     #[test]
     fn catalog_publishes_every_engine_tool() {
         assert!(CATALOG.len() >= 30, "expected the full Obscura catalog, got {}", CATALOG.len());
+        assert_eq!(CATALOG.len(), aphrody_web_service::WebSession::tools().len());
         for name in [
             "aphrody_browser_navigate",
             "aphrody_browser_snapshot",
@@ -155,6 +156,14 @@ mod tests {
         }
         assert!(CATALOG.iter().all(|t| t.name.starts_with(PUBLIC_PREFIX)));
         assert_eq!(engine_name("aphrody_browser_click"), "browser_click");
+    }
+
+    #[tokio::test]
+    async fn shared_session_rejects_non_web_navigation_without_network() {
+        let result =
+            call(&request("aphrody_browser_navigate", json!({ "url": "file:///tmp/a" }))).await;
+        assert_eq!(result.is_error, Some(true));
+        assert!(text(&result).contains("not allowed"), "{result:?}");
     }
 
     #[test]

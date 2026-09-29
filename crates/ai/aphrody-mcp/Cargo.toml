@@ -22,9 +22,9 @@ path = "src/main.rs"
 # Linux and Windows MSVC (the only Windows toolchain aphrody uses).
 default = ["native-browser", "dragonball", "nie"]
 koharu = ["aphrody-manga/koharu"]
-native-browser = ["dep:obscura-mcp", "obscura-mcp/render"]
+native-browser = ["dep:aphrody-web-service", "aphrody-web-service/render"]
 # Obscura stealth (fingerprint + tracker blocking, wreq TLS impersonation).
-browser-stealth = ["native-browser", "obscura-mcp/stealth"]
+browser-stealth = ["native-browser", "aphrody-web-service/stealth"]
 
 # --- Local inference toolbox (docs/plans/local-inference-toolbox.md, step 7) ---
 # Opt-in because each tool pulls a backend the base MCP server has no use for.
@@ -151,7 +151,7 @@ base64             = { workspace = true }
 aphrody-re         = { workspace = true }
 dirs               = { workspace = true }
 aphrody-gemini-web         = { workspace = true }
-obscura-mcp        = { workspace = true, optional = true }
+aphrody-web-service = { workspace = true, optional = true }
 regex              = { workspace = true }
 # `sync_external_agents` — external agent session mirror (agy, Codex, Claude
 # Code) and its feed into the local memory store (sqlite is already linked
