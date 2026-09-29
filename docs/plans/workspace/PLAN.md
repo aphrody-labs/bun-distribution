@@ -302,7 +302,13 @@ Le bridge Rust est importé avec ses méthodes publiques, et sa conversion
 Markdown HTTP directe appelle l'extracteur local ; le test HTTP local et les
 gates de l'archive propre sont dans
 [`aphrody-web-bridge-import.json`](../../migration/aphrody-web-bridge-import.json).
-Ces deux imports ne ferment ni le corpus gold BXC, ni les profils navigateur,
+L'index HNSW Rust de BXC est importé avec son format de persistance et ses
+tests de rappel dans
+[`aphrody-web-index-import.json`](../../migration/aphrody-web-index-import.json).
+`aphrody-memory` reste sur une recherche exacte et un fichier JSONL ; une
+migration de format et un contrat de classement sont requis avant toute fusion
+de ces deux surfaces.
+Ces trois imports ne ferment ni le corpus gold BXC, ni les profils navigateur,
 ni les symboles FFI/Bun, ni les consommateurs AI/MCP dont l'import est encore
 en travail. Leur bascule et l'élimination des dépendances au checkout source
 restent des critères de sortie de P5.

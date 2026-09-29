@@ -535,6 +535,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "aphrody-web-index"
+version = "0.1.0"
+dependencies = [
+ "memmap2",
+ "parking_lot",
+ "serde",
+ "serde_json",
+ "thiserror",
+]
+
+[[package]]
 name = "aphrody-yolo"
 version = "0.1.0"
 dependencies = [

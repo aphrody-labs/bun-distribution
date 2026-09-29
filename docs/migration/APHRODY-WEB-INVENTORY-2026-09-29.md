@@ -69,6 +69,9 @@ before importing.
 - `crates/web/obscura-dom` supplies the imported HTML parser backend with the
   source Obscura license. Its target manifest uses version `0.1.1` to coexist
   with the source checkout's `0.1.0` until its remaining consumers move.
+- `crates/web/aphrody-web-index` now contains the source HNSW vector index,
+  including its FFI handle API, persistence and recall tests. The source
+  mapping is in [`aphrody-web-index-import.json`](./aphrody-web-index-import.json).
 - The root Cargo manifest now resolves `aphrody-web-bridge` locally. Its
   source import and adaptations are recorded in
   [`aphrody-web-bridge-import.json`](./aphrody-web-bridge-import.json).
@@ -87,7 +90,7 @@ before importing.
 | --- | --- | --- |
 | Obscura | `obscura-{dom,net,browser,cdp,js,render,mcp,cli}` plus `aphrody-browser`; DOM, network, V8 execution, CDP, optional layout/paint and MCP | Keep as an internal backend of canonical `aphrody-web`; qualify V8/thread/feature and upstream-license boundaries before merging crates. |
 | Web engine and service | `aphrody-web-engine`, `aphrody-web-service`, `aphrody-web` | Canonical Rust web/browser API and thin CLI/service entry points. |
-| Extraction and indexing | `aphrody-web-extract`, `aphrody-web-index` | Consolidate duplicated HTML-to-Markdown, main-content extraction, URL canonicalization, SimHash and vector-index paths after parity evidence. |
+| Extraction and indexing | `aphrody-web-extract`, `aphrody-web-index` | The portable source crates are imported locally. Retire source FFI consumers after their schemas, gold corpus, index persistence and ranking gates pass. |
 | FFI | `aphrody-web-ffi`, `aphrody-web-bridge` | One ABI/loader owner; keep compatibility symbols and existing callers until mapped and qualified. The local bridge now uses Rust directly for Markdown, still loads native DOM/title/DNS functions and drives BXC for browser work. |
 | Chromium/CDP | `aphrody-web-chromium`, browser/CDP adapters and BXC profiles | Preserve explicit Chromium escalation and profile/cookie isolation; JSC or Obscura does not imply Chromium parity. |
 | Lightpanda | Optional external headless engine configured for `agent-browser` and BXC profiles | Keep an adapter/backend only where workload parity justifies it; do not fold an unmodified Zig upstream into Rust. |
@@ -102,15 +105,18 @@ before importing.
 | `aphrody-web-service` and `aphrody-web-engine` | Re-export/call `extract_main` and `html_to_markdown` | Still source checkout dependencies; move after HTTP/service fixture gates. |
 | BXC Bun `src/rust/bridge.ts` | Loads `aphrody_web_extract_main`, `aphrody_web_html_to_markdown`, `aphrody_web_simhash64` | Keep export map and output JSON stable while switching the native library owner. |
 | `aphrody-web-bridge` | Historically loaded `bxc_html_to_markdown` for direct fetch | Imported locally; direct fetch and its public Markdown method use `aphrody-web-extract`. DOM/title/DNS and browser subprocess paths retain their compatibility behavior. |
+| `aphrody-web-ffi` index exports | Calls `aphrody_web_index::ffi_api` in the source checkout | Target HNSW library is imported; the C ABI and Bun callers are still on the source checkout. |
+| `aphrody-memory` | `HnswBackend` stores JSONL records and ranks by exact cosine scan | Different persistence and ranking semantics; decide an explicit migration before sharing the BXC HNSW implementation. |
 | Target `aphrody-tools` `web_fetch` | Opt-in HTML-to-Markdown with `rendering.kind` and `rendering.via` | Current AI worktree calls target `aphrody-web-extract` directly; `via` keeps the legacy value and `backend` identifies the Rust owner. Clean-clone import pending. |
 | Target AI MCP/client | Discovers and routes `bxc_*` tools through the BXC process | Discovery, schemas, auth and browser lifecycle not yet cut over. |
 
 The imported portable extractor passed 27 unit, seven extraction and 20
 Markdown tests offline. The bridge passed its scoped offline tests in a clean
 archive and a local HTTP regression proved direct Markdown conversion without
-loading the native library. The BXC gold corpus and its 259 fixtures, browser
-profiles, native exports, and clean-clone AI/Bun consumer gates remain open.
-These results demonstrate the portable extraction and direct-fetch slices.
+loading the native library. The index passed its API and recall tests in the
+current worktree. The BXC gold corpus and its 259 fixtures, browser profiles,
+native exports, and clean-clone AI/Bun consumer gates remain open. These
+results demonstrate portable extraction, indexing and direct fetch only.
 
 The target plan already sets P5 acceptance in
 [`workspace/PLAN.md`](../plans/workspace/PLAN.md): web/JS/crawl parity, browser

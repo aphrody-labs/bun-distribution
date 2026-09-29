@@ -1,0 +1,20 @@
+[package]
+name = "aphrody-web-index"
+version = "0.1.0"
+edition.workspace = true
+license = "Apache-2.0"
+description = "HNSW approximate nearest-neighbour index with scalar int8 quantisation and mmap persistence"
+publish = false
+
+
+[dependencies]
+memmap2.workspace = true
+parking_lot.workspace = true
+serde = { workspace = true, features = ["std"] }
+serde_json = { workspace = true, features = ["std"] }
+thiserror.workspace = true
+
+[dev-dependencies]
+
+[lints]
+workspace = true
