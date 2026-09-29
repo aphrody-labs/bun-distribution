@@ -54,3 +54,4 @@ export { runRepositoryHealth } from "./repository-health.ts";
 export { runWorkspaceRepair } from "./workspace-repair.ts";
 export { runCargoPackageRepair } from "./cargo-package-repair.ts";
 export { rgRoots, runRg } from "./rg.ts";
+export { runShenron, shenronRoots } from "./shenron.ts";

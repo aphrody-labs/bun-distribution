@@ -47,6 +47,7 @@ import { runWorkspaceRepair } from "./workspace-repair.ts";
 import { runCargoPackageRepair } from "./cargo-package-repair.ts";
 import { runConsolidation } from "./consolidation.ts";
 import { runRg } from "./rg.ts";
+import { runShenron } from "./shenron.ts";
 
 const [operation, ...rest] = process.argv.slice(2);
 if (operation === "consolidation") {
@@ -54,6 +55,9 @@ if (operation === "consolidation") {
 }
 if (operation === "rg") {
   process.exit(await runRg(rest));
+}
+if (operation === "shenron") {
+  process.exit(await runShenron(rest));
 }
 if (operation === "bridge") {
   const [bridgeOperation, ...bridgeArgs] = rest;

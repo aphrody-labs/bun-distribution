@@ -14,7 +14,7 @@
       "target": "packages/shenron/api/package.json",
       "staging": "packages/shenron/_preview/api/package.json",
       "source_sha256": "ec4a5e526e716c6524ca63271528d8e80d46364d079da5c87031b68b3c120381",
-      "target_sha256": "00dbd479bc7d209fd4ed66613ccfc2268175835e9bb0c6eec5bb47c691da9121"
+      "target_sha256": "0f333348494e35cfbfa1e9cbe9a60b53889d7536569d08f740302a71213616c3"
     },
     {
       "source": "packages/api/openapi/public.json",
@@ -182,7 +182,7 @@
       "target": "packages/shenron/auth/package.json",
       "staging": "packages/shenron/_preview/auth/package.json",
       "source_sha256": "30b4dfafd022650a7bebdf8752a8011f1d517b276ee3e09dc488ff4f0e3c7966",
-      "target_sha256": "6569d8f4a0cc91dcc7aa21ba649653536bd9555bf9e0fa0359af39ac372a52a9"
+      "target_sha256": "3bf4284f07e3d08f1cec6f105e9caf9e05c0ff545283fa04197500346a0b3a55"
     },
     {
       "source": "packages/auth/src/client.ts",
@@ -406,7 +406,7 @@
       "target": "packages/shenron/config/package.json",
       "staging": "packages/shenron/_preview/config/package.json",
       "source_sha256": "47b03d7cedbc024cb7060567708b23d38099293f4319e856c3c337bc6b47877e",
-      "target_sha256": "e1070b6b1e1b4ac49ff2cc8d4d825a84b784136ad53a50f172c4f726f73af0eb"
+      "target_sha256": "d492d2ac08b68b90160791f836eacfeb211c2b3dcf7ba725c5d24e5cbf7f46cf"
     },
     {
       "source": "packages/config/tsconfig/base.json",
@@ -833,7 +833,7 @@
       "target": "packages/shenron/db/package.json",
       "staging": "packages/shenron/_preview/db/package.json",
       "source_sha256": "965948790f35333893c1fbad86b1d9840495a3452097a39ffc95ece3939f2bd0",
-      "target_sha256": "0c0e8bf98b9fae2c2bcabecbb4ba68b5b8205cb33d573fab153a0d838ecbe89c"
+      "target_sha256": "4eca7985e6f1ae62e1a644b86644bd9e82b1e688be36e56fc09986480d8720d5"
     },
     {
       "source": "packages/db/scripts/migration-audit.ts",
@@ -1057,7 +1057,7 @@
       "target": "packages/shenron/images/package.json",
       "staging": "packages/shenron/_preview/images/package.json",
       "source_sha256": "f612901fbf588e95a020cc0bdeb2b21697fa172826cb735f3ba31bd7bc6eaca6",
-      "target_sha256": "9dc9dc3be8937f52acc702e3083d7a0957b2b87cd1ae0af3439a541f0eaf5598"
+      "target_sha256": "f657f05dfd1277233d1139f3cd4735ab9541677f82ba2cdc53c5f8c78d022fc6"
     },
     {
       "source": "packages/images/src/ink-stroke.ts",
@@ -1169,7 +1169,7 @@
       "target": "packages/shenron/pipeline/package.json",
       "staging": "packages/shenron/_preview/pipeline/package.json",
       "source_sha256": "ccd11e9c885af35523afa5eab4bdc5c49fc4040763f61e1aa141f35461b1999e",
-      "target_sha256": "62b5177eecac196cb6248af7c651a1cd1a60aa5f4b7a299204afa856cb2af49f"
+      "target_sha256": "adae2aaea358de53c28c52c1d4291bd5df8854d1399456cea1da9ba85704b50b"
     },
     {
       "source": "packages/pipeline/scripts/telecharge-planches-dragonballcn.ts",
@@ -2121,7 +2121,7 @@
       "target": "packages/shenron/ui/package.json",
       "staging": "packages/shenron/_preview/ui/package.json",
       "source_sha256": "fcf5bb8d8b5c5993bfc328d014e8548cb76e34869c6722494cf7ef14662ee46b",
-      "target_sha256": "eb2b5eb92d0612ff3523426785fa4f7d05cbc39d6ed34bfc11fa253b324e3e64"
+      "target_sha256": "2ee5e470b6ec1eef0858027eb25f4e640b3e39c2e5350f378f05ee76a35c2086"
     },
     {
       "source": "packages/ui/.npmignore",
@@ -8389,7 +8389,7 @@
       "source": "apps/bot/package.json",
       "target": "apps/shenron/bot/package.json",
       "source_sha256": "368a9679bcb9b6829c824ea17a4764671758c23c3acb8099025dc506c48bea00",
-      "target_sha256": "2cbafa5d7253d555607bc2b0b1720e8e85cb805fc627be2e1be6638c41f73363"
+      "target_sha256": "ff59decca04c21f4c3568735321a4cde9d94b5726238b3e20ecdd2f6f58fba83"
     },
     {
       "source": "apps/bot/public/manifest.webmanifest",
@@ -11125,7 +11125,7 @@
       "source": "apps/site/package.json",
       "target": "apps/shenron/site/package.json",
       "source_sha256": "d7513b498da0cad695d98cb969dfdfcf6532c1aec4faa216d2befe29e2a18145",
-      "target_sha256": "6aeaa55f6ab1c752d76484e4f1edc42d4115cda6d1164aeef15056fed4f96daa"
+      "target_sha256": "ce89919ac72c4c92b64142fd6abf94505eb3c66357560d18e48b4663c2fc8a2b"
     },
     {
       "source": "apps/site/postcss.config.mjs",
@@ -19357,7 +19357,7 @@
   "source_file_count": 3147,
   "target_file_count": 3149,
   "qualifications": [
-    "Nine package/app manifests use pinned source catalog versions within the Aphrody root workspace.",
+    "Compatible dependencies use Aphrody root catalog entries; other Shenron versions remain pinned to the qualified source snapshot.",
     "Cross-package and cross-app filesystem paths map to packages/shenron and apps/shenron.",
     "The site owns its databook indexer helper; the source repository remains unchanged.",
     "SQL migrations remain byte-identical to the source."

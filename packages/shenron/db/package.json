@@ -27,7 +27,7 @@
   },
   "scripts": {
     "type-check": "tsc --noEmit",
-    "lint": "oxlint",
+    "lint": "oxlint -c ../.oxlintrc.json",
     "test": "bun test",
     "audit:migrations": "bun scripts/migration-audit.ts --check"
   },
@@ -38,8 +38,8 @@
     "@shenron/config": "workspace:*"
   },
   "devDependencies": {
-    "@types/bun": "^1.4.0",
-    "typescript": "7.0.2"
+    "@types/bun": "catalog:",
+    "typescript": "catalog:"
   },
   "shenron": {
     "runtime": {

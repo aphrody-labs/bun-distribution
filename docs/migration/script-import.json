@@ -1,10 +1,10 @@
 {
-  "generatedAt": "2026-09-29T03:23:45.010Z",
+  "generatedAt": "2026-09-29T11:09:15.993Z",
   "copied": 0,
-  "identical": 454,
+  "identical": 483,
   "exactDuplicateAliases": 5,
   "conflicts": 0,
   "failures": [],
-  "indexedScripts": 454,
+  "indexedScripts": 937,
   "report": "docs/migration/IMPORTED-SCRIPTS-INDEX.md"
 }

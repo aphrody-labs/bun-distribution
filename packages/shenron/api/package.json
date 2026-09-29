@@ -14,7 +14,7 @@
   },
   "scripts": {
     "type-check": "tsc --noEmit",
-    "lint": "oxlint",
+    "lint": "oxlint -c ../.oxlintrc.json",
     "test": "bun test",
     "openapi": "bun scripts/openapi.ts",
     "openapi:check": "bun scripts/openapi.ts --check"
@@ -24,12 +24,12 @@
     "@shenron/config": "workspace:*",
     "@shenron/db": "workspace:*",
     "hono": "^4.13.0",
-    "zod": "^4.6.4"
+    "zod": "catalog:"
   },
   "devDependencies": {
-    "@types/bun": "^1.4.0",
+    "@types/bun": "catalog:",
     "drizzle-orm": "^0.45.3",
-    "typescript": "7.0.2"
+    "typescript": "catalog:"
   },
   "shenron": {
     "runtime": {

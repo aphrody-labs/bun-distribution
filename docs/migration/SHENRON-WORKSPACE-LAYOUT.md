@@ -4,11 +4,22 @@
 
 - `packages/shenron/{api,auth,config,db,images,pipeline,ui}` and
   `apps/shenron/{bot,site}` are Bun root workspace members. Package names and
-  `@shenron/*` workspace dependencies are preserved. Source catalog versions
-  are pinned within Shenron manifests, avoiding cross-domain catalog skew.
+  `@shenron/*` workspace dependencies are preserved. Compatible TypeScript,
+  Bun types, React, Zod, and Oxlint dependencies use Aphrody's root catalog.
 - `packages/discord/aphrody-messaging` is the Aphrody-owned Discord package.
   The complete Discord.js/Discordx fork stays in its own pinned workspace at
   `upstream/discord`, outside the root Bun workspace.
+- `@aphrody/workspace` exposes Shenron through
+  `packages/infra/aphrody-workspace/src/shenron.ts`: workspace status and
+  declared-script execution, shared script audit, source-map migrations, and
+  Aphrody Infra service/environment/deploy commands. Its migration steps reuse
+  the existing `consolidation` engine and filter docs/scripts imports to
+  Shenron after generating the shared inventory.
+- The current source inventory was regenerated and 483 Shenron scripts were
+  imported with verified hashes under `scripts/tools/shenron`; the generated
+  command index is `docs/migration/IMPORTED-SCRIPTS-INDEX.md`. The original
+  checkout remains untouched. Runtime and host duties continue through the
+  declared Shenron manifests and `aphrody-infra`.
 - The Shenron source checkout and the earlier `_preview` package copy remain
   intact. Source SHA-256 values, target hashes, and remapped paths are recorded
   in `shenron-workspace-import.json`. Run `bun run shenron:verify` after edits.
@@ -25,6 +36,9 @@
   activated as Aphrody CI, and deploy files are not installed. No `.env`, local
   database, cache, generated output, or ignored source file was imported. The
   tracked proxy environment file was excluded.
+- The complete phased convergence plan, including remaining UI/runtime/dependency
+  work and clean-clone/deploy closure, is in
+  [`APHRODY-ROADMAP.md`](../plans/shenron/APHRODY-ROADMAP.md).
 
 On 2026-09-29, root `bun install --frozen-lockfile`, nine Shenron typechecks,
 399 bot tests, and complete `config`, `api`, `auth`, `db`, `images`, and `ui`

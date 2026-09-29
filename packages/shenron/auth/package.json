@@ -42,20 +42,20 @@
   },
   "scripts": {
     "type-check": "tsc --noEmit",
-    "lint": "oxlint",
+    "lint": "oxlint -c ../.oxlintrc.json",
     "test": "bun test"
   },
   "dependencies": {
     "@shenron/config": "workspace:*"
   },
   "devDependencies": {
-    "@types/bun": "^1.4.0",
-    "typescript": "7.0.2",
+    "@types/bun": "catalog:",
+    "typescript": "catalog:",
     "better-auth": "1.7.5",
     "hono": "^4.13.0",
     "next": "16.3.5",
-    "react": "19.3.0",
-    "@types/react": "19.3.0",
+    "react": "catalog:",
+    "@types/react": "catalog:",
     "@shenron/db": "workspace:*",
     "drizzle-orm": "^0.45.3"
   },
@@ -63,7 +63,7 @@
     "better-auth": "1.7.5",
     "hono": "^4.13.0",
     "next": "16.3.5",
-    "react": "19.3.0"
+    "react": "catalog:"
   },
   "peerDependenciesMeta": {
     "hono": {

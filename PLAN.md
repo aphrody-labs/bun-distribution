@@ -18,8 +18,10 @@ inventories and orchestration commands.
 - `upstream/`: pinned forks and upstream workspaces whose history/build roots
   remain independent.
 
-`rg` and `shenron` remain in `src` until this plan and `aphrody-py` meet every
-source-closure, compatibility, installed-workflow, license, and rollback gate.
+Keep the original `rg` and Shenron checkouts in `src` until this plan and
+`aphrody-py` meet every source-closure, compatibility, installed-workflow,
+license, and rollback gate. Partial workspace integrations may proceed when
+explicitly requested; they do not close these gates or authorize cutover.
 
 ## Extraction gates
 
@@ -175,7 +177,8 @@ source-closure, compatibility, installed-workflow, license, and rollback gate.
       rights and workspace metadata before selecting the next import.
 - [ ] Inventory nested submodules/workspaces recursively and classify every
       declared source that is not on disk (`bevy`, `dust`, `emu.nintendo.wii.gecko`)
-      before claiming source closure. `rg` and `shenron` are explicitly deferred.
+      before claiming source closure. RG and Shenron now have partial workspace
+      integrations; their source-closure gates remain open.
       The 2026-09-29 Gitlink pass found 23 links: 11 match their index pins, 7
       checkout heads differ from their index pins, 3 lack `.gitmodules` declarations,
       1 nested checkout is uninitialized, and 1 (`aphrody-ui`) is reserved for its
@@ -193,6 +196,15 @@ source-closure, compatibility, installed-workflow, license, and rollback gate.
       and a real scanner invocation passed on 2026-09-29. Provenance and the
       dirty-source caveat are in
       [`INFRA-WORKSPACE-IMPORT.md`](docs/migration/INFRA-WORKSPACE-IMPORT.md).
+- [x] Add the Shenron facade to `@aphrody/workspace`; route its package checks,
+      script audit, service catalog, dev environment and plan-only deployment
+      through Aphrody and Infra. Import 483 source-hashed Shenron scripts under
+      `scripts/tools/shenron`; qualify the same workspaces and compatible root
+      dependency catalog. Package typechecks, migration audit and Infra service
+      catalog pass. The UI/runtime/dependency convergence roadmap and remaining
+      script portability checks are in
+      [`APHRODY-ROADMAP.md`](docs/plans/shenron/APHRODY-ROADMAP.md). This does
+      not close the clean-clone or release gates.
 - [ ] Qualify the copied Infra package from a clean clone and migrate its
       remaining callers before removing the transitional `src/aphrody-infra`
       source. This is part of the full `src/` exit gate, not a new release owner.

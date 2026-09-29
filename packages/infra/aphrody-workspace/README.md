@@ -69,11 +69,17 @@ The consolidation command inventories current checkout heads, dirty paths, works
 
 `rg` is the Rose Griffon facade over this workspace and Aphrody Infra. `rg status` lists the staged applications and packages; `rg check` runs only scripts declared by those package manifests; `rg deploy` routes through the Rust RG deploy adapter and requires an explicit Infra target. `rg migrate` calls the existing consolidation workflows with the current workspace roots. See `docs/rg/MIGRATION-TO-APHRODY.md` for the migration sequence and exit gates.
 
+`shenron` is the Shenron facade over its Aphrody workspaces and Aphrody Infra. `shenron status` and `shenron scripts` enumerate the nine active workspaces and their declared commands; `shenron check` runs those commands by workspace; `shenron audit` applies the shared script policy to imported app, package, and operations script roots. `shenron infra`, `shenron service`, `shenron dev-env`, and `shenron deploy` use the Rust Infra bridge; deploy always selects the Shenron stack, and Infra stays plan-only unless `--apply` is supplied. `shenron migrate inventory` builds the shared source map; `shenron migrate docs|scripts` uses its existing importers scoped to Shenron. Run inventory first; imports validate source hashes and preserve conflicting targets. `shenron migrate infra` reuses Infra's service-script importer. The Infra service catalog and host configuration remain owned by aphrody-infra and are consumed directly by the CLI; the broad config importer is not part of this Shenron-scoped step.
+
 ```bash
 bun packages/infra/aphrody-workspace/src/ops.ts rg status
 bun packages/infra/aphrody-workspace/src/ops.ts rg check lint
 bun packages/infra/aphrody-workspace/src/ops.ts rg migrate inventory
 bun packages/infra/aphrody-workspace/src/ops.ts rg deploy --target <infra-target>
+bun packages/infra/aphrody-workspace/src/ops.ts shenron status
+bun packages/infra/aphrody-workspace/src/ops.ts shenron check lint
+bun packages/infra/aphrody-workspace/src/ops.ts shenron migrate inventory
+bun packages/infra/aphrody-workspace/src/ops.ts shenron service catalog
 ```
 
 ```bash

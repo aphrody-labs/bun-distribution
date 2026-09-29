@@ -267,7 +267,7 @@ export async function runConsolidation(args: string[]): Promise<number> {
   const [action = "inventory", ...rest] = args;
   if (action === "--help" || action === "-h" || action === "help") {
     console.log(
-      "Usage: aphrody-ops consolidation <inventory|submodules-inventory|infra-config-import|infra-scripts-import|source-licenses-import|docs-import|scripts-import> [--source-root path] [--iecode-root path] [--aphrody-root path] [--python-root path]",
+      "Usage: aphrody-ops consolidation <inventory|submodules-inventory|infra-config-import|infra-scripts-import|source-licenses-import|docs-import|scripts-import> [--owner name] [--source-root path] [--iecode-root path] [--aphrody-root path] [--python-root path]",
     );
     return 0;
   }
@@ -281,9 +281,10 @@ export async function runConsolidation(args: string[]): Promise<number> {
     action !== "scripts-import"
   )
     throw new Error(
-      "Usage: aphrody-ops consolidation <inventory|submodules-inventory|infra-config-import|infra-scripts-import|source-licenses-import|docs-import|scripts-import> [options]",
+      "Usage: aphrody-ops consolidation <inventory|submodules-inventory|infra-config-import|infra-scripts-import|source-licenses-import|docs-import|scripts-import> [--owner name] [options]",
     );
   const options = argsOf(rest);
+  const ownerFilter = options.get("--owner");
   const sourceRoot = resolve(options.get("--source-root") ?? "/home/aphro/src");
   const iecodeRoot = resolve(options.get("--iecode-root") ?? join(dirname(sourceRoot), "iecode"));
   const aphrodyRoot = resolve(
@@ -335,7 +336,8 @@ export async function runConsolidation(args: string[]): Promise<number> {
     let aliases = 0;
     let conflicts = 0;
     for (const entry of report.entries) {
-      if (entry.kind !== "script") continue;
+      if (entry.kind !== "script" || (ownerFilter && !entry.source.startsWith(`${ownerFilter}/`)))
+        continue;
       if (entry.duplicateOf) {
         aliases++;
         continue;
@@ -429,7 +431,14 @@ export async function runConsolidation(args: string[]): Promise<number> {
     }
     const indexPath = join(aphrodyRoot, "docs/migration/IMPORTED-SCRIPTS-INDEX.md");
     await mkdir(dirname(indexPath), { recursive: true });
-    await writeFile(indexPath, `${index.join("\n")}\n`);
+    let indexContent = index;
+    if (ownerFilter && existsSync(indexPath)) {
+      const priorRows = (await readFile(indexPath, "utf8"))
+        .split("\n")
+        .filter((line) => line.startsWith("- `") && !line.includes(`\`${ownerFilter}/`));
+      indexContent = [...index.slice(0, 5), ...priorRows.concat(index.slice(5)).sort()];
+    }
+    await writeFile(indexPath, `${indexContent.join("\n")}\n`);
     await writeFile(output, `${JSON.stringify(report, null, 2)}\n`);
     const result = {
       generatedAt: new Date().toISOString(),
@@ -438,7 +447,7 @@ export async function runConsolidation(args: string[]): Promise<number> {
       exactDuplicateAliases: aliases,
       conflicts,
       failures,
-      indexedScripts: index.length - 5,
+      indexedScripts: indexContent.length - 5,
       report: relative(aphrodyRoot, indexPath),
     };
     const importReport = join(aphrodyRoot, "docs/migration/script-import.json");
@@ -480,6 +489,7 @@ export async function runConsolidation(args: string[]): Promise<number> {
     for (const entry of report.entries) {
       if (
         entry.kind !== "documentation" ||
+        (ownerFilter && !entry.source.startsWith(`${ownerFilter}/`)) ||
         !entry.importedTarget?.includes("/_source/") ||
         !entry.target ||
         protectedConflicts.has(entry.target)
@@ -514,7 +524,11 @@ export async function runConsolidation(args: string[]): Promise<number> {
       removedGeneratedFallbacks++;
     }
     for (const entry of report.entries) {
-      if (entry.kind !== "documentation") continue;
+      if (
+        entry.kind !== "documentation" ||
+        (ownerFilter && !entry.source.startsWith(`${ownerFilter}/`))
+      )
+        continue;
       if (entry.duplicateOf) {
         aliases++;
         continue;
@@ -787,7 +801,7 @@ export async function runConsolidation(args: string[]): Promise<number> {
     );
     return failures.length > 0 ? 1 : 0;
   }
-  const specs: RootSpec[] = [
+  const allSpecs: RootSpec[] = [
     {
       key: "src-root-docs",
       path: sourceRoot,
@@ -810,7 +824,7 @@ export async function runConsolidation(args: string[]): Promise<number> {
       ["nie", "nie", "extract"],
       ["fut", "fut", "extract"],
       ["rg", "rg", "deferred"],
-      ["shenron", "shenron", "deferred"],
+      ["shenron", "shenron", "extract"],
       ["bun", "bun", "upstream-pinned"],
       ["oxc", "oxc", "upstream-pinned"],
       ["bevy", "bevy", "classify"],
@@ -824,6 +838,10 @@ export async function runConsolidation(args: string[]): Promise<number> {
     })),
     { key: "iecode", path: iecodeRoot, owner: "iecode", mode: "extract" },
   ];
+  const specs = allSpecs.filter(
+    (spec) => !ownerFilter || spec.key === ownerFilter || spec.owner === ownerFilter,
+  );
+  if (ownerFilter && !specs.length) throw new Error(`unknown consolidation owner: ${ownerFilter}`);
   if (action === "submodules-inventory") {
     const result = inventorySubmodules(specs);
     const nested = await inventoryNestedFiles(result.submodules, specs);

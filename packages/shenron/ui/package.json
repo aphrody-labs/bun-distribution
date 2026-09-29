@@ -78,7 +78,7 @@
   },
   "scripts": {
     "type-check": "tsc --noEmit",
-    "lint": "oxlint",
+    "lint": "oxlint -c ../.oxlintrc.json",
     "test": "bun test",
     "tokens": "bun scripts/generate-tokens.ts",
     "tokens:check": "bun scripts/generate-tokens.ts --check",
@@ -101,16 +101,16 @@
     "swiper": "^14.2.0"
   },
   "peerDependencies": {
-    "react": "19.3.0",
-    "react-dom": "19.3.0"
+    "react": "catalog:",
+    "react-dom": "catalog:"
   },
   "devDependencies": {
-    "@types/bun": "^1.4.0",
-    "@types/react": "19.3.0",
-    "typescript": "7.0.2",
-    "@types/react-dom": "19.3.0",
-    "react": "19.3.0",
-    "react-dom": "19.3.0",
+    "@types/bun": "catalog:",
+    "@types/react": "catalog:",
+    "typescript": "catalog:",
+    "@types/react-dom": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:",
     "postcss": "8.5.26",
     "@tailwindcss/postcss": "^4.3.3",
     "tailwindcss": "^4.3.3",

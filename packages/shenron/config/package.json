@@ -18,15 +18,15 @@
   },
   "scripts": {
     "type-check": "tsc --noEmit",
-    "lint": "oxlint",
+    "lint": "oxlint -c ../.oxlintrc.json",
     "test": "bun test"
   },
   "dependencies": {
-    "zod": "^4.6.4"
+    "zod": "catalog:"
   },
   "devDependencies": {
-    "@types/bun": "^1.4.0",
-    "typescript": "7.0.2"
+    "@types/bun": "catalog:",
+    "typescript": "catalog:"
   },
   "shenron": {
     "runtime": {

@@ -12,6 +12,7 @@ interface ImportRecord {
   source_file_count: number;
   target_file_count: number;
   files: FileRecord[];
+  qualifications: string[];
 }
 
 const root = resolve(import.meta.dir, "../..");
@@ -19,7 +20,7 @@ const record = JSON.parse(
   readFileSync(resolve(root, "docs/migration/shenron-workspace-import.json"), "utf8"),
 ) as ImportRecord;
 const rootManifest = JSON.parse(readFileSync(resolve(root, "package.json"), "utf8")) as {
-  workspaces: { packages: string[] };
+  workspaces: { packages: string[]; catalog?: Record<string, string> };
 };
 
 for (const pattern of ["packages/shenron/*", "apps/shenron/*"]) {
@@ -62,8 +63,8 @@ for (const [kind, names] of [
       manifest.peerDependencies,
     ]) {
       for (const [dependency, version] of Object.entries(dependencies ?? {})) {
-        if (version === "catalog:")
-          throw new Error(`${manifest.name} still uses the source catalog for ${dependency}`);
+        if (version === "catalog:" && !rootManifest.workspaces.catalog?.[dependency])
+          throw new Error(`${manifest.name} references missing root catalog entry ${dependency}`);
         if (dependency.startsWith("@shenron/") && version !== "workspace:*") {
           throw new Error(`${manifest.name} does not use the Aphrody workspace for ${dependency}`);
         }
@@ -71,5 +72,8 @@ for (const [kind, names] of [
     }
   }
 }
+
+if (!record.qualifications.some((entry) => entry.includes("root catalog")))
+  throw new Error("Shenron import record does not document Aphrody root catalog alignment");
 
 console.log(`Shenron layout: 9 workspaces and ${record.files.length} qualified files`);
