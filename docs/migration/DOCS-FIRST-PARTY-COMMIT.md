@@ -20,3 +20,7 @@ contains 6,538 entries, the link audit maps 2,272 local links and reports 1,292
 unresolved local Markdown links, and documents from other roots still need
 license and hash qualification. This audit did not inspect the delegated UI
 checkout.
+
+After the Bun documentation commit, a fresh clone of `4eaf8c4` verified the
+combined first-party and Bun batches: all 4,169 mapped targets are present and
+match their recorded imported SHA-256 values.

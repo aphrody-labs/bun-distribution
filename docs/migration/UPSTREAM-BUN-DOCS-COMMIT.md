@@ -10,3 +10,7 @@ mismatches. The imported Bun `LICENSE.md` is part of this set.
 This copies the documentation reference only. Bun's source fork and upstream
 workspace remain separate under the migration plan; documentation import does
 not claim source or build parity.
+
+From fresh clone `4eaf8c4`, a combined check of the Bun and licensed first-party
+documentation batches verified 4,169 targets with zero missing files and zero
+hash mismatches.

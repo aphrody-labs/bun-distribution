@@ -200,6 +200,10 @@ source-closure, compatibility, installed-workflow, license, and rollback gate.
       [Bun docs audit](docs/migration/UPSTREAM-BUN-DOCS-COMMIT.md) records the
       zero-missing, zero-mismatch result; Bun's upstream fork remains a separate
       workspace and is not represented as imported code.
+- [x] Verify the committed licensed-root and Bun documentation from a fresh
+      clone of `4eaf8c4`: all 4,169 mapped targets are present and match their
+      recorded imported SHA-256 values. This proves file integrity for these
+      batches; it does not close the remaining docs, link, or workspace gates.
 - [ ] Complete Infra's consumer and pipeline cutover without the transitional
       checkout. The Rust library suite now passes 52/52 after its Git overview
       test was isolated in a temporary repository. `pipeline --stage check --json` reports 12
