@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
 // SPDX-FileCopyrightText: 2026 aphrody contributors
 
-//! Native BXC tools for the Aphrody Agent Engine:
-//! - [`WebSearchTool`]: high-cadence search via bxc search engine
-//! - [`WebScrapeTool`]: fast markdown extraction via bxc scrape engine
+//! Shared Rust Web tools for the Aphrody Agent Engine:
+//! - [`WebSearchTool`]: public web search
+//! - [`WebScrapeTool`]: markdown extraction
 //! - [`JsEvalTool`]: in-process / sandboxed JavaScript VM execution
 //! - [`GoogleAiTool`]: direct keyless Google AI generative interface
 
@@ -29,7 +29,7 @@ pub struct WebSearchArgs {
     pub num: Option<u32>,
 }
 
-/// Native web search tool powered by the bxc engine.
+/// Native web search tool powered by the shared Rust Web client.
 pub struct WebSearchTool {
     definition: ToolDefinition,
     budget: Duration,
@@ -78,7 +78,7 @@ impl ToolExecutor for WebSearchTool {
             ToolError::InvalidArguments { tool: "web_search".into(), message: e.to_string() }
         })?;
 
-        let client = match aphrody_web_bridge::cli::BxcCli::discover() {
+        let client = match aphrody_web_bridge::cli::WebBrowserClient::discover() {
             Ok(c) => c,
             Err(e) => {
                 return Ok(ToolOutput::error(format!(
@@ -125,7 +125,7 @@ pub struct WebScrapeArgs {
     pub profile: Option<String>,
 }
 
-/// Native web scraper tool powered by bxc.
+/// Native web scraper tool powered by the shared Rust Web client.
 pub struct WebScrapeTool {
     definition: ToolDefinition,
     budget: Duration,
@@ -149,8 +149,7 @@ impl WebScrapeTool {
 
         let definition = ToolDefinition::new(
             "web_scrape",
-            "Scrape and convert any public web page directly into clean Markdown using the native \
-             bxc engine.",
+            "Scrape and convert any public web page directly into clean Markdown.",
             JsonSchema::object(
                 properties,
                 Some(vec!["url".into()]),
@@ -179,7 +178,7 @@ impl ToolExecutor for WebScrapeTool {
             ToolError::InvalidArguments { tool: "web_scrape".into(), message: e.to_string() }
         })?;
 
-        let client = match aphrody_web_bridge::cli::BxcCli::discover() {
+        let client = match aphrody_web_bridge::cli::WebBrowserClient::discover() {
             Ok(c) => c,
             Err(e) => {
                 return Ok(ToolOutput::error(format!(
@@ -207,7 +206,7 @@ pub struct JsEvalArgs {
     pub code: String,
 }
 
-/// Fast JavaScript VM evaluation tool powered by the bxc engine.
+/// Fast JavaScript VM evaluation tool powered by the shared Rust Web client.
 pub struct JsEvalTool {
     definition: ToolDefinition,
 }
@@ -224,7 +223,7 @@ impl JsEvalTool {
 
         let definition = ToolDefinition::new(
             "js_eval",
-            "Execute JavaScript code in the native bxc V8 / Bun VM runtime and return output.",
+            "Execute JavaScript code in an isolated native V8 runtime and return output.",
             JsonSchema::object(
                 properties,
                 Some(vec!["code".into()]),
@@ -253,7 +252,7 @@ impl ToolExecutor for JsEvalTool {
             ToolError::InvalidArguments { tool: "js_eval".into(), message: e.to_string() }
         })?;
 
-        let client = match aphrody_web_bridge::cli::BxcCli::discover() {
+        let client = match aphrody_web_bridge::cli::WebBrowserClient::discover() {
             Ok(c) => c,
             Err(e) => {
                 return Ok(ToolOutput::error(format!(
@@ -297,7 +296,7 @@ pub struct GoogleAiArgs {
     pub model: Option<String>,
 }
 
-/// Native keyless Google AI tool powered by bxc gemini web session.
+/// Native keyless Google AI tool powered by the shared Gemini web session.
 pub struct GoogleAiTool {
     definition: ToolDefinition,
 }

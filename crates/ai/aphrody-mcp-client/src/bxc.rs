@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // SPDX-FileCopyrightText: 2026 aphrody contributors
 
-//! bxc native tools bridge: resolution, lazy MCP server initialization, and stable aliases.
+//! Legacy web compatibility types backed by the shared Rust tool registry.
 
 use std::{
     collections::HashSet,
@@ -12,8 +12,10 @@ use std::{
 use aphrody_toolcall::{ToolExecutor, ToolExposure, ToolRegistry};
 use serde::{Deserialize, Serialize};
 use tokio::sync::OnceCell;
-use tracing::{debug, info};
+use tracing::info;
 
+#[cfg(not(target_arch = "wasm32"))]
+use crate::web::{WebExposureProfile, register_native_web_tools};
 use crate::{
     builtins::search::ToolCatalog,
     client::{McpClient, McpClientHandle},
@@ -21,17 +23,16 @@ use crate::{
     executor::McpToolExecutor,
 };
 
-/// Exposure profile controlling how many bxc tools are visible directly to the model.
+/// Legacy exposure profile, now mapped to the native web tool catalog.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
 #[serde(rename_all = "snake_case")]
 pub enum BxcExposureProfile {
-    /// Recommended default: ≤ ~25 primary web and browser tools exposed directly;
-    /// all other specialized tools (FUT, wiki, archive, etc.) registered as Deferred.
+    /// Supported native web and browser tools are exposed directly.
     #[default]
     Default,
     /// Minimal: only `web_search` and `web_fetch` exposed directly.
     Minimal,
-    /// Full: every tool advertised by bxc is exposed directly.
+    /// Every native and available compatibility web tool is exposed directly.
     Full,
 }
 
@@ -48,7 +49,8 @@ pub struct BxcAliasMapping {
     pub in_default_set: bool,
 }
 
-/// The canonical set of stable aliases mapped to bxc tools.
+/// Historical alias map retained for consumers inspecting the old public API.
+/// Runtime registration prefers native tools and falls back for the remaining aliases.
 pub const BXC_STABLE_ALIASES: &[BxcAliasMapping] = &[
     // Core search & crawl:
     BxcAliasMapping {
@@ -204,7 +206,7 @@ pub fn resolve_bxc_binary() -> Option<PathBuf> {
     }
 }
 
-/// Provider managing a lazily-spawned bxc MCP server process.
+/// Compatibility provider for callers that still construct the former web bridge.
 #[derive(Clone)]
 pub struct LazyBxcProvider {
     binary_path: Option<PathBuf>,
@@ -236,20 +238,16 @@ impl LazyBxcProvider {
         self.binary_path.as_deref()
     }
 
-    /// Lazily get or spawn the underlying `bxc mcp` client connection.
+    /// Lazily connect when a capability has no shared Rust implementation yet.
     pub async fn get_client(&self) -> Result<McpClientHandle> {
         let bin = self.binary_path.as_ref().ok_or_else(|| {
-            McpClientError::BxcResolve(
-                "bxc binary not found; install bxc or set BXC_BIN".to_string(),
-            )
+            McpClientError::BxcResolve("web compatibility binary was not found".to_owned())
         })?;
-
         self.cell
             .get_or_try_init(|| async {
-                info!(bin = %bin.display(), "Spawning lazy bxc MCP server (`bxc mcp`)");
+                info!(bin = %bin.display(), "Starting web compatibility MCP for remaining tools");
                 let bin_str = bin.to_str().unwrap_or("bxc");
-                let args = vec!["mcp".to_string()];
-
+                let args = vec!["mcp".to_owned()];
                 let mut client = McpClient::from_stdio(bin_str, &args, None, None)?;
                 client.initialize().await?;
                 Ok(McpClientHandle::new("bxc", client))
@@ -265,8 +263,7 @@ impl Default for LazyBxcProvider {
     }
 }
 
-/// Connects to bxc and registers both first-class aliases and remaining upstream tools
-/// into the [`ToolRegistry`] and [`ToolCatalog`].
+/// Registers shared Rust web tools first, then unported server tools without duplicates.
 ///
 /// Returns the total number of tools registered.
 pub async fn register_bxc_tools(
@@ -275,26 +272,33 @@ pub async fn register_bxc_tools(
     provider: &LazyBxcProvider,
     profile: BxcExposureProfile,
 ) -> Result<usize> {
-    if !provider.is_available() {
-        debug!("bxc binary not available; skipping bxc tool registration");
-        return Ok(0);
-    }
-
-    // Initialize or obtain the client connection:
-    let client = provider.get_client().await?;
-    let upstream_tools = client.list_tools().await?;
-
-    let mut registered_count = 0;
-    let mut claimed_upstream = HashSet::new();
-
-    // 1. Register first-class aliases:
-    for alias in BXC_STABLE_ALIASES {
-        // Check if upstream server provides this tool:
-        if let Some(tool) = upstream_tools.iter().find(|t| t.name == alias.upstream_name) {
+    #[cfg(not(target_arch = "wasm32"))]
+    {
+        let native_profile = match profile {
+            BxcExposureProfile::Default => WebExposureProfile::Default,
+            BxcExposureProfile::Minimal => WebExposureProfile::Minimal,
+            BxcExposureProfile::Full => WebExposureProfile::Full,
+        };
+        let mut registered = register_native_web_tools(registry, catalog, native_profile).await;
+        if !provider.is_available() {
+            return Ok(registered);
+        }
+        let client = provider.get_client().await?;
+        let upstream_tools = client.list_tools().await?;
+        let mut claimed_upstream = HashSet::new();
+        for alias in BXC_STABLE_ALIASES {
+            let Some(tool) = upstream_tools.iter().find(|tool| tool.name == alias.upstream_name)
+            else {
+                continue;
+            };
+            claimed_upstream.insert(alias.upstream_name);
+            if registry.get(alias.exposed_name).is_some() {
+                continue;
+            }
             let exposure = match profile {
                 BxcExposureProfile::Full => ToolExposure::Direct,
                 BxcExposureProfile::Minimal => {
-                    if alias.exposed_name == "web_search" || alias.exposed_name == "web_fetch" {
+                    if matches!(alias.exposed_name, "web_search" | "web_fetch") {
                         ToolExposure::Direct
                     } else {
                         ToolExposure::Deferred
@@ -308,7 +312,6 @@ pub async fn register_bxc_tools(
                     }
                 },
             };
-
             let executor = McpToolExecutor::with_alias(
                 "bxc",
                 alias.upstream_name,
@@ -318,38 +321,52 @@ pub async fn register_bxc_tools(
                 client.clone(),
                 exposure,
             );
-
-            catalog.add(executor.definition().clone()).await;
+            let definition = executor.definition().clone();
             if registry.register(Arc::new(executor)).is_ok() {
-                registered_count += 1;
+                catalog.add(definition).await;
+                registered += 1;
             }
-            claimed_upstream.insert(alias.upstream_name.to_string());
         }
-    }
-
-    // 2. Register all other tools advertised by bxc (e.g. FUT, wiki, archive, etc.):
-    for tool in &upstream_tools {
-        if !claimed_upstream.contains(&tool.name) {
-            let exposure = match profile {
-                BxcExposureProfile::Full => ToolExposure::Direct,
-                _ => ToolExposure::Deferred,
+        for tool in &upstream_tools {
+            if claimed_upstream.contains(tool.name.as_str()) || registry.get(&tool.name).is_some() {
+                continue;
+            }
+            let exposure = if profile == BxcExposureProfile::Full {
+                ToolExposure::Direct
+            } else {
+                ToolExposure::Deferred
             };
-
             let executor = McpToolExecutor::from_mcp_tool("bxc", tool, client.clone(), exposure);
-
-            catalog.add(executor.definition().clone()).await;
+            let definition = executor.definition().clone();
             if registry.register(Arc::new(executor)).is_ok() {
-                registered_count += 1;
+                catalog.add(definition).await;
+                registered += 1;
             }
         }
+        Ok(registered)
     }
+    #[cfg(target_arch = "wasm32")]
+    {
+        let _ = (registry, catalog, provider, profile);
+        Ok(0)
+    }
+}
 
-    info!(
-        registered = registered_count,
-        total_upstream = upstream_tools.len(),
-        profile = ?profile,
-        "Registered bxc tools into registry and catalog"
-    );
+#[cfg(test)]
+mod tests {
+    use super::*;
 
-    Ok(registered_count)
+    #[tokio::test]
+    async fn native_tools_register_without_a_compatibility_binary() {
+        let provider = LazyBxcProvider::with_binary("/unused/legacy-web-server");
+        let mut registry = ToolRegistry::new();
+        let catalog = ToolCatalog::new();
+        assert_eq!(
+            register_bxc_tools(&mut registry, &catalog, &provider, BxcExposureProfile::Default)
+                .await
+                .unwrap(),
+            7
+        );
+        assert!(registry.get("web_search").is_some());
+    }
 }

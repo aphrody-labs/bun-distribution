@@ -30,14 +30,14 @@ pub struct AssembledRegistry {
 /// Options controlling registry assembly.
 #[derive(Debug, Clone, Default)]
 pub struct RegistryOptions {
-    /// Exposure profile for bxc tools.
+    /// Exposure profile for native web tools (legacy field name).
     pub bxc_exposure: BxcExposureProfile,
-    /// Whether to auto-register bxc tools when the binary is present.
+    /// Whether to register the shared Rust web tools. Retains the legacy field name.
     pub enable_bxc: bool,
 }
 
 /// Assemble a ready-to-use [`ToolRegistry`] including builtins, configured MCP servers, and
-/// optional bxc bridge.
+/// optional native web tools.
 pub async fn assemble_tool_registry(
     configured_servers: &BTreeMap<String, McpServerConfig>,
     options: RegistryOptions,
@@ -48,12 +48,14 @@ pub async fn assemble_tool_registry(
     // Register all configured external MCP servers:
     register_configured_mcp_servers(&mut registry, &catalog, configured_servers).await?;
 
-    // Optionally connect bxc tools:
+    // Register native web tools first, then compatibility tools still missing in Rust.
+    #[cfg(not(target_arch = "wasm32"))]
     if options.enable_bxc {
         let provider = LazyBxcProvider::new();
-        if provider.is_available() {
-            let _ =
-                register_bxc_tools(&mut registry, &catalog, &provider, options.bxc_exposure).await;
+        if let Err(error) =
+            register_bxc_tools(&mut registry, &catalog, &provider, options.bxc_exposure).await
+        {
+            warn!(%error, "Web compatibility tools could not be registered");
         }
     }
 

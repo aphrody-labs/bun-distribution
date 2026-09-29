@@ -7,8 +7,8 @@
 //! - Full MCP JSON-RPC 2.0 client over stdio (child process) and streamable HTTP transports.
 //! - [`McpToolExecutor`] bridging MCP tools into [`aphrody_toolcall::ToolExecutor`].
 //! - Built-in agent tools: `update_plan`, `view_image`, and `tool_search`.
-//! - Native bxc tools bridge with lazy process spawning and stable first-class aliases
-//!   (`web_search`, `web_fetch`, `web_crawl`, `browser_*`, etc.).
+//! - Native web tools backed by the shared Rust client (`web_search`, `web_fetch`,
+//!   supported `browser_*` actions).
 //! - Automatic assembly from [`aphrody_config::mcp::McpServerConfig`].
 
 pub mod builtins;
@@ -20,6 +20,8 @@ pub mod protocol;
 pub mod registry;
 pub mod schema;
 pub mod transport;
+#[cfg(not(target_arch = "wasm32"))]
+pub mod web;
 
 pub use builtins::{
     PlanState, ToolCatalog, ToolSearchResult, ToolSearchTool, UpdatePlanTool, ViewImageTool,
@@ -41,5 +43,8 @@ pub use registry::{
     register_selected_mcp_servers,
 };
 pub use schema::mcp_schema_to_toolcall_schema;
-#[cfg(not(target_arch = "wasm32"))] pub use transport::stdio::StdioTransport;
+#[cfg(not(target_arch = "wasm32"))]
+pub use transport::stdio::StdioTransport;
 pub use transport::{Transport, http::HttpTransport};
+#[cfg(not(target_arch = "wasm32"))]
+pub use web::{WebExposureProfile, register_native_web_tools};

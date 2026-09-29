@@ -9,7 +9,7 @@ authors.workspace      = true
 homepage.workspace     = true
 repository.workspace   = true
 license.workspace      = true
-description            = "Model Context Protocol (MCP) client for aphrody: stdio and streamable HTTP transports, ToolExecutor adapter for aphrody-toolcall, built-ins (update_plan, view_image, tool_search), and bxc native tools bridge (P3)."
+description            = "Model Context Protocol client for Aphrody: stdio and streamable HTTP transports, ToolExecutor adapter, built-in tools, and shared Rust web tools."
 
 [lints]
 workspace = true

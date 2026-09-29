@@ -11,7 +11,7 @@
 //!   prompts.
 //! - Pluggable [`ComputerBackend`]s:
 //!   - `Windows`: in-process native execution via `aphrody-winclean`
-//!   - `Browser`: controlled browser automation via `bxc` `browser_*` tools
+//!   - `Browser`: controlled browser automation via shared Rust Web tools
 //!   - `Linux`: X11 desktop automation via XTest / GetImage
 //!   - `Mock`: in-memory deterministic backend for headless unit tests.
 
@@ -31,7 +31,7 @@ use serde_json::{Value, json};
 pub enum ComputerEnvironment {
     /// Native Windows desktop automation via the in-process `aphrody-winclean` crate.
     Windows,
-    /// Browser session automation via bxc.
+    /// Browser session automation via the shared Rust Web client.
     Browser,
     /// Linux X11 automation.
     Linux,
@@ -447,7 +447,7 @@ impl ComputerBackend for WindowsComputerBackend {
     }
 }
 
-/// Browser automation backend driven natively by bxc.
+/// Browser automation backend driven by the shared Rust Web client.
 pub struct BrowserComputerBackend;
 
 #[async_trait::async_trait]
@@ -461,12 +461,11 @@ impl ComputerBackend for BrowserComputerBackend {
         action: &ComputerAction,
         policy: &ComputerPolicy,
     ) -> Result<ToolOutput, ToolError> {
-        let client = match aphrody_web_bridge::cli::BxcCli::discover() {
+        let client = match aphrody_web_bridge::cli::WebBrowserClient::discover() {
             Ok(c) => c,
             Err(error) => {
                 return Ok(ToolOutput::error(format!(
-                    "computer [browser]: bxc executable not found ({error}); please verify bxc \
-                     installation or set BXC_BIN"
+                    "computer [browser]: native Web client unavailable ({error})"
                 )));
             },
         };
@@ -823,7 +822,7 @@ impl ComputerTool {
     ///
     /// The choice is honest about what the build can do: `Windows` maps to
     /// the in-process `aphrody-winclean` backend only when compiled for Windows,
-    /// `Browser` to bxc, `Mock` to the deterministic test backend, and
+    /// `Browser` to the shared Rust Web client, `Mock` to the deterministic test backend, and
     /// `Linux` (no X11 backend yet) or `Windows` on another host to
     /// [`UnsupportedComputerBackend`], which rejects every action.
     #[must_use]
@@ -846,7 +845,7 @@ impl ComputerTool {
         Self::new_with_backend(backend, policy)
     }
 
-    /// Create configured specifically for browser and web computer use via bxc.
+    /// Create configured specifically for browser and web computer use via the shared Rust Web client.
     #[must_use]
     pub fn browser() -> Self {
         Self::new_with_backend(Arc::new(BrowserComputerBackend), ComputerPolicy::default())

@@ -32,19 +32,15 @@
 //! (timeout / output cap) remain configurable via the builder.
 
 mod apply_patch;
-mod bxc_tools;
 mod computer_use;
 mod jev;
 mod read_file;
 mod search_text;
 mod shell;
+mod web_tools;
 mod winclean;
 
 pub use apply_patch::ApplyPatchTool;
-pub use bxc_tools::{
-    GoogleAiArgs, GoogleAiTool, JsEvalArgs, JsEvalTool, WebScrapeArgs, WebScrapeTool,
-    WebSearchArgs, WebSearchTool,
-};
 pub use computer_use::{
     BrowserComputerBackend, ComputerAction, ComputerBackend, ComputerEnvironment, ComputerPolicy,
     ComputerTool, ComputerUseTool, MockComputerBackend, UnsupportedComputerBackend,
@@ -55,6 +51,10 @@ pub use read_file::ReadFileTool;
 pub use search_text::SearchTextTool;
 pub use shell::{
     DEFAULT_MAX_OUTPUT_BYTES, DEFAULT_TIMEOUT, OutputSink, ShellExecConfig, ShellExecTool,
+};
+pub use web_tools::{
+    GoogleAiArgs, GoogleAiTool, JsEvalArgs, JsEvalTool, WebScrapeArgs, WebScrapeTool,
+    WebSearchArgs, WebSearchTool,
 };
 pub use winclean::{
     WINCLEAN_DIRECT_TOOLS, WINCLEAN_GATEWAY, WincleanGatewayTool, WincleanTool, winclean_tools,
