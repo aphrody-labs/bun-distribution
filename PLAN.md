@@ -318,10 +318,27 @@ explicitly requested; they do not close these gates or authorize cutover.
       and 383 unique MCP names. The catalog check remains red: `aphrody-ai` and
       the UI-owned checkout cannot complete `cargo metadata` because sibling
       dependency paths are unavailable. `aphrody-ui` was not changed.
-- [x] Infra reports 56 declared root workspace packages. Its layout check passes;
-      Cargo boundary audit still finds path dependencies outside this workspace
-      in sibling checkouts. The root repository has no Git remote, so this batch
-      can be committed locally but cannot be pushed from this checkout.
+- [x] Infra reports 56 declared root Bun workspace packages. Its layout check
+      passes. A domain-scoped Rust audit reports 92 Cargo members, of which 8
+      are integrated in the requested non-AI/non-Web perimeter: one Contracts
+      crate (`aphrody-kernel-client`), six Infra crates and `ievr-data`. The 63
+      AI and 21 Web members are excluded from this count by scope; they do not
+      establish migration parity for those domains.
+- [ ] Make the Rust workspace self-contained. The audit found 30 local Cargo
+      path references outside the monorepo: Contracts 6, OS 13, Compat 5, UI 2,
+      Shell 2, Native 1 and Koharu 1. Remaining source owners include Contracts,
+      Native, Compat/N2B, Shell, OS, UI/M3, Koharu, and NIE/IECODE FFI/bindings;
+      only `ievr-data` is currently integrated for NIE/IECODE. Infra has six of
+      seven Rust manifests integrated. No Rust source was identified for Fut.
+- [ ] Complete the Bun workspace migration for the same perimeter. UI/M3,
+      Compat/N2B, OS, Shell, Koharu, Fut and NIE/IECODE application workspaces
+      are not present under their target owners. Reconcile Infra's remaining
+      source manifests. Bun/Oxc sources are not present under `upstream/` (only
+      Discord and simdutf-rio are); document references do not constitute a
+      source import. Central N2B/Oxc Bun/FFI packaging remains a boundary to
+      verify, with the implementation in the excluded AI domain.
+- [x] The root repository has no Git remote, so the consolidated batch was
+      committed locally as `004540e1`; it cannot be pushed from this checkout.
 - [ ] Infra's Bun workspace audit initially found 150 manifest violations. Its
       safe fixer repaired 149 (Bun engine floors, missing `typecheck` scripts,
       and catalog references) across the 56 root-owned manifests. One remains:
