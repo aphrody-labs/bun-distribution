@@ -99,6 +99,13 @@ source-closure, compatibility, installed-workflow, license, and rollback gate.
       [`ievr-iecode-extraction.json`](docs/migration/ievr-iecode-extraction.json)
       records source/origin heads, SHA comparison, license boundary and the
       successful target `cargo check --all-targets --locked --offline`.
+- [x] Import the vital AI home crate and its two direct first-party dependencies
+      (`aphrody-models`, `aphrody-config`) from clean `aphrody-ai` HEAD
+      `3aa88791f49b963a00f073cb206677ea9d1957e1` into `crates/ai/`. All 75
+      source files match SHA-256; package names and Apache-2.0 licensing are
+      preserved. The root workspace and shared dependency features now resolve
+      the imported closure; `cargo check --offline -p aphrody-agent-home` passes.
+      See [`ai-agent-home-extraction.json`](docs/migration/ai-agent-home-extraction.json).
 - [x] Stage IECODE's Bun packages and split its generic happy-dom host into
       `@aphrody/bun-test-dom`, retaining `@nie/plugin/happydom` as a compatibility
       export. `@aphrody/iecode-ffi`, `@aphrody/nie`, and `@nie/plugin` are private

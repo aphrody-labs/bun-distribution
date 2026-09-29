@@ -1,0 +1,109 @@
+# Realistic config.toml fixture combining upstream Codex shape
+# (var/codex/docs/config.md) with aphrody's extension tables. Used by
+# crates/aphrody-config/src/config_toml_tests.rs::realistic_fixture_parses_with_zero_errors.
+
+model = "gpt-5-codex"
+review_model = "gpt-5-codex-mini"
+model_provider = "openai"
+model_context_window = 272000
+model_auto_compact_token_limit = 200000
+model_reasoning_effort = "high"
+model_reasoning_summary = "concise"
+model_verbosity = "medium"
+approval_policy = "on-request"
+sandbox_mode = "workspace-write"
+profile = "fast-local"
+notify = ["notify-send", "aphrody turn finished"]
+instructions = "You are operating inside the aphrody monorepo."
+developer_instructions = "Prefer rg/fd/bat over grep/find/cat."
+project_doc_max_bytes = 65536
+project_doc_fallback_filenames = ["CONVENTIONS.md", "CONTRIBUTING.md"]
+oss_provider = "ollama"
+
+# Fields that exist in upstream but not in aphrody's ConfigToml: these must
+# land in `unknown` and never fail parsing.
+tui = { theme = "dark" }
+otel = { enabled = false }
+features = { multi_agent_v2 = true }
+hide_agent_reasoning = false
+
+[sandbox_workspace_write]
+writable_roots = ["/tmp/aphrody-scratch"]
+network_access = false
+exclude_tmpdir_env_var = false
+exclude_slash_tmp = true
+
+[shell_environment_policy]
+inherit = true
+ignore_default_excludes = false
+exclude = ["AWS_*", "*_SECRET_KEY"]
+include_only = []
+
+[shell_environment_policy.set]
+APHRODY_HOME = "~/.aphrody"
+
+[model_providers.openai]
+wire_api = "responses"
+
+[model_providers.custom-vllm-cluster]
+name = "Home cluster vLLM"
+base_url = "http://10.0.0.5:8000/v1"
+wire_api = "chat"
+request_max_retries = 2
+
+[profiles.fast-local]
+model = "qwen2.5-coder:7b"
+model_provider = "ollama"
+approval_policy = "never"
+sandbox_mode = "workspace-write"
+model_reasoning_effort = "low"
+
+[profiles.deep-research]
+model = "gpt-5-codex"
+model_provider = "openai"
+
+[mcp_servers.aphrody]
+command = "aphrody-mcp"
+args = ["--stdio"]
+
+[mcp_servers.aphrody.env]
+RUST_LOG = "info"
+
+[mcp_servers.dbfr]
+url = "https://mcp.dragonballfr.com/mcp"
+bearer_token_env_var = "DBFR_MCP_TOKEN"
+enabled_tools = ["rag_search"]
+
+[rag]
+enabled = true
+db_path = "~/.aphrody/rag/index.db"
+embed_model = "multilingual-e5-small"
+embed_backend = "ort"
+mode = "hybrid+rerank"
+top_k = 20
+rerank_top_n = 8
+auto_context = "first-turn"
+min_score = 0.15
+
+[llama]
+ctx = 8192
+keep_alive = "5m"
+
+[train]
+output_dir = "~/.aphrody/train"
+
+[compat]
+read_codex_home = false
+
+[computer_use]
+enabled = false
+allowed_apps = ["devenv.exe"]
+denied_apps = ["regedit.exe", "cmd.exe"]
+environment = "windows"
+
+[tools.bxc]
+enabled = true
+max_concurrent = 4
+
+[model_profiles.qwen3-coder]
+dialect = "qwen3-xml"
