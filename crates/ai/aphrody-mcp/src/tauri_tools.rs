@@ -129,7 +129,6 @@ async fn catalog() -> Result<Vec<Tool>, String> {
     let tools: Vec<Tool> = raw.get("tools").and_then(Value::as_array).into_iter().flatten()
         .filter(|tool|tool.get("name").and_then(Value::as_str).is_some_and(|name|name.starts_with("tauri_")))
         .cloned()
-        .into_iter()
         .filter_map(|tool| serde_json::from_value(json!({
             "name": format!("{PREFIX}{}",tool["name"].as_str().unwrap_or_default().trim_start_matches("tauri_")),
             "description": tool["description"],

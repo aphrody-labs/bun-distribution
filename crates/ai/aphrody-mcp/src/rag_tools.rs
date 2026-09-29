@@ -83,7 +83,7 @@ async fn embedder_from_env() -> Result<Option<Arc<dyn aphrody_rag::Embedder>>, S
     Ok(Some(embedder))
 }
 
-#[cfg(feature = "ort")]
+#[cfg(feature = "rag-ort")]
 async fn embedder_ort(model: String) -> Result<Arc<dyn aphrody_rag::Embedder>, String> {
     tokio::task::spawn_blocking(move || aphrody_rag::OrtEmbedder::load(&model))
         .await
@@ -92,7 +92,7 @@ async fn embedder_ort(model: String) -> Result<Arc<dyn aphrody_rag::Embedder>, S
         .map_err(|error| error.to_string())
 }
 
-#[cfg(not(feature = "ort"))]
+#[cfg(not(feature = "rag-ort"))]
 async fn embedder_ort(_model: String) -> Result<Arc<dyn aphrody_rag::Embedder>, String> {
     Err("embed_backend=ort requires aphrody-rag built with the `ort` feature".to_owned())
 }

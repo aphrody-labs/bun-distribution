@@ -248,13 +248,13 @@ pub(crate) async fn status(req: JobStatusRequest) -> String {
             },
         },
     };
-    if let Some(limit) = req.limit {
-        if limit == 0 || limit > 200 {
-            return error_envelope(
-                "JOB_BAD_REQUEST",
-                format!("limit must be in 1..=200 (got {limit})"),
-            );
-        }
+    if let Some(limit) = req.limit
+        && (limit == 0 || limit > 200)
+    {
+        return error_envelope(
+            "JOB_BAD_REQUEST",
+            format!("limit must be in 1..=200 (got {limit})"),
+        );
     }
     let tail = match req.log_tail {
         None => DEFAULT_LOG_TAIL,

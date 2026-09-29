@@ -520,10 +520,10 @@ fn context7_client() -> &'static reqwest::Client {
 async fn context7_get(path: &str, params: &[(&str, &str)]) -> String {
     let url = format!("{}/{}", context7_base_url(), path.trim_start_matches('/'));
     let mut req = context7_client().get(&url).query(params);
-    if let Ok(key) = std::env::var("CONTEXT7_API_KEY") {
-        if !key.is_empty() {
-            req = req.bearer_auth(key);
-        }
+    if let Ok(key) = std::env::var("CONTEXT7_API_KEY")
+        && !key.is_empty()
+    {
+        req = req.bearer_auth(key);
     }
     match req.send().await {
         Ok(resp) => {
@@ -1769,10 +1769,10 @@ impl GoogleMcpServer {
     ) -> String {
         let mut args = serde_json::Map::new();
         args.insert("query".into(), json!(query));
-        if let Some(lang) = language {
-            if !lang.is_empty() {
-                args.insert("language".into(), json!(lang));
-            }
+        if let Some(lang) = language
+            && !lang.is_empty()
+        {
+            args.insert("language".into(), json!(lang));
         }
         mslearn_call("microsoft_code_sample_search", serde_json::Value::Object(args)).await
     }
@@ -1810,10 +1810,10 @@ impl GoogleMcpServer {
     ) -> String {
         let mut ms_code_args = serde_json::Map::new();
         ms_code_args.insert("query".into(), json!(&query));
-        if let Some(ref lang) = language {
-            if !lang.is_empty() {
-                ms_code_args.insert("language".into(), json!(lang));
-            }
+        if let Some(ref lang) = language
+            && !lang.is_empty()
+        {
+            ms_code_args.insert("language".into(), json!(lang));
         }
 
         let ctx7_future = async {
@@ -2254,11 +2254,11 @@ impl GoogleMcpServer {
     ) -> String {
         match aphrody_git::fetch_awesome_list(&source).await {
             Ok(mut index) => {
-                if enrich.unwrap_or(false) {
-                    if let Ok(client) = aphrody_git::GitHubClient::from_env() {
-                        for cat in &mut index.categories {
-                            client.enrich_awesome_items(&mut cat.items, 10).await;
-                        }
+                if enrich.unwrap_or(false)
+                    && let Ok(client) = aphrody_git::GitHubClient::from_env()
+                {
+                    for cat in &mut index.categories {
+                        client.enrich_awesome_items(&mut cat.items, 10).await;
                     }
                 }
                 index.to_markdown()
@@ -4026,12 +4026,10 @@ fn http_app() -> Router {
 /// Boot the stdio MCP server exposing the built-in tools. Equivalent to the
 /// pre-clap behaviour of `aphrody-mcp` (no subcommand).
 ///
-/// Modern MCP clients (2026-07-28 era probes such as Antigravity / Gemini / Claude Code)
-/// probe the transport using `server/discover` or `ping` before initiating the legacy
-/// handshake `initialize`. Upstream `rmcp` strictly expects `initialize` as its very
-/// first request, crashing with `ExpectedInitializeRequest` otherwise.
-/// We intercept pre-init discovery/ping messages, reply conforming JSON-RPC 2.0 payloads,
-/// and pass the chained stream containing `initialize` to `rmcp`.
+/// Support the modern stateless lifecycle and the legacy `initialize` lifecycle
+/// on the same stdio endpoint. `rmcp::service::serve_directly` handles modern
+/// requests (including `server/discover`); the legacy `serve` path still starts
+/// with `initialize` and preserves old clients.
 async fn run_server() -> Result<()> {
     use tokio::io::{AsyncBufReadExt, AsyncReadExt, AsyncWriteExt, BufReader};
 
@@ -4040,7 +4038,7 @@ async fn run_server() -> Result<()> {
     let stdin = tokio::io::stdin();
     let mut stdout = tokio::io::stdout();
     let mut reader = BufReader::new(stdin);
-    let pending_line = loop {
+    let (pending_line, stateless) = loop {
         let mut line = String::new();
         let n = reader.read_line(&mut line).await?;
         if n == 0 {
@@ -4053,33 +4051,15 @@ async fn run_server() -> Result<()> {
             continue;
         }
 
-        if let Ok(val) = serde_json::from_str::<serde_json::Value>(trimmed) {
-            if let Some(method) = val.get("method").and_then(|m| m.as_str()) {
-                if method == "server/discover" {
-                    let id = val.get("id").cloned().unwrap_or(serde_json::Value::Null);
-                    let resp = serde_json::json!({
-                        "jsonrpc": "2.0",
-                        "id": id,
-                        "result": {
-                            "supportedVersions": ["2025-11-25", "2024-11-05"],
-                            "capabilities": {
-                                "tools": { "listChanged": true },
-                                "resources": { "listChanged": true },
-                                "prompts": { "listChanged": true }
-                            },
-                            "serverInfo": {
-                                "name": "aphrody-mcp",
-                                "version": env!("CARGO_PKG_VERSION")
-                            }
-                        }
-                    });
-                    let mut resp_bytes = serde_json::to_vec(&resp)?;
-                    resp_bytes.push(b'\n');
-                    stdout.write_all(&resp_bytes).await?;
-                    stdout.flush().await?;
-                    tracing::info!("Handled pre-init server/discover probe");
-                    continue;
-                } else if method == "ping" {
+        if let Ok(val) = serde_json::from_str::<serde_json::Value>(trimmed)
+            && let Some(method) = val.get("method").and_then(|m| m.as_str())
+        {
+            let is_stateless = is_stateless_mcp_request(&val);
+            if is_stateless {
+                break (line, true);
+            }
+            match method {
+                "ping" => {
                     let id = val.get("id").cloned().unwrap_or(serde_json::Value::Null);
                     let resp = serde_json::json!({
                         "jsonrpc": "2.0",
@@ -4092,22 +4072,46 @@ async fn run_server() -> Result<()> {
                     stdout.flush().await?;
                     tracing::info!("Handled pre-init ping probe");
                     continue;
-                }
+                },
+                "initialize" => break (line, false),
+                _ => break (line, false),
             }
+        } else {
+            break (line, false);
         }
-
-        break line;
     };
 
     let cursor = std::io::Cursor::new(pending_line.into_bytes());
     let chained_stdin = cursor.chain(reader);
 
-    let service = GoogleMcpServer.serve((chained_stdin, stdout)).await.inspect_err(|e| {
-        tracing::error!("Serving error: {:?}", e);
-    })?;
+    let service = if stateless {
+        rmcp::service::serve_directly::<rmcp::RoleServer, _, _, _, _>(
+            GoogleMcpServer,
+            (chained_stdin, stdout),
+            None,
+        )
+    } else {
+        GoogleMcpServer.serve((chained_stdin, stdout)).await.inspect_err(|e| {
+            tracing::error!("Serving error: {:?}", e);
+        })?
+    };
 
     service.waiting().await?;
     Ok(())
+}
+
+fn is_stateless_mcp_request(request: &serde_json::Value) -> bool {
+    let method = request.get("method").and_then(serde_json::Value::as_str);
+    if method == Some("server/discover") {
+        return true;
+    }
+    if method == Some("initialize") {
+        return false;
+    }
+    request
+        .pointer("/params/_meta/io.modelcontextprotocol~1protocolVersion")
+        .and_then(serde_json::Value::as_str)
+        .is_some_and(|version| version >= "2026-07-28")
 }
 
 // ---------------------------------------------------------------------------
@@ -4117,6 +4121,30 @@ async fn run_server() -> Result<()> {
 #[cfg(test)]
 mod cli_tests {
     use super::*;
+
+    #[test]
+    fn modern_mcp_requests_select_the_stateless_lifecycle() {
+        let discover = serde_json::json!({
+            "method": "server/discover",
+            "params": {"_meta": {}}
+        });
+        let modern_tools = serde_json::json!({
+            "method": "tools/list",
+            "params": {"_meta": {
+                "io.modelcontextprotocol/protocolVersion": "2026-07-28"
+            }}
+        });
+        let legacy_tools = serde_json::json!({"method": "tools/list", "params": {}});
+        let legacy_initialize = serde_json::json!({
+            "method": "initialize",
+            "params": {"_meta": {"io.modelcontextprotocol/protocolVersion": "2026-07-28"}}
+        });
+
+        assert!(is_stateless_mcp_request(&discover));
+        assert!(is_stateless_mcp_request(&modern_tools));
+        assert!(!is_stateless_mcp_request(&legacy_tools));
+        assert!(!is_stateless_mcp_request(&legacy_initialize));
+    }
 
     #[tokio::test]
     async fn native_web_extraction_is_in_the_single_mcp_catalog() {
@@ -4388,7 +4416,7 @@ mod aphrody_mcp_call_tests {
         }
         #[cfg(all(feature = "ocr", not(target_arch = "wasm32")))]
         assert!(router.get("aphrody_shenron_ocr").is_some());
-        // The 35 tools ported from the retired Bun apps/shenron-mcp.
+        // The 37 tools ported from the retired Bun apps/shenron-mcp.
         #[cfg(all(feature = "dragonball", not(target_arch = "wasm32")))]
         {
             let names = [
@@ -4436,6 +4464,23 @@ mod aphrody_mcp_call_tests {
             let count =
                 router.list_all().iter().filter(|t| t.name.starts_with("dragonball.")).count();
             assert_eq!(count, names.len(), "unexpected dragonball.* tool count");
+
+            for (name, read_only, destructive) in [
+                ("dragonball.admin_databooks_deposit", false, true),
+                ("dragonball.admin_bot_commands", true, false),
+                ("dragonball.admin_bot_command_execute", false, true),
+                ("dragonball.admin_services", true, false),
+                ("dragonball.admin_service_action", false, true),
+                ("dragonball.a2a_send", false, false),
+                ("dragonball.a2a_task_status", true, false),
+            ] {
+                let annotations =
+                    router.get(name).and_then(|tool| tool.annotations.as_ref()).unwrap_or_else(
+                        || panic!("Shenron MCP tool has no behavior annotations: {name}"),
+                    );
+                assert_eq!(annotations.read_only_hint, Some(read_only), "{name}");
+                assert_eq!(annotations.destructive_hint, Some(destructive), "{name}");
+            }
         }
         // The nie-game tools of the retired nie plugin, forwarded to nie-mcp.
         #[cfg(all(feature = "nie", not(target_arch = "wasm32")))]
@@ -4474,6 +4519,19 @@ mod aphrody_mcp_call_tests {
         assert!(
             router.get("sync_external_agents").is_some(),
             "external_sessions_router not merged"
+        );
+    }
+
+    #[cfg(all(not(feature = "nie"), not(target_arch = "wasm32")))]
+    #[test]
+    fn nie_tools_are_absent_without_the_optional_feature() {
+        let router = GoogleMcpServer::all_tools();
+        assert!(router.get("nie.tools").is_none());
+        assert!(router.get("nie.call").is_none());
+        assert_eq!(
+            router.list_all().iter().filter(|tool| tool.name.starts_with("nie.")).count(),
+            0,
+            "NIE tools must stay out of the default MCP catalog"
         );
     }
 

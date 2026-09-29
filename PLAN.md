@@ -193,13 +193,41 @@ explicitly requested; they do not close these gates or authorize cutover.
 - [ ] Keep the existing single configured `aphrody-mcp` endpoint. The full AI
       MCP crate and its recorded AI dependency closure are now in the root Cargo
       workspace; `cargo check --offline -p aphrody-mcp` passes with the default
-      `dragonball` and `nie` features. The 21 public NIE wrappers still discover
-      and dispatch to the 67 child tools rather than listing all 67 individually.
-      The stdio transport has been extracted to the library-only
-      `aphrody-mcp-nie-bridge`, wired behind the `nie` feature, and passes its
-      handshake/catalog/call fixture. Full catalog/schema/error/bounds/lifecycle
-      conformance and single-endpoint client qualification remain open. See
+      `dragonball` feature. Keep `nie` optional and disabled by default until
+      NIE is a source member of this monorepo. The stdio transport has been
+      extracted to the library-only `aphrody-mcp-nie-bridge` package, behind the
+      opt-in `nie` feature, and passes its protocol, 67-name passthrough,
+      schema-preservation, JSON-RPC error, timeout, bounded-frame and
+      child-restart fixtures. Source DTO schemas are mirrored and tested with
+      the source RMCP schema generator, including strict unknown-field rules.
+      The existing client config and a spawned default Aphrody process now
+      pass the single-endpoint initialize/tools-list smoke check with Shenron
+      active and no `nie.*` tools. The default live-client check verifies all
+      37 exact `dragonball.*` names and object schemas; the `toolbox` build and
+      default router check cover the same names and annotations. A subprocess
+      test verifies the 2026-07-28 stateless `server/discover` plus `tools/list`
+      lifecycle against the full Shenron catalog, while a unit test covers
+      modern/legacy request routing. Real NIE child-runtime and explorer UI
+      qualification remain open. See
       [`APHRODY-MCP-EXTRACTION-READINESS.md`](docs/migration/APHRODY-MCP-EXTRACTION-READINESS.md).
+      On 2026-09-30, `cargo test --locked -p aphrody-mcp -p
+      aphrody-mcp-nie-bridge` passed before modern protocol qualification (97
+      MCP unit tests, 4 client tests, and 5 bridge tests; 1 network-dependent
+      browser test ignored). After the dual lifecycle change,
+      `cargo test --offline --locked -p aphrody-mcp` passed (98 unit tests, 5
+      client tests; 1 network-dependent browser test ignored), as did MCP
+      Clippy with `-D warnings`. Default-off
+      and explicit `--features nie` router checks both pass. The `@aphrody/bun`
+      TypeScript 7 typecheck and `cargo clippy --locked -p aphrody-mcp -p
+      aphrody-mcp-nie-bridge --all-targets --no-deps -- -D warnings` also pass.
+      The opt-in `toolbox` tranche passes independently: `cargo test --locked
+      -p aphrody-mcp --features toolbox` passes 148 unit tests (1
+      network-dependent browser test ignored) and 5 client tests; toolbox
+      Clippy with
+      `-D warnings` and `cargo build --locked -p aphrody-mcp --features
+      toolbox` also pass. Its initial lint exposed an undeclared RAG ORT cfg;
+      the new `rag-ort` feature forwards `aphrody-rag/ort` and is included by
+      `toolbox`. NIE remains excluded from that aggregate.
 - [x] Integrate all ten Contracts crates in the root Cargo workspace. Nine crates
       were copied from clean source HEAD `4a22afb12b086573e6890e49a3bfbde7a96380ea`;
       package versions are retained under target workspace metadata. The six

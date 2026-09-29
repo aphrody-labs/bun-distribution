@@ -88,7 +88,7 @@ async fn run(args: &Value) -> Result<Value, String> {
     let mut allowed_domains = args.get("allowedDomains").map_or(Ok(Vec::new()), |value| {
         let domains = value.as_array().ok_or("allowedDomains must be an array")?;
         if domains.len() > 100 {
-            return Err("allowedDomains must contain no more than 100 entries".into());
+            return Err("allowedDomains must contain no more than 100 entries");
         }
         domains
             .iter()

@@ -20,7 +20,7 @@ path = "src/main.rs"
 # The Obscura browser (HTTP + DOM + V8, plus the layout/paint engine for
 # screenshots and PDF) served natively. On by default: V8 ships prebuilt for
 # Linux and Windows MSVC (the only Windows toolchain aphrody uses).
-default = ["native-browser", "dragonball", "nie"]
+default = ["native-browser", "dragonball"]
 koharu = ["aphrody-manga/koharu"]
 native-browser = ["dep:aphrody-web-service", "aphrody-web-service/render"]
 # Obscura stealth (fingerprint + tracker blocking, wreq TLS impersonation).
@@ -58,17 +58,20 @@ dbfr      = []
 # `aphrody_rag_search` / `aphrody_rag_context` — the local aphrody-rag SQLite
 # index (`$APHRODY_RAG_DB`, default `~/.aphrody/rag/index.db`).
 rag       = ["dep:aphrody-rag"]
+# Local ONNX Runtime embedder for RAG. Keep it out of the default server; the
+# full local-inference toolbox enables it explicitly.
+rag-ort   = ["rag", "aphrody-rag/ort"]
 # `dragonball.*` — the Dragon Ball tools of the single Aphrody MCP (ported from
 # the retired Bun `apps/shenron-mcp`): Shenron bot/site API proxies plus the
 # local corpus, persona and `APHRODY_AI_*` chat of `aphrody-rag::dragonball`.
 # On by default: aphrody-mcp is the one MCP the kernel plugin proxies.
 dragonball = ["dep:aphrody-rag"]
-# `nie.*` — the NIE (Inazuma Eleven Victory Road) tools that replace the retired `nie`
-# plugin's `nie-game` server. Transport only: a long-lived `nie-mcp` child over stdio
-# (`NIE_MCP_BIN`), because aphrody-ai must not link nie crates. No extra dependency.
+# `nie.*` — optional transport to the NIE `nie-mcp` child. Keep disabled by
+# default until NIE's source crate is integrated in this monorepo and its client
+# contract is qualified; aphrody-ai must not link NIE crates.
 nie = ["dep:aphrody-mcp-nie-bridge"]
 # Everything the toolbox exposes over MCP.
-toolbox   = ["ocr", "stt-local", "vision", "jobs", "dbfr", "rag", "dragonball", "nie"]
+toolbox   = ["ocr", "stt-local", "vision", "jobs", "dbfr", "rag-ort", "dragonball"]
 
 # `winclean` — the 166 tools of aphrody-winclean (Windows computer use + OS control)
 # advertised and dispatched in-process via aphrody-winclean. Opt-in because the

@@ -133,14 +133,12 @@ async fn handle_conn(stream: TcpStream) {
 
     // Inbound: match each response to its pending request id.
     while let Some(Ok(msg)) = read.next().await {
-        if let Message::Text(t) = msg {
-            if let Ok(v) = serde_json::from_str::<Value>(&t.to_string()) {
-                if let Some(id) = v.get("id").and_then(Value::as_u64) {
-                    if let Some(resp) = bridge().pending.lock().await.remove(&id) {
-                        let _ = resp.send(v);
-                    }
-                }
-            }
+        if let Message::Text(t) = msg
+            && let Ok(v) = serde_json::from_str::<Value>(t.as_ref())
+            && let Some(id) = v.get("id").and_then(Value::as_u64)
+            && let Some(resp) = bridge().pending.lock().await.remove(&id)
+        {
+            let _ = resp.send(v);
         }
     }
 

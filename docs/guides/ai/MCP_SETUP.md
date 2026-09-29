@@ -42,7 +42,10 @@ cargo build --release -p aphrody-mcp --locked
 
 Bare `aphrody-mcp` starts the stdio server. `aphrody-mcp client` connects
 to another MCP server. The catalog depends on Cargo features; do not copy a
-tool count from documentation.
+tool count from documentation. `dragonball.*` is enabled by default; `nie.*`
+is optional and disabled until NIE is integrated into this monorepo. The stdio
+endpoint accepts both the legacy `initialize` flow and the 2026-07-28 stateless
+`server/discover` flow.
 
 ## Plugin boundary
 

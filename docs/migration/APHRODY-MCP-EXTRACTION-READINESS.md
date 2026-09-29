@@ -1,6 +1,6 @@
 # Aphrody MCP extraction readiness
 
-Updated 2026-09-29 after the Aphrody AI extraction and NIE bridge split. The
+Updated 2026-09-30 after default, toolbox, and Shenron MCP qualification. The
 earlier read-only assessment is retained below as historical evidence; current
 target status is recorded first.
 
@@ -9,35 +9,74 @@ target status is recorded first.
 **The Aphrody MCP crate is integrated; protocol qualification is still partial.**
 The target includes the `aphrody-mcp` executable, its imported AI dependency
 closure, and the `rmcp` 3.4.1 dependency. `cargo check --offline -p aphrody-mcp`
-passes with its default `dragonball` and `nie` features. NIE's stdio transport
-now lives in the library-only `aphrody-mcp-nie-bridge` package and is wired into
-the same executable behind the `nie` feature. Its Unix fixture test verifies
-initialize, live catalog schema passthrough, and a forwarded tool result.
+passes with its default `dragonball` feature. NIE is not yet in the root
+monorepo, so the optional `nie` feature is disabled by default and excluded
+from the `toolbox` feature. NIE's stdio transport lives in the library-only
+`aphrody-mcp-nie-bridge` package and can be enabled explicitly for integration
+qualification; its Unix fixtures use mock children.
 
-There is still exactly one client-facing `aphrody-mcp` endpoint. That endpoint
-publishes `nie.tools`, `nie.call`, and typed compatibility wrappers, while the
-67-name child catalog remains dynamically discoverable through `nie.tools`.
-The fixture does not yet qualify all child names/schemas, error forms, size and
-timeout bounds, restart behavior, explorer lifecycle, or client configuration.
-Do not claim full protocol parity until those fixtures and the single-endpoint
-consumer check pass.
+The `toolbox` feature is separately build-, test- and Clippy-qualified. It
+includes `rag-ort`, which forwards the existing `aphrody-rag/ort` backend, and
+still excludes NIE. The default server remains free of that ONNX RAG backend.
 
-The current AI implementation already has the right transitional shape: one
-`aphrody-mcp` process exposes `nie.tools`, `nie.call`, and typed `nie.*`
+The current client config still names exactly one `aphrody-mcp` endpoint. Its
+default tool catalog does not publish any `nie.*` tools. When the optional
+feature is enabled for qualification, that endpoint publishes `nie.tools`,
+`nie.call`, and typed compatibility wrappers, while the 67-name child catalog
+remains dynamically discoverable through `nie.tools`.
+The bridge conformance fixture now exercises all 67 names, generic `cli_*`
+schemas, descriptor passthrough/filtering, a JSON-RPC error, bounded line
+handling, timeout/reset, reconnect, and reuse of the same child across calls.
+The test checks the size-limit algorithm with a small fixture limit; production
+still accepts a maximum 64 MiB frame.
+
+The 67-entry fixture derives `inputSchema` through the same `rmcp`
+`schema_for_input` helper used by the pinned source SDK and mirrored NIE request
+types. Read-only inspection of source commit `94d88bc3993e7dabddf44ce9804d5b41ee5d4c4c`
+found that `wiki_character_card`, `wiki_search`, and `zukan_rank` use
+`deny_unknown_fields`; the bridge DTOs and generated fixture schemas now retain
+that constraint. The default client configuration now passes an integration
+smoke check: the exact one-endpoint source config starts `aphrody-mcp`, completes
+`initialize`/`tools/list`, exposes Shenron's `dragonball.*` surface, and contains
+no `nie.*` tools. Both the default live-client assertion and the expanded
+`toolbox` check verify all 37 exact Shenron names and object schemas; the
+router test checks the same names and annotations. Runtime source-schema and
+child error parity and explorer WebSocket survival are still open.
+
+The stdio server supports both the legacy `initialize` lifecycle and the
+2026-07-28 stateless lifecycle. It routes `server/discover` and modern requests
+carrying protocol metadata through `rmcp::service::serve_directly`, while
+preserving the existing initialize flow for older clients. Live subprocess
+coverage now verifies discovery, negotiated support, server identity and the
+full 37-name Shenron catalog without an initialize request; the request router
+has a matching unit test.
+
+When explicitly enabled, the AI implementation keeps a single process
+boundary: `aphrody-mcp` exposes `nie.tools`, `nie.call`, and typed `nie.*`
 compatibility calls, then forwards requests to one persistent `nie-mcp` child
-over stdio. That child is hidden behind the configured Aphrody endpoint; it is
-not separately configured by a client. It must remain a process boundary
-until IECODE provides the game services and the FFI/data/licence gaps are
-resolved.
+over stdio. It remains opt-in until the NIE source crate is a monorepo member
+and the FFI/data/licence and consumer-parity gates are resolved.
 
 ## Revisions and workspace graph
 
 | Checkout                            | Revision                                   | Observed state                      |
 | ----------------------------------- | ------------------------------------------ | ----------------------------------- |
 | Source `/home/aphro/src/aphrody-ai` | `3aa88791f49b963a00f073cb206677ea9d1957e1` | clean `main...origin/main`          |
-| NIE `/home/aphro/src/nie`           | `fd624e060a4180c988336bcc3f829bb1835cbf24` | clean `main...origin/main`          |
+| NIE submodule Gitlink                | `94d88bc3993e7dabddf44ce9804d5b41ee5d4c4c` | working tree absent; commit available locally |
 | IECODE `/home/aphro/iecode`         | `8fdab4b96014f70972c2855878cab49510ffe876` | clean `main...origin/main`          |
 | Target `/home/aphro/aphrody`        | local extraction worktree                  | broad migration batch remains dirty |
+
+On 2026-09-29 the referenced NIE checkout `/home/aphro/src/nie` was absent, but
+the superproject's exact gitlink commit remained in its local submodule object
+database and was inspected read-only through a temporary detached checkout at
+`/home/aphro/tmp/nie-mcp-audit`. This verified the current 67-name router and
+direct request DTO attributes. The clean audit checkout and isolated bridge
+harness remain under `/home/aphro/tmp`. The real source MCP
+test could not be run: Cargo workspace loading fails before compilation because
+the NIE manifest points at source directories such as
+`/home/aphro/iecode/crates/re`, which are absent in the current IECODE checkout.
+The mock fixture is therefore schema parity evidence from the matching DTOs and
+SDK schema generator, not a live child-runtime test.
 
 The current target root includes the AI MCP workspace package and the NIE
 bridge library. The lock resolves both `aphrody-mcp` and `rmcp` 3.4.1. The
@@ -54,9 +93,11 @@ depends on many AI siblings: `aphrody-config`, `aphrody-kernel`, `aphrody-a2a`,
 `aphrody-voice`, `aphrody-re`, `aphrody-gemini-web`, `aphrody-session`,
 `aphrody-memory`, and `aphrody-manga`, plus feature-gated RAG, OCR, jobs,
 vision, WinClean, and Obscura crates. Those AI members were outside the target
-workspace at audit time; their mapped closure is now imported. `--no-default-features --features nie` can disable default tool
-families, but it cannot remove the unconditional dependencies or turn this
-binary-only `main.rs` into an independently compilable NIE module.
+workspace at audit time; their mapped closure is now imported. The `nie`
+feature is optional and disabled by default (also excluded from `toolbox`). An
+explicit `--features nie` build can exercise the bridge, but it cannot remove
+the unconditional dependencies or turn this binary-only `main.rs` into an
+independently compilable NIE module.
 
 The integrated source and target use `rmcp` 3.4.1. The root lockfile now
 resolves it offline as part of the imported MCP crate and bridge.
@@ -68,8 +109,8 @@ The NIE source inventory at the revision above records 67 child tools: 48
 error paths, side effects, and transports are inventoried in
 [`NIE-MCP-API-INVENTORY.md`](NIE-MCP-API-INVENTORY.md).
 
-The AI server's `nie` feature currently registers **21 public Aphrody tool
-names**: `nie.tools`, `nie.call`, and 19 typed compatibility wrappers. It does
+The AI server's opt-in `nie` feature registers **21 public Aphrody tool names**:
+`nie.tools`, `nie.call`, and 19 typed compatibility wrappers. It does
 not publish all 67 child tools as individually named tools in Aphrody's
 `tools/list`. Instead:
 
@@ -140,20 +181,29 @@ record.
    caller passes its checks. Keep its one public binary name and existing MCP
    configuration; do not install or activate a second `aphrody-mcp` executable
    concurrently.
-4. **Partial.** A fake stdio child verifies handshake, schema passthrough and
-   representative `tools/call` result forwarding (3 bridge unit tests pass).
-   Still add fixtures for the full 67-name catalog, schemas hidden and shown,
-   error results, 64 MiB line handling, timeout, child restart and explorer
-   bridge survival. These tests need no game data. Real operation parity still needs the licensed
-   local fixtures/runtime and must separately cover all 67 names, input schemas,
-   error forms, side effects, and bounded responses.
-5. **Open.** Qualify the single endpoint's client configuration and consumer
-   behavior. Keep the child bridge until IECODE exposes equivalent game
-   operations and the explorer lifecycle under resolved data and license terms.
+4. **Partial; mock transport and source DTO schema tranche qualified.** Fake
+   stdio children verify the negotiated legacy protocol, complete 67-name
+   catalog, generated schemas from mirrored source DTOs, filtering,
+   `tools/call`, JSON-RPC errors, bounded-frame rejection, timeout, reconnect
+   after error/timeout, and persistent-child reuse. Source inspection confirmed
+   exact required fields, camel-case keys and strict unknown-field handling for
+   the direct NIE schemas. Shenron router checks assert all direct tools register
+   and preserve the five admin tools' read-only/destructive annotations.
+   The single-endpoint default client smoke check also passes with Shenron
+   available and NIE absent. Remaining work: run the real child against its
+   current source build, compare child error/side-effect behavior, and exercise
+   the real explorer WebSocket lifecycle. None of these checks reads game data
+   or invokes external admin APIs.
+5. **Partial.** The current source endpoint configuration is parsed and the
+   built server's default initialize/tools-list flow is exercised. Consumer
+   behavior when the optional NIE bridge is enabled remains open. Keep the child
+   bridge until IECODE exposes equivalent game operations and the explorer
+   lifecycle under resolved data and license terms.
 
-The target now builds the full imported `aphrody-mcp` package and the isolated
-transport boundary while keeping one configured endpoint. The bridge fixture
-does **not** claim 67-name parity or qualify the complete protocol/lifecycle.
+The target builds the full imported `aphrody-mcp` package and isolated transport
+boundary while keeping one configured endpoint. The bridge fixture verifies
+passthrough against a source-inspected 67-name mock catalog; it does **not**
+qualify the real child's complete protocol/lifecycle.
 
 ## Evidence inspected
 

@@ -386,20 +386,15 @@ mod tests {
             .expect("native local ranking");
         assert_ne!(rank["isError"], true, "{rank}");
 
-        let detect = call_raw(
-            "bxc_detect_frameworks",
-            serde_json::json!({ "url": "file:///tmp/a" }),
-        )
-        .await
-        .expect("native detection dispatch");
+        let detect =
+            call_raw("bxc_detect_frameworks", serde_json::json!({ "url": "file:///tmp/a" }))
+                .await
+                .expect("native detection dispatch");
         assert_eq!(detect["isError"], true, "{detect}");
 
-        let crawl = call_raw(
-            "aphrody_web_crawl",
-            serde_json::json!({ "urls": ["file:///tmp/a"] }),
-        )
-        .await
-        .expect("native crawl dispatch");
+        let crawl = call_raw("aphrody_web_crawl", serde_json::json!({ "urls": ["file:///tmp/a"] }))
+            .await
+            .expect("native crawl dispatch");
         assert_eq!(crawl["isError"], true, "{crawl}");
 
         #[cfg(not(target_arch = "wasm32"))]

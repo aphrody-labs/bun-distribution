@@ -169,10 +169,10 @@ pub(crate) async fn pages(req: DatabookPagesRequest) -> String {
         }
         if has_text {
             transcribed += 1;
-        } else if has_image {
-            if let Some(number) = plate.get("number").and_then(serde_json::Value::as_u64) {
-                missing.push(number);
-            }
+        } else if has_image
+            && let Some(number) = plate.get("number").and_then(serde_json::Value::as_u64)
+        {
+            missing.push(number);
         }
     }
     json!({

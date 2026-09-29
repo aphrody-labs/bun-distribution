@@ -506,13 +506,11 @@ async fn shenron_rag_search_core(params: ShenronSearchQuery) -> Response {
     .await;
     let mode = if let Some(vector_rows) = vector_rows.filter(|rows| !rows.is_empty()) {
         let mut fused: HashMap<String, (Value, f64)> = HashMap::new();
-        for (branch, hits) in
-            [results, vector_rows.iter().map(shenron_row_value).collect()].into_iter().enumerate()
-        {
+        for hits in [results, vector_rows.iter().map(shenron_row_value).collect()] {
             for (rank, hit) in hits.into_iter().enumerate() {
                 let key = hit["sourceId"].as_str().unwrap_or_default().to_owned();
                 let entry = fused.entry(key).or_insert((hit, 0.0));
-                entry.1 += (if branch == 0 { 1.0 } else { 1.0 }) / (60.0 + (rank + 1) as f64);
+                entry.1 += 1.0 / (60.0 + (rank + 1) as f64);
             }
         }
         let mut ranked = fused.into_values().collect::<Vec<_>>();
@@ -1442,10 +1440,10 @@ async fn shenron_ocr_core(request: OcrRequest) -> Response {
         if result.get("error").is_some() {
             return shenron_error(StatusCode::BAD_GATEWAY, "OCR backend failed");
         }
-        return response(
+        response(
             shenron_ocr_payload(&result, request.language.as_deref(), include_geometry),
             "no-store",
-        );
+        )
     }
     #[cfg(not(feature = "ocr"))]
     {

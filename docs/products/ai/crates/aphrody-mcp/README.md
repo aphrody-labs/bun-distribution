@@ -85,10 +85,17 @@ Use MCP `tools/list` from the built server for the exact runtime schemas.
 - Admin tools fail closed without `SHENRON_API_ADMIN_TOKEN` (bot) or
   `SHENRON_DATABOOKS_API_TOKEN` (site).
 
-### NIE (`nie.*`, feature `nie`, on by default)
+The independent `aphrody_rag_*` index tools are opt-in. `--features rag` exposes the
+SQLite index with lexical search; `--features rag-ort` also forwards
+`aphrody-rag/ort` so configured local ONNX embeddings can run. The aggregate
+`toolbox` feature includes `rag-ort`, OCR, vision, local transcription, jobs,
+and DBFR tools. It still excludes NIE.
+
+### NIE (`nie.*`, optional feature `nie`, disabled by default)
 
 The tools of the retired `nie` plugin's `nie-game` server, served by
-`src/nie_tools.rs` as a process boundary (aphrody-ai never links `nie` crates):
+`aphrody-mcp-nie-bridge` as a process boundary (aphrody-ai never links `nie`
+crates):
 one long-lived `nie-mcp` child over stdio (`NIE_MCP_BIN`, default `nie-mcp` on
 `PATH`, empty disables; `NIE_MCP_TIMEOUT_SECS`, default 120). Typed tools:
 `health`, `vfs_{list,search,stat,cat}`, `asset_get`,
@@ -97,6 +104,10 @@ one long-lived `nie-mcp` child over stdio (`NIE_MCP_BIN`, default `nie-mcp` on
 `nie.tools` lists the live catalog (every `cli_*` command) and `nie.call`
 forwards any of them unchanged. The child inherits `NIE_REPO`,
 `NIE_APHRODY_API_URL` and `NIE_MODEL_SERVE_URL`.
+
+NIE is not yet a member of this monorepo, so the default `aphrody-mcp` and
+`toolbox` builds do not advertise or link this feature. Keep it disabled until
+the NIE source crates and their consumer qualification are integrated here.
 
 ## Transports
 

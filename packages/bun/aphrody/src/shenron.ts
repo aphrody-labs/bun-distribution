@@ -4,6 +4,7 @@ export {
   EXPECTED_SHENRON_ABI_VERSION,
   shenronAbiVersion,
   shenronVersion,
+  shenronLastError,
   shenronRun,
   shenronRunCaptured,
   shenronRagSearch,

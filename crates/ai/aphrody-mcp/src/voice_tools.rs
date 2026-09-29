@@ -235,9 +235,11 @@ pub(crate) async fn transcribe(req: VoiceTranscribeRequest) -> String {
 
     let mime = mime_type.as_deref().unwrap_or(DEFAULT_STT_MIME).to_owned();
 
-    let mut opts = aphrody_voice::stt::SttOptions::default();
-    opts.language = language.clone();
-    opts.response_format = aphrody_voice::stt::TranscriptFormat::VerboseJson;
+    let opts = aphrody_voice::stt::SttOptions {
+        language: language.clone(),
+        response_format: aphrody_voice::stt::TranscriptFormat::VerboseJson,
+        ..Default::default()
+    };
 
     // 1. Try local Whisper first (offline-preferred per task spec).
     let model_path = std::env::var("APHRODY_WHISPER_MODEL").unwrap_or_default();

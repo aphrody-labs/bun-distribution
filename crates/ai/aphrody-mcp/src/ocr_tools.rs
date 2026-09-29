@@ -223,15 +223,15 @@ pub(crate) async fn read(req: OcrReadRequest) -> String {
         Err(reason) => return error_envelope("OCR_BAD_REQUEST", reason),
     };
 
-    if let Some(ref m) = req.model {
-        if m.trim().is_empty() {
-            return error_envelope("OCR_BAD_REQUEST", "model must be non-empty when provided");
-        }
+    if let Some(ref m) = req.model
+        && m.trim().is_empty()
+    {
+        return error_envelope("OCR_BAD_REQUEST", "model must be non-empty when provided");
     }
-    if let Some(ref e) = req.engine {
-        if e.trim().is_empty() {
-            return error_envelope("OCR_BAD_REQUEST", "engine must be non-empty when provided");
-        }
+    if let Some(ref e) = req.engine
+        && e.trim().is_empty()
+    {
+        return error_envelope("OCR_BAD_REQUEST", "engine must be non-empty when provided");
     }
 
     let (engine, model) = match resolve_engine(req.engine.as_deref(), req.model.as_deref()) {

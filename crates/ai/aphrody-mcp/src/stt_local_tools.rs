@@ -138,13 +138,13 @@ pub(crate) async fn transcribe(req: LocalTranscribeRequest) -> String {
     if model.trim().is_empty() {
         return error_envelope("STT_BAD_REQUEST", "model must be non-empty when provided");
     }
-    if let Some(threads) = req.threads {
-        if threads == 0 || threads > 64 {
-            return error_envelope(
-                "STT_BAD_REQUEST",
-                format!("threads must be in 1..=64 (got {threads})"),
-            );
-        }
+    if let Some(threads) = req.threads
+        && (threads == 0 || threads > 64)
+    {
+        return error_envelope(
+            "STT_BAD_REQUEST",
+            format!("threads must be in 1..=64 (got {threads})"),
+        );
     }
 
     let mut backend = aphrody_voice::stt::whisper_cpp::WhisperCppBackend::new(model.clone());

@@ -7,7 +7,7 @@ game data were opened.
 
 | Repository | HEAD | Worktree |
 | --- | --- | --- |
-| `/home/aphro/src/nie` | `fd624e060a4180c988336bcc3f829bb1835cbf24` | clean, `main...origin/main` |
+| NIE submodule object DB at `/home/aphro/src/.git/modules/nie` | `94d88bc3993e7dabddf44ce9804d5b41ee5d4c4c` (superproject gitlink) | source worktree absent; tree readable from local Git objects |
 | `/home/aphro/iecode` | `8fdab4b96014f70972c2855878cab49510ffe876` | clean, `main...origin/main` |
 
 At current NIE HEAD, `packages/` contains only `README.md`; the package source

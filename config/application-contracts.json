@@ -32,8 +32,8 @@
       "role": "specialized-engine-and-3d-asset-plane",
       "website": { "runtime": "rust-http", "package": "nie-site", "unit": "nie-site.service", "port": 8085 },
       "api": { "runtime": "rust-http", "package": "nie-model-serve", "unit": "nie-model-serve.service", "port": 8790 },
-      "mcp": "aphrody-mcp nie.* (process boundary: aphrody-mcp runs nie-mcp as a child; the nie agent plugin is merged into aphrody-os plugins/aphrody)",
-      "desktop": "none: IEVR features are web-only (nie-site + apps/nie-web). The Inacord Tauri app was removed on 2026-09-26; its generic pet/pixel commands moved to aphrody-app, which reaches game features only through aphrody-mcp nie.*",
+      "mcp": "optional aphrody-mcp nie.* (disabled by default until NIE source crates join this monorepo; process boundary runs nie-mcp as a child; the nie agent plugin is merged into aphrody-os plugins/aphrody)",
+      "desktop": "none: IEVR features are web-only (nie-site + apps/nie-web). The Inacord Tauri app was removed on 2026-09-26; its generic pet/pixel commands moved to aphrody-app, which can reach game features through the opt-in aphrody-mcp nie.* capability",
       "data": { "primary": "none", "storage": "local-ievr-3d-assets", "localIndex": "sqlite (nie-index RE knowledge base and atlas, var/)", "optionalPostgres": "nie-pg schema nie (cfg.bin import, manual run)", "optionalRedis": "nie-index atlas mirror, opt-in via NIE_ATLAS_REDIS / --redis; no Redis service contract (OPEN-RESERVATIONS #3)", "schedules": "none (no nie timer or cron is declared or deployed)" }
     },
     "iecode": {
@@ -43,7 +43,7 @@
     "aphrody": {
       "role": "single-desktop-super-app",
       "desktop": { "runtime": "tauri-v2", "package": "aphrody-app", "sourceRepo": "aphrody-ui", "ui": "@aphrody/app-ui", "sidecars": ["sd-daemon", "aphrody"], "modules": ["agent (aphrody app-server over stdio)", "drive (aphrody-drive plugin + sd-daemon; the Spacedrive drive/apps/tauri host was removed 2026-09-26)", "models", "identity (pet and pixel pipeline, ex-Inacord)", "browser", "terminal", "systemd", "infra", "windows", "settings"] },
-      "gameFeatures": "aphrody-mcp nie.* only; aphrody-ui never depends on ../nie"
+      "gameFeatures": "opt-in aphrody-mcp nie.* only; disabled in the root build until NIE is integrated; aphrody-ui never depends on ../nie"
     }
   },
   "deduplication": {

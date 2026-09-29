@@ -3,7 +3,7 @@
 //
 //! `dragonball.*` — the Dragon Ball tools of the single Aphrody MCP.
 //!
-//! Ported from the retired Bun server `apps/shenron-mcp` (30 public tools and
+//! Ported from the retired Bun server `apps/shenron-mcp` (32 public tools and
 //! the five editorial admin tools). Transport only: the local RAG, persona and
 //! `APHRODY_AI_*` chat resolution live in [`aphrody_rag::dragonball`]; wiki,
 //! bot, databook, manga, canon and A2A data stay behind the Shenron bot and
