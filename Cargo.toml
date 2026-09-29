@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 [workspace]
 resolver = "3"
-members = ["crates/iecode/ievr-data", "crates/infra/*", "crates/contracts/aphrody-kernel-client", "crates/ai/aphrody-agent-home", "crates/ai/aphrody-models", "crates/ai/aphrody-config"]
+members = ["crates/iecode/ievr-data", "crates/infra/*", "crates/contracts/aphrody-kernel-client", "crates/ai/aphrody-agent-home", "crates/ai/aphrody-models", "crates/ai/aphrody-config", "crates/ai/aphrody-toolcall", "crates/ai/aphrody-patch", "crates/ai/aphrody-context", "crates/ai/aphrody-prompts", "crates/ai/aphrody-providers"]
 
 [workspace.package]
 version = "1.0.0"
@@ -16,6 +16,7 @@ homepage = "https://github.com/aphrody-labs/aphrody"
 serde = { version = "1", default-features = false, features = ["derive"] }
 serde_json = { version = "1", default-features = false }
 anyhow = "1.0"
+async-trait = "0.1"
 arc-swap = "1.7"
 base64 = "0.22"
 blake3 = "1.5"
@@ -50,6 +51,9 @@ url = "2"
 which = "8"
 criterion = "0.8"
 pretty_assertions = "1"
+schemars = { version = "0.8", features = ["derive"] }
+similar = "3"
+minijinja = { version = "2", default-features = false, features = ["loader", "builtins", "macros", "multi_template", "deserialization", "serde"] }
 aphrody-models = { path = "crates/ai/aphrody-models" }
 aphrody-config = { path = "crates/ai/aphrody-config" }
 fast_rsync = "0.2"

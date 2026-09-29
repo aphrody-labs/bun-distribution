@@ -106,6 +106,12 @@ source-closure, compatibility, installed-workflow, license, and rollback gate.
       preserved. The root workspace and shared dependency features now resolve
       the imported closure; `cargo check --offline -p aphrody-agent-home` passes.
       See [`ai-agent-home-extraction.json`](docs/migration/ai-agent-home-extraction.json).
+- [x] Import five dependency-light AI foundation crates (`aphrody-toolcall`,
+      `aphrody-patch`, `aphrody-context`, `aphrody-prompts` and
+      `aphrody-providers`) from the same clean source HEAD. All 19 tracked files
+      match source SHA-256 and modes. Their manifests join the root workspace;
+      one offline Cargo check covering all five passes. See
+      [`ai-core-crates-extraction.json`](docs/migration/ai-core-crates-extraction.json).
 - [x] Stage IECODE's Bun packages and split its generic happy-dom host into
       `@aphrody/bun-test-dom`, retaining `@nie/plugin/happydom` as a compatibility
       export. `@aphrody/iecode-ffi`, `@aphrody/nie`, and `@nie/plugin` are private
