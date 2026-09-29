@@ -42,7 +42,7 @@ pas de la fusion des processus (voir §3 et §6).
 | `aphrody-ai-http`, `aphrody-shenron-embed` | services Aphrody | aphrody | Dérive du port de l'embedder : 8794 dans l'unité, 8790 dans `aphrody-infra/docs/PLAN.md:37`. |
 | `shenron-backup.timer` (VPS) | oneshot + timer | aphrody-infra | Préparé mais **jamais installé**. Dépend d'un checkout `aphrody-infra` absent (`SHENRON-MIGRATION.md:127-128`). Seule exception déclarée (`scheduler-policy.json:22`). |
 | `shenron-pg-backup`, `shenron-sqlite-replica-backup` (dbfr) | timers | aphrody-infra | Inchangés : dbfr ne fait pas tourner d'application. |
-| `relecture-ocr` | démon Python | `services/relecture-ocr/serveur.py` | **Non supervisé**, aucune unité. |
+| `relecture-ocr` | démon Python dans le workspace partagé | `/home/aphro/aphrody-py/packages/shenron/relecture-ocr` | **Non supervisé**, aucune unité. Lancer avec `uv run --project /home/aphro/aphrody-py --package shenron-relecture-ocr relecture-ocr`. |
 | Boucles `scripts/ops/*`, `packages/pipeline/scripts/*` | lots lancés à la main | shenron | Hors runtime. La règle 9 interdit `rag:build` en prod. |
 | `shenron-zswap.service` | fichier resté en place | aphrody-infra | Déjà retiré (`service-catalog.json:224`). C'est `rg-zram-swap` qui gère le swap. |
 | Plan de release | `/srv/shenron/releases/<sha>` + `current` | aphrody-infra | Appliqué à la main. Aucun adaptateur atomique, aucune rétention. |

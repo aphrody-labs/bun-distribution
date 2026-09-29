@@ -319,17 +319,20 @@ explicitly requested; they do not close these gates or authorize cutover.
       the UI-owned checkout cannot complete `cargo metadata` because sibling
       dependency paths are unavailable. `aphrody-ui` was not changed.
 - [x] Infra reports 56 declared root Bun workspace packages. Its layout check
-      passes. A domain-scoped Rust audit reports 92 Cargo members, of which 8
-      are integrated in the requested non-AI/non-Web perimeter: one Contracts
-      crate (`aphrody-kernel-client`), six Infra crates and `ievr-data`. The 63
-      AI and 21 Web members are excluded from this count by scope; they do not
-      establish migration parity for those domains.
-- [ ] Make the Rust workspace self-contained. The audit found 30 local Cargo
-      path references outside the monorepo: Contracts 6, OS 13, Compat 5, UI 2,
-      Shell 2, Native 1 and Koharu 1. Remaining source owners include Contracts,
-      Native, Compat/N2B, Shell, OS, UI/M3, Koharu, and NIE/IECODE FFI/bindings;
-      only `ievr-data` is currently integrated for NIE/IECODE. Infra has six of
-      seven Rust manifests integrated. No Rust source was identified for Fut.
+      passes. The earlier domain-scoped audit saw 92 Cargo members, of which 8
+      were integrated in the requested non-AI/non-Web perimeter. After the
+      subsequent Contracts/OS/Compat/Shell consolidation, current
+      `cargo metadata --no-deps` sees 134 members: 10 Contracts, 6 Infra, 24 OS,
+      4 Compat, 4 Shell and 1 IECODE data crate are in scope (49 total). The 64
+      AI and 21 Web members are excluded from that migration count.
+- [ ] Make the Rust workspace self-contained. The earlier source audit found
+      30 path references into `/home/aphro/src` before the latest batch. The
+      current root manifest still has 7 such dependencies: UI 2, Compat/N2B 3,
+      Native 1 and Koharu 1. Remaining source owners include Native, the rest of
+      Compat/N2B, UI/M3, Koharu, and NIE/IECODE FFI/bindings; only `ievr-data` is
+      currently integrated for NIE/IECODE. Infra has six of seven Rust manifests
+      integrated. No Rust source was identified for Fut. Re-run Infra's full
+      path audit after the source checkouts are available.
 - [ ] Complete the Bun workspace migration for the same perimeter. UI/M3,
       Compat/N2B, OS, Shell, Koharu, Fut and NIE/IECODE application workspaces
       are not present under their target owners. Reconcile Infra's remaining

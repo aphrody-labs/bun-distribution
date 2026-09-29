@@ -132,7 +132,7 @@ pub struct LlamaConfig {
 /// `[train]` — training surface configuration (P10, feature `train`).
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct TrainConfig {
-    /// Path to the `py/aphrody-train` uv project, if not the in-tree
+    /// Path to the shared `aphrody-py` uv workspace, if not the sibling
     /// default.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub python_project: Option<String>,

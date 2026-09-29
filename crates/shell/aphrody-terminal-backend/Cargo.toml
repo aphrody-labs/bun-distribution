@@ -2,9 +2,9 @@
 [package]
 name = "aphrody-terminal-backend"
 publish                = false
-version.workspace      = true
+version = "1.0.0-canary"
 edition.workspace      = true
-rust-version = "1.0.0-canary"
+rust-version.workspace = true
 authors.workspace      = true
 homepage.workspace     = true
 repository.workspace   = true
