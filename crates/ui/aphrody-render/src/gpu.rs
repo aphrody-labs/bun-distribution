@@ -50,6 +50,8 @@ pub enum GpuError {
     NoAdapter,
     /// The device could not be created.
     Device(wgpu::RequestDeviceError),
+    /// Reading the rendered frame back from the GPU failed.
+    Readback(String),
 }
 
 impl std::fmt::Display for GpuError {
@@ -57,6 +59,7 @@ impl std::fmt::Display for GpuError {
         match self {
             Self::NoAdapter => write!(f, "no compatible GPU adapter is available"),
             Self::Device(err) => write!(f, "failed to create GPU device: {err}"),
+            Self::Readback(why) => write!(f, "GPU readback failed: {why}"),
         }
     }
 }
@@ -154,13 +157,16 @@ async fn create_context() -> Result<GpuContext, GpuError> {
     };
     let mut selected = None;
     for &backends in preferred {
-        let instance =
-            wgpu::Instance::new(&wgpu::InstanceDescriptor { backends, ..Default::default() });
+        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor {
+            backends,
+            ..wgpu::InstanceDescriptor::new_without_display_handle()
+        });
         if let Ok(adapter) = instance
             .request_adapter(&wgpu::RequestAdapterOptions {
                 power_preference: wgpu::PowerPreference::HighPerformance,
                 compatible_surface: None,
                 force_fallback_adapter: false,
+                apply_limit_buckets: false,
             })
             .await
         {
@@ -180,6 +186,7 @@ async fn create_context() -> Result<GpuContext, GpuError> {
             label: Some("aphrody-render"),
             required_features: wgpu::Features::empty(),
             required_limits: wgpu::Limits::downlevel_defaults(),
+            experimental_features: wgpu::ExperimentalFeatures::disabled(),
             memory_hints: wgpu::MemoryHints::Performance,
             trace: wgpu::Trace::Off,
         })
@@ -258,8 +265,8 @@ async fn render_scene_gpu_async(scene: &Scene) -> Result<GpuFrame, GpuError> {
     });
     let shape_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
         label: Some("shape-pipeline-layout"),
-        bind_group_layouts: &[&shape_bgl],
-        push_constant_ranges: &[],
+        bind_group_layouts: &[Some(&shape_bgl)],
+        immediate_size: 0,
     });
     let blend = wgpu::BlendState {
         color: wgpu::BlendComponent {
@@ -298,7 +305,7 @@ async fn render_scene_gpu_async(scene: &Scene) -> Result<GpuFrame, GpuError> {
         },
         depth_stencil: None,
         multisample: wgpu::MultisampleState::default(),
-        multiview: None,
+        multiview_mask: None,
         cache: None,
     });
 
@@ -345,8 +352,8 @@ async fn render_scene_gpu_async(scene: &Scene) -> Result<GpuFrame, GpuError> {
     });
     let tex_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
         label: Some("tex-pipeline-layout"),
-        bind_group_layouts: &[&tex_bgl],
-        push_constant_ranges: &[],
+        bind_group_layouts: &[Some(&tex_bgl)],
+        immediate_size: 0,
     });
     let tex_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
         label: Some("tex-pipeline"),
@@ -373,7 +380,7 @@ async fn render_scene_gpu_async(scene: &Scene) -> Result<GpuFrame, GpuError> {
         },
         depth_stencil: None,
         multisample: wgpu::MultisampleState::default(),
-        multiview: None,
+        multiview_mask: None,
         cache: None,
     });
 
@@ -404,6 +411,7 @@ async fn render_scene_gpu_async(scene: &Scene) -> Result<GpuFrame, GpuError> {
             depth_stencil_attachment: None,
             timestamp_writes: None,
             occlusion_query_set: None,
+            multiview_mask: None,
         });
 
         for node in &scene.nodes {
@@ -588,10 +596,16 @@ async fn render_scene_gpu_async(scene: &Scene) -> Result<GpuFrame, GpuError> {
     slice.map_async(wgpu::MapMode::Read, move |result| {
         let _ = tx.send(result);
     });
-    device.poll(wgpu::PollType::Wait).ok();
-    rx.recv().ok();
+    device
+        .poll(wgpu::PollType::wait_indefinitely())
+        .map_err(|err| GpuError::Readback(err.to_string()))?;
+    rx.recv()
+        .map_err(|err| GpuError::Readback(err.to_string()))?
+        .map_err(|err| GpuError::Readback(err.to_string()))?;
 
-    let data = slice.get_mapped_range();
+    let data = slice
+        .get_mapped_range()
+        .map_err(|err| GpuError::Readback(err.to_string()))?;
     let mut rgba = vec![0_u8; (width as usize) * (height as usize) * 4];
     for row in 0..height as usize {
         let src = &data

@@ -207,6 +207,7 @@ impl Renderer3d {
         let (device, queue, adapter) = crate::gpu::shared_device().map_err(|err| match err {
             crate::gpu::GpuError::NoAdapter => Gpu3dError::NoAdapter,
             crate::gpu::GpuError::Device(err) => Gpu3dError::Device(err),
+            crate::gpu::GpuError::Readback(why) => Gpu3dError::Readback(why),
         })?;
         Ok(Self::with_device(device, queue, adapter))
     }
@@ -249,13 +250,13 @@ impl Renderer3d {
         });
         let layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
             label: Some("3d-layout"),
-            bind_group_layouts: &[&bgl, &shadow_bgl],
-            push_constant_ranges: &[],
+            bind_group_layouts: &[Some(&bgl), Some(&shadow_bgl)],
+            immediate_size: 0,
         });
         let shadow_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
             label: Some("3d-shadow-layout"),
-            bind_group_layouts: &[&bgl],
-            push_constant_ranges: &[],
+            bind_group_layouts: &[Some(&bgl)],
+            immediate_size: 0,
         });
         let shadow_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
             label: Some("3d-shadow"),
@@ -274,13 +275,13 @@ impl Renderer3d {
             },
             depth_stencil: Some(wgpu::DepthStencilState {
                 format: DEPTH_FORMAT,
-                depth_write_enabled: true,
-                depth_compare: wgpu::CompareFunction::Less,
+                depth_write_enabled: Some(true),
+                depth_compare: Some(wgpu::CompareFunction::Less),
                 stencil: wgpu::StencilState::default(),
                 bias: wgpu::DepthBiasState::default(),
             }),
             multisample: wgpu::MultisampleState::default(),
-            multiview: None,
+            multiview_mask: None,
             cache: None,
         });
         let shadow = shadow_target(&device, &shadow_bgl, 1);
@@ -376,7 +377,7 @@ impl Renderer3d {
             let _ = tx.send(result);
         });
         self.device
-            .poll(wgpu::PollType::Wait)
+            .poll(wgpu::PollType::wait_indefinitely())
             .map_err(|err| Gpu3dError::Readback(format!("{err:?}")))?;
         rx.recv()
             .map_err(|err| Gpu3dError::Readback(err.to_string()))?
@@ -384,7 +385,9 @@ impl Renderer3d {
         let row_bytes = width as usize * 4;
         let mut rgba = vec![0_u8; row_bytes * height as usize];
         {
-            let data = slice.get_mapped_range();
+            let data = slice
+                .get_mapped_range()
+                .map_err(|err| Gpu3dError::Readback(err.to_string()))?;
             for (dst, src) in
                 rgba.chunks_exact_mut(row_bytes).zip(data.chunks_exact(bytes_per_row as usize))
             {
@@ -477,13 +480,13 @@ impl Renderer3d {
             },
             depth_stencil: Some(wgpu::DepthStencilState {
                 format: DEPTH_FORMAT,
-                depth_write_enabled: !transparent,
-                depth_compare: wgpu::CompareFunction::Less,
+                depth_write_enabled: Some(!transparent),
+                depth_compare: Some(wgpu::CompareFunction::Less),
                 stencil: wgpu::StencilState::default(),
                 bias: wgpu::DepthBiasState::default(),
             }),
             multisample: wgpu::MultisampleState { count: samples, ..Default::default() },
-            multiview: None,
+            multiview_mask: None,
             cache: None,
         });
         self.pipelines.insert((format, samples, double_sided, transparent), pipeline);
@@ -738,6 +741,7 @@ impl Renderer3d {
                 }),
                 timestamp_writes: None,
                 occlusion_query_set: None,
+                multiview_mask: None,
             });
             pass.set_pipeline(&self.shadow_pipeline);
             pass.set_bind_group(0, &self.bind_group, &[]);
@@ -784,6 +788,7 @@ impl Renderer3d {
                 }),
                 timestamp_writes: None,
                 occlusion_query_set: None,
+                multiview_mask: None,
             });
             pass.set_bind_group(0, &self.bind_group, &[]);
             pass.set_viewport(vx as f32, vy as f32, vw as f32, vh as f32, 0.0, 1.0);
@@ -838,7 +843,7 @@ impl Renderer3d {
     }
 }
 
-fn vertex_layouts() -> [wgpu::VertexBufferLayout<'static>; 2] {
+fn vertex_layouts() -> [Option<wgpu::VertexBufferLayout<'static>>; 2] {
     const MESH: [wgpu::VertexAttribute; 2] =
         wgpu::vertex_attr_array![0 => Float32x3, 1 => Float32x3];
     const INSTANCE: [wgpu::VertexAttribute; 10] = wgpu::vertex_attr_array![
@@ -847,16 +852,16 @@ fn vertex_layouts() -> [wgpu::VertexBufferLayout<'static>; 2] {
         9 => Float32x4, 10 => Float32x4, 11 => Float32x4
     ];
     [
-        wgpu::VertexBufferLayout {
+        Some(wgpu::VertexBufferLayout {
             array_stride: std::mem::size_of::<VertexGpu>() as u64,
             step_mode: wgpu::VertexStepMode::Vertex,
             attributes: &MESH,
-        },
-        wgpu::VertexBufferLayout {
+        }),
+        Some(wgpu::VertexBufferLayout {
             array_stride: std::mem::size_of::<InstanceGpu>() as u64,
             step_mode: wgpu::VertexStepMode::Instance,
             attributes: &INSTANCE,
-        },
+        }),
     ]
 }
 
