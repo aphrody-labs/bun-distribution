@@ -295,6 +295,18 @@ les moteurs/caches/APIs seulement selon preuve par workload ; (6) retirer les
 shims datés et anciens owners après fenêtre de compatibilité documentée. La
 copie ou le succès de compilation d'une crate ne ferme aucun de ces gates.
 
+État d'exécution : l'extracteur Rust complet et son DOM Obscura requis sont
+importés avec hashes et tests de la tranche portable dans
+[`aphrody-web-extract-import.json`](../../migration/aphrody-web-extract-import.json).
+Le bridge Rust est importé avec ses méthodes publiques, et sa conversion
+Markdown HTTP directe appelle l'extracteur local ; le test HTTP local et les
+gates de l'archive propre sont dans
+[`aphrody-web-bridge-import.json`](../../migration/aphrody-web-bridge-import.json).
+Ces deux imports ne ferment ni le corpus gold BXC, ni les profils navigateur,
+ni les symboles FFI/Bun, ni les consommateurs AI/MCP dont l'import est encore
+en travail. Leur bascule et l'élimination des dépendances au checkout source
+restent des critères de sortie de P5.
+
 - [ ] Cartographier Obscura/JS, Chromium/CDP, V8 et JSC, leurs dépendances
   natives, fils d'exécution, allocateurs, contextes, stockage et features.
   Le manifest Web render signale déjà une contrainte de liaison V8 : reproduire

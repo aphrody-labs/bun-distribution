@@ -13,6 +13,7 @@ authors = ["aphrody-code"]
 homepage = "https://github.com/aphrody-labs/aphrody"
 
 [workspace.dependencies]
+aphrody-web-bridge = { path = "crates/web/aphrody-web-bridge", version = "1.0.0-canary" }
 aphrody-web-extract = { path = "crates/web/aphrody-web-extract", version = "1.0.0" }
 obscura-dom = { path = "crates/web/obscura-dom", version = "0.1.1" }
 html5ever = "0.39"
