@@ -284,11 +284,11 @@ following source inventory does not qualify an installed workflow.
 
 | Capability | Source present | Product/runtime status | Priority |
 | --- | --- | --- | --- |
-| Tasks, goals, autonomy | [`aphrody-agent-runtime`](../crates/aphrody-agent-runtime/src/config.rs) has per-turn FullAuto/Gated; the CLI has a goal loop; OS owns [durable jobs](../../aphrody-os/crates/aphrody-jobs/src/lib.rs). | **INCOMPLET:** no shared task/goal state machine, approved autonomous wake, or task API in [`aphrody-app-server`](../crates/aphrody-app-server/src/lib.rs). M3 task components receive props but have no task backend. | P1 |
+| Tasks, goals, autonomy | [`aphrody-agent-runtime`](../crates/aphrody-agent-runtime/src/config.rs) has per-turn FullAuto/Gated; the CLI has a goal loop; OS owns [durable jobs](../../aphrody-os/crates/aphrody-jobs/src/lib.rs). | **INCOMPLET:** no shared task/goal state machine, approved autonomous wake, or task API in [`aphrody-app-server`](../../../crates/ai/aphrody-app-server/src/lib.rs). M3 task components receive props but have no task backend. | P1 |
 | Schedules | OS has [`aphrody-cron`](../../aphrody-os/crates/aphrody-cron/src/lib.rs) and [`aphrody-task-runner`](../../aphrody-os/crates/aphrody-task-runner/src/lib.rs). | **INCOMPLET:** the scheduler calculates when to run and does not execute agent work; no app-server cron API, durable agent-run result, or UI workflow. | P1 |
-| Memory | [`aphrody-memory`](../crates/aphrody-memory/src/types.rs) stores flat records with tags and metadata through local and hosted providers; CLI commands exist. | **INCOMPLET:** no Spacebot-equivalent typed graph, edges, cross-channel working memory, or app-server memory CRUD/search. | P1 |
-| Messaging and skills | [`aphrody-messaging`](../crates/aphrody-messaging/src/lib.rs) has channel adapters; [`aphrody-skills`](../crates/aphrody-skills/src/lib.rs) has skill loading and installation. | **INCOMPLET:** neither is connected to a multi-agent, per-channel app-server lifecycle; automatic reflection and skill capture are unqualified. | P2 |
-| Indexed-content screening | Drive has trust tiers and quarantine fields, and [`aphrody-jev`](../crates/aphrody-jev/src/rag.rs) can judge retrieved passages. | **NON_FAIT:** [Drive's upstream-identical `SafetyModel`](../../aphrody-os/drive/crates/archive/src/safety.rs) always returns safe; its optional screening feature is disabled. No production caller in this repository uses the Jev passage judge, and retrieval-time filtering cannot establish pre-index quarantine. Do not claim Prompt Guard 2 protection. | P0 |
+| Memory | [`aphrody-memory`](../../../crates/ai/aphrody-memory/src/types.rs) stores flat records with tags and metadata through local and hosted providers; CLI commands exist. | **INCOMPLET:** no Spacebot-equivalent typed graph, edges, cross-channel working memory, or app-server memory CRUD/search. | P1 |
+| Messaging and skills | [`aphrody-messaging`](../../../crates/ai/aphrody-messaging/src/lib.rs) has channel adapters; [`aphrody-skills`](../../../crates/ai/aphrody-skills/src/lib.rs) has skill loading and installation. | **INCOMPLET:** neither is connected to a multi-agent, per-channel app-server lifecycle; automatic reflection and skill capture are unqualified. | P2 |
+| Indexed-content screening | Drive has trust tiers and quarantine fields, and [`aphrody-jev`](../../../crates/ai/aphrody-jev/src/rag.rs) can judge retrieved passages. | **NON_FAIT:** [Drive's upstream-identical `SafetyModel`](../../aphrody-os/drive/crates/archive/src/safety.rs) always returns safe; its optional screening feature is disabled. No production caller in this repository uses the Jev passage judge, and retrieval-time filtering cannot establish pre-index quarantine. Do not claim Prompt Guard 2 protection. | P0 |
 
 **Ownership and order.** P0: replace the always-safe Drive screening path with an
 actual versioned classifier decision, trust policy and fail-closed handling for
@@ -296,7 +296,7 @@ unjudged external records before exposing them to agent search. OS owns the
 Drive index and quarantine state after extraction; AI owns model inference and
 passage judgment.
 P1: define task, goal, memory and schedule DTOs and error/event envelopes in
-[`aphrody-contracts`](../../aphrody-contracts/crates/aphrody-app-protocol/src/lib.rs),
+[`aphrody-contracts`](../../../crates/contracts/aphrody-app-protocol/src/lib.rs),
 then implement those handlers in the resident app-server using AI libraries and
 OS cron/jobs/policy. P2: connect channel adapters and skill capture to that same
 lifecycle. [`aphrody-ui`](../../aphrody-ui/packages/app-ui/src/router.tsx) owns

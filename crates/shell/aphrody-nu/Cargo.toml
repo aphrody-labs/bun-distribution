@@ -1,0 +1,27 @@
+[package]
+name = "aphrody-nu"
+description = "Nushell embedded in Aphrody OS: structured evaluation for agents (the shell subsystem)."
+version = "1.0.0-canary"
+edition.workspace = true
+rust-version = "1.0.0-canary"
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+publish = false
+
+[lints]
+workspace = true
+
+[dependencies]
+aphrody-subsystem = { workspace = true }
+aphrody-kernel-client = { workspace = true }
+async-trait = { workspace = true }
+serde_json = { workspace = true }
+tokio = { workspace = true }
+nu-cmd-extra = { workspace = true }
+nu-cmd-lang = { workspace = true }
+nu-command = { workspace = true }
+nu-engine = { workspace = true }
+nu-parser = { workspace = true }
+nu-protocol = { workspace = true }
+nu-std = { workspace = true }

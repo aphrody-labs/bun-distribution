@@ -1,0 +1,24 @@
+{
+  "schema": "iecode-emu.adapter-interface",
+  "schema_version": 1,
+  "scope": "in-process-only",
+  "python_api": {
+    "methods": {
+      "capabilities": "capabilities() -> Capabilities",
+      "call": "call(request: Request) -> Response"
+    },
+    "request": {"adapter": "str", "operation": "str", "input": "bytes|typed-buffer", "options": "JSON object"},
+    "response": {"outputs": "typed-buffer[]", "diagnostics": "diagnostic[]"}
+  },
+  "c_ffi": {
+    "header": "iecode-emu-adapter.h",
+    "functions": [
+      "iecode_emu_adapter_capabilities_json(adapter_id, adapter_id_len, out)",
+      "iecode_emu_adapter_call_json(request, request_len, out)",
+      "iecode_emu_buffer_free(buffer)"
+    ],
+    "memory": "provider allocates output; caller frees exactly once",
+    "encoding": "UTF-8 JSON envelope held in memory"
+  },
+  "forbidden": ["shell wrapper", "subprocess", "stdout protocol", "implicit game-data discovery"]
+}

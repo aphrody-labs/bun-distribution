@@ -4,11 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { XClient, XSession, type Tweet } from "@aphrody-code/x";
+import { XClient, XSession, type Tweet } from "@aphrody/x";
 import { createPostgresClient } from "@rosegriffon/db/service";
 import type { Json } from "@rosegriffon/db";
 import { sql } from "../../lib/db.js";
-import { getOfficialXAccounts, loadBxcXCookieHeader } from "./x-accounts";
+import { getOfficialXAccounts, loadXCookieHeader } from "./x-accounts";
 
 type MediaItem = {
 	id: string;
@@ -99,7 +99,7 @@ export async function crawlTwitter(options: {
 	count?: number;
 	error?: string;
 }> {
-	// Multi-comptes officiels (additif, source x-accounts.ts — mis à jour après discovery bxc x + search).
+	// Multi-comptes officiels (additif, source x-accounts.ts — mis à jour après discovery Aphrody X + search).
 	// Inclut les comptes validés (principaux + fallback low-activity pour complétude historique).
 	// Par défaut, tous les comptes officiels. La veille horaire, elle, ne demande
 	// QUE le dernier post d'`@Azalee_IE` : l'archive des autres comptes est déjà
@@ -114,12 +114,12 @@ export async function crawlTwitter(options: {
 	let hasErrors = false;
 
 	try {
-		// Utilise pleinement le cookie bxc (~/.bxc/cookies/xcom.json) si présent (prioritaire),
-		// fallback sur loadOrEnv ( .aphrody ou X_* env) — supporte le flux CLI bxc x.
+		// Utilise pleinement le session Aphrody X si présent (prioritaire),
+		// fallback sur loadOrEnv ( .aphrody ou X_* env) — supporte le flux CLI Aphrody X.
 		let session: XSession;
-		const bxcCookie = loadBxcXCookieHeader();
-		if (bxcCookie) {
-			session = XSession.fromCookieString(bxcCookie);
+		const xCookie = loadXCookieHeader();
+		if (xCookie) {
+			session = XSession.fromCookieString(xCookie);
 		} else {
 			session = XSession.loadOrEnv();
 		}
@@ -182,8 +182,8 @@ export async function crawlTwitter(options: {
 			}
 
 				console.log(`[Crawl Twitter] Crawl historique complet de @${screenName}...`);
-				// rg cron + bxc x : MAX plus élevé pour AkihiroHino (CEO Level-5, tweets clés pour Azalée wiki + RAG).
-				// "peuple tout les tweets" via pagination userTweets + bxc cookie natif.
+				// rg cron + Aphrody X : MAX plus élevé pour AkihiroHino (CEO Level-5, tweets clés pour Azalée wiki + RAG).
+				// "peuple tout les tweets" via pagination userTweets + session Aphrody X.
 				// `parCompte` borne la moisson : la veille horaire ne demande qu'UN
 				// post (le dernier), là où un rattrapage d'archive en demande 1200.
 				// Sans cette borne, la veille repaginait toute la timeline chaque
@@ -249,7 +249,7 @@ export async function crawlTwitter(options: {
 					`[Crawl Twitter] ${fetchedTweets.length} tweets accumulés au total pour @${screenName}.`
 				);
 				if (screenName === "AkihiroHino") {
-					console.log(`[AkihiroHino] Peuplement tweets CEO Level-5 via rg-cron + bxc x (historique étendu, pour sync Azalée + RAG + traductions).`);
+					console.log(`[AkihiroHino] Peuplement tweets CEO Level-5 via rg-cron + Aphrody X (historique étendu, pour sync Azalée + RAG + traductions).`);
 				}
 
 				const nonRetweets = fetchedTweets.filter((t) => !t.text.startsWith("RT @"));

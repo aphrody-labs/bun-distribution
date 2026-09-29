@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { Browser, Page, type NavigationResponse } from "@aphrody-code/bxc";
+import { WebCdpPage, waitForSelector } from "../../lib/web-cdp";
 import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
@@ -15,7 +15,7 @@ interface RePageTarget {
 	url: string;
 }
 
-async function safeGoto(page: Page, url: string, timeout = 30000): Promise<NavigationResponse> {
+async function safeGoto(page: WebCdpPage, url: string, timeout = 30000): Promise<NavigationResponse> {
 	return Promise.race([
 		page.goto(url),
 		new Promise<never>((_, reject) =>
@@ -33,11 +33,9 @@ export async function crawlRe(): Promise<{ success: boolean; error?: string }> {
 		{ lang: "fr", url: "https://www.inazuma.jp/re/fr/" },
 	];
 
+	let page: WebCdpPage | undefined;
 	try {
-		const page = (await Browser.newPage({
-			profile:
-				(process.env.BXC_PROFILE as "stealth" | "max" | "static" | "fast" | "http") || "stealth",
-		})) as Page;
+		page = await WebCdpPage.connect();
 		let crawlCount = 0;
 
 		for (const target of targets) {
@@ -54,10 +52,10 @@ export async function crawlRe(): Promise<{ success: boolean; error?: string }> {
 					continue;
 				}
 
-				await page.waitForSelector("body", 15000).catch(() => {});
+				await waitForSelector(page, "body", 15000).catch(() => {});
 				const html = await page.content();
 				if (html.length < 500) {
-					console.warn(`[Crawl RE] Page trop courte ou vide pour ${target.lang}, abandon.`);
+					console.warn(`[Crawl RE] WebCdpPage trop courte ou vide pour ${target.lang}, abandon.`);
 					continue;
 				}
 
@@ -79,12 +77,13 @@ export async function crawlRe(): Promise<{ success: boolean; error?: string }> {
 			}
 		}
 
-		await page.close();
 		console.log(`[Crawl RE] Crawl terminé. ${crawlCount} langues sauvegardées.`);
 		return { success: true };
 	} catch (err: unknown) {
 		const msg = err instanceof Error ? err.message : String(err);
 		console.error("[Crawl RE] Erreur critique lors du crawl RE :", err);
 		return { success: false, error: msg };
+	} finally {
+		await page?.close().catch(() => undefined);
 	}
 }

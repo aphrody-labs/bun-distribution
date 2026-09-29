@@ -1,0 +1,29 @@
+# SPDX-License-Identifier: Apache-2.0
+[package]
+name = "aphrody-toolchains"
+description = "Unified Bun / uv / Nushell runtime layer: shell-free discovery, repo-file version pins and consistent launch environment."
+version = "1.0.0-canary"
+edition.workspace = true
+rust-version = "1.0.0-canary"
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+homepage.workspace = true
+readme = "README.md"
+keywords = ["bun", "uv", "nushell", "toolchain", "discovery"]
+categories = ["development-tools"]
+publish = true
+
+[lints]
+workspace = true
+
+[lib]
+path = "src/lib.rs"
+
+[dependencies]
+serde_json = { workspace = true }
+thiserror  = { workspace = true }
+toml       = { workspace = true }
+
+[dev-dependencies]
+tempfile = { workspace = true }

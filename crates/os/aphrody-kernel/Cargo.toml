@@ -1,0 +1,58 @@
+[package]
+name = "aphrody-kernel"
+description = "The Aphrody OS privileged user-space control plane: administration, MCP tools, skills and bus events over local IPC."
+version = "1.0.0-canary"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+publish = false
+
+[lints]
+workspace = true
+
+[features]
+default = ["builtins"]
+# The `aphrody-kernel` binary and its built-in subsystems. Higher layers that only host one
+# subsystem over the kernel transport (aphrody-web's browser plugin) disable it.
+builtins = [
+    "dep:anyhow",
+    "dep:aphrody-bun-docs",
+    "dep:aphrody-compat",
+    "dep:aphrody-coreutils",
+    "dep:aphrody-shell",
+    "dep:aphrody-systemd",
+    "dep:clap",
+]
+
+[[bin]]
+name = "aphrody-kernel"
+path = "src/main.rs"
+required-features = ["builtins"]
+
+[dependencies]
+aphrody-subsystem = { workspace = true }
+aphrody-events = { workspace = true }
+aphrody-execpolicy = { workspace = true }
+aphrody-toolchains = { workspace = true }
+aphrody-winclean = { workspace = true }
+async-trait = { workspace = true }
+gix = { workspace = true }
+reqwest = { workspace = true }
+rustls = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+tokio = { workspace = true }
+tracing = { workspace = true }
+# The binary's built-in subsystems (feature `builtins`).
+anyhow = { workspace = true, optional = true }
+aphrody-bun-docs = { workspace = true, optional = true }
+aphrody-compat = { workspace = true, optional = true }
+aphrody-coreutils = { workspace = true, optional = true }
+aphrody-shell = { workspace = true, optional = true }
+aphrody-systemd = { workspace = true, optional = true }
+clap = { workspace = true, optional = true }
+
+[dev-dependencies]
+tempfile = { workspace = true }

@@ -1,0 +1,66 @@
+{
+  "schema_version": 1,
+  "consumer": "iecode-emu",
+  "boundary": {
+    "allowed": ["rust_migration", "rust_ffi", "native_dll_import"],
+    "forbidden": ["launcher", "process_adapter", "cli_subprocess", "managed_ui_api"]
+  },
+  "surfaces": [
+    {
+      "id": "save.iese",
+      "source": "IESE/IESEViewModel",
+      "kind": "save",
+      "public_api": ["DataHandler.Open(Stream)", "DataHandler.SaveAsync(IGame, bool)", "IGame", "IGameMixiMax"],
+      "iecode_emu_operations": ["save_open", "save_read_model", "save_write_model", "save_export"],
+      "strategy": "rust_migration",
+      "status": "audited"
+    },
+    {
+      "id": "save.inazuma_eleven_save_editor",
+      "source": "InazumaElevenSaveEditor/InazumaElevenSaveEditor",
+      "kind": "save",
+      "public_api": ["ISave.Open(BinaryDataReader)", "ISave.Save(OpenFileDialog)", "IGame", "INZ4/INZ5/INZ6"],
+      "iecode_emu_operations": ["save_open", "save_read_model", "save_write_model", "save_export", "save_player_file_read", "save_player_file_write"],
+      "strategy": "rust_migration",
+      "status": "audited_ui_coupled"
+    },
+    {
+      "id": "save.toolbox",
+      "source": "Inazuma-Eleven-Toolbox/Inazuma-Eleven-Toolbox",
+      "kind": "save_codec",
+      "public_api": ["NDSIE3.EncryptSave(byte[], UInt32)", "NDSIE3.DecryptSave(byte[], UInt32)", "SetMoveLevels(...)"],
+      "iecode_emu_operations": ["save_open", "save_export", "save_write_model"],
+      "strategy": "rust_migration",
+      "status": "audited_ui_coupled"
+    },
+    {
+      "id": "game_data.lynx",
+      "source": "Lynx/Lynx",
+      "kind": "save_and_virtual_memory",
+      "public_api": ["Save.Games.IGame", "Save.Saves.IE", "Games.Game.GetFile(string)", "Games.Game.Files", "Games.Game.GetEmptyObject<T>()"],
+      "iecode_emu_operations": ["save_open", "save_write_model", "save_export", "memory_read", "memory_write", "memory_commit"],
+      "strategy": "rust_migration",
+      "status": "audited_reflection_and_managed_archive_types"
+    },
+    {
+      "id": "game_data.map_event_editor",
+      "source": "InazumaElevenMapEventEditor/InazumaElevenGoMapEventEditor",
+      "kind": "virtual_memory",
+      "public_api": ["VirtualDirectory.GetFileFromFullPath", "VirtualDirectory.AddFile", "VirtualDirectory.GetAllFiles", "SubMemoryStream.Read", "BinaryDataReader.GetSection", "BinaryDataWriter.Write"],
+      "iecode_emu_operations": ["memory_read", "memory_write", "memory_commit"],
+      "strategy": "rust_migration",
+      "status": "audited_not_process_memory"
+    },
+    {
+      "id": "modding.ievr",
+      "source": "IEVR_Mod_Manager",
+      "kind": "modding",
+      "public_api": ["ModManager.ScanMods", "ModManager.GetEnabledMods", "ModManager.DetectPacksModifiers", "ProfileManager.GetAllProfiles", "ProfileManager.LoadProfile", "ProfileManager.SaveProfile", "ProfileManager.DeleteProfile"],
+      "iecode_emu_operations": ["mod_scan", "mod_profile_read", "mod_profile_write", "mod_conflicts"],
+      "strategy": "rust_migration",
+      "status": "audited_pure_data_surface",
+      "excluded_api": ["ViolaIntegration.MergeModsAsync", "SteamHelper.DetectGamePath", "MainWindow.PlayButton_Click"],
+      "merge_strategy": "rust_migration_or_native_dll_import_only"
+    }
+  ]
+}

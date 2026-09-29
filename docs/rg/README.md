@@ -1,6 +1,6 @@
 # Documentation — monorepo Rose Griffon
 
-> 🌟 **SOURCE UNIQUE DE VÉRITÉ** : Le document de référence canonique pour la navigation, l'architecture unifiée des trois univers et le design system est [`/PLAN.md`](../PLAN.md).
+> 🌟 **SOURCE UNIQUE DE VÉRITÉ** : Le document de référence canonique pour la navigation, l'architecture unifiée des trois univers et le design system est [`PLAN.md`](../../PLAN.md).
 
 Index de la documentation partagée. Convention du dépôt : `*.md` est gitignoré
 **sauf** `docs/**`, `PLAN.md`, les `README.md` de paquet et quelques exceptions listées
@@ -10,7 +10,7 @@ dans `.gitignore`.
 
 | Doc | Portée |
 | --- | --- |
-| [PLAN.md](../PLAN.md) | **Source Unique de Vérité** : Navigation unifiée, 3 univers (Asso/Wiki/E-Sport), tokens `theme-achillea`, layouts & tests. |
+| [PLAN.md](../../PLAN.md) | **Source Unique de Vérité** : Navigation unifiée, 3 univers (Asso/Wiki/E-Sport), tokens `theme-achillea`, layouts & tests. |
 | [database.md](database.md) | Base de données et cache hybride : Postgres self-host ↔ miroir SQLite embarqué. |
 | [decision-archi-donnees-azalee.md](decision-archi-donnees-azalee.md) | Décision d'architecture : passage de la couche données d'Azalée sur Drizzle. |
 | [architecture-unifiee-ievr.md](architecture-unifiee-ievr.md) | Vue d'ensemble de la chaîne IEVR : extraction, stockage, rendu. |
@@ -19,7 +19,7 @@ dans `.gitignore`.
 
 | Doc | Portée |
 | --- | --- |
-| [azalee.md](azalee.md) | Contrat canonique de la surface web : Azalée vit dans `apps/website` sous `/wiki`, avec un seul build et aucune unité web autonome. |
+| [azalee.md](azalee.md) | Contrat canonique de la surface web : Azalée vit dans `apps/rg/website` sous `/wiki`, avec un seul build et aucune unité web autonome. |
 | [azalee-lib.md](azalee-lib.md) | `@rosegriffon/azalee` : cœur du wiki en bibliothèque Bun (racine client-safe, `/server`, `/remote`). |
 | [wiki-filters.md](wiki-filters.md) | Filtres du wiki et contournement des colonnes NULL de `inagle_skills`. |
 
@@ -49,7 +49,7 @@ dans `.gitignore`.
 | [bot-administration.md](bot-administration.md) | Surface web du bot : contrat de types partagé, serveur d'administration en boucle locale, API et pages `/admin/bot` + `/admin/cron`. |
 | [campagnes-hashtag.md](campagnes-hashtag.md) | Campagnes à hashtag : récolte X + Discord, tolérance aux fautes de frappe, relais vers le salon de suivi. |
 | [insta.md](insta.md) | Instagram : pourquoi aucune récolte automatique n'est possible, la vérification oEmbed, le dépôt manuel et la table dédiée. |
-| [stockage-secondaire.md](../../aphrody-infra/docs/ops/stockage-secondaire.md) (dépôt aphrody-infra) | Archive froide sur le second VPS : pourquoi elle a existé, ce qui en est revenu le 21/8/2026, et ce qui ne doit jamais être déporté. |
+| `aphrody-infra/docs/ops/stockage-secondaire.md` (dépôt aphrody-infra) | Archive froide sur le second VPS : pourquoi elle a existé, ce qui en est revenu le 21/8/2026, et ce qui ne doit jamais être déporté. |
 | [achillea-services.md](achillea-services.md) | Topologie, secrets hors Git, ports, sondes et contrat d'upload Supabase d'Achillea. |
 | [achillea-storage-migration.md](achillea-storage-migration.md) | Runbook sûr et reprenable pour migrer les octets Storage Cloud d'Achillea vers sa pile locale isolée. |
 | [achillea-modulaire.md](achillea-modulaire.md) | Architecture portable d'Achilléa : contrat, métier, client isomorphe, export Rust/Swift/Kotlin — et ce qu'il reste à faire pour migrer le front. |

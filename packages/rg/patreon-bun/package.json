@@ -1,67 +1,68 @@
 {
-	"name": "@rosegriffon/patreon-bun",
-	"version": "1.0.3",
-	"description": "Bun-only TypeScript library for the V2 Patreon API. Fork of patreon-api.ts (ghostrider-05) for Rose Griffon.",
-	"keywords": [
-		"bun",
-		"oauth",
-		"patreon",
-		"patreon-api",
-		"patreon-client",
-		"patreon-wrapper",
-		"typescript",
-		"webhook-server"
-	],
-	"homepage": "https://github.com/rose-griffon/patreon-bun#readme",
-	"bugs": {
-		"url": "https://github.com/rose-griffon/patreon-bun/issues/"
-	},
-	"license": "MIT",
-	"author": "Rose Griffon <contact@rose-griffon.fr>",
-	"contributors": [
-		{
-			"name": "ghostrider-05",
-			"url": "https://github.com/ghostrider-05"
-		}
-	],
-	"repository": {
-		"type": "git",
-		"url": "git+https://github.com/rose-griffon/patreon-bun.git"
-	},
-	"files": [
-		"dist",
-		"README.md",
-		"LICENSE"
-	],
-	"type": "module",
-	"types": "./dist/index.d.ts",
-	"exports": {
-		".": {
-			"types": "./dist/index.d.ts",
-			"import": "./dist/index.js"
-		}
-	},
-	"publishConfig": {
-		"access": "public",
-		"registry": "https://registry.npmjs.org"
-	},
-	"scripts": {
-		"test": "bun test --preload ./src/__tests__/server.ts src",
-		"build:js": "bun build src/index.ts --outdir dist --target bun --format esm",
-		"build:types": "bun --bun tsc --emitDeclarationOnly --noCheck",
-		"build": "bun run build:js && bun run build:types",
-		"prepublishOnly": "bun run build",
-		"type-check": "bun --bun tsc --noEmit",
-		"lint": "bunx oxlint -c ../../.oxlintrc.json -A style -A pedantic -A restriction src"
-	},
-	"devDependencies": {
-		"@types/bun": "catalog:",
-		"msw": "catalog:",
-		"openapi-types": "catalog:",
-		"ts-morph": "catalog:",
-		"typescript": "catalog:"
-	},
-	"engines": {
-		"bun": ">=1.4.2"
-	}
+  "name": "@rosegriffon/patreon-bun",
+  "version": "1.0.3",
+  "description": "Bun-only TypeScript library for the V2 Patreon API. Fork of patreon-api.ts (ghostrider-05) for Rose Griffon.",
+  "keywords": [
+    "bun",
+    "oauth",
+    "patreon",
+    "patreon-api",
+    "patreon-client",
+    "patreon-wrapper",
+    "typescript",
+    "webhook-server"
+  ],
+  "homepage": "https://github.com/rose-griffon/patreon-bun#readme",
+  "bugs": {
+    "url": "https://github.com/rose-griffon/patreon-bun/issues/"
+  },
+  "license": "MIT",
+  "author": "Rose Griffon <contact@rose-griffon.fr>",
+  "contributors": [
+    {
+      "name": "ghostrider-05",
+      "url": "https://github.com/ghostrider-05"
+    }
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rose-griffon/patreon-bun.git"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "type": "module",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org"
+  },
+  "scripts": {
+    "test": "bun test --preload ./src/__tests__/server.ts src",
+    "build:js": "bun build src/index.ts --outdir dist --target bun --format esm",
+    "build:types": "bun --bun tsc --emitDeclarationOnly --noCheck",
+    "build": "bun run build:js && bun run build:types",
+    "prepublishOnly": "bun run build",
+    "type-check": "bun --bun tsc --noEmit",
+    "lint": "bunx oxlint -c ../config/oxlintrc.json -A style -A pedantic -A restriction src",
+    "typecheck": "tsgo -p tsconfig.json --noEmit"
+  },
+  "devDependencies": {
+    "@types/bun": "catalog:",
+    "msw": "catalog:",
+    "openapi-types": "catalog:",
+    "ts-morph": "catalog:",
+    "typescript": "catalog:"
+  },
+  "engines": {
+    "bun": ">=1.4.2"
+  }
 }

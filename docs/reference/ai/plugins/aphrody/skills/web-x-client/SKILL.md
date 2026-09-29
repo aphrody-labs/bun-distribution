@@ -11,4 +11,4 @@ Key exports: XClient, XSession, rankTweets, tweetToPostCandidate, XTools (in xai
 
 Cross-platform: pure TS + optional Rust companion in `crates/aphrody-x`.
 
-Use the web-x-grok-architect agent for deep integration work.
+Use the web-engineer agent for deep integration work.

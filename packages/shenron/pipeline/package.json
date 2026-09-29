@@ -13,27 +13,28 @@
     "build": "bun build src/cli.ts --target=bun --outfile=dist/pipeline",
     "type-check": "tsc --noEmit && tsc --noEmit -p tsconfig.scripts.json",
     "lint": "oxlint -c ../.oxlintrc.json",
-    "test": "bun test"
+    "test": "bun test",
+    "typecheck": "tsgo -p tsconfig.json --noEmit"
   },
   "dependencies": {
     "@ai-sdk/openai-compatible": "^3.0.0",
     "@ai-sdk/provider": "4.0.17",
-    "ai": "^7.0.0",
+    "ai": "catalog:",
     "@shenron/config": "workspace:*",
     "@shenron/db": "workspace:*",
     "postgres": "^3.4.9",
-    "sharp": "^0.35.4",
+    "sharp": "catalog:",
     "sqlite-vec": "^0.1.1",
     "zod": "catalog:"
   },
   "devDependencies": {
     "@types/bun": "catalog:",
-    "@types/node": "^26.6.2",
+    "@types/node": "catalog:",
     "oxlint": "catalog:",
     "typescript": "catalog:"
   },
   "engines": {
-    "bun": ">=1.3.0"
+    "bun": ">=1.4.2"
   },
   "exports": {
     ".": "./src/index.ts",

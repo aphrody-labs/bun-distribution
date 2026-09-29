@@ -68,7 +68,7 @@ tools return `Unavailable`. Fix it with `git submodule update --init third_party
 
 - If the docs call an API experimental or unstable, say so in the answer.
 - Native code goes through `bun:ffi` or N-API. For a Rust cdylib, use the `ffi-architect`
-  agent and the `web-rust-ffi` skill.
+  agent and the `web` skill.
 
 ## Aphrody OS context
 

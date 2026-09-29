@@ -4,8 +4,7 @@
  * Le catalogue des techniques est rendu CÔTÉ SERVEUR : deux `fetch()` statiques
  * (`?per_page=500&page=1` puis `page=2`) rapportent 100 % des attributs
  * `data-movie-url` / `data-poster-url`. Aucun navigateur headless n'est requis
- * — ce qui évite au passage la contrainte de barrel de `zukan/order.ts` (qui,
- * lui, tire `@aphrody-code/bxc` et ne doit jamais être ré-exporté).
+ * — ce qui évite au passage la contrainte de barrel de `zukan/order.ts` (qui dépend du transport CDP et ne doit jamais être ré-exporté).
  *
  * Ce module est PUR réseau + parsing : aucune écriture DB, aucune dépendance
  * Node hors `fetch`. Il remplace l'ancienne lecture de `/tmp/zukan/**` disparue.

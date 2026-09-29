@@ -1,6 +1,6 @@
 # Services et stockage Achillea
 
-> **Note d'architecture (23/09/2026)** : Le frontend autonome Angular d'Achilléa a été retiré et intégré dans `apps/website` (`/achillea`). Les unités `achillea-postgrest`, `achillea-storage` et `achillea-realtime` (ports 8820-8822) ainsi que le GoTrue dédié (`achillea-auth` port 8824) ont été retirés. La base Achilléa est désormais un schéma natif de la base `rg` (`scripts/ops/achillea-merge.ts`), et l'authentification est unifiée via Better Auth (`/api/achillea/session`). Seul `achillea-bot.service` reste actif aux côtés de `rg-api.service`.
+> **Note d'architecture (23/09/2026)** : Le frontend autonome Angular d'Achilléa a été retiré et intégré dans `apps/rg/website` (`/achillea`). Les unités `achillea-postgrest`, `achillea-storage` et `achillea-realtime` (ports 8820-8822) ainsi que le GoTrue dédié (`achillea-auth` port 8824) ont été retirés. La base Achilléa est désormais un schéma natif de la base `rg` (`scripts/rg/ops/achillea-merge.ts`), et l'authentification est unifiée via Better Auth (`/api/achillea/session`). Seul `achillea-bot.service` reste actif aux côtés de `rg-api.service`.
 
 Cette fiche décrit la configuration déclarative du portage Achillea. Elle ne constitue pas
 une activation de production : aucune unité systemd, configuration Nginx, migration ou
@@ -18,13 +18,13 @@ Les routes et unités sont contrôlées avec le dépôt Infra, sans réseau ni s
 | API unifiée Elysia/Kysely | `127.0.0.1:8800` | `https://api.rosegriffon.fr/v1/` et `/health` | `rg-api.service`               |
 | Ranked REST + Colyseus   | `127.0.0.1:4002`   | `https://ranked.rosegriffon.fr`                                 | enfant du backend              |
 | Socket.IO                | `127.0.0.1:4005`   | `https://ranked.rosegriffon.fr/socket.io/`                      | processus backend              |
-| Front Achilléa            | route Next         | `https://rosegriffon.fr/achillea`                               | `apps/website`                |
+| Front Achilléa            | route Next         | `https://rosegriffon.fr/achillea`                               | `apps/rg/website`             |
 
 `achillea-bot.service` supervise le backend, l'API historique, Socket.IO et le sous-processus
 ranked. `rg-api.service` porte l'API unifiée Elysia/Kysely sur le même schéma PostgreSQL
 `achillea`; les nouvelles surfaces migrées passent par `api.rosegriffon.fr/v1/`.
 `KillMode=control-group` garantit que ranked s'arrête avec son parent. Le front de production
-est rendu par `apps/website`; `achillea.rosegriffon.fr` redirige vers cette route.
+est rendu par `apps/rg/website`; `achillea.rosegriffon.fr` redirige vers cette route.
 
 L'unité candidate est
 [`systemd/rg-achillea-bot.service`](https://github.com/aphrody-code/aphrody-infra/blob/main/systemd/rg-achillea-bot.service).
@@ -73,7 +73,7 @@ distants.
 Achilléa a vécu successivement sur Supabase Cloud, puis dans une base `achillea`
 dédiée du cluster local, exposée à `rg` par `postgres_fdw` — des tables
 étrangères, lisibles mais jamais écrivables, et une identité coupée en deux.
-Depuis [`scripts/ops/achillea-merge.ts`](../scripts/ops/achillea-merge.ts), ses
+Depuis [`achillea-merge.ts`](../../scripts/rg/ops/achillea-merge.ts), ses
 69 tables sont de VRAIES tables du schéma `achillea` de la base `rg`.
 
 Ce que ça change concrètement :
@@ -92,9 +92,9 @@ configuration de MikroORM : les 56 migrations d'Achilléa écrivent des noms non
 qualifiés, et l'application n'a pas changé d'une ligne.
 
 ```bash
-bun scripts/ops/achillea-merge.ts --verify   # inventaire comparé, aucune écriture
-bun scripts/ops/achillea-merge.ts --copy     # (re)copie le schéma et les données
-bun scripts/ops/achillea-merge.ts --cutover  # bascule les services sur `rg`
+bun scripts/rg/ops/achillea-merge.ts --verify   # inventaire comparé, aucune écriture
+bun scripts/rg/ops/achillea-merge.ts --copy     # (re)copie le schéma et les données
+bun scripts/rg/ops/achillea-merge.ts --cutover  # bascule les services sur `rg`
 ```
 
 La base `achillea` n'est PAS supprimée : elle reste le repli immédiat — remettre

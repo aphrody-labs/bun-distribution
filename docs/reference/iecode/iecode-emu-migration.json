@@ -1,0 +1,17 @@
+{
+  "schema": "iecode-emu.adapter-migration",
+  "schema_version": 1,
+  "interface": "iecode-emu-interface.json",
+  "policy": [
+    "retain Python only as a bounded reference",
+    "extract byte-oriented library calls",
+    "port to the listed Rust owner or expose only the in-process ABI",
+    "remove the Python runtime after parity evidence"
+  ],
+  "adapters": [
+    {"id": "buscador-inazuma", "rust_owner": ["nie-formats", "nie-explore"], "migration": "split NDS/PKB/PAC decoding from Tk presentation"},
+    {"id": "iestrikers", "rust_owner": ["nie-pe", "nie-re", "nie-forge"], "migration": "replace ppcdis/CodeWarrior orchestration with library calls"},
+    {"id": "inazuma-eleven-go-mapenv", "rust_owner": ["nie-formats", "nie-explore"], "migration": "expose compile/decompile as buffer functions"},
+    {"id": "inz-cond", "rust_owner": ["nie-formats", "nie-viola"], "migration": "expose condition IR decode/encode as typed calls"}
+  ]
+}

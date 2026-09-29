@@ -1,0 +1,322 @@
+// SPDX-License-Identifier: Apache-2.0
+//! Privileged cloud integration subsystem (`cloud`).
+//!
+//! Exposes native GitHub inspection (status, branches, commit DAG, trees)
+//! and Google Cloud integration (GCP auth status, Gemini API configuration, GCS storage)
+//! as first-class kernel tools.
+
+use std::path::PathBuf;
+
+use aphrody_subsystem::{SubsystemError, SystemSubsystem, ToolDefinition};
+use async_trait::async_trait;
+use serde_json::{Value, json};
+
+/// The kernel-owned cloud control plane (GitHub and Google Cloud).
+#[derive(Debug, Default)]
+pub struct CloudSubsystem;
+
+impl CloudSubsystem {
+    #[must_use]
+    pub fn new() -> Self {
+        Self
+    }
+}
+
+/// Runs a synchronous gix inspection off the async runtime.
+async fn blocking(
+    job: impl FnOnce() -> Result<Value, SubsystemError> + Send + 'static,
+) -> Result<Value, SubsystemError> {
+    tokio::task::spawn_blocking(job)
+        .await
+        .map_err(|e| SubsystemError::Failed(format!("git inspection task failed: {e}")))?
+}
+
+fn resolve_repo_path(given: Option<&str>) -> Result<PathBuf, SubsystemError> {
+    if let Some(p) = given {
+        let path = PathBuf::from(p);
+        if path.exists() {
+            return Ok(path);
+        }
+        return Err(SubsystemError::InvalidArguments(format!(
+            "repository path does not exist: {p}"
+        )));
+    }
+    std::env::current_dir().map_err(|e| {
+        SubsystemError::Failed(format!("failed to determine current working directory: {e}"))
+    })
+}
+
+#[async_trait]
+impl SystemSubsystem for CloudSubsystem {
+    fn name(&self) -> &'static str {
+        "cloud"
+    }
+
+    fn description(&self) -> &'static str {
+        "Kernel-owned cloud control plane: native GitHub repository status, branch and commit \
+         trees, and Google Cloud Platform / Gemini environment inspection."
+    }
+
+    fn tools(&self) -> Vec<ToolDefinition> {
+        vec![
+            ToolDefinition::new(
+                "github_status",
+                "Inspect current branch, ahead/behind tracking, modified/untracked files and recent commits for a Git repository",
+                json!({
+                    "type": "object",
+                    "properties": {
+                        "repo_path": {
+                            "type": "string",
+                            "description": "Path to the git repository (defaults to current working directory)"
+                        }
+                    }
+                }),
+            )
+            .read_only(),
+            ToolDefinition::new(
+                "github_branches",
+                "List local and tracking remote branches with upstream synchronization status",
+                json!({
+                    "type": "object",
+                    "properties": {
+                        "repo_path": {
+                            "type": "string",
+                            "description": "Path to the git repository (defaults to current working directory)"
+                        }
+                    }
+                }),
+            )
+            .read_only(),
+            ToolDefinition::new(
+                "github_tree",
+                "List tree entries (blobs, trees, sizes) at a specific Git reference or path",
+                json!({
+                    "type": "object",
+                    "properties": {
+                        "repo_path": {
+                            "type": "string",
+                            "description": "Path to the git repository (defaults to current working directory)"
+                        },
+                        "ref_name": {
+                            "type": "string",
+                            "description": "Git ref or branch name (defaults to HEAD)"
+                        },
+                        "path": {
+                            "type": "string",
+                            "description": "Subdirectory path inside the repository"
+                        }
+                    }
+                }),
+            )
+            .read_only(),
+            ToolDefinition::new(
+                "git_ingest",
+                "Ingest any Git repository or directory into a prompt-ready LLM digest matching https://gitingest.com/llms.txt (token estimation, ASCII tree, delimited file contents)",
+                json!({
+                    "type": "object",
+                    "properties": {
+                        "repo_path": {
+                            "type": "string",
+                            "description": "Path to the local repository or directory (defaults to current working directory)"
+                        },
+                        "max_file_size": {
+                            "type": "integer",
+                            "description": "Maximum allowed file size in bytes (defaults to 10MB)"
+                        },
+                        "include_patterns": {
+                            "type": "array",
+                            "items": { "type": "string" },
+                            "description": "Wildcard pattern(s) of files to include"
+                        },
+                        "exclude_patterns": {
+                            "type": "array",
+                            "items": { "type": "string" },
+                            "description": "Wildcard pattern(s) of files to exclude"
+                        }
+                    }
+                }),
+            )
+            .read_only(),
+            ToolDefinition::new(
+                "gcp_status",
+                "Inspect Google Cloud Platform credentials, active project, and Gemini API key availability",
+                json!({
+                    "type": "object",
+                    "properties": {
+                        "project": {
+                            "type": "string",
+                            "description": "Optional project override to verify"
+                        }
+                    }
+                }),
+            )
+            .read_only(),
+            ToolDefinition::new(
+                "gcp_storage_list",
+                "List objects and storage prefixes in a Google Cloud Storage bucket",
+                json!({
+                    "type": "object",
+                    "properties": {
+                        "bucket": {
+                            "type": "string",
+                            "description": "GCS bucket name"
+                        },
+                        "prefix": {
+                            "type": "string",
+                            "description": "Optional prefix path inside the bucket"
+                        }
+                    },
+                    "required": ["bucket"]
+                }),
+            )
+            .read_only(),
+        ]
+    }
+
+    async fn call(&self, tool: &str, arguments: Value) -> Result<Value, SubsystemError> {
+        match tool {
+            "github_status" => {
+                let repo_path =
+                    resolve_repo_path(arguments.get("repo_path").and_then(Value::as_str))?;
+                let path = repo_path.clone();
+                blocking(move || crate::cloud_git::status(&path)).await
+            },
+            "github_branches" => {
+                let repo_path =
+                    resolve_repo_path(arguments.get("repo_path").and_then(Value::as_str))?;
+                blocking(move || crate::cloud_git::branches(&repo_path)).await
+            },
+            "github_tree" => {
+                let repo_path =
+                    resolve_repo_path(arguments.get("repo_path").and_then(Value::as_str))?;
+                let ref_name = arguments.get("ref_name").and_then(Value::as_str).unwrap_or("HEAD");
+                let subpath = arguments.get("path").and_then(Value::as_str).unwrap_or(".");
+                let (ref_name, subpath) = (ref_name.to_owned(), subpath.to_owned());
+                blocking(move || crate::cloud_git::tree(&repo_path, &ref_name, &subpath)).await
+            },
+            "git_ingest" => {
+                let repo_path =
+                    resolve_repo_path(arguments.get("repo_path").and_then(Value::as_str))?;
+                let max_size = arguments
+                    .get("max_file_size")
+                    .and_then(Value::as_u64)
+                    .unwrap_or(10 * 1024 * 1024);
+                let include: Vec<String> = arguments
+                    .get("include_patterns")
+                    .and_then(Value::as_array)
+                    .map(|arr| arr.iter().filter_map(|v| v.as_str().map(String::from)).collect())
+                    .unwrap_or_default();
+                let exclude: Vec<String> = arguments
+                    .get("exclude_patterns")
+                    .and_then(Value::as_array)
+                    .map(|arr| arr.iter().filter_map(|v| v.as_str().map(String::from)).collect())
+                    .unwrap_or_default();
+                blocking(move || crate::cloud_git::ingest(&repo_path, max_size, &include, &exclude))
+                    .await
+            },
+            "gcp_status" => {
+                let gemini_key = std::env::var("GEMINI_API_KEY").ok();
+                let google_key = std::env::var("GOOGLE_API_KEY").ok();
+                let app_credentials = std::env::var("GOOGLE_APPLICATION_CREDENTIALS").ok();
+                let project = arguments
+                    .get("project")
+                    .and_then(Value::as_str)
+                    .map(String::from)
+                    .or_else(|| std::env::var("CLOUDSDK_CORE_PROJECT").ok())
+                    .or_else(|| std::env::var("GCP_PROJECT").ok());
+
+                let has_api_key = gemini_key.is_some() || google_key.is_some();
+                let has_service_account =
+                    app_credentials.as_ref().map(|p| PathBuf::from(p).exists()).unwrap_or(false);
+
+                Ok(json!({
+                    "configured": has_api_key || has_service_account,
+                    "gemini_api_key_configured": has_api_key,
+                    "service_account_credentials_path": app_credentials,
+                    "service_account_valid": has_service_account,
+                    "project": project.unwrap_or_else(|| "aphrody-production".to_string()),
+                    "auth_provider": if has_service_account { "ServiceAccount" } else if has_api_key { "ApiKey" } else { "None" },
+                }))
+            },
+            "gcp_storage_list" => {
+                let bucket = arguments
+                    .get("bucket")
+                    .and_then(Value::as_str)
+                    .ok_or_else(|| SubsystemError::InvalidArguments("missing bucket".into()))?;
+                let prefix = arguments.get("prefix").and_then(Value::as_str).unwrap_or("");
+                let client = crate::cloud_gcs::http_client()?;
+                let config = crate::cloud_gcs::GcsConfig::from_env(&client).await?;
+                crate::cloud_gcs::list(&client, &config, bucket, prefix).await
+            },
+            _ => Err(SubsystemError::UnknownTool(tool.to_owned())),
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn cloud_subsystem_declares_tools() {
+        let cloud = CloudSubsystem::new();
+        assert_eq!(cloud.name(), "cloud");
+        let tools = cloud.tools();
+        assert_eq!(tools.len(), 6);
+        let names: Vec<_> = tools.iter().map(|t| t.name.as_str()).collect();
+        assert!(names.contains(&"github_status"));
+        assert!(names.contains(&"github_branches"));
+        assert!(names.contains(&"github_tree"));
+        assert!(names.contains(&"gcp_status"));
+        assert!(names.contains(&"gcp_storage_list"));
+        assert!(names.contains(&"git_ingest"));
+    }
+
+    #[tokio::test]
+    async fn gcp_status_returns_structured_payload() {
+        let cloud = CloudSubsystem::new();
+        let res = cloud.call("gcp_status", json!({})).await.expect("call");
+        assert!(res.get("auth_provider").is_some());
+        assert!(res.get("project").is_some());
+    }
+
+    #[tokio::test]
+    async fn github_status_in_current_repo() {
+        let cloud = CloudSubsystem::new();
+        let res = cloud.call("github_status", json!({})).await;
+        assert!(res.is_ok(), "github_status failed: {:?}", res.err());
+        let val = res.unwrap();
+        assert!(val.get("branch").is_some());
+        assert!(val.get("recent_commits").is_some());
+    }
+
+    #[tokio::test]
+    async fn github_branches_in_current_repo() {
+        let cloud = CloudSubsystem::new();
+        let res = cloud.call("github_branches", json!({})).await;
+        assert!(res.is_ok(), "github_branches failed: {:?}", res.err());
+        let val = res.unwrap();
+        assert!(val.get("branches").is_some());
+    }
+
+    #[tokio::test]
+    async fn github_tree_in_current_repo() {
+        let cloud = CloudSubsystem::new();
+        let res = cloud.call("github_tree", json!({ "path": "crates" })).await;
+        assert!(res.is_ok(), "github_tree failed: {:?}", res.err());
+        let val = res.unwrap();
+        assert!(val.get("entries").is_some());
+    }
+
+    #[tokio::test]
+    async fn cloud_subsystem_handles_errors() {
+        let cloud = CloudSubsystem::new();
+        let res_unknown = cloud.call("nonexistent_cloud_tool", json!({})).await;
+        assert!(matches!(res_unknown, Err(SubsystemError::UnknownTool(_))));
+
+        let res_bad_path = cloud
+            .call("github_status", json!({ "repo_path": "C:\\nonexistent\\invalid\\path\\12345" }))
+            .await;
+        assert!(res_bad_path.is_err());
+    }
+}

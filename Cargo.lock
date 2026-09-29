@@ -287,7 +287,7 @@ dependencies = [
  "aphrody-a2a-client",
  "aphrody-a2a-coord",
  "aphrody-agent-home",
- "aphrody-agent-proto",
+ "aphrody-agent-proto 1.0.0",
  "aphrody-agent-runtime",
  "aphrody-ai",
  "aphrody-antigravity",
@@ -409,7 +409,9 @@ dependencies = [
  "futures",
  "getrandom 0.2.17",
  "hex",
+ "rcgen 0.14.10",
  "reqwest 0.13.5",
+ "rustls",
  "serde",
  "serde_json",
  "tokio",
@@ -419,7 +421,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-a2a-coord"
-version = "1.0.0-canary"
+version = "1.0.0"
 dependencies = [
  "aphrody-a2a",
  "aphrody-a2a-server",
@@ -428,13 +430,35 @@ dependencies = [
  "chrono",
  "futures",
  "getrandom 0.2.17",
+ "http-body-util",
  "reqwest 0.13.5",
  "serde",
  "serde_json",
+ "tempfile",
  "thiserror 2.0.21",
  "tokio",
+ "tower",
  "tracing",
  "which 8.0.6",
+]
+
+[[package]]
+name = "aphrody-a2a-grpc"
+version = "0.2.2"
+dependencies = [
+ "aphrody-a2a",
+ "aphrody-a2a-client",
+ "aphrody-a2a-pb",
+ "aphrody-a2a-server",
+ "async-trait",
+ "futures",
+ "http",
+ "rcgen 0.14.10",
+ "tokio",
+ "tokio-rustls",
+ "tokio-stream",
+ "tonic",
+ "tonic-tls",
 ]
 
 [[package]]
@@ -464,13 +488,17 @@ dependencies = [
  "aphrody-a2a-pb",
  "async-trait",
  "axum",
+ "axum-server",
  "base64 0.22.1",
  "chrono",
  "futures",
+ "http-body-util",
  "hyper",
  "reqwest 0.13.5",
+ "rustls",
  "serde",
  "serde_json",
+ "tempfile",
  "tokio",
  "tokio-stream",
  "tower",
@@ -510,10 +538,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "aphrody-agent-proto"
+version = "1.0.0"
+dependencies = [
+ "pretty_assertions",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.21",
+ "uuid",
+]
+
+[[package]]
 name = "aphrody-agent-runtime"
 version = "1.0.0"
 dependencies = [
- "aphrody-agent-proto",
+ "aphrody-agent-proto 1.0.0",
  "aphrody-agent-tools",
  "aphrody-antigravity",
  "aphrody-config",
@@ -544,7 +583,7 @@ dependencies = [
 name = "aphrody-agent-tools"
 version = "1.0.0"
 dependencies = [
- "aphrody-agent-proto",
+ "aphrody-agent-proto 1.0.0",
  "aphrody-gemini-web",
  "aphrody-guard",
  "aphrody-jev",
@@ -630,8 +669,9 @@ dependencies = [
 
 [[package]]
 name = "aphrody-app-protocol"
-version = "1.0.0-canary"
+version = "1.0.0"
 dependencies = [
+ "pretty_assertions",
  "serde",
  "serde_json",
 ]
@@ -641,7 +681,7 @@ name = "aphrody-app-server"
 version = "1.0.0"
 dependencies = [
  "aphrody-agent-home",
- "aphrody-agent-proto",
+ "aphrody-agent-proto 1.0.0",
  "aphrody-agent-runtime",
  "aphrody-app-protocol",
  "aphrody-config",
@@ -790,7 +830,7 @@ name = "aphrody-engine"
 version = "1.0.0"
 dependencies = [
  "aphrody-agent-home",
- "aphrody-agent-proto",
+ "aphrody-agent-proto 1.0.0",
  "aphrody-model-client",
  "aphrody-rollout",
  "aphrody-toolcall",
@@ -1080,7 +1120,7 @@ version = "1.0.0-canary"
 dependencies = [
  "aphrody-events",
  "aphrody-execpolicy",
- "aphrody-subsystem",
+ "aphrody-subsystem 1.0.0-canary",
  "aphrody-toolchains",
  "aphrody-winclean",
  "async-trait",
@@ -1230,6 +1270,8 @@ dependencies = [
  "aphrody-vision",
  "aphrody-voice",
  "aphrody-web-bridge",
+ "aphrody-web-crawl",
+ "aphrody-web-detect",
  "aphrody-web-extract",
  "aphrody-web-service",
  "aphrody-winclean",
@@ -1817,6 +1859,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "aphrody-rust"
+version = "0.1.0"
+dependencies = [
+ "pyo3",
+]
+
+[[package]]
 name = "aphrody-sdk"
 version = "1.0.0"
 dependencies = [
@@ -1946,6 +1995,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "aphrody-subsystem"
+version = "1.0.0"
+dependencies = [
+ "async-trait",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.21",
+ "tokio",
+]
+
+[[package]]
 name = "aphrody-summary"
 version = "1.0.0"
 dependencies = [
@@ -1957,7 +2017,7 @@ dependencies = [
 name = "aphrody-supervisor"
 version = "1.0.0"
 dependencies = [
- "aphrody-agent-proto",
+ "aphrody-agent-proto 1.0.0",
  "aphrody-engine",
  "aphrody-model-client",
  "aphrody-rollout",
@@ -2091,7 +2151,7 @@ dependencies = [
 name = "aphrody-tui"
 version = "1.0.0-canary"
 dependencies = [
- "aphrody-agent-proto",
+ "aphrody-agent-proto 1.0.0-canary",
  "crossterm",
  "ratatui",
  "tokio",
@@ -2292,7 +2352,7 @@ dependencies = [
  "aphrody-fsindex",
  "aphrody-proc",
  "aphrody-re",
- "aphrody-subsystem",
+ "aphrody-subsystem 1.0.0-canary",
  "base64 0.22.1",
  "image",
  "ort",
@@ -3153,6 +3213,28 @@ dependencies = [
 ]
 
 [[package]]
+name = "axum-server"
+version = "0.8.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b1df331683d982a0b9492b38127151e6453639cd34926eb9c07d4cd8c6d22bfc"
+dependencies = [
+ "arc-swap",
+ "bytes",
+ "either",
+ "fs-err",
+ "http",
+ "http-body",
+ "hyper",
+ "hyper-util",
+ "pin-project-lite",
+ "rustls",
+ "rustls-pki-types",
+ "tokio",
+ "tokio-rustls",
+ "tower-service",
+]
+
+[[package]]
 name = "backon"
 version = "1.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3402,6 +3484,9 @@ name = "bit-vec"
 version = "0.9.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b71798fca2c1fe1086445a7258a4bc81e6e49dcd24c8d0dd9a1e57395b603f51"
+dependencies = [
+ "serde",
+]
 
 [[package]]
 name = "bit_field"
@@ -7098,6 +7183,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "fs-err"
+version = "3.3.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b91aa448ca50d7e79433bdf3ee8d99215430d2ec02ade5aefab2a073a1822e8a"
+dependencies = [
+ "autocfg",
+ "tokio",
+]
+
+[[package]]
 name = "fs4"
 version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -9256,6 +9351,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "hyper-tls"
+version = "0.6.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "70206fc6890eaca9fde8a0bf71caa2ddfc9fe045ac9e5c70df101a7dbde866e0"
+dependencies = [
+ "bytes",
+ "http-body-util",
+ "hyper",
+ "hyper-util",
+ "native-tls",
+ "tokio",
+ "tokio-native-tls",
+ "tower-service",
+]
+
+[[package]]
 name = "hyper-util"
 version = "0.1.21"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -10135,7 +10246,7 @@ dependencies = [
  "js-sys",
  "p256 0.13.2",
  "p384 0.13.1",
- "pem",
+ "pem 3.0.6",
  "rand 0.8.8",
  "rsa",
  "serde",
@@ -13062,7 +13173,7 @@ dependencies = [
  "encoding_rs",
  "futures-util",
  "psl",
- "rcgen",
+ "rcgen 0.13.2",
  "reqwest 0.13.5",
  "rustls",
  "serde",
@@ -14073,6 +14184,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1d30c53c26bc5b31a98cd02d20f25a7c8567146caf63ed593a9d87b2775291be"
 dependencies = [
  "base64 0.22.1",
+ "serde_core",
+]
+
+[[package]]
+name = "pem"
+version = "4.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d354a98a3d1251555de99e8fdd8afda05573c31b82f59063a7b0a29b5527f120"
+dependencies = [
+ "base64 0.23.1",
  "serde_core",
 ]
 
@@ -15199,6 +15320,63 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d55d956fa96f5ec02be2e13af0e20391a5aa83d6a074e3ad368959d0fab299ea"
 
 [[package]]
+name = "pyo3"
+version = "0.29.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4688ddedf473e32662b9b067670129a8afb8c18e351482c70d62ba4a88171e8b"
+dependencies = [
+ "libc",
+ "once_cell",
+ "portable-atomic",
+ "pyo3-build-config",
+ "pyo3-ffi",
+ "pyo3-macros",
+]
+
+[[package]]
+name = "pyo3-build-config"
+version = "0.29.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f41027e41b4bd03f6e60f9f417fe24a6341a6bb744edd62b6f709f2a52ea30e9"
+dependencies = [
+ "target-lexicon",
+]
+
+[[package]]
+name = "pyo3-ffi"
+version = "0.29.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e591a95526fead067432c3b3a33fc74770b87b1e04e73671090d9c2055a2b327"
+dependencies = [
+ "libc",
+ "pyo3-build-config",
+]
+
+[[package]]
+name = "pyo3-macros"
+version = "0.29.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "73225868fc1cd84eef2c3c230ddb91273bf1de46aeb8a4248da76d32a0924a1c"
+dependencies = [
+ "proc-macro2",
+ "pyo3-macros-backend",
+ "quote",
+ "syn 2.0.119",
+]
+
+[[package]]
+name = "pyo3-macros-backend"
+version = "0.29.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "571575aa3749fa6216757dd47d2a3e7ef360f329a40f0666a9fbd14889024952"
+dependencies = [
+ "heck 0.5.0",
+ "proc-macro2",
+ "quote",
+ "syn 2.0.119",
+]
+
+[[package]]
 name = "qoi"
 version = "0.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -15710,11 +15888,25 @@ version = "0.13.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "75e669e5202259b5314d1ea5397316ad400819437857b90861765f24c4cf80a2"
 dependencies = [
- "pem",
+ "pem 3.0.6",
  "ring",
  "rustls-pki-types",
  "time",
- "yasna",
+ "yasna 0.5.2",
+]
+
+[[package]]
+name = "rcgen"
+version = "0.14.10"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8774e05a7d0de114588e6a28fe7e71694b82614ed569d86d8b389dfbc98b8ad8"
+dependencies = [
+ "pem 4.0.0",
+ "ring",
+ "rustls-pki-types",
+ "time",
+ "x509-parser",
+ "yasna 0.6.0",
 ]
 
 [[package]]
@@ -15968,11 +16160,13 @@ dependencies = [
  "http-body-util",
  "hyper",
  "hyper-rustls",
+ "hyper-tls",
  "hyper-util",
  "js-sys",
  "log",
  "mime",
  "mime_guess",
+ "native-tls",
  "percent-encoding",
  "pin-project-lite",
  "quinn",
@@ -15984,6 +16178,7 @@ dependencies = [
  "serde_urlencoded",
  "sync_wrapper",
  "tokio",
+ "tokio-native-tls",
  "tokio-rustls",
  "tokio-util",
  "tower",
@@ -18821,6 +19016,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "tokio-native-tls"
+version = "0.3.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "bbae76ab933c85776efabc971569dd6119c580d8f5d448769dec1764bf796ef2"
+dependencies = [
+ "native-tls",
+ "tokio",
+]
+
+[[package]]
 name = "tokio-postgres"
 version = "0.7.18"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -19159,6 +19364,24 @@ dependencies = [
  "syn 2.0.119",
  "tempfile",
  "tonic-build",
+]
+
+[[package]]
+name = "tonic-tls"
+version = "0.7.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c1ace145c667504b488f44f08fd4966da7feefd430621a4ce1eae5ca79e6c867"
+dependencies = [
+ "async-stream",
+ "futures",
+ "hyper",
+ "hyper-util",
+ "socket2",
+ "tokio",
+ "tokio-rustls",
+ "tonic",
+ "tower",
+ "tracing",
 ]
 
 [[package]]
@@ -21533,6 +21756,7 @@ dependencies = [
  "lazy_static",
  "nom 7.1.3",
  "oid-registry",
+ "ring",
  "rusticata-macros",
  "thiserror 2.0.21",
  "time",
@@ -21832,6 +22056,16 @@ version = "0.5.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e17bb3549cc1321ae1296b9cdc2698e2b6cb1992adfa19a8c72e5b7a738f44cd"
 dependencies = [
+ "time",
+]
+
+[[package]]
+name = "yasna"
+version = "0.6.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b5f6765e852b9b4dc8e2a76843e4d64d1cea8e79bcde0b6901aea8e7c7f08282"
+dependencies = [
+ "bit-vec 0.9.1",
  "time",
 ]
 

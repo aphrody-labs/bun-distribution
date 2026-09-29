@@ -8,8 +8,8 @@
   "types": "./src/index.ts",
   "exports": {
     ".": "./src/index.ts",
-		"./access": "./src/access/index.ts",
-		"./auth": "./src/auth/index.ts",
+    "./access": "./src/access/index.ts",
+    "./auth": "./src/auth/index.ts",
     "./brackets": "./src/brackets/index.ts",
     "./casts": "./src/casts/index.ts",
     "./clans": "./src/clans/index.ts",
@@ -27,8 +27,8 @@
     "./pagination": "./src/pagination/index.ts",
     "./participants": "./src/participants/index.ts",
     "./presentation": "./src/presentation/index.ts",
-		"./ranking": "./src/ranking/index.ts",
-		"./ranked": "./src/ranked/index.ts",
+    "./ranking": "./src/ranking/index.ts",
+    "./ranked": "./src/ranked/index.ts",
     "./reference": "./src/reference/index.ts",
     "./rulesets": "./src/rulesets/index.ts",
     "./sanctions": "./src/sanctions/index.ts",
@@ -39,12 +39,13 @@
     "./wallet": "./src/wallet/index.ts"
   },
   "scripts": {
-    "lint": "bunx oxlint -c ../../.oxlintrc.json -A style -A pedantic -A restriction src tests",
-    "lint:fix": "bunx oxlint -c ../../.oxlintrc.json -A style -A pedantic -A restriction --fix src tests",
+    "lint": "bunx oxlint -c ../config/oxlintrc.json -A style -A pedantic -A restriction src tests",
+    "lint:fix": "bunx oxlint -c ../config/oxlintrc.json -A style -A pedantic -A restriction --fix src tests",
     "type-check": "bun --bun tsc --noEmit",
     "format": "bunx oxfmt .",
     "format:check": "bunx oxfmt --check .",
-    "test": "bun test"
+    "test": "bun test",
+    "typecheck": "tsgo -p tsconfig.json --noEmit"
   },
   "dependencies": {
     "@rosegriffon/achillea-types": "workspace:*",
@@ -56,5 +57,8 @@
     "oxlint": "catalog:",
     "typescript": "catalog:"
   },
-  "sideEffects": false
+  "sideEffects": false,
+  "engines": {
+    "bun": ">=1.4.2"
+  }
 }

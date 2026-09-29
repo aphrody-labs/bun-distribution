@@ -9,9 +9,9 @@ import { createPostgresClient } from "@rosegriffon/db/service";
 import { buildOrderMap, crawlZukanOrderPages } from "@rosegriffon/inagle/zukan/order";
 import { sql } from "../../lib/db.js";
 
-// Le scraper d'ordre (navigation bxc + parsing cheerio des pages chara_param) est
+// Le scraper d'ordre (navigation CDP + parsing cheerio des pages chara_param) est
 // désormais unifié dans `@rosegriffon/inagle/zukan/order` (leaf, hors barrel car
-// il tire @aphrody-code/bxc). Ce fichier ne garde que l'orchestration prod :
+// il utilise Aphrody Web CDP). Ce fichier ne garde que l'orchestration prod :
 // diff Redis + écriture `zukan_order` sur Supabase. Comportement identique.
 
 /** @deprecated Réexport de compatibilité — type unifié dans le module order. */

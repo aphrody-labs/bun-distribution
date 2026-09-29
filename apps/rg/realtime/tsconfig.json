@@ -1,8 +1,7 @@
 {
   "compilerOptions": {
-    "ignoreDeprecations": "6.0",
     "target": "esnext",
-    "module": "esnext",
+    "module": "preserve",
     "moduleResolution": "bundler",
     "lib": ["esnext"],
     "types": ["bun"],

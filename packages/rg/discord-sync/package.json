@@ -10,5 +10,8 @@
   },
   "dependencies": {
     "discord.js": "catalog:"
+  },
+  "engines": {
+    "bun": ">=1.4.2"
   }
 }

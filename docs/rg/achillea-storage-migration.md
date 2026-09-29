@@ -6,7 +6,7 @@ la pile RG/Azalée, ne supprime rien côté source et ne réalise aucune opérat
 réseau par défaut.
 
 L’outil associé est
-[`scripts/achillea/migrate-storage-objects.ts`](../scripts/achillea/migrate-storage-objects.ts).
+[`migrate-storage-objects.ts`](../../scripts/rg/achillea/migrate-storage-objects.ts).
 Il utilise uniquement les API Storage : les secrets ne sont acceptés que par
 variables d’environnement, jamais dans les arguments, le manifeste ou les
 logs.
@@ -78,9 +78,9 @@ set -a
 . /home/ubuntu/.bash_secrets
 set +a
 
-bun scripts/achillea/migrate-storage-objects.ts --inventory
-bun scripts/achillea/migrate-storage-objects.ts --migrate
-bun scripts/achillea/migrate-storage-objects.ts --verify
+bun scripts/rg/achillea/migrate-storage-objects.ts --inventory
+bun scripts/rg/achillea/migrate-storage-objects.ts --migrate
+bun scripts/rg/achillea/migrate-storage-objects.ts --verify
 ```
 
 La sortie est volontairement expurgée : elle indique le project ref, le port
@@ -91,7 +91,7 @@ loopback, les buckets et le chemin d’état, mais aucune URL ni aucune clé.
 Dans une fenêtre opérateur approuvée et sous gel des écritures Cloud :
 
 ```bash
-bun scripts/achillea/migrate-storage-objects.ts \
+bun scripts/rg/achillea/migrate-storage-objects.ts \
   --inventory --execute --confirm ACHILLEA_STORAGE_MIGRATION
 ```
 
@@ -121,7 +121,7 @@ métadonnées sensibles.
 Après validation du manifeste et de l’inventaire PostgreSQL :
 
 ```bash
-bun scripts/achillea/migrate-storage-objects.ts \
+bun scripts/rg/achillea/migrate-storage-objects.ts \
   --migrate --execute --confirm ACHILLEA_STORAGE_MIGRATION
 ```
 
@@ -147,7 +147,7 @@ en-tête d’authentification ou URL.
 Toujours sous gel des écritures :
 
 ```bash
-bun scripts/achillea/migrate-storage-objects.ts \
+bun scripts/rg/achillea/migrate-storage-objects.ts \
   --verify --execute --confirm ACHILLEA_STORAGE_MIGRATION
 ```
 
@@ -189,9 +189,9 @@ Les tests n’effectuent aucun appel réseau réel et utilisent deux stockages
 mémoire séparés :
 
 ```bash
-bun test scripts/achillea/migrate-storage-objects.test.ts
-bunx oxlint scripts/achillea/migrate-storage-objects.ts \
-  scripts/achillea/migrate-storage-objects.test.ts
+bun test scripts/rg/achillea/migrate-storage-objects.test.ts
+bunx oxlint scripts/rg/achillea/migrate-storage-objects.ts \
+  scripts/rg/achillea/migrate-storage-objects.test.ts
 ```
 
 Ils couvrent les refus de cible, les dossiers interdits, le double opt-in, la

@@ -66,4 +66,4 @@ Run with `bun test packages/xai/index.test.ts packages/x/index.test.ts`
 - Stream tool_calls deltas accumulate by index
 - For production agents, prefer XTools + native X over legacy search_parameters
 
-Load web-x-client and web-mcp-server skills when touching the other side of the integration.
+Load web-x-client and web skills when touching the other side of the integration.

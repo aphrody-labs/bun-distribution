@@ -1,6 +1,6 @@
 # Documentation du Package `@rosegriffon/inagle`
 
-Le package `@rosegriffon/inagle` (situé dans [packages/inagle/](file:///packages/inagle)) est l'API universelle et le moteur d'analyse de données de jeu pour **Inazuma Eleven: Victory Road (IEVR)** au sein du monorepo Rose Griffon.
+Le package `@rosegriffon/inagle` (situé dans [packages/rg/inagle/](../../packages/rg/inagle)) est l'API universelle et le moteur d'analyse de données de jeu pour **Inazuma Eleven: Victory Road (IEVR)** au sein du monorepo Rose Griffon.
 
 Ce document présente l'architecture globale, le pipeline de données, l'alignement avec la base de données et les mécanismes de tests natifs.
 
@@ -8,11 +8,11 @@ Ce document présente l'architecture globale, le pipeline de données, l'alignem
 
 ## 1. Vue d'Ensemble & Architecture
 
-`@rosegriffon/inagle` sert de couche d'abstraction de données (Data Access Layer) partagée par le wiki de l'application Next.js ([`apps/website`](../apps/website)) et les tâches périodiques du démon de fond (`packages/cron`).
+`@rosegriffon/inagle` sert de couche d'abstraction de données (Data Access Layer) partagée par le wiki de l'application Next.js ([`apps/rg/website`](../../apps/rg/website)) et les tâches périodiques du démon de fond (`packages/rg/cron`).
 
-### Structure du Code source ([packages/inagle/src](file:///packages/inagle/src))
+### Structure du Code source ([packages/rg/inagle/src](../../packages/rg/inagle/src))
 ```
-packages/inagle/src/
+packages/rg/inagle/src/
 ├── adapters/          # Adaptateurs d'API Web (ex: Hono)
 ├── analysis/          # Logique d'analyse comparative de statistiques
 ├── api/               # Couche d'API de données globale
@@ -37,20 +37,20 @@ packages/inagle/src/
 ## 2. API & Sous-modules Clés
 
 ### A. Gestion des Personnages & Variantes
-* **Fichiers** : [entities/types.ts](file:///packages/inagle/src/entities/types.ts), [service.ts](file:///packages/inagle/src/service.ts)
+* **Fichiers** : [entities/types.ts](../../packages/rg/inagle/src/entities/types.ts), [service.ts](../../packages/rg/inagle/src/service.ts)
 * **Description** : Les personnages possèdent un `charaId` unique mais peuvent comporter plusieurs `variants` (loadouts, versions jeunes, versions spéciales).
 * **Résolution de Rareté** : La fonction `loadBaseCharacters()` calcule dynamiquement la rareté globale d'un personnage de base en parcourant ses variantes pour retenir la meilleure rareté disponible (comme BASARA ou UR).
 
 ### B. Moteur de Stat Calculator
-* **Fichiers** : [stat-calculator.ts](file:///packages/inagle/src/stat-calculator.ts)
+* **Fichiers** : [stat-calculator.ts](../../packages/rg/inagle/src/stat-calculator.ts)
 * **Description** : Permet de calculer à la volée les statistiques d'un personnage à un niveau donné (1 à 99) en fonction de sa rareté, ses auras, et les boosts appliqués.
 
 ### C. Gestion BASARA & Signes Astrologiques
-* **Fichiers** : [basara/index.js](file:///packages/inagle/src/basara/index.ts), [parsers/star-sign.ts](file:///packages/inagle/src/parsers/star-sign.ts)
+* **Fichiers** : [basara/index.js](../../packages/rg/inagle/src/basara/index.ts), [parsers/star-sign.ts](../../packages/rg/inagle/src/parsers/star-sign.ts)
 * **Description** : Cartographie des loadouts de personnages BASARA et attribution de leur code de rareté `20`.
 
 ### D. Recherche Globale
-* **Fichiers** : [search/index.js](file:///packages/inagle/src/search/index.ts)
+* **Fichiers** : [search/index.js](../../packages/rg/inagle/src/search/index.ts)
 * **Description** : Fournit une API de recherche unifiée (`GlobalSearchAPI`) indexant les personnages, techniques (skills) et objets du jeu.
 
 ---
@@ -58,7 +58,7 @@ packages/inagle/src/
 ## 3. Pipeline de Données & Synchronisation DB
 Le pipeline permet d'extraire les données compilées et de les synchroniser avec la base de données PostgreSQL (Supabase) et le backup SQLite local.
 
-* **Fichier clé** : [cli-push.ts](file:///packages/inagle/src/cli-push.ts)
+* **Fichier clé** : [cli-push.ts](../../packages/rg/inagle/src/cli-push.ts)
 * **Mécanisme de Fusion (`sheet_data`)** :
   Lors de la synchronisation vers la table `inagle_characters`, les métadonnées curatées hors-pipeline (comme les descriptions personnalisées de fiches de personnages) sont préservées. Les nouveaux movesets générés par le build JSON sont fusionnés intelligemment pour conserver les modifications dynamiques sans écraser les anciennes données :
   ```typescript
@@ -81,11 +81,11 @@ Le pipeline permet d'extraire les données compilées et de les synchroniser ave
 ## 4. Tests d'Intégration Unifiés
 Le package `inagle` est testé de manière autonome sous le runtime natif **Bun** pour valider l'exactitude du parser en conditions réelles sans nécessiter d'outils tiers comme Playwright.
 
-* **Fichier de test** : [azalee-inagle-integration.test.ts](file:///packages/inagle/src/azalee-inagle-integration.test.ts)
+* **Fichier de test** : [azalee-inagle-integration.test.ts](../../packages/rg/inagle/src/azalee-inagle-integration.test.ts)
 * **Commandes** :
   ```bash
   # Lancer les tests d'intégration du package inagle
-  bun test packages/inagle/src/azalee-inagle-integration.test.ts
+  bun test packages/rg/inagle/src/azalee-inagle-integration.test.ts
   ```
 
 ### Couverture des Tests

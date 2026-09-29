@@ -3,7 +3,7 @@
 //!
 //! Provides:
 //! - Exclusive GPU lease acquisition preempting `llama-server` inference.
-//! - Subprocess runner driving `py/aphrody-train` with live NDJSON event streaming.
+//! - Subprocess runner driving the shared `aphrody-py` workspace with live NDJSON event streaming.
 //! - Gold-leak guarded dataset triples generation.
 //! - Metric-driven candidate promotion gates (ΔRecall@5 ≥ +0.01, per-tag regression ≤ 0.03).
 //! - Automatic model registration in [`aphrody_models::ModelStore`].
@@ -37,12 +37,18 @@ mod tests {
             serde_json::json!({"type":"history_item","message":{"role":"model","parts":[{"text":"It reads a file."}]}}),
             serde_json::json!({"id":"e2","msg":{"type":"turn_complete","last_agent_message":"It reads a file."}}),
         ];
-        let lines = items.iter().map(|item| {
-            serde_json::json!({"ts":"2026-09-24T00:00:00Z","item":item}).to_string()
-        }).collect::<Vec<_>>().join("\n");
+        let lines = items
+            .iter()
+            .map(|item| serde_json::json!({"ts":"2026-09-24T00:00:00Z","item":item}).to_string())
+            .collect::<Vec<_>>()
+            .join("\n");
         std::fs::write(input.join("rollout-test.jsonl"), format!("{lines}\n")).unwrap();
         let gold = temp.path().join("gold.jsonl");
-        std::fs::write(&gold, "{\"q\":\"unrelated gold query\",\"expectUrl\":[\"https://example.invalid/gold\"]}\n").unwrap();
+        std::fs::write(
+            &gold,
+            "{\"q\":\"unrelated gold query\",\"expectUrl\":[\"https://example.invalid/gold\"]}\n",
+        )
+        .unwrap();
         let out_dir = temp.path().join("out");
         let mut job = TrainingJob::new("test-dataset-001", TrainKind::DatasetRollouts, &out_dir);
         job.input_path = Some(input);

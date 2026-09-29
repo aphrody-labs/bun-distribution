@@ -2,8 +2,11 @@
 	"compilerOptions": {
 		"target": "ESNext",
 		"lib": ["ESNext"],
-		"module": "ESNext",
+		"module": "Preserve",
 		"moduleResolution": "Bundler",
+		"moduleDetection": "force",
+		"allowImportingTsExtensions": true,
+		"verbatimModuleSyntax": true,
 		"strict": true,
 		"noImplicitAny": true,
 		"strictNullChecks": true,

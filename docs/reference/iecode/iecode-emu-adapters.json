@@ -1,0 +1,130 @@
+{
+  "schema": "iecode-emu.adapter-capabilities",
+  "schema_version": 1,
+  "interface": {
+    "transport": ["in-process", "c-ffi"],
+    "discovery": {
+      "request": {
+        "in_process": "capabilities(adapter_id) -> Capabilities",
+        "ffi": "iecode_emu_adapter_capabilities_json(adapter_id, out) -> Status"
+      },
+      "response": {
+        "schema": "iecode-emu.adapter-capabilities",
+        "adapter": "string",
+        "capabilities": "string[]",
+        "operations": "operation[]"
+      }
+    },
+    "invoke": {
+      "request": {
+        "schema": "iecode-emu.adapter-request",
+        "adapter": "string",
+        "operation": "string",
+        "input": "bytes|typed-buffer",
+        "options": "object"
+      },
+      "response": {
+        "schema": "iecode-emu.adapter-response",
+        "adapter": "string",
+        "operation": "string",
+        "outputs": "typed-buffer[]",
+        "diagnostics": "object[]"
+      },
+      "rules": [
+        "all inputs and outputs cross the boundary in memory; no stdout, shell, or subprocess is part of the contract",
+        "the host owns buffers, lifecycle, cancellation, and explicit file reads",
+        "adapters never discover, download, or install game data implicitly",
+        "an unsupported operation returns status UNSUPPORTED and no partial output"
+      ]
+    },
+    "status_codes": {
+      "OK": "success",
+      "INVALID_REQUEST": "invalid typed request",
+      "UNSUPPORTED": "unsupported capability or operation",
+      "FORMAT_ERROR": "input or format error",
+      "DEPENDENCY_UNAVAILABLE": "required in-process library unavailable"
+    }
+  },
+  "adapters": [
+    {
+      "id": "buscador-inazuma",
+      "project": "Buscador-Inazuma",
+      "kind": "rom-asset-search",
+      "status": "legacy-adapter-audit",
+      "target_owners": ["nie-formats", "nie-explore"],
+      "capabilities": [
+        "rom.nds.inspect",
+        "rom.asset.search",
+        "rom.asset.extract",
+        "rom.sprite.preview"
+      ],
+      "operations": [
+        {"id": "inspect", "input": "nds_path", "output": "rom_metadata"},
+        {"id": "search-assets", "input": "nds_path+query", "output": "asset_locations"},
+        {"id": "extract-pkb-pac", "input": "archive_path", "output": "file_entries"}
+      ],
+      "current_entrypoint": "BuscadorInazuma (Master)/main.py",
+      "current_boundary": "GUI-only; extraction helpers are Python-callable but not a stable JSON API",
+      "requires_external_game_input": true
+    },
+    {
+      "id": "iestrikers",
+      "project": "IEStrikers",
+      "kind": "wii-reverse-engineering-and-build",
+      "status": "legacy-adapter-audit",
+      "target_owners": ["nie-pe", "nie-re", "nie-forge"],
+      "capabilities": [
+        "dol.symbol.lookup",
+        "dol.function.disassemble",
+        "dol.asset.rip",
+        "decompilation.progress"
+      ],
+      "operations": [
+        {"id": "lookup-symbol", "input": "symbol+context", "output": "address"},
+        {"id": "disassemble-function", "input": "address+binary", "output": "assembly"},
+        {"id": "rip-assets", "input": "dol+asset-map", "output": "asset_files"},
+        {"id": "progress", "input": "analysis-output", "output": "progress_report"}
+      ],
+      "current_entrypoint": "configure.py, getfunction.py, calcprogress.py",
+      "current_boundary": "depends on external ppcdis and CodeWarrior tools plus a user-provided DOL",
+      "requires_external_game_input": true
+    },
+    {
+      "id": "inazuma-eleven-go-mapenv",
+      "project": "InazumaElevenGoMapenv",
+      "kind": "map-format-converter",
+      "status": "legacy-adapter-audit",
+      "target_owners": ["nie-formats", "nie-explore"],
+      "capabilities": ["mapenv.compile", "mapenv.decompile", "mapenv.roundtrip"],
+      "operations": [
+        {"id": "compile", "input": "mapenv_text_path", "output": "mapenv_binary_path"},
+        {"id": "decompile", "input": "mapenv_binary_path", "output": "mapenv_text_path"}
+      ],
+      "current_entrypoint": "mapenv.py c|d INPUT OUTPUT",
+      "current_boundary": "stable file CLI; no implicit game-directory lookup",
+      "requires_external_game_input": true
+    },
+    {
+      "id": "inz-cond",
+      "project": "inz_cond",
+      "kind": "condition-format-and-modding",
+      "status": "legacy-adapter-audit",
+      "target_owners": ["nie-formats", "nie-viola"],
+      "capabilities": [
+        "condition.decode",
+        "condition.encode",
+        "condition.generate.c",
+        "condition.generate.squirrel",
+        "condition.roundtrip"
+      ],
+      "operations": [
+        {"id": "decode", "input": "base64_condition", "output": "condition_ir+source"},
+        {"id": "encode", "input": "condition_source", "output": "base64_condition"},
+        {"id": "roundtrip", "input": "base64_condition", "output": "equivalence_report"}
+      ],
+      "current_entrypoint": "inz_cond_cmd.py -d BASE64; GUI is optional",
+      "current_boundary": "CLI decodes to generated source; encoder/API is library-level Python only",
+      "requires_external_game_input": false
+    }
+  ]
+}

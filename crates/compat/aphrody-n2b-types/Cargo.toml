@@ -1,0 +1,20 @@
+[package]
+name = "aphrody-n2b-types"
+description = "N2B shared types and the versioned JSON report schema."
+version = "0.6.2"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+readme = "README.md"
+keywords = ["bun", "nodejs", "migration", "n2b", "schema"]
+categories = ["development-tools"]
+publish = true
+authors.workspace = true
+
+[dependencies]
+serde = { workspace = true }
+
+[lints]
+workspace = true

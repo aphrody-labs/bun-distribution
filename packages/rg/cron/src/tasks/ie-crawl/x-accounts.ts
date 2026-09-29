@@ -4,10 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import { XSession } from "@aphrody/x";
+
 // Config centralisée des comptes X/Twitter officiels Inazuma Eleven / LEVEL-5.
 // Multi-comptes pour ingestion cron + RAG (cf. UNIFIED-RAG-PLAN §4.1 + §8).
 //
-// Validés via bxc x profile + tweets (2026-06) + bxc x search discovery:
+// Validés via Aphrody X profile + tweets (2026-06) + Aphrody X search discovery:
 // - inazuma_project : イナズマイレブン公式 (JP, ~260k) — principal
 // - inazuma_cross   : イナズマイレブン クロス 公式 (JP, ~46k) — officiel jeu mobile Cross
 // - AkihiroHino : 日野晃博 CEO LEVEL-5 (~228k)
@@ -16,7 +18,7 @@
 // - InazumaSeries : Inazuma Eleven Series — officiel global EN (~34k)
 // - Level5Hub : Level-5 Hub — news/leaks ES très actif (~3k, fort engagement)
 //
-// Comptes communauté/news haut-signal découverts via bxc x search (2026-06),
+// Comptes communauté/news haut-signal découverts via Aphrody X search (2026-06),
 // vérifiés réels, centrés Inazuma Eleven (≠ news jeux généralistes bruyantes) :
 // - DartsEnthusiast : EN news/analyse IE (~3.4k, stats DL, INA-DAI, leaks)
 // - InazumaNational : EN clips/comparatifs IE (~11k)
@@ -24,7 +26,7 @@
 // - Braco_Frost     : ES news/leaks IE (~? , annonces DLC/mundial)
 //
 // Round 2 — découverte Grok (OIDC auth.x.ai, modèle grok-4.3) puis VÉRIFICATION
-// individuelle via bxc x client (profil + tweets), 2026-06. Ajoutés uniquement les
+// individuelle via Aphrody X client (profil + tweets), 2026-06. Ajoutés uniquement les
 // comptes RÉELS, centrés IE et à signal suffisant :
 // - inazumaSD_L5   : イナズマイレブン SD 公式 (JP officiel, ~24.5k)
 // - mutugame       : ムツゲーム — ambassadeur officiel LEVEL-5 公認 (JP, ~2k)
@@ -38,7 +40,7 @@
 // - Inazuma_JuuuN  : ジューーン — JA streamer/analyse VR+Cross (~2.4k, vues 100k+ sur hissatsu)
 // - Koume_no_Inaire: コウメ大福 — JA compétitif/meta VR (~1.5k)
 //
-// Round 2 — ÉCARTÉS bien que RÉELS (vérifiés via bxc, mais signal insuffisant ou
+// Round 2 — ÉCARTÉS bien que RÉELS (vérifiés via Aphrody, mais signal insuffisant ou
 // timeline trop bruyante pour un RAG informatif ; leur contenu IE reste capté par
 // les requêtes de recherche dans harvest-search.ts) :
 // - Suumash (~516) timeline multi-jeux (Sonic/Pokémon/SF6), trop de bruit
@@ -74,12 +76,12 @@ export const OFFICIAL_X_ACCOUNTS = [
 	"Azalee_IE", // FR
 	"InazumaSeries", // Series / officiel global EN
 	"Level5Hub", // news/leaks ES actif
-	// communauté / news haut-signal centrés IE (découverte search bxc 2026-06)
+	// communauté / news haut-signal centrés IE (découverte search Aphrody 2026-06)
 	"DartsEnthusiast", // EN news/analyse
 	"InazumaNational", // EN clips/comparatifs
 	"ShinAngelico", // ES leaker/news
 	"Braco_Frost", // ES news/leaks
-	// round 2 — officiels + communauté vérifiés (Grok OIDC discovery + bxc verify)
+	// round 2 — officiels + communauté vérifiés (Grok OIDC discovery + Aphrody verify)
 	"inazumaSD_L5", // 公式 JP — Inazuma Eleven SD
 	"mutugame", // ambassadeur officiel LEVEL-5 公認
 	"inazo__", // FR news/analyse
@@ -114,35 +116,23 @@ export function getOfficialXAccounts(primaryOnly = false): readonly string[] {
 	return primaryOnly ? PRIMARY_X_ACCOUNTS : OFFICIAL_X_ACCOUNTS;
 }
 
-/** Helper: charge cookie bxc xcom.json (si présent) et renvoie "auth_token=..; ct0=.." pour XSession.fromCookieString. */
-export function loadBxcXCookieHeader(): string | null {
+/** Helper: charge cookie Aphrody Xcom.json (si présent) et renvoie "auth_token=..; ct0=.." pour XSession.fromCookieString. */
+export function loadXCookieHeader(): string | null {
 	try {
-		const fs = require("node:fs") as typeof import("node:fs");
-		const path = "/home/ubuntu/.bxc/cookies/xcom.json";
-		if (!fs.existsSync(path)) return null;
-		const cookies = JSON.parse(fs.readFileSync(path, "utf-8")) as Array<{ name: string; value: string }>;
-		const auth = cookies.find((c) => c.name === "auth_token");
-		const ct0 = cookies.find((c) => c.name === "ct0");
-		if (!auth?.value || !ct0?.value) return null;
-		return `auth_token=${auth.value}; ct0=${ct0.value}`;
+		return XSession.loadOrEnv().cookieHeader();
 	} catch {
 		return null;
 	}
 }
 
-/** Charge les cookies complets depuis bxc xcom.json pour injection dans Browser (bxc) ou XSession. */
-export function loadBxcXCookies(): Array<{ name: string; value: string; domain?: string; path?: string }> {
+/** Load the shared Aphrody X session as cookies for the x.com CDP page. */
+export function loadAphrodyXCookies(): Array<{ name: string; value: string; domain: string; path: string }> {
 	try {
-		const fs = require("node:fs") as typeof import("node:fs");
-		const path = "/home/ubuntu/.bxc/cookies/xcom.json";
-		if (!fs.existsSync(path)) return [];
-		const cookies = JSON.parse(fs.readFileSync(path, "utf-8")) as Array<{ name: string; value: string; domain?: string; path?: string }>;
-		return cookies.map((c) => ({
-			name: c.name,
-			value: c.value,
-			domain: c.domain || ".x.com",
-			path: c.path || "/",
-		}));
+		const session = XSession.loadOrEnv();
+		return [
+			{ name: "auth_token", value: session.auth_token, domain: ".x.com", path: "/" },
+			{ name: "ct0", value: session.ct0, domain: ".x.com", path: "/" },
+		];
 	} catch {
 		return [];
 	}

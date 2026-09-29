@@ -181,7 +181,7 @@ export function demarrerIpcUnix(deps: DependancesIpc): PontIpc {
 
 			default: {
 				// Verbes de scraping (`scrape.*`, `x.*`) : les moteurs
-				// `@aphrody-code/bxc` et `@aphrody-code/x` vivent ici, pas dans le
+				// `@aphrody/agent-browser` et `@aphrody/x` vivent ici, pas dans le
 				// bot, et n'y seront pas installés (le fichier de verrouillage doit
 				// rester en version 1). `servirVerbeScrape` ne lève jamais : il
 				// porte ses propres délais, ses propres plafonds de débit et rend

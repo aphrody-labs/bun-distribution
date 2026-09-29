@@ -23,7 +23,7 @@ Bun.env.RG_CRON_SOCKET = chemin;
  *
  * ⚠ Le spécificateur d'import ci-dessous est volontairement calculé, pas
  * littéral : `packages/cron/src/lib/ipc-unix.ts` route désormais les verbes de
- * scraping vers `tasks/ie-crawl/scrape-service.ts`, qui charge `@aphrody/bxc`
+ * scraping vers `tasks/ie-crawl/scrape-service.ts`, qui utilise Aphrody Web CDP
  * et `@aphrody/x`. Avec un chemin littéral, `tsc -p apps/bot` suivait la chaîne
  * et type-vérifiait les SOURCES de ces deux dépendances (elles supposent le DOM
  * et ont leurs propres erreurs) : le bot héritait de 14 erreurs qui ne lui

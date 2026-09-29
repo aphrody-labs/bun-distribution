@@ -1,0 +1,38 @@
+name: RG migration gates
+
+on:
+  pull_request:
+    paths:
+      - "apps/rg/**"
+      - "packages/rg/**"
+      - "docs/rg/**"
+      - "config/rg/**"
+      - "package.json"
+      - "bun.lock"
+      - "bunfig.toml"
+      - "packages/infra/aphrody-workspace/**"
+      - ".github/workflows/rg-migration.yml"
+  push:
+    branches: [main]
+    paths:
+      - "apps/rg/**"
+      - "packages/rg/**"
+      - "docs/rg/**"
+      - "config/rg/**"
+      - "package.json"
+      - "bun.lock"
+      - "bunfig.toml"
+      - "packages/infra/aphrody-workspace/**"
+      - ".github/workflows/rg-migration.yml"
+
+jobs:
+  rg-pipeline:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.2
+      - run: bun test packages/infra/aphrody-workspace/test/rg.test.ts
+      - run: bun --bun tsc --project packages/infra/aphrody-workspace/tsconfig.json --noEmit
+      - run: bun run rg:pipeline

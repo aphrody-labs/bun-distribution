@@ -273,7 +273,7 @@ profiles for the model families it targets (Qwen2.5-Coder, Qwen3, GPT-OSS,
 `[rag]`'s embedder/reranker, the managed `llama-server` provider's base URL,
 and the OCR/STT/vision model ids are not only `config.toml` keys: they are
 also named by eighteen canonical environment variables
-([`aphrody_config::ai_env`](../crates/aphrody-config/src/ai_env.rs)), the
+([`aphrody_config::ai_env`](../../../crates/ai/aphrody-config/src/ai_env.rs)), the
 same contract `../aphrody-infra/config/local-ai.json` publishes to shenron,
 `aphrody-os`, `rg` and `nie`:
 

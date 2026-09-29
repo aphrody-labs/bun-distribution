@@ -1,0 +1,35 @@
+obscura crates vendored from https://github.com/h4ckf0r0day/obscura at 1a3169da276d7720732c7b20535474942917fb83.
+Local addition: obscura-net/src/dns.rs (DnsRecon). Upstream code otherwise unmodified;
+manifests pin upstream dependency versions and edition 2021.
+vendor/taffy is restored from upstream Obscura commit 1a3169da276d7720732c7b20535474942917fb83.
+Compared with crates.io taffy 0.12.1, 12 source files contain the upstream layout changes
+for intrinsic sizing and margin propagation used by obscura-render; keep this patch until
+those APIs/behaviors are available in a compatible release. Taffy's `detailed_layout_info` is enabled because obscura-render uses it for grid track sizing. `cosmic-text`
+now resolves from crates.io and is no longer vendored.
+Crates.io recheck (2026-09-28): Taffy 0.14.0 is published, but does not provide
+`Style.item_aspect_ratio_is_intrinsic`, `Style.intrinsic_size_containment`, or
+`TaffyTree::set_calc_resolver`; `obscura-render` consumes all three. Upstream Obscura main still
+patches Taffy 0.12, so replacing the vendor with 0.14 is not a compatible source-only migration.
+Local addition: obscura-mcp/src/aphrody.rs (in-process tools()/call() API) + its `pub mod aphrody;` line.
+Local build deduplication: `crates/obscura-cli` and `crates/obscura-mcp` share
+`build-version.rs` for the `OBSCURA_BUILD_VERSION` environment variable.
+Local dependency deduplication: `obscura-js` and `obscura-net` use the Aphrody Web
+workspace's reqwest 0.13.5 dependency instead of adding reqwest 0.12 to the renderer/service
+graph.
+Local manifest cleanup: removed eight direct dependencies with no source, test or example consumer
+from `obscura-cdp`, `obscura-js`, `obscura-browser` and `obscura-dom`; upstream code and public APIs
+were left unchanged.
+Manifests: [lints] allow-all (vendored code is not linted by the aphrody gate).
+render-repros/ is upstream's layout fixture tree (read by obscura-render tests); LICENSE is upstream's.
+Manifests: every obscura crate is `publish = false` (path dependencies without versions cannot be
+published; cargo-deny treats publishable crates with wildcard path deps as errors).
+Local fix: obscura-render inline::tests::isolated_fallback_engine uses tests/fonts/NotoSansArabic.ttf
+(restored from upstream vendor/cosmic-text/fonts) instead of assets/dejavu-sans.ttf, which has Latin
+glyphs and defeated the variable-fallback premise of those tests.
+Feature policy (2026-09-28): Aphrody Web's service and browser subsystem no longer enable
+`obscura-mcp/render` unconditionally. `render` opts into Obscura's Taffy layout and raster/text
+dependencies; `stealth` implies `render` per upstream's `skills/obscura/SKILL.md` and activates
+the transport feature. `aphrody-web-engine` and `aphrody-browser` expose opt-in `render` and
+`stealth` features so DOM/CDP/MCP-only consumers avoid the renderer graph. The upstream skill was
+read from main at repository commit `22d3f2d495d1308b4718ae174159c5ce50c6c0b3` (GitHub API,
+2026-09-28).

@@ -139,7 +139,7 @@ async function translateWithGlossary(
 }
 
 /**
- * Traduction auto via Grok (OIDC SuperGrok keyless natif, comme dans bxc xai)
+ * Traduction auto via Grok (OIDC SuperGrok keyless natif, via le client Aphrody X)
  * + synchronisation avec les projections SQL du glossaire Azalée.
  * Utilisé prioritairement pour tweets AkihiroHino (CEO) et contenus JA IE, pour qualité lore/termes jeu.
  */
@@ -368,7 +368,7 @@ export async function processTweets() {
 					const replacements = isJa ? jpReplacements : enReplacements;
 					let translated: string;
 					if (tweet.author_username === "AkihiroHino" || isJa) {
-						// Sync Azalee translate (glossaire + /tools/translator) + Grok natif (OIDC comme bxc)
+						// Sync Azalee translate (glossaire + /tools/translator) + Grok natif (OIDC via le client Aphrody X)
 						translated = await translateWithGrok(originalText, sourceLang, "fr");
 						if (replacements.length > 0) {
 							translated = await translateWithGlossary(translated, sourceLang, "fr", replacements);

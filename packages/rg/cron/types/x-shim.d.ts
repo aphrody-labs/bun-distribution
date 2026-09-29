@@ -1,8 +1,8 @@
 /**
- * Déclarations de types de `@aphrody-code/x` — utilisées UNIQUEMENT à la compilation.
+ * Déclarations de types de `@aphrody/x` — utilisées UNIQUEMENT à la compilation.
  *
  * POURQUOI CE FICHIER EXISTE
- * `@aphrody-code/x` (alias local de `@aphrody/x`, cf. `node_modules/@aphrody-code/x`
+ * `@aphrody/x` (alias local de `@aphrody/x`, cf. `node_modules/@aphrody/x`
  * → `.bun/@aphrody+x@1.0.10`) publie sa SOURCE `.ts` brute (`main`/`types` →
  * `./src/index.ts`) sans aucun `.d.ts`. Laisser tsc lire cette source le fait
  * échouer sur les réglages stricts du dépôt (`strictNullChecks`,
@@ -10,9 +10,9 @@
  * quinzaine d'erreurs dans `src/config/query-ids.ts`, `src/core/client.ts`,
  * `src/services/{crawler,media,news}.ts` — du code tiers qui n'est pas le nôtre.
  * `skipLibCheck` ne couvre PAS ce cas : il ne s'applique qu'aux `.d.ts`.
- * Les `paths` de `tsconfig.typecheck.json` redirigent donc `@aphrody-code/x`
+ * Les `paths` de `tsconfig.typecheck.json` redirigent donc `@aphrody/x`
  * vers ce fichier. Les `paths` n'affectent QUE la résolution des types : l'import
- * émis reste `@aphrody-code/x` et le vrai paquet est bien chargé à l'exécution.
+ * émis reste `@aphrody/x` et le vrai paquet est bien chargé à l'exécution.
  *
  * CE FICHIER N'EST PAS UN STUB `any`
  * Chaque déclaration ci-dessous a été relevée dans la source réelle du paquet

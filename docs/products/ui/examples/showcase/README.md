@@ -1,0 +1,17 @@
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+# M3 component showcase
+
+Bun-served catalog for the Material Web React bridge, M3 theme/tokens, and motion
+packages. This example is separate from the Tauri desktop UI and the Next.js and
+SpaceUI fixtures.
+
+```sh
+bun run dev       # Bun server with HMR
+bun run build     # browser bundle to dist/
+bun run typecheck
+bun run smoke
+bun run qa        # Gemini visual probe
+```
+
+The current entrypoints are `src/index.html` → `src/app.ts` and the separate
+`src/qa-gemini.html` / `src/qa-gemini.ts` probe. `src/server.ts` serves both.

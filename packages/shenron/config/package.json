@@ -19,7 +19,8 @@
   "scripts": {
     "type-check": "tsc --noEmit",
     "lint": "oxlint -c ../.oxlintrc.json",
-    "test": "bun test"
+    "test": "bun test",
+    "typecheck": "tsgo -p tsconfig.json --noEmit"
   },
   "dependencies": {
     "zod": "catalog:"
@@ -41,5 +42,8 @@
       "./tsconfig/bun.json": "json",
       "./tsconfig/react.json": "json"
     }
+  },
+  "engines": {
+    "bun": ">=1.4.2"
   }
 }

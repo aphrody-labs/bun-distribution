@@ -1,5 +1,5 @@
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
-import { XClient, XSession } from "@aphrody-code/x";
+import { XClient, XSession } from "@aphrody/x";
 import { createPostgresClient } from "@rosegriffon/db/service";
 import { syncThread } from "./sync-specific-thread";
 

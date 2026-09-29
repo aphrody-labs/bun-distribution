@@ -18,10 +18,11 @@
   "scripts": {
     "type-check": "bun --bun tsc --noEmit",
     "test": "bun test src",
-    "lint": "bunx oxlint -c ../../.oxlintrc.json src"
+    "lint": "bunx oxlint -c ../config/oxlintrc.json src",
+    "typecheck": "tsgo -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "@better-auth/agent-auth": "0.5.1",
+    "@better-auth/agent-auth": "catalog:",
     "@better-auth/api-key": "1.6.28",
     "@better-auth/oauth-provider": "1.6.28",
     "@better-auth/passkey": "1.6.28",
@@ -29,15 +30,18 @@
     "@rosegriffon/db": "workspace:*",
     "@rosegriffon/types": "workspace:*",
     "better-auth": "catalog:",
-    "nodemailer": "8.0.10",
+    "nodemailer": "catalog:",
     "zod": "catalog:"
   },
   "devDependencies": {
     "@types/bun": "catalog:",
-    "@types/nodemailer": "8.0.0",
+    "@types/nodemailer": "catalog:",
     "next": "catalog:",
     "react": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:"
+  },
+  "engines": {
+    "bun": ">=1.4.2"
   }
 }

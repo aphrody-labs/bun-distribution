@@ -49,12 +49,12 @@
     "coverage": "bun ../../../scripts/tools/web/x-coverage.ts"
   },
   "devDependencies": {
-    "@types/bun": "^1.4.2",
-    "typescript": "^7.0.2"
+    "@types/bun": "catalog:",
+    "typescript": "catalog:"
   },
   "dependencies": {
     "@aphrody/bun": "workspace:*",
-    "zod": "^4.6.4"
+    "zod": "catalog:"
   },
   "peerDependencies": {}
 }

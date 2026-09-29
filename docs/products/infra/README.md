@@ -22,8 +22,9 @@ current deployment and OAuth redirect registration are recorded in
 [`docs/PLAN.md`](../../plans/infra/PLAN.md). Reusable Discord code and upstream bot
 architecture audits belong to the separate
 [Aphrody Discord monorepo](https://github.com/aphrody-code/aphrody-discord).
-Its Carbon OAuth flow requests the published standard scopes and the
-Administrator install bit for the fixed development guild; Discord-specific
+Its Carbon profile login requests `identify`. Its separate bot installation
+requests `bot applications.commands` and permission bitfield `8` for the
+development guild; Discord-specific
 scope/approval limits are documented in that repository's
 [`docs/carbon-oauth.md`](https://github.com/aphrody-code/aphrody-discord/blob/main/docs/carbon-oauth.md).
 

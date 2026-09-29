@@ -1,0 +1,130 @@
+/* stylelint-disable docusaurus/copyright-header */
+/**
+ * Any CSS included here will be global. The classic template
+ * bundles Infima by default. Infima is a CSS framework designed to
+ * work well for content-centric websites.
+ */
+
+/* You can override the default Infima variables here. */
+:root {
+  --ifm-code-font-size: 95%;
+}
+
+:root[data-theme="light"] {
+  --ifm-codeblock: #f6f8fa;
+  --ifm-hr-border-color: #00000011;
+
+  --ifm-menu-color: #0009;
+  --ifm-toc-link-color: #0009;
+
+  --ifm-color-primary: #5865f2;
+  --ifm-color-primary-dark: #3949f0;
+  --ifm-color-primary-darker: #2a3bee;
+  --ifm-color-primary-darkest: #1121d6;
+  --ifm-color-primary-light: #7781f4;
+  --ifm-color-primary-lighter: #868ff6;
+  --ifm-color-primary-lightest: #b4baf9;
+
+  --ifm-table-border-color: #dadde1;
+  --ifm-table-head-background: #ececec;
+  --ifm-table-stripe-background: #f5f6f7;
+}
+
+:root[data-theme="dark"] {
+  --ifm-codeblock: #161b22;
+  --ifm-hr-border-color: #ffffff11;
+  --ifm-background-color: #0d1117;
+  --ifm-background-surface-color: #161b22;
+
+  --ifm-menu-color: #fff9;
+  --ifm-toc-link-color: #fff9;
+
+  --ifm-color-primary: #5865f2;
+  --ifm-color-primary-dark: #3949f0;
+  --ifm-color-primary-darker: #2a3bee;
+  --ifm-color-primary-darkest: #1121d6;
+  --ifm-color-primary-light: #7781f4;
+  --ifm-color-primary-lighter: #868ff6;
+  --ifm-color-primary-lightest: #b4baf9;
+
+  --ifm-table-border-color: #30363d;
+  --ifm-table-head-background: #161b22;
+  --ifm-table-stripe-background: #161b22;
+}
+
+pre,
+.codeBlockTitle_BvAR,
+.codeBlockTitle_node_modules-\@docusaurus-theme-classic-lib-next-theme-CodeBlock-styles-module {
+  /* biome-ignore lint/complexity/noImportantStyles: ignore */
+  background: var(--ifm-codeblock) !important;
+}
+
+.badge-container {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+}
+
+article table {
+  display: table;
+  width: 100%;
+  font-size: 14px;
+}
+
+article table thead th {
+  text-align: left;
+  text-transform: uppercase;
+}
+
+/* biome-ignore lint/style/noDescendingSpecificity: ignore */
+article table th,
+article table td {
+  padding: 6px 10px;
+}
+
+article table tr:nth-child(2n) {
+  background-color: var(--ifm-table-stripe-background);
+}
+
+.menu ul a {
+  font-size: 0.875rem;
+}
+
+html[data-theme="light"] p {
+  color: #374151;
+}
+
+html[data-theme="dark"] p {
+  color: #ccc;
+}
+
+h1 {
+  font-weight: 700;
+  font-size: 2.25em;
+  margin-top: 0;
+  margin-bottom: 0.8888889em;
+  line-height: 1.1111111;
+}
+
+h2 {
+  font-weight: 600;
+  font-size: 1.5em;
+  margin-top: 2em;
+  margin-bottom: 1em;
+  line-height: 1.3333333;
+}
+
+h3 {
+  font-weight: 500;
+  font-size: 1.25em;
+  margin-top: 1.6em;
+  margin-bottom: 0.6em;
+  line-height: 1.6;
+}
+
+h4 {
+  font-weight: 400;
+  margin-top: 1.5em;
+  margin-bottom: 0.5em;
+  line-height: 1.5;
+}

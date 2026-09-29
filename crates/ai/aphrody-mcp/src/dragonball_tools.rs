@@ -48,13 +48,40 @@ const MAX_RESULT_CHARS: usize = 90_000;
 /// Wiki categories accepted by `wiki_list`, `wiki_get` and `wiki_search`
 /// (mirror of the bot contract `GET /api/public/wiki/categories`).
 pub(crate) const WIKI_CATEGORIES: [&str; 21] = [
-    "characters", "planets", "races", "techniques", "transformations", "sagas", "arcs",
-    "episodes", "movies", "games", "tools", "battles", "items", "dragons", "wishes", "locations",
-    "tournaments", "voice_actors", "soundtracks", "power_levels", "timeline_events",
+    "characters",
+    "planets",
+    "races",
+    "techniques",
+    "transformations",
+    "sagas",
+    "arcs",
+    "episodes",
+    "movies",
+    "games",
+    "tools",
+    "battles",
+    "items",
+    "dragons",
+    "wishes",
+    "locations",
+    "tournaments",
+    "voice_actors",
+    "soundtracks",
+    "power_levels",
+    "timeline_events",
 ];
 
-const A2A_TARGETS: [&str; 9] =
-    ["codex", "agycli", "claude", "local_model", "rag", "subagents", "ocr", "translation", "broadcast"];
+const A2A_TARGETS: [&str; 9] = [
+    "codex",
+    "agycli",
+    "claude",
+    "local_model",
+    "rag",
+    "subagents",
+    "ocr",
+    "translation",
+    "broadcast",
+];
 
 // ---------------------------------------------------------------------------
 // Endpoints and HTTP
@@ -94,7 +121,9 @@ fn enc(segment: &str) -> String {
     let mut out = String::with_capacity(segment.len());
     for byte in segment.bytes() {
         match byte {
-            b'A'..=b'Z' | b'a'..=b'z' | b'0'..=b'9' | b'-' | b'_' | b'.' | b'~' => out.push(byte as char),
+            b'A'..=b'Z' | b'a'..=b'z' | b'0'..=b'9' | b'-' | b'_' | b'.' | b'~' => {
+                out.push(byte as char)
+            },
             _ => out.push_str(&format!("%{byte:02X}")),
         }
     }
@@ -141,8 +170,13 @@ async fn call(
     let status = response.status();
     let text = response.text().await.map_err(|e| format!("lecture de {path}: {e}"))?;
     if !status.is_success() {
-        let snippet: String =
-            text.chars().take(200).collect::<String>().split_whitespace().collect::<Vec<_>>().join(" ");
+        let snippet: String = text
+            .chars()
+            .take(200)
+            .collect::<String>()
+            .split_whitespace()
+            .collect::<Vec<_>>()
+            .join(" ");
         let suffix = if snippet.is_empty() { String::new() } else { format!(" — {snippet}") };
         return Err(format!("API {} sur {path}{suffix}", status.as_u16()));
     }
@@ -173,7 +207,9 @@ fn admin_token(name: &str, label: &str) -> Result<String, String> {
 /// Prefix site-relative `url`/`href` string values with the site origin.
 pub(crate) fn absolutize(value: Value, site: &str) -> Value {
     match value {
-        Value::Array(items) => Value::Array(items.into_iter().map(|v| absolutize(v, site)).collect()),
+        Value::Array(items) => {
+            Value::Array(items.into_iter().map(|v| absolutize(v, site)).collect())
+        },
         Value::Object(map) => Value::Object(
             map.into_iter()
                 .map(|(k, v)| {
@@ -192,8 +228,8 @@ pub(crate) fn absolutize(value: Value, site: &str) -> Value {
 }
 
 fn ok(data: Value) -> CallToolResult {
-    let mut text =
-        serde_json::to_string_pretty(&absolutize(data, &site_base())).unwrap_or_else(|_| "null".into());
+    let mut text = serde_json::to_string_pretty(&absolutize(data, &site_base()))
+        .unwrap_or_else(|_| "null".into());
     if text.chars().count() > MAX_RESULT_CHARS {
         text = format!(
             "{}\n\n… [résultat tronqué à {MAX_RESULT_CHARS} caractères — affinez la requête ou réduisez 'limit']",
@@ -235,7 +271,12 @@ fn auto_fallback() -> bool {
     process_env("APHRODY_AUTO_FALLBACK").as_deref() == Some("1")
 }
 
-fn local_opts(limit: Option<u32>, lang: Option<String>, entity: Option<String>, kind: Option<String>) -> LocalSearchOptions {
+fn local_opts(
+    limit: Option<u32>,
+    lang: Option<String>,
+    entity: Option<String>,
+    kind: Option<String>,
+) -> LocalSearchOptions {
     LocalSearchOptions { limit: limit.map(|l| l as usize), lang, entity, kind }
 }
 
@@ -273,7 +314,10 @@ pub(crate) async fn rag_search(r: RagSearchRequest) -> CallToolResult {
     }
     let limit = r.limit.map(|l| l.clamp(1, 25));
     let local = || {
-        ok(local_corpus().search_json(&r.query, &local_opts(limit, r.lang.clone(), r.entity.clone(), r.kind.clone())))
+        ok(local_corpus().search_json(
+            &r.query,
+            &local_opts(limit, r.lang.clone(), r.entity.clone(), r.kind.clone()),
+        ))
     };
     if local_forced(r.local) {
         return local();
@@ -359,7 +403,9 @@ pub(crate) async fn rag_context(r: RagContextRequest) -> CallToolResult {
 pub(crate) struct RagAskRequest {
     #[schemars(description = "La question à poser, en langage naturel")]
     pub question: String,
-    #[schemars(description = "Forcer l'inférence locale (contrat APHRODY_AI_*) et le corpus local")]
+    #[schemars(
+        description = "Forcer l'inférence locale (contrat APHRODY_AI_*) et le corpus local"
+    )]
     #[serde(default)]
     pub local: Option<bool>,
 }
@@ -374,7 +420,16 @@ pub(crate) async fn rag_ask(r: RagAskRequest) -> CallToolResult {
     // `q` goes in the query string (read by rag/chat) and in the body.
     let path = format!("/api/public/rag/chat?q={}", enc(&r.question));
     let body = json!({ "q": r.question });
-    match call(reqwest::Method::POST, &api_base(), &path, &vec![], Some(&body), None, Duration::from_secs(90)).await
+    match call(
+        reqwest::Method::POST,
+        &api_base(),
+        &path,
+        &vec![],
+        Some(&body),
+        None,
+        Duration::from_secs(90),
+    )
+    .await
     {
         Ok(v) => ok(v),
         Err(_) if auto_fallback() => ok(local_corpus().ask_json(&r.question, &process_env).await),
@@ -398,7 +453,10 @@ fn check_category(category: &str) -> Result<(), String> {
     if WIKI_CATEGORIES.contains(&category) {
         Ok(())
     } else {
-        Err(format!("catégorie inconnue « {category} » ; attendues : {}", WIKI_CATEGORIES.join(", ")))
+        Err(format!(
+            "catégorie inconnue « {category} » ; attendues : {}",
+            WIKI_CATEGORIES.join(", ")
+        ))
     }
 }
 
@@ -451,7 +509,8 @@ pub(crate) async fn wiki_list(r: WikiListRequest) -> CallToolResult {
     if let Err(e) = check_category(&r.category) {
         return err(e);
     }
-    let query = vec![("limit", s(r.limit.map(|l| l.clamp(1, 200)))), ("offset", s(r.offset)), ("q", r.q)];
+    let query =
+        vec![("limit", s(r.limit.map(|l| l.clamp(1, 200)))), ("offset", s(r.offset)), ("q", r.q)];
     done(api_get(&format!("/api/public/wiki/{}", r.category), query).await)
 }
 
@@ -500,7 +559,8 @@ async fn resolve_wiki_id(category: &str, id: &str) -> Result<String, String> {
         return Ok(id.to_owned());
     }
     let wanted = slugify(id);
-    let list = api_get(&format!("/api/public/wiki/{category}"), vec![("q", Some(id.to_owned()))]).await?;
+    let list =
+        api_get(&format!("/api/public/wiki/{category}"), vec![("q", Some(id.to_owned()))]).await?;
     let found = list
         .get(category)
         .and_then(Value::as_array)
@@ -571,16 +631,26 @@ pub(crate) struct QueryLimitRequest {
 }
 
 pub(crate) async fn manga_search(r: QueryLimitRequest) -> CallToolResult {
-    done(api_get("/api/public/manga/search", vec![("q", Some(r.query)), ("limit", s(r.limit.map(|l| l.clamp(1, 50))))]).await)
+    done(
+        api_get(
+            "/api/public/manga/search",
+            vec![("q", Some(r.query)), ("limit", s(r.limit.map(|l| l.clamp(1, 50))))],
+        )
+        .await,
+    )
 }
 
 /// Input of `dragonball.manga_tomes`.
 #[derive(Debug, Clone, Deserialize, JsonSchema)]
 pub(crate) struct MangaTomesRequest {
-    #[schemars(description = "Code de série OCR (ex. 'DB'), tel que renvoyé par manga_tomes ; omettre pour tout lister")]
+    #[schemars(
+        description = "Code de série OCR (ex. 'DB'), tel que renvoyé par manga_tomes ; omettre pour tout lister"
+    )]
     #[serde(default)]
     pub series: Option<String>,
-    #[schemars(description = "Tome : numéro (13 → vol13) ou identifiant OCR (vol13, ch1407, t901)")]
+    #[schemars(
+        description = "Tome : numéro (13 → vol13) ou identifiant OCR (vol13, ch1407, t901)"
+    )]
     #[serde(default)]
     pub tome: Option<Tome>,
 }
@@ -600,14 +670,21 @@ pub(crate) async fn manga_tomes(r: MangaTomesRequest) -> CallToolResult {
 pub(crate) struct MangaPageRequest {
     #[schemars(description = "Code de série OCR (ex. 'DB'), tel que renvoyé par manga_tomes")]
     pub series: String,
-    #[schemars(description = "Tome : numéro (13 → vol13) ou identifiant OCR (vol13, ch1407, t901)")]
+    #[schemars(
+        description = "Tome : numéro (13 → vol13) ou identifiant OCR (vol13, ch1407, t901)"
+    )]
     pub tome: Tome,
     #[schemars(description = "Numéro de planche")]
     pub planche: u32,
 }
 
 pub(crate) async fn manga_page(r: MangaPageRequest) -> CallToolResult {
-    let path = format!("/api/public/manga/page/{}/{}/{}", enc(&r.series), enc(&manga_tome_id(&r.tome)), r.planche);
+    let path = format!(
+        "/api/public/manga/page/{}/{}/{}",
+        enc(&r.series),
+        enc(&manga_tome_id(&r.tome)),
+        r.planche
+    );
     done(api_get(&path, vec![]).await)
 }
 
@@ -655,11 +732,20 @@ pub(crate) struct MangaPlancheRequest {
 }
 
 pub(crate) async fn manga_planche(r: MangaPlancheRequest) -> CallToolResult {
-    done(site_get(&format!("/api/manga/chapter/{}/planche/{}", r.chapter_id, r.planche), vec![]).await)
+    done(
+        site_get(&format!("/api/manga/chapter/{}/planche/{}", r.chapter_id, r.planche), vec![])
+            .await,
+    )
 }
 
 pub(crate) async fn manga_recherche(r: QueryLimitRequest) -> CallToolResult {
-    done(site_get("/api/manga/search", vec![("q", Some(r.query)), ("limit", s(r.limit.map(|l| l.clamp(1, 100))))]).await)
+    done(
+        site_get(
+            "/api/manga/search",
+            vec![("q", Some(r.query)), ("limit", s(r.limit.map(|l| l.clamp(1, 100))))],
+        )
+        .await,
+    )
 }
 
 /// Input of `dragonball.manga_scanlate`.
@@ -724,7 +810,9 @@ pub(crate) async fn bot_stats() -> CallToolResult {
 /// Input of `dragonball.bot_personas`.
 #[derive(Debug, Clone, Deserialize, JsonSchema)]
 pub(crate) struct BotPersonasRequest {
-    #[schemars(description = "Définir le persona du bot unique (écrit <APHRODY_HOME>/persona.json)")]
+    #[schemars(
+        description = "Définir le persona du bot unique (écrit <APHRODY_HOME>/persona.json)"
+    )]
     #[serde(default)]
     pub set_persona: Option<String>,
 }
@@ -766,7 +854,10 @@ pub(crate) struct LimitRequest {
 }
 
 pub(crate) async fn bot_leaderboard(r: LimitRequest) -> CallToolResult {
-    done(api_get("/api/public/leaderboard", vec![("limit", s(r.limit.map(|l| l.clamp(1, 100))))]).await)
+    done(
+        api_get("/api/public/leaderboard", vec![("limit", s(r.limit.map(|l| l.clamp(1, 100))))])
+            .await,
+    )
 }
 
 pub(crate) async fn bot_commands() -> CallToolResult {
@@ -822,7 +913,10 @@ pub(crate) async fn databooks_search(r: DatabooksSearchRequest) -> CallToolResul
             let mut item = item.as_object().cloned().unwrap_or_default();
             let pages = item.remove("pages");
             let count = pages.as_ref().and_then(Value::as_array).map_or(0, Vec::len);
-            let id = item.get("id").map(|v| v.as_str().map_or_else(|| v.to_string(), str::to_owned)).unwrap_or_default();
+            let id = item
+                .get("id")
+                .map(|v| v.as_str().map_or_else(|| v.to_string(), str::to_owned))
+                .unwrap_or_default();
             item.insert("pageCount".into(), json!(count));
             item.insert("url".into(), json!(format!("/wiki/databooks/{id}")));
             Value::Object(item)
@@ -891,7 +985,10 @@ pub(crate) async fn databooks_planches(r: DatabooksPlanchesRequest) -> CallToolR
                 .map(|v| v.as_str().map_or_else(|| v.to_string(), str::to_owned))
                 .unwrap_or_default();
             item.insert("url".into(), json!(format!("/wiki/databooks/{id}")));
-            item.insert("extrait".into(), json!(extrait_autour(texte.as_ref().and_then(Value::as_str).unwrap_or(""), &r.q)));
+            item.insert(
+                "extrait".into(),
+                json!(extrait_autour(texte.as_ref().and_then(Value::as_str).unwrap_or(""), &r.q)),
+            );
             Value::Object(item)
         })
         .collect();
@@ -977,7 +1074,9 @@ pub(crate) async fn databooks_scanlate(r: DatabooksScanlateRequest) -> CallToolR
 /// Input of `dragonball.canon_check`.
 #[derive(Debug, Clone, Deserialize, JsonSchema)]
 pub(crate) struct CanonCheckRequest {
-    #[schemars(description = "L'affirmation ou la question à arbitrer (vide = renvoyer la doctrine)")]
+    #[schemars(
+        description = "L'affirmation ou la question à arbitrer (vide = renvoyer la doctrine)"
+    )]
     #[serde(default)]
     pub question: Option<String>,
 }
@@ -1005,7 +1104,12 @@ pub(crate) struct CanonReferencesRequest {
 }
 
 pub(crate) async fn canon_references(r: CanonReferencesRequest) -> CallToolResult {
-    let query = vec![("q", r.q), ("provenance", r.provenance), ("limit", s(r.limit)), ("offset", s(r.offset))];
+    let query = vec![
+        ("q", r.q),
+        ("provenance", r.provenance),
+        ("limit", s(r.limit)),
+        ("offset", s(r.offset)),
+    ];
     done(site_get("/api/canon/references", query).await)
 }
 
@@ -1028,7 +1132,8 @@ async fn a2a_rpc(method: &str, params: Value) -> Result<Value, String> {
     if !status.is_success() && status.as_u16() != 400 {
         return Err(format!("Shenron A2A HTTP {}", status.as_u16()));
     }
-    let reply: Value = response.json().await.map_err(|_| "Shenron A2A returned invalid JSON".to_owned())?;
+    let reply: Value =
+        response.json().await.map_err(|_| "Shenron A2A returned invalid JSON".to_owned())?;
     if let Some(error) = reply.get("error") {
         return Err(format!(
             "Shenron A2A {}: {}",
@@ -1051,8 +1156,10 @@ async fn a2a_get_task(task_id: &str) -> Result<Option<Value>, String> {
 #[derive(Debug, Clone, Deserialize, JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct A2aSendRequest {
-    #[schemars(description = "Destinataire : codex, agycli, claude, local_model, rag, subagents, \
-                              ocr, translation ou broadcast (ignoré quand taskId est fourni)")]
+    #[schemars(
+        description = "Destinataire : codex, agycli, claude, local_model, rag, subagents, \
+                              ocr, translation ou broadcast (ignoré quand taskId est fourni)"
+    )]
     pub target: String,
     #[schemars(description = "Ordre, consigne ou requête ; avec taskId : compte rendu du pair")]
     pub instruction: String,
@@ -1074,7 +1181,9 @@ pub(crate) struct A2aSendRequest {
     #[schemars(description = "Statut : working, input_required, completed ou failed")]
     #[serde(default)]
     pub status: Option<String>,
-    #[schemars(description = "Artefacts vérifiables : [{name, type: json|markdown|code|file, uri?, content?, data?}]")]
+    #[schemars(
+        description = "Artefacts vérifiables : [{name, type: json|markdown|code|file, uri?, content?, data?}]"
+    )]
     #[serde(default)]
     pub artifacts: Option<Vec<Value>>,
 }
@@ -1096,7 +1205,11 @@ pub(crate) async fn a2a_send(r: A2aSendRequest) -> CallToolResult {
         };
     }
     if !A2A_TARGETS.contains(&r.target.as_str()) {
-        return err(format!("cible A2A inconnue « {} » ; attendues : {}", r.target, A2A_TARGETS.join(", ")));
+        return err(format!(
+            "cible A2A inconnue « {} » ; attendues : {}",
+            r.target,
+            A2A_TARGETS.join(", ")
+        ));
     }
     let params = json!({
         "target": r.target, "sourceAgent": source, "instruction": r.instruction,
@@ -1114,8 +1227,11 @@ pub(crate) async fn a2a_send(r: A2aSendRequest) -> CallToolResult {
         Ok(None) => return err(format!("Shenron A2A task missing after send: {task_id}")),
         Err(e) => return err(e),
     };
-    let parts = result.pointer("/response/parts").and_then(Value::as_array).cloned().unwrap_or_default();
-    let part = |kind: &str| parts.iter().find(|p| p.get("type").and_then(Value::as_str) == Some(kind)).cloned();
+    let parts =
+        result.pointer("/response/parts").and_then(Value::as_array).cloned().unwrap_or_default();
+    let part = |kind: &str| {
+        parts.iter().find(|p| p.get("type").and_then(Value::as_str) == Some(kind)).cloned()
+    };
     ok(json!({
         "task": task,
         "responseMarkdown": part("text").and_then(|p| p.get("text").cloned()).unwrap_or_else(|| json!("")),
@@ -1143,7 +1259,9 @@ pub(crate) async fn a2a_task_status(r: A2aTaskStatusRequest) -> CallToolResult {
 /// Input of `dragonball.a2a_task_list`.
 #[derive(Debug, Clone, Deserialize, JsonSchema)]
 pub(crate) struct A2aTaskListRequest {
-    #[schemars(description = "Filtrer par cible (codex, agycli, claude, local_model, rag, subagents, ocr, translation, broadcast)")]
+    #[schemars(
+        description = "Filtrer par cible (codex, agycli, claude, local_model, rag, subagents, ocr, translation, broadcast)"
+    )]
     #[serde(default)]
     pub target: Option<String>,
 }
@@ -1205,8 +1323,15 @@ pub(crate) async fn admin_databooks_deposit(r: AdminDepositRequest) -> CallToolR
     if r.databook_id == 0 || r.pages.is_empty() || r.pages.len() > 2_000 {
         return err("databookId ≥ 1 et 1 à 2000 planches attendus");
     }
-    if let Some(bad) = r.pages.iter().find(|p| p.number == 0 || p.text.trim().is_empty() || p.text.chars().count() > 40_000) {
-        return err(format!("planche {} invalide : numéro ≥ 1 et texte non vide ≤ 40 000 caractères", bad.number));
+    if let Some(bad) = r
+        .pages
+        .iter()
+        .find(|p| p.number == 0 || p.text.trim().is_empty() || p.text.chars().count() > 40_000)
+    {
+        return err(format!(
+            "planche {} invalide : numéro ≥ 1 et texte non vide ≤ 40 000 caractères",
+            bad.number
+        ));
     }
     let token = match admin_token("SHENRON_DATABOOKS_API_TOKEN", "databooks") {
         Ok(t) => t,
@@ -1214,7 +1339,18 @@ pub(crate) async fn admin_databooks_deposit(r: AdminDepositRequest) -> CallToolR
     };
     let body = json!({ "mode": "merge", "pages": r.pages });
     let path = format!("/api/databooks/{}/transcription", r.databook_id);
-    done(call(reqwest::Method::POST, &site_api_base(), &path, &vec![], Some(&body), Some(&token), DEFAULT_TIMEOUT).await)
+    done(
+        call(
+            reqwest::Method::POST,
+            &site_api_base(),
+            &path,
+            &vec![],
+            Some(&body),
+            Some(&token),
+            DEFAULT_TIMEOUT,
+        )
+        .await,
+    )
 }
 
 async fn bot_admin(method: reqwest::Method, path: &str, body: Option<Value>) -> CallToolResult {
@@ -1222,7 +1358,10 @@ async fn bot_admin(method: reqwest::Method, path: &str, body: Option<Value>) -> 
         Ok(t) => t,
         Err(e) => return err(e),
     };
-    done(call(method, &api_base(), path, &vec![], body.as_ref(), Some(&token), DEFAULT_TIMEOUT).await)
+    done(
+        call(method, &api_base(), path, &vec![], body.as_ref(), Some(&token), DEFAULT_TIMEOUT)
+            .await,
+    )
 }
 
 pub(crate) async fn admin_bot_commands() -> CallToolResult {
@@ -1249,12 +1388,12 @@ pub(crate) async fn admin_bot_command_execute(r: AdminCommandRequest) -> CallToo
         return err("invocation : 1 à 160 caractères");
     }
     if let Some(channel) = &r.channel_id
-        && (!(17..=20).contains(&channel.len())
-            || !channel.bytes().all(|b| b.is_ascii_digit()))
+        && (!(17..=20).contains(&channel.len()) || !channel.bytes().all(|b| b.is_ascii_digit()))
     {
         return err("channelId : snowflake de 17 à 20 chiffres");
     }
-    let body = json!({ "invocation": r.invocation, "options": r.options, "channelId": r.channel_id });
+    let body =
+        json!({ "invocation": r.invocation, "options": r.options, "channelId": r.channel_id });
     bot_admin(reqwest::Method::POST, "/api/bot/commands/exec", Some(body)).await
 }
 
@@ -1276,7 +1415,8 @@ pub(crate) struct AdminServiceActionRequest {
 
 /// `[a-z0-9-]{1,80}`.
 pub(crate) fn is_service_token(value: &str) -> bool {
-    (1..=80).contains(&value.len()) && value.bytes().all(|b| b.is_ascii_lowercase() || b.is_ascii_digit() || b == b'-')
+    (1..=80).contains(&value.len())
+        && value.bytes().all(|b| b.is_ascii_lowercase() || b.is_ascii_digit() || b == b'-')
 }
 
 pub(crate) async fn admin_service_action(r: AdminServiceActionRequest) -> CallToolResult {
@@ -1284,7 +1424,12 @@ pub(crate) async fn admin_service_action(r: AdminServiceActionRequest) -> CallTo
         return err("service et action : [a-z0-9-]{1,80}");
     }
     let body = json!(r.arguments.unwrap_or_default());
-    bot_admin(reqwest::Method::POST, &format!("/api/services/{}/{}", r.service, r.action), Some(body)).await
+    bot_admin(
+        reqwest::Method::POST,
+        &format!("/api/services/{}/{}", r.service, r.action),
+        Some(body),
+    )
+    .await
 }
 
 #[cfg(test)]
@@ -1327,7 +1472,11 @@ mod tests {
 
     #[test]
     fn urls_skip_empty_query_values_and_encode() {
-        let url = build_url("https://b", "/p", &vec![("q", Some("a b&c".into())), ("x", None), ("y", Some(String::new()))]);
+        let url = build_url(
+            "https://b",
+            "/p",
+            &vec![("q", Some("a b&c".into())), ("x", None), ("y", Some(String::new()))],
+        );
         assert_eq!(url, "https://b/p?q=a%20b%26c");
     }
 
@@ -1345,17 +1494,46 @@ mod tests {
 
     #[tokio::test]
     async fn validation_fails_closed_before_any_request() {
-        let r = admin_service_action(AdminServiceActionRequest { service: "Bad Name".into(), action: "x".into(), arguments: None }).await;
+        let r = admin_service_action(AdminServiceActionRequest {
+            service: "Bad Name".into(),
+            action: "x".into(),
+            arguments: None,
+        })
+        .await;
         assert_eq!(r.is_error, Some(true));
-        let r = wiki_list(WikiListRequest { category: "nope".into(), limit: None, offset: None, q: None }).await;
+        let r = wiki_list(WikiListRequest {
+            category: "nope".into(),
+            limit: None,
+            offset: None,
+            q: None,
+        })
+        .await;
         assert_eq!(r.is_error, Some(true));
-        let r = rag_search(RagSearchRequest { query: "x".into(), limit: None, lang: None, entity: None, source_id: None, kind: None, local: None }).await;
+        let r = rag_search(RagSearchRequest {
+            query: "x".into(),
+            limit: None,
+            lang: None,
+            entity: None,
+            source_id: None,
+            kind: None,
+            local: None,
+        })
+        .await;
         assert_eq!(r.is_error, Some(true));
     }
 
     #[tokio::test]
     async fn local_rag_answers_offline() {
-        let r = rag_search(RagSearchRequest { query: "Goku".into(), limit: Some(3), lang: None, entity: None, source_id: None, kind: None, local: Some(true) }).await;
+        let r = rag_search(RagSearchRequest {
+            query: "Goku".into(),
+            limit: Some(3),
+            lang: None,
+            entity: None,
+            source_id: None,
+            kind: None,
+            local: Some(true),
+        })
+        .await;
         assert_ne!(r.is_error, Some(true));
         let text = r.content[0].as_text().map(|t| t.text.clone()).unwrap_or_default();
         let v: Value = serde_json::from_str(&text).expect("json");

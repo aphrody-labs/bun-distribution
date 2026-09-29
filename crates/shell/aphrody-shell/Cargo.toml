@@ -1,0 +1,19 @@
+# SPDX-License-Identifier: Apache-2.0
+[package]
+name = "aphrody-shell"
+description = "Canonical Aphrody shell surface: Nushell, native PTY/WebSocket transport and Ratatui UI."
+version = "1.0.0-canary"
+edition.workspace = true
+rust-version = "1.0.0-canary"
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+publish = false
+
+[lints]
+workspace = true
+
+[dependencies]
+aphrody-nu = { workspace = true }
+aphrody-tui = { workspace = true }
+aphrody-terminal-backend = { workspace = true }

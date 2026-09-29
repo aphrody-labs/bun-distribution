@@ -335,16 +335,21 @@ fn rag_backend() -> &'static str {
 }
 
 fn training_root() -> miette::Result<PathBuf> {
-    let configured = std::env::var_os("APHRODY_ROOT").map(PathBuf::from);
-    let compiled = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .ancestors()
-        .nth(3)
-        .map(std::path::Path::to_path_buf);
-    configured
-        .or(compiled)
-        .filter(|root| root.join("py/aphrody-train/pyproject.toml").is_file())
+    let python_root = std::env::var_os("APHRODY_PY_ROOT").map(PathBuf::from);
+    let monorepo = std::env::var_os("APHRODY_ROOT").map(PathBuf::from).or_else(|| {
+        PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .ancestors()
+            .nth(3)
+            .map(std::path::Path::to_path_buf)
+    });
+    python_root
+        .or_else(|| monorepo.and_then(|root| root.parent().map(|parent| parent.join("aphrody-py"))))
+        .filter(|root| {
+            root.join("uv.lock").is_file()
+                && root.join("packages/ai/py/aphrody-train/pyproject.toml").is_file()
+        })
         .ok_or_else(|| {
-            miette::miette!("Projet py/aphrody-train introuvable ; définir APHRODY_ROOT")
+            miette::miette!("Workspace aphrody-py introuvable ; définir APHRODY_PY_ROOT")
         })
 }
 
@@ -673,7 +678,7 @@ async fn handle_train(action: ShenronTrainAction) -> miette::Result<()> {
         ShenronTrainAction::Status => {
             let hw = aphrody_models::accel::probe();
             let doc = json!({
-                "python_project": training_root().ok().map(|root| root.join("py/aphrody-train").display().to_string()),
+                "python_project": training_root().ok().map(|root| root.join("packages/ai/py/aphrody-train").display().to_string()),
                 "gpu_count": hw.gpus.len(),
                 "candidate_root": shenron_training_dir()?.display().to_string(),
                 "rag_promotion": "requires a measured shadow index; no automatic model replacement"
@@ -700,7 +705,8 @@ async fn handle_train(action: ShenronTrainAction) -> miette::Result<()> {
             let status = std::process::Command::new("uv")
                 .current_dir(&root)
                 .args(["run", "--project"])
-                .arg(root.join("py/aphrody-train"))
+                .arg(&root)
+                .args(["--package", "aphrody-train"])
                 .args(["python", "-m", "aphrody_train.triples"])
                 .arg("--input-chunks")
                 .arg(input)
@@ -754,7 +760,8 @@ async fn train_model(
     let status = std::process::Command::new("uv")
         .current_dir(&root)
         .args(["run", "--project"])
-        .arg(root.join("py/aphrody-train"))
+        .arg(&root)
+        .args(["--package", "aphrody-train"])
         .args(["--extra", "full", "python", "-m", module])
         .arg("--triples-file")
         .arg(&triples)

@@ -42,7 +42,8 @@
     "db:studio": "bunx drizzle-kit studio",
     "db:push": "bunx drizzle-kit push",
     "db:seed-xv2-char-meta": "bun src/db/seed-xv2-char-meta.ts",
-    "db:seed-xv2-all": "bun src/db/seed-xv2-techniques.ts && bun src/db/seed-xv2-characters.ts && bun src/db/seed-xv2-char-meta.ts && bun src/db/seed-xv2-portraits.ts && bun src/db/seed-xv2-transformations.ts && bun src/db/seed-xv2-char-techniques.ts"
+    "db:seed-xv2-all": "bun src/db/seed-xv2-techniques.ts && bun src/db/seed-xv2-characters.ts && bun src/db/seed-xv2-char-meta.ts && bun src/db/seed-xv2-portraits.ts && bun src/db/seed-xv2-transformations.ts && bun src/db/seed-xv2-char-techniques.ts",
+    "typecheck": "tsgo -p tsconfig.json --noEmit"
   },
   "dependencies": {
     "@napi-rs/canvas": "1.0.9",
@@ -52,23 +53,23 @@
     "@discordx/pagination": "4.4.2",
     "@shenron/auth": "workspace:*",
     "@shenron/images": "workspace:*",
-    "@tanstack/react-query": "^5.102.8",
-    "better-auth": "1.7.5",
+    "@tanstack/react-query": "catalog:",
+    "better-auth": "catalog:",
     "dayjs": "^1.11.23",
-    "discord.js": "^14.27.0",
+    "discord.js": "catalog:",
     "drizzle-orm": "^0.45.3",
-    "graphql": "^17.0.2",
-    "graphql-yoga": "^5.22.0",
-    "lucide-react": "^1.41.0",
+    "graphql": "catalog:",
+    "graphql-yoga": "catalog:",
+    "lucide-react": "catalog:",
     "pino": "^10.3.1",
     "pino-pretty": "^13.1.3",
     "postgres": "^3.4.9",
     "react": "catalog:",
     "react-dom": "catalog:",
-    "reflect-metadata": "^0.2.2",
-    "sharp": "^0.35.4",
+    "reflect-metadata": "catalog:",
+    "sharp": "catalog:",
     "sqlite-vec": "^0.1.1",
-    "tsyringe": "^4.10.0",
+    "tsyringe": "catalog:",
     "zod": "catalog:",
     "@shenron/config": "workspace:*",
     "@shenron/db": "workspace:*",
@@ -82,10 +83,10 @@
     "@types/react-dom": "catalog:",
     "drizzle-kit": "^0.31.11",
     "oxlint": "catalog:",
-    "tailwindcss": "^4.3.3",
+    "tailwindcss": "catalog:",
     "typescript": "catalog:"
   },
   "engines": {
-    "bun": ">=1.2.0"
+    "bun": ">=1.4.2"
   }
 }

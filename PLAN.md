@@ -89,8 +89,8 @@ explicitly requested; they do not close these gates or authorize cutover.
       index is [`IMPORTED-DOCS-INDEX.md`](docs/migration/IMPORTED-DOCS-INDEX.md).
       Existing target files and distinct path collisions are preserved and routed
       through explicit alternate paths.
-- [ ] Close documentation import: the 2026-09-29 guarded import now maps 2,272
-      local links and records 1,292 unresolved links with zero failures. The importer
+- [ ] Close documentation import: the latest 2026-09-29 guarded import maps 2,130
+      local links and records 1,030 unresolved links with zero importer failures. The importer
       recognizes verified imported file targets, including the corrected `@aphrody/nie`
       package manifest; five more links resolve than in the prior report. The remaining
       sample includes code, assets, configuration, external worktrees and unimported
@@ -139,6 +139,22 @@ explicitly requested; they do not close these gates or authorize cutover.
       `aphrody-ai` HEAD. The seven new workspace members pass one offline Cargo
       check. See
       [`ai-model-stack-extraction.json`](docs/migration/ai-model-stack-extraction.json).
+- [x] Prioritize the rest of `aphrody-ai`: import all 62 Rust workspace crates
+      plus the non-member `aphrody-sdk` crate into `crates/ai/`; 797 source
+      files match the recorded hashes and modes. Offline Cargo metadata resolves
+      all 63 imported packages. A workspace all-targets check was attempted but
+      is blocked by 22 Taffy API errors in the external `aphrody-web` checkout;
+      the CLI and FFI crates remain excluded under the UI ownership rule. The
+      extraction record lists 32 remaining workspace dependencies that still
+      resolve to sibling checkouts, so clean-clone closure is not complete.
+      See [`ai-rust-workspace-extraction.json`](docs/migration/ai-rust-workspace-extraction.json).
+- [x] Import AI Bun packages `@aphrody/doc-ai`, `@aphrody/google` and
+      `@aphrody/xai`, plus their direct first-party dependency `@aphrody/x`;
+      keep package provenance and source hashes in
+      [`ai-bun-workspace-extraction.json`](docs/migration/ai-bun-workspace-extraction.json).
+      Frozen Bun install, Turbo typecheck (8/8), and the Google package build
+      passed. Tests were not run. Resolve remaining dependency/workspace closure
+      before marking unified clean-clone integration complete.
 - [x] Stage IECODE's Bun packages and split its generic happy-dom host into
       `@aphrody/bun-test-dom`, retaining `@nie/plugin/happydom` as a compatibility
       export. `@aphrody/iecode-ffi`, `@aphrody/nie`, and `@nie/plugin` are private
@@ -165,6 +181,14 @@ explicitly requested; they do not close these gates or authorize cutover.
       Preserve schemas, errors, side-effect bounds and explorer lifecycle; use
       protocol fixtures before replacing the persistent `nie-mcp` child bridge.
       See [`APHRODY-MCP-EXTRACTION-READINESS.md`](docs/migration/APHRODY-MCP-EXTRACTION-READINESS.md).
+- [x] Import the nine absent crates from the clean Contracts workspace at
+      `4a22afb12b086573e6890e49a3bfbde7a96380ea`; all imported files match
+      source SHA-256 and modes. All ten Contracts crate directories now resolve
+      as root Cargo members, removing the six Contracts sibling path dependencies.
+      `cargo metadata --offline` resolves 102 workspace members and 1,301 packages.
+      The existing kernel-client manifest retains its target-local explicit version.
+      File-level provenance and remaining consumer/clean-clone limits are in
+      [`contracts-rust-extraction.json`](docs/migration/contracts-rust-extraction.json).
 - [ ] Import all remaining first-party crates, apps and packages into valid
       Cargo/Bun root workspaces; resolve package/catalog versions, path dependencies,
       license and upstream-submodule boundaries before claiming a unified build.
@@ -242,7 +266,7 @@ explicitly requested; they do not close these gates or authorize cutover.
       matched all 1,894 mapped document targets to their imported SHA-256 values;
       one target was already tracked as source license evidence. The
       [commit audit](docs/migration/DOCS-FIRST-PARTY-COMMIT.md) records the
-      scope. The remaining owners and 1,292 unresolved local Markdown links keep
+      scope. The remaining owners and 1,030 unresolved local Markdown links keep
       the full documentation gate open.
 - [x] Commit 2,275 hash-verified Bun documentation targets from pinned upstream
       HEAD `a2671046afbfc818fba21a4925f384b75dc8e109`. The imported Bun
@@ -272,3 +296,58 @@ explicitly requested; they do not close these gates or authorize cutover.
       checkout references in inventory/systemd before changing deployed paths,
       rerun all scoped gates
       against a clean clone, and close the pipeline errors.
+
+## Consolidation checkpoint — 2026-09-29
+
+- [x] Rebuilt the Infra-owned source inventory and documentation import reports
+      from the current checkout state. The inventory covers 15 present roots and
+      66,272 paths; it records source HEADs, dirty paths, hashes, workspace
+      manifests, and missing roots. The guarded docs import copied 0 files,
+      refreshed 0 targets, verified 6,012 identical documents, preserved 163
+      exact-duplicate aliases, and reported 0 conflicts or import failures. It
+      mapped 2,130 local Markdown links and leaves 1,030 unresolved. The latest
+      reports are [`source-map.json`](docs/migration/source-map.json) and
+      [`document-import.json`](docs/migration/document-import.json).
+- [x] Marked 24 structured NIE game-data files as protected data in the Infra
+      inventory module. They remain in their local protected paths, are excluded
+      from document import/index generation, and are ignored by Git. Explanatory
+      Markdown remains eligible for documentation import.
+- [x] Regenerated the Infra ecosystem catalog from the active `/home/aphro/src`
+      checkouts: 10 repositories, 126 crates, 55 binaries, 59 Bun packages,
+      5 Python packages, 49 CLI binaries, 443 CLI commands, 401 MCP registrations
+      and 383 unique MCP names. The catalog check remains red: `aphrody-ai` and
+      the UI-owned checkout cannot complete `cargo metadata` because sibling
+      dependency paths are unavailable. `aphrody-ui` was not changed.
+- [x] Infra reports 56 declared root workspace packages. Its layout check passes;
+      Cargo boundary audit still finds path dependencies outside this workspace
+      in sibling checkouts. The root repository has no Git remote, so this batch
+      can be committed locally but cannot be pushed from this checkout.
+- [ ] Infra's Bun workspace audit initially found 150 manifest violations. Its
+      safe fixer repaired 149 (Bun engine floors, missing `typecheck` scripts,
+      and catalog references) across the 56 root-owned manifests. One remains:
+      `packages/web/m3-tokens` has no available `@aphrody/m3-config` package or
+      preset to extend. Workspace tests currently report 14/15 passing because
+      the repository-wide contract requires that missing M3 preset.
+- [ ] Restore clean-clone dependency closure before claiming a unified build:
+      `bun install --frozen-lockfile` currently fails on catalog references,
+      registry age restrictions for newly published versions, and a 404 for
+      `@rpbey/discordx`. The full `rg check all` exits non-zero: formatting and
+      typecheck gates fail, and the website build references the absent
+      `scripts/next-build.sh`. `packages/rg/inagle` also cannot resolve the new
+      `@aphrody/agent-browser/cdp` package in the current installed workspace.
+      Repair these manifests, workspace links and gates before production use.
+- [ ] Close repository documentation links: the Infra `docs-links` pass scanned
+      5,940 Markdown documents and 8,880 links and reported 7,725 unresolved
+      targets. This wider scan includes upstream documentation routes and source
+      tree paths; use the per-link report to distinguish intentional upstream
+      routes from missing local files. The docs overlap scan was not used to
+      delete content; fixture similarity is not proof of duplicate documentation.
+- [ ] Reinventory the missing source checkouts: `/home/aphro/src/aphrody-web`
+      and `/home/aphro/src/aphrody-discord` are absent as reported by the user;
+      `/home/aphro/src/rg`, `/home/aphro/src/shenron`, `bevy`, `dust`, and
+      `emu.nintendo.wii.gecko` are also absent. Their source closures, licenses,
+      consumer mappings, and clean-clone parity remain open.
+- [ ] Keep the consolidated agent work transitional until the gates above pass.
+      Targeted agent reports cover native Web/MCP, Google cookies/search, browser
+      CDP, and RG scraping work, but the root-wide Bun install, Rust boundary,
+      documentation-link, and RG quality gates have not passed.

@@ -22,9 +22,12 @@
     "./drive-sync": "./src/drive-sync.ts"
   },
   "dependencies": {
-    "@ai-sdk/google-vertex": "5.0.89",
-    "ai": "6.0.286",
+    "@ai-sdk/google-vertex": "catalog:",
+    "ai": "catalog:",
     "google-auth-library": "11.1.0",
-    "googleapis": "182.0.0"
+    "googleapis": "catalog:"
+  },
+  "engines": {
+    "bun": ">=1.4.2"
   }
 }

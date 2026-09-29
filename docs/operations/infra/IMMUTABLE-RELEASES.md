@@ -49,6 +49,22 @@ redirect registration, and the app reports a setup response until it exists.
 Live status (2026-09-28): the callback is registered; Discord API readback
 confirmed it and `/oauth/login` returned the authorization redirect (`302`).
 
+Live status (2026-09-29 08:50 UTC): release
+`084964f4a95c1d4231a75d282b61c371b4852120` is active. The release
+checksums, public health/Gateway, `ping` command, minimal login and separate
+install redirects, denied callback replay, and logout origin checks passed.
+The authorized callback and rollback drill remain open; see
+[`inventory/aphrody-discord-dev-2026-09-29.md`](../inventory/aphrody-discord-dev-2026-09-29.md).
+
+Live status (2026-09-29 08:56 UTC): release
+`4cf6332cdc66b3ec9c0f2b0c288f0a3024acf808` superseded the prior
+release. Checksums, service, public health/Gateway, login/install redirects and
+unauthenticated session response passed. Its login rate limit was tested
+locally, without exhausting the live development login endpoint.
+The rollback drill reactivated `084964f4a95c1d4231a75d282b61c371b4852120`,
+verified health/Gateway, then reactivated `4cf6332cdc66b3ec9c0f2b0c288f0a3024acf808`
+with the same checks passing. A fresh authorized OAuth callback remains open.
+
 The **all-in-one bundle** pins all three to one superproject commit and
 activates them in order Aphrody → Shenron → RG through
 `scripts/atomic-deploy-bundle.sh` (`aphrody-infra-deploy-bundle`). Every

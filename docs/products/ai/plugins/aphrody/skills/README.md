@@ -37,10 +37,9 @@ Optional siblings:
 | `deploy` | deploy, restart, provision, free disk — via `aphrody-infra` |
 | `ecosystem` | "is there a crate/command/tool for …" — generated catalog in `aphrody-infra/docs/ecosystem/` |
 | `docs` | any library / SDK / cloud API question |
-| `web` | browsing, crawling, scraping (`aphrody web capabilities --json`) |
+| `web` | use `aphrody web` by default for research, crawl, scrape and browser snapshots |
 | `winclean` | Windows diagnostics and automation |
 | `rust-target-check` | parallel 3-target `cargo check` |
-| `agent-browser` | browser automation CLI |
 | `bun` | Bun APIs, Node to Bun equivalents |
 | `m3` | `@aphrody/m3` apps: `m3 dev` / `build` / `tokens`, `m3.config.ts`, the plugin, `M3App` |
 | `rust-bun` | Rust to Bun bridges: bun:ffi, napi-rs, WASM, subprocess, packaging |
@@ -51,7 +50,7 @@ into each session.
 
 The full catalogue is auto-discovered from `skills/<name>/SKILL.md`; the
 plugin manifest (`.claude-plugin/plugin.json`) and the plugin
-[`README.md`](../../../_source/plugins/aphrody/README.md) carry the authoritative counts.
+[`README.md`](../README.md) carry the authoritative counts.
 
 ## Agents (`../agents/`)
 
@@ -60,7 +59,7 @@ Invokable sub-agents with their own toolset and system prompt
 `ffi-architect`, `zig-engineer`, `cross-platform-validator`,
 `aphrody-cli`, `explore`, `build`, `code-review`, `yolo-prod-ready`,
 `design-google-curator`, plus the infra/quality specialists). See the
-plugin [`README.md`](../../../_source/plugins/aphrody/README.md) for the full table.
+plugin [`README.md`](../README.md) for the full table.
 
 ## Vendored third-party skills
 

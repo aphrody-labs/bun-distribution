@@ -1,6 +1,7 @@
 ---
-description: Exécuter Aphrody Web via Aphrody
-argument-hint: [arguments]
+description: Use Aphrody Web for research, fetch, browser, scraping or bounded crawl
+argument-hint: [aphrody web arguments]
 ---
 
-Exécute `aphrody web $ARGUMENTS` et conserve son code de sortie.
+Run `aphrody web $ARGUMENTS`. Check `aphrody web --help` when arguments are
+unclear, and preserve the command's output and exit code.

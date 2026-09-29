@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { Browser, Page } from "@aphrody-code/bxc";
+import { WebCdpPage, waitForSelector } from "../../lib/web-cdp";
 import * as cheerio from "cheerio";
 import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
@@ -12,7 +12,7 @@ import { existsSync } from "node:fs";
 
 const DATA_ROOT = "/home/ubuntu/nie/data/inazuma.jp/victory-road";
 
-async function safeGoto(page: Page, url: string, timeout = 30000): Promise<unknown> {
+async function safeGoto(page: WebCdpPage, url: string, timeout = 30000): Promise<unknown> {
 	return Promise.race([
 		page.goto(url),
 		new Promise((_, reject) =>
@@ -26,11 +26,9 @@ export async function crawlNews(): Promise<{ success: boolean; error?: string }>
 		"[Crawl News] Démarrage du crawl des actualités (Topics et Patch Notes) multi-langues..."
 	);
 
+	let page: WebCdpPage | undefined;
 	try {
-		const page = (await Browser.newPage({
-			profile:
-				(process.env.BXC_PROFILE as "stealth" | "max" | "static" | "fast" | "http") || "stealth",
-		})) as Page;
+		page = await WebCdpPage.connect();
 
 		// ==========================================
 		// 1. CRAWL TOPICS (FR, EN, JA)
@@ -49,7 +47,7 @@ export async function crawlNews(): Promise<{ success: boolean; error?: string }>
 			console.log(`[Crawl News] Scraping Topics index [${locale}] : ${url}`);
 			try {
 				await safeGoto(page, url);
-				await page.waitForSelector("body", 15000).catch(() => {});
+				await waitForSelector(page, "body", 15000).catch(() => {});
 				const topicsIndexHtml = await page.content();
 				await writeFile(join(topicsDir, "index.html"), topicsIndexHtml);
 
@@ -92,7 +90,7 @@ export async function crawlNews(): Promise<{ success: boolean; error?: string }>
 
 					try {
 						await safeGoto(page, topic.url);
-						await page.waitForSelector("body", 15000).catch(() => {});
+						await waitForSelector(page, "body", 15000).catch(() => {});
 						const detailHtml = await page.content();
 						await writeFile(detailPath, detailHtml);
 
@@ -143,7 +141,7 @@ export async function crawlNews(): Promise<{ success: boolean; error?: string }>
 
 				try {
 					await safeGoto(page, platformUrl);
-					await page.waitForSelector("body", 15000).catch(() => {});
+					await waitForSelector(page, "body", 15000).catch(() => {});
 					const platformHtml = await page.content();
 
 					const $patch = cheerio.load(platformHtml);
@@ -190,7 +188,7 @@ export async function crawlNews(): Promise<{ success: boolean; error?: string }>
 
 						try {
 							await safeGoto(page, patch.url);
-							await page.waitForSelector("body", 15000).catch(() => {});
+							await waitForSelector(page, "body", 15000).catch(() => {});
 							const patchHtml = await page.content();
 							await writeFile(patchDetailPath, patchHtml);
 
@@ -220,11 +218,12 @@ export async function crawlNews(): Promise<{ success: boolean; error?: string }>
 			}
 		}
 
-		await page.close();
 		console.log("[Crawl News] Synchronisation des actualités multi-langues terminée avec succès.");
 		return { success: true };
 	} catch (err: any) {
 		console.error("[Crawl News] Erreur critique lors du crawl des actualités :", err);
 		return { success: false, error: err.message || String(err) };
+	} finally {
+		await page?.close().catch(() => undefined);
 	}
 }

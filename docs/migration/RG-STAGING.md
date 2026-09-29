@@ -1,4 +1,5 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
+
 # Rose Griffon source staging
 
 RG source remains authoritative at `/home/aphro/src/rg`. The staged copy in this
@@ -8,15 +9,15 @@ The source revision and the SHA-256 of every tracked file are recorded in
 
 ## Destination map
 
-| RG source | Aphrody staging |
-| --- | --- |
-| `apps/*` | `apps/rg/*` |
-| `packages/*` | `packages/rg/*` |
-| `scripts/*` | `scripts/rg/*` |
-| `docs/*` | `docs/rg/*` |
-| root files | `docs/rg/root/*` (also `config/rg/*` for tracked non-private files) |
-| `plugins/*`, `.claude-plugin/*` | same paths |
-| `.github/*`, `.ops/*`, `.codex/*` | corresponding `rg` subdirectory |
+| RG source                         | Aphrody staging                                                     |
+| --------------------------------- | ------------------------------------------------------------------- |
+| `apps/*`                          | `apps/rg/*`                                                         |
+| `packages/*`                      | `packages/rg/*`                                                     |
+| `scripts/*`                       | `scripts/rg/*`                                                      |
+| `docs/*`                          | `docs/rg/*`                                                         |
+| root files                        | `docs/rg/root/*` (also `config/rg/*` for tracked non-private files) |
+| `plugins/*`, `.claude-plugin/*`   | same paths                                                          |
+| `.github/*`, `.ops/*`, `.codex/*` | corresponding `rg` subdirectory                                     |
 
 The ten local `.env` files and the RG root `.npmrc` are copied beside their
 RG app or package under `apps/rg` and `packages/rg`, with mode `0600`. They are
@@ -33,19 +34,23 @@ regenerate them from the package when that workspace is qualified.
 
 ## Integration gates
 
-- The initial Aphrody root Bun workspace glob matched 21 RG packages and seven
-  RG apps. The root workspace has since been narrowed to explicit Aphrody
-  domains; a frozen Bun install dry run passes with RG excluded. RG manifests
-  still contain 146 `catalog:` package names absent from the Aphrody root
-  catalog, while 11 shared catalog entries have different version ranges.
-  Keep RG out of normal root installs until this is reconciled.
-- Six nested Patreon workspaces are outside the Aphrody root workspace glob.
+- The initial staging report recorded 21 RG packages and seven RG apps outside
+  the Aphrody workspace. Root workspace patterns now include `apps/rg/*`,
+  `packages/rg/*`, and the nested Patreon examples/docs/worker manifests. The
+  RG module currently discovers 33 members; the root catalog includes the RG
+  catalog entries, with Aphrody's existing values kept where names overlap.
+- Package scripts and imports are being retargeted to the copied layout. A
+  clean root install is not yet qualified: `@rpbey/discordx` returns 404 and
+  is still imported throughout the RG bot; the current Aphrody messaging
+  package does not implement its decorators or command discovery. The lockfile
+  must remain unchanged until the Discord owner supplies a behaviorally
+  compatible workspace API.
 - A local link audit found 18 unresolved relative links across six copied RG
-  Markdown files. Remap them when promoting the docs from source preservation
-  to canonical Aphrody documentation.
-- RG scripts, TypeScript configuration, lint commands, and release assembly
-  still use the original monorepo-relative paths. The copies have not been
-  retargeted or run from Aphrody.
+  Markdown files. Resolve those before promoting the docs to canonical
+  Aphrody documentation.
+- The TypeScript 7, import/export, lint, format, tests, and build gates now run
+  through the RG workspace module. Current checks still expose dependency and
+  source-level errors; the staging copy is not yet qualified for release.
 - The source RG test run had 1,212 passes and 11 failures; its root typecheck
   failed in `packages/ui/test/presentation-literals.test.ts`. Re-run gates
   after the dependency and path cutover; do not infer runtime parity from the
@@ -56,3 +61,42 @@ regenerate them from the package when that workspace is qualified.
 The copied `.github/rg/workflows` files are provenance only. GitHub Actions
 does not load workflows from that nested path. Production topology remains
 owned by `aphrody-infra`.
+
+## Pipeline RG dans Aphrody
+
+Le module `@aphrody/workspace` expose désormais `aphrody-ops rg status`,
+`aphrody-ops rg check <gate>`, et `aphrody-ops rg pipeline [--dry-run]`.
+La pipeline découvre récursivement les manifests RG puis filtre les résultats
+aux membres effectifs des globs `workspaces` racine. Elle exige un contrôle TS
+pour chaque membre qui possède un `tsconfig`, audite les imports/dépendances,
+puis lance les scripts déclarés ou les commandes de repli pour format, lint,
+typecheck et test; elle lance les builds déclarés, un audit N2B avec les fichiers
+secrets exclus, et vérifie les liens de `docs/rg`. Le rapport publie les membres retenus, les étapes exécutées et la
+couverture. Les gates dépendants de l'installation sont marqués ignorés si
+l'installation gelée échoue. Le déploiement reste délégué à `aphrody-infra`.
+
+Les anciens imports `@aphrody-code/bxc`, `@aphrody/bxc` et le paquet absent
+`@aphrody/zukan` sont retirés des consommateurs actifs. Les pages rendues
+utilisent désormais `WebCdpPage` depuis `@aphrody/agent-browser/cdp`, adossé au
+serveur CDP Aphrody Web. Les recherches web du service utilisent DuckDuckGo
+HTML; `scrape.page` renvoie le texte visible du DOM, sans conversion Markdown
+par le moteur Rust. `web-recon` conserve son crawl de pages/ressources et son
+HAR synthétique issu des sondes HTTP, mais n'expose plus la détection DNS /
+Wappalyzer de BXC. Le contrat de ces limites est décrit dans
+`packages/rg/cron/src/tasks/ie-crawl/scrape-service.ts`.
+
+`@aphrody/x` reste le propriétaire des appels X et de la session. Les anciens
+profils `static/http` ne sont plus exposés dans la commande Discord : le serveur
+CDP est géré à l'échelle du service Aphrody Web.
+
+La génération de `bun.lock` est encore bloquée par `@rpbey/discordx`, utilisé
+par le bot RG: l'API Discord Aphrody présente dans le workspace ne fournit pas
+encore les décorateurs et l'enregistrement de commandes nécessaires. Il faut
+terminer l'intégration de l'owner Discord et vérifier la parité avant de
+remplacer cette dépendance. Le filtre Bun `minimumReleaseAge` bloque aussi
+Oxlint 1.86.0 et Oxfmt 0.71.0 pendant les trois jours suivant leur publication;
+la politique de fraîcheur n'a pas été contournée.
+
+Les gates bloquants sont: terminer l'owner Discord, régénérer `bun.lock` avec
+Bun 1.4.2, corriger les résultats de l'audit imports/exports et de format/lint,
+puis exécuter `bun run rg:pipeline` intégralement en CI.

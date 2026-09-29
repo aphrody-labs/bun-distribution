@@ -17,13 +17,14 @@
     "lint": "oxlint -c ../.oxlintrc.json",
     "test": "bun test",
     "openapi": "bun scripts/openapi.ts",
-    "openapi:check": "bun scripts/openapi.ts --check"
+    "openapi:check": "bun scripts/openapi.ts --check",
+    "typecheck": "tsgo -p tsconfig.json --noEmit"
   },
   "dependencies": {
     "@hono/zod-openapi": "^1.6.0",
     "@shenron/config": "workspace:*",
     "@shenron/db": "workspace:*",
-    "hono": "^4.13.0",
+    "hono": "catalog:",
     "zod": "catalog:"
   },
   "devDependencies": {
@@ -40,5 +41,8 @@
       "./next": "server",
       "./openapi.json": "json"
     }
+  },
+  "engines": {
+    "bun": ">=1.4.2"
   }
 }

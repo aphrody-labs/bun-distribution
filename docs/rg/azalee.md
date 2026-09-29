@@ -8,12 +8,12 @@ status: "stable"
 # Azalée dans Website
 
 Azalée n'est plus une application web autonome. Le portail Rose Griffon et le
-wiki IEVR sont une seule application Next.js : [`apps/website`](../apps/website).
+wiki IEVR sont une seule application Next.js : [`apps/rg/website`](../../apps/rg/website).
 Les pages du wiki sont servies sous `https://rosegriffon.fr/wiki`.
 
 ## Invariants
 
-- Un seul code frontend : `apps/website`.
+- Un seul code frontend : `apps/rg/website`.
 - Un seul `next build` : celui du workspace `@rosegriffon/website`.
 - Une seule release bleu/vert : `website-web.service` et
   `website-web-b.service`.
@@ -23,7 +23,7 @@ Les pages du wiki sont servies sous `https://rosegriffon.fr/wiki`.
   redirige chaque requête vers le chemin correspondant sous
   `https://rosegriffon.fr/wiki` ; ce domaine ne déclenche aucun build.
 - Une modification de la présentation, des routes ou des métadonnées du wiki
-  se fait dans `apps/website`, puis est livrée avec Website.
+  se fait dans `apps/rg/website`, puis est livrée avec Website.
 
 ## Ce qui conserve le nom Azalée
 
@@ -50,8 +50,8 @@ d'`azalee-web.service` est obsolète et doit être supprimée.
 
 | Sujet | Source de vérité |
 | --- | --- |
-| Routes et composants du wiki | `apps/website/src/app/wiki` et composants Website associés |
-| Navigation, thèmes et préférences | `apps/website` et packages partagés |
+| Routes et composants du wiki | `apps/rg/website/src/app/wiki` et composants Website associés |
+| Navigation, thèmes et préférences | `apps/rg/website` et packages partagés |
 | Données IEVR | packages de données et miroir documentés dans [architecture-unifiee-ievr.md](architecture-unifiee-ievr.md) |
 | Publication frontend | [deploiement-sans-coupure.md](deploiement-sans-coupure.md) |
 | Domaine historique | configuration nginx de redirection, sans upstream Azalée |

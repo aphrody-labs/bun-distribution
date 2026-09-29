@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { Browser, Page } from "@aphrody-code/bxc";
+import { WebCdpPage, waitForSelector } from "../../lib/web-cdp";
 import * as cheerio from "cheerio";
 import { existsSync } from "node:fs";
 import { mkdir, writeFile } from "node:fs/promises";
@@ -19,7 +19,7 @@ interface NewsItem {
 	date: string;
 }
 
-async function safeGoto(page: Page, url: string, timeout = 30000): Promise<unknown> {
+async function safeGoto(page: WebCdpPage, url: string, timeout = 30000): Promise<unknown> {
 	return Promise.race([
 		page.goto(url),
 		new Promise((_, reject) =>
@@ -31,15 +31,13 @@ async function safeGoto(page: Page, url: string, timeout = 30000): Promise<unkno
 export async function crawlLevel5(): Promise<{ success: boolean; error?: string }> {
 	console.log("[Crawl Level5] Démarrage du crawl des actualités LEVEL-5...");
 
+	let page: WebCdpPage | undefined;
 	try {
-		const page = (await Browser.newPage({
-			profile:
-				(process.env.BXC_PROFILE as "stealth" | "max" | "static" | "fast" | "http") || "stealth",
-		})) as Page;
+		page = await WebCdpPage.connect();
 
 		console.log("[Crawl Level5] Navigation vers https://www.level5.co.jp/news/");
 		await safeGoto(page, "https://www.level5.co.jp/news/");
-		await page.waitForSelector("body", 15000).catch(() => {});
+		await waitForSelector(page, "body", 15000).catch(() => {});
 		const indexHtml = await page.content();
 
 		const $ = cheerio.load(indexHtml);
@@ -84,7 +82,7 @@ export async function crawlLevel5(): Promise<{ success: boolean; error?: string 
 			console.log(`[Crawl Level5] Inspection de l'article : ${art.title} (${art.url})`);
 			try {
 				await safeGoto(page, art.url);
-				await page.waitForSelector("body", 15000).catch(() => {});
+				await waitForSelector(page, "body", 15000).catch(() => {});
 				const detailHtml = await page.content();
 
 				// On vérifie si l'article parle de Inazuma Eleven (イナズマ or Inazuma)
@@ -115,7 +113,6 @@ export async function crawlLevel5(): Promise<{ success: boolean; error?: string 
 			}
 		}
 
-		await page.close();
 		console.log(
 			`[Crawl Level5] Crawl terminé. ${crawlCount} nouveaux articles Inazuma Eleven enregistrés.`
 		);
@@ -124,5 +121,7 @@ export async function crawlLevel5(): Promise<{ success: boolean; error?: string 
 		const msg = err instanceof Error ? err.message : String(err);
 		console.error("[Crawl Level5] Erreur critique lors du crawl Level5 :", err);
 		return { success: false, error: msg };
+	} finally {
+		await page?.close().catch(() => undefined);
 	}
 }

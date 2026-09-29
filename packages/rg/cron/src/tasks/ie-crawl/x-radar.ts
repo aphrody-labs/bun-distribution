@@ -4,13 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { Browser, Page } from "@aphrody-code/bxc";
+import { WebCdpPage, waitForSelector } from "../../lib/web-cdp";
 import { createPostgresClient } from "@rosegriffon/db/service";
 import type { Json } from "@rosegriffon/db";
-import { loadBxcXCookies, loadBxcXCookieHeader } from "./x-accounts";
+import { loadAphrodyXCookies, loadXCookieHeader } from "./x-accounts";
 import { processTweets } from "./process-tweets";
 import * as cheerio from "cheerio";
-import { XClient, XSession, radarSearch } from "@aphrody-code/x";
+import { XClient, XSession, radarSearch } from "@aphrody/x";
 
 const RADAR_BASE = "https://x.com/i/radar";
 
@@ -76,27 +76,25 @@ export async function crawlXRadar(
 		: radarIdOrUrl) || radarIdOrUrl;
 	const url = `${RADAR_BASE}/${radarId}`;
 
-	console.log(`[Crawl X Radar] bxc x radar scrape: ${url} (ID=${radarId})`);
+	console.log(`[Crawl X Radar] Aphrody Web radar scrape: ${url} (ID=${radarId})`);
 
-	let page: Page | null = null;
+	let page: WebCdpPage | null = null;
 	try {
-		const profile =
-			(process.env.BXC_PROFILE as "stealth" | "max" | "static" | "fast" | "http") || "max";
-		page = (await Browser.newPage({ profile })) as Page;
+		page = await WebCdpPage.connect();
 
-		// Inject bxc X cookies for full authenticated radar view (same as twitter.ts / XClient)
-		const xCookies = loadBxcXCookies();
+		// Inject Aphrody X session cookies for full authenticated radar view (same as twitter.ts / XClient)
+		const xCookies = loadAphrodyXCookies();
 		if (xCookies.length > 0) {
 			try {
-				await (page as any).addCookies(xCookies);
-				console.log(`[Crawl X Radar] Injected ${xCookies.length} X cookies (bxc)`);
+				await page.addCookies(xCookies);
+				console.log(`[Crawl X Radar] Injected ${xCookies.length} Aphrody X session cookies`);
 			} catch (ckErr) {
 				console.warn("[Crawl X Radar] addCookies warning (continuing):", ckErr);
 			}
 		}
 
 		await page.goto(url);
-		await page.waitForSelector("body", 20000).catch(() => {});
+		await waitForSelector(page, "body", 20000).catch(() => {});
 		// Radar is JS-heavy: give hydration time + possible lazy load
 		await new Promise((r) => setTimeout(r, 4500));
 
@@ -109,14 +107,14 @@ export async function crawlXRadar(
 		await writeFile(join(snapDir, "page.html"), html);
 		console.log(`[Crawl X Radar] Snapshot saved: ${snapDir}/page.html`);
 
-		// === DEEP RESEARCH using bxc: extract from __INITIAL_STATE__ (the real hydrated SearchTimeline data with querySource:"radar")
+		// === DEEP RESEARCH using Aphrody Web CDP: extract from __INITIAL_STATE__ (the real hydrated SearchTimeline data with querySource:"radar")
 		// This is the authoritative feed data (bypasses virtualized DOM / lazy render issues). We also research the rawQuery for this radar ID.
 		let extracted: SimpleTweet[] = [];
 		let discoveredQuery: string | null = null;
 		try {
-			const state = await page.evaluate(() => (globalThis as any).__INITIAL_STATE__);
+			const state = await page.evaluate("globalThis.__INITIAL_STATE__");
 			if (state) {
-				console.log("[Crawl X Radar] Deep research: got __INITIAL_STATE__ from bxc render, searching for radar entries...");
+				console.log("[Crawl X Radar] Deep research: got __INITIAL_STATE__ from Obscura render, searching for radar entries...");
 				extracted = extractTweetsFromState(state);
 				console.log(`[Crawl X Radar] State deep extract found ${extracted.length} tweets`);
 				// Research the query associated with this specific radar ID (for future pure XClient radarSearch calls)
@@ -166,11 +164,11 @@ export async function crawlXRadar(
 			});
 		}
 
-		// === Additional deep radar content via native @aphrody-code/x (bxc x) with querySource "radar" ===
+		// === Additional deep radar content via @aphrody/x with querySource "radar" ===
 		// This supplements the specific /i/radar/ID page snapshot (which may be UI/config) with actual IE-relevant radar search results.
 		try {
-			const bxcCookie = loadBxcXCookieHeader();
-			const session = bxcCookie ? XSession.fromCookieString(bxcCookie) : XSession.loadOrEnv();
+			const xCookie = loadXCookieHeader();
+			const session = xCookie ? XSession.fromCookieString(xCookie) : XSession.loadOrEnv();
 			const xclient = new XClient(session);
 			const radarQs = [
 				'"Inazuma Eleven" OR "ヴィクトリーロード" OR "イナイレ" lang:ja min_faves:2',
@@ -178,7 +176,7 @@ export async function crawlXRadar(
 				'"Inazuma Eleven Victory Road" (DLC OR roster OR update OR リーク) min_faves:3',
 			];
 			for (const q of radarQs) {
-				console.log(`[Crawl X Radar] Native bxc x radarSearch: ${q}`);
+				console.log(`[Crawl X Radar] @aphrody/x radarSearch: ${q}`);
 				const res = await radarSearch(xclient, q, { count: 15, querySource: "radar", product: "Latest" });
 				console.log(`[Crawl X Radar] +${res.tweets.length} from native radar`);
 				for (const t of res.tweets) {

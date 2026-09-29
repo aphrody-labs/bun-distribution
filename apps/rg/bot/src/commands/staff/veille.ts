@@ -14,7 +14,7 @@
  * « qu'avons-nous gardé ».
  *
  * ── POURQUOI PAR LE CRON ───────────────────────────────────────────────────
- * Les moteurs `@aphrody-code/x` et `@aphrody-code/bxc` vivent dans
+ * Les moteurs `@aphrody/x` et le navigateur CDP Aphrody Web vivent dans
  * `packages/cron`, et n'iront pas dans le bot : les installer ici toucherait le
  * fichier de verrouillage, qui doit rester en version 1 pour la CI. Le bot
  * passe donc par la socket UNIX du démon, dont le contrat des six verbes est

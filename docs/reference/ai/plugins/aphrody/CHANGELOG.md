@@ -8,7 +8,13 @@
 - 1.5.0: consolidated the Aphrody AI/LLM skills and the Shenron Dragon Ball
   skills/agents into this single plugin, now maintained at `aphrody-ai/plugins/aphrody`.
   The OS plugin and standalone Dragon Ball plugin entries were retired; the unified
-  plugin declares the OS kernel and AI/Dragon Ball MCP processes.
+  plugin declares only the OS kernel MCP; it routes to internal AI, Dragon Ball
+  and Web providers without a second public server.
+- Web guidance now defaults agents to `aphrody web`, reflects the live CLI and
+  bounded Rust crawl, and consolidates generic web/browser/build/MCP guidance
+  into one skill and one `web-engineer` agent. Domain-specific X/Grok, frames
+  and X client skills remain separate.
+- The plugin manifests and validator enforce one public kernel MCP endpoint.
 - 1.4.0: the `nie` plugin (`nie/plugins/nie`, marketplace `nie-marketplace`) is merged here
   and retired. New skills: `formats-level5`, `ievr-terminologie`, `jouer-ievr`,
   `nie-architecture`, `nie-monorepo`, `nie-re-workflow`, `nie-render-pipeline`,

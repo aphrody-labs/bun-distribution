@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { Browser, Page } from "@aphrody-code/bxc";
+import { WebCdpPage, waitForSelector } from "../../lib/web-cdp";
 import * as cheerio from "cheerio";
 import { existsSync } from "node:fs";
 import { mkdir, writeFile } from "node:fs/promises";
@@ -12,7 +12,7 @@ import { join } from "node:path";
 
 const DATA_ROOT = "/home/ubuntu/nie/data/level5.co.jp/blog";
 
-async function safeGoto(page: Page, url: string, timeout = 30000): Promise<unknown> {
+async function safeGoto(page: WebCdpPage, url: string, timeout = 30000): Promise<unknown> {
 	return Promise.race([
 		page.goto(url),
 		new Promise((_, reject) =>
@@ -38,11 +38,9 @@ export async function crawlLevel5Blog(): Promise<{
 		"[Crawl Level5 Blog] Démarrage du crawl du blog LEVEL-5 (5つ星工房日記 / Five-Star Workshop)..."
 	);
 
+	let page: WebCdpPage | undefined;
 	try {
-		const page = (await Browser.newPage({
-			profile:
-				(process.env.BXC_PROFILE as "stealth" | "max" | "static" | "fast" | "http") || "stealth",
-		})) as Page;
+		page = await WebCdpPage.connect();
 		const articles: BlogArticle[] = [];
 
 		// 1. Scraping du Blog Japonais, Anglais et Chinois (Traditionnel & Simplifié)
@@ -57,7 +55,7 @@ export async function crawlLevel5Blog(): Promise<{
 			console.log(`[Crawl Level5 Blog] Index scraping (${target.locale}) : ${target.url}`);
 			try {
 				await safeGoto(page, target.url);
-				await page.waitForSelector("body", 15000).catch(() => {});
+				await waitForSelector(page, "body", 15000).catch(() => {});
 				const indexHtml = await page.content();
 				const $ = cheerio.load(indexHtml);
 
@@ -135,7 +133,7 @@ export async function crawlLevel5Blog(): Promise<{
 
 			try {
 				await safeGoto(page, art.url);
-				await page.waitForSelector("body", 15000).catch(() => {});
+				await waitForSelector(page, "body", 15000).catch(() => {});
 				const detailHtml = await page.content();
 				await writeFile(indexPath, detailHtml);
 
@@ -162,7 +160,6 @@ export async function crawlLevel5Blog(): Promise<{
 			}
 		}
 
-		await page.close();
 		console.log(
 			`[Crawl Level5 Blog] Crawl terminé avec succès. ${count} nouveaux articles stockés.`
 		);
@@ -170,5 +167,7 @@ export async function crawlLevel5Blog(): Promise<{
 	} catch (err: any) {
 		console.error("[Crawl Level5 Blog] Erreur critique lors du crawl du blog Level5 :", err);
 		return { success: false, error: err.message || String(err) };
+	} finally {
+		await page?.close().catch(() => undefined);
 	}
 }

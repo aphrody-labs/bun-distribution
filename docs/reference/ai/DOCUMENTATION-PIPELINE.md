@@ -50,7 +50,7 @@ the owning repository's applicable gates.
 
 ## Generator behavior
 
-[aphrody-summary](../crates/aphrody-summary/src/lib.rs) builds the Markdown
+[aphrody-summary](../../../crates/ai/aphrody-summary/src/lib.rs) builds the Markdown
 navigation and context output from the docs tree. It also mirrors selected
 root files into `docs/_root/`; generation happens before the `--check`
 comparison, so `--check` can refresh those mirrors.

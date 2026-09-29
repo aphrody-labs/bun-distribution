@@ -4,7 +4,7 @@ Note d'architecture. Décrit **pourquoi** le cœur métier d'Azalée a quitté
 `apps/azalee`, **ce qui a bougé**, le **contrat client-safe / serveur**, et la voie
 **CLI + GUI Tauri sans Next**.
 
-Référence d'usage : [`packages/azalee/README.md`](../packages/azalee/README.md).
+Référence d'usage : [`packages/rg/azalee/README.md`](../../packages/rg/azalee/README.md).
 
 ## Pourquoi
 
@@ -29,28 +29,28 @@ une webview et une surface serveur qui ne dépend que de Bun.
 Le paquet npm reprend le nom historique `@rosegriffon/azalee` ; à l'époque de cette
 extraction, l'application Next avait été renommée `@rosegriffon/azalee-web` (dossier
 `apps/azalee` inchangé). Cette application a depuis été entièrement retirée : le wiki
-est fusionné dans `apps/website` (voir [azalee.md](azalee.md)). Le tableau ci-dessous
+est fusionné dans `apps/rg/website` (voir [azalee.md](azalee.md)). Le tableau ci-dessous
 reste la référence des chemins **d'origine** (`apps/azalee/...`, aujourd'hui disparus)
-vers leur destination actuelle dans `packages/azalee`.
+vers leur destination actuelle dans `packages/rg/azalee`.
 
 | Ancien chemin | Nouveau chemin |
 | --- | --- |
-| `bin/azalee.ts` | `packages/azalee/src/cli.ts` |
-| `apps/azalee/lib/wiki-service.ts` | `packages/azalee/src/wiki/service.ts` |
-| `apps/azalee/lib/wiki/{teams,shops,quests,coaches,stadiums,drops,gacha,trophies,invocation,chara-stats,game-text}.ts` | `packages/azalee/src/wiki/*.ts` |
-| `apps/azalee/lib/wiki/*-shared.ts` | `packages/azalee/src/wiki/*-shared.ts` |
-| `apps/azalee/lib/cpk/{index,materialize,shared,tree}.ts` | `packages/azalee/src/cpk/*.ts` |
-| `apps/azalee/lib/game-text/{index,materialize,shared,format}.ts` | `packages/azalee/src/game-text/*.ts` |
-| `apps/azalee/lib/cross/{catalog,data,data-shared,assets-shared}.ts` | `packages/azalee/src/cross/*.ts` |
-| `apps/azalee/src/lib/images/{index,utils}.ts` | `packages/azalee/src/images/*.ts` |
-| `apps/azalee/src/lib/images/utils.test.ts` | `packages/azalee/test/images.test.ts` |
-| `apps/azalee/lib/search/**` + `apps/azalee/lib/search-utils.ts` | `packages/azalee/src/search/**` (`search-utils.ts` → `utils.ts`) |
-| `apps/azalee/lib/{translations,format-description,japanese-romaji,download-filename,aura-translations}.ts` | `packages/azalee/src/text/*.ts` |
-| `apps/azalee/lib/gaiji-shared.ts` | `packages/azalee/src/text/gaiji.ts` |
-| `apps/azalee/lib/{formations,gender,roster-resolver,skills-cutin,team-rules,team-types,team-emblem-map}.ts` | `packages/azalee/src/game/*.ts` |
-| `apps/azalee/lib/supabase/sqlite-client.ts` | `packages/azalee/src/db/sqlite-client.ts` |
-| `apps/azalee/data/*.json` (22 fichiers, dont `cross/`) | `packages/azalee/src/data/**` |
-| `apps/azalee/scripts/build-*.ts` (8 générateurs de manifestes) | `packages/azalee/scripts/` |
+| `bin/azalee.ts` | `packages/rg/azalee/src/cli.ts` |
+| `apps/azalee/lib/wiki-service.ts` | `packages/rg/azalee/src/wiki/service.ts` |
+| `apps/azalee/lib/wiki/{teams,shops,quests,coaches,stadiums,drops,gacha,trophies,invocation,chara-stats,game-text}.ts` | `packages/rg/azalee/src/wiki/*.ts` |
+| `apps/azalee/lib/wiki/*-shared.ts` | `packages/rg/azalee/src/wiki/*-shared.ts` |
+| `apps/azalee/lib/cpk/{index,materialize,shared,tree}.ts` | `packages/rg/azalee/src/cpk/*.ts` |
+| `apps/azalee/lib/game-text/{index,materialize,shared,format}.ts` | `packages/rg/azalee/src/game-text/*.ts` |
+| `apps/azalee/lib/cross/{catalog,data,data-shared,assets-shared}.ts` | `packages/rg/azalee/src/cross/*.ts` |
+| `apps/azalee/src/lib/images/{index,utils}.ts` | `packages/rg/azalee/src/images/*.ts` |
+| `apps/azalee/src/lib/images/utils.test.ts` | `packages/rg/azalee/test/images.test.ts` |
+| `apps/azalee/lib/search/**` + `apps/azalee/lib/search-utils.ts` | `packages/rg/azalee/src/search/**` (`search-utils.ts` → `utils.ts`) |
+| `apps/azalee/lib/{translations,format-description,japanese-romaji,download-filename,aura-translations}.ts` | `packages/rg/azalee/src/text/*.ts` |
+| `apps/azalee/lib/gaiji-shared.ts` | `packages/rg/azalee/src/text/gaiji.ts` |
+| `apps/azalee/lib/{formations,gender,roster-resolver,skills-cutin,team-rules,team-types,team-emblem-map}.ts` | `packages/rg/azalee/src/game/*.ts` |
+| `apps/azalee/lib/supabase/sqlite-client.ts` | `packages/rg/azalee/src/db/sqlite-client.ts` |
+| `apps/azalee/data/*.json` (22 fichiers, dont `cross/`) | `packages/rg/azalee/src/data/**` |
+| `apps/azalee/scripts/build-*.ts` (8 générateurs de manifestes) | `packages/rg/azalee/scripts/` |
 
 Modules **créés** par l'extraction, sans équivalent antérieur :
 
@@ -91,7 +91,7 @@ Le contrat est vérifiable mécaniquement — si la racine tire un module serveu
 bundle navigateur échoue à la résolution :
 
 ```bash
-bun build --target=browser packages/azalee/src/index.ts --outdir /tmp/azalee-browser
+bun build --target=browser packages/rg/azalee/src/index.ts --outdir /tmp/azalee-browser
 # Bundled 45 modules in 43ms → index.js 2.66 MB
 ```
 
@@ -130,7 +130,7 @@ L'injection est centralisée dans un module unique, importé par chaque façade 
 est donc garantie avant le premier accès données, quelle que soit la route :
 
 ```ts
-// apps/website/src/lib/azalee-runtime.ts
+// apps/rg/website/src/lib/azalee-runtime.ts
 import "server-only";
 
 import { setDatabaseProvider } from "@rosegriffon/azalee/db";
@@ -172,7 +172,7 @@ Façades présentes : `lib/wiki-service.ts`, `lib/wiki/{teams,shops,quests,coach
 **CLI.** `src/cli.ts` (24 commandes, dont `data` et `serve`) n'accède plus aux données par
 ses propres chemins : il appelle `resolveMirrorPath()` de la lib, donc la même
 résolution que le wiki web. Un binaire autonome se compile via
-`bun run --cwd packages/azalee compile` (`bun build --compile`, runtime Bun embarqué,
+`bun run --cwd packages/rg/azalee compile` (`bun build --compile`, runtime Bun embarqué,
 pas de `node_modules`).
 
 **GUI Tauri.** Le binaire compilé sert de `externalBin` ; le processus Rust le lance

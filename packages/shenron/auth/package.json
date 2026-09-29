@@ -43,7 +43,8 @@
   "scripts": {
     "type-check": "tsc --noEmit",
     "lint": "oxlint -c ../.oxlintrc.json",
-    "test": "bun test"
+    "test": "bun test",
+    "typecheck": "tsgo -p tsconfig.json --noEmit"
   },
   "dependencies": {
     "@shenron/config": "workspace:*"
@@ -51,9 +52,9 @@
   "devDependencies": {
     "@types/bun": "catalog:",
     "typescript": "catalog:",
-    "better-auth": "1.7.5",
-    "hono": "^4.13.0",
-    "next": "16.3.5",
+    "better-auth": "catalog:",
+    "hono": "catalog:",
+    "next": "catalog:",
     "react": "catalog:",
     "@types/react": "catalog:",
     "@shenron/db": "workspace:*",
@@ -75,5 +76,8 @@
     "react": {
       "optional": true
     }
+  },
+  "engines": {
+    "bun": ">=1.4.2"
   }
 }

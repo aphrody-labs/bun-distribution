@@ -1,0 +1,28 @@
+[package]
+name = "aphrody-n2b-registry"
+description = "N2B data-driven Node-to-Bun migration rule registry, embedded TOML validated at first use."
+version = "0.6.2"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+readme = "README.md"
+keywords = ["bun", "nodejs", "migration", "n2b", "rules"]
+categories = ["development-tools"]
+publish = true
+authors.workspace = true
+
+[lib]
+name = "aphrody_n2b_registry"
+path = "src/lib.rs"
+
+[dependencies]
+aphrody-n2b-types.workspace = true
+serde = { workspace = true }
+toml = { workspace = true }
+regex = { workspace = true }
+once_cell = { workspace = true }
+
+[lints]
+workspace = true

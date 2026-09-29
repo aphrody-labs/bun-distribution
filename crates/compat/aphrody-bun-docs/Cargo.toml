@@ -1,0 +1,22 @@
+[package]
+name = "aphrody-bun-docs"
+description = "Offline Bun documentation (third_party/bun/docs) and n2b Node-to-Bun equivalents as an Aphrody OS MCP subsystem."
+version = "1.0.0-canary"
+edition.workspace = true
+rust-version = "1.0.0-canary"
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+publish = false
+
+[lints]
+workspace = true
+
+[dependencies]
+aphrody-n2b-registry = { workspace = true }
+aphrody-subsystem = { workspace = true }
+async-trait = { workspace = true }
+serde_json = { workspace = true }
+
+[dev-dependencies]
+tokio = { workspace = true }

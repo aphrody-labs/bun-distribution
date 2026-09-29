@@ -1,0 +1,16 @@
+# La présence de ce fichier suffit : Ren'Py ne lit pas son contenu.
+#
+# Le chemin compte, en revanche, et il ne se devine pas : `renpy/script.py:397`
+# teste littéralement `loadable("libs/libs.txt")`. Posé un cran plus bas — dans
+# `libs/nie/` — il ne serait jamais vu, et les bibliothèques perdraient leur
+# priorité sans un mot d'avertissement.
+#
+# Ce qu'il déclenche (`renpy/script.py:409-419`, `sphinx/source/lifecycle.rst:26`) :
+# tout `game/libs/<nom>/…` passe en priorité 0 — donc AVANT les fichiers du jeu —
+# avec un tri qui retire le `libs/<nom>/` de tête. C'est le mécanisme de
+# bibliothèque documenté de Ren'Py, pas un détournement : c'est ce qui permet au
+# greffon `nie/` de définir son store avant que le jeu ne s'en serve, sans qu'un
+# projet ait à ordonner quoi que ce soit à la main.
+#
+# Un projet qui a déjà ses propres bibliothèques garde ce fichier tel quel : il
+# vaut pour toutes, pas pour une seule.

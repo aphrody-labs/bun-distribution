@@ -198,7 +198,7 @@ await xTools.news({count?});
 
 See `src/core/client.ts` (Chat + XaiClient), `src/index.ts` (exports, including `XTools`, every `*ToolDef` and `xNativeTools` re-exported from `@aphrody/x`).
 
-Runnable example: [packages/xai/examples/grok-x-agent.ts](examples/grok-x-agent.ts) (full agent loop with native X fulfillment).
+Runnable example: [packages/xai/examples/grok-x-agent.ts](../../../../../packages/ai/xai/examples/grok-x-agent.ts) (full agent loop with native X fulfillment).
 
 ## Production-grade Grok and native X
 

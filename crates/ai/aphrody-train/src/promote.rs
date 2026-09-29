@@ -82,7 +82,8 @@ pub fn evaluate_candidate(
         || baseline_tags.values().chain(candidate_tags.values()).any(|score| !valid_score(*score))
     {
         return PromoteVerdict::Rejected {
-            reason: "scores must be finite probabilities with identical nonempty per-tag sets".into(),
+            reason: "scores must be finite probabilities with identical nonempty per-tag sets"
+                .into(),
             delta_recall_at_5: delta,
             max_regression_observed: 0.0,
         };
@@ -216,10 +217,33 @@ mod tests {
         let missing = temp.path().join("missing.onnx");
         let mut tags = BTreeMap::new();
         tags.insert("anime".into(), 0.80);
-        assert!(!evaluate_candidate(0.80, 0.90, &tags, &tags, &missing, &PromoteCriteria::default()).is_promoted());
+        assert!(
+            !evaluate_candidate(0.80, 0.90, &tags, &tags, &missing, &PromoteCriteria::default())
+                .is_promoted()
+        );
         let artifact = temp.path().join("model.onnx");
         std::fs::write(&artifact, b"weights").unwrap();
-        assert!(!evaluate_candidate(0.80, 0.90, &BTreeMap::new(), &BTreeMap::new(), &artifact, &PromoteCriteria::default()).is_promoted());
-        assert!(!evaluate_candidate(f64::NAN, 0.90, &tags, &tags, &artifact, &PromoteCriteria::default()).is_promoted());
+        assert!(
+            !evaluate_candidate(
+                0.80,
+                0.90,
+                &BTreeMap::new(),
+                &BTreeMap::new(),
+                &artifact,
+                &PromoteCriteria::default()
+            )
+            .is_promoted()
+        );
+        assert!(
+            !evaluate_candidate(
+                f64::NAN,
+                0.90,
+                &tags,
+                &tags,
+                &artifact,
+                &PromoteCriteria::default()
+            )
+            .is_promoted()
+        );
     }
 }

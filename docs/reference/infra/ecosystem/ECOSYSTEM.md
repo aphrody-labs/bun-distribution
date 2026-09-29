@@ -3,11 +3,11 @@
 # Aphrody ecosystem catalog
 
 Every repository, crate, binary, feature, Bun package and uv package of the workspace, extracted
-from the checkout. Companion files: [CLI.md](./CLI.md) (exact command trees), [MCP-TOOLS.md](./MCP-TOOLS.md)
-(every MCP tool), [ecosystem.json](./ecosystem.json) (machine-readable). Check here before writing new
+from the checkout. Companion files: [CLI.md](CLI.md) (exact command trees), [MCP-TOOLS.md](MCP-TOOLS.md)
+(every MCP tool), [ecosystem.json](ecosystem.json) (machine-readable). Check here before writing new
 code: reuse an existing crate, command or tool instead of duplicating it.
 
-Totals: 15 repositories (10 aphrody, 1 shared, 4 experiments), 242 crates, 92 binaries, 158 Bun packages, 12 uv packages, 846 CLI commands, 583 MCP tools.
+Totals: 10 repositories (9 aphrody, 0 shared, 1 experiments), 126 crates, 55 binaries, 59 Bun packages, 5 uv packages, 443 CLI commands, 401 MCP tools.
 
 | Repository | Kind | Role |
 | --- | --- | --- |
@@ -20,81 +20,11 @@ Totals: 15 repositories (10 aphrody, 1 shared, 4 experiments), 242 crates, 92 bi
 | [aphrody-os](#aphrody-os) | aphrody |  |
 | [aphrody-shell](#aphrody-shell) | aphrody |  |
 | [aphrody-ui](#aphrody-ui) | aphrody |  |
-| [aphrody-web](#aphrody-web) | aphrody |  |
-| [iecode](#iecode) | experiment |  |
 | [nie](#nie) | experiment |  |
-| [rg](#rg) | experiment |  |
-| [shenron](#shenron) | experiment |  |
-| [aphrody-discord](#aphrody-discord) | shared | Shared Discord transport, protocol contracts and framework adapters for Aphrody applications |
 
 ## aphrody-ai
 
-### Crates (62)
-
-| Crate | Path | Description | Binaries | Features |
-| --- | --- | --- | --- | --- |
-| `aphrody` | crates/aphrody | Aphrody — cross-platform Rust CLI (Linux / Windows / macOS / WebAssembly). | `aphrody` | default, firefly, forensics, index, infer, jobs, koharu, magika, memory-lancedb, ocr, rag, train, yara |
-| `aphrody-agent-home` | crates/aphrody-agent-home | aphrody-agent-home — the agent's persistent home: Soul / Identity / User / Tools, mmap zero-copy file cache, content-addressed cache, bootstrap budget, system-prompt assembler, hot-reload, git backup. |  | default, git |
-| `aphrody-agent-runtime` | crates/aphrody-agent-runtime | Wiring/factory layer that assembles a ready-to-run aphrody agent: builds a ModelClient (Gemini or stub), a ToolRegistry preloaded with the shell-exec + apply-patch tools, an optional rollout recorder, and spawns an aphrody-engine session. The ergonomic entry point every surface (CLI / TUI / desktop) uses to start an autonomous agent. |  | default, rag |
-| `aphrody-agent-tools` | crates/aphrody-agent-tools | Concrete ToolExecutor implementations for the aphrody agent engine: a streaming sandboxed shell-exec tool and an apply_patch tool that wraps aphrody-patch. These are the real capabilities the engine's ToolRegistry exposes to the model. |  |  |
-| `aphrody-ai` | crates/aphrody-ai | Canonical Aphrody pure AI logic: models, inference, providers, RAG, agents, MCP client and sessions. |  |  |
-| `aphrody-antigravity` | crates/aphrody-antigravity | Native Rust SDK for Antigravity (Google AI Ultra / Gemini) — token extraction from Windows Credential Manager, OAuth refresh, typed HTTP client. |  | default, grpc, local-ls |
-| `aphrody-app-server` | crates/aphrody-app-server | Local Codex-shaped app server for Aphrody threads and turns. |  | default, rag |
-| `aphrody-chat` | crates/aphrody-chat | Unified turn-loop REPL that orchestrates the aphrody building blocks (gemini-runtime + tools + memory + session + permissions + hooks + prompts + router + cost + context + events) into a complete chat agent. Replaces the dependency on the packaged TypeScript gemini-cli. |  |  |
-| `aphrody-config` | crates/aphrody-config | Codex-compatible config.toml model for aphrody: ConfigToml, model providers (managed llama-server, Ollama, LM Studio, vLLM, Antigravity, OpenAI, Anthropic, ChatGPT), layered merge (built-ins < Codex-compat < user < project < profile < -c overrides < CLI flags), dotted -c override parsing, and the No-Human-In-The-Loop policy defaults. Pure, no filesystem access in the core, wasm32-safe. |  |  |
-| `aphrody-context` | crates/aphrody-context | LLM context-window manager — heuristic token counting, sliding-window trim with pinned-message preservation, summarization triggers, and JSON snapshot/restore. |  |  |
-| `aphrody-ecosystem` | crates/aphrody-ecosystem | Dependency-free ownership and local surface discovery for Aphrody AI, OS and infra. |  |  |
-| `aphrody-embed` | crates/aphrody-embed | Local, offline text embeddings for aphrody — fastembed (ONNX Runtime) text vectorisation with no external API. Feeds semantic memory/search. | `aphrody-embed` | candle, default, embeddings, native, server |
-| `aphrody-engine` | crates/aphrody-engine | The unified aphrody agent turn loop: drives a ModelClient stream, maps unified ModelStreamEvent into the SQ/EQ EventMsg protocol, runs tool calls via a ToolRegistry, re-injects tool results for multi-turn reasoning, and records the session to a rollout. The single engine shared by every surface (CLI / TUI / desktop / MCP). Inspired by OpenAI Codex (Apache-2.0). |  |  |
-| `aphrody-exec-events` | crates/aphrody-exec-events | Top-level JSONL thread and item events emitted by aphrody exec (--experimental-json) and EventTranslator for Codex TS SDK contract parity. |  |  |
-| `aphrody-ffi` | crates/aphrody-ffi | Native C-ABI surface for aphrody — load the full CLI in-process from Bun (bun:ffi) or any C host. |  | default, firefly, forensics, index, infer, jobs, koharu, magika, ocr, yara |
-| `aphrody-firefly` | crates/aphrody-firefly | Pure-Rust Adobe Firefly Services client for aphrody — IMS OAuth server-to-server token core, v3 async image generation (Image model), job polling and output download. Cross-platform (rustls), headless, in-policy. Backs the `aphrody firefly` CLI and the firefly_generate MCP tool, and is the auth core shared with the cloud Photoshop API. |  |  |
-| `aphrody-gateway` | crates/aphrody-gateway | Provider-agnostic OpenAI-compatible AI gateway: Cloudflare AI Gateway, Vercel AI Gateway, and BYOK OpenAI proxy. |  |  |
-| `aphrody-gemini-runtime` | crates/aphrody-gemini-runtime | Cross-platform Gemini CLI runtime adapter: detect, version, turn streaming. |  |  |
-| `aphrody-gemini-web` | crates/aphrody-gemini-web | Gemini web app (gemini.google.com) Boq RPC client — cookie auth, page-bootstrap token scrape, batchexecute envelope codec. Mirrors the notebooklm crate transport. | `aphrody-gemini-web` |  |
-| `aphrody-google` | crates/aphrody-google | Canonical Rust facade for Aphrody Google Cloud, Gemini, Web and Antigravity integrations. | `aphrody-google` |  |
-| `aphrody-http-error` | crates/aphrody-http-error | One JSON error envelope ({"error":{"code","message","data"}}) shared by Aphrody's own HTTP surfaces. |  |  |
-| `aphrody-infer` | crates/aphrody-infer | Local ONNX inference backend for aphrody: runtime discovery, execution-provider selection with CUDA/DirectML/CPU fallback, and session loading driven by the aphrody-models catalog. |  | default, onnx |
-| `aphrody-jev` | crates/aphrody-jev | Typed client for TypeSafe Jev System One decisions (Noul, Choice, Score) with SaaS, Cloudflare edge and local jeff routing and failover. | `aphrody-jev` | default, server |
-| `aphrody-llama-server` | crates/aphrody-llama-server | Managed local inference: a supervisor for llama.cpp's `llama-server`, driven as an external binary (never linked). Reads GGUF facts, probes what the installed build supports, plans the launch (context, KV precision, MoE/layer placement, LoRA), runs the server under a detached idle-timeout daemon that holds the GPU lease, and gives clients attach-or-spawn access to an OpenAI-compatible endpoint plus the tokenize / LoRA hot-swap / props side channels. | `aphrody-fake-llama-server`, `aphrody-llama-daemon` | test-support |
-| `aphrody-llm-infra` | crates/aphrody-llm-infra | LLM runtime infrastructure: cost tracking, rate limiting, retry primitives, two-tier caching. |  |  |
-| `aphrody-manga` | crates/aphrody-manga | Koharu-backed manga page analysis, translation, cleanup and PSD export for Aphrody. |  | default, koharu |
-| `aphrody-marketplace` | crates/aphrody-marketplace | Skill / MCP / hook / theme extension marketplace index — loaders (file, HTTP, embedded), semver queries, SHA-256 integrity verification. |  | default, github |
-| `aphrody-mcp` | crates/aphrody-mcp | aphrody-mcp — unified Rust MCP stdio server. Pure Rust, sub-millisecond cold-start. | `aphrody-mcp` | browser-stealth, dbfr, default, dragonball, jobs, koharu, native-browser, nie, ocr, rag, stt-local, toolbox, vision, winclean |
-| `aphrody-mcp-client` | crates/aphrody-mcp-client | Model Context Protocol (MCP) client for aphrody: stdio and streamable HTTP transports, ToolExecutor adapter for aphrody-toolcall, built-ins (update_plan, view_image, tool_search), and bxc native tools bridge (P3). |  |  |
-| `aphrody-mcp-oauth` | crates/aphrody-mcp-oauth | Native Rust OAuth 2.1 client for HTTP/SSE MCP servers (RFC 9728 + 8414 + 7591 + 7636). |  | default, rustls-no-provider |
-| `aphrody-mcp-smoke` | crates/aphrody-mcp-smoke | End-to-end smoke test runner for the unified aphrody-mcp stdio server: handshake + tools/list + tools/call sweep over all 17 tools, p50/p95 latency, NDJSON report. | `aphrody-mcp-smoke` |  |
-| `aphrody-memory` | crates/aphrody-memory | aphrody memory SDK — async MemoryBackend (JSONL/HNSW/SQLite/LanceDB) + MemoryProvider (Mem0/Honcho/SqliteLocal Tier-1). |  | default, lancedb |
-| `aphrody-messaging` | crates/aphrody-messaging | Tier-1 messaging connectors (Telegram, Slack, Resend Email API, and native SMTP). |  |  |
-| `aphrody-model-antigravity` | crates/aphrody-model-antigravity | Antigravity (Google AI Ultra / Cloud Code) ModelClient implementation for aphrody agent engine — keyless token re-read on 401, function calling, reasoning stream. |  |  |
-| `aphrody-model-client` | crates/aphrody-model-client | Provider abstraction for the aphrody agent engine: the async `ModelClient` trait, a unified `ModelStreamEvent` (text delta / tool call / reasoning / completed+usage), and a Gemini generateContent streaming client that maps Google's SSE wire onto the unified events. Lets the turn loop stay provider-agnostic (Gemini REST / gemini-web / agy). |  |  |
-| `aphrody-models` | crates/aphrody-models | Local model lifecycle for aphrody: pinned HuggingFace/URL references, a curated catalog of OCR / visual-transcription / speech-to-text / embedding models, a digest-checked resumable downloader, hand-rolled GGUF / GGML / safetensors / ONNX header inspection, and an LRU-evicting on-disk store under ~/.aphrody/models. |  |  |
-| `aphrody-notebooklm` | crates/aphrody-notebooklm | NotebookLM Boq RPC client — pure-HTTP, cookie/OAuth auth, batchexecute envelope codec, artifacts/sources/chat/research surface. |  |  |
-| `aphrody-ocr` | crates/aphrody-ocr | Image-to-text pipeline for aphrody: drives a local vision-language model over one image or a whole directory, parses its DocTags output into markdown, and reports which pages carry no text at all. |  | default, sqlite |
-| `aphrody-ocr-core` | crates/aphrody-ocr-core | Portable versioned OCR result contract, provenance and quality states for aphrody. |  | default, sqlite |
-| `aphrody-ocr-onnx` | crates/aphrody-ocr-onnx | PP-OCR ONNX recognition primitives for aphrody. |  |  |
-| `aphrody-ocr-vlm` | crates/aphrody-ocr-vlm | llama.cpp VLM backends for Aphrody OCR: one-shot and resident document transcription. |  |  |
-| `aphrody-patch` | crates/aphrody-patch | LLM-native file-edit patch format (*** Begin Patch / Add\|Update\|Delete File / @@ context) with a parser, Unicode-tolerant fuzzy line seeking, a streaming parser, and application over a pluggable filesystem trait. Inspired by OpenAI Codex apply-patch (Apache-2.0). |  |  |
-| `aphrody-project-doc` | crates/aphrody-project-doc | Codex-compatible AGENTS.md discovery: root->cwd walk with .git project-root detection, AGENTS.override.md precedence, a global (home-scoped) override, a total byte budget with UTF-8-boundary truncation, and honest reporting of every skipped file. Mirrors openai/codex codex-rs/core/src/agents_md.rs. |  |  |
-| `aphrody-prompts` | crates/aphrody-prompts | Prompt template engine: minijinja-backed registry, typed variable validation, reusable partials, and PII-scrubbing pipeline. |  |  |
-| `aphrody-providers` | crates/aphrody-providers | Single-source-of-truth `Provider` enum for the aphrody three-only LLM whitelist (anthropic, gemini, antigravity). |  |  |
-| `aphrody-rag` | crates/aphrody-rag | Unified RAG storage, embedding, vector scan, hybrid search, and agent tools for aphrody (P8). |  | default, ort |
-| `aphrody-rag-core` | crates/aphrody-rag-core | Pure, wasm32-safe core of the aphrody RAG layer: source-aware chunkers (Rust/JS-TS/Markdown/structural/prose), reciprocal-rank-fusion + MMR + vector helpers, and a bit-for-bit port of shenron's retrieval eval harness. |  | default, oxc |
-| `aphrody-rag-eval` | crates/aphrody-rag-eval | RAG evaluation harness benchmarked against shenron on dbfr (P9). | `aphrody-rag-eval` |  |
-| `aphrody-rollout` | crates/aphrody-rollout | Resilient agent-session recorder: appends timestamped JSONL items to ~/.aphrody/sessions/rollout-*.jsonl through an async actor (mpsc + background writer task with Flush/Persist/Shutdown), and resumes a prior session by replaying its JSONL. Inspired by OpenAI Codex rollout (Apache-2.0). |  |  |
-| `aphrody-router` | crates/aphrody-router | Provider-whitelisted LLM router (Anthropic + Gemini + Antigravity). |  |  |
-| `aphrody-session` | crates/aphrody-session | Conversation session tracker for aphrody — turns + tool calls + token usage + cost, persisted as JSONL with atomic writes and deterministic replay; incremental mirror of external agent sessions (Antigravity CLI, Codex, Claude Code). |  | default, memory |
-| `aphrody-skills` | crates/aphrody-skills | Unified skills infrastructure: SKILL.md runtime + lifecycle hooks + tool-level permissions. | `aphrody-skills` |  |
-| `aphrody-skills-forge` | crates/aphrody-skills-forge | Programmatic SKILL.md scaffolding + registry loader + lint engine for the aphrody skill catalog. |  |  |
-| `aphrody-summary` | crates/aphrody-summary | aphrody — the ultimate cross-platform CLI (Linux/Windows/WASM). | `aphrody-summary` |  |
-| `aphrody-supervisor` | crates/aphrody-supervisor | Multi-agent control plane for aphrody: spawns and tracks N named engine sessions, routes submissions to a chosen agent, fans-in every agent's event stream into one tagged channel, and drives lifecycle (list / interrupt / shutdown) plus per-agent autonomy policy. The orchestration layer above aphrody-engine. |  |  |
-| `aphrody-toolcall` | crates/aphrody-toolcall | Tool catalogue model for the aphrody agent engine: ToolDefinition (name / description / JSON-schema input & output), the async ToolExecutor trait, ToolExposure (Direct / Deferred / DirectModelOnly / Hidden), and a JsonSchema type with prompt-budget compaction passes. Inspired by OpenAI Codex tools (Apache-2.0). |  |  |
-| `aphrody-toolcall-repair` | crates/aphrody-toolcall-repair | Weak open-source model tool-calling robustness layer: a tolerant JSON repairer (markdown fences, trailing commas, single-quoted strings, unquoted keys, Python literals, truncation, double-encoding), inline tool-call extraction for Hermes / Qwen3-Coder XML / Mistral / bare-JSON dialects, a JSON-Schema-subset argument validator + coercer with corrective retry messages, apply_patch normalisation (unified diff / SEARCH-REPLACE / whole-file -> Codex patch), and per-model PromptProfile selection. |  |  |
-| `aphrody-tools` | crates/aphrody-tools | Tool descriptor registry (JSON Schema input/output) with cross-vendor exporters/importers for Anthropic tool-use, Gemini function declarations and MCP `tools/list` shapes. |  |  |
-| `aphrody-train` | crates/aphrody-train | Training surface for aphrody: exclusive GPU lease, job runner, streaming event protocol, and measured promotion gates (P10, docs/plans/codex-oss.md). |  |  |
-| `aphrody-translate` | crates/aphrody-translate | aphrody — translate code comments to French, scrub AI-isms and emoji, apply Aphrody prose style | `aphrody-translate` |  |
-| `aphrody-vision` | crates/aphrody-vision | Visual transcription over local GGUF vision models: caption, dense-region description, full-page OCR and VQA. |  | capture, default |
-| `aphrody-voice` | crates/aphrody-voice | Voice I/O (TTS + STT) provider traits + ElevenLabs/Whisper adapters + Discord shim. |  | local-whisper |
+> extraction error: cargo metadata failed:  | Caused by: |   No such file or directory (os error 2)
 
 ### Bun packages (4)
 
@@ -281,31 +211,9 @@ Totals: 15 repositories (10 aphrody, 1 shared, 4 experiments), 242 crates, 92 bi
 
 ## aphrody-ui
 
-### Crates (19)
+> extraction error: cargo metadata failed:  | Caused by: |   No such file or directory (os error 2)
 
-| Crate | Path | Description | Binaries | Features |
-| --- | --- | --- | --- | --- |
-| `aphrody-a2a-ui` | crates/aphrody-a2a-ui | A2A protocol UI: WASM channel viewer for ai.json + .coord JSONL mailbox. |  |  |
-| `aphrody-app` | crates/aphrody-app | Aphrody OS desktop (Tauri v2): the GUI and window manager; drives the aphrody agent over its app-server protocol. | `aphrody-app` | custom-protocol |
-| `aphrody-bun` | crates/aphrody-bun | High-performance native Rust plugin for Bun applications using bun:ffi. |  | gpu |
-| `aphrody-drive` | crates/aphrody-drive | Aphrody Drive, the Aphrody OS file explorer: Tauri v2 plugin that supervises the sd-daemon core and bridges it to the explorer webview. |  |  |
-| `aphrody-icons` | crates/aphrody-icons | Material Design Icons & Symbols (Web Fonts, CSS, JSON) as a workspace crate |  | default, serde, svg |
-| `aphrody-identity` | crates/aphrody-identity | Aphrody product identity: brand icons, favicon and webmanifest, the measured palette (design tokens, M3 seed), and the typed 2D pet runtime (RGBA atlas, timed animations, directions). | `design`, `export_assets`, `pixel` | default, fs |
-| `aphrody-logo` | crates/aphrody-logo | The canonical aphrody character icon (assets/aphrody.webp) embedded once, with Windows .ico, scalable .svg, and M3 maskable PNG derivations. |  |  |
-| `aphrody-m3` | crates/aphrody-m3 | Unified Material 3 facade for Aphrody OS: tokens, adaptive layout, themes, motion, typography and platform contracts. |  |  |
-| `aphrody-m3-reproduce` | crates/aphrody-m3-reproduce | Reproduce a site in Material 3: seed colors, fonts, shapes and a component tree from a screenshot or a crawl, emitted as an @aphrody/m3 app scaffold. | `aphrody-m3-reproduce` | capture, cli, crawl, default, image, network |
-| `aphrody-m3-tokens` | crates/aphrody-m3-tokens | Material Design 3 baseline design tokens: color roles, type scale, elevation, motion. |  | default, embedded-fonts, image, std |
-| `aphrody-model-view` | crates/aphrody-model-view | Frameless, transparent native 3D view of a glTF/GLB/OBJ model or Scene3d file on the desktop (Tauri + aphrody-tauri-3d); reloads live when the file changes. | `aphrody-model-view` |  |
-| `aphrody-render` | crates/aphrody-render | Unified Aphrody native renderer contract: M3 layout, 2D GPU backends and CPU fallback. | `aphrody-canvas` | all-gpu, cpu, default, dx12, gpu, metal, parallel, vulkan, webgl, webgpu |
-| `aphrody-render3d` | crates/aphrody-render3d | Native 3D for Aphrody agents: glTF/OBJ inspection, M3 scene modelling, GPU/CPU rendering to PNG, GLB export and live native views, as a kernel subsystem. | `aphrody-render3d-mcp` |  |
-| `aphrody-softraster` | crates/aphrody-softraster | Dependency-free deterministic CPU triangle rasterizer (z-buffer, perspective-correct nearest texturing, alpha cutout): the GPU-less fallback shared by aphrody-render3d and nie. |  |  |
-| `aphrody-sprite-sheet` | crates/aphrody-sprite-sheet | Sprite atlas to web sheet (CSS image/mask classes, standalone SVG symbols, JSON manifest); no_std + alloc, no input format. |  |  |
-| `aphrody-svg` | crates/aphrody-svg | The single SVG owner of the Aphrody ecosystem: parse, sanitize, optimize, normalize viewBox, M3 theming, sprite sheets, glyph outlines to SVG paths, rasterize to PNG/ICO and pixel diff. |  | default, glyph, m3, raster |
-| `aphrody-tauri-3d` | crates/aphrody-tauri-3d | Native 3D layer for Tauri v2: the aphrody-render wgpu scene presented under a transparent M3 webview (DirectComposition on Windows). |  |  |
-| `aphrody-tauri-m3` | crates/aphrody-tauri-m3 | Material Design 3 for native Tauri v2 apps: M3 sheets rendered in Rust, the OS accent colour as dynamic-colour seed, and the window surface kept in the scheme. |  |  |
-| `aphrody-tauri-mcp` | crates/aphrody-tauri-mcp | Native MCP adapter for Aphrody Tauri desktop webview inspection. | `aphrody-tauri-mcp` |  |
-
-### Bun packages (35)
+### Bun packages (39)
 
 | Package | Path | Description | Bin |
 | --- | --- | --- | --- |
@@ -339,96 +247,21 @@ Totals: 15 repositories (10 aphrody, 1 shared, 4 experiments), 242 crates, 92 bi
 | `@aphrody/spacebot-client` | drive/packages/spacebot-client | Typed HTTP/SSE client for the Spacebot agent runtime (OpenAPI schema, events), used by the Aphrody Drive AI features. From spacedriveapp/spacebot packages/api-client (ab2c160). |  |
 | `@aphrody/svg` | packages/svg | Thin bun:ffi binding of the aphrody-svg crate: sanitize, normalize viewBox, M3 theming, sprite sheets, optimize, render to PNG/RGBA/ICO, pixel diff and font glyph to SVG. |  |
 | `@material-symbols/metadata` | crates/aphrody-icons/metadata | Metadata for Material Symbols. |  |
+| `@nie/asset-source` | packages/asset-source | Le contrat d'acces aux ressources du jeu, et son implementation web. Monte par nie web (navigateur) ; l'hote Tauri d'Inacord a ete retire le 2026-09-26. |  |
+| `@nie/bridge` | packages/nie-bridge | Control bridge contract and client for the native Rust nie-mcp server and the Inacord page of nie web. |  |
 | `@sd/scripts` | drive/scripts |  |  |
 | `@spacedrive/tokens` | packages/aphrody-spaceui/packages/tokens | Design tokens for SpaceUI - Pure CSS for Tailwind v4 |  |
 | `aphrody-ui` | . | Aphrody UI: Material Design 3 packages, Material Web, SpaceUI, app-ui, Aphrody Drive and M3 examples (Bun workspace). |  |
 | `material-symbols` | crates/aphrody-icons/material-symbols | Latest variable icon fonts and CSS for Material Symbols. |  |
+| `nie-media` | packages/nie-media | Pure episode navigation and embed-player URLs for the nie hosts; no scraper, no I/O. |  |
+| `nie-web` | apps/nie-web | WebAssembly host for the nie engine, served by the nie-site crate. |  |
 | `spacedrive` | drive |  |  |
-
-## aphrody-web
-
-### Crates (22)
-
-| Crate | Path | Description | Binaries | Features |
-| --- | --- | --- | --- | --- |
-| `aphrody-browser` | crates/aphrody-browser | Obscura as the Aphrody OS browser subsystem: every engine tool on a dedicated V8 thread. | `aphrody-browser`, `aphrody-browser-mcp` | default, render, stealth |
-| `aphrody-site` | crates/aphrody-site | Aphrody OS Web origin, APIs, canvas, assets and MCP | `aphrody-site` |  |
-| `aphrody-web` | crates/aphrody-web | Canonical Aphrody pure Web & Browser surface: BXC engine, Obscura headless browser, CDP and scraping. |  |  |
-| `aphrody-web-bridge` | crates/aphrody-web-bridge | Bridge from aphrody to the bxc engine: runtime-loaded `bxc_rust_bridge` cdylib for byte-level work (HTML to Markdown, CSS selectors, DNS) and a driven `bxc` subprocess for browser, stealth and cache work. |  |  |
-| `aphrody-web-chromium` | crates/aphrody-web-chromium | Aphrody Web Chromium profile reader: cookie store parsing and decryption. |  |  |
-| `aphrody-web-engine` | crates/aphrody-web-engine | Aphrody Web browser engine binary: CDP server, MCP server, fetch and scrape on Obscura. | `aphrody-web`, `aphrody-web-worker` | default, render, stealth |
-| `aphrody-web-extract` | crates/aphrody-web-extract | Main-content extraction, structural chunking, SimHash near-duplicate detection and canonical URL resolution for Aphrody Web |  | profiling |
-| `aphrody-web-ffi` | crates/aphrody-web-ffi | Aphrody Web native bridge: the C ABI consumed by Bun (DOM, extraction, ranking, network). |  | default, native-stealth |
-| `aphrody-web-index` | crates/aphrody-web-index | HNSW approximate nearest-neighbour index with scalar int8 quantisation and mmap persistence |  |  |
-| `aphrody-web-render` | crates/aphrody-web-render | In-process JavaScript page rendering (V8 + html5ever) behind a non-blocking C ABI |  |  |
-| `aphrody-web-service` | crates/aphrody-web-service | Canonical web execution contract for Aphrody OS: OXC analysis, Bun tooling and Obscura V8 pages. |  | default, render, stealth |
-| `aphrody-x` | crates/aphrody-x | X / Twitter native GraphQL + REST client (cookie auth, no API key required) | `x-cli` |  |
-| `aphrody-x-algorithm` | crates/aphrody-x-algorithm | Native Rust adaptation of X (Twitter) For You feed ranking algorithm (pipeline + filters + weighted scorer + diversity) for Aphrody Web |  |  |
-| `obscura` | crates/aphrody-obscura/crates/obscura | Rust API for the Obscura headless browser |  | api, default, obscura-browser, obscura-net, render, stealth, tokio |
-| `obscura-browser` | crates/aphrody-obscura/crates/obscura-browser |  |  | default, render, stealth |
-| `obscura-cdp` | crates/aphrody-obscura/crates/obscura-cdp |  |  | default, render, stealth |
-| `obscura-cli` | crates/aphrody-obscura/crates/obscura-cli |  | `obscura`, `obscura-worker` | default, render, stealth |
-| `obscura-dom` | crates/aphrody-obscura/crates/obscura-dom |  |  |  |
-| `obscura-js` | crates/aphrody-obscura/crates/obscura-js |  |  | default, render, stealth |
-| `obscura-mcp` | crates/aphrody-obscura/crates/obscura-mcp |  |  | default, render, stealth |
-| `obscura-net` | crates/aphrody-obscura/crates/obscura-net |  |  | default, futures-util, stealth, wreq, wreq-util |
-| `obscura-render` | crates/aphrody-obscura/crates/obscura-render | Optional scoped render layer for Obscura: layout (taffy) and, with the paint feature, text and raster output for screenshots. | `paint_file` | default, paint |
-
-### Bun packages (6)
-
-| Package | Path | Description | Bin |
-| --- | --- | --- | --- |
-| `@aphrody/agent-browser` | packages/agent-browser | Fast browser automation CLI and SDK for AI agents in Bun, backed by native agent-browser & Obscura CDP. | `agent-browser` |
-| `@aphrody/bxc` | apps/bxc | Aphrody Web Browser: headless HTTP, browser, search, and extraction library integrated with Aphrody OS |  |
-| `@aphrody/bxc-test` | packages/bxc-test | Playwright-compatible browser/site test runner for Bun, backed by bxc's native in-process CDP layer. Zero-spawn, no Chromium bundling. |  |
-| `@aphrody/m3-tokens` | packages/m3-tokens | Material 3 design tokens (--md-sys-*) for the @aphrody/material-web fork: MUI-theme → M3 token CSS generation and runtime Material You dynamic colour via material-color-utilities. |  |
-| `@aphrody/x` | packages/x | Headless X (Twitter) client in pure TypeScript for Bun. Cookie-auth GraphQL + REST, no API key. Includes local For You algo (x-algorithm port), full stealth, store, and X function tools (XTools, x_* JSON Schema definitions) for Grok or any tool-calling model. |  |
-| `aphrody-web` | . | Aphrody Web: bxc web engine, X client, FUT suite, and bxc test runner (Bun workspace). |  |
-
-## iecode
-
-_Experiment converging into aphrody: reuse or port from it, do not grow it._
-
-### Crates (10)
-
-| Crate | Path | Description | Binaries | Features |
-| --- | --- | --- | --- | --- |
-| `iecode-cli` | apps/iecode-cli | Canonical IECODE command-line binding over the Rust and FFI library owners | `iecode` |  |
-| `iecode-core` | crates/core | Canonical IECODE capability facade |  |  |
-| `iecode-emu` | crates/emu | Canonical emulator backend registry and capability contracts for Inazuma Eleven |  |  |
-| `iecode-ffi` | crates/ffi | Stable C ABI for the IECODE core, consumed by Bun and .NET |  |  |
-| `iecode-geom` | crates/geom | Shared POD geometry types (Vec2/Vec3) and scalar math for the IECODE workspace. |  | default, serde, std |
-| `iecode-pipeline` | crates/pipeline | Canonical IECODE platform pipeline manifests and stage validation |  |  |
-| `iecode-re` | crates/re | Reverse-engineering primitives for PE/ELF/Mach-O triage, string extraction, and x86 disassembly. |  | default, integration |
-| `iecode-sql` | crates/sql | Shared read-only SQL boundary for NIE hosts |  |  |
-| `iecode-tasks` | crates/tasks | Cancelable, pausable asynchronous job orchestration with progress reporting. |  | default, host |
-| `iecode-video` | crates/video | Streaming RGBA-to-video encoding capability for IECODE. |  |  |
-
-### Bun packages (3)
-
-| Package | Path | Description | Bin |
-| --- | --- | --- | --- |
-| `iecode-core` | packages/iecode-core | Canonical Inazuma Eleven media catalogue, source URLs, navigation and player contracts. |  |
-| `iecode-ffi` | packages/iecode-ffi | Bun binding for the canonical IECODE native ABI. |  |
-| `iecode-workspace` | . | Unified IECODE workspace for native, Rust, Python and portable media libraries. |  |
-
-### uv packages (7)
-
-| Package | Path | Description | Scripts |
-| --- | --- | --- | --- |
-| `buscador-inazuma` | src/Buscador-Inazuma | Tk desktop search tool for Inazuma Eleven Nintendo DS ROM assets |  |
-| `iecode-python-workspace` | . | Shared UV workspace for the repository's Python tools |  |
-| `iestrikers-tools` | src/IEStrikers | Python tooling for the Inazuma Eleven Go Strikers 2013 decompilation |  |
-| `inazuma-eleven-go-mapenv` | src/InazumaElevenGoMapenv | Compiler and decompiler for Inazuma Eleven Go mapenv files |  |
-| `inz-cond` | src/inz_cond | Level-5 condition data encoder, decoder, and code generator |  |
-| `niepy` | src/niepy | Porte d'entrée Python vers le moteur et les données de nie (Inazuma Eleven: Victory Road) — VFS, décodeurs de formats, simulation de match, pont Ren'Py. |  |
-| `renpy` | src/iepy |  |  |
 
 ## nie
 
 _Experiment converging into aphrody: reuse or port from it, do not grow it._
 
-### Crates (46)
+### Crates (43)
 
 | Crate | Path | Description | Binaries | Features |
 | --- | --- | --- | --- | --- |
@@ -442,7 +275,6 @@ _Experiment converging into aphrody: reuse or port from it, do not grow it._
 | `nie-cli` | crates/tools/nie-cli | Binaire `nie` : pilote la boucle RE (seed, propagate, coverage) et la frontière redis | `nie` |  |
 | `nie-computer-use` | crates/tools/nie-computer-use | Native, bounded Computer Use probes for nie.exe and Ghidra. |  | default, host |
 | `nie-core` | crates/engine/nie-core | Logique de jeu reversée en Rust pur (ballon, IA tactique, états de match, calcul gardien, stats joueur) |  | data, default, serde |
-| `nie-data` | crates/engine/nie-data | Modèles de données de jeu IEVR portés en Rust pur (skills, auras, chara_param, items, growth/exp tables, passifs) depuis le pipeline inagle — no_std+alloc, wasm-friendly | `export_formations`, `export_passives`, `export_skills` | default, serde, std |
 | `nie-dump` | crates/forge/nie-dump | Minidump reader for nie.exe: re-exports aphrody_re::minidump and adds the game image base |  |  |
 | `nie-editor` | crates/tools/nie-editor | Native NIE 3D editor with a shared DirectX 12, Vulkan, or OpenGL viewport | `nie-editor` | default, host |
 | `nie-explore` | crates/engine/nie-explore | Moteur partagé d'aperçu/description des entrées VFS (CPK) par format — utilisé par `nie vfs cat` (nie-cli) et l'app desktop `nie-explorer` (Tauri) |  | default, host |
@@ -469,29 +301,20 @@ _Experiment converging into aphrody: reuse or port from it, do not grow it._
 | `nie-runtime` | crates/engine/nie-runtime | Moteur de jeu nie : boucle intégrée monde + physique + rendu top-down → frames/MP4 (headless, déterministe) | `nie-match3d`, `nie-runtime` |  |
 | `nie-save` | crates/engine/nie-save | Déchiffrement, lecture et édition des saves IEVR (Lives format CRC32-keyed XOR) |  | default, real-saves, serde |
 | `nie-seed` | crates/forge/nie-seed | Import du savoir fusionné (index Ghidra nie-index.json, RTTI, formats iecode, hash→nom inagle) comme ancres de la boucle RE nie |  | default, host |
-| `nie-site` | crates/tools/nie-site | nie — serveur HTTP 100 % Rust (Axum 0.8) : bundle nie-web, /api/v1, espaces VFS /f et /b, proxy nie-model-serve | `nie-site` |  |
 | `nie-steam` | crates/tools/nie-steam | Acquisition Steam native (download/dump des depots IEVR) en Rust pur, sur steamroom — port du Steam/ C# d'iecode (remplace SteamKit2) | `nie-steam` | default, host |
 | `nie-trace` | crates/forge/nie-trace | RE en direct (runtime) : lecture de la mémoire live d'un nie.exe — process_vm_readv(2) si Wine/Linux, ReadProcessMemory si Windows natif. Résolution de module, hex dump, dump de plages, scan. Binaire nie-mem cross-compilable depuis WSL. | `nie-edit`, `nie-mem` | default, host |
-| `nie-ui` | crates/engine/nie-ui | Source unique, typée, des jetons de design du jeu (couleurs OKLCH, géométrie, mouvement) — génère le CSS de packages/inacord-ui/src/shell/game-tokens.css et relie nie_formats::sprite_sheet (icônes) aux jetons pour le Rust qui compose des images | `game_screens_css` |  |
 | `nie-viewer-web` | crates/engine/nie-viewer-web | Le viewer 3D du dépôt, compilé seul pour le navigateur avec le backend WebGL 2 — chargé à la demande quand WebGPU manque |  |  |
 | `nie-viola` | crates/engine/nie-viola | Opérations de modding LEVEL-5 (dump, pack, merge, crypto Criware) en Rust — périmètre de l'outil Viola, ordonnancement et empreinte mémoire revus |  |  |
 | `nie-wasm` | crates/engine/nie-wasm | Bindings WebAssembly pour le savoir nie vérifié : nie-formats (detect/CRILAYLA/@UTF/G4*), nie-core (stats growth + FSM de match) et nie-data (lookup skill/aura/item) exposés au navigateur via wasm-bindgen |  | default, webgpu |
 | `nie-wiki` | crates/tools/nie-wiki | Explore IEVR game data from the SQLite mirror |  |  |
 | `nie-zukan` | crates/tools/nie-zukan | Level-5 Inagle encyclopedia ingestion, parsing, and matching | `nie-zukan` | default, host |
 
-### Bun packages (9)
+### Bun packages (2)
 
 | Package | Path | Description | Bin |
 | --- | --- | --- | --- |
-| `@aphrody/nie` | packages/nie | Bindings FFI de iecode (Rust) — la bibliothèque native unifiée du dépôt |  |
 | `@aphrody/yolo` | .agents/skills/yolo | Universal Autonomous Multi-Agent Execution Engine & Agent Layer (2026 Edition) |  |
-| `@nie/asset-source` | packages/asset-source | Le contrat d'acces aux ressources du jeu, et son implementation web. Monte par nie web (navigateur) ; l'hote Tauri d'Inacord a ete retire le 2026-09-26. |  |
-| `@nie/bridge` | packages/nie-bridge | Control bridge contract and client for the native Rust nie-mcp server and the Inacord page of nie web. |  |
-| `@nie/game` | packages/nie-game | Logique de jeu pure d'Inazuma Eleven: Victory Road (formations, codes d'equipe, regles, texte) — sans marque, sans I/O. |  |
-| `@nie/plugin` | packages/nie-plugin | Repository Bun preloads: game-format loaders over @aphrody/nie and the happy-dom test globals. |  |
-| `nie-media` | packages/nie-media | Pure episode navigation and embed-player URLs for the nie hosts; no scraper, no I/O. |  |
-| `nie-monorepo` | . | Bun workspace for nie libraries and applications; the `nie` name is reserved for the FFI package. |  |
-| `nie-web` | apps/nie-web | WebAssembly host for the nie engine, served by the nie-site crate. |  |
+| `nie-monorepo` | . | NIE game reconstruction source during transfer to IECODE and Aphrody. |  |
 
 ### uv packages (2)
 
@@ -499,119 +322,3 @@ _Experiment converging into aphrody: reuse or port from it, do not grow it._
 | --- | --- | --- | --- |
 | `nie-tools` | . | Outillage Python RE (nie.exe : désassemblage/PE/émulation) + décodeurs G4 (décodeurs G4 : plugins/nie-blender) |  |
 | `niepy` | python | Porte d'entrée Python vers le moteur et les données de nie (Inazuma Eleven: Victory Road) — VFS, décodeurs de formats, simulation de match, pont Ren'Py. |  |
-
-## rg
-
-_Experiment converging into aphrody: reuse or port from it, do not grow it._
-
-### Bun packages (32)
-
-| Package | Path | Description | Bin |
-| --- | --- | --- | --- |
-| `@rose-griffon/monorepo` | . | Rose Griffon monorepo — site communautaire (azalee wiki IEVR + website rosegriffon + bot Discord). Stack Next 16.2 / React 19.2 / Bun 1.3 / Supabase / Turborepo. |  |
-| `@rosegriffon/achillea-bot` | apps/achillea-bot | Achillea Backend — Bot Discord + API REST + WebSocket pour la plateforme Achillea (Bun + Ts.ED + PostgreSQL/Kysely) |  |
-| `@rosegriffon/achillea-client` | packages/achillea-client | Versioned HTTP client and runtime contracts for the Achillea guild API |  |
-| `@rosegriffon/achillea-contract` | packages/achillea-contract | Contrat Achilléa exporté en JSON Schema et en types natifs (Rust, Swift, Kotlin) — la brique qui rend le domaine portable hors TypeScript |  |
-| `@rosegriffon/achillea-core` | packages/achillea-core | Logique métier portable (multi-runtime : navigateur, edge Deno/Web, Node, Bun) — Elo, classement, sanctions, licences, votes, validation. Aucune dépendance Discord / ORM / DI. |  |
-| `@rosegriffon/achillea-types` | packages/achillea-types | Contrats d'API partagés (DTO + enums) — source unique pour le bot et le web |  |
-| `@rosegriffon/api` | apps/api | API unique et unifiée Rose Griffon (ElysiaJS + Kysely + Bun) |  |
-| `@rosegriffon/app-shell` | packages/app-shell | Chrome applicatif partagé de website (navigation, barre latérale, barre supérieure, pied de page) |  |
-| `@rosegriffon/assets` | packages/assets | Shared static assets for Rose Griffon apps |  |
-| `@rosegriffon/auth` | packages/auth | Shared authentication logic and guards for Rose Griffon apps |  |
-| `@rosegriffon/azalee` | packages/azalee | Bibliothèque Bun du wiki Azalée (Inazuma Eleven: Victory Road) — accès PostgreSQL, index CPK, recherche et CLI. | `azalee` |
-| `@rosegriffon/bot` | apps/bot | Bot Discord Rose Griffon — slash commands public + admin, sync members, canvas cards |  |
-| `@rosegriffon/config` | packages/config | Configs partagées : tsconfig, eslint, oxlint, tailwind preset |  |
-| `@rosegriffon/cron` | packages/cron | Daemon de tâches planifiées (cron) pour la maintenance DB, CDN et API |  |
-| `@rosegriffon/db` | packages/db | Accès PostgreSQL partagé, façades SQL et types Database générés (site + bot) |  |
-| `@rosegriffon/discord-sync` | packages/discord-sync |  |  |
-| `@rosegriffon/i18n` | packages/i18n | Noyau i18n pur Rose Griffon : locales BCP-47, négociation, replis et formatage Intl |  |
-| `@rosegriffon/identity` | packages/identity | Compte unique Rose Griffon : identité native et connexions liées (Discord, Patreon, Twitch, Google, Steam, Achilléa) |  |
-| `@rosegriffon/inagle` | packages/inagle | Universal Game Data API for Inazuma Eleven: Victory Road — parsers, types, and tools for IEVR game data | `inagle` |
-| `@rosegriffon/inagle-cross` | packages/inagle-cross | API de données et de rétro-conception pour Inazuma Eleven Cross — types, schémas, et analyseurs d'assets |  |
-| `@rosegriffon/patreon-bun` | packages/patreon-bun | Bun-only TypeScript library for the V2 Patreon API. Fork of patreon-api.ts (ghostrider-05) for Rose Griffon. |  |
-| `@rosegriffon/patreon-bun-discord-bot` | packages/patreon-bun/apps/discord-bot |  |  |
-| `@rosegriffon/patreon-bun-docs` | packages/patreon-bun/docs | The documentation site for the @rosegriffon/patreon-bun |  |
-| `@rosegriffon/patreon-bun-worker-docs` | packages/patreon-bun/apps/worker-docs |  |  |
-| `@rosegriffon/preferences` | packages/preferences | Pure cross-runtime resolution of Rose Griffon presentation preferences |  |
-| `@rosegriffon/search` | packages/search | Recherche unifiée sur les trois domaines du réseau : association, wiki Azalée, e-sport Achilléa |  |
-| `@rosegriffon/types` | packages/types | Types métier partagés (roles, user, discord) — source unique de vérité bot/azalee/website |  |
-| `@rosegriffon/ui` | packages/ui | Composants shadcn/ui partagés (new-york style, Tailwind v4) |  |
-| `@rosegriffon/website` | apps/website |  |  |
-| `cdn` | apps/cdn |  |  |
-| `realtime` | apps/realtime |  |  |
-| `storage` | apps/storage |  |  |
-
-## shenron
-
-_Experiment converging into aphrody: reuse or port from it, do not grow it._
-
-### Bun packages (10)
-
-| Package | Path | Description | Bin |
-| --- | --- | --- | --- |
-| `@shenron/api` | packages/api |  |  |
-| `@shenron/auth` | packages/auth | Briques Better Auth partagées (site Next, bot Bun, API) : secret, origines, cookies, fournisseur Discord, handler Request/Response |  |
-| `@shenron/bot` | apps/bot |  |  |
-| `@shenron/config` | packages/config |  |  |
-| `@shenron/db` | packages/db | PostgreSQL partagé Shenron : schéma Drizzle, pool postgres-js (Next) et driver Bun.SQL (scripts, API), indépendant du framework |  |
-| `@shenron/images` | packages/images | Image hashing, deduplication, variant selection and sourced illustration picking for Shenron (Bun + sharp) |  |
-| `@shenron/pipeline` | packages/pipeline | Shenron compute clients and Dragon Ball data pipeline: AI, Aphrody services, BXC and OCR/RAG workflows | `pipeline` |
-| `@shenron/site` | apps/site |  |  |
-| `@shenron/ui` | packages/ui |  |  |
-| `shenron-monorepo` | . |  |  |
-
-## aphrody-discord
-
-_Shared integration repository: applications retain domain logic and data._
-
-Shared Discord transport, protocol contracts and framework adapters for Aphrody applications
-
-### Bun packages (45)
-
-| Package | Path | Description | Bin |
-| --- | --- | --- | --- |
-| `@aphrody/carbon-example` | apps/carbon-example |  |  |
-| `@aphrody/messaging` | packages/aphrody-messaging | Aphrody messaging channel contracts and Discord REST adapter. |  |
-| `@discordjs/actions` | packages/actions | A set of actions that we use for our workflows |  |
-| `@discordjs/api-extractor` | packages/api-extractor | Analyze the exported API for a TypeScript library and generate reviews, documentation, and .d.ts rollups | `api-extractor` |
-| `@discordjs/api-extractor-model` | packages/api-extractor-model | A helper library for loading and saving the .api.json files created by API Extractor |  |
-| `@discordjs/api-extractor-utils` | packages/api-extractor-utils | Utilities for api-extractor |  |
-| `@discordjs/brokers` | packages/brokers | Powerful set of message brokers |  |
-| `@discordjs/builders` | packages/builders | A set of builders that you can use when creating your bot |  |
-| `@discordjs/collection` | packages/collection | Utility data structure used in discord.js |  |
-| `@discordjs/core` | packages/core | A thinly abstracted wrapper around the rest API, and gateway. |  |
-| `@discordjs/docgen` | packages/docgen | The docs.json generator for discord.js and its related projects | `docgen` |
-| `@discordjs/formatters` | packages/formatters | A set of functions to format strings for Discord. |  |
-| `@discordjs/guide` | apps/guide | Imagine a bot... the most popular way to build discord bots |  |
-| `@discordjs/next` | packages/next | A powerful TypeScript library for interacting with the Discord API |  |
-| `@discordjs/proxy` | packages/proxy | Tools for running an HTTP proxy for Discord's API |  |
-| `@discordjs/proxy-container` | apps/proxy-container | Lightweight HTTP proxy for Discord's API, brought to you as a container 📦 |  |
-| `@discordjs/rest` | packages/rest | The REST API for discord.js |  |
-| `@discordjs/rpc` | packages/rpc | A simple RPC client for Discord |  |
-| `@discordjs/scripts` | packages/scripts | A set of scripts that we use for our workflows | `generate-split-documentation`, `sort-labels` |
-| `@discordjs/structures` | packages/structures | Wrapper around Discord's structures |  |
-| `@discordjs/template-bun-javascript` | packages/create-discord-bot/template/Bun/JavaScript |  |  |
-| `@discordjs/template-bun-typescript` | packages/create-discord-bot/template/Bun/TypeScript |  |  |
-| `@discordjs/template-javascript` | packages/create-discord-bot/template/JavaScript |  |  |
-| `@discordjs/template-typescript` | packages/create-discord-bot/template/TypeScript |  |  |
-| `@discordjs/ui` | packages/ui |  |  |
-| `@discordjs/util` | packages/util | Utilities shared across Discord.js packages |  |
-| `@discordjs/voice` | packages/voice | Implementation of the Discord Voice API for Node.js |  |
-| `@discordjs/website` | apps/website | Imagine a bot... the most popular way to build discord bots |  |
-| `@discordjs/ws` | packages/ws | Wrapper around Discord's gateway |  |
-| `@discordx/di` | packages/di | dependency injection service with TSyringe support |  |
-| `@discordx/importer` | packages/importer | A solution to import files on the module and commonjs at the same time |  |
-| `@discordx/internal` | packages/internal | Internal methods for discordx |  |
-| `@discordx/lava-player` | packages/lava-player | Powerful Lavalink player library written in TypeScript for Node.js |  |
-| `@discordx/lava-queue` | packages/lava-queue | Queue system for @discordx/lava-player |  |
-| `@discordx/music` | packages/music | Powerful Discord music player library using YTDL |  |
-| `@discordx/pagination` | packages/pagination | Library for creating pagination messages in Discord bots |  |
-| `@discordx/plugin-lava-player` | packages/plugin-lava-player | Fully-featured Discord music player leveraging the power of Lavalink |  |
-| `@discordx/plugin-ytdl-player` | packages/plugin-ytdl-player | Fully-featured Discord music player utilizing YTDL |  |
-| `@discordx/utilities` | packages/utilities | Utilities package for enhancing discordx functionality |  |
-| `aphrody-discord` | . | Shared Bun Discord transport, contracts, and framework adapters for Aphrody applications. |  |
-| `create-discord-bot` | packages/create-discord-bot | A simple way to create a startup Discord bot. | `create-discord-bot` |
-| `create-discordx` | packages/create-discordx | create discordx apps with one command | `create-discordx` |
-| `discord.js` | packages/discord.js | A powerful library for interacting with the Discord API |  |
-| `discordx` | packages/discordx | Create a discord bot with TypeScript and Decorators! |  |
-| `docusaurus` | docs | discordx documentation |  |

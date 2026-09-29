@@ -5,7 +5,9 @@
 
 use std::path::PathBuf;
 
-use aphrody_train::{TrainKind, TrainingJob, acquire_training_lease, run_training_job};
+use aphrody_train::{
+    TrainKind, TrainingJob, acquire_training_lease, find_python_train_project, run_training_job,
+};
 use clap::{Args, Subcommand, ValueEnum};
 use miette::{IntoDiagnostic, Result};
 
@@ -106,12 +108,15 @@ pub(crate) async fn run(args: TrainArgs) -> Result<()> {
             let gpu_lock = locks_dir.join("gpu.lock");
             let is_locked = gpu_lock.exists();
             let repo_root = std::env::current_dir().into_diagnostic()?;
-            let py_train_exists = repo_root.join("py/aphrody-train").exists();
+            let py_root = find_python_train_project(&repo_root);
+            let py_train_exists =
+                py_root.join("packages/ai/py/aphrody-train/pyproject.toml").is_file();
 
             let status = serde_json::json!({
                 "gpu_lock_active": is_locked,
                 "locks_dir": locks_dir.display().to_string(),
                 "python_train_project": py_train_exists,
+                "python_workspace": py_root.display().to_string(),
                 "state_dir": state_dir.display().to_string(),
             });
             println!("{}", serde_json::to_string_pretty(&status).into_diagnostic()?);

@@ -56,11 +56,32 @@ pub struct JobOutcome {
     pub duration_secs: f64,
 }
 
-/// Locate the `py/aphrody-train` directory relative to the repository root.
+/// Locate the shared `aphrody-py` workspace from the checkout or its sibling.
 #[must_use]
 pub fn find_python_train_project(repo_root: &Path) -> PathBuf {
-    let candidate = repo_root.join("py").join("aphrody-train");
-    if candidate.is_dir() { candidate } else { repo_root.to_path_buf() }
+    if let Some(configured) = std::env::var_os("APHRODY_PY_ROOT") {
+        return PathBuf::from(configured);
+    }
+
+    let is_workspace = |root: &Path| {
+        root.join("uv.lock").is_file()
+            && root.join("packages/ai/py/aphrody-train/pyproject.toml").is_file()
+    };
+    if is_workspace(repo_root) {
+        return repo_root.to_path_buf();
+    }
+    for ancestor in repo_root.ancestors() {
+        if let Some(parent) = ancestor.parent() {
+            let sibling = parent.join("aphrody-py");
+            if is_workspace(&sibling) {
+                return sibling;
+            }
+        }
+    }
+
+    // Keep old checkouts usable while they are being cut over to aphrody-py.
+    let legacy = repo_root.join("py/aphrody-train");
+    if legacy.join("pyproject.toml").is_file() { legacy } else { repo_root.join("../aphrody-py") }
 }
 
 /// Execute a training job under an exclusive GPU lease.
@@ -117,7 +138,7 @@ pub async fn run_training_job(
     // 4. Build command
     let py_project = find_python_train_project(repo_root);
     let mut cmd = Command::new(aphrody_toolchains::Toolchain::Uv.executable());
-    cmd.args(["run", "--project"]).arg(&py_project);
+    cmd.args(["run", "--project"]).arg(&py_project).args(["--package", "aphrody-train"]);
     if matches!(
         job.kind,
         crate::job::TrainKind::Embed | crate::job::TrainKind::Rerank | crate::job::TrainKind::Lora
@@ -167,7 +188,7 @@ pub async fn run_training_job(
     }
 
     // Inject python path so in-tree packages resolve
-    let python_path = py_project.join("src");
+    let python_path = py_project.join("packages/ai/py/aphrody-train/src");
     cmd.env("PYTHONPATH", python_path);
     cmd.stdout(std::process::Stdio::piped());
     cmd.stderr(std::process::Stdio::null());

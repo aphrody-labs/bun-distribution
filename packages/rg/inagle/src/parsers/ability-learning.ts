@@ -1,4 +1,4 @@
-import { ConfigNode } from "../core/config-parser.js";
+import type { ConfigNode } from "../core/config-parser.js";
 import { findConfigFile, loadConfig, toHex } from "../core/data-loader.js";
 import { DATA_ROOT } from "../core/paths.js";
 

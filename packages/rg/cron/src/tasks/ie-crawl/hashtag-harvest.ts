@@ -27,7 +27,7 @@
 // Usage :
 //   bun packages/cron/src/tasks/ie-crawl/hashtag-harvest.ts [--campagne <slug>] [--limite N] [--dry]
 
-import { XClient, XSession, type Tweet } from "@aphrody-code/x";
+import { XClient, XSession, type Tweet } from "@aphrody/x";
 import { createBunSql } from "@rosegriffon/db/bun-sql";
 import type { SQL } from "bun";
 import {
@@ -39,7 +39,7 @@ import {
 } from "./tweet-row";
 import { fermerStockage, rehebergerMediasTweet } from "./tweet-media-storage";
 import { apparierHashtag, requetesVariantes, variantesRecherche } from "./hashtag-variantes";
-import { loadBxcXCookieHeader } from "./x-accounts";
+import { loadXCookieHeader } from "./x-accounts";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Réglages
@@ -307,7 +307,7 @@ export async function crawlHashtagCampaigns(options: OptionsRecolte = {}): Promi
 		// UN SEUL client pour tout le run : il accumule l'état de rate-limit, ce qui
 		// permet au backoff interne d'attendre la bonne fenêtre. Deux clients, ce
 		// sont deux boucles à l'aveugle qui prennent chacune leur 429.
-		const cookie = loadBxcXCookieHeader();
+		const cookie = loadXCookieHeader();
 		const session = cookie ? XSession.fromCookieString(cookie) : XSession.loadOrEnv();
 		const client = new XClient(session);
 

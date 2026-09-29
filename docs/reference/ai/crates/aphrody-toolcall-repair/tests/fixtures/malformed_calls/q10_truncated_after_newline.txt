@@ -1,0 +1,3 @@
+I will inspect the file now.
+<tool_call>
+  <function=read_file><parameter=path>src/main.rs</parameter>

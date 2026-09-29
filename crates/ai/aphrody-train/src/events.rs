@@ -160,10 +160,9 @@ mod tests {
 
     #[test]
     fn done_event_keeps_its_own_job_id() {
-        let done = TrainEvent::parse_line(
-            r#"{"type":"done","job_id":"other-job","duration_secs":0.1}"#,
-        )
-        .unwrap();
+        let done =
+            TrainEvent::parse_line(r#"{"type":"done","job_id":"other-job","duration_secs":0.1}"#)
+                .unwrap();
         assert_eq!(done.job_id(), "other-job");
     }
 }

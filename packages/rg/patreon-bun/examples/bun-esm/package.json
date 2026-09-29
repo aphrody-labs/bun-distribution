@@ -1,17 +1,21 @@
 {
-	"name": "@rosegriffon/patreon-bun-bun-esm",
-	"version": "1.0.0",
-	"private": true,
-	"description": "",
-	"keywords": [],
-	"license": "MIT",
-	"author": "ghostrider-05",
-	"type": "module",
-	"main": "./index.js",
-	"scripts": {
-		"start": "bun index.js"
-	},
-	"devDependencies": {
-		"@rosegriffon/patreon-bun": "workspace:*"
-	}
+  "name": "@rosegriffon/patreon-bun-bun-esm",
+  "version": "1.0.0",
+  "private": true,
+  "description": "",
+  "keywords": [],
+  "license": "MIT",
+  "author": "ghostrider-05",
+  "type": "module",
+  "main": "./index.js",
+  "scripts": {
+    "start": "bun index.js",
+    "typecheck": "tsgo -p tsconfig.json --noEmit"
+  },
+  "devDependencies": {
+    "@rosegriffon/patreon-bun": "workspace:*"
+  },
+  "engines": {
+    "bun": ">=1.4.2"
+  }
 }

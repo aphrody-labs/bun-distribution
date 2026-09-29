@@ -11,16 +11,16 @@
 // langue (JA/EN/FR/ES). On filtre le bruit (RT purs, trop court), on dédoublonne
 // par id et on upsert dans la table `tweets` (idempotent par id).
 //
-// Requêtes validées via bxc x search (2026-06, compte yoyo) — voir x-accounts.ts.
+// Requêtes validées via Aphrody X search (2026-06, compte yoyo) — voir x-accounts.ts.
 // Lecture/recherche seule : on ne publie RIEN.
 
-import { XClient, XSession, type Tweet } from "@aphrody-code/x";
+import { XClient, XSession, type Tweet } from "@aphrody/x";
 import { createPostgresClient } from "@rosegriffon/db/service";
 // Conversion tweet → ligne de `public.tweets` : mutualisée dans `tweet-row.ts`
 // (le code y est repris à l'identique) pour que la récolte de campagnes à hashtag
 // produise exactement le même jsonb `media` que cette veille-ci.
 import { tweetToRow } from "./tweet-row";
-import { loadBxcXCookieHeader } from "./x-accounts";
+import { loadXCookieHeader } from "./x-accounts";
 
 // Requêtes "Latest" couvrant officiel + news + communauté, multi-langue.
 // Centrées Inazuma Eleven: Victory Road (英雄たちのヴィクトリーロード) + série.
@@ -116,9 +116,9 @@ export async function crawlTwitterSearch(
 	console.log(`[X Search] Harvest sur ${queries.length} requêtes (${perQuery}/req)...`);
 
 	let session: XSession;
-	const bxcCookie = loadBxcXCookieHeader();
-	if (bxcCookie) {
-		session = XSession.fromCookieString(bxcCookie);
+	const xCookie = loadXCookieHeader();
+	if (xCookie) {
+		session = XSession.fromCookieString(xCookie);
 	} else {
 		session = XSession.loadOrEnv();
 	}

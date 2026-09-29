@@ -4,36 +4,34 @@
 
 Every MCP tool registered in source, grouped by server: rmcp `#[tool]` routers, kernel subsystem
 `ToolDefinition`s, JSON tool catalogs, and Bun `registerTool` servers. Descriptions are clipped; the
-full text is in [ecosystem.json](./ecosystem.json). The kernel re-exports its subsystems' tools through
+full text is in [ecosystem.json](ecosystem.json). The kernel re-exports its subsystems' tools through
 `aphrody-kernel`, so one tool name can appear under several servers.
 
-Totals: 22 servers, 583 tool registrations, 549 unique tool names.
+Totals: 16 servers, 401 tool registrations, 383 unique tool names.
 
-## aphrody-ai — aphrody-agent-tools
+## aphrody-ai — aphrody-ai
 
-Kind: kernel-subsystem. 8 tools.
+Kind: kernel-subsystem. 15 tools.
 
 | Tool | Description |
 | --- | --- |
 | `apply_patch` | Apply a patch document to the filesystem. Use this to create, delete, rename, and edit files. The patch is framed by `*** Begin Patch` / `*** End Patch` and uses `*** Add/Delete/Update File:` directi… |
 | `google_ai` | Query Google AI models keylessly via native session and retrieve generated text. |
 | `js_eval` | Execute JavaScript code in the native bxc V8 / Bun VM runtime and return output. |
+| `rag_context` | Assemble a prompt-ready <retrieved_context> block bounded by token budget for direct model ingestion. |
+| `rag_search` | Search indexed codebase files and documentation using hybrid retrieval (FTS5 BM25 + dense vector scan + RRF fusion). |
 | `read_file` | Read a bounded local UTF-8 file for repository inspection, RAG preparation, or data mining. |
 | `search_text` | Search local repository text with ripgrep and return bounded line-numbered matches for data mining. |
 | `shell` | Run a command and capture its combined stdout/stderr output and exit code. The command is given as an argv vector and executed directly (no shell interpretation). Long output is truncated. |
+| `tool_search` | Search for available tools and their schemas by keyword when the initial toolset does not cover a specific action. |
+| `update_plan` | Update or record the agent's multi-step execution plan and current progress. |
+| `view_image` | Load a local image file and inspect it visually (for vision-capable models). |
+| `web_ingest` | Retrieve a web page through Aphrody OS and index it into the local RAG store so later rag_search/rag_context calls can retrieve it. |
 | `web_scrape` | Scrape and convert any public web page directly into clean Markdown using the native bxc engine. |
 | `web_search` | Search the live web and return curated, markdown-formatted results. |
-
-## aphrody-ai — aphrody-gemini-runtime
-
-Kind: json-catalog. 2 tools.
-
-| Tool | Description |
-| --- | --- |
-| `read_file` | Read a file from disk |
 | `write_file` | Write content to a file |
 
-## aphrody-ai — aphrody-mcp (GoogleMcpServer)
+## aphrody-ai — aphrody-ai (GoogleMcpServer)
 
 Kind: rmcp. 120 tools.
 
@@ -159,26 +157,6 @@ Kind: rmcp. 120 tools.
 | `universal_web_fetch` | Fetch any webpage from the internet and convert it to clean Markdown. Fetched directly by aphrody and converted in-process (no third-party reader). Highly recommended for reading online developer doc… |
 | `voice_synthesize` | Synthesise speech from text via the aphrody-voice ElevenLabs adapter. Returns { audio_base64, mime_type, duration_ms, bytes, voice }. Requires ELEVENLABS_API_KEY in env. |
 | `voice_transcribe` | Transcribe base64-encoded audio via aphrody-voice-stt. Prefers offline whisper.cpp (set APHRODY_WHISPER_MODEL to a GGML model path); falls back to the OpenAI Whisper REST API (OPENAI_API_KEY) — so th… |
-
-## aphrody-ai — aphrody-mcp-client
-
-Kind: kernel-subsystem. 3 tools.
-
-| Tool | Description |
-| --- | --- |
-| `tool_search` | Search for available tools and their schemas by keyword when the initial toolset does not cover a specific action. |
-| `update_plan` | Update or record the agent's multi-step execution plan and current progress. |
-| `view_image` | Load a local image file and inspect it visually (for vision-capable models). |
-
-## aphrody-ai — aphrody-rag
-
-Kind: kernel-subsystem. 3 tools.
-
-| Tool | Description |
-| --- | --- |
-| `rag_context` | Assemble a prompt-ready <retrieved_context> block bounded by token budget for direct model ingestion. |
-| `rag_search` | Search indexed codebase files and documentation using hybrid retrieval (FTS5 BM25 + dense vector scan + RRF fusion). |
-| `web_ingest` | Retrieve a web page through Aphrody OS and index it into the local RAG store so later rag_search/rag_context calls can retrieve it. |
 
 ## aphrody-compat — aphrody-bun-docs subsystem `bun_docs`
 
@@ -445,57 +423,7 @@ Kind: kernel-subsystem. 3 tools.
 | `nu_eval` | Evaluate Nushell code and return its value as JSON (tables are arrays of records). Pass data through `vars` (read as $env.<name>) instead of splicing it into code. External command output is captured… |
 | `nu_help` | Full help of one Nushell command: signature, flags, examples. |
 
-## aphrody-ui — aphrody-app subsystem `tauri`
-
-Kind: kernel-subsystem. 15 tools.
-
-| Tool | Description |
-| --- | --- |
-| `tauri_dom_snapshot` | Inspect DOM text and accessible element metadata in a local Aphrody webview. |
-| `tauri_driver_session` | Start, stop or inspect the local Tauri automation session. |
-| `tauri_execute_js` | Evaluate JavaScript for explicit local Aphrody UI inspection. |
-| `tauri_find_element` | Find DOM elements by CSS selector in a local Aphrody webview. |
-| `tauri_get_styles` | Read computed CSS styles for a local Aphrody Tauri element. |
-| `tauri_interact` | Click, fill, type, focus or scroll a DOM element in a local Aphrody webview. |
-| `tauri_keyboard` | Dispatch a keydown or keyup event to a local Aphrody Tauri element. |
-| `tauri_manage_window` | List, inspect or resize a local Tauri window. |
-| `tauri_read_logs` | Read console entries explicitly buffered by a local Aphrody Tauri webview. |
-| `tauri_screenshot` | Capture a local Aphrody Tauri window as a PNG image. |
-| `tauri_viewport_read` | Read rendered text and viewport dimensions in a local Aphrody webview. |
-| `tauri_wait_for` | Wait for a CSS selector or text to appear in a local Aphrody Tauri webview. |
-| `tauri_window_list` | List Aphrody Tauri webview windows and state. |
-| `webview_get_pointed_element` | Inspect the DOM element at viewport coordinates in a local Tauri webview. |
-| `webview_select_element` | Select a DOM element by CSS selector and return its geometry in a local Tauri webview. |
-
-## aphrody-ui — aphrody-app subsystem `window`
-
-Kind: kernel-subsystem. 10 tools.
-
-| Tool | Description |
-| --- | --- |
-| `clipboard_read` | Read the clipboard text. |
-| `clipboard_write` | Replace the clipboard text. |
-| `desktop_notify` | Show a native desktop notification. |
-| `window_close_label` | Close a window by label. |
-| `window_focus` | Show, unminimize and focus a window. |
-| `window_list` | Every desktop window with its title, URL, state, position and size. |
-| `window_open` | Open a Tauri/Wry interactive preview on an http(s) URL. It gets no desktop capability and is never used as a crawler or artifact source. |
-| `window_set_bounds` | Move and/or resize a window (physical pixels). |
-| `window_set_state` | Minimize, maximize, restore, hide or show a window. |
-| `window_set_title` | Change a window title. |
-
-## aphrody-ui — aphrody-render3d subsystem `render3d`
-
-Kind: kernel-subsystem. 4 tools.
-
-| Tool | Description |
-| --- | --- |
-| `render3d_model_inspect` | Read a .glb/.gltf/.obj model: mesh, vertex and triangle counts, world bounds (min, max, centre, radius) and its PBR materials. |
-| `render3d_model_render` | Render a .glb/.gltf/.obj model from a yaw/pitch/zoom view to a PNG file in one call (M3 studio lighting, shadows, 4x MSAA). |
-| `render3d_model_scene` | Stage a model in an M3 studio (hemisphere + key + fill lights, framed orbit camera) and return the complete, editable Scene3d JSON (for render3d_render, render3d_export_glb or render3d_view). |
-| `render3d_view` | Open a live native desktop view (frameless, transparent, only the 3D) of a .glb/.gltf/.obj model or a Scene3d .json file; the view reloads whenever the file changes, so rewriting the file controls it. |
-
-## aphrody-ui — aphrody-tauri-mcp (TauriMcp)
+## aphrody-ui — aphrody-ui (TauriMcp)
 
 Kind: rmcp. 16 tools.
 
@@ -518,207 +446,55 @@ Kind: rmcp. 16 tools.
 | `webview_get_pointed_element` | Inspect the DOM element at viewport coordinates in a local Tauri webview. |
 | `webview_select_element` | Select a DOM element by CSS selector and return its geometry in a local Tauri webview. |
 
-## aphrody-web — @aphrody/bxc
+## aphrody-ui — aphrody-ui subsystem `render3d`
 
-Kind: bun-mcp. 137 tools.
-
-| Tool | Description |
-| --- | --- |
-| `browser_click` | … (deprecated alias — use bxc_browser_click instead.) |
-| `browser_close` | … (deprecated alias — use bxc_browser_close instead.) |
-| `browser_evaluate` | … (deprecated alias — use bxc_browser_evaluate instead.) |
-| `browser_fill` | … (deprecated alias — use bxc_browser_fill instead.) |
-| `browser_hover` | … (deprecated alias — use bxc_browser_hover instead.) |
-| `browser_navigate` | … (deprecated alias — use bxc_browser_navigate instead.) |
-| `browser_pdf` | … (deprecated alias — use bxc_browser_pdf instead.) |
-| `browser_press_key` | … (deprecated alias — use bxc_browser_press_key instead.) |
-| `browser_screenshot` | … (deprecated alias — use bxc_browser_screenshot instead.) |
-| `browser_select_option` | … (deprecated alias — use bxc_browser_select_option instead.) |
-| `browser_snapshot` | … (deprecated alias — use bxc_browser_snapshot instead.) |
-| `browser_type` | … (deprecated alias — use bxc_browser_type instead.) |
-| `browser_wait_for` | … (deprecated alias — use bxc_browser_wait_for instead.) |
-| `bxc_actor_list` | Lists available Aphrody Web Browser Actors from built-in and installed package manifests. |
-| `bxc_actor_run` | Runs an Aphrody Web Browser Actor by name, a local script or directory, or a remote Git repository URL. You can optionally provide custom input JSON, storage dir, and control purge behavior. |
-| `bxc_aphrody_rankings` | Retrieves Google SERP rankings and E-E-A-T signals from the Aphrody PostgreSQL database. |
-| `bxc_aphrody_status` | Probes the sovereign Aphrody infrastructure (PostgreSQL 18, Redis 8.0, unified aphrody-site API and MCP). |
-| `bxc_archive_item` | Retrieve an Internet Archive item's public metadata and file manifest without downloading media. |
-| `bxc_archive_search` | Search Internet Archive's public catalog via AdvancedSearch, for example: collection:prelinger AND mediatype:movies. |
-| `bxc_archive_wayback` | List public Wayback Machine captures through the CDX API; no archived content is downloaded. |
-| `bxc_asset_search` | Search configured image or GIF providers concurrently and return deduplicated, attributed references plus cache and partial-provider status. Wikimedia and Google Images are available for images; GIPH… |
-| `bxc_browser_click` |  |
-| `bxc_browser_close` |  |
-| `bxc_browser_evaluate` |  |
-| `bxc_browser_fill` |  |
-| `bxc_browser_hover` |  |
-| `bxc_browser_navigate` |  |
-| `bxc_browser_pdf` |  |
-| `bxc_browser_press_key` |  |
-| `bxc_browser_screenshot` |  |
-| `bxc_browser_select_option` |  |
-| `bxc_browser_snapshot` |  |
-| `bxc_browser_type` |  |
-| `bxc_browser_wait_for` |  |
-| `bxc_capabilities` | List the canonical BXC CLI commands, MCP tools, API routes, and packages. Call this first when deciding whether BXC can handle a browser, crawl, search, extraction, media, anime, Google, Gemini, X, G… |
-| `bxc_cdp_evaluate` | Executes raw JavaScript in the page context via V8. |
-| `bxc_crawl_massive` | Launches a high-throughput continuous Web indexer with multi-tiered fetching, per-domain politeness rate limiting, and SQLite WAL persistence with FTS5. |
-| `bxc_crawl_recursive` | Starts a recursive background crawl for a list of URLs on the VPS, matching depth constraints and domain restrictions. Ideal for scraping and indexing sites recursively. |
-| `bxc_crawl_replay_failed` | Replays and retries all failed requests currently stored in the crawler's dead-letter queue. |
-| `bxc_crawl_stats` | Retrieves statistics from the request queue of the autonomous crawler. |
-| `bxc_detect_frameworks` | Identifies web frameworks and anti-bot protections on a URL. |
-| `bxc_dragonball_shenron` | Queries the verified, canonical Shenron (神龍, ID: 1090) knowledge base across Akira Toriyama manga (42 tomes), Daizenshuu 2, 4, 7, and Chōzenshū. Includes creator lineage, wish rules (Kami-sama vs Den… |
-| `bxc_export_dataset` | Exports items from a Bxc crawled dataset into a high-performance SQLite database (with FTS5 full-text indexing) or PostgreSQL database table. |
-| `bxc_fut_accelerate_calc` | Calculates the exact AcceleRATE 2.0 kinematic classification (Lengthy, Explosive, etc.). |
-| `bxc_fut_auth` | Establishes (or refreshes) the native EA FC web-app UTAS session from the stored ea.com cookies and persists it. Returns the session status. |
-| `bxc_fut_bid` | Places a bid or executes Buy Now on an active market auction via native UTAS. |
-| `bxc_fut_career_scout` | Simulates Career Mode scouting or computes player market valuation and growth. |
-| `bxc_fut_club` | Lists the club's player items from the native web app (UTAS /club). Use all=true to paginate the whole club. |
-| `bxc_fut_club_stats` | Returns the club inventory summary (credits, real trade-pile / watch-list counts, player total) plus the raw per-category club stats. |
-| `bxc_fut_consumables` | Lists stackable development consumables in the club (chemistry styles, position modifiers, contracts…). |
-| `bxc_fut_credits` | Returns the live coin balance of the native EA FC web-app account. |
-| `bxc_fut_detect_url` | Identifies any FUT URL (fut.gg, FUTBin): provider, page type (PLAYER, SBC, SQUAD, EVOLUTION, FODDER, MARKET_LISTING), game year, and the extracted slug or identifier. |
-| `bxc_fut_evaluate_player` | Evaluates one card by combining three sources: its database entry, its factual meta rating (how it actually plays versus its face rating), and its observed market price plus EA's official price band.… |
-| `bxc_fut_fc_iq_codec` | Encodes or decodes FC IQ tactical share codes (e.g. 'fciq_...'). |
-| `bxc_fut_formations` | Lists the formations EA SPORTS FC ships (29, including same-named variants such as '4-3-3 (2)'), each with its category and position layout. Pass a name for that formation's slots, roles and focus. |
-| `bxc_fut_gamepad_autopilot` | Runs the autonomous AI decision loop for EA SPORTS FC 27, executing real-time controller micro-decisions via ViGEmBus. |
-| `bxc_fut_gamepad_control` | Controls or queries the native hardware-level Virtual Xbox 360 controller via ViGEmBus to play EA SPORTS FC 27. |
-| `bxc_fut_igs_calc` | Calculates modulated In-Game Stats (IGS) using Chemistry Styles and stamina decay. |
-| `bxc_fut_list_card` | Lists an item from the transfer pile onto the EA transfer market. |
-| `bxc_fut_market` | Searches the live EA FC transfer market (UTAS /transfermarket) with the web app's own filters and returns the auctions. |
-| `bxc_fut_market_filters` | Builds transfer-market search parameters from the in-game 9-tile filter matrix (name, rarity, position, playstyles, chemistry style, price steps, nation, league, club). Returns the compiled UTAS para… |
-| `bxc_fut_massinfo` | Retrieves full account mass info from the official EA Web App (credits, persona, club name, deck limits). |
-| `bxc_fut_match_sim` | Simulates a full 90-minute match between two squads with stochastic events, xG, and possession. |
-| `bxc_fut_move` | Moves items between piles in the native web app (unassigned/trade → club, or club/unassigned → trade pile). |
-| `bxc_fut_player` | Scrapes detailed player statistics, attributes, and traits from FUTGG. |
-| `bxc_fut_price` | Scrapes the live console/PC price of a FIFA/FC player from FUTBin. |
-| `bxc_fut_pricelimits` | Returns EA's official price ranges (min/max BIN) for one or more player definition ids. |
-| `bxc_fut_quicksell` | Quick sells (discards) one or more items for their coin discard value. |
-| `bxc_fut_relist` | Relists all expired items currently sitting on the transfer pile. |
-| `bxc_fut_remove_trade` | Removes a closed (sold / expired) trade from the transfer list. |
-| `bxc_fut_sbc_ilp_solve` | Solves an SBC challenge using Mixed Integer Linear Programming (ILP) with minimal coin cost. |
-| `bxc_fut_search_players` | Searches the local scraped FC player database by name, position, rating band, league, nation, club, skill moves and weak foot. The position filter also matches alternative positions. No EA session re… |
-| `bxc_fut_session` | Checks or injects the native EA SPORTS FC Web App session (UTAS SID, phishing token, persistence). |
-| `bxc_fut_setup_optimize` | Generates optimal fcsetup.ini configuration based on GPU hardware (e.g. RTX 4070 12GB). |
-| `bxc_fut_squads` | Returns squads from the native web app: the active squad (default) or the full squad list. |
-| `bxc_fut_stadium` | Returns the stadium configuration of the native EA FC web-app club. |
-| `bxc_fut_tradepile` | Lists all cards on the user's active transfer pile (tradepile) including live auctions, sold, and expired items. |
-| `bxc_fut_unassigned` | Lists unassigned purchased items / won auctions and pack pulls waiting to be assigned. |
-| `bxc_fut_watch` | Adds auctions to, or removes them from, the transfer-targets watch list. |
-| `bxc_fut_watchlist` | Lists transfer targets and active auctions being followed on the user's watchlist. |
-| `bxc_gemini_ask` | Query Google Gemini directly with automatic engine selection (Rust Bridge -> Web) using signed-in cookies. |
-| `bxc_gemini_chat` | Chat with Gemini keeping continuous conversation context across multi-turn exchanges. |
-| `bxc_gemini_conversations` | Fetch recent conversations history from Gemini Web App. |
-| `bxc_gemini_rust` | Execute a high-speed one-shot query directly through the native Rust cdylib bridge (gemini-web crate). |
-| `bxc_gemini_scrape` | Static reverse-engineering of gemini.google.com/app — extracts Boq hashes, CSS variables, RPC services and available models. |
-| `bxc_gemini_status` | Returns the health and connection status of all Gemini engines in BXC (Web, Rust Bridge). |
-| `bxc_get_url_data` | Retrieves cached or live crawled data (title, status, markdown content, structured JSON metadata, and OpenAPI schema) for a given URL on the VPS. Checks Redis first, then SQLite, then crawls live. |
-| `bxc_get_url_openapi` | Retrieves the well-typed OpenAPI schema generated for a given crawled URL on the VPS. |
-| `bxc_get_url_types` | Retrieves generated TypeScript interface definitions representing the schema of a given crawled URL on the VPS. |
-| `bxc_google_books` | Search Google Books catalog (resilient fallback via API & SERP vertical). |
-| `bxc_google_calendar_public` | Fetch and parse events from any public Google iCalendar feed by ID. |
-| `bxc_google_detect_language` | Detect language of text with zero latency (stopwords & Unicode script detection with Gemini fallback), compatible with Google Cloud Translation detect API. |
-| `bxc_google_dns` | Query Google Public DNS-over-HTTPS (DoH) for any domain and record type (A, AAAA, MX, TXT, etc.). |
-| `bxc_google_doc_export` | Export a publicly shared Google Document to plain text. |
-| `bxc_google_fetch` | Fetches a URL and returns its clean GFM Markdown plus structured metadata extracted in one pass: JSON-LD, OpenGraph, Twitter cards, canonical URL and meta description. Ideal for handing an AI both a… |
-| `bxc_google_sheet_export` | Export a publicly shared Google Spreadsheet to CSV. |
-| `bxc_google_suggest` | Get real-time query suggestions from Google Autocomplete. |
-| `bxc_google_supported_languages` | List all 195 official supported Google Cloud Translation languages, optionally localized in target language. |
-| `bxc_google_translate` | Translate text or HTML using Google Cloud Translation API v2 compatible engine with rate-limit evasion (SQLite WAL cache -> rotating Web RPCs -> Mobile web -> Gemini LLM -> gcloud ADC). Supports deta… |
-| `bxc_google_tts` | Synthesize high-quality natural Text-to-Speech audio MP3 via official Google Translate TTS endpoint with chunk concatenation. |
-| `bxc_google_vertical_search` | Search specialized Google verticals: News, Images, Scholar, Videos, or Maps. |
-| `bxc_grok_chat` | One-shot xAI Grok chat completion (POST /v1/chat/completions) with optional reasoning effort and structured JSON output. Key-less via SUPER_GROK_TOKEN or ~/.grok/auth.json OIDC; falls back to XAI_API… |
-| `bxc_grok_models` | List xAI Grok models (GET /v1/models). Uses XAI_API_KEY, SUPER_GROK_TOKEN or the Grok Build OIDC session (~/.grok/auth.json) — no metered key required. |
-| `bxc_grok_whoami` | Show which xAI credential source bxc will use (XAI_API_KEY, SUPER_GROK_TOKEN or grok_oidc from ~/.grok/auth.json); never returns the token. |
-| `bxc_keyword_search` | Performs full-text keyword search on all crawled web pages on the VPS using SQLite FTS5 rank relevancy matching. |
-| `bxc_mirror` | Downloads and mirrors a complete site (HTML/CSS/JS/images) to a local directory. |
-| `bxc_pipeline_crawl` | Crawl or scrape any target (URL, search query, X handle, Anime, FUT, Wiki) through the Unified Pipeline with auto-routing and multi-tier extraction. |
-| `bxc_pipeline_extract` | Extract structured data, markdown and interactive snapshot from a URL using the Unified Pipeline. |
-| `bxc_recon` | Probes a target URL and produces a full reconnaissance report (HTTP/CDN info, frameworks, assets, CSS selectors). |
-| `bxc_scrape_markdown` | Scrapes a URL and returns its content in clean GFM Markdown. |
-| `bxc_search` | Powerful Google Web Search. Returns ranked organic results (title, URL, snippet) and, with `rich`, the featured snippet / knowledge panel / People-Also-Ask / related searches. Authenticates automatic… |
-| `bxc_semantic_search` | Performs ranked semantic similarity search on all crawled web pages on the VPS using cosine similarity. |
-| `bxc_service_status` | Probes the infra-owned Aphrody Web API service, Web PostgreSQL, Redis, and CDP endpoint. |
-| `bxc_voiranime_info` | Gets metadata, details, and the episodes list for a specific anime series. |
-| `bxc_voiranime_resolve` | Resolves a video embed iframe URL (e.g. Vidmoly, Filemoon) to its direct streaming link. |
-| `bxc_voiranime_search` | Searches for an anime in the VoirAnime catalog (French streaming directory). |
-| `bxc_wiki_check` | Does this domain serve MediaWiki? Known hosts answer instantly, others are probed via meta=siteinfo. |
-| `bxc_wiki_find` | Full-text search INSIDE the wiki pages already read by bxc (local FTS5, no network). |
-| `bxc_wiki_markdown` | Returns a MediaWiki page as clean Markdown through its API: no navigation, no banner, no menu. |
-| `bxc_wiki_mirror` | Mirrors a wiki page and every one of its images to a local directory, verifying each download against the SHA-1 published by the wiki, and indexes the page locally (FTS5 + embedding). |
-| `bxc_wiki_page` | Reads a MediaWiki page through its API (works where the HTML is 403-blocked, e.g. Fandom). Returns sections, infobox fields with their real names, tables with rowspan/colspan expanded, full-resolutio… |
-| `bxc_wiki_search` | Full-text search ON a wiki through its API. Any page URL of that wiki is enough to locate it. |
-| `bxc_x_algorithm_rank` | Rank a list of X posts using the local port of X For You algorithm (filters + weighted engagement scorer + author diversity from xai-org/x-algorithm). Returns ScoredPost[]. |
-| `bxc_x_client` | Native X / Twitter client (cookie auth, no API key). Fetch a profile, a user's tweets, search the Latest timeline, trending news, or resolve the authenticated account. Auth uses an auth_token + ct0 c… |
-| `bxc_x_purge_tweets` | Delete the authenticated X account's own tweets, replies and media posts below a like threshold, least-liked first. Walks all three timelines (UserTweets, UserTweetsAndReplies, UserMedia) since none… |
-| `bxc_x_unfollow_purge` | Empty the authenticated X account's following list, accounts that do not follow back first, then mutuals. Rate-limit aware (randomised pacing + rolling 15 min / 24 h budgets + x-rate-limit headers) a… |
-| `bxc_xcom_profile` | Scrapes public information from a Twitter / X.com profile. |
-| `bxc_xpro_deck` | X Pro (Gryphon) decks on pro.x.com + X Radar. Cookie auth via session/env. Actions: probe, sync (ViewerAccountSync), deck, create, remove, radar_search. |
-| `tune_memory_sqlite` | Stores or retrieves a fine-tuned memory fact in the high-performance SQLite database. |
-| `web_browser_autopilot_start` | Start autonomous, budgeted crawl passes with robots checks and deduplicated indexing. Runs while this provider process lives. |
-| `web_browser_crawl` | Start one bounded, resumable Aphrody Web Browser crawl pass. The SQLite frontier and citable local index survive restarts. |
-| `web_browser_index_search` | Search indexed passages with URL, offsets and fetch provenance for RAG and deep research. |
-| `web_browser_mirror` | Mirror a site with bounded pages, assets and bytes while honoring robots.txt. |
-| `web_browser_mission_status` | Inspect the active mission, persistent frontier and local document index. |
-| `web_browser_mission_stop` | Stop the running Web Browser mission after in-flight work settles. |
-| `web_browser_rag_research` | Run the RAG Web Browser actor, index its sources and return citable local passages. |
-| `web_browser_site_to_api` | Run the site-to-API actor and return generated OpenAPI, schema and types metadata. |
-
-## aphrody-web — aphrody-browser
-
-Kind: kernel-subsystem. 7 tools.
+Kind: kernel-subsystem. 4 tools.
 
 | Tool | Description |
 | --- | --- |
-| `aphrody_web_call` | backend gateway |
-| `browser_navigate` | duplicate |
-| `chromium_profiles` | Read-only inventory of local Chrome/Chromium profiles; cookie values and databases are never returned. |
-| `gemini_web_navigate` | Navigate the shared Obscura session to Gemini Web. |
-| `google_search` | Search Google Web through the shared Obscura session and return Markdown. |
-| `web_browser_autopilot_start` | Start the web mission. |
-| `web_fetch` | Fetch a remote HTTP(S) page through the shared Obscura transport and return Markdown. Use the Aphrody Web curl profile for raw HTTP or browser impersonation without rendering. |
+| `render3d_model_inspect` | Read a .glb/.gltf/.obj model: mesh, vertex and triangle counts, world bounds (min, max, centre, radius) and its PBR materials. |
+| `render3d_model_render` | Render a .glb/.gltf/.obj model from a yaw/pitch/zoom view to a PNG file in one call (M3 studio lighting, shadows, 4x MSAA). |
+| `render3d_model_scene` | Stage a model in an M3 studio (hemisphere + key + fill lights, framed orbit camera) and return the complete, editable Scene3d JSON (for render3d_render, render3d_export_glb or render3d_view). |
+| `render3d_view` | Open a live native desktop view (frameless, transparent, only the 3D) of a .glb/.gltf/.obj model or a Scene3d .json file; the view reloads whenever the file changes, so rewriting the file controls it. |
 
-## aphrody-web — obscura-mcp
+## aphrody-ui — aphrody-ui subsystem `tauri`
 
-Kind: json-catalog. 37 tools.
+Kind: kernel-subsystem. 15 tools.
 
 | Tool | Description |
 | --- | --- |
-| `browser_back` | Navigate back in the page history (equivalent to the browser back button). |
-| `browser_clear_cookies` | Wipe every cookie from the jar. |
-| `browser_click` | Click an element. Pass `ref` (preferred, from browser_snapshot / browser_interactive_elements) OR a `selector`. |
-| `browser_close` | Close the current browser page and reset state |
-| `browser_console_messages` | Return the console messages logged by the current page |
-| `browser_count` | Count how many elements on the page match a CSS selector. Cheap existence / pagination probe. |
-| `browser_detect_forms` | List every <form> on the page with its action URL, method, and a description of each input/textarea/select. Use to understand a form's structure before filling it in. |
-| `browser_evaluate` | Evaluate a JavaScript expression in the page context and return the result |
-| `browser_extract` | Extract a structured object from the page given a map of {field_name: css_selector}. Returns one JSON object with each field set to the matching element's text content (or attribute via 'selector@att… |
-| `browser_fill` | Set the value of an input element. Pass `ref` (preferred) OR `selector`. |
-| `browser_fill_form` | Fill multiple inputs in one call. `fields` is an array of {ref?, selector?, value, type?}. type='text' (default) sets value, type='check'/'uncheck' toggles checkboxes, type='select' picks an option b… |
-| `browser_forward` | Navigate forward in the page history. |
-| `browser_get_attribute` | Read an attribute of an element (href, src, value, class, data-*, etc.). Returns the raw attribute value as a string, or empty string if missing. |
-| `browser_get_cookies` | Return all cookies in the browser's cookie jar as one JSON object per line. |
-| `browser_interactive_elements` | List every clickable / typeable element on the current page with a stable ref ID and a brief description. Use this BEFORE clicking or filling so you can refer to elements by ref instead of guessing a… |
-| `browser_links` | List every anchor link on the current page as one JSON object per line: {text, href}. Use when you need to enumerate where to navigate next. |
-| `browser_markdown` | Extract the current page as Markdown (headings, paragraphs, lists, links, code blocks). Use this instead of browser_snapshot when you want token-dense structured content rather than plain text. |
-| `browser_navigate` | Navigate to a URL and wait for the page to load |
-| `browser_network_requests` | Return the list of network requests made by the current page |
-| `browser_pdf` | Export the current rendered document as a paginated raster PDF using print media and bounded PDF defaults. |
-| `browser_press_key` | Dispatch a keyboard event on an element or the document |
-| `browser_reload` | Reload the current page. |
-| `browser_screenshot` | Capture the current rendered viewport as a PNG image. Width and height default to the page's current CSS viewport. |
-| `browser_scroll` | Scroll the page or an element. `direction` is 'top'\|'bottom'\|'up'\|'down'\|'left'\|'right' (default 'down'). `amount` in pixels (default viewport height). Use 'bottom' to trigger infinite-scroll loaders. |
-| `browser_search` | Find substring matches in the visible page text. Returns each match with its surrounding context. Use this to confirm content exists before scraping or to locate a section. |
-| `browser_select_option` | Select an option from a <select> element |
-| `browser_set_cookie` | Add or replace a cookie in the jar. Use this to skip a login flow when you already have a session token. |
-| `browser_set_storage_state` | Restore session state previously returned by browser_storage_state. Pass the JSON object. Use to bring an authenticated session back without re-logging in. |
-| `browser_snapshot` | Get the current page content as text (title, URL, and readable body text) |
-| `browser_storage_state` | Export the full authentication / session state (cookies + localStorage + sessionStorage) as a JSON object. Save this to skip a login on a subsequent run via browser_set_storage_state. |
-| `browser_tab_close` | Close a tab by ID (default: the active tab). If you close the active tab, the next remaining tab becomes active. |
-| `browser_tab_list` | List all open tabs with their ID, URL, title, and which one is active. |
-| `browser_tab_new` | Open a new tab (isolated browser page). Returns the tab ID; subsequent tool calls operate on the most recently opened or browser_tab_switch'd tab. |
-| `browser_tab_switch` | Switch the active tab. All subsequent tool calls (snapshot, click, etc.) target this tab. |
-| `browser_type` | Type text into an input element (appends to existing value). Pass `ref` (preferred) OR `selector`. |
-| `browser_wait_for` | Wait for a CSS selector to appear in the DOM |
-| `browser_wait_for_text` | Wait until a substring appears anywhere in the rendered page text. Use when you want to wait for a result message or notification rather than a specific selector. |
+| `tauri_dom_snapshot` | Inspect DOM text and accessible element metadata in a local Aphrody webview. |
+| `tauri_driver_session` | Start, stop or inspect the local Tauri automation session. |
+| `tauri_execute_js` | Evaluate JavaScript for explicit local Aphrody UI inspection. |
+| `tauri_find_element` | Find DOM elements by CSS selector in a local Aphrody webview. |
+| `tauri_get_styles` | Read computed CSS styles for a local Aphrody Tauri element. |
+| `tauri_interact` | Click, fill, type, focus or scroll a DOM element in a local Aphrody webview. |
+| `tauri_keyboard` | Dispatch a keydown or keyup event to a local Aphrody Tauri element. |
+| `tauri_manage_window` | List, inspect or resize a local Tauri window. |
+| `tauri_read_logs` | Read console entries explicitly buffered by a local Aphrody Tauri webview. |
+| `tauri_screenshot` | Capture a local Aphrody Tauri window as a PNG image. |
+| `tauri_viewport_read` | Read rendered text and viewport dimensions in a local Aphrody webview. |
+| `tauri_wait_for` | Wait for a CSS selector or text to appear in a local Aphrody Tauri webview. |
+| `tauri_window_list` | List Aphrody Tauri webview windows and state. |
+| `webview_get_pointed_element` | Inspect the DOM element at viewport coordinates in a local Tauri webview. |
+| `webview_select_element` | Select a DOM element by CSS selector and return its geometry in a local Tauri webview. |
+
+## aphrody-ui — aphrody-ui subsystem `window`
+
+Kind: kernel-subsystem. 10 tools.
+
+| Tool | Description |
+| --- | --- |
+| `clipboard_read` | Read the clipboard text. |
+| `clipboard_write` | Replace the clipboard text. |
+| `desktop_notify` | Show a native desktop notification. |
+| `window_close_label` | Close a window by label. |
+| `window_focus` | Show, unminimize and focus a window. |
+| `window_list` | Every desktop window with its title, URL, state, position and size. |
+| `window_open` | Open a Tauri/Wry interactive preview on an http(s) URL. It gets no desktop capability and is never used as a crawler or artifact source. |
+| `window_set_bounds` | Move and/or resize a window (physical pixels). |
+| `window_set_state` | Minimize, maximize, restore, hide or show a window. |
+| `window_set_title` | Change a window title. |
 
 ## nie — nie-cli (NieMcpServer)
 

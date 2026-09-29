@@ -13,7 +13,7 @@
  * deux scripts d'audit avant refactor — on le garde tel quel pour 0 régression.
  * Ne PAS remplacer par les normaliseurs de `matcher.ts`.
  *
- * Pas de dépendance lourde (ni bxc, ni cheerio, ni pg/sqlite) : module pur.
+ * Pas de dépendance lourde (ni navigateur, ni cheerio, ni pg/sqlite) : module pur.
  * Importable en leaf `@rosegriffon/inagle/zukan/audit`. NON ré-exporté par le
  * barrel.
  */

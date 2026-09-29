@@ -84,6 +84,14 @@ function kindOf(path: string): { kind: string; category?: string } {
   const parts = path.split("/");
   const name = basename(path);
   const ext = name.includes(".") ? `.${name.split(".").at(-1)!.toLowerCase()}` : "";
+  // Keep proprietary game dumps and derived fixture datasets in their protected
+  // stores. Import adjacent Markdown analysis, but never move structured game
+  // data into the source/documentation workspace.
+  if (
+    /^docs\/game-data\/(?:oc|menu-fixtures)\//.test(path) &&
+    !DOC_EXTENSIONS.has(ext)
+  )
+    return { kind: "protected-game-data" };
   if (
     DOC_EXTENSIONS.has(ext) ||
     /^(AGENTS|CONTRIBUTING|ARCHITECTURE|PLAN|README)(\.|$)/i.test(name)
@@ -106,6 +114,7 @@ function safeKey(path: string): string {
   return path.replaceAll("\\", "/").replace(/^\/+/, "");
 }
 function targetPath(owner: string, path: string, info: ReturnType<typeof kindOf>): string | null {
+  if (info.kind === "protected-game-data") return null;
   const parts = path.split("/");
   const ext = basename(path).split(".").at(-1)?.toLowerCase();
   if (info.kind === "documentation") {

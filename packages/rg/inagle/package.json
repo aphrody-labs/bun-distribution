@@ -65,12 +65,13 @@
     "import:game-text:postgres": "bun scripts/import-game-text-postgres.ts",
     "prepublishOnly": "bun run build",
     "test": "bun test",
-    "lint": "bunx oxlint -c ../../.oxlintrc.json -A style -A pedantic -A restriction src",
-    "lint:fix": "bunx oxlint -c ../../.oxlintrc.json -A style -A pedantic -A restriction --fix src",
-    "type-check": "bun --bun tsc -p tsconfig.build.json --noEmit"
+    "lint": "bunx oxlint -c ../config/oxlintrc.json -A style -A pedantic -A restriction src",
+    "lint:fix": "bunx oxlint -c ../config/oxlintrc.json -A style -A pedantic -A restriction --fix src",
+    "type-check": "bun --bun tsc -p tsconfig.build.json --noEmit",
+    "typecheck": "tsgo -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "@aphrody-code/zukan": "catalog:",
+    "@aphrody/agent-browser": "workspace:*",
     "@rosegriffon/db": "workspace:*",
     "@leeoniya/ufuzzy": "catalog:",
     "cheerio": "catalog:",
@@ -89,5 +90,8 @@
   },
   "trustedDependencies": [
     "esbuild"
-  ]
+  ],
+  "engines": {
+    "bun": ">=1.4.2"
+  }
 }

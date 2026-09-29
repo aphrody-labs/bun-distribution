@@ -4,7 +4,7 @@
 This is the single first-party plugin for Aphrody AI/LLM, Dragon Ball/Shenron,
 the OS kernel, Aphrody Web, N2B and WinClean. It bundles their skills and agents
 for Claude Code, Codex and Antigravity (`agy`), and connects to the Aphrody
-kernel plus the unified AI MCP server. Runtime and product source remains in
+kernel's unified MCP endpoint. Runtime and product source remains in
 its owning repository; this plugin is the one shared agent entry point.
 
 **Version: 1.5.0** · License: Apache-2.0 · Owner: [aphrody-code](https://github.com/aphrody-code)
@@ -18,7 +18,7 @@ Platform priority: Linux Ubuntu 26.04 (#1), Windows 11 (#2), WebAssembly (#3).
 cargo build --manifest-path ../aphrody-os/Cargo.toml --release -p aphrody-kernel --locked
 cp ../aphrody-os/target/<triple>/release/aphrody-kernel ~/.local/bin/  # aphrody-kernel.exe on Windows
 
-# The AI MCP server provides model, RAG and Dragon Ball tools
+# Build the internal AI/Web provider used by the kernel MCP
 cargo build --release -p aphrody-mcp --locked
 ```
 
@@ -33,9 +33,10 @@ tools that are not served natively in Rust.
 | Codex | `.codex-plugin/plugin.json` | `.mcp.json` |
 | Antigravity (`agy`) | `plugin.json` | `mcp_config.json` (compatibility projection) |
 
-The plugin connects to `aphrody-kernel mcp` for OS capabilities and
-`aphrody-mcp server` for AI, RAG and Dragon Ball tools. `.mcp.json` is canonical;
-`mcp_config.json` is its byte-for-byte Antigravity projection.
+The plugin connects to `aphrody-kernel mcp` as its single public MCP endpoint.
+The kernel routes to its internal AI/Web provider, including `aphrody-mcp`, and
+deduplicates overlapping tools. `.mcp.json` is canonical; `mcp_config.json` is
+its byte-for-byte Antigravity projection.
 
 ## MCP servers
 
@@ -61,12 +62,12 @@ these tools as native ones, like `Read` or `WebFetch`:
   `universal_web_fetch` / `aphrody_google_fetch` instead of a built-in fetch, and
   so on.
 
-### `aphrody-mcp server`
+### Internal AI and Web provider
 
-The AI MCP server exposes local model, RAG and Dragon Ball/Shenron tools. Its
-tool catalog depends on build features; `tools/list` is authoritative. Shenron
-owns editorial records and source URLs; Aphrody supplies the MCP transport and
-compute. Dragon Ball skills and their reviewed references are bundled here.
+The kernel routes AI, RAG, Dragon Ball/Shenron and Web tools through its internal
+provider. Its tool catalog depends on installed providers and build features;
+`tools/list` is authoritative. Shenron owns editorial records and source URLs;
+Aphrody supplies the MCP transport and compute.
 
 ### High-performance kernel engine
 
@@ -116,22 +117,20 @@ use kernel tools and never a DLL or a second WinClean MCP server. The contract i
 
 ## Slash commands
 
-`/docs`, `/status`, `/package`, `/n2b`, `/web`, `/web-build`, `/web-new-scraper`,
-`/web-verify` and the `winclean-*` compatibility commands. All invoke the
+`/docs`, `/status`, `/package`, `/n2b`, `/web` and the `winclean-*` compatibility commands. All invoke the
 canonical Aphrody OS/kernel path.
 
-## Agents (47)
+## Agents
 
 - Aphrody CLI and workspace: `aphrody-cli`, `explore`, `build`, `test-runner`,
   `lint-workflow`, `code-review`, `cargo-auditor`, `cross-platform-validator`,
   `rust-architect`, `rust-engineer`, `docs-researcher`.
-- Aphrody Web: `web-researcher`, `web-scrape-debugger`, `web-scraper-creator`,
-  `web-crossplat-builder`, `web-mcp-author`, `web-rust-ffi-engineer`,
-  `web-verify-enforcer`, `web-x-grok-architect`.
+- Aphrody Web: `web-engineer` handles live research, crawl/browser work and
+  Rust/MCP implementation.
 - N2B: `node2bun`.
 - Dragon Ball/Shenron: `dbfr-ocr`, `dbfr-traducteur`, `dbfr-wiki`.
 
-## Skills (77)
+## Skills
 
 Counts and cross-references are enforced by `scripts/validate-plugin.sh`
 (descriptions <= 260 chars: every skill, agent and command description is
@@ -146,9 +145,9 @@ loaded into each session, so the catalogue is kept small).
   `aphrody-train`.
 - Dragon Ball/Shenron: `dragon-ball`, `dragon-ball-canon`,
   `dragon-ball-japonais`, `databooks-ocr`, `shenron-admin`, `toriyama-svg`.
-- Aphrody Web: `web`, `web-build`, `web-docs`, `web-frames`, `web-grok-xai`,
-  `web-mcp-server`, `web-new-scraper`, `web-next-playwright`, `web-rust-ffi`,
-  `web-verify`, `web-x-client`, `web-xcom`, `agent-browser`.
+- Aphrody Web: `web` routes everyday web, crawl and browser tasks through the
+  live Aphrody CLI/MCP; load `web-frames`, `web-grok-xai`, `web-x-client` or
+  `web-xcom` only for those focused domains.
 - Windows: `winclean` (+ `_shared` rules), `powershell-expert`, `csharp-async`,
   `dpapi-timing-audit`.
 - Reverse engineering: `auto-re`, `deep-analysis`, `pe-symbol-recovery`,

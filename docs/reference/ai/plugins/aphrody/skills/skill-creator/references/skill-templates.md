@@ -3,13 +3,9 @@
 Ready-to-use templates for different technology types. Five templates
 cover the common shapes encountered in the aphrody scope.
 
-All templates below reference the two MCP servers wired into the
-aphrody plugin:
-
-- `mcp__aphrody__*` — Microsoft Learn HTTP MCP (Azure / .NET /
-  Windows / M365 / Power Platform).
-- `mcp__aphrody__*` — local stdio MCP (universal_web_fetch, agent_browser_scrape,
-  google_search, …) for non-Microsoft documentation.
+The Aphrody plugin exposes one public MCP server through `aphrody-kernel mcp`.
+Its live catalog depends on installed internal providers; discover exact tool
+names with the host's MCP tool list instead of copying static names into skills.
 
 If the user has `context7` MCP installed alongside, prefer it for
 language-agnostic library docs (Rust crates, Node packages, Python libs).

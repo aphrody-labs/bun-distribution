@@ -1,18 +1,22 @@
 {
-	"name": "@rosegriffon/patreon-bun-cloudflare-webhook",
-	"version": "1.0.0",
-	"private": true,
-	"description": "",
-	"license": "MIT",
-	"author": "ghostrider-05",
-	"type": "module",
-	"main": "index.js",
-	"scripts": {
-		"deploy": "bunx wrangler deploy"
-	},
-	"devDependencies": {
-		"@cloudflare/workers-types": "^4.20260603.1",
-		"@rosegriffon/patreon-bun": "workspace:*",
-		"wrangler": "^4.97.0"
-	}
+  "name": "@rosegriffon/patreon-bun-cloudflare-webhook",
+  "version": "1.0.0",
+  "private": true,
+  "description": "",
+  "license": "MIT",
+  "author": "ghostrider-05",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "deploy": "bunx wrangler deploy",
+    "typecheck": "tsgo -p tsconfig.json --noEmit"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "catalog:",
+    "@rosegriffon/patreon-bun": "workspace:*",
+    "wrangler": "catalog:"
+  },
+  "engines": {
+    "bun": ">=1.4.2"
+  }
 }

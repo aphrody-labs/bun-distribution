@@ -1,5 +1,7 @@
 /* SPDX-License-Identifier: Apache-2.0 */
 
+import { resolve } from "node:path";
+
 /**
  * One bounded, native runtime gate for critical Bun and uv surfaces.
  *
@@ -11,15 +13,20 @@ type Check = { name: string; command: string; args: string[]; cwd?: string };
 
 export async function runRuntimeGate(args: string[]): Promise<number> {
   let root = process.cwd();
+  let pythonRoot = process.env.APHRODY_PY_ROOT;
   for (let index = 0; index < args.length; index++) {
     const arg = args[index];
     if (arg === "--root") root = args[++index] ?? "";
+    else if (arg === "--python-root") pythonRoot = args[++index] ?? "";
     else if (arg === "--help" || arg === "-h") {
-      console.log("Usage: aphrody-ops runtime-gate [--root <aphrody-ai>]");
+      console.log(
+        "Usage: aphrody-ops runtime-gate [--root <aphrody>] [--python-root <aphrody-py>]",
+      );
       return 0;
     } else throw new Error(`Unknown argument: ${arg}`);
   }
   if (!root) throw new Error("--root requires an aphrody-ai repository path");
+  pythonRoot = resolve(root, pythonRoot ?? "../aphrody-py");
   const checks: Check[] = [
     { name: "Bun runtime", command: "bun", args: ["--version"] },
     { name: "Bun Google tests", command: "bun", args: ["test", "packages/google/test"] },
@@ -38,25 +45,42 @@ export async function runRuntimeGate(args: string[]): Promise<number> {
       ],
     },
     { name: "uv runtime", command: "uv", args: ["--version"] },
-    { name: "uv Aphrody lock", command: "uv", args: ["lock", "--check"], cwd: "py" },
-    { name: "uv training lock", command: "uv", args: ["lock", "--check"], cwd: "py/aphrody-train" },
+    { name: "uv Python workspace lock", command: "uv", args: ["lock", "--check"], cwd: pythonRoot },
+    {
+      name: "uv training import",
+      command: "uv",
+      args: [
+        "run",
+        "--locked",
+        "--package",
+        "aphrody-train",
+        "python",
+        "-c",
+        "import aphrody_train",
+      ],
+      cwd: pythonRoot,
+    },
     {
       name: "uv Aphrody import",
       command: "uv",
       args: [
         "run",
+        "--locked",
         "--project",
-        "py/aphrody",
+        pythonRoot,
+        "--package",
+        "aphrody",
         "python",
         "-c",
         "import aphrody; print(aphrody.__name__)",
       ],
+      cwd: pythonRoot,
     },
   ];
 
   let failures = 0;
   for (const check of checks) {
-    const cwd = check.cwd ? `${root}/${check.cwd}` : root;
+    const cwd = check.cwd ? resolve(check.cwd) : root;
     const result = Bun.spawnSync([check.command, ...check.args], {
       cwd,
       stdout: "pipe",

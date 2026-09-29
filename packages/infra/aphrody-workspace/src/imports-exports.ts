@@ -452,12 +452,19 @@ async function auditPackage(
     }),
   );
   const externalImports = [...used].filter(
-    (name) => !name.startsWith("@aphrody/") || declared.has(name),
+    (name) => name !== "bun" && (!name.startsWith("@aphrody/") || declared.has(name)),
   );
   const unlisted = externalImports
     .filter((name) => !declared.has(name) && !name.startsWith("@types/"))
     .sort();
-  const sourceUnmatched = Object.keys({ ...dependencies, ...devDependencies })
+  // Development tools are usually invoked by package scripts rather than imported
+  // from application source, so only runtime/peer/optional dependencies are audited
+  // for unused declarations.
+  const sourceUnmatched = Object.keys({
+    ...dependencies,
+    ...peerDependencies,
+    ...item.manifest.optionalDependencies,
+  })
     .filter((name) => !subpathUsed.has(name) && !name.startsWith("@types/"))
     .sort();
   const exportsByFile: Record<string, string[]> = {};

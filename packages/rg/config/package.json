@@ -9,7 +9,7 @@
   ],
   "type": "module",
   "scripts": {
-    "lint": "bunx oxlint -c ../../.oxlintrc.json ."
+    "lint": "bunx oxlint -c ./oxlintrc.json ."
   },
   "exports": {
     "./tsconfig-base.json": "./tsconfig-base.json",
@@ -26,5 +26,8 @@
     "type": "git",
     "url": "git+https://github.com/rose-griffon/rg.git",
     "directory": "packages/config"
+  },
+  "engines": {
+    "bun": ">=1.4.2"
   }
 }

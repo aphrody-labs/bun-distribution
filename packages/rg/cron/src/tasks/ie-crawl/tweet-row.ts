@@ -20,7 +20,7 @@
 // par `url`. Ce code n'est pas superposable à `tweetToRow` (qui produit un tweet
 // isolé, `is_thread: false`) et perdrait sa garde anti-régression.
 
-import type { Tweet } from "@aphrody-code/x";
+import type { Tweet } from "@aphrody/x";
 import type { Json } from "@rosegriffon/db";
 
 /**
@@ -43,7 +43,7 @@ export type MediaItem = {
 	[key: string]: string | number | boolean | null | undefined;
 };
 
-/** Média brut tel que renvoyé par le parseur de `@aphrody-code/x`. */
+/** Média brut tel que renvoyé par le parseur de `@aphrody/x`. */
 export type MediaBrut = {
 	id?: string;
 	type?: string;

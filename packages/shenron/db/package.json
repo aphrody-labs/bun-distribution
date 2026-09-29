@@ -29,7 +29,8 @@
     "type-check": "tsc --noEmit",
     "lint": "oxlint -c ../.oxlintrc.json",
     "test": "bun test",
-    "audit:migrations": "bun scripts/migration-audit.ts --check"
+    "audit:migrations": "bun scripts/migration-audit.ts --check",
+    "typecheck": "tsgo -p tsconfig.json --noEmit"
   },
   "dependencies": {
     "@paralleldrive/cuid2": "^3.3.0",
@@ -62,5 +63,8 @@
       "./guards": "server",
       "./redis": "bun"
     }
+  },
+  "engines": {
+    "bun": ">=1.4.2"
   }
 }

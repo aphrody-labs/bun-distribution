@@ -15,7 +15,7 @@
  *  - mapping 1:1 hash↔perso via `usedHashes` (set GLOBAL partagé sur tout le run) ;
  *  - corrélation de Spearman sur les 7 stats, Jaccard sur les descriptions EN, genre.
  *
- * IMPORTANT : ce module ne tire AUCUNE dépendance lourde (pas de bxc, pas de
+ * IMPORTANT : ce module ne tire AUCUNE dépendance lourde (pas de navigateur, pas de
  * cheerio, pas de pg). Il peut donc être importé en leaf
  * `@rosegriffon/inagle/zukan/matcher`. Il n'est PAS ré-exporté par le barrel
  * `zukan/index.ts` (réservé aux types/parser/library) par prudence, mais reste
