@@ -54,6 +54,11 @@ mod web;
 #[cfg(not(target_arch = "wasm32"))]
 pub use web::*;
 
+// The historical bun_rs ABI remains available in the same native library.
+// Its implementation is an internal rlib; it no longer ships a second cdylib.
+#[cfg(not(target_arch = "wasm32"))]
+pub use bun_rs::*;
+
 #[cfg(not(target_arch = "wasm32"))]
 mod native {
     use std::{

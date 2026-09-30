@@ -1183,6 +1183,7 @@ name = "aphrody-ffi"
 version = "1.0.0"
 dependencies = [
  "aphrody",
+ "aphrody-bun",
  "aphrody-gemini-web",
  "aphrody-manga",
  "aphrody-stdio-capture",

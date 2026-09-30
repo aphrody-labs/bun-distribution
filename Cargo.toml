@@ -16,6 +16,7 @@ description = "aphrody \u2014 the ultimate cross-platform CLI (Linux/Windows/WAS
 categories = ["command-line-utilities", "development-tools", "web-programming"]
 keywords = ["cli", "cross-platform", "rust", "linux", "wasm"]
 [workspace.dependencies]
+aphrody-bun = { path = "crates/ui/aphrody-bun", version = "1.0.0-canary" }
 iecode-core = { path = "crates/iecode/core", version = "1.0.0" }
 iecode-emu = { path = "crates/iecode/emu", version = "1.0.0" }
 iecode-ffi = { path = "crates/iecode/ffi", version = "1.0.0" }

@@ -520,3 +520,16 @@ explicitly requested; they do not close these gates or authorize cutover.
       path resolution and runtime TOML parsing; final gates and release build
       are running. Retain the prior binary for rollback and verify the actual
       live process before declaring MCP/CLI ready.
+
+## Unified native UI bridge — 2026-09-30
+
+- [x] Link the existing M3/SVG/render ABI into `aphrody-ffi` and keep
+      `aphrody-bun` as an internal rlib. All 22 historical UI C symbols are
+      exported by the aggregate. CLI, Web, Manga, Shenron and M3 package
+      subpaths now use one lazy handle and typed registry; imports work
+      without a native artifact. Dynamic allocator TLS fixes the Bun dlopen
+      failure after combining these surfaces. Scoped Rust tests pass 61/61,
+      Bun handle/import tests 2/2, and UI/CLI contract smokes, typecheck and
+      strict Clippy pass. See [evidence](docs/migration/unified-ui-ffi.json).
+      N2B/Oxc/fork consumers, portable package/release manifests, runtime
+      unload lifecycle and cross-platform/product gates remain open.

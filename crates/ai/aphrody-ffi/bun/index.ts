@@ -11,16 +11,17 @@
 // Set APHRODY_FFI_LIB to override the library path; otherwise it is resolved
 // from target/{release,debug}/ relative to this file.
 
-import { CString, dlopen, FFIType, suffix, type Pointer } from "bun:ffi";
-import { existsSync, readdirSync } from "node:fs";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
+import { CString, type Pointer } from "bun:ffi";
+import {
+  closeNativeLibrary,
+  loadNativeLibrary,
+  EXPECTED_ABI_VERSION,
+  EXPECTED_WEB_ABI_VERSION,
+  EXPECTED_SHENRON_ABI_VERSION,
+  EXPECTED_MANGA_ABI_VERSION,
+} from "../../../../packages/bun/aphrody/src/library";
+export { EXPECTED_ABI_VERSION, EXPECTED_WEB_ABI_VERSION, EXPECTED_SHENRON_ABI_VERSION, EXPECTED_MANGA_ABI_VERSION };
 
-/** ABI version this binding is written against. */
-export const EXPECTED_ABI_VERSION = 1;
-export const EXPECTED_WEB_ABI_VERSION = 4;
-export const EXPECTED_SHENRON_ABI_VERSION = 1;
-export const EXPECTED_MANGA_ABI_VERSION = 1;
 
 const ENCODER = new TextEncoder();
 
@@ -36,172 +37,14 @@ export function cstr(text: string): Uint8Array {
   return ENCODER.encode(`${text}\0`);
 }
 
-function resolveLibPath(): string {
-  const override = process.env.APHRODY_FFI_LIB;
-  if (override) {
-    if (!existsSync(override)) throw new Error(`APHRODY_FFI_LIB points to a missing file: ${override}`);
-    return override;
-  }
-
-  // On Windows the cdylib is `aphrody_ffi.dll`; elsewhere `libaphrody_ffi.{so,dylib}`.
-  const prefix = process.platform === "win32" ? "" : "lib";
-  const fileName = `${prefix}aphrody_ffi.${suffix}`;
-
-  const here = dirname(fileURLToPath(import.meta.url));
-  // crates/ai/aphrody-ffi/bun -> repository root is four levels up.
-  const targetDir = join(here, "..", "..", "..", "..", "target");
-
-  const candidates: string[] = [];
-  for (const profile of ["release", "debug"]) {
-    candidates.push(join(targetDir, profile, fileName));
-  }
-  // Also probe target/<triple>/{release,debug}/ — present when .cargo/config
-  // pins a default --target (aphrody defaults to x86_64-pc-windows-msvc).
-  try {
-    for (const entry of readdirSync(targetDir, { withFileTypes: true })) {
-      if (!entry.isDirectory()) continue;
-      for (const profile of ["release", "debug"]) {
-        candidates.push(join(targetDir, entry.name, profile, fileName));
-      }
-    }
-  } catch {
-    // target/ may not exist yet; fall through to the bare name.
-  }
-
-  for (const candidate of candidates) {
-    if (existsSync(candidate)) return candidate;
-  }
-  throw new Error(`aphrody-ffi native library not found; build aphrody-ffi or set APHRODY_FFI_LIB (searched ${targetDir})`);
-}
-
-const SYMBOLS = {
-  aphrody_abi_version: { args: [], returns: FFIType.u32 },
-  aphrody_web_bridge_abi_version: { args: [], returns: FFIType.u32 },
-  aphrody_version: { args: [], returns: FFIType.cstring },
-  aphrody_run_json: { args: [FFIType.cstring], returns: FFIType.i32 },
-  aphrody_run: { args: [FFIType.i32, FFIType.ptr], returns: FFIType.i32 },
-  aphrody_run_captured: { args: [FFIType.cstring], returns: FFIType.ptr },
-  aphrody_string_free: { args: [FFIType.ptr], returns: FFIType.void },
-  aphrody_last_error: { args: [], returns: FFIType.ptr },
-  shenron_abi_version: { args: [], returns: FFIType.u32 },
-  shenron_version: { args: [], returns: FFIType.cstring },
-  shenron_string_free: { args: [FFIType.ptr], returns: FFIType.void },
-  shenron_run_json: { args: [FFIType.cstring], returns: FFIType.i32 },
-  shenron_run: { args: [FFIType.i32, FFIType.ptr], returns: FFIType.i32 },
-  shenron_run_captured: { args: [FFIType.cstring], returns: FFIType.ptr },
-  shenron_rag_search: { args: [FFIType.cstring, FFIType.i32, FFIType.cstring], returns: FFIType.ptr },
-  shenron_rag_stats: { args: [], returns: FFIType.ptr },
-  shenron_auth_status: { args: [], returns: FFIType.ptr },
-  shenron_persona_prompt: { args: [], returns: FFIType.cstring },
-  shenron_persona_ask: { args: [FFIType.cstring], returns: FFIType.ptr },
-  manga_abi_version: { args: [], returns: FFIType.u32 },
-  manga_detect_bubbles: { args: [FFIType.ptr, FFIType.u64_fast], returns: FFIType.ptr },
-  manga_typeset_fit: { args: [FFIType.cstring, FFIType.f32, FFIType.f32, FFIType.f32, FFIType.f32, FFIType.i32], returns: FFIType.ptr },
-  manga_pipeline_run: { args: [FFIType.ptr, FFIType.u64_fast, FFIType.cstring], returns: FFIType.ptr },
-  manga_scanlate_cdn: { args: [FFIType.cstring, FFIType.cstring], returns: FFIType.ptr },
-  manga_scanlate_databook: { args: [FFIType.u64, FFIType.u32, FFIType.cstring], returns: FFIType.ptr },
-  manga_scanlate_chapter: { args: [FFIType.u64, FFIType.u32, FFIType.cstring], returns: FFIType.ptr },
-  manga_string_free: { args: [FFIType.ptr], returns: FFIType.void },
-  aphrody_web_extract_main: { args: [FFIType.ptr, FFIType.ptr, FFIType.ptr], returns: FFIType.ptr },
-  aphrody_web_free_string: { args: [FFIType.ptr], returns: FFIType.void },
-  aphrody_web_extract_title: { args: [FFIType.ptr], returns: FFIType.ptr },
-  aphrody_web_strip_tags: { args: [FFIType.ptr], returns: FFIType.ptr },
-  aphrody_web_parse_html: { args: [FFIType.ptr], returns: FFIType.ptr },
-  aphrody_web_tree_destroy: { args: [FFIType.ptr], returns: FFIType.void },
-  aphrody_web_query_selector: { args: [FFIType.ptr, FFIType.ptr], returns: FFIType.ptr },
-  aphrody_web_query_selector_all: { args: [FFIType.ptr, FFIType.ptr], returns: FFIType.ptr },
-  aphrody_web_media_extract: { args: [FFIType.ptr, FFIType.ptr], returns: FFIType.ptr },
-  aphrody_web_media_resolve_submit: { args: [FFIType.ptr, FFIType.ptr, FFIType.u32], returns: FFIType.u64_fast },
-  aphrody_web_html_to_markdown: { args: [FFIType.ptr, FFIType.ptr], returns: FFIType.ptr },
-  aphrody_web_simhash64: { args: [FFIType.ptr], returns: FFIType.ptr },
-  aphrody_web_index_last_error: { args: [], returns: FFIType.ptr },
-  aphrody_web_index_open: { args: [FFIType.ptr, FFIType.u32, FFIType.ptr, FFIType.i32], returns: FFIType.u64_fast },
-  aphrody_web_index_len: { args: [FFIType.u64_fast], returns: FFIType.i64_fast },
-  aphrody_web_index_dim: { args: [FFIType.u64_fast], returns: FFIType.u32 },
-  aphrody_web_index_add: { args: [FFIType.u64_fast, FFIType.u64_fast, FFIType.ptr, FFIType.u32], returns: FFIType.i32 },
-  aphrody_web_index_add_batch: { args: [FFIType.u64, FFIType.ptr, FFIType.ptr, FFIType.u32, FFIType.u32], returns: FFIType.i32 },
-  aphrody_web_index_search: { args: [FFIType.u64_fast, FFIType.ptr, FFIType.u32, FFIType.u32, FFIType.u32], returns: FFIType.ptr },
-  aphrody_web_index_remove: { args: [FFIType.u64_fast, FFIType.u64_fast], returns: FFIType.i32 },
-  aphrody_web_index_save: { args: [FFIType.u64_fast], returns: FFIType.i32 },
-  aphrody_web_index_compact: { args: [FFIType.u64_fast], returns: FFIType.i32 },
-  aphrody_web_index_stats: { args: [FFIType.u64_fast], returns: FFIType.ptr },
-  aphrody_web_index_close: { args: [FFIType.u64_fast], returns: FFIType.i32 },
-  aphrody_web_job_completed_seq: { args: [], returns: FFIType.u64_fast },
-  aphrody_web_job_pending_count: { args: [], returns: FFIType.u32 },
-  aphrody_web_job_status: { args: [FFIType.u64_fast], returns: FFIType.i32 },
-  aphrody_web_job_take: { args: [FFIType.u64_fast], returns: FFIType.ptr },
-  aphrody_web_job_cancel: { args: [FFIType.u64_fast], returns: FFIType.i32 },
-  aphrody_web_embed_submit: { args: [FFIType.ptr, FFIType.ptr, FFIType.u32], returns: FFIType.u64_fast },
-  aphrody_web_rerank_submit: { args: [FFIType.ptr, FFIType.ptr, FFIType.u32], returns: FFIType.u64_fast },
-  aphrody_web_embed_info: { args: [], returns: FFIType.ptr },
-  aphrody_web_embed_install_submit: { args: [FFIType.ptr, FFIType.u32], returns: FFIType.u64_fast },
-  aphrody_web_get_chromium_cookies: { args: [FFIType.ptr, FFIType.ptr, FFIType.ptr], returns: FFIType.ptr },
-  aphrody_web_obscura_fetch_submit: { args: [FFIType.ptr, FFIType.u8, FFIType.u32], returns: FFIType.u64_fast },
-  aphrody_web_obscura_fetch: { args: [FFIType.ptr, FFIType.u8, FFIType.u32], returns: FFIType.ptr },
-  aphrody_web_dns_recon: { args: [FFIType.ptr], returns: FFIType.ptr },
-  aphrody_web_gemini_web_ask: { args: [FFIType.ptr, FFIType.ptr, FFIType.ptr], returns: FFIType.ptr },
-  aphrody_web_x_user_by_screen_name: { args: [FFIType.ptr, FFIType.ptr, FFIType.ptr], returns: FFIType.ptr },
-  aphrody_web_x_user_tweets: { args: [FFIType.ptr, FFIType.ptr, FFIType.ptr, FFIType.u32], returns: FFIType.ptr },
-  aphrody_web_x_community_by_rest_id: { args: [FFIType.ptr, FFIType.ptr, FFIType.ptr], returns: FFIType.ptr },
-  aphrody_web_x_community_tweets: { args: [FFIType.ptr, FFIType.ptr, FFIType.ptr, FFIType.u32], returns: FFIType.ptr },
-  aphrody_web_x_community_info_and_tweets: { args: [FFIType.ptr, FFIType.ptr, FFIType.ptr, FFIType.u32], returns: FFIType.ptr },
-  aphrody_web_dns_recon_submit: { args: [FFIType.ptr, FFIType.u32], returns: FFIType.u64_fast },
-  aphrody_web_gemini_web_ask_submit: { args: [FFIType.ptr, FFIType.ptr, FFIType.ptr, FFIType.u32], returns: FFIType.u64_fast },
-  aphrody_web_x_user_by_screen_name_submit: { args: [FFIType.ptr, FFIType.ptr, FFIType.ptr, FFIType.u32], returns: FFIType.u64_fast },
-  aphrody_web_x_user_tweets_submit: { args: [FFIType.ptr, FFIType.ptr, FFIType.ptr, FFIType.u32, FFIType.u32], returns: FFIType.u64_fast },
-  aphrody_web_x_community_by_rest_id_submit: { args: [FFIType.ptr, FFIType.ptr, FFIType.ptr, FFIType.u32], returns: FFIType.u64_fast },
-  aphrody_web_x_community_tweets_submit: { args: [FFIType.ptr, FFIType.ptr, FFIType.ptr, FFIType.u32, FFIType.u32], returns: FFIType.u64_fast },
-  aphrody_web_x_community_info_and_tweets_submit: { args: [FFIType.ptr, FFIType.ptr, FFIType.ptr, FFIType.u32, FFIType.u32], returns: FFIType.u64_fast },
-  aphrody_web_x_algorithm_rank: { args: [FFIType.ptr, FFIType.ptr, FFIType.u32], returns: FFIType.ptr },
-} as const;
-
-type FfiLibrary = ReturnType<typeof dlopen<typeof SYMBOLS>>;
-let lib: FfiLibrary | undefined;
+type FfiLibrary = ReturnType<typeof loadNativeLibrary>;
 let liveIndexHandles = 0;
 let liveDomTrees = 0;
 const liveJobIds = new Set<number>();
 
 /** @internal Shared native library handle for the Aphrody, Shenron, Web and Manga exports. */
 export function loadLib(): FfiLibrary {
-  if (!lib) {
-    const libraryPath = resolveLibPath();
-    let loaded: FfiLibrary;
-    try {
-      loaded = dlopen(libraryPath, SYMBOLS);
-    } catch (error) {
-      throw new Error(`Unable to load aphrody-ffi at ${libraryPath}: ${String(error)}`, { cause: error });
-    }
-    const actual = loaded.symbols.aphrody_abi_version();
-    if (actual !== EXPECTED_ABI_VERSION) {
-      loaded.close();
-      throw new Error(
-        `aphrody-ffi ABI mismatch: binding expects ${EXPECTED_ABI_VERSION}, library reports ${actual}`,
-      );
-    }
-    const webActual = loaded.symbols.aphrody_web_bridge_abi_version();
-    if (webActual !== EXPECTED_WEB_ABI_VERSION) {
-      loaded.close();
-      throw new Error(
-        `aphrody-ffi Web ABI mismatch: binding expects ${EXPECTED_WEB_ABI_VERSION}, library reports ${webActual}`,
-      );
-    }
-    const shenronActual = loaded.symbols.shenron_abi_version();
-    if (shenronActual !== EXPECTED_SHENRON_ABI_VERSION) {
-      loaded.close();
-      throw new Error(
-        `shenron ABI mismatch: binding expects ${EXPECTED_SHENRON_ABI_VERSION}, library reports ${shenronActual}`,
-      );
-    }
-    const mangaActual = loaded.symbols.manga_abi_version();
-    if (mangaActual !== EXPECTED_MANGA_ABI_VERSION) {
-      loaded.close();
-      throw new Error(
-        `Manga ABI mismatch: binding expects ${EXPECTED_MANGA_ABI_VERSION}, library reports ${mangaActual}`,
-      );
-    }
-    lib = loaded;
-  }
-  return lib;
+  return loadNativeLibrary();
 }
 
 function readOwnedString(
@@ -731,6 +574,5 @@ export function close(): void {
       `Cannot close aphrody-ffi with live native resources (${liveIndexHandles} indexes, ${liveDomTrees} DOM trees, ${liveJobIds.size} jobs)`,
     );
   }
-  lib?.close();
-  lib = undefined;
+  closeNativeLibrary();
 }

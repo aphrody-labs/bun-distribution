@@ -1,7 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
 #![deny(clippy::all, clippy::undocumented_unsafe_blocks)]
-// MSVC reports import-library creation as a warning when linking a cdylib.
-#![allow(linker_messages)]
 
 //! Bun-RS FFI module. Exposes optimized C-ABI functions to Bun applications
 //! using `bun:ffi` for maximum performance and zero overhead.
@@ -15,6 +13,10 @@ mod svg;
 mod symbols;
 mod validator;
 pub use icons::icon_svg_json;
+pub use icons::{bun_rs_icon_names, bun_rs_icon_svg};
+pub use render::{bun_rs_render_free, bun_rs_render_png, bun_rs_render3d_png};
+pub use reproduce::{bun_rs_m3_reproduce, bun_rs_m3_seed_from_image};
+pub use svg::bun_rs_svg;
 
 /// Get the version of the wrapper crate as a C-string.
 ///

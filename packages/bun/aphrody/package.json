@@ -20,8 +20,8 @@
     "./web": "./src/web.ts"
   },
   "scripts": {
-    "build": "cargo build --release --locked -p aphrody-bun --features gpu -p aphrody-ffi",
-    "test": "cargo build --release --locked -p aphrody-bun --features gpu -p aphrody-ffi && bun run test-ffi.ts && bun run test-cli-only.ts",
+    "build": "cargo build --release --locked -p aphrody-ffi --features gpu",
+    "test": "cargo build --release --locked -p aphrody-ffi --features gpu && bun test test-library.test.ts && bun run test-ffi.ts && bun run test-cli-only.ts",
     "typecheck": "bunx --bun tsc --project tsconfig.json --noEmit"
   },
   "devDependencies": {

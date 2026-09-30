@@ -1,62 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { CString } from "bun:ffi";
-import { openBunRs } from "./native";
-
-const lib = openBunRs({
-  bun_rs_version: {
-    args: [],
-    returns: "cstring",
-  },
-  bun_rs_add: {
-    args: ["i32", "i32"],
-    returns: "i32",
-  },
-  bun_rs_count_char: {
-    args: ["ptr", "usize", "u8"],
-    returns: "usize",
-  },
-  bun_rs_find_bytes: {
-    args: ["ptr", "usize", "ptr", "usize"],
-    returns: "i64",
-  },
-  bun_rs_hct_to_argb: {
-    args: ["f32", "f32", "f32"],
-    returns: "u32",
-  },
-  bun_rs_argb_to_hct: {
-    args: ["u32", "ptr", "ptr", "ptr"],
-    returns: "void",
-  },
-  bun_rs_hct_tones: {
-    args: ["f32", "f32", "f32", "ptr"],
-    returns: "void",
-  },
-  bun_rs_derive_scheme: {
-    args: ["f32", "f32", "bool", "ptr"],
-    returns: "void",
-  },
-  bun_rs_compile_sass: {
-    args: ["ptr", "usize", "ptr", "usize", "i32", "bool", "ptr"],
-    returns: "ptr",
-  },
-  bun_rs_compile_sass_file: {
-    args: ["ptr", "usize", "ptr", "usize", "i32", "bool", "ptr"],
-    returns: "ptr",
-  },
-  bun_rs_free_string: {
-    args: ["ptr"],
-    returns: "void",
-  },
-  bun_rs_validate_spec: {
-    args: ["ptr", "usize"],
-    returns: "ptr",
-  },
-  bun_rs_m3_css: {
-    args: ["ptr", "usize"],
-    returns: "ptr",
-  },
-});
+import { nativeSymbols as lib } from "./library";
 
 export const ROLES = [
   "background",
@@ -113,7 +58,6 @@ export const ROLES = [
 export type ColorRoleMap = Record<string, string>;
 
 /** Get the native library version. */
-pub_fn_version();
 function pub_fn_version(): string {
   const version = lib.bun_rs_version();
   if (!version) throw new Error("aphrody-bun returned a null version pointer");
@@ -122,14 +66,12 @@ function pub_fn_version(): string {
 export { pub_fn_version as version };
 
 /** Run native addition to test round-trip FFI overhead. */
-pub_fn_add(1, 2);
 function pub_fn_add(a: number, b: number): number {
   return lib.bun_rs_add(a, b);
 }
 export { pub_fn_add as add };
 
 /** SIMD count char using memchr. */
-pub_fn_countChar("abc", "b");
 function pub_fn_countChar(text: string, char: string): number {
   const buf = Buffer.from(text);
   return Number(lib.bun_rs_count_char(buf, buf.length, char.charCodeAt(0)));
@@ -137,7 +79,6 @@ function pub_fn_countChar(text: string, char: string): number {
 export { pub_fn_countChar as countChar };
 
 /** SIMD substring search using memchr. */
-pub_fn_findBytes("abc", "b");
 function pub_fn_findBytes(haystack: string, needle: string): number {
   const hBuf = Buffer.from(haystack);
   const nBuf = Buffer.from(needle);
@@ -146,14 +87,12 @@ function pub_fn_findBytes(haystack: string, needle: string): number {
 export { pub_fn_findBytes as findBytes };
 
 /** Convert HCT to packed ARGB u32. */
-pub_fn_hctToArgb(277.0, 40.0, 40.0);
 function pub_fn_hctToArgb(h: number, c: number, t: number): number {
   return lib.bun_rs_hct_to_argb(h, c, t);
 }
 export { pub_fn_hctToArgb as hctToArgb };
 
 /** Convert ARGB to HCT coordinates. */
-pub_fn_argbToHct(0xff6750a4);
 function pub_fn_argbToHct(argb: number): { hue: number; chroma: number; tone: number } {
   const h = new Float32Array(1);
   const c = new Float32Array(1);
@@ -168,7 +107,6 @@ function pub_fn_argbToHct(argb: number): { hue: number; chroma: number; tone: nu
 export { pub_fn_argbToHct as argbToHct };
 
 /** Generate the 13-stop tonal palette from HCT. */
-pub_fn_hctTones(277.0, 40.0, 40.0);
 function pub_fn_hctTones(h: number, c: number, t: number): Uint32Array {
   const p = new Uint32Array(13);
   lib.bun_rs_hct_tones(h, c, t, p);
@@ -177,7 +115,6 @@ function pub_fn_hctTones(h: number, c: number, t: number): Uint32Array {
 export { pub_fn_hctTones as hctTones };
 
 /** Derive all 49 M3 color roles from HCT seed. */
-pub_fn_deriveScheme(277.0, 40.0, false);
 function pub_fn_deriveScheme(h: number, c: number, isDark: boolean): ColorRoleMap {
   const colors = new Uint32Array(49);
   lib.bun_rs_derive_scheme(h, c, isDark, colors);
@@ -196,7 +133,6 @@ function pub_fn_deriveScheme(h: number, c: number, isDark: boolean): ColorRoleMa
 export { pub_fn_deriveScheme as deriveScheme };
 
 /** Compile SCSS/Sass source to CSS using the grass Rust compiler. */
-pub_fn_compileSass("a { b { color: red; } }");
 function pub_fn_compileSass(
   source: string,
   loadPaths: string[] = [],

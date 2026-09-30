@@ -13,7 +13,7 @@ description = "High-performance native Rust plugin for Bun applications using bu
 
 [lib]
 name = "bun_rs"
-crate-type = ["cdylib", "rlib"]
+crate-type = ["rlib"]
 
 [features]
 # Render 3D frames on the GPU (`wgpu`) when an adapter exists; without it

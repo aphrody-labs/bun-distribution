@@ -1,28 +1,12 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { toArrayBuffer } from "bun:ffi";
-import { openBunRs } from "./native";
+import { nativeSymbols as renderLib } from "./library";
 import type { Render3dPolicy, Scene, Scene3d } from "./scene-types";
 
 export type * from "./scene-types";
 
-
 const render3dPolicies: Record<Render3dPolicy, number> = { cpu: 0, auto: 1, gpu: 2 };
-
-const renderLib = openBunRs({
-  bun_rs_render_png: {
-    args: ["ptr", "usize", "ptr"],
-    returns: "ptr",
-  },
-  bun_rs_render3d_png: {
-    args: ["ptr", "usize", "u32", "ptr"],
-    returns: "ptr",
-  },
-  bun_rs_render_free: {
-    args: ["ptr", "usize"],
-    returns: "void",
-  },
-});
 
 /**
  * Render an M3 [`Scene`] (see `crates/aphrody-render/src/scene.rs`) to a

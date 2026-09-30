@@ -24,6 +24,7 @@ workspace = true
 
 [features]
 default = []
+gpu = ["aphrody-bun/gpu"]
 native-stealth = ["obscura-net/stealth"]
 koharu    = ["aphrody/koharu", "aphrody-manga/koharu"]
 # Forward aphrody's opt-in command features so a feature-rich cdylib can be
@@ -47,6 +48,7 @@ jobs      = ["aphrody/jobs"]
 # NOT build the binary target, so the binary's `#[global_allocator]` is absent
 # here and this crate installs its own mimalloc below without a conflict.
 aphrody    = { workspace = true }
+aphrody-bun = { workspace = true }
 aphrody-manga = { workspace = true }
 aphrody-web-extract = { workspace = true }
 aphrody-web-media = { workspace = true }
@@ -57,7 +59,8 @@ aphrody-gemini-web = { workspace = true }
 aphrody-x = { workspace = true }
 aphrody-x-algorithm = { workspace = true }
 base64     = { workspace = true }
-mimalloc   = { workspace = true }
+# A dlopened library must not reserve mimalloc's initial-exec static TLS.
+mimalloc   = { workspace = true, features = ["local_dynamic_tls"] }
 obscura-dom = { workspace = true }
 obscura-net = { workspace = true }
 reqwest    = { workspace = true }

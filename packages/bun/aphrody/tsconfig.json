@@ -8,6 +8,7 @@
     "scripts",
     "src",
     "src/**/*.ts",
-    "test-ffi.ts"
+    "test-ffi.ts",
+    "test-library.test.ts"
   ]
 }

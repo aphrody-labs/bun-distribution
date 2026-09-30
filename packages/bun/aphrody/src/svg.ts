@@ -1,15 +1,20 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { CString } from "bun:ffi";
-import { openBunRs } from "./native";
-
-const lib = openBunRs({
-  bun_rs_svg: { args: ["ptr", "usize"], returns: "ptr" },
-  bun_rs_free_string: { args: ["ptr"], returns: "void" },
-});
+import { nativeSymbols as lib } from "./library";
 
 export interface SvgRequest {
-  op: "sanitize" | "geometry" | "normalize" | "theme" | "sprite" | "optimize" | "render" | "ico" | "diff" | "glyph";
+  op:
+    | "sanitize"
+    | "geometry"
+    | "normalize"
+    | "theme"
+    | "sprite"
+    | "optimize"
+    | "render"
+    | "ico"
+    | "diff"
+    | "glyph";
   [key: string]: unknown;
 }
 

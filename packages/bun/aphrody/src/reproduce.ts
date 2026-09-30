@@ -1,22 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
-import { CString, ptr as bunPtr } from "bun:ffi";
-import { openBunRs } from "./native";
-
-const lib = openBunRs({
-  bun_rs_m3_reproduce: {
-    args: ["u8", "ptr", "usize"],
-    returns: "ptr",
-  },
-  bun_rs_m3_seed_from_image: {
-    args: ["ptr", "usize"],
-    returns: "u32",
-  },
-  bun_rs_free_string: {
-    args: ["ptr"],
-    returns: "void",
-  },
-});
+import { CString } from "bun:ffi";
+import { nativeSymbols as lib } from "./library";
 
 /** Where a {@link ReproductionPlan} came from. */
 export type ReproductionSource =
@@ -67,8 +52,7 @@ interface Envelope {
 }
 
 function callReproduce(kind: 0 | 1 | 2, input: Uint8Array): ReproductionPlan {
-  const inputPtr = input.length > 0 ? (bunPtr(input) as unknown as number) : null;
-  const rawPtr = lib.bun_rs_m3_reproduce(kind, inputPtr, input.length);
+  const rawPtr = lib.bun_rs_m3_reproduce(kind, input.length > 0 ? input : null, input.length);
   if (!rawPtr) throw new Error("bun_rs_m3_reproduce returned a null pointer");
   let envelope: Envelope;
   try {
@@ -76,7 +60,8 @@ function callReproduce(kind: 0 | 1 | 2, input: Uint8Array): ReproductionPlan {
   } finally {
     lib.bun_rs_free_string(rawPtr);
   }
-  if (!envelope.ok || !envelope.plan) throw new Error(`m3Reproduce: ${envelope.error ?? "unknown error"}`);
+  if (!envelope.ok || !envelope.plan)
+    throw new Error(`m3Reproduce: ${envelope.error ?? "unknown error"}`);
   return envelope.plan;
 }
 
@@ -101,5 +86,5 @@ export function m3Reproduce(
 export function m3SeedFromImage(image: Uint8Array | ArrayBuffer): number {
   const bytes = image instanceof ArrayBuffer ? new Uint8Array(image) : image;
   if (bytes.length === 0) return 0xff4285f4;
-  return lib.bun_rs_m3_seed_from_image(bunPtr(bytes) as unknown as number, bytes.length);
+  return lib.bun_rs_m3_seed_from_image(bytes, bytes.length);
 }

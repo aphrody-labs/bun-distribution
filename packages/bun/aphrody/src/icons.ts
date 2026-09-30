@@ -1,22 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { CString } from "bun:ffi";
-import { openBunRs } from "./native";
-
-const lib = openBunRs({
-  bun_rs_icon_svg: {
-    args: ["ptr", "usize"],
-    returns: "ptr",
-  },
-  bun_rs_icon_names: {
-    args: ["ptr", "usize"],
-    returns: "ptr",
-  },
-  bun_rs_free_string: {
-    args: ["ptr"],
-    returns: "void",
-  },
-});
+import { nativeSymbols as lib } from "./library";
 
 /** Material Symbols style: the three variable fonts embedded by `aphrody-icons`. */
 export type M3IconStyle = "outlined" | "rounded" | "sharp";
@@ -45,7 +30,10 @@ interface IconEnvelope {
   error?: string;
 }
 
-function callJson(symbol: (ptr: Buffer, len: number) => number | bigint | null, payload: string): IconEnvelope {
+function callJson(
+  symbol: (ptr: Buffer, len: number) => number | bigint | null,
+  payload: string,
+): IconEnvelope {
   const buf = Buffer.from(payload);
   const ptr = symbol(buf, buf.length);
   if (!ptr) throw new Error("aphrody-icons FFI call returned a null pointer");
@@ -55,7 +43,8 @@ function callJson(symbol: (ptr: Buffer, len: number) => number | bigint | null, 
   } finally {
     lib.bun_rs_free_string(ptr as any);
   }
-  if (typeof envelope.ok !== "boolean") throw new Error("aphrody-icons returned an invalid response");
+  if (typeof envelope.ok !== "boolean")
+    throw new Error("aphrody-icons returned an invalid response");
   return envelope;
 }
 
