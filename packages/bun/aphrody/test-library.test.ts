@@ -13,9 +13,10 @@ test("all public subpaths can be imported without a native artifact", async () =
       "-e",
       `
       const { nativeLibraryLoaded } = await import("./src/library.ts");
-      for (const subpath of ["index", "cli", "web", "shenron", "manga", "svg", "render", "reproduce", "icons"]) {
+      for (const subpath of ["index", "cli", "web", "shenron", "manga", "svg", "render", "reproduce", "icons", "n2b", "oxc"]) {
         await import("./src/" + subpath + ".ts");
       }
+      for (const subpath of ["n2b", "oxc"]) await import("@aphrody/bun/" + subpath);
       if (nativeLibraryLoaded()) throw new Error("import loaded native code");
       const { add } = await import("./src/index.ts");
       try { add(1, 2); throw new Error("call unexpectedly succeeded"); }

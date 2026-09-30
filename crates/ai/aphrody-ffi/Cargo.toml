@@ -49,6 +49,8 @@ jobs      = ["aphrody/jobs"]
 # here and this crate installs its own mimalloc below without a conflict.
 aphrody    = { workspace = true }
 aphrody-bun = { workspace = true }
+aphrody-n2b-native = { workspace = true }
+aphrody-oxc-bridge = { workspace = true }
 aphrody-manga = { workspace = true }
 aphrody-web-extract = { workspace = true }
 aphrody-web-media = { workspace = true }

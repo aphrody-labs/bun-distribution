@@ -1,0 +1,182 @@
+// SPDX-License-Identifier: Apache-2.0
+import { afterAll, expect, test } from "bun:test";
+import { CString, dlopen } from "bun:ffi";
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { closeNativeLibrary, loadNativeLibrary, nativeLibraryLoaded } from "./src/library";
+import { findNewlinesUtf16, scanNodeProject } from "./src/n2b";
+import { formatSource, lintSource, minifySource } from "./src/oxc";
+
+const root = mkdtempSync(join(tmpdir(), "aphrody-native-consumer-"));
+const script = join(root, "index.js");
+const original = "#!/usr/bin/env node\nconsole.log('hello');\n";
+afterAll(() => {
+  closeNativeLibrary();
+  rmSync(root, { recursive: true, force: true });
+});
+
+test("typed native subpaths reject invalid inputs before loading", () => {
+  closeNativeLibrary();
+  expect(() => formatSource("x\0y")).toThrow(TypeError);
+  expect(() => scanNodeProject("x\0y")).toThrow(TypeError);
+  expect(() => scanNodeProject(root, { mode: "invalid" } as never)).toThrow(TypeError);
+  expect(() => scanNodeProject(root, { dry_run: 3 } as never)).toThrow(TypeError);
+  expect(() => scanNodeProject(root, { ignore: [3] } as never)).toThrow(TypeError);
+  expect(() => scanNodeProject(root, { unknown: true } as never)).toThrow(TypeError);
+  expect(nativeLibraryLoaded()).toBe(false);
+});
+
+test("N2B reports findings, respects ignores and previews then applies fixes", () => {
+  writeFileSync(script, original);
+  const report = scanNodeProject(root);
+  expect(report.schema_version).toBe(2);
+  expect(
+    report.files
+      .flatMap((file) => file.findings)
+      .some((finding) => finding.rule_id === "shebang/node"),
+  ).toBe(true);
+  expect(readFileSync(script, "utf8")).toBe(original);
+  const preview = scanNodeProject(root, { mode: "fix", dry_run: true });
+  expect(preview.files.some((file) => file.changed)).toBe(true);
+  expect(readFileSync(script, "utf8")).toBe(original);
+  expect(scanNodeProject(root, { ignore: ["index.js"] }).findings_total).toBe(0);
+  scanNodeProject(root, { mode: "fix", dry_run: false });
+  expect(readFileSync(script, "utf8")).toContain("#!/usr/bin/env bun");
+  expect(() => scanNodeProject(join(root, "missing"))).toThrow("not a directory");
+});
+
+test("UTF16 helper preserves astral, lone-surrogate and high-byte newline offsets", () => {
+  const source = "😀\n\u0A00\u000A\uD800x\n";
+  const expected = Array.from({ length: source.length }, (_, index) => index).filter(
+    (index) => source.charCodeAt(index) === 10,
+  );
+  expect([...findNewlinesUtf16(source)]).toEqual(expected);
+  expect([...findNewlinesUtf16("")]).toEqual([]);
+});
+
+test("Oxc formats, minifies and returns parse diagnostics through one handle", () => {
+  const handle = loadNativeLibrary();
+  const source = "const greeting='hello';console.log(greeting)";
+  expect(formatSource(source)).toContain('const greeting = "hello";');
+  expect(minifySource(source)).toContain("console.log");
+  expect(lintSource("const = ;").length).toBeGreaterThan(0);
+  expect(() => minifySource("const = ;")).toThrow("Oxc minify:");
+  expect(loadNativeLibrary()).toBe(handle);
+  closeNativeLibrary();
+  expect(formatSource(source)).toContain("const greeting");
+  expect(loadNativeLibrary()).not.toBe(handle);
+});
+
+const referencePath = process.env.APHRODY_OXC_REFERENCE_LIB;
+test.skipIf(!referencePath)("aggregate Oxc matches the original fork bridge byte for byte", () => {
+  const reference = dlopen(referencePath!, {
+    aphrody_oxc_abi_version: { args: [], returns: "u32" },
+    aphrody_oxc_format: { args: ["cstring", "cstring"], returns: "ptr" },
+    aphrody_oxc_minify: { args: ["cstring", "cstring"], returns: "ptr" },
+    aphrody_oxc_lint: { args: ["cstring", "cstring"], returns: "ptr" },
+    aphrody_oxc_free: { args: ["ptr"], returns: "void" },
+  });
+  const aggregate = loadNativeLibrary();
+  try {
+    expect(reference.symbols.aphrody_oxc_abi_version()).toBe(
+      aggregate.symbols.aphrody_oxc_abi_version(),
+    );
+    for (const [source, filename] of [
+      ["const foo='hello';console.log(foo)", "fixture.js"],
+      ["interface Person {name: string};const greet=(p:Person)=>p.name", "fixture.ts"],
+      ["const component = <div title='a'>hello</div>", "fixture.jsx"],
+      ["const = ;", "invalid.js"],
+      ["let α = '😀'; console.log(α)", "unicode.js"],
+    ]) {
+      for (const operation of ["format", "minify", "lint"] as const) {
+        const symbol = `aphrody_oxc_${operation}` as const;
+        const input = Buffer.from(`${source}\0`);
+        const path = Buffer.from(`${filename}\0`);
+        const expected = reference.symbols[symbol](input, path);
+        const actual = aggregate.symbols[symbol](input, path);
+        try {
+          expect(new CString(actual!).toString()).toBe(new CString(expected!).toString());
+        } finally {
+          reference.symbols.aphrody_oxc_free(expected);
+          aggregate.symbols.aphrody_oxc_free(actual);
+        }
+      }
+    }
+  } finally {
+    reference.close();
+  }
+});
+
+const forkBinary = process.env.APHRODY_BUN_FORK_BIN;
+for (const order of ["builtin-first", "package-first"]) {
+  test.skipIf(!forkBinary)(`compiled Bun fork shares the aggregate handle: ${order}`, async () => {
+    const child = Bun.spawn({
+      cmd: [forkBinary!, join(import.meta.dir, "fixtures/bun-fork-native.ts"), order],
+      env: { ...process.env, BUN_DEBUG_QUIET_LOGS: "1" },
+      stdout: "pipe",
+      stderr: "pipe",
+    });
+    const [stdout, stderr, code] = await Promise.all([
+      new Response(child.stdout).text(),
+      new Response(child.stderr).text(),
+      child.exited,
+    ]);
+    expect(stderr).toBe("");
+    expect(code).toBe(0);
+    expect(JSON.parse(stdout)).toMatchObject({ order, schema: 2, parity: true, reload: true });
+  });
+}
+
+const n2bReferencePath = process.env.APHRODY_N2B_REFERENCE_LIB;
+test.skipIf(!n2bReferencePath)(
+  "aggregate N2B matches the original Compat bridge's full reports and errors",
+  () => {
+    const reference = dlopen(n2bReferencePath!, {
+      node2bun_abi_version: { args: [], returns: "u32" },
+      node2bun_scan_json: { args: ["cstring"], returns: "ptr" },
+      node2bun_scan_with_options_json: { args: ["cstring", "cstring"], returns: "ptr" },
+      node2bun_string_free: { args: ["ptr"], returns: "void" },
+    });
+    const aggregate = loadNativeLibrary();
+    writeFileSync(script, original);
+    const path = Buffer.from(`${root}\0`);
+    try {
+      expect(reference.symbols.node2bun_abi_version()).toBe(
+        aggregate.symbols.node2bun_abi_version(),
+      );
+      for (const options of [
+        { mode: "check" },
+        { mode: "fix", dry_run: true },
+        { mode: "aggressive", dry_run: true },
+        { ignore: ["index.js"] },
+        { unknown: true },
+      ]) {
+        const encoded = Buffer.from(`${JSON.stringify(options)}\0`);
+        const expected = reference.symbols.node2bun_scan_with_options_json(path, encoded);
+        const actual = aggregate.symbols.node2bun_scan_with_options_json(path, encoded);
+        try {
+          expect(JSON.parse(new CString(actual!).toString())).toEqual(
+            JSON.parse(new CString(expected!).toString()),
+          );
+        } finally {
+          reference.symbols.node2bun_string_free(expected);
+          aggregate.symbols.node2bun_string_free(actual);
+        }
+        expect(readFileSync(script, "utf8")).toBe(original);
+      }
+      const expected = reference.symbols.node2bun_scan_json(null);
+      const actual = aggregate.symbols.node2bun_scan_json(null);
+      try {
+        expect(JSON.parse(new CString(actual!).toString())).toEqual(
+          JSON.parse(new CString(expected!).toString()),
+        );
+      } finally {
+        reference.symbols.node2bun_string_free(expected);
+        aggregate.symbols.node2bun_string_free(actual);
+      }
+    } finally {
+      reference.close();
+    }
+  },
+);

@@ -59,6 +59,13 @@ pub use web::*;
 #[cfg(not(target_arch = "wasm32"))]
 pub use bun_rs::*;
 
+// Preserve the native N2B and Oxc contracts inside this sole dynamic artifact.
+// Their original library owners provide implementations and destructors.
+#[cfg(not(target_arch = "wasm32"))]
+pub use aphrody_n2b_native::*;
+#[cfg(not(target_arch = "wasm32"))]
+pub use aphrody_oxc_bridge::*;
+
 #[cfg(not(target_arch = "wasm32"))]
 mod native {
     use std::{

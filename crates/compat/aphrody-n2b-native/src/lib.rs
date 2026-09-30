@@ -136,6 +136,9 @@ pub unsafe extern "C" fn node2bun_scan_json(root_ptr: *const c_char) -> *mut c_c
 /// `mode=fix` and `mode=aggressive` can write project files unless `dry_run=true`.
 /// Both arguments must be null or valid NUL-terminated UTF-8 strings.
 /// The result is owned by the caller and freed with `node2bun_string_free`.
+///
+/// # Safety
+/// Both arguments must be null or valid NUL-terminated UTF-8 strings.
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn node2bun_scan_with_options_json(
     root_ptr: *const c_char,

@@ -9,6 +9,8 @@ export const EXPECTED_WEB_ABI_VERSION = 4;
 export const EXPECTED_SHENRON_ABI_VERSION = 1;
 export const EXPECTED_MANGA_ABI_VERSION = 1;
 export const EXPECTED_BUN_RS_ABI_VERSION = 1;
+export const EXPECTED_N2B_ABI_VERSION = 2;
+export const EXPECTED_OXC_ABI_VERSION = 1;
 
 const SYMBOLS = {
   aphrody_abi_version: { args: [], returns: FFIType.u32 },
@@ -252,11 +254,33 @@ const SYMBOLS = {
     returns: "u32",
   },
   bun_rs_abi_version: { args: [], returns: FFIType.u32 },
+  node2bun_abi_version: { args: [], returns: FFIType.u32 },
+  node2bun_scan_json: { args: [FFIType.cstring], returns: FFIType.ptr },
+  node2bun_scan_with_options_json: {
+    args: [FFIType.cstring, FFIType.cstring],
+    returns: FFIType.ptr,
+  },
+  node2bun_string_free: { args: [FFIType.ptr], returns: FFIType.void },
+  find_newlines_u16: {
+    args: ["ptr", "usize", "ptr", "usize"],
+    returns: "usize",
+  },
+  aphrody_oxc_abi_version: { args: [], returns: FFIType.u32 },
+  aphrody_oxc_format: { args: [FFIType.cstring, FFIType.cstring], returns: FFIType.ptr },
+  aphrody_oxc_minify: { args: [FFIType.cstring, FFIType.cstring], returns: FFIType.ptr },
+  aphrody_oxc_lint: { args: [FFIType.cstring, FFIType.cstring], returns: FFIType.ptr },
+  aphrody_oxc_free: { args: [FFIType.ptr], returns: FFIType.void },
 } as const;
 
 type NativeLibrary = ReturnType<typeof dlopen<typeof SYMBOLS>>;
 type NativeSymbols = NativeLibrary["symbols"];
-let library: NativeLibrary | undefined;
+const LIBRARY_KEY = Symbol.for("aphrody.ffi.library.v1");
+interface SharedNativeLibrary {
+  path: string;
+  library: NativeLibrary;
+  owner: "@aphrody/bun" | "bun:aphrody";
+}
+const sharedState = globalThis as typeof globalThis & { [LIBRARY_KEY]?: SharedNativeLibrary };
 
 function hostTriple(): string | undefined {
   const arch = process.arch === "x64" ? "x86_64" : process.arch === "arm64" ? "aarch64" : undefined;
@@ -303,8 +327,15 @@ export function resolveNativeLibraryPath(): string | undefined {
 
 /** @internal All bindings share this handle. Importing a binding never opens it. */
 export function loadNativeLibrary(): NativeLibrary {
-  if (library) return library;
-  const path = resolveNativeLibraryPath();
+  const shared = sharedState[LIBRARY_KEY];
+  const override = process.env.APHRODY_FFI_LIB;
+  if (shared && override && resolve(override) !== shared.path) {
+    throw new Error(
+      `aphrody_ffi is already loaded from ${shared.path}; APHRODY_FFI_LIB selects ${resolve(override)}.`,
+    );
+  }
+  if (shared?.owner === "@aphrody/bun") return shared.library;
+  const path = shared?.path ?? resolveNativeLibraryPath();
   if (!path)
     throw new Error(
       "aphrody-ffi native library not found; build aphrody-ffi or set APHRODY_FFI_LIB",
@@ -322,6 +353,8 @@ export function loadNativeLibrary(): NativeLibrary {
       ["Shenron", loaded.symbols.shenron_abi_version(), EXPECTED_SHENRON_ABI_VERSION],
       ["Manga", loaded.symbols.manga_abi_version(), EXPECTED_MANGA_ABI_VERSION],
       ["M3", loaded.symbols.bun_rs_abi_version(), EXPECTED_BUN_RS_ABI_VERSION],
+      ["N2B", loaded.symbols.node2bun_abi_version(), EXPECTED_N2B_ABI_VERSION],
+      ["Oxc", loaded.symbols.aphrody_oxc_abi_version(), EXPECTED_OXC_ABI_VERSION],
     ] as const) {
       if (actual !== expected)
         throw new Error(`${name} ABI mismatch at ${path}: expected ${expected}, found ${actual}`);
@@ -330,19 +363,22 @@ export function loadNativeLibrary(): NativeLibrary {
     loaded.close();
     throw error;
   }
-  library = loaded;
+  // A builtin-first handle only has its subset of bindings. Open and validate
+  // this superset before releasing that handle so the library never unloads.
+  shared?.library.close();
+  sharedState[LIBRARY_KEY] = { path, library: loaded, owner: "@aphrody/bun" };
   return loaded;
 }
 
 /** @internal Close only after the engine binding has checked live resources. */
 export function closeNativeLibrary(): void {
-  library?.close();
-  library = undefined;
+  sharedState[LIBRARY_KEY]?.library.close();
+  delete sharedState[LIBRARY_KEY];
 }
 
 /** @internal Observe lazy loading without opening a library. */
 export function nativeLibraryLoaded(): boolean {
-  return library !== undefined;
+  return sharedState[LIBRARY_KEY] !== undefined;
 }
 
 // Resolve functions on use so every subpath follows handle close/reload safely.

@@ -17,11 +17,13 @@
     "./cli": "./src/cli.ts",
     "./manga": "./src/manga.ts",
     "./shenron": "./src/shenron.ts",
-    "./web": "./src/web.ts"
+    "./web": "./src/web.ts",
+    "./n2b": "./src/n2b.ts",
+    "./oxc": "./src/oxc.ts"
   },
   "scripts": {
     "build": "cargo build --release --locked -p aphrody-ffi --features gpu",
-    "test": "cargo build --release --locked -p aphrody-ffi --features gpu && bun test test-library.test.ts && bun run test-ffi.ts && bun run test-cli-only.ts",
+    "test": "cargo build --release --locked -p aphrody-ffi --features gpu && bun test test-library.test.ts test-native.test.ts && bun run test-ffi.ts && bun run test-cli-only.ts",
     "typecheck": "bunx --bun tsc --project tsconfig.json --noEmit"
   },
   "devDependencies": {
