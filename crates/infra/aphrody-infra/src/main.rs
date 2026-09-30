@@ -600,22 +600,9 @@ fn quality(
     if execute && repo.is_none() {
         bail!("--repo est requis avec --run");
     }
-    let workspace = maintenance_workspace_root(root)?;
-    let catalog: Value =
-        serde_json::from_slice(&fs::read(root.join("docs/ecosystem/ecosystem.json"))?)?;
-    let names: Vec<String> = catalog["repos"]
-        .as_array()
-        .into_iter()
-        .flatten()
-        .filter_map(|entry| entry["name"].as_str().map(str::to_owned))
-        .filter(|name| repo.is_none_or(|wanted| wanted == name))
-        .collect();
-    if names.is_empty() {
-        bail!("dépôt non catalogué: {}", repo.unwrap_or("<aucun>"));
-    }
+    let repositories = workspace_repositories(root, repo)?;
     let mut rows = Vec::new();
-    for name in names {
-        let path = workspace.join(&name);
+    for (name, path) in repositories {
         let manifest_path = path.join("package.json");
         if !manifest_path.is_file() {
             continue;
@@ -678,38 +665,53 @@ fn quality(
     Ok(())
 }
 
-fn maintenance_workspace_root(root: &Path) -> Result<&Path> {
-    root.parent().context("le dépôt Infra doit avoir une racine workspace parente")
+/// Resolve the first-party workspace without treating former source repo names as
+/// aliases for a consolidated root (maintenance may mutate the selected repo).
+fn workspace_repositories(root: &Path, requested: Option<&str>) -> Result<Vec<(String, PathBuf)>> {
+    if root.join("crates/infra/aphrody-infra/Cargo.toml").is_file() {
+        let manifest: Value = serde_json::from_slice(&fs::read(root.join("package.json"))?)?;
+        let name = manifest["name"].as_str().context("root package.json has no name")?;
+        if requested.is_some_and(|wanted| wanted != name) {
+            bail!("dépôt non catalogué: {} (workspace consolidé: {name})", requested.unwrap());
+        }
+        return Ok(vec![(name.to_owned(), root.to_path_buf())]);
+    }
+    let workspace =
+        root.parent().context("le dépôt Infra doit avoir une racine workspace parente")?;
+    let catalog_path = [
+        root.join("docs/ecosystem/ecosystem.json"),
+        root.join("docs/reference/infra/ecosystem/ecosystem.json"),
+    ]
+    .into_iter()
+    .find(|path| path.is_file())
+    .context("catalogue ecosystem.json introuvable")?;
+    let catalog: Value = serde_json::from_slice(&fs::read(&catalog_path)?)?;
+    let known: std::collections::BTreeSet<String> = catalog["repos"]
+        .as_array()
+        .context("catalogue ecosystem.json sans repos")?
+        .iter()
+        .filter_map(|entry| entry["name"].as_str().map(str::to_owned))
+        .collect();
+    if requested.is_some_and(|wanted| !known.contains(wanted)) {
+        bail!("dépôt non catalogué: {}", requested.unwrap());
+    }
+    Ok(known
+        .into_iter()
+        .filter(|name| requested.is_none_or(|wanted| wanted == name))
+        .map(|name| {
+            let path = workspace.join(&name);
+            (name, path)
+        })
+        .collect())
 }
 
 fn maintenance_repositories(
     root: &Path,
     requested: Option<&str>,
 ) -> Result<Vec<(String, PathBuf)>> {
-    let workspace = maintenance_workspace_root(root)?;
-    let catalog: Value =
-        serde_json::from_slice(&fs::read(root.join("docs/ecosystem/ecosystem.json"))?)?;
-    let known: std::collections::BTreeSet<String> = catalog["repos"]
-        .as_array()
+    Ok(workspace_repositories(root, requested)?
         .into_iter()
-        .flatten()
-        .filter_map(|entry| entry["name"].as_str().map(str::to_owned))
-        .collect();
-    let names: Vec<String> = match requested {
-        Some(repo) => {
-            if !known.contains(repo) {
-                bail!("dépôt non catalogué: {repo}");
-            }
-            vec![repo.to_owned()]
-        },
-        None => known.into_iter().collect(),
-    };
-    Ok(names
-        .into_iter()
-        .filter_map(|name| {
-            let path = workspace.join(&name);
-            path.join("Cargo.toml").is_file().then_some((name, path))
-        })
+        .filter(|(_, path)| path.join("Cargo.toml").is_file())
         .collect())
 }
 
@@ -742,7 +744,7 @@ fn maintenance(
         match action {
             MaintenanceAction::Scan => {
                 let output = Command::new("cargo")
-                    .args(["metadata", "--no-deps", "--format-version=1"])
+                    .args(["metadata", "--locked", "--no-deps", "--format-version=1"])
                     .current_dir(&path)
                     .output();
                 let metadata_ok = output.as_ref().is_ok_and(|result| result.status.success());
@@ -2087,6 +2089,42 @@ async fn execute_ovh(command: &aphrody_ovh::OvhCommand, run: &mut Run) -> Result
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn consolidated_quality_and_maintenance_select_the_actual_root() {
+        let fixture = tempfile::tempdir().unwrap();
+        let root = fixture.path().join("consolidated workspace");
+        fs::create_dir_all(root.join("crates/infra/aphrody-infra")).unwrap();
+        fs::write(root.join("crates/infra/aphrody-infra/Cargo.toml"), "").unwrap();
+        fs::write(root.join("Cargo.toml"), "[workspace]\n").unwrap();
+        fs::write(root.join("package.json"), r#"{"name":"aphrody","scripts":{"lint":"oxlint"}}"#)
+            .unwrap();
+        let expected = vec![("aphrody".to_owned(), root.clone())];
+        assert_eq!(workspace_repositories(&root, None).unwrap(), expected);
+        assert_eq!(maintenance_repositories(&root, Some("aphrody")).unwrap(), expected);
+        assert!(workspace_repositories(&root, Some("aphrody-ai")).is_err());
+    }
+
+    #[test]
+    fn legacy_catalog_keeps_explicit_source_repo_selection() {
+        let fixture = tempfile::tempdir().unwrap();
+        let root = fixture.path().join("aphrody-infra");
+        fs::create_dir_all(root.join("docs/ecosystem")).unwrap();
+        fs::write(
+            root.join("docs/ecosystem/ecosystem.json"),
+            r#"{"repos":[{"name":"aphrody-ai"},{"name":"aphrody-infra"}]}"#,
+        )
+        .unwrap();
+        let peer = fixture.path().join("aphrody-ai");
+        fs::create_dir_all(&peer).unwrap();
+        fs::write(peer.join("Cargo.toml"), "[workspace]\n").unwrap();
+        assert_eq!(
+            maintenance_repositories(&root, Some("aphrody-ai")).unwrap(),
+            vec![("aphrody-ai".to_owned(), peer)]
+        );
+        assert_eq!(workspace_repositories(&root, None).unwrap().len(), 2);
+        assert!(workspace_repositories(&root, Some("unknown")).is_err());
+    }
 
     #[test]
     fn parses_target_matrix_shape() {

@@ -794,7 +794,11 @@ fn has_extension(entries: &[String], extensions: &[&str]) -> bool {
 }
 
 fn yolo_plan(root: &Path, json: bool) -> Result<()> {
-    let manifest = yolo_root(root).join("yolo.json");
+    yolo_plan_resources(root, &yolo_root(root)?, json)
+}
+
+fn yolo_plan_resources(root: &Path, resources: &Path, json: bool) -> Result<()> {
+    let manifest = resources.join("yolo.json");
     let value: serde_json::Value = serde_json::from_str(
         &std::fs::read_to_string(&manifest)
             .with_context(|| format!("cannot read YOLO manifest: {}", manifest.display()))?,
@@ -928,6 +932,10 @@ fn yolo_plan(root: &Path, json: bool) -> Result<()> {
 }
 
 fn yolo_check(root: &Path, json: bool) -> Result<()> {
+    yolo_check_resources(root, &yolo_root(root)?, json)
+}
+
+fn yolo_check_resources(root: &Path, yolo_root: &Path, json: bool) -> Result<()> {
     anyhow::ensure!(
         !root.join("packages/yolo/package.json").is_file(),
         "obsolete packages/yolo package must not exist; YOLO belongs to the Aphrody plugin"
@@ -936,7 +944,6 @@ fn yolo_check(root: &Path, json: bool) -> Result<()> {
         !root.join("crates/aphrody-yolo/resources/yolo/yolo.json").exists(),
         "duplicate YOLO manifest remains under aphrody-yolo resources"
     );
-    let yolo_root = yolo_root(root);
     let manifest_path = yolo_root.join("yolo.json");
     let manifest: serde_json::Value = serde_json::from_slice(
         &fs::read(&manifest_path)
@@ -1011,20 +1018,51 @@ fn yolo_check(root: &Path, json: bool) -> Result<()> {
     Ok(())
 }
 
-fn yolo_root(root: &Path) -> PathBuf {
-    let in_tree = root.join("plugins/aphrody");
-    if in_tree.join("yolo.json").is_file() {
-        return in_tree;
+/// Resources belong to the canonical plugin, never to a versioned plugin cache.
+/// Relative overrides are resolved against the requested repository root.
+fn resolve_yolo_root(root: &Path, override_path: Option<&Path>) -> Result<PathBuf> {
+    let candidates = match override_path {
+        Some(path) => {
+            anyhow::ensure!(!path.as_os_str().is_empty(), "APHRODY_YOLO_ROOT cannot be empty");
+            vec![if path.is_absolute() { path.to_path_buf() } else { root.join(path) }]
+        },
+        None => vec![
+            root.join("config/ai/plugins/aphrody"),
+            root.join("plugins/aphrody"),
+            root.join("../aphrody-os/plugins/aphrody"),
+            root.join("../aphrody-ai/plugins/aphrody"),
+        ],
+    };
+    let path = candidates
+        .iter()
+        .find(|candidate| candidate.join("yolo.json").is_file())
+        .with_context(|| {
+            format!(
+                "YOLO resources missing; expected {} (override: APHRODY_YOLO_ROOT)",
+                candidates[0].display()
+            )
+        })?;
+    let manifest: serde_json::Value = serde_json::from_slice(&fs::read(path.join("yolo.json"))?)
+        .with_context(|| format!("invalid YOLO manifest: {}", path.display()))?;
+    let schema = manifest["$schema"].as_str().context("YOLO manifest has no $schema")?;
+    anyhow::ensure!(
+        path.join(schema).is_file(),
+        "YOLO manifest schema does not exist: {}",
+        path.join(schema).display()
+    );
+    for directory in ["agents", "skills"] {
+        anyhow::ensure!(
+            path.join(directory).is_dir(),
+            "YOLO resources missing: {}",
+            path.join(directory).display()
+        );
     }
-    let os_peer = root.join("../aphrody-os/plugins/aphrody");
-    if os_peer.join("yolo.json").is_file() {
-        return os_peer;
-    }
-    let ai_peer = root.join("../aphrody-ai/plugins/aphrody");
-    if ai_peer.join("yolo.json").is_file() {
-        return ai_peer;
-    }
-    in_tree
+    Ok(path.clone())
+}
+
+fn yolo_root(root: &Path) -> Result<PathBuf> {
+    let override_path = std::env::var_os("APHRODY_YOLO_ROOT").map(PathBuf::from);
+    resolve_yolo_root(root, override_path.as_deref())
 }
 
 fn task_owner(title: &str) -> &'static str {
@@ -1384,9 +1422,88 @@ fn main() -> ExitCode {
 mod tests {
     use super::*;
 
+    struct Fixture(PathBuf);
+    impl Fixture {
+        fn new() -> Self {
+            static NEXT: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+            let path = std::env::temp_dir().join(format!(
+                "aphrody-yolo-resources-{}-{}",
+                std::process::id(),
+                NEXT.fetch_add(1, std::sync::atomic::Ordering::Relaxed)
+            ));
+            fs::create_dir(&path).unwrap();
+            Self(path)
+        }
+        fn plugin(&self, relative: &str) -> PathBuf {
+            let path = self.0.join(relative);
+            fs::create_dir_all(path.join("schemas")).unwrap();
+            fs::create_dir_all(path.join("agents")).unwrap();
+            fs::create_dir_all(path.join("skills/yolo")).unwrap();
+            fs::write(path.join("yolo.json"), r#"{"$schema":"./schemas/yolo.schema.json","id":"fixture","entrypoints":{"plan":"aphrody-yolo plan"}}"#).unwrap();
+            fs::write(path.join("schemas/yolo.schema.json"), "{}").unwrap();
+            fs::write(path.join("agents/lead.md"), "---\nname: lead\ndescription: fixture\n---\n")
+                .unwrap();
+            fs::write(path.join("skills/yolo/SKILL.md"), "fixture").unwrap();
+            path
+        }
+    }
+    impl Drop for Fixture {
+        fn drop(&mut self) {
+            let _ = fs::remove_dir_all(&self.0);
+        }
+    }
+
+    #[test]
+    fn consolidated_plugin_supports_plan_and_check_without_override() {
+        let fixture = Fixture::new();
+        let expected = fixture.plugin("config/ai/plugins/aphrody");
+        fixture.plugin("plugins/aphrody");
+        let resources = resolve_yolo_root(&fixture.0, None).unwrap();
+        assert_eq!(resources, expected);
+        yolo_plan_resources(&fixture.0, &resources, true).unwrap();
+        yolo_check_resources(&fixture.0, &resources, true).unwrap();
+    }
+
+    #[test]
+    fn legacy_source_and_in_tree_plugin_roots_remain_supported() {
+        let fixture = Fixture::new();
+        let root = fixture.0.join("aphrody-infra");
+        fs::create_dir(&root).unwrap();
+        let peer = fixture.plugin("aphrody-ai/plugins/aphrody");
+        assert_eq!(resolve_yolo_root(&root, None).unwrap().canonicalize().unwrap(), peer);
+        let local = fixture.plugin("aphrody-infra/plugins/aphrody");
+        assert_eq!(resolve_yolo_root(&root, None).unwrap(), local);
+    }
+
+    #[test]
+    fn explicit_resource_override_is_authoritative_and_validated() {
+        let fixture = Fixture::new();
+        fixture.plugin("config/ai/plugins/aphrody");
+        let external = fixture.plugin("custom plugin");
+        assert_eq!(
+            resolve_yolo_root(&fixture.0, Some(Path::new("custom plugin"))).unwrap(),
+            external
+        );
+        assert_eq!(resolve_yolo_root(&fixture.0, Some(&external)).unwrap(), external);
+        assert!(resolve_yolo_root(&fixture.0, Some(Path::new("missing"))).is_err());
+        assert!(resolve_yolo_root(&fixture.0, Some(Path::new(""))).is_err());
+        fs::remove_file(external.join("schemas/yolo.schema.json")).unwrap();
+        assert!(
+            resolve_yolo_root(&fixture.0, Some(&external))
+                .unwrap_err()
+                .to_string()
+                .contains("schema")
+        );
+        fs::remove_file(fixture.0.join("config/ai/plugins/aphrody/yolo.json")).unwrap();
+        assert!(resolve_yolo_root(&fixture.0, None).is_err());
+    }
+
     #[test]
     fn aphrody_plugin_yolo_resources_validate_without_a_bun_package() {
-        let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../..");
-        yolo_check(&root, false).expect("the Aphrody plugin YOLO resources must validate");
+        let root = Path::new(env!("CARGO_MANIFEST_DIR"))
+            .ancestors()
+            .find(|path| path.join("Cargo.toml").is_file() && path.join("package.json").is_file())
+            .expect("workspace root");
+        yolo_check(root, false).expect("the Aphrody plugin YOLO resources must validate");
     }
 }
