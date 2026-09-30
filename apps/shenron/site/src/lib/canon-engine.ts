@@ -1542,7 +1542,7 @@ export function referencesPour(
 	maximum = 3
 ): CanonReference[] {
 	if (config.references.length === 0) return [];
-	const sujet = motsDuSujet.map((m) => normaliser(m));
+	const sujet = new Set(motsDuSujet.map((m) => normaliser(m)));
 
 	const frequence = frequenceMotsCles(config.references);
 
@@ -1558,7 +1558,7 @@ export function referencesPour(
 			if (kw.length > 3) motSolide = true;
 			// Un mot-clé que le verdict a lui-même reconnu désigne le sujet, pas le
 			// vocabulaire commun : il compte double.
-			if (sujet.includes(normaliser(kw))) poids += kw.length;
+			if (sujet.has(normaliser(kw))) poids += kw.length;
 		}
 		if (poids > 0 && motSolide) notes.push({ reference, poids });
 	}
@@ -1916,7 +1916,7 @@ function getTierColor(tier: CanonTier, config: CanonConfig = DEFAULT_CANON_CONFI
 
 // ── Résolution défensive du document stocké ─────────────────────────────────
 
-const CATEGORIES: CanonTopicEntry["category"][] = ["character", "form", "lore", "work", "myth"];
+const CATEGORIES = new Set<CanonTopicEntry["category"]>(["character", "form", "lore", "work", "myth"]);
 const COULEUR_HEX = /^#[0-9a-f]{3,8}$/i;
 
 /**
@@ -2023,7 +2023,7 @@ export function resolveCanonConfig(patch: unknown): CanonConfig {
 			while (vus.has(id)) id = `${id}-2`;
 			vus.add(id);
 			const tier = isCanonTier(e.tier) ? e.tier : "EXTENSION_OFFICIELLE";
-			const category = CATEGORIES.includes(e.category as CanonTopicEntry["category"])
+			const category = CATEGORIES.has(e.category as CanonTopicEntry["category"])
 				? (e.category as CanonTopicEntry["category"])
 				: "lore";
 			const quote = citation(e.toriyamaQuote);

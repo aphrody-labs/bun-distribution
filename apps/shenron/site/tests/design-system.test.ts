@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
+const REPO_ROOT = join(import.meta.dir, "..", "..", "..", "..");
 const APP_DIR = join(import.meta.dir, "..", "src", "app");
 const KIT_DIR = join(import.meta.dir, "..", "src", "components", "kit");
 /** Toutes les `page.tsx` sous `src/app`, en chemins relatifs à `src/app`. */
@@ -126,7 +127,12 @@ describe("système de design — un seul vocabulaire", () => {
 	 */
 	test("le titre de page du kit délègue à HeroTitles", () => {
 		const heading = readFileSync(join(KIT_DIR, "SectionHeading.tsx"), "utf8");
-		expect(heading).toContain("HeroTitles");
+		if (heading.includes("@shenron/ui/layout/SectionHeading")) {
+			const uiHeading = readFileSync(join(REPO_ROOT, "packages", "shenron", "ui", "src", "layout", "SectionHeading.tsx"), "utf8");
+			expect(uiHeading).toContain("HeroTitles");
+		} else {
+			expect(heading).toContain("HeroTitles");
+		}
 	});
 
 	test("les index encyclopédiques d'expansion partagent leur coque wiki", () => {
@@ -172,7 +178,13 @@ describe("système de design — un seul vocabulaire", () => {
 		const layout = readFileSync(join(APP_DIR, "wiki", "layout.tsx"), "utf8");
 		const css = readFileSync(join(APP_DIR, "globals.css"), "utf8");
 		expect(layout).toContain("data-wiki-surface");
-		expect(css).toContain("[data-wiki-surface]");
-		expect(css).toContain("--wiki-shell-max");
+		if (css.includes("@shenron/ui/site.css")) {
+			const uiCss = readFileSync(join(REPO_ROOT, "packages", "shenron", "ui", "src", "site.css"), "utf8");
+			expect(uiCss).toContain("[data-wiki-surface]");
+			expect(uiCss).toContain("--wiki-shell-max");
+		} else {
+			expect(css).toContain("[data-wiki-surface]");
+			expect(css).toContain("--wiki-shell-max");
+		}
 	});
 });

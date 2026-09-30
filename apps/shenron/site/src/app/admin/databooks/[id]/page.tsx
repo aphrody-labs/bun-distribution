@@ -21,7 +21,7 @@ export const dynamic = "force-dynamic";
 
 type Filtre = "toutes" | "a-transcrire" | "transcrites" | "suspectes";
 
-const FILTRES: Filtre[] = ["toutes", "a-transcrire", "transcrites", "suspectes"];
+const FILTRES = new Set<Filtre>(["toutes", "a-transcrire", "transcrites", "suspectes"]);
 
 export default async function RelecturePage({
 	params,
@@ -37,7 +37,7 @@ export default async function RelecturePage({
 	if (!fiche) notFound();
 
 	const { filtre, planche } = await searchParams;
-	const filtreInitial = FILTRES.includes(filtre as Filtre) ? (filtre as Filtre) : "toutes";
+	const filtreInitial = FILTRES.has(filtre as Filtre) ? (filtre as Filtre) : "toutes";
 	const nPlanche = Number(planche);
 
 	const planches: PlancheRelecture[] = fiche.pages.map((p) => ({

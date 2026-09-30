@@ -4,11 +4,11 @@ import { describe, expect, it } from "bun:test";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
-const SRC = join(import.meta.dir, "..", "src");
+const SRC = join(import.meta.dir, "..", "..", "src");
 const FORBIDDEN = /from\s+["'](?:bun:ffi|bun:sqlite|sharp|bun)["']|import\(\s*["'](?:bun:ffi|sharp)["']\s*\)|\bdlopen\b/;
 
 describe("portability", () => {
-	for (const file of ["index.ts", "compute.ts", "shenron-embeddings.ts", "web.ts"]) {
+	for (const file of ["index.ts", "aphrody/compute.ts", "aphrody/shenron-embeddings.ts", "aphrody/web.ts"]) {
 		it(`${file} imports no Bun-native module`, () => {
 			const text = readFileSync(join(SRC, file), "utf8");
 			expect(FORBIDDEN.test(text)).toBe(false);
@@ -17,7 +17,7 @@ describe("portability", () => {
 	}
 
 	it("a2a never imports an application module", () => {
-		for (const file of ["a2a.ts", "a2a-probes.ts"]) {
+		for (const file of ["aphrody/a2a.ts", "aphrody/a2a-probes.ts"]) {
 			const text = readFileSync(join(SRC, file), "latin1");
 			expect(/(?:from\s+|import\(\s*)["'][^"']*apps\//.test(text)).toBe(false);
 			expect(/bun:ffi|from\s+["']sharp["']/.test(text)).toBe(false);

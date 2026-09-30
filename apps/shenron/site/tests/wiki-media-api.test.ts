@@ -2,8 +2,10 @@ import { describe, expect, it, mock } from "bun:test";
 
 mock.module("server-only", () => ({}));
 
+const dbUrl = process.env.DATABASE_URL?.trim();
+
 describe("Sprint 1 — Media Works & Editions API Integration", () => {
-	it("dbUniverse.mediaWorks() renvoie les œuvres médias avec leurs éditions imbriquées", async () => {
+	it.skipIf(!dbUrl)("dbUniverse.mediaWorks() renvoie les œuvres médias avec leurs éditions imbriquées", async () => {
 		const { dbUniverse } = await import("../src/lib/db-universe");
 		const works = await dbUniverse.mediaWorks();
 		expect(works).not.toBeNull();
@@ -25,7 +27,7 @@ describe("Sprint 1 — Media Works & Editions API Integration", () => {
 		expect(fullColor!.volumes_count).toBe(42);
 	});
 
-	it("dbUniverse.mediaEditions() renvoie les éditions filtrées par slug d'œuvre", async () => {
+	it.skipIf(!dbUrl)("dbUniverse.mediaEditions() renvoie les éditions filtrées par slug d'œuvre", async () => {
 		const { dbUniverse } = await import("../src/lib/db-universe");
 		const editions = await dbUniverse.mediaEditions({ workSlug: "dragon-ball" });
 		expect(editions).not.toBeNull();
@@ -33,7 +35,7 @@ describe("Sprint 1 — Media Works & Editions API Integration", () => {
 		expect(editions!.every((e) => e.work_slug === "dragon-ball")).toBe(true);
 	});
 
-	it("GET /api/wiki/media répond avec CORS et les œuvres sérialisées", async () => {
+	it.skipIf(!dbUrl)("GET /api/wiki/media répond avec CORS et les œuvres sérialisées", async () => {
 		const { GET, OPTIONS } = await import("../src/app/api/wiki/media/route");
 
 		// OPTIONS preflight
@@ -53,7 +55,7 @@ describe("Sprint 1 — Media Works & Editions API Integration", () => {
 		expect(json.data[0].editions.length).toBeGreaterThanOrEqual(2);
 	});
 
-	it("GET /api/wiki/media?edition=full_color filtre les éditions correspondantes", async () => {
+	it.skipIf(!dbUrl)("GET /api/wiki/media?edition=full_color filtre les éditions correspondantes", async () => {
 		const { GET } = await import("../src/app/api/wiki/media/route");
 		const req = new Request("http://localhost:3000/api/wiki/media?edition=full_color");
 		const res = await GET(req as any);
@@ -67,13 +69,12 @@ describe("Sprint 1 — Media Works & Editions API Integration", () => {
 	});
 
 	it("les composants pages manga intègrent la matrice d'éditions et le balisage des tomes", async () => {
-		const fs = await import("node:fs/promises");
-		const indexContent = await fs.readFile("apps/shenron/site/src/app/wiki/manga/page.tsx", "utf-8");
+		const indexContent = await Bun.file(new URL("../src/app/wiki/manga/page.tsx", import.meta.url)).text();
 		expect(indexContent).toContain("mediaWorks");
 		expect(indexContent).toContain("Matrice Ontologique Média");
 		expect(indexContent).toContain("/api/wiki/media");
 
-		const volumeContent = await fs.readFile("apps/shenron/site/src/app/wiki/manga/volume/[id]/page.tsx", "utf-8");
+		const volumeContent = await Bun.file(new URL("../src/app/wiki/manga/volume/[id]/page.tsx", import.meta.url)).text();
 		expect(volumeContent).toContain("Éditions répertoriées :");
 		expect(volumeContent).toContain("Glénat FR (42)");
 		expect(volumeContent).toContain("Full Color (42)");

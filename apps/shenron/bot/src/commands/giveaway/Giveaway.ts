@@ -158,6 +158,7 @@ export class GiveawayCommands {
 
 import { Once } from "discordx";
 import type { Client } from "discord.js";
+import { CronRegistry } from "~/api/cron-registry";
 
 @Discord()
 @Bot("shenron")
@@ -165,12 +166,22 @@ import type { Client } from "discord.js";
 export class GiveawayTicker {
 	constructor(
 		@inject(DatabaseService) private dbs: DatabaseService,
-		@inject(MessageTemplateService) private msg: MessageTemplateService
+		@inject(MessageTemplateService) private msg: MessageTemplateService,
+		@inject(CronRegistry) private cron: CronRegistry
 	) {}
 
 	@Once({ event: "clientReady" })
 	async start([client]: [Client]) {
-		setInterval(() => this.tick(client).catch(() => {}), 60_000).unref();
+		this.cron.register({
+			name: "giveaway-ticker",
+			description: "Tirage au sort automatique des giveaways expirés",
+			owner: "giveaways",
+			category: "periodic",
+			idempotent: true,
+			duplicateBehavior: "skip",
+			intervalMs: 60_000,
+			fn: () => this.tick(client),
+		});
 	}
 
 	async tick(client: Client) {

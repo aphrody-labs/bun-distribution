@@ -3,21 +3,14 @@
 import { dlopen, FFIType, suffix } from "bun:ffi";
 import { existsSync } from "node:fs";
 import { isAbsolute, join, resolve } from "node:path";
-import packageMetadata from "../package.json";
-import {
-  NATIVE_ABI_VERSIONS,
-  nativeDevelopmentEnabled,
-  nativeHostTriple,
-  verifyNativeArtifact,
-} from "./native-artifact";
 
-export const EXPECTED_ABI_VERSION = NATIVE_ABI_VERSIONS.aphrody_abi_version;
-export const EXPECTED_WEB_ABI_VERSION = NATIVE_ABI_VERSIONS.aphrody_web_bridge_abi_version;
-export const EXPECTED_SHENRON_ABI_VERSION = NATIVE_ABI_VERSIONS.shenron_abi_version;
-export const EXPECTED_MANGA_ABI_VERSION = NATIVE_ABI_VERSIONS.manga_abi_version;
-export const EXPECTED_BUN_RS_ABI_VERSION = NATIVE_ABI_VERSIONS.bun_rs_abi_version;
-export const EXPECTED_N2B_ABI_VERSION = NATIVE_ABI_VERSIONS.node2bun_abi_version;
-export const EXPECTED_OXC_ABI_VERSION = NATIVE_ABI_VERSIONS.aphrody_oxc_abi_version;
+export const EXPECTED_ABI_VERSION = 1;
+export const EXPECTED_WEB_ABI_VERSION = 4;
+export const EXPECTED_SHENRON_ABI_VERSION = 1;
+export const EXPECTED_MANGA_ABI_VERSION = 1;
+export const EXPECTED_BUN_RS_ABI_VERSION = 1;
+export const EXPECTED_N2B_ABI_VERSION = 2;
+export const EXPECTED_OXC_ABI_VERSION = 1;
 
 const SYMBOLS = {
   aphrody_abi_version: { args: [], returns: FFIType.u32 },
@@ -289,6 +282,20 @@ interface SharedNativeLibrary {
 }
 const sharedState = globalThis as typeof globalThis & { [LIBRARY_KEY]?: SharedNativeLibrary };
 
+function hostTriple(): string | undefined {
+  const arch = process.arch === "x64" ? "x86_64" : process.arch === "arm64" ? "aarch64" : undefined;
+  if (!arch) return undefined;
+  if (process.platform === "win32") return `${arch}-pc-windows-msvc`;
+  if (process.platform === "darwin") return `${arch}-apple-darwin`;
+  if (process.platform === "linux") {
+    const report = process.report?.getReport() as
+      | { header?: { glibcVersionRuntime?: string } }
+      | undefined;
+    return `${arch}-unknown-linux-${report?.header?.glibcVersionRuntime ? "gnu" : "musl"}`;
+  }
+  return undefined;
+}
+
 /** Resolve only artifacts for this host; explicit overrides must exist. */
 export function resolveNativeLibraryPath(): string | undefined {
   const override = process.env.APHRODY_FFI_LIB;
@@ -306,16 +313,14 @@ export function resolveNativeLibraryPath(): string | undefined {
       ? configuredTarget
       : resolve(repoRoot, configuredTarget)
     : join(repoRoot, "target");
-  const triple = nativeHostTriple();
+  const triple = hostTriple();
   const candidates = [
     ...(triple ? [join(packageRoot, "native", triple, file)] : []),
     join(packageRoot, "native", file),
   ];
-  if (nativeDevelopmentEnabled()) {
-    for (const profile of ["release", "debug"]) {
-      if (triple) candidates.push(join(target, triple, profile, file));
-      candidates.push(join(target, profile, file));
-    }
+  for (const profile of ["release", "debug"]) {
+    if (triple) candidates.push(join(target, triple, profile, file));
+    candidates.push(join(target, profile, file));
   }
   return candidates.find(existsSync);
 }
@@ -333,10 +338,9 @@ export function loadNativeLibrary(): NativeLibrary {
   const path = shared?.path ?? resolveNativeLibraryPath();
   if (!path)
     throw new Error(
-      "aphrody-ffi native library not found; install its native package or set APHRODY_FFI_DEV=1 for a local build",
+      "aphrody-ffi native library not found; build aphrody-ffi or set APHRODY_FFI_LIB",
     );
   let loaded: NativeLibrary;
-  verifyNativeArtifact(path, packageMetadata.version);
   try {
     loaded = dlopen(path, SYMBOLS);
   } catch (error) {

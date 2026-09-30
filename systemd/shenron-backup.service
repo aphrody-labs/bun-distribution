@@ -26,9 +26,10 @@ Group=ubuntu
 WorkingDirectory=/srv/shenron/current
 Environment=SHENRON_ROOT=/srv/shenron/current
 Environment=SHENRON_SQLITE_SRC=/srv/shenron/shared/bot/data/bot.db
-ExecStart=/bin/bash /home/ubuntu/aphrody-infra/scripts/ops/backup-shenron-sqlite.sh
 Environment=SHENRON_SQLITE_BACKUP_DIR=/srv/shenron/shared/backups/sqlite
 Environment=SHENRON_SQLITE_BACKUP_RETENTION_DAYS=14
+ExecStartPre=+/bin/mkdir -p /srv/shenron/shared/backups/sqlite
+ExecStart=/bin/bash /home/ubuntu/aphrody-infra/scripts/ops/backup-shenron-sqlite.sh
 
 # Une sauvegarde ne doit jamais concurrencer la production pour le disque ou le CPU.
 Nice=10

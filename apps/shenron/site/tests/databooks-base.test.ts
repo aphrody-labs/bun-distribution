@@ -8,7 +8,7 @@ describe("chemin de disque d'une planche", () => {
 	// qu'aucune ne l'était.
 	it("résout la forme stockée en base", () => {
 		expect(cheminPlanche("./assets/wiki/databooks/abc.jpg")?.replaceAll("\\", "/")).toMatch(
-			/apps\/site\/public\/wiki\/databooks\/abc\.jpg$/
+			/apps\/(shenron\/)?site\/public\/wiki\/databooks\/abc\.jpg$/
 		);
 	});
 

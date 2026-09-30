@@ -410,7 +410,7 @@ describe("API Canon References (/api/canon/references) — Corpus de preuves", (
 		expect(res.headers.get("Access-Control-Allow-Origin")).toBe("*");
 	});
 
-	test("GET /api/canon/references (liste paginée par défaut)", async () => {
+	test.skipIf(!process.env.DATABASE_URL?.trim())("GET /api/canon/references (liste paginée par défaut)", async () => {
 		const req = createReq("/api/canon/references?limit=10&offset=0");
 		const res = await getCanonReferences(req);
 		expect(res.status).toBe(200);
@@ -432,7 +432,7 @@ describe("API Canon References (/api/canon/references) — Corpus de preuves", (
 		}
 	});
 
-	test("GET /api/canon/references avec filtre q=broly", async () => {
+	test.skipIf(!process.env.DATABASE_URL?.trim())("GET /api/canon/references avec filtre q=broly", async () => {
 		const req = createReq("/api/canon/references?q=broly&limit=5");
 		const res = await getCanonReferences(req);
 		expect(res.status).toBe(200);
@@ -446,7 +446,7 @@ describe("API Canon References (/api/canon/references) — Corpus de preuves", (
 		}
 	});
 
-	test("GET /api/canon/references avec filtre provenance=databooks", async () => {
+	test.skipIf(!process.env.DATABASE_URL?.trim())("GET /api/canon/references avec filtre provenance=databooks", async () => {
 		const req = createReq("/api/canon/references?provenance=databooks&limit=5");
 		const res = await getCanonReferences(req);
 		expect(res.status).toBe(200);
@@ -458,7 +458,7 @@ describe("API Canon References (/api/canon/references) — Corpus de preuves", (
 		}
 	});
 
-	test("GET /api/canon/references avec provenance inconnue (repli propre)", async () => {
+	test.skipIf(!process.env.DATABASE_URL?.trim())("GET /api/canon/references avec provenance inconnue (repli propre)", async () => {
 		const req = createReq("/api/canon/references?provenance=invalide&limit=5");
 		const res = await getCanonReferences(req);
 		expect(res.status).toBe(200);

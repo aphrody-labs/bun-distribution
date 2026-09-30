@@ -12,7 +12,7 @@ Standalone Rust/Bun library extracted from Koharu revision `c697b31e`.
 | `koharu-sdk` binary | Headless JSONL requests: `id`, `method`, `params`; response `result` or `error` |
 | `packages/sdk` | Host-neutral Bun client plus native, settings and Tauri adapters |
 | `packages/bridge` | Generated commands and WASM/WebGPU canvas bindings |
-| Sibling `aphrody-ui/packages/koharu-ui` | Editor components, styles and presentation |
+| `packages/koharu/ui` and `apps/koharu/editor` | Editor components, styles and standalone consumer |
 
 ```sh
 RUSTC_WRAPPER= cargo build -p koharu-library --bin koharu-sdk
@@ -28,9 +28,7 @@ WebGPU canvas interaction.
 
 Follow [K0–K9 in the shared plan](../../plans/ai/PLAN.md#koharu-aphrody-and-shenron-convergence)
 and [AGENTS.md](../../reference/koharu/AGENTS.md) for NHITL, ownership and focused validation.
-Local consumers currently use sibling paths; source is published at
-[`aphrody-labs/aphrody-koharu`](https://github.com/aphrody-labs/aphrody-koharu). Clean
-external source closure remains open.
+The Rust, Bun, bridge, SDK, UI, and editor consumer now share this monorepo. The former standalone source checkout is no longer an active dependency.
 Weights and native runtime binaries need separate distribution for offline use.
 
 The standalone Rust desktop is Tauri v3 alpha while JavaScript adapters use v2;

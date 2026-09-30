@@ -1,5 +1,5 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
-# Koharu capability map for aphrody-ui
+# Koharu integration map for Aphrody
 
 Status: source comparison snapshot dated 2026-09-27; standalone UI extraction and
 native settings integration updated 2026-09-28. Aphrody's Settings > Koharu
@@ -19,12 +19,12 @@ described below.
 
 ### Working-tree update (2026-09-28)
 
-The independent local `aphrody-koharu` checkout provides a headless Rust
+The aphrody monorepo provides the canonical headless Rust
 [`koharu-library`](../../../products/koharu/crates/koharu-library/README.md)
 for page import, the four model stages, typed results, and PNG/PSD export.
 `aphrody-ai` consumes this library through an optional `aphrody-manga` feature;
 `aphrody-ui` now contains the `@aphrody/koharu-ui` source package at
-`packages/koharu-ui`. Its export map exposes `./components/*`, `./lib/*`,
+`packages/koharu/ui`. Its export map exposes `./components/*`, `./lib/*`,
 `./locales/*`, and `./styles.css`. Exported component owners cover app chrome,
 startup, editor/canvas/overlays, page rail and inspector, toolbar/selection,
 agent/activity/resource panels, controls, and pipeline/provider/translation/
@@ -101,12 +101,12 @@ Koharu capability.
 ## Interfaces and extracted source
 
 The extracted UI package lives in this repository under
-`packages/koharu-ui/src`. Its `lib/backend.ts` and `lib/queries.ts` are the
+`packages/koharu/ui/src`. Its `lib/backend.ts` and `lib/queries.ts` are the
 client boundary consumed by the copied editor components. The generated
-Tauri bridge remains owned by the independent `aphrody-koharu` checkout at
-`../aphrody-koharu/packages/bridge/src/protocol.ts` and `canvas.ts`; its
+Tauri bridge is owned by this monorepo at
+`packages/koharu/bridge/src/protocol.ts` and `canvas.ts`; its
 protocol is generated from Rust and should not be hand-edited. The example
-consumer at `examples/koharu-editor` demonstrates the package in a separate
+consumer at `apps/koharu/editor` demonstrates the package in a separate
 standalone host, not in Aphrody's app shell.
 
 The bridge, SDK peer dependency, extracted UI package and example now resolve
@@ -154,13 +154,13 @@ management, or the Aphrody agent as substitutes for that contract.
 
 Extracted UI in this checkout:
 
-- `packages/koharu-ui/src/components/app/KoharuApp.tsx`, `TitleBar.tsx`, `StartupView.tsx`
-- `packages/koharu-ui/src/components/editor/Editor.tsx`, `CanvasWorkspace.tsx`, `AgentPanel.tsx`,
+- `packages/koharu/ui/src/components/app/KoharuApp.tsx`, `TitleBar.tsx`, `StartupView.tsx`
+- `packages/koharu/ui/src/components/editor/Editor.tsx`, `CanvasWorkspace.tsx`, `AgentPanel.tsx`,
   `ToolBar.tsx`, `Inspector.tsx`, `PageRail.tsx`, `ActivityCenter.tsx`, `ResourceMonitor.tsx`
-- `packages/koharu-ui/src/lib/backend.ts`, `queries.ts`, `store.ts`, `document.ts`
-- `examples/koharu-editor` (standalone example consumer)
+- `packages/koharu/ui/src/lib/backend.ts`, `queries.ts`, `store.ts`, `document.ts`
+- `apps/koharu/editor` (standalone example consumer)
 
-Koharu Rust/bridge source (`../aphrody-koharu`):
+Koharu Rust/bridge source (this monorepo):
 
 - `packages/bridge/src/protocol.ts`, `canvas.ts`
 - `crates/koharu-app/src/commands/`, `crates/koharu-scene/`, `crates/koharu-storage/`,

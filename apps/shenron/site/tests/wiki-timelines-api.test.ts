@@ -2,8 +2,10 @@ import { describe, expect, it, mock } from "bun:test";
 
 mock.module("server-only", () => ({}));
 
+const dbUrl = process.env.DATABASE_URL?.trim();
+
 describe("Sprint 3 — Narrative Timelines API Integration", () => {
-	it("dbUniverse.narrativeTimelines() renvoie les 4 timelines avec le décompte d'événements", async () => {
+	it.skipIf(!dbUrl)("dbUniverse.narrativeTimelines() renvoie les 4 timelines avec le décompte d'événements", async () => {
 		const { dbUniverse } = await import("../src/lib/db-universe");
 		const timelines = await dbUniverse.narrativeTimelines();
 		expect(timelines).not.toBeNull();
@@ -25,7 +27,7 @@ describe("Sprint 3 — Narrative Timelines API Integration", () => {
 		expect(xeno).toBeDefined();
 	});
 
-	it("GET /api/wiki/timelines répond avec statut 200 et les métadonnées", async () => {
+	it.skipIf(!dbUrl)("GET /api/wiki/timelines répond avec statut 200 et les métadonnées", async () => {
 		const { GET, OPTIONS } = await import("../src/app/api/wiki/timelines/route");
 
 		const opt = OPTIONS();

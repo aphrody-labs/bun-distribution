@@ -34,8 +34,8 @@
 import { join } from "node:path";
 import postgres from "postgres";
 
-const args = process.argv.slice(2);
-const flag = (nom: string) => args.includes(`--${nom}`);
+const args = new Set(process.argv.slice(2));
+const flag = (nom: string) => args.has(`--${nom}`);
 const APPLIQUER = flag("appliquer");
 
 async function urlBase(): Promise<string> {

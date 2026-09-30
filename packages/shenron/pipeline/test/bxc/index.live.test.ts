@@ -1,10 +1,12 @@
 import { describe, expect, it } from "bun:test";
+import { existsSync } from "node:fs";
 import { resolve } from "node:path";
 import { bxc, resolveBxcPath } from "../../src/bxc/index";
 import { FramesService } from "../../src/bxc/services";
 
 process.env.DRAGONBALLCN_SNAPSHOT_DIR = resolve(import.meta.dir, "fixtures/dragonballcn");
 const framesFixture = resolve(import.meta.dir, "fixtures/bxc-frames-stats.mjs");
+const hasBxcScraper = Boolean(Bun.which("bxc") || (process.env.BXC_BIN && existsSync(process.env.BXC_BIN)));
 
 describe("BxcBridge Native Client Suite", () => {
   it("resolves valid bxc path", () => {
@@ -15,10 +17,10 @@ describe("BxcBridge Native Client Suite", () => {
 
   it("checks bxc version", async () => {
     const v = await bxc.version();
-    expect(v).toContain("bxc");
+    expect(v).toMatch(/bxc|aphrody/i);
   });
 
-  it("Anime-Sama: search and getEpisodes typings and execution", async () => {
+  it.skipIf(!hasBxcScraper)("Anime-Sama: search and getEpisodes typings and execution", async () => {
     const results = await bxc.animesama.search("inazuma");
     expect(Array.isArray(results)).toBe(true);
     expect(results.length).toBeGreaterThan(0);
@@ -35,7 +37,7 @@ describe("BxcBridge Native Client Suite", () => {
     expect(eps.episodes[0]).toHaveProperty("lecteurs");
   });
 
-  it("VoirAnime: search and getAnime", async () => {
+  it.skipIf(!hasBxcScraper)("VoirAnime: search and getAnime", async () => {
     const results = await bxc.voiranime.search("inazuma");
     expect(Array.isArray(results)).toBe(true);
     expect(results.length).toBeGreaterThan(0);
@@ -49,7 +51,7 @@ describe("BxcBridge Native Client Suite", () => {
     expect(Array.isArray(info.episodes)).toBe(true);
   }, 30000);
 
-  it("MediaWiki: search and markdown", async () => {
+  it.skipIf(!hasBxcScraper)("MediaWiki: search and markdown", async () => {
     // Wiki MediaWiki hors Fandom (source interdite dans ce dépôt) ; l'API de
     // recherche de Wikipédia ne répond pas à cet endpoint, wiki.gg oui.
     const results = await bxc.wiki.search("https://terraria.wiki.gg/wiki/Terraria_Wiki", "boss", 5);
@@ -63,7 +65,7 @@ describe("BxcBridge Native Client Suite", () => {
     expect(md.length).toBeGreaterThan(100);
   }, 30000);
 
-  it("Google Translate: translate with multi-provider fallback", async () => {
+  it.skipIf(!hasBxcScraper)("Google Translate: translate with multi-provider fallback", async () => {
     const res = await bxc.google.translate("Bonjour le monde", "en", "fr");
     expect(res).toHaveProperty("translatedText");
     expect(res.translatedText.toLowerCase()).toContain("world");

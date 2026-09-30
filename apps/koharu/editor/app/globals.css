@@ -1,0 +1,6 @@
+@import 'tailwindcss';
+@import '@aphrody/m3-theme/tokens.css';
+@import '@aphrody/m3-theme/tailwind.css';
+
+@source '../../../../packages/koharu/ui/src/**/*.{ts,tsx}';
+@source '../**/*.{ts,tsx}';

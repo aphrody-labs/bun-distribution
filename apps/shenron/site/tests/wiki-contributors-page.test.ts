@@ -4,14 +4,14 @@ import { join } from "node:path";
 
 describe("Sprint 4 — Contributor Detail Pages & Wiring", () => {
 	it("la page index /wiki/contributeurs redirige vers /wiki/staff", () => {
-		const filePath = join(process.cwd(), "apps/shenron/site/src/app/wiki/contributeurs/page.tsx");
+		const filePath = new URL("../src/app/wiki/contributeurs/page.tsx", import.meta.url).pathname;
 		expect(existsSync(filePath)).toBe(true);
 		const content = readFileSync(filePath, "utf-8");
 		expect(content).toContain('redirect("/wiki/staff")');
 	});
 
 	it("la page de détail /wiki/contributeurs/[slug] existe et intègre les composants canoniques", () => {
-		const filePath = join(process.cwd(), "apps/shenron/site/src/app/wiki/contributeurs/[slug]/page.tsx");
+		const filePath = new URL("../src/app/wiki/contributeurs/[slug]/page.tsx", import.meta.url).pathname;
 		expect(existsSync(filePath)).toBe(true);
 		const content = readFileSync(filePath, "utf-8");
 		expect(content).toContain("DomainBar");
@@ -24,11 +24,11 @@ describe("Sprint 4 — Contributor Detail Pages & Wiring", () => {
 	});
 
 	it("le hub staff rend le catalogue unifié et intègre le casting dans le hub", () => {
-		const filePath = join(process.cwd(), "apps/shenron/site/src/app/wiki/staff/page.tsx");
+		const filePath = new URL("../src/app/wiki/staff/page.tsx", import.meta.url).pathname;
 		const content = readFileSync(filePath, "utf-8");
 		expect(content).toContain("buildUnifiedStaffCatalog");
 		expect(content).toContain("UnifiedStaffExplorer");
-		const catalog = readFileSync(join(process.cwd(), "apps/shenron/site/src/lib/unified-staff-catalog.ts"), "utf-8");
+		const catalog = readFileSync(new URL("../src/lib/unified-staff-catalog.ts", import.meta.url).pathname, "utf-8");
 		expect(catalog).toContain("/wiki/staff#${va.slug}");
 	});
 });

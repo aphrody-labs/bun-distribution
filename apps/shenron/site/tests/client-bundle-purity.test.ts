@@ -187,7 +187,7 @@ function listSources(dir: string): string[] {
 		const full = join(dir, entry.name);
 		if (entry.isDirectory()) {
 			if (entry.name !== "node_modules") out.push(...listSources(full));
-		} else if (/\.(tsx?|jsx?)$/.test(entry.name) && !/\.d\.ts$/.test(entry.name)) out.push(full);
+		} else if (/\.(tsx?|jsx?)$/.test(entry.name) && !entry.name.endsWith('.d.ts')) out.push(full);
 	}
 	return out;
 }

@@ -6412,10 +6412,52 @@ export class ApiServer {
 		logRagHealth(container.resolve(DatabaseService).sqlite);
 	}
 
-	async stop(): Promise<void> {
+	get isRunning(): boolean {
+		return this.server !== null;
+	}
+
+	get port(): number | null {
+		return this.server?.port ?? null;
+	}
+
+	get pendingRequests(): number {
+		return this.server?.pendingRequests ?? 0;
+	}
+
+	async stop(force = false): Promise<void> {
 		if (!this.server) return;
-		await this.server.stop();
+		this.server.stop(force);
 		this.server = null;
+	}
+
+	/**
+	 * Arrête d'accepter de nouvelles connexions TCP et attend que toutes
+	 * les requêtes HTTP en vol se terminent (ou jusqu'au timeout) avant de fermer.
+	 */
+	async drain(timeoutMs = 10_000): Promise<{ drained: boolean; pendingRequests: number }> {
+		if (!this.server) return { drained: true, pendingRequests: 0 };
+		const srv = this.server;
+		logger.info(
+			{ port: srv.port, pendingRequests: srv.pendingRequests },
+			"ApiServer: draining in-flight requests..."
+		);
+		srv.stop(false); // Cesse d'écouter les nouvelles connexions, laisse filer les requêtes actives
+		const start = Date.now();
+		while (srv.pendingRequests > 0 && Date.now() - start < timeoutMs) {
+			await Bun.sleep(20);
+		}
+		const drained = srv.pendingRequests === 0;
+		if (!drained) {
+			logger.warn(
+				{ pendingRequests: srv.pendingRequests, timeoutMs },
+				"ApiServer: drain timed out, forcing close"
+			);
+			srv.stop(true);
+		} else {
+			logger.info("ApiServer: all in-flight requests drained successfully");
+		}
+		this.server = null;
+		return { drained, pendingRequests: drained ? 0 : srv.pendingRequests };
 	}
 }
 

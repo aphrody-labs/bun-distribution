@@ -1,0 +1,65 @@
+{
+  "name": "@aphrody/koharu-ui",
+  "version": "0.1.0",
+  "description": "Koharu editor, controls, preferences, resources and canvas UI for Aphrody hosts",
+  "license": "MIT OR Apache-2.0",
+  "type": "module",
+  "engines": {
+    "bun": ">=1.4.2"
+  },
+  "files": [
+    "src"
+  ],
+  "exports": {
+    "./providers": "./src/providers.tsx",
+    "./navigation": "./src/navigation.ts",
+    "./components/editor/useCanvas": "./src/components/editor/useCanvas.ts",
+    "./components/preferences/models": "./src/components/preferences/models.ts",
+    "./components/*": "./src/components/*.tsx",
+    "./lib/*": "./src/lib/*.ts",
+    "./locales/*": "./src/locales/*",
+    "./assets/NotoSansCJK-VF.otf": "./src/assets/NotoSansCJK-VF.otf",
+    "./assets/OFL.txt": "./src/assets/OFL.txt",
+    "./styles.css": "./src/styles.css",
+    "./components/preferences/KoharuSettings": "./src/components/preferences/KoharuSettings.tsx"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@aphrody/m3-primitives": "^3.3.3",
+    "@base-ui/react": "catalog:",
+    "@tanstack/react-query": "catalog:",
+    "@tanstack/react-virtual": "^3.14.11",
+    "@tauri-apps/api": "catalog:",
+    "@tauri-apps/plugin-opener": "catalog:",
+    "@koharu/bridge": "0.1.0",
+    "class-variance-authority": "catalog:",
+    "clsx": "catalog:",
+    "i18next": "^26.4.2",
+    "i18next-browser-languagedetector": "^8.2.1",
+    "i18next-localstorage-backend": "^4.3.2",
+    "lucide-react": "catalog:",
+    "next-themes": "catalog:",
+    "react-colorful": "^5.8.1",
+    "react-i18next": "^17.0.13",
+    "react-resizable-panels": "catalog:",
+    "react-markdown": "^10.1.0",
+    "remark-gfm": "^4.0.1",
+    "tailwind-merge": "catalog:",
+    "zustand": "catalog:",
+    "@koharu/sdk": "0.1.0"
+  },
+  "peerDependencies": {
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "typescript": "catalog:"
+  }
+}

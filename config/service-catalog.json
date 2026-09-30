@@ -239,11 +239,13 @@
       "runtime": "bun",
       "unit": "shenron-site.service",
       "health": "http://127.0.0.1:5011/api/health",
+      "port": 5011,
       "sourceRepo": "shenron",
       "workingDirectory": "/srv/shenron/current/apps/site",
       "releaseRoot": "/srv/shenron/releases",
       "sharedRoot": "/srv/shenron/shared",
       "deployAdapter": "scripts/atomic-deploy-shenron.sh",
+      "note": "Next.js site: /api/health (liveness), /api/health/live (alias) and /api/health/ready (readiness)",
       "public": true
     },
     {
@@ -270,6 +272,7 @@
       "runtime": "bun",
       "unit": "shenron-bot.service",
       "health": "http://127.0.0.1:5006/health",
+      "port": 5006,
       "sourceRepo": "shenron",
       "workingDirectory": "/srv/shenron/current/apps/bot",
       "releaseRoot": "/srv/shenron/releases",
@@ -315,7 +318,7 @@
       "nie": "/home/ubuntu/nie"
     },
     "secrets": "operator-managed-environment-files",
-    "retiredUnits": ["rg-watchdog@.service", "rg-repo-sync.service", "shenron.service", "shenron-site-b.service", "shenron-api.service", "shenron-watchdog.service", "shenron-watchdog.timer", "shenron-clean-vps.service", "shenron-clean-vps.timer", "shenron-log-watcher.service", "shenron-zswap.service", "filebrowser.service"],
+    "retiredUnits": ["rg-watchdog@.service", "rg-repo-sync.service", "shenron.service", "shenron-site-b.service", "shenron-api.service", "shenron-mcp.service", "shenron-watchdog.service", "shenron-watchdog.timer", "shenron-clean-vps.service", "shenron-clean-vps.timer", "shenron-log-watcher.service", "shenron-zswap.service", "filebrowser.service"],
     "sharedRuntimes": ["bun", "postgresql", "redis", "nginx"],
     "databasePolicy": "postgresql-primary-with-sqlite-local-cache",
     "authPolicy": "one-better-auth-contract-per-public-origin"

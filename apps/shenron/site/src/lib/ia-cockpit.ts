@@ -508,7 +508,7 @@ export function computeRetrievalMetrics(
 
 export type FetchLike = (input: string | URL, init?: RequestInit) => Promise<Response>;
 
-const LOOPBACK_HOSTS = ["127.0.0.1", "[::1]", "localhost"];
+const LOOPBACK_HOSTS = new Set(["127.0.0.1", "[::1]", "localhost"]);
 
 /**
  * Aggregate crawl statistics of Aphrody Web. `AphrodyWebClient` only exposes
@@ -530,7 +530,7 @@ export async function fetchAphrodyWebCrawlStats(options: {
 	} catch {
 		throw new SourceNotConfiguredError("APHRODY_WEB_API_URL n'est pas une URL valide");
 	}
-	const loopback = LOOPBACK_HOSTS.includes(base.hostname);
+	const loopback = LOOPBACK_HOSTS.has(base.hostname);
 	if ((base.protocol !== "https:" && !(base.protocol === "http:" && loopback)) || base.username || base.password) {
 		throw new SourceNotConfiguredError("APHRODY_WEB_API_URL doit utiliser HTTPS ou HTTP loopback, sans identifiants");
 	}

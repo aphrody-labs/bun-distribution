@@ -10,7 +10,7 @@ sheet as `styles.css`. The editor uses canonical `@aphrody/m3-primitives`
 where the component contract fits. Remaining Koharu-specific controls are
 internal until they can be ported without changing editor behavior.
 
-The shell in `examples/koharu-editor` consumes this package. The host imports
+The shell in `apps/koharu/editor` consumes this package. The host imports
 its own Tailwind and M3 tokens before opting into `@aphrody/koharu-ui/styles.css`.
 That stylesheet scopes its UI rules to `[data-koharu-ui]` and portal rules to
 `[data-koharu-ui-layer]`. The package includes the full Noto Sans CJK variable

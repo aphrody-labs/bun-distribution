@@ -8,8 +8,8 @@ export {
   lastError as getAphrodyLastError,
   run as runAphrody,
   runCaptured as runAphrodyCaptured,
-} from "./engine";
-export type { CapturedResult as AphrodyCapturedResult } from "./engine";
+} from "../../../../crates/ai/aphrody-ffi/bun/index";
+export type { CapturedResult as AphrodyCapturedResult } from "../../../../crates/ai/aphrody-ffi/bun/index";
 
 /** Availability checks validate the same native handle used by every subpath. */
 export function isAphrodyFfiAvailable(): boolean {

@@ -440,6 +440,14 @@ portabilité réutilisé par tous les paquets.
 | `./paths` | server |
 | `./guards` | server (outillage de test et de conformance) |
 | `./testing` | pure |
+| `./zeni` | pure (formatage monétaire canonique avec espace insécable) |
+| `./races` | pure (races XV2, multiplicateurs gains/XP, Zenkai, régénération) |
+| `./races-alias` | pure (normalisation des 70 graphies d'import vers les 18 slugs de races canoniques) |
+| `./economy-canon` | pure (prix officiels Chōzenshū 4, parité yen/zéni, inflation canon Budokai ×2.96) |
+| `./inflation-rules` | pure (élasticité masse monétaire, calcul d'indice et prix indexés arrondis) |
+| `./fusion-names` | pure (résolution canonique et mélange syllabique de fusion) |
+| `./xp` | pure (paliers de niveaux et calculs d'expérience purs) |
+| `./techniques-types` | pure (classification Xenoverse 2 et mentions de provenance) |
 | `./tsconfig/{base,bun,react}.json` | json |
 
 ```ts

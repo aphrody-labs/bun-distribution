@@ -43,7 +43,11 @@ export function chargerLexiqueCanonique(): LexiqueEntry[] {
 
 	// Chemins possibles selon le contexte d'exécution (site ou racine monorepo)
 	const paths = [
+		join(process.cwd(), "data", "shenron", "lexique-db-canonique.json"),
 		join(process.cwd(), "data", "lexique-db-canonique.json"),
+		join(process.cwd(), "..", "..", "..", "data", "shenron", "lexique-db-canonique.json"),
+		join(process.cwd(), "..", "..", "..", "data", "lexique-db-canonique.json"),
+		join(process.cwd(), "..", "..", "data", "shenron", "lexique-db-canonique.json"),
 		join(process.cwd(), "..", "..", "data", "lexique-db-canonique.json"),
 	];
 
@@ -65,24 +69,33 @@ export function chargerLexiqueCanonique(): LexiqueEntry[] {
 	}
 
 	// Repli de sécurité minimal si le fichier n'est pas encore généré
-	cachedLexique = [
-		{ ja: "超サイヤ人ゴッド超サイヤ人", fr: "Super Saiyan Blue", kind: "race", length: 13 },
-		{ ja: "超サイヤ人", fr: "Super Saiyan", kind: "race", length: 5 },
-		{ ja: "ドラゴンボール", fr: "Dragon Ball", kind: "autre", length: 7 },
-		{ ja: "サイヤ人", fr: "Saiyan", kind: "race", length: 4 },
-		{ ja: "かめはめ波", fr: "Kamehameha", kind: "technique", length: 5 },
-		{ ja: "元気玉", fr: "Genkidama", kind: "technique", length: 3 },
-		{ ja: "界王拳", fr: "Kaiô-ken", kind: "technique", length: 3 },
-		{ ja: "孫悟空", fr: "Son Goku", kind: "personnage", length: 3 },
-		{ ja: "ベジータ", fr: "Vegeta", kind: "personnage", length: 4 },
-		{ ja: "ピッコロ", fr: "Piccolo", kind: "personnage", length: 4 },
-		{ ja: "フリーザ", fr: "Freezer", kind: "personnage", length: 4 },
-		{ ja: "セル", fr: "Cell", kind: "personnage", length: 2 },
-		{ ja: "魔人ブウ", fr: "Majin Boo", kind: "personnage", length: 4 },
-		{ ja: "クリリン", fr: "Krilin", kind: "personnage", length: 4 },
-	];
+	const fallback: LexiqueEntry[] = (
+		[
+			{ ja: "超サイヤ人ゴッド超サイヤ人", fr: "Super Saiyan Blue", kind: "race", length: 13 },
+			{ ja: "超かめはめ波", fr: "Super Kamehameha", kind: "technique", length: 6 },
+			{ ja: "ドラゴンボール", fr: "Dragon Ball", kind: "autre", length: 7 },
+			{ ja: "超サイヤ人", fr: "Super Saiyan", kind: "race", length: 5 },
+			{ ja: "かめはめ波", fr: "Kamehameha", kind: "technique", length: 5 },
+			{ ja: "サイヤ人", fr: "Saiyan", kind: "race", length: 4 },
+			{ ja: "ベジータ", fr: "Vegeta", kind: "personnage", length: 4 },
+			{ ja: "ピッコロ", fr: "Piccolo", kind: "personnage", length: 4 },
+			{ ja: "フリーザ", fr: "Freezer", kind: "personnage", length: 4 },
+			{ ja: "魔人ブウ", fr: "Majin Boo", kind: "personnage", length: 4 },
+			{ ja: "クリリン", fr: "Krilin", kind: "personnage", length: 4 },
+			{ ja: "元気玉", fr: "Genkidama", kind: "technique", length: 3 },
+			{ ja: "界王拳", fr: "Kaiô-ken", kind: "technique", length: 3 },
+			{ ja: "孫悟空", fr: "Son Goku", kind: "personnage", length: 3 },
+			{ ja: "セル", fr: "Cell", kind: "personnage", length: 2 },
+		] as const as LexiqueEntry[]
+	)
+		.slice()
+		.sort((a, b) => {
+			if (b.length !== a.length) return b.length - a.length;
+			return a.ja.localeCompare(b.ja);
+		});
 
-	return cachedLexique;
+	cachedLexique = fallback;
+	return fallback;
 }
 
 /**

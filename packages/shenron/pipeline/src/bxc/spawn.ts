@@ -54,6 +54,11 @@ export function resolveBxcPath(): string {
     }
   }
 
+  const aphrodyWeb = Bun.which("aphrody-web") || Bun.which("aphrody");
+  if (aphrodyWeb) {
+    return aphrodyWeb;
+  }
+
   return "bxc";
 }
 
@@ -67,9 +72,14 @@ export function resolveBxcCommand(bxcPath?: string): string[] {
 	if (!bxcPath && existsSync(sourceEntry)) return [process.execPath, sourceEntry];
 
 	const binary = bxcPath || resolveBxcPath();
+	if (binary.endsWith("aphrody") || binary.endsWith("aphrody.exe")) return [binary, "web"];
 	if (binary.endsWith(".mjs")) return [process.execPath, "run", binary];
 	if (binary === "bxc" && !Bun.which(binary)) {
-		throw new Error("BXC is unavailable. Set BXC_BIN or BXC_DIR, or install bxc.");
+		const aphrodyWeb = Bun.which("aphrody-web") || Bun.which("aphrody");
+		if (aphrodyWeb) {
+			return aphrodyWeb.endsWith("aphrody") ? [aphrodyWeb, "web"] : [aphrodyWeb];
+		}
+		throw new Error("BXC is unavailable. Set BXC_BIN or BXC_DIR, or install bxc (or aphrody web).");
 	}
 	return [binary];
 }

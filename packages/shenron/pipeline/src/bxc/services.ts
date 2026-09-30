@@ -36,7 +36,6 @@ import {
 	type BxcVectorOutput,
 	type BxcFramesStats,
 	type PlayerEmbed,
-	type EpisodeResolvedStreams,
 	type FrameMatch,
 	type BxcSpawnOptions,
 } from "./types";
@@ -777,7 +776,7 @@ export class BxcDbBridge {
    */
   async resolveMangaPages(
     did: string,
-    options?: { highResOnly?: boolean }
+    _options?: { highResOnly?: boolean }
   ): Promise<string[]> {
     const volumeInfo: DbcnVolumeInfo = await this.dragonballcn.info(did, this.options);
     if (!volumeInfo.pages || volumeInfo.pages.length === 0) {

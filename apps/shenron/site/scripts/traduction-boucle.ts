@@ -643,7 +643,7 @@ while (LOTS === 0 || lot < LOTS) {
 		for (const p of planches) exclusions.add(clefPlanche(p));
 	} else {
 		for (const p of planches) {
-			if (!lignes.some((ligne) => ligne.includes(`\"databookId\":${p.databookId},\"page\":${p.page}`))) {
+			if (!lignes.some((ligne) => ligne.includes(`"databookId":${p.databookId},"page":${p.page}`))) {
 				exclusions.add(clefPlanche(p));
 			}
 		}

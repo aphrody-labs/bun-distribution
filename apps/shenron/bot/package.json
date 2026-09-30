@@ -17,7 +17,7 @@
     "type-check": "bunx tsc --noEmit",
     "lint": "oxlint",
     "lint:fix": "oxlint --fix",
-    "test": "bun test tests/",
+    "test": "bun test --isolate tests/",
     "ids": "bun scripts/discover-ids.ts",
     "watch-logs": "bun scripts/log-watcher.ts",
     "bg:fetch": "bun scripts/fetch-backgrounds.ts --download",

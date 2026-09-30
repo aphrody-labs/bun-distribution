@@ -48,8 +48,8 @@ import { join } from "node:path";
 import postgres from "postgres";
 import { SITE_URL } from "../src/lib/config";
 
-const args = process.argv.slice(2);
-const flag = (nom: string) => args.includes(`--${nom}`);
+const args = new Set(process.argv.slice(2));
+const flag = (nom: string) => args.has(`--${nom}`);
 const APPLIQUER = flag("appliquer");
 const AGENT = `${new URL(SITE_URL).host}-wiki/1.0 (metadonnees d'episodes; +${SITE_URL})`;
 const PAGE = "ドラゴンボールDAIMA";

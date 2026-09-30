@@ -12,7 +12,9 @@ mock.module("server-only", () => ({}));
 const { chercherPlanches, totalPlanchesPourRequete } = await import("../src/lib/manga-api");
 const { GET } = await import("../src/app/api/manga/search/route");
 
-describe("chercherPlanches & totalPlanchesPourRequete — citations françaises", () => {
+const dbUrl = process.env.DATABASE_URL?.trim();
+
+describe.skipIf(!dbUrl)("chercherPlanches & totalPlanchesPourRequete — citations françaises", () => {
 	test("recherche du mot célèbre 'Kamehameha'", async () => {
 		const resultats = await chercherPlanches("Kamehameha", 5);
 		expect(resultats.length).toBeGreaterThan(0);
@@ -67,7 +69,7 @@ describe("chercherPlanches & totalPlanchesPourRequete — citations françaises"
 	});
 });
 
-describe("recherche en japonais (multisyllabique, kanjis et katakana)", () => {
+describe.skipIf(!dbUrl)("recherche en japonais (multisyllabique, kanjis et katakana)", () => {
 	test("terme japonais avec kanji : 'かめはめ波'", async () => {
 		const resultats = await chercherPlanches("かめはめ波", 5);
 		expect(resultats.length).toBeGreaterThan(0);
@@ -101,7 +103,7 @@ describe("recherche en japonais (multisyllabique, kanjis et katakana)", () => {
 	});
 });
 
-describe("tolérance à la ponctuation française et japonaise", () => {
+describe.skipIf(!dbUrl)("tolérance à la ponctuation française et japonaise", () => {
 	test("guillemets français « » et guillemets droits \" \"", async () => {
 		const brut = await chercherPlanches("Kamehameha", 5);
 		const avecGuillemets = await chercherPlanches("« Kamehameha »", 5);
@@ -132,7 +134,7 @@ describe("tolérance à la ponctuation française et japonaise", () => {
 	});
 });
 
-describe("filtrage par série, par tome et pagination", () => {
+describe.skipIf(!dbUrl)("filtrage par série, par tome et pagination", () => {
 	test("filtrage par série : db vs dbs", async () => {
 		const planchesDb = await chercherPlanches("Kamehameha", { limit: 10, series: "db" });
 		expect(planchesDb.length).toBeGreaterThan(0);
@@ -198,7 +200,7 @@ describe("filtrage par série, par tome et pagination", () => {
 	});
 });
 
-describe("mise en valeur des extraits (snippets avec <mark>)", () => {
+describe.skipIf(!dbUrl)("mise en valeur des extraits (snippets avec <mark>)", () => {
 	test("snippet systématiquement surligné avec <mark>", async () => {
 		const res = await chercherPlanches("Kamehameha", 3);
 		for (const p of res) {
@@ -217,7 +219,7 @@ describe("mise en valeur des extraits (snippets avec <mark>)", () => {
 	});
 });
 
-describe("Route API HTTP GET /api/manga/search", () => {
+describe.skipIf(!dbUrl)("Route API HTTP GET /api/manga/search", () => {
 	test("renvoie un JSON valide avec les champs q, count et resultats", async () => {
 		const req = new Request("http://localhost:3000/api/manga/search?q=kamehameha&limit=2");
 		const res = await GET(req);

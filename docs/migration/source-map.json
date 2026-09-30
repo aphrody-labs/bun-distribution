@@ -33905,7 +33905,7 @@
       "size": 560,
       "status": "clean",
       "sha256": "580cb14519057f98c5036898acdfc75b5f7a99c5b1497b52e9c71a257633543d",
-      "target": "../aphrody-py/packages/koharu/crates/koharu-torch/src/vision/export_dinov2.py"
+      "target": "../aphrody-py/tools/koharu/model-tools/src/koharu_model_tools/export_dinov2.py"
     },
     {
       "source": "aphrody-koharu/crates/koharu-torch/src/vision/export_model.py",
@@ -33913,7 +33913,7 @@
       "size": 765,
       "status": "clean",
       "sha256": "949b7f33b13fd9eee46e60e6235a3752e4f6d73c46d3cec3d829f2b087c35b1b",
-      "target": "../aphrody-py/packages/koharu/crates/koharu-torch/src/vision/export_model.py"
+      "target": "../aphrody-py/tools/koharu/model-tools/src/koharu_model_tools/export_models.py"
     },
     {
       "source": "aphrody-koharu/crates/koharu-torch/src/vision/image.rs",
@@ -98617,7 +98617,7 @@
       "size": 1916,
       "status": "clean",
       "sha256": "902bf32636380ddadaa112f2c228f4961f83a53aa20a352a2c2f2dabe861325d",
-      "target": "packages/ui/koharu-ui/package.json",
+      "target": "packages/koharu/ui/package.json",
       "importedSourceSha256": "902bf32636380ddadaa112f2c228f4961f83a53aa20a352a2c2f2dabe861325d"
     },
     {
@@ -98625,7 +98625,7 @@
       "kind": "bun-package",
       "size": 32682580,
       "status": "clean",
-      "target": "packages/ui/koharu-ui/src/assets/NotoSansCJK-VF.otf"
+      "target": "packages/koharu/ui/src/assets/NotoSansCJK-VF.otf"
     },
     {
       "source": "aphrody-ui/packages/koharu-ui/src/assets/OFL.txt",
@@ -98643,7 +98643,7 @@
       "size": 393,
       "status": "clean",
       "sha256": "0c99271841aece2126bb9003686045849a24832a9bf9c833885e322854a35ca7",
-      "target": "packages/ui/koharu-ui/src/components/ClientOnly.tsx",
+      "target": "packages/koharu/ui/src/components/ClientOnly.tsx",
       "importedSourceSha256": "0c99271841aece2126bb9003686045849a24832a9bf9c833885e322854a35ca7"
     },
     {
@@ -98652,7 +98652,7 @@
       "size": 2000,
       "status": "clean",
       "sha256": "d1bb499e0d963c5da75df94c5aee27a9c6986725579fef989d05d7290bc5e532",
-      "target": "packages/ui/koharu-ui/src/components/app/AboutDialog.tsx",
+      "target": "packages/koharu/ui/src/components/app/AboutDialog.tsx",
       "importedSourceSha256": "d1bb499e0d963c5da75df94c5aee27a9c6986725579fef989d05d7290bc5e532"
     },
     {
@@ -98661,7 +98661,7 @@
       "size": 2151,
       "status": "clean",
       "sha256": "02e70de0199acea9c0470d94fc5e8e449aaf42543b38b9b9b396b8cf80372a75",
-      "target": "packages/ui/koharu-ui/src/components/app/KoharuApp.tsx",
+      "target": "packages/koharu/ui/src/components/app/KoharuApp.tsx",
       "importedSourceSha256": "02e70de0199acea9c0470d94fc5e8e449aaf42543b38b9b9b396b8cf80372a75"
     },
     {
@@ -98670,7 +98670,7 @@
       "size": 2474,
       "status": "clean",
       "sha256": "ca3439e9c8ef15f13acbb771ef9674ffacd0e422bcff5918484033e4d64aede4",
-      "target": "packages/ui/koharu-ui/src/components/app/StartupView.tsx",
+      "target": "packages/koharu/ui/src/components/app/StartupView.tsx",
       "importedSourceSha256": "ca3439e9c8ef15f13acbb771ef9674ffacd0e422bcff5918484033e4d64aede4"
     },
     {
@@ -98679,7 +98679,7 @@
       "size": 12554,
       "status": "clean",
       "sha256": "86a59d28d986214db85940b7a9ede7f61291d9cdc4c2323e60e2cd9ebacd52ac",
-      "target": "packages/ui/koharu-ui/src/components/app/TitleBar.tsx",
+      "target": "packages/koharu/ui/src/components/app/TitleBar.tsx",
       "importedSourceSha256": "86a59d28d986214db85940b7a9ede7f61291d9cdc4c2323e60e2cd9ebacd52ac"
     },
     {
@@ -98688,7 +98688,7 @@
       "size": 6017,
       "status": "clean",
       "sha256": "554fbfb77013958949a8149b0a3d9799fd298b1f40415438dc40fb336342d0c3",
-      "target": "packages/ui/koharu-ui/src/components/app/Updater.tsx",
+      "target": "packages/koharu/ui/src/components/app/Updater.tsx",
       "importedSourceSha256": "554fbfb77013958949a8149b0a3d9799fd298b1f40415438dc40fb336342d0c3"
     },
     {
@@ -98697,7 +98697,7 @@
       "size": 4194,
       "status": "clean",
       "sha256": "00b2b5dcaa097b962d0d7436a10f5d7d3e7068ab09ad78c144f561b47235b8c9",
-      "target": "packages/ui/koharu-ui/src/components/app/WindowChrome.tsx",
+      "target": "packages/koharu/ui/src/components/app/WindowChrome.tsx",
       "importedSourceSha256": "00b2b5dcaa097b962d0d7436a10f5d7d3e7068ab09ad78c144f561b47235b8c9"
     },
     {
@@ -98706,7 +98706,7 @@
       "size": 1978,
       "status": "clean",
       "sha256": "2634fc95ec02d8eb149a834d1653af551c5aacd5400d1039e9fb1a716b1c1606",
-      "target": "packages/ui/koharu-ui/src/components/controls/ColorSampling.tsx",
+      "target": "packages/koharu/ui/src/components/controls/ColorSampling.tsx",
       "importedSourceSha256": "2634fc95ec02d8eb149a834d1653af551c5aacd5400d1039e9fb1a716b1c1606"
     },
     {
@@ -98715,7 +98715,7 @@
       "size": 4447,
       "status": "clean",
       "sha256": "9622e569563a39d15d44c0a60a35f7e5f8fe18687313942e63c7276893d7c967",
-      "target": "packages/ui/koharu-ui/src/components/controls/ColorWell.tsx",
+      "target": "packages/koharu/ui/src/components/controls/ColorWell.tsx",
       "importedSourceSha256": "9622e569563a39d15d44c0a60a35f7e5f8fe18687313942e63c7276893d7c967"
     },
     {
@@ -98724,7 +98724,7 @@
       "size": 1759,
       "status": "clean",
       "sha256": "0396a19bab0c60f46cfdda982e36176ce3de7055ac73de391a3fdc407c34d1ce",
-      "target": "packages/ui/koharu-ui/src/components/controls/CommitTextarea.tsx",
+      "target": "packages/koharu/ui/src/components/controls/CommitTextarea.tsx",
       "importedSourceSha256": "0396a19bab0c60f46cfdda982e36176ce3de7055ac73de391a3fdc407c34d1ce"
     },
     {
@@ -98733,7 +98733,7 @@
       "size": 18337,
       "status": "clean",
       "sha256": "d5be6c9b9840681cfca8d22790d6abbb45508c39bbc3a5745e8b424acadeeafb",
-      "target": "packages/ui/koharu-ui/src/components/controls/FontPicker.tsx",
+      "target": "packages/koharu/ui/src/components/controls/FontPicker.tsx",
       "importedSourceSha256": "d5be6c9b9840681cfca8d22790d6abbb45508c39bbc3a5745e8b424acadeeafb"
     },
     {
@@ -98742,7 +98742,7 @@
       "size": 7322,
       "status": "clean",
       "sha256": "b9141474b2fc5fac418967c69a32f39916da5311c168e56d54e498459b8b1e7e",
-      "target": "packages/ui/koharu-ui/src/components/controls/ModelPicker.tsx",
+      "target": "packages/koharu/ui/src/components/controls/ModelPicker.tsx",
       "importedSourceSha256": "b9141474b2fc5fac418967c69a32f39916da5311c168e56d54e498459b8b1e7e"
     },
     {
@@ -98751,7 +98751,7 @@
       "size": 5321,
       "status": "clean",
       "sha256": "a81114055a5a46b73332b45a0a0feb7342ec07e122bcaa2851bd9b992a02b5d2",
-      "target": "packages/ui/koharu-ui/src/components/controls/OutputPicker.tsx",
+      "target": "packages/koharu/ui/src/components/controls/OutputPicker.tsx",
       "importedSourceSha256": "a81114055a5a46b73332b45a0a0feb7342ec07e122bcaa2851bd9b992a02b5d2"
     },
     {
@@ -98760,7 +98760,7 @@
       "size": 8941,
       "status": "clean",
       "sha256": "1776c30d354aa4110d1478b4bfed02955e1debe014308c05ebebc5911e79c554",
-      "target": "packages/ui/koharu-ui/src/components/editor/ActivityCenter.tsx",
+      "target": "packages/koharu/ui/src/components/editor/ActivityCenter.tsx",
       "importedSourceSha256": "1776c30d354aa4110d1478b4bfed02955e1debe014308c05ebebc5911e79c554"
     },
     {
@@ -98769,7 +98769,7 @@
       "size": 12631,
       "status": "clean",
       "sha256": "2ac5a21d625a593e362760f8f689dcd3cfe8ffd9901486e9260ca9a34c819bff",
-      "target": "packages/ui/koharu-ui/src/components/editor/AgentPanel.tsx",
+      "target": "packages/koharu/ui/src/components/editor/AgentPanel.tsx",
       "importedSourceSha256": "2ac5a21d625a593e362760f8f689dcd3cfe8ffd9901486e9260ca9a34c819bff"
     },
     {
@@ -98778,7 +98778,7 @@
       "size": 1619,
       "status": "clean",
       "sha256": "cf9ccd04ff8c8cbda4725e36eb358d8ace85f0038e48f31e5bec7598b182a82c",
-      "target": "packages/ui/koharu-ui/src/components/editor/CanvasCommandBar.tsx",
+      "target": "packages/koharu/ui/src/components/editor/CanvasCommandBar.tsx",
       "importedSourceSha256": "cf9ccd04ff8c8cbda4725e36eb358d8ace85f0038e48f31e5bec7598b182a82c"
     },
     {
@@ -98787,7 +98787,7 @@
       "size": 6363,
       "status": "clean",
       "sha256": "f2fc9dd275d6908fec0bc05aa7ddc48060208c223f68d11bf9649e29e041bc5d",
-      "target": "packages/ui/koharu-ui/src/components/editor/CanvasOverlay.tsx",
+      "target": "packages/koharu/ui/src/components/editor/CanvasOverlay.tsx",
       "importedSourceSha256": "f2fc9dd275d6908fec0bc05aa7ddc48060208c223f68d11bf9649e29e041bc5d"
     },
     {
@@ -98796,7 +98796,7 @@
       "size": 34267,
       "status": "clean",
       "sha256": "2f277519180b86db2782262ced8d5bf764bdb953100f5bbb40e038466f203dbf",
-      "target": "packages/ui/koharu-ui/src/components/editor/CanvasWorkspace.tsx",
+      "target": "packages/koharu/ui/src/components/editor/CanvasWorkspace.tsx",
       "importedSourceSha256": "2f277519180b86db2782262ced8d5bf764bdb953100f5bbb40e038466f203dbf"
     },
     {
@@ -98805,7 +98805,7 @@
       "size": 2034,
       "status": "clean",
       "sha256": "b69bd3a1a236ea6b70865dd71c99e883f1935c9e942f7ebeac0305e44dd373d7",
-      "target": "packages/ui/koharu-ui/src/components/editor/Editor.tsx",
+      "target": "packages/koharu/ui/src/components/editor/Editor.tsx",
       "importedSourceSha256": "b69bd3a1a236ea6b70865dd71c99e883f1935c9e942f7ebeac0305e44dd373d7"
     },
     {
@@ -98814,7 +98814,7 @@
       "size": 15259,
       "status": "clean",
       "sha256": "ea7ab0bf29ce8241cf876c941766ddda2ae50c31a1c5e5971b50104d7b094b82",
-      "target": "packages/ui/koharu-ui/src/components/editor/InferenceControl.tsx",
+      "target": "packages/koharu/ui/src/components/editor/InferenceControl.tsx",
       "importedSourceSha256": "ea7ab0bf29ce8241cf876c941766ddda2ae50c31a1c5e5971b50104d7b094b82"
     },
     {
@@ -98823,7 +98823,7 @@
       "size": 40572,
       "status": "clean",
       "sha256": "cffc2a4e30f0847520e876bba49b25b559cd9ba02159f2c77ddb433dc464831e",
-      "target": "packages/ui/koharu-ui/src/components/editor/Inspector.tsx",
+      "target": "packages/koharu/ui/src/components/editor/Inspector.tsx",
       "importedSourceSha256": "cffc2a4e30f0847520e876bba49b25b559cd9ba02159f2c77ddb433dc464831e"
     },
     {
@@ -98832,7 +98832,7 @@
       "size": 20757,
       "status": "clean",
       "sha256": "b7b1944256bb245da846f881eb3289bde6b22591b9ba02a1929bf9c6292d21d6",
-      "target": "packages/ui/koharu-ui/src/components/editor/PageRail.tsx",
+      "target": "packages/koharu/ui/src/components/editor/PageRail.tsx",
       "importedSourceSha256": "b7b1944256bb245da846f881eb3289bde6b22591b9ba02a1929bf9c6292d21d6"
     },
     {
@@ -98841,7 +98841,7 @@
       "size": 5595,
       "status": "clean",
       "sha256": "e588e80b7628531fbcc69686223e696d4575b65dc325dc2ef9c7f5a775812a53",
-      "target": "packages/ui/koharu-ui/src/components/editor/ResourceMonitor.tsx",
+      "target": "packages/koharu/ui/src/components/editor/ResourceMonitor.tsx",
       "importedSourceSha256": "e588e80b7628531fbcc69686223e696d4575b65dc325dc2ef9c7f5a775812a53"
     },
     {
@@ -98850,7 +98850,7 @@
       "size": 1375,
       "status": "clean",
       "sha256": "9d77d8b96b3b03851299f1765cbe9483a50bd5dad7d005fa407e94c0dc31fafe",
-      "target": "packages/ui/koharu-ui/src/components/editor/RightSidebar.tsx",
+      "target": "packages/koharu/ui/src/components/editor/RightSidebar.tsx",
       "importedSourceSha256": "9d77d8b96b3b03851299f1765cbe9483a50bd5dad7d005fa407e94c0dc31fafe"
     },
     {
@@ -98859,7 +98859,7 @@
       "size": 6371,
       "status": "clean",
       "sha256": "bf1f21b9c7599741e4f9be06bcf2f2d2f05670f11607c9fe189f2a02f5909100",
-      "target": "packages/ui/koharu-ui/src/components/editor/SelectionControls.tsx",
+      "target": "packages/koharu/ui/src/components/editor/SelectionControls.tsx",
       "importedSourceSha256": "bf1f21b9c7599741e4f9be06bcf2f2d2f05670f11607c9fe189f2a02f5909100"
     },
     {
@@ -98868,7 +98868,7 @@
       "size": 1415,
       "status": "clean",
       "sha256": "27d27fce0f9544de8cc38d4a3be253f6ea51446f64b7200658a50699c082177c",
-      "target": "packages/ui/koharu-ui/src/components/editor/StatusBar.tsx",
+      "target": "packages/koharu/ui/src/components/editor/StatusBar.tsx",
       "importedSourceSha256": "27d27fce0f9544de8cc38d4a3be253f6ea51446f64b7200658a50699c082177c"
     },
     {
@@ -98877,7 +98877,7 @@
       "size": 6236,
       "status": "clean",
       "sha256": "d04463dc880f92013357868738d4971890c87f69c9b83fb5fd7446faa56173a3",
-      "target": "packages/ui/koharu-ui/src/components/editor/ToolBar.tsx",
+      "target": "packages/koharu/ui/src/components/editor/ToolBar.tsx",
       "importedSourceSha256": "d04463dc880f92013357868738d4971890c87f69c9b83fb5fd7446faa56173a3"
     },
     {
@@ -98886,7 +98886,7 @@
       "size": 5850,
       "status": "clean",
       "sha256": "c51024300a6567cea4e236a54de71f0520ea10907c21371e490e808457264d6a",
-      "target": "packages/ui/koharu-ui/src/components/editor/useCanvas.ts",
+      "target": "packages/koharu/ui/src/components/editor/useCanvas.ts",
       "importedSourceSha256": "c51024300a6567cea4e236a54de71f0520ea10907c21371e490e808457264d6a"
     },
     {
@@ -98895,7 +98895,7 @@
       "size": 3969,
       "status": "clean",
       "sha256": "73f816962b39c99f779a13257133e3191b9d628f1aa484872e6d890a2dc55c8a",
-      "target": "packages/ui/koharu-ui/src/components/preferences/GenerationPreferences.tsx",
+      "target": "packages/koharu/ui/src/components/preferences/GenerationPreferences.tsx",
       "importedSourceSha256": "73f816962b39c99f779a13257133e3191b9d628f1aa484872e6d890a2dc55c8a"
     },
     {
@@ -98904,7 +98904,7 @@
       "size": 5520,
       "status": "clean",
       "sha256": "2c44a7a1b387fd05d5b5609292004fd5c5eb77039fc00b299f8636a2fd51925d",
-      "target": "packages/ui/koharu-ui/src/components/preferences/PipelinePreferences.tsx",
+      "target": "packages/koharu/ui/src/components/preferences/PipelinePreferences.tsx",
       "importedSourceSha256": "2c44a7a1b387fd05d5b5609292004fd5c5eb77039fc00b299f8636a2fd51925d"
     },
     {
@@ -98913,7 +98913,7 @@
       "size": 3662,
       "status": "clean",
       "sha256": "656f93a79885bb0cac1486e6ec82182ba3f99def5b182fa48ca8a064a28bd3fb",
-      "target": "packages/ui/koharu-ui/src/components/preferences/PreferenceFields.tsx",
+      "target": "packages/koharu/ui/src/components/preferences/PreferenceFields.tsx",
       "importedSourceSha256": "656f93a79885bb0cac1486e6ec82182ba3f99def5b182fa48ca8a064a28bd3fb"
     },
     {
@@ -98922,7 +98922,7 @@
       "size": 5422,
       "status": "clean",
       "sha256": "28ea304c1ec33be649f1b577fde53b9a48a023a1c49492e6e17f282d91162e01",
-      "target": "packages/ui/koharu-ui/src/components/preferences/ProviderPreferences.tsx",
+      "target": "packages/koharu/ui/src/components/preferences/ProviderPreferences.tsx",
       "importedSourceSha256": "28ea304c1ec33be649f1b577fde53b9a48a023a1c49492e6e17f282d91162e01"
     },
     {
@@ -98931,7 +98931,7 @@
       "size": 13081,
       "status": "clean",
       "sha256": "da45dc7269819263b342326448b7c3388963f86d3c4a3d86d2a78971d6b096e3",
-      "target": "packages/ui/koharu-ui/src/components/preferences/SettingsPage.tsx",
+      "target": "packages/koharu/ui/src/components/preferences/SettingsPage.tsx",
       "importedSourceSha256": "da45dc7269819263b342326448b7c3388963f86d3c4a3d86d2a78971d6b096e3"
     },
     {
@@ -98940,7 +98940,7 @@
       "size": 6849,
       "status": "clean",
       "sha256": "6e0e07721ba142e90eee87eee05ff5644a0e3c5f53876fc4190bff403f24c43a",
-      "target": "packages/ui/koharu-ui/src/components/preferences/TranslationPreferences.tsx",
+      "target": "packages/koharu/ui/src/components/preferences/TranslationPreferences.tsx",
       "importedSourceSha256": "6e0e07721ba142e90eee87eee05ff5644a0e3c5f53876fc4190bff403f24c43a"
     },
     {
@@ -98949,7 +98949,7 @@
       "size": 5862,
       "status": "clean",
       "sha256": "7cd59da579301081e71f6fa827e1d5b2cb31b1a74cf1ed86d82c0055a085cd7a",
-      "target": "packages/ui/koharu-ui/src/components/preferences/TypesettingPreferences.tsx",
+      "target": "packages/koharu/ui/src/components/preferences/TypesettingPreferences.tsx",
       "importedSourceSha256": "7cd59da579301081e71f6fa827e1d5b2cb31b1a74cf1ed86d82c0055a085cd7a"
     },
     {
@@ -98958,7 +98958,7 @@
       "size": 3403,
       "status": "clean",
       "sha256": "be2bfdaafea14842b5e13fddb1928483d0b5b5c88906a0b68a2d607d5fe865cb",
-      "target": "packages/ui/koharu-ui/src/components/preferences/models.ts",
+      "target": "packages/koharu/ui/src/components/preferences/models.ts",
       "importedSourceSha256": "be2bfdaafea14842b5e13fddb1928483d0b5b5c88906a0b68a2d607d5fe865cb"
     },
     {
@@ -98967,7 +98967,7 @@
       "size": 11786,
       "status": "clean",
       "sha256": "f5e2e4abe522bfd9f5dbc6bc81ddd506c41f6388cfdd026e4d0c6719fe882e2a",
-      "target": "packages/ui/koharu-ui/src/components/start/StartView.tsx",
+      "target": "packages/koharu/ui/src/components/start/StartView.tsx",
       "importedSourceSha256": "f5e2e4abe522bfd9f5dbc6bc81ddd506c41f6388cfdd026e4d0c6719fe882e2a"
     },
     {
@@ -98976,7 +98976,7 @@
       "size": 2671,
       "status": "clean",
       "sha256": "043c6a1d77c2438960fdd4ec509c91e923875fed450c772e2028b0efc43cfc1f",
-      "target": "packages/ui/koharu-ui/src/internal/components/accordion.tsx",
+      "target": "packages/koharu/ui/src/internal/components/accordion.tsx",
       "importedSourceSha256": "043c6a1d77c2438960fdd4ec509c91e923875fed450c772e2028b0efc43cfc1f"
     },
     {
@@ -98985,7 +98985,7 @@
       "size": 5493,
       "status": "clean",
       "sha256": "044e64e75093d35d1a2027e8f42f5b8ba8149c9fd92ac13e7681fca55b9747c7",
-      "target": "packages/ui/koharu-ui/src/internal/components/alert-dialog.tsx",
+      "target": "packages/koharu/ui/src/internal/components/alert-dialog.tsx",
       "importedSourceSha256": "044e64e75093d35d1a2027e8f42f5b8ba8149c9fd92ac13e7681fca55b9747c7"
     },
     {
@@ -98994,7 +98994,7 @@
       "size": 2125,
       "status": "clean",
       "sha256": "fd29b4c97228c7e710bd904ccd810ff40798faa72a5ceb4f49ce0dbea7cd69c0",
-      "target": "packages/ui/koharu-ui/src/internal/components/alert.tsx",
+      "target": "packages/koharu/ui/src/internal/components/alert.tsx",
       "importedSourceSha256": "fd29b4c97228c7e710bd904ccd810ff40798faa72a5ceb4f49ce0dbea7cd69c0"
     },
     {
@@ -99003,7 +99003,7 @@
       "size": 426,
       "status": "clean",
       "sha256": "d84a23bdcdcb2364eb90ccebfb4644eb2069fcd342721e3917fc0dc09bc64857",
-      "target": "packages/ui/koharu-ui/src/internal/components/aspect-ratio.tsx",
+      "target": "packages/koharu/ui/src/internal/components/aspect-ratio.tsx",
       "importedSourceSha256": "d84a23bdcdcb2364eb90ccebfb4644eb2069fcd342721e3917fc0dc09bc64857"
     },
     {
@@ -99012,7 +99012,7 @@
       "size": 6299,
       "status": "clean",
       "sha256": "1e58e56f3e0a333eb08d0b13080a659a94d76d8a9e624e96af44cd69f6091d5f",
-      "target": "packages/ui/koharu-ui/src/internal/components/attachment.tsx",
+      "target": "packages/koharu/ui/src/internal/components/attachment.tsx",
       "importedSourceSha256": "1e58e56f3e0a333eb08d0b13080a659a94d76d8a9e624e96af44cd69f6091d5f"
     },
     {
@@ -99021,7 +99021,7 @@
       "size": 3148,
       "status": "clean",
       "sha256": "fc88b1fb69cc32a8f1e508be9dada20a5720d9c0bb0a247b28493030fec9ee74",
-      "target": "packages/ui/koharu-ui/src/internal/components/avatar.tsx",
+      "target": "packages/koharu/ui/src/internal/components/avatar.tsx",
       "importedSourceSha256": "fc88b1fb69cc32a8f1e508be9dada20a5720d9c0bb0a247b28493030fec9ee74"
     },
     {
@@ -99030,7 +99030,7 @@
       "size": 1978,
       "status": "clean",
       "sha256": "1df528030ef832b92c2dcb475eb764f1490494aadb808936e949e653f328df85",
-      "target": "packages/ui/koharu-ui/src/internal/components/badge.tsx",
+      "target": "packages/koharu/ui/src/internal/components/badge.tsx",
       "importedSourceSha256": "1df528030ef832b92c2dcb475eb764f1490494aadb808936e949e653f328df85"
     },
     {
@@ -99039,7 +99039,7 @@
       "size": 2712,
       "status": "clean",
       "sha256": "bd59306c89a34e42ab015f1eaa579ab6eab057aa9e3851fe5b2df13e1c8b6480",
-      "target": "packages/ui/koharu-ui/src/internal/components/breadcrumb.tsx",
+      "target": "packages/koharu/ui/src/internal/components/breadcrumb.tsx",
       "importedSourceSha256": "bd59306c89a34e42ab015f1eaa579ab6eab057aa9e3851fe5b2df13e1c8b6480"
     },
     {
@@ -99048,7 +99048,7 @@
       "size": 4938,
       "status": "clean",
       "sha256": "56cfa1555b534f3951a86da92063201be1fa95a0095b3227bcbc64eb5fb24b3c",
-      "target": "packages/ui/koharu-ui/src/internal/components/bubble.tsx",
+      "target": "packages/koharu/ui/src/internal/components/bubble.tsx",
       "importedSourceSha256": "56cfa1555b534f3951a86da92063201be1fa95a0095b3227bcbc64eb5fb24b3c"
     },
     {
@@ -99057,7 +99057,7 @@
       "size": 2554,
       "status": "clean",
       "sha256": "800c3678e2a075c17c1838d1984fabd9e7b83ffb94156e817a13e8b0004f9fb3",
-      "target": "packages/ui/koharu-ui/src/internal/components/button-group.tsx",
+      "target": "packages/koharu/ui/src/internal/components/button-group.tsx",
       "importedSourceSha256": "800c3678e2a075c17c1838d1984fabd9e7b83ffb94156e817a13e8b0004f9fb3"
     },
     {
@@ -99066,7 +99066,7 @@
       "size": 3299,
       "status": "clean",
       "sha256": "856e5b8530229f639ddf3c9d3be3383168b538edb7d3d060917a91eac67cbff1",
-      "target": "packages/ui/koharu-ui/src/internal/components/button.tsx",
+      "target": "packages/koharu/ui/src/internal/components/button.tsx",
       "importedSourceSha256": "856e5b8530229f639ddf3c9d3be3383168b538edb7d3d060917a91eac67cbff1"
     },
     {
@@ -99075,7 +99075,7 @@
       "size": 2721,
       "status": "clean",
       "sha256": "4d7310cacfadb89ed15cab38774b94c1b1d5a0677b8568b03764c8536430f9a8",
-      "target": "packages/ui/koharu-ui/src/internal/components/card.tsx",
+      "target": "packages/koharu/ui/src/internal/components/card.tsx",
       "importedSourceSha256": "4d7310cacfadb89ed15cab38774b94c1b1d5a0677b8568b03764c8536430f9a8"
     },
     {
@@ -99084,7 +99084,7 @@
       "size": 1387,
       "status": "clean",
       "sha256": "aa8437342ac8801801d2523823bee07e9e23e8aad62cacab5fdfa322769ff415",
-      "target": "packages/ui/koharu-ui/src/internal/components/checkbox.tsx",
+      "target": "packages/koharu/ui/src/internal/components/checkbox.tsx",
       "importedSourceSha256": "aa8437342ac8801801d2523823bee07e9e23e8aad62cacab5fdfa322769ff415"
     },
     {
@@ -99093,7 +99093,7 @@
       "size": 679,
       "status": "clean",
       "sha256": "457c783423ecbe4dd9f43ab32836d1e9d41bba4e66d7f7f71b6b1c3a2cd94178",
-      "target": "packages/ui/koharu-ui/src/internal/components/collapsible.tsx",
+      "target": "packages/koharu/ui/src/internal/components/collapsible.tsx",
       "importedSourceSha256": "457c783423ecbe4dd9f43ab32836d1e9d41bba4e66d7f7f71b6b1c3a2cd94178"
     },
     {
@@ -99102,7 +99102,7 @@
       "size": 9333,
       "status": "clean",
       "sha256": "59e5390bfba30d1dd388818a1262914adfa149a231f1ceda26e59e0c81c70bdf",
-      "target": "packages/ui/koharu-ui/src/internal/components/combobox.tsx",
+      "target": "packages/koharu/ui/src/internal/components/combobox.tsx",
       "importedSourceSha256": "59e5390bfba30d1dd388818a1262914adfa149a231f1ceda26e59e0c81c70bdf"
     },
     {
@@ -99111,7 +99111,7 @@
       "size": 8339,
       "status": "clean",
       "sha256": "bbc2d3ff16af51d6909ea01867a6acfb722ef52ff90f256b14c75acf6bd03fe4",
-      "target": "packages/ui/koharu-ui/src/internal/components/context-menu.tsx",
+      "target": "packages/koharu/ui/src/internal/components/context-menu.tsx",
       "importedSourceSha256": "bbc2d3ff16af51d6909ea01867a6acfb722ef52ff90f256b14c75acf6bd03fe4"
     },
     {
@@ -99120,7 +99120,7 @@
       "size": 4269,
       "status": "clean",
       "sha256": "e89822de985a07bd16a37cd42325d7edbd0f9c47f65f294a58d813085488ba0f",
-      "target": "packages/ui/koharu-ui/src/internal/components/dialog.tsx",
+      "target": "packages/koharu/ui/src/internal/components/dialog.tsx",
       "importedSourceSha256": "e89822de985a07bd16a37cd42325d7edbd0f9c47f65f294a58d813085488ba0f"
     },
     {
@@ -99129,7 +99129,7 @@
       "size": 109,
       "status": "clean",
       "sha256": "0fd9e12ece15ec2ac5b32018664deb9e1df0977d1f0a4d3ee65e070b3e7df04b",
-      "target": "packages/ui/koharu-ui/src/internal/components/direction.tsx",
+      "target": "packages/koharu/ui/src/internal/components/direction.tsx",
       "importedSourceSha256": "0fd9e12ece15ec2ac5b32018664deb9e1df0977d1f0a4d3ee65e070b3e7df04b"
     },
     {
@@ -99138,7 +99138,7 @@
       "size": 11633,
       "status": "clean",
       "sha256": "bd40d2ff56646463aaa3b9611c29351709b4ae4484fbda92dea249c1c037db41",
-      "target": "packages/ui/koharu-ui/src/internal/components/drawer.tsx",
+      "target": "packages/koharu/ui/src/internal/components/drawer.tsx",
       "importedSourceSha256": "bd40d2ff56646463aaa3b9611c29351709b4ae4484fbda92dea249c1c037db41"
     },
     {
@@ -99147,7 +99147,7 @@
       "size": 9280,
       "status": "clean",
       "sha256": "56508375d5a6e185a0cfa968fe88293471058d28e2a87436ab5b750fd1f97e8f",
-      "target": "packages/ui/koharu-ui/src/internal/components/dropdown-menu.tsx",
+      "target": "packages/koharu/ui/src/internal/components/dropdown-menu.tsx",
       "importedSourceSha256": "56508375d5a6e185a0cfa968fe88293471058d28e2a87436ab5b750fd1f97e8f"
     },
     {
@@ -99156,7 +99156,7 @@
       "size": 2489,
       "status": "clean",
       "sha256": "5fff79518feea22e37f314128d93839e6a8039c436a3706376840c2a57e971be",
-      "target": "packages/ui/koharu-ui/src/internal/components/empty.tsx",
+      "target": "packages/koharu/ui/src/internal/components/empty.tsx",
       "importedSourceSha256": "5fff79518feea22e37f314128d93839e6a8039c436a3706376840c2a57e971be"
     },
     {
@@ -99165,7 +99165,7 @@
       "size": 6228,
       "status": "clean",
       "sha256": "a245773bf97c116dbb2c06873e97afbcdb1c0a2fdac752ae14a62717b42ed03a",
-      "target": "packages/ui/koharu-ui/src/internal/components/field.tsx",
+      "target": "packages/koharu/ui/src/internal/components/field.tsx",
       "importedSourceSha256": "a245773bf97c116dbb2c06873e97afbcdb1c0a2fdac752ae14a62717b42ed03a"
     },
     {
@@ -99174,7 +99174,7 @@
       "size": 1939,
       "status": "clean",
       "sha256": "0b91901bea3e82a8e5f899222226fcd003b0013f29c38e3b65b3178aeff3de2a",
-      "target": "packages/ui/koharu-ui/src/internal/components/hover-card.tsx",
+      "target": "packages/koharu/ui/src/internal/components/hover-card.tsx",
       "importedSourceSha256": "0b91901bea3e82a8e5f899222226fcd003b0013f29c38e3b65b3178aeff3de2a"
     },
     {
@@ -99183,7 +99183,7 @@
       "size": 5381,
       "status": "clean",
       "sha256": "459a8399964c74f0042f6de4d1bf57b47770e7e96cf0f3c0024ff01843cdc4f2",
-      "target": "packages/ui/koharu-ui/src/internal/components/input-group.tsx",
+      "target": "packages/koharu/ui/src/internal/components/input-group.tsx",
       "importedSourceSha256": "459a8399964c74f0042f6de4d1bf57b47770e7e96cf0f3c0024ff01843cdc4f2"
     },
     {
@@ -99192,7 +99192,7 @@
       "size": 1048,
       "status": "clean",
       "sha256": "57d9a46b06c35ccea571f9d6d2fdf9c1a29ef0c7d88e4e9d99a1a3ffb5e2c103",
-      "target": "packages/ui/koharu-ui/src/internal/components/input.tsx",
+      "target": "packages/koharu/ui/src/internal/components/input.tsx",
       "importedSourceSha256": "57d9a46b06c35ccea571f9d6d2fdf9c1a29ef0c7d88e4e9d99a1a3ffb5e2c103"
     },
     {
@@ -99201,7 +99201,7 @@
       "size": 5048,
       "status": "clean",
       "sha256": "3f778cd903dfbecb998afa4c4b44200b0fac3dd7c4306bfe1b2ccca4071d6f05",
-      "target": "packages/ui/koharu-ui/src/internal/components/item.tsx",
+      "target": "packages/koharu/ui/src/internal/components/item.tsx",
       "importedSourceSha256": "3f778cd903dfbecb998afa4c4b44200b0fac3dd7c4306bfe1b2ccca4071d6f05"
     },
     {
@@ -99210,7 +99210,7 @@
       "size": 864,
       "status": "clean",
       "sha256": "5a1b1457b494b9402d4132c5b238f54034ed0508ae8eb9ae8e8fffe1a4f9ba32",
-      "target": "packages/ui/koharu-ui/src/internal/components/kbd.tsx",
+      "target": "packages/koharu/ui/src/internal/components/kbd.tsx",
       "importedSourceSha256": "5a1b1457b494b9402d4132c5b238f54034ed0508ae8eb9ae8e8fffe1a4f9ba32"
     },
     {
@@ -99219,7 +99219,7 @@
       "size": 539,
       "status": "clean",
       "sha256": "4effd912cfe37eb76e9f3915109015ae7b0b65c4d2efd198dc3889735c074781",
-      "target": "packages/ui/koharu-ui/src/internal/components/label.tsx",
+      "target": "packages/koharu/ui/src/internal/components/label.tsx",
       "importedSourceSha256": "4effd912cfe37eb76e9f3915109015ae7b0b65c4d2efd198dc3889735c074781"
     },
     {
@@ -99228,7 +99228,7 @@
       "size": 2020,
       "status": "clean",
       "sha256": "8728a636be67ae4073c20741ceb7f7223b5b6401459aa67c76ad905b20cfc887",
-      "target": "packages/ui/koharu-ui/src/internal/components/marker.tsx",
+      "target": "packages/koharu/ui/src/internal/components/marker.tsx",
       "importedSourceSha256": "8728a636be67ae4073c20741ceb7f7223b5b6401459aa67c76ad905b20cfc887"
     },
     {
@@ -99237,7 +99237,7 @@
       "size": 8484,
       "status": "clean",
       "sha256": "946c42f12ae4cef69ccc6658a3e6a59ca35f9728c5948ab261871a31934e8c45",
-      "target": "packages/ui/koharu-ui/src/internal/components/menubar.tsx",
+      "target": "packages/koharu/ui/src/internal/components/menubar.tsx",
       "importedSourceSha256": "946c42f12ae4cef69ccc6658a3e6a59ca35f9728c5948ab261871a31934e8c45"
     },
     {
@@ -99246,7 +99246,7 @@
       "size": 2325,
       "status": "clean",
       "sha256": "357cdb0dad4db1c90274eba376f8c4ad5b13a8990c2b56e55697c87f27c1abb5",
-      "target": "packages/ui/koharu-ui/src/internal/components/message.tsx",
+      "target": "packages/koharu/ui/src/internal/components/message.tsx",
       "importedSourceSha256": "357cdb0dad4db1c90274eba376f8c4ad5b13a8990c2b56e55697c87f27c1abb5"
     },
     {
@@ -99255,7 +99255,7 @@
       "size": 2155,
       "status": "clean",
       "sha256": "2beb054599b8879d19a6f5bf003e82b92f54fa9e089ab6062528441e25b5e801",
-      "target": "packages/ui/koharu-ui/src/internal/components/native-select.tsx",
+      "target": "packages/koharu/ui/src/internal/components/native-select.tsx",
       "importedSourceSha256": "2beb054599b8879d19a6f5bf003e82b92f54fa9e089ab6062528441e25b5e801"
     },
     {
@@ -99264,7 +99264,7 @@
       "size": 7584,
       "status": "clean",
       "sha256": "4aa7f4915bfe04bfe5883fdf99c3886e34921063fccd1e6bfd4a99365fa1b044",
-      "target": "packages/ui/koharu-ui/src/internal/components/navigation-menu.tsx",
+      "target": "packages/koharu/ui/src/internal/components/navigation-menu.tsx",
       "importedSourceSha256": "4aa7f4915bfe04bfe5883fdf99c3886e34921063fccd1e6bfd4a99365fa1b044"
     },
     {
@@ -99273,7 +99273,7 @@
       "size": 2448,
       "status": "clean",
       "sha256": "90d13f8494ecdf3f4f2aac5eef37617c107b520554ce69cc0d714010973e1d21",
-      "target": "packages/ui/koharu-ui/src/internal/components/number-field.tsx",
+      "target": "packages/koharu/ui/src/internal/components/number-field.tsx",
       "importedSourceSha256": "90d13f8494ecdf3f4f2aac5eef37617c107b520554ce69cc0d714010973e1d21"
     },
     {
@@ -99282,7 +99282,7 @@
       "size": 2981,
       "status": "clean",
       "sha256": "3b779fbb96738a93cb8d7511e7f49fca40c98f8bc70fdd221e8e6abb567bf362",
-      "target": "packages/ui/koharu-ui/src/internal/components/pagination.tsx",
+      "target": "packages/koharu/ui/src/internal/components/pagination.tsx",
       "importedSourceSha256": "3b779fbb96738a93cb8d7511e7f49fca40c98f8bc70fdd221e8e6abb567bf362"
     },
     {
@@ -99291,7 +99291,7 @@
       "size": 2697,
       "status": "clean",
       "sha256": "c0f5ae317b37ca15cb86c59ae82f9f7f9587b57e31d4641b688dda8e2b21e314",
-      "target": "packages/ui/koharu-ui/src/internal/components/popover.tsx",
+      "target": "packages/koharu/ui/src/internal/components/popover.tsx",
       "importedSourceSha256": "c0f5ae317b37ca15cb86c59ae82f9f7f9587b57e31d4641b688dda8e2b21e314"
     },
     {
@@ -99300,7 +99300,7 @@
       "size": 1824,
       "status": "clean",
       "sha256": "f96263b1e8f2a9d464424f9e0ac41f76e88d0c11adbb770f5e168578a0a30bba",
-      "target": "packages/ui/koharu-ui/src/internal/components/progress.tsx",
+      "target": "packages/koharu/ui/src/internal/components/progress.tsx",
       "importedSourceSha256": "f96263b1e8f2a9d464424f9e0ac41f76e88d0c11adbb770f5e168578a0a30bba"
     },
     {
@@ -99309,7 +99309,7 @@
       "size": 1692,
       "status": "clean",
       "sha256": "94125852725497a8590143066a3975b0101041bc687ac958bf509d82c2e1206b",
-      "target": "packages/ui/koharu-ui/src/internal/components/radio-group.tsx",
+      "target": "packages/koharu/ui/src/internal/components/radio-group.tsx",
       "importedSourceSha256": "94125852725497a8590143066a3975b0101041bc687ac958bf509d82c2e1206b"
     },
     {
@@ -99318,7 +99318,7 @@
       "size": 1722,
       "status": "clean",
       "sha256": "d003fdd17faa0e6a60a5175aaa6f07ed37554016ae5f04c4d0069a955d58515d",
-      "target": "packages/ui/koharu-ui/src/internal/components/resizable.tsx",
+      "target": "packages/koharu/ui/src/internal/components/resizable.tsx",
       "importedSourceSha256": "d003fdd17faa0e6a60a5175aaa6f07ed37554016ae5f04c4d0069a955d58515d"
     },
     {
@@ -99327,7 +99327,7 @@
       "size": 2971,
       "status": "clean",
       "sha256": "90d66715f0b3a31eb10e6832dd4c8f05ad1be9b8bbaddd108964be8a6273cc1c",
-      "target": "packages/ui/koharu-ui/src/internal/components/scroll-area.tsx",
+      "target": "packages/koharu/ui/src/internal/components/scroll-area.tsx",
       "importedSourceSha256": "90d66715f0b3a31eb10e6832dd4c8f05ad1be9b8bbaddd108964be8a6273cc1c"
     },
     {
@@ -99336,7 +99336,7 @@
       "size": 6957,
       "status": "clean",
       "sha256": "e4ca4d4a368dd92cafd6cbeb98746ccef779a1b6b6d9bccedc35490646cb8ea1",
-      "target": "packages/ui/koharu-ui/src/internal/components/select.tsx",
+      "target": "packages/koharu/ui/src/internal/components/select.tsx",
       "importedSourceSha256": "e4ca4d4a368dd92cafd6cbeb98746ccef779a1b6b6d9bccedc35490646cb8ea1"
     },
     {
@@ -99345,7 +99345,7 @@
       "size": 571,
       "status": "clean",
       "sha256": "9add326e18b6b7cbe03589a2e25e90b7eedff87da04c08337958446990ad76f2",
-      "target": "packages/ui/koharu-ui/src/internal/components/separator.tsx",
+      "target": "packages/koharu/ui/src/internal/components/separator.tsx",
       "importedSourceSha256": "9add326e18b6b7cbe03589a2e25e90b7eedff87da04c08337958446990ad76f2"
     },
     {
@@ -99354,7 +99354,7 @@
       "size": 4605,
       "status": "clean",
       "sha256": "c09802014e34e882b408b35cffa76fb5b6fb12a80a87fca79bf71bf53f59528b",
-      "target": "packages/ui/koharu-ui/src/internal/components/sheet.tsx",
+      "target": "packages/koharu/ui/src/internal/components/sheet.tsx",
       "importedSourceSha256": "c09802014e34e882b408b35cffa76fb5b6fb12a80a87fca79bf71bf53f59528b"
     },
     {
@@ -99363,7 +99363,7 @@
       "size": 22274,
       "status": "clean",
       "sha256": "80fba5ce060498cc161226c74718a5fd11fb1f17a0f5c716a8ac745da2f57d9c",
-      "target": "packages/ui/koharu-ui/src/internal/components/sidebar.tsx",
+      "target": "packages/koharu/ui/src/internal/components/sidebar.tsx",
       "importedSourceSha256": "80fba5ce060498cc161226c74718a5fd11fb1f17a0f5c716a8ac745da2f57d9c"
     },
     {
@@ -99372,7 +99372,7 @@
       "size": 289,
       "status": "clean",
       "sha256": "7c74c21749efb794ac396c649211f7c684ecd1e877cac5565a2dac498676f846",
-      "target": "packages/ui/koharu-ui/src/internal/components/skeleton.tsx",
+      "target": "packages/koharu/ui/src/internal/components/skeleton.tsx",
       "importedSourceSha256": "7c74c21749efb794ac396c649211f7c684ecd1e877cac5565a2dac498676f846"
     },
     {
@@ -99381,7 +99381,7 @@
       "size": 2087,
       "status": "clean",
       "sha256": "c8b27883bd916e021da111580fe55c2a09ee16b71a94bc96f200a6ccd022a444",
-      "target": "packages/ui/koharu-ui/src/internal/components/slider.tsx",
+      "target": "packages/koharu/ui/src/internal/components/slider.tsx",
       "importedSourceSha256": "c8b27883bd916e021da111580fe55c2a09ee16b71a94bc96f200a6ccd022a444"
     },
     {
@@ -99390,7 +99390,7 @@
       "size": 333,
       "status": "clean",
       "sha256": "fb36fc84b7fdd8463e370a008455f32b2f494ae05c3cc54073456c9c653e6c50",
-      "target": "packages/ui/koharu-ui/src/internal/components/spinner.tsx",
+      "target": "packages/koharu/ui/src/internal/components/spinner.tsx",
       "importedSourceSha256": "fb36fc84b7fdd8463e370a008455f32b2f494ae05c3cc54073456c9c653e6c50"
     },
     {
@@ -99399,7 +99399,7 @@
       "size": 1740,
       "status": "clean",
       "sha256": "0cad423284c06de7f9506dd7136f4d01bac7a6fb186275783434bec82a2134ae",
-      "target": "packages/ui/koharu-ui/src/internal/components/switch.tsx",
+      "target": "packages/koharu/ui/src/internal/components/switch.tsx",
       "importedSourceSha256": "0cad423284c06de7f9506dd7136f4d01bac7a6fb186275783434bec82a2134ae"
     },
     {
@@ -99408,7 +99408,7 @@
       "size": 2519,
       "status": "clean",
       "sha256": "72bf27c37609056d9c7a9d63bf117ba4fcdb718cc62a132b0fc5c233fd4a9636",
-      "target": "packages/ui/koharu-ui/src/internal/components/table.tsx",
+      "target": "packages/koharu/ui/src/internal/components/table.tsx",
       "importedSourceSha256": "72bf27c37609056d9c7a9d63bf117ba4fcdb718cc62a132b0fc5c233fd4a9636"
     },
     {
@@ -99417,7 +99417,7 @@
       "size": 3580,
       "status": "clean",
       "sha256": "dccd3ed7e44917436841cca50e6fd75255fbebdb9cdad06d4c7530a89e65a233",
-      "target": "packages/ui/koharu-ui/src/internal/components/tabs.tsx",
+      "target": "packages/koharu/ui/src/internal/components/tabs.tsx",
       "importedSourceSha256": "dccd3ed7e44917436841cca50e6fd75255fbebdb9cdad06d4c7530a89e65a233"
     },
     {
@@ -99426,7 +99426,7 @@
       "size": 848,
       "status": "clean",
       "sha256": "d1962807aa962e086303c412a67ca1bad43ae18b48da72b766649c68a148ac72",
-      "target": "packages/ui/koharu-ui/src/internal/components/textarea.tsx",
+      "target": "packages/koharu/ui/src/internal/components/textarea.tsx",
       "importedSourceSha256": "d1962807aa962e086303c412a67ca1bad43ae18b48da72b766649c68a148ac72"
     },
     {
@@ -99435,7 +99435,7 @@
       "size": 7643,
       "status": "clean",
       "sha256": "59c14204ca3910de63c5224c415a021de15be793bc51912abdf50bb1fb0e54a8",
-      "target": "packages/ui/koharu-ui/src/internal/components/toast.tsx",
+      "target": "packages/koharu/ui/src/internal/components/toast.tsx",
       "importedSourceSha256": "59c14204ca3910de63c5224c415a021de15be793bc51912abdf50bb1fb0e54a8"
     },
     {
@@ -99444,7 +99444,7 @@
       "size": 3259,
       "status": "clean",
       "sha256": "335ce6fe31d278541683bd199ed246f7d40a670323e754a38f5162d441ee7064",
-      "target": "packages/ui/koharu-ui/src/internal/components/toggle-group.tsx",
+      "target": "packages/koharu/ui/src/internal/components/toggle-group.tsx",
       "importedSourceSha256": "335ce6fe31d278541683bd199ed246f7d40a670323e754a38f5162d441ee7064"
     },
     {
@@ -99453,7 +99453,7 @@
       "size": 1808,
       "status": "clean",
       "sha256": "aa7bd1d6c23856256fb4df4edefb57b1d1cfd204960927e75ec41b73eb287392",
-      "target": "packages/ui/koharu-ui/src/internal/components/toggle.tsx",
+      "target": "packages/koharu/ui/src/internal/components/toggle.tsx",
       "importedSourceSha256": "aa7bd1d6c23856256fb4df4edefb57b1d1cfd204960927e75ec41b73eb287392"
     },
     {
@@ -99462,7 +99462,7 @@
       "size": 2945,
       "status": "clean",
       "sha256": "62b291216306e3f181c3ef759267db4b80443d2eab17ff91a35d01e105ce9d79",
-      "target": "packages/ui/koharu-ui/src/internal/components/tooltip.tsx",
+      "target": "packages/koharu/ui/src/internal/components/tooltip.tsx",
       "importedSourceSha256": "62b291216306e3f181c3ef759267db4b80443d2eab17ff91a35d01e105ce9d79"
     },
     {
@@ -99471,7 +99471,7 @@
       "size": 584,
       "status": "clean",
       "sha256": "d2377fbad5ad2bdf7fa896a68c36ac8bf4aa74a974b2061f77b41ae58d623001",
-      "target": "packages/ui/koharu-ui/src/internal/hooks/use-mobile.ts",
+      "target": "packages/koharu/ui/src/internal/hooks/use-mobile.ts",
       "importedSourceSha256": "d2377fbad5ad2bdf7fa896a68c36ac8bf4aa74a974b2061f77b41ae58d623001"
     },
     {
@@ -99480,7 +99480,7 @@
       "size": 172,
       "status": "clean",
       "sha256": "76db4720b8835194b5bb3c6e4f1049914e39a24121dee582eca62039c8c16dfb",
-      "target": "packages/ui/koharu-ui/src/internal/lib/utils.ts",
+      "target": "packages/koharu/ui/src/internal/lib/utils.ts",
       "importedSourceSha256": "76db4720b8835194b5bb3c6e4f1049914e39a24121dee582eca62039c8c16dfb"
     },
     {
@@ -99489,7 +99489,7 @@
       "size": 3136,
       "status": "clean",
       "sha256": "8393adc3610dca4844d75e109d0561aa0c7b4e476e534be3ad20729397475903",
-      "target": "packages/ui/koharu-ui/src/internal/styles/globals.css",
+      "target": "packages/koharu/ui/src/internal/styles/globals.css",
       "importedSourceSha256": "8393adc3610dca4844d75e109d0561aa0c7b4e476e534be3ad20729397475903"
     },
     {
@@ -99498,7 +99498,7 @@
       "size": 2601,
       "status": "clean",
       "sha256": "9676f8ea8ead90bcebfafc75758ed963734fc1a2e5aec011985c1c1b674e0c74",
-      "target": "packages/ui/koharu-ui/src/lib/backend.ts",
+      "target": "packages/koharu/ui/src/lib/backend.ts",
       "importedSourceSha256": "9676f8ea8ead90bcebfafc75758ed963734fc1a2e5aec011985c1c1b674e0c74"
     },
     {
@@ -99507,7 +99507,7 @@
       "size": 1503,
       "status": "clean",
       "sha256": "a58a03e80ba0ff59b56f6f54fbdb3c2b5cf39206b14951ddda73de16fa1a2bd2",
-      "target": "packages/ui/koharu-ui/src/lib/document.ts",
+      "target": "packages/koharu/ui/src/lib/document.ts",
       "importedSourceSha256": "a58a03e80ba0ff59b56f6f54fbdb3c2b5cf39206b14951ddda73de16fa1a2bd2"
     },
     {
@@ -99516,7 +99516,7 @@
       "size": 9376,
       "status": "clean",
       "sha256": "aa9a9a7f9107ba5df1185b86f3a530d5e30a27e63ecf18c1d56205fb7efb786f",
-      "target": "packages/ui/koharu-ui/src/lib/geometry.ts",
+      "target": "packages/koharu/ui/src/lib/geometry.ts",
       "importedSourceSha256": "aa9a9a7f9107ba5df1185b86f3a530d5e30a27e63ecf18c1d56205fb7efb786f"
     },
     {
@@ -99525,7 +99525,7 @@
       "size": 1853,
       "status": "clean",
       "sha256": "e45092be66c2cf5211ef8689f2765102169d8218187f6891f6e526f157572de5",
-      "target": "packages/ui/koharu-ui/src/lib/i18n.ts",
+      "target": "packages/koharu/ui/src/lib/i18n.ts",
       "importedSourceSha256": "e45092be66c2cf5211ef8689f2765102169d8218187f6891f6e526f157572de5"
     },
     {
@@ -99534,7 +99534,7 @@
       "size": 2894,
       "status": "clean",
       "sha256": "464456298f9af53e703933928cf6b4e30f1de9e9807aa583977c50d486600ac8",
-      "target": "packages/ui/koharu-ui/src/lib/queries.ts",
+      "target": "packages/koharu/ui/src/lib/queries.ts",
       "importedSourceSha256": "464456298f9af53e703933928cf6b4e30f1de9e9807aa583977c50d486600ac8"
     },
     {
@@ -99543,7 +99543,7 @@
       "size": 5996,
       "status": "clean",
       "sha256": "63044de18aa46243d4692cf3c2a12948588d7d7a7bfd0850e57b4182f86f045d",
-      "target": "packages/ui/koharu-ui/src/lib/store.ts",
+      "target": "packages/koharu/ui/src/lib/store.ts",
       "importedSourceSha256": "63044de18aa46243d4692cf3c2a12948588d7d7a7bfd0850e57b4182f86f045d"
     },
     {
@@ -99552,7 +99552,7 @@
       "size": 1040,
       "status": "clean",
       "sha256": "21c9daaf30f4268cd893d88153e64b2add36cabc38caa95e09c6d9cf992a8510",
-      "target": "packages/ui/koharu-ui/src/lib/translation.ts",
+      "target": "packages/koharu/ui/src/lib/translation.ts",
       "importedSourceSha256": "21c9daaf30f4268cd893d88153e64b2add36cabc38caa95e09c6d9cf992a8510"
     },
     {
@@ -99561,7 +99561,7 @@
       "size": 18510,
       "status": "clean",
       "sha256": "95fde6b89ea3d565c68e4e2ac2137ba1f6ef7ea46465efabd98d05344094aee2",
-      "target": "packages/ui/koharu-ui/src/locales/en-US/translation.json",
+      "target": "packages/koharu/ui/src/locales/en-US/translation.json",
       "importedSourceSha256": "95fde6b89ea3d565c68e4e2ac2137ba1f6ef7ea46465efabd98d05344094aee2"
     },
     {
@@ -99570,7 +99570,7 @@
       "size": 20368,
       "status": "clean",
       "sha256": "b315d38ad97be814967aa87fba91bd089d6ca4398ffd29ef6cf612cb74fe024d",
-      "target": "packages/ui/koharu-ui/src/locales/es-ES/translation.json",
+      "target": "packages/koharu/ui/src/locales/es-ES/translation.json",
       "importedSourceSha256": "b315d38ad97be814967aa87fba91bd089d6ca4398ffd29ef6cf612cb74fe024d"
     },
     {
@@ -99579,7 +99579,7 @@
       "size": 22161,
       "status": "clean",
       "sha256": "35cf8fca5696a7d887cec6d0e122ea86e58b5b19a4a0d77c8ef647d85e9e8269",
-      "target": "packages/ui/koharu-ui/src/locales/ja-JP/translation.json",
+      "target": "packages/koharu/ui/src/locales/ja-JP/translation.json",
       "importedSourceSha256": "35cf8fca5696a7d887cec6d0e122ea86e58b5b19a4a0d77c8ef647d85e9e8269"
     },
     {
@@ -99588,7 +99588,7 @@
       "size": 20779,
       "status": "clean",
       "sha256": "bce105726e244bac18f8e093e5d98d62a7f286cda41e109c5095bb422692afee",
-      "target": "packages/ui/koharu-ui/src/locales/ko-KR/translation.json",
+      "target": "packages/koharu/ui/src/locales/ko-KR/translation.json",
       "importedSourceSha256": "bce105726e244bac18f8e093e5d98d62a7f286cda41e109c5095bb422692afee"
     },
     {
@@ -99597,7 +99597,7 @@
       "size": 20111,
       "status": "clean",
       "sha256": "2da76b5608f62c2a3b4cb712f8270368c35daf467410de32816284292bebf95b",
-      "target": "packages/ui/koharu-ui/src/locales/pt-BR/translation.json",
+      "target": "packages/koharu/ui/src/locales/pt-BR/translation.json",
       "importedSourceSha256": "2da76b5608f62c2a3b4cb712f8270368c35daf467410de32816284292bebf95b"
     },
     {
@@ -99606,7 +99606,7 @@
       "size": 26255,
       "status": "clean",
       "sha256": "8cb28e9ce6eb424bd02d27ee6b6d2f783f05175949666ea5a17319720242db80",
-      "target": "packages/ui/koharu-ui/src/locales/ru-RU/translation.json",
+      "target": "packages/koharu/ui/src/locales/ru-RU/translation.json",
       "importedSourceSha256": "8cb28e9ce6eb424bd02d27ee6b6d2f783f05175949666ea5a17319720242db80"
     },
     {
@@ -99615,7 +99615,7 @@
       "size": 20006,
       "status": "clean",
       "sha256": "138dc69996a13633db8b0b7e40258696cf207822ee98c0a032314c2152c9f777",
-      "target": "packages/ui/koharu-ui/src/locales/tr-TR/translation.json",
+      "target": "packages/koharu/ui/src/locales/tr-TR/translation.json",
       "importedSourceSha256": "138dc69996a13633db8b0b7e40258696cf207822ee98c0a032314c2152c9f777"
     },
     {
@@ -99624,7 +99624,7 @@
       "size": 18495,
       "status": "clean",
       "sha256": "3ae2b770e2e54fb57a1938ae8deb2c592f5caebe7e09497e770985779035447d",
-      "target": "packages/ui/koharu-ui/src/locales/zh-CN/translation.json",
+      "target": "packages/koharu/ui/src/locales/zh-CN/translation.json",
       "importedSourceSha256": "3ae2b770e2e54fb57a1938ae8deb2c592f5caebe7e09497e770985779035447d"
     },
     {
@@ -99633,7 +99633,7 @@
       "size": 18534,
       "status": "clean",
       "sha256": "db078ff24e483f0e50e48ec97b46279f82ec69f36a41ce013895f9a310d88523",
-      "target": "packages/ui/koharu-ui/src/locales/zh-TW/translation.json",
+      "target": "packages/koharu/ui/src/locales/zh-TW/translation.json",
       "importedSourceSha256": "db078ff24e483f0e50e48ec97b46279f82ec69f36a41ce013895f9a310d88523"
     },
     {
@@ -99642,7 +99642,7 @@
       "size": 776,
       "status": "clean",
       "sha256": "591b64d9c6f747e0beee408b7eae655d474e71dbfda7c1f7e3db63723f06bba4",
-      "target": "packages/ui/koharu-ui/src/navigation.ts",
+      "target": "packages/koharu/ui/src/navigation.ts",
       "importedSourceSha256": "591b64d9c6f747e0beee408b7eae655d474e71dbfda7c1f7e3db63723f06bba4"
     },
     {
@@ -99651,7 +99651,7 @@
       "size": 4394,
       "status": "clean",
       "sha256": "da860d57d1a5cb82e8d878161d14232060215f0a7f2919a99202dc791ab891dd",
-      "target": "packages/ui/koharu-ui/src/providers.tsx",
+      "target": "packages/koharu/ui/src/providers.tsx",
       "importedSourceSha256": "da860d57d1a5cb82e8d878161d14232060215f0a7f2919a99202dc791ab891dd"
     },
     {
@@ -99660,7 +99660,7 @@
       "size": 8691,
       "status": "clean",
       "sha256": "ead51a8e2bf6aea3b92aaff449a27804304ef6face76c686d3648c0e6f55cf94",
-      "target": "packages/ui/koharu-ui/src/styles.css",
+      "target": "packages/koharu/ui/src/styles.css",
       "importedSourceSha256": "ead51a8e2bf6aea3b92aaff449a27804304ef6face76c686d3648c0e6f55cf94"
     },
     {
@@ -99669,7 +99669,7 @@
       "size": 499,
       "status": "clean",
       "sha256": "9027f0d4d2ef711eaebaa6947e6871d3b8b82a3329053a3a161c2f1f164217a7",
-      "target": "packages/ui/koharu-ui/tsconfig.json",
+      "target": "packages/koharu/ui/tsconfig.json",
       "importedSourceSha256": "9027f0d4d2ef711eaebaa6947e6871d3b8b82a3329053a3a161c2f1f164217a7"
     },
     {

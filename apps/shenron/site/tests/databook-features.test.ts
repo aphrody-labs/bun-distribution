@@ -116,9 +116,14 @@ describe("databook page limit", () => {
 
 describe("source features shipped", () => {
 	test("DatabookReader : layout côte-à-côte + lightbox + zoom", async () => {
-		const src = await Bun.file(
+		let src = await Bun.file(
 			new URL("../src/components/databooks/DatabookReader.tsx", import.meta.url)
 		).text();
+		if (src.includes("@shenron/ui/reader")) {
+			src = await Bun.file(
+				new URL("../../../../packages/shenron/ui/src/reader/DatabookReader.tsx", import.meta.url)
+			).text();
+		}
 		expect(src).toContain("lightbox");
 		expect(src).toContain("cursor-zoom-in");
 		expect(src).toContain("lg:flex-row");

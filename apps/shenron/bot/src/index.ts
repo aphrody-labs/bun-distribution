@@ -14,6 +14,7 @@ import { loadRaceLevelRoles } from "./lib/race-levels";
 import { loadLevelThresholds } from "./lib/level-thresholds";
 import { runBootAudit } from "./lib/boot-audit";
 import { ApiServer } from "./api/server";
+import { CronRegistry } from "./api/cron-registry";
 import { assertRagEmbeddingSpace } from "./lib/rag";
 import { existsSync } from "node:fs";
 import { PERSONAS, PERSONA_IDS, type PersonaId } from "./lib/personas";
@@ -137,15 +138,42 @@ client.on("interactionCreate", (interaction) => {
 	client.executeInteraction(interaction);
 });
 
-async function shutdown(signal: string) {
-	logger.info(`Received ${signal}, shutting down…`);
+export async function shutdown(
+	signal: string,
+	options: { timeoutMs?: number; exit?: boolean } = {}
+) {
+	const timeoutMs = options.timeoutMs ?? 10_000;
+	logger.info(`Received ${signal}, shutting down (timeout: ${timeoutMs}ms)…`);
 	try {
+		// 1. Drain cron registry (clear timers, wait for active jobs to finish)
+		const cron = container.resolve(CronRegistry);
+		const cronDrain = await cron.drain(timeoutMs);
+		if (!cronDrain.drained) {
+			logger.warn({ pending: cronDrain.pending }, "Cron drain timed out during shutdown");
+		}
+
+		// 2. Drain and stop API server (stop listening, wait for in-flight requests)
+		const api = container.resolve(ApiServer);
+		const apiDrain = await api.drain(timeoutMs);
+		if (!apiDrain.drained) {
+			logger.warn(
+				{ pendingRequests: apiDrain.pendingRequests },
+				"API server drain timed out during shutdown"
+			);
+		}
+
+		// 3. Destroy Discord client connection
 		await client.destroy();
+
+		// 4. Close database connections
 		dbService.close();
+		logger.info("✓ Shutdown complete");
 	} catch (err) {
 		logger.error({ err }, "Error during shutdown");
 	}
-	process.exit(0);
+	if (options.exit !== false) {
+		process.exit(0);
+	}
 }
 
 process.on("SIGINT", () => void shutdown("SIGINT"));
@@ -171,11 +199,15 @@ try {
 }
 
 // ── Auto-seed wiki si DB vide (self-healing après perte bot.db) ─────────
-// Non-bloquant : tourne en background après boot, idempotent (skip si seedé).
-// Évite que les endpoints `/api/public/wiki/*` répondent `{characters: []}`
-// après un recovery comme commit 8d9fc49.
-void (async () => {
-	try {
+// Enregistré comme tâche de démarrage avec suivi des métriques et idempotence.
+const cron = container.resolve(CronRegistry);
+cron.registerStartupJob({
+	name: "wiki-auto-seed",
+	owner: "wiki",
+	description: "Auto-seed wiki si DB vide (self-healing après perte bot.db)",
+	idempotent: true,
+	duplicateBehavior: "skip",
+	fn: async () => {
 		const { runWikiSeed } = await import("~/db/seed-wiki");
 		const result = await runWikiSeed({
 			log: (m) => logger.info({ subsystem: "wiki-seed" }, m),
@@ -190,7 +222,9 @@ void (async () => {
 				"wiki auto-seeded on boot"
 			);
 		}
-	} catch (err) {
-		logger.warn({ err }, "wiki auto-seed failed (non-fatal)");
-	}
-})();
+	},
+});
+
+void cron.run("wiki-auto-seed").catch((err) => {
+	logger.warn({ err }, "wiki auto-seed failed (non-fatal)");
+});

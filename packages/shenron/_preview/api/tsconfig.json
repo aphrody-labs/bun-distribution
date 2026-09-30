@@ -1,7 +1,0 @@
-{
-	"extends": "../config/tsconfig/bun.json",
-	"compilerOptions": {
-		"noUncheckedIndexedAccess": true
-	},
-	"include": ["src/**/*", "test/**/*", "scripts/**/*"]
-}

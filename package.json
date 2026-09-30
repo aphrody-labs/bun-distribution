@@ -12,6 +12,7 @@
       "packages/web/*",
       "apps/web/*",
       "apps/shenron/*",
+      "apps/koharu/*",
       "apps/rg/*",
       "packages/rg/*",
       "packages/rg/patreon-bun/apps/worker-docs",
@@ -241,7 +242,9 @@
       "@tailwindcss/oxide": "^4.3.3",
       "three": "^0.184.0",
       "@types/three": "^0.184.1",
-      "@tailwindcss/node": "^4.3.3"
+      "@tailwindcss/node": "^4.3.3",
+      "@base-ui/react": "^1.8.0",
+      "@tauri-apps/plugin-opener": "^2.0.0"
     }
   },
   "type": "module",

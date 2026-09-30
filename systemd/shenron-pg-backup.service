@@ -12,7 +12,10 @@ User=ubuntu
 Group=ubuntu
 WorkingDirectory=/home/ubuntu/shenron
 Environment=SHENRON_ROOT=/home/ubuntu/shenron
-ExecStart=/bin/bash /home/ubuntu/aphrody-infra/scripts/ops/backup-shenron-pg.sh
+Environment=SHENRON_PG_BACKUP_DIR=/home/ubuntu/shenron/data/backups/shenron-pg
+Environment=SHENRON_PG_BACKUP_RETENTION_DAYS=14
+ExecStartPre=+/bin/mkdir -p /home/ubuntu/shenron/data/backups/shenron-pg
+ExecStart=/bin/bash -c 'if [ -f /home/ubuntu/aphrody-infra/scripts/ops/backup-shenron-pg.sh ]; then exec /bin/bash /home/ubuntu/aphrody-infra/scripts/ops/backup-shenron-pg.sh; else exec /bin/bash /home/ubuntu/shenron/scripts/backup-shenron-pg.sh; fi'
 
 Nice=10
 IOSchedulingClass=idle

@@ -77,7 +77,7 @@ if (existsSync(DB_PATH)) {
 			.query(`SELECT id, name, url, license_key, attribution_template FROM db_sources`)
 			.all() as any;
 		db.close();
-	} catch (err) {
+	} catch {
 		console.warn("⚠ Impossible de lire db_sources depuis SQLite, utilisation du fallback.");
 	}
 }
@@ -434,7 +434,7 @@ async function handleMirror(url: string) {
 		cmdArgs.push("--delay-ms", String(delayMs));
 	}
 
-	const { code, stdout, stderr } = await execBxc("mirror", cmdArgs, { proxy, profile });
+	const { code, stderr } = await execBxc("mirror", cmdArgs, { proxy, profile });
 
 	if (code !== 0) {
 		console.error(`[-] Error mirroring ${url}: bxc exited with code ${code}. Stderr: ${stderr}`);

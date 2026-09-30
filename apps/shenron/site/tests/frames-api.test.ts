@@ -45,6 +45,34 @@ mock.module("@/lib/db", () => {
 	};
 });
 
+mock.module("@/lib/bxc", () => ({
+	bxc: {
+		frames: {
+			vector: async () => ({
+				hash: "mock-hash-12345",
+				vector: Array(33).fill(128),
+			}),
+			search: async () => ({
+				origin: "local",
+				matches: [
+					{
+						title: "DBS",
+						episode: 50,
+						atMs: 125000,
+						similarity: 0.95,
+						preview: {
+							image: "https://bot.dragonballfr.com/assets/ext/db_episodes/dbs-50.jpg",
+							video: "/preview/dbs-50.mp4",
+						},
+						source: "local",
+					},
+				],
+				quota: { used: 1, total: 100 },
+			}),
+		},
+	},
+}));
+
 const { OPTIONS, POST } = await import("../src/app/api/frames/search/route");
 
 // JPEG minimal 1x1 pixel valide

@@ -24,11 +24,10 @@ describe("character consolidation", () => {
 	});
 });
 
-test("executes atomically against disposable PostgreSQL tables", async () => {
-	const env = await Bun.file(new URL("../.env", import.meta.url)).text();
-	const url = env.split("\n").findLast((line) => line.startsWith("DATABASE_URL="))
-		?.slice("DATABASE_URL=".length).trim().replace(/^["']|["']$/g, "");
-	if (!url) throw new Error("DATABASE_URL required for disposable DB test");
+const dbUrl = process.env.DATABASE_URL?.trim();
+
+test.skipIf(!dbUrl)("executes atomically against disposable PostgreSQL tables", async () => {
+	const url = dbUrl!;
 	const sql = postgres(url, { max: 1, prepare: false });
 	try {
 		await sql`create temporary table sh_chars (id bigint primary key, name text not null, name_ja text, visible boolean not null)`;

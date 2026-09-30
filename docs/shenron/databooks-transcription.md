@@ -144,14 +144,16 @@ DATABASE_URL=… bun apps/site/scripts/index-databooks-redis.ts --purge
 
 ## 5. MCP
 
-Deux outils sur `mcp.dragonballfr.com` :
+Le serveur MCP public `mcp.dragonballfr.com` a été retiré. Le serveur unifié
+`aphrody-mcp` expose les outils Dragon Ball en stdio local, avec les noms
+qualifiés suivants :
 
-- `databooks_search` — recherche plein texte, renvoie les fiches sans les
+- `dragonball.databooks_search` — recherche plein texte, renvoie les fiches sans les
   planches (une fiche peut en compter 300) ;
-- `databooks_get` — fiche détaillée, planches et transcriptions incluses
+- `dragonball.databooks_get` — fiche détaillée, planches et transcriptions incluses
   (plafond `maxPages`, défaut 50).
 
-Ils tapent l'API du site **par son nom public** et non un port loopback : le
-port applicatif dépend du catalogue de services côté `aphrody-infra` (cf.
-[`INFRA-DELEGATION.md`](INFRA-DELEGATION.md)) et peut changer à chaque
-déploiement.
+Ces outils appellent l'API du site avec la configuration runtime Shenron de
+`aphrody-mcp`; ils ne constituent pas une surface HTTP MCP publique. Utiliser
+`tools/list` sur le binaire construit pour obtenir les schémas actifs. La
+configuration de l'ancien hôte ne doit pas servir de cible client.

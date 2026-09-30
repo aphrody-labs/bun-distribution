@@ -16,7 +16,7 @@ import {
 	DATABOOKS_FREEZE_EXIT_CODE,
 } from "@shenron/db/guards";
 
-export { DATABOOKS_FREEZE_EXIT_CODE,  };
+export { DATABOOKS_FREEZE_EXIT_CODE, DatabooksFrozenError };
 
 function defaultFreezeFile(): string {
 	try {

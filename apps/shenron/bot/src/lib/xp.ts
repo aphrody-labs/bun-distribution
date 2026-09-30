@@ -1,6 +1,14 @@
+// SPDX-License-Identifier: Apache-2.0
 import { LEVEL_THRESHOLDS } from "./constants";
+import {
+	calculateLevelForXP,
+	calculateNextThresholdFrom,
+	calculateXpRequiredForLevel,
+	formatXP as formatXpHelper,
+	type LevelThreshold,
+} from "@shenron/config/xp";
 
-export type LevelThreshold = { level: number; xp: number };
+export type { LevelThreshold };
 
 /**
  * Paliers ACTIFS. Défaut = `LEVEL_THRESHOLDS` (en dur), mais éditables depuis
@@ -24,29 +32,18 @@ export function getLevelThresholds(): readonly LevelThreshold[] {
 }
 
 /**
- * Niveau atteint pour un XP. Reste en TS pur — bench (Bun 1.3.14, 1M iter)
- * mesure 5× plus lent en Rust à cause de l'overhead FFI napi (~130ns/call)
- * pour une boucle de 10 items. Le hot-path message/voice tick l'appelle
- * 60+ fois/seconde donc on garde TS.
- *
- * Pour les use cases qui ont besoin de la version riche `{current, nextLevel,
- * nextLevelXp, needed}`, utiliser `native.xpProgress(xp)` (cf. `lib/native.ts`).
+ * Niveau atteint pour un XP.
  */
 export function levelForXP(xp: number): number {
-	let level = 0;
-	for (const t of ACTIVE_THRESHOLDS) {
-		if (xp >= t.xp) level = t.level;
-		else break;
-	}
-	return level;
+	return calculateLevelForXP(xp, ACTIVE_THRESHOLDS);
 }
 
 export function xpRequiredForLevel(level: number): number {
-	return ACTIVE_THRESHOLDS.find((t) => t.level === level)?.xp ?? Infinity;
+	return calculateXpRequiredForLevel(level, ACTIVE_THRESHOLDS);
 }
 
 export function nextThresholdFrom(xp: number) {
-	return ACTIVE_THRESHOLDS.find((t) => t.xp > xp);
+	return calculateNextThresholdFrom(xp, ACTIVE_THRESHOLDS);
 }
 
 export function randomInt(min: number, max: number): number {
@@ -54,5 +51,5 @@ export function randomInt(min: number, max: number): number {
 }
 
 export function formatXP(xp: number): string {
-	return xp.toLocaleString("fr-FR");
+	return formatXpHelper(xp);
 }

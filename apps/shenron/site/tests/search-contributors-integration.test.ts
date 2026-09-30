@@ -2,8 +2,10 @@ import { describe, expect, it, mock } from "bun:test";
 
 mock.module("server-only", () => ({}));
 
+const dbUrl = process.env.DATABASE_URL?.trim();
+
 describe("Global Search Contributors Integration", () => {
-	it("dbUniverse.search('toriyama') renvoie les contributeurs avec Akira Toriyama en tête", async () => {
+	it.skipIf(!dbUrl)("dbUniverse.search('toriyama') renvoie les contributeurs avec Akira Toriyama en tête", async () => {
 		const { dbUniverse } = await import("../src/lib/db-universe");
 		const results = await dbUniverse.search("toriyama");
 		expect(results).not.toBeNull();
@@ -16,7 +18,7 @@ describe("Global Search Contributors Integration", () => {
 		expect(toriyama!.category).toBe("author");
 	});
 
-	it("dbUniverse.search('torishima') retrouve l'éditeur historique Kazuhiko Torishima", async () => {
+	it.skipIf(!dbUrl)("dbUniverse.search('torishima') retrouve l'éditeur historique Kazuhiko Torishima", async () => {
 		const { dbUniverse } = await import("../src/lib/db-universe");
 		const results = await dbUniverse.search("torishima");
 		expect(results).not.toBeNull();
@@ -29,7 +31,7 @@ describe("Global Search Contributors Integration", () => {
 		expect(torishima!.category).toBe("editorial_staff");
 	});
 
-	it("GET /api/search?q=toriyama renvoie les résultats incluant les contributeurs", async () => {
+	it.skipIf(!dbUrl)("GET /api/search?q=toriyama renvoie les résultats incluant les contributeurs", async () => {
 		const { GET } = await import("../src/app/api/search/route");
 		const req = new Request("http://localhost:3000/api/search?q=toriyama");
 		const res = await GET(req as any);

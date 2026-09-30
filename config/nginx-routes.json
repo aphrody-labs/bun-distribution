@@ -15,9 +15,9 @@
     { "host": "achillea.rosegriffon.fr", "service": "rg-achillea-bot", "upstream": "127.0.0.1:4000", "probePath": "/health/check" },
     { "host": "ranked.rosegriffon.fr", "service": "rg-achillea-bot", "upstream": "127.0.0.1:4002", "probePath": "/health/check" },
     { "host": "azalee.rosegriffon.fr", "service": "rg-api", "upstream": "127.0.0.1:8800", "probePath": "/health", "paths": ["/storage/v1/"] },
-    { "host": "dragonballfr.com", "service": "shenron-site", "upstream": "127.0.0.1:5011" },
-    { "host": "bot.dragonballfr.com", "service": "shenron-bot", "upstream": "127.0.0.1:5006" },
-    { "host": "cdn.dragonballfr.com", "service": "shenron-site", "upstream": "127.0.0.1:5011", "probePath": "/health", "paths": ["/_next/static/", "/_next/image", "/wiki/", "/assets/", "/health"] },
+    { "host": "dragonballfr.com", "service": "shenron-site", "upstream": "127.0.0.1:5011", "probePath": "/api/health", "vhost": "nginx/dragonballfr.com.conf.example" },
+    { "host": "bot.dragonballfr.com", "service": "shenron-bot", "upstream": "127.0.0.1:5006", "probePath": "/health", "vhost": "nginx/bot.dragonballfr.com.conf.example" },
+    { "host": "cdn.dragonballfr.com", "service": "shenron-site", "upstream": "127.0.0.1:5011", "probePath": "/health", "paths": ["/_next/static/", "/_next/image", "/wiki/", "/assets/", "/health", "/api/health"], "vhost": "nginx/cdn.dragonballfr.com.conf.example" },
     { "host": "mcp.dragonballfr.com", "service": "shenron-mcp", "upstream": "127.0.0.1:5010", "protocol": "mcp-a2a", "status": "retired", "retiredAt": "2026-09-25" }
   ],
   "internal": [

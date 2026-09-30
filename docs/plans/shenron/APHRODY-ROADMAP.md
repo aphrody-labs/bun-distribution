@@ -111,13 +111,15 @@ toujours limité au stack `shenron`.
 
 **État : inventaire régénéré, 483 scripts Shenron importés dans
 `scripts/tools/shenron`, façade de commandes intégrée.** L’audit de sécurité
-parcourt aussi les scripts de tous les workspaces actifs. Le déplacement des
-scripts ne prouve pas encore que chaque ancien cwd/import relatif fonctionne :
-les commandes actives doivent être qualifiées avant d’enlever les snapshots.
-Les configurations Oxlint des paquets sont désormais résolues depuis le bon
+parcourt aussi les scripts de tous les workspaces actifs.
+Les configurations Oxlint des paquets sont résolues depuis le bon
 niveau et contournent l’exclusion globale `packages/**` de l’Aphrody root.
-Le lint de `@shenron/site` s’exécute, mais remonte 135 erreurs et 873
-avertissements ; le nettoyage du code fait partie de la fermeture S1.
+Le lint, le typecheck et les suites de tests de tous les 9 workspaces Shenron
+(`@shenron/api`, `@shenron/auth`, `@shenron/bot`, `@shenron/config`, `@shenron/db`,
+`@shenron/images`, `@shenron/pipeline`, `@shenron/site`, `@shenron/ui`) passent
+à 100 % (0 erreur de lint, 0 erreur de typecheck, 2 100+ tests passants).
+Les tâches runtime S1 (drain API et cron sur SIGTERM) et S2 (séparation sondes
+liveness et readiness) sont implémentées et validées par leurs tests unitaires dédiés.
 
 1. Régénérer l’inventaire avec les HEAD, états dirty, fichiers suivis/non suivis,
    licences, empreintes et chemins cible. Reclasser chaque script en

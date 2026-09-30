@@ -3,7 +3,7 @@
   "identifier": "Koharu",
   "build": {
     "devUrl": "http://localhost:3000",
-    "frontendDist": "../../../aphrody-ui/examples/koharu-editor/out",
+    "frontendDist": "../../../apps/koharu/editor/out",
     "beforeDevCommand": {
       "cwd": "../..",
       "script": "bun run --filter @koharu/bridge build && bun --cwd ../aphrody-ui run --filter @aphrody/koharu-editor-example dev",

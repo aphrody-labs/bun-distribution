@@ -6,6 +6,8 @@ import { NextRequest } from "next/server";
 
 const { GET, OPTIONS } = await import("../src/app/api/wiki/events/route");
 
+const dbUrl = process.env.DATABASE_URL?.trim();
+
 describe("/api/wiki/events — Moteur d'événements et facettes", () => {
 	test("OPTIONS répond avec le statut 204 et les en-têtes CORS", async () => {
 		const res = OPTIONS();
@@ -14,7 +16,7 @@ describe("/api/wiki/events — Moteur d'événements et facettes", () => {
 		expect(res.headers.get("Access-Control-Allow-Methods")).toContain("GET");
 	});
 
-	test("GET sans paramètre renvoie la liste complète avec métadonnées et facettes", async () => {
+	test.skipIf(!dbUrl)("GET sans paramètre renvoie la liste complète avec métadonnées et facettes", async () => {
 		const req = new NextRequest("http://test/api/wiki/events");
 		const res = await GET(req);
 		expect(res.status).toBe(200);
@@ -38,7 +40,7 @@ describe("/api/wiki/events — Moteur d'événements et facettes", () => {
 		expect(typeof json.facets.canon.non_canon).toBe("number");
 	});
 
-	test("GET ?type=battle filtre uniquement les combats", async () => {
+	test.skipIf(!dbUrl)("GET ?type=battle filtre uniquement les combats", async () => {
 		const req = new NextRequest("http://test/api/wiki/events?type=battle");
 		const res = await GET(req);
 		const json = await res.json();
@@ -50,7 +52,7 @@ describe("/api/wiki/events — Moteur d'événements et facettes", () => {
 		}
 	});
 
-	test("GET ?type=tournament filtre uniquement les tournois", async () => {
+	test.skipIf(!dbUrl)("GET ?type=tournament filtre uniquement les tournois", async () => {
 		const req = new NextRequest("http://test/api/wiki/events?type=tournament");
 		const res = await GET(req);
 		const json = await res.json();
@@ -62,7 +64,7 @@ describe("/api/wiki/events — Moteur d'événements et facettes", () => {
 		}
 	});
 
-	test("GET ?canon=true exclut les événements hors-canon", async () => {
+	test.skipIf(!dbUrl)("GET ?canon=true exclut les événements hors-canon", async () => {
 		const req = new NextRequest("http://test/api/wiki/events?canon=true");
 		const res = await GET(req);
 		const json = await res.json();
@@ -73,7 +75,7 @@ describe("/api/wiki/events — Moteur d'événements et facettes", () => {
 		}
 	});
 
-	test("GET ?q=Goku recherche sur le titre ou les participants", async () => {
+	test.skipIf(!dbUrl)("GET ?q=Goku recherche sur le titre ou les participants", async () => {
 		const req = new NextRequest("http://test/api/wiki/events?q=Goku");
 		const res = await GET(req);
 		const json = await res.json();
@@ -85,7 +87,7 @@ describe("/api/wiki/events — Moteur d'événements et facettes", () => {
 		}
 	});
 
-	test("GET gère la pagination découpée avec exactitude", async () => {
+	test.skipIf(!dbUrl)("GET gère la pagination découpée avec exactitude", async () => {
 		const req = new NextRequest("http://test/api/wiki/events?page=2&limit=5");
 		const res = await GET(req);
 		const json = await res.json();
@@ -96,7 +98,7 @@ describe("/api/wiki/events — Moteur d'événements et facettes", () => {
 		expect(json.pageCount).toBe(Math.ceil(json.total / 5));
 	});
 
-	test("GET ?timeline=manga-canon isole la timeline canonique et renvoie la facette timelines", async () => {
+	test.skipIf(!dbUrl)("GET ?timeline=manga-canon isole la timeline canonique et renvoie la facette timelines", async () => {
 		const req = new NextRequest("http://test/api/wiki/events?timeline=manga-canon");
 		const res = await GET(req);
 		const json = await res.json();

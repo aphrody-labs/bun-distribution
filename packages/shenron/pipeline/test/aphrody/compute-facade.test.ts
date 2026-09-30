@@ -200,8 +200,8 @@ describe("AphrodyComputeClient facade: request bodies identical to the legacy cl
 		const vectors = await client.embed(texts);
 		expect(vectors).toHaveLength(20);
 		expect(calls.map((c) => (c.body as { texts: string[] }).texts.length)).toEqual([16, 4]);
-		expect((calls[0]?.body as { texts: string[]; kind: string }).texts[0]).toBe("Goku 0");
-		expect((calls[0]?.body as { kind: string }).kind).toBe("query");
+		expect((calls[0]!.body as { texts: string[]; kind: string }).texts[0]).toBe("Goku 0");
+		expect((calls[0]!.body as { kind: string }).kind).toBe("query");
 	});
 
 	test("legacy errors and messages are preserved", async () => {

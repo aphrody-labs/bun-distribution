@@ -203,9 +203,46 @@ filebrowser, watchdog et superviseurs propres à Shenron sont retirées du plan.
   `apps/shenron-embed` ; `staged` retiré de `aphrody-shenron-embed`,
   `shenron-mcp` et `shenron-backup` (actifs en production). Source
   `systemd/shenron-zswap.service` supprimée (unité retirée, absente des deux hôtes).
-- Écart restant (action hôte) : sur DBFR, `shenron-pg-backup.service` et
-  `shenron-sqlite-replica-backup.service` exécutent encore
-  `/home/ubuntu/shenron/scripts/backup-shenron-{pg,sqlite}.sh` ; la source vise
-  `/home/ubuntu/aphrody-infra/scripts/ops/…`, checkout absent sur DBFR. Installer
-  les sources exige d'abord ce checkout, puis `daemon-reload` et un
-  `systemctl start` manuel de chaque service pour vérifier la sauvegarde.
+- Écart résolu (2026-09-30) : sur DBFR, `shenron-pg-backup.service` et
+  `shenron-sqlite-replica-backup.service` disposent d'un fallback direct et
+  résilient vers `/home/ubuntu/shenron/scripts/backup-shenron-{pg,sqlite}.sh`
+  avec création automatique des répertoires de destination (`ExecStartPre`). Les
+  sauvegardes ont été déclenchées manuellement et validées avec succès
+  (status 0/SUCCESS, dumps compressés vérifiés).
+
+## Audit et Clôture de Parité de Bout en Bout (2026-09-30)
+
+L'audit de bout en bout de l'infrastructure Shenron a validé la conformité
+stricte entre les dépôts (`aphrody` et `aphrody-infra`) et les serveurs réels
+(`vps` et `dbfr`) :
+
+1. **Doctrine du service unique Bot + API (`shenron-bot.service`)** :
+   - Un seul workload Bun (`bun src/index.ts`, PID actif 2064448) héberge à la
+     fois la passerelle Discord (`discordx`) et l'API publique REST / GraphQL /
+     OpenAPI sur le port 5006 (`http://127.0.0.1:5006/health`).
+   - L'unité `shenron-api.service` et l'unité retirée `shenron-mcp.service` sont
+     consignées dans `policies.retiredUnits` de `service-catalog.json`.
+
+2. **Résolution du bogue EROFS sur Next.js (`shenron-site.service`)** :
+   - Sous `ProtectSystem=strict`, Next.js échouait lors de l'accès à `.coord`
+     dans la release scellée en lecture seule.
+   - Ajout de `Environment=A2A_COORD_DIR=/srv/shenron/shared/coord` dans
+     l'unité systemd, création du dossier persistant `/srv/shenron/shared/coord`
+     et intégration dans les liens de release d'`atomic-deploy-shenron.sh`.
+   - `shenron-site.service` redémarré proprement (port 5011, prêt en 241ms).
+
+3. **Exposition publique et Sondes de Santé Nginx (HTTP/2 200 OK)** :
+   - `https://dragonballfr.com/api/health` ➔ 200 OK (Next.js sur :5011)
+   - `https://bot.dragonballfr.com/health` ➔ 200 OK (Bot + API sur :5006)
+   - `https://cdn.dragonballfr.com/health` ➔ 200 OK (Nginx CDN probe)
+   - `https://cdn.dragonballfr.com/api/health` ➔ 200 OK (passerelle vers :5011)
+
+4. **Validation des sauvegardes réelles** :
+   - VPS : `shenron-backup.service` (SQLite 128 Mo compressé dans `/srv/shenron/shared/backups/sqlite/`, status 0/SUCCESS).
+   - DBFR : `shenron-pg-backup.service` (PostgreSQL 81 Mo compressé vérifié par `gzip -t`, status 0/SUCCESS).
+   - DBFR : `shenron-sqlite-replica-backup.service` (SQLite réplica 127 Mo compressé, status 0/SUCCESS).
+
+5. **Nettoyage et Purge des Résidus** :
+   - Monorepo : suppression du répertoire orphelin `packages/shenron/_preview` (457 fichiers) et masquage de `/.coord/` dans `.gitignore`.
+   - VPS & DBFR : suppression de `/home/ubuntu/.shenron-build-tmp` et `.shenron-isr-release-dir`.
+   - Validation `aphrody-infra validate` : 23 services, 25 routes, 0 violation.

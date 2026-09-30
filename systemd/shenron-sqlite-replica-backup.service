@@ -13,7 +13,8 @@ WorkingDirectory=/home/ubuntu/shenron
 Environment=SHENRON_SQLITE_BACKUP_DIR=/home/ubuntu/shenron/data/backups/shenron-sqlite
 Environment=SHENRON_SQLITE_BACKUP_RETENTION_DAYS=14
 Environment=SHENRON_ROOT=/home/ubuntu/shenron
-ExecStart=/bin/bash /home/ubuntu/aphrody-infra/scripts/ops/backup-shenron-sqlite.sh
+ExecStartPre=+/bin/mkdir -p /home/ubuntu/shenron/data/backups/shenron-sqlite
+ExecStart=/bin/bash -c 'if [ -f /home/ubuntu/aphrody-infra/scripts/ops/backup-shenron-sqlite.sh ]; then exec /bin/bash /home/ubuntu/aphrody-infra/scripts/ops/backup-shenron-sqlite.sh; else exec /bin/bash /home/ubuntu/shenron/scripts/backup-shenron-sqlite.sh; fi'
 
 Nice=10
 IOSchedulingClass=idle

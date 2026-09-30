@@ -38,7 +38,7 @@ describe("Sprint 2 — Media Works, Editions & Volume Reader Compatibility", () 
 	});
 
 	test("Postgres migration 0018 contains required tables and strict safety", () => {
-		const sql = readFileSync("apps/shenron/site/src/db/migrations/0018_media_works_and_editions.sql", "utf8");
+		const sql = readFileSync(new URL("../src/db/migrations/0018_media_works_and_editions.sql", import.meta.url), "utf8");
 		expect(sql).toMatch(/create table if not exists bot\.media_works/i);
 		expect(sql).toMatch(/create table if not exists bot\.media_editions/i);
 		expect(sql).toMatch(/create table if not exists bot\.media_volumes/i);
@@ -49,7 +49,7 @@ describe("Sprint 2 — Media Works, Editions & Volume Reader Compatibility", () 
 	});
 
 	test("SQLite migration 0018 contains required tables and indexes", () => {
-		const sql = readFileSync("apps/shenron/bot/src/db/migrations/0018_refonte_media_works_editions.sql", "utf8");
+		const sql = readFileSync(new URL("../../bot/src/db/migrations/0018_refonte_media_works_editions.sql", import.meta.url), "utf8");
 		expect(sql).toMatch(/create table if not exists `media_works`/i);
 		expect(sql).toMatch(/create table if not exists `media_editions`/i);
 		expect(sql).toMatch(/create table if not exists `media_volumes`/i);

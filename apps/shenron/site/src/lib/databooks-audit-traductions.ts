@@ -145,8 +145,8 @@ const JETON_MASQUAGE = /(?<![\p{L}\d])(?:z[eêéèë]ta|yuni)[ _-]?\d{3}(?!\d)/g
 
 export function signalJetons(fr: string, src: string): Signal | null {
 	const jetons = [...new Set(fr.match(JETON_MASQUAGE) ?? [])];
-	const legitimes = jetons.filter((j) => src.includes(j));
-	const fuites = jetons.filter((j) => !legitimes.includes(j));
+	const legitimes = new Set(jetons.filter((j) => src.includes(j)));
+	const fuites = jetons.filter((j) => !legitimes.has(j));
 	if (fuites.length === 0) return null;
 	return {
 		code: "jeton-masquage",
