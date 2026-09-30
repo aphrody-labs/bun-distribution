@@ -29,7 +29,8 @@ including after package close/reload. A different configured library path
 fails while another path remains loaded. Workers have independent globals;
 this is not a worker-lifecycle coordination mechanism.
 
-The native artifact tested at
+The companion aggregate source and package bindings are committed at monorepo
+revision `9fa127cb`. The native artifact tested at
 `/home/aphro/aphrody/target/debug/libaphrody_ffi.so` was built using
 `cargo build --offline --locked -p aphrody-ffi`. Its recorded SHA-256 is
 `d7ae091c4fef2b54370b56ffa114c093a5fdb45bdbac7df298fe7cdf14c8786f`
