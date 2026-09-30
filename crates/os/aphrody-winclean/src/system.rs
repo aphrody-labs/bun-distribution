@@ -203,11 +203,9 @@ pub fn get_memory_info() -> MemoryInfo {
     let total = system.total_memory();
     let available = system.available_memory();
     MemoryInfo {
-        memory_load_percent: if total == 0 {
-            0
-        } else {
-            ((total - available) * 100 / total) as u32
-        },
+        memory_load_percent: (u128::from(total.saturating_sub(available)) * 100)
+            .checked_div(u128::from(total))
+            .unwrap_or(0) as u32,
         total_physical_bytes: total,
         available_physical_bytes: available,
         total_page_file_bytes: system.total_swap(),
@@ -706,7 +704,7 @@ pub fn list_scheduled_tasks(folder: &str) -> std::io::Result<ScheduledTaskListRe
             continue;
         }
         let path = fields[1].clone();
-        if prefix != ""
+        if !prefix.is_empty()
             && prefix != "\\"
             && !path.to_ascii_lowercase().starts_with(&prefix.to_ascii_lowercase())
         {
@@ -798,7 +796,7 @@ fn wsl_result(args: &[String]) -> serde_json::Value {
     #[cfg(not(windows))]
     {
         let _ = args;
-        return serde_json::json!({"Success": false, "ExitCode": -1, "Stdout": "", "Stderr": "WSL management is Windows-only.", "DurationSeconds": 0.0, "TimedOut": false, "Error": "unsupported"});
+        serde_json::json!({"Success": false, "ExitCode": -1, "Stdout": "", "Stderr": "WSL management is Windows-only.", "DurationSeconds": 0.0, "TimedOut": false, "Error": "unsupported"})
     }
     #[cfg(windows)]
     {

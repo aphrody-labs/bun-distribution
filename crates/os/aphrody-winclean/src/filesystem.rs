@@ -42,7 +42,7 @@ pub fn resolve_path(path: &str) -> io::Result<PathBuf> {
     }
     let desktop = dirs_desktop().unwrap_or_else(|| std::env::current_dir().unwrap_or_default());
     let joined = desktop.join(candidate);
-    fs::canonicalize(&joined).or_else(|_| Ok(joined))
+    fs::canonicalize(&joined).or(Ok(joined))
 }
 
 fn dirs_desktop() -> Option<PathBuf> {

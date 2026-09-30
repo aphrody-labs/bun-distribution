@@ -183,7 +183,7 @@ pub fn parse_address(value: &serde_json::Value) -> io::Result<u64> {
 
 pub fn parse_hex(value: &str) -> io::Result<Vec<u8>> {
     let compact: String = value.chars().filter(|c| !c.is_ascii_whitespace()).collect();
-    if compact.is_empty() || compact.len() % 2 != 0 {
+    if compact.is_empty() || !compact.len().is_multiple_of(2) {
         return Err(invalid("hex must contain an even number of digits"));
     }
     (0..compact.len())

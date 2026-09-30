@@ -394,10 +394,10 @@ pub fn call_rust(tool: &str, arguments: Value) -> Result<Value, SubsystemError> 
             } else {
                 aphrody_capture::list_detailed_windows().into_iter().find(|w| w.handle == h)
             };
-            if arguments.get("activate").and_then(Value::as_bool).unwrap_or(true) {
-                if let Some(ref w) = w {
-                    aphrody_capture::switch_to_window(w.handle).map_err(failed)?;
-                }
+            if arguments.get("activate").and_then(Value::as_bool).unwrap_or(true)
+                && let Some(ref w) = w
+            {
+                aphrody_capture::switch_to_window(w.handle).map_err(failed)?;
             }
             let x = arguments.get("x").and_then(Value::as_i64).ok_or_else(|| {
                 SubsystemError::InvalidArguments("computer_click requires x".into())
@@ -559,10 +559,10 @@ pub fn call_rust(tool: &str, arguments: Value) -> Result<Value, SubsystemError> 
             } else {
                 aphrody_capture::list_detailed_windows().into_iter().find(|w| w.handle == h)
             };
-            if arguments.get("activate").and_then(Value::as_bool).unwrap_or(true) {
-                if let Some(ref v) = w {
-                    aphrody_capture::switch_to_window(v.handle).map_err(failed)?;
-                }
+            if arguments.get("activate").and_then(Value::as_bool).unwrap_or(true)
+                && let Some(ref v) = w
+            {
+                aphrody_capture::switch_to_window(v.handle).map_err(failed)?;
             }
             let ox = w.as_ref().map(|v| v.x).unwrap_or(0);
             let oy = w.as_ref().map(|v| v.y).unwrap_or(0);
@@ -894,7 +894,9 @@ pub fn call_rust(tool: &str, arguments: Value) -> Result<Value, SubsystemError> 
                 as usize;
             let b = memory_read(&arguments, tool, max.saturating_mul(2))?;
             let units = b
-                .chunks_exact(2)
+                .as_chunks::<2>()
+                .0
+                .iter()
                 .map(|x| u16::from_le_bytes([x[0], x[1]]))
                 .take_while(|v| *v != 0)
                 .collect::<Vec<_>>();
@@ -1237,10 +1239,11 @@ pub fn call_rust(tool: &str, arguments: Value) -> Result<Value, SubsystemError> 
         "search_files" => {
             let p = path("path")?;
             let pattern = path("pattern")?;
-            if !pattern.contains('*') && !pattern.contains('?') {
-                if let Some(v) = filesystem::search_files_indexed(p, pattern).map_err(failed)? {
-                    return serde_json::to_value(v).map_err(failed);
-                }
+            if !pattern.contains('*')
+                && !pattern.contains('?')
+                && let Some(v) = filesystem::search_files_indexed(p, pattern).map_err(failed)?
+            {
+                return serde_json::to_value(v).map_err(failed);
             }
             serde_json::to_value(
                 filesystem::search_files(

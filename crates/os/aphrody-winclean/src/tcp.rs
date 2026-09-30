@@ -71,7 +71,7 @@ fn parse_proc_address(hex: &str) -> Option<std::net::IpAddr> {
         8 => Some(std::net::IpAddr::from(word(hex)?)),
         32 => {
             let mut bytes = [0u8; 16];
-            for (index, target) in bytes.chunks_exact_mut(4).enumerate() {
+            for (index, target) in bytes.as_chunks_mut::<4>().0.iter_mut().enumerate() {
                 target.copy_from_slice(&word(hex.get(index * 8..index * 8 + 8)?)?);
             }
             Some(std::net::IpAddr::from(bytes))

@@ -19,10 +19,10 @@ pub fn query_event_log(
         return Err(io::Error::new(io::ErrorKind::InvalidInput, "invalid event log channel"));
     }
     let max_events = max_events.clamp(1, 1000);
-    if let Some(filter) = xpath_filter {
-        if filter.chars().any(|c| c.is_control() || c == '"') {
-            return Err(io::Error::new(io::ErrorKind::InvalidInput, "invalid event log XPath"));
-        }
+    if let Some(filter) = xpath_filter
+        && filter.chars().any(|c| c.is_control() || c == '"')
+    {
+        return Err(io::Error::new(io::ErrorKind::InvalidInput, "invalid event log XPath"));
     }
     let query = xpath_filter.map(str::trim).filter(|value| !value.is_empty()).unwrap_or("*");
     let entries = imp::query(channel.trim(), query, max_events as usize)?;

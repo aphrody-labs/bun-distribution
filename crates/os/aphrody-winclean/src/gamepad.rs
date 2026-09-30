@@ -56,6 +56,10 @@ mod native {
         guard.pads[index] = Some(pad);
         Ok(json!({"success":true,"slot":index,"vendorId":"045e","productId":"028e"}))
     }
+    #[allow(
+        clippy::too_many_arguments,
+        reason = "Preserve the published gamepad API compatibility"
+    )]
     pub fn send_state(
         slot_value: i64,
         buttons: i64,
@@ -127,6 +131,10 @@ mod native {
     pub fn create(_: i64) -> Result<Value, String> {
         unsupported()
     }
+    #[allow(
+        clippy::too_many_arguments,
+        reason = "Preserve the published gamepad API compatibility"
+    )]
     pub fn send_state(
         _: i64,
         _: i64,

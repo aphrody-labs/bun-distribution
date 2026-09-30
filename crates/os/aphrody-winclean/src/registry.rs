@@ -239,7 +239,7 @@ fn type_name(code: u32) -> String {
 }
 
 fn utf16_units(data: &[u8]) -> Vec<u16> {
-    data.chunks_exact(2).map(|pair| u16::from_le_bytes([pair[0], pair[1]])).collect()
+    data.as_chunks::<2>().0.iter().map(|pair| u16::from_le_bytes([pair[0], pair[1]])).collect()
 }
 
 fn hex_upper(data: &[u8]) -> String {
