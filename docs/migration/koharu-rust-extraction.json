@@ -212,5 +212,6 @@
   "rootDependencyPins": {
     "hf-hub": "e88c9efe6d38bb370008ba0f5281249210c52176",
     "tauri-specta": "77e14e0a342b604e91d4cebbe018a7cb6eef0582"
-  }
+  },
+  "supersededBy": "koharu-consolidation.json"
 }
