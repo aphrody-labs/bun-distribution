@@ -2,6 +2,16 @@
 
 # Aphrody monorepo extraction plan
 
+## Third-party duplication cleanup — 2026-10-01
+
+Removed 139 ignored, untracked dependency/build directories from the imported
+Discord workspace and Drive source snapshot after checking each target against
+Git's tracked files and ignore rules. `upstream/discord` fell from about 4.0 GiB
+to 26 MiB; `crates/os/drive` fell from about 2.5 GiB to 23 MiB. All 2,232
+tracked Discord files and 1,899 tracked Drive files remain. The remaining
+upstream sources have no proven full-tree byte-identical replacement; their
+provenance and active Cargo consumers are retained.
+
 ## Ignore rules — 2026-10-01
 
 Reconciled the root ignore rules with imported Aphrody AI/UI/Web, Bun/Oxc and
