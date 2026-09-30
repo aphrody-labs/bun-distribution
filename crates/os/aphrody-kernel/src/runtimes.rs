@@ -150,7 +150,7 @@ mod tests {
             .expect("resolve");
         let uv = &result["runtimes"][0];
         assert_eq!(uv["toolchain"], "uv");
-        assert_eq!(uv["pin"]["version"], "0.12.17");
+        assert_eq!(uv["pin"]["version"], "0.12.17", "{result}");
         assert!(uv["found"].is_boolean());
     }
 

@@ -4,7 +4,10 @@
 //! Exposes native SSH execution, SFTP remote filesystem navigation, differential
 //! synchronization (`fast_rsync`), and remote Git inspection as kernel tools.
 
-use std::{path::PathBuf, process::Stdio};
+use std::{
+    path::{Path, PathBuf},
+    process::Stdio,
+};
 
 use aphrody_subsystem::{SubsystemError, SystemSubsystem, ToolDefinition};
 use async_trait::async_trait;
@@ -36,36 +39,57 @@ fn dirs_home() -> Option<PathBuf> {
 fn find_infra_manifest() -> Option<PathBuf> {
     if let Ok(path) = std::env::var("APHRODY_INFRA_PATH") {
         let p = PathBuf::from(path);
-        if p.exists() {
+        if p.is_file() {
             return Some(p);
         }
     }
     if let Ok(dir) = std::env::var("APHRODY_INFRA_DIR") {
         let p = PathBuf::from(dir).join("Cargo.toml");
-        if p.exists() {
+        if p.is_file() {
             return Some(p);
         }
     }
 
-    if let Ok(cwd) = std::env::current_dir() {
-        let sibling = cwd.join("../aphrody-infra/Cargo.toml");
-        if sibling.exists() {
-            return Some(sibling);
-        }
-        let direct = cwd.join("aphrody-infra/Cargo.toml");
-        if direct.exists() {
-            return Some(direct);
+    let cwd = std::env::current_dir().ok();
+    let executable = std::env::current_exe().ok();
+    find_workspace_manifest(cwd.as_deref(), executable.as_deref(), dirs_home().as_deref())
+}
+
+// Keep this independent of process environment so relocated clean clones and service
+// launches can be tested without changing environment variables in parallel tests.
+fn find_workspace_manifest(
+    cwd: Option<&Path>,
+    executable: Option<&Path>,
+    home: Option<&Path>,
+) -> Option<PathBuf> {
+    for start in cwd.into_iter().chain(executable.and_then(Path::parent)) {
+        for root in start.ancestors() {
+            let manifest = root.join("Cargo.toml");
+            if manifest.is_file()
+                && (root.join("crates/infra/aphrody-ssh/Cargo.toml").is_file()
+                    || root.join("crates/aphrody-ssh/Cargo.toml").is_file())
+            {
+                return Some(manifest);
+            }
+            for legacy in [root.join("aphrody-infra"), root.join("../aphrody-infra")] {
+                let manifest = legacy.join("Cargo.toml");
+                if manifest.is_file() {
+                    return Some(manifest);
+                }
+            }
         }
     }
-
-    if let Some(home) = dirs_home() {
-        let in_src = home.join("src").join("aphrody-infra").join("Cargo.toml");
-        if in_src.exists() {
-            return Some(in_src);
-        }
-        let in_home = home.join("aphrody-infra").join("Cargo.toml");
-        if in_home.exists() {
-            return Some(in_home);
+    if let Some(home) = home {
+        for root in [
+            home.join("aphrody"),
+            home.join("src/aphrody"),
+            home.join("src/aphrody-infra"),
+            home.join("aphrody-infra"),
+        ] {
+            let manifest = root.join("Cargo.toml");
+            if manifest.is_file() {
+                return Some(manifest);
+            }
         }
     }
 
@@ -73,9 +97,18 @@ fn find_infra_manifest() -> Option<PathBuf> {
 }
 
 fn resolve_infra_invoker() -> Result<(String, Vec<String>), SubsystemError> {
-    if let Ok(output) = std::process::Command::new("aphrody-ssh").arg("--version").output() {
-        if output.status.success() {
-            return Ok(("aphrody-ssh".to_string(), Vec::new()));
+    if let Ok(output) = std::process::Command::new("aphrody-ssh").arg("--version").output()
+        && output.status.success()
+    {
+        return Ok(("aphrody-ssh".to_string(), Vec::new()));
+    }
+
+    if let Ok(executable) = std::env::current_exe()
+        && let Some(directory) = executable.parent()
+    {
+        let binary = directory.join(format!("aphrody-ssh{}", std::env::consts::EXE_SUFFIX));
+        if binary.is_file() {
+            return Ok((binary.to_string_lossy().into_owned(), Vec::new()));
         }
     }
 
@@ -83,12 +116,12 @@ fn resolve_infra_invoker() -> Result<(String, Vec<String>), SubsystemError> {
         if let Some(manifest_dir) = manifest.parent() {
             let bin_name = if cfg!(windows) { "aphrody-ssh.exe" } else { "aphrody-ssh" };
             let debug_bin = manifest_dir.join("target").join("debug").join(bin_name);
-            if debug_bin.exists() {
-                return Ok((debug_bin.to_string_lossy().into_owned(), Vec::new()));
-            }
             let release_bin = manifest_dir.join("target").join("release").join(bin_name);
-            if release_bin.exists() {
+            if release_bin.is_file() {
                 return Ok((release_bin.to_string_lossy().into_owned(), Vec::new()));
+            }
+            if debug_bin.is_file() {
+                return Ok((debug_bin.to_string_lossy().into_owned(), Vec::new()));
             }
         }
 
@@ -106,8 +139,8 @@ fn resolve_infra_invoker() -> Result<(String, Vec<String>), SubsystemError> {
     }
 
     Err(SubsystemError::Failed(
-        "aphrody-infra manifest or binary not found. Set APHRODY_INFRA_PATH or clone \
-         aphrody-infra beside aphrody-os."
+        "aphrody-ssh binary or workspace manifest not found. Install aphrody-ssh beside \
+         aphrody-kernel or set APHRODY_INFRA_PATH to the Aphrody workspace Cargo.toml."
             .into(),
     ))
 }
@@ -321,10 +354,7 @@ impl SystemSubsystem for InfraSubsystem {
                     .ok_or_else(|| SubsystemError::InvalidArguments("missing repo_path".into()))?;
 
                 validate_host(host)?;
-                let cmd = format!(
-                    "git -C '{repo_path}' status --short --branch && git -C '{repo_path}' log -n \
-                     5 --oneline"
-                );
+                let cmd = git_status_command(repo_path)?;
                 let output =
                     run_infra_cli(&["--json", "exec", "--host", host, "--cmd", &cmd]).await?;
                 Ok(output)
@@ -332,6 +362,25 @@ impl SystemSubsystem for InfraSubsystem {
             _ => Err(SubsystemError::UnknownTool(tool.to_owned())),
         }
     }
+}
+
+fn git_status_command(repo_path: &str) -> Result<String, SubsystemError> {
+    if repo_path.is_empty() || repo_path.contains('\0') {
+        return Err(SubsystemError::InvalidArguments(
+            "repo_path must be nonempty and contain no NUL".into(),
+        ));
+    }
+    let quote = |value: &str| format!("'{}'", value.replace('\'', "'\"'\"'"));
+    // Expand only the documented home shorthand, keeping the rest a literal
+    // shell argument even when names contain quotes, spaces or shell operators.
+    let path = if repo_path == "~" {
+        "\"$HOME\"".to_owned()
+    } else if let Some(relative) = repo_path.strip_prefix("~/") {
+        format!("\"$HOME\"/{}", quote(relative))
+    } else {
+        quote(repo_path)
+    };
+    Ok(format!("git -C {path} status --short --branch && git -C {path} log -n 5 --oneline"))
 }
 
 fn validate_host(host: &str) -> Result<(), SubsystemError> {
@@ -380,6 +429,74 @@ async fn run_infra_cli(args: &[&str]) -> Result<Value, SubsystemError> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn discovers_relocated_workspace_from_nested_cwd_and_kernel() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let root = dir.path().join("relocated");
+        std::fs::create_dir_all(root.join("crates/infra/aphrody-ssh")).unwrap();
+        std::fs::write(root.join("Cargo.toml"), "[workspace]\n").unwrap();
+        std::fs::write(root.join("crates/infra/aphrody-ssh/Cargo.toml"), "[package]\n").unwrap();
+        let expected = Some(root.join("Cargo.toml"));
+        assert_eq!(
+            find_workspace_manifest(Some(&root.join("docs/reference")), None, None),
+            expected
+        );
+        assert_eq!(
+            find_workspace_manifest(None, Some(&root.join("target/release/aphrody-kernel")), None),
+            expected
+        );
+        assert_eq!(find_workspace_manifest(Some(dir.path()), None, None), None);
+    }
+
+    #[test]
+    fn preserves_legacy_sibling_and_home_discovery() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let legacy = dir.path().join("src/aphrody-infra");
+        std::fs::create_dir_all(legacy.join("crates/aphrody-ssh")).unwrap();
+        std::fs::write(legacy.join("Cargo.toml"), "[workspace]\n").unwrap();
+        std::fs::write(legacy.join("crates/aphrody-ssh/Cargo.toml"), "[package]\n").unwrap();
+        let expected = Some(legacy.join("Cargo.toml"));
+        let sibling =
+            find_workspace_manifest(Some(&dir.path().join("src/aphrody-os")), None, None).unwrap();
+        assert_eq!(
+            sibling.canonicalize().unwrap(),
+            expected.as_ref().unwrap().canonicalize().unwrap()
+        );
+        assert_eq!(find_workspace_manifest(None, None, Some(dir.path())), expected);
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn git_status_handles_literal_paths_and_home_shorthand() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        for relative in ["quoted ' name", "repo' ; touch INJECTED ; #", "ordinary"] {
+            let repository = dir.path().join(relative);
+            std::fs::create_dir(&repository).unwrap();
+            assert!(
+                std::process::Command::new("git")
+                    .args(["init", "--quiet"])
+                    .arg(&repository)
+                    .status()
+                    .unwrap()
+                    .success()
+            );
+            // A missing HEAD makes log fail; status must still run for the correct path.
+            for path in [repository.to_string_lossy().into_owned(), format!("~/{relative}")] {
+                let output = std::process::Command::new("sh")
+                    .arg("-c")
+                    .arg(git_status_command(&path).unwrap())
+                    .env("HOME", dir.path())
+                    .current_dir(dir.path())
+                    .output()
+                    .unwrap();
+                assert!(String::from_utf8_lossy(&output.stdout).contains("## No commits yet"));
+                assert!(!dir.path().join("INJECTED").exists());
+            }
+        }
+        assert!(git_status_command("").is_err());
+        assert!(git_status_command("repo\0path").is_err());
+    }
 
     #[tokio::test]
     async fn infra_subsystem_declares_tools() {

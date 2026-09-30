@@ -153,10 +153,10 @@ where
             continue;
         }
         let Ok(permit) = Arc::clone(&permits).try_acquire_owned() else {
-            if let Some(id) = message.get("id") {
-                if outbound.try_send(json!({"jsonrpc": "2.0", "id": id, "error": {"code": -32000, "message": "too many concurrent requests"}})).is_err() {
-                    break;
-                }
+            if let Some(id) = message.get("id")
+                && outbound.try_send(json!({"jsonrpc": "2.0", "id": id, "error": {"code": -32000, "message": "too many concurrent requests"}})).is_err()
+            {
+                break;
             }
             continue;
         };

@@ -6,7 +6,7 @@ use std::{collections::HashSet, path::PathBuf, process::Stdio, sync::Arc, time::
 use async_trait::async_trait;
 use serde_json::{Value, json};
 use tokio::{
-    io::{AsyncBufReadExt, AsyncWriteExt, BufReader},
+    io::{AsyncBufRead, AsyncBufReadExt, AsyncWriteExt, BufReader},
     process::{Child, ChildStdin, ChildStdout},
     sync::Mutex,
 };
@@ -15,11 +15,42 @@ use crate::{SubsystemError, SystemSubsystem, ToolDefinition};
 
 const RPC_TIMEOUT: Duration = Duration::from_secs(60);
 const AUTO_DISCOVERY_TIMEOUT: Duration = Duration::from_secs(10);
+const MAX_MCP_FRAME: usize = 64 * 1024 * 1024;
+
+async fn read_frame<R: AsyncBufRead + Unpin>(
+    reader: &mut R,
+    buffer: &mut Vec<u8>,
+    limit: usize,
+) -> Result<(), String> {
+    loop {
+        // The only suspension occurs before modifying the persistent buffer.
+        let available = reader.fill_buf().await.map_err(|error| error.to_string())?;
+        if available.is_empty() {
+            return Err("MCP provider closed stdout".into());
+        }
+        let newline = available.iter().position(|byte| *byte == b'\n');
+        let take = newline.map_or(available.len(), |position| position + 1);
+        if take > limit.saturating_sub(buffer.len()) {
+            return Err(format!("MCP provider frame exceeds {limit} bytes"));
+        }
+        buffer.extend_from_slice(&available[..take]);
+        reader.consume(take);
+        if newline.is_some() {
+            return Ok(());
+        }
+        if buffer.len() == limit {
+            return Err(format!("MCP provider frame exceeds {limit} bytes"));
+        }
+    }
+}
 
 struct ProcessState {
     _child: Child,
     stdin: ChildStdin,
     stdout: BufReader<ChildStdout>,
+    response_buffer: Vec<u8>,
+    next_request_id: u64,
+    disconnected: bool,
 }
 
 /// A subsystem plugin: an MCP server binary shipped by a higher-layer repository.
@@ -214,6 +245,9 @@ impl McpProxySubsystem {
             _child: child,
             stdin,
             stdout: BufReader::new(stdout),
+            response_buffer: Vec::new(),
+            next_request_id: 1,
+            disconnected: false,
         }));
         let proxy = Self {
             name: "aphrody-web".into(),
@@ -230,27 +264,36 @@ impl McpProxySubsystem {
                     "capabilities": {},
                     "clientInfo": {"name": "aphrody-os", "version": env!("CARGO_PKG_VERSION")}
                 }),
-                1,
             )
             .await?;
         proxy.notify("notifications/initialized", json!({})).await?;
-        let listed = proxy.request("tools/list", json!({}), 2).await?;
-        proxy.tools = listed
-            .pointer("/tools")
-            .and_then(Value::as_array)
-            .into_iter()
-            .flatten()
-            .filter_map(|tool| {
-                let name = tool.get("name")?.as_str()?.to_owned();
-                let schema =
-                    tool.get("inputSchema").cloned().unwrap_or_else(|| json!({"type":"object"}));
-                Some(ToolDefinition::new(
-                    name,
-                    tool.get("description").and_then(Value::as_str).unwrap_or_default(),
-                    schema,
-                ))
-            })
-            .collect();
+        let mut params = json!({});
+        let mut cursors = HashSet::new();
+        let mut names = HashSet::new();
+        loop {
+            let listed = proxy.request("tools/list", params).await?;
+            let tools = listed
+                .get("tools")
+                .and_then(Value::as_array)
+                .ok_or("MCP tools/list response has no tools array")?;
+            for tool in tools {
+                let definition = provider_tool(tool)?;
+                if !names.insert(definition.name.clone()) {
+                    return Err(format!("MCP provider listed duplicate tool: {}", definition.name));
+                }
+                proxy.tools.push(definition);
+            }
+            match listed.get("nextCursor") {
+                None | Some(Value::Null) => break,
+                Some(Value::String(cursor)) => {
+                    if !cursors.insert(cursor.clone()) {
+                        return Err("MCP provider repeated a tools/list cursor".into());
+                    }
+                    params = json!({"cursor": cursor});
+                },
+                _ => return Err("MCP provider returned an invalid tools/list cursor".into()),
+            }
+        }
         if proxy.tools.is_empty() {
             return Err("MCP provider returned no tools".into());
         }
@@ -264,34 +307,71 @@ impl McpProxySubsystem {
         state.stdin.flush().await.map_err(|error| error.to_string())
     }
 
-    async fn request(&self, method: &str, params: Value, id: u64) -> Result<Value, String> {
-        let mut state = self.process.lock().await;
-        Self::write_line(
-            &mut state,
-            &json!({"jsonrpc":"2.0","id":id,"method":method,"params":params}),
-        )
-        .await?;
-        loop {
-            let mut line = String::new();
-            let read = tokio::time::timeout(RPC_TIMEOUT, state.stdout.read_line(&mut line))
-                .await
-                .map_err(|_| format!("MCP {method} timed out"))?
-                .map_err(|error| error.to_string())?;
-            if read == 0 {
-                return Err("MCP provider closed stdout".into());
-            }
-            let response: Value = serde_json::from_str(line.trim())
-                .map_err(|error| format!("MCP invalid response: {error}"))?;
-            if response.get("id") == Some(&json!(id)) {
-                if let Some(error) = response.get("error") {
-                    return Err(error
-                        .get("message")
-                        .and_then(Value::as_str)
-                        .unwrap_or("MCP error")
-                        .into());
+    async fn request(&self, method: &str, params: Value) -> Result<Value, String> {
+        self.request_with_timeout(method, params, RPC_TIMEOUT).await
+    }
+
+    async fn request_with_timeout(
+        &self,
+        method: &str,
+        params: Value,
+        timeout: Duration,
+    ) -> Result<Value, String> {
+        // A provider emitting notifications must not extend a request indefinitely.
+        // Include queued requests and blocked stdin writes in the same deadline.
+        let deadline = tokio::time::Instant::now() + timeout;
+        let mut state = tokio::time::timeout_at(deadline, self.process.lock())
+            .await
+            .map_err(|_| format!("MCP {method} timed out waiting for the provider"))?;
+        if state.disconnected {
+            return Err("MCP provider disconnected".into());
+        }
+        let id = state.next_request_id;
+        state.next_request_id = id.checked_add(1).ok_or("MCP request ID exhausted")?;
+        let result = tokio::time::timeout_at(deadline, async {
+            Self::write_line(
+                &mut state,
+                &json!({"jsonrpc":"2.0","id":id,"method":method,"params":params}),
+            )
+            .await?;
+            loop {
+                // Preserve partial framing when the caller cancels this future.
+                // A later request can finish and discard the earlier ID's reply.
+                let ProcessState { stdout, response_buffer, .. } = &mut *state;
+                if let Err(error) = read_frame(stdout, response_buffer, MAX_MCP_FRAME).await {
+                    state.disconnected = true;
+                    let _ = state._child.start_kill();
+                    return Err(error);
                 }
-                return Ok(response.get("result").cloned().unwrap_or(Value::Null));
+                let response_buffer = &mut state.response_buffer;
+                let response = serde_json::from_slice::<Value>(response_buffer)
+                    .map_err(|error| format!("MCP invalid response: {error}"));
+                response_buffer.clear();
+                let response = response?;
+                if response.get("id") == Some(&json!(id)) {
+                    if let Some(error) = response.get("error") {
+                        return Err(error
+                            .get("message")
+                            .and_then(Value::as_str)
+                            .unwrap_or("MCP error")
+                            .into());
+                    }
+                    return response
+                        .get("result")
+                        .cloned()
+                        .ok_or_else(|| "MCP response has no result".into());
+                }
             }
+        })
+        .await;
+        match result {
+            Ok(result) => result,
+            Err(_) => {
+                // An unresponsive provider cannot retain the process indefinitely.
+                state.disconnected = true;
+                let _ = state._child.start_kill();
+                Err(format!("MCP {method} timed out"))
+            },
         }
     }
 
@@ -300,6 +380,22 @@ impl McpProxySubsystem {
         Self::write_line(&mut state, &json!({"jsonrpc":"2.0","method":method,"params":params}))
             .await
     }
+}
+
+fn provider_tool(tool: &Value) -> Result<ToolDefinition, String> {
+    let name = tool
+        .get("name")
+        .and_then(Value::as_str)
+        .filter(|name| !name.is_empty())
+        .ok_or("MCP provider listed a tool without a name")?;
+    let mut definition = ToolDefinition::new(
+        name,
+        tool.get("description").and_then(Value::as_str).unwrap_or_default(),
+        tool.get("inputSchema").cloned().unwrap_or_else(|| json!({"type":"object"})),
+    );
+    definition.read_only =
+        tool.pointer("/annotations/readOnlyHint").and_then(Value::as_bool).unwrap_or(false);
+    Ok(definition)
 }
 
 /// Obscura (the browser subsystem) owns these kernel names; keep one owner per tool.
@@ -339,13 +435,191 @@ fn installed_binary(name: &str) -> Option<PathBuf> {
     directories.into_iter().map(|directory| directory.join(&executable)).find(|path| path.is_file())
 }
 
+#[async_trait]
+impl SystemSubsystem for McpProxySubsystem {
+    fn name(&self) -> &str {
+        &self.name
+    }
+    fn description(&self) -> &str {
+        &self.description
+    }
+    fn tools(&self) -> Vec<ToolDefinition> {
+        self.tools.clone()
+    }
+    async fn call(&self, tool: &str, arguments: Value) -> Result<Value, SubsystemError> {
+        if !self.tools.iter().any(|definition| definition.name == tool) {
+            return Err(SubsystemError::UnknownTool(tool.into()));
+        }
+        self.request("tools/call", json!({"name":tool,"arguments":arguments}))
+            .await
+            .map_err(SubsystemError::Failed)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use std::collections::HashSet;
 
     use super::{
         McpProxySubsystem, PluginSpec, is_browser_owned, is_web_provider_tool, is_web_tool,
+        provider_tool, read_frame,
     };
+
+    #[tokio::test]
+    async fn frames_reject_oversize_before_growing_the_buffer_past_limit() {
+        let mut reader = tokio::io::BufReader::with_capacity(4, &b"123456789\n"[..]);
+        let mut buffer = Vec::new();
+        let error = read_frame(&mut reader, &mut buffer, 8).await.unwrap_err();
+        assert!(error.contains("exceeds 8 bytes"));
+        assert!(buffer.len() <= 8);
+
+        let mut reader = tokio::io::BufReader::with_capacity(4, &b"1234567\nnext\n"[..]);
+        buffer.clear();
+        read_frame(&mut reader, &mut buffer, 8).await.unwrap();
+        assert_eq!(buffer, b"1234567\n");
+        buffer.clear();
+        read_frame(&mut reader, &mut buffer, 8).await.unwrap();
+        assert_eq!(buffer, b"next\n");
+    }
+
+    #[test]
+    fn provider_metadata_preserves_read_only_annotations() {
+        let read = provider_tool(
+            &serde_json::json!({"name": "probe", "annotations": {"readOnlyHint": true}}),
+        )
+        .unwrap();
+        assert!(read.read_only);
+        assert_eq!(read.to_mcp()["annotations"]["readOnlyHint"], true);
+        assert!(!provider_tool(&serde_json::json!({"name": "write"})).unwrap().read_only);
+        assert!(provider_tool(&serde_json::json!({"name": ""})).is_err());
+    }
+
+    #[cfg(unix)]
+    #[tokio::test]
+    async fn discovers_all_pages_and_uses_distinct_call_ids() {
+        use crate::SystemSubsystem;
+        let dir = tempfile::tempdir().unwrap();
+        let script = dir.path().join("provider.sh");
+        // A local provider rejects missing pagination, then sends a stale reply
+        // before the live response: only the new request ID may be accepted.
+        std::fs::write(&script, r#"
+read -r request
+printf '%s\n' '{"jsonrpc":"2.0","id":1,"result":{"protocolVersion":"2025-06-18","capabilities":{"tools":{}}}}'
+read -r initialized
+read -r request
+printf '%s\n' '{"jsonrpc":"2.0","id":2,"result":{"tools":[{"name":"probe","annotations":{"readOnlyHint":true}}],"nextCursor":""}}'
+read -r request
+case "$request" in *'"cursor":""'*) ;; *) exit 3 ;; esac
+printf '%s\n' '{"jsonrpc":"2.0","id":3,"result":{"tools":[{"name":"write"}]}}'
+read -r request
+printf '%s\n' '{"jsonrpc":"2.0","id":3,"result":{"wrong":true}}' '{"jsonrpc":"2.0","id":4,"result":{"value":41}}'
+read -r request
+printf '%s\n' '{"jsonrpc":"2.0","id":4,"result":{"wrong":true}}' '{"jsonrpc":"2.0","id":5,"result":{"value":42}}'
+"#).unwrap();
+        let provider =
+            McpProxySubsystem::spawn("sh", &[script.to_string_lossy().into_owned()]).await.unwrap();
+        assert_eq!(provider.tools().len(), 2);
+        assert!(provider.tools()[0].read_only);
+        assert!(!provider.tools()[1].read_only);
+        assert_eq!(provider.call("probe", serde_json::json!({})).await.unwrap()["value"], 41);
+        assert_eq!(provider.call("probe", serde_json::json!({})).await.unwrap()["value"], 42);
+    }
+
+    #[cfg(unix)]
+    #[tokio::test]
+    async fn notifications_cannot_extend_deadline_or_reuse_timed_out_connection() {
+        use crate::SystemSubsystem;
+        let dir = tempfile::tempdir().unwrap();
+        let script = dir.path().join("provider.sh");
+        std::fs::write(
+            &script,
+            r#"
+read -r request
+printf '%s\n' '{"jsonrpc":"2.0","id":1,"result":{}}'
+read -r initialized
+read -r request
+printf '%s\n' '{"jsonrpc":"2.0","id":2,"result":{"tools":[{"name":"probe"}]}}'
+read -r request
+while true; do
+printf '%s\n' '{"jsonrpc":"2.0","method":"notifications/progress","params":{}}'
+sleep 0.01
+done
+"#,
+        )
+        .unwrap();
+        let provider =
+            McpProxySubsystem::spawn("sh", &[script.to_string_lossy().into_owned()]).await.unwrap();
+        let error = provider
+            .request_with_timeout(
+                "tools/call",
+                serde_json::json!({"name":"probe"}),
+                std::time::Duration::from_millis(100),
+            )
+            .await
+            .unwrap_err();
+        assert!(error.contains("timed out"));
+        let next = provider.call("probe", serde_json::json!({})).await.unwrap_err();
+        assert!(next.to_string().contains("disconnected"));
+    }
+
+    #[cfg(unix)]
+    #[tokio::test]
+    async fn caller_cancellation_preserves_partial_reply_framing() {
+        use crate::SystemSubsystem;
+        let dir = tempfile::tempdir().unwrap();
+        let script = dir.path().join("provider.sh");
+        std::fs::write(
+            &script,
+            r#"
+read -r request
+printf '%s\n' '{"jsonrpc":"2.0","id":1,"result":{}}'
+read -r initialized
+read -r request
+printf '%s\n' '{"jsonrpc":"2.0","id":2,"result":{"tools":[{"name":"probe"}]}}'
+read -r request
+printf '%s' '{"jsonrpc":"2.0","id":3,'
+sleep 0.1
+printf '%s\n' '"result":{"value":41}}'
+read -r request
+printf '%s\n' '{"jsonrpc":"2.0","id":4,"result":{"value":42}}'
+"#,
+        )
+        .unwrap();
+        let provider =
+            McpProxySubsystem::spawn("sh", &[script.to_string_lossy().into_owned()]).await.unwrap();
+        let cancelled = tokio::time::timeout(
+            std::time::Duration::from_millis(50),
+            provider.call("probe", serde_json::json!({})),
+        )
+        .await;
+        assert!(cancelled.is_err());
+        assert_eq!(provider.call("probe", serde_json::json!({})).await.unwrap()["value"], 42);
+    }
+
+    #[cfg(unix)]
+    #[tokio::test]
+    async fn rejects_repeating_pagination_cursor() {
+        let dir = tempfile::tempdir().unwrap();
+        let script = dir.path().join("provider.sh");
+        std::fs::write(
+            &script,
+            r#"
+read -r request
+printf '%s\n' '{"jsonrpc":"2.0","id":1,"result":{}}'
+read -r initialized
+read -r request
+printf '%s\n' '{"jsonrpc":"2.0","id":2,"result":{"tools":[],"nextCursor":"again"}}'
+read -r request
+printf '%s\n' '{"jsonrpc":"2.0","id":3,"result":{"tools":[],"nextCursor":"again"}}'
+"#,
+        )
+        .unwrap();
+        let error = McpProxySubsystem::spawn("sh", &[script.to_string_lossy().into_owned()])
+            .await
+            .err()
+            .unwrap();
+        assert!(error.contains("repeated a tools/list cursor"));
+    }
 
     #[test]
     fn auto_discovery_accepts_only_web_provider_tools() {
@@ -396,26 +670,5 @@ mod tests {
     async fn explicit_missing_provider_still_reports_an_error() {
         let command = "aphrody-kernel-no-such-mcp-provider-46a80fb9";
         assert!(McpProxySubsystem::configured_provider(Some(command.into())).await.is_err());
-    }
-}
-
-#[async_trait]
-impl SystemSubsystem for McpProxySubsystem {
-    fn name(&self) -> &str {
-        &self.name
-    }
-    fn description(&self) -> &str {
-        &self.description
-    }
-    fn tools(&self) -> Vec<ToolDefinition> {
-        self.tools.clone()
-    }
-    async fn call(&self, tool: &str, arguments: Value) -> Result<Value, SubsystemError> {
-        if !self.tools.iter().any(|definition| definition.name == tool) {
-            return Err(SubsystemError::UnknownTool(tool.into()));
-        }
-        self.request("tools/call", json!({"name":tool,"arguments":arguments}), 100)
-            .await
-            .map_err(SubsystemError::Failed)
     }
 }

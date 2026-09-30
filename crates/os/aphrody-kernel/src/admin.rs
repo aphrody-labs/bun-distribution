@@ -66,6 +66,37 @@ mod tests {
 
     use super::{AdminSubsystem, call_rust};
 
+    fn pe_fixture() -> tempfile::NamedTempFile {
+        // One valid AMD64 PE section, independent of the test runner's executable format.
+        let mut bytes = vec![0_u8; 0x400];
+        bytes[..2].copy_from_slice(b"MZ");
+        bytes[0x3c..0x40].copy_from_slice(&0x80_u32.to_le_bytes());
+        bytes[0x80..0x84].copy_from_slice(b"PE\0\0");
+        bytes[0x84..0x86].copy_from_slice(&0x8664_u16.to_le_bytes());
+        bytes[0x86..0x88].copy_from_slice(&1_u16.to_le_bytes());
+        bytes[0x94..0x96].copy_from_slice(&0xf0_u16.to_le_bytes());
+        bytes[0x96..0x98].copy_from_slice(&0x22_u16.to_le_bytes());
+        bytes[0x98..0x9a].copy_from_slice(&0x20b_u16.to_le_bytes());
+        bytes[0xa8..0xac].copy_from_slice(&0x1000_u32.to_le_bytes());
+        bytes[0xb0..0xb8].copy_from_slice(&0x1_4000_0000_u64.to_le_bytes());
+        bytes[0xb8..0xbc].copy_from_slice(&0x1000_u32.to_le_bytes());
+        bytes[0xbc..0xc0].copy_from_slice(&0x200_u32.to_le_bytes());
+        bytes[0xd0..0xd4].copy_from_slice(&0x2000_u32.to_le_bytes());
+        bytes[0xd4..0xd8].copy_from_slice(&0x200_u32.to_le_bytes());
+        bytes[0xdc..0xde].copy_from_slice(&3_u16.to_le_bytes());
+        bytes[0x104..0x108].copy_from_slice(&16_u32.to_le_bytes());
+        bytes[0x188..0x18d].copy_from_slice(b".text");
+        bytes[0x190..0x194].copy_from_slice(&16_u32.to_le_bytes());
+        bytes[0x194..0x198].copy_from_slice(&0x1000_u32.to_le_bytes());
+        bytes[0x198..0x19c].copy_from_slice(&0x200_u32.to_le_bytes());
+        bytes[0x19c..0x1a0].copy_from_slice(&0x200_u32.to_le_bytes());
+        bytes[0x1ac..0x1b0].copy_from_slice(&0x6000_0020_u32.to_le_bytes());
+        bytes[0x200..0x210].copy_from_slice(b"aphrody fixture\0");
+        let file = tempfile::NamedTempFile::new().expect("PE fixture");
+        std::fs::write(file.path(), bytes).expect("write PE fixture");
+        file
+    }
+
     #[test]
     fn every_canonical_winclean_tool_is_agent_available() {
         let tools = AdminSubsystem.tools();
@@ -201,7 +232,8 @@ mod tests {
 
     #[test]
     fn section_dump_is_served_by_the_rust_owner() {
-        let input = std::env::current_exe().expect("current test executable");
+        let fixture = pe_fixture();
+        let input = fixture.path();
         let output =
             std::env::temp_dir().join(format!("aphrody-section-{}.bin", std::process::id()));
         let result = call_rust(
@@ -217,7 +249,8 @@ mod tests {
 
     #[test]
     fn pe_header_is_served_by_the_rust_owner() {
-        let input = std::env::current_exe().expect("current test executable");
+        let fixture = pe_fixture();
+        let input = fixture.path();
         let result =
             call_rust("binary_parse_pe_header", json!({ "path": input.to_string_lossy() }))
                 .expect("Rust PE header handler succeeds");
@@ -227,7 +260,8 @@ mod tests {
 
     #[test]
     fn analyze_pe_is_served_by_the_rust_owner() {
-        let input = std::env::current_exe().expect("current test executable");
+        let fixture = pe_fixture();
+        let input = fixture.path();
         let result = call_rust("analyze_pe", json!({ "path": input.to_string_lossy() }))
             .expect("Rust PE analysis handler succeeds");
         assert_eq!(result["success"], true);
@@ -268,7 +302,7 @@ mod tests {
         )
         .expect("Rust read handler succeeds");
         let read_text = read.as_str().expect("read result is text");
-        assert!(read_text.ends_with("\\sample.txt\nContent:\ntwo"));
+        assert!(read_text.ends_with(&format!("{}\nContent:\ntwo", file.display())));
         let info = call_rust("get_file_info", json!({ "path": file.to_string_lossy() }))
             .expect("Rust info handler succeeds");
         assert_eq!(info["isDirectory"], false);
@@ -357,6 +391,19 @@ mod tests {
         assert!(missing.as_str().is_some_and(|value| value.contains("No process")));
         let waited = call_rust("wait", json!({ "seconds": 1 })).expect("wait succeeds");
         assert_eq!(waited.as_str(), Some("Waited 1 second(s)."));
+    }
+
+    #[cfg(not(windows))]
+    #[test]
+    fn windows_inventory_tools_report_platform_unavailability() {
+        for tool in ["list_power_plans", "list_services", "list_scheduled_tasks"] {
+            assert!(matches!(call_rust(tool, json!({})), Err(SubsystemError::Failed(_))));
+        }
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn windows_inventory_tools_are_served_by_the_rust_owner() {
         let plans = call_rust("list_power_plans", json!({})).expect("power plan list succeeds");
         assert_eq!(
             plans["Count"].as_u64(),
@@ -417,10 +464,14 @@ mod tests {
             )
             .is_err()
         );
+    }
+
+    #[test]
+    fn launch_app_is_served_by_the_rust_owner() {
         let executable = std::env::current_exe().expect("current executable");
         let launched = call_rust(
             "launch_app",
-            json!({ "target": executable.to_string_lossy(), "args": "--version" }),
+            json!({ "target": executable.to_string_lossy(), "args": "--exact aphrody-launch-no-such-test --quiet" }),
         )
         .expect("launch handler succeeds");
         assert!(launched.as_str().is_some_and(|value| value.contains("Launched")));

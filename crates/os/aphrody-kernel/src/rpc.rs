@@ -337,13 +337,12 @@ impl Kernel {
                 let scope = session.scope().expect("authenticated request has a scope");
                 if let Some((_, skill)) =
                     self.skills().await.into_iter().find(|(_, skill)| skill.name == name)
+                    && !skill.steps.iter().all(|step| scope.allows_tool(&step.tool))
                 {
-                    if !skill.steps.iter().all(|step| scope.allows_tool(&step.tool)) {
-                        return Err(forbidden(format!(
-                            "principal `{}` cannot run `{name}`",
-                            scope.principal
-                        )));
-                    }
+                    return Err(forbidden(format!(
+                        "principal `{}` cannot run `{name}`",
+                        scope.principal
+                    )));
                 }
                 let skill_params =
                     params.get("params").and_then(Value::as_object).cloned().unwrap_or_default();

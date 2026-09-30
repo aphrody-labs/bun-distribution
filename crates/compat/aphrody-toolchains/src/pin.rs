@@ -94,8 +94,7 @@ fn plain_file(path: PathBuf) -> Result<Option<Pin>, ResolveError> {
 
 fn toml_file(path: PathBuf) -> Result<Option<(toml::Value, PathBuf)>, ResolveError> {
     let Some(text) = read(&path)? else { return Ok(None) };
-    let value = text
-        .parse::<toml::Value>()
+    let value = toml::from_str::<toml::Value>(&text)
         .map_err(|e| ResolveError::PinFile { path: path.clone(), message: e.to_string() })?;
     Ok(Some((value, path)))
 }

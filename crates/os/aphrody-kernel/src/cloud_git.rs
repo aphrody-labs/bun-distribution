@@ -306,10 +306,10 @@ pub(crate) fn ingest(
                 {
                     continue;
                 }
-                if let Ok(meta) = std::fs::metadata(&p) {
-                    if meta.len() > max_size {
-                        continue;
-                    }
+                if let Ok(meta) = std::fs::metadata(&p)
+                    && meta.len() > max_size
+                {
+                    continue;
                 }
                 if let Ok(bytes) = std::fs::read(&p) {
                     let probe_len = bytes.len().min(8192);

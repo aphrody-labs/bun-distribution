@@ -47,7 +47,7 @@ impl AuditBridge {
                         }
                     },
                     Err(tokio::sync::broadcast::error::RecvError::Lagged(count)) => {
-                        task_lagged.fetch_add(u64::from(count), Ordering::Relaxed);
+                        task_lagged.fetch_add(count, Ordering::Relaxed);
                         tracing::error!(dropped = count, "kernel audit bridge fell behind");
                     },
                     Err(tokio::sync::broadcast::error::RecvError::Closed) => break,

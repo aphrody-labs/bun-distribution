@@ -9,8 +9,9 @@
 //! Tools: `bun_docs_search`, `bun_docs_read`, `bun_docs_list`, `bun_node_equivalent`.
 //! Skill: `bun_docs_lookup` (search and return the best page in one call).
 //!
-//! The docs root resolves from `APHRODY_BUN_DOCS`, then an optional `third_party/bun/docs` in
-//! the current directory or any ancestor, then the checkout this crate was built from.
+//! The docs root resolves from `APHRODY_BUN_DOCS`, installed data directories, then an
+//! optional corpus in the current checkout or the checkout this crate was built from.
+//! Installed kernels do not require their launch directory to be a source checkout.
 
 use std::{
     collections::HashMap,
@@ -334,21 +335,67 @@ fn snippet(body: &str, terms: &[String]) -> String {
     if cut { format!("{text}…") } else { text.to_owned() }
 }
 
-/// Docs root: `APHRODY_BUN_DOCS`, else an optional `third_party/bun/docs` in the current
-/// directory or an ancestor, else the checkout this crate was built from.
+/// Docs root: `APHRODY_BUN_DOCS`, installed data, then optional checkout copies.
+///
+/// Install a corpus at `<executable-directory>/bun-docs`,
+/// `<installation-prefix>/share/aphrody/bun/docs`, or
+/// `$XDG_DATA_HOME/aphrody/bun/docs` (`$HOME/.local/share` by default).
+/// On Windows the user data directory is `%APPDATA%` instead.
+/// An explicit override remains authoritative, including when it is invalid.
 #[must_use]
 pub fn resolve_root() -> Option<PathBuf> {
-    if let Some(root) = std::env::var_os(ROOT_ENV).map(PathBuf::from) {
-        return Some(root);
+    let configured = std::env::var_os(ROOT_ENV).map(PathBuf::from);
+    let executable = std::env::current_exe().ok();
+    #[cfg(windows)]
+    let data = std::env::var_os("APPDATA").map(PathBuf::from);
+    #[cfg(not(windows))]
+    let data = std::env::var_os("XDG_DATA_HOME")
+        .map(PathBuf::from)
+        .filter(|path| path.is_absolute())
+        .or_else(|| std::env::var_os("HOME").map(|home| PathBuf::from(home).join(".local/share")));
+    let installed = installed_roots(executable.as_deref(), data.as_deref());
+    resolve_root_from(
+        configured.as_deref(),
+        &installed,
+        std::env::current_dir().ok().as_deref(),
+        Path::new(env!("CARGO_MANIFEST_DIR")),
+    )
+}
+
+fn installed_roots(executable: Option<&Path>, data: Option<&Path>) -> Vec<PathBuf> {
+    let mut roots = Vec::new();
+    if let Some(bin) = executable.and_then(Path::parent) {
+        roots.push(bin.join("bun-docs"));
+        if let Some(prefix) = bin.parent() {
+            roots.push(prefix.join("share/aphrody/bun/docs"));
+        }
     }
-    let relative = Path::new("third_party").join("bun").join("docs");
-    if let Ok(cwd) = std::env::current_dir()
-        && let Some(found) = cwd.ancestors().map(|dir| dir.join(&relative)).find(|dir| dir.is_dir())
-    {
-        return Some(found);
+    if let Some(data) = data {
+        roots.push(data.join("aphrody/bun/docs"));
     }
-    let built = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..").join(relative);
-    built.is_dir().then_some(built)
+    roots
+}
+
+fn resolve_root_from(
+    configured: Option<&Path>,
+    installed: &[PathBuf],
+    cwd: Option<&Path>,
+    built: &Path,
+) -> Option<PathBuf> {
+    if let Some(root) = configured {
+        return Some(root.to_path_buf());
+    }
+    if let Some(root) = installed.iter().find(|root| root.is_dir()) {
+        return Some(root.clone());
+    }
+    cwd.into_iter().chain(std::iter::once(built)).find_map(|start| {
+        start.ancestors().find_map(|dir| {
+            ["third_party/bun/docs", "docs/reference/upstream-bun"]
+                .into_iter()
+                .map(|relative| dir.join(relative))
+                .find(|root| root.is_dir())
+        })
+    })
 }
 
 /// Node modules, npm packages and Node API call patterns from the n2b registry that match
@@ -443,7 +490,10 @@ impl BunDocsSubsystem {
         self.index
             .get_or_init(|| {
                 let root = self.root.clone().or_else(resolve_root).ok_or_else(|| {
-                    format!("Bun docs not found: set {ROOT_ENV} to an upstream Bun docs directory")
+                    format!(
+                        "Bun docs not found: set {ROOT_ENV} to an upstream Bun docs directory \
+                         or install the corpus in the user data directory at aphrody/bun/docs"
+                    )
                 })?;
                 DocsIndex::load(&root)
             })
@@ -748,6 +798,84 @@ mod tests {
         assert_eq!(fs[0]["kind"], "module");
         assert!(node_equivalents("dotenv", 10).iter().any(|e| e["kind"] == "package"));
         assert!(node_equivalents("", 10).is_empty());
+    }
+
+    #[test]
+    fn installed_corpus_is_found_outside_a_checkout() {
+        let temp = tempfile::tempdir().expect("temporary install");
+        let data = temp.path().join("data");
+        let root = data.join("aphrody/bun/docs");
+        std::fs::create_dir_all(root.join("runtime")).expect("corpus directory");
+        std::fs::write(root.join("runtime/file-io.mdx"), PAGE).expect("corpus page");
+        let installed = installed_roots(Some(&temp.path().join("bin/aphrody-kernel")), Some(&data));
+        for launch in ["unrelated", "workspaces/other", ""] {
+            let resolved = resolve_root_from(
+                None,
+                &installed,
+                Some(&temp.path().join(launch)),
+                &temp.path().join("removed-build-checkout"),
+            )
+            .expect("installed corpus");
+            assert_eq!(resolved, root);
+            let docs = DocsIndex::load(&resolved).expect("load installed corpus");
+            assert_eq!(docs.search("Bun.file", 1)[0].page.slug, "runtime/file-io");
+        }
+    }
+
+    #[test]
+    fn executable_bundle_is_preferred_over_user_data_and_checkout() {
+        let temp = tempfile::tempdir().expect("temporary install");
+        let executable = temp.path().join("prefix/bin/aphrody-kernel");
+        let data = temp.path().join("data");
+        let installed = installed_roots(Some(&executable), Some(&data));
+        for root in &installed {
+            std::fs::create_dir_all(root).expect("bundle directory");
+        }
+        assert_eq!(
+            resolve_root_from(None, &installed, None, temp.path()),
+            Some(installed[0].clone())
+        );
+        std::fs::remove_dir(&installed[0]).expect("remove portable bundle");
+        assert_eq!(
+            resolve_root_from(None, &installed, None, temp.path()),
+            Some(installed[1].clone())
+        );
+        assert_eq!(installed[1], temp.path().join("prefix/share/aphrody/bun/docs"));
+    }
+
+    #[test]
+    fn explicit_corpus_override_does_not_fall_back_when_invalid() {
+        let temp = tempfile::tempdir().expect("temporary corpus");
+        let missing = temp.path().join("missing-configured-corpus");
+        let configured =
+            resolve_root_from(Some(&missing), &[temp.path().to_owned()], None, temp.path());
+        assert_eq!(configured, Some(missing.clone()));
+        assert!(DocsIndex::load(&missing).is_err());
+    }
+
+    #[test]
+    fn checkout_discovery_handles_old_and_consolidated_crate_layouts() {
+        for relative in ["third_party/bun/docs", "docs/reference/upstream-bun"] {
+            let temp = tempfile::tempdir().expect("temporary checkout");
+            let root = temp.path().join(relative);
+            std::fs::create_dir_all(&root).expect("checkout corpus");
+            for crate_dir in ["crates/aphrody-bun-docs", "crates/compat/aphrody-bun-docs"] {
+                let built = temp.path().join(crate_dir);
+                assert_eq!(resolve_root_from(None, &[], None, &built), Some(root.clone()));
+                assert_eq!(
+                    resolve_root_from(None, &[], Some(&built), Path::new("missing")),
+                    Some(root.clone())
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn developer_sibling_checkouts_are_not_implicit_corpora() {
+        let temp = tempfile::tempdir().expect("temporary workspace");
+        std::fs::create_dir_all(temp.path().join("bun/docs")).expect("sibling corpus");
+        let checkout = temp.path().join("aphrody-compat/crates/aphrody-bun-docs");
+        assert!(resolve_root_from(None, &[], Some(&checkout), &checkout).is_none());
     }
 
     #[tokio::test]
