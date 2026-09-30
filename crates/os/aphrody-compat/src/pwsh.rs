@@ -30,15 +30,15 @@ pub async fn detect_pwsh() -> PwshRuntimeInfo {
     }
 
     // Priority 2: Windows PowerShell 5.1 (Windows only)
-    if cfg!(windows) {
-        if let Some(bin) = which("powershell.exe") {
-            return PwshRuntimeInfo {
-                available: true,
-                kind: "windows_powershell".to_owned(),
-                path: Some(bin.to_string_lossy().to_string()),
-                version: Some("5.1".to_owned()),
-            };
-        }
+    if cfg!(windows)
+        && let Some(bin) = which("powershell.exe")
+    {
+        return PwshRuntimeInfo {
+            available: true,
+            kind: "windows_powershell".to_owned(),
+            path: Some(bin.to_string_lossy().to_string()),
+            version: Some("5.1".to_owned()),
+        };
     }
 
     PwshRuntimeInfo { available: false, kind: "none".to_owned(), path: None, version: None }

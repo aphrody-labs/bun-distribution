@@ -112,20 +112,20 @@ impl Journal {
             .iter()
             .rev()
             .filter(|e| {
-                if let Some(target_unit) = unit {
-                    if e.unit != target_unit {
-                        return false;
-                    }
+                if let Some(target_unit) = unit
+                    && e.unit != target_unit
+                {
+                    return false;
                 }
-                if let Some(level_cap) = max_level {
-                    if e.level > level_cap {
-                        return false;
-                    }
+                if let Some(level_cap) = max_level
+                    && e.level > level_cap
+                {
+                    return false;
                 }
-                if let Some(since) = since_usec {
-                    if e.timestamp_usec < since {
-                        return false;
-                    }
+                if let Some(since) = since_usec
+                    && e.timestamp_usec < since
+                {
+                    return false;
                 }
                 true
             })

@@ -168,11 +168,8 @@ impl Unit {
                         },
                         _ => {},
                     },
-                    "install" => match k.as_str() {
-                        "wantedby" => {
-                            unit.wanted_by.extend(v.split_whitespace().map(ToString::to_string));
-                        },
-                        _ => {},
+                    "install" if k.as_str() == "wantedby" => {
+                        unit.wanted_by.extend(v.split_whitespace().map(ToString::to_string));
                     },
                     _ => {},
                 }

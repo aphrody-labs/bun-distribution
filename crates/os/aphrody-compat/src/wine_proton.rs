@@ -50,20 +50,20 @@ pub fn detect_wine_runtime() -> WineRuntimeInfo {
     // Check common Proton paths
     if let Ok(home) = env::var("HOME") {
         let steam_proton = Path::new(&home).join(".local/share/Steam/steamapps/common");
-        if steam_proton.exists() {
-            if let Ok(entries) = std::fs::read_dir(&steam_proton) {
-                for entry in entries.flatten() {
-                    let name = entry.file_name().to_string_lossy().to_string();
-                    if name.starts_with("Proton") {
-                        let proton_bin = entry.path().join("proton");
-                        return WineRuntimeInfo {
-                            available: true,
-                            kind: "proton".to_owned(),
-                            path: Some(proton_bin.to_string_lossy().to_string()),
-                            prefix: env::var("STEAM_COMPAT_DATA_PATH").ok(),
-                            proton_version: Some(name),
-                        };
-                    }
+        if steam_proton.exists()
+            && let Ok(entries) = std::fs::read_dir(&steam_proton)
+        {
+            for entry in entries.flatten() {
+                let name = entry.file_name().to_string_lossy().to_string();
+                if name.starts_with("Proton") {
+                    let proton_bin = entry.path().join("proton");
+                    return WineRuntimeInfo {
+                        available: true,
+                        kind: "proton".to_owned(),
+                        path: Some(proton_bin.to_string_lossy().to_string()),
+                        prefix: env::var("STEAM_COMPAT_DATA_PATH").ok(),
+                        proton_version: Some(name),
+                    };
                 }
             }
         }
