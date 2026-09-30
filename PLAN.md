@@ -477,3 +477,46 @@ explicitly requested; they do not close these gates or authorize cutover.
       `bun.lock`. A frozen root install passes and the Infra Bun audit reports
       zero violations across 81 manifests. M3 package tests and builds remain
       unrun; clean-clone qualification remains open.
+
+## Production qualification checkpoint — 2026-09-30
+
+- [x] Restore N2B's original report baselines, Node input fixture and Contracts
+      schemas with source revisions and byte hashes in
+      [`n2b-test-resource-extraction.json`](docs/migration/n2b-test-resource-extraction.json).
+      The CLI contract suite now runs entirely from this checkout: 20 tests
+      pass, including JSON/JSONL/SARIF/Markdown and schema validation.
+- [x] Import the repository A2A manifest and correct its migrated test path.
+      All 27 `aphrody-a2a-coord` tests and scoped strict Clippy pass after
+      correcting inherited lint errors. Provenance is recorded in
+      [`contracts-agent-manifest-extraction.json`](docs/migration/contracts-agent-manifest-extraction.json).
+- [x] Remove the Koharu protocol generator's dependency on the nonstandard
+      compile-time `CARGO_WORKSPACE_DIR`; its default resolves the imported
+      bridge package, with `KOHARU_PROTOCOL_OUT` as an explicit output override.
+      The workspace all-targets locked offline Cargo check passes after these
+      resource/path repairs. This does not prove clean-clone closure: external
+      UI dependencies and the app-server console placeholder remain open.
+- [x] Correct RG's migrated typecheck commands, website aliases, inherited
+      source root, linter paths and Next tracing/build-script paths. Build
+      verification now requires a successful Next exit plus fresh build ID and
+      standalone server; four subprocess regression tests pass. The broader
+      RG typecheck still fails on application/dependency errors, including the
+      agent-browser CDP binary-message type. Full RG build and quality gates
+      remain open.
+- [x] Correct Infra's generated docs index directory and Markdown destination
+      parser in both the authoritative owner and imported dispatcher. Owner
+      commit `fb4bf582` is pushed; TypeScript 7, scoped Oxc and all 21 target
+      dispatcher tests pass. The actual links audit falls from 7,700 to 1,896
+      unresolved targets; 216 index entries still point to absent IECODE
+      destinations. The new `consolidation docs-index` reports these gaps and
+      fails qualification rather than hiding them. Anchor and exclusion
+      coverage remain open.
+- [x] Repair Bun docs discovery at its Rust owner and install a source-pinned,
+      hash-verified corpus in the user data directory. The source fix is pushed
+      as Compat commit `17851d9`; all 12 resolver/search tests, strict Clippy
+      and check pass. The installed MCP kernel still needs the rebuilt binary
+      and a verified native CLI/MCP smoke before its live failure is closed.
+- [ ] Finish native kernel qualification and activate the validated release.
+      Source corrections cover MCP pagination/annotations/reply IDs, Infra
+      path resolution and runtime TOML parsing; final gates and release build
+      are running. Retain the prior binary for rollback and verify the actual
+      live process before declaring MCP/CLI ready.

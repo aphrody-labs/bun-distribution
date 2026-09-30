@@ -44,7 +44,6 @@ pub fn router(cfg: &ListenerConfig) -> Router {
 }
 
 /// Build the HTTP surface with all A2A files scoped to one Home Agent profile.
-#[must_use]
 pub fn router_for_profile(cfg: &ListenerConfig, profile_root: &std::path::Path) -> Router {
     router_with_mailbox(cfg, Mailbox::for_profile_root(profile_root))
 }

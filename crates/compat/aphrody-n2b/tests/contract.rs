@@ -21,7 +21,7 @@
 //  1. The binary's JSON output deserializes cleanly into the generated
 //     aphrody_n2b_core::schema::N2bReport type.
 //  2. The JSON output conforms to the N2B report schema via the jsonschema crate. The schema is
-//     owned by the sibling repository aphrody-contracts (../aphrody-contracts/schema/v2.json).
+//     owned by Contracts (crates/contracts/schema/v2.json).
 //
 // These tests are the canonical verrou against regression: if either
 // fails, rpb-dashboard (and any other consumer parsing JSON v2) breaks.
@@ -30,33 +30,16 @@ use std::path::{Path, PathBuf};
 
 use assert_cmd::Command;
 
-fn repo_root() -> PathBuf {
-    // $CARGO_MANIFEST_DIR points at crates/aphrody-n2b/. Two parents up → repo root.
-    PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .parent()
-        .expect("CARGO_MANIFEST_DIR parent")
-        .parent()
-        .expect("repo root")
-        .to_path_buf()
-}
-
 fn fixture() -> PathBuf {
-    let dir = repo_root().join("test").join("fixture");
-    // A missing fixture makes n2b scan nothing and every shape assertion pass vacuously.
-    assert!(dir.join("src").join("server.ts").is_file(), "n2b fixture missing: {}", dir.display());
+    let dir = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/node-project");
+    // Require the real imported corpus; an empty scan cannot qualify the CLI contract.
+    assert!(dir.join("src/server.ts").is_file(), "n2b fixture missing: {}", dir.display());
     dir
 }
 
-/// N2B report schema v2. Its single source of truth is the sibling repository
-/// `aphrody-contracts`, checked out next to this one (`../aphrody-contracts`), the same way the
-/// Cargo path dependencies resolve `../aphrody-os`, `../aphrody-ui` and `../aphrody-web`.
+/// Contracts owns the report schema, now inside the same source workspace.
 fn schema_path() -> PathBuf {
-    repo_root()
-        .parent()
-        .expect("aphrody-compat has a parent directory")
-        .join("aphrody-contracts")
-        .join("schema")
-        .join("v2.json")
+    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../contracts/schema/v2.json")
 }
 
 fn run_n2b(args: &[&str]) -> (String, String, i32) {
@@ -91,7 +74,7 @@ fn json_report_validates_against_schema_v2() {
     let fixture = fixture().display().to_string();
     let (stdout, _stderr, _code) = run_n2b(&[&fixture, "--report=json"]);
     let schema_text = std::fs::read_to_string(schema_path()).unwrap_or_else(|e| {
-        panic!("{} readable (sibling aphrody-contracts checkout): {e}", schema_path().display())
+        panic!("{} readable (imported Contracts schema): {e}", schema_path().display())
     });
     let schema_json: serde_json::Value =
         serde_json::from_str(&schema_text).expect("schema/v2.json is valid JSON");
@@ -257,7 +240,7 @@ fn finding_without_compat_validates_against_schema() {
         }]
     });
     let schema_text = std::fs::read_to_string(schema_path()).unwrap_or_else(|e| {
-        panic!("{} readable (sibling aphrody-contracts checkout): {e}", schema_path().display())
+        panic!("{} readable (imported Contracts schema): {e}", schema_path().display())
     });
     let schema_json: serde_json::Value = serde_json::from_str(&schema_text).unwrap();
     let validator = jsonschema::validator_for(&schema_json).unwrap();

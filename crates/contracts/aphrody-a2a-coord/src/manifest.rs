@@ -180,7 +180,7 @@ mod tests {
     #[test]
     fn repo_manifest_parses_and_targets_public_endpoint() {
         let manifest: AiManifest =
-            serde_json::from_str(include_str!("../../../ai.json")).expect("ai.json parses");
+            serde_json::from_str(include_str!("../../../../ai.json")).expect("ai.json parses");
         assert_eq!(manifest.supported_interfaces[0].url, "https://aphrody.com/api/v1/a2a");
         assert!(manifest.peers.is_empty(), "peer list belongs to aphrody-infra");
     }

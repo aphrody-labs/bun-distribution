@@ -58,21 +58,18 @@ impl CoordPeerExecutor {
     }
 
     fn resolve_peer(&self, ctx: &ExecutorContext) -> PeerId {
-        if let Some(meta) = &ctx.metadata {
-            if let Some(p) = meta.get("aphrody_peer").or(meta.get("peer")) {
-                if let Some(s) = p.as_str() {
-                    if let Some(id) = PeerId::parse(s) {
-                        return id;
-                    }
-                }
-            }
+        if let Some(meta) = &ctx.metadata
+            && let Some(p) = meta.get("aphrody_peer").or(meta.get("peer"))
+            && let Some(s) = p.as_str()
+            && let Some(id) = PeerId::parse(s)
+        {
+            return id;
         }
-        if let Some(msg) = &ctx.message {
-            if let Some(text) = msg.text() {
-                if let Some(peer) = parse_peer_prefix(text) {
-                    return peer;
-                }
-            }
+        if let Some(msg) = &ctx.message
+            && let Some(text) = msg.text()
+            && let Some(peer) = parse_peer_prefix(text)
+        {
+            return peer;
         }
         self.default_peer
     }
@@ -96,10 +93,10 @@ impl CoordPeerExecutor {
             }
             return String::new();
         }
-        if let Some(rest) = t.strip_prefix("/peer ") {
-            if let Some((_, body)) = rest.split_once(' ') {
-                return body.trim().to_owned();
-            }
+        if let Some(rest) = t.strip_prefix("/peer ")
+            && let Some((_, body)) = rest.split_once(' ')
+        {
+            return body.trim().to_owned();
         }
         text
     }

@@ -25,7 +25,7 @@ pub fn agent_card_from_manifest(manifest: &AiManifest, base_url: &str) -> AgentC
         })
         .collect();
 
-    let jsonrpc_url = format!("{base_url}");
+    let jsonrpc_url = base_url.to_owned();
     AgentCard {
         name: manifest.name.clone().unwrap_or_else(|| "aphrody".to_owned()),
         description: manifest
