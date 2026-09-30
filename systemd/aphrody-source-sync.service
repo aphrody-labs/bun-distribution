@@ -1,15 +1,15 @@
 [Unit]
 Description=Aphrody source workspace synchronisation
-Documentation=file:///home/aphro/src/aphrody-infra/README.md
+Documentation=file:///home/aphro/aphrody/README.md
 After=network-online.target
 Wants=network-online.target
-ConditionPathExists=/home/aphro/src/aphrody-infra/scripts/source-sync.ts
+ConditionPathExists=/home/aphro/aphrody/scripts/source-sync.ts
 
 [Service]
 Type=simple
-WorkingDirectory=/home/aphro/src/aphrody-infra
+WorkingDirectory=/home/aphro/aphrody
 Environment=PATH=/home/aphro/.local/bin:/home/aphro/.bun/bin:/home/aphro/.cargo/bin:/usr/local/bin:/usr/bin:/bin
-ExecStart=/home/aphro/.bun/bin/bun run source:sync:watch
+ExecStart=/home/aphro/.bun/bin/bun scripts/source-sync.ts --apply --watch --interval 60 --repo aphrody --repo aphrody-py --repo iecode
 Restart=always
 RestartSec=10s
 Nice=15
