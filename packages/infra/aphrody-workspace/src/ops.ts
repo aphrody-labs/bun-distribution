@@ -112,7 +112,7 @@ if (operation === "imports-exports") {
   process.exit(0);
 }
 if (operation === "monorepo-gate") {
-  process.exit(runMonorepoGate(rest));
+  process.exit(await runMonorepoGate(rest));
 }
 if (operation === "cargo-package-repair") {
   process.exit(await runCargoPackageRepair(rest));

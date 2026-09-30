@@ -198,9 +198,14 @@ export function checkManifest(
 }
 
 /** Manifests actually selected by the root Bun workspace globs. */
-export async function firstPartyManifests(repo: string): Promise<string[]> {
+export async function firstPartyManifests(
+  repo: string,
+  patternsOverride?: readonly string[],
+): Promise<string[]> {
   const root = await Bun.file(join(repo, "package.json")).json();
-  const patterns: string[] = root.workspaces?.packages ?? [];
+  const patterns: readonly string[] =
+    patternsOverride ??
+    (Array.isArray(root.workspaces) ? root.workspaces : (root.workspaces?.packages ?? []));
   const includes = patterns.filter((pattern) => !pattern.startsWith("!"));
   const excludes = patterns
     .filter((pattern) => pattern.startsWith("!"))

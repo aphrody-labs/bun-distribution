@@ -1,0 +1,187 @@
+// SPDX-License-Identifier: Apache-2.0
+import { expect, test } from "bun:test";
+import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { dirname, join } from "node:path";
+import {
+  buildMonorepoGatePlan,
+  discoverMonorepoGatePlan,
+  executeMonorepoGate,
+  type WorkspacePackage,
+} from "../src/monorepo-gate.ts";
+
+const packages: WorkspacePackage[] = [
+  {
+    name: "@owner/app",
+    path: "apps/owner/app",
+    scripts: {
+      "type-check": "bun --bun tsc --noEmit",
+      lint: "oxlint src",
+      "format:check": "oxfmt --check src",
+      test: "bun test test",
+      build: "bun build src/index.ts --outdir dist",
+    },
+  },
+];
+
+function fixture(overrides: Partial<Parameters<typeof buildMonorepoGatePlan>[0]> = {}) {
+  return buildMonorepoGatePlan({
+    root: "/workspace/aphrody",
+    packages,
+    rootScripts: {
+      typecheck: "bun run --filter @aphrody/workspace typecheck",
+      "docs:check-links": "bun check-docs.ts",
+    },
+    hasCargoManifest: true,
+    hasCargoLock: true,
+    hasBunLock: true,
+    ...overrides,
+  });
+}
+
+test("gate plans locked all-target Rust checks, tests and release builds plus each package script", () => {
+  const plan = fixture();
+  expect(plan.gaps).toEqual([]);
+  expect(plan.checks[0]!.command).toEqual(["bun", "install", "--frozen-lockfile"]);
+  for (const subcommand of ["check", "clippy", "test", "build"]) {
+    const check = plan.checks.find(
+      (item) => item.command[0] === "cargo" && item.command[1] === subcommand,
+    )!;
+    expect(check.command).toContain("--workspace");
+    expect(check.command).toContain("--all-targets");
+    expect(check.command).toContain("--locked");
+  }
+  expect(plan.checks.find((item) => item.name === "Rust release build")!.command).toContain(
+    "--release",
+  );
+  expect(plan.checks.find((item) => item.name === "Rust Clippy")!.command.slice(-3)).toEqual([
+    "--",
+    "-D",
+    "warnings",
+  ]);
+  expect(plan.checks.find((item) => item.name === "Rust documentation tests")!.command).toContain(
+    "--doc",
+  );
+  const checks = plan.checks.filter((item) => item.name.startsWith("@owner/app:"));
+  expect(checks).toHaveLength(5);
+  expect(checks.every((item) => item.cwd === "/workspace/aphrody/apps/owner/app")).toBe(true);
+  expect(checks.map((item) => item.command)).toContainEqual(["bun", "run", "type-check"]);
+  expect(checks.map((item) => item.command)).toContainEqual(["bun", "run", "format:check"]);
+  expect(plan.checks.some((item) => item.command.includes("--filter"))).toBe(false);
+  expect(plan.checks.at(-1)!.command).toEqual(["bun", "run", "docs:check-links"]);
+});
+
+test("missing and placeholder scripts and absent locks prevent success even when every command exits zero", async () => {
+  const plan = fixture({
+    packages: [
+      {
+        name: "@owner/incomplete",
+        path: "packages/incomplete",
+        scripts: { test: "echo TODO", format: "oxfmt src" },
+      },
+    ],
+    hasCargoLock: false,
+    hasBunLock: false,
+    rootScripts: { typecheck: "bun run --filter @aphrody/workspace typecheck" },
+  });
+  expect(plan.gaps.map((gap) => gap.check)).toEqual([
+    "lockfile",
+    "lockfile",
+    "typecheck",
+    "lint",
+    "format",
+    "test",
+    "build",
+    "documentation",
+  ]);
+  expect((await executeMonorepoGate(plan, async () => 0)).passed).toBe(false);
+  expect(
+    fixture({ rootScripts: { "docs:check": "echo TODO" } }).gaps.some(
+      (gap) => gap.check === "documentation",
+    ),
+  ).toBe(true);
+});
+
+test("the executor collects failures and exceptions without hiding later checks", async () => {
+  const plan = fixture();
+  const calls: string[] = [];
+  const report = await executeMonorepoGate(plan, async (check) => {
+    calls.push(check.name);
+    if (check.name === "Frozen Bun install") return 7;
+    if (check.name === "Rust all-target check") throw new Error("cargo unavailable");
+    return 0;
+  });
+  expect(calls).toHaveLength(plan.checks.length);
+  expect(report.passed).toBe(false);
+  expect(report.results.filter((result) => result.status === "failed")).toHaveLength(2);
+  expect(report.results.find((result) => result.error)?.error).toBe("cargo unavailable");
+  expect(report.results.at(-1)!.status).toBe("passed");
+  expect((await executeMonorepoGate(plan, async () => 0)).passed).toBe(true);
+});
+
+test("an empty or duplicate-name workspace remains a coverage failure", () => {
+  expect(fixture({ packages: [] }).gaps.some((gap) => gap.check === "workspace")).toBe(true);
+  expect(
+    fixture({ packages: [...packages, { ...packages[0]!, path: "apps/duplicate" }] }).gaps.some(
+      (gap) => gap.reason.includes("Duplicate package name"),
+    ),
+  ).toBe(true);
+});
+
+test("discovery uses actual root workspace members, exclusions and overlapping patterns", async () => {
+  const root = await mkdtemp(join(tmpdir(), "monorepo-gate-"));
+  try {
+    const entries = [
+      { ...packages[0]!, path: "apps/owner/app" },
+      { ...packages[0]!, name: "@owner/legacy", path: "apps/owner/legacy" },
+      { ...packages[0]!, name: "@owner/vendor", path: "upstream/vendor" },
+      { ...packages[0]!, name: "@owner/nested", path: "apps/owner/app/node_modules/nested" },
+    ];
+    for (const pkg of entries) {
+      const path = join(root, pkg.path, "package.json");
+      await mkdir(dirname(path), { recursive: true });
+      await writeFile(path, JSON.stringify({ name: pkg.name, scripts: pkg.scripts }));
+    }
+    await writeFile(
+      join(root, "package.json"),
+      JSON.stringify({
+        workspaces: ["apps/owner/*", "apps/owner/app", "!apps/owner/legacy", "missing/*"],
+        scripts: { "docs:check-links": "bun check-docs.ts" },
+      }),
+    );
+    for (const name of ["Cargo.toml", "Cargo.lock", "bun.lock"])
+      await writeFile(join(root, name), "");
+    const plan = await discoverMonorepoGatePlan(root);
+    expect(plan.packages.map((pkg) => pkg.name)).toEqual(["@owner/app"]);
+    expect(plan.gaps).toEqual([
+      {
+        path: "missing/*",
+        check: "workspace",
+        reason: "Declared workspace pattern has no package manifests",
+      },
+    ]);
+    expect(plan.checks.filter((check) => check.name.startsWith("@owner/app:"))).toHaveLength(5);
+    const child = Bun.spawn(
+      ["bun", join(import.meta.dir, "../src/monorepo-gate.ts"), "--root", root, "--plan", "--json"],
+      { stdout: "pipe", stderr: "pipe" },
+    );
+    const [exitCode, output] = await Promise.all([child.exited, new Response(child.stdout).text()]);
+    expect(exitCode).toBe(1);
+    const report = JSON.parse(output);
+    expect(report.executed).toBe(false);
+    expect(report.status).toBe("planned");
+    expect(report).not.toHaveProperty("passed");
+    await writeFile(
+      join(root, "package.json"),
+      JSON.stringify({
+        workspaces: { packages: ["apps/owner/app", "../outside/*"] },
+        scripts: { "docs:check-links": "bun check-docs.ts" },
+      }),
+    );
+    const objectPlan = await discoverMonorepoGatePlan(root);
+    expect(objectPlan.packages.map((pkg) => pkg.name)).toEqual(["@owner/app"]);
+    expect(objectPlan.gaps[0]!.reason).toBe("Workspace pattern escapes repository");
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});

@@ -7,6 +7,8 @@ on:
       - "packages/rg/**"
       - "docs/rg/**"
       - "config/rg/**"
+      - "scripts/rg/**"
+      - "scripts/audit/rg-build.test.ts"
       - "package.json"
       - "bun.lock"
       - "bunfig.toml"
@@ -19,6 +21,8 @@ on:
       - "packages/rg/**"
       - "docs/rg/**"
       - "config/rg/**"
+      - "scripts/rg/**"
+      - "scripts/audit/rg-build.test.ts"
       - "package.json"
       - "bun.lock"
       - "bunfig.toml"
@@ -33,6 +37,7 @@ jobs:
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: 1.4.2
-      - run: bun test packages/infra/aphrody-workspace/test/rg.test.ts
+      - run: bun install --frozen-lockfile
+      - run: bun test packages/infra/aphrody-workspace/test/rg.test.ts scripts/audit/rg-build.test.ts
       - run: bun --bun tsc --project packages/infra/aphrody-workspace/tsconfig.json --noEmit
       - run: bun run rg:pipeline
