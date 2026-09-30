@@ -26,7 +26,7 @@ const IMAGE_QUANTIZE_COLORS: usize = 128;
 #[must_use]
 pub fn source_color_from_rgba8(rgba8: &[u8]) -> u32 {
     let mut pixels = Vec::with_capacity(rgba8.len() / 4);
-    for chunk in rgba8.chunks_exact(4) {
+    for chunk in rgba8.as_chunks::<4>().0 {
         let [r, g, b, a] = [chunk[0], chunk[1], chunk[2], chunk[3]];
         if a < 255 {
             continue;

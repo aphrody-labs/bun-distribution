@@ -141,41 +141,6 @@ fn client_loader_returns_empty_on_missing_file() {
     assert!(cfg.servers.is_empty());
 }
 
-/// The current NIE repository `.mcp.json` is the single local `aphrody-mcp`
-/// endpoint. Until NIE is integrated into this monorepo, the default server
-/// keeps Shenron's Dragon Ball catalog while omitting `nie.*` tools.
-#[tokio::test]
-async fn single_aphrody_endpoint_keeps_nie_disabled_until_integration() {
-    let config = include_str!("fixtures/nie-mcp.json");
-    let parsed = parse_mcp_config(config).expect("current NIE MCP config parses");
-    assert_eq!(parsed.servers.len(), 1, "there must be one configured endpoint");
-    let endpoint = &parsed.servers[0];
-    assert_eq!(endpoint.name, "aphrody");
-    match &endpoint.transport {
-        McpTransportConfig::Stdio { command, args, .. } => {
-            assert_eq!(command, "aphrody-mcp");
-            assert!(args.is_empty());
-        },
-        other => panic!("expected the existing stdio endpoint, got {other:?}"),
-    }
-
-    let mut client = McpClient::from_stdio(env!("CARGO_BIN_EXE_aphrody-mcp"), &[], &HashMap::new())
-        .await
-        .expect("spawn configured Aphrody MCP binary");
-    client.initialize().await.expect("initialize the configured endpoint");
-    let tools = client.list_tools().await.expect("list the single endpoint catalog");
-    let names: Vec<_> = tools.iter().map(|tool| tool.name.as_str()).collect();
-    let dragonball_names: Vec<_> =
-        names.iter().copied().filter(|name| name.starts_with("dragonball.")).collect();
-    assert_eq!(dragonball_names.len(), EXPECTED_DRAGONBALL_TOOLS.len());
-    for &expected in EXPECTED_DRAGONBALL_TOOLS {
-        assert!(dragonball_names.contains(&expected), "tools/list is missing {expected}");
-        let tool = tools.iter().find(|tool| tool.name == expected).expect("listed tool");
-        assert!(tool.input_schema.is_object(), "{expected} must publish an object schema");
-    }
-    assert!(!names.iter().any(|name| name.starts_with("nie.")));
-}
-
 /// The standard 2026 MCP lifecycle is stateless: discovery and tools/list both
 /// carry their own protocol/client metadata and need no `initialize` request.
 #[tokio::test]
@@ -246,7 +211,6 @@ async fn stateless_mcp_discovers_and_lists_the_full_shenron_catalog() {
             tools.iter().find(|tool| tool["name"].as_str() == Some(name)).expect("listed tool");
         assert!(tool["inputSchema"].is_object(), "{name} must publish an object schema");
     }
-    assert!(!names.iter().any(|name| name.starts_with("nie.")));
 
     drop(stdin);
     child.kill().await.expect("stop Aphrody MCP server");

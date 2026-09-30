@@ -2,7 +2,7 @@
 //! The same local agent console is embedded in HTTP and the Tauri application.
 //!
 //! The assets are staged by `build.rs` into `OUT_DIR`: the console built in
-//! `../aphrody-os/crates/aphrody-app/ui-dist/` when it exists, otherwise a
+//! `crates/ui/aphrody-app/ui-dist/` when it exists, otherwise a
 //! placeholder page that explains how to build it. [`ui_embedded`] tells
 //! which one this binary carries.
 

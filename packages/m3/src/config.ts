@@ -131,7 +131,10 @@ export async function loadM3Config(cwd: string = process.cwd(), file?: string): 
   if (!path || !existsSync(path)) {
     throw new Error(`no ${CONFIG_FILES[0]} in ${cwd}`);
   }
-  const mod = (await import(pathToFileURL(path).href)) as { default?: unknown };
+  try {
+    delete require.cache[path];
+  } catch {}
+  const mod = (await import(path)) as { default?: unknown };
   const config = mod.default;
   assertConfig(config, path);
   return resolveM3Config(config, dirname(path), path);

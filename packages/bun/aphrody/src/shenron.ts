@@ -12,5 +12,5 @@ export {
   shenronAuthStatus,
   shenronPersonaPrompt,
   shenronPersonaAsk,
-} from "../../../../crates/ai/aphrody-ffi/bun/index";
-export type { CapturedResult as ShenronCapturedResult } from "../../../../crates/ai/aphrody-ffi/bun/index";
+} from "./engine";
+export type { CapturedResult as ShenronCapturedResult } from "./engine";

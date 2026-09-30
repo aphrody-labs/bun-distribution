@@ -57,7 +57,9 @@ fn rgba8_from_png(bytes: &[u8]) -> Vec<u8> {
 
 fn pixels_from_rgba8(rgba8: &[u8]) -> Vec<u32> {
     rgba8
-        .chunks_exact(4)
+        .as_chunks::<4>()
+        .0
+        .iter()
         .filter(|c| c[3] == 255)
         .map(|c| aphrody_m3_tokens::color_math::argb_from_rgb(c[0], c[1], c[2]))
         .collect()

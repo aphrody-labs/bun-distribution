@@ -65,12 +65,7 @@
     "vendor:check": "bun scripts/vendor-upstream.ts --check",
     "prepack": "bun scripts/vendor-upstream.ts --check"
   },
-  "devDependencies": {
-    "@types/bun": "catalog:",
-    "@types/node": "catalog:",
-    "undici-types": "catalog:",
-    "typescript": "catalog:"
-  },
+
   "peerDependencies": {
     "@aphrody/bun": "^3.3.0"
   },

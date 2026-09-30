@@ -162,6 +162,108 @@ export const styles = css`
     color: var(--_selected-label);
   }
 
+  .dial-picker {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    user-select: none;
+  }
+
+  .field.clickable {
+    cursor: pointer;
+  }
+
+  .field.active {
+    background: var(--_selected-container);
+    color: var(--_selected-label);
+    border-color: var(--_primary);
+  }
+
+  .clock-dial {
+    position: relative;
+    width: 256px;
+    height: 256px;
+    border-radius: 50%;
+    background: var(--_field-color);
+    box-sizing: border-box;
+    cursor: pointer;
+    touch-action: none;
+    outline: none;
+  }
+
+  .clock-dial:focus-visible {
+    outline: 2px solid var(--_primary);
+    outline-offset: 2px;
+  }
+
+  .clock-pin {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 8px;
+    height: 8px;
+    margin-left: -4px;
+    margin-top: -4px;
+    border-radius: 50%;
+    background: var(--_primary);
+    z-index: 2;
+  }
+
+  .clock-hand {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 2px;
+    height: 92px;
+    margin-left: -1px;
+    margin-top: -92px;
+    background: var(--_primary);
+    transform-origin: bottom center;
+    pointer-events: none;
+    z-index: 1;
+    transition: transform 120ms cubic-bezier(0.2, 0, 0, 1);
+  }
+
+  .clock-hand-knob {
+    position: absolute;
+    top: -18px;
+    left: 50%;
+    width: 36px;
+    height: 36px;
+    margin-left: -18px;
+    border-radius: 50%;
+    background: var(--_primary);
+  }
+
+  .clock-number {
+    position: absolute;
+    width: 36px;
+    height: 36px;
+    margin-left: -18px;
+    margin-top: -18px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    appearance: none;
+    border: none;
+    background: none;
+    color: var(--_on-surface);
+    font-family: var(--md-sys-typescale-body-large-font, "Google Sans Flex", Roboto, system-ui, sans-serif);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    z-index: 3;
+    padding: 0;
+    outline: none;
+  }
+
+  .clock-number.selected {
+    color: var(--md-sys-color-on-primary, #ffffff);
+    font-weight: 600;
+  }
+
   @media (forced-colors: active) {
     .field {
       border-color: CanvasText;

@@ -14,8 +14,11 @@ publish = false
 workspace = true
 
 [dependencies]
+aphrody-subsystem = { workspace = true }
 aphrody-web-bridge = { workspace = true }
 aphrody-web-extract = { workspace = true }
 aphrody-web-service = { workspace = true }
 aphrody-web-index = { workspace = true }
 obscura = { workspace = true }
+async-trait = { workspace = true }
+serde_json = { workspace = true }

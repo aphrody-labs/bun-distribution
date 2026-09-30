@@ -1,0 +1,52 @@
+# SPDX-License-Identifier: Apache-2.0
+[package]
+name = "aphrody-a2a-ui"
+publish                = false
+version = "1.0.0-canary"
+edition.workspace      = true
+rust-version.workspace = true
+authors.workspace      = true
+homepage.workspace     = true
+repository.workspace   = true
+license.workspace      = true
+description            = "A2A protocol UI: WASM channel viewer for ai.json + .coord JSONL mailbox."
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[lints]
+workspace = true
+
+# ---------------------------------------------------------------------------
+# Core dependencies — cross-platform (native + wasm32)
+# ---------------------------------------------------------------------------
+[dependencies]
+serde      = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
+
+# ---------------------------------------------------------------------------
+# WASM-only: browser-side rendering surface.
+# ---------------------------------------------------------------------------
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+wasm-bindgen             = { workspace = true }
+js-sys                   = { workspace = true }
+console_error_panic_hook = { workspace = true }
+web-sys                  = { workspace = true, features = [
+    "Window",
+    "Document",
+    "Element",
+    "HtmlElement",
+    "Performance",
+    "console",
+    "Node",
+    "NodeList",
+] }
+
+# ---------------------------------------------------------------------------
+# Dev / example dependencies — never compiled into the cdylib.
+# ---------------------------------------------------------------------------
+
+# cargo-machete cannot introspect cfg-conditional dep sections and reports
+# wasm-bindgen-family deps as unused on a native host scan.
+[package.metadata.cargo-machete]
+ignored = ["wasm-bindgen", "js-sys", "web-sys", "console_error_panic_hook"]

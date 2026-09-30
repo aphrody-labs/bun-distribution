@@ -120,15 +120,15 @@ impl Theme {
     pub fn resolve_paint(&self, value: &str) -> String {
         let resolved = self.resolve_vars(value);
         let trimmed = resolved.trim();
-        if trimmed.eq_ignore_ascii_case("currentcolor") {
-            if let Some(c) = &self.current_color {
-                return c.clone();
-            }
+        if trimmed.eq_ignore_ascii_case("currentcolor")
+            && let Some(c) = &self.current_color
+        {
+            return c.clone();
         }
-        if let Ok(color) = trimmed.parse::<svgtypes::Color>() {
-            if let Some((_, to)) = self.remap.iter().find(|(from, _)| *from == color) {
-                return to.clone();
-            }
+        if let Ok(color) = trimmed.parse::<svgtypes::Color>()
+            && let Some((_, to)) = self.remap.iter().find(|(from, _)| *from == color)
+        {
+            return to.clone();
         }
         resolved
     }

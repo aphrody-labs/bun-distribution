@@ -1,5 +1,8 @@
 # NIE → Aphrody : plan unique d'absorption
 
+> **Décision du 2026-09-30 :** IECODE (`/home/aphro/iecode`) est l’unique propriétaire de tout code IEVR/NIE. Aucun crate, module, outil ou binding spécifique au jeu ne doit être ajouté à Aphrody, `src` ou `aphrody-py`. Les intégrations spécifiques au jeu retirées d’Aphrody ont été supprimées après vérification des équivalents IECODE.
+
+
 Statut : **incomplet**, 2026-09-29. Ce fichier est la seule liste active du
 chantier NIE ; les anciens plans restent dans l'historique Git. Il applique le
 [plan Aphrody racine](../workspace/PLAN.md#nie-convergence), son

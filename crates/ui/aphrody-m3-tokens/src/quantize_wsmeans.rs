@@ -182,9 +182,7 @@ pub fn quantize(
         let mut component_a_sums = vec![0.0f64; cluster_count];
         let mut component_b_sums = vec![0.0f64; cluster_count];
         let mut component_c_sums = vec![0.0f64; cluster_count];
-        for sum in &mut pixel_count_sums {
-            *sum = 0;
-        }
+        pixel_count_sums.fill(0);
         for i in 0..point_count {
             let cluster_index = cluster_indices[i];
             let point = points[i];

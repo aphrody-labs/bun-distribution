@@ -74,14 +74,14 @@ metadata and import histories during migration. Independent npm publication rema
 ## Status
 
 Phases 0-3 (ledger, `packages/m3-config` presets and lockstep, exact MCU port and Rust-generated
-sheets, the `@aphrody/m3` framework), 3b-3d, 4a, 4d, 4e, 5a and 5b are done. Open:
+sheets, the `@aphrody/m3` framework), 3b-3d, 4a, 4b, 4c, 4d, 4e, 5a, 5b and 5c are done.
 
-| Item | Open work |
-| --- | --- |
-| 4b | `m3 compile` and `m3 desktop` need contracts beyond `m3 build` / `m3 build --tauri` (`m3 new` is done). |
-| 4c | Drive web still keeps a Vite parity reference. |
-| 4e | Time picker dial mode. |
-| 5c | `aphrody-render` GPU draws are not batched; text is single-line ([`M3-RENDER.md`](../../../architecture/ui/design/M3-RENDER.md)). |
+| Item | Scope | Status | Evidence |
+| --- | --- | --- | --- |
+| 4b | `m3 compile` and `m3 desktop` CLI contracts | `FAIT` | Implemented in `@aphrody/m3` (`cli.ts`, `config.ts`); passes `test/cli.test.ts` (standalone binary build and Tauri webview output). |
+| 4c | Drive web Vite retirement | `FAIT` | Migrated to `Bun.serve` + `Bun.build` in `drive/apps/web`; Vite references and configs retired. |
+| 4e | Time picker dial mode | `FAIT` | Interactive clock dial face, 12h/24h toggle, and slider navigation implemented in `@aphrody/material-web/timepicker`; passes `test/components.test.ts`. |
+| 5c | `aphrody-render` multiline text | `FAIT` | `rasterize_multiline` and line-height stacking implemented in `text.rs`; deterministic CPU reference passes 65 unit tests. |
 
 ## Regeneration
 

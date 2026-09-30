@@ -148,6 +148,7 @@ mod tests {
     }
 
     #[test]
+    #[allow(clippy::assertions_on_constants)]
     fn hover_opacity_less_than_dragged() {
         assert!(
             HOVER.opacity < DRAGGED.opacity,

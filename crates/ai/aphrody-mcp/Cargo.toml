@@ -66,10 +66,6 @@ rag-ort   = ["rag", "aphrody-rag/ort"]
 # local corpus, persona and `APHRODY_AI_*` chat of `aphrody-rag::dragonball`.
 # On by default: aphrody-mcp is the one MCP the kernel plugin proxies.
 dragonball = ["dep:aphrody-rag"]
-# `nie.*` — optional transport to the NIE `nie-mcp` child. Keep disabled by
-# default until NIE's source crate is integrated in this monorepo and its client
-# contract is qualified; aphrody-ai must not link NIE crates.
-nie = ["dep:aphrody-mcp-nie-bridge"]
 # Everything the toolbox exposes over MCP.
 toolbox   = ["ocr", "stt-local", "vision", "jobs", "dbfr", "rag-ort", "dragonball"]
 
@@ -86,7 +82,6 @@ workspace = true
 [dependencies]
 aphrody-jev        = { workspace = true }
 aphrody-models     = { workspace = true }
-aphrody-mcp-nie-bridge = { workspace = true, optional = true }
 # Canonical `APHRODY_AI_*` environment resolution (`ai_env`), used by
 # `http_rest.rs`'s shenron gateway to resolve the chat/vision/embed base URLs
 # it forwards to, replacing hardcoded `127.0.0.1:8080` fallbacks.

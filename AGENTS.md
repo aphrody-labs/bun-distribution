@@ -10,6 +10,8 @@ This repository is the Rust + Bun source target. The active migration plan is
 
 - Rust crates live under `crates/<domain>/<crate>`; Bun apps and packages live
   under `apps/<domain>/<app>` and `packages/<domain>/<package>`.
+- New Rust packages follow `docs/architecture/rust-crate-naming.md`; existing
+  imported and published package names remain compatibility contracts.
 - Documentation is canonical under `docs/<category>/<domain>`. Categories are
   `architecture`, `apis`, `decisions`, `guides`, `operations`, `plans`,
   `products`, `reference`, and `research`.

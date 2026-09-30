@@ -1,0 +1,555 @@
+// SPDX-License-Identifier: Apache-2.0
+//! The app-server broker: sole owner of the JSON-RPC connection to the agent.
+//!
+//! The agent runs in a separate `aphrody app-server` process speaking newline-delimited
+//! JSON-RPC over stdio. The broker starts it on first use, rewrites request ids so that
+//! several webviews can never collide, correlates each response to its caller, pushes every
+//! server notification to the webviews as the `aphrody://notification` event, and, if the
+//! backend exits, fails the pending calls, restarts it on the next request and replays the
+//! `initialize` / `initialized` handshake the UI performed. The renderer never opens a pipe
+//! or a process: it only reaches this module through the allow-listed Tauri commands.
+
+use std::{collections::HashMap, path::PathBuf, process::Stdio, sync::Arc, time::Duration};
+
+use serde_json::{Value, json};
+use tauri::{AppHandle, Emitter, ipc::Channel};
+use tokio::{
+    io::{AsyncBufReadExt, AsyncWriteExt, BufReader},
+    process::{ChildStderr, ChildStdin, ChildStdout, Command},
+    sync::{Mutex, oneshot},
+};
+
+/// Event carrying one server notification to the webviews.
+pub const NOTIFICATION_EVENT: &str = "aphrody://notification";
+/// Event carrying backend lifecycle changes (`started`, `exited`).
+pub const BACKEND_EVENT: &str = "aphrody://backend";
+
+/// Upper bound for one request. `thread/start` may wait for a local model server to load.
+const REQUEST_TIMEOUT: Duration = Duration::from_secs(600);
+
+type Pending = Arc<std::sync::Mutex<HashMap<u64, oneshot::Sender<Value>>>>;
+/// Per-thread streaming subscriptions installed by [`AppServerBroker::subscribe`].
+type Channels = Arc<std::sync::Mutex<HashMap<String, Vec<Channel<Value>>>>>;
+
+struct Connection {
+    stdin: ChildStdin,
+    /// The app-server leads a kill-on-close process group (a Job Object on Windows):
+    /// dropping it, or the desktop dying without unwinding, ends the whole tree, so no
+    /// `aphrody app-server` or model server it started outlives the window.
+    child: aphrody_proc::GroupChild,
+    pending: Pending,
+}
+
+/// One destination for a routed notification. Real subscriptions are
+/// [`tauri::ipc::Channel`]; the trait exists so [`route_to_subscriber`] is unit-testable
+/// without a webview.
+trait NotificationSink {
+    /// Attempts delivery. `false` means the sink is no longer usable and its
+    /// subscription must be dropped.
+    fn deliver(&self, message: &Value) -> bool;
+}
+
+impl NotificationSink for Channel<Value> {
+    fn deliver(&self, message: &Value) -> bool {
+        self.send(message.clone()).is_ok()
+    }
+}
+
+/// The thread a JSON-RPC notification is scoped to, read from `params.threadId`.
+///
+/// `None` for process-wide notifications (e.g. a malformed line diagnostic), which are
+/// only ever broadcast on [`NOTIFICATION_EVENT`], never routed to a per-session channel.
+fn notification_thread_id(message: &Value) -> Option<&str> {
+    message.get("params")?.get("threadId")?.as_str()
+}
+
+/// Forward `message` to all channels subscribed to its thread, if any.
+///
+/// Drops dead subscriptions when delivery fails, which happens once the frontend has
+/// dropped its side of the channel. Cleans up empty subscriber lists and returns whether
+/// at least one subscriber received the message successfully.
+fn route_to_subscriber<S: NotificationSink>(
+    channels: &mut HashMap<String, Vec<S>>,
+    message: &Value,
+) -> bool {
+    let Some(thread_id) = notification_thread_id(message) else { return false };
+    let (any_delivered, is_empty) = match channels.get_mut(thread_id) {
+        Some(sinks) => {
+            let mut any_delivered = false;
+            sinks.retain(|sink| {
+                let delivered = sink.deliver(message);
+                if delivered {
+                    any_delivered = true;
+                }
+                delivered
+            });
+            (any_delivered, sinks.is_empty())
+        },
+        None => return false,
+    };
+    if is_empty {
+        channels.remove(thread_id);
+    }
+    any_delivered
+}
+
+/// Owns the `aphrody app-server` child process and its JSON-RPC stream.
+pub struct AppServerBroker {
+    app: AppHandle,
+    connection: Mutex<Option<Connection>>,
+    next_id: std::sync::atomic::AtomicU64,
+    /// Generation counter incremented on every app-server spawn to detect stale replies.
+    generation: std::sync::atomic::AtomicU64,
+    /// The UI's `initialize` params, replayed after a backend restart.
+    handshake: std::sync::Mutex<Option<Value>>,
+    /// Per-thread streaming subscriptions, keyed by `threadId`.
+    channels: Channels,
+}
+
+/// Resolve the `aphrody` binary: an explicit `$APHRODY_BIN`, then the bundled sidecar,
+/// then `aphrody` on `PATH`.
+///
+/// The sidecar is declared as `externalBin` (`binaries/aphrody`, staged per target triple
+/// by `aphrody-ops tauri`); the bundler installs it next to the desktop executable without
+/// the triple suffix, and `aphrody-ops tauri` copies it beside the unbundled `cargo run`
+/// binary as well, so both cases resolve through the executable's directory.
+#[must_use]
+pub fn resolve_aphrody_bin() -> PathBuf {
+    if let Some(path) = std::env::var_os("APHRODY_BIN").filter(|value| !value.is_empty()) {
+        return PathBuf::from(path);
+    }
+    let file = format!("aphrody{}", std::env::consts::EXE_SUFFIX);
+    if let Some(sidecar) = std::env::current_exe()
+        .ok()
+        .and_then(|exe| exe.parent().map(|dir| dir.join(&file)))
+        .filter(|candidate| candidate.is_file())
+    {
+        return sidecar;
+    }
+    PathBuf::from(file)
+}
+
+/// A command for the `aphrody` binary that never opens a console window on Windows.
+#[must_use]
+pub fn aphrody_command() -> Command {
+    #[allow(unused_mut)]
+    let mut command = Command::new(resolve_aphrody_bin());
+    #[cfg(windows)]
+    {
+        const CREATE_NO_WINDOW: u32 = 0x0800_0000;
+        command.creation_flags(CREATE_NO_WINDOW);
+    }
+    command
+}
+
+impl AppServerBroker {
+    #[must_use]
+    pub fn new(app: AppHandle) -> Self {
+        Self {
+            app,
+            connection: Mutex::new(None),
+            next_id: std::sync::atomic::AtomicU64::new(1),
+            generation: std::sync::atomic::AtomicU64::new(0),
+            handshake: std::sync::Mutex::new(None),
+            channels: Arc::default(),
+        }
+    }
+
+    /// Return the active backend generation.
+    #[must_use]
+    pub fn generation(&self) -> u64 {
+        self.generation.load(std::sync::atomic::Ordering::Relaxed)
+    }
+
+    /// Stream every future notification for `thread_id` over `channel`, in arrival order,
+    /// in addition to the existing [`NOTIFICATION_EVENT`] broadcast. Adds the channel to
+    /// the subscriber list for `thread_id` without overwriting subscriptions from other windows.
+    pub fn subscribe(&self, thread_id: String, channel: Channel<Value>) {
+        self.channels
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .entry(thread_id)
+            .or_default()
+            .push(channel);
+    }
+
+    /// Stop streaming notifications for `thread_id`. A no-op when it has no subscription.
+    pub fn unsubscribe(&self, thread_id: &str) {
+        self.channels.lock().unwrap_or_else(std::sync::PoisonError::into_inner).remove(thread_id);
+    }
+
+    /// Forward one JSON-RPC message from a webview and return the server's reply.
+    ///
+    /// A request (with `id`) resolves to the full response object with the caller's
+    /// original `id` restored. A notification (no `id`) resolves to `{}` once written.
+    ///
+    /// # Errors
+    /// Returns a message when the backend cannot be started, the write fails, the backend
+    /// exits before answering, or the request exceeds its timeout.
+    pub async fn call(&self, mut message: Value) -> Result<Value, String> {
+        let method = message.get("method").and_then(Value::as_str).unwrap_or_default().to_owned();
+        if method == "initialize" {
+            *self.handshake.lock().unwrap_or_else(std::sync::PoisonError::into_inner) =
+                Some(message.get("params").cloned().unwrap_or(Value::Null));
+        }
+        let original_id = message.get("id").cloned();
+        let mut guard = self.connection.lock().await;
+        let restarted = self.ensure_started(&mut guard).await?;
+        let connection = guard.as_mut().ok_or("app-server backend unavailable")?;
+        if restarted && method != "initialize" {
+            self.replay_handshake(connection).await?;
+        }
+        let Some(original_id) = original_id else {
+            write_line(&mut connection.stdin, &message).await?;
+            return Ok(json!({}));
+        };
+        let id = self.next_id.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+        message["id"] = json!(id);
+        let (sender, receiver) = oneshot::channel();
+        connection
+            .pending
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .insert(id, sender);
+        if let Err(error) = write_line(&mut connection.stdin, &message).await {
+            connection
+                .pending
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner)
+                .remove(&id);
+            return Err(error);
+        }
+        // Do not hold the connection while waiting: other calls and interrupts must pass.
+        let pending = Arc::clone(&connection.pending);
+        drop(guard);
+        let mut response = match tokio::time::timeout(REQUEST_TIMEOUT, receiver).await {
+            Ok(Ok(response)) => response,
+            Ok(Err(_)) => return Err(format!("app-server exited before answering {method}")),
+            Err(_) => {
+                pending.lock().unwrap_or_else(std::sync::PoisonError::into_inner).remove(&id);
+                return Err(format!("{method} timed out after {}s", REQUEST_TIMEOUT.as_secs()));
+            },
+        };
+        response["id"] = original_id;
+        if method == "thread/close" {
+            if let Some(thread_id) = message
+                .get("params")
+                .and_then(|params| params.get("threadId"))
+                .and_then(Value::as_str)
+            {
+                self.unsubscribe(thread_id);
+            }
+        }
+        Ok(response)
+    }
+
+    /// Forward one response to a server request (e.g. command or file change approval).
+    ///
+    /// Preserves the original server-issued request ID without rewriting it or waiting
+    /// for a response. Rejects stale replies if an expected `backendGeneration` was provided
+    /// and does not match the active generation.
+    pub async fn reply(&self, mut response: Value) -> Result<(), String> {
+        if response.get("id").is_none() {
+            return Err("server reply requires an `id` field".into());
+        }
+        if response.get("result").is_none() && response.get("error").is_none() {
+            return Err("server reply requires either a `result` or `error` field".into());
+        }
+        if let Some(expected_gen) = response.get("backendGeneration").and_then(Value::as_u64) {
+            let current_gen = self.generation();
+            if expected_gen != current_gen {
+                return Err(format!(
+                    "stale approval/reply from generation {expected_gen} rejected (current generation is {current_gen})"
+                ));
+            }
+        }
+        if let Some(obj) = response.as_object_mut() {
+            obj.remove("backendGeneration");
+        }
+        let mut guard = self.connection.lock().await;
+        let connection = guard.as_mut().ok_or("app-server backend unavailable")?;
+        write_line(&mut connection.stdin, &response).await
+    }
+
+    /// Start the backend if it is not running. Returns whether a new process was started
+    /// after a previous one had exited (the handshake must then be replayed).
+    async fn ensure_started(&self, slot: &mut Option<Connection>) -> Result<bool, String> {
+        let had_previous = if let Some(connection) = slot.as_mut() {
+            match connection.child.try_wait() {
+                Ok(None) => return Ok(false),
+                _ => true,
+            }
+        } else {
+            false
+        };
+        *slot = Some(self.spawn()?);
+        let generation = self.generation();
+        let _ = self.app.emit(
+            BACKEND_EVENT,
+            json!({"state": "started", "restarted": had_previous, "backendGeneration": generation}),
+        );
+        Ok(had_previous)
+    }
+
+    fn spawn(&self) -> Result<Connection, String> {
+        let generation = self.generation.fetch_add(1, std::sync::atomic::Ordering::Relaxed) + 1;
+        let bin = resolve_aphrody_bin();
+        let mut command = std::process::Command::new(&bin);
+        command
+            .arg("app-server")
+            .stdin(Stdio::piped())
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped());
+        if let Some(dir) = crate::models::stored_models_dir(&self.app) {
+            command.env(crate::models::MODELS_DIR_ENV, dir);
+        }
+        let options = aphrody_proc::SpawnOptions { hide_window: true, ..Default::default() };
+        let mut child = aphrody_proc::spawn_group(&mut command, options)
+            .map_err(|error| format!("cannot start `{} app-server`: {error}", bin.display()))?;
+        let pipe_error = |error: std::io::Error| format!("app-server pipe unavailable: {error}");
+        let stdin = ChildStdin::from_std(child.take_stdin().ok_or("app-server stdin unavailable")?)
+            .map_err(pipe_error)?;
+        let stdout =
+            ChildStdout::from_std(child.take_stdout().ok_or("app-server stdout unavailable")?)
+                .map_err(pipe_error)?;
+        let stderr =
+            ChildStderr::from_std(child.take_stderr().ok_or("app-server stderr unavailable")?)
+                .map_err(pipe_error)?;
+        let pending: Pending = Arc::default();
+
+        let app = self.app.clone();
+        let reader_pending = Arc::clone(&pending);
+        let reader_channels = Arc::clone(&self.channels);
+        tauri::async_runtime::spawn(async move {
+            let mut lines = BufReader::new(stdout).lines();
+            while let Ok(Some(line)) = lines.next_line().await {
+                let Ok(message) = serde_json::from_str::<Value>(&line) else {
+                    log::warn!("app-server wrote a non-JSON line ({} bytes)", line.len());
+                    continue;
+                };
+                let is_response = message.get("result").is_some() || message.get("error").is_some();
+                match message.get("id").and_then(Value::as_u64) {
+                    Some(id) if is_response => {
+                        let sender = reader_pending
+                            .lock()
+                            .unwrap_or_else(std::sync::PoisonError::into_inner)
+                            .remove(&id);
+                        if let Some(sender) = sender {
+                            let _ = sender.send(message);
+                        }
+                    },
+                    _ => {
+                        let mut msg = message.clone();
+                        if let Some(obj) = msg.as_object_mut() {
+                            obj.insert("backendGeneration".into(), json!(generation));
+                        }
+                        route_to_subscriber(
+                            &mut reader_channels
+                                .lock()
+                                .unwrap_or_else(std::sync::PoisonError::into_inner),
+                            &msg,
+                        );
+                        let _ = app.emit(NOTIFICATION_EVENT, msg);
+                    },
+                }
+            }
+            // Dropping the senders fails every call still waiting on this process.
+            reader_pending.lock().unwrap_or_else(std::sync::PoisonError::into_inner).clear();
+            let _ = app
+                .emit(BACKEND_EVENT, json!({"state": "exited", "backendGeneration": generation}));
+        });
+        tauri::async_runtime::spawn(async move {
+            let mut lines = BufReader::new(stderr).lines();
+            while let Ok(Some(line)) = lines.next_line().await {
+                log::info!(target: "aphrody-app-server", "{line}");
+            }
+        });
+        Ok(Connection { stdin, child, pending })
+    }
+
+    async fn replay_handshake(&self, connection: &mut Connection) -> Result<(), String> {
+        let params =
+            self.handshake.lock().unwrap_or_else(std::sync::PoisonError::into_inner).clone();
+        let Some(params) = params else { return Ok(()) };
+        let id = self.next_id.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+        let (sender, receiver) = oneshot::channel();
+        connection
+            .pending
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .insert(id, sender);
+        write_line(
+            &mut connection.stdin,
+            &json!({"id": id, "method": "initialize", "params": params}),
+        )
+        .await?;
+        let response = tokio::time::timeout(REQUEST_TIMEOUT, receiver)
+            .await
+            .map_err(|_| "initialize timed out after a backend restart".to_owned())?
+            .map_err(|_| "app-server exited during the handshake".to_owned())?;
+        if let Some(error) = response.get("error") {
+            return Err(format!("initialize failed after a backend restart: {error}"));
+        }
+        write_line(&mut connection.stdin, &json!({"method": "initialized", "params": {}})).await
+    }
+}
+
+async fn write_line(stdin: &mut ChildStdin, message: &Value) -> Result<(), String> {
+    let mut line = serde_json::to_vec(message).map_err(|error| error.to_string())?;
+    line.push(b'\n');
+    stdin.write_all(&line).await.map_err(|error| format!("app-server write failed: {error}"))?;
+    stdin.flush().await.map_err(|error| format!("app-server write failed: {error}"))
+}
+
+#[cfg(test)]
+mod tests {
+    use std::cell::RefCell;
+
+    use serde_json::json;
+
+    use super::{HashMap, NotificationSink, Value, notification_thread_id, route_to_subscriber};
+
+    /// In-memory [`NotificationSink`] recording deliveries, standing in for
+    /// [`tauri::ipc::Channel`] so routing is testable without a webview.
+    struct RecordingSink {
+        received: RefCell<Vec<Value>>,
+        closed: bool,
+    }
+
+    impl RecordingSink {
+        fn open() -> Self {
+            Self { received: RefCell::new(Vec::new()), closed: false }
+        }
+
+        fn closed() -> Self {
+            Self { received: RefCell::new(Vec::new()), closed: true }
+        }
+    }
+
+    impl NotificationSink for RecordingSink {
+        fn deliver(&self, message: &Value) -> bool {
+            if self.closed {
+                return false;
+            }
+            self.received.borrow_mut().push(message.clone());
+            true
+        }
+    }
+
+    #[test]
+    fn notification_thread_id_reads_params_thread_id() {
+        let message = json!({"method": "item/agentMessage/delta", "params": {"threadId": "t-1", "delta": "hi"}});
+        assert_eq!(notification_thread_id(&message), Some("t-1"));
+    }
+
+    #[test]
+    fn notification_thread_id_is_none_when_absent_or_wrong_type() {
+        assert_eq!(notification_thread_id(&json!({"method": "backend/started"})), None);
+        assert_eq!(notification_thread_id(&json!({"method": "x", "params": {}})), None);
+        assert_eq!(
+            notification_thread_id(&json!({"method": "x", "params": {"threadId": 1}})),
+            None,
+        );
+    }
+
+    #[test]
+    fn route_to_subscriber_delivers_to_the_matching_thread_only() {
+        let mut channels = HashMap::new();
+        channels.insert("t-1".to_owned(), vec![RecordingSink::open()]);
+        channels.insert("t-2".to_owned(), vec![RecordingSink::open()]);
+
+        let message = json!({"method": "item/agentMessage/delta", "params": {"threadId": "t-1"}});
+        assert!(route_to_subscriber(&mut channels, &message));
+
+        assert_eq!(channels["t-1"][0].received.borrow().as_slice(), [message]);
+        assert!(channels["t-2"][0].received.borrow().is_empty());
+    }
+
+    #[test]
+    fn route_to_subscriber_ignores_notifications_without_a_subscriber() {
+        let mut channels: HashMap<String, Vec<RecordingSink>> = HashMap::new();
+        channels.insert("t-1".to_owned(), vec![RecordingSink::open()]);
+
+        assert!(!route_to_subscriber(&mut channels, &json!({"method": "backend/started"})));
+        assert!(!route_to_subscriber(
+            &mut channels,
+            &json!({"method": "x", "params": {"threadId": "t-unknown"}})
+        ));
+        assert!(channels["t-1"][0].received.borrow().is_empty());
+    }
+
+    #[test]
+    fn route_to_subscriber_drops_a_closed_subscription() {
+        let mut channels = HashMap::new();
+        channels.insert("t-1".to_owned(), vec![RecordingSink::closed()]);
+
+        let delivered = route_to_subscriber(
+            &mut channels,
+            &json!({"method": "turn/completed", "params": {"threadId": "t-1"}}),
+        );
+
+        assert!(!delivered);
+        assert!(!channels.contains_key("t-1"), "a failed delivery must drop the subscription");
+    }
+
+    #[test]
+    fn route_delivers_to_multiple_subscribers_on_same_thread() {
+        let mut channels = HashMap::new();
+        let sink1 = RecordingSink::open();
+        let sink2 = RecordingSink::open();
+        channels.insert("t-1".to_owned(), vec![sink1, sink2]);
+
+        let message = json!({"method": "item/agentMessage/delta", "params": {"threadId": "t-1", "delta": "hi"}});
+        assert!(route_to_subscriber(&mut channels, &message));
+
+        assert_eq!(channels["t-1"].len(), 2);
+        assert_eq!(channels["t-1"][0].received.borrow().as_slice(), std::slice::from_ref(&message));
+        assert_eq!(channels["t-1"][1].received.borrow().as_slice(), [message]);
+    }
+
+    #[test]
+    fn route_cleans_up_closed_subscribers_while_retaining_open_ones() {
+        let mut channels = HashMap::new();
+        let closed_sink = RecordingSink::closed();
+        let open_sink = RecordingSink::open();
+        channels.insert("t-1".to_owned(), vec![closed_sink, open_sink]);
+
+        let message = json!({"method": "item/agentMessage/delta", "params": {"threadId": "t-1", "delta": "update"}});
+        assert!(route_to_subscriber(&mut channels, &message));
+
+        assert_eq!(channels["t-1"].len(), 1);
+        assert_eq!(channels["t-1"][0].received.borrow().as_slice(), [message]);
+    }
+
+    #[test]
+    fn route_cleans_up_when_all_subscribers_are_closed() {
+        let mut channels = HashMap::new();
+        channels.insert("t-1".to_owned(), vec![RecordingSink::closed(), RecordingSink::closed()]);
+
+        let message = json!({"method": "turn/completed", "params": {"threadId": "t-1"}});
+        assert!(!route_to_subscriber(&mut channels, &message));
+        assert!(
+            !channels.contains_key("t-1"),
+            "when all subscribers fail delivery, the thread key must be removed"
+        );
+    }
+
+    #[test]
+    fn server_reply_validation_requires_id_and_result_or_error() {
+        let no_id = json!({"result": {"decision": "accept"}});
+        assert!(no_id.get("id").is_none());
+
+        let with_id_no_result = json!({"id": "req-1"});
+        assert!(
+            with_id_no_result.get("result").is_none() && with_id_no_result.get("error").is_none()
+        );
+
+        let valid_result = json!({"id": "req-1", "result": {"decision": "accept"}});
+        assert!(valid_result.get("id").is_some());
+        assert!(valid_result.get("result").is_some());
+
+        let valid_error = json!({"id": "req-1", "error": {"code": -32000, "message": "denied"}});
+        assert!(valid_error.get("id").is_some());
+        assert!(valid_error.get("error").is_some());
+    }
+}

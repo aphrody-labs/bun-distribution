@@ -1,0 +1,19 @@
+# SPDX-License-Identifier: Apache-2.0
+[package]
+name = "aphrody-sprite-sheet"
+version = "1.0.0-canary"
+edition.workspace      = true
+rust-version.workspace = true
+authors.workspace      = true
+homepage.workspace     = true
+repository.workspace   = true
+license.workspace      = true
+description            = "Sprite atlas to web sheet (CSS image/mask classes, standalone SVG symbols, JSON manifest); no_std + alloc, no input format."
+
+publish = false
+
+[lints]
+workspace = true
+
+[dev-dependencies]
+serde_json = { workspace = true }

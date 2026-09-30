@@ -9,3 +9,6 @@ pub use aphrody_web_extract as extract;
 pub use aphrody_web_index as index;
 pub use aphrody_web_service as service;
 pub use obscura;
+
+mod subsystem;
+pub use subsystem::WebSubsystem;

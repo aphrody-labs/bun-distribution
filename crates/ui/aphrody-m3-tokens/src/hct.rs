@@ -219,7 +219,7 @@ const NO_VERTEX: [f64; 3] = [-1.0, -1.0, -1.0];
 fn nth_vertex(y: f64, n: usize) -> [f64; 3] {
     let [k_r, k_g, k_b] = Y_FROM_LINRGB;
     let coord_a = if n % 4 <= 1 { 0.0 } else { 100.0 };
-    let coord_b = if n % 2 == 0 { 0.0 } else { 100.0 };
+    let coord_b = if n.is_multiple_of(2) { 0.0 } else { 100.0 };
     if n < 4 {
         let (g, b) = (coord_a, coord_b);
         let r = (y - g * k_g - b * k_b) / k_r;

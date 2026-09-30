@@ -380,9 +380,11 @@ mod tests {
 
     #[test]
     fn brand_corners_are_rounded() {
-        assert!(BRAND_CORNER_PROMPT_BAR_PX >= 24);
-        assert!(BRAND_CORNER_MESSAGE_PX >= 16);
-        assert!(BRAND_CORNER_CHIP_PX >= 12);
+        const {
+            assert!(BRAND_CORNER_PROMPT_BAR_PX >= 24);
+            assert!(BRAND_CORNER_MESSAGE_PX >= 16);
+            assert!(BRAND_CORNER_CHIP_PX >= 12);
+        }
     }
 
     #[cfg(feature = "std")]

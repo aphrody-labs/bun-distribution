@@ -43,7 +43,7 @@ is fail-stop: the host discards that session; it does not retry partially
 mutated hardware. Persistent save-state encoding, output ports and ABI stability
 are later gates, not implied by the in-memory snapshot test.
 
-Native rendering targets `wgpu` 30.0.1, with Vulkan/D3D12/Metal chosen through
+Native rendering targets the workspace `wgpu` 30.0.1 dependency, with Vulkan/D3D12/Metal chosen through
 capability probing; browser delivery uses WebGPU and an explicit WebGL fallback
 only if a measured browser target needs it. The shared output contract must not
 expose `wgpu` objects: Aphrody UI currently pins `wgpu` 26, and a typed GPU

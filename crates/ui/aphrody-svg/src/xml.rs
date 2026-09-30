@@ -91,12 +91,12 @@ fn write_node(
         if let Some(text) = node.text().and_then(|t| rules.text(parent, t)) {
             escape_into(out, &text, false);
         }
-    } else if node.is_comment() && rules.keep_comments() {
-        if let Some(text) = node.text() {
-            out.push_str("<!--");
-            out.push_str(&text.replace("--", "- -"));
-            out.push_str("-->");
-        }
+    } else if node.is_comment() && rules.keep_comments()
+        && let Some(text) = node.text()
+    {
+        out.push_str("<!--");
+        out.push_str(&text.replace("--", "- -"));
+        out.push_str("-->");
     }
 }
 
@@ -213,7 +213,7 @@ mod tests {
         let svg = r##"<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"><text xml:space="preserve">a &amp; b &lt; c</text><use xlink:href="#x"/></svg>"##;
         let doc = parse(svg).expect("parse");
         let out = write_document(&doc, &Keep);
-        assert_eq!(out, svg.replace("&amp; b &lt; c", "&amp; b &lt; c"));
+        assert_eq!(out, svg);
     }
 
     #[test]

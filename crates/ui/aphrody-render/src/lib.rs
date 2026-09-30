@@ -11,6 +11,13 @@
 
 #![forbid(unsafe_code)]
 #![deny(missing_docs)]
+#![allow(
+    clippy::chunks_exact_to_as_chunks,
+    clippy::manual_is_multiple_of,
+    clippy::should_implement_trait,
+    clippy::needless_range_loop,
+    clippy::collapsible_if
+)]
 
 /// The retained M3 scene model: nodes, paints, corners and elevation.
 pub mod scene;

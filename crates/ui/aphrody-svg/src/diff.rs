@@ -43,7 +43,7 @@ pub fn diff_rgba(a: &[u8], b: &[u8], width: u32, height: u32, tolerance: u8) -> 
         )));
     }
     let (mut mismatched, mut max_delta, mut sum) = (0u64, 0u8, 0u64);
-    for (pa, pb) in a.chunks_exact(4).zip(b.chunks_exact(4)) {
+    for (pa, pb) in a.as_chunks::<4>().0.iter().zip(b.as_chunks::<4>().0) {
         let mut worst = 0u8;
         for (ca, cb) in pa.iter().zip(pb) {
             let d = ca.abs_diff(*cb);

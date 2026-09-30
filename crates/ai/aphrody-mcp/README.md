@@ -86,19 +86,6 @@ Use MCP `tools/list` from the built server for the exact runtime schemas.
 - Admin tools fail closed without `SHENRON_API_ADMIN_TOKEN` (bot) or
   `SHENRON_DATABOOKS_API_TOKEN` (site).
 
-### NIE (`nie.*`, feature `nie`, on by default)
-
-The tools of the retired `nie` plugin's `nie-game` server, served by
-`src/nie_tools.rs` as a process boundary (aphrody-ai never links `nie` crates):
-one long-lived `nie-mcp` child over stdio (`NIE_MCP_BIN`, default `nie-mcp` on
-`PATH`, empty disables; `NIE_MCP_TIMEOUT_SECS`, default 120). Typed tools:
-`health`, `vfs_{list,search,stat,cat}`, `asset_get`,
-`re_{query,function,coverage}`, `repo_read`, `wiki_{search,character_card}`,
-`zukan_rank`, `explorer_{status,navigate,open,tab,toast}` and `game_launch`;
-`nie.tools` lists the live catalog (every `cli_*` command) and `nie.call`
-forwards any of them unchanged. The child inherits `NIE_REPO`,
-`NIE_APHRODY_API_URL` and `NIE_MODEL_SERVE_URL`.
-
 ## Transports
 
 `stdio` is the default (line-delimited JSON-RPC over `stdin`/`stdout`). To run

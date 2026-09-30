@@ -39,6 +39,24 @@ describe("parseArgs", () => {
     expect(() => parseArgs(["dev", "--port"])).toThrow("--port needs a value");
   });
 
+  test("compile and desktop commands parsing", () => {
+    expect(parseArgs(["compile", "--outfile", "dist/app", "--dev"])).toEqual({
+      command: "compile",
+      flags: { outfile: "dist/app", dev: true },
+      positionals: [],
+    });
+    expect(parseArgs(["desktop", "--dev"])).toEqual({
+      command: "desktop",
+      flags: { dev: true },
+      positionals: [],
+    });
+    expect(parseArgs(["desktop", "--build"])).toEqual({
+      command: "desktop",
+      flags: { build: true },
+      positionals: [],
+    });
+  });
+
   test("--sheet validation", () => {
     expect(sheetFlag({})).toBe("tokens");
     expect(sheetFlag({ sheet: "spaceui" })).toBe("spaceui");
@@ -95,6 +113,28 @@ describe("runCli", () => {
     expect(built.outputs.some((output) => output.path === "index.html")).toBe(true);
     await expect(runCli(["new", "my-app"], tmp.dir)).rejects.toThrow();
     await expect(runCli(["new"], tmp.dir)).rejects.toThrow("expected one project directory");
+  });
+
+  test("m3 compile builds a standalone binary", async () => {
+    await using tmp = await tempDir();
+    const outfile = join(tmp.dir, "test-bin");
+    const exitCode = await runCli(["compile", "--outfile", outfile, "--config", "m3.plain.config.ts"], FIXTURE);
+    expect(exitCode).toBe(0);
+    expect(existsSync(outfile)).toBe(true);
+  });
+
+  test("m3 desktop requires tauri config and builds webview", async () => {
+    await using tmp = await tempDir();
+    await Bun.write(join(tmp.dir, "m3.config.ts"), 'export default { entry: "index.html" };\n');
+    await expect(runCli(["desktop"], tmp.dir)).rejects.toThrow("tauri.uiDist");
+
+    const uiDist = join(tmp.dir, "desktop-ui");
+    await Bun.write(
+      join(tmp.dir, "m3.config.ts"),
+      `export default { entry: "${join(FIXTURE, "plain.html")}", tauri: { uiDist: "${uiDist}" } };\n`
+    );
+    expect(await runCli(["desktop"], tmp.dir)).toBe(0);
+    expect(existsSync(join(uiDist, "index.html"))).toBe(true);
   });
 });
 

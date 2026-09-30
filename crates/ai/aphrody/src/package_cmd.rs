@@ -111,7 +111,7 @@ const PACKAGES: &[Package] = &[
     },
     Package {
         name: "nie",
-        repository: "https://github.com/aphrody-code/nie.git",
+        repository: "https://github.com/aphrody-code/iecode.git",
         engine: Engine::Cargo,
         cargo_package: Some("nie-cli"),
         unix_build: &[],

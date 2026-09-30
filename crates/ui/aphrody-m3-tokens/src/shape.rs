@@ -143,6 +143,7 @@ mod tests {
     }
 
     #[test]
+    #[allow(clippy::assertions_on_constants)]
     fn canonical_ordering() {
         // Each token must be strictly larger than the previous one.
         assert!(FULL.dp > EXTRA_EXTRA_LARGE.dp);

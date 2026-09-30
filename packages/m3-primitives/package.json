@@ -37,7 +37,7 @@
   },
   "dependencies": {
     "@aphrody/m3-motion": "workspace:*",
-    "@base-ui/react": "^1.8.0",
+    "@base-ui/react": "catalog:",
     "class-variance-authority": "catalog:",
     "clsx": "catalog:",
     "motion": "catalog:",

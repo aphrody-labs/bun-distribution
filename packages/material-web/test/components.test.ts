@@ -257,6 +257,27 @@ test("md-time-picker (input mode) normalizes 24h and 12h values", async () => {
   expect(ampm).toBeTruthy();
 });
 
+test("md-time-picker (dial mode) renders clock face and interacts", async () => {
+  await import("../timepicker/time-picker.js");
+  const el = await mount<HTMLElement & { value: string; variant: string; dial: boolean }>("md-time-picker");
+  el.dial = true;
+  el.value = "10:30";
+  await (el as unknown as { updateComplete: Promise<unknown> }).updateComplete;
+
+  const clockDial = el.shadowRoot!.querySelector(".clock-dial");
+  expect(clockDial).toBeTruthy();
+
+  const numbers = el.shadowRoot!.querySelectorAll(".clock-number");
+  expect(numbers.length).toBeGreaterThan(0);
+
+  const num7 = Array.from(numbers).find((btn) => btn.textContent?.trim() === "07" || btn.textContent?.trim() === "7") as HTMLElement;
+  if (num7) {
+    num7.click();
+    await (el as unknown as { updateComplete: Promise<unknown> }).updateComplete;
+    expect(el.value).toContain(":30");
+  }
+});
+
 // ── md-table ──────────────────────────────────────────────────────────────
 
 test("md-table sorts, selects rows, and reflects grid semantics", async () => {

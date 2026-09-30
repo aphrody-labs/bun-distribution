@@ -14,7 +14,7 @@ const FONT: &[u8] =
 fn ink(svg: &str) -> usize {
     let r = render(svg, RenderOptions { height: Some(64), ..RenderOptions::default() })
         .expect("render");
-    r.rgba.chunks_exact(4).filter(|p| p[3] > 127).count()
+    r.rgba.as_chunks::<4>().0.iter().filter(|p| p[3] > 127).count()
 }
 
 #[test]

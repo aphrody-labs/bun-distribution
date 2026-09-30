@@ -1,0 +1,6 @@
+# SPDX-License-Identifier: Apache-2.0
+"$schema" = "schemas/schema.json"
+
+[default]
+description = "Read M3 sheets and schemes, the OS accent colour, and keep the window surface in the scheme."
+permissions = ["allow-css", "allow-scheme", "allow-system-accent", "allow-sync-window"]

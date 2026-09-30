@@ -10,16 +10,17 @@
 //
 // `dev` and `build` read `m3.config.ts` from the working directory (see `./config.ts`).
 import { existsSync, readFileSync } from "node:fs";
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { chmod, mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
 import { buildM3 } from "./build.js";
 import { loadM3Config } from "./config.js";
 import type { M3Sheet } from "./native.js";
 import { createM3Project } from "./new.js";
+import { m3Plugin } from "./plugin.js";
 import { serveM3 } from "./server.js";
 import { m3Tokens, SHEETS, writeTokenBundle } from "./tokens.js";
 
-export const COMMANDS = ["dev", "build", "tokens", "check", "new", "help", "version"] as const;
+export const COMMANDS = ["dev", "build", "tokens", "check", "new", "compile", "desktop", "help", "version"] as const;
 export type M3Command = (typeof COMMANDS)[number];
 
 export type FlagValue = string | boolean;
@@ -31,7 +32,7 @@ export interface ParsedArgs {
 }
 
 /** Flags that never take a value. */
-const BOOLEAN_FLAGS = new Set(["dark", "dev", "hmr", "help", "version"]);
+const BOOLEAN_FLAGS = new Set(["dark", "dev", "hmr", "help", "version", "build"]);
 /** Flags whose value is optional (`--tauri` alone uses `tauri.uiDist` of the config). */
 const OPTIONAL_VALUE_FLAGS = new Set(["tauri"]);
 const SHORT: Record<string, string> = { h: "help", v: "version", p: "port", o: "out" };
@@ -39,15 +40,17 @@ const SHORT: Record<string, string> = { h: "help", v: "version", p: "port", o: "
 export const USAGE = `m3 — the @aphrody Material Design 3 framework CLI
 
 Usage:
-  m3 dev    [--port <n>] [--no-hmr] [--config <file>]
-  m3 build  [--tauri [<dir>]] [--outdir <dir>] [--dev] [--config <file>]
-  m3 tokens [--sheet ${SHEETS.join("|")}] [--seed <hex>] [--variant <name>] [--dark]
-            [--contrast <n>] [--out <file>]
+  m3 dev      [--port <n>] [--no-hmr] [--config <file>]
+  m3 build    [--tauri [<dir>]] [--outdir <dir>] [--dev] [--config <file>]
+  m3 compile  [--outfile <file>] [--dev] [--config <file>]
+  m3 desktop  [--dev|--build] [--config <file>]
+  m3 tokens   [--sheet ${SHEETS.join("|")}] [--seed <hex>] [--variant <name>] [--dark]
+              [--contrast <n>] [--out <file>]
   m3 tokens --bundle <dir> [--seed <hex>] [--variant <name>] [--contrast <n>] [--root <dir>]
   m3 check
   m3 new <dir>
 
-dev and build read m3.config.ts from the working directory.`;
+dev, build, compile and desktop read m3.config.ts from the working directory.`;
 
 /** Parse `argv` (without the runtime and script paths). */
 export function parseArgs(argv: readonly string[]): ParsedArgs {
@@ -247,6 +250,65 @@ export async function runCli(argv: readonly string[], cwd: string = process.cwd(
       if (positionals.length !== 1) throw new Error("m3 new: expected one project directory");
       const target = await createM3Project(resolve(cwd, positionals[0]!));
       console.log(`m3 new: created ${target}`);
+      return 0;
+    }
+    case "compile": {
+      const config = await loadM3Config(cwd, stringFlag(flags, "config"));
+      const outfile = stringFlag(flags, "outfile") ?? join(config.outdir, "app");
+      const started = performance.now();
+      const entry = resolve(config.dir, config.entry);
+      const plugin = m3Plugin({ theme: config.theme, root: config.root, configDir: config.dir });
+      const result = await Bun.build({
+        entrypoints: [entry],
+        compile: true,
+        minify: flags.dev !== true && (config.minify ?? true),
+        plugins: [plugin],
+        define: config.define,
+      });
+      if (!result.success) {
+        for (const log of result.logs) console.error(log);
+        throw new Error(`m3 compile failed with ${result.logs.length} errors`);
+      }
+      const output = result.outputs[0];
+      if (output) {
+        await Bun.write(outfile, output);
+        if (process.platform !== "win32") {
+          await chmod(outfile, 0o755).catch(() => {});
+        }
+      }
+      const bytes = output ? output.size : (existsSync(outfile) ? (await readFile(outfile)).byteLength : 0);
+      console.log(`m3 compile: ${outfile} (${bytes} B) in ${Math.round(performance.now() - started)} ms`);
+      return 0;
+    }
+    case "desktop": {
+      const config = await loadM3Config(cwd, stringFlag(flags, "config"));
+      if (!config.tauri) {
+        throw new Error("m3 desktop: set `tauri.uiDist` in m3.config.ts");
+      }
+      const isDev = flags.dev === true;
+      if (isDev) {
+        console.log(`m3 desktop: dev mode for Tauri desktop host`);
+        const server = await serveM3({
+          index: config.entry,
+          routes: config.routes,
+          proxy: config.proxy,
+          port: numberFlag(flags, "port") ?? 1421,
+          cwd: config.dir,
+        });
+        console.log(`m3 desktop: webview listening at ${server.url}`);
+        return 0;
+      }
+      const started = performance.now();
+      const tauri = config.tauri;
+      const result = await buildM3({
+        entry: config.entry,
+        outdir: config.outdir,
+        production: true,
+        tauri,
+        plugin: { theme: config.theme, root: config.root, configDir: config.dir },
+        cwd: config.dir,
+      });
+      console.log(`m3 desktop: built webview to ${tauri.uiDist} (${result.outputs.length} files) in ${Math.round(performance.now() - started)} ms`);
       return 0;
     }
   }

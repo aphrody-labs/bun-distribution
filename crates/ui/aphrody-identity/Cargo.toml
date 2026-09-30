@@ -1,0 +1,49 @@
+# SPDX-License-Identifier: Apache-2.0
+[package]
+name = "aphrody-identity"
+description = "Aphrody product identity: brand icons, favicon and webmanifest, the measured palette (design tokens, M3 seed), and the typed 2D pet runtime (RGBA atlas, timed animations, directions)."
+version                = "1.0.0-canary"
+edition.workspace      = true
+rust-version.workspace = true
+authors.workspace      = true
+homepage.workspace     = true
+repository.workspace   = true
+license.workspace      = true
+
+[lints]
+workspace = true
+
+[dependencies]
+# `pixel` hands an assembled sheet to aphrody-sprite-sheet (CSS, SVG `<symbol>`, JSON) instead
+# of re-implementing them; nie-formats reuses the same crate for `.g4tx` atlases.
+aphrody-sprite-sheet = { workspace = true }
+serde      = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
+sha2       = { workspace = true }
+png        = { workspace = true }
+
+# "image -> SVG -> raster" chain (module `pixel`); choices and rejections in docs/toolchain-image-2026.md
+# (`dssim` rejected as AGPL, `vtracer` because it would pull a second `image`).
+image         = { workspace = true, features = ["png", "jpeg", "webp"] }
+image-compare = { workspace = true }
+palette       = { workspace = true, features = ["std"] }
+aphrody-svg   = { workspace = true, features = ["raster"] }
+
+[features]
+# `fs`: entry points that read the disk. Off for web and mobile, where `Image::depuis_octets`
+# and `Pet::from_png` are enough; everything else works in memory.
+default = ["fs"]
+fs = []
+
+[[bin]]
+name = "pixel"
+path = "src/bin/pixel.rs"
+
+[[bin]]
+name = "export_assets"
+path = "src/bin/export_assets.rs"
+
+# `design`: the colour sheet derived from the measured palette, and the M3 seed (`--m3-seed`).
+[[bin]]
+name = "design"
+path = "src/bin/design.rs"

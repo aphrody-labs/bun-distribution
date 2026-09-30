@@ -127,6 +127,12 @@ export class TimePicker extends LitElement {
   /** Accessible label / placeholder for the editable field. */
   @property({ type: String, attribute: "field-label" }) fieldLabel = "Time";
 
+  /** The presentation variant: `'input'` (numeric fields) or `'dial'` (clock face). */
+  @property({ type: String }) variant: "input" | "dial" = "input";
+
+  /** Shorthand for `variant="dial"`. */
+  @property({ type: Boolean }) dial = false;
+
   /** BCP-47 locale tag driving AM/PM (day-period) labels via `Intl`. */
   @property({ type: String }) locale = "";
 
@@ -135,6 +141,9 @@ export class TimePicker extends LitElement {
 
   /** Parsed minutes (0–59). `-1` when unset/invalid. */
   @state() private minutes = -1;
+
+  /** Active unit being adjusted on the dial: `'hours'` or `'minutes'`. */
+  @state() private activeUnit: "hours" | "minutes" = "hours";
 
   /** Current (possibly invalid) text in the editable field. */
   @state() private fieldText = "";
@@ -210,9 +219,33 @@ export class TimePicker extends LitElement {
     return this.minutes < 0 ? "" : pad2(this.minutes);
   }
 
+  private get isDial(): boolean {
+    return this.dial || this.variant === "dial";
+  }
+
+  private get displayHoursNumber(): number {
+    if (this.hours24 < 0) return 12;
+    if (this.format === "24h") return this.hours24;
+    const h12 = this.hours24 % 12;
+    return h12 === 0 ? 12 : h12;
+  }
+
+  private get dialHourAngle(): number {
+    const h = this.displayHoursNumber;
+    return (h % 12) * 30;
+  }
+
+  private get dialMinuteAngle(): number {
+    const m = this.minutes < 0 ? 0 : this.minutes;
+    return m * 6;
+  }
+
   protected override render() {
     if (this.editable) {
       return this.renderField();
+    }
+    if (this.isDial) {
+      return this.renderDial();
     }
     const is12h = this.format === "12h";
     return html`
@@ -245,6 +278,186 @@ export class TimePicker extends LitElement {
         ${is12h ? this.renderAmPm() : nothing}
       </div>
     `;
+  }
+
+  private renderDial(): TemplateResult {
+    const is12h = this.format === "12h";
+    const angle = this.activeUnit === "hours" ? this.dialHourAngle : this.dialMinuteAngle;
+    const dialLabel = this.activeUnit === "hours" ? "Select hour" : "Select minute";
+    const currentValue = this.activeUnit === "hours"
+      ? (is12h ? this.displayHoursNumber : Math.max(0, this.hours24))
+      : Math.max(0, this.minutes);
+    const maxValue = this.activeUnit === "hours" ? (is12h ? 12 : 23) : 59;
+    const minValue = this.activeUnit === "hours" && is12h ? 1 : 0;
+
+    return html`
+      <div class="dial-picker">
+        <div class="picker">
+          <div class="fields">
+            <button
+              type="button"
+              class=${classMap({ field: true, hours: true, clickable: true, active: this.activeUnit === "hours" })}
+              aria-label="Hours"
+              aria-pressed=${this.activeUnit === "hours" ? "true" : "false"}
+              @click=${() => (this.activeUnit = "hours")}
+            >
+              ${this.displayHours || "00"}
+            </button>
+            <span class="separator" aria-hidden="true">:</span>
+            <button
+              type="button"
+              class=${classMap({ field: true, minutes: true, clickable: true, active: this.activeUnit === "minutes" })}
+              aria-label="Minutes"
+              aria-pressed=${this.activeUnit === "minutes" ? "true" : "false"}
+              @click=${() => (this.activeUnit = "minutes")}
+            >
+              ${this.displayMinutes || "00"}
+            </button>
+          </div>
+          ${is12h ? this.renderAmPm() : nothing}
+        </div>
+
+        <div
+          class="clock-dial"
+          role="slider"
+          tabindex="0"
+          aria-label=${dialLabel}
+          aria-valuemin=${minValue}
+          aria-valuemax=${maxValue}
+          aria-valuenow=${currentValue}
+          @click=${this.handleDialClick}
+          @keydown=${this.handleDialKeydown}
+        >
+          <div class="clock-pin"></div>
+          <div class="clock-hand" style="transform: rotate(${angle}deg);">
+            <div class="clock-hand-knob"></div>
+          </div>
+          ${this.activeUnit === "hours" ? this.renderDialHours() : this.renderDialMinutes()}
+        </div>
+      </div>
+    `;
+  }
+
+  private renderDialHours(): TemplateResult[] {
+    const is12h = this.format === "12h";
+    const hours = is12h
+      ? [12, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
+      : [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23];
+
+    return hours.map((h) => {
+      let radius = 92;
+      let angle = (h % 12) * 30;
+      if (!is12h && (h === 0 || h >= 13)) {
+        radius = 60;
+        angle = (h % 12) * 30;
+      }
+      const rad = (angle - 90) * (Math.PI / 180);
+      const x = Math.round(128 + radius * Math.cos(rad));
+      const y = Math.round(128 + radius * Math.sin(rad));
+      const selected = is12h
+        ? this.displayHoursNumber === h
+        : (this.hours24 === h || (this.hours24 < 0 && h === 0));
+
+      return html`
+        <button
+          type="button"
+          class=${classMap({ "clock-number": true, selected })}
+          style="left: ${x}px; top: ${y}px;"
+          @click=${(e: Event) => {
+            e.stopPropagation();
+            this.selectDialHour(h);
+          }}
+        >
+          ${is12h ? h : pad2(h)}
+        </button>
+      `;
+    });
+  }
+
+  private renderDialMinutes(): TemplateResult[] {
+    const steps = [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55];
+    return steps.map((m) => {
+      const angle = m * 6;
+      const rad = (angle - 90) * (Math.PI / 180);
+      const x = Math.round(128 + 92 * Math.cos(rad));
+      const y = Math.round(128 + 92 * Math.sin(rad));
+      const selected = this.minutes === m;
+
+      return html`
+        <button
+          type="button"
+          class=${classMap({ "clock-number": true, selected })}
+          style="left: ${x}px; top: ${y}px;"
+          @click=${(e: Event) => {
+            e.stopPropagation();
+            this.selectDialMinute(m);
+          }}
+        >
+          ${pad2(m)}
+        </button>
+      `;
+    });
+  }
+
+  private selectDialHour(hour: number) {
+    let h24: number;
+    if (this.format === "24h") {
+      h24 = hour;
+    } else {
+      h24 = this.to24(hour === 12 ? 0 : hour, this.isPm);
+    }
+    const m = this.minutes < 0 ? 0 : this.minutes;
+    this.setTime(h24, m);
+    this.activeUnit = "minutes";
+  }
+
+  private selectDialMinute(minute: number) {
+    const h = this.hours24 < 0 ? 0 : this.hours24;
+    this.setTime(h, minute);
+  }
+
+  private handleDialClick(event: MouseEvent) {
+    const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
+    const x = event.clientX - rect.left - 128;
+    const y = event.clientY - rect.top - 128;
+    const dist = Math.hypot(x, y);
+    if (dist < 10) return;
+
+    let deg = (Math.atan2(y, x) * (180 / Math.PI)) + 90;
+    if (deg < 0) deg += 360;
+
+    if (this.activeUnit === "hours") {
+      const is12h = this.format === "12h";
+      let step = Math.round(deg / 30) % 12;
+      if (is12h) {
+        this.selectDialHour(step === 0 ? 12 : step);
+      } else {
+        if (dist < 76) {
+          this.selectDialHour(step === 0 ? 0 : step + 12);
+        } else {
+          this.selectDialHour(step === 0 ? 12 : step);
+        }
+      }
+    } else {
+      const m = Math.round(deg / 6) % 60;
+      this.selectDialMinute(m);
+    }
+  }
+
+  private handleDialKeydown(event: KeyboardEvent) {
+    const delta = this.arrowDelta(event);
+    if (delta === 0) return;
+    event.preventDefault();
+
+    if (this.activeUnit === "hours") {
+      const current = this.hours24 < 0 ? 0 : this.hours24;
+      const next = (current + delta + 24) % 24;
+      this.setTime(next, this.minutes < 0 ? 0 : this.minutes);
+    } else {
+      const current = this.minutes < 0 ? 0 : this.minutes;
+      const next = (current + delta + 60) % 60;
+      this.setTime(this.hours24 < 0 ? 0 : this.hours24, next);
+    }
   }
 
   private renderField(): TemplateResult {

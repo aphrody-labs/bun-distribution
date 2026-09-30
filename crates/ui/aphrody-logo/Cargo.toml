@@ -1,0 +1,20 @@
+# SPDX-License-Identifier: Apache-2.0
+[package]
+name = "aphrody-logo"
+version = "1.0.0-canary"
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+homepage.workspace = true
+repository.workspace = true
+license.workspace = true
+description = "The canonical aphrody character icon (assets/aphrody.webp) embedded once, with Windows .ico, scalable .svg, and M3 maskable PNG derivations."
+
+[lints]
+workspace = true
+
+[dependencies]
+image = { workspace = true, features = ["webp", "png"] }
+base64 = { workspace = true }
+ico = "0.5"
+thiserror = { workspace = true }

@@ -7,6 +7,15 @@ Status: scaffold initialized 2026-09-29. The cross-repository authority is
 and acceptance. Infra's `@aphrody/workspace` is the source of truth for generated
 inventories and orchestration commands.
 
+## IEVR ownership decision — 2026-09-30
+
+All IEVR/NIE/IECODE-specific code is owned exclusively by `/home/aphro/iecode`.
+No active game implementation, format parser, game data adapter, or NIE service
+may remain in this Aphrody workspace. Confirmed duplicate Rust crates, the NIE
+MCP relay and the IEVR inventory tool have been removed from this checkout.
+Keep Aphrody libraries domain-neutral; record this rule above earlier extraction
+notes that placed IEVR code in Aphrody.
+
 ## Target layout
 
 - `crates/<domain>/<crate>`: all first-party Rust crates from Aphrody owners.
@@ -513,13 +522,46 @@ explicitly requested; they do not close these gates or authorize cutover.
 - [x] Repair Bun docs discovery at its Rust owner and install a source-pinned,
       hash-verified corpus in the user data directory. The source fix is pushed
       as Compat commit `17851d9`; all 12 resolver/search tests, strict Clippy
-      and check pass. The installed MCP kernel still needs the rebuilt binary
-      and a verified native CLI/MCP smoke before its live failure is closed.
-- [ ] Finish native kernel qualification and activate the validated release.
+      and check pass. The rebuilt release passed native CLI and isolated stdio
+      MCP smokes; the configured live Codex tool now returns Bun documentation
+      after reloading only its kernel child. Evidence is recorded in
+      [`native-mcp-cli-qualification.json`](docs/migration/native-mcp-cli-qualification.json).
+- [x] Qualify and activate the Linux native kernel/provider release on this host.
       Source corrections cover MCP pagination/annotations/reply IDs, Infra
-      path resolution and runtime TOML parsing; final gates and release build
-      are running. Retain the prior binary for rollback and verify the actual
-      live process before declaring MCP/CLI ready.
+      path resolution and runtime TOML parsing; kernel tests and release build
+      have passed at the kernel scope and the validated release is active, with
+      the previous binary retained for rollback. Final full transitive strict
+      Clippy and all 78 kernel/CLI tests now pass. The configured root thread
+      uses kernel PID 717194 and provider PID 717217; installed and loaded
+      SHA256 hashes agree. Original Bun docs and native Web language calls
+      succeed after activation. Cross-platform and wider production closure
+      remain open.
+
+- [x] Fix two proven forensic edge cases at the Rust owner: empty entropy input
+      and a UTF-16 run ending at EOF. The target kernel/RE suite passes 225
+      tests and doctests, with three credential/live-application tests ignored.
+      Capture, execution-policy and event crates pass 30 checks; Compat and
+      Systemd pass seven tests and scoped strict Clippy.
+- [x] Make Infra production gates discover every declared Bun member and run
+      actual package scripts plus locked Rust checks, tests and release builds.
+      Missing or placeholder scripts are reported as qualification gaps. All
+      30 Infra/RG build regressions pass; the real plan reports 81 packages,
+      224 commands and 190 coverage gaps. Full gate execution remains open.
+
+- [x] Repair native Infra maintenance/quality repository selection and YOLO
+      resource discovery at the owner and target. All 21 tests, strict Clippy,
+      check and builds pass. Actual native commands now resolve this workspace
+      and the imported plugin without overrides. Owner commit `88faaf76` is
+      pushed; 112 required plugin resources retain hashes and licenses in
+      [`yolo-resources-extraction.json`](docs/migration/yolo-resources-extraction.json).
+- [x] Remove attempts to launch the retired BXC executable from native Web
+      tool discovery and calls. The MCP catalog uses six existing Rust owners,
+      the CLI resolves `aphrody-web`, and prompts refer to available tools.
+      Scoped MCP tests pass 12/12, client tests 18/18 and bridge tests 56/56,
+      with strict Clippy. Unmapped historical registry aliases remain explicit
+      gaps; no legacy executable is reintroduced. The rebuilt provider is
+      active on the configured root thread: 159 unique tools and a successful
+      original native Web call returning 195 supported languages.
 
 ## Unified native UI bridge — 2026-09-30
 
@@ -533,3 +575,11 @@ explicitly requested; they do not close these gates or authorize cutover.
       strict Clippy pass. See [evidence](docs/migration/unified-ui-ffi.json).
       N2B/Oxc/fork consumers, portable package/release manifests, runtime
       unload lifecycle and cross-platform/product gates remain open.
+- [x] Migrate Spacedrive non-UI backend, server, and UI bridge. `crates/os/drive` (1,899 files) and `crates/web/drive-server` (9 files) are FSL-1.1-ALv2 and excluded from the root `Cargo.toml`. `crates/ui/aphrody-drive` (28 files) is an FSL-1.1-ALv2 Tauri plugin. Apache-2.0 root crates are not relicensed. See [`drive-rust-extraction.json`](docs/migration/drive-rust-extraction.json) for source commit 0511c85 and file counts. Repository manifests remain valid.
+
+## Rust crate, GPU and window ownership — 2026-09-30
+
+- [x] Compare active Rust workspace ownership with imported upstream references. The workspace has one direct `wgpu` version (30.0.1) and one shared initialization/policy crate; `aphrody-render` still has its own context path, so backend convergence is incomplete. No active Cargo member owns a Bevy/winit/SDL window; Bevy remains the documented NIE host choice while the emulator core stays headless. Recorded current boundaries and remaining actions in [`rust-crate-gpu-window-ownership.md`](docs/architecture/rust-crate-gpu-window-ownership.md).
+- [ ] Route `aphrody-render` GPU context creation through the shared backend while preserving its injected-device API; relocate the backend out of the IECODE namespace after consumer mapping.
+- [ ] Decide package renames only after preserving upstream-compatible identities and enumerating Cargo selectors/downstream use. The workspace currently contains IECODE/NIE/Koharu/Obscura package names without `aphrody-` prefixes.
+- [x] Move `aphrody-logo` and `aphrody-identity` into `crates/ui/`, recable their former AI/UI workspace consumers, and remove them from the former UI workspace. The NIE UI token crate belongs to IECODE: transferred it to `iecode/crates/nie/aphrody-nie-ui` with the `aphrody-nie-*` package prefix and local `aphrody-nie-formats` owner. Recabled the IECODE workspace's Aphrody RE/UI dependencies to the canonical monorepo and routed its removed Bevy root-facade paths through the prefixed internal facade alias. Aphrody locked metadata, `aphrody-web` check, Aphrody CLI check, logo tests, and no-deps metadata for IECODE and the former AI/UI workspaces pass. The focused NIE compile remains blocked by the existing `rand/small_rng` feature conflict in `aphrody-nie-wiki`.

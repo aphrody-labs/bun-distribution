@@ -21,18 +21,6 @@ description = "aphrody \u2014 the ultimate cross-platform CLI (Linux/Windows/WAS
 categories = ["command-line-utilities", "development-tools", "web-programming"]
 keywords = ["cli", "cross-platform", "rust", "linux", "wasm"]
 [workspace.dependencies]
-nie-ffi = { path = "crates/iecode/nie-ffi", version = "1.0.0", default-features = false }
-nie-core = { path = "crates/iecode/nie-core", version = "1.0.0", default-features = false }
-nie-formats = { path = "crates/iecode/nie-formats", version = "1.0.0", default-features = false }
-nie-runtime = { path = "crates/iecode/nie-runtime", version = "1.0.0", default-features = false }
-nie-wiki = { path = "crates/iecode/nie-wiki", version = "1.0.0" }
-nie-render3d = { path = "crates/iecode/nie-render3d", version = "1.0.0", default-features = false }
-nie-lua = { path = "crates/iecode/nie-lua", version = "1.0.0", default-features = false }
-nie-data = { package = "iecode-ievr-data", path = "crates/iecode/ievr-data", version = "1.0.0" }
-nie-geom = { package = "iecode-geom", path = "crates/iecode/geom", version = "1.0.0" }
-nie-video = { package = "iecode-video", path = "crates/iecode/video", version = "1.0.0" }
-nie-emu = { package = "iecode-emu", path = "crates/iecode/emu", version = "1.0.0" }
-aphrody-gpu-backend = { path = "crates/iecode/aphrody-gpu-backend", version = "1.0.0" }
 aphrody-softraster = { path = "crates/ui/aphrody-softraster", version = "1.0.0-canary" }
 aphrody-sprite-sheet = { path = "crates/ui/aphrody-sprite-sheet", version = "1.0.0-canary" }
 glam = { version = "0.33.9", default-features = false, features = ["std"] }
@@ -54,9 +42,6 @@ oxc_linter = { git = "https://github.com/aphrody-code/oxc.git", rev = "31d5266e1
 oxc_minifier = { git = "https://github.com/aphrody-code/oxc.git", rev = "31d5266e150ff17af52f0c2fc798cc27dc9a5a59" }
 oxc_semantic = { git = "https://github.com/aphrody-code/oxc.git", rev = "31d5266e150ff17af52f0c2fc798cc27dc9a5a59" }
 aphrody-bun = { path = "crates/ui/aphrody-bun", version = "1.0.0-canary" }
-iecode-core = { path = "crates/iecode/core", version = "1.0.0" }
-iecode-emu = { path = "crates/iecode/emu", version = "1.0.0" }
-iecode-ffi = { path = "crates/iecode/ffi", version = "1.0.0" }
 tokio-postgres-rustls = { version = "0.14", default-features = false, features = ["ring", "native-certs"] }
 pyo3 = { version = "0.29", features = [] }
 anyhow = "1.0.104"
@@ -114,7 +99,6 @@ aphrody-memory = { path = "crates/ai/aphrody-memory", features = [] }
 aphrody-messaging = { path = "crates/ai/aphrody-messaging", features = [] }
 aphrody-model-antigravity = { path = "crates/ai/aphrody-model-antigravity", features = [] }
 aphrody-model-client = { path = "crates/ai/aphrody-model-client", features = [] }
-aphrody-mcp-nie-bridge = { path = "crates/ai/aphrody-mcp-nie-bridge" }
 aphrody-models = { path = "crates/ai/aphrody-models", features = [] }
 aphrody-n2b = { path = "crates/compat/aphrody-n2b", features = [] }
 aphrody-n2b-core = { path = "crates/compat/aphrody-n2b-core", features = [] }
@@ -307,7 +291,6 @@ aphrody-compat = { path = "crates/os/aphrody-compat", version = "1.0.0-canary", 
 aphrody-coreutils = { path = "crates/os/aphrody-coreutils", version = "1.0.0-canary", features = [] }
 aphrody-cron = { path = "crates/os/aphrody-cron", version = "1.0.0-canary", features = [] }
 aphrody-execpolicy = { path = "crates/os/aphrody-execpolicy", version = "1.0.0-canary", features = [] }
-aphrody-ievr = { path = "crates/os/aphrody-ievr", version = "1.0.0-canary", features = [] }
 aphrody-systemd = { path = "crates/os/aphrody-systemd", version = "1.0.0-canary", features = [] }
 aphrody-sandbox = { path = "crates/os/aphrody-sandbox", version = "1.0.0-canary", features = [] }
 aphrody-search = { path = "crates/os/aphrody-search", version = "1.0.0-canary", features = [] }

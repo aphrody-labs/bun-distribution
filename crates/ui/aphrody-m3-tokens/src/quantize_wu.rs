@@ -177,9 +177,9 @@ impl QuantizerWu {
 
             next = 0;
             let mut temp = volume_variance[0];
-            for j in 1..=i {
-                if volume_variance[j] > temp {
-                    temp = volume_variance[j];
+            for (j, &variance) in volume_variance.iter().enumerate().take(i + 1).skip(1) {
+                if variance > temp {
+                    temp = variance;
                     next = j;
                 }
             }
