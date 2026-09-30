@@ -49,8 +49,17 @@ import { runConsolidation } from "./consolidation.ts";
 import { runRg } from "./rg.ts";
 import { runShenron } from "./shenron.ts";
 import { runWebMigration } from "./web-migration.ts";
+import { join } from "node:path";
 
 const [operation, ...rest] = process.argv.slice(2);
+if (operation === "agent-home-drive-sync" || operation === "drive-sync") {
+  const task = Bun.spawn([process.execPath, join(import.meta.dir, "agent-home-drive-sync.ts"), ...rest], {
+    stdin: "inherit",
+    stdout: "inherit",
+    stderr: "inherit",
+  });
+  process.exit(await task.exited);
+}
 if (operation === "web-migration") {
   process.exit(await runWebMigration(rest));
 }

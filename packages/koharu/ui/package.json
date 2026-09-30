@@ -27,13 +27,13 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@aphrody/m3-primitives": "^3.3.3",
+    "@aphrody/m3-primitives": "workspace:*",
     "@base-ui/react": "catalog:",
     "@tanstack/react-query": "catalog:",
     "@tanstack/react-virtual": "^3.14.11",
     "@tauri-apps/api": "catalog:",
     "@tauri-apps/plugin-opener": "catalog:",
-    "@koharu/bridge": "0.1.0",
+    "@koharu/bridge": "workspace:*",
     "class-variance-authority": "catalog:",
     "clsx": "catalog:",
     "i18next": "^26.4.2",
@@ -48,7 +48,7 @@
     "remark-gfm": "^4.0.1",
     "tailwind-merge": "catalog:",
     "zustand": "catalog:",
-    "@koharu/sdk": "0.1.0"
+    "@koharu/sdk": "workspace:*"
   },
   "peerDependencies": {
     "react": "^19.3.0",

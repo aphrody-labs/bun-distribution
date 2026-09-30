@@ -1,8 +1,13 @@
 # SPDX-License-Identifier: Apache-2.0
 [workspace]
 resolver = "3"
-members = ["crates/ui/*", "crates/iecode/*", "crates/infra/*", "crates/contracts/*", "crates/os/*", "crates/shell/*", "crates/compat/*", "crates/native/*", "crates/koharu/*", "crates/ai/*", "crates/web/*"]
-exclude = ["crates/contracts/schema", "crates/os/drive", "crates/web/drive-server"]
+members = ["crates/ui/*", "crates/infra/*", "crates/contracts/*", "crates/os/*", "crates/shell/*", "crates/compat/*", "crates/native/*", "crates/koharu/*", "crates/ai/*", "crates/web/*"]
+exclude = [
+  "crates/contracts/schema",
+  "crates/os/drive",
+  "crates/web/drive-server",
+  "crates/ui/aphrody-app",
+]
 
 [workspace.package]
 version = "1.0.0"
@@ -68,6 +73,9 @@ aphrody-agent-home = { path = "crates/ai/aphrody-agent-home", features = [] }
 aphrody-agent-proto = { path = "crates/contracts/aphrody-agent-proto", version = "1.0.0-canary", features = [] }
 aphrody-agent-runtime = { path = "crates/ai/aphrody-agent-runtime", features = [] }
 aphrody-agent-tools = { path = "crates/ai/aphrody-agent-tools", features = [] }
+aphrody-a2a-ui = { path = "crates/ui/aphrody-a2a-ui", version = "1.0.0-canary" }
+aphrody-identity = { path = "crates/ui/aphrody-identity", version = "1.0.0-canary" }
+aphrody-model-view = { path = "crates/ui/aphrody-model-view", version = "1.0.0-canary" }
 aphrody-antigravity = { path = "crates/ai/aphrody-antigravity", features = [] }
 aphrody-app-protocol = { path = "crates/contracts/aphrody-app-protocol", version = "1.0.0-canary", features = [] }
 aphrody-app-server = { path = "crates/ai/aphrody-app-server", features = [] }
@@ -176,6 +184,8 @@ chrono = { version = "0.4", features = ["serde"] }
 clap = { version = "4.6.6", features = ["derive", "env", "color"] }
 clap_complete = { version = "4", features = [] }
 colored = { version = "3", features = [] }
+console_error_panic_hook = "0.1.7"
+zbus = { version = "5", default-features = false, features = ["blocking-api", "async-io"] }
 cookie = "=0.18.2"
 criterion = { version = "0.8.2", features = ["html_reports"] }
 dashmap = { version = "6", features = [] }
@@ -451,6 +461,10 @@ quote = "1.0.47"
 aphrody-icons = { path = "crates/ui/aphrody-icons", version = "1.0.0-canary" }
 aphrody-m3 = { path = "crates/ui/aphrody-m3", version = "1.0.0-canary" }
 aphrody-m3-reproduce = { path = "crates/ui/aphrody-m3-reproduce", version = "1.0.0-canary" }
+aphrody-render3d = { path = "crates/ui/aphrody-render3d", version = "1.0.0-canary" }
+aphrody-tauri-3d = { path = "crates/ui/aphrody-tauri-3d", version = "1.0.0-canary" }
+aphrody-tauri-m3 = { path = "crates/ui/aphrody-tauri-m3", version = "1.0.0-canary" }
+aphrody-tauri-mcp = { path = "crates/ui/aphrody-tauri-mcp", version = "1.0.0-canary" }
 aphrody-render = { path = "crates/ui/aphrody-render", version = "1.0.0-canary" }
 aphrody-svg = { path = "crates/ui/aphrody-svg", version = "1.0.0-canary", default-features = false }
 ts-rs = {"version" = "12", "features" = ["serde-compat"]}

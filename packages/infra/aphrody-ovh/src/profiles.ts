@@ -15,7 +15,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
-import { OvhClient, type OvhEndpoint } from "./client.js";
+import { OvhClient, type OvhEndpoint, type OvhClientOptions } from "./client.js";
 
 export interface ProfileDefinition {
   id: string;

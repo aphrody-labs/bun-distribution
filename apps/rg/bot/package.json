@@ -17,7 +17,7 @@
     "typecheck": "bun --bun tsc --noEmit"
   },
   "dependencies": {
-    "@aphrody/canvas": "catalog:",
+    "@aphrody/canvas": "workspace:*",
     "@aphrody/discordx": "catalog:",
     "@rosegriffon/achillea-client": "workspace:*",
     "@rosegriffon/azalee": "workspace:*",

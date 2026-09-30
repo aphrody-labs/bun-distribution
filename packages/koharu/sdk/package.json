@@ -31,7 +31,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@koharu/bridge": "0.1.0"
+    "@koharu/bridge": "workspace:*"
   },
   "peerDependencies": {
     "@tauri-apps/api": "catalog:"

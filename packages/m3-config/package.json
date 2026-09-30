@@ -1,6 +1,6 @@
 {
   "name": "@aphrody/m3-config",
-  "version": "3.3.0",
+  "version": "3.3.3",
   "private": true,
   "description": "Shared build, typecheck and test presets for the @aphrody Material Design 3 packages: tsconfig, tsup preset and the happy-dom test preload.",
   "license": "Apache-2.0",

@@ -29,5 +29,6 @@
   "devDependencies": {
     "@types/bun": "catalog:",
     "typescript": "catalog:"
-  }
+  },
+  "license": "Apache-2.0"
 }

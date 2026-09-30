@@ -2,6 +2,9 @@
   "name": "@aphrody/workspace",
   "version": "0.1.0",
   "private": true,
+  "description": "Cross-monorepo workspace orchestrator, gates, audits, migration tools and operations",
+  "license": "Apache-2.0",
+  "author": "Aphrody",
   "bin": {
     "aphrody-ops": "./src/ops.ts",
     "aphrody-workspace": "./src/cli.ts"
@@ -51,7 +54,9 @@
     "./cargo-package-repair": "./src/cargo-package-repair.ts",
     "./consolidation": "./src/consolidation.ts",
     "./rg": "./src/rg.ts",
-    "./shenron": "./src/shenron.ts"
+    "./shenron": "./src/shenron.ts",
+    "./agent-home-drive-sync": "./src/agent-home-drive-sync.ts",
+    "./web-migration": "./src/web-migration.ts"
   },
   "scripts": {
     "build": "bun build ./src/cli.ts ./src/ops.ts --target=bun --outdir dist --sourcemap=linked",

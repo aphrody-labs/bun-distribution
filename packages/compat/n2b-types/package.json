@@ -26,5 +26,6 @@
     "access": "public",
     "registry": "https://registry.npmjs.org"
   },
-  "sideEffects": false
+  "sideEffects": false,
+  "license": "Apache-2.0"
 }

@@ -33,7 +33,7 @@
     "typecheck": "bun --bun tsc --noEmit"
   },
   "dependencies": {
-    "@rosegriffon/types": "^1.0.3",
+    "@rosegriffon/types": "workspace:*",
     "@supabase/ssr": "catalog:",
     "kysely": "catalog:",
     "pg": "catalog:"

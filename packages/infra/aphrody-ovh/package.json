@@ -28,6 +28,7 @@
   },
   "dependencies": {},
   "devDependencies": {
-    "@types/bun": "catalog:"
+    "@types/bun": "catalog:",
+    "typescript": "catalog:"
   }
 }

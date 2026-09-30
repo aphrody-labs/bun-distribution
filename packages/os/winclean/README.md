@@ -1,11 +1,11 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
-# @aphrody-code/winclean (compatibilité locale)
+# @aphrody/winclean (anciennement @aphrody-code/winclean)
 
 Bun client for the Aphrody OS kernel: 166 typed Windows computer-use and OS-control
 tools routed through the same local endpoint as MCP, A2A, CLI and GUI.
 
 ```ts
-import { Winclean } from "@aphrody-code/winclean";
+import { Winclean } from "@aphrody/winclean";
 
 using wc = Winclean.open();
 const obs = (await wc.computerObserve({ windowHandle: 0 })).ok();

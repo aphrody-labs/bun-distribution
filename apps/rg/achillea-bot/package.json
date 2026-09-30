@@ -51,7 +51,7 @@
     "typecheck": "tsc --pretty --skipLibCheck --noEmit"
   },
   "dependencies": {
-    "@aphrody/canvas": "catalog:",
+    "@aphrody/canvas": "workspace:*",
     "@aphrody/discordx": "catalog:",
     "@aphrody/importer": "^0.1.0",
     "@aphrody/utilities": "^0.1.0",
