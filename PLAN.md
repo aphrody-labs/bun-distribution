@@ -2,6 +2,15 @@
 
 # Aphrody monorepo extraction plan
 
+## Ignore rules — 2026-10-01
+
+Reconciled the root ignore rules with imported Aphrody AI/UI/Web, Bun/Oxc and
+Discord configurations. All 186 active Cargo member
+target directories remain ignored; four tracked Rust source modules under
+`src/target` are visible again. Thirteen tracked paths still match intended
+local ignores (ten node_modules links, two Turbo logs and one Shenron
+subtitle). `git diff --check` passes.
+
 ## Rust crate naming — 2026-10-01
 
 The cross-monorepo convention for new Aphrody platform crates is recorded in

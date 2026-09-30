@@ -1,12 +1,31 @@
+# SPDX-License-Identifier: Apache-2.0
+
+# Cargo outputs at workspace roots. Keep source modules such as
+# crates/ai/aphrody-rag-eval/src/target/ visible to Git.
 /target/
-**/target/
+/crates/*/*/target/
+/packages/*/*/target/
+/apps/*/*/target/
+**/*.rs.bk
+
+# Bun, TypeScript, and frontend outputs. Package-specific exceptions remain in
+# their own .gitignore files (for example, the tracked drive-server dist shell).
 /node_modules/
 /dist/
 /.turbo/
 **/node_modules/
 **/.turbo/
-/apps/**/dist/
-/packages/**/dist/
+/apps/*/*/.next/
+/packages/*/*/.next/
+/apps/*/*/coverage/
+/packages/*/*/coverage/
+/crates/*/*/coverage/
+/apps/*/*/playwright-report/
+/apps/*/*/test-results/
+/apps/*/*/dist/
+/apps/*/dist/
+/packages/*/*/dist/
+/packages/*/dist/
 **/*.tsbuildinfo
 /packages/rg/db/src/**/*.js
 /packages/rg/db/src/**/*.d.ts
@@ -15,6 +34,20 @@
 /docs/reference/nie/game-data/menu-fixtures/
 /.cache/
 /.venv/
+**/.cache/
+**/.venv/
+/build/
+cmake-build-*/
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+compile_commands.json
+.ninja_deps
+.ninja_log
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.hypothesis/
 /var/runs/
 /var/private/
 /var/unification/
@@ -33,12 +66,20 @@
 /docs/rg/root/.npmrc
 *.pem
 *.key
+*.p12
+*.pfx
+*.kdbx
 *.sqlite
 *.sqlite3
 *.sqlite-shm
 *.sqlite-wal
 *.db
 *.dump
+# Database fixtures are source inputs; generated databases belong in var/.
+!**/fixtures/**/*.db
+!**/fixtures/**/*.sqlite
+!**/fixtures/**/*.sqlite3
+!**/fixtures/**/*.dump
 /upstream/discord/packages/discordx/coverage/
 /apps/shenron/*/node_modules/
 /packages/shenron/*/node_modules/
@@ -49,8 +90,28 @@ __pycache__/
 .env.*
 !.env.example
 !.env.*.example
+/secrets/
+/cookies/
+/.npmrc
+.claude/settings.local.json
+*.heapsnapshot
+*.heapsnapshot.*
+*.heapprofile
+*.heapprofile.*
+*.heaptimeline
+*.heaptimeline.*
+*.cpuprofile
+*.cpuprofile.*
 /.coord/
 **/.coord/
+
+# Host editor and file-manager state.
+.DS_Store
+Thumbs.db
+*.swp
+*~
+.idea/
+.vs/
 
 # Generated host native artifacts; staged by the package builder.
 /packages/bun/aphrody/native/
