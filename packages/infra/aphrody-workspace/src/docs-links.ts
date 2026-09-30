@@ -21,8 +21,53 @@ async function verifyPath(filePath: string): Promise<boolean> {
   }
 }
 
+/** Extract inline Markdown destinations, including wrapped paths and balanced parentheses. */
+export function markdownLinkDestinations(content: string): string[] {
+  const links: string[] = [];
+  const labels = /!?\[(?:\\.|[^\]\\])*\]\(/g;
+  while (labels.exec(content) !== null) {
+    let cursor = labels.lastIndex;
+    while (/\s/.test(content[cursor] ?? "") && cursor < content.length) cursor++;
+    let destination = "";
+    if (content[cursor] === "<") {
+      const start = ++cursor;
+      while (cursor < content.length && content[cursor] !== ">" && content[cursor] !== "\n") {
+        cursor += content[cursor] === "\\" ? 2 : 1;
+      }
+      if (content[cursor] !== ">") continue;
+      destination = content.slice(start, cursor++);
+    } else {
+      const start = cursor;
+      let depth = 0;
+      while (cursor < content.length) {
+        const char = content[cursor]!;
+        if (char === "\\") {
+          cursor += 2;
+          continue;
+        }
+        if (char === "(") depth++;
+        else if (char === ")") {
+          if (!depth) break;
+          depth--;
+        } else if (/\s/.test(char) && !depth) break;
+        cursor++;
+      }
+      if (depth) continue;
+      destination = content.slice(start, cursor);
+    }
+    // A destination may be followed by a quoted or parenthesized title.
+    const ending = /^(?:\s+(?:"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|\((?:\\.|[^)\\])*\)))?\s*\)/.exec(
+      content.slice(cursor),
+    );
+    if (!ending) continue;
+    links.push(destination.replace(/\\([\\()[\]<>])/g, "$1"));
+    labels.lastIndex = cursor + ending[0].length;
+  }
+  return links;
+}
+
 function documentationRouteCandidates(docsDir: string, route: string): string[] {
-  const relativeRoute = route.replace(/^\/+/, "").split(/[?#]/, 1)[0] ?? "";
+  const relativeRoute = route.replace(/^\/+/, "");
   if (relativeRoute.split(/[\\/]/).includes("..")) return [];
   const page = join(docsDir, relativeRoute);
   return [page, `${page}.md`, `${page}.mdx`, join(page, "index.md"), join(page, "index.mdx")];
@@ -94,14 +139,7 @@ export async function runDocsLinks(args: string[]): Promise<number> {
     // Retirer les blocs de code (fenced et inline) pour éviter de valider de faux liens dans des exemples de code
     const cleanContent = content.replace(/```[\s\S]*?```/g, "").replace(/`[^`\n]+`/g, "");
 
-    // Regex pour capturer les liens Markdown [texte](url)
-    // Ignorer les URLs externes commençant par http/https/mailto
-    const linkRegex = /\[[^\]]*?\]\(([^)]+?)\)/g;
-    let match;
-
-    while ((match = linkRegex.exec(cleanContent)) !== null) {
-      const linkUrl = match[1]?.trim() ?? "";
-
+    for (const linkUrl of markdownLinkDestinations(cleanContent)) {
       // Ignorer les liens externes
       if (
         linkUrl.startsWith("http://") ||
@@ -117,23 +155,22 @@ export async function runDocsLinks(args: string[]): Promise<number> {
       }
 
       totalLinks++;
+      let path: string;
+      try {
+        // Strip URL metadata before decoding so %23 and %3F remain filename characters.
+        path = decodeURIComponent(linkUrl.split(/[?#]/, 1)[0] ?? "");
+      } catch {
+        findings.push({ file: relativeFile, link: linkUrl, target: "<invalid URL encoding>" });
+        brokenLinks++;
+        continue;
+      }
       let targets: string[];
-
-      if (linkUrl.startsWith("file:///")) {
-        // Lien absolu virtuel par rapport à la racine du monorepo (ex: file:///docs/PLAN.md)
-        const subPath = linkUrl.replace("file:///", "");
-        targets = [join(ROOT_DIR, subPath)];
-      } else if (webRoutes && linkUrl.startsWith("/")) {
-        // Mint and similar static documentation sites use root-relative routes.
-        // Resolve those routes against the configured docs tree rather than the
-        // workstation filesystem, while requiring a matching source page.
-        targets = documentationRouteCandidates(DOCS_DIR, linkUrl);
+      if (path.startsWith("file:///")) {
+        targets = [join(ROOT_DIR, path.slice("file:///".length))];
+      } else if (webRoutes && path.startsWith("/")) {
+        targets = documentationRouteCandidates(DOCS_DIR, path);
       } else {
-        // Lien relatif (ex: ./database.md ou ../packages/...)
-        // Supprimer l'ancre si elle existe (ex: database.md#cache-redis)
-        const urlWithoutAnchor = linkUrl.split("#")[0] || "";
-        if (!urlWithoutAnchor) continue;
-        targets = [resolve(fileDir, urlWithoutAnchor)];
+        targets = [resolve(fileDir, path)];
       }
 
       const exists = (await Promise.all(targets.map(verifyPath))).some(Boolean);

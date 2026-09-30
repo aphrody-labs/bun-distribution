@@ -93,10 +93,7 @@ function kindOf(path: string): { kind: string; category?: string } {
   // Keep proprietary game dumps and derived fixture datasets in their protected
   // stores. Import adjacent Markdown analysis, but never move structured game
   // data into the source/documentation workspace.
-  if (
-    /^docs\/game-data\/(?:oc|menu-fixtures)\//.test(path) &&
-    !DOC_EXTENSIONS.has(ext)
-  )
+  if (/^docs\/game-data\/(?:oc|menu-fixtures)\//.test(path) && !DOC_EXTENSIONS.has(ext))
     return { kind: "protected-game-data" };
   if (
     DOC_EXTENSIONS.has(ext) ||
@@ -288,11 +285,81 @@ async function rootSnapshot(
   return { root: summary, entries };
 }
 
+export type DocumentationIndexEntry = Pick<Entry, "source" | "kind" | "target"> &
+  Partial<Pick<Entry, "importedTarget">>;
+const DOCUMENTATION_INDEX_MARKER =
+  "<!-- Generated from migration/source-map.json by aphrody-ops consolidation docs-import. -->";
+
+/** Render recorded destinations without accessing their source checkouts. */
+export function renderDocumentationIndex(
+  entries: readonly DocumentationIndexEntry[],
+  aphrodyRoot: string,
+): string {
+  const indexPath = join(aphrodyRoot, "docs/migration/IMPORTED-DOCS-INDEX.md");
+  const groups = new Map<string, DocumentationIndexEntry[]>();
+  for (const entry of entries) {
+    const destination = entry.importedTarget ?? entry.target;
+    if (entry.kind !== "documentation" || !destination?.startsWith("docs/")) continue;
+    if (!resolve(aphrodyRoot, destination).startsWith(`${resolve(aphrodyRoot)}/docs/`))
+      throw new Error(`documentation destination escaped docs: ${destination}`);
+    const category = destination.split("/")[1] ?? "reference";
+    const group = groups.get(category) ?? [];
+    group.push(entry);
+    groups.set(category, group);
+  }
+  const lines = [
+    DOCUMENTATION_INDEX_MARKER,
+    "# Documentation index",
+    "",
+    "Source documents are copied with provenance. Verified local file links are rewritten where their imported targets exist; see [document-import.json](document-import.json) for unresolved references.",
+    "",
+  ];
+  for (const [category, documents] of [...groups].sort(([a], [b]) => a.localeCompare(b))) {
+    lines.push(`## ${category}`, "");
+    for (const entry of documents.toSorted((a, b) =>
+      (a.importedTarget ?? a.target!).localeCompare(b.importedTarget ?? b.target!),
+    )) {
+      const destination = entry.importedTarget ?? entry.target!;
+      const label = destination.split("/").slice(3).join("/") || basename(destination);
+      const href = relative(dirname(indexPath), join(aphrodyRoot, destination)).replaceAll(
+        "\\",
+        "/",
+      );
+      const encodedHref = href
+        .split("/")
+        .map((segment) => encodeURIComponent(segment))
+        .join("/")
+        .replace(/\(/g, "%28")
+        .replace(/\)/g, "%29");
+      lines.push(
+        `- [${label.replaceAll("[", "\\[").replaceAll("]", "\\]")}](${encodedHref}) — ${entry.source}`,
+      );
+    }
+    lines.push("");
+  }
+  return `${lines.join("\n")}\n`;
+}
+
+async function writeDocumentationIndex(
+  aphrodyRoot: string,
+  content: string,
+): Promise<string | null> {
+  const indexPath = join(aphrodyRoot, "docs/migration/IMPORTED-DOCS-INDEX.md");
+  if (existsSync(indexPath)) {
+    const existing = await readFile(indexPath, "utf8");
+    if (!existing.startsWith(DOCUMENTATION_INDEX_MARKER))
+      return "preserved existing handwritten documentation index; no index was written";
+  }
+  await mkdir(dirname(indexPath), { recursive: true });
+  await writeFile(indexPath, content);
+  return null;
+}
+
 export async function runConsolidation(args: string[]): Promise<number> {
   const [action = "inventory", ...rest] = args;
   if (action === "--help" || action === "-h" || action === "help") {
     console.log(
-      "Usage: aphrody-ops consolidation <inventory|submodules-inventory|infra-config-import|infra-scripts-import|source-licenses-import|docs-import|scripts-import> [--owner name] [--source-root path] [--iecode-root path] [--aphrody-root path] [--python-root path]",
+      "Usage: aphrody-ops consolidation <inventory|submodules-inventory|infra-config-import|infra-scripts-import|source-licenses-import|docs-import|docs-index|scripts-import> [--owner name] [--source-root path] [--iecode-root path] [--aphrody-root path] [--python-root path]",
     );
     return 0;
   }
@@ -303,10 +370,11 @@ export async function runConsolidation(args: string[]): Promise<number> {
     action !== "infra-scripts-import" &&
     action !== "source-licenses-import" &&
     action !== "docs-import" &&
+    action !== "docs-index" &&
     action !== "scripts-import"
   )
     throw new Error(
-      "Usage: aphrody-ops consolidation <inventory|submodules-inventory|infra-config-import|infra-scripts-import|source-licenses-import|docs-import|scripts-import> [--owner name] [options]",
+      "Usage: aphrody-ops consolidation <inventory|submodules-inventory|infra-config-import|infra-scripts-import|source-licenses-import|docs-import|docs-index|scripts-import> [--owner name] [options]",
     );
   const options = argsOf(rest);
   const ownerFilter = options.get("--owner");
@@ -321,6 +389,35 @@ export async function runConsolidation(args: string[]): Promise<number> {
   const output = join(aphrodyRoot, "docs/migration/source-map.json");
   const nestedOutput = join(aphrodyRoot, "docs/migration/nested-source-map.json");
   const pythonOutput = join(pythonRoot, "docs/migration/source-map.json");
+  if (action === "docs-index") {
+    if (ownerFilter)
+      throw new Error("docs-index regenerates the complete map; --owner is unsupported");
+    const report = JSON.parse(await readFile(output, "utf8")) as { entries: Entry[] };
+    const entries = report.entries.filter(
+      (entry) =>
+        entry.kind === "documentation" &&
+        (entry.importedTarget ?? entry.target)?.startsWith("docs/"),
+    );
+    const content = renderDocumentationIndex(entries, aphrodyRoot);
+    const missingTargets = entries
+      .map((entry) => entry.importedTarget ?? entry.target!)
+      .filter((destination) => !existsSync(join(aphrodyRoot, destination)));
+    const failure = await writeDocumentationIndex(aphrodyRoot, content);
+    console.log(
+      JSON.stringify(
+        {
+          index: "docs/migration/IMPORTED-DOCS-INDEX.md",
+          sourceMap: "docs/migration/source-map.json",
+          indexedDocuments: entries.length,
+          missingTargets,
+          failures: failure ? [failure] : [],
+        },
+        null,
+        2,
+      ),
+    );
+    return failure || missingTargets.length ? 1 : 0;
+  }
   if (action === "infra-config-import") {
     const result = await importInfraConfig(sourceRoot, aphrodyRoot);
     console.log(JSON.stringify(result, null, 2));
@@ -767,36 +864,11 @@ export async function runConsolidation(args: string[]): Promise<number> {
       }
       entry.importedSourceSha256 = entry.sha256;
     }
-    const indexLines = [
-      "<!-- Generated from migration/source-map.json by aphrody-ops consolidation docs-import. -->",
-      "# Documentation index",
-      "",
-      "Source documents are copied with provenance. Verified local file links are rewritten where their imported targets exist; see [document-import.json](migration/document-import.json) for unresolved references.",
-      "",
-    ];
-    for (const [category, documents] of [...docsByCategory].sort(([a], [b]) =>
-      a.localeCompare(b),
-    )) {
-      indexLines.push(`## ${category}`, "");
-      for (const entry of documents.sort((a, b) => a.target!.localeCompare(b.target!))) {
-        const destination = entry.importedTarget ?? entry.target!;
-        const label = destination.split("/").slice(3).join("/") || basename(destination);
-        const href = relative(join(aphrodyRoot, "docs"), join(aphrodyRoot, destination)).replaceAll(
-          "\\",
-          "/",
-        );
-        indexLines.push(`- [${label.replaceAll("]", "\\]")}](${href}) — ${entry.source}`);
-      }
-      indexLines.push("");
-    }
-    const indexPath = join(aphrodyRoot, "docs/migration/IMPORTED-DOCS-INDEX.md");
-    const generatedIndex = `${indexLines.join("\n")}\n`;
-    if (existsSync(indexPath)) {
-      const existingIndex = await readFile(indexPath, "utf8");
-      if (!existingIndex.startsWith("<!-- Generated from migration/source-map.json"))
-        failures.push("preserved existing generated-docs index; no index was written");
-      else await writeFile(indexPath, generatedIndex);
-    } else await writeFile(indexPath, generatedIndex);
+    const indexFailure = await writeDocumentationIndex(
+      aphrodyRoot,
+      renderDocumentationIndex([...docsByCategory.values()].flat(), aphrodyRoot),
+    );
+    if (indexFailure) failures.push(indexFailure);
     const result = {
       generatedAt: new Date().toISOString(),
       sourceMap: relative(aphrodyRoot, output),
