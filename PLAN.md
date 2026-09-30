@@ -2,6 +2,14 @@
 
 # Aphrody monorepo extraction plan
 
+## Rust crate naming — 2026-10-01
+
+The cross-monorepo convention for new Aphrody platform crates is recorded in
+`docs/architecture/rust-crate-naming.md`. Existing Koharu product and
+Obscura/Taffy vendor package IDs remain compatibility contracts. Aphrody's
+active Cargo workspace metadata currently lists 186 packages: 152 `aphrody*`
+packages, 25 Koharu packages, 8 Obscura packages, and Taffy.
+
 Status: scaffold initialized 2026-09-29. The cross-repository authority is
 [`src/PLAN.md`](../src/PLAN.md); this file tracks this repository's extraction
 and acceptance. Infra's `@aphrody/workspace` is the source of truth for generated
