@@ -1,7 +1,7 @@
 # @aphrody/m3-config
 
-Shared presets for the first-party Material Design 3 packages (`packages/m3-*`, `packages/react`,
-`packages/material-web`). Private; consumed as a `workspace:*` devDependency. Contract and status:
+Shared presets for the first-party Material Design 3 packages (`packages/m3-*`, `packages/ui/m3-react`,
+`packages/ui/material-web`). Private; consumed as a `workspace:*` devDependency. Contract and status:
 [`docs/design/M3-PLAN.md`](../../../../plans/ui/design/M3-PLAN.md), enforced by `bun run bun:check` (rule `m3`).
 
 | Export | Use |

@@ -103,7 +103,7 @@ réception principale. Le domaine `aphrody.com` a été ajouté au compte Resend
 zone OVH. Resend doit encore passer l'état `Pending` après propagation DNS;
 les MX OVH restent en place pour la réception.
 
-Le connecteur Rust est [`aphrody-messaging::ResendConnector`](../../../crates/ai/aphrody-messaging/src/resend.rs).
+Le connecteur Rust est [`aphrody-messaging::ResendConnector`](../../../crates/ai/messaging/src/resend.rs).
 La commande opérateur est `aphrody mail health` (lecture seule), puis
 `aphrody mail send --to ... --subject ... --message ...` pour un envoi explicite.
 Passer `--idempotency-key` pour rendre une relance sûre côté Resend ; la clé

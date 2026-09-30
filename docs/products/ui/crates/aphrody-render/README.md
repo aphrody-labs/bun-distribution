@@ -31,8 +31,8 @@ wasm WebGPU, WebGL, CPU); GPU backends are reported only when `gpu` is compiled.
 
 ## Consumers
 
-- Native: `packages/canvas` and `@aphrody/bun` (`m3Render`, `m3Render3d`).
-- Browser: `packages/canvas/site` and `packages/material-web` (`md-3d-scene`,
+- Native: `packages/ui/canvas` and `@aphrody/bun` (`m3Render`, `m3Render3d`).
+- Browser: `packages/ui/canvas/site` and `packages/ui/material-web` (`md-3d-scene`,
   `md-native-3d`).
 - Tauri: `crates/aphrody-tauri-3d` (native layer under a transparent webview)
   and `crates/aphrody-model-view` (frameless desktop model viewer).

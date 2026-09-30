@@ -370,7 +370,7 @@ Definitions paraphrased; the source page is authoritative.
 ## Composants M3 → éléments `md-*` (Material Web)
 
 Cartographie des composants du glossaire vers leur custom element `md-*`
-(`packages/material-web`). Consommé par le framework — cf. [`M3-FRAMEWORK.md`](./M3-FRAMEWORK.md).
+(`packages/ui/material-web`). Consommé par le framework — cf. [`M3-FRAMEWORK.md`](./M3-FRAMEWORK.md).
 
 | Composant M3                                                                             | Élément `md-*`                                                   | Statut material-web                        |
 | ---------------------------------------------------------------------------------------- | ---------------------------------------------------------------- | ------------------------------------------ |

@@ -5,7 +5,7 @@ import { homedir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import type { docs_v1, drive_v3 } from "googleapis";
 import { googleApi } from "./api.ts";
-import syncContract from "../../../../crates/ai/aphrody-agent-home/sync-contract.json";
+import syncContract from "../../../../crates/ai/agent-home/sync-contract.json";
 
 export const AGENT_HOME_DEFAULT_DOCS: readonly string[] = syncContract;
 const DEFAULT_DOCS = new Set<string>(AGENT_HOME_DEFAULT_DOCS);

@@ -20,7 +20,7 @@ m3.material.io/foundations/glossary). Plan de fusion : [FUSION-PLAN.md](../../..
                           │
    ┌──────────────────────┼───────────────────────────────────────────┐
    ▼                      ▼                                             ▼
- packages/material-web   packages/ui (shadcn)                    packages/tailwindcss
+ packages/ui/material-web   packages/ui (shadcn)                    packages/tailwindcss
  web components md-*     theme-aphrody.json (registry:theme)      @theme inline
  (Lit) héritent direct   --primary: var(--md-sys-color-primary)   --color-*: var(--md-sys-color-*)
    │                      │
@@ -34,7 +34,7 @@ m3.material.io/foundations/glossary). Plan de fusion : [FUSION-PLAN.md](../../..
 | Pilier              | Fork                               | Rôle dans le framework                                                                          |
 | ------------------- | ---------------------------------- | ----------------------------------------------------------------------------------------------- |
 | **Tokens**          | `crates/aphrody-m3-tokens` (Rust, in-tree) | Source de vérité : HCT, palettes tonales, `--md-sys-*`, export CSS + fusion.                    |
-| **Composants**      | `packages/material-web`            | ~82 web components `md-*` (Lit), héritent les `--md-sys-color-*`. Bunisé (n2b).                 |
+| **Composants**      | `packages/ui/material-web`            | ~82 web components `md-*` (Lit), héritent les `--md-sys-color-*`. Bunisé (n2b).                 |
 | **Runtime WC**      | `packages/lit`                     | `@lit/react` (wrap md-\* → React), `labs/gen-wrapper-react`, `labs/ssr-react`/`nextjs`. Bunisé. |
 | **React UI**        | `packages/ui` (shadcn)             | Couche composants React ; thème via `theme-aphrody.json` (`registry:theme`).                    |
 | **Utilitaires CSS** | `packages/tailwindcss`             | Tailwind v4 ; `@theme inline` mappé sur les tokens M3.                                          |

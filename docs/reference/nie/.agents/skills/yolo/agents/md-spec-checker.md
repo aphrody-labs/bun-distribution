@@ -16,7 +16,7 @@ assistant: Invokes md-spec-checker to run the full M3 checklist across the codeb
 
 <example>
 Context: After a partial migration, user wants to know what remains.
-user: What M3 violations are still in packages/react/src after the migration pass?
+user: What M3 violations are still in packages/ui/m3-react/src after the migration pass?
 assistant: Invokes md-spec-checker in read-only mode to produce a targeted findings list, pointing to md-corrector for remediation.
 </example>
 

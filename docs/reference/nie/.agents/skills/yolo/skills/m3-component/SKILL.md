@@ -11,7 +11,7 @@ description: >
 
 Scaffolds a Material Design 3 component end-to-end. Auto-detects context and takes the right path:
 
-- **Mode A** — inside the `material-web` monorepo (detected by `packages/material-web/` + `packages/react/md-elements.txt`): full 3-point wiring via the `add-md-component` skill.
+- **Mode A** — inside the `material-web` monorepo (detected by `packages/ui/material-web/` + `packages/ui/m3-react/md-elements.txt`): full 3-point wiring via the `add-md-component` skill.
 - **Mode B** — any other project (generic React / Lit / plain web): generates a standalone, spec-compliant component skeleton.
 
 ---
@@ -20,8 +20,8 @@ Scaffolds a Material Design 3 component end-to-end. Auto-detects context and tak
 
 Before doing anything, check whether both of these paths exist relative to the project root:
 
-- `packages/material-web/` (directory)
-- `packages/react/md-elements.txt` (file)
+- `packages/ui/material-web/` (directory)
+- `packages/ui/m3-react/md-elements.txt` (file)
 
 If both exist: **Mode A**. Otherwise: **Mode B**.
 
@@ -41,7 +41,7 @@ If any input is ambiguous, infer from the closest existing component and proceed
 
 ### File structure
 
-Create exactly three files under `packages/material-web/<comp>/`:
+Create exactly three files under `packages/ui/material-web/<comp>/`:
 
 ```
 <comp>/<comp>.ts                     # @customElement + export class + HTMLElementTagNameMap
@@ -53,7 +53,7 @@ Create exactly three files under `packages/material-web/<comp>/`:
 
 **Point 1 — bundle export**
 
-Add to `packages/material-web/aphrody-components.ts`:
+Add to `packages/ui/material-web/aphrody-components.ts`:
 
 ```ts
 export * from "./<comp>/<comp>.js";
@@ -61,12 +61,12 @@ export * from "./<comp>/<comp>.js";
 
 **Point 2 — register the tag**
 
-Append the tag on a new line in `packages/react/md-elements.txt`.
+Append the tag on a new line in `packages/ui/m3-react/md-elements.txt`.
 
 **Point 3 — regenerate React wrappers**
 
 ```bash
-cd packages/react && bun run generate.mjs
+cd packages/ui/m3-react && bun run generate.mjs
 ```
 
 Check stdout: the tag must NOT appear under "Unresolved". If it does, the `@customElement … export class` lines are not consecutive or the export is missing from `aphrody-components.ts`.
@@ -78,11 +78,11 @@ bunx turbo run build
 # compiled .js files are gitignored; turbo build refreshes them first
 # components that import each other read the compiled .js, not .ts
 
-cd packages/material-web && bunx tsc -p tsconfig.json --noEmit
+cd packages/ui/material-web && bunx tsc -p tsconfig.json --noEmit
 # strict + noUnusedLocals: catches TS6133/TS7011 that --skipLibCheck hides
 # use bun run typecheck:fast (tsgo) for speed during iteration; tsc remains canonical
 
-cd packages/material-web && bun run build:aphrody
+cd packages/ui/material-web && bun run build:aphrody
 # self-contained dist-aphrody bundle
 ```
 
@@ -91,9 +91,9 @@ Do not claim success until `tsc --noEmit` is clean and the tag is resolved by `g
 ### Gotchas
 
 - **Decorator + export class must be on consecutive lines.** `generate.mjs` regex: `/@customElement\(\s*['"]([a-z0-9-]+)['"]\s*\)\s*\nexport class (\w+)/`. A blank line or comment between them breaks resolution.
-- **Never hand-edit** `packages/react/wrappers/*.ts` or `packages/react/index.ts` — both are auto-generated and will be overwritten on the next `generate.mjs` run.
+- **Never hand-edit** `packages/ui/m3-react/wrappers/*.ts` or `packages/ui/m3-react/index.ts` — both are auto-generated and will be overwritten on the next `generate.mjs` run.
 - **Auto-formatter** (`post-edit-format.sh`) rewrites quotes and indentation after every `Edit`/`Write`. Single or double quotes in `@customElement(...)` are both accepted by the regex. If an edit keeps reverting, use `sed -i` to bypass the hook.
-- **Custom events**: if the component fires events, add them to `EVENTS_BY_TAG` in `packages/react/generate.mjs` before running point 3. Verify the event string against the actual `new CustomEvent('...')` call — do not guess.
+- **Custom events**: if the component fires events, add them to `EVENTS_BY_TAG` in `packages/ui/m3-react/generate.mjs` before running point 3. Verify the event string against the actual `new CustomEvent('...')` call — do not guess.
 
 ### Lit best practices (enforced by strict build)
 

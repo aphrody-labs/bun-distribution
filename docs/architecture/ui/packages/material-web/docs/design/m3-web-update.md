@@ -3,7 +3,7 @@
 # Mise à jour « M3 Web » (material-web) depuis le scrape récursif du glossaire
 
 > **MAJ 2026-05-22 — catalogue complété.** Les 12 composants manquants sont
-> désormais livrés dans `packages/material-web` en Lit auto-suffisant (css
+> désormais livrés dans `packages/ui/material-web` en Lit auto-suffisant (css
 > inline + tokens `--md-sys-*`, sans pipeline SASS) : `md-snackbar`,
 > `md-top-app-bar`/`md-bottom-app-bar`, `md-navigation-rail`(+item),
 > `md-search-bar`, `md-toolbar`, `md-bottom-sheet`, `md-side-sheet`,
@@ -16,13 +16,13 @@
 > `labs/` stables (badge, cards, navigation bar/drawer/tab, segmented button)
 > sont promus via `aphrody-labs.ts`. Tout est branché dans `all.ts` (via
 > `aphrody-components.ts`) + wrappers React dans `apps/m3-react`. Détail :
-> [`packages/material-web/APHRODY-M3.md`](../../../../../../reference/ui/packages/material-web/docs/material-web/APHRODY-M3.md).
+> [`packages/ui/material-web/APHRODY-M3.md`](../../../../../../reference/ui/packages/material-web/docs/material-web/APHRODY-M3.md).
 > Validation : `tsc --noEmit` exit 0 sur les 24 custom elements (flags stricts
 > du projet : noUnusedLocals, noImplicitOverride, noImplicitReturns,
 > noPropertyAccessFromIndexSignature).
 
 Consolide le **scrape récursif** de Material Design 3 — index glossaire +
-toutes les pages composants — en un plan d'update concret pour `packages/material-web`
+toutes les pages composants — en un plan d'update concret pour `packages/ui/material-web`
 (le « M3 web »). Référence : [`m3-glossary.md`](./m3-glossary.md),
 [`m3-components-spec.md`](./m3-components-spec.md), [`DESIGN-PACKAGE.md`](../../../../docs/design/DESIGN-PACKAGE.md).
 
@@ -40,7 +40,7 @@ toutes les pages composants — en un plan d'update concret pour `packages/mater
     (40 fichiers). Le glossaire liste chaque composant avec un lien « Learn more » ;
     ces 35 pages cibles ont toutes été scrapées (= récursif sur les composants).
 
-## État de couverture M3 web (`packages/material-web`)
+## État de couverture M3 web (`packages/ui/material-web`)
 
 35 composants M3 × custom elements `md-*` (détail dans `m3-components-spec.md`) :
 
@@ -79,7 +79,7 @@ génération vit dans `labs/gb/` (non publié).
 
 - **lit** (`packages/lit`) : forké (`aphrody-code/lit`), config oxc/bun synchronisée,
   **bunisé via `n2b --fix`** (125 fichiers : `node:` prefixes, `Bun.file`…).
-- **material-web** (`packages/material-web`) : **bunisé via `n2b --fix`** (21 fichiers),
+- **material-web** (`packages/ui/material-web`) : **bunisé via `n2b --fix`** (21 fichiers),
   config oxc/bun synchronisée.
 - Sync toolchain des 5 forks : `just sync-packages` (oxlint + oxfmt + n2b report).
 - Bridge React moderne : `apps/m3-react` (TS6, `tsc --noEmit` + oxlint verts).

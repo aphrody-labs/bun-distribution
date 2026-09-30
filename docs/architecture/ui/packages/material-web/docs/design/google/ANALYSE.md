@@ -213,7 +213,7 @@ Captures dans ce dossier : `google.png` (accueil), `ai_mode.png` (AI Mode + auto
   (défini une seule fois en custom property). Fonctionne en light **et** dark (toggle + seed picker
   Material You déjà présents dans le showcase).
 - **Composants réels uniquement** : n'utiliser que des exports `Md*` réellement présents dans
-  `@aphrody/m3-react` (cf. `packages/react/index.ts`). Pas de composant inventé.
+  `@aphrody/m3-react` (cf. `packages/ui/m3-react/index.ts`). Pas de composant inventé.
 - **Icônes Material Symbols** via `MdIcon` (texte enfant = ligature) ; la police variable est chargée par
   le showcase (plages d'axes) — sparkle = `auto_awesome`.
 - **Style** : tabs + double-quotes (formatter), header SPDX sur les fichiers `.ts/.tsx`, pas d'emoji, bun only.

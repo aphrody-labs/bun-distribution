@@ -172,4 +172,4 @@ aphrody-ui checkout:
 - `packages/app-ui/src/tauri-bridge.ts`, `codex-chat.tsx`, `routes/explorer/`, `routes/tasks/`,
   `models-hub.tsx`, `stores/aphrodyJobStore.ts`
 - `crates/aphrody-app/`, `crates/aphrody-render/`, `crates/aphrody-render3d/`,
-  `packages/canvas/`
+  `packages/ui/canvas/`

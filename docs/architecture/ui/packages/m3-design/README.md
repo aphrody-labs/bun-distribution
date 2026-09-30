@@ -68,7 +68,7 @@ Exposes the compiler via a Bun-native REST API server and a direct terminal CLI 
 ## Getting Started
 
 > [!NOTE]
-> bun only — `npm` and `pnpm` are not used in this monorepo. Run all tasks from this package directory (`packages/m3-design/`).
+> bun only — `npm` and `pnpm` are not used in this monorepo. Run all tasks from this package directory (`packages/ui/m3-design/`).
 
 ### Running via CLI
 

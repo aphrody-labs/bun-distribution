@@ -8,7 +8,6 @@
       "packages/discord/*",
       "packages/shenron/*",
       "packages/infra/*",
-      "packages/m3*",
       "packages/web/*",
       "apps/web/*",
       "apps/shenron/*",
@@ -19,13 +18,11 @@
       "packages/rg/patreon-bun/examples/*",
       "packages/rg/patreon-bun/docs",
       "packages/compat/*",
-      "packages/canvas",
-      "packages/eslint-plugin-m3",
-      "packages/material-web",
       "packages/os/*",
       "packages/koharu/*",
       "packages/fut/*",
-      "packages/react"
+      "packages/ui/*",
+      "packages/interop/*"
     ],
     "catalog": {
       "@types/bun": "1.4.2",
@@ -249,12 +246,12 @@
   },
   "type": "module",
   "scripts": {
-    "bun:check": "bun packages/infra/aphrody-workspace/src/ops.ts bun-workspace --root .",
+    "bun:check": "bun packages/infra/workspace/src/ops.ts bun-workspace --root .",
     "typecheck": "bun run --filter @aphrody/workspace typecheck",
     "test": "bun run --filter @aphrody/workspace test",
     "lint": "bun run --filter @aphrody/workspace lint",
     "format:check": "bun run --filter @aphrody/workspace format:check",
-    "workspace:doctor:iecode": "bun packages/infra/aphrody-workspace/src/ops.ts iecode-doctor --root ../iecode",
+    "workspace:doctor:iecode": "bun packages/infra/workspace/src/ops.ts iecode-doctor --root ../iecode",
     "ai:build": "turbo run build --filter=\"@aphrody/*\"",
     "ai:typecheck": "turbo run typecheck --filter=\"@aphrody/*\"",
     "ai:test": "turbo run test --filter=\"@aphrody/*\"",
@@ -272,10 +269,14 @@
     "bench:rust": "bun scripts/tools/ai/scripts/bench-rust-surface.ts",
     "bench:bun": "bun scripts/tools/ai/scripts/bench-bun-surface.ts",
     "bench:python": "bun scripts/tools/ai/scripts/bench-python-surface.ts",
-    "rg:status": "bun packages/infra/aphrody-workspace/src/ops.ts rg status",
-    "rg:pipeline": "bun packages/infra/aphrody-workspace/src/ops.ts rg pipeline",
-    "rg:pipeline:plan": "bun packages/infra/aphrody-workspace/src/ops.ts rg pipeline --dry-run",
-    "docs:check-links": "bun packages/infra/aphrody-workspace/src/ops.ts docs-links --root . --docs docs --scope repository"
+    "rg:status": "bun packages/infra/workspace/src/ops.ts rg status",
+    "rg:pipeline": "bun packages/infra/workspace/src/ops.ts rg pipeline",
+    "rg:pipeline:plan": "bun packages/infra/workspace/src/ops.ts rg pipeline --dry-run",
+    "docs:check-links": "bun packages/infra/workspace/src/ops.ts docs-links --root . --docs docs --scope repository",
+    "monorepo:layout": "bun packages/infra/workspace/src/ops.ts workspace-layout --root .",
+    "monorepo:state": "bun packages/infra/workspace/src/ops.ts repository-state --root .",
+    "monorepo:clean": "bun packages/infra/workspace/src/ops.ts workspace-clean --root .",
+    "infra:pipeline:sync": "bun packages/infra/workspace/src/ops.ts pipeline-catalog --root . --apply"
   },
   "devDependencies": {
     "@types/bun": "catalog:",

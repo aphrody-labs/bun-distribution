@@ -2,7 +2,7 @@
 
 # Parité Angular Material ↔ aphrody material-web
 
-Vérification d'équivalence (2026-05-23) de notre fork `packages/material-web`
+Vérification d'équivalence (2026-05-23) de notre fork `packages/ui/material-web`
 (base `@material/web` + extensions `aphrody-components.ts` + labs promus) face à
 **Angular Material** (`angular/components`, `src/material/*` + `src/cdk/*`,
 upstream reference source).
@@ -85,4 +85,4 @@ textarea autosize.
 
 Clone sparse de référence d’`angular/components`, limité à :
 `src/material`, `src/cdk`, `src/material-experimental`. Re-cloner pour
-rafraîchir. Notre bundle : [`packages/material-web/APHRODY-M3.md`](../../../../../../reference/ui/packages/material-web/docs/material-web/APHRODY-M3.md).
+rafraîchir. Notre bundle : [`packages/ui/material-web/APHRODY-M3.md`](../../../../../../reference/ui/packages/material-web/docs/material-web/APHRODY-M3.md).

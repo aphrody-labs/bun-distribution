@@ -1,0 +1,78 @@
+{
+  "name": "@aphrody/material-web",
+  "version": "3.3.3",
+  "description": "Material Design 3 web components (Lit) \u2014 MUI + MUI X migration target",
+  "keywords": [
+    "components",
+    "design system",
+    "lit",
+    "material",
+    "material design",
+    "web components"
+  ],
+  "homepage": "https://github.com/aphrody-code/material-web/tree/main/packages/material-web#readme",
+  "bugs": {
+    "url": "https://github.com/aphrody-code/material-web/issues"
+  },
+  "license": "Apache-2.0",
+  "author": "aphrody-code",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/aphrody-code/material-web.git",
+    "directory": "packages/ui/material-web"
+  },
+  "files": [
+    "**/*.js",
+    "**/*.js.map",
+    "**/*.d.ts",
+    "**/*.scss",
+    "**/*.css",
+    "**/*.css.map",
+    "!web-test-runner.config.js",
+    "!**/test/**",
+    "!**/*_test.*",
+    "!.wireit/**",
+    "!scripts/",
+    "!**/testing/**",
+    "testing/harness.{js,js.map,d.ts}",
+    "testing/transform-pseudo-classes.{js,js.map,d.ts}"
+  ],
+  "type": "module",
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "bun scripts/build.ts",
+    "build:ts": "bun scripts/build.ts ts",
+    "build:css-to-ts": "bun scripts/build.ts css-to-ts",
+    "build:sass": "bun scripts/build.ts sass",
+    "build:aphrody": "bun run aphrody-build.ts",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "typecheck:fast": "tsgo -p tsconfig.json --noEmit",
+    "typecheck:aphrody": "tsc -p tsconfig.aphrody.json",
+    "typecheck:bun": "tsc -p tsconfig.bun.json --noEmit",
+    "test": "bun run build && bun test",
+    "test:browser": "bun tests-web/run.ts"
+  },
+  "dependencies": {
+    "@aphrody/canvas": "workspace:*",
+    "@lit/context": "catalog:",
+    "lit": "catalog:",
+    "three": "catalog:",
+    "tslib": "catalog:"
+  },
+  "devDependencies": {
+    "@aphrody/bun": "workspace:*",
+    "@aphrody/m3-config": "workspace:*",
+    "@types/node": "catalog:",
+    "@types/three": "catalog:",
+    "@typescript/native-preview": "catalog:",
+    "bun-types": "catalog:",
+    "sass-embedded": "^1.100.0",
+    "sass-true": "catalog:",
+    "typescript": "catalog:"
+  },
+  "engines": {
+    "bun": ">=1.4.2"
+  }
+}

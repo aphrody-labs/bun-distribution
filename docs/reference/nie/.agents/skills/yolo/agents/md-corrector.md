@@ -171,7 +171,7 @@ Then verify the build:
 
 ```bash
 bunx turbo run build
-cd packages/material-web && bunx tsc -p tsconfig.json --noEmit
+cd packages/ui/material-web && bunx tsc -p tsconfig.json --noEmit
 ```
 
 Do not declare done until:

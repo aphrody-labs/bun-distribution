@@ -34,7 +34,7 @@ availability comes from the running binary and its negotiated capabilities.
 ## AI service contracts
 
 - Shared protocol types describe the wire vocabulary. The implemented
-  [app-server dispatcher](../../../crates/ai/aphrody-app-server/src/lib.rs) and its
+  [app-server dispatcher](../../../crates/ai/app-server/src/lib.rs) and its
   handlers determine the supported subset.
 - The desktop uses persistent stdio. The local HTTP app-server also has
   `/rpc` and an SSE `/events` transport; HTTP support is not evidence of a

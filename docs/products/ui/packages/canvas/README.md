@@ -90,7 +90,7 @@ Copies are byte-identical after line-ending normalization to LF.
 
 ```sh
 git -C third_party/canvas fetch && git -C third_party/canvas checkout <reviewed-sha>
-cd packages/canvas
+cd packages/ui/canvas
 bun run vendor            # rewrites vendor/, scene-types.d.ts and optionalDependencies
 # bump "version" to <upstream-version>-aphrody.1 and aphrodyCanvasVersion in site.ts,
 # site.d.ts and index.d.ts, then run the gates below
@@ -99,7 +99,7 @@ bun run vendor            # rewrites vendor/, scene-types.d.ts and optionalDepen
 ## Validation
 
 ```sh
-cd packages/canvas
+cd packages/ui/canvas
 bun test                  # contract, native encode (PNG/WebP/AVIF), vendor drift, manifest
 bun run typecheck         # sources, then published declarations with skipLibCheck: false
 bun run lint && bun run format:check
@@ -115,5 +115,5 @@ no `workspace:` or `catalog:` specifier, so the packed `package.json` is the reg
 `package.json`. Manual equivalent, run by the owner:
 
 ```sh
-cd packages/canvas && bun publish --access public --tag latest --registry https://registry.npmjs.org
+cd packages/ui/canvas && bun publish --access public --tag latest --registry https://registry.npmjs.org
 ```

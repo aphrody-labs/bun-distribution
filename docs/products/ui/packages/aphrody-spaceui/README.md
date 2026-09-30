@@ -6,11 +6,11 @@ It is excluded from the Aphrody Bun workspace and is not a build or publishing t
 
 Maintained components live in first-party packages:
 
-- `packages/m3-primitives`
-- `packages/m3-forms`
-- `packages/m3-ai`
-- `packages/m3-explorer`
-- `packages/m3-theme`
+- `packages/ui/m3-primitives`
+- `packages/ui/m3-forms`
+- `packages/ui/m3-ai`
+- `packages/ui/m3-explorer`
+- `packages/ui/m3-theme`
 - `packages/assets`
 - `examples/m3-spaceui-showcase`
 

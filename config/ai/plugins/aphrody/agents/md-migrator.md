@@ -178,7 +178,7 @@ Fix all type errors before reporting the migration complete. For the monorepo sp
 
 ```bash
 bunx turbo run build
-cd packages/material-web && bunx tsc -p tsconfig.json --noEmit
+cd packages/ui/material-web && bunx tsc -p tsconfig.json --noEmit
 ```
 
 ## Component coverage reference

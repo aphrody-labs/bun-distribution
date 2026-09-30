@@ -61,7 +61,7 @@ every 50 ms. SSE, notification drains, and turn polling consume shared queues;
 concurrent consumers can take events from one another. SSE has no sequence ID
 or reconnect cursor. Use one notification consumer per server instance until
 the subscription/replay contract is implemented. See
-[`serve_stdio_with_server`, `http_events`, and `drain_notifications`](../../../../../crates/ai/aphrody-app-server/src/lib.rs).
+[`serve_stdio_with_server`, `http_events`, and `drain_notifications`](../../../../../crates/ai/app-server/src/lib.rs).
 
 The legacy string `input` and explicit `waitForCompletion` extension remain
 available. HTTP holds the shared server mutex while handling an RPC, so a
@@ -70,7 +70,7 @@ delivery. New clients should use array input and asynchronous turns.
 
 ## Implemented method surface
 
-The dispatch table in [`src/lib.rs`](../../../../../crates/ai/aphrody-app-server/src/lib.rs) is authoritative. Supported
+The dispatch table in [`src/lib.rs`](../../../../../crates/ai/app-server/src/lib.rs) is authoritative. Supported
 methods include Codex-shaped methods and Aphrody extensions; their presence
 does not imply identical semantics to every upstream method with the same name.
 
@@ -99,7 +99,7 @@ with `arguments: null` and a final `{ "ok": ... }` result. This projection does
 not carry their actual arguments, detailed results, shell output deltas, patch
 diffs, or reasoning events. The runtime also constructs the shell tool without
 its optional output sink; see
-[`build_tool_registry`](../../../../../crates/ai/aphrody-agent-runtime/src/tools.rs).
+[`build_tool_registry`](../../../../../crates/ai/agent-runtime/src/tools.rs).
 
 Completing this path requires typed tool events, cancellation propagated into
 active tools, independent subscriptions with replay, and measured engine-to-UI

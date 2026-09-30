@@ -739,7 +739,10 @@ interface MetaPackage {
 
 export function collect(root: string): Ecosystem {
   const roles = readRoles(root);
-  const repoNames = [...APHRODY_REPOS, ...EXPERIMENTS, ...SHARED_REPOS].filter((repo) => existsSync(join(root, repo)));
+  const candidates = existsSync(join(root, "aphrody", "Cargo.toml"))
+    ? ["aphrody", "aphrody-py", "iecode"]
+    : [...APHRODY_REPOS, ...EXPERIMENTS, ...SHARED_REPOS];
+  const repoNames = candidates.filter((repo) => existsSync(join(root, repo)));
   const repos: RepoInfo[] = [];
   const index = new ClapIndex();
   const binTargets: { binary: string; crate: string; repo: string; src: string; libSrc?: string; usesClap: boolean }[] = [];
@@ -755,8 +758,8 @@ export function collect(root: string): Ecosystem {
     const dir = join(root, repo);
     const info: RepoInfo = {
       name: repo,
-      kind: APHRODY_REPOS.includes(repo) ? "aphrody" : SHARED_REPOS.includes(repo) ? "shared" : "experiment",
-      role: roles.get(repo) ?? (repo === "aphrody-discord" ? "Shared Discord transport, protocol contracts and framework adapters for Aphrody applications" : ""),
+      kind: ["aphrody", "aphrody-py", "iecode"].includes(repo) || APHRODY_REPOS.includes(repo) ? "aphrody" : SHARED_REPOS.includes(repo) ? "shared" : "experiment",
+      role: ({ aphrody: "Canonical Rust/Bun monorepo", "aphrody-py": "Active Python workspace", iecode: "Active game-domain workspace" } as Record<string, string>)[repo] ?? roles.get(repo) ?? (repo === "aphrody-discord" ? "Shared Discord transport, protocol contracts and framework adapters for Aphrody applications" : ""),
       crates: [],
       bunPackages: [],
       pythonPackages: [],

@@ -44,12 +44,12 @@ La cible est une intégration native dans le monorepo Aphrody, avec des proprié
 Depuis la racine Aphrody:
 
 ```sh
-bun packages/infra/aphrody-workspace/src/ops.ts rg status
-bun packages/infra/aphrody-workspace/src/ops.ts rg check lint
-bun packages/infra/aphrody-workspace/src/ops.ts rg check test --package @rosegriffon/website
-bun packages/infra/aphrody-workspace/src/ops.ts rg migrate inventory
-bun packages/infra/aphrody-workspace/src/ops.ts rg migrate scripts
-bun packages/infra/aphrody-workspace/src/ops.ts rg deploy --target <cible-infra>
+bun packages/infra/workspace/src/ops.ts rg status
+bun packages/infra/workspace/src/ops.ts rg check lint
+bun packages/infra/workspace/src/ops.ts rg check test --package @rosegriffon/website
+bun packages/infra/workspace/src/ops.ts rg migrate inventory
+bun packages/infra/workspace/src/ops.ts rg migrate scripts
+bun packages/infra/workspace/src/ops.ts rg deploy --target <cible-infra>
 ```
 
 Le déploiement appelle l’adaptateur `aphrody-infra` pour `rg`; il reste en plan tant que `--apply` n’est pas fourni. Les contrôles lancent uniquement les scripts déclarés dans les manifestes RG copiés. Le sous-ensemble migré doit conserver ses fichiers `.env` hors index Git.

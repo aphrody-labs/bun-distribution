@@ -2,6 +2,7 @@
 /** Safe, repeatable source sync for first-party Git workspaces. */
 import { existsSync, mkdirSync, openSync, readFileSync, readdirSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
+import { homedir } from "node:os";
 
 type Result = { code: number; stdout: string; stderr: string };
 type Row = Record<string, unknown> & { repo: string; status: string; action: string };
@@ -28,7 +29,8 @@ const infra = resolve(import.meta.dir, "..");
 const workspace = resolve(infra, "..");
 const identity = { name: "aphrody-code", email: "contact@aphrody.com" };
 const owners = new Set(["aphrody-code", "aphrody-labs"]);
-const lockPath = join(infra, "target", "source-sync.lock");
+const stateRoot = join(process.env.XDG_STATE_HOME ?? join(homedir(), ".local", "state"), "aphrody", "source-sync");
+const lockPath = join(stateRoot, "source-sync.lock");
 
 function run(repo: string, ...command: string[]): Result {
   const proc = Bun.spawnSync(command, { cwd: repo, stdout: "pipe", stderr: "pipe", env: process.env });
@@ -134,7 +136,7 @@ function syncOne(name: string): Row {
   }
 }
 function writeReport(report: Record<string, unknown>): void {
-  const reportDir = join(infra, "target", "research");
+  const reportDir = stateRoot;
   mkdirSync(reportDir, { recursive: true });
   const destination = join(reportDir, "source-sync.json");
   const temporary = `${destination}.${process.pid}.tmp`;
@@ -160,7 +162,7 @@ function tick(): Row[] {
   return rows;
 }
 function acquireLock(): void {
-  mkdirSync(join(infra, "target"), { recursive: true });
+  mkdirSync(stateRoot, { recursive: true });
   try {
     const descriptor = openSync(lockPath, "wx", 0o600);
     writeFileSync(descriptor, `${JSON.stringify({ pid: process.pid, startedAt: new Date().toISOString() })}\n`);

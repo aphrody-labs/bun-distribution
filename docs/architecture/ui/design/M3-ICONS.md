@@ -9,7 +9,7 @@ loaded at runtime. The fonts in `crates/aphrody-icons/material-symbols/*.woff2`
 crates/aphrody-icons (svg feature)  WOFF2 decode -> variable instance -> outline -> SVG path
 crates/aphrody-bun                  bun_rs_icon_svg, bun_rs_icon_names (native FFI)
 packages/bun                        m3Icon(options), m3IconNames(style)
-packages/m3-icons                   <M3Icon>, <m3-icon>, generateIcons, m3IconPlugin
+packages/ui/m3-icons                   <M3Icon>, <m3-icon>, generateIcons, m3IconPlugin
 ```
 
 ## Rust (`aphrody-icons`, feature `svg`)

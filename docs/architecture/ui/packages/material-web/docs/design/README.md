@@ -4,7 +4,7 @@
 
 Specs M3 paraphrasées (valeurs numériques : dp, rayons, rôles de couleur,
 niveaux d'élévation, durées/courbes de motion) servant de **source de vérité
-design** pour `packages/material-web`, `packages/m3-tokens`, `packages/m3-motion`
+design** pour `packages/ui/material-web`, `packages/m3-tokens`, `packages/ui/m3-motion`
 et le kit de migration MUI (`migration/`). Aucune phrase n'est recopiée de la
 documentation Google ; seules les valeurs (faits non protégeables) le sont.
 Source : <https://m3.material.io>.
@@ -27,7 +27,7 @@ Source : <https://m3.material.io>.
 | Doc                                                      | Contenu                                                                     |
 | -------------------------------------------------------- | --------------------------------------------------------------------------- |
 | [`m3-styles.md`](./m3-styles.md)                         | Color (HCT), typescale, **shape (10 niveaux)**, elevation, motion, spacing  |
-| [`m3-motion.md`](../../../../_source/packages/material-web/docs/design/m3-motion.md)                         | Courbes d'easing (7) + durées (16) — confronté à `packages/m3-motion`       |
+| [`m3-motion.md`](../../../../_source/packages/material-web/docs/design/m3-motion.md)                         | Courbes d'easing (7) + durées (16) — confronté à `packages/ui/m3-motion`       |
 | [`m3-layout.md`](./m3-layout.md)                         | Window size classes (600/840/1200/1600), panes, navigation adaptive, marges |
 | [`aphrody-m3-tokens.md`](./aphrody-m3-tokens.md)         | Exemple de thème (rôles dark/light dérivés d'un seed HCT)                   |
 | [`aphrody-m3-theme.json`](./aphrody-m3-theme.json)       | Le même thème en JSON (seed + palettes)                                     |
@@ -61,7 +61,7 @@ famille Google Sans, transparent screens) **incluant du contexte brand aphrody/G
 - **Définir/vérifier un composant** → `m3-components-spec.md` + `m3-styles.md`
 - **Tokens couleur (seed → rôles)** → `packages/m3-tokens/dynamic-color` ; exemple : `aphrody-m3-theme.json`
 - **Layout adaptive (breakpoints/panes/nav)** → `m3-layout.md` ↔ `packages/m3-tokens/src/breakpoints.ts`
-- **Motion (easing/durées)** → `m3-motion.md` ↔ `packages/m3-motion`
+- **Motion (easing/durées)** → `m3-motion.md` ↔ `packages/ui/m3-motion`
 - **Parité de couverture** → `angular-material-parity.md`, `m3-components-spec.md`
 
 ## État de conformité (vérifié 2026-05-29)

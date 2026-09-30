@@ -1,6 +1,12 @@
 {
   "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["typescript", "unicorn", "oxc", "promise", "import"],
+  "plugins": [
+    "typescript",
+    "unicorn",
+    "oxc",
+    "promise",
+    "import"
+  ],
   "categories": {
     "correctness": "error",
     "suspicious": "warn",
@@ -30,7 +36,6 @@
     ".git/**",
     ".claude/**",
     "py/**",
-    "packages/**",
     "apps/photoshop-*/**",
     "crates/**/assets/**",
     "docs/**/screenshots/**",
@@ -40,7 +45,11 @@
   ],
   "overrides": [
     {
-      "files": ["**/*.test.ts", "**/*.spec.ts", "**/*.test.js"],
+      "files": [
+        "**/*.test.ts",
+        "**/*.spec.ts",
+        "**/*.test.js"
+      ],
       "rules": {
         "@typescript-eslint/no-explicit-any": "off",
         "no-console": "off"

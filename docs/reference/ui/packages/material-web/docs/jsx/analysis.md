@@ -134,7 +134,7 @@ React 19 introduces a revised runtime representation of JSX elements, and couple
 
 ### 2.1 Runtime Representation: `ReactElement` and Key/Ref Extraction
 
-At runtime, JSX translates to calls to `react/jsx-runtime` (`jsx`, `jsxs`). These functions are defined in [ReactJSXElement.js](file:///tmp/react/packages/react/src/jsx/ReactJSXElement.js).
+At runtime, JSX translates to calls to `react/jsx-runtime` (`jsx`, `jsxs`). These functions are defined in [ReactJSXElement.js](file:///tmp/react/packages/ui/m3-react/src/jsx/ReactJSXElement.js).
 
 #### transitional Element Tagging
 In React 19, elements are tagged with transitional symbols. Looking at [ReactSymbols.js](file:///tmp/react/packages/shared/ReactSymbols.js#L15):
@@ -151,7 +151,7 @@ Transitional elements are labeled with `Symbol.for('react.transitional.element')
 Historically, React extracted both `key` and `ref` out of the config object, omitting them from the child's `props`. 
 In React 19, **`ref` is now a regular prop**. It is passed down directly within the `props` object.
 
-Looking at `ReactElement` constructor in [ReactJSXElement.js:L170](file:///tmp/react/packages/react/src/jsx/ReactJSXElement.js#L170):
+Looking at `ReactElement` constructor in [ReactJSXElement.js:L170](file:///tmp/react/packages/ui/m3-react/src/jsx/ReactJSXElement.js#L170):
 
 ```javascript
 function ReactElement(type, key, props, owner, debugStack, debugTask) {

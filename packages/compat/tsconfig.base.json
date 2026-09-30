@@ -21,10 +21,10 @@
     "allowImportingTsExtensions": true,
     "paths": {
       "@aphrody/n2b-core": [
-        "./n2b/src/index.ts"
+        "./n2b-client/src/index.ts"
       ],
       "@aphrody/n2b-core/*": [
-        "./n2b/src/*"
+        "./n2b-client/src/*"
       ],
       "@aphrody/n2b-types": [
         "./n2b-types/src/index.ts"

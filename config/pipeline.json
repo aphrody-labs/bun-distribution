@@ -1,690 +1,2088 @@
 {
   "schemaVersion": 1,
-  "name": "aphrody-production-pipeline",
-  "authority": "aphrody-infra",
-  "workspaceRoot": "../src",
-  "runners": {
-    "bun": "package.json scripts (default)",
-    "just": "Justfile recipes of the Rust category repositories"
-  },
-  "nextPolicy": {
-    "major": 16,
-    "channel": "canary",
-    "singleBuildPerRelease": true
-  },
+  "name": "aphrody-monorepo-validation",
+  "authority": "@aphrody/workspace",
+  "workspaceRoot": "..",
   "stages": [
     {
-      "id": "format",
-      "parallel": true,
-      "steps": [
-        {
-          "repo": "aphrody-infra",
-          "command": [
-            "run",
-            "format:check"
-          ]
-        },
-        {
-          "repo": "aphrody-ai",
-          "command": [
-            "run",
-            "fmt:check"
-          ]
-        },
-        {
-          "repo": "aphrody-os",
-          "command": [
-            "run",
-            "format",
-            "--",
-            "--check"
-          ]
-        },
-        {
-          "repo": "aphrody-os",
-          "runner": "just",
-          "command": [
-            "fmt-check"
-          ]
-        },
-        {
-          "repo": "aphrody-ui",
-          "command": [
-            "run",
-            "format",
-            "--",
-            "--check"
-          ]
-        },
-        {
-          "repo": "aphrody-web",
-          "command": [
-            "run",
-            "format",
-            "--",
-            "--check"
-          ]
-        },
-        {
-          "repo": "aphrody-compat",
-          "command": [
-            "run",
-            "format",
-            "--",
-            "--check"
-          ]
-        },
-        {
-          "repo": "aphrody-contracts",
-          "runner": "just",
-          "command": [
-            "fmt-check"
-          ]
-        },
-        {
-          "repo": "aphrody-shell",
-          "runner": "just",
-          "command": [
-            "fmt-check"
-          ]
-        },
-        {
-          "repo": "aphrody-native",
-          "runner": "just",
-          "command": [
-            "fmt-check"
-          ]
-        },
-        {
-          "repo": "rg",
-          "command": [
-            "run",
-            "format:check"
-          ]
-        },
-        {
-          "repo": "shenron",
-          "command": [
-            "run",
-            "format:check"
-          ]
-        },
-        {
-          "repo": "nie",
-          "command": [
-            "run",
-            "docs:check"
-          ]
-        },
-        {
-          "repo": "iecode",
-          "command": [
-            "run",
-            "format:check"
-          ]
-        }
-      ]
-    },
-    {
-      "id": "lint",
-      "parallel": true,
-      "steps": [
-        {
-          "repo": "aphrody-infra",
-          "command": [
-            "run",
-            "lint"
-          ]
-        },
-        {
-          "repo": "aphrody-ai",
-          "command": [
-            "run",
-            "lint"
-          ]
-        },
-        {
-          "repo": "aphrody-ai",
-          "runner": "just",
-          "command": [
-            "clippy"
-          ]
-        },
-        {
-          "repo": "aphrody-os",
-          "command": [
-            "run",
-            "lint"
-          ]
-        },
-        {
-          "repo": "aphrody-os",
-          "runner": "just",
-          "command": [
-            "clippy"
-          ]
-        },
-        {
-          "repo": "aphrody-ui",
-          "command": [
-            "run",
-            "lint"
-          ]
-        },
-        {
-          "repo": "aphrody-ui",
-          "runner": "just",
-          "command": [
-            "clippy"
-          ]
-        },
-        {
-          "repo": "aphrody-web",
-          "command": [
-            "run",
-            "lint"
-          ]
-        },
-        {
-          "repo": "aphrody-web",
-          "runner": "just",
-          "command": [
-            "clippy"
-          ]
-        },
-        {
-          "repo": "aphrody-compat",
-          "command": [
-            "run",
-            "lint"
-          ]
-        },
-        {
-          "repo": "aphrody-compat",
-          "runner": "just",
-          "command": [
-            "clippy"
-          ]
-        },
-        {
-          "repo": "aphrody-contracts",
-          "runner": "just",
-          "command": [
-            "clippy"
-          ]
-        },
-        {
-          "repo": "aphrody-shell",
-          "runner": "just",
-          "command": [
-            "clippy"
-          ]
-        },
-        {
-          "repo": "aphrody-native",
-          "runner": "just",
-          "command": [
-            "clippy"
-          ]
-        },
-        {
-          "repo": "rg",
-          "command": [
-            "run",
-            "lint"
-          ]
-        },
-        {
-          "repo": "shenron",
-          "command": [
-            "run",
-            "lint"
-          ]
-        },
-        {
-          "repo": "nie",
-          "command": [
-            "run",
-            "lint"
-          ]
-        },
-        {
-          "repo": "iecode",
-          "command": [
-            "run",
-            "lint"
-          ]
-        }
-      ]
-    },
-    {
-      "id": "types",
-      "parallel": true,
-      "steps": [
-        {
-          "repo": "aphrody-infra",
-          "command": [
-            "run",
-            "typecheck"
-          ]
-        },
-        {
-          "repo": "aphrody-ai",
-          "command": [
-            "run",
-            "typecheck"
-          ]
-        },
-        {
-          "repo": "aphrody-ai",
-          "runner": "just",
-          "command": [
-            "check"
-          ]
-        },
-        {
-          "repo": "aphrody-os",
-          "command": [
-            "run",
-            "typecheck"
-          ]
-        },
-        {
-          "repo": "aphrody-os",
-          "runner": "just",
-          "command": [
-            "check"
-          ]
-        },
-        {
-          "repo": "aphrody-ui",
-          "command": [
-            "run",
-            "typecheck"
-          ]
-        },
-        {
-          "repo": "aphrody-ui",
-          "runner": "just",
-          "command": [
-            "check"
-          ]
-        },
-        {
-          "repo": "aphrody-web",
-          "command": [
-            "run",
-            "typecheck"
-          ]
-        },
-        {
-          "repo": "aphrody-web",
-          "runner": "just",
-          "command": [
-            "check"
-          ]
-        },
-        {
-          "repo": "aphrody-compat",
-          "command": [
-            "run",
-            "typecheck"
-          ]
-        },
-        {
-          "repo": "aphrody-compat",
-          "command": [
-            "run",
-            "n2b:typecheck"
-          ]
-        },
-        {
-          "repo": "aphrody-compat",
-          "runner": "just",
-          "command": [
-            "check"
-          ]
-        },
-        {
-          "repo": "aphrody-contracts",
-          "runner": "just",
-          "command": [
-            "check"
-          ]
-        },
-        {
-          "repo": "aphrody-shell",
-          "runner": "just",
-          "command": [
-            "check"
-          ]
-        },
-        {
-          "repo": "aphrody-native",
-          "runner": "just",
-          "command": [
-            "check"
-          ]
-        },
-        {
-          "repo": "rg",
-          "command": [
-            "run",
-            "type-check"
-          ]
-        },
-        {
-          "repo": "shenron",
-          "command": [
-            "run",
-            "type-check"
-          ]
-        },
-        {
-          "repo": "nie",
-          "command": [
-            "run",
-            "typecheck"
-          ]
-        },
-        {
-          "repo": "iecode",
-          "command": [
-            "run",
-            "typecheck"
-          ]
-        },
-        {
-          "repo": "iecode",
-          "command": [
-            "run",
-            "check:rust"
-          ]
-        },
-        {
-          "repo": "iecode",
-          "command": [
-            "run",
-            "check:python"
-          ]
-        }
-      ]
-    },
-    {
-      "id": "unit-and-ui",
-      "parallel": true,
-      "steps": [
-        {
-          "repo": "aphrody-infra",
-          "command": [
-            "run",
-            "test"
-          ]
-        },
-        {
-          "repo": "aphrody-ai",
-          "command": [
-            "run",
-            "test"
-          ]
-        },
-        {
-          "repo": "aphrody-ai",
-          "runner": "just",
-          "command": [
-            "test"
-          ]
-        },
-        {
-          "repo": "aphrody-os",
-          "command": [
-            "run",
-            "test"
-          ]
-        },
-        {
-          "repo": "aphrody-os",
-          "runner": "just",
-          "command": [
-            "test"
-          ]
-        },
-        {
-          "repo": "aphrody-ui",
-          "command": [
-            "run",
-            "test"
-          ]
-        },
-        {
-          "repo": "aphrody-ui",
-          "runner": "just",
-          "command": [
-            "test"
-          ]
-        },
-        {
-          "repo": "aphrody-web",
-          "command": [
-            "run",
-            "test"
-          ]
-        },
-        {
-          "repo": "aphrody-web",
-          "runner": "just",
-          "command": [
-            "test"
-          ]
-        },
-        {
-          "repo": "aphrody-compat",
-          "command": [
-            "run",
-            "test"
-          ]
-        },
-        {
-          "repo": "aphrody-compat",
-          "runner": "just",
-          "command": [
-            "test"
-          ]
-        },
-        {
-          "repo": "aphrody-contracts",
-          "runner": "just",
-          "command": [
-            "test"
-          ]
-        },
-        {
-          "repo": "aphrody-shell",
-          "runner": "just",
-          "command": [
-            "test"
-          ]
-        },
-        {
-          "repo": "aphrody-native",
-          "runner": "just",
-          "command": [
-            "test"
-          ]
-        },
-        {
-          "repo": "rg",
-          "command": [
-            "run",
-            "test"
-          ]
-        },
-        {
-          "repo": "shenron",
-          "command": [
-            "run",
-            "test:all"
-          ]
-        },
-        {
-          "repo": "nie",
-          "command": [
-            "run",
-            "test"
-          ]
-        },
-        {
-          "repo": "iecode",
-          "command": [
-            "run",
-            "test"
-          ]
-        },
-        {
-          "repo": "iecode",
-          "command": [
-            "run",
-            "test:rust"
-          ]
-        }
-      ]
-    },
-    {
-      "id": "build",
+      "id": "structure",
       "parallel": false,
       "steps": [
         {
-          "repo": "aphrody-infra",
+          "repo": "aphrody",
           "command": [
             "run",
-            "infra:cli",
-            "validate"
-          ]
-        },
-        {
-          "repo": "aphrody-compat",
-          "command": [
-            "run",
-            "build"
-          ]
-        },
-        {
-          "repo": "aphrody-ui",
-          "command": [
-            "run",
-            "build"
-          ]
-        },
-        {
-          "repo": "aphrody-web",
-          "command": [
-            "run",
-            "build"
-          ]
-        },
-        {
-          "repo": "aphrody-ai",
-          "command": [
-            "run",
-            "build"
-          ]
-        },
-        {
-          "repo": "aphrody-os",
-          "command": [
-            "run",
-            "build"
-          ]
-        },
-        {
-          "repo": "rg",
-          "command": [
-            "run",
-            "build"
-          ]
-        },
-        {
-          "repo": "shenron",
-          "command": [
-            "run",
-            "site:build"
-          ]
-        },
-        {
-          "repo": "nie",
-          "command": [
-            "run",
-            "build"
-          ]
-        },
-        {
-          "repo": "iecode",
-          "command": [
-            "run",
-            "check:dotnet"
+            "monorepo:layout"
           ]
         }
       ]
     },
     {
-      "id": "release",
+      "id": "rust-foundation",
       "parallel": false,
       "steps": [
         {
-          "repo": "aphrody-ai",
+          "repo": "aphrody",
+          "runner": "just",
           "command": [
-            "run",
-            "verify:release"
+            "check"
           ]
         },
         {
-          "repo": "aphrody-infra",
+          "repo": "aphrody",
+          "runner": "just",
           "command": [
-            "run",
-            "release:bundle"
+            "clippy"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "runner": "just",
+          "command": [
+            "test"
           ]
         }
       ]
     },
     {
-      "id": "live",
+      "id": "bun-bun",
       "parallel": false,
-      "afterDeploy": true,
       "steps": [
         {
-          "repo": "aphrody-infra",
+          "repo": "aphrody",
           "command": [
             "run",
-            "audit:live"
+            "--filter",
+            "@aphrody/bun-test-dom",
+            "typecheck"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "bun-compat",
+      "parallel": false,
+      "steps": [
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@aphrody/n2b-core",
+            "typecheck"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@aphrody/n2b-core",
+            "test"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@aphrody/n2b-core",
+            "build"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@aphrody/n2b-plugin",
+            "typecheck"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@aphrody/n2b-shims",
+            "typecheck"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@aphrody/n2b-shims",
+            "build"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@aphrody/n2b-types",
+            "typecheck"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@aphrody/n2b-types",
+            "build"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "bun-os",
+      "parallel": false,
+      "steps": [
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@aphrody/os",
+            "typecheck"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@aphrody/os",
+            "test"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@aphrody/winclean",
+            "typecheck"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@aphrody/winclean",
+            "test"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "bun-interop",
+      "parallel": false,
+      "steps": [
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@aphrody/bun",
+            "typecheck"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@aphrody/bun",
+            "test"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@aphrody/bun",
+            "build"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "bun-infra",
+      "parallel": false,
+      "steps": [
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@aphrody/ovh",
+            "typecheck"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@aphrody/ovh",
+            "test"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@aphrody/workspace",
+            "lint"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@aphrody/workspace",
+            "typecheck"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@aphrody/workspace",
+            "test"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@aphrody/workspace",
+            "build"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "bun-ui",
+      "parallel": false,
+      "steps": [
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@aphrody/canvas",
+            "lint"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@aphrody/canvas",
+            "typecheck"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@aphrody/canvas",
+            "test"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@aphrody/eslint-plugin-m3",
+            "test"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@aphrody/m3-ai",
+            "typecheck"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@aphrody/m3-ai",
+            "test"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@aphrody/m3-ai",
+            "build"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@aphrody/m3-config",
+            "typecheck"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@aphrody/m3-config",
+            "test"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@aphrody/m3-design",
+            "typecheck"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@aphrody/m3-design",
+            "test"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@aphrody/m3-explorer",
+            "typecheck"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@aphrody/m3-explorer",
+            "test"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@aphrody/m3-explorer",
+            "build"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@aphrody/m3-fonts",
+            "typecheck"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@aphrody/m3-fonts",
+            "test"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@aphrody/m3-forms",
+            "typecheck"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@aphrody/m3-forms",
+            "test"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@aphrody/m3-forms",
+            "build"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@aphrody/m3-icons",
+            "typecheck"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@aphrody/m3-icons",
+            "test"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@aphrody/m3-icons",
+            "build"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@aphrody/m3-motion",
+            "typecheck"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@aphrody/m3-motion",
+            "test"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@aphrody/m3-motion",
+            "build"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@aphrody/m3-next-migrate",
+            "typecheck"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@aphrody/m3-next-migrate",
+            "test"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@aphrody/m3-next-migrate",
+            "build"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@aphrody/m3-next",
+            "typecheck"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@aphrody/m3-next",
+            "test"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@aphrody/m3-next",
+            "build"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@aphrody/m3-primitives",
+            "typecheck"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@aphrody/m3-primitives",
+            "test"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@aphrody/m3-primitives",
+            "build"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@aphrody/m3-react",
+            "typecheck"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@aphrody/m3-react",
+            "test"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@aphrody/m3-react",
+            "build"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@aphrody/m3-reader",
+            "typecheck"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@aphrody/m3-reader",
+            "build"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@aphrody/m3-theme",
+            "lint"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@aphrody/m3-theme",
+            "typecheck"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@aphrody/m3-theme",
+            "test"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@aphrody/m3-theme",
+            "build"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@aphrody/m3-tokens",
+            "lint"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@aphrody/m3-tokens",
+            "typecheck"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@aphrody/m3-tokens",
+            "test"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@aphrody/m3-tokens",
+            "build"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@aphrody/m3",
+            "typecheck"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@aphrody/m3",
+            "test"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@aphrody/m3",
+            "build"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@aphrody/material-web",
+            "typecheck"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@aphrody/material-web",
+            "test"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@aphrody/material-web",
+            "build"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "bun-web",
+      "parallel": false,
+      "steps": [
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@aphrody/agent-browser",
+            "typecheck"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@aphrody/agent-browser",
+            "test"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@aphrody/web-test",
+            "lint"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@aphrody/web-test",
+            "typecheck"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@aphrody/web-test",
+            "test"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@aphrody/x",
+            "lint"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@aphrody/x",
+            "typecheck"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@aphrody/x",
+            "test"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@aphrody/x",
+            "build"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "bun-ai",
+      "parallel": false,
+      "steps": [
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@aphrody/doc-ai",
+            "typecheck"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@aphrody/doc-ai",
+            "test"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@aphrody/doc-ai",
+            "build"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@aphrody/google",
+            "test"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@aphrody/google",
+            "build"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@aphrody/xai",
+            "typecheck"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@aphrody/xai",
+            "test"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "bun-discord",
+      "parallel": false,
+      "steps": [
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@aphrody/messaging",
+            "typecheck"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@aphrody/messaging",
+            "test"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@aphrody/messaging",
+            "build"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "bun-koharu",
+      "parallel": false,
+      "steps": [
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@aphrody/koharu-editor-example",
+            "lint"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@aphrody/koharu-editor-example",
+            "typecheck"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@aphrody/koharu-editor-example",
+            "test"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@aphrody/koharu-editor-example",
+            "build"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@koharu/bridge",
+            "lint"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@koharu/bridge",
+            "typecheck"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@koharu/bridge",
+            "build"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@koharu/sdk",
+            "typecheck"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@aphrody/koharu-ui",
+            "typecheck"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "bun-fut",
+      "parallel": false,
+      "steps": [
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@aphrody/fut",
+            "typecheck"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@aphrody/fut",
+            "test"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@aphrody/fut",
+            "build"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "bun-rg",
+      "parallel": false,
+      "steps": [
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@rosegriffon/achillea-bot",
+            "lint"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@rosegriffon/achillea-bot",
+            "typecheck"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@rosegriffon/achillea-bot",
+            "test"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@rosegriffon/achillea-bot",
+            "build"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@rosegriffon/api",
+            "typecheck"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@rosegriffon/api",
+            "test"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@rosegriffon/bot",
+            "lint"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@rosegriffon/bot",
+            "typecheck"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@rosegriffon/bot",
+            "test"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@rosegriffon/bot",
+            "build"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@rosegriffon/cdn",
+            "typecheck"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@rosegriffon/cdn",
+            "test"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@rosegriffon/realtime",
+            "typecheck"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@rosegriffon/realtime",
+            "test"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@rosegriffon/storage",
+            "typecheck"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@rosegriffon/storage",
+            "test"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@rosegriffon/website",
+            "lint"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@rosegriffon/website",
+            "typecheck"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@rosegriffon/website",
+            "test"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@rosegriffon/website",
+            "build"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@rosegriffon/achillea-client",
+            "lint"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@rosegriffon/achillea-client",
+            "typecheck"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@rosegriffon/achillea-client",
+            "test"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@rosegriffon/achillea-contract",
+            "lint"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@rosegriffon/achillea-contract",
+            "typecheck"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@rosegriffon/achillea-contract",
+            "test"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@rosegriffon/achillea-core",
+            "lint"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@rosegriffon/achillea-core",
+            "typecheck"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@rosegriffon/achillea-core",
+            "test"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@rosegriffon/achillea-types",
+            "lint"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@rosegriffon/achillea-types",
+            "typecheck"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@rosegriffon/achillea-types",
+            "test"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@rosegriffon/app-shell",
+            "lint"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@rosegriffon/app-shell",
+            "typecheck"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@rosegriffon/app-shell",
+            "test"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@rosegriffon/auth",
+            "lint"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@rosegriffon/auth",
+            "typecheck"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@rosegriffon/auth",
+            "test"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@rosegriffon/azalee",
+            "lint"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@rosegriffon/azalee",
+            "typecheck"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@rosegriffon/azalee",
+            "test"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@rosegriffon/azalee",
+            "build"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@rosegriffon/config",
+            "lint"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@rosegriffon/cron",
+            "lint"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@rosegriffon/cron",
+            "typecheck"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@rosegriffon/cron",
+            "test"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@rosegriffon/cron",
+            "build"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@rosegriffon/db",
+            "lint"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@rosegriffon/db",
+            "typecheck"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@rosegriffon/db",
+            "test"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@rosegriffon/i18n",
+            "lint"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@rosegriffon/i18n",
+            "typecheck"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@rosegriffon/i18n",
+            "test"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@rosegriffon/identity",
+            "lint"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@rosegriffon/identity",
+            "typecheck"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@rosegriffon/identity",
+            "test"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@rosegriffon/inagle-cross",
+            "lint"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@rosegriffon/inagle-cross",
+            "typecheck"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@rosegriffon/inagle",
+            "lint"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@rosegriffon/inagle",
+            "typecheck"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@rosegriffon/inagle",
+            "test"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@rosegriffon/inagle",
+            "build"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@rosegriffon/patreon-bun-worker-docs",
+            "typecheck"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@rosegriffon/patreon-bun-docs",
+            "typecheck"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@rosegriffon/patreon-bun-bun-esm",
+            "typecheck"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@rosegriffon/patreon-bun-bun-webhook",
+            "typecheck"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@rosegriffon/patreon-bun-cloudflare-webhook",
+            "typecheck"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@rosegriffon/patreon-bun",
+            "lint"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@rosegriffon/patreon-bun",
+            "typecheck"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@rosegriffon/patreon-bun",
+            "test"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@rosegriffon/patreon-bun",
+            "build"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@rosegriffon/preferences",
+            "lint"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@rosegriffon/preferences",
+            "typecheck"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@rosegriffon/preferences",
+            "test"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@rosegriffon/search",
+            "lint"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@rosegriffon/search",
+            "typecheck"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@rosegriffon/search",
+            "test"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@rosegriffon/types",
+            "lint"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@rosegriffon/types",
+            "typecheck"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@rosegriffon/types",
+            "test"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@rosegriffon/ui",
+            "lint"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@rosegriffon/ui",
+            "typecheck"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@rosegriffon/ui",
+            "test"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "product-shenron-final",
+      "parallel": false,
+      "steps": [
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@shenron/bot",
+            "lint"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@shenron/bot",
+            "typecheck"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@shenron/bot",
+            "test"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@shenron/bot",
+            "build"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@shenron/site",
+            "lint"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@shenron/site",
+            "typecheck"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@shenron/site",
+            "test"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@shenron/site",
+            "build"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@shenron/api",
+            "lint"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@shenron/api",
+            "typecheck"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@shenron/api",
+            "test"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@shenron/auth",
+            "lint"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@shenron/auth",
+            "typecheck"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@shenron/auth",
+            "test"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@shenron/config",
+            "lint"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@shenron/config",
+            "typecheck"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@shenron/config",
+            "test"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@shenron/db",
+            "lint"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@shenron/db",
+            "typecheck"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@shenron/db",
+            "test"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@shenron/images",
+            "typecheck"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@shenron/images",
+            "test"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@shenron/pipeline",
+            "lint"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@shenron/pipeline",
+            "typecheck"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@shenron/pipeline",
+            "test"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@shenron/pipeline",
+            "build"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@shenron/ui",
+            "lint"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@shenron/ui",
+            "typecheck"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@shenron/ui",
+            "test"
           ]
         }
       ]
     }
-  ],
-  "deploy": {
-    "adapter": "cargo run -p aphrody-infra -- deploy --stack bundle",
-    "target": "vps",
-    "bundle": "scripts/build-aphrody-stack-release.sh (WSL Ubuntu-24.04, ext4 superproject clone): Aphrody stack + Shenron artifact + RG pin; NIE and IECode ship no VPS release",
-    "requires": [
-      "all stages green",
-      "SMOKE.json attestation",
-      "nginx -t",
-      "health probes",
-      "rollback slot"
-    ],
-    "then": "live stage: scripts/live-audit.ts must report 0 errors (routes, pages, links, assets, render, server journal)"
-  },
-  "cdn": {
-    "owner": "aphrody-infra",
-    "provider": "nginx+rg-cdn",
-    "invalidate": "scripts/rg/invalidate-cdn.ts",
-    "singleOrigin": true,
-    "aphrody": {
-      "host": "cdn.aphrody.com",
-      "catalog": "config/asset-catalog.json",
-      "check": "bun scripts/assets/cdn.ts check",
-      "build": "bun scripts/assets/cdn.ts build",
-      "publish": "bun scripts/assets/cdn.ts publish --vps <ssh-host>"
-    }
-  }
+  ]
 }

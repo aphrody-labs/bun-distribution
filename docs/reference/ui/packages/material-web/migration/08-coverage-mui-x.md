@@ -20,7 +20,7 @@ Conséquence : plusieurs features que nous avons construites (`multiSort`, filtr
 
 ## Module 1 — Data Grid (`md-table`)
 
-Code : `packages/material-web/table/internal/table.ts` (tag `md-table` défini dans `table/table.ts:56`).
+Code : `packages/ui/material-web/table/internal/table.ts` (tag `md-table` défini dans `table/table.ts:56`).
 
 | Feature MUI X                                                       | Tier MUI X                       | Statut                 | Preuve (code réel)                                                                                                                                                                  |
 | ------------------------------------------------------------------- | -------------------------------- | ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -49,7 +49,7 @@ Code : `packages/material-web/table/internal/table.ts` (tag `md-table` défini d
 
 ## Module 2 — Charts
 
-Code : `packages/material-web/charts/internal/*`. Base partagée `chart-base.ts` (API `series` `chart-base.ts:132`, `categories`:135, `colors`:138, `legend`:150, `tooltip`:153, palette M3 `chart-base.ts:30-39`).
+Code : `packages/ui/material-web/charts/internal/*`. Base partagée `chart-base.ts` (API `series` `chart-base.ts:132`, `categories`:135, `colors`:138, `legend`:150, `tooltip`:153, palette M3 `chart-base.ts:30-39`).
 
 Tags définis (via `@customElement`) : `md-line-chart`, `md-bar-chart`, `md-pie-chart`, `md-area-chart`, `md-scatter-chart`, `md-radar-chart`, `md-sparkline`, `md-gauge` (**8 types**).
 
@@ -78,7 +78,7 @@ Tags définis (via `@customElement`) : `md-line-chart`, `md-bar-chart`, `md-pie-
 
 ## Module 3 — Date and Time Pickers
 
-Code : `packages/material-web/{datepicker,timepicker}/internal/*`. Tags `md-date-picker`, `md-date-range-picker`, `md-time-picker` (`timepicker/time-picker.ts:35`), `md-date-time-picker` (`datepicker/date-time-picker.ts:44`). i18n via `date-i18n.ts` / `time-i18n.ts` (`Intl`).
+Code : `packages/ui/material-web/{datepicker,timepicker}/internal/*`. Tags `md-date-picker`, `md-date-range-picker`, `md-time-picker` (`timepicker/time-picker.ts:35`), `md-date-time-picker` (`datepicker/date-time-picker.ts:44`). i18n via `date-i18n.ts` / `time-i18n.ts` (`Intl`).
 
 | Feature MUI X                                               | Tier MUI X | Statut                 | Preuve (code réel)                                                                                                              |
 | ----------------------------------------------------------- | ---------- | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
@@ -102,7 +102,7 @@ Code : `packages/material-web/{datepicker,timepicker}/internal/*`. Tags `md-date
 
 ## Module 4 — Tree View (`md-tree` / `md-tree-item`)
 
-Code : `packages/material-web/tree/internal/tree.ts` + `tree-item.ts`. Tags `md-tree`, `md-tree-item`.
+Code : `packages/ui/material-web/tree/internal/tree.ts` + `tree-item.ts`. Tags `md-tree`, `md-tree-item`.
 
 | Feature MUI X                                                                  | Tier MUI X | Statut | Preuve (code réel)                                                                                                   |
 | ------------------------------------------------------------------------------ | ---------- | ------ | -------------------------------------------------------------------------------------------------------------------- |
@@ -126,7 +126,7 @@ Code : `packages/material-web/tree/internal/tree.ts` + `tree-item.ts`. Tags `md-
 
 ## Module 5 — Scheduler (`md-scheduler`)
 
-Code : `packages/material-web/scheduler/internal/scheduler.ts` (635 LOC ; tag `scheduler/scheduler.ts:43`).
+Code : `packages/ui/material-web/scheduler/internal/scheduler.ts` (635 LOC ; tag `scheduler/scheduler.ts:43`).
 
 | Feature                                                  | Tier MUI X                            | Statut | Preuve                                                                                                                |
 | -------------------------------------------------------- | ------------------------------------- | ------ | --------------------------------------------------------------------------------------------------------------------- |

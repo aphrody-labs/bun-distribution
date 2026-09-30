@@ -183,8 +183,8 @@ records Shenron ownership, research rules and MCP boundaries. Aphrody Web
 
 The OS rendering contract is centralized in `crates/aphrody-render`: one M3
 adaptive geometry contract is shared by 2D and 3D surfaces, with deterministic
-CPU RGBA validation and native/web consumers routed through `packages/canvas`
-and `packages/material-web`. Tauri/Wry, Obscura and WASM are hosts of that
+CPU RGBA validation and native/web consumers routed through `packages/ui/canvas`
+and `packages/ui/material-web`. Tauri/Wry, Obscura and WASM are hosts of that
 contract. GPU backends are not advertised before a real device/surface exists,
 and the OS carries no IEVR dependency. See the `render-pipeline` skill for the
 scoped gates and invariants.

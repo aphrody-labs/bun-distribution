@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 # Bun agent client
 
-[`agent.ts`](../../../../../../crates/ai/aphrody-ffi/bun/agent.ts) provides a Bun-native app-server client alongside the
+[`agent.ts`](../../../../../../crates/interop/ffi/bun/agent.ts) provides a Bun-native app-server client alongside the
 existing synchronous FFI binding. It starts `aphrody app-server` through
 `Bun.spawn` and exchanges newline-delimited v2 protocol frames.
 

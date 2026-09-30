@@ -1,8 +1,3 @@
----
-name: yolo-perfect-grind
-description: "Alias of the yolo skill in perfect mode. Triggers: /yolo-perfect-grind, \"loop until perfect\", \"code en boucle\", \"force le grind\"."
----
+# Référence canonique
 
-Load the `yolo` skill and run it in **perfect** mode (see its §2 Modes table).
-All rules — discovery, gates, decide-vs-ask, host playbook, honest delivery —
-live only in `yolo/SKILL.md`.
+Ce document est maintenu dans [la configuration du plugin](../../../../../../../config/ai/plugins/aphrody/skills/yolo-perfect-grind/SKILL.md).

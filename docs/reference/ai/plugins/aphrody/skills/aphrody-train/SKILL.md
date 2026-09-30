@@ -3,7 +3,7 @@ name: aphrody-train
 description: "aphrody training pipeline: triple datasets, embedding/reranker fine-tuning, LoRA adapters, autonomous promotion."
 version: "1.0.0"
 metadata:
-  source: aphrody native — crates/ai/aphrody-train & aphrody-py/packages/ai/py/aphrody-train
+  source: aphrody native — crates/ai/train & aphrody-py/packages/ai/py/aphrody-train
   since: "2026-09-19"
 ---
 

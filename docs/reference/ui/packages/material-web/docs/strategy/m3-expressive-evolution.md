@@ -19,11 +19,11 @@ Sur Android, M3 Expressive consacre l'abandon définitif des vues XML au profit 
 
 | Concept Jetpack Compose (M3) | Équivalent Monorepo Web (`material-web` / `m3-react`) | Statut de Parité |
 | :--- | :--- | :--- |
-| `MaterialExpressiveTheme` | `M3ThemeProvider` (dans [react.tsx](file://~/material-web/packages/m3-theme/src/react.tsx)) | **Partielle** : Gère les variables CSS claires/sombres et la génération dynamique depuis un seed, mais sans les ressorts physiques natifs CSS. |
+| `MaterialExpressiveTheme` | `M3ThemeProvider` (dans [react.tsx](file://~/material-web/packages/ui/m3-theme/src/react.tsx)) | **Partielle** : Gère les variables CSS claires/sombres et la génération dynamique depuis un seed, mais sans les ressorts physiques natifs CSS. |
 | `ColorScheme` (MCU) | [dynamic-color.ts](file://~/material-web/packages/m3-tokens/src/dynamic-color.ts) | **Complète** : Supporte les 7 variantes de schémas MCU dont `expressive`. |
-| `Typography` | `<md-type>` (dans [md-type.ts](file://~/material-web/packages/material-web/typography/internal/md-type.ts)) | **Complète** : Implémente le rendu avec axes variables `Google Sans Flex` et les styles. |
+| `Typography` | `<md-type>` (dans [md-type.ts](file://~/material-web/packages/ui/material-web/typography/internal/md-type.ts)) | **Complète** : Implémente le rendu avec axes variables `Google Sans Flex` et les styles. |
 | `shapes` (échelle 10 niveaux) | `shape.rs` / CSS custom properties | **Partielle** : Échelle 7 étapes actuellement dans les tokens Web ; les 3 ajouts M3 Expressive (20dp, 32dp, 48dp) doivent être intégrés. |
-| `motionScheme` (physique springs) | [packages/m3-motion/](file://~/material-web/packages/m3-motion/) | **Partielle** : Interpolation physique sous React (via Framer Motion) mais retombée (fallback) sur des beziers CSS standard pour le Shadow DOM de Lit. |
+| `motionScheme` (physique springs) | [packages/ui/m3-motion/](file://~/material-web/packages/ui/m3-motion/) | **Partielle** : Interpolation physique sous React (via Framer Motion) mais retombée (fallback) sur des beziers CSS standard pour le Shadow DOM de Lit. |
 | `State Layers` (+8% / +10% / +16%) | `<md-ripple>` ou classes de pseudo-état CSS | **Complète** : Géré via les couches d'état de l'élément de ripple natif. |
 | `TextFieldState` | Custom React Hook `useTextFieldState` | **Proposition** : Hook de contrôle d'état atomique pour le wrapper React du champ textuel. |
 
@@ -93,7 +93,7 @@ Dans notre catalogue Lit, cela correspond à l'application de variables CSS asso
 ```
 
 ### Limitations Web sur le mouvement Expressive
-1. **Ressorts physiques (Springs)** : Compose utilise un moteur physique interne pour animer les layouts (amortissement, rigidité). CSS ne gère pas nativement les équations de ressort. Le contournement dans le package [m3-motion](file://~/material-web/packages/m3-motion/) consiste à utiliser Framer Motion pour les wrappers React et à fournir des approximations avec des transitions `cubic-bezier(0.05, 0.7, 0.1, 1.0)` (courbe de décélération expressive) pour Lit.
+1. **Ressorts physiques (Springs)** : Compose utilise un moteur physique interne pour animer les layouts (amortissement, rigidité). CSS ne gère pas nativement les équations de ressort. Le contournement dans le package [m3-motion](file://~/material-web/packages/ui/m3-motion/) consiste à utiliser Framer Motion pour les wrappers React et à fournir des approximations avec des transitions `cubic-bezier(0.05, 0.7, 0.1, 1.0)` (courbe de décélération expressive) pour Lit.
 2. **Morphing de forme (Shape Morph)** : Très développé sous Compose (conversion vectorielle fluide d'un bouton vers un FAB ou une carte), le morphing sur le Web se heurte à l'isolation du Shadow DOM et à la limitation des tracés SVG complexes. Nous utilisons à la place des transitions `clip-path` ou des animations de taille combinées à des arrondis dynamiques.
 
 ---
@@ -227,11 +227,11 @@ L'évolution M3 Expressive redéfinit la transition entre les types d'écrans en
 ### Le nouveau paradigme de navigation latérale
 En mode compact, la barre de navigation inférieure (`NavigationBar`, 3 à 5 destinations) reste la norme ergonomique. 
 Cependant, pour les écrans Medium et Expanded, la navigation bascule sur un rail vertical. M3 Expressive modifie ce rail de la manière suivante :
-1. **Élargissement** : Le rail passe d'une largeur classique de 80dp à **96dp** (dans [navigation-rail-styles.ts](file://~/material-web/packages/material-web/navigationrail/internal/navigation-rail-styles.ts)).
+1. **Élargissement** : Le rail passe d'une largeur classique de 80dp à **96dp** (dans [navigation-rail-styles.ts](file://~/material-web/packages/ui/material-web/navigationrail/internal/navigation-rail-styles.ts)).
 2. **Cibles tactiles agrandies** : La hauteur minimale des éléments passe de 60dp à **64dp** pour une meilleure préhension ergonomique.
 3. **Suppression du NavigationDrawer** : Le tiroir de navigation standard (`NavigationDrawer`) est remplacé par une version **expansible** du `NavigationRail` (d'une largeur d'au moins 220dp, gérée par l'attribut `expanded` de notre composant Lit). Cela offre une transition continue de layout : au lieu de faire apparaître un volet modal masquant le contenu, le rail de navigation s'élargit en repoussant ou en adaptant la grille de contenu.
 
-Dans notre structure de mise en page, ces transitions sont orchestrées par `<md-scaffold>` (dans [md-scaffold.ts](file://~/material-web/packages/material-web/layout/md-scaffold.ts)) qui calcule dynamiquement la largeur de l'écran ou écoute des conteneurs parents (via des requêtes de conteneur, *Container Queries*) pour basculer automatiquement entre barre inférieure, rail 96dp et rail étendu.
+Dans notre structure de mise en page, ces transitions sont orchestrées par `<md-scaffold>` (dans [md-scaffold.ts](file://~/material-web/packages/ui/material-web/layout/md-scaffold.ts)) qui calcule dynamiquement la largeur de l'écran ou écoute des conteneurs parents (via des requêtes de conteneur, *Container Queries*) pour basculer automatiquement entre barre inférieure, rail 96dp et rail étendu.
 
 ---
 
@@ -241,7 +241,7 @@ Dans notre structure de mise en page, ces transitions sont orchestrées par `<md
 Historiquement, charger un style typographique complet (Light, Regular, Medium, SemiBold, Bold, Italic) nécessitait le téléchargement de plusieurs fichiers de police (parfois plus de 1 Mo de bundle).
 L'évolution M3 s'appuie désormais sur des **polices variables** (comme `Google Sans Flex` ou `Roboto Flex`). Un seul fichier de police compact (~150 ko) expose plusieurs axes modifiables dynamiquement par le moteur de rendu graphique.
 
-Les axes de variations supportés par notre composant `<md-type>` (dans [md-type.ts](file://~/material-web/packages/material-web/typography/internal/md-type.ts)) sont :
+Les axes de variations supportés par notre composant `<md-type>` (dans [md-type.ts](file://~/material-web/packages/ui/material-web/typography/internal/md-type.ts)) sont :
 *   `wght` (Weight / Poids) : 100 à 900.
 *   `opsz` (Optical Size / Taille optique) : 9 à 144. Ajuste la graisse et l'espacement selon la taille réelle d'affichage pour une lisibilité maximale.
 *   `wdth` (Width / Largeur) : 75% à 125%.
@@ -280,10 +280,10 @@ Pour intégrer pleinement les capacités de M3 Expressive au sein de notre monor
 
 ### Phase 1 : Alignement des Formes et de la Typographie (Priorité Haute)
 1.  **Mise à jour de l'échelle des formes (Shapes)** : Étendre les définitions de tokens dans notre sous-système de design pour passer de l'ancienne échelle à 7 niveaux vers l'échelle M3 Expressive à **10 niveaux** en ajoutant les tokens de rayon pour `large-increased (20dp)`, `extra-large-increased (32dp)` et `extra-extra-large (48dp)`.
-2.  **Intégration des 15 styles Emphasized** : Compléter [type-scale.ts](file://~/material-web/packages/material-web/typography/internal/type-scale.ts) pour exporter les 15 rôles `*-emphasized` associés et régénérer le fichier global de variables CSS de typographie.
+2.  **Intégration des 15 styles Emphasized** : Compléter [type-scale.ts](file://~/material-web/packages/ui/material-web/typography/internal/type-scale.ts) pour exporter les 15 rôles `*-emphasized` associés et régénérer le fichier global de variables CSS de typographie.
 
 ### Phase 2 : Composants de Navigation et Saisie (Priorité Moyenne)
-1.  **Élargissement du Navigation Rail** : Modifier [navigation-rail-styles.ts](file://~/material-web/packages/material-web/navigationrail/internal/navigation-rail-styles.ts) pour passer la largeur par défaut (`--_width`) de `80px` à `96px` et la hauteur de l'item à `64px`. Mettre en place un modificateur ou une variable permettant l'expansion en volet latéral fluide à la place de l'ancien `NavigationDrawer`.
+1.  **Élargissement du Navigation Rail** : Modifier [navigation-rail-styles.ts](file://~/material-web/packages/ui/material-web/navigationrail/internal/navigation-rail-styles.ts) pour passer la largeur par défaut (`--_width`) de `80px` à `96px` et la hauteur de l'item à `64px`. Mettre en place un modificateur ou une variable permettant l'expansion en volet latéral fluide à la place de l'ancien `NavigationDrawer`.
 2.  **Création du package d'état `useTextFieldState`** : Créer le fichier utilitaire ou le hook `useTextFieldState` dans `@aphrody/m3-react` pour offrir l'API d'état atomique aux consommateurs React.
 
 ### Phase 3 : Mouvement Physique et Effets Avancés (Priorité Basse)

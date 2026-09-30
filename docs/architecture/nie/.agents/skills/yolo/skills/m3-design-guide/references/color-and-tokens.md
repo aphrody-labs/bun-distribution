@@ -1,6 +1,6 @@
 # Color, tokens, and numeric values — M3 reference
 
-This file is the "look up exact numbers" companion to `../SKILL.md`. All values are copied from the authoritative foundations document at `<repo-root>/packages/material-web/docs/01-md3-spec-foundations.md` when that corpus is available, and attributed to [m3.material.io](https://m3.material.io/) and the official Material repositories.
+This file is the "look up exact numbers" companion to `../SKILL.md`. All values are copied from the authoritative foundations document at `<repo-root>/packages/ui/material-web/docs/01-md3-spec-foundations.md` when that corpus is available, and attributed to [m3.material.io](https://m3.material.io/) and the official Material repositories.
 
 ---
 

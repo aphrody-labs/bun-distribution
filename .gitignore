@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 # Cargo outputs at workspace roots. Keep source modules such as
-# crates/ai/aphrody-rag-eval/src/target/ visible to Git.
+# crates/ai/rag-eval/src/target/ visible to Git.
 /target/
 /crates/*/*/target/
 /packages/*/*/target/
@@ -114,4 +114,4 @@ Thumbs.db
 .vs/
 
 # Generated host native artifacts; staged by the package builder.
-/packages/bun/aphrody/native/
+/packages/interop/native/native/

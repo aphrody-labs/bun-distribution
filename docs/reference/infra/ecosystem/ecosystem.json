@@ -919,7 +919,7 @@
         },
         {
           "name": "@aphrody/canvas",
-          "path": "packages/canvas",
+          "path": "packages/ui/canvas",
           "description": "Aphrody native Skia canvas facade over the pinned upstream @napi-rs/canvas runtime",
           "bins": []
         },
@@ -943,7 +943,7 @@
         },
         {
           "name": "@aphrody/eslint-plugin-m3",
-          "path": "packages/eslint-plugin-m3",
+          "path": "packages/ui/eslint-plugin-m3",
           "description": "Lint rules for sites consuming material-web (@aphrody/m3-react + Material Symbols) — runs under oxlint (jsPlugins) and ESLint.",
           "bins": []
         },
@@ -961,7 +961,7 @@
         },
         {
           "name": "@aphrody/m3",
-          "path": "packages/m3",
+          "path": "packages/ui/m3",
           "description": "The @aphrody Material Design 3 framework for Bun: one plugin (Tailwind v4, Sass through Rust, m3:* virtual theme/font modules, ?url imports), serveM3 (Bun.serve + HMR + proxy), buildM3 (Bun.build, Tauri webview layout), M3App and the m3 CLI.",
           "bins": [
             "m3"
@@ -969,67 +969,67 @@
         },
         {
           "name": "@aphrody/m3-ai",
-          "path": "packages/m3-ai",
+          "path": "packages/ui/m3-ai",
           "description": "Material Design 3 agent-interaction components (tool calls, markdown, chat composer, workers, tasks): the SpaceUI (@spacedrive/ai) set rebuilt on @aphrody/m3-primitives.",
           "bins": []
         },
         {
           "name": "@aphrody/m3-codemods",
-          "path": "packages/material-web/migration/codemods",
+          "path": "packages/ui/material-web/migration/codemods",
           "description": "Codemods MUI React -> @aphrody/m3-react (jscodeshift + ast-grep)",
           "bins": []
         },
         {
           "name": "@aphrody/m3-config",
-          "path": "packages/m3-config",
+          "path": "packages/ui/m3-config",
           "description": "Shared build, typecheck and test presets for the @aphrody Material Design 3 packages: tsconfig, tsup preset and the happy-dom test preload.",
           "bins": []
         },
         {
           "name": "@aphrody/m3-design",
-          "path": "packages/m3-design",
+          "path": "packages/ui/m3-design",
           "description": "Automated design engine for Material Design 3 and Google Design",
           "bins": []
         },
         {
           "name": "@aphrody/m3-explorer",
-          "path": "packages/m3-explorer",
+          "path": "packages/ui/m3-explorer",
           "description": "Material Design 3 file-management components (tag pill, inline rename, file thumb, grid item): the SpaceUI (@spacedrive/explorer) set rebuilt on @aphrody/m3-primitives.",
           "bins": []
         },
         {
           "name": "@aphrody/m3-fonts",
-          "path": "packages/m3-fonts",
+          "path": "packages/ui/m3-fonts",
           "description": "Aphrody M3 typefaces: Google Sans Flex, Google Sans Code, Roboto Flex, Roboto Mono and Material Symbols with Japanese fallbacks (Noto Sans JP, M PLUS 1 Code) as @font-face CSS and a typed manifest.",
           "bins": []
         },
         {
           "name": "@aphrody/m3-forms",
-          "path": "packages/m3-forms",
+          "path": "packages/ui/m3-forms",
           "description": "Material Design 3 form fields (react-hook-form) on @aphrody/m3-primitives: the SpaceUI (@spacedrive/forms) set, M3-styled.",
           "bins": []
         },
         {
           "name": "@aphrody/m3-icons",
-          "path": "packages/m3-icons",
+          "path": "packages/ui/m3-icons",
           "description": "Material Symbols icons for @aphrody/m3: pixel-perfect inline SVG rendered from the aphrody-icons variable fonts, no icon font shipped at runtime.",
           "bins": []
         },
         {
           "name": "@aphrody/m3-motion",
-          "path": "packages/m3-motion",
+          "path": "packages/ui/m3-motion",
           "description": "Material 3 animation plugin powered by Motion (formerly Framer Motion)",
           "bins": []
         },
         {
           "name": "@aphrody/m3-next",
-          "path": "packages/m3-next",
+          "path": "packages/ui/m3-next",
           "description": "Next.js 16 App Router integration for the @aphrody Material Design 3 layer: withM3 config, M3Html/M3Root server components (color-scheme, dark class from cookie or system, SSR scheme variables), a 'use client' M3ThemeProvider bridge, metadata/viewport helpers and the m3Css server helper.",
           "bins": []
         },
         {
           "name": "@aphrody/m3-next-migrate",
-          "path": "packages/m3-next-migrate",
+          "path": "packages/ui/m3-next-migrate",
           "description": "Migration engine, AST codemod and runtime shims to migrate Next.js 16 UI and React components to Tauri v2 desktop apps or Bun/Vite web SPAs",
           "bins": [
             "m3-next-migrate",
@@ -1038,31 +1038,31 @@
         },
         {
           "name": "@aphrody/m3-primitives",
-          "path": "packages/m3-primitives",
+          "path": "packages/ui/m3-primitives",
           "description": "Material Design 3 React primitives: the SpaceUI (@spacedrive/primitives) component set rebuilt on the M3 roles, shape, typescale, state layers and motion of the aphrody design system.",
           "bins": []
         },
         {
           "name": "@aphrody/m3-react",
-          "path": "packages/react",
+          "path": "packages/ui/m3-react",
           "description": "React wrappers (@lit/react createComponent) for every <md-*> element of the @aphrody/material-web fork.",
           "bins": []
         },
         {
           "name": "@aphrody/m3-reader",
-          "path": "packages/m3-reader",
+          "path": "packages/ui/m3-reader",
           "description": "Material 3 manga and illustrated book readers for React",
           "bins": []
         },
         {
           "name": "@aphrody/m3-theme",
-          "path": "packages/m3-theme",
+          "path": "packages/ui/m3-theme",
           "description": "Canonical Material 3 fusion sheets: tokens.css (M3 + shadcn/ui + Tailwind v4 aliases), tailwind.css (every M3 system token as a Tailwind v4 utility) and spaceui.css (the SpaceUI themes rebuilt as M3 dynamic schemes, with SpaceUI compatibility aliases).",
           "bins": []
         },
         {
           "name": "@aphrody/material-web",
-          "path": "packages/material-web",
+          "path": "packages/ui/material-web",
           "description": "Material Design 3 web components (Lit) — MUI + MUI X migration target",
           "bins": []
         },

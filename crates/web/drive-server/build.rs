@@ -44,10 +44,10 @@ fn main() {
 	// won't pay the cost of rebuilding the web bundle.
 	watch_dir(&web_dir.join("src"));
 	watch_dir(&aphrody_root.join("packages/app-ui/src"));
-	watch_dir(&aphrody_root.join("packages/m3-primitives/src"));
-	watch_dir(&aphrody_root.join("packages/m3-ai/src"));
-	watch_dir(&aphrody_root.join("packages/m3-explorer/src"));
-	watch_dir(&aphrody_root.join("packages/m3-forms/src"));
+	watch_dir(&aphrody_root.join("packages/ui/m3-primitives/src"));
+	watch_dir(&aphrody_root.join("packages/ui/m3-ai/src"));
+	watch_dir(&aphrody_root.join("packages/ui/m3-explorer/src"));
+	watch_dir(&aphrody_root.join("packages/ui/m3-forms/src"));
 	watch_dir(&repo_root.join("packages/ts-client/src"));
 	for path in [
 		web_dir.join("index.html"),

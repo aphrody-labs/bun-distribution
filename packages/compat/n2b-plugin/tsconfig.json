@@ -15,7 +15,7 @@
       "path": "../n2b-types"
     },
     {
-      "path": "../n2b"
+      "path": "../n2b-client"
     }
   ],
   "include": [

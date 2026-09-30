@@ -6,11 +6,11 @@ The four former local compatibility packages contained only re-export facades (n
 and had no consumers outside this archive's obsolete docs. Their manifests, build configs and
 facades have been removed; release notes remain. The M3 implementations live in first-party packages,
 see docs/design/SPACEUI-M3-FUSION.md:
-  packages/tokens      -> packages/m3-theme (spaceui.css, tailwind.css) + crates/aphrody-m3-tokens/src/spaceui.rs
-  packages/primitives  -> packages/m3-primitives  (@aphrody/m3-primitives)
-  packages/forms       -> packages/m3-forms       (@aphrody/m3-forms)
-  packages/ai          -> packages/m3-ai          (@aphrody/m3-ai)
-  packages/explorer    -> packages/m3-explorer    (@aphrody/m3-explorer)
+  packages/tokens      -> packages/ui/m3-theme (spaceui.css, tailwind.css) + crates/aphrody-m3-tokens/src/spaceui.rs
+  packages/primitives  -> packages/ui/m3-primitives  (@aphrody/m3-primitives)
+  packages/forms       -> packages/ui/m3-forms       (@aphrody/m3-forms)
+  packages/ai          -> packages/ui/m3-ai          (@aphrody/m3-ai)
+  packages/explorer    -> packages/ui/m3-explorer    (@aphrody/m3-explorer)
   packages/icons       -> packages/assets     (@aphrody/assets)
   packages/icons payload: 619 exact copies retired; package manifest/config removed; see packages/icons/RETIRED-DUPLICATES.json.
   examples/showcase    -> examples/m3-spaceui-showcase (runnable source migrated; local directory is a pointer)

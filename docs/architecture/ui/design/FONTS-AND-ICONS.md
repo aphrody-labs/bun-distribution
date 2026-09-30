@@ -8,11 +8,11 @@ typefaces and icons. Type scale and axes: [`TYPOGRAPHY.md`](./TYPOGRAPHY.md).
 
 | Concern | Decision | Owner |
 | --- | --- | --- |
-| Web font format | WOFF2 subsets of the variable sources, every axis kept | `packages/m3-fonts` (`bun run subset`) |
+| Web font format | WOFF2 subsets of the variable sources, every axis kept | `packages/ui/m3-fonts` (`bun run subset`) |
 | Latin | One face per family cut to `LATIN_CORE_RANGES` | `src/fonts.css` |
 | Japanese | Separate sheet: kana/punctuation chunk + Windows-31J ideographs in 500-codepoint chunks, each with its own `unicode-range` | `src/fonts-jp.css` |
 | Material Symbols font | Opt-in sheet, never in the core sheet; UI icons are inline SVG from `@aphrody/m3-icons` | `src/fonts-symbols.css`, `crates/aphrody-icons` |
-| System fallbacks | Bundled faces, then platform faces per OS, then the generic family | `FONT_STACKS` in `packages/m3-fonts/src/index.ts` |
+| System fallbacks | Bundled faces, then platform faces per OS, then the generic family | `FONT_STACKS` in `packages/ui/m3-fonts/src/index.ts` |
 | Delivery in Tauri | Fonts are part of `frontendDist` (`ui-dist`), embedded and served by the custom protocol; no `bundle.resources`, no `asset:` protocol | `@aphrody/m3` `buildM3` |
 | CSP | `font-src 'self' data:` (Bun inlines small fonts as `data:` URLs) | `crates/aphrody-app/tauri.conf.json` |
 | App icons | `icon.ico` with 16/24/32/48/64/128/256 layers; PNGs 16-512 for the Linux hicolor theme | `crates/aphrody-app/icons` |
@@ -34,7 +34,7 @@ typefaces and icons. Type scale and axes: [`TYPOGRAPHY.md`](./TYPOGRAPHY.md).
 ## Regenerating
 
 ```sh
-cd packages/m3-fonts
+cd packages/ui/m3-fonts
 bun run subset   # uv + fontTools -> fonts/web/*.woff2, src/subsets.json, stylesheets
 bun run gen      # stylesheets only (after editing the manifest)
 bun test src     # sync, sizes, WOFF2 magic, fallbacks

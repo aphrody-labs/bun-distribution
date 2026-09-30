@@ -1,7 +1,0 @@
-{
-  "$schema": "../../node_modules/oxlint/configuration_schema.json",
-  "plugins": ["typescript", "unicorn", "oxc", "promise", "import"],
-  "env": { "browser": true, "node": true, "es2024": true },
-  "globals": { "Bun": "readonly" },
-  "rules": { "no-console": "off", "no-debugger": "error", "no-underscore-dangle": "off" }
-}

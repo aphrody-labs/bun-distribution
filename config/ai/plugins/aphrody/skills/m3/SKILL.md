@@ -7,7 +7,7 @@ description: "@aphrody/m3 framework: m3 dev/build/tokens/check, m3.config.ts, th
 
 # m3: the @aphrody Material Design 3 framework
 
-`packages/m3` (`@aphrody/m3`) is the single dev, build and theming path for Material 3 apps in
+`packages/ui/m3` (`@aphrody/m3`) is the single dev, build and theming path for Material 3 apps in
 the Aphrody ecosystem: `Bun.serve` and `Bun.build`, never Vite. It lives in the `aphrody-ui`
 repository; every path below is relative to that repository. The framework shape is in
 `docs/design/M3-FRAMEWORK.md`, the phase status in `docs/design/M3-PLAN.md`. For Material 3 design
@@ -91,7 +91,7 @@ Vanilla or Lit: `import "@aphrody/m3/lit"` registers the `aphrody-components` el
 
 ```sh
 bun run bun:check
-bun run --cwd packages/m3 test && bun run --cwd packages/m3 typecheck
+bun run --cwd packages/ui/m3 test && bun run --cwd packages/ui/m3 typecheck
 bunx turbo run typecheck build --filter=@aphrody/m3
 ```
 

@@ -12,9 +12,9 @@ lanes, while sharing geometry and validation.
 
 ## Boundaries
 
-- Native consumers use `packages/canvas`.
-- Browser/site consumers use `packages/canvas/site` and
-  `packages/material-web`.
+- Native consumers use `packages/ui/canvas`.
+- Browser/site consumers use `packages/ui/canvas/site` and
+  `packages/ui/material-web`.
 - Tauri/Wry and Obscura host native or web surfaces; they do not duplicate
   backend policy.
 - `aphrody-m3` and `aphrody-m3-tokens` remain the source of M3 layout, theme,

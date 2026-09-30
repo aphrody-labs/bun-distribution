@@ -3,8 +3,8 @@
   "name": "aphrody-google-stack",
   "authority": "aphrody-google",
   "sourceRepositories": {
-    "ai": "../src/aphrody-ai",
-    "web": "../src/aphrody-web",
+    "ai": ".",
+    "web": ".",
     "infra": "."
   },
   "artifacts": {

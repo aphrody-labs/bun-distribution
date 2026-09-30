@@ -1,0 +1,93 @@
+# @aphrody/workspace
+
+Bun automation boundary for Aphrody Infra. From this checkout it executes the
+current Rust source through incremental Cargo; set `APHRODY_INFRA_BIN` or
+`APHRODY_INFRA_USE_INSTALLED=1` to use a verified installed binary. It does not
+reimplement infrastructure mutations: Rust owns services,
+Git, SSH, deployment, VPN, OVH and secrets.
+
+```bash
+bun packages/infra/workspace/src/cli.ts doctor --strict --json
+bun packages/infra/workspace/src/ops.ts pipeline plan
+bun packages/infra/workspace/src/ops.ts fleet
+bun packages/infra/workspace/src/ops.ts n2b scan /path/to/project
+bun packages/infra/workspace/src/ops.ts binaries
+bun packages/infra/workspace/src/ops.ts binary aphrody-kernel --version
+bun packages/infra/workspace/src/ops.ts packages status
+bun packages/infra/workspace/src/ops.ts packages outdated --repo aphrody
+bun packages/infra/workspace/src/ops.ts bridge status
+bun packages/infra/workspace/src/ops.ts bridge rust aphrody-kernel --version
+bun packages/infra/workspace/src/ops.ts infra doctor --strict --json
+bun packages/infra/workspace/src/ops.ts infra quality plan --json
+bun packages/infra/workspace/src/ops.ts infra quality lint --repo aphrody-infra --run
+bun packages/infra/workspace/src/ops.ts orchestrate health
+bun packages/infra/workspace/src/ops.ts imports-exports --root ../aphrody-ui --json
+bun packages/infra/workspace/src/ops.ts monorepo-audit --root ../aphrody-ui --only imports --json
+bun packages/infra/workspace/src/ops.ts bun-workspace --root ../aphrody-ui --json
+bun packages/infra/workspace/src/ops.ts bun-docs check
+bun packages/infra/workspace/src/ops.ts ui-verify --root ../aphrody-ui --quick
+```
+
+The `client` export is the typed fetch boundary for `aphrody-infra serve`.
+
+`fleet` reads the generated ecosystem and the pipeline catalogue, so the package
+shows every catalogued Aphrody repository and its delivery stages without a
+second registry. `n2b` forwards full Node-to-Bun migrations to the Aphrody N2B
+CLI; it does not substitute the smaller read-only native scanner.
+
+`binaries` discovers every present `aphrody*` and `n2b` executable in the
+trusted local-bin and sibling workspace build outputs. `binary` dispatches only
+to one of those discovered paths; it never executes an arbitrary `PATH` entry.
+
+`packages` discovers catalogued first-party roots that declare or evidence Bun usage and carry a `bun.lock`. It uses Bun’s package manager for frozen installs, outdated dependency reporting and JSON audits. The default registry is the official npm registry; a workspace’s existing `.npmrc` or `bunfig.toml` registry remains authoritative.
+
+`bridge` is the single Bun-to-Rust registry: it combines the declared Bun workspaces, verified Rust executables and the typed Infra API endpoint. `bridge rust` dispatches only to a discovered executable; `infra` keeps the source-aware Infra invocation, including its explicit `--root` argument.
+
+`infra quality` reads declared `format`, `lint`, typecheck, test and build scripts from first-party package manifests. The Rust control plane selects the script; Bun is invoked only to run the selected application-owned check.
+
+Les étapes d’audit et de correction peuvent être résolues ou lancées par le contrôleur Rust :
+
+```bash
+bun packages/infra/workspace/src/ops.ts infra quality audit --repo aphrody-ui --run
+bun packages/infra/workspace/src/ops.ts infra quality audit --repo shenron --run
+bun packages/infra/workspace/src/ops.ts infra quality fix --repo aphrody-ui --run
+```
+
+`imports-exports`, `monorepo-audit`, `bun-workspace`, `bun-docs` and `ui-verify` are reusable Bun modules. They centralize the UI AST inventory, audit dispatcher, Bun workspace contract, embedded official Bun documentation, and UI gate runner. The UI exposes them through its existing package scripts, with `aphrody-ops` resolved from the Aphrody workstation command directory.
+
+`automation-inventory --root /home/aphro/src --json` emits the current cross-repository automation catalogue and classification.
+
+The consolidation command inventories current checkout heads, dirty paths, workspace manifests and documentation/script destinations without changing source repositories. After reviewing `docs/migration/source-map.json`, `consolidation docs-import` copies only mapped documentation whose source hash still matches; it preserves conflicting target files and records exact duplicate aliases. Relative Markdown links to imported documents and verified local files are rewritten. File targets must have matching source and target hashes, recorded import hashes, or a matching Bun package identity. `consolidation scripts-import` copies categorized first-party scripts without executing them. Remaining asset/code links, reference-style links and missing or changed sources are recorded in target import reports and remain an open gate.
+
+`consolidation submodules-inventory` records Gitlink pins, `.gitmodules` declarations, initialized nested heads and missing candidate roots without initializing a checkout. It also writes a linked map of tracked and untracked nested files with working-file SHA-256, Git index and HEAD object IDs, file classification, parsed Cargo, Bun/Node, Python and pnpm workspace declarations, and resolved member patterns. Nested files have no import target. It leaves `aphrody-ui` to its designated agent and does not inspect that checkout.
+
+`consolidation infra-config-import` stages clean tracked Infra catalogs, systemd units and its Rust toolchain pin at the target root. It refuses a changed source or conflicting target, records source and target hashes, and reports path remaps and endpoint classes in `docs/migration/infra-config-import.json`. The current pipeline and Google stack source paths are transitional; deployed endpoint and unit values are preserved for a coordinated cutover.
+
+`consolidation infra-scripts-import` stages the six clean tracked Infra scripts named by the copied systemd units under categorized `scripts/` paths. It rejects source hash changes and target conflicts, then records the copies in `docs/migration/infra-scripts-import.json`. Copied script defaults and deployed unit paths still need runtime qualification.
+
+`consolidation source-licenses-import` preserves root LICENSE, NOTICE and COPYING files from pinned non-UI source Git commits. It checks each worktree against the pinned blob, records raw and filtered hashes, and gives byte-identical files one canonical target with aliases in `docs/migration/source-licenses-import.json`. Missing root licenses and nested package licenses remain separate migration gates.
+
+`rg` is the Rose Griffon facade over this workspace and Aphrody Infra. `rg status` lists the staged applications and packages; `rg check` runs only scripts declared by those package manifests; `rg deploy` routes through the Rust RG deploy adapter and requires an explicit Infra target. `rg migrate` calls the existing consolidation workflows with the current workspace roots. See `docs/rg/MIGRATION-TO-APHRODY.md` for the migration sequence and exit gates.
+
+`shenron` is the Shenron facade over its Aphrody workspaces and Aphrody Infra. `shenron status` and `shenron scripts` enumerate the nine active workspaces and their declared commands; `shenron check` runs those commands by workspace; `shenron audit` applies the shared script policy to imported app, package, and operations script roots. `shenron infra`, `shenron service`, `shenron dev-env`, and `shenron deploy` use the Rust Infra bridge; deploy always selects the Shenron stack, and Infra stays plan-only unless `--apply` is supplied. `shenron migrate inventory` builds the shared source map; `shenron migrate docs|scripts` uses its existing importers scoped to Shenron. Run inventory first; imports validate source hashes and preserve conflicting targets. `shenron migrate infra` reuses Infra's service-script importer. The Infra service catalog and host configuration remain owned by aphrody-infra and are consumed directly by the CLI; the broad config importer is not part of this Shenron-scoped step.
+
+```bash
+bun packages/infra/workspace/src/ops.ts rg status
+bun packages/infra/workspace/src/ops.ts rg check lint
+bun packages/infra/workspace/src/ops.ts rg migrate inventory
+bun packages/infra/workspace/src/ops.ts rg deploy --target <infra-target>
+bun packages/infra/workspace/src/ops.ts shenron status
+bun packages/infra/workspace/src/ops.ts shenron check lint
+bun packages/infra/workspace/src/ops.ts shenron migrate inventory
+bun packages/infra/workspace/src/ops.ts shenron service catalog
+```
+
+```bash
+bun packages/infra/workspace/src/ops.ts consolidation inventory --source-root /home/aphro/src --iecode-root /home/aphro/iecode --aphrody-root /home/aphro/aphrody --python-root /home/aphro/aphrody-py
+bun packages/infra/workspace/src/ops.ts consolidation submodules-inventory --source-root /home/aphro/src --iecode-root /home/aphro/iecode --aphrody-root /home/aphro/aphrody --python-root /home/aphro/aphrody-py
+bun packages/infra/workspace/src/ops.ts consolidation infra-config-import --source-root /home/aphro/src --aphrody-root /home/aphro/aphrody
+bun packages/infra/workspace/src/ops.ts consolidation infra-scripts-import --source-root /home/aphro/src --aphrody-root /home/aphro/aphrody
+bun packages/infra/workspace/src/ops.ts consolidation source-licenses-import --source-root /home/aphro/src --aphrody-root /home/aphro/aphrody
+bun packages/infra/workspace/src/ops.ts consolidation docs-import --source-root /home/aphro/src --iecode-root /home/aphro/iecode --aphrody-root /home/aphro/aphrody --python-root /home/aphro/aphrody-py
+bun packages/infra/workspace/src/ops.ts consolidation scripts-import --source-root /home/aphro/src --iecode-root /home/aphro/iecode --aphrody-root /home/aphro/aphrody --python-root /home/aphro/aphrody-py
+```

@@ -84,7 +84,7 @@ const report = await migrateProject({
 ## Testing & Verification
 
 ```bash
-bun test packages/m3-next-migrate
+bun test packages/ui/m3-next-migrate
 bun run --filter @aphrody/m3-next-migrate typecheck
 bun run --filter @aphrody/m3-next-migrate build
 ```

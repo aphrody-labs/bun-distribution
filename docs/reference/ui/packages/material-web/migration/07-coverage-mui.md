@@ -1,6 +1,6 @@
 # 07 — Audit de couverture `@mui/material` (état VÉRIFIÉ shippé)
 
-Vérification en lecture seule de la couverture **réelle** de tout `@mui/material@9.x` par le monorepo `material-web`, croisant quatre sources de vérité du **code shippé** (et non les matrices de planif périmées) : les dossiers composants MUI (`material-ui/packages/mui-material/src/*/`, 135 dossiers capitalisés), les tags `md-*` réels (`material-web/packages/react/md-elements.txt`, 119 lignes), les wrappers React `Md*` (`material-web/packages/react/wrappers/*.ts`, 119 wrappers `Md*`) et les éléments Lit `@customElement` (`material-web/packages/material-web/**`). Le doc de planif `05-gap-analysis.md` est désormais **partiellement périmé** : 9 de ses « gaps » ont été shippés depuis (avatar, alert, skeleton, breadcrumbs, link, surface, backdrop, popover, rating) + les 5 transitions React. Tout `🔴` ci-dessous est confirmé par `grep` d'absence, pas déduit du tableau.
+Vérification en lecture seule de la couverture **réelle** de tout `@mui/material@9.x` par le monorepo `material-web`, croisant quatre sources de vérité du **code shippé** (et non les matrices de planif périmées) : les dossiers composants MUI (`material-ui/packages/mui-material/src/*/`, 135 dossiers capitalisés), les tags `md-*` réels (`material-web/packages/ui/m3-react/md-elements.txt`, 119 lignes), les wrappers React `Md*` (`material-web/packages/ui/m3-react/wrappers/*.ts`, 119 wrappers `Md*`) et les éléments Lit `@customElement` (`material-web/packages/ui/material-web/**`). Le doc de planif `05-gap-analysis.md` est désormais **partiellement périmé** : 9 de ses « gaps » ont été shippés depuis (avatar, alert, skeleton, breadcrumbs, link, surface, backdrop, popover, rating) + les 5 transitions React. Tout `🔴` ci-dessous est confirmé par `grep` d'absence, pas déduit du tableau.
 
 ## Méthode et périmètre
 
@@ -89,7 +89,7 @@ Briques transverses réellement présentes : `md-elevation`, `md-ripple`, `md-fo
 
 | MUI        | Statut | Couverture                                                                     |
 | ---------- | ------ | ------------------------------------------------------------------------------ |
-| `Collapse` | ✅     | `Collapse` (`packages/react/transitions/Collapse.tsx`) — **shim React shippé** |
+| `Collapse` | ✅     | `Collapse` (`packages/ui/m3-react/transitions/Collapse.tsx`) — **shim React shippé** |
 | `Fade`     | ✅     | `Fade` (`transitions/Fade.tsx`)                                                |
 | `Grow`     | ✅     | `Grow` (`transitions/Grow.tsx`)                                                |
 | `Slide`    | ✅     | `Slide` (`transitions/Slide.tsx`)                                              |
@@ -133,7 +133,7 @@ Dénominateur = **~100 composants UI** (135 dossiers MUI − ~6 infra/primitives
 
 **Couverture composants UI livrables : ~94 / ~100 couverts (✅+🟡)** — soit ~58 ✅ pleins + ~30 🟡 slot/primitive, 6 🔴 UI restants.
 
-**Tout `@mui/material` est-il couvert ? NON à 100%, mais OUI sur la quasi-totalité de la surface composant.** Tous les composants M3-spec et la grande majorité des patterns MUI ont un équivalent shippé. Les 9 shims planifiés en `05` (avatar, alert, skeleton, breadcrumbs, link, surface, backdrop, popover, rating) et les 5 transitions React sont **bien présents dans le code** — vérifié : dossiers Lit `@customElement` (`material-web/{avatar,alert,skeleton,breadcrumbs,link,surface,backdrop,popover,rating}`), wrappers React `Md*` correspondants, et `packages/react/transitions/{Collapse,Fade,Grow,Slide,Zoom}.tsx`. Restent des gaps ciblés, tous de faible effort.
+**Tout `@mui/material` est-il couvert ? NON à 100%, mais OUI sur la quasi-totalité de la surface composant.** Tous les composants M3-spec et la grande majorité des patterns MUI ont un équivalent shippé. Les 9 shims planifiés en `05` (avatar, alert, skeleton, breadcrumbs, link, surface, backdrop, popover, rating) et les 5 transitions React sont **bien présents dans le code** — vérifié : dossiers Lit `@customElement` (`material-web/{avatar,alert,skeleton,breadcrumbs,link,surface,backdrop,popover,rating}`), wrappers React `Md*` correspondants, et `packages/ui/m3-react/transitions/{Collapse,Fade,Grow,Slide,Zoom}.tsx`. Restent des gaps ciblés, tous de faible effort.
 
 ---
 

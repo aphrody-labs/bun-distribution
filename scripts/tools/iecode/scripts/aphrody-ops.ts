@@ -4,7 +4,7 @@ import { dirname, join, resolve } from "node:path";
 
 const iecodeRoot = resolve(import.meta.dir, "..");
 const aphrodyRoot = resolve(process.env.APHRODY_ROOT ?? join(dirname(iecodeRoot), "aphrody"));
-const cli = join(aphrodyRoot, "packages/infra/aphrody-workspace/src/ops.ts");
+const cli = join(aphrodyRoot, "packages/infra/workspace/src/ops.ts");
 
 if (!(await Bun.file(cli).exists())) {
   console.error(`Aphrody workspace CLI is missing: ${cli}`);

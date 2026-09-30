@@ -46,12 +46,12 @@ when a project already speaks shadcn/Tailwind and you want it themed by M3.
 @import "@aphrody-code/m3-theme/tokens.css"; /* :root (M3) + :root (shadcn aliases) + @theme + .dark */
 ```
 
-It is self-contained: `packages/m3-theme/generate.ts` builds `tokens.css` from the
+It is self-contained: `packages/ui/m3-theme/generate.ts` builds `tokens.css` from the
 M3 baseline palette + the shadcn alias map (no external CLI). Regenerate after
 editing the palette/aliases:
 
 ```bash
-cd packages/m3-theme && bun run generate    # bun generate.ts && oxfmt tokens.css
+cd packages/ui/m3-theme && bun run generate    # bun generate.ts && oxfmt tokens.css
 ```
 
 ## The hard rule — host only, never shadow DOM

@@ -74,5 +74,5 @@ the auto-fixers clear the mechanical MUI residue, and the remaining `error`s
 (`no-sx-prop`) mark the irreducible manual styling work. Pairs with the
 `m3-correct` skill (which remediates) and the `migrate-mui` skill (which ports).
 
-Verify in-repo: `cd packages/eslint-plugin-m3 && bun test/run.ts` (runs real oxlint
+Verify in-repo: `cd packages/ui/eslint-plugin-m3 && bun test/run.ts` (runs real oxlint
 on fixtures, 8/8 fire on bad, 0 on good).

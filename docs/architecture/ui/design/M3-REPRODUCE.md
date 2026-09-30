@@ -14,7 +14,7 @@ are bit-identical to the reference for the same pixels.
 | Pipeline and CLI | `crates/aphrody-m3-reproduce` (`ReproductionPlan`, theme, crawl, fetch, scaffold) |
 | FFI | `crates/aphrody-bun/src/reproduce.rs`: `bun_rs_m3_reproduce`, `bun_rs_m3_seed_from_image` |
 | Bun | `packages/bun/src/reproduce.ts`: `m3Reproduce(opts)`, `m3SeedFromImage(bytes)` |
-| Parity fixture | `packages/m3-theme/scripts/mcu-image-fixture.ts`, `crates/aphrody-m3-tokens/tests/mcu_image_parity.rs` |
+| Parity fixture | `packages/ui/m3-theme/scripts/mcu-image-fixture.ts`, `crates/aphrody-m3-tokens/tests/mcu_image_parity.rs` |
 
 The one deviation from upstream: `QuantizerWsmeans` seeds from an explicit `mulberry32` RNG
 instead of `Math.random()`, matched in the fixture script, so output is deterministic.

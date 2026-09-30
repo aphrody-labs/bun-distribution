@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 # The `@aphrody/m3` framework
 
-Rust owns the canonical tokens. `@aphrody/m3` (`packages/m3`) serves, builds and themes Bun web
+Rust owns the canonical tokens. `@aphrody/m3` (`packages/ui/m3`) serves, builds and themes Bun web
 and desktop Tauri apps through `Bun.serve` and `Bun.build`. Next.js has a separate adapter;
 mobile browser and installed Android/iOS support remain to be qualified. Base UI and Tailwind
 CSS are the forked React web foundation, including webviews; native widgets need their own
@@ -15,10 +15,10 @@ crates/aphrody-m3-tokens (Rust)   seed -> HCT -> palettes -> roles; type, shape,
         |
 crates/aphrody-bun -> @aphrody/bun   m3Css({ sheet, seed, variant, dark, contrast })
         |
-packages/m3 (@aphrody/m3)   m3Plugin | serveM3 | buildM3 | M3App (/react) | /lit | m3 CLI
+packages/ui/m3 (@aphrody/m3)   m3Plugin | serveM3 | buildM3 | M3App (/react) | /lit | m3 CLI
         |
-        +-- packages/material-web (Lit md-*), packages/react (@aphrody/m3-react)
-        +-- packages/m3-primitives, m3-forms, m3-explorer, m3-ai (React 19 + Tailwind v4)
+        +-- packages/ui/material-web (Lit md-*), packages/ui/m3-react (@aphrody/m3-react)
+        +-- packages/ui/m3-primitives, m3-forms, m3-explorer, m3-ai (React 19 + Tailwind v4)
                 -> packages/app-ui (Tauri webview), Drive
 ```
 
@@ -35,19 +35,19 @@ submodules before `bun install --frozen-lockfile` in a fresh checkout.
 
 | Package | Tree | Role |
 | --- | --- | --- |
-| `@aphrody/m3` | `packages/m3` | Plugin, `serveM3`, `buildM3`, `M3App`, Lit entry, `m3` CLI. |
+| `@aphrody/m3` | `packages/ui/m3` | Plugin, `serveM3`, `buildM3`, `M3App`, Lit entry, `m3` CLI. |
 | `@aphrody/bun` | `packages/bun` + `crates/aphrody-bun` | FFI: HCT maths, `m3Css`, Sass compile (`sassRustPlugin`). |
-| `@aphrody/m3-theme` | `packages/m3-theme` | Generated `tokens.css`, `tailwind.css`, `spaceui.css`; `M3ThemeProvider`; Tauri bridge. |
+| `@aphrody/m3-theme` | `packages/ui/m3-theme` | Generated `tokens.css`, `tailwind.css`, `spaceui.css`; `M3ThemeProvider`; Tauri bridge. |
 | `@aphrody/m3-tokens` | `../aphrody-web/packages/m3-tokens` | TypeScript tokens: dynamic colour, breakpoints, platform contract. |
-| `@aphrody/m3-motion` | `packages/m3-motion` | Springs, easings, durations. |
-| `@aphrody/m3-fonts` | `packages/m3-fonts` | WOFF2 subsets and font stacks ([`FONTS-AND-ICONS.md`](./FONTS-AND-ICONS.md)). |
-| `@aphrody/m3-icons` | `packages/m3-icons` | Material Symbols as inline SVG ([`M3-ICONS.md`](./M3-ICONS.md)). |
-| `@aphrody/material-web` | `packages/material-web` | Lit `md-*` fork plus Aphrody extension elements. |
-| `@aphrody/m3-react` | `packages/react` | `@lit/react` wrappers, `adaptive`, `state`, `transitions`. |
+| `@aphrody/m3-motion` | `packages/ui/m3-motion` | Springs, easings, durations. |
+| `@aphrody/m3-fonts` | `packages/ui/m3-fonts` | WOFF2 subsets and font stacks ([`FONTS-AND-ICONS.md`](./FONTS-AND-ICONS.md)). |
+| `@aphrody/m3-icons` | `packages/ui/m3-icons` | Material Symbols as inline SVG ([`M3-ICONS.md`](./M3-ICONS.md)). |
+| `@aphrody/material-web` | `packages/ui/material-web` | Lit `md-*` fork plus Aphrody extension elements. |
+| `@aphrody/m3-react` | `packages/ui/m3-react` | `@lit/react` wrappers, `adaptive`, `state`, `transitions`. |
 | `@aphrody/m3-primitives`, `-forms`, `-explorer`, `-ai` | `packages/m3-*` | React components for application shells (D2). |
-| `@aphrody/m3-next` | `packages/m3-next` | Next.js 16 App Router adapter (`examples/m3-next`). |
-| `@aphrody/m3-config` | `packages/m3-config` | Shared tsconfig, tsup and test presets (private). |
-| `@aphrody/eslint-plugin-m3` | `packages/eslint-plugin-m3` | M3 lint rules. |
+| `@aphrody/m3-next` | `packages/ui/m3-next` | Next.js 16 App Router adapter (`examples/m3-next`). |
+| `@aphrody/m3-config` | `packages/ui/m3-config` | Shared tsconfig, tsup and test presets (private). |
+| `@aphrody/eslint-plugin-m3` | `packages/ui/eslint-plugin-m3` | M3 lint rules. |
 
 ## An application
 

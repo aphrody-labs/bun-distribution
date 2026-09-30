@@ -1,7 +1,7 @@
 # Audit de couverture M3 Components × material-web
 
 Source spec : `https://m3.material.io/components/<slug>` (fetch via `mcp__aphrody__universal_web_fetch`, mai 2026). Synthèses par composant dans `var/m3-spec/components/<slug>.md`.
-Couverture code : custom elements `md-*` du package `packages/material-web/` (inventaire `@customElement` réel ; `labs/` = non-stable, `labs/gb/` = génération M3 Expressive en cours).
+Couverture code : custom elements `md-*` du package `packages/ui/material-web/` (inventaire `@customElement` réel ; `labs/` = non-stable, `labs/gb/` = génération M3 Expressive en cours).
 
 Légende statut :
 

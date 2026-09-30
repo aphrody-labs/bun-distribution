@@ -11,22 +11,22 @@ You are an expert Material Design 3 component author for the material-web monore
 
 First, detect which context you are in:
 
-- **Monorepo** (the `material-web` project): `packages/material-web/` and `packages/react/` directories exist. Follow the monorepo procedure below exactly.
+- **Monorepo** (the `material-web` project): `packages/ui/material-web/` and `packages/ui/m3-react/` directories exist. Follow the monorepo procedure below exactly.
 - **Generic project**: only `@material/web` or `@aphrody-code/m3-react` is a dependency. Follow the generic procedure below.
 
 Never mix the two paths.
 
-## Monorepo procedure (packages/material-web)
+## Monorepo procedure (packages/ui/material-web)
 
 Follow the `add-md-component` skill exactly. Summary of the non-negotiable steps:
 
 ### Step 0 — Read the gabarit
 
-Read all 3 files of `packages/material-web/snackbar/` before writing anything. For form-associated components, also read an existing form component (e.g. `checkbox`). This prevents formatting and structural drift.
+Read all 3 files of `packages/ui/material-web/snackbar/` before writing anything. For form-associated components, also read an existing form component (e.g. `checkbox`). This prevents formatting and structural drift.
 
 ### Step 1 — Scaffold three files
 
-Under `packages/material-web/<comp>/` (where `<comp>` is the tag without `md-`):
+Under `packages/ui/material-web/<comp>/` (where `<comp>` is the tag without `md-`):
 
 ```
 <comp>/<comp>.ts                      # @customElement + class + HTMLElementTagNameMap
@@ -62,7 +62,7 @@ For styles (`internal/<comp>-styles.ts`):
 
 ### Step 2 — Wire point 1/3: bundle export
 
-Add to `packages/material-web/aphrody-components.ts`:
+Add to `packages/ui/material-web/aphrody-components.ts`:
 
 ```ts
 export * from "./<comp>/<comp>.js";
@@ -72,21 +72,21 @@ Use `.js` extension (TypeScript resolves to `.ts` at compile time; the runtime a
 
 ### Step 3 — Wire point 2/3: register the tag
 
-Append the tag (e.g. `md-rating`) on a new line in `packages/react/md-elements.txt`.
+Append the tag (e.g. `md-rating`) on a new line in `packages/ui/m3-react/md-elements.txt`.
 
 ### Step 4 — Custom events (if any)
 
-If the component fires non-trivial events, add an entry to the `EVENTS_BY_TAG` map in `packages/react/generate.mjs`, mapping React handler prop names to the actual DOM event strings. Verify the string against the real `new CustomEvent('...')` or `@fires` annotation in the source — do not guess.
+If the component fires non-trivial events, add an entry to the `EVENTS_BY_TAG` map in `packages/ui/m3-react/generate.mjs`, mapping React handler prop names to the actual DOM event strings. Verify the string against the real `new CustomEvent('...')` or `@fires` annotation in the source — do not guess.
 
 ### Step 5 — Wire point 3/3: regenerate React wrappers
 
 ```bash
-cd packages/react && bun run generate.mjs
+cd packages/ui/m3-react && bun run generate.mjs
 ```
 
 Check stdout: the tag must NOT appear under "Unresolved". If it does, the consecutive-lines constraint was violated or the export from `aphrody-components.ts` is missing.
 
-Never hand-edit `packages/react/wrappers/*.ts` or `packages/react/index.ts` — they are fully auto-generated.
+Never hand-edit `packages/ui/m3-react/wrappers/*.ts` or `packages/ui/m3-react/index.ts` — they are fully auto-generated.
 
 ### Step 6 — Strict build verification (in this exact order)
 
@@ -94,8 +94,8 @@ The `.js` compiled files are gitignored. Components that import other components
 
 ```bash
 bunx turbo run build
-cd packages/material-web && bunx tsc -p tsconfig.json --noEmit
-cd packages/material-web && bun run build:aphrody
+cd packages/ui/material-web && bunx tsc -p tsconfig.json --noEmit
+cd packages/ui/material-web && bun run build:aphrody
 ```
 
 `tsc --noEmit` runs in strict mode with `noUnusedLocals`. `--skipLibCheck` alone is not enough — it hides `TS6133`/`TS7011` errors that the real build catches.

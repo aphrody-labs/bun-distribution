@@ -30,7 +30,7 @@ charge pas** la police — l'intégrateur le fait une fois (cf. §3).
 
 Depuis 2026-05, le `md-icon` **stable** expose les 4 axes Material Symbols comme
 tokens (avant : seul `font-variation-settings: inherit` existait — aucun contrôle
-par axe). Source : `packages/material-web/icon/internal/_icon.scss` +
+par axe). Source : `packages/ui/material-web/icon/internal/_icon.scss` +
 `tokens/_md-comp-icon.scss`.
 
 | Axe  | Token            | Plage    | Défaut | Effet                          |
@@ -64,7 +64,7 @@ Les autres tokens existants restent : `--md-icon-size` (24px), `--md-icon-font`
 
 ## 3. Intégration : charger la police (helper fourni)
 
-`packages/material-web/icon/material-symbols.ts` fournit des helpers (calqués sur
+`packages/ui/material-web/icon/material-symbols.ts` fournit des helpers (calqués sur
 ceux de Google Sans). **Trois voies** :
 
 ### a. CDN Google Fonts, plages variables (prototypage)

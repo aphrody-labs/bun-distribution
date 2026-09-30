@@ -1509,7 +1509,7 @@ qui appelle `checkPackageRuntimes`, `checkNoEscapingImports` et
 | Reprises qui triplent la latence | `maxRetries: 0` sur le chemin chaud, décompte des appels `fetch` dans les tests |
 | `site:migrate` du déploiement qui prendrait des migrations déplacées | rien n'est déplacé en Phase 1 (D5) |
 | `.env` local avec une URL de base vivante | les tests ne lisent jamais `DATABASE_URL` ; sonde d'audit refusée sans `--operator` |
-| Binaire canvas Linux non prouvé (GLIBC, rendu) | shim conservé hors cibles préconstruites ; preuve en CI-2 puis sonde INFRA-9 ; retour arrière d'une ligne de catalogue vers la version `1.0.9-aphrody.x` précédente de `@aphrody/canvas` ; correctif du binaire dans `aphrody-ui/packages/canvas` |
+| Binaire canvas Linux non prouvé (GLIBC, rendu) | shim conservé hors cibles préconstruites ; preuve en CI-2 puis sonde INFRA-9 ; retour arrière d'une ligne de catalogue vers la version `1.0.9-aphrody.x` précédente de `@aphrody/canvas` ; correctif du binaire dans `aphrody-ui/packages/ui/canvas` |
 | `minimumReleaseAge` | aucune résolution neuve prévue (`@ai-sdk/provider` et `postcss` déjà verrouillés, canvas déjà livré) ; tout ajout au diff de `bun.lock` est refusé |
 | Changement de comportement glissé dans un « refactor » | registre S/B ; instantanés statut/corps, équivalence CSS, instantané OpenAPI et fixtures de parité IA font échouer les gates |
 

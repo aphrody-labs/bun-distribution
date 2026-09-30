@@ -4,11 +4,12 @@
 
 This repository is the Rust + Bun source target. The active migration plan is
 [PLAN.md](PLAN.md); the source-to-target inventory is generated and owned by
-`aphrody-infra/packages/aphrody-workspace`.
+`packages/infra/workspace`.
 
 ## Ownership and layout
 
-- Rust crates live under `crates/<domain>/<crate>`; Bun apps and packages live
+- Rust libraries live under `crates/<domain>/<crate>`; the general CLI lives
+  under `apps/cli`. Bun apps and packages live
   under `apps/<domain>/<app>` and `packages/<domain>/<package>`.
 - New Rust packages follow `docs/architecture/rust-crate-naming.md`; existing
   imported and published package names remain compatibility contracts.
@@ -21,8 +22,9 @@ This repository is the Rust + Bun source target. The active migration plan is
 - Keep the first-party Rust and Bun workspaces at this repository root. Keep
   Bun, Oxc and other upstream forks in `upstream/` with pinned revisions and
   their upstream workspaces/history.
-- Do not import `rg` or `shenron` until the root consolidation plan's stability
-  and closure gates pass.
+- RG and Shenron sources are imported. Qualify contracts, native/interop, OS,
+  Infra, UI and AI/Web before product integration. Shenron is the final product
+  gate; imported source alone does not prove deployment readiness.
 
 ## Migration safety
 

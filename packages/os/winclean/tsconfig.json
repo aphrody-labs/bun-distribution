@@ -5,7 +5,7 @@
     "moduleResolution": "bundler",
     "paths": {
       "@aphrody/os": [
-        "../os/src/index.ts"
+        "../kernel-client/src/index.ts"
       ]
     },
     "strict": true,

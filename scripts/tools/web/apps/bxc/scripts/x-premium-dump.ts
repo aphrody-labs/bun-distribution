@@ -20,7 +20,7 @@ import { XClient, XSession } from "@aphrody/x";
 
 const CATALOG_PATH = join(
   dirname(fileURLToPath(import.meta.url)),
-  "../../../../../../crates/web/aphrody-x/data/x-graphql-catalog.json",
+  "../../../../../../crates/web/x/data/x-graphql-catalog.json",
 );
 
 /** GraphQL ops tied to x.com/i/premium, subscriptions, or Blue Verified (2026 catalog). */

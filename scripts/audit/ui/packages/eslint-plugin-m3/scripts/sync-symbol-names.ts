@@ -3,7 +3,7 @@
  * canonique du kit de migration (migration/codemods/data/material-symbols-names.json,
  * elle-même issue des codepoints officiels Google).
  *
- * Lancer : bun scripts/sync-symbol-names.ts   (depuis packages/eslint-plugin-m3/)
+ * Lancer : bun scripts/sync-symbol-names.ts   (depuis packages/ui/eslint-plugin-m3/)
  */
 import { dirname, join } from "node:path";
 

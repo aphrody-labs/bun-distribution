@@ -48,7 +48,7 @@ template — the pipeline never hard-fails for lack of a key.
 ## When to use
 
 - A new `docs/*.md` was written in English -> `doc-ai translate docs/new.md fr`.
-- A new `md-*` component shipped -> `doc-ai generate packages/material-web/<comp>/internal/<comp>.ts`
+- A new `md-*` component shipped -> `doc-ai generate packages/ui/material-web/<comp>/internal/<comp>.ts`
   to draft its API guide.
 - Before a docs release -> `bun run docs:ai` to refresh every translation.
 

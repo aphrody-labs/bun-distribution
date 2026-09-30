@@ -53,4 +53,4 @@ extracts, when you only want the parse:
 - `m3-template` (skill) — interactive scaffolding of a canonical M3 page with the
   adaptive shell; reach for it when a human is iterating in-repo.
 
-Verify in-repo: `cd packages/m3-design && bun test` (parser + generator suites).
+Verify in-repo: `cd packages/ui/m3-design && bun test` (parser + generator suites).

@@ -22,18 +22,18 @@ the M3 family on `aphrody.m3Version`), commit, then `git tag m3-v<version>` and 
 
 | In-tree | Published as |
 | --- | --- |
-| `packages/canvas` | `@aphrody/canvas` (own version `<upstream>-aphrody.<n>`, see its README) |
-| `packages/material-web` | `@aphrody/material-web` |
-| `packages/react` | `@aphrody/m3-react` |
-| `packages/m3-motion` | `@aphrody/m3-motion` |
-| `packages/m3-theme` | `@aphrody/m3-theme` |
-| `packages/m3-primitives` | `@aphrody/m3-primitives` |
-| `packages/m3-forms` | `@aphrody/m3-forms` |
-| `packages/m3-explorer` | `@aphrody/m3-explorer` |
-| `packages/m3-ai` | `@aphrody/m3-ai` |
-| `packages/m3-design` | `@aphrody/m3-design` |
-| `packages/eslint-plugin-m3` | `@aphrody/eslint-plugin-m3` |
-| `packages/m3` | `@aphrody/m3` |
+| `packages/ui/canvas` | `@aphrody/canvas` (own version `<upstream>-aphrody.<n>`, see its README) |
+| `packages/ui/material-web` | `@aphrody/material-web` |
+| `packages/ui/m3-react` | `@aphrody/m3-react` |
+| `packages/ui/m3-motion` | `@aphrody/m3-motion` |
+| `packages/ui/m3-theme` | `@aphrody/m3-theme` |
+| `packages/ui/m3-primitives` | `@aphrody/m3-primitives` |
+| `packages/ui/m3-forms` | `@aphrody/m3-forms` |
+| `packages/ui/m3-explorer` | `@aphrody/m3-explorer` |
+| `packages/ui/m3-ai` | `@aphrody/m3-ai` |
+| `packages/ui/m3-design` | `@aphrody/m3-design` |
+| `packages/ui/eslint-plugin-m3` | `@aphrody/eslint-plugin-m3` |
+| `packages/ui/m3` | `@aphrody/m3` |
 
 Published elsewhere: `@aphrody/m3-tokens` from `aphrody-web` (`packages/m3-tokens`, consumed here
 through the root `catalog`). `@aphrody/bun` (`packages/bun`, native crate `crates/aphrody-bun`) is

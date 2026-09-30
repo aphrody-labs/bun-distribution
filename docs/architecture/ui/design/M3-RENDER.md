@@ -67,7 +67,7 @@ Native hosts:
   `@aphrody/bun`. Wire types in `packages/bun/src/scene-types.ts` mirror `scene.rs` by hand
   (kept honest by the JSON round-trip test).
 - `@aphrody/canvas` `drawM3Scene` / `drawM3Scene3d` import `@aphrody/bun` lazily (optional peer);
-  `packages/canvas/scene-types.d.ts` is a drift-checked copy of the wire types.
+  `packages/ui/canvas/scene-types.d.ts` is a drift-checked copy of the wire types.
 
 ## Known limits
 
@@ -81,5 +81,5 @@ cargo test -p aphrody-render --locked
 cargo test -p aphrody-render --locked --features gpu
 cargo clippy -p aphrody-render --locked --all-targets --features gpu -- -D warnings
 cargo test -p aphrody-bun --locked
-(cd packages/canvas && bun test)
+(cd packages/ui/canvas && bun test)
 ```

@@ -195,7 +195,7 @@ Remind the caller to run `bun install` first if `@aphrody-code/m3-react` or
 ### Example A -- Settings screen (React, Compact through Expanded)
 
 ```tsx
-// packages/react usage; host layout = Tailwind; theming = --md-sys-color-*
+// packages/ui/m3-react usage; host layout = Tailwind; theming = --md-sys-color-*
 
 import {
   MdNavigationBar,

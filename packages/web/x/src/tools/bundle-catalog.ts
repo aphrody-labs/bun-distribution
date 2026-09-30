@@ -22,7 +22,7 @@ export interface CatalogFile {
 }
 
 const REPO_ROOT = join(dirname(fileURLToPath(import.meta.url)), "../../../../..");
-export const DEFAULT_CATALOG_PATH = join(REPO_ROOT, "crates/web/aphrody-x/data/x-graphql-catalog.json");
+export const DEFAULT_CATALOG_PATH = join(REPO_ROOT, "crates/web/x/data/x-graphql-catalog.json");
 
 const BUNDLE_RE =
   /https:\/\/abs\.twimg\.com\/responsive-web\/client-web(?:-legacy)?\/[A-Za-z0-9.-]+\.js/g;
