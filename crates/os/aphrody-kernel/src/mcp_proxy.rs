@@ -16,6 +16,9 @@ use crate::{SubsystemError, SystemSubsystem, ToolDefinition};
 const RPC_TIMEOUT: Duration = Duration::from_secs(60);
 const AUTO_DISCOVERY_TIMEOUT: Duration = Duration::from_secs(10);
 const MAX_MCP_FRAME: usize = 64 * 1024 * 1024;
+// The Rust AI MCP catalog owns native Web tool aliases. The migrated CLI
+// aphrody-web has no MCP mode; obsolete browser/BXC binaries are not providers.
+const WEB_MCP_PROVIDERS: &[(&str, &[&str])] = &[("aphrody-mcp", &["server"])];
 
 async fn read_frame<R: AsyncBufRead + Unpin>(
     reader: &mut R,
@@ -100,12 +103,7 @@ impl McpProxySubsystem {
             });
         }
 
-        // The browser's backend exposes its full live tool catalog. Its plain
-        // `mcp` command delegates to aphrody-mcp, so request the backend here.
-        // The unified MCP binary remains an optional fallback.
-        for (name, args) in
-            [("aphrody-web-browser", &["mcp", "--backend"][..]), ("aphrody-mcp", &["server"][..])]
-        {
+        for &(name, args) in WEB_MCP_PROVIDERS {
             let Some(path) = installed_binary(name) else {
                 continue;
             };
@@ -619,6 +617,11 @@ printf '%s\n' '{"jsonrpc":"2.0","id":3,"result":{"tools":[],"nextCursor":"again"
             .err()
             .unwrap();
         assert!(error.contains("repeated a tools/list cursor"));
+    }
+
+    #[test]
+    fn web_provider_discovery_uses_the_native_mcp_catalog() {
+        assert_eq!(super::WEB_MCP_PROVIDERS, &[("aphrody-mcp", &["server"][..])]);
     }
 
     #[test]

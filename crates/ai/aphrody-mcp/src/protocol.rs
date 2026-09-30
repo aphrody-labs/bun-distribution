@@ -28,11 +28,8 @@ use serde_json::{Value, json};
 /// session hook.
 pub(crate) const USAGE_GUIDE: &str = "\
 Use the aphrody tools as native tools, first, whenever they cover the task:
-- Web search: aphrody_search (Google, authenticated, rich=true for featured snippet, knowledge \
-                                      panel, People-Also-Ask) instead of a built-in WebSearch.
-- Read a URL: universal_web_fetch (Markdown) or aphrody_google_fetch (Markdown plus JSON-LD / \
-                                      OpenGraph / canonical) instead of a built-in WebFetch; \
-                                      profile=stealth or max for pages that need a real browser.
+- Web search: aphrody_search instead of a built-in WebSearch.
+- Read a URL: universal_web_fetch (Markdown) instead of a built-in WebFetch.
 - Library, SDK or API docs: docs_auto_search, then context7_query_docs or microsoft_docs_fetch for \
                                       a precise page.
 - Browser automation: aphrody_browser_navigate, aphrody_browser_snapshot, aphrody_browser_click, \
@@ -43,10 +40,9 @@ Use the aphrody tools as native tools, first, whenever they cover the task:
                                       aphrody_tauri_get_styles, aphrody_tauri_viewport_read, \
                                       aphrody_tauri_screenshot; use aphrody_tauri_execute_js only \
                                       for explicit local UI inspection.
-- Crawl or mirror a site: aphrody_crawl_recursive, aphrody_crawl_massive, aphrody_mirror.
-- Google services: aphrody_google_translate, aphrody_google_detect_language, aphrody_google_tts, \
-                                      aphrody_google_suggest, aphrody_google_books, \
-                                      aphrody_google_dns, aphrody_google_sheet_export, \
+- Crawl a site: aphrody_web_crawl with urls and bounded crawl options.
+- Google services: aphrody_google_suggest, aphrody_google_dns, \
+                                      aphrody_google_supported_languages, aphrody_google_sheet_export, \
                                       aphrody_google_doc_export, aphrody_google_calendar_public.
 - Gemini: aphrody_gemini_ask (aphrody_gemini_rust for the fastest one-shot answer).
 - Node.js to Bun: n2b. Binaries: re_triage, re_strings, re_sections, re_disasm.
@@ -294,25 +290,24 @@ const PROMPTS: &[PromptSpec] = &[
         title: "Research a topic on the web",
         description: "Search Google, read the best sources, answer with citations.",
         argument: ("topic", "What to research."),
-        template: "Research: {}\n\nCall aphrody_search with rich=true, read the three most \
-                   relevant results with aphrody_google_fetch, then answer with a short synthesis \
+        template: "Research: {}\n\nCall aphrody_search, read the three most \
+                   relevant results with universal_web_fetch, then answer with a short synthesis \
                    and cite every claim with its URL.",
     },
     PromptSpec {
         name: "read-page",
         title: "Read a web page",
-        description: "Fetch a URL as Markdown with its structured metadata.",
+        description: "Fetch a URL as Markdown.",
         argument: ("url", "The page to read."),
-        template: "Read {} with aphrody_google_fetch (profile=http; retry with profile=stealth if \
-                   the page is empty or blocked) and summarise it.",
+        template: "Read {} with universal_web_fetch and summarise it.",
     },
     PromptSpec {
         name: "crawl-site",
         title: "Crawl a site",
         description: "Crawl a site recursively and report what it contains.",
         argument: ("url", "The site root."),
-        template: "Crawl {} with aphrody_crawl_recursive, then report the page count, the main \
-                   sections and any structured data found.",
+        template: "Crawl {} with aphrody_web_crawl (urls contains the site root), then report the page count, \
+                   the main sections and any structured data found.",
     },
     PromptSpec {
         name: "migrate-to-bun",

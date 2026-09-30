@@ -85,17 +85,17 @@ pub async fn register_configured_mcp_servers(
 
                         for tool in tools {
                             // Check explicit allow-list:
-                            if let Some(allow) = &cfg.enabled_tools {
-                                if !allow.contains(&tool.name) {
-                                    continue;
-                                }
+                            if let Some(allow) = &cfg.enabled_tools
+                                && !allow.contains(&tool.name)
+                            {
+                                continue;
                             }
 
                             // Check explicit deny-list:
-                            if let Some(deny) = &cfg.disabled_tools {
-                                if deny.contains(&tool.name) {
-                                    continue;
-                                }
+                            if let Some(deny) = &cfg.disabled_tools
+                                && deny.contains(&tool.name)
+                            {
+                                continue;
                             }
 
                             let executor = McpToolExecutor::from_mcp_tool(

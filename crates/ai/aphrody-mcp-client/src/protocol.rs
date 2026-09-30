@@ -256,10 +256,10 @@ pub fn parse_server_info(result: &JsonValue) -> Result<ServerInfo> {
 /// Parse a `tools/call` result into [`CallToolResult`].
 pub fn parse_call_tool_result(result: &JsonValue) -> Result<CallToolResult> {
     // If the result already matches CallToolResult schema:
-    if let Ok(res) = serde_json::from_value::<CallToolResult>(result.clone()) {
-        if !res.content.is_empty() || res.is_error.is_some() {
-            return Ok(res);
-        }
+    if let Ok(res) = serde_json::from_value::<CallToolResult>(result.clone())
+        && (!res.content.is_empty() || res.is_error.is_some())
+    {
+        return Ok(res);
     }
 
     // Fallback: if result has a direct "content" array:

@@ -1,23 +1,18 @@
 // SPDX-License-Identifier: Apache-2.0
 // SPDX-FileCopyrightText: 2026 aphrody contributors
 //
-//! Where bxc lives on this machine.
+//! Locate native Aphrody Web artifacts for installation reports.
 //!
-//! Two artefacts, two chains, one module — because the workspace has already
-//! paid for the alternative. `aphrody-infer`, `aphrody-voice` and
-//! `aphrody-agent-home` each grew their own copy of the `~/.aphrody` rule and
-//! promptly disagreed about it. The
-//! `bxc` executable was on its way to the same fate: `crates/cli` carried a
-//! chain that, on Windows, only looked in `%LOCALAPPDATA%\bxc\bin` — while the
-//! installed binary on this very machine sits at `~/.local/bin/bxc.exe`. That
-//! chain now delegates here.
+//! # Executable — `aphrody-web`
 //!
-//! # Executable — `bxc`
-//!
-//! 1. `$BXC_BIN` — explicit, must exist
-//! 2. `%LOCALAPPDATA%\bxc\bin\bxc.exe` (Windows only)
-//! 3. `<home>/bxc/bin`, `<home>/.local/bin`, `<home>/.local/share/bxc/bin`
+//! 1. `$APHRODY_WEB_BIN` — explicit, must exist
+//! 2. Published legacy override names, when explicitly configured
+//! 3. `<home>/.local/bin/aphrody-web`
 //! 4. `PATH`
+//!
+//! Legacy executable names are never automatically discovered. Browser and MCP
+//! callers use the linked Rust Web service; locating this CLI does not establish
+//! an MCP transport capability.
 //!
 //! # Shared library — `bxc_rust_bridge`
 //!
@@ -52,11 +47,20 @@ fn library_override_var() -> &'static str {
 /// override is exactly the kind of change nobody notices until it bites.
 pub const ENV_BIN: &str = "BXC_BIN";
 
-/// Canonical override for the Aphrody Web Browser executable.
+/// Published compatibility override for an explicitly configured executable.
 pub const ENV_WEB_BROWSER_BIN: &str = "APHRODY_WEB_BROWSER_BIN";
 
+/// Canonical override for the native Aphrody Web CLI.
+pub const ENV_WEB_BIN: &str = "APHRODY_WEB_BIN";
+
 fn binary_override_var() -> &'static str {
-    if non_empty_env(ENV_WEB_BROWSER_BIN).is_some() { ENV_WEB_BROWSER_BIN } else { ENV_BIN }
+    if non_empty_env(ENV_WEB_BIN).is_some() {
+        ENV_WEB_BIN
+    } else if non_empty_env(ENV_WEB_BROWSER_BIN).is_some() {
+        ENV_WEB_BROWSER_BIN
+    } else {
+        ENV_BIN
+    }
 }
 
 /// Platform file name of the bxc bridge shared library.
@@ -86,10 +90,13 @@ pub const UNIFIED_LIB_NAME: &str = if cfg!(windows) {
     "libaphrody_ffi.so"
 };
 
-/// Platform file name of the bxc executable.
+/// Former executable name retained for source API compatibility only.
 pub const BIN_NAME: &str = if cfg!(windows) { "bxc.exe" } else { "bxc" };
 
 /// Preferred public executable name for Aphrody Web Browser.
+pub const WEB_BIN_NAME: &str = if cfg!(windows) { "aphrody-web.exe" } else { "aphrody-web" };
+
+/// Former public browser name retained for source API compatibility only.
 pub const WEB_BROWSER_BIN_NAME: &str =
     if cfg!(windows) { "aphrody-web-browser.exe" } else { "aphrody-web-browser" };
 
@@ -263,7 +270,7 @@ impl Attempt {
     /// Turn a failed attempt into the typed error for an executable.
     fn into_binary_error(self) -> WebBrowserError {
         self.override_error()
-            .unwrap_or_else(|| WebBrowserError::binary_missing(WEB_BROWSER_BIN_NAME, &self.tried))
+            .unwrap_or_else(|| WebBrowserError::binary_missing(WEB_BIN_NAME, &self.tried))
     }
 
     /// Turn a failed attempt into the typed error for the shared library.
@@ -338,7 +345,7 @@ fn is_file(path: &Path) -> bool {
 // Executable
 // ---------------------------------------------------------------------------
 
-/// Candidate list for the `bxc` executable, in resolution order.
+/// Candidate list for the native `aphrody-web` CLI, in resolution order.
 ///
 /// Split from [`binary`] so the ordering is a value a test can assert on.
 #[must_use]
@@ -351,60 +358,18 @@ pub fn binary_candidates() -> Vec<(PathBuf, fn(PathBuf) -> Source)> {
 
     if let Some(home) = home() {
         out.push((
-            home.join(".local").join("bin").join(WEB_BROWSER_BIN_NAME),
+            home.join(".local").join("bin").join(WEB_BIN_NAME),
             Source::Home as fn(PathBuf) -> Source,
         ));
     }
-
     for dir in path_dirs() {
-        out.push((dir.join(WEB_BROWSER_BIN_NAME), Source::Path as fn(PathBuf) -> Source));
-    }
-
-    #[cfg(target_os = "windows")]
-    if let Some(local) = std::env::var_os("LOCALAPPDATA") {
-        out.push((
-            Path::new(&local).join("bxc").join("bin").join(BIN_NAME),
-            Source::Home as fn(PathBuf) -> Source,
-        ));
-    }
-
-    if let Some(home) = home() {
-        for rel in [
-            ["bxc", "bin"].as_slice(),
-            [".local", "bin"].as_slice(),
-            [".local", "share", "bxc", "bin"].as_slice(),
-        ] {
-            let mut p = home.clone();
-            p.extend(rel);
-            p.push(BIN_NAME);
-            out.push((p, Source::Home as fn(PathBuf) -> Source));
-        }
-    }
-
-    for root in in_tree_roots() {
-        out.push((
-            root.join("apps").join("bxc").join("bin").join(BIN_NAME),
-            Source::InTree as fn(PathBuf) -> Source,
-        ));
-        #[cfg(target_os = "windows")]
-        out.push((
-            root.join("apps").join("bxc").join("bin").join("bxc.cmd"),
-            Source::InTree as fn(PathBuf) -> Source,
-        ));
-        out.push((
-            root.join("apps").join("bxc").join("dist").join(BIN_NAME),
-            Source::InTree as fn(PathBuf) -> Source,
-        ));
-    }
-
-    for dir in path_dirs() {
-        out.push((dir.join(BIN_NAME), Source::Path as fn(PathBuf) -> Source));
+        out.push((dir.join(WEB_BIN_NAME), Source::Path as fn(PathBuf) -> Source));
     }
 
     out
 }
 
-/// Locate the `bxc` executable.
+/// Locate the native `aphrody-web` CLI.
 ///
 /// # Errors
 ///
@@ -414,7 +379,7 @@ pub fn binary() -> Result<Source> {
     attempt.found.clone().ok_or_else(|| attempt.into_binary_error())
 }
 
-/// Locate the `bxc` executable, reporting the itinerary either way.
+/// Locate the native CLI, reporting the itinerary either way.
 #[must_use]
 pub fn binary_attempt() -> Attempt {
     resolve_one(binary_override_var(), binary_candidates, &is_file)
@@ -576,23 +541,36 @@ mod tests {
     #[test]
     fn the_binary_chain_looks_under_dot_local_bin_on_every_platform() {
         let Some(home) = home() else { return };
-        let wanted = home.join(".local").join("bin").join(BIN_NAME);
+        let wanted = home.join(".local").join("bin").join(WEB_BIN_NAME);
         let found = binary_candidates().into_iter().any(|(p, _)| p == wanted);
         assert!(found, "expected {} among the candidates", wanted.display());
     }
 
     #[test]
-    fn public_browser_name_precedes_legacy_binary_name() {
-        let candidates: Vec<_> = binary_candidates().into_iter().map(|(path, _)| path).collect();
-        let public = candidates
-            .iter()
-            .position(|path| path.file_name().is_some_and(|name| name == WEB_BROWSER_BIN_NAME))
-            .expect("public browser binary candidate");
-        let legacy = candidates
-            .iter()
-            .position(|path| path.file_name().is_some_and(|name| name == BIN_NAME))
-            .expect("legacy browser binary candidate");
-        assert!(public < legacy);
+    fn native_cli_install_is_discovered() {
+        let canonical = home().expect("test home").join(".local/bin").join(WEB_BIN_NAME);
+        let probe = |path: &Path| path == canonical;
+        let cli = walk(binary_candidates(), &probe);
+        assert_eq!(cli.found.expect("native CLI").path(), canonical);
+    }
+
+    #[test]
+    fn obsolete_binary_names_are_not_automatically_discovered() {
+        for (path, wrap) in binary_candidates() {
+            if matches!(wrap(path.clone()), Source::Override(_)) {
+                continue;
+            }
+            assert_eq!(path.file_name().unwrap(), WEB_BIN_NAME);
+            assert_ne!(path.file_name().unwrap(), WEB_BROWSER_BIN_NAME);
+            assert_ne!(path.file_name().unwrap(), BIN_NAME);
+        }
+        let legacy_only = walk(
+            binary_candidates(),
+            &|path| matches!(path.file_name().and_then(|name| name.to_str()), Some(name) if name == BIN_NAME || name == WEB_BROWSER_BIN_NAME),
+        );
+        if non_empty_env(binary_override_var()).is_none() {
+            assert!(legacy_only.found.is_none());
+        }
     }
 
     /// An override, when set, must be probed before anything else.

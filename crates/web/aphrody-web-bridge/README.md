@@ -10,7 +10,14 @@ Direct HTML fetch and `Bridge::html_to_markdown` now use the local
 `aphrody-web-extract` Rust crate. `Rendering::Markdown.via` keeps its existing
 serialized value for consumers; `Fetched::path_taken` reports the actual Rust
 backend. Other DOM, title and DNS calls still use the native library, and
-browser profiles still drive BXC as a subprocess.
+browser profiles dispatch through the linked Rust Web service.
+
+The optional executable resolver reports the installed `aphrody-web` CLI from
+`~/.local/bin` or `PATH`. `APHRODY_WEB_BIN` configures its explicit location;
+published `APHRODY_WEB_BROWSER_BIN` and `BXC_BIN` override names remain accepted
+only when explicitly configured. Legacy executable names are not discovered.
+Browser and MCP execution use native Rust capabilities and require no BXC
+subprocess.
 
 The import and local adaptations are recorded in
 `docs/migration/aphrody-web-bridge-import.json`. The offline local HTTP test

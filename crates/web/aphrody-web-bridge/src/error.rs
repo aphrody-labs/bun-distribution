@@ -138,10 +138,11 @@ pub enum WebBrowserError {
         detail: String,
     },
 
-    /// The `bxc` executable was not found anywhere.
+    /// The native Aphrody Web CLI was not found anywhere.
     #[error(
-        "bxc engine (`{name}`) not found.\nTried, in order:{tried}\nFix: install bxc, or point \
-         aphrody at it with `BXC_BIN=/abs/path/to/{name}`."
+        "Aphrody Web CLI (`{name}`) not found.\nTried, in order:{tried}\nFix: install aphrody-web, or point \
+         aphrody at it with `APHRODY_WEB_BIN=/abs/path/to/{name}` (legacy explicit overrides: \
+         APHRODY_WEB_BROWSER_BIN, BXC_BIN)."
     )]
     BinaryMissing {
         /// Platform file name that was searched for.

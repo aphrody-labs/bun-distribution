@@ -3,24 +3,24 @@
 
 //! Legacy web compatibility types backed by the shared Rust tool registry.
 
-use std::{
-    collections::HashSet,
-    path::{Path, PathBuf},
-    sync::Arc,
-};
+use std::path::{Path, PathBuf};
+#[cfg(not(target_arch = "wasm32"))]
+use std::sync::Arc;
 
-use aphrody_toolcall::{ToolExecutor, ToolExposure, ToolRegistry};
+use aphrody_toolcall::ToolRegistry;
+#[cfg(not(target_arch = "wasm32"))]
+use aphrody_toolcall::{
+    AdditionalProperties, JsonSchema, ToolDefinition, ToolError, ToolExecutor, ToolExposure,
+    ToolOutput,
+};
 use serde::{Deserialize, Serialize};
-use tokio::sync::OnceCell;
-use tracing::info;
 
 #[cfg(not(target_arch = "wasm32"))]
 use crate::web::{WebExposureProfile, register_native_web_tools};
 use crate::{
     builtins::search::ToolCatalog,
-    client::{McpClient, McpClientHandle},
+    client::McpClientHandle,
     error::{McpClientError, Result},
-    executor::McpToolExecutor,
 };
 
 /// Legacy exposure profile, now mapped to the native web tool catalog.
@@ -41,7 +41,7 @@ pub enum BxcExposureProfile {
 pub struct BxcAliasMapping {
     /// Exposed function name the model calls.
     pub exposed_name: &'static str,
-    /// Upstream name on the `bxc mcp` server.
+    /// Historical upstream name retained for API compatibility.
     pub upstream_name: &'static str,
     /// Short description for model visibility.
     pub description: &'static str,
@@ -50,7 +50,7 @@ pub struct BxcAliasMapping {
 }
 
 /// Historical alias map retained for consumers inspecting the old public API.
-/// Runtime registration prefers native tools and falls back for the remaining aliases.
+/// Runtime registration uses native tools and reports unported aliases explicitly.
 pub const BXC_STABLE_ALIASES: &[BxcAliasMapping] = &[
     // Core search & crawl:
     BxcAliasMapping {
@@ -189,10 +189,10 @@ pub const BXC_STABLE_ALIASES: &[BxcAliasMapping] = &[
     },
 ];
 
-/// Resolves the bxc executable path.
+/// Historical resolver alias for the native Aphrody Web executable.
 ///
-/// The chain (`APHRODY_WEB_BROWSER_BIN` / `BXC_BIN`, home, `PATH`, the in-tree aphrody-os
-/// build) is owned by [`aphrody_web_bridge::resolve::binary`]; this is only its `Option` form.
+/// The shared Rust resolver owns discovery. The returned CLI does not serve the
+/// retired BXC MCP protocol; use [`register_bxc_tools`] to register native capabilities.
 pub fn resolve_bxc_binary() -> Option<PathBuf> {
     #[cfg(not(target_arch = "wasm32"))]
     {
@@ -210,26 +210,25 @@ pub fn resolve_bxc_binary() -> Option<PathBuf> {
 #[derive(Clone)]
 pub struct LazyBxcProvider {
     binary_path: Option<PathBuf>,
-    cell: Arc<OnceCell<McpClientHandle>>,
 }
 
 impl LazyBxcProvider {
-    /// Create a new provider discovering the binary location automatically.
+    /// Create a compatibility provider discovering the native web CLI.
     #[must_use]
     pub fn new() -> Self {
-        Self { binary_path: resolve_bxc_binary(), cell: Arc::new(OnceCell::new()) }
+        Self { binary_path: resolve_bxc_binary() }
     }
 
     /// Create with an explicit binary path.
     #[must_use]
     pub fn with_binary(path: impl Into<PathBuf>) -> Self {
-        Self { binary_path: Some(path.into()), cell: Arc::new(OnceCell::new()) }
+        Self { binary_path: Some(path.into()) }
     }
 
-    /// Whether a valid bxc executable could be resolved on this system.
+    /// Whether the configured native web CLI path exists.
     #[must_use]
     pub fn is_available(&self) -> bool {
-        self.binary_path.as_ref().map_or(false, |p| p.is_file())
+        self.binary_path.as_ref().is_some_and(|p| p.is_file())
     }
 
     /// Access the resolved binary path.
@@ -238,22 +237,14 @@ impl LazyBxcProvider {
         self.binary_path.as_deref()
     }
 
-    /// Lazily connect when a capability has no shared Rust implementation yet.
+    /// Report the retirement of the former subprocess MCP provider.
+    ///
+    /// Native tools are registered by [`register_bxc_tools`]. No executable is
+    /// launched, including an explicit path supplied through [`Self::with_binary`].
     pub async fn get_client(&self) -> Result<McpClientHandle> {
-        let bin = self.binary_path.as_ref().ok_or_else(|| {
-            McpClientError::BxcResolve("web compatibility binary was not found".to_owned())
-        })?;
-        self.cell
-            .get_or_try_init(|| async {
-                info!(bin = %bin.display(), "Starting web compatibility MCP for remaining tools");
-                let bin_str = bin.to_str().unwrap_or("bxc");
-                let args = vec!["mcp".to_owned()];
-                let mut client = McpClient::from_stdio(bin_str, &args, None, None)?;
-                client.initialize().await?;
-                Ok(McpClientHandle::new("bxc", client))
-            })
-            .await
-            .cloned()
+        Err(McpClientError::BxcResolve(
+            "BXC MCP has been retired; register native Aphrody Web tools with register_bxc_tools. Unported aliases report their missing Rust capability directly.".to_owned(),
+        ))
     }
 }
 
@@ -263,7 +254,27 @@ impl Default for LazyBxcProvider {
     }
 }
 
-/// Registers shared Rust web tools first, then unported server tools without duplicates.
+#[cfg(not(target_arch = "wasm32"))]
+struct UnportedWebAlias {
+    definition: ToolDefinition,
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+#[async_trait::async_trait]
+impl ToolExecutor for UnportedWebAlias {
+    fn definition(&self) -> &ToolDefinition {
+        &self.definition
+    }
+
+    async fn handle(&self, _: serde_json::Value) -> std::result::Result<ToolOutput, ToolError> {
+        Ok(ToolOutput::error(format!(
+            "{} has no native Rust tool mapping in this Aphrody Web registry yet; the retired BXC MCP backend is unavailable.",
+            self.definition.name
+        )))
+    }
+}
+
+/// Registers native Rust web tools and compatibility errors for unported aliases.
 ///
 /// Returns the total number of tools registered.
 pub async fn register_bxc_tools(
@@ -280,64 +291,30 @@ pub async fn register_bxc_tools(
             BxcExposureProfile::Full => WebExposureProfile::Full,
         };
         let mut registered = register_native_web_tools(registry, catalog, native_profile).await;
-        if !provider.is_available() {
+        let _ = provider;
+        // The normal catalog advertises only implemented native capabilities.
+        // Full compatibility mode retains unported names with explicit errors.
+        if profile != BxcExposureProfile::Full {
             return Ok(registered);
         }
-        let client = provider.get_client().await?;
-        let upstream_tools = client.list_tools().await?;
-        let mut claimed_upstream = HashSet::new();
         for alias in BXC_STABLE_ALIASES {
-            let Some(tool) = upstream_tools.iter().find(|tool| tool.name == alias.upstream_name)
-            else {
-                continue;
-            };
-            claimed_upstream.insert(alias.upstream_name);
             if registry.get(alias.exposed_name).is_some() {
                 continue;
             }
-            let exposure = match profile {
-                BxcExposureProfile::Full => ToolExposure::Direct,
-                BxcExposureProfile::Minimal => {
-                    if matches!(alias.exposed_name, "web_search" | "web_fetch") {
-                        ToolExposure::Direct
-                    } else {
-                        ToolExposure::Deferred
-                    }
-                },
-                BxcExposureProfile::Default => {
-                    if alias.in_default_set {
-                        ToolExposure::Direct
-                    } else {
-                        ToolExposure::Deferred
-                    }
-                },
-            };
-            let executor = McpToolExecutor::with_alias(
-                "bxc",
-                alias.upstream_name,
+            let definition = ToolDefinition::new(
                 alias.exposed_name,
-                alias.description,
-                &tool.input_schema,
-                client.clone(),
-                exposure,
-            );
-            let definition = executor.definition().clone();
-            if registry.register(Arc::new(executor)).is_ok() {
-                catalog.add(definition).await;
-                registered += 1;
-            }
-        }
-        for tool in &upstream_tools {
-            if claimed_upstream.contains(tool.name.as_str()) || registry.get(&tool.name).is_some() {
-                continue;
-            }
-            let exposure = if profile == BxcExposureProfile::Full {
-                ToolExposure::Direct
-            } else {
-                ToolExposure::Deferred
-            };
-            let executor = McpToolExecutor::from_mcp_tool("bxc", tool, client.clone(), exposure);
-            let definition = executor.definition().clone();
+                format!(
+                    "Unavailable: this alias has no native Rust mapping in this registry yet. {}",
+                    alias.description
+                ),
+                JsonSchema::object(
+                    Default::default(),
+                    None,
+                    Some(AdditionalProperties::Boolean(true)),
+                ),
+            )
+            .with_exposure(ToolExposure::Direct);
+            let executor = UnportedWebAlias { definition: definition.clone() };
             if registry.register(Arc::new(executor)).is_ok() {
                 catalog.add(definition).await;
                 registered += 1;
@@ -358,7 +335,8 @@ mod tests {
 
     #[tokio::test]
     async fn native_tools_register_without_a_compatibility_binary() {
-        let provider = LazyBxcProvider::with_binary("/unused/legacy-web-server");
+        // An existing executable must not trigger a legacy MCP subprocess.
+        let provider = LazyBxcProvider::with_binary(std::env::current_exe().unwrap());
         let mut registry = ToolRegistry::new();
         let catalog = ToolCatalog::new();
         assert_eq!(
@@ -368,5 +346,42 @@ mod tests {
             7
         );
         assert!(registry.get("web_search").is_some());
+        assert!(registry.get("web_crawl").is_none());
+        assert_eq!(
+            register_bxc_tools(&mut registry, &catalog, &provider, BxcExposureProfile::Default)
+                .await
+                .unwrap(),
+            0
+        );
+    }
+
+    #[tokio::test]
+    async fn retired_provider_does_not_start_an_explicit_executable() {
+        let provider = LazyBxcProvider::with_binary(std::env::current_exe().unwrap());
+        assert!(provider.is_available());
+        let error = match provider.get_client().await {
+            Ok(_) => panic!("retired provider must not connect"),
+            Err(error) => error.to_string(),
+        };
+        assert!(error.contains("retired"), "{error}");
+        assert!(error.contains("register_bxc_tools"), "{error}");
+    }
+
+    #[tokio::test]
+    async fn full_profile_retains_unported_aliases_with_explicit_errors() {
+        let mut registry = ToolRegistry::new();
+        let catalog = ToolCatalog::new();
+        let provider = LazyBxcProvider::with_binary("/unused/legacy-web-server");
+        assert_eq!(
+            register_bxc_tools(&mut registry, &catalog, &provider, BxcExposureProfile::Full)
+                .await
+                .unwrap(),
+            BXC_STABLE_ALIASES.len()
+        );
+        let tool = registry.get("web_crawl").unwrap();
+        let output = tool.handle(serde_json::json!({"url": "https://example.com"})).await.unwrap();
+        assert!(output.is_error);
+        assert!(output.content.contains("web_crawl"));
+        assert!(output.content.contains("no native Rust tool mapping"));
     }
 }

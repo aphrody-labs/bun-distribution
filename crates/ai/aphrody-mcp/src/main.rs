@@ -2012,9 +2012,9 @@ impl GoogleMcpServer {
         })
     }
 
-    #[tool(description = "Call any tool of the Aphrody web backend (browser, crawl, scrape, \
-                          Google, Gemini, X/Grok, FUT, archive, wiki) by name through this same \
-                          endpoint; every such tool is also listed directly as aphrody_*.")]
+    #[tool(description = "Call native Aphrody Web tools by their public or historical name \
+                          through this endpoint (browser, crawl, Google, Gemini, X, archive). \
+                          Use aphrody_capabilities to inspect the tools available in this build.")]
     async fn aphrody_web_call(
         &self,
         Parameters(WebCallRequest { tool, args }): Parameters<WebCallRequest>,
