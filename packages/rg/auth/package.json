@@ -19,7 +19,7 @@
     "type-check": "bun --bun tsc --noEmit",
     "test": "bun test src",
     "lint": "bunx oxlint -c ../config/oxlintrc.json src",
-    "typecheck": "tsgo -p tsconfig.json --noEmit"
+    "typecheck": "bun --bun tsc --noEmit"
   },
   "dependencies": {
     "@better-auth/agent-auth": "catalog:",

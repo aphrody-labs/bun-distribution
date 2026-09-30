@@ -53,7 +53,7 @@
     "prepublishOnly": "bun run build",
     "type-check": "bun --bun tsc --noEmit",
     "lint": "bunx oxlint -c ../config/oxlintrc.json -A style -A pedantic -A restriction src",
-    "typecheck": "tsgo -p tsconfig.json --noEmit"
+    "typecheck": "bun --bun tsc --noEmit"
   },
   "devDependencies": {
     "@types/bun": "catalog:",

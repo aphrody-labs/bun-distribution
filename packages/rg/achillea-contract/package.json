@@ -17,7 +17,7 @@
     "lint": "bunx oxlint -c ../config/oxlintrc.json -A style -A pedantic -A restriction src tests",
     "type-check": "bun --bun tsc --noEmit",
     "test": "bun test tests",
-    "typecheck": "tsgo -p tsconfig.json --noEmit"
+    "typecheck": "bun --bun tsc --noEmit"
   },
   "dependencies": {
     "@rosegriffon/achillea-types": "workspace:*"

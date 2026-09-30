@@ -9,7 +9,7 @@
     "test": "bun test .",
     "start": "bun server.ts",
     "dev": "bun --watch server.ts",
-    "typecheck": "tsgo -p tsconfig.json --noEmit"
+    "typecheck": "bun --bun tsc --noEmit"
   },
   "dependencies": {
     "@rosegriffon/db": "workspace:*"

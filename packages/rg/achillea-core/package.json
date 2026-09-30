@@ -4,6 +4,7 @@
   "private": true,
   "description": "Logique métier portable (multi-runtime : navigateur, edge Deno/Web, Node, Bun) — Elo, classement, sanctions, licences, votes, validation. Aucune dépendance Discord / ORM / DI.",
   "type": "module",
+  "sideEffects": false,
   "main": "./src/index.ts",
   "types": "./src/index.ts",
   "exports": {
@@ -45,11 +46,11 @@
     "format": "bunx oxfmt .",
     "format:check": "bunx oxfmt --check .",
     "test": "bun test",
-    "typecheck": "tsgo -p tsconfig.json --noEmit"
+    "typecheck": "bun --bun tsc --noEmit"
   },
   "dependencies": {
-    "@rosegriffon/achillea-types": "workspace:*",
     "@casl/ability": "catalog:",
+    "@rosegriffon/achillea-types": "workspace:*",
     "@sindresorhus/transliterate": "catalog:"
   },
   "devDependencies": {
@@ -57,7 +58,6 @@
     "oxlint": "catalog:",
     "typescript": "catalog:"
   },
-  "sideEffects": false,
   "engines": {
     "bun": ">=1.4.2"
   }

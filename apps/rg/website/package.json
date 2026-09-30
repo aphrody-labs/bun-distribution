@@ -7,8 +7,8 @@
     "test": "bun test src",
     "test:ui": "bun --bun vitest --ui",
     "test:run": "bun --bun vitest run",
-    "build": "bash ../../scripts/next-build.sh",
-    "qa:browser": "bash ../../scripts/qa/agent-browser-rg.sh",
+    "build": "bash ../../../scripts/rg/next-build.sh",
+    "qa:browser": "bash ../../../scripts/rg/qa/agent-browser-rg.sh",
     "start": "bun run --bun next start",
     "lint": "oxlint -A style -A pedantic -A restriction -A react/react-in-jsx-scope -A unicorn/consistent-function-scoping -A promise/no-multiple-resolved -A react-perf . && eslint .",
     "lint:fix": "oxlint -A style -A pedantic -A restriction -A react/react-in-jsx-scope -A unicorn/consistent-function-scoping -A promise/no-multiple-resolved -A react-perf --fix . && eslint --fix .",
@@ -17,9 +17,10 @@
     "analyze": "ANALYZE=true next build",
     "type-check": "bun --bun tsc --noEmit",
     "clean": "rm -rf .next .turbo dist",
-    "typecheck": "tsgo -p tsconfig.json --noEmit"
+    "typecheck": "bun --bun tsc --noEmit"
   },
   "dependencies": {
+    "@better-auth/passkey": "1.6.28",
     "@colyseus/sdk": "^0.17.42",
     "@dnd-kit/core": "catalog:",
     "@dnd-kit/sortable": "catalog:",
@@ -86,7 +87,6 @@
     "@rosegriffon/search": "workspace:*",
     "@rosegriffon/types": "workspace:*",
     "@rosegriffon/ui": "workspace:*",
-    "@better-auth/passkey": "1.6.28",
     "@sentry/nextjs": "catalog:",
     "@spacedrive/primitives": "catalog:",
     "@spacedrive/tokens": "catalog:",

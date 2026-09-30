@@ -19,7 +19,7 @@
     "build": "bun build src/index.ts --compile --minify --sourcemap --bytecode --format esm --outfile dist/rg-cron",
     "type-check": "bun --bun tsc -p tsconfig.typecheck.json --noEmit",
     "lint": "bunx oxlint -c ../config/oxlintrc.json src",
-    "typecheck": "tsgo -p tsconfig.json --noEmit"
+    "typecheck": "bun --bun tsc -p tsconfig.typecheck.json --noEmit"
   },
   "dependencies": {
     "@aphrody/agent-browser": "workspace:*",

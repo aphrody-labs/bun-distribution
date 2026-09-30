@@ -28,15 +28,22 @@ if [ -z "$NODE_BIN" ] || [ ! -x "$NODE_BIN" ]; then
 	echo "✗ node introuvable (NODE_BIN='$NODE_BIN') — build impossible" >&2
 	exit 127
 fi
-APP_NAME=$(basename "$(pwd)")
-SERVER_JS=".next/standalone/apps/$APP_NAME/server.js"
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd -- "$SCRIPT_DIR/../.." && pwd)"
+APP_PATH="$(realpath --relative-to="$REPO_ROOT" "$PWD")"
+if [[ "$APP_PATH" == .. || "$APP_PATH" == ../* ]]; then
+	echo "✗ build lancé hors du workspace Aphrody" >&2
+	exit 1
+fi
+SERVER_JS=".next/standalone/$APP_PATH/server.js"
 
 # TMPDIR sur disque (PAS le tmpfs /tmp, RAM-backed et souvent plein sur ce VPS) :
 # un /tmp saturé fait crasher le sous-process babel-loader (SIGTERM/EDQUOT).
 BUILD_TMP="${BUILD_TMP:-$HOME/.azalee-build-tmp}"
 mkdir -p "$BUILD_TMP"
 
-build_start=$(date +%s)
+BUILD_STAMP="$(mktemp "$BUILD_TMP/next-build.XXXXXX")" || exit 1
+trap 'rm -f -- "$BUILD_STAMP"' EXIT
 # Node undici ne supporte pas socks5h:// (UnsupportedProxyProtocol sur next/font)
 env -u http_proxy -u https_proxy -u HTTP_PROXY -u HTTPS_PROXY -u ALL_PROXY -u all_proxy \
 	TMPDIR="$BUILD_TMP" \
@@ -45,16 +52,17 @@ env -u http_proxy -u https_proxy -u HTTP_PROXY -u HTTPS_PROXY -u ALL_PROXY -u al
 	"$NODE_BIN" node_modules/next/dist/bin/next build --turbopack "$@"
 rc=$?
 
-if [ -f .next/BUILD_ID ] && [ "$(stat -c %Y .next/BUILD_ID)" -ge "$build_start" ]; then
-	if [ ! -f "$SERVER_JS" ]; then
-		echo "✗ build réellement échoué — server.js absent ($SERVER_JS)" >&2
-		exit 1
-	fi
-	if [ "$rc" -ne 0 ]; then
-		echo "⚠ build OK (BUILD_ID $(cat .next/BUILD_ID)) — code retour $rc ignoré (artefacts présents)" >&2
-	fi
-	exit 0
+# Un code d'échec reste un échec, même si Next a écrit des artefacts partiels.
+if [ "$rc" -ne 0 ]; then
+	echo "✗ Next build échoué (exit $rc)" >&2
+	exit "$rc"
 fi
-
-echo "✗ build réellement échoué — BUILD_ID absent ou non mis à jour (exit $rc)" >&2
-exit "$([ "$rc" -ne 0 ] && echo "$rc" || echo 1)"
+if [ ! -f .next/BUILD_ID ] || [ ! .next/BUILD_ID -nt "$BUILD_STAMP" ]; then
+	echo "✗ build échoué — BUILD_ID absent ou périmé" >&2
+	exit 1
+fi
+if [ ! -f "$SERVER_JS" ] || [ ! "$SERVER_JS" -nt "$BUILD_STAMP" ]; then
+	echo "✗ build échoué — serveur standalone absent ou périmé ($SERVER_JS)" >&2
+	exit 1
+fi
+exit 0

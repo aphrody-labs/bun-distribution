@@ -1,35 +1,35 @@
 {
-	"extends": "@rosegriffon/config/tsconfig-nextjs.json",
-	"compilerOptions": {
-		"noImplicitOverride": false,
-		"noUncheckedIndexedAccess": false,
-		"types": ["google.maps", "bun", "@webgpu/types"],
-		"tsBuildInfoFile": ".next/.tsbuildinfo",
-		"paths": {
-			"@/*": ["./src/*", "./*"],
-			"@public/*": ["./public/*"],
-			"@rosegriffon/assets": ["../../packages/assets/src/index.ts"],
-			"@rosegriffon/assets/*": ["../../packages/assets/src/*"],
-			"@rosegriffon/azalee": ["../../packages/azalee/src/index.ts"],
-			"@rosegriffon/azalee/*": ["../../packages/azalee/src/*"],
-			"@rosegriffon/db": ["../../packages/db/src/index.ts"],
-			"@rosegriffon/db/*": ["../../packages/db/src/*"],
-			"@rosegriffon/types": ["../../packages/types/src/index.ts"],
-			"@rosegriffon/types/*": ["../../packages/types/src/*"],
-			"@rosegriffon/auth": ["../../packages/auth/src/index.ts"],
-			"@rosegriffon/auth/*": ["../../packages/auth/src/*"],
-			"@rosegriffon/ui": ["../../packages/ui/src/index.ts"],
-			"@rosegriffon/ui/*": ["../../packages/ui/src/*"],
-			"@rosegriffon/app-shell": ["../../packages/app-shell/src/index.ts"],
-			"@rosegriffon/app-shell/*": ["../../packages/app-shell/src/*"]
-		}
-	},
-	"include": [
-		"next-env.d.ts",
-		"**/*.ts",
-		"**/*.tsx",
-		".next/types/**/*.ts",
-		".next/dev/types/**/*.ts"
-	],
-	"exclude": ["node_modules", ".next", "dist", "build", "out", "coverage", ".turbo"]
+  "extends": "@rosegriffon/config/tsconfig-nextjs.json",
+  "compilerOptions": {
+    "noImplicitOverride": false,
+    "noUncheckedIndexedAccess": false,
+    "types": ["google.maps", "bun", "@webgpu/types"],
+    "tsBuildInfoFile": ".next/.tsbuildinfo",
+    "paths": {
+      "@/*": ["./src/*", "./*"],
+      "@public/*": ["./public/*"],
+      "@rosegriffon/assets": ["../../../packages/rg/assets/src/index.ts"],
+      "@rosegriffon/assets/*": ["../../../packages/rg/assets/src/*"],
+      "@rosegriffon/azalee": ["../../../packages/rg/azalee/src/index.ts"],
+      "@rosegriffon/azalee/*": ["../../../packages/rg/azalee/src/*"],
+      "@rosegriffon/db": ["../../../packages/rg/db/src/index.ts"],
+      "@rosegriffon/db/*": ["../../../packages/rg/db/src/*"],
+      "@rosegriffon/types": ["../../../packages/rg/types/src/index.ts"],
+      "@rosegriffon/types/*": ["../../../packages/rg/types/src/*"],
+      "@rosegriffon/auth": ["../../../packages/rg/auth/src/index.ts"],
+      "@rosegriffon/auth/*": ["../../../packages/rg/auth/src/*"],
+      "@rosegriffon/ui": ["../../../packages/rg/ui/src/index.ts"],
+      "@rosegriffon/ui/*": ["../../../packages/rg/ui/src/*"],
+      "@rosegriffon/app-shell": ["../../../packages/rg/app-shell/src/index.ts"],
+      "@rosegriffon/app-shell/*": ["../../../packages/rg/app-shell/src/*"]
+    }
+  },
+  "include": [
+    "next-env.d.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    ".next/types/**/*.ts",
+    ".next/dev/types/**/*.ts"
+  ],
+  "exclude": ["node_modules", ".next", "dist", "build", "out", "coverage", ".turbo"]
 }

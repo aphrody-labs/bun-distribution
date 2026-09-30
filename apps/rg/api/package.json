@@ -5,20 +5,24 @@
   "type": "module",
   "main": "src/index.ts",
   "types": "src/index.ts",
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org"
+  },
   "scripts": {
     "dev": "bun --watch src/index.ts",
     "start": "bun src/index.ts",
     "test": "bun --env-file=../../.env test",
     "type-check": "tsc --noEmit",
-    "typecheck": "tsgo -p tsconfig.json --noEmit"
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@elysia/eden": "^1.4.10",
     "@elysiajs/cors": "^1.4.2",
     "@elysiajs/swagger": "^1.3.1",
-    "@rosegriffon/azalee": "workspace:*",
     "@rosegriffon/achillea-core": "workspace:*",
     "@rosegriffon/auth": "workspace:*",
+    "@rosegriffon/azalee": "workspace:*",
     "@rosegriffon/db": "workspace:*",
     "@rosegriffon/inagle": "workspace:*",
     "brackets-manager": "^1.11.0",
@@ -26,10 +30,6 @@
     "elysia": "^1.4.28",
     "kysely": "catalog:",
     "pg": "catalog:"
-  },
-  "publishConfig": {
-    "access": "public",
-    "registry": "https://registry.npmjs.org"
   },
   "engines": {
     "bun": ">=1.4.2"

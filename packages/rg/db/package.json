@@ -27,10 +27,10 @@
   },
   "scripts": {
     "types:gen": "bun scripts/types-gen.ts",
-    "type-check": "bun --bun ../../node_modules/typescript/bin/tsc --noEmit",
+    "type-check": "bun --bun tsc --noEmit",
     "test": "bun test",
     "lint": "bunx oxlint -c ../config/oxlintrc.json src",
-    "typecheck": "tsgo -p tsconfig.json --noEmit"
+    "typecheck": "bun --bun tsc --noEmit"
   },
   "dependencies": {
     "@rosegriffon/types": "^1.0.3",

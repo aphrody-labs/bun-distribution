@@ -21,10 +21,10 @@
   },
   "scripts": {
     "lint": "bunx oxlint -c ../config/oxlintrc.json src",
-    "type-check": "bun --bun ../../node_modules/typescript/bin/tsc --noEmit",
+    "type-check": "bun --bun tsc --noEmit",
     "test": "bun test test",
     "tokens": "bun scripts/generer-tokens.ts",
-    "typecheck": "tsgo -p tsconfig.json --noEmit"
+    "typecheck": "bun --bun tsc --noEmit"
   },
   "dependencies": {
     "@hookform/resolvers": "catalog:",

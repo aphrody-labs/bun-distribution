@@ -10,7 +10,7 @@
   "main": "./index.js",
   "scripts": {
     "start": "bun index.js",
-    "typecheck": "tsgo -p tsconfig.json --noEmit"
+    "typecheck": "bun --bun tsc -p tsconfig.json --noEmit"
   },
   "devDependencies": {
     "@rosegriffon/patreon-bun": "workspace:*"

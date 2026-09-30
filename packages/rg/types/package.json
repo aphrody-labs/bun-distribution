@@ -29,15 +29,15 @@
   "scripts": {
     "test": "bun test src",
     "lint": "bunx oxlint -c ../config/oxlintrc.json src",
-    "type-check": "bun --bun ../../node_modules/typescript/bin/tsc --noEmit",
-    "typecheck": "tsgo -p tsconfig.json --noEmit"
+    "type-check": "bun --bun tsc --noEmit",
+    "typecheck": "bun --bun tsc --noEmit"
   },
   "dependencies": {
     "zod": "catalog:"
   },
   "devDependencies": {
-    "@types/bun": "catalog:",
     "@rosegriffon/config": "workspace:*",
+    "@types/bun": "catalog:",
     "typescript": "catalog:"
   },
   "peerDependencies": {

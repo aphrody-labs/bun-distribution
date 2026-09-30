@@ -11,7 +11,7 @@
     "lint": "bunx oxlint -c ../config/oxlintrc.json src",
     "type-check": "bun --bun tsc --noEmit",
     "test": "bun test test",
-    "typecheck": "tsgo -p tsconfig.json --noEmit"
+    "typecheck": "bun --bun tsc --noEmit"
   },
   "engines": {
     "bun": ">=1.4.2"

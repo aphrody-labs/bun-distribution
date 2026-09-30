@@ -67,13 +67,13 @@
     "test": "bun test",
     "lint": "bunx oxlint -c ../config/oxlintrc.json -A style -A pedantic -A restriction src",
     "lint:fix": "bunx oxlint -c ../config/oxlintrc.json -A style -A pedantic -A restriction --fix src",
-    "type-check": "bun --bun tsc -p tsconfig.build.json --noEmit",
-    "typecheck": "tsgo -p tsconfig.json --noEmit"
+    "type-check": "bun --bun tsc -p tsconfig.json --noEmit",
+    "typecheck": "bun --bun tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
     "@aphrody/agent-browser": "workspace:*",
-    "@rosegriffon/db": "workspace:*",
     "@leeoniya/ufuzzy": "catalog:",
+    "@rosegriffon/db": "workspace:*",
     "cheerio": "catalog:",
     "commander": "catalog:",
     "dotenv": "catalog:",
@@ -88,10 +88,10 @@
     "typescript": "catalog:",
     "vitest": "catalog:"
   },
-  "trustedDependencies": [
-    "esbuild"
-  ],
   "engines": {
     "bun": ">=1.4.2"
-  }
+  },
+  "trustedDependencies": [
+    "esbuild"
+  ]
 }

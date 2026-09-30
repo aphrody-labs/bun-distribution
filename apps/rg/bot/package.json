@@ -14,16 +14,16 @@
     "test": "bun test src",
     "smoke:admin": "bun src/scripts/smoke-admin.ts",
     "smoke:canvas": "bun src/scripts/smoke-canvas.ts",
-    "typecheck": "tsc -p tsconfig.json --noEmit"
+    "typecheck": "bun --bun tsc --noEmit"
   },
   "dependencies": {
-    "@rosegriffon/achillea-client": "workspace:*",
     "@aphrody/canvas": "catalog:",
+    "@aphrody/discordx": "catalog:",
+    "@rosegriffon/achillea-client": "workspace:*",
     "@rosegriffon/azalee": "workspace:*",
     "@rosegriffon/db": "workspace:*",
     "@rosegriffon/types": "workspace:*",
     "@rosegriffon/ui": "workspace:*",
-    "@aphrody/discordx": "catalog:",
     "discord.js": "catalog:",
     "reflect-metadata": "catalog:",
     "zod": "catalog:"

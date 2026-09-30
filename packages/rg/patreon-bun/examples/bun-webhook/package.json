@@ -9,7 +9,7 @@
   "scripts": {
     "start": "bun src/index.ts",
     "type-check": "tsc --noEmit",
-    "typecheck": "tsgo -p tsconfig.json --noEmit"
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@rosegriffon/patreon-bun": "workspace:*"
