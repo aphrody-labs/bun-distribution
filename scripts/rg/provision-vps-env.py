@@ -1,0 +1,1 @@
+../../../../aphrody-py/tools/infra/scripts/python-workspace-dispatch.py

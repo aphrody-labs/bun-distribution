@@ -2,7 +2,7 @@
 [workspace]
 resolver = "3"
 members = ["crates/ui/*", "crates/iecode/*", "crates/infra/*", "crates/contracts/*", "crates/os/*", "crates/shell/*", "crates/compat/*", "crates/native/*", "crates/koharu/*", "crates/ai/*", "crates/web/*"]
-exclude = ["crates/contracts/schema"]
+exclude = ["crates/contracts/schema", "crates/os/drive", "crates/web/drive-server"]
 
 [workspace.package]
 version = "1.0.0"
@@ -16,6 +16,31 @@ description = "aphrody \u2014 the ultimate cross-platform CLI (Linux/Windows/WAS
 categories = ["command-line-utilities", "development-tools", "web-programming"]
 keywords = ["cli", "cross-platform", "rust", "linux", "wasm"]
 [workspace.dependencies]
+nie-ffi = { path = "crates/iecode/nie-ffi", version = "1.0.0", default-features = false }
+nie-core = { path = "crates/iecode/nie-core", version = "1.0.0", default-features = false }
+nie-formats = { path = "crates/iecode/nie-formats", version = "1.0.0", default-features = false }
+nie-runtime = { path = "crates/iecode/nie-runtime", version = "1.0.0", default-features = false }
+nie-wiki = { path = "crates/iecode/nie-wiki", version = "1.0.0" }
+nie-render3d = { path = "crates/iecode/nie-render3d", version = "1.0.0", default-features = false }
+nie-lua = { path = "crates/iecode/nie-lua", version = "1.0.0", default-features = false }
+nie-data = { package = "iecode-ievr-data", path = "crates/iecode/ievr-data", version = "1.0.0" }
+nie-geom = { package = "iecode-geom", path = "crates/iecode/geom", version = "1.0.0" }
+nie-video = { package = "iecode-video", path = "crates/iecode/video", version = "1.0.0" }
+nie-emu = { package = "iecode-emu", path = "crates/iecode/emu", version = "1.0.0" }
+aphrody-gpu-backend = { path = "crates/iecode/aphrody-gpu-backend", version = "1.0.0" }
+aphrody-softraster = { path = "crates/ui/aphrody-softraster", version = "1.0.0-canary" }
+aphrody-sprite-sheet = { path = "crates/ui/aphrody-sprite-sheet", version = "1.0.0-canary" }
+glam = { version = "0.33.9", default-features = false, features = ["std"] }
+crc32fast = { version = "1.5", default-features = false }
+image_dds = { version = "0.7", default-features = false }
+cridecoder = { version = "0.2.3", default-features = false }
+redis = { version = "0.27" }
+bcdec_rs = { version = "0.2.0" }
+mlua = { version = "0.11" }
+tree-sitter = { version = "0.26" }
+tree-sitter-lua = { version = "0.5" }
+image-compare = { version = "0.5" }
+palette = { version = "0.7", default-features = false }
 aphrody-oxc-bridge = { path = "crates/compat/aphrody-oxc-bridge", version = "0.1.0" }
 rustc-hash = "2"
 oxc_codegen = { git = "https://github.com/aphrody-code/oxc.git", rev = "31d5266e150ff17af52f0c2fc798cc27dc9a5a59", default-features = false }
@@ -72,7 +97,7 @@ aphrody-jobs = { path = "crates/os/aphrody-jobs", version = "1.0.0-canary", feat
 aphrody-kernel = { path = "crates/os/aphrody-kernel", version = "1.0.0-canary", default-features = false, features = [] }
 aphrody-llama-server = { path = "crates/ai/aphrody-llama-server", features = [] }
 aphrody-llm-infra = { path = "crates/ai/aphrody-llm-infra", features = [] }
-aphrody-logo = { path = "../src/aphrody-ui/crates/aphrody-logo", version = "1.0.0-canary", features = [] }
+aphrody-logo = { path = "crates/ui/aphrody-logo", version = "1.0.0-canary", features = [] }
 aphrody-m3-tokens = { path = "crates/ui/aphrody-m3-tokens", version = "1.0.0-canary", features = [] }
 aphrody-manga = { path = "crates/ai/aphrody-manga", features = [] }
 aphrody-mcp-client = { path = "crates/ai/aphrody-mcp-client", features = [] }
@@ -443,6 +468,10 @@ resvg = {"version" = "0.47", "default-features" = false}
 usvg = {"version" = "0.47"}
 tiny-skia = {"version" = "0.12"}
 grass = "0.13"
+aphrody-drive = { path = "crates/ui/aphrody-drive", version = "1.0.0-canary" }
+tokio-util = { version = "0.7", features = ["io"] }
+swift-rs = { version = "1.0" }
+tauri-plugin = { version = "=3.0.0-alpha.1" }
 [workspace.lints.rust]
 unsafe_op_in_unsafe_fn = "deny"
 unused_must_use = "deny"
