@@ -1,0 +1,116 @@
+#!/usr/bin/env bun
+// SPDX-License-Identifier: Apache-2.0
+// Infrastructure orchestration for the canonical @aphrody/google Drive sync.
+import { watch } from "node:fs";
+
+const ROOT = "/home/aphro/aphrody";
+const ENV = `${ROOT}/.env`;
+const GOOGLE_CLI = `${ROOT}/packages/ai/google/bin/aphrody-google.ts`;
+const WORKSPACE = "/home/aphro/.aphrody/workspaces/dbfr";
+const MEMORY_DB = "/home/aphro/.aphrody/private/memory/agent-home.sqlite";
+const MEMORY_BIN = `${ROOT}/target/debug/aphrody-agent-home-memory`;
+const TRAIN_BIN = `${ROOT}/target/debug/aphrody-agent-train`;
+const TRAIN_CONFIG = "/home/aphro/.aphrody/private/agent-training.json";
+const TRAIN_STATE = "/home/aphro/.aphrody/train/dbfr/pipeline-state.json";
+const DEFAULT_DOCS = new Set<string>(
+  await Bun.file(`${ROOT}/crates/ai/aphrody-agent-home/sync-contract.json`).json() as string[],
+);
+let running = false;
+let pending = false;
+let debounce: ReturnType<typeof setTimeout> | undefined;
+
+async function ensureMemoryBinary(): Promise<void> {
+  if (await Bun.file(MEMORY_BIN).exists()) return;
+  const build = Bun.spawn(["cargo", "build", "-p", "aphrody-memory", "--bin", "aphrody-agent-home-memory"], {
+    cwd: ROOT,
+    stdin: "ignore",
+    stdout: "inherit",
+    stderr: "inherit",
+  });
+  if (await build.exited !== 0) throw new Error("Agent Home memory binary build failed");
+}
+
+async function ensureTrainingBinary(): Promise<void> {
+  if (await Bun.file(TRAIN_BIN).exists()) return;
+  const build = Bun.spawn(["cargo", "build", "-p", "aphrody-train", "--bin", "aphrody-agent-train"], {
+    cwd: ROOT,
+    stdin: "ignore",
+    stdout: "inherit",
+    stderr: "inherit",
+  });
+  if (await build.exited !== 0) throw new Error("Agent training binary build failed");
+}
+
+async function sync(): Promise<void> {
+  if (running) {
+    pending = true;
+    return;
+  }
+  running = true;
+  try {
+    do {
+      pending = false;
+      const task = Bun.spawn([process.execPath, `--env-file=${ENV}`, GOOGLE_CLI, "drive", "sync"], {
+        cwd: ROOT,
+        stdin: "ignore",
+        stdout: "inherit",
+        stderr: "inherit",
+      });
+      const result = await task.exited;
+      if (result !== 0) throw new Error(`Canonical Google Drive sync exited ${result}`);
+      await ensureMemoryBinary();
+      const memory = Bun.spawn([MEMORY_BIN], {
+        cwd: ROOT,
+        env: { ...process.env, APHRODY_AGENT_HOME: WORKSPACE, APHRODY_AGENT_HOME_MEMORY_DB: MEMORY_DB },
+        stdin: "ignore",
+        stdout: "inherit",
+        stderr: "inherit",
+      });
+      const memoryResult = await memory.exited;
+      if (memoryResult !== 0) throw new Error(`Agent Home memory reconciliation exited ${memoryResult}`);
+      await ensureTrainingBinary();
+      const training = Bun.spawn([TRAIN_BIN], {
+        cwd: ROOT,
+        env: {
+          ...process.env,
+          APHRODY_ROOT: "/home/aphro",
+          APHRODY_AGENT_HOME: WORKSPACE,
+          APHRODY_AGENT_TRAIN_CONFIG: TRAIN_CONFIG,
+          APHRODY_AGENT_TRAIN_STATE: TRAIN_STATE,
+        },
+        stdin: "ignore",
+        stdout: "inherit",
+        stderr: "inherit",
+      });
+      const trainingResult = await training.exited;
+      if (trainingResult !== 0) throw new Error(`Agent training pipeline exited ${trainingResult}`);
+    } while (pending);
+  } finally {
+    running = false;
+  }
+}
+
+if (Bun.argv.includes("daemon")) {
+  const watcher = watch(WORKSPACE, (_event, filename) => {
+    if (!filename || !DEFAULT_DOCS.has(filename.toString())) return;
+    if (debounce) clearTimeout(debounce);
+    debounce = setTimeout(() => void sync().catch(console.error), 2_000);
+  });
+  const job = Bun.cron("*/5 * * * *", async () => {
+    try {
+      await sync();
+    } catch (error) {
+      console.error(error);
+    }
+  });
+  function stop(): void {
+    watcher.close();
+    job.stop();
+    if (debounce) clearTimeout(debounce);
+  }
+  process.on("SIGTERM", stop);
+  process.on("SIGINT", stop);
+  await sync();
+} else {
+  await sync();
+}

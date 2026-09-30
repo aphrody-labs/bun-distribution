@@ -48,8 +48,12 @@ import { runCargoPackageRepair } from "./cargo-package-repair.ts";
 import { runConsolidation } from "./consolidation.ts";
 import { runRg } from "./rg.ts";
 import { runShenron } from "./shenron.ts";
+import { runWebMigration } from "./web-migration.ts";
 
 const [operation, ...rest] = process.argv.slice(2);
+if (operation === "web-migration") {
+  process.exit(await runWebMigration(rest));
+}
 if (operation === "consolidation") {
   process.exit(await runConsolidation(rest));
 }

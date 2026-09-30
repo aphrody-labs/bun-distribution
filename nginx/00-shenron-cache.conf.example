@@ -1,0 +1,35 @@
+# Zones de cache reverse-proxy pour les vhosts Shenron (dragonballfr.com,
+# bot.dragonballfr.com). Chargé une fois dans le bloc `http {}` de l'unique
+# instance Nginx (config/nginx-routes.json : "one-nginx-instance-one-route-
+# per-public-service"). Traduit de shenron/deploy/nginx/00-shenron-cache.conf
+# — l'upstream crawler/CDN d'origine (nœud séparé, IP publique) est retiré :
+# aucune route cdn.dragonballfr.com n'est déclarée ici (voir la décision
+# ouverte dans docs/SHENRON-MIGRATION.md).
+
+proxy_cache_path /var/cache/nginx/shenron_static
+    levels=1:2
+    keys_zone=shenron_static:10m
+    max_size=2500m
+    inactive=30d
+    use_temp_path=off;
+
+proxy_cache_path /var/cache/nginx/shenron_images
+    levels=1:2
+    keys_zone=shenron_images:20m
+    max_size=2000m
+    inactive=7d
+    use_temp_path=off;
+
+proxy_cache_path /var/cache/nginx/shenron_hls
+    levels=1:2
+    keys_zone=shenron_hls:10m
+    max_size=1500m
+    inactive=12h
+    use_temp_path=off;
+
+# Les réponses liées à une session ne doivent jamais être servies depuis le cache.
+map $http_cookie $bypass_user_cache {
+    default 0;
+    ~*better-auth\.session_token 1;
+    ~*__Secure-better-auth 1;
+}
