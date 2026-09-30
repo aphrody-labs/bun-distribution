@@ -117,6 +117,15 @@ export function checkManifest(
         name in catalog
           ? catalog[name]
           : Object.values(catalogs).find((entries) => name in entries)?.[name];
+      if (spec.startsWith("catalog:") && catalogSpec === undefined) {
+        out.push({
+          path,
+          rule: "catalog",
+          message: `${section}.${name} references missing ${namedCatalog ?? "default"} catalog entry`,
+          fixable: false,
+        });
+        continue;
+      }
       // This reader is also consumed directly through file: by Shenron. Its
       // explicit version must match the root catalog without requiring that
       // catalog to resolve from a different workspace.

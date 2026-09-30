@@ -116,7 +116,7 @@ function kindOf(path: string): { kind: string; category?: string } {
 function safeKey(path: string): string {
   return path.replaceAll("\\", "/").replace(/^\/+/, "");
 }
-function targetPath(owner: string, path: string, info: ReturnType<typeof kindOf>): string | null {
+export function targetPath(owner: string, path: string, info: ReturnType<typeof kindOf>): string | null {
   if (info.kind === "protected-game-data") return null;
   const parts = path.split("/");
   const ext = basename(path).split(".").at(-1)?.toLowerCase();
@@ -124,8 +124,11 @@ function targetPath(owner: string, path: string, info: ReturnType<typeof kindOf>
     const remainder = parts[0] === "docs" ? parts.slice(1).join("/") : path;
     return `docs/${info.category ?? "reference"}/${owner}/${remainder || basename(path)}`;
   }
-  if (ext === "py" || ext === "pyi" || ext === "ipynb")
+  if (ext === "py" || ext === "pyi" || ext === "ipynb") {
+    if (owner === "infra" && parts[0] === "scripts")
+      return "../aphrody-py/tools/infra/scripts/python-workspace-dispatch.py";
     return `../aphrody-py/${parts[0] === "scripts" ? "tools" : parts[0] === "apps" ? "apps" : "packages"}/${owner}/${path}`;
+  }
   if (info.kind === "script") return `scripts/${info.category ?? "tools"}/${owner}/${path}`;
   if (info.kind === "rust-source") {
     const remainder =
@@ -152,6 +155,9 @@ function targetPath(owner: string, path: string, info: ReturnType<typeof kindOf>
   if (parts[0] === "apps") return `apps/${owner}/${parts.slice(1).join("/")}`;
   if (info.kind.endsWith("manifest")) return `migration/manifests/${owner}/${path}`;
   return `migration/source-refs/${owner}/${path}`;
+}
+export function isInfraPythonScript(path: string, info: ReturnType<typeof kindOf>): boolean {
+  return info.kind === "script" && /^scripts\/.*\.(?:py|pyi|ipynb)$/i.test(path);
 }
 function parseStatus(raw: string): Map<string, string> {
   const result = new Map<string, string>();
