@@ -470,10 +470,10 @@ impl NdjsonSinkSubscriber {
         line.push(b'\n');
 
         let _guard = self.lock.lock().await;
-        if let Some(parent) = self.path.parent() {
-            if !parent.as_os_str().is_empty() {
-                afs::create_dir_all(parent).await?;
-            }
+        if let Some(parent) = self.path.parent()
+            && !parent.as_os_str().is_empty()
+        {
+            afs::create_dir_all(parent).await?;
         }
         let mut file = afs::OpenOptions::new().create(true).append(true).open(&self.path).await?;
         file.write_all(&line).await?;

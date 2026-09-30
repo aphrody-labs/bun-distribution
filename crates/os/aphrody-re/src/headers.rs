@@ -145,7 +145,7 @@ pub struct DosHeader {
 
 impl DosHeader {
     /// DOS MZ magic bytes.
-    pub const MAGIC: [u8; 2] = [b'M', b'Z'];
+    pub const MAGIC: [u8; 2] = *b"MZ";
 
     /// Attempt to read a `DosHeader` from the start of `bytes` without copying.
     ///

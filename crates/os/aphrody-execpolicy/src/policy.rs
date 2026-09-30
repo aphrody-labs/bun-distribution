@@ -92,9 +92,7 @@ impl Policy {
     /// 2. Tie-breaker: longer matched prefix (more specific rule).
     #[must_use]
     pub fn evaluate(&self, cmd: &[String]) -> Option<RuleMatch> {
-        let Some((first, _)) = cmd.split_first() else {
-            return None;
-        };
+        let (first, _) = cmd.split_first()?;
 
         // Normalize first token (remove .exe on Windows)
         let prog_key = first.strip_suffix(".exe").unwrap_or(first);
@@ -113,10 +111,9 @@ impl Policy {
                 best_match = match best_match {
                     None => Some(candidate),
                     Some(existing) => {
-                        if candidate.decision > existing.decision {
-                            Some(candidate)
-                        } else if candidate.decision == existing.decision
-                            && candidate.matched_prefix.len() > existing.matched_prefix.len()
+                        if candidate.decision > existing.decision
+                            || (candidate.decision == existing.decision
+                                && candidate.matched_prefix.len() > existing.matched_prefix.len())
                         {
                             Some(candidate)
                         } else {

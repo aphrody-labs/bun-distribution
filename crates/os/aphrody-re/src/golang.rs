@@ -356,40 +356,42 @@ fn find_pclntab(data: &[u8]) -> Option<&[u8]> {
 /// Look for the pclntab inside known sections.
 fn find_pclntab_in_sections(data: &[u8]) -> Option<&[u8]> {
     // ELF
-    if data.len() >= 4 && &data[..4] == b"\x7FELF" {
-        if let Ok(elf) = goblin::elf::Elf::parse(data) {
-            for sh in &elf.section_headers {
-                let name = elf.shdr_strtab.get_at(sh.sh_name).unwrap_or("");
-                if name == ".gopclntab" {
-                    let off = sh.sh_offset as usize;
-                    let sz = sh.sh_size as usize;
-                    if let Some(slice) = data.get(off..off.saturating_add(sz)) {
-                        if is_valid_pclntab_magic(slice) {
-                            return Some(slice);
-                        }
-                    }
+    if data.len() >= 4
+        && &data[..4] == b"\x7FELF"
+        && let Ok(elf) = goblin::elf::Elf::parse(data)
+    {
+        for sh in &elf.section_headers {
+            let name = elf.shdr_strtab.get_at(sh.sh_name).unwrap_or("");
+            if name == ".gopclntab" {
+                let off = sh.sh_offset as usize;
+                let sz = sh.sh_size as usize;
+                if let Some(slice) = data.get(off..off.saturating_add(sz))
+                    && is_valid_pclntab_magic(slice)
+                {
+                    return Some(slice);
                 }
             }
         }
     }
     // PE
-    if data.len() >= 2 && &data[..2] == b"MZ" {
-        if let Ok(pe) = goblin::pe::PE::parse(data) {
-            for section in &pe.sections {
-                let raw_name = section.name().unwrap_or("");
-                // PE sections: runtime.pclntab is placed in `.text` or a
-                // dedicated `.rdata` section; the section itself is named
-                // `.gopclnt` (truncated to 8 chars in PE).
-                if raw_name.starts_with(".gopclnt") || raw_name == "runtime" {
-                    // section.data() returns Cow<[u8]> — we need the raw slice.
-                    // Use the raw offset/size from the section header instead.
-                    let raw_off = section.pointer_to_raw_data as usize;
-                    let raw_sz = section.size_of_raw_data as usize;
-                    if let Some(bytes) = data.get(raw_off..raw_off.saturating_add(raw_sz)) {
-                        if is_valid_pclntab_magic(bytes) {
-                            return Some(bytes);
-                        }
-                    }
+    if data.len() >= 2
+        && &data[..2] == b"MZ"
+        && let Ok(pe) = goblin::pe::PE::parse(data)
+    {
+        for section in &pe.sections {
+            let raw_name = section.name().unwrap_or("");
+            // PE sections: runtime.pclntab is placed in `.text` or a
+            // dedicated `.rdata` section; the section itself is named
+            // `.gopclnt` (truncated to 8 chars in PE).
+            if raw_name.starts_with(".gopclnt") || raw_name == "runtime" {
+                // section.data() returns Cow<[u8]> — we need the raw slice.
+                // Use the raw offset/size from the section header instead.
+                let raw_off = section.pointer_to_raw_data as usize;
+                let raw_sz = section.size_of_raw_data as usize;
+                if let Some(bytes) = data.get(raw_off..raw_off.saturating_add(raw_sz))
+                    && is_valid_pclntab_magic(bytes)
+                {
+                    return Some(bytes);
                 }
             }
         }
@@ -415,10 +417,10 @@ fn find_pclntab_by_magic(data: &[u8]) -> Option<&[u8]> {
         // The actual magic starts 1 byte before the [0xff,0xff,0xff] suffix.
         if candidate >= 1 {
             let start = candidate - 1;
-            if let Some(slice) = data.get(start..) {
-                if is_valid_pclntab_magic(slice) {
-                    return Some(slice);
-                }
+            if let Some(slice) = data.get(start..)
+                && is_valid_pclntab_magic(slice)
+            {
+                return Some(slice);
             }
         }
         search_offset = candidate + 1;
@@ -797,7 +799,7 @@ fn sample_types(data: &[u8], limit: usize) -> Vec<String> {
         }
         // Check length byte: must be 1..=127 (single-byte varint for short names)
         let len_byte = window[0] as usize;
-        if len_byte < 2 || len_byte > 127 {
+        if !(2..=127).contains(&len_byte) {
             continue;
         }
         let name_start = idx + 1;

@@ -52,16 +52,16 @@ fn for_each_printable_string(bytes: &[u8], min_len: usize, mut visit: impl FnMut
     for (index, byte) in bytes.iter().copied().enumerate() {
         if (0x20..=0x7e).contains(&byte) {
             start.get_or_insert(index);
-        } else if let Some(run_start) = start.take() {
-            if index - run_start >= min_len {
-                visit(&bytes[run_start..index]);
-            }
+        } else if let Some(run_start) = start.take()
+            && index - run_start >= min_len
+        {
+            visit(&bytes[run_start..index]);
         }
     }
-    if let Some(run_start) = start {
-        if bytes.len() - run_start >= min_len {
-            visit(&bytes[run_start..]);
-        }
+    if let Some(run_start) = start
+        && bytes.len() - run_start >= min_len
+    {
+        visit(&bytes[run_start..]);
     }
 
     for alignment in 0..2 {
@@ -406,10 +406,10 @@ impl WgaPreferences {
                 if let Ok(v) = rest.trim().parse::<f64>() {
                     user_zoom_factor = v;
                 }
-            } else if let Some(rest) = trimmed.strip_prefix("experiments:") {
-                if let Ok(v) = rest.trim().parse::<u64>() {
-                    experiments.push(v);
-                }
+            } else if let Some(rest) = trimmed.strip_prefix("experiments:")
+                && let Ok(v) = rest.trim().parse::<u64>()
+            {
+                experiments.push(v);
             }
         }
 
@@ -735,14 +735,13 @@ fn extract_chromium_version(bytes: &[u8], indicators: &mut Vec<String>) -> Optio
     // Pattern: `Chrome/M.m.b.p` (user-agent style).
     // We run the regex directly on raw bytes for efficiency.
     let re = Regex::new(r"Chrome/(\d+\.\d+\.\d+\.\d+)").expect("static regex");
-    if let Some(cap) = re.captures(bytes) {
-        if let Some(ver_bytes) = cap.get(1) {
-            if let Ok(ver) = std::str::from_utf8(ver_bytes.as_bytes()) {
-                let ver = ver.to_owned();
-                indicators.push(format!("Chromium version: {ver}"));
-                return Some(ver);
-            }
-        }
+    if let Some(cap) = re.captures(bytes)
+        && let Some(ver_bytes) = cap.get(1)
+        && let Ok(ver) = std::str::from_utf8(ver_bytes.as_bytes())
+    {
+        let ver = ver.to_owned();
+        indicators.push(format!("Chromium version: {ver}"));
+        return Some(ver);
     }
     None
 }
@@ -811,13 +810,12 @@ fn extract_grpc_surface(
 
     // --- Pass 1a: routing paths (most authoritative) on raw bytes -----------
     for cap in path_re.captures_iter(bytes) {
-        if let (Some(svc), Some(meth)) = (cap.get(1), cap.get(2)) {
-            if let (Ok(svc), Ok(meth)) =
+        if let (Some(svc), Some(meth)) = (cap.get(1), cap.get(2))
+            && let (Ok(svc), Ok(meth)) =
                 (std::str::from_utf8(svc.as_bytes()), std::str::from_utf8(meth.as_bytes()))
-            {
-                services.insert(svc.to_owned());
-                methods.insert(meth.to_owned());
-            }
+        {
+            services.insert(svc.to_owned());
+            methods.insert(meth.to_owned());
         }
     }
 

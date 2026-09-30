@@ -344,8 +344,8 @@ pub fn mouse_drag(
 /// assert_eq!(px, [0xFF, 0x00, 0xBB, 0xFF]); // R=0xFF, G=0x00, B=0xBB, A=0xFF
 /// ```
 pub fn bgra_to_rgba(buf: &mut [u8]) {
-    assert!(buf.len() % 4 == 0, "bgra_to_rgba: buffer length must be a multiple of 4");
-    for px in buf.chunks_exact_mut(4) {
+    assert!(buf.len().is_multiple_of(4), "bgra_to_rgba: buffer length must be a multiple of 4");
+    for px in buf.as_chunks_mut::<4>().0 {
         px.swap(0, 2); // swap B <-> R
         px[3] = 0xFF; // fix up alpha
     }

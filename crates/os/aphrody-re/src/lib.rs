@@ -637,35 +637,35 @@ pub fn extract_strings_file(
     for (index, &byte) in bytes.iter().enumerate() {
         if (0x20..0x7f).contains(&byte) {
             start.get_or_insert(index);
-        } else if let Some(begin) = start.take() {
-            if index - begin >= min_length {
-                strings.push(BinaryString {
-                    offset: begin as u64,
-                    encoding: "ascii",
-                    length: index - begin,
-                    value: String::from_utf8_lossy(&bytes[begin..index]).into_owned(),
-                });
-                if strings.len() >= max_results {
-                    return Ok(ExtractedStrings {
-                        success: true,
-                        path: path.display().to_string(),
-                        count: strings.len(),
-                        capped: true,
-                        strings,
-                    });
-                }
-            }
-        }
-    }
-    if let Some(begin) = start {
-        if bytes.len() - begin >= min_length {
+        } else if let Some(begin) = start.take()
+            && index - begin >= min_length
+        {
             strings.push(BinaryString {
                 offset: begin as u64,
                 encoding: "ascii",
-                length: bytes.len() - begin,
-                value: String::from_utf8_lossy(&bytes[begin..]).into_owned(),
+                length: index - begin,
+                value: String::from_utf8_lossy(&bytes[begin..index]).into_owned(),
             });
+            if strings.len() >= max_results {
+                return Ok(ExtractedStrings {
+                    success: true,
+                    path: path.display().to_string(),
+                    count: strings.len(),
+                    capped: true,
+                    strings,
+                });
+            }
         }
+    }
+    if let Some(begin) = start
+        && bytes.len() - begin >= min_length
+    {
+        strings.push(BinaryString {
+            offset: begin as u64,
+            encoding: "ascii",
+            length: bytes.len() - begin,
+            value: String::from_utf8_lossy(&bytes[begin..]).into_owned(),
+        });
     }
 
     let mut index = 0;
@@ -677,8 +677,12 @@ pub fn extract_strings_file(
         } else if let Some(begin) = start.take() {
             let length = (index - begin) / 2;
             if length >= min_length {
-                let value: String =
-                    bytes[begin..index].chunks_exact(2).map(|pair| pair[0] as char).collect();
+                let value: String = bytes[begin..index]
+                    .as_chunks::<2>()
+                    .0
+                    .iter()
+                    .map(|pair| pair[0] as char)
+                    .collect();
                 strings.push(BinaryString {
                     offset: begin as u64,
                     encoding: "utf16",
@@ -688,6 +692,22 @@ pub fn extract_strings_file(
             }
         }
         index += 2;
+    }
+    if let Some(begin) = start
+        && (index - begin) / 2 >= min_length
+        && strings.len() < max_results
+    {
+        strings.push(BinaryString {
+            offset: begin as u64,
+            encoding: "utf16",
+            length: (index - begin) / 2,
+            value: bytes[begin..index]
+                .as_chunks::<2>()
+                .0
+                .iter()
+                .map(|pair| pair[0] as char)
+                .collect(),
+        });
     }
 
     Ok(ExtractedStrings {
@@ -721,11 +741,11 @@ pub fn xor_file(
     use sha2::{Digest, Sha256};
 
     let clean: String = key_hex.chars().filter(|c| *c != ' ' && *c != '-').collect();
-    if clean.is_empty() || clean.len() % 2 != 0 {
+    if clean.is_empty() || !clean.len().is_multiple_of(2) {
         return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput, "invalid keyHex."));
     }
     let mut key = Vec::with_capacity(clean.len() / 2);
-    for pair in clean.as_bytes().chunks_exact(2) {
+    for pair in clean.as_bytes().as_chunks::<2>().0 {
         let text = std::str::from_utf8(pair).map_err(|_| {
             std::io::Error::new(std::io::ErrorKind::InvalidInput, "invalid keyHex.")
         })?;
@@ -794,12 +814,14 @@ pub fn aes_ctr_file(
 
     fn parse_hex(value: &str) -> std::io::Result<Vec<u8>> {
         let clean: String = value.chars().filter(|c| *c != ' ' && *c != '-').collect();
-        if clean.is_empty() || clean.len() % 2 != 0 {
+        if clean.is_empty() || !clean.len().is_multiple_of(2) {
             return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput, "invalid hex."));
         }
         clean
             .as_bytes()
-            .chunks_exact(2)
+            .as_chunks::<2>()
+            .0
+            .iter()
             .map(|pair| {
                 let text = std::str::from_utf8(pair).map_err(|_| {
                     std::io::Error::new(std::io::ErrorKind::InvalidInput, "invalid hex.")
@@ -1345,7 +1367,7 @@ pub fn entropy_map_file(
     let size = file.metadata()?.len();
     let total_blocks = size.div_ceil(block_size as u64);
     let sample_step =
-        usize::try_from((total_blocks / total_blocks.min(4096)).max(1)).unwrap_or(usize::MAX);
+        usize::try_from((total_blocks / total_blocks.clamp(1, 4096)).max(1)).unwrap_or(usize::MAX);
     let mut reader = BufReader::new(file);
     let mut block = vec![0_u8; block_size];
     let mut entropy = Vec::with_capacity(usize::try_from(total_blocks.min(4096)).unwrap_or(4096));
@@ -1355,14 +1377,14 @@ pub fn entropy_map_file(
         if count == 0 {
             break;
         }
-        if block_index % sample_step == 0 {
+        if block_index.is_multiple_of(sample_step) {
             entropy.push(shannon_entropy(&block[..count]));
         }
         block_index += 1;
     }
     let samples = entropy.len();
     let max = entropy.iter().copied().reduce(f64::max).unwrap_or(0.0);
-    let min = entropy.iter().copied().reduce(f64::min).unwrap_or(8.0);
+    let min = entropy.iter().copied().reduce(f64::min).unwrap_or(0.0);
     let avg = if samples == 0 { 0.0 } else { entropy.iter().sum::<f64>() / samples as f64 };
     Ok(EntropyMap {
         path: path.display().to_string(),
@@ -1394,12 +1416,12 @@ pub fn extract_strings(bytes: &[u8], min_len: usize, limit: usize) -> Vec<String
             (true, None) => start = Some(i),
             (false, Some(s)) => {
                 let len = i - s;
-                if len >= min_len {
-                    if let Ok(text) = std::str::from_utf8(&bytes[s..i]) {
-                        push_unique(&mut out, &mut seen, text.to_owned(), limit);
-                        if out.len() >= limit {
-                            return out;
-                        }
+                if len >= min_len
+                    && let Ok(text) = std::str::from_utf8(&bytes[s..i])
+                {
+                    push_unique(&mut out, &mut seen, text.to_owned(), limit);
+                    if out.len() >= limit {
+                        return out;
                     }
                 }
                 start = None;
@@ -1409,10 +1431,10 @@ pub fn extract_strings(bytes: &[u8], min_len: usize, limit: usize) -> Vec<String
     }
     if let Some(s) = start {
         let len = bytes.len() - s;
-        if len >= min_len {
-            if let Ok(text) = std::str::from_utf8(&bytes[s..]) {
-                push_unique(&mut out, &mut seen, text.to_owned(), limit);
-            }
+        if len >= min_len
+            && let Ok(text) = std::str::from_utf8(&bytes[s..])
+        {
+            push_unique(&mut out, &mut seen, text.to_owned(), limit);
         }
     }
 
@@ -1503,6 +1525,30 @@ mod tests {
         let zeros = vec![0u8; 1024];
         let h = shannon_entropy(&zeros);
         expect_that!(h, eq(0.0));
+    }
+
+    #[test]
+    fn entropy_map_empty_file_has_no_samples_or_panics() {
+        let file = tempfile::NamedTempFile::new().expect("empty fixture");
+        let report = entropy_map_file(file.path(), None).expect("empty entropy report");
+        assert_eq!(report.size, 0);
+        assert_eq!(report.sample_step, 1);
+        assert_eq!(report.samples, 0);
+        assert!(report.entropy.is_empty());
+        assert_eq!((report.min, report.max, report.avg), (0.0, 0.0, 0.0));
+    }
+
+    #[test]
+    fn extract_strings_file_keeps_utf16_run_at_end_of_file() {
+        let file = tempfile::NamedTempFile::new().expect("UTF16 fixture");
+        for bytes in [&b"R\0u\0s\0t\0"[..], &b"R\0u\0s\0t\0\xff"[..]] {
+            std::fs::write(file.path(), bytes).expect("write fixture");
+            let report = extract_strings_file(file.path(), Some(4), None).expect("extract strings");
+            assert_eq!(report.count, 1);
+            assert_eq!(report.strings[0].encoding, "utf16");
+            assert_eq!(report.strings[0].value, "Rust");
+            assert_eq!(report.strings[0].offset, 0);
+        }
     }
 
     #[gtest]

@@ -250,16 +250,16 @@ pub fn map_adobe_app(root: &Path, opts: MapOptions) -> io::Result<AdobeAppMap> {
 
         // Augment with PE-extracted version for the top-level field when AMT
         // extraction did not produce a version (non-standard installs).
-        if main_version.is_none() {
-            if let Some(ref v) = version {
-                let fname = abs_path
-                    .file_name()
-                    .map(|n| n.to_string_lossy().to_ascii_lowercase())
-                    .unwrap_or_default();
-                // Photoshop.exe / Illustrator.exe are the main binaries.
-                if fname == "photoshop.exe" || fname == "illustrator.exe" {
-                    main_version = Some(v.clone());
-                }
+        if main_version.is_none()
+            && let Some(ref v) = version
+        {
+            let fname = abs_path
+                .file_name()
+                .map(|n| n.to_string_lossy().to_ascii_lowercase())
+                .unwrap_or_default();
+            // Photoshop.exe / Illustrator.exe are the main binaries.
+            if fname == "photoshop.exe" || fname == "illustrator.exe" {
+                main_version = Some(v.clone());
             }
         }
 
