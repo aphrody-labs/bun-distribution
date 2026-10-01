@@ -102,7 +102,9 @@ describe.skipIf(!fixtureUrl)("ranked SQL schema isolation", () => {
     );
     await persistence.finalizeOngoingLobby(lobbyId, match(), 20);
     await persistence.finalizeOngoingLobby(lobbyId, match(), 20);
-    const players = await sql`SELECT games_played FROM achillea.user_elo ORDER BY user_id`;
+    const players = await sql<
+      Array<{ games_played: number }>
+    >`SELECT games_played FROM achillea.user_elo ORDER BY user_id`;
     expect(players.map((player) => player.games_played)).toEqual([1, 1]);
     expect((await persistence.getRankedOverview()).finishedToday).toBe(1);
     expect(await persistence.cancelLobby(lobbyId)).toBe(false);
@@ -146,8 +148,9 @@ describe.skipIf(!fixtureUrl)("ranked SQL schema isolation", () => {
       (${eventId}, 'RANKED', 'Contested', now() - interval '2 days')
     `;
     expect(await persistence.cleanupStaleOngoingLobbies(24)).toBe(1);
-    const rows =
-      await sql`SELECT event_type, state FROM achillea.lobby WHERE created_at < now() - interval '1 day' ORDER BY id`;
+    const rows = await sql<
+      Array<{ event_type: string; state: string }>
+    >`SELECT event_type, state FROM achillea.lobby WHERE created_at < now() - interval '1 day' ORDER BY id`;
     expect(rows.map((row) => [row.event_type, row.state])).toEqual([
       ["RANKED", "Canceled"],
       ["TOURNAMENT", "Ongoing"],
