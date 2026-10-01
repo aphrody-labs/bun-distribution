@@ -1,6 +1,6 @@
 # Gestion des filtres et détails du Wiki (Azalée)
 
-Ce document explique le fonctionnement du filtrage et de la résolution des catégories/éléments dans le wiki d'Azalée (`apps/website/src/lib/wiki-service.ts`), suite aux corrections apportées pour pallier les limitations de la base de données.
+Ce document explique le fonctionnement du filtrage et de la résolution des catégories/éléments dans le wiki d'Azalée ([`apps/rg/website/src/lib/wiki-service.ts`](file:///home/aphro/aphrody/apps/rg/website/src/lib/wiki-service.ts)), suite aux corrections apportées pour pallier les limitations de la base de données.
 
 ## 1. Problématique de la Base de Données
 
@@ -78,7 +78,7 @@ Les tables d'auras en base de données ne possèdent pas de colonne `owner_chara
 * **Solution** : Pour afficher le propriétaire ("Owner") de l'aura sur sa page de détails, `wiki-service.ts` fait un fallback de recherche automatique de liaison dans `change_aura_skills.json` (qui mappe les `id` d'auras vers les `charaParamId` de personnages propriétaires).
 
 ### C. Enrichissement de la fiche joueur
-Dans la fiche d'un personnage (`apps/website/src/app/wiki/chara/[id]/page.tsx`), la fonction `getCharacterAuras` récupère désormais le champ `sheet_data` des auras et extrait :
+Dans la fiche d'un personnage ([`apps/rg/website/src/app/wiki/chara/[id]/page.tsx`](file:///home/aphro/aphrody/apps/rg/website/src/app/wiki/chara/[id]/page.tsx)), la fonction `getCharacterAuras` récupère désormais le champ `sheet_data` des auras et extrait :
 * L'effet passif (`passiveEffect`)
 * Le nom de la technique spéciale associée (`hissatsuName`)
 

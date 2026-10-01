@@ -58,7 +58,7 @@ Le pipeline unifié est une chaîne unique. Pour chaque étape, l'implémentatio
 
 ### Étape 6 — Serving (wiki azalee / jeu jouable wasm)
 
-- **Wiki (actuel, prod)** : azalee (Next.js self-host VPS, `apps/website` :3004) lit les tables `inagle_*` via un miroir SQLite embarqué. inagle reste le **seul producteur** de ces tables ; azalee et `rg-cron` dépendent en dur de son `dist/` (subpath exports).
+- **Wiki (actuel, prod)** : azalee (Next.js self-host VPS, [`apps/rg/website`](file:///home/aphro/aphrody/apps/rg/website) :3004) lit les tables `inagle_*` via un miroir SQLite embarqué. inagle reste le **seul producteur** de ces tables ; azalee et `rg-cron` dépendent en dur de son `dist/` (subpath exports).
 - **Jeu jouable (cible Rust)** : `crate nie-wasm` (1108 LOC) — surface wasm-bindgen (12 exports : `detect_format`, `crilayla_decompress`, `utf_table_json`, `calculate_stats`, `skill_lookup`, `aura_lookup`, `item_lookup`, `match_tick`, `final_score`…), chaque fonction ayant un jumeau natif testable (27 tests). `crate nie-headless` (202 LOC) : runner CLI headless consommant nie-formats.
 
 ### Le pont C# → Rust (catalogue de formats)

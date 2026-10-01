@@ -14,7 +14,7 @@ de la base par défaut.
 | 0 | *héritage — à ne plus utiliser pour du neuf* | `dbz:message:`, `dbz:user:`, `dbz:channel:` (projet Dragon Ball), `vector:inazuma-news:` | ~897 000 |
 | 1 | Rose Griffon (`rg-bot`, site, `rg-cron`) — `REDIS_URL=redis://127.0.0.1:6379/1` | `vector:inazuma-news:` | ~32 000 |
 | 2 | **Achilléa** (`achillea-bot`, files BullMQ) | `achillea:` | files transitoires |
-| 3 | Index des fichiers CPK d'Inazuma Eleven (`apps/website/src/lib/cpk`) | `iev:file:`, `iev:tex:`, `iev:cpk:`, `iev:chara:` | ~3 900 |
+| 3 | Index des fichiers CPK d'Inazuma Eleven ([`apps/rg/website/src/lib/cpk`](file:///home/aphro/aphrody/apps/rg/website/src/lib/cpk)) | `iev:file:`, `iev:tex:`, `iev:cpk:`, `iev:chara:` | ~3 900 |
 | 4 | Atlas de symboles du RE toolkit | `atlas:addr:`, `atlas:sym:` | ~92 000 |
 | 9 | Tests d'Achilléa | `achillea:` | volatile |
 
