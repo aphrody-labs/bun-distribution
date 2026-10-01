@@ -60,3 +60,12 @@ and application builds are handled by their normal gates.
 RG typechecking, tests, the complete pipeline and VPS release assembly use this
 same preparation step. A failed preparation blocks its dependent checks;
 previously generated output cannot turn that failure into a passing gate.
+
+## Canonical Zukan catalog
+
+The private Inagle archive ships its single canonical official English Zukan corpus
+through `@rosegriffon/inagle/zukan/catalog`. RG imports that export rather than
+reaching into an IECODE documentation directory or retaining a source copy.
+The corpus includes masked profiles with optional nicknames and stats; consumers
+must handle those absent fields. Package preparation preserves the catalog in
+the source allowlist, so CI and immutable releases use the same pinned input.

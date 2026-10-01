@@ -15,6 +15,7 @@
         "@types/node": "catalog:",
         "@types/react": "catalog:",
         "@types/react-dom": "catalog:",
+        "@types/three": "catalog:",
         "cheerio": "catalog:",
         "oxfmt": "catalog:",
         "oxlint": "catalog:",
@@ -1644,9 +1645,9 @@
     "@parcel/watcher",
   ],
   "overrides": {
-    "@rosegriffon/azalee": "file:.cache/iecode-packages/azalee-d4de50ba2a4b7154cb9e91f405cc30a343b04aed.tgz",
-    "@rosegriffon/inagle": "file:.cache/iecode-packages/inagle-d4de50ba2a4b7154cb9e91f405cc30a343b04aed.tgz",
-    "@rosegriffon/inagle-cross": "file:.cache/iecode-packages/inagle-cross-d4de50ba2a4b7154cb9e91f405cc30a343b04aed.tgz",
+    "@rosegriffon/azalee": "file:.cache/iecode-packages/azalee-92e027f647744ba20be55a18b992400131ad2eca.tgz",
+    "@rosegriffon/inagle": "file:.cache/iecode-packages/inagle-92e027f647744ba20be55a18b992400131ad2eca.tgz",
+    "@rosegriffon/inagle-cross": "file:.cache/iecode-packages/inagle-cross-92e027f647744ba20be55a18b992400131ad2eca.tgz",
   },
   "catalog": {
     "@ai-sdk/google": "^3.0.122",
@@ -1720,10 +1721,10 @@
     "@radix-ui/react-toggle-group": "^1.1.11",
     "@radix-ui/react-tooltip": "^1.2.8",
     "@rosegriffon/assets": "^1.0.3",
-    "@rosegriffon/azalee": "file:.cache/iecode-packages/azalee-d4de50ba2a4b7154cb9e91f405cc30a343b04aed.tgz",
+    "@rosegriffon/azalee": "file:.cache/iecode-packages/azalee-92e027f647744ba20be55a18b992400131ad2eca.tgz",
     "@rosegriffon/db": "^1.0.3",
-    "@rosegriffon/inagle": "file:.cache/iecode-packages/inagle-d4de50ba2a4b7154cb9e91f405cc30a343b04aed.tgz",
-    "@rosegriffon/inagle-cross": "file:.cache/iecode-packages/inagle-cross-d4de50ba2a4b7154cb9e91f405cc30a343b04aed.tgz",
+    "@rosegriffon/inagle": "file:.cache/iecode-packages/inagle-92e027f647744ba20be55a18b992400131ad2eca.tgz",
+    "@rosegriffon/inagle-cross": "file:.cache/iecode-packages/inagle-cross-92e027f647744ba20be55a18b992400131ad2eca.tgz",
     "@sentry/nextjs": "^10.56.0",
     "@shikijs/vitepress-twoslash": "^4.2.0",
     "@sindresorhus/transliterate": "^2.3.1",
@@ -3331,7 +3332,7 @@
 
     "@rosegriffon/auth": ["@rosegriffon/auth@workspace:packages/rg/auth"],
 
-    "@rosegriffon/azalee": ["@rosegriffon/azalee@.cache/iecode-packages/azalee-d4de50ba2a4b7154cb9e91f405cc30a343b04aed.tgz", { "dependencies": { "@rosegriffon/assets": "^1.0.3", "@rosegriffon/db": "^1.0.3", "@rosegriffon/inagle": "2.0.4", "@rosegriffon/inagle-cross": "1.0.3", "commander": "^14.0.3", "wanakana": "^5.3.1" }, "bin": { "azalee": "./src/cli.ts" } }, "sha512-KoOcRkvfA3BUExoZJY0HRWkcWVtYSuqUUpZ2XCLwGRf/kujacTWdEYHLUizo9LaNGAtGJB8sbh1oCHVRkd/PZA=="],
+    "@rosegriffon/azalee": ["@rosegriffon/azalee@.cache/iecode-packages/azalee-92e027f647744ba20be55a18b992400131ad2eca.tgz", { "dependencies": { "@rosegriffon/assets": "^1.0.3", "@rosegriffon/db": "^1.0.3", "@rosegriffon/inagle": "2.0.4", "@rosegriffon/inagle-cross": "1.0.3", "commander": "^14.0.3", "wanakana": "^5.3.1" }, "bin": { "azalee": "./src/cli.ts" } }, "sha512-Tn4zHH9kChpc7woWeDe5DIiqW6xEXl47q3JSUoHuOeHcUmbl/GwbVnYHKH5KIooq/dvZM82gDZ1sUDcVoKLeWw=="],
 
     "@rosegriffon/bot": ["@rosegriffon/bot@workspace:apps/rg/bot"],
 
@@ -3347,9 +3348,9 @@
 
     "@rosegriffon/identity": ["@rosegriffon/identity@workspace:packages/rg/identity"],
 
-    "@rosegriffon/inagle": ["@rosegriffon/inagle@.cache/iecode-packages/inagle-d4de50ba2a4b7154cb9e91f405cc30a343b04aed.tgz", { "dependencies": { "@leeoniya/ufuzzy": "^1.0.14", "@rosegriffon/assets": "^1.0.3", "@rosegriffon/db": "^1.0.3", "cheerio": "^1.2.0", "commander": "^14.0.3", "dotenv": "^17.3.1", "drizzle-orm": "^0.45.3", "kuroshiro": "^1.2.0", "kuroshiro-analyzer-kuromoji": "^1.1.0", "picocolors": "^1.1.1", "wanakana": "^5.3.1", "zod": "^3.25.76" }, "peerDependencies": { "@aphrody/agent-browser": "*" }, "optionalPeers": ["@aphrody/agent-browser"], "bin": { "inagle": "./src/cli.ts" } }, "sha512-ijlBeCTTrBimH3bNNnQ8CfF2vLtQUplLxloM6LanE7btuVybw38amBcEX9dmUuaiq0lyq1cjoe/72dAmNM6vqA=="],
+    "@rosegriffon/inagle": ["@rosegriffon/inagle@.cache/iecode-packages/inagle-92e027f647744ba20be55a18b992400131ad2eca.tgz", { "dependencies": { "@leeoniya/ufuzzy": "^1.0.14", "@rosegriffon/assets": "^1.0.3", "@rosegriffon/db": "^1.0.3", "cheerio": "^1.2.0", "commander": "^14.0.3", "dotenv": "^17.3.1", "drizzle-orm": "^0.45.3", "kuroshiro": "^1.2.0", "kuroshiro-analyzer-kuromoji": "^1.1.0", "picocolors": "^1.1.1", "wanakana": "^5.3.1", "zod": "^3.25.76" }, "peerDependencies": { "@aphrody/agent-browser": "*" }, "optionalPeers": ["@aphrody/agent-browser"], "bin": { "inagle": "./src/cli.ts" } }, "sha512-spEJronNi77v/z8EB1i23lvVEU+j3yccUibIlRbqtia23jaFa3CfODu5nbG71pyR17QQ1P1R90eIdoB+16EGUw=="],
 
-    "@rosegriffon/inagle-cross": ["@rosegriffon/inagle-cross@.cache/iecode-packages/inagle-cross-d4de50ba2a4b7154cb9e91f405cc30a343b04aed.tgz", { "dependencies": { "zod": "^3.25.76" } }, "sha512-Iw1r1ovnKlexQGMuDxNSTjwOOsVcsd+HS1WVGtZ9W0D8iilSwq7i20fzojmv9OK4N4hdnb1HCSO+mNfPfUsgjw=="],
+    "@rosegriffon/inagle-cross": ["@rosegriffon/inagle-cross@.cache/iecode-packages/inagle-cross-92e027f647744ba20be55a18b992400131ad2eca.tgz", { "dependencies": { "zod": "^3.25.76" } }, "sha512-sjNc6xJX/oL5hqW8VRPNshBqCIkstFonSQ14V/2d+XVwZJ1w1kWu4PTsHkdzRJKDBa9NWqfdnRl9JSVOsARevQ=="],
 
     "@rosegriffon/patreon-bun": ["@rosegriffon/patreon-bun@workspace:packages/rg/patreon-bun"],
 
