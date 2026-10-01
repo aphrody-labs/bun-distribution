@@ -3,6 +3,7 @@ import { infraRoot } from "./runtime.ts";
 import { runRustBridge } from "./bridges.ts";
 import { scanImportsExports } from "./imports-exports.ts";
 import { runDocsLinks } from "./docs-links.ts";
+import { buildDependencies, dependencyBuildPlan } from "./bun-dependency-builds.ts";
 
 // This module is a CLI surface; console output is its documented interface.
 // oxlint-disable no-console
@@ -165,7 +166,19 @@ function checkCoverage(packages: PackageInfo[]) {
   );
 }
 
-async function runCheck(check: Check, selected: PackageInfo[], root: string): Promise<number> {
+async function runCheck(
+  check: Check,
+  selected: PackageInfo[],
+  root: string,
+  dependenciesPrepared = false,
+): Promise<number> {
+  if (!dependenciesPrepared && ["typecheck", "test", "build"].includes(check)) {
+    const code = await buildDependencies(
+      root,
+      selected.map((item) => item.name),
+    );
+    if (code !== 0) return code;
+  }
   let status = 0;
   // Run package gates serially to avoid overloading the shared build host.
   // oxlint-disable-next-line no-await-in-loop
@@ -322,6 +335,14 @@ async function pipeline(root: string, dryRun: boolean): Promise<number> {
         ).exited,
     },
     {
+      name: "RG workspace dependency builds",
+      run: () =>
+        buildDependencies(
+          root,
+          packages.map((item) => item.name),
+        ),
+    },
+    {
       name: "N2B Bun migration audit",
       run: () => n2bAudit(root),
     },
@@ -351,7 +372,7 @@ async function pipeline(root: string, dryRun: boolean): Promise<number> {
         return findings.length ? 1 : 0;
       },
     },
-    ...CHECKS.map((check) => ({ name: check, run: () => runCheck(check, packages, root) })),
+    ...CHECKS.map((check) => ({ name: check, run: () => runCheck(check, packages, root, true) })),
     {
       name: "RG documentation links",
       run: () => runDocsLinks(["--root", root, "--docs", "docs/rg", "--scope", "docs"]),
@@ -382,9 +403,16 @@ async function pipeline(root: string, dryRun: boolean): Promise<number> {
   // oxlint-disable-next-line no-await-in-loop
   for (const task of tasks) {
     console.error(`\n=== RG pipeline: ${task.name} ===`);
-    if (task.name !== "Bun frozen workspace install" && results[0]?.status === "failed") {
+    if (
+      (task.name !== "Bun frozen workspace install" && results[0]?.status === "failed") ||
+      (["typecheck", "test", "build"].includes(task.name) &&
+        results.some(
+          (result) =>
+            result.stage === "RG workspace dependency builds" && result.status === "failed",
+        ))
+    ) {
       results.push({ stage: task.name, status: "skipped" });
-      console.error("Skipped because the frozen workspace install failed.");
+      console.error("Skipped because a required workspace preparation stage failed.");
       continue;
     }
     try {
@@ -556,6 +584,17 @@ export async function runRg(args: string[], root = infraRoot()): Promise<number>
     }
     return 0;
   }
+  if (action === "prepare") {
+    if (rest.some((arg) => arg !== "--dry-run"))
+      throw new Error("usage: aphrody-ops rg prepare [--dry-run]");
+    const packages = await manifests(root);
+    const consumers = packages.map((item) => item.name);
+    if (rest.includes("--dry-run")) {
+      console.log(JSON.stringify(await dependencyBuildPlan(resolve(root), consumers), null, 2));
+      return 0;
+    }
+    return buildDependencies(resolve(root), consumers);
+  }
   if (action === "pipeline") {
     if (rest.some((arg) => arg !== "--dry-run"))
       throw new Error("usage: aphrody-ops rg pipeline [--dry-run]");
@@ -566,11 +605,16 @@ export async function runRg(args: string[], root = infraRoot()): Promise<number>
     const packages = await manifests(root);
     if (check === "all") {
       if (options.length) throw new Error("usage: aphrody-ops rg check all");
+      const preparationCode = await buildDependencies(
+        resolve(root),
+        packages.map((item) => item.name),
+      );
+      if (preparationCode !== 0) return preparationCode;
       let status = 0;
       // oxlint-disable-next-line no-await-in-loop
       for (const item of CHECKS) {
         // oxlint-disable-next-line no-await-in-loop
-        const code = await runCheck(item, packages, resolve(root));
+        const code = await runCheck(item, packages, resolve(root), true);
         if (code !== 0 && status === 0) status = code;
       }
       return status;
@@ -637,5 +681,7 @@ export async function runRg(args: string[], root = infraRoot()): Promise<number>
       )
     ).exited;
   }
-  throw new Error("usage: aphrody-ops rg <status|inventory|pipeline|check|deploy|migrate> ...");
+  throw new Error(
+    "usage: aphrody-ops rg <status|inventory|prepare|pipeline|check|deploy|migrate> ...",
+  );
 }

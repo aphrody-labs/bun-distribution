@@ -123,8 +123,7 @@ unset NODE_AUTH_TOKEN
 
 # These workspace packages export dist/ files, which are absent from git.
 # Build them before Next resolves their package exports.
-(cd "$stage/packages/rg/patreon-bun" && bun run build)
-(cd "$stage/packages/discord/kit" && bun run build)
+(cd "$stage" && bun packages/infra/workspace/src/ops.ts rg prepare)
 
 # Next 16 standalone must be built under Node 22; Bun is used for installs and
 # for the final runtime. Docker reads the protected env file on the host only.

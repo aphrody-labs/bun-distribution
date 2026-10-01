@@ -39,3 +39,24 @@ gate; a successful installation alone does not establish deployment readiness.
 
 The migration inventory is
 [ievr-to-iecode-2026-10-01.json](../../migration/ievr-to-iecode-2026-10-01.json).
+
+## Dependent workspace artifacts
+
+After preparing the pinned IECODE archives and installing the frozen lockfile,
+prepare the compiled exports required by RG:
+
+```bash
+bun packages/infra/workspace/src/ops.ts rg prepare --dry-run
+bun packages/infra/workspace/src/ops.ts rg prepare
+```
+
+The shared operations owner follows active `workspace:` dependency edges and
+builds libraries that expose `dist/` or `build/` entries, in dependency order.
+It rejects artifact cycles and owners without a build script, and stops on the
+first failed build. Explicit file archives retain their producer ownership.
+Currently, RG requires Discord Kit and Patreon artifacts. Source-only packages
+and application builds are handled by their normal gates.
+
+RG typechecking, tests, the complete pipeline and VPS release assembly use this
+same preparation step. A failed preparation blocks its dependent checks;
+previously generated output cannot turn that failure into a passing gate.
