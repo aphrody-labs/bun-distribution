@@ -375,10 +375,10 @@ impl FileSecretStore {
     }
 
     async fn save(&self, map: &BTreeMap<String, String>) -> SecretsResult<()> {
-        if let Some(parent) = self.path.parent() {
-            if !parent.as_os_str().is_empty() {
-                tokio::fs::create_dir_all(parent).await?;
-            }
+        if let Some(parent) = self.path.parent()
+            && !parent.as_os_str().is_empty()
+        {
+            tokio::fs::create_dir_all(parent).await?;
         }
         let json = serde_json::to_vec_pretty(map)?;
         let tmp = self.path.with_extension("json.tmp");
@@ -579,10 +579,10 @@ impl EncryptedFileSecretStore {
     }
 
     async fn save_map(&self, map: &BTreeMap<String, String>) -> SecretsResult<()> {
-        if let Some(parent) = self.path.parent() {
-            if !parent.as_os_str().is_empty() {
-                tokio::fs::create_dir_all(parent).await?;
-            }
+        if let Some(parent) = self.path.parent()
+            && !parent.as_os_str().is_empty()
+        {
+            tokio::fs::create_dir_all(parent).await?;
         }
         // Fresh salt + nonce every write (deterministic ones would defeat AEAD).
         let mut salt = [0u8; 16];
