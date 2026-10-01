@@ -52,14 +52,18 @@ import { runRg } from "./rg.ts";
 import { runShenron } from "./shenron.ts";
 import { runWebMigration } from "./web-migration.ts";
 import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 
 const [operation, ...rest] = process.argv.slice(2);
 if (operation === "agent-home-drive-sync" || operation === "drive-sync") {
-  const task = Bun.spawn([process.execPath, join(import.meta.dir, "agent-home-drive-sync.ts"), ...rest], {
-    stdin: "inherit",
-    stdout: "inherit",
-    stderr: "inherit",
-  });
+  const task = Bun.spawn(
+    [process.execPath, join(import.meta.dir, "agent-home-drive-sync.ts"), ...rest],
+    {
+      stdin: "inherit",
+      stdout: "inherit",
+      stderr: "inherit",
+    },
+  );
   process.exit(await task.exited);
 }
 if (operation === "web-migration") {
@@ -88,6 +92,17 @@ if (operation === "bridge") {
   const [binary, ...args] = bridgeArgs;
   if (!binary) throw new Error("usage: aphrody-ops bridge rust <aphrody-binary> [arguments...]");
   process.exit(await runRustBridge(binary, args, { stdout: "inherit", stderr: "inherit" }));
+}
+if (operation === "iecode-sync") {
+  const entry = new URL("../../../../scripts/nie/sync-main.ts", import.meta.url);
+  const child = Bun.spawn([process.execPath, fileURLToPath(entry), ...rest], {
+    cwd: process.cwd(),
+    env: { ...process.env, IECODE_REPO_ROOT: process.env.IECODE_REPO_ROOT ?? process.cwd() },
+    stdin: "inherit",
+    stdout: "inherit",
+    stderr: "inherit",
+  });
+  process.exit(await child.exited);
 }
 if (operation === "infra") {
   process.exit(

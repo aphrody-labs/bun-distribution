@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 /** Derive validation stages from the active manifests, bottom to top. */
-import { join } from "node:path";
+import { basename, join, resolve } from "node:path";
 import { firstPartyManifests } from "./bun-workspace.ts";
 const DOMAIN_ORDER = [
   "bun",
@@ -18,26 +18,42 @@ const DOMAIN_ORDER = [
   "shenron",
 ];
 export async function pipelineCatalog(root: string) {
+  root = resolve(root);
+  const rootManifest = await Bun.file(join(root, "package.json")).json();
+  const rootName = rootManifest.name?.replace(/-workspace$/, "");
+  const repository =
+    typeof rootName === "string" && /^[a-z0-9-]+$/.test(rootName) ? rootName : basename(root);
+  const rootScripts: Record<string, string> = rootManifest.scripts ?? {};
+  const isAphrody = repository === "aphrody";
   const stages: {
     id: string;
     parallel: boolean;
     steps: { repo: string; runner?: string; command: string[] }[];
-  }[] = [
-    {
+  }[] = [];
+  const structureGate = isAphrody
+    ? "monorepo:layout"
+    : ["check:workspace", "monorepo:layout"].find((name) => rootScripts[name]);
+  if (structureGate)
+    stages.push({
       id: "structure",
       parallel: false,
-      steps: [{ repo: "aphrody", command: ["run", "monorepo:layout"] }],
-    },
-    {
-      id: "rust-foundation",
-      parallel: false,
-      steps: ["check", "clippy", "test"].map((gate) => ({
-        repo: "aphrody",
+      steps: [{ repo: repository, command: ["run", structureGate] }],
+    });
+  const rustSteps = isAphrody
+    ? ["check", "clippy", "test"].map((gate) => ({
+        repo: repository,
         runner: "just",
         command: [gate],
-      })),
-    },
-  ];
+      }))
+    : ["check:rust", "test:rust"]
+        .filter((gate) => rootScripts[gate])
+        .map((gate) => ({ repo: repository, command: ["run", gate] }));
+  if (rustSteps.length)
+    stages.push({
+      id: "rust-foundation",
+      parallel: false,
+      steps: rustSteps,
+    });
   const groups = new Map<string, { repo: string; command: string[] }[]>();
   const absent: { path: string; missing: string[] }[] = [];
   for (const path of await firstPartyManifests(root)) {
@@ -53,7 +69,7 @@ export async function pipelineCatalog(root: string) {
     });
     const steps = groups.get(domain) ?? [];
     for (const name of selected)
-      if (name) steps.push({ repo: "aphrody", command: ["run", "--filter", pkg.name, name] });
+      if (name) steps.push({ repo: repository, command: ["run", "--filter", pkg.name, name] });
     groups.set(domain, steps);
   }
   for (const domain of [
@@ -71,7 +87,7 @@ export async function pipelineCatalog(root: string) {
   return {
     config: {
       schemaVersion: 1,
-      name: "aphrody-monorepo-validation",
+      name: `${repository}-monorepo-validation`,
       authority: "@aphrody/workspace",
       workspaceRoot: "..",
       stages,
