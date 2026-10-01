@@ -259,18 +259,18 @@ impl GoTokenEstimator {
         }
 
         // Step 2: Sibling of the running binary (supporting nextest where binary is in deps/)
-        if let Ok(exe) = std::env::current_exe() {
-            if let Some(dir) = exe.parent() {
-                for cand in ["aphrody-tokenizer-go.exe", "aphrody-tokenizer-go"] {
-                    let p = dir.join(cand);
-                    if p.exists() {
-                        return Some(p);
-                    }
-                    if let Some(parent) = dir.parent() {
-                        let p2 = parent.join(cand);
-                        if p2.exists() {
-                            return Some(p2);
-                        }
+        if let Ok(exe) = std::env::current_exe()
+            && let Some(dir) = exe.parent()
+        {
+            for cand in ["aphrody-tokenizer-go.exe", "aphrody-tokenizer-go"] {
+                let p = dir.join(cand);
+                if p.exists() {
+                    return Some(p);
+                }
+                if let Some(parent) = dir.parent() {
+                    let p2 = parent.join(cand);
+                    if p2.exists() {
+                        return Some(p2);
                     }
                 }
             }
