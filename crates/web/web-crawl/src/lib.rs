@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 //! Shared crawl frontier, page processing and injectable network transport.
 
+mod blocking;
 mod frontier;
 mod mediawiki;
 mod mirror;
@@ -11,6 +12,7 @@ mod scoring;
 mod sitemap;
 pub mod wiki;
 
+pub use blocking::BlockingCrawler;
 pub use frontier::{AddRequest, Frontier, FrontierOptions, FrontierStats, Lease, RequestState};
 pub use mediawiki::{MediaWikiDocument, MediaWikiError, MediaWikiOptions, crawl_mediawiki};
 pub use mirror::{

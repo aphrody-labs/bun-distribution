@@ -117,6 +117,7 @@
  */
 
 import type { XClient } from "@aphrody/x";
+import { WebService } from "@aphrody/agent-browser/service";
 import { WebCdpPage } from "../../lib/web-cdp";
 import { loadXCookieHeader } from "./x-accounts";
 
@@ -137,7 +138,7 @@ export const LIMITE_LIENS_EXEMPLES = 10;
 /** HTML lu par `scrape.recon` avant analyse (2 Mo). */
 export const LIMITE_HTML_OCTETS = 2_000_000;
 
-/** Agent utilisateur commun aux appels directs (recon, repli DuckDuckGo). */
+/** User-Agent passed to the owning Web transport and the remaining recon adapter. */
 const AGENT_UTILISATEUR =
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36";
 
@@ -1058,22 +1059,24 @@ async function verbeScrapePage(requete: Record<string, unknown>): Promise<Repons
   }
 }
 
-/** Recherche DuckDuckGo (rendu HTML sans JavaScript) — repli de `scrape.google`. */
+/** DuckDuckGo result parsing; Aphrody Web owns page acquisition and rendering. */
 async function chercherDuckDuckGo(requete: string, limite: number): Promise<ResultatRecherche[]> {
   const url = new URL("https://html.duckduckgo.com/html/");
   url.searchParams.set("q", requete);
   url.searchParams.set("kl", "fr-fr");
-  const reponse = await fetch(url, {
-    headers: { "user-agent": AGENT_UTILISATEUR, "accept-language": "fr-FR,fr;q=0.9,en;q=0.8" },
-    signal: AbortSignal.timeout(20_000),
-  });
-  if (!reponse.ok) {
+  try {
+    const html = await new WebService().fetch(url.toString(), {
+      dump: "html",
+      timeoutSecs: 20,
+      userAgent: AGENT_UTILISATEUR,
+    });
+    return analyserSerpDuckDuckGo(html, limite);
+  } catch (error) {
     throw new ErreurScrape(
       "moteur_indisponible",
-      `Le moteur de repli a répondu ${reponse.status}.`,
+      `Aphrody Web search unavailable: ${nettoyerMessage(error instanceof Error ? error.message : String(error))}`,
     );
   }
-  return analyserSerpDuckDuckGo(await reponse.text(), limite);
 }
 
 async function verbeScrapeGoogle(requete: Record<string, unknown>): Promise<ReponseScrape> {
@@ -1103,15 +1106,11 @@ async function verbeScrapeRecon(requete: Record<string, unknown>): Promise<Repon
   const url = validerUrl(requete.url);
   const debut = Bun.nanoseconds();
 
-  let reponse: Response;
+  let reponse;
   try {
-    reponse = await fetch(url, {
-      headers: {
-        "user-agent": AGENT_UTILISATEUR,
-        accept: "text/html,application/xhtml+xml,*/*;q=0.8",
-      },
-      redirect: "follow",
-      signal: AbortSignal.timeout(20_000),
+    reponse = await new WebService().response(url.toString(), {
+      maxBytes: LIMITE_HTML_OCTETS,
+      timeoutSecs: 20,
     });
   } catch (err) {
     throw new ErreurScrape(
@@ -1119,29 +1118,11 @@ async function verbeScrapeRecon(requete: Record<string, unknown>): Promise<Repon
       `Impossible de joindre ${url.hostname} : ${nettoyerMessage(err instanceof Error ? err.message : String(err))}`,
     );
   }
-
-  const entetes = extraireEntetes(reponse.headers);
-  const typeContenu = reponse.headers.get("content-type") ?? "";
-  const estTextuel = /text\/|json|xml|javascript/i.test(typeContenu);
-
-  let corps = "";
-  let octets = 0;
-  let corpsTronque = false;
-  if (estTextuel) {
-    const lu = await lireCorpsBorne(reponse, LIMITE_HTML_OCTETS);
-    corps = lu.texte;
-    octets = lu.octets;
-    corpsTronque = lu.tronque;
-  } else {
-    // Corps binaire (image, archive, exécutable) : rien à analyser, et le
-    // télécharger n'apprendrait rien. On annule le flux pour libérer la
-    // connexion sans en lire un octet.
-    try {
-      await reponse.body?.cancel();
-    } catch {
-      /* flux déjà consommé ou coupé */
-    }
-  }
+  const entetes = extraireEntetes(new Headers(reponse.headers));
+  const typeContenu = new Headers(reponse.headers).get("content-type") ?? "";
+  const corps = reponse.body;
+  const octets = reponse.bytes;
+  const corpsTronque = reponse.truncated;
 
   const titre = /<title[^>]*>([\s\S]{0,300}?)<\/title>/i.exec(corps)?.[1] ?? "";
   const titreFinal = titre ? texteBrut(titre) : "";
@@ -1151,7 +1132,7 @@ async function verbeScrapeRecon(requete: Record<string, unknown>): Promise<Repon
     url: url.toString(),
     urlFinale: reponse.url || url.toString(),
     statut: reponse.status,
-    statutTexte: reponse.statusText || "",
+    statutTexte: "",
     typeContenu: bornerTexte(typeContenu, 120),
     titre: bornerTexte(titreFinal || url.hostname, 200),
     octets,

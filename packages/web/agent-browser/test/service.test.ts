@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 import { describe, expect, test } from "bun:test";
+import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import {
@@ -11,7 +13,7 @@ import {
   repositoryRoot,
   validateWebConfig,
 } from "../src/config.ts";
-import { crawlArgs, fetchArgs } from "../src/service.ts";
+import { WebService, crawlArgs, fetchArgs } from "../src/service.ts";
 
 const root = repositoryRoot();
 
@@ -87,7 +89,13 @@ describe("service argument builders", () => {
   test("crawl is bounded and obeys robots by default", () => {
     const args = crawlArgs(
       ["https://example.test/"],
-      { maxPages: 5, allowedDomains: ["example.test"], includeLinks: true },
+      {
+        maxPages: 5,
+        allowedDomains: ["example.test"],
+        includeLinks: true,
+        includeUrlRegex: ["/target/"],
+        excludeUrlRegex: ["/private/"],
+      },
       config,
     );
     expect(args[0]).toBe("crawl");
@@ -95,6 +103,8 @@ describe("service argument builders", () => {
     expect(args[args.indexOf("--max-pages") + 1]).toBe("5");
     expect(args[args.indexOf("--allowed-domain") + 1]).toBe("example.test");
     expect(args).toContain("--include-links");
+    expect(args[args.indexOf("--include-url-regex") + 1]).toBe("/target/");
+    expect(args[args.indexOf("--exclude-url-regex") + 1]).toBe("/private/");
     expect(args).not.toContain("--allow-private-network");
     expect(crawlArgs(["https://example.test/"], { obeyRobots: false }, config)).not.toContain(
       "--obey-robots",
@@ -125,4 +135,35 @@ describe("validateWebConfig", () => {
     expect(problems.some((p) => p.includes("storage.token"))).toBe(true);
     expect(validateWebConfig(null)).toEqual(["config must be a JSON object"]);
   });
+});
+
+test("bounded response delegates its cap to the native owner and preserves metadata", async () => {
+  const dir = await mkdtemp(join(tmpdir(), "aphrody-web-response-"));
+  const binary = join(dir, "aphrody-web");
+  await writeFile(
+    binary,
+    `#!/usr/bin/env bun
+const args = process.argv.slice(2);
+if (args[0] !== "response" || args[args.indexOf("--max-bytes") + 1] !== "6" || args.includes("--allow-private-network")) process.exit(9);
+console.log(JSON.stringify({ url: "https://example.test/final", status: 206, headers: { "content-type": "text/plain" }, bytes: 6, truncated: true, body: "abcdef" }));
+`,
+    { mode: 0o700 },
+  );
+  try {
+    const service = new WebService({ binary });
+    const response = await service.response("https://example.test/", { maxBytes: 6 });
+    expect(response).toEqual({
+      url: "https://example.test/final",
+      status: 206,
+      headers: { "content-type": "text/plain" },
+      bytes: 6,
+      truncated: true,
+      body: "abcdef",
+    });
+    await expect(service.response("https://example.test/", { maxBytes: 0 })).rejects.toThrow(
+      RangeError,
+    );
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
 });

@@ -7,11 +7,9 @@
 import { iecodeDataPath } from "@aphrody/paths";
 import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import { WebCdpPage } from "../../lib/web-cdp";
+import { WebService } from "@aphrody/agent-browser/service";
 
-// Crawl exhaustif des pages Inazuma avec Aphrody Web CDP, puis sondage HTTP
-// des ressources. La détection DNS/Wappalyzer de l’ancien moteur et la capture
-// réseau native HAR n’ont pas d’équivalent dans l’API WebCdpPage.
+// Domain resource classification and reports; Aphrody Web owns all network discovery.
 
 export interface WebReconOptions {
   /** URL racine (défaut victory-road/fr). */
@@ -172,64 +170,12 @@ function hostOf(url: string): string | null {
   }
 }
 
-/** Sonde une ressource : GET (suit redirections), renvoie status + content-type ; persiste le JSON. */
-async function probe(
-  url: string,
-  kind: ResourceKind,
-  jsonDir: string,
-  jsonSink: Array<{ url: string; file: string }>,
-): Promise<{ status: number | null; contentType: string | null; kind: ResourceKind }> {
-  try {
-    const res = await fetch(url, {
-      headers: {
-        "user-agent":
-          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36",
-        accept: "*/*",
-      },
-      redirect: "follow",
-      signal: AbortSignal.timeout(20000),
-    });
-    const ct = res.headers.get("content-type");
-    let resolvedKind = kind;
-    const isJson = (ct || "").includes("json") || JSON_EXT.test(url);
-    if (isJson && res.ok) {
-      resolvedKind = "json";
-      try {
-        const text = await res.text();
-        JSON.parse(text); // valide
-        const safe = url
-          .replace(/^https?:\/\//, "")
-          .replace(/[^A-Za-z0-9._-]/g, "_")
-          .slice(0, 180);
-        const file = join(jsonDir, `${safe || "payload"}.json`);
-        await writeFile(file, text);
-        jsonSink.push({ url, file });
-      } catch {
-        /* corps non-JSON malgré le content-type : on ignore */
-      }
-    }
-    return { status: res.status, contentType: ct, kind: resolvedKind };
-  } catch {
-    return { status: null, contentType: null, kind };
-  }
-}
-
-async function pool<T>(items: T[], limit: number, fn: (it: T) => Promise<void>): Promise<void> {
-  const queue = [...items];
-  const workers = Array.from({ length: Math.min(limit, queue.length) }, async () => {
-    for (;;) {
-      const it = queue.shift();
-      if (it === undefined) break;
-      await fn(it);
-    }
-  });
-  await Promise.all(workers);
-}
-
 /**
  * Crawl recon exhaustif d'un site Inazuma. Écrit tous les artefacts demandés dans
  * `outDir` et renvoie un résumé structuré.
  */
+const escapeRegex = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
 export async function crawlWebRecon(opts: WebReconOptions): Promise<WebReconResult> {
   const root = opts.rootUrl ?? "https://www.inazuma.jp/victory-road/fr/";
   // Par défaut, on ne CRAWLE (= visite récursive) que les pages sous le chemin
@@ -247,6 +193,9 @@ export async function crawlWebRecon(opts: WebReconOptions): Promise<WebReconResu
   const pathPrefix = opts.pagePathPrefix ?? rootPath;
   const probeAssets = opts.probeAssets ?? true;
   const maxProbes = opts.maxProbes ?? 2000;
+  if (!Number.isSafeInteger(maxProbes) || maxProbes < 0 || maxProbes > 2000) {
+    throw new RangeError("maxProbes must be an integer between 0 and 2000");
+  }
   const rootHost = hostOf(root) ?? "www.inazuma.jp";
   const pageHostAllow = opts.pageHostAllow ?? [rootHost];
   const outDir = opts.outDir;
@@ -265,8 +214,8 @@ export async function crawlWebRecon(opts: WebReconOptions): Promise<WebReconResu
 
   // Le serveur expose les pages rendues; la détection de frameworks et
   // l’inspection DNS restent explicitement non disponibles sur cette API.
-  const frameworks = { source: "Aphrody Web CDP", detection: "not-available" };
-  const zukanDetect = { source: "Aphrody Web CDP", detection: "not-available" };
+  const frameworks = { source: "aphrody-web-crawl", detection: "not-available" };
+  const zukanDetect = { source: "aphrody-web-crawl", detection: "not-available" };
   await writeArtifact(
     "detect.json",
     JSON.stringify({ root: frameworks, "zukan.inazuma.jp": zukanDetect }, null, 2),
@@ -275,7 +224,7 @@ export async function crawlWebRecon(opts: WebReconOptions): Promise<WebReconResu
     "recon.md",
     `# Recon
 
-Pages rendues via Aphrody Web CDP. La détection multi-signal DNS/Wappalyzer n’est pas exposée par WebCdpPage.
+Bounded rendered discovery through aphrody-web-crawl. DNS/framework detection is unavailable in this report.
 `,
   );
   artifacts["recon.md"] = {
@@ -285,18 +234,6 @@ Pages rendues via Aphrody Web CDP. La détection multi-signal DNS/Wappalyzer n�
 
   // --- 3. Découverte des pages + extraction des ressources ---
   console.log("[WebRecon] Découverte des pages et ressources…");
-  const visited = new Set<string>();
-  const queue: string[] = [];
-  const enqueue = (u: string) => {
-    // Retire le fragment et normalise le slash final (toutes les pages crawlées
-    // sont des URLs de répertoire, sans extension — garanti par isCrawlablePage).
-    const base = u.split("#")[0]!;
-    const norm = base.endsWith("/") ? base : `${base}/`;
-    if (!visited.has(norm) && !queue.includes(norm)) queue.push(norm);
-  };
-  enqueue(root);
-  for (const s of opts.seeds ?? []) enqueue(s);
-
   // resources: abs URL -> { kind, referrers }
   const resources = new Map<string, { kind: ResourceKind; referrers: Set<string> }>();
   const recordRes = (url: string, kind: ResourceKind, ref: string) => {
@@ -309,110 +246,93 @@ Pages rendues via Aphrody Web CDP. La détection multi-signal DNS/Wappalyzer n�
     }
   };
 
-  const LOCALES = new Set(["fr", "en", "ja", "es", "de", "it", "zh-tw", "zh-cn", "pt-br"]);
-  const isCrawlablePage = (url: string): boolean => {
-    try {
-      const u = new URL(url);
-      if (!pageHostAllow.includes(u.hostname)) return false;
-      if (!u.pathname.startsWith(pathPrefix)) return false;
-      // pages = pas d'extension de fichier
-      if (/\.[a-z0-9]{2,5}$/i.test(u.pathname)) return false;
-      // Rejette les artefacts du sélecteur de langue. Sur ce site, la SEULE
-      // position légitime d'un segment locale est juste après `victory-road`
-      // (ex. /victory-road/fr/…). Les liens du sélecteur sont des hrefs relatifs
-      // (`en/`, `fr/`, …) qui, résolus contre une page profonde, produisent des
-      // URLs comme /victory-road/fr/story/en/ ou /victory-road/fr/character/de/ —
-      // des stubs de ~2 ko sans contenu propre. On rejette donc tout segment
-      // locale apparaissant APRÈS le 1er segment suivant `victory-road`.
-      const segs = u.pathname.split("/").filter(Boolean); // ["victory-road","fr","story","en"]
-      const vrIdx = segs.indexOf("victory-road");
-      if (vrIdx !== -1) {
-        // segs[vrIdx+1] = locale canonique (autorisé) ; au-delà, un locale = artefact
-        for (let i = vrIdx + 2; i < segs.length; i++) {
-          if (LOCALES.has(segs[i]!)) return false;
-        }
-      }
-      return true;
-    } catch {
-      return false;
-    }
-  };
-
+  const service = new WebService();
+  const report = await service.crawl([root, ...(opts.seeds ?? [])], {
+    maxPages: 120,
+    render: true,
+    maxDepth: 12,
+    allowedDomains: pageHostAllow,
+    includeUrlRegex: [`^https?://[^/]+${escapeRegex(pathPrefix)}`],
+    excludeUrlRegex: [
+      "\\.[a-zA-Z0-9]{2,5}(?:[?#].*)?$",
+      "/victory-road/[^/]+/(?:[^/]+/)*(?:fr|en|ja|es|de|it|zh-tw|zh-cn|pt-br)/?(?:[?#].*)?$",
+    ],
+    includeHtml: true,
+    includeLinks: true,
+    obeyRobots: true,
+  });
+  await writeArtifact("crawl.json", JSON.stringify(report, null, 2));
   const pages: string[] = [];
-  let pageCount = 0;
-  const MAX_PAGES = 120;
-  while (queue.length && pageCount < MAX_PAGES) {
-    const pageUrl = queue.shift()!;
-    if (visited.has(pageUrl)) continue;
-    visited.add(pageUrl);
-
-    let html = "";
-    let page: WebCdpPage | undefined;
-    try {
-      page = await WebCdpPage.connect();
-      await page.goto(pageUrl);
-      html = await page.content();
-      await writeArtifact(`snapshots/p${pageCount}.html`, html);
-    } catch (error) {
-      console.warn(
-        `[WebRecon] Échec CDP pour ${pageUrl}: ${error instanceof Error ? error.message : String(error)}`,
-      );
-      continue;
-    } finally {
-      await page?.close().catch(() => undefined);
-    }
-    if (!html) {
-      console.warn(`[WebRecon] Pas de HTML pour ${pageUrl}`);
-      continue;
-    }
-    pages.push(pageUrl);
-    pageCount++;
-    console.log(`[WebRecon] [${pageCount}] ${pageUrl} (${html.length} octets)`);
-
-    const res = extractResources(html, pageUrl);
-    for (const [url, kind] of res) {
-      if (kind === "link") {
-        // candidat page interne
-        if (isCrawlablePage(url)) enqueue(url);
-        recordRes(url, "link", pageUrl);
-      } else if (kind === "iframe") {
-        recordRes(url, "iframe", pageUrl);
-      } else {
-        recordRes(url, kind, pageUrl);
-      }
-    }
+  for (const [index, page] of report.pages.entries()) {
+    pages.push(page.url);
+    const html = page.html ?? "";
+    await writeArtifact(`snapshots/p${index}.html`, html);
+    for (const [url, kind] of extractResources(html, page.url)) recordRes(url, kind, page.url);
   }
 
   // --- 4. Sonder les ressources (status + content-type + JSON) ---
   const jsonSink: Array<{ url: string; file: string }> = [];
   const endpoints: Endpoint[] = [];
   const allResEntries = [...resources.entries()];
-  // inclure aussi les pages comme endpoints (déjà 200 puisque HTML obtenu)
-  for (const p of pages) {
+  for (const page of report.pages) {
     endpoints.push({
-      url: p,
+      url: page.url,
       method: "GET",
-      status: 200,
-      contentType: "text/html",
+      status: page.status,
+      contentType: page.contentType,
       kind: "page",
       referrers: [],
     });
   }
 
-  if (probeAssets) {
-    console.log(`[WebRecon] Sondage de ${Math.min(allResEntries.length, maxProbes)} ressources…`);
-    const toProbe = allResEntries.slice(0, maxProbes);
-    await pool(toProbe, 12, async ([url, meta]) => {
-      const { status, contentType, kind } = await probe(url, meta.kind, jsonDir, jsonSink);
+  if (probeAssets && maxProbes > 0 && allResEntries.length > 0) {
+    const selected = allResEntries.slice(0, maxProbes);
+    const probes = await service.crawl(
+      selected.map(([url]) => url),
+      {
+        maxPages: selected.length,
+        maxDepth: 0,
+        concurrency: 12,
+        allowedDomains: [...new Set(selected.map(([url]) => new URL(url).hostname))],
+        includeHtml: true,
+        obeyRobots: true,
+      },
+    );
+    await writeArtifact("probes.json", JSON.stringify(probes, null, 2));
+    const byUrl = new Map(probes.pages.map((page) => [page.url, page]));
+    for (const [url, meta] of selected) {
+      const page = byUrl.get(url);
+      let kind = meta.kind;
+      if (
+        page &&
+        page.status >= 200 &&
+        page.status < 300 &&
+        ((page.contentType ?? "").includes("json") || JSON_EXT.test(url))
+      ) {
+        try {
+          const text = page.html ?? "";
+          JSON.parse(text);
+          kind = "json";
+          const safe = url
+            .replace(/^https?:\/\//, "")
+            .replace(/[^A-Za-z0-9._-]/g, "_")
+            .slice(0, 180);
+          const file = join(jsonDir, `${safe || "payload"}.json`);
+          await writeFile(file, text);
+          jsonSink.push({ url, file });
+        } catch {
+          /* Keep the declared kind when the payload is not JSON. */
+        }
+      }
       endpoints.push({
         url,
         method: "GET",
-        status,
-        contentType,
+        status: page?.status ?? null,
+        contentType: page?.contentType ?? null,
         kind,
         referrers: [...meta.referrers].slice(0, 5),
       });
-    });
+    }
   } else {
     for (const [url, meta] of allResEntries)
       endpoints.push({
@@ -554,7 +474,7 @@ Pages rendues via Aphrody Web CDP. La détection multi-signal DNS/Wappalyzer n�
  * (renvoie {success} comme les autres crawlers, n'émet pas d'exception).
  */
 export async function crawlWebReconTask(
-  outDir = iecodeDataPath('inazuma.jp/victory-road/_recon/fr'),
+  outDir = iecodeDataPath("inazuma.jp/victory-road/_recon/fr"),
 ): Promise<{ success: boolean; pages?: number; endpoints?: number; error?: string }> {
   try {
     const res = await crawlWebRecon({ outDir });
@@ -688,7 +608,7 @@ function buildLlmsTxt(d: {
 
 > Recon exhaustif de ${d.root} et de l'écosystème lié (www.inazuma.jp, zukan.inazuma.jp, CDN IIJ/CloudFront).
 > Jeu LEVEL-5 (Steam app id 2799860). Site statique multilingue server-rendered (openresty) derrière l'IIJ CDN.
-> Généré par @rosegriffon/cron ie-crawl/web-recon (Aphrody Web CDP; HAR synthétique).
+> Généré par @rosegriffon/cron ie-crawl/web-recon (aphrody-web-crawl; HAR synthétique).
 
 ## Vue d'ensemble
 

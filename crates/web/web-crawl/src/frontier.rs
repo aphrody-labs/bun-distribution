@@ -221,6 +221,19 @@ impl Frontier {
         Ok(inserted)
     }
 
+    /// Request a fresh acquisition while retaining this frontier's per-host pacing state.
+    /// Pending or actively leased requests are left intact.
+    pub fn enqueue_or_refresh(&mut self, request: AddRequest, now_ms: i64) -> rusqlite::Result<()> {
+        let url = normalize_page_url(&request.url, None, UrlNormalizationOptions::default())
+            .map_err(|error| rusqlite::Error::InvalidParameterName(error.to_string()))?;
+        self.enqueue(request, now_ms)?;
+        self.db.execute(
+            "UPDATE requests SET state='pending',retries=0,locked_at=NULL,last_error=NULL WHERE url=?1 AND state IN ('done','failed')",
+            [url.as_str()],
+        )?;
+        Ok(())
+    }
+
     pub fn enqueue_many(
         &mut self,
         requests: impl IntoIterator<Item = AddRequest>,

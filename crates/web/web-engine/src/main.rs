@@ -84,6 +84,17 @@ enum Command {
         allow_file_access: bool,
     },
 
+    /// Bounded original text response and metadata, through the shared native network owner.
+    Response {
+        url: String,
+        #[arg(long, default_value_t = 2_000_000, value_parser = clap::value_parser!(u64).range(1..=64_000_000))]
+        max_bytes: u64,
+        #[arg(long, default_value_t = 30, value_parser = clap::value_parser!(u64).range(1..=300))]
+        timeout: u64,
+        #[arg(long)]
+        allow_private_network: bool,
+    },
+
     Fetch {
         url: String,
 
@@ -191,6 +202,7 @@ fn is_quiet_command(cmd: &Option<Command>) -> bool {
         Some(Command::Fetch { quiet: true, .. })
             | Some(Command::Scrape { quiet: true, .. })
             | Some(Command::Crawl(crawl::CrawlArgs { quiet: true, .. }))
+            | Some(Command::Response { .. })
     )
 }
 
@@ -264,6 +276,34 @@ async fn main() -> anyhow::Result<()> {
                 )
                 .await?;
             }
+        },
+        Some(Command::Response {
+            url,
+            max_bytes,
+            timeout: timeout_secs,
+            allow_private_network,
+        }) => {
+            validate_page_url(&url).map_err(anyhow::Error::msg)?;
+            let parsed = url::Url::parse(&url)?;
+            let client = obscura_net::ObscuraHttpClient::with_full_options(
+                Arc::new(obscura_net::CookieJar::new()),
+                global_proxy.as_deref(),
+                allow_private_network,
+            );
+            let (response, truncated) = tokio::time::timeout(
+                Duration::from_secs(timeout_secs),
+                client.fetch_text_preview(&parsed, max_bytes as usize),
+            )
+            .await
+            .map_err(|_| anyhow::anyhow!("Aphrody Web response timed out"))??;
+            println!(
+                "{}",
+                serde_json::json!({
+                    "url": response.url.as_str(), "status": response.status,
+                    "headers": response.headers, "bytes": response.body.len(),
+                    "truncated": truncated, "body": response.text(),
+                })
+            );
         },
         Some(Command::Fetch {
             url,

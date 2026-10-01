@@ -54,11 +54,24 @@ export interface PageArtifact {
   }[];
 }
 
+export interface NativeResponse {
+  url: string;
+  status: number;
+  headers: Record<string, string>;
+  bytes: number;
+  truncated: boolean;
+  body: string;
+}
+
 export interface CrawlOptions {
   maxDepth?: number;
   maxPages?: number;
   concurrency?: number;
   allowedDomains?: string[];
+  includeUrlRegex?: string[];
+  excludeUrlRegex?: string[];
+  /** Discover links after native V8 page rendering. */
+  render?: boolean;
   obeyRobots?: boolean;
   sitemaps?: boolean;
   delayMs?: number;
@@ -169,9 +182,12 @@ export function crawlArgs(
   args.push("--user-agent", options.userAgent ?? crawl?.userAgent ?? "AphrodyWeb/1.0");
   for (const host of options.allowedDomains ?? crawl?.allowedHosts ?? [])
     args.push("--allowed-domain", host);
+  for (const pattern of options.includeUrlRegex ?? []) args.push("--include-url-regex", pattern);
+  for (const pattern of options.excludeUrlRegex ?? []) args.push("--exclude-url-regex", pattern);
   if (options.obeyRobots ?? crawl?.obeyRobots ?? true) args.push("--obey-robots");
   if (options.sitemaps ?? crawl?.sitemaps) args.push("--sitemaps");
   if (options.allowPrivateNetwork) args.push("--allow-private-network");
+  if (options.render) args.push("--render");
   if (options.includeHtml) args.push("--include-html");
   if (options.includeMarkdown) args.push("--include-markdown");
   if (options.includeLinks) args.push("--include-links");
@@ -255,6 +271,28 @@ export class WebService {
       (timeoutSecs + 15) * 1000,
       options.allowPrivateNetwork ? { OBSCURA_ALLOW_PRIVATE_NETWORK: "1" } : {},
     );
+  }
+
+  /** Original textual response bounded before transfer; binary bodies are skipped. */
+  async response(
+    url: string,
+    options: { maxBytes?: number; timeoutSecs?: number; allowPrivateNetwork?: boolean } = {},
+  ): Promise<NativeResponse> {
+    const timeoutSecs = options.timeoutSecs ?? 30;
+    const maxBytes = options.maxBytes ?? 2_000_000;
+    if (!Number.isSafeInteger(maxBytes) || maxBytes < 1 || maxBytes > 64_000_000) {
+      throw new RangeError("maxBytes must be an integer between 1 and 64000000");
+    }
+    const args = [
+      "response",
+      url,
+      "--max-bytes",
+      String(maxBytes),
+      "--timeout",
+      String(timeoutSecs),
+    ];
+    if (options.allowPrivateNetwork) args.push("--allow-private-network");
+    return JSON.parse(await this.#run(args, (timeoutSecs + 15) * 1000)) as NativeResponse;
   }
 
   /** Page converted to GitHub-flavoured Markdown. */

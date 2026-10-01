@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 //! `aphrody-web crawl`: the bounded, robots-aware crawler of `aphrody-web-crawl` as a CLI.
 //!
-//! The crawl uses the static Obscura HTTP stack (no V8), so what it reports is what a native
-//! crawler or an LLM agent sees in the initial HTML of each page. Output is a stable JSON
+//! Static HTTP is the default; `--render` supplies V8-rendered HTML through the same frontier.
+//! Robots and sitemaps retain their original response bodies. Output is a stable JSON
 //! document (`aphrody-web.crawl/1`), NDJSON or concatenated Markdown.
 
 use std::{cell::RefCell, collections::HashMap, sync::Arc, time::Instant};
@@ -13,6 +13,7 @@ use aphrody_web_crawl::{
 };
 use aphrody_web_extract::{UrlNormalizationOptions, normalize_page_url};
 use clap::{Args, ValueEnum};
+use obscura_browser::{BrowserContext, Page};
 use obscura_net::{CookieJar, ObscuraHttpClient};
 use serde::Serialize;
 use tokio::time::{Duration, timeout};
@@ -57,6 +58,18 @@ pub struct CrawlArgs {
     /// Hosts the crawl may visit (subdomains included). Defaults to the seed hosts.
     #[arg(long = "allowed-domain", value_name = "HOST")]
     pub allowed_domains: Vec<String>,
+
+    /// Include only URLs matching one of these regular expressions.
+    #[arg(long)]
+    pub include_url_regex: Vec<String>,
+
+    /// Reject matching URLs before fetching; exclusions take precedence.
+    #[arg(long)]
+    pub exclude_url_regex: Vec<String>,
+
+    /// Render page JavaScript through the shared Obscura browser before discovering links.
+    #[arg(long)]
+    pub render: bool,
 
     /// Honour robots.txt (Disallow and Crawl-delay) for every visited origin.
     #[arg(long)]
@@ -172,16 +185,51 @@ struct Captured {
     body: String,
 }
 
-/// Wraps the Obscura transport to retain the initial HTML for `--include-html`/`--include-links`.
+/// Supplies static or rendered bodies to the shared frontier and retains report captures.
 struct CapturingTransport {
     inner: ObscuraTransport,
+    rendered_context: Option<Arc<BrowserContext>>,
     capture: bool,
     bodies: RefCell<HashMap<String, Captured>>,
 }
 
 impl CrawlTransport for CapturingTransport {
     async fn fetch(&self, url: &Url) -> Result<FetchResult, String> {
-        let response = self.inner.fetch(url).await?;
+        let response = if let Some(context) = &self.rendered_context {
+            // Robots and sitemap policy documents are consumed as their original bytes.
+            if url.path().ends_with("/robots.txt") || url.path().ends_with(".xml") {
+                self.inner.fetch(url).await?
+            } else {
+                aphrody_web_service::validate_page_url(url.as_str())?;
+                let mut page = Page::new("crawl-page".into(), context.clone());
+                page.navigate_with_wait(url.as_str(), obscura_browser::lifecycle::WaitUntil::Load)
+                    .await
+                    .map_err(|error| error.to_string())?;
+                let event = page
+                    .network_events
+                    .iter()
+                    .rev()
+                    .find(|event| event.resource_type == "Document")
+                    .ok_or_else(|| {
+                        "rendered navigation did not report a document response".to_string()
+                    })?;
+                FetchResult {
+                    url: page
+                        .url
+                        .clone()
+                        .ok_or_else(|| "rendered navigation has no final URL".to_string())?,
+                    status: event.status,
+                    content_type: event
+                        .response_headers
+                        .iter()
+                        .find(|(name, _)| name.eq_ignore_ascii_case("content-type"))
+                        .map(|(_, value)| value.clone()),
+                    body: super::dump_html(&page),
+                }
+            }
+        } else {
+            self.inner.fetch(url).await?
+        };
         if self.capture && (200..400).contains(&response.status) {
             let key =
                 normalize_page_url(response.url.as_str(), None, UrlNormalizationOptions::default())
@@ -371,16 +419,33 @@ pub async fn run_crawl(args: CrawlArgs, proxy: Option<String>) -> anyhow::Result
             .map_err(|error| anyhow::anyhow!("cannot enqueue seed {seed:?}: {error}"))?;
     }
 
+    let rendered_context = args.render.then(|| {
+        Arc::new(BrowserContext::with_storage_and_network(
+            "crawl".into(),
+            proxy.clone(),
+            false,
+            Some(args.user_agent.clone()),
+            None,
+            args.allow_private_network,
+        ))
+    });
     let transport = CapturingTransport {
         inner: ObscuraTransport::new(client),
+        rendered_context,
         capture: args.include_html || args.include_links,
         bodies: RefCell::new(HashMap::new()),
     };
     let options = CrawlOptions {
         max_depth: args.max_depth,
         max_requests: usize::try_from(args.max_pages).unwrap_or(MAX_PAGES_LIMIT),
-        max_concurrency: usize::try_from(args.concurrency).unwrap_or(4),
+        max_concurrency: if args.render {
+            1
+        } else {
+            usize::try_from(args.concurrency).unwrap_or(4)
+        },
         allowed_domains: allowed.clone(),
+        include_url_regex: args.include_url_regex.clone(),
+        exclude_url_regex: args.exclude_url_regex.clone(),
         obey_robots: args.obey_robots,
         ingest_sitemaps: args.sitemaps,
         user_agent: args.user_agent.clone(),
@@ -444,6 +509,9 @@ mod tests {
             max_pages: 10,
             concurrency: 2,
             allowed_domains: Vec::new(),
+            include_url_regex: Vec::new(),
+            exclude_url_regex: Vec::new(),
+            render: false,
             obey_robots: true,
             sitemaps: false,
             delay_ms: 0,
@@ -549,6 +617,46 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn rendered_transport_discovers_script_inserted_links_through_shared_frontier() {
+        let port = serve(HashMap::from([
+            ("/", ("text/html", r#"<!doctype html><html><body><main><h1>Rendered root</h1><script>const link = document.createElement('a'); link.href = '/hydrated'; link.textContent = 'Hydrated destination'; document.body.appendChild(link);</script></main></body></html>"#)),
+            ("/hydrated", ("text/html", "<!doctype html><html><body><main><h1>Hydrated destination</h1><p>Reached exclusively through JavaScript-created links.</p></main></body></html>")),
+        ])).await;
+        let seed = format!("http://127.0.0.1:{port}/");
+        let client = ObscuraHttpClient::with_full_options(Arc::new(CookieJar::new()), None, true);
+        let context = Arc::new(BrowserContext::with_storage_and_network(
+            "rendered-crawl-test".into(),
+            None,
+            false,
+            None,
+            None,
+            true,
+        ));
+        let transport = CapturingTransport {
+            inner: ObscuraTransport::new(client),
+            rendered_context: Some(context),
+            capture: true,
+            bodies: RefCell::new(HashMap::new()),
+        };
+        let mut frontier = Frontier::memory(FrontierOptions::default()).unwrap();
+        frontier.enqueue(AddRequest::seed(seed), 0).unwrap();
+        let options = CrawlOptions {
+            max_depth: 1,
+            max_requests: 2,
+            max_concurrency: 1,
+            allowed_domains: vec!["127.0.0.1".into()],
+            ..CrawlOptions::default()
+        };
+        let report = crawl_bounded(&mut frontier, &transport, &options).await.unwrap();
+        assert!(report.errors.is_empty(), "{:?}", report.errors);
+        assert_eq!(report.pages.len(), 2);
+        assert!(report.pages.iter().any(|page| page.url.path() == "/hydrated"));
+        assert!(
+            transport.bodies.borrow().values().any(|body| body.body.contains("href=\"/hydrated\""))
+        );
+    }
+
+    #[tokio::test]
     async fn crawl_follows_links_honours_robots_and_stays_on_host() {
         let port = serve(HashMap::from([
             (
@@ -579,6 +687,7 @@ mod tests {
         frontier.enqueue(AddRequest::seed(seed.clone()), 0).unwrap();
         let transport = CapturingTransport {
             inner: ObscuraTransport::new(client),
+            rendered_context: None,
             capture: true,
             bodies: RefCell::new(HashMap::new()),
         };

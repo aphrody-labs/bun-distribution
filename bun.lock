@@ -534,6 +534,7 @@
       "name": "@aphrody/fut",
       "version": "1.0.0",
       "dependencies": {
+        "@aphrody/agent-browser": "workspace:*",
         "bottleneck": "catalog:",
         "class-validator": "catalog:",
         "graphql": "catalog:",
