@@ -481,3 +481,24 @@ cargo test --locked
 
 Toute validation doit nommer son périmètre et ses limites. Les anciens tests
 Gemini et les catalogues historiques ne constituent pas l’état courant.
+
+## 8. Coordination commune Claude / Codex / agy — demande active
+
+- [ ] Auditer et dédupliquer toutes les surfaces A2A sur le monorepo actuel.
+- [ ] Centraliser règles, mémoire et conversations par les propriétaires existants.
+- [ ] Configurer les trois agents pour travailler simultanément dans le même
+  checkout et la même branche, avec attribution des fichiers et coordination.
+- [ ] Vérifier les launchers, imports de sessions et échanges réels ; distinguer
+  configuration, dry-run et exécution concurrente prouvée.
+
+Le sous-agent `a2a_audit` effectue l’audit en lecture seule. Les formats natifs
+Claude/Codex/agy ne sont pas interchangeables ; leur partage doit passer par
+les adaptateurs de sessions canoniques et une mémoire commune.
+
+### Catalogue SSH actif
+
+45 tests SSH, check et clippy all-targets verrouillés réussis après remplacement
+ de la découverte automatique du checkout frère Infra par le monorepo identifié
+ via `Cargo.toml` et `crates/infra/ssh/Cargo.toml`. Overrides explicites conservés ;
+ test de layout actuel et rejet des archives ajouté. Aucun accès SSH distant
+ n’est établi par ces tests.

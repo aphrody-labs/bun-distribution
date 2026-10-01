@@ -243,7 +243,7 @@ pub fn resolve_plan(
 
 /// Locate `service-catalog.json`, honoring an explicit path, `APHRODY_INFRA_CATALOG`,
 /// `APHRODY_INFRA_ROOT`, or a search of the current directory and its ancestors (direct or a
-/// sibling `aphrody-infra` checkout, matching the workspace's `../<repo>` convention).
+/// active monorepo identified by its current SSH owner layout).
 pub fn resolve_catalog_path(explicit: Option<&Path>) -> Result<PathBuf, Error> {
     if let Some(p) = explicit {
         return Ok(p.to_path_buf());
@@ -261,21 +261,23 @@ pub fn resolve_catalog_path(explicit: Option<&Path>) -> Result<PathBuf, Error> {
         }
     }
     let cwd = std::env::current_dir().map_err(|e| Error::Catalog(format!("cwd: {e}")))?;
-    for base in cwd.ancestors() {
-        let direct = base.join(CATALOG_RELATIVE_PATH);
-        if direct.is_file() {
-            return Ok(direct);
-        }
-        let sibling = base.join("aphrody-infra").join(CATALOG_RELATIVE_PATH);
-        if sibling.is_file() {
-            return Ok(sibling);
-        }
+    if let Some(path) = find_workspace_catalog(&cwd) {
+        return Ok(path);
     }
     Err(Error::Catalog(format!(
         "could not locate {CATALOG_RELATIVE_PATH}; pass --catalog <path>, set \
-         APHRODY_INFRA_CATALOG or APHRODY_INFRA_ROOT, or run from an aphrody-infra checkout or \
-         one of its siblings"
+         APHRODY_INFRA_CATALOG or APHRODY_INFRA_ROOT, or run from the active Aphrody monorepo"
     )))
+}
+
+fn find_workspace_catalog(cwd: &Path) -> Option<PathBuf> {
+    cwd.ancestors().find_map(|base| {
+        let catalog = base.join(CATALOG_RELATIVE_PATH);
+        (base.join("Cargo.toml").is_file()
+            && base.join("crates/infra/ssh/Cargo.toml").is_file()
+            && catalog.is_file())
+        .then_some(catalog)
+    })
 }
 
 fn load_catalog(path: &Path) -> Result<String, Error> {
@@ -731,6 +733,26 @@ mod tests {
                 "vps",
             ]
         );
+    }
+
+    #[test]
+    fn automatic_catalog_requires_current_monorepo_layout() {
+        let root = std::env::temp_dir().join(format!("ssh-catalog-layout-{}", std::process::id()));
+        std::fs::create_dir_all(root.join("aphrody-infra/config")).unwrap();
+        std::fs::write(root.join("aphrody-infra/config/service-catalog.json"), "{}").unwrap();
+        assert_eq!(find_workspace_catalog(&root), None);
+        assert_eq!(find_workspace_catalog(&root.join("aphrody-infra")), None);
+        std::fs::create_dir_all(root.join("config")).unwrap();
+        std::fs::write(root.join(CATALOG_RELATIVE_PATH), "{}").unwrap();
+        std::fs::write(root.join("Cargo.toml"), "[workspace]").unwrap();
+        assert_eq!(find_workspace_catalog(&root), None);
+        std::fs::create_dir_all(root.join("crates/infra/ssh")).unwrap();
+        std::fs::write(root.join("crates/infra/ssh/Cargo.toml"), "[package]").unwrap();
+        assert_eq!(
+            find_workspace_catalog(&root.join("nested")),
+            Some(root.join(CATALOG_RELATIVE_PATH))
+        );
+        std::fs::remove_dir_all(root).unwrap();
     }
 
     #[test]
