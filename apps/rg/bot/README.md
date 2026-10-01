@@ -112,7 +112,7 @@ câblage.
 ## Liens monorepo
 
 - [`@rosegriffon/db`](../../packages/db) — client typé de la base self-host (browser/server/service + types `Database` générés)
-- [`@rosegriffon/azalee`](../../packages/azalee) — bibliothèque du wiki IEVR ; le bot en consomme le sous-chemin `/remote`
+- `@rosegriffon/azalee` (IECODE `packages/azalee`, archive figée selon `config/sibling-checkouts.json`) — bibliothèque du wiki IEVR ; le bot en consomme le sous-chemin `/remote`
 - [`@rosegriffon/config`](../../packages/config) — tsconfig (`tsconfig-bun.json`), oxlintrc, eslint base
 
 ## Couche DB — Bun.SQL + client Supabase-compatible

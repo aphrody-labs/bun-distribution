@@ -553,7 +553,7 @@ régressions nouvelles ne sont pas transformées en skips pour livrer.
 <a id="nie-convergence"></a>
 ### NIE, IECODE, Files et les applications
 
-Le plan NIE actif, [NIE → Aphrody](../nie/PLAN.md), et sa
+Le plan NIE actif, NIE → Aphrody (archivé dans IECODE `docs/history/aphrody-docs-2026-10-01/plans/nie/PLAN.md`), et sa
 [matrice de capacités](../../reference/workspace/NIE-CAPABILITY-MAP.md) détaillent le chantier,
 les propriétaires et les preuves requises. Ce plan racine fixe la destination
 physique commune : tout Rust et Bun NIE rejoint `aphrody`; ses projets Python
@@ -653,7 +653,7 @@ est [M3-PLAN.md](../ui/design/M3-PLAN.md), avec son
 ### Décisions consolidées qui restaient implicites dans le plan NIE
 
 Ces choix ferment les options d'architecture du
-[plan NIE](../nie/PLAN.md). Les cases P0–P4 restent des preuves d'exécution ;
+plan NIE (IECODE `docs/history/aphrody-docs-2026-10-01/plans/nie/PLAN.md`). Les cases P0–P4 restent des preuves d'exécution ;
 une case ouverte ne rouvre pas une décision ci-dessous.
 
 - **Dépôts et propriété :** IECODE garde le domaine IEVR ; ses sources Rust
@@ -703,7 +703,8 @@ une case ouverte ne rouvre pas une décision ci-dessous.
   Réutiliser [l'audit Files](../../research/workspace/FILE-SURFACE-AUDIT.md) sans présumer ses constats actuels.
 - NIE/IECODE : forge G4–G6, golden bytes, formats et saves, écrans/captures,
   parité native/headless/WASM et persistance Inacord. La
-  [matrice NIE](../../reference/workspace/NIE-CAPABILITY-MAP.md) et le [plan NIE](../nie/PLAN.md)
+  [matrice NIE](../../reference/workspace/NIE-CAPABILITY-MAP.md) et le plan NIE
+  (IECODE `docs/history/aphrody-docs-2026-10-01/plans/nie/PLAN.md`)
   guident l'absorption ; Rust et Bun rejoignent `aphrody`, Python `aphrody-py`.
 - UI : M3, Tauri courant, qualification de l'hôte natif selon le
   [plan multi-hôtes](../ui/design/M3-MULTI-HOST-PLAN.md), desktop,

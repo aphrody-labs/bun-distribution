@@ -8,10 +8,9 @@
     "paths": {
       "@/*": ["./src/*", "./*"],
       "@public/*": ["./public/*"],
+      "@iecode/*": ["../../../../iecode/*"],
       "@rosegriffon/assets": ["../../../packages/rg/assets/src/index.ts"],
       "@rosegriffon/assets/*": ["../../../packages/rg/assets/src/*"],
-      "@rosegriffon/azalee": ["../../../packages/rg/azalee/src/index.ts"],
-      "@rosegriffon/azalee/*": ["../../../packages/rg/azalee/src/*"],
       "@rosegriffon/db": ["../../../packages/rg/db/src/index.ts"],
       "@rosegriffon/db/*": ["../../../packages/rg/db/src/*"],
       "@rosegriffon/types": ["../../../packages/rg/types/src/index.ts"],
@@ -21,10 +20,7 @@
       "@rosegriffon/ui": ["../../../packages/rg/ui/src/index.ts"],
       "@rosegriffon/ui/*": ["../../../packages/rg/ui/src/*"],
       "@rosegriffon/app-shell": ["../../../packages/rg/app-shell/src/index.ts"],
-      "@rosegriffon/app-shell/*": ["../../../packages/rg/app-shell/src/*"],
-      "@rosegriffon/inagle": ["../../../packages/rg/inagle/dist/index.d.ts"],
-      "@rosegriffon/inagle/asset-manifest": ["../../../packages/rg/inagle/src/data/asset-manifest.generated.ts"],
-      "@rosegriffon/inagle/*": ["../../../packages/rg/inagle/dist/*"]
+      "@rosegriffon/app-shell/*": ["../../../packages/rg/app-shell/src/*"]
     }
   },
   "include": [

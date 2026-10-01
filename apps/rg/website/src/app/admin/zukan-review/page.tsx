@@ -54,7 +54,7 @@ export default async function ZukanReviewPage() {
 			.order("series", { ascending: true })
 			.limit(200),
 		import("@/data/zukan-audit.json").then((m) => m.default).catch(() => null),
-		import("@/data/zukan/param_en.json")
+		import("@iecode/docs/nie/game-data/zukan/param_en.json")
 			.then((m) => m.default as ZukanCandidate[])
 			.catch(() => [] as ZukanCandidate[]),
 	]);
