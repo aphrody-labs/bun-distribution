@@ -58,3 +58,4 @@ export { rgRoots, runRg } from "./rg.ts";
 export { runShenron, shenronRoots } from "./shenron.ts";
 
 export { pipelineCatalog, runPipelineCatalog } from "./pipeline-catalog.ts";
+export { collectAgentLive, runAgentLive } from "./agent-live.ts";

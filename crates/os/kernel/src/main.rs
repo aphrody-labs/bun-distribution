@@ -179,8 +179,15 @@ async fn builtin_kernel(
 }
 
 fn parse_object(text: &str) -> anyhow::Result<Value> {
-    let clean = if text.contains(r#"\""#) { text.replace(r#"\""#, "\"") } else { text.to_string() };
-    let value: Value = serde_json::from_str(&clean)?;
+    // Valid JSON may contain escaped quotes inside code or paths. Only
+    // normalize the legacy shell-escaped form after normal parsing fails.
+    let value: Value = serde_json::from_str(text).or_else(|original| {
+        if text.contains(r#"\""#) {
+            serde_json::from_str(&text.replace(r#"\""#, "\""))
+        } else {
+            Err(original)
+        }
+    })?;
     anyhow::ensure!(value.is_object(), "expected a JSON object, got {text}");
     Ok(value)
 }
@@ -302,6 +309,9 @@ mod tests {
             json!({"name": "aphrody", "value": 42})
         );
         assert_eq!(parse_object(r#"{\"escaped\": true}"#).unwrap(), json!({"escaped": true}));
+        let arguments =
+            json!({"code": "ps | where name =~ \"claude|codex\"", "path": "C:\\agents\\run"});
+        assert_eq!(parse_object(&arguments.to_string()).unwrap(), arguments);
         assert!(parse_object("[1, 2, 3]").is_err());
         assert!(parse_object("\"string\"").is_err());
         assert!(parse_object("42").is_err());

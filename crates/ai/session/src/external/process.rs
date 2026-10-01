@@ -175,6 +175,11 @@ pub fn probe_live_processes() -> Vec<LiveAgentProcess> {
         .iter()
         .filter_map(|pid| {
             let process = system.process(*pid)?;
+            // Linux task IDs share the executable and cwd of their process.
+            // They must not become separate agents in the live graph.
+            if process.thread_kind().is_some() {
+                return None;
+            }
             let name = process.name().to_string_lossy().into_owned();
             let (agent, via_node) = classify_process(&name, process.exe(), process.cmd())?;
             let started_at = i64::try_from(process.start_time())

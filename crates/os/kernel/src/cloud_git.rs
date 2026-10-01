@@ -114,7 +114,9 @@ pub(crate) fn status(path: &Path) -> Result<Value, SubsystemError> {
     }
 
     let mut recent_commits = Vec::new();
+    let mut head_id = None;
     if let Ok(head) = repo.head_commit() {
+        head_id = Some(head.id.to_string());
         let walk = repo.rev_walk([head.id]).all().map_err(|e| failed("git log failed", e))?;
         for info in walk.take(5) {
             let info = info.map_err(|e| failed("git log failed", e))?;
@@ -134,6 +136,7 @@ pub(crate) fn status(path: &Path) -> Result<Value, SubsystemError> {
     Ok(json!({
         "repository": path.to_string_lossy(),
         "branch": branch,
+        "head": head_id,
         "clean": modified.is_empty() && untracked.is_empty(),
         "modified_count": modified.len(),
         "untracked_count": untracked.len(),

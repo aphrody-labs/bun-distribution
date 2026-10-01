@@ -51,10 +51,14 @@ import { runConsolidation } from "./consolidation.ts";
 import { runRg } from "./rg.ts";
 import { runShenron } from "./shenron.ts";
 import { runWebMigration } from "./web-migration.ts";
+import { runAgentLive } from "./agent-live.ts";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const [operation, ...rest] = process.argv.slice(2);
+if (operation === "agent-live") {
+  process.exit(await runAgentLive(rest));
+}
 if (operation === "agent-home-drive-sync" || operation === "drive-sync") {
   const task = Bun.spawn(
     [process.execPath, join(import.meta.dir, "agent-home-drive-sync.ts"), ...rest],

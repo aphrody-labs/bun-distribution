@@ -58,7 +58,8 @@
     "./agent-home-drive-sync": "./src/agent-home-drive-sync.ts",
     "./web-migration": "./src/web-migration.ts",
     "./repository-state": "./src/repository-state.ts",
-    "./pipeline-catalog": "./src/pipeline-catalog.ts"
+    "./pipeline-catalog": "./src/pipeline-catalog.ts",
+    "./agent-live": "./src/agent-live.ts"
   },
   "scripts": {
     "build": "bun build ./src/cli.ts ./src/ops.ts --target=bun --outdir dist --sourcemap=linked",

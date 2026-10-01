@@ -137,6 +137,7 @@ impl PeerInvoker {
             ".coord/shared/MEMORY.md",
             ".coord/shared/CONVERSATIONS.md",
             ".coord/shared/TRANSCRIPTS.md",
+            ".coord/shared/LIVE.md",
         ] {
             if let Ok(text) = std::fs::read_to_string(self.cwd.join(relative)) {
                 let bounded: String = text.chars().take(16_384).collect();
@@ -237,7 +238,26 @@ impl PeerInvoker {
         cmd.stdin(Stdio::null());
         cmd.stdout(Stdio::piped());
         cmd.stderr(Stdio::piped());
-        let out = cmd.output()?;
+        let run_id = format!(
+            "{}-{}-{}",
+            chrono::Utc::now().timestamp_micros(),
+            crate::envelope::new_id("run"),
+            std::process::id()
+        );
+        cmd.env("APHRODY_RUN_ID", &run_id);
+        let mut child = cmd.spawn()?;
+        let mut trace =
+            match crate::run_trace::RunTrace::start(&self.cwd, peer.short(), child.id(), run_id) {
+                Ok(trace) => trace,
+                Err(error) => {
+                    let _ = child.kill();
+                    let _ = child.wait();
+                    return Err(error.into());
+                },
+            };
+        tracing::debug!(run_id = %trace.id, peer = peer.short(), "peer launched");
+        let out = child.wait_with_output()?;
+        trace.finish(&self.cwd, out.status.code(), &String::from_utf8_lossy(&out.stdout))?;
         Ok(PeerInvokeResult {
             peer,
             exit_code: out.status.code(),

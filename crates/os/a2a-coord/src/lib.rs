@@ -21,6 +21,7 @@ pub mod manifest;
 pub mod peer;
 pub mod proxy;
 pub mod registry;
+mod run_trace;
 
 pub use bridge::{SendParams, a2a_router};
 pub use card::agent_card_from_manifest;
