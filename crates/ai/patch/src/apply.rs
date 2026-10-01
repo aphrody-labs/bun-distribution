@@ -98,14 +98,14 @@ pub fn apply_patch<F: PatchFileSystem>(
                     source,
                 })?;
 
-                if let Some(move_to) = move_to {
-                    if move_to != path {
-                        fs.remove(path).map_err(|source| ApplyError::Io {
-                            context: format!("failed to remove moved-from file {}", path.display()),
-                            source,
-                        })?;
-                        summary.deleted.push(path.clone());
-                    }
+                if let Some(move_to) = move_to
+                    && move_to != path
+                {
+                    fs.remove(path).map_err(|source| ApplyError::Io {
+                        context: format!("failed to remove moved-from file {}", path.display()),
+                        source,
+                    })?;
+                    summary.deleted.push(path.clone());
                 }
                 summary.modified.push(dest.clone());
             },

@@ -152,7 +152,7 @@ fn strip_environment_id_preamble<'a>(
 /// heredoc wrapper first if one is present. Returns the inner hunk lines.
 fn check_patch_boundaries_lenient<'a>(lines: &'a [&'a str]) -> Result<&'a [&'a str], ParseError> {
     match check_patch_boundaries_strict(lines) {
-        Ok(inner) => return Ok(inner),
+        Ok(inner) => Ok(inner),
         Err(strict_err) => {
             if let [first, .., last] = lines {
                 let is_heredoc_open =

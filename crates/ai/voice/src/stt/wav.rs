@@ -121,23 +121,29 @@ pub fn decode(audio: &[u8]) -> Result<DecodedWav, WavError> {
 
     let samples = match bits_per_sample {
         16 => {
-            if pcm.len() % 2 != 0 {
+            if !pcm.len().is_multiple_of(2) {
                 return Err(WavError("odd byte count in a 16-bit data chunk".into()));
             }
             let interleaved: Vec<f32> = pcm
-                .chunks_exact(2)
+                .as_chunks::<2>()
+                .0
+                .iter()
                 .map(|b| f32::from(i16::from_le_bytes([b[0], b[1]])) / 32_768.0)
                 .collect();
             downmix(interleaved, channels)
         },
         32 => {
-            if pcm.len() % 4 != 0 {
+            if !pcm.len().is_multiple_of(4) {
                 return Err(WavError(
                     "byte count not a multiple of 4 in a 32-bit data chunk".into(),
                 ));
             }
-            let interleaved: Vec<f32> =
-                pcm.chunks_exact(4).map(|b| f32::from_le_bytes([b[0], b[1], b[2], b[3]])).collect();
+            let interleaved: Vec<f32> = pcm
+                .as_chunks::<4>()
+                .0
+                .iter()
+                .map(|b| f32::from_le_bytes([b[0], b[1], b[2], b[3]]))
+                .collect();
             downmix(interleaved, channels)
         },
         bps => {
@@ -168,10 +174,17 @@ fn downmix(interleaved: Vec<f32>, channels: usize) -> Vec<f32> {
 /// which keeps "not raw f32" distinguishable from "empty transcript".
 #[must_use]
 pub fn as_raw_f32(audio: &[u8]) -> Option<Vec<f32>> {
-    if audio.is_empty() || audio.len() % 4 != 0 {
+    if audio.is_empty() || !audio.len().is_multiple_of(4) {
         return None;
     }
-    Some(audio.chunks_exact(4).map(|b| f32::from_le_bytes([b[0], b[1], b[2], b[3]])).collect())
+    Some(
+        audio
+            .as_chunks::<4>()
+            .0
+            .iter()
+            .map(|b| f32::from_le_bytes([b[0], b[1], b[2], b[3]]))
+            .collect(),
+    )
 }
 
 /// Encode mono `f32` samples as a 16-bit PCM WAV at `sample_rate`.

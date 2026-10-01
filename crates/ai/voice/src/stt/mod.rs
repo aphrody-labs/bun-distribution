@@ -25,8 +25,8 @@
 //! # Authentication
 //!
 //! Credentials are read from environment variables at construction time:
-//! - [`WhisperApiProvider`]: `OPENAI_API_KEY`
-//! - [`ElevenLabsSttProvider`]: `ELEVENLABS_API_KEY`
+//! - [`WhisperApiProvider`] — `OPENAI_API_KEY`
+//! - [`ElevenLabsSttProvider`] — `ELEVENLABS_API_KEY`
 //!
 //! # Relationship to `aphrody-voice`
 //!
@@ -37,23 +37,32 @@
 #![forbid(unsafe_code)]
 
 // Native-only modules: reqwest + tokio do not compile for wasm32.
-#[cfg(not(target_arch = "wasm32"))] pub mod elevenlabs_stt;
-#[cfg(not(target_arch = "wasm32"))] pub mod local_whisper;
-#[cfg(not(target_arch = "wasm32"))] pub mod wav;
-#[cfg(not(target_arch = "wasm32"))] pub mod whisper_api;
-#[cfg(not(target_arch = "wasm32"))] pub mod whisper_cpp;
+#[cfg(not(target_arch = "wasm32"))]
+pub mod elevenlabs_stt;
+#[cfg(not(target_arch = "wasm32"))]
+pub mod local_whisper;
+#[cfg(not(target_arch = "wasm32"))]
+pub mod wav;
+#[cfg(not(target_arch = "wasm32"))]
+pub mod whisper_api;
+#[cfg(not(target_arch = "wasm32"))]
+pub mod whisper_cpp;
 
 // Browser-native module: only compiled when targeting wasm32.
-#[cfg(target_arch = "wasm32")] pub mod web;
+#[cfg(target_arch = "wasm32")]
+pub mod web;
 
 // ── Native-only: trait + error types ─────────────────────────────────────────
 //
 // All items below reference `reqwest` which is absent on wasm32 targets.
 // The browser path uses `JsValue` errors directly in `web::WebSpeechRecognition`.
 
-#[cfg(not(target_arch = "wasm32"))] use async_trait::async_trait;
-#[cfg(not(target_arch = "wasm32"))] use futures::Stream;
-#[cfg(not(target_arch = "wasm32"))] use serde::{Deserialize, Serialize};
+#[cfg(not(target_arch = "wasm32"))]
+use async_trait::async_trait;
+#[cfg(not(target_arch = "wasm32"))]
+use futures::Stream;
+#[cfg(not(target_arch = "wasm32"))]
+use serde::{Deserialize, Serialize};
 
 // ── SttError ──────────────────────────────────────────────────────────────────
 
@@ -102,10 +111,11 @@ pub enum SttError {
 /// Maps directly to the `response_format` parameter accepted by both the
 /// OpenAI Whisper API and the ElevenLabs STT API.
 #[cfg(not(target_arch = "wasm32"))]
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum TranscriptFormat {
     /// Plain UTF-8 text (default).
+    #[default]
     Text,
     /// Verbose JSON including word-level timestamps and confidence scores.
     VerboseJson,
@@ -113,13 +123,6 @@ pub enum TranscriptFormat {
     Srt,
     /// WebVTT subtitle format (`.vtt`).
     Vtt,
-}
-
-#[cfg(not(target_arch = "wasm32"))]
-impl Default for TranscriptFormat {
-    fn default() -> Self {
-        Self::Text
-    }
 }
 
 // ── SttOptions ────────────────────────────────────────────────────────────────

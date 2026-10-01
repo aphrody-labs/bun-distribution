@@ -84,7 +84,7 @@ impl PsdWriter {
         self.write_bytes(ascii.as_bytes());
 
         let mut total = ascii.len() + 1;
-        while total % pad_to != 0 {
+        while !total.is_multiple_of(pad_to) {
             self.write_u8(0);
             total += 1;
         }

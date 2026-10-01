@@ -90,7 +90,7 @@ impl<'a> SynthRequest<'a> {
             || opts.style.is_some()
             || opts.use_speaker_boost.is_some();
 
-        let voice_settings = has_settings.then(|| VoiceSettings {
+        let voice_settings = has_settings.then_some(VoiceSettings {
             stability: opts.stability,
             similarity_boost: opts.similarity_boost,
             style: opts.style,
@@ -126,18 +126,18 @@ fn normalize_voice(value: &Value) -> Option<VoiceInfo> {
 
     let id = read_string(obj.get("voice_id")?)?;
 
-    let name = obj.get("name").and_then(|v| read_string(v)).unwrap_or_else(|| id.clone());
+    let name = obj.get("name").and_then(read_string).unwrap_or_else(|| id.clone());
 
-    let preview_url = obj.get("preview_url").and_then(|v| read_string(v));
+    let preview_url = obj.get("preview_url").and_then(read_string);
 
     // Gender is buried inside the `labels` map.
     let labels = obj.get("labels").and_then(Value::as_object);
-    let gender = labels.and_then(|m| m.get("gender")).and_then(|v| read_string(v));
+    let gender = labels.and_then(|m| m.get("gender")).and_then(read_string);
 
     // `language` is not a top-level field in the standard v1 payload; it may
     // appear in fine-tuned or shared voice metadata under `fine_tuning`.
     // We also accept it as a direct top-level field for forward-compat.
-    let language = obj.get("language").and_then(|v| read_string(v));
+    let language = obj.get("language").and_then(read_string);
 
     Some(VoiceInfo { id, name, language, gender, preview_url })
 }

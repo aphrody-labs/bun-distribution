@@ -68,12 +68,8 @@ fn scan(
     last: usize,
     eq: impl Fn(&str, &str) -> bool,
 ) -> Option<usize> {
-    for i in search_start..=last {
-        if needle.iter().enumerate().all(|(j, pat)| eq(&haystack[i + j], pat)) {
-            return Some(i);
-        }
-    }
-    None
+    (search_start..=last)
+        .find(|&i| needle.iter().enumerate().all(|(j, pat)| eq(&haystack[i + j], pat)))
 }
 
 /// Normalise common Unicode punctuation to ASCII equivalents and trim, so that

@@ -179,10 +179,10 @@ pub fn resolve() -> Option<WhisperSource> {
             return Some(WhisperSource::EnvDir(found));
         }
     }
-    if let Some(dir) = non_empty_env("APHRODY_WHISPER_DIR") {
-        if let Some(found) = in_dir(Path::new(&dir)) {
-            return Some(WhisperSource::EnvDir(found));
-        }
+    if let Some(dir) = non_empty_env("APHRODY_WHISPER_DIR")
+        && let Some(found) = in_dir(Path::new(&dir))
+    {
+        return Some(WhisperSource::EnvDir(found));
     }
     if let Some(found) = runtimes_dir().as_deref().and_then(find_managed_in) {
         return Some(WhisperSource::Managed(found));

@@ -5,13 +5,11 @@
 //!
 //! Fetches exact encoded manga/databook image bytes for Koharu processing.
 
-use std::path::Path;
 use serde::{Deserialize, Serialize};
+use std::path::Path;
 use thiserror::Error;
 
-use crate::{
-    pipeline::{MangaPageResult, MangaPipeline, MangaPipelineError, MangaPipelineOptions},
-};
+use crate::pipeline::{MangaPageResult, MangaPipeline, MangaPipelineError, MangaPipelineOptions};
 
 /// Errors encountered while fetching or streaming from the manga/databook CDN.
 #[derive(Debug, Error)]
@@ -20,7 +18,6 @@ pub enum CdnError {
     #[cfg(not(target_arch = "wasm32"))]
     #[error("HTTP network error: {0}")]
     Network(#[from] reqwest::Error),
-
 
     /// Requested resource was not found on the catalog.
     #[error("resource not found: {0}")]
@@ -160,21 +157,25 @@ impl MangaCdnClient {
     ) -> Result<(Vec<u8>, PlateRecord), CdnError> {
         #[cfg(not(target_arch = "wasm32"))]
         {
-            let endpoint = format!("{}/api/databooks/{}", self.base_url.trim_end_matches('/'), databook_id);
+            let endpoint =
+                format!("{}/api/databooks/{}", self.base_url.trim_end_matches('/'), databook_id);
             let resp = self.client.get(&endpoint).send().await?;
             if !resp.status().is_success() {
-                return Err(CdnError::NotFound(format!("Databook {databook_id} not found: HTTP {}", resp.status())));
+                return Err(CdnError::NotFound(format!(
+                    "Databook {databook_id} not found: HTTP {}",
+                    resp.status()
+                )));
             }
             let record: serde_json::Value = resp.json().await?;
-            let pages = record
-                .get("pages")
-                .and_then(serde_json::Value::as_array)
-                .ok_or_else(|| CdnError::InvalidResponse(format!("Databook {databook_id} has no pages field")))?;
+            let pages =
+                record.get("pages").and_then(serde_json::Value::as_array).ok_or_else(|| {
+                    CdnError::InvalidResponse(format!("Databook {databook_id} has no pages field"))
+                })?;
 
             let target_page = pages.iter().find(|p| {
                 p.get("number")
                     .and_then(serde_json::Value::as_u64)
-                    .map_or(false, |n| n as u32 == plate_number)
+                    .is_some_and(|n| n as u32 == plate_number)
             });
 
             let Some(page) = target_page else {
@@ -183,24 +184,18 @@ impl MangaCdnClient {
                 )));
             };
 
-            let stored_img = page
-                .get("image")
-                .and_then(serde_json::Value::as_str)
-                .ok_or_else(|| CdnError::InvalidResponse(format!("Plate {plate_number} has no image field")))?;
+            let stored_img =
+                page.get("image").and_then(serde_json::Value::as_str).ok_or_else(|| {
+                    CdnError::InvalidResponse(format!("Plate {plate_number} has no image field"))
+                })?;
 
             let cdn_url = self.resolve_cdn_url(stored_img);
-            let existing_text = page
-                .get("text")
-                .and_then(serde_json::Value::as_str)
-                .map(str::to_string);
+            let existing_text =
+                page.get("text").and_then(serde_json::Value::as_str).map(str::to_string);
 
             let image = self.fetch_image(&cdn_url).await?;
-            let record = PlateRecord {
-                entity_id: databook_id,
-                plate_number,
-                cdn_url,
-                existing_text,
-            };
+            let record =
+                PlateRecord { entity_id: databook_id, plate_number, cdn_url, existing_text };
 
             Ok((image, record))
         }
@@ -222,9 +217,12 @@ impl MangaCdnClient {
         let output = MangaPipeline::process_image_bytes(&bytes, options).await?;
         let mut result = output.result;
         result.source.url = Some(self.resolve_cdn_url(cdn_url_or_path));
-        Ok((result, output.psd_bytes.ok_or_else(|| {
-            CdnError::InvalidResponse("Koharu did not export a PSD".to_owned())
-        })?))
+        Ok((
+            result,
+            output.psd_bytes.ok_or_else(|| {
+                CdnError::InvalidResponse("Koharu did not export a PSD".to_owned())
+            })?,
+        ))
     }
 
     /// Fetch a manga plate by chapter ID and plate number directly from the catalog.
@@ -235,17 +233,29 @@ impl MangaCdnClient {
     ) -> Result<(Vec<u8>, PlateRecord), CdnError> {
         #[cfg(not(target_arch = "wasm32"))]
         {
-            let endpoint = format!("{}/api/manga/chapter/{}/planche/{}", self.base_url.trim_end_matches('/'), chapter_id, plate_number);
+            let endpoint = format!(
+                "{}/api/manga/chapter/{}/planche/{}",
+                self.base_url.trim_end_matches('/'),
+                chapter_id,
+                plate_number
+            );
             let resp = self.client.get(&endpoint).send().await?;
             if !resp.status().is_success() {
-                return Err(CdnError::NotFound(format!("Manga chapter {chapter_id} plate {plate_number} not found: HTTP {}", resp.status())));
+                return Err(CdnError::NotFound(format!(
+                    "Manga chapter {chapter_id} plate {plate_number} not found: HTTP {}",
+                    resp.status()
+                )));
             }
             let record: serde_json::Value = resp.json().await?;
             let stored_img = record
                 .get("image")
                 .or_else(|| record.get("url"))
                 .and_then(serde_json::Value::as_str)
-                .ok_or_else(|| CdnError::InvalidResponse(format!("Manga plate {plate_number} has no image field")))?;
+                .ok_or_else(|| {
+                    CdnError::InvalidResponse(format!(
+                        "Manga plate {plate_number} has no image field"
+                    ))
+                })?;
 
             let cdn_url = self.resolve_cdn_url(stored_img);
             let existing_text = record
@@ -255,12 +265,8 @@ impl MangaCdnClient {
                 .map(str::to_string);
 
             let image = self.fetch_image(&cdn_url).await?;
-            let record = PlateRecord {
-                entity_id: chapter_id,
-                plate_number,
-                cdn_url,
-                existing_text,
-            };
+            let record =
+                PlateRecord { entity_id: chapter_id, plate_number, cdn_url, existing_text };
 
             Ok((image, record))
         }
@@ -286,9 +292,13 @@ impl MangaCdnClient {
         result.source.entity_id = Some(chapter_id);
         result.source.plate_number = Some(plate_number);
         result.source.url = Some(record.cdn_url.clone());
-        Ok((result, output.psd_bytes.ok_or_else(|| {
-            CdnError::InvalidResponse("Koharu did not export a PSD".to_owned())
-        })?, record))
+        Ok((
+            result,
+            output.psd_bytes.ok_or_else(|| {
+                CdnError::InvalidResponse("Koharu did not export a PSD".to_owned())
+            })?,
+            record,
+        ))
     }
 
     /// Stream and scanlate a databook plate directly from the catalog.
@@ -306,9 +316,13 @@ impl MangaCdnClient {
         result.source.entity_id = Some(databook_id);
         result.source.plate_number = Some(plate_number);
         result.source.url = Some(record.cdn_url.clone());
-        Ok((result, output.psd_bytes.ok_or_else(|| {
-            CdnError::InvalidResponse("Koharu did not export a PSD".to_owned())
-        })?, record))
+        Ok((
+            result,
+            output.psd_bytes.ok_or_else(|| {
+                CdnError::InvalidResponse("Koharu did not export a PSD".to_owned())
+            })?,
+            record,
+        ))
     }
 }
 

@@ -104,13 +104,13 @@ impl StreamingPatchParser {
 
     fn ensure_update_hunk_not_empty(&self, line: &str) -> Result<(), ParseError> {
         if let Some(UpdateFile { path, chunks, .. }) = self.hunks.last() {
-            if chunks.is_empty() {
-                if let Mode::UpdateFile { hunk_line_number } = self.mode {
-                    return Err(InvalidHunk {
-                        message: format!("Update file hunk for path '{}' is empty", path.display()),
-                        line_number: hunk_line_number,
-                    });
-                }
+            if chunks.is_empty()
+                && let Mode::UpdateFile { hunk_line_number } = self.mode
+            {
+                return Err(InvalidHunk {
+                    message: format!("Update file hunk for path '{}' is empty", path.display()),
+                    line_number: hunk_line_number,
+                });
             }
             if chunks.last().is_some_and(|c| c.old_lines.is_empty() && c.new_lines.is_empty()) {
                 if line == END_PATCH_MARKER {
@@ -189,12 +189,12 @@ impl StreamingPatchParser {
                 if self.handle_hunk_header(trimmed)? {
                     return Ok(());
                 }
-                if let Some(line_to_add) = line.strip_prefix('+') {
-                    if let Some(AddFile { contents, .. }) = self.hunks.last_mut() {
-                        contents.push_str(line_to_add);
-                        contents.push('\n');
-                        return Ok(());
-                    }
+                if let Some(line_to_add) = line.strip_prefix('+')
+                    && let Some(AddFile { contents, .. }) = self.hunks.last_mut()
+                {
+                    contents.push_str(line_to_add);
+                    contents.push('\n');
+                    return Ok(());
                 }
                 Err(self.invalid_header(trimmed))
             },

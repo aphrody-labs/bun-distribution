@@ -48,10 +48,10 @@ impl PatchFileSystem for StdFileSystem {
     }
 
     fn write(&self, path: &Path, contents: &str) -> io::Result<()> {
-        if let Some(parent) = path.parent() {
-            if !parent.as_os_str().is_empty() {
-                std::fs::create_dir_all(parent)?;
-            }
+        if let Some(parent) = path.parent()
+            && !parent.as_os_str().is_empty()
+        {
+            std::fs::create_dir_all(parent)?;
         }
         std::fs::write(path, contents)
     }

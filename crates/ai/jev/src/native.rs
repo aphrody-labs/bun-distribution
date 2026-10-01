@@ -259,10 +259,10 @@ fn letter_distribution(top: &[TopLogprob], count: usize) -> Result<Vec<f64>, Jev
         let mut chars = token.chars();
         let (Some(letter), None) = (chars.next(), chars.next()) else { continue };
         let letter = letter.to_ascii_uppercase();
-        if let Some(index) = LABELS.iter().position(|&l| l as char == letter) {
-            if index < count {
-                mass[index] += candidate.logprob.exp();
-            }
+        if let Some(index) = LABELS.iter().position(|&l| l as char == letter)
+            && index < count
+        {
+            mass[index] += candidate.logprob.exp();
         }
     }
     let total: f64 = mass.iter().sum();

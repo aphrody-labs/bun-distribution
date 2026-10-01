@@ -20,11 +20,14 @@
 #![forbid(unsafe_code)]
 
 // Native-only modules: reqwest + tokio do not compile for wasm32.
-#[cfg(not(target_arch = "wasm32"))] pub mod discord_shim;
-#[cfg(not(target_arch = "wasm32"))] pub mod elevenlabs;
+#[cfg(not(target_arch = "wasm32"))]
+pub mod discord_shim;
+#[cfg(not(target_arch = "wasm32"))]
+pub mod elevenlabs;
 
 // Browser-native module: only compiled when targeting wasm32.
-#[cfg(target_arch = "wasm32")] pub mod web;
+#[cfg(target_arch = "wasm32")]
+pub mod web;
 
 // Speech-to-text (STT) — unified from the former `aphrody-voice-stt` crate.
 pub mod stt;
@@ -34,10 +37,14 @@ pub mod stt;
 // All items below reference `reqwest` which is absent on wasm32 targets.
 // The browser path uses `JsValue` errors directly in `web::WebSpeechSynth`.
 
-#[cfg(not(target_arch = "wasm32"))] use async_trait::async_trait;
-#[cfg(not(target_arch = "wasm32"))] use bytes::Bytes;
-#[cfg(not(target_arch = "wasm32"))] use futures::Stream;
-#[cfg(not(target_arch = "wasm32"))] use serde::{Deserialize, Serialize};
+#[cfg(not(target_arch = "wasm32"))]
+use async_trait::async_trait;
+#[cfg(not(target_arch = "wasm32"))]
+use bytes::Bytes;
+#[cfg(not(target_arch = "wasm32"))]
+use futures::Stream;
+#[cfg(not(target_arch = "wasm32"))]
+use serde::{Deserialize, Serialize};
 
 /// Error type for all native voice provider operations.
 ///
@@ -95,7 +102,7 @@ pub struct VoiceInfo {
 /// All fields are optional at the call site; each provider falls back to its
 /// own defaults when `None`.
 #[cfg(not(target_arch = "wasm32"))]
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct SynthOptions {
     /// Voice stability (0.0 – 1.0).  Higher = more consistent but less
     /// expressive.  ElevenLabs default: `0.5`.
@@ -115,19 +122,6 @@ pub struct SynthOptions {
     /// `"eleven_multilingual_v2"`.  Falls back to provider default when
     /// `None`.
     pub model_id: Option<String>,
-}
-
-#[cfg(not(target_arch = "wasm32"))]
-impl Default for SynthOptions {
-    fn default() -> Self {
-        Self {
-            stability: None,
-            similarity_boost: None,
-            style: None,
-            use_speaker_boost: None,
-            model_id: None,
-        }
-    }
 }
 
 // ── VoiceProvider ─────────────────────────────────────────────────────────────
