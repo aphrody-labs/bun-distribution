@@ -98,6 +98,25 @@ actifs, aucun import vers une ancienne implantation déplacée.
   sa base d’origine. Cette augmentation ne signale pas une régression des
   liens actifs ; le vérificateur doit distinguer ces preuves des pages actives.
 
+### Périmètre explicite du contrôle documentaire — 2026-10-01
+
+- FAIT : `docs-links` accepte `--exclude-file <chemin relatif racine>` répété,
+  uniquement pour des documents inventoriés. Un chemin absent, un dossier ou
+  une exclusion hors inventaire provoque une erreur ; les exclusions apparaissent
+  dans le rapport JSON et texte.
+- `docs:check-links` exclut explicitement le seul snapshot d’architecture du
+  workspace ajouté ci-dessus. Le contrôle sans option continue à le vérifier ;
+  aucune exclusion globale de `docs/migration` n’est introduite.
+- Résultat avec cette exclusion : 5 957 documents inventoriés, 8 882 liens
+  examinés, 1 933 destinations non résolues. INCOMPLET : le contrôle reste rouge
+  et le classement des autres preuves, routes importées et liens actifs est ouvert.
+- Gates : 44 tests Infra réussis, 1 test natif conditionnel ignoré ; typecheck
+  du package réussi ; format des deux fichiers TypeScript modifiés et
+  `git diff --check` réussis. Oxc ne signale pas d’erreur, mais conserve
+  quatre avertissements `no-await-in-loop` dans des boucles préexistantes.
+- Les tests prouvent qu’une exclusion historique ne masque pas les échecs actifs,
+  que le contrôle complet garde le snapshot et que les chemins invalides sont rejetés.
+
 ## 1. Contrats, cœur et compatibilité
 
 Propriétaires : `crates/contracts`, `crates/native`, `crates/compat`,

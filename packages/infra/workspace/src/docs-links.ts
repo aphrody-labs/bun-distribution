@@ -1,5 +1,5 @@
 import { readdir, readFile, stat } from "node:fs/promises";
-import { join, dirname, resolve } from "node:path";
+import { join, dirname, resolve, relative } from "node:path";
 
 async function getFiles(dir: string): Promise<string[]> {
   const entries = await readdir(dir, { withFileTypes: true });
@@ -79,11 +79,16 @@ export async function runDocsLinks(args: string[]): Promise<number> {
   let scope: "docs" | "repository" = "docs";
   let webRoutes = false;
   let json = false;
+  const excludedFiles: string[] = [];
   for (let index = 0; index < args.length; index++) {
     const arg = args[index];
     if (arg === "--root") root = args[++index] ?? "";
     else if (arg === "--docs") docs = args[++index] ?? "";
-    else if (arg === "--scope") {
+    else if (arg === "--exclude-file") {
+      const value = args[++index];
+      if (!value || value.startsWith("--")) throw new Error("--exclude-file requires a path");
+      excludedFiles.push(value);
+    } else if (arg === "--scope") {
       const value = args[++index];
       if (value !== "docs" && value !== "repository")
         throw new Error("--scope must be docs or repository");
@@ -92,7 +97,7 @@ export async function runDocsLinks(args: string[]): Promise<number> {
     else if (arg === "--json") json = true;
     else if (arg === "--help" || arg === "-h") {
       console.log(
-        "Usage: aphrody-ops docs-links [--root <repository>] [--docs <directory>] [--scope docs|repository] [--web-routes] [--json]",
+        "Usage: aphrody-ops docs-links [--root <repository>] [--docs <directory>] [--scope docs|repository] [--exclude-file <root-relative path>] [--web-routes] [--json]",
       );
       return 0;
     } else throw new Error(`Unknown argument: ${arg}`);
@@ -108,11 +113,19 @@ export async function runDocsLinks(args: string[]): Promise<number> {
     for (const entry of rootEntries)
       if (entry.isFile() && entry.name.endsWith(".md")) files.push(join(ROOT_DIR, entry.name));
   }
+  const excluded = new Set<string>();
+  for (const requested of excludedFiles) {
+    const file = resolve(ROOT_DIR, requested);
+    if (!files.includes(file))
+      throw new Error(`Excluded file is not an inventoried Markdown document: ${requested}`);
+    excluded.add(file);
+  }
   let totalLinks = 0;
   let brokenLinks = 0;
   const findings: Array<{ file: string; link: string; target: string }> = [];
 
   for (const file of files) {
+    if (excluded.has(file)) continue;
     // Ignorer les fichiers de bundle générés qui contiennent beaucoup de liens absolus virtuels
     if (file.endsWith("llms.txt") || file.endsWith("llms-full.txt")) continue;
 
@@ -189,7 +202,13 @@ export async function runDocsLinks(args: string[]): Promise<number> {
   if (json)
     console.log(
       JSON.stringify(
-        { scanned: files.length, links: totalLinks, broken: brokenLinks, findings },
+        {
+          scanned: files.length,
+          excluded: [...excluded].map((file) => relative(ROOT_DIR, file).replaceAll("\\", "/")),
+          links: totalLinks,
+          broken: brokenLinks,
+          findings,
+        },
         null,
         2,
       ),
@@ -198,6 +217,8 @@ export async function runDocsLinks(args: string[]): Promise<number> {
     console.log(`\n📊 Bilan de la vérification :`);
     console.log(`   - Liens locaux vérifiés : ${totalLinks}`);
     console.log(`   - Liens cassés trouvés  : ${brokenLinks}`);
+    for (const file of excluded)
+      console.log(`   - Fichier exclu explicitement : ${relative(ROOT_DIR, file)}`);
   }
 
   if (brokenLinks > 0) {

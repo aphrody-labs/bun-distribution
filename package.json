@@ -272,7 +272,7 @@
     "rg:status": "bun packages/infra/workspace/src/ops.ts rg status",
     "rg:pipeline": "bun packages/infra/workspace/src/ops.ts rg pipeline",
     "rg:pipeline:plan": "bun packages/infra/workspace/src/ops.ts rg pipeline --dry-run",
-    "docs:check-links": "bun packages/infra/workspace/src/ops.ts docs-links --root . --docs docs --scope repository",
+    "docs:check-links": "bun packages/infra/workspace/src/ops.ts docs-links --root . --docs docs --scope repository --exclude-file docs/migration/workspace-architecture-before-monorepo-2026-10-01.md",
     "monorepo:layout": "bun packages/infra/workspace/src/ops.ts workspace-layout --root .",
     "monorepo:state": "bun packages/infra/workspace/src/ops.ts repository-state --root .",
     "monorepo:clean": "bun packages/infra/workspace/src/ops.ts workspace-clean --root .",

@@ -81,3 +81,28 @@ test("generated migration index and URL metadata resolve actual local files", as
     await rm(root, { recursive: true, force: true });
   }
 });
+
+test("explicit historical exclusions do not hide active failures or accept stale paths", async () => {
+  const root = await mkdtemp(join(tmpdir(), "docs-links-exclusions-"));
+  try {
+    await mkdir(join(root, "docs/migration"), { recursive: true });
+    await writeFile(join(root, "docs/migration/snapshot.md"), "[legacy](missing.md)");
+    await writeFile(join(root, "docs/active.md"), "# Active");
+    const args = ["--root", root, "--json"];
+    expect(await runDocsLinks(args)).toBe(1);
+    const excludedArgs = [...args, "--exclude-file", "docs/migration/snapshot.md"];
+    expect(await runDocsLinks(excludedArgs)).toBe(0);
+    await writeFile(join(root, "docs/active.md"), "[broken](missing.md)");
+    expect(await runDocsLinks(excludedArgs)).toBe(1);
+    await Promise.all(
+      ["docs/migration/absent.md", "docs/migration", "../outside.md"].map((path) =>
+        expect(runDocsLinks([...args, "--exclude-file", path])).rejects.toThrow(
+          "not an inventoried Markdown document",
+        ),
+      ),
+    );
+    await expect(runDocsLinks([...args, "--exclude-file"])).rejects.toThrow("requires a path");
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
