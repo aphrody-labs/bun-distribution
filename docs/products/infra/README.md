@@ -113,10 +113,11 @@ and the declared Nu plugin binaries from crates.io, then registers those plugins
 with the local Nu installation. The inventory is
 `config/developer-cli-tools.json`; none of these tools are workspace dependencies.
 
-`aphrody-infra dev-env --local wsl --apply` also installs the explicitly declared
-Rust development tools in `config/system-packages.json` through `cargo-binstall`.
-The current declaration is `cargo-nextest`; it is available for fast Rust test
-execution without becoming an Infra workspace dependency.
+`aphrody-infra dev-env --local wsl --apply` and the root bootstrap install the
+Rust development tools declared in `config/system-packages.json` through
+`cargo-binstall`. The set includes nextest, deny/audit/machete, expand/hack and
+the optional cross-compilation frontends; they remain host tools, not workspace
+dependencies.
 
 Keep distribution systemd as host supervisor. Templates are not automatically
 installed; a catalogue or old health report does not establish a live deployment.

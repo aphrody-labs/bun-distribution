@@ -1,0 +1,44 @@
+#!/usr/bin/env nu
+# SPDX-License-Identifier: Apache-2.0
+
+export-env {
+  let home = $nu.home-dir
+  let root = $env.APHRODY_ROOT? | default ($home | path join "aphrody")
+  let aphrody_home = $env.APHRODY_HOME? | default ($home | path join ".aphrody")
+  let domain = $env.APHRODY_AGENT_DOMAIN? | default "aphrody"
+  let cargo_home = $env.CARGO_HOME? | default ($home | path join ".cargo")
+  let bun_install = $env.BUN_INSTALL? | default ($home | path join ".bun")
+
+  $env.APHRODY_ROOT = ($root | path expand)
+  $env.APHRODY_HOME = ($aphrody_home | path expand)
+  $env.APHRODY_AGENT_DOMAIN = $domain
+  $env.APHRODY_WORKSPACE = ($env.APHRODY_WORKSPACE? | default ($env.APHRODY_HOME | path join "workspaces" $domain))
+  $env.APHRODY_SOURCE_ROOT = ($env.APHRODY_SOURCE_ROOT? | default (($env.APHRODY_ROOT | path dirname) | path join "source"))
+  $env.APHRODY_PY_ROOT = ($env.APHRODY_PY_ROOT? | default (($env.APHRODY_ROOT | path dirname) | path join "aphrody-py"))
+  $env.APHRODY_IECODE_ROOT = ($env.APHRODY_IECODE_ROOT? | default (($env.APHRODY_ROOT | path dirname) | path join "iecode"))
+  $env.IECODE_ROOT = ($env.IECODE_ROOT? | default $env.APHRODY_IECODE_ROOT)
+  $env.CARGO_HOME = $cargo_home
+  $env.BUN_INSTALL = $bun_install
+  $env.CARGO_BUILD_JOBS = ($env.CARGO_BUILD_JOBS? | default "6")
+  $env.CARGO_INCREMENTAL = ($env.CARGO_INCREMENTAL? | default "0")
+  let bins = [($cargo_home | path join "bin"), ($bun_install | path join "bin"), ($home | path join ".local" "bin")]
+  let existing_path = $env.PATH? | default []
+  $env.PATH = ($bins | append $existing_path | reduce --fold [] {|entry, acc|
+    if $entry in $acc { $acc } else { $acc | append $entry }
+  })
+}
+
+def main [--install, --root: path] {
+  if not $install { print "Source this script from env.nu to initialize the current Nushell session."; return }
+  let root = $root | default ($env.APHRODY_ROOT? | default ((pwd) | path expand)) | path expand
+  let hook = ($root | path join "scripts/tools/shell/setup.nu")
+  let profile = ($nu.default-config-dir | path join "env.nu")
+  let marker = "# >>> aphrody global environment >>>"
+  let old = if ($profile | path exists) { open --raw $profile } else { "" }
+  if not ($old | str contains $marker) {
+    let root_literal = ($root | to nuon)
+    let addition = $"\n($marker)\n$env.APHRODY_ROOT = ($root_literal)\nsource-env ($hook | to nuon)\n# <<< aphrody global environment <<<\n"
+    ($old + $addition) | save --force $profile
+  }
+  print $"Installed Nushell hook in ($profile). Open a new shell to load it."
+}

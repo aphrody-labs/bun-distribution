@@ -1,0 +1,7 @@
+# SPDX-License-Identifier: Apache-2.0
+[Unit]
+Description=Update Aphrody user Rust toolchains and Cargo tools
+
+[Service]
+Type=oneshot
+ExecStart=%h/.local/bin/aphrody-rust-update
