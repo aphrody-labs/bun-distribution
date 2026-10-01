@@ -66,12 +66,12 @@ pub fn extract_chunks(body: &str) -> Vec<Value> {
             let length: usize = line.parse().unwrap_or(0);
             if i + 1 < lines.len() {
                 let next = lines[i + 1].trim();
-                if !next.is_empty() {
-                    if let Ok(value) = serde_json::from_str::<Value>(next) {
-                        chunks.push(value);
-                        i += 2;
-                        continue;
-                    }
+                if !next.is_empty()
+                    && let Ok(value) = serde_json::from_str::<Value>(next)
+                {
+                    chunks.push(value);
+                    i += 2;
+                    continue;
                 }
             }
             // Multi-line fallback: accumulate up to the declared byte length.
@@ -112,10 +112,10 @@ pub fn parse_envelopes(raw: &str) -> Vec<Value> {
             if items.first().and_then(|v| v.as_str()) != Some("wrb.fr") {
                 continue;
             }
-            if let Some(Value::String(inner)) = items.get(2) {
-                if let Ok(parsed) = serde_json::from_str::<Value>(inner) {
-                    results.push(parsed);
-                }
+            if let Some(Value::String(inner)) = items.get(2)
+                && let Ok(parsed) = serde_json::from_str::<Value>(inner)
+            {
+                results.push(parsed);
             }
         }
     }

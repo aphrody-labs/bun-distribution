@@ -131,10 +131,10 @@ impl NotebookClient {
         let start = std::time::Instant::now();
         loop {
             let artifacts = self.get_artifacts_filtered(notebook_id).await?;
-            if let Some(artifact) = artifacts.into_iter().find(|a| a.id == artifact_id) {
-                if artifact.download_url.is_some() {
-                    return Ok(artifact);
-                }
+            if let Some(artifact) = artifacts.into_iter().find(|a| a.id == artifact_id)
+                && artifact.download_url.is_some()
+            {
+                return Ok(artifact);
             }
             if start.elapsed() > timeout {
                 return Err(NotebookError::Rpc {

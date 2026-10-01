@@ -119,19 +119,24 @@ impl NotebookClient {
             .to_string();
 
         let nb_path = format!("/notebook/{notebook_id}");
-        let payload = json!([[[file_name.clone()]], notebook_id, [2], [
-            1,
-            Value::Null,
-            Value::Null,
-            Value::Null,
-            Value::Null,
-            Value::Null,
-            Value::Null,
-            Value::Null,
-            Value::Null,
-            Value::Null,
-            [1]
-        ],]);
+        let payload = json!([
+            [[file_name.clone()]],
+            notebook_id,
+            [2],
+            [
+                1,
+                Value::Null,
+                Value::Null,
+                Value::Null,
+                Value::Null,
+                Value::Null,
+                Value::Null,
+                Value::Null,
+                Value::Null,
+                Value::Null,
+                [1]
+            ],
+        ]);
         let envelope = self.transport.rpc_raw(ADD_SOURCE_FILE, &payload, Some(&nb_path)).await?;
         let (source_id, _title) = parse_add_source(envelope)?;
 

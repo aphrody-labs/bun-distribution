@@ -57,15 +57,10 @@ fn parse_envelopes_returns_empty_for_truncated_input() {
 
 #[test]
 fn parse_envelopes_skips_non_wrb_envelopes() {
-    let mixed = json!([["di", 9000, "some unrelated payload"], [
-        "wrb.fr",
-        "wXbhsf",
-        "[[\"nb-only\"]]",
-        null,
-        null,
-        null,
-        "generic"
-    ]]);
+    let mixed = json!([
+        ["di", 9000, "some unrelated payload"],
+        ["wrb.fr", "wXbhsf", "[[\"nb-only\"]]", null, null, null, "generic"]
+    ]);
     let inner_str = mixed.to_string();
     let raw = format!(")]}}'\n{}\n{}", inner_str.len(), inner_str);
     let envelopes = boq::parse_envelopes(&raw);

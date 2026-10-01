@@ -16,19 +16,25 @@ use crate::{
 impl NotebookClient {
     /// `CCqFvf` — create a fresh empty notebook. Returns `(notebook_id, thread_id)`.
     pub async fn create_notebook(&self) -> Result<(String, String)> {
-        let payload = json!(["", Value::Null, Value::Null, [2], [
-            1,
+        let payload = json!([
+            "",
             Value::Null,
             Value::Null,
-            Value::Null,
-            Value::Null,
-            Value::Null,
-            Value::Null,
-            Value::Null,
-            Value::Null,
-            Value::Null,
-            [1]
-        ],]);
+            [2],
+            [
+                1,
+                Value::Null,
+                Value::Null,
+                Value::Null,
+                Value::Null,
+                Value::Null,
+                Value::Null,
+                Value::Null,
+                Value::Null,
+                Value::Null,
+                [1]
+            ],
+        ]);
         let envelope = self.transport.rpc_raw(CREATE_NOTEBOOK, &payload, Some("/")).await?;
         let notebook_id = envelope
             .get(2)
@@ -134,10 +140,10 @@ impl NotebookClient {
 
     /// `s0tc2d` — rename a notebook.
     pub async fn rename_notebook(&self, notebook_id: &str, new_title: &str) -> Result<()> {
-        let payload = json!([notebook_id, [[Value::Null, Value::Null, Value::Null, [
-            Value::Null,
-            new_title
-        ]]],]);
+        let payload = json!([
+            notebook_id,
+            [[Value::Null, Value::Null, Value::Null, [Value::Null, new_title]]],
+        ]);
         self.transport.rpc_raw(RENAME_NOTEBOOK, &payload, Some("/")).await?;
         Ok(())
     }

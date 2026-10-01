@@ -1182,3 +1182,17 @@ heuristique ; aucun changement Git ne doit être attribué sans preuve.
   le verrou d’une compilation concurrente ; sccache conservé. Clone propre,
   providers live, plateformes et features produit restent ouverts.
 - Preuves : [rapport et logs](docs/operations/ai/gateway-firefly-qualification-2026-10-01/report.json).
+
+### NotebookLM et progression du gate CLI/MCP — 2026-10-01
+
+- FAIT : gardes de disponibilité d’artefact et de décodage Boq simplifiées,
+  listes rustdoc et assertion des discriminants corrigées. Valeurs des payloads
+  RPC préservées lors du formatage. Clippy strict all-targets avec dépendances,
+  format et diff réussis ; 27 tests et un doctest réussis, aucun ignoré.
+- Fixtures Boq : forme encodée, payloads récupérés, enveloppes étrangères et
+  données tronquées vérifiés. Les tests de surface publique ne lancent pas le CLI.
+  Aucun appel Google live ni qualification de polling distant n’est établi.
+- INCOMPLET : gate CLI/MCP no-default désormais arrêté sur un diagnostic terminal
+  et deux du miroir Web. Famille terminal déléguée et miroir concurrent préservés.
+  Features produit, clone propre, plateformes et artefacts installés restent ouverts.
+- Preuves : [rapport et logs](docs/operations/ai/notebooklm-qualification-2026-10-01/report.json).

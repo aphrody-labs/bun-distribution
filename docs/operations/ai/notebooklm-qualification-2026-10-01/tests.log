@@ -1,0 +1,113 @@
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on build directory
+   Compiling zerofrom v0.1.8
+   Compiling signal-hook-registry v1.4.8
+   Compiling parking_lot v0.12.5
+   Compiling getrandom v0.2.17
+   Compiling serde_core v1.0.229
+   Compiling http-body v1.1.0
+   Compiling futures-util v0.3.34
+   Compiling typenum v1.20.1
+   Compiling bitflags v2.13.2
+   Compiling cpufeatures v0.2.17
+   Compiling thiserror v2.0.21
+   Compiling ring v0.17.14
+   Compiling http-body-util v0.1.5
+   Compiling tokio v1.53.1
+   Compiling yoke v0.8.3
+   Compiling rustls-webpki v0.103.15
+   Compiling zerovec v0.11.8
+   Compiling zerotrie v0.2.5
+   Compiling rustls v0.23.45
+   Compiling generic-array v0.14.7
+   Compiling serde v1.0.229
+   Compiling serde_json v1.0.151
+   Compiling rustls-platform-verifier v0.6.2
+   Compiling tinystr v0.8.4
+   Compiling potential_utf v0.1.6
+   Compiling crypto-common v0.1.7
+   Compiling block-buffer v0.10.4
+   Compiling icu_collections v2.3.0
+   Compiling digest v0.10.7
+   Compiling icu_locale_core v2.3.0
+   Compiling sha2 v0.10.9
+   Compiling serde_urlencoded v0.7.1
+   Compiling icu_provider v2.3.1
+   Compiling tokio-util v0.7.19
+   Compiling tower v0.5.3
+   Compiling async-compression v0.4.48
+   Compiling tokio-rustls v0.26.5
+   Compiling icu_properties v2.3.0
+   Compiling icu_normalizer v2.3.0
+   Compiling h2 v0.4.19
+   Compiling idna_adapter v1.2.2
+   Compiling idna v1.1.0
+   Compiling url v2.5.8
+   Compiling publicsuffix v2.3.0
+   Compiling cookie_store v0.22.1
+   Compiling tower-http v0.6.11
+   Compiling hyper v1.11.1
+   Compiling hyper-util v0.1.21
+   Compiling hyper-rustls v0.27.10
+   Compiling reqwest v0.13.5
+   Compiling aphrody-notebooklm v1.0.0 (/home/aphro/aphrody/crates/ai/notebooklm)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2m 03s
+     Running unittests src/lib.rs (/tmp/aphrody-plan-ai-target/debug/deps/aphrody_notebooklm-1e527478d5baeee6)
+
+running 9 tests
+test boq::tests::parse_envelopes_skips_other_kinds ... ok
+test boq::tests::encode_round_trip_single_string ... ok
+test transport::tests::tokens_default_is_empty ... ok
+test boq::tests::parse_envelopes_empty_when_xssi_only ... ok
+test boq::tests::strip_xssi_handles_both_variants ... ok
+test chat::tests::parse_chat_stream_empty_returns_empty_reply ... ok
+test boq::tests::parse_envelopes_single_chunk ... ok
+test boq::tests::extract_chunks_handles_multi_line_payload ... ok
+test transport::tests::urlencode_space_becomes_plus ... ok
+
+test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/boq_roundtrip.rs (/tmp/aphrody-plan-ai-target/debug/deps/boq_roundtrip-3573b6270296cede)
+
+running 7 tests
+test encode_f_req_produces_expected_outer_shape ... ok
+test first_envelope_errors_when_response_is_empty ... ok
+test parse_envelopes_handles_arrays_of_arrays ... ok
+test strip_xssi_is_a_no_op_on_clean_input ... ok
+test parse_envelopes_recovers_inner_payload ... ok
+test parse_envelopes_returns_empty_for_truncated_input ... ok
+test parse_envelopes_skips_non_wrb_envelopes ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests/cli_help.rs (/tmp/aphrody-plan-ai-target/debug/deps/cli_help-7cd0806d2cc2e3d7)
+
+running 6 tests
+test auth_from_env_errors_without_credentials ... ok
+test cookie_export_rejects_missing_required_cookie ... ok
+test prelude_exposes_research_mode ... ok
+test prelude_exposes_source_kind ... ok
+test prelude_exposes_artifact_kind_variants ... ok
+test cookie_export_round_trip ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/rpc_ids_smoke.rs (/tmp/aphrody-plan-ai-target/debug/deps/rpc_ids_smoke-cfc26b31bc0b5ffb)
+
+running 5 tests
+test artifact_type_constants_in_expected_range ... ok
+test artifact_kind_round_trips_through_wire_id ... ok
+test artifact_kind_parses_string_aliases ... ok
+test url_constants_point_at_notebooklm_google_com ... ok
+test all_rpc_ids_are_exported_and_non_empty ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests aphrody_notebooklm
+
+running 1 test
+test crates/ai/notebooklm/src/lib.rs - (line 34) - compile ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+all doctests ran in 0.79s; merged doctests compilation took 0.77s

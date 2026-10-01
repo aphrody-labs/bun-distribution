@@ -75,7 +75,7 @@ fn artifact_type_constants_in_expected_range() {
     ];
     assert_eq!(kinds.len(), 9);
     for k in kinds {
-        assert!(k >= 1 && k <= 9, "artifact kind discriminant out of range: {k}");
+        assert!((1..=9).contains(&k), "artifact kind discriminant out of range: {k}");
     }
 }
 

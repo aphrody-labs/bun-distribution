@@ -15,7 +15,7 @@
 //! * [`types`]     — strongly-typed data model ([`Notebook`], [`Source`], [`Artifact`],
 //!   [`ChatReply`], [`AccountInfo`], …).
 //! * [`auth`]      — [`Auth`] enum (cookie jar OR OAuth Bearer) + env loader
-//!                   + Cookie-Editor JSON importer.
+//!   + Cookie-Editor JSON importer.
 //! * [`boq`]       — `f.req` encoder + XSSI-prefix stripper + chunk parser.
 //! * [`transport`] — pure-HTTP [`HttpTransport`] (reqwest, Chrome UA, system proxy honoured, no
 //!   curl-impersonate).

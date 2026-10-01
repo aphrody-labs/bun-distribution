@@ -82,8 +82,7 @@ pub const URL_BASE: &str = "https://notebooklm.google.com";
 pub const URL_DASHBOARD: &str = "https://notebooklm.google.com/";
 pub const URL_BATCH_EXECUTE: &str =
     "https://notebooklm.google.com/_/LabsTailwindUi/data/batchexecute";
-pub const URL_CHAT_STREAM: &str =
-    "https://notebooklm.google.com/_/LabsTailwindUi/data/google.internal.labs.tailwind.orchestration.v1.LabsTailwindOrchestrationService/GenerateFreeFormStreamed";
+pub const URL_CHAT_STREAM: &str = "https://notebooklm.google.com/_/LabsTailwindUi/data/google.internal.labs.tailwind.orchestration.v1.LabsTailwindOrchestrationService/GenerateFreeFormStreamed";
 pub const URL_UPLOAD: &str = "https://notebooklm.google.com/upload/_/";
 
 /// Tagged tuple inserted as the first element of artifact + research payloads.

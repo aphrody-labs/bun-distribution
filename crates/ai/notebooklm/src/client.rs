@@ -23,7 +23,7 @@ impl NotebookClient {
 
     /// Bootstrap from environment (`NOTEBOOKLM_OAUTH_TOKEN`/`NOTEBOOKLM_COOKIES`)
     /// + caller-supplied tokens. Useful for CLI flows that want one-liner
-    /// construction without manual auth juggling.
+    ///   construction without manual auth juggling.
     pub fn from_env(tokens: SessionTokens) -> Result<Self> {
         let auth = Auth::from_env()?;
         Self::new(auth, tokens)
