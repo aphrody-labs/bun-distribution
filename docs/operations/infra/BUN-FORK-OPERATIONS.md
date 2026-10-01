@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 # Aphrody Bun fork operations
 
-The Aphrody Bun fork is the top platform development priority. The [Bun fork guide](../../reference/upstream-bun/APHRODY-FORK.md) owns source contribution, module wiring and upstream sync; the [platform map](../../reference/infra/APHRODY-BUN-PLATFORM.md) owns capability boundaries. [`config/bun-fork.json`](../config/bun-fork.json) is Infra's exact source pin for integration work. The pin records a source revision, not a distributable release or the runtime selected by applications.
+The Aphrody Bun fork is the top platform development priority. The [Bun fork guide](../../reference/upstream-bun/APHRODY-FORK.md) owns source contribution, module wiring and upstream sync; the [platform map](../../reference/infra/APHRODY-BUN-PLATFORM.md) owns capability boundaries. [`config/bun-fork.json`](../../../config/bun-fork.json) is Infra's exact source pin for integration work. The pin records a source revision, not a distributable release or the runtime selected by applications.
 
 The planned transfer from the agent account to an Aphrody organization is tracked in [GitHub ownership](../../reference/infra/GITHUB-OWNERSHIP.md). Keep the current repository owner and pin until the organization exists and the transferred fork is verified.
 

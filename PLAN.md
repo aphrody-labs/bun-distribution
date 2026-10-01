@@ -117,6 +117,27 @@ actifs, aucun import vers une ancienne implantation déplacée.
 - Les tests prouvent qu’une exclusion historique ne masque pas les échecs actifs,
   que le contrôle complet garde le snapshot et que les chemins invalides sont rejetés.
 
+### Inventaire de revue documentaire — 2026-10-01
+
+- FAIT : trois destinations de runbooks Infra corrigées vers les fichiers
+  existants `config/bun-fork.json`, `config/shell-runtime.json` et
+  `inventory/aphrody-discord-dev-2026-09-29.md`. Le contrôle ne relève plus
+  de destination manquante dans `docs/operations/infra/`.
+- [Rapport de revue](docs/migration/document-links-review-2026-10-01.json) :
+  1 930 destinations non résolues réparties sur 501 documents ; chaque
+  destination et chaque action de revue sont conservées dans l’inventaire.
+- Répartition : 599 références de documentation Bun importée, 414 références
+  du README d’exemples Bevy importé, 270 références dans les preuves de migration,
+  647 références encore non classées. Ces rôles ne prouvent ni validité ni
+  nécessité d’exclusion ; les routes restent des candidates à vérifier.
+- INCOMPLET : vérifier les bases de résolution et les mappings d’import avant
+  de traiter les groupes tiers/historiques ; examiner autorité, propriétaire,
+  date et consommateurs des 647 autres références. Aucune exclusion ajoutée.
+- Vérification : contrôle exécuté avec le snapshot d’architecture explicitement
+  exclu (code 1, défauts restants), somme des groupes égale au total, cibles des
+  trois corrections présentes et `git diff --check` réussi. Pas de changement
+  de code ; les tests Infra ne sont pas réexécutés pour ce lot documentaire.
+
 ## 1. Contrats, cœur et compatibilité
 
 Propriétaires : `crates/contracts`, `crates/native`, `crates/compat`,

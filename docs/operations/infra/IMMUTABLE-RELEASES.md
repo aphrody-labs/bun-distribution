@@ -54,7 +54,7 @@ Live status (2026-09-29 08:50 UTC): release
 checksums, public health/Gateway, `ping` command, minimal login and separate
 install redirects, denied callback replay, and logout origin checks passed.
 The authorized callback and rollback drill remain open; see
-[`inventory/aphrody-discord-dev-2026-09-29.md`](../inventory/aphrody-discord-dev-2026-09-29.md).
+[`inventory/aphrody-discord-dev-2026-09-29.md`](../../../inventory/aphrody-discord-dev-2026-09-29.md).
 
 Live status (2026-09-29 08:56 UTC): release
 `4cf6332cdc66b3ec9c0f2b0c288f0a3024acf808` superseded the prior
