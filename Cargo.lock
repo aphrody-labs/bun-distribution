@@ -2365,6 +2365,7 @@ dependencies = [
 name = "aphrody-rust"
 version = "0.1.0"
 dependencies = [
+ "aphrody-rag-core",
  "pyo3",
 ]
 

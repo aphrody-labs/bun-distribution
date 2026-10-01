@@ -10,15 +10,7 @@ fn cosine_similarity(v1: Vec<f32>, v2: Vec<f32>) -> PyResult<f32> {
             "Vectors must be non-empty and of same length",
         ));
     }
-    let mut dot = 0.0;
-    let mut norm_a = 0.0;
-    let mut norm_b = 0.0;
-    for (a, b) in v1.iter().zip(v2.iter()) {
-        dot += a * b;
-        norm_a += a * a;
-        norm_b += b * b;
-    }
-    if norm_a == 0.0 || norm_b == 0.0 { Ok(0.0) } else { Ok(dot / (norm_a.sqrt() * norm_b.sqrt())) }
+    Ok(aphrody_rag_core::fusion::cosine(&v1, &v2))
 }
 
 #[pyfunction]
@@ -35,19 +27,7 @@ fn top_k_cosine_similarity(
         if emb.len() != query.len() {
             continue;
         }
-        let mut dot = 0.0;
-        let mut norm_a = 0.0;
-        let mut norm_b = 0.0;
-        for (a, b) in query.iter().zip(emb.iter()) {
-            dot += a * b;
-            norm_a += a * a;
-            norm_b += b * b;
-        }
-        let score = if norm_a == 0.0 || norm_b == 0.0 {
-            0.0
-        } else {
-            dot / (norm_a.sqrt() * norm_b.sqrt())
-        };
+        let score = aphrody_rag_core::fusion::cosine(&query, emb);
         results.push((idx, score));
     }
     results.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
@@ -61,18 +41,9 @@ fn reciprocal_rank_fusion(
     rankings: Vec<Vec<usize>>,
     k: Option<f32>,
 ) -> PyResult<Vec<(usize, f32)>> {
-    use std::collections::HashMap;
-    let k_val = k.unwrap_or(60.0);
-    let mut scores = HashMap::new();
-    for ranking in rankings {
-        for (rank, &item_id) in ranking.iter().enumerate() {
-            let score = 1.0 / (k_val + rank as f32);
-            *scores.entry(item_id).or_insert(0.0) += score;
-        }
-    }
-    let mut results: Vec<(usize, f32)> = scores.into_iter().collect();
-    results.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
-    Ok(results)
+    let lists: Vec<&[usize]> = rankings.iter().map(Vec::as_slice).collect();
+    Ok(aphrody_rag_core::fusion::rrf(&lists, f64::from(k.unwrap_or(60.0)))
+        .into_iter().map(|(id, score)| (id, score as f32)).collect())
 }
 
 #[pymodule]
