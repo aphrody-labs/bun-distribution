@@ -96,10 +96,10 @@ impl Reranker for LlamaServerReranker {
 
         let mut headers = HeaderMap::new();
         headers.insert(CONTENT_TYPE, HeaderValue::from_static("application/json"));
-        if let Some(ref key) = self.api_key {
-            if let Ok(val) = HeaderValue::from_str(&format!("Bearer {}", key)) {
-                headers.insert(AUTHORIZATION, val);
-            }
+        if let Some(ref key) = self.api_key
+            && let Ok(val) = HeaderValue::from_str(&format!("Bearer {}", key))
+        {
+            headers.insert(AUTHORIZATION, val);
         }
 
         let resp = self

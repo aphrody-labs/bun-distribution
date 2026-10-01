@@ -52,14 +52,14 @@ impl StubEmbedder {
         let mut out = Vec::with_capacity(dim);
         let mut state = blake3::hash(text.as_bytes());
 
-        let chunks_needed = (dim + 7) / 8;
+        let chunks_needed = dim.div_ceil(8);
         for i in 0..chunks_needed {
             let bytes = state.as_bytes();
-            for chunk in bytes.chunks_exact(4) {
+            for chunk in bytes.as_chunks::<4>().0.iter() {
                 if out.len() >= dim {
                     break;
                 }
-                let u = u32::from_le_bytes(chunk.try_into().unwrap());
+                let u = u32::from_le_bytes(*chunk);
                 // Map to -1.0 .. 1.0:
                 let f = ((u as f64 / u32::MAX as f64) * 2.0 - 1.0) as f32;
                 out.push(f);

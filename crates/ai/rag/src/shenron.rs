@@ -169,11 +169,11 @@ fn load_corpus_file(path: &Path, docs: &mut Vec<ShenronCorpusDoc>) -> Result<()>
         }
     } else {
         // Try parsing as {"docs": [...]}
-        if let Ok(container) = serde_json::from_str::<CorpusContainer>(&content) {
-            if let Some(inner) = container.docs {
-                docs.extend(inner);
-                return Ok(());
-            }
+        if let Ok(container) = serde_json::from_str::<CorpusContainer>(&content)
+            && let Some(inner) = container.docs
+        {
+            docs.extend(inner);
+            return Ok(());
         }
         // Try parsing directly as [...]
         if let Ok(array) = serde_json::from_str::<Vec<ShenronCorpusDoc>>(&content) {

@@ -190,6 +190,10 @@ impl RagStore {
     }
 
     /// Insert a single chunk. Returns the new `chunk_id`.
+    #[expect(
+        clippy::too_many_arguments,
+        reason = "Existing public API retained for consumer compatibility"
+    )]
     pub async fn insert_chunk(
         &self,
         doc_id: i64,
@@ -400,8 +404,8 @@ impl RagStore {
             }
 
             let mut vec = Vec::with_capacity(dim);
-            for chunk_bytes in blob.chunks_exact(4) {
-                vec.push(f32::from_le_bytes(chunk_bytes.try_into().unwrap()));
+            for chunk_bytes in blob.as_chunks::<4>().0.iter() {
+                vec.push(f32::from_le_bytes(*chunk_bytes));
             }
 
             let sim = cosine(query_embedding, &vec);

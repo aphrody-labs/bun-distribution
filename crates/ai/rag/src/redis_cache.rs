@@ -179,7 +179,7 @@ impl RedisRagCache {
 fn encode_resp_cmd(args: &[&str]) -> String {
     let mut out = format!("*{}\r\n", args.len());
     for arg in args {
-        out.push_str(&format!("${}\r\n{}\r\n", arg.as_bytes().len(), arg));
+        out.push_str(&format!("${}\r\n{}\r\n", arg.len(), arg));
     }
     out
 }
@@ -190,9 +190,7 @@ fn parse_bulk_string(raw: &str) -> Option<String> {
         return None;
     }
     if let Some(stripped) = raw.strip_prefix('$') {
-        let mut parts = stripped.splitn(2, "\r\n");
-        let _len_str = parts.next()?;
-        let data_and_rest = parts.next()?;
+        let (_len_str, data_and_rest) = stripped.split_once("\r\n")?;
         if let Some(pos) = data_and_rest.rfind("\r\n") {
             return Some(data_and_rest[..pos].to_string());
         }

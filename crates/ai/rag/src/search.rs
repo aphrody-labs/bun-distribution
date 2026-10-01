@@ -17,7 +17,7 @@ use crate::{
 };
 
 /// Requested search strategy.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum SearchMode {
     /// Pure BM25 text match via SQLite FTS5.
@@ -25,13 +25,8 @@ pub enum SearchMode {
     /// Pure dense vector cosine similarity.
     Vector,
     /// Reciprocal Rank Fusion of Lexical and Vector candidates.
+    #[default]
     Hybrid,
-}
-
-impl Default for SearchMode {
-    fn default() -> Self {
-        Self::Hybrid
-    }
 }
 
 /// Search configuration parameters.
@@ -176,8 +171,10 @@ impl RagSearcher {
         };
 
         // 3. Optional cross-encoder reranking on top candidates
-        if opts.rerank && self.reranker.is_some() && !hits.is_empty() {
-            let reranker = self.reranker.as_ref().unwrap();
+        if opts.rerank
+            && !hits.is_empty()
+            && let Some(reranker) = self.reranker.as_ref()
+        {
             let rerank_count = opts.rerank_top_n.min(hits.len());
             let mut top_slice = hits[..rerank_count].to_vec();
 

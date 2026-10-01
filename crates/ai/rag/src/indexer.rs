@@ -228,12 +228,11 @@ impl RagIndexer {
         let rel_path_str = path_key.to_owned();
         let content_hash = blake3::hash(content_str.as_bytes()).to_hex().to_string();
 
-        if !opts.force_reindex {
-            if let Some(doc) = self.store.get_doc_by_path(&rel_path_str).await? {
-                if doc.hash == content_hash {
-                    return Ok(None);
-                }
-            }
+        if !opts.force_reindex
+            && let Some(doc) = self.store.get_doc_by_path(&rel_path_str).await?
+            && doc.hash == content_hash
+        {
+            return Ok(None);
         }
 
         let lang = format!("{:?}", detect_language(&rel_path_str)).to_ascii_lowercase();
