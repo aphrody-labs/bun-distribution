@@ -329,9 +329,8 @@ impl ModelStore {
         let prefix = read_prefix(path, inspect::PREFIX_BYTES)?;
         let inspection = inspect::inspect_prefix(&prefix, &reference.basename());
 
-        let stored_path = path
-            .strip_prefix(&self.root)
-            .map_or_else(|_| path.display().to_string(), |rel| to_slash(rel));
+        let stored_path =
+            path.strip_prefix(&self.root).map_or_else(|_| path.display().to_string(), to_slash);
 
         Ok(InstalledModel {
             reference: reference.clone(),
@@ -373,7 +372,7 @@ impl ModelStore {
     pub fn remove(&self, reference: &ModelRef) -> Result<InstalledModel> {
         let mut registry = self.load_registry()?;
         let key = reference.to_string();
-        let entry = registry.remove(&key).ok_or_else(|| ModelError::NotInstalled(key))?;
+        let entry = registry.remove(&key).ok_or(ModelError::NotInstalled(key))?;
 
         // An adopted `file:` artefact lives outside the store and belongs to
         // whoever put it there: forget it, never delete it.
@@ -656,10 +655,10 @@ fn prune_empty_dirs(deleted: &Path, root: &Path) {
 
 /// Resolve the default store root.
 fn default_root() -> Result<PathBuf> {
-    if let Ok(explicit) = std::env::var("APHRODY_MODELS_DIR") {
-        if !explicit.is_empty() {
-            return Ok(PathBuf::from(explicit));
-        }
+    if let Ok(explicit) = std::env::var("APHRODY_MODELS_DIR")
+        && !explicit.is_empty()
+    {
+        return Ok(PathBuf::from(explicit));
     }
     crate::paths::models_dir()
 }
@@ -848,7 +847,7 @@ mod tests {
     fn gc_never_deletes_adopted_files() {
         let (guard, store) = store();
         let outside = guard.path().join("big.gguf");
-        std::fs::write(&outside, &[7_u8; 5_000]).unwrap();
+        std::fs::write(&outside, [7_u8; 5_000]).unwrap();
         let entry = store.adopt_local(&outside).unwrap();
 
         let report = store.gc(0).unwrap();

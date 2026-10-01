@@ -1,0 +1,31 @@
+{
+  "scope": "Python RAG remaining compute after native math migration",
+  "pythonRevision": "ce2a9afc5cca28a8e6bb4f797c919d591758528c",
+  "canonicalMath": [
+    "cosine",
+    "RRF",
+    "top-k cosine scoring"
+  ],
+  "remaining": [
+    {
+      "path": "packages/ai/py/aphrody/aphrody/rag/raptor.py",
+      "functions": [
+        "_normalize_embeddings",
+        "_rank_leaf_pairs",
+        "_split_psi_buckets"
+      ],
+      "observedCompute": [
+        "NumPy float64 l2 norm and epsilon clamp",
+        "pairwise matrix product and rank sorting",
+        "batch clustering center assignment matrix products"
+      ],
+      "requirements": [
+        "preserve float64 precision, zero-vector semantics and epsilon behavior",
+        "preserve bounded Psi bucket behavior and output ordering",
+        "move shared vector kernels to rag-core with batch bindings",
+        "qualify RAPTOR consumers and isolated native wheel"
+      ]
+    }
+  ],
+  "complete": false
+}

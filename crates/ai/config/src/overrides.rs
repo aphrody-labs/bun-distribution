@@ -24,11 +24,10 @@ pub enum OverrideError {
 fn split_dotted_path(path: &str) -> Result<Vec<String>, OverrideError> {
     let mut segments = Vec::new();
     let mut current = String::new();
-    let mut chars = path.chars().peekable();
     let mut in_quotes = false;
     let mut segment_was_quoted = false;
 
-    while let Some(c) = chars.next() {
+    for c in path.chars() {
         match c {
             '"' if !in_quotes => {
                 in_quotes = true;

@@ -307,10 +307,11 @@ pub fn parse_nvidia_smi(stdout: &str) -> Vec<GpuInfo> {
 #[cfg(not(target_arch = "wasm32"))]
 fn probe_cuda_toolkit() -> Option<String> {
     for var in ["CUDA_PATH", "CUDA_HOME", "CUDA_ROOT"] {
-        if let Ok(path) = std::env::var(var) {
-            if !path.is_empty() && std::path::Path::new(&path).is_dir() {
-                return Some(cuda_version_from_path(&path));
-            }
+        if let Ok(path) = std::env::var(var)
+            && !path.is_empty()
+            && std::path::Path::new(&path).is_dir()
+        {
+            return Some(cuda_version_from_path(&path));
         }
     }
     None

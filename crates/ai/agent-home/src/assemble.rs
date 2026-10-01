@@ -151,21 +151,22 @@ impl<'a> SystemPromptView<'a> {
             out.push_str("\n\n");
             out.push_str(section.body.trim_end());
         }
-        if let Some(report) = &self.truncation {
-            if report.warning_shown && !report.lines.is_empty() {
-                if !out.is_empty() {
-                    out.push_str("\n\n");
-                }
-                out.push_str("[Bootstrap truncation warning]\n");
-                out.push_str("Some workspace bootstrap files were truncated before injection.\n");
-                out.push_str(
-                    "Treat the context above as partial and read the relevant files directly if \
+        if let Some(report) = &self.truncation
+            && report.warning_shown
+            && !report.lines.is_empty()
+        {
+            if !out.is_empty() {
+                out.push_str("\n\n");
+            }
+            out.push_str("[Bootstrap truncation warning]\n");
+            out.push_str("Some workspace bootstrap files were truncated before injection.\n");
+            out.push_str(
+                "Treat the context above as partial and read the relevant files directly if \
                      details seem missing.",
-                );
-                for line in &report.lines {
-                    out.push_str("\n- ");
-                    out.push_str(line.trim());
-                }
+            );
+            for line in &report.lines {
+                out.push_str("\n- ");
+                out.push_str(line.trim());
             }
         }
         out

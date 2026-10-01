@@ -232,14 +232,14 @@ impl FileCache {
         // Fast path: identity matches the cached entry.
         {
             let guard = self.entries.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
-            if let Some(entry) = guard.get(rel_path) {
-                if entry.identity == identity {
-                    return Ok(CacheHit {
-                        bytes: entry.bytes.clone(),
-                        content_hash: entry.content_hash.clone(),
-                        from_cache: true,
-                    });
-                }
+            if let Some(entry) = guard.get(rel_path)
+                && entry.identity == identity
+            {
+                return Ok(CacheHit {
+                    bytes: entry.bytes.clone(),
+                    content_hash: entry.content_hash.clone(),
+                    from_cache: true,
+                });
             }
         }
 
@@ -247,11 +247,10 @@ impl FileCache {
         let bytes = MappedBytes::load(abs_path)?;
         let content_hash = blake3::hash(bytes.as_slice()).to_hex().to_string();
         let mut guard = self.entries.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
-        guard.insert(rel_path.to_string(), CachedFile {
-            identity,
-            content_hash: content_hash.clone(),
-            bytes: bytes.clone(),
-        });
+        guard.insert(
+            rel_path.to_string(),
+            CachedFile { identity, content_hash: content_hash.clone(), bytes: bytes.clone() },
+        );
         Ok(CacheHit { bytes, content_hash, from_cache: false })
     }
 
@@ -273,11 +272,10 @@ impl FileCache {
             // Map the bytes lazily-now (cheap, page-cache backed) so the
             // recorded hash stays paired with real content.
             if let Ok(bytes) = MappedBytes::load(&abs) {
-                guard.insert(rec.rel_path.clone(), CachedFile {
-                    identity,
-                    content_hash: rec.content_hash.clone(),
-                    bytes,
-                });
+                guard.insert(
+                    rec.rel_path.clone(),
+                    CachedFile { identity, content_hash: rec.content_hash.clone(), bytes },
+                );
             }
         }
     }
@@ -367,8 +365,7 @@ mod tests {
     fn state_round_trips_through_disk() {
         let td = tempdir().unwrap();
         let root = td.path();
-        let mut state = WorkspaceState::default();
-        state.setup_completed_at = Some("2026-05-23T00:00:00Z".to_string());
+        let mut state = WorkspaceState { setup_completed_at: Some("2026-05-23T00:00:00Z".to_string()), ..WorkspaceState::default() };
         state.cache.push(CacheRecord {
             rel_path: "SOUL.md".to_string(),
             identity: FileIdentity { dev: 1, ino: 2, size: 3, mtime_ns: 4 },
@@ -415,8 +412,7 @@ mod tests {
         // Build state by loading once + exporting.
         let cache1 = FileCache::new();
         let hit = cache1.load("SOUL.md", &p).unwrap();
-        let mut state = WorkspaceState::default();
-        state.cache = cache1.export_records();
+        let state = WorkspaceState { cache: cache1.export_records(), ..WorkspaceState::default() };
         // New cache seeded from state: the file is unchanged -> entry restored.
         let cache2 = FileCache::new();
         cache2.seed_from_state(&state, root);

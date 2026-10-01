@@ -89,10 +89,10 @@ pub fn resolve_workspace(
     profile: Option<&str>,
     agent_id: Option<&str>,
 ) -> Result<PathBuf, HomeError> {
-    if let Ok(ws) = std::env::var(ENV_APHRODY_WORKSPACE) {
-        if !ws.is_empty() {
-            return Ok(PathBuf::from(ws));
-        }
+    if let Ok(ws) = std::env::var(ENV_APHRODY_WORKSPACE)
+        && !ws.is_empty()
+    {
+        return Ok(PathBuf::from(ws));
     }
     let base = state_dir()?;
     if let Some(agent) = agent_id {

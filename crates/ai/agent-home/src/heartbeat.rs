@@ -79,10 +79,11 @@ pub(crate) fn extract_bullets(body: &str) -> Vec<String> {
             if !item.is_empty() {
                 out.push(item.to_string());
             }
-        } else if let Some((num, rest)) = split_ordered(l) {
-            if num && !rest.is_empty() {
-                out.push(rest.to_string());
-            }
+        } else if let Some((num, rest)) = split_ordered(l)
+            && num
+            && !rest.is_empty()
+        {
+            out.push(rest.to_string());
         }
     }
     out
@@ -115,12 +116,15 @@ mod tests {
     #[test]
     fn parses_dash_star_and_ordered_bullets() {
         let hb = Heartbeat::parse("- check mail\n* sweep inbox\n1. reply\n2) escalate\n");
-        assert_eq!(hb.steps, vec![
-            "check mail".to_string(),
-            "sweep inbox".to_string(),
-            "reply".to_string(),
-            "escalate".to_string()
-        ]);
+        assert_eq!(
+            hb.steps,
+            vec![
+                "check mail".to_string(),
+                "sweep inbox".to_string(),
+                "reply".to_string(),
+                "escalate".to_string()
+            ]
+        );
     }
 
     #[test]

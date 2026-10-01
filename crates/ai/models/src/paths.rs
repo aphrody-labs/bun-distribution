@@ -80,10 +80,10 @@ fn compose_state_dir(explicit: Option<PathBuf>, home: &std::path::Path) -> PathB
 ///
 /// [`ModelError::NoStateDir`] when no home can be determined.
 pub fn home_dir() -> Result<PathBuf> {
-    if cfg!(windows) {
-        if let Some(profile) = non_empty_var("USERPROFILE") {
-            return Ok(profile);
-        }
+    if cfg!(windows)
+        && let Some(profile) = non_empty_var("USERPROFILE")
+    {
+        return Ok(profile);
     }
     if let Some(home) = non_empty_var("HOME") {
         return Ok(home);
@@ -249,7 +249,6 @@ pub fn data_dir() -> Result<PathBuf> {
 pub fn sessions_dir() -> Result<PathBuf> {
     state_subdir("sessions")
 }
-
 
 #[cfg(test)]
 mod tests {

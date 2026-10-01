@@ -195,8 +195,8 @@ impl Report {
 
         for row in &self.rows {
             let mut line = String::new();
-            for index in 0..self.headers.len() {
-                let _ = write!(line, "{:<width$}  ", Self::cell(row, index), width = widths[index]);
+            for (index, width) in widths.iter().enumerate() {
+                let _ = write!(line, "{:<width$}  ", Self::cell(row, index), width = *width);
             }
             let _ = writeln!(out, "{}", line.trim_end());
         }

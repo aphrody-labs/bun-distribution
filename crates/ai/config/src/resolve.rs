@@ -213,23 +213,7 @@ pub fn resolve(
         .clone()
         .or_else(|| merged.get("profile").and_then(toml::Value::as_str).map(str::to_string));
 
-    if let Some(name) = &requested_profile {
-        let profile_value = merged.get("profiles").and_then(|profiles| profiles.get(name)).cloned();
-        if let Some(value) = profile_value {
-            let profile: crate::profile::ConfigProfile = value.try_into()?;
-            let encoded = toml::to_string(&profile)?;
-            let typed_value: toml::Value = toml::from_str(&encoded)?;
-            merge_profile(&mut merged, &typed_value);
-        } else {
-            let mut available: Vec<String> = merged
-                .get("profiles")
-                .and_then(toml::Value::as_table)
-                .map(|table| table.keys().cloned().collect())
-                .unwrap_or_default();
-            available.sort_unstable();
-            return Err(ConfigError::UnknownProfile { name: name.clone(), available });
-        }
-    }
+    apply_selected_profile(&mut merged, requested_profile.as_deref())?;
 
     for raw in &overrides.config_overrides {
         let (path, value) = parse_override(raw)?;
@@ -324,6 +308,31 @@ pub fn resolve(
     };
 
     Ok((config, warnings))
+}
+
+fn apply_selected_profile(
+    merged: &mut toml::Value,
+    requested_profile: Option<&str>,
+) -> Result<(), ConfigError> {
+    if let Some(name) = requested_profile {
+        let profile_value = merged.get("profiles").and_then(|profiles| profiles.get(name)).cloned();
+        if let Some(value) = profile_value {
+            let profile: crate::profile::ConfigProfile = value.try_into()?;
+            let encoded = toml::to_string(&profile)?;
+            let typed_value: toml::Value = toml::from_str(&encoded)?;
+            merge_profile(merged, &typed_value);
+        } else {
+            let mut available: Vec<String> = merged
+                .get("profiles")
+                .and_then(toml::Value::as_table)
+                .map(|table| table.keys().cloned().collect())
+                .unwrap_or_default();
+            available.sort_unstable();
+            return Err(ConfigError::UnknownProfile { name: name.to_owned(), available });
+        }
+    }
+
+    Ok(())
 }
 
 /// Merge a typed profile while replacing isolation-sensitive Home Agent

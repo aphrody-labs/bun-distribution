@@ -600,3 +600,20 @@ et le wrapper avec glue de module ; hashes/provenance vérifiés. Wheel et
 sdist construits hors workspace puis installés dans des environnements isolés
 avec smoke RRF corrigé. Rapport de qualification suivi sous docs/migration ;
 qualification effectuée en mode worktree explicite. Pas de publication externe.
+
+### Gates AI et état live demandé
+
+Configuration : deux lints corrigés, 106 tests et clippy all-targets avec
+dépendances réussis. Models : 118 tests réussis, lints lib/test corrigés.
+Agent Home : 104 unit tests réussis ; trois tests d’intégration échouent sur
+profils privés et chemin crates/home/shenron inexistant. Ne pas traiter ce
+gate comme vert. Clippy du contexte partagé révèle ensuite cinq lints memory.
+RAPTOR conserve des calculs NumPy float64 par lots : audit restant suivi,
+propriétaire unique global RAG non déclaré complet.
+
+Demande active : état live via Aphrody OS/kernel et Infra/Workspace reliant
+IDs/PIDs agents Claude/Codex/agy/modèles locaux, sessions, actions, mémoire,
+A2A, branche/HEAD/commits et propriétaires crates Rust/packages Bun. Réutiliser
+probe_live_processes, adaptateurs external session, catalogue Workspace et
+inspection Git kernel. Identifier séparément observation exacte et corrélation
+heuristique ; aucun changement Git ne doit être attribué sans preuve.

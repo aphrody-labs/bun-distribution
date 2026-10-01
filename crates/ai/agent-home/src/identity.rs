@@ -67,10 +67,10 @@ impl Identity {
         }
         // If no frontmatter name but the body starts with an H1, adopt it as
         // the name (common authoring shorthand: `# Aria`).
-        if id.name == DEFAULT_AGENT_NAME {
-            if let Some(h1) = first_h1(&id.body) {
-                id.name = h1;
-            }
+        if id.name == DEFAULT_AGENT_NAME
+            && let Some(h1) = first_h1(&id.body)
+        {
+            id.name = h1;
         }
         id
     }

@@ -319,11 +319,8 @@ fn lint_body(body: &str) -> Result<(), HomeError> {
     }
 
     // Vague-philosophy density: count sentences vs. flagged fragments.
-    let sentence_count = trimmed
-        .split(|c| matches!(c, '.' | '!' | '?'))
-        .filter(|s| !s.trim().is_empty())
-        .count()
-        .max(1);
+    let sentence_count =
+        trimmed.split(['.', '!', '?']).filter(|s| !s.trim().is_empty()).count().max(1);
     let mut philosophy_hits = 0usize;
     for marker in VAGUE_PHILOSOPHY_MARKERS {
         if lower.contains(marker) {
@@ -349,16 +346,16 @@ fn is_changelog_heading(line: &str) -> bool {
     };
     let rest = rest.trim_start_matches('#').trim_start();
     // `v1`, `v1.2`, `v1.2.3`
-    if let Some(ver) = rest.strip_prefix('v') {
-        if ver.chars().next().is_some_and(|c| c.is_ascii_digit()) {
-            return true;
-        }
+    if let Some(ver) = rest.strip_prefix('v')
+        && ver.chars().next().is_some_and(|c| c.is_ascii_digit())
+    {
+        return true;
     }
     // `[1.0.0]`
-    if let Some(inner) = rest.strip_prefix('[') {
-        if inner.chars().next().is_some_and(|c| c.is_ascii_digit()) {
-            return true;
-        }
+    if let Some(inner) = rest.strip_prefix('[')
+        && inner.chars().next().is_some_and(|c| c.is_ascii_digit())
+    {
+        return true;
     }
     false
 }
@@ -378,10 +375,10 @@ mod tests {
         assert_eq!(soul.brevity, Brevity::Terse);
         assert_eq!(soul.humor, Humor::Dry);
         assert_eq!(soul.default_bluntness, Bluntness::Frank);
-        assert_eq!(soul.opinions, vec![
-            "tabs over spaces".to_string(),
-            "ship small PRs".to_string()
-        ]);
+        assert_eq!(
+            soul.opinions,
+            vec!["tabs over spaces".to_string(), "ship small PRs".to_string()]
+        );
         assert_eq!(soul.boundaries.len(), 1);
         assert!(soul.body.starts_with("I am aphrody"));
     }
@@ -390,11 +387,10 @@ mod tests {
     fn parses_inline_flow_list() {
         let src = "---\nopinions: [first, \"second item\", third]\n---\nbody\n";
         let soul = Soul::parse(src).expect("valid");
-        assert_eq!(soul.opinions, vec![
-            "first".to_string(),
-            "second item".to_string(),
-            "third".to_string()
-        ]);
+        assert_eq!(
+            soul.opinions,
+            vec!["first".to_string(), "second item".to_string(), "third".to_string()]
+        );
     }
 
     #[test]

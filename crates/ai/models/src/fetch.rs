@@ -150,13 +150,14 @@ impl Downloader {
         }
 
         let final_path = store.path_for(reference);
-        if !options.force && final_path.is_file() {
-            if let Some(existing) = store.get(reference)? {
-                // Trust the index only if the bytes still match it, otherwise
-                // fall through and re-download.
-                if store.verify(reference)?.is_intact() {
-                    return Ok(PullOutcome::AlreadyPresent(existing));
-                }
+        if !options.force
+            && final_path.is_file()
+            && let Some(existing) = store.get(reference)?
+        {
+            // Trust the index only if the bytes still match it, otherwise
+            // fall through and re-download.
+            if store.verify(reference)?.is_intact() {
+                return Ok(PullOutcome::AlreadyPresent(existing));
             }
         }
 
