@@ -448,10 +448,10 @@ fn lr_body(
     options: Option<serde_json::Value>,
 ) -> serde_json::Value {
     let mut body = serde_json::json!({ "inputs": input, "outputs": [output] });
-    if let Some(opts) = options {
-        if !opts.is_null() {
-            body["options"] = opts;
-        }
+    if let Some(opts) = options
+        && !opts.is_null()
+    {
+        body["options"] = opts;
     }
     body
 }
@@ -468,10 +468,10 @@ fn psd_single_body(
     options: Option<serde_json::Value>,
 ) -> serde_json::Value {
     let mut body = serde_json::json!({ "inputs": [input], "outputs": [output] });
-    if let Some(opts) = options {
-        if !opts.is_null() {
-            body["options"] = opts;
-        }
+    if let Some(opts) = options
+        && !opts.is_null()
+    {
+        body["options"] = opts;
     }
     body
 }

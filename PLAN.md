@@ -1168,3 +1168,17 @@ heuristique ; aucun changement Git ne doit être attribué sans preuve.
   transaction ; leur génération complète n’est pas atomique avec les chunks.
 - Preuves : [rapport et logs](docs/operations/ai/unified-owner-qualification-2026-10-01/report.json).
   Checkout concurrent ; aucun remote Git configuré, commits locaux seulement.
+
+### Gateway / Firefly et gate CLI/MCP — 2026-10-01
+
+- FAIT : boucles de lignes SSE et gardes cache/CORS/options simplifiées sans
+  changer leurs conditions ni les arrêts sur fin/erreur. Clippy strict avec
+  dépendances et all-targets réussi ; 51 tests Firefly, 39 tests Gateway et
+  un doctest réussis, aucun échec ni test ignoré. Format et diff contrôlés.
+- INCOMPLET : gate CLI/MCP no-default terminé en échec sur cinq diagnostics
+  NotebookLM, un terminal et deux Web crawl. Le miroir Web porte des changements
+  concurrents préservés ; aucun gate intégré vert n’est établi.
+- Qualification Linux depuis le worktree, dans un target temporaire pour éviter
+  le verrou d’une compilation concurrente ; sccache conservé. Clone propre,
+  providers live, plateformes et features produit restent ouverts.
+- Preuves : [rapport et logs](docs/operations/ai/gateway-firefly-qualification-2026-10-01/report.json).

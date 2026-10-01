@@ -192,10 +192,10 @@ impl TokenCache {
     /// As [`fetch_token`].
     pub async fn bearer(&self, http: &reqwest::Client) -> Result<String> {
         let mut guard = self.token.lock().await;
-        if let Some(tok) = guard.as_ref() {
-            if tok.is_valid() {
-                return Ok(tok.token.clone());
-            }
+        if let Some(tok) = guard.as_ref()
+            && tok.is_valid()
+        {
+            return Ok(tok.token.clone());
         }
         let fresh = fetch_token(http, &self.creds).await?;
         let value = fresh.token.clone();

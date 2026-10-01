@@ -171,26 +171,22 @@ fn sse_bytes_to_chunks(
             Ok(bytes) => {
                 buf.push_str(&String::from_utf8_lossy(&bytes));
                 let mut chunks = Vec::new();
-                loop {
-                    if let Some(nl) = buf.find('\n') {
-                        let line = buf[..nl].trim_end_matches('\r').to_owned();
-                        buf.drain(..=nl);
-                        match parse_sse_line(&line) {
-                            Ok(Some(c)) => {
-                                let done = c.finish;
-                                chunks.push(Ok(c));
-                                if done {
-                                    break;
-                                }
-                            },
-                            Ok(None) => {},
-                            Err(e) => {
-                                chunks.push(Err(e));
+                while let Some(nl) = buf.find('\n') {
+                    let line = buf[..nl].trim_end_matches('\r').to_owned();
+                    buf.drain(..=nl);
+                    match parse_sse_line(&line) {
+                        Ok(Some(c)) => {
+                            let done = c.finish;
+                            chunks.push(Ok(c));
+                            if done {
                                 break;
-                            },
-                        }
-                    } else {
-                        break;
+                            }
+                        },
+                        Ok(None) => {},
+                        Err(e) => {
+                            chunks.push(Err(e));
+                            break;
+                        },
                     }
                 }
                 chunks

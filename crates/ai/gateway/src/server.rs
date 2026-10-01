@@ -69,16 +69,12 @@ pub fn is_allowed_origin(origin: &str) -> bool {
 /// Attach CORS headers to a header map, allowing only validated localhost origins.
 pub fn add_cors_headers(headers: &mut HeaderMap, origin: Option<&HeaderValue>) {
     headers.insert(header::VARY, HeaderValue::from_static("Origin"));
-    if let Some(origin_val) = origin {
-        if let Ok(origin_str) = origin_val.to_str() {
-            if is_allowed_origin(origin_str) {
-                headers.insert(header::ACCESS_CONTROL_ALLOW_ORIGIN, origin_val.clone());
-                headers.insert(
-                    header::ACCESS_CONTROL_ALLOW_CREDENTIALS,
-                    HeaderValue::from_static("true"),
-                );
-            }
-        }
+    if let Some(origin_val) = origin
+        && let Ok(origin_str) = origin_val.to_str()
+        && is_allowed_origin(origin_str)
+    {
+        headers.insert(header::ACCESS_CONTROL_ALLOW_ORIGIN, origin_val.clone());
+        headers.insert(header::ACCESS_CONTROL_ALLOW_CREDENTIALS, HeaderValue::from_static("true"));
     }
     headers.insert(
         header::ACCESS_CONTROL_ALLOW_METHODS,
@@ -114,10 +110,8 @@ async fn auth_middleware(req: Request, next: Next) -> Response {
     if let Ok(expected_token) = std::env::var("APHRODY_OS_AUTH_TOKEN") {
         let expected_token = expected_token.trim();
         if !expected_token.is_empty() {
-            let auth_header = req
-                .headers()
-                .get(header::AUTHORIZATION)
-                .and_then(|val| val.to_str().ok());
+            let auth_header =
+                req.headers().get(header::AUTHORIZATION).and_then(|val| val.to_str().ok());
 
             let authorized = match auth_header {
                 Some(header_val) => {
@@ -170,9 +164,8 @@ pub async fn serve_gateway(
     adapter: Arc<dyn GatewayAdapter>,
     model_ids: Vec<String>,
 ) -> Result<(), GatewayError> {
-    let auth_configured = std::env::var("APHRODY_OS_AUTH_TOKEN")
-        .ok()
-        .is_some_and(|t| !t.trim().is_empty());
+    let auth_configured =
+        std::env::var("APHRODY_OS_AUTH_TOKEN").ok().is_some_and(|t| !t.trim().is_empty());
     if !addr.ip().is_loopback() && !auth_configured {
         eprintln!(
             "WARNING [SECURITY]: aphrody-gateway binding to non-loopback address {addr} without APHRODY_OS_AUTH_TOKEN configured! Loopback binding is strongly recommended for unauthenticated gateways."
