@@ -729,3 +729,24 @@ A2A, branche/HEAD/commits et propriétaires crates Rust/packages Bun. Réutilise
 probe_live_processes, adaptateurs external session, catalogue Workspace et
 inspection Git kernel. Identifier séparément observation exacte et corrélation
 heuristique ; aucun changement Git ne doit être attribué sans preuve.
+
+### Profils isolés et Docs DBFR — qualification installée
+
+- FAIT : CLI et MCP installés routent les sessions et la mémoire vers les
+  profils `aphrody`, `dbfr` et `ie`. Le miroir global ne nourrit plus la mémoire.
+  Les trois services de domaine sont actifs ; Codex, Claude et agy ont chacun
+  répondu au smoke natif dans leur profil. Le MCP conserve ses 159 outils.
+- FAIT : sept Docs DBFR lus via le MCP Google Drive et convertis en Markdown
+  Agent Home/OpenClaw/A2A dans le store privé. Personnalité Shenron, logique,
+  contexte, rôles et liens conservés ; revue indépendante, hashes et chargeur
+  Rust réel vérifiés. Neuf tests Google réussis. Synchronisation documentaire
+  en lecture seule active ; ancien service système concurrent désactivé.
+- FAIT : références CLI (71 commandes présentes) et TOOLS canoniques mises
+  à jour ; setup Infra et outils natifs qualifiés dans leurs rapports.
+- INCOMPLET : sauvegarde entraînement Drive en cours, 33/35 artefacts et
+  1 197 217 839 octets vérifiés à cette observation. Aucun nouvel entraînement
+  ou appel d’inférence locale n’est revendiqué. Clippy CLI/MCP avec dépendances
+  et intégrations Agent Home restent en correction ; gates produit ouverts.
+- Preuves : [runtime domaines](docs/operations/ai/agent-domain-runtime-qualification-2026-10-01.json),
+  [Docs DBFR](docs/operations/ai/dbfr-drive-markdown-2026-10-01.json),
+  [sauvegarde modèles](docs/operations/ai/agent-home-trained-artifact-sync-2026-10-01.json).
