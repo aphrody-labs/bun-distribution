@@ -1354,3 +1354,5 @@ heuristique ; aucun changement Git ne doit être attribué sans preuve.
   Doctor dégradé et recherche éventuellement vide ne prouvent pas un produit prêt.
   Gate CLI/MCP terminal/Web Frames encore ouvert ; aucun gate global vert annoncé.
 - Preuves : [rapport, hashes binaires et logs](docs/operations/shenron/native-artifact-qualification-2026-10-01/report.json).
+
+- 2026-10-01: isolate workspace operation loading through lazy imports and add private IECODE package archive preparation with allowlists, checksums and dirty-source provenance. Five dispatcher/packaging tests pass (26 assertions); staged whitespace check passes. External IECODE workspace memberships and consumer installation migration remain pending.

@@ -1,74 +1,15 @@
 #!/usr/bin/env bun
-import { runInfra } from "./runtime.ts";
-import { loadFleet } from "./fleet.ts";
-import { runN2b } from "./n2b.ts";
-import { discoverAphrodyBinaries, runAphrodyBinary } from "./binaries.ts";
-import { runPackageOperation, type PackageOperation } from "./packages.ts";
-import { loadAphrodyBridgeCatalog, runRustBridge } from "./bridges.ts";
-import { runScriptAudit } from "./audit-scripts.ts";
-import { runImportsExports } from "./imports-exports.ts";
-import { runMonorepoAudit } from "./monorepo-audit.ts";
-import { runBunDocs } from "./bun-docs.ts";
-import { runBunWorkspace } from "./bun-workspace.ts";
-import { runUiVerify } from "./ui-verify.ts";
-import { runDriveUpstreamAudit } from "./drive-upstream-audit.ts";
-import { runDriveDaemon } from "./drive-daemon.ts";
-import { runTauri } from "./tauri.ts";
-import { runTauriApps } from "./tauri-apps.ts";
-import { runStackDedup } from "./stack-dedup.ts";
-import { runTauriSync } from "./tauri-sync.ts";
-import { runUpstreamSources } from "./upstream-sources.ts";
-import { runBunNative } from "./bun-native.ts";
-import { runUiDedupManifest } from "./ui-dedup-manifest.ts";
-import { runSpaceUiIcons } from "./spaceui-icons.ts";
-import { runDesktopSmoke } from "./desktop-smoke.ts";
-import { runSpaceUiToM3 } from "./spaceui-to-m3.ts";
-import { runDocsLinks } from "./docs-links.ts";
-import { runVendorLicenseAudit } from "./vendor-license-audit.ts";
-import { runWorkspaceDeps } from "./workspace-deps.ts";
-import { runBunUpstreamDocs } from "./bun-upstream-docs.ts";
-import { runEcosystemDeps } from "./ecosystem-deps.ts";
-import { runWorkspaceLayout } from "./workspace-layout.ts";
-import { runCargoBoundaries } from "./cargo-boundaries.ts";
-import { runAutomationInventory } from "./automation-inventory.ts";
-import { runRuntimeGate } from "./runtime-gate.ts";
-import { runIecodeDoctor } from "./iecode-doctor.ts";
-import { runKoharuRelease } from "./koharu-release.ts";
-import { runPowerShellSyntax } from "./powershell-syntax.ts";
-import { runWorkspaceClean } from "./workspace-clean.ts";
-import { runPipelineCatalog } from "./pipeline-catalog.ts";
-import { runRepositoryState } from "./repository-state.ts";
-import { runAiReleaseGate } from "./ai-release-gate.ts";
-import { runAgentHome } from "./agent-home.ts";
-import { runAgentPluginSync } from "./agent-plugin-sync.ts";
-import { runPythonQuality } from "./python-quality.ts";
-import { runDocsOverlaps } from "./docs-overlaps.ts";
-import { runDocsConsolidation } from "./docs-consolidation.ts";
-import { runGitignoredAudit } from "./gitignored-audit.ts";
-import { runRuntimeVersions } from "./runtime-versions.ts";
-import { runMonorepoGate } from "./monorepo-gate.ts";
-import { runInfraAudit } from "./infra-audit.ts";
-import { runWindowsPaths } from "./windows-paths.ts";
-import { runGitAttribution } from "./git-attribution.ts";
-import { runRepositoryHealth } from "./repository-health.ts";
-import { runWorkspaceRepair } from "./workspace-repair.ts";
-import { runCargoPackageRepair } from "./cargo-package-repair.ts";
-import { runCargoReleaseAudit } from "./cargo-release-audit.ts";
-import { runConsolidation } from "./consolidation.ts";
-import { runRg } from "./rg.ts";
-import { runShenron } from "./shenron.ts";
-import { runDiscord } from "./discord.ts";
-import { runWebMigration } from "./web-migration.ts";
-import { runAgentLive } from "./agent-live.ts";
+// Load only the selected operation so unrelated products do not own its dependencies.
+import type { PackageOperation } from "./packages.ts";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const [operation, ...rest] = process.argv.slice(2);
 if (operation === "discord") {
-  process.exit(await runDiscord(rest));
+  process.exit(await (await import("./discord.ts")).runDiscord(rest));
 }
 if (operation === "agent-live") {
-  process.exit(await runAgentLive(rest));
+  process.exit(await (await import("./agent-live.ts")).runAgentLive(rest));
 }
 if (operation === "agent-home-drive-sync" || operation === "drive-sync") {
   const task = Bun.spawn(
@@ -82,23 +23,25 @@ if (operation === "agent-home-drive-sync" || operation === "drive-sync") {
   process.exit(await task.exited);
 }
 if (operation === "web-migration") {
-  process.exit(await runWebMigration(rest));
+  process.exit(await (await import("./web-migration.ts")).runWebMigration(rest));
 }
 if (operation === "consolidation") {
-  process.exit(await runConsolidation(rest));
+  process.exit(await (await import("./consolidation.ts")).runConsolidation(rest));
 }
 if (operation === "rg") {
-  process.exit(await runRg(rest));
+  process.exit(await (await import("./rg.ts")).runRg(rest));
 }
 if (operation === "shenron") {
-  process.exit(await runShenron(rest));
+  process.exit(await (await import("./shenron.ts")).runShenron(rest));
 }
 if (operation === "bridge") {
   const [bridgeOperation, ...bridgeArgs] = rest;
   if (!bridgeOperation || bridgeOperation === "status") {
     if (bridgeArgs.length > 0)
       throw new Error("usage: aphrody-ops bridge [status|rust <binary> [arguments...]]");
-    console.log(JSON.stringify(await loadAphrodyBridgeCatalog(), null, 2));
+    console.log(
+      JSON.stringify(await (await import("./bridges.ts")).loadAphrodyBridgeCatalog(), null, 2),
+    );
     process.exit(0);
   }
   if (bridgeOperation !== "rust") {
@@ -106,7 +49,11 @@ if (operation === "bridge") {
   }
   const [binary, ...args] = bridgeArgs;
   if (!binary) throw new Error("usage: aphrody-ops bridge rust <aphrody-binary> [arguments...]");
-  process.exit(await runRustBridge(binary, args, { stdout: "inherit", stderr: "inherit" }));
+  process.exit(
+    await (
+      await import("./bridges.ts")
+    ).runRustBridge(binary, args, { stdout: "inherit", stderr: "inherit" }),
+  );
 }
 if (operation === "iecode-sync") {
   const entry = new URL("../../../../scripts/nie/sync-main.ts", import.meta.url);
@@ -121,16 +68,21 @@ if (operation === "iecode-sync") {
 }
 if (operation === "infra") {
   process.exit(
-    await runRustBridge("aphrody-infra", rest, { stdout: "inherit", stderr: "inherit" }),
+    await (
+      await import("./bridges.ts")
+    ).runRustBridge("aphrody-infra", rest, { stdout: "inherit", stderr: "inherit" }),
   );
 }
-if (operation === "infra-audit") process.exit(await runInfraAudit(rest));
+if (operation === "infra-audit")
+  process.exit(await (await import("./infra-audit.ts")).runInfraAudit(rest));
 if (operation === "orchestrate") {
   const [action = "status", ...args] = rest;
   const usesTarget = action !== "catalog";
   const target = usesTarget && !args.includes("--target") ? ["--target", "local"] : [];
   process.exit(
-    await runRustBridge("aphrody-infra", ["service", action, ...args, ...target], {
+    await (
+      await import("./bridges.ts")
+    ).runRustBridge("aphrody-infra", ["service", action, ...args, ...target], {
       stdout: "inherit",
       stderr: "inherit",
     }),
@@ -140,7 +92,7 @@ if (operation === "audit-scripts") {
   const index = rest.indexOf("--repo");
   const repo = index === -1 ? undefined : rest[index + 1];
   if (!repo || rest.length !== 2) throw new Error("usage: aphrody-ops audit-scripts --repo <name>");
-  await runScriptAudit(repo);
+  await (await import("./audit-scripts.ts")).runScriptAudit(repo);
   process.exit(0);
 }
 if (operation === "imports-exports") {
@@ -154,128 +106,128 @@ if (operation === "imports-exports") {
     rootIndex === -1
       ? rest
       : rest.filter((_, index) => index !== rootIndex && index !== rootIndex + 1);
-  await runImportsExports(args, root);
+  await (await import("./imports-exports.ts")).runImportsExports(args, root);
   process.exit(0);
 }
 if (operation === "monorepo-gate") {
-  process.exit(await runMonorepoGate(rest));
+  process.exit(await (await import("./monorepo-gate.ts")).runMonorepoGate(rest));
 }
 if (operation === "cargo-package-repair") {
-  process.exit(await runCargoPackageRepair(rest));
+  process.exit(await (await import("./cargo-package-repair.ts")).runCargoPackageRepair(rest));
 }
 if (operation === "cargo-release-audit") {
-  process.exit(await runCargoReleaseAudit(rest));
+  process.exit(await (await import("./cargo-release-audit.ts")).runCargoReleaseAudit(rest));
 }
 if (operation === "workspace-repair") {
-  process.exit(await runWorkspaceRepair(rest));
+  process.exit(await (await import("./workspace-repair.ts")).runWorkspaceRepair(rest));
 }
 if (operation === "repository-health") {
-  process.exit(await runRepositoryHealth(rest));
+  process.exit(await (await import("./repository-health.ts")).runRepositoryHealth(rest));
 }
 if (operation === "git-attribution") {
-  process.exit(await runGitAttribution(rest));
+  process.exit(await (await import("./git-attribution.ts")).runGitAttribution(rest));
 }
 if (operation === "windows-paths") {
-  process.exit(await runWindowsPaths(rest));
+  process.exit(await (await import("./windows-paths.ts")).runWindowsPaths(rest));
 }
 if (operation === "runtime-versions") {
-  process.exit(runRuntimeVersions(rest));
+  process.exit((await import("./runtime-versions.ts")).runRuntimeVersions(rest));
 }
 if (operation === "gitignored-audit") {
-  process.exit(await runGitignoredAudit(rest));
+  process.exit(await (await import("./gitignored-audit.ts")).runGitignoredAudit(rest));
 }
 if (operation === "docs-overlaps") {
-  process.exit(runDocsOverlaps(rest));
+  process.exit((await import("./docs-overlaps.ts")).runDocsOverlaps(rest));
 }
 if (operation === "docs-consolidate") {
-  process.exit(await runDocsConsolidation(rest));
+  process.exit(await (await import("./docs-consolidation.ts")).runDocsConsolidation(rest));
 }
 if (operation === "python-quality") {
-  process.exit(runPythonQuality(rest));
+  process.exit((await import("./python-quality.ts")).runPythonQuality(rest));
 }
 if (operation === "agent-plugin-sync") {
-  process.exit(runAgentPluginSync(rest));
+  process.exit((await import("./agent-plugin-sync.ts")).runAgentPluginSync(rest));
 }
 if (operation === "agent-home") {
-  process.exit(runAgentHome(rest));
+  process.exit((await import("./agent-home.ts")).runAgentHome(rest));
 }
 if (operation === "ai-release-gate") {
-  process.exit(runAiReleaseGate(rest));
+  process.exit((await import("./ai-release-gate.ts")).runAiReleaseGate(rest));
 }
 if (operation === "powershell-syntax") {
-  process.exit(await runPowerShellSyntax(rest));
+  process.exit(await (await import("./powershell-syntax.ts")).runPowerShellSyntax(rest));
 }
 if (operation === "workspace-clean") {
-  process.exit(await runWorkspaceClean(rest));
+  process.exit(await (await import("./workspace-clean.ts")).runWorkspaceClean(rest));
 }
 if (operation === "pipeline-catalog") {
-  process.exit(await runPipelineCatalog(rest));
+  process.exit(await (await import("./pipeline-catalog.ts")).runPipelineCatalog(rest));
 }
 if (operation === "repository-state") {
-  process.exit(await runRepositoryState(rest));
+  process.exit(await (await import("./repository-state.ts")).runRepositoryState(rest));
 }
 if (operation === "koharu-release") {
-  process.exit(await runKoharuRelease(rest));
+  process.exit(await (await import("./koharu-release.ts")).runKoharuRelease(rest));
 }
 if (operation === "iecode-doctor") {
-  process.exit(await runIecodeDoctor(rest));
+  process.exit(await (await import("./iecode-doctor.ts")).runIecodeDoctor(rest));
 }
 if (operation === "runtime-gate") {
-  process.exit(await runRuntimeGate(rest));
+  process.exit(await (await import("./runtime-gate.ts")).runRuntimeGate(rest));
 }
 if (operation === "automation-inventory") {
-  process.exit(await runAutomationInventory(rest));
+  process.exit(await (await import("./automation-inventory.ts")).runAutomationInventory(rest));
 }
 if (operation === "cargo-boundaries") {
-  process.exit(await runCargoBoundaries(rest));
+  process.exit(await (await import("./cargo-boundaries.ts")).runCargoBoundaries(rest));
 }
 if (operation === "workspace-layout") {
-  process.exit(await runWorkspaceLayout(rest));
+  process.exit(await (await import("./workspace-layout.ts")).runWorkspaceLayout(rest));
 }
 if (operation === "ecosystem-deps") {
-  process.exit(await runEcosystemDeps(rest));
+  process.exit(await (await import("./ecosystem-deps.ts")).runEcosystemDeps(rest));
 }
 if (operation === "bun-upstream-docs") {
-  process.exit(await runBunUpstreamDocs(rest));
+  process.exit(await (await import("./bun-upstream-docs.ts")).runBunUpstreamDocs(rest));
 }
 if (operation === "workspace-deps") {
-  process.exit(await runWorkspaceDeps(rest));
+  process.exit(await (await import("./workspace-deps.ts")).runWorkspaceDeps(rest));
 }
 if (operation === "vendor-license-audit") {
-  process.exit(await runVendorLicenseAudit(rest));
+  process.exit(await (await import("./vendor-license-audit.ts")).runVendorLicenseAudit(rest));
 }
 if (operation === "docs-links") {
-  process.exit(await runDocsLinks(rest));
+  process.exit(await (await import("./docs-links.ts")).runDocsLinks(rest));
 }
 if (operation === "spaceui-to-m3") {
-  process.exit(await runSpaceUiToM3(rest));
+  process.exit(await (await import("./spaceui-to-m3.ts")).runSpaceUiToM3(rest));
 }
 if (operation === "desktop-smoke") {
-  process.exit(await runDesktopSmoke(rest));
+  process.exit(await (await import("./desktop-smoke.ts")).runDesktopSmoke(rest));
 }
 if (operation === "spaceui-icons") {
-  process.exit(await runSpaceUiIcons(rest));
+  process.exit(await (await import("./spaceui-icons.ts")).runSpaceUiIcons(rest));
 }
 if (operation === "ui-dedup-manifest") {
-  process.exit(await runUiDedupManifest(rest));
+  process.exit(await (await import("./ui-dedup-manifest.ts")).runUiDedupManifest(rest));
 }
 if (operation === "bun-native") {
-  process.exit(await runBunNative(rest));
+  process.exit(await (await import("./bun-native.ts")).runBunNative(rest));
 }
 if (operation === "tauri") {
-  process.exit(await runTauri(rest));
+  process.exit(await (await import("./tauri.ts")).runTauri(rest));
 }
 if (operation === "tauri-apps") {
-  process.exit(await runTauriApps(rest));
+  process.exit(await (await import("./tauri-apps.ts")).runTauriApps(rest));
 }
 if (operation === "tauri-sync") {
-  process.exit(await runTauriSync(rest));
+  process.exit(await (await import("./tauri-sync.ts")).runTauriSync(rest));
 }
 if (operation === "upstream-sources") {
-  process.exit(await runUpstreamSources(rest));
+  process.exit(await (await import("./upstream-sources.ts")).runUpstreamSources(rest));
 }
 if (operation === "stack-dedup") {
-  process.exit(await runStackDedup(rest));
+  process.exit(await (await import("./stack-dedup.ts")).runStackDedup(rest));
 }
 // UI scaffolding CLIs: one process each, arguments passed through.
 const UI_CLIS: Record<string, string> = {
@@ -293,33 +245,36 @@ if (operation !== undefined && operation in UI_CLIS) {
   process.exit(await child.exited);
 }
 if (operation === "drive-daemon") {
-  process.exit(await runDriveDaemon(rest));
+  process.exit(await (await import("./drive-daemon.ts")).runDriveDaemon(rest));
 }
 if (operation === "drive-upstream-audit") {
-  process.exit(await runDriveUpstreamAudit(rest));
+  process.exit(await (await import("./drive-upstream-audit.ts")).runDriveUpstreamAudit(rest));
 }
 if (operation === "ui-verify") {
-  process.exit(await runUiVerify(rest));
+  process.exit(await (await import("./ui-verify.ts")).runUiVerify(rest));
 }
 if (operation === "bun-workspace") {
-  process.exit(await runBunWorkspace(rest));
+  process.exit(await (await import("./bun-workspace.ts")).runBunWorkspace(rest));
 }
 if (operation === "bun-docs") {
   const [action = "fetch", ...args] = rest;
-  if (action === "fetch") process.exit(await runBunDocs(args));
-  if (action === "check") process.exit(await runBunDocs(["--check", ...args]));
+  if (action === "fetch") process.exit(await (await import("./bun-docs.ts")).runBunDocs(args));
+  if (action === "check")
+    process.exit(await (await import("./bun-docs.ts")).runBunDocs(["--check", ...args]));
   throw new Error("usage: aphrody-ops bun-docs [fetch|check]");
 }
 if (operation === "monorepo-audit") {
-  process.exit(await runMonorepoAudit(rest));
+  process.exit(await (await import("./monorepo-audit.ts")).runMonorepoAudit(rest));
 }
 if (operation === "fleet") {
-  console.log(JSON.stringify(await loadFleet(), null, 2));
+  console.log(JSON.stringify(await (await import("./fleet.ts")).loadFleet(), null, 2));
   process.exit(0);
 }
-if (operation === "n2b") process.exit(await runN2b(rest));
+if (operation === "n2b") process.exit(await (await import("./n2b.ts")).runN2b(rest));
 if (operation === "binaries") {
-  console.log(JSON.stringify(await discoverAphrodyBinaries(), null, 2));
+  console.log(
+    JSON.stringify(await (await import("./binaries.ts")).discoverAphrodyBinaries(), null, 2),
+  );
   process.exit(0);
 }
 if (operation === "packages") {
@@ -334,12 +289,16 @@ if (operation === "packages") {
   }
   if (repoIndex === -1 && packageArgs.length > 0)
     throw new Error("usage: aphrody-ops packages <operation> [--repo <name>]");
-  process.exit(await runPackageOperation(packageOperation as PackageOperation, { repository }));
+  process.exit(
+    await (
+      await import("./packages.ts")
+    ).runPackageOperation(packageOperation as PackageOperation, { repository }),
+  );
 }
 if (operation === "binary") {
   const [binary, ...args] = rest;
   if (!binary) throw new Error("usage: aphrody-ops binary <aphrody-binary> [arguments...]");
-  process.exit(await runAphrodyBinary(binary, args));
+  process.exit(await (await import("./binaries.ts")).runAphrodyBinary(binary, args));
 }
 const aliases: Record<string, string[]> = {
   doctor: ["doctor", "--strict", "--json"],
@@ -355,5 +314,7 @@ const args =
         ...(operation === "pipeline" ? [rest.shift() ?? "plan", ...rest] : rest),
       ]
     : process.argv.slice(2);
-const result = await runInfra({ args, stdout: "inherit", stderr: "inherit" });
+const result = await (
+  await import("./runtime.ts")
+).runInfra({ args, stdout: "inherit", stderr: "inherit" });
 process.exit(result.exitCode);
