@@ -36,18 +36,61 @@ pub fn similarities(left: &[Vec<f64>], right: &[Vec<f64>]) -> Result<Vec<Vec<f64
         return Ok(vec![vec![]; left.len()]);
     }
     let width = left_width.unwrap_or(0);
-    let left_matrix = ndarray::Array2::from_shape_vec(
-        (left.len(), width),
-        left.iter().flatten().copied().collect(),
-    )
-    .map_err(|_| "left batch shape overflow")?;
-    let right_matrix = ndarray::Array2::from_shape_vec(
-        (right.len(), width),
-        right.iter().flatten().copied().collect(),
-    )
-    .map_err(|_| "right batch shape overflow")?;
-    let product = left_matrix.dot(&right_matrix.t());
-    Ok(product.rows().into_iter().map(|row| row.to_vec()).collect())
+    let left_flat: Vec<f64> = left.iter().flatten().copied().collect();
+    let right_flat: Vec<f64> = right.iter().flatten().copied().collect();
+    let product = similarities_flat(&left_flat, &right_flat, left.len(), right.len(), width)?;
+    if right.is_empty() {
+        return Ok(vec![vec![]; left.len()]);
+    }
+    Ok(product.chunks_exact(right.len()).map(<[f64]>::to_vec).collect())
+}
+
+/// Contiguous batch product without copying the input into owned matrices.
+/// Identical input batches use lower-triangular tiles and mirror the result.
+pub fn similarities_flat(
+    left: &[f64],
+    right: &[f64],
+    left_rows: usize,
+    right_rows: usize,
+    width: usize,
+) -> Result<Vec<f64>, &'static str> {
+    let left_matrix = ndarray::ArrayView2::from_shape((left_rows, width), left)
+        .map_err(|_| "left batch shape mismatch")?;
+    let right_matrix = ndarray::ArrayView2::from_shape((right_rows, width), right)
+        .map_err(|_| "right batch shape mismatch")?;
+    let output_size = left_rows
+        .checked_mul(right_rows)
+        .filter(|size| *size <= isize::MAX as usize / 8)
+        .ok_or("similarity result shape overflow")?;
+    if left_rows == 0 || right_rows == 0 || width == 0 {
+        return Ok(vec![0.0; output_size]);
+    }
+    if left_rows != right_rows || left != right {
+        return Ok(left_matrix.dot(&right_matrix.t()).into_raw_vec_and_offset().0);
+    }
+    let mut result = vec![0.0; output_size];
+    const TILE: usize = 256;
+    for row_start in (0..left_rows).step_by(TILE) {
+        let row_end = (row_start + TILE).min(left_rows);
+        for col_start in (0..=row_start).step_by(TILE) {
+            let col_end = (col_start + TILE).min(left_rows);
+            let rows =
+                left_matrix.slice_axis(ndarray::Axis(0), ndarray::Slice::from(row_start..row_end));
+            let columns =
+                right_matrix.slice_axis(ndarray::Axis(0), ndarray::Slice::from(col_start..col_end));
+            let product = rows.dot(&columns.t());
+            for ((i, j), value) in product.indexed_iter() {
+                let row = row_start + i;
+                let col = col_start + j;
+                if col > row {
+                    continue;
+                }
+                result[row * left_rows + col] = *value;
+                result[col * left_rows + row] = *value;
+            }
+        }
+    }
+    Ok(result)
 }
 
 /// Mean embedding in input order. An empty batch has no prototype.
@@ -129,6 +172,22 @@ mod tests {
         assert!(normalize(&[vec![1.0], vec![1.0, 2.0]]).is_err());
         assert!(similarities(&[vec![1.0]], &[vec![1.0, 2.0]]).is_err());
         assert!(mean(&[]).is_err());
+    }
+    #[test]
+    fn symmetric_tiles_preserve_both_triangles_across_tile_boundaries() {
+        let rows = 257;
+        let width = 3;
+        let input: Vec<f64> = (0..rows * width).map(|index| (index % 10) as f64).collect();
+        let actual = similarities_flat(&input, &input, rows, rows, width).unwrap();
+        for left in 0..rows {
+            for right in 0..rows {
+                let expected: f64 = (0..width)
+                    .map(|dim| input[left * width + dim] * input[right * width + dim])
+                    .sum();
+                assert_eq!(actual[left * rows + right], expected);
+            }
+        }
+        assert!(similarities_flat(&input, &input, rows + 1, rows, width).is_err());
     }
     #[test]
     fn empty_and_zero_centers_preserve_bucket_semantics() {

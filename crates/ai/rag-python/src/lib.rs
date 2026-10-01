@@ -2,7 +2,7 @@
 // SPDX-FileCopyrightText: 2026 aphrody contributors
 
 use pyo3::prelude::*;
-use pyo3::types::PyBytes;
+use pyo3::types::PyByteArray;
 
 fn vector_error(error: &'static str) -> PyErr {
     pyo3::exceptions::PyValueError::new_err(error)
@@ -21,9 +21,24 @@ fn unpack_embeddings(data: &[u8], rows: usize, width: usize) -> PyResult<Vec<Vec
     Ok(values.chunks_exact(width).map(<[f64]>::to_vec).collect())
 }
 
-fn pack_embeddings(py: Python<'_>, values: &[Vec<f64>]) -> Py<PyBytes> {
-    let bytes: Vec<u8> = values.iter().flatten().flat_map(|value| value.to_le_bytes()).collect();
-    PyBytes::new(py, &bytes).unbind()
+fn pack_values<'a>(
+    py: Python<'_>,
+    values: impl ExactSizeIterator<Item = &'a f64>,
+) -> PyResult<Py<PyByteArray>> {
+    let size =
+        values.len().checked_mul(8).ok_or_else(|| vector_error("packed result size overflow"))?;
+    PyByteArray::new_with(py, size, |bytes| {
+        for (chunk, value) in bytes.as_chunks_mut::<8>().0.iter_mut().zip(values) {
+            chunk.copy_from_slice(&value.to_le_bytes());
+        }
+        Ok(())
+    })
+    .map(Bound::unbind)
+}
+
+fn pack_embeddings(py: Python<'_>, values: &[Vec<f64>]) -> PyResult<Py<PyByteArray>> {
+    let flattened: Vec<f64> = values.iter().flatten().copied().collect();
+    pack_values(py, flattened.iter())
 }
 
 #[pyfunction]
@@ -32,11 +47,11 @@ fn normalize_embeddings_f64(
     data: &[u8],
     rows: usize,
     width: usize,
-) -> PyResult<Py<PyBytes>> {
+) -> PyResult<Py<PyByteArray>> {
     let batch = unpack_embeddings(data, rows, width)?;
     let result =
         py.detach(|| aphrody_rag_core::vectors_f64::normalize(&batch)).map_err(vector_error)?;
-    Ok(pack_embeddings(py, &result))
+    pack_embeddings(py, &result)
 }
 
 #[pyfunction]
@@ -47,13 +62,28 @@ fn embedding_similarities_f64(
     left_rows: usize,
     right_rows: usize,
     width: usize,
-) -> PyResult<Py<PyBytes>> {
-    let left_batch = unpack_embeddings(left, left_rows, width)?;
-    let right_batch = unpack_embeddings(right, right_rows, width)?;
+) -> PyResult<Py<PyByteArray>> {
+    if left_rows.checked_mul(width).and_then(|size| size.checked_mul(8)) != Some(left.len())
+        || right_rows.checked_mul(width).and_then(|size| size.checked_mul(8)) != Some(right.len())
+    {
+        return Err(vector_error("packed embedding dimensions do not match buffer length"));
+    }
+    let left_batch: Vec<f64> =
+        left.as_chunks::<8>().0.iter().map(|bytes| f64::from_le_bytes(*bytes)).collect();
+    let right_batch: Vec<f64> =
+        right.as_chunks::<8>().0.iter().map(|bytes| f64::from_le_bytes(*bytes)).collect();
     let result = py
-        .detach(|| aphrody_rag_core::vectors_f64::similarities(&left_batch, &right_batch))
+        .detach(|| {
+            aphrody_rag_core::vectors_f64::similarities_flat(
+                &left_batch,
+                &right_batch,
+                left_rows,
+                right_rows,
+                width,
+            )
+        })
         .map_err(vector_error)?;
-    Ok(pack_embeddings(py, &result))
+    pack_values(py, result.iter())
 }
 
 #[pyfunction]
@@ -62,10 +92,10 @@ fn mean_embeddings_f64(
     data: &[u8],
     rows: usize,
     width: usize,
-) -> PyResult<Py<PyBytes>> {
+) -> PyResult<Py<PyByteArray>> {
     let batch = unpack_embeddings(data, rows, width)?;
     let result = py.detach(|| aphrody_rag_core::vectors_f64::mean(&batch)).map_err(vector_error)?;
-    Ok(pack_embeddings(py, &[result]))
+    pack_values(py, result.iter())
 }
 
 #[pyfunction]
@@ -77,13 +107,13 @@ fn update_cosine_centers_f64(
     rows: usize,
     center_rows: usize,
     width: usize,
-) -> PyResult<Py<PyBytes>> {
+) -> PyResult<Py<PyByteArray>> {
     let batch = unpack_embeddings(data, rows, width)?;
     let centers_batch = unpack_embeddings(centers, center_rows, width)?;
     let result = py
         .detach(|| aphrody_rag_core::vectors_f64::update_centers(&batch, &labels, &centers_batch))
         .map_err(vector_error)?;
-    Ok(pack_embeddings(py, &result))
+    pack_embeddings(py, &result)
 }
 
 #[pyfunction]
