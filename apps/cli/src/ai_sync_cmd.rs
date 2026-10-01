@@ -76,7 +76,7 @@ pub(crate) async fn run(args: SyncSessionsArgs) -> miette::Result<()> {
     let memory = if args.no_memory {
         None
     } else {
-        let store = SqliteLocalProvider::open_default()
+        let store = open_sync_memory(&options)
             .map_err(|error| miette::miette!("sync-sessions: local memory store: {error}"))?;
         Some(Arc::new(store))
     };
@@ -98,7 +98,11 @@ pub(crate) async fn run(args: SyncSessionsArgs) -> miette::Result<()> {
                     record.content.chars().take(2000).collect::<String>()
                 ));
             }
-            let dir = workspace.join(".coord/shared");
+            let projection_root = match options.domain_filter.as_deref() {
+                Some(domain) => external::domain_profile_dir(domain).into_diagnostic()?,
+                None => workspace.clone(),
+            };
+            let dir = projection_root.join(".coord/shared");
             std::fs::create_dir_all(&dir).into_diagnostic()?;
             let temporary = dir.join(format!(".TRANSCRIPTS.{}.tmp", std::process::id()));
             std::fs::write(&temporary, body).into_diagnostic()?;
@@ -113,6 +117,20 @@ pub(crate) async fn run(args: SyncSessionsArgs) -> miette::Result<()> {
             _ = tokio::signal::ctrl_c() => return Ok(()),
         }
     }
+}
+
+fn open_sync_memory(options: &SyncOptions) -> miette::Result<SqliteLocalProvider> {
+    let Some(domain) = options.domain_filter.as_deref() else {
+        return SqliteLocalProvider::open_default().into_diagnostic();
+    };
+    let root = external::domain_profile_dir(domain).into_diagnostic()?;
+    let config = crate::exec_cmd::load_config(&aphrody_config::CliOverrides {
+        profile: Some(domain.to_owned()),
+        ..Default::default()
+    })?;
+    let services =
+        aphrody_agent_home::ProfileServiceContext::from_config(root, &config).into_diagnostic()?;
+    SqliteLocalProvider::open_profile(&services).into_diagnostic()
 }
 
 /// One sync pass on the blocking pool (filesystem walk, file reads, fsyncs).

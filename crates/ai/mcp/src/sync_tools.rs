@@ -47,8 +47,7 @@ pub(crate) async fn sync_external_agents(request: SyncExternalAgentsRequest) -> 
     let runtime = tokio::runtime::Handle::current();
     let joined = tokio::task::spawn_blocking(move || {
         if feed_memory {
-            let store = SqliteLocalProvider::open_default()
-                .map_err(|error| format!("local memory store: {error}"))?;
+            let store = open_sync_memory(&options)?;
             external::sync_into_memory(&options, &store, &runtime)
                 .map_err(|error| error.to_string())
         } else {
@@ -62,6 +61,33 @@ pub(crate) async fn sync_external_agents(request: SyncExternalAgentsRequest) -> 
         Ok(Err(error)) => error_json(&error),
         Err(error) => error_json(&format!("sync task failed: {error}")),
     }
+}
+
+fn open_sync_memory(options: &SyncOptions) -> Result<SqliteLocalProvider, String> {
+    let Some(domain) = options.domain_filter.as_deref() else {
+        return SqliteLocalProvider::open_default().map_err(|error| error.to_string());
+    };
+    let root = external::domain_profile_dir(domain).map_err(|error| error.to_string())?;
+    let state = aphrody_models::paths::state_dir().map_err(|error| error.to_string())?;
+    let mut layers = vec![aphrody_config::ConfigLayer::new(
+        aphrody_config::LayerSource::Builtin,
+        aphrody_config::builtin_providers_layer_value(&|name| std::env::var(name).ok()),
+    )];
+    if let Some(layer) = aphrody_config::load_user_layer(&state.join("config.toml"))
+        .map_err(|error| error.to_string())?
+    {
+        layers.push(layer);
+    }
+    let (config, _) = aphrody_config::resolve(
+        layers,
+        &aphrody_config::CliOverrides { profile: Some(domain.to_owned()), ..Default::default() },
+        "llama",
+        &std::collections::BTreeMap::new(),
+    )
+    .map_err(|error| error.to_string())?;
+    let services = aphrody_agent_home::ProfileServiceContext::from_config(root, &config)
+        .map_err(|error| error.to_string())?;
+    SqliteLocalProvider::open_profile(&services).map_err(|error| error.to_string())
 }
 
 fn error_json(message: &str) -> String {

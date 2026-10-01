@@ -3,154 +3,226 @@
   "scope": "WSL host CLI inventory",
   "commands": [
     {
-      "command": "nu",
-      "path": "/home/aphro/.cargo/bin/nu",
-      "version": "0.115.1",
-      "versionState": "verified"
+      "command": "agy",
+      "path": "/home/aphro/.local/bin/agy",
+      "version": "1.2.14",
+      "state": "path"
     },
     {
-      "command": "coreutils",
-      "path": "/home/aphro/.cargo/bin/coreutils",
-      "version": "coreutils 0.12.0 (multi-call binary)",
-      "versionExitCode": 0
+      "command": "aphrody",
+      "path": "/home/aphro/.local/bin/aphrody",
+      "version": "aphrody 1.0.0-canary",
+      "state": "path"
     },
     {
-      "command": "eza",
-      "path": "/usr/bin/eza",
-      "version": "eza - A modern, maintained replacement for ls",
-      "versionExitCode": 0
+      "command": "aphrody-kernel",
+      "path": "/home/aphro/.local/bin/aphrody-kernel",
+      "version": "aphrody-kernel 1.0.0-canary",
+      "state": "path"
+    },
+    {
+      "command": "aphrody-mcp",
+      "path": "/home/aphro/.local/bin/aphrody-mcp",
+      "version": "aphrody-mcp 1.0.0",
+      "state": "path"
+    },
+    {
+      "command": "atuin",
+      "path": "/home/aphro/.cargo/bin/atuin",
+      "version": "atuin 18.23.0 (78366dca8c4941731e06a2f81c0980cc2ccc3836)",
+      "state": "path"
     },
     {
       "command": "bat",
       "path": "/home/aphro/.cargo/bin/bat",
       "version": "bat 0.26.1 (979ba22)",
-      "versionExitCode": 0
-    },
-    {
-      "command": "rg",
-      "path": "/home/aphro/.codex/packages/app-server-daemon/releases/0.159.3-x86_64-unknown-linux-musl/codex-path/rg",
-      "version": "ripgrep 15.2.0 (rev e89fff89ac)",
-      "versionExitCode": 0
-    },
-    {
-      "command": "fd",
-      "path": "/home/aphro/.cargo/bin/fd",
-      "version": "fd 10.5.0",
-      "versionExitCode": 0
-    },
-    {
-      "command": "sd",
-      "path": "/home/aphro/.cargo/bin/sd",
-      "version": "sd 1.0.0",
-      "versionExitCode": 0
-    },
-    {
-      "command": "choose",
-      "path": "/home/aphro/.cargo/bin/choose",
-      "version": "choose 1.3.7",
-      "versionExitCode": 0
-    },
-    {
-      "command": "dust",
-      "path": "/home/aphro/.cargo/bin/dust",
-      "version": "Dust 1.2.6",
-      "versionExitCode": 0
-    },
-    {
-      "command": "dysk",
-      "path": "/home/aphro/.cargo/bin/dysk",
-      "version": "dysk 3.7.1",
-      "versionExitCode": 0
-    },
-    {
-      "command": "erd",
-      "path": "/home/aphro/.cargo/bin/erd",
-      "version": "erdtree 3.1.2",
-      "versionExitCode": 0
-    },
-    {
-      "command": "procs",
-      "path": "/home/aphro/.cargo/bin/procs",
-      "version": "procs 0.14.12",
-      "versionExitCode": 0
+      "state": "path"
     },
     {
       "command": "btm",
       "path": "/home/aphro/.cargo/bin/btm",
       "version": "bottom 0.14.9",
+      "state": "path"
+    },
+    {
+      "command": "bun",
+      "path": "/home/aphro/.bun/bin/bun",
+      "version": "1.4.2",
+      "state": "path"
+    },
+    {
+      "command": "bunx",
+      "path": "/home/aphro/.bun/bin/bunx",
+      "version": "1.4.2",
+      "state": "path"
+    },
+    {
+      "command": "bxc",
+      "path": "/home/aphro/.bun/bin/bxc",
+      "version": "bxc 0.9.15",
+      "state": "path"
+    },
+    {
+      "command": "carapace",
+      "path": "/usr/bin/carapace",
+      "version": "carapace-bin 1.8.0",
       "versionExitCode": 0
     },
     {
-      "command": "zoxide",
-      "path": "/home/aphro/.cargo/bin/zoxide",
-      "version": "zoxide 0.10.0",
+      "command": "cargo",
+      "path": "/home/aphro/.cargo/bin/cargo",
+      "version": "cargo 1.98.1 (797e8a9bc 2026-08-05)",
+      "state": "path"
+    },
+    {
+      "command": "choose",
+      "path": "/home/aphro/.cargo/bin/choose",
+      "version": "choose 1.3.7",
+      "state": "path"
+    },
+    {
+      "command": "cl.exe",
+      "path": "/home/aphro/.local/bin/cl.exe",
+      "version": "Microsoft C/C++ 19.44.35229",
+      "state": "path"
+    },
+    {
+      "command": "claude",
+      "path": "/home/aphro/.nvm/versions/node/v24.20.0/bin/claude",
+      "version": "2.1.286 (Claude Code)",
+      "state": "path"
+    },
+    {
+      "command": "codex",
+      "path": "/home/aphro/.local/bin/codex",
+      "version": "codex-cli 0.158.0",
+      "state": "path"
+    },
+    {
+      "command": "coreutils",
+      "path": "/home/aphro/.cargo/bin/coreutils",
+      "version": "coreutils 0.12.0 (multi-call binary)",
+      "state": "path"
+    },
+    {
+      "command": "curl",
+      "path": "/usr/bin/curl",
+      "version": "curl 8.5.0 (x86_64-pc-linux-gnu) libcurl/8.5.0 OpenSSL/3.0.13 zlib/1.3 brotli/1.1.0 zstd/1.5.5 libidn2/2.3.7 libpsl/0.21.2 (+libidn2/2.3.7) libssh/0.10.6/openss",
       "versionExitCode": 0
     },
     {
       "command": "delta",
       "path": "/home/aphro/.cargo/bin/delta",
       "version": "delta 0.19.2",
-      "versionExitCode": 0
+      "state": "path"
     },
     {
-      "command": "xh",
-      "path": "/home/aphro/.cargo/bin/xh",
-      "version": "xh 0.26.2",
-      "versionState": "verified"
+      "command": "dust",
+      "path": "/home/aphro/.cargo/bin/dust",
+      "version": "Dust 1.2.6",
+      "state": "path"
     },
     {
-      "command": "tldr",
-      "path": "/home/aphro/.cargo/bin/tldr",
-      "version": "tealdeer 1.9.0",
-      "versionExitCode": 0
+      "command": "dysk",
+      "path": "/home/aphro/.cargo/bin/dysk",
+      "version": "dysk 3.7.1",
+      "state": "path"
     },
     {
-      "command": "yazi",
-      "path": "/home/aphro/.cargo/bin/yazi",
-      "version": "Yazi 26.5.6 (aa52643 2026-05-05)",
-      "versionExitCode": 0
+      "command": "erd",
+      "path": "/home/aphro/.cargo/bin/erd",
+      "version": "erdtree 3.1.2",
+      "state": "path"
     },
     {
-      "command": "ya",
-      "path": "/home/aphro/.cargo/bin/ya",
-      "version": "Ya 26.5.6 (aa52643 2026-05-05)",
-      "versionExitCode": 0
+      "command": "eza",
+      "path": "/usr/bin/eza",
+      "version": "eza - A modern, maintained replacement for ls",
+      "state": "path"
+    },
+    {
+      "command": "fd",
+      "path": "/home/aphro/.cargo/bin/fd",
+      "version": "fd 10.5.0",
+      "state": "path"
+    },
+    {
+      "command": "ffmpeg",
+      "path": "/usr/bin/ffmpeg",
+      "version": null,
+      "state": "path"
+    },
+    {
+      "command": "gcloud",
+      "path": "/usr/bin/gcloud",
+      "version": "Google Cloud SDK 587.0.0",
+      "state": "path"
+    },
+    {
+      "command": "gh",
+      "path": "/usr/bin/gh",
+      "version": "gh version 2.45.0 (2025-07-18 Ubuntu 2.45.0-1ubuntu0.3)",
+      "state": "path"
+    },
+    {
+      "command": "git",
+      "path": "/usr/bin/git",
+      "version": "git version 2.43.0",
+      "state": "path"
     },
     {
       "command": "gitui",
       "path": "/home/aphro/.cargo/bin/gitui",
       "version": "gitui 0.28.1-nightly 2026-03-25 ()",
-      "versionExitCode": 0
-    },
-    {
-      "command": "just",
-      "path": "/home/aphro/.cargo/bin/just",
-      "version": "just 1.58.0",
-      "versionExitCode": 0
-    },
-    {
-      "command": "atuin",
-      "path": "/home/aphro/.cargo/bin/atuin",
-      "version": "atuin 18.23.0 (78366dca8c4941731e06a2f81c0980cc2ccc3836)",
-      "versionExitCode": 0
-    },
-    {
-      "command": "starship",
-      "path": "/home/aphro/.cargo/bin/starship",
-      "version": "starship 1.26.0",
-      "versionExitCode": 0
-    },
-    {
-      "command": "zellij",
-      "path": "/home/aphro/.cargo/bin/zellij",
-      "version": "zellij 0.45.1",
-      "versionState": "verified"
+      "state": "path"
     },
     {
       "command": "hx",
       "path": "/home/aphro/.cargo/bin/hx",
       "version": "helix 25.07.1 (079a789e)",
-      "versionState": "verified"
+      "state": "path"
+    },
+    {
+      "command": "just",
+      "path": "/home/aphro/.cargo/bin/just",
+      "version": "just 1.58.0",
+      "state": "path"
+    },
+    {
+      "command": "lib.exe",
+      "path": "/home/aphro/.local/bin/lib.exe",
+      "version": "MSVC 14.44.35207",
+      "state": "path"
+    },
+    {
+      "command": "link.exe",
+      "path": "/home/aphro/.local/bin/link.exe",
+      "version": "MSVC 14.44.35207",
+      "state": "path"
+    },
+    {
+      "command": "llama-server",
+      "path": "/home/aphro/.local/bin/llama-server",
+      "version": null,
+      "state": "path"
+    },
+    {
+      "command": "ml64.exe",
+      "path": "/home/aphro/.local/bin/ml64.exe",
+      "version": "Microsoft MASM 14.44.35207",
+      "state": "path"
+    },
+    {
+      "command": "n2b",
+      "path": "/home/aphro/.local/bin/n2b",
+      "version": "n2b 0.6.2",
+      "state": "path"
+    },
+    {
+      "command": "nu",
+      "path": "/home/aphro/.cargo/bin/nu",
+      "version": "0.115.1",
+      "state": "path"
     },
     {
       "command": "nu_plugin_bigquery",
@@ -203,46 +275,88 @@
       "version": null
     },
     {
-      "command": "cargo",
-      "path": "/home/aphro/.cargo/bin/cargo",
-      "version": "cargo 1.98.1 (797e8a9bc 2026-08-05)",
-      "versionExitCode": 0
-    },
-    {
-      "command": "rustc",
-      "path": "/home/aphro/.cargo/bin/rustc",
-      "version": "rustc 1.98.1 (48a229cea 2026-09-01)",
-      "versionExitCode": 0
-    },
-    {
-      "command": "sccache",
-      "path": "/home/aphro/.cargo/bin/sccache",
-      "version": "sccache 0.18.0",
-      "versionExitCode": 0
-    },
-    {
-      "command": "bun",
-      "path": "/home/aphro/.bun/bin/bun",
-      "version": "1.4.2",
-      "versionExitCode": 0
-    },
-    {
-      "command": "uv",
-      "path": "/home/aphro/.local/bin/uv",
-      "version": "uv 0.12.17 (x86_64-unknown-linux-gnu)",
-      "versionExitCode": 0
+      "command": "oxfmt",
+      "path": "/home/aphro/.bun/bin/oxfmt",
+      "version": "Version: 0.70.0",
+      "state": "path"
     },
     {
       "command": "oxlint",
       "path": "/home/aphro/.bun/bin/oxlint",
       "version": "Version: 1.85.0",
-      "versionExitCode": 0
+      "state": "path"
     },
     {
-      "command": "oxfmt",
-      "path": "/home/aphro/.bun/bin/oxfmt",
-      "version": "Version: 0.70.0",
-      "versionExitCode": 0
+      "command": "procs",
+      "path": "/home/aphro/.cargo/bin/procs",
+      "version": "procs 0.14.12",
+      "state": "path"
+    },
+    {
+      "command": "pwsh",
+      "path": "/usr/bin/pwsh",
+      "version": "PowerShell 7.6.6",
+      "state": "path"
+    },
+    {
+      "command": "python3",
+      "path": "/usr/bin/python3",
+      "version": "Python 3.12.3",
+      "state": "path"
+    },
+    {
+      "command": "rclone",
+      "path": "/home/aphro/.local/bin/rclone",
+      "version": "rclone v1.75.1",
+      "state": "path"
+    },
+    {
+      "command": "rg",
+      "path": "/home/aphro/.codex/packages/app-server-daemon/releases/0.159.3-x86_64-unknown-linux-musl/codex-path/rg",
+      "version": "ripgrep 15.2.0 (rev e89fff89ac)",
+      "state": "path"
+    },
+    {
+      "command": "rustc",
+      "path": "/home/aphro/.cargo/bin/rustc",
+      "version": "rustc 1.98.1 (48a229cea 2026-09-01)",
+      "state": "path"
+    },
+    {
+      "command": "rustup",
+      "path": "/home/aphro/.cargo/bin/rustup",
+      "version": "rustup 1.29.1 (d95a37b6a 2026-08-13)",
+      "state": "path"
+    },
+    {
+      "command": "sccache",
+      "path": "/home/aphro/.cargo/bin/sccache",
+      "version": "sccache 0.18.0",
+      "state": "path"
+    },
+    {
+      "command": "sd",
+      "path": "/home/aphro/.cargo/bin/sd",
+      "version": "sd 1.0.0",
+      "state": "path"
+    },
+    {
+      "command": "ssh",
+      "path": "/usr/bin/ssh",
+      "version": null,
+      "state": "path"
+    },
+    {
+      "command": "starship",
+      "path": "/home/aphro/.cargo/bin/starship",
+      "version": "starship 1.26.0",
+      "state": "path"
+    },
+    {
+      "command": "tldr",
+      "path": "/home/aphro/.cargo/bin/tldr",
+      "version": "tealdeer 1.9.0",
+      "state": "path"
     },
     {
       "command": "tsc",
@@ -251,64 +365,58 @@
       "versionExitCode": 0
     },
     {
-      "command": "codex",
-      "path": "/home/aphro/.local/bin/codex",
-      "version": "codex-cli 0.158.0",
-      "versionExitCode": 0
+      "command": "tsgo",
+      "path": "/home/aphro/.bun/bin/tsgo",
+      "version": "Version 7.0.0-dev.20260707.2",
+      "state": "path"
     },
     {
-      "command": "claude",
-      "path": "/home/aphro/.nvm/versions/node/v24.20.0/bin/claude",
-      "version": "2.1.286 (Claude Code)",
-      "versionExitCode": 0
+      "command": "uv",
+      "path": "/home/aphro/.local/bin/uv",
+      "version": "uv 0.12.17 (x86_64-unknown-linux-gnu)",
+      "state": "path"
     },
     {
-      "command": "agy",
-      "path": "/home/aphro/.local/bin/agy",
-      "version": "1.2.14",
-      "versionExitCode": 0
+      "command": "uvx",
+      "path": "/home/aphro/.local/bin/uvx",
+      "version": "uvx 0.12.17 (x86_64-unknown-linux-gnu)",
+      "state": "path"
     },
     {
-      "command": "aphrody",
-      "path": "/home/aphro/.local/bin/aphrody",
-      "version": "aphrody 1.0.0-canary",
-      "versionExitCode": 0
+      "command": "xh",
+      "path": "/home/aphro/.cargo/bin/xh",
+      "version": "xh 0.26.2",
+      "state": "path"
     },
     {
-      "command": "aphrody-kernel",
-      "path": "/home/aphro/.local/bin/aphrody-kernel",
-      "version": "aphrody-kernel 1.0.0-canary",
-      "versionExitCode": 0
+      "command": "ya",
+      "path": "/home/aphro/.cargo/bin/ya",
+      "version": "Ya 26.5.6 (aa52643 2026-05-05)",
+      "state": "path"
     },
     {
-      "command": "carapace",
-      "path": "/usr/bin/carapace",
-      "version": "carapace-bin 1.8.0",
-      "versionExitCode": 0
+      "command": "yazi",
+      "path": "/home/aphro/.cargo/bin/yazi",
+      "version": "Yazi 26.5.6 (aa52643 2026-05-05)",
+      "state": "path"
     },
     {
-      "command": "git",
-      "path": "/usr/bin/git",
-      "version": "git version 2.43.0",
-      "versionExitCode": 0
+      "command": "zellij",
+      "path": "/home/aphro/.cargo/bin/zellij",
+      "version": "zellij 0.45.1",
+      "state": "path"
     },
     {
-      "command": "gh",
-      "path": "/usr/bin/gh",
-      "version": "gh version 2.45.0 (2025-07-18 Ubuntu 2.45.0-1ubuntu0.3)",
-      "versionExitCode": 0
+      "command": "zig",
+      "path": "/home/aphro/.local/bin/zig",
+      "version": "0.16.0",
+      "state": "path"
     },
     {
-      "command": "curl",
-      "path": "/usr/bin/curl",
-      "version": "curl 8.5.0 (x86_64-pc-linux-gnu) libcurl/8.5.0 OpenSSL/3.0.13 zlib/1.3 brotli/1.1.0 zstd/1.5.5 libidn2/2.3.7 libpsl/0.21.2 (+libidn2/2.3.7) libssh/0.10.6/openss",
-      "versionExitCode": 0
-    },
-    {
-      "command": "pwsh",
-      "path": "/usr/bin/pwsh",
-      "version": "PowerShell 7.6.6",
-      "versionExitCode": 0
+      "command": "zoxide",
+      "path": "/home/aphro/.cargo/bin/zoxide",
+      "version": "zoxide 0.10.0",
+      "state": "path"
     }
   ],
   "nushellLoadedPlugins": [
@@ -323,5 +431,6 @@
     "skim",
     "zstdsep"
   ],
-  "binaryAvailabilityDoesNotProveProviderAuthentication": true
+  "binaryAvailabilityDoesNotProveProviderAuthentication": true,
+  "toolchainEvidence": "docs/migration/toolchain-setup-2026-10-01.json"
 }

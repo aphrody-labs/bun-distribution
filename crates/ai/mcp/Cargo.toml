@@ -86,6 +86,7 @@ aphrody-models     = { workspace = true }
 # `http_rest.rs`'s shenron gateway to resolve the chat/vision/embed base URLs
 # it forwards to, replacing hardcoded `127.0.0.1:8080` fallbacks.
 aphrody-config     = { workspace = true }
+aphrody-agent-home = { workspace = true }
 aphrody-kernel     = { workspace = true }
 aphrody-web-extract = { workspace = true }
 aphrody-web-detect = { workspace = true }

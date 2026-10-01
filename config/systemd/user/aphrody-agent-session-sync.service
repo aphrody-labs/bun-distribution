@@ -1,10 +1,10 @@
 [Unit]
-Description=Shared Claude Codex agy session and memory ingestion
+Description=Claude Codex agy global session mirror without cross-domain memory
 
 [Service]
 Type=simple
 WorkingDirectory=/home/aphro/aphrody
-ExecStart=/home/aphro/.local/bin/aphrody ai sync-sessions --watch --interval-secs 30 --json --shared-workspace /home/aphro/aphrody
+ExecStart=/home/aphro/.local/bin/aphrody ai sync-sessions --watch --interval-secs 30 --json --no-memory
 Restart=on-failure
 RestartSec=10
 UMask=0077
