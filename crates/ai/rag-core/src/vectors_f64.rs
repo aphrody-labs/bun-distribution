@@ -15,8 +15,8 @@ pub(crate) fn dimensions<T>(rows: &[Vec<T>]) -> Result<Option<usize>, &'static s
 // Algorithm reference: numpy/_core/src/umath/loops_utils.h.src, pairwise_sum.
 macro_rules! numpy_sum {
     ($name:ident, $float:ty) => {
-        pub(crate) fn $name(length: usize, at: &dyn Fn(usize) -> $float) -> $float {
-            fn reduce(start: usize, length: usize, at: &dyn Fn(usize) -> $float) -> $float {
+        pub(crate) fn $name<F: Fn(usize) -> $float>(length: usize, at: &F) -> $float {
+            fn reduce<F: Fn(usize) -> $float>(start: usize, length: usize, at: &F) -> $float {
                 if length < 8 {
                     return (start..start + length).fold(-0.0, |sum, index| sum + at(index));
                 }
