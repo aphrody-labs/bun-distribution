@@ -974,13 +974,13 @@ mod tests {
         let base = serve(router).await;
         let api = OllamaApi::local(base);
 
-        let failure = api.pull_with("missing", |_| {}).await.err().expect("failure");
+        let failure = api.pull_with("missing", |_| {}).await.expect_err("failure");
         assert!(matches!(
             failure,
             ModelError::Api { ref message, .. } if message.contains("file does not exist")
         ), "{failure}");
 
-        let cut = api.pull_with("cut", |_| {}).await.err().expect("cut");
+        let cut = api.pull_with("cut", |_| {}).await.expect_err("cut");
         assert!(matches!(cut, ModelError::Stream(_)), "{cut}");
     }
 
@@ -1042,7 +1042,7 @@ mod tests {
         let base = serve(router).await;
         let client = OllamaClient::local(base, "m");
         assert!(client.embed(&[]).await.expect("empty").is_empty());
-        let error = EmbedClient::embed(&client, &["a", "b"]).await.err().expect("mismatch");
+        let error = EmbedClient::embed(&client, &["a", "b"]).await.expect_err("mismatch");
         assert!(matches!(error, ModelError::Stream(_)), "{error}");
     }
 }

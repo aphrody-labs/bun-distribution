@@ -1,0 +1,391 @@
+   Compiling hyper-util v0.1.21
+   Compiling hyper-rustls v0.27.10
+   Compiling axum v0.8.9
+   Compiling reqwest v0.13.5
+   Compiling aphrody-model-client v1.0.0 (/home/aphro/aphrody/crates/ai/model-client)
+   Compiling aphrody-engine-mistralrs v1.0.0 (/home/aphro/aphrody/crates/ai/engine-mistralrs)
+warning: struct `RawChunk` is never constructed
+  --> crates/ai/engine-mistralrs/src/events.rs:22:19
+   |
+22 | pub(crate) struct RawChunk {
+   |                   ^^^^^^^^
+   |
+   = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: struct `RawToolCall` is never constructed
+  --> crates/ai/engine-mistralrs/src/events.rs:37:19
+   |
+37 | pub(crate) struct RawToolCall {
+   |                   ^^^^^^^^^^^
+
+warning: struct `RawUsage` is never constructed
+  --> crates/ai/engine-mistralrs/src/events.rs:46:19
+   |
+46 | pub(crate) struct RawUsage {
+   |                   ^^^^^^^^
+
+warning: struct `StreamState` is never constructed
+  --> crates/ai/engine-mistralrs/src/events.rs:56:19
+   |
+56 | pub(crate) struct StreamState {
+   |                   ^^^^^^^^^^^
+
+warning: methods `push` and `finish` are never used
+  --> crates/ai/engine-mistralrs/src/events.rs:66:19
+   |
+63 | impl StreamState {
+   | ---------------- methods in this implementation
+...
+66 |     pub(crate) fn push(&mut self, chunk: RawChunk) -> Vec<ModelStreamEvent> {
+   |                   ^^^^
+...
+90 |     pub(crate) fn finish(&mut self) -> Vec<ModelStreamEvent> {
+   |                   ^^^^^^
+
+warning: function `tool_call_event` is never used
+   --> crates/ai/engine-mistralrs/src/events.rs:103:4
+    |
+103 | fn tool_call_event(call: RawToolCall) -> ModelStreamEvent {
+    |    ^^^^^^^^^^^^^^^
+
+warning: function `generated_call_id` is never used
+   --> crates/ai/engine-mistralrs/src/events.rs:114:4
+    |
+114 | fn generated_call_id(name: &str) -> String {
+    |    ^^^^^^^^^^^^^^^^^
+
+warning: function `parse_arguments` is never used
+   --> crates/ai/engine-mistralrs/src/events.rs:122:4
+    |
+122 | fn parse_arguments(raw: &str) -> Value {
+    |    ^^^^^^^^^^^^^^^
+
+warning: function `token_usage` is never used
+   --> crates/ai/engine-mistralrs/src/events.rs:129:4
+    |
+129 | fn token_usage(usage: RawUsage) -> TokenUsage {
+    |    ^^^^^^^^^^^
+
+warning: enum `PlannedMessage` is never used
+  --> crates/ai/engine-mistralrs/src/plan.rs:30:17
+   |
+30 | pub(crate) enum PlannedMessage {
+   |                 ^^^^^^^^^^^^^^
+
+warning: struct `PlannedToolCall` is never constructed
+  --> crates/ai/engine-mistralrs/src/plan.rs:43:19
+   |
+43 | pub(crate) struct PlannedToolCall {
+   |                   ^^^^^^^^^^^^^^^
+
+warning: struct `PlannedTool` is never constructed
+  --> crates/ai/engine-mistralrs/src/plan.rs:52:19
+   |
+52 | pub(crate) struct PlannedTool {
+   |                   ^^^^^^^^^^^
+
+warning: enum `PlannedToolChoice` is never used
+  --> crates/ai/engine-mistralrs/src/plan.rs:61:17
+   |
+61 | pub(crate) enum PlannedToolChoice {
+   |                 ^^^^^^^^^^^^^^^^^
+
+warning: enum `Effort` is never used
+  --> crates/ai/engine-mistralrs/src/plan.rs:70:17
+   |
+70 | pub(crate) enum Effort {
+   |                 ^^^^^^
+
+warning: struct `PlannedSampling` is never constructed
+  --> crates/ai/engine-mistralrs/src/plan.rs:81:19
+   |
+81 | pub(crate) struct PlannedSampling {
+   |                   ^^^^^^^^^^^^^^^
+
+warning: struct `PlannedTurn` is never constructed
+  --> crates/ai/engine-mistralrs/src/plan.rs:95:19
+   |
+95 | pub(crate) struct PlannedTurn {
+   |                   ^^^^^^^^^^^
+
+warning: struct `PlanError` is never constructed
+   --> crates/ai/engine-mistralrs/src/plan.rs:109:19
+    |
+109 | pub(crate) struct PlanError(pub String);
+    |                   ^^^^^^^^^
+
+warning: function `plan_turn` is never used
+   --> crates/ai/engine-mistralrs/src/plan.rs:116:15
+    |
+116 | pub(crate) fn plan_turn(turn: &ChatTurn, images_supported: bool) -> Result<PlannedTurn, PlanError> {
+    |               ^^^^^^^^^
+
+warning: function `wire_call_id` is never used
+   --> crates/ai/engine-mistralrs/src/plan.rs:160:4
+    |
+160 | fn wire_call_id<'a>(id: &'a str, name: &'a str) -> &'a str {
+    |    ^^^^^^^^^^^^
+
+warning: function `tool_response_content` is never used
+   --> crates/ai/engine-mistralrs/src/plan.rs:165:4
+    |
+165 | fn tool_response_content(response: &Value) -> String {
+    |    ^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `arguments_text` is never used
+   --> crates/ai/engine-mistralrs/src/plan.rs:174:4
+    |
+174 | fn arguments_text(args: &Value) -> String {
+    |    ^^^^^^^^^^^^^^
+
+warning: function `push_message` is never used
+   --> crates/ai/engine-mistralrs/src/plan.rs:182:4
+    |
+182 | fn push_message(out: &mut Vec<PlannedMessage>, message: &ChatMessage) {
+    |    ^^^^^^^^^^^^
+
+warning: function `push_tool_results` is never used
+   --> crates/ai/engine-mistralrs/src/plan.rs:236:4
+    |
+236 | fn push_tool_results(out: &mut Vec<PlannedMessage>, results: &[&Part]) {
+    |    ^^^^^^^^^^^^^^^^^
+
+warning: function `plan_tool` is never used
+   --> crates/ai/engine-mistralrs/src/plan.rs:260:4
+    |
+260 | fn plan_tool(tool: &ToolDecl) -> PlannedTool {
+    |    ^^^^^^^^^
+
+warning: function `plan_tool_choice` is never used
+   --> crates/ai/engine-mistralrs/src/plan.rs:271:4
+    |
+271 | fn plan_tool_choice(choice: Option<&Value>) -> Result<PlannedToolChoice, PlanError> {
+    |    ^^^^^^^^^^^^^^^^
+
+warning: function `widen` is never used
+   --> crates/ai/engine-mistralrs/src/plan.rs:297:4
+    |
+297 | fn widen(value: f32) -> f64 {
+    |    ^^^^^
+
+warning: function `extra_f64` is never used
+   --> crates/ai/engine-mistralrs/src/plan.rs:301:4
+    |
+301 | fn extra_f64(options: &TurnOptions, key: &str) -> Option<f64> {
+    |    ^^^^^^^^^
+
+warning: function `extra_f32` is never used
+   --> crates/ai/engine-mistralrs/src/plan.rs:305:4
+    |
+305 | fn extra_f32(options: &TurnOptions, key: &str) -> Option<f32> {
+    |    ^^^^^^^^^
+
+warning: function `plan_sampling` is never used
+   --> crates/ai/engine-mistralrs/src/plan.rs:310:4
+    |
+310 | fn plan_sampling(options: &TurnOptions) -> PlannedSampling {
+    |    ^^^^^^^^^^^^^
+
+warning: function `plan_json_schema` is never used
+   --> crates/ai/engine-mistralrs/src/plan.rs:331:4
+    |
+331 | fn plan_json_schema(options: &TurnOptions) -> Option<Value> {
+    |    ^^^^^^^^^^^^^^^^
+
+warning: function `plan_enable_thinking` is never used
+   --> crates/ai/engine-mistralrs/src/plan.rs:343:4
+    |
+343 | fn plan_enable_thinking(options: &TurnOptions) -> Option<bool> {
+    |    ^^^^^^^^^^^^^^^^^^^^
+
+warning: function `parse_effort` is never used
+   --> crates/ai/engine-mistralrs/src/plan.rs:353:4
+    |
+353 | fn parse_effort(raw: &str) -> Result<Effort, PlanError> {
+    |    ^^^^^^^^^^^^
+
+warning: `aphrody-engine-mistralrs` (lib) generated 32 warnings
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 5.93s
+     Running unittests src/lib.rs (target/debug/deps/aphrody_engine_mistralrs-c9599f94ca04fd20)
+
+running 32 tests
+test config::tests::a_minimal_document_deserializes_with_defaults ... ok
+test config::tests::source_ids_and_constructors ... ok
+test config::tests::embedder_rejects_options_its_builder_lacks ... ok
+test error::tests::engine_errors_map_onto_http_statuses ... ok
+test config::tests::validation_names_the_offending_field ... ok
+test error::tests::unavailable_messages_name_the_remedy ... ok
+test events::tests::a_stream_with_no_finish_chunk_still_completes ... ok
+test events::tests::empty_deltas_are_dropped ... ok
+test config::tests::serde_round_trip_uses_a_kind_tag ... ok
+test events::tests::text_and_reasoning_deltas_pass_through_in_order ... ok
+test events::tests::an_explicit_finish_reason_wins_over_the_tool_call_default ... ok
+test events::tests::missing_call_ids_are_generated_unique_and_named ... ok
+test events::tests::tool_calls_arrive_whole_and_decide_the_finish_reason ... ok
+test events::tests::the_stream_ends_with_one_completed_carrying_reason_and_usage ... ok
+test config::tests::served_name_prefers_a_non_blank_override ... ok
+test events::tests::unparsable_arguments_are_kept_as_text ... ok
+test plan::tests::a_blank_system_is_dropped_and_an_empty_turn_is_refused ... ok
+test plan::tests::a_negative_top_k_means_disabled ... ok
+test plan::tests::a_legacy_history_without_call_ids_falls_back_to_the_function_name ... ok
+test plan::tests::a_tool_result_filed_under_a_user_message_still_becomes_a_tool_message ... ok
+test plan::tests::images_need_a_vision_model_and_tool_images_follow_their_result ... ok
+test plan::tests::reasoning_effort_and_thinking_toggles ... ok
+test plan::tests::json_schema_comes_from_the_typed_option_or_response_format ... ok
+test plan::tests::system_then_user_flatten_in_order ... ok
+test plan::tests::tool_calls_pair_with_their_results_through_the_call_id ... ok
+test plan::tests::tool_choice_accepts_the_openai_spellings ... ok
+test plan::tests::tool_choice_only_counts_when_tools_are_declared ... ok
+test plan::tests::tool_declarations_keep_their_schema ... ok
+test plan::tests::truncate_sequence_is_honoured ... ok
+test plan::tests::typed_options_and_extras_map_onto_sampling ... ok
+test plan::tests::unset_options_stay_unset_so_the_model_defaults_apply ... ok
+test plan::tests::widen_keeps_the_decimal_the_caller_wrote ... ok
+
+test result: ok. 32 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/lib.rs (target/debug/deps/aphrody_model_client-dea9605eca9eae1b)
+
+running 125 tests
+test anthropic::tests::images_and_tool_result_images_use_content_blocks ... ok
+test http::tests::error_messages_are_extracted_from_every_server_shape ... ok
+test ndjson::tests::a_corrupt_line_is_reported_once_and_ends_the_stream ... ok
+test ollama::chat::tests::a_mid_stream_error_line_fails_the_stream_with_its_message ... ok
+test ndjson::tests::lines_split_across_chunks_are_reassembled ... ok
+test ollama::chat::tests::a_plain_turn_maps_to_the_documented_request ... ok
+test ollama::chat::tests::images_go_to_the_images_field_and_urls_to_the_text ... ok
+test ollama::chat::tests::options_think_format_and_extra_are_mapped_and_merged ... ok
+test ollama::chat::tests::pending_thinking_is_flushed_when_the_turn_ends_without_an_answer ... ok
+test ollama::chat::tests::the_client_default_think_applies_when_the_turn_has_none ... ok
+test ollama::chat::tests::a_body_that_ends_without_done_is_an_error ... ok
+test ollama::chat::tests::two_calls_to_one_tool_keep_their_ids_and_indexes ... ok
+test ollama::chat::tests::thinking_text_calls_and_usage_map_to_unified_events ... ok
+test ollama::chat::tests::tool_history_keeps_thinking_calls_and_tool_names_together ... ok
+test ollama::chat::tests::tool_images_follow_the_tool_message_in_a_user_message ... ok
+test anthropic::tests::parser_assembles_thinking_text_and_tool_call ... ok
+test anthropic::tests::parser_surfaces_error_events_and_bad_tool_json ... ok
+test anthropic::tests::request_maps_roles_tools_and_call_ids ... ok
+test anthropic::tests::request_without_effort_omits_thinking_fields ... ok
+test ollama::tests::ollama_host_values_resolve_like_the_go_client ... ok
+test ollama::tests::model_names_compare_the_way_ollama_displays_them ... ok
+test http::tests::rooted_runtime_keeps_credentials_and_swaps_the_base ... ok
+test ndjson::tests::crlf_terminators_and_blank_lines_are_tolerated ... ok
+test ollama::types::tests::keep_alive_and_think_serialise_like_the_go_types ... ok
+test ollama::types::tests::null_fields_and_unknown_fields_are_tolerated ... ok
+test ollama::types::tests::pull_progress_lines_decode ... ok
+test ollama::types::tests::reasoning_effort_maps_onto_think ... ok
+test ollama::types::tests::requests_omit_unset_fields ... ok
+test ollama::types::tests::show_exposes_capabilities_and_context_length ... ok
+test ollama::types::tests::show_prefers_details_context_length_over_gguf_metadata ... ok
+test ollama::types::tests::tags_decode ... ok
+test ndjson::tests::an_empty_body_yields_nothing ... ok
+test ndjson::tests::a_transport_error_is_forwarded_and_terminates ... ok
+test ndjson::tests::a_multibyte_character_split_between_chunks_survives ... ok
+test http::tests::server_root_strips_only_a_trailing_api_segment ... ok
+test http::tests::refining_keeps_the_status_and_other_variants ... ok
+test ollama::chat::tests::a_call_without_an_id_gets_a_local_one ... ok
+test ollama::types::tests::chat_chunks_decode_tool_calls_and_counters ... ok
+test ollama::types::tests::embed_response_decodes ... ok
+test openai_chat::tests::parse_error_payload ... ok
+test openai_chat::tests::parse_chunked_tool_calls_stream ... ok
+test openai_chat::tests::options_map_onto_chat_fields_and_extra_wins ... ok
+test openai_chat::tests::build_chat_completions_request_matches_standard ... ok
+test openai_chat::tests::parse_completion_with_usage_and_finish_reason ... ok
+test ndjson::tests::error_lines_are_recognised ... ok
+test openai_chat::tests::parse_text_delta_event ... ok
+test openai_chat::tests::parse_tool_call_event ... ok
+test openai_chat::tests::parse_think_tag_within_content ... ok
+test openai_chat::tests::reasoning_tags_can_be_split_across_any_delta_boundary ... ok
+test openai_chat::tests::parse_reasoning_content_event ... ok
+test openai_chat::tests::parse_stream_across_think_tags ... ok
+test openai_chat::tests::missing_provider_ids_get_unique_local_ids ... ok
+test openai_chat::tests::tool_images_follow_the_tool_message_as_user_content ... ok
+test openai_chat::tests::two_parallel_calls_same_tool_keep_distinct_ids ... ok
+test openai_chat::tests::user_image_becomes_multimodal_content ... ok
+test ollama::tests::generate_streams_chunks_with_fill_in_the_middle_fields ... ok
+test ollama::tests::chat_streams_native_events_and_sends_the_native_request ... ok
+test openai_chat::tests::sse_error_is_terminal_even_when_done_follows_in_the_same_chunk ... ok
+test openai_chat::tests::sse_eof_after_finish_reason_is_a_valid_terminal_response ... ok
+test ollama::tests::a_failed_pull_is_an_error_and_a_cut_pull_is_not_a_success ... ok
+test openai_chat::tests::empty_tool_calls_cannot_accumulate_without_a_cardinality_limit ... ok
+test anthropic::tests::bearer_auth_sends_oauth_headers ... ok
+test openai_chat::tests::sse_transport_error_and_truncation_never_complete_successfully ... ok
+test openai_compat::tests::endpoint_url_appends_only_the_endpoint_and_encodes_query ... ok
+test openai_chat::tests::sse_done_stops_polling_a_peer_that_keeps_the_connection_open ... ok
+test openai_compat::tests::backoff_grows_is_capped_and_honours_retry_after ... ok
+test openai_responses::tests::failed_response_is_an_api_error ... ok
+test openai_responses::tests::malformed_arguments_surface_as_raw_string ... ok
+test openai_responses::tests::function_call_uses_call_id_from_output_item_and_emits_once ... ok
+test openai_chat::tests::incomplete_frame_after_finish_is_not_dispatched_or_successful ... ok
+test openai_responses::tests::every_frame_of_a_chunk_is_decoded ... ok
+test openai_chat::tests::sse_decodes_utf8_across_every_byte_boundary ... ok
+test openai_compat::tests::turn_options_win_over_provider_defaults ... ok
+test openai_responses::tests::reasoning_item_round_trips_verbatim ... ok
+test openai_responses::tests::responses_function_call_is_mapped ... ok
+test openai_responses::tests::request_pairs_parallel_calls_by_call_id_and_carries_images ... ok
+test openai_responses::tests::pending_call_is_flushed_on_completion ... ok
+test tests::build_request_body_matches_golden ... ok
+test tests::build_stream_url_trims_trailing_slash ... ok
+test tests::build_stream_url_matches_gemini_endpoint ... ok
+test openai_responses::tests::responses_text_delta_is_mapped ... ok
+test tests::empty_candidates_frame_yields_nothing ... ok
+test openai_responses::tests::stream_closed_without_completed_still_ends_the_turn ... ok
+test rerank::tests::scores_return_to_input_order_and_ignore_out_of_range_hits ... ok
+test tests::frames_to_items_skips_done_sentinel ... ok
+test tests::build_request_body_omits_optional_sections ... ok
+test tests::gemini_options_build_generation_config ... ok
+test tests::parse_error_frame_yields_api_error ... ok
+test tests::parse_final_frame_yields_completed_with_usage ... ok
+test tests::gemini_images_are_inline_data_and_tool_images_follow_the_response ... ok
+test tests::history_serializes_and_reads_back_verbatim ... ok
+test tests::gemini_thought_signature_round_trips_on_its_function_call ... ok
+test tests::gemini_body_carries_no_call_ids ... ok
+test tests::parse_usage_reports_cached_and_thought_tokens ... ok
+test tests::split_sse_events_handles_crlf_and_multiple ... ok
+test tests::parse_function_call_frame_yields_tool_call ... ok
+test tests::split_sse_events_keeps_partial_in_buffer ... ok
+test tests::parse_text_frame_yields_text_delta ... ok
+test tests::split_sse_ignores_repeated_leading_and_trailing_blank_lines ... ok
+test tests::sse_event_data_extracts_and_joins_data_lines ... ok
+test tests::sse_event_data_strips_single_leading_space ... ok
+test ollama::tests::pull_streams_progress_and_reports_success ... ok
+test tests::split_sse_handles_every_line_ending_and_chunk_boundary ... ok
+test vllm::tests::config_debug_redacts_key ... ok
+test openai_chat::tests::sse_limits_unfinished_frames_and_is_pull_based ... ok
+test openai_compat::tests::request_carries_path_auth_headers_query_and_default_options ... ok
+test openai_compat::tests::a_client_error_is_not_retried_and_surfaces_the_body ... ok
+test openai_compat::tests::retries_a_503_then_streams ... ok
+test ollama::tests::embedding_through_the_trait_checks_the_vector_count ... ok
+test anthropic::tests::client_streams_a_tool_turn_from_a_local_messages_server ... ok
+test ollama::tests::a_missing_model_surfaces_the_server_message_and_status ... ok
+test ollama::tests::probing_capabilities_replaces_the_conservative_default ... ok
+test vllm::tests::advanced_inputs_and_binary_pooling_keep_wire_data ... ok
+test ollama::tests::management_calls_decode_the_documented_payloads ... ok
+test openai_compat::tests::mock_axum_server_sees_chat_completions_with_configured_headers ... ok
+test vllm::tests::embeddings_and_rerank_obey_input_and_top_n_contracts ... ok
+test vllm::tests::routes_auth_queries_and_native_response_shapes ... ok
+test vllm::tests::chat_stream_preserves_vllm_options_and_usage ... ok
+test vllm::tests::dropping_chat_stream_releases_http_body ... ok
+test vllm::tests::malformed_batches_and_tokenization_are_rejected ... ok
+test openai_compat::tests::a_silent_stream_fails_with_an_idle_timeout ... ok
+test vllm::tests::deadlines_cover_headers_native_body_and_sse_idle ... ok
+test openai_compat::tests::an_unreachable_provider_fails_after_its_retry_budget ... ok
+test vllm::tests::retries_errors_and_decode_failure_use_shared_policy ... ok
+test openai_chat::tests::accumulated_tool_fragments_have_a_total_memory_limit ... ok
+
+test result: ok. 125 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.61s
+
+   Doc-tests aphrody_engine_mistralrs
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests aphrody_model_client
+
+running 1 test
+test crates/ai/model-client/src/ollama/mod.rs - ollama::OllamaClient (line 463) - compile ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+all doctests ran in 0.31s; merged doctests compilation took 0.30s

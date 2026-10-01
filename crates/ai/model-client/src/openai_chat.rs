@@ -251,36 +251,45 @@ fn chat_message_to_openai_messages(message: &ChatMessage) -> Vec<Value> {
 
 /// Process a streaming text chunk, extracting reasoning tokens inside `<think>...</think>`
 /// and standard text tokens outside.
-fn process_text_chunk(text: &str, in_thinking: &mut bool) -> Vec<ModelStreamEvent> {
+fn process_text_chunk(
+    text: &str,
+    in_thinking: &mut bool,
+    pending: &mut String,
+) -> Vec<ModelStreamEvent> {
     let mut events = Vec::new();
-    let mut remainder = text;
-
-    while !remainder.is_empty() {
-        if *in_thinking {
-            if let Some(end_idx) = remainder.find("</think>") {
-                let thinking_part = &remainder[..end_idx];
-                if !thinking_part.is_empty() {
-                    events.push(ModelStreamEvent::ReasoningDelta(thinking_part.to_string()));
-                }
-                *in_thinking = false;
-                remainder = &remainder[end_idx + "</think>".len()..];
-            } else {
-                events.push(ModelStreamEvent::ReasoningDelta(remainder.to_string()));
-                break;
+    pending.push_str(text);
+    loop {
+        let marker = if *in_thinking { "</think>" } else { "<think>" };
+        if let Some(index) = pending.find(marker) {
+            if index > 0 {
+                let text = pending[..index].to_string();
+                events.push(if *in_thinking {
+                    ModelStreamEvent::ReasoningDelta(text)
+                } else {
+                    ModelStreamEvent::TextDelta(text)
+                });
             }
-        } else if let Some(start_idx) = remainder.find("<think>") {
-            let text_part = &remainder[..start_idx];
-            if !text_part.is_empty() {
-                events.push(ModelStreamEvent::TextDelta(text_part.to_string()));
-            }
-            *in_thinking = true;
-            remainder = &remainder[start_idx + "<think>".len()..];
+            pending.drain(..index + marker.len());
+            *in_thinking = !*in_thinking;
         } else {
-            events.push(ModelStreamEvent::TextDelta(remainder.to_string()));
+            // Only hold a suffix that may become a tag in the next delta;
+            // ordinary output remains immediately visible to the consumer.
+            let held = (1..marker.len())
+                .rev()
+                .find(|length| pending.ends_with(&marker[..*length]))
+                .unwrap_or(0);
+            let emitted = pending.len() - held;
+            if emitted > 0 {
+                let text = pending.drain(..emitted).collect();
+                events.push(if *in_thinking {
+                    ModelStreamEvent::ReasoningDelta(text)
+                } else {
+                    ModelStreamEvent::TextDelta(text)
+                });
+            }
             break;
         }
     }
-
     events
 }
 
@@ -296,7 +305,9 @@ struct PendingToolCall {
 #[derive(Debug, Default)]
 pub(crate) struct ChatCompletionsStreamParser {
     in_thinking: bool,
+    pending_text: String,
     pending_tool_calls: Vec<PendingToolCall>,
+    pending_tool_bytes: usize,
     completed_usage: Option<TokenUsage>,
     completed_finish_reason: Option<String>,
 }
@@ -372,13 +383,24 @@ impl ChatCompletionsStreamParser {
                 let content =
                     delta.get("content").and_then(Value::as_str).filter(|s| !s.is_empty());
                 if let Some(c) = content {
-                    events.extend(process_text_chunk(c, &mut self.in_thinking));
+                    events.extend(process_text_chunk(
+                        c,
+                        &mut self.in_thinking,
+                        &mut self.pending_text,
+                    ));
                 }
 
                 // 3. Tool call deltas
                 if let Some(tool_calls) = delta.get("tool_calls").and_then(Value::as_array) {
                     for tc in tool_calls {
                         events.extend(self.record_tool_call_delta(tc));
+                        if self.pending_tool_bytes > MAX_CHAT_SSE_FRAME_BYTES
+                            || self.pending_tool_calls.len() > MAX_CHAT_PENDING_TOOL_CALLS
+                        {
+                            return Err(ModelError::Stream(
+                                "OpenAI pending tool calls exceed 8 MiB or 1024 calls".into(),
+                            ));
+                        }
                     }
                 }
             }
@@ -415,6 +437,8 @@ impl ChatCompletionsStreamParser {
             self.pending_tool_calls.last_mut().unwrap()
         };
 
+        let old_bytes = entry.id.len() + entry.name.len() + entry.arguments_buf.len();
+
         if let Some(id) = tc.get("id").and_then(Value::as_str)
             && !id.is_empty()
         {
@@ -435,6 +459,14 @@ impl ChatCompletionsStreamParser {
         }
         entry.arguments_buf.push_str(&fragment);
 
+        let new_bytes = entry
+            .id
+            .len()
+            .saturating_add(entry.name.len())
+            .saturating_add(entry.arguments_buf.len());
+        self.pending_tool_bytes =
+            self.pending_tool_bytes.saturating_sub(old_bytes).saturating_add(new_bytes);
+
         Some(ModelStreamEvent::ToolCallDelta {
             id: (!entry.id.is_empty()).then(|| entry.id.clone()),
             name: (!entry.name.is_empty()).then(|| entry.name.clone()),
@@ -445,6 +477,7 @@ impl ChatCompletionsStreamParser {
     /// Flush all accumulated tool calls as [`ModelStreamEvent::ToolCall`].
     pub(crate) fn flush_tool_calls(&mut self) -> Vec<ModelStreamEvent> {
         let pending = std::mem::take(&mut self.pending_tool_calls);
+        self.pending_tool_bytes = 0;
         let mut events = Vec::with_capacity(pending.len());
         for call in pending {
             let name = if call.name.is_empty() { "unnamed_tool".to_string() } else { call.name };
@@ -464,7 +497,16 @@ impl ChatCompletionsStreamParser {
 
     /// Complete the stream on `[DONE]` or stream EOF, emitting tool calls and Completed.
     pub(crate) fn feed_done(&mut self) -> Vec<ModelStreamEvent> {
-        let mut events = self.flush_tool_calls();
+        let mut events = Vec::new();
+        if !self.pending_text.is_empty() {
+            let text = std::mem::take(&mut self.pending_text);
+            events.push(if self.in_thinking {
+                ModelStreamEvent::ReasoningDelta(text)
+            } else {
+                ModelStreamEvent::TextDelta(text)
+            });
+        }
+        events.extend(self.flush_tool_calls());
         if self.completed_finish_reason.is_some() || self.completed_usage.is_some() {
             events.push(ModelStreamEvent::Completed {
                 usage: self.completed_usage.take(),
@@ -479,15 +521,9 @@ impl ChatCompletionsStreamParser {
 pub fn parse_chat_completions_event(data: &str) -> Result<Vec<ModelStreamEvent>, ModelError> {
     let mut parser = ChatCompletionsStreamParser::new();
     let mut events = parser.feed_event(data)?;
-    // For single-event evaluation, flush tool calls immediately
-    events.extend(parser.flush_tool_calls());
-    // Also emit completed if finish_reason or usage was present in this frame
-    if parser.completed_finish_reason.is_some() || parser.completed_usage.is_some() {
-        events.push(ModelStreamEvent::Completed {
-            usage: parser.completed_usage.take(),
-            finish_reason: parser.completed_finish_reason.take(),
-        });
-    }
+    // For single-event evaluation, flush tool calls immediately.
+    // Complete any literal tag prefix too: no next delta will arrive here.
+    events.extend(parser.feed_done());
     Ok(events)
 }
 
@@ -529,6 +565,12 @@ impl ModelClient for LocalChatCompletionsClient {
     }
 }
 
+/// Largest unfinished SSE frame accepted from a provider (8 MiB).
+/// A provider that never terminates a frame cannot grow the buffer indefinitely.
+const MAX_CHAT_SSE_FRAME_BYTES: usize = 8 * 1024 * 1024;
+/// Maximum simultaneously accumulating tool calls, including empty arguments.
+const MAX_CHAT_PENDING_TOOL_CALLS: usize = 1024;
+
 /// Decode a Chat Completions SSE byte stream into neutral events.
 pub(crate) fn chat_completions_sse_stream<S>(
     bytes: S,
@@ -538,96 +580,120 @@ where
 {
     futures::stream::once(async { Ok(ModelStreamEvent::Created) }).chain(
         futures::stream::unfold(
-            (Box::pin(bytes.fuse()), String::new(), ChatCompletionsStreamParser::new(), false),
-            |(mut stream, mut buffer, mut parser, mut completed_sent)| async move {
+            (
+                Some(Box::pin(bytes.fuse())),
+                String::new(),
+                Vec::<u8>::new(),
+                ChatCompletionsStreamParser::new(),
+            ),
+            |(mut stream, mut buffer, mut utf8_tail, mut parser)| async move {
+                stream.as_ref()?;
                 loop {
                     let frames = crate::split_sse_events(&mut buffer);
                     let mut items = Vec::new();
-
                     for frame in frames {
+                        if frame.len() > MAX_CHAT_SSE_FRAME_BYTES {
+                            items.push(Err(ModelError::Stream(
+                                "OpenAI SSE frame exceeds 8 MiB".into(),
+                            )));
+                            stream = None;
+                            break;
+                        }
                         let data = crate::sse_event_data(&frame);
                         let trimmed = data.trim();
                         if trimmed.is_empty() {
                             continue;
                         }
                         if trimmed == "[DONE]" {
-                            if !completed_sent {
-                                let done_events = parser.feed_done();
-                                if !done_events.is_empty() {
-                                    completed_sent = true;
-                                    items.extend(done_events.into_iter().map(Ok));
-                                }
+                            let mut done = parser.feed_done();
+                            if !done
+                                .iter()
+                                .any(|event| matches!(event, ModelStreamEvent::Completed { .. }))
+                            {
+                                done.push(ModelStreamEvent::Completed {
+                                    usage: None,
+                                    finish_reason: None,
+                                });
                             }
-                            continue;
+                            items.extend(done.into_iter().map(Ok));
+                            // Release the HTTP body now, even if the peer leaves
+                            // the socket open after its terminal marker.
+                            stream = None;
+                            break;
                         }
                         match parser.feed_event(trimmed) {
-                            Ok(events) => {
-                                items.extend(events.into_iter().map(Ok));
+                            Ok(events) => items.extend(events.into_iter().map(Ok)),
+                            Err(error) => {
+                                items.push(Err(error));
+                                stream = None;
+                                break;
                             },
-                            Err(error) => items.push(Err(error)),
                         }
                     }
-
+                    if stream.is_some() && buffer.len() > MAX_CHAT_SSE_FRAME_BYTES {
+                        items
+                            .push(Err(ModelError::Stream("OpenAI SSE frame exceeds 8 MiB".into())));
+                        stream = None;
+                    }
                     if !items.is_empty() {
                         return Some((
                             futures::stream::iter(items),
-                            (stream, buffer, parser, completed_sent),
+                            (stream, buffer, utf8_tail, parser),
                         ));
                     }
-
-                    match stream.next().await {
-                        Some(Ok(chunk)) => match std::str::from_utf8(&chunk) {
-                            Ok(text) => buffer.push_str(text),
-                            Err(error) => {
-                                return Some((
-                                    futures::stream::iter(vec![Err(ModelError::Stream(format!(
-                                        "invalid utf-8: {error}"
-                                    )))]),
-                                    (stream, buffer, parser, completed_sent),
-                                ));
-                            },
+                    let active = stream.as_mut()?;
+                    match active.next().await {
+                        Some(Ok(chunk)) => {
+                            utf8_tail.extend_from_slice(&chunk);
+                            match std::str::from_utf8(&utf8_tail) {
+                                Ok(text) => {
+                                    buffer.push_str(text);
+                                    utf8_tail.clear();
+                                },
+                                Err(error) if error.error_len().is_none() => {
+                                    // HTTP chunk boundaries may bisect a codepoint.
+                                    let valid = error.valid_up_to();
+                                    buffer.push_str(
+                                        std::str::from_utf8(&utf8_tail[..valid])
+                                            .expect("validated UTF-8 prefix"),
+                                    );
+                                    utf8_tail.drain(..valid);
+                                },
+                                Err(error) => {
+                                    let error =
+                                        ModelError::Stream(format!("invalid utf-8: {error}"));
+                                    return Some((
+                                        futures::stream::iter(vec![Err(error)]),
+                                        (None, buffer, utf8_tail, parser),
+                                    ));
+                                },
+                            }
                         },
                         Some(Err(error)) => {
                             return Some((
                                 futures::stream::iter(vec![Err(error)]),
-                                (stream, buffer, parser, completed_sent),
+                                (None, buffer, utf8_tail, parser),
                             ));
                         },
                         None => {
-                            let tail = std::mem::take(&mut buffer);
-                            let trimmed = tail.trim();
-                            let mut final_items = Vec::new();
-                            if !trimmed.is_empty() {
-                                let data = crate::sse_event_data(trimmed);
-                                let d_trimmed = data.trim();
-                                if !d_trimmed.is_empty() && d_trimmed != "[DONE]" {
-                                    match parser.feed_event(d_trimmed) {
-                                        Ok(events) => {
-                                            final_items.extend(events.into_iter().map(Ok));
-                                        },
-                                        Err(error) => final_items.push(Err(error)),
-                                    }
-                                }
-                            }
-                            if !completed_sent {
-                                let done_events = parser.feed_done();
-                                if !done_events.is_empty() {
-                                    completed_sent = true;
-                                    final_items.extend(done_events.into_iter().map(Ok));
-                                } else {
-                                    completed_sent = true;
-                                    final_items.push(Ok(ModelStreamEvent::Completed {
-                                        usage: None,
-                                        finish_reason: Some("stop".to_string()),
-                                    }));
-                                }
-                            }
-                            if final_items.is_empty() {
-                                return None;
-                            }
+                            let items = if !utf8_tail.is_empty() {
+                                vec![Err(ModelError::Stream(
+                                    "truncated utf-8 at OpenAI SSE EOF".into(),
+                                ))]
+                            } else if !buffer.trim().is_empty() {
+                                vec![Err(ModelError::Stream(
+                                    "OpenAI SSE ended with an incomplete event".into(),
+                                ))]
+                            } else if parser.completed_finish_reason.is_some() {
+                                parser.feed_done().into_iter().map(Ok).collect()
+                            } else {
+                                vec![Err(ModelError::Stream(
+                                    "OpenAI SSE ended before a terminal event".into(),
+                                ))]
+                            };
                             return Some((
-                                futures::stream::iter(final_items),
-                                (stream, String::new(), parser, completed_sent),
+                                futures::stream::iter(items),
+                                (None, String::new(), Vec::new(), parser),
                             ));
                         },
                     }
@@ -882,9 +948,10 @@ mod tests {
     fn parse_reasoning_content_event() {
         let data = r#"{"choices":[{"delta":{"reasoning_content":"Thinking carefully..."}}]}"#;
         let events = parse_chat_completions_event(data).unwrap();
-        assert_eq!(events, vec![ModelStreamEvent::ReasoningDelta(
-            "Thinking carefully...".to_string()
-        )]);
+        assert_eq!(
+            events,
+            vec![ModelStreamEvent::ReasoningDelta("Thinking carefully...".to_string())]
+        );
     }
 
     #[test]
@@ -892,10 +959,13 @@ mod tests {
         let data =
             r#"{"choices":[{"delta":{"content":"<think>Internal plan</think>Visible answer"}}]}"#;
         let events = parse_chat_completions_event(data).unwrap();
-        assert_eq!(events, vec![
-            ModelStreamEvent::ReasoningDelta("Internal plan".to_string()),
-            ModelStreamEvent::TextDelta("Visible answer".to_string()),
-        ]);
+        assert_eq!(
+            events,
+            vec![
+                ModelStreamEvent::ReasoningDelta("Internal plan".to_string()),
+                ModelStreamEvent::TextDelta("Visible answer".to_string()),
+            ]
+        );
     }
 
     #[test]
@@ -905,18 +975,24 @@ mod tests {
         let e1 = parser
             .feed_event(r#"{"choices":[{"delta":{"content":"Before <think>Inside"}}]}"#)
             .unwrap();
-        assert_eq!(e1, vec![
-            ModelStreamEvent::TextDelta("Before ".to_string()),
-            ModelStreamEvent::ReasoningDelta("Inside".to_string()),
-        ]);
+        assert_eq!(
+            e1,
+            vec![
+                ModelStreamEvent::TextDelta("Before ".to_string()),
+                ModelStreamEvent::ReasoningDelta("Inside".to_string()),
+            ]
+        );
 
         let e2 = parser
             .feed_event(r#"{"choices":[{"delta":{"content":" reasoning</think> After"}}]}"#)
             .unwrap();
-        assert_eq!(e2, vec![
-            ModelStreamEvent::ReasoningDelta(" reasoning".to_string()),
-            ModelStreamEvent::TextDelta(" After".to_string()),
-        ]);
+        assert_eq!(
+            e2,
+            vec![
+                ModelStreamEvent::ReasoningDelta(" reasoning".to_string()),
+                ModelStreamEvent::TextDelta(" After".to_string()),
+            ]
+        );
     }
 
     #[test]
@@ -938,11 +1014,14 @@ mod tests {
         }"#;
         let events = parse_chat_completions_event(data).unwrap();
         assert_eq!(events.len(), 2);
-        assert_eq!(events[0], ModelStreamEvent::ToolCallDelta {
-            id: Some("call_abc123".to_string()),
-            name: Some("read_file".to_string()),
-            arguments_fragment: "{\"path\":\"src/lib.rs\"}".to_string(),
-        });
+        assert_eq!(
+            events[0],
+            ModelStreamEvent::ToolCallDelta {
+                id: Some("call_abc123".to_string()),
+                name: Some("read_file".to_string()),
+                arguments_fragment: "{\"path\":\"src/lib.rs\"}".to_string(),
+            }
+        );
         match &events[1] {
             ModelStreamEvent::ToolCall { id, name, arguments } => {
                 assert_eq!(id, "call_abc123");
@@ -963,11 +1042,14 @@ mod tests {
                 r#"{"choices":[{"delta":{"tool_calls":[{"index":0,"id":"call_1","function":{"name":"calc","arguments":"{\"a\":"}}]}}]}"#,
             )
             .unwrap();
-        assert_eq!(e1, vec![ModelStreamEvent::ToolCallDelta {
-            id: Some("call_1".to_string()),
-            name: Some("calc".to_string()),
-            arguments_fragment: "{\"a\":".to_string(),
-        }]);
+        assert_eq!(
+            e1,
+            vec![ModelStreamEvent::ToolCallDelta {
+                id: Some("call_1".to_string()),
+                name: Some("calc".to_string()),
+                arguments_fragment: "{\"a\":".to_string(),
+            }]
+        );
 
         // Chunk 2: index 0 with end of args
         let e2 = parser
@@ -975,11 +1057,14 @@ mod tests {
                 r#"{"choices":[{"delta":{"tool_calls":[{"index":0,"function":{"arguments":"1}"}}]}}]}"#,
             )
             .unwrap();
-        assert_eq!(e2, vec![ModelStreamEvent::ToolCallDelta {
-            id: Some("call_1".to_string()),
-            name: Some("calc".to_string()),
-            arguments_fragment: "1}".to_string(),
-        }]);
+        assert_eq!(
+            e2,
+            vec![ModelStreamEvent::ToolCallDelta {
+                id: Some("call_1".to_string()),
+                name: Some("calc".to_string()),
+                arguments_fragment: "1}".to_string(),
+            }]
+        );
 
         // Chunk 3: finish_reason tool_calls
         let e3 = parser.feed_event(r#"{"choices":[{"finish_reason":"tool_calls"}]}"#).unwrap();
@@ -995,10 +1080,13 @@ mod tests {
 
         // Done: Completed event emitted
         let done = parser.feed_done();
-        assert_eq!(done, vec![ModelStreamEvent::Completed {
-            usage: None,
-            finish_reason: Some("tool_calls".to_string()),
-        }]);
+        assert_eq!(
+            done,
+            vec![ModelStreamEvent::Completed {
+                usage: None,
+                finish_reason: Some("tool_calls".to_string()),
+            }]
+        );
     }
 
     #[test]
@@ -1012,10 +1100,13 @@ mod tests {
             }
         }"#;
         let events = parse_chat_completions_event(data).unwrap();
-        assert_eq!(events, vec![ModelStreamEvent::Completed {
-            usage: Some(TokenUsage::new(15, 8, 23)),
-            finish_reason: Some("stop".to_string()),
-        }]);
+        assert_eq!(
+            events,
+            vec![ModelStreamEvent::Completed {
+                usage: Some(TokenUsage::new(15, 8, 23)),
+                finish_reason: Some("stop".to_string()),
+            }]
+        );
     }
 
     #[test]
@@ -1029,5 +1120,209 @@ mod tests {
             },
             other => panic!("expected Api error, got {other:?}"),
         }
+    }
+
+    #[tokio::test]
+    async fn sse_decodes_utf8_across_every_byte_boundary() {
+        use futures::StreamExt as _;
+        let fixture =
+            "data: {\"choices\":[{\"delta\":{\"content\":\"é日🙂\"}}]}\r\n\r\ndata: [DONE]\r\n\r\n";
+        for split in 0..=fixture.len() {
+            let bytes = futures::stream::iter(vec![
+                Ok(bytes::Bytes::copy_from_slice(&fixture.as_bytes()[..split])),
+                Ok(bytes::Bytes::copy_from_slice(&fixture.as_bytes()[split..])),
+            ]);
+            let events: Vec<_> = chat_completions_sse_stream(bytes).collect().await;
+            assert_eq!(events.len(), 3, "split {split}: {events:?}");
+            assert!(matches!(&events[1], Ok(ModelStreamEvent::TextDelta(text)) if text == "é日🙂"));
+            assert!(matches!(&events[2], Ok(ModelStreamEvent::Completed { .. })));
+        }
+    }
+
+    #[tokio::test]
+    async fn sse_done_stops_polling_a_peer_that_keeps_the_connection_open() {
+        use futures::StreamExt as _;
+        let bytes =
+            futures::stream::once(async { Ok(bytes::Bytes::from_static(b"data: [DONE]\n\n")) })
+                .chain(futures::stream::pending());
+        let events: Vec<_> = tokio::time::timeout(
+            std::time::Duration::from_secs(1),
+            chat_completions_sse_stream(bytes).collect(),
+        )
+        .await
+        .expect("DONE must end without EOF");
+        assert_eq!(events.len(), 2);
+        assert!(matches!(&events[1], Ok(ModelStreamEvent::Completed { finish_reason: None, .. })));
+    }
+
+    #[tokio::test]
+    async fn sse_error_is_terminal_even_when_done_follows_in_the_same_chunk() {
+        use futures::StreamExt as _;
+        let bytes = futures::stream::iter(vec![Ok(bytes::Bytes::from_static(
+            b"data: {\"error\":{\"message\":\"engine failed\",\"code\":500}}\n\ndata: [DONE]\n\n",
+        ))]);
+        let events: Vec<_> = chat_completions_sse_stream(bytes).collect().await;
+        assert_eq!(events.len(), 2);
+        assert!(
+            matches!(&events[1], Err(ModelError::Api { status: 500, message }) if message == "engine failed")
+        );
+    }
+
+    #[tokio::test]
+    async fn sse_transport_error_and_truncation_never_complete_successfully() {
+        use futures::StreamExt as _;
+        for bytes in [
+            vec![Ok(bytes::Bytes::from_static(
+                b"data: {\"choices\":[{\"delta\":{\"content\":\"partial\"}}]}\n\n",
+            ))],
+            vec![Err(ModelError::Stream("transport failed".into()))],
+            vec![Ok(bytes::Bytes::from_static(
+                b"data: {\"choices\":[{\"delta\":{\"content\":\"partial\"}}]}\n\n\xc3",
+            ))],
+            vec![Ok(bytes::Bytes::from_static(b"data: {oops}\n\n"))],
+        ] {
+            let events: Vec<_> =
+                chat_completions_sse_stream(futures::stream::iter(bytes)).collect().await;
+            assert!(events.last().expect("error").is_err(), "{events:?}");
+            assert!(
+                !events.iter().any(|e| matches!(e, Ok(ModelStreamEvent::Completed { .. }))),
+                "{events:?}"
+            );
+        }
+    }
+
+    #[tokio::test]
+    async fn sse_eof_after_finish_reason_is_a_valid_terminal_response() {
+        use futures::StreamExt as _;
+        let bytes = futures::stream::iter(vec![Ok(bytes::Bytes::from_static(
+            b"data: {\"choices\":[{\"finish_reason\":\"length\"}]}\n\n",
+        ))]);
+        let events: Vec<_> = chat_completions_sse_stream(bytes).collect().await;
+        assert!(
+            matches!(&events[1], Ok(ModelStreamEvent::Completed { finish_reason: Some(reason), .. }) if reason == "length")
+        );
+    }
+
+    #[tokio::test]
+    async fn sse_limits_unfinished_frames_and_is_pull_based() {
+        use futures::StreamExt as _;
+        use std::sync::{
+            Arc,
+            atomic::{AtomicUsize, Ordering},
+        };
+        let polls = Arc::new(AtomicUsize::new(0));
+        let calls = polls.clone();
+        let bytes = futures::stream::poll_fn(move |_| {
+            calls.fetch_add(1, Ordering::SeqCst);
+            std::task::Poll::Ready(Some(Ok(bytes::Bytes::from_static(
+                b"data: {\"choices\":[{\"delta\":{\"content\":\"one\"}}]}\n\n",
+            ))))
+        });
+        let stream = chat_completions_sse_stream(bytes);
+        futures::pin_mut!(stream);
+        assert!(matches!(stream.next().await, Some(Ok(ModelStreamEvent::Created))));
+        assert_eq!(polls.load(Ordering::SeqCst), 0);
+        assert!(matches!(stream.next().await, Some(Ok(ModelStreamEvent::TextDelta(_)))));
+        assert_eq!(polls.load(Ordering::SeqCst), 1);
+
+        let oversized = bytes::Bytes::from(vec![b'x'; MAX_CHAT_SSE_FRAME_BYTES + 1]);
+        let bytes = futures::stream::iter(vec![Ok(oversized)]);
+        let events: Vec<_> = chat_completions_sse_stream(bytes).collect().await;
+        assert!(
+            matches!(events.last(), Some(Err(ModelError::Stream(message))) if message.contains("8 MiB"))
+        );
+    }
+
+    #[test]
+    fn reasoning_tags_can_be_split_across_any_delta_boundary() {
+        let text = "before <think>reason</think> after";
+        for split in 0..=text.len() {
+            let mut parser = ChatCompletionsStreamParser::new();
+            let mut events = Vec::new();
+            for chunk in [&text[..split], &text[split..]] {
+                events.extend(
+                    parser
+                        .feed_event(&json!({"choices":[{"delta":{"content":chunk}}]}).to_string())
+                        .expect("frame"),
+                );
+            }
+            let visible: String = events
+                .iter()
+                .filter_map(|e| match e {
+                    ModelStreamEvent::TextDelta(t) => Some(t.as_str()),
+                    _ => None,
+                })
+                .collect();
+            let reason: String = events
+                .iter()
+                .filter_map(|e| match e {
+                    ModelStreamEvent::ReasoningDelta(t) => Some(t.as_str()),
+                    _ => None,
+                })
+                .collect();
+            assert_eq!(visible, "before  after", "split {split}");
+            assert_eq!(reason, "reason", "split {split}");
+        }
+        let mut parser = ChatCompletionsStreamParser::new();
+        parser.feed_event(r#"{"choices":[{"delta":{"content":"literal <th"}}]}"#).expect("frame");
+        assert_eq!(parser.feed_done(), vec![ModelStreamEvent::TextDelta("<th".into())]);
+    }
+
+    #[tokio::test]
+    async fn incomplete_frame_after_finish_is_not_dispatched_or_successful() {
+        use futures::StreamExt as _;
+        let bytes = futures::stream::iter(vec![Ok(bytes::Bytes::from_static(
+            b"data: {\"choices\":[{\"finish_reason\":\"stop\"}]}\n\ndata: {\"choices\":[{\"delta\":{\"content\":\"extra\"}}]}",
+        ))]);
+        let events: Vec<_> = chat_completions_sse_stream(bytes).collect().await;
+        assert_eq!(events.len(), 2);
+        assert!(
+            matches!(&events[1],Err(ModelError::Stream(message)) if message.contains("incomplete event"))
+        );
+    }
+
+    #[tokio::test]
+    async fn accumulated_tool_fragments_have_a_total_memory_limit() {
+        let mut parser = ChatCompletionsStreamParser::new();
+        let fragment = "x".repeat(MAX_CHAT_SSE_FRAME_BYTES / 2);
+        let frame = json!({"choices":[{"delta":{"tool_calls":[{"index":0,"id":"call-1","function":{"name":"write","arguments":fragment}}]}}]}).to_string();
+        parser.feed_event(&frame).expect("first fragment fits");
+        assert!(
+            matches!(parser.feed_event(&frame),Err(ModelError::Stream(message)) if message.contains("pending tool calls exceed"))
+        );
+        use futures::StreamExt as _;
+        let chunk = bytes::Bytes::from(format!("data: {frame}\n\n"));
+        let stream = futures::stream::iter(vec![
+            Ok(chunk.clone()),
+            Ok(chunk),
+            Ok(bytes::Bytes::from_static(b"data: [DONE]\n\n")),
+        ]);
+        let events: Vec<_> = chat_completions_sse_stream(stream).collect().await;
+        assert!(
+            matches!(events.last(),Some(Err(ModelError::Stream(message))) if message.contains("pending tool calls exceed"))
+        );
+        assert!(
+            !events.iter().any(|event| matches!(event, Ok(ModelStreamEvent::Completed { .. })))
+        );
+        assert_eq!(
+            parse_chat_completions_event(r#"{"choices":[{"delta":{"content":"literal <th"}}]}"#)
+                .expect("literal tag"),
+            vec![
+                ModelStreamEvent::TextDelta("literal ".into()),
+                ModelStreamEvent::TextDelta("<th".into())
+            ]
+        );
+    }
+
+    #[test]
+    fn empty_tool_calls_cannot_accumulate_without_a_cardinality_limit() {
+        let mut parser = ChatCompletionsStreamParser::new();
+        let calls: Vec<_> = (0..=MAX_CHAT_PENDING_TOOL_CALLS)
+            .map(|index| json!({"index":index,"function":{"arguments":""}}))
+            .collect();
+        let frame = json!({"choices":[{"delta":{"tool_calls":calls}}]}).to_string();
+        assert!(
+            matches!(parser.feed_event(&frame),Err(ModelError::Stream(message)) if message.contains("1024 calls"))
+        );
     }
 }

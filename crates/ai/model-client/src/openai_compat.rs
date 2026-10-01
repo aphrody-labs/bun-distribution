@@ -238,6 +238,13 @@ impl OpenAiCompatClient {
         Self { http: reqwest::Client::new(), runtime, wire, model: model.into() }
     }
 
+    /// Reuse a configured HTTP client and its connection pool across provider APIs.
+    #[must_use]
+    pub fn with_http_client(mut self, http: reqwest::Client) -> Self {
+        self.http = http;
+        self
+    }
+
     /// The provider description this client was built from.
     #[must_use]
     pub fn runtime(&self) -> &ProviderRuntime {

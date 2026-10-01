@@ -1,0 +1,204 @@
+    Checking aphrody-model-client v1.0.0 (/home/aphro/aphrody/crates/ai/model-client)
+    Checking aphrody-engine-mistralrs v1.0.0 (/home/aphro/aphrody/crates/ai/engine-mistralrs)
+warning: struct `RawChunk` is never constructed
+  --> crates/ai/engine-mistralrs/src/events.rs:22:19
+   |
+22 | pub(crate) struct RawChunk {
+   |                   ^^^^^^^^
+   |
+   = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: struct `RawToolCall` is never constructed
+  --> crates/ai/engine-mistralrs/src/events.rs:37:19
+   |
+37 | pub(crate) struct RawToolCall {
+   |                   ^^^^^^^^^^^
+
+warning: struct `RawUsage` is never constructed
+  --> crates/ai/engine-mistralrs/src/events.rs:46:19
+   |
+46 | pub(crate) struct RawUsage {
+   |                   ^^^^^^^^
+
+warning: struct `StreamState` is never constructed
+  --> crates/ai/engine-mistralrs/src/events.rs:56:19
+   |
+56 | pub(crate) struct StreamState {
+   |                   ^^^^^^^^^^^
+
+warning: methods `push` and `finish` are never used
+  --> crates/ai/engine-mistralrs/src/events.rs:66:19
+   |
+63 | impl StreamState {
+   | ---------------- methods in this implementation
+...
+66 |     pub(crate) fn push(&mut self, chunk: RawChunk) -> Vec<ModelStreamEvent> {
+   |                   ^^^^
+...
+90 |     pub(crate) fn finish(&mut self) -> Vec<ModelStreamEvent> {
+   |                   ^^^^^^
+
+warning: function `tool_call_event` is never used
+   --> crates/ai/engine-mistralrs/src/events.rs:103:4
+    |
+103 | fn tool_call_event(call: RawToolCall) -> ModelStreamEvent {
+    |    ^^^^^^^^^^^^^^^
+
+warning: function `generated_call_id` is never used
+   --> crates/ai/engine-mistralrs/src/events.rs:114:4
+    |
+114 | fn generated_call_id(name: &str) -> String {
+    |    ^^^^^^^^^^^^^^^^^
+
+warning: function `parse_arguments` is never used
+   --> crates/ai/engine-mistralrs/src/events.rs:122:4
+    |
+122 | fn parse_arguments(raw: &str) -> Value {
+    |    ^^^^^^^^^^^^^^^
+
+warning: function `token_usage` is never used
+   --> crates/ai/engine-mistralrs/src/events.rs:129:4
+    |
+129 | fn token_usage(usage: RawUsage) -> TokenUsage {
+    |    ^^^^^^^^^^^
+
+warning: enum `PlannedMessage` is never used
+  --> crates/ai/engine-mistralrs/src/plan.rs:30:17
+   |
+30 | pub(crate) enum PlannedMessage {
+   |                 ^^^^^^^^^^^^^^
+
+warning: struct `PlannedToolCall` is never constructed
+  --> crates/ai/engine-mistralrs/src/plan.rs:43:19
+   |
+43 | pub(crate) struct PlannedToolCall {
+   |                   ^^^^^^^^^^^^^^^
+
+warning: struct `PlannedTool` is never constructed
+  --> crates/ai/engine-mistralrs/src/plan.rs:52:19
+   |
+52 | pub(crate) struct PlannedTool {
+   |                   ^^^^^^^^^^^
+
+warning: enum `PlannedToolChoice` is never used
+  --> crates/ai/engine-mistralrs/src/plan.rs:61:17
+   |
+61 | pub(crate) enum PlannedToolChoice {
+   |                 ^^^^^^^^^^^^^^^^^
+
+warning: enum `Effort` is never used
+  --> crates/ai/engine-mistralrs/src/plan.rs:70:17
+   |
+70 | pub(crate) enum Effort {
+   |                 ^^^^^^
+
+warning: struct `PlannedSampling` is never constructed
+  --> crates/ai/engine-mistralrs/src/plan.rs:81:19
+   |
+81 | pub(crate) struct PlannedSampling {
+   |                   ^^^^^^^^^^^^^^^
+
+warning: struct `PlannedTurn` is never constructed
+  --> crates/ai/engine-mistralrs/src/plan.rs:95:19
+   |
+95 | pub(crate) struct PlannedTurn {
+   |                   ^^^^^^^^^^^
+
+warning: struct `PlanError` is never constructed
+   --> crates/ai/engine-mistralrs/src/plan.rs:109:19
+    |
+109 | pub(crate) struct PlanError(pub String);
+    |                   ^^^^^^^^^
+
+warning: function `plan_turn` is never used
+   --> crates/ai/engine-mistralrs/src/plan.rs:116:15
+    |
+116 | pub(crate) fn plan_turn(turn: &ChatTurn, images_supported: bool) -> Result<PlannedTurn, PlanError> {
+    |               ^^^^^^^^^
+
+warning: function `wire_call_id` is never used
+   --> crates/ai/engine-mistralrs/src/plan.rs:160:4
+    |
+160 | fn wire_call_id<'a>(id: &'a str, name: &'a str) -> &'a str {
+    |    ^^^^^^^^^^^^
+
+warning: function `tool_response_content` is never used
+   --> crates/ai/engine-mistralrs/src/plan.rs:165:4
+    |
+165 | fn tool_response_content(response: &Value) -> String {
+    |    ^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `arguments_text` is never used
+   --> crates/ai/engine-mistralrs/src/plan.rs:174:4
+    |
+174 | fn arguments_text(args: &Value) -> String {
+    |    ^^^^^^^^^^^^^^
+
+warning: function `push_message` is never used
+   --> crates/ai/engine-mistralrs/src/plan.rs:182:4
+    |
+182 | fn push_message(out: &mut Vec<PlannedMessage>, message: &ChatMessage) {
+    |    ^^^^^^^^^^^^
+
+warning: function `push_tool_results` is never used
+   --> crates/ai/engine-mistralrs/src/plan.rs:236:4
+    |
+236 | fn push_tool_results(out: &mut Vec<PlannedMessage>, results: &[&Part]) {
+    |    ^^^^^^^^^^^^^^^^^
+
+warning: function `plan_tool` is never used
+   --> crates/ai/engine-mistralrs/src/plan.rs:260:4
+    |
+260 | fn plan_tool(tool: &ToolDecl) -> PlannedTool {
+    |    ^^^^^^^^^
+
+warning: function `plan_tool_choice` is never used
+   --> crates/ai/engine-mistralrs/src/plan.rs:271:4
+    |
+271 | fn plan_tool_choice(choice: Option<&Value>) -> Result<PlannedToolChoice, PlanError> {
+    |    ^^^^^^^^^^^^^^^^
+
+warning: function `widen` is never used
+   --> crates/ai/engine-mistralrs/src/plan.rs:297:4
+    |
+297 | fn widen(value: f32) -> f64 {
+    |    ^^^^^
+
+warning: function `extra_f64` is never used
+   --> crates/ai/engine-mistralrs/src/plan.rs:301:4
+    |
+301 | fn extra_f64(options: &TurnOptions, key: &str) -> Option<f64> {
+    |    ^^^^^^^^^
+
+warning: function `extra_f32` is never used
+   --> crates/ai/engine-mistralrs/src/plan.rs:305:4
+    |
+305 | fn extra_f32(options: &TurnOptions, key: &str) -> Option<f32> {
+    |    ^^^^^^^^^
+
+warning: function `plan_sampling` is never used
+   --> crates/ai/engine-mistralrs/src/plan.rs:310:4
+    |
+310 | fn plan_sampling(options: &TurnOptions) -> PlannedSampling {
+    |    ^^^^^^^^^^^^^
+
+warning: function `plan_json_schema` is never used
+   --> crates/ai/engine-mistralrs/src/plan.rs:331:4
+    |
+331 | fn plan_json_schema(options: &TurnOptions) -> Option<Value> {
+    |    ^^^^^^^^^^^^^^^^
+
+warning: function `plan_enable_thinking` is never used
+   --> crates/ai/engine-mistralrs/src/plan.rs:343:4
+    |
+343 | fn plan_enable_thinking(options: &TurnOptions) -> Option<bool> {
+    |    ^^^^^^^^^^^^^^^^^^^^
+
+warning: function `parse_effort` is never used
+   --> crates/ai/engine-mistralrs/src/plan.rs:353:4
+    |
+353 | fn parse_effort(raw: &str) -> Result<Effort, PlanError> {
+    |    ^^^^^^^^^^^^
+
+warning: `aphrody-engine-mistralrs` (lib) generated 32 warnings
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 28.71s

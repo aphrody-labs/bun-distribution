@@ -30,13 +30,20 @@ use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 
 mod anthropic;
+pub mod http;
+pub mod ndjson;
+pub mod ollama;
 mod openai_chat;
-mod openai_compat;
+pub mod openai_compat;
 mod openai_responses;
+pub mod rerank;
+pub mod vllm;
+
 pub use anthropic::{
     ANTHROPIC_API_VERSION, ANTHROPIC_OAUTH_BETA, AnthropicAuth, AnthropicClient,
     DEFAULT_MAX_OUTPUT_TOKENS, MessagesStreamParser, build_messages_request,
 };
+pub use ollama::{OllamaApi, OllamaClient, Think, ollama_host_to_url};
 pub use openai_chat::{
     LocalChatCompletionsClient, build_chat_completions_request, parse_chat_completions_event,
 };
@@ -45,6 +52,8 @@ pub use openai_compat::{
     ProviderRuntime, merge_options,
 };
 pub use openai_responses::{LocalResponsesClient, build_responses_request, parse_responses_event};
+pub use rerank::{EmbedClient, RerankClient, RerankHit};
+pub use vllm::{VllmApi, VllmClient, VllmConfig};
 
 /// Errors surfaced by a [`ModelClient`] or the pure wire helpers.
 #[derive(Debug, thiserror::Error)]
@@ -525,25 +534,40 @@ fn gemini_generation_config(options: &TurnOptions) -> Option<Value> {
 
 /// Split complete SSE events out of an accumulating `buffer`.
 ///
-/// SSE events are delimited by a blank line (`\n\n`). Any trailing partial
-/// event (no terminating blank line yet) is left in `buffer` for the next
-/// chunk. Returns the raw event blocks (everything before each `\n\n`),
-/// including their `data:`/`event:` field lines.
+/// SSE events are delimited by a blank line (LF, CRLF or CR). Any trailing
+/// partial event is left in `buffer` for the next chunk. Returned blocks
+/// retain their fields, with line endings normalized to LF.
 #[must_use]
 pub fn split_sse_events(buffer: &mut String) -> Vec<String> {
     let mut events = Vec::new();
-    // Normalize CRLF so the `\n\n` delimiter search is uniform.
-    if buffer.contains('\r') {
-        *buffer = buffer.replace("\r\n", "\n");
-    }
-    while let Some(idx) = buffer.find("\n\n") {
-        let event: String = buffer.drain(..idx).collect();
-        // Drop the delimiter itself.
-        buffer.drain(..2);
-        if !event.trim().is_empty() {
-            events.push(event);
+    let bytes = buffer.as_bytes();
+    let (mut cursor, mut line_start, mut event_start, mut previous_line_end) = (0, 0, 0, 0);
+    while cursor < bytes.len() {
+        let delimiter = match bytes[cursor] {
+            b'\n' => 1,
+            b'\r' if bytes.get(cursor + 1) == Some(&b'\n') => 2,
+            // Keep a partial CRLF of a nonempty line until its next byte.
+            // A final CR ending a blank line already dispatches the event;
+            // a following LF is harmless leading empty input next time.
+            b'\r' if cursor + 1 < bytes.len() || cursor == line_start => 1,
+            b'\r' => break,
+            _ => {
+                cursor += 1;
+                continue;
+            },
+        };
+        if cursor == line_start {
+            let event = &buffer[event_start..previous_line_end.max(event_start)];
+            if !event.trim().is_empty() {
+                events.push(event.replace("\r\n", "\n").replace('\r', "\n"));
+            }
+            event_start = cursor + delimiter;
         }
+        previous_line_end = cursor;
+        cursor += delimiter;
+        line_start = cursor;
     }
+    buffer.drain(..event_start);
     events
 }
 
@@ -555,8 +579,10 @@ pub fn split_sse_events(buffer: &mut String) -> Vec<String> {
 #[must_use]
 pub fn sse_event_data(event: &str) -> String {
     let mut data_lines = Vec::new();
-    for line in event.lines() {
-        if let Some(rest) = line.strip_prefix("data:") {
+    for line in event.trim_start_matches('\u{feff}').split(['\r', '\n']) {
+        if line == "data" {
+            data_lines.push("");
+        } else if let Some(rest) = line.strip_prefix("data:") {
             // A single leading space after the colon is part of the syntax.
             data_lines.push(rest.strip_prefix(' ').unwrap_or(rest));
         }
@@ -1173,6 +1199,34 @@ mod tests {
         let mut buffer = String::from("data: a\r\n\r\ndata: b\r\n\r\n");
         let events = split_sse_events(&mut buffer);
         assert_eq!(events, vec!["data: a".to_string(), "data: b".to_string()]);
+        assert!(buffer.is_empty());
+    }
+
+    #[test]
+    fn split_sse_handles_every_line_ending_and_chunk_boundary() {
+        for ending in ["\n", "\r\n", "\r"] {
+            let fixture =
+                format!("data: one{ending}data: two{ending}{ending}data: three{ending}{ending}");
+            for split in 0..=fixture.len() {
+                let mut buffer = fixture[..split].to_string();
+                let mut events = split_sse_events(&mut buffer);
+                buffer.push_str(&fixture[split..]);
+                events.extend(split_sse_events(&mut buffer));
+                assert_eq!(
+                    events.iter().map(|e| sse_event_data(e)).collect::<Vec<_>>(),
+                    vec!["one\ntwo", "three"],
+                    "{ending:?} split {split}"
+                );
+                assert!(buffer.trim().is_empty());
+            }
+        }
+        assert_eq!(sse_event_data("\u{feff}data: one\rdata\rdata: two"), "one\n\ntwo");
+    }
+
+    #[test]
+    fn split_sse_ignores_repeated_leading_and_trailing_blank_lines() {
+        let mut buffer = "\n\n\r\ndata: one\n\n\n\ndata: two\r\r\r".to_string();
+        assert_eq!(split_sse_events(&mut buffer), vec!["data: one", "data: two"]);
         assert!(buffer.is_empty());
     }
 
