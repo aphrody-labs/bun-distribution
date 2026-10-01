@@ -1395,8 +1395,23 @@ async fn collect_diagnostics() -> DoctorReport {
 /// Workspace health (AH-16): opens the agent home, assembles against the
 /// default bootstrap budget, and warns on missing required files or truncation.
 fn check_workspace() -> CheckResult {
-    let home = match aphrody_agent_home::AgentHome::open(aphrody_agent_home::HomeOptions::default())
-    {
+    let config = match crate::exec_cmd::load_config(&aphrody_config::CliOverrides::default()) {
+        Ok(config) => config,
+        Err(error) => {
+            return CheckResult::Warn(format!("agent home profile config not loadable: {error}"));
+        },
+    };
+    let workspace = match crate::exec_cmd::profile_workspace(&config) {
+        Ok(workspace) => workspace,
+        Err(error) => {
+            return CheckResult::Warn(format!("agent home profile not resolvable: {error}"));
+        },
+    };
+    let home = match aphrody_agent_home::AgentHome::open(aphrody_agent_home::HomeOptions {
+        workspace: Some(workspace),
+        profile: config.active_profile.clone(),
+        ..Default::default()
+    }) {
         Ok(h) => h,
         Err(e) => return CheckResult::Warn(format!("agent home not openable: {e}")),
     };

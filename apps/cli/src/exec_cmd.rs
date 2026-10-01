@@ -73,7 +73,7 @@ fn apply_environment_profile(mut overrides: CliOverrides) -> CliOverrides {
     overrides
 }
 
-fn profile_workspace(config: &Config) -> miette::Result<PathBuf> {
+pub(crate) fn profile_workspace(config: &Config) -> miette::Result<PathBuf> {
     aphrody_agent_home::paths::resolve_workspace(config.active_profile.as_deref(), None)
         .map_err(|error| miette::miette!("exec: {error}"))
 }
@@ -147,11 +147,23 @@ pub(crate) fn load_config(overrides: &CliOverrides) -> miette::Result<Config> {
     Ok(config)
 }
 
+/// Only the selected profile's filtered projection enters a local model prompt.
+fn profile_conversations(workspace: &Path) -> Option<String> {
+    let root = workspace.canonicalize().ok()?;
+    let path = workspace.join(".coord/shared/TRANSCRIPTS.md").canonicalize().ok()?;
+    if !path.starts_with(&root) || std::fs::metadata(&path).ok()?.len() > 2 * 1024 * 1024 {
+        return None;
+    }
+    let text = std::fs::read_to_string(path).ok()?;
+    Some(text.chars().take(16_384).collect())
+}
+
 pub(crate) fn runtime_config(config: &Config, cwd: &Path) -> miette::Result<RuntimeConfig> {
     // The unified doctrine leads every session: Aphrody home agent identity,
     // the BXC web/scrape/browser engine, and the no-human-in-the-loop YOLO
     // execution contract. Profile-, operator- and project-level instructions
     // are layered on top of it, so they can refine it but never lose it.
+    let workspace = profile_workspace(config)?;
     let mut instructions = vec![aphrody_prompts::APHRODY_UNIFIED_SYSTEM_PROMPT.to_owned()];
     instructions.extend(config.instructions.iter().cloned());
     instructions.extend(config.developer_instructions.iter().cloned());
@@ -160,11 +172,16 @@ pub(crate) fn runtime_config(config: &Config, cwd: &Path) -> miette::Result<Runt
         &aphrody_project_doc::ProjectDocOptions {
             max_bytes: config.project_doc_max_bytes,
             fallback_filenames: config.project_doc_fallback_filenames.clone(),
-            global_dir: profile_workspace(config).ok(),
+            global_dir: Some(workspace.clone()),
         },
     )
     .map_err(|error| miette::miette!("exec: {error}"))?;
     instructions.push(docs.render());
+    if let Some(conversations) = profile_conversations(&workspace) {
+        instructions.push(format!(
+            "Shared conversations of the selected Agent Home domain:\n{conversations}"
+        ));
+    }
     let mut runtime = RuntimeConfig::new(
         config
             .model
@@ -175,7 +192,7 @@ pub(crate) fn runtime_config(config: &Config, cwd: &Path) -> miette::Result<Runt
     .with_cwd(cwd)
     .with_computer_use(config.computer_use.clone())
     .with_system_prompt(instructions.join("\n\n"))
-    .with_live_agent_home_workspace(profile_workspace(config)?)
+    .with_live_agent_home_workspace(workspace.clone())
     .with_max_tool_iterations(0)
     .with_autonomy(if config.approval_policy == aphrody_config::AskForApproval::Never {
         aphrody_agent_runtime::AutonomyMode::FullAuto
@@ -205,9 +222,8 @@ pub(crate) fn runtime_config(config: &Config, cwd: &Path) -> miette::Result<Runt
         };
         runtime = runtime.with_rag_db(path);
     }
-    if let Some(profile) =
-        aphrody_agent_runtime::resolve_tool_profile(config, &profile_workspace(config)?, cwd)
-            .map_err(|error| miette::miette!("exec: {error}"))?
+    if let Some(profile) = aphrody_agent_runtime::resolve_tool_profile(config, &workspace, cwd)
+        .map_err(|error| miette::miette!("exec: {error}"))?
     {
         runtime = runtime.with_tool_profile(profile);
     }
@@ -715,5 +731,60 @@ mod tests {
         );
         // YOLO contract: the turn loop is never capped mid-objective.
         assert_eq!(runtime.max_tool_iterations, 0);
+    }
+    #[test]
+    fn default_and_explicit_domain_profiles_reach_the_local_runtime_home() {
+        let cwd = tempfile::tempdir().unwrap();
+        for (explicit, expected) in [(None, "aphrody"), (Some("dbfr"), "dbfr"), (Some("ie"), "ie")]
+        {
+            let layers = vec![
+                ConfigLayer::new(
+                    LayerSource::Builtin,
+                    aphrody_config::builtin_providers_layer_value(&|_| None),
+                ),
+                ConfigLayer::new(
+                    LayerSource::User,
+                    toml::from_str(
+                        "profile = 'aphrody'\n[profiles.aphrody]\n[profiles.dbfr]\n[profiles.ie]\n",
+                    )
+                    .unwrap(),
+                ),
+            ];
+            let overrides =
+                CliOverrides { profile: explicit.map(str::to_owned), ..Default::default() };
+            let (config, _) =
+                aphrody_config::resolve(layers, &overrides, "llama", &BTreeMap::new()).unwrap();
+            assert_eq!(config.active_profile.as_deref(), Some(expected));
+            let runtime = runtime_config(&config, cwd.path()).unwrap();
+            assert_eq!(
+                runtime.live_agent_home_workspace,
+                Some(profile_workspace(&config).unwrap())
+            );
+        }
+    }
+    #[test]
+    fn local_model_conversations_stay_inside_the_selected_profile() {
+        let root = tempfile::tempdir().unwrap();
+        let aphrody = root.path().join("aphrody");
+        let dbfr = root.path().join("dbfr");
+        for (profile, text) in [(&aphrody, "aphrody conversation"), (&dbfr, "dbfr conversation")] {
+            std::fs::create_dir_all(profile.join(".coord/shared")).unwrap();
+            std::fs::write(profile.join(".coord/shared/TRANSCRIPTS.md"), text).unwrap();
+        }
+        assert_eq!(profile_conversations(&aphrody).as_deref(), Some("aphrody conversation"));
+        assert_eq!(profile_conversations(&dbfr).as_deref(), Some("dbfr conversation"));
+        #[cfg(unix)]
+        {
+            std::fs::remove_file(dbfr.join(".coord/shared/TRANSCRIPTS.md")).unwrap();
+            std::os::unix::fs::symlink(
+                aphrody.join(".coord/shared/TRANSCRIPTS.md"),
+                dbfr.join(".coord/shared/TRANSCRIPTS.md"),
+            )
+            .unwrap();
+            assert!(
+                profile_conversations(&dbfr).is_none(),
+                "a cross-domain symlink must not enter the model prompt"
+            );
+        }
     }
 }

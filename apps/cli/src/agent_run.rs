@@ -99,8 +99,12 @@ fn autonomy_for(gated: bool) -> AutonomyMode {
 #[cfg(test)]
 fn build_config(args: &AgentArgs) -> RuntimeConfig {
     let model = args.model.clone().unwrap_or_else(|| DEFAULT_MODEL.to_string());
-    let home_prompt = AgentHome::open(HomeOptions::default())
+    let home_prompt = crate::exec_cmd::load_config(&aphrody_config::CliOverrides::default())
         .ok()
+        .and_then(|config| crate::exec_cmd::profile_workspace(&config).ok())
+        .and_then(|workspace| {
+            AgentHome::open(HomeOptions { workspace: Some(workspace), ..Default::default() }).ok()
+        })
         .map(|home| home.system_prompt(&BootstrapBudget::default()).render())
         .filter(|prompt| !prompt.trim().is_empty());
     let system = args.system.as_deref().map_or_else(
