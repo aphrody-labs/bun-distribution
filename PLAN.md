@@ -391,6 +391,22 @@ aux trois racines actives. WSL : disques, processus, shell et chemins revérifi�
   développement comptant sur une compilation automatique doivent définir
   l’opt-in explicite avant leur prochaine invocation.
 
+### Launcher SSH kernel sans build implicite — 2026-10-01
+
+- FAIT : les outils Infra du kernel exigent `APHRODY_INFRA_BUILD_FROM_SOURCE=1`
+  pour consulter les builds workspace ou invoquer Cargo. Sans cet opt-in,
+  ils utilisent `aphrody-ssh` installé sur PATH ou à côté du kernel, puis
+  échouent clairement si aucun exécutable installé n’est disponible.
+- Le build de développement utilise `--locked`. Le test prouve qu’un manifest
+  seul ne déclenche pas un build sans opt-in et que le mode explicite conserve
+  la sélection du manifest et le verrouillage Cargo.
+- [Logs](docs/migration/kernel-source-optin-2026-10-01/test.log) : 80 tests
+  réussis, un GCS live ignoré ; check et clippy all-targets verrouillés réussis,
+  format et diff-check réussis. L’avertissement Cargo de compatibilité future
+  `proc-macro-error2 2.0.1` reste présent.
+- INCOMPLET : services installés et autres launchers restent à qualifier ;
+  aucun redémarrage ou déploiement du kernel n’est effectué dans ce lot.
+
 ## 4. UI et bibliothèques navigateur
 
 Propriétaire : `packages/ui`, `crates/ui`.

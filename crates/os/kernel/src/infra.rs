@@ -97,36 +97,47 @@ fn resolve_infra_invoker() -> Result<(String, Vec<String>), SubsystemError> {
         }
     }
 
-    if let Some(manifest) = find_infra_manifest() {
-        if let Some(manifest_dir) = manifest.parent() {
-            let bin_name = if cfg!(windows) { "aphrody-ssh.exe" } else { "aphrody-ssh" };
-            let debug_bin = manifest_dir.join("target").join("debug").join(bin_name);
-            let release_bin = manifest_dir.join("target").join("release").join(bin_name);
-            if release_bin.is_file() {
-                return Ok((release_bin.to_string_lossy().into_owned(), Vec::new()));
-            }
-            if debug_bin.is_file() {
-                return Ok((debug_bin.to_string_lossy().into_owned(), Vec::new()));
-            }
-        }
-
-        return Ok((
-            "cargo".to_string(),
-            vec![
-                "run".to_string(),
-                "--manifest-path".to_string(),
-                manifest.to_string_lossy().into_owned(),
-                "-p".to_string(),
-                "aphrody-ssh".to_string(),
-                "--".to_string(),
-            ],
-        ));
+    if std::env::var("APHRODY_INFRA_BUILD_FROM_SOURCE").as_deref() == Ok("1")
+        && let Some(manifest) = find_infra_manifest()
+        && let Some(invoker) = workspace_infra_invoker(&manifest, true)
+    {
+        return Ok(invoker);
     }
 
     Err(SubsystemError::Failed(
         "aphrody-ssh binary or workspace manifest not found. Install aphrody-ssh beside \
-         aphrody-kernel or set APHRODY_INFRA_PATH to the Aphrody workspace Cargo.toml."
+         aphrody-kernel or explicitly enable APHRODY_INFRA_BUILD_FROM_SOURCE=1 for development."
             .into(),
+    ))
+}
+
+fn workspace_infra_invoker(manifest: &Path, allow_source: bool) -> Option<(String, Vec<String>)> {
+    if !allow_source {
+        return None;
+    }
+    if let Some(manifest_dir) = manifest.parent() {
+        let bin_name = if cfg!(windows) { "aphrody-ssh.exe" } else { "aphrody-ssh" };
+        let debug_bin = manifest_dir.join("target").join("debug").join(bin_name);
+        let release_bin = manifest_dir.join("target").join("release").join(bin_name);
+        if release_bin.is_file() {
+            return Some((release_bin.to_string_lossy().into_owned(), Vec::new()));
+        }
+        if debug_bin.is_file() {
+            return Some((debug_bin.to_string_lossy().into_owned(), Vec::new()));
+        }
+    }
+
+    Some((
+        "cargo".to_string(),
+        vec![
+            "run".to_string(),
+            "--locked".to_string(),
+            "--manifest-path".to_string(),
+            manifest.to_string_lossy().into_owned(),
+            "-p".to_string(),
+            "aphrody-ssh".to_string(),
+            "--".to_string(),
+        ],
     ))
 }
 
@@ -432,6 +443,18 @@ mod tests {
             expected
         );
         assert_eq!(find_workspace_manifest(Some(dir.path()), None, None), None);
+    }
+
+    #[test]
+    fn workspace_manifest_never_triggers_an_implicit_build() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let manifest = dir.path().join("Cargo.toml");
+        std::fs::write(&manifest, "[workspace]\n").unwrap();
+        assert_eq!(workspace_infra_invoker(&manifest, false), None);
+        let (command, args) = workspace_infra_invoker(&manifest, true).unwrap();
+        assert_eq!(command, "cargo");
+        assert!(args.contains(&"--locked".to_owned()));
+        assert!(args.contains(&manifest.to_string_lossy().into_owned()));
     }
 
     #[test]
