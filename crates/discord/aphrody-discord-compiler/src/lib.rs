@@ -218,8 +218,8 @@ impl DiscordCompiler {
                     commands_count += 1;
                     if let Ok(source) = std::fs::read_to_string(&entry) {
                         let filename = entry.to_string_lossy();
-                        if let Ok(c_source) = std::ffi::CString::new(source) {
-                            if let Ok(c_filename) = std::ffi::CString::new(filename.as_bytes()) {
+                        if let Ok(c_source) = std::ffi::CString::new(source)
+                            && let Ok(c_filename) = std::ffi::CString::new(filename.as_bytes()) {
                                 unsafe {
                                     let ptr = aphrody_oxc_bridge::aphrody_oxc_lint(
                                         c_source.as_ptr(),
@@ -227,18 +227,15 @@ impl DiscordCompiler {
                                     );
                                     if !ptr.is_null() {
                                         let cstr = std::ffi::CStr::from_ptr(ptr);
-                                        if let Ok(s) = cstr.to_str() {
-                                            if let Ok(v) = serde_json::from_str::<serde_json::Value>(s) {
-                                                if v["ok"] == false {
+                                        if let Ok(s) = cstr.to_str()
+                                            && let Ok(v) = serde_json::from_str::<serde_json::Value>(s)
+                                                && v["ok"] == false {
                                                     oxc_errors += 1;
                                                 }
-                                            }
-                                        }
                                         aphrody_oxc_bridge::aphrody_oxc_free(ptr);
                                     }
                                 }
                             }
-                        }
                     }
                 }
             }

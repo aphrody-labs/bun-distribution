@@ -152,26 +152,22 @@ pub fn is_origin_allowed(origin: &str, bound_addr: Option<SocketAddr>) -> bool {
             if ip.is_loopback() {
                 return true;
             }
-            if let Some(bound) = bound_addr {
-                if let std::net::IpAddr::V4(bip) = bound.ip() {
-                    if !bip.is_unspecified() && ip == bip {
+            if let Some(bound) = bound_addr
+                && let std::net::IpAddr::V4(bip) = bound.ip()
+                    && !bip.is_unspecified() && ip == bip {
                         return true;
                     }
-                }
-            }
             false
         },
         Some(url::Host::Ipv6(ip)) => {
             if ip.is_loopback() {
                 return true;
             }
-            if let Some(bound) = bound_addr {
-                if let std::net::IpAddr::V6(bip) = bound.ip() {
-                    if !bip.is_unspecified() && ip == bip {
+            if let Some(bound) = bound_addr
+                && let std::net::IpAddr::V6(bip) = bound.ip()
+                    && !bip.is_unspecified() && ip == bip {
                         return true;
                     }
-                }
-            }
             false
         },
         None => false,
@@ -191,11 +187,10 @@ pub fn is_host_allowed(host_header: &str, bound_addr: Option<SocketAddr>) -> boo
     };
 
     // If port is specified in Host header and bound_addr has a known port, check port match.
-    if let (Some(bound), Some(header_port)) = (bound_addr, url.port()) {
-        if bound.port() != 0 && header_port != bound.port() {
+    if let (Some(bound), Some(header_port)) = (bound_addr, url.port())
+        && bound.port() != 0 && header_port != bound.port() {
             return false;
         }
-    }
 
     match url.host() {
         Some(url::Host::Domain(domain)) => {
@@ -238,11 +233,10 @@ fn is_authenticated(req: &Request, expected_token: &str) -> bool {
     // 1. Authorization header: "Bearer <token>"
     if let Some(auth_val) = req.headers().get("authorization").and_then(|v| v.to_str().ok()) {
         let auth_val = auth_val.trim();
-        if let Some(token) = auth_val.strip_prefix("Bearer ") {
-            if constant_time_eq(token.trim(), expected_token) {
+        if let Some(token) = auth_val.strip_prefix("Bearer ")
+            && constant_time_eq(token.trim(), expected_token) {
                 return true;
             }
-        }
     }
 
     // 2. Query parameter: ?token=<token>
@@ -381,12 +375,11 @@ async fn handle_conn(stream: TcpStream, cfg: PtyConfig) -> Result<()> {
 
     let callback = move |req: &Request, resp: Response| -> Result<Response, ErrorResponse> {
         // 1. Check Origin: if Origin header is present and is not null / local allowed origin, reject.
-        if let Some(origin) = req.headers().get("origin").and_then(|v| v.to_str().ok()) {
-            if !is_origin_allowed(origin, bound_addr) {
+        if let Some(origin) = req.headers().get("origin").and_then(|v| v.to_str().ok())
+            && !is_origin_allowed(origin, bound_addr) {
                 warn!("rejected websocket connection with forbidden origin: {origin}");
                 return Err(forbidden_response("forbidden origin"));
             }
-        }
 
         // 2. Check Host: ensure host matches loopback/localhost or the bound host.
         match req.headers().get("host").and_then(|v| v.to_str().ok()) {
@@ -402,12 +395,11 @@ async fn handle_conn(stream: TcpStream, cfg: PtyConfig) -> Result<()> {
         }
 
         // 3. Check Authentication Token (if configured or present in environment)
-        if let Some(ref expected) = auth_token {
-            if !is_authenticated(req, expected) {
+        if let Some(ref expected) = auth_token
+            && !is_authenticated(req, expected) {
                 warn!("rejected unauthenticated websocket connection");
                 return Err(unauthorized_response("authentication required"));
             }
-        }
 
         Ok(resp)
     };
