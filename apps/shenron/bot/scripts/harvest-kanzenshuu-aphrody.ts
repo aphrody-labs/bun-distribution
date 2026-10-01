@@ -1,6 +1,6 @@
 /**
  * harvest-kanzenshuu-aphrody.ts — renforce le corpus d'auteur `.aphrody` avec
- * les traductions de Kanzenshuu, récoltées par le moteur navigateur `bxc`.
+ * les traductions de Kanzenshuu, récoltées par Aphrody Web.
  *
  * Le constat qui a motivé ce script : `.aphrody` ne portait QUE 7 documents
  * d'auteur (interviews Daizenshuu, Super Exciting Guide, introductions de
@@ -10,10 +10,10 @@
  * paroles d'auteur et d'éditeur imprimées chez Shueisha : exactement la matière
  * que `/wiki/canon` promet, et que le RAG n'avait pas.
  *
- * Pourquoi `bxc` et pas `fetch` : ces pages sont rendues côté client derrière un
+ * Pourquoi Aphrody Web et pas `fetch` : ces pages sont rendues côté client derrière un
  * thème WordPress, et l'API REST du site n'expose PAS cette section (les
  * traductions ne sont ni `post` ni type public — vérifié sur `/wp-json/wp/v2`).
- * `bxc scrape --markdown` ouvre la page dans un vrai moteur et rend du GFM.
+ * `aphrody web scrape --profile max` rend la page navigateur et renvoie du GFM.
  *
  * Doctrine, appliquée sans exception (cf. `CLAUDE.md`) :
  *   - la liste des URL vient du **sitemap** du site, pas d'un crawl sauvage ;
@@ -30,11 +30,10 @@
  *   bun apps/shenron/bot/scripts/harvest-kanzenshuu-aphrody.ts --limite 5   # essai
  *   bun apps/shenron/bot/scripts/harvest-kanzenshuu-aphrody.ts --tout
  */
-import { existsSync } from "node:fs";
 import { mkdir, readdir, writeFile } from "node:fs/promises";
 import { homedir } from "node:os";
 import { join } from "node:path";
-import { bxcCommand } from "@shenron/pipeline/bxc/cli";
+import { aphrodyWebScrape } from "@shenron/pipeline/aphrody";
 
 const SITEMAPS = [
 	"https://www.kanzenshuu.com/page-sitemap.xml",
@@ -42,29 +41,6 @@ const SITEMAPS = [
 	"https://www.kanzenshuu.com/page-sitemap3.xml",
 ];
 const PREFIXE = "kanzenshuu-trad_";
-/**
- * Le pont Rust de bxc : sans lui, tous les profils de rendu échouent et la page
- * revient VIDE — sans erreur au niveau du processus.
- *
- * Le chemin que bxc cherche par défaut (`~/bxc/rust-bridge/target/release/`)
- * n'existe pas sur ce VPS ; la bibliothèque est installée à côté du binaire.
- * On résout donc le premier candidat qui existe RÉELLEMENT, et on refuse de
- * démarrer sinon : une récolte qui tourne sans pont dépose un corpus vide en
- * silence, ce qui est pire qu'un échec franc.
- */
-function pontRust(): string {
-	const candidats = [
-		process.env.BXC_RUST_BRIDGE_LIB,
-		join(homedir(), ".bxc", "bin", "libbxc_rust_bridge.so"),
-		join(homedir(), "bxc", "rust-bridge", "target", "release", "libbxc_rust_bridge.so"),
-	].filter((c): c is string => Boolean(c));
-	for (const c of candidats) if (existsSync(c)) return c;
-	throw new Error(
-		`Pont Rust de bxc introuvable (essayés : ${candidats.join(", ")}). ` +
-			"Installer avec `bxc install --full` ou pointer BXC_RUST_BRIDGE_LIB."
-	);
-}
-const BRIDGE = pontRust();
 const DELAI_MS = Number(process.env.KZ_DELAI_MS ?? 4000);
 
 const argLimite = process.argv.findIndex((a) => a === "--limite");
@@ -109,17 +85,16 @@ function titreDe(corps: string): string {
 }
 
 async function scrape(url: string): Promise<{ markdown: string; erreur: string }> {
-	const proc = Bun.spawn([...(await bxcCommand()), "scrape", url, "--markdown"], {
-		env: { ...process.env, BXC_RUST_BRIDGE_LIB: BRIDGE },
-		stdout: "pipe",
-		stderr: "pipe",
-	});
-	const [markdown, erreur] = await Promise.all([
-		new Response(proc.stdout).text(),
-		new Response(proc.stderr).text(),
-	]);
-	await proc.exited;
-	return { markdown, erreur };
+	try {
+		const markdown = await aphrodyWebScrape(url, {
+			profile: "max",
+			bin: process.env.APHRODY_BIN,
+			timeoutMs: 120_000,
+		});
+		return { markdown, erreur: "" };
+	} catch (error) {
+		return { markdown: "", erreur: error instanceof Error ? error.message : String(error) };
+	}
 }
 
 /**
