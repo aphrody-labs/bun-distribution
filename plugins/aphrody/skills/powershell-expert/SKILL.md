@@ -1,11 +1,18 @@
 ---
 name: powershell-expert
-description: "PowerShell scripts, modules, cmdlets and Windows Forms/WPF GUIs following Microsoft practices, with Gallery module lookups."
+description: "PowerShell 7.x and 5.1: scripts, advanced functions, modules, Pester tests, WinForms/WPF GUIs, Microsoft practices, live PowerShell Gallery (PSResourceGet) checks. Use for .ps1/.psm1/.psd1 work, choosing modules, or PowerShell tools."
+version: "1.1.0"
 ---
 
 # PowerShell Expert
 
 Develop production-quality PowerShell scripts, tools, and GUIs using Microsoft best practices and the PowerShell ecosystem.
+
+Target the right edition: PowerShell 7 (cross-platform; 7.6.6 is current as of 2026-10, 7.6 is
+the LTS line) unless the script must run on stock Windows PowerShell 5.1. Use
+`#Requires -Version 7.4` (or `5.1`) and `#Requires -PSEdition Core|Desktop` accordingly, and
+avoid Windows-only cmdlets (`Get-WmiObject`, WinForms/WPF, registry) in scripts meant for
+Linux/macOS.
 
 ## Quick Reference
 
@@ -176,11 +183,15 @@ When recommending modules, search the PowerShell Gallery. These are common start
 | Category    | Popular Modules                          |
 | ----------- | ---------------------------------------- |
 | **Azure**   | `Az`, `Az.Compute`, `Az.Storage`         |
-| **Testing** | `Pester`, `PSScriptAnalyzer`             |
+| **Testing** | `Pester` (6.x), `PSScriptAnalyzer`       |
 | **Console** | `PSReadLine`, `Terminal-Icons`           |
 | **Secrets** | `Microsoft.PowerShell.SecretManagement`  |
-| **Web**     | `Pode` (web server), `PoshRSJob` (async) |
-| **GUI**     | `WPFBot3000`, `PSGUI`                    |
+| **Web**     | `Pode` (web server)                      |
+| **Parallel**| `ForEach-Object -Parallel` (7.x), `Microsoft.PowerShell.ThreadJob` (`Start-ThreadJob`) |
+| **Excel**   | `ImportExcel`                            |
+
+Avoid stale modules such as `PoshRSJob` (last release 2018), `WPFBot3000` (2020) and
+`PSGUI` (2016); build GUIs directly with WinForms/WPF as in `references/gui-development.md`.
 
 ## Live Verification
 
@@ -235,10 +246,11 @@ Microsoft Docs URLs vary by module. **Use the WebSearch tool** to find the corre
 
 If the WebFetch or WebSearch tools are unavailable or return errors:
 
-1. **For module verification**: Execute `Search-Gallery.ps1` from this skill:
+1. **For module verification**: run `Search-Gallery.ps1` from the `scripts` folder next to
+   this SKILL.md (in a plugin install: `${CLAUDE_PLUGIN_ROOT}/skills/powershell-expert/scripts`):
 
    ```powershell
-   ~/.claude/skills/powershell-expert/scripts/Search-Gallery.ps1 -Name 'ModuleName'
+   pwsh -NoProfile -File <skill-dir>/scripts/Search-Gallery.ps1 -Name 'ModuleName'
    ```
 
 2. **For cmdlet syntax**: Suggest the user run locally:

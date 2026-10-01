@@ -1,25 +1,28 @@
-# Dragon Ball — référence canon condensée (hors-ligne)
+# Dragon Ball — repères hors-ligne (non sourcés)
 
-Cadre rapide quand l'API n'est pas joignable, ou pour situer une réponse avant de
-sourcer le détail via le RAG. **Pour les valeurs précises (ki, ordre exact,
-fiches), la source de vérité reste `dragonballfr.com` (RAG + wiki).**
+> **S'applique quand :** l'API et le MCP sont injoignables et qu'il faut seulement s'orienter. **Sinon :** n'utilise pas ce fichier ; interroge le RAG, le wiki et `/api/canon`.
 
-## Séries et niveaux de canon
+**Ce fichier n'est pas une source.** Il date d'avant la vérification par les
+outils, il n'est pas relié à des éditions ni à des années de publication
+vérifiées, et il ne doit jamais être cité comme preuve. Tout fait qu'il évoque
+est à confirmer par le RAG ou le wiki, avec sa source ; ce qui ne se confirme pas
+reste vide dans la réponse. **Pour les valeurs précises (ki, ordre exact,
+fiches, statut de canon), la source de vérité reste `dragonballfr.com` (RAG +
+wiki + `/api/canon`).** Les verdicts de canonicité ont été retirés d'ici : la
+doctrine du site a changé et seul `/api/canon` fait foi (skill `dragon-ball-canon`).
 
-- **Dragon Ball** (manga, Akira Toriyama, 1984–1995, 42 tomes / 519 chapitres) =
-  **le canon de référence**. Animes : _Dragon Ball_ (enfance de Goku) puis
+## Séries (repères, sans verdict de canon)
+
+- **Dragon Ball** (manga d'Akira Toriyama, 42 tomes dans la doctrine du site). Animes : _Dragon Ball_ (enfance de Goku) puis
   _Dragon Ball Z_ (2ᵉ moitié, dès l'arc Saiyan) ; _Dragon Ball Kai_ = remaster de DBZ.
-- **Dragon Ball Super** (manga 2015–, Toyotarō supervisé par Toriyama ; anime
-  2015–2018) = suite **canon** après Boo. ⚠️ manga et anime Super **divergent**
-  par endroits (arc Trunks du futur, arc Survie).
-- **Dragon Ball Daima** (anime 2024, conçu par Toriyama) — Goku & co rajeunis,
-  Royaume Démoniaque. Canon léger.
-- **Dragon Ball GT** (anime 1996, sans manga Toriyama) = **semi/non-canon**.
-  Source de Super Saiyan 4, Baby, Shenron Maléfiques.
-- **Films** : ère Z surtout non-canon ; **Battle of Gods** (2013) et
-  **Resurrection 'F'** (2015) intégrés au canon Super ; **Broly** (2018, réécrit
-  l'origine de Broly, canon Super) ; **Super Hero** (2022, canon).
-- **Super Dragon Ball Heroes** et jeux (Xenoverse 1/2…) = **non-canon** (what-if).
+- **Dragon Ball Super** (manga et anime) : suite après Boo. ⚠️ manga et anime Super
+  **divergent** par endroits (arc Trunks du futur, arc Survie) : le signaler.
+- **Dragon Ball Daima** (anime) — Goku & co rajeunis, Royaume Démoniaque.
+- **Dragon Ball GT** (anime, sans manga de Toriyama). Source de Super Saiyan 4,
+  Baby, Shenron Maléfiques.
+- **Films et jeux** (Battle of Gods, Resurrection 'F', Broly, Super Hero, films
+  Toei, Xenoverse, FighterZ, Super Dragon Ball Heroes) : leur statut de canon
+  n'est pas tranché ici ; demande `dragonball_canon_check`.
 
 ## Sagas dans l'ordre
 
@@ -53,7 +56,7 @@ survivant** → **Super Hero** (Gamma 1 & 2, Cell Max).
 9. **Super Saiyan 4** — **GT uniquement** (Ôzaru doré → SSJ4).
 10. **Super Saiyan Légendaire** — **Broly** (films), distinct de la lignée ci-dessus.
 
-## Races (le wiki en distingue 6, Saiyan dédiée)
+## Races (le wiki en listait 18 le 2026-10-01 : `dragonball_wiki_categories`)
 
 Saiyan · Namékien · Terrien/Humain · **Race de Freezer** (glaciale/arcosienne) ·
 Majin · Cyborg/Androïde — plus les divinités (Kaiô, Dieux de la destruction,
@@ -81,10 +84,8 @@ de Piccolo Daimaô) · **Krillin / Krilin** (meilleur ami humain de Goku) ·
 
 ## Niveaux de ki — avertissement
 
-Les chiffres (scouters) ne servent vraiment qu'aux arcs **Saiyan** et **Namek**,
-puis sont abandonnés (ils deviennent narratifs). Repères canon de cette période :
-Goku à l'arrivée de Raditz ~334 (jusqu'à ~416 en s'énervant) ; Raditz ~1 500 ;
-Vegeta ~18 000 ; **Freezer 1ʳᵉ forme ~530 000** (et « 100 % » bien au-delà).
-**Ne pas extrapoler** au-delà de Namek, et toujours citer le support (databook vs
-anime) — c'est précisément là que la mémoire d'entraînement se trompe : préfère
-le RAG.
+Les chiffres de scouter ne servent vraiment qu'aux arcs **Saiyan** et **Namek**,
+puis deviennent narratifs. Aucune valeur n'est donnée ici : ni la mémoire ni ce
+fichier ne sont des sources pour un chiffre de puissance. Cherche-le dans le RAG
+ou le wiki (champs `ki`/`max_ki`), cite le support (databook vs anime) et ne
+l'extrapole pas au-delà de Namek.

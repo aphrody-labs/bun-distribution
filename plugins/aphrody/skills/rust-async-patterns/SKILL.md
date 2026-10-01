@@ -1,6 +1,7 @@
 ---
 name: rust-async-patterns
-description: "Rust async with Tokio: async traits, cancellation, error handling, concurrency patterns, debugging async code."
+description: "Rust async with Tokio: tasks, JoinSet, select!, channels, streams, async traits, cancellation, shutdown, timeouts, errors, and debugging hangs or Send errors. Use when writing or reviewing any async Rust."
+version: "1.1.0"
 ---
 
 # Rust Async Patterns
@@ -39,14 +40,14 @@ Future (lazy) → poll() → Ready(value) | Pending
 ## Quick Start
 
 ```toml
-# Cargo.toml (ou [workspace.dependencies])
+# Cargo.toml (or [workspace.dependencies]); check crates.io / `cargo add` for current versions
 [dependencies]
-tokio = { version = "1.52", features = ["full"] }
+tokio = { version = "1", features = ["full"] }   # trim features for libraries
+tokio-util = "0.7"                                # CancellationToken, codecs
 futures = "0.3"
-async-trait = "0.1"
 anyhow = "1"
 tracing = "0.1"
-tracing-subscriber = "=0.3.22"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 ```
 
 ```rust
@@ -85,6 +86,7 @@ Detailed pattern documentation lives in `references/details.md`. Read that file 
 - **Use `JoinSet`** - For managing multiple tasks
 - **Instrument with tracing** - For debugging async code
 - **Handle cancellation** - Check `CancellationToken`
+- **Prefer native `async fn` in traits** - Reach for `async-trait` only for `dyn` dispatch
 
 ### Don'ts
 
@@ -94,8 +96,12 @@ Detailed pattern documentation lives in `references/details.md`. Read that file 
 - **Don't ignore errors** - Propagate with `?` or log
 - **Don't forget Send bounds** - For spawned futures
 
-## Aphrody OS context
 
-- Use workspace dependencies and `[lints] workspace = true`; `cargo clippy --all-targets -- -D warnings` must be clean.
-- Keep platform-specific async I/O behind `cfg` so Linux, Windows MSVC and wasm32 all build (see the `rust-target-check` skill).
+## Project conventions
+
+- If the project has a Cargo workspace, add dependencies to `[workspace.dependencies]` and
+  reference them with `{ workspace = true }`; honour `[lints] workspace = true` and run the
+  project's clippy gate (commonly `cargo clippy --all-targets -- -D warnings`).
+- Tokio does not run on `wasm32-unknown-unknown`; if the crate targets wasm, keep runtime
+  code behind `cfg(not(target_arch = "wasm32"))` and verify with the `rust-target-check` skill.
 - Pair with `rust-best-practices-2026` for general Rust style.

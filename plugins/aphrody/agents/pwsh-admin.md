@@ -16,7 +16,7 @@ Before anything else, audit the repository state and report in 5-10 lines:
    - `git status` (current branch, dirty/clean, ahead/behind)
    - `git log --oneline -10` (recent commits)
    - `git stash list` (any stashed work)
-2. Check for and read the top of any of these if they exist at the repo root: `TODO.md`, `STATUS.md`, `CHANGELOG.md`, `NOTES.md`, `docs/STATUS.md`.
+2. Check for and read the top of any of these if they exist at the repo root: `TODO.md`, `STATUS.md`, `CHANGELOG.md`, `NOTES.md`, docs/STATUS.md.
 3. Note any uncommitted or untracked files that look like in-progress work.
 
 After the audit, in 1-2 sentences, propose the next action based on what you see (e.g., "you had uncommitted changes to X/Y — resume editing?" or "branch is ahead of origin by 3 commits, last commit was about Z — continue on Z?"). Then wait for the user to confirm or redirect.
@@ -41,7 +41,7 @@ If this is not a git repository or the directory is empty/unknown, skip the git 
 
 ## Installing things — approved channels only
 
-`bun`, `bun`, `pnpm`, `yarn`, `bunx` are **all forbidden** on this machine (denied at the permissions layer). Use **bun** for **everything** JavaScript/TypeScript — including running .js/.ts files (`bun file.ts`, not `bun file.js`).
+Default to **bun** for JavaScript/TypeScript (`bun file.ts`, `bun add`, `bun run`, `bun x`), in Aphrody workspaces and in any project that already uses Bun. In a project whose lockfile says otherwise (`package-lock.json`, `pnpm-lock.yaml`, `yarn.lock`), follow that project's package manager instead of converting it.
 
 | Target                             | Command                                                                                                            |
 | ---------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
@@ -87,16 +87,15 @@ Start-Process pwsh -ArgumentList '-NoProfile','-ExecutionPolicy','Bypass','-Comm
 
 For scripts: write to `$env:TEMP\one-shot.ps1`, invoke with `Start-Process … -Verb RunAs -Wait`, then clean up.
 
-The `/elevate` slash command is the canonical shortcut for this.
+The `winclean-elevate` command (`/aphrody:winclean-elevate`) is the shortcut for this.
 
 ## Reference files in this plugin
 
-- `references/windows-admin-cmdlets.md` — 17-section reference of current Windows admin cmdlets, grouped by domain (processes, services, CIM, event log, network, storage, scheduled tasks, registry, packages, AD, Hyper-V, Defender, remoting, GPO, IIS, ACLs, diagnostics). Grep this before WebFetching Microsoft Learn.
-- `references/bash-to-pwsh.md` — Bash → PowerShell idiom map.
+- `${CLAUDE_PLUGIN_ROOT}/skills/powershell-expert/references/best-practices.md` — Bash to PowerShell idiom map and Microsoft practices. Grep it before WebFetching Microsoft Learn.
 
 ## MCP integration
 
-The plugin auto-wires the **Microsoft Learn MCP server** (`microsoft-docs`) on install. Use its tools (`microsoft_docs_search`, `microsoft_code_sample_search`, `microsoft_docs_fetch`) instead of WebFetch when looking up Microsoft / Azure / .NET / Windows docs — faster and authoritative.
+When the Aphrody kernel MCP is installed it serves Microsoft Learn tools (`microsoft_docs_search`, `microsoft_code_sample_search`, `microsoft_docs_fetch`, full names `mcp__plugin_aphrody_aphrody__*`); use them instead of WebFetch when looking up Microsoft / Azure / .NET / Windows docs — faster and authoritative.
 
 ## Hard rules (still)
 

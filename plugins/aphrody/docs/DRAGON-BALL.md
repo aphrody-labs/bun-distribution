@@ -28,27 +28,29 @@ demande ; ne pas déduire l'état courant d'une documentation versionnée.
 
 ## MCP Shenron
 
-La configuration [`.mcp.json`](../.mcp.json) démarre le MCP unifié local
-`aphrody-mcp` en stdio. Les outils Shenron y sont nommés `dragonball.*`.
+La configuration [`.mcp.json`](../.mcp.json) démarre `aphrody-kernel mcp` en
+stdio (binaire surchargeable par `APHRODY_KERNEL_BIN`) ; le noyau route les
+outils Shenron vers son fournisseur interne `aphrody-mcp`. Ils y sont nommés
+`dragonball_*` (`mcp__plugin_aphrody_aphrody__dragonball_*` dans Claude Code).
 Le MCP HTTP public `mcp.dragonballfr.com` et l'ancien processus
-`apps/shenron-mcp` ont été retirés ; ne les reconfigurez pas.
+`shenron-mcp` ont été retirés ; ne les reconfigurez pas.
 
 - Le serveur expose 30 outils publics pour RAG, wiki,
   manga, databooks, canon, chronologie, bot, actualités et A2A. La plupart
   consultent des données ; `a2a_send` dépose une tâche et a donc un effet
   externe.
-- Cinq outils admin sont enregistrés : `dragonball.admin_databooks_deposit`,
-  `dragonball.admin_bot_commands`, `dragonball.admin_bot_command_execute`,
-  `dragonball.admin_services` et `dragonball.admin_service_action`. Ils
+- Cinq outils admin sont enregistrés : `dragonball_admin_databooks_deposit`,
+  `dragonball_admin_bot_commands`, `dragonball_admin_bot_command_execute`,
+  `dragonball_admin_services` et `dragonball_admin_service_action`. Ils
   nécessitent les jetons API correspondants dans l'environnement du processus
   MCP et échouent fermés sans autorisation.
-- `dragonball.admin_databooks_deposit`, `dragonball.admin_bot_command_execute`
-  et `dragonball.admin_service_action` écrivent ou déclenchent une action. Lire
+- `dragonball_admin_databooks_deposit`, `dragonball_admin_bot_command_execute`
+  et `dragonball_admin_service_action` écrivent ou déclenchent une action. Lire
   leur schéma et inspecter les options avant de les appeler.
 - Le catalogue n'expose pas `admin_aphrody_doctor`, `admin_aphrody_git`, de
   commande générique `admin_ai` ni de génération LLM. Pour les opérations
   locales, lancer directement le CLI Aphrody ; pour le chat, utiliser
-  `dragonball.rag_ask` et vérifier les passages cités.
+  `dragonball_rag_ask` et vérifier les passages cités.
 - Il n'existe pas de shell ou de proxy HTTP arbitraire exposé par ces outils.
 
 Les outils admin appellent Shenron depuis le processus local `aphrody-mcp`.
@@ -62,7 +64,7 @@ copier un jeton depuis l'hôte.
 La présence d'une connexion MCP dans ce dépôt ne prouve ni que le binaire est
 sur le `PATH`, ni que les API sont joignables. Vérifier `aphrody-mcp --help`,
 puis négocier `tools/list` avec le client MCP. Les noms actuels sont préfixés
-par `dragonball.`.
+par `dragonball_`.
 
 ## Règles de réponse
 
@@ -98,21 +100,21 @@ par `dragonball.`.
 
 ## Propriété des sources
 
-- Entrée unique du plugin et skills : `aphrody-ai/plugins/aphrody/`.
+- Entrée unique du plugin et skills : `plugins/aphrody/` du monorepo Aphrody.
 - Source de vérité des données éditoriales et du code du site/bot : dépôt Shenron.
-- Code du transport MCP : `aphrody-ai/crates/aphrody-mcp/src/dragonball_tools.rs`
-  et `aphrody-ai/crates/aphrody-mcp/src/http_rest.rs`.
-- Contrats de services et déploiement : dépôt `aphrody-infra`.
+- Code du transport MCP : `crates/ai/mcp/src/dragonball_tools.rs`
+  et `crates/ai/mcp/src/http_rest.rs` (crate `aphrody-mcp`).
+- Contrats de services et déploiement : `packages/infra` et `crates/infra` du monorepo.
 
 Les skills et le transport MCP sont deux surfaces distinctes : les outils
-`dragonball.*` sont enregistrés dans `aphrody-mcp`; les données éditoriales et
+`dragonball_*` sont enregistrés dans `aphrody-mcp`; les données éditoriales et
 leurs contrats restent maintenus dans Shenron. Modifier chaque implémentation
 dans son dépôt propriétaire et ne pas traiter les skills comme une source de
 vérité des données.
 
 ## Installation locale
 
-Le plugin unique se trouve dans `aphrody-ai/plugins/aphrody`. Ses manifestes
+Le plugin unique se trouve dans `plugins/aphrody` du monorepo Aphrody. Ses manifestes
 Claude Code, Codex et Antigravity ainsi que ses configurations MCP distribuent
 les skills Dragon Ball et Aphrody ensemble. Vérifier que la skill `dragon-ball`
 est découverte et que le serveur MCP local répond. Les chemins de marketplace

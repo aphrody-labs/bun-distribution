@@ -1,12 +1,14 @@
 ---
 name: pe-symbol-recovery
-description: "Recover function/structure symbols in Windows PE and .NET binaries: stripped functions, call graphs, method tables, packed binaries."
+description: "Recover function/structure symbols in Windows PE and .NET binaries: stripped functions, call graphs, method tables, packed binaries. Use when asked what a stripped .exe/.dll does or to name its functions."
 allowed-tools: Read, Grep, Glob, Bash
 ---
 
 # PE Symbol Recovery (Windows / .NET)
 
-Recover meaningful function names, types, and call relationships from stripped Windows PE binaries. Use the repository's `aphrody-re` reverse-engineering commands and preserve evidence artifacts outside the product runtime path.
+> **Applies when:** a PE/.NET file is available and the `aphrody` CLI (`aphrody re ...`) or the kernel MCP tools `re_triage`, `re_sections`, `re_strings`, `re_disasm`, `analyze_pe` are connected. **Otherwise:** use `objdump`/`llvm-objdump`/`rizin`/Ghidra and say that the Aphrody triage step was skipped.
+
+Recover meaningful function names, types, and call relationships from stripped Windows PE binaries. Use the `aphrody-re` crate (`crates/os/re`) through `aphrody re` and preserve evidence artifacts outside the product runtime path.
 
 ## When to Use
 
@@ -18,7 +20,7 @@ Recover meaningful function names, types, and call relationships from stripped W
 
 ## When NOT to Use
 
-- Live process introspection — use the kernel `aphrody-winclean` process tools.
+- Live process introspection — use the process tools of the `aphrody-winclean` crate (`crates/os/winclean`) hosted by the kernel (`list_processes`, `mem_list_modules`).
 - DLL hijacking detection — use the repository reverse-engineering commands and
   preserve the evidence artifact.
 - Pure managed disassembly with full PDB available — `dnSpy` / `ilspycmd` are faster.
@@ -40,7 +42,7 @@ kernel handler rather than introducing a parallel WinClean engine.
 1. **Export Address Table first** — `pe.ExportedFunctions` returns ordinal + name pairs. Always cheap.
 2. **Import Address Table cross-reference** — every external call gives a _known_ symbol on the other side. Walk `pe.ImportedFunctions`.
 3. **String references** — strings near a function often name it (`"failed to open registry key %s"` → likely `OpenRegKey`).
-4. **Constants & syscall numbers** — Windows syscalls have stable numbers in modern builds; match against [j00ru's syscall table](https://j00ru.vexillium.org/syscalls/nt/64/) **(verify URL before recommending — see `auto memory` rule).**
+4. **Constants & syscall numbers** — Windows syscalls have stable numbers in modern builds; match against [j00ru's syscall table](https://j00ru.vexillium.org/syscalls/nt/64/) (URL not verified here; check it before relying on it).
 5. **Paired-function inference** — alloc/free, lock/unlock, init/teardown, open/close. If you can name one, the partner is usually structurally adjacent.
 6. **.NET metadata** — `MetadataReader` (System.Reflection.Metadata) exposes method tokens, type defs, signatures — works even after IL stripping if metadata stream is intact.
 7. **Cross-reference clusters** — functions only called by one parent are probably helpers of that parent; name accordingly.
@@ -56,8 +58,8 @@ kernel handler rather than introducing a parallel WinClean engine.
 
 | Component | Hook |
 | --- | --- |
-| `aphrody-re` | Primary static-analysis entry point and evidence producer. |
-| Kernel `admin` subsystem | Expose only stable, typed reverse-engineering capabilities. |
+| `aphrody-re` (`crates/os/re`) | Primary static-analysis entry point and evidence producer. |
+| Kernel `admin` subsystem (`crates/os/kernel/src/admin.rs`) and `crates/os/winclean` | Typed tools such as `analyze_pe`, `binary_parse_pe_header`, `binary_entropy_map`. |
 | Rust integration tests | Add deterministic fixtures for PE triage and section/strings output. |
 
 ## Rationalizations to Reject
@@ -74,4 +76,4 @@ kernel handler rather than introducing a parallel WinClean engine.
 
 ## Authoring Notes
 
-This skill was authored by the WinClean team. Pattern guidance was informed by community Claude Code reverse-engineering skills (`P4nda0s/reverse-skills`) but the content here is original and Windows-PE-specific.
+Original, Windows-PE-specific content.

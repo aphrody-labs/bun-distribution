@@ -2,7 +2,7 @@
   "mcpServers": {
     "aphrody": {
       "type": "stdio",
-      "command": "aphrody-kernel",
+      "command": "${APHRODY_KERNEL_BIN:-aphrody-kernel}",
       "args": [
         "mcp"
       ]

@@ -32,11 +32,11 @@ Quand deux sources divergent, dis-le au lieu de choisir en silence.
 
 ## Chercher
 
-**Robinet local obligatoire** — il ne lit que le manga et les databooks :
+**Robinet local obligatoire** (dépôt Aphrody présent ; commandes lancées depuis sa racine) — il ne lit que le manga et les databooks :
 
 ```bash
-bun apps/site/scripts/sources-wiki.ts manga "Vegeta" --limite 20 --json
-bun apps/site/scripts/sources-wiki.ts databook "ベジータ" --limite 20 --json
+bun apps/shenron/site/scripts/sources-wiki.ts manga "Vegeta" --limite 20 --json
+bun apps/shenron/site/scripts/sources-wiki.ts databook "ベジータ" --limite 20 --json
 ```
 
 Ce que ce script ne rend pas ne s'écrit pas. Pour une preuve complète, rouvrir
@@ -46,14 +46,14 @@ son identifiant stable.
 **Databooks japonais** — le texte des planches, quand il faut la donnée d'origine :
 
 ```bash
-bun apps/site/scripts/sources-wiki.ts databook "戦闘力" --limite 20 --json
+bun apps/shenron/site/scripts/sources-wiki.ts databook "戦闘力" --limite 20 --json
 ```
 
 **Wiki existant** — pour ne pas dupliquer et rester cohérent :
 
 ```bash
-bun apps/site/scripts/sources-wiki.ts cherche db_characters "Vegeta" --json
-bun apps/site/scripts/sources-wiki.ts fiche db_characters 1 --json
+bun apps/shenron/site/scripts/sources-wiki.ts cherche db_characters "Vegeta" --json
+bun apps/shenron/site/scripts/sources-wiki.ts fiche db_characters 1 --json
 ```
 
 Le contenu des databooks est **en japonais**. Fais-le traduire par

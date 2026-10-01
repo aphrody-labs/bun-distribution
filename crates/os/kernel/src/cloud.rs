@@ -11,6 +11,19 @@ use aphrody_subsystem::{SubsystemError, SystemSubsystem, ToolDefinition};
 use async_trait::async_trait;
 use serde_json::{Value, json};
 
+use crate::paths::{EnvLookup, process_env, var};
+
+/// The project `gcp_status` reports when nothing selects one: the historical default of the
+/// Aphrody deployment. The report says so (`project_source: "default"`), so a client outside that
+/// deployment can tell a configured project from this fallback.
+const DEFAULT_GCP_PROJECT: &str = "aphrody-production";
+
+/// Environment variables that select the project, in precedence order after the `project`
+/// argument. The first two are the historical ones; the others are the names the Google client
+/// libraries and the Aphrody Vertex tooling already use.
+const GCP_PROJECT_ENV: [&str; 4] =
+    ["CLOUDSDK_CORE_PROJECT", "GCP_PROJECT", "GOOGLE_CLOUD_PROJECT", "APHRODY_VERTEX_PROJECT"];
+
 /// The kernel-owned cloud control plane (GitHub and Google Cloud).
 #[derive(Debug, Default)]
 pub struct CloudSubsystem;
@@ -44,6 +57,21 @@ fn resolve_repo_path(given: Option<&str>) -> Result<PathBuf, SubsystemError> {
     std::env::current_dir().map_err(|e| {
         SubsystemError::Failed(format!("failed to determine current working directory: {e}"))
     })
+}
+
+/// The project `gcp_status` reports and where it came from: the `project` argument, then
+/// [`GCP_PROJECT_ENV`] in order, then [`DEFAULT_GCP_PROJECT`]. The source is `"argument"`, the
+/// name of the variable, or `"default"`. An empty argument or variable counts as unset.
+fn resolve_gcp_project(env: EnvLookup<'_>, argument: Option<&str>) -> (String, &'static str) {
+    if let Some(project) = argument.filter(|project| !project.is_empty()) {
+        return (project.to_owned(), "argument");
+    }
+    for key in GCP_PROJECT_ENV {
+        if let Some(project) = var(env, key) {
+            return (project.to_string_lossy().into_owned(), key);
+        }
+    }
+    (DEFAULT_GCP_PROJECT.to_owned(), "default")
 }
 
 #[async_trait]
@@ -218,12 +246,10 @@ impl SystemSubsystem for CloudSubsystem {
                 let gemini_key = std::env::var("GEMINI_API_KEY").ok();
                 let google_key = std::env::var("GOOGLE_API_KEY").ok();
                 let app_credentials = std::env::var("GOOGLE_APPLICATION_CREDENTIALS").ok();
-                let project = arguments
-                    .get("project")
-                    .and_then(Value::as_str)
-                    .map(String::from)
-                    .or_else(|| std::env::var("CLOUDSDK_CORE_PROJECT").ok())
-                    .or_else(|| std::env::var("GCP_PROJECT").ok());
+                let (project, project_source) = resolve_gcp_project(
+                    &process_env,
+                    arguments.get("project").and_then(Value::as_str),
+                );
 
                 let has_api_key = gemini_key.is_some() || google_key.is_some();
                 let has_service_account =
@@ -234,7 +260,8 @@ impl SystemSubsystem for CloudSubsystem {
                     "gemini_api_key_configured": has_api_key,
                     "service_account_credentials_path": app_credentials,
                     "service_account_valid": has_service_account,
-                    "project": project.unwrap_or_else(|| "aphrody-production".to_string()),
+                    "project": project,
+                    "project_source": project_source,
                     "auth_provider": if has_service_account { "ServiceAccount" } else if has_api_key { "ApiKey" } else { "None" },
                 }))
             },
@@ -256,6 +283,7 @@ impl SystemSubsystem for CloudSubsystem {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::paths::table;
 
     #[tokio::test]
     async fn cloud_subsystem_declares_tools() {
@@ -278,6 +306,7 @@ mod tests {
         let res = cloud.call("gcp_status", json!({})).await.expect("call");
         assert!(res.get("auth_provider").is_some());
         assert!(res.get("project").is_some());
+        assert!(res.get("project_source").is_some());
     }
 
     #[tokio::test]
@@ -318,5 +347,44 @@ mod tests {
             .call("github_status", json!({ "repo_path": "C:\\nonexistent\\invalid\\path\\12345" }))
             .await;
         assert!(res_bad_path.is_err());
+    }
+
+    #[test]
+    fn gcp_project_resolution_order_keeps_the_historical_default() {
+        // Nothing configured: the historical default, reported as such.
+        let none = table::<&str, &str>([]);
+        assert_eq!(resolve_gcp_project(&none, None), ("aphrody-production".to_owned(), "default"));
+        // Each variable wins over the ones after it, and the argument wins over all of them.
+        let all = table([
+            ("APHRODY_VERTEX_PROJECT", "vertex"),
+            ("GOOGLE_CLOUD_PROJECT", "google"),
+            ("GCP_PROJECT", "gcp"),
+            ("CLOUDSDK_CORE_PROJECT", "sdk"),
+        ]);
+        assert_eq!(resolve_gcp_project(&all, None), ("sdk".to_owned(), "CLOUDSDK_CORE_PROJECT"));
+        assert_eq!(resolve_gcp_project(&all, Some("given")), ("given".to_owned(), "argument"));
+        let without_sdk = table([
+            ("APHRODY_VERTEX_PROJECT", "vertex"),
+            ("GOOGLE_CLOUD_PROJECT", "google"),
+            ("GCP_PROJECT", "gcp"),
+        ]);
+        assert_eq!(resolve_gcp_project(&without_sdk, None), ("gcp".to_owned(), "GCP_PROJECT"));
+        let without_gcp =
+            table([("APHRODY_VERTEX_PROJECT", "vertex"), ("GOOGLE_CLOUD_PROJECT", "google")]);
+        assert_eq!(
+            resolve_gcp_project(&without_gcp, None),
+            ("google".to_owned(), "GOOGLE_CLOUD_PROJECT")
+        );
+        let vertex = table([("APHRODY_VERTEX_PROJECT", "vertex")]);
+        assert_eq!(
+            resolve_gcp_project(&vertex, None),
+            ("vertex".to_owned(), "APHRODY_VERTEX_PROJECT")
+        );
+    }
+
+    #[test]
+    fn empty_gcp_project_inputs_count_as_unset() {
+        let env = table([("CLOUDSDK_CORE_PROJECT", ""), ("GCP_PROJECT", "gcp")]);
+        assert_eq!(resolve_gcp_project(&env, Some("")), ("gcp".to_owned(), "GCP_PROJECT"));
     }
 }

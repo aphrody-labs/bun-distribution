@@ -185,6 +185,24 @@ pub async fn prepare_managed_provider(
     config: &mut Config,
     cwd: &Path,
 ) -> Result<ProviderLease, ManagedProviderError> {
+    prepare_managed_provider_in(config, cwd, None).await
+}
+
+/// [`prepare_managed_provider`] with an explicit model store root.
+///
+/// `store_root` names the folder weights are resolved and downloaded into; `None` keeps the
+/// default (`$APHRODY_MODELS_DIR`, else `<state dir>/models`). A host that embeds the agent in
+/// its own process (the desktop app-server broker) passes the folder the user picked here
+/// instead of mutating the process environment.
+///
+/// # Errors
+///
+/// See [`prepare_managed_provider`].
+pub async fn prepare_managed_provider_in(
+    config: &mut Config,
+    cwd: &Path,
+    store_root: Option<&Path>,
+) -> Result<ProviderLease, ManagedProviderError> {
     let managed = config.provider.info.managed == Some(ManagedRuntime::LlamaServer)
         && config.provider.info.base_url.is_none();
     let local = matches!(config.provider.id.as_str(), "ollama" | "lmstudio" | "vllm");
@@ -233,6 +251,7 @@ pub async fn prepare_managed_provider(
         provider: if managed { "llama" } else { &config.provider.id },
         model: config.model.as_deref(),
         endpoint: endpoint.as_deref(),
+        store_root,
         ..OssReadyOptions::default()
     })
     .await

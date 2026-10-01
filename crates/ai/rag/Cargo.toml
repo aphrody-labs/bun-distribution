@@ -17,6 +17,8 @@ workspace = true
 [features]
 default = []
 ort = ["dep:aphrody-embed", "aphrody-embed/embeddings"]
+# In-process pure-Rust CPU embedder + cross-encoder (no Python, no HTTP, no Mutex).
+native = ["dep:aphrody-embed", "aphrody-embed/native"]
 
 [dependencies]
 aphrody-embed    = { workspace = true, optional = true }

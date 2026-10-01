@@ -1,9 +1,11 @@
 ---
 name: dragon-ball-japonais
-description: "Vérifie le japonais Dragon Ball, les graphies, le rōmaji et les traductions depuis le corpus et le lexique Dragonballfr; consulte les sources."
+description: "Vérifie le japonais Dragon Ball (graphies, rōmaji, traduction FR) dans le corpus des databooks et le wiki de dragonballfr.com. Utiliser avant d'écrire ou traduire un nom, une technique ou une réplique japonaise ; jamais de mémoire."
 ---
 
 # Japonais Dragon Ball — vocabulaire, lexique, traduction
+
+> **S'applique quand :** `https://dragonballfr.com` et `https://bot.dragonballfr.com` sont joignables (ou le MCP `dragonball_*` est connecté) ; la chaîne outillée en bas suppose en plus le monorepo Aphrody (`apps/shenron/site`). **Sinon :** dis qu'une graphie n'est pas vérifiée et laisse-la vide ; ne la devine ni de la prononciation ni de la romanisation.
 
 Le japonais de Dragon Ball ne se traite pas comme du japonais courant, et c'est
 la seule chose à retenir avant de commencer : **son vocabulaire n'est dans aucun
@@ -32,8 +34,11 @@ curl -s "https://dragonballfr.com/api/databooks/search?q=%E7%95%8C%E7%8E%8B%E6%8
   | jq '{total, fiches, ou: [.items[] | {titre, planche: .numero}]}'
 ```
 
-Fréquences mesurées sur le corpus (2026-08-22) : `かめはめ波` 570×, `元気玉` 215×,
-`瞬間移動` 207×, `界王拳` 133×, `龍拳` 120×, `ギャリック砲` 28×.
+Équivalent MCP : `dragonball_databooks_planches` (paramètres `q`, `databook`,
+`limit`). Fréquences relevées sur le corpus le 2026-10-01 (champ `total` de la
+route ci-dessus ; le corpus grossit en continu, donc ces nombres ne sont pas
+stables) : `かめはめ波` 737, `元気玉` 233, `瞬間移動` 160, `界王拳` 152, `龍拳` 139,
+`ギャリック砲` 40.
 
 ## Chercher dans le japonais réel
 
@@ -67,10 +72,13 @@ L'API publique du wiki est sur `bot.dragonballfr.com/api/public`, sans
 authentification. Ne passe pas par `dragonballfr.com/api/bot-user/…` : ces
 routes-là exigent une session.
 
-Couverture mesurée le 2026-09-12 : 1 023 personnages, 187 techniques, 47
-planètes et 8 races portent une graphie japonaise utilisable. Les techniques
-restent la lacune connue — 808 des 825 n'ont aucun nom japonais, essentiellement
-des compétences de jeux vidéo sans graphie canonique.
+La couverture varie : toutes les entités n'ont pas de `name_ja`, et les
+techniques sont la lacune connue (beaucoup sont des compétences de jeux vidéo
+sans graphie canonique ; voir `apps/shenron/site/scripts/ja-techniques.ts`). Une
+graphie japonaise absente du wiki reste **vide** : ne la complète pas de mémoire.
+Compte actuel : `curl -s https://bot.dragonballfr.com/api/public/wiki/categories | jq`
+donne le total par catégorie, et un `name_ja` null ou vide se repère dans
+`dragonball_wiki_list`.
 
 ## Traduire
 
@@ -83,7 +91,7 @@ mesurée :
 4. réinjecter la forme française officielle.
 
 Le marqueur qui tient dépend du moteur, et cela se vérifie plutôt que se
-suppose. Mesuré le 2026-09-12 : sur Google (par bxc), `⟦0⟧` traverse intact et
+suppose. Mesuré le 2026-09-12 (non rejoué depuis ; à revérifier avec `bxc google translate`) : sur Google (par bxc), `⟦0⟧` traverse intact et
 **suit la grammaire de la langue cible** — « Le ⟦0⟧ de ⟦1⟧ » ressort en
 « ⟦1⟧ の ⟦0⟧ ». Sur NLLB en local, le même marqueur se fait réécrire ou perdre,
 et seuls des noms propres latins courts et improbables (`Zeta`, `Yuni`) passent.
@@ -92,7 +100,7 @@ L'écart est net sur les mêmes phrases :
 
 |                                  | Sans protection                               | Avec                                         |
 | -------------------------------- | --------------------------------------------- | -------------------------------------------- |
-| `孫悟空は界王拳を使った`         | Son-gu a utilisé le poing du roi              | **Son Goku** a utilisé le **Kaiô-ken**       |
+| `孫悟空は界王拳を使った`         | Son-gu a utilisé le poing du roi              | **Son Goku** a utilisé le **Kaioken**        |
 | `ベジータはサイヤ人の王子だ`     | Végitta est le prince des Saïyas              | **Vegeta** est le prince des **Saiyans**     |
 | `ピッコロとクリリンが地球を守る` | Les picolo et les crillins protègent la Terre | **Piccolo** et **Krilin** protègent la Terre |
 
@@ -105,20 +113,20 @@ Rien de tout cela ne se refait à la main : le dépôt porte les trois pièces.
 
 | Pièce | Où | Ce qu'elle fait |
 | --- | --- | --- |
-| Lexique hors ligne | `apps/site/messages/glossary.json` | 1 316 noms construits depuis nos tables par `scripts/i18n-glossary-build.ts`, avec la graphie japonaise quand elle existe |
-| Masquage / restitution | `apps/site/src/lib/i18n/glossary.ts` | `protect`, `restore`, `spell` ; un jeton perdu par le moteur revient dans `missing` et la phrase est refusée |
-| Moteur sans clé | `bxc google translate` | une phrase en ligne de commande, ou un LOT par l'émulateur d'API sur `127.0.0.1:8089` |
+| Lexique hors ligne | `apps/shenron/site/messages/glossary.json` | 1 316 entrées le 2026-10-01 (compte du fichier), construites depuis nos tables par `apps/shenron/site/scripts/i18n-glossary-build.ts` |
+| Masquage / restitution | `apps/shenron/site/src/lib/i18n/glossary.ts` | `protect`, `restore`, `spell` ; un jeton perdu par le moteur revient dans `missing` et la phrase est refusée |
+| Moteur sans clé | `bxc google translate` (ou `aphrody translate`, qui protège le vocabulaire Shenron JP->FR) | une phrase en ligne de commande, ou un lot via `--serve` (émulateur de l'API Google Cloud Translation v2) |
 
 ```bash
-# Un lot de segments en un seul appel — c'est ce qui rend 12 000 planches tenable
-bun ~/bxc/src/cli/index.ts google translate --serve &
-curl -s -X POST http://127.0.0.1:8089/language/translate/v2 \
+# Un lot de segments en un seul appel (adresse et port : ceux affichés par --serve)
+bxc google translate --serve &
+curl -s -X POST http://127.0.0.1:<port>/language/translate/v2 \
   -H 'Content-Type: application/json' \
   -d '{"q":["孫悟空は界王拳を使った"],"source":"ja","target":"fr"}' \
   | jq -r '.data.translations[].translatedText'
 
 # La boucle complète sur les planches de databooks : file, masquage, juge, dépôt signé
-bun apps/site/scripts/traduction-boucle.ts --lots 1 --moteur google      # à blanc
+bun apps/shenron/site/scripts/traduction-boucle.ts --lots 1 --moteur google   # à blanc ; --appliquer pour écrire
 ```
 
 Deux gardes de cette chaîne méritent d'être connues, parce qu'elles viennent
@@ -132,7 +140,7 @@ aucune n'est retenue : le terme retombe sur sa forme française.
 
 **Les transcriptions sont automatiques, donc bruitées.** Sur le corpus mesuré,
 `ブルマ` est lu `フルマ`, `ピッコロ` lu `ビッコロ`, `ブロリー` lu `プロリー` — et
-`ドラゴンボール` lui-même est mal lu 95 fois. Une graphie isolée trouvée dans une
+`ドラゴンボール` lui-même est parfois mal lu. Une graphie isolée trouvée dans une
 seule planche peut être une erreur de lecture ; une graphie répétée dans
 plusieurs ouvrages est fiable.
 
@@ -150,3 +158,4 @@ personnage : compare en les retirant.
   de translittération
 - `references/outils.md` — chaîne de traitement du dépôt (kuromoji, JMdict,
   scripts d'analyse) pour qui travaille sur le code
+- `docs/shenron/japonais.md` — documentation de la chaîne dans le dépôt

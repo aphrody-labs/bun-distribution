@@ -5,12 +5,14 @@
 
 pub mod llama;
 pub mod openai;
+#[cfg(feature = "native")] pub mod native;
 #[cfg(feature = "ort")] pub mod ort;
 pub mod stub;
 
 use async_trait::async_trait;
 pub use llama::LlamaServerEmbedder;
 pub use openai::OpenAiCompatEmbedder;
+#[cfg(feature = "native")] pub use native::NativeEmbedder;
 #[cfg(feature = "ort")] pub use ort::OrtEmbedder;
 pub use stub::StubEmbedder;
 

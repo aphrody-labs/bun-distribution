@@ -102,7 +102,7 @@ package at `X` must get the platform package at `X` or the loader loads a stale 
 
 - Bun implements Node‑API, so a napi‑rs `.node` built for Node generally loads in
   **Bun unmodified** — `import`/`require` the generated `index.js`, no flag, no
-  recompile. The in‑repo test `test/js/third_party/@napi-rs/canvas/napi-rs-canvas.test.ts`
+  recompile. The oven-sh/bun test `test/js/third_party/@napi-rs/canvas/napi-rs-canvas.test.ts`
   exercises exactly this (`createCanvas`, `loadImage`, `ctx.drawImage`,
   `canvas.encode("png")`) against a real napi‑rs addon.
 - **The event‑loop gotcha (most important Bun caveat):** on Linux/macOS Bun is

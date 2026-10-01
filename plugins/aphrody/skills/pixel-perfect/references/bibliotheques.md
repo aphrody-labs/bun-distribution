@@ -1,6 +1,6 @@
 # Bibliothèques de la chaîne « image → SVG → raster »
 
-Versions et dates **mesurées le 2026-09-05** (API crates.io + `gh api repos/…`), pas citées de
+Versions et dates **mesurées le 2026-09-05** (le workspace Aphrody épingle aujourd'hui `resvg`/`usvg` 0.47 : relire `Cargo.toml` avant de recopier) (API crates.io + `gh api repos/…`), pas citées de
 mémoire. Rejouer la mesure avant de recopier un numéro :
 
 ```bash
@@ -74,8 +74,9 @@ visioncortex   = { version = "0.9", optional = true }   # feature `vectoriser`
 
 ## Ce que la crate utilise réellement
 
-`aphrody-identity` (aphrody-ui) tire `image`, `image-compare`, `palette`, `resvg`/`usvg`/`tiny-skia` et
-`visioncortex` (derrière la feature `vectoriser`). **`quantette` n'est pas tiré** : le k-means de
+`aphrody-identity` (`crates/ui/identity`) tire `image`, `image-compare`, `palette` et `aphrody-svg`
+(feature `raster`, qui porte le rendu `resvg`) ; `pixel::vectoriser` est un tracé interne, sans
+`visioncortex`. **`quantette` n'est pas tiré** : le k-means de
 `pixel::mesurer` tient en une cinquantaine de lignes et travaille déjà en Oklab via `palette` —
 une dépendance de plus pour la même chose ne se justifiait pas. Le reprendre si la
 quantification devient un goulot (il est SIMD) ou s'il faut du dithering.

@@ -1,6 +1,6 @@
 ---
 description: Upgrade all winget packages silently (use with caution — system-wide)
-argument-hint: [--exclude=<id1, id2>]
+argument-hint: "[--exclude=<id1,id2>]"
 allowed-tools: PowerShell
 ---
 

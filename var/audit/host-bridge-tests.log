@@ -1,0 +1,198 @@
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on build directory
+   Compiling tokio v1.53.1
+   Compiling tokio-util v0.7.19
+   Compiling aphrody-subsystem v1.0.0-canary (/home/aphro/aphrody/crates/contracts/subsystem)
+   Compiling async-compression v0.4.48
+   Compiling tokio-rustls v0.26.5
+   Compiling tokio-stream v0.1.19
+   Compiling aphrody-kernel-client v1.0.0-canary (/home/aphro/aphrody/crates/os/kernel-client)
+   Compiling tokio-tungstenite v0.24.0
+   Compiling aphrody-events v1.0.0-canary (/home/aphro/aphrody/crates/os/events)
+   Compiling aphrody-nu v1.0.0-canary (/home/aphro/aphrody/crates/shell/nu)
+   Compiling aphrody-coreutils v1.0.0-canary (/home/aphro/aphrody/crates/os/coreutils)
+   Compiling aphrody-compat v1.0.0-canary (/home/aphro/aphrody/crates/os/compat)
+   Compiling aphrody-systemd v1.0.0-canary (/home/aphro/aphrody/crates/os/systemd)
+   Compiling aphrody-bun-docs v1.0.0-canary (/home/aphro/aphrody/crates/compat/bun-docs)
+   Compiling aphrody-tui v1.0.0-canary (/home/aphro/aphrody/crates/shell/tui)
+   Compiling h2 v0.4.19
+   Compiling tower v0.5.3
+   Compiling tower-http v0.6.11
+   Compiling hyper v1.11.1
+   Compiling hyper-util v0.1.21
+   Compiling hyper-rustls v0.27.10
+   Compiling axum v0.8.9
+   Compiling hyper-timeout v0.5.2
+   Compiling reqwest v0.13.5
+   Compiling tonic v0.14.6
+   Compiling aphrody-winclean v1.0.0-canary (/home/aphro/aphrody/crates/os/winclean)
+   Compiling tonic-prost v0.14.6
+   Compiling aphrody-a2a-pb v0.1.8 (/home/aphro/aphrody/crates/contracts/a2a-pb)
+   Compiling aphrody-a2a-server v0.3.0 (/home/aphro/aphrody/crates/os/a2a-server)
+   Compiling aphrody-a2a-coord v1.0.0-canary (/home/aphro/aphrody/crates/os/a2a-coord)
+   Compiling aphrody-terminal-backend v1.0.0-canary (/home/aphro/aphrody/crates/shell/terminal-backend)
+   Compiling aphrody-shell v1.0.0-canary (/home/aphro/aphrody/crates/shell/shell)
+   Compiling aphrody-kernel v1.0.0-canary (/home/aphro/aphrody/crates/os/kernel)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1m 37s
+warning: the following packages contain code that will be rejected by a future version of Rust: proc-macro-error2 v2.0.1
+note: to see what the problems were, use the option `--future-incompat-report`, or run `cargo report future-incompatibilities --id 1`
+     Running unittests src/lib.rs (target/debug/deps/aphrody_kernel-8518004ec067a610)
+
+running 80 tests
+test admin::tests::cpk_summary_is_served_by_the_rust_owner ... ok
+test admin::tests::aob_scan_is_served_by_the_rust_owner ... ok
+test admin::tests::entropy_map_is_served_by_the_rust_owner ... ok
+test admin::tests::golang_scan_is_served_by_the_rust_owner ... ok
+test admin::tests::analyze_pe_is_served_by_the_rust_owner ... ok
+test admin::tests::launch_app_is_served_by_the_rust_owner ... ok
+test admin::tests::multi_hash_is_served_by_the_rust_owner ... ok
+test admin::tests::section_dump_is_served_by_the_rust_owner ... ok
+test admin::tests::pe_header_is_served_by_the_rust_owner ... ok
+test admin::tests::strings_are_served_by_the_rust_owner ... ok
+test admin::tests::windows_inventory_tools_report_platform_unavailability ... ok
+test admin::tests::filesystem_tools_are_served_by_the_rust_owner ... ok
+test cloud::tests::cloud_subsystem_handles_errors ... ok
+test cloud::tests::cloud_subsystem_declares_tools ... ok
+test cloud::tests::gcp_status_returns_structured_payload ... ok
+test cloud_gcs::tests::live_listing ... ignored, requires GCP credentials and GCS_TEST_BUCKET
+test cloud_git::tests::relative_age_formats_units ... ok
+test infra::tests::infra_subsystem_rejects_unknown_host ... ok
+test infra::tests::infra_subsystem_declares_tools ... ok
+test infra::tests::infra_subsystem_validates_arguments_and_tools ... ok
+test infra::tests::validate_host_rules ... ok
+test mcp_proxy::tests::browser_owned_tools_are_not_proxied_by_providers ... ok
+test mcp_proxy::tests::frames_reject_oversize_before_growing_the_buffer_past_limit ... ok
+test mcp_proxy::tests::auto_discovery_accepts_only_web_provider_tools ... ok
+test mcp_proxy::tests::provider_metadata_preserves_read_only_annotations ... ok
+test infra::tests::workspace_manifest_never_triggers_an_implicit_build ... ok
+test admin::tests::aes_ctr_is_served_by_the_rust_owner ... ok
+test mcp_proxy::tests::web_provider_discovery_uses_the_native_mcp_catalog ... ok
+test remote::tests::cancelled_call_releases_pending_response_slot ... ok
+test cloud::tests::github_branches_in_current_repo ... ok
+test infra::tests::legacy_archives_are_not_automatically_discovered ... ok
+test infra::tests::discovers_relocated_workspace_from_nested_cwd_and_kernel ... ok
+test admin::tests::xor_is_served_by_the_rust_owner ... ok
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 80 filtered out; finished in 0.00s
+
+test admin::tests::every_canonical_winclean_tool_is_agent_available ... ok
+test tests::a2a_envelope_uses_the_same_tool_dispatcher ... ok
+test tests::duplicate_skills_in_one_subsystem_rejected ... ok
+test tests::duplicate_tools_in_one_subsystem_are_rejected ... ok
+test mcp_proxy::tests::discovers_all_pages_and_uses_distinct_call_ids ... ok
+test runtimes::tests::rejects_unknown_toolchain_and_tool ... ok
+test mcp_proxy::tests::empty_explicit_command_disables_auto_discovery ... ok
+test tests::duplicate_skills_across_subsystems_rejected ... ok
+test infra::tests::home_fallback_requires_current_owner_layout ... ok
+test tests::execution_policy_blocks_kernel_dispatch ... ok
+test tests::nested_skill_calls_are_rejected ... ok
+test tests::authenticated_sessions_are_scoped_before_kernel_dispatch ... ok
+test tests::remote_subsystem_validation_and_parsing ... ok
+test mcp_proxy::tests::plugins_are_disabled_by_an_empty_command_and_skipped_when_absent ... ok
+test mcp_proxy::tests::rejects_repeating_pagination_cursor ... ok
+test mcp_proxy::tests::explicit_missing_provider_still_reports_an_error ... ok
+test tests::rpc_subscribe_and_publish_with_filtering ... ok
+test tests::rpc_skills_list_and_run ... ok
+test tests::rpc_ping_and_unknown_method_handling ... ok
+test tests::skill_reports_failing_step ... ok
+test cloud::tests::github_tree_in_current_repo ... ok
+test tests::skill_invalid_argument_types_rejected ... ok
+test tests::routes_calls_and_refuses_collisions ... ok
+test tests::a2a_target_selects_the_owner_and_rejects_misdirected_side_effects ... ok
+test tests::a_peer_registers_a_subsystem_and_serves_its_calls ... ok
+test tests::sub_agent_runs_on_the_bus ... ok
+test tests::skills_chain_steps_and_are_tools ... ok
+test tests::persistent_audit_records_bus_events_and_reports_health ... ok
+test tests::rpc_system_subsystems_and_subsystem_tools_unknown ... ok
+test tests::transport_default_endpoint_env_override ... ok
+test tests::tool_starting_with_skill_prefix_is_rejected ... ok
+test tests::transport_rejects_line_before_exceeding_limit ... ok
+test tests::transport_malformed_json_returns_parse_error ... ok
+test tests::mcp_surface_over_a_connection ... ok
+test tests::timed_out_client_request_is_removed_from_pending ... ok
+test cloud_gcs::tests::surfaces_api_errors ... ok
+test cloud_git::tests::status_branches_and_tree_on_temp_repo ... ok
+test cloud_gcs::tests::rejects_invalid_bucket ... ok
+test cloud_gcs::tests::lists_objects_across_pages_with_bearer_token ... ok
+test runtimes::tests::resolves_pins_from_a_project_directory ... ok
+test infra::tests::git_status_handles_literal_paths_and_home_shorthand ... ok
+test tests::host_remote_joins_a_kernel_and_leaves_on_disconnect ... ok
+test mcp_proxy::tests::caller_cancellation_preserves_partial_reply_framing ... ok
+test mcp_proxy::tests::notifications_cannot_extend_deadline_or_reuse_timed_out_connection ... ok
+test cloud::tests::github_status_in_current_repo ... ok
+test admin::tests::every_registered_tool_reaches_the_rust_dispatch_match ... ok
+test admin::tests::system_inventory_tools_are_served_by_the_rust_owner ... ok
+
+test result: ok. 79 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 1.40s
+
+     Running unittests src/lib.rs (target/debug/deps/aphrody_kernel_client-e4cffaa1ea838ced)
+
+running 4 tests
+test tests::mismatched_response_id_fails ... ok
+test tests::ignores_interleaved_notifications_before_request_response ... ok
+test tests::initializes_and_calls_tools_over_one_local_stream ... ok
+test tests::times_out_and_redacts_tokens ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running unittests src/lib.rs (target/debug/deps/aphrody_nu-60121f1bcb66c544)
+
+running 14 tests
+test utils::tests::enforces_timeout_and_output_resource_bounds ... ok
+test tests::json_round_trip_keeps_structure ... ok
+test utils::tests::catalogs_preserve_provider_and_availability ... ok
+test utils::tests::only_catalogued_companions_are_selectable ... ok
+test utils::tests::rejects_utility_paths_and_shell_expressions ... ok
+test tests::tables_come_back_as_records ... ok
+test tests::utility_command_rejects_shell_expressions_before_ipc ... ok
+test tests::parse_errors_are_reported_not_panicked ... ok
+test utils::tests::interrupt_signal_cancels_kernel_wait ... ok
+test tests::vars_are_env_and_not_code ... ok
+test tests::full_nushell_surface_is_registered ... ok
+test tests::external_command_output_is_captured ... ok
+test tests::evaluations_do_not_leak_into_each_other ... ok
+test tests::subsystem_times_out_and_interrupts ... ok
+
+test result: ok. 14 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.03s
+
+     Running unittests src/lib.rs (target/debug/deps/aphrody_winclean-5445c81d3df0d66b)
+
+running 30 tests
+test clipboard::tests::clipboard_is_unsupported_off_windows ... ok
+test clipboard::tests::text_with_nul_is_rejected_before_touching_the_clipboard ... ok
+test defender::tests::defender_is_unsupported_off_windows ... ok
+test eventlog::tests::invalid_channels_and_filters_are_rejected ... ok
+test eventlog::tests::standard_levels_have_names ... ok
+test memory::tests::parses_decimal_and_hex_addresses ... ok
+test memory::tests::parses_spaced_hex_without_accepting_invalid_input ... ok
+test registry::tests::default_value_name_maps_to_the_unnamed_value ... ok
+test registry::tests::hive_roots_are_never_deleted ... ok
+test registry::tests::invalid_values_are_rejected_before_any_write ... ok
+test registry::tests::registry_paths_accept_every_hive_spelling ... ok
+test registry::tests::values_decode_to_typed_json_and_reg_exe_strings ... ok
+test services::tests::invalid_names_and_actions_are_rejected_before_the_scm ... ok
+test services::tests::names_follow_the_servicecontroller_vocabulary ... ok
+test tcp::tests::malformed_addresses_are_rejected ... ok
+test tcp::tests::proc_net_tcp6_fixture_parses_ipv6_rows ... ok
+test tcp::tests::socket_links_resolve_to_inodes ... ok
+test timefmt::tests::cim_datetimes_are_normalised_to_utc ... ok
+test tcp::tests::state_names_follow_the_tcpstate_vocabulary ... ok
+test timefmt::tests::civil_day_conversions_round_trip ... ok
+test tcp::tests::proc_net_tcp_fixture_parses_ipv4_rows ... ok
+test timefmt::tests::filetime_renders_like_the_event_log_system_time ... ok
+test winml::tests::non_windows_is_explicitly_unsupported ... ok
+test wsl::tests::decodes_windows_inventory_and_linux_output ... ok
+test registry::tests::registry_preserves_catalog_and_ownership ... ok
+test tcp::tests::live_table_lists_a_bound_listener ... ok
+test coordination::tests::atomic_write_replaces_complete_file ... ok
+test wsl::tests::captures_large_streams_without_pipe_deadlock ... ok
+test wsl::tests::limits_output ... ok
+test wsl::tests::reaps_timed_out_launcher ... ok
+
+test result: ok. 30 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
+

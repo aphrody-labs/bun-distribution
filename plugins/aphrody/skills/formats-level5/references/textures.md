@@ -1,5 +1,7 @@
 # Textures, shaders et rendu 2D
 
+Modules dans `iecode:crates/nie/aphrody-nie-formats/src/` (racine IECODE, cf. `../SKILL.md`).
+
 | Format | Magic | Extension | Module | Contenu |
 |---|---|---|---|---|
 | G4TX | `G4TX` | `.g4tx` | `g4tx.rs`, `g4tx_decode.rs`, `g4tx_encode.rs` | Texture Level-5 |
@@ -10,22 +12,18 @@
 
 ## Décoder une texture
 
-```ts
-import { decodeToPng } from "nie";
-const png = decodeToPng(bytes);        // null si ce n'est pas un G4TX décodable
-```
-
-Ou l'outil MCP `asset_get` avec `decode: "tex"`.
+Outil MCP `asset_get` avec `decode: "tex"` (PNG), ou `nie vfs cat <chemin.g4tx>` avec l'option de
+sortie PNG de `--help`. Depuis Rust : `g4tx_decode.rs`.
 
 ## La convention `/tex` — piège classique
 
-La route HTTP de `nie-model-serve` **remplace `.png` par `.g4tx`** : lui passer
+La route HTTP de `aphrody-nie-model-serve` **remplace `.png` par `.g4tx`** : lui passer
 `…/x.g4tx.png` est une erreur. L'URL correcte est `…/x.png`, et le service va chercher
 `…/x.g4tx`.
 
-En voie FFI (décodage en process), il n'y a pas de substitution : le chemin garde son `.g4tx`.
-La réponse de `asset_get` indique laquelle des deux voies a servi, via `source: "ffi"` ou
-`"model-serve"` — s'y fier plutôt que de supposer.
+En voie process (`asset_get`, CLI), il n'y a pas de substitution : le chemin garde son `.g4tx`.
+La réponse de `asset_get` indique la voie qui a servi (`source`, ex. `"rust-native"` ou
+`"model-serve"`) — s'y fier plutôt que de supposer.
 
 ## Écriture
 
@@ -34,13 +32,8 @@ vérifier sur un fichier réel avant de s'en servir dans un mod.
 
 ## Police
 
-`font.rs` interprète `font.cfg.bin` (métriques) et l'atlas `font.g4tx`. Côté TypeScript :
-
-```ts
-using vfs  = vfsOpen("./data")!;
-using font = vfs.openFont()!;
-const png  = font.renderText("COMMENCER");   // PNG RGBA8
-```
+`font.rs` interprète `font.cfg.bin` (métriques) et l'atlas `font.g4tx` ; exemples
+`font_render.rs` et `render_text.rs` dans `iecode:crates/nie/aphrody-nie-formats/examples/`.
 
 Il n'y a **pas** de format `.g4tg` à reverser : c'était une hypothèse fausse, levée le
 2026-06-16 (cf. l'en-tête de `font.rs`).

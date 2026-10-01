@@ -1,14 +1,14 @@
 ---
 name: protocol-reverse-engineering
-description: "Network protocol reverse engineering: packet capture analysis, protocol dissection and documentation of proprietary protocols."
+description: "Network protocol reverse engineering: packet capture analysis, protocol dissection and documentation of proprietary protocols. Use when asked to capture, dissect or document an undocumented wire protocol."
 version: "1.0.0"
 metadata:
-  source: synced from a network-protocol RE skill on 2026-05-19, integration footer stripped
+  source: generic network-protocol RE reference (no repository paths)
 ---
 
 # Protocol Reverse Engineering
 
-Mode `/goal` permanent : décider seul, ne pas s'arrêter avant protocole documenté.
+> **Applies when:** a capture (pcap/HAR) or a live authorized target is available and standard tools (tshark/tcpdump/mitmproxy/scapy) are installed; works in any repo. **Otherwise:** work from provided captures/logs only, name the missing tool, and for client binaries first run `aphrody re strings` / `re auto` (see `auto-re`) if available. Only capture traffic you are authorized to analyze.
 
 Techniques for capturing, analyzing, and documenting network protocols. Tools below are cross-platform (Wireshark/tshark/tcpdump/mitmproxy/scapy run on Linux/macOS/Windows; on Windows use `npcap` + `Npcap`-backed dumpcap, and an interface name like `\Device\NPF_{...}` instead of `eth0`).
 

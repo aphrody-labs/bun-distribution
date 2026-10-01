@@ -29,14 +29,14 @@ my-pkg/
 
 The key idea: **declare your symbols once** in `ffi.manifest.ts` and *generate*
 the `dlopen` block + typed wrapper, instead of hand‑writing (and drifting) the
-binding boilerplate in every project. The `scripts/gen-bindings.ts` in this skill
+binding boilerplate in every project. The `skills/rust-bun/scripts/gen-bindings.ts` script of this plugin
 does exactly that.
 
 ## 1. Prototype fast
 
 Get a working round trip before worrying about packaging:
 
-1. `scripts/scaffold.sh` (see `references/bun-ffi.md`), or start from the layout above.
+1. `skills/rust-bun/scripts/scaffold.sh` (see `references/bun-ffi.md`), or start from the layout above.
 2. Keep the edit loop tight: `bun dev.ts` watches `src/**` and `ffi.manifest.ts`,
    runs `cargo build` (debug — faster) and re‑runs your entry/tests on change. See
    `references/rs-to-ts/automation.md` for the watcher.
@@ -107,6 +107,6 @@ generated wrapper, so consumers never see pointers or `FFIType`. Ship a `.d.ts`
 
 ## Scripts
 
-- `scripts/gen-bindings.ts` — reads `ffi.manifest.ts`, writes a typed
+- `skills/rust-bun/scripts/gen-bindings.ts` — reads `ffi.manifest.ts`, writes a typed
   `bindings.generated.ts` (`dlopen` + wrapper, with auto `CString`/free for
   `string` symbols). Run standalone or from `build.ts`.

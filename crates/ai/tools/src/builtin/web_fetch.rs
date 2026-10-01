@@ -9,7 +9,9 @@
 //! Differences vs the TS surface:
 //! * No private-IP allow-list yet (SSRF guard belongs in the caller's `aphrody-permissions` policy,
 //!   not here).
-//! * Body is truncated to `max_bytes` (default 256 KiB).
+//! * Body is truncated to `max_bytes` (default 256 KiB). It is streamed and the read stops at the
+//!   cap, so memory use is bounded by `max_bytes` whatever the server sends; `bytes` is the
+//!   declared `Content-Length` when the body was cut and the server sent one, else the bytes read.
 //! * Returns the raw bytes as UTF-8 when valid, else a base64-encoded payload tagged `binary`.
 //!
 //! ## Client reuse
@@ -182,7 +184,7 @@ impl Tool for WebFetchTool {
             req = req.header(k.as_str(), v.as_str());
         }
 
-        let resp = req.send().await.map_err(|e| ToolError::Network(e.to_string()))?;
+        let mut resp = req.send().await.map_err(|e| ToolError::Network(e.to_string()))?;
         let status = resp.status().as_u16();
         let mut headers_map = serde_json::Map::new();
         for (k, v) in resp.headers().iter() {
@@ -192,11 +194,23 @@ impl Tool for WebFetchTool {
             );
         }
         let final_url = resp.url().to_string();
-        let bytes = resp.bytes().await.map_err(|e| ToolError::Network(e.to_string()))?;
-        let truncated = bytes.len() > max_bytes;
-        let slice = if truncated { &bytes[..max_bytes] } else { &bytes[..] };
+        let declared_length = resp.content_length();
+        let (body, truncated) = read_capped(&mut resp, max_bytes).await?;
+        // The full size when the server declared it, else what was read: a
+        // capped read never learns the size of a body it stopped reading.
+        let declared_total = declared_length
+            .filter(|_| truncated)
+            .map_or(body.len(), |n| usize::try_from(n).unwrap_or(usize::MAX));
+        let total_bytes = declared_total.max(body.len());
+        let slice = &body[..];
         let (body_repr, encoding) = match std::str::from_utf8(slice) {
             Ok(s) => (Value::String(s.to_string()), "utf-8"),
+            // The cap cut a multi-byte character in two: keep the valid prefix
+            // instead of reporting a text page as base64.
+            Err(e) if truncated && e.error_len().is_none() => (
+                Value::String(String::from_utf8_lossy(&slice[..e.valid_up_to()]).into_owned()),
+                "utf-8",
+            ),
             Err(_) => {
                 use base64::Engine;
                 let b64 = base64::engine::general_purpose::STANDARD.encode(slice);
@@ -214,11 +228,34 @@ impl Tool for WebFetchTool {
             "headers":    Value::Object(headers_map),
             "encoding":   encoding,
             "body":       body_repr,
-            "bytes":      bytes.len(),
+            "bytes":      total_bytes,
             "truncated":  truncated,
             "rendering":  rendering,
         }))
     }
+}
+
+/// Read at most `max_bytes` of the response body, stopping as soon as the cap
+/// is exceeded.
+///
+/// Returns the bytes kept and whether more body was left unread. The body is
+/// streamed chunk by chunk and the connection is dropped with the response: a
+/// plain `resp.bytes()` buffers the whole download in memory first, so a
+/// multi-gigabyte URL would exhaust memory before the cap ever applied.
+async fn read_capped(
+    resp: &mut reqwest::Response,
+    max_bytes: usize,
+) -> Result<(Vec<u8>, bool), ToolError> {
+    let mut body: Vec<u8> = Vec::with_capacity(max_bytes.min(64 * 1024));
+    while let Some(chunk) = resp.chunk().await.map_err(|e| ToolError::Network(e.to_string()))? {
+        let room = max_bytes - body.len();
+        if chunk.len() > room {
+            body.extend_from_slice(&chunk[..room]);
+            return Ok((body, true));
+        }
+        body.extend_from_slice(&chunk);
+    }
+    Ok((body, false))
 }
 
 /// Decide what `body` holds, and say so.

@@ -1,7 +1,7 @@
 ---
 name: asm-lowlevel-engineer
-description: Assembly and low-level engineer for x86_64, ARM64 and RISC-V, SIMD (AVX-512, NEON), compiler intrinsics and reverse engineering.
-tools: [Read, Write, Edit, Bash, Glob, Grep]
+description: Assembly and low-level engineer for x86_64, ARM64, RISC-V, SIMD (AVX-512, NEON) and intrinsics. Use for hand-tuned kernels, inline asm, ABI questions and binary-level debugging.
+tools: Read, Write, Edit, Bash, Glob, Grep
 model: opus
 ---
 

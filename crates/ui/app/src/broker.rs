@@ -1,21 +1,35 @@
 // SPDX-License-Identifier: Apache-2.0
 //! The app-server broker: sole owner of the JSON-RPC connection to the agent.
 //!
-//! The agent runs in a separate `aphrody app-server` process speaking newline-delimited
-//! JSON-RPC over stdio. The broker starts it on first use, rewrites request ids so that
-//! several webviews can never collide, correlates each response to its caller, pushes every
-//! server notification to the webviews as the `aphrody://notification` event, and, if the
-//! backend exits, fails the pending calls, restarts it on the next request and replays the
-//! `initialize` / `initialized` handshake the UI performed. The renderer never opens a pipe
-//! or a process: it only reaches this module through the allow-listed Tauri commands.
+//! The agent runs in this process. [`aphrody_app_server::serve_stdio_with`] serves
+//! newline-delimited JSON-RPC over two `tokio::io::duplex` pipes (one per direction), so there is
+//! no child process, no `aphrody` binary to locate and no output to scrape. The broker starts the
+//! server on first use, rewrites request ids so that several webviews can never collide,
+//! correlates each response to its caller, pushes every server notification to the webviews as
+//! the `aphrody://notification` event, and, if the server task ends (a failure, a panic, which
+//! Tokio contains in the task, or a shutdown), fails the pending calls, starts a fresh server on
+//! the next request and replays the `initialize` / `initialized` handshake the UI performed.
+//! The renderer never opens a pipe or a process: it only reaches this module through the
+//! allow-listed Tauri commands.
+//!
+//! The model store root the user picked is an option of the server
+//! ([`aphrody_app_server::AppServer::with_models_dir`]), never an environment variable: mutating
+//! the environment of a threaded process is `unsafe` in edition 2024.
 
-use std::{collections::HashMap, path::PathBuf, process::Stdio, sync::Arc, time::Duration};
+use std::{
+    collections::HashMap,
+    sync::{
+        Arc,
+        atomic::{AtomicBool, Ordering},
+    },
+    time::Duration,
+};
 
+use aphrody_app_server::{AppServer, serve_stdio_with};
 use serde_json::{Value, json};
 use tauri::{AppHandle, Emitter, ipc::Channel};
 use tokio::{
-    io::{AsyncBufReadExt, AsyncWriteExt, BufReader},
-    process::{ChildStderr, ChildStdin, ChildStdout, Command},
+    io::{AsyncBufRead, AsyncBufReadExt, AsyncWriteExt, BufReader, DuplexStream, duplex},
     sync::{Mutex, oneshot},
 };
 
@@ -27,16 +41,20 @@ pub const BACKEND_EVENT: &str = "aphrody://backend";
 /// Upper bound for one request. `thread/start` may wait for a local model server to load.
 const REQUEST_TIMEOUT: Duration = Duration::from_secs(600);
 
+/// Capacity of each in-process pipe. A message larger than this still goes through: the writer
+/// waits while the other end drains it.
+const PIPE_CAPACITY: usize = 1 << 20;
+
 type Pending = Arc<std::sync::Mutex<HashMap<u64, oneshot::Sender<Value>>>>;
 /// Per-thread streaming subscriptions installed by [`AppServerBroker::subscribe`].
 type Channels = Arc<std::sync::Mutex<HashMap<String, Vec<Channel<Value>>>>>;
 
 struct Connection {
-    stdin: ChildStdin,
-    /// The app-server leads a kill-on-close process group (a Job Object on Windows):
-    /// dropping it, or the desktop dying without unwinding, ends the whole tree, so no
-    /// `aphrody app-server` or model server it started outlives the window.
-    child: aphrody_proc::GroupChild,
+    /// Client end of the server's input pipe. Closing it (dropping the connection) is the
+    /// shutdown signal: the server joins every session, so each rollout is flushed, and returns.
+    input: DuplexStream,
+    /// Cleared by the supervising task once the server has ended, whatever the reason.
+    alive: Arc<AtomicBool>,
     pending: Pending,
 }
 
@@ -93,7 +111,93 @@ fn route_to_subscriber<S: NotificationSink>(
     any_delivered
 }
 
-/// Owns the `aphrody app-server` child process and its JSON-RPC stream.
+/// An in-process app-server and the client ends of its two pipes.
+struct Link {
+    /// Requests written here reach the server.
+    input: DuplexStream,
+    /// Responses and notifications the server wrote.
+    output: DuplexStream,
+    /// `true` while the server task runs.
+    alive: Arc<AtomicBool>,
+    /// Resolves with the reason the server ended, after `alive` has been cleared.
+    exit: oneshot::Receiver<String>,
+}
+
+/// Start `server` on its own task, wired to two fresh in-memory pipes.
+///
+/// The server runs [`serve_stdio_with`] until its input is closed or it fails. A second task
+/// supervises it: it observes how the first one ended (a clean close, an error, or a panic,
+/// which Tokio contains in the task) and publishes that as the `exit` reason. Must be called
+/// from within a Tokio runtime.
+fn open_link(server: AppServer) -> Link {
+    let (input, server_input) = duplex(PIPE_CAPACITY);
+    let (server_output, output) = duplex(PIPE_CAPACITY);
+    let serving =
+        tokio::spawn(serve_stdio_with(BufReader::new(server_input), server_output, server));
+    let alive = Arc::new(AtomicBool::new(true));
+    let (publish, exit) = oneshot::channel();
+    let flag = Arc::clone(&alive);
+    tokio::spawn(async move {
+        let reason = match serving.await {
+            Ok(Ok(())) => "closed".to_owned(),
+            Ok(Err(error)) => format!("failed: {error}"),
+            Err(error) => format!("crashed: {error}"),
+        };
+        flag.store(false, Ordering::Release);
+        let _ = publish.send(reason);
+    });
+    Link { input, output, alive, exit }
+}
+
+/// Deliver everything the server writes until its output ends.
+///
+/// A response (a message with `result` or `error` and a numeric `id`) wakes the caller waiting
+/// on that id. Anything else is a notification: it is stamped with the backend `generation`,
+/// routed to the subscribers of its thread and handed to `emit` for the global broadcast. When
+/// the output ends, every call still waiting is failed by dropping its sender.
+async fn pump<R, S>(
+    output: R,
+    pending: &Pending,
+    channels: &std::sync::Mutex<HashMap<String, Vec<S>>>,
+    generation: u64,
+    mut emit: impl FnMut(Value),
+) where
+    R: AsyncBufRead + Unpin,
+    S: NotificationSink,
+{
+    let mut lines = output.lines();
+    while let Ok(Some(line)) = lines.next_line().await {
+        let Ok(message) = serde_json::from_str::<Value>(&line) else {
+            log::warn!("app-server wrote a non-JSON line ({} bytes)", line.len());
+            continue;
+        };
+        let is_response = message.get("result").is_some() || message.get("error").is_some();
+        match message.get("id").and_then(Value::as_u64) {
+            Some(id) if is_response => {
+                let sender =
+                    pending.lock().unwrap_or_else(std::sync::PoisonError::into_inner).remove(&id);
+                if let Some(sender) = sender {
+                    let _ = sender.send(message);
+                }
+            },
+            _ => {
+                let mut notification = message;
+                if let Some(object) = notification.as_object_mut() {
+                    object.insert("backendGeneration".into(), json!(generation));
+                }
+                route_to_subscriber(
+                    &mut channels.lock().unwrap_or_else(std::sync::PoisonError::into_inner),
+                    &notification,
+                );
+                emit(notification);
+            },
+        }
+    }
+    // Dropping the senders fails every call still waiting on this server.
+    pending.lock().unwrap_or_else(std::sync::PoisonError::into_inner).clear();
+}
+
+/// Owns the in-process app-server and its JSON-RPC stream.
 pub struct AppServerBroker {
     app: AppHandle,
     connection: Mutex<Option<Connection>>,
@@ -104,42 +208,6 @@ pub struct AppServerBroker {
     handshake: std::sync::Mutex<Option<Value>>,
     /// Per-thread streaming subscriptions, keyed by `threadId`.
     channels: Channels,
-}
-
-/// Resolve the `aphrody` binary: an explicit `$APHRODY_BIN`, then the bundled sidecar,
-/// then `aphrody` on `PATH`.
-///
-/// The sidecar is declared as `externalBin` (`binaries/aphrody`, staged per target triple
-/// by `aphrody-ops tauri`); the bundler installs it next to the desktop executable without
-/// the triple suffix, and `aphrody-ops tauri` copies it beside the unbundled `cargo run`
-/// binary as well, so both cases resolve through the executable's directory.
-#[must_use]
-pub fn resolve_aphrody_bin() -> PathBuf {
-    if let Some(path) = std::env::var_os("APHRODY_BIN").filter(|value| !value.is_empty()) {
-        return PathBuf::from(path);
-    }
-    let file = format!("aphrody{}", std::env::consts::EXE_SUFFIX);
-    if let Some(sidecar) = std::env::current_exe()
-        .ok()
-        .and_then(|exe| exe.parent().map(|dir| dir.join(&file)))
-        .filter(|candidate| candidate.is_file())
-    {
-        return sidecar;
-    }
-    PathBuf::from(file)
-}
-
-/// A command for the `aphrody` binary that never opens a console window on Windows.
-#[must_use]
-pub fn aphrody_command() -> Command {
-    #[allow(unused_mut)]
-    let mut command = Command::new(resolve_aphrody_bin());
-    #[cfg(windows)]
-    {
-        const CREATE_NO_WINDOW: u32 = 0x0800_0000;
-        command.creation_flags(CREATE_NO_WINDOW);
-    }
-    command
 }
 
 impl AppServerBroker {
@@ -184,8 +252,8 @@ impl AppServerBroker {
     /// original `id` restored. A notification (no `id`) resolves to `{}` once written.
     ///
     /// # Errors
-    /// Returns a message when the backend cannot be started, the write fails, the backend
-    /// exits before answering, or the request exceeds its timeout.
+    /// Returns a message when the write fails, the backend ends before answering, or the
+    /// request exceeds its timeout.
     pub async fn call(&self, mut message: Value) -> Result<Value, String> {
         let method = message.get("method").and_then(Value::as_str).unwrap_or_default().to_owned();
         if method == "initialize" {
@@ -194,13 +262,13 @@ impl AppServerBroker {
         }
         let original_id = message.get("id").cloned();
         let mut guard = self.connection.lock().await;
-        let restarted = self.ensure_started(&mut guard).await?;
+        let restarted = self.ensure_started(&mut guard);
         let connection = guard.as_mut().ok_or("app-server backend unavailable")?;
         if restarted && method != "initialize" {
             self.replay_handshake(connection).await?;
         }
         let Some(original_id) = original_id else {
-            write_line(&mut connection.stdin, &message).await?;
+            write_line(&mut connection.input, &message).await?;
             return Ok(json!({}));
         };
         let id = self.next_id.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
@@ -211,7 +279,7 @@ impl AppServerBroker {
             .lock()
             .unwrap_or_else(std::sync::PoisonError::into_inner)
             .insert(id, sender);
-        if let Err(error) = write_line(&mut connection.stdin, &message).await {
+        if let Err(error) = write_line(&mut connection.input, &message).await {
             connection
                 .pending
                 .lock()
@@ -267,103 +335,69 @@ impl AppServerBroker {
         }
         let mut guard = self.connection.lock().await;
         let connection = guard.as_mut().ok_or("app-server backend unavailable")?;
-        write_line(&mut connection.stdin, &response).await
+        write_line(&mut connection.input, &response).await
     }
 
-    /// Start the backend if it is not running. Returns whether a new process was started
-    /// after a previous one had exited (the handshake must then be replayed).
-    async fn ensure_started(&self, slot: &mut Option<Connection>) -> Result<bool, String> {
-        let had_previous = if let Some(connection) = slot.as_mut() {
-            match connection.child.try_wait() {
-                Ok(None) => return Ok(false),
-                _ => true,
-            }
-        } else {
-            false
+    /// Stop the in-process agent and wait up to `grace` for it to finish.
+    ///
+    /// Closing the server's input is its shutdown signal: it joins every session, so each
+    /// rollout is flushed before the process exits. Called when the application exits. A turn
+    /// that is still running when the grace period ends is abandoned with the process.
+    pub async fn shutdown(&self, grace: Duration) {
+        let Some(connection) = self.connection.lock().await.take() else { return };
+        let alive = Arc::clone(&connection.alive);
+        drop(connection);
+        let deadline = tokio::time::Instant::now() + grace;
+        while alive.load(Ordering::Acquire) && tokio::time::Instant::now() < deadline {
+            tokio::time::sleep(Duration::from_millis(20)).await;
+        }
+    }
+
+    /// Start the server if it is not running. Returns whether a new server replaced one that had
+    /// ended (the handshake must then be replayed).
+    fn ensure_started(&self, slot: &mut Option<Connection>) -> bool {
+        let had_previous = match slot.as_ref() {
+            Some(connection) if connection.alive.load(Ordering::Acquire) => return false,
+            Some(_) => true,
+            None => false,
         };
-        *slot = Some(self.spawn()?);
+        *slot = Some(self.spawn());
         let generation = self.generation();
         let _ = self.app.emit(
             BACKEND_EVENT,
             json!({"state": "started", "restarted": had_previous, "backendGeneration": generation}),
         );
-        Ok(had_previous)
+        had_previous
     }
 
-    fn spawn(&self) -> Result<Connection, String> {
+    /// Start an in-process server: no process, no binary, no environment variable.
+    fn spawn(&self) -> Connection {
         let generation = self.generation.fetch_add(1, std::sync::atomic::Ordering::Relaxed) + 1;
-        let bin = resolve_aphrody_bin();
-        let mut command = std::process::Command::new(&bin);
-        command
-            .arg("app-server")
-            .stdin(Stdio::piped())
-            .stdout(Stdio::piped())
-            .stderr(Stdio::piped());
+        let mut server = AppServer::new();
         if let Some(dir) = crate::models::stored_models_dir(&self.app) {
-            command.env(crate::models::MODELS_DIR_ENV, dir);
+            server = server.with_models_dir(dir);
         }
-        let options = aphrody_proc::SpawnOptions { hide_window: true, ..Default::default() };
-        let mut child = aphrody_proc::spawn_group(&mut command, options)
-            .map_err(|error| format!("cannot start `{} app-server`: {error}", bin.display()))?;
-        let pipe_error = |error: std::io::Error| format!("app-server pipe unavailable: {error}");
-        let stdin = ChildStdin::from_std(child.take_stdin().ok_or("app-server stdin unavailable")?)
-            .map_err(pipe_error)?;
-        let stdout =
-            ChildStdout::from_std(child.take_stdout().ok_or("app-server stdout unavailable")?)
-                .map_err(pipe_error)?;
-        let stderr =
-            ChildStderr::from_std(child.take_stderr().ok_or("app-server stderr unavailable")?)
-                .map_err(pipe_error)?;
+        let Link { input, output, alive, exit } = open_link(server);
         let pending: Pending = Arc::default();
 
         let app = self.app.clone();
         let reader_pending = Arc::clone(&pending);
         let reader_channels = Arc::clone(&self.channels);
-        tauri::async_runtime::spawn(async move {
-            let mut lines = BufReader::new(stdout).lines();
-            while let Ok(Some(line)) = lines.next_line().await {
-                let Ok(message) = serde_json::from_str::<Value>(&line) else {
-                    log::warn!("app-server wrote a non-JSON line ({} bytes)", line.len());
-                    continue;
-                };
-                let is_response = message.get("result").is_some() || message.get("error").is_some();
-                match message.get("id").and_then(Value::as_u64) {
-                    Some(id) if is_response => {
-                        let sender = reader_pending
-                            .lock()
-                            .unwrap_or_else(std::sync::PoisonError::into_inner)
-                            .remove(&id);
-                        if let Some(sender) = sender {
-                            let _ = sender.send(message);
-                        }
-                    },
-                    _ => {
-                        let mut msg = message.clone();
-                        if let Some(obj) = msg.as_object_mut() {
-                            obj.insert("backendGeneration".into(), json!(generation));
-                        }
-                        route_to_subscriber(
-                            &mut reader_channels
-                                .lock()
-                                .unwrap_or_else(std::sync::PoisonError::into_inner),
-                            &msg,
-                        );
-                        let _ = app.emit(NOTIFICATION_EVENT, msg);
-                    },
-                }
+        tokio::spawn(async move {
+            pump(BufReader::new(output), &reader_pending, &*reader_channels, generation, |message| {
+                let _ = app.emit(NOTIFICATION_EVENT, message);
+            })
+            .await;
+            let reason = exit.await.unwrap_or_else(|_| "unknown".to_owned());
+            if reason != "closed" {
+                log::warn!("app-server ended: {reason}");
             }
-            // Dropping the senders fails every call still waiting on this process.
-            reader_pending.lock().unwrap_or_else(std::sync::PoisonError::into_inner).clear();
-            let _ = app
-                .emit(BACKEND_EVENT, json!({"state": "exited", "backendGeneration": generation}));
+            let _ = app.emit(
+                BACKEND_EVENT,
+                json!({"state": "exited", "backendGeneration": generation, "reason": reason}),
+            );
         });
-        tauri::async_runtime::spawn(async move {
-            let mut lines = BufReader::new(stderr).lines();
-            while let Ok(Some(line)) = lines.next_line().await {
-                log::info!(target: "aphrody-app-server", "{line}");
-            }
-        });
-        Ok(Connection { stdin, child, pending })
+        Connection { input, alive, pending }
     }
 
     async fn replay_handshake(&self, connection: &mut Connection) -> Result<(), String> {
@@ -378,7 +412,7 @@ impl AppServerBroker {
             .unwrap_or_else(std::sync::PoisonError::into_inner)
             .insert(id, sender);
         write_line(
-            &mut connection.stdin,
+            &mut connection.input,
             &json!({"id": id, "method": "initialize", "params": params}),
         )
         .await?;
@@ -389,24 +423,33 @@ impl AppServerBroker {
         if let Some(error) = response.get("error") {
             return Err(format!("initialize failed after a backend restart: {error}"));
         }
-        write_line(&mut connection.stdin, &json!({"method": "initialized", "params": {}})).await
+        write_line(&mut connection.input, &json!({"method": "initialized", "params": {}})).await
     }
 }
 
-async fn write_line(stdin: &mut ChildStdin, message: &Value) -> Result<(), String> {
+/// Write one JSON-RPC message, newline-terminated, to the server's input pipe.
+async fn write_line(input: &mut DuplexStream, message: &Value) -> Result<(), String> {
     let mut line = serde_json::to_vec(message).map_err(|error| error.to_string())?;
     line.push(b'\n');
-    stdin.write_all(&line).await.map_err(|error| format!("app-server write failed: {error}"))?;
-    stdin.flush().await.map_err(|error| format!("app-server write failed: {error}"))
+    input.write_all(&line).await.map_err(|error| format!("app-server write failed: {error}"))?;
+    input.flush().await.map_err(|error| format!("app-server write failed: {error}"))
 }
 
 #[cfg(test)]
 mod tests {
-    use std::cell::RefCell;
+    use std::{
+        cell::RefCell,
+        sync::{Arc, Mutex},
+        time::Duration,
+    };
 
     use serde_json::json;
 
-    use super::{HashMap, NotificationSink, Value, notification_thread_id, route_to_subscriber};
+    use super::{
+        AppServer, AtomicBool, BufReader, DuplexStream, HashMap, Link, NotificationSink, Ordering,
+        Pending, Value, notification_thread_id, oneshot, open_link, pump, route_to_subscriber,
+        write_line,
+    };
 
     /// In-memory [`NotificationSink`] recording deliveries, standing in for
     /// [`tauri::ipc::Channel`] so routing is testable without a webview.
@@ -550,5 +593,101 @@ mod tests {
         let valid_error = json!({"id": "req-1", "error": {"code": -32000, "message": "denied"}});
         assert!(valid_error.get("id").is_some());
         assert!(valid_error.get("error").is_some());
+    }
+
+    #[tokio::test]
+    async fn pump_wakes_callers_and_stamps_and_routes_notifications() {
+        let pending: Pending = Arc::default();
+        let (answer, answered) = oneshot::channel::<Value>();
+        let (orphan, orphaned) = oneshot::channel::<Value>();
+        pending.lock().unwrap().insert(5, answer);
+        pending.lock().unwrap().insert(6, orphan);
+        let channels = Mutex::new(HashMap::from([("t-1".to_owned(), vec![RecordingSink::open()])]));
+        let output = concat!(
+            r#"{"method":"item/agentMessage/delta","params":{"threadId":"t-1"}}"#,
+            "\n",
+            "this line is not json\n",
+            r#"{"id":5,"result":{"ok":true}}"#,
+            "\n",
+            r#"{"id":"approval-1","method":"item/requestApproval","params":{"threadId":"t-2"}}"#,
+            "\n",
+        );
+        let mut broadcast = Vec::new();
+
+        pump(output.as_bytes(), &pending, &channels, 3, |message| broadcast.push(message)).await;
+
+        // A response goes to its caller only; the non-JSON line is skipped; every other message,
+        // including a server-initiated request with a string id, is a stamped notification.
+        assert_eq!(answered.await.unwrap()["result"]["ok"], true);
+        assert_eq!(broadcast.len(), 2, "{broadcast:?}");
+        assert_eq!(broadcast[0]["backendGeneration"], 3);
+        assert_eq!(broadcast[1]["id"], "approval-1");
+        {
+            let channels = channels.lock().unwrap();
+            let routed = channels["t-1"][0].received.borrow().len();
+            assert_eq!(routed, 1, "routed to the matching thread only");
+        }
+        // The output ended: a call still waiting is failed instead of hanging.
+        assert!(orphaned.await.is_err());
+    }
+
+    /// An in-process server and a `pump` over its output, wired like `AppServerBroker::spawn`
+    /// wires them, minus the webview.
+    struct Harness {
+        input: DuplexStream,
+        alive: Arc<AtomicBool>,
+        exit: oneshot::Receiver<String>,
+        pending: Pending,
+        pumped: tokio::task::JoinHandle<()>,
+        _home: tempfile::TempDir,
+    }
+
+    fn harness() -> Harness {
+        let home = tempfile::tempdir().unwrap();
+        let Link { input, output, alive, exit } = open_link(AppServer::with_home(home.path()));
+        let pending: Pending = Arc::default();
+        let channels = Mutex::new(HashMap::<String, Vec<RecordingSink>>::new());
+        let pumped = tokio::spawn({
+            let pending = Arc::clone(&pending);
+            async move {
+                pump(BufReader::new(output), &pending, &channels, 1, drop).await;
+            }
+        });
+        Harness { input, alive, exit, pending, pumped, _home: home }
+    }
+
+    #[tokio::test]
+    async fn the_in_process_server_answers_a_request_through_the_pipes() {
+        let mut harness = harness();
+        let (sender, receiver) = oneshot::channel::<Value>();
+        harness.pending.lock().unwrap().insert(7, sender);
+
+        write_line(&mut harness.input, &json!({"id": 7, "method": "initialize", "params": {}}))
+            .await
+            .unwrap();
+
+        let response = tokio::time::timeout(Duration::from_secs(5), receiver)
+            .await
+            .expect("the server answers within five seconds")
+            .expect("the pump delivers the response");
+        assert_eq!(response["id"], 7);
+        assert_eq!(response["result"]["serverInfo"]["name"], "aphrody");
+        assert!(harness.alive.load(Ordering::Acquire));
+    }
+
+    #[tokio::test]
+    async fn closing_the_input_ends_the_server_cleanly_and_fails_waiting_calls() {
+        let harness = harness();
+        let (sender, waiting) = oneshot::channel::<Value>();
+        harness.pending.lock().unwrap().insert(9, sender);
+        let Harness { input, alive, exit, pumped, .. } = harness;
+
+        drop(input);
+
+        let reason = tokio::time::timeout(Duration::from_secs(5), exit).await.unwrap().unwrap();
+        assert_eq!(reason, "closed");
+        assert!(!alive.load(Ordering::Acquire), "the flag is cleared before the reason is sent");
+        pumped.await.unwrap();
+        assert!(waiting.await.is_err(), "a call still waiting is failed, never left hanging");
     }
 }

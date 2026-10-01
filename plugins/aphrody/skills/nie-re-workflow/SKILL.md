@@ -1,59 +1,64 @@
 ---
 name: nie-re-workflow
-description: "The atlas-driven reverse-engineering loop of nie: search the RE surfaces, measure nie.exe reconstruction coverage, pick the next forge target. Triggers: atlas, where are we, what next, coverage, forge, 100 %."
+description: "Atlas-driven reverse-engineering loop for nie.exe (IEVR): search the RE surfaces with nie atlas, read the ranked gaps, pick the next forge target, run the measure loop. Use for: atlas, where are we, what next, coverage, forge, road to 100 %."
 ---
 
 # nie — la boucle de reverse-engineering
 
+> **S'applique quand :** le dépôt IECODE (sa racine contient un dossier `iecode:crates/nie`) est le répertoire de travail et la CLI `nie` (crate `aphrody-nie-cli`) est construite ; les chemins préfixés `iecode:` sont relatifs à cette racine.
+> **Sinon :** ne pas citer de chiffre ni d'adresse du binaire ; indiquer que l'atlas, la base `var/nie.sqlite` ou `nie.exe` sont absents (ils sont locaux et privés) et donner la commande qui mesurerait.
+
 Le dépôt reconstruit `nie.exe` (Inazuma Eleven: Victory Road, PE x86-64) et prouve sa
-compréhension en le **reproduisant octet pour octet**. Le reverse-engineering est le moyen ;
-la mesure est le juge.
+compréhension en le **reproduisant octet pour octet** (`iecode:docs/nie/FORGE.md`). Le
+reverse-engineering est le moyen ; la mesure est le juge. Les documents `iecode:docs/nie/` sont des
+références migrées : leurs chemins et chiffres décrivent leur checkout d'origine.
 
 ## Règle n° 1 — interroger l'atlas AVANT de fouiller l'arbre
 
-Tout ce que le dépôt sait vit dans **une** base, `var/nie-atlas.sqlite` (miroir Redis `db4`) :
+Tout ce que le dépôt sait vit dans **une** base locale, `var/nie-atlas.sqlite` (variable
+`NIE_ATLAS`, miroir Redis optionnel ; schéma dans `iecode:docs/nie/ATLAS.md`) :
 
 ```bash
+nie atlas build            # (re)construit l'index (et le miroir redis)
 nie atlas search <terme>   # docs + symboles + outils + fichiers + crates, en une requête
 nie atlas status           # une ligne mesurée
 nie atlas gaps             # la route vers les 100 %, classée
 nie atlas next             # le prochain chantier, en JSON
 nie atlas docs --orphans   # les documents qui n'ancrent rien sur la machine
 nie atlas dupes            # les fichiers strictement identiques à plusieurs chemins
-just atlas                   # (re)construire l'index (~3 min à froid, 8 s sans le digest KB)
 ```
 
-Un `rg` à la racine dépasse 60 s ; l'atlas répond en millisecondes et couvre des surfaces qu'un
-`grep` ne voit pas (le digest de la base de connaissance, les unités de forge, les outils).
-Ne fouiller l'arbre à la main que si l'atlas n'a rien — et, dans ce cas, `nie find` /
-`nie grep` (moteur ripgrep) plutôt que les binaires système.
+Un `rg` à la racine d'un gros arbre est lent ; l'atlas couvre aussi des surfaces qu'un `grep` ne
+voit pas (digest de la base de connaissance, unités de forge, outils). Ne fouiller l'arbre à la
+main que si l'atlas n'a rien — et, dans ce cas, `nie find` (fichiers) / `nie grep` (contenu,
+moteur ripgrep) plutôt que les binaires système. Si `var/nie-atlas.sqlite` manque, `nie atlas build`
+doit d'abord le construire ; sans données locales, le dire.
 
 ## Règle n° 2 — le prochain chantier se lit, il ne s'invente pas
 
-`nie atlas gaps` classe chaque écart par `(cible − courant) × poids`. Les poids disent ce que
-« 100 % » veut dire ici, dans l'ordre : identité du binaire 10, part produite 9, preuves uemu 7,
-`.text` 6, fonctions classées 6, fonctions nommées 5, unités relevées 5, unités byte-exactes 4,
-symboles portés 3, documents ancrés 2.
+`nie atlas gaps` classe chaque écart par `(cible − courant) × poids` ; les poids sont définis dans
+`iecode:crates/nie/aphrody-nie-index/src/atlas.rs` (ne pas les recopier d'un document).
 
 La boucle autonome enchaîne tout cela :
 
 ```bash
-bash scripts/atlas-loop.sh              # un tick : mesurer → indexer → classer → agir → re-mesurer
-bash scripts/atlas-loop.sh --no-act     # mesurer et indexer seulement
-bash scripts/atlas-loop.sh --ticks 5
-ATLAS_PROOFS=1 bash scripts/atlas-loop.sh   # rejoue aussi les preuves uemu (lent)
+bash scripts/tools/atlas-loop.sh              # un tick : mesurer → indexer → classer → agir → re-mesurer
+bash scripts/tools/atlas-loop.sh --no-act     # mesurer et indexer seulement
+bash scripts/tools/atlas-loop.sh --ticks 5
+ATLAS_PROOFS=1 bash scripts/tools/atlas-loop.sh   # rejoue aussi les preuves uemu (lent)
+ATLAS_RE_REAL=1 bash scripts/tools/atlas-loop.sh  # rejoue le test RE réel sur le serveur MCP
 ```
 
 Elle agit **une fois par tick**, de façon bornée et réversible, à l'intérieur du dépôt : jamais
-de `push`, de suppression, de service, de `/etc`, ni de `pkill` ; garde-disque à 2 Gio et
-`timeout` sur chaque action.
+de `push`, de suppression, de service, de `/etc`, ni de `pkill` ; garde-disque et `timeout` sur
+les étapes qui écrivent (voir l'en-tête du script).
 
 ## Règle n° 3 — aucune mesure sans sa commande
 
 Un chiffre n'entre dans l'index qu'accompagné de la commande qui l'a produit :
 
 ```bash
-nie atlas metric proofs.ok 12 --total 47 --source 'bash scripts/proofs.sh' --refresh
+nie atlas metric <nom> <valeur> [--total N] --source '<commande qui a produit le chiffre>' --refresh
 ```
 
 Et un écart n'existe que si sa métrique a réellement été mesurée : `refresh_gaps` ne crée
@@ -62,61 +67,68 @@ Corollaire : ne jamais recopier un chiffre d'un document — le régénérer.
 
 ## Les trois oracles, par ordre de force
 
-1. **L'identité de la forge** — `just forge` ; `nie-forge build` échoue si
-   `sha256(dist/nie.exe)` diffère de la référence. Ne jamais « réparer » ce test.
-2. **uemu** — `just preuves` émule sous Unicorn la fonction RÉELLE du binaire et compare le
-   portage bit à bit. C'est ce que Rust ne sait pas produire seul.
-3. **Les golden `nie-data`** — une famille n'est portée que si elle recalcule le dump du jeu
-   bit pour bit sur son corpus entier.
+1. **L'identité de la forge** — `aphrody-nie-forge build` (défaut `--out`/cible `dist/nie.exe`)
+   échoue si le sha256 produit diffère de la référence. Ne jamais « réparer » ce test.
+2. **uemu** — `bash scripts/audit/proofs.sh` rejoue les preuves `iecode:scripts/audit/uemu/validate_*.py`
+   (émulation de la fonction RÉELLE du binaire, comparaison bit à bit du portage). C'est ce que
+   Rust ne sait pas produire seul.
+3. **Les golden `aphrody-nie-data`** — une famille n'est portée que si elle recalcule le dump du
+   jeu bit pour bit sur son corpus entier.
 
-Tout ce qui n'est pas validable est marqué incomplet, jamais « fait ».
+Tout ce qui n'est pas validable est marqué incomplet, jamais « fait ». L'atlas et la forge
+citent des recettes `just` (`re-rebuild`, `preuves`, `forge`) ; l'arbre IECODE actuel n'a pas de
+`justfile` : utiliser les commandes ci-dessus et `nie rebuild`.
 
 ## Vérifier que le serveur MCP dit vrai
 
-`cargo test -p nie-mcp --test re_real` interroge le **vrai** serveur sur stdio (`re_coverage`,
-`re_query`, `re_function` par adresse **et** par nom, `cli_atlas status`/`gaps`) puis corrobore
-ses réponses contre la table `.pdata` du binaire de référence, lue indépendamment par `nie-pe`.
-Le test est *data-gated* : sans `var/nie.sqlite` ni `nie.exe`, il dit ce qu'il saute et passe.
+`cargo test -p aphrody-nie-mcp --test re_real` interroge le **vrai** serveur sur stdio puis
+corrobore ses réponses contre la table `.pdata` du binaire de référence. Le test est
+*data-gated* : sans `var/nie.sqlite` ni `nie.exe` (variables `NIE_REPO`, `NIE_SQLITE`), il dit ce
+qu'il saute et passe — un passage « vide » ne prouve rien.
 
-**Mesure du 2026-09-11 — à connaître avant de citer la base** : sur 400 fonctions nommées,
-**43,00 % seulement** commencent sur une vraie racine `.pdata` de `nie.exe` (172/400 ; 163 de
-plus tombent à l'intérieur d'un corps). Le binaire de référence a **55 351** racines `.pdata`,
-la base en a indexé **50 674** : elle décrit un **autre build** (`binary.sha256 = 4c2b91fb…`,
-31 468 032 o) que la cible (`b1fa04ea…`, 33 918 464 o). D'où l'écart `re.anchoring` dans
-`nie atlas gaps` : ré-ancrer la base est le préalable à toute citation de ses adresses.
+Leçon durable : la base de connaissance peut décrire un **autre build** que la cible ; avant de
+citer une adresse, vérifier son ancrage sur une racine `.pdata` du binaire de référence (écart
+`re.anchoring` dans `nie atlas gaps`) et citer le binaire avec son sha256, jamais un chiffre
+recopié d'un document.
 
-Attention au format des réponses : `re_query` rend les colonnes d'adresse en **chaînes
-hexadécimales** (`"0x140452820"`), pas en nombres.
+Le format des réponses d'`re_query` est à vérifier sur une vraie réponse (les colonnes d'adresse
+sont rendues en chaînes hexadécimales, cf. `ievr-terminologie`).
 
 ## La chaîne, et qui possède quoi
 
 ```
-Ghidra → nie-re / nie-index → nie-trace → nie-computer-use
+Ghidra → aphrody-nie-re / aphrody-nie-index → aphrody-nie-trace → aphrody-nie-computer-use
                  ↓
-            var/nie.sqlite (19 Go)  →  digest dans l'atlas
+            var/nie.sqlite  →  digest dans l'atlas
 ```
 
-- `nie-re` : PE, `.pdata`, RTTI, vtables, désassemblage iced-x86, base de connaissance.
-- `nie-index` : le schéma de la base **et** l'atlas (`atlas.rs` / `atlas.sql`).
-- `nie-pe` / `nie-asm` / `nie-forge` : découpage byte-exact, encodeur x86-64, production.
-- `nie-trace` : lectures bornées du processus vivant. `nie-computer-use` : frontière typée.
+Packages sous `iecode:crates/nie/` (préfixe `aphrody-nie-` omis ci-dessous) :
 
-## Pièges mesurés — les répéter coûte des heures
+- `re` : PE, `.pdata`, RTTI, vtables, désassemblage, base de connaissance.
+- `index` : le schéma de la base **et** l'atlas (`atlas.rs` / `atlas.sql`).
+- `pe` / `asm` / `forge` : découpage byte-exact, encodeur x86-64, production.
+- `trace` : lectures bornées du processus vivant (binaires `nie-mem`, `nie-edit`).
+  `computer-use` : frontière typée.
 
-- L'index Ghidra est **désaligné** : `.pdata` est la vérité terrain (3,7 % seulement des `FUN_`
-  de Ghidra tombent sur un vrai début de fonction). Toujours passer par `just re-rebuild`,
-  jamais par les CLI brutes — `disasm` avant `rtti` rend un résultat incomplet **sans erreur**.
-- Les racines `.pdata` ne sont pas un nombre unique : **50 674** dans la base (build indexé),
-  **55 351** dans `nie.exe` (référence). Citer le binaire avec le chiffre, toujours.
-- `kb.forge_unit` est **vide** : le vrai découpage est `var/forge/cover.json` (215 688 unités).
-- Le registre vivant est `data/forge/registry.json`, pas le défaut CLI `forge/registry.json`.
-- `target/release/nie-forge` peut être antérieur au format de `cover.json`
-  (`unknown variant 'inline_data'`) : prendre le plus récent de `release`/`debug`.
-- La porte de qualité est `cargo clippy --all-targets`, **jamais**
-  `cargo build --workspace --all-targets` : le disque du VPS est à 91 %.
+## Pièges — les répéter coûte des heures
+
+- L'index Ghidra peut être **désaligné** : `.pdata` est la vérité terrain. Passer par
+  `nie rebuild` (« refonde la carte sur `.pdata`, ré-ancre Ghidra, disasm + propage ») plutôt que
+  par les CLI brutes : `disasm` avant `rtti` donne un résultat incomplet **sans erreur**.
+- Les racines `.pdata` de la base et du binaire de référence ne sont pas le même nombre si les
+  builds diffèrent : citer le binaire avec son empreinte, toujours.
+- `forge_unit` (table de la KB) et `var/forge/cover.json` ne sont pas la même chose : le
+  découpage de référence est le `cover.json` ; vérifier lequel est peuplé avant de compter.
+- Les défauts de `aphrody-nie-forge` (`var/forge`, `forge/registry.json`, `forge/asm`,
+  `var/nie.sqlite`, voir `iecode:crates/nie/aphrody-nie-forge/src/main.rs`) peuvent différer du registre
+  réellement utilisé : vérifier avec `--help` et le contenu du répertoire.
+- Un binaire de forge plus ancien que le format de `cover.json` échoue au chargement
+  (variante inconnue) : prendre le binaire le plus récent de `target/release` / `target/debug`.
+- La porte de qualité est un `cargo clippy -p <crate> --all-targets` ciblé, **jamais**
+  `cargo build --workspace --all-targets` sur une machine contrainte en disque.
 - `pixel-perfect` n'est pas acquis, et `byte-exact` qualifie les **données**, jamais les pixels.
 
 ## Références
 
-`docs/ATLAS.md` (l'index et la boucle) · `docs/RE.md` (la base de connaissance) ·
-`docs/FORGE.md` (les paliers G0→G6) · `PLAN.md` (le plan, mené par les écarts mesurés).
+`iecode:docs/nie/ATLAS.md` (l'index et la boucle) · `iecode:docs/nie/RE.md` (la base de
+connaissance) · `iecode:docs/nie/FORGE.md` (les paliers G0→G6) · `iecode:PLAN.md` (le plan).

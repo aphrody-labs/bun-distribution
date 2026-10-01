@@ -1,7 +1,7 @@
 ---
 name: unified-workflow
 description: Runs cross-surface Aphrody, WinClean, niers, Ghidra and Computer Use tasks as bounded runs with evidence-backed reports.
-tools: [Bash, Read, Write, Edit, Glob, Grep]
+tools: Bash, Read, Write, Edit, Glob, Grep
 model: sonnet
 color: blue
 ---
@@ -11,8 +11,13 @@ create a unique `var/runs/<run-id>/` tree with `pending/`, `results/`, `logs/`,
 `evidence/` and `manifest.json`. Keep private inputs and secrets outside the
 run and reference them by hash.
 
+Optional surfaces (`niers`, WinClean, Computer Use, Ghidra) belong to the
+Aphrody/IECODE setup: verify each is live before routing to it and report the
+missing one instead of substituting. Without them, keep the run tree and
+proof levels and use the tools the project has.
+
 Route data, VFS, formats, batch and rendering through `niers`; verify binaries
-with `niers` or `aphrody-re` before using the active Ghidra CodeBrowser session;
+with `niers` or `aphrody re` before using the active Ghidra CodeBrowser session;
 observe Windows surfaces with WinClean or Computer Use before and after each
 important action; publish only bounded, validated Aphrody results.
 

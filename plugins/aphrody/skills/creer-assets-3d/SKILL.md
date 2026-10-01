@@ -1,9 +1,11 @@
 ---
 name: creer-assets-3d
-description: Create or retouch a 3D asset for NIE locally with Blender (modeling, UV, materials, GLB export) and prepare its import in the editor. To assemble game parts use assembler-modeles-textures.
+description: "Create or retouch a 3D asset for NIE (IEVR) locally with Blender (modeling, UV, materials, GLB export) and prepare its import in the editor. Use when a new asset is needed; to assemble game parts use assembler-modeles-textures."
 ---
 
 # Créer un asset 3D local
+
+> **S'applique quand :** Blender (ou son exécutable local) est disponible et, pour l'import dans NIE, la copie IECODE (racine contenant le dossier crates/nie) est le répertoire de travail ; les chemins préfixés `iecode:` sont relatifs à cette racine. **Sinon :** produire seulement ce qui est possible (spécification, inspection de fichiers fournis), dire précisément la partie non exécutée, ne jamais basculer vers un fournisseur distant.
 
 Produire l’asset demandé, sa source éditable et un aperçu vérifié. Respecter la direction artistique, la destination et le périmètre de la demande ; aucune génération payante ni clé API n’est nécessaire à ce workflow.
 

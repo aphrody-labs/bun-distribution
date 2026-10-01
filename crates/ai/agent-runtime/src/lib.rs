@@ -65,7 +65,9 @@ pub use aphrody_engine::AutonomyMode;
 pub use config::{RuntimeConfig, ShellGuardrails, default_sessions_dir};
 pub use error::RuntimeError;
 pub use factory::ModelFactory;
-pub use managed_provider::{ManagedProviderError, ProviderLease, prepare_managed_provider};
+pub use managed_provider::{
+    ManagedProviderError, ProviderLease, prepare_managed_provider, prepare_managed_provider_in,
+};
 pub use model::{ModelChoice, ScriptedTurn, StubModelClient};
 pub use profile_tools::resolve_tool_profile;
 pub use runtime::{AgentRuntime, AgentRuntimeBuilder, RunResult};

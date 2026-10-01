@@ -1,57 +1,70 @@
 ---
 name: render-pipeline
-description: Use for Aphrody's unified 2D/3D rendering pipeline, CPU raster safety, M3 geometry, native canvas, Tauri/Wry, Obscura, WASM, and browser rendering.
+description: "Aphrody OS rendering (crate aphrody-render, @aphrody/canvas): surfaces, CPU raster safety, wgpu GPU parity, Pipeline3d and RenderPolicy, glTF/OBJ models, Tauri/Obscura/web hosts. Use for 2D/3D rendering work in the Aphrody monorepo."
+version: "1.1.0"
 ---
 
 # Aphrody render pipeline
 
-Use `crates/aphrody-render` as the single OS-level rendering contract.
-`RenderSurface` owns surface kind, logical dimensions, scale factor and the
-canonical M3 adaptive layout. `NativeCanvas` and `NativeScene3d` are separate
-lanes, while sharing geometry and validation.
+Applies to the Aphrody monorepo (root `package.json` named `aphrody`). Elsewhere, treat this
+as a design reference only.
+
+Crate `aphrody-render` (`crates/ui/render`) is the single OS-level rendering contract.
+`RenderSurface` owns surface kind, logical dimensions, scale factor and the canonical M3
+adaptive layout. `SurfaceKind::NativeCanvas` (2D) and `SurfaceKind::NativeScene3d` (3D) are
+separate lanes that share geometry and validation; `RenderPolicy` (`lib.rs`) decides CPU vs GPU.
+
+## Layout of the crate
+
+| Module | Role |
+| --- | --- |
+| `lib.rs` | `RenderSurface`, `SurfaceKind`, `Backend`, `RenderPolicy`, `rgba8_len`, `fill_rgba8_rows` |
+| `canvas.rs`, `raster.rs`, `text.rs`, `geometry.rs` | 2D canvas and CPU raster |
+| `scene3d.rs`, `mesh3d.rs`, `math3d.rs`, `raster3d.rs` | 3D scene model and CPU reference rasterizer |
+| `pipeline3d.rs` | `Pipeline3d` with `RenderPolicy::{CpuOnly, Auto, GpuRequired}`; reports `RenderedBy` |
+| `gpu.rs`, `gpu3d.rs` (+ `.wgsl`) | headless wgpu backend behind the `gpu` feature |
+| `model.rs` | glTF and OBJ import (`gltf`, `tobj`), `write_glb`, `studio_scene` |
+| `src/bin/aphrody-canvas.rs` | CLI front end |
+
+Features: `default = ["cpu", "parallel"]` (`parallel` = rayon, bit-identical output);
+`gpu` enables wgpu; `vulkan` / `dx12` / `metal` are aliases of `gpu` (wgpu picks the backend
+at adapter time).
 
 ## Boundaries
 
-- Native consumers use `packages/canvas`.
-- Browser/site consumers use `packages/canvas/site` and
-  `packages/material-web`.
-- Tauri/Wry and Obscura host native or web surfaces; they do not duplicate
-  backend policy.
-- `aphrody-m3-tokens` (with its `facade` module, the former `aphrody-m3` crate)
-  remains the source of M3 layout, theme,
-  typography and accessibility contracts.
-- The `gpu` feature is real (wgpu, DX12 first on Windows): every GPU user goes
-  through `gpu::shared_context()`; never open a second device. CPU
-  (`raster3d`, `raster`) stays the deterministic reference and GPU output must
-  keep pixel parity with it (`gpu3d_matches_cpu_reference`).
-- 3D enters through `pipeline3d::Pipeline3d` (`CpuOnly` / `Auto` /
-  `GpuRequired`); models through `model` (`gltf`, `tobj`, `write_glb`,
-  `studio_scene`). Do not add another 3D engine or model parser.
-- Native 3D in Tauri is `crates/aphrody-tauri-3d` (DirectComposition layer
-  under a transparent webview, `md-native-3d` on the page); agents use the
-  `render3d_*` kernel tools (`crates/aphrody-render3d`).
-- No IEVR dependency belongs in Aphrody OS.
+- Bun/TS consumers use `@aphrody/canvas` (`packages/ui/canvas`): `.` for native (FFI through
+  `@aphrody/bun`, which exposes `bun_rs_render3d_png` with the same three policies), `./site`
+  (alias `./browser`) for browser/site rendering; web components come from
+  `@aphrody/material-web`.
+- Tauri/Wry (`crates/ui/app`) and Obscura (`obscura-render`) host native or web surfaces; they
+  do not duplicate backend policy.
+- `aphrody-m3-tokens` (`crates/ui/m3-tokens`, including its `facade` module) is the source of
+  M3 layout, theme, typography and accessibility contracts.
+- Every GPU user goes through `gpu::shared_context()`; never open a second device. The CPU
+  path stays the deterministic reference and GPU output must keep pixel parity with it
+  (test `gpu3d_matches_cpu_reference` in `gpu3d.rs`, which skips when no adapter exists).
+- 3D enters through `pipeline3d::Pipeline3d`; models through `model`. Do not add another 3D
+  engine or model parser.
+- No game-specific (NIE/IEVR) dependency belongs in Aphrody OS rendering.
 
 ## CPU safety invariants
 
-Before allocating RGBA8 storage, call `rgba8_len`. It rejects zero dimensions
-and checked multiplication overflow. Use `fill_rgba8_rows` for background
-initialisation; it validates the exact buffer length and writes contiguous rows.
-Invalid input returns `false` without modifying the buffer. Keep the crate
-`unsafe`-free and never silently truncate dimensions.
+Before allocating RGBA8 storage, call `rgba8_len`: it rejects zero dimensions and checked
+multiplication overflow. Use `fill_rgba8_rows` for background initialisation; it validates
+the exact buffer length and writes contiguous rows. Invalid input returns `false` without
+modifying the buffer. Keep the crate `unsafe`-free and never silently truncate dimensions.
 
 ## Verification
 
-Run the narrowest gates first:
+Narrowest gates first (respect the project rule on who runs cargo; if builds are reserved
+for the lead or CI, hand these commands over instead of running them):
 
 ```text
 cargo test -p aphrody-render --locked
 cargo clippy -p aphrody-render --locked --all-targets -- -D warnings
 cargo test -p aphrody-render --features gpu --locked
-cargo test -p aphrody-render3d
-bun test ./packages/canvas/index.test.ts
+bun test ./packages/ui/canvas
 ```
 
-Then run the package's typecheck/lint and the repository's scoped web
-verification. Do not make unrelated workspace formatting changes to conceal
+Then run the package's typecheck/lint. Do not make unrelated formatting changes to hide
 pre-existing drift.

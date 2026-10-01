@@ -1,12 +1,15 @@
 // SPDX-License-Identifier: Apache-2.0
 //! Aphrody desktop (Tauri 3): the GUI and window manager of Aphrody OS.
 //!
-//! The agent is not linked into this process. Agent sessions run in `aphrody app-server`,
-//! owned by [`broker::AppServerBroker`] and reached over stdio JSON-RPC; one-shot CLI commands
-//! run as `aphrody <args>` subprocesses. aphrody-os therefore never depends on the AI layer,
-//! and a crash in the agent cannot take the window down. The webview sees three allow-listed
-//! commands and the `aphrody://notification` / `aphrody://backend` events, nothing else.
-
+//! The agent runs in this process. Agent sessions are served by `aphrody-app-server` over
+//! in-memory pipes, owned by [`broker::AppServerBroker`] (JSON-RPC, restart with handshake
+//! replay, event routing); model management is the toolkit-free `aphrody-local-ai` hub
+//! ([`models`]). No `aphrody` binary is bundled, located or spawned: a panic in the agent is
+//! contained by its Tokio task, so it cannot take the window down, and the next request restarts
+//! it. The one process the agent still starts is the managed `llama-server`, through a detached
+//! daemon that re-executes this very executable ([`llama_daemon`]). The webview sees only
+//! allow-listed Tauri commands and the `aphrody://notification` / `aphrody://backend` events.
+//!
 //! At start the desktop also hosts the Aphrody OS kernel ([`aphrody_kernel`]) with
 //! web ([`web_subsystem::WebSubsystem`]: Obscura and the optional MCP provider) and window
 //! ([`window::WindowSubsystem`]) subsystems on the local endpoint, or joins the kernel already
@@ -17,6 +20,7 @@ pub mod desktop;
 pub mod identity;
 pub mod integration;
 pub mod koharu;
+pub mod llama_daemon;
 pub mod models;
 pub mod quickbar;
 pub mod runtime;
@@ -167,8 +171,12 @@ struct Meta {
     target_os: &'static str,
     target_arch: &'static str,
     family: &'static str,
-    /// The `aphrody` binary the broker starts.
+    /// The executable hosting the agent. The agent runs in process, so this is the desktop
+    /// itself (empty when the platform cannot tell). The field keeps its name for existing
+    /// readers; it no longer names a separate `aphrody` binary.
     aphrody_bin: String,
+    /// How the agent is reached: always `in-process` (see [`broker`]).
+    agent_transport: &'static str,
 }
 
 #[tauri::command]
@@ -178,7 +186,9 @@ fn aphrody_meta() -> Meta {
         target_os: std::env::consts::OS,
         target_arch: std::env::consts::ARCH,
         family: std::env::consts::FAMILY,
-        aphrody_bin: broker::resolve_aphrody_bin().display().to_string(),
+        aphrody_bin: std::env::current_exe()
+            .map_or_else(|_| String::new(), |exe| exe.display().to_string()),
+        agent_transport: "in-process",
     }
 }
 
@@ -857,8 +867,17 @@ pub fn run() {
             identity::aphrody_pixel_vectoriser,
             identity::aphrody_pixel_planche,
         ])
-        .run(tauri::generate_context!())
-        .expect("aphrody desktop: fatal error while running the Tauri application");
+        .build(tauri::generate_context!())
+        .expect("aphrody desktop: fatal error while building the Tauri application")
+        .run(|app, event| {
+            // The agent runs in this process: closing its input lets it join every session, so
+            // each rollout is flushed before the process ends (bounded, a stuck turn is dropped).
+            if matches!(event, tauri::RunEvent::Exit)
+                && let Some(broker) = app.try_state::<AppServerBroker>()
+            {
+                tauri::async_runtime::block_on(broker.shutdown(Duration::from_secs(5)));
+            }
+        });
 }
 
 #[cfg(test)]

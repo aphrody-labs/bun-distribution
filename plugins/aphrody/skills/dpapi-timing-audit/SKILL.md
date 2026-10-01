@@ -1,16 +1,18 @@
 ---
 name: dpapi-timing-audit
-description: "Audit DPAPI/BCrypt credential-decryption code for timing side channels: non-constant MAC compare, secret-dependent branches, elided zeroize."
+description: "Audit DPAPI/BCrypt credential-decryption code for timing side channels: non-constant MAC compare, secret-dependent branches, elided zeroize. Use when reviewing code that handles decrypted secrets. Audit only, never exploit."
 allowed-tools: Read, Grep, Glob, Bash
 ---
 
 # DPAPI Timing Audit
 
-Credential-handling code in Aphrody (token stores, password vaults, OAuth refresh blobs) MUST be timing-safe. This skill enforces that.
+> **Applies when:** reviewing code that decrypts or compares secrets (DPAPI/BCrypt/AEAD), in any repo; Aphrody-specific pointers are in the checklist. **Otherwise:** apply the three buckets to the code at hand; skip the Aphrody paths. Audit and report only: do not build exploits or extract secret values.
+
+Credential-handling code (token stores, password vaults, OAuth refresh blobs) must be timing-safe. This skill audits that.
 
 ## When to Use
 
-- Reviewing changes to `crates/aphrody-winclean` credential handlers.
+- Reviewing changes to DPAPI call sites (in the Aphrody monorepo: `crates/os/base/src/lib.rs`, which wraps `CryptUnprotectData`) or to `crates/os/winclean` / `crates/os/secrets` credential handling.
 - Adding new MCP tools that touch `CryptUnprotectData`, `BCryptDecrypt`, or `SecureString`.
 - Implementing a new authenticated-encryption verifier in any language (C#, Rust, C++).
 - After an analyzer surfaces `CA5358` / `CA5350` / similar crypto warnings.
@@ -93,4 +95,4 @@ When a Rust credential handler is touched:
 
 ## Authoring Notes
 
-WinClean original skill. Patterns informed by Trail of Bits' `constant-time-analysis` and `zeroize-audit` skills (CC BY-SA 4.0, https://github.com/trailofbits/skills), but text and toolchain mapping are original.
+Patterns informed by Trail of Bits' `constant-time-analysis` and `zeroize-audit` skills (CC BY-SA 4.0, https://github.com/trailofbits/skills), but text and toolchain mapping are original.

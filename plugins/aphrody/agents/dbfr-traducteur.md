@@ -38,7 +38,7 @@ curl -s "https://bot.dragonballfr.com/api/public/wiki/search?q=Vegeta&limit=5" \
 puis réinjecte la forme officielle.
 
 Le marqueur qui tient dépend du moteur, et cela se mesure au lieu de se supposer.
-Mesuré le 2026-09-12 sur Google (par bxc) : `⟦0⟧` traverse intact **et suit la
+Mesuré le 2026-09-12 sur Google (avec bxc) : `⟦0⟧` traverse intact **et suit la
 grammaire de la cible** — « Le ⟦0⟧ de ⟦1⟧ » ressort en « ⟦1⟧ の ⟦0⟧ », ce qui est
 exactement le comportement recherché. Sur les modèles de traduction neuronale
 locaux (NLLB), le même marqueur se fait réécrire ou perdre ; ce sont alors des
@@ -47,24 +47,26 @@ noms propres latins courts et improbables (`Zeta`, `Yuni`, `Kilo`) qui passent.
 **Toujours du plus long au plus court** : sinon `サイヤ` mord sur `サイヤ人` et
 laisse un `人` orphelin.
 
-Le dépôt fournit ces règles en code, et tu t'en sers plutôt que de les refaire :
+Le dépôt Aphrody (Shenron) fournit ces règles en code, et tu t'en sers plutôt que de les refaire :
 
-- `apps/site/src/lib/ja/traduction.ts` — `protegerTermes`, `restaurerTermes`,
+- `apps/shenron/site/src/lib/ja/traduction.ts` — `protegerTermes`, `restaurerTermes`,
   `segmentsTraduisibles`, pour le japonais vers le français ;
-- `apps/site/src/lib/i18n/glossary.ts` — `protect`, `restore`, `spell`, adossés
-  à `apps/site/messages/glossary.json` : 1 316 noms construits depuis nos tables,
+- `apps/shenron/site/src/lib/i18n/glossary.ts` — `protect`, `restore`, `spell`, adossés
+  à `apps/shenron/site/messages/glossary.json` : 1 316 noms construits depuis nos tables,
   utilisables **hors ligne et sans API**. Un jeton que le moteur a perdu revient
   dans `missing` : la phrase est refusée, jamais déposée à moitié.
 
-**3. Traduire le reste**, c'est-à-dire la phrase autour. Sans clé ni compte :
+**3. Traduire le reste**, c'est-à-dire la phrase autour. `aphrody translate "<texte>" --source ja --target fr`
+(mode Shenron JP→FR : protection du lexique et contrôle qualité, port Rust de ces règles dans `crates/ai/translate/src/shenron.rs`)
+ou, sans clé ni compte, le binaire `bxc` :
 
 ```bash
 # une phrase
-bun ~/bxc/src/cli/index.ts google translate "孫悟空は界王拳を使った" --source ja --target fr
+bxc google translate "孫悟空は界王拳を使った" --source ja --target fr
 
 # un lot, par l'émulateur d'API (127.0.0.1:8089) — c'est ce qu'il faut pour
 # plusieurs segments d'une même planche
-bun ~/bxc/src/cli/index.ts google translate --serve &
+bxc google translate --serve &
 curl -s -X POST http://127.0.0.1:8089/language/translate/v2 \
   -H 'Content-Type: application/json' \
   -d '{"q":["…","…"],"source":"ja","target":"fr"}' | jq -r '.data.translations[].translatedText'

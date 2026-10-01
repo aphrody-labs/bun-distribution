@@ -1,56 +1,56 @@
 ---
 name: csharp-async
-description: "C# async/await best practices."
+description: "C#/.NET async/await: Task vs ValueTask, cancellation, ConfigureAwait, sync-over-async deadlocks, async void, WhenAll/WhenEach, Parallel.ForEachAsync, IAsyncEnumerable, Channels. Use when writing, reviewing or debugging async C#."
+version: "1.1.0"
 ---
 
-# C# Async Programming Best Practices
+# C# async programming
 
-Your goal is to help me follow best practices for asynchronous programming in C#.
+Apply these when writing or reviewing async C#. Check the project's target framework
+(`<TargetFramework>` in the `.csproj`) before using newer APIs; the ones marked with a version
+need at least that .NET.
 
-## Naming Conventions
+## Naming and signatures
 
-- Use the 'Async' suffix for all async methods
-- Match method names with their synchronous counterparts when applicable (e.g., `GetDataAsync()` for `GetData()`)
+- Suffix async methods with `Async` (`GetDataAsync` next to `GetData`); omit it only where a
+  framework convention says otherwise (ASP.NET Core controller actions, event handlers).
+- Return `Task<T>` / `Task`; `async void` only for event handlers.
+- Accept a `CancellationToken cancellationToken = default` as the last parameter of public
+  async APIs and pass it to every awaited call.
+- `ValueTask<T>` only for hot paths that usually complete synchronously; await a `ValueTask`
+  exactly once and never block on it (call `.AsTask()` if it must be stored or awaited twice).
 
-## Return Types
+## Correctness
 
-- Return `Task<T>` when the method returns a value
-- Return `Task` when the method doesn't return a value
-- Consider `ValueTask<T>` for high-performance scenarios to reduce allocations
-- Avoid returning `void` for async methods except for event handlers
+- Never block on async work: no `.Result`, `.Wait()`, `.GetAwaiter().GetResult()` in code that
+  can run on a synchronization context or the thread pool (deadlocks, thread-pool starvation).
+  Go async all the way up; at a true sync entry point use `async Task Main`.
+- In library code use `ConfigureAwait(false)`; in app code (ASP.NET Core has no
+  synchronization context, UI apps do) leave it off where the continuation needs the UI thread.
+- Always await, or deliberately store, returned tasks; a fire-and-forget task loses its
+  exceptions. If fire-and-forget is required, wrap it with logging of failures.
+- In `async` methods just `throw`; use `Task.FromException` only in non-async Task-returning
+  methods. Elide `async`/`await` for pure pass-through only when no `using`/`try` surrounds it.
+- Dispose async resources with `await using` (`IAsyncDisposable`).
 
-## Exception Handling
+## Composition and throughput
 
-- Use try/catch blocks around await expressions
-- Avoid swallowing exceptions in async methods
-- Use `ConfigureAwait(false)` when appropriate to prevent deadlocks in library code
-- In `async` methods, just `throw`: the exception is stored in the returned task. Use `Task.FromException()` only in non-`async` Task-returning methods
+- Independent operations: start them, then `await Task.WhenAll(...)`. Inspect each task for
+  all exceptions; `await` rethrows only the first.
+- First to finish / timeouts: `Task.WhenAny`, or `task.WaitAsync(TimeSpan, ct)` (.NET 6+);
+  process results as they complete with `Task.WhenEach` (.NET 9+).
+- Bounded parallel I/O: `Parallel.ForEachAsync(items, new ParallelOptions { MaxDegreeOfParallelism = n, CancellationToken = ct }, ...)` (.NET 6+) or a `SemaphoreSlim`.
+- Producer/consumer: `System.Threading.Channels` (bounded channels for back-pressure).
+- Streams: `IAsyncEnumerable<T>` with `await foreach`, `[EnumeratorCancellation]` on the
+  token parameter, `.WithCancellation(ct)` at the call site.
+- CPU-bound work: `Task.Run` at the caller (UI/event boundary), not inside library methods.
+- Use `TimeProvider` (.NET 8+) for delays and timers that tests need to control.
 
-## Performance
+## Review checklist
 
-- Use `Task.WhenAll()` for parallel execution of multiple tasks
-- Use `Task.WhenAny()` for implementing timeouts or taking the first completed task
-- Avoid unnecessary async/await when simply passing through task results
-- Consider cancellation tokens for long-running operations
+Flag: blocking calls on tasks, `async void` outside event handlers, missing or ignored
+`CancellationToken`, un-awaited tasks, `ValueTask` awaited twice, `Task.Run` wrapping I/O,
+locks held across `await` (use `SemaphoreSlim.WaitAsync`), and `async` lambdas passed to
+APIs that expect `Action` (they become `async void`).
 
-## Common Pitfalls
-
-- Never use `.Wait()`, `.Result`, or `.GetAwaiter().GetResult()` in async code
-- Avoid mixing blocking and async code
-- Don't create async void methods (except for event handlers)
-- Always await Task-returning methods
-
-## Implementation Patterns
-
-- Implement the async command pattern for long-running operations
-- Use async streams (IAsyncEnumerable<T>) for processing sequences asynchronously
-- Consider the task-based asynchronous pattern (TAP) for public APIs
-
-When reviewing my C# code, identify these issues and suggest improvements that follow these best practices.
-
-## WinClean Integration Rules (Antigravity/Gemini Compatible)
-
-- **Strict Environment**: Must operate within the Windows 11 (24H2+) context.
-- **Package Management Enforcement**: NEVER use `node`, `npm`, `npx`, `pnpm`, or `yarn`. ALWAYS use `bun` and `bunx` for package management and local scripts. For globally installed tools (turbo, oxlint, oxfmt, skills): ALWAYS use bare direct commands (`turbo`, `oxlint`, `oxfmt`, `skills find/add ...`). NEVER `bunx turbo`, `bunx skills@latest` etc. See `plugins/aphrody/skills/_shared/winclean-rules.md`. Use `winget`, `gh`, `uv`/`uvx`, `cargo`, `nuget`, `vcpkg` as appropriate.
-- **Performance First**: Zero unnecessary allocations. Use streaming operations where possible.
-- **Language Policy**: Always reply in **French**, but code, variables, and commits must be in **English**.
+For current API details use the `docs` skill (Microsoft Learn).

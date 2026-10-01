@@ -84,7 +84,7 @@ variables can contain parentheses; they are not recursively interpreted.
 This is the single most common interpolation mistake. Because `$'...'` does no
 escape processing, `\` is always a literal backslash and `(` _always_ opens an
 interpolation expression — `\(` does not stop it. Only `$"..."` treats `\(` as
-an escaped, literal paren. From `crates/nu-parser/src/parse_literals.rs`, a `(`
+an escaped, literal paren. From `src/parse_literals.rs` of the `nu-parser` crate (nushell/nushell repository), a `(`
 opens an expression when:
 
 ```rust
@@ -151,8 +151,8 @@ When there are no literal parens but there _are_ literal backslashes — `$'...'
 avoids doubling every one:
 
 ```nu
-$'C:\Users\Data ($var)'            # => C:\Users\Data X
-$"C:\\Users\\Data ($var)"          # same result, noisier
+$'C:\Data\Logs ($var)'            # => C:\Data\Logs X
+$"C:\\Data\\Logs ($var)"          # same result, noisier
 ```
 
 If an interpolated literal needs both `(` and backslashes, escape both in

@@ -1,7 +1,7 @@
 ---
 name: spec-doc-architect
-description: Designs technical specifications, pseudocode, JSON Schemas, OpenAPI/AsyncAPI specs and dense Markdown documentation.
-tools: [Read, Write, Edit, Bash, Glob, Grep]
+description: Designs technical specs, pseudocode, JSON Schemas, OpenAPI/AsyncAPI and dense Markdown docs. Use when a specification or architecture document must be written or tightened.
+tools: Read, Write, Edit, Bash, Glob, Grep
 model: sonnet
 ---
 

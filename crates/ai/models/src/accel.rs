@@ -9,12 +9,10 @@
 // job scheduler before it queues a batch, and by every backend that has to
 // pick an execution provider.
 //
-// The GPU probe shells out to `nvidia-smi` rather than linking NVML. That is a
-// deliberate trade: NVML means an FFI dependency, a versioned .so/.dll to find
-// at runtime, and a build-time story on three platforms — all to read four
-// numbers that `nvidia-smi --query-gpu` prints in CSV on every driver since
-// 2012, on both Linux and Windows. A missing binary simply means "no CUDA
-// here", which is exactly the answer a CPU-only box should give.
+// The GPU probe uses NVML through `nvml-wrapper`, which loads the driver's
+// library at runtime (no link-time dependency, no CUDA toolchain). A missing
+// driver makes `Nvml::init` fail, which is exactly the "no CUDA here" answer a
+// CPU-only box should give. No `nvidia-smi` process is spawned.
 //
 // The `Accelerator` enum itself is pure and compiles for wasm32; only the
 // probe is host-gated.
@@ -225,7 +223,7 @@ fn rationale(entry: &CatalogEntry, accelerator: Accelerator, profile: &HardwareP
 
 /// Probe this machine for usable accelerators.
 ///
-/// Never fails: an absent driver, an absent `nvidia-smi`, or an unparseable
+/// Never fails: an absent driver, an absent NVML library, or an unparseable
 /// line all degrade to "CPU only", which is the truthful answer for a box
 /// where nothing else could be proven to work.
 #[cfg(not(target_arch = "wasm32"))]
@@ -256,24 +254,39 @@ pub fn probe() -> HardwareProfile {
     }
 }
 
-/// Ask `nvidia-smi` for every card it can see.
+/// Enumerate every NVIDIA card through NVML, in process.
+///
+/// NVML is loaded dynamically (`dlopen` / `LoadLibrary`) by `nvml-wrapper`, so
+/// a host without the driver simply fails to initialise and reports no GPU;
+/// no `nvidia-smi` process is spawned.
 #[cfg(not(target_arch = "wasm32"))]
 fn probe_nvidia() -> Vec<GpuInfo> {
-    let output = std::process::Command::new("nvidia-smi")
-        .args([
-            "--query-gpu=name,memory.total,memory.free,driver_version,compute_cap",
-            "--format=csv,noheader,nounits",
-        ])
-        .output();
-
-    let Ok(output) = output else { return Vec::new() };
-    if !output.status.success() {
-        return Vec::new();
-    }
-    parse_nvidia_smi(&String::from_utf8_lossy(&output.stdout))
+    let Ok(nvml) = nvml_wrapper::Nvml::init() else { return Vec::new() };
+    let driver = nvml.sys_driver_version().unwrap_or_default();
+    let count = nvml.device_count().unwrap_or(0);
+    (0..count)
+        .filter_map(|index| {
+            let device = nvml.device_by_index(index).ok()?;
+            let memory = device.memory_info().ok()?;
+            let compute_capability = device
+                .cuda_compute_capability()
+                .map(|cc| format!("{}.{}", cc.major, cc.minor))
+                .unwrap_or_default();
+            Some(GpuInfo {
+                name: device.name().unwrap_or_default(),
+                vram_bytes: memory.total,
+                vram_free_bytes: memory.free,
+                driver: driver.clone(),
+                compute_capability,
+            })
+        })
+        .collect()
 }
 
 /// Parse the CSV `nvidia-smi --format=csv,noheader,nounits` emits.
+///
+/// No longer used by the probe (NVML is read in process); kept as a public
+/// parser for callers holding captured `nvidia-smi` output.
 ///
 /// Split out from the process call so the parsing is testable without a GPU.
 /// Memory columns are mebibytes under `nounits`.

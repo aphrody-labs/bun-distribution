@@ -84,6 +84,13 @@ impl HttpTransport {
         self.auth.as_ref()
     }
 
+    /// Borrow the pooled HTTP client so the Scotty upload reuses its
+    /// connections instead of building (and TLS-handshaking) a second client
+    /// per file.
+    pub(crate) fn http_client(&self) -> &reqwest::Client {
+        &self.client
+    }
+
     fn next_req_id(&self) -> u64 {
         use std::sync::atomic::Ordering;
         // 100_000 stride matches the JS reference's `jitteredIncrement` baseline.

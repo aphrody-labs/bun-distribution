@@ -1,5 +1,7 @@
 # Monde : navigation et collision
 
+Modules dans `iecode:crates/nie/aphrody-nie-formats/src/` (racine IECODE, cf. `../SKILL.md`).
+
 | Format | Magic | Extension | Module | Contenu |
 |---|---|---|---|---|
 | NAVM | `NAVM` | **`.g4nv`** | `navm.rs` | Navmesh |
@@ -16,8 +18,8 @@
 
 ## Validation
 
-`col.rs` a été validé à l'octet sur **1 143 `.col` réels** du VFS : magic `PXCL` plus
-l'invariant `header_size + data_size == file_size`. Un fichier qui viole cet invariant n'est pas
+`col.rs` documente (en-tête du module) une validation à l'octet sur des `.col` réels du VFS :
+magic `PXCL` plus l'invariant `header_size + data_size == file_size`. Un fichier qui viole cet invariant n'est pas
 un `.col` valide — le signaler plutôt que de forcer le parsing.
 
 Emplacements : `common/map/**/*.col` et `dx11/map/**/*.col`.

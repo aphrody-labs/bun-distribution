@@ -26,7 +26,8 @@ cette machine).
 
 Trois surfaces aphrody coexistent : `agy` (forward binaire) · `antigravity`
 (client RPC pur Rust, sans binaire) · `agent` (réimplémentation agent en Rust).
-`agy-loop` greffe une boucle autonome sur `agy` via son hook `AfterAgent`.
+`agy-loop` greffe une boucle autonome sur `agy` via ses hooks `Stop` (pilote) et
+`PostInvocation` (comptage par tour) ; `AfterAgent` n'existe pas côté agy (§3).
 
 ---
 
@@ -138,7 +139,10 @@ sans ambiguïté un **fork Codeium/Windsurf** rebrandé Antigravity :
   active d'agy ici.
 - **Hooks** [VÉRIFIÉ strings] : `Loaded hooks.json from %s: %d named hooks, %d
   total handlers` → agy charge bien des `hooks.json`. Événements de cycle de vie
-  (dont `SessionStart`, `AfterAgent`) — cf. plugin aphrody §3.2.
+  documentés dans le binaire : `PreToolUse`, `PostToolUse`, `PreInvocation`,
+  `PostInvocation`, `Stop` (les protos internes ajoutent `SessionStart`).
+  **`AfterAgent` / `BeforeAgent` n'existent pas dans agy** (aucune occurrence
+  dans le binaire ; ce sont des noms du Gemini CLI) — cf. §3.
 - **MCP** : `RefreshMcpServers`, `ListMcpPrompts`, `McpCommandTemplate`,
   `McpBrowserRecordingStartHook` → support MCP natif (stdio + HTTP).
 
@@ -182,62 +186,123 @@ Flags top-level :
 
 ## 3. `aphrody agy-loop` — boucle autonome [VÉRIFIÉ CODE]
 
-Source unique : `crates/aphrody/src/agy_loop.rs`. Dispatch : `lib.rs:1023-1025`
-(`agy_loop::run(action)`). **Pas de feature-gate.**
+Source unique : `apps/cli/src/agy_loop.rs` (dispatch `Commands::AgyLoop` dans
+`apps/cli/src/lib.rs`). **Pas de feature-gate** (hors wasm32).
+
+> **Correction de contrat (2026-10-01).** Une version antérieure de ce document
+> et du driver décrivait la boucle comme pilotée par un hook `AfterAgent` et
+> par `{"decision":"deny"}`. C'est le contrat du **Gemini CLI**, pas celui
+> d'agy : le binaire `agy` ne contient aucun évènement `AfterAgent` ni
+> `BeforeAgent`. Contrat agy réel ci-dessous [VÉRIFIÉ — documentation embarquée
+> dans le binaire `agy` et protos `hooks_go_proto` ; non exécuté de bout en
+> bout]. Le SDK Python `antigravity-sdk-python` n'a pas non plus ces noms : il
+> expose `OnSessionStart`, `OnSessionEnd`, `PreTurn`, `PostTurn`,
+> `PreToolCall`, `PostToolCall`, `OnToolError`, `OnInteraction`,
+> `OnCompaction` et `Stop` (hook `StopHook` : `ALLOW_STOP` ou `CONTINUE` +
+> `reason`). Le tableau de normalisation des évènements entre outils appartient
+> à `aphrody-marketplace`, pas à ce document.
 
 ### 3.1 Principe
 
-`agy` n'a aucun mode « continue jusqu'à terminé ». La boucle est implémentée
-**entièrement via le hook `AfterAgent`** d'agy : à chaque fin de tour, agy invoque
-`aphrody agy-loop hook`, qui décide de relancer l'agent ou non. Il n'y a **aucun
-process daemon** : `start`/`stop`/`status` ne font que manipuler des fichiers
-d'état dans le workspace ; le « moteur » est agy lui-même qui rappelle le hook.
+`agy` n'a aucun mode « continue jusqu'à terminé ». La boucle est implémentée via
+deux hooks d'agy : **`Stop`** (pilote) — quand la boucle d'exécution de l'agent
+se termine, agy invoque `aphrody agy-loop hook --event stop`, qui décide de
+relancer l'agent ou de le laisser s'arrêter — et **`PostInvocation`**
+(comptabilité par tour) — après chaque invocation du modèle,
+`aphrody agy-loop hook --event post-invocation` compte le tour et capte la
+sentinelle de fin sans jamais rien forcer. Il n'y a **aucun process daemon** :
+`start`/`stop`/`status` ne font que manipuler des fichiers d'état dans le
+workspace ; le « moteur » est agy lui-même qui rappelle le hook.
 
-### 3.2 Câblage par le plugin aphrody [VÉRIFIÉ fichier]
+### 3.2 Câblage dans un `hooks.json` d'agy [VÉRIFIÉ — doc embarquée du binaire]
 
-`~/.gemini/config/plugins/aphrody/hooks.json` enregistre :
+Un `hooks.json` d'agy est un objet dont chaque clé de premier niveau est un
+**nom de hook** ; sous ce nom, une liste par évènement. `Stop` et
+`PostInvocation` sont des listes « plates » de gestionnaires (le `matcher` est
+réservé à `PreToolUse`/`PostToolUse`). Fragment exact, produit par le code
+(`aphrody agy-loop hooks-json`) :
 
 ```json
-"AfterAgent": [ { "hooks": [
-  { "type": "command", "command": "aphrody agy-loop hook", "timeout": 30 } ] } ]
+{
+  "aphrody-loop": {
+    "PostInvocation": [
+      { "type": "command", "command": "aphrody agy-loop hook --event post-invocation", "timeout": 10 }
+    ],
+    "Stop": [
+      { "type": "command", "command": "aphrody agy-loop hook --event stop", "timeout": 10 }
+    ]
+  }
+}
 ```
 
-(+ un `SessionStart` qui echo un rappel « aphrody-mcp ready… docs_auto_search
-FIRST »). Le plugin `aphrody` est importé `source: claude-code`, composants
-`skills, agents, hooks, commands` (`import_manifest.json`).
+Emplacements lus par agy : `<workspace>/.agents/hooks.json`, le fichier partagé
+`~/.gemini/config/hooks.json` et `plugins/<nom>/hooks.json` d'un plugin. Les
+commandes sont lancées depuis le dossier du `hooks.json` (donc pas depuis le
+workspace : le driver lit `workspacePaths` dans le JSON reçu). Les payloads
+sont en **camelCase** (protojson).
 
-### 3.3 Sous-commandes [VÉRIFIÉ — `AgyLoopAction`, agy_loop.rs:38-58]
+État de cette machine au 2026-10-01 : aucun `hooks.json` agy n'existe
+(`~/.gemini/config/hooks.json` absent, pas de dossier `plugins/`), donc la
+boucle n'est câblée nulle part tant que le fragment ci-dessus n'est pas
+installé. L'ancien câblage `AfterAgent` décrit auparavant ici (plugin `aphrody`
+importé `source: claude-code`) suivait le format Gemini CLI
+`{"hooks":{"AfterAgent":[…]}}` : agy ne connaît pas cet évènement, il ne
+pouvait pas relancer la boucle.
+
+### 3.3 Sous-commandes [VÉRIFIÉ CODE — `AgyLoopAction`, `apps/cli/src/agy_loop.rs`]
 
 | Cmd | Effet (code) |
 |-----|--------------|
-| `start --goal "<txt>" [--max N]` | Écrit `.agents/aphrody-loop.json` (`goal`, `iteration:0`, `max_iterations`, `started_at`). `--max` défaut **50** (`DEFAULT_MAX_ITERATIONS`, l.35). Lève un éventuel marqueur stop résiduel (l.195-210). |
-| `stop` | Pose `.agents/aphrody-loop.stop` ET efface l'état (l.213-222). Le stop est capté au prochain hook. |
-| `status` | Imprime l'état JSON courant, ou « (boucle inactive) » (l.224-233). |
-| `hook` | Driver stdin/stdout — **pas pour usage manuel** (l.235). |
+| `start --goal "<txt>" [--max N]` | Écrit `.agents/aphrody-loop.json` (`goal`, `iteration:0`, `max_iterations`, `started_at`, compteurs `invocations`, `last_invocation_num`, `done_seen`, `error_streak`). `--max` défaut **50** (`DEFAULT_MAX_ITERATIONS`). Lève un éventuel marqueur stop résiduel. |
+| `stop` | Pose `.agents/aphrody-loop.stop` ET efface l'état. Le stop est capté au prochain hook. |
+| `status` | Imprime l'état JSON courant, ou « (boucle inactive) ». |
+| `hook [--event stop\|post-invocation\|after-agent]` | Driver stdin/stdout — **pas pour usage manuel**. Sans `--event`, l'évènement est déduit du JSON (`hook_event_name`, sinon `invocationNum` ⇒ `PostInvocation`, `prompt_response` ⇒ `AfterAgent` hérité, `Stop` par défaut). |
+| `hooks-json` | Affiche le fragment `hooks.json` agy ci-dessus (pas d'écriture de fichier). |
 
-### 3.4 Le driver `hook` (cœur de la boucle) [VÉRIFIÉ — `run_hook`, agy_loop.rs:135-185]
+### 3.4 Le driver `hook` (cœur de la boucle) [VÉRIFIÉ CODE — `handle_hook_in`, `judge`]
+
+Entrée `Stop` d'agy (stdin, camelCase) : `executionNum`, `terminationReason`
+(`model_stop`, `max_steps_exceeded`, `error`, …), `error`, `fullyIdle`,
+`finalModelOutput` + champs communs (`conversationId`, `workspacePaths`,
+`transcriptPath`, `parentConversationId`, …). Sortie attendue (stdout) :
+`{"decision":"continue","reason":…}` ; `continue` bloque l'arrêt et injecte
+`reason` en message système, toute autre valeur laisse l'agent s'arrêter. agy
+plafonne lui-même les continuations consécutives d'un hook `Stop` (champ
+`MaxStopHookContinuations` de la config de l'exécuteur, valeur par défaut non
+vérifiée ; changelog embarqué : « after a configurable number of consecutive
+continuations, the hook can no longer block ») : `--max` s'y ajoute, le plus bas
+des deux gagne ; l'état reste armé et la boucle reprend au prochain arrêt.
 
 1. Lit le JSON du hook sur **stdin** (tolérant : stdin vide ⇒ no-op, ne casse
-   jamais agy, l.137-139).
-2. Résout le workspace via `cwd` du JSON, sinon `current_dir` (l.74-79, 141).
+   jamais agy ; une E/S d'état en échec est journalisée sur stderr et la
+   réponse devient `{}`).
+2. Résout le workspace : `workspacePaths` (agy), puis `cwd` (Gemini CLI), puis le
+   répertoire courant du hook (et son parent si c'est `.agents`).
 3. **Boucle inactive** (pas de `.agents/aphrody-loop.json`) ⇒ émet `{}` et sort
-   (n'interfère jamais avec un arrêt normal, l.144-147).
-4. Lit `prompt_response` du JSON ; vérifie `.agents/aphrody-loop.stop`.
-5. **Terminaison** si la réponse contient le jeton `APHRODY_LOOP_DONE`
-   (`DONE_SENTINEL`, l.26) OU si stop demandé ⇒ efface l'état, émet
-   `{"continue":true,"suppressOutput":true,"systemMessage":"…objectif atteint…"}`
-   (l.153-164).
-6. **Garde anti-emballement** : `iteration >= max` ⇒ efface l'état, rend la main
-   avec un message (l.167-178).
+   (n'interfère jamais avec un arrêt normal). Une conversation de sous-agent
+   (`parentConversationId` non vide) ⇒ `{}` aussi.
+4. `PostInvocation` : incrémente `invocations`, retient `invocationNum`, capte la
+   sentinelle dans `modelOutput` (`done_seen`) ; répond `{}` — jamais de
+   `terminationBehavior`/`injectSteps`.
+5. `Stop` : **Terminaison** si `finalModelOutput` (ou `done_seen`) porte le
+   jeton `APHRODY_LOOP_DONE` **seul sur une ligne** (`DONE_SENTINEL` ; une simple
+   mention dans une phrase ne compte pas) OU si stop demandé ⇒ efface l'état,
+   émet `{"decision":"allow_stop","reason":"…objectif atteint…"}`.
+6. **Interruption utilisateur** (`terminationReason` contenant `cancel`) ⇒
+   désarme et laisse s'arrêter. **Garde anti-emballement** : `iteration >= max`
+   ⇒ efface l'état, rend la main avec un message ; 3 arrêts consécutifs sur
+   erreur (`terminationReason`/`error`) ⇒ idem.
 7. **Sinon** : incrémente `iteration`, sauvegarde, émet
-   `{"decision":"deny","reason":<directive>}` (l.180-184). Côté agy,
-   `decision:"deny"` sur `AfterAgent` = « rejette cet arrêt, génère un nouveau
-   tour » → la `reason` est réinjectée comme directive système.
+   `{"decision":"continue","reason":<directive>}`.
 
-La **directive** (l.111-127) réinjecte l'objectif + « itération i/max », exige du
-vrai code (zéro stub/TODO), build+tests verts, commit, et de n'émettre
-`APHRODY_LOOP_DONE` seul sur la dernière ligne que lorsque tout est vert et
-committé.
+Dialecte hérité : avec `--event after-agent` (ou `hook_event_name` =
+`AfterAgent`) le driver garde la sortie Gemini CLI
+`{"decision":"deny","reason":…}` / `{"continue":true,…}` ; ce n'est pas un
+contrat agy et rien ne le câble pour agy.
+
+La **directive** réinjecte l'objectif + « itération i/max », exige du vrai code
+(zéro stub/TODO), build+tests verts, commit, et de n'émettre `APHRODY_LOOP_DONE`
+seul sur la dernière ligne que lorsque tout est vert et committé.
 
 ### 3.5 Logging / état
 
@@ -309,7 +374,7 @@ $ aphrody agy -p "implémente X"
    │ config/skills/plugins/hooks/MCP  ~/.gemini/config/*          │
    │   • plugins (modern-web-guidance, aphrody, bxc-gemini,       │
    │     material-design) → skills + commands + hooks + MCP       │
-   │   • hooks.json: SessionStart(echo) , AfterAgent(agy-loop)    │
+   │   • hooks.json: Stop+PostInvocation(agy-loop)                │
    │   • MCP servers: aphrody(stdio), bxc, context7, github,      │
    │     supabase, vercel (HTTP)                                  │
    │ BRIEFING.md / trajectory / Cascade / Antigravity Browser     │
@@ -325,8 +390,8 @@ $ aphrody agy -p "implémente X"
    agy exécute outils (shell, fichiers, MCP, browser) → écrit réponse
         │  fin de tour
         ▼
-   hook AfterAgent → `aphrody agy-loop hook`  (stdin JSON)
-        │  boucle active & non finie ? → {"decision":"deny","reason":directive}
+   hook Stop → `aphrody agy-loop hook --event stop`  (stdin JSON camelCase)
+        │  boucle active & non finie ? → {"decision":"continue","reason":directive}
         ▼  (relance un nouveau tour)  …jusqu'à APHRODY_LOOP_DONE / stop / max
    stdout → terminal utilisateur
 ```
@@ -405,9 +470,10 @@ distinct ; la vérité « plugin list » est celle de `~/.gemini/config/`.)
 
 Plugin `aphrody` [VÉRIFIÉ] : `plugin.json` = `{"name":"aphrody"}` ;
 `mcp_config.json` = serveur `aphrody` (stdio `~/.local/bin/aphrody-mcp`) ;
-`hooks.json` = `SessionStart` (echo rappel docs) + `AfterAgent`
-(`aphrody agy-loop hook`, timeout 30) ; `skills/` = 31 skills (dont
-`aphrody-cmd-ai-creative`, `agy`-related, autopilot, deep-analysis…).
+`hooks.json` = `SessionStart` (echo rappel docs) + une entrée `AfterAgent`
+(`aphrody agy-loop hook`, timeout 30) **au format Gemini CLI, sans effet sous
+agy** (cf. §3.2 : le câblage agy est `Stop` + `PostInvocation`) ; `skills/` = 31
+skills (dont `aphrody-cmd-ai-creative`, `agy`-related, autopilot, deep-analysis…).
 
 ### 6.5 MCP servers d'agy [VÉRIFIÉ — `~/.gemini/antigravity-cli/mcp_config.json`]
 
@@ -426,8 +492,8 @@ HTTP nativement.
    Comportement réel = plus large que la doc. [VÉRIFIÉ commands.rs:643-654]
 2. **agy-loop n'est pas un daemon** : aucun process persistant ; `start/stop` =
    fichiers d'état ; la « boucle » est portée par agy qui rappelle le hook à
-   chaque `AfterAgent`. Si agy ne tourne pas (ou le plugin/hook n'est pas chargé),
-   rien ne relance.
+   chaque `Stop` (et compte les tours via `PostInvocation`). Si agy ne tourne pas
+   (ou si le `hooks.json` n'est pas chargé), rien ne relance.
 3. **Secrets en clair** : `~/.gemini/.../mcp_config.json` contiennent des tokens
    (GitHub/Supabase/Vercel) lisibles — ne pas les recopier ; caviardés ici.
 4. **Mode `-p` borné** : `--print-timeout` 5m par défaut ; en CI/headless sans
@@ -445,10 +511,10 @@ HTTP nativement.
 | Forwarder `agy` (résolution + spawn) | `crates/aphrody/src/commands.rs:614-690` |
 | Variante CLI + dispatch | `crates/aphrody/src/lib.rs:162-166, 1026-1028` |
 | Backend chat agy (RPC Cloud Code, sans binaire) | `crates/aphrody/src/agy_backend.rs` |
-| Boucle autonome `agy-loop` | `crates/aphrody/src/agy_loop.rs` |
+| Boucle autonome `agy-loop` | `apps/cli/src/agy_loop.rs` (anciennement `crates/aphrody/src/agy_loop.rs`) |
 | Sélection backend de `chat/hermes` | `crates/aphrody/src/agent_cmd.rs:475-487` |
 | SDK Antigravity (token, RPC, config) | `crates/aphrody-antigravity/src/{auth,client,config,endpoints,models}.rs` |
 | Surface `aphrody antigravity` | `crates/aphrody/src/antigravity_cmd.rs` |
 | Surface `aphrody agent` | `crates/aphrody/src/agent_cmd.rs`, `agent_run.rs`, `crates/aphrody-agent-runtime/` |
 | Skill commandes IA | `~/.gemini/config/plugins/aphrody/skills/aphrody-cmd-ai-creative/SKILL.md` |
-| Hook wiring agy-loop | `~/.gemini/config/plugins/aphrody/hooks.json` |
+| Hook wiring agy-loop | fragment : `aphrody agy-loop hooks-json` ; à installer dans `<workspace>/.agents/hooks.json`, `~/.gemini/config/hooks.json` ou `plugins/<nom>/hooks.json` |

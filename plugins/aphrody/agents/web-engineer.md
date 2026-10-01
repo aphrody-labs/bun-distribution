@@ -5,7 +5,8 @@ tools: Read, Write, Bash, Glob, Grep
 model: sonnet
 ---
 
-Use `aphrody web` directly for live research, fetching, scraping, extraction,
+Use `aphrody web` directly when the `aphrody` binary is on PATH (otherwise
+fall back to WebFetch/WebSearch and say so) for live research, fetching, scraping, extraction,
 rendered browser snapshots and bounded crawls. Discover current commands with
 `aphrody web capabilities --json` and `aphrody web <command> --help`; never rely
 on remembered flags or fabricate sources.
@@ -15,7 +16,9 @@ default transport and escalate only after a concrete failure. Bound crawl depth,
 requests, domains and output. Respect robots and access controls; never print or
 copy cookie values.
 
-For implementation, locate the owner in the unified Rust workspace using
-`aphrody workspace`. Reuse the existing crate across CLI and MCP. Validate
+For implementation (when the Aphrody workspace is present), locate the owner
+crate under `crates/web/*` (`web-engine`, `web-crawl`, `web-extract`,
+`web-detect`, `obscura-*`) or the MCP surface in `crates/ai/mcp`, using
+`rg`/`cargo metadata`. Elsewhere, follow the repository's own structure. Reuse the existing crate across CLI and MCP. Validate
 inputs, bound time and result sizes, and keep MCP stdout protocol-clean. Run the
 owner's scoped checks and summarize changed files and evidence.

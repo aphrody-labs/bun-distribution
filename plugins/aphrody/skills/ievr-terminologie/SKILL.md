@@ -1,9 +1,12 @@
 ---
 name: ievr-terminologie
-description: Verify any Inazuma Eleven Victory Road term (format, extension, character/technique code, reversed symbol, virtual address, VFS path, table name) before stating it or writing it in code, a commit or docs.
+description: "Verify any Inazuma Eleven Victory Road term (format, extension, character/technique code, reversed symbol, virtual address, VFS path, table name) before stating it or writing it in code, a commit or docs. Use whenever an IEVR identifier appears."
 ---
 
 # Terminologie IEVR — ne jamais deviner un nom
+
+> **S'applique quand :** le dépôt IECODE (sa racine contient un dossier `iecode:crates/nie`) est le répertoire de travail ; les chemins préfixés `iecode:` sont relatifs à cette racine.
+> **Sinon :** dire que la source de vérité n'est pas accessible, donner la commande qui trancherait, et ne citer aucun identifiant IEVR de mémoire.
 
 Les identifiants d'Inazuma Eleven: Victory Road sont opaques et se ressemblent : `G4MD` et
 `G4MG` désignent deux choses différentes, `.g4nv` porte le magic `NAVM`, un code personnage
@@ -23,18 +26,19 @@ et adresses virtuelles · chemins VFS · noms de tables `.cfg.bin` · noms de cr
 
 | Terme | Source de vérité | Comment |
 |---|---|---|
-| Format, magic, extension | `crates/engine/nie-formats/src/lib.rs` (`enum FileFormat`) et un module par format | `Grep` sur l'enum ; le module `<fmt>.rs` porte le parseur réel |
-| Chemin VFS, existence d'un fichier | Le VFS lui-même (255 308 fichiers) | outil MCP `vfs_search` / `vfs_stat`, ou `nie vfs find <sous-chaîne> -j` |
-| Personnage, technique | Miroir wiki | `nie vfs chara <nom\|id\|code>` · `nie vfs waza <nom\|id\|code>` |
-| Symbole reversé, adresse | `var/nie.sqlite` | outil MCP `nie.re_function` (par nom ou vaddr) ou `nie.re_query` |
-| Table / clé d'un `.cfg.bin` | Le fichier décodé | outil MCP `asset_get` avec `decode: "cfg"`, ou `probe_rdbn` / `probe_t2b` |
-| Famille de données portée | `crates/engine/nie-data/src/` | `grep -rl "<MARKER_LIST>" crates/engine/nie-data/src/` — **les modules portent des noms de concept, pas de format** |
-| Crate, chemin du dépôt | `cargo metadata --no-deps` | ne jamais déduire un chemin de crate de son nom |
+| Format, magic, extension | `iecode:crates/nie/aphrody-nie-formats/src/lib.rs` (`enum FileFormat`) et un module par format | `Grep` sur l'enum ; le module `<fmt>.rs` porte le parseur réel |
+| Chemin VFS, existence d'un fichier | Le VFS lui-même (installation du jeu) | outil MCP `vfs_search` / `vfs_stat` (serveur `aphrody-nie-mcp`), ou `nie vfs find <sous-chaîne> -j` |
+| Personnage, technique | Miroir wiki (`aphrody-nie-wiki`) | `nie vfs chara <nom\|id\|code>` · `nie vfs waza <nom\|id\|code>` |
+| Symbole reversé, adresse | `var/nie.sqlite` (locale, absente sans les données privées) | outil MCP `re_function` (par nom ou vaddr) ou `re_query` (SELECT) |
+| Table / clé d'un `.cfg.bin` | Le fichier décodé | outil MCP `asset_get` avec `decode: "cfg"`, ou les exemples `probe_rdbn` / `probe_t2b` de `iecode:crates/nie/aphrody-nie-game/examples/` |
+| Famille de données portée | `iecode:crates/nie/aphrody-nie-data/src/` | `grep -rl "<MARKER_LIST>" crates/nie/aphrody-nie-data/src/` — **les modules portent des noms de concept, pas de format** |
+| Crate, chemin du dépôt | `cargo metadata --no-deps` | ne jamais déduire un chemin de crate de son nom : le package s'appelle `aphrody-nie-<x>` |
 
-Tables de `var/nie.sqlite` (lecture seule, `SELECT` uniquement) : `function`, `coverage`,
-`rtti_class`, `rtti_base`, `xref`, `str`, `pdata_func`, `hash_name`, `symbol`, `section`,
-`format`, `format_field`, `anchor`, `glob`, `hypothesis`, `binary`, `meta`, `func_const`,
-`func_str_ref`, et la famille `cam_*` (caméra).
+Tables du schéma de `var/nie.sqlite` (lecture seule, `SELECT` uniquement ; source :
+`iecode:crates/nie/aphrody-nie-index/src/schema.sql` et `camera.sql`) : `meta`, `binary`, `section`,
+`function`, `glob`, `func_str_ref`, `func_const`, `xref`, `str`, `rtti_class`, `rtti_base`,
+`pdata_func`, `symbol`, `format`, `format_field`, `hash_name`, `anchor`, `hypothesis`, `coverage`,
+`forge_unit`, et la famille `cam_*` (caméra).
 
 ## Comment répondre quand la vérification est impossible
 
@@ -54,13 +58,14 @@ une date, le VFS et la KB sont l'état présent.
   `read_values`) et T2B en arbre (`cfgbin::cfgbin_parse`, `CfgEntry`). Tout
   `common/property/**` est T2B. Se tromper de branche donne un parseur qui « marche » et rend
   des valeurs fausses.
-- **Convention `/tex`** : la route model-serve remplace `.png` par `.g4tx` — écrire
-  `…/x.g4tx.png` est l'erreur classique. En voie FFI le chemin garde son `.g4tx`.
-- **`Vfs::init()` prend `<racine>/data`**, pas la racine — sinon « impossible d'ouvrir
-  cpk_list.cfg.bin », un message qui n'indique pas la vraie cause.
-- **`nie vfs extract -o` attend un fichier**, pas un dossier : sinon « Accès refusé (os
-  error 5) », qui n'a rien à voir avec des permissions.
-- **`nie.exe` est à la racine du dépôt**, pas dans `data/`. Base image `0x140000000`.
+- **Routes `/tex`** : les formes valides sont dans l'en-tête de
+  `iecode:crates/nie/aphrody-nie-model-serve/src/main.rs` (`/tex/<chemin>.png` et
+  `/tex/<chemin>.g4tx/<nom>.png`) ; les relire plutôt que les reconstituer.
+- **`Vfs::init` prend le dossier `data` de l'installation** (celui qui contient `cpk_list.cfg.bin`),
+  pas la racine du jeu (`iecode:crates/nie/aphrody-nie-formats/src/vfs.rs`).
+- **`nie.exe`** : `game_launch` le résout depuis `NIE_GAME_EXE`, sinon la racine du dépôt
+  (`NIE_REPO`). La base image `0x140000000` apparaît dans
+  `iecode:crates/nie/aphrody-nie-forge/src/lift.rs` ; la revérifier avant de la citer.
 - **Un retour conditionnel n'est pas une constante** : porter un `sete al` / `found ? 1 : 0`
   comme `return 1` est une source classique de faux portages.
 

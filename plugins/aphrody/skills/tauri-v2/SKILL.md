@@ -1,7 +1,7 @@
 ---
 name: tauri-v2
-description: "Tauri v2 apps: tauri.conf.json, #[tauri::command], IPC (invoke, events, channels), permissions/capabilities, plugins, bundling."
-version: 1.0.1
+description: "Tauri apps (stable v2, v3 alpha migration): tauri.conf.json, commands, IPC (invoke, events, channels), capabilities, plugins, state, tray, sidecars, updater, bundling. Use for src-tauri projects, @tauri-apps/api, IPC or permission errors."
+version: "1.1.0"
 ---
 
 # Tauri v2+ Development Skill
@@ -10,13 +10,15 @@ version: 1.0.1
 
 ## Before You Start
 
-**This skill prevents 8+ common errors and saves ~60% tokens.**
+Check which major the project uses before writing code: `tauri` in `src-tauri/Cargo.toml`
+(or the workspace `Cargo.toml`) and `@tauri-apps/api` in `package.json`. Everything below is
+v2 (2.12.x is current stable). If the project pins `tauri = "=3.0.0-alpha.N"`, read
+[`references/tauri-3-alpha.md`](references/tauri-3-alpha.md) first: v3 selects the webview
+runtime with `Builder::runtime(...)`, moves runtime-specific APIs to `tauri-runtime-wry`
+extension traits and changes the plugin trait.
 
-| Metric | Without Skill | With Skill |
-|--------|--------------|------------|
-| Setup Time | ~2 hours | ~30 min |
-| Common Errors | 8+ | 0 |
-| Token Usage | High (exploration) | Low (direct patterns) |
+Use the project's package manager for CLI commands (`bun tauri ...`, `pnpm tauri ...`,
+`npm run tauri ...`, or `cargo tauri ...` with `tauri-cli` installed).
 
 ### Known Issues This Skill Prevents
 
@@ -399,6 +401,7 @@ Located in `references/`:
 - [`plugin-reference.md`](references/plugin-reference.md) - Official plugin install, registration, and permission strings
 - [`updater-distribution-reference.md`](references/updater-distribution-reference.md) - Signing, HTTPS requirements, and bundle shipping
 - [`advanced-runtime-reference.md`](references/advanced-runtime-reference.md) - `TrayIconBuilder`, sidecars, deep links, and asset protocols
+- [`tauri-3-alpha.md`](references/tauri-3-alpha.md) - Breaking changes and upgrade checklist for the 3.0 alphas
 
 > **Note:** For deep dives on specific topics, see the reference files above.
 
@@ -413,7 +416,7 @@ Located in `references/`:
 | `tauri` | ^2 (v2+) | Rust core |
 | `tauri-build` | ^2 (v2+) | Build scripts |
 
-*\*Last verified: 2026-04-02. Always check [official changelog](https://github.com/tauri-apps/tauri/blob/dev/crates/tauri/CHANGELOG.md) for feature timing.*
+*\*Last verified: 2026-10-01 (stable 2.12.1; 3.0.0-alpha.3 exists). Always check [official changelog](https://github.com/tauri-apps/tauri/blob/dev/crates/tauri/CHANGELOG.md) for feature timing.*
 
 ### Optional (Plugins)
 
@@ -490,15 +493,22 @@ fn platform_info() -> String {
 
 Before using this skill, verify:
 
-- [ ] `npx tauri info` shows correct Tauri v2 versions
+- [ ] `tauri info` (via the project's package manager) shows the expected Tauri versions
 - [ ] `src-tauri/capabilities/default.json` exists with at least `core:default`
 - [ ] All commands registered in `generate_handler![]`
 - [ ] `lib.rs` contains shared code (for mobile support)
 - [ ] Required Rust targets installed for target platforms
 
-## Aphrody OS context
+## In the Aphrody monorepo
 
-- The desktop app lives in the `aphrody-ui` repository: `crates/aphrody-app` (Tauri v2, vendored CLI at `crates/tauri`; run it there with `cargo run -p tauri-cli -- build`). Paths below are relative to `aphrody-ui`.
-- The app never links `aphrody`: it talks to the agent through `aphrody app-server` (stdio JSON-RPC) in `src/broker.rs`. Stream results over a `tauri::ipc::Channel`, not `emit`.
-- Keep the strict CSP and the minimal capabilities; `frontendDist` is `ui-dist` (Bun-built). Translate any `npm`/`pnpm`/`yarn` command in this skill to `bun`.
-- Plan and risks: `docs/tauri/`. CI bundle: `.github/workflows/desktop-bundle.yml`. Dependency policy: `deny.toml`.
+Applies only when the repo root `package.json` is named `aphrody`:
+
+- The desktop app is crate `aphrody-app` at `crates/ui/app` and is on the **Tauri 3 alpha**
+  (versions pinned in the root `[workspace.dependencies]`; `tauri-plugin-dialog` is patched
+  from `../source/tauri-plugin-dialog`). Apply `references/tauri-3-alpha.md`.
+- `frontendDist` is `ui-dist` (Bun-built), `devUrl` is `http://localhost:1421`; keep the
+  strict CSP in `crates/ui/app/tauri.conf.json` and the minimal files in `capabilities/`.
+- The app talks to the agent through `src/broker.rs`; stream results over a
+  `tauri::ipc::Channel` rather than global events. Use `bun` for every JS command.
+- `aphrody-tauri-wrap` (`crates/ui/tauri-wrap`) and `@aphrody/web-to-tauri` wrap an existing
+  web app as a Tauri app; `aphrody_tauri_*` MCP tools drive a running app for testing.

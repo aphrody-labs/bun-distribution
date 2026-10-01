@@ -107,7 +107,9 @@ fn wire_call_id<'a>(id: &'a str, name: &'a str) -> &'a str {
 }
 
 /// Render a tool response payload as the string `content` of a `tool` message.
-fn tool_response_content(response: &Value) -> String {
+///
+/// Shared with the Ollama wire, whose `tool` messages carry the same string.
+pub(crate) fn tool_response_content(response: &Value) -> String {
     match response {
         Value::String(text) => text.clone(),
         other => other.to_string(),

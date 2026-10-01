@@ -1,6 +1,7 @@
 ---
 name: developing-genkit-js
-description: "Genkit AI apps in TypeScript: flows, tools, agents, and Genkit errors or type/validation issues."
+description: "Genkit 1.x AI apps in TypeScript: flows, generate, tools, agents, structured output, RAG, model plugins, Next.js/Firebase deployment, and Genkit errors or type issues. Use when code imports genkit or @genkit-ai/* or an AI feature uses Genkit."
+version: "1.1.0"
 ---
 
 # Genkit JS
@@ -9,7 +10,7 @@ description: "Genkit AI apps in TypeScript: flows, tools, agents, and Genkit err
 
 Ensure the `genkit` CLI is available.
 -   Run `genkit --version` to verify. Minimum CLI version needed: **1.29.0**
--   If not found or if an older version (1.x < 1.29.0) is present, install/upgrade it: `npm install -g genkit-cli@^1.29.0`.
+-   If not found or if an older version (1.x < 1.29.0) is present, install/upgrade it with the project's package manager: `npm install -g genkit-cli@^1` (or `bun add -g genkit-cli`, `pnpm add -g genkit-cli`). Latest on 2026-10-01: CLI 1.43, `genkit` 1.42.
 
 **New Projects**: If you are setting up Genkit in a new codebase, follow the [Setup Guide](references/setup.md).
 
@@ -78,7 +79,7 @@ See [Common Errors](references/common-errors.md) for a list of deprecated APIs (
     -   See [Best Practices](references/best-practices.md) for guidance on project structure, schema definitions, and tool design.
     -   **Be Minimal**: Only specify options that differ from defaults. When unsure, check docs/source.
 4.  **Ensure Correctness**:
-    -   Run type checks (e.g., `npx tsc --noEmit`) after making changes.
+    -   Run type checks after making changes (the project's `typecheck` script, or `npx tsc --noEmit` / `bunx tsc --noEmit`).
     -   If type checks fail, consult [Common Errors](references/common-errors.md) before searching source code.
 5.  **Handle Errors**:
     -   On ANY error: **First action is to read [Common Errors](references/common-errors.md)**

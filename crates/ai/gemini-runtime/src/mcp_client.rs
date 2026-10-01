@@ -1,135 +1,31 @@
 // SPDX-License-Identifier: Apache-2.0
-//! Model Context Protocol (MCP) JSON-RPC 2.0 client.
+//! MCP client facade for the Gemini runtime.
 //!
-//! Implements the client half of the MCP wire protocol over two transports:
+//! The one MCP client of the workspace is [`aphrody_mcp_client`]. It owns the JSON-RPC framing,
+//! the stdio and streamable HTTP transports, header validation and the timeouts; this module no
+//! longer carries a second implementation of any of it. What remains is the public surface that
+//! `aphrody mcp` (`apps/cli`), [`crate::tools::McpProxyTool`] and the existing tests were written
+//! against: an `async` [`McpClient::from_stdio`] taking `HashMap` environments,
+//! [`McpClient::from_http_headers`], an owned [`ServerInfo`], tools whose description is a plain
+//! `String`, and a `call_tool` that returns the raw JSON-RPC result. Everything below is
+//! delegation plus value conversion.
 //!
-//! - **stdio** — spawn a child process and exchange newline-delimited JSON-RPC frames over
-//!   `stdin`/`stdout`. This is the form used by Claude Desktop and the repo's own `.mcp.json`
-//!   (`google_mcp`, `bxc`, …). Implemented via [`tokio::process::Command`] — guarded by
-//!   `#[cfg(not(target_arch = "wasm32"))]` because process spawning is unavailable on the wasm32
-//!   target.
-//! - **http** — POST single JSON-RPC frames to a streamable-HTTP MCP endpoint. Available on every
-//!   target including wasm32 via [`reqwest`].
-//!
-//! # Wire protocol summary
-//!
-//! The MCP handshake mandated by the spec is:
-//!
-//! 1. Client → `initialize` (`{ protocolVersion, capabilities, clientInfo }`).
-//! 2. Server → result with `{ protocolVersion, capabilities, serverInfo }`.
-//! 3. Client → `notifications/initialized` (no id, no response).
-//! 4. Client → `tools/list` → server returns `{ tools: [{ name, description, inputSchema }] }`.
-//! 5. Client → `tools/call` (`{ name, arguments }`) → server returns `{ content: […] }`.
-//!
-//! This client implements steps 1–5. Higher-level orchestration (probing, registry,
-//! event publishing) lives in `aphrody-terminal-llm::mcp` — the reference probe-loop
-//! implementation that this module generalises into a reusable client object.
+//! New code should use [`aphrody_mcp_client::McpClient`] together with
+//! [`aphrody_config::mcp::McpServerConfig`]; this facade goes away once `aphrody mcp` migrates.
 
-#[cfg(not(target_arch = "wasm32"))] use std::process::Stdio;
-use std::{collections::HashMap, time::Duration};
-
-use serde::{Deserialize, Serialize};
-use thiserror::Error;
-#[cfg(not(target_arch = "wasm32"))]
-use tokio::{
-    io::{AsyncBufReadExt as _, AsyncWriteExt as _, BufReader, Lines},
-    process::{Child, ChildStdin, ChildStdout, Command},
-    time::timeout,
+use std::{
+    collections::{BTreeMap, HashMap},
+    time::Duration,
 };
 
-// ---------------------------------------------------------------------------
-// Public constants
-// ---------------------------------------------------------------------------
-
-/// MCP protocol version advertised in the `initialize` handshake.
-///
-/// Matches the version negotiated by Claude Desktop, the `aphrody-terminal-llm`
-/// probe loop and the upstream `modelcontextprotocol/specification` repo
-/// (`2024-11-05`).
-pub const MCP_PROTOCOL_VERSION: &str = "2024-11-05";
-
-/// Default timeout for a single stdio JSON-RPC exchange (request + response).
-pub const DEFAULT_RPC_TIMEOUT: Duration = Duration::from_secs(30);
+// The error type is the canonical one: a single definition for every MCP caller.
+pub use aphrody_mcp_client::McpClientError as McpError;
+// Shared with the canonical client; the values are unchanged (`2024-11-05`, 30 s).
+pub use aphrody_mcp_client::{DEFAULT_RPC_TIMEOUT, MCP_PROTOCOL_VERSION};
+use serde::{Deserialize, Serialize};
 
 /// Default timeout for connecting to / spawning an MCP server.
 pub const DEFAULT_CONNECT_TIMEOUT: Duration = Duration::from_secs(10);
-
-// ---------------------------------------------------------------------------
-// Error type
-// ---------------------------------------------------------------------------
-
-/// Errors produced by [`McpClient`].
-#[derive(Debug, Error)]
-pub enum McpError {
-    /// Spawning the child process failed (stdio transport only).
-    #[error("failed to spawn MCP server `{command}`: {source}")]
-    Spawn {
-        /// The command that failed to spawn.
-        command: String,
-        /// The underlying I/O error.
-        #[source]
-        source: std::io::Error,
-    },
-
-    /// The child process exposed no usable stdin/stdout handle.
-    #[error("MCP child process exposed no {handle} handle")]
-    MissingHandle {
-        /// `"stdin"` or `"stdout"`.
-        handle: &'static str,
-    },
-
-    /// An I/O error occurred while exchanging JSON-RPC frames.
-    #[error("I/O error during MCP exchange: {0}")]
-    Io(#[from] std::io::Error),
-
-    /// HTTP transport error.
-    #[error("HTTP transport error: {0}")]
-    Http(#[from] reqwest::Error),
-
-    /// A configured HTTP header could not be used. Its value is never included.
-    #[error("invalid MCP HTTP header `{name}`")]
-    InvalidHeader { name: String },
-
-    /// A required header value is sourced from an unset environment variable.
-    #[error("MCP HTTP header `{name}` requires environment variable `{variable}`")]
-    MissingHeaderEnvironment { name: String, variable: String },
-
-    /// The HTTP MCP endpoint returned a non-2xx status.
-    #[error("HTTP MCP endpoint returned status {status}: {body}")]
-    HttpStatus {
-        /// HTTP status code.
-        status: u16,
-        /// Response body (truncated to 1 KiB).
-        body: String,
-    },
-
-    /// JSON-RPC server returned a structured `error` field.
-    #[error("JSON-RPC error {code}: {message}")]
-    JsonRpc {
-        /// Error code from the JSON-RPC response.
-        code: i64,
-        /// Human-readable error message.
-        message: String,
-    },
-
-    /// Response could not be deserialized.
-    #[error("malformed JSON-RPC response: {0}")]
-    Malformed(String),
-
-    /// The exchange exceeded the configured timeout.
-    #[error("MCP RPC `{method}` timed out after {seconds}s")]
-    Timeout {
-        /// JSON-RPC method that timed out.
-        method: String,
-        /// Timeout value in seconds.
-        seconds: u64,
-    },
-
-    /// The transport used does not support the requested operation on this
-    /// target (e.g. stdio on wasm32).
-    #[error("MCP stdio transport is unavailable on this target (wasm32)")]
-    UnsupportedTransport,
-}
 
 // ---------------------------------------------------------------------------
 // Public types
@@ -164,169 +60,83 @@ pub struct McpTool {
 }
 
 // ---------------------------------------------------------------------------
-// Wire-level helpers
+// Conversions from the canonical client's value types
 // ---------------------------------------------------------------------------
 
-/// Build a minimal JSON-RPC 2.0 request frame (no id ⇒ notification).
-fn jsonrpc_notification(method: &str, params: serde_json::Value) -> String {
-    serde_json::json!({
-        "jsonrpc": "2.0",
-        "method": method,
-        "params": params,
-    })
-    .to_string()
-}
-
-/// Build a minimal JSON-RPC 2.0 request frame with `id`.
-fn jsonrpc_request(id: u64, method: &str, params: serde_json::Value) -> String {
-    serde_json::json!({
-        "jsonrpc": "2.0",
-        "id": id,
-        "method": method,
-        "params": params,
-    })
-    .to_string()
-}
-
-/// Extract a `result` field, or convert an `error` field into [`McpError::JsonRpc`].
-fn parse_response(text: &str) -> Result<serde_json::Value, McpError> {
-    let v: serde_json::Value = serde_json::from_str(text)
-        .map_err(|e| McpError::Malformed(format!("not valid JSON: {e}; raw={text}")))?;
-    if let Some(err) = v.get("error") {
-        let code = err.get("code").and_then(serde_json::Value::as_i64).unwrap_or(0);
-        let message =
-            err.get("message").and_then(serde_json::Value::as_str).unwrap_or("unknown").to_owned();
-        return Err(McpError::JsonRpc { code, message });
+impl From<aphrody_mcp_client::ServerInfo> for ServerInfo {
+    fn from(info: aphrody_mcp_client::ServerInfo) -> Self {
+        Self {
+            name: info.name,
+            version: info.version,
+            capabilities: info.capabilities,
+            protocol_version: info.protocol_version,
+        }
     }
-    v.get("result")
-        .cloned()
-        .ok_or_else(|| McpError::Malformed(format!("missing `result` field: {text}")))
 }
 
-/// Parse a `tools/list` response payload into a vector of [`McpTool`]s.
-fn parse_tools(result: &serde_json::Value) -> Result<Vec<McpTool>, McpError> {
-    let tools_arr = result
-        .get("tools")
-        .and_then(serde_json::Value::as_array)
-        .ok_or_else(|| McpError::Malformed(format!("missing `tools[]`: {result}")))?;
-    let mut out = Vec::with_capacity(tools_arr.len());
-    for raw in tools_arr {
-        let tool: McpTool = serde_json::from_value(raw.clone())
-            .map_err(|e| McpError::Malformed(format!("malformed tool entry: {e}; raw={raw}")))?;
-        out.push(tool);
+impl From<aphrody_mcp_client::McpTool> for McpTool {
+    fn from(tool: aphrody_mcp_client::McpTool) -> Self {
+        Self {
+            name: tool.name,
+            // The canonical descriptor keeps an absent description as `None`; this surface has
+            // always rendered it as the empty string.
+            description: tool.description.unwrap_or_default(),
+            input_schema: tool.input_schema,
+        }
     }
-    Ok(out)
 }
 
-/// Parse an `initialize` response payload into [`ServerInfo`].
-fn parse_server_info(result: &serde_json::Value) -> Result<ServerInfo, McpError> {
-    let server_info = result
-        .get("serverInfo")
-        .ok_or_else(|| McpError::Malformed(format!("missing `serverInfo`: {result}")))?;
-    let name =
-        server_info.get("name").and_then(serde_json::Value::as_str).unwrap_or("unknown").to_owned();
-    let version = server_info
-        .get("version")
-        .and_then(serde_json::Value::as_str)
-        .unwrap_or("0.0.0")
-        .to_owned();
-    let capabilities = result.get("capabilities").cloned().unwrap_or(serde_json::Value::Null);
-    let protocol_version = result
-        .get("protocolVersion")
-        .and_then(serde_json::Value::as_str)
-        .unwrap_or(MCP_PROTOCOL_VERSION)
-        .to_owned();
-    Ok(ServerInfo { name, version, capabilities, protocol_version })
-}
-
-// ---------------------------------------------------------------------------
-// Transport-specific connection state
-// ---------------------------------------------------------------------------
-
-/// Active transport backing an [`McpClient`].
-enum Transport {
-    /// Spawned child process; stdio JSON-RPC framing.
-    #[cfg(not(target_arch = "wasm32"))]
-    Stdio { child: Box<Child>, stdin: ChildStdin, lines: Lines<BufReader<ChildStdout>> },
-    /// HTTP MCP endpoint.
-    Http { client: reqwest::Client, url: String },
+/// Copy a `HashMap` environment or header set into the canonical client's ordered map.
+fn ordered(map: &HashMap<String, String>) -> BTreeMap<String, String> {
+    map.iter().map(|(key, value)| (key.clone(), value.clone())).collect()
 }
 
 // ---------------------------------------------------------------------------
 // McpClient
 // ---------------------------------------------------------------------------
 
-/// A live MCP JSON-RPC 2.0 client connection.
+/// A live MCP client connection. A thin wrapper over [`aphrody_mcp_client::McpClient`].
 ///
-/// Created via [`McpClient::from_stdio`] or [`McpClient::from_http`]. Holds
-/// the underlying transport (spawned child process or HTTP client) and tracks
-/// monotonically increasing JSON-RPC request IDs.
-///
-/// Dropping the client closes the transport: for stdio the child process is
-/// killed (via `Command::kill_on_drop(true)`); for HTTP nothing happens.
+/// Created via [`McpClient::from_stdio`], [`McpClient::from_http`] or
+/// [`McpClient::from_http_headers`]. Dropping the client closes the transport: the stdio child
+/// process is killed, an HTTP client simply goes away.
 pub struct McpClient {
-    transport: Transport,
-    next_id: u64,
-    /// Configurable RPC timeout (default: [`DEFAULT_RPC_TIMEOUT`]).
+    inner: aphrody_mcp_client::McpClient,
+    /// Configurable RPC timeout (default: [`DEFAULT_RPC_TIMEOUT`]). It also bounds the
+    /// `initialize` handshake, as it always has on this surface.
     pub rpc_timeout: Duration,
-    /// Whether `initialize` has already been called; gates `list_tools` /
-    /// `call_tool` from running before the handshake.
-    initialized: bool,
 }
 
 impl McpClient {
+    fn wrap(inner: aphrody_mcp_client::McpClient) -> Self {
+        Self { inner, rpc_timeout: DEFAULT_RPC_TIMEOUT }
+    }
+
+    /// Apply this client's timeout to every phase of the canonical client.
+    fn apply_timeouts(&mut self) {
+        self.inner.rpc_timeout = self.rpc_timeout;
+        self.inner.startup_timeout = self.rpc_timeout;
+    }
+
     /// Connect to an MCP server over stdio by spawning `command` with `args`
     /// and a custom environment (`env`).
     ///
-    /// Stdin is left open so subsequent `initialize` / `tools/list` /
-    /// `tools/call` requests can be written. The child is configured with
-    /// `kill_on_drop(true)` so dropping the [`McpClient`] terminates it.
-    ///
-    /// On wasm32 this function returns [`McpError::UnsupportedTransport`].
+    /// The child is killed when the [`McpClient`] is dropped. On wasm32 this returns
+    /// [`McpError::UnsupportedTransport`].
     ///
     /// # Errors
     ///
     /// - [`McpError::Spawn`] — the child process could not be started.
     /// - [`McpError::MissingHandle`] — the child exposed no stdin or stdout.
     /// - [`McpError::UnsupportedTransport`] — on wasm32.
-    #[cfg(not(target_arch = "wasm32"))]
     pub async fn from_stdio(
         command: &str,
         args: &[&str],
         env: &HashMap<String, String>,
     ) -> Result<Self, McpError> {
-        let mut cmd = Command::new(command);
-        cmd.args(args)
-            .envs(env)
-            .stdin(Stdio::piped())
-            .stdout(Stdio::piped())
-            .stderr(Stdio::null())
-            .kill_on_drop(true);
-
-        let mut child = cmd
-            .spawn()
-            .map_err(|source| McpError::Spawn { command: command.to_owned(), source })?;
-        let stdin = child.stdin.take().ok_or(McpError::MissingHandle { handle: "stdin" })?;
-        let stdout = child.stdout.take().ok_or(McpError::MissingHandle { handle: "stdout" })?;
-        let lines = BufReader::new(stdout).lines();
-
-        Ok(Self {
-            transport: Transport::Stdio { child: Box::new(child), stdin, lines },
-            next_id: 1,
-            rpc_timeout: DEFAULT_RPC_TIMEOUT,
-            initialized: false,
-        })
-    }
-
-    /// Stub on wasm32: stdio transport is unavailable because
-    /// `tokio::process` is not implemented there.
-    #[cfg(target_arch = "wasm32")]
-    pub async fn from_stdio(
-        _command: &str,
-        _args: &[&str],
-        _env: &HashMap<String, String>,
-    ) -> Result<Self, McpError> {
-        Err(McpError::UnsupportedTransport)
+        let args: Vec<String> = args.iter().map(|arg| (*arg).to_owned()).collect();
+        let env = ordered(env);
+        aphrody_mcp_client::McpClient::from_stdio(command, &args, Some(&env), None).map(Self::wrap)
     }
 
     /// Connect to a streamable-HTTP MCP endpoint.
@@ -336,48 +146,26 @@ impl McpClient {
     ///
     /// # Errors
     ///
-    /// - [`McpError::Http`] — building the inner [`reqwest::Client`] failed.
+    /// - [`McpError::InvalidHeader`] — the token cannot be sent as a header value.
+    /// - [`McpError::Http`] — building the inner HTTP client failed.
     pub fn from_http(url: impl Into<String>, bearer: Option<String>) -> Result<Self, McpError> {
-        let mut headers = HashMap::new();
-        if let Some(token) = bearer {
-            headers.insert("Authorization".to_owned(), format!("Bearer {token}"));
-        }
-        Self::from_http_headers(url, &headers)
+        aphrody_mcp_client::McpClient::from_http(url, bearer, None).map(Self::wrap)
     }
 
     /// Connect to a streamable-HTTP endpoint with the configured request
     /// headers. Header values are validated without including them in errors.
     /// The same headers are sent for initialization, notifications and calls.
+    ///
+    /// # Errors
+    ///
+    /// - [`McpError::InvalidHeader`] — a header name or value cannot be sent.
+    /// - [`McpError::Http`] — building the inner HTTP client failed.
     pub fn from_http_headers(
         url: impl Into<String>,
         headers: &HashMap<String, String>,
     ) -> Result<Self, McpError> {
-        let mut default_headers = reqwest::header::HeaderMap::new();
-        for (name, value) in headers {
-            let key = reqwest::header::HeaderName::from_bytes(name.as_bytes())
-                .map_err(|_| McpError::InvalidHeader { name: name.clone() })?;
-            let value = reqwest::header::HeaderValue::from_str(value)
-                .map_err(|_| McpError::InvalidHeader { name: name.clone() })?;
-            default_headers.insert(key, value);
-        }
-        let client = reqwest::Client::builder()
-            .timeout(DEFAULT_RPC_TIMEOUT)
-            .default_headers(default_headers)
-            .redirect(reqwest::redirect::Policy::none())
-            .build()
-            .map_err(McpError::Http)?;
-        Ok(Self {
-            transport: Transport::Http { client, url: url.into() },
-            next_id: 1,
-            rpc_timeout: DEFAULT_RPC_TIMEOUT,
-            initialized: false,
-        })
-    }
-
-    fn next_id(&mut self) -> u64 {
-        let id = self.next_id;
-        self.next_id = self.next_id.wrapping_add(1);
-        id
+        let headers = ordered(headers);
+        aphrody_mcp_client::McpClient::from_http(url, None, Some(&headers)).map(Self::wrap)
     }
 
     /// Send a JSON-RPC request and wait for the matching response.

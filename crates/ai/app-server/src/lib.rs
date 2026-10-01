@@ -21,7 +21,7 @@ use aphrody_agent_home::{AgentHome, BootstrapBudget, HomeOptions};
 use aphrody_agent_proto::{Event, EventMsg, InputItem, Op};
 use aphrody_agent_runtime::{
     AgentRuntime, ModelChoice, ModelFactory, ProviderLease, build_profiled_tool_registry,
-    build_tool_registry, prepare_managed_provider,
+    build_tool_registry, prepare_managed_provider_in,
 };
 use aphrody_app_protocol::{
     ClientRequest, ConfigReadParams, InitializeParams, JSONRPCError, JSONRPCNotification,
@@ -262,6 +262,9 @@ pub struct AppServer {
     base_home: std::path::PathBuf,
     home: std::path::PathBuf,
     profile: Option<String>,
+    /// Model store root chosen by the embedding host (see [`AppServer::with_models_dir`]).
+    /// `None` keeps the default resolution: `$APHRODY_MODELS_DIR`, else `<state dir>/models`.
+    models_dir: Option<std::path::PathBuf>,
     #[cfg(test)]
     test_home: Option<tempfile::TempDir>,
 }
@@ -411,9 +414,29 @@ impl AppServer {
             base_home: home.clone(),
             home,
             profile: None,
+            models_dir: None,
             #[cfg(test)]
             test_home: None,
         }
+    }
+
+    /// Select the model store root used to resolve and download the weights of managed local
+    /// models.
+    ///
+    /// A host that embeds the server in its own process (the desktop) passes the folder the
+    /// user chose instead of exporting `APHRODY_MODELS_DIR`: mutating the process environment
+    /// is `unsafe` in edition 2024 and racy next to other threads. A `None` root, the default,
+    /// keeps `$APHRODY_MODELS_DIR`, else `<state dir>/models`.
+    #[must_use]
+    pub fn with_models_dir(mut self, models_dir: impl Into<std::path::PathBuf>) -> Self {
+        self.models_dir = Some(models_dir.into());
+        self
+    }
+
+    /// The model store root selected with [`AppServer::with_models_dir`], if any.
+    #[must_use]
+    pub fn models_dir(&self) -> Option<&std::path::Path> {
+        self.models_dir.as_deref()
     }
 
     /// Stop every session and wait for its rollout recorder to flush before
@@ -485,9 +508,10 @@ impl AppServer {
             })
             .transpose()?
             .unwrap_or(false);
-        let provider_lease = prepare_managed_provider(&mut resolved, &cwd)
-            .await
-            .map_err(|error| AppServerError::Runtime(error.to_string()))?;
+        let provider_lease =
+            prepare_managed_provider_in(&mut resolved, &cwd, self.models_dir.as_deref())
+                .await
+                .map_err(|error| AppServerError::Runtime(error.to_string()))?;
         let mut runtime_config = config::runtime(&resolved, &self.home, &cwd, &params)?;
         if !ephemeral {
             runtime_config = runtime_config.with_rollout_path(self.home.join("sessions"));
@@ -1574,7 +1598,25 @@ where
     R: AsyncBufRead + Unpin,
     W: AsyncWrite + Unpin,
 {
-    let mut server = AppServer::new();
+    serve_stdio_with(reader, writer, AppServer::new()).await
+}
+
+/// [`serve_stdio`] over any pair of streams, with a caller-configured [`AppServer`].
+///
+/// This is the in-process entry point: a host that embeds the server (the desktop broker) wires
+/// `reader` and `writer` to the two halves of a `tokio::io::duplex` pipe instead of a child
+/// process, and configures the server it hands in (for example
+/// [`AppServer::with_models_dir`]). The loop ends at end of input, or on an I/O or serialization
+/// failure; every session is joined before this returns, so rollouts are flushed.
+pub async fn serve_stdio_with<R, W>(
+    reader: R,
+    writer: W,
+    mut server: AppServer,
+) -> Result<(), AppServerError>
+where
+    R: AsyncBufRead + Unpin,
+    W: AsyncWrite + Unpin,
+{
     serve_stdio_with_server(reader, writer, &mut server).await
 }
 
@@ -1833,6 +1875,42 @@ wire_api = "chat"
         server.handle(r#"{"id":0,"method":"initialize"}"#).await.unwrap();
         server.handle(r#"{"method":"initialized"}"#).await.unwrap();
         server
+    }
+
+    #[test]
+    fn models_dir_is_an_explicit_option_and_not_an_environment_variable() {
+        assert_eq!(AppServer::with_home("home").models_dir(), None);
+        let chosen = AppServer::with_home("home").with_models_dir("models");
+        assert_eq!(chosen.models_dir(), Some(std::path::Path::new("models")));
+    }
+
+    #[tokio::test]
+    async fn serve_stdio_with_answers_over_in_memory_pipes_and_ends_at_eof() {
+        // The in-process transport of the desktop broker: one pipe per direction, no child.
+        let (mut client_writer, server_reader) = tokio::io::duplex(64 * 1024);
+        let (server_writer, client_reader) = tokio::io::duplex(64 * 1024);
+        let served = tokio::spawn(serve_stdio_with(
+            tokio::io::BufReader::new(server_reader),
+            server_writer,
+            test_server(),
+        ));
+        client_writer.write_all(b"{\"id\":1,\"method\":\"initialize\"}\n").await.unwrap();
+        let mut lines = tokio::io::BufReader::new(client_reader).lines();
+        let reply = tokio::time::timeout(std::time::Duration::from_secs(5), lines.next_line())
+            .await
+            .unwrap()
+            .unwrap()
+            .unwrap();
+        let reply: Value = serde_json::from_str(&reply).unwrap();
+        assert_eq!(reply["id"], 1);
+        assert_eq!(reply["result"]["serverInfo"]["name"], "aphrody");
+        // Closing the client end is the shutdown signal: the loop joins its sessions and returns.
+        drop(client_writer);
+        tokio::time::timeout(std::time::Duration::from_secs(5), served)
+            .await
+            .unwrap()
+            .unwrap()
+            .unwrap();
     }
 
     #[tokio::test]

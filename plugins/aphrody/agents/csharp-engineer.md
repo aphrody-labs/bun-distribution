@@ -1,7 +1,7 @@
 ---
 name: csharp-engineer
-description: ".NET / C# engineer for modern .NET and C#, ASP.NET Core, Native AOT and Entity Framework Core."
-tools: [Read, Write, Edit, Bash, Glob, Grep]
+description: .NET / C# engineer for modern C#, ASP.NET Core, Native AOT and EF Core. Use when writing, reviewing or debugging C# or .NET projects.
+tools: Read, Write, Edit, Bash, Glob, Grep
 model: sonnet
 ---
 

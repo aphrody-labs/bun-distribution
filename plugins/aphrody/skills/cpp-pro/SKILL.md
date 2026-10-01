@@ -1,71 +1,62 @@
 ---
 name: cpp-pro
-description: "Modern C++ (C++20/23): RAII, smart pointers, templates, move semantics, STL algorithms, performance."
+description: "Modern C++ (C++20/23, C++26 aware): RAII, smart pointers, move semantics, concepts, templates, ranges, concurrency, CMake, sanitizers, tests and benchmarks. Use when writing, reviewing, debugging or modernising C++ code or CMake projects."
+version: "1.1.0"
 metadata:
-  risk: unknown
   source: community
-  date_added: "2026-02-27"
 ---
 
-## Use this skill when
+# Modern C++
 
-- Working on cpp pro tasks or workflows
-- Needing guidance, best practices, or checklists for cpp pro
+## Before writing code
 
-## Do not use this skill when
-
-- The task is unrelated to cpp pro
-- You need a different domain or tool outside this scope
-
-## Instructions
-
-- Clarify goals, constraints, and required inputs.
-- Apply relevant best practices and validate outcomes.
-- Provide actionable steps and verification.
-- If detailed examples are required, open `resources/implementation-playbook.md`.
-
-You are a C++ programming expert specializing in modern C++ and high-performance software.
-
-## Focus Areas
-
-- Modern C++ (C++11/14/17/20/23) features
-- RAII and smart pointers (unique_ptr, shared_ptr)
-- Template metaprogramming and concepts
-- Move semantics and perfect forwarding
-- STL algorithms and containers
-- Concurrency with std::thread and atomics
-- Exception safety guarantees
+- Detect the language level and toolchain: `CMAKE_CXX_STANDARD` / `target_compile_features`
+  in `CMakeLists.txt`, `-std=` flags, `compile_commands.json`, `.clang-format`, `.clang-tidy`,
+  and the compilers CI uses. Do not use a feature the project's standard or minimum compiler
+  lacks (check cppreference's compiler support tables for C++23/26 library features).
+- Follow the project's existing error model (exceptions vs `std::expected`/error codes),
+  naming and header layout.
 
 ## Approach
 
-1. Prefer stack allocation and RAII over manual memory management
-2. Use smart pointers when heap allocation is necessary
-3. Follow the Rule of Zero/Three/Five
-4. Use const correctness and constexpr where applicable
-5. Leverage STL algorithms over raw loops
-6. Profile with tools like perf and VTune
+1. Stack allocation and RAII first; `std::unique_ptr` for ownership, `std::shared_ptr` only
+   for genuinely shared lifetime; no owning raw pointers.
+2. Rule of Zero; when a type manages a resource, Rule of Five.
+3. `const` correctness, `constexpr`/`consteval` where values are compile-time.
+4. Constrain templates with concepts instead of SFINAE; prefer ranges/algorithms to raw loops
+   when clearer.
+5. `std::span` / `std::string_view` for non-owning views (never store them past the owner).
+6. Concurrency through `std::jthread`, `std::stop_token`, atomics with explicit memory
+   orders only when measured, otherwise mutexes.
+7. Measure before optimising (`perf`, VTune, Tracy, Google Benchmark).
 
-## Output
+## Output expectations
 
-- Modern C++ code following best practices
-- CMakeLists.txt with appropriate C++ standard
-- Header files with proper include guards or #pragma once
-- Unit tests using Google Test or Catch2
-- AddressSanitizer/ThreadSanitizer clean output
-- Performance benchmarks using Google Benchmark
-- Clear documentation of template interfaces
+- Compiles warning-free at `-Wall -Wextra -Wpedantic` (MSVC `/W4 /permissive-`).
+- CMake: target-based (`target_link_libraries`, `target_compile_features(... cxx_std_23)`),
+  no global `include_directories`/`add_definitions`.
+- Headers with `#pragma once`; tests in GoogleTest or Catch2; benchmarks in Google Benchmark.
+- Clean under AddressSanitizer + UndefinedBehaviorSanitizer, and ThreadSanitizer for
+  concurrent code.
+- Follow the C++ Core Guidelines; prefer compile-time errors over runtime checks.
 
-Follow C++ Core Guidelines. Prefer compile-time errors over runtime errors.
+## References (read the one that matches the task)
+
+| File | Covers |
+| --- | --- |
+| `references/modern-cpp.md` | C++20/23 features: concepts, ranges, coroutines, spaceship, designated initializers, modules, constexpr, `std::format`; feature table incl. `std::expected`/`std::print` |
+| `references/templates.md` | variadic templates, CRTP, type traits, metaprogramming |
+| `references/memory-performance.md` | smart pointers, custom allocators and pools, move semantics, RVO, SIMD, cache-friendly layout, alignment |
+| `references/concurrency.md` | atomics and memory ordering, lock-free structures, thread pools, parallel STL, futures, coroutine concurrency |
+| `references/build-tooling.md` | modern CMake, sanitizers, static analysis, Catch2/GoogleTest, profiling, Conan, GitHub Actions CI |
+| `resources/implementation-playbook.md` | end-to-end implementation checklist with examples |
+
+## Related skills
+
+- Calling C++ from Bun or Rust: `rust-bun` (its FFI type and ownership rules apply to any C ABI).
+- Shell tooling for builds and scripts: `cross-platform-cli-toolbelt`.
 
 ## Limitations
 
-- Use this skill only when the task clearly matches the scope described above.
-- Do not treat the output as a substitute for environment-specific validation, testing, or expert review.
-- Stop and ask for clarification if required inputs, permissions, safety boundaries, or success criteria are missing.
-
-## WinClean Integration Rules (Antigravity/Gemini Compatible)
-
-- **Strict Environment**: Must operate within the Windows 11 (24H2+) context.
-- **Package Management Enforcement**: NEVER use `node`, `npm`, `npx`, `pnpm`, or `yarn`. ALWAYS use `bun` and `bunx` for package management and local scripts. For globally installed tools (turbo, oxlint, oxfmt, skills): ALWAYS use bare direct commands (`turbo`, `oxlint`, `oxfmt`, `skills find/add ...`). NEVER `bunx turbo`, `bunx skills@latest` etc. See `plugins/aphrody/skills/_shared/winclean-rules.md`. Use `winget`, `gh`, `uv`/`uvx`, `cargo`, `nuget`, `vcpkg` as appropriate.
-- **Performance First**: Zero unnecessary allocations. Use streaming operations where possible.
-- **Language Policy**: Always reply in **French**, but code, variables, and commits must be in **English**.
+Not a substitute for building and testing in the real toolchain. Ask when required inputs
+(target platforms, standard level, error model) are missing.

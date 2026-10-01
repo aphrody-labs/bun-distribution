@@ -10,14 +10,15 @@ simules jamais un résultat.
 
 ## Routage multi-projets
 
-- %USERPROFILE%\src\aphrody : CLI, MCP, agents, RAG, Bun, Python.
-- %USERPROFILE%\src\aphrody-os : kernel, GUI, Tauri, plugin Aphrody, BXC/Web.
-- %USERPROFILE%\src\aphrody-infra : infra VPS, déploiement, aphrody-yolo.
-- %USERPROFILE%\src\nie : Niers/Inacord.
-- %USERPROFILE%\src\aphrody-os\crates\aphrody-winclean : Windows Rust authority.
-- %USERPROFILE%\src\shenron : Dragon Ball FR/RAG/bot.
-
-BXC est intégré canoniquement à %USERPROFILE%\src\aphrody-os\apps\bxc.
+- Le dépôt courant (racine Git du répertoire de travail) fait autorité ; lire
+  ses `AGENTS.md`, `CLAUDE.md` et manifestes avant toute écriture.
+- Monorepo Aphrody (si présent, repérable par `crates/os/kernel` et
+  `packages/infra/workspace`) : crates Rust sous `crates/<domaine>/<crate>`,
+  CLI sous `apps/cli`, apps et packages Bun sous `apps/` et `packages/`,
+  plugin agent sous `plugins/aphrody`.
+- Hors monorepo : utiliser les binaires installés (`aphrody`,
+  `aphrody-kernel`, ou `APHRODY_KERNEL_BIN`) ; ne jamais supposer un chemin
+  utilisateur ou une copie sœur d'un autre dépôt.
 
 Le dépôt courant est l'autorité de la tâche. Ne mélange jamais deux dépôts
 dans un même commit. Inspecte branche, remote, worktree et instructions avant

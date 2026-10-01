@@ -533,9 +533,10 @@ enum Commands {
         #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
         args: Vec<String>,
     },
-    /// Boucle de codage autonome pour le CLI Antigravity (`agy`) via son hook
-    /// `AfterAgent`. Câblé par le plugin aphrody-agy ; `start`/`stop`/`status`
-    /// pilotent la boucle, `hook` est le driver invoqué par agy.
+    /// Boucle de codage autonome pour le CLI Antigravity (`agy`) via ses hooks
+    /// `Stop` (pilote) et `PostInvocation` (comptage par tour). Câblé par le
+    /// plugin aphrody-agy ; `start`/`stop`/`status` pilotent la boucle, `hook`
+    /// est le driver invoqué par agy, `hooks-json` affiche le câblage.
     #[cfg(not(target_arch = "wasm32"))]
     #[command(name = "agy-loop")]
     AgyLoop {

@@ -231,6 +231,24 @@ async fn run_with_broadcast() -> Result<()> {
 
 ### Pattern 5: Async Traits
 
+Since Rust 1.75, `async fn` in traits is native. Prefer it for generic (static) dispatch; it
+needs no macro and no boxing:
+
+```rust
+pub trait Repository {
+    async fn get(&self, id: &str) -> Result<Entity>;
+}
+
+async fn load<R: Repository>(repo: &R, id: &str) -> Result<Entity> {
+    repo.get(id).await
+}
+```
+
+Native async trait methods are not dyn-compatible, and their futures carry no `Send` bound
+that callers can name. When the trait must be used as `dyn Trait`, or spawned futures need
+`Send`, use the `async-trait` crate (boxes each call) or `trait-variant`
+(`#[trait_variant::make(SendRepository: Send)]`) for the `Send` case:
+
 ```rust
 use async_trait::async_trait;
 

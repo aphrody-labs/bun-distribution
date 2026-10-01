@@ -119,7 +119,10 @@ fn write_out(path: &Path, body: &str) -> miette::Result<()> {
 pub(crate) enum ModelAction {
     /// List locally installed models.
     ///
+    /// Ollama-compatible alias: `aphrody model ls`.
+    ///
     /// Example: aphrody model list --format markdown --out models.md
+    #[command(visible_alias = "ls")]
     List {
         /// Only show models pulled through a catalog entry with this task.
         #[arg(long)]
@@ -184,7 +187,10 @@ pub(crate) enum ModelAction {
     /// Show what an installed artefact actually is: size, digest, and the
     /// decoded GGUF / GGML / safetensors / ONNX header.
     ///
+    /// Ollama-compatible alias: `aphrody model show`.
+    ///
     /// Example: aphrody model info whisper-base-en --json
+    #[command(visible_alias = "show")]
     Info {
         /// Catalog id or model reference.
         spec: String,
@@ -203,6 +209,8 @@ pub(crate) enum ModelAction {
     /// Delete an installed model and drop it from the registry.
     ///
     /// Artefacts adopted from outside the store are un-tracked, never deleted.
+    /// Ollama-compatible alias: `aphrody model remove`.
+    #[command(visible_alias = "remove")]
     Rm {
         /// Catalog id or model reference.
         spec: String,
@@ -235,6 +243,15 @@ pub(crate) enum ModelAction {
         #[command(flatten)]
         output: OutputOpts,
     },
+    /// List model servers currently loaded in-process-managed daemons
+    /// (Ollama `ps`): role, alias, port, readiness. Read-only; reads the
+    /// state published by `aphrody-llama-server`, spawns nothing.
+    ///
+    /// Example: aphrody model ps --json
+    Ps {
+        #[command(flatten)]
+        output: OutputOpts,
+    },
     /// Print the store root, or the resolved path of one artefact.
     Path {
         /// Catalog id or model reference. Omit to print the store root.
@@ -253,6 +270,7 @@ pub(crate) async fn run(action: ModelAction) -> miette::Result<()> {
     match action {
         ModelAction::Accel { output } => accel_report(&output),
         ModelAction::Catalog { task, output } => catalog(task.as_deref(), &output),
+        ModelAction::Ps { output } => ps(&output),
         ModelAction::Recommend { task, prefer, pull: do_pull, output } => {
             recommend(&task, &prefer, do_pull, &output).await
         },
@@ -273,6 +291,7 @@ pub(crate) async fn run(action: ModelAction) -> miette::Result<()> {
                 ModelAction::Path { spec } => path(&store, spec.as_deref()),
                 // Handled above, before the store is opened.
                 ModelAction::Accel { .. }
+                | ModelAction::Ps { .. }
                 | ModelAction::Catalog { .. }
                 | ModelAction::Recommend { .. } => unreachable!(),
             }
@@ -786,6 +805,44 @@ fn verify(store: &ModelStore, spec: &str, output: &OutputOpts) -> miette::Result
         // model loader.
         Err(miette::miette!("`{spec}` failed verification"))
     }
+}
+
+/// `model ps`: report running managed model servers, per role.
+///
+/// Delegates to the inference crate's published run state; nothing is
+/// spawned and no inference happens here.
+fn ps(output: &OutputOpts) -> miette::Result<()> {
+    use aphrody_llama_server::{Role, discover_running};
+
+    let running: Vec<_> = [Role::Chat, Role::Embed, Role::Rerank]
+        .into_iter()
+        .filter_map(discover_running)
+        .collect();
+
+    let mut report = Report::new("Running models", &["ROLE", "ALIAS", "PORT", "READY", "MODEL"])
+        .with_footer(format!("{} instance(s)", running.len()));
+    for state in &running {
+        report.push(vec![
+            state.role.as_str().to_owned(),
+            state.alias.clone(),
+            state.port.to_string(),
+            state.ready.to_string(),
+            state.model.display().to_string(),
+        ]);
+    }
+    let json = serde_json::json!({
+        "count": running.len(),
+        "instances": running.iter().map(|state| serde_json::json!({
+            "role": state.role.as_str(),
+            "alias": state.alias,
+            "port": state.port,
+            "ready": state.ready,
+            "model": state.model,
+            "base_url": state.base_url(),
+            "started_unix": state.started_unix,
+        })).collect::<Vec<_>>(),
+    });
+    output.emit_report(&report, &json)
 }
 
 fn remove(store: &ModelStore, spec: &str, output: &OutputOpts) -> miette::Result<()> {

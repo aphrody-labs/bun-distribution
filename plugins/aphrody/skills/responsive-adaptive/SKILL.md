@@ -1,6 +1,7 @@
 ---
 name: responsive-adaptive
-description: "Material 3 adaptive layout: window size classes, navigation rail/bar/drawer swaps, canonical list-detail layouts, grids, touch targets."
+description: "Material 3 adaptive layout: window size classes, navigation bar/rail/drawer swaps, canonical layouts (list-detail, supporting pane, feed), panes, grids, foldables, touch targets. Use when an M3 UI must work across phone, tablet and desktop."
+version: "1.1.0"
 ---
 
 # M3 Responsive and Adaptive Layout
@@ -70,8 +71,9 @@ breakpoint thresholds inside `@container` rules.
 
 Swap navigation components as the window grows. Use the project's
 `md-navigation-bar`, `md-navigation-rail`, and `md-navigation-drawer`
-components (React: `MdNavigationBar`, `MdNavigationRail`, `MdNavigationDrawer`
-from `@aphrody-code/m3-react`).
+elements, or the equivalent components of the project's M3 library. Upstream `@material/web`
+(maintenance mode) ships `md-navigation-bar` / `md-navigation-drawer` only under `labs/` and
+has no navigation rail or top app bar; projects usually provide those themselves.
 
 | Size class  | Navigation pattern                            | Notes                                                |
 | ----------- | --------------------------------------------- | ---------------------------------------------------- |
@@ -194,16 +196,18 @@ Before laying out a screen, answer these questions:
 
 ## Project component map
 
-| M3 element            | Web component                    | React wrapper (m3-react)      |
+| M3 element            | Web component                    | React wrapper (Aphrody `@aphrody/m3-react`) |
 | --------------------- | -------------------------------- | ----------------------------- |
 | Bottom navigation bar | `<md-navigation-bar>`            | `<MdNavigationBar>`           |
 | Navigation rail       | `<md-navigation-rail>`           | `<MdNavigationRail>`          |
 | Navigation drawer     | `<md-navigation-drawer>`         | `<MdNavigationDrawer>`        |
 | Top app bar           | `<md-top-app-bar>`               | `<MdTopAppBar>`               |
-| FAB                   | `<md-fab>` / `<md-extended-fab>` | `<MdFab>` / `<MdExtendedFab>` |
+| FAB / extended FAB    | `<md-fab>` (extended: set `label`) | `<MdFab>`                   |
 
-Use `@aphrody-code/m3-react` in React apps; use `@material/web` (via
-`aphrody-components.ts`) in plain-web or Lit contexts.
+Use the project's React M3 wrapper in React apps and `@material/web` (or the project's own
+custom elements) in plain-web or Lit contexts. In the Aphrody monorepo these are
+`@aphrody/m3-react` (`packages/ui/m3-react`, window size classes in
+`@aphrody/m3-react/adaptive`) and `@aphrody/material-web` (`aphrody-components.ts`).
 
 ---
 

@@ -1,17 +1,17 @@
 ---
 name: auto-re
-description: "Automated reverse-engineering report for a PE/ELF binary or directory: triage, strings, endpoints, Go detection, entrypoint disassembly."
+description: "Automated reverse-engineering report for a PE/ELF binary or directory: triage, strings, endpoints, Go detection, entrypoint disasm (aphrody re auto). Use when handed an unknown binary and a first overview is needed."
 version: "1.0.0"
 metadata:
-  source: aphrody native — crates/aphrody-re + crates/cli/src/re_auto.rs
+  source: aphrody native — crates/os/re (aphrody-re) + apps/cli/src/re_auto.rs
   since: "2026-05-22"
 ---
 
 # auto-re — Workflow de reverse engineering automatise
 
-Mode `/goal` permanent : décider seul, ne pas s'arrêter avant rapport RE complet.
+> **S'applique quand :** un binaire/dossier est disponible et le CLI `aphrody` (sous-commande `re`) est installé. **Sinon :** utiliser `file`/`readelf`/`objdump`/`strings`/rizin à la place et indiquer quelle passe Aphrody a été sautée.
 
-Multiplateforme : `aphrody re` analyse PE/ELF/Mach-O sur Linux/Windows/macOS. Chemins relatifs ou `$VAR` ; ne jamais coder en dur un home utilisateur.
+Multiplateforme : `aphrody re` analyse PE/ELF (Mach-O et WebAssembly : format `Unknown`, non pris en charge) sur Linux/Windows/macOS. Chemins relatifs ou `$VAR` ; ne jamais coder en dur un home utilisateur.
 
 ## Vue d'ensemble
 
@@ -154,10 +154,10 @@ aphrody re go "$LS" --pretty > ls-go.json
 jq '.endpoints.api_endpoints' ls-report.json
 
 # Packages Go
-jq '.go.packages' ls-go.json
+jq '.packages' ls-go.json
 
 # Fonctions contenant "cortex" ou "cascade"
-jq '[.go.funcs_sample[] | select(.name | test("cortex|cascade|Cascade"; "i"))]' ls-go.json
+jq '[.funcs[] | select(.name | test("cortex|cascade|Cascade"; "i"))]' ls-go.json
 ```
 
 ## Flags
@@ -168,6 +168,7 @@ jq '[.go.funcs_sample[] | select(.name | test("cortex|cascade|Cascade"; "i"))]' 
 | `--json` | bool | false | JSON only sur stdout, pas de markdown stderr |
 | `--limit N` | usize | 2000 | Max strings par fichier |
 | `--pretty` | bool | false | Pretty-print JSON (re go seulement) |
+| `--deep` (re go) | bool | false | Délègue aussi à `redress` si installé (`$REDRESS_BIN` > PATH) ; utile quand `func_count = 0` |
 
 ## Detection Go
 
@@ -189,7 +190,7 @@ Le detecteur Go utilise deux heuristiques complementaires :
 
 ## Integration avec deep-analysis
 
-`auto-re` produit le triage initial. Pour une investigation approfondie :
+`auto-re` produit le triage initial. Pour une investigation approfondie (Ghidra est un outil externe, optionnel) :
 
 1. Lancer `auto-re` pour identifier les zones suspectes.
 2. Charger le binaire dans Ghidra (GUI ou headless via `--deep`).

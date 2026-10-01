@@ -25,8 +25,9 @@ case "$cmd" in
   ask)
     [ "$#" -gt 0 ] || { echo "usage: db.sh ask <question>" >&2; exit 2; }
     api "/api/public/rag/search?q=$(urlenc "$@")&limit=$LIMIT" | jq -r '
+      if .error then "erreur de l'"'"'API : \(.error) — aucun résultat exploitable" else
       "mode de récupération : \(.mode)\n",
-      (.results[] | "• [\(.kind)] \(.title)\n  \(.url)\n  \((.snippet // "") | gsub("\\s+"; " ") | .[0:220])\n")'
+      (.results[] | "• [\(.kind)] \(.title)\n  \(.url)\n  \((.snippet // "") | gsub("\\s+"; " ") | .[0:220])\n") end'
     ;;
   search)
     [ "$#" -gt 0 ] || { echo "usage: db.sh search <termes>" >&2; exit 2; }
@@ -63,11 +64,12 @@ db.sh — base Dragon Ball (API : $API)
   char <nom>           cherche un personnage / entité par nom
   list <cat> [limit]   liste une catégorie
   get <cat> <id|slug>  ouvre une fiche
-  stats | personas     stats du serveur Discord / les 6 personas du bot
+  stats | personas     stats du serveur Discord / les personas du bot
   raw <chemin>         GET brut (ex: db.sh raw /api/public/news)
 
-Catégories : characters, planets, races, techniques, transformations,
-             sagas, episodes, movies, games
+Catégories : liste courante : db.sh raw /api/public/wiki/categories
+             (characters, planets, races, techniques, transformations, sagas,
+             arcs, episodes, movies, games, tools, battles, items, …)
 Env : DB_API (base), DB_LIMIT (nb de résultats).
 EOF
     ;;

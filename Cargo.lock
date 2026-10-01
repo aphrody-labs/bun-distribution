@@ -916,14 +916,16 @@ dependencies = [
 name = "aphrody-app"
 version = "1.0.0-canary"
 dependencies = [
+ "aphrody-app-server",
  "aphrody-capture",
  "aphrody-compat",
  "aphrody-coreutils",
  "aphrody-drive",
  "aphrody-identity",
  "aphrody-kernel",
+ "aphrody-llama-server",
+ "aphrody-local-ai",
  "aphrody-native",
- "aphrody-proc",
  "aphrody-sprite-sheet",
  "aphrody-subsystem",
  "aphrody-systemd",
@@ -933,6 +935,7 @@ dependencies = [
  "log",
  "mimalloc",
  "reqwest 0.13.5",
+ "rustls",
  "serde",
  "serde_json",
  "tauri",
@@ -953,6 +956,7 @@ dependencies = [
  "tauri-plugin-updater",
  "tauri-plugin-window-state",
  "tauri-runtime-wry",
+ "tempfile",
  "tokio",
  "url",
 ]
@@ -1626,6 +1630,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "aphrody-local-ai"
+version = "1.0.0-canary"
+dependencies = [
+ "aphrody-models",
+ "futures-util",
+ "serde_json",
+ "tempfile",
+ "thiserror 2.0.21",
+]
+
+[[package]]
 name = "aphrody-m3-reproduce"
 version = "1.0.0-canary"
 dependencies = [
@@ -1654,7 +1669,6 @@ name = "aphrody-manga"
 version = "1.0.0"
 dependencies = [
  "aphrody-ocr-core",
- "aphrody-translate",
  "image",
  "koharu-library",
  "reqwest 0.13.5",
@@ -1767,6 +1781,7 @@ dependencies = [
  "futures-util",
  "pretty_assertions",
  "reqwest 0.13.5",
+ "rustls",
  "serde",
  "serde_json",
  "thiserror 2.0.21",
@@ -1905,6 +1920,7 @@ dependencies = [
  "dirs 7.0.0",
  "futures-util",
  "hex",
+ "nvml-wrapper",
  "reqwest 0.13.5",
  "rustls",
  "serde",

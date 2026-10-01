@@ -20,8 +20,7 @@ of C). `rustls` is ≈40 KLOC of Rust, externally audited (Cure53 in 2020 and
 
 **Issue 3 — cross-platform.** OpenSSL doesn't ship on Windows (vcpkg or
 manual install). `rustls` works identically on Linux, Windows MSVC, and
-wasm32. For aphrody, Linux #1 + Windows #2 + wasm #3 (CLAUDE.md §0), this
-is decisive.
+wasm32. For any project shipping on more than one OS, this is decisive.
 
 **When OpenSSL is unavoidable.** FIPS 140-3 boundary requirement that
 mandates a FIPS-validated module — even then, prefer `aws-lc-rs` (which is
@@ -74,21 +73,18 @@ risk.
 
 ## tao + wry (Linux)
 
-Linux build pulls GTK3, which has multiple RUSTSEC advisories tracked but
-not patched upstream (cf. CLAUDE.md §7). Project policy ignores them in
-`deny.toml` for the `gui` crate, but you do not want to take that exception
-on a new crate. WASM via `wasm-bindgen` is the project's preferred path; if
-you genuinely need native, `egui`/`iced` ship via `wgpu` and avoid GTK
-entirely.
-
-When `wry` is unavoidable: existing Tauri app, need OS-native webview for
-parity with a Mac/Windows-first product. Otherwise, WASM.
+On Linux, `wry` uses WebKitGTK and `tao` uses the gtk-rs GTK3 bindings, which
+RustSec flags as unmaintained (RUSTSEC-2024-0411 and following, 2024-03-04).
+There is no patched release, so `cargo deny` reports them for every Tauri app on
+Linux. This is an accepted cost of Tauri: record a targeted `ignore` with a
+reason in `deny.toml`. If the UI does not need a web view, `egui`/`iced`/`slint`
+on `wgpu` avoid GTK entirely.
 
 ## unicorn-engine (GPL-2.0)
 
-GPL-2.0 is **viral**: linking unicorn-engine into the aphrody binary
-contaminates the whole binary. aphrody ships Apache-2.0, so this is an
-outright license violation if released. The only safe usage is as an
+GPL-2.0 is **viral**: linking unicorn-engine into a binary makes the whole
+binary GPL. For a project distributed under Apache-2.0 or MIT this is a licence
+violation once released. The only safe usage is as an
 **out-of-process** executable invoked via FFI/subprocess with no static
 linking — which defeats most of the reason to embed an emulator.
 
@@ -103,23 +99,26 @@ truly need emulation, or evaluate if static analysis suffices.
 radare2's core is LGPL-3.0 with GPL-3.0 components. Similar contamination
 story to unicorn. Use `goblin` + `capstone` + your own analysis layer.
 
-## serde_yaml 0.9
+## serde_yaml 0.9 / serde_yaml_ng
 
-Archived by upstream in September 2024 with a note recommending forks.
-The community-maintained drop-in is `serde_yaml_ng`. API is compatible;
-swap is a single `Cargo.toml` line.
+`serde_yaml` was archived upstream in 2024. The `serde_yaml_ng` fork has not
+released since 2024-05. The maintained successor is `yaml_serde` (published by
+the YAML organization). Keep existing imports with a package rename:
+
+```toml
+serde_yaml = { package = "yaml_serde", version = "0.10" }
+```
 
 ## chrono 0.4 default features
 
 The default features pull in `oldtime` (CVE history) and bloat the build.
-For new code, prefer `jiff` 0.1 (single Tantek-style API, immutable,
-no_std-friendly variants). For chrono-dependent code, set
+For new code, prefer `jiff` 0.2 (time-zone aware by default, immutable
+values, a single coherent API). For chrono-dependent code, set
 `default-features = false` and enable only `clock` and `serde`.
 
 ## time 0.1 / 0.2
 
-Pre-1.0. No timezone support. `time` 0.3 has full TZ support; `jiff` 0.1
-is the modern alternative.
+Pre-1.0 APIs. Use `time` 0.3, or `jiff` 0.2 when time-zone arithmetic matters.
 
 ## failure / error-chain
 
@@ -127,32 +126,34 @@ Both were popular pre-`?` operator (Rust 1.39, late 2019). `anyhow`
 (applications) + `thiserror` (libraries) is the consensus pattern post-2020
 and remains so in 2026.
 
-## rand 0.7 / rand 0.9
+## Mixing rand majors
 
-Workspace is pinned to 0.8 because `denokv_proto` (transitive) requires it
-(cf. CLAUDE.md §7). Mixing 0.7/0.8/0.9 in a single workspace causes
-duplicate crate compilation and incompatible `Rng` traits. Match the
-workspace pin.
+The current major is `rand` 0.10. Mixing majors in one workspace compiles
+`rand` several times and gives incompatible `Rng` traits, so match whatever
+major the workspace already uses (`cargo tree -d -i rand` shows duplicates),
+and bump all members together.
 
-## tracing-subscriber 0.3.23+
+## bincode
 
-Packaging bug in 0.3.23: the `env` module became private in a way that
-breaks downstream code expecting `tracing_subscriber::EnvFilter`. Pin 0.3.22
-until 0.3.24 lands with the fix (cf. CLAUDE.md §7).
+RUSTSEC-2025-0141 (2025-12-16): the bincode team ceased development after a
+harassment incident. 1.3.3 is considered complete; 3.0.0 is not a usable
+upgrade. RustSec lists `wincode`, `postcard`, `bitcode` and `rkyv` as
+alternatives. Existing on-disk formats written with bincode 1 can keep using
+1.3.3; new formats should pick an alternative.
 
 ## native-tls on Linux
 
 `native-tls` selects the platform's TLS implementation: Schannel on
 Windows, SecureTransport on macOS, OpenSSL on Linux. The Linux path
-inherits all OpenSSL system-dep issues. For cross-platform aphrody where
-Linux is priority #1, this is a non-starter. Use `rustls-tls` reqwest
-feature.
+inherits all OpenSSL system-dep issues. For portable Linux binaries
+(containers, distroless, musl) this is a non-starter. reqwest 0.13 uses rustls
+by default.
 
 ## dotenv (for parsing)
 
-`dotenv` loads `.env` files into process env, but doesn't help with typed
-parsing or layering. `figment` (with `Env::prefixed("APP_")`) is the
-typed-config story; `envy` is the lightweight derive-based parser.
+`dotenv` is unmaintained (RUSTSEC-2021-0141). Use `dotenvy` to load `.env`
+files; for typed, layered configuration use `figment`
+(`Env::prefixed("APP_")`) or `config`.
 
 ## lazy_static, once_cell::sync::Lazy
 

@@ -1,0 +1,52 @@
+# SPDX-License-Identifier: Apache-2.0
+[package]
+name = "aphrody-engine-mistralrs"
+publish                = false
+version.workspace      = true
+edition.workspace      = true
+rust-version.workspace = true
+authors.workspace      = true
+homepage.workspace     = true
+repository.workspace   = true
+license.workspace      = true
+description            = "In-process mistral.rs inference backend for Aphrody: a `ModelClient` (text, vision, tool calls, streaming) and an embedder over the `mistralrs` crate for safetensors, GGUF and UQFF weights, with ISQ and paged attention. Every mistral.rs dependency sits behind the off-by-default `engine` feature; without it the crate is a small shell that compiles on every target (wasm32 included) and reports `Unavailable`."
+
+[lints]
+workspace = true
+
+# Build weight: `engine` pulls mistral.rs (git, pinned) and its own pinned copy of
+# candle, next to the crates.io candle that `koharu-ml` already builds. No candle
+# type crosses this crate's API, so the two copies never meet. See README.md.
+[features]
+default = []
+# The in-process engine. Off by default and never in default CLI builds.
+engine = ["dep:mistralrs", "dep:image", "dep:base64", "dep:url"]
+# Compute backends, named after upstream's. Each one implies `engine`; none is on
+# by default. The consumer picks the one its host can run.
+cuda       = ["engine", "mistralrs/cuda"]
+cudnn      = ["cuda", "mistralrs/cudnn"]
+cutile     = ["cuda", "mistralrs/cutile"]
+flash-attn = ["cuda", "mistralrs/flash-attn"]
+nccl       = ["cuda", "mistralrs/nccl"]
+metal      = ["engine", "mistralrs/metal"]
+accelerate = ["engine", "mistralrs/accelerate"]
+mkl        = ["engine", "mistralrs/mkl"]
+
+# Configuration and error types: every target, wasm32 included.
+[dependencies]
+serde     = { workspace = true }
+thiserror = { workspace = true }
+
+# The client needs `aphrody-model-client` (reqwest, tokio), which is host-only.
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+aphrody-model-client = { workspace = true }
+async-trait          = { workspace = true }
+futures              = { workspace = true }
+serde_json           = { workspace = true }
+tokio                = { workspace = true, features = ["rt", "sync", "macros", "time"] }
+tracing              = { workspace = true }
+# Only with `engine`.
+mistralrs = { workspace = true, optional = true }
+image     = { workspace = true, optional = true }
+base64    = { workspace = true, optional = true }
+url       = { workspace = true, optional = true }

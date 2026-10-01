@@ -1,8 +1,11 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 # aphrody-app: the Aphrody OS desktop (Tauri 3), GUI and window manager.
-# The agent runs out of process (`aphrody app-server` over stdio JSON-RPC, see
-# src/broker.rs), so this crate has no dependency on the AI layer.
+# The agent runs in this process: src/broker.rs serves `aphrody-app-server` over in-memory pipes
+# (no `aphrody app-server` child, no `aphrody` sidecar; see
+# docs/plans/ui/local-ai-gui-native-integration.md). Model management is in process through
+# aphrody-local-ai. The desktop executable also answers `__llama-daemon` (src/llama_daemon.rs),
+# the argument the managed llama-server supervisor re-executes it with.
 
 [package]
 name = "aphrody-app"
@@ -37,20 +40,26 @@ tauri-build = { workspace = true }
 
 [dependencies]
 reqwest = { workspace = true }
+aphrody-app-server = { workspace = true }
 aphrody-capture = { workspace = true }
 aphrody-compat = { workspace = true }
 aphrody-coreutils = { workspace = true }
 aphrody-drive = { workspace = true }
 aphrody-identity = { workspace = true }
 aphrody-kernel = { workspace = true }
+# The `__llama-daemon` entry (src/llama_daemon.rs) hosts `aphrody_llama_server::daemon::run`.
+aphrody-llama-server = { workspace = true }
+# Toolkit-free, in-process model hub (replaces the `aphrody model` CLI child process).
+aphrody-local-ai = { path = "../local-ai" }
 aphrody-native = { workspace = true }
-aphrody-proc = { workspace = true }
 aphrody-sprite-sheet = { workspace = true }
 aphrody-subsystem = { workspace = true }
 aphrody-systemd = { workspace = true }
 async-trait = { workspace = true }
 base64 = { workspace = true }
 koharu-library = { workspace = true }
+# The process-wide TLS provider the `__llama-daemon` entry installs before any HTTP client exists.
+rustls = { workspace = true }
 tauri = { workspace = true, features = ["dynamic-acl", "image-ico", "tray-icon"] }
 tauri-runtime-wry = { workspace = true }
 tokio = { workspace = true }
@@ -75,3 +84,7 @@ tauri-plugin-autostart = { workspace = true }
 tauri-plugin-deep-link = { workspace = true }
 tauri-plugin-fs = { workspace = true }
 tauri-plugin-opener = { workspace = true }
+
+[dev-dependencies]
+# The broker tests run a real in-process app-server over a throwaway state directory.
+tempfile = { workspace = true }

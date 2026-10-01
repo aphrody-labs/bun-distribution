@@ -289,11 +289,27 @@ pub(crate) async fn send_streaming_post(
     body: &serde_json::Value,
     authorize: &(dyn Fn(reqwest::RequestBuilder) -> reqwest::RequestBuilder + Sync),
 ) -> Result<reqwest::Response, ModelError> {
+    send_with_retry(runtime, &|| {
+        authorize(http.post(url).header(reqwest::header::ACCEPT, "text/event-stream").json(body))
+    })
+    .await
+}
+
+/// Send the request `build` produces under `runtime`'s retry budget.
+///
+/// `build` is called once per attempt and returns the request with its method,
+/// URL, body and credential already attached; the provider's extra
+/// [`ProviderRuntime::headers`] are added here. This is the single retry loop
+/// of the crate: the OpenAI, Anthropic, Ollama and vLLM wires all go through
+/// it, so connect failures, `429`, `408` and `5xx` behave identically on every
+/// provider (and `Retry-After` is honoured everywhere).
+pub(crate) async fn send_with_retry(
+    runtime: &ProviderRuntime,
+    build: &(dyn Fn() -> reqwest::RequestBuilder + Sync),
+) -> Result<reqwest::Response, ModelError> {
     let mut attempt = 0u32;
     loop {
-        let mut request =
-            http.post(url).header(reqwest::header::ACCEPT, "text/event-stream").json(body);
-        request = authorize(request);
+        let mut request = build();
         for (name, value) in &runtime.headers {
             request = request.header(name, value);
         }

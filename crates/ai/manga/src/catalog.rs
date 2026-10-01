@@ -123,10 +123,19 @@ impl MangaCdnClient {
 
     /// Fetch exact image bytes from a CDN URL or local path.
     pub async fn fetch_image(&self, url_or_path: &str) -> Result<Vec<u8>, CdnError> {
-        // If local file exists, read directly
+        // If local file exists, read directly (off the executor: a plate can be many MiB).
         let local_path = Path::new(url_or_path);
-        if local_path.exists() {
-            return Ok(std::fs::read(local_path)?);
+        #[cfg(not(target_arch = "wasm32"))]
+        {
+            if tokio::fs::try_exists(local_path).await.unwrap_or(false) {
+                return Ok(tokio::fs::read(local_path).await?);
+            }
+        }
+        #[cfg(target_arch = "wasm32")]
+        {
+            if local_path.exists() {
+                return Ok(std::fs::read(local_path)?);
+            }
         }
 
         #[cfg(not(target_arch = "wasm32"))]

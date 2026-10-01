@@ -1,23 +1,35 @@
 ---
 name: skill-creator
-description: "Create or improve an agent skill for any technology by researching it with the docs skill, after checking no existing skill already covers it."
+description: "Create or refresh an agent skill that teaches a technology (library, SDK, service, protocol): check no skill covers it, research current docs, then generate SKILL.md with local essentials plus doc lookups. Use when asked to make a skill for a tool or API."
+version: "1.1.0"
 license: MIT
-upstream: https://github.com/microsoftdocs/mcp/tree/main/skills/microsoft-skill-creator
+metadata:
+  upstream: "https://github.com/microsoftdocs/mcp/tree/main/skills/microsoft-skill-creator"
 ---
 
 # Skill Creator
 
-Mode `/goal` permanent : décider seul, ne pas s'arrêter avant SKILL.md généré.
-
 Generate hybrid skills that store essential knowledge locally while
 enabling dynamic documentation lookups for depth. Investigate the topic
-with the method and tool table of the `docs` skill (§1: Context7,
-Microsoft Learn, WebFetch, the Aphrody browser) — only tools present in
-the session. Microsoft-specific templates: `references/microsoft-skill-templates.md`.
+with the method and tool table of the `docs` skill (Context7, Microsoft
+Learn, WebFetch/WebSearch, fetch or scrape MCP tools), using only tools
+present in the session. Microsoft-specific templates:
+`references/microsoft-skill-templates.md`.
 
-Before adding a skill, grep `skills/` for one that already covers the
-topic and extend it instead; this plugin has been purged for duplicates
-(see `skills/README.md`).
+Before adding a skill, search the target `skills/` directories (project
+`.claude/skills/`, the plugin's `skills/`, `~/.claude/skills/`) for one that
+already covers the topic and extend it instead.
+
+This skill focuses on *researching a technology* into a skill. For
+running trigger evals, benchmarking a skill against a baseline or
+optimising its description, use the general skill-authoring tooling when
+installed (for example Anthropic's `skill-creator` plugin skill).
+
+Tool names below are examples: `docs_search(...)` stands for Microsoft
+Learn / Context7 / `docs_auto_search`, `web_search(...)` for `WebSearch`,
+`fetch(...)` for `WebFetch` or a fetch MCP tool such as
+`universal_web_fetch`, and `scrape(...)` for a browser-rendering tool when
+the docs need JavaScript.
 
 ## About Skills
 
@@ -63,8 +75,8 @@ microsoft_docs_search(query="{technology} concepts architecture")
 microsoft_docs_search(query="{technology} getting started tutorial")
 
 # Generic tech
-google_search(query="{technology} architecture concepts")
-universal_web_fetch(url="https://docs.rs/{crate}/latest/{crate}/")    # Rust crate
+web_search(query="{technology} architecture concepts")
+fetch(url="https://docs.rs/{crate}/latest/{crate}/")    # Rust crate
 ```
 
 **Phase 2 — Core Content:**
@@ -72,8 +84,8 @@ universal_web_fetch(url="https://docs.rs/{crate}/latest/{crate}/")    # Rust cra
 ```
 microsoft_docs_fetch(url="…")                # high-signal pages from Phase 1
 microsoft_code_sample_search(query="{technology}", language="{lang}")
-universal_web_fetch(url="…")                 # generic pages
-agent_browser_scrape(url="…", selector="article") # JS-rendered docs
+fetch(url="…")                 # generic pages
+scrape(url="…")                              # JS-rendered docs
 ```
 
 **Phase 3 — Depth:**
@@ -81,7 +93,7 @@ agent_browser_scrape(url="…", selector="article") # JS-rendered docs
 ```
 microsoft_docs_search(query="{technology} best practices")
 microsoft_docs_search(query="{technology} troubleshooting errors")
-google_search(query="{technology} pitfalls common mistakes")
+web_search(query="{technology} pitfalls common mistakes")
 ```
 
 #### Investigation Checklist
@@ -169,9 +181,9 @@ Use the appropriate template from
 ```
 "crate {name} overview"                          → docs.rs landing
 "crate {name} examples"                          → docs.rs examples/
-universal_web_fetch("https://docs.rs/{name}/latest/{name}/")
-universal_web_fetch("https://crates.io/crates/{name}")
-google_search("{name} crate gotchas")
+fetch("https://docs.rs/{name}/latest/{name}/")
+fetch("https://crates.io/crates/{name}")
+web_search("{name} crate gotchas")
 ```
 
 ### For SDKs / Libraries
@@ -208,10 +220,10 @@ google_search("{name} crate gotchas")
 ### Investigation
 
 ```
-universal_web_fetch(url="https://docs.rs/tokio/latest/tokio/")
-universal_web_fetch(url="https://tokio.rs/tokio/tutorial")
-google_search(query="tokio runtime flavor multi_thread current_thread")
-google_search(query="tokio gotchas pitfalls blocking")
+fetch(url="https://docs.rs/tokio/latest/tokio/")
+fetch(url="https://tokio.rs/tokio/tutorial")
+web_search(query="tokio runtime flavor multi_thread current_thread")
+web_search(query="tokio gotchas pitfalls blocking")
 ```
 
 ### Generated Skill (sketch)
@@ -257,9 +269,9 @@ See [the async sample](sample_codes/getting-started/hello_async.rs).
 
 | Topic                | How to Find                                                                  |
 | -------------------- | ---------------------------------------------------------------------------- |
-| Runtime flavors      | `universal_web_fetch("https://docs.rs/tokio/latest/tokio/runtime/index.html")` |
-| Channels             | `universal_web_fetch("https://docs.rs/tokio/latest/tokio/sync/index.html")`  |
-| Tutorial             | `universal_web_fetch("https://tokio.rs/tokio/tutorial")`                     |
+| Runtime flavors      | `fetch("https://docs.rs/tokio/latest/tokio/runtime/index.html")` |
+| Channels             | `fetch("https://docs.rs/tokio/latest/tokio/sync/index.html")`  |
+| Tutorial             | `fetch("https://tokio.rs/tokio/tutorial")`                     |
 ```
 
 ## Example: Creating a "Semantic Kernel" Skill

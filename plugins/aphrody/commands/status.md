@@ -1,63 +1,57 @@
 ---
-description: One-screen status report of the aphrody project (binary, branch, PLAN ⏳ items, A2A peer, plugin version).
+description: One-screen read-only status of the current project (binary, git, open plan items, A2A peer, plugin version).
 allowed-tools: Bash, Read
-argument-hint: (no arguments)
+argument-hint: "(no arguments)"
 model: sonnet
 ---
 
-# /status — aphrody project status snapshot
+# /status — project status snapshot
 
-Aggregate the canonical project state in one shot and render a tight
-report. No mutations — pure read-only diagnostics.
+Read-only diagnostics, rendered as one tight report. Each step is skipped
+cleanly (and reported as `n/a`) when its precondition is absent; the
+Aphrody-specific steps apply when the `aphrody` binary is on `PATH`.
 
 ## Steps
 
-1. **Binary + plugin metadata**
-   - `aphrody --version` → version + commit + target.
-   - Read `plugins/aphrody/.claude-plugin/plugin.json` → plugin
-     version + agent count + MCP server count.
+1. **Binary and plugin**
+   - When `aphrody` is on `PATH`: `aphrody --version`.
+   - Read `${CLAUDE_PLUGIN_ROOT}/.claude-plugin/plugin.json` for the plugin
+     version.
 
-2. **Git state**
-   - `git -C "$(git rev-parse --show-toplevel)" status --short | head -20`
-     → uncommitted file count.
-   - `git -C "$(git rev-parse --show-toplevel)" log --oneline -5` → last
-     5 commits.
-   - Current branch via `git -C "$(git rev-parse --show-toplevel)" branch --show-current`.
+2. **Git state** (skip outside a Git repository)
+   - `git status --short | head -20` for the uncommitted file count.
+   - `git log --oneline -5` and `git branch --show-current`.
 
-3. **PLAN.md ⏳ items**
-   - `grep -c '⏳' docs/PLAN.md` → count.
-   - `grep -n '⏳' docs/PLAN.md | head -10` → first 10 with line numbers.
+3. **Open plan items**
+   - Locate the plan: PLAN.md or docs/PLAN.md at the repository root.
+   - Count open items: `grep -c -e '- \[ \]' -e '⏳' <plan>`; show the first 10
+     with `grep -n`.
 
-4. **A2A peer (winclean)**
-   - `aphrody doctor --json | jq -r '.peer_a2a.heartbeat_detail'`.
-   - Surface stale-flag if `is_stale: true`.
+4. **A2A peer** (when `aphrody` is present)
+   - `aphrody doctor --json | jq -r '.peer_a2a.heartbeat_detail, .peer_a2a.is_stale'`.
 
-
-6. **Hooks status** (informational)
-   - `aphrody self bootstrap --check | head -20` → toolchain readiness.
+5. **Toolchain** (when `aphrody` is present)
+   - `aphrody self bootstrap --check | head -20` (inventory only).
 
 ## Output format
 
-Single screen, no fluff. Render as :
-
 ```
-aphrody status — <iso-date>
+status — <iso-date>
 
-binary    : <version> @ <commit> (target=<triple>)
-plugin    : <version> · <N> agents · <M> MCP servers
+binary    : <version> (or n/a)
+plugin    : <version>
 branch    : <name> (<N> uncommitted)
 last      : <sha> <subject>
-PLAN ⏳   : <N> total (first 5 line numbers shown)
+plan      : <N> open items in <file> (first 5 line numbers shown)
 A2A peer  : <heartbeat detail> [stale|fresh]
-toolchain : <N>/N required tools OK
+toolchain : <inventory summary>
 ```
 
-End with a single bullet list of action items if any state is degraded
-(stale peer > 600 s, unblocked ⏳ count > 10).
+End with a short action list only if state is degraded (stale peer, many open
+items, missing tools).
 
 ## Anti-stub
 
-- Never fabricate a state if a command fails — surface stderr verbatim.
-- Never invent ⏳ items not in PLAN.md.
-- The `/status` command is informational only — no `git add`, no
-  `aphrody daemon`, no writes.
+- Never fabricate a state when a command fails; surface stderr verbatim.
+- Never invent plan items that are not in the plan file.
+- Informational only: no `git add`, no daemon start, no writes.

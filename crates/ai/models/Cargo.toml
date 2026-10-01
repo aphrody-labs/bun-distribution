@@ -41,6 +41,9 @@ reqwest     = { workspace = true }
 rustls      = { workspace = true }
 # Driving `Response::bytes_stream()` chunk by chunk.
 futures-util = { workspace = true }
+# In-process GPU enumeration (replaces the `nvidia-smi` subprocess). NVML is
+# loaded at runtime, so hosts without an NVIDIA driver still build and run.
+nvml-wrapper = { workspace = true }
 
 [dev-dependencies]
 # The store and downloader tests all run against a throwaway root.

@@ -1,12 +1,16 @@
 # Chaîne de traitement du japonais (dépôt shenron)
 
+> **S'applique quand :** le monorepo Aphrody est le répertoire de travail (code du site sous `apps/shenron/site`) et Bun est installé. **Sinon :** ne lance aucun script d'ici ; reste sur l'API publique décrite dans `SKILL.md`.
+
 Pour qui travaille sur le code de dragonballfr.com. L'utilisation courante de la
-skill ne demande que l'API publique — cf. `SKILL.md`.
+skill ne demande que l'API publique — cf. `SKILL.md`. Documentation de la chaîne :
+`docs/shenron/japonais.md` (ses chemins `apps/site/…` datent d'avant le
+déplacement sous `apps/shenron/site/…`).
 
 ## Installation
 
 ```bash
-bun apps/site/scripts/ja-preparer.ts        # ~25 Mo, hors dépôt
+bun apps/shenron/site/scripts/ja-preparer.ts [--force]   # ressources hors dépôt, dans apps/shenron/site/.ja-data/
 ```
 
 | Ressource                              | Rôle                              | Poids  |
@@ -14,11 +18,12 @@ bun apps/site/scripts/ja-preparer.ts        # ~25 Mo, hors dépôt
 | dictionnaire **kuromoji** (IPADIC)     | découpage, nature, lecture, lemme | 18 Mo  |
 | index **JMdict** (EDRDG, CC BY-SA 4.0) | « ce mot existe-t-il ? »          | 7,6 Mo |
 
-JMdict est la base de jisho.org : 218 461 entrées, 464 819 graphies. Seules les
-formes écrites sont conservées — le JSON d'origine pèse 113 Mo pour une question
-qui tient dans un ensemble.
+JMdict est la base de jisho.org (récupérée depuis les publications
+`jmdict-simplified`). Seules les formes écrites sont conservées — le JSON
+d'origine pèse 113 Mo, d'après `ja-preparer.ts`, pour une question qui tient
+dans un ensemble.
 
-## Modules — `apps/site/src/lib/ja/`
+## Modules — `apps/shenron/site/src/lib/ja/`
 
 | Fichier            | Contenu                                                  | Pur ?         |
 | ------------------ | -------------------------------------------------------- | ------------- |
@@ -28,12 +33,15 @@ qui tient dans un ensemble.
 | `lexique.ts`       | lexique du domaine depuis `bot.*`                        | `server-only` |
 | `dictionnaire.ts`  | kuromoji + JMdict, chargement paresseux                  | fichiers      |
 
+Autres modules présents dans ce dossier : `appariement.ts`, `coherence.ts`,
+`lexique-canonique.ts`, `index.ts` (non décrits ici ; lis leur en-tête).
+
 ## Scripts
 
 ```bash
-bun apps/site/scripts/ja-analyser.ts    --json rapport.json   # fautes de lecture
-bun apps/site/scripts/ja-vocabulaire.ts --json vocab.json     # vocabulaire manquant
-bun apps/site/scripts/ja-techniques.ts  [--apply]             # noms japonais des techniques
+bun apps/shenron/site/scripts/ja-analyser.ts    --json rapport.json   # fautes de lecture
+bun apps/shenron/site/scripts/ja-vocabulaire.ts --json vocab.json     # vocabulaire manquant
+bun apps/shenron/site/scripts/ja-techniques.ts  [--apply]             # noms japonais des techniques (simulation par défaut)
 ```
 
 Les deux premiers lisent **le même signal en sens inverse** : une graphie
@@ -53,20 +61,25 @@ Une graphie n'est signalée que si tous la laissent passer :
    remontait 105 fois ;
 4. la forme correcte existe dans le corpus **et y domine**.
 
-Mesuré : ~2 M de tokens en 57 s, ~1 220 corrections proposées, **environ 15 %
-de faux positifs**. Rien n'est appliqué automatiquement.
+Le détecteur se trompe encore (faux positifs) : rien n'est appliqué
+automatiquement, la sortie alimente une relecture humaine. Les chiffres de
+performance publiés dans les anciennes versions de cette page ne sont pas
+reproduits ici faute de mesure rejouée.
 
 ## Pièges vécus
 
 - **`import.meta.dir` est une API Bun** : `undefined` sous Turbopack. Le dossier
   des ressources se résout **à l'appel**, par essais, jamais à l'évaluation du
   module — un build a échoué là-dessus.
-- Les ressources sont gitignorées, donc absentes des versions figées du
-  déploiement bleu/vert. `deploy-site.ts` pose un lien symbolique ; sans lui,
-  l'analyse répond « 0 anomalie » en production alors qu'elle en trouve 1 217 en
-  local. Un résultat rassurant et faux est pire qu'une erreur.
+- Les ressources (`apps/shenron/site/.ja-data/`) sont gitignorées, donc absentes
+  d'une version déployée tant que `ja-preparer.ts` n'y a pas été exécuté : sans
+  elles l'analyse peut répondre « 0 anomalie » alors qu'elle en trouve en local.
+  Un résultat rassurant et faux est pire qu'une erreur. (Le mécanisme de
+  déploiement exact n'est pas documenté dans ce dépôt : à vérifier avant de
+  l'affirmer.)
 - L'index du lexique doit être construit **avec** le lexique et mis en cache :
-  le reconstruire par planche revient à le refaire 362 fois pour un ouvrage.
+  le reconstruire par planche multiplie le coût par le nombre de planches d'un
+  ouvrage.
 - Le corpus **bouge** : la transcription tourne en continu. Deux mesures
   espacées d'une heure ne portent pas sur le même texte — ne pas attribuer un
   écart à un changement de code sans l'avoir isolé.

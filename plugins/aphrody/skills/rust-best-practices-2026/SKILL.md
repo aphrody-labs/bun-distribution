@@ -1,300 +1,161 @@
 ---
 name: rust-best-practices-2026
-description: "Current Rust practice: edition 2024, async closures, precise capturing, Tokio discipline, recent toolchain/WASM/Cargo changes; for writing or reviewing Rust."
-version: 1.0.0
-source: https://blog.rust-lang.org/ + rust-lang.org WebFetch 2026-05-19
+description: "Current Rust (stable 1.94-1.98, edition 2024): new std APIs to prefer, async closures, precise capturing, unsafe rules, wasm link change, Cargo warnings, Tokio discipline, supply-chain gates. Use when writing, reviewing or modernising Rust."
+version: "2.0.0"
+source: "blog.rust-lang.org release posts 1.94.0-1.98.1, verified 2026-10-01"
 ---
 
-# Rust best practices — May 2026 snapshot
+# Rust best practices (stable 1.98, edition 2024)
 
-Mode `/goal` permanent : décider seul, ne pas s'arrêter avant complétion.
+A snapshot of what changed recently in stable Rust and how it should change the code being
+written. Release cadence is six weeks, so check the newest posts at
+`https://blog.rust-lang.org/releases/` when a question depends on something newer than 1.98.
 
-Synthèse source-of-truth pour tout code Rust écrit dans le workspace courant.
-Couvre **Rust stable courant (1.95.0, 2026-04-16)** + **breakage à venir 1.96
-(2026-05-28)** + **CVE-2026-33056** + **edition 2024 idioms matures**.
+## 1. Read the project before writing Rust
 
----
+- **Toolchain**: `rust-toolchain.toml` (`channel`, `targets`, `components`) and
+  `rust-version` in `Cargo.toml`. New std APIs below are only usable when `rust-version`
+  (MSRV) is at least the release that stabilised them; otherwise keep the workaround.
+- **Edition**: `edition = "2024"` implies `resolver = "3"` (MSRV-aware resolution).
+- **Workspace**: if `[workspace.dependencies]` exists, add versions there and use
+  `foo = { workspace = true }` in members; honour `[workspace.lints]` / `[lints] workspace = true`.
+- **Gates**: use the commands the project documents (README, CI workflow, `justfile`,
+  `Makefile.toml`, `xtask`). Default to `cargo check`, `cargo clippy --all-targets -- -D warnings`,
+  `cargo test` (or `cargo nextest run`) scoped to the changed crate with `-p <crate>`.
+- **Compiler cache**: use `sccache` only if the project or user config sets
+  `RUSTC_WRAPPER`/`build.rustc-wrapper`; check with `sccache --show-stats`.
+- Mark internal crates `publish = false` unless they are meant for crates.io.
 
-## 1. Toolchain pinning courant & Hygiène Cargo
+## 2. Recent stable features to prefer
 
-| Slot | Version | Notes |
-|---|---|---|
-| Pinned toolchain | **stable, pinned per repository** | `channel` de `rust-toolchain.toml` de chaque repo catégorie ; l'ancien pin `nightly-2026-05-17` du monolithe est retiré |
-| Stable baseline | **1.95.0** | shipped 2026-04-16 |
-| Edition | **2024** | resolver = "3", `[workspace.lints]` centralisé |
-| Cache compilation | **aucun wrapper** | les repos catégorie ne forcent pas `sccache` ; exporter `RUSTC_WRAPPER=` pour les builds |
-| Registry protocol | **`sparse`** | `registries.crates-io.protocol = "sparse"` obligatoire |
-| Cibles cross-compilées | 5 cibles prioritaires | `x86_64-pc-windows-msvc`, `x86_64-unknown-linux-gnu`, `wasm32-unknown-unknown`, `wasm32-wasip1`, `aarch64-apple-darwin` |
+| Since | Feature | Replaces |
+| --- | --- | --- |
+| 1.95 | `cfg_select! { unix => {..} windows => {..} _ => {..} }` | the `cfg-if` crate |
+| 1.95 | if-let guards: `Some(x) if let Ok(y) = f(x) => ..` | nested `match`/`if let` |
+| 1.95 | `Vec::push_mut` / `insert_mut`, `VecDeque::push_{front,back}_mut`, `LinkedList::push_*_mut` return `&mut T` | push then re-index |
+| 1.95 | `Atomic{Bool,Usize,Isize,Ptr}::update` / `try_update` | hand-written CAS loops |
+| 1.95 | `bool: TryFrom<{integer}>` | `match n { 0 => false, 1 => true, .. }` |
+| 1.95 | `MaybeUninit<[T; N]>` <-> `[MaybeUninit<T>; N]` via `From`/`AsRef`/`AsMut` | transmutes |
+| 1.95 | `core::hint::cold_path()` | `#[cold]` helper fns for one branch |
+| 1.95 | `<*const T>::as_ref_unchecked`, `<*mut T>::as_mut_unchecked` | `&*ptr` (still UB if null/invalid) |
+| 1.95 | `Layout::repeat`, `repeat_packed`, `extend_packed`, `dangling_ptr` | manual layout math |
+| 1.96 | `assert_matches!` / `debug_assert_matches!` (`use core::assert_matches;`) | `assert!(matches!(..))` (no Debug output) |
+| 1.96 | `core::range::{Range, RangeFrom, RangeInclusive, RangeToInclusive}`: `Copy` + `IntoIterator` | storing `std::ops::Range` (not `Copy`) |
+| 1.96 | `From<T>` for `LazyLock`, `LazyCell`, `AssertUnwindSafe` | wrapper closures |
+| 1.97 | integer `highest_one`, `lowest_one`, `isolate_highest_one`, `isolate_lowest_one`, `bit_width` (also on `NonZero`) | `leading_zeros` arithmetic |
+| 1.98 | `str::strip_circumfix` / `[T]::strip_circumfix` | `strip_prefix(..).and_then(strip_suffix)` |
+| 1.98 | `str::substr_range`, `[T]::subslice_range` | pointer arithmetic on sub-slices |
+| 1.98 | `String::from_utf16le` / `from_utf16be` (+ `_lossy`) | manual `u16` chunking |
+| 1.98 | integer `format_into(&mut core::fmt::NumBuffer<_>)` | `itoa`-style crates for hot paths |
+| 1.98 | `f32`/`f64` `algebraic_add`/`_sub`/`_mul`/`_div`/`_rem` | `fast-math` hacks; allows reassociation |
 
-### Règle d'hygiène Cargo & caches de build
+Caveat on if-let guards: their patterns do not count towards exhaustiveness, so keep a
+fallback arm.
 
-- **`sccache` systématique** : Vérifier `sccache --show-stats` ; le cache partagé évite de recompiler les crates inchangés à chaque switch de branche/worktree.
-- **Nettoyage sélectif d'espace** : Éviter les `cargo clean` globaux destructeurs qui vident tout le cache. Supprimer plutôt sélectivement `target/*/incremental` si le disque sature :
-  ```powershell
-  # Purge sélective des résidus incrémentaux sans perdre les artefacts finaux ni le cache sccache :
-  Get-ChildItem -Path target -Recurse -Directory -Filter "incremental" | Remove-Item -Recurse -Force
+```rust
+// 1.95 cfg_select!: first matching arm wins
+cfg_select! {
+    unix => { mod posix; use posix as sys; }
+    windows => { mod win; use win as sys; }
+    _ => { compile_error!("unsupported platform"); }
+}
+
+// 1.96 assert_matches!: panics with the Debug value on mismatch
+use core::assert_matches;
+assert_matches!(parse("42"), Ok(42));
+
+// 1.96 Copy range in a struct
+#[derive(Clone, Copy)]
+struct Span(core::range::Range<usize>);
+```
+
+## 3. Edition 2024 idioms
+
+- **Async closures**: take `impl AsyncFn(..) -> T` (`AsyncFnMut`, `AsyncFnOnce`, in the
+  prelude) instead of `Fn() -> Pin<Box<dyn Future>>`; call sites use `async || { .. }`.
+- **Precise capturing**: return-position `impl Trait` captures all in-scope lifetimes by
+  default, so `+ '_` is usually redundant. Narrow with `-> impl Iterator<Item = &'a str> + use<'a>`.
+- **`unsafe_op_in_unsafe_fn`** warns by default: wrap each unsafe operation inside an
+  `unsafe fn` in its own `unsafe { }` block, with a `// SAFETY:` comment.
+- **`unsafe extern "C" { .. }`** is required for extern blocks; mark individually safe
+  items `safe fn`.
+- **`static_mut_refs`** denies references to `static mut`: use `OnceLock`, `LazyLock`,
+  `Mutex`/`RwLock` or atomics.
+- `gen` is a reserved keyword; rename identifiers (or use `r#gen`).
+
+## 4. Breaking or behavioural changes to plan for
+
+- **1.96, wasm**: `wasm32-*` targets no longer link with `--allow-undefined`. Undefined
+  imports become link errors. Fix by naming the host module:
+
+  ```rust
+  #[link(wasm_import_module = "host")]
+  unsafe extern "C" {
+      fn host_log(ptr: *const u8, len: usize);
+  }
   ```
-- **Gate de dépendances** : Toutes les versions externes sont verrouillées dans `[workspace.dependencies]` à la racine du workspace. Aucun crate membre ne doit spécifier une version directe hors workspace (`foo = { workspace = true }`).
-- **Publication crates.io** : Sauf crate A2A/client explicitement destiné à la publication publique, tous les crates internes doivent porter `publish = false`.
 
-
----
-
-## 2. Rust 1.95 — nouvelles APIs à utiliser
-
-### Langage
-
-| Feature | Remplace | Exemple |
-|---|---|---|
-| **`cfg_select!` macro** | `cfg-if` crate | `cfg_select! { unix => { mod posix; } windows => { mod win; } }` |
-| **if-let guards dans match** | match nested + `if let` | `match x { Foo(y) if let Some(z) = y.bar() => …, _ => … }` |
-
-⚠ **Exhaustiveness** : le compilateur **ne traite pas** les patterns d'`if let` guards
-comme exhaustif. Toujours fournir un `_ =>` ou prouver l'exhaustivité ailleurs.
-
-### Stable APIs nouvelles (utiliser plutôt que workarounds)
-
-```rust
-// MaybeUninit/Cell ↔ array conversions (zéro-copy, zéro-cost)
-let a: [MaybeUninit<u8>; 4] = MaybeUninit::uninit_array();
-let b: MaybeUninit<[u8; 4]> = a.into();                   // From conversion
-let c: &MaybeUninit<[u8; 4]> = b.as_ref();                // AsRef
-
-// Atomic update — CAS-loop intégré, plus de while-let manuel
-let atomic = AtomicUsize::new(0);
-let old = atomic.update(Ordering::SeqCst, Ordering::SeqCst, |v| Some(v + 1));
-let opt = atomic.try_update(Ordering::SeqCst, Ordering::SeqCst, |v| v.checked_add(1));
-
-// Vec / VecDeque / LinkedList push_mut / insert_mut (retourne &mut T)
-let mut v = vec![1, 2];
-let pushed: &mut i32 = v.push_mut(3);    // évite re-index après push
-*pushed = 99;
-
-// Pointer as_ref_unchecked / as_mut_unchecked (const + mut)
-let raw: *const u8 = ptr::null();
-unsafe { let _: &u8 = raw.as_ref_unchecked(); }            // ⚠ UB si null
-
-// bool depuis entier (TryFrom)
-let b = bool::try_from(0u8)?;                              // 0 → false, 1 → true, autre → Err
-
-// core::range — ranges 1st-class avec iterator
-use core::range::{Range, RangeFrom, RangeInclusive};
-let r = Range { start: 0, end: 10 };
-
-// core::hint::cold_path — branche froide pour branch prediction
-if rare_condition {
-    core::hint::cold_path();
-    handle_rare_case();
-}
-
-// const-stabilizations utiles
-const FN: fmt::Arguments = fmt::from_fn(|f| f.write_str("hi"));
-const X: bool = ControlFlow::<()>::Break(()).is_break();
-```
-
-### Removals breakers
-
-- **Custom target specs JSON** retirés de `rustc` **stable** (nightly only). Pour
-  aphrody : aucun impact (`x86_64-{linux-gnu,pc-windows-msvc}` + `wasm32-unknown-unknown`
-  sont des cibles built-in). Si quelqu'un essaie d'ajouter un target.json custom →
-  refuser, utiliser un cfg ou un nouveau triple built-in.
-
----
-
-## 3. Edition 2024 — patterns matures
-
-### Async closures (stable 2024) — préférer aux `Box<dyn Future>`
-
-```rust
-// AVANT (boxed future, alloc + dyn dispatch)
-fn middleware<F>(handler: F) where F: Fn() -> Pin<Box<dyn Future<Output=()>>> { … }
-
-// APRÈS (2024 async closure, zéro alloc)
-fn middleware<F>(handler: F) where F: AsyncFn() { … }
-middleware(async || { do_work().await; });
-```
-
-Traits prelude 2024 : `AsyncFn`, `AsyncFnMut`, `AsyncFnOnce`.
-
-### Précis capturing — `+ '_` souvent superflu en traits
-
-```rust
-// 2024 edition : capture rule = "toutes les input lifetimes captured"
-trait Service {
-    fn call(&self, req: Request) -> impl Future<Output = Response>;
-    //                                ^ pas besoin de + '_  (capture &self auto)
-}
-
-// Syntaxe `use<'a, T>` pour capture explicite quand besoin
-fn parse<'a>(s: &'a str) -> impl Iterator<Item=&'a str> + use<'a> { … }
-```
-
-### `unsafe_op_in_unsafe_fn` lint warn-by-default
-
-```rust
-unsafe fn raw_call(p: *const u8) {
-    // ❌ 2024 warn : doit être dans un unsafe {} block explicite
-    let v = *p;
-
-    // ✅ explicite
-    let v = unsafe { *p };
-}
-```
-
-### `static_mut_refs` deny-by-default (références vers `static mut`)
-
-Plus jamais `static mut FOO: Vec<u8> = …`. Utiliser `Mutex` / `RwLock` / `OnceLock`
-/ `LazyLock` / `Atomic*`.
-
----
-
-## 4. Rust 1.96 (2026-05-28) — WASM breakage à anticiper
-
-**Changement** : retrait de `--allow-undefined` du linker `wasm-ld` pour TOUS les
-targets `wasm32-*`. Tracking : [rust-lang/rust#149868](https://github.com/rust-lang/rust/pull/149868).
-
-### Avant 1.96 (silent import)
-
-```rust
-unsafe extern "C" {
-    fn foo();                          // imports `foo` depuis env (silently)
-}
-static nonexistent: u8;                // imports `nonexistent` (silently)
-```
-
-### À partir de 1.96 (link-error)
-
-```rust
-// ✅ Option A — annoter le module hôte explicitement
-#[link(wasm_import_module = "host")]
-unsafe extern "C" {
-    fn foo();                          // imports "host"::foo
-}
-
-// ✅ Option B — escape hatch temporaire (à retirer ASAP)
-// dans .cargo/config.toml :
-// [target.wasm32-unknown-unknown]
-// rustflags = ["-Clink-arg=allow-undefined"]
-```
-
-### Action pour aphrody
-
-1. Audit `crates/aphrody-wasm/`, `crates/cli/` (si compile en wasm), et tout crate
-   avec `extern "C"` blocks ciblant wasm.
-2. Ajouter `#[link(wasm_import_module="…")]` partout où applicable.
-3. Si breakage : pin temporairement `rust-toolchain.toml` ≤ `nightly-2026-05-27`
-   le temps de migrer.
-
----
-
-## 5. CVE-2026-33056 — Cargo tar extraction
-
-**Affected** : `cargo` ≤ 1.94.0 avec **registries privés / alternate** (crates.io
-patché côté serveur le 2026-03-13).
-
-**Vector** : crate malveillant peut modifier permissions de répertoires arbitraires
-du filesystem pendant `cargo build` / `cargo install` (via vulnérabilité crate `tar`).
-
-**Fix** : bump à `cargo` ≥ **1.94.1** (sortie 2026-03-26) ou ≥ 1.95.
-
-**Action pour aphrody** :
-
-- Les workspaces sont sur le stable pinné par `rust-toolchain.toml` (≥ 1.95) → **patched**.
-- `deny.toml` doit déjà bannir `tar < 0.4.45` (à vérifier).
-- Si on ajoute un registry alternate (`[registries]` dans `.cargo/config.toml`),
-  confirmer auprès du fournisseur qu'il a re-scanné ses crates.
-
-```toml
-# deny.toml — ajouter si pas déjà
-[[bans.deny]]
-name = "tar"
-version = "<0.4.45"
-reason = "CVE-2026-33056 — directory permission tampering during extraction"
-```
-
----
-
-## 6. Send-bound problem (async traits + tower)
-
-**Problème** : pas moyen aujourd'hui d'écrire une fn générique qui exige `impl Trait`
-async returning `Send` futures → bloque `tower` middleware sur AFIT.
-
-**Workaround courant 2026** :
-
-| Cas | Solution |
-|---|---|
-| Lib veut `dyn Trait` async | crate **`dynosaur`** v0.3 (proc macro, parité `async-trait` mais natif AFIT) |
-| Lib veut bound `Send` sur `impl Trait` | trait + `trait MyServiceSend: MyService<…: Send> {}` (verbeux mais portable) |
-| Service tower | continuer `async-trait` 0.1 jusqu'à RFC `return_type_notation` stable |
-
----
-
-## 7. Tokio discipline 2026
-
-```rust
-// ❌ kill performance — bloque worker thread
-async fn read_config() -> Vec<u8> {
-    std::fs::read("config.toml").unwrap()      // syscall blocking !
-}
-
-// ✅ offload sur thread pool dédié
-async fn read_config() -> Vec<u8> {
-    tokio::task::spawn_blocking(|| std::fs::read("config.toml").unwrap())
-        .await
-        .unwrap()
-}
-
-// ✅ ou utiliser tokio::fs (async wrappers)
-async fn read_config() -> std::io::Result<Vec<u8>> {
-    tokio::fs::read("config.toml").await
-}
-```
-
-### `tokio::select!` cancellation safety
-
-```rust
-// ⚠ chaque branch non-completed est DROPPED — l'opération est annulée mid-flight
-tokio::select! {
-    r = reader.read_buf(&mut buf) => { … }    // ✅ cancellation-safe (Tokio AsyncRead)
-    _ = tokio::time::sleep(d) => { … }
-}
-
-// ❌ NON cancellation-safe — perd des données si timeout race
-tokio::select! {
-    items = collect_into_vec() => { … }       // collect partiel dropé, items perdus
-    _ = sleep(d) => { … }
-}
-```
-
-Règle : seules les opérations documentées **cancellation-safe** vont dans
-`tokio::select!`. Sinon, encapsuler dans `tokio::spawn` + abort handle.
-
----
-
-## 8. Outils workflow conseillés (cf. skill `cross-platform-cli-toolbelt`)
-
-| Tâche | Outil 2026 |
-|---|---|
-| Cache de compilation | `sccache` (`rustc-wrapper = "sccache"`, stats: `sccache -s`) |
-| Compile/check rapide | `cargo check --offline` + `cargo nextest run --offline` |
-| Benchmark | `criterion` + `hyperfine` (CLI comparison) |
-| Unsafe verify | `cargo +nightly miri test --workspace --lib` |
-| Lint strict | `cargo clippy --workspace --all-targets -- -D warnings -W clippy::pedantic` |
-| Macro debug | `cargo expand` |
-| Cross-compile Linux ← Windows | `cargo zigbuild --target x86_64-unknown-linux-gnu` |
-| Doc | `cargo doc --no-deps --workspace` |
-| Supply-chain | `cargo deny check` + `cargo vet` + `cargo audit` |
-| Install binaire | `cargo binstall <crate>` (pré-build, **pas** `cargo install`) |
-| Économie disque / purge | Purge ciblée de `target/*/incremental` (pas de `cargo clean` aveugle) |
-
-
----
-
-## 9. Sources
-
-- [Rust Blog](https://blog.rust-lang.org/)
-- [Announcing Rust 1.95.0 (2026-04-16)](https://blog.rust-lang.org/2026/04/16/Rust-1.95.0/)
-- [Security advisory CVE-2026-33056 (2026-03-21)](https://blog.rust-lang.org/2026/03/21/cve-2026-33056/)
-- [WASM target changes (2026-04-04)](https://blog.rust-lang.org/2026/04/04/changes-to-webassembly-targets-and-handling-undefined-symbols/)
-- [Modern Rust Best Practices in 2026 (onehorizon.ai)](https://onehorizon.ai/blog/modern-rust-best-practices-in-2026-beyond-the-borrow-checker)
-- [Announcing Rust 1.85.0 and Rust 2024](https://blog.rust-lang.org/2025/02/20/Rust-1.85.0/)
+  Temporary escape hatch only: `RUSTFLAGS=-Clink-arg=--allow-undefined`.
+- **1.97**: v0 symbol mangling is the default (affects tools that parse symbol names, e.g.
+  profilers or symbol-stripping scripts); linker stderr now surfaces as the
+  `linker_messages` warning lint (silence via `[lints.rust] linker_messages = "allow"` only if
+  the message is understood).
+- **1.97 Cargo**: `CARGO_BUILD_WARNINGS=allow|warn|deny`. In CI prefer
+  `CARGO_BUILD_WARNINGS=deny cargo build --keep-going` to collect every error, instead of
+  `RUSTFLAGS=-Dwarnings` (which invalidates the build cache).
+- **Custom target JSON specs** are nightly-only; use built-in triples.
+
+## 5. Security baseline
+
+- CVE-2026-33056 (Cargo tar extraction, alternate registries): fixed in Cargo 1.94.1.
+  CVE-2026-5223 / CVE-2026-5222 (tarball symlinks, URL-normalised auth): fixed in 1.96.
+  Any toolchain at or above 1.96.0 covers all three; crates.io users were not affected.
+- Run the supply-chain gates the project has: `cargo deny check` (licences, bans,
+  advisories), `cargo audit`, `cargo vet`. When adding a private `[registries]` entry,
+  confirm the registry has rescanned its crates.
+
+## 6. Async traits and `Send`
+
+| Need | Use |
+| --- | --- |
+| Static dispatch | native `async fn` in traits (stable since 1.75) |
+| `Send` futures from a trait | `trait-variant` (`#[trait_variant::make(Send)]`) |
+| `dyn Trait` with async methods | `dynosaur` (keeps native AFIT) or `async-trait` (boxes) |
+| tower `Service` | its own `poll_ready`/`call` model; `async-trait` where needed |
+
+## 7. Tokio discipline
+
+- Never block a worker: `std::fs`, `std::thread::sleep`, CPU-heavy loops go in
+  `tokio::task::spawn_blocking` or use `tokio::fs`.
+- Only cancellation-safe futures belong in `tokio::select!` branches (documented per method;
+  e.g. `AsyncReadExt::read` is, `read_exact` and "collect into a Vec" loops are not). Otherwise
+  move the work into a spawned task and select on its `JoinHandle`.
+- Do not hold a `std::sync::Mutex` guard across `.await`; scope it or use `tokio::sync::Mutex`.
+- Bound concurrency with `Semaphore` / `JoinSet`, and propagate shutdown with
+  `tokio_util::sync::CancellationToken`. See the `rust-async-patterns` skill for full patterns.
+
+## 8. Tooling
+
+| Task | Tool |
+| --- | --- |
+| Fast test runner | `cargo nextest run` |
+| Strict lint | `cargo clippy --all-targets -- -D warnings` (add `-W clippy::pedantic` if the project opts in) |
+| UB check in unsafe code | `cargo +nightly miri test` |
+| Macro expansion | `cargo expand` |
+| Benchmarks | `criterion` (in-process), `hyperfine` (CLI) |
+| Cross-compile | `cargo zigbuild`, `cross`; multi-target checks via the `rust-target-check` skill |
+| Prebuilt binaries | `cargo binstall <crate>` |
+| Disk pressure | delete `target/*/incremental` or use `cargo sweep`, rather than a full `cargo clean` |
+
+Shell tool choices are covered by the `cross-platform-cli-toolbelt` skill; crate choices by
+`best-stack-2026`.
+
+## Sources
+
+- Release index: https://blog.rust-lang.org/releases/
+- 1.95.0: https://blog.rust-lang.org/2026/04/16/Rust-1.95.0/
+- 1.96.0: https://blog.rust-lang.org/2026/05/28/Rust-1.96.0/
+- 1.97.0: https://blog.rust-lang.org/2026/07/09/Rust-1.97.0/
+- 1.98.0: https://blog.rust-lang.org/2026/08/20/Rust-1.98.0/
+- CVE-2026-33056: https://blog.rust-lang.org/2026/03/21/cve-2026-33056/
+- Edition 2024 guide: https://doc.rust-lang.org/edition-guide/rust-2024/

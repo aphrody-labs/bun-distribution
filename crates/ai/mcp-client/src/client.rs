@@ -8,7 +8,7 @@ use std::{collections::BTreeMap, path::Path, sync::Arc, time::Duration};
 use aphrody_config::mcp::{McpServerConfig, McpServerTransportConfig};
 use serde_json::Value as JsonValue;
 use tokio::sync::Mutex;
-use tracing::info;
+use tracing::{info, warn};
 
 #[cfg(not(target_arch = "wasm32"))] use crate::transport::stdio::StdioTransport;
 use crate::{
@@ -86,7 +86,7 @@ impl McpClient {
     /// Create a client configured from an [`McpServerConfig`].
     pub fn from_config(server_name: &str, cfg: &McpServerConfig) -> Result<Self> {
         let mut client = match &cfg.transport {
-            McpServerTransportConfig::Stdio { command, args, env, cwd } => {
+            McpServerTransportConfig::Stdio { command, args, env, cwd, .. } => {
                 let cwd_path = cwd.as_ref().map(Path::new);
                 #[cfg(not(target_arch = "wasm32"))]
                 {
@@ -102,9 +102,27 @@ impl McpClient {
                 url,
                 bearer_token_env_var,
                 http_headers,
+                ..
             } => {
-                let bearer =
-                    bearer_token_env_var.as_ref().and_then(|var_name| std::env::var(var_name).ok());
+                // Only the variable name lives in the configuration; the token is read at connect
+                // time. An unset or empty variable is reported instead of silently producing an
+                // unauthenticated client; callers that must refuse to connect without the
+                // credential use `crate::headers::resolve_server_secrets` first.
+                let bearer = match bearer_token_env_var {
+                    Some(var_name) => match std::env::var(var_name) {
+                        Ok(token) if !token.is_empty() => Some(token),
+                        _ => {
+                            warn!(
+                                server = server_name,
+                                variable = %var_name,
+                                "MCP bearer token environment variable is unset or empty; \
+                                 connecting without an Authorization header"
+                            );
+                            None
+                        },
+                    },
+                    None => None,
+                };
                 Self::from_http(url, bearer, http_headers.as_ref())?
             },
         };
@@ -158,6 +176,17 @@ impl McpClient {
 
     /// Call a named tool on the server with arbitrary JSON arguments.
     pub async fn call_tool(&mut self, name: &str, arguments: JsonValue) -> Result<CallToolResult> {
+        let res = self.call_tool_raw(name, arguments).await?;
+        parse_call_tool_result(&res)
+    }
+
+    /// Call a named tool and return the JSON-RPC `result` payload exactly as the server sent it.
+    ///
+    /// [`Self::call_tool`] parses the payload into the typed [`CallToolResult`], which keeps only
+    /// the text, image and resource parts. Callers that forward the server's answer verbatim (the
+    /// `aphrody mcp call` command, the `aphrody_mcp_call` proxy tool) use this variant so fields
+    /// such as `structuredContent` or `_meta` survive.
+    pub async fn call_tool_raw(&mut self, name: &str, arguments: JsonValue) -> Result<JsonValue> {
         if !self.initialized {
             self.initialize().await?;
         }
@@ -167,8 +196,7 @@ impl McpClient {
             "arguments": arguments,
         });
 
-        let res = self.transport.call("tools/call", params, self.rpc_timeout).await?;
-        parse_call_tool_result(&res)
+        self.transport.call("tools/call", params, self.rpc_timeout).await
     }
 
     /// Ping the server to check connection liveness.
@@ -225,6 +253,12 @@ impl McpClientHandle {
     pub async fn call_tool(&self, name: &str, arguments: JsonValue) -> Result<CallToolResult> {
         let mut guard = self.inner.lock().await;
         guard.call_tool(name, arguments).await
+    }
+
+    /// Call a named tool and return the raw JSON-RPC `result` payload.
+    pub async fn call_tool_raw(&self, name: &str, arguments: JsonValue) -> Result<JsonValue> {
+        let mut guard = self.inner.lock().await;
+        guard.call_tool_raw(name, arguments).await
     }
 
     /// Shut down the client.

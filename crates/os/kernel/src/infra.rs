@@ -14,6 +14,14 @@ use async_trait::async_trait;
 use serde_json::{Value, json};
 use tokio::process::Command;
 
+use crate::paths::{EnvLookup, process_env, var};
+
+/// Layout marker of the Aphrody monorepo that owns `aphrody-ssh`.
+const SSH_OWNER_MARKER: &str = "crates/infra/ssh/Cargo.toml";
+
+/// Historical checkout directory under the home directory, tried after everything configured.
+const DEFAULT_CHECKOUT_DIR: &str = "aphrody";
+
 /// The kernel-owned infrastructure control plane.
 #[derive(Debug, Default)]
 pub struct InfraSubsystem;
@@ -25,34 +33,56 @@ impl InfraSubsystem {
     }
 }
 
-fn dirs_home() -> Option<PathBuf> {
-    #[cfg(target_os = "windows")]
-    {
-        std::env::var_os("USERPROFILE").map(PathBuf::from)
-    }
-    #[cfg(not(target_os = "windows"))]
-    {
-        std::env::var_os("HOME").map(PathBuf::from)
-    }
+/// Whether `root` is a checkout of the Aphrody monorepo that can build `aphrody-ssh`.
+fn has_ssh_owner_layout(root: &Path) -> bool {
+    root.join("Cargo.toml").is_file() && root.join(SSH_OWNER_MARKER).is_file()
 }
 
 fn find_infra_manifest() -> Option<PathBuf> {
-    if let Ok(path) = std::env::var("APHRODY_INFRA_PATH") {
-        let p = PathBuf::from(path);
-        if p.is_file() {
-            return Some(p);
-        }
-    }
-    if let Ok(dir) = std::env::var("APHRODY_INFRA_DIR") {
-        let p = PathBuf::from(dir).join("Cargo.toml");
-        if p.is_file() {
-            return Some(p);
-        }
-    }
-
     let cwd = std::env::current_dir().ok();
     let executable = std::env::current_exe().ok();
-    find_workspace_manifest(cwd.as_deref(), executable.as_deref(), dirs_home().as_deref())
+    let home = crate::paths::home_dir();
+    resolve_infra_manifest(&process_env, cwd.as_deref(), executable.as_deref(), home.as_deref())
+}
+
+/// The workspace manifest that builds `aphrody-ssh` from source (development only, behind
+/// `APHRODY_INFRA_BUILD_FROM_SOURCE=1`). First match wins:
+///
+/// 1. `APHRODY_INFRA_PATH`: the exact `Cargo.toml`.
+/// 2. `APHRODY_INFRA_DIR`: a directory holding `Cargo.toml`.
+/// 3. `APHRODY_INFRA_ROOT`, then `APHRODY_ROOT`: a checkout root with the SSH owner layout
+///    (the names `aphrody-ssh` and the CLI already use for the same checkout).
+/// 4. The working directory and the kernel's own directory, with their ancestors.
+/// 5. `<home>/aphrody`, the historical default checkout location (same layout check).
+///
+/// A configured value that does not exist or has the wrong layout falls through to the next
+/// step, as before. The environment, the directories and the home are all injected so relocated
+/// clean clones and service launches are tested without touching the process environment.
+fn resolve_infra_manifest(
+    env: EnvLookup<'_>,
+    cwd: Option<&Path>,
+    executable: Option<&Path>,
+    home: Option<&Path>,
+) -> Option<PathBuf> {
+    if let Some(path) = var(env, "APHRODY_INFRA_PATH").map(PathBuf::from)
+        && path.is_file()
+    {
+        return Some(path);
+    }
+    if let Some(directory) = var(env, "APHRODY_INFRA_DIR") {
+        let manifest = PathBuf::from(directory).join("Cargo.toml");
+        if manifest.is_file() {
+            return Some(manifest);
+        }
+    }
+    for key in ["APHRODY_INFRA_ROOT", "APHRODY_ROOT"] {
+        if let Some(root) = var(env, key).map(PathBuf::from)
+            && has_ssh_owner_layout(&root)
+        {
+            return Some(root.join("Cargo.toml"));
+        }
+    }
+    find_workspace_manifest(cwd, executable, home)
 }
 
 // Keep this independent of process environment so relocated clean clones and service
@@ -64,49 +94,95 @@ fn find_workspace_manifest(
 ) -> Option<PathBuf> {
     for start in cwd.into_iter().chain(executable.and_then(Path::parent)) {
         for root in start.ancestors() {
-            let manifest = root.join("Cargo.toml");
-            if manifest.is_file() && root.join("crates/infra/ssh/Cargo.toml").is_file() {
-                return Some(manifest);
+            if has_ssh_owner_layout(root) {
+                return Some(root.join("Cargo.toml"));
             }
         }
     }
-    if let Some(home) = home {
-        let root = home.join("aphrody");
-        let manifest = root.join("Cargo.toml");
-        if manifest.is_file() && root.join("crates/infra/ssh/Cargo.toml").is_file() {
-            return Some(manifest);
-        }
-    }
-
-    None
+    let root = home?.join(DEFAULT_CHECKOUT_DIR);
+    has_ssh_owner_layout(&root).then(|| root.join("Cargo.toml"))
 }
 
 fn resolve_infra_invoker() -> Result<(String, Vec<String>), SubsystemError> {
-    if let Ok(output) = std::process::Command::new("aphrody-ssh").arg("--version").output()
-        && output.status.success()
-    {
+    let executable = std::env::current_exe().ok();
+    plan_infra_invoker(&process_env, ssh_on_path, executable.as_deref(), find_infra_manifest)
+}
+
+/// Whether an `aphrody-ssh` found by the operating system's `PATH` lookup runs.
+fn ssh_on_path() -> bool {
+    std::process::Command::new("aphrody-ssh")
+        .arg("--version")
+        .output()
+        .is_ok_and(|output| output.status.success())
+}
+
+/// `APHRODY_SSH_BIN`: the override `aphrody ssh` and the Shenron scripts already honour.
+///
+/// It is authoritative when set, including when it is invalid, so a typo never silently selects
+/// another binary. A bare command name is left to the operating system's `PATH` lookup; a value
+/// with a directory part must be an existing file.
+fn explicit_ssh_binary(env: EnvLookup<'_>) -> Result<Option<String>, SubsystemError> {
+    let Some(value) = var(env, "APHRODY_SSH_BIN") else {
+        return Ok(None);
+    };
+    let command = value.to_string_lossy().trim().to_owned();
+    if command.is_empty() {
+        return Ok(None);
+    }
+    let path = Path::new(&command);
+    if path.components().count() > 1 && !path.is_file() {
+        return Err(SubsystemError::Unavailable(format!(
+            "APHRODY_SSH_BIN points to `{command}`, which is not an existing file"
+        )));
+    }
+    Ok(Some(command))
+}
+
+/// The program and arguments that run `aphrody-ssh`. First match wins:
+///
+/// 1. `APHRODY_SSH_BIN` (explicit, see [`explicit_ssh_binary`]).
+/// 2. `aphrody-ssh` found by `PATH` (`path_probe`).
+/// 3. `aphrody-ssh` beside the running kernel.
+/// 4. Only with `APHRODY_INFRA_BUILD_FROM_SOURCE=1`: a build of the workspace located by
+///    `find_manifest` (see [`resolve_infra_manifest`]).
+///
+/// With none of them the infra tools report [`SubsystemError::Unavailable`] with the remedies,
+/// instead of failing obscurely: they serve the Aphrody infrastructure hosts and have no meaning
+/// on a machine that has neither the binary nor a checkout.
+fn plan_infra_invoker(
+    env: EnvLookup<'_>,
+    path_probe: impl FnOnce() -> bool,
+    executable: Option<&Path>,
+    find_manifest: impl FnOnce() -> Option<PathBuf>,
+) -> Result<(String, Vec<String>), SubsystemError> {
+    if let Some(binary) = explicit_ssh_binary(env)? {
+        return Ok((binary, Vec::new()));
+    }
+
+    if path_probe() {
         return Ok(("aphrody-ssh".to_string(), Vec::new()));
     }
 
-    if let Ok(executable) = std::env::current_exe()
-        && let Some(directory) = executable.parent()
-    {
+    if let Some(directory) = executable.and_then(Path::parent) {
         let binary = directory.join(format!("aphrody-ssh{}", std::env::consts::EXE_SUFFIX));
         if binary.is_file() {
             return Ok((binary.to_string_lossy().into_owned(), Vec::new()));
         }
     }
 
-    if std::env::var("APHRODY_INFRA_BUILD_FROM_SOURCE").as_deref() == Ok("1")
-        && let Some(manifest) = find_infra_manifest()
+    if var(env, "APHRODY_INFRA_BUILD_FROM_SOURCE").is_some_and(|value| value == "1")
+        && let Some(manifest) = find_manifest()
         && let Some(invoker) = workspace_infra_invoker(&manifest, true)
     {
         return Ok(invoker);
     }
 
-    Err(SubsystemError::Failed(
-        "aphrody-ssh binary or workspace manifest not found. Install aphrody-ssh beside \
-         aphrody-kernel or explicitly enable APHRODY_INFRA_BUILD_FROM_SOURCE=1 for development."
+    Err(SubsystemError::Unavailable(
+        "the infra tools need the `aphrody-ssh` binary, which was not found: install it on PATH \
+         or beside aphrody-kernel, or set APHRODY_SSH_BIN to its path (inside an Aphrody \
+         checkout, APHRODY_INFRA_BUILD_FROM_SOURCE=1 builds it from the workspace located by \
+         APHRODY_INFRA_DIR, APHRODY_INFRA_PATH, APHRODY_INFRA_ROOT, APHRODY_ROOT or the working \
+         directory). These tools only serve the Aphrody infrastructure hosts `vps` and `dbfr`."
             .into(),
     ))
 }
@@ -424,7 +500,19 @@ async fn run_infra_cli(args: &[&str]) -> Result<Value, SubsystemError> {
 
 #[cfg(test)]
 mod tests {
+    use std::ffi::OsStr;
+
     use super::*;
+    use crate::paths::table;
+
+    /// A checkout carrying the SSH owner layout at `base/name`.
+    fn checkout(base: &Path, name: &str) -> PathBuf {
+        let root = base.join(name);
+        std::fs::create_dir_all(root.join("crates/infra/ssh")).unwrap();
+        std::fs::write(root.join("Cargo.toml"), "[workspace]\n").unwrap();
+        std::fs::write(root.join(SSH_OWNER_MARKER), "[package]\n").unwrap();
+        root
+    }
 
     #[test]
     fn discovers_relocated_workspace_from_nested_cwd_and_kernel() {
@@ -572,5 +660,164 @@ mod tests {
         assert!(validate_host("dbfr").is_ok());
         assert!(validate_host("unknown").is_err());
         assert!(validate_host("").is_err());
+    }
+
+    #[test]
+    fn explicit_manifest_path_beats_every_other_source() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let explicit = dir.path().join("explicit/Cargo.toml");
+        std::fs::create_dir_all(explicit.parent().unwrap()).unwrap();
+        std::fs::write(&explicit, "[workspace]\n").unwrap();
+        let by_dir = checkout(dir.path(), "by-dir");
+        let by_root = checkout(dir.path(), "by-root");
+        let walked = checkout(dir.path(), "walked");
+        let home = dir.path().join("home");
+        checkout(&home, DEFAULT_CHECKOUT_DIR);
+        let env = table([
+            ("APHRODY_INFRA_PATH", explicit.as_os_str()),
+            ("APHRODY_INFRA_DIR", by_dir.as_os_str()),
+            ("APHRODY_INFRA_ROOT", by_root.as_os_str()),
+        ]);
+        assert_eq!(resolve_infra_manifest(&env, Some(&walked), None, Some(&home)), Some(explicit));
+    }
+
+    #[test]
+    fn configured_sources_are_tried_before_the_walk_and_the_home_default() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let by_dir = checkout(dir.path(), "by-dir");
+        let by_infra_root = checkout(dir.path(), "by-infra-root");
+        let by_root = checkout(dir.path(), "by-root");
+        let walked = checkout(dir.path(), "walked");
+        let home = dir.path().join("home");
+        let default = checkout(&home, DEFAULT_CHECKOUT_DIR);
+        let manifest = |root: &Path| Some(root.join("Cargo.toml"));
+        let resolve = |env: &dyn Fn(&str) -> Option<std::ffi::OsString>| {
+            resolve_infra_manifest(env, Some(&walked), None, Some(&home))
+        };
+
+        let all = table([
+            ("APHRODY_INFRA_DIR", by_dir.as_os_str()),
+            ("APHRODY_INFRA_ROOT", by_infra_root.as_os_str()),
+            ("APHRODY_ROOT", by_root.as_os_str()),
+        ]);
+        assert_eq!(resolve(&all), manifest(&by_dir));
+        let without_dir = table([
+            ("APHRODY_INFRA_ROOT", by_infra_root.as_os_str()),
+            ("APHRODY_ROOT", by_root.as_os_str()),
+        ]);
+        assert_eq!(resolve(&without_dir), manifest(&by_infra_root));
+        let only_root = table([("APHRODY_ROOT", by_root.as_os_str())]);
+        assert_eq!(resolve(&only_root), manifest(&by_root));
+
+        // Nothing configured: the working directory walk, then the home default, as before.
+        let none = table::<&str, &str>([]);
+        assert_eq!(resolve(&none), manifest(&walked));
+        assert_eq!(resolve_infra_manifest(&none, None, None, Some(&home)), manifest(&default));
+        assert_eq!(resolve_infra_manifest(&none, None, None, None), None);
+    }
+
+    #[test]
+    fn configured_values_that_do_not_apply_fall_through_instead_of_failing() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let walked = checkout(dir.path(), "walked");
+        let bare = dir.path().join("bare");
+        std::fs::create_dir_all(&bare).unwrap();
+        std::fs::write(bare.join("Cargo.toml"), "[workspace]\n").unwrap();
+        let missing = dir.path().join("missing");
+        // A missing manifest, a directory without one, a root without the owner layout and an
+        // empty variable all leave the resolution to the walk.
+        let env = table([
+            ("APHRODY_INFRA_PATH", missing.join("Cargo.toml").as_os_str()),
+            ("APHRODY_INFRA_DIR", missing.as_os_str()),
+            ("APHRODY_INFRA_ROOT", bare.as_os_str()),
+            ("APHRODY_ROOT", OsStr::new("")),
+        ]);
+        assert_eq!(
+            resolve_infra_manifest(&env, Some(&walked), None, None),
+            Some(walked.join("Cargo.toml"))
+        );
+        assert_eq!(resolve_infra_manifest(&env, None, None, None), None);
+    }
+
+    #[test]
+    fn explicit_ssh_binary_is_authoritative_when_set() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let binary = dir.path().join(format!("custom-ssh{}", std::env::consts::EXE_SUFFIX));
+        std::fs::write(&binary, "").unwrap();
+
+        // Unset, empty and blank values leave the choice to the rest of the order.
+        for value in [None, Some(""), Some("  ")] {
+            let env = table(value.map(|value| ("APHRODY_SSH_BIN", value)));
+            assert_eq!(explicit_ssh_binary(&env).unwrap(), None, "{value:?}");
+        }
+        let env = table([("APHRODY_SSH_BIN", binary.as_os_str())]);
+        assert_eq!(explicit_ssh_binary(&env).unwrap(), Some(binary.to_string_lossy().into_owned()));
+        // A bare command name is resolved by the operating system's PATH lookup at spawn time.
+        let env = table([("APHRODY_SSH_BIN", "my-ssh")]);
+        assert_eq!(explicit_ssh_binary(&env).unwrap(), Some("my-ssh".to_owned()));
+        // A path that does not exist is an error, never a silent switch to another binary.
+        let missing = dir.path().join("missing-ssh");
+        let env = table([("APHRODY_SSH_BIN", missing.as_os_str())]);
+        let error = explicit_ssh_binary(&env).unwrap_err();
+        assert!(
+            matches!(&error, SubsystemError::Unavailable(message) if message.contains("APHRODY_SSH_BIN")),
+            "{error}"
+        );
+    }
+
+    #[test]
+    fn invoker_order_is_explicit_then_path_then_sibling_then_opted_in_source() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let kernel_directory = dir.path().join("bin");
+        std::fs::create_dir_all(&kernel_directory).unwrap();
+        let sibling = kernel_directory.join(format!("aphrody-ssh{}", std::env::consts::EXE_SUFFIX));
+        std::fs::write(&sibling, "").unwrap();
+        let kernel = kernel_directory.join("aphrody-kernel");
+        let none = table::<&str, &str>([]);
+
+        let explicit = table([("APHRODY_SSH_BIN", "custom-ssh")]);
+        assert_eq!(
+            plan_infra_invoker(&explicit, || true, Some(&kernel), || None).unwrap(),
+            ("custom-ssh".to_owned(), Vec::new())
+        );
+        assert_eq!(
+            plan_infra_invoker(&none, || true, Some(&kernel), || None).unwrap(),
+            ("aphrody-ssh".to_owned(), Vec::new())
+        );
+        assert_eq!(
+            plan_infra_invoker(&none, || false, Some(&kernel), || None).unwrap(),
+            (sibling.to_string_lossy().into_owned(), Vec::new())
+        );
+
+        // A workspace is never built (nor even searched) without the explicit opt-in.
+        let manifest = checkout(dir.path(), "checkout").join("Cargo.toml");
+        let searched =
+            || -> Option<PathBuf> { panic!("no opt-in: the workspace must not be searched") };
+        for value in [None, Some("0"), Some("true"), Some("")] {
+            let env = table(value.map(|value| ("APHRODY_INFRA_BUILD_FROM_SOURCE", value)));
+            assert!(plan_infra_invoker(&env, || false, None, searched).is_err(), "{value:?}");
+        }
+        let opted_in = table([("APHRODY_INFRA_BUILD_FROM_SOURCE", "1")]);
+        let (program, arguments) =
+            plan_infra_invoker(&opted_in, || false, None, || Some(manifest.clone())).unwrap();
+        assert_eq!(program, "cargo");
+        assert!(arguments.contains(&"--locked".to_owned()));
+        assert!(arguments.contains(&manifest.to_string_lossy().into_owned()));
+    }
+
+    #[test]
+    fn without_a_binary_or_a_checkout_the_infra_tools_say_what_to_do() {
+        let none = table::<&str, &str>([]);
+        let error = plan_infra_invoker(&none, || false, None, || None).unwrap_err();
+        let SubsystemError::Unavailable(message) = &error else {
+            panic!("expected Unavailable, got {error:?}");
+        };
+        for remedy in ["aphrody-ssh", "PATH", "APHRODY_SSH_BIN", "APHRODY_INFRA_BUILD_FROM_SOURCE"]
+        {
+            assert!(message.contains(remedy), "missing `{remedy}` in: {message}");
+        }
+        // The opt-in alone does not help when no workspace can be located either.
+        let opted_in = table([("APHRODY_INFRA_BUILD_FROM_SOURCE", "1")]);
+        assert!(plan_infra_invoker(&opted_in, || false, None, || None).is_err());
     }
 }

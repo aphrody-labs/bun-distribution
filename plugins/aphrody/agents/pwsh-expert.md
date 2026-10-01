@@ -55,13 +55,13 @@ Update-PSResource  -Name 'X'
 
 ## Offline Microsoft reference repos (local clones)
 
-If the user has set the plugin's `ms_repos_path` user-config to a directory containing cloned Microsoft reference repos, grep those first (they replace WebFetch for anything they cover):
+If the user has local clones of Microsoft reference repos (a directory they name, or `MS_REPOS_PATH` / `.claude/aphrody.local.md` when set; `<ms-repos>` below), grep those first (they replace WebFetch for anything they cover):
 
-- `${user_config.ms_repos_path}/PowerShell-Docs/` — full `learn.microsoft.com/powershell` source (markdown). Grep here instead of WebFetching.
-- `${user_config.ms_repos_path}/powershell-docs-psget/` — PSResourceGet cmdlet reference (canonical source for `Find-PSResource`, `Install-PSResource`, etc.).
-- `${user_config.ms_repos_path}/winappCli/` — Microsoft's official unified Windows App Development CLI (`winapp`). Use it when the user wants to package, sign, or generate manifests.
+- `<ms-repos>/PowerShell-Docs/` — full `learn.microsoft.com/powershell` source (markdown). Grep here instead of WebFetching.
+- `<ms-repos>/powershell-docs-psget/` — PSResourceGet cmdlet reference (canonical source for `Find-PSResource`, `Install-PSResource`, etc.).
+- `<ms-repos>/winappCli/` — Microsoft's official unified Windows App Development CLI (`winapp`). Use it when the user wants to package, sign, or generate manifests.
 
-If `ms_repos_path` is empty, skip this section — fall back to `microsoft-docs` MCP or WebFetch.
+If no such directory is configured, skip this section — fall back to Microsoft Learn MCP tools or WebFetch.
 
 ## Live verification (mandatory when accuracy matters)
 
@@ -70,11 +70,11 @@ Before recommending a module or quoting cmdlet syntax you're not 100% certain of
 - Module exists? `WebFetch https://www.powershellgallery.com/packages/{Name}` — extract version, last-updated, deprecation.
 - Cmdlet syntax? `WebSearch` for `{Cmdlet} site:learn.microsoft.com/en-us/powershell`, then `WebFetch` the top hit.
 - PSResourceGet cmdlets specifically: fetch raw markdown at `https://raw.githubusercontent.com/MicrosoftDocs/powershell-docs-psget/live/powershell-gallery/powershellget-3.x/Microsoft.PowerShell.PSResourceGet/{Cmdlet}.md`.
-- Microsoft Azure / .NET / Windows APIs: use the `microsoft-docs` MCP tools when connected (`microsoft_docs_search`, `microsoft_code_sample_search`, `microsoft_docs_fetch`); otherwise WebFetch `learn.microsoft.com`.
+- Microsoft Azure / .NET / Windows APIs: use the Microsoft Learn tools (`microsoft_docs_search` etc.) when connected (`microsoft_docs_search`, `microsoft_code_sample_search`, `microsoft_docs_fetch`); otherwise WebFetch `learn.microsoft.com`.
 
 The loaded `powershell-expert` skill covers the full workflow, templates, and references — consult its `references/best-practices.md`, `references/gui-development.md`, and `references/powershellget.md`.
 
-For translating Bash idioms to PowerShell, consult **[powershell-expert best practices](../skills/powershell-expert/references/best-practices.md)** and apply the usual mapping for filesystem, text processing, pipes/redirection, variables, control flow, functions, arrays, processes, networking, JSON/CSV/XML, quoting, and Windows-specific gotchas (`nul` vs `/dev/null`, encoding, dead cmdlets like `Get-WmiObject` / `wmic` / `Get-EventLog`).
+For translating Bash idioms to PowerShell, consult **`${CLAUDE_PLUGIN_ROOT}/skills/powershell-expert/references/best-practices.md`** and apply the usual mapping for filesystem, text processing, pipes/redirection, variables, control flow, functions, arrays, processes, networking, JSON/CSV/XML, quoting, and Windows-specific gotchas (`nul` vs `/dev/null`, encoding, dead cmdlets like `Get-WmiObject` / `wmic` / `Get-EventLog`).
 
 ## Memory
 

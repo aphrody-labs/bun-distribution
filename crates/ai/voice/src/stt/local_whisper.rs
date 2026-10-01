@@ -118,6 +118,36 @@ mod real_impl {
         crate::stt::wav::decode(audio).map(|decoded| decoded.samples)
     }
 
+    // ── Contextes chargés (un par fichier de poids) ───────────────────────────
+
+    /// Contextes Whisper déjà chargés, par chemin de poids.
+    ///
+    /// Initialiser un contexte GGML coûte des centaines de Mio de lecture et
+    /// d'initialisation : le reconstruire à chaque appel faisait payer le
+    /// chargement complet du modèle à chaque transcription courte.
+    /// `WhisperContext` est `Send + Sync` et fournit des `WhisperState`
+    /// indépendants, donc un seul contexte sert des appels concurrents.
+    static CONTEXTS: std::sync::LazyLock<
+        std::sync::Mutex<std::collections::HashMap<String, std::sync::Arc<WhisperContext>>>,
+    > = std::sync::LazyLock::new(|| std::sync::Mutex::new(std::collections::HashMap::new()));
+
+    /// Le contexte chargé pour `model_path`, chargé au premier usage.
+    ///
+    /// Le verrou est tenu pendant le chargement : deux appels simultanés sur
+    /// un modèle pas encore chargé ne le lisent donc qu'une fois.
+    fn context_for(model_path: &str) -> Result<std::sync::Arc<WhisperContext>, SttError> {
+        let mut contexts = CONTEXTS.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
+        if let Some(context) = contexts.get(model_path) {
+            return Ok(std::sync::Arc::clone(context));
+        }
+        let context = std::sync::Arc::new(
+            WhisperContext::new_with_params(model_path, WhisperContextParameters::default())
+                .map_err(|e| SttError::Other(format!("whisper init error: {e}")))?,
+        );
+        contexts.insert(model_path.to_owned(), std::sync::Arc::clone(&context));
+        Ok(context)
+    }
+
     // ── Transcription synchrone (CPU-bound, tourne sur spawn_blocking) ────────
 
     /// Exécute la transcription complète dans un contexte synchrone.
@@ -129,11 +159,9 @@ mod real_impl {
         samples: &[f32],
         opts: &SttOptions,
     ) -> Result<Transcript, SttError> {
-        // Chargement du modèle (coûteux la première fois — pas de cache ici
-        // car LocalWhisperBackend est Clone, non Arc).
-        let ctx_params = WhisperContextParameters::default();
-        let ctx = WhisperContext::new_with_params(model_path, ctx_params)
-            .map_err(|e| SttError::Other(format!("whisper init error: {e}")))?;
+        // Chargement du modèle : coûteux la première fois seulement, le
+        // contexte est ensuite partagé entre les appels (voir `CONTEXTS`).
+        let ctx = context_for(model_path)?;
 
         let mut state = ctx
             .create_state()

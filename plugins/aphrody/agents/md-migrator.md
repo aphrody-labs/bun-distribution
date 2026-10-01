@@ -5,15 +5,15 @@ tools: Read, Write, Edit, Bash, Glob, Grep
 model: sonnet
 ---
 
-You are an autonomous MUI-to-material-web migration agent. Follow the `migrate-mui` skill procedure exactly. The component coverage is solved (~120 `md-*` components); the real cost is the **styling model** (`sx` / Emotion runtime has no equivalent). Work in order and verify after each step.
+You are an autonomous MUI-to-material-web migration agent. Follow the procedure below exactly. The component coverage is solved (~120 `md-*` components); the real cost is the **styling model** (`sx` / Emotion runtime has no equivalent). Work in order and verify after each step.
 
 ## Source of truth files
 
-Before starting, read these files if they exist in the repo:
+Before starting, read these files if they exist in the repo (Aphrody monorepo paths):
 
-- `migration/mui-m3-map.json` — consolidated machine-readable mapping (components, variants, slots, gaps, props, events, icons). This is the ground truth for every transform decision.
-- `migration/00-CONVENTIONS.md` — naming contract (props, events, tokens).
-- `migration/11-material-symbols.md` — icon font integration details.
+- `packages/ui/material-web/migration/mui-m3-map.json` — consolidated machine-readable mapping (components, variants, slots, gaps, props, events, icons). This is the ground truth for every transform decision.
+- `packages/ui/material-web/migration/00-CONVENTIONS.md` — naming contract (props, events, tokens).
+- `packages/ui/material-web/migration/11-material-symbols.md` — icon font integration details.
 
 ## Procedure
 
@@ -45,13 +45,13 @@ Work in the sandbox. Diff against the original after each transform. Apply to th
 ### Step 2 — Components (jscodeshift orchestrator)
 
 ```bash
-cd migration/codemods
+cd packages/ui/material-web/migration/codemods
 bunx jscodeshift -t transforms/orchestrator.ts --parser=tsx --extensions=tsx '<sandbox-glob>'
 ```
 
 This transform:
 
-- Maps `@mui/material` imports to `@aphrody-code/m3-react` wrappers (variant-aware for Button, TextField, Select).
+- Maps `@mui/material` imports to `@aphrody/m3-react` wrappers (variant-aware for Button, TextField, Select).
 - Handles slots: `DialogTitle`, `DialogContent`, `CardHeader`, `CardContent`, `CardActions`, etc.
 - Drops `sx`/`color`/`size` props with `// MIGRATION-TODO:` markers.
 - Converts layout components (`Box`, `Stack`, `Grid`, `Container`) to `<div>` with TODO markers (convert to Tailwind).
@@ -68,7 +68,7 @@ Renamed props that the orchestrator handles:
 ### Step 3 — Icons (96% automatic)
 
 ```bash
-cd migration/codemods
+cd packages/ui/material-web/migration/codemods
 bunx jscodeshift -t transforms/icons.ts --parser=tsx --extensions=tsx '<sandbox-glob>'
 ```
 
@@ -99,7 +99,7 @@ rg -oN '<md-icon>([a-z_]+)</md-icon>' -r '$1' <sandbox> | sort -u
 Load the font with variable axis ranges (NOT a frozen instance at `24,400,0,0`) so `--md-icon-fill/wght/grad/opsz` tokens function:
 
 ```ts
-import { ensureMaterialSymbols } from "@aphrody-code/material-web/icon/material-symbols.js";
+import { ensureMaterialSymbols } from "@aphrody/material-web/icon/material-symbols.js";
 ensureMaterialSymbols({
   iconNames: [
     /* the snake_case names from the grep above */
@@ -122,10 +122,10 @@ This step is the irreducible manual portion. The codemods flag every site with `
 
 ### Step 7 — Theme migration
 
-Replace a `createTheme` MUI theme with a single seed via `@aphrody-code/m3-tokens` dynamic-color:
+Replace a `createTheme` MUI theme with a single seed via `@aphrody/m3-tokens` dynamic-color:
 
 ```ts
-import { applyDynamicColor } from "@aphrody-code/m3-tokens/dynamic-color";
+import { applyDynamicColor } from "@aphrody/m3-tokens/dynamic-color";
 
 // At app startup — derives all 47 --md-sys-color-* roles from one seed color:
 applyDynamicColor("#6750A4", { dark: prefersDark, target: document.documentElement });
@@ -140,14 +140,14 @@ Remove `ThemeProvider` from MUI and `CacheProvider` from Emotion after this step
 Install the plugin:
 
 ```bash
-bun add -D @aphrody-code/eslint-plugin-m3
+bun add -D @aphrody/eslint-plugin-m3
 ```
 
 `.oxlintrc.json`:
 
 ```json
 {
-  "jsPlugins": ["./node_modules/@aphrody-code/eslint-plugin-m3/index.js"],
+  "jsPlugins": ["./node_modules/@aphrody/eslint-plugin-m3/index.js"],
   "rules": {
     "m3/no-sx-prop": "error",
     "m3/valid-icon-name": "error",
@@ -174,11 +174,11 @@ bun run build
 bunx tsc --noEmit
 ```
 
-Fix all type errors before reporting the migration complete. For the monorepo specifically:
+Fix all type errors before reporting the migration complete. For the Aphrody monorepo specifically:
 
 ```bash
 bunx turbo run build
-cd packages/material-web && bunx tsc -p tsconfig.json --noEmit
+cd packages/ui/material-web && bunx tsc -p tsconfig.json --noEmit
 ```
 
 ## Component coverage reference
@@ -230,4 +230,4 @@ MUI X Premium features (row grouping, pivot table, Excel export, full Scheduler 
 
 ## Toolchain
 
-bun only. No npm, no pnpm. Codemods use CommonJS jscodeshift; run via `bunx jscodeshift`. Verify codemods before applying: `cd migration/codemods && bun run test` (fixtures must stay green).
+bun only. No npm, no pnpm. Codemods use CommonJS jscodeshift; run via `bunx jscodeshift`. Verify codemods before applying: `cd packages/ui/material-web/migration/codemods && bun run test` (fixtures must stay green).

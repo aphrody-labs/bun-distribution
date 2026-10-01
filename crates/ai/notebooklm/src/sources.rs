@@ -106,7 +106,8 @@ impl NotebookClient {
         path: impl AsRef<Path>,
     ) -> Result<(String, String)> {
         let abs = path.as_ref().to_path_buf();
-        let metadata = std::fs::metadata(&abs)
+        let metadata = tokio::fs::metadata(&abs)
+            .await
             .map_err(|e| NotebookError::Network(format!("stat {}: {e}", abs.display())))?;
         if !metadata.is_file() {
             return Err(NotebookError::Network(format!("not a regular file: {}", abs.display())));
@@ -140,10 +141,11 @@ impl NotebookClient {
         let envelope = self.transport.rpc_raw(ADD_SOURCE_FILE, &payload, Some(&nb_path)).await?;
         let (source_id, _title) = parse_add_source(envelope)?;
 
-        let file_bytes = std::fs::read(&abs)
+        let file_bytes = tokio::fs::read(&abs)
+            .await
             .map_err(|e| NotebookError::Network(format!("read {}: {e}", abs.display())))?;
         scotty_upload(
-            self.transport.tokens(),
+            self.transport.http_client(),
             // Re-deref the Arc<Auth> through a borrow that matches the helper signature.
             self.transport.auth_for_upload(),
             notebook_id,
@@ -236,8 +238,12 @@ fn parse_add_source(envelope: Value) -> Result<(String, String)> {
     Ok((id, title))
 }
 
+/// A file upload outlives the transport client's 120 s default; the longer
+/// budget is set per request so the pooled client is shared, not rebuilt.
+const UPLOAD_TIMEOUT: Duration = Duration::from_secs(300);
+
 async fn scotty_upload(
-    tokens: &crate::transport::SessionTokens,
+    client: &reqwest::Client,
     auth: &Auth,
     notebook_id: &str,
     file_name: &str,
@@ -245,10 +251,6 @@ async fn scotty_upload(
     file_size: u64,
     file_bytes: Vec<u8>,
 ) -> Result<()> {
-    let client = reqwest::Client::builder()
-        .timeout(Duration::from_secs(300))
-        .build()
-        .map_err(|e| NotebookError::Network(format!("upload client: {e}")))?;
     let mut headers = HeaderMap::new();
     headers.insert(
         HeaderName::from_static("origin"),
@@ -260,12 +262,16 @@ async fn scotty_upload(
     );
     headers.insert(HeaderName::from_static("x-goog-authuser"), HeaderValue::from_static("0"));
     for (name, value) in auth.request_headers() {
-        let header_name = HeaderName::from_static(name);
+        // `Auth::request_headers` yields canonical-cased names ("Cookie",
+        // "Authorization"); `HeaderName::from_static` panics on any uppercase
+        // byte, so parse them at runtime exactly as the RPC transport does.
+        let header_name = HeaderName::from_bytes(name.as_bytes()).map_err(|e| {
+            NotebookError::Auth(format!("invalid upload auth header name {name}: {e}"))
+        })?;
         let header_value = HeaderValue::from_str(&value)
             .map_err(|e| NotebookError::Auth(format!("invalid upload auth header {name}: {e}")))?;
         headers.insert(header_name, header_value);
     }
-    let _ = tokens; // tokens unused on the Scotty path (cookie-only).
 
     let init_body = json!({
         "PROJECT_ID": notebook_id,
@@ -294,7 +300,19 @@ async fn scotty_upload(
     );
 
     let init_url = format!("{URL_UPLOAD}?authuser=0");
-    let init_response = client.post(init_url).headers(init_headers).body(init_body).send().await?;
+    let init_response = client
+        .post(init_url)
+        .timeout(UPLOAD_TIMEOUT)
+        .headers(init_headers)
+        .body(init_body)
+        .send()
+        .await?;
+    if !init_response.status().is_success() {
+        return Err(NotebookError::Network(format!(
+            "scotty init returned HTTP {}",
+            init_response.status()
+        )));
+    }
     let upload_url = init_response
         .headers()
         .get("x-goog-upload-url")
@@ -316,8 +334,13 @@ async fn scotty_upload(
     upload_headers
         .insert(HeaderName::from_static("x-goog-upload-offset"), HeaderValue::from_static("0"));
 
-    let upload_response =
-        client.post(upload_url).headers(upload_headers).body(file_bytes).send().await?;
+    let upload_response = client
+        .post(upload_url)
+        .timeout(UPLOAD_TIMEOUT)
+        .headers(upload_headers)
+        .body(file_bytes)
+        .send()
+        .await?;
     if !upload_response.status().is_success() {
         return Err(NotebookError::Network(format!(
             "scotty upload returned HTTP {}",

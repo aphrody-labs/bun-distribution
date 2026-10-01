@@ -1,14 +1,17 @@
 ---
 name: jouer-ievr
-description: "Run and play Inazuma Eleven Victory Road from nie: launch nie.exe, simulate a match (nie-runtime, nie-headless, nie-play), render assets with nie-game, observe memory with nie-trace, drive the explorer via nie.* MCP."
+description: "Run and play Inazuma Eleven Victory Road from the IECODE workspace: launch nie.exe (game_launch), simulate a match (aphrody-nie-headless/-runtime/-play), render assets (aphrody-nie-game), inspect memory (nie mem). Use to run or reproduce IEVR behaviour."
 ---
 
-# Jouer à IEVR depuis nie
+# Jouer à IEVR depuis IECODE
 
-Il y a **deux jeux** dans ce dépôt, et il faut choisir lequel on veut faire tourner.
+> **S'applique quand :** le dépôt IECODE (sa racine contient un dossier `iecode:crates/nie`) est le répertoire de travail et que l'installation du jeu est accessible (`NIE_GAME_DIR`) ; les chemins préfixés `iecode:` sont relatifs à cette racine.
+> **Sinon :** ne pas simuler ni prétendre avoir lancé le jeu ; dire ce qui manque (dépôt, installation, `nie.exe`) et proposer la commande à lancer là où ils existent.
 
-1. **`nie.exe`** — le vrai jeu Level-5, à la racine du dépôt. On peut le **lancer** et
-   l'**observer**, pas le piloter.
+Il y a **deux jeux** à distinguer, et il faut choisir lequel on veut faire tourner.
+
+1. **`nie.exe`** — le vrai jeu Level-5, non versionné : `game_launch` le cherche via `NIE_GAME_EXE`
+   sinon `nie.exe` à la racine du dépôt (`NIE_REPO`). On peut le **lancer** et l'**observer**.
 2. **Le moteur nie** — une simulation Rust déterministe et scriptable, jouable de bout en bout
    sans le jeu original. C'est là qu'on « joue » de façon reproductible.
 
@@ -16,30 +19,33 @@ Il y a **deux jeux** dans ce dépôt, et il faut choisir lequel on veut faire to
 
 | Action | Disponible | Comment |
 |---|---|---|
-| Lancer le vrai jeu | oui | outil MCP `game_launch` (process détaché, rend le PID) |
-| Observer le jeu qui tourne | oui, **lecture seule** | `nie-trace` : régions du module, lecture d'octets, dump |
-| Écrire dans la mémoire du jeu | **non — décision tranchée** | Jamais d'écriture mémoire dans un process tiers depuis le dépôt |
-| Envoyer des entrées clavier/manette à `nie.exe` | **non — n'existe pas** | Aucune infrastructure d'input synthétique dans le dépôt |
-| Simuler un match complet | oui | `nie-headless match`, `nie-runtime`, `nie-play` |
-| Rendre les vrais assets | oui | `nie-game` (wgpu, fenêtre ou capture PNG) |
-| Piloter l'explorateur | oui | outils MCP `nie.explorer_navigate`, `nie.explorer_open`, `nie.explorer_tab` |
+| Lancer le vrai jeu | oui | outil MCP `game_launch` du serveur `aphrody-nie-mcp` (process détaché, rend le PID) |
+| Observer le jeu qui tourne | oui | `nie mem` (s'attache à un process existant, ne le lance ni ne le stoppe) ; binaire `nie-mem` : régions, lecture, scan |
+| Écrire dans la mémoire du jeu | **seulement par les outils d'édition dédiés** | `nie-mem`/`nie-edit` (`iecode:crates/nie/aphrody-nie-trace`) savent écrire ; ne le faire que sur demande explicite, jamais par défaut |
+| Envoyer des entrées clavier/manette à `nie.exe` | **non, pas dans les crates NIE** | `aphrody-nie-computer-use` ne fait que sonder ; la mutation d'UI passe par l'hôte WinClean/Computer Use (skill `winclean`, Windows) |
+| Simuler un match complet | oui | `aphrody-nie-headless match`, `aphrody-nie-runtime`, `aphrody-nie-play` |
+| Rendre les vrais assets | oui | `aphrody-nie-game` (wgpu, fenêtre ou capture PNG) |
+| Piloter l'explorateur | si un client Inacord est connecté au pont | outils MCP `explorer_navigate`, `explorer_open`, `explorer_tab`, `explorer_toast` |
 
 **Ne pas prétendre piloter `nie.exe`.** Une demande de « jouer comme un humain » au vrai binaire
-supposerait capture d'écran plus entrées synthétiques : rien de tel n'existe ici, et il faudrait
-le construire. Le dire, puis proposer la voie moteur, qui est reproductible et scriptable.
+supposerait capture d'écran plus entrées synthétiques : aucune chaîne de ce type n'est dans les
+crates NIE. Le dire, puis proposer la voie moteur, qui est reproductible et scriptable.
 
 ## Simuler un match
 
+Binaires construits depuis les packages `aphrody-nie-*` (`target/<profil>/<binaire>` ou
+`cargo run -p <package> -- …`) ; `--help` de chacun fait foi.
+
 ```bash
 # Résumé JSON déterministe, sans rendu
-./target/debug/nie-headless.exe match
+aphrody-nie-headless match
 
 # Match simulé + rendu vidéo (headless)
-./target/debug/nie-runtime.exe --frames 600 --fps 60 --out match.mp4
-./target/debug/nie-runtime.exe --no-video --out frame.png     # dernière frame seulement
+aphrody-nie-runtime --frames 600 --fps 60 --out match.mp4
+aphrody-nie-runtime --no-video --out frame.png     # dernière frame seulement
 
 # Match avec de vraies données de personnages et la police du jeu
-./target/debug/nie-play.exe \
+aphrody-nie-play \
   --font-cfg <font.cfg.bin> --font-g4tx <font.g4tx> \
   --seed 12345 --chara-param <chara_param_*.cfg.bin.json>
 ```
@@ -50,28 +56,27 @@ détectable — comparer deux exécutions, pas deux impressions.
 ## Rendre les vrais assets
 
 ```bash
-./target/debug/nie-game.exe --window                    # fenêtre wgpu
-./target/debug/nie-game.exe --capture out.png           # rendu hors-écran
-./target/debug/nie-game.exe --g4tx <chemin VFS .g4tx>   # texture précise
+aphrody-nie-game --window                    # fenêtre wgpu
+aphrody-nie-game --capture out.png           # rendu hors-écran
+aphrody-nie-game --g4tx <chemin VFS .g4tx>   # texture précise
 ```
 
-`--game-dir` résout automatiquement via la variable d'environnement `NIE_GAME_DIR` ou pointer directement vers l'installation Steam du jeu (`<racine>/data`).
+Le dossier du jeu se résout avec `--game-dir`, sinon `NIE_GAME_DIR`, sinon le répertoire courant
+ou l'un de ses ancêtres portant `data/cpk_list.cfg.bin` : c'est la racine du jeu, pas `data/`.
 
 ## Observer le vrai jeu
 
-`nie-trace` (et les commandes Tauri `re_trace_*` de l'explorateur) lisent la mémoire d'un
-`nie.exe` en cours : recherche du process, régions du module, lecture d'octets, dump complet.
-**Lecture seule, sans exception** — c'est une décision du projet, pas une limite technique.
-
-Enchaînement utile : `game_launch` pour démarrer, puis `re_trace_find_process` pour s'y
-raccrocher, puis lecture des régions.
+`nie mem` (lecture) et les binaires `nie-mem` / `nie-edit` de `aphrody-nie-trace` s'attachent à un
+`nie.exe` en cours : recherche du process, régions du module, lecture d'octets, scan, dump. Le
+backend dépend de la plateforme (Windows natif ou Linux/Wine). Enchaînement utile :
+`game_launch` pour démarrer, puis `nie mem --help` pour s'y raccrocher et lire les régions.
 
 ## Piloter l'explorateur pendant une session
 
-Quand `nie-explorer` tourne et que son pont est activé, le serveur MCP le dirige :
-`nie.explorer_navigate` (dossier VFS), `nie.explorer_open` (fichier), `nie.explorer_tab`, `nie.explorer_toast`.
-`nie.explorer_status` dit si un client est connecté — l'appeler avant de conclure qu'une commande a
-échoué.
+Le serveur MCP `aphrody-nie-mcp` (aussi `nie mcp`) expose `explorer_navigate` (dossier VFS),
+`explorer_open` (fichier), `explorer_tab`, `explorer_toast`, qui passent par un pont loopback vers
+une page Inacord. Cette page n'est pas dans l'arbre IECODE actuel : `explorer_status` dit si un
+client est connecté — l'appeler avant de conclure qu'une commande a échoué.
 
 ## Honnêteté sur les résultats
 

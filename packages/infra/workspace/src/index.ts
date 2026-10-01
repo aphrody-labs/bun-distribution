@@ -22,6 +22,7 @@ export { runDriveDaemon } from "./drive-daemon.ts";
 export { runTauri } from "./tauri.ts";
 export { runTauriApps } from "./tauri-apps.ts";
 export { runTauriSync } from "./tauri-sync.ts";
+export { runUpstreamSources } from "./upstream-sources.ts";
 export { runBunNative } from "./bun-native.ts";
 export { runUiDedupManifest } from "./ui-dedup-manifest.ts";
 export { runSpaceUiIcons } from "./spaceui-icons.ts";

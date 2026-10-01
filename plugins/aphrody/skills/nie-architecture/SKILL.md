@@ -1,67 +1,67 @@
 ---
 name: nie-architecture
-description: "Apply the settled nie architecture: Inacord as the user-facing visual VFS explorer only, a retained native game reconstruction target, and one shared library owner per capability exposed through API, CLI, MCP, code/scripts, web, desktop and forge."
+description: "Settled NIE (Inazuma Eleven Victory Road) architecture: one library owner per capability behind thin API/CLI/MCP/web bindings, and the native game UI as a separate reconstruction target. Use before placing NIE code or adding a parser, UI or binding."
 ---
 
 # nie architecture
 
-`PLAN.md` is the sole execution plan and measured status ledger. This skill fixes architectural
-choices; it does not certify that their implementation or reverse engineering is complete.
-Use `nie-monorepo` for paths, dependency conventions and scoped commands.
+> **Applies when:** the IECODE checkout (its root has a `iecode:crates/nie` directory) is the working directory; paths prefixed `iecode:` are relative to that root, unprefixed paths to the Aphrody monorepo.
+> **Otherwise:** read `docs/architecture/nie/` and `docs/NIE-CAPABILITY-MAP.md` in the Aphrody monorepo, and say that the NIE sources are unavailable rather than guessing crate or file names.
+
+`iecode:PLAN.md` is the execution ledger and `iecode:AGENTS.md` the only agent contract. This skill
+fixes architectural choices; it does not certify that their implementation or reverse engineering is
+complete. Use `nie-monorepo` for paths, dependency conventions and scoped commands.
 
 ## Two retained product goals
 
-1. **There is no Tauri host in nie.** The Inacord Tauri app (`apps/inacord`) was removed on
-   2026-09-26 (operator decision, superseding the 2026-09-22 "Inacord is the user-facing visual
-   VFS explorer, and only that" direction below, which itself superseded the former "preserve
-   every Inacord GUI capability" direction —
-   `docs/archive/plans/2026-09-25/PLAN-2026-09-08-to-25.md`, § "Product direction — Inacord is the
-   visual VFS explorer"). The desktop is aphrody-ui `crates/aphrody-app`; the non-IEVR Inacord
-   pet/pixel commands live there as the `identity` module. IEVR stays in nie web (`nie-site` +
-   `apps/nie-web`), and the app reaches the game only through the `nie.*` tools of aphrody-ai
-   `aphrody-mcp`. Every capability that was headless before the removal — wiki, 3D editing,
-   modding, reverse engineering, Lua, live-memory — stays headless in its Rust library owner and
-   is exposed through API, CLI, MCP, code/scripts and the mobile/Blender integrations; a preview
-   may consume their read-only results but never becomes their operator surface.
+1. **Capabilities stay headless in their Rust library owner** (wiki, 3D editing, modding, reverse
+   engineering, Lua, live memory) and are exposed through API, CLI, MCP, code/scripts and the
+   Blender/mobile integrations; a preview may consume their read-only results but never becomes
+   their operator surface. The former Inacord Tauri explorer and the former NIE web application
+   (the nie-web app and the inacord-ui and asset-source packages) are not members of either
+   checkout any more (`iecode:docs/nie/README.md`, `iecode:docs/nie/IECODE-MIGRATION.md`). The
+   Aphrody desktop is the `aphrody-app` package (`crates/ui/app`, which has an `identity` module);
+   the NIE MCP server (`iecode:crates/nie/aphrody-nie-mcp`) still exposes `explorer_*` tools that
+   drive an Inacord page over a loopback bridge, so check `explorer_status` before assuming a client
+   is connected.
 2. **The native game UI remains a distinct reconstruction target.** Preserve native layouts,
    menus, animation, resource resolution and Lua/state contracts for backend behavior, mod
    authoring and production of a new `nie.exe`. Retain its reference ledger and native/Wasm
    evidence. Shared application completion and game reconstruction are separate acceptance axes.
 
-The supplied Inacord explorer and game main-menu captures are visual references. Full-screen
-captures must never become runtime screen textures. Neither reference authorizes fake gameplay,
-substitute artwork or the deletion of an underlying library owner.
+Visual reference captures (explorer, game main menu) must never become runtime screen textures. No
+reference authorizes fake gameplay, substitute artwork or the deletion of an underlying library owner.
 
 ## Public site boundary
 
-The public site is `nie-site`, implemented in Rust. It owns IEVR pages, read-only API routes and
-the local mirror boundary. It must not absorb desktop-only VFS mutation, mods, reverse engineering
-or native game runtime state. Bun remains an operational transport only; no TypeScript game-data
-parser or cloud-backed IEVR adapter is permitted.
+The public IEVR site was the Rust `nie-site` binary (routes, read-only API, local mirror boundary).
+Its crate is not in the IECODE tree; its retired deployment template is `systemd/nie-site.service`
+and the retained spec is `iecode:docs/nie/SITE.md`. Whatever hosts it must not absorb desktop-only
+VFS mutation, mods, reverse engineering or native game runtime state. Bun stays an operational
+transport only; no TypeScript game-data parser or cloud-backed IEVR adapter.
 
 ## One implementation per role
 
+Rust owners are packages under `iecode:crates/nie/aphrody-nie-<x>` (written `<x>` below).
+
 | Role | Existing owner to extend |
 |---|---|
-| Frontend source/build and host composition | `apps/nie-web`, the only frontend application; no Tauri packaging remains here (removed 2026-09-26) |
-| Native desktop integration | aphrody-ui `crates/aphrody-app`, reached only through the `nie.*` tools of aphrody-ai `aphrody-mcp`, never a direct dependency |
-| General presentation primitives | sibling `rg/packages/ui`; `packages/inacord-ui` owns nie-specific presentation |
-| Shared Inacord/game components and selection/navigation primitives | `packages/inacord-ui` |
-| Asset loading, transport and capability contracts | `packages/asset-source` |
-| Binary format decoding, including Level-5/Criware families | `nie-formats` |
-| Typed game tables | `nie-data` |
-| Resource inspection and media resolution | `nie-explore` |
-| SQLite/PostgreSQL connections and migration runners | `nie-sql` |
-| Domain state and simulation | `nie-core`, `nie-runtime`, `nie-app` according to existing domain boundaries |
-| Lua execution and observed native callbacks | `nie-lua` |
-| Scene documents, models and rendering | `nie-render3d`, with existing `nie-game`, `nie-camera` and `nie-ui` consumers |
-| Save/mod/Steam capabilities | `nie-save`, `nie-viola`, `nie-steam` |
-| Game-data wiki mirror, projections and query APIs | `nie-wiki` |
-| Public IEVR pages and HTTP routes | `nie-site` |
-| Zukan candidate ranking | `nie-zukan`; do not claim historical TypeScript pipelines migrated without proof |
-| Executable forge and RE | Existing `nie-pe`, `nie-asm`, `nie-forge`, `nie-re`, `nie-index`, `nie-trace` owners |
-| Bun FFI / file imports | `packages/nie` / `packages/nie-plugin` over `nie-ffi` |
-| CLI, MCP, HTTP and Wasm | Thin bindings through existing `nie-cli`, `nie-mcp`, `nie-site` and `nie-wasm` |
+| General UI primitives | `packages/rg/ui` (Aphrody monorepo); NIE-specific presentation has no maintained owner in either checkout, so decide it explicitly before adding one |
+| Native desktop integration | `aphrody-app` (`crates/ui/app`), reached through the NIE MCP tools, never a direct dependency |
+| Binary format decoding, including Level-5/Criware families | `formats` |
+| Typed game tables | `data` |
+| Resource inspection and media resolution | `explore` |
+| SQLite/PostgreSQL connections and migration runners | `sql` (Postgres tooling in `pg`) |
+| Domain state and simulation | `core`, `runtime`, `app` according to existing domain boundaries |
+| Lua execution and observed native callbacks | `lua` |
+| Scene documents, models and rendering | `render3d` (and `render` for RGBA8 composition), with `game`, `camera` and `ui` consumers |
+| Save/mod/Steam capabilities | `save`, `viola`, `steam` |
+| Game-data wiki mirror, projections and query APIs | `wiki` |
+| Zukan candidate ranking | `zukan`; do not claim historical TypeScript pipelines migrated without proof |
+| Executable forge and RE | `pe`, `asm`, `forge`, `re`, `index`, `trace` |
+| Bun FFI | `ffi` (its library target is `iecode`) |
+| CLI, MCP and Wasm | thin bindings: `cli` (binary `nie`), `mcp` (binary `aphrody-nie-mcp`, also `nie mcp`), `wasm` |
+| Model/GLB HTTP serving | `model-serve` |
 
 A CLI, command handler or React component must not become a second home for domain algorithms.
 Extract reusable logic into its existing library owner, preserve the original caller, then add
@@ -79,9 +79,9 @@ application infrastructure; they are not game-engine capabilities.
   tuple and retains source-file provenance and hash ambiguity. Do not use a UI fallback string as
   a translated game label. The shell URL locales and game VFS locales are distinct: all measured
   VFS languages are selectable for game text without claiming a translated host route exists.
-- `packages/inacord-ui/src/gallery` owns the shared gallery. Retain Inacord file/conversion/
-  preview capabilities and Azalee data/filter/card capabilities through host adapters. Counts
-  and pagination must use the same deduplicated resource inventory, not summed source totals.
+- A gallery shares one deduplicated resource inventory: counts and pagination must come from it,
+  not from summed source totals. Azalee data/filter/card capabilities live in
+  `iecode:packages/azalee` and are consumed through host adapters.
 
 - Keep source VFS path, native resource/region identity, filename and existing slug traceable in
   resource contracts. Preserve served routes and identifiers during migration.
@@ -99,30 +99,22 @@ application infrastructure; they are not game-engine capabilities.
 
 ## Host convergence and migration boundaries
 
-The application 3D editor has one presentation owner: `packages/inacord-ui/src/three/Viewport3D.tsx`.
-It is not an Inacord view (`apps/nie-web/src/desktop/lib/vues.ts` registers `explorer` only);
-VFS/CPK previews delegate to it through compatibility adapters. Keep its
-multi-asset scene, picking, outliner, statistics, TRS gizmos, grid, wireframe and camera controls.
-`ModelViewerSurface` in the same directory owns gallery/detail preview lifecycle; its retained
-model-viewer backend preserves local compressed-model decoders. Do not create another editor
-or duplicate a preview lifecycle to add a host. The Rust reconstruction renderer remains a
-distinct backend until its rendering and editing contracts reach measured parity.
+Keep one presentation owner for a 3D editor/viewer and one preview lifecycle per host: do not
+create another editor to add a host. The Rust reconstruction renderer (`render3d`, `game`)
+remains a distinct backend until its rendering and editing contracts reach measured parity.
 
-The canonical frontend lives in `apps/nie-web`; the Inacord source is under `src/desktop`, and
-its view registry exposes the VFS explorer only. Native adapters retain filesystem and process
-operations; web adapters use the existing HTTP/Wasm owners. The browser adapter fails desktop
-filesystem, process, updater and mutation commands explicitly: never hide an unavailable
-operation behind a successful no-op. GUI-only modules made unreachable by the explorer-only cut
-are removed once their browser route consumers are classified, never together with their
-library owners.
+Native adapters retain filesystem and process operations; web adapters use the existing HTTP/Wasm
+owners. A browser adapter must fail desktop filesystem, process, updater and mutation commands
+explicitly: never hide an unavailable operation behind a successful no-op.
 
 Wiki raw queries, legacy MCP facades and TypeScript ranking remain compatibility boundaries
 until consumer migration is demonstrated.
 
-Use one root Cargo workspace/lockfile and Bun catalog/lockfile. Dependency convergence preserves
-consumer features and target conditions; it does not require one package for unrelated roles.
-Historical IECODE material is provenance/reference, not a new runtime dependency; consult
-`docs/IECODE-MIGRATION.md` before adding a parser or data family.
+Use one root Cargo workspace/lockfile and one Bun catalog/lockfile. Dependency convergence
+preserves consumer features and target conditions; it does not require one package for unrelated
+roles. New shared behavior goes to an existing NIE crate or a maintained Aphrody owner, never a
+parallel placeholder crate; read `iecode:docs/nie/IECODE-MIGRATION.md` and
+`iecode:docs/migrations/NIERS-ABSORPTION.md` before adding a parser or data family.
 
 ## Acceptance
 
@@ -130,4 +122,4 @@ Track application feature preservation, native theme provenance, native game rec
 executable production separately. Require relevant interaction, decoding, round-trip, rendering
 and native/Wasm gates with nonzero counts before completion claims. Compilation or an HTTP 200
 is insufficient. Keep unsupported formats and unproven reverse-engineering behavior visible in
-`PLAN.md`; the architectural decision never turns those gaps into completed work.
+`iecode:PLAN.md`; the architectural decision never turns those gaps into completed work.

@@ -43,8 +43,27 @@ pub enum McpClientError {
     HttpStatus {
         /// HTTP status code.
         status: u16,
-        /// Response body.
+        /// Response body (truncated to 1 KiB).
         body: String,
+    },
+
+    /// A configured HTTP header name or value is not valid. The value is never
+    /// included, so a malformed secret cannot leak through the error text.
+    #[error("invalid MCP HTTP header `{name}`")]
+    InvalidHeader {
+        /// Name of the offending header.
+        name: String,
+    },
+
+    /// A header value is sourced from an environment variable that is unset or
+    /// empty. Callers that resolve `${VAR}` placeholders fail closed with this
+    /// error instead of connecting without the credential.
+    #[error("MCP HTTP header `{name}` requires environment variable `{variable}`")]
+    MissingHeaderEnvironment {
+        /// Name of the header that needs the secret.
+        name: String,
+        /// Environment variable expected to hold the value.
+        variable: String,
     },
 
     /// JSON-RPC server returned an error envelope.

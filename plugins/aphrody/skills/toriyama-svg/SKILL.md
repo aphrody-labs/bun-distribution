@@ -1,9 +1,11 @@
 ---
 name: toriyama-svg
-description: "Crée des illustrations SVG depuis des références mesurables, documente la géométrie et vérifie l’export."
+description: "Dessine ou refait un SVG, une icône ou une animation de style Toriyama (Dragon Ball) à partir de mesures relevées sur des planches, documente la géométrie et vérifie le rendu. Utiliser pour tout asset vectoriel Dragon Ball ; jamais de mémoire."
 ---
 
 # Dessiner à la Toriyama, en vectoriel et en mesuré
+
+> **S'applique quand :** une référence mesurable (planche, couverture, databook) est consultable et que Python 3 (Pillow, numpy) et Bun (`sharp`) sont disponibles pour les scripts de cette skill ; la stack de composants de la dernière section suppose le monorepo Aphrody (`packages/shenron/ui`). **Sinon :** sans référence, ne dessine pas de mémoire et ne choisis aucune couleur : dis ce qui manque et laisse ces valeurs vides ; sans les outils, fais les mesures à la main, consigne-les, et annonce que le contrôle visuel n'a pas eu lieu.
 
 Le mot « pixel perfect » mérite d'être défini avant de commencer, parce qu'il
 cache deux choses très différentes.
@@ -34,13 +36,16 @@ le travail qui a servi de modèle à ce skill.
 Trouver les images de référence, et les hiérarchiser. Le manga au trait tranche
 la FORME, le manga en couleur tranche la COULEUR, l'anime ne tranche ni l'un ni
 l'autre mais dépanne. Lire `references/sources.md` pour le corpus local
-(planches hébergées, databooks, MCP `dragonball`), la façon de contourner les
+(planches hébergées, databooks, outils MCP `dragonball_*`), la façon de contourner les
 403, et pourquoi Fandom est banni.
 
 Travailler dans `/tmp/<sujet>/`. Les références sont du matériel de travail, pas
 des livrables.
 
 ### 2. Mesurer
+
+Les commandes suivantes se lancent depuis le dossier de cette skill (les scripts
+sont dans son sous-dossier `scripts/`).
 
 ```bash
 python3 scripts/mesurer.py /tmp/goku/planche.webp --teinte 20 45 --sat 0.3 --k 5
@@ -89,14 +94,16 @@ dire dans le document au lieu de le peindre.
 
 ### 3. Consigner
 
-Écrire un document de mesures dans `docs/<sujet>-analyse-visuelle.md` : les
+Écrire un document de mesures dans `docs/shenron/<sujet>-analyse-visuelle.md`
+(exemples existants : `docs/shenron/kinto-un-analyse-visuelle.md`,
+`docs/shenron/couverture-analyse-visuelle.md`) : les
 sources et **ce que chacune vaut** (y compris celles qu'on écarte, avec la
 raison), les nombres, et un tableau « décision → mesure d'origine ». Ce tableau
 est le cœur du document : il permet à la revue suivante de contester une
 décision sans refaire les mesures.
 
-Note pour ce dépôt : les `*.md` à la racine sont limités à une liste fixe, tout
-le reste va dans `docs/`.
+Note pour ce monorepo : la documentation va sous `docs/<catégorie>/<domaine>`
+(règle de `CLAUDE.md` à la racine), pas à la racine.
 
 ### 4. Dessiner en géométrie
 
@@ -106,8 +113,11 @@ entre des points de rupture. Construite ainsi, elle reste modifiable : on
 déplace un creux, on change une flèche, la forme suit — alors qu'un chemin de
 Bézier écrit à la main est figé dès qu'il est posé.
 
-`scripts/geometrie.ts` fournit les primitives, à copier dans le projet et à
-étendre :
+`geometrie.ts` (dossier `scripts/` de cette skill) fournit les primitives, à
+copier dans le projet et à étendre. La version TypeScript maintenue du moteur,
+avec des noms anglais, est dans `packages/shenron/ui/src/toriyama-svg/geometry.ts`
+(`arcs`, `volute`, `meche`, `inkStroke` pour `trait`, `planDombre`, `mirrorX` pour
+`miroir`) :
 
 | Primitive                       | Ce qu'elle sert à dessiner                                                                                                                 |
 | ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -173,7 +183,7 @@ séparément : silhouette simplifiée (cinq gros lobes plutôt que quatorze), tr
 bruit, pastille de fond pour le contraste.
 
 ```bash
-bun scripts/icones.ts icone.svg --sortie apps/site/public --sortie apps/bot/public
+bun scripts/icones.ts icone.svg --sortie apps/shenron/site/public --sortie apps/shenron/bot/public
 ```
 
 Sort le jeu complet — vrai `favicon.ico` multi-tailles, PNG 16/32/48/96, icône
@@ -198,33 +208,37 @@ dessin d'un quart.
   vérifier que Blender est réellement branché, comment préparer une variante
   « plan » du SVG extrudable, et quoi proposer quand le MCP est absent.
 
-## Stack Réutilisable : Moteur Vectoriel & Composants UI Toriyama
+## Stack réutilisable : moteur vectoriel et composants Toriyama
 
-Le moteur vectoriel et les primitives graphiques ont été intégrés en une stack de composants TypeScript / React hautement réutilisable, importable directement dans l'ensemble du monorepo via `@/components/ui` et `@/lib/toriyama-svg`.
+Dans le monorepo Aphrody, le moteur vectoriel et les composants sont dans le
+package `@shenron/ui` (`packages/shenron/ui`), que le site Shenron
+(`apps/shenron/site`) ré-exporte via `@/components/toriyama` et
+`@/components/ui`. Chaque nom ci-dessous a été retrouvé dans les sources le
+2026-10-01 ; hors de ce monorepo, ils n'existent pas.
 
-### 1. Moteur Géométrique & Palette (`@/lib/toriyama-svg`)
+### 1. Moteur géométrique et palette (`@shenron/ui/toriyama-svg`)
 
-- **Géométrie :** `arcs()`, `volute()`, `meche()`, `planDombre()`, `starPoints()`, `scouterBrackets()`, `radialSpeedlines()`.
-- **Palette :** `TORIYAMA_PALETTE` — couleurs officielles extraites des tankōbon et artbooks (Goku Gi, Capsule Corp, Turtle School, Kaio, Piccolo Mazoku, Red Ribbon, Scouter HUD, Ki Aura).
-- **Sceaux & Emblèmes :** `EMBLEMS` — coordonnées vectorielles haute définition (Kame 龜, Goku 悟, Kaio 界, Mazoku 魔, Capsule Corp, Red Ribbon, Majin M, Tenkaichi 武, Vegeta Royal Crest).
+- **Géométrie** (`geometry.ts`) : `arcs()`, `volute()`, `meche()`, `planDombre()`, `starPoints()`, `scouterBrackets()`, `radialSpeedlines()` (plus `inkStroke`, `mirrorX`).
+- **Palette** : `TORIYAMA_PALETTE` (`palette.ts`), documentée dans le fichier comme mesurée sur les tankōbon couleur, artbooks et model sheets : groupes `goku`, `kame`, `kai`, `piccolo`, etc.
+- **Sceaux et emblèmes** : `EMBLEMS` (`emblems.ts`), clés `kame`, `go`, `kai`, `demon`, `capsuleCorp`, `redRibbon`, `majin`, `tenkaichi`, `vegetaRoyal`.
 
-### 2. Suite Vectorielle Toriyama (`@/components/toriyama` ou `@/components/ui`)
+### 2. Composants SVG (`@shenron/ui/toriyama`)
 
-- `<ToriyamaEmblem name="..." size={48} variant="badge|flat" />` (ainsi que les raccourcis `<EmblemKame />`, `<EmblemGo />`, `<EmblemKai />`, etc.)
-- `<DragonBallSphere stars={1..7} size={64} glow interactive />` : boule de cristal avec dégradé ambre exact et étoiles rouge carmin à 5 pointes.
-- `<DragonRadarDisplay blips={[...]} scanning size={80} />` : détecteur de dragon balls avec écran CRT, réticule et balayage radar.
-- `<ScouterHudOverlay powerLevel={9001} color="green|red|blue" size={180} />` : affichage tête haute tactique Saiyan / Armée de Freezer.
-- `<KintoUnCloud width={120} height={70} animated />` : nuage magique avec volutes rentrantes et traînées de vitesse.
-- `<KiAura color="gold|blue|red|green" sparks size={100} />` : aura d'énergie de Super Saiyan avec éclairs et traits d'action radiaux.
-- `<ShenronSilhouette size={80} />`, `<SenzuBean size={40} />`, `<PotaraEarrings size={48} />`.
+- `<ToriyamaEmblem name="kame" size={48} variant="flat|badge|monochrome" />` et les raccourcis `<EmblemKame />`, `<EmblemGo />`, `<EmblemKai />`, `<EmblemDemon />`, `<EmblemCapsuleCorp />`, `<EmblemRedRibbon />`, `<EmblemMajin />`, `<EmblemTenkaichi />`, `<EmblemVegetaRoyal />`.
+- `<DragonBallSphere stars={1..7} size glow interactive />`, `<DragonRadarDisplay blips scanning size />`, `<ScouterHudOverlay powerLevel color="green|red|blue" size targetLocked />`.
+- `<KintoUnCloud width height animated />`, `<KiAura color="gold|blue|red|green|purple" sparks size />`.
+- `<ShenronSilhouette size color />`, `<SenzuBean size />`, `<PotaraEarrings size orbColor="yellow|green" />`.
 
-### 3. Composants UI & Primitives Manga (`@/components/ui`)
+### 3. Primitives d'interface manga (`@shenron/ui/toriyama-*`, ré-exportées par `@/components/ui`)
 
-- `<ToriyamaBadge emblem="kame|go|capsule|majin|dragonBall" variant="..." />` : badge officiel Dragon Ball.
-- `<ToriyamaPanel variant="standard|slanted|action|scouter|capsule" sfx="DODONPA !" />` : case de manga (koma-wari) avec trame de points, traits de vitesse et slot onomatopée.
-- `<ToriyamaSlider mode="dragonball|scouter" min={1} max={7} />` : curseur tactile dont le curseur est une véritable Dragon Ball ou un réticule de scouter.
-- `<ToriyamaProgress variant="ki|scouter|majin|capsule" value={75} />` : barre de charge d'énergie avec éclat de Ki.
-- `<ToriyamaSpeechBubble variant="normal|shout" tailPosition="bottom" />` : bulle de dialogue et cri de combat manga.
+- `<ToriyamaBadge emblem variant="kame|capsule|saiyan|majin|scouter|ink|gold" size="sm|md|lg" />` (`emblem` : un nom d'`EMBLEMS` ou `"dragonBall"` avec `stars`).
+- `<ToriyamaPanel variant="standard|slanted|action|scouter|capsule" sfx title />` : case de manga avec slot onomatopée.
+- `<ToriyamaSlider mode="dragonball|scouter" min max step value onChange />`.
+- `<ToriyamaProgress variant="ki|scouter|majin|capsule" value max showLabel />`.
+- `<ToriyamaSpeechBubble variant="normal|shout|thought" tailPosition="bottom|top|left|right" />`.
+
+Les props viennent des interfaces `*Props` de ces fichiers ; relis-les avant
+usage, l'API peut évoluer.
 
 ## Livrer
 
@@ -233,7 +247,9 @@ référence, les masques et les rendus de contrôle restent dans `/tmp`. Le scri
 générateur entre aussi : c'est lui qui rend l'asset reproductible, et sans lui
 la prochaine retouche recommence à zéro.
 
-Puis `bun run lint && bun run type-check`, un commit d'une ligne en français, et
+Puis les contrôles du package concerné (par exemple `bun run lint` et
+`bun run type-check` dans `apps/shenron/site`, scripts déclarés dans son
+`package.json`), un commit d'une ligne en français si le dépôt le demande, et
 le déploiement si l'asset est servi en production. Vérifier ensuite que les
 fichiers sortent bien avec le bon type de contenu.
 

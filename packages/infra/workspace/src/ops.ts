@@ -17,6 +17,7 @@ import { runTauri } from "./tauri.ts";
 import { runTauriApps } from "./tauri-apps.ts";
 import { runStackDedup } from "./stack-dedup.ts";
 import { runTauriSync } from "./tauri-sync.ts";
+import { runUpstreamSources } from "./upstream-sources.ts";
 import { runBunNative } from "./bun-native.ts";
 import { runUiDedupManifest } from "./ui-dedup-manifest.ts";
 import { runSpaceUiIcons } from "./spaceui-icons.ts";
@@ -263,6 +264,9 @@ if (operation === "tauri-apps") {
 }
 if (operation === "tauri-sync") {
   process.exit(await runTauriSync(rest));
+}
+if (operation === "upstream-sources") {
+  process.exit(await runUpstreamSources(rest));
 }
 if (operation === "stack-dedup") {
   process.exit(await runStackDedup(rest));

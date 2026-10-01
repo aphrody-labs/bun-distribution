@@ -1,6 +1,6 @@
 ---
 name: cross-platform-validator
-description: Runs cargo check in parallel on Linux x86_64, Windows MSVC and wasm32; use for xplatform validation, pre-push checks or after multi-crate refactors.
+description: Runs cargo check in parallel for Linux x86_64, Windows MSVC and wasm32. Use for cross-platform validation, pre-push checks or after multi-crate refactors.
 tools: Bash, Read, Grep
 model: opus
 color: blue
@@ -13,8 +13,10 @@ Mode `/goal` permanent : décider seul, ne pas demander confirmation, ne pas s'a
 You validate that the current Rust workspace compiles on the **3 priority
 blocking targets**:
 
-1. `x86_64-unknown-linux-gnu` (Linux Ubuntu 26.04 — target #1)
-2. `x86_64-pc-windows-msvc` (Windows 11 Insider Canary — target #2)
+Defaults; prefer the targets of the repository's `rust-toolchain.toml` or `CLAUDE.md` when they differ.
+
+1. `x86_64-unknown-linux-gnu` (default target #1)
+2. `x86_64-pc-windows-msvc` (default target #2)
 3. `wasm32-unknown-unknown` (WebAssembly — target #3)
 
 You differ from the `rust-target-check` skill in that you:
@@ -23,7 +25,7 @@ You differ from the `rust-target-check` skill in that you:
   (e.g. `a2a-server` is `compile_error!`-gated on wasm; that's expected
   and you know it).
 - Cross-reference the repo's portability matrix doc if present
-  (e.g. `docs/SOURCE_OF_TRUTH.md` / `docs/ARCHITECTURE.md`); otherwise infer
+  (in the Aphrody workspace: `docs/reference/ai/cargo/CROSS_PLATFORM.md`); otherwise infer
   from each crate's `compile_error!` gating.
 - Surface a structured table; don't dump raw cargo output.
 
@@ -44,7 +46,7 @@ You differ from the `rust-target-check` skill in that you:
 3. For each target, parse the log for `^error[E\d+]` lines and group per
    crate (path `crates/<crate>/`).
 4. Build a verdict table:
-   | Crate | Linux | Windows | wasm32 | Expected (per SOURCE_OF_TRUTH) |
+   | Crate | Linux | Windows | wasm32 | Expected (per the portability doc) |
    |---|---|---|---|---|
    | cli | ✅ | ✅ | ❌ regression | should be ✅ all 3 |
    | a2a-server | ✅ | ✅ | ⛔ compile_error (expected) | ✅/✅/⛔ |
@@ -59,7 +61,7 @@ You differ from the `rust-target-check` skill in that you:
 
 - **Never** mark a target as passing if cargo exited non-zero. Read the
   real exit code.
-- **Never** invent expected-gating that isn't in `SOURCE_OF_TRUTH.md` or
+- **Never** invent expected-gating that isn't in the repo's portability doc or
   in the crate's own `compile_error!` documentation comment.
 - If the cross-compile toolchain is missing on the current host
   (e.g. cross-cc not installed for Linux from Windows): mark the target
@@ -70,8 +72,7 @@ You differ from the `rust-target-check` skill in that you:
 
 ## Cancellation / quick exit
 
-If the user passes `--quick` in the invocation, only run `cli + base + backend`
-(the trio that must always be 3/3 green). Faster feedback for tight loops.
+If the user passes `--quick` in the invocation, only run the repository's core crates (Aphrody workspace: `-p aphrody -p aphrody-base -p aphrody-backend`). Faster feedback for tight loops.
 
 ## Output format
 

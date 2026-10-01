@@ -9,7 +9,7 @@ authors.workspace      = true
 homepage.workspace     = true
 repository.workspace   = true
 license.workspace      = true
-description            = "Model Context Protocol client for Aphrody: stdio and streamable HTTP transports, ToolExecutor adapter, built-in tools, and shared Rust web tools."
+description            = "Model Context Protocol client for Aphrody: the single MCP client of the workspace. Stdio and streamable HTTP transports, ToolExecutor adapter, fail-closed credential expansion, built-in tools, and shared Rust web tools."
 
 [lints]
 workspace = true
@@ -32,4 +32,6 @@ tokio      = { workspace = true, features = ["process", "io-util", "sync", "time
 
 [dev-dependencies]
 pretty_assertions = { workspace = true }
+# reqwest is built with `rustls-no-provider`: the HTTP transport tests install the ring provider.
+rustls            = { workspace = true }
 tokio             = { workspace = true, features = ["macros", "rt-multi-thread"] }

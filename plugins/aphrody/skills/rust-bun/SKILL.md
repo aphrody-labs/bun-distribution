@@ -1,6 +1,6 @@
 ---
 name: rust-bun
-description: "Connect Rust and Bun: choose bun:ffi, napi-rs, Bun.spawn, WASM or IPC, type marshalling, packaging a crate as a Bun package (references/bun-ffi, napi-rs, wasm-bun, rs-to-ts)."
+description: "Connect Rust and Bun/Node: choose bun:ffi, napi-rs, Bun.spawn, WASM or IPC; type marshalling and memory ownership; scaffold a cdylib + bun:ffi wrapper; package a crate for Bun/npm. Use when JS must call Rust or load a .node/.so/.dll/.wasm."
 metadata:
   version: "1.0.0"
   keywords: [rust, bun, ffi, napi, napi-rs, n-api, wasm, bun.spawn, jsc, bun_jsc, native-addon]
@@ -106,3 +106,17 @@ Rust↔JS boundary is designed.
 - `references/how-bun-does-it.md` — the canonical oven-sh/bun internals:
   `bun_jsc`/`host_fn`, `.classes.ts` codegen, `bun_core`/`bun_sys`, and the FFI
   JIT trampoline, with file pointers.
+- `references/bun-ffi.md` (+ `bun-ffi/`), `references/napi-rs.md` (+ `napi-rs/`),
+  `references/wasm-bun.md` (+ `wasm-bun/`), `references/rs-to-ts.md` (+ `rs-to-ts/`) —
+  hands-on guides per path.
+
+## Scripts
+
+- `scripts/scaffold.sh <crate-name> [dir]` — creates a Rust 2024 `cdylib` with C-ABI
+  exports plus a `bun:ffi` wrapper and test; refuses to overwrite a non-empty dir.
+- `bun scripts/gen-bindings.ts <manifest.ts> [out.ts]` — generates a typed `dlopen`
+  block from a declarative symbol manifest so JS `args` stay in lockstep with Rust.
+
+Bun's internals moved from Zig to Rust upstream (oven-sh/bun PR #30412, merged
+2026-05-14); check the current tree before citing a file path from
+`references/how-bun-does-it.md`.

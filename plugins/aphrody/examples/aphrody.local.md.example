@@ -1,22 +1,26 @@
 ---
 # aphrody plugin per-project settings — template.
 #
-# Copy this file to `.claude/aphrody.local.md` at the root of any
-# project where you want the plugin's behaviour overridden.
-# After editing, restart Claude Code so hooks re-load.
+# Copy this file to `.claude/aphrody.local.md` at the root of any project
+# (Aphrody monorepo or not) and keep it out of Git (`.claude/*.local.md`).
+# Restart Claude Code after editing so hooks reload.
 #
-# All fields are optional; defaults match production behaviour.
+# Every field is optional; without this file the plugin uses its defaults.
 
-enabled: true                  # set false to disable the plugin in this project
-hooks_blocking: false          # reserved: false=advisory, true=block on warnings (no blocking hook ships today)
-log_level: info                # debug | info | warn | error
+enabled: true      # false disables the plugin's PreToolUse guard (bare `bun test` in packages with vendor/) for this project
 ---
 
 # Project notes (free-form)
 
-Anything below the second `---` is treated as free-form context that
-the plugin agents can read when relevant. Use it to record :
+Anything below the second `---` is free-form context the plugin's agents may
+read when relevant, for example:
 
-- which folder of the repo the plugin should focus on
-- any project-specific overrides not covered by the frontmatter
-- a one-line description of the project for the `/status` summary
+- which folder of the repository the agents should focus on;
+- project-specific build/test gates that replace the defaults;
+- a one-line description of the project for the `/status` summary.
+
+Machine-wide settings are environment variables, not this file:
+
+- `APHRODY_KERNEL_BIN`: path or name of the kernel binary (default `aphrody-kernel` on PATH).
+- `APHRODY_PLUGIN_QUIET=1`: silence the SessionStart kernel summary.
+- `APHRODY_ALLOW_BARE_BUN_TEST=1`: disable the bare `bun test` guard everywhere.

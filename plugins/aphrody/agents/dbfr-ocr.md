@@ -5,11 +5,14 @@ tools: Read, Bash, Glob, Grep
 model: opus
 ---
 
+**Précondition** : les commandes `bun apps/shenron/site/scripts/…` supposent le
+dépôt Aphrody (Shenron) ; sans lui, travaille uniquement depuis l'image fournie.
+
 Tu transcris des planches japonaises de databooks Dragon Ball pour
 dragonballfr.com : Daizenshuu, Chōzenshū, artbooks, guides Toriyama, magazines
 V-Jump. Le corpus compte actuellement **14 233 planches**, dont les
 transcriptions sont évolutives. Vérifie les compteurs avec
-`bun apps/site/scripts/databooks.ts etat` avant de citer un chiffre.
+`bun apps/shenron/site/scripts/databooks.ts etat` avant de citer un chiffre.
 
 ## Contrat visuel et délégation
 
@@ -162,9 +165,9 @@ absence du lexique n'est pas une preuve de faute.
 ## Le détecteur, avant toute chose
 
 ```bash
-bun apps/site/scripts/detecte-hallucinations.ts               # rapport lisible
-bun apps/site/scripts/detecte-hallucinations.ts --json out.json
-bun apps/site/scripts/detecte-hallucinations.ts --famille boucle-motif-long
+bun apps/shenron/site/scripts/detecte-hallucinations.ts               # rapport lisible
+bun apps/shenron/site/scripts/detecte-hallucinations.ts --json out.json
+bun apps/shenron/site/scripts/detecte-hallucinations.ts --famille boucle-motif-long
 ```
 
 Il classe chaque famille en **bloquant** (une règle existe, ceci ne devrait plus
@@ -178,8 +181,8 @@ avant d'en ajouter une : elles disent pourquoi tel seuil et pas un autre.
 
 ## Les modules de correction
 
-Chaque famille vit dans son module pur sous `src/lib/databooks-ocr/`, avec son
-runner `scripts/corrige-*.ts` en `--simulation` / `--appliquer`. Ne mets jamais
+Chaque famille vit dans son module pur sous `apps/shenron/site/src/lib/databooks-ocr/`, avec son
+runner `apps/shenron/site/scripts/corrige-*.ts` en `--simulation` / `--appliquer`. Ne mets jamais
 deux familles dans un même fichier : plusieurs agents y travaillent en
 parallèle et s'écraseraient.
 
@@ -258,8 +261,10 @@ apporter une mesure nouvelle qui contredit celle-ci.
 - Une planche `textless` en masse **n'est pas une panne** : vérifie la catégorie
   de l'ouvrage. Un artbook rend légitimement des pages sans texte.
 - Ce qui manquait aux bulles n'était pas le modèle mais le **cadrage** :
-  `aphrody ocr bulles` recadre et agrandit, et rend leur texte à 78 % des
-  planches muettes. Une bulle fait 130×100 dans une planche de 1128×1600 —
+  recadrer et agrandir (`bun apps/shenron/site/scripts/decoupe-planche.ts <image> <préfixe> [colonnes] [lignes]` ;
+  `aphrody ocr ppocr` donne la géométrie des zones de texte) a rendu leur texte
+  à 78 % des planches muettes lors de la mesure avec l'ancienne passe « bulles »,
+  qui n'existe plus comme sous-commande. Une bulle fait 130×100 dans une planche de 1128×1600 —
   une poignée de jetons visuels dans ce que le modèle traite comme un dessin.
 - **La résolution ne prédit pas la lisibilité** : le taux de récupération DÉCROÎT
   quand le scan grandit (27 % sous 600 px, 3 % au-delà de 2500), parce qu'un très
@@ -290,9 +295,9 @@ laisse passer à dessein.
 ## Les autres outils d'analyse
 
 ```bash
-bun apps/site/scripts/ja-analyser.ts --json rapport.json    # fautes probables
-bun apps/site/scripts/ja-vocabulaire.ts --json vocab.json   # vocabulaire manquant
-bun apps/site/scripts/planches-a-relire.ts                  # file de relecture
+bun apps/shenron/site/scripts/ja-analyser.ts --json rapport.json    # fautes probables
+bun apps/shenron/site/scripts/ja-vocabulaire.ts --json vocab.json   # vocabulaire manquant
+bun apps/shenron/site/scripts/planches-a-relire.ts                  # file de relecture
 ```
 
 Environ **15 % des suggestions de `ja-analyser` sont fausses**. Ne les applique
@@ -300,6 +305,6 @@ jamais en masse : le relecteur `/admin/databooks/<id>` les affiche planche par
 planche avec le scan à côté, et c'est le seul endroit où l'on peut trancher.
 
 L'export `~/base-connaissance-dragon-ball/` (régénérable par
-`scripts/exporte-base-connaissance.ts`) porte le lexique complet, les 33 919
+`bun apps/shenron/site/scripts/exporte-base-connaissance.ts`) porte le lexique complet, les 33 919
 graphies katakana du corpus avec leur fréquence, et les 4 027 mots inconnus vus
 au moins trois fois.

@@ -109,38 +109,57 @@ Variables de substitution : `${extensionPath}`, `${workspacePath}`, `${/}`
 (séparateur de chemin selon l'OS). Commandes custom = TOML dans `commands/`
 (`commands/deploy.toml` ⇒ `/deploy`, `commands/gcs/sync.toml` ⇒ `/gcs:sync`).
 
-### 5.2. Hooks (`hooks/hooks.json`)
+### 5.2. Hooks
 
-Events : `SessionStart`, `SessionEnd`, `BeforeAgent`, `AfterAgent`,
-`BeforeModel`, `AfterModel`, `BeforeToolSelection`, `BeforeTool`, `AfterTool`,
-`Notification`, `PreCompress`.
-(⚠ noms Gemini CLI : `BeforeTool`/`AfterTool`, **pas** `PreToolUse`/`PostToolUse`
-de Claude Code — le migrateur mappe `PostToolUse → AfterTool`.)
+> **Correction (2026-10-01).** Les noms `BeforeAgent`/`AfterAgent`/`BeforeTool`/
+> `AfterTool`… et la structure `{"hooks":{"<Event>":[…]}}` de cette section
+> étaient ceux du **Gemini CLI**, pas ceux d'agy. Le binaire `agy` ne contient
+> aucun `AfterAgent`/`BeforeAgent`/`BeforeTool`/`AfterTool` ; sa documentation
+> embarquée décrit le contrat ci-dessous. Détail et preuves :
+> [`docs/reference/ai/agy-cli/aphrody-agy-map.md`](../../../reference/ai/agy-cli/aphrody-agy-map.md) §3.
 
-Structure :
+Événements d'agy : `PreToolUse`, `PostToolUse`, `PreInvocation`,
+`PostInvocation`, `Stop` (les protos internes ajoutent `SessionStart`). Fichier
+`hooks.json` : `<workspace>/.agents/hooks.json`, `~/.gemini/config/hooks.json`
+ou `plugins/<nom>/hooks.json`. Chaque clé de premier niveau est un **nom de
+hook** (avec `enabled` optionnel) portant une liste par événement ;
+`PreToolUse`/`PostToolUse` sont groupés (`matcher` regex sur le nom d'outil +
+`hooks`), `PreInvocation`/`PostInvocation`/`Stop` sont des listes plates de
+gestionnaires :
+
 ```json
-{ "hooks": { "AfterAgent": [ { "matcher": "", "hooks": [
-  { "type": "command", "command": "…", "name": "…", "timeout": 60000 } ] } ] } }
+{ "lint": { "PostToolUse": [ { "matcher": "run_command", "hooks": [
+    { "type": "command", "command": "./scripts/lint.sh", "timeout": 10 } ] } ] },
+  "loop": { "Stop": [ { "type": "command", "command": "…", "timeout": 10 } ] } }
 ```
 
-**Protocole** : le hook reçoit un JSON sur **stdin** (`session_id`,
-`transcript_path`, `cwd`, `hook_event_name`, `timestamp`) et émet un JSON sur
-**stdout** (exit 0). Champs de contrôle communs : `systemMessage`,
-`suppressOutput`, `continue` (false ⇒ stoppe la boucle agent), `stopReason`,
-`decision` (`allow`/`deny`/`block`), `reason`, `hookSpecificOutput`.
+**Protocole** : le hook (type `command` seulement, `sh -c` / `cmd /c`, lancé
+depuis le dossier du `hooks.json`, timeout 30 s par défaut) reçoit un JSON
+**camelCase** (protojson) sur **stdin** — champs communs `conversationId`,
+`workspacePaths`, `transcriptPath`, `artifactDirectoryPath`, `modelName` — et
+émet un JSON sur **stdout**. Par événement :
 
-`AfterAgent` (post-réponse) reçoit en plus `prompt`, `prompt_response`,
-`stop_hook_active`. **`decision: "deny"` + `reason` force l'agent à continuer**
-(nouveau tour, `reason` injecté comme prompt système). Exit code 2 ⇒ retry avec
-stderr comme feedback. C'est le levier exploité par `aphrody agy-loop`.
+| Événement | Entrée en plus | Sortie |
+|-----------|----------------|--------|
+| `PreToolUse` | `toolCall{name,args}`, `stepIdx` | `decision` (`allow`/`deny`/`ask`/`force_ask`), `reason`, `permissionOverrides`, `overwrite` |
+| `PostToolUse` | `stepIdx`, `error` | `{}` |
+| `PreInvocation` | `invocationNum`, `initialNumSteps` | `injectSteps` |
+| `PostInvocation` | idem + `modelOutput`, `modelThinking` | `injectSteps`, `terminationBehavior` (`force_continue`/`terminate`/vide) |
+| `Stop` | `executionNum`, `terminationReason`, `error`, `fullyIdle`, `finalModelOutput` | `decision` (`continue` bloque l'arrêt, toute autre valeur le laisse passer), `reason` (injecté en message système) |
+
+**`Stop` + `decision: "continue"` + `reason` force l'agent à continuer** ; agy
+plafonne le nombre de continuations consécutives d'un hook `Stop`. C'est le
+levier exploité par `aphrody agy-loop`.
 
 ## 6. Mode boucle autonome — il n'y en a PAS nativement
 
 `agy` n'expose aucun mode « continue jusqu'à terminé » : tout est initié par
-l'utilisateur ou borné au sous-agent. Le plugin `aphrody-agy` comble ce manque
-via un hook `AfterAgent` (`aphrody agy-loop hook`) qui réinjecte une directive
-tant que le jeton `APHRODY_LOOP_DONE` n'a pas été émis. Voir
-`extensions/aphrody-agy/README.md`.
+l'utilisateur ou borné au sous-agent. `aphrody agy-loop` comble ce manque via le
+hook `Stop` (`aphrody agy-loop hook --event stop`, pilote) et le hook
+`PostInvocation` (comptage par tour), qui réinjectent une directive tant que le
+jeton `APHRODY_LOOP_DONE` n'a pas été émis seul sur une ligne. Le fragment
+`hooks.json` exact est affiché par `aphrody agy-loop hooks-json`. (Le chemin
+`extensions/aphrody-agy/README.md` cité autrefois n'existe plus dans ce dépôt.)
 
 ## Sources
 

@@ -2,8 +2,9 @@
 //! Fusion, dedup, source-weighting/quota, MMR, and vector-kernel tests.
 
 use aphrody_rag_core::fusion::{
-    QuotaRule, SourceWeight, WeightedCandidate, apply_source_weights, cosine, dedup_by_key, dot,
-    dot_i8, l2_normalize, mmr, quantize_i8, rrf, rrf_weighted, top_k_exact,
+    QuotaRule, ScoreScaling, SourceWeight, WeightedCandidate, apply_source_weights, cosine,
+    cosine_with_norm, dedup_by_key, dot, dot_i8, fuse_scores, l2_normalize, merge_top_k,
+    minmax_normalize, mmr, norm, quantize_i8, rrf, rrf_weighted, top_k_dot, top_k_exact, top_k_i8,
 };
 
 #[test]

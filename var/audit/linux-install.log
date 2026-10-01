@@ -1,0 +1,55 @@
+● aphrody-kernel.service - Aphrody Linux kernel control plane
+     Loaded: loaded (/home/aphro/.config/systemd/user/aphrody-kernel.service; enabled; preset: enabled)
+     Active: active (running) since Thu 2026-10-01 13:47:53 CEST; 20ms ago
+   Main PID: 178496 (aphrody-kernel)
+      Tasks: 1 (limit: 31241)
+     Memory: 23.0M (peak: 23.0M)
+        CPU: 6ms
+     CGroup: /user.slice/user-1000.slice/user@1000.service/app.slice/aphrody-kernel.service
+             └─178496 /home/aphro/.local/bin/aphrody-kernel serve --no-browser
+
+Oct 01 13:47:53 APHRODY systemd[250]: Started aphrody-kernel.service - Aphrody Linux kernel control plane.
+
+● aphrody-host-bridge@windows.service - Aphrody native Hyper-V tunnel to windows
+     Loaded: loaded (/home/aphro/.config/systemd/user/aphrody-host-bridge@.service; enabled; preset: enabled)
+     Active: active (running) since Thu 2026-10-01 13:47:53 CEST; 132ms ago
+   Main PID: 178524 (aphrody-host-se)
+      Tasks: 25 (limit: 31241)
+     Memory: 2.2M (peak: 4.6M)
+        CPU: 9ms
+     CGroup: /user.slice/user-1000.slice/user@1000.service/app.slice/app-aphrody\x2dhost\x2dbridge.slice/aphrody-host-bridge@windows.service
+             └─178524 /home/aphro/.local/bin/aphrody-host-service --config /home/aphro/.config/aphrody/host-bridge/windows.json
+
+Oct 01 13:47:53 APHRODY systemd[250]: Started aphrody-host-bridge@windows.service - Aphrody native Hyper-V tunnel to windows.
+Oct 01 13:47:53 APHRODY aphrody-host-service[178524]: bridge unavailable: connection: Connection refused (os error 111)
+Oct 01 13:47:53 APHRODY aphrody-host-service[178524]: bridge unavailable: connection: Connection refused (os error 111)
+
+● aphrody-host-bridge@desktop.service - Aphrody native Hyper-V tunnel to desktop
+     Loaded: loaded (/home/aphro/.config/systemd/user/aphrody-host-bridge@.service; enabled; preset: enabled)
+     Active: active (running) since Thu 2026-10-01 13:47:53 CEST; 136ms ago
+   Main PID: 178532 (aphrody-host-se)
+      Tasks: 25 (limit: 31241)
+     Memory: 2.3M (peak: 4.5M)
+        CPU: 7ms
+     CGroup: /user.slice/user-1000.slice/user@1000.service/app.slice/app-aphrody\x2dhost\x2dbridge.slice/aphrody-host-bridge@desktop.service
+             └─178532 /home/aphro/.local/bin/aphrody-host-service --config /home/aphro/.config/aphrody/host-bridge/desktop.json
+
+Oct 01 13:47:53 APHRODY systemd[250]: Started aphrody-host-bridge@desktop.service - Aphrody native Hyper-V tunnel to desktop.
+Oct 01 13:47:53 APHRODY aphrody-host-service[178532]: bridge unavailable: connection: Connection refused (os error 111)
+Oct 01 13:47:53 APHRODY aphrody-host-service[178532]: bridge unavailable: connection: Connection refused (os error 111)
+
+● aphrody-host-bridge@privileged.service - Aphrody native Hyper-V tunnel to privileged
+     Loaded: loaded (/home/aphro/.config/systemd/user/aphrody-host-bridge@.service; enabled; preset: enabled)
+     Active: active (running) since Thu 2026-10-01 13:47:53 CEST; 136ms ago
+   Main PID: 178534 (aphrody-host-se)
+      Tasks: 25 (limit: 31241)
+     Memory: 2.0M (peak: 3.5M)
+        CPU: 7ms
+     CGroup: /user.slice/user-1000.slice/user@1000.service/app.slice/app-aphrody\x2dhost\x2dbridge.slice/aphrody-host-bridge@privileged.service
+             └─178534 /home/aphro/.local/bin/aphrody-host-service --config /home/aphro/.config/aphrody/host-bridge/privileged.json
+
+Oct 01 13:47:53 APHRODY systemd[250]: Stopping aphrody-host-bridge@privileged.service - Aphrody native Hyper-V tunnel to privileged...
+Oct 01 13:47:53 APHRODY systemd[250]: Stopped aphrody-host-bridge@privileged.service - Aphrody native Hyper-V tunnel to privileged.
+Oct 01 13:47:53 APHRODY systemd[250]: Started aphrody-host-bridge@privileged.service - Aphrody native Hyper-V tunnel to privileged.
+Oct 01 13:47:53 APHRODY aphrody-host-service[178534]: bridge unavailable: connection: Connection refused (os error 111)
+Oct 01 13:47:53 APHRODY aphrody-host-service[178534]: bridge unavailable: connection: Connection refused (os error 111)

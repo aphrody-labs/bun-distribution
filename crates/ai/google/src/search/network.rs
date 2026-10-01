@@ -416,12 +416,15 @@ async fn browser_fetch(
         .map_err(|_| "browser worker ended".to_owned())?
 }
 
-async fn fetch_serp_html(
+/// Fetch `url` over the configured transports and return the first parse that
+/// holds organic results. The HTML is parsed once: the parse that proves a
+/// transport worked is the parse the caller receives.
+async fn fetch_serp(
     url: &Url,
     cookies: &[SearchCookie],
     options: &SearchOptions,
     query: &str,
-) -> Result<(String, SearchTransport), String> {
+) -> Result<(SerpContent, SearchTransport), String> {
     let transports: &[SearchTransport] = match options.transport {
         SearchTransport::Auto => &[SearchTransport::Fetch, SearchTransport::Http],
         SearchTransport::Fetch => &[SearchTransport::Fetch],
@@ -436,8 +439,9 @@ async fn fetch_serp_html(
         };
         match response {
             Ok(html) if !is_blocked_serp_html(&html) => {
-                if !parse_serp(&html, query).organic.is_empty() {
-                    return Ok((html, *transport));
+                let content = parse_serp(&html, query);
+                if !content.organic.is_empty() {
+                    return Ok((content, *transport));
                 }
                 last_error = format!(
                     "transport {} returned HTML with no organic results: {} (bytes={}, h3_tags={})",
@@ -514,29 +518,44 @@ fn cache_set(key: &str, value: &RichSearchResult, ttl_ms: u64) -> Result<(), Str
     Ok(())
 }
 
+/// Run synchronous file or SQLite work on the blocking pool so it never stalls
+/// the async executor that is driving other searches.
+async fn blocking<T, F>(job: F) -> Result<T, String>
+where
+    T: Send + 'static,
+    F: FnOnce() -> T + Send + 'static,
+{
+    tokio::task::spawn_blocking(job).await.map_err(|error| error.to_string())
+}
+
 /// Fetch and parse a Google SERP with authenticated cookies when available.
 pub async fn search_rich(query: &str, options: &SearchOptions) -> Result<RichSearchResult, String> {
     let url = search_url(query, options)?;
-    let cookies = search_cookies(options);
+    let cookies = {
+        let options = options.clone();
+        blocking(move || search_cookies(&options)).await?
+    };
     let authenticated = !cookies.is_empty();
     let cache_key = format!("serp-rich:anonymous-v2:{url}");
     let cache_anonymous = !authenticated && options.cache_ttl_ms.is_some_and(|ttl| ttl > 0);
-    if cache_anonymous && let Some(mut hit) = cache_get(&cache_key) {
-        hit.served_from_cache = true;
-        return Ok(hit);
+    if cache_anonymous {
+        let key = cache_key.clone();
+        // A failed lookup is a cache miss, never a failed search.
+        if let Some(mut hit) = blocking(move || cache_get(&key)).await.ok().flatten() {
+            hit.served_from_cache = true;
+            return Ok(hit);
+        }
     }
-    let (html, profile_used) = fetch_serp_html(&url, &cookies, options, query).await?;
-    let mut content = parse_serp(&html, query);
+    let (mut content, profile_used) = fetch_serp(&url, &cookies, options, query).await?;
     if content.organic.is_empty() && options.udm.is_none() && !options.classic {
         let mut web_url = url.clone();
         web_url.query_pairs_mut().append_pair("udm", "14");
-        if let Ok((web_html, _)) = fetch_serp_html(&web_url, &cookies, options, query).await {
-            let web = parse_serp(&web_html, query);
-            if !web.organic.is_empty() {
-                content.organic = web.organic;
-                if content.total_results.is_none() {
-                    content.total_results = web.total_results;
-                }
+        if let Ok((web, _)) = fetch_serp(&web_url, &cookies, options, query).await
+            && !web.organic.is_empty()
+        {
+            content.organic = web.organic;
+            if content.total_results.is_none() {
+                content.total_results = web.total_results;
             }
         }
     }
@@ -546,7 +565,9 @@ pub async fn search_rich(query: &str, options: &SearchOptions) -> Result<RichSea
         && !result.content.organic.is_empty()
         && let Some(ttl) = options.cache_ttl_ms
     {
-        let _ = cache_set(&cache_key, &result, ttl);
+        let key = cache_key.clone();
+        let stored = result.clone();
+        let _ = blocking(move || cache_set(&key, &stored, ttl)).await;
     }
     Ok(result)
 }

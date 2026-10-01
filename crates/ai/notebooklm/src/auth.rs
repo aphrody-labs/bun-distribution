@@ -22,7 +22,10 @@ use serde::{Deserialize, Serialize};
 use crate::error::{NotebookError, Result};
 
 /// One entry in the cookie jar.
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+///
+/// `Debug` redacts `value`: a session cookie is a credential, and this type is
+/// reachable from `{:?}` of the transport, the client and every error context.
+#[derive(Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct SessionCookie {
     pub name: String,
     pub value: String,
@@ -34,6 +37,20 @@ pub struct SessionCookie {
     pub secure: bool,
     #[serde(default)]
     pub http_only: bool,
+}
+
+impl std::fmt::Debug for SessionCookie {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter
+            .debug_struct("SessionCookie")
+            .field("name", &self.name)
+            .field("value", &"[REDACTED]")
+            .field("domain", &self.domain)
+            .field("path", &self.path)
+            .field("secure", &self.secure)
+            .field("http_only", &self.http_only)
+            .finish()
+    }
 }
 
 fn default_path() -> String {
@@ -78,12 +95,26 @@ impl CookieJar {
 }
 
 /// Top-level credential carrier.
-#[derive(Debug, Clone)]
+///
+/// `Debug` never prints the OAuth bearer token (cookie values are redacted by
+/// [`SessionCookie`]'s own `Debug`).
+#[derive(Clone)]
 pub enum Auth {
     /// Reuse cookies harvested from a logged-in browser session.
     Cookies(CookieJar),
     /// Bearer access token (OAuth 2.0).
     OAuthAccessToken(String),
+}
+
+impl std::fmt::Debug for Auth {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Cookies(jar) => formatter.debug_tuple("Cookies").field(jar).finish(),
+            Self::OAuthAccessToken(_) => {
+                formatter.debug_tuple("OAuthAccessToken").field(&"[REDACTED]").finish()
+            },
+        }
+    }
 }
 
 impl Auth {

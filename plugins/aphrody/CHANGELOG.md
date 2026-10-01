@@ -1,7 +1,42 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 # Changelog
 
-## Unreleased
+## 1.6.0 - 2026-10-01
+
+Aligned with the Aphrody monorepo layout and usable from any project.
+
+### Changed
+
+- `.mcp.json` runs `${APHRODY_KERNEL_BIN:-aphrody-kernel} mcp`, so the kernel
+  binary can be relocated without editing the plugin. The server key stays
+  `aphrody` (tools remain `mcp__plugin_aphrody_aphrody__*`). `mcp_config.json`
+  (agy) keeps the literal `aphrody-kernel` because agy expansion of
+  `${VAR:-default}` is unverified; it is no longer required to be byte-identical.
+- `SessionStart` no longer runs `aphrody-kernel tools` directly (which dumped
+  the ~270 KB catalog into context and failed noisily without the kernel). The
+  new `hooks/scripts/session-start.sh` prints one summary line, is silent when
+  the kernel is missing or slow, and honours `APHRODY_PLUGIN_QUIET=1`.
+- The bare-`bun test` guard no longer targets the removed `apps/bxc` package.
+  It applies to any package that has `package.json` + `vendor/`, uses jq with a
+  sed fallback, follows a leading `cd DIR &&`, and can be disabled with
+  `APHRODY_ALLOW_BARE_BUN_TEST=1` or `enabled: false` in
+  `.claude/aphrody.local.md`.
+- Manifests point at the monorepo declared in the workspace `Cargo.toml`
+  (`github.com/aphrody-labs/aphrody`), describe the current catalogue, and drop
+  the Codex-only `interface`/`category` fields from the Claude manifest
+  (`claude plugin validate` reported them as ignored). The marketplace entry now
+  carries the full metadata.
+- `home/AGENTS.md`, `docs/DRAGON-BALL.md` and the README no longer cite
+  per-user Windows paths or the retired sibling repositories
+  (`aphrody-os`, `aphrody-ai`, `apps/bxc`).
+- `scripts/validate-plugin.sh` runs from any cwd, validates every JSON file with
+  jq (python3 fallback), checks version consistency across manifests, the
+  marketplace and this changelog, checks skill/agent/command frontmatter,
+  syntax-checks hook scripts, reports all problems instead of stopping at the
+  first, and warns on user-specific absolute paths and cited monorepo paths
+  that do not exist.
+
+## Unreleased (1.5.0 notes)
 
 ### Changed
 

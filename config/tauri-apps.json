@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "description": "Single registry of every Tauri project in the monorepo: first-party apps and plugins, workspace-excluded or git-ignored ones, and upstream-owned fixtures. `bun run tauri:apps:check` scans the whole tree (git-ignored and workspace-excluded paths included, only target/node_modules/.git are skipped) and fails on any Tauri project missing here. tauri-sync derives its cargo gate and generated-file list from this file.",
+  "description": "Single registry of every Tauri project in the monorepo: first-party apps and plugins, workspace-excluded or git-ignored ones; upstream checkouts live outside the repo (config/upstream-sources.json). `bun run tauri:apps:check` scans the whole tree (git-ignored and workspace-excluded paths included, only target/node_modules/.git are skipped) and fails on any Tauri project missing here. tauri-sync derives its cargo gate and generated-file list from this file.",
   "scanSkip": [
     "target",
     "node_modules",
@@ -128,46 +128,6 @@
       "kind": "integration",
       "path": "packages/ui/m3",
       "note": "buildM3 / M3App Tauri webview layout; no Tauri dependency."
-    },
-    {
-      "id": "mcp-server-tauri",
-      "kind": "upstream",
-      "path": "upstream/mcp-server-tauri",
-      "workspace": "upstream",
-      "subtree": true,
-      "note": "Upstream Tauri MCP server, bridge plugin (tauri-plugin-mcp-bridge) and test-app fixture. Upstream workspace, kept apart."
-    },
-    {
-      "id": "tauri-plugin-webdriver",
-      "kind": "upstream",
-      "path": "upstream/tauri-plugin-webdriver",
-      "workspace": "upstream",
-      "subtree": true,
-      "note": "Upstream WebDriver plugin and examples/tauri-app fixture."
-    },
-    {
-      "id": "victauri",
-      "kind": "upstream",
-      "path": "upstream/victauri",
-      "workspace": "upstream",
-      "subtree": true,
-      "note": "Upstream Tauri verification toolkit: plugin, test client and demo/gauntlet fixtures."
-    },
-    {
-      "id": "tauri-plugin-dialog",
-      "kind": "upstream",
-      "path": "upstream/tauri-plugin-dialog",
-      "workspace": "upstream",
-      "subtree": true,
-      "note": "Vendored tauri-plugin-dialog 3.0.0-alpha.2 with the Manager import fix (see config/tauri-upstream.json patches)."
-    },
-    {
-      "id": "tauri-driver",
-      "kind": "upstream",
-      "path": "upstream/tauri-driver",
-      "workspace": "upstream",
-      "subtree": true,
-      "note": "Upstream WebDriver server for Tauri apps."
     }
   ]
 }

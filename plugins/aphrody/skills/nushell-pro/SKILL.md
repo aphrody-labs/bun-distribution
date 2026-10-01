@@ -1,6 +1,7 @@
 ---
 name: nushell-pro
-description: "Nushell scripting best practices, idioms, security and code review for .nu scripts, modules and custom commands."
+description: "Nushell (0.114-0.116) scripting: idioms, security, testing, code review, modules, custom commands and completers, Bash-to-Nushell conversion and version migrations. Use when writing, reviewing, debugging or porting .nu code or Nushell config."
+version: "1.1.0"
 ---
 
 # Nushell Pro
@@ -35,6 +36,7 @@ in this file; load detailed references only when the task needs them.
 
    | Task                                                 | Reference                                                                                     |
    | ---------------------------------------------------- | --------------------------------------------------------------------------------------------- |
+   | Nu 0.116 migration: unified completers, finally, YAML | [Nu 0.116 Migration](references/nu-0.116-migration.md)                                        |
    | Nu 0.115 migration, YAML, CLI args, command changes  | [Nu 0.115 Migration](references/nu-0.115-migration.md)                                        |
    | Nu 0.114 migration and version compatibility         | [Nu 0.114 Migration](references/nu-0.114-migration.md)                                        |
    | Strings, regex/globs, generated JS/JSON              | [String Formats](references/string-formats.md)                                                |
@@ -242,7 +244,14 @@ nu --no-config-file path/to/test-script.nu
 - If validation fails, fix the smallest reproducible issue and rerun the exact
   failing command before broadening the test suite.
 
-## Aphrody OS context
+## Version and environment
 
-- Nushell is embedded in aphrody-os; evaluate snippets with the `nu_eval` MCP tool (structured JSON, pass data through `vars`) and look up commands with `nu_help` / `nu_commands`.
-- The workspace pins Nushell 0.115 (`nu-*` in the root `Cargo.toml`), so the 0.115 migration notes apply.
+- Detect the target version first (`version | get version`, or the `nu-*` crate versions in
+  `Cargo.toml` when Nushell is embedded) and apply only the migration notes up to it. The
+  latest release is 0.116.0 (2026-09-26).
+- If the session exposes Nushell MCP tools (`nu_eval`, `nu_help`, `nu_commands`), evaluate
+  snippets with `nu_eval` (structured JSON; pass data through `vars`) and look up commands
+  with `nu_help` / `nu_commands` instead of guessing signatures.
+- In the Aphrody monorepo, Nushell is embedded through crate `aphrody-nu`
+  (`crates/shell/nu`) and the workspace pins `nu-*` 0.115.1, so 0.115 semantics apply there
+  until the pin moves.

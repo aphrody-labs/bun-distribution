@@ -1,87 +1,104 @@
 ---
 name: rust-target-check
-description: "Run cargo check on Linux x86_64, Windows MSVC and wasm32 in parallel to verify a change is cross-platform."
-version: "1.0.0"
-argument-hint: [crate-name | --workspace]
+description: "Run cargo check for several targets at once (default Linux x86_64, Windows MSVC, wasm32) and report per-target verdicts with the first real error. Use after Rust, Cargo.toml or cfg changes, before pushing, or for cross-platform checks."
+version: "2.0.0"
+argument-hint: "[crate-name | --workspace] [--targets triple,triple,...]"
 allowed-tools: Bash, Read
-disable-model-invocation: false
 ---
 
-# rust-target-check — 3-target parallel verifier
+# rust-target-check: multi-target cargo check
 
-Mode `/goal` permanent : décider seul, ne pas s'arrêter avant verdict complet.
+Verifies that a change type-checks on every target the project ships, without building
+binaries. `cargo check` is enough to catch `cfg` mistakes, missing platform imports and
+dependency features that do not exist on a target.
 
-The workspace must compile on the **3 priority cross-platform targets**:
+## 1. Decide the targets
 
-1. `x86_64-unknown-linux-gnu` (Linux Ubuntu 26.04, **target #1 blocking**)
-2. `x86_64-pc-windows-msvc` (Windows 11 Insider Canary, target #2 blocking)
-3. `wasm32-unknown-unknown` (WebAssembly, target #3 blocking)
+In priority order:
 
-This skill spawns the three `cargo check --offline` processes **in parallel**
-and reports a consolidated verdict. Failing on the target is non-negotiable
-per `docs/SOURCE_OF_TRUTH.md` rules.
+1. Targets given by the user (`--targets`).
+2. `targets = [...]` in `rust-toolchain.toml`, restricted to the platforms CI builds
+   (`.github/workflows/*.yml` `--target` values, `Cross.toml`, `.cargo/config.toml`).
+3. Default set: `x86_64-unknown-linux-gnu`, `x86_64-pc-windows-msvc`, `wasm32-unknown-unknown`.
 
-## When to use
+Only check wasm for crates meant to run there (a `cdylib` with `wasm-bindgen`, a crate whose
+README/CI targets wasm, or `[target.'cfg(target_arch = "wasm32")'.dependencies]`). A
+workspace-wide wasm check fails on any crate using Tokio's runtime, `std::process` or native
+C libraries, and that failure says nothing about the change.
 
-- The user types `/rust-target-check` or asks to validate cross-platform
-- A workspace member was modified and the user wants confidence before pushing
-- `Cargo.toml` was edited (deps, features, profile)
-- After a major rust-engineer agent run
+Confirm the toolchain has them: `rustup target list --installed`; add missing ones with
+`rustup target add <triple>`. A target that is not installed is reported as **skipped
+(toolchain missing)**, never as passing.
 
-## When to skip
+## 2. Decide the scope
 
-- Pure documentation edits (`.md`)
-- TypeScript / Bun changes only (no `.rs` touched)
-- Single-package scratchpad work where the user already knows it's
-  non-portable (then they should use plain `cargo check -p X` directly)
+- Crate name given: `-p <crate>` (find names with `cargo metadata --no-deps --format-version 1`).
+- `--workspace` or nothing given, and many crates changed: `--workspace`.
+- Otherwise: the crates owning the changed files (`git diff --name-only` mapped to the
+  nearest `Cargo.toml`).
 
-## Workflow
+Add `--locked` when `Cargo.lock` is committed; add `--offline` only when dependencies are
+already fetched or vendored (otherwise it fails for reasons unrelated to the change).
+If the project forbids agents from running cargo, or reserves builds for a lead/CI, report
+the exact commands instead of running them.
 
-1. Resolve scope:
-   - If `argument-hint` is a crate name → `cargo check -p <name>` on each target
-   - If `--workspace` or empty → `cargo check --workspace` on each target
-2. Spawn the 3 cargo processes in parallel:
+## 3. Run
 
-   **Linux / macOS (Bash) :**
-   ```bash
-   T="${TMPDIR:-/tmp}"
-   cargo check --offline --locked --target x86_64-unknown-linux-gnu --message-format=short > "$T/xc-linux.log" 2>&1 & LINUX=$!
-   cargo check --offline --locked --target x86_64-pc-windows-msvc   --message-format=short > "$T/xc-win.log"   2>&1 & WIN=$!
-   cargo check --offline --locked --target wasm32-unknown-unknown   --message-format=short > "$T/xc-wasm.log"  2>&1 & WASM=$!
-   wait $LINUX; LINUX_EC=$?; wait $WIN; WIN_EC=$?; wait $WASM; WASM_EC=$?
-   ```
+Concurrent `cargo` processes sharing one `target/` directory wait on its lock, so true
+parallelism needs one target dir per triple. Use parallel runs when disk allows; otherwise
+run the same commands sequentially in the default `target/` (incremental reuse makes this
+cheap).
 
-   **Windows (PowerShell) :**
-   ```powershell
-   $t = $env:TEMP
-   $j1 = Start-Job { cargo check --offline --locked --target x86_64-pc-windows-msvc --message-format=short }
-   $j2 = Start-Job { cargo check --offline --locked --target x86_64-unknown-linux-gnu --message-format=short }
-   $j3 = Start-Job { cargo check --offline --locked --target wasm32-unknown-unknown --message-format=short }
-   Wait-Job $j1, $j2, $j3 | Out-Null
-   $r1 = Receive-Job $j1; $r2 = Receive-Job $j2; $r3 = Receive-Job $j3
-   ```
-3. Report verdict per target:
-   | Target | Verdict | Exit code | Notes |
-   |---|---|---|---|
-   | Windows MSVC (`x86_64-pc-windows-msvc`) | ✅ / ❌ | … | Target native hôte Win11 |
-   | Linux x86_64 (`x86_64-unknown-linux-gnu`) | ✅ / ❌ | … | Target #1 blocking VPS / WSL / Prod |
-   | WASM (`wasm32-unknown-unknown` / `wasm32-wasip1`) | ✅ / ❌ | … | Target sandboxing / navigateur |
+Bash (Linux, macOS, WSL):
 
-4. For each failed target, tail the log and surface the first error block
-   (don't dump the whole log).
-5. Exit semantics: skill returns success only if **all 3 pass**.
+```bash
+SCOPE="-p my-crate"            # or --workspace
+FLAGS="--locked --message-format=short"
+LOG="${TMPDIR:-/tmp}/xcheck"; mkdir -p "$LOG"
+declare -A PID
+for T in x86_64-unknown-linux-gnu x86_64-pc-windows-msvc wasm32-unknown-unknown; do
+  CARGO_TARGET_DIR="target/xcheck-$T" cargo check $SCOPE $FLAGS --target "$T" >"$LOG/$T.log" 2>&1 &
+  PID[$T]=$!
+done
+for T in "${!PID[@]}"; do wait "${PID[$T]}"; echo "$T exit=$?"; done
+```
 
-## Anti-stub clause
+PowerShell (Windows):
 
-- Do **not** fabricate a "passing" report — always read the real exit code.
-- If `cargo` is not installed: exit immediately with a clear setup error
-  (no fake-pass).
-- If cross-compile toolchain is missing for a target (e.g. on Windows host
-  without `cargo zigbuild`), mark that target as **skipped (toolchain
-  missing)** and **do not silently mark it green**.
+```powershell
+$scope = @('-p','my-crate'); $log = Join-Path $env:TEMP 'xcheck'; New-Item -Force -ItemType Directory $log | Out-Null
+$jobs = foreach ($t in 'x86_64-pc-windows-msvc','x86_64-unknown-linux-gnu','wasm32-unknown-unknown') {
+  Start-Job -ArgumentList $t,$scope,$log,$PWD -ScriptBlock {
+    param($t,$scope,$log,$cwd) Set-Location $cwd
+    $env:CARGO_TARGET_DIR = "target/xcheck-$t"
+    cargo check @scope --locked --message-format=short --target $t *> (Join-Path $log "$t.log")
+    [pscustomobject]@{ Target = $t; Exit = $LASTEXITCODE }
+  }
+}
+$jobs | Wait-Job | Receive-Job
+```
 
-## Pre-requisites
+## 4. Report
 
-- `rustup target list --installed` should include the 3 targets
-- For wasm32 / cross from Windows: `cargo install cargo-zigbuild` (optional
-  for the wasm path, recommended for Linux-from-Windows)
+| Target | Verdict | Exit | First error |
+| --- | --- | --- | --- |
+| `x86_64-unknown-linux-gnu` | pass / FAIL / skipped | 0 | |
+| `x86_64-pc-windows-msvc` | pass / FAIL / skipped | 101 | `src/fs.rs:42: unresolved import std::os::unix` |
+| `wasm32-unknown-unknown` | pass / FAIL / skipped | 0 | |
+
+- For each failure show only the first `error[...]` block of the log (`grep -m1 -A12 '^error'`).
+- Distinguish **code errors** from **environment errors**: a `build.rs` that compiles C
+  (`cc`, `bindgen`, `ring`, `openssl-sys`) needs a cross C toolchain. From Linux to
+  Windows MSVC use `cargo xwin check --target x86_64-pc-windows-msvc`; for Linux from other
+  hosts `cargo zigbuild` or `cross`. Report those as environment failures, with the fix.
+- Success only if every non-skipped target passes. Read real exit codes; never infer a
+  pass from partial output.
+
+## Common fixes
+
+- Platform-only import: gate with `#[cfg(unix)]` / `#[cfg(windows)]` or `cfg_select!` (1.95+).
+- Platform-only dependency: move it to `[target.'cfg(windows)'.dependencies]`.
+- wasm: disable default features that pull `tokio/rt-multi-thread`, `mio`, or filesystem
+  access; for `getrandom` on `wasm32-unknown-unknown` enable its `wasm_js` backend (feature and, depending on the version, `--cfg getrandom_backend="wasm_js"`; check its README).
+- Since Rust 1.96, undefined wasm imports fail to link; annotate extern blocks with
+  `#[link(wasm_import_module = "...")]` (relevant to `cargo build`, not `check`).

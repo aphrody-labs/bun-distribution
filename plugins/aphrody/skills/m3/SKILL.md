@@ -1,18 +1,26 @@
 ---
 name: m3
-description: "@aphrody/m3 framework: m3 dev/build/tokens/check, m3.config.ts, the Bun plugin (Tailwind v4, Sass via Rust, m3:* theme and font modules, ?url), serveM3, buildM3 (Tauri webview), M3App. Use to start, build or theme an M3 web or Tauri app."
+description: "@aphrody/m3 framework: m3 CLI (new, dev, build, compile, desktop, tokens, check), m3.config.ts, the Bun plugin (Tailwind v4, Rust Sass, m3:* modules), serveM3, buildM3, M3App. Use when a project depends on @aphrody/m3."
+version: "1.1.0"
 ---
 
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 
 # m3: the @aphrody Material Design 3 framework
 
-`packages/m3` (`@aphrody/m3`) is the single dev, build and theming path for Material 3 apps in
-the Aphrody ecosystem: `Bun.serve` and `Bun.build`, never Vite. It lives in the `aphrody-ui`
-repository; every path below is relative to that repository. The framework shape is in
-`docs/design/M3-FRAMEWORK.md`, the phase status in `docs/design/M3-PLAN.md`. For Material 3 design
-questions (roles, components, adaptive layout) use the `material-3` and `responsive-adaptive`
-skills. For Bun API questions use `bun`.
+`@aphrody/m3` is the dev, build and theming path for Material 3 apps on Bun: `Bun.serve` and
+`Bun.build`, never Vite. Source: `packages/ui/m3` in the Aphrody monorepo (repo-relative paths
+below refer to that checkout). Framework design: `docs/architecture/ui/design/M3-FRAMEWORK.md`;
+phase status: `docs/plans/ui/design/M3-PLAN.md`. For Material 3 design questions use the
+`material-3` and `responsive-adaptive` skills; for Bun APIs use `bun`.
+
+**Outside the monorepo**, the package still needs two things: the native `@aphrody/bun`
+library (it provides `m3Css` and the Rust Sass compiler; loaded only when a sheet or `.scss`
+is requested) and an asset root holding `crates/ui/bun/icons/material-symbols/` and
+`assets/fonts/google-sans-flex/`. Point `APHRODY_OS_ROOT` (or the plugin's `root` option) at
+a checkout or bundle that has them, or generate a self-contained bundle once with
+`m3 tokens --bundle <dir>`. Install with the project's package manager; inside the monorepo
+use `"@aphrody/m3": "workspace:*"`.
 
 ## An app in three files
 
@@ -25,7 +33,7 @@ export default defineM3Config({
   entry: "src/index.html",                        // served on /*, bundled by m3 build
   port: 3000,                                     // PORT overrides it
   proxy: { "/rpc": "http://localhost:8080" },     // the prefix and everything below it
-  tauri: { uiDist: "../../crates/aphrody-app/ui-dist" },
+  tauri: { uiDist: "../src-tauri/ui-dist" },     // Tauri frontendDist (e.g. crates/ui/app/ui-dist)
   theme: { seed: "#6750a4", variant: "tonalSpot", contrast: 0 },
 });
 ```
@@ -37,7 +45,7 @@ export default defineM3Config({
 plugins = ["@aphrody/m3/plugin"]
 ```
 
-`package.json`: `"@aphrody/m3": "workspace:*"` in `devDependencies`, scripts `"dev": "m3 dev"`,
+`package.json`: `@aphrody/m3` in `devDependencies`, scripts `"dev": "m3 dev"`,
 `"build": "m3 build"` (or `"m3 build --tauri"`). For the `m3:*` and `?url` module types, add
 `/// <reference types="@aphrody/m3/client" />` in a `src/*.d.ts`.
 
@@ -48,9 +56,15 @@ plugins = ["@aphrody/m3/plugin"]
 | `m3 dev [--port n] [--no-hmr]` | `serveM3`: `Bun.serve` with HMR and browser console, SPA fallback, proxy prefixes. Warns when `bunfig.toml` lacks the plugin. |
 | `m3 build [--outdir d] [--dev]` | `buildM3`: one minified `Bun.build` with the plugin, hashed chunks. |
 | `m3 build --tauri [dir]` | Tauri webview layout: `index.html`, `app.js`, `app.css`, `fonts/`, no hashes; `dir` defaults to `tauri.uiDist`. |
-| `m3 tokens [--sheet tokens\|tailwind\|spaceui\|scheme] [--seed] [--variant] [--dark] [--contrast] [--out f]` | One sheet from `crates/aphrody-m3-tokens` through `m3Css` (FFI). Stdout without `--out`. |
-| `m3 tokens --bundle <dir>` | Self-contained bundle: every sheet, light and dark schemes, fonts, `manifest.json`. |
-| `m3 check` | `bun run bun:check` at the workspace root, then `bun test` in the app. |
+| `m3 new <dir>` | Scaffold a minimal Bun/M3 project (the `web` template of `@aphrody/scaffold`); no install, no network. |
+| `m3 compile [--outfile f] [--dev]` | `Bun.build({ compile: true })` with the plugin: one standalone executable (default `<outdir>/app`). |
+| `m3 desktop [--dev\|--build]` | Tauri host: `--dev` serves the webview on port 1421 (`--port` overrides); otherwise builds into `tauri.uiDist`. |
+| `m3 tokens [--sheet tokens\|tailwind\|spaceui\|scheme] [--seed] [--variant] [--dark] [--contrast] [--out f]` | One sheet from the `aphrody-m3-tokens` crate (`crates/ui/m3-tokens`) through `m3Css` (FFI). Stdout without `--out`. |
+| `m3 tokens --bundle <dir> [--root d]` | Self-contained bundle: every sheet, light and dark schemes, fonts, `manifest.json`. |
+| `m3 check` | `bun run bun:check` in the nearest ancestor whose `package.json` defines it, then `bun test` in the app. |
+
+`dev`, `build`, `compile` and `desktop` read `m3.config.ts` from the working directory
+(`--config <file>` overrides).
 
 ## Plugin modules
 
@@ -62,7 +76,7 @@ Tailwind resolves its own `@import`s and cannot see plugin modules.
 | --- | --- |
 | `m3:theme.css` (`m3:tokens.css`) | Fusion tokens (M3, shadcn, Tailwind aliases, light and dark) for `theme` of `m3.config.ts`. |
 | `m3:tailwind.css`, `m3:spaceui.css`, `m3:scheme.css` | The other `m3Css` sheets. |
-| `m3:symbols.css`, `m3:symbols-rounded.css`, `m3:symbols-sharp.css` | Material Symbols from the `icons` module of `aphrody-bun` (`crates/ui/bun/icons`). |
+| `m3:symbols.css`, `m3:symbols-rounded.css`, `m3:symbols-sharp.css` | Material Symbols from the `icons` module of the `aphrody-bun` crate (`crates/ui/bun/icons/material-symbols`). |
 | `m3:fonts.css` | Google Sans Flex from `assets/fonts/google-sans-flex`. |
 | `./file.ext?url` | The file inlined as a `data:` URL (`.scss` line comments stripped). |
 
@@ -89,11 +103,17 @@ Vanilla or Lit: `import "@aphrody/m3/lit"` registers the `aphrody-components` el
 
 ## Gates
 
+In an app: `m3 check` (or the app's own `test` / `typecheck` scripts).
+
+In the monorepo, for the framework itself:
+
 ```sh
 bun run bun:check
-bun run --cwd packages/m3 test && bun run --cwd packages/m3 typecheck
+bun run --cwd packages/ui/m3 test && bun run --cwd packages/ui/m3 typecheck
 bunx turbo run typecheck build --filter=@aphrody/m3
 ```
 
-The Tauri desktop runs `m3 dev` on port 1421 (`build.devUrl`) and `m3 build --tauri` through
-`beforeDevCommand` / `beforeBuildCommand` in `crates/aphrody-app/tauri.conf.json`.
+The Aphrody desktop app (`crates/ui/app/tauri.conf.json`) expects the webview at
+`devUrl` `http://localhost:1421` and the built UI in `frontendDist` `ui-dist`; it defines no
+`beforeDevCommand`, so start `m3 desktop --dev` (or `m3 dev --port 1421`) yourself and build
+with `m3 build --tauri` before bundling.

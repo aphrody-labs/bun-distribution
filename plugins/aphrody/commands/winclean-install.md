@@ -1,5 +1,5 @@
 ---
-description: Install a package, module, plugin or CLI via an approved channel without confirmation.
+description: Install a package, module, plugin or CLI via a standard channel (Windows-oriented) without asking which one.
 argument-hint: <package-name> [--scope user|machine]
 allowed-tools: PowerShell, Bash, Read, Write, Edit, WebFetch
 ---
@@ -13,7 +13,7 @@ Install **$ARGUMENTS** using the appropriate **approved** channel. Auto-detect f
 | 1        | **Claude plugin**                        | request mentions `plugin:` or a known Claude plugin               | `claude plugin install <name>[@<marketplace>]`                                                                     |
 | 2        | **PowerShell module** (PSResourceGet v3) | module targets `.Management`, `Az.*`, `Microsoft.*`, or PSGallery | `Install-PSResource -Name <Name> -Scope CurrentUser -TrustRepository -Quiet`                                       |
 | 3        | **bun**                                  | JavaScript / TypeScript packages, Node deps                       | `bun add -g <pkg>` (global) or `bun add <pkg>` (project)                                                           |
-| 4        | **uv** (Python libs and envs)            | `uv` is the canonical Python tool on this machine                 | `uv pip install <pkg>` (in active env) or `uv tool install <pkg>` (global CLI)                                     |
+| 4        | **uv** (Python libs and envs)            | `uv` when available (preferred Python tool)                 | `uv pip install <pkg>` (in active env) or `uv tool install <pkg>` (global CLI)                                     |
 | 5        | **pipx**                                 | Python CLI tools that want isolation                              | `pipx install <pkg>`                                                                                               |
 | 6        | **pip**                                  | Python libraries when uv is not applicable                        | `pip install --user <pkg>`                                                                                         |
 | 7        | **cargo**                                | Rust crates / binaries                                            | `cargo install <crate>`                                                                                            |
@@ -28,20 +28,15 @@ If `winget` is not on PATH:
 $winget = (Get-AppxPackage Microsoft.DesktopAppInstaller).InstallLocation + '\winget.exe'
 ```
 
-## Forbidden channels (never use)
+## Channels to avoid
 
-- **`bun`**, **`bun`**, **`pnpm`**, **`yarn`**, **`bunx`** — all denied at the permissions layer. Use **`bun`** for everything JavaScript/TypeScript:
-  - Runtime: `bun <file>` (not `bun <file>`)
-  - Scripts: `bun run <script>` (not `bun run <script>`)
-  - CLI execution: `bun x <cli>` (not `bunx`)
-  - Install deps: `bun install` / `bun add` (not `bun add`)
-  - Prefer Windows-native installers and the approved channels listed above.
-- **`apt`**, **`apt-get`**, **`dnf`**, **`brew`** — Linux/Mac package managers. On Windows use winget.
+- **JavaScript/TypeScript**: use `bun` (`bun add`, `bun install`, `bun run <script>`, `bun x <cli>`) in Aphrody workspaces and in any project that already uses Bun. In a project whose lockfile says otherwise (`package-lock.json`, `pnpm-lock.yaml`, `yarn.lock`), keep that project's package manager instead of converting it.
+- **`apt`, `apt-get`, `dnf`, `brew`**: Linux/macOS package managers; on Windows use winget.
 
 ## Rules
 
 - **Silent by default** — always pass `--silent`, `--accept-source-agreements`, `--accept-package-agreements`, `--disable-interactivity` (winget), `-Quiet -TrustRepository` (PSResourceGet), `-y` (choco), `--force` (code extensions).
-- **Elevate if the installer requires system-scope** — `Start-Process -Verb RunAs -Wait` via the `/elevate` pattern. UAC is silent on this machine.
+- **Elevate if the installer requires system-scope** — `Start-Process -Verb RunAs -Wait` via the `winclean-elevate` command pattern (UAC may prompt the user).
 - **Prefer user scope** — `--scope user` (winget), `-Scope CurrentUser` (PSResourceGet), `--user` (pip) — before going machine-wide.
 - **Report** the version installed and the install location. Note any post-install PATH update the user needs to pick up (hint: open a new shell).
 - **Never ask** which channel. Pick one and execute.

@@ -1,0 +1,18 @@
+﻿{
+    "RemovedBytes":  505041725,
+    "RemovedFiles":  558,
+    "Failures":  [
+                     {
+                         "Path":  "C:\\Users\\aphro\\.local\\share\\wezterm\\gui-sock-15688",
+                         "Error":  "Reparse point preserved"
+                     },
+                     {
+                         "Path":  "C:\\Users\\aphro\\.local\\share\\wezterm",
+                         "Error":  "Exception lors de l\u0027appel de « Delete » avec « 2 » argument(s) : « Le répertoire n’est pas vide.\r\n »"
+                     }
+                 ],
+    "Remaining":  [
+                      "C:\\Users\\aphro\\.local\\share\\wezterm"
+                  ],
+    "ZigRemaining":  false
+}

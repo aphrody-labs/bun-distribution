@@ -1,16 +1,14 @@
 ---
 name: deep-analysis
-description: "Focused reverse-engineering questions on a binary (what a function does, crypto use, config extraction) with incremental renaming, retyping and comments."
+description: "Focused reverse-engineering questions on a binary (what a function does, crypto use, config extraction) with incremental renaming, retyping and comments in Ghidra. Use for depth-first questions once a binary is loaded in a Ghidra MCP session."
 version: "1.0.0"
 metadata:
-  source: synced from a Ghidra-MCP RE skill on 2026-05-19, integration footer stripped
+  source: generic Ghidra-MCP investigation method (tool names are those of an external Ghidra MCP server)
 ---
 
 # Deep Analysis
 
-Mode `/goal` permanent : décider seul, ne pas s'arrêter avant réponse étayée + threads de suivi.
-
-Cross-platform: works wherever the Ghidra MCP tools are wired (Ghidra runs on Linux/Windows/macOS).
+> **Applies when:** a Ghidra MCP server is connected with the binary loaded. The tool names below (`get-decompilation`, `rename-variables`, ...) belong to that external server, not to Aphrody: list its tools first and map names if they differ. **Otherwise:** keep the method (read, improve, verify, thread) and use Aphrody static tools if present (`aphrody re strings|sections|disasm`, kernel MCP `re_strings`, `re_sections`, `re_disasm`, `binary_extract_strings`) or `objdump`/`rizin`; report that decompilation and database edits were unavailable. Authorized analysis only; never print secret values you recover.
 
 ## Purpose
 

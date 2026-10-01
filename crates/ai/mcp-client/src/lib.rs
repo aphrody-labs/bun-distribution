@@ -10,12 +10,17 @@
 //! - Native web tools backed by the shared Rust client (`web_search`, `web_fetch`,
 //!   supported `browser_*` actions).
 //! - Automatic assembly from [`aphrody_config::mcp::McpServerConfig`].
+//! - Fail-closed `${VAR}` credential expansion ([`headers`]) shared by every caller.
+//!
+//! This is the one MCP client of the workspace: `aphrody-gemini-runtime`'s `McpClient` and the
+//! `aphrody-mcp client` command are thin callers of it.
 
 pub mod builtins;
 pub mod bxc;
 pub mod client;
 pub mod error;
 pub mod executor;
+pub mod headers;
 pub mod protocol;
 pub mod registry;
 pub mod schema;
@@ -34,6 +39,9 @@ pub use bxc::{
 pub use client::{DEFAULT_RPC_TIMEOUT, DEFAULT_STARTUP_TIMEOUT, McpClient, McpClientHandle};
 pub use error::{McpClientError, Result};
 pub use executor::McpToolExecutor;
+pub use headers::{
+    bearer_env_var, expand_header_value, resolve_header_placeholders, resolve_server_secrets,
+};
 pub use protocol::{
     CallToolResult, ClientCapabilities, ClientInfo, MCP_PROTOCOL_VERSION, McpContent, McpTool,
     ServerInfo,

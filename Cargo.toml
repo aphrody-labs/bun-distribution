@@ -6,8 +6,6 @@ exclude = [
   "crates/contracts/schema",
   "crates/os/drive",
   "crates/web/drive-server",
-  # Patched upstream bridge plugin (optional path dependency of aphrody-tauri-wrap, feature debug-bridge); not a workspace member.
-  "upstream/mcp-server-tauri/packages/tauri-plugin-mcp-bridge",
 ]
 
 [workspace.package]
@@ -429,8 +427,8 @@ tauri-plugin-global-shortcut = "=3.0.0-alpha.2"
 tauri-plugin-autostart = "=3.0.0-alpha.2"
 tauri-plugin-deep-link = "=3.0.0-alpha.2"
 tauri-plugin-fs = "=3.0.0-alpha.2"
-# Debug bridge: hypothesi bridge pinned under upstream/ with patches/tauri-plugin-mcp-bridge-0.13.0-tauri3.patch.
-tauri-plugin-mcp-bridge = { path = "upstream/mcp-server-tauri/packages/tauri-plugin-mcp-bridge" }
+# Debug bridge: hypothesi bridge checked out under ../source (config/upstream-sources.json) with patches/tauri-plugin-mcp-bridge-0.13.0-tauri3.patch.
+tauri-plugin-mcp-bridge = { path = "../source/mcp-server-tauri/packages/tauri-plugin-mcp-bridge" }
 tauri-specta = { git = "https://github.com/koharu-rs/tauri-specta", tag = "v2.0.0-rc.25-koharu.1", features = ["derive", "typescript"] }
 atomicwrites = "0.4.4"
 fs4 = "1.1.0"
@@ -490,6 +488,7 @@ perf = { level = "warn", priority = -1 }
 
 [patch.crates-io]
 taffy = { path = "crates/web/taffy" }
-simdutf = { path = "upstream/simdutf-rio" }
+# Checked out under ../source (config/upstream-sources.json); restore with `bun run sources:sync`.
+simdutf = { path = "../source/simdutf-rio" }
 # tauri-plugin-dialog 3.0.0-alpha.2 predates tauri 3.0.0-alpha.3 (Manager::run_on_main_thread); see config/tauri-upstream.json
-tauri-plugin-dialog = { path = "upstream/tauri-plugin-dialog" }
+tauri-plugin-dialog = { path = "../source/tauri-plugin-dialog" }

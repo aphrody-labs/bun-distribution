@@ -15,6 +15,16 @@
 // aphrody's build hermetic, and means a llama.cpp bump is a download rather
 // than a recompile.
 //
+// Since the native-integration work there is a second, in-process way to run
+// the same GGUF files: `aphrody-llama-server` (feature `in-process`) drives
+// `koharu-llama`, which loads `libllama` / `libmtmd` at RUNTIME through
+// `libloading`, so the hermetic-build argument above still holds (nothing is
+// linked). This module stays the one owner of "where is llama.cpp on this
+// machine", for both worlds: `resolve` finds the release binaries, and
+// `resolve_library` finds the directory holding the shared libraries the
+// in-process engine loads. `aphrody-llama-server` does the loading; this crate
+// stays `forbid(unsafe_code)`.
+//
 // Resolution order mirrors `gemini_runtime::resolve_bin`:
 //   1. $APHRODY_LLAMA_BIN        — explicit path to one executable
 //   2. $APHRODY_LLAMA_DIR        — a directory holding the release binaries

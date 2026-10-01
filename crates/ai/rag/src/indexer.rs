@@ -287,10 +287,10 @@ impl RagIndexer {
                 inserted_chunk_ids.chunks(opts.batch_size).zip(chunk_texts.chunks(opts.batch_size))
             {
                 if let Ok(embeddings) = emb.embed_batch(texts_batch).await {
-                    for (&chunk_id, embedding) in chunk_ids_batch.iter().zip(embeddings) {
-                        if self.store.insert_vector(chunk_id, &model_id, &embedding).await.is_ok() {
-                            vector_count += 1;
-                        }
+                    let items: Vec<(i64, Vec<f32>)> =
+                        chunk_ids_batch.iter().copied().zip(embeddings).collect();
+                    if let Ok(written) = self.store.insert_vectors(&model_id, &items).await {
+                        vector_count += written;
                     }
                 }
             }

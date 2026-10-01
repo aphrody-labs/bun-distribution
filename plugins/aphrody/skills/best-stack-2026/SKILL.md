@@ -1,300 +1,225 @@
 ---
 name: best-stack-2026
-description: "Rust crate chooser: recommended crate, version, rejected alternative and reason for any domain; use before adding or choosing a dependency in Cargo.toml."
+description: "Rust crate chooser: recommended crate and version per domain, rejected alternative and why, licence and platform caveats (verified 2026-10). Use before adding or bumping a Cargo.toml dependency, for which-crate or X-vs-Y questions, or flagged crates."
 license: Apache-2.0
 metadata:
-  version: 1.0.0
-  source: aphrody-marketplace::awesome (curator) + awesome-rust 50k★ + RUSTSEC + crates.io 2026-05-19
+  version: "2.0.0"
+  source: "crates.io API + RustSec advisory-db, verified 2026-10-01"
 ---
 
-# Best Rust stack — May 2026 canonical chooser
+# Best Rust stack (October 2026)
 
-Mode `/goal` permanent : décider seul, ne pas s'arrêter avant recommandation justifiée.
+When asked "what should I use for X in Rust?", pick from this table, name the rejected
+alternative and give the one-line reason. Naming what was ruled out is half the value.
 
-When a user asks "what should I use for X in Rust?", do not improvise. Do not
-default to the first crate that comes to mind. Consult this table, pick the
-canonical choice, and **explain *why* the alternative was rejected**. Naming
-the rejected alternative is half the value — it tells the user you considered
-the obvious option and ruled it out for a reason.
+## Before answering
 
-## When to engage this skill
+1. **Read the project first.** If `Cargo.toml` / `[workspace.dependencies]` already has a
+   crate for the domain, or pins a version, reuse it; do not introduce a second HTTP client,
+   TLS stack or error crate. Match the project's licence (check `license` in `Cargo.toml`
+   and `deny.toml`).
+2. **Versions drift.** The versions below were current on 2026-10-01. Before writing a
+   `Cargo.toml` line, confirm with `cargo add <crate>` (picks the newest compatible),
+   `cargo search <crate> --limit 1`, or `https://crates.io/api/v1/crates/<crate>`
+   (`max_stable_version`). Write the caret range of the major (`"0.8"`, `"1"`), not a patch pin.
+3. **Health check.** `cargo deny check advisories` / `cargo audit` flag RustSec
+   advisories, including `unmaintained` notices.
+4. For language/toolchain questions defer to `rust-best-practices-2026`.
 
-- Direct question: "best crate for X", "which library", "should I use Y or Z"
-- Architecture discussion that will result in a dependency choice
-- About to edit a `Cargo.toml` (add, bump, replace a dep)
-- User wrote "let's use openssl" / "let's use actix" / any other phrase
-  matching the [§ Anti-patterns](#anti-patterns) table — flag it, recommend
-  the modern equivalent, but do not block (advisory per project policy).
+Three failure modes this table protects against: **licence contamination** (GPL/AGPL linked
+into a permissive binary), **cross-platform breakage** (system OpenSSL, GTK) and **bit-rot**
+(popular but unmaintained crates).
 
-## Why a curated stack matters
-
-Assume an **Apache-2.0 / permissive** host project shipping across Linux
-(priority #1), Windows, and wasm32 (adapt to the host repo's actual license if
-different — the GPL-contamination guard still applies to permissive projects).
-Three failure modes the canonical stack protects against:
-
-1. **License contamination** — GPL/AGPL crates virally infect Apache-2.0
-   binaries at link time. Apex offenders: `unicorn-engine 2.x` (CPU emu),
-   `radare2-rs`, certain reverse-engineering wrappers.
-2. **Cross-platform breakage** — `native-tls` on Linux pulls OpenSSL system
-   libs that drift across distros; `tao/wry` pull GTK3 (CVE-tagged). Anything
-   that breaks on Linux #1 is non-mergeable (cf. CLAUDE.md §6).
-3. **Bit-rot** — popular ≠ maintained. `actix-web 4.x` keeps working but
-   maintenance velocity has dropped; `tokio 0.2`/`0.3` is fossil. Recency
-   matters more than star count past ~10k★.
-
-For toolchain / language features (Rust 1.95, Edition 2024 idioms, async
-closures, CVE-2026-33056, WASM 1.96 breakage), consult the sibling skill
-`rust-best-practices-2026` — that skill covers *how* to write the code; this
-one covers *what to depend on*.
-
----
-
-## Canonical stack table
-
-The **Pick** column is the recommendation. The **Reject** column is what NOT
-to use (or what the user might reasonably suggest first). The **Why** is the
-half-sentence that lets the user accept the trade-off.
+## Canonical table
 
 ### Web / HTTP / API
 
-| Domain | Pick (version) | Reject | Why |
+| Domain | Pick | Reject | Why |
 |---|---|---|---|
-| HTTP server | **`axum` 0.7 / 0.8** | `actix-web` 4.x ; `warp` ; raw `hyper` | tokio/tower native, lowest friction, biggest 2026 mindshare |
-| HTTP client | **`reqwest` 0.13** (rustls backend; feature `rustls-no-provider` ou `rustls`) | `surf` ; `isahc` ; `curl` crate | standard de facto, rustls pure-Rust sur Linux+Windows+WASM |
-| HTTP/3, QUIC | **`quinn` 0.11** | `quiche` ; raw `s2n-quic` | pure-Rust, Apache-2.0, integrates with tokio + rustls |
-| WebSocket | **`tokio-tungstenite` 0.24** | `ws-rs` (unmaintained) | tokio native, autobahn-clean |
-| gRPC | **`tonic` 0.14** | `grpc-rs` (C++ FFI) | pure-Rust, hyper-based, prost 0.14 codegen |
-| GraphQL | **`async-graphql` 7.x** | `juniper` | schema-first, subscriptions, federation v2 |
-| OpenAPI codegen | **`utoipa` 5.x** (server) ; **`progenitor`** (client) | `openapi-generator-cli` (Java) | native Rust, derive macros |
-| Routing helpers | (use axum directly) | `actix-router` standalone | axum's router is sufficient and faster |
+| HTTP server | `axum` 0.8 | `actix-web` 4 for greenfield; raw `hyper` | tokio/tower native, composes with every tower layer |
+| HTTP client | `reqwest` 0.13 (rustls; `rustls-no-provider` to choose the crypto provider) | `surf`, `isahc`, `curl` | de facto standard, pure-Rust TLS |
+| HTTP/3, QUIC | `quinn` 0.11 | `quiche` | pure Rust, tokio + rustls |
+| WebSocket | `tokio-tungstenite` 0.30 | `ws` (unmaintained) | tokio native, Autobahn-clean |
+| gRPC | `tonic` 0.14 + `prost` 0.14 | `grpcio` (C++ core) | pure Rust, hyper/tower based |
+| GraphQL | `async-graphql` 7 | `juniper` | subscriptions, federation |
+| OpenAPI | `utoipa` 6 (server docs); `progenitor` 0.15 (client codegen) | Java `openapi-generator` | derive macros, native Rust |
 
 ### Async runtime
 
 | Domain | Pick | Reject | Why |
 |---|---|---|---|
-| Runtime | **`tokio` 1.52** with `full` (ou `rt-multi-thread` + `macros`) | `async-std` (unmaintained) ; `smol` (niche) ; `embassy` (embedded only) | 99% de l'écosystème standardisé |
-| Spawning sets | **`tokio::task::JoinSet`** | manual `Vec<JoinHandle>` | cancellation-safe, easier abort |
-| Utilities | **`futures` 0.3** + **`tokio-stream` 0.1** | `futures-lite` for prod | full Stream/Sink, well-known |
-| Channels | **`tokio::sync::{mpsc,oneshot,broadcast,watch}`** | `flume` for ergonomics ; `crossbeam-channel` for sync-only | first-party, integrates with select! |
-| Sync primitives | **`parking_lot`** for `Mutex`/`RwLock` non-async ; `tokio::sync::*` for async | `std::sync::Mutex` for new code | parking_lot is faster + smaller, std works but legacy reflex |
+| Runtime | `tokio` 1 (`rt-multi-thread`, `macros`; `full` only in binaries) | `async-std` (discontinued); `smol` unless tiny | the ecosystem standard |
+| Task sets | `tokio::task::JoinSet` | `Vec<JoinHandle>` | abort-on-drop, join_next |
+| Streams | `futures` 0.3 + `tokio-stream` 0.1 | | full Stream/Sink |
+| Cancellation | `tokio-util` 0.7 `CancellationToken` | ad-hoc `AtomicBool` flags | hierarchical, awaitable |
+| Channels | `tokio::sync::{mpsc, oneshot, broadcast, watch}` | `crossbeam-channel` in async code | integrates with `select!` |
+| Sync locks | `std::sync::Mutex` (fast since 1.62) or `parking_lot` 0.12 | holding any sync guard across `.await` | std is fine; parking_lot for fairness/no poisoning |
 
 ### Database / persistence
 
 | Domain | Pick | Reject | Why |
 |---|---|---|---|
-| Postgres + compile-time SQL check | **`sqlx` 0.8** with `postgres,runtime-tokio,tls-rustls,macros` | `diesel` for greenfield ; `tokio-postgres` raw | `query!` macro verifies SQL at compile time |
-| Postgres + ORM | **`sea-orm` 1.x** (only if you really want an ORM) | `diesel` (sync-blocking model) | async, dynamic queries, migrations |
-| Migrations | **`sqlx-cli`** | `refinery` ; `barrel` | matches sqlx schema, ergonomic |
-| Embedded KV | **`redb` 2.x** for pure-Rust ; **`sled` 0.34** for write-heavy (note: maintained-mode) | `lmdb-rkv` (unmaintained) ; `rocksdb` (heavy C++ dep) | pure Rust, mmap, ACID |
-| SQLite | **`rusqlite` 0.40** (bundled) ou **`sqlx` 0.8 sqlite** | `diesel` sqlite | bundled feature avoids system libsqlite version drift |
-| Redis | **`redis` 1.7.0** ou **`fred` 10.x** | `darkredis` (stale) | tokio-comp natif, cluster + reconnect |
-| Time-series / OLAP | **`duckdb-rs`** for in-process analytics | spawning Python | embedded, columnar, vectorised |
+| Postgres / MySQL / SQLite, SQL-first | `sqlx` 0.9 (`runtime-tokio`, `tls-rustls`, `macros`) | raw `tokio-postgres` for app code | compile-time-checked `query!` |
+| ORM | `sea-orm` 2 (async) or `diesel` 2.3 + `diesel-async` 0.9 | sync `diesel` inside async handlers | pick an ORM only if dynamic queries need it |
+| Migrations | `sqlx-cli` (with sqlx) / `diesel_cli` | | matches the query layer |
+| Embedded KV | `redb` 4 (B-tree, ACID) or `fjall` 3 (LSM, write-heavy) | `sled` (0.34 frozen since 2021, 1.0 never shipped); `lmdb-rkv` | maintained, pure Rust |
+| SQLite (sync) | `rusqlite` 0.40 with `bundled` | system libsqlite | no version drift |
+| Redis | `redis` 1.7 (`tokio-comp`, cluster) | `fred` (no release since 2025-02); `darkredis` | maintained, async, cluster |
+| In-process analytics | `duckdb` (crate versions track DuckDB, e.g. 1.10506 = DuckDB 1.5.x) | shelling out to Python | columnar, embedded |
 
 ### Crypto / TLS
 
 | Domain | Pick | Reject | Why |
 |---|---|---|---|
-| TLS stack | **`rustls` 0.23** with `aws-lc-rs` provider | `native-tls` (OpenSSL) ; `openssl` 0.10 | pure-Rust on Linux+WASM, no system dep drift |
-| Hash | **`sha2` 0.10** (general) ; **`blake3` 1.5** (perf-critical) | OpenSSL hashes | RustCrypto, audited, AVX-512 in blake3 |
-| AEAD | **`aes-gcm` 0.10** ; **`chacha20poly1305` 0.10** | OpenSSL EVP | RustCrypto traits, constant-time |
-| Asymmetric | **`ed25519-dalek` 2.x** ; **`x25519-dalek` 2.x** | `ring` directly for new code | dalek is audited and ergonomic |
-| Password hash | **`argon2` 0.5** | `bcrypt` for new schemes | OWASP 2026 recommendation |
-| Random | **`rand` 0.8** (note: pinned by `denokv_proto` per CLAUDE.md §7) | `oorandom` for crypto | rand 0.8 is workspace-pinned |
-| JWT | **`jsonwebtoken` 9.x** | hand-rolled | maintained, supports all common algs |
+| TLS | `rustls` 0.23 with `aws-lc-rs` (default) or `ring` 0.17 provider | `native-tls` / `openssl` | no system OpenSSL; same behaviour on all OSes |
+| Hash | `sha2` 0.11 (general), `blake3` 1.8 (speed) | OpenSSL digests | RustCrypto, SIMD |
+| AEAD | `aes-gcm` 0.11, `chacha20poly1305` 0.11 | OpenSSL EVP | constant-time, RustCrypto traits |
+| Signatures / KEX | `ed25519-dalek` 3, `x25519-dalek` 3 | hand-rolled | audited |
+| Password hashing | `argon2` 0.6 | `bcrypt` for new schemes | OWASP recommendation |
+| Random | `rand` 0.10 (or `getrandom` 0.3 for raw bytes) | mixing rand majors in one workspace | rand 0.10 renamed several APIs; check the changelog when bumping |
+| JWT | `jsonwebtoken` 11 (enable one crypto backend feature: `aws_lc_rs` or `rust_crypto`) | hand-rolled JWT | maintained, all common algs |
 
-### Serialisation / parsing
-
-| Domain | Pick | Reject | Why |
-|---|---|---|---|
-| Schema-typed | **`serde` 1.x** + **`serde_json` 1.x** | hand-rolled JSON | universal |
-| YAML | **`yaml_serde` 0.10** (YAML organization's official fork; `serde_yaml = { package = "yaml_serde" }` keeps imports) | `serde_yaml` 0.9 (archived, `+deprecated`) ; `serde_yaml_ng` (frozen since 2024-05) | maintained by github.com/yaml, fact-checked 2026-09-23 on crates.io |
-| TOML | **`toml` 0.8** with `serde` feature | `toml_edit` unless you need format preservation | `toml_edit` for round-tripping Cargo.toml, `toml` for plain parse |
-| Binary (compact) | **`bincode` 2.x** | `rmp-serde` for cross-lang | binary serde with checked encoding |
-| CBOR | **`ciborium` 0.2** | `serde_cbor` (archived) | RustCrypto-stewarded |
-| Protocol Buffers | **`prost` 0.14** | `rust-protobuf` (slow) | tonic ecosystem aligned |
-| MessagePack | **`rmp-serde` 1.x** | `msgpack` (stale) | maintained, serde compat |
-| ELF/PE/Mach-O | **`goblin` 0.9** | `object` raw (lower level) ; `elf` crate | reads all formats, idiomatic |
-| Decompilation/disasm | **`iced-x86`** (x86) ; **`capstone` 0.13** (multi-arch) | `unicorn-engine` (GPL!) | capstone is Apache-2.0; iced-x86 fast x86-only |
-| Compression | **`zstd` 0.13** ; **`flate2` 1.x** (gzip) ; **`lz4_flex`** (LZ4) | C bindings only when no pure-Rust available | pure-Rust where possible |
-| Archive | **`tar` 0.4.45+** (CVE-2026-33056) ; **`zip` 2.x** | older tar | post-CVE versions |
-
-### CLI / config / observability / Agent MCP
+### Serialisation / parsing / formats
 
 | Domain | Pick | Reject | Why |
 |---|---|---|---|
-| Args | **`clap` 4.x** with `derive`, `color`, `env` features | `structopt` (merged into clap) ; `argh` for tiny | derive macros, completions, manpage gen |
-| Embedded Shell | **`nu-cli` / `nu-cmd-lang` 0.115.1** | hand-rolled shell DSL | Nushell official crates, structured data pipeline |
-| MCP Protocol (Agent) | **`rmcp` SDK** (`features = ["server", "transport-streamable-http-server"]`) | hand-rolled JSON-RPC 2.0 | SDK officiel Model Context Protocol pour Rust |
-| System info / OS | **`sysinfo` 0.39.3** | raw WMI / procfs parsing | multiplateforme, mémoire, CPU, disques, processus |
-| Config files | **`figment` 0.10** | hand-rolled merge | layered (file + env + CLI) |
-| Env vars | **`envy`** for simple ; **`figment::providers::Env`** for complex | `dotenv` (loading only, not parsing) | typed deserialization |
-| Errors (apps) | **`anyhow` 1.x** | `eyre` for richer reports | thread-safe, no_std-friendly variant exists |
-| Errors (libs) | **`thiserror` 2.x** | hand-rolled `impl Error` | derive macros, fewer footguns |
-| Logging | **`tracing` 0.1** + **`tracing-subscriber` 0.3.22** (pinned per CLAUDE.md §7) | `log` for new apps | spans, structured, OTel integration |
-| OpenTelemetry | **`opentelemetry` 0.27** + **`tracing-opentelemetry`** | Jaeger client raw | vendor-neutral, OTel collector compat |
-| Metrics | **`metrics` 0.23** + **`metrics-exporter-prometheus`** | `prometheus` crate directly | facade pattern, swappable backend |
+| JSON | `serde` 1 + `serde_json` 1 | | universal |
+| YAML | `yaml_serde` 0.10 (official YAML-org fork; `serde_yaml = { package = "yaml_serde", version = "0.10" }` keeps imports) | `serde_yaml` (archived 2024), `serde_yaml_ng`, `yaml-rust` (RustSec unmaintained) | maintained |
+| TOML | `toml` 1 (plain parse); `toml_edit` (format-preserving edits) | | `toml` reached 1.0 (TOML 1.1 spec) |
+| Compact binary | `postcard` 1 (also no_std), `bitcode` 0.6, `wincode` 0.6, or `rkyv` 0.8 (zero-copy) | `bincode` (RUSTSEC-2025-0141: development ceased; 3.0.0 is a tombstone, 1.3.3 frozen) | maintained alternatives listed by RustSec |
+| CBOR | `ciborium` 0.2 | `serde_cbor` (RustSec unmaintained) | |
+| MessagePack | `rmp-serde` 1.3 | `msgpack` | serde compatible |
+| Protobuf | `prost` 0.14 | `protobuf` v2 | tonic-aligned |
+| ELF/PE/Mach-O | `goblin` 0.10 (high level) or `object` 0.40 (read/write, used by the toolchain) | `elf` crate | |
+| Disassembly | `iced-x86` 1.21 (x86/x64), `capstone` 0.14 (multi-arch) | `unicorn-engine` (GPL-2.0), `radare2` bindings (LGPL/GPL) | permissive licences |
+| PDB symbols | `pdb` 0.8 (stable but no release since 2022; `pdb-addr2line` for lookups) | hand-parsing MSF | |
+| Compression | `zstd` 0.14, `flate2` 1.1, `lz4_flex` 0.14 | C bindings when pure Rust exists | |
+| Archives | `tar` >= 0.4.45 (RUSTSEC-2026-0067/0068, CVE-2026-33056), `zip` 8 | older `tar`, `zip` < 2 | symlink/permission fixes |
+| Byte search | `memchr` 2.8, `aho-corasick` 1.1 | hand-rolled SIMD | |
 
-### Terminal / TUI / interactive
-
-| Domain | Pick | Reject | Why |
-|---|---|---|---|
-| TUI framework | **`ratatui` 0.30** | `cursive` ; `tui-rs` (archived predecessor) | active, theme-friendly, OSC-aware |
-| Terminal I/O | **`crossterm` 0.29** | `termion` (Unix-only) ; `console` | cross-platform Linux+Windows+WASM stub |
-| ANSI parsing | **`vte` 0.13** | hand-rolled state machine | alacritty-grade parser |
-| Progress bars | **`indicatif` 0.17** | `tqdm` ports | de facto, multi-bar |
-| REPL / prompt | **`reedline` 0.36** | `rustyline` (older) | nu-shell stewarded, modern |
-| Shell colors | **`owo-colors` 4.x** ou **`colored` 3.x** | string formatting ad-hoc | const styles / macros rapides |
-
-### GUI / desktop / web rendering
+### CLI / config / observability / agents
 
 | Domain | Pick | Reject | Why |
 |---|---|---|---|
-| Desktop App Framework | **`tauri` 2.11.6** + official v2 plugins | Electron ; raw WebView | léger, sécurisé, sandboxing natif |
-| Native window | **`winit` 0.30** | `glutin` directly ; `tao` (uses GTK3 on Linux) | active, raw_window_handle support |
-| GPU rendering | **`wgpu` 25** | OpenGL/Vulkan direct (verbose) ; `tao+wry` | Linux+Windows+WASM webgpu single API |
-| Egui (immediate-mode GUI) | **`egui` 0.30** + `eframe` | `iced` for retained-mode | iterate fast, ships everywhere |
-| Iced (Elm-like GUI) | **`iced` 0.13** | egui if you need retained-mode | architecture clean, harder ramp |
-| Web (WASM) | **`leptos` 0.7** OR **`dioxus` 0.6** | `yew` (slower SSR story) | fine-grained reactivity, no virtual-DOM tax |
-| Embedded webview (last resort) | **`wry` =0.55.1** (ou WASM natif) | webviews non isolées | pinning exact requis pour éviter conflits |
+| Arguments | `clap` 4.6 (`derive`, `env`) | `structopt` (merged into clap) | completions, man pages |
+| Embedded shell | `nu-cli` / `nu-protocol` 0.116 (Nushell crates; versions move in lockstep, bump all together) | hand-rolled DSL | structured pipelines |
+| MCP server/client | `rmcp` 3 (official Rust SDK; features e.g. `server`, `transport-io`, `transport-streamable-http-server`, `macros`) | hand-rolled JSON-RPC | spec-tracking SDK |
+| System info | `sysinfo` 0.39 (disable default features, enable `system`/`disk` etc.) | parsing `/proc` or WMI by hand | cross-platform |
+| Layered config | `figment` 0.10 or `config` | hand-rolled merge | file + env + CLI layers |
+| Errors | `anyhow` 1 (apps), `thiserror` 2 (libs) | `failure`, `error-chain` (archived) | |
+| Logging | `tracing` 0.1 + `tracing-subscriber` 0.3 (`env-filter`) | `log` + `env_logger` for new apps | spans, structured fields |
+| OpenTelemetry | `opentelemetry` 0.33 + `tracing-opentelemetry` 0.34 (keep the pair in sync) | raw Jaeger clients | vendor-neutral |
+| Metrics | `metrics` 0.24 + `metrics-exporter-prometheus` 0.18 | `prometheus` crate directly | facade, swappable backend |
+| Lazy statics | `std::sync::LazyLock` / `OnceLock` | `lazy_static`, `once_cell::sync::Lazy` | in std since 1.80 |
+| Retry/backoff | `backon` | `backoff` (RustSec unmaintained) | |
+| Human-readable durations | `jiff` 0.2 (`SignedDuration` / `Span` parse "1h 30m") | `humantime` (RustSec unmaintained) | |
 
-### ML / AI / vector / Agentic Systems
-
-Do not pick AI dependencies from this skill. The single source is
-`aphrody-infra/docs/BEST-AI-STACK-CANONICAL.md` (verified versions, source URL per row,
-newest pre-release channel first). Rule from that doc: name the existing Aphrody owner first,
-third-party projects only as upstream dependencies or references.
-
-| Need | Aphrody owner | Never recommend instead |
-|---|---|---|
-| Local GGUF inference | `aphrody-llama-server` (supervises llama.cpp `llama-server`) | linking llama.cpp directly into agent crates |
-| ONNX inference / embeddings | `aphrody-infer` (`ort`) / `aphrody-embed` (fastembed) | spawning Python `sentence-transformers` |
-| RAG | `aphrody-rag`, `aphrody-rag-core` | a second vector/RAG layer |
-| Agent loop | `aphrody-engine`, `aphrody-agent-runtime` | `rig-core` or LangChain ports as the runtime |
-| Sandbox / exec policy | `aphrody-sandbox`, `aphrody-execpolicy` (aphrody-os) | E2B or other third-party cloud sandboxes |
-| Protocols | `aphrody-a2a*` (contracts), `aphrody-mcp` + `rmcp` | hand-rolled JSON-RPC |
-| Chat UI | `aphrody-ui` Tauri + Material 3 via `aphrody app-server` | Open WebUI / LibreChat / LobeChat |
-| Training | `aphrody-train` (Rust + `py/` uv) | ad-hoc training scripts |
-
-### Networking / IPC / RPC
+### Terminal / TUI
 
 | Domain | Pick | Reject | Why |
 |---|---|---|---|
-| Async DNS | **`hickory-resolver` 0.24** | `trust-dns` (renamed) ; system resolver only | hickory = rename of trust-dns, current upstream |
-| Raw sockets | **`socket2` 0.5** | `nix::sys::socket` directly | cross-platform shim |
-| MQTT | **`rumqttc` 0.24** | `paho-mqtt` (C++ FFI) | pure-Rust, async |
-| gRPC reflection | **`tonic-reflection` 0.14** | hand-rolled | matches tonic |
-| Postcard (no_std RPC) | **`postcard` 1.x** | bincode in no_std contexts | zero-copy, no_std |
+| TUI | `ratatui` 0.30 | `tui` (archived), `cursive` | active, large widget ecosystem |
+| Terminal I/O | `crossterm` 0.29 | `termion` (Unix only) | Windows support |
+| ANSI parsing | `vte` 0.15 | hand-rolled state machine | |
+| Progress bars | `indicatif` 0.18 | | |
+| Line editor | `reedline` 0.52 or `rustyline` | | |
+| Colours | `owo-colors` 4, `anstream`/`anstyle` (what clap uses) | `atty` (RustSec unsound/unmaintained; use `std::io::IsTerminal`) | |
 
-### Reverse engineering / binary analysis (aphrody-specific)
+### GUI / desktop / web
 
 | Domain | Pick | Reject | Why |
 |---|---|---|---|
-| PE/ELF parser | **`goblin` 0.9** | `object` (lower-level) | covers PE+ELF+Mach-O+TE |
-| PDB symbols | **`pdb` 0.8** | manual MSF parse | mature, used by rust-analyzer |
-| Disassembly | **`iced-x86` 1.21** (x86 only) ; **`capstone` 0.13** (multi) | `unicorn-engine` (GPL!) | both Apache-2.0; emu separately |
-| Memory scan | **`memchr` 2.x** + **`aho-corasick` 1.x** | hand-rolled SIMD | SIMD-optimised, well-tested |
-| Hashing files | **`blake3` 1.5** (preferred) or `sha2` 0.10 | OpenSSL | blake3 SIMD + parallel |
-| Entropy / strings | (custom — see `crates/aphrody-re`) | — | already in-tree |
+| Web-UI desktop app | `tauri` 2.12 (+ official v2 plugins). Tauri 3.0 is in alpha (3.0.0-alpha.x since 2026-09); use it only if the project already does | Electron | small binaries, capability-based permissions |
+| Windowing | `winit` 0.30 | `glutin` alone | raw-window-handle |
+| GPU | `wgpu` 30 | raw Vulkan/GL | one API for Vulkan/Metal/DX12/WebGPU |
+| Immediate-mode GUI | `egui` 0.36 + `eframe` | | fastest to iterate |
+| Retained / Elm-style GUI | `iced` 0.14, or `slint` | | |
+| Web front-end in Rust | `leptos` 0.8 or `dioxus` 0.7 | `yew` | fine-grained reactivity |
+| Raw webview | `wry` 0.57 (via Tauri when possible) | unisolated custom webviews | |
+
+On Linux, `wry`/`tao` (and so Tauri) depend on WebKitGTK and the gtk-rs GTK3 bindings,
+which RustSec flags as unmaintained (RUSTSEC-2024-0411 and following, dated 2024-03-04). This is an accepted,
+documented exception for Tauri apps; add targeted `ignore` entries in `deny.toml` with a
+reason rather than avoiding Tauri. For GTK-free native UI use `egui`/`iced`/`slint` on `wgpu`.
+
+### Networking / IPC
+
+| Domain | Pick | Reject | Why |
+|---|---|---|---|
+| DNS | `hickory-resolver` 0.26 | `trust-dns-resolver` (renamed) | |
+| Raw sockets | `socket2` 0.6 | `nix::sys::socket` directly | cross-platform |
+| MQTT | `rumqttc` 0.25 | `paho-mqtt` (C FFI) | pure Rust |
+| no_std RPC framing | `postcard` 1 | | |
 
 ### Testing / quality
 
 | Domain | Pick | Reject | Why |
 |---|---|---|---|
-| Runner | **`cargo-nextest`** | `cargo test` for big suites | parallel, isolation, retries |
-| Snapshot | **`insta` 1.40** | hand-rolled diff | inline review, cargo-insta tool |
-| Property | **`proptest` 1.5** | `quickcheck` (less ergonomic) | shrinking, derive support |
-| Mock | **`mockall` 0.13** | `mockito` for HTTP only | trait-aware codegen |
-| Bench | **`criterion` 0.5** | `cargo bench` raw | statistical analysis, regressions |
-| Coverage | **`cargo-llvm-cov`** | `tarpaulin` (slower) | LLVM source-based |
-| Fuzzing | **`cargo-fuzz`** (libFuzzer) ; **`afl.rs`** (AFL++) | hand-rolled | tie into Rust UB sanitisers |
+| Runner | `cargo-nextest` | plain `cargo test` for large suites | process isolation, retries |
+| Snapshots | `insta` 1.48 | hand-rolled diffs | `cargo insta review` |
+| Property tests | `proptest` 1.11 | `quickcheck` | shrinking strategies |
+| Mocks | `mockall` 0.15 | | trait codegen |
+| Benchmarks | `criterion` 0.8 (or `divan`) | unstable `#[bench]` | statistics |
+| Coverage | `cargo-llvm-cov` | `tarpaulin` | source-based |
+| Fuzzing | `cargo-fuzz`, `afl` | | |
 
----
+### AI / ML
 
-## Anti-patterns (refuse politely, propose alternative)
+Model-runtime crates churn too fast for a static table. Check the project for an existing
+owner first (an inference, embedding or RAG crate already in the workspace); otherwise
+consult current docs (the `docs` skill) for `ort` (ONNX Runtime), `candle`, `llama-cpp-2`,
+`fastembed`, and pick one with an active release in the last six months.
 
-If the user names one of these, do not silently accept. Surface the issue,
-state the modern equivalent, let them override consciously.
+**In the Aphrody monorepo** (root `package.json` named `aphrody`): the canonical AI stack is
+`docs/reference/infra/BEST-AI-STACK-CANONICAL.md`, and existing owners come first:
+`aphrody-llama-server` (llama.cpp supervisor), `aphrody-infer`, `aphrody-embed`,
+`aphrody-rag` / `aphrody-rag-core`, `aphrody-engine` / `aphrody-agent-runtime`,
+`aphrody-sandbox` / `aphrody-execpolicy`, `aphrody-a2a*`, `aphrody-mcp` (+ `rmcp`),
+`aphrody-train`; binary analysis lives in `aphrody-re` (`crates/os/re`).
 
-| User says | Issue | Recommend instead |
+## Anti-patterns (flag, recommend, let the user override)
+
+| User proposes | Issue | Recommend |
 |---|---|---|
-| `openssl = "0.9"` or `0.10` | OpenSSL system-lib drift across distros + history of CVEs ; native-tls pulls it | **`rustls` 0.23** + `aws-lc-rs` or `ring` provider |
-| `actix-web` for greenfield | Maintenance velocity dropped vs axum ; less aligned with tokio ecosystem | **`axum` 0.8** |
-| `tokio` 0.2 / 0.3 | Pre-1.0 fossil, no `JoinSet`, no current API | **`tokio` 1.x** with rt-multi-thread |
-| `hyper` 0.14 raw | Low level for app code ; 1.x has different API | **`axum` 0.8** (servers) or **`reqwest` 0.13** (clients) |
-| `async-std` | Project effectively unmaintained since 2023 | **`tokio` 1.x** |
-| `tao` + `wry` on Linux | Pulls GTK3 → RUSTSEC GTK CVEs (cf. CLAUDE.md §7) ; webview heavy | **WASM via wasm-bindgen** or **`egui`/`iced`** native |
-| `unicorn-engine` | **GPL-2.0** virally infects Apache-2.0 binary | **`iced-x86`** (analysis) + separate emulation strategy |
-| `radare2-rs` | GPL transitive | **`goblin` + capstone + custom analysis** |
-| `serde_yaml` 0.9 / `serde_yaml_ng` | Upstream archived September 2024 ; `_ng` fork unreleased since 2024-05 | **`yaml_serde` 0.10** (official YAML-org fork, package rename keeps imports) |
-| `chrono` 0.4 with `default-features = true` | Old default pulls oldtime CVE + bloat | **`chrono` 0.4** with `default-features = false`, `["clock", "serde"]` — or **`jiff` 0.2** for new code |
-| `time` 0.1 / 0.2 | Pre-1.0, no tz | **`time` 0.3** or **`jiff` 0.2** |
-| `failure` / `error-chain` | Both archived | **`anyhow` + `thiserror`** |
-| `rand` 0.7 / 0.9 | Workspace pins 0.8 (CLAUDE.md §7) | **`rand` 0.8** |
-| `tracing-subscriber` 0.3.23+ | Known packaging bug (CLAUDE.md §7) | **`tracing-subscriber` 0.3.22** |
-| `native-tls` on Linux | OpenSSL system dep, cross-platform pain | **`rustls` + reqwest 0.13 default `rustls` feature** |
-| `dotenv` for parsing | Loading only ; not typed | **`figment`** or **`envy`** |
-| `lazy_static` for new code | std has it now | **`std::sync::LazyLock`** (1.80+) |
-| `once_cell::sync::Lazy` for new code | std has it now | **`std::sync::LazyLock`** |
-| `error-chain` style chained errors | Pre-`?` operator era | **`anyhow::Context::with_context`** |
+| `openssl` / `native-tls` | system OpenSSL drift on Linux, absent on Windows, large CVE surface | `rustls` 0.23 (`aws-lc-rs` is FIPS-validated if FIPS is required) |
+| `actix-web` for greenfield | separate middleware model from tower; smaller ecosystem today | `axum` 0.8 |
+| `tokio` 0.2/0.3, `hyper` 0.14 | pre-1.0 / old major APIs | `tokio` 1, `hyper` 1 or `axum` |
+| `async-std` | discontinued | `tokio` 1 (or `smol`) |
+| `unicorn-engine`, radare2 bindings | GPL/LGPL contamination of a permissive binary | `iced-x86`/`capstone` + `goblin`; emulate out of process if unavoidable |
+| `serde_yaml`, `serde_yaml_ng`, `yaml-rust` | archived / frozen / unmaintained | `yaml_serde` 0.10 |
+| `bincode` | RUSTSEC-2025-0141, development ceased | `postcard`, `bitcode`, `wincode`, `rkyv` |
+| `sled` | 0.34 frozen, 1.0 never released | `redb` or `fjall` |
+| `chrono` with default features | pulls unneeded features | `chrono` with `default-features = false, features = ["clock", "serde"]`, or `jiff` 0.2 for new code |
+| `time` 0.1/0.2 | pre-1.0, no time zones | `time` 0.3 or `jiff` 0.2 |
+| `failure`, `error-chain` | archived | `anyhow` + `thiserror` |
+| `lazy_static`, `once_cell::sync::Lazy` | in std since 1.80 | `std::sync::LazyLock` |
+| `atty`, `paste`, `proc-macro-error`, `instant`, `derivative`, `backoff`, `humantime`, `rustls-pemfile` | RustSec unmaintained notices | `std::io::IsTerminal`, `pastey`, `proc-macro-error2`, `web-time`, `derive-where`/`educe`, `backon`, `jiff`, `rustls-pki-types` PEM API |
+| `dotenv` | RUSTSEC-2021-0141 unmaintained, loading only | `dotenvy` for loading; `figment` for typed config |
 
----
+Longer rationales for pushback ("why not openssl, everyone uses it?") are in
+`references/anti-patterns.md`.
 
-## How to answer a "best crate for X" question
-
-Apply this template — short, decisive, citation-light. Avoid hedging.
+## Answer template
 
 ```text
-For X in Rust 2026: use **{crate} {version}** ({short rationale}).
+For X in Rust: use **{crate} {major}** ({one-line rationale}).
+Reject: {alternative} ({one-line reason}).
 
-Reject: {alternative} — {one-line reason}.
+[dependencies]
+{crate} = { version = "{major}", features = [...] }
 
-Snippet:
-```rust
-{minimal `Cargo.toml` snippet}
-{optional minimal usage example, ~5 lines}
+Cross-platform: {Linux/Windows/macOS/wasm caveat if any}. Licence: {SPDX}.
 ```
 
-Cross-platform: {if applicable, note Linux/Windows/WASM caveats}.
-License: {SPDX} (compatible Apache-2.0 aphrody).
-```
-
-If the user's question covers **multiple domains** (e.g. "build a REST API
-with auth and Postgres"), produce one block per domain, ordered by build-up
-dependency (runtime → server → db → auth → observability).
-
-If the user explicitly **insists** on a rejected stack ("I want actix because
-my team knows it"), accept the choice but record the trade-off briefly:
-*"Fine, actix-web 4 is still production-grade; the maintenance gap with
-axum's velocity is the watchpoint. Pin to 4.9.x and re-evaluate in 6mo."*
-
----
-
-## Integration with aphrody-marketplace::awesome
-
-When the workspace has run `aphrody marketplace awesome manifest`, a curated
-JSON whitelist sits at `var/data/awesome/stack-whitelist.json` (cf.
-`aphrody_marketplace::awesome::to_stack_policy`). Prefer that file as the
-**dynamic source of truth** — it reflects the most recent fact-checked
-top-of-awesome-rust snapshot. The table above is the **embedded fallback**
-when the manifest is not yet generated (first-run, hermetic CI).
-
-Both sources are consistent by design — the table is hand-curated from the
-same top-200 awesome-rust sources the curator scrapes.
-
-For deeper notes on why each Pick won (RUSTSEC history, license audit,
-benchmark deltas), see `references/anti-patterns.md` and the live data in
-`var/data/awesome/ranked.json`.
-
----
+For multi-domain questions ("REST API with auth and Postgres"), give one block per domain in
+build-up order: runtime, server, database, auth, observability. If the user insists on a
+rejected crate, accept it and state the watch-point in one sentence.
 
 ## Output discipline
 
-- **Always** name the version range (`"0.8"`, not just `axum`).
-- **Always** explain the rejected alternative in one line.
-- **Never** recommend a crate from the [§ Anti-patterns](#anti-patterns)
-  table without flagging it.
-- **Refuse** GPL / AGPL crates outright when the user's project is
-  Apache-2.0 / MIT — state the contamination risk in one sentence.
-- **Defer** to `rust-best-practices-2026` skill for language/toolchain
-  guidance (Edition 2024, async closures, WASM 1.96 break, CVE-2026-33056).
+- Always give a version (major or caret range) and the rejected alternative.
+- Refuse GPL/AGPL crates for permissively licensed projects, stating the contamination risk.
+- Never present a version from this table as "latest" without checking when the answer is
+  version-sensitive; say "as of 2026-10" otherwise.
+- If a crate discovery tool is available (an `awesome_search` MCP tool, `cargo search`,
+  lib.rs), use it for domains this table does not cover.

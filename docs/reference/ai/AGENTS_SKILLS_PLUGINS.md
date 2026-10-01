@@ -104,7 +104,13 @@ For example, a file `commands/deploy.toml` registers the command `/deploy`. Nest
 
 Hooks are lifecycle interceptors defined in the plugin's `hooks/hooks.json` file. They allow running scripts or binaries during specific transitions of the agent session.
 
-### 4.1 Supported Lifecycle Events
+> **Scope of sections 4.1 and 4.2.** The event names and payloads below are the
+> **Gemini CLI** hook contract. Antigravity (`agy`) does **not** implement
+> `BeforeAgent`/`AfterAgent`/`BeforeTool`/`AfterTool` (verified against the
+> documentation embedded in the `agy` binary): it has its own set, described in
+> section 4.3.
+
+### 4.1 Supported Lifecycle Events (Gemini CLI)
 
 - `SessionStart`: Fires when the CLI session initializes.
 - `SessionEnd`: Fires before the CLI exits.
@@ -151,7 +157,29 @@ Each hook communicates via standard I/O streams (**stdin** and **stdout**).
 
 #### Decision Control:
 - `decision: "allow"`: Standard execution, proceeds to output rendering or next phase.
-- `decision: "deny"`: Rejects the current state. When returned by `AfterAgent`, **it forces the agent engine to run another iteration loop**, injecting the `reason` field as a system directive prompt. This is the primary driver of autonomous coding loops (e.g. `aphrody agy-loop`).
+- `decision: "deny"`: Rejects the current state. When returned by `AfterAgent`, **it forces the agent engine to run another iteration loop**, injecting the `reason` field as a system directive prompt. This is the Gemini CLI lever for autonomous coding loops; the Antigravity equivalent is `Stop` with `decision: "continue"` (section 4.3), which is what `aphrody agy-loop` drives.
+
+### 4.3 Antigravity (`agy`) hooks
+
+`hooks.json` lives in `<workspace>/.agents/`, in the shared `~/.gemini/config/` or in a plugin
+(`plugins/<name>/hooks.json`). Each top-level key is a **hook name** (optional `"enabled": false`)
+holding one list per event. Supported events: `PreToolUse`, `PostToolUse` (grouped: a `matcher`
+regex on the tool name plus a `hooks` list), `PreInvocation`, `PostInvocation`, `Stop` (flat lists of
+handlers). Only `type: "command"` handlers exist (`sh -c` / `cmd /c`, run from the directory of
+`hooks.json`, 30 s default timeout). Payloads are **camelCase** (protojson): common fields
+`conversationId`, `workspacePaths`, `transcriptPath`, `artifactDirectoryPath`, `modelName`.
+
+| Event | Extra input | Output |
+|---|---|---|
+| `PreToolUse` | `toolCall{name,args}`, `stepIdx` | `decision` (`allow`/`deny`/`ask`/`force_ask`), `reason`, `permissionOverrides`, `overwrite` |
+| `PostToolUse` | `stepIdx`, `error` | `{}` |
+| `PreInvocation` | `invocationNum`, `initialNumSteps` | `injectSteps` |
+| `PostInvocation` | same + `modelOutput`, `modelThinking` | `injectSteps`, `terminationBehavior` (`force_continue` / `terminate` / empty) |
+| `Stop` | `executionNum`, `terminationReason`, `error`, `fullyIdle`, `finalModelOutput` | `decision` (`continue` blocks the stop and injects `reason`; any other value allows it) |
+
+The Python SDK (`antigravity-sdk-python`, in-process) names its hooks differently again
+(`OnSessionStart`, `PreTurn`, `PostTurn`, `PreToolCall`, `PostToolCall`, `OnToolError`,
+`OnCompaction`, `Stop`). Cross-tool event-name normalization is owned by `aphrody-marketplace`.
 
 ---
 
@@ -172,6 +200,6 @@ Unlike Claude Code and Open-Design, which auto-trigger based on natural language
 | **Frontmatter keys** | `name`, `description` | `name`, `description`, `triggers`, `od` | `name`, `description`, `when_to_use` | `name`, `description`, `metadata`, `license` |
 | **Triggers** | None | Natural language triggers | Natural language triggers | None |
 | **Invocation** | Tool call (`activate_skill`) | Direct narrative injection | Direct narrative injection | Direct narrative injection |
-| **Config formats** | `hooks/hooks.json` | `agent.json` | `CLAUDE.md` | `plugin.json` |
+| **Config formats** | `hooks/hooks.json` (Gemini CLI), `.agents/hooks.json` (Antigravity) | `agent.json` | `CLAUDE.md` | `plugin.json` |
 | **Local Path** | `.agents/skills/` | `.agents/skills/` | `.claude/skills/` | `.agents/skills/` |
 | **Global Path** | `~/.gemini/` | `~/.openclaw/` | `~/.claude/` | `~/.agents/` |

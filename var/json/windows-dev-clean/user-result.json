@@ -1,0 +1,402 @@
+﻿{
+    "RemovedBytes":  10405427478,
+    "RemovedFiles":  138113,
+    "FreeBefore":  90839040000,
+    "FreeAfter":  102749872128,
+    "Targets":  [
+                    {
+                        "Path":  "C:\\Users\\aphro\\.android",
+                        "Removed":  true
+                    },
+                    {
+                        "Path":  "C:\\Users\\aphro\\.nuget",
+                        "Removed":  true
+                    },
+                    {
+                        "Path":  "C:\\Users\\aphro\\.venvs",
+                        "Removed":  true
+                    },
+                    {
+                        "Path":  "C:\\Users\\aphro\\.vscode",
+                        "Removed":  true
+                    },
+                    {
+                        "Path":  "C:\\Users\\aphro\\.vscode-oss",
+                        "Removed":  true
+                    },
+                    {
+                        "Path":  "C:\\Users\\aphro\\.vscode-oss-shared",
+                        "Removed":  true
+                    },
+                    {
+                        "Path":  "C:\\Users\\aphro\\.vscode-shared",
+                        "Removed":  true
+                    },
+                    {
+                        "Path":  "C:\\Users\\aphro\\AppData\\Local\\.wasm-pack",
+                        "Removed":  true
+                    },
+                    {
+                        "Path":  "C:\\Users\\aphro\\AppData\\Local\\Android",
+                        "Removed":  true
+                    },
+                    {
+                        "Path":  "C:\\Users\\aphro\\AppData\\Local\\anythingllm-desktop-updater",
+                        "Removed":  true
+                    },
+                    {
+                        "Path":  "C:\\Users\\aphro\\AppData\\Local\\ASP.NET",
+                        "Removed":  true
+                    },
+                    {
+                        "Path":  "C:\\Users\\aphro\\AppData\\Local\\AvaloniaUI",
+                        "Removed":  true
+                    },
+                    {
+                        "Path":  "C:\\Users\\aphro\\AppData\\Local\\biomejs",
+                        "Removed":  true
+                    },
+                    {
+                        "Path":  "C:\\Users\\aphro\\AppData\\Local\\Blender Foundation",
+                        "Removed":  true
+                    },
+                    {
+                        "Path":  "C:\\Users\\aphro\\AppData\\Local\\ccache",
+                        "Removed":  true
+                    },
+                    {
+                        "Path":  "C:\\Users\\aphro\\AppData\\Local\\claude-cli-nodejs",
+                        "Removed":  true
+                    },
+                    {
+                        "Path":  "C:\\Users\\aphro\\AppData\\Local\\cloud-code",
+                        "Removed":  true
+                    },
+                    {
+                        "Path":  "C:\\Users\\aphro\\AppData\\Local\\copilot",
+                        "Removed":  true
+                    },
+                    {
+                        "Path":  "C:\\Users\\aphro\\AppData\\Local\\dcc-mcp",
+                        "Removed":  true
+                    },
+                    {
+                        "Path":  "C:\\Users\\aphro\\AppData\\Local\\Docker",
+                        "Removed":  true
+                    },
+                    {
+                        "Path":  "C:\\Users\\aphro\\AppData\\Local\\docker-secrets-engine",
+                        "Removed":  true
+                    },
+                    {
+                        "Path":  "C:\\Users\\aphro\\AppData\\Local\\GitHub CLI",
+                        "Removed":  true
+                    },
+                    {
+                        "Path":  "C:\\Users\\aphro\\AppData\\Local\\google-vscode-extension",
+                        "Removed":  true
+                    },
+                    {
+                        "Path":  "C:\\Users\\aphro\\AppData\\Local\\ImageMagick",
+                        "Removed":  true
+                    },
+                    {
+                        "Path":  "C:\\Users\\aphro\\AppData\\Local\\Live++",
+                        "Removed":  true
+                    },
+                    {
+                        "Path":  "C:\\Users\\aphro\\AppData\\Local\\main.kts.compiled.cache",
+                        "Removed":  true
+                    },
+                    {
+                        "Path":  "C:\\Users\\aphro\\AppData\\Local\\Microsoft\\VisualStudio",
+                        "Removed":  true
+                    },
+                    {
+                        "Path":  "C:\\Users\\aphro\\AppData\\Local\\Microsoft\\VSApplicationInsights",
+                        "Removed":  true
+                    },
+                    {
+                        "Path":  "C:\\Users\\aphro\\AppData\\Local\\Microsoft\\WinGet\\Packages\\dnSpyEx.dnSpy_Microsoft.Winget.Source_8wekyb3d8bbwe",
+                        "Removed":  true
+                    },
+                    {
+                        "Path":  "C:\\Users\\aphro\\AppData\\Local\\Microsoft\\WinGet\\Packages\\Google.PlatformTools_Microsoft.Winget.Source_8wekyb3d8bbwe",
+                        "Removed":  true
+                    },
+                    {
+                        "Path":  "C:\\Users\\aphro\\AppData\\Local\\Microsoft\\WinGet\\Packages\\Helix.Helix_Microsoft.Winget.Source_8wekyb3d8bbwe",
+                        "Removed":  true
+                    },
+                    {
+                        "Path":  "C:\\Users\\aphro\\AppData\\Local\\Microsoft\\WinGet\\Packages\\horsicq.DIE-engine_Microsoft.Winget.Source_8wekyb3d8bbwe",
+                        "Removed":  true
+                    },
+                    {
+                        "Path":  "C:\\Users\\aphro\\AppData\\Local\\Microsoft\\WinGet\\Packages\\Microsoft.Sysinternals.ProcessExplorer_Microsoft.Winget.Source_8wekyb3d8bbwe",
+                        "Removed":  true
+                    },
+                    {
+                        "Path":  "C:\\Users\\aphro\\AppData\\Local\\Microsoft\\WinGet\\Packages\\Microsoft.Sysinternals.ProcessMonitor_Microsoft.Winget.Source_8wekyb3d8bbwe",
+                        "Removed":  true
+                    },
+                    {
+                        "Path":  "C:\\Users\\aphro\\AppData\\Local\\Microsoft\\WinGet\\Packages\\Rizin.Cutter_Microsoft.Winget.Source_8wekyb3d8bbwe",
+                        "Removed":  true
+                    },
+                    {
+                        "Path":  "C:\\Users\\aphro\\AppData\\Local\\Microsoft\\WinGet\\Packages\\sharkdp.bat_Microsoft.Winget.Source_8wekyb3d8bbwe",
+                        "Removed":  true
+                    },
+                    {
+                        "Path":  "C:\\Users\\aphro\\AppData\\Local\\Microsoft\\WinGet\\Packages\\Skylot.jadx_Microsoft.Winget.Source_8wekyb3d8bbwe",
+                        "Removed":  true
+                    },
+                    {
+                        "Path":  "C:\\Users\\aphro\\AppData\\Local\\Microsoft\\WinGet\\Packages\\UPX.UPX_Microsoft.Winget.Source_8wekyb3d8bbwe",
+                        "Removed":  true
+                    },
+                    {
+                        "Path":  "C:\\Users\\aphro\\AppData\\Local\\Microsoft\\WinGet\\Packages\\xhcoding.sshpass-win32_Microsoft.Winget.Source_8wekyb3d8bbwe",
+                        "Removed":  true
+                    },
+                    {
+                        "Path":  "C:\\Users\\aphro\\AppData\\Local\\ms-playwright-go",
+                        "Removed":  true
+                    },
+                    {
+                        "Path":  "C:\\Users\\aphro\\AppData\\Local\\node-gyp",
+                        "Removed":  true
+                    },
+                    {
+                        "Path":  "C:\\Users\\aphro\\AppData\\Local\\npm-cache",
+                        "Removed":  true
+                    },
+                    {
+                        "Path":  "C:\\Users\\aphro\\AppData\\Local\\NuGet",
+                        "Removed":  true
+                    },
+                    {
+                        "Path":  "C:\\Users\\aphro\\AppData\\Local\\pnpm",
+                        "Removed":  true
+                    },
+                    {
+                        "Path":  "C:\\Users\\aphro\\AppData\\Local\\pnpm-cache",
+                        "Removed":  true
+                    },
+                    {
+                        "Path":  "C:\\Users\\aphro\\AppData\\Local\\prisma-nodejs",
+                        "Removed":  true
+                    },
+                    {
+                        "Path":  "C:\\Users\\aphro\\AppData\\Local\\Programs\\AnythingLLM",
+                        "Removed":  true
+                    },
+                    {
+                        "Path":  "C:\\Users\\aphro\\AppData\\Local\\Programs\\DockerDesktop",
+                        "Removed":  true
+                    },
+                    {
+                        "Path":  "C:\\Users\\aphro\\AppData\\Local\\Programs\\ILSpy",
+                        "Removed":  true
+                    },
+                    {
+                        "Path":  "C:\\Users\\aphro\\AppData\\Local\\Programs\\Microsoft VS Code",
+                        "Removed":  true
+                    },
+                    {
+                        "Path":  "C:\\Users\\aphro\\AppData\\Local\\Programs\\ovhcloud-cli",
+                        "Removed":  true
+                    },
+                    {
+                        "Path":  "C:\\Users\\aphro\\AppData\\Local\\Programs\\Termius",
+                        "Removed":  true
+                    },
+                    {
+                        "Path":  "C:\\Users\\aphro\\AppData\\Local\\Programs\\WinSCP",
+                        "Removed":  true
+                    },
+                    {
+                        "Path":  "C:\\Users\\aphro\\AppData\\Local\\PSResourceGet",
+                        "Removed":  true
+                    },
+                    {
+                        "Path":  "C:\\Users\\aphro\\AppData\\Local\\rust-lang",
+                        "Removed":  true
+                    },
+                    {
+                        "Path":  "C:\\Users\\aphro\\AppData\\Local\\tealdeer",
+                        "Removed":  true
+                    },
+                    {
+                        "Path":  "C:\\Users\\aphro\\AppData\\Local\\termius-updater",
+                        "Removed":  true
+                    },
+                    {
+                        "Path":  "C:\\Users\\aphro\\AppData\\Local\\unityhub-updater",
+                        "Removed":  true
+                    },
+                    {
+                        "Path":  "C:\\Users\\aphro\\AppData\\Local\\UnrealEngine",
+                        "Removed":  true
+                    },
+                    {
+                        "Path":  "C:\\Users\\aphro\\AppData\\Local\\UnrealEngineLauncher",
+                        "Removed":  true
+                    },
+                    {
+                        "Path":  "C:\\Users\\aphro\\AppData\\Local\\vercel",
+                        "Removed":  true
+                    },
+                    {
+                        "Path":  "C:\\Users\\aphro\\AppData\\Local\\vitest",
+                        "Removed":  true
+                    },
+                    {
+                        "Path":  "C:\\Users\\aphro\\AppData\\Local\\Zed",
+                        "Removed":  true
+                    },
+                    {
+                        "Path":  "C:\\Users\\aphro\\AppData\\Local\\zig",
+                        "Removed":  false
+                    },
+                    {
+                        "Path":  "C:\\Users\\aphro\\AppData\\Local\\zoxide",
+                        "Removed":  true
+                    },
+                    {
+                        "Path":  "C:\\Users\\aphro\\AppData\\Roaming\\anythingllm-desktop",
+                        "Removed":  true
+                    },
+                    {
+                        "Path":  "C:\\Users\\aphro\\AppData\\Roaming\\Blender Foundation",
+                        "Removed":  true
+                    },
+                    {
+                        "Path":  "C:\\Users\\aphro\\AppData\\Roaming\\Code",
+                        "Removed":  true
+                    },
+                    {
+                        "Path":  "C:\\Users\\aphro\\AppData\\Roaming\\com.vercel.cli",
+                        "Removed":  true
+                    },
+                    {
+                        "Path":  "C:\\Users\\aphro\\AppData\\Roaming\\dcc-mcp",
+                        "Removed":  true
+                    },
+                    {
+                        "Path":  "C:\\Users\\aphro\\AppData\\Roaming\\Docker",
+                        "Removed":  true
+                    },
+                    {
+                        "Path":  "C:\\Users\\aphro\\AppData\\Roaming\\docker-secrets-engine",
+                        "Removed":  true
+                    },
+                    {
+                        "Path":  "C:\\Users\\aphro\\AppData\\Roaming\\gcloud",
+                        "Removed":  true
+                    },
+                    {
+                        "Path":  "C:\\Users\\aphro\\AppData\\Roaming\\GitHub CLI",
+                        "Removed":  true
+                    },
+                    {
+                        "Path":  "C:\\Users\\aphro\\AppData\\Roaming\\Microsoft\\VisualStudio",
+                        "Removed":  true
+                    },
+                    {
+                        "Path":  "C:\\Users\\aphro\\AppData\\Roaming\\nextjs-nodejs",
+                        "Removed":  true
+                    },
+                    {
+                        "Path":  "C:\\Users\\aphro\\AppData\\Roaming\\npm-cache",
+                        "Removed":  true
+                    },
+                    {
+                        "Path":  "C:\\Users\\aphro\\AppData\\Roaming\\NuGet",
+                        "Removed":  true
+                    },
+                    {
+                        "Path":  "C:\\Users\\aphro\\AppData\\Roaming\\nushell",
+                        "Removed":  true
+                    },
+                    {
+                        "Path":  "C:\\Users\\aphro\\AppData\\Roaming\\ollama app.exe",
+                        "Removed":  true
+                    },
+                    {
+                        "Path":  "C:\\Users\\aphro\\AppData\\Roaming\\Prisma",
+                        "Removed":  true
+                    },
+                    {
+                        "Path":  "C:\\Users\\aphro\\AppData\\Roaming\\turborepo",
+                        "Removed":  true
+                    },
+                    {
+                        "Path":  "C:\\Users\\aphro\\AppData\\Roaming\\UnityHub",
+                        "Removed":  true
+                    },
+                    {
+                        "Path":  "C:\\Users\\aphro\\AppData\\Roaming\\Unreal Engine",
+                        "Removed":  true
+                    },
+                    {
+                        "Path":  "C:\\Users\\aphro\\AppData\\Roaming\\vercel",
+                        "Removed":  true
+                    },
+                    {
+                        "Path":  "C:\\Users\\aphro\\AppData\\Roaming\\Visual Studio Setup",
+                        "Removed":  true
+                    },
+                    {
+                        "Path":  "C:\\Users\\aphro\\AppData\\Roaming\\VSCodium",
+                        "Removed":  true
+                    },
+                    {
+                        "Path":  "C:\\Users\\aphro\\AppData\\Roaming\\Zed",
+                        "Removed":  true
+                    },
+                    {
+                        "Path":  "C:\\Users\\aphro\\vscode-remote-wsl",
+                        "Removed":  true
+                    }
+                ],
+    "Failures":  [
+                     {
+                         "Path":  "C:\\Users\\aphro\\AppData\\Local\\zig\\p\\N-V-__8AABDOXwDW4TLrTiydikRCN2ym9hJI1GKGR09ZLBvY\\cbuildbot",
+                         "Error":  "Reparse point preserved"
+                     },
+                     {
+                         "Path":  "C:\\Users\\aphro\\AppData\\Local\\zig\\p\\N-V-__8AABDOXwDW4TLrTiydikRCN2ym9hJI1GKGR09ZLBvY\\cros_sdk",
+                         "Error":  "Reparse point preserved"
+                     },
+                     {
+                         "Path":  "C:\\Users\\aphro\\AppData\\Local\\zig\\p\\N-V-__8AABDOXwDW4TLrTiydikRCN2ym9hJI1GKGR09ZLBvY\\gerrit",
+                         "Error":  "Reparse point preserved"
+                     },
+                     {
+                         "Path":  "C:\\Users\\aphro\\AppData\\Local\\zig\\p\\N-V-__8AABDOXwDW4TLrTiydikRCN2ym9hJI1GKGR09ZLBvY\\luci-auth-fido2-plugin",
+                         "Error":  "Reparse point preserved"
+                     },
+                     {
+                         "Path":  "C:\\Users\\aphro\\AppData\\Local\\zig\\p\\N-V-__8AABDOXwDW4TLrTiydikRCN2ym9hJI1GKGR09ZLBvY",
+                         "Error":  "Exception lors de l\u0027appel de « Delete » avec « 2 » argument(s) : « Le répertoire n’est pas vide.\r\n »"
+                     },
+                     {
+                         "Path":  "C:\\Users\\aphro\\AppData\\Local\\zig\\p",
+                         "Error":  "Exception lors de l\u0027appel de « Delete » avec « 2 » argument(s) : « Le répertoire n’est pas vide.\r\n »"
+                     },
+                     {
+                         "Path":  "C:\\Users\\aphro\\AppData\\Local\\zig",
+                         "Error":  "Exception lors de l\u0027appel de « Delete » avec « 2 » argument(s) : « Le répertoire n’est pas vide.\r\n »"
+                     }
+                 ],
+    "ChromeExists":  true,
+    "Games":  [
+                  "C:\\XboxGames\\GameSave",
+                  "C:\\Program Files\\EA Games\\EA SPORTS FC 27",
+                  "C:\\Program Files\\Epic Games\\DirectXRedist",
+                  "C:\\Program Files\\Epic Games\\GameInputRedist",
+                  "C:\\Program Files\\Epic Games\\Launcher"
+              ]
+}

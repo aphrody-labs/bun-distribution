@@ -1,9 +1,11 @@
 ---
 name: peaufiner-rendu-3d
-description: Diagnose and polish a NIE 3D render with comparable captures and targeted geometry, UV, material or framing fixes; before/after verification. Never promise fidelity without a reference.
+description: "Diagnose and polish a NIE (IEVR) 3D render with comparable captures and targeted geometry, UV, material or framing fixes, with before/after checks. Use when a render looks wrong; never promise fidelity without a reference."
 ---
 
 # Peaufiner avec des preuves visuelles
+
+> **S'applique quand :** la copie IECODE (racine contenant le dossier crates/nie) est le répertoire de travail et les fichiers du jeu sont disponibles ; les chemins préfixés `iecode:` sont relatifs à cette racine. **Sinon :** travailler uniquement à partir des fichiers fournis, dire quelle vérification (parseur, VFS, rendu) n'a pas pu être exécutée, ne pas deviner d'identifiant.
 
 Lire [les outils de capture locaux](../creer-assets-3d/references/outils-locaux.md). Choisir le consommateur réellement visé par la demande. Un aperçu Blender, un PNG CPU et le viewport GPU de l’éditeur constituent trois observations différentes.
 
@@ -20,6 +22,6 @@ Lire [les outils de capture locaux](../creer-assets-3d/references/outils-locaux.
 
 Une capture exécutée doit être ouverte et examinée avant d’être décrite comme vérifiée visuellement. Un contrôle de dimensions, un code retour nul ou une statistique de pixels ne remplace pas cette observation.
 
-Séparer les constats, les causes confirmées et les hypothèses restantes. Avec une référence du jeu, préciser sa provenance et les différences de scène/caméra qui empêchent une comparaison stricte. Sans référence comparable, parler de cohérence ou de correction du défaut observé, jamais de résultat pixel-perfect. Le contrôle CPU/GPU `--verify` de `nie-render3d` mesure la silhouette ; il n’atteste pas une fidélité globale au jeu.
+Séparer les constats, les causes confirmées et les hypothèses restantes. Avec une référence du jeu, préciser sa provenance et les différences de scène/caméra qui empêchent une comparaison stricte. Sans référence comparable, parler de cohérence ou de correction du défaut observé, jamais de résultat pixel-perfect. Le contrôle CPU/GPU `--verify` de `aphrody-nie-render3d` mesure la silhouette ; il n’atteste pas une fidélité globale au jeu.
 
 Rendre le candidat, les captures avant/après, les paramètres de reproduction et le bilan des critères. Signaler explicitement si l’éditeur cible n’a pas été ouvert ou si une partie du modèle n’a pas pu être observée. Ne pas élargir ce travail à une refonte du moteur ou à un déploiement non demandé.

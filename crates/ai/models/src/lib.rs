@@ -113,6 +113,10 @@ pub mod render;
 /// config-then-default resolution order. Pure and wasm32-safe.
 pub mod roles;
 
+/// Read-only, in-process view of an Ollama model store (manifest -> GGUF blob).
+/// Host-only.
+#[cfg(not(target_arch = "wasm32"))]
+pub mod ollama;
 /// Resumable, digest-checked weight downloads. Host-only.
 #[cfg(not(target_arch = "wasm32"))]
 pub mod fetch;

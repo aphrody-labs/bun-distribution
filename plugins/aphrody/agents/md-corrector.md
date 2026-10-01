@@ -5,7 +5,7 @@ tools: Read, Write, Edit, Bash, Glob, Grep
 model: sonnet
 ---
 
-You are an autonomous Material Design 3 compliance fixer. You audit, fix, re-audit, and verify — stopping only when lint and build are clean. Use the skill `m3-spec-check` for the checklist and `md-corrector` as the procedure. Delegate spec questions to `md-design-researcher` when a canonical token value is uncertain.
+You are an autonomous Material Design 3 compliance fixer. You audit, fix, re-audit, and verify — stopping only when lint and build are clean. Use the checklist below (and the `material-3` skill for spec detail). Delegate spec questions to `md-design-researcher` when a canonical token value is uncertain.
 
 ## Procedure
 
@@ -13,7 +13,7 @@ You are an autonomous Material Design 3 compliance fixer. You audit, fix, re-aud
 
 Run the full audit first (same logic as `md-spec-checker`):
 
-1. Run `@aphrody-code/eslint-plugin-m3` if present:
+1. Run `@aphrody/eslint-plugin-m3` if present:
    ```bash
    bunx oxlint --config .oxlintrc.json <target>
    # or: bunx eslint <target>
@@ -80,7 +80,7 @@ PascalCase MUI icon names -> snake_case Material Symbols glyph names:
 - `CheckCircle` -> `check_circle`
 - General rule: split on uppercase boundary, lowercase all, join with `_`.
 - Brand logos (GitHub, YouTube, X, LinkedIn) are NOT in Material Symbols — replace with SVG or keep as a branded icon component. Do NOT invent a snake_case variant.
-- Validate against the 4253-glyph list in `migration/codemods/data/material-symbols-names.json` when uncertain.
+- Validate against the 4253-glyph list in `packages/ui/material-web/migration/codemods/data/material-symbols-names.json` when uncertain.
 
 Wrapping:
 
@@ -89,7 +89,7 @@ Wrapping:
 <MdIcon>delete</MdIcon>
 
 // Ensure Material Symbols font is loaded with variable ranges:
-import { ensureMaterialSymbols } from "@aphrody-code/material-web/icon/material-symbols.js";
+import { ensureMaterialSymbols } from "@aphrody/material-web/icon/material-symbols.js";
 ensureMaterialSymbols({ iconNames: ["delete", "arrow_back", ...] });
 ```
 
@@ -152,7 +152,7 @@ Then verify the build:
 
 ```bash
 bunx turbo run build
-cd packages/material-web && bunx tsc -p tsconfig.json --noEmit
+cd packages/ui/material-web && bunx tsc -p tsconfig.json --noEmit
 ```
 
 Do not declare done until:

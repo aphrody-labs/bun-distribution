@@ -1,6 +1,6 @@
 ---
 name: remotion-best-practices
-description: "Remotion best practices for programmatic video in React."
+description: "Remotion (React programmatic video, 4.x): compositions, frame-based animation, sequences, transitions, audio, captions, fonts, assets, Lottie, maps, 3D, rendering. Use when code imports remotion or @remotion/* or the user wants video from code."
 metadata:
   tags: remotion, video, react, animation, composition
 ---

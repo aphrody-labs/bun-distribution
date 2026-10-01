@@ -177,9 +177,10 @@ impl McpProxySubsystem {
     /// `aphrody-render3d-mcp`; see aphrody-infra/docs/REPO-LAYERING.md).
     ///
     /// `env` names an explicit command (empty disables the plugin, a missing binary is an error);
-    /// otherwise `binary` is looked up next to the kernel, on `PATH`, then in `~/.local/bin` and
-    /// `~/.cargo/bin`, and an absent plugin is skipped. Tools already in `occupied` keep their
-    /// owner.
+    /// otherwise `binary` is looked up on `PATH`, next to the kernel, then in the user install
+    /// directories (`~/.local/bin`, `$CARGO_HOME/bin`, `~/.cargo/bin`, `$APHRODY_HOME/bin`), and
+    /// an absent plugin is skipped, so the kernel starts without it. Tools already in `occupied`
+    /// keep their owner.
     pub async fn configured_plugin(
         spec: PluginSpec<'_>,
         occupied: &HashSet<String>,
@@ -414,23 +415,20 @@ fn is_web_provider_tool(name: &str) -> bool {
     is_web_tool(name) || name.starts_with("web_")
 }
 
+/// An installed provider binary, searched in the order of
+/// [`crate::paths::binary_search_directories`].
 fn installed_binary(name: &str) -> Option<PathBuf> {
     let executable = format!("{name}{}", std::env::consts::EXE_SUFFIX);
-    let mut directories = Vec::new();
-    if let Some(path) = std::env::var_os("PATH") {
-        directories.extend(std::env::split_paths(&path));
-    }
-    if let Ok(kernel) = std::env::current_exe()
-        && let Some(parent) = kernel.parent()
-    {
-        directories.push(parent.to_path_buf());
-    }
-    if let Some(home) = std::env::var_os("USERPROFILE").or_else(|| std::env::var_os("HOME")) {
-        let home = PathBuf::from(home);
-        directories.push(home.join(".local").join("bin"));
-        directories.push(home.join(".cargo").join("bin"));
-    }
-    directories.into_iter().map(|directory| directory.join(&executable)).find(|path| path.is_file())
+    let kernel = std::env::current_exe().ok();
+    let home = crate::paths::home_dir();
+    crate::paths::binary_search_directories(
+        &crate::paths::process_env,
+        kernel.as_deref().and_then(|kernel| kernel.parent()),
+        home.as_deref(),
+    )
+    .into_iter()
+    .map(|directory| directory.join(&executable))
+    .find(|path| path.is_file())
 }
 
 #[async_trait]

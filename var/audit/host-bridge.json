@@ -1,0 +1,13 @@
+{
+  "samples": 100,
+  "medianMs": 0.198438,
+  "p95Ms": 0.769102,
+  "maxMs": 1.711738,
+  "reverseLinuxCall": {
+    "cwd": "/home/aphro",
+    "value": "Ubuntu"
+  },
+  "guestToHostEvent": true,
+  "hostToGuestEvent": true,
+  "invalidTokenRejected": true
+}

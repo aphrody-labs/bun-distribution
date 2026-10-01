@@ -246,15 +246,21 @@ impl GoogleTranslateClient {
         if request.format.as_deref().is_some_and(|format| !matches!(format, "text" | "html")) {
             return Err("Google Translate format must be text or html".to_owned());
         }
+        use futures::StreamExt as _;
+
         let texts = request.q.into_vec();
+        let target = request.target.as_str();
+        let source = request.source.as_deref();
         let mut translations = Vec::with_capacity(texts.len());
-        for chunk in texts.chunks(options.concurrency) {
-            let futures = chunk.iter().map(|text| {
-                self.translate_single(text, &request.target, request.source.as_deref(), options)
-            });
-            for result in futures::future::join_all(futures).await {
-                translations.push(result?);
-            }
+        // A sliding window of `concurrency` requests: one slow text never idles
+        // the other slots (a `chunks` + `join_all` loop waits for each chunk's
+        // slowest member). Order is preserved, and the first failure drops the
+        // stream, cancelling what is still in flight.
+        let mut window = futures::stream::iter(texts.iter())
+            .map(|text| self.translate_single(text, target, source, options))
+            .buffered(options.concurrency);
+        while let Some(result) = window.next().await {
+            translations.push(result?);
         }
         Ok(TranslateV2Response { data: TranslateV2Data { translations } })
     }

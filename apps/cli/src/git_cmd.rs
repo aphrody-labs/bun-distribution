@@ -158,6 +158,35 @@ pub(crate) enum GitAction {
         #[arg(long)]
         json: bool,
     },
+    /// Upstream source checkouts outside the repository (config/upstream-sources.json).
+    Source {
+        /// `status` and `verify` inspect natively; `sync` runs the @aphrody/workspace restorer.
+        #[arg(value_enum, default_value = "status")]
+        action: SourceAction,
+        /// Repository root holding the manifest.
+        #[arg(long, default_value = ".")]
+        path: PathBuf,
+        /// Override the source root (also APHRODY_SOURCE_ROOT).
+        #[arg(long)]
+        source_root: Option<PathBuf>,
+        /// `sync` only: clone, extract and patch instead of printing a plan.
+        #[arg(long)]
+        apply: bool,
+        /// Pretty-print JSON.
+        #[arg(long)]
+        pretty: bool,
+    },
+}
+
+/// Operation on the upstream source manifest.
+#[derive(clap::ValueEnum, Debug, Clone, Copy)]
+pub(crate) enum SourceAction {
+    /// Report every checkout.
+    Status,
+    /// Report and fail unless every checkout is healthy.
+    Verify,
+    /// Restore missing checkouts and patches.
+    Sync,
 }
 
 pub(crate) async fn run(action: GitAction) -> miette::Result<()> {
@@ -300,6 +329,31 @@ pub(crate) async fn run(action: GitAction) -> miette::Result<()> {
                 emit(&serde_json::to_value(&report).map_err(to_report)?, true)?;
             } else {
                 println!("{}", report.to_markdown());
+            }
+        },
+        GitAction::Source { action, path, source_root, apply, pretty } => {
+            if matches!(action, SourceAction::Sync) {
+                let mut command = std::process::Command::new("bun");
+                command
+                    .arg(path.join("packages/infra/workspace/src/ops.ts"))
+                    .args(["upstream-sources", "sync", "--root"])
+                    .arg(&path);
+                if let Some(root) = &source_root {
+                    command.arg("--source-root").arg(root);
+                }
+                if apply {
+                    command.arg("--apply");
+                }
+                let status = command.status().map_err(|error| miette::miette!("run bun: {error}"))?;
+                if !status.success() {
+                    return Err(miette::miette!("upstream-sources sync failed ({status})"));
+                }
+                return Ok(());
+            }
+            let report = aphrody_git::source_report(&path, source_root.as_deref()).map_err(to_report)?;
+            emit(&serde_json::to_value(&report).map_err(to_report)?, pretty)?;
+            if matches!(action, SourceAction::Verify) && !report.is_healthy() {
+                return Err(miette::miette!("upstream sources are not all healthy"));
             }
         },
     }

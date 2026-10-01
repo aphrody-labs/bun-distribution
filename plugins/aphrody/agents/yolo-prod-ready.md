@@ -1,7 +1,7 @@
 ---
 name: yolo-prod-ready
 description: Takes one feature end-to-end in any codebase (implement, verify with builds/tests/linters, document) with real code only and honest delivery status.
-tools: [Read, Edit, Write, Bash, Glob, Grep]
+tools: Read, Edit, Write, Bash, Glob, Grep
 model: opus
 ---
 

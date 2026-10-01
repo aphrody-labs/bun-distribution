@@ -1,59 +1,57 @@
 ---
 name: bun
-description: "Bun runtime, bundler, package manager and test runner, using the offline Bun docs tools and the n2b Node-to-Bun registry."
-version: "1.0.0"
+description: "Bun runtime, bundler, package manager and test runner from version-matched docs (offline bun_docs tools, bun-types, bun.com). Use for Bun.serve/file/$, bun build/test/install, bun:sqlite/ffi, or porting Node code to Bun."
+version: "1.1.0"
 ---
 
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 
-# bun — Bun docs first, then code
+# bun: docs first, then code
 
-Answer Bun questions from the Bun docs vendored in the repo, not from training data. Those docs
-are pinned to the Bun release the workspace runs. Use `n2b` when the task is a full Node
-migration.
+Answer Bun questions from documentation that matches the Bun version the project runs, not
+from memory. Bun ships fast and APIs move between minors, so an answer from training data is
+often subtly wrong.
 
-## Sources, in order
+## 1. Find the project's Bun version
 
-1. **Kernel MCP tools** (the `bun_docs` subsystem, `crates/aphrody-bun-docs`). They search the
-   docs in `third_party/bun/docs`, the upstream `oven-sh/bun` submodule that
-   `bun.com/docs` is built from. The version is in `third_party/runtime-sources.toml`.
-   - `bun_docs_search {query, limit?, include_content?}`: ranked pages with slug, URL and
-     snippet. Set `include_content: true` to get the best page's Markdown too.
-   - `bun_docs_read {slug | url, section?}`: one page, or only the part under one heading.
-   - `bun_docs_list {prefix?}`: lists pages. Prefixes: `runtime/`, `bundler/`, `pm/`,
-     `test/`, `guides/`.
-   - `bun_node_equivalent {query}`: the Bun replacement for a `node:*` module, an npm
-     package or a Node API. It comes from the n2b registry (`crates/aphrody-n2b-registry`)
-     and adds the matching docs pages.
-   - Skill `bun_docs_lookup {query}`: runs a search and returns the top page in one call.
-2. **Upstream source.** `third_party/bun/packages/bun-types/*.d.ts` holds the exact API
-   signatures. `third_party/bun/test/` shows real usage.
-3. **Context7** (`/oven-sh/bun`): only if the vendored tree lacks a page. That usually means
-   the feature is newer than the pinned release, and you should say so.
+- `bun --version`, `packageManager` / `engines.bun` in the root `package.json`, and the
+  `@types/bun` / `bun-types` version in the lockfile (`bun.lock`, text format).
+- Note workspaces (`workspaces.packages`) and `catalog:` versions in the root `package.json`;
+  respect them when adding dependencies.
 
-If the MCP server cannot be reached, run the kernel directly:
-`aphrody-kernel call bun_docs_search '{"query":"..."}'`. If the submodule is missing, the
-tools return `Unavailable`. Fix it with `git submodule update --init third_party/bun`, or set
-`APHRODY_BUN_DOCS=<docs dir>`.
+## 2. Sources, in order
 
-## Workflow
+1. **Offline Bun docs MCP tools, if the session exposes them** (names end in
+   `bun_docs_search`, `bun_docs_read`, `bun_docs_list`, `bun_node_equivalent`, and the
+   composite `skill_bun_docs_lookup`). They index a local upstream Bun docs tree.
+   - `bun_docs_search {query, limit?, include_content?}`: ranked pages (slug, URL, snippet).
+   - `bun_docs_read {slug | url, section?}`: one page, or one heading's section.
+   - `bun_docs_list {prefix?}`: prefixes `runtime/`, `bundler/`, `pm/`, `test/`, `guides/`.
+   - `bun_node_equivalent {query}`: Bun replacement for a `node:*` module, npm package or
+     Node API, with `compat` = `full` | `partial` (see `missing_apis`) | `missing` (use the
+     `bun` / `hint` fields).
+   If they return `Unavailable`, the docs corpus is missing: point `APHRODY_BUN_DOCS` at an
+   upstream `oven-sh/bun` `docs/` directory.
+2. **Type definitions in the project**: `node_modules/bun-types/*.d.ts` (or
+   `node_modules/@types/bun`). These are the exact signatures for the installed version.
+3. **Upstream docs**: `https://bun.com/docs` (index for agents: `https://bun.com/docs/llms.txt`),
+   or Context7 library `/oven-sh/bun`. If a feature only appears here and not in the local
+   types, it is newer than the installed Bun; say so.
 
-1. Search: `bun_docs_search` using the API name plus what the user wants to do (for example
-   `Bun.file stream`, `bun build --compile target`, `bun test mock module`).
-2. Read the one relevant `section` of the page. Cite its `url` in the answer.
-3. For Node code, call `bun_node_equivalent` on each import. Follow the `compat` value:
-   - `full`: keep the import.
-   - `partial`: check `missing_apis`.
-   - `missing`: rewrite using the `bun` / `hint` fields.
-4. Write the code, then check it with `bun run typecheck` and `bun test <scope>` in the
-   package you changed.
+## 3. Workflow
+
+1. Search with the API name plus the intent (`Bun.file stream`, `bun build --compile target`,
+   `bun test mock module`).
+2. Read only the relevant section and cite its URL.
+3. For Node code, resolve each import (`bun_node_equivalent`, or the Node-compat page
+   `https://bun.com/docs/runtime/nodejs-compat`). Keep fully supported imports; rewrite the rest.
+4. Write the code, then run the package's own scripts (`bun run typecheck` or `bunx tsc
+   --noEmit`, and `bun test <path>`).
 
 ## Rules
 
-- Bun-native repos use `bun` and `bunx`. Never use `npm`, `pnpm`, `yarn`, `npx` or `node`.
-  The lockfile is `bun.lock` (text). Workspaces come from the root `package.json`, and the
-  build runs through Turborepo.
-- Prefer these Bun-native APIs:
+- In a Bun project use `bun` / `bunx`, not `npm`, `pnpm`, `yarn`, `npx` or `node`.
+- Prefer Bun-native APIs:
 
   | Task | Bun API | Instead of |
   | --- | --- | --- |
@@ -66,19 +64,17 @@ tools return `Unavailable`. Fix it with `git submodule update --init third_party
   | Hashing | `Bun.password` / `Bun.hash` | hashing packages |
   | `.env` files | loaded automatically | `dotenv` |
 
-- If the docs call an API experimental or unstable, say so in the answer.
-- Native code goes through `bun:ffi` or N-API. For a Rust cdylib, use the `ffi-architect`
-  agent and the `web` skill.
+- Flag any API the docs mark experimental or unstable.
+- Native code goes through `bun:ffi` or N-API; for Rust libraries use the `rust-bun` skill.
 
-## Aphrody OS context
+## In the Aphrody monorepo
 
-- The Bun workspace covers `packages/*`, `packages/aphrody-spaceui/packages/*`, `examples/*`
-  and Drive. Package names are `@aphrody/*`.
-- The `bun_docs` subsystem is always registered in `aphrody-kernel`. Any MCP client connected
-  to `aphrody-kernel mcp` gets these tools.
-- When the vendored Bun submodule is updated (`third_party/README.md`), the tools pick up the
-  new docs automatically. There is no index to regenerate.
-- The layer map and the manifest contract are in `docs/BUN.md`. `bun run bun:check` enforces
-  the contract (one `packageManager`, `engines.bun` matching the root, `catalog:` versions, no
-  Node tooling in scripts, a `typecheck` script wherever there is a tsconfig). Run
-  `bun run bun:fix` after adding a package or bumping Bun.
+Applies only when the repo root `package.json` is named `aphrody`:
+
+- The `bun_docs` subsystem lives in crate `aphrody-bun-docs` (`crates/compat/bun-docs`); Node
+  equivalents come from `aphrody-n2b-registry` (`crates/compat/n2b-registry`). Without MCP,
+  call it directly: `aphrody-kernel call bun_docs_search '{"query":"..."}'`.
+- The docs corpus resolves from `APHRODY_BUN_DOCS`, then installed data
+  (`$XDG_DATA_HOME/aphrody/bun/docs`), then `docs/reference/upstream-bun` in the checkout.
+- Workspace globs and `catalog:` versions are in the root `package.json`; `bun run bun:check`
+  validates the Bun workspace contract.

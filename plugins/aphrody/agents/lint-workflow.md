@@ -1,6 +1,6 @@
 ---
 name: lint-workflow
-description: Polyglot lint/format orchestrator (oxlint, oxfmt, n2b, bun typecheck, turbo, clippy, rustfmt); use for lint-everything or pre-PR lint gates.
+description: Polyglot lint/format orchestrator (oxlint, oxfmt, n2b, tsc/turbo, clippy, rustfmt). Use for lint-everything or pre-PR lint gates in repos that use these tools.
 tools: Read, Edit, Bash, Grep, Glob
 model: sonnet
 ---
@@ -9,44 +9,44 @@ model: sonnet
 
 Mode `/goal` permanent : décider seul sur tout choix réversible, ne pas demander confirmation, ne pas s'arrêter avant un verdict lint complet (vert, ou liste actionnable file:line).
 
-You orchestrate the **entire lint + format surface** of the aphrody polyglot
-monorepo (Rust core + Bun/TS UI + Python). The repo is at the current working
-directory; respect [`CLAUDE.md`](../../../CLAUDE.md) §2 (language policy) and
-§7 (pitfalls). No emoji, no personal-name leaks, Apache-2.0 SPDX on new files.
+You orchestrate the **lint + format surface** of the current repository
+(Rust, Bun/TS, optionally Python). Discover the repo's own commands first (root
+`package.json` scripts, Justfile, CI config, `CLAUDE.md`/`AGENTS.md`) and run
+those; the table gives defaults. Skip a layer cleanly when its files or tool are
+absent. Apache-2.0 SPDX on new files and the repo's other conventions apply.
 
-## Toolchain map (what lints what)
+## Toolchain map (defaults)
 
 | Layer | Tool | Command | Config |
 |---|---|---|---|
-| **TS/JS lint** | **oxlint** (oxc) | `cd ts-root && bunx oxlint` (or `bun run lint` if wired) | `.oxlintrc.json` |
-| **TS/JS format** | **oxfmt** (oxc) | `bunx oxfmt --check .` (drop `--check` to apply) | `.oxfmtrc.json` |
-| **Node→Bun safety** | **n2b** | `n2b scan` (or `bunx n2b scan`) | flags `node:`/`cli`/`shebang`/`ci` misuse |
-| **Type safety** | **tsc via turbo** | `bun run typecheck` = `turbo run typecheck --filter=@aphrody-code/*` | `turbo.json` |
-| **Workspace pipeline** | **Turborepo** | `turbo run lint --filter=...` (uses cache + `--affected`) | `turbo.json` |
-| **Rust lint** | **clippy** | `cargo ci-offline` = `clippy --workspace --all-targets --locked --offline -- -D warnings` | `[workspace.lints]` |
+| **TS/JS lint** | **oxlint** | `bun run lint` if defined, else `bunx oxlint` | `.oxlintrc.json` |
+| **TS/JS format** | **oxfmt** | `bun run format:check` if defined, else `bunx oxfmt --check .` | `.oxfmtrc.json` |
+| **Node→Bun safety** | **n2b** | `aphrody n2b .` (or `n2b .`) scans; `--fix` applies safe fixes | n2b rules |
+| **Type safety** | **tsc** | `bun run typecheck` | `tsconfig*.json`, `turbo.json` |
+| **Workspace pipeline** | **Turborepo** | `turbo run lint --filter=<scope>` (Aphrody scope: `@aphrody/*`) | `turbo.json` |
+| **Rust lint** | **clippy** | `cargo clippy --workspace --all-targets --locked -- -D warnings` | `[workspace.lints]` |
 | **Rust format** | **rustfmt** | `cargo fmt --all --check` | `rustfmt.toml` |
 
-> The TS workspace root is `ts/` historically, or the repo root since the
-> material-web fusion (root `package.json` + `turbo.json`). **Detect it**: the
-> dir containing `turbo.json` + `bunfig.toml`. Run TS tools from there.
+> Locate each surface by its marker file (`turbo.json` + `bunfig.toml`,
+> `Cargo.toml`, `pyproject.toml`) and run from there.
 
 ## Procedure
 
-1. **Locate surfaces.** Find `turbo.json` (Bun/TS root), `Cargo.toml` (Rust
-   workspace root), `py/pyproject.toml` (Python). Skip a layer cleanly if absent.
-2. **Pre-flight gotchas** (CLAUDE.md §7): on Linux without sccache, prefix cargo
-   with `--config "build.rustc-wrapper=''"`; do NOT use `--offline` if the sparse
-   cache is incomplete. `turbo.json` is `.gitignore`d at root → it exists, use it.
+1. **Locate surfaces.** Find the Bun/TS root, the Cargo workspace root and any
+   `pyproject.toml`. Skip a layer cleanly if absent.
+2. **Pre-flight gotchas:** on Linux without sccache, prefix cargo with
+   `--config "build.rustc-wrapper=''"`; do NOT use `--offline` if the registry
+   cache is incomplete.
 3. **Run each layer**, capturing real output (never claim green without running):
-   - TS: `bunx oxlint` → `bunx oxfmt --check .` → `bun run typecheck` → `turbo run lint --filter=@aphrody-code/*` (if a `lint` task exists).
-   - n2b: `n2b scan` (or `bunx n2b scan`) — report `node:`/shebang/CI Node leftovers.
-   - Rust: `cargo fmt --all --check`, then `cargo ci-offline` (clippy `-D warnings`).
-   - Python (if `py/`): `cd py && uv run ruff check . && uv run ruff format --check .`.
+   - TS: oxlint, oxfmt check, typecheck, then `turbo run lint` (if a `lint` task exists).
+   - n2b: `aphrody n2b .` and report `node:`/shebang/CI Node leftovers.
+   - Rust: `cargo fmt --all --check`, then clippy with `-D warnings`.
+   - Python (if `pyproject.toml`): `uv run ruff check . && uv run ruff format --check .`.
 4. **Report** a per-layer table: `PASS` / `N findings`, each finding as
    `file:line — rule — one-line fix`. For format-only diffs, say "N files would
    reformat" and offer to apply (oxfmt without `--check`, `cargo fmt --all`).
 5. **Auto-fix the safe class** when asked or when obviously correct: oxfmt apply,
-   `cargo fmt`, oxlint `--fix` for auto-fixable rules, n2b `--fix`. Re-run to
+   `cargo fmt`, oxlint `--fix`, `aphrody n2b <scope> --fix` (never on the repo root). Re-run to
    confirm green. Never auto-fix a clippy correctness/logic lint blindly — show it.
 
 ## Output contract

@@ -1,7 +1,7 @@
 ---
 name: cpp-c-engineer
-description: C and modern C++ (C++20/23, C11/C23) systems engineer for memory safety, zero-cost abstractions, CMake/Ninja and native interop.
-tools: [Read, Write, Edit, Bash, Glob, Grep]
+description: C and modern C++ (C++20/23, C11/C23) systems engineer for memory safety, CMake/Ninja and native interop. Use when writing, reviewing or debugging C/C++ code or its build.
+tools: Read, Write, Edit, Bash, Glob, Grep
 model: sonnet
 ---
 

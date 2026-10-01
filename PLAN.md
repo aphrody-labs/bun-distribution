@@ -581,7 +581,7 @@ migration non entreprise). Détails : `docs/operations/ui/tauri-upstream.md`.
 - DÉFAUT AMONT contourné : `tauri-plugin-dialog` 3.0.0-alpha.2 (publié) ne compile
   pas contre `tauri` 3.0.0-alpha.3 (`run_on_main_thread` déplacé vers `Manager`) ;
   HEAD de la branche `v3` des plugins aussi. Copie crates.io + une ligne dans
-  `upstream/tauri-plugin-dialog` (`[patch.crates-io]`, patch
+  `../source/tauri-plugin-dialog` (`[patch.crates-io]`, patch
   `patches/tauri-plugin-dialog-3.0.0-alpha.2.patch`).
 - FAIT : forks inventoriés. `aphrody-code/tauri` 89499afc : seul changement
   `no_redirection_bitmap`, déjà présent dans Tauri 3 → retiré.

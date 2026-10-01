@@ -23,6 +23,7 @@
 
 pub mod admin;
 pub mod hvsock;
+pub mod paths;
 mod audit;
 mod auth;
 pub mod client;

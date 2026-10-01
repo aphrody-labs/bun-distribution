@@ -1,77 +1,87 @@
-# `skills/` — aphrody plugin skill registry
+# `skills/`: aphrody plugin skill registry
 
-Single source of truth for the **agent skills** bundled with the aphrody
-Claude Code plugin. Each skill is a directory whose `SKILL.md` declares
-its triggers, scope, and operating instructions.
+Agent skills bundled with the aphrody Claude Code plugin. Each skill is a directory whose
+`SKILL.md` declares its triggers, scope and instructions. Skills are auto-discovered from
+`skills/<name>/SKILL.md`; the plugin manifest (`.claude-plugin/plugin.json`) and the plugin
+[`README.md`](../README.md) carry the authoritative counts.
 
-Last updated: 2026-09-28 (unified Aphrody, AI/LLM and Dragon Ball skills; descriptions capped at 260 chars by scripts/validate-plugin.sh).
+Last updated: 2026-10-01 (general-purpose engineering skills made project-agnostic and
+re-verified against crates.io, npm, RustSec and upstream release notes).
 
 ## Skill format (`SKILL.md`)
 
-Every skill **MUST** start with a YAML frontmatter block:
+Every skill starts with a YAML frontmatter block, checked by `scripts/validate-plugin.sh`:
 
 ```yaml
 ---
-name: my-skill                # kebab-case, matches directory name
-description: One-line summary of what the skill does and when it fires.
+name: my-skill        # kebab-case, must match the directory name
+description: "What it does and when to use it, on one line, at most 260 characters."
 ---
 ```
 
 Optional siblings:
 
-| File / dir    | Purpose                                          |
-|---------------|--------------------------------------------------|
-| `references/` | Supporting docs (playbooks, catalogs, links).    |
-| `scripts/`    | Helper automation (Rust / `cargo run` wrappers). |
-| `evals/`      | Evaluation harness (deterministic test cases).   |
+| File / dir    | Purpose |
+|---------------|---------|
+| `references/` | Detailed docs loaded on demand (keep `SKILL.md` lean). |
+| `scripts/`    | Helper automation, referenced relative to the skill directory (`${CLAUDE_PLUGIN_ROOT}/skills/<name>/scripts/...` in a plugin install). |
+| `evals/`      | Trigger and task prompts with assertions. |
 
-> **Toolchain policy** (`docs/BUN.md`): helper automation is Rust
-> (`cargo run -p …`) or Bun (`bun …`, `bunx …`), or a one-shot shell/pwsh
-> wrapper. Never `node`, `npm`, `npx`, `pnpm` or `yarn`.
+## Portability rules
 
-## Highlights
+The plugin is meant to work in any project, not only the Aphrody monorepo:
 
-| Skill | Trigger |
+- **Detect, do not assume.** Read the project's manifests, lockfiles and toolchain files
+  (`Cargo.toml`, `rust-toolchain.toml`, `package.json`, `bun.lock`, `*.csproj`, ...) and use
+  its package manager and gates. No absolute paths or user-specific locations.
+- **Tools are optional.** Refer to MCP tools by their bare name (`bun_docs_search`,
+  `docs_auto_search`, `nu_eval`) and say what to do when they are absent.
+- **Monorepo specifics go last**, in an "In the Aphrody monorepo" section that states how
+  to recognise the monorepo (root `package.json` named `aphrody`) and uses real,
+  repo-relative paths (`crates/<domain>/<crate>`, `packages/<domain>/<package>`).
+- **Versions carry a date.** Pin facts to a verification date and tell the agent how to
+  re-check (crates.io, npm, release notes) instead of presenting them as "latest".
+
+## Skill groups
+
+| Group | Skills |
 |---|---|
-| `yolo` | "yolo", "grind", "start", "loop until perfect" (aliases: `yolo-grind`, `yolo-perfect-grind`, `start`) |
-| `deploy` | deploy, restart, provision, free disk — via `aphrody-infra` |
-| `ecosystem` | "is there a crate/command/tool for …" — generated catalog in `aphrody-infra/docs/ecosystem/` |
-| `docs` | any library / SDK / cloud API question |
-| `web` | use `aphrody web` by default for research, crawl, scrape and browser snapshots |
-| `winclean` | Windows diagnostics and automation |
-| `rust-target-check` | parallel 3-target `cargo check` |
-| `bun` | Bun APIs, Node to Bun equivalents |
-| `m3` | `@aphrody/m3` apps: `m3 dev` / `build` / `tokens`, `m3.config.ts`, the plugin, `M3App` |
-| `rust-bun` | Rust to Bun bridges: bun:ffi, napi-rs, WASM, subprocess, packaging |
-| `nie-re-workflow`, `formats-level5`, `jouer-ievr` | the `nie` repository (Inazuma Eleven RE, formats, play loop; merged from the retired `nie` plugin) |
+| General engineering (portable) | `docs`, `bun`, `rust-best-practices-2026`, `rust-async-patterns`, `rust-target-check`, `best-stack-2026`, `rust-bun`, `cpp-pro`, `csharp-async`, `powershell-expert`, `nushell-pro`, `cross-platform-cli-toolbelt`, `developing-genkit-js`, `skill-creator` |
+| UI (portable) | `tauri-v2`, `tailwindcss`, `shadcn`, `material-3`, `responsive-adaptive`, `remotion-best-practices`, `color-expert` |
+| Aphrody UI | `m3` (`@aphrody/m3`), `render-pipeline` (`aphrody-render`) |
+| Aphrody OS, AI and web | `yolo` (+ `yolo-grind`, `yolo-perfect-grind`, `start`), `deploy`, `ecosystem`, `web`, `web-*`, `cloud`, `a2a-protocol`, `aphrody-*`, `n2b`, `unified-workflow`, `winclean`, `_shared` |
+| Reverse engineering | `auto-re`, `deep-analysis`, `pe-symbol-recovery`, `protocol-reverse-engineering`, `dpapi-timing-audit` |
+| NIE (Inazuma Eleven) | `nie-*`, `formats-level5`, `jouer-ievr`, `ievr-terminologie`, `assembler-modeles-textures`, `creer-assets-3d`, `peaufiner-rendu-3d`, `pixel-perfect` |
+| Dragon Ball / Shenron | `dragon-ball*`, `databooks-ocr`, `shenron-admin`, `toriyama-svg` |
 
-Before adding a skill, extend an existing one: every description is loaded
-into each session.
-
-The full catalogue is auto-discovered from `skills/<name>/SKILL.md`; the
-plugin manifest (`.claude-plugin/plugin.json`) and the plugin
-[`README.md`](../README.md) carry the authoritative counts.
+Before adding a skill, extend an existing one: every description is loaded into each
+session. The `ecosystem` skill and `docs/` (`ECOSYSTEM.md`, `CLI.md`, `MCP-TOOLS.md`) list
+existing crates, commands and MCP tools.
 
 ## Agents (`../agents/`)
 
-Invokable sub-agents with their own toolset and system prompt
-(`rust-architect`, `rust-engineer`, `cargo-auditor`, `cpp-engineer`,
-`ffi-architect`, `zig-engineer`, `cross-platform-validator`,
-`aphrody-cli`, `explore`, `build`, `code-review`, `yolo-prod-ready`,
-`design-google-curator`, plus the infra/quality specialists). See the
-plugin [`README.md`](../README.md) for the full table.
+Sub-agents with their own toolset and prompt, for example `rust-architect`,
+`rust-engineer`, `cargo-auditor`, `cpp-c-engineer`, `csharp-engineer`, `ffi-architect`,
+`cross-platform-validator`, `docs-researcher`, `explore`, `build`, `code-review`,
+`test-runner`, `lint-workflow`, `pwsh-expert`, `win32-expert`, `web-engineer`,
+`yolo-prod-ready`. See the plugin [`README.md`](../README.md) for the full table.
 
 ## Vendored third-party skills
 
-Imported 2026-09-23 with `bunx skills add`, reviewed, and given an "Aphrody OS context" section. All are MIT-licensed.
+Reviewed copies of upstream skills, adapted to the portability rules above (upstream
+attribution kept in each file).
 
-| Skill | Upstream |
-|---|---|
-| `tauri-v2` | `nodnarbnitram/claude-code-extensions` |
-| `material-3` | `hamen/material-3-skill` |
-| `rust-async-patterns` | `wshobson/agents` |
-| `nushell-pro` | `hustcer/nushell-pro` |
+| Skill | Upstream | Licence |
+|---|---|---|
+| `tauri-v2` | `nodnarbnitram/claude-code-extensions` | MIT |
+| `material-3` | `hamen/material-3-skill` | MIT |
+| `rust-async-patterns` | `wshobson/agents` | MIT |
+| `nushell-pro` | `hustcer/nushell-pro` | MIT |
+| `shadcn` | `shadcn-ui/ui` (`skills/shadcn`) | MIT |
+| `remotion-best-practices` | `remotion-dev/skills` | see upstream (no licence file) |
+| `developing-genkit-js` | Genkit team agent skill (`genkit-ai`) | see upstream |
+| `skill-creator` | `microsoftdocs/mcp` (`microsoft-skill-creator`) | MIT |
+| `color-expert` | `meodai/skill.color-expert` (SKILL.md only; references fetched from upstream) | CC-BY-4.0 |
 
-Refresh one with `bunx skills add <owner/repo> -s <skill> -a claude-code -y` in a scratch directory, review the diff, then copy `SKILL.md` and `references/` back (keep the context section).
-All Aphrody AI/LLM, OS, Web, WinClean and Dragon Ball skills are bundled in this
-single plugin. Runtime implementations remain in their owning repositories.
+Refresh one with `bunx skills add <owner/repo> -s <skill> -a claude-code -y` in a scratch
+directory, review the diff, then merge it back while keeping the portability changes.

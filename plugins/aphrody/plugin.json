@@ -1,5 +1,5 @@
 {
   "name": "aphrody",
-  "description": "Unified Aphrody plugin for AI/LLM, Dragon Ball/Shenron, the OS kernel, Aphrody Web, N2B, WinClean and YOLO.",
-  "version": "1.5.0"
+  "description": "Aphrody agent toolkit usable in any project: skills, agents and commands for Rust/Bun engineering, web research, AI/RAG, reverse engineering, Windows/Linux administration, Material 3 UI, NIE and Dragon Ball/Shenron, plus the optional aphrody-kernel MCP server.",
+  "version": "1.6.0"
 }

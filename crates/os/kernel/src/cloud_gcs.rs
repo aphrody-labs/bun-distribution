@@ -11,14 +11,18 @@
 //! `service_account` key files need RS256 JWT signing, which this crate does not carry; they
 //! are reported as an explicit error pointing to `GOOGLE_OAUTH_ACCESS_TOKEN`.
 
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use aphrody_subsystem::SubsystemError;
 use serde_json::{Value, json};
 
+use crate::paths::{EnvLookup, process_env, var};
+
 const GCS_ENDPOINT: &str = "https://storage.googleapis.com";
 const TOKEN_ENDPOINT: &str = "https://oauth2.googleapis.com/token";
 const MAX_PAGES: usize = 50;
+/// File name of Application Default Credentials inside the gcloud configuration directory.
+const ADC_FILE: &str = "application_default_credentials.json";
 
 fn failed(context: &str, error: impl std::fmt::Display) -> SubsystemError {
     SubsystemError::Failed(format!("{context}: {error}"))
@@ -40,30 +44,55 @@ impl GcsConfig {
         {
             return Ok(Self { endpoint, token: Some(token) });
         }
-        match adc_path() {
+        let adc = adc_path();
+        match adc.as_deref() {
             Some(path) if path.is_file() => {
-                let token = refresh_adc(client, &path).await?;
+                let token = refresh_adc(client, path).await?;
                 Ok(Self { endpoint, token: Some(token) })
             },
             _ if emulator.is_some() => Ok(Self { endpoint, token: None }),
-            _ => Err(SubsystemError::Failed(
-                "no GCP credentials: set GOOGLE_OAUTH_ACCESS_TOKEN or run `gcloud auth application-default login`"
-                    .into(),
-            )),
+            searched => Err(SubsystemError::Failed(no_credentials_message(searched))),
         }
     }
 }
 
+/// The remedies for a missing credential, naming the file that was looked for when there is one.
+fn no_credentials_message(searched: Option<&Path>) -> String {
+    let remedies = "set GOOGLE_OAUTH_ACCESS_TOKEN, point GOOGLE_APPLICATION_CREDENTIALS at a \
+                    credentials file, or run `gcloud auth application-default login`";
+    match searched {
+        Some(path) => {
+            format!("no GCP credentials: {} is not an existing file; {remedies}", path.display())
+        },
+        None => format!("no GCP credentials: {remedies}"),
+    }
+}
+
 fn adc_path() -> Option<PathBuf> {
-    if let Some(path) = std::env::var_os("GOOGLE_APPLICATION_CREDENTIALS") {
+    adc_path_from(&process_env, cfg!(windows), crate::paths::home_dir().as_deref())
+}
+
+/// Where Application Default Credentials are looked for, first match wins:
+///
+/// 1. `GOOGLE_APPLICATION_CREDENTIALS`: an explicit file.
+/// 2. `CLOUDSDK_CONFIG`: the gcloud configuration directory override.
+/// 3. The gcloud default: `%APPDATA%\gcloud` on Windows, `<home>/.config/gcloud` elsewhere
+///    (gcloud does not honour `XDG_CONFIG_HOME`, so neither does this).
+///
+/// A variable that is set but empty counts as unset.
+fn adc_path_from(env: EnvLookup<'_>, windows: bool, home: Option<&Path>) -> Option<PathBuf> {
+    if let Some(path) = var(env, "GOOGLE_APPLICATION_CREDENTIALS") {
         return Some(PathBuf::from(path));
     }
-    let base = if cfg!(windows) {
-        std::env::var_os("APPDATA").map(PathBuf::from)
+    if let Some(directory) = var(env, "CLOUDSDK_CONFIG") {
+        return Some(PathBuf::from(directory).join(ADC_FILE));
+    }
+    let base = if windows {
+        var(env, "APPDATA").map(PathBuf::from)
     } else {
-        std::env::var_os("HOME").map(|h| PathBuf::from(h).join(".config"))
+        home.map(|home| home.join(".config"))
     };
-    base.map(|b| b.join("gcloud").join("application_default_credentials.json"))
+    base.map(|base| base.join("gcloud").join(ADC_FILE))
 }
 
 async fn refresh_adc(
@@ -193,11 +222,13 @@ pub(crate) async fn list(
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use tokio::{
         io::{AsyncReadExt, AsyncWriteExt},
         net::TcpListener,
     };
+
+    use super::*;
+    use crate::paths::table;
 
     /// Minimal HTTP/1.1 server answering each connection with the next canned body and
     /// returning the request lines it received.
@@ -285,5 +316,71 @@ mod tests {
         let config = GcsConfig::from_env(&client).await.expect("credentials");
         let out = list(&client, &config, &bucket, "").await.expect("list");
         assert!(out["items"].is_array());
+    }
+
+    #[test]
+    fn adc_resolution_order_is_explicit_file_then_gcloud_directory_then_default() {
+        let home = Some(Path::new("/h"));
+        let all = table([
+            ("GOOGLE_APPLICATION_CREDENTIALS", "/explicit/creds.json"),
+            ("CLOUDSDK_CONFIG", "/gcloud-config"),
+            ("APPDATA", "/appdata"),
+        ]);
+        for windows in [false, true] {
+            assert_eq!(
+                adc_path_from(&all, windows, home),
+                Some(PathBuf::from("/explicit/creds.json"))
+            );
+        }
+        let without_file = table([("CLOUDSDK_CONFIG", "/gcloud-config"), ("APPDATA", "/appdata")]);
+        for windows in [false, true] {
+            assert_eq!(
+                adc_path_from(&without_file, windows, home),
+                Some(Path::new("/gcloud-config").join(ADC_FILE))
+            );
+        }
+    }
+
+    #[test]
+    fn adc_default_follows_the_gcloud_layout_of_each_platform() {
+        let none = table::<&str, &str>([]);
+        // gcloud keeps its configuration in `~/.config/gcloud` on Unix, whatever XDG says.
+        let xdg = table([("XDG_CONFIG_HOME", "/xdg"), ("APPDATA", "/appdata")]);
+        assert_eq!(
+            adc_path_from(&xdg, false, Some(Path::new("/h"))),
+            Some(Path::new("/h").join(".config").join("gcloud").join(ADC_FILE))
+        );
+        assert_eq!(adc_path_from(&none, false, None), None);
+        // On Windows it is `%APPDATA%\gcloud`; without APPDATA there is no default.
+        assert_eq!(
+            adc_path_from(&xdg, true, Some(Path::new("/h"))),
+            Some(Path::new("/appdata").join("gcloud").join(ADC_FILE))
+        );
+        assert_eq!(adc_path_from(&none, true, Some(Path::new("/h"))), None);
+    }
+
+    #[test]
+    fn empty_adc_variables_count_as_unset() {
+        let env = table([("GOOGLE_APPLICATION_CREDENTIALS", ""), ("CLOUDSDK_CONFIG", "")]);
+        assert_eq!(
+            adc_path_from(&env, false, Some(Path::new("/h"))),
+            Some(Path::new("/h").join(".config").join("gcloud").join(ADC_FILE))
+        );
+    }
+
+    #[test]
+    fn missing_credentials_name_the_searched_file_and_the_remedies() {
+        let searched = Path::new("/h/.config/gcloud").join(ADC_FILE);
+        let named = no_credentials_message(Some(&searched));
+        assert!(named.contains(&searched.display().to_string()), "{named}");
+        for message in [named, no_credentials_message(None)] {
+            for remedy in [
+                "GOOGLE_OAUTH_ACCESS_TOKEN",
+                "GOOGLE_APPLICATION_CREDENTIALS",
+                "gcloud auth application-default login",
+            ] {
+                assert!(message.contains(remedy), "missing `{remedy}` in: {message}");
+            }
+        }
     }
 }

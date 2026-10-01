@@ -68,6 +68,21 @@ available. HTTP holds the shared server mutex while handling an RPC, so a
 request waiting for turn completion can delay other RPCs and notification
 delivery. New clients should use array input and asynchronous turns.
 
+### Embedding in a host process
+
+A host that links this crate runs the same stdio loop over two
+`tokio::io::duplex` pipes instead of spawning `aphrody app-server`
+(`aphrody-app`'s broker does exactly that). `serve_stdio_with(reader, writer,
+server)` takes a configured `AppServer`; `AppServer::with_models_dir(path)`
+selects the model store root for managed local models, so the host never
+exports `APHRODY_MODELS_DIR` (mutating the environment of a threaded process is
+`unsafe` in edition 2024). Closing the client end of the pipe is the shutdown
+signal: every session is joined and its rollout flushed before the future
+returns. The managed `llama-server` daemon is started detached by the runtime
+by re-executing the current executable as `<exe> __llama-daemon ...`, so an
+embedding host must answer that argument at the top of its `main` (see
+`crates/ui/app/src/main.rs`).
+
 ## Implemented method surface
 
 The dispatch table in [`src/lib.rs`](src/lib.rs) is authoritative. Supported

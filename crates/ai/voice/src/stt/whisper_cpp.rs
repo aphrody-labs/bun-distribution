@@ -436,6 +436,9 @@ impl SttProvider for WhisperCppBackend {
         if let Some(threads) = self.threads {
             cmd.arg("-t").arg(threads.to_string());
         }
+        // A dropped future (caller timeout, cancelled request) must not leave a
+        // multi-minute decode running in the background holding the CPU or GPU.
+        cmd.kill_on_drop(true);
 
         let output = cmd.output().await.map_err(|e| {
             SttError::Other(format!("cannot spawn {}: {e}", binary.path().display()))

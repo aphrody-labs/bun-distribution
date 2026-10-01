@@ -5,7 +5,7 @@
 
 use std::{path::Path, sync::Arc};
 
-use aphrody_rag_core::fusion::cosine;
+use aphrody_rag_core::fusion::top_k_exact;
 use rusqlite::{Connection, OptionalExtension as _, params};
 use serde::{Deserialize, Serialize};
 use tokio::sync::Mutex;
@@ -341,6 +341,64 @@ impl RagStore {
         Ok(())
     }
 
+    /// Store many dense vectors in one transaction (one lock, one fsync-batch,
+    /// one model-lock check). Returns the number of vectors written.
+    ///
+    /// Same semantics and on-disk format as [`Self::insert_vector`]; a model
+    /// mismatch aborts the whole batch before any row is written.
+    pub async fn insert_vectors(
+        &self,
+        model_id: &str,
+        items: &[(i64, Vec<f32>)],
+    ) -> Result<usize> {
+        if items.is_empty() {
+            return Ok(0);
+        }
+        let mut conn = self.conn.lock().await;
+        let tx = conn.transaction()?;
+        let existing = tx
+            .query_row("SELECT model_id FROM vectors LIMIT 1", [], |row| row.get::<_, String>(0))
+            .optional()?;
+        if let Some(expected) = existing
+            && expected != model_id
+        {
+            return Err(RagError::ModelMismatch { expected, found: model_id.to_owned() });
+        }
+        let mut written = 0;
+        {
+            let mut stmt = tx.prepare(
+                r#"
+                INSERT INTO vectors (chunk_id, model_id, dim, quant, embedding)
+                VALUES (?1, ?2, ?3, 'f32', ?4)
+                ON CONFLICT(chunk_id) DO UPDATE SET
+                    model_id = excluded.model_id,
+                    dim = excluded.dim,
+                    embedding = excluded.embedding
+                "#,
+            )?;
+            let mut blob = Vec::new();
+            for (chunk_id, embedding) in items {
+                blob.clear();
+                blob.reserve(embedding.len() * 4);
+                for &val in embedding {
+                    blob.extend_from_slice(&val.to_le_bytes());
+                }
+                stmt.execute(params![chunk_id, model_id, embedding.len() as i64, blob])?;
+                written += 1;
+            }
+        }
+        tx.execute(
+            r#"
+            INSERT INTO meta (key, value) VALUES ('embed_model_id', ?1)
+            ON CONFLICT(key) DO UPDATE SET value = excluded.value
+            "#,
+            params![model_id],
+        )?;
+        tx.commit()?;
+        Ok(written)
+    }
+
+
     /// Lock this index to one embedding space before vectors are written.
     ///
     /// Existing vectors are inspected as the source of truth so older indexes
@@ -430,69 +488,80 @@ impl RagStore {
     }
 
     /// Perform exact dense vector similarity search across all chunks for `model_id`.
+    ///
+    /// Two passes: (1) stream only `(chunk_id, embedding)` into one flat row-major
+    /// matrix and select the exact top-`limit` with the bounded-heap kernel from
+    /// `aphrody-rag-core` (no per-row chunk/doc join, no per-row `Vec`, no full
+    /// sort); (2) hydrate chunk text only for the `limit` winners.
     pub async fn search_vector(
         &self,
         query_embedding: &[f32],
         model_id: &str,
         limit: usize,
     ) -> Result<Vec<ScoredChunk>> {
+        let dim = query_embedding.len();
+        if dim == 0 || limit == 0 {
+            return Ok(Vec::new());
+        }
         let conn = self.conn.lock().await;
 
-        let mut stmt = conn.prepare(
-            r#"
-            SELECT c.id, c.doc_id, d.path, c.chunk_index, c.heading, c.symbol, c.content, c.start_line, c.end_line, c.token_count,
-                   v.dim, v.embedding
-            FROM vectors v
-            JOIN chunks c ON v.chunk_id = c.id
-            JOIN docs d ON c.doc_id = d.id
-            WHERE v.model_id = ?1
-            "#,
-        )?;
-
-        let mut candidates = Vec::new();
-        let rows = stmt.query_map(params![model_id], |row| {
-            let chunk = ChunkRecord {
-                id: row.get(0)?,
-                doc_id: row.get(1)?,
-                path: row.get(2)?,
-                chunk_index: row.get::<_, i64>(3)? as usize,
-                heading: row.get(4)?,
-                symbol: row.get(5)?,
-                content: row.get(6)?,
-                start_line: row.get::<_, i64>(7)? as usize,
-                end_line: row.get::<_, i64>(8)? as usize,
-                token_count: row.get::<_, i64>(9)? as usize,
-            };
-            let dim: usize = row.get::<_, i64>(10)? as usize;
-            let blob: Vec<u8> = row.get(11)?;
-
-            Ok((chunk, dim, blob))
-        })?;
-
-        for r in rows {
-            let (chunk, dim, blob) = r?;
-            if dim != query_embedding.len() || blob.len() != dim * 4 {
-                continue;
+        let mut ids: Vec<i64> = Vec::new();
+        let mut matrix: Vec<f32> = Vec::new();
+        {
+            let mut stmt = conn.prepare(
+                "SELECT chunk_id, dim, embedding FROM vectors WHERE model_id = ?1",
+            )?;
+            let mut rows = stmt.query(params![model_id])?;
+            while let Some(row) = rows.next()? {
+                let row_dim = row.get::<_, i64>(1)? as usize;
+                let blob = row.get_ref(2)?.as_blob().map_err(|e| rusqlite::Error::FromSqlConversionFailure(2, rusqlite::types::Type::Blob, Box::new(e)))?;
+                if row_dim != dim || blob.len() != dim * 4 {
+                    continue;
+                }
+                ids.push(row.get(0)?);
+                matrix.extend(
+                    blob.as_chunks::<4>().0.iter().map(|bytes| f32::from_le_bytes(*bytes)),
+                );
             }
-
-            let mut vec = Vec::with_capacity(dim);
-            for chunk_bytes in blob.as_chunks::<4>().0.iter() {
-                vec.push(f32::from_le_bytes(*chunk_bytes));
-            }
-
-            let sim = cosine(query_embedding, &vec);
-            candidates.push(ScoredChunk {
-                chunk,
-                score: f64::from(sim),
-                channel: "vector".to_string(),
-            });
         }
 
-        // Sort descending by cosine similarity:
-        candidates.sort_by(|a, b| b.score.total_cmp(&a.score));
-        candidates.truncate(limit);
-
-        Ok(candidates)
+        let top = top_k_exact(query_embedding, &matrix, dim, limit);
+        let mut stmt = conn.prepare(
+            r#"
+            SELECT c.id, c.doc_id, d.path, c.chunk_index, c.heading, c.symbol, c.content, c.start_line, c.end_line, c.token_count
+            FROM chunks c
+            JOIN docs d ON c.doc_id = d.id
+            WHERE c.id = ?1
+            "#,
+        )?;
+        let mut out = Vec::with_capacity(top.len());
+        for (row_index, score) in top {
+            let chunk_id = ids[row_index];
+            let chunk = stmt
+                .query_row(params![chunk_id], |row| {
+                    Ok(ChunkRecord {
+                        id: row.get(0)?,
+                        doc_id: row.get(1)?,
+                        path: row.get(2)?,
+                        chunk_index: row.get::<_, i64>(3)? as usize,
+                        heading: row.get(4)?,
+                        symbol: row.get(5)?,
+                        content: row.get(6)?,
+                        start_line: row.get::<_, i64>(7)? as usize,
+                        end_line: row.get::<_, i64>(8)? as usize,
+                        token_count: row.get::<_, i64>(9)? as usize,
+                    })
+                })
+                .optional()?;
+            if let Some(chunk) = chunk {
+                out.push(ScoredChunk {
+                    chunk,
+                    score: f64::from(score),
+                    channel: "vector".to_string(),
+                });
+            }
+        }
+        Ok(out)
     }
 
     /// Read a metadata key.

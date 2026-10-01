@@ -1,11 +1,12 @@
 # Skill Templates
 
 Ready-to-use templates for different technology types. Five templates
-cover the common shapes encountered in the aphrody scope.
+cover the common shapes.
 
-The Aphrody plugin exposes one public MCP server through `aphrody-kernel mcp`.
-Its live catalog depends on installed internal providers; discover exact tool
-names with the host's MCP tool list instead of copying static names into skills.
+MCP tool catalogs differ between hosts and installs; discover exact tool
+names from the session's tool list instead of copying static names into
+generated skills, and phrase lookups so they still work with plain
+`WebFetch`/`WebSearch`.
 
 If the user has `context7` MCP installed alongside, prefer it for
 language-agnostic library docs (Rust crates, Node packages, Python libs).
@@ -14,8 +15,8 @@ language-agnostic library docs (Rust crates, Node packages, Python libs).
 
 ## Template 1: Rust Crate Skill
 
-For crates published on crates.io / docs.rs. **Default template for any
-new aphrody workspace crate or third-party Rust dependency.**
+For crates published on crates.io / docs.rs, or a crate inside the
+current Cargo workspace.
 
 ````markdown
 ---
@@ -36,10 +37,15 @@ what its competitors are and why this one was chosen.}
 {crate-name} = { version = "{X.Y}", features = ["{feature}"] }
 ```
 
-Workspace-wide install (preferred per aphrody policy):
+In a Cargo workspace, declare the version once at the root and inherit it:
 
 ```toml
-# Cargo.toml [workspace.dependencies]
+# root Cargo.toml
+[workspace.dependencies]
+{crate-name} = { version = "{X.Y}", features = ["{feature}"] }
+
+# member Cargo.toml
+[dependencies]
 {crate-name} = { workspace = true }
 ```
 
@@ -96,8 +102,8 @@ async fn main() -> anyhow::Result<()> {
 
 For the full API surface :
 
-- `universal_web_fetch(url="https://docs.rs/{crate-name}/latest/{crate_name}/")`
-- `universal_web_fetch(url="https://docs.rs/{crate-name}/latest/{crate_name}/{module}/")`
+- `fetch(url="https://docs.rs/{crate-name}/latest/{crate_name}/")`
+- `fetch(url="https://docs.rs/{crate-name}/latest/{crate_name}/{module}/")`
 
 ## Best Practices
 
@@ -114,10 +120,10 @@ For the full API surface :
 
 | Topic              | How to Find                                                                                |
 | ------------------ | ------------------------------------------------------------------------------------------ |
-| {Advanced topic 1} | `universal_web_fetch(url="https://docs.rs/{crate}/latest/{crate}/{topic}/")`               |
-| Source             | `universal_web_fetch(url="{github-url}")`                                                  |
-| Crate metadata     | `universal_web_fetch(url="https://crates.io/crates/{crate}")`                              |
-| Examples           | `agent_browser_scrape(url="https://docs.rs/{crate}/latest/{crate}/", selector=".examples")`          |
+| {Advanced topic 1} | `fetch(url="https://docs.rs/{crate}/latest/{crate}/{topic}/")`               |
+| Source             | `fetch(url="{github-url}")`                                                  |
+| Crate metadata     | `fetch(url="https://crates.io/crates/{crate}")`                              |
+| Examples           | `scrape(url="https://docs.rs/{crate}/latest/{crate}/")`          |
 ````
 
 ---

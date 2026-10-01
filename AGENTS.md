@@ -21,7 +21,11 @@ This repository is the Rust + Bun source target. The active migration plan is
   cross-monorepo orchestrator.
 - Keep the first-party Rust and Bun workspaces at this repository root. Keep
   Bun, Oxc and other upstream forks in `upstream/` with pinned revisions and
-  their upstream workspaces/history.
+  their upstream workspaces/history. Other upstream clones and crate extracts
+  live outside the repo in `../source` (`~/source`), listed with URL, pinned
+  commit and local patches in `config/upstream-sources.json`. Check or restore
+  them with `bun run sources`, `bun run sources:sync` or `aphrody git source
+  status|verify|sync`; Cargo path dependencies point at `../source/<id>`.
 - RG and Shenron sources are imported. Qualify contracts, native/interop, OS,
   Infra, UI and AI/Web before product integration. Shenron is the final product
   gate; imported source alone does not prove deployment readiness.

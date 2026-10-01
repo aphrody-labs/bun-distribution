@@ -1,7 +1,7 @@
 ---
 name: material-3
-description: "Material Design 3 (Material You) implementation: theming, components and adaptive layout in Jetpack Compose, Flutter and @material/web."
-user-invokable: true
+description: "Material Design 3 / Material You / M3 Expressive: color roles, dynamic color, typography, shape, elevation, motion, components and adaptive layout in Compose, Flutter and @material/web. Use when building, theming or auditing an M3 UI."
+version: "1.1.0"
 argument-hint: "[component|theme|layout|scaffold|audit] [description or URL]"
 ---
 
@@ -220,7 +220,7 @@ MaterialTheme(
 ### Setup
 
 ```bash
-npm install @material/web
+npm install @material/web   # or: bun add / pnpm add @material/web (2.5.x on 2026-10-01)
 ```
 
 ### Import Components Individually
@@ -661,9 +661,17 @@ Status thresholds: **pass** (7+), **warn** (4-6), **fail** (0-3)
 - `references/layout-and-responsive.md` — Breakpoints, canonical layouts, insets, foldables
 - `references/theming-and-dynamic-color.md` — Theming: Compose first, then Flutter and web
 
-## Aphrody OS context
+## Project-provided tokens
 
-- The source of truth for tokens is the Rust crate `crates/aphrody-m3-tokens` (color, dynamic/HCT, shape, typography, elevation, state, motion springs and web cubic-bezier conversions). Read values from it; do not re-type them from this skill.
-- Design audits live in `docs/design/` (m3-styles, m3-motion); motion reference is `docs/m3-motion-tokens.md`.
-- Compose/Flutter sections are reference only: aphrody-os targets Rust (TUI, WASM, Tauri web UI).
-- Known gap: the crate's HCT solver places seed #6750A4 at about 252 degrees of hue instead of about 283; verify tonal output against material-color-utilities.
+Before hard-coding any value from this skill, look for a token source already in the
+project (a generated theme file, `--md-sys-*` CSS custom properties, a Compose `Theme.kt`,
+a tokens package or crate) and read values from it. Generate new schemes with Google's
+`material-color-utilities` (or a port of it) rather than by hand.
+
+**In the Aphrody monorepo** (root `package.json` named `aphrody`): the token source of truth
+is crate `aphrody-m3-tokens` (`crates/ui/m3-tokens`: HCT/CAM16, dynamic schemes, tonal
+palettes, shape, typography, elevation, state, motion), with parity against
+material-color-utilities tested in `crates/ui/m3-tokens/tests/mcu_parity.rs`. Web packages are
+`@aphrody/m3*` and `@aphrody/material-web` under `packages/ui/`; use the `m3` skill for the
+`@aphrody/m3` framework. Design notes: `docs/architecture/ui/packages/material-web/docs/design/`
+(`m3-styles.md`, `m3-motion.md`).

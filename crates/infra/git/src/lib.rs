@@ -12,6 +12,7 @@ pub mod ingest;
 pub mod project;
 mod repository;
 pub mod search;
+pub mod source;
 
 pub use awesome::{
     AwesomeCategory, AwesomeIndex, AwesomeItem, PRESETS, fetch_awesome_list,
@@ -39,6 +40,7 @@ pub use project::{
     GitBranch, GitCommitGraph, GitCommitNode, GitDiffItem, GitTreeNode, GitWorktreeInfo,
     commit_graph, commit_log, list_branches, list_tree_at, list_worktrees,
 };
+pub use source::{SourceReport, SourceRow, SourceState, source_report};
 pub use repository::{Change, GitHubRepository, LocalRepository, Remote, inspect_repository};
 
 /// Errors emitted by the unified Git/GitHub surface.

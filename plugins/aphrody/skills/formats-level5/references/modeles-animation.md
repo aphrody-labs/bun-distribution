@@ -1,6 +1,6 @@
 # Modèles 3D et animation
 
-Tous les modules sont dans `crates/engine/nie-formats/src/`.
+Tous les modules sont dans `iecode:crates/nie/aphrody-nie-formats/src/` (racine IECODE, cf. `../SKILL.md`).
 
 | Format | Magic | Extension | Module | Contenu |
 |---|---|---|---|---|
@@ -13,6 +13,7 @@ Tous les modules sont dans `crates/engine/nie-formats/src/`.
 | G4LA | `G4LA` | `.g4la` | `g4la.rs` | Animation de lumière |
 | G4VS | `G4VS` | `.g4vs` | `g4vs.rs` | Visibilité / états |
 | G4PK | `G4PK` | `.g4pk` | `g4pk.rs` | Conteneur de plusieurs sous-fichiers |
+| G4RA | `G4RA` | — | `g4ra.rs` | Liaisons statiques d'animation de référence, sans sémantique de lecture (cf. l'en-tête du module) |
 | G4PKM | (via G4PK) | `.g4pkm` | `g4pkm.rs`, `g4pkm_motion.rs` | Layout 2D de menu : transforms de chaque bone d'un G4SK encapsulé dans un G4PK |
 
 ## Pièges
@@ -29,6 +30,6 @@ Tous les modules sont dans `crates/engine/nie-formats/src/`.
 ## Assemblage
 
 `assemble.rs` recompose un modèle texturé à partir de ses pièces. Côté service,
-`nie-model-serve` expose `/model-full/<code>.glb` (assemblage + texturage), et l'outil MCP
+`aphrody-nie-model-serve` expose `/model-full/<code>.glb` (assemblage + texturage), et l'outil MCP
 `asset_get` avec `decode: "model"` prend un **code personnage nu** (ex. `c01000010`), pas un
 chemin VFS.

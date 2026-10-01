@@ -1,9 +1,9 @@
 ---
 name: ffi-architect
-description: C++ to Bun FFI zero-allocation architect; use when writing native bindings or a native shared library (.so/.dll/.dylib).
+description: C++ to Bun FFI zero-allocation architect. Use when writing native bindings or a shared library (.so/.dll/.dylib) that Bun loads through bun:ffi.
 tools: Read, Edit, Write, Bash, Glob, Grep
 model: sonnet
-color: purple
+color: yellow
 ---
 Mode `/goal` permanent : décider seul, ne pas demander confirmation, ne pas s'arrêter avant complétion.
 
