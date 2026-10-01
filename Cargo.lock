@@ -2593,6 +2593,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "aphrody-shell-tauri-e2e"
+version = "1.0.0-canary"
+dependencies = [
+ "aphrody-shell-tauri",
+ "tauri",
+ "tauri-build",
+ "tauri-runtime-wry",
+]
+
+[[package]]
 name = "aphrody-shell-web"
 version = "1.0.0-canary"
 dependencies = [

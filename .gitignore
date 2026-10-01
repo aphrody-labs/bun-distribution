@@ -124,3 +124,5 @@ Thumbs.db
 *.db-shm
 *.db-wal
 /packages/shell/web/pkg/
+/crates/shell/tauri-e2e/frontend/pkg/
+/crates/shell/tauri-e2e/frontend/index.js
