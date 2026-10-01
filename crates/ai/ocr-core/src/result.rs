@@ -85,7 +85,7 @@ pub struct RunProvenance {
 }
 
 /// Aggregate and per-block quality information.
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, Default, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct Quality {
     /// Mean recognition confidence in the inclusive range `[0, 1]`.
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -93,12 +93,6 @@ pub struct Quality {
     /// Human- and machine-readable reasons that prevented automatic acceptance.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub reasons: Vec<String>,
-}
-
-impl Default for Quality {
-    fn default() -> Self {
-        Self { mean_confidence: None, reasons: Vec::new() }
-    }
 }
 
 /// One recognised region in reading order.
