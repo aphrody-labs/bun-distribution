@@ -264,6 +264,20 @@ ABI, erreurs et annulation vérifiés par des cas qui traversent les frontières
   le protocole upstream actuel, le runtime assemblé ou les autres plateformes.
   La qualification complète des contrats et consommateurs reste ouverte.
 
+### Contrats et consommateurs A2A depuis clone propre — 2026-10-01
+
+- FAIT : [rapport et logs](docs/migration/contracts-clean-clone-2026-10-01/report.json)
+  depuis un clone du commit `92c44198`, propre avant et après les gates.
+  Métadonnées : 186 membres, aucun chemin de dépendance locale hors du clone.
+- Neuf packages : cinq propriétaires Contrats et les quatre consommateurs
+  opérationnels A2A déplacés sous OS. 482 tests réussis, check all-targets et
+  clippy all-targets verrouillés avec refus des avertissements réussis.
+- Sources isolées, artefacts de compilation et cache Cargo partagés : cette
+  preuve vérifie le clone propre, pas une compilation sans cache.
+- INCOMPLET : kernel, CLI, interop et produits consommateurs ne sont pas
+  qualifiés par ces gates ; Windows, features optionnelles et runtime assemblé
+  restent ouverts. Aucun ancien checkout n’est supprimé.
+
 ## 2. Interop et CLI
 
 Propriétaires : `crates/interop/ffi`, `packages/interop/native`, `apps/cli`.
