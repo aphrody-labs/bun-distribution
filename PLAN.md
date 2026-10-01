@@ -53,9 +53,25 @@ routes de sites, exemples et snapshots historiques demandent une classification.
   dans `@aphrody/workspace` ; retirer l’exclusion globale `packages/**` d’Oxc.
 - [x] Nettoyer les builds et caches ; sortir les exécutables et l’état du
   source-sync de `target` ; redémarrer les services avec les chemins actuels.
-- [x] Rose Griffon consolidé strictement sur **deux applications** : `apps/rg/website` (Next.js 16 frontend/web, build de production Turbopack validé à 100%) et `apps/rg/bot` (démon unifié backend : API ElysiaJS :8800 avec 153 routes, WebSockets natifs, moteur Colyseus Ranked, services in-process CDN/Realtime/Storage, et bot Discord multi-profils). Suppression complète des dossiers redondants (`cdn`, `realtime`, `storage`, `api`, `achillea-bot`, `azalee`).
-- [x] Déplacement des packages de jeu Inazuma (`azalee`, `inagle`, `inagle-cross`) vers `iecode` (`/home/aphro/iecode/packages/`) avec synchronisation du workspace `iecode` (203 Rust, 3 Bun, doctor OK).
-- [x] Découplage complet de `patreon-bun` : repo autonome GitHub `rose-griffon/patreon-bun` désarchivé, mis à jour et poussé sur `main` (174 tests passants, build Bun natif). Audit NPM complété (version 1.0.3 publiée).
+- [x] Purge et hygiène du monorepo Aphrody : purge de 2,65 Go d'artefacts de build et
+  caches de développement via `workspace-clean --apply` ; suppression actée des dossiers
+  redondants ; vérification du workspace (83 packages déclarés, 0 violation de layout,
+  0 manifest orphelin) ; intégration des commits de consolidation.
+- [x] Rose Griffon consolidé strictement sur **deux applications** : `apps/rg/website`
+  (Next.js 16 frontend/web, build de production Turbopack validé à 100%) et `apps/rg/bot`
+  (démon unifié backend : API ElysiaJS :8800 avec 153 routes, WebSockets natifs, moteur
+  Colyseus Ranked, services in-process CDN/Realtime/Storage, et bot Discord multi-profils).
+  Suppression complète des dossiers redondants (`cdn`, `realtime`, `storage`, `api`,
+  `achillea-bot`, `azalee`).
+- [x] Usine Inazuma IECODE : intégration complète des packages (`azalee`, `inagle`,
+  `inagle-cross`), contrats binaires niveau 5 (`nie-bridge`), pipeline de crawlers Zukan,
+  spécifications de formats et documentation (`docs/nie/`), et jeux de données de
+  référence (`param_en.json`, `zukan-audit.json`). Workspace `iecode` synchronisé et
+  validé (203 Rust, 6 Bun, compilation WASM `wasm32-unknown-unknown` à 0 erreur, 275 tests
+  unitaires passants, 291 fichiers docs vérifiés).
+- [x] Découplage complet de `patreon-bun` : repo autonome GitHub `rose-griffon/patreon-bun`
+  désarchivé, mis à jour et poussé sur `main` (174 tests passants, build Bun natif).
+  Audit NPM complété (version 1.0.3 publiée).
 - [ ] Qualifier chaque groupe de doublons restant : propriétaire, consommateurs,
   licence, nécessité de copie au packaging. Supprimer uniquement après mise à
   jour des consommateurs et vérification du packaging.
