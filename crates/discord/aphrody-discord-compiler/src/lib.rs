@@ -7,13 +7,14 @@
 //! and automated smoke testing without requiring external standalone scripts.
 
 use std::{
+    ffi::{CStr, CString, c_char},
     path::{Path, PathBuf},
     process::{Command, Stdio},
     time::Instant,
 };
 
 use colored::Colorize;
-use miette::{IntoDiagnostic, Result, bail};
+use miette::{Context, IntoDiagnostic, Result, bail};
 use serde::{Deserialize, Serialize};
 
 /// Target Discord bots recognized by Aphrody.
@@ -33,12 +34,8 @@ impl BotTarget {
             "achillea" | "achillea-bot" => Some(Self::Achillea),
             _ => {
                 let p = PathBuf::from(s);
-                if p.exists() {
-                    Some(Self::Custom(p))
-                } else {
-                    None
-                }
-            }
+                if p.exists() { Some(Self::Custom(p)) } else { None }
+            },
         }
     }
 
@@ -198,12 +195,21 @@ impl DiscordCompiler {
         let tsconfig_path = dir.join("tsconfig.json");
         let entry_path = dir.join(target.entrypoint());
 
-        let pkg_exists = pkg_path.exists();
-        let tsconfig_exists = tsconfig_path.exists();
-        let entry_exists = entry_path.exists();
+        let pkg_exists = pkg_path.try_exists().into_diagnostic().wrap_err_with(|| {
+            format!("Failed to inspect Discord package file {}", pkg_path.display())
+        })?;
+        let tsconfig_exists = tsconfig_path.try_exists().into_diagnostic().wrap_err_with(|| {
+            format!("Failed to inspect Discord TypeScript config {}", tsconfig_path.display())
+        })?;
+        let entry_exists = entry_path.try_exists().into_diagnostic().wrap_err_with(|| {
+            format!("Failed to inspect Discord bot entrypoint {}", entry_path.display())
+        })?;
 
         let uses_discord_kit = if pkg_exists {
-            let content = std::fs::read_to_string(&pkg_path).unwrap_or_default();
+            let content =
+                std::fs::read_to_string(&pkg_path).into_diagnostic().wrap_err_with(|| {
+                    format!("Failed to read Discord package file {}", pkg_path.display())
+                })?;
             content.contains("@aphrody/discord-kit")
         } else {
             false
@@ -212,32 +218,34 @@ impl DiscordCompiler {
         let mut commands_count = 0;
         let mut oxc_errors = 0;
         let commands_dir = dir.join("src/commands");
-        if commands_dir.exists() {
-            for entry in walkdir(&commands_dir) {
-                if entry.extension().and_then(|e| e.to_str()) == Some("ts") {
-                    commands_count += 1;
-                    if let Ok(source) = std::fs::read_to_string(&entry) {
-                        let filename = entry.to_string_lossy();
-                        if let Ok(c_source) = std::ffi::CString::new(source)
-                            && let Ok(c_filename) = std::ffi::CString::new(filename.as_bytes()) {
-                                unsafe {
-                                    let ptr = aphrody_oxc_bridge::aphrody_oxc_lint(
-                                        c_source.as_ptr(),
-                                        c_filename.as_ptr(),
-                                    );
-                                    if !ptr.is_null() {
-                                        let cstr = std::ffi::CStr::from_ptr(ptr);
-                                        if let Ok(s) = cstr.to_str()
-                                            && let Ok(v) = serde_json::from_str::<serde_json::Value>(s)
-                                                && v["ok"] == false {
-                                                    oxc_errors += 1;
-                                                }
-                                        aphrody_oxc_bridge::aphrody_oxc_free(ptr);
-                                    }
-                                }
-                            }
-                    }
+        if commands_dir.try_exists().into_diagnostic().wrap_err_with(|| {
+            format!("Failed to inspect Discord commands directory {}", commands_dir.display())
+        })? {
+            for entry in walkdir(&commands_dir)? {
+                if entry.extension().and_then(|e| e.to_str()) != Some("ts") {
+                    continue;
                 }
+                commands_count += 1;
+                let source =
+                    std::fs::read_to_string(&entry).into_diagnostic().wrap_err_with(|| {
+                        format!("Failed to read Discord command source {}", entry.display())
+                    })?;
+                let c_source = CString::new(source).into_diagnostic().wrap_err_with(|| {
+                    format!("Discord command source contains a NUL byte: {}", entry.display())
+                })?;
+                let filename = entry.to_str().ok_or_else(|| {
+                    miette::miette!("Discord command path is not valid UTF-8: {}", entry.display())
+                })?;
+                let c_filename = CString::new(filename).into_diagnostic().wrap_err_with(|| {
+                    format!("Discord command path contains a NUL byte: {}", entry.display())
+                })?;
+
+                // SAFETY: both C strings live through the call. The bridge returns an owned
+                // C string, which `OxcLintResponse` releases on every success/error path.
+                let response = unsafe {
+                    aphrody_oxc_bridge::aphrody_oxc_lint(c_source.as_ptr(), c_filename.as_ptr())
+                };
+                oxc_errors += parse_oxc_lint_response(response, &entry)?.len();
             }
         }
 
@@ -254,7 +262,11 @@ impl DiscordCompiler {
     }
 
     /// Compile a target bot into a standalone native binary via `bun build --compile`.
-    pub fn compile(&self, target: &BotTarget, options: &CompilerOptions) -> Result<CompilationResult> {
+    pub fn compile(
+        &self,
+        target: &BotTarget,
+        options: &CompilerOptions,
+    ) -> Result<CompilationResult> {
         let dir = target.default_dir(&self.root);
         if !dir.exists() {
             bail!("Bot directory does not exist: {}", dir.display());
@@ -289,11 +301,8 @@ impl DiscordCompiler {
 
         let start = Instant::now();
         let outfile = target.default_outfile();
-        let mut build_args = vec![
-            "build".to_string(),
-            target.entrypoint().to_string(),
-            "--compile".to_string(),
-        ];
+        let mut build_args =
+            vec!["build".to_string(), target.entrypoint().to_string(), "--compile".to_string()];
 
         if options.minify {
             build_args.push("--minify".to_string());
@@ -351,15 +360,11 @@ impl DiscordCompiler {
             if smoke_output.is_empty() {
                 smoke_output = String::from_utf8_lossy(&output.stderr).to_string();
             }
-
-            if output.status.success() || !smoke_output.is_empty() {
-                smoke_passed = true;
-                let sample = smoke_output.lines().next().unwrap_or("(clean boot)");
-                println!("  [smoke sample]: {}", sample.dimmed());
-                println!("✓ {}", "Standalone binary smoke check passed cleanly".green());
-            } else {
-                bail!("Smoke check failed: binary produced no output or crashed");
-            }
+            smoke_output = validate_smoke_output(output.status.success(), smoke_output)?;
+            smoke_passed = true;
+            let sample = smoke_output.lines().next().unwrap_or("(clean boot)");
+            println!("  [smoke sample]: {}", sample.dimmed());
+            println!("✓ {}", "Standalone binary smoke check passed cleanly".green());
         }
 
         Ok(CompilationResult {
@@ -385,7 +390,9 @@ impl DiscordCompiler {
 
     /// Run full monorepo discord verification suite.
     pub fn verify_monorepo(&self) -> Result<()> {
-        println!("\n🔍 Running full Discord verification via `bun scripts/audit/discord-verify.ts --full --compile`...\n");
+        println!(
+            "\n🔍 Running full Discord verification via `bun scripts/audit/discord-verify.ts --full --compile`...\n"
+        );
         let status = Command::new(&self.bun_bin)
             .args(["scripts/audit/discord-verify.ts", "--full", "--compile"])
             .current_dir(&self.root)
@@ -397,24 +404,79 @@ impl DiscordCompiler {
         if !status.success() {
             bail!("Monorepo Discord verification failed with exit code {:?}", status.code());
         }
-        println!("\n🎉 {}", "All Discord monorepo gates and native compilations verified successfully!".green().bold());
+        println!(
+            "\n🎉 {}",
+            "All Discord monorepo gates and native compilations verified successfully!"
+                .green()
+                .bold()
+        );
         Ok(())
     }
 }
 
-fn walkdir(dir: &Path) -> Vec<PathBuf> {
+fn walkdir(dir: &Path) -> Result<Vec<PathBuf>> {
     let mut files = Vec::new();
-    if let Ok(entries) = std::fs::read_dir(dir) {
-        for entry in entries.flatten() {
-            let path = entry.path();
-            if path.is_dir() {
-                files.extend(walkdir(&path));
-            } else {
-                files.push(path);
-            }
+    let entries = std::fs::read_dir(dir)
+        .into_diagnostic()
+        .wrap_err_with(|| format!("Failed to read Discord commands directory {}", dir.display()))?;
+    for entry in entries {
+        let entry = entry.into_diagnostic().wrap_err_with(|| {
+            format!("Failed to enumerate Discord commands directory {}", dir.display())
+        })?;
+        let path = entry.path();
+        let file_type = entry.file_type().into_diagnostic().wrap_err_with(|| {
+            format!("Failed to inspect Discord command path {}", path.display())
+        })?;
+        if file_type.is_dir() {
+            files.extend(walkdir(&path)?);
+        } else {
+            files.push(path);
         }
     }
-    files
+    Ok(files)
+}
+
+struct OxcLintResponse(*mut c_char);
+
+impl Drop for OxcLintResponse {
+    fn drop(&mut self) {
+        // SAFETY: the pointer is owned by aphrody_oxc_lint and released exactly once here.
+        unsafe { aphrody_oxc_bridge::aphrody_oxc_free(self.0) };
+    }
+}
+
+fn parse_oxc_lint_response(pointer: *mut c_char, filename: &Path) -> Result<Vec<String>> {
+    if pointer.is_null() {
+        bail!("Oxc lint returned a null response for {}", filename.display());
+    }
+    let _owned_response = OxcLintResponse(pointer);
+    // SAFETY: the bridge contract returns an owned, NUL-terminated UTF-8 JSON string.
+    let json_text = unsafe { CStr::from_ptr(pointer) }
+        .to_str()
+        .into_diagnostic()
+        .wrap_err_with(|| format!("Oxc lint returned non-UTF-8 JSON for {}", filename.display()))?;
+    let response: serde_json::Value = serde_json::from_str(json_text)
+        .into_diagnostic()
+        .wrap_err_with(|| format!("Oxc lint returned malformed JSON for {}", filename.display()))?;
+    match response.get("ok").and_then(serde_json::Value::as_bool) {
+        Some(true) => {},
+        Some(false) => {
+            let detail = response
+                .get("error")
+                .and_then(serde_json::Value::as_str)
+                .unwrap_or("unknown bridge error");
+            bail!("Oxc lint failed for {}: {detail}", filename.display());
+        },
+        None => {
+            bail!("Oxc lint response is missing a boolean `ok` field for {}", filename.display())
+        },
+    }
+    let diagnostics = response.get("diagnostics").cloned().ok_or_else(|| {
+        miette::miette!("Oxc lint response is missing `diagnostics` for {}", filename.display())
+    })?;
+    serde_json::from_value(diagnostics).into_diagnostic().wrap_err_with(|| {
+        format!("Oxc lint returned invalid diagnostics for {}", filename.display())
+    })
 }
 
 fn format_bytes(bytes: u64) -> String {
@@ -428,9 +490,44 @@ fn format_bytes(bytes: u64) -> String {
     format!("{:.2} {}", (bytes as f64) / k.powi(i as i32), sizes[i])
 }
 
+fn validate_smoke_output(exit_success: bool, output: String) -> Result<String> {
+    if !exit_success {
+        let detail = if output.is_empty() { "no output" } else { output.as_str() };
+        bail!("Smoke check failed: binary exited unsuccessfully ({detail})");
+    }
+    Ok(output)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::{
+        fs,
+        sync::atomic::{AtomicUsize, Ordering},
+    };
+
+    struct TestDirectory(PathBuf);
+
+    impl TestDirectory {
+        fn new() -> Self {
+            static NEXT_ID: AtomicUsize = AtomicUsize::new(0);
+            let id = NEXT_ID.fetch_add(1, Ordering::Relaxed);
+            let path =
+                std::env::temp_dir().join(format!("aphrody-discord-{}-{id}", std::process::id()));
+            fs::create_dir_all(&path).unwrap();
+            Self(path)
+        }
+    }
+
+    impl Drop for TestDirectory {
+        fn drop(&mut self) {
+            let _ = fs::remove_dir_all(&self.0);
+        }
+    }
+
+    fn owned_json(text: &str) -> *mut c_char {
+        CString::new(text).unwrap().into_raw()
+    }
 
     #[test]
     fn parse_bot_target() {
@@ -446,5 +543,89 @@ mod tests {
         assert!(opts.minify);
         assert!(opts.sourcemap);
         assert!(opts.smoke_check);
+    }
+
+    #[test]
+    fn smoke_check_rejects_nonzero_exit_even_when_binary_prints_output() {
+        let result = validate_smoke_output(false, "panic while starting".to_string());
+        assert!(result.is_err());
+        assert!(result.unwrap_err().to_string().contains("panic while starting"));
+    }
+
+    #[test]
+    fn smoke_check_accepts_successful_silent_binary() {
+        assert_eq!(validate_smoke_output(true, String::new()).unwrap(), "");
+    }
+
+    #[test]
+    fn oxc_response_parser_rejects_null_malformed_missing_status_and_bridge_errors() {
+        let filename = Path::new("command.ts");
+
+        assert!(
+            parse_oxc_lint_response(std::ptr::null_mut(), filename)
+                .unwrap_err()
+                .to_string()
+                .contains("null response")
+        );
+        assert!(
+            parse_oxc_lint_response(owned_json("not json"), filename)
+                .unwrap_err()
+                .to_string()
+                .contains("malformed JSON")
+        );
+        assert!(
+            parse_oxc_lint_response(owned_json(r#"{"diagnostics":[]}"#), filename)
+                .unwrap_err()
+                .to_string()
+                .contains("boolean `ok`")
+        );
+        assert!(
+            parse_oxc_lint_response(
+                owned_json(r#"{"ok":false,"error":"bridge failed"}"#),
+                filename
+            )
+            .unwrap_err()
+            .to_string()
+            .contains("bridge failed")
+        );
+        assert!(
+            parse_oxc_lint_response(owned_json(r#"{"ok":true}"#), filename)
+                .unwrap_err()
+                .to_string()
+                .contains("missing `diagnostics`")
+        );
+    }
+
+    #[test]
+    fn inspect_counts_oxc_diagnostics_from_valid_bridge_response() {
+        let temp = TestDirectory::new();
+        let commands = temp.0.join("src/commands");
+        fs::create_dir_all(&commands).unwrap();
+        fs::write(commands.join("invalid.ts"), "const = ;").unwrap();
+        let compiler = DiscordCompiler { root: PathBuf::new(), bun_bin: PathBuf::new() };
+
+        let inspection = compiler.inspect(&BotTarget::Custom(temp.0.clone())).unwrap();
+
+        assert_eq!(inspection.commands_count, 1);
+        assert!(inspection.oxc_diagnostics_errors > 0);
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn inspect_returns_a_contextual_error_when_command_source_cannot_be_read() {
+        let temp = TestDirectory::new();
+        let commands = temp.0.join("src/commands");
+        fs::create_dir_all(&commands).unwrap();
+        std::os::unix::fs::symlink(
+            commands.join("missing-target.ts"),
+            commands.join("unreadable.ts"),
+        )
+        .unwrap();
+        let compiler = DiscordCompiler { root: PathBuf::new(), bun_bin: PathBuf::new() };
+
+        let error = compiler.inspect(&BotTarget::Custom(temp.0.clone())).unwrap_err();
+
+        assert!(error.to_string().contains("Failed to read Discord command source"));
+        assert!(error.to_string().contains("unreadable.ts"));
     }
 }

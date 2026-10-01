@@ -3,12 +3,12 @@ import { MessageFlags, type Interaction } from "discord.js";
 import type { Client } from "discordx";
 
 export interface SafeExecuteInteractionOptions {
-	failureMessage?: string;
-	unhandledMessage?: string;
-	logger?: {
-		error?: (...args: any[]) => void;
-		warn?: (...args: any[]) => void;
-	};
+  failureMessage?: string;
+  unhandledMessage?: string;
+  logger?: {
+    error?: (...args: any[]) => void;
+    warn?: (...args: any[]) => void;
+  };
 }
 
 /**
@@ -24,50 +24,53 @@ export interface SafeExecuteInteractionOptions {
  *    without crashing the service.
  */
 export async function safeExecuteInteraction(
-	client: Client,
-	interaction: Interaction,
-	options: SafeExecuteInteractionOptions = {}
+  client: Client,
+  interaction: Interaction,
+  options: SafeExecuteInteractionOptions = {},
 ): Promise<void> {
-	const logger = options.logger ?? console;
-	const failureMessage =
-		options.failureMessage ?? "❌ La commande a rencontré une erreur interne.";
-	const unhandledMessage =
-		options.unhandledMessage ??
-		"Commande inconnue ou expirée. Rechargez Discord (Ctrl+R) pour actualiser la liste.";
+  const logger = options.logger ?? console;
+  const failureMessage = options.failureMessage ?? "❌ La commande a rencontré une erreur interne.";
+  const unhandledMessage =
+    options.unhandledMessage ??
+    "Commande inconnue ou expirée. Rechargez Discord (Ctrl+R) pour actualiser la liste.";
 
-	let executionError: unknown;
-	try {
-		await client.executeInteraction(interaction);
-	} catch (err) {
-		executionError = err;
-		logger.error?.(
-			"[discord-kit] Interaction execution failed:",
-			err instanceof Error ? (err.stack ?? err.message) : err
-		);
-	}
+  let executionFailed = false;
+  try {
+    await client.executeInteraction(interaction);
+  } catch (err) {
+    executionFailed = true;
+    logger.error?.(
+      "[discord-kit] Interaction execution failed:",
+      err instanceof Error ? (err.stack ?? err.message) : err,
+    );
+  }
 
-	if (!interaction.isRepliable()) {
-		return;
-	}
+  if (!interaction.isRepliable()) {
+    return;
+  }
 
-	try {
-		if (interaction.replied) {
-			return;
-		}
+  try {
+    if (interaction.replied) {
+      return;
+    }
 
-		if (interaction.deferred) {
-			if (executionError) {
-				await interaction.editReply({ content: failureMessage });
-			}
-			return;
-		}
+    if (interaction.deferred) {
+      if (executionFailed) {
+        await interaction.editReply({ content: failureMessage });
+      }
+      return;
+    }
 
-		await interaction.reply({
-			content: executionError ? failureMessage : unhandledMessage,
-			flags: MessageFlags.Ephemeral,
-		});
-	} catch (replyErr) {
-		// Interaction expired (3 seconds for initial ack, 15 minutes for webhook followup).
-		// Safe to ignore as user's client already timed out.
-	}
+    await interaction.reply({
+      content: executionFailed ? failureMessage : unhandledMessage,
+      flags: MessageFlags.Ephemeral,
+    });
+  } catch (replyErr) {
+    // Discord code 10062 means the interaction token is no longer addressable.
+    if ((replyErr as { code?: unknown })?.code === 10062) return;
+    logger.warn?.(
+      "[discord-kit] Failed to send interaction fallback reply:",
+      replyErr instanceof Error ? (replyErr.stack ?? replyErr.message) : replyErr,
+    );
+  }
 }
