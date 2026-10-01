@@ -79,3 +79,16 @@ Apache-2.0. Copyright AGNTCY Contributors; aphrody-code packaging.
 - `aphrody-a2a-client` — async client with JSON-RPC / REST / gRPC transports.
 - `aphrody-a2a-server` — `axum`-based server framework and task store.
 - `aphrody-a2a-grpc` — gRPC binding layer connecting client and server over tonic.
+
+## Shenron TypeScript projection
+
+The coordination schema owns the base fields and envelope kinds. Regenerate
+Shenron's checked-in projection from the repository root:
+
+```bash
+cargo run -q -p aphrody-a2a --example export_coord_types --locked > packages/shenron/pipeline/src/aphrody/coord.generated.ts
+```
+
+Shenron extends this base with task verdicts/artifacts and preserves its legacy
+open transport names in the application adapter. The generator is a development
+command; consuming the checked-in projection does not launch Cargo.

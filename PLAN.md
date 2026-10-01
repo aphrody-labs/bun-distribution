@@ -549,3 +549,14 @@ type/subject et les champs historiques ; les identifiants OS env-* restent
 compatibles. Tests de projection des cinq kinds et de lecture legacy réussis,
 avec tests complets aphrody-a2a/a2a-coord et clippy scoped sans dépendances.
 La projection TypeScript Shenron étendue reste à qualifier.
+
+### Projection TypeScript A2A Shenron
+
+Base CoordEnvelope et kinds générés depuis envelope_schema() du propriétaire
+Rust par l’exemple export_coord_types. Shenron importe cette projection et
+garde uniquement ses extensions produit et noms de transport legacy ouverts.
+Génération reproductible byte-for-byte, typecheck TypeScript 7 du package,
+oxlint des deux fichiers et clippy du générateur réussis. Les tests A2A ciblés
+(24) et la suite pipeline complète passent ; aucun Cargo requis à l’exécution
+TypeScript. Les endpoints publics et la sémantique de routage kernel restent
+à qualifier ; cette étape ne ferme pas le plan global.

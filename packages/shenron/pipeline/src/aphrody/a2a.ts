@@ -63,26 +63,20 @@ let missingNotifierWarned = false;
 // 1. Types Standardisés du Protocole A2A (JSON-RPC 2.0 & Discriminated Unions)
 // ============================================================================
 
+import { COORD_ENVELOPE_KINDS, type CoordEnvelope, type CoordEnvelopeKind } from "./coord.generated";
+
 export type A2ARole = "user" | "agent" | "system";
 
-export type A2AEnvelopeKind = "ping" | "ask" | "fact" | "ack" | "error";
-export const A2A_ENVELOPE_KINDS: readonly A2AEnvelopeKind[] = ["ping", "ask", "fact", "ack", "error"];
+export type A2AEnvelopeKind = CoordEnvelopeKind;
+export const A2A_ENVELOPE_KINDS: readonly A2AEnvelopeKind[] = COORD_ENVELOPE_KINDS;
 
 /**
  * Enveloppe standard du protocole A2A coord (compatible ai.json v1 & a2a-ui).
  * `verdict`, `artifacts` et `taskId` sont optionnels : un pair qui répond à un ordre
  * (champ `re` = id de l'enveloppe d'origine) les renseigne pour clore la tâche.
  */
-export interface A2AEnvelope {
-	v: number;
-	ts: string;
-	id: string;
-	from: string;
-	to: string;
-	kind: A2AEnvelopeKind;
-	topic: string;
-	body: string;
-	re?: string;
+export interface A2AEnvelope extends Omit<CoordEnvelope, "channel_hint"> {
+	// Legacy peers may provide additional transport names.
 	channel_hint?: string[];
 	taskId?: string;
 	verdict?: HonestDeliveryVerdict;

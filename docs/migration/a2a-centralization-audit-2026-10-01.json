@@ -65,10 +65,21 @@
         "full aphrody-a2a and a2a-coord tests",
         "scoped clippy without dependencies"
       ]
+    },
+    {
+      "owner": "aphrody-a2a schema / Shenron adapter",
+      "status": "TypeScript base generated from canonical Rust schema; product extensions retained",
+      "generator": "cargo run -q -p aphrody-a2a --example export_coord_types --locked",
+      "checks": [
+        "byte-for-byte regeneration",
+        "TypeScript package check",
+        "scoped oxlint",
+        "generator scoped clippy",
+        "24 A2A tests and full pipeline suite"
+      ]
     }
   ],
   "remaining": [
-    "Envelope representations remain compatibility projections with different strictness and Shenron extensions; generated cross-language base projection needs qualification.",
     "Kernel a2a/message/send is local tool dispatch, not remote target delivery; routing semantics need clarification in its API.",
     "Full legacy/public A2A deployment qualification remains open."
   ],
