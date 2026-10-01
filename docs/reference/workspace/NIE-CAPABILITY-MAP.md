@@ -6,7 +6,8 @@ This is a source audit, not proof of installed parity or a replacement for each
 repository's implementation plan. Baseline: root NIE gitlink
 `34c55fa1da54f715bb78ac336167fe18b13f9cca`, checked on 2026-09-29.
 This matrix records that historical source shape. A later 686-file source
-transfer is inventoried in [`nie/docs/SOURCE-TRANSFER-MANIFEST.json`](../nie/SOURCE-TRANSFER-MANIFEST.json).
+transfer is inventoried in `nie/docs/SOURCE-TRANSFER-MANIFEST.json` (IECODE owns the NIE
+documentation; see `docs/migration/ievr-to-iecode-2026-10-01.json`).
 The staged UI/Web copies are not yet feature parity; the active owner and
 correction plan is [`nie/PLAN.md`](../../plans/nie/PLAN.md).
 
@@ -26,7 +27,7 @@ it records 242 crates and 158 Bun packages. Infra's
 reports 10 Aphrody category repositories, 92 Rust dependency edges, no cycles
 and no layer violations before migration.
 
-NIE [Cargo](../nie/Cargo.toml) specifies `publish = false` and a commercial
+NIE `Cargo.toml` specifies `publish = false` and a commercial
 `license-file`. The former staged `@aphrody/nie` manifest under
 `packages/iecode/` declared MIT without a supporting grant; that staging package
 has been removed. Preserve the commercial boundary and verify source notices,

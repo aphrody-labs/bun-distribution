@@ -13,14 +13,14 @@ dans `.gitignore`.
 | [PLAN.md](../../PLAN.md) | **Source Unique de Vérité** : Navigation unifiée, 3 univers (Asso/Wiki/E-Sport), tokens `theme-achillea`, layouts & tests. |
 | [database.md](database.md) | Base de données et cache hybride : Postgres self-host ↔ miroir SQLite embarqué. |
 | [decision-archi-donnees-azalee.md](decision-archi-donnees-azalee.md) | Décision d'architecture : passage de la couche données d'Azalée sur Drizzle. |
-| [architecture-unifiee-ievr.md](architecture-unifiee-ievr.md) | Vue d'ensemble de la chaîne IEVR : extraction, stockage, rendu. |
+| IECODE `docs/nie/architecture-unifiee-ievr.md` | Vue d'ensemble de la chaîne IEVR : extraction, stockage, rendu. |
 
 ## Wiki Azalée et bibliothèque
 
 | Doc | Portée |
 | --- | --- |
 | [azalee.md](azalee.md) | Contrat canonique de la surface web : Azalée vit dans `apps/rg/website` sous `/wiki`, avec un seul build et aucune unité web autonome. |
-| [azalee-lib.md](azalee-lib.md) | `@rosegriffon/azalee` : cœur du wiki en bibliothèque Bun (racine client-safe, `/server`, `/remote`). |
+| IECODE `docs/nie/azalee/azalee-lib.md` | `@rosegriffon/azalee` : cœur du wiki en bibliothèque Bun (racine client-safe, `/server`, `/remote`). |
 | [wiki-filters.md](wiki-filters.md) | Filtres du wiki et contournement des colonnes NULL de `inagle_skills`. |
 
 ## Données du jeu (extraction)
@@ -28,8 +28,8 @@ dans `.gitignore`.
 | Doc | Portée |
 | --- | --- |
 | [gamedata-coverage.md](gamedata-coverage.md) | **Plan durable** de couverture de l'extraction : ce qui est parsé, poussé, ce qui manque. |
-| [inagle.md](inagle.md) | `@rosegriffon/inagle` : parser binaire CPK/G4TX, API, pipeline. |
-| [iecode-inagle-supabase.md](iecode-inagle-supabase.md) | Chaîne complète iecode → inagle → Supabase : tables, correspondances, procédures. |
+| IECODE `docs/nie/inagle/inagle.md` | `@rosegriffon/inagle` : parser binaire CPK/G4TX, API, pipeline. |
+| IECODE `docs/nie/inagle/iecode-inagle-supabase.md` | Chaîne complète iecode → inagle → Supabase : tables, correspondances, procédures. |
 | [chr.md](chr.md) | Format des modèles de personnage et assemblage 3D. |
 | [lvl5.md](lvl5.md) | Formats propriétaires Level-5 : CPK, G4TX, cfgbin, gaiji. |
 

@@ -52,6 +52,6 @@ d'`azalee-web.service` est obsolète et doit être supprimée.
 | --- | --- |
 | Routes et composants du wiki | `apps/rg/website/src/app/wiki` et composants Website associés |
 | Navigation, thèmes et préférences | `apps/rg/website` et packages partagés |
-| Données IEVR | packages de données et miroir documentés dans [architecture-unifiee-ievr.md](architecture-unifiee-ievr.md) |
+| Données IEVR | packages de données et miroir documentés dans IECODE `docs/nie/architecture-unifiee-ievr.md` |
 | Publication frontend | [deploiement-sans-coupure.md](deploiement-sans-coupure.md) |
 | Domaine historique | configuration nginx de redirection, sans upstream Azalée |

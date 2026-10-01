@@ -84,7 +84,7 @@ un upstream `azalee-web`.
 Le miroir SQLite des tables `inagle_*` est produit dans le dépôt `niers`, puis
 consommé par les packages de données et Website. Une correction ne se fait
 jamais directement dans le miroir. Les responsabilités sont détaillées dans
-[architecture-unifiee-ievr.md](architecture-unifiee-ievr.md) et
+IECODE `docs/nie/architecture-unifiee-ievr.md` et
 [database.md](database.md).
 
 ## Règles de sécurité opérationnelle
