@@ -88,7 +88,7 @@ un chemin encore issu du défaut est signalé une fois par processus.
 ## IA Aphrody — `@shenron/pipeline/ai/config` (contrat `aphrody-infra`)
 
 Les noms suivent le contrat IA local v1 d'`aphrody-infra` :
-[`../aphrody-infra/config/local-ai.json`](../../aphrody-infra/config/local-ai.json)
+[`config/local-ai.json`](../../config/local-ai.json)
 (noms canoniques, alias hérités, forme d'URL de chaque alias, index `shenron-rag` et valeurs
 de la cible `vps`). Le résolveur unique est `@shenron/pipeline/ai/config` (table `AI_ENV`) : bot,
 site, façades `@shenron/pipeline/aphrody`, pipeline et scripts passent tous par lui. Il lit le nom

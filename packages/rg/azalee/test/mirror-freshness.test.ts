@@ -66,7 +66,7 @@ describe.skipIf(process.platform === "win32")("réouverture du miroir après un 
 
 		// La vérification de fraîcheur est limitée à une fois toutes les 5 s :
 		// on laisse passer l'intervalle plutôt que d'exposer un compteur interne.
-		await Bun.sleep(5100);
+		await Bun.sleep(5500);
 
 		expect(await lireNom()).toBe("APRÈS");
 	}, 20_000);

@@ -14,7 +14,7 @@ and tick boxes as you go.
 - [ ] All open security advisories triaged
       (`gh api repos/aphrody-code/aphrody/security-advisories` or GitHub UI).
 - [ ] All Dependabot PRs reviewed; deny-list (per
-      [`.github/dependabot.yml`](../.github/dependabot.yml)) intact.
+      `dependabot.yml`) intact.
 - [ ] All in-flight Discussions answered or moved to issues.
 - [ ] [`docs/PLAN.md`](../../plans/ai/PLAN.md) reviewed; all `Pending` items
       either shipped or explicitly punted.

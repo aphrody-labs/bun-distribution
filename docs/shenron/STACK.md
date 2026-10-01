@@ -16,7 +16,7 @@ paquets, leurs frontières, leurs API publiques, l'ordre de migration et les
 gates. Le découpage exécutable de la Phase 1 (une vague par ligne, un agent par
 paquet, chemins possédés disjoints) était généré dans
 `var/stack-research/work-breakdown.json`; cet artefact de recherche n'est pas versionné.
-Le registre courant est [`PLAN.md`](../PLAN.md).
+Le registre courant est [`PLAN.md`](../../PLAN.md).
 
 Il complète :
 
@@ -1303,7 +1303,7 @@ liens d'espace de travail : aucune résolution neuve.
 | **5 — clôture** | `tooling` | cliquet `transitional` vidé, gates de CI ajoutés, test de pureté des modules client, démarrage du bot sans services, docs d'infra ; seul, après la vague 4 | `check:packages --strict` vert |
 
 Le détail exécutable (chemins possédés, tâches, critères, tests, commandes)
-est tenu dans [`PLAN.md`](../PLAN.md); le fichier de recherche
+est tenu dans [`PLAN.md`](../../PLAN.md); le fichier de recherche
 `var/stack-research/work-breakdown.json` n'est pas versionné.
 
 **Critères de sortie de la Phase 1** (L0/L1 sur le poste local) :

@@ -2,7 +2,7 @@
 # Desktop UI design
 
 This is the visual authority for the single public desktop webview in
-[`packages/app-ui`](../packages/app-ui). [GUI](../../reference/ui/GUI.md) owns host and capability
+[`packages/ui/m3`](../../../packages/ui/m3). [GUI](../../reference/ui/GUI.md) owns host and capability
 boundaries; [UX](./UX-DESIGN.md) owns flows; [UI rules](../../reference/ui/UI-RULES.md) bind shipped
 content and behavior. Descriptions here are design constraints, not proof that a
 feature is implemented.
@@ -23,7 +23,7 @@ Do not add product areas beyond these four. Host and capability exclusions are d
 
 ## 2. Base and references
 
-The visual references are indexed in [`assets/manifest.json`](../assets/manifest.json).
+The visual references are indexed in [`assets/ui/manifest.json`](../../../assets/ui/manifest.json).
 Spacedrive informs the file navigation and explorer; Codex informs Chat and its composer;
 Material 3 owns roles, states and accessibility. These are visual references, not runtime
 requirements or permissions to copy source. Preserve per-file upstream provenance.

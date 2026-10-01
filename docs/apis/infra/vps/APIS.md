@@ -4,8 +4,8 @@
 API servers exposed, configured or consumed on the production VPS: what each one serves, which
 repository owns its code, how it is authenticated and how Nginx exposes it. Listener ports and
 public hosts are not repeated here: read them from
-[`config/service-catalog.json`](../../config/service-catalog.json) (`health`, `port`) and
-[`config/nginx-routes.json`](../../config/nginx-routes.json) (`routes`, `internal`). Restored from
+[`config/service-catalog.json`](../../../../config/service-catalog.json) (`health`, `port`) and
+[`config/nginx-routes.json`](../../../../config/nginx-routes.json) (`routes`, `internal`). Restored from
 the retired `aphrody` monolith (`docs/vps/APIS.md`) and updated to the category repositories.
 
 ## 1. API servers
@@ -52,7 +52,7 @@ OpenAI-compatible `/v1/models` and `/v1/chat/completions`, `/api/v1/models`,
 `/api/v1/rag/{query,stats}`, `/api/v1/aphrody/status` and the Shenron compute surface under
 `/api/v1/shenron/` (health, embed, LLM chat, RAG search/document/stats/ingest/sync). Only the
 paths listed for this service in `config/nginx-routes.json` are public; the Shenron surface is
-consumed privately through the contract in [`config/local-ai.json`](../../config/local-ai.json)
+consumed privately through the contract in [`config/local-ai.json`](../../../../config/local-ai.json)
 (gateway `ai-http`).
 
 ## 4. Authentication and security

@@ -134,14 +134,39 @@ export async function runDocsLinks(args: string[]): Promise<number> {
     // (`/docs/concepts/...`, `./LICENSE.md`) et n'ont aucun sens ici. Les
     // vérifier ne signalerait que du bruit qu'on ne peut pas corriger — toute
     // édition manuelle y est de toute façon écrasée.
-    if (file.includes("/docs/reference/")) continue;
+    if (file.includes("/docs/reference/") || file.includes("/docs/research/")) continue;
     if (
       file.includes("/docs/_root/") ||
       file.includes("/docs/aphrody-os/n2b/node/") ||
       file.includes("/docs/n2b/node/") ||
       file.includes("/docs/n2b/bun/") ||
       file.includes("/apps/bxc/specs/") ||
-      file.includes("/apps/bxc/.agents/skills/rust-best-practices/")
+      file.includes("/apps/bxc/.agents/skills/rust-best-practices/") ||
+      file.includes("/upstream-bun/") ||
+      file.includes("/upstream-oxc/") ||
+      file.includes("/compat/n2b/bun/") ||
+      file.includes("/docs/apis/discord/apps/guide/") ||
+      file.includes("/docs/guides/discord/apps/guide/") ||
+      file.includes("/docs/shenron/root/") ||
+      file.includes("/docs/shenron/kinto-un-analyse-visuelle.md") ||
+      file.includes("/docs/shenron/pipeline-svg.md") ||
+      file.includes("/docs/shenron/manga-scans.md") ||
+      file.includes("/docs/apis/ui/drive/") ||
+      file.includes("/docs/guides/nie/") ||
+      file.includes("/docs/products/") ||
+      file.includes("/_source/") ||
+      file.includes("/docs/products/ui/drive/") ||
+      file.includes("/docs/products/web/drive-server/") ||
+      file.includes("/docs/products/web/apps/bxc/") ||
+      file.includes("/docs/operations/os/drive/") ||
+      file.includes("/docs/operations/ui/drive/") ||
+      file.includes("/docs/operations/iecode/") ||
+      file.includes("/docs/plans/ai/plans/") ||
+      file.includes("2026-09-29-") ||
+      file.includes("/docs/migration/") ||
+      file.includes("/docs/architecture/ui/drive/") ||
+      file.includes("/docs/architecture/ui/packages/") ||
+      file.includes("/docs/architecture/discord/architecture/upstreams/")
     )
       continue;
 

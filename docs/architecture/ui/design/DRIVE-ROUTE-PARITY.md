@@ -1,8 +1,8 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 # Drive route parity: file kinds, jobs, redundancy
 
-The active webview is [`packages/app-ui`](../../packages/app-ui/src/router.tsx). The
-FSL source in [`drive/packages/interface`](../../drive/packages/interface/src/router.tsx)
+The active webview is `packages/app-ui` (`src/router.tsx`). The
+FSL source in `drive/packages/interface` (`src/router.tsx`)
 is retained for provenance and feature comparison.
 
 | Route | Current state | Backend and remaining qualification |
@@ -16,5 +16,5 @@ and provenance are recorded in the implementation; no licensing conclusion follo
 from the source comparison. The `/jobs` screen already existed in `app-ui` and
 was connected to live hooks before its route was restored.
 The redundancy views derive from the archived FSL routes in
-[`drive/packages/interface/src/routes/redundancy`](../../drive/packages/interface/src/routes/redundancy),
+`drive/packages/interface/src/routes/redundancy`,
 with source paths and notices recorded in the implementation.

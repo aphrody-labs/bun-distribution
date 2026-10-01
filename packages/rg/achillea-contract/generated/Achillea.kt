@@ -392,6 +392,7 @@ data class CircuitTournamentSummary(
 	val size: Double,
 	val grandFinalAt: String,
 	val podium: List<CircuitPodiumEntry>,
+	val standingsStatus: String,
 )
 
 /// Forme historique dénormalisée (snake_case) encore servie par quelques vues.

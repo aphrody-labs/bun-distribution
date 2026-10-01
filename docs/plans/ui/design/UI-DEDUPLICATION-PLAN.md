@@ -23,7 +23,7 @@ its product owner; generic presentation and interaction belong to the M3 package
 [`APHRODY-M3-CANONICAL-CONTRACT.md`](../../../architecture/ui/design/APHRODY-M3-CANONICAL-CONTRACT.md) governs tokens. The
 [`multi-host plan`](./M3-MULTI-HOST-PLAN.md) sets host delivery order and the Tailwind CSS/Base UI
 target. Base UI and Tailwind CSS remain maintained M3-adapted forks in the Bun workspace.
-The [`asset catalog`](../../assets/manifest.json) supplies visual references, not
+The [`asset catalog`](../../../../assets/ui/manifest.json) supplies visual references, not
 functional requirements or reusable user data. The generated
 [`ecosystem catalog`](../../../reference/infra/ecosystem/ECOSYSTEM.md) is the cross-repository
 package inventory; do not hand-edit it.

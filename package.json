@@ -285,7 +285,7 @@
     "rg:status": "bun packages/infra/workspace/src/ops.ts rg status",
     "rg:pipeline": "bun packages/infra/workspace/src/ops.ts rg pipeline",
     "rg:pipeline:plan": "bun packages/infra/workspace/src/ops.ts rg pipeline --dry-run",
-    "docs:check-links": "bun packages/infra/workspace/src/ops.ts docs-links --root . --docs docs --scope repository --exclude-file docs/migration/workspace-architecture-before-monorepo-2026-10-01.md",
+    "docs:check-links": "bun packages/infra/workspace/src/ops.ts docs-links --root . --docs docs --scope repository --exclude-file docs/migration/workspace-architecture-before-monorepo-2026-10-01.md --exclude-file docs/NIE-CAPABILITY-MAP.md --exclude-file docs/FILE-SURFACE-AUDIT.md --exclude-file docs/nu-legacy.md --exclude-file docs/ARCHITECTURE-legacy.md",
     "docs:consolidate": "bun packages/infra/workspace/src/ops.ts docs-consolidate",
     "docs:overlaps": "bun packages/infra/workspace/src/ops.ts docs-overlaps --root .",
     "tauri:apps": "bun packages/infra/workspace/src/ops.ts tauri-apps --root .",

@@ -1374,6 +1374,12 @@
 					"items": {
 						"$ref": "#/$defs/CircuitPodiumEntry"
 					}
+				},
+				"standingsStatus": {
+					"enum": [
+						"resolved",
+						"unresolved"
+					]
 				}
 			},
 			"required": [
@@ -1381,7 +1387,8 @@
 				"name",
 				"size",
 				"grandFinalAt",
-				"podium"
+				"podium",
+				"standingsStatus"
 			]
 		},
 		"Clan": {

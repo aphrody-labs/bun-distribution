@@ -474,6 +474,8 @@ pub struct CircuitTournamentSummary {
 	#[serde(rename = "grandFinalAt")]
 	pub grand_final_at: String,
 	pub podium: Vec<CircuitPodiumEntry>,
+	#[serde(rename = "standingsStatus")]
+	pub standings_status: String,
 }
 
 /// Forme historique dénormalisée (snake_case) encore servie par quelques vues.

@@ -21,8 +21,8 @@ The current IEVR/MCP/plugin ownership and integration sequence is documented in
 | `research/`     | Audits, measurements and source comparisons      |
 
 The unified architecture and consolidation plan for Bun 1.4.2, ElysiaJS, Colyseus and Discord bots are documented in
-[`docs/plans/convergence/ROSE-GRIFFON-ACHILLEA-CONVERGENCE.md`](docs/plans/convergence/ROSE-GRIFFON-ACHILLEA-CONVERGENCE.md) and
-[`docs/architecture/convergence/BUN-ELYSIA-COLYSEUS-ARCHITECTURE.md`](docs/architecture/convergence/BUN-ELYSIA-COLYSEUS-ARCHITECTURE.md).
+[`plans/convergence/ROSE-GRIFFON-ACHILLEA-CONVERGENCE.md`](plans/convergence/ROSE-GRIFFON-ACHILLEA-CONVERGENCE.md) and
+[`architecture/convergence/BUN-ELYSIA-COLYSEUS-ARCHITECTURE.md`](architecture/convergence/BUN-ELYSIA-COLYSEUS-ARCHITECTURE.md).
 
 The Tauri 3 upstream line, runtime choice, centralized versions and sync
 script are documented in

@@ -55,7 +55,7 @@ impl BotTarget {
         match self {
             Self::Shenron => "Shenron Discord Bot + Public API",
             Self::RoseGriffon => "Rose Griffon Discord Bot (RG / Azalée)",
-            Self::Achillea => "Achillea Discord Bot",
+            Self::Achillea => "Achillea (Rose Griffon Unified Engine & API)",
             Self::Custom(_) => "Custom Discord Bot",
         }
     }
@@ -63,16 +63,14 @@ impl BotTarget {
     pub fn default_dir(&self, root: &Path) -> PathBuf {
         match self {
             Self::Shenron => root.join("apps/shenron/bot"),
-            Self::RoseGriffon => root.join("apps/rg/bot"),
-            Self::Achillea => root.join("apps/rg/achillea-bot"),
+            Self::RoseGriffon | Self::Achillea => root.join("apps/rg/bot"),
             Self::Custom(p) => p.clone(),
         }
     }
 
     pub fn entrypoint(&self) -> &str {
         match self {
-            Self::Shenron | Self::RoseGriffon => "src/entry-standalone.ts",
-            Self::Achillea => "src/main.ts",
+            Self::Shenron | Self::RoseGriffon | Self::Achillea => "src/entry-standalone.ts",
             Self::Custom(_) => "src/entry-standalone.ts",
         }
     }

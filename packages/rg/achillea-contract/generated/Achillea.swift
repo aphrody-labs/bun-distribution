@@ -394,6 +394,7 @@ public struct CircuitTournamentSummary: Codable, Sendable {
 	public let size: Double
 	public let grandFinalAt: String
 	public let podium: [CircuitPodiumEntry]
+	public let standingsStatus: String
 }
 
 /// Forme historique dénormalisée (snake_case) encore servie par quelques vues.

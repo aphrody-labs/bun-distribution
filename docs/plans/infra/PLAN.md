@@ -2,53 +2,33 @@
 
 # Aphrody Infra plan
 
-
-
 Open infrastructure work. `config/` owns topology/routing and
-
-[inventory](../inventory/) holds dated observations. Execute authorized tasks
+[inventory](../../../inventory/) holds dated observations. Execute authorized tasks
 under [NHITL](../../reference/infra/AGENTS.md); backups, integrity checks and rollback remain technical gates.
 Each live result is dated and scoped in the decision ledger; historical host
 observations below must be revalidated before operational use.
 
-
 ## 1. Objective
 
-
-
 One declared control plane and reproducible releases from pinned owner repositories.
-
 Use [immutable releases](../../operations/infra/IMMUTABLE-RELEASES.md), [Shenron migration](../../reference/infra/SHENRON-MIGRATION.md)
-
 and [authority map](../../reference/infra/UNIFIED-AGENT-CONTEXT.md); avoid duplicate registries or supervisors.
-
-
 
 ## 2. Current state (observed 2026-09-26, read-only ssh)
 
-
-
 Historical observation, to revalidate before operations: VPS ran RG/Shenron;
-
 Aphrody/NIE/IECode services were retired. VPS PostgreSQL and monitoring had failures.
-
 DBFR held data/backups; WSL was the reference build host; Windows received off-host
-
 backups. Bundle tooling was prepared but not activated. Exact identities, paths,
-
 retirement markers and backup records belong to `inventory/` and the runbooks.
 
-
-
 ## 3. Open work, ordered
-
-
 
 ### P0 — Aphrody Bun fork
 
 - Treat the [Aphrody Bun fork](../../operations/infra/BUN-FORK-OPERATIONS.md) as the primary platform
   development track. Pin its `main` and upstream revisions in
-  [`config/bun-fork.json`](../config/bun-fork.json), qualify native ABI and
+  [`config/bun-fork.json`](../../../config/bun-fork.json), qualify native ABI and
   cross-platform artifacts, then connect verified consumers.
 
 ### P0 — correctness of the working tree

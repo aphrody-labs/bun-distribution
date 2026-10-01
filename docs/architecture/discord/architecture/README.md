@@ -6,7 +6,7 @@
 > Canonical documentation for Discord architecture and standalone native compilation is located at:
 > - [**Aphrody Discord Architecture**](../README.md)
 > - [**Discord Bot Compiler Architecture (`aphrody-discord-compiler`)**](../COMPILER.md)
-> - [**Discord Operations & Systemd Units**](../../operations/discord/SYSTEMD-SERVICES.md)
+> - [**Discord Operations & Systemd Units**](../../../operations/discord/SYSTEMD-SERVICES.md)
 
 This directory preserves historical audits and records the completion of the Discord architecture consolidation in the Aphrody monorepo.
 
@@ -17,7 +17,7 @@ This directory preserves historical audits and records the completion of the Dis
 | Repository or bot | Historical Audit | Current Status (October 2026) |
 | --- | --- | --- |
 | **Aphrody AI messaging** | [aphrody-ai-messaging-discord.md](./upstreams/aphrody-ai-messaging-discord.md) | Fully ported and active as `@aphrody/messaging` (`packages/discord/aphrody-messaging`). Zero-runtime-dependency REST channel transport. |
-| **Shenron** | [Shenron integration](../../shenron/APHRODY-DISCORD-INTEGRATION.md) | Fully autonomous using `@aphrody/discord-kit`. Compiles to standalone native binary `dist/shenron` (~151.6 MB) executed by `shenron-bot.service`. |
+| **Shenron** | [Shenron integration](../../../shenron/APHRODY-DISCORD-INTEGRATION.md) | Fully autonomous using `@aphrody/discord-kit`. Compiles to standalone native binary `dist/shenron` (~151.6 MB) executed by `shenron-bot.service`. |
 | **Rose Griffon (`rg`)** | [rg-discord-bots.md](./upstreams/rg-discord-bots.md) | Fully autonomous using `@aphrody/discord-kit`. Dynamic profile dispatch (`rg` vs `azalee`) via static loader registry `src/modules.ts`. Compiles to native binary `dist/rg-bot` (~144.9 MB) executed by `rg-bot.service`. |
 | **NIE Wunderbot** | [nie-wunderbot.md](./upstreams/nie-wunderbot.md) | Historical upstream review; superseded by shared framework. |
 
