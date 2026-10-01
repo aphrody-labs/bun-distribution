@@ -62,8 +62,8 @@ describe("shims/path", () => {
   });
 
   test("relativeTo resolves relative segments", () => {
-    const r = path.relativeTo(import.meta, "..", "src", "schema.ts");
-    expect(r.endsWith(join("packages", "n2b", "src", "schema.ts"))).toBe(true);
+    const r = path.relativeTo(import.meta, "..", "src", "cli.ts");
+    expect(r.endsWith(join("packages", "compat", "n2b-client", "src", "cli.ts"))).toBe(true);
   });
 });
 

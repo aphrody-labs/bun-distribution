@@ -146,12 +146,29 @@ Propriétaires : `crates/contracts`, `crates/native`, `crates/compat`,
 - [ ] Auditer le graphe Cargo/Bun et les dépendances croisées par domaine.
 - [ ] Conserver les contrats purs ; déplacer réseau, timeout et processus vers
   leurs propriétaires opérationnels. Le client kernel est déjà sous OS.
-- [ ] Distinguer moteur N2B Rust et façade CLI Bun ; le dossier Bun devient
+- [x] Distinguer moteur N2B Rust et façade CLI Bun ; le dossier Bun devient
   `n2b-client`, son nom public reste compatible jusqu’à une migration versionnée.
 - [ ] Reprendre les critères ouverts des anciens plans contrats/native/compat.
 
 Critères : check/clippy/test des propriétaires concernés ; contrats JSON-RPC,
 ABI, erreurs et annulation vérifiés par des cas qui traversent les frontières.
+
+### Client Bun N2B — 2026-10-01
+
+- FAIT : le dossier `packages/compat/n2b-client` existe déjà ; le nom public
+  `@aphrody/n2b-core` et les exports restent compatibles. La façade invoque
+  le moteur Rust par processus et ne contient pas ses calculs de scan.
+- Le repli de développement a été corrigé : il cherche désormais
+  `target/debug/n2b` à la racine, au lieu de `packages/target/debug/n2b`.
+  Installation PATH, override explicite et `N2B_BIN` gardent leur priorité.
+- Un test isolé recrée le layout imbriqué, vide PATH et `N2B_BIN`, et prouve
+  l’exécution du binaire de fixture placé au bon endroit. Le test shims de
+  chemin utilise maintenant le dossier et le fichier source actuels.
+- Gates : 15 tests réussis, Oxc sans avertissement sur les fichiers modifiés,
+  build TypeScript des références puis typecheck client réussis,
+  `git diff --check` réussi. Les tests CLI existants utilisent le binaire
+  installé ; aucun rebuild du moteur Rust, test Windows ou contrôle ABI
+  n’est établi par ce lot. La qualification générale Compat reste ouverte.
 
 ### Graphe direct des dépendances — 2026-10-01
 
