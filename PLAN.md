@@ -81,6 +81,23 @@ actifs, aucun import vers une ancienne implantation déplacée.
 - Les constats datés de l’audit OS ne sont pas requalifiés par une réparation
   de liens. Les preuves de migration restent intactes.
 
+### Architecture du workspace — 2026-10-01
+
+- FAIT : la [page canonique](docs/architecture/workspace/ARCHITECTURE.md)
+  décrit les racines actives, les workspaces racine, les propriétaires actuels,
+  les frontières à qualifier et Shenron comme gate produit final.
+- L’ancienne page est préservée octet pour octet dans
+  [le snapshot](docs/migration/workspace-architecture-before-monorepo-2026-10-01.md).
+  Ses liens relatifs gardent pour base historique `docs/architecture/workspace/` ;
+  ce snapshot n’est pas une documentation active à réparer.
+- Vérification : aucune destination non résolue dans la page canonique selon
+  `docs-links --scope repository --json` ; `git diff --check` réussi.
+- INCOMPLET : le classement documentaire global reste ouvert. Le contrôle
+  compte maintenant 5 957 documents, 8 920 liens et 1 972 destinations non
+  résolues, car il inclut aussi le nouveau snapshot historique sans restaurer
+  sa base d’origine. Cette augmentation ne signale pas une régression des
+  liens actifs ; le vérificateur doit distinguer ces preuves des pages actives.
+
 ## 1. Contrats, cœur et compatibilité
 
 Propriétaires : `crates/contracts`, `crates/native`, `crates/compat`,
