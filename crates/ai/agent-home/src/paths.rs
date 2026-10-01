@@ -12,7 +12,7 @@
 //!   [`HomeOptions::agent_id`].
 //! * default — `~/.aphrody/workspace`.
 
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 #[cfg(not(target_arch = "wasm32"))]
 pub use aphrody_models::paths::ENV_APHRODY_HOME;
@@ -107,17 +107,40 @@ pub fn resolve_workspace(
         .map(|p| sanitize_profile(&p))
         .filter(|p| !p.is_empty());
     match prof {
-        Some(p) => {
-            let canonical = base.join("workspaces").join(&p);
-            if canonical.is_dir() { Ok(canonical) } else { Ok(base.join(format!("workspace-{p}"))) }
-        },
+        Some(p) => Ok(named_profile_workspace(&base, &p)),
         None => Ok(base.join("workspace")),
     }
+}
+
+/// Resolve a named profile inside an explicit state directory, independently
+/// of the current agent's workspace/profile environment overrides.
+/// Existing legacy profile directories remain a compatibility fallback.
+#[must_use]
+pub fn named_profile_workspace(state: &Path, profile: &str) -> PathBuf {
+    let profile = sanitize_profile(profile);
+    if profile.is_empty() {
+        return state.join("workspace");
+    }
+    let canonical = state.join("workspaces").join(&profile);
+    if canonical.is_dir() { canonical } else { state.join(format!("workspace-{profile}")) }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn named_profile_uses_canonical_home_before_legacy_within_the_selected_state() {
+        let state = tempfile::tempdir().unwrap();
+        let legacy = state.path().join("workspace-dbfr");
+        std::fs::create_dir_all(&legacy).unwrap();
+        assert_eq!(named_profile_workspace(state.path(), "DBFR"), legacy);
+        let canonical = state.path().join("workspaces/dbfr");
+        std::fs::create_dir_all(&canonical).unwrap();
+        assert_eq!(named_profile_workspace(state.path(), "DBFR"), canonical);
+        assert_eq!(named_profile_workspace(state.path(), "../dbfr"), canonical);
+        assert_eq!(named_profile_workspace(state.path(), ""), state.path().join("workspace"));
+    }
 
     #[test]
     fn sanitize_strips_path_separators() {

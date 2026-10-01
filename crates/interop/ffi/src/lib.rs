@@ -468,14 +468,23 @@ mod native {
     pub extern "C" fn shenron_persona_prompt() -> *const c_char {
         static SOUL: OnceLock<CString> = OnceLock::new();
         SOUL.get_or_init(|| {
-            let home_shenron = aphrody::locate_home_shenron();
-            let soul_file = home_shenron.join("SOUL.md");
-            let text = std::fs::read_to_string(&soul_file).unwrap_or_else(|_| {
-                "Shenron x Akira Toriyama (Tori-bot) Canon Persona".to_string()
-            });
-            CString::new(text).unwrap_or_else(|_| CString::new("Shenron Persona").unwrap())
+            shenron_persona_from_state(aphrody_agent_home::paths::state_dir().ok().as_deref())
         })
         .as_ptr()
+    }
+
+    fn shenron_persona_from_state(state: Option<&std::path::Path>) -> CString {
+        let text = state
+            .map(|state| aphrody_agent_home::paths::named_profile_workspace(state, "dbfr"))
+            .and_then(|root| aphrody_agent_home::SyncSnapshot::capture(root).ok())
+            .and_then(|snapshot| {
+                snapshot.documents.into_iter().find(|document| document.filename == "SOUL.md")
+            })
+            .map_or_else(
+                || "Shenron x Akira Toriyama (Tori-bot) Canon Persona".to_owned(),
+                |document| document.content,
+            );
+        CString::new(text).unwrap_or_else(|_| c"Shenron Persona".to_owned())
     }
 
     /// Query the sovereign Akira Toriyama / Shenron persona directly.
@@ -1141,6 +1150,57 @@ mod native {
             assert!(!ptr.is_null());
             let text = unsafe { CStr::from_ptr(ptr) }.to_str().unwrap();
             assert!(text.contains("Toriyama") || text.contains("Shenron"));
+            assert_eq!(shenron_persona_prompt(), ptr, "the C pointer remains process-stable");
+        }
+
+        fn persona_fixture(
+            state: &std::path::Path,
+            profile: &str,
+            soul: &str,
+        ) -> std::path::PathBuf {
+            let root = state.join("workspaces").join(profile);
+            std::fs::create_dir_all(&root).unwrap();
+            for file in aphrody_agent_home::sync_defaults().unwrap() {
+                let content =
+                    if file.filename() == "SOUL.md" { soul } else { "# Synthetic fixture\n" };
+                std::fs::write(root.join(file.filename()), content).unwrap();
+            }
+            root
+        }
+
+        #[test]
+        fn shenron_persona_reads_the_dbfr_snapshot_instead_of_other_or_legacy_homes() {
+            let state = tempfile::tempdir().unwrap();
+            let soul = "---\ntone: précis\nbrevity: terse\n---\n\nShenron dbfr fixture.\n";
+            let root = persona_fixture(state.path(), "dbfr", soul);
+            persona_fixture(state.path(), "aphrody", "Aphrody unrelated persona.\n");
+            let legacy = state.path().join("home/shenron");
+            std::fs::create_dir_all(&legacy).unwrap();
+            std::fs::write(legacy.join("SOUL.md"), "Legacy unrelated persona.\n").unwrap();
+            let snapshot = aphrody_agent_home::SyncSnapshot::capture(&root).unwrap();
+            let selected = snapshot.documents.iter().find(|doc| doc.filename == "SOUL.md").unwrap();
+            assert_eq!(selected.content, soul);
+            assert_eq!(shenron_persona_from_state(Some(state.path())).to_str().unwrap(), soul);
+        }
+
+        #[test]
+        fn shenron_persona_retains_fallback_for_missing_or_incomplete_snapshots() {
+            let state = tempfile::tempdir().unwrap();
+            let fallback = "Shenron x Akira Toriyama (Tori-bot) Canon Persona";
+            assert_eq!(shenron_persona_from_state(None).to_str().unwrap(), fallback);
+            let root = persona_fixture(state.path(), "dbfr", "Shenron fixture.\n");
+            std::fs::remove_file(root.join("BOOT.md")).unwrap();
+            assert_eq!(shenron_persona_from_state(Some(state.path())).to_str().unwrap(), fallback);
+        }
+
+        #[test]
+        fn shenron_persona_interior_nul_keeps_a_valid_c_string() {
+            let state = tempfile::tempdir().unwrap();
+            persona_fixture(state.path(), "dbfr", "Shenron fixture\0not a C string.\n");
+            assert_eq!(
+                shenron_persona_from_state(Some(state.path())).as_c_str(),
+                c"Shenron Persona"
+            );
         }
 
         #[test]

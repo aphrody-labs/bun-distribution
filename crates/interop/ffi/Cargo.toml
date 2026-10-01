@@ -48,6 +48,7 @@ jobs      = ["aphrody/jobs"]
 # NOT build the binary target, so the binary's `#[global_allocator]` is absent
 # here and this crate installs its own mimalloc below without a conflict.
 aphrody    = { workspace = true }
+aphrody-agent-home = { workspace = true }
 aphrody-bun = { workspace = true }
 aphrody-n2b-native = { workspace = true }
 aphrody-oxc-bridge = { workspace = true }
@@ -77,3 +78,6 @@ aphrody-stdio-capture = { workspace = true }
 # FFI calls amortise the worker-thread spawn cost instead of paying it per call.
 tokio      = { workspace = true }
 url        = { workspace = true }
+
+[target.'cfg(not(target_arch = "wasm32"))'.dev-dependencies]
+tempfile = { workspace = true }
