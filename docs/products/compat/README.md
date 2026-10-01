@@ -27,7 +27,7 @@ shows the CLI; [AGENTS.md](../../reference/compat/AGENTS.md) owns the frozen con
 
 - [Documentation index](./_source/README.md), [Bun rules](../../reference/compat/BUN.md)
 - [Publication scope](../../plans/compat/PLAN.md), [publish ladder](../../reference/ai/cargo/PUBLISH-LADDER.md)
-- [CLI consumer contract](../../reference/compat/tests/rpb-dashboard-baseline/INVOCATIONS.md)
+- [CLI consumer contract](../../../crates/compat/n2b/tests/baselines/rpb-dashboard-baseline/INVOCATIONS.md)
 - [Maintenance scripts](../../reference/compat/scripts/n2b/PLUGIN-SCRIPTS.md)
 
 Apache-2.0. Keep N2B crate/package versions synchronized; native ABI versioning

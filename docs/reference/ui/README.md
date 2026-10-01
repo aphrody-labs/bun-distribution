@@ -80,5 +80,5 @@ historical.
 - `packages/` and `crates/`: remaining import snapshots whose text differs from the owner copy only
   by link paths, upstream changelogs and font/icon license notices. Canonical copies live next to
   the code (`packages/ui/*`, `crates/ui/*`); the consolidation report lists each pending case.
-- `assets/fonts/`: [Google Sans Flex](./assets/fonts/google-sans-flex/OFL.txt) and
-  [Google Sans Code](./assets/fonts/google-sans-code/OFL.txt) license notices.
+- `assets/fonts/`: [Google Sans Flex](../../../assets/fonts/google-sans-flex/OFL.txt) and
+  [Google Sans Code](../../../assets/fonts/google-sans-code/OFL.txt) license notices.

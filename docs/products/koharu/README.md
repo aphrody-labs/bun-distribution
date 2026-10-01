@@ -2,7 +2,7 @@
 # Aphrody Koharu
 
 Standalone Rust/Bun library extracted from Koharu revision `c697b31e`.
-[Upstream README](./UPSTREAM-README.md) and MIT/Apache-2.0 notices preserve provenance.
+[Upstream README](../../../crates/koharu/UPSTREAM-README.md) and MIT/Apache-2.0 notices preserve provenance.
 
 ## Ownership and use
 

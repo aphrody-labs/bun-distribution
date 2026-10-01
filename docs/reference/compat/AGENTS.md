@@ -17,7 +17,7 @@ Follow [workspace rules](../workspace/AGENTS.md) and the user's global policy:
 ## n2b external contract (frozen)
 
 `n2b` is consumed as a subprocess (CLI-as-API, see
-[`tests/rpb-dashboard-baseline/INVOCATIONS.md`](./tests/rpb-dashboard-baseline/INVOCATIONS.md)).
+[`tests/rpb-dashboard-baseline/INVOCATIONS.md`](../../../crates/compat/n2b/tests/baselines/rpb-dashboard-baseline/INVOCATIONS.md)).
 Change one of these surfaces only as a justified breaking change with regenerated baselines;
 otherwise add a new rule or flag instead of altering an existing one.
 

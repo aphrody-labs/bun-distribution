@@ -33,7 +33,7 @@ repository is now `aphrody-ai`. Treat the closeout notes below as history.
 - Release bins: `target/x86_64-unknown-linux-gnu/x86_64-unknown-linux-gnu/release/{aphrody,aphrody-mcp}`
 - **One** `cargo build --release` at a time (LTO)
 - Install: `scripts/deploy.sh` or `install -m 755` (not `cp` while binary running)
-- [Sibling builds & versions](sibling-repo-build-and-versions.md) — `CARGO_TARGET_DIR` sends n2b/bxc builds into aphrody's target; bxc version is compile-baked; n2b 0.6.1 / bxc 0.6.2
+- [Sibling builds & versions](../../reference/ai/memory/sibling-repo-build-and-versions.md) — `CARGO_TARGET_DIR` sends n2b/bxc builds into aphrody's target; bxc version is compile-baked; n2b 0.6.1 / bxc 0.6.2
 
 ## MCP
 
@@ -42,13 +42,13 @@ repository is now `aphrody-ai`. Treat the closeout notes below as history.
 
 ## Tooling / Bun
 
-- [n2b --fix + agent stack Bun](n2b-fix-and-agent-stack-bun.md) — n2b only auto-applies the safe class (not fs/sleep); agent stack is Node-free
+- [n2b --fix + agent stack Bun](../../reference/ai/memory/n2b-fix-and-agent-stack-bun.md) — n2b only auto-applies the safe class (not fs/sleep); agent stack is Node-free
 - VPS Bun is **1.4.0-canary.1** (manifests pin 1.3.14, ignore that)
 
 ## Cross-repo contracts (aphrody = hub)
 
 - `aphrody/docs/rag-unified-pattern.md` — shared e5-small sidecar + RRF retrieval
-- [bxc test pkgs: bxc-test + next-playwright](bxc-test-and-next-playwright.md) — Playwright-compat `@aphrody-code/bxc-test` + Next `instant()` port over native CDP (shipped, bxc `11a923d`); `Network.deleteCookies` fix
+- [bxc test pkgs: bxc-test + next-playwright](../../reference/ai/memory/bxc-test-and-next-playwright.md) — Playwright-compat `@aphrody-code/bxc-test` + Next `instant()` port over native CDP (shipped, bxc `11a923d`); `Network.deleteCookies` fix
 
 ## A2A (Rust)
 
@@ -78,5 +78,5 @@ Stop to free RAM: `sudo systemctl disable --now bxc-crawler.service bxc.service 
 - Never commit `~/aphrody/.env`, `~/.aphrody/x-session.json`, cookie jars
 ## Feedback (working style)
 
-- [No questions, direct action](feedback-no-questions-direct-action.md) — execute, never ask for confirmation (user emphatic 2026-06-04)
-- [No reflexive loops](feedback-no-reflexive-loops.md) — don't mechanically repeat bxc/workflow calls; think if the action is even needed (user said "infinite loop, pause et réfléchi" 2026-06-04)
+- [No questions, direct action](../../reference/ai/memory/feedback-no-questions-direct-action.md) — execute, never ask for confirmation (user emphatic 2026-06-04)
+- [No reflexive loops](../../reference/ai/memory/feedback-no-reflexive-loops.md) — don't mechanically repeat bxc/workflow calls; think if the action is even needed (user said "infinite loop, pause et réfléchi" 2026-06-04)

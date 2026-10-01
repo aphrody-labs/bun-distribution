@@ -13,7 +13,7 @@ catalogs of this repository.
 | Host roles, priorities, public and loopback-only ports | [`config/production-topology.json`](../../config/production-topology.json), [`docs/PRODUCTION-ALLOCATION.md`](../PRODUCTION-ALLOCATION.md) |
 | Targets and SSH aliases | [`inventory/targets.json`](../../inventory/targets.json) |
 | Last dated observation of the host | [`inventory/vps-source.json`](../../inventory/vps-source.json) (evidence, never live state) |
-| Kernel, sysctl and journald tuning | [`host/aphrody-os/VPS-TUNING.md`](../../../reference/infra/host/aphrody-os/VPS-TUNING.md), [`host/sysctl/`](../../host/sysctl/) |
+| Kernel, sysctl and journald tuning | [`host/aphrody-os/VPS-TUNING.md`](../../../../host/aphrody-os/VPS-TUNING.md), [`host/sysctl/`](../../host/sysctl/) |
 | Release layout and activation | [`docs/IMMUTABLE-RELEASES.md`](../../../operations/infra/IMMUTABLE-RELEASES.md), [`docs/RG-IMMUTABLE-RELEASES.md`](../../../operations/infra/RG-IMMUTABLE-RELEASES.md) |
 
 The VPS was reset to a clean slate on 2026-09-22 and is rebuilt only from immutable releases

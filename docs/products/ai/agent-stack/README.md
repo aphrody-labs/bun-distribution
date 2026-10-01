@@ -91,7 +91,7 @@ Refresh: `bash ../aphrody-infra/scripts/aphrody/fetch-ai-llms.sh`
 | File | Source |
 | --- | --- |
 | [`x-ai-llms.txt`](../../../reference/ai/agent-stack/x-ai-llms.txt) | https://docs.x.ai/llms.txt |
-| [`bun-llms.txt`](../../../reference/ai/agent-stack/bun-llms.txt) | https://bun.com/docs/llms.txt |
+| [`bun-llms.txt`](../../../../packages/infra/workspace/docs/bun/llms.txt) | https://bun.com/docs/llms.txt |
 | [`anthropic-llms.txt`](../../../reference/ai/agent-stack/anthropic-llms.txt) | https://docs.anthropic.com/llms.txt |
 | [`claude-code-llms.txt`](../../../reference/ai/agent-stack/claude-code-llms.txt) | https://code.claude.com/docs/llms.txt |
 

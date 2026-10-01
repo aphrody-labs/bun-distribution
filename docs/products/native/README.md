@@ -29,7 +29,7 @@ Python/PyTorch reference implementation.
 ## Build and documentation
 
 `just ci` runs the Rust checks. The exact gates are in [AGENTS.md](../../reference/native/AGENTS.md).
-See [Rust API](./crates/aphrody-native/README.md) and
+See [Rust API](../../../crates/native/native/README.md) and
 [C library choice](../../reference/native/libc.md).
 
 Apache-2.0.

@@ -32,7 +32,7 @@ own repositories.
 | System | [README](../../products/os/_source/README.md.712b5622bf2b) |
 | UI | [README](../../products/ui/_source/README.md.8c1fe132fe5c), [index](../../products/ui/_source/README.md) |
 | Koharu libraries | [README](../../products/koharu/README.md), [UI integration](../ui/integrations/KOHARU.md) |
-| Manga, OCR and databook review | [Aphrody manga adapter](../../products/ai/crates/aphrody-manga/README.md), [Shenron review boundary](../shenron/docs/KOHARU-CAPABILITY-MAP.md) |
+| Manga, OCR and databook review | [Aphrody manga adapter](../../../crates/ai/manga/README.md), [Shenron review boundary](../shenron/docs/KOHARU-CAPABILITY-MAP.md) |
 | Web | [README](../../products/web/README.md) |
 | Contracts | [README](../../products/contracts/README.md), [A2A](../../products/contracts/a2a/README.md) |
 | Native | [README](../../products/native/README.md) |

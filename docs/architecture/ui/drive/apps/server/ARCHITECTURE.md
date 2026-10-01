@@ -375,6 +375,6 @@ RUST_LOG=debug ./sd-server
 
 ## Related Documentation
 
-- [README.md](../../../../../products/ui/drive/apps/server/README.md) - Setup and usage
+- [README.md](../../../../../../crates/web/drive-server/README.md) - Setup and usage
 - [../../docs/core/architecture.md](../../docs/core/architecture.md) - Core VDFS design
 - [../tauri/DAEMON_SETUP.md](../tauri/DAEMON_SETUP.md) - Tauri daemon integration
