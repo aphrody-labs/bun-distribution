@@ -8,7 +8,9 @@
     "./scripts/aphrody-corpus": "./scripts/_aphrody-corpus.ts"
   },
   "scripts": {
+    "predev": "bun ../../../packages/shenron/ui/scripts/sync-assets.ts --to public",
     "dev": "NEXT_DIST_DIR=.next-dev bunx next dev --turbopack",
+    "prebuild": "bun ../../../packages/shenron/ui/scripts/sync-assets.ts --to public",
     "build": "NEXT_DIST_DIR=.next-build bunx next build --turbopack",
     "start": "bunx next start",
     "lint": "oxlint -c .oxlintrc.json",
