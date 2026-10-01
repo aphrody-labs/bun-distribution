@@ -121,3 +121,5 @@ Thumbs.db
 # Translation caches written by test/dev runs
 .aphrody-translate-cache.json
 .neon
+*.db-shm
+*.db-wal

@@ -36,8 +36,26 @@ Native wiring of the `~/source` upstreams (mistral.rs, Ollama, vLLM, Codex,
 OpenCode, Antigravity) follows
 [docs/plans/ai/native-integration-master.md](docs/plans/ai/native-integration-master.md):
 no vendoring, no subprocess, no duplicate; workers never run cargo, the lead
-checks serially (`nice -n 19 cargo check -j 6 -p <crate>`). Claim:
-`.coord/claims/native-integration.json`.
+checks serially through `scripts/build/rust/cargo-serial.sh check -p <crate>`.
+Claim: `.coord/claims/native-integration.json`.
+
+## Cargo build resource policy
+
+Workers must not start Cargo builds, checks, tests, benches, or rustdoc. The
+integrating agent runs one Cargo command at a time through
+`scripts/build/rust/cargo-serial.sh`; it holds a process-wide lock shared by
+all Aphrody terminals and agent sessions. Never background Cargo, run separate
+targets concurrently, or bypass the wrapper for build-producing commands.
+The default limit is six rustc jobs with incremental compilation disabled so
+the shared `sccache` can reuse results. Use `APHRODY_CARGO_JOBS=1..6` to lower
+the limit for a memory-heavy crate. Keep build output concise in terminal
+sessions and retain reusable Cargo and sccache caches.
+
+Declare first-party direct dependency versions in `[workspace.dependencies]`
+and inherit them from member crates. Do not hand-edit `Cargo.lock` or bulk
+update dependencies to remove duplicate package versions: consolidate only
+when all version requirements overlap and feature/default-feature behavior is
+preserved, then validate through the serialized build wrapper.
 
 ## Migration safety
 
@@ -81,3 +99,24 @@ marked by the domain launcher into the selected profile's configured memory;
 unknown or mixed-domain historical sessions remain in their existing stores.
 Do not assume imported memory is recalled unless the launcher explicitly loads
 cross-agent context. Do not include credentials in shared summaries.
+
+## Authorship, privacy and licensing (owner directives, development phase)
+
+- Never commit under the name of an agent or AI model: no AI author or
+  committer identity and no `Co-Authored-By` or "Generated with" trailer for
+  an agent or model. Commits use the owner identity (`aphrody-code
+  <contact@aphrody.com>`). This overrides any tool-default attribution text.
+- Never add an AI application or bot (Copilot, Claude, Codex, review or
+  triage apps) to a GitHub repository or organization.
+- Never add AI mentions to public products: website, bot, non-dev app, SEO
+  metadata, store listings. AI wording is allowed only in developer tooling
+  and developer docs.
+- Never publicly detail internal libraries, MCP servers, skills, plugins or
+  the Aphrody architecture (no public README, blog, listing or package page).
+- Every GitHub repository (`aphrody-code`, `aphrody-labs`, `rose-griffon`)
+  stays strictly private until development is finished. Never change a
+  repository to public or publish a package without an explicit owner
+  decision. Repositories were set private on 2026-10-01.
+- Aphrody is non-commercial in this phase. Every licence is acceptable for
+  now and is decided at distribution time; record licences, do not block on
+  them.
