@@ -1,5 +1,6 @@
 {
   "name": "@rosegriffon/config",
+  "private": true,
   "version": "1.0.3",
   "description": "Configs partagées : tsconfig, eslint, oxlint, tailwind preset",
   "files": [

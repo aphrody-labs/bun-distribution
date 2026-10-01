@@ -1,5 +1,6 @@
 {
   "name": "@aphrody/assets",
+  "private": true,
   "version": "0.1.0",
   "description": "File-kind icons, extension badges, brand logos, images, sounds, videos and lottie animations, with icon resolution (getIcon, getLayeredIcon, getBeardedIcon, getIcon20): the Spacedrive @sd/assets set, merged with SpaceUI's @spacedrive/icons, for the Material Design 3 explorer surfaces.",
   "keywords": [

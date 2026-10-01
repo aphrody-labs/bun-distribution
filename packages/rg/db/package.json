@@ -1,5 +1,6 @@
 {
   "name": "@rosegriffon/db",
+  "private": true,
   "version": "1.0.3",
   "description": "Accès PostgreSQL partagé, façades SQL et types Database générés (site + bot)",
   "type": "module",

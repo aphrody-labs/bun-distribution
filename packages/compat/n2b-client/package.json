@@ -1,5 +1,6 @@
 {
   "name": "@aphrody/n2b-core",
+  "private": true,
   "version": "0.6.2",
   "description": "TypeScript façade thin pour le binaire Rust n2b — wrapper CLI (scan, rules, promptMarkdown).",
   "license": "Apache-2.0",

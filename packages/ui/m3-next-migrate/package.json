@@ -1,5 +1,6 @@
 {
   "name": "@aphrody/m3-next-migrate",
+  "private": true,
   "version": "3.3.3",
   "description": "Migration engine, AST codemod and runtime shims to migrate Next.js 16 UI and React components to Tauri v2 desktop apps or Bun/Vite web SPAs",
   "keywords": [

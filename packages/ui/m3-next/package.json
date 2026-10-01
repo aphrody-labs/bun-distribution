@@ -1,5 +1,6 @@
 {
   "name": "@aphrody/m3-next",
+  "private": true,
   "version": "3.3.3",
   "description": "Next.js 16 App Router integration for the @aphrody Material Design 3 layer: withM3 config, M3Html/M3Root server components (color-scheme, dark class from cookie or system, SSR scheme variables), a 'use client' M3ThemeProvider bridge, metadata/viewport helpers and the m3Css server helper.",
   "keywords": [

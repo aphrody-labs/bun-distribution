@@ -1,5 +1,6 @@
 {
   "name": "@rosegriffon/patreon-bun",
+  "private": true,
   "version": "1.0.3",
   "description": "Bun-only TypeScript library for the V2 Patreon API. Fork of patreon-api.ts (ghostrider-05) for Rose Griffon.",
   "keywords": [

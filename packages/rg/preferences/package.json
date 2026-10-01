@@ -1,5 +1,6 @@
 {
   "name": "@rosegriffon/preferences",
+  "private": true,
   "version": "1.0.3",
   "description": "Pure cross-runtime resolution of Rose Griffon presentation preferences",
   "repository": {

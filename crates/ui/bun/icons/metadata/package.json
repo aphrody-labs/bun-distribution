@@ -1,5 +1,6 @@
 {
   "name": "@material-symbols/metadata",
+  "private": true,
   "version": "0.44.8",
   "description": "Metadata for Material Symbols.",
   "files": [

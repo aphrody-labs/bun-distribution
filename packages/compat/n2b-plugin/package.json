@@ -1,5 +1,6 @@
 {
   "name": "@aphrody/n2b-plugin",
+  "private": true,
   "version": "0.6.2",
   "description": "Plugin Bun (Bun.plugin) pour le scan N2B Rust natif ou CLI.",
   "type": "module",

@@ -1,5 +1,6 @@
 {
   "name": "@aphrody/m3-reader",
+  "private": true,
   "version": "3.3.3",
   "description": "Material 3 manga and illustrated book readers for React",
   "license": "Apache-2.0",

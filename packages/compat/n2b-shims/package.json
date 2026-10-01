@@ -1,5 +1,6 @@
 {
   "name": "@aphrody/n2b-shims",
+  "private": true,
   "version": "0.6.2",
   "description": "Polyfills Bun-natifs pour les APIs Node détectées par n2b (env, fs, path, shell).",
   "type": "module",

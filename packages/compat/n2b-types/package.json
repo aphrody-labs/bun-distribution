@@ -1,5 +1,6 @@
 {
   "name": "@aphrody/n2b-types",
+  "private": true,
   "version": "0.6.2",
   "description": "TypeScript types auto-générés depuis schema/v2.json. Source de vérité Rust → TS.",
   "type": "module",

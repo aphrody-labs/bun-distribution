@@ -1,5 +1,6 @@
 {
   "name": "@aphrody/web-test",
+  "private": true,
   "version": "0.2.6",
   "repository": {
     "type": "git",

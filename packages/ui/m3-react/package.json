@@ -1,5 +1,6 @@
 {
   "name": "@aphrody/m3-react",
+  "private": true,
   "version": "3.3.3",
   "description": "React wrappers (@lit/react createComponent) for every <md-*> element of the @aphrody/material-web fork.",
   "homepage": "https://github.com/aphrody-code/material-web/tree/main/packages/react#readme",
@@ -27,27 +28,39 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
+      "bun": "./index.ts",
+      "import": "./index.ts",
       "default": "./dist/index.js"
     },
     "./transitions": {
       "types": "./dist/transitions/index.d.ts",
+      "bun": "./transitions/index.ts",
+      "import": "./transitions/index.ts",
       "default": "./dist/transitions/index.js"
     },
     "./adaptive": {
       "types": "./dist/adaptive/index.d.ts",
+      "bun": "./adaptive/index.ts",
+      "import": "./adaptive/index.ts",
       "default": "./dist/adaptive/index.js"
     },
     "./state": {
       "types": "./dist/state/index.d.ts",
+      "bun": "./state/index.ts",
+      "import": "./state/index.ts",
       "default": "./dist/state/index.js"
     },
     "./adapters/tanstack": {
       "types": "./dist/adapters/tanstack.d.ts",
+      "bun": "./adapters/tanstack.ts",
+      "import": "./adapters/tanstack.ts",
       "default": "./dist/adapters/tanstack.js"
     },
     "./package.json": "./package.json",
     "./*": {
       "types": "./dist/wrappers/*.d.ts",
+      "bun": "./wrappers/*.ts",
+      "import": "./wrappers/*.ts",
       "default": "./dist/wrappers/*.js"
     }
   },

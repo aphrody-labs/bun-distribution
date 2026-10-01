@@ -1,5 +1,6 @@
 {
   "name": "@aphrody/fut",
+  "private": true,
   "version": "1.0.0",
   "description": "High-Performance EA SPORTS FC & FIFA Ultimate Team Intelligence Suite: Scraping, Crawling, Market Valuation, AI Squad Builder, Mathematical SBC Solver, Early Leaks Radar, Live Chrome MV3 Extension, and Remote MCP Bridge.",
   "repository": {
