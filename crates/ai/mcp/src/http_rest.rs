@@ -8,6 +8,7 @@ use std::{
 };
 
 use aphrody_models::ModelStore;
+use aphrody_sql::pg::Client;
 use axum::{
     Json, Router,
     extract::{DefaultBodyLimit, Query},
@@ -18,10 +19,8 @@ use axum::{
 use rmcp::schemars::{self, JsonSchema};
 use serde::Deserialize;
 use serde_json::{Value, json};
-use tokio_postgres::{Client, NoTls};
 
 const DB_TIMEOUT: Duration = Duration::from_millis(1500);
-const DB_ENV: &str = "APHRODY_MCP_DATABASE_URL";
 const MAX_INGEST_BYTES: usize = 512 * 1024;
 const MAX_SEARCH_CONTENT_CHARS: usize = 8192;
 
@@ -1744,17 +1743,13 @@ async fn aphrody_status_handler() -> Response {
     )
 }
 
+/// Checks a connection out of the process-wide `aphrody-sql` pool (TLS for non-loopback
+/// hosts). `APHRODY_MCP_DATABASE_URL_POOLED` is preferred over the historical
+/// `APHRODY_MCP_DATABASE_URL`, which keeps working unchanged.
 async fn connect_db() -> Option<Client> {
-    let config = std::env::var(DB_ENV).ok().filter(|value| !value.trim().is_empty())?;
-    let (client, connection) =
-        tokio::time::timeout(DB_TIMEOUT, tokio_postgres::connect(&config, NoTls))
-            .await
-            .ok()?
-            .ok()?;
-    tokio::spawn(async move {
-        let _ = connection.await;
-    });
-    Some(client)
+    let url = aphrody_sql::DatabaseEnv::new("APHRODY_MCP").runtime()?.url;
+    let pool = aphrody_sql::shared_pool(url.expose()).ok()?;
+    tokio::time::timeout(DB_TIMEOUT, pool.get()).await.ok()?.ok()
 }
 
 async fn rag_query_handler(Query(params): Query<RagQuery>) -> Response {

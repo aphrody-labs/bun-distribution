@@ -45,6 +45,12 @@ oxc_semantic = { version = "0.152.0", git = "https://github.com/aphrody-code/oxc
 aphrody-bun = { path = "crates/ui/bun", version = "1.0.0-canary" }
 aphrody-discord-compiler = { path = "crates/discord/aphrody-discord-compiler", version = "1.0.0" }
 tokio-postgres-rustls = { version = "0.14", default-features = false, features = ["ring", "native-certs"] }
+deadpool-postgres = "0.14"
+pgvector = { version = "0.4", features = ["postgres", "halfvec"] }
+sqlite-vec = "0.1.9"
+rustls-native-certs = "0.8"
+webpki-roots = "1"
+aphrody-sql = { path = "crates/infra/sql", version = "0.1.0", default-features = false }
 pyo3 = { version = "0.29", features = [] }
 anyhow = "1.0.104"
 aes-gcm = { version = "0.10", features = [] }

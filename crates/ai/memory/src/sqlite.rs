@@ -54,6 +54,7 @@ use std::{
     sync::Arc,
 };
 
+use aphrody_sql::sqlite::{self, OpenPolicy};
 use async_trait::async_trait;
 use chrono::{DateTime, TimeZone, Utc};
 use rusqlite::{Connection, OptionalExtension, params};
@@ -106,21 +107,14 @@ impl SqliteBackend {
     pub async fn open(path: impl AsRef<Path>) -> Result<Self, MemoryError> {
         let path = path.as_ref().to_owned();
         let path_clone = path.clone();
-        let conn = task::spawn_blocking(move || -> Result<Connection, rusqlite::Error> {
+        let conn = task::spawn_blocking(move || -> Result<Connection, aphrody_sql::SqlError> {
+            // Open policy shared across Aphrody (WAL, busy_timeout=5000, foreign_keys=ON,
+            // temp_store=MEMORY, optimize on open); it also creates missing parent directories.
             let conn = if path_clone.as_os_str() == ":memory:" {
-                Connection::open_in_memory()?
+                sqlite::open_in_memory(OpenPolicy::read_write())?
             } else {
-                if let Some(parent) = path_clone.parent()
-                    && !parent.as_os_str().is_empty()
-                {
-                    std::fs::create_dir_all(parent)
-                        .map_err(|e| rusqlite::Error::ToSqlConversionFailure(Box::new(e)))?;
-                }
-                Connection::open(&path_clone)?
+                sqlite::open(&path_clone, OpenPolicy::read_write())?
             };
-            // Pragmas: WAL for concurrent reads + sane synchronous mode.
-            conn.pragma_update(None, "journal_mode", "WAL")?;
-            conn.pragma_update(None, "synchronous", "NORMAL")?;
             conn.execute_batch(SCHEMA_SQL)?;
             Ok(conn)
         })

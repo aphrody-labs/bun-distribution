@@ -11,8 +11,12 @@
 
 use std::path::Path;
 
+use aphrody_sql::{
+    SqlError,
+    sqlite::{self, OpenPolicy},
+};
 use async_trait::async_trait;
-use rusqlite::{Connection, OpenFlags, params};
+use rusqlite::{Connection, params};
 use tokio::sync::Mutex;
 use uuid::Uuid;
 
@@ -84,10 +88,7 @@ impl SqliteLocalProvider {
     /// # Errors
     /// - [`MemoryError::Sqlite`] if the file cannot be opened or the schema migration fails.
     pub fn open(path: impl AsRef<Path>) -> Result<Self, MemoryError> {
-        let flags = OpenFlags::SQLITE_OPEN_READ_WRITE
-            | OpenFlags::SQLITE_OPEN_CREATE
-            | OpenFlags::SQLITE_OPEN_NO_MUTEX;
-        let conn = Connection::open_with_flags(path, flags)?;
+        let conn = sqlite::open(path, OpenPolicy::read_write()).map_err(Self::sql_error)?;
         Self::bootstrap(&conn)?;
         Ok(Self { conn: Mutex::new(conn) })
     }
@@ -97,9 +98,18 @@ impl SqliteLocalProvider {
     /// # Errors
     /// - [`MemoryError::Sqlite`] if the schema migration fails.
     pub fn open_in_memory() -> Result<Self, MemoryError> {
-        let conn = Connection::open_in_memory()?;
+        let conn = sqlite::open_in_memory(OpenPolicy::read_write()).map_err(Self::sql_error)?;
         Self::bootstrap(&conn)?;
         Ok(Self { conn: Mutex::new(conn) })
+    }
+
+    /// Maps `aphrody-sql` failures onto the public [`MemoryError`] variants.
+    fn sql_error(error: SqlError) -> MemoryError {
+        match error {
+            SqlError::Sqlite(error) => MemoryError::Sqlite(error),
+            SqlError::Io(error) => MemoryError::Io(error),
+            other => MemoryError::Unexpected(other.to_string()),
+        }
     }
 
     fn bootstrap(conn: &Connection) -> Result<(), MemoryError> {

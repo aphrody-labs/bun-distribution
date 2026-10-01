@@ -8,12 +8,16 @@ use rusqlite::Connection;
 use crate::error::Result;
 
 /// Apply the canonical RAG database schema to `conn`.
+///
+/// Open `conn` through [`aphrody_sql::sqlite::open`] so the standard pragmas (WAL,
+/// `busy_timeout`, ...) are in force; this function only owns the DDL.
 pub fn initialize_schema(conn: &Connection) -> Result<()> {
     conn.execute_batch(
         r#"
+        -- WAL, synchronous, busy_timeout, temp_store and optimize belong to the
+        -- `aphrody_sql::sqlite::OpenPolicy` the store opens its connections with.
+        -- Foreign keys stay here as a safety net: ON DELETE CASCADE depends on it.
         PRAGMA foreign_keys = ON;
-        PRAGMA journal_mode = WAL;
-        PRAGMA synchronous = NORMAL;
 
         CREATE TABLE IF NOT EXISTS docs (
             id INTEGER PRIMARY KEY AUTOINCREMENT,

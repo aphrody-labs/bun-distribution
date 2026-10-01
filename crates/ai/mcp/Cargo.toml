@@ -94,6 +94,9 @@ aphrody-web-crawl = { workspace = true }
 aphrody-x          = { workspace = true }
 rmcp               = { workspace = true }
 tokio-postgres     = { workspace = true }
+# Shared SQL owner (ADR D5): one PostgreSQL pool per process with TLS by URL, and typed
+# pgvector binds for the Shenron vector recall.
+aphrody-sql        = { workspace = true, features = ["postgres"] }
 aphrody-a2a                = { workspace = true }
 aphrody-a2a-server         = { workspace = true }
 aphrody-git                = { workspace = true }

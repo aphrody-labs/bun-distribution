@@ -3,11 +3,13 @@
 
 use std::time::Duration;
 
+use aphrody_sql::pg::vector;
 use serde_json::{Value, json};
 use tokio_postgres::{Client, Row};
 
 const MODEL: &str = "Xenova/multilingual-e5-small";
-// Vector literals are bound as Rust strings, so PostgreSQL must infer text parameters.
+// Embeddings are bound as typed pgvector `vector` values (binary protocol), never as
+// `[..]::text::vector` string literals.
 
 pub(crate) struct Filters<'a> {
     pub lang: Option<&'a str>,
@@ -24,11 +26,10 @@ pub(crate) async fn search(
     filters: Filters<'_>,
     limit: i64,
 ) -> Option<Vec<Row>> {
-    let vector = embed(query, "query").await?;
-    let literal = vector_literal(&vector);
+    let embedding = vector::from_f64(&embed(query, "query").await?)?;
     let sql = r#"
         SELECT d.entity_id::text, d.title::text, d.url::text, d.content::text,
-               (1.0 / (1.0 + (v.embedding <=> $1::text::vector)))::float8,
+               (1.0 / (1.0 + (v.embedding <=> $1::vector)))::float8,
                COALESCE(d.metadata->>'kind','document'), d.metadata->>'lang',
                COALESCE(d.metadata->>'originSourceId',d.metadata->>'sourceId',d.metadata->>'source_id'),
                d.metadata->>'entity', d.id::text, d.corpus::text
@@ -39,14 +40,14 @@ pub(crate) async fn search(
           AND ($4::text IS NULL OR d.metadata->>'kind'=$4)
           AND ($5::text IS NULL OR COALESCE(d.metadata->>'originSourceId',d.metadata->>'sourceId',d.metadata->>'source_id')=$5)
           AND ($6::text IS NULL OR d.metadata->>'entity'=$6)
-        ORDER BY v.embedding <=> $1::text::vector LIMIT $7
+        ORDER BY v.embedding <=> $1::vector LIMIT $7
     "#;
     tokio::time::timeout(
         Duration::from_secs(3),
         database.query(
             sql,
             &[
-                &literal,
+                &embedding,
                 &MODEL,
                 &filters.lang,
                 &filters.kind,
@@ -70,26 +71,22 @@ pub(crate) async fn index_document(
     content: &str,
 ) -> bool {
     let passage = format!("{title}. {content}").chars().take(1200).collect::<String>();
-    let Some(vector) = embed(&passage, "passage").await else {
+    let Some(embedding) = embed(&passage, "passage").await.and_then(|values| vector::from_f64(&values))
+    else {
         return false;
     };
-    let literal = vector_literal(&vector);
     let sql = "INSERT INTO aphrody_shenron_vectors (document_id,model,embedding) SELECT \
-               id,$2,$3::text::vector FROM aphrody_rag_documents WHERE id=$1::uuid AND title=$4 \
+               id,$2,$3::vector FROM aphrody_rag_documents WHERE id=$1::uuid AND title=$4 \
                AND content=$5 ON CONFLICT (document_id) DO UPDATE SET \
                model=EXCLUDED.model,embedding=EXCLUDED.embedding,created_at=now()";
     matches!(
         tokio::time::timeout(
             Duration::from_secs(3),
-            database.execute(sql, &[&id, &MODEL, &literal, &title, &content])
+            database.execute(sql, &[&id, &MODEL, &embedding, &title, &content])
         )
         .await,
         Ok(Ok(1))
     )
-}
-
-fn vector_literal(vector: &[f64]) -> String {
-    format!("[{}]", vector.iter().map(ToString::to_string).collect::<Vec<_>>().join(","))
 }
 
 async fn embed(text: &str, kind: &str) -> Option<Vec<f64>> {

@@ -145,6 +145,13 @@ impl RagIndexer {
             }
         }
 
+        if stats.indexed_files > 0 {
+            // Bulk load finished: fold the WAL back into the database file.
+            if let Err(error) = self.store.checkpoint().await {
+                tracing::debug!(%error, "post-index WAL checkpoint failed");
+            }
+        }
+
         stats.elapsed_ms = start.elapsed().as_millis() as u64;
         Ok(stats)
     }

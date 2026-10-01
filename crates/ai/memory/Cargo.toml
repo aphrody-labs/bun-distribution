@@ -56,6 +56,8 @@ reqwest      = { workspace = true }
 # `bundled` feature compiles a static libsqlite3, removing the system dep
 # (kept hermetic across Linux #1 / Win11 #2 per CLAUDE.md §0).
 rusqlite     = { workspace = true }
+aphrody-sql   = { workspace = true, features = ["sqlite"] }
+aphrody-rag-core = { workspace = true }
 aphrody-agent-home = { workspace = true }
 aphrody-models     = { workspace = true }
 # --- LanceDB backend (ported from openclaw/extensions/memory-lancedb) -------

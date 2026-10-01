@@ -5,9 +5,9 @@
 
 use std::time::Duration;
 
+use aphrody_sql::pg::Client;
 use serde::Serialize;
 use serde_json::{Value, json};
-use tokio_postgres::{Client, NoTls};
 
 const DB_TIMEOUT: Duration = Duration::from_secs(5);
 const CORPUS: &str = "bxc_crawl";
@@ -34,16 +34,15 @@ fn document_title(markdown: &str, url: &str) -> String {
         .unwrap_or_else(|| url.to_owned())
 }
 
+/// Checks a connection out of the process-wide `aphrody-sql` pool for `database_url`
+/// (TLS for non-loopback hosts, recycled connections verified before reuse).
 async fn connect(database_url: &str) -> Result<Client, &'static str> {
-    let (client, connection) =
-        tokio::time::timeout(DB_TIMEOUT, tokio_postgres::connect(database_url, NoTls))
-            .await
-            .map_err(|_| "RAG PostgreSQL unavailable")?
-            .map_err(|_| "RAG PostgreSQL unavailable")?;
-    tokio::spawn(async move {
-        let _ = connection.await;
-    });
-    Ok(client)
+    let pool =
+        aphrody_sql::shared_pool(database_url).map_err(|_| "RAG PostgreSQL unavailable")?;
+    tokio::time::timeout(DB_TIMEOUT, pool.get())
+        .await
+        .map_err(|_| "RAG PostgreSQL unavailable")?
+        .map_err(|_| "RAG PostgreSQL unavailable")
 }
 
 /// Idempotently writes an OS-scraped page into the AI PostgreSQL RAG corpus.

@@ -3,9 +3,16 @@
 
 //! Core SQLite storage layer for documents, chunks, FTS5 index, and dense vectors.
 
-use std::{path::Path, sync::Arc};
+use std::{
+    path::Path,
+    sync::{Arc, PoisonError},
+};
 
 use aphrody_rag_core::fusion::top_k_exact;
+use aphrody_sql::{
+    SqlError,
+    sqlite::{self, OpenPolicy},
+};
 use rusqlite::{Connection, OptionalExtension as _, params};
 use serde::{Deserialize, Serialize};
 use tokio::sync::Mutex;
@@ -105,18 +112,44 @@ pub struct RagStats {
     pub embedding_model: Option<String>,
 }
 
+/// Maps `aphrody-sql` failures onto the public [`RagError`] variants.
+fn sql_error(error: SqlError) -> RagError {
+    match error {
+        SqlError::Sqlite(error) => RagError::Sqlite(error),
+        SqlError::Io(error) => RagError::Io(error),
+        other => RagError::Other(other.to_string()),
+    }
+}
+
 /// Thread-safe RAG SQLite store.
+///
+/// Connections are opened through the `aphrody-sql` SQLite policy (WAL,
+/// `busy_timeout=5000`, `foreign_keys=ON`, `temp_store=MEMORY`,
+/// `PRAGMA optimize=0x10002`). File-backed stores also keep a dedicated
+/// read-only connection so the brute-force vector scan runs on a blocking
+/// thread without holding the writer's async mutex.
 #[derive(Clone)]
 pub struct RagStore {
     conn: Arc<Mutex<Connection>>,
+    /// Read-only connection for scans; `None` for in-memory stores, whose data
+    /// is only visible to the writer connection.
+    reader: Option<Arc<std::sync::Mutex<Connection>>>,
 }
 
 impl RagStore {
     /// Open or create a persistent SQLite RAG database at `path`.
     pub fn open(path: impl AsRef<Path>) -> Result<Self> {
-        let conn = Connection::open(path)?;
+        let path = path.as_ref();
+        let conn = sqlite::open(path, OpenPolicy::read_write()).map_err(sql_error)?;
         initialize_schema(&conn)?;
-        Ok(Self { conn: Arc::new(Mutex::new(conn)) })
+        let reader = match sqlite::open(path, OpenPolicy::read_only()) {
+            Ok(reader) => Some(Arc::new(std::sync::Mutex::new(reader))),
+            Err(error) => {
+                tracing::debug!(%error, "RAG store has no dedicated reader connection");
+                None
+            },
+        };
+        Ok(Self { conn: Arc::new(Mutex::new(conn)), reader })
     }
 
     /// Open or create the canonical persistent SQLite RAG database under the unified state directory
@@ -131,9 +164,18 @@ impl RagStore {
 
     /// Open a transient in-memory database (useful for isolated tests).
     pub fn open_in_memory() -> Result<Self> {
-        let conn = Connection::open_in_memory()?;
+        let conn = sqlite::open_in_memory(OpenPolicy::read_write()).map_err(sql_error)?;
         initialize_schema(&conn)?;
-        Ok(Self { conn: Arc::new(Mutex::new(conn)) })
+        Ok(Self { conn: Arc::new(Mutex::new(conn)), reader: None })
+    }
+
+    /// Fold the WAL back into the database file and truncate it (call after bulk indexing).
+    /// Returns `true` when the checkpoint completed; a concurrent reader can make it return
+    /// `false` without error.
+    pub async fn checkpoint(&self) -> Result<bool> {
+        let conn = self.conn.lock().await;
+        let checkpoint = sqlite::checkpoint_truncate(&conn).map_err(sql_error)?;
+        Ok(!checkpoint.busy)
     }
 
     /// Upsert a document record. Returns the `doc_id`.
@@ -493,6 +535,10 @@ impl RagStore {
     /// matrix and select the exact top-`limit` with the bounded-heap kernel from
     /// `aphrody-rag-core` (no per-row chunk/doc join, no per-row `Vec`, no full
     /// sort); (2) hydrate chunk text only for the `limit` winners.
+    ///
+    /// The scan runs on a blocking thread: on the dedicated read-only connection for
+    /// file-backed stores (writers are not blocked, WAL readers never block them), or,
+    /// for in-memory stores, on the writer connection moved into `spawn_blocking`.
     pub async fn search_vector(
         &self,
         query_embedding: &[f32],
@@ -503,65 +549,21 @@ impl RagStore {
         if dim == 0 || limit == 0 {
             return Ok(Vec::new());
         }
-        let conn = self.conn.lock().await;
-
-        let mut ids: Vec<i64> = Vec::new();
-        let mut matrix: Vec<f32> = Vec::new();
-        {
-            let mut stmt = conn.prepare(
-                "SELECT chunk_id, dim, embedding FROM vectors WHERE model_id = ?1",
-            )?;
-            let mut rows = stmt.query(params![model_id])?;
-            while let Some(row) = rows.next()? {
-                let row_dim = row.get::<_, i64>(1)? as usize;
-                let blob = row.get_ref(2)?.as_blob().map_err(|e| rusqlite::Error::FromSqlConversionFailure(2, rusqlite::types::Type::Blob, Box::new(e)))?;
-                if row_dim != dim || blob.len() != dim * 4 {
-                    continue;
-                }
-                ids.push(row.get(0)?);
-                matrix.extend(
-                    blob.as_chunks::<4>().0.iter().map(|bytes| f32::from_le_bytes(*bytes)),
-                );
-            }
-        }
-
-        let top = top_k_exact(query_embedding, &matrix, dim, limit);
-        let mut stmt = conn.prepare(
-            r#"
-            SELECT c.id, c.doc_id, d.path, c.chunk_index, c.heading, c.symbol, c.content, c.start_line, c.end_line, c.token_count
-            FROM chunks c
-            JOIN docs d ON c.doc_id = d.id
-            WHERE c.id = ?1
-            "#,
-        )?;
-        let mut out = Vec::with_capacity(top.len());
-        for (row_index, score) in top {
-            let chunk_id = ids[row_index];
-            let chunk = stmt
-                .query_row(params![chunk_id], |row| {
-                    Ok(ChunkRecord {
-                        id: row.get(0)?,
-                        doc_id: row.get(1)?,
-                        path: row.get(2)?,
-                        chunk_index: row.get::<_, i64>(3)? as usize,
-                        heading: row.get(4)?,
-                        symbol: row.get(5)?,
-                        content: row.get(6)?,
-                        start_line: row.get::<_, i64>(7)? as usize,
-                        end_line: row.get::<_, i64>(8)? as usize,
-                        token_count: row.get::<_, i64>(9)? as usize,
-                    })
-                })
-                .optional()?;
-            if let Some(chunk) = chunk {
-                out.push(ScoredChunk {
-                    chunk,
-                    score: f64::from(score),
-                    channel: "vector".to_string(),
-                });
-            }
-        }
-        Ok(out)
+        let query = query_embedding.to_vec();
+        let model_id = model_id.to_owned();
+        let joined = if let Some(reader) = &self.reader {
+            let reader = Arc::clone(reader);
+            tokio::task::spawn_blocking(move || {
+                let conn = reader.lock().unwrap_or_else(PoisonError::into_inner);
+                scan_vectors(&conn, &query, &model_id, limit)
+            })
+            .await
+        } else {
+            let conn = Arc::clone(&self.conn).lock_owned().await;
+            tokio::task::spawn_blocking(move || scan_vectors(&conn, &query, &model_id, limit))
+                .await
+        };
+        joined.map_err(|error| RagError::Other(format!("vector scan task failed: {error}")))?
     }
 
     /// Read a metadata key.
@@ -604,4 +606,67 @@ impl RagStore {
 
         Ok(RagStats { doc_count, chunk_count, vector_count, embedding_model })
     }
+}
+
+/// Exact top-`limit` scan of the `vectors` table for `model_id` (blocking).
+fn scan_vectors(
+    conn: &Connection,
+    query_embedding: &[f32],
+    model_id: &str,
+    limit: usize,
+) -> Result<Vec<ScoredChunk>> {
+    let dim = query_embedding.len();
+    let mut ids: Vec<i64> = Vec::new();
+    let mut matrix: Vec<f32> = Vec::new();
+    {
+        let mut stmt =
+            conn.prepare("SELECT chunk_id, dim, embedding FROM vectors WHERE model_id = ?1")?;
+        let mut rows = stmt.query(params![model_id])?;
+        while let Some(row) = rows.next()? {
+            let row_dim = row.get::<_, i64>(1)? as usize;
+            let blob = row.get_ref(2)?.as_blob().map_err(|e| {
+                rusqlite::Error::FromSqlConversionFailure(2, rusqlite::types::Type::Blob, Box::new(e))
+            })?;
+            if row_dim != dim || blob.len() != dim * 4 {
+                continue;
+            }
+            ids.push(row.get(0)?);
+            matrix
+                .extend(blob.as_chunks::<4>().0.iter().map(|bytes| f32::from_le_bytes(*bytes)));
+        }
+    }
+
+    let top = top_k_exact(query_embedding, &matrix, dim, limit);
+    let mut stmt = conn.prepare(
+        r#"
+        SELECT c.id, c.doc_id, d.path, c.chunk_index, c.heading, c.symbol, c.content, c.start_line, c.end_line, c.token_count
+        FROM chunks c
+        JOIN docs d ON c.doc_id = d.id
+        WHERE c.id = ?1
+        "#,
+    )?;
+    let mut out = Vec::with_capacity(top.len());
+    for (row_index, score) in top {
+        let chunk_id = ids[row_index];
+        let chunk = stmt
+            .query_row(params![chunk_id], |row| {
+                Ok(ChunkRecord {
+                    id: row.get(0)?,
+                    doc_id: row.get(1)?,
+                    path: row.get(2)?,
+                    chunk_index: row.get::<_, i64>(3)? as usize,
+                    heading: row.get(4)?,
+                    symbol: row.get(5)?,
+                    content: row.get(6)?,
+                    start_line: row.get::<_, i64>(7)? as usize,
+                    end_line: row.get::<_, i64>(8)? as usize,
+                    token_count: row.get::<_, i64>(9)? as usize,
+                })
+            })
+            .optional()?;
+        if let Some(chunk) = chunk {
+            out.push(ScoredChunk { chunk, score: f64::from(score), channel: "vector".to_string() });
+        }
+    }
+    Ok(out)
 }
