@@ -29,6 +29,7 @@ clap.workspace = true
 gix.workspace = true
 reqwest = { workspace = true, features = ["blocking"] }
 ignore.workspace = true
+libc.workspace = true
 opendal.workspace = true
 regex.workspace = true
 ring.workspace = true

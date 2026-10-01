@@ -11,6 +11,7 @@ pub mod devenv;
 pub mod drive;
 pub mod lifecycle;
 pub mod local_ai;
+pub mod nginx;
 pub mod pipeline;
 pub mod probe;
 pub mod reclaim;
@@ -23,6 +24,7 @@ pub use drive::{
 
 pub use catalog::{CatalogService, ServiceCatalog, TargetInfo, TargetMatrix};
 pub use lifecycle::{ServiceAction, ServiceActionResult, ServiceStatusResult};
+pub use nginx::{LocationBlock, NginxConfig, ServerBlock, UpstreamBlock, UpstreamTarget};
 pub use pipeline::{PipelineConfig, PipelineStage, PipelineStep, StageExecutionResult};
 pub use probe::ProbeResult;
 

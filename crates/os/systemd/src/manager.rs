@@ -281,3 +281,205 @@ impl ServiceManager {
         Ok(())
     }
 }
+
+/// Common trait implemented by both the in-process virtual supervisor and host systemd controllers.
+#[async_trait::async_trait]
+pub trait SystemdSupervisor: Send + Sync {
+    async fn start_unit(&self, name: &str) -> Result<(), String>;
+    async fn stop_unit(&self, name: &str) -> Result<(), String>;
+    async fn restart_unit(&self, name: &str) -> Result<(), String>;
+    async fn reload_unit(&self, name: &str) -> Result<(), String>;
+    async fn unit_status(&self, name: &str) -> Option<UnitStatus>;
+    async fn list_units(&self) -> Vec<UnitStatus>;
+}
+
+/// The in-process DAG service supervisor for development, testing, and desktop shell.
+pub type VirtualSupervisor = ServiceManager;
+
+#[async_trait::async_trait]
+impl SystemdSupervisor for ServiceManager {
+    async fn start_unit(&self, name: &str) -> Result<(), String> {
+        ServiceManager::start_unit(self, name)
+    }
+
+    async fn stop_unit(&self, name: &str) -> Result<(), String> {
+        ServiceManager::stop_unit(self, name)
+    }
+
+    async fn restart_unit(&self, name: &str) -> Result<(), String> {
+        ServiceManager::restart_unit(self, name)
+    }
+
+    async fn reload_unit(&self, name: &str) -> Result<(), String> {
+        ServiceManager::reload_unit(self, name)
+    }
+
+    async fn unit_status(&self, name: &str) -> Option<UnitStatus> {
+        self.get_unit_status(name).ok()
+    }
+
+    async fn list_units(&self) -> Vec<UnitStatus> {
+        ServiceManager::list_units(self)
+    }
+}
+
+/// Controller for the host Linux systemd init system (e.g. on production VPS or DBFR).
+#[derive(Debug, Default, Clone)]
+pub struct HostSystemdBackend {
+    /// Whether to scope commands to the user session (`systemctl --user`).
+    pub user_mode: bool,
+}
+
+impl HostSystemdBackend {
+    #[must_use]
+    pub fn new(user_mode: bool) -> Self {
+        Self { user_mode }
+    }
+
+    fn run_systemctl(&self, action: &str, name: &str) -> Result<(), String> {
+        #[cfg(unix)]
+        {
+            let mut cmd = std::process::Command::new("systemctl");
+            if self.user_mode {
+                cmd.arg("--user");
+            }
+            cmd.arg(action).arg(name);
+            let output = cmd.output().map_err(|e| format!("failed to execute systemctl: {e}"))?;
+            if output.status.success() {
+                Ok(())
+            } else {
+                let err = String::from_utf8_lossy(&output.stderr);
+                Err(format!("systemctl {action} failed: {}", err.trim()))
+            }
+        }
+        #[cfg(not(unix))]
+        {
+            let _ = (action, name);
+            Err("host systemd is only available on Unix/Linux".to_string())
+        }
+    }
+}
+
+#[async_trait::async_trait]
+impl SystemdSupervisor for HostSystemdBackend {
+    async fn start_unit(&self, name: &str) -> Result<(), String> {
+        self.run_systemctl("start", name)
+    }
+
+    async fn stop_unit(&self, name: &str) -> Result<(), String> {
+        self.run_systemctl("stop", name)
+    }
+
+    async fn restart_unit(&self, name: &str) -> Result<(), String> {
+        self.run_systemctl("restart", name)
+    }
+
+    async fn reload_unit(&self, name: &str) -> Result<(), String> {
+        self.run_systemctl("reload", name)
+    }
+
+    async fn unit_status(&self, name: &str) -> Option<UnitStatus> {
+        #[cfg(unix)]
+        {
+            let mut cmd = std::process::Command::new("systemctl");
+            if self.user_mode {
+                cmd.arg("--user");
+            }
+            cmd.args(["show", name, "--property=ActiveState,SubState,MainPID,Description"]);
+            let output = cmd.output().ok()?;
+            if !output.status.success() {
+                return None;
+            }
+            let text = String::from_utf8_lossy(&output.stdout);
+            let mut active = "inactive";
+            let mut sub = "dead".to_string();
+            let mut pid = None;
+            let mut desc = name.to_string();
+            for line in text.lines() {
+                if let Some(val) = line.strip_prefix("ActiveState=") {
+                    active = val;
+                } else if let Some(val) = line.strip_prefix("SubState=") {
+                    sub = val.to_string();
+                } else if let Some(val) = line.strip_prefix("MainPID=") {
+                    pid = val.parse::<u32>().ok().filter(|&p| p > 0);
+                } else if let Some(val) = line.strip_prefix("Description=") {
+                    desc = val.to_string();
+                }
+            }
+            let state = match active {
+                "active" => ActiveState::Active,
+                "reloading" => ActiveState::Reloading,
+                "inactive" => ActiveState::Inactive,
+                "failed" => ActiveState::Failed,
+                "activating" => ActiveState::Activating,
+                "deactivating" => ActiveState::Deactivating,
+                _ => ActiveState::Inactive,
+            };
+            Some(UnitStatus {
+                name: name.to_string(),
+                unit_type: if name.ends_with(".target") { UnitType::Target } else { UnitType::Service },
+                description: desc,
+                state,
+                sub_state: sub,
+                main_pid: pid,
+                uptime_secs: None,
+                restart_count: 0,
+                dependencies: Vec::new(),
+            })
+        }
+        #[cfg(not(unix))]
+        {
+            let _ = name;
+            None
+        }
+    }
+
+    async fn list_units(&self) -> Vec<UnitStatus> {
+        #[cfg(unix)]
+        {
+            let mut cmd = std::process::Command::new("systemctl");
+            if self.user_mode {
+                cmd.arg("--user");
+            }
+            cmd.args(["list-units", "--type=service,target", "--all", "--plain", "--no-legend"]);
+            let Ok(output) = cmd.output() else { return Vec::new() };
+            if !output.status.success() {
+                return Vec::new();
+            }
+            let text = String::from_utf8_lossy(&output.stdout);
+            let mut units = Vec::new();
+            for line in text.lines() {
+                let parts: Vec<&str> = line.split_whitespace().collect();
+                if parts.len() >= 4 {
+                    let name = parts[0];
+                    let active = parts[2];
+                    let sub = parts[3];
+                    let state = match active {
+                        "active" => ActiveState::Active,
+                        "reloading" => ActiveState::Reloading,
+                        "failed" => ActiveState::Failed,
+                        "activating" => ActiveState::Activating,
+                        "deactivating" => ActiveState::Deactivating,
+                        _ => ActiveState::Inactive,
+                    };
+                    units.push(UnitStatus {
+                        name: name.to_string(),
+                        unit_type: if name.ends_with(".target") { UnitType::Target } else { UnitType::Service },
+                        description: parts[4..].join(" "),
+                        state,
+                        sub_state: sub.to_string(),
+                        main_pid: None,
+                        uptime_secs: None,
+                        restart_count: 0,
+                        dependencies: Vec::new(),
+                    });
+                }
+            }
+            units
+        }
+        #[cfg(not(unix))]
+        {
+            Vec::new()
+        }
+    }
+}

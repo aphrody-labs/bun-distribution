@@ -955,6 +955,7 @@ mod native {
         RUNTIME.get_or_init(|| {
             tokio::runtime::Builder::new_multi_thread()
                 .enable_all()
+                .thread_stack_size(8 * 1024 * 1024)
                 .build()
                 .expect("aphrody-ffi: failed to build the tokio runtime")
         })
@@ -1264,12 +1265,19 @@ mod native {
 
         #[test]
         fn shenron_run_captured_runs_in_process() {
-            let json = CString::new(r#"["auth", "status", "--json"]"#).unwrap();
-            let res_ptr = unsafe { shenron_run_captured(json.as_ptr()) };
-            assert!(!res_ptr.is_null());
-            let text = unsafe { CStr::from_ptr(res_ptr) }.to_str().unwrap();
-            assert!(text.contains("code"));
-            unsafe { shenron_string_free(res_ptr) };
+            std::thread::Builder::new()
+                .stack_size(8 * 1024 * 1024)
+                .spawn(|| {
+                    let json = CString::new(r#"["auth", "status", "--json"]"#).unwrap();
+                    let res_ptr = unsafe { shenron_run_captured(json.as_ptr()) };
+                    assert!(!res_ptr.is_null());
+                    let text = unsafe { CStr::from_ptr(res_ptr) }.to_str().unwrap();
+                    assert!(text.contains("code"));
+                    unsafe { shenron_string_free(res_ptr) };
+                })
+                .expect("failed to spawn test thread")
+                .join()
+                .expect("test thread panicked");
         }
     }
 }

@@ -223,3 +223,19 @@ export async function registerSubsystem(spec: SubsystemSpec, endpoint = defaultE
   });
   return client;
 }
+
+export * as systemd from "./systemd.ts";
+export {
+  formatJournal,
+  getWatchdogUsec,
+  journal,
+  notifyReady,
+  notifyStatus,
+  notifyStopping,
+  notifyWatchdog,
+  sdNotify,
+  startWatchdogLoop,
+  SyslogPriority,
+  type SyslogLevel,
+} from "./systemd.ts";
+

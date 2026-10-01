@@ -164,7 +164,10 @@ pub fn get_service_statuses(
     let mut statuses = Vec::new();
 
     for service in selected {
-        let unit = service.systemd_unit_name();
+        // Status describes the catalogued unit itself. In particular, a timer
+        // must be queried as `*.timer`; mapping it to its associated service
+        // reports an active timer as inactive whenever its service is idle.
+        let unit = service.unit.clone();
         let (active, state) = if is_local {
             let out = Command::new("systemctl").args(["is-active", &unit]).output().ok();
             match out {

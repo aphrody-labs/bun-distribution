@@ -7,7 +7,7 @@ agent surface. The facade is `aphrody-shell`; implementations are `aphrody-nu`,
 
 Contracts owns `aphrody-subsystem`, `aphrody-agent-proto` and
 `aphrody-kernel-client`, consumed through sibling paths. The agent stays across a
-process boundary; there is no AI dependency or Bun workspace here.
+process boundary; there is no AI dependency here. The only Bun package is `@aphrody/shell-web`.
 
 ## Runtime
 
@@ -23,10 +23,13 @@ upstream notices and root Cargo patches in consuming workspaces.
 
 ## WASM, web and Tauri
 
+Current state and fact-check: [STATUS](./STATUS.md). Plan: [wasm-stack-definitive](../../plans/shell/wasm-stack-definitive.md).
+
 - `aphrody-terminal-core`: portable Rio VT state (extracted from the backend, re-exported there).
 - `aphrody-shell-web` (`wasm32-unknown-unknown`): `WebTerminal`, backend-less `WebShell`, wire frames.
   `scripts/build/shell/build-wasm.sh` emits `packages/shell/web/pkg` (gitignored).
 - `@aphrody/shell-web`: WebSocket (to `serve`), Tauri and local transports.
+- `aphrody-shell-session`, `aphrody-shell-vfs`: engine/session seam and in-memory VFS (staged, not yet consumed).
 - `aphrody-shell-tauri`: Tauri 3 plugin over native PTY sessions. Registered via
   `aphrody_shell_tauri::init()`; wired in `crates/ui/app` (plugin + `aphrody-shell-tauri:default` capability).
 - Verification: `bun test` in `packages/shell/web` (WASM in Bun; real headless Chrome + live PTY backend with

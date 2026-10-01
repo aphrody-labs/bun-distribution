@@ -78,6 +78,36 @@ pub unsafe extern "C" fn aphrody_web_strip_tags(html: *const c_char) -> *mut c_c
     unsafe { text::web_internal_strip_tags(html) }
 }
 
+/// Canonical link extraction through the existing text owner.
+///
+/// # Safety
+/// Both arguments must be null or readable NUL-terminated strings.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn aphrody_web_extract_links(
+    html: *const c_char,
+    base_url: *const c_char,
+) -> *mut c_char {
+    unsafe { text::web_internal_extract_links(html, base_url) }
+}
+
+/// Canonical plain-text extraction.
+///
+/// # Safety
+/// `html` must be null or a readable NUL-terminated string.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn aphrody_web_extract_text(html: *const c_char) -> *mut c_char {
+    unsafe { text::web_internal_extract_text(html) }
+}
+
+/// Canonical URL normalization.
+///
+/// # Safety
+/// `url` must be null or a readable NUL-terminated string.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn aphrody_web_normalize_url(url: *const c_char) -> *mut c_char {
+    unsafe { text::web_internal_normalize_url(url) }
+}
+
 /// Canonical DOM parser. Destroy its result with `aphrody_web_tree_destroy`.
 ///
 /// # Safety

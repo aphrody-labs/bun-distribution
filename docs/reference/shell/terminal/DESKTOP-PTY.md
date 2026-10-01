@@ -8,6 +8,9 @@ order stays in `PLAN.md`; this document fixes the interfaces and the acceptance 
 
 ## Historical baseline (2026-09-27)
 
+> Superseded 2026-10-02: the shipped design is `aphrody-shell-tauri` (`aphrody_shell_open/_channel/write/resize/close`)
+> and `rio-vt` is adopted in `aphrody-terminal-core`. See [STATUS](../../../products/shell/STATUS.md).
+
 The table below records the state before the desktop PTY integration. It is
 not a current-status report: `aphrody-ui` now has an in-process `PtyRegistry`,
 `aphrody_pty_*` commands and a wterm/Ghostty terminal view. This document's

@@ -5,6 +5,7 @@ Open, write to, resize and close native shell sessions.
 #### This default permission set includes the following:
 
 - `allow-aphrody-shell-open`
+- `allow-aphrody-shell-open-channel`
 - `allow-aphrody-shell-write`
 - `allow-aphrody-shell-resize`
 - `allow-aphrody-shell-close`
@@ -66,6 +67,32 @@ Enables the aphrody_shell_open command without any pre-configured scope.
 <td>
 
 Denies the aphrody_shell_open command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`aphrody-shell-tauri:allow-aphrody-shell-open-channel`
+
+</td>
+<td>
+
+Enables the aphrody_shell_open_channel command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`aphrody-shell-tauri:deny-aphrody-shell-open-channel`
+
+</td>
+<td>
+
+Denies the aphrody_shell_open_channel command without any pre-configured scope.
 
 </td>
 </tr>

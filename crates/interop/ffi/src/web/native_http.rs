@@ -6,7 +6,9 @@
 
 #[cfg(feature = "native-stealth")]
 use std::sync::Arc;
-use std::{ffi::c_char, sync::OnceLock, time::Duration};
+use std::{collections::HashMap, ffi::c_char, sync::OnceLock, time::Duration};
+
+use serde::Deserialize;
 
 use obscura_net::ObscuraHttpClient;
 #[cfg(feature = "native-stealth")]
@@ -119,11 +121,140 @@ pub unsafe extern "C" fn aphrody_web_obscura_fetch_submit(
     })
 }
 
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+struct HttpRequest {
+    url: String,
+    #[serde(default = "default_method")]
+    method: String,
+    #[serde(default)]
+    headers: HashMap<String, String>,
+    #[serde(default)]
+    body: String,
+    #[serde(default)]
+    stealth: bool,
+    #[serde(default = "default_timeout")]
+    timeout_ms: u32,
+}
+
+fn default_method() -> String {
+    "GET".into()
+}
+fn default_timeout() -> u32 {
+    30_000
+}
+
+async fn request_json(request: HttpRequest) -> String {
+    let url = match parse_url(Some(&request.url)) {
+        Ok(url) => url,
+        Err(error) => return error_json_string(error),
+    };
+    if !matches!(
+        request.method.as_str(),
+        "GET" | "HEAD" | "POST" | "PUT" | "DELETE" | "PATCH" | "OPTIONS"
+    ) {
+        return error_json_string("unsupported HTTP method");
+    }
+    if matches!(request.method.as_str(), "GET" | "HEAD") && !request.body.is_empty() {
+        return error_json_string("GET and HEAD cannot carry a request body");
+    }
+    #[cfg(not(feature = "native-stealth"))]
+    if request.stealth {
+        return error_json_string("native-stealth feature is not installed");
+    }
+    let send = async {
+        if request.stealth {
+            #[cfg(feature = "native-stealth")]
+            {
+                return stealth_client()
+                    .send_single(
+                        &request.method,
+                        &url,
+                        &request.headers,
+                        request.body.as_bytes(),
+                        false,
+                        false,
+                    )
+                    .await;
+            }
+            #[cfg(not(feature = "native-stealth"))]
+            {
+                return Err(obscura_net::ObscuraNetError::Network(
+                    "native-stealth feature is not installed".into(),
+                ));
+            }
+        }
+        plain_client()
+            .send_single(&request.method, &url, &request.headers, request.body.as_bytes())
+            .await
+    };
+    let result =
+        tokio::time::timeout(Duration::from_millis(u64::from(request.timeout_ms)), send).await;
+    match result {
+        Ok(Ok(response)) => json!({
+            "ok": true, "url": response.url.to_string(), "status": response.status,
+            "headers": response.headers, "body": response.text(),
+            "transport": if request.stealth { "obscura-wreq" } else { "obscura-reqwest" },
+        })
+        .to_string(),
+        Ok(Err(_)) => error_json_string("native HTTP request failed"),
+        Err(_) => error_json_string("native HTTP request timed out"),
+    }
+}
+
+/// Submit one authenticated request without redirect following or shared cookie injection.
+/// The caller supplies explicit method, headers and UTF-8 body in a JSON object.
+/// Collect the result through the existing job API and free it through its existing deallocator.
+///
+/// # Safety
+/// `request_ptr` must point to readable NUL-terminated JSON for the duration of this call.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn aphrody_web_http_request_submit(request_ptr: *const c_char) -> u64 {
+    guard(0, || {
+        let Some(raw) = (unsafe { borrow_str(request_ptr) }) else {
+            return jobs::resolved(error_json_string("HTTP request JSON is missing"));
+        };
+        match serde_json::from_str::<HttpRequest>(raw) {
+            Ok(request) => jobs::submit(0, request_json(request)),
+            Err(_) => jobs::resolved(error_json_string("HTTP request JSON is invalid")),
+        }
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use std::ffi::CString;
 
     use super::*;
+
+    #[tokio::test]
+    async fn authenticated_request_rejects_invalid_contract_without_network() {
+        let mut request: HttpRequest =
+            serde_json::from_value(json!({"url":"file:///tmp/nope"})).unwrap();
+        assert!(request_json(request).await.contains("only http and https"));
+        request =
+            serde_json::from_value(json!({"url":"https://example.org", "method":"TRACE"})).unwrap();
+        assert!(request_json(request).await.contains("unsupported HTTP method"));
+        request = serde_json::from_value(
+            json!({"url":"https://example.org", "method":"GET", "body":"payload"}),
+        )
+        .unwrap();
+        assert!(request_json(request).await.contains("GET and HEAD cannot carry"));
+        assert!(
+            serde_json::from_value::<HttpRequest>(
+                json!({"url":"https://example.org", "redirect":"follow"})
+            )
+            .is_err()
+        );
+    }
+
+    #[cfg(not(feature = "native-stealth"))]
+    #[tokio::test]
+    async fn authenticated_request_never_falls_back_from_missing_stealth() {
+        let request: HttpRequest =
+            serde_json::from_value(json!({"url":"https://example.org", "stealth":true})).unwrap();
+        assert!(request_json(request).await.contains("native-stealth feature is not installed"));
+    }
 
     #[test]
     fn rejects_non_http_without_network() {

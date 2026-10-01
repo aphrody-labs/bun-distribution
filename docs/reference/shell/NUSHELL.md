@@ -14,7 +14,7 @@ complétions communautaires et les chemins de configuration Bash/Nu, voir le
 
 | Surface | Emplacement | Rôle |
 | --- | --- | --- |
-| Moteur embarqué | `crates/aphrody-nu` | Construit un contexte Nushell dans le processus Aphrody et évalue du code Nu |
+| Moteur embarqué | `crates/shell/nu` | Construit un contexte Nushell dans le processus Aphrody et évalue du code Nu |
 | Script de maintenance | `scripts/shell_maintenance_workflow.nu` | Audite et nettoie certains artefacts dans le répertoire courant |
 | Nettoyage Windows | `scripts/winclean.nu` | Pipeline de purge et d’optimisation Windows, à effets système |
 | Configuration interactive | Hors dépôt, `~/.config/nushell/{env.nu,config.nu}` | Plugins, fonctions, complétions, invite et alias locaux |
@@ -37,10 +37,10 @@ variables d’environnement parent sont copiées directement dans `EngineState`;
 
 Le shell interactif et les plugins Nu du poste sont des outils facultatifs,
 installés hors du graphe Cargo de ce dépôt par
-[`aphrody-infra/scripts/setup.nu`](../../aphrody-infra/scripts/setup.nu) avec
+[`scripts/setup.nu`](../../../scripts/setup.nu) avec
 `--developer-cli` (inspection) ou `--developer-cli --apply` (installation et
 enregistrement des plugins). La liste maintenue est dans
-[`developer-cli-tools.json`](../../aphrody-infra/config/developer-cli-tools.json).
+[`developer-cli-tools.json`](../../../config/developer-cli-tools.json).
 
 ## Moteur `aphrody-nu`
 

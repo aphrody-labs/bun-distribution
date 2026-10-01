@@ -1,0 +1,56 @@
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+# Shell, terminal and OS: consolidated status (2026-10-02)
+
+Source of truth for what exists. Older plans and audits are kept as history and link here.
+Evidence: repo read, native tests, wasm32 checks, a real Chrome run and a real Tauri webview run.
+
+## Layers
+
+| Layer | Crate / package | State | Targets |
+| --- | --- | --- | --- |
+| VT state | `aphrody-terminal-core` (rio-vt 0.5.28) | real, tested | native, wasm32 |
+| Session seam | `aphrody-shell-session` | real, tested, **no consumer yet** | native, wasm32 (checked) |
+| Virtual FS | `aphrody-shell-vfs` (`MemVfs`, conformance) | real, tested, **no consumer yet** | native, wasm32 (checked) |
+| Web bindings | `aphrody-shell-web` (`WebTerminal`, `WebShell`, `LocalShell` with 8 builtins) | real, toy engine | wasm32 |
+| TS client | `@aphrody/shell-web` (WebSocket, Tauri, local transports) | real, tested in Bun and headless Chrome | web |
+| PTY + WebSocket server | `aphrody-terminal-backend` (auth, Origin/Host, session/idle/frame/output limits) | real, tested | native only |
+| Tauri plugin | `aphrody-shell-tauri` (`open`, `open_channel`, `write`, `resize`, `close`) | real, tested, wired in `crates/ui/app` | native (Tauri 3 alpha.3) |
+| Webview e2e | `aphrody-shell-tauri-e2e` + `scripts/build/shell/tauri-e2e.sh` | passes on WebKitGTK/Broadway | Linux |
+| Nushell | `aphrody-nu` (nu 0.115.1) | real | native only; no upstream wasm32 target |
+| TUI | `aphrody-tui` | real | native only |
+| Systemd | `aphrody-systemd` | virtual DAG, journal, `sd_notify`; `start_unit`/`stop_unit` only flip state. Restart policy is parsed, not enforced. Real control only via `HostSystemdBackend` | native |
+
+## Not built yet (wave B-D of the plan)
+
+`LocalShell` on session + vfs (T3), OPFS `Vfs` + worker (T5), wasm coreutils (T7), Nushell wasm spike (T9),
+`SandboxHost` + cloud adapter (T11-T12), worker/sandbox TS transports (T8), UI transport selection (T13), gates (T14).
+Staying native on purpose: Nushell, TUI, PTY.
+
+## Fact-check against upstreams
+
+| Item | Finding | Consequence |
+| --- | --- | --- |
+| brush-core 0.5.0 / brush-parser 0.4.0 | compile for wasm32-unknown-unknown (scratch check); upstream only smoke-tests wasip2 | candidate engine behind `ShellEngine`; unproven in a browser |
+| uutils | 0.12.0 ships wasip1/wasip2 tarballs; our `uu_*` pins are 0.10.0 | best wasm coreutils base; bump is an os-owner task |
+| Nushell | no wasm32 target upstream | keep native; stream output to the web terminal |
+| xterm.js | 6.0.0, canvas renderer removed, write callback gives flow control | default renderer |
+| ghostty-web | 0.4.0, no release since 2025-12 | optional renderer behind the same transport |
+| Tauri | v2.12.1 stable; v3 alpha.4 (2026-10-01) drops `macos-private-api`; workspace mixes alpha.2/3/4 | align the Tauri family in one owner-led bump, then drop `macOSPrivateApi` in the e2e config |
+| portable-pty | 0.9.0 exists; the 2026-09-27 desktop-PTY note says 0.9.0 breaks headless Windows clients (`ESC[6n`) | stay on 0.8 (kept; a 0.9 bump was tried natively and reverted) |
+| getrandom | lock has 0.1, 0.2, 0.3, 0.4 | brush in wasm needs `--cfg getrandom_backend="wasm_js"` for 0.3 |
+| Context7 | confirms Tauri v2 plugin/RunEvent/capability shapes and xterm `write` callback; no v3 alpha docs | verify v3 behaviour from crate source |
+| `~/source` | `bun run sources` and `sync` (dry run): every managed pin is present and ok, nothing to sync | no change needed |
+
+## Corrected in this pass
+
+Stale paths in the terminal README and NUSHELL.md, broken NUSHELL links, backend line count, nu feature list,
+DESKTOP-PTY.md (marked superseded), audit T-01 and T-05 (marked fixed).
+
+## Known doc debt (not fixed here)
+
+- `docs/reference/os/integrations/KOHARU.md` (13 dead links) and `docs/products/os/*` (6 dead links).
+- `ARCHITECTURE.md` over-claims the systemd restart policy; `ARCHITECTURE-GAPS-STATUS.md` has stale script paths.
+- About 25 os crates have no crate doc (systemd, proc, sandbox, jobs, kernel, search first).
+- `docs/plans/os/native-runtime-yolo.md` is transient session state, not a plan.
+- Duplicated `_source` / `patches` notes under products and reference; two terminal-design docs disagree on Rio.
+- `aphrody-wsl` version is `1.0.0`, other os crates `1.0.0-canary`.

@@ -1,3 +1,5 @@
+> Update 2026-10-02: T-01 (token, Origin, Host, loopback) and T-05 (session, idle, frame and output limits) are fixed in `crates/shell/terminal-backend` (`tests/limits.rs`). Line citations below predate the move of `terminal.rs` to `aphrody-terminal-core`.
+
 # Audit bas niveau — axe « terminal » (couche terminal, pty, shell)
 
 Date : 2026-10-01. Dépôt : /home/aphro/aphrody (branche main, arbre sale). Niveau de preuve global : **P1 (statique)**.

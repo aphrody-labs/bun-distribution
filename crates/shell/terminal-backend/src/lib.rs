@@ -25,7 +25,15 @@
 
 pub mod coord;
 mod session;
-use std::{net::SocketAddr, path::PathBuf};
+use std::{
+    net::SocketAddr,
+    path::PathBuf,
+    sync::{
+        Arc, Mutex,
+        atomic::{AtomicU64, AtomicUsize, Ordering},
+    },
+    time::{Duration, Instant},
+};
 
 use anyhow::{Context as _, Result};
 pub use coord::{
@@ -71,7 +79,37 @@ pub struct PtyConfig {
     /// Authentication token required to connect to the WebSocket terminal.
     /// If [`None`], the backend falls back to the `APHRODY_OS_AUTH_TOKEN` environment variable.
     pub auth_token: Option<String>,
+    /// Maximum concurrent sessions accepted by [`serve`]; further connections are refused with
+    /// HTTP 503. [`None`] means unlimited.
+    pub max_sessions: Option<usize>,
+    /// Close a session after this long without client input or shell output. [`None`] disables.
+    pub idle_ttl: Option<Duration>,
+    /// Largest accepted client frame in bytes (binary, text or decoded `data` bytes); larger
+    /// frames are dropped without touching the pty. [`None`] means unlimited.
+    pub max_input_frame_bytes: Option<usize>,
+    /// Total shell output bytes forwarded per session before it is closed. [`None`] means
+    /// unlimited.
+    pub max_output_bytes: Option<u64>,
 }
+
+/// Environment variable: maximum concurrent sessions.
+pub const ENV_MAX_SESSIONS: &str = "APHRODY_SHELL_MAX_SESSIONS";
+/// Environment variable: idle TTL in seconds (`0` disables).
+pub const ENV_IDLE_TTL_SECS: &str = "APHRODY_SHELL_IDLE_TTL_SECS";
+/// Environment variable: maximum client frame size in bytes (`0` disables).
+pub const ENV_MAX_INPUT_FRAME: &str = "APHRODY_SHELL_MAX_INPUT_FRAME";
+/// Environment variable: maximum output bytes per session (`0` disables).
+pub const ENV_MAX_OUTPUT_BYTES: &str = "APHRODY_SHELL_MAX_OUTPUT_BYTES";
+
+/// Safe defaults applied by [`serve`] on non-loopback binds when a limit is not configured:
+/// 8 sessions, 15 min idle, 1 MiB per input frame, 8 MiB output per session.
+pub const EXPOSED_MAX_SESSIONS: usize = 8;
+/// See [`EXPOSED_MAX_SESSIONS`].
+pub const EXPOSED_IDLE_TTL: Duration = Duration::from_secs(15 * 60);
+/// See [`EXPOSED_MAX_SESSIONS`].
+pub const EXPOSED_MAX_INPUT_FRAME_BYTES: usize = 1024 * 1024;
+/// See [`EXPOSED_MAX_SESSIONS`].
+pub const EXPOSED_MAX_OUTPUT_BYTES: u64 = 8 * 1024 * 1024;
 
 impl Default for PtyConfig {
     fn default() -> Self {
@@ -83,11 +121,49 @@ impl Default for PtyConfig {
             args: Vec::new(),
             env: Vec::new(),
             auth_token: None,
+            max_sessions: None,
+            idle_ttl: None,
+            max_input_frame_bytes: None,
+            max_output_bytes: None,
         }
     }
 }
 
 impl PtyConfig {
+    /// Override the session limits from the `APHRODY_SHELL_*` environment variables
+    /// ([`ENV_MAX_SESSIONS`], [`ENV_IDLE_TTL_SECS`], [`ENV_MAX_INPUT_FRAME`],
+    /// [`ENV_MAX_OUTPUT_BYTES`]). Unset or unparsable variables leave the field unchanged;
+    /// a value of `0` disables that limit.
+    #[must_use]
+    pub fn with_env_limits(mut self) -> Self {
+        fn var(name: &str) -> Option<u64> {
+            std::env::var(name).ok()?.trim().parse().ok()
+        }
+        if let Some(v) = var(ENV_MAX_SESSIONS) {
+            self.max_sessions = (v > 0).then(|| usize::try_from(v).unwrap_or(usize::MAX));
+        }
+        if let Some(v) = var(ENV_IDLE_TTL_SECS) {
+            self.idle_ttl = (v > 0).then(|| Duration::from_secs(v));
+        }
+        if let Some(v) = var(ENV_MAX_INPUT_FRAME) {
+            self.max_input_frame_bytes = (v > 0).then(|| usize::try_from(v).unwrap_or(usize::MAX));
+        }
+        if let Some(v) = var(ENV_MAX_OUTPUT_BYTES) {
+            self.max_output_bytes = (v > 0).then_some(v);
+        }
+        self
+    }
+
+    /// Fill every unset limit with the exposure-safe defaults ([`EXPOSED_MAX_SESSIONS`] etc.).
+    #[must_use]
+    pub fn with_exposed_defaults(mut self) -> Self {
+        self.max_sessions.get_or_insert(EXPOSED_MAX_SESSIONS);
+        self.idle_ttl.get_or_insert(EXPOSED_IDLE_TTL);
+        self.max_input_frame_bytes.get_or_insert(EXPOSED_MAX_INPUT_FRAME_BYTES);
+        self.max_output_bytes.get_or_insert(EXPOSED_MAX_OUTPUT_BYTES);
+        self
+    }
+
     /// Return the explicit auth token if configured, or fall back to `APHRODY_OS_AUTH_TOKEN` from env.
     pub fn effective_auth_token(&self) -> Option<String> {
         self.auth_token.clone().or_else(|| {
@@ -341,6 +417,13 @@ pub async fn serve(addr: SocketAddr, mut cfg: PtyConfig) -> Result<()> {
         }
     }
 
+    // Env limits are opt-in everywhere; a non-loopback bind additionally gets safe defaults.
+    cfg = cfg.with_env_limits();
+    if !addr.ip().is_loopback() {
+        cfg = cfg.with_exposed_defaults();
+    }
+    let active = Arc::new(AtomicUsize::new(0));
+
     let listener = TcpListener::bind(addr).await.with_context(|| format!("bind {addr}"))?;
     info!("aphrody-terminal-backend listening on {addr}");
 
@@ -353,8 +436,9 @@ pub async fn serve(addr: SocketAddr, mut cfg: PtyConfig) -> Result<()> {
         let (stream, peer) = listener.accept().await.context("accept")?;
         info!("new connection from {peer}");
         let cfg = cfg.clone();
+        let active = Arc::clone(&active);
         tokio::spawn(async move {
-            if let Err(e) = handle_conn(stream, cfg).await {
+            if let Err(e) = handle_conn_limited(stream, cfg, active).await {
                 warn!("session error: {e:#}");
             }
         });
@@ -368,8 +452,50 @@ pub async fn serve(addr: SocketAddr, mut cfg: PtyConfig) -> Result<()> {
 /// The session lasts until the client leaves or the shell exits. When the client leaves, the
 /// shell is stopped (`TerminateProcess` on Windows, `SIGHUP` on Unix) and the pty is closed;
 /// when the shell exits, the remaining output is flushed and the WebSocket is closed.
-#[allow(clippy::result_large_err)]
+#[cfg(test)]
 async fn handle_conn(stream: TcpStream, cfg: PtyConfig) -> Result<()> {
+    handle_conn_limited(stream, cfg, Arc::new(AtomicUsize::new(0))).await
+}
+
+/// RAII slot in the concurrent-session counter.
+struct SessionSlot(Arc<AtomicUsize>);
+
+impl SessionSlot {
+    fn try_acquire(active: &Arc<AtomicUsize>, max: Option<usize>) -> Option<Self> {
+        let prev = active.fetch_add(1, Ordering::AcqRel);
+        if max.is_some_and(|m| prev >= m) {
+            active.fetch_sub(1, Ordering::AcqRel);
+            return None;
+        }
+        Some(Self(Arc::clone(active)))
+    }
+}
+
+impl Drop for SessionSlot {
+    fn drop(&mut self) {
+        self.0.fetch_sub(1, Ordering::AcqRel);
+    }
+}
+
+fn unavailable_response(reason: &str) -> ErrorResponse {
+    let body = format!("{{\"error\":\"{reason}\"}}");
+    tokio_tungstenite::tungstenite::http::Response::builder()
+        .status(StatusCode::SERVICE_UNAVAILABLE)
+        .header("Content-Type", "application/json")
+        .header("Connection", "close")
+        .body(Some(body))
+        .unwrap_or_else(|_| tokio_tungstenite::tungstenite::http::Response::new(None))
+}
+
+#[allow(clippy::result_large_err)]
+async fn handle_conn_limited(
+    stream: TcpStream,
+    cfg: PtyConfig,
+    active: Arc<AtomicUsize>,
+) -> Result<()> {
+    let slot: Arc<Mutex<Option<SessionSlot>>> = Arc::new(Mutex::new(None));
+    let slot_cb = Arc::clone(&slot);
+    let max_sessions = cfg.max_sessions;
     let bound_addr = stream.local_addr().ok();
     let auth_token = cfg.effective_auth_token();
 
@@ -401,6 +527,17 @@ async fn handle_conn(stream: TcpStream, cfg: PtyConfig) -> Result<()> {
                 return Err(unauthorized_response("authentication required"));
             }
 
+        // 4. Session quota (after auth so unauthenticated peers cannot consume slots).
+        match SessionSlot::try_acquire(&active, max_sessions) {
+            Some(s) => {
+                *slot_cb.lock().unwrap_or_else(std::sync::PoisonError::into_inner) = Some(s);
+            },
+            None => {
+                warn!("rejected websocket connection: session limit reached");
+                return Err(unavailable_response("too many sessions"));
+            },
+        }
+
         Ok(resp)
     };
 
@@ -409,14 +546,37 @@ async fn handle_conn(stream: TcpStream, cfg: PtyConfig) -> Result<()> {
         .context("WebSocket handshake")?;
     let (mut ws_sink, mut ws_source) = ws_stream.split();
 
+    // Held for the whole session; released on return.
+    let _slot = slot.lock().unwrap_or_else(std::sync::PoisonError::into_inner).take();
+
+    let start = Instant::now();
+    let last_activity = Arc::new(AtomicU64::new(0));
+    let touch = |a: &AtomicU64| {
+        a.store(u64::try_from(start.elapsed().as_millis()).unwrap_or(u64::MAX), Ordering::Relaxed);
+    };
+    let max_out = cfg.max_output_bytes;
+    let max_in = cfg.max_input_frame_bytes;
+    let idle_ttl = cfg.idle_ttl;
+
     let (events_tx, mut events_rx) = mpsc::channel::<PtyEvent>(256);
     let session = PtySession::spawn(&cfg, events_tx)?;
 
     // Forward pty output to the client, then close the WebSocket once the shell has exited.
+    let fwd_activity = Arc::clone(&last_activity);
     let mut forward_task = tokio::spawn(async move {
+        let mut sent: u64 = 0;
         while let Some(event) = events_rx.recv().await {
             match event {
                 PtyEvent::Output(data) => {
+                    sent = sent.saturating_add(data.len() as u64);
+                    if max_out.is_some_and(|m| sent > m) {
+                        warn!("session output cap exceeded; closing");
+                        break;
+                    }
+                    fwd_activity.store(
+                        u64::try_from(start.elapsed().as_millis()).unwrap_or(u64::MAX),
+                        Ordering::Relaxed,
+                    );
                     if ws_sink.send(Message::Binary(data)).await.is_err() {
                         break;
                     }
@@ -433,12 +593,25 @@ async fn handle_conn(stream: TcpStream, cfg: PtyConfig) -> Result<()> {
     // Read incoming WebSocket messages until the client leaves or the shell exits.
     let mut forward_done = false;
     loop {
+        let idle_wait = match idle_ttl {
+            Some(ttl) => {
+                let last = Duration::from_millis(last_activity.load(Ordering::Relaxed));
+                let idle = start.elapsed().saturating_sub(last);
+                if idle >= ttl {
+                    info!("closing idle session after {ttl:?}");
+                    break;
+                }
+                ttl - idle
+            },
+            None => Duration::from_secs(60 * 60 * 24 * 365),
+        };
         let msg = tokio::select! {
             msg = ws_source.next() => msg,
             _ = &mut forward_task => {
                 forward_done = true;
                 break;
             },
+            () = tokio::time::sleep(idle_wait) => continue,
         };
         let msg = match msg {
             Some(Ok(m)) => m,
@@ -449,7 +622,15 @@ async fn handle_conn(stream: TcpStream, cfg: PtyConfig) -> Result<()> {
             None => break,
         };
 
+        touch(&last_activity);
+        let oversize = |n: usize| max_in.is_some_and(|m| n > m);
         match msg {
+            Message::Binary(bytes) if oversize(bytes.len()) => {
+                warn!("dropped oversize binary frame ({} bytes)", bytes.len());
+            },
+            Message::Text(text) if oversize(text.len()) => {
+                warn!("dropped oversize text frame ({} bytes)", text.len());
+            },
             Message::Binary(bytes) => {
                 if session.write(bytes).await.is_err() {
                     break;
@@ -461,6 +642,9 @@ async fn handle_conn(stream: TcpStream, cfg: PtyConfig) -> Result<()> {
                     if let Err(e) = session.resize(cols, rows) {
                         debug!("{e:#}");
                     }
+                },
+                Ok(ControlMsg::Data { bytes }) if oversize(bytes.len()) => {
+                    warn!("dropped oversize data message ({} bytes)", bytes.len());
                 },
                 Ok(ControlMsg::Data { bytes }) => {
                     if session.write(bytes).await.is_err() {

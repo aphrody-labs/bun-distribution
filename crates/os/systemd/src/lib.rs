@@ -4,11 +4,13 @@
 
 pub mod journal;
 pub mod manager;
+pub mod notify;
 pub mod subsystem;
 pub mod unit;
 
 pub use journal::{Journal, JournalEntry, LogLevel};
-pub use manager::{ServiceManager, UnitStatus};
+pub use manager::{HostSystemdBackend, ServiceManager, SystemdSupervisor, UnitStatus, VirtualSupervisor};
+pub use notify::{notify, notify_ready, notify_reloading, notify_status, notify_stopping, notify_watchdog, spawn_watchdog_loop, watchdog_usec};
 pub use subsystem::SystemdSubsystem;
 pub use unit::{ActiveState, RestartPolicy, Unit, UnitType};
 
