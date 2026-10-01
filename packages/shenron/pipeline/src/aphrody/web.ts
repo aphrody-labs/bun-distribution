@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-/** Authenticated Aphrody Web crawl jobs. The index remains owned by BXC. */
+/** Authenticated crawl jobs and index access owned by Aphrody Web. */
 export interface AphrodyCrawlOptions {
 	baseUrl?: string;
 	token?: string;
