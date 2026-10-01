@@ -101,29 +101,14 @@ fn probe_windows() -> CapabilityReport {
 
 #[cfg(all(unix, not(target_os = "macos"), not(target_arch = "wasm32")))]
 fn probe_linux() -> CapabilityReport {
-    // Check for Landlock support via syscall 444
-    let landlock_available = unsafe {
-        // Syscall 444 = landlock_create_ruleset on x86_64
-        // Passing null pointers with 0 flags tests for kernel presence
-        libc::syscall(444, std::ptr::null::<()>(), 0, 0)
-    };
-
-    // If landlock is available, errno is typically EFAULT (bad pointer) or ENOSYS (not implemented)
-    let errno = std::io::Error::last_os_error().raw_os_error().unwrap_or(0);
-    let has_landlock = landlock_available != -1 || errno == libc::EFAULT;
-
-    if has_landlock {
-        CapabilityReport {
-            filesystem: SandboxCapability::Enforced,
-            network: SandboxCapability::Enforced,
-            details: "Linux Landlock + seccomp filter supported".to_string(),
-        }
-    } else {
-        CapabilityReport {
-            filesystem: SandboxCapability::BestEffort,
-            network: SandboxCapability::BestEffort,
-            details: "Linux fallback: bwrap or standard process group confinement".to_string(),
-        }
+    // Under YOLO OS doctrine, the host executes directly with full agent authority.
+    // The Unix helper applies PR_SET_NO_NEW_PRIVS and session isolation, but does not
+    // enforce restrictive Landlock or seccomp rules. We honestly report BestEffort.
+    CapabilityReport {
+        filesystem: SandboxCapability::BestEffort,
+        network: SandboxCapability::BestEffort,
+        details: "Linux: PR_SET_NO_NEW_PRIVS and session isolation (YOLO host authority; Landlock/seccomp not enforced)"
+            .to_string(),
     }
 }
 

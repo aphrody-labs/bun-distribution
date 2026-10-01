@@ -550,6 +550,9 @@ enum Commands {
         /// Répertoire de travail initial du shell
         #[arg(long)]
         cwd: Option<std::path::PathBuf>,
+        /// Jeton d'authentification pour sécuriser le WebSocket (défaut : $APHRODY_OS_AUTH_TOKEN ou généré)
+        #[arg(long)]
+        token: Option<String>,
     },
     /// Model Context Protocol — manage TOML servers, read legacy JSON, call tools.
     #[cfg(not(target_arch = "wasm32"))]
@@ -1739,8 +1742,8 @@ async fn dispatch(ctx: &GoogleContext, cli: Cli) -> miette::Result<()> {
         Some(Commands::Ssh { args }) => {
             commands::SshCommand { args }.execute(ctx).await?;
         },
-        Some(Commands::Term { addr, shell, cwd }) => {
-            commands::TermCommand { addr, shell, cwd }.execute(ctx).await?;
+        Some(Commands::Term { addr, shell, cwd, token }) => {
+            commands::TermCommand { addr, shell, cwd, token }.execute(ctx).await?;
         },
         Some(Commands::Mcp { action }) => match action {
             McpAction::Add { name, url, command } => {

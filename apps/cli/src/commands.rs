@@ -1917,25 +1917,52 @@ pub(crate) struct TermCommand {
     pub shell: Option<String>,
     /// Optional working directory forwarded to the backend.
     pub cwd: Option<PathBuf>,
+    /// Optional authentication token for WebSocket clients.
+    pub token: Option<String>,
 }
 
-#[async_trait]
-impl TerminalCommand for TermCommand {
-    async fn execute(&self, _ctx: &GoogleContext) -> miette::Result<()> {
+impl TermCommand {
+    pub(crate) fn validate_and_configure(&self) -> miette::Result<(SocketAddr, aphrody_terminal_backend::PtyConfig)> {
         let addr: SocketAddr = self
             .addr
             .parse()
             .map_err(|e| miette::miette!("invalid --addr '{}': {e}", self.addr))?;
+
+        let env_token = std::env::var("APHRODY_OS_AUTH_TOKEN")
+            .ok()
+            .filter(|s| !s.is_empty());
+        let explicit_token = self.token.clone().or(env_token);
+
+        // Require authentication token when binding to non-loopback addresses (e.g. 0.0.0.0)
+        if !addr.ip().is_loopback() && explicit_token.is_none() {
+            return Err(miette::miette!(
+                "binding aphrody term to non-loopback address '{addr}' requires authentication; specify --token or set APHRODY_OS_AUTH_TOKEN"
+            ));
+        }
+
+        let token = explicit_token.unwrap_or_else(aphrody_terminal_backend::generate_token);
 
         let cfg = aphrody_terminal_backend::PtyConfig {
             cols: 80,
             rows: 24,
             shell: self.shell.clone(),
             cwd: self.cwd.clone(),
+            auth_token: Some(token),
             ..aphrody_terminal_backend::PtyConfig::default()
         };
 
-        eprintln!("aphrody term: ws://{addr} (open the WASM UI to connect)");
+        Ok((addr, cfg))
+    }
+}
+
+#[async_trait]
+impl TerminalCommand for TermCommand {
+    async fn execute(&self, _ctx: &GoogleContext) -> miette::Result<()> {
+        let (addr, cfg) = self.validate_and_configure()?;
+        let token = cfg.auth_token.as_deref().unwrap_or("");
+
+        eprintln!("aphrody term: auth token: {token}");
+        eprintln!("aphrody term: ws://{addr}/?token={token} (open the WASM UI to connect)");
 
         tokio::select! {
             res = aphrody_terminal_backend::serve(addr, cfg) => {
@@ -2562,4 +2589,83 @@ async fn notebooklm_download(
     });
     println!("{payload:#}");
     Ok(())
+}
+
+#[cfg(test)]
+mod term_command_tests {
+    use super::*;
+
+    #[test]
+    fn term_command_rejects_non_loopback_without_auth() {
+        // Ensure env var is absent for this test
+        let _env_guard = std::env::var("APHRODY_OS_AUTH_TOKEN").ok();
+        unsafe { std::env::remove_var("APHRODY_OS_AUTH_TOKEN"); }
+
+        let cmd = TermCommand {
+            addr: "0.0.0.0:8788".to_string(),
+            shell: None,
+            cwd: None,
+            token: None,
+        };
+
+        let res = cmd.validate_and_configure();
+        assert!(res.is_err(), "non-loopback without token must be rejected");
+        let err_str = res.unwrap_err().to_string();
+        assert!(err_str.contains("non-loopback address"), "unexpected error: {err_str}");
+
+        if let Some(tok) = _env_guard {
+            unsafe { std::env::set_var("APHRODY_OS_AUTH_TOKEN", tok); }
+        }
+    }
+
+    #[test]
+    fn term_command_accepts_non_loopback_with_explicit_token() {
+        let cmd = TermCommand {
+            addr: "0.0.0.0:8788".to_string(),
+            shell: None,
+            cwd: None,
+            token: Some("custom-token-secret-1234567890".to_string()),
+        };
+
+        let (addr, cfg) = cmd.validate_and_configure().expect("should accept with explicit token");
+        assert_eq!(addr, "0.0.0.0:8788".parse().unwrap());
+        assert_eq!(cfg.auth_token.as_deref(), Some("custom-token-secret-1234567890"));
+    }
+
+    #[test]
+    fn term_command_generates_token_for_loopback_when_unset() {
+        let _env_guard = std::env::var("APHRODY_OS_AUTH_TOKEN").ok();
+        unsafe { std::env::remove_var("APHRODY_OS_AUTH_TOKEN"); }
+
+        let cmd = TermCommand {
+            addr: "127.0.0.1:8788".to_string(),
+            shell: None,
+            cwd: None,
+            token: None,
+        };
+
+        let (addr, cfg) = cmd.validate_and_configure().expect("loopback should succeed");
+        assert_eq!(addr, "127.0.0.1:8788".parse().unwrap());
+        let token = cfg.auth_token.expect("token should be generated");
+        assert_eq!(token.len(), 32);
+        assert!(token.chars().all(|c| c.is_ascii_hexdigit()));
+
+        if let Some(tok) = _env_guard {
+            unsafe { std::env::set_var("APHRODY_OS_AUTH_TOKEN", tok); }
+        }
+    }
+
+    #[test]
+    fn term_command_rejects_invalid_addr() {
+        let cmd = TermCommand {
+            addr: "not-a-valid-addr".to_string(),
+            shell: None,
+            cwd: None,
+            token: None,
+        };
+
+        let res = cmd.validate_and_configure();
+        assert!(res.is_err());
+        assert!(res.unwrap_err().to_string().contains("invalid --addr"));
+    }
 }

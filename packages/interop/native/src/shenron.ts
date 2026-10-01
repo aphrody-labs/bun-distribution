@@ -9,6 +9,7 @@ export {
   shenronRunCaptured,
   shenronRagSearch,
   shenronRagStats,
+  shenronRagChunk,
   shenronAuthStatus,
   shenronPersonaPrompt,
   shenronPersonaAsk,

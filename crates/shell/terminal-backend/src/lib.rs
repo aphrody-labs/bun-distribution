@@ -951,8 +951,9 @@ mod tests {
             let (stream, _) = listener2.accept().await.expect("accept");
             handle_conn(stream, cfg2).await
         });
-        let (mut client2, _) = connect_async(format!("ws://{addr2}?token={token}")).await.expect("connect with query token");
+        let (mut client2, _) = connect_async(format!("ws://{addr2}/?token={token}")).await.expect("connect with query token");
         client2.close(None).await.expect("close");
+        drop(client2);
         let _ = server2.await;
 
         // 3. Authorization Bearer header -> accepted
@@ -971,6 +972,7 @@ mod tests {
         req.headers_mut().insert("Authorization", format!("Bearer {token}").parse().unwrap());
         let (mut client3, _) = connect_async(req).await.expect("connect with Bearer header");
         client3.close(None).await.expect("close");
+        drop(client3);
         let _ = server3.await;
     }
 

@@ -712,6 +712,22 @@ export function shenronRagStats(): CapturedResult {
   );
 }
 
+/** Chunk Markdown through Aphrody's canonical Shenron-parity RAG implementation. */
+export function shenronRagChunk(
+  markdown: string,
+  maxChars = 1400,
+  overlapPct = 0.15,
+): Array<{ content: string; section: string }> {
+  if (!Number.isInteger(maxChars) || maxChars < 1) throw new RangeError("maxChars must be positive");
+  if (!Number.isFinite(overlapPct) || overlapPct < 0 || overlapPct > 1)
+    throw new RangeError("overlapPct must be between zero and one");
+  const pointer = loadLib().symbols.shenron_rag_chunk(cstr(markdown), maxChars, overlapPct);
+  const raw = readOwnedString(pointer, (value) => loadLib().symbols.shenron_string_free(value));
+  const result = JSON.parse(raw) as unknown;
+  if (!Array.isArray(result)) throw new Error("Aphrody RAG chunker returned an invalid response");
+  return result as Array<{ content: string; section: string }>;
+}
+
 /** Read sanitized Shenron authentication status; secret values are never returned. */
 export function shenronAuthStatus(): CapturedResult {
   const pointer = loadLib().symbols.shenron_auth_status();

@@ -39,6 +39,7 @@ const SYMBOLS = {
     returns: FFIType.ptr,
   },
   shenron_rag_stats: { args: [], returns: FFIType.ptr },
+  shenron_rag_chunk: { args: [FFIType.cstring, FFIType.i32, FFIType.f32], returns: FFIType.ptr },
   shenron_auth_status: { args: [], returns: FFIType.ptr },
   shenron_persona_prompt: { args: [], returns: FFIType.cstring },
   shenron_persona_ask: { args: [FFIType.cstring], returns: FFIType.ptr },

@@ -436,6 +436,65 @@ mod native {
         string_to_c(json)
     }
 
+    /// Chunk Shenron Markdown with Aphrody's canonical RAG implementation.
+    /// Returns a JSON array of `{content, section}` objects. Free the returned
+    /// string with `shenron_string_free`.
+    ///
+    /// # Safety
+    /// `markdown` must be a valid NUL-terminated UTF-8 string; result must be
+    /// freed exactly once.
+    #[unsafe(no_mangle)]
+    #[must_use]
+    pub unsafe extern "C" fn shenron_rag_chunk(
+        markdown: *const c_char,
+        max_chars: c_int,
+        overlap_pct: f32,
+    ) -> *mut c_char {
+        use aphrody_rag_core::Chunker;
+
+        let outcome = catch_unwind(|| {
+            if markdown.is_null() {
+                return "{\"error\":\"markdown pointer is null\"}".to_owned();
+            }
+            let source = match unsafe { CStr::from_ptr(markdown) }.to_str() {
+                Ok(source) => source,
+                Err(_) => return "{\"error\":\"markdown is not valid UTF-8\"}".to_owned(),
+            };
+            let mut options = aphrody_rag_core::ChunkOptions::shenron_parity();
+            options.max_chars = usize::try_from(max_chars.max(1)).unwrap_or(1);
+            options.overlap_pct = overlap_pct.clamp(0.0, 1.0);
+            let chunks = aphrody_rag_core::MarkdownChunker.chunk(source, source, &options);
+            serde_json::to_string(
+                &chunks
+                    .into_iter()
+                    .map(|chunk| {
+                        serde_json::json!({
+                            "content": chunk.text,
+                            "section": chunk.symbol.unwrap_or_default(),
+                        })
+                    })
+                    .collect::<Vec<_>>(),
+            )
+            .unwrap_or_else(|error| {
+                format!(
+                    "{{\"error\":{}}}",
+                    serde_json::to_string(&error.to_string()).unwrap_or_default()
+                )
+            })
+        });
+        let json = outcome.unwrap_or_else(|payload| {
+            format!(
+                "{{\"error\":{}}}",
+                serde_json::to_string(&format!(
+                    "shenron_rag_chunk panicked: {}",
+                    panic_message(&*payload)
+                ))
+                .unwrap_or_default()
+            )
+        });
+        string_to_c(json)
+    }
+
     /// Retrieve only whether local admin credentials are configured.
     ///
     /// The CLI JSON contract is deliberately sanitized and must never include

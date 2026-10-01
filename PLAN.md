@@ -888,6 +888,30 @@ Propriétaires : `packages/shenron`, `apps/shenron`.
 Critères : corpus/règles partagés, tests pipeline/config, build site/bot,
 smoke documenté. Une mise en production est une opération distincte.
 
+### Migration du calcul du pipeline vers ses propriétaires Rust — en cours
+
+- Le chunking partagé de `packages/shenron/pipeline/scripts/_rag-chunk.ts` a
+  été remplacé par l'appel Bun FFI `shenronRagChunk`, implémenté par
+  `aphrody-rag-core::MarkdownChunker` avec les options de parité Shenron. Les
+  trois consommateurs (`ingest-aphrody-rag.ts`, `_rag-corpus-sources.ts` et
+  `_rag-sources-pg.ts`) continuent d'utiliser le contrat `{content, section}` ;
+  ils ne portent plus l'algorithme de découpage.
+- Le crate RAG avait déjà des fixtures de parité Markdown et TypeScript ; le
+  nouveau symbole FFI réutilise le même `ChunkOptions::shenron_parity`. Le
+  typecheck du pipeline et celui du package natif Bun passent ;
+  `cargo check -p aphrody-ffi --offline` et `cargo fmt --check -p aphrody-ffi`
+  passent également dans l'état courant du checkout.
+- Restent à cartographier et basculer par propriétaire : OCR et revue,
+  embeddings/indexation/RAG, crawl/extraction Web, traduction et médias manga,
+  ainsi que les scripts d'ingestion et de dépôt qui demeurent spécifiques aux
+  contrats éditoriaux et bases Shenron. Pour chaque flux, le consommateur doit
+  appeler son propriétaire Rust via l'API Bun native ou une commande installée,
+  garder les règles éditoriales au niveau Shenron et prouver le contrat sur les
+  données de fixture avant de retirer son implémentation TypeScript.
+- La migration entière n'est pas validée : il reste à établir l'inventaire
+  complet des consommateurs et propriétaires, les gates ABI/FFI depuis artefact
+  construit, les vérifications Linux/Windows et les exécutions de bout en bout.
+
 ## Commandes de contrôle
 
 ```bash

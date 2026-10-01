@@ -1287,6 +1287,7 @@ dependencies = [
  "aphrody-manga",
  "aphrody-n2b-native",
  "aphrody-oxc-bridge",
+ "aphrody-rag-core",
  "aphrody-stdio-capture",
  "aphrody-web-chromium",
  "aphrody-web-extract",
