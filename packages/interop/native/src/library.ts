@@ -289,12 +289,23 @@ interface SharedNativeLibrary {
 }
 const sharedState = globalThis as typeof globalThis & { [LIBRARY_KEY]?: SharedNativeLibrary };
 
+/** Compatibility overrides share one path policy and cannot select two handles. */
+function configuredLibraryOverride(): string | undefined {
+  const canonical = process.env.APHRODY_FFI_LIB;
+  const compatibility = process.env.SHENRON_FFI_LIB;
+  if (canonical && compatibility && resolve(canonical) !== resolve(compatibility))
+    throw new Error("APHRODY_FFI_LIB and SHENRON_FFI_LIB select different native libraries");
+  return canonical || compatibility;
+}
+
 /** Resolve only artifacts for this host; explicit overrides must exist. */
 export function resolveNativeLibraryPath(): string | undefined {
-  const override = process.env.APHRODY_FFI_LIB;
+  const override = configuredLibraryOverride();
   if (override) {
     if (!existsSync(override))
-      throw new Error(`APHRODY_FFI_LIB points to a missing file: ${override}`);
+      throw new Error(
+        `${process.env.APHRODY_FFI_LIB ? "APHRODY_FFI_LIB" : "SHENRON_FFI_LIB"} points to a missing file: ${override}`,
+      );
     return resolve(override);
   }
   const file = `${process.platform === "win32" ? "" : "lib"}aphrody_ffi.${suffix}`;
@@ -323,10 +334,10 @@ export function resolveNativeLibraryPath(): string | undefined {
 /** @internal All bindings share this handle. Importing a binding never opens it. */
 export function loadNativeLibrary(): NativeLibrary {
   const shared = sharedState[LIBRARY_KEY];
-  const override = process.env.APHRODY_FFI_LIB;
+  const override = configuredLibraryOverride();
   if (shared && override && resolve(override) !== shared.path) {
     throw new Error(
-      `aphrody_ffi is already loaded from ${shared.path}; APHRODY_FFI_LIB selects ${resolve(override)}.`,
+      `aphrody_ffi is already loaded from ${shared.path}; native override selects ${resolve(override)}.`,
     );
   }
   if (shared?.owner === "@aphrody/bun") return shared.library;
