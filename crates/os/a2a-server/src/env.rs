@@ -143,7 +143,8 @@ fn unescape_double(s: &str) -> String {
 /// Load the env file resolved from `start_dir` (or `cwd` if `None`)
 /// into the process environment.
 ///
-/// Existing env vars are overwritten (matches gemini-cli's `override: true`).
+/// Existing env vars are overwritten (matches gemini-cli's `override: true`),
+/// except explicit parent-provided Agent Home routing, which takes precedence.
 /// Returns the path that was loaded, if any.
 pub fn load_environment(start_dir: Option<&Path>) -> Option<PathBuf> {
     let start: PathBuf = start_dir
@@ -153,6 +154,9 @@ pub fn load_environment(start_dir: Option<&Path>) -> Option<PathBuf> {
     let path = find_env_file(&start)?;
     let contents = fs::read_to_string(&path).ok()?;
     for (k, v) in parse_dotenv(&contents) {
+        if preserve_parent_routing(&k, std::env::var_os(&k).is_some()) {
+            continue;
+        }
         // SAFETY: env mutation is unsafe in 2024-edition Rust (race risk).
         // We accept this — the caller invokes `load_environment` during
         // single-threaded startup, mirroring the TS reference.
@@ -163,11 +167,29 @@ pub fn load_environment(start_dir: Option<&Path>) -> Option<PathBuf> {
     Some(path)
 }
 
+fn preserve_parent_routing(key: &str, is_explicit: bool) -> bool {
+    is_explicit
+        && matches!(
+            key,
+            "APHRODY_HOME" | "APHRODY_WORKSPACE" | "APHRODY_PROFILE" | "APHRODY_AGENT_DOMAIN"
+        )
+}
+
 #[cfg(test)]
 mod tests {
     use std::io::Write;
 
     use super::*;
+
+    #[test]
+    fn explicit_parent_domain_routing_survives_project_dotenv() {
+        for key in ["APHRODY_HOME", "APHRODY_WORKSPACE", "APHRODY_PROFILE", "APHRODY_AGENT_DOMAIN"]
+        {
+            assert!(preserve_parent_routing(key, true));
+            assert!(!preserve_parent_routing(key, false));
+        }
+        assert!(!preserve_parent_routing("UNRELATED_REFERENCE_SETTING", true));
+    }
 
     #[test]
     fn test_parse_dotenv_basic() {
