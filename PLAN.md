@@ -182,6 +182,21 @@ ABI, erreurs et annulation vérifiés par des cas qui traversent les frontières
   plugin et packaging release restent à qualifier. Cette preuve Linux avec
   features par défaut ne clôt pas la qualification générale Compat.
 
+### Résolution du plugin et helpers natifs N2B — 2026-10-01
+
+- FAIT : le plugin Bun ne force plus `n2b` lors du contrôle de disponibilité.
+  Il utilise désormais le même résolveur que le scan : override explicite,
+  `N2B_BIN`, PATH puis repli workspace. Son script `test` exécute un vrai test.
+- Test de régression : PATH vide, binaire de fixture dans `N2B_BIN`, build Bun
+  réel et marqueur prouvant que le scan a été lancé (un plugin désactivé ne
+  crée pas ce marqueur). Un test réussi ; build TypeScript des références,
+  typecheck et Oxc sans avertissement réussis ; `git diff --check` réussi.
+- Helpers `aphrody-n2b-native` : trois tests Rust et clippy all-targets verrouillé
+  avec refus des avertissements réussis. La crate produit un `rlib`, consommé
+  par l’interop ; ce contrôle ne prouve pas un `dlopen` Bun ou l’ABI agrégée.
+- INCOMPLET : tests avec le module `bun:aphrody`, artefact interop qualifié,
+  ABI réelle, Windows et packaging restent ouverts.
+
 ### Graphe direct des dépendances — 2026-10-01
 
 - FAIT : [inventaire des arêtes déclarées](docs/migration/dependency-graph-review-2026-10-01.json)

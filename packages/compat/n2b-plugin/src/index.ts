@@ -92,7 +92,7 @@ export function n2bPlugin(opts: N2BPluginOptions = {}): BunPlugin {
       }
       if (!report) {
         try {
-          await binaryVersion(opts.bin ?? "n2b");
+          await binaryVersion(opts.bin);
         } catch {
           if (!quiet) {
             console.warn(
