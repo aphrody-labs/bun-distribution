@@ -70,6 +70,7 @@ pub mod profile;
 pub mod provider;
 pub mod rag;
 pub mod resolve;
+pub mod shenron;
 pub mod wire_api;
 
 #[cfg(not(target_arch = "wasm32"))] pub mod load;

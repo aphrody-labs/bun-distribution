@@ -12,6 +12,7 @@
 
 use std::path::PathBuf;
 
+use aphrody_config::shenron::ShenronAuthPresence;
 use clap::Subcommand;
 use miette::IntoDiagnostic;
 use serde_json::json;
@@ -262,6 +263,10 @@ pub fn locate_home_shenron() -> PathBuf {
         }
     }
     if let Some(user_home) = dirs::home_dir() {
+        let canonical = user_home.join(".aphrody/private/shenron/home");
+        if canonical.is_dir() {
+            return canonical;
+        }
         let candidate = user_home.join("src").join("aphrody-ai").join("home").join("shenron");
         if candidate.is_dir() {
             return candidate;
@@ -558,8 +563,9 @@ async fn handle_doctor(json_output: bool) -> miette::Result<()> {
         }),
         Err(error) => json!({"reachable": false, "ready": false, "reason": error.to_string()}),
     };
-    let workspace = aphrody_agent_home::paths::resolve_workspace(Some("dbfr"), None)
+    let state = aphrody_agent_home::paths::state_dir()
         .map_err(|error| miette::miette!("Agent Home: {error}"))?;
+    let workspace = aphrody_agent_home::paths::named_profile_workspace(&state, "dbfr");
     let agent_home = match aphrody_agent_home::SyncSnapshot::capture(&workspace) {
         Ok(snapshot) => {
             json!({"valid": true, "files": snapshot.documents.len(), "revision": snapshot.revision})
@@ -571,6 +577,8 @@ async fn handle_doctor(json_output: bool) -> miette::Result<()> {
         && serving_rag["ready"] == true
         && agent_home["valid"] == true;
     let doc = json!({
+        "pillar": "shenron_sovereign_bridge",
+        "auth": ShenronAuthPresence::from_home(&locate_home_shenron()),
         "status": if operational { "operational" } else { "degraded" },
         "shenron_root": locate_shenron().map(|p| p.display().to_string()),
         "site": site,
@@ -814,8 +822,9 @@ async fn handle_infra(action: ShenronInfraAction) -> miette::Result<()> {
 }
 
 async fn handle_persona(action: ShenronPersonaAction) -> miette::Result<()> {
-    let workspace = aphrody_agent_home::paths::resolve_workspace(Some("dbfr"), None)
+    let state = aphrody_agent_home::paths::state_dir()
         .map_err(|error| miette::miette!("Agent Home: {error}"))?;
+    let workspace = aphrody_agent_home::paths::named_profile_workspace(&state, "dbfr");
     // Read one coherent revision; never generate from a partially edited home.
     aphrody_agent_home::SyncSnapshot::capture(&workspace)
         .map_err(|error| miette::miette!("Agent Home dbfr invalide: {error}"))?;
@@ -877,17 +886,17 @@ async fn handle_persona(action: ShenronPersonaAction) -> miette::Result<()> {
 async fn handle_auth(action: ShenronAuthAction) -> miette::Result<()> {
     match action {
         ShenronAuthAction::Status { json } => {
-            let doc = json!({
-                "admin_token_configured": config_alias(&["SHENRON_ADMIN_TOKEN", "API_ADMIN_TOKEN"]).is_some(),
-                "ai_token_configured": ai_token().is_ok(),
-                "site": site_base()?.as_str(),
-                "bot": bot_base()?.as_str()
-            });
+            let doc = ShenronAuthPresence::from_home(&locate_home_shenron());
             if json {
                 println!("{}", serde_json::to_string_pretty(&doc).into_diagnostic()?);
             } else {
-                println!("Admin Shenron configuré: {}", doc["admin_token_configured"]);
-                println!("Aphrody AI configuré: {}", doc["ai_token_configured"]);
+                println!("=== Présence des identifiants d'administration locaux ===");
+                println!(
+                    "  * Fichier d'identifiants : {}",
+                    if doc.admin_credentials_present { "présent" } else { "absent" }
+                );
+                println!("  * Configuration locale : {}", doc.configured);
+                println!("  * Session distante : non vérifiée");
             }
         },
         ShenronAuthAction::Url { site, raw } => {
