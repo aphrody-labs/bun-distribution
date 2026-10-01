@@ -256,11 +256,10 @@ fn coerce_node(value: &mut Value, schema: &Value, pointer: &str, out: &mut Vec<C
 
     if matches!(expected_type, Some("object"))
         && let Value::String(s) = value.clone()
+        && let Ok(decoded @ (Value::Object(_) | Value::Array(_))) = repair_json(&s)
     {
-        if let Ok(decoded @ (Value::Object(_) | Value::Array(_))) = repair_json(&s) {
-            out.push(Coercion::new(pointer, "decoded JSON-encoded string into an object"));
-            *value = decoded;
-        }
+        out.push(Coercion::new(pointer, "decoded JSON-encoded string into an object"));
+        *value = decoded;
     }
 
     if let Value::Object(map) = value {

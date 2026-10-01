@@ -560,16 +560,14 @@ struct AnthropicSseTextDelta {
 /// delta de type `text_delta`, `None` sinon.
 fn anthropic_sse_text(event_type: &str, data: &str) -> Option<String> {
     // On accepte soit l'événement explicite, soit le champ `type` dans le JSON.
-    if event_type == "content_block_delta" || event_type.is_empty() {
-        if let Ok(delta) = serde_json::from_str::<AnthropicSseDelta>(data) {
-            if delta.kind == "content_block_delta" {
-                if let Some(d) = delta.delta {
-                    if d.kind == "text_delta" && !d.text.is_empty() {
-                        return Some(d.text);
-                    }
-                }
-            }
-        }
+    if (event_type == "content_block_delta" || event_type.is_empty())
+        && let Ok(delta) = serde_json::from_str::<AnthropicSseDelta>(data)
+        && delta.kind == "content_block_delta"
+        && let Some(d) = delta.delta
+        && d.kind == "text_delta"
+        && !d.text.is_empty()
+    {
+        return Some(d.text);
     }
     None
 }
@@ -714,14 +712,13 @@ impl ChatProvider for AnthropicProvider {
                 match byte_stream.next().await {
                     None => {
                         // Fin du flux réseau — vider le tampon restant.
-                        if let Some(leftover) = reader.flush() {
-                            if let Some(evt) = builder.push_line(&leftover) {
+                        if let Some(leftover) = reader.flush()
+                            && let Some(evt) = builder.push_line(&leftover) {
                                 if evt.data == "[DONE]" { break; }
                                 if let Some(text) = anthropic_sse_text(&evt.event, &evt.data) {
                                     yield Ok(text);
                                 }
                             }
-                        }
                         break;
                     }
                     Some(Err(e)) => {
@@ -1051,14 +1048,13 @@ impl ChatProvider for GeminiProvider {
             loop {
                 match byte_stream.next().await {
                     None => {
-                        if let Some(leftover) = reader.flush() {
-                            if let Some(evt) = builder.push_line(&leftover) {
+                        if let Some(leftover) = reader.flush()
+                            && let Some(evt) = builder.push_line(&leftover) {
                                 if evt.data == "[DONE]" { break; }
                                 if let Some(text) = gemini_sse_text(&evt.data) {
                                     yield Ok(text);
                                 }
                             }
-                        }
                         break;
                     }
                     Some(Err(e)) => {
@@ -1348,14 +1344,13 @@ mod tests {
             loop {
                 match byte_stream.next().await {
                     None => {
-                        if let Some(leftover) = reader.flush() {
-                            if let Some(evt) = builder.push_line(&leftover) {
+                        if let Some(leftover) = reader.flush()
+                            && let Some(evt) = builder.push_line(&leftover) {
                                 if evt.data == "[DONE]" { break; }
                                 if let Some(text) = anthropic_sse_text(&evt.event, &evt.data) {
                                     yield Ok::<String, RouterError>(text);
                                 }
                             }
-                        }
                         break;
                     }
                     Some(Err(e)) => {

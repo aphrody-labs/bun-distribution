@@ -54,161 +54,189 @@ pub struct PromptProfile {
 #[must_use]
 pub fn builtin_profiles() -> Vec<PromptProfile> {
     vec![
-        PromptProfile {
-            id: "qwen2.5-coder".to_string(),
-            match_model: vec!["qwen2.5-coder*".to_string(), "qwen2*coder*".to_string()],
-            system_preamble: concat!(
-                "You have access to tools. When you need one, respond with exactly one JSON ",
-                "object per call, on its own, of the shape ",
-                "{\"name\": \"<tool name>\", \"arguments\": {<JSON object>}}. Do not wrap it in ",
-                "markdown fences, do not add commentary before or after it, and do not emit more ",
-                "than one call unless the task truly needs several independent tools in the same ",
-                "turn. When editing files, use the apply_patch tool with the exact ",
-                "*** Begin Patch / *** Update File: <path> / @@ <context> / -removed / +added / ",
-                "*** End Patch envelope; never a unified diff or a SEARCH/REPLACE block."
-            )
-            .to_string(),
-            tool_dialect: ToolDialect::BareJson,
-            apply_patch_format: PatchFormat::CodexPatch,
-            parallel_tools: false,
-            max_tools: Some(24),
-            grammar: GrammarMode::JsonSchema,
-            temperature: Some(0.1),
-            stop: Vec::new(),
-        },
-        PromptProfile {
-            id: "qwen3-coder".to_string(),
-            match_model: vec!["qwen3-coder*".to_string(), "qwen3*coder*".to_string()],
-            system_preamble: concat!(
-                "You have access to tools. Call a tool with exactly this XML shape: ",
-                "<tool_call><function=TOOL_NAME><parameter=PARAM_NAME>value</parameter>",
-                "<parameter=OTHER_PARAM>value</parameter></function></tool_call>. One ",
-                "<parameter> element per argument, the raw value on its own lines (no quoting, no ",
-                "escaping) between the tags. Close every <function> and <tool_call> tag you open. ",
-                "For file edits, use the apply_patch function with a single `input` parameter ",
-                "whose value is a complete *** Begin Patch ... *** End Patch document."
-            )
-            .to_string(),
-            tool_dialect: ToolDialect::Qwen3CoderXml,
-            apply_patch_format: PatchFormat::CodexPatch,
-            parallel_tools: true,
-            max_tools: Some(32),
-            grammar: GrammarMode::None,
-            temperature: Some(0.2),
-            stop: vec!["</tool_call>".to_string()],
-        },
-        PromptProfile {
-            id: "gpt-oss".to_string(),
-            match_model: vec!["gpt-oss*".to_string()],
-            system_preamble: concat!(
-                "You have access to tools in the OpenAI function-calling shape. Emit a call as a ",
-                "single JSON object {\"tool_calls\": [{\"type\": \"function\", \"function\": ",
-                "{\"name\": \"<tool name>\", \"arguments\": \"<JSON-encoded arguments object as ",
-                "a string>\"}}]} with no surrounding prose. Prefer one tool call per message \
-                 unless ",
-                "the calls are truly independent. Use the apply_patch tool for every file edit; ",
-                "never hand-write a diff yourself."
-            )
-            .to_string(),
-            tool_dialect: ToolDialect::OpenAiJson,
-            apply_patch_format: PatchFormat::CodexPatch,
-            parallel_tools: true,
-            max_tools: Some(32),
-            grammar: GrammarMode::JsonSchema,
-            temperature: Some(0.2),
-            stop: Vec::new(),
-        },
-        PromptProfile {
-            id: "devstral-mistral".to_string(),
-            match_model: vec![
-                "devstral*".to_string(),
-                "mistral*".to_string(),
-                "codestral*".to_string(),
-            ],
-            system_preamble: concat!(
-                "You have access to tools. To call one, end your message with the literal marker ",
-                "[TOOL_CALLS] immediately followed by a JSON array with exactly one element per ",
-                "call: [{\"name\": \"<tool name>\", \"arguments\": {<JSON object>}}]. Do not add ",
-                "any text after the array. For file edits, use the apply_patch tool with a full ",
-                "*** Begin Patch ... *** End Patch document as its `input` argument."
-            )
-            .to_string(),
-            tool_dialect: ToolDialect::MistralToolCalls,
-            apply_patch_format: PatchFormat::CodexPatch,
-            parallel_tools: false,
-            max_tools: Some(24),
-            grammar: GrammarMode::None,
-            temperature: Some(0.15),
-            stop: vec!["[/TOOL_CALLS]".to_string()],
-        },
-        PromptProfile {
-            id: "llama-3".to_string(),
-            match_model: vec![
-                "llama-3*".to_string(),
-                "llama3*".to_string(),
-                "*llama-3*".to_string(),
-                "*llama3*".to_string(),
-            ],
-            system_preamble: concat!(
-                "You have access to tools. When you use one, wrap the call in ",
-                "<tool_call>{\"name\": \"<tool name>\", \"arguments\": {<JSON \
-                 object>}}</tool_call> ",
-                "tags with nothing else inside them. Use plain JSON with double-quoted keys and ",
-                "strings; do not use Python literals (True/False/None) or trailing commas. Prefer \
-                 a ",
-                "single tool call per turn. Use the apply_patch tool, not a hand-written diff, \
-                 for ",
-                "file edits."
-            )
-            .to_string(),
-            tool_dialect: ToolDialect::Hermes,
-            apply_patch_format: PatchFormat::CodexPatch,
-            parallel_tools: false,
-            max_tools: Some(16),
-            grammar: GrammarMode::None,
-            temperature: Some(0.2),
-            stop: vec!["</tool_call>".to_string()],
-        },
-        PromptProfile {
-            id: "gemma".to_string(),
-            match_model: vec!["gemma*".to_string()],
-            system_preamble: concat!(
-                "You have access to tools. Respond with a single JSON object of the shape ",
-                "{\"name\": \"<tool name>\", \"arguments\": {<JSON object>}} and nothing else \
-                 when ",
-                "you need one. Keep arguments minimal and only call one tool per turn unless the ",
-                "task explicitly needs several. Use the apply_patch tool for file edits."
-            )
-            .to_string(),
-            tool_dialect: ToolDialect::BareJson,
-            apply_patch_format: PatchFormat::CodexPatch,
-            parallel_tools: false,
-            max_tools: Some(12),
-            grammar: GrammarMode::JsonSchema,
-            temperature: Some(0.1),
-            stop: Vec::new(),
-        },
-        PromptProfile {
-            id: "default".to_string(),
-            match_model: vec!["*".to_string()],
-            system_preamble: concat!(
-                "You have access to tools. When you need one, respond with a single JSON object ",
-                "{\"name\": \"<tool name>\", \"arguments\": {<JSON object>}}, or wrap it as ",
-                "<tool_call>{...}</tool_call> if that is more natural for you. Use plain JSON ",
-                "(double-quoted keys/strings, no trailing commas). Use the apply_patch tool with \
-                 a ",
-                "*** Begin Patch ... *** End Patch document for file edits."
-            )
-            .to_string(),
-            tool_dialect: ToolDialect::BareJson,
-            apply_patch_format: PatchFormat::CodexPatch,
-            parallel_tools: false,
-            max_tools: None,
-            grammar: GrammarMode::None,
-            temperature: None,
-            stop: Vec::new(),
-        },
+        qwen25_coder_profile(),
+        qwen3_coder_profile(),
+        gpt_oss_profile(),
+        devstral_profile(),
+        llama3_profile(),
+        gemma_profile(),
+        default_profile(),
     ]
+}
+
+fn qwen25_coder_profile() -> PromptProfile {
+    PromptProfile {
+        id: "qwen2.5-coder".to_string(),
+        match_model: vec!["qwen2.5-coder*".to_string(), "qwen2*coder*".to_string()],
+        system_preamble: concat!(
+            "You have access to tools. When you need one, respond with exactly one JSON ",
+            "object per call, on its own, of the shape ",
+            "{\"name\": \"<tool name>\", \"arguments\": {<JSON object>}}. Do not wrap it in ",
+            "markdown fences, do not add commentary before or after it, and do not emit more ",
+            "than one call unless the task truly needs several independent tools in the same ",
+            "turn. When editing files, use the apply_patch tool with the exact ",
+            "*** Begin Patch / *** Update File: <path> / @@ <context> / -removed / +added / ",
+            "*** End Patch envelope; never a unified diff or a SEARCH/REPLACE block."
+        )
+        .to_string(),
+        tool_dialect: ToolDialect::BareJson,
+        apply_patch_format: PatchFormat::CodexPatch,
+        parallel_tools: false,
+        max_tools: Some(24),
+        grammar: GrammarMode::JsonSchema,
+        temperature: Some(0.1),
+        stop: Vec::new(),
+    }
+}
+
+fn qwen3_coder_profile() -> PromptProfile {
+    PromptProfile {
+        id: "qwen3-coder".to_string(),
+        match_model: vec!["qwen3-coder*".to_string(), "qwen3*coder*".to_string()],
+        system_preamble: concat!(
+            "You have access to tools. Call a tool with exactly this XML shape: ",
+            "<tool_call><function=TOOL_NAME><parameter=PARAM_NAME>value</parameter>",
+            "<parameter=OTHER_PARAM>value</parameter></function></tool_call>. One ",
+            "<parameter> element per argument, the raw value on its own lines (no quoting, no ",
+            "escaping) between the tags. Close every <function> and <tool_call> tag you open. ",
+            "For file edits, use the apply_patch function with a single `input` parameter ",
+            "whose value is a complete *** Begin Patch ... *** End Patch document."
+        )
+        .to_string(),
+        tool_dialect: ToolDialect::Qwen3CoderXml,
+        apply_patch_format: PatchFormat::CodexPatch,
+        parallel_tools: true,
+        max_tools: Some(32),
+        grammar: GrammarMode::None,
+        temperature: Some(0.2),
+        stop: vec!["</tool_call>".to_string()],
+    }
+}
+
+fn gpt_oss_profile() -> PromptProfile {
+    PromptProfile {
+        id: "gpt-oss".to_string(),
+        match_model: vec!["gpt-oss*".to_string()],
+        system_preamble: concat!(
+            "You have access to tools in the OpenAI function-calling shape. Emit a call as a ",
+            "single JSON object {\"tool_calls\": [{\"type\": \"function\", \"function\": ",
+            "{\"name\": \"<tool name>\", \"arguments\": \"<JSON-encoded arguments object as ",
+            "a string>\"}}]} with no surrounding prose. Prefer one tool call per message \
+         unless ",
+            "the calls are truly independent. Use the apply_patch tool for every file edit; ",
+            "never hand-write a diff yourself."
+        )
+        .to_string(),
+        tool_dialect: ToolDialect::OpenAiJson,
+        apply_patch_format: PatchFormat::CodexPatch,
+        parallel_tools: true,
+        max_tools: Some(32),
+        grammar: GrammarMode::JsonSchema,
+        temperature: Some(0.2),
+        stop: Vec::new(),
+    }
+}
+
+fn devstral_profile() -> PromptProfile {
+    PromptProfile {
+        id: "devstral-mistral".to_string(),
+        match_model: vec![
+            "devstral*".to_string(),
+            "mistral*".to_string(),
+            "codestral*".to_string(),
+        ],
+        system_preamble: concat!(
+            "You have access to tools. To call one, end your message with the literal marker ",
+            "[TOOL_CALLS] immediately followed by a JSON array with exactly one element per ",
+            "call: [{\"name\": \"<tool name>\", \"arguments\": {<JSON object>}}]. Do not add ",
+            "any text after the array. For file edits, use the apply_patch tool with a full ",
+            "*** Begin Patch ... *** End Patch document as its `input` argument."
+        )
+        .to_string(),
+        tool_dialect: ToolDialect::MistralToolCalls,
+        apply_patch_format: PatchFormat::CodexPatch,
+        parallel_tools: false,
+        max_tools: Some(24),
+        grammar: GrammarMode::None,
+        temperature: Some(0.15),
+        stop: vec!["[/TOOL_CALLS]".to_string()],
+    }
+}
+
+fn llama3_profile() -> PromptProfile {
+    PromptProfile {
+        id: "llama-3".to_string(),
+        match_model: vec![
+            "llama-3*".to_string(),
+            "llama3*".to_string(),
+            "*llama-3*".to_string(),
+            "*llama3*".to_string(),
+        ],
+        system_preamble: concat!(
+            "You have access to tools. When you use one, wrap the call in ",
+            "<tool_call>{\"name\": \"<tool name>\", \"arguments\": {<JSON \
+         object>}}</tool_call> ",
+            "tags with nothing else inside them. Use plain JSON with double-quoted keys and ",
+            "strings; do not use Python literals (True/False/None) or trailing commas. Prefer \
+         a ",
+            "single tool call per turn. Use the apply_patch tool, not a hand-written diff, \
+         for ",
+            "file edits."
+        )
+        .to_string(),
+        tool_dialect: ToolDialect::Hermes,
+        apply_patch_format: PatchFormat::CodexPatch,
+        parallel_tools: false,
+        max_tools: Some(16),
+        grammar: GrammarMode::None,
+        temperature: Some(0.2),
+        stop: vec!["</tool_call>".to_string()],
+    }
+}
+
+fn gemma_profile() -> PromptProfile {
+    PromptProfile {
+        id: "gemma".to_string(),
+        match_model: vec!["gemma*".to_string()],
+        system_preamble: concat!(
+            "You have access to tools. Respond with a single JSON object of the shape ",
+            "{\"name\": \"<tool name>\", \"arguments\": {<JSON object>}} and nothing else \
+         when ",
+            "you need one. Keep arguments minimal and only call one tool per turn unless the ",
+            "task explicitly needs several. Use the apply_patch tool for file edits."
+        )
+        .to_string(),
+        tool_dialect: ToolDialect::BareJson,
+        apply_patch_format: PatchFormat::CodexPatch,
+        parallel_tools: false,
+        max_tools: Some(12),
+        grammar: GrammarMode::JsonSchema,
+        temperature: Some(0.1),
+        stop: Vec::new(),
+    }
+}
+
+fn default_profile() -> PromptProfile {
+    PromptProfile {
+        id: "default".to_string(),
+        match_model: vec!["*".to_string()],
+        system_preamble: concat!(
+            "You have access to tools. When you need one, respond with a single JSON object ",
+            "{\"name\": \"<tool name>\", \"arguments\": {<JSON object>}}, or wrap it as ",
+            "<tool_call>{...}</tool_call> if that is more natural for you. Use plain JSON ",
+            "(double-quoted keys/strings, no trailing commas). Use the apply_patch tool with \
+         a ",
+            "*** Begin Patch ... *** End Patch document for file edits."
+        )
+        .to_string(),
+        tool_dialect: ToolDialect::BareJson,
+        apply_patch_format: PatchFormat::CodexPatch,
+        parallel_tools: false,
+        max_tools: None,
+        grammar: GrammarMode::None,
+        temperature: None,
+        stop: Vec::new(),
+    }
 }
 
 /// Select the best-matching profile for `model`.
