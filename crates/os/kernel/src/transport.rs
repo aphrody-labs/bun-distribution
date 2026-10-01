@@ -58,27 +58,12 @@ fn encode_message(message: &Value) -> io::Result<Vec<u8>> {
 }
 
 /// The local endpoint name for this user.
+///
+/// Delegates to [`aphrody_kernel_client::default_endpoint`], the single owner of the rule, so the
+/// server and its clients cannot disagree (see the module documentation for the order).
 #[must_use]
 pub fn default_endpoint() -> String {
-    if let Some(endpoint) = std::env::var_os("APHRODY_OS_SOCKET").filter(|value| !value.is_empty())
-    {
-        return endpoint.to_string_lossy().into_owned();
-    }
-    let user: String = std::env::var("USERNAME")
-        .or_else(|_| std::env::var("USER"))
-        .unwrap_or_else(|_| "user".into())
-        .chars()
-        .filter(|c| c.is_ascii_alphanumeric() || *c == '-' || *c == '_')
-        .collect();
-    if cfg!(windows) {
-        return format!(r"\\.\pipe\aphrody-os-{user}");
-    }
-    match std::env::var_os("XDG_RUNTIME_DIR").filter(|dir| !dir.is_empty()) {
-        Some(dir) => {
-            std::path::Path::new(&dir).join("aphrody-os.sock").to_string_lossy().into_owned()
-        },
-        None => format!("/tmp/aphrody-os-{user}.sock"),
-    }
+    aphrody_kernel_client::default_endpoint()
 }
 
 /// Serve one connection until the peer closes it. Requests run concurrently, so a peer can

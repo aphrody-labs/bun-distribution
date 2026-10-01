@@ -5,7 +5,9 @@
 This is the active Aphrody Rust and Bun monorepo. Its [plan](PLAN.md) records
 migration progress and acceptance gates; the source-to-target evidence is in
 [`docs/migration/`](docs/migration/). The shared orchestration package is
-[`@aphrody/workspace`](packages/infra/workspace/).
+[`@aphrody/workspace`](packages/infra/workspace/). Upstream clones live in
+`~/source` (`bun run sources`); the native AI integration plan is
+[docs/plans/ai/native-integration-master.md](docs/plans/ai/native-integration-master.md).
 
 `/home/aphro/aphrody-py` owns Aphrody Python work. `/home/aphro/iecode`
 exclusively owns IECODE, NIE and IEVR game implementation. `/home/aphro/src`

@@ -53,8 +53,6 @@ pub fn endpoint_from(env: EnvLookup<'_>, windows: bool) -> String {
 
 #[cfg(test)]
 mod tests {
-    use std::ffi::OsStr;
-
     use super::*;
 
     fn table<'a>(pairs: &'a [(&'a str, &'a str)]) -> impl Fn(&str) -> Option<OsString> + 'a {
@@ -85,7 +83,8 @@ mod tests {
 
     #[test]
     fn windows_uses_a_per_user_named_pipe() {
-        let env = table(&[("USERNAME", "Some One"), ("USER", "ignored"), ("XDG_RUNTIME_DIR", "/x")]);
+        let env =
+            table(&[("USERNAME", "Some One"), ("USER", "ignored"), ("XDG_RUNTIME_DIR", "/x")]);
         // The user name keeps only ASCII letters, digits, `-` and `_`.
         assert_eq!(endpoint_from(&env, true), r"\\.\pipe\aphrody-os-SomeOne");
         let user_only = table(&[("USER", "someone")]);
@@ -124,7 +123,7 @@ mod tests {
     #[cfg(unix)]
     #[test]
     fn a_user_name_that_is_not_unicode_counts_as_absent() {
-        use std::os::unix::ffi::OsStrExt;
+        use std::{ffi::OsStr, os::unix::ffi::OsStrExt};
 
         let invalid = OsStr::from_bytes(b"bad\xffname");
         let env = move |key: &str| match key {

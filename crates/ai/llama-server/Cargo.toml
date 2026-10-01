@@ -17,6 +17,31 @@ workspace = true
 [features]
 # Builds the fake `llama-server` used by the integration tests.
 test-support = []
+# In-process llama.cpp through `koharu-llama` (libllama / libmtmd are loaded at
+# RUNTIME through libloading, nothing is linked): a `ModelClient` over a GGUF
+# file, embeddings, multimodal (mtmd), and a loopback OpenAI-compatible endpoint
+# so the HTTP-shaped entry points (`Supervisor::ensure`, `ManagedLlamaServer`)
+# keep working without spawning `llama-server`. Off by default: it needs
+# libclang at build time (koharu-llama-sys runs bindgen). With it on, the
+# supervisor/daemon/`--help` paths are an explicit opt-in
+# (`APHRODY_LLAMA_BACKEND=spawn`), see `Backend`.
+in-process = [
+    "dep:aphrody-infer",
+    "dep:aphrody-model-client",
+    "dep:aphrody-toolcall-repair",
+    "dep:async-trait",
+    "dep:axum",
+    "dep:base64",
+    "dep:bytes",
+    "dep:chrono",
+    "dep:encoding_rs",
+    "dep:futures",
+    "dep:koharu-llama",
+    "dep:koharu-runtime",
+    "dep:libloading",
+    "dep:minijinja",
+    "dep:minijinja-contrib",
+]
 
 [[bin]]
 name = "aphrody-llama-daemon"
@@ -37,8 +62,26 @@ rustls         = { workspace = true }
 serde          = { workspace = true }
 serde_json     = { workspace = true }
 thiserror      = { workspace = true }
-tokio          = { workspace = true, features = ["rt", "macros", "time", "fs"] }
+tokio          = { workspace = true, features = ["rt", "macros", "time", "fs", "sync", "net"] }
 tracing        = { workspace = true }
+
+# --- feature `in-process` (all optional; the default build is unchanged) ---
+aphrody-infer           = { workspace = true, optional = true }
+aphrody-model-client    = { workspace = true, optional = true }
+aphrody-toolcall-repair = { workspace = true, optional = true }
+async-trait             = { workspace = true, optional = true }
+axum                    = { workspace = true, optional = true }
+base64                  = { workspace = true, optional = true }
+bytes                   = { workspace = true, optional = true }
+chrono                  = { workspace = true, optional = true }
+encoding_rs             = { workspace = true, optional = true }
+futures                 = { workspace = true, optional = true }
+koharu-llama            = { workspace = true, optional = true }
+koharu-runtime          = { workspace = true, optional = true }
+libloading              = { workspace = true, optional = true }
+# `tojson` (used by every chat template that renders tools) is behind minijinja's `json` feature.
+minijinja               = { workspace = true, optional = true, features = ["json"] }
+minijinja-contrib       = { workspace = true, optional = true }
 
 [dev-dependencies]
 aphrody-model-client = { workspace = true }

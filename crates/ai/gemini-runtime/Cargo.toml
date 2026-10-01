@@ -9,12 +9,16 @@ authors.workspace      = true
 homepage.workspace     = true
 repository.workspace   = true
 license.workspace      = true
-description            = "Cross-platform Gemini CLI runtime adapter: detect, version, turn streaming."
+description            = "Cross-platform Gemini CLI runtime adapter: detect, version, turn streaming, plus the mcp.json loader and the legacy MCP client facade over aphrody-mcp-client."
 
 [lints]
 workspace = true
 
 [dependencies]
+# The one MCP client (transports, framing, header validation) and the one MCP server model.
+# `mcp_client` is a thin facade over the former; `mcp_config` reads into the latter.
+aphrody-mcp-client = { workspace = true }
+aphrody-config     = { workspace = true }
 tokio        = { workspace = true, features = ["process", "io-util", "macros", "rt-multi-thread", "sync"] }
 serde        = { workspace = true, features = ["derive"] }
 serde_json   = { workspace = true }

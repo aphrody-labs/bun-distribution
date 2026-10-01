@@ -12,6 +12,10 @@ use thiserror::Error;
 use tokio::io::{AsyncBufReadExt, AsyncRead, AsyncWrite, AsyncWriteExt, BufReader};
 use tokio::sync::Mutex;
 
+mod endpoint;
+
+pub use endpoint::{ENDPOINT_ENV, EnvLookup, endpoint_from};
+
 /// Default deadline for one local kernel request.
 pub const DEFAULT_REQUEST_TIMEOUT: Duration = Duration::from_secs(30);
 /// Maximum inbound or outbound JSON-RPC frame size.
@@ -113,27 +117,17 @@ impl ClientOptions {
 }
 
 /// Resolve the local kernel endpoint from `APHRODY_OS_SOCKET` or the documented per-user default.
+///
+/// This is the canonical rule: the kernel server's own `default_endpoint` delegates here, so the
+/// server and its clients cannot disagree. [`endpoint_from`] is the same rule over an injected
+/// environment.
 #[must_use]
 pub fn default_endpoint() -> String {
-    if let Some(endpoint) = std::env::var_os("APHRODY_OS_SOCKET").filter(|value| !value.is_empty())
-    {
-        return endpoint.to_string_lossy().into_owned();
-    }
-    let user: String = std::env::var("USERNAME")
-        .or_else(|_| std::env::var("USER"))
-        .unwrap_or_else(|_| "user".into())
-        .chars()
-        .filter(|character| character.is_ascii_alphanumeric() || matches!(character, '-' | '_'))
-        .collect();
-    if cfg!(windows) {
-        return format!(r"\\.\pipe\aphrody-os-{user}");
-    }
-    match std::env::var_os("XDG_RUNTIME_DIR").filter(|directory| !directory.is_empty()) {
-        Some(directory) => {
-            std::path::Path::new(&directory).join("aphrody-os.sock").to_string_lossy().into_owned()
-        },
-        None => format!("/tmp/aphrody-os-{user}.sock"),
-    }
+    endpoint_from(&process_env, cfg!(windows))
+}
+
+fn process_env(key: &str) -> Option<std::ffi::OsString> {
+    std::env::var_os(key)
 }
 
 /// Connected, serial request/response client for one kernel session.

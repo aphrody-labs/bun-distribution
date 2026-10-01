@@ -4,7 +4,7 @@
 //! The kernel ships outside the Aphrody checkout: an agent plugin starts it in any project, on
 //! Windows, Linux or WSL. It therefore never assumes the repository, a fixed home layout or a
 //! user name. Every rule that locates something on disk is a pure function of an injected
-//! [`EnvLookup`], so tests pass a fixed table instead of mutating the process environment
+//! `EnvLookup`, so tests pass a fixed table instead of mutating the process environment
 //! (`std::env::set_var` is `unsafe` in edition 2024) and one host can exercise the Windows and
 //! the Unix branches alike.
 //!

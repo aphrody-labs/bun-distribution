@@ -206,6 +206,180 @@ fn which_on_path(file_name: &str) -> Option<PathBuf> {
     })
 }
 
+// ---------------------------------------------------------------------------
+// Shared libraries: what the in-process engine (`aphrody-llama-server`,
+// feature `in-process`) loads instead of spawning a binary.
+// ---------------------------------------------------------------------------
+
+/// Platform file name of the llama.cpp core shared library.
+pub const LIBRARY_NAME: &str = if cfg!(windows) {
+    "llama.dll"
+} else if cfg!(target_vendor = "apple") {
+    "libllama.dylib"
+} else {
+    "libllama.so"
+};
+
+/// Platform file name of the llama.cpp multimodal (mtmd) shared library.
+pub const MTMD_LIBRARY_NAME: &str = if cfg!(windows) {
+    "mtmd.dll"
+} else if cfg!(target_vendor = "apple") {
+    "libmtmd.dylib"
+} else {
+    "libmtmd.so"
+};
+
+/// Subdirectories of an install root that may hold the shared libraries, in
+/// the order they are tried. Release archives unpack to the root, to `bin/`,
+/// to `lib/` or to `build/bin/` depending on the platform and the packager.
+const LIBRARY_SUBDIRS: [&str; 4] = ["", "bin", "lib", "build/bin"];
+
+/// Where a llama.cpp library directory came from.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum LibraryOrigin {
+    /// `$APHRODY_LLAMA_LIB_DIR`: an explicit directory, asserted by the user.
+    LibDirEnv,
+    /// `$APHRODY_LLAMA_DIR`: the directory holding the release binaries.
+    EnvDir,
+    /// The directory of `$APHRODY_LLAMA_BIN`.
+    BinEnv,
+    /// Found under `~/.aphrody/runtimes/llama-*`.
+    Managed,
+}
+
+impl LibraryOrigin {
+    /// Short label for reports.
+    #[must_use]
+    pub const fn label(self) -> &'static str {
+        match self {
+            Self::LibDirEnv => "APHRODY_LLAMA_LIB_DIR",
+            Self::EnvDir => "APHRODY_LLAMA_DIR",
+            Self::BinEnv => "APHRODY_LLAMA_BIN (directory)",
+            Self::Managed => "managed (~/.aphrody/runtimes)",
+        }
+    }
+}
+
+/// A directory holding the llama.cpp shared libraries.
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
+pub struct LlamaLibrary {
+    /// The directory that contains [`LIBRARY_NAME`].
+    pub dir: PathBuf,
+    /// The llama.cpp build number read from the install's directory name
+    /// (`llama-b10903` is build `10903`), when the name carries one. The
+    /// in-process engine is compiled against the headers of one specific
+    /// build, so this is what decides whether a library is safe to load.
+    pub build: Option<u32>,
+    /// Whether the multimodal library sits beside the core one.
+    pub mtmd: bool,
+    /// How it was found.
+    pub origin: LibraryOrigin,
+}
+
+impl LlamaLibrary {
+    /// Path of the core library.
+    #[must_use]
+    pub fn library_path(&self) -> PathBuf {
+        self.dir.join(LIBRARY_NAME)
+    }
+}
+
+/// The llama.cpp build number in a release directory or archive name.
+///
+/// Release tags are `b<number>`; installs are unpacked as `llama-b10903` or
+/// `llama-b10903-bin-ubuntu-x64`. Returns `None` for a name without a tag
+/// segment (`llama-latest`, `bin`, `build`).
+#[must_use]
+pub fn parse_build(name: &str) -> Option<u32> {
+    name.split(['-', '_']).find_map(|segment| {
+        let digits = segment.strip_prefix('b')?;
+        if digits.is_empty() || !digits.bytes().all(|byte| byte.is_ascii_digit()) {
+            return None;
+        }
+        digits.parse().ok()
+    })
+}
+
+/// The build number carried by `dir` or one of its nearest ancestors
+/// (`.../llama-b10903/build/bin` still reads `10903`).
+fn build_of(dir: &Path) -> Option<u32> {
+    dir.ancestors()
+        .take(4)
+        .filter_map(|ancestor| ancestor.file_name())
+        .find_map(|name| parse_build(&name.to_string_lossy()))
+}
+
+/// The directory under `root` (or `root` itself) that holds the core library.
+fn library_dir_in(root: &Path) -> Option<PathBuf> {
+    LIBRARY_SUBDIRS
+        .iter()
+        .map(|sub| if sub.is_empty() { root.to_path_buf() } else { root.join(sub) })
+        .find(|dir| dir.join(LIBRARY_NAME).is_file())
+}
+
+/// A [`LlamaLibrary`] for `root`, when it holds the core library.
+#[must_use]
+pub fn library_in(root: &Path, origin: LibraryOrigin) -> Option<LlamaLibrary> {
+    let dir = library_dir_in(root)?;
+    Some(LlamaLibrary {
+        build: build_of(&dir),
+        mtmd: dir.join(MTMD_LIBRARY_NAME).is_file(),
+        dir,
+        origin,
+    })
+}
+
+/// Scan `root` (normally `~/.aphrody/runtimes`) for `llama-*` installs that
+/// hold the shared libraries, newest build first.
+#[must_use]
+pub fn find_managed_library_in(root: &Path) -> Option<LlamaLibrary> {
+    let mut candidates: Vec<PathBuf> = std::fs::read_dir(root)
+        .ok()?
+        .filter_map(core::result::Result::ok)
+        .map(|entry| entry.path())
+        .filter(|path| {
+            path.is_dir()
+                && path.file_name().is_some_and(|name| name.to_string_lossy().starts_with("llama-"))
+        })
+        .collect();
+    // Same ordering argument as `find_managed_in`: build numbers only grow.
+    candidates.sort_by(|a, b| b.file_name().cmp(&a.file_name()));
+    candidates.into_iter().find_map(|dir| library_in(&dir, LibraryOrigin::Managed))
+}
+
+/// Locate a directory holding the llama.cpp shared libraries.
+///
+/// Resolution order, first hit wins:
+///   1. `$APHRODY_LLAMA_LIB_DIR` — explicit, used as given
+///   2. `$APHRODY_LLAMA_DIR`     — the directory of the release binaries
+///   3. `$APHRODY_LLAMA_BIN`     — the directory of that executable
+///   4. `~/.aphrody/runtimes/llama-*/` — newest build wins
+///
+/// Returns `None` when no install carries the libraries, which is a normal
+/// state: the in-process engine then provisions its own copy, or reports
+/// itself unavailable, and the external `llama-server` path keeps working.
+#[must_use]
+pub fn resolve_library() -> Option<LlamaLibrary> {
+    if let Some(dir) = non_empty_env("APHRODY_LLAMA_LIB_DIR")
+        && let Some(found) = library_in(Path::new(&dir), LibraryOrigin::LibDirEnv)
+    {
+        return Some(found);
+    }
+    if let Some(dir) = non_empty_env("APHRODY_LLAMA_DIR")
+        && let Some(found) = library_in(Path::new(&dir), LibraryOrigin::EnvDir)
+    {
+        return Some(found);
+    }
+    if let Some(bin) = non_empty_env("APHRODY_LLAMA_BIN")
+        && let Some(parent) = Path::new(&bin).parent()
+        && let Some(found) = library_in(parent, LibraryOrigin::BinEnv)
+    {
+        return Some(found);
+    }
+    find_managed_library_in(&crate::runtime::runtimes_dir().ok()?)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -279,6 +453,69 @@ mod tests {
             if let Some(source) = resolve(*tool) {
                 assert!(source.path().is_file(), "{tool} resolved to a non-file");
             }
+        }
+    }
+
+    #[test]
+    fn build_numbers_are_read_from_release_names() {
+        assert_eq!(parse_build("llama-b10903"), Some(10903));
+        assert_eq!(parse_build("llama-b10903-bin-ubuntu-x64"), Some(10903));
+        assert_eq!(parse_build("b1"), Some(1));
+        // No tag segment: not a build.
+        for name in ["llama-latest", "bin", "build", "llama-b", "llama-bx10", "llama-b10x"] {
+            assert_eq!(parse_build(name), None, "{name}");
+        }
+    }
+
+    #[test]
+    fn a_library_directory_is_found_in_the_root_or_its_usual_subdirectories() {
+        for sub in ["", "bin", "lib", "build/bin"] {
+            let dir = tempfile::tempdir().unwrap();
+            let root = dir.path().join("llama-b10903");
+            touch(&root.join(sub).join(LIBRARY_NAME));
+            let found = library_in(&root, LibraryOrigin::Managed).expect(sub);
+            assert!(found.dir.ends_with(if sub.is_empty() { "llama-b10903" } else { sub }));
+            assert_eq!(found.build, Some(10903), "{sub}: the build is read through ancestors");
+            assert!(!found.mtmd, "{sub}: no multimodal library was written");
+        }
+    }
+
+    #[test]
+    fn the_multimodal_library_is_reported_when_present() {
+        let dir = tempfile::tempdir().unwrap();
+        touch(&dir.path().join(LIBRARY_NAME));
+        touch(&dir.path().join(MTMD_LIBRARY_NAME));
+        let found = library_in(dir.path(), LibraryOrigin::LibDirEnv).unwrap();
+        assert!(found.mtmd);
+        assert_eq!(found.build, None, "a temp directory name carries no build");
+        assert_eq!(found.library_path(), dir.path().join(LIBRARY_NAME));
+    }
+
+    #[test]
+    fn a_binary_only_install_has_no_library() {
+        let dir = tempfile::tempdir().unwrap();
+        touch(&dir.path().join("llama-b1").join(LlamaTool::Server.file_name()));
+        assert!(find_managed_library_in(dir.path()).is_none());
+        assert!(library_in(&dir.path().join("llama-b1"), LibraryOrigin::EnvDir).is_none());
+    }
+
+    #[test]
+    fn the_managed_library_scan_prefers_the_newest_build() {
+        let dir = tempfile::tempdir().unwrap();
+        for build in ["llama-b10000", "llama-b10903"] {
+            touch(&dir.path().join(build).join(LIBRARY_NAME));
+        }
+        touch(&dir.path().join("onnxruntime-1.29").join(LIBRARY_NAME));
+        let found = find_managed_library_in(dir.path()).unwrap();
+        assert_eq!(found.build, Some(10903));
+        assert_eq!(found.origin, LibraryOrigin::Managed);
+        assert!(find_managed_library_in(&dir.path().join("absent")).is_none());
+    }
+
+    #[test]
+    fn library_resolution_never_panics_on_this_machine() {
+        if let Some(found) = resolve_library() {
+            assert!(found.library_path().is_file());
         }
     }
 }

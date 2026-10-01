@@ -168,188 +168,54 @@ impl McpClient {
         aphrody_mcp_client::McpClient::from_http(url, None, Some(&headers)).map(Self::wrap)
     }
 
-    /// Send a JSON-RPC request and wait for the matching response.
-    async fn call(
-        &mut self,
-        method: &str,
-        params: serde_json::Value,
-    ) -> Result<serde_json::Value, McpError> {
-        let id = self.next_id();
-        let frame = jsonrpc_request(id, method, params);
-        let timeout_duration = self.rpc_timeout;
-        let secs = timeout_duration.as_secs();
-        let method_owned = method.to_owned();
-
-        let fut = async {
-            match &mut self.transport {
-                #[cfg(not(target_arch = "wasm32"))]
-                Transport::Stdio { stdin, lines, .. } => {
-                    stdin.write_all(frame.as_bytes()).await?;
-                    stdin.write_all(b"\n").await?;
-                    stdin.flush().await?;
-
-                    // Read lines until we find a matching id.
-                    loop {
-                        let line = match lines.next_line().await {
-                            Ok(Some(l)) => l,
-                            Ok(None) => {
-                                return Err(McpError::Malformed(
-                                    "MCP server closed stdout before responding".to_owned(),
-                                ));
-                            },
-                            Err(e) => return Err(McpError::Io(e)),
-                        };
-                        if line.trim().is_empty() {
-                            continue;
-                        }
-                        // Skip JSON-RPC notifications (no id) and responses with
-                        // unrelated ids; the latter happens when notifications
-                        // are emitted by the server.
-                        let v: serde_json::Value = match serde_json::from_str(&line) {
-                            Ok(v) => v,
-                            Err(_) => continue,
-                        };
-                        let resp_id = v.get("id").and_then(serde_json::Value::as_u64);
-                        if resp_id != Some(id) {
-                            continue;
-                        }
-                        return parse_response(&line);
-                    }
-                },
-                Transport::Http { client, url } => {
-                    let req = client
-                        .post(url.as_str())
-                        .header("Content-Type", "application/json")
-                        .header("Accept", "application/json, text/event-stream");
-                    let resp = req.body(frame).send().await.map_err(McpError::Http)?;
-                    let status = resp.status();
-                    let text = resp.text().await.map_err(McpError::Http)?;
-                    if !status.is_success() {
-                        let trimmed: String = text.chars().take(1024).collect();
-                        return Err(McpError::HttpStatus {
-                            status: status.as_u16(),
-                            body: trimmed,
-                        });
-                    }
-                    parse_response(&text)
-                },
-            }
-        };
-
-        #[cfg(not(target_arch = "wasm32"))]
-        {
-            match timeout(timeout_duration, fut).await {
-                Ok(r) => r,
-                Err(_) => Err(McpError::Timeout { method: method_owned, seconds: secs }),
-            }
-        }
-        #[cfg(target_arch = "wasm32")]
-        {
-            // No tokio::time::timeout on wasm; trust the reqwest client timeout.
-            let _ = (timeout_duration, secs, method_owned);
-            fut.await
-        }
-    }
-
-    /// Send a JSON-RPC notification (no response expected).
-    ///
-    /// Only meaningful for stdio transport; HTTP MCP requires a response per
-    /// frame, so we POST without waiting for an interesting body.
-    async fn notify(&mut self, method: &str, params: serde_json::Value) -> Result<(), McpError> {
-        let frame = jsonrpc_notification(method, params);
-        match &mut self.transport {
-            #[cfg(not(target_arch = "wasm32"))]
-            Transport::Stdio { stdin, .. } => {
-                stdin.write_all(frame.as_bytes()).await?;
-                stdin.write_all(b"\n").await?;
-                stdin.flush().await?;
-                Ok(())
-            },
-            Transport::Http { client, url } => {
-                let req = client.post(url.as_str()).header("Content-Type", "application/json");
-                // We deliberately ignore the body; notifications are fire-and-forget.
-                let _ = req.body(frame).send().await.map_err(McpError::Http)?;
-                Ok(())
-            },
-        }
-    }
-
     /// Perform the MCP `initialize` handshake and the `notifications/initialized`
-    /// follow-up. Must be called before [`Self::list_tools`] or
-    /// [`Self::call_tool`].
+    /// follow-up. The other methods run it on demand when it has not happened yet.
     ///
     /// # Errors
     ///
     /// Any [`McpError`] variant the underlying transport can produce.
     pub async fn initialize(&mut self) -> Result<ServerInfo, McpError> {
-        let params = serde_json::json!({
-            "protocolVersion": MCP_PROTOCOL_VERSION,
-            "capabilities": {
-                "tools": {}
-            },
-            "clientInfo": {
-                "name": "aphrody-gemini-runtime",
-                "version": env!("CARGO_PKG_VERSION"),
-            }
-        });
-        let result = self.call("initialize", params).await?;
-        let info = parse_server_info(&result)?;
-        // Per spec: client SHOULD send `notifications/initialized` after a
-        // successful initialize. Servers like google_mcp expect it before
-        // accepting `tools/list`.
-        self.notify("notifications/initialized", serde_json::json!({})).await?;
-        self.initialized = true;
-        Ok(info)
+        self.apply_timeouts();
+        self.inner.initialize().await.cloned().map(ServerInfo::from)
     }
 
     /// List the tools advertised by the connected MCP server.
     ///
     /// # Errors
     ///
-    /// - [`McpError::Malformed`] — when `initialize` has not been called yet or the response
-    ///   payload does not match `{ tools: [...] }`.
+    /// - [`McpError::Malformed`] — the response payload does not match `{ tools: [...] }`.
+    /// - Any error of the handshake or the transport.
     pub async fn list_tools(&mut self) -> Result<Vec<McpTool>, McpError> {
-        if !self.initialized {
-            return Err(McpError::Malformed("list_tools called before initialize()".to_owned()));
-        }
-        let result = self.call("tools/list", serde_json::json!({})).await?;
-        parse_tools(&result)
+        self.apply_timeouts();
+        let tools = self.inner.list_tools().await?;
+        Ok(tools.into_iter().map(McpTool::from).collect())
     }
 
     /// Invoke a tool on the connected server.
     ///
     /// `args` must be a JSON object matching the tool's `inputSchema`.
     /// Returns the raw JSON-RPC `result` field — typically
-    /// `{ content: [{ type: "text", text: "..." }, ...] }`.
+    /// `{ content: [{ type: "text", text: "..." }, ...] }` — untouched.
     ///
     /// # Errors
     ///
     /// - [`McpError::JsonRpc`] — server returned a JSON-RPC error envelope.
-    /// - [`McpError::Malformed`] — when `initialize` has not been called.
+    /// - Any error of the handshake or the transport.
     pub async fn call_tool(
         &mut self,
         name: &str,
         args: serde_json::Value,
     ) -> Result<serde_json::Value, McpError> {
-        if !self.initialized {
-            return Err(McpError::Malformed("call_tool called before initialize()".to_owned()));
-        }
-        let params = serde_json::json!({
-            "name": name,
-            "arguments": args,
-        });
-        self.call("tools/call", params).await
+        self.apply_timeouts();
+        self.inner.call_tool_raw(name, args).await
     }
 
     /// Attempt to gracefully shut down the underlying transport.
     ///
-    /// For stdio, sends SIGKILL via [`Child::start_kill`]; for HTTP this is a
-    /// no-op (the connection pool is dropped with the client).
-    #[cfg(not(target_arch = "wasm32"))]
+    /// For stdio the child process is killed; for HTTP this is a no-op.
     pub async fn shutdown(&mut self) {
-        if let Transport::Stdio { child, .. } = &mut self.transport {
-            let _ = child.start_kill();
-        }
+        // Best effort, as before: the child is also killed when the client is dropped.
+        let _ = self.inner.shutdown().await;
     }
 }
 
@@ -439,85 +305,56 @@ mod tests {
         server.join().expect("server assertions");
     }
 
+    // JSON-RPC framing, response parsing and the transports are tested where they live, in
+    // `aphrody-mcp-client` (`tests/mcp_client_tests.rs`, `tests/http_transport.rs`). The tests
+    // below cover only what this facade adds: value conversion and the error passthrough.
+
     #[test]
-    fn parse_tools_extracts_three_fields() {
-        let raw = serde_json::json!({
-            "tools": [
-                {
-                    "name": "read_file",
-                    "description": "Read a file from disk",
-                    "inputSchema": {"type": "object", "properties": {"path": {"type": "string"}}}
-                },
-                {
-                    "name": "write_file",
-                    "description": "Write content to a file",
-                    "inputSchema": {"type": "object"}
-                }
-            ]
-        });
-        let tools = parse_tools(&raw).expect("parse ok");
-        assert_eq!(tools.len(), 2);
-        assert_eq!(tools[0].name, "read_file");
-        assert_eq!(tools[0].description, "Read a file from disk");
-        assert!(tools[0].input_schema.is_object());
-        assert_eq!(tools[1].name, "write_file");
+    fn canonical_tool_without_description_renders_as_empty_string() {
+        let tool = aphrody_mcp_client::McpTool {
+            name: "echo".to_owned(),
+            description: None,
+            input_schema: serde_json::json!({"type": "object"}),
+        };
+        let converted = McpTool::from(tool);
+        assert_eq!(converted.name, "echo");
+        assert_eq!(converted.description, "");
+        assert!(converted.input_schema.is_object());
     }
 
     #[test]
-    fn parse_tools_rejects_missing_array() {
-        let raw = serde_json::json!({"foo": "bar"});
-        assert!(matches!(parse_tools(&raw), Err(McpError::Malformed(_))));
+    fn canonical_server_info_converts_field_for_field() {
+        let info = aphrody_mcp_client::ServerInfo {
+            name: "example-server".to_owned(),
+            version: "1.2.3".to_owned(),
+            capabilities: serde_json::json!({"tools": {}}),
+            protocol_version: "2024-11-05".to_owned(),
+        };
+        let converted = ServerInfo::from(info);
+        assert_eq!(converted.name, "example-server");
+        assert_eq!(converted.version, "1.2.3");
+        assert_eq!(converted.protocol_version, "2024-11-05");
+        assert!(converted.capabilities.is_object());
+        // The serialised shape consumed by `aphrody mcp list` keeps its snake_case keys.
+        let value = serde_json::to_value(&converted).expect("serialises");
+        assert_eq!(value["protocol_version"], "2024-11-05");
     }
 
-    #[test]
-    fn parse_response_surfaces_jsonrpc_error() {
-        let raw =
-            r#"{"jsonrpc":"2.0","id":1,"error":{"code":-32601,"message":"method not found"}}"#;
-        match parse_response(raw) {
-            Err(McpError::JsonRpc { code, message }) => {
-                assert_eq!(code, -32601);
-                assert_eq!(message, "method not found");
-            },
-            other => panic!("expected JsonRpc, got {other:?}"),
+    #[tokio::test]
+    async fn missing_command_surfaces_the_canonical_spawn_error() {
+        let env = HashMap::new();
+        let bogus = "definitely-not-a-real-binary-xyz-aphrody-facade";
+        match McpClient::from_stdio(bogus, &[], &env).await {
+            Err(McpError::Spawn { command, .. }) => assert_eq!(command, bogus),
+            Err(other) => panic!("expected Spawn, got {other:?}"),
+            Ok(_) => panic!("phantom binary somehow spawned"),
         }
     }
 
     #[test]
-    fn parse_response_extracts_result() {
-        let raw = r#"{"jsonrpc":"2.0","id":1,"result":{"ok":true}}"#;
-        let v = parse_response(raw).expect("ok");
-        assert_eq!(v["ok"], true);
-    }
-
-    #[test]
-    fn parse_server_info_returns_defaults() {
-        let raw = serde_json::json!({
-            "protocolVersion": "2024-11-05",
-            "serverInfo": {"name": "example-server", "version": "1.2.3"},
-            "capabilities": {"tools": {}}
-        });
-        let info = parse_server_info(&raw).expect("ok");
-        assert_eq!(info.name, "example-server");
-        assert_eq!(info.version, "1.2.3");
-        assert_eq!(info.protocol_version, "2024-11-05");
-        assert!(info.capabilities.is_object());
-    }
-
-    #[test]
-    fn jsonrpc_request_shape() {
-        let frame = jsonrpc_request(7, "tools/list", serde_json::json!({}));
-        let v: serde_json::Value = serde_json::from_str(&frame).expect("valid JSON");
-        assert_eq!(v["jsonrpc"], "2.0");
-        assert_eq!(v["id"], 7);
-        assert_eq!(v["method"], "tools/list");
-    }
-
-    #[test]
-    fn jsonrpc_notification_omits_id() {
-        let frame = jsonrpc_notification("notifications/initialized", serde_json::json!({}));
-        let v: serde_json::Value = serde_json::from_str(&frame).expect("valid JSON");
-        assert_eq!(v["jsonrpc"], "2.0");
-        assert!(v.get("id").is_none());
-        assert_eq!(v["method"], "notifications/initialized");
+    fn shared_constants_keep_their_values() {
+        assert_eq!(MCP_PROTOCOL_VERSION, "2024-11-05");
+        assert_eq!(DEFAULT_RPC_TIMEOUT, Duration::from_secs(30));
+        assert_eq!(DEFAULT_CONNECT_TIMEOUT, Duration::from_secs(10));
     }
 }

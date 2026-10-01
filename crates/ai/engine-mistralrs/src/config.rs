@@ -167,7 +167,9 @@ impl PagedAttentionSpec {
             PagedMemory::ContextTokens(0) | PagedMemory::Megabytes(0) => {
                 bad("the cache size must be nonzero")
             },
-            PagedMemory::Utilization(fraction) if !(fraction > 0.0 && fraction <= 1.0) => {
+            PagedMemory::Utilization(fraction)
+                if fraction.is_nan() || fraction <= 0.0 || fraction > 1.0 =>
+            {
                 bad("utilization must be in (0, 1]")
             },
             _ if self.block_size == Some(0) => bad("the block size must be nonzero"),

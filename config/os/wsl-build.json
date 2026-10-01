@@ -1,0 +1,16 @@
+{
+  "sourceRoot": "/home/aphro/source",
+  "outputRoot": "/home/aphro/source/build/aphrody",
+  "workspace": "/home/aphro/aphrody",
+  "jobs": 4,
+  "timeoutSeconds": 21600,
+  "distribution": "AphrodyOS",
+  "suite": "noble",
+  "mirror": "https://archive.ubuntu.com/ubuntu",
+  "sources": [
+    {"name":"WSL", "url":"https://github.com/microsoft/WSL.git", "revision":"c34e75aea8dcc50c0c2f9e76b2de9b26a58e8b67"},
+    {"name":"wslg", "url":"https://github.com/microsoft/wslg.git", "revision":"6942bb534b537302a7a22617261d9274db3cfa37"},
+    {"name":"WSL2-Linux-Kernel", "url":"https://github.com/microsoft/WSL2-Linux-Kernel.git", "revision":"14794180686c2fb6307fbe359c359bec765249f3"},
+    {"name":"terminal", "url":"https://github.com/microsoft/terminal.git", "revision":"2b5336c1fca1e53ceeaac09710a13c478938cc8d"}
+  ]
+}

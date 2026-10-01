@@ -30,6 +30,15 @@ This repository is the Rust + Bun source target. The active migration plan is
   Infra, UI and AI/Web before product integration. Shenron is the final product
   gate; imported source alone does not prove deployment readiness.
 
+## Active integration
+
+Native wiring of the `~/source` upstreams (mistral.rs, Ollama, vLLM, Codex,
+OpenCode, Antigravity) follows
+[docs/plans/ai/native-integration-master.md](docs/plans/ai/native-integration-master.md):
+no vendoring, no subprocess, no duplicate; workers never run cargo, the lead
+checks serially (`nice -n 19 cargo check -j 6 -p <crate>`). Claim:
+`.coord/claims/native-integration.json`.
+
 ## Migration safety
 
 - Keep every source checkout intact until its mapped consumers pass from a

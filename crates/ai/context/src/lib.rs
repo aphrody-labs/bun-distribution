@@ -344,101 +344,73 @@ impl GoTokenEstimator {
     }
 }
 
-#[cfg(not(target_arch = "wasm32"))]
-impl Default for GoTokenEstimator {
-    fn default() -> Self {
-        Self::new(None)
+/// Exact in-process token counts from a Hugging Face `tokenizer.json`
+/// (feature `tokenizers`, host only).
+///
+/// Load the tokenizer of the model whose context window is being budgeted
+/// (for example a local GGUF model's `tokenizer.json`, or the `Xenova/gpt-4`
+/// export of `cl100k_base`); every estimate is then the true token count of
+/// that vocabulary, computed in the calling thread with no subprocess. The
+/// loaded tokenizer is shared behind an [`Arc`], so clones are free and the
+/// estimator is `Send + Sync`.
+#[cfg(all(feature = "tokenizers", not(target_arch = "wasm32")))]
+#[derive(Clone)]
+pub struct TokenizerFileEstimator {
+    tokenizer: Arc<tokenizers::Tokenizer>,
+}
+
+#[cfg(all(feature = "tokenizers", not(target_arch = "wasm32")))]
+impl std::fmt::Debug for TokenizerFileEstimator {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("TokenizerFileEstimator").finish_non_exhaustive()
     }
 }
 
-#[cfg(not(target_arch = "wasm32"))]
-impl TokenEstimator for GoTokenEstimator {
+#[cfg(all(feature = "tokenizers", not(target_arch = "wasm32")))]
+impl TokenizerFileEstimator {
+    /// Load a `tokenizer.json` from disk.
+    ///
+    /// # Errors
+    ///
+    /// [`ContextError::Tokenizer`] when the file is missing or is not a valid
+    /// tokenizer definition.
+    pub fn from_file(path: impl AsRef<std::path::Path>) -> Result<Self, ContextError> {
+        let path = path.as_ref();
+        let tokenizer = tokenizers::Tokenizer::from_file(path)
+            .map_err(|error| ContextError::Tokenizer(format!("{}: {error}", path.display())))?;
+        Ok(Self::from_tokenizer(tokenizer))
+    }
+
+    /// Parse a `tokenizer.json` document held in memory.
+    ///
+    /// # Errors
+    ///
+    /// [`ContextError::Tokenizer`] when `json` is not a valid tokenizer
+    /// definition.
+    pub fn from_json(json: &[u8]) -> Result<Self, ContextError> {
+        let tokenizer = tokenizers::Tokenizer::from_bytes(json)
+            .map_err(|error| ContextError::Tokenizer(error.to_string()))?;
+        Ok(Self::from_tokenizer(tokenizer))
+    }
+
+    /// Wrap an already built tokenizer.
+    #[must_use]
+    pub fn from_tokenizer(tokenizer: tokenizers::Tokenizer) -> Self {
+        Self { tokenizer: Arc::new(tokenizer) }
+    }
+}
+
+#[cfg(all(feature = "tokenizers", not(target_arch = "wasm32")))]
+impl TokenEstimator for TokenizerFileEstimator {
     fn estimate(&self, text: &str) -> u32 {
         if text.is_empty() {
             return 0;
         }
-
-        let bin = match Self::resolve_bin() {
-            Some(p) => p,
-            None => {
-                // Fallback to HeuristicTokenEstimator on failure to resolve binary
-                tracing::warn!(
-                    "aphrody-tokenizer-go binary not found; falling back to heuristic estimator"
-                );
-                return HeuristicTokenEstimator::default().estimate(text);
-            },
-        };
-
-        // Use the stdin JSON interface as designed
-        let mut child = match std::process::Command::new(&bin)
-            .stdin(std::process::Stdio::piped())
-            .stdout(std::process::Stdio::piped())
-            .stderr(std::process::Stdio::null())
-            .spawn()
-        {
-            Ok(c) => c,
-            Err(e) => {
-                tracing::warn!(
-                    "Failed to spawn tokenizer process: {}; falling back to heuristic",
-                    e
-                );
-                return HeuristicTokenEstimator::default().estimate(text);
-            },
-        };
-
-        // Write the request to stdin
-        if let Some(mut stdin) = child.stdin.take() {
-            let req = serde_json::json!({
-                "encoding": self.encoding,
-                "text": text,
-            });
-            if let Err(e) = serde_json::to_writer(&mut stdin, &req) {
-                tracing::warn!(
-                    "Failed to write JSON to tokenizer: {}; falling back to heuristic",
-                    e
-                );
-                return HeuristicTokenEstimator::default().estimate(text);
-            }
-        }
-
-        // Read response
-        let output = match child.wait_with_output() {
-            Ok(out) => out,
-            Err(e) => {
-                tracing::warn!("Failed to read tokenizer output: {}; falling back to heuristic", e);
-                return HeuristicTokenEstimator::default().estimate(text);
-            },
-        };
-
-        if !output.status.success() {
-            tracing::warn!(
-                "Tokenizer exited with status: {}; falling back to heuristic",
-                output.status
-            );
-            return HeuristicTokenEstimator::default().estimate(text);
-        }
-
-        #[derive(serde::Deserialize)]
-        struct TokenizerResponse {
-            tokens: Option<u32>,
-            error: Option<String>,
-        }
-
-        match serde_json::from_slice::<TokenizerResponse>(&output.stdout) {
-            Ok(resp) => {
-                if let Some(err) = resp.error {
-                    tracing::warn!("Tokenizer returned error: {}; falling back to heuristic", err);
-                    HeuristicTokenEstimator::default().estimate(text)
-                } else {
-                    resp.tokens.unwrap_or(0).max(1)
-                }
-            },
-            Err(e) => {
-                tracing::warn!(
-                    "Failed to parse tokenizer JSON response: {}; falling back to heuristic",
-                    e
-                );
-                HeuristicTokenEstimator::default().estimate(text)
+        match self.tokenizer.encode_fast(text, false) {
+            Ok(encoding) => u32::try_from(encoding.len()).unwrap_or(u32::MAX).max(1),
+            Err(error) => {
+                tracing::warn!("tokenizer failed to encode text: {error}; using lexical estimate");
+                LexicalTokenEstimator.estimate(text)
             },
         }
     }

@@ -39,6 +39,7 @@ path = "src/host_service.rs"
 aphrody-subsystem = { workspace = true }
 aphrody-events = { workspace = true }
 aphrody-execpolicy = { workspace = true }
+aphrody-kernel-client = { workspace = true }
 aphrody-toolchains = { workspace = true }
 aphrody-winclean = { workspace = true }
 async-trait = { workspace = true }

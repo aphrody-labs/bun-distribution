@@ -48,7 +48,8 @@
 /// The crate's error type.
 pub mod error;
 /// llama.cpp backend discovery: locating the upstream release binaries that
-/// run the catalog GGUF entries.
+/// run the catalog GGUF entries, and the shared libraries the in-process
+/// engine (`aphrody-llama-server`, feature `in-process`) loads instead.
 pub mod llama;
 /// Locating the ONNX Runtime shared library.
 pub mod runtime;
@@ -59,7 +60,7 @@ pub mod runtime;
 pub mod session;
 
 pub use error::{InferError, Result};
-pub use llama::{LlamaSource, LlamaTool};
+pub use llama::{LibraryOrigin, LlamaLibrary, LlamaSource, LlamaTool};
 pub use runtime::{RuntimeSource, discover};
 #[cfg(all(feature = "onnx", not(target_arch = "wasm32")))]
 pub use session::{LoadedModel, SessionConfig, init_runtime, load};

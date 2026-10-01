@@ -152,3 +152,185 @@ fn top_k_exact_returns_best_k_by_cosine() {
     assert_eq!(top[0].0, 1);
     assert_eq!(top[1].0, 2);
 }
+
+/// Deterministic pseudo-random values in `[-1, 1)` (no `rand` dependency).
+fn lcg_vec(seed: &mut u64, len: usize) -> Vec<f32> {
+    (0..len)
+        .map(|_| {
+            *seed = seed
+                .wrapping_mul(6_364_136_223_846_793_005)
+                .wrapping_add(1_442_695_040_888_963_407);
+            ((*seed >> 33) as f32 / (1_u64 << 31) as f32) * 2.0 - 1.0
+        })
+        .collect()
+}
+
+/// `rows` unit-normalised vectors of width `dim`, row-major.
+fn unit_rows(rows: usize, dim: usize, seed: &mut u64) -> Vec<f32> {
+    let mut matrix = Vec::with_capacity(rows * dim);
+    for _ in 0..rows {
+        let mut row = lcg_vec(seed, dim);
+        l2_normalize(&mut row);
+        matrix.extend(row);
+    }
+    matrix
+}
+
+#[test]
+fn dot_matches_a_wide_sum_across_lane_boundaries() {
+    let mut seed = 7;
+    for len in [0_usize, 1, 7, 8, 9, 16, 19, 64, 65] {
+        let a = lcg_vec(&mut seed, len);
+        let b = lcg_vec(&mut seed, len);
+        let wide: f64 = a.iter().zip(&b).map(|(x, y)| f64::from(*x) * f64::from(*y)).sum();
+        assert!((f64::from(dot(&a, &b)) - wide).abs() < 1e-3, "len {len}");
+    }
+    assert_eq!(dot(&[1.0, 2.0], &[1.0]), 0.0, "length mismatch is zero");
+}
+
+#[test]
+fn norm_is_the_euclidean_length() {
+    assert!((norm(&[3.0, 4.0]) - 5.0).abs() < 1e-6);
+    assert_eq!(norm(&[]), 0.0);
+}
+
+#[test]
+fn cosine_with_norm_is_bit_identical_to_cosine() {
+    let mut seed = 11;
+    for _ in 0..20 {
+        let a = lcg_vec(&mut seed, 37);
+        let b = lcg_vec(&mut seed, 37);
+        assert_eq!(cosine(&a, &b).to_bits(), cosine_with_norm(&a, norm(&a), &b).to_bits());
+    }
+    assert_eq!(cosine_with_norm(&[1.0, 0.0], 1.0, &[1.0]), 0.0);
+    assert_eq!(cosine_with_norm(&[0.0, 0.0], 0.0, &[1.0, 0.0]), 0.0);
+}
+
+#[test]
+fn top_k_dot_matches_top_k_exact_on_unit_rows() {
+    let mut seed = 21;
+    let dim = 24;
+    let matrix = unit_rows(300, dim, &mut seed);
+    let query = matrix[17 * dim..18 * dim].to_vec();
+    let exact = top_k_exact(&query, &matrix, dim, 5);
+    let fast = top_k_dot(&query, &matrix, dim, 5);
+    assert_eq!(exact[0].0, 17);
+    assert_eq!(
+        exact.iter().map(|(row, _)| *row).collect::<Vec<_>>(),
+        fast.iter().map(|(row, _)| *row).collect::<Vec<_>>()
+    );
+    for ((_, a), (_, b)) in exact.iter().zip(&fast) {
+        assert!((a - b).abs() < 1e-5);
+    }
+    assert!(top_k_dot(&[1.0], &matrix, dim, 5).is_empty(), "wrong query width yields nothing");
+}
+
+#[test]
+fn top_k_i8_finds_the_exact_nearest_row_and_most_of_the_top_k() {
+    let mut seed = 33;
+    let dim = 32;
+    let rows = 200;
+    let matrix = unit_rows(rows, dim, &mut seed);
+    let mut codes = Vec::with_capacity(rows * dim);
+    let mut scales = Vec::with_capacity(rows);
+    for row in matrix.chunks_exact(dim) {
+        let (q, scale) = quantize_i8(row);
+        codes.extend(q);
+        scales.push(scale);
+    }
+    let query = matrix[17 * dim..18 * dim].to_vec();
+    let exact: Vec<usize> = top_k_dot(&query, &matrix, dim, 5).iter().map(|(r, _)| *r).collect();
+    let approx = top_k_i8(&query, &codes, &scales, dim, 5);
+    assert_eq!(approx[0].0, 17, "the stored row itself must rank first");
+    assert!((approx[0].1 - 1.0).abs() < 0.02, "score {}", approx[0].1);
+    let overlap = approx.iter().filter(|(r, _)| exact.contains(r)).count();
+    assert!(overlap >= 3, "int8 top-5 overlaps exact top-5 in {overlap} rows");
+}
+
+#[test]
+fn merge_top_k_equals_a_single_scan() {
+    let mut seed = 44;
+    let dim = 24;
+    let matrix = unit_rows(300, dim, &mut seed);
+    let query = lcg_vec(&mut seed, dim);
+    let mut unit_query = query;
+    l2_normalize(&mut unit_query);
+    let single = top_k_dot(&unit_query, &matrix, dim, 7);
+    let shard_rows = 100;
+    let parts: Vec<Vec<(usize, f32)>> = (0..3)
+        .map(|shard| {
+            let slice = &matrix[shard * shard_rows * dim..(shard + 1) * shard_rows * dim];
+            top_k_dot(&unit_query, slice, dim, 7)
+                .into_iter()
+                .map(|(row, score)| (row + shard * shard_rows, score))
+                .collect()
+        })
+        .collect();
+    assert_eq!(merge_top_k(parts, 7), single);
+}
+
+#[test]
+fn top_k_breaks_ties_by_lower_row_and_ranks_nan_last() {
+    let query = [1.0_f32, 0.0];
+    let matrix = [1.0_f32, 0.0, 1.0, 0.0, f32::NAN, 0.0];
+    let all = top_k_dot(&query, &matrix, 2, 3);
+    assert_eq!(all.iter().map(|(row, _)| *row).collect::<Vec<_>>(), vec![0, 1, 2]);
+    assert_eq!(all[2].1, f32::NEG_INFINITY);
+    let two = top_k_dot(&query, &matrix, 2, 2);
+    assert_eq!(two.iter().map(|(row, _)| *row).collect::<Vec<_>>(), vec![0, 1]);
+}
+
+#[test]
+fn fuse_scores_min_max_matches_the_llamaindex_relative_score_definition() {
+    let a = [("a", 10.0), ("b", 5.0), ("c", 0.0)];
+    let b = [("b", 0.9), ("d", 0.1)];
+    let fused = fuse_scores(&[(&a[..], 1.0), (&b[..], 1.0)], ScoreScaling::MinMax);
+    let ids: Vec<&str> = fused.iter().map(|(id, _)| *id).collect();
+    // a = 1.0 * 0.5, b = 0.5 * 0.5 + 1.0 * 0.5, c = d = 0; ties by first appearance.
+    assert_eq!(ids, vec!["b", "a", "c", "d"]);
+    assert!((fused[0].1 - 0.75).abs() < 1e-12);
+    assert!((fused[1].1 - 0.5).abs() < 1e-12);
+    assert_eq!(fused[2].1, 0.0);
+}
+
+#[test]
+fn fuse_scores_constant_lists_and_weights() {
+    let flat = [("x", 3.0), ("y", 3.0)];
+    let fused = fuse_scores(&[(&flat[..], 1.0)], ScoreScaling::MinMax);
+    assert_eq!(fused, vec![("x", 1.0), ("y", 1.0)]);
+    let zero = [("z", 0.0)];
+    assert_eq!(fuse_scores(&[(&zero[..], 1.0)], ScoreScaling::MinMax), vec![("z", 0.0)]);
+
+    let left = [("a", 1.0)];
+    let right = [("b", 1.0)];
+    let weighted = fuse_scores(&[(&left[..], 3.0), (&right[..], 1.0)], ScoreScaling::MinMax);
+    assert_eq!(weighted[0].0, "a");
+    assert!((weighted[0].1 - 0.75).abs() < 1e-12 && (weighted[1].1 - 0.25).abs() < 1e-12);
+
+    let none: [(&str, f64); 0] = [];
+    assert!(fuse_scores(&[(&none[..], 1.0)], ScoreScaling::MinMax).is_empty());
+}
+
+#[test]
+fn fuse_scores_dist_based_uses_three_sigma_bounds_without_clamping() {
+    let list = [("a", 1.0), ("b", 2.0), ("c", 3.0)];
+    let fused = fuse_scores(&[(&list[..], 1.0)], ScoreScaling::DistBased);
+    let score = |id: &str| fused.iter().find(|(i, _)| *i == id).map(|(_, s)| *s).unwrap();
+    assert!((score("b") - 0.5).abs() < 1e-9);
+    assert!((score("a") + score("c") - 1.0).abs() < 1e-9, "symmetric around the mean");
+    assert!(score("c") > score("b") && score("b") > score("a"));
+    // mean 2, population sigma sqrt(2/3): the bounds sit well outside the data, so scores stay
+    // strictly inside (0, 1) instead of touching the ends as min-max would.
+    assert!(score("a") > 0.0 && score("c") < 1.0);
+}
+
+#[test]
+fn minmax_normalize_scales_to_the_unit_interval() {
+    let mut values = [2.0, 4.0, 6.0];
+    minmax_normalize(&mut values);
+    assert_eq!(values, [0.0, 0.5, 1.0]);
+    let mut flat = [3.0, 3.0];
+    minmax_normalize(&mut flat);
+    assert_eq!(flat, [1.0, 1.0]);
+    minmax_normalize(&mut []);
+}
