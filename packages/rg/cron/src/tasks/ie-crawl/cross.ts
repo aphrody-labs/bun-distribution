@@ -5,7 +5,7 @@
  */
 
 import { iecodeDataPath } from "@aphrody/paths";
-import { WebCdpPage, waitForSelector } from "../../lib/web-cdp";
+import { WebCdpPage, waitForSelector, type NavigationResponse } from "../../lib/web-cdp";
 import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 

@@ -45,7 +45,7 @@ import {
 } from "./tasks/discord-messages";
 import { runDiscordPollsImport } from "./tasks/discord-polls";
 import { runNoctalyImport } from "./tasks/discord-noctaly";
-import { ServerWebSocket } from "bun";
+import type { ServerWebSocket } from "bun";
 import { CATALOGUE_TACHES, PLANIFICATIONS, TACHES_CRON } from "@rosegriffon/types/cron";
 import { createPostgresClient } from "@rosegriffon/db/service";
 import { resolveProfile, isAdmin } from "@rosegriffon/auth";
