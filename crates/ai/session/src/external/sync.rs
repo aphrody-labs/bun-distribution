@@ -15,7 +15,7 @@ use serde_json::Value;
 
 use super::{
     AgentKind, AgentReport, AgentRoots, ExternalRecord, LOCK_FILE_NAME, REPORT_SCHEMA_VERSION,
-    SessionReport, SessionSource, SyncError, SyncIssue, SyncOptions, SyncReport, agy, claude,
+    Role, SessionReport, SessionSource, SyncError, SyncIssue, SyncOptions, SyncReport, agy, claude,
     codex,
     common::{Draft, LineContext, normalize_workspace, truncate_text},
     process::{LiveAgentProcess, probe_live_processes},
@@ -117,8 +117,21 @@ where
         state.save(&state_path)?;
     }
 
-    let (sources, discovery_issues) = discover_sources(&options.roots, &agents);
+    let (mut sources, discovery_issues) = discover_sources(&options.roots, &agents);
     report.issues.extend(discovery_issues);
+    if options.domain_filter.is_some() || options.workspace_filter.is_some() {
+        sources.retain(|source| match source_matches_filters(source, options) {
+            Ok(matches) => matches,
+            Err(error) => {
+                report.issues.push(SyncIssue::new(
+                    Some(source.agent),
+                    Some(&source.path),
+                    error.to_string(),
+                ));
+                false
+            },
+        });
+    }
 
     let mut outcomes: Vec<SourceOutcome> = Vec::with_capacity(sources.len());
     for source in &sources {
@@ -436,6 +449,7 @@ where
         &session_id,
         start,
         options.max_text_bytes,
+        options.domain_filter.as_deref(),
         &mut ctx,
         &mirror_file,
         committed,
@@ -473,17 +487,20 @@ where
     let records_before =
         if restarted { 0 } else { previous.as_ref().map_or(0, |entry| entry.records) };
     state.mirrors.insert(mirror.clone(), mirror_len);
-    state.sources.insert(key, SourceState {
-        agent: source.agent,
-        session_id,
-        workspace: ctx.workspace,
-        offset: end,
-        head_len,
-        head_fnv,
-        mirror,
-        records: records_before + outcome.new_records,
-        updated_at: Some(Utc::now()),
-    });
+    state.sources.insert(
+        key,
+        SourceState {
+            agent: source.agent,
+            session_id,
+            workspace: ctx.workspace,
+            offset: end,
+            head_len,
+            head_fnv,
+            mirror,
+            records: records_before + outcome.new_records,
+            updated_at: Some(Utc::now()),
+        },
+    );
     state.save(state_path).map_err(SourceFailure::Fatal)?;
     outcome.bytes = end.saturating_sub(start);
     Ok(outcome)
@@ -499,6 +516,7 @@ fn stream_new_lines<F>(
     session_id: &str,
     start: u64,
     max_text_bytes: usize,
+    domain_filter: Option<&str>,
     ctx: &mut LineContext,
     mirror: &File,
     mirror_start: u64,
@@ -539,6 +557,14 @@ where
             continue;
         };
         for (part, draft) in parse_line(source.agent, &value, ctx).into_iter().enumerate() {
+            if draft.role == Role::User
+                && let Some(expected) = domain_filter
+                && let Some(rest) = draft.text.strip_prefix("[APHRODY_AGENT_DOMAIN=")
+                && let Some((observed, _)) = rest.split_once(']')
+                && observed != expected
+            {
+                return Err("transcript domain changed during ingestion".into());
+            }
             let (text, truncated) = truncate_text(draft.text, max_text_bytes);
             batch.push(ExternalRecord {
                 agent: source.agent,
@@ -587,6 +613,44 @@ where
 }
 
 // ---------------------------------------------------------------------------
+// Scan explicit transcript provenance before writing or feeding any record.
+fn source_matches_filters(source: &SessionSource, options: &SyncOptions) -> io::Result<bool> {
+    let mut context = LineContext { workspace: source.workspace.clone() };
+    let mut domains = std::collections::HashSet::new();
+    let mut first_user_domain = None;
+    let mut saw_user = false;
+    for line in BufReader::new(File::open(&source.path)?).lines() {
+        let line = line?;
+        let Ok(value) = serde_json::from_str::<Value>(&line) else { continue };
+        for draft in parse_line(source.agent, &value, &mut context) {
+            if draft.role == Role::User {
+                if !saw_user {
+                    saw_user = true;
+                    first_user_domain = draft
+                        .text
+                        .strip_prefix("[APHRODY_AGENT_DOMAIN=")
+                        .and_then(|rest| rest.split_once(']'))
+                        .map(|(domain, _)| domain.to_owned());
+                }
+                if let Some(rest) = draft.text.strip_prefix("[APHRODY_AGENT_DOMAIN=")
+                    && let Some((domain, _)) = rest.split_once(']')
+                {
+                    domains.insert(domain.to_owned());
+                }
+            }
+        }
+    }
+    let domain_matches = options.domain_filter.as_ref().is_none_or(|domain| {
+        first_user_domain.as_ref() == Some(domain) && domains.len() == 1 && domains.contains(domain)
+    });
+    let workspace_matches = options.workspace_filter.as_ref().is_none_or(|workspace| {
+        context.workspace.as_ref().is_some_and(|observed| {
+            normalize_workspace(observed) == normalize_workspace(&workspace.to_string_lossy())
+        })
+    });
+    Ok(domain_matches && workspace_matches)
+}
+
 // Live processes -> sessions
 // ---------------------------------------------------------------------------
 
@@ -622,4 +686,73 @@ fn attribute_live(
         }
     }
     attributed
+}
+
+#[cfg(test)]
+mod domain_isolation_tests {
+    use super::*;
+    #[test]
+    fn same_checkout_sessions_require_one_matching_user_domain() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("rollout-domain.jsonl");
+        let source = SessionSource {
+            agent: AgentKind::Codex,
+            path: path.clone(),
+            session_id: "fixture".into(),
+            workspace: None,
+            title: None,
+            current: false,
+            modified: None,
+        };
+        let options = SyncOptions::new(AgentRoots::from_home(dir.path()), dir.path().join("out"))
+            .with_domain("dbfr")
+            .with_workspace("/repo");
+        let write = |domains: &[&str], role: &str| {
+            let mut lines = vec![
+                serde_json::json!({"type":"session_meta","payload":{"cwd":"/repo"}}).to_string(),
+            ];
+            for domain in domains {
+                lines.push(serde_json::json!({"type":"response_item","payload":{"type":"message","role":role,"content":[{"type":"input_text","text":format!("[APHRODY_AGENT_DOMAIN={domain}]\ntask")} ]}}).to_string());
+            }
+            fs::write(&path, lines.join("\n") + "\n").unwrap();
+        };
+        write(&["dbfr"], "user");
+        assert!(source_matches_filters(&source, &options).unwrap());
+        write(&["aphrody"], "user");
+        assert!(!source_matches_filters(&source, &options).unwrap());
+        write(&[], "user");
+        assert!(!source_matches_filters(&source, &options).unwrap());
+        write(&["dbfr", "aphrody"], "user");
+        assert!(!source_matches_filters(&source, &options).unwrap());
+        let mirror = File::create(dir.path().join("mirror.jsonl")).unwrap();
+        let mut context = LineContext::default();
+        let mut outcome = SourceOutcome::default();
+        let mut fed = Vec::new();
+        let result = stream_new_lines(
+            &source,
+            "fixture",
+            0,
+            0,
+            Some("dbfr"),
+            &mut context,
+            &mirror,
+            0,
+            &mut |records: &[ExternalRecord]| {
+                fed.extend(records.iter().cloned());
+                Ok(())
+            },
+            &mut outcome,
+        );
+        assert!(result.is_err());
+        assert!(fed.is_empty(), "cross-domain records must not reach the memory sink");
+        write(&["dbfr"], "user");
+        let tagged = fs::read_to_string(&path).unwrap();
+        let unknown = serde_json::json!({"type":"response_item","payload":{"type":"message","role":"user","content":[{"type":"input_text","text":"untagged earlier task"}]}}).to_string();
+        fs::write(&path, format!("{unknown}\n{tagged}")).unwrap();
+        assert!(!source_matches_filters(&source, &options).unwrap());
+        write(&["dbfr"], "assistant");
+        assert!(!source_matches_filters(&source, &options).unwrap());
+        write(&["dbfr"], "user");
+        assert!(!source_matches_filters(&source, &options.with_workspace("/other")).unwrap());
+    }
 }

@@ -98,6 +98,9 @@ pub enum SyncError {
     /// aphrody's state directory could not be resolved.
     #[error("cannot resolve the aphrody state directory: {0}")]
     NoStateDir(String),
+    /// Domain/profile selection is invalid.
+    #[error("invalid agent domain/profile: {0}")]
+    InvalidDomain(String),
     /// An agent name that is none of `agy`, `codex`, `claude`.
     #[error("unknown agent `{0}` (expected agy, codex or claude)")]
     UnknownAgent(String),
@@ -350,6 +353,25 @@ pub fn default_output_dir() -> Result<PathBuf, SyncError> {
     aphrody_models::paths::sessions_dir().map_err(|error| SyncError::NoStateDir(error.to_string()))
 }
 
+/// Canonical allowlisted domain profile. Existing global stores are never migrated.
+pub fn domain_profile_dir(domain: &str) -> Result<PathBuf, SyncError> {
+    if !matches!(domain, "aphrody" | "dbfr" | "ie") {
+        return Err(SyncError::InvalidDomain(domain.into()));
+    }
+    let state = aphrody_models::paths::state_dir()
+        .map_err(|error| SyncError::NoStateDir(error.to_string()))?;
+    let canonical = state.join("workspaces").join(domain);
+    let selected = non_empty_env("APHRODY_WORKSPACE").unwrap_or_else(|| canonical.clone());
+    if !selected.join("AGENTS.md").is_file()
+        || selected.canonicalize().ok() != canonical.canonicalize().ok()
+    {
+        return Err(SyncError::InvalidDomain(
+            "workspace must match the selected domain profile".into(),
+        ));
+    }
+    Ok(selected)
+}
+
 /// What one sync run does.
 #[derive(Debug, Clone)]
 pub struct SyncOptions {
@@ -364,6 +386,10 @@ pub struct SyncOptions {
     pub max_text_bytes: usize,
     /// Match running agent processes (sysinfo) to the sessions they write.
     pub probe_processes: bool,
+    /// Require an explicit launcher domain marker; unknown sessions are excluded.
+    pub domain_filter: Option<String>,
+    /// Optional exact code workspace filter.
+    pub workspace_filter: Option<PathBuf>,
 }
 
 impl SyncOptions {
@@ -377,6 +403,8 @@ impl SyncOptions {
             agents: AgentKind::ALL.to_vec(),
             max_text_bytes: DEFAULT_MAX_TEXT_BYTES,
             probe_processes: false,
+            domain_filter: None,
+            workspace_filter: None,
         }
     }
 
@@ -386,7 +414,28 @@ impl SyncOptions {
     ///
     /// Propagates [`AgentRoots::discover`] and [`default_output_dir`].
     pub fn discover() -> Result<Self, SyncError> {
-        Ok(Self::new(AgentRoots::discover()?, default_output_dir()?))
+        let mut options = Self::new(AgentRoots::discover()?, default_output_dir()?);
+        if let Some(domain) =
+            std::env::var("APHRODY_AGENT_DOMAIN").ok().filter(|domain| !domain.is_empty())
+        {
+            options.output_dir = domain_profile_dir(&domain)?.join("sessions");
+            options.domain_filter = Some(domain);
+        }
+        Ok(options)
+    }
+
+    /// Restrict to an explicit launcher domain; untagged sessions are excluded.
+    #[must_use]
+    pub fn with_domain(mut self, domain: impl Into<String>) -> Self {
+        self.domain_filter = Some(domain.into());
+        self
+    }
+
+    /// Restrict to one exact code workspace.
+    #[must_use]
+    pub fn with_workspace(mut self, workspace: impl Into<PathBuf>) -> Self {
+        self.workspace_filter = Some(workspace.into());
+        self
     }
 
     /// Restrict the run to `agents` (empty keeps all of them).

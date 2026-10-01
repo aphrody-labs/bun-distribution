@@ -20,7 +20,14 @@ fn git(root: &Path, args: &[&str]) -> Option<String> {
 }
 
 impl RunTrace {
-    pub(crate) fn start(root: &Path, agent: &str, pid: u32, id: String) -> io::Result<Self> {
+    pub(crate) fn start(
+        root: &Path,
+        agent: &str,
+        pid: u32,
+        id: String,
+        domain: Option<&str>,
+        profile: Option<&Path>,
+    ) -> io::Result<Self> {
         let path = root.join(".coord/shared/runs").join(format!("{id}.json"));
         let trace = Self {
             path,
@@ -28,6 +35,8 @@ impl RunTrace {
             value: json!({
                 "schema_version": 1, "run_id": id, "agent": agent, "pid": pid,
                 "launcher_pid": std::process::id(), "workspace": root,
+                "agent_domain": domain,
+                "agent_home_workspace": profile,
                 "started_at": Utc::now().to_rfc3339(), "ended_at": null,
                 "branch": git(root, &["branch", "--show-current"]),
                 "head_at_start": git(root, &["rev-parse", "HEAD"]),
@@ -87,7 +96,15 @@ mod tests {
     #[test]
     fn captures_native_id_without_storing_output_or_claiming_commits() {
         let root = tempfile::tempdir().unwrap();
-        let mut trace = RunTrace::start(root.path(), "codex", 42, "run-fixture".into()).unwrap();
+        let mut trace = RunTrace::start(
+            root.path(),
+            "codex",
+            42,
+            "run-fixture".into(),
+            Some("dbfr"),
+            Some(root.path()),
+        )
+        .unwrap();
         trace
             .finish(
                 root.path(),
@@ -99,6 +116,7 @@ mod tests {
         let value: Value = serde_json::from_str(&bytes).unwrap();
         assert_eq!(value["session_id"], "native-123");
         assert_eq!(value["pid"], 42);
+        assert_eq!(value["agent_domain"], "dbfr");
         assert!(!bytes.contains("secret output"));
         assert!(value.get("commits_authored").is_none());
         assert!(value["ended_at"].is_string());

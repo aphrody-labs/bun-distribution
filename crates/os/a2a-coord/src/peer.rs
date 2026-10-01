@@ -53,6 +53,8 @@ pub struct PeerInvokeResult {
 pub enum PeerError {
     #[error("unknown peer: {0}")]
     UnknownPeer(String),
+    #[error("invalid agent domain/profile: {0}")]
+    InvalidDomain(String),
     #[error("binary not found: {0}")]
     BinaryNotFound(String),
     #[error("io: {0}")]
@@ -61,6 +63,64 @@ pub enum PeerError {
     BranchMismatch { expected: String, observed: String },
     #[error("utf8")]
     Utf8(#[from] std::string::FromUtf8Error),
+}
+
+/// A domain profile is selected explicitly; native credential/session roots stay untouched.
+#[derive(Debug, Clone)]
+struct DomainContext {
+    name: String,
+    workspace: PathBuf,
+}
+
+impl DomainContext {
+    fn from_env(repo: &Path) -> Result<Option<Self>, PeerError> {
+        let configured = repo.join("config/ai/agent-domains.json");
+        let fallback = if configured.is_file() {
+            let value: serde_json::Value = serde_json::from_slice(&std::fs::read(configured)?)
+                .map_err(|error| PeerError::InvalidDomain(error.to_string()))?;
+            Some(
+                value
+                    .get("defaultDomain")
+                    .and_then(serde_json::Value::as_str)
+                    .ok_or_else(|| PeerError::InvalidDomain("defaultDomain missing".into()))?
+                    .to_owned(),
+            )
+        } else {
+            None
+        };
+        let Some(name) =
+            std::env::var("APHRODY_AGENT_DOMAIN").ok().filter(|name| !name.is_empty()).or(fallback)
+        else {
+            return Ok(None);
+        };
+        let state = std::env::var_os("APHRODY_HOME")
+            .map(PathBuf::from)
+            .or_else(|| {
+                std::env::var_os("HOME")
+                    .or_else(|| std::env::var_os("USERPROFILE"))
+                    .map(|home| PathBuf::from(home).join(".aphrody"))
+            })
+            .ok_or_else(|| PeerError::InvalidDomain("state root unavailable".into()))?;
+        let canonical = state.join("workspaces").join(&name);
+        let workspace = std::env::var_os("APHRODY_WORKSPACE")
+            .map(PathBuf::from)
+            .unwrap_or_else(|| canonical.clone());
+        Self::validated(name, workspace, canonical).map(Some)
+    }
+
+    fn validated(name: String, workspace: PathBuf, canonical: PathBuf) -> Result<Self, PeerError> {
+        if !matches!(name.as_str(), "aphrody" | "dbfr" | "ie") {
+            return Err(PeerError::InvalidDomain(name));
+        }
+        if workspace.canonicalize()? != canonical.canonicalize()?
+            || !workspace.join("AGENTS.md").is_file()
+        {
+            return Err(PeerError::InvalidDomain(
+                "workspace must match the selected domain profile".into(),
+            ));
+        }
+        Ok(Self { name, workspace })
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -90,7 +150,8 @@ impl PeerInvoker {
 
     pub fn invoke_prompt(&self, peer: PeerId, prompt: &str) -> Result<PeerInvokeResult, PeerError> {
         self.verify_shared_branch()?;
-        let shared = self.shared_prompt(prompt);
+        let domain = DomainContext::from_env(&self.cwd)?;
+        let shared = self.shared_prompt(prompt, domain.as_ref());
         let prompt = shared.as_str();
         if self.dry_run {
             return Ok(PeerInvokeResult {
@@ -130,22 +191,43 @@ impl PeerInvoker {
         Ok(())
     }
 
-    fn shared_prompt(&self, task: &str) -> String {
+    fn shared_prompt(&self, task: &str, domain: Option<&DomainContext>) -> String {
         let mut context = String::new();
-        for relative in [
-            "AGENTS.md",
-            ".coord/shared/MEMORY.md",
-            ".coord/shared/CONVERSATIONS.md",
-            ".coord/shared/TRANSCRIPTS.md",
-            ".coord/shared/LIVE.md",
-        ] {
-            if let Ok(text) = std::fs::read_to_string(self.cwd.join(relative)) {
+        let paths = if let Some(domain) = domain {
+            vec![
+                self.cwd.join("AGENTS.md"),
+                domain.workspace.join("AGENTS.md"),
+                domain.workspace.join("SOUL.md"),
+                domain.workspace.join("MEMORY.md"),
+                domain.workspace.join("TOOLS.md"),
+                domain.workspace.join("CONVERSATIONS.md"),
+                domain.workspace.join(".coord/shared/TRANSCRIPTS.md"),
+            ]
+        } else {
+            [
+                "AGENTS.md",
+                ".coord/shared/MEMORY.md",
+                ".coord/shared/CONVERSATIONS.md",
+                ".coord/shared/TRANSCRIPTS.md",
+                ".coord/shared/LIVE.md",
+            ]
+            .iter()
+            .map(|path| self.cwd.join(path))
+            .collect()
+        };
+        for path in paths {
+            if let Ok(text) = std::fs::read_to_string(&path) {
                 let bounded: String = text.chars().take(16_384).collect();
-                context.push_str(&format!("\nRepository context ({relative}):\n{bounded}\n"));
+                context.push_str(&format!(
+                    "\nRepository/profile context ({}):\n{bounded}\n",
+                    path.display()
+                ));
             }
         }
+        let marker = domain
+            .map_or(String::new(), |domain| format!("[APHRODY_AGENT_DOMAIN={}]\n", domain.name));
         format!(
-            "{task}\n\nShared repository context; follow the current task and repository rules:\n{context}"
+            "{marker}{task}\n\nShared repository context; follow the current task and repository rules:\n{context}"
         )
     }
 
@@ -235,6 +317,12 @@ impl PeerInvoker {
 
     fn run(&self, peer: PeerId, mut cmd: Command) -> Result<PeerInvokeResult, PeerError> {
         cmd.current_dir(&self.cwd);
+        let domain = DomainContext::from_env(&self.cwd)?;
+        if let Some(domain) = &domain {
+            cmd.env("APHRODY_AGENT_DOMAIN", &domain.name);
+            cmd.env("APHRODY_WORKSPACE", &domain.workspace);
+            cmd.env("APHRODY_PROFILE", &domain.name);
+        }
         cmd.stdin(Stdio::null());
         cmd.stdout(Stdio::piped());
         cmd.stderr(Stdio::piped());
@@ -246,15 +334,21 @@ impl PeerInvoker {
         );
         cmd.env("APHRODY_RUN_ID", &run_id);
         let mut child = cmd.spawn()?;
-        let mut trace =
-            match crate::run_trace::RunTrace::start(&self.cwd, peer.short(), child.id(), run_id) {
-                Ok(trace) => trace,
-                Err(error) => {
-                    let _ = child.kill();
-                    let _ = child.wait();
-                    return Err(error.into());
-                },
-            };
+        let mut trace = match crate::run_trace::RunTrace::start(
+            &self.cwd,
+            peer.short(),
+            child.id(),
+            run_id,
+            domain.as_ref().map(|domain| domain.name.as_str()),
+            domain.as_ref().map(|domain| domain.workspace.as_path()),
+        ) {
+            Ok(trace) => trace,
+            Err(error) => {
+                let _ = child.kill();
+                let _ = child.wait();
+                return Err(error.into());
+            },
+        };
         tracing::debug!(run_id = %trace.id, peer = peer.short(), "peer launched");
         let out = child.wait_with_output()?;
         trace.finish(&self.cwd, out.status.code(), &String::from_utf8_lossy(&out.stdout))?;
@@ -303,9 +397,34 @@ mod coordination_tests {
     fn common_coding_peers_are_routable() {
         assert_eq!(PeerId::parse("codex"), Some(PeerId::Codex));
         assert_eq!(PeerId::parse("agycli"), Some(PeerId::Agy));
-        let invoker = PeerInvoker::new(".").with_dry_run(true);
+        let directory = tempfile::tempdir().unwrap();
+        let invoker = PeerInvoker::new(directory.path()).with_dry_run(true);
         for peer in [PeerId::Claude, PeerId::Codex, PeerId::Agy] {
             assert_eq!(invoker.invoke_prompt(peer, "shared task").unwrap().exit_code, Some(0));
         }
+    }
+}
+
+#[cfg(test)]
+mod domain_tests {
+    use super::*;
+    #[test]
+    fn selected_domain_excludes_shared_and_other_domain_context() {
+        let root = tempfile::tempdir().unwrap();
+        let repo = root.path().join("repo");
+        let profile = root.path().join("dbfr");
+        std::fs::create_dir_all(repo.join(".coord/shared")).unwrap();
+        std::fs::create_dir_all(&profile).unwrap();
+        std::fs::write(repo.join("AGENTS.md"), "repository rules").unwrap();
+        std::fs::write(repo.join(".coord/shared/MEMORY.md"), "aphrody private memory").unwrap();
+        std::fs::write(profile.join("AGENTS.md"), "dbfr rules").unwrap();
+        std::fs::write(profile.join("MEMORY.md"), "dbfr private memory").unwrap();
+        let context =
+            DomainContext::validated("dbfr".into(), profile.clone(), profile.clone()).unwrap();
+        let prompt = PeerInvoker::new(&repo).shared_prompt("task", Some(&context));
+        assert!(prompt.starts_with("[APHRODY_AGENT_DOMAIN=dbfr]"));
+        assert!(prompt.contains("dbfr private memory"));
+        assert!(!prompt.contains("aphrody private memory"));
+        assert!(DomainContext::validated("ie".into(), repo, profile).is_err());
     }
 }
