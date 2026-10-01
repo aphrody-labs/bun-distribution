@@ -27,8 +27,16 @@ export {
 } from "./shenron-embeddings";
 export {
 	aphrodyWebRecon,
+	aphrodyWebCrawl,
+	aphrodyWebSearch,
 	aphrodyWebScrape,
+	scrapeWithAphrody,
+	type AphrodyScrapeOptions,
+	type AphrodyScrapeProfile,
+	type AphrodyScrapeResult,
 	type AphrodyWebScrapeOptions,
+	type AphrodyWebCrawlRequest,
+	type AphrodyWebCrawlReport,
 	AphrodyWebClient,
 	type AphrodyCrawlJob,
 	type AphrodyCrawlOptions,

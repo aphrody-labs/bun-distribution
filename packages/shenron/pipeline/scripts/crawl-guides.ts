@@ -1,7 +1,7 @@
 /**
  * crawl-guides.ts — Crawl de guides et traductions de référence Dragon Ball via Aphrody Web.
  *
- * Utilise la CLI bxc local pour récupérer les pages sous forme de Markdown propre,
+ * Utilise Aphrody Web pour récupérer les pages sous forme de Markdown propre,
  * extrait le contenu utile en enlevant le header, la navigation et le footer,
  * et enregistre les fichiers Markdown nettoyés dans data/rag/raw/guides/.
  *

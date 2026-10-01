@@ -1,7 +1,7 @@
 #!/usr/bin/env bun
 /**
- * rag-harvest.ts — Orchestre la récolte (harvesting) de données Dragon Ball
- * canon via bxc (recon, scrape, mirror, search, crawl-worker).
+ * rag-harvest.ts — Orchestre la récolte RAG Dragon Ball through Aphrody Web.
+ * BXC mirror support remains for raw site mirrors until Aphrody Web owns that contract.
  * Extrait du markdown brut, normalise, et versionne dans data/rag/raw/.
  *
  * Usage : bun apps/shenron/bot/scripts/rag-harvest.ts <subcommand> [options]
@@ -10,6 +10,8 @@ import { Database } from "bun:sqlite";
 import { mkdirSync, writeFileSync, existsSync, readFileSync } from "node:fs";
 import { createHash } from "node:crypto";
 import { fileURLToPath } from "node:url";
+import { homedir } from "node:os";
+import { aphrodyWebCrawl, aphrodyWebRecon, aphrodyWebScrape, aphrodyWebSearch } from "@shenron/pipeline/aphrody";
 import { bxcCommand } from "@shenron/pipeline/bxc/cli";
 
 // Paths
@@ -172,7 +174,7 @@ const SEEDS = [
 	},
 ];
 
-// Execute bxc command helper
+// Temporary raw-site mirror adapter; other web operations use Aphrody Web.
 async function execBxc(
 	subcmd: string,
 	subcmdArgs: string[],
@@ -363,30 +365,29 @@ function saveHarvestedDoc(
 // Subcommands Handlers
 async function handleRecon(url: string, customSourceId?: string) {
 	if (refuseSiFandom(url)) return null;
-	console.log(`[*] Harvesting markdown content via bxc scrape: ${url}`);
-
-	const scrapeRes = await execBxc("scrape", [url, "--markdown", "--profile", profile], { proxy });
-
-	if (scrapeRes.code !== 0 || scrapeRes.stdout.length < 50) {
-		console.error(
-			`[-] Error scraping markdown for ${url}: bxc scrape exited with code ${scrapeRes.code}. Stderr: ${scrapeRes.stderr}`
-		);
+	console.log(`[*] Harvesting Markdown through Aphrody Web: ${url}`);
+	let markdown: string;
+	try {
+		markdown = await aphrodyWebScrape(url, { profile: profile as "static" | "http" | "fast" | "stealth" | "max" });
+	} catch (error) {
+		console.error(`[-] Aphrody Web scrape failed for ${url}: ${error instanceof Error ? error.message : String(error)}`);
+		return null;
+	}
+	if (markdown.length < 50) {
+		console.error(`[-] Aphrody Web returned too little Markdown for ${url}`);
 		return null;
 	}
 
-	const savedPath = saveHarvestedDoc(url, scrapeRes.stdout, customSourceId, "md");
+	const savedPath = saveHarvestedDoc(url, markdown, customSourceId, "md");
 	console.log(`[+] Successfully saved markdown: ${url} -> ${savedPath}`);
 
-	// Now run bxc recon to get the structural/recon report
-	console.log(`[*] Running bxc recon (structural report): ${url}`);
-	const reconRes = await execBxc("recon", [url, "--profile", profile], { proxy });
-	if (reconRes.code === 0 && reconRes.stdout.length >= 50) {
-		const savedReconPath = saveHarvestedDoc(url, reconRes.stdout, customSourceId, "recon.md");
+	console.log(`[*] Running Aphrody Web reconnaissance: ${url}`);
+	try {
+		const report = await aphrodyWebRecon(url, { profile: profile as "static" | "http" | "fast" | "stealth" | "max" });
+		const savedReconPath = saveHarvestedDoc(url, JSON.stringify(report, null, 2), customSourceId, "recon.md");
 		console.log(`[+] Successfully saved recon report: ${url} -> ${savedReconPath}`);
-	} else {
-		console.warn(
-			`[!] bxc recon failed or returned empty: code ${reconRes.code}. Skipping recon report.`
-		);
+	} catch (error) {
+		console.warn(`Aphrody Web recon failed; skipping report: ${error instanceof Error ? error.message : String(error)}`);
 	}
 
 	return savedPath;
@@ -394,20 +395,15 @@ async function handleRecon(url: string, customSourceId?: string) {
 
 async function handleScrape(url: string, selector?: string, customSourceId?: string) {
 	if (refuseSiFandom(url)) return null;
-	console.log(`[*] Harvesting URL via bxc scrape: ${url} (selector: ${selector || "markdown"})`);
-
-	const cmdArgs = [url];
-	if (selector) {
-		cmdArgs.push(selector);
-		if (isJson) cmdArgs.push("--json");
-	} else {
-		cmdArgs.push("--markdown");
-	}
-
-	const { code, stdout, stderr } = await execBxc("scrape", cmdArgs, { proxy, profile });
-
-	if (code !== 0) {
-		console.error(`[-] Error scraping ${url}: bxc exited with code ${code}. Stderr: ${stderr}`);
+	console.log(`[*] Harvesting URL via Aphrody Web scrape: ${url} (selector: ${selector || "markdown"})`);
+	let stdout: string;
+	try {
+		stdout = await aphrodyWebScrape(url, {
+			profile: profile as "static" | "http" | "fast" | "stealth" | "max",
+			...(selector ? { selector } : {}),
+		});
+	} catch (error) {
+		console.error(`[-] Aphrody Web scrape failed: ${error instanceof Error ? error.message : String(error)}`);
 		return null;
 	}
 
@@ -424,7 +420,7 @@ async function handleMirror(url: string) {
 	const outDir = `${outputDir}/${sourceId}/mirror`;
 	mkdirSync(outDir, { recursive: true });
 
-	console.log(`[*] Mirroring site via bxc mirror: ${url} -> ${outDir}`);
+	console.log(`[*] Mirroring site via the BXC compatibility adapter: ${url} -> ${outDir}`);
 
 	const cmdArgs = [url, outDir];
 	if (isRecursive) {
@@ -446,23 +442,15 @@ async function handleMirror(url: string) {
 }
 
 async function handleSearch(query: string) {
-	console.log(`[*] Searching Web via bxc search: "${query}"`);
-
-	const cmdArgs = [query];
-	if (isJson) {
-		cmdArgs.push("--json");
-	} else {
-		cmdArgs.push("--markdown");
-	}
-
-	const { code, stdout, stderr } = await execBxc("search", cmdArgs, { proxy });
-
-	if (code !== 0) {
-		console.error(
-			`[-] Error searching for "${query}": bxc exited with code ${code}. Stderr: ${stderr}`
-		);
+	console.log(`[*] Searching Web through Aphrody: "${query}"`);
+	let result: unknown;
+	try {
+		result = await aphrodyWebSearch(query, { language: "fr", region: "FR" });
+	} catch (error) {
+		console.error(`[-] Aphrody Web search failed for "${query}": ${error instanceof Error ? error.message : String(error)}`);
 		return null;
 	}
+	const stdout = isJson ? JSON.stringify(result, null, 2) : searchMarkdown(result);
 
 	const querySlug = query.toLowerCase().replace(/[^a-z0-9]+/g, "-");
 	const ext = isJson ? "json" : "md";
@@ -483,35 +471,28 @@ async function handleSearch(query: string) {
 }
 
 async function handleCrawlWorker(initialUrls: string[]) {
-	console.log(`[*] Running bxc crawl-worker...`);
-
-	const cmdArgs = ["--no-daemon"];
-	if (allowedDomains) {
-		cmdArgs.push("--allowed-domains", allowedDomains);
-	}
-	if (maxDepth) {
-		cmdArgs.push("--max-depth", String(maxDepth));
-	}
-	if (queueName) {
-		cmdArgs.push("--queue", queueName);
-	}
-	if (proxy) {
-		cmdArgs.push("--proxy-pool", proxy);
-	}
-	cmdArgs.push(...initialUrls);
-
-	console.log(`[*] Executing: bxc crawl-worker ${cmdArgs.join(" ")}`);
-
-	const cmd = await bxcCommand();
-	cmd.push("crawl-worker", ...cmdArgs);
-
-	const proc = Bun.spawn(cmd, {
-		stdout: "inherit",
-		stderr: "inherit",
+	console.log(`[*] Running bounded Aphrody Web crawl (${queueName})...`);
+	if (!initialUrls.length) throw new Error("crawl-worker requires at least one URL");
+	const report = await aphrodyWebCrawl({
+		urls: initialUrls,
+		...(allowedDomains ? { allowedDomains: allowedDomains.split(",").map((domain) => domain.trim()).filter(Boolean) } : {}),
+		maxDepth,
+		maxRequests: maxPages,
+		maxConcurrency: 2,
+		perHostDelayMs: delayMs,
+		sqlite: `${process.env.APHRODY_HOME || `${homedir()}/.aphrody`}/workspaces/dbfr/crawl/frontier/${queueName}.sqlite`,
 	});
+	console.log(`[*] Aphrody Web crawl finished: ${report.pages.length} pages, ${report.attempts} requests, ${report.errors.length} errors`);
+}
 
-	const code = await proc.exited;
-	console.log(`[*] Crawl-worker exited with code ${code}`);
+function searchMarkdown(value: unknown): string {
+	const result = value as { content?: { organic?: Array<{ position?: number; title?: string; url?: string; snippet?: string }>; corrected_query?: string } };
+	const organic = result.content?.organic ?? [];
+	return [
+		`# Search results${result.content?.corrected_query ? `: ${result.content.corrected_query}` : ""}`,
+		"",
+		...organic.flatMap((hit) => [`${hit.position ?? "-"}. [${hit.title ?? hit.url ?? "Result"}](${hit.url ?? ""})`, ...(hit.snippet ? [`   ${hit.snippet}`] : []), ""]),
+	].join("\n");
 }
 
 async function handleRunSeeds() {
@@ -552,22 +533,22 @@ async function handleRunSeeds() {
 
 function printHelpAndExit() {
 	console.log(`
-rag-harvest.ts — Dragon Ball RAG Data Harvester (bxc engine)
+rag-harvest.ts — Dragon Ball RAG Data Harvester (Aphrody Web)
 
 Usage:
   bun apps/shenron/bot/scripts/rag-harvest.ts <subcommand> [options]
 
 Subcommands:
-  recon <url>            Harvest a single URL using 'bxc recon' (or fallback 'bxc scrape --markdown')
-  scrape <url>           Extract content using 'bxc scrape' (uses CSS selector or --markdown)
-  mirror <url>           Download a complete site locally using 'bxc mirror'
-  search <query>         Query Google Search and save results using 'bxc search'
-  crawl-worker [urls]    Start a crawl worker using 'bxc crawl-worker'
+  recon <url>            Harvest Markdown and structural report through Aphrody Web
+  scrape <url>           Extract content using Aphrody Web (CSS selector or Markdown)
+  mirror <url>           Download a complete site locally using the BXC compatibility path
+  search <query>         Query Google Search through Aphrody Web
+  crawl-worker [urls]    Run a bounded persistent Aphrody Web crawl
   run-seeds              Harvest all seeds from db_sources and pre-configured links
 
 Options:
   --profile <name>       Stealth profile (static | fast | http | stealth | max) [default: max]
-  --proxy <url>          Use HTTP/Socks5 proxy for requests
+  --proxy <url>          Use HTTP/Socks5 proxy for the BXC mirror compatibility path
   --delay <ms>           Rate-limiting delay between requests in milliseconds [default: 1000]
   --source-id <id>       Override source ID (for folders and manifest) [default: derived from hostname]
   --output-dir <dir>     Output base directory [default: apps/shenron/bot/data/rag/raw/]

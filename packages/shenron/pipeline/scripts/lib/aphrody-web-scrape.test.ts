@@ -2,7 +2,7 @@ import { describe, expect, it } from "bun:test";
 import { scrapeWithAphrody } from "./aphrody-web-scrape.ts";
 
 describe("Aphrody Web HTML capture", () => {
-	it("uses native BXC scrape on the private VPS listener", async () => {
+	it("uses Aphrody Web's local listener on the private VPS", async () => {
 		let pathname = "";
 		await scrapeWithAphrody("https://example.org/", {
 			baseUrl: "http://127.0.0.1:3007",

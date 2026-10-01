@@ -37,18 +37,16 @@ propriété.
 | Traduction | crate `aphrody-translate` | Le site délègue déjà la traduction à Aphrody. |
 | OCR databooks | `aphrody-ocr` via API Aphrody | Reconnaissance/revue distantes; Shenron reste le validateur et l’écrivain des transcriptions. |
 | Infra | `aphrody-infra`, `@aphrody/workspace` | Adaptateur status/check ajouté; scripts ops avec SSH/gcloud encore à migrer opération par opération. |
-| Recherche, crawl, extraction Dragon Ball | Aphrody Web | Le crawler générique et MediaWiki sont disponibles; `crawl-guides.ts` et `rag-recon.ts` utilisent aussi le wrapper `aphrodyWebScrape`. Les adaptateurs de source et règles Dragon Ball restent des contrats de domaine à déplacer/conserver côté Shenron. |
+| Recherche, crawl, extraction Dragon Ball | Aphrody Web | Le crawler générique et MediaWiki sont disponibles; `crawl-guides.ts`, `rag-recon.ts` et scrape/recon/search/crawl-worker de `rag-harvest.ts` utilisent les clients Aphrody Web. Les adaptateurs de source et règles Dragon Ball restent des contrats de domaine à déplacer/conserver côté Shenron. |
 | Types, configuration, canon, API/site, bot et UI Shenron | Shenron | Domaine produit : reste dans Shenron. Les capacités partagées sont appelées via contrats Aphrody. |
 
 ## Points encore à migrer
 
 - Les consommateurs Shenron qui importent `@shenron/pipeline/bxc/*` ou lancent
   des commandes BXC restent à migrer par flux. `rag-harvest.ts` utilise encore
-  BXC pour scrape/recon, mirror, search et crawl-worker; `bxc-asset-harvest.ts`
-  garde scrape/recon/mirror; `bxc-ingest.ts`, les récoltes Kanzenshuu et les
-  scripts d’acquisition de scans ont encore des dépendances BXC. Les contrats
-  Aphrody existants ou manquants doivent remplacer chaque opération avant de
-  retirer ces appels.
+  BXC pour mirror; `bxc-asset-harvest.ts`, `bxc-ingest.ts` et quelques tâches
+  d’exploitation restent à inventorier. Les contrats Aphrody existants ou
+  manquants doivent remplacer chaque opération avant de retirer ces appels.
 - Le flux `crawl universal` est redirigé vers le worker Aphrody Web, mais il
   doit être validé sur un petit lot réel avant de remplacer les anciennes
   sorties. Les crawls complets Fandom sont volontairement hors exécution de

@@ -284,7 +284,7 @@ async function main() {
 			result = await runCrawl({ source: (positional[0] as any) ?? "universal", url: positional[1], dryRun });
 			break;
 		case "unify":
-			console.log("=== Pipeline Unify : exports bxc corpus -> store aphrody-rag ===");
+			console.log("=== Pipeline Unify : Aphrody Web corpus -> Aphrody RAG ===");
 			result = await runCorpusIngest({ dryRun });
 			break;
 		default:
@@ -301,7 +301,7 @@ Modules unifiés (exécutables hors du VPS principal) :
   ia           Orchestration des workflows et agents IA
   translation  Lance la supervision Bun des traductions databooks et du RAG
   crawl        Lance les scrapers et collecteurs de données
-  unify        Ingère les exports bxc corpus dans le store aphrody-rag canonique
+  unify        Ingère les exports Aphrody Web dans le store Aphrody RAG
 `);
 			process.exit(command ? 1 : 0);
 	}

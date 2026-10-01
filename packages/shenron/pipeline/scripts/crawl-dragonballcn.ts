@@ -16,8 +16,8 @@
  *
  * RÉCUPÉRATION
  * ------------
- * Toutes les pages passent par BXC avec une sortie HTML, afin que le transport,
- * le cache et les profils de navigation restent centralisés dans le crawler.
+ * Toutes les pages passent par l’API HTML Aphrody Web; le cache et l’extraction
+ * éditoriale restent dans Shenron.
  *
  * Usage :
  *   bun apps/shenron/bot/scripts/crawl-dragonballcn.ts                      # tout le catalogue (~15 s)
@@ -110,7 +110,7 @@ function cheminCache(url: string) {
 	return `${DOSSIER_CACHE}${Bun.hash(url).toString(36)}.html`;
 }
 
-async function viaBxc(url: string): Promise<string> {
+async function fetchSourceHtml(url: string): Promise<string> {
 	const result = await scrapeWithAphrody(url, { profile: "render" });
 	if (estChallenge(result.content)) throw new Error(`Aphrody Web challenge pour ${url}`);
 	return result.content;
@@ -121,7 +121,7 @@ async function recupere(url: string): Promise<string> {
 	if (!FORCE && (await cache.exists())) return cache.text();
 
 	await temporise();
-	const html = await viaBxc(url);
+	const html = await fetchSourceHtml(url);
 
 	await Bun.write(cheminCache(url), html);
 	return html;

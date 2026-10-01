@@ -12,18 +12,9 @@
  * relevé de `crawl-dragonballcn.ts`, qui sait quelles éditions existent mais
  * pas quel volume chacune représente ni où sa pagination diverge.
  *
- * POURQUOI LE SERVEUR MCP ET NON LA CLI NI curl
- * ---------------------------------------------
- * Trois clients ont été mesurés le 2026-09-04 sur les fiches `list/gain_1.php` :
- *   · `curl`, même avec Referer et User-Agent honnêtes → **403 Cloudflare**,
- *     sur TOUS les identifiants, alors que les pages de catalogue (`*.htm`)
- *     passent en 200 avec le même client ;
- *   · `bxc scrape --profile max` en ligne de commande → réussit la première
- *     fiche puis rend des réponses VIDES (96 octets) sur les suivantes ;
- *   · le serveur **bxc-mcp** (`bxc_scrape_markdown`, profil `max`) → rend la
- *     fiche complète, de façon reproductible. C'est le client retenu ici.
- * Le dialogue se fait en JSON-RPC sur l'entrée standard du binaire `bxc-mcp`
- * (transport stdio), un seul processus pour toute la campagne.
+ * Les fiches passent par le client partagé Aphrody Web (`aphrody web scrape
+ * --markdown --profile max`). Le crawl reste séquentiel et persiste ses
+ * checkpoints au fil de l'eau.
  *
  * Sorties :
  *   · `data/catalogues/dragonballcn.json`            — le compte, par ouvrage
@@ -36,6 +27,7 @@
  *   bun apps/shenron/bot/scripts/volumetrie-dragonballcn.ts --recommencer      # ignore les mesures acquises
  */
 import { join } from "node:path";
+import { aphrodyWebScrape } from "@shenron/pipeline/aphrody";
 
 const args = process.argv.slice(2);
 const opt = (nom: string, defaut?: string) => {
@@ -47,7 +39,6 @@ const flag = (nom: string) => args.includes(`--${nom}`);
 const DOSSIER = join(import.meta.dir, "..", "data", "catalogues");
 const CATALOGUE = join(DOSSIER, "dragonballcn.json");
 const INVENTAIRE = join(DOSSIER, "dragonballcn-inventaire.json");
-const BINAIRE_MCP = `${process.env.HOME}/.local/bin/bxc-mcp`;
 const COLLECTION = opt("collection");
 const LIMITE = Number(opt("limite", "0"));
 const DELAI = Number(opt("delai", "1500"));
@@ -59,82 +50,16 @@ type Planche = { n: number; fichier: string; poids: string | null; ajoutee: stri
 type Ouvrage = { did: string; url: string; libelle?: string; planches?: number | null };
 type Collection = { slug: string; titre: string; ouvrages: Ouvrage[] };
 
-// ------------------------------------------------------------ client MCP stdio
+// ---------------------------------------------------------- client Aphrody Web
 
-/**
- * Un seul processus `bxc-mcp` pour toute la campagne : le relancer à chaque
- * fiche coûterait plus cher que la requête elle-même (le binaire pèse 127 Mo).
- */
-class ClientMcp {
-	private proc: Bun.Subprocess<"pipe", "pipe", "ignore">;
-	private reste = "";
-	private lecteur: ReadableStreamDefaultReader<Uint8Array>;
-	private id = 0;
-
-	constructor() {
-		this.proc = Bun.spawn([BINAIRE_MCP], { stdin: "pipe", stdout: "pipe", stderr: "ignore" });
-		this.lecteur = this.proc.stdout.getReader();
-	}
-
-	/** Lit jusqu'à la réponse portant cet identifiant (le serveur peut intercaler des notifications). */
-	private async reponse(id: number, echeance: number): Promise<Record<string, unknown> | null> {
-		const decodeur = new TextDecoder();
-		while (Date.now() < echeance) {
-			const nl = this.reste.indexOf("\n");
-			if (nl === -1) {
-				const { value, done } = await this.lecteur.read();
-				if (done) return null;
-				this.reste += decodeur.decode(value, { stream: true });
-				continue;
-			}
-			const ligne = this.reste.slice(0, nl).trim();
-			this.reste = this.reste.slice(nl + 1);
-			if (!ligne) continue;
-			try {
-				const msg = JSON.parse(ligne) as { id?: number };
-				if (msg.id === id) return msg as Record<string, unknown>;
-			} catch {
-				// Ligne non JSON (trace du serveur) : on l'ignore.
-			}
-		}
-		return null;
-	}
-
-	private async demande(method: string, params: unknown, dureeMs: number) {
-		const id = ++this.id;
-		this.proc.stdin.write(`${JSON.stringify({ jsonrpc: "2.0", id, method, params })}\n`);
-		await this.proc.stdin.flush();
-		return this.reponse(id, Date.now() + dureeMs);
-	}
-
-	async ouvrir() {
-		await this.demande(
-			"initialize",
-			{
-				protocolVersion: "2024-11-05",
-				capabilities: {},
-				clientInfo: { name: "dragonballfr-inventaire", version: "1.0" },
-			},
-			30_000
-		);
-		this.proc.stdin.write(
-			`${JSON.stringify({ jsonrpc: "2.0", method: "notifications/initialized" })}\n`
-		);
-		await this.proc.stdin.flush();
-	}
-
+class AphrodyWebScraper {
 	async scrapeMarkdown(url: string): Promise<string | null> {
-		const r = (await this.demande(
-			"tools/call",
-			{ name: "bxc_scrape_markdown", arguments: { url, profile: "max", force: true } },
-			DUREE_MAX_MS
-		)) as { result?: { content?: { type: string; text?: string }[] } } | null;
-		const texte = r?.result?.content?.map((c) => c.text ?? "").join("\n") ?? "";
-		return texte.trim() ? texte : null;
-	}
-
-	fermer() {
-		this.proc.kill();
+		try {
+			return await aphrodyWebScrape(url, { profile: "max", timeoutMs: DUREE_MAX_MS });
+		} catch (error) {
+			console.error(`Aphrody Web scrape failed for ${url}: ${error instanceof Error ? error.message : String(error)}`);
+			return null;
+		}
 	}
 }
 
@@ -178,9 +103,7 @@ for (const c of collections) {
 const cibles = LIMITE > 0 ? aFaire.slice(0, LIMITE) : aFaire;
 console.log(`${cibles.length} ouvrage(s) à inventorier (sur ${aFaire.length} restants).`);
 
-const client = new ClientMcp();
-await client.ouvrir();
-
+const client = new AphrodyWebScraper();
 let mesures = 0;
 let muets = 0;
 try {
@@ -212,7 +135,6 @@ try {
 } finally {
 	await Bun.write(CATALOGUE, `${JSON.stringify(catalogue, null, "\t")}\n`);
 	await Bun.write(INVENTAIRE, `${JSON.stringify(inventaire, null, "\t")}\n`);
-	client.fermer();
 }
 
 const total = Object.values(inventaire).reduce((s, p) => s + p.length, 0);

@@ -3,6 +3,7 @@
 import { chmod, mkdir, statfs } from "node:fs/promises";
 import { join } from "node:path";
 import sharp from "sharp";
+import { aphrodyWebScrape } from "@shenron/pipeline/aphrody";
 
 const args = process.argv.slice(2);
 const flag = (nom: string) => args.includes(`--${nom}`);
@@ -28,7 +29,6 @@ const SORTIE = join(RACINE_BOT, "assets", "dragonballcn", "planches");
 
 const MAISON = process.env.DRAGONBALLCN_ETAT_DIR ?? join(process.env.HOME ?? "/tmp", ".aphrody");
 const JOURNAL = join(MAISON, "dragonballcn-planches.json");
-const BINAIRE_MCP = join(process.env.HOME ?? "", ".local", "bin", "bxc-mcp");
 
 const RACINE = "https://comic.dragonballcn.com";
 
@@ -43,7 +43,7 @@ const JOUR_MS = 24 * 60 * 60 * 1000;
 const REFUS_MAX = 5;
 const DISQUE_MIN = 2 * 2 ** 30;
 
-const DUREE_MCP_MS = 180_000;
+const DUREE_WEB_MS = 180_000;
 
 type Planche = { n: number; fichier: string; poids: string | null; ajoutee: string | null };
 type Ouvrage = { did: string; url: string; libelle?: string; titre_tome?: string };
@@ -140,60 +140,12 @@ const estUneImage = (corps: Uint8Array) => {
 };
 
 async function resoutDossier(url: string): Promise<string | null> {
-	const proc = Bun.spawn([BINAIRE_MCP], { stdin: "pipe", stdout: "pipe", stderr: "ignore" });
-	const lecteur = proc.stdout.getReader();
-	const decodeur = new TextDecoder();
-	const echeance = Date.now() + DUREE_MCP_MS;
-	let reste = "";
-
-	const envoie = async (message: unknown) => {
-		proc.stdin.write(`${JSON.stringify(message)}\n`);
-		await proc.stdin.flush();
-	};
-
-	const attend = async (id: number): Promise<string | null> => {
-		while (Date.now() < echeance) {
-			const saut = reste.indexOf("\n");
-			if (saut === -1) {
-				const { value, done } = await lecteur.read();
-				if (done) return null;
-				reste += decodeur.decode(value, { stream: true });
-				continue;
-			}
-			const ligne = reste.slice(0, saut).trim();
-			reste = reste.slice(saut + 1);
-			if (!ligne) continue;
-			try {
-				if ((JSON.parse(ligne) as { id?: number }).id === id) return ligne;
-			} catch {}
-		}
-		return null;
-	};
-
 	try {
-		await envoie({
-			jsonrpc: "2.0",
-			id: 1,
-			method: "initialize",
-			params: {
-				protocolVersion: "2024-11-05",
-				capabilities: {},
-				clientInfo: { name: "dragonballfr-planches", version: "1.0" },
-			},
-		});
-		if (!(await attend(1))) return null;
-		await envoie({ jsonrpc: "2.0", method: "notifications/initialized" });
-		await envoie({
-			jsonrpc: "2.0",
-			id: 2,
-			method: "tools/call",
-			params: { name: "bxc_scrape_markdown", arguments: { url, profile: "max", force: true } },
-		});
-		const reponse = await attend(2);
-		return reponse ? (/list\/+([^"')\s\\]+?)\/_thumb\./.exec(reponse)?.[1] ?? null) : null;
-	} finally {
-		lecteur.cancel().catch(() => {});
-		proc.kill();
+		const markdown = await aphrodyWebScrape(url, { profile: "max", timeoutMs: DUREE_WEB_MS });
+		return /list\/+([^"')\s\\]+?)\/_thumb\./.exec(markdown)?.[1] ?? null;
+	} catch (error) {
+		console.error(`Aphrody Web: ${error instanceof Error ? error.message : String(error)}`);
+		return null;
 	}
 }
 
@@ -250,11 +202,8 @@ async function verifiePrealables(sonde: boolean) {
 	if (!Bun.which("curl"))
 		manques.push("`curl` absent du PATH — c'est le client HTTP du script (apt install curl).");
 
-	if (!(await Bun.file(BINAIRE_MCP).exists()))
-		manques.push(
-			`\`${BINAIRE_MCP}\` absent — le binaire MCP résout le dossier distant. ` +
-				"Le reconstruire depuis bxc : `bun run build:mcp`, puis l'installer dans ~/.local/bin."
-		);
+	if (!process.env.APHRODY_BIN?.trim() && !Bun.which("aphrody"))
+		manques.push("Aphrody CLI absent du PATH — définir APHRODY_BIN ou installer le binaire aphrody.");
 
 	try {
 		await sharp({ create: { width: 1, height: 1, channels: 3, background: "#000" } })
