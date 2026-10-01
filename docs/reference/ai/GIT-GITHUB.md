@@ -239,4 +239,4 @@ of the source repository `aphrody-code/aphrody`.
 
 The measured 2026-09-07 migration, including every consumer commit and the
 remaining external blockers, is recorded in the
-[historical multi-agent Git/GitHub migration audit](https://github.com/aphrody-code/aphrody-ai/blob/51c8502949c420b9c8d4945fef0a63dcf2aaea33/docs/audits/2026-09-07-multi-agent-git-github-migration.md).
+[historical multi-agent Git/GitHub migration audit](https://github.com/aphrody-labs/aphrody/blob/51c8502949c420b9c8d4945fef0a63dcf2aaea33/docs/audits/2026-09-07-multi-agent-git-github-migration.md).

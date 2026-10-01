@@ -7,7 +7,7 @@ une activation de production : aucune unité systemd, configuration Nginx, migra
 politique Supabase n'est appliquée automatiquement.
 
 La source de vérité machine-readable est le [catalogue de services
-Infra](https://github.com/aphrody-code/aphrody-infra/blob/main/config/service-catalog.json).
+Infra](https://github.com/aphrody-labs/aphrody).
 Les routes et unités sont contrôlées avec le dépôt Infra, sans réseau ni secret.
 
 ## Topologie Unifiée
@@ -140,7 +140,7 @@ usages publics des preuves privées.
 | Preuves ranked        | `ranked-proofs/proof/` | privé, URL signée (3 600 s par défaut) | 5 Mio décodés, transport texte base64 8 Mio | PNG, JPEG, WebP détectés par magic bytes |
 
 Le stockage est désormais décrit dans le [catalogue de services
-Infra](https://github.com/aphrody-code/aphrody-infra/blob/main/config/service-catalog.json)
+Infra](https://github.com/aphrody-labs/aphrody)
 et le script de migration versionné. Il ne s'exécute pas seul. Il faut d'abord
 obtenir un dump valide de la base Achillea, relire la cible et appliquer la migration
 sur ce projet uniquement.

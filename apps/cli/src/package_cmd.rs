@@ -84,7 +84,7 @@ struct Package {
 const PACKAGES: &[Package] = &[
     Package {
         name: "aphrody",
-        repository: "https://github.com/aphrody-code/aphrody-ai.git",
+        repository: "https://github.com/aphrody-labs/aphrody.git",
         engine: Engine::Cargo,
         cargo_package: Some("aphrody"),
         unix_build: &[],
@@ -93,7 +93,7 @@ const PACKAGES: &[Package] = &[
     },
     Package {
         name: "bxc",
-        repository: "https://github.com/aphrody-code/bxc.git",
+        repository: "https://github.com/aphrody-labs/aphrody.git",
         engine: Engine::Bun,
         cargo_package: None,
         unix_build: &["run", "build:linux"],
@@ -102,7 +102,7 @@ const PACKAGES: &[Package] = &[
     },
     Package {
         name: "n2b",
-        repository: "https://github.com/aphrody-code/n2b.git",
+        repository: "https://github.com/aphrody-labs/aphrody.git",
         engine: Engine::Cargo,
         cargo_package: Some("n2b"),
         unix_build: &[],
@@ -111,7 +111,7 @@ const PACKAGES: &[Package] = &[
     },
     Package {
         name: "nie",
-        repository: "https://github.com/aphrody-code/iecode.git",
+        repository: "https://github.com/aphrody-labs/iecode.git",
         engine: Engine::Cargo,
         cargo_package: Some("nie-cli"),
         unix_build: &[],

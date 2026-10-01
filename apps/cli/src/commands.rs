@@ -42,7 +42,7 @@ impl TerminalCommand for VersionCommand {
                 "built": env!("APHRODY_BUILD_UNIX"),
                 "target": env!("APHRODY_TARGET"),
                 "profile": env!("APHRODY_BUILD_PROFILE"),
-                "repo": "https://github.com/aphrody-code/aphrody-ai",
+                "repo": "https://github.com/aphrody-labs/aphrody",
                 "license": "Apache-2.0",
                 "a2a": "ai.json v1 (AGNTCY a2a/v0.4) @ /ai.json + /.well-known/ai.json"
             });
@@ -58,7 +58,7 @@ impl TerminalCommand for VersionCommand {
         println!("target:    {}", env!("APHRODY_TARGET"));
         println!("profile:   {}", env!("APHRODY_BUILD_PROFILE"));
         println!();
-        println!("repo:      https://github.com/aphrody-code/aphrody-ai");
+        println!("repo:      https://github.com/aphrody-labs/aphrody");
         println!("license:   Apache-2.0");
         println!("a2a:       ai.json v1 (AGNTCY a2a/v0.4) @ /ai.json + /.well-known/ai.json");
         Ok(())

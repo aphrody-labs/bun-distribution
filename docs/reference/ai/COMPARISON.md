@@ -31,4 +31,4 @@ No current numeric score is asserted; the active plan uses explicit release crit
 
 The previous comparison with task runners and environment managers is
 superseded and retained in
-[Git history at bb46076](https://github.com/aphrody-code/aphrody-ai/blob/bb46076ce7ab57ea3af96486dbefc66392ef3562/docs/COMPARISON.md).
+[Git history at bb46076](https://github.com/aphrody-labs/aphrody/blob/bb46076ce7ab57ea3af96486dbefc66392ef3562/docs/COMPARISON.md).

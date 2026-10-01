@@ -70,7 +70,7 @@ use crate::channels::{
 const DISCORD_API_BASE: &str = "https://discord.com/api/v10/";
 
 /// User-Agent string Discord requires on every API call (RFC 7231).
-const USER_AGENT: &str = "DiscordBot (https://github.com/aphrody-code/aphrody-ai, 1.0)";
+const USER_AGENT: &str = "DiscordBot (https://github.com/aphrody-labs/aphrody, 1.0)";
 
 // ── Wire types ────────────────────────────────────────────────────────────────
 

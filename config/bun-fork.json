@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "repository": "aphrody-code/bun",
+  "repository": "aphrody-labs/bun",
   "parent": "oven-sh/bun",
   "branch": "main",
   "commit": "a2671046afbfc818fba21a4925f384b75dc8e109",

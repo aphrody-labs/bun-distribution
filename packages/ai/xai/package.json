@@ -3,11 +3,11 @@
   "version": "1.1.6",
   "repository": {
     "type": "git",
-    "url": "https://github.com/aphrody-code/aphrody-ai.git",
+    "url": "https://github.com/aphrody-labs/aphrody.git",
     "directory": "packages/xai"
   },
   "bugs": {
-    "url": "https://github.com/aphrody-code/aphrody-ai/issues"
+    "url": "https://github.com/aphrody-labs/aphrody/issues"
   },
   "publishConfig": {
     "access": "public"

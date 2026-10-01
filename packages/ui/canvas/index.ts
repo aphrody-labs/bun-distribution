@@ -105,7 +105,7 @@ async function blitPng(png: Uint8Array, width: number, height: number): Promise<
 }
 
 /**
- * Draw an M3 [`Scene`](https://github.com/aphrody-code/aphrody-ui/blob/main/crates/aphrody-render/src/scene.rs)
+ * Draw an M3 [`Scene`](https://github.com/aphrody-labs/aphrody/blob/main/crates/ui/render/src/scene.rs)
  * onto a fresh native Skia canvas.
  *
  * Rendering itself happens off-thread of the addon: the scene is rasterized

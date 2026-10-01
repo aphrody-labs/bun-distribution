@@ -1053,7 +1053,7 @@ No current numeric score is asserted; the active plan uses explicit release crit
 
 The previous comparison with task runners and environment managers is
 superseded and retained in
-[Git history at bb46076](https://github.com/aphrody-code/aphrody-ai/blob/bb46076ce7ab57ea3af96486dbefc66392ef3562/docs/COMPARISON.md).
+[Git history at bb46076](https://github.com/aphrody-labs/aphrody/blob/bb46076ce7ab57ea3af96486dbefc66392ef3562/docs/COMPARISON.md).
 
 
 ## File: docs/DOCUMENTATION-PIPELINE.md
@@ -1860,7 +1860,7 @@ of the source repository `aphrody-code/aphrody`.
 
 The measured 2026-09-07 migration, including every consumer commit and the
 remaining external blockers, is recorded in the
-[historical multi-agent Git/GitHub migration audit](https://github.com/aphrody-code/aphrody-ai/blob/51c8502949c420b9c8d4945fef0a63dcf2aaea33/docs/audits/2026-09-07-multi-agent-git-github-migration.md).
+[historical multi-agent Git/GitHub migration audit](https://github.com/aphrody-labs/aphrody/blob/51c8502949c420b9c8d4945fef0a63dcf2aaea33/docs/audits/2026-09-07-multi-agent-git-github-migration.md).
 
 
 ## File: docs/GOOGLE.md
@@ -3457,7 +3457,7 @@ adding a language bridge alone does not connect a capability to a user flow.
 
 The previous plan's machine-specific settings, fixed resource budgets and
 aggregate test counts are historical. Read the
-[original at bb46076](https://github.com/aphrody-code/aphrody-ai/blob/bb46076ce7ab57ea3af96486dbefc66392ef3562/docs/PLAN-POLYGLOT-2026.md)
+[original at bb46076](https://github.com/aphrody-labs/aphrody/blob/bb46076ce7ab57ea3af96486dbefc66392ef3562/docs/PLAN-POLYGLOT-2026.md)
 for provenance. It is superseded and does not authorize deployment or define
 current hosts, ports, platform support or performance.
 
@@ -3505,7 +3505,7 @@ than reopening the old spelling mismatch.
 Koharu has a headless library/SDK and extracted editor/settings integration;
 full editor, published source closure and Shenron's active review/deposit remain open.
 All release rows below remain **INCOMPLET**. Source, reported checks and installed
-proof are distinct. The [previous detailed baseline](https://github.com/aphrody-code/aphrody-ai/blob/914a4bf5006366f05d030bd7976bcccd17ce93e2/docs/PLAN.md)
+proof are distinct. The [previous detailed baseline](https://github.com/aphrody-labs/aphrody/blob/914a4bf5006366f05d030bd7976bcccd17ce93e2/docs/PLAN.md)
 preserves dated evidence; none of its test counts is a current guarantee.
 
 ## Organization and ownership
@@ -4222,7 +4222,7 @@ A guide or a generated crate description does not prove runtime readiness.
 ## Historical evidence
 
 Dated audit snapshots removed from the working tree remain available at the
-[2026-09-28 cleanup parent revision](https://github.com/aphrody-code/aphrody-ai/tree/51c8502949c420b9c8d4945fef0a63dcf2aaea33/docs/audits);
+[2026-09-28 cleanup parent revision](https://github.com/aphrody-labs/aphrody/tree/51c8502949c420b9c8d4945fef0a63dcf2aaea33/docs/audits);
 the research files still in this tree retain their original scope.
 The [2026-09-26 protocol and desktop fact-check](research/agent-protocol-and-desktop-factcheck-2026-09-26.md)
 and [Rust parity assessment](research/codex-rust-parity-2026-09-26.md) are
@@ -4232,7 +4232,7 @@ referenced audit anchor. `ROADMAP.md`, `PLAN-POLYGLOT-2026.md`, `VISION.md`,
 `COMPARISON.md` and `SAAS-FUTURE-PLAN.md` now route to the current plan or
 explain its scope; they do not create parallel delivery tracks.
 
-The dated [Koharu AI capability map](https://github.com/aphrody-code/aphrody-ai/blob/51c8502949c420b9c8d4945fef0a63dcf2aaea33/docs/audits/2026-09-27-koharu-ai-capability-map.md)
+The dated [Koharu AI capability map](https://github.com/aphrody-labs/aphrody/blob/51c8502949c420b9c8d4945fef0a63dcf2aaea33/docs/audits/2026-09-27-koharu-ai-capability-map.md)
 compares source-level manga OCR, translation, inpainting, model runtime and
 agent capabilities with existing Aphrody AI owners. It is an inventory
 snapshot, not a delivery plan or parity claim.
@@ -4603,7 +4603,7 @@ contract owned by [aphrody-ui](../../aphrody-ui/docs/GUI.md).
 
 The former calendar, release-date and adoption targets are superseded. They
 remain available in the
-[historical roadmap at bb46076](https://github.com/aphrody-code/aphrody-ai/blob/bb46076ce7ab57ea3af96486dbefc66392ef3562/docs/ROADMAP.md).
+[historical roadmap at bb46076](https://github.com/aphrody-labs/aphrody/blob/bb46076ce7ab57ea3af96486dbefc66392ef3562/docs/ROADMAP.md).
 They do not establish a supported platform, shipped release or current task.
 
 
@@ -4693,7 +4693,7 @@ is not a multi-tenant execution policy.
 
 The previous infrastructure snapshots, proposed domains, service choices and
 commercial phases are superseded. They remain available in the
-[historical proposal at bb46076](https://github.com/aphrody-code/aphrody-ai/blob/bb46076ce7ab57ea3af96486dbefc66392ef3562/docs/SAAS-FUTURE-PLAN.md).
+[historical proposal at bb46076](https://github.com/aphrody-labs/aphrody/blob/bb46076ce7ab57ea3af96486dbefc66392ef3562/docs/SAAS-FUTURE-PLAN.md).
 Reassess them against the active product and live infra catalog before
 starting any hosted implementation.
 
@@ -5490,7 +5490,7 @@ Drive and model licensing cannot be inferred from this repository's license.
 
 The former Antigravity-rewrite vision is superseded. Its decisions and context
 remain available in the
-[historical vision at bb46076](https://github.com/aphrody-code/aphrody-ai/blob/bb46076ce7ab57ea3af96486dbefc66392ef3562/docs/VISION.md).
+[historical vision at bb46076](https://github.com/aphrody-labs/aphrody/blob/bb46076ce7ab57ea3af96486dbefc66392ef3562/docs/VISION.md).
 
 
 ## File: docs/_root/CHANGELOG.md
@@ -6273,7 +6273,7 @@ under Apache-2.0 (the project license). No CLA, no copyright assignment.
 in preference order:
 
 1. **Preferred** — file a private advisory through
-   [GitHub Security Advisories](https://github.com/aphrody-code/aphrody-ai/security/advisories/new).
+   [GitHub Security Advisories](https://github.com/aphrody-labs/aphrody/security/advisories/new).
    This keeps the report attached to the affected repository and lets us
    collaborate on a fix without disclosure.
 2. **Email** — write to `security@aphrody.dev`. Use the PGP key below if you
@@ -20403,7 +20403,7 @@ claim.
 Current capability ownership and remaining integration work are defined by the
 [delivery plan](../PLAN.md) and [architecture](../ARCHITECTURE.md). The original
 plan is retained at [revision
-13509d1](https://github.com/aphrody-code/aphrody-ai/blob/13509d1708e887646b19928a4d43812825c2e176/docs/plans/bxc-fusion.md).
+13509d1](https://github.com/aphrody-labs/aphrody/blob/13509d1708e887646b19928a4d43812825c2e176/docs/plans/bxc-fusion.md).
 
 
 ## File: docs/plans/codex-oss.md
@@ -20418,14 +20418,14 @@ P0-P11 status table and local-parity claims.
 
 The complete former plan, including the original implementation reports,
 phase definitions and measurements, remains available at
-[bb46076ce7ab57ea3af96486dbefc66392ef3562](https://github.com/aphrody-code/aphrody-ai/blob/bb46076ce7ab57ea3af96486dbefc66392ef3562/docs/plans/codex-oss.md).
+[bb46076ce7ab57ea3af96486dbefc66392ef3562](https://github.com/aphrody-labs/aphrody/blob/bb46076ce7ab57ea3af96486dbefc66392ef3562/docs/plans/codex-oss.md).
 Its monorepo paths, ownership statements and measured environments are
 historical. Resolve current owners through [ARCHITECTURE.md](../ARCHITECTURE.md).
 
 ## 2026-09-24 implementation audit
 
 This anchor is retained for references from the dated parity assessment.
-The [original audit section](https://github.com/aphrody-code/aphrody-ai/blob/bb46076ce7ab57ea3af96486dbefc66392ef3562/docs/plans/codex-oss.md#2026-09-24-implementation-audit)
+The [original audit section](https://github.com/aphrody-labs/aphrody/blob/bb46076ce7ab57ea3af96486dbefc66392ef3562/docs/plans/codex-oss.md#2026-09-24-implementation-audit)
 records scoped source/test results and explicit gaps from that run. It is not
 proof of the current installed desktop, enforced sandbox, hosted service,
 model quality or production release.
@@ -20495,7 +20495,7 @@ decision or establish current packaging support.
 The current target and remaining desktop work are in the [delivery plan](../PLAN.md)
 and the [aphrody-ui multi-host plan](../../../aphrody-ui/docs/design/M3-MULTI-HOST-PLAN.md).
 The original plan and its evidence are retained at [revision
-1f473d5](https://github.com/aphrody-code/aphrody-ai/blob/1f473d5c89b80fc4d96c9ea6bb7a390fc2fe5801/docs/plans/tauri-app.md).
+1f473d5](https://github.com/aphrody-labs/aphrody/blob/1f473d5c89b80fc4d96c9ea6bb7a390fc2fe5801/docs/plans/tauri-app.md).
 
 
 ## File: docs/python-image-toolchain.md
@@ -20659,7 +20659,7 @@ The Shenron gold file in the sibling checkout, `../shenron/apps/bot/tests/rag-go
 
 ### Verified historical baseline
 
-The [Shenron audit from 2026-09-14](https://github.com/aphrody-code/shenron/blob/f847733a26533cff8e274c358ecd12e5c1971630/docs/audits/rag-eval-2026-09-14.json) records a lexical-only run over 172 cases and 56,190 chunks, with all 172 expected sources present. It reports R@1 0.442, R@3 0.680, R@5 0.802, R@10 0.855, MRR 0.581, and nDCG@10 0.641. The audit does not report latency percentiles or a hybrid/reranked Aphrody comparison.
+The [Shenron audit from 2026-09-14](https://github.com/aphrody-labs/shenron/blob/f847733a26533cff8e274c358ecd12e5c1971630/docs/audits/rag-eval-2026-09-14.json) records a lexical-only run over 172 cases and 56,190 chunks, with all 172 expected sources present. It reports R@1 0.442, R@3 0.680, R@5 0.802, R@10 0.855, MRR 0.581, and nDCG@10 0.641. The audit does not report latency percentiles or a hybrid/reranked Aphrody comparison.
 
 ### Local offline feasibility on 2026-09-24
 
@@ -25893,7 +25893,7 @@ La convergence de ces trois composants établit une passerelle bidirectionnelle 
 
 ### 4. Dépôts & Artefacts Internes Associés
 - **Reverse-Engineering Antigravity IDE :** [antigravity-ide-re.md](antigravity-ide-re.md)
-- **Audit Web Scrape Gemini Spark :** [historical snapshot](https://github.com/aphrody-code/aphrody-ai/blob/51c8502949c420b9c8d4945fef0a63dcf2aaea33/docs/audits/gemini-web-scrape.md)
+- **Audit Web Scrape Gemini Spark :** [historical snapshot](https://github.com/aphrody-labs/aphrody/blob/51c8502949c420b9c8d4945fef0a63dcf2aaea33/docs/audits/gemini-web-scrape.md)
 - **Serveur MCP Dragon Ball FR :** `~/shenron/apps/mcp/src/index.ts`
 - **Crates Cœur Aphrody :**
   - [crates/aphrody-mcp](../../crates/aphrody-mcp)

@@ -20,7 +20,7 @@ Or pin to the monorepo:
 
 ```toml
 [dependencies]
-base = { git = "https://github.com/aphrody-code/aphrody-os", package = "base" }
+base = { git = "https://github.com/aphrody-labs/aphrody", package = "base" }
 ```
 
 ## Features

@@ -82,4 +82,4 @@ instead of starting a broken OAuth flow.
 - Keep HTTP interactions signature-verified and mutually exclusive with
   Gateway-delivered interactions for the same Discord application.
 - Keep DNS, certificates, Nginx, systemd, releases, and VPS state owned by
-  [`aphrody-infra`](https://github.com/aphrody-code/aphrody-infra).
+  [`aphrody-infra`](https://github.com/aphrody-labs/aphrody).

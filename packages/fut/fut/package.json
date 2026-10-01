@@ -4,10 +4,10 @@
   "description": "High-Performance EA SPORTS FC & FIFA Ultimate Team Intelligence Suite: Scraping, Crawling, Market Valuation, AI Squad Builder, Mathematical SBC Solver, Early Leaks Radar, Live Chrome MV3 Extension, and Remote MCP Bridge.",
   "repository": {
     "type": "git",
-    "url": "https://github.com/aphrody-code/fut.git"
+    "url": "https://github.com/aphrody-labs/aphrody.git"
   },
   "bugs": {
-    "url": "https://github.com/aphrody-code/fut/issues"
+    "url": "https://github.com/aphrody-labs/aphrody/issues"
   },
   "homepage": "https://fut.aphrody.com",
   "publishConfig": {

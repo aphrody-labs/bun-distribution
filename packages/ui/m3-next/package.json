@@ -10,12 +10,12 @@
     "react-server-components",
     "tailwind"
   ],
-  "homepage": "https://github.com/aphrody-code/aphrody-ui/tree/main/packages/m3-next#readme",
+  "homepage": "https://github.com/aphrody-labs/aphrody/tree/main/packages/ui/m3-next#readme",
   "license": "Apache-2.0",
   "author": "aphrody-code",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/aphrody-code/aphrody-ui.git",
+    "url": "git+https://github.com/aphrody-labs/aphrody.git",
     "directory": "packages/ui/m3-next"
   },
   "files": [

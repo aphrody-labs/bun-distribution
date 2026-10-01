@@ -9,4 +9,4 @@ claim.
 Current capability ownership and remaining integration work are defined by the
 [delivery plan](../PLAN.md) and [architecture](../../../architecture/ai/ARCHITECTURE.md). The original
 plan is retained at [revision
-13509d1](https://github.com/aphrody-code/aphrody-ai/blob/13509d1708e887646b19928a4d43812825c2e176/docs/plans/bxc-fusion.md).
+13509d1](https://github.com/aphrody-labs/aphrody/blob/13509d1708e887646b19928a4d43812825c2e176/docs/plans/bxc-fusion.md).

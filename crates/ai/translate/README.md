@@ -19,7 +19,7 @@ target is French. Identifier names are out of scope by design.
 
 ```bash
 cargo install --locked aphrody-translate                                                 # crates.io
-cargo install --git https://github.com/aphrody-code/aphrody-ai --bin aphrody-translate   # canary category repository
+cargo install --git https://github.com/aphrody-labs/aphrody --bin aphrody-translate   # canary category repository
 ```
 
 A workspace checkout also builds it via `cargo build --release -p aphrody-translate`.

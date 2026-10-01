@@ -99,7 +99,7 @@ la base source est déjà locale.
 
 La base `rg` (PostgreSQL 18 local, y compris le schéma `achillea` depuis sa
 fusion) est sauvegardée par le [script Infra
-`scripts/rg/sauvegarde.ts`](https://github.com/aphrody-code/aphrody-infra/blob/main/scripts/rg/sauvegarde.ts) :
+`scripts/rg/sauvegarde.ts`](https://github.com/aphrody-labs/aphrody) :
 
 ```bash
 bun --cwd ../aphrody-infra scripts/rg/sauvegarde.ts

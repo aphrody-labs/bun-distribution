@@ -1,6 +1,6 @@
 # Aphrody Web Browser
 
-[aphrody-web repository](https://github.com/aphrody-code/aphrody-web) · [License](LICENSE)
+[aphrody-web repository](https://github.com/aphrody-labs/aphrody) · [License](LICENSE)
 
 Aphrody Web Browser is a Bun-native browser automation, crawling, search, and extraction
 toolkit backed by a Rust FFI bridge. One CLI provides static HTML processing,
@@ -209,10 +209,10 @@ Requirements: Bun, Git, and Rust for native builds.
 
 ```bash
 # The native bridge links sibling crates, so clone the siblings next to aphrody-web.
-git clone https://github.com/aphrody-code/aphrody-web.git
-git clone https://github.com/aphrody-code/aphrody-contracts.git
-git clone https://github.com/aphrody-code/aphrody-os.git
-git clone https://github.com/aphrody-code/aphrody-compat.git
+git clone https://github.com/aphrody-labs/aphrody.git
+git clone https://github.com/aphrody-labs/aphrody.git
+git clone https://github.com/aphrody-labs/aphrody.git
+git clone https://github.com/aphrody-labs/aphrody.git
 cd aphrody-web
 bun install --frozen-lockfile
 cd apps/bxc

@@ -3,11 +3,11 @@
   "version": "0.2.6",
   "repository": {
     "type": "git",
-    "url": "https://github.com/aphrody-code/aphrody-web.git",
+    "url": "https://github.com/aphrody-labs/aphrody.git",
     "directory": "packages/web/aphrody-web-test"
   },
   "bugs": {
-    "url": "https://github.com/aphrody-code/aphrody-web/issues"
+    "url": "https://github.com/aphrody-labs/aphrody/issues"
   },
   "publishConfig": {
     "access": "public"

@@ -2,11 +2,11 @@
 # Contributing to Aphrody Web
 
 BXC is the Web implementation inside `aphrody-os`. Changes belong in the
-[Aphrody OS repository](https://github.com/aphrody-code/aphrody-os); there is
+[Aphrody OS repository](https://github.com/aphrody-labs/aphrody); there is
 no separate BXC checkout, release workflow, or production service.
 
 ```bash
-git clone https://github.com/aphrody-code/aphrody-os.git
+git clone https://github.com/aphrody-labs/aphrody.git
 cd aphrody-os
 bun install --frozen-lockfile
 cargo check -p aphrody-web-ffi --locked

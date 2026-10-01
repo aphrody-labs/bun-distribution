@@ -39,7 +39,7 @@ than reopening the old spelling mismatch.
 Koharu has a headless library/SDK and extracted editor/settings integration;
 full editor, published source closure and Shenron's active review/deposit remain open.
 All release rows below remain **INCOMPLET**. Source, reported checks and installed
-proof are distinct. The [previous detailed baseline](https://github.com/aphrody-code/aphrody-ai/blob/914a4bf5006366f05d030bd7976bcccd17ce93e2/docs/PLAN.md)
+proof are distinct. The [previous detailed baseline](https://github.com/aphrody-labs/aphrody/blob/914a4bf5006366f05d030bd7976bcccd17ce93e2/docs/PLAN.md)
 preserves dated evidence; none of its test counts is a current guarantee.
 
 ## Organization and ownership

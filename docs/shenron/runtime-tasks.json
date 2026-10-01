@@ -38,7 +38,7 @@
     {
       "id": "INFRA-1",
       "owner": "aphrody-infra",
-      "issue": "https://github.com/aphrody-code/aphrody-infra/issues/1",
+      "issue": "https://github.com/aphrody-labs/aphrody/issues/1",
       "dependsOn": [],
       "action": "Inventory installed services, active releases, timers, backups and restore results on VPS and DBFR; fix SQLite timer timezone",
       "doneWhen": "Dated live inventory, scheduled backup cycle, hashes and restore proof are recorded"
@@ -102,7 +102,7 @@
     {
       "id": "INFRA-2",
       "owner": "aphrody-infra",
-      "issue": "https://github.com/aphrody-code/aphrody-infra/issues/2",
+      "issue": "https://github.com/aphrody-labs/aphrody/issues/2",
       "dependsOn": ["INFRA-1", "S1", "S2"],
       "action": "Implement a catalog driven Shenron site and bot release adapter with probes and rollback",
       "doneWhen": "Controlled stage, activation and rollback pass without taking ownership of Aphrody MCP"
@@ -110,7 +110,7 @@
     {
       "id": "INFRA-3",
       "owner": "aphrody-infra",
-      "issue": "https://github.com/aphrody-code/aphrody-infra/issues/3",
+      "issue": "https://github.com/aphrody-labs/aphrody/issues/3",
       "dependsOn": ["INFRA-2", "S2"],
       "action": "Implement two Next site slots, cache policy, Nginx switch and drain",
       "doneWhen": "Concurrent traffic switch and rollback have zero observed 5xx in the test window"
@@ -118,7 +118,7 @@
     {
       "id": "INFRA-4",
       "owner": "aphrody-infra",
-      "issue": "https://github.com/aphrody-code/aphrody-infra/issues/4",
+      "issue": "https://github.com/aphrody-labs/aphrody/issues/4",
       "dependsOn": ["INFRA-2", "S1", "S3"],
       "action": "Deploy bot and API with exclusive Discord and job ownership",
       "doneWhen": "Upgrade and rollback show one Gateway connection and one execution per job"
@@ -126,7 +126,7 @@
     {
       "id": "INFRA-5",
       "owner": "aphrody-infra",
-      "issue": "https://github.com/aphrody-code/aphrody-infra/issues/5",
+      "issue": "https://github.com/aphrody-labs/aphrody/issues/5",
       "dependsOn": ["INFRA-1", "INFRA-2", "INFRA-3", "INFRA-4"],
       "action": "Align migration and allocation docs with observed Shenron releases and routes",
       "doneWhen": "Infra validation passes and docs distinguish declared, staged and live state"

@@ -222,7 +222,7 @@ results apply to their named revisions and dates, not current host health.
   Targets: `/home/aphro/aphrody` and `/home/aphro/aphrody-py`.
 
 
-The pre-cleanup ledger is retained at [revision 917cb93c0afd](https://github.com/aphrody-code/aphrody-infra/blob/917cb93c0afd7b8883ad1dd5ee6397365609af10/docs/PLAN.md).
+The pre-cleanup ledger is retained at [revision 917cb93c0afd](https://github.com/aphrody-labs/aphrody/blob/917cb93c0afd7b8883ad1dd5ee6397365609af10/docs/PLAN.md).
 
 Retrieve locally with `git show 917cb93c0afd7b8883ad1dd5ee6397365609af10:docs/PLAN.md`.
 
@@ -324,11 +324,11 @@ sections current and store operational detail in its existing runbook.
 
   `cargo check -p aphrody-nu` passed in 9.88 s; test suites were not run. Revisions:
 
-  [Shell `17f4227`](https://github.com/aphrody-code/aphrody-shell/commit/17f422745fc565687b3bbcab44a87337679287c2),
+  [Shell `17f4227`](https://github.com/aphrody-labs/aphrody/commit/17f422745fc565687b3bbcab44a87337679287c2),
 
-  [Infra `98a901b`](https://github.com/aphrody-code/aphrody-infra/commit/98a901bccda18737a9fbf03cedfd2479fed8fb20),
+  [Infra `98a901b`](https://github.com/aphrody-labs/aphrody/commit/98a901bccda18737a9fbf03cedfd2479fed8fb20),
 
-  [OS `283a7153`](https://github.com/aphrody-code/aphrody-os/commit/283a71534194a111d04f2458bda7cd897d8bcab7).
+  [OS `283a7153`](https://github.com/aphrody-labs/aphrody/commit/283a71534194a111d04f2458bda7cd897d8bcab7).
 
 - **2026-09-28:** registry audit of OS uutils companions found no safe crates.io substitution for
 
@@ -389,23 +389,23 @@ sections current and store operational detail in its existing runbook.
   longer carry unused Tokio parking-lot/signal support. The broader OS package check exposed an
   unrelated Linux compile error in `aphrody-search/src/everything.rs` (`Path` is missing in the
   non-Windows stub); it remains open. Revisions:
-  [Contracts `17cb078`](https://github.com/aphrody-code/aphrody-contracts/commit/17cb078),
-  [Shell `85631d4`](https://github.com/aphrody-code/aphrody-shell/commit/85631d4),
-  [OS `7d388fdc`](https://github.com/aphrody-code/aphrody-os/commit/7d388fdc).
+  [Contracts `17cb078`](https://github.com/aphrody-labs/aphrody/commit/17cb078),
+  [Shell `85631d4`](https://github.com/aphrody-labs/aphrody/commit/85631d4),
+  [OS `7d388fdc`](https://github.com/aphrody-labs/aphrody/commit/7d388fdc).
 - **2026-09-28:** fixed the Linux-only missing `Path` import found by that OS check;
   `cargo check --offline --workspace --all-targets` now passes. Revision:
-  [OS `8cf333d9`](https://github.com/aphrody-code/aphrody-os/commit/8cf333d9).
+  [OS `8cf333d9`](https://github.com/aphrody-labs/aphrody/commit/8cf333d9).
 - **2026-09-28:** the Infra scanner now resolves its default UI root relative to its script,
   finds vendor roots at arbitrary depth, and inventories workspace/crate path and Git
   dependencies plus local/Git patches across Aphrody owners. A synthetic sibling-workspace run
   from `/tmp` found a direct local dependency, workspace and crate Git dependencies, a four-level
   vendor tree, and its generated `target`; no live UI checkout was scanned. Revision:
-  [Infra `bf3390a`](https://github.com/aphrody-code/aphrody-infra/commit/bf3390a).
+  [Infra `bf3390a`](https://github.com/aphrody-labs/aphrody/commit/bf3390a).
 - **2026-09-28:** Web's workspace Tokio `full` request is also enabled by upstream
   `deno_core 0.412`, whose manifest hardcodes Tokio `full`; narrowing the Web root declaration
   would not reduce the resolved graph, so no manifest change was retained. Its workspace check
   exposed a Rust 2024 extern-block error in the index benchmark; the focused all-target check now
-  passes after the fix in [Web `ee641f0`](https://github.com/aphrody-code/aphrody-web/commit/ee641f0).
+  passes after the fix in [Web `ee641f0`](https://github.com/aphrody-labs/aphrody/commit/ee641f0).
 - **2026-09-28:** the scanner's `--skip-ui` path now avoids opening UI manifests and lockfiles,
   including when another repository's local dependency points into UI. A temporary sibling
   fixture with deliberately invalid UI `Cargo.toml` and `Cargo.lock` plus a path dependency into UI
@@ -423,8 +423,8 @@ sections current and store operational detail in its existing runbook.
   match the registry source, and `cargo info` reports MIT. Shell's focused backend check and OS's
   kernel all-target check pass offline and locked; `cargo tree` confirms the PTY feature stays off.
   OS's lockfile now records the same registry source. Revisions:
-  [Shell `198b024`](https://github.com/aphrody-code/aphrody-shell/commit/198b024),
-  [OS `d7b95c78`](https://github.com/aphrody-code/aphrody-os/commit/d7b95c78).
+  [Shell `198b024`](https://github.com/aphrody-labs/aphrody/commit/198b024),
+  [OS `d7b95c78`](https://github.com/aphrody-labs/aphrody/commit/d7b95c78).
 - **2026-09-28:** the two Koharu Git dependencies remain justified by registry compatibility.
   `hf-hub@1.1.0` is absent from crates.io; the available `1.0.0` source lacks the 1.1 transport,
   redirect and cache fixes used by the current Git revision. Crates.io `tauri-specta@2.0.0-rc.25`

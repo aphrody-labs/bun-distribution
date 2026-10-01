@@ -86,7 +86,7 @@ fn version_json_has_expected_schema() {
     assert_eq!(value["version"], env!("CARGO_PKG_VERSION"), "version must echo CARGO_PKG_VERSION");
     assert_eq!(value["license"], "Apache-2.0", "license field must be Apache-2.0");
     assert_eq!(
-        value["repo"], "https://github.com/aphrody-code/aphrody-ai",
+        value["repo"], "https://github.com/aphrody-labs/aphrody",
         "repo field must be the canonical repository URL"
     );
 }

@@ -15,6 +15,6 @@ is not a multi-tenant execution policy.
 
 The previous infrastructure snapshots, proposed domains, service choices and
 commercial phases are superseded. They remain available in the
-[historical proposal at bb46076](https://github.com/aphrody-code/aphrody-ai/blob/bb46076ce7ab57ea3af96486dbefc66392ef3562/docs/SAAS-FUTURE-PLAN.md).
+[historical proposal at bb46076](https://github.com/aphrody-labs/aphrody/blob/bb46076ce7ab57ea3af96486dbefc66392ef3562/docs/SAAS-FUTURE-PLAN.md).
 Reassess them against the active product and live infra catalog before
 starting any hosted implementation.

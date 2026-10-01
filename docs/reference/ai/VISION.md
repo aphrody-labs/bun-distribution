@@ -24,4 +24,4 @@ Drive and model licensing cannot be inferred from this repository's license.
 
 The former Antigravity-rewrite vision is superseded. Its decisions and context
 remain available in the
-[historical vision at bb46076](https://github.com/aphrody-code/aphrody-ai/blob/bb46076ce7ab57ea3af96486dbefc66392ef3562/docs/VISION.md).
+[historical vision at bb46076](https://github.com/aphrody-labs/aphrody/blob/bb46076ce7ab57ea3af96486dbefc66392ef3562/docs/VISION.md).

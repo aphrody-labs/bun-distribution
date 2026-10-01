@@ -56,7 +56,7 @@ pub fn agent_card_from_manifest(manifest: &AiManifest, base_url: &str) -> AgentC
             url: p
                 .url
                 .clone()
-                .unwrap_or_else(|| "https://github.com/aphrody-code/aphrody-contracts".to_owned()),
+                .unwrap_or_else(|| "https://github.com/aphrody-labs/aphrody".to_owned()),
         }),
         documentation_url: manifest.documentation_url.clone(),
         icon_url: None,

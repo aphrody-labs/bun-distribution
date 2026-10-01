@@ -8,7 +8,7 @@ edition     = "2024"
 publish     = false
 license     = "Apache-2.0"
 description = "X / Twitter native GraphQL + REST client (cookie auth, no API key required)"
-repository  = "https://github.com/aphrody-code/aphrody-web"
+repository  = "https://github.com/aphrody-labs/aphrody"
 
 [lints]
 workspace = true

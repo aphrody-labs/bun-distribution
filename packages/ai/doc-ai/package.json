@@ -2,15 +2,15 @@
   "name": "@aphrody/doc-ai",
   "version": "3.2.5",
   "description": "AI-first documentation and automatic translation system",
-  "homepage": "https://github.com/aphrody-code/aphrody-ai/tree/main/packages/doc-ai#readme",
+  "homepage": "https://github.com/aphrody-labs/aphrody/tree/main/packages/ai/doc-ai#readme",
   "bugs": {
-    "url": "https://github.com/aphrody-code/aphrody-ai/issues"
+    "url": "https://github.com/aphrody-labs/aphrody/issues"
   },
   "license": "Apache-2.0",
   "author": "aphrody-code",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/aphrody-code/aphrody-ai.git",
+    "url": "git+https://github.com/aphrody-labs/aphrody.git",
     "directory": "packages/doc-ai"
   },
   "bin": {

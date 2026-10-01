@@ -6,7 +6,7 @@ set -Eeuo pipefail
 # Linux filesystem, check out one superproject commit and initialize every
 # submodule at its recorded gitlink so sibling path dependencies resolve.
 #
-# SOURCE is the superproject remote (git@github.com:aphrody-code/aphrody-src.git),
+# SOURCE is the superproject remote (git@github.com:aphrody-labs/aphrody.git),
 # a local superproject checkout (e.g. /mnt/c/Users/aphro/src) or a `git bundle`
 # file. For a local checkout, submodule objects are fetched from its sibling
 # directories, so commits that are not pushed yet still resolve; otherwise the

@@ -45,7 +45,7 @@ export const ERROR_MARKERS = [
 	"404_-_HORS_JEU_!",
 ];
 
-const UA = "aphrody-live-audit/1.0 (+https://github.com/aphrody-code/aphrody-infra)";
+const UA = "aphrody-live-audit/1.0 (+https://github.com/aphrody-labs/aphrody)";
 
 /** Opens `url` in a fresh static page and asserts a < 400 document status. */
 export async function open(url: string): Promise<TestPage> {

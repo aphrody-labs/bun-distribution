@@ -94,7 +94,7 @@ Implementation of `PLAN.md` (hardening, algorithmic core, agent index). Metrics:
 ### Changed
 
 - **`@aphrody/fut` extrait du monorepo** vers son propre repo,
-  [`aphrody-code/fut`](https://github.com/aphrody-code/fut), historique git
+  [`aphrody-code/fut`](https://github.com/aphrody-labs/aphrody), historique git
   préservé (`git subtree split`). `bxc` le consomme désormais comme une
   dépendance npm ordinaire (déjà le cas pour `src/cli/fut.ts` et
   `src/mcp/server.ts` ; `src/server/index.ts` corrigé pour faire de même).
@@ -661,13 +661,13 @@ que leurs tags existent. Cette publication les livre toutes d'un coup, avec les 
 
 ---
 
-[Unreleased]: https://github.com/aphrody-code/bxc/compare/v0.9.7...HEAD
-[0.9.7]: https://github.com/aphrody-code/bxc/compare/v0.9.6...v0.9.7
-[0.5.3]: https://github.com/aphrody-code/bxc/releases/tag/v0.5.3
-[0.5.2]: https://github.com/aphrody-code/bxc/releases/tag/v0.5.2
-[0.5.1]: https://github.com/aphrody-code/bxc/releases/tag/v0.5.1
-[0.5.0]: https://github.com/aphrody-code/bxc/releases/tag/v0.5.0
-[0.4.0]: https://github.com/aphrody-code/bxc/releases/tag/v0.4.0
-[0.3.1]: https://github.com/aphrody-code/bxc/releases/tag/v0.3.1
-[0.2.0]: https://github.com/aphrody-code/bxc/releases/tag/v0.2.0
-[0.1.0-alpha.0]: https://github.com/aphrody-code/bxc/releases/tag/v0.1.0-alpha.0
+[Unreleased]: https://github.com/aphrody-labs/aphrody/compare/v0.9.7...HEAD
+[0.9.7]: https://github.com/aphrody-labs/aphrody/compare/v0.9.6...v0.9.7
+[0.5.3]: https://github.com/aphrody-labs/aphrody/releases/tag/v0.5.3
+[0.5.2]: https://github.com/aphrody-labs/aphrody/releases/tag/v0.5.2
+[0.5.1]: https://github.com/aphrody-labs/aphrody/releases/tag/v0.5.1
+[0.5.0]: https://github.com/aphrody-labs/aphrody/releases/tag/v0.5.0
+[0.4.0]: https://github.com/aphrody-labs/aphrody/releases/tag/v0.4.0
+[0.3.1]: https://github.com/aphrody-labs/aphrody/releases/tag/v0.3.1
+[0.2.0]: https://github.com/aphrody-labs/aphrody/releases/tag/v0.2.0
+[0.1.0-alpha.0]: https://github.com/aphrody-labs/aphrody/releases/tag/v0.1.0-alpha.0

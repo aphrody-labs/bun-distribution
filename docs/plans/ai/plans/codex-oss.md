@@ -8,14 +8,14 @@ P0-P11 status table and local-parity claims.
 
 The complete former plan, including the original implementation reports,
 phase definitions and measurements, remains available at
-[bb46076ce7ab57ea3af96486dbefc66392ef3562](https://github.com/aphrody-code/aphrody-ai/blob/bb46076ce7ab57ea3af96486dbefc66392ef3562/docs/plans/codex-oss.md).
+[bb46076ce7ab57ea3af96486dbefc66392ef3562](https://github.com/aphrody-labs/aphrody/blob/bb46076ce7ab57ea3af96486dbefc66392ef3562/docs/plans/codex-oss.md).
 Its monorepo paths, ownership statements and measured environments are
 historical. Resolve current owners through [ARCHITECTURE.md](../../../architecture/ai/ARCHITECTURE.md).
 
 ## 2026-09-24 implementation audit
 
 This anchor is retained for references from the dated parity assessment.
-The [original audit section](https://github.com/aphrody-code/aphrody-ai/blob/bb46076ce7ab57ea3af96486dbefc66392ef3562/docs/plans/codex-oss.md#2026-09-24-implementation-audit)
+The [original audit section](https://github.com/aphrody-labs/aphrody/blob/bb46076ce7ab57ea3af96486dbefc66392ef3562/docs/plans/codex-oss.md#2026-09-24-implementation-audit)
 records scoped source/test results and explicit gaps from that run. It is not
 proof of the current installed desktop, enforced sandbox, hosted service,
 model quality or production release.

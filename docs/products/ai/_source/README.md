@@ -54,7 +54,7 @@ is preserved byte for byte. Its relative links retain the historical base
 Domain guides below retain their original scope and may contain old paths.
 
 Dated audit snapshots removed from the working tree remain available at the
-[2026-09-28 cleanup parent revision](https://github.com/aphrody-code/aphrody-ai/tree/51c8502949c420b9c8d4945fef0a63dcf2aaea33/docs/audits);
+[2026-09-28 cleanup parent revision](https://github.com/aphrody-labs/aphrody/tree/51c8502949c420b9c8d4945fef0a63dcf2aaea33/docs/audits);
 the research files still in this tree retain their original scope.
 The [2026-09-26 protocol and desktop fact-check](../../../apis/ai/research/agent-protocol-and-desktop-factcheck-2026-09-26.md)
 and [Rust parity assessment](../../../research/ai/research/codex-rust-parity-2026-09-26.md) are
@@ -63,7 +63,7 @@ The former [P0-P11 plan](../../../plans/ai/plans/codex-oss.md) retains a provena
 referenced audit anchor. Other imported roadmaps, visions and comparisons
 retain their domain context; the root plan governs current execution.
 
-The dated [Koharu AI capability map](https://github.com/aphrody-code/aphrody-ai/blob/51c8502949c420b9c8d4945fef0a63dcf2aaea33/docs/audits/2026-09-27-koharu-ai-capability-map.md)
+The dated [Koharu AI capability map](https://github.com/aphrody-labs/aphrody/blob/51c8502949c420b9c8d4945fef0a63dcf2aaea33/docs/audits/2026-09-27-koharu-ai-capability-map.md)
 compares source-level manga OCR, translation, inpainting, model runtime and
 agent capabilities with existing Aphrody AI owners. It is an inventory
 snapshot, not a delivery plan or parity claim.

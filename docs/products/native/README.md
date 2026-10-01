@@ -17,10 +17,10 @@ been a complete libc.
 ## Inference ownership
 
 Llama inference belongs to
-[`aphrody-llama-server`](https://github.com/aphrody-code/aphrody-ai/blob/main/crates/aphrody-llama-server/src/lib.rs),
+[`aphrody-llama-server`](https://github.com/aphrody-labs/aphrody/blob/main/crates/ai/llama-server/src/lib.rs),
 which drives upstream [`llama-server`](https://github.com/ggml-org/llama.cpp/tree/master/tools/server).
 Whisper transcription belongs to
-[`aphrody-voice`](https://github.com/aphrody-code/aphrody-ai/blob/main/crates/aphrody-voice/src/stt/local_whisper.rs): it drives upstream
+[`aphrody-voice`](https://github.com/aphrody-labs/aphrody/blob/main/crates/ai/voice/src/stt/local_whisper.rs): it drives upstream
 [`whisper.cpp`](https://github.com/ggml-org/whisper.cpp) by default and can use
 [`whisper-rs`](https://docs.rs/whisper-rs/latest/whisper_rs/) in process.
 The official [OpenAI Whisper](https://github.com/openai/whisper) repository is the

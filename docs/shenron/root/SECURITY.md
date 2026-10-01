@@ -6,7 +6,7 @@ Merci de **ne pas** ouvrir d'issue publique pour une faille de sécurité.
 
 Privilégier le canal privé de GitHub :
 **Security → Report a vulnerability** (Private Vulnerability Reporting) sur
-`github.com/aphrody-code/shenron`.
+`github.com/aphrody-labs/shenron`.
 
 À défaut, contact direct : **contact@aphrody-code.dev**.
 

@@ -369,7 +369,7 @@ pub fn embedded_index() -> MarketplaceIndex {
                 .to_string(),
             kind: ExtensionKind::Skill,
             source_url:
-                "https://github.com/aphrody-code/aphrody-shell/tree/main/crates/aphrody-terminal-backend"
+                "https://github.com/aphrody-labs/aphrody/tree/main/crates/shell/terminal-backend"
                     .to_string(),
             sha256: "0000000000000000000000000000000000000000000000000000000000000001".to_string(),
             author: "aphrody-code".to_string(),
@@ -385,7 +385,7 @@ pub fn embedded_index() -> MarketplaceIndex {
                 .to_string(),
             kind: ExtensionKind::Skill,
             source_url:
-                "https://github.com/aphrody-code/aphrody-ai/tree/main/crates/aphrody-skills-forge"
+                "https://github.com/aphrody-labs/aphrody/tree/main/crates/ai/skills-forge"
                     .to_string(),
             sha256: "0000000000000000000000000000000000000000000000000000000000000002".to_string(),
             author: "aphrody-code".to_string(),
@@ -401,7 +401,7 @@ pub fn embedded_index() -> MarketplaceIndex {
                           job store."
                 .to_string(),
             kind: ExtensionKind::Skill,
-            source_url: "https://github.com/aphrody-code/aphrody-os/tree/main/crates/aphrody-cron"
+            source_url: "https://github.com/aphrody-labs/aphrody/tree/main/crates/os/cron"
                 .to_string(),
             sha256: "0000000000000000000000000000000000000000000000000000000000000003".to_string(),
             author: "aphrody-code".to_string(),
@@ -417,7 +417,7 @@ pub fn embedded_index() -> MarketplaceIndex {
                           SIGINT trap."
                 .to_string(),
             kind: ExtensionKind::Skill,
-            source_url: "https://github.com/aphrody-code/aphrody-os/tree/main/crates/aphrody-cron"
+            source_url: "https://github.com/aphrody-labs/aphrody/tree/main/crates/os/cron"
                 .to_string(),
             sha256: "0000000000000000000000000000000000000000000000000000000000000004".to_string(),
             author: "aphrody-code".to_string(),
@@ -432,7 +432,7 @@ pub fn embedded_index() -> MarketplaceIndex {
             description: "Native Rust MCP stdio adapter for the Anthropic provider channel."
                 .to_string(),
             kind: ExtensionKind::Mcp,
-            source_url: "https://github.com/aphrody-code/aphrody-ai/tree/main/crates/aphrody-mcp"
+            source_url: "https://github.com/aphrody-labs/aphrody/tree/main/crates/ai/mcp"
                 .to_string(),
             sha256: "0000000000000000000000000000000000000000000000000000000000000005".to_string(),
             author: "aphrody-code".to_string(),
@@ -447,7 +447,7 @@ pub fn embedded_index() -> MarketplaceIndex {
             description: "Native Rust MCP stdio adapter for the Gemini provider channel."
                 .to_string(),
             kind: ExtensionKind::Mcp,
-            source_url: "https://github.com/aphrody-code/aphrody-ai/tree/main/crates/aphrody-mcp"
+            source_url: "https://github.com/aphrody-labs/aphrody/tree/main/crates/ai/mcp"
                 .to_string(),
             sha256: "0000000000000000000000000000000000000000000000000000000000000006".to_string(),
             author: "aphrody-code".to_string(),
@@ -462,7 +462,7 @@ pub fn embedded_index() -> MarketplaceIndex {
             description: "Native Rust MCP stdio adapter for the Antigravity provider channel."
                 .to_string(),
             kind: ExtensionKind::Mcp,
-            source_url: "https://github.com/aphrody-code/aphrody-ai/tree/main/crates/aphrody-mcp"
+            source_url: "https://github.com/aphrody-labs/aphrody/tree/main/crates/ai/mcp"
                 .to_string(),
             sha256: "0000000000000000000000000000000000000000000000000000000000000007".to_string(),
             author: "aphrody-code".to_string(),
@@ -477,7 +477,7 @@ pub fn embedded_index() -> MarketplaceIndex {
             description: "Baseline M3 design tokens — colour, typography, elevation, motion."
                 .to_string(),
             kind: ExtensionKind::Theme,
-            source_url: "https://github.com/aphrody-code/aphrody-web/tree/main/packages/m3-tokens"
+            source_url: "https://github.com/aphrody-labs/aphrody/tree/main/packages/ui/m3-tokens"
                 .to_string(),
             sha256: "0000000000000000000000000000000000000000000000000000000000000008".to_string(),
             author: "aphrody-code".to_string(),
@@ -492,7 +492,7 @@ pub fn embedded_index() -> MarketplaceIndex {
             description: "Pre-commit hook running oxclint over staged JS/TS migration candidates."
                 .to_string(),
             kind: ExtensionKind::Hook,
-            source_url: "https://github.com/aphrody-code/aphrody-compat"
+            source_url: "https://github.com/aphrody-labs/aphrody"
                 .to_string(),
             sha256: "0000000000000000000000000000000000000000000000000000000000000009".to_string(),
             author: "aphrody-code".to_string(),
