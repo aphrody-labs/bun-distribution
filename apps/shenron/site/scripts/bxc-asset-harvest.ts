@@ -1,14 +1,13 @@
 #!/usr/bin/env bun
 /**
- * bxc-asset-harvest.ts — extraction industrielle d'assets via le **vrai bxc**
- * du monorepo (même résolution que `apps/shenron/bot/scripts/rag-harvest.ts`).
+ * bxc-asset-harvest.ts — extraction d'assets via Aphrody Web.
  *
- * Ne PAS inventer un fetch HTTP parallèle : tout le crawl passe par `execBxc`
- * resolved from the local BXC checkout or an explicit BXC_BIN override.
+ * Scrape et reconnaissance passent par l'owner Aphrody Web. Le miroir récursif
+ * reste provisoirement sur BXC, faute d'API miroir Aphrody équivalente.
  *
  * Pipeline (aligné shenron crawl) :
- *  1. `bxc scrape <url> --markdown --profile max`  → MD + extraction liens média
- *  2. `bxc recon <url> --profile max --json`       → assets[] structurés
+ *  1. `aphrody web scrape <url> --markdown`         → MD + extraction liens média
+ *  2. `aphrody web recon <url> --json`              → assets[] structurés
  *  3. `bxc mirror <url> <dir> --recursive …`       → graphe HTML/CSS/assets
  *  4. Download des URLs image/audio découvertes → public/{sfx,dbz,sprites}/bxc/
  *
@@ -24,6 +23,7 @@
 import { mkdirSync, writeFileSync, existsSync, readFileSync, appendFileSync } from "node:fs";
 import { join, dirname, basename, extname } from "node:path";
 import { createHash } from "node:crypto";
+import { aphrodyWebRecon, aphrodyWebScrape } from "@shenron/pipeline/aphrody";
 import { bxcCommand } from "@shenron/pipeline/bxc/cli";
 import { BOT_HOST, CDN_ORIGIN, SITE_URL } from "../src/lib/config";
 
@@ -53,7 +53,7 @@ function opt(name: string, dflt?: string): string | undefined {
 	if (i >= 0 && argv[i + 1] && !argv[i + 1]!.startsWith("--")) return argv[i + 1];
 	return dflt;
 }
-const profile = opt("profile", process.env.BXC_PROFILE ?? "max")!;
+const profile = opt("profile", process.env.APHRODY_WEB_PROFILE ?? process.env.BXC_PROFILE ?? "max")!;
 const proxy = opt("proxy", process.env.BXC_PROXY ?? process.env.PROXY);
 const delayMs = parseInt(opt("delay", "800")!, 10);
 const maxPages = parseInt(opt("max-pages", "25")!, 10);
@@ -380,7 +380,7 @@ type AssetHit = {
 	url: string;
 	type: string;
 	fromPage: string;
-	via: "bxc-recon" | "bxc-scrape" | "bxc-mirror";
+	via: "aphrody-web-recon" | "aphrody-web-scrape" | "bxc-recon" | "bxc-scrape" | "bxc-mirror";
 };
 
 type DlRec = {
@@ -459,7 +459,7 @@ function extractFromMarkdown(md: string, page: string): AssetHit[] {
 		if (seen.has(url)) continue;
 		seen.add(url);
 		const type = /\.(mp3|wav|ogg|m4a)(\?|$)/i.test(url) ? "audio" : "image";
-		hits.push({ url, type, fromPage: page, via: "bxc-scrape" });
+		hits.push({ url, type, fromPage: page, via: "aphrody-web-scrape" });
 	}
 	return hits;
 }
@@ -479,13 +479,13 @@ function extractFromReconJson(stdout: string, page: string): AssetHit[] {
 			// recon types: image, stylesheet, script, media, font…
 			if (t === "image" || t === "media" || t === "audio" || MEDIA_EXT.test(a.url)) {
 				const type = /\.(mp3|wav|ogg|m4a)(\?|$)/i.test(a.url) || t === "audio" ? "audio" : "image";
-				hits.push({ url: a.url, type, fromPage: page, via: "bxc-recon" });
+				hits.push({ url: a.url, type, fromPage: page, via: "aphrody-web-recon" });
 			}
 		}
 	} catch {
 		// also harvest media URLs from plain recon markdown dump
 		hits.push(
-			...extractFromMarkdown(stdout, page).map((h) => ({ ...h, via: "bxc-recon" as const }))
+			...extractFromMarkdown(stdout, page).map((h) => ({ ...h, via: "aphrody-web-recon" as const }))
 		);
 	}
 	return hits;
@@ -629,33 +629,37 @@ async function harvestSource(src: (typeof SOURCES)[0]): Promise<AssetHit[]> {
 	if (MIRROR_ONLY && !doMirror) return hits;
 
 	if (doRecon && !MIRROR_ONLY) {
-		// 1) scrape --markdown (rag-harvest handleRecon pattern)
-		log(`[*] bxc scrape --markdown ${src.url}`);
-		const scrape = await execBxc("scrape", [src.url, "--markdown", "--force"], { proxy, profile });
-		if (scrape.code === 0 && scrape.stdout.length > 80) {
-			const mdHits = extractFromMarkdown(scrape.stdout, src.url);
-			log(`  [scrape] ${mdHits.length} media URLs from markdown (${scrape.stdout.length} chars)`);
-			hits.push(...mdHits);
-			// persist markdown for audit
-			const mdDir = join(MOISSON, "brut", src.id);
-			mkdirSync(mdDir, { recursive: true });
-			writeFileSync(join(mdDir, "page.md"), scrape.stdout);
-		} else {
-			log(`  [scrape] fail code=${scrape.code} stderr=${scrape.stderr.slice(0, 200)}`);
+		// 1) scrape markdown through the Aphrody Web owner
+		log(`[*] Aphrody Web scrape --markdown ${src.url}`);
+		try {
+			const markdown = await aphrodyWebScrape(src.url, { profile: profile as "static" | "http" | "fast" | "stealth" | "max", bin: process.env.APHRODY_BIN });
+			if (markdown.length > 80) {
+				const mdHits = extractFromMarkdown(markdown, src.url);
+				log(`  [scrape] ${mdHits.length} media URLs from markdown (${markdown.length} chars)`);
+				hits.push(...mdHits);
+				const mdDir = join(MOISSON, "brut", src.id);
+				mkdirSync(mdDir, { recursive: true });
+				writeFileSync(join(mdDir, "page.md"), markdown);
+			}
+		} catch (error) {
+			log(`  [scrape] failed: ${error instanceof Error ? error.message : String(error)}`);
 		}
 
-		// 2) recon --json for structured assets
-		log(`[*] bxc recon --json ${src.url}`);
-		const recon = await execBxc("recon", [src.url, "--json"], { proxy, profile });
-		if (recon.code === 0 && recon.stdout.includes("{")) {
-			const rHits = extractFromReconJson(recon.stdout, src.url);
+		// 2) structured asset recon through Aphrody Web
+		log(`[*] Aphrody Web recon --json ${src.url}`);
+		try {
+			const recon = await aphrodyWebRecon<{ assets?: { type?: string; url?: string }[] }>(src.url, {
+				profile: profile as "static" | "http" | "fast" | "stealth" | "max",
+				bin: process.env.APHRODY_BIN,
+			});
+			const rHits = extractFromReconJson(JSON.stringify(recon), src.url);
 			log(`  [recon] ${rHits.length} assets`);
 			hits.push(...rHits);
 			const mdDir = join(MOISSON, "brut", src.id);
 			mkdirSync(mdDir, { recursive: true });
-			writeFileSync(join(mdDir, "recon.json"), recon.stdout.slice(recon.stdout.indexOf("{")));
-		} else {
-			log(`  [recon] fail code=${recon.code}`);
+			writeFileSync(join(mdDir, "recon.json"), JSON.stringify(recon, null, 2));
+		} catch (error) {
+			log(`  [recon] failed: ${error instanceof Error ? error.message : String(error)}`);
 		}
 	}
 

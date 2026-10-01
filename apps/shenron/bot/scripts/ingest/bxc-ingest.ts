@@ -1,14 +1,14 @@
 /**
- * bxc-ingest — Script d'ingestion utilisant le moteur bxc pour scraper
+ * aphrody-ingest — Script d'ingestion utilisant Aphrody Web pour extraire
  * les dernières news Dragon Ball et les insérer dans `db_news` (table runtime,
  * forward-syncée vers Neon ; PAS du wiki éditorial → pas de wiki-write-guard).
  *
- * bxc scrape <url> <selector> --json renvoie un array JSON `[{ index, text }]`
+ * Aphrody Web `web scrape <url> <selector>` renvoie un array JSON `[{ index, text }]`
  * (textContent des éléments matchés). On dé-doublonne par titre et on insère.
  *
  * Env / flags :
- *   BXC_DIR      BXC repository root when it is not adjacent to Shenron.
- *   BXC_PROFILE  profil bxc (défaut "fast" ; valides: static|fast|http|stealth|max).
+ *   APHRODY_BIN          chemin de l'exécutable Aphrody, si absent du PATH.
+ *   APHRODY_WEB_PROFILE  profil Web (défaut "max").
  *   --dry-run    n'écrit rien en DB, log seulement ce qui serait inséré.
  *
  * Usage : bun apps/shenron/bot/scripts/ingest/bxc-ingest.ts [--dry-run]
@@ -20,13 +20,13 @@ import { drizzle } from "drizzle-orm/bun-sqlite";
 import { Database } from "bun:sqlite";
 import { dbNews } from "../../src/db/schema";
 import { eq } from "drizzle-orm";
-import { bxcCommand } from "@shenron/pipeline/bxc/cli";
+import { aphrodyWebScrape } from "@shenron/pipeline/aphrody";
 
 const sqlite = new Database(Bun.env.DATABASE_PATH ?? "./data/bot.db");
 sqlite.exec("PRAGMA foreign_keys = ON");
 const db = drizzle(sqlite, { schema: { dbNews } });
 
-const BXC_PROFILE = process.env.BXC_PROFILE ?? "max";
+const WEB_PROFILE = process.env.APHRODY_WEB_PROFILE ?? "max";
 const DRY_RUN = process.argv.includes("--dry-run");
 
 const SOURCES = [
@@ -46,46 +46,36 @@ const SOURCES = [
 
 type BxcScrapeItem = { index: number; text: string };
 
-/** Lance `bxc scrape <url> <selector> --json` et renvoie les textContent non vides. */
-async function scrapeWithBxc(url: string, selector: string): Promise<string[]> {
-	console.log(`Scraping via bxc (${BXC_PROFILE}): ${url}`);
-	const cmd = [
-		...(await bxcCommand()),
-		"scrape",
-		url,
-		selector,
-		"--profile",
-		BXC_PROFILE,
-		"--max",
-		"10",
-		"--json",
-	];
-	const proc = Bun.spawn(cmd, {
-		stdout: "pipe",
-		stderr: "ignore",
-	});
-	const out = await new Response(proc.stdout).text();
-	const code = await proc.exited;
-	if (code !== 0) {
-		console.error(`  bxc a quitté avec le code ${code}`);
+/** Extrait les textContent non vides depuis l'owner Aphrody Web. */
+async function scrapeWithAphrody(url: string, selector: string): Promise<string[]> {
+	console.log(`Scraping via Aphrody Web (${WEB_PROFILE}): ${url}`);
+	let out: string;
+	try {
+		out = await aphrodyWebScrape(url, {
+			profile: WEB_PROFILE as "static" | "fast" | "http" | "stealth" | "max",
+			selector,
+			max: 10,
+		});
+	} catch (error) {
+		console.error(`  Aphrody Web scrape failed: ${error instanceof Error ? error.message : String(error)}`);
 		return [];
 	}
 	let items: BxcScrapeItem[];
 	try {
 		items = JSON.parse(out) as BxcScrapeItem[];
 	} catch {
-		console.error("  Sortie bxc non-JSON (parse échoué)");
+		console.error("  Sortie Aphrody Web non-JSON (parse échoué)");
 		return [];
 	}
 	return items.map((it) => it.text?.replace(/\s+/g, " ").trim() ?? "").filter((t) => t.length > 0);
 }
 
 async function main() {
-	console.log(`Lancement de l'ingestion bxc${DRY_RUN ? " (dry-run)" : ""}.`);
+	console.log(`Lancement de l'ingestion Aphrody Web${DRY_RUN ? " (dry-run)" : ""}.`);
 
 	for (const source of SOURCES) {
 		try {
-			const items = await scrapeWithBxc(source.url, source.selector);
+			const items = await scrapeWithAphrody(source.url, source.selector);
 			console.log(`${items.length} items trouvés pour ${source.name}`);
 
 			for (const title of items) {

@@ -42,11 +42,14 @@ propriété.
 
 ## Points encore à migrer
 
-- Les consommateurs Shenron qui importent `@shenron/pipeline/bxc/*` ou lancent
-  des commandes BXC restent à migrer par flux. `rag-harvest.ts` utilise encore
-  BXC pour mirror; `bxc-asset-harvest.ts`, `bxc-ingest.ts` et quelques tâches
-  d’exploitation restent à inventorier. Les contrats Aphrody existants ou
-  manquants doivent remplacer chaque opération avant de retirer ces appels.
+- `bxc-asset-harvest.ts` et `bxc-ingest.ts` utilisent désormais Aphrody Web
+  pour le scrape/reconnaissance. Le téléchargement miroir récursif d'assets
+  dans `bxc-asset-harvest.ts` reste BXC : l'API Crawl Aphrody renvoie pages,
+  contenu structuré et liens découverts, mais n'aspire pas les binaires liés
+  dans une arborescence locale. `rag-harvest.ts` conserve aussi BXC pour ce
+  besoin de miroir. Plusieurs scripts médias et tâches d'exploitation
+  spécialisées restent à migrer après rapprochement de leurs contrats avec
+  `aphrody web frames`, le navigateur et les clients Infra.
 - Le flux `crawl universal` est redirigé vers le worker Aphrody Web, mais il
   doit être validé sur un petit lot réel avant de remplacer les anciennes
   sorties. Les crawls complets Fandom sont volontairement hors exécution de
@@ -63,6 +66,9 @@ propriété.
 
 - `aphrody web crawl` renvoie maintenant Markdown, texte, métadonnées et blocs
   extraits dans son JSON, et accepte des filtres d’URL regex répétés.
+- Le crawl reste explicitement borné par profondeur, nombre de requêtes,
+  concurrence, délai par hôte et domaine autorisé; son frontier SQLite permet
+  de reprendre et coordonner les travaux sur un stockage partagé compatible.
 - `aphrody web mediawiki` énumère un ensemble borné par l’Action API MediaWiki,
   applique un intervalle partagé aux requêtes et extrait le Markdown avec
   `aphrody-web-extract`.
