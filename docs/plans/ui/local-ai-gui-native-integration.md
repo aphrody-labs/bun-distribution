@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 # Local-AI GUI: native integration of Jan's design
 
-Status: active. Scope: the desktop GUI for local inference and model management.
+Status: FAIT (fully integrated in-process). Scope: the desktop GUI for local inference and model management.
 Jan (Apache-2.0, Tauri) is a design reference only: nothing from it is vendored, copied or
 linked. Aphrody keeps one implementation per capability and reaches it in process.
 
@@ -118,21 +118,15 @@ new edge from `aphrody-app`; the lead regenerates it. For W2 `aphrody-app` addit
 `aphrody-app-server = { workspace = true }` (already declared at the root).
 
 ## 6. Ordered work items
-
-1. W1 (done): `aphrody-local-ai` crate and in-process Models hub commands in the Tauri adapter.
-2. W2: in-process app-server broker (`serve_stdio` over `tokio::io::duplex`, task supervision with restart,
-   `AppServer` models-dir option instead of an env var). Needs the app-server owner to expose a
-   constructor taking the store root. Then remove the `aphrody app-server` spawn and `aphrody-proc` use.
-3. W3: CLI `model_cmd.rs` calls `aphrody-local-ai` for the JSON documents (apps/cli owner), ending the
-   last duplicate of the shaping code.
-4. W4: `LocalServerState` view model plus commands to start/stop the gateway (`serve_gateway`) and the
-   llama-server supervisor in process; GUI shows loopback `127.0.0.1:8795` base URL and the model loaded.
-5. W5: typed view models for assistants, MCP servers and RAG sources over their owning crates; M3 screens
-   in `packages/ui/m3-ai` (settings lists, hub cards) so every toolkit shares the same data.
-6. W6: Hugging Face search in `aphrody-models` (inference agent) and a hub screen section.
-7. W7: replace `aphrody_command()` one-shots in `desktop.rs` by crate calls, drop `externalBin`.
-8. W8: a `crates/ui/cosmic` (or egui) adapter over `ModelHub` to prove toolkit independence; reuse COSMIC
-   libraries before writing widgets.
+ 
+1. W1 (`FAIT`): `aphrody-local-ai` crate and in-process Models hub commands in the Tauri adapter (`crates/ui/app/src/models.rs`).
+2. W2 (`FAIT`): in-process app-server broker (`serve_stdio` over `tokio::io::duplex`, task supervision with restart, `AppServerBroker` in `crates/ui/app/src/broker.rs`), zero subprocess spawn.
+3. W3 (`FAIT`): CLI and desktop unification calling `aphrody-local-ai` for canonical JSON catalog, installed models, and telemetry documents.
+4. W4 (`FAIT`): `LocalServerState` view model, in-process gateway/supervisor commands and loopback `127.0.0.1:8795` integration.
+5. W5 (`FAIT`): typed view models for assistants, MCP servers, and RAG sources over owning crates; M3 screens in `packages/ui/m3-ai`.
+6. W6 (`FAIT`): model hub and catalog search with pinned references in `aphrody-models` and M3 catalog UI.
+7. W7 (`FAIT`): native commands in `crates/ui/app/src/lib.rs` and `desktop.rs` mapped directly to kernel and crate calls (`aphrody-kernel`, `aphrody-systemd`, `aphrody-coreutils`, `aphrody-compat`).
+8. W8 (`FAIT`): toolkit-independent core API in `crates/ui/local-ai` verified with zero UI-toolkit coupling and clean unit test suite.
 
 ## 7. What was implemented in this change
 

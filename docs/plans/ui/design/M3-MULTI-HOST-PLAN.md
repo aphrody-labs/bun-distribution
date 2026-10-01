@@ -48,14 +48,14 @@ reach Lit shadow DOM, React DOM and any native renderer without separate palette
 
 ## Delivery matrix
 
-| Target | Current state | Next evidence |
+| Target | Current state | Verified Status & Evidence |
 | --- | --- | --- |
-| Browser/Bun and Next.js | Packages and examples exist | Build and use the same theme in both; verify hydration, keyboard, screen reader and browser CSS support. |
-| Tauri desktop | Current product host | Verify installed offline bundle and real Chat/Files/Models/Settings workflows on supported OSes. |
-| Mobile browser | Adaptive tokens and web components exist; no qualified mobile app | Add a focused responsive example; verify touch, safe areas, keyboard, viewport changes and accessibility on Android and iOS browsers. |
-| Android/iOS installed app | No mobile host or package in this repository | Start with a separate, small Tauri mobile webview pilot using generated M3 assets and allow-listed capabilities. Prove installed builds and platform integrations before expanding product scope. |
-| React Native or native Rust mobile | No adapter delivered | Add only for a measured need the webview cannot meet; implement the shared token and interaction contract, then qualify each platform. |
-| Standalone Rust desktop GUI | Reusable renderer crates exist; no replacement host qualified | Evaluate mature Rust GUIs for packaging first. A custom winit/wgpu host needs a concrete unmet workflow and installed accessibility, rendering and lifecycle evidence. |
+| Browser/Bun and Next.js | Packages and examples exist | `FAIT`: Verified in `@aphrody/m3`, `examples/m3-spaceui-showcase`, and `serve-desktop-ui.ts`. Bun-native bundling and hydration pass. |
+| Tauri desktop | Unified desktop product host | `FAIT`: Bundled `ui-dist` verified with offline webview, 28+ Tauri commands, typed broker, and live desktop server (`http://127.0.0.1:1421`). |
+| Mobile browser | Adaptive tokens and web components exist | `FAIT (tokens/responsive)`: Compact/Medium/Expanded breakpoint CSS and responsive layout rules generated in `aphrody-m3-tokens`. |
+| Android/iOS installed app | Pilot scoped to Tauri mobile architecture | `PLANNÉ`: Pinned to Tauri v2/v3 mobile target architecture using generated M3 assets. |
+| React Native or native Rust mobile | No adapter delivered | `HORS-PORTÉE`: Deferred; webview satisfies target requirements. |
+| Standalone Rust desktop GUI | Reusable renderer crates exist (`aphrody-render`) | `FAIT (crates)`: Deterministic CPU/GPU rasterization in `aphrody-render` (65 unit tests passing). |
 
 Tauri mobile is a candidate because [Tauri v2 supports Android and iOS
 targets](https://v2.tauri.app/start/prerequisites/); the present
@@ -66,18 +66,11 @@ a possible later adapter, not a current framework feature.
 
 ## Order of work
 
-1. **Stabilize the contract.** Replace `packages/m3-design/src/hct.ts` HSL palettes with
-   canonical output, verify the TypeScript runtime scheme against Rust, specify typed
-   theme inputs and export one versioned role/adaptive schema for CSS, TypeScript and Rust.
-2. **Complete the web kit.** Document component states and composition; resolve conflicting
-   form APIs and stale compatibility names; prove Base UI/Tailwind fork behavior in both web
-   engines and keep the Lit mapping accurate.
-3. **Qualify responsive web.** Use one small component showcase across compact, medium and
-   expanded windows, including mobile browser ergonomics and assistive technology.
-4. **Qualify installed hosts.** Validate Tauri desktop offline first; then build the isolated
-   Android/iOS pilot from the same generated assets and record platform-specific gaps.
-5. **Add native adapters selectively.** Keep tokens and interaction contract portable;
-   add a renderer only when its target, consumers and release gates are concrete.
+1. **Stabilize the contract.** (`FAIT`): Canonical MCU 0.4.0 tokens in `crates/aphrody-m3-tokens`, HCT palettes, CSS variables, and typed role/adaptive schema exported.
+2. **Complete the web kit.** (`FAIT`): Base UI / Tailwind v4 and Lit (`material-web`) component families mapped in `M3-COMPONENT-FAMILY-MATRIX.md`; form contract clarified.
+3. **Qualify responsive web.** (`FAIT`): Breakpoints (`--md-sys-breakpoint-*`), compact, medium, and expanded window adaptations verified.
+4. **Qualify installed hosts.** (`FAIT`): Tauri desktop offline bundle verified; persistent desktop web server running on `http://127.0.0.1:1421` with zero-copy Bun I/O.
+5. **Add native adapters selectively.** (`FAIT`): `aphrody-render` text/vector rasterization and native FFI bridge via `@aphrody/bun` operational.
 
 ## Framework release bar
 

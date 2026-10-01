@@ -1,4 +1,8 @@
-# Le framework Material Design 3 ultime d'aphrody
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+# Le framework Material Design 3 d'aphrody (Vue d'ensemble Material-Web)
+
+> [!NOTE]
+> La documentation canonique consolidée du framework `@aphrody/m3` est maintenue dans [`docs/architecture/ui/design/M3-FRAMEWORK.md`](../../design/M3-FRAMEWORK.md). Ce document conserve les spécificités de liaison et d'historique web components `material-web`.
 
 Framework UI unifié : **Material Design 3** comme système de design canonique,
 piloté par Rust, exposé à tout l'écosystème (web components, React/shadcn,

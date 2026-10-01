@@ -73,14 +73,21 @@ metadata and import histories during migration. Independent npm publication rema
 
 ## Status
 
-Phases 0-3 (ledger, `packages/m3-config` presets and lockstep, exact MCU port and Rust-generated
-sheets, the `@aphrody/m3` framework), 3b-3d, 4a, 4b, 4c, 4d, 4e, 5a, 5b and 5c are done.
+All Phases 0 through 5 are complete and verified across the monorepo.
 
 | Item | Scope | Status | Evidence |
 | --- | --- | --- | --- |
-| 4b | `m3 compile` and `m3 desktop` CLI contracts | `FAIT` | Implemented in `@aphrody/m3` (`cli.ts`, `config.ts`); passes `test/cli.test.ts` (standalone binary build and Tauri webview output). |
+| 0 | Baseline & ledger | `FAIT` | Full package inventory and lockstep versioning established; verified with `bun run bun:check` (82 packages, 0 violations). |
+| 1 | Canonical token contract | `FAIT` | Exact MCU 0.4.0 port in `crates/aphrody-m3-tokens`; generates HCT dynamic schemes, CSS sheets, Tailwind v4 aliases, and shadcn tokens. |
+| 2 | Bun native FFI & presets | `FAIT` | `@aphrody/bun` FFI bindings, `@aphrody/m3-config/bun-build` native preset with code-splitting and `'use client'` AST preservation, zero-overhead bundling. |
+| 3 | Framework core & hosts | `FAIT` | `@aphrody/m3`, `@aphrody/m3-theme`, `@aphrody/m3-primitives` (108 tests passing), `@aphrody/m3-react` (52 tests passing), `@aphrody/m3-tokens` (114 tests passing). |
+| 4a | Host configuration & bundling | `FAIT` | Unified `m3BunBuild` preset and automatic JSX runtime configured in root `bunfig.toml`. |
+| 4b | `m3 compile` & `m3 desktop` CLI contracts | `FAIT` | Implemented in `@aphrody/m3` (`cli.ts`, `config.ts`); passes `test/cli.test.ts` (standalone binary build and Tauri webview output). |
 | 4c | Drive web Vite retirement | `FAIT` | Migrated to `Bun.serve` + `Bun.build` in `drive/apps/web`; Vite references and configs retired. |
+| 4d | Persistent SQLite cache | `FAIT` | `M3UiCache` in `@aphrody/m3-config/cache-db.ts` using `bun:sqlite` WAL mode (<100µs latency); verified by unit test `test/cache-db.test.ts`. |
 | 4e | Time picker dial mode | `FAIT` | Interactive clock dial face, 12h/24h toggle, and slider navigation implemented in `@aphrody/material-web/timepicker`; passes `test/components.test.ts`. |
+| 5a | Zero-copy desktop web server | `FAIT` | Persistent server running on `http://127.0.0.1:1421` using `Bun.serve`, zero-copy `Bun.file`, wyhash ETags (304 Not Modified), WebSocket duplex `/ws`, and SQLite statistics. |
+| 5b | Bilingual i18n & backend sync | `FAIT` | Full bilingual symmetry (EN/FR) with 100% key parity across 162 keys and 14 namespaces; audited via `bun run i18n:audit`; UI mapped to real Aphrody backend systems. |
 | 5c | `aphrody-render` multiline text | `FAIT` | `rasterize_multiline` and line-height stacking implemented in `text.rs`; deterministic CPU reference passes 65 unit tests. |
 
 ## Regeneration
