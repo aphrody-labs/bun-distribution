@@ -64,17 +64,17 @@ fonts/Document_xls.png packages/ui/assets/icons/Document_xls.png
 fonts/Document_xls_Light.png packages/ui/assets/icons/Document_xls_Light.png
 fonts/Document_xmp.png packages/ui/assets/icons/Document_xmp.png
 fonts/Dotfile-20.png packages/ui/assets/icons/Dotfile-20.png
-fonts/Drive-AmazonS3.png packages/ui/assets/icons/Drive-AmazonS3.png
+fonts/Drive-AmazonS3.png packages/ui/assets/icons/AmazonS3.png
 fonts/Drive-AmazonS3_Light.png packages/ui/assets/icons/Drive-AmazonS3_Light.png
-fonts/Drive-BackBlaze.png packages/ui/assets/icons/Drive-BackBlaze.png
+fonts/Drive-BackBlaze.png packages/ui/assets/icons/BackBlaze.png
 fonts/Drive-BackBlaze_Light.png packages/ui/assets/icons/Drive-BackBlaze_Light.png
-fonts/Drive-Box.png packages/ui/assets/icons/Drive-Box.png
-fonts/Drive-DAV.png packages/ui/assets/icons/Drive-DAV.png
+fonts/Drive-Box.png packages/ui/assets/icons/Box.png
+fonts/Drive-DAV.png packages/ui/assets/icons/DAV.png
 fonts/Drive-DAV_Light.png packages/ui/assets/icons/Drive-DAV_Light.png
 fonts/Drive-Darker.png packages/ui/assets/icons/Drive-Darker.png
-fonts/Drive-Dropbox.png packages/ui/assets/icons/Drive-Dropbox.png
+fonts/Drive-Dropbox.png packages/ui/assets/icons/Dropbox.png
 fonts/Drive-Dropbox_Light.png packages/ui/assets/icons/Drive-Dropbox_Light.png
-fonts/Drive-GoogleDrive.png packages/ui/assets/icons/Drive-GoogleDrive.png
+fonts/Drive-GoogleDrive.png packages/ui/assets/icons/GoogleDrive.png
 fonts/Drive-GoogleDrive_Light.png packages/ui/assets/icons/Drive-GoogleDrive_Light.png
 fonts/Drive-Mega.png packages/ui/assets/icons/Drive-Mega.png
 fonts/Drive-Mega_Light.png packages/ui/assets/icons/Drive-Mega_Light.png
@@ -82,7 +82,7 @@ fonts/Drive-OneDrive.png packages/ui/assets/icons/Drive-OneDrive.png
 fonts/Drive-OneDrive_Light.png packages/ui/assets/icons/Drive-OneDrive_Light.png
 fonts/Drive-OpenStack.png packages/ui/assets/icons/Drive-OpenStack.png
 fonts/Drive-OpenStack_Light.png packages/ui/assets/icons/Drive-OpenStack_Light.png
-fonts/Drive-PCloud.png packages/ui/assets/icons/Drive-PCloud.png
+fonts/Drive-PCloud.png packages/ui/assets/icons/PCloud.png
 fonts/Drive-PCloud_Light.png packages/ui/assets/icons/Drive-PCloud_Light.png
 fonts/Drive-box_Light.png packages/ui/assets/icons/Drive-box_Light.png
 fonts/Drive.png packages/ui/assets/icons/Drive.png
@@ -94,8 +94,8 @@ fonts/Encrypted_Light.png packages/ui/assets/icons/Encrypted_Light.png
 fonts/Entity.png packages/ui/assets/icons/Entity.png
 fonts/Entity_Light.png packages/ui/assets/icons/Entity_Light.png
 fonts/Executable-20.png packages/ui/assets/icons/Executable-20.png
-fonts/Executable.png packages/ui/assets/icons/Executable.png
-fonts/Executable_Light.png packages/ui/assets/icons/Executable_Light.png
+fonts/Executable.png packages/ui/assets/icons/Application.png
+fonts/Executable_Light.png packages/ui/assets/icons/Application_Light.png
 fonts/Executable_Light_old.png packages/ui/assets/icons/Executable_Light_old.png
 fonts/Executable_old.png packages/ui/assets/icons/Executable_old.png
 fonts/Face_Light.png packages/ui/assets/icons/Face_Light.png
@@ -214,7 +214,7 @@ fonts/Terminal.png packages/ui/assets/icons/Terminal.png
 fonts/Terminal_Light.png packages/ui/assets/icons/Terminal_Light.png
 fonts/Text-20.png packages/ui/assets/icons/Text-20.png
 fonts/Text.png packages/ui/assets/icons/Text.png
-fonts/TextAlt.png packages/ui/assets/icons/TextAlt.png
+fonts/TextAlt.png packages/ui/assets/icons/Text.png
 fonts/TextAlt_Light.png packages/ui/assets/icons/TextAlt_Light.png
 fonts/Text_Light.png packages/ui/assets/icons/Text_Light.png
 fonts/Text_txt.png packages/ui/assets/icons/Text_txt.png
@@ -245,3 +245,4 @@ fonts/splat.mp3 packages/ui/assets/sounds/splat.mp3
 fonts/splat.ogg packages/ui/assets/sounds/splat.ogg
 fonts/startup.mp3 packages/ui/assets/sounds/startup.mp3
 fonts/startup.ogg packages/ui/assets/sounds/startup.ogg
+fonts/icon.svg crates/ui/identity/assets/brand/icon.svg

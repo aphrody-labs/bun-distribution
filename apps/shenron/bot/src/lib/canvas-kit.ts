@@ -8,6 +8,7 @@
  * L'enregistrement des fonts est fait au chargement de ce module (side effect),
  * donc `import "~/lib/canvas-kit"` suffit à garantir leur disponibilité.
  */
+import { existsSync } from "node:fs";
 import { GlobalFonts, type SKRSContext2D } from "@napi-rs/canvas";
 import { botFile } from "~/lib/asset-files";
 import { logger } from "~/lib/logger";
@@ -42,7 +43,15 @@ function registerFonts(): void {
 	];
 	for (const [file, family] of fonts) {
 		try {
-			GlobalFonts.registerFromPath(botFile(`assets/fonts/${file}`, BOT_ROOT), family);
+			const primaryPath = botFile(`assets/fonts/${file}`, BOT_ROOT);
+			if (existsSync(primaryPath)) {
+				GlobalFonts.registerFromPath(primaryPath, family);
+			} else if (file === "NotoColorEmoji.ttf") {
+				const canonical = `${BOT_ROOT}/../../../crates/web/obscura-render/assets/noto-color-emoji.ttf`;
+				if (existsSync(canonical)) {
+					GlobalFonts.registerFromPath(canonical, family);
+				}
+			}
 		} catch (err) {
 			logger.debug({ err, file, family }, "Font non chargée (fallback sans-serif)");
 		}

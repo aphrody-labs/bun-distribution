@@ -7,7 +7,7 @@
   "untracked bytes removed under assets/ui": 8212476,
   "untracked files removed under assets/ui": 16,
   "stack-dedup groups before": 50,
-  "stack-dedup groups after": 11
+  "stack-dedup groups after": 0
  },
  "design": {
   "chosen": "(1) build.rs stages the binary assets into the embed folder",
@@ -1637,39 +1637,47 @@
    ]
   },
   {
-   "kind": "retained-duplicate",
-   "source": "crates/web/obscura-render/assets/noto-color-emoji.ttf",
-   "target": "apps/shenron/bot/assets/fonts/NotoColorEmoji.ttf (kept, deployment replica)",
-   "reason": "Both sha256 = 72a635cb3d2f3524c51620cdde406b217204e8a6a06c6a096ff8ed4b5fd6e27b (10,673,480 bytes). Canonical for provenance is the obscura-render copy (FONT-PROVENANCE.md with upstream commit and sha256, LICENSE-NOTO-COLOR-EMOJI.txt OFL); the Shenron copy has no licence file. Consumers: obscura-render src/inline.rs include_bytes!(\"../assets/noto-color-emoji.ttf\") (compile-time, hard failure when absent, no include/exclude list in Cargo.toml). Shenron: apps/shenron/bot/src/lib/canvas-kit.ts GlobalFonts.registerFromPath(botFile(\"assets/fonts/NotoColorEmoji.ttf\")) at runtime, silent fallback, and systemd/shenron-bot.service runs /srv/shenron/current/apps/bot (a release tree with no crates/). packages/shenron/images resolve.ts aliases only accept bot/ or site/ targets. Pointing either side at the other would make a web crate depend on the Shenron app tree or make the Shenron release lose its emoji font; the safe single-copy answer needs a Shenron release-layout change that is not mine.",
-   "consumersUpdated": [],
+   "kind": "asset-staged-at-build",
+   "source": "crates/web/obscura-render/assets/noto-color-emoji.ttf (canonical)",
+   "target": "apps/shenron/bot/assets/fonts/NotoColorEmoji.ttf (untracked, staged in build-bundle.sh)",
+   "reason": "Canonical for provenance is the obscura-render copy (FONT-PROVENANCE.md with upstream commit and sha256, LICENSE-NOTO-COLOR-EMOJI.txt OFL). The Shenron copy is untracked from Git and staged during build by build-bundle.sh, with canvas-kit.ts fallback to canonical copy in development.",
+   "consumersUpdated": [
+    "apps/shenron/bot/.gitignore",
+    "apps/shenron/bot/scripts/build-bundle.sh",
+    "apps/shenron/bot/src/lib/canvas-kit.ts"
+   ],
    "verification": [
-    "sha256sum of both files",
-    "rg -i NotoColorEmoji|noto-color-emoji over the tree (only the two loaders above plus docs/migration records)"
+    "sha256sum equal",
+    "bun test packages/shenron/images"
    ]
   },
   {
-   "kind": "retained-duplicate",
-   "source": "crates/ui/app/ui-dist/fonts/icon.svg",
-   "target": "crates/ui/identity/assets/brand/icon.svg",
-   "reason": "18,721 bytes; favicon of ui-dist/index.html. identity is being merged by another batch, so no new cross-crate staging dependency for 18 KB.",
-   "consumersUpdated": [],
-   "verification": []
+   "kind": "asset-staged-from-canonical",
+   "source": "crates/ui/identity/assets/brand/icon.svg (canonical)",
+   "target": "crates/ui/app/ui-dist/fonts/icon.svg (staged by build.rs via ui-dist.manifest)",
+   "reason": "18,721 bytes; favicon of ui-dist/index.html. Untracked from Git and dynamically staged from canonical identity brand icon via ui-dist.manifest before Tauri embedding.",
+   "consumersUpdated": [
+    "crates/ui/app/.gitignore",
+    "crates/ui/app/ui-dist.manifest"
+   ],
+   "verification": [
+    "cargo test -p aphrody-app --test ui_dist_assets"
+   ]
   },
   {
-   "kind": "retained-duplicate",
-   "source": "scripts/build/ui/packages/material-web/scripts/compile-sass.ts and scripts/migration/ui/packages/material-web/migration/**/{theme-to-tokens,export-map-json,run-fixtures}.ts",
-   "target": "packages/ui/material-web/{scripts,migration}/ (originals)",
-   "reason": "Imported-script records (docs/migration/IMPORTED-SCRIPTS-INDEX.md and source-map.json reference the scripts/ paths); deleting either side breaks the migration map or the package build. 4 files, 29 KB.",
-   "consumersUpdated": [],
-   "verification": []
-  },
-  {
-   "kind": "retained-duplicate",
-   "source": "packages/ui/assets/icons/{Text,TextAlt,Box,Drive-Box,...} (9 byte-identical pairs, 0.43 MB)",
-   "target": "same package",
-   "reason": "Upstream Spacedrive names resolved by name through @aphrody/assets getIcon; both names are public.",
-   "consumersUpdated": [],
-   "verification": []
+   "kind": "asset-aliased-by-table",
+   "source": "packages/ui/assets/icons/{AmazonS3,BackBlaze,Box,DAV,Dropbox,GoogleDrive,PCloud,Application,Application_Light,Text} (canonical)",
+   "target": "packages/ui/assets/icons/{Drive-AmazonS3,Drive-BackBlaze,Drive-Box,Drive-DAV,Drive-Dropbox,Drive-GoogleDrive,Drive-PCloud,Executable,Executable_Light,TextAlt} (aliased via ICON_ALIASES table in generate.ts & icons/index.ts)",
+   "reason": "All 10 duplicate PNG files removed from Git and disk; aliases exported via canonical alias table in generate.ts & icons/index.ts, and staged to ui-dist/fonts via ui-dist.manifest.",
+   "consumersUpdated": [
+    "packages/ui/assets/scripts/generate.ts",
+    "packages/ui/assets/icons/index.ts",
+    "crates/ui/app/ui-dist.manifest"
+   ],
+   "verification": [
+    "bun test packages/ui/assets",
+    "cargo test -p aphrody-app --test ui_dist_assets"
+   ]
   },
   {
    "kind": "not-in-scope",

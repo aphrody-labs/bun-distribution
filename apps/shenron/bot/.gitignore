@@ -16,3 +16,6 @@ data/cache/
 assets/subtitles/db_episodes/
 assets/subtitles/db_movies/
 data/dbz-frames/
+
+# Police de caractères émojis déployée depuis crates/web/obscura-render (canonique)
+assets/fonts/NotoColorEmoji.ttf

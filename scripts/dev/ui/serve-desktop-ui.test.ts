@@ -134,6 +134,60 @@ describe("serve-desktop-ui", () => {
 
       const parsedWs = JSON.parse(wsMessage);
       expect(parsedWs.type).toBe("ready");
+
+      // 11. Transparent in-browser Tauri IPC Bridge injection in HTML
+      expect(htmlText).toContain("aphrody-tauri-unified-bridge");
+      expect(htmlText).toContain("window.__TAURI_INTERNALS__");
+      expect(htmlText).toContain("window.__TAURI__");
+
+      // 12. Transparent Tauri command dispatch: aphrody_meta
+      const metaRes = await fetch(`${baseUrl}/api/tauri/invoke`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ cmd: "aphrody_meta" }),
+      });
+      expect(metaRes.status).toBe(200);
+      const metaData = await metaRes.json();
+      expect(metaData.app_version).toBe("1.0.0-canary");
+      expect(metaData.mode).toBe("unified-tauri-web");
+      expect(metaData.subsystems).toContain("systemd");
+      expect(metaData.subsystems).toContain("web");
+
+      // 13. Transparent Tauri command dispatch: aphrody_hardware_telemetry
+      const telemRes = await fetch(`${baseUrl}/api/tauri/invoke`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ cmd: "aphrody_hardware_telemetry" }),
+      });
+      expect(telemRes.status).toBe(200);
+      const telemData = await telemRes.json();
+      expect(telemData.cpu.cores).toBeGreaterThan(0);
+      expect(telemData.memory.total).toBeGreaterThan(0);
+      expect(typeof telemData.platform).toBe("string");
+
+      // 14. Transparent Tauri command dispatch: aphrody_model_catalog
+      const modelsRes = await fetch(`${baseUrl}/api/tauri/invoke`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ cmd: "aphrody_model_catalog" }),
+      });
+      expect(modelsRes.status).toBe(200);
+      const modelsData = await modelsRes.json();
+      expect(Array.isArray(modelsData)).toBe(true);
+      expect(modelsData.length).toBeGreaterThan(0);
+
+      // 15. Unified applications registry API: /api/apps
+      const appsRes = await fetch(`${baseUrl}/api/apps`);
+      expect(appsRes.status).toBe(200);
+      const appsData = await appsRes.json();
+      expect(appsData.ecosystem).toBe("aphrody-unified-monorepo");
+      const appIds = appsData.apps.map((a: any) => a.id);
+      expect(appIds).toContain("aphrody-app");
+      expect(appIds).toContain("koharu-editor");
+      expect(appIds).toContain("rg-website");
+      expect(appIds).toContain("shenron-site");
+      expect(appIds).toContain("cli");
+      expect(appIds).toContain("m3-framework");
     } finally {
       server.stop(true);
     }

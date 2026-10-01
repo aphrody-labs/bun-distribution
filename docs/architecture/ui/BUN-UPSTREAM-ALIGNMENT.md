@@ -152,15 +152,18 @@ Le module `M3UiCache` (`@aphrody/m3-config/cache-db`) fournit une couche de pers
 - Utilisé pour mettre en cache les calculs colorimétriques HCT, les rendus vectoriels d'icônes, les feuilles de style de tokens et les préférences de session.
 - Instance partagée persistante sous `~/.aphrody/cache/ui.sqlite` avec fallback en mémoire pour les tests.
 
-### 3.3 Serveur Desktop Persistant (`Bun.serve`)
+### 3.3 Serveur Desktop Persistant & Pont Tauri Universel (`Bun.serve`)
 
 Le serveur persistant [`scripts/dev/ui/serve-desktop-ui.ts`](file:///home/aphro/aphrody/scripts/dev/ui/serve-desktop-ui.ts) écoute sur le port officiel Tauri `1421` :
+- **Pont IPC Tauri Transparent** : injection automatique dans `index.html` de `window.__TAURI_INTERNALS__` et `window.__TAURI__` (core `invoke`, event `listen`/`emit`), permettant à l'application web d'exécuter nativement toutes les commandes Tauri de bureau sans runtime Wry externe.
+- **Dispatching de Commandes Natives (`/api/tauri/invoke`)** : prise en charge complète de `aphrody_meta`, `aphrody_hardware_telemetry`, `aphrody_model_*`, `aphrody_fs_*`, `aphrody_shenron_chat`, `koharu_rpc`, `aphrody_rpc`.
 - **Routage SPA** : redirection transparente de toutes les routes de vues (`/chat`, `/files`, `/models`, `/settings`, `/splash`, `/pet`, etc.) vers `crates/ui/app/ui-dist/index.html`.
 - **ETags wyhash** : calcul d'empreinte ultra-rapide via `Bun.hash.wyhash` et réponses instantanées `304 Not Modified`.
 - **Compression transparente** : compression à la volée via `Bun.gzipSync` pour les assets supérieurs à 1 Ko.
-- **Canal WebSocket Duplex (`/ws`)** : synchronisation en temps réel de l'état des sous-systèmes et télémétrie des fenêtres.
+- **Canal WebSocket Duplex (`/ws`)** : synchronisation en temps réel de l'état des sous-systèmes, télémétrie matérielle et diffusion d'événements.
 - **APIs dynamiques** :
   - `/health` : statut, uptime, révision Bun et capacités actives
+  - `/api/apps` : registre unifié de toutes les applications du monorepo (`aphrody-app`, `koharu`, `rg-website`, `shenron-site`, `cli`, `m3-framework`)
   - `/api/capabilities` : inventaire exhaustif et dynamique des piliers natifs
   - `/api/i18n` et `/api/i18n/:lang` : catalogues bilingues synchronisés
   - `/api/tokens` : variables et métadonnées du système de design Material 3

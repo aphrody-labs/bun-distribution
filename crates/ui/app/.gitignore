@@ -15,6 +15,7 @@
 /ui-dist/fonts/*.mp3
 /ui-dist/fonts/*.ogg
 /ui-dist/fonts/*.partial-*
+/ui-dist/fonts/icon.svg
 
 # Staged by build.rs from ui-dist.manifest (canonical sources: packages/ui/assets, packages/ui/m3-fonts); never committed twice.
 /ui-dist/fonts/Album-20.png

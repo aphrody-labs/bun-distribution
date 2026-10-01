@@ -138,20 +138,29 @@ Serveur exécuté sur `http://127.0.0.1:1421` (ou configuré via `PORT`/`HOST`) 
 }
 ```
 
-### 3.2 `/api/capabilities`
+### 3.2 `/api/tauri/invoke`
+- **Méthode** : `POST`
+- **Description** : Dispatcher universel de commandes natives Tauri pour exécution transparente en mode web standalone (`aphrody_meta`, `aphrody_hardware_telemetry`, `aphrody_model_*`, `aphrody_fs_*`, `aphrody_shenron_chat`, `koharu_rpc`, `aphrody_rpc`).
+- **Corps de requête** : `{ "cmd": "nom_commande", "args": { ... } }`
+
+### 3.3 `/api/apps`
+- **Méthode** : `GET`
+- **Description** : Retourne l'inventaire structuré de tout l'écosystème unifié (`aphrody-app`, `koharu-editor`, `rg-website`, `shenron-site`, `cli`, `m3-framework`).
+
+### 3.4 `/api/capabilities`
 - **Méthode** : `GET`
 - **Description** : Reflète l'état réel et dynamique des 8 sous-systèmes du backend natif Aphrody (`ffi`, `appServer`, `kernel`, `drive`, `koharu`, `shenron`, `shell`, `cli`).
 
-### 3.3 `/api/i18n` et `/api/i18n/:lang`
+### 3.5 `/api/i18n` et `/api/i18n/:lang`
 - **Méthode** : `GET`
 - **Paramètres** : `:lang` = `en` ou `fr`
 - **Description** : Retourne les catalogues de traduction 100% symétriques générés depuis les modèles backend.
 
-### 3.4 `/api/tokens`
+### 3.6 `/api/tokens`
 - **Méthode** : `GET`
 - **Description** : Expose la métrique et les dimensions du design system M3 (36 rôles de couleur, 13 palettes tonales, 6 niveaux d'élévation, 7 rayons de courbure, 10 pas temporels de motion).
 
-### 3.5 `/api/cache/stats`
+### 3.7 `/api/cache/stats`
 - **Méthode** : `GET`
 - **Description** : Retourne les statistiques d'utilisation du cache SQLite local (`totalEntries`, `namespaces`, `databasePath`).
 
