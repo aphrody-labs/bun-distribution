@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 
 > Historical research and target-state analysis. For the current Rust-only WinClean runtime,
-> transport limits, and subsystem wiring, see [the architecture overview](../_source/ARCHITECTURE.md).
+> transport limits, and subsystem wiring, see [the architecture overview](../ARCHITECTURE.md).
 # Recherche Architecturale : Systèmes d'Exploitation Rust & Doctrine Aphrody OS
 
 Ce document consigne les recherches approfondies, l'état de l'art technique, le fact-checking de l'écosystème Rust bare-metal / `no_std`, et la doctrine architecturale définitive régissant **Aphrody OS**.

@@ -66,6 +66,21 @@ routes de sites, exemples et snapshots historiques demandent une classification.
 Critères : installation Bun figée, métadonnées Cargo, layout, liens documentaires
 actifs, aucun import vers une ancienne implantation déplacée.
 
+### Validation partielle des liens — 2026-10-01
+
+- Contrôle exécuté : `bun packages/infra/workspace/src/docs-links.ts --scope repository --json`.
+- 5 956 documents inventoriés, 8 904 liens locaux examinés ; 1 962 destinations
+  non résolues avant correction. Les exclusions du vérificateur (notamment
+  `docs/reference/`) ne sont pas couvertes par ces résultats.
+- 19 occurrences corrigées dans l’audit d’architecture OS et son étude de
+  recherche : chemins des propriétaires kernel, kernel-client, WinClean, jobs,
+  events et backend, manifest racine et vue d’architecture. Les cibles existent.
+- INCOMPLET : 1 943 liens non résolus restent à classer et traiter. Ce total
+  contient des routes de sites importées et des chemins historiques ; il ne
+  représente pas un nombre établi de défauts de documentation active.
+- Les constats datés de l’audit OS ne sont pas requalifiés par une réparation
+  de liens. Les preuves de migration restent intactes.
+
 ## 1. Contrats, cœur et compatibilité
 
 Propriétaires : `crates/contracts`, `crates/native`, `crates/compat`,
