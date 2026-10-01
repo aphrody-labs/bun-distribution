@@ -2,7 +2,8 @@
 /** BXC domain clients sharing a single CLI contract and service module. */
 import { execBxc, execBxcJson } from "./spawn";
 import { AphrodyTranslateService } from "../aphrody/translate";
-import { AphrodyWikiSearchService } from "../aphrody/wiki";
+import { AphrodyFramesClient } from "../aphrody/frames";
+import { AphrodyWikiService } from "../aphrody/wiki";
 import {
 	AnimesamaSearchResultSchema,
 	AnimesamaAnimeInfoSchema,
@@ -17,7 +18,6 @@ import {
 	type VoiranimeSearchResult,
 	type VoiranimeAnimeInfo,
 	type VoiranimeResolvedSource,
-	WikiPageDossierSchema,
 	type WikiSearchResult,
 	type WikiPageDossier,
 	type TranslationResult,
@@ -193,17 +193,14 @@ export class WikiService {
 
   /**
    * Extrait le contenu d'une page MediaWiki au format Markdown propre
-   * Commande CLI : `bxc wiki md <url>`
+   * Commande CLI : `aphrody web wiki-page <url> --markdown`
    */
   async markdown(url: string, options?: BxcSpawnOptions): Promise<string> {
     const trimmed = url.trim();
     if (!trimmed) throw new Error("Wiki URL is required");
 
-    // Pour le markdown, on veut le texte brut sans altération JSON
-    return execBxc(["wiki", "md", trimmed], {
-      ...this.defaultOptions,
-      ...options,
-    });
+    const timeoutMs = options?.timeoutMs ?? this.defaultOptions.timeoutMs;
+    return new AphrodyWikiService({ ...(timeoutMs === undefined ? {} : { timeoutMs }), ...(options?.aphrodyBin ?? this.defaultOptions.aphrodyBin ? { bin: options?.aphrodyBin ?? this.defaultOptions.aphrodyBin } : {}) }).markdown(trimmed);
   }
 
   /**
@@ -215,7 +212,7 @@ export class WikiService {
 
   /**
    * Recherche plein texte directement SUR le wiki distant via son API MediaWiki
-   * Commande CLI : `bxc wiki search <url> <query>`
+   * Commande CLI : `aphrody web wiki-search <api-url> <query>`
    */
   async search(
     wikiUrl: string,
@@ -229,25 +226,19 @@ export class WikiService {
     if (!trimmedQuery) return [];
 
     const timeoutMs = options?.timeoutMs ?? this.defaultOptions.timeoutMs;
-    return new AphrodyWikiSearchService(
-      timeoutMs === undefined ? {} : { timeoutMs }
-    ).search(trimmedUrl, trimmedQuery, limit);
+    return new AphrodyWikiService({ ...(timeoutMs === undefined ? {} : { timeoutMs }), ...(options?.aphrodyBin ?? this.defaultOptions.aphrodyBin ? { bin: options?.aphrodyBin ?? this.defaultOptions.aphrodyBin } : {}) }).search(trimmedUrl, trimmedQuery, limit);
   }
 
   /**
    * Récupère le dossier complet d'une page (sections, tableaux, infobox, images, révision)
-   * Commande CLI : `bxc wiki page <url>`
+   * Commande CLI : `aphrody web wiki-page <url>`
    */
   async page(url: string, options?: BxcSpawnOptions): Promise<WikiPageDossier> {
     const trimmed = url.trim();
     if (!trimmed) throw new Error("Wiki URL is required");
 
-    const raw = await execBxcJson<unknown>(["wiki", "page", trimmed], {
-      ...this.defaultOptions,
-      ...options,
-    });
-
-    return WikiPageDossierSchema.parse(raw);
+    const timeoutMs = options?.timeoutMs ?? this.defaultOptions.timeoutMs;
+    return new AphrodyWikiService({ ...(timeoutMs === undefined ? {} : { timeoutMs }), ...(options?.aphrodyBin ?? this.defaultOptions.aphrodyBin ? { bin: options?.aphrodyBin ?? this.defaultOptions.aphrodyBin } : {}) }).page(trimmed);
   }
 }
 
@@ -255,7 +246,7 @@ export class WikiService {
 export class GoogleTranslateService {
   private readonly translator: AphrodyTranslateService;
   constructor(defaultOptions: BxcSpawnOptions = {}) {
-    this.translator = new AphrodyTranslateService({ timeoutMs: defaultOptions.timeoutMs });
+    this.translator = new AphrodyTranslateService({ timeoutMs: defaultOptions.timeoutMs, bin: defaultOptions.aphrodyBin });
   }
   translate(text: string, target = "en", source = "auto", options: Partial<TranslateOptions> & BxcSpawnOptions = {}): Promise<TranslationResult> {
     return this.translator.translate(text, target, source, {
@@ -434,97 +425,36 @@ export interface FramesSearchOptions {
   at?: string;
 }
 
+/** Compatibility entry point; execution, descriptors and storage belong to Rust Aphrody. */
 export class FramesService {
   constructor(private readonly defaultOptions: BxcSpawnOptions = {}) {}
 
-  /**
-   * Extrait le vecteur MPEG-7 ColorLayout (DCT 33 coefficients) et son hash d'une image
-   * Commande CLI : `bxc frames vector <imagePath> --json`
-   */
-  async vector(
-    imagePath: string,
-    options?: BxcSpawnOptions
-  ): Promise<BxcVectorOutput> {
-    const trimmed = imagePath.trim();
-    if (!trimmed) throw new Error("Image path is required");
-
-    const raw = await execBxcJson<unknown>(["frames", "vector", trimmed], {
-      ...this.defaultOptions,
-      ...options,
+  private client(options: BxcSpawnOptions = {}): AphrodyFramesClient {
+    const merged = { ...this.defaultOptions, ...options };
+    return new AphrodyFramesClient({
+      ...(merged.aphrodyBin ? { bin: merged.aphrodyBin } : {}),
+      ...(merged.timeoutMs === undefined ? {} : { timeoutMs: merged.timeoutMs }),
     });
-
-    return BxcVectorOutputSchema.parse(raw);
   }
 
-  /**
-   * Recherche à quel épisode et timecode correspond une image
-   * Local d'abord (index local ~1M frames), puis remote (trace.moe)
-   * Commande CLI : `bxc frames search <imagePath> [--local|--remote] --json`
-   */
-  async search(
-    imagePath: string,
-    mode: "--local" | "--remote" = "--local",
-    opts: FramesSearchOptions = {},
-    options?: BxcSpawnOptions
-  ): Promise<BxcSearchOutput> {
-    const trimmed = imagePath.trim();
-    if (!trimmed) throw new Error("Image path is required");
-
-    const args = ["frames", "search", trimmed, mode];
-    if (opts.limit !== undefined && opts.limit > 0) {
-      args.push("--limit", String(opts.limit));
-    }
-    if (opts.anilistId !== undefined) {
-      args.push("--anilist-id", String(opts.anilistId));
-    }
-    if (opts.at) {
-      args.push("--at", opts.at);
-    }
-
-    const raw = await execBxcJson<unknown>(args, {
-      ...this.defaultOptions,
-      ...options,
-    });
-
-    return BxcSearchOutputSchema.parse(raw);
+  async vector(imagePath: string, options?: BxcSpawnOptions): Promise<BxcVectorOutput> {
+    return BxcVectorOutputSchema.parse(await this.client(options).vector(imagePath));
   }
 
-  /**
-   * Récupère les statistiques de l'index de frames local
-   * Commande CLI : `bxc frames stats --json`
-   */
+  async search(imagePath: string, mode: "--local" | "--remote" = "--local", opts: FramesSearchOptions = {}, options?: BxcSpawnOptions): Promise<BxcSearchOutput> {
+    return BxcSearchOutputSchema.parse(await this.client(options).search(imagePath, { ...opts, mode }));
+  }
+
   async stats(options?: BxcSpawnOptions): Promise<BxcFramesStats> {
-    const raw = await execBxcJson<unknown>(["frames", "stats"], {
-      ...this.defaultOptions,
-      ...options,
-    });
-
-    return BxcFramesStatsSchema.parse(raw);
+    return BxcFramesStatsSchema.parse(await this.client(options).stats());
   }
 
-  /**
-   * Liste les médias indexés dans l'index local
-   * Commande CLI : `bxc frames list [filter] --json`
-   */
-  async list(filter?: string, options?: BxcSpawnOptions): Promise<unknown> {
-    const args = ["frames", "list"];
-    if (filter) args.push(filter);
-
-    return execBxcJson<unknown>(args, {
-      ...this.defaultOptions,
-      ...options,
-    });
+  list(filter?: string, options?: BxcSpawnOptions): Promise<unknown> {
+    return this.client(options).list(filter);
   }
 
-  /**
-   * Interroge le quota trace.moe
-   * Commande CLI : `bxc frames quota --json`
-   */
-  async quota(options?: BxcSpawnOptions): Promise<unknown> {
-    return execBxcJson<unknown>(["frames", "quota"], {
-      ...this.defaultOptions,
-      ...options,
-    });
+  quota(options?: BxcSpawnOptions): Promise<unknown> {
+    return this.client(options).quota();
   }
 }
 

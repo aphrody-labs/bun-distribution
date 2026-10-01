@@ -1,10 +1,8 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 
-# Tauri v2 integration
+# Tauri 3 integration
 
-> **Status: historical (Tauri 2 context).** This page describes the Tauri 2 desktop host. The workspace now pins Tauri 3 alpha (`tauri =3.0.0-alpha.3`, default runtime `tauri-runtime-wry`, `tauri-runtime-cef` only for Koharu): see [the Tauri 3 upstream line](../../../operations/ui/tauri-upstream.md) and [`config/tauri-apps.json`](../../../../config/tauri-apps.json). Keep the content below as compatibility context until the desktop host is requalified under Tauri 3 (Verify). Paths such as `crates/aphrody-app` and `packages/app-ui` predate the layout migration: the host is `crates/ui/app`, and `@aphrody/app-ui` is not yet part of this workspace.
-
-How `crates/aphrody-app` hosts the UI and reaches the rest of Aphrody. Protocol and target
+How `crates/ui/app` hosts the UI and reaches the rest of Aphrody. Protocol and target
 surfaces: [`../GUI.md`](../GUI.md); desktop integration and pitfalls:
 [`../DESKTOP-INTEGRATION.md`](../DESKTOP-INTEGRATION.md); plugin policy: [`plugins.md`](./plugins.md).
 
@@ -19,8 +17,8 @@ surfaces: [`../GUI.md`](../GUI.md); desktop integration and pitfalls:
 
 ## Frontend build
 
-- `packages/app-ui` is the only frontend. `@aphrody/m3` builds it (`m3 build --tauri`) into
-  `crates/aphrody-app/ui-dist` (`index.html`, `app.js`, `app.css`, `fonts/`); names are not hashed
+- `packages/ui/m3` provides the M3 component framework (`m3 build --tauri`) into
+  `crates/ui/app/ui-dist` (`index.html`, `app.js`, `app.css`, `fonts/`); names are not hashed
   and scripts stay external modules for the `script-src 'self'` CSP.
 - `tauri.conf.json`: `frontendDist = "ui-dist"`, `devUrl = http://localhost:1421`,
   `beforeDevCommand` / `beforeBuildCommand` run `bun run --filter @aphrody/app-ui dev|build`.

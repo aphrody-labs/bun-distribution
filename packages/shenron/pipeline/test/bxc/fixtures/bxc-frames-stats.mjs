@@ -7,7 +7,7 @@ if (command === "--version") {
 	process.exit(0);
 }
 
-if (command === "frames stats --json") {
+if (command === "frames stats --json" || command === "web frames stats --json") {
 	process.stdout.write(
 		JSON.stringify({ path: "/fixture/frames.sqlite", media: 1, frames: 8, durationMs: 12 })
 	);

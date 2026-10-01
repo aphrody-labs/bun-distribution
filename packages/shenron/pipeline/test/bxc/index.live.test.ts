@@ -65,11 +65,11 @@ describe("BxcBridge Native Client Suite", () => {
     expect(md.length).toBeGreaterThan(100);
   }, 30000);
 
-  it.skipIf(!hasBxcScraper)("Google Translate: translate with multi-provider fallback", async () => {
+  it.skipIf(!hasBxcScraper)("Aphrody Translate: respects the requested target", async () => {
     const res = await bxc.google.translate("Bonjour le monde", "en", "fr");
     expect(res).toHaveProperty("translatedText");
     expect(res.translatedText.toLowerCase()).toContain("world");
-    expect(["bxc-cli", "lingva", "mymemory", "cache"]).toContain(res.provider);
+    expect(res.provider).toBe("aphrody-translate");
   });
 
   it("DragonballCN: catalog", async () => {
@@ -106,7 +106,7 @@ describe("BxcBridge Native Client Suite", () => {
   }, 50000);
 
   it("Frames: local index stats", async () => {
-    const stats = await new FramesService({ bxcPath: framesFixture }).stats();
+    const stats = await new FramesService({ aphrodyBin: framesFixture }).stats();
     expect(stats).toEqual({ path: "/fixture/frames.sqlite", media: 1, frames: 8, durationMs: 12 });
   });
 

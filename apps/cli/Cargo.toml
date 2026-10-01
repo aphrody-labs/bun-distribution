@@ -122,6 +122,7 @@ aphrody-web-bridge                = { workspace = true }
 aphrody-web-crawl                 = { workspace = true }
 aphrody-web-detect                = { workspace = true }
 aphrody-web-extract               = { workspace = true }
+aphrody-web-frames                = { workspace = true }
 aphrody-x                         = { workspace = true }
 obscura                           = { workspace = true }
 obscura-net                       = { workspace = true }

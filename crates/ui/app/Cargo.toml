@@ -45,12 +45,12 @@ aphrody-identity = { workspace = true }
 aphrody-kernel = { workspace = true }
 aphrody-native = { workspace = true }
 aphrody-proc = { workspace = true }
-aphrody-render3d = { workspace = true }
 aphrody-sprite-sheet = { workspace = true }
 aphrody-subsystem = { workspace = true }
 aphrody-systemd = { workspace = true }
 async-trait = { workspace = true }
 base64 = { workspace = true }
+koharu-library = { workspace = true }
 tauri = { workspace = true, features = ["dynamic-acl", "image-ico", "tray-icon"] }
 tauri-runtime-wry = { workspace = true }
 tokio = { workspace = true }

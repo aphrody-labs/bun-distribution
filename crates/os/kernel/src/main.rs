@@ -129,13 +129,7 @@ async fn builtin_kernel(
     // repository never links them (aphrody-infra/docs/REPO-LAYERING.md).
     let mut occupied: HashSet<String> =
         kernel.tools().await.into_iter().map(|(_, tool)| tool.name).collect();
-    let mut plugins = vec![(
-        "render3d",
-        "3D scene rendering (aphrody-ui plugin process).",
-        "APHRODY_RENDER3D_MCP_BIN",
-        "aphrody-render3d-mcp",
-        Vec::new(),
-    )];
+    let mut plugins: Vec<(&str, &str, &str, &str, Vec<(String, String)>)> = Vec::new();
     if browser {
         // The plugin resolves the Aphrody Web provider itself; an explicit one is handed down.
         let child_env: Vec<(String, String)> = web_mcp

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-//! Aphrody desktop (Tauri v2): the GUI and window manager of Aphrody OS.
+//! Aphrody desktop (Tauri 3): the GUI and window manager of Aphrody OS.
 //!
 //! The agent is not linked into this process. Agent sessions run in `aphrody app-server`,
 //! owned by [`broker::AppServerBroker`] and reached over stdio JSON-RPC; one-shot CLI commands
@@ -35,7 +35,7 @@ use std::{
 use aphrody_kernel::{AgentBus, Event, Kernel, SystemSubsystem};
 #[cfg(windows)]
 use base64::Engine;
-use tauri::{Manager, PhysicalSize, WebviewWindow};
+use tauri::{Emitter, Manager, PhysicalSize, WebviewWindow};
 
 use crate::broker::AppServerBroker;
 
@@ -80,7 +80,6 @@ async fn start_kernel(app: tauri::AppHandle) {
         windows,
         Arc::new(TauriWebviewSubsystem::new(app.clone())) as Arc<dyn SystemSubsystem>,
         admin,
-        Arc::new(aphrody_render3d::Render3dSubsystem::new()) as Arc<dyn SystemSubsystem>,
         Arc::new(aphrody_systemd::SystemdSubsystem::new()) as Arc<dyn SystemSubsystem>,
         Arc::new(aphrody_coreutils::CoreutilsSubsystem::new()) as Arc<dyn SystemSubsystem>,
         Arc::new(aphrody_compat::CompatSubsystem::new()) as Arc<dyn SystemSubsystem>,
@@ -561,6 +560,13 @@ enum ShellWindowAction {
     Focus,
     /// Begin a native window drag from an M3 title bar drag region.
     StartDragging,
+    /// Set the shell fullscreen state.
+    Fullscreen {
+        /// Fullscreen.
+        fullscreen: bool,
+    },
+    /// Toggle fullscreen state.
+    ToggleFullscreen,
     /// Change the M3 palette and the native WebView theme together.
     SetTheme {
         /// Requested theme preference.
@@ -576,6 +582,7 @@ struct ShellWindowState {
     focused: bool,
     minimized: bool,
     maximized: bool,
+    fullscreen: bool,
     decorated: bool,
     /// Effective host theme (`light` or `dark`).
     theme: &'static str,
@@ -608,6 +615,7 @@ fn shell_window_state(window: &WebviewWindow) -> Result<ShellWindowState, String
         focused: window.is_focused().map_err(|error| error.to_string())?,
         minimized: window.is_minimized().map_err(|error| error.to_string())?,
         maximized: window.is_maximized().map_err(|error| error.to_string())?,
+        fullscreen: window.is_fullscreen().map_err(|error| error.to_string())?,
         decorated: window.is_decorated().map_err(|error| error.to_string())?,
         theme,
     })
@@ -645,6 +653,11 @@ fn aphrody_shell_window(
             window.show().and_then(|()| window.unminimize()).and_then(|()| window.set_focus())
         },
         ShellWindowAction::StartDragging => window.start_dragging(),
+        ShellWindowAction::Fullscreen { fullscreen } => window.set_fullscreen(fullscreen),
+        ShellWindowAction::ToggleFullscreen => {
+            let current = window.is_fullscreen().map_err(|error| error.to_string())?;
+            window.set_fullscreen(!current)
+        },
         ShellWindowAction::SetTheme { theme } => window.set_theme(match theme {
             ShellTheme::System => None,
             ShellTheme::Light => Some(tauri::Theme::Light),
@@ -726,6 +739,36 @@ pub fn run() {
             integration::setup(app.handle())?;
             Ok(())
         })
+        .on_menu_event(|app, event| {
+            match event.id().as_ref() {
+                "menu_new_session" => {
+                    let _ = app.emit_to(integration::MAIN, "aphrody://menu/new-session", ());
+                },
+                "menu_open_file" => {
+                    let _ = app.emit_to(integration::MAIN, "aphrody://menu/open-file", ());
+                },
+                "menu_open_folder" => {
+                    let _ = app.emit_to(integration::MAIN, "aphrody://menu/open-folder", ());
+                },
+                "menu_quick_ask" => {
+                    quickbar::toggle(app);
+                },
+                "menu_toggle_pet" => {
+                    integration::set_pet(app, !integration::load_prefs(app).pet);
+                },
+                "menu_toggle_widget" => {
+                    integration::set_widget(app, !integration::load_prefs(app).widget);
+                },
+                "menu_docs" => {
+                    let _ = tauri_plugin_opener::OpenerExt::opener(app)
+                        .open_url("https://aphrody.dev/docs", None::<&str>);
+                },
+                "menu_updates" => {
+                    tauri::async_runtime::spawn(integration::check_updates(app.clone()));
+                },
+                _ => {},
+            }
+        })
         .on_window_event(|window, event| {
             if window.label() == integration::MAIN
                 && let tauri::WindowEvent::CloseRequested { api, .. } = event
@@ -774,6 +817,8 @@ pub fn run() {
             integration::aphrody_desktop_integration,
             integration::aphrody_pet,
             integration::aphrody_widget,
+            integration::aphrody_check_update,
+            integration::aphrody_install_update,
             aphrody_fs_read_dir,
             aphrody_fs_read_text,
             models::aphrody_hardware_telemetry,
@@ -818,12 +863,18 @@ mod tests {
             "toggle_maximize",
             "focus",
             "start_dragging",
+            "toggle_fullscreen",
         ] {
             let action: ShellWindowAction =
                 serde_json::from_str(&format!(r#"{{"action":"{action}"}}"#))
                     .unwrap_or_else(|error| panic!("{action} must deserialize: {error}"));
             assert!(!matches!(action, ShellWindowAction::SetTheme { .. }));
         }
+
+        let action: ShellWindowAction =
+            serde_json::from_str(r#"{"action":"fullscreen","fullscreen":true}"#)
+                .expect("fullscreen action must deserialize");
+        assert!(matches!(action, ShellWindowAction::Fullscreen { fullscreen: true }));
     }
 
     #[test]

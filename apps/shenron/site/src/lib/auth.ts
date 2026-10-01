@@ -113,8 +113,16 @@ export function buildAuthOptions(deps: SiteAuthDeps) {
 
 		basePath: AUTH_BASE_PATH,
 		// Même résolution que le bot : >= 32 caractères, fail-closed en production.
+		// En phase de build Next.js (prerendering/static analysis sans secrets de prod injectés),
+		// repli sur secret éphémère pour permettre la collecte des routes.
 		secret: resolveBetterAuthSecret({
-			NODE_ENV: authEnv.NODE_ENV,
+			NODE_ENV:
+				(process.env.NEXT_PHASE === "phase-production-build" ||
+					process.env.npm_lifecycle_event === "build" ||
+					process.env.SKIP_ENV_VALIDATION === "1") &&
+				!authEnv.BETTER_AUTH_SECRET
+					? "development"
+					: authEnv.NODE_ENV,
 			BETTER_AUTH_SECRET: authEnv.BETTER_AUTH_SECRET,
 		}).secret,
 		// Limite de débit de /api/auth (règles spéciales par défaut de Better Auth,

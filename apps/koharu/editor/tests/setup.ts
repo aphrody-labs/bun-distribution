@@ -1,5 +1,8 @@
-import '@testing-library/jest-dom/vitest'
-import { afterEach, beforeEach, vi } from 'vitest'
+import * as matchers from '@testing-library/jest-dom/matchers'
+import { afterEach, beforeEach, expect, vi } from 'vitest'
+
+expect.extend(matchers)
+
 
 import { queryClient } from '@aphrody/koharu-ui/lib/queries'
 import { defaultShortcuts, useKoharuStore } from '@aphrody/koharu-ui/lib/store'
@@ -64,6 +67,25 @@ Object.defineProperty(URL, 'createObjectURL', {
   writable: true,
 })
 Object.defineProperty(URL, 'revokeObjectURL', { value: vi.fn(), writable: true })
+
+let callbackId = 0
+const tauriCallbacks = new Map<number, (payload: any) => void>()
+Object.defineProperty(window, '__TAURI_INTERNALS__', {
+  value: {
+    metadata: {
+      currentWindow: { label: 'main' },
+      currentWebview: { label: 'main' },
+    },
+    callbacks: tauriCallbacks,
+    transformCallback: (callback: (payload: any) => void) => {
+      const id = ++callbackId
+      tauriCallbacks.set(id, callback)
+      return id
+    },
+    invoke: vi.fn(async () => undefined),
+  },
+  writable: true,
+})
 
 const initial = useKoharuStore.getState()
 beforeEach(() => {

@@ -21,5 +21,10 @@ export default defineConfig({
     include: ['tests/**/*.test.{ts,tsx}'],
     clearMocks: true,
     restoreMocks: true,
+    server: {
+      deps: {
+        inline: [/@aphrody\//, /@koharu\//, /@tauri-apps\//],
+      },
+    },
   },
 })

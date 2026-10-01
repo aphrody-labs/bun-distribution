@@ -4,7 +4,6 @@ import { readFile, readdir, stat } from "node:fs/promises";
 import { basename, join } from "node:path";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
-import { Database } from "bun:sqlite";
 import { sql } from "drizzle-orm";
 import { db } from "@/lib/db";
 
@@ -96,16 +95,59 @@ async function isCampaignServiceActive(id: string): Promise<boolean> {
 	}
 }
 
+function openSqliteReadOnly(path: string): {
+	query: (sql: string) => { get: () => Record<string, unknown> | null };
+	close: () => void;
+} | null {
+	try {
+		if (typeof (globalThis as unknown as { Bun?: unknown }).Bun !== "undefined") {
+			// eslint-disable-next-line @typescript-eslint/no-require-imports
+			const { Database } = require("bun:sqlite");
+			const db = new Database(path, { readonly: true });
+			return {
+				query: (sqlStr: string) => ({ get: () => db.query(sqlStr).get() }),
+				close: () => db.close(),
+			};
+		}
+		const nodeSqlite = (
+			process as unknown as {
+				getBuiltinModule?: (id: string) => {
+					DatabaseSync: new (
+						p: string,
+						o?: unknown
+					) => {
+						prepare: (sqlStr: string) => { get: () => Record<string, unknown> | undefined };
+						close: () => void;
+					};
+				};
+			}
+		).getBuiltinModule?.("node:sqlite");
+		if (nodeSqlite) {
+			const db = new nodeSqlite.DatabaseSync(path, { readOnly: true });
+			return {
+				query: (sqlStr: string) => ({
+					get: () => (db.prepare(sqlStr).get() ?? null) as Record<string, unknown> | null,
+				}),
+				close: () => db.close(),
+			};
+		}
+	} catch {
+		return null;
+	}
+	return null;
+}
+
 function readCrawlCounters(path: string): { pages: number; successfulPages: number } | null {
 	try {
-		const database = new Database(path, { readonly: true });
+		const database = openSqliteReadOnly(path);
+		if (!database) return null;
 		const row = database
-			.query<{ pages: number; successfulPages: number }, []>(
+			.query(
 				"SELECT count(*) AS pages, sum(CASE WHEN status BETWEEN 200 AND 299 THEN 1 ELSE 0 END) AS successfulPages FROM scrapes"
 			)
-			.get();
+			.get() as { pages?: number; successfulPages?: number } | null;
 		database.close();
-		return row ? { pages: Number(row.pages), successfulPages: Number(row.successfulPages ?? 0) } : null;
+		return row ? { pages: Number(row.pages ?? 0), successfulPages: Number(row.successfulPages ?? 0) } : null;
 	} catch {
 		return null;
 	}
@@ -118,18 +160,19 @@ function readQueueCounters(path: string | null): {
 } | null {
 	if (!path) return null;
 	try {
-		const database = new Database(path, { readonly: true });
+		const database = openSqliteReadOnly(path);
+		if (!database) return null;
 		const row = database
-			.query<{ queuedPages: number; completedRequests: number; failedRequests: number }, []>(
+			.query(
 				"SELECT count(*) FILTER (WHERE state = 'PENDING') AS queuedPages, count(*) FILTER (WHERE state = 'DONE') AS completedRequests, count(*) FILTER (WHERE state = 'FAILED') AS failedRequests FROM requests"
 			)
-			.get();
+			.get() as { queuedPages?: number; completedRequests?: number; failedRequests?: number } | null;
 		database.close();
 		return row
 			? {
-					queuedPages: Number(row.queuedPages),
-					completedRequests: Number(row.completedRequests),
-					failedRequests: Number(row.failedRequests),
+					queuedPages: Number(row.queuedPages ?? 0),
+					completedRequests: Number(row.completedRequests ?? 0),
+					failedRequests: Number(row.failedRequests ?? 0),
 				}
 			: null;
 	} catch {

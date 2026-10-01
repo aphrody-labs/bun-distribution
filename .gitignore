@@ -117,3 +117,6 @@ Thumbs.db
 /packages/interop/native/native/
 # Private imported Shenron state: credentials, trained weights and user data.
 /data/shenron/home/
+
+# Translation caches written by test/dev runs
+.aphrody-translate-cache.json

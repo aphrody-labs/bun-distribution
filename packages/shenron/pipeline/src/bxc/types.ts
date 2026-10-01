@@ -127,31 +127,7 @@ export type VoiranimeResolvedSource = z.infer<typeof VoiranimeResolvedSourceSche
 // 3. MEDIAWIKI SCHEMAS & TYPES
 // ==========================================
 
-export const WikiSectionSchema = z.object({
-  niveau: z.number().default(1),
-  titre: z.string(),
-  ancre: z.string().default(""),
-});
-export type WikiSection = z.infer<typeof WikiSectionSchema>;
-
-export { WikiSearchResultSchema, type WikiSearchResult } from "../aphrody/wiki";
-
-export const WikiPageDossierSchema = z.object({
-  url: z.string(),
-  titre: z.string(),
-  api: z.string().default("api.php"),
-  revid: z.number().nullable().optional(),
-  sections: z.array(WikiSectionSchema).default([]),
-  infobox: z.array(z.record(z.string(), z.unknown())).default([]),
-  tableaux: z.array(z.unknown()).default([]),
-  images: z.array(z.unknown()).default([]),
-  categories: z.array(z.string()).default([]),
-  liens_externes: z.array(z.string()).default([]),
-  markdown: z.string().optional(),
-  wikitext: z.string().nullable().optional(),
-  mesures: z.record(z.string(), z.number()).optional(),
-});
-export type WikiPageDossier = z.infer<typeof WikiPageDossierSchema>;
+export { WikiSectionSchema, WikiSearchResultSchema, WikiPageDossierSchema, type WikiSection, type WikiSearchResult, type WikiPageDossier } from "../aphrody/wiki";
 
 // ==========================================
 // 4. GOOGLE TRANSLATE SCHEMAS & TYPES
@@ -324,6 +300,8 @@ export interface ChapterWithPagesResult {
 // ==========================================
 
 export interface BxcSpawnOptions {
+  /** Installed Aphrody CLI for capabilities migrated to their Rust owners. */
+  aphrodyBin?: string;
   bxcPath?: string;
   timeoutMs?: number;
   retries?: number;

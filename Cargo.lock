@@ -582,6 +582,7 @@ dependencies = [
  "aphrody-web-crawl",
  "aphrody-web-detect",
  "aphrody-web-extract",
+ "aphrody-web-frames",
  "aphrody-winclean",
  "aphrody-x",
  "assert_cmd",
@@ -923,12 +924,12 @@ dependencies = [
  "aphrody-kernel",
  "aphrody-native",
  "aphrody-proc",
- "aphrody-render3d",
  "aphrody-sprite-sheet",
  "aphrody-subsystem",
  "aphrody-systemd",
  "async-trait",
  "base64 0.23.1",
+ "koharu-library",
  "log",
  "mimalloc",
  "reqwest 0.13.5",
@@ -1894,18 +1895,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "aphrody-model-view"
-version = "1.0.0-canary"
-dependencies = [
- "aphrody-tauri-3d",
- "aphrody-tauri-wrap",
- "log",
- "tauri",
- "tauri-build",
- "tauri-runtime-wry",
-]
-
-[[package]]
 name = "aphrody-models"
 version = "1.0.0"
 dependencies = [
@@ -2361,23 +2350,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "aphrody-render3d"
-version = "1.0.0-canary"
-dependencies = [
- "anyhow",
- "aphrody-kernel",
- "aphrody-m3-tokens",
- "aphrody-render",
- "aphrody-softraster",
- "aphrody-subsystem",
- "async-trait",
- "base64 0.23.1",
- "serde",
- "serde_json",
- "tokio",
-]
-
-[[package]]
 name = "aphrody-rollout"
 version = "1.0.0"
 dependencies = [
@@ -2676,21 +2648,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "aphrody-tauri-3d"
-version = "1.0.0-canary"
-dependencies = [
- "aphrody-m3-tokens",
- "aphrody-render",
- "log",
- "raw-window-handle",
- "serde",
- "serde_json",
- "tauri",
- "tauri-plugin",
- "windows 0.62.2",
-]
-
-[[package]]
 name = "aphrody-tauri-mcp"
 version = "1.0.0-canary"
 dependencies = [
@@ -2963,6 +2920,7 @@ dependencies = [
  "obscura-net",
  "regex",
  "rusqlite",
+ "serde",
  "serde_json",
  "tokio",
  "url",
@@ -3016,6 +2974,20 @@ dependencies = [
  "thiserror 2.0.21",
  "tokio",
  "url",
+]
+
+[[package]]
+name = "aphrody-web-frames"
+version = "0.1.0"
+dependencies = [
+ "base64 0.23.1",
+ "reqwest 0.13.5",
+ "rusqlite",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "thiserror 2.0.21",
+ "tokio",
 ]
 
 [[package]]

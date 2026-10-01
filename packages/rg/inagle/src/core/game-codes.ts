@@ -23,6 +23,7 @@ export const ELEMENT_NAMES: Record<number, LocalizedCodeName> = {
 	4: { en: "Mountain", ja: "山", fr: "Montagne" },
 	5: { en: "Void", ja: "無", fr: "Néant" },
 };
+export const ElementNames = ELEMENT_NAMES;
 
 /** Catégories des techniques, y compris les catégories internes. */
 export const CATEGORY_NAMES: Record<number, LocalizedCodeName> = {

@@ -280,8 +280,21 @@ pub fn state(app: &AppHandle) -> IntegrationState {
     IntegrationState { pet: prefs.pet, widget: prefs.widget, autostart: autostart_enabled(app) }
 }
 
+/// Result of an explicit update check.
+#[derive(Debug, Clone, Serialize)]
+pub struct UpdateCheckResult {
+    /// Whether an update is available.
+    pub available: bool,
+    /// Current app version.
+    pub current_version: String,
+    /// New version if available.
+    pub version: Option<String>,
+    /// Release notes / body if provided.
+    pub body: Option<String>,
+}
+
 /// Ask the release feed for an update and report the result as a desktop notification.
-async fn check_updates(app: AppHandle) {
+pub async fn check_updates(app: AppHandle) {
     let body = match app.updater() {
         Ok(updater) => match updater.check().await {
             Ok(Some(update)) => {
@@ -294,6 +307,43 @@ async fn check_updates(app: AppHandle) {
     };
     if let Err(error) = app.notification().builder().title("Aphrody").body(body).show() {
         log::error!("update notification: {error}");
+    }
+}
+
+/// Check for updates explicitly for the UI / settings page.
+#[tauri::command]
+pub async fn aphrody_check_update(app: AppHandle) -> Result<UpdateCheckResult, String> {
+    let current_version = app.package_info().version.to_string();
+    let updater = app.updater().map_err(|error| error.to_string())?;
+    match updater.check().await {
+        Ok(Some(update)) => Ok(UpdateCheckResult {
+            available: true,
+            current_version,
+            version: Some(update.version.clone()),
+            body: update.body.clone(),
+        }),
+        Ok(None) => Ok(UpdateCheckResult {
+            available: false,
+            current_version,
+            version: None,
+            body: None,
+        }),
+        Err(error) => Err(error.to_string()),
+    }
+}
+
+/// Download and install the available update if any.
+#[tauri::command]
+pub async fn aphrody_install_update(app: AppHandle) -> Result<bool, String> {
+    let updater = app.updater().map_err(|error| error.to_string())?;
+    if let Some(update) = updater.check().await.map_err(|error| error.to_string())? {
+        update
+            .download_and_install(|_downloaded, _total| {}, || {})
+            .await
+            .map_err(|error| error.to_string())?;
+        Ok(true)
+    } else {
+        Ok(false)
     }
 }
 
@@ -362,6 +412,79 @@ fn build_tray(app: &AppHandle, prefs: DesktopPrefs) -> tauri::Result<()> {
     }
     builder.build(app)?;
     *lock(&app.state::<Integration>().tray) = Some(TrayItems { pet, widget, autostart });
+    Ok(())
+}
+
+pub fn build_app_menu(app: &AppHandle) -> tauri::Result<()> {
+    use tauri::menu::Submenu;
+
+    let file_menu = Submenu::with_items(
+        app,
+        "File",
+        true,
+        &[
+            &MenuItem::with_id(app, "menu_new_session", "New Session", true, Some("CmdOrCtrl+N"))?,
+            &MenuItem::with_id(app, "menu_open_file", "Open File...", true, Some("CmdOrCtrl+O"))?,
+            &MenuItem::with_id(app, "menu_open_folder", "Open Folder...", true, Some("CmdOrCtrl+Shift+O"))?,
+            &PredefinedMenuItem::separator(app)?,
+            &PredefinedMenuItem::close_window(app, None)?,
+            &PredefinedMenuItem::quit(app, None)?,
+        ],
+    )?;
+
+    let edit_menu = Submenu::with_items(
+        app,
+        "Edit",
+        true,
+        &[
+            &PredefinedMenuItem::undo(app, None)?,
+            &PredefinedMenuItem::redo(app, None)?,
+            &PredefinedMenuItem::separator(app)?,
+            &PredefinedMenuItem::cut(app, None)?,
+            &PredefinedMenuItem::copy(app, None)?,
+            &PredefinedMenuItem::paste(app, None)?,
+            &PredefinedMenuItem::select_all(app, None)?,
+        ],
+    )?;
+
+    let view_menu = Submenu::with_items(
+        app,
+        "View",
+        true,
+        &[
+            &PredefinedMenuItem::fullscreen(app, None)?,
+            &MenuItem::with_id(app, "menu_quick_ask", "Quick Ask", true, Some("Alt+Space"))?,
+        ],
+    )?;
+
+    let window_menu = Submenu::with_items(
+        app,
+        "Window",
+        true,
+        &[
+            &PredefinedMenuItem::minimize(app, None)?,
+            &MenuItem::with_id(app, "menu_toggle_pet", "Toggle Desktop Pet", true, None::<&str>)?,
+            &MenuItem::with_id(app, "menu_toggle_widget", "Toggle Desktop Widget", true, None::<&str>)?,
+        ],
+    )?;
+
+    let help_menu = Submenu::with_items(
+        app,
+        "Help",
+        true,
+        &[
+            &MenuItem::with_id(app, "menu_docs", "Aphrody Documentation", true, None::<&str>)?,
+            &MenuItem::with_id(app, "menu_updates", "Check for Updates...", true, None::<&str>)?,
+            &PredefinedMenuItem::separator(app)?,
+            &PredefinedMenuItem::about(app, None, None)?,
+        ],
+    )?;
+
+    let menu = Menu::with_items(
+        app,
+        &[&file_menu, &edit_menu, &view_menu, &window_menu, &help_menu],
+    )?;
+    let _ = app.set_menu(menu);
     Ok(())
 }
 
@@ -440,6 +563,10 @@ pub fn setup(app: &AppHandle) -> tauri::Result<()> {
 
     if let Err(error) = build_tray(app, prefs) {
         log::error!("tray icon: {error}");
+    }
+
+    if let Err(error) = build_app_menu(app) {
+        log::error!("app menu: {error}");
     }
 
     // Installers register the scheme; dev runs and AppImages register it at runtime.

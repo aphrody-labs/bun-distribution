@@ -1,13 +1,13 @@
 # SPDX-License-Identifier: FSL-1.1-ALv2
 #
-# aphrody-drive: Aphrody Drive, the file explorer of Aphrody OS, as a Tauri v2 plugin hosted by
-# the desktop (crates/aphrody-app). Derived from the Spacedrive desktop app (drive/apps/tauri).
+# aphrody-drive: Aphrody Drive, the file explorer of Aphrody OS, as a Tauri 3 plugin hosted by
+# the desktop (crates/ui/app). Derived from the Spacedrive desktop app (drive/apps/tauri).
 # The explorer core runs out of process (`sd-daemon`, built from the drive/ workspace) and is
 # reached over its local newline-delimited JSON socket, so this crate never links the core.
 
 [package]
 name = "aphrody-drive"
-description = "Aphrody Drive, the Aphrody OS file explorer: Tauri v2 plugin that supervises the sd-daemon core and bridges it to the explorer webview."
+description = "Aphrody Drive, the Aphrody OS file explorer: Tauri 3 plugin that supervises the sd-daemon core and bridges it to the explorer webview."
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true

@@ -1,6 +1,6 @@
 import type { BaseCharacter, Item } from "@rosegriffon/inagle";
 import type { Skill, Team } from "@rosegriffon/inagle";
-import { ElementNames } from "@rosegriffon/inagle";
+import { ELEMENT_NAMES as ElementNames } from "@rosegriffon/inagle/core/game-codes";
 import type { Database } from "@rosegriffon/db";
 import { createAchilleaSql, sql } from "@rosegriffon/db/achillea-sql";
 import type { Database as SqlDatabase } from "@rosegriffon/db/schema";
@@ -333,7 +333,7 @@ function getElementIds(name: string): number[] {
 	}
 	const n = name.toLowerCase();
 	const ids: number[] = [];
-	for (const [id, val] of Object.entries(ElementNames)) {
+	for (const [id, val] of Object.entries(ElementNames || {})) {
 		const v = val as any;
 		if (v.en?.toLowerCase() === n || v.fr?.toLowerCase() === n) {
 			ids.push(Number(id));
@@ -829,7 +829,7 @@ export const wikiService = {
 						imageUrl: resolvedImageUrl,
 						assetCode: a.asset_code,
 						subType: t.table.replace("inagle_", "").replace("s", ""),
-						element: ElementNames[a.element_id as keyof typeof ElementNames] || undefined,
+						element: (ElementNames && ElementNames[a.element_id as keyof typeof ElementNames]) || undefined,
 						sheetData: sd,
 						passiveEffect:
 							sd.passiveEffect || sd.passive || a.description_fr || sd.desc_FR || undefined,
@@ -881,7 +881,7 @@ export const wikiService = {
 		if (!row) return undefined;
 
 		const a = row as any;
-		const elementInfo = ElementNames[a.element_id as keyof typeof ElementNames] || ElementNames[0];
+		const elementInfo = (ElementNames && ElementNames[a.element_id as keyof typeof ElementNames]) || (ElementNames && ElementNames[0]) || { en: "Void", fr: "Néant", ja: "なし" };
 		const sd = normalizeAuraSheetData(a.sheet_data) || {};
 
 		// Fetch linked skill video and owner in parallel
@@ -1126,7 +1126,8 @@ export const wikiService = {
 
 			const results = (paged as unknown as DbAura[]).map((a) => {
 				const elementInfo =
-					ElementNames[a.element_id as keyof typeof ElementNames] || ElementNames[0];
+					(ElementNames && ElementNames[a.element_id as keyof typeof ElementNames]) ||
+					(ElementNames && ElementNames[0]) || { en: "Void", fr: "Néant", ja: "なし" };
 				const sd = (a.sheet_data || {}) as any;
 				const assetCode = (a as any).asset_code || sd.assetCode || null;
 				return {
@@ -1184,7 +1185,8 @@ export const wikiService = {
 
 		const results = (pagedData as unknown as DbAura[]).map((a) => {
 			const elementInfo =
-				ElementNames[a.element_id as keyof typeof ElementNames] || ElementNames[0];
+				(ElementNames && ElementNames[a.element_id as keyof typeof ElementNames]) ||
+				(ElementNames && ElementNames[0]) || { en: "Void", fr: "Néant", ja: "なし" };
 			const sd = (a.sheet_data || {}) as any;
 			// asset_code n'est pas présent dans toutes les views (ex: inagle_souls_clean)
 			// — fallback vers sheet_data.assetCode

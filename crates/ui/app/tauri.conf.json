@@ -4,9 +4,7 @@
   "identifier": "dev.aphrody.desktop",
   "build": {
     "devUrl": "http://localhost:1421",
-    "frontendDist": "ui-dist",
-    "beforeDevCommand": "bun run --filter @aphrody/app-ui dev",
-    "beforeBuildCommand": "bun run --filter @aphrody/app-ui build"
+    "frontendDist": "ui-dist"
   },
   "app": {
     "macOSPrivateApi": true,
@@ -162,6 +160,22 @@
         "role": "Viewer",
         "rank": "Alternate",
         "mimeType": "application/json"
+      },
+      {
+        "ext": ["cbz", "cbr", "zip"],
+        "name": "Comic or Manga Archive",
+        "description": "Comic or Manga Archive",
+        "role": "Viewer",
+        "rank": "Alternate",
+        "mimeType": "application/vnd.comicbook+zip"
+      },
+      {
+        "ext": ["png", "jpg", "jpeg", "webp"],
+        "name": "Image file",
+        "description": "Image file",
+        "role": "Viewer",
+        "rank": "Alternate",
+        "mimeType": "image/*"
       }
     ],
     "linux": {
@@ -187,7 +201,9 @@
     },
     "updater": {
       "pubkey": "",
-      "endpoints": []
+      "endpoints": [
+        "https://releases.aphrody.dev/{{target}}/{{current_version}}"
+      ]
     }
   }
 }

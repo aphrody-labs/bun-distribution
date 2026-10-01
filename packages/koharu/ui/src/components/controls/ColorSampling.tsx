@@ -14,7 +14,7 @@ import { useKoharuStore, type CanvasTool } from '@aphrody/koharu-ui/lib/store'
 
 type ApplyColor = (color: string) => void
 
-interface ColorSampling {
+export interface ColorSampling {
   request: (apply: ApplyColor) => void
   complete: (color: string) => boolean
   cancel: () => void

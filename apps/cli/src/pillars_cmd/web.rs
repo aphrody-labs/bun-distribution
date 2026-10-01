@@ -276,6 +276,86 @@ pub(crate) enum WebAction {
         #[arg(long)]
         json: bool,
     },
+    /// Read a complete MediaWiki page dossier or Markdown through the Action API
+    WikiPage {
+        /// Article URL (/wiki/title or ?title=title)
+        url: String,
+        /// Action API endpoint for this wiki
+        #[arg(long)]
+        api_url: String,
+        /// Return only Markdown, without image-information batches
+        #[arg(long)]
+        markdown: bool,
+        /// Include Markdown and wikitext in the dossier
+        #[arg(long)]
+        include_content: bool,
+        /// Skip resolving original images
+        #[arg(long)]
+        no_images: bool,
+        #[arg(long)]
+        json: bool,
+    },
+    /// MPEG-7 frame vectors, SQLite indexing and local/trace.moe search
+    Frames {
+        #[command(subcommand)]
+        action: WebFramesAction,
+    },
+}
+
+#[derive(Debug, Subcommand)]
+pub(crate) enum WebFramesAction {
+    Vector {
+        path: std::path::PathBuf,
+        #[arg(long)]
+        at: Option<String>,
+        #[arg(long)]
+        json: bool,
+    },
+    Search {
+        path: std::path::PathBuf,
+        #[arg(long, group = "mode")]
+        local: bool,
+        #[arg(long, group = "mode")]
+        remote: bool,
+        #[arg(long, group = "mode")]
+        auto: bool,
+        #[arg(long)]
+        limit: Option<usize>,
+        #[arg(long)]
+        anilist_id: Option<i64>,
+        #[arg(long)]
+        at: Option<String>,
+        #[arg(long)]
+        json: bool,
+    },
+    Stats {
+        #[arg(long)]
+        json: bool,
+    },
+    List {
+        filter: Option<String>,
+        #[arg(long)]
+        json: bool,
+    },
+    Quota {
+        #[arg(long)]
+        json: bool,
+    },
+    Index {
+        path: std::path::PathBuf,
+        #[arg(long)]
+        title: Option<String>,
+        #[arg(long)]
+        season: Option<i64>,
+        #[arg(long)]
+        episode: Option<i64>,
+        #[arg(long, default_value_t = 1.0)]
+        fps: f64,
+        #[arg(long)]
+        force: bool,
+        #[arg(long)]
+        json: bool,
+    },
 }
 
 #[derive(Clone, Copy, Debug, ValueEnum)]
@@ -720,16 +800,16 @@ pub(crate) async fn handle_web(action: WebAction) -> miette::Result<()> {
             batch_size,
             request_interval_ms,
         } => {
-            handle_web_mediawiki(
-                api_url,
+            handle_web_mediawiki(aphrody_web_crawl::MediaWikiOptions {
+                api_url: reqwest::Url::parse(&api_url).into_diagnostic()?,
                 article_path,
                 prefix,
                 include_url_regex,
                 exclude_url_regex,
                 max_pages,
-                batch_size,
-                request_interval_ms,
-            )
+                page_batch_size: batch_size,
+                request_interval: Duration::from_millis(request_interval_ms),
+            })
             .await?;
         },
         WebAction::Mirror {
@@ -765,35 +845,45 @@ pub(crate) async fn handle_web(action: WebAction) -> miette::Result<()> {
         WebAction::WikiSearch { api_url, query, limit, json } => {
             handle_web_wiki_search(api_url, query.join(" "), limit, json).await?;
         },
+        WebAction::WikiPage { url, api_url, markdown, include_content, no_images, json } => {
+            let options = aphrody_web_crawl::MediaWikiOptions::new(
+                reqwest::Url::parse(&api_url).into_diagnostic()?,
+            );
+            let client = obscura_net::ObscuraHttpClient::new();
+            if markdown {
+                let content = aphrody_web_crawl::wiki::page_markdown(&client, &options, &url)
+                    .await
+                    .map_err(|error| miette!("MediaWiki page failed: {error}"))?;
+                if json {
+                    print_web_json(&serde_json::json!(content))?;
+                } else {
+                    println!("{content}");
+                }
+            } else {
+                let dossier = aphrody_web_crawl::wiki::page_dossier(
+                    &client,
+                    &options,
+                    &url,
+                    aphrody_web_crawl::wiki::WikiPageOptions {
+                        include_images: !no_images,
+                        include_content,
+                    },
+                )
+                .await
+                .map_err(|error| miette!("MediaWiki page failed: {error}"))?;
+                print_web_json(&serde_json::to_value(dossier).into_diagnostic()?)?;
+            }
+        },
+        WebAction::Frames { action } => handle_web_frames(action).await?,
     }
     Ok(())
 }
 
-async fn handle_web_mediawiki(
-    api_url: String,
-    article_path: String,
-    prefix: Option<String>,
-    include_url_regex: Vec<String>,
-    exclude_url_regex: Vec<String>,
-    max_pages: usize,
-    batch_size: usize,
-    request_interval_ms: u64,
-) -> miette::Result<()> {
-    if max_pages == 0 || batch_size == 0 {
+async fn handle_web_mediawiki(options: aphrody_web_crawl::MediaWikiOptions) -> miette::Result<()> {
+    if options.max_pages == 0 || options.page_batch_size == 0 {
         return Err(miette!("--max-pages and --batch-size must be positive"));
     }
-    let api_url = reqwest::Url::parse(&api_url).into_diagnostic()?;
     let client = obscura_net::ObscuraHttpClient::new();
-    let options = aphrody_web_crawl::MediaWikiOptions {
-        api_url,
-        article_path,
-        prefix,
-        include_url_regex,
-        exclude_url_regex,
-        max_pages,
-        page_batch_size: batch_size,
-        request_interval: Duration::from_millis(request_interval_ms),
-    };
     let pages = aphrody_web_crawl::crawl_mediawiki(&client, &options)
         .await
         .map_err(|error| miette!("MediaWiki crawl failed: {error}"))?;
@@ -890,6 +980,76 @@ async fn handle_web_mirror(
         }
         Ok(())
     }
+}
+
+async fn handle_web_frames(action: WebFramesAction) -> miette::Result<()> {
+    use aphrody_web_frames::{FramesClient, FramesSearchMode, FramesSearchOptions, MediaMeta};
+    let client = FramesClient::new().into_diagnostic()?;
+    let value = match action {
+        WebFramesAction::Vector { path, at, json: _ } => {
+            let at_ms = at
+                .as_deref()
+                .map(aphrody_web_frames::parse_timecode)
+                .transpose()
+                .into_diagnostic()?;
+            serde_json::to_value(client.vector_file(path, at_ms).into_diagnostic()?)
+        },
+        WebFramesAction::Search {
+            path,
+            local: _,
+            remote,
+            auto,
+            limit,
+            anilist_id,
+            at,
+            json: _,
+        } => {
+            let at_ms = at
+                .as_deref()
+                .map(aphrody_web_frames::parse_timecode)
+                .transpose()
+                .into_diagnostic()?;
+            let mode = if remote {
+                FramesSearchMode::Remote
+            } else if auto {
+                FramesSearchMode::Auto
+            } else {
+                FramesSearchMode::Local
+            };
+            serde_json::to_value(
+                client
+                    .search_file(path, at_ms, FramesSearchOptions { mode, limit, anilist_id })
+                    .await
+                    .into_diagnostic()?,
+            )
+        },
+        WebFramesAction::Stats { json: _ } => {
+            serde_json::to_value(client.stats().into_diagnostic()?)
+        },
+        WebFramesAction::List { filter, json: _ } => {
+            serde_json::to_value(client.list(filter.as_deref()).into_diagnostic()?)
+        },
+        WebFramesAction::Quota { json: _ } => {
+            serde_json::to_value(client.quota().await.into_diagnostic()?)
+        },
+        WebFramesAction::Index { path, title, season, episode, fps, force, json: _ } => {
+            let title = title.unwrap_or_else(|| {
+                path.file_stem().unwrap_or_default().to_string_lossy().into_owned()
+            });
+            let meta = MediaMeta {
+                source: path.to_string_lossy().into_owned(),
+                title,
+                season,
+                episode,
+                duration_ms: 0,
+                fps,
+            };
+            let frames = client.index(&path, meta, fps, force).into_diagnostic()?;
+            Ok(serde_json::json!({ "frames": frames, "path": client.index_path() }))
+        },
+    }
+    .into_diagnostic()?;
+    print_web_json(&value)
 }
 
 async fn handle_web_wiki_search(

@@ -63,7 +63,6 @@ aphrody-agent-tools = { path = "crates/ai/agent-tools", features = [] }
 aphrody-a2a-ui = { path = "crates/ui/a2a-ui", version = "1.0.0-canary" }
 aphrody-gui-core = { path = "crates/ui/gui-core", version = "1.0.0-canary" }
 aphrody-identity = { path = "crates/ui/identity", version = "1.0.0-canary" }
-aphrody-model-view = { path = "crates/ui/model-view", version = "1.0.0-canary" }
 aphrody-antigravity = { path = "crates/ai/antigravity", features = [] }
 aphrody-app-protocol = { path = "crates/contracts/app-protocol", version = "1.0.0-canary", features = [] }
 aphrody-app-server = { path = "crates/ai/app-server", features = [] }
@@ -146,6 +145,7 @@ aphrody-web-detect = { path = "crates/web/web-detect", version = "1.0.0", featur
 aphrody-web-chromium = { path = "crates/web/web-chromium", version = "1.0.0-canary", features = [] }
 aphrody-web-engine = { path = "crates/web/web-engine", version = "1.0.0", features = [] }
 aphrody-web-extract = { path = "crates/web/web-extract", version = "1.0.0", features = [] }
+aphrody-web-frames = { path = "crates/web/web-frames", version = "0.1.0", features = [] }
 aphrody-web-index = { path = "crates/web/web-index", version = "0.1.0", features = [] }
 aphrody-web-service = { path = "crates/web/web-service", version = "1.0.0", features = [] }
 aphrody-x = { path = "crates/web/x", version = "0.3.1", features = [] }
@@ -453,8 +453,6 @@ prettyplease = "0.3.0"
 quote = "1.0.47"
 
 aphrody-m3-reproduce = { path = "crates/ui/m3-reproduce", version = "1.0.0-canary" }
-aphrody-render3d = { path = "crates/ui/render-tools", version = "1.0.0-canary" }
-aphrody-tauri-3d = { path = "crates/ui/tauri-3d", version = "1.0.0-canary" }
 aphrody-tauri-mcp = { path = "crates/ui/tauri-mcp", version = "1.0.0-canary" }
 aphrody-tauri-wrap = { path = "crates/ui/tauri-wrap", version = "1.0.0-canary", default-features = false }
 aphrody-render = { path = "crates/ui/render", version = "1.0.0-canary" }

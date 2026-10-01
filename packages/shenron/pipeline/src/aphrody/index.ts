@@ -58,10 +58,15 @@ export {
 
 export {
   AphrodyWikiSearchService,
+  AphrodyWikiService,
+  WikiPageDossierSchema,
+  WikiSectionSchema,
   WikiSearchResultSchema,
   resolveWikiApiUrl,
   type AphrodyWikiOptions,
   type WikiSearchResult,
+  type WikiPageDossier,
+  type WikiSection,
 } from "./wiki";
 export {
   aphrodyWebMirror,
@@ -69,3 +74,11 @@ export {
   type AphrodyWebMirrorReport,
   type AphrodyWebMirrorRequest,
 } from "./mirror";
+export {
+  AphrodyFramesClient,
+  type AphrodyFrameVector,
+  type AphrodyFrameMatch,
+  type AphrodyFrameSearch,
+  type AphrodyFramesSearchOptions,
+  type AphrodyFramesStats,
+} from "./frames";

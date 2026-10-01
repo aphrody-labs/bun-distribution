@@ -1,6 +1,14 @@
 // SPDX-License-Identifier: Apache-2.0
 //! MediaWiki full-text search through the same Action API transport as the crawler.
 
+#[path = "wiki_page.rs"]
+mod wiki_page;
+
+pub use wiki_page::{
+    WikiImage, WikiInfobox, WikiInfoboxValue, WikiPageDossier, WikiPageOptions, WikiPageSection,
+    WikiTable, page_dossier, page_markdown, parse_infobox, parse_tables,
+};
+
 use obscura_net::ObscuraHttpClient;
 use serde_json::Value;
 use url::Url;

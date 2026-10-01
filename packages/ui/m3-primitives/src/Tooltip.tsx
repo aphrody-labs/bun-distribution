@@ -60,7 +60,7 @@ export interface TooltipProps extends PropsWithChildren {
 
 const separateKeybinds = (keybinds: TooltipProps["keybinds"]): TooltipProps["keybinds"] => {
   if (!keybinds) return;
-  const arr = [];
+  const arr: NonNullable<TooltipProps["keybinds"]> = [];
   for (const i of keybinds) {
     if (i.length >= 2) {
       arr.push(i);

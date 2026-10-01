@@ -1,19 +1,16 @@
 # Desktop integration (`aphrody-app`)
 
-> **Status: historical (Tauri 2 context).** This page describes the Tauri 2 desktop host. The workspace now pins Tauri 3 alpha (`tauri =3.0.0-alpha.3`, default runtime `tauri-runtime-wry`, `tauri-runtime-cef` only for Koharu): see [the Tauri 3 upstream line](../../operations/ui/tauri-upstream.md) and [`config/tauri-apps.json`](../../../config/tauri-apps.json). Keep the content below as compatibility context until the desktop host is requalified under Tauri 3 (Verify). Paths such as `crates/aphrody-app` and `packages/app-ui` predate the layout migration: the host is `crates/ui/app`, and `@aphrody/app-ui` is not yet part of this workspace.
-
-How the Tauri v2 desktop integrates with Windows and Linux: installers, updates, "Open with
+How the Tauri 3 desktop (`crates/ui/app`) integrates with Windows and Linux: installers, updates, "Open with
 Aphrody", deep links, tray, loading screen, desktop pet and widget. Code:
-`crates/aphrody-app/src/integration.rs` (native), `packages/app-ui/src/desktop-surfaces.tsx`,
-`open-requests.ts`, `pet-behavior.ts` (UI). Configuration: `crates/aphrody-app/tauri.conf.json`
-and `crates/aphrody-app/capabilities/`.
+`crates/ui/app/src/integration.rs` (native), `packages/ui/m3` (UI surfaces),
+`open-requests.ts`, `pet-behavior.ts`. Configuration: `crates/ui/app/tauri.conf.json`
+and `crates/ui/app/capabilities/`.
 
 ## Plugins
 
-The optional desktop adapter consumes Tauri and its plugins from pinned Git revisions
-of the external [`aphrody-code/tauri`](https://github.com/aphrody-code/tauri) and
-[`aphrody-code/plugins-workspace`](https://github.com/aphrody-code/plugins-workspace)
-forks. The root `Cargo.toml` declares the shared dependencies; no upstream source tree
+The desktop shell consumes the centralized Tauri 3 line (`tauri = "=3.0.0-alpha.3"`,
+`tauri-runtime-wry = "=3.0.0-alpha.3"`, `tauri-plugin-* = "=3.0.0-alpha.2"`).
+The root `Cargo.toml` declares the shared dependencies; no upstream source tree
 is vendored under `crates/`.
 
 | Plugin | Use |

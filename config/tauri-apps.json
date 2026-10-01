@@ -27,22 +27,6 @@
       "note": "Desktop agent console. Embeds the prebuilt ui-dist bundle until @aphrody/app-ui joins the workspace."
     },
     {
-      "id": "aphrody-model-view",
-      "kind": "app",
-      "path": "crates/ui/model-view",
-      "package": "aphrody-model-view",
-      "runtime": "wry",
-      "workspace": "member",
-      "confs": [
-        "tauri.conf.json"
-      ],
-      "gate": true,
-      "generated": [
-        "crates/ui/model-view/gen"
-      ],
-      "note": "Frameless transparent native 3D model viewer (aphrody-tauri-3d). Needs GDK_BACKEND=x11 on WSLg."
-    },
-    {
       "id": "koharu",
       "kind": "app",
       "path": "crates/koharu/koharu",
@@ -79,18 +63,6 @@
       "workspace": "member",
       "gate": true,
       "note": "Tauri plugin: Drive daemon commands for aphrody-app."
-    },
-    {
-      "id": "aphrody-tauri-3d",
-      "kind": "plugin",
-      "path": "crates/ui/tauri-3d",
-      "package": "aphrody-tauri-3d",
-      "workspace": "member",
-      "gate": true,
-      "generated": [
-        "crates/ui/tauri-3d/permissions"
-      ],
-      "note": "Native 3D layer attached to a Tauri window (wgpu 30)."
     },
     {
       "id": "aphrody-tauri-mcp",

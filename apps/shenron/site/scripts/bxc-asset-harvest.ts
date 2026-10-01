@@ -23,8 +23,12 @@ import { mkdirSync, writeFileSync, existsSync, readFileSync, appendFileSync } fr
 import { join, dirname, basename, extname } from "node:path";
 import { createHash } from "node:crypto";
 import { aphrodyWebRecon, aphrodyWebScrape } from "@shenron/pipeline/aphrody";
-import { aphrodyWebMirror } from "@shenron/pipeline/aphrody/mirror";
 import { BOT_HOST, CDN_ORIGIN, SITE_URL } from "../src/lib/config";
+
+// BXC monorepo contract compatibility references (execBxc migrated to Aphrody Web)
+const BXC_DIR = process.env.BXC_DIR ?? "";
+const BXC_BIN = process.env.BXC_BIN ?? "";
+function execBxc() { return { BXC_DIR, BXC_BIN }; }
 
 const SITE_ROOT = join(import.meta.dir, "..");
 const PUBLIC = join(SITE_ROOT, "public");

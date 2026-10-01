@@ -38,6 +38,7 @@
     "@shenron/db": "workspace:*",
     "@shenron/ui": "workspace:*",
     "@shenron/images": "workspace:*",
+    "@aphrody/koharu-ui": "workspace:*",
     "@t3-oss/env-nextjs": "^0.13.11",
     "@tanstack/react-query": "catalog:",
     "@tiptap/core": "catalog:",

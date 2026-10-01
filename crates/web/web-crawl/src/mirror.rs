@@ -449,13 +449,13 @@ async fn safe_write(root: &Path, relative_path: &Path, bytes: &[u8]) -> std::io:
         ));
     };
     let destination = parent.join(filename);
-    if let Ok(metadata) = tokio::fs::symlink_metadata(&destination).await {
-        if metadata.file_type().is_symlink() || !metadata.is_file() {
-            return Err(std::io::Error::new(
-                std::io::ErrorKind::PermissionDenied,
-                format!("refusing non-regular mirror destination {}", destination.display()),
-            ));
-        }
+    if let Ok(metadata) = tokio::fs::symlink_metadata(&destination).await
+        && (metadata.file_type().is_symlink() || !metadata.is_file())
+    {
+        return Err(std::io::Error::new(
+            std::io::ErrorKind::PermissionDenied,
+            format!("refusing non-regular mirror destination {}", destination.display()),
+        ));
     }
     tokio::fs::write(destination, bytes).await
 }
@@ -596,11 +596,10 @@ fn rewrite_html(
         }
         for (name, value) in changed {
             tree.with_node_mut(id, |node| {
-                if let Some(attrs) = node.attrs_mut() {
-                    if let Some(attr) = attrs.iter_mut().find(|attr| attr.qualified_name_eq(&name))
-                    {
-                        attr.value = value;
-                    }
+                if let Some(attrs) = node.attrs_mut()
+                    && let Some(attr) = attrs.iter_mut().find(|attr| attr.qualified_name_eq(&name))
+                {
+                    attr.value = value;
                 }
             });
         }

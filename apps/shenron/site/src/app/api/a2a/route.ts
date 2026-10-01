@@ -57,7 +57,9 @@ export async function GET(request: Request) {
 	if (url.searchParams.get("envelopes") === "1" || url.searchParams.get("view") === "mailbox") {
 		const denied = a2aGuard(request);
 		if (denied) return denied;
-		const envelopes = await getA2AHub().listStoredEnvelopes(100);
+		const envelopes = await (typeof getA2AHub().listStoredEnvelopes === "function"
+			? getA2AHub().listStoredEnvelopes(100)
+			: getA2AHub().listEnvelopes(100));
 		return NextResponse.json({ envelopes, total: envelopes.length }, { headers: CORS_HEADERS });
 	}
 

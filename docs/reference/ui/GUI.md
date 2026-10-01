@@ -1,12 +1,10 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 # Desktop GUI contract
 
-> **Tauri version note (historical).** Mentions of Tauri v2 below describe the former host. The workspace now pins Tauri 3 alpha (`tauri =3.0.0-alpha.3`, default runtime `tauri-runtime-wry`, `tauri-runtime-cef` only for Koharu): see [the Tauri 3 upstream line](../../operations/ui/tauri-upstream.md) and [`config/tauri-apps.json`](../../../config/tauri-apps.json). The product-boundary rules on this page are unchanged; host details need requalification under Tauri 3 (Verify).
-
 ## Product boundary
 
-`packages/app-ui` is the single public-facing desktop webview, hosted by the current
-Tauri v2 app in `crates/aphrody-app`. Its user areas are Chat, Files, Models and
+The desktop webview is hosted by the Tauri 3 (`tauri-runtime-wry`) app in `crates/ui/app`.
+Its user areas are Chat, Files, Models and
 Settings. Keep browser navigation, shell/PTY/terminal sessions, SSH host consoles,
 system diagnostics and infrastructure administration outside this webview. The
 Rust distribution may package mature standalone GUI applications when needed; this

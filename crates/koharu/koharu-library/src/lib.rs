@@ -28,7 +28,11 @@ pub mod import;
 pub mod agent_tools;
 pub mod agent_host;
 pub mod project;
+pub mod service;
 mod result;
+
+pub use service::Service;
+
 
 pub use koharu_agent as agent;
 #[cfg(target_arch = "wasm32")]

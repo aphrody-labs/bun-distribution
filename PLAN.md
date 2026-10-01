@@ -162,7 +162,8 @@ actifs, aucun import vers une ancienne implantation déplacée.
 Propriétaires : `crates/contracts`, `crates/native`, `crates/compat`,
 `packages/bun`, `packages/compat`.
 
-- [ ] Auditer le graphe Cargo/Bun et les dépendances croisées par domaine.
+- [~] Auditer le graphe Cargo/Bun et les dépendances croisées par domaine.
+  Cargo et Bun faits (voir « Audit Cargo par domaine ») ; dev/features ouverts.
 - [ ] Conserver les contrats purs ; déplacer réseau, timeout et processus vers
   leurs propriétaires opérationnels. Le client kernel est déjà sous OS.
 - [x] Distinguer moteur N2B Rust et façade CLI Bun ; le dossier Bun devient
@@ -430,7 +431,7 @@ aux trois racines actives. WSL : disques, processus, shell et chemins revérifi�
 
 Propriétaire : `packages/ui`, `crates/ui`.
 
-- [ ] Retirer du point d’entrée de M3 Design tout serveur ou `process.exit()` à
+- [x] Retirer du point d’entrée de M3 Design tout serveur ou `process.exit()` à
   l’import ; placer démarrage/configuration dans une application.
 - [ ] Séparer la génération SVG native et les composants React navigateur ;
   aucun binding Bun natif dans le chemin d’un composant `use client`.
@@ -1218,6 +1219,92 @@ heuristique ; aucun changement Git ne doit être attribué sans preuve.
   répété pour ce lot sans changement de code.
 - Preuves : [audit direct, hashes et périmètres](docs/operations/ai/documentation-navigation-qualification-2026-10-01.json).
 
+### Audit Cargo par domaine — 2026-10-01
+
+- FAIT : `cargo metadata --locked --no-deps`, 181 packages, dépendances hors dev.
+  `contracts`, `native` et `compat` restent purs : une seule arête inter-domaine
+  (`aphrody-bun-docs` → `aphrody-subsystem`).
+- Cycles de domaines : `os` ↔ `shell` (kernel→shell optionnel,
+  terminal-backend→a2a-coord, nu→kernel-client) ; `ai` ↔ `web`
+  (`aphrody-web-bridge` → `aphrody-translate`). Inversions : `aphrody-ffi` →
+  `aphrody` (apps/cli) et `aphrody-yolo` (infra) → kernel-client.
+- FAIT Bun : 83 packages résolus (l’en-tête en annonce 84, écart à expliquer),
+  aucun package → app, aucun cycle ; arêtes `apps` → `packages` uniquement.
+- INCOMPLET : dépendances dev/par cible et résolution par features
+  non audités ; aucune arête corrigée, aucun build ni test exécuté.
+- Classement : `aphrody-ffi` → `aphrody` est intentionnel (un seul appel,
+  `aphrody::run_async`, `crates/interop/ffi/src/lib.rs:987`) ; il se résout par
+  l’extraction des capacités du CLI déjà listée en section Interop, pas isolément.
+- Preuves : [audit](docs/migration/cargo-domain-audit-2026-10-01.json).
+
+### Triage des 647 références non classées — 2026-10-01
+
+- FAIT : chaque référence du rôle `unclassified` du rapport de revue est classée
+  par heuristique de nom et d’existence de fichier (aucun document modifié) :
+  229 sans propriétaire identifié, 150 candidates de déplacement (au plus trois
+  fichiers suivis du même nom), 92 routes de site qui existent avec `.md`/`.mdx`
+  (guide Discord importé, donc non défectueuses), 86 assets ou licences non
+  importés, 46 routes/externes, 44 chemins de dépôts frères d’avant le monorepo.
+  Somme : 647.
+- INCOMPLET : les classes sont des heuristiques, pas des défauts confirmés. Les
+  150 candidates et les 229 sans propriétaire demandent une vérification manuelle
+  contre la source pinnée avant correction ; aucun lien n’est réparé ici.
+- Preuves : [triage](docs/migration/document-links-unclassified-triage-2026-10-01.json).
+
+### Inventaire des références de scripts — 2026-10-01
+
+- FAIT : 849 fichiers suivis sous `scripts/` ; recherche de leur chemin relatif
+  complet dans les fichiers suivis hors `upstream/` et `docs/migration/`.
+  741 n’ont aucune référence par chemin complet (dont `scripts/tools` 463/483,
+  `scripts/build` 96/97, `scripts/audit` 82/94, `scripts/migration` 17/17,
+  `scripts/dev` 12/12).
+- INCOMPLET : la méthode ne voit ni les chemins relatifs au dossier courant
+  (`bun ./build/x.ts` dans un `package.json` de sous-dossier), ni l’invocation
+  par nom de base ou dynamique. Ces 741 sont des candidats, pas des scripts
+  inutilisés ; rien n’est supprimé. Un second passage par nom de base dans les manifests et
+  `pipeline.json` ramène les candidats de 741 à 688. Reste : comparer aux commandes déclarées du
+  pipeline (`config/pipeline.json`) et aux `scripts` des manifests.
+- Preuves : [inventaire](docs/migration/scripts-reference-inventory-2026-10-01.json).
+
+### Effets d’import M3 Design et frontière `use client` — 2026-10-01
+
+- FAIT : `packages/ui/m3-design/src/index.ts` n’exporte que types, parser, hct,
+  prompts, generator et handlers ; le serveur et `process.exit` vivent dans
+  `src/server.ts`, lancé explicitement. `import("./src/index.ts")` sous Bun
+  réussit sans serveur ni sortie (10 exports). Aucun correctif nécessaire : le
+  critère était déjà satisfait ; `node.ts` n’est importé que par un test.
+- Analyse statique des 73 fichiers `use client` de `packages/ui` suivis par leurs
+  imports relatifs : aucun import de `bun:*`, `bun` ou `@aphrody/native`.
+  Seules `m3-config/tsup.ts` et `m3-next-migrate/src/scanner.ts` (outillage) et
+  des tests importent `node:fs`.
+- INCOMPLET : imports de packages nus non suivis ; aucun build navigateur,
+  SSR/hydratation ni typecheck exécuté. La séparation SVG natif/React reste ouverte.
+
+### Constat `render-tools` — 2026-10-01
+
+- CONSTAT : `crates/ui/render-tools` (crate `aphrody-render3d`, binaire
+  `aphrody-render3d-mcp`) est supprimé dans l’index Git (`D `) et absent du
+  working tree, comme `crates/ui/model-view`. Le lot de dédup UI/web l’avait
+  conservé (`docs/migration/stack-dedup/render-merge.json`) ; l’auteur de la
+  suppression n’est pas établi (`.coord/shared/LIVE.md` ne l’établit pas).
+- Liens actifs vers ce chemin, donc cassés tant que la suppression tient :
+  `docs/architecture/ui/README.md:25-26`, `docs/ecosystem/ECOSYSTEM.md:125`,
+  `crates/ui/render/README.md:39`. Seuls les symboles `bun_rs_render3d_png` de
+  `aphrody-bun` subsistent ; aucun autre propriétaire des outils `render3d_*`.
+- Rien restauré ni modifié : identité publique `aphrody-render3d` à décider.
+
+### Gate CLI/MCP revérifié — 2026-10-01
+
+- CONSTAT : `cargo clippy -p aphrody -p aphrody-mcp --all-targets --locked
+  --no-default-features -- -D warnings` ne bute plus sur `web-crawl`
+  (`wiki_page.rs` existe désormais). Il échoue sur six diagnostics de
+  `crates/web/web-frames` : import `BufRead` inutilisé (`media.rs:4`),
+  deux `div_ceil` manuels (`descriptor.rs:49-50`), un `if` réductible
+  (`index.rs:82`), deux `Ok(…?)` inutiles (`service.rs:76-77`).
+- INCOMPLET : crate non suivie sous claim actif `frames-rust-owner` (codex) ;
+  aucun correctif appliqué par ce lot. Les diagnostics en aval du premier
+  échec ne sont pas connus.
+
 ### Couverture documentaire explicite restaurée — 2026-10-01
 
 - FAIT : le vérificateur Infra n’exclut plus implicitement catégories, chemins
@@ -1236,6 +1323,16 @@ heuristique ; aucun changement Git ne doit être attribué sans preuve.
 - Les ancres et sites externes ne sont pas vérifiés. Documents de packages/apps
   hors `docs` non inventoriés. Aucune preuve historique réécrite.
 - Preuves : [rapport, tests et inventaire exhaustif](docs/operations/infra/document-links-coverage-qualification-2026-10-01/report.json).
+
+### Script `test` de `@rosegriffon/discord-sync` — 2026-10-01
+
+- FAIT : ajout de `"test": "bun test"` ; deux fichiers de test existaient sans
+  script. `bun run test` : 2 tests réussis, 0 échec.
+- Contrôle de manifests (git ls-files, hors typecheck) : quatre autres packages
+  avec sources TypeScript sans `tsconfig.json` (`ai/google`, `rg/assets`,
+  `rg/config`, `ui/eslint-plugin-m3`). INCOMPLET : aucun typecheck ajouté sans
+  vérifier qu’il passe ; le total « 69 packages » du pipeline utilise d’autres
+  critères et n’est pas réconcilié ici.
 
 ### Artefact natif réel et routage doctor Shenron — 2026-10-01
 

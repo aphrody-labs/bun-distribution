@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 //! Virtual Distributed Filesystem (VDFS) Engine & OpenDAL Virtual Mounts.
 //!
-//! Provides the core filesystem abstraction for Aphrody Drive (Tauri v2 / DrivePane / M3 Explorer),
+//! Provides the core filesystem abstraction for Aphrody Drive (Tauri 3 / DrivePane / M3 Explorer),
 //! bridging local storage, OpenDAL virtual mounts, in-process Russh SFTP, and Git (gix) trees.
 
 use std::{

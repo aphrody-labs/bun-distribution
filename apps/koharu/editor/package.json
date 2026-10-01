@@ -37,6 +37,8 @@
     "@types/react-dom": "catalog:",
     "@vitejs/plugin-react": "catalog:",
     "@vitest/ui": "^5.0.0",
+    "@tauri-apps/api": "catalog:",
+    "@tauri-apps/plugin-opener": "catalog:",
     "jsdom": "catalog:",
     "oxlint": "catalog:",
     "tailwindcss": "catalog:",

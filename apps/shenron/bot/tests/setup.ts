@@ -52,6 +52,8 @@ Bun.env.BXC_BIN = resolve(
 	import.meta.dir,
 	"../../../../packages/shenron/pipeline/test/bxc/fixtures/bxc-frames-stats.mjs"
 );
+// Migrated frame queries use the Aphrody CLI contract in the same offline fixture.
+Bun.env.APHRODY_BIN = Bun.env.BXC_BIN;
 const migrationsFolder = join(import.meta.dir, "../src/db/migrations");
 console.log("Migrations folder:", migrationsFolder);
 migrate(db, { migrationsFolder });

@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 # aphrody-app — Aphrody Tauri desktop host
 
-`aphrody-app` is the Tauri v2/Wry shell in the root Aphrody OS Cargo workspace.
+`aphrody-app` is the Tauri 3 (`tauri-runtime-wry`) shell in the root Aphrody OS Cargo workspace.
 It owns the native main window, a local app-server broker, the local kernel
 subsystems and the desktop-only Drive bridge. The agent remains out of process:
 the broker starts `aphrody app-server` and speaks JSON-RPC over stdio.
@@ -11,7 +11,7 @@ The trusted main window's core commands include:
 | Command | Returns | Use |
 |---|---|---|
 | `aphrody_meta()` | `{ app_version, target_os, target_arch, family }` | header / about info |
-| `aphrody_rpc(request)` | JSON-RPC result | app-server v2 sessions, turns and interruption |
+| `aphrody_rpc(request)` | JSON-RPC result | app-server sessions, turns and interruption |
 | `aphrody_shell_window(action)` | native window state | main-only window controls and navigation |
 
 Shenron's public, read-only grounded chat is available in the existing Chat
@@ -21,18 +21,13 @@ It does not represent an authenticated Shenron account or grant admin access.
 See [`../../docs/integrations/SHENRON.md`](../../../docs/reference/ui/integrations/SHENRON.md)
 for the API, FFI, auth, and database ownership decisions.
 
-The main window also exposes `koharu_rpc(method, params)`. Its broker starts the
-`koharu-sdk` sidecar built from the aphrody monorepo on demand,
-passes JSON Lines requests over stdio, and emits SDK events as `koharu://event`.
-The method must exist in the SDK; this is not a shell execution API. The SDK owns
-its Rust model, project, and processing dependencies in its own Cargo workspace,
-so Tauri v2 never links Koharu's Tauri 3 alpha desktop runtime. The existing
-log, single-instance, window-state, opener, and process plugins already cover
-Koharu's plugin set. `aphrody-ops tauri` stages the SDK as a target-suffixed
-`externalBin`; `KOHARU_SDK_SIDECAR_SOURCE` may point to a prebuilt binary during
-packaging, and `KOHARU_SDK_BIN` overrides resolution at runtime. A packaged SDK
-binary and successful IPC compilation do not establish an integrated editor
-route or visual behavior.
+The main window also exposes `koharu_rpc(method, params)`. The Koharu engine is
+directly linked in-process via `koharu-library`, eliminating subprocess overhead,
+stdio serialization, and external sidecar requirements. It dispatches commands
+directly in-process and emits live engine events as `koharu://event`. Both the editor
+and the Aphrody desktop shell share the unified Tauri 3 line (pinned `=3.0.0-alpha.3`),
+providing full M3 theming and zero-subprocess performance.
+
 
 The shell command takes its invoking `WebviewWindow`, accepts no target label and
 rejects every label except `main`. Remote Wry previews have no capability and

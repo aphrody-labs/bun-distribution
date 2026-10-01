@@ -17,7 +17,8 @@ import type {
   ProviderPreferences as ProviderSettings,
 } from '@koharu/bridge/protocol'
 import { Button } from '../../internal/components/button'
-import { Input } from '@aphrody/m3-primitives'
+import { Input } from '../../internal/components/input'
+
 
 type ConfigWithSetting<T, Key extends PropertyKey> = T extends { settings: infer Settings }
   ? Key extends keyof Settings
