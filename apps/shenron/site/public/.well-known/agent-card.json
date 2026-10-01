@@ -1,6 +1,6 @@
 {
   "name": "shenron-dragonball",
-  "description": "Hub de communication A2A unifié Dragon Ball : Codex, agycli, Claude, Modèles locaux, RAG et Sous-agents.",
+  "description": "Hub de communication A2A unifié Dragon Ball : automation, bus d'événements et services.",
   "version": "0.3.0",
   "url": "https://dragonballfr.com/api/a2a",
   "capabilities": {

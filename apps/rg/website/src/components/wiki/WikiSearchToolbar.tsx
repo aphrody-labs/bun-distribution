@@ -131,7 +131,7 @@ export function WikiSearchToolbar({
 
 	return (
 		<div className={cn("relative group w-full", containerClassName || "max-w-sm")}>
-			{/* Animated Gradient Border - Gemini Style */}
+			{/* Animated Gradient Border */}
 			<div className="absolute -inset-0.5 bg-linear-to-r from-[#4facfe] via-[#7367f0] to-[#9733ee] rounded-full blur opacity-0 group-focus-within:opacity-20 transition duration-500" />
 
 			<div
