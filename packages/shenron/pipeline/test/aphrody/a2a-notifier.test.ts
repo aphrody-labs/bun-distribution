@@ -1,16 +1,23 @@
 // SPDX-License-Identifier: Apache-2.0
-/** Injected #bot-admin notifier and `.coord` override of the A2A hub (W2-APH-05). */
+/** Injected #bot-admin notifier and heartbeat probe path override (W2-APH-05). */
 import { afterEach, describe, expect, it } from "bun:test";
-import { mkdtempSync, rmSync } from "node:fs";
+import { mkdtempSync, readdirSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { DISCORD_BO_ADMIN_CHANNEL, ShenronA2AHub, type AdminNotification } from "../../src/aphrody/a2a";
+import {
+	DISCORD_BO_ADMIN_CHANNEL,
+	measurePipelineStatus,
+	ShenronA2AHub,
+	type A2AProbes,
+	type AdminNotification,
+} from "../../src/aphrody/a2a";
 
 const originalWarn = console.warn;
 
 afterEach(() => {
 	console.warn = originalWarn;
 	ShenronA2AHub.configure({ notifier: null, coordDir: null });
+	ShenronA2AHub.resetProbes();
 });
 
 describe("ShenronA2AHub.configure", () => {
@@ -75,16 +82,27 @@ describe("ShenronA2AHub.configure", () => {
 		expect(String(warnings[0])).toContain("discord down");
 	});
 
-	it("coordDir override takes precedence over A2A_COORD_DIR", async () => {
+	it("coordDir override supplies the OCR heartbeat probe path", async () => {
 		const saved = process.env.A2A_COORD_DIR;
 		const envDir = mkdtempSync(join(tmpdir(), "a2a-env-"));
 		const override = mkdtempSync(join(tmpdir(), "a2a-override-"));
 		try {
 			process.env.A2A_COORD_DIR = envDir;
 			ShenronA2AHub.configure({ coordDir: override });
-			await ShenronA2AHub.handleMsgEnvelope({ from: "codex", to: "shenron-dragonball", kind: "ping", topic: "t", body: "b" });
-			const { readdirSync } = await import("node:fs");
-			expect(readdirSync(override).some((f) => f.startsWith("inbox-from-"))).toBe(true);
+			const observedPaths: string[] = [];
+			const probes: A2AProbes = {
+				databooksPipeline: async () => ({ measured: false, measuredAt: new Date().toISOString(), error: "fixture" }),
+				systemdUnits: async () => [],
+				ocrResultsDb: async () => ({ path: "fixture", state: "unknown" }),
+				ocrHeartbeat: async (coordDir) => {
+					observedPaths.push(coordDir);
+					return { state: "none", maxAgeMinutes: 15 };
+				},
+				ragContext: async () => ({ ok: false, endpoint: "fixture", error: "unused" }),
+			};
+			await measurePipelineStatus(probes);
+			expect(observedPaths).toEqual([override]);
+			expect(readdirSync(override)).toEqual([]);
 			expect(readdirSync(envDir)).toEqual([]);
 		} finally {
 			if (saved === undefined) delete process.env.A2A_COORD_DIR;

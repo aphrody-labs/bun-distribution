@@ -12,12 +12,11 @@
  *   heartbeat worker) ; FAIT seulement si tout est mesuré ET qu'un worker vivant est prouvé.
  * - Ordres de travail (codex, agycli, claude, local_model, subagents, ordre OCR) : la tâche reste
  *   `submitted` / `working` en INCOMPLET jusqu'à ce qu'un pair poste un résultat
- *   (`tasks/update`, `message/send` avec `taskId`, ou enveloppe `.coord` portant `re`).
+ *   (`tasks/update`, `message/send` avec `taskId`, ou enveloppe reçue par l'API de coordination avec `re`).
  * - `broadcast` : `completed` au sens « déposé dans N boîtes », jamais FAIT pour le travail sous-jacent.
  * - Alertes dans le salon Discord #bot-admin (1548677623935139901).
  */
 
-import * as path from "node:path";
 import {
 	appendRemoteEnvelope,
 	aphrodyA2aStoreEnabled,
@@ -312,7 +311,7 @@ export const a2aTaskStore = new TaskStore();
 class CoordMailboxStore {
 	private memoryEnvelopes: A2AEnvelope[] = [];
 
-	/** Résolu à chaque appel : `A2A_COORD_DIR` peut changer (tests) et le MCP tourne dans apps/mcp. */
+	/** Répertoire lu par la sonde heartbeat ; `A2A_COORD_DIR` peut changer (tests et hôtes). */
 	get coordDir(): string {
 		return hubConfig.coordDir ?? resolveCoordDir();
 	}
@@ -538,7 +537,7 @@ export interface A2ATaskUpdateParams {
 	text?: string;
 	data?: Record<string, unknown>;
 	artifacts?: A2AArtifact[];
-	/** Enveloppe `.coord` qui porte la mise à jour (déjà écrite par le pair). */
+	/** Identifiant d'une enveloppe déjà reçue et stockée par l'adaptateur de coordination. */
 	envelopeId?: string;
 }
 
@@ -574,7 +573,7 @@ export class ShenronA2AHub {
 	}
 
 	/**
-	 * Injects the #bot-admin notifier and/or a `.coord` directory override
+	 * Injects the #bot-admin notifier and/or a heartbeat probe directory override
 	 * (takes precedence over `A2A_COORD_DIR`). Omitted keys are left unchanged,
 	 * `null` resets a key to its default.
 	 */
@@ -621,7 +620,7 @@ export class ShenronA2AHub {
 					id: "subagent_task",
 					name: "Délégation d'ordres",
 					description:
-						"Dépôt d'un ordre dans la boîte .coord pour un agent ou des sous-agents ; tâche submitted/INCOMPLET jusqu'au résultat du pair.",
+						"Dépôt d'un ordre dans la boîte Aphrody A2A namespacée pour un agent ou des sous-agents ; tâche submitted/INCOMPLET jusqu'au résultat du pair.",
 				},
 				{
 					id: "model_infer",
@@ -633,7 +632,7 @@ export class ShenronA2AHub {
 					id: "task_update",
 					name: "Clôture par un pair",
 					description:
-						"tasks/update, message/send avec taskId, ou enveloppe .coord avec re : statut + verdict (FAIT exige au moins un artefact).",
+						"tasks/update, message/send avec taskId, ou enveloppe via l'API namespacée avec re : statut + verdict (FAIT exige au moins un artefact).",
 				},
 			],
 		};
@@ -700,7 +699,7 @@ export class ShenronA2AHub {
 			throw new Error(`Cible A2A inconnue : ${String(target)}`);
 		}
 
-		// 1. Enveloppe entrante dans la boîte .coord (format ai.json v1 / a2a-ui)
+		// 1. Enveloppe entrante (format ai.json v1 / a2a-ui)
 		const incomingEnv: A2AEnvelope = {
 			v: 1,
 			ts: new Date().toISOString(),
@@ -723,7 +722,7 @@ export class ShenronA2AHub {
 		});
 		await persistTask(task, true);
 		incomingEnv.taskId = task.id;
-		const mailboxFile = await storeEnvelope(incomingEnv);
+		const mailboxUri = await storeEnvelope(incomingEnv);
 
 		task.history.push({
 			role: "user",
@@ -817,7 +816,7 @@ export class ShenronA2AHub {
 							`**Ordre :** ${instruction}`,
 							`**Enveloppe :** \`${incomingEnv.id}\` — **tâche :** \`${task.id}\``,
 							"",
-							`Aucun traitement n'a été effectué par le hub. La tâche reste \`submitted\` jusqu'à ce qu'un worker poste un résultat (tasks/update, message/send avec taskId, ou enveloppe .coord avec re=${incomingEnv.id}).`,
+							`Aucun traitement n'a été effectué par le hub. La tâche reste \`submitted\` jusqu'à ce qu'un worker poste un résultat (tasks/update, message/send avec taskId, ou enveloppe via l'API de coordination avec re=${incomingEnv.id}).`,
 							"",
 							statusMd,
 						].join("\n");
@@ -825,7 +824,8 @@ export class ShenronA2AHub {
 							kind: "work_order",
 							awaiting: target,
 							envelopeId: incomingEnv.id,
-							mailboxFile,
+							mailboxUri,
+							mailboxFile: mailboxUri, // Compatibility key; the value is an Aphrody coordination URI.
 							gaps: [gap, ...report.gaps],
 							blockers: report.blockers,
 							pipeline: report,
@@ -839,11 +839,11 @@ export class ShenronA2AHub {
 				case "agycli":
 				case "local_model":
 				case "subagents": {
-					if (!mailboxFile) {
+					if (!mailboxUri) {
 						status = "failed";
 						verdict = "NON_FAIT";
-						responseMarkdown = `### Ordre pour ${target.toUpperCase()} (A2A) — NON_FAIT\n\n**Bloqueur :** l'enveloppe n'a pas pu être écrite dans ${coordMailboxStore.coordDir}.`;
-						responseData = { kind: "work_order", awaiting: target, blockers: ["boîte .coord non inscriptible"] };
+						responseMarkdown = `### Ordre pour ${target.toUpperCase()} (A2A) — NON_FAIT\n\n**Bloqueur :** l'adaptateur n'a retourné aucune URI d'enveloppe.`;
+						responseData = { kind: "work_order", awaiting: target, blockers: ["URI de boîte A2A absente"] };
 						break;
 					}
 					status = "submitted";
@@ -854,24 +854,25 @@ export class ShenronA2AHub {
 						`**Ordre :** ${instruction}`,
 						`**Enveloppe :** \`${incomingEnv.id}\` — **tâche :** \`${task.id}\``,
 						"",
-						`Aucune exécution n'est présumée. La tâche reste \`submitted\` jusqu'à ce que ${target} poste un résultat avec artefacts (tasks/update, message/send avec taskId, ou enveloppe .coord avec re=${incomingEnv.id}).`,
+						`Aucune exécution n'est présumée. La tâche reste \`submitted\` jusqu'à ce que ${target} poste un résultat avec artefacts (tasks/update, message/send avec taskId, ou enveloppe via l'API de coordination avec re=${incomingEnv.id}).`,
 					].join("\n");
 					responseData = {
 						kind: "work_order",
 						awaiting: target,
 						envelopeId: incomingEnv.id,
-						mailboxFile,
+						mailboxUri,
+						mailboxFile: mailboxUri, // Compatibility key; the value is an Aphrody coordination URI.
 						gaps: [`en attente du résultat de ${target}`],
 					};
 					break;
 				}
 
 				case "broadcast": {
-					if (!mailboxFile) {
+					if (!mailboxUri) {
 						status = "failed";
 						verdict = "NON_FAIT";
-						responseMarkdown = `### Diffusion A2A — NON_FAIT\n\n**Bloqueur :** l'enveloppe n'a pas pu être écrite dans ${coordMailboxStore.coordDir}.`;
-						responseData = { kind: "broadcast", deliveredMailboxes: 0, blockers: ["boîte .coord non inscriptible"] };
+						responseMarkdown = `### Diffusion A2A — NON_FAIT\n\n**Bloqueur :** l'adaptateur n'a retourné aucune URI d'enveloppe.`;
+						responseData = { kind: "broadcast", deliveredMailboxes: 0, blockers: ["URI de boîte A2A absente"] };
 						break;
 					}
 					status = "completed";
@@ -881,12 +882,13 @@ export class ShenronA2AHub {
 						"",
 						instruction,
 						"",
-						`Enveloppe \`${incomingEnv.id}\` écrite dans \`${path.basename(mailboxFile)}\`. Seul le dépôt est accompli : aucun destinataire n'a accusé réception et aucun travail n'est présumé fait.`,
+						`Enveloppe \`${incomingEnv.id}\` déposée via \`${mailboxUri}\`. Seul le dépôt est accompli : aucun destinataire n'a accusé réception et aucun travail n'est présumé fait.`,
 					].join("\n");
 					responseData = {
 						kind: "broadcast",
 						deliveredMailboxes: 1,
-						mailboxFiles: [mailboxFile],
+						mailboxUris: [mailboxUri],
+						mailboxFiles: [mailboxUri], // Compatibility key; values are coordination URIs.
 						envelopeId: incomingEnv.id,
 						acknowledgements: 0,
 						gaps: ["dépôt seulement : aucun accusé de réception des destinataires"],
@@ -1042,7 +1044,7 @@ export class ShenronA2AHub {
 		const applied = new Set((task.metadata.appliedEnvelopes as string[] | undefined) ?? []);
 		if (params.envelopeId) applied.add(params.envelopeId);
 
-		// Trace dans la boîte partagée quand la mise à jour n'y est pas déjà (voie JSON-RPC / MCP).
+		// Trace in the configured coordination API when this update did not arrive as an envelope.
 		if (!params.envelopeId) {
 			const env: A2AEnvelope = {
 				v: 1,
@@ -1102,8 +1104,8 @@ export class ShenronA2AHub {
 	}
 
 	/**
-	 * Applique les enveloppes `.coord` des pairs (champ `re` = enveloppe d'origine de la tâche)
-	 * qui n'ont pas encore été prises en compte — un pair peut écrire directement dans la boîte.
+	 * Applique les réponses reçues par l'API de coordination (champ `re` = enveloppe d'origine)
+	 * qui n'ont pas encore été prises en compte.
 	 */
 	static async reconcileTask(task: A2ATask): Promise<A2ATask> {
 		const envelopeId = task.metadata?.envelopeId;
@@ -1152,7 +1154,7 @@ export class ShenronA2AHub {
 	}
 
 	/**
-	 * Traite une enveloppe A2A directe (format endpoint /msg ou file channel .coord).
+	 * Traite une enveloppe A2A entrante (endpoint /msg or JSON-RPC adapter).
 	 * Une réponse de pair (`re` ou `taskId` liés à une tâche) met la tâche à jour au lieu
 	 * de créer un nouvel ordre.
 	 */
@@ -1217,7 +1219,7 @@ export class ShenronA2AHub {
 		};
 
 		if (kind === "ping") {
-			return ackTo(`Pong: ${topic}`, `Shenron A2A hub v${A2A_PROTOCOL_VERSION} : heartbeat de ${from} enregistré.`);
+			return ackTo(`Pong: ${topic}`, `Shenron A2A hub v${A2A_PROTOCOL_VERSION} : ping de ${from} reçu et accusé.`);
 		}
 
 		// Erreur critique hors tâche : escalade #bot-admin, pas de nouvel ordre.

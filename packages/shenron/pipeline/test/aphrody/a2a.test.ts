@@ -1,27 +1,37 @@
 // SPDX-License-Identifier: Apache-2.0
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "bun:test";
-import { mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync, appendFileSync } from "node:fs";
+import { mkdtempSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
 	ShenronA2AHub,
 	a2aTaskStore,
 	defaultA2AProbes,
+	type A2AEnvelope,
 	type A2AProbes,
+	type A2ATask,
 	type DatabooksPipelineSnapshot,
 } from "../../src/aphrody/a2a";
 
 // Boîte .coord isolée : les tests n'écrivent JAMAIS dans la vraie boîte partagée.
 const previousCoordDir = process.env.A2A_COORD_DIR;
+const previousCoordApi = process.env.APHRODY_A2A_COORD_API;
+const previousCoordToken = process.env.APHRODY_A2A_COORD_TOKEN;
 const coordDir = mkdtempSync(join(tmpdir(), "a2a-test-coord-"));
 
 beforeAll(() => {
 	process.env.A2A_COORD_DIR = coordDir;
+	delete process.env.APHRODY_A2A_COORD_API;
+	delete process.env.APHRODY_A2A_COORD_TOKEN;
 });
 
 afterAll(() => {
 	if (previousCoordDir === undefined) delete process.env.A2A_COORD_DIR;
 	else process.env.A2A_COORD_DIR = previousCoordDir;
+	if (previousCoordApi === undefined) delete process.env.APHRODY_A2A_COORD_API;
+	else process.env.APHRODY_A2A_COORD_API = previousCoordApi;
+	if (previousCoordToken === undefined) delete process.env.APHRODY_A2A_COORD_TOKEN;
+	else process.env.APHRODY_A2A_COORD_TOKEN = previousCoordToken;
 	rmSync(coordDir, { recursive: true, force: true });
 });
 
@@ -300,7 +310,7 @@ describe("Ordres de travail et clôture par un pair", () => {
 		expect(res.result.verdict).toBe("NON_FAIT");
 	});
 
-	it("une enveloppe .coord écrite directement par le pair (re=…) fait basculer la tâche", async () => {
+	it("une enveloppe reçue par l'adaptateur (re=…) fait basculer la tâche", async () => {
 		const { task, responseData } = await ShenronA2AHub.sendMessage({
 			target: "subagents",
 			sourceAgent: "test-runner",
@@ -309,22 +319,21 @@ describe("Ordres de travail et clôture par un pair", () => {
 		const envelopeId = responseData.envelopeId as string;
 		expect(envelopeId).toMatch(/^env-/);
 
-		// Le pair écrit dans SA boîte, sans passer par le hub.
-		appendFileSync(
-			join(coordDir, "inbox-from-subagents.jsonl"),
-			JSON.stringify({
-				v: 1,
-				ts: new Date(Date.now() + 5).toISOString(),
-				id: "env-peer-done-1",
-				from: "subagents",
-				to: "shenron-dragonball",
-				kind: "fact",
-				topic: "Relecture terminée",
-				body: "FAIT : 9 planches relues",
-				re: envelopeId,
-				artifacts: [{ name: "relecture.jsonl", type: "file", uri: "file:///tmp/relecture.jsonl" }],
-			}) + "\n"
-		);
+		// This adapter-level case uses the isolated development fallback; the HTTP contract is tested below.
+		const ack = await ShenronA2AHub.handleMsgEnvelope({
+			v: 1,
+			ts: new Date(Date.now() + 5).toISOString(),
+			id: "env-peer-done-1",
+			from: "subagents",
+			to: "shenron-dragonball",
+			kind: "fact",
+			topic: "Relecture terminée",
+			body: "FAIT : 9 planches relues",
+			re: envelopeId,
+			artifacts: [{ name: "relecture.jsonl", type: "file", uri: "file:///tmp/relecture.jsonl" }],
+		});
+		expect(ack.kind).toBe("ack");
+		expect(ack.taskId).toBe(task.id);
 
 		const got: any = await ShenronA2AHub.handleJsonRpc({
 			jsonrpc: "2.0",
@@ -369,11 +378,13 @@ describe("Ordres de travail et clôture par un pair", () => {
 		expect(res.verdict).not.toBe("FAIT");
 		expect(res.responseData.deliveredMailboxes).toBe(1);
 		expect(res.responseData.acknowledgements).toBe(0);
+		expect(res.responseData.mailboxFiles).toEqual(res.responseData.mailboxUris);
 	});
 
-	it("ping → ack + heartbeat, et toutes les écritures restent dans la boîte temporaire", async () => {
+	it("ping → ack et garde les enveloppes du fallback de développement en mémoire", async () => {
 		const pong = await ShenronA2AHub.handleMsgEnvelope({
 			v: 1,
+			id: "env-ping-test-codex",
 			from: "codex",
 			to: "shenron-dragonball",
 			kind: "ping",
@@ -384,11 +395,115 @@ describe("Ordres de travail et clôture par un pair", () => {
 		expect(pong.to).toBe("codex");
 		expect(pong.re).toBeDefined();
 
-		const files = readdirSync(coordDir);
-		expect(files).toContain("heartbeat-codex.txt");
-		expect(files).toContain("inbox-from-test-runner.jsonl");
-		expect(files).toContain("a2a-tasks.jsonl");
-		expect(readFileSync(join(coordDir, "inbox-from-test-runner.jsonl"), "utf8")).toContain("Relis les planches");
+		const envelopes = await ShenronA2AHub.listStoredEnvelopes();
+		expect(envelopes.some((envelope) => envelope.id === "env-ping-test-codex")).toBe(true);
+		expect(envelopes.some((envelope) => envelope.id === pong.id && envelope.re === "env-ping-test-codex")).toBe(true);
+		// The Shenron HTTP adapter does not write mailbox or heartbeat files in the development fallback.
+		expect(readdirSync(coordDir)).toEqual([]);
+	});
+
+	it("l'adaptateur parle l'API Aphrody namespacée et corrèle les réponses", async () => {
+		// This protocol fixture tests the TS adapter; Rust task_api tests own disk persistence.
+		const tasks = new Map<string, A2ATask>();
+		const envelopes: A2AEnvelope[] = [];
+		const requests: Array<{ method: string; path: string; authorization: string | null }> = [];
+		const root = "/coord/shenron-dragonball";
+		const server = Bun.serve({
+			port: 0,
+			async fetch(request) {
+				const url = new URL(request.url);
+				requests.push({
+					method: request.method,
+					path: url.pathname,
+					authorization: request.headers.get("authorization"),
+				});
+				if (url.pathname === `${root}/tasks` && request.method === "POST") {
+					const task = (await request.json()) as A2ATask;
+					tasks.set(task.id, task);
+					return Response.json(task, { status: 201 });
+				}
+				if (url.pathname === `${root}/tasks` && request.method === "GET") {
+					return Response.json({ tasks: [...tasks.values()], total: tasks.size });
+				}
+				if (url.pathname.startsWith(`${root}/tasks/`)) {
+					const id = decodeURIComponent(url.pathname.slice(`${root}/tasks/`.length));
+					if (request.method === "GET") {
+						const task = tasks.get(id);
+						return task ? Response.json(task) : Response.json({ error: "task not found" }, { status: 404 });
+					}
+					if (request.method === "PUT") {
+						const task = (await request.json()) as A2ATask;
+						tasks.set(id, task);
+						return Response.json(task);
+					}
+				}
+				if (url.pathname === `${root}/envelopes` && request.method === "POST") {
+					const envelope = (await request.json()) as A2AEnvelope;
+					envelopes.push(envelope);
+					return Response.json({ ok: true, id: envelope.id }, { status: 201 });
+				}
+				if (url.pathname === `${root}/envelopes` && request.method === "GET") {
+					return Response.json({ envelopes, total: envelopes.length });
+				}
+				return Response.json({ error: "not found" }, { status: 404 });
+			},
+		});
+		process.env.APHRODY_A2A_COORD_API = server.url.origin;
+		process.env.APHRODY_A2A_COORD_TOKEN = "test-coord-token";
+		try {
+			const { task, responseData } = await ShenronA2AHub.sendMessage({
+				target: "subagents",
+				sourceAgent: "test-runner",
+				instruction: "Relire la fiche Goku",
+			});
+			const ack = await ShenronA2AHub.handleMsgEnvelope({
+				id: "env-http-reply-1",
+				from: "subagents",
+				to: "shenron-dragonball",
+				kind: "fact",
+				topic: "Relecture",
+				body: "Fiche revue",
+				re: responseData.envelopeId,
+				verdict: "FAIT",
+				artifacts: [{ name: "relecture.md", type: "markdown", content: "Relue" }],
+			});
+			expect(ack.kind).toBe("ack");
+			expect(ack.taskId).toBe(task.id);
+			expect((await ShenronA2AHub.getTask(task.id))?.status).toBe("completed");
+			expect((await ShenronA2AHub.listStoredEnvelopes()).some((env) => env.id === "env-http-reply-1")).toBe(true);
+			expect(requests.some((r) => r.method === "POST" && r.path === `${root}/tasks`)).toBe(true);
+			expect(requests.some((r) => r.method === "GET" && r.path === `${root}/tasks`)).toBe(true);
+			expect(requests.some((r) => r.method === "GET" && r.path === `${root}/tasks/${task.id}`)).toBe(true);
+			expect(requests.some((r) => r.method === "PUT" && r.path === `${root}/tasks/${task.id}`)).toBe(true);
+			expect(requests.some((r) => r.method === "POST" && r.path === `${root}/envelopes`)).toBe(true);
+			expect(requests.some((r) => r.method === "GET" && r.path === `${root}/envelopes`)).toBe(true);
+			expect(requests.every((r) => r.authorization === "Bearer test-coord-token")).toBe(true);
+			expect(tasks.get(task.id)?.metadata.appliedEnvelopes).toContain("env-http-reply-1");
+		} finally {
+			delete process.env.APHRODY_A2A_COORD_API;
+			delete process.env.APHRODY_A2A_COORD_TOKEN;
+			server.stop(true);
+		}
+	});
+
+	it("ne retombe pas sur le cache mémoire si l'API Aphrody configurée échoue", async () => {
+		const server = Bun.serve({
+			port: 0,
+			fetch: () => Response.json({ error: "store unavailable" }, { status: 503 }),
+		});
+		process.env.APHRODY_A2A_COORD_API = server.url.origin;
+		try {
+			await expect(
+				ShenronA2AHub.sendMessage({
+					target: "subagents",
+					sourceAgent: "test-runner",
+					instruction: "Ordre dont le stockage doit échouer",
+				}),
+			).rejects.toThrow("Aphrody A2A store 503: store unavailable");
+		} finally {
+			delete process.env.APHRODY_A2A_COORD_API;
+			server.stop(true);
+		}
 	});
 
 	it("enveloppe /msg au kind invalide → enveloppe error, aucune tâche créée", async () => {
