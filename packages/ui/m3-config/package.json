@@ -11,8 +11,6 @@
     "./tsconfig.json": "./tsconfig.json",
     "./tsconfig.build.json": "./tsconfig.build.json",
     "./tsup": "./tsup.ts",
-    "./bun-build": "./bun-build.ts",
-    "./cache-db": "./cache-db.ts",
     "./test/dom": "./test/dom.ts"
   },
   "scripts": {
