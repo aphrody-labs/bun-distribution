@@ -1640,6 +1640,7 @@ dependencies = [
 name = "aphrody-mcp"
 version = "1.0.0"
 dependencies = [
+ "aphrody-agent-home",
  "anyhow",
  "aphrody-a2a",
  "aphrody-a2a-server",
@@ -2230,6 +2231,7 @@ dependencies = [
 name = "aphrody-rag-core"
 version = "1.0.0"
 dependencies = [
+ "ndarray 0.17.2",
  "blake3",
  "oxc_allocator",
  "oxc_ast",
