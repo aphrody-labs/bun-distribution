@@ -17,10 +17,6 @@ fn main() {
     println!("cargo:rerun-if-changed=proto/exa_language_server.proto");
     println!("cargo:rerun-if-changed=build.rs");
 
-    if std::env::var_os("CARGO_FEATURE_GRPC").is_none() {
-        return;
-    }
-
     #[cfg(feature = "grpc")]
     compile_protos();
 }

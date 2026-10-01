@@ -126,6 +126,48 @@ printf 'apt\t%s missing of {count}\n' "$missing"
     Ok(out)
 }
 
+/// Optional developer tools share the canonical catalog and installer.
+pub fn developer_script(root: &Path, apply: bool) -> Result<String> {
+    let catalog: Value =
+        serde_json::from_str(&fs::read_to_string(root.join("config/developer-cli-tools.json"))?)?;
+    let mut out = String::from("set -eu\n");
+    out.push_str(&format!("{PATH_BLOCK}\n"));
+    for family in ["tools", "nu_plugins"] {
+        if family == "nu_plugins" {
+            out.push_str("plugin_registry=\"\"; if command -v nu >/dev/null 2>&1; then plugin_registry=$(nu -c '$nu.plugin-path'); fi\n");
+        }
+        let tools = catalog[family].as_array().with_context(|| format!("{family} absent"))?;
+        for tool in tools {
+            let command = version_token(tool["command"].as_str().context("command absent")?)?;
+            let package = version_token(tool["package"].as_str().context("package absent")?)?;
+            for token in [command, package] {
+                if !token.starts_with(|c: char| c.is_ascii_alphabetic() || c == '_') {
+                    bail!("nom de commande/crate refusé: {token}");
+                }
+            }
+            if apply {
+                out.push_str(&format!(
+                    "if ! command -v {command} >/dev/null 2>&1; then\n\
+                     command -v cargo-binstall >/dev/null 2>&1 || cargo install --locked cargo-binstall\n\
+                     cargo binstall -y --locked {package}\nfi\n"
+                ));
+            }
+            out.push_str(&format!(
+                "if command -v {command} >/dev/null 2>&1; then printf 'present\t%s\t%s\n' {command} \"$(command -v {command})\"; else printf 'missing\t%s\n' {command}; fi\n"
+            ));
+            if family == "nu_plugins" && apply {
+                let plugin = version_token(tool["plugin"].as_str().context("plugin absent")?)?;
+                out.push_str(&format!(
+                    "if [ \"$(nu --config /dev/null --env-config /dev/null --plugin-config \"$plugin_registry\" -c \"plugin list | where name == '{plugin}' | is-empty\")\" = true ]; then\n\
+                     nu --config /dev/null --env-config /dev/null --plugin-config \"$plugin_registry\" -c \"plugin add $(command -v {command})\"\nfi\n"
+                ));
+            }
+        }
+    }
+    out.push_str("if command -v nu >/dev/null 2>&1; then nu --config /dev/null --env-config /dev/null --plugin-config \"$plugin_registry\" -c 'plugin list | select name status | to json'; fi\n");
+    Ok(out)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -165,6 +207,20 @@ mod tests {
         let mut bad = pins();
         bad.apt.push("x$(id)".into());
         assert!(script(&bad, false).is_err());
+    }
+
+    #[test]
+    fn developer_catalog_rejects_shell_tokens_before_install() {
+        let root =
+            std::env::temp_dir().join(format!("aphrody-developer-test-{}", std::process::id()));
+        fs::create_dir_all(root.join("config")).unwrap();
+        fs::write(
+            root.join("config/developer-cli-tools.json"),
+            r#"{"tools":[{"command":"safe","package":"unsafe;touch-marker"}],"nu_plugins":[]}"#,
+        )
+        .unwrap();
+        assert!(developer_script(&root, true).is_err());
+        fs::remove_dir_all(root).unwrap();
     }
 
     #[test]

@@ -481,6 +481,12 @@ export function renderTools(generatedAt: string, home: string, root: string): st
 }
 
 export function runAgentHome(args: string[]): number {
+  if (args.includes("--help") || args.includes("-h")) {
+    console.log(
+      "Usage: aphrody-ops agent-home [--source <parent-root>] [--profile <profile>] [--workspace <directory>] [--dry-run]",
+    );
+    return 0;
+  }
   const dryRun = args.includes("--dry-run");
   const profileIndex = args.indexOf("--profile");
   const profile = profileIndex >= 0 ? args[profileIndex + 1] : undefined;

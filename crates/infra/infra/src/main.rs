@@ -102,6 +102,9 @@ enum CommandKind {
     },
     /// Validate or provision the declared development environment.
     DevEnv {
+        /// Inspect/install the optional developer CLI catalog on this host.
+        #[arg(long)]
+        developer_cli: bool,
         #[arg(long)]
         target: Option<String>,
         #[arg(long)]
@@ -2025,9 +2028,21 @@ async fn main() -> Result<()> {
         },
         CommandKind::Validate { json } => validate_catalogs(&root, *json, &mut run),
         CommandKind::Reclaim { target, apply } => reclaim_disk(&root, target, *apply, &mut run),
-        CommandKind::DevEnv { target, apply, local } => match local {
-            Some(host) => dev_env_local(&root, host, *apply, &mut run),
-            None => dev_env(&root, target.as_deref(), *apply, &mut run),
+        CommandKind::DevEnv { target, apply, local, developer_cli } => match (developer_cli, local)
+        {
+            (true, _) => {
+                let report =
+                    run_remote("bash", &["-s"], &devenv::developer_script(&root, *apply)?)?;
+                print!("{report}");
+                run.action(
+                    "developer-cli",
+                    if *apply { "applied" } else { "checked" },
+                    json!({ "report": report }),
+                );
+                Ok(())
+            },
+            (false, Some(host)) => dev_env_local(&root, host, *apply, &mut run),
+            (false, None) => dev_env(&root, target.as_deref(), *apply, &mut run),
         },
         CommandKind::Service { action, id, target, json } => {
             service_lifecycle(&root, *action, id.as_deref(), target, *json, &mut run)
