@@ -55,6 +55,13 @@ packages will share the `aphrody` monorepo; its Python projects join `aphrody-py
 the [root consolidation plan](../workspace/PLAN.md). Repo consolidation does not change AI's wire,
 process or domain ownership boundaries.
 
+The [LiteLLM review](../../research/ai/litellm-review-2026-10-01.md) records
+the current gateway integration boundary: connect to a configured remote
+LiteLLM service through the existing OpenAI-compatible client when needed;
+keep local routing, model readiness, tool policy, secrets and durable sessions
+with their current Aphrody owners. LiteLLM's Rust gateway is beta and does not
+change the local gateway or release qualification plan.
+
 ## Delivery sequence
 
 ### D0 — Freeze the usable contract

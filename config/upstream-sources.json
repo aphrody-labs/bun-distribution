@@ -164,6 +164,17 @@
       "role": "reference"
     },
     {
+      "id": "litellm",
+      "kind": "git",
+      "url": "https://github.com/BerriAI/litellm.git",
+      "ref": "main",
+      "commit": "b4bb2a77a20231860d91220376a1ec2691481b8b",
+      "pinned": false,
+      "role": "reference",
+      "license": "MIT outside enterprise/; enterprise/ has separate terms",
+      "note": "Full SDK and gateway reference, including its beta litellm-rust workspace. Keep external; see docs/research/ai/litellm-review-2026-10-01.md."
+    },
+    {
       "id": "mistral.rs",
       "kind": "git",
       "url": "https://github.com/EricLBuehler/mistral.rs.git",

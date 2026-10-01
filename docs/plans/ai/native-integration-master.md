@@ -25,6 +25,7 @@ everything, with a complete plan and documented execution.
 | `vllm` | `ab5266769` | Apache-2.0 | Wire protocol extras (rerank, score, tokenize, pooling, metrics); client only. |
 | `jan` | `e0c62f863` | Apache-2.0 | Design reference for the local AI hub; concepts only. |
 | `llama_index` | `7e2c60a78` | MIT | Coverage grid for the RAG pipeline; concepts only. |
+| `litellm` | `b4bb2a77a202` | MIT outside `enterprise/`; separate terms inside | Full SDK/gateway and beta Rust workspace reviewed; external OpenAI-compatible endpoint and routing concepts only. See [review](../../research/ai/litellm-review-2026-10-01.md). |
 | `openfox` | `3b434db` | unverified (no root LICENSE) | Concept map only until the licence is confirmed; no code copied. |
 
 ## 2. Rules for every worker
@@ -107,6 +108,16 @@ replacements only, re-read right before editing.
 - D7. Nothing is committed by workers. The lead commits only on request.
 - D8. W8 toolkit-independence proof uses `ratatui` (already in the lockfile),
   not a new GUI toolkit.
+- D9. LiteLLM remains an external reference and optional remote OpenAI-compatible
+  endpoint. Do not add its Python SDK, beta Rust workspace, subprocess, or a
+  second provider/router owner. Its Python gateway has a mature feature surface;
+  the documented Rust path is opt-in and incomplete, so it does not replace
+  Aphrody's local facade. See the [source review](../../research/ai/litellm-review-2026-10-01.md).
+- D10. Apply LiteLLM's routing feature list to gaps in the single Aphrody router
+  only when a measured use case needs it: deployment-level limits, health and
+  cooldown state, bounded retries, cross-group fallbacks, and latency/cost
+  selection. Keep key tenancy/spend controls separate from Aphrody OS policy,
+  tool authority, secrets and durable agent event contracts.
 
 ## 5. Waves
 
