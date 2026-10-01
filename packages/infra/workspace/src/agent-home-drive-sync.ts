@@ -1,5 +1,6 @@
 #!/usr/bin/env bun
 // SPDX-License-Identifier: Apache-2.0
+/* eslint-disable no-await-in-loop -- Resumable chunks and state transitions must execute sequentially. */
 // Infrastructure orchestration for the canonical @aphrody/google Drive sync.
 import { watch } from "node:fs";
 import { infraRoot } from "./runtime.ts";
@@ -8,24 +9,27 @@ const ROOT = process.env.APHRODY_ROOT ?? infraRoot();
 const ENV = `${ROOT}/.env`;
 const GOOGLE_CLI = `${ROOT}/packages/ai/google/bin/aphrody-google.ts`;
 const WORKSPACE = "/home/aphro/.aphrody/workspaces/dbfr";
-const MEMORY_DB = "/home/aphro/.aphrody/private/memory/agent-home.sqlite";
-const MEMORY_BIN = process.env.APHRODY_AGENT_HOME_MEMORY_BIN ?? Bun.which("aphrody-agent-home-memory") ?? "";
+const MEMORY_DB = process.env.APHRODY_AGENT_HOME_MEMORY_DB ?? `${WORKSPACE}/db/agent.db`;
+const MEMORY_BIN =
+  process.env.APHRODY_AGENT_HOME_MEMORY_BIN ?? Bun.which("aphrody-agent-home-memory") ?? "";
 const TRAIN_BIN = process.env.APHRODY_AGENT_TRAIN_BIN ?? Bun.which("aphrody-agent-train") ?? "";
 const TRAIN_CONFIG = "/home/aphro/.aphrody/private/agent-training.json";
 const TRAIN_STATE = "/home/aphro/.aphrody/train/dbfr/pipeline-state.json";
 const DEFAULT_DOCS = new Set<string>(
-  await Bun.file(`${ROOT}/crates/ai/agent-home/sync-contract.json`).json() as string[],
+  (await Bun.file(`${ROOT}/crates/ai/agent-home/sync-contract.json`).json()) as string[],
 );
 let running = false;
 let pending = false;
 let debounce: ReturnType<typeof setTimeout> | undefined;
 
 async function ensureMemoryBinary(): Promise<void> {
-  if (!MEMORY_BIN || !(await Bun.file(MEMORY_BIN).exists())) throw new Error("Install aphrody-agent-home-memory or set APHRODY_AGENT_HOME_MEMORY_BIN");
+  if (!MEMORY_BIN || !(await Bun.file(MEMORY_BIN).exists()))
+    throw new Error("Install aphrody-agent-home-memory or set APHRODY_AGENT_HOME_MEMORY_BIN");
 }
 
 async function ensureTrainingBinary(): Promise<void> {
-  if (!TRAIN_BIN || !(await Bun.file(TRAIN_BIN).exists())) throw new Error("Install aphrody-agent-train or set APHRODY_AGENT_TRAIN_BIN");
+  if (!TRAIN_BIN || !(await Bun.file(TRAIN_BIN).exists()))
+    throw new Error("Install aphrody-agent-train or set APHRODY_AGENT_TRAIN_BIN");
 }
 
 async function sync(): Promise<void> {
@@ -37,24 +41,32 @@ async function sync(): Promise<void> {
   try {
     do {
       pending = false;
-      const task = Bun.spawn([process.execPath, `--env-file=${ENV}`, GOOGLE_CLI, "drive", "sync"], {
-        cwd: ROOT,
-        stdin: "ignore",
-        stdout: "inherit",
-        stderr: "inherit",
-      });
+      const task = Bun.spawn(
+        [process.execPath, `--env-file=${ENV}`, GOOGLE_CLI, "drive", "sync", "--download-only"],
+        {
+          cwd: ROOT,
+          stdin: "ignore",
+          stdout: "inherit",
+          stderr: "inherit",
+        },
+      );
       const result = await task.exited;
       if (result !== 0) throw new Error(`Canonical Google Drive sync exited ${result}`);
       await ensureMemoryBinary();
       const memory = Bun.spawn([MEMORY_BIN], {
         cwd: ROOT,
-        env: { ...process.env, APHRODY_AGENT_HOME: WORKSPACE, APHRODY_AGENT_HOME_MEMORY_DB: MEMORY_DB },
+        env: {
+          ...process.env,
+          APHRODY_AGENT_HOME: WORKSPACE,
+          APHRODY_AGENT_HOME_MEMORY_DB: MEMORY_DB,
+        },
         stdin: "ignore",
         stdout: "inherit",
         stderr: "inherit",
       });
       const memoryResult = await memory.exited;
-      if (memoryResult !== 0) throw new Error(`Agent Home memory reconciliation exited ${memoryResult}`);
+      if (memoryResult !== 0)
+        throw new Error(`Agent Home memory reconciliation exited ${memoryResult}`);
       await ensureTrainingBinary();
       const training = Bun.spawn([TRAIN_BIN], {
         cwd: ROOT,

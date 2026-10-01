@@ -1,0 +1,84 @@
+{
+  "schemaVersion": 1,
+  "owner": "@aphrody/workspace",
+  "qualifiedAt": "2026-10-01T03:21:21.979912+00:00",
+  "root": "/home/aphro/.aphrody",
+  "privateEvidence": "/home/aphro/.aphrody/proofs/home-cleanup-2026-10-01.json",
+  "cleanup": {
+    "exactArchiveCopiesRemoved": 303,
+    "archiveBytes": 14070937,
+    "generatedFilesRemoved": 94,
+    "generatedBytes": 2207699,
+    "orphanSqliteSidecarsRemoved": 2,
+    "totalReclaimedBytes": 16311404,
+    "postRemovalAllCanonicalHashesVerified": true,
+    "activeMemoryStoresPreserved": true,
+    "privateDatasetsPreserved": true,
+    "modelWeightsPreserved": true
+  },
+  "aliases": {
+    "workspace-dbfr": "/home/aphro/.aphrody/workspaces/dbfr",
+    "workspace-shenron": "/home/aphro/.aphrody/workspaces/dbfr"
+  },
+  "domains": {
+    "aphrody": "/home/aphro/.aphrody/workspaces/aphrody",
+    "dbfr": "/home/aphro/.aphrody/workspaces/dbfr",
+    "ie": "/home/aphro/.aphrody/workspaces/ie",
+    "shenronIsDbfrAlias": true
+  },
+  "drive": {
+    "service": "shenron-agent-home-drive-sync.service",
+    "enabled": true,
+    "active": true,
+    "scope": [
+      "AGENTS.md",
+      "SOUL.md",
+      "IDENTITY.md",
+      "USER.md",
+      "TOOLS.md",
+      "HEARTBEAT.md",
+      "BOOT.md"
+    ],
+    "actualUploaded": 2,
+    "actualDownloaded": 2,
+    "memoryNativeScope": 7,
+    "memoryNativeChanged": 0,
+    "modelWeightsNotSyncedToDrive": false,
+    "stateAllSevenLocalHashesVerified": true,
+    "lockRejectsConcurrentSync": true,
+    "remoteSteadyStateDryRunVerified": true,
+    "notes": "Historical two uploads/two downloads belonged to the superseded legacy bidirectional mode. It is removed. The current owner uses native tabs/list/link reads, stages remote changes privately for agent semantic review, preserves active Markdown and issues no Google Docs writes.",
+    "currentPolicy": "native-markdown-download-only",
+    "googleDocsWritesPerCycle": 0,
+    "currentCycleUnchanged": 7,
+    "systemDuplicateDisabled": true,
+    "profileMemoryDatabase": "/home/aphro/.aphrody/workspaces/dbfr/db/agent.db",
+    "trainedWeightsBackupOwner": "Separate shenron-trained-artifact-sync.service is copying/verifying weights; whole backup completion remains independent."
+  },
+  "training": {
+    "nativeStatus": "waiting_for_input_or_gold",
+    "rolloutsExists": false,
+    "goldExists": false,
+    "baseModelExists": false,
+    "previousTrainedWeightsPreserved": "/home/aphro/.aphrody/private/shenron/home/models",
+    "completedNewTraining": false
+  },
+  "catalogDownload": {
+    "id": "qwen3-coder-30b-a3b-q4km",
+    "partialBytesPreserved": 7965788619,
+    "unit": "aphrody-qwen-resume-catalog-20261001.service",
+    "boundedRuntimeSeconds": 1800,
+    "initialState": "running",
+    "completed": false
+  },
+  "preservedBrokenAliases": [
+    "data",
+    "ocr"
+  ],
+  "limits": [
+    "A new LoRA job cannot run until real dbfr rollouts/gold and compatible base model exist.",
+    "The resumed Qwen model must pass catalog SHA-256 before being claimed installed.",
+    "data/ocr old Windows aliases are preserved because no replacement protected store has been proven.",
+    "Drive synchronization is limited to the seven canonical documents; model weights and corpora are not uploaded."
+  ]
+}

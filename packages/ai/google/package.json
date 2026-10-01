@@ -19,7 +19,8 @@
     ".": "./src/index.ts",
     "./runtime": "./src/runtime.ts",
     "./api": "./src/api.ts",
-    "./drive-sync": "./src/drive-sync.ts"
+    "./drive-sync": "./src/drive-sync.ts",
+    "./drive-model-sync": "./src/drive-model-sync.ts"
   },
   "dependencies": {
     "@ai-sdk/google-vertex": "catalog:",

@@ -3,6 +3,7 @@ export * from "./runtime.ts";
 export * from "./vertex.ts";
 export * from "./api.ts";
 export * from "./drive-sync.ts";
+export * from "./drive-model-sync.ts";
 
 /** Google account authentication and data operations backed by the native
  * credential-store SDK. OAuth tokens never enter the Bun process. */

@@ -1,45 +1,53 @@
 // SPDX-License-Identifier: Apache-2.0
+/* eslint-disable no-await-in-loop -- Seven native documents and their evidence are reconciled sequentially. */
 import { createHash } from "node:crypto";
 import { chmod, mkdir, readdir, rename, rm } from "node:fs/promises";
 import { homedir } from "node:os";
 import { dirname, join, resolve } from "node:path";
-import type { docs_v1, drive_v3 } from "googleapis";
+import type { drive_v3 } from "googleapis";
 import { googleApi } from "./api.ts";
+import {
+  nativeMarkdown,
+  projectionAction,
+  projectionMarkdown,
+  type NativeDocument,
+} from "./drive-markdown.ts";
 import syncContract from "../../../../crates/ai/agent-home/sync-contract.json";
 
 export const AGENT_HOME_DEFAULT_DOCS: readonly string[] = syncContract;
 const DEFAULT_DOCS = new Set<string>(AGENT_HOME_DEFAULT_DOCS);
 const DOC_MIME = "application/vnd.google-apps.document";
 type RemoteDoc = { id: string; name: string; modifiedTime: string };
-type Entry = { id: string; mimeType: string; localHash: string; remoteModifiedTime: string };
-type State = { version: 1; rootFolderId: string; files: Record<string, Entry>; indexHash?: string };
-type Service = { drive: drive_v3.Drive; docs: docs_v1.Docs };
-
+type Entry = {
+  id: string;
+  localHash: string;
+  remoteHash: string;
+  remoteModifiedTime: string;
+  sourceSnapshotHash?: string;
+  sourceRenderedHash?: string;
+};
+type State = {
+  version: 1;
+  kind: "native-markdown-download-only";
+  rootFolderId: string;
+  files: Record<string, Entry>;
+};
 function required(name: string): string {
   const value = process.env[name];
   if (!value) throw new Error(`${name} is required in Aphrody .env`);
   return value;
 }
-
-function digest(data: Uint8Array): string {
+function digest(data: string): string {
   return createHash("sha256").update(data).digest("hex");
 }
-
-async function hashFile(path: string): Promise<string> {
-  return digest(new Uint8Array(await Bun.file(path).arrayBuffer()));
+async function save(path: string, data: string): Promise<void> {
+  await mkdir(dirname(path), { recursive: true, mode: 0o700 });
+  const temp = `${path}.${process.pid}.tmp`;
+  await Bun.write(temp, data, { mode: 0o600 });
+  await chmod(temp, 0o600);
+  await rename(temp, path);
 }
-
-async function localDocs(root: string): Promise<Set<string>> {
-  const names = new Set<string>();
-  for (const item of await readdir(root, { withFileTypes: true })) {
-    if (!DEFAULT_DOCS.has(item.name)) continue;
-    if (!item.isFile()) throw new Error(`Agent Home default must be a regular file: ${item.name}`);
-    names.add(item.name);
-  }
-  return names;
-}
-
-async function driveDocs(drive: drive_v3.Drive, rootId: string): Promise<Map<string, RemoteDoc>> {
+async function remoteDocs(drive: drive_v3.Drive, rootId: string): Promise<Map<string, RemoteDoc>> {
   const docs = new Map<string, RemoteDoc>();
   let pageToken: string | undefined;
   do {
@@ -53,168 +61,189 @@ async function driveDocs(drive: drive_v3.Drive, rootId: string): Promise<Map<str
     });
     for (const file of page.data.files ?? []) {
       if (!file.name || !DEFAULT_DOCS.has(file.name)) continue;
-      if (!file.id || file.mimeType !== DOC_MIME) throw new Error(`Expected a native Google Doc: ${file.name}`);
-      if (docs.has(file.name)) throw new Error(`Duplicate Google Doc in Agent Home folder: ${file.name}`);
+      if (!file.id || file.mimeType !== DOC_MIME || docs.has(file.name))
+        throw new Error(`Missing, duplicate or non-native Agent Home document: ${file.name}`);
       docs.set(file.name, { id: file.id, name: file.name, modifiedTime: file.modifiedTime ?? "" });
     }
     pageToken = page.data.nextPageToken ?? undefined;
   } while (pageToken);
+  for (const name of DEFAULT_DOCS)
+    if (!docs.has(name)) throw new Error(`Required native Agent Home document missing: ${name}`);
   return docs;
 }
-
-async function readDoc(drive: drive_v3.Drive, id: string): Promise<Uint8Array> {
-  const result = await drive.files.export({ fileId: id, mimeType: "text/plain" }, { responseType: "arraybuffer" });
-  return new Uint8Array(result.data as ArrayBuffer);
-}
-
-async function writeDoc(docs: docs_v1.Docs, id: string, text: string): Promise<void> {
-  const current = await docs.documents.get({ documentId: id, includeTabsContent: false });
-  const end = current.data.body?.content?.at(-1)?.endIndex ?? 1;
-  const requests: docs_v1.Schema$Request[] = [];
-  if (end > 2) requests.push({ deleteContentRange: { range: { startIndex: 1, endIndex: end - 1 } } });
-  if (text) requests.push({ insertText: { location: { index: 1 }, text } });
-  if (requests.length) await docs.documents.batchUpdate({ documentId: id, requestBody: { requests } });
-}
-
-async function refreshMetadata(drive: drive_v3.Drive, id: string): Promise<RemoteDoc> {
-  const response = await drive.files.get({ fileId: id, fields: "id,name,modifiedTime", supportsAllDrives: true });
-  return { id, name: response.data.name ?? "", modifiedTime: response.data.modifiedTime ?? "" };
-}
-
-async function createDoc(service: Service, parent: string, name: string, path: string): Promise<RemoteDoc> {
-  const response = await service.drive.files.create({
-    requestBody: { name, mimeType: DOC_MIME, parents: [parent] },
-    fields: "id",
-    supportsAllDrives: true,
-  });
-  const id = response.data.id;
-  if (!id) throw new Error(`Google Drive did not return a document ID for ${name}`);
-  await writeDoc(service.docs, id, await Bun.file(path).text());
-  return refreshMetadata(service.drive, id);
-}
-
-async function saveLocal(path: string, data: Uint8Array): Promise<void> {
-  const temp = `${path}.${process.pid}.aphrody-tmp`;
-  await Bun.write(temp, data, { mode: 0o600 });
-  await rename(temp, path);
-}
-
-async function saveState(path: string, state: State): Promise<void> {
-  await mkdir(dirname(path), { recursive: true, mode: 0o700 });
-  const temp = `${path}.${process.pid}.tmp`;
-  await Bun.write(temp, `${JSON.stringify(state, null, 2)}\n`, { mode: 0o600 });
-  await chmod(temp, 0o600);
-  await rename(temp, path);
-}
-
-async function runSync(dryRun: boolean): Promise<void> {
-  const root = resolve(required("APHRODY_AGENT_HOME"));
-  const rootFolderId = required("APHRODY_GOOGLE_DRIVE_FOLDER_ID");
-  const statePath = join(homedir(), ".aphrody/drive-sync/dbfr-google-api.json");
-  const state: State = await Bun.file(statePath).exists()
-    ? await Bun.file(statePath).json() as State
-    : { version: 1, rootFolderId, files: {} };
-  if (state.version !== 1 || state.rootFolderId !== rootFolderId) throw new Error("Drive state does not match the configured folder/version");
-  const stale = Object.keys(state.files).filter((name) => !DEFAULT_DOCS.has(name));
-  if (stale.length) throw new Error(`Drive state still contains ${stale.length} out-of-scope files`);
-  const service = await googleApi();
-  const local = await localDocs(root);
-  const remote = await driveDocs(service.drive, rootFolderId);
-  const summary = { created: 0, uploaded: 0, downloaded: 0, unchanged: 0 };
-
-  for (const name of AGENT_HOME_DEFAULT_DOCS) {
-    const path = join(root, name);
-    const hasLocal = local.has(name);
-    let doc = remote.get(name);
-    const previous = state.files[name];
-    if (!hasLocal && !doc) throw new Error(`Required Agent Home document is missing on both sides: ${name}`);
-    if (hasLocal && !doc) {
-      if (!dryRun) {
-        doc = await createDoc(service, rootFolderId, name, path);
-        state.files[name] = { id: doc.id, mimeType: DOC_MIME, localHash: await hashFile(path), remoteModifiedTime: doc.modifiedTime };
-        await saveState(statePath, state);
-      }
-      summary.created++;
-      continue;
-    }
-    if (!hasLocal && doc) {
-      if (!dryRun) {
-        const bytes = await readDoc(service.drive, doc.id);
-        await saveLocal(path, bytes);
-        state.files[name] = { id: doc.id, mimeType: DOC_MIME, localHash: digest(bytes), remoteModifiedTime: doc.modifiedTime };
-        await saveState(statePath, state);
-      }
-      summary.downloaded++;
-      continue;
-    }
-    const hash = await hashFile(path);
-    if (!previous) {
-      const remoteBytes = await readDoc(service.drive, doc!.id);
-      if (digest(remoteBytes) !== hash) throw new Error(`Initial Agent Home conflict for ${name}`);
-      if (!dryRun) {
-        state.files[name] = { id: doc!.id, mimeType: DOC_MIME, localHash: hash, remoteModifiedTime: doc!.modifiedTime };
-        await saveState(statePath, state);
-      }
-      summary.unchanged++;
-      continue;
-    }
-    const localChanged = hash !== previous.localHash;
-    const remoteChanged = doc!.id !== previous.id || doc!.modifiedTime !== previous.remoteModifiedTime;
-    if (localChanged && remoteChanged) throw new Error(`Concurrent Agent Home edits for ${name}; resolve both versions`);
-    if (localChanged) {
-      if (!dryRun) {
-        await writeDoc(service.docs, doc!.id, await Bun.file(path).text());
-        doc = await refreshMetadata(service.drive, doc!.id);
-        state.files[name] = { id: doc.id, mimeType: DOC_MIME, localHash: hash, remoteModifiedTime: doc.modifiedTime };
-        await saveState(statePath, state);
-      }
-      summary.uploaded++;
-    } else if (remoteChanged) {
-      if (!dryRun) {
-        const bytes = await readDoc(service.drive, doc!.id);
-        await saveLocal(path, bytes);
-        state.files[name] = { id: doc!.id, mimeType: DOC_MIME, localHash: digest(bytes), remoteModifiedTime: doc!.modifiedTime };
-        await saveState(statePath, state);
-      }
-      summary.downloaded++;
-    } else summary.unchanged++;
-  }
-
-  if (!dryRun) {
-    const index = `# Shenron Agent Home\n\n${AGENT_HOME_DEFAULT_DOCS.map((name) => `${name} — https://docs.google.com/document/d/${state.files[name]!.id}/edit`).join("\n")}\n`;
-    const indexHash = digest(new TextEncoder().encode(index));
-    if (state.indexHash !== indexHash) {
-      await writeDoc(service.docs, required("APHRODY_GOOGLE_DOC_INDEX_ID"), index);
-      state.indexHash = indexHash;
-      await saveState(statePath, state);
-    }
-  }
-  console.log(JSON.stringify({ root, driveFolderId: rootFolderId, scope: AGENT_HOME_DEFAULT_DOCS, ...summary }, null, 2));
-}
-
-export async function syncAgentHome(options: { dryRun?: boolean } = {}): Promise<void> {
-  const lock = join(homedir(), ".aphrody/drive-sync/dbfr-google-api.lock");
-  await mkdir(dirname(lock), { recursive: true, mode: 0o700 });
+export async function syncAgentHome(
+  options: { dryRun?: boolean; seedReviewed?: string } = {},
+): Promise<void> {
+  const root = resolve(required("APHRODY_AGENT_HOME")),
+    rootFolderId = required("APHRODY_GOOGLE_DRIVE_FOLDER_ID");
+  const privateRoot = join(homedir(), ".aphrody/drive-sync");
+  const statePath = join(privateRoot, "dbfr-google-markdown.json"),
+    lock = join(privateRoot, "dbfr-google-api.lock");
+  await mkdir(privateRoot, { recursive: true, mode: 0o700 });
   try {
     await mkdir(lock, { mode: 0o700 });
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code !== "EEXIST") throw error;
-    const pidFile = Bun.file(join(lock, "pid"));
-    const pid = await pidFile.exists() ? Number(await pidFile.text()) : 0;
+    const pid = Number(
+      await Bun.file(join(lock, "pid"))
+        .text()
+        .catch(() => "0"),
+    );
     if (pid > 1) {
       try {
         process.kill(pid, 0);
-        throw new Error(`Google Drive sync is already running (pid ${pid})`);
+        throw new Error("Google Drive sync is already running", { cause: error });
       } catch (probe) {
         if ((probe as NodeJS.ErrnoException).code !== "ESRCH") throw probe;
       }
     }
-    await rm(lock, { recursive: true, force: true });
+    await rm(lock, { recursive: true });
     await mkdir(lock, { mode: 0o700 });
   }
   await Bun.write(join(lock, "pid"), `${process.pid}\n`, { mode: 0o600 });
   try {
-    await runSync(Boolean(options.dryRun));
+    const state: State = (await Bun.file(statePath).exists())
+      ? await Bun.file(statePath).json()
+      : { version: 1, kind: "native-markdown-download-only", rootFolderId, files: {} };
+    if (
+      state.version !== 1 ||
+      state.kind !== "native-markdown-download-only" ||
+      state.rootFolderId !== rootFolderId
+    )
+      throw new Error("Native Markdown state scope mismatch");
+    if (Object.keys(state.files).some((name) => !DEFAULT_DOCS.has(name)))
+      throw new Error("Native Markdown state contains out-of-scope entries");
+    const service = await googleApi(),
+      remote = await remoteDocs(service.drive, rootFolderId);
+    const local = new Set(
+      (await readdir(root, { withFileTypes: true }))
+        .filter((entry) => entry.isFile())
+        .map((entry) => entry.name),
+    );
+    const summary = {
+      mode: state.kind,
+      seeded: 0,
+      unchanged: 0,
+      localAhead: 0,
+      staged: 0,
+      unsupported: 0,
+      uploaded: 0,
+    };
+    for (const name of AGENT_HOME_DEFAULT_DOCS) {
+      const doc = remote.get(name)!;
+      const native = (
+        await service.docs.documents.get({ documentId: doc.id, includeTabsContent: true })
+      ).data;
+      const nativeJson = JSON.stringify(native, null, 2);
+      const localText = local.has(name) ? await Bun.file(join(root, name)).text() : "";
+      const localHash = digest(localText);
+      let remoteHash: string;
+      try {
+        remoteHash = digest(nativeMarkdown(native as NativeDocument));
+      } catch {
+        summary.unsupported++;
+        if (!options.dryRun) {
+          const directory = join(
+            privateRoot,
+            "incoming-native",
+            `${name}-${digest(nativeJson).slice(0, 16)}-${localHash.slice(0, 16)}`,
+          );
+          await save(join(directory, "remote.native.json"), nativeJson + "\n");
+          await save(join(directory, "local.md"), localText);
+          const baseline = Bun.file(join(privateRoot, "markdown-reviewed-baseline", name));
+          if (await baseline.exists())
+            await save(join(directory, "reviewed-baseline.md"), await baseline.text());
+          await save(
+            join(directory, "evidence.json"),
+            JSON.stringify(
+              {
+                name,
+                reason: "Unsupported native content retained for agent/A2A semantic review",
+                localHash,
+                activeMarkdownPreserved: true,
+                googleDocsWrites: 0,
+              },
+              null,
+              2,
+            ) + "\n",
+          );
+        }
+        continue;
+      }
+      if (options.seedReviewed) {
+        if (!local.has(name)) throw new Error(`Reviewed local Markdown missing: ${name}`);
+        const snapshot = await Bun.file(join(resolve(options.seedReviewed), name + ".json")).text();
+        const baseline = {
+          id: doc.id,
+          localHash,
+          remoteHash,
+          remoteModifiedTime: doc.modifiedTime,
+          sourceSnapshotHash: digest(snapshot),
+          sourceRenderedHash: digest(nativeMarkdown(JSON.parse(snapshot) as NativeDocument)),
+        };
+        if (!options.dryRun) {
+          await save(join(privateRoot, "markdown-reviewed-baseline", name), localText);
+          await save(
+            join(privateRoot, "markdown-reviewed-baseline", name + ".native.json"),
+            snapshot,
+          );
+          state.files[name] = baseline;
+        }
+        summary.seeded++;
+        continue;
+      }
+      const previous = state.files[name];
+      const action = projectionAction(
+        previous?.id === doc.id ? previous : undefined,
+        remoteHash,
+        localHash,
+      );
+      if (action === "unchanged") {
+        summary.unchanged++;
+        continue;
+      }
+      if (action === "local-ahead") {
+        summary.localAhead++;
+        continue;
+      }
+      summary.staged++;
+      if (!options.dryRun) {
+        const directory = join(
+          privateRoot,
+          "incoming-markdown",
+          `${name}-${remoteHash.slice(0, 16)}-${localHash.slice(0, 16)}`,
+        );
+        await save(join(directory, "remote.native.json"), nativeJson + "\n");
+        await save(
+          join(directory, "remote.candidate.md"),
+          projectionMarkdown(native as NativeDocument, localText),
+        );
+        await save(join(directory, "local.md"), localText);
+        const baseline = Bun.file(join(privateRoot, "markdown-reviewed-baseline", name));
+        if (await baseline.exists())
+          await save(join(directory, "reviewed-baseline.md"), await baseline.text());
+        await save(
+          join(directory, "evidence.json"),
+          JSON.stringify(
+            {
+              name,
+              reason: "Agent/A2A semantic review required; no human approval requested",
+              id: doc.id,
+              remoteModifiedTime: doc.modifiedTime,
+              localHash,
+              remoteHash,
+              baseline: previous ?? null,
+              activeMarkdownPreserved: true,
+              googleDocsWrites: 0,
+            },
+            null,
+            2,
+          ) + "\n",
+        );
+      }
+    }
+    if (!options.dryRun) await save(statePath, JSON.stringify(state, null, 2) + "\n");
+    console.log(JSON.stringify(summary));
   } finally {
     await rm(lock, { recursive: true, force: true });
   }
