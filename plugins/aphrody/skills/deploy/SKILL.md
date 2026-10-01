@@ -5,14 +5,14 @@ description: "Deploy, restart, provision or clean Aphrody hosts (vps, dbfr, WSL)
 
 # deploy — through aphrody-infra only
 
-`../aphrody-infra` owns hosts, services, routes, toolchains and inventories; the kernel tools below
+`crates/infra` owns hosts, services, routes, toolchains and inventories; the kernel tools below
 only execute through it and never keep a second host registry.
 
 Host management is available through two synchronized control layers:
 1. **The kernel `infra` subsystem** (`crates/os/kernel/src/infra.rs`): In-process SSH, native SFTP, differential sync and remote Git tools directly callable over MCP.
-2. **`aphrody-infra` CLI** (`../aphrody-infra`): Declarative catalogs (`config/service-catalog.json`, `config/nginx-routes.json`), host inventories, and release playbooks.
+2. **`aphrody-infra` CLI** (`crates/infra/infra`): Declarative catalogs (`config/infra/service-catalog.json`, `config/infra/nginx-routes.json`), host inventories, and release playbooks.
 
-Read `aphrody-infra/README.md` and `aphrody-infra/docs/PLAN.md` before mutations.
+Read `crates/infra/infra/README.md` and `docs/plans/` before mutations.
 
 ## Kernel `infra` subsystem tools
 
@@ -29,19 +29,19 @@ Read `aphrody-infra/README.md` and `aphrody-infra/docs/PLAN.md` before mutations
 The kernel resolves the infrastructure runner dynamically through a five-stage fallback:
 1. **System PATH**: `aphrody-ssh --version`.
 2. **Environment overrides**: `APHRODY_INFRA_PATH` (exact `Cargo.toml`) or `APHRODY_INFRA_DIR`.
-3. **Workspace relative traversal**: `../aphrody-infra/Cargo.toml` or `aphrody-infra/Cargo.toml`.
-4. **User home profile**: `~/src/aphrody-infra/Cargo.toml` or `~/aphrody-infra/Cargo.toml`.
+3. **Workspace relative traversal**: `crates/infra/infra/Cargo.toml`.
+4. **User home profile**: `~/aphrody/crates/infra/infra/Cargo.toml`.
 5. **Compiled target binary discovery**: Detects existing `target/debug/aphrody-ssh[.exe]` or `target/release/aphrody-ssh[.exe]`, falling back cleanly to `cargo run --manifest-path ... -p aphrody-ssh --`.
 
 ## `aphrody-infra` CLI operations
 
-| Goal | Command (from `aphrody-infra`) |
+| Goal | Command (from monorepo root) |
 | --- | --- |
-| Observe hosts | `cargo run -- status [--target id]` |
-| Catalog consistency | `cargo run -- validate` |
-| Toolchain / APT on a host | `cargo run -- dev-env --target vps\|dbfr\|wsl-ubuntu-24.04 [--apply]` (on the host: `nu scripts/setup.nu`) |
-| Free disk safely | `cargo run -- reclaim --target vps [--apply]` (allowlist `config/disk-reclaim.json`) |
-| Release | `cargo run -- deploy --target id --release <path> --apply` |
+| Observe hosts | `cargo run -p aphrody-infra -- status [--target id]` |
+| Catalog consistency | `cargo run -p aphrody-infra -- validate` |
+| Toolchain / APT on a host | `cargo run -p aphrody-infra -- dev-env --target vps\|dbfr\|wsl-ubuntu-24.04 [--apply]` (on the host: `nu scripts/setup.nu`) |
+| Free disk safely | `cargo run -p aphrody-infra -- reclaim --target vps [--apply]` (allowlist `config/disk-reclaim.json`) |
+| Release | `cargo run -p aphrody-infra -- deploy --target id --release <path> --apply` |
 
 Rules: plan (`apply: false` / no `--apply`) first; services and nginx routes are added to
 `config/service-catalog.json` / `config/nginx-routes.json`, never hand-written
