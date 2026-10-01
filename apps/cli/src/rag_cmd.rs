@@ -67,11 +67,21 @@ enum RagAction {
     },
     /// Ingest a Shenron corpus JSON, JSONL or lots directory into the RAG store.
     IngestShenron {
-        /// Path to corpus JSON, JSONL or directory containing them.
-        path: PathBuf,
+        /// One or more corpus JSON/JSONL inputs or directories containing them.
+        #[arg(required = true, num_args = 1..)]
+        paths: Vec<PathBuf>,
         /// Maximum number of documents to ingest.
         #[arg(long)]
         max_docs: Option<usize>,
+        /// Do not compute dense embeddings during this ingestion.
+        #[arg(long)]
+        lexical_only: bool,
+        /// Store the full source URL as the document path for older consumers.
+        #[arg(long)]
+        preserve_url: bool,
+        /// Reproduce the historical Shenron corpus chunk boundaries.
+        #[arg(long)]
+        legacy_chunks: bool,
     },
     /// Assemble source context for a model prompt.
     Context {
@@ -308,10 +318,18 @@ pub(crate) async fn run(args: RagArgs, overrides: CliOverrides) -> miette::Resul
     }
     let store = Arc::new(RagStore::open(&db).into_diagnostic()?);
     match args.action {
-        RagAction::IngestShenron { path, max_docs } => {
-            let docs = aphrody_rag::load_shenron_corpus(&path).into_diagnostic()?;
-            let embedder = build_embedder(&config.rag).await?;
-            let opts = aphrody_rag::ShenronIngestOptions { max_docs, ..Default::default() };
+        RagAction::IngestShenron { paths, max_docs, lexical_only, preserve_url, legacy_chunks } => {
+            let mut docs = Vec::new();
+            for path in paths {
+                docs.extend(aphrody_rag::load_shenron_corpus(path).into_diagnostic()?);
+            }
+            let embedder = if lexical_only { None } else { build_embedder(&config.rag).await? };
+            let opts = aphrody_rag::ShenronIngestOptions {
+                max_docs,
+                preserve_urls: preserve_url,
+                legacy_chunks,
+                ..Default::default()
+            };
             let stats = aphrody_rag::ingest_shenron_docs(&store, &docs, embedder.as_ref(), &opts)
                 .await
                 .into_diagnostic()?;

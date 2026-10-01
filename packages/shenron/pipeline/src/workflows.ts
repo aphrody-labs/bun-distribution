@@ -207,11 +207,12 @@ export interface CrawlTarget {
 
 /**
  * Canonical Dragon Ball corpus locations (aphrody-web `bxc corpus` crawler, aphrody-rag store).
- * Sibling checkouts are resolved relative to the Shenron root; env values override them.
+ * The crawl config and evaluation fixtures belong to this Aphrody checkout;
+ * the BXC source checkout remains configurable until its crawler is migrated.
  */
 export function corpusLocations(root: string, env: Record<string, string | undefined> = process.env) {
 	const crawlDir = env.APHRODY_CORPUS_CRAWL_DIR?.trim() || join(env.APHRODY_HOME?.trim() || join(homedir(), ".aphrody"), "workspaces", "dbfr", "crawl");
-	const datasetDir = env.APHRODY_DRAGONBALL_DATASET_DIR?.trim() || join(root, "..", "aphrody-ai", "crates", "aphrody-rag-eval", "datasets", "dragonball");
+	const datasetDir = env.APHRODY_DRAGONBALL_DATASET_DIR?.trim() || join(root, "crates", "ai", "rag-eval", "datasets", "dragonball");
 	return {
 		bxcRoot: env.BXC_ROOT?.trim() || join(root, "..", "aphrody-web", "apps", "bxc"),
 		datasetDir,
@@ -226,9 +227,19 @@ export async function runCorpusIngest(options: { dryRun?: boolean; runner?: Comm
 	const root = join(import.meta.dir, "../../../..");
 	const loc = corpusLocations(root);
 	const corpusDir = join(loc.crawlDir, "corpus");
-	const exports = existsSync(corpusDir) ? readdirSync(corpusDir).filter((f) => f.endsWith(".jsonl")).map((f) => join(corpusDir, f)) : [];
+	const exports = existsSync(corpusDir) ? readdirSync(corpusDir).filter((f) => f.endsWith(".jsonl")).sort().map((f) => join(corpusDir, f)) : [];
 	if (!exports.length && !options.dryRun) throw new Error(`aucun export bxc corpus dans ${corpusDir}; lancer d'abord: pipeline crawl universal`);
-	const command = ["bun", join(loc.datasetDir, "ingest-rag.ts"), "--db", loc.ragDb, ...exports];
+	const command = [
+		process.env.APHRODY_BIN?.trim() || "aphrody",
+		"rag",
+		"--db",
+		loc.ragDb,
+		"ingest-shenron",
+		...exports,
+		"--lexical-only",
+		"--preserve-url",
+		"--legacy-chunks",
+	];
 	return executeCommand(command, { cwd: root, dryRun: options.dryRun, runner: options.runner });
 }
 

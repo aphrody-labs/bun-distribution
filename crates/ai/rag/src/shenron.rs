@@ -16,12 +16,13 @@ use std::{
 
 use aphrody_rag_core::{ChunkOptions, chunker_for_path};
 use serde::{Deserialize, Serialize};
-use tracing::{debug, info, warn};
+use sha2::{Digest as _, Sha256};
+use tracing::info;
 
 use crate::{
     embedder::Embedder,
     error::{RagError, Result},
-    store::RagStore,
+    store::{NewChunk, RagStore},
 };
 
 /// A normalized Shenron document before chunking and indexing.
@@ -52,10 +53,8 @@ pub struct ShenronCorpusDoc {
 impl ShenronCorpusDoc {
     /// Return the most descriptive title available.
     pub fn display_title(&self) -> String {
-        self.name
-            .clone()
-            .filter(|s| !s.trim().is_empty())
-            .unwrap_or_else(|| self.id.clone())
+        self.name.as_deref().map(str::trim).filter(|name| !name.is_empty())
+            .map(str::to_owned).unwrap_or_else(|| self.id.clone())
     }
 
     /// Return the textual content, defaulting to empty string.
@@ -83,6 +82,10 @@ pub struct ShenronIngestOptions {
     pub batch_size: usize,
     /// Re-index documents even if already present.
     pub force: bool,
+    /// Preserve source URLs as paths for older Shenron corpus consumers.
+    pub preserve_urls: bool,
+    /// Reproduce the historical Dragon Ball corpus paragraph chunk boundaries.
+    pub legacy_chunks: bool,
 }
 
 impl Default for ShenronIngestOptions {
@@ -93,6 +96,8 @@ impl Default for ShenronIngestOptions {
             chunk_opts: ChunkOptions::default(),
             batch_size: 32,
             force: false,
+            preserve_urls: false,
+            legacy_chunks: false,
         }
     }
 }
@@ -110,10 +115,94 @@ pub struct ShenronIngestStats {
     pub vectors_created: usize,
     /// Documents skipped (too short, empty, or duplicate).
     pub skipped: usize,
+    /// Documents already present with unchanged content.
+    pub unchanged: usize,
     /// Any non-fatal document errors encountered.
     pub errors: Vec<String>,
     /// Total elapsed time in milliseconds.
     pub elapsed_ms: u64,
+}
+
+struct CorpusChunk {
+    heading: Option<String>,
+    text: String,
+    start_line: usize,
+    end_line: usize,
+}
+
+fn utf16_len(text: &str) -> usize {
+    text.encode_utf16().count()
+}
+
+fn legacy_heading(line: &str) -> Option<String> {
+    let level = line.bytes().take_while(|byte| *byte == b'#').count();
+    if !(1..=6).contains(&level)
+        || !line.get(level..)?.chars().next().is_some_and(char::is_whitespace)
+    {
+        return None;
+    }
+    let mut title = line[level..].trim_end();
+    while title.ends_with('#') {
+        title = title[..title.len() - 1].trim_end();
+    }
+    (!title.is_empty()).then(|| title.to_owned())
+}
+
+/// Match the former Bun corpus ingester's chunk shape exactly, including its
+/// UTF-16 thresholds and inclusion of Markdown heading lines in chunk text.
+fn legacy_corpus_chunks(text: &str, title: &str) -> Vec<CorpusChunk> {
+    const SINGLE_CHUNK_MAX: usize = 1200;
+    const TARGET_CHUNK_CHARS: usize = 1500;
+    if utf16_len(text) <= SINGLE_CHUNK_MAX {
+        return vec![CorpusChunk {
+            heading: Some(title.to_owned()),
+            text: text.to_owned(),
+            start_line: 1,
+            end_line: 1,
+        }];
+    }
+
+    let lines: Vec<&str> = text.split('\n').collect();
+    let mut chunks = Vec::new();
+    let mut heading = title.to_owned();
+    let mut buffer: Vec<&str> = Vec::new();
+    let mut start_line = 1;
+    let mut size = 0;
+    for (index, line) in lines.iter().enumerate() {
+        let line_no = index + 1;
+        let next_heading = legacy_heading(line);
+        let paragraph_end = line.trim().is_empty() && size >= TARGET_CHUNK_CHARS;
+        let hard_cap = size + utf16_len(line) > TARGET_CHUNK_CHARS * 2;
+        if next_heading.is_some() || paragraph_end || (hard_cap && !buffer.is_empty()) {
+            let body = buffer.join("\n").trim().to_owned();
+            if !body.is_empty() {
+                chunks.push(CorpusChunk {
+                    heading: Some(heading.clone()),
+                    text: body,
+                    start_line,
+                    end_line: line_no.saturating_sub(1).max(start_line),
+                });
+            }
+            buffer.clear();
+            size = 0;
+            start_line = line_no;
+            if let Some(next_heading) = next_heading {
+                heading = next_heading;
+            }
+        }
+        buffer.push(line);
+        size += utf16_len(line) + 1;
+    }
+    let body = buffer.join("\n").trim().to_owned();
+    if !body.is_empty() {
+        chunks.push(CorpusChunk {
+            heading: Some(heading),
+            text: body,
+            start_line,
+            end_line: lines.len().max(start_line),
+        });
+    }
+    chunks
 }
 
 /// Load a Shenron corpus from a JSON file, JSONL file, or directory containing such files.
@@ -127,9 +216,11 @@ pub fn load_shenron_corpus(path: impl AsRef<Path>) -> Result<Vec<ShenronCorpusDo
     if path.is_file() {
         load_corpus_file(path, &mut docs)?;
     } else if path.is_dir() {
-        for entry in std::fs::read_dir(path)? {
-            let entry = entry?;
-            let sub_path = entry.path();
+        let mut paths = std::fs::read_dir(path)?
+            .map(|entry| entry.map(|entry| entry.path()))
+            .collect::<std::io::Result<Vec<_>>>()?;
+        paths.sort();
+        for sub_path in paths {
             if sub_path.is_file() {
                 let ext = sub_path
                     .extension()
@@ -137,7 +228,7 @@ pub fn load_shenron_corpus(path: impl AsRef<Path>) -> Result<Vec<ShenronCorpusDo
                     .unwrap_or("")
                     .to_ascii_lowercase();
                 if ext == "json" || ext == "jsonl" {
-                    let _ = load_corpus_file(&sub_path, &mut docs);
+                    load_corpus_file(&sub_path, &mut docs)?;
                 }
             }
         }
@@ -162,9 +253,9 @@ fn load_corpus_file(path: &Path, docs: &mut Vec<ShenronCorpusDoc>) -> Result<()>
             }
             match serde_json::from_str::<ShenronCorpusDoc>(trimmed) {
                 Ok(doc) => docs.push(doc),
-                Err(err) => {
-                    debug!("Failed to parse line {} in {}: {err}", line_idx + 1, path.display());
-                },
+                Err(err) => return Err(RagError::Other(format!(
+                    "invalid corpus JSON at {}:{}: {err}", path.display(), line_idx + 1
+                ))),
             }
         }
     } else {
@@ -180,7 +271,7 @@ fn load_corpus_file(path: &Path, docs: &mut Vec<ShenronCorpusDoc>) -> Result<()>
             docs.extend(array);
             return Ok(());
         }
-        warn!("Unrecognized JSON structure in {}", path.display());
+        return Err(RagError::Other(format!("unrecognized corpus JSON structure in {}", path.display())));
     }
 
     Ok(())
@@ -208,20 +299,24 @@ pub async fn ingest_shenron_docs(
 
     for doc in &docs[..limit] {
         let text = doc.text_content();
-        if text.len() < opts.min_content_len {
+        if utf16_len(text) < opts.min_content_len {
             stats.skipped += 1;
             continue;
         }
 
         // Determine canonical document path / URL
         let raw_url = if doc.url.trim().is_empty() {
-            format!("/wiki/databooks/{}", doc.id)
+            if opts.preserve_urls { format!("/corpus/{}", doc.id) }
+            else { format!("/wiki/databooks/{}", doc.id) }
         } else {
             doc.url.trim().to_string()
         };
 
-        // Normalize URL to lowercase path for boundary-aware retrieval
-        let url_path = if let Some(stripped) = raw_url.strip_prefix("https://dragonballfr.com") {
+        // Older Shenron ingestion stored the complete source URL as `docs.path`.
+        // Keep that identity when requested; otherwise use the normalized path.
+        let url_path = if opts.preserve_urls {
+            raw_url
+        } else if let Some(stripped) = raw_url.strip_prefix("https://dragonballfr.com") {
             stripped.to_string()
         } else if let Some(stripped) = raw_url.strip_prefix("http://dragonballfr.com") {
             stripped.to_string()
@@ -238,76 +333,79 @@ pub async fn ingest_shenron_docs(
         seen_paths.insert(unique_path.clone());
 
         let hash = blake3::hash(text.as_bytes()).to_hex().to_string();
+        // The former Bun consumer stored SHA-256; accept that digest to avoid
+        // rewriting unchanged rows while new Rust writes retain BLAKE3.
+        let legacy_hash = format!("{:x}", Sha256::digest(text.as_bytes()));
+        if !opts.force
+            && store
+                .get_doc_by_path(&unique_path)
+                .await?
+                .is_some_and(|existing| existing.hash == hash || existing.hash == legacy_hash)
+        {
+            stats.unchanged += 1;
+            continue;
+        }
         let title = doc.display_title();
-        let language = doc.lang.as_deref().unwrap_or("fr");
-        let size_bytes = text.len() as i64;
-        let mtime_ms = 0i64;
+        let language = doc.lang.as_deref().filter(|lang| !lang.is_empty()).unwrap_or("fr");
 
-        let doc_id = match store
-            .upsert_doc(&unique_path, &hash, Some(&title), Some(language), mtime_ms, size_bytes)
+        // Chunking uses the historical corpus shape only for consumers that
+        // explicitly request it; other RAG ingestion keeps the general chunker.
+        let chunks = if opts.legacy_chunks {
+            legacy_corpus_chunks(text, &title)
+        } else if utf16_len(text) <= 1200 {
+            vec![CorpusChunk {
+                heading: Some(title.clone()),
+                text: text.to_owned(),
+                start_line: 1,
+                end_line: 1,
+            }]
+        } else {
+            chunker_for_path(&format!("{unique_path}.md"))
+                .chunk(&unique_path, text, &opts.chunk_opts)
+                .into_iter()
+                .map(|chunk| CorpusChunk {
+                    heading: chunk.symbol,
+                    text: chunk.text,
+                    start_line: chunk.start_line as usize,
+                    end_line: chunk.end_line as usize,
+                })
+                .collect()
+        };
+        let chunks: Vec<NewChunk> = chunks
+            .into_iter()
+            .map(|chunk| NewChunk {
+                heading: chunk.heading.or_else(|| Some(title.clone())),
+                symbol: doc.entity.clone(),
+                token_count: (utf16_len(&chunk.text) / 4).max(1),
+                content: chunk.text,
+                start_line: chunk.start_line,
+                end_line: chunk.end_line,
+            })
+            .collect();
+        let chunk_ids = match store
+            .upsert_doc_chunks(
+                &unique_path,
+                &hash,
+                &title,
+                language,
+                0,
+                text.len() as i64,
+                &chunks,
+            )
             .await
         {
-            Ok(id) => id,
+            Ok(ids) => ids,
             Err(err) => {
-                stats.errors.push(format!("Failed to upsert doc {}: {err}", doc.id));
+                stats.errors.push(format!("Failed to replace document {}: {err}", doc.id));
                 continue;
             },
         };
-
         stats.docs_ingested += 1;
-        let _ = store.clear_doc_chunks(doc_id).await;
-
-        // Chunking: for small passages, insert single chunk preserving title
-        let mut chunks_to_embed = Vec::new();
-        if text.len() <= 1200 {
-            let token_count = (text.len() / 4).max(1);
-            match store
-                .insert_chunk(doc_id, 0, Some(&title), doc.entity.as_deref(), text, 1, 1, token_count)
-                .await
-            {
-                Ok(chunk_id) => {
-                    stats.chunks_created += 1;
-                    if embedder.is_some() {
-                        chunks_to_embed.push((chunk_id, text.to_string()));
-                    }
-                },
-                Err(err) => {
-                    stats.errors.push(format!("Insert chunk error for {}: {err}", doc.id));
-                },
-            }
-        } else {
-            let chunker = chunker_for_path(&format!("{unique_path}.md"));
-            let chunks = chunker.chunk(&unique_path, text, &opts.chunk_opts);
-
-            for (idx, c) in chunks.into_iter().enumerate() {
-                let heading = c.symbol.as_deref().or(Some(&title));
-                let symbol = doc.entity.as_deref();
-                let token_count = (c.text.len() / 4).max(1);
-                match store
-                    .insert_chunk(
-                        doc_id,
-                        idx,
-                        heading,
-                        symbol,
-                        &c.text,
-                        c.start_line as usize,
-                        c.end_line as usize,
-                        token_count,
-                    )
-                    .await
-                {
-                    Ok(chunk_id) => {
-                        stats.chunks_created += 1;
-                        if embedder.is_some() {
-                            chunks_to_embed.push((chunk_id, c.text));
-                        }
-                    },
-                    Err(err) => {
-                        stats.errors.push(format!("Insert chunk error in {}: {err}", doc.id));
-                    },
-                }
-            }
-        }
+        stats.chunks_created += chunk_ids.len();
+        let chunks_to_embed: Vec<(i64, String)> = chunk_ids
+            .into_iter()
+            .zip(chunks.into_iter().map(|chunk| chunk.content))
+            .collect();
 
         // Compute dense embeddings if embedder is attached
         if let Some(emb) = embedder {

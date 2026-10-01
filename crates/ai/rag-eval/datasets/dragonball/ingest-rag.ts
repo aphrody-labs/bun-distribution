@@ -3,15 +3,17 @@
 // SPDX-FileCopyrightText: 2026 aphrody contributors
 
 /**
- * Lexical ingestion of `bxc corpus` JSONL exports into an `aphrody-rag` SQLite store.
+ * Historical Bun reference for the old lexical `bxc corpus` ingestion contract.
  *
- * The canonical ingester is `aphrody rag ingest-shenron <jsonl> --db <store>` (Rust,
+ * The operational ingester is now `aphrody rag ingest-shenron <jsonl> --db <store>` (Rust,
  * `crates/aphrody-rag/src/shenron.rs`), which also computes dense vectors when an
  * embedder is configured. This script writes the same schema (`docs`, `chunks`,
  * `chunks_fts` via the schema triggers) with the same document rules (path = URL,
  * single chunk up to 1200 characters, heading chunks above) so a crawl can be
  * ingested and evaluated (`aphrody-rag-eval --target local --db <store>`) without
- * building the `aphrody` binary. Re-running is idempotent: unchanged documents
+ * building the `aphrody` binary. Runtime workflows now use the Rust CLI and do
+ * not invoke this script; this remains a parity oracle for the former output.
+ * Re-running is idempotent: unchanged documents
  * (same SHA-256 of their text) are skipped, changed ones are re-chunked.
  *
  * Usage: bun ingest-rag.ts --db <store.sqlite> <corpus.jsonl>...

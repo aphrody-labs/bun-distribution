@@ -12,6 +12,12 @@ Le serveur MCP Shenron n'est plus dans ce dépôt : il est porté par
 bun run pipeline <ocr|rag|ia|translation|crawl> [options]
 ```
 
+`bun run pipeline unify` ingests BXC JSONL exports through the installed Rust
+owner (`aphrody rag ingest-shenron`). Set `APHRODY_BIN` when the binary is not
+on `PATH`; set `APHRODY_DRAGONBALL_RAG_DB` to choose the target SQLite store.
+This path preserves the former URL, UTF-16 chunk boundaries and lexical-only
+mode while the Rust owner manages SQLite and FTS5.
+
 Pour obtenir des candidats OCR Koharu depuis un projet natif, utiliser
 `bun run pipeline koharu-native-candidate <manga|databook> <manifest.json>
 <project-root> <project-name> <candidates.jsonl> [--sdk <koharu-sdk>]`.

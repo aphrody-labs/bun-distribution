@@ -100,7 +100,7 @@ export async function scanRepository(root: string) {
   const parseErrors: { path: string; error: string }[] = [];
   for (const entry of existing) {
     const path = entry.path;
-    if (path.startsWith("upstream/")) continue;
+    if (path.startsWith("upstream/") || path.startsWith("docs/")) continue;
     if (path.endsWith("Cargo.toml")) {
       try {
         const manifest = object(Bun.TOML.parse(await readFile(join(root, path), "utf8")));

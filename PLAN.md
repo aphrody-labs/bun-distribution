@@ -901,6 +901,12 @@ smoke documenté. Une mise en production est une opération distincte.
   typecheck du pipeline et celui du package natif Bun passent ;
   `cargo check -p aphrody-ffi --offline` et `cargo fmt --check -p aphrody-ffi`
   passent également dans l'état courant du checkout.
+- L'ingestion des exports `bxc corpus` utilise maintenant la commande locale
+  `aphrody rag ingest-shenron` au lieu du script Bun du checkout séparé
+  `../aphrody-ai`. Le chemin par défaut des configurations/fixtures RAG pointe
+  vers `crates/ai/rag-eval/datasets/dragonball`. Le propriétaire Rust accepte
+  les anciens hash SHA-256 inchangés en plus de son hash BLAKE3, et l'appel peut
+  préserver les URL d'origine et désactiver l'embedding dense pour ce flux.
 - Restent à cartographier et basculer par propriétaire : OCR et revue,
   embeddings/indexation/RAG, crawl/extraction Web, traduction et médias manga,
   ainsi que les scripts d'ingestion et de dépôt qui demeurent spécifiques aux
