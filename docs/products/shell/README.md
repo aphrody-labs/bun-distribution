@@ -21,6 +21,17 @@ and captured output, not total process memory or CPU scheduling.
 state; rendering and complete terminal interaction belong to the host. Preserve
 upstream notices and root Cargo patches in consuming workspaces.
 
+## WASM, web and Tauri
+
+- `aphrody-terminal-core`: portable Rio VT state (extracted from the backend, re-exported there).
+- `aphrody-shell-web` (`wasm32-unknown-unknown`): `WebTerminal`, backend-less `WebShell`, wire frames.
+  `scripts/build/shell/build-wasm.sh` emits `packages/shell/web/pkg` (gitignored).
+- `@aphrody/shell-web`: WebSocket (to `serve`), Tauri and local transports.
+- `aphrody-shell-tauri`: Tauri 3 plugin over native PTY sessions. Registered via
+  `aphrody_shell_tauri::init()`; wired in `crates/ui/app` (plugin + `aphrody-shell-tauri:default` capability).
+- Nushell (`aphrody-nu`) and the Ratatui TUI stay native; the browser shell is the local builtin shell
+  or a remote backend.
+
 ## Build and docs
 
 Use the pinned Rust toolchain and `RUSTC_WRAPPER=`. `just ci` runs the owner gates

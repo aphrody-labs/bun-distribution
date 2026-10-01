@@ -948,6 +948,7 @@ dependencies = [
  "aphrody-llama-server",
  "aphrody-local-ai",
  "aphrody-native",
+ "aphrody-shell-tauri",
  "aphrody-sprite-sheet",
  "aphrody-subsystem",
  "aphrody-systemd",
@@ -2580,6 +2581,27 @@ dependencies = [
 ]
 
 [[package]]
+name = "aphrody-shell-tauri"
+version = "1.0.0-canary"
+dependencies = [
+ "aphrody-terminal-backend",
+ "serde",
+ "serde_json",
+ "tauri",
+ "tauri-plugin",
+ "tokio",
+]
+
+[[package]]
+name = "aphrody-shell-web"
+version = "1.0.0-canary"
+dependencies = [
+ "aphrody-terminal-core",
+ "serde_json",
+ "wasm-bindgen",
+]
+
+[[package]]
 name = "aphrody-skills"
 version = "1.0.0"
 dependencies = [
@@ -2798,10 +2820,10 @@ version = "1.0.0-canary"
 dependencies = [
  "anyhow",
  "aphrody-a2a-coord",
+ "aphrody-terminal-core",
  "futures-util",
  "getrandom 0.2.17",
  "portable-pty",
- "rio-vt",
  "serde",
  "serde_json",
  "tempfile",
@@ -2811,6 +2833,13 @@ dependencies = [
  "tracing",
  "url",
  "which 8.0.6",
+]
+
+[[package]]
+name = "aphrody-terminal-core"
+version = "1.0.0-canary"
+dependencies = [
+ "rio-vt",
 ]
 
 [[package]]

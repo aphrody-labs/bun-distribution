@@ -45,6 +45,7 @@ aphrody-capture = { workspace = true }
 aphrody-compat = { workspace = true }
 aphrody-coreutils = { workspace = true }
 aphrody-drive = { workspace = true }
+aphrody-shell-tauri = { workspace = true }
 aphrody-identity = { workspace = true }
 aphrody-kernel = { workspace = true }
 # The `__llama-daemon` entry (src/llama_daemon.rs) hosts `aphrody_llama_server::daemon::run`.

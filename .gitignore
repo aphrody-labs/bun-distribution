@@ -123,3 +123,4 @@ Thumbs.db
 .neon
 *.db-shm
 *.db-wal
+/packages/shell/web/pkg/

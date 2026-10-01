@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-//! Native VT state derived from a [`crate::PtySession`] byte stream.
+//! Portable VT state derived from a terminal byte stream (native, WASM, Tauri).
 
 use std::sync::{Arc, Mutex, PoisonError};
 

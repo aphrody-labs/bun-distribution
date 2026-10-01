@@ -750,6 +750,7 @@ pub fn run() {
         // the missing configuration from `check` instead of pretending there is no update.
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(aphrody_drive::init())
+        .plugin(aphrody_shell_tauri::init())
         // Managed before `setup`: the config windows (splash, pet, widget) are created first and
         // their pages invoke integration commands as soon as they load.
         .manage(integration::Integration::default())

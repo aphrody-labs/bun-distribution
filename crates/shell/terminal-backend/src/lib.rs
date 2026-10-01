@@ -25,7 +25,6 @@
 
 pub mod coord;
 mod session;
-mod terminal;
 use std::{net::SocketAddr, path::PathBuf};
 
 use anyhow::{Context as _, Result};
@@ -36,7 +35,7 @@ pub use coord::{
 use futures_util::{SinkExt, stream::StreamExt};
 use serde::Deserialize;
 pub use session::{PtyEvent, PtySession, TEARDOWN_TIMEOUT};
-pub use terminal::{
+pub use aphrody_terminal_core::{
     DEFAULT_SCROLLBACK_LINES, StyledTerminalSnapshot, TerminalCell, TerminalSnapshot, TerminalState,
 };
 use tokio::{
@@ -369,6 +368,7 @@ pub async fn serve(addr: SocketAddr, mut cfg: PtyConfig) -> Result<()> {
 /// The session lasts until the client leaves or the shell exits. When the client leaves, the
 /// shell is stopped (`TerminateProcess` on Windows, `SIGHUP` on Unix) and the pty is closed;
 /// when the shell exits, the remaining output is flushed and the WebSocket is closed.
+#[allow(clippy::result_large_err)]
 async fn handle_conn(stream: TcpStream, cfg: PtyConfig) -> Result<()> {
     let bound_addr = stream.local_addr().ok();
     let auth_token = cfg.effective_auth_token();

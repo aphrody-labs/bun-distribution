@@ -136,6 +136,9 @@ aphrody-skills = { path = "crates/ai/skills", version = "1.0.0", features = [] }
 aphrody-ssh = { path = "crates/infra/ssh", version = "0.1.0", features = [] }
 aphrody-stdio-capture = { path = "crates/os/stdio-capture", version = "1.0.0-canary", features = [] }
 aphrody-supervisor = { path = "crates/ai/supervisor", version = "1.0.0", features = [] }
+aphrody-shell-web = { path = "crates/shell/web", version = "1.0.0-canary", features = [] }
+aphrody-shell-tauri = { path = "crates/shell/tauri", version = "1.0.0-canary", features = [] }
+aphrody-terminal-core = { path = "crates/shell/terminal-core", version = "1.0.0-canary", features = [] }
 aphrody-terminal-backend = { path = "crates/shell/terminal-backend", version = "1.0.0-canary", features = [] }
 aphrody-toolcall = { path = "crates/ai/toolcall", version = "1.0.0", features = [] }
 aphrody-toolcall-repair = { path = "crates/ai/toolcall-repair", version = "1.0.0", features = [] }

@@ -1,0 +1,29 @@
+# SPDX-License-Identifier: Apache-2.0
+[package]
+name = "aphrody-shell-tauri"
+description = "Tauri 3 plugin exposing native PTY shell sessions to the aphrody-shell-web webview client."
+version = "1.0.0-canary"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+publish = false
+links = "aphrody-shell-tauri"
+
+[lints]
+workspace = true
+
+[build-dependencies]
+tauri-plugin = { workspace = true, features = ["build"] }
+
+[dependencies]
+aphrody-terminal-backend = { workspace = true }
+tauri = { workspace = true }
+tokio = { workspace = true, features = ["rt-multi-thread", "sync"] }
+serde = { workspace = true }
+
+[dev-dependencies]
+tauri = { workspace = true, features = ["test"] }
+tokio = { workspace = true, features = ["rt-multi-thread", "macros", "time"] }
+serde_json = { workspace = true }
