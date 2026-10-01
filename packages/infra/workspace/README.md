@@ -110,3 +110,10 @@ bun packages/infra/workspace/src/ops.ts consolidation source-licenses-import --s
 bun packages/infra/workspace/src/ops.ts consolidation docs-import --source-root /home/aphro/src --iecode-root /home/aphro/iecode --aphrody-root /home/aphro/aphrody --python-root /home/aphro/aphrody-py
 bun packages/infra/workspace/src/ops.ts consolidation scripts-import --source-root /home/aphro/src --iecode-root /home/aphro/iecode --aphrody-root /home/aphro/aphrody --python-root /home/aphro/aphrody-py
 ```
+## Infrastructure audit without application builds
+
+`bun src/ops.ts infra-audit --run --live --evidence /tmp/aphrody-infra-audit --output /tmp/aphrody-infra-audit.json`
+
+The Infra owner inventories Cargo members/features, Bun packages, Infra modules and scripts; runs reviewed type/lint/format/unit gates serially; and inspects WSL, VPS and dbfr through installed native tools. It does not compile Rust, build Next, launch browsers, crawl sites or mutate live hosts. Arbitrary adapters, application test hooks and builds are recorded as deferred. Raw output remains outside Git; the report carries timestamps and hashes. A partial audit never qualifies deployment. Installed binaries and cached tests do not prove that modified Rust source compiles.
+
+`monorepo-gate --no-build --plan --json` exposes the selected leaf commands and exclusions without executing them. `APHRODY_NO_BUILD=1` forbids source-compilation fallback in the Bun Infra bridge.

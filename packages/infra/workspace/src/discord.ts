@@ -88,14 +88,19 @@ export async function runDiscord(args: string[] = [], root = infraRoot()): Promi
   if (subcommand === "compile") {
     const target = rest[0] || "all";
     const smoke = rest.includes("--smoke") || !rest.includes("--no-smoke");
-    console.log(`\n🚀 Delegating Discord compilation to native aphrody CLI (target: ${target})...\n`);
+    console.log(
+      `\n🚀 Delegating Discord compilation to native aphrody CLI (target: ${target})...\n`,
+    );
     const cliPath = join(root, "target/debug/aphrody");
     const cmd = existsSync(cliPath) ? cliPath : "aphrody";
 
-    const proc = Bun.spawn([cmd, "discord", "compile", target, smoke ? "--smoke" : "--smoke=false"], {
-      cwd: root,
-      stdio: ["inherit", "inherit", "inherit"],
-    });
+    const proc = Bun.spawn(
+      [cmd, "discord", "compile", target, smoke ? "--smoke" : "--smoke=false"],
+      {
+        cwd: root,
+        stdio: ["inherit", "inherit", "inherit"],
+      },
+    );
     const exitCode = await proc.exited;
     return exitCode;
   }
@@ -126,6 +131,8 @@ export async function runDiscord(args: string[] = [], root = infraRoot()): Promi
     return exitCode;
   }
 
-  console.error(`Unknown discord operation: ${subcommand}. Usage: ops discord [status|compile|verify|inspect]`);
+  console.error(
+    `Unknown discord operation: ${subcommand}. Usage: ops discord [status|compile|verify|inspect]`,
+  );
   return 1;
 }

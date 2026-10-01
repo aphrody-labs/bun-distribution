@@ -3,8 +3,15 @@ import { mkdtemp, mkdir, writeFile, symlink, rm } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
-import { cleanWorkspace } from "../src/workspace-clean.ts";
+import { cleanWorkspace, measureArtifact } from "../src/workspace-clean.ts";
 const roots: string[] = [];
+test("artifact accounting tolerates a file disappearing during a concurrent Cargo run", async () => {
+  const root = await fixture();
+  const path = join(root, "rmeta-temporary");
+  await writeFile(path, "temporary");
+  await rm(path);
+  expect(await measureArtifact(path)).toEqual({ bytes: 0, files: 0 });
+});
 afterEach(async () => {
   for (const root of roots.splice(0)) await rm(root, { recursive: true });
 });

@@ -1408,14 +1408,45 @@ fn reclaim_disk(root: &Path, target_id: &str, apply: bool, run: &mut Run) -> Res
     Ok(())
 }
 
-fn service_health(root: &Path, id: Option<&str>, as_json: bool, run: &mut Run) -> Result<()> {
+fn service_probe(
+    target_id: &str,
+    url: &str,
+    timeout_secs: u32,
+) -> Result<aphrody_infra::probe::ProbeResult> {
+    if aphrody_infra::lifecycle::is_local_target(target_id) {
+        Ok(aphrody_infra::probe::probe_url(
+            url,
+            std::time::Duration::from_secs(u64::from(timeout_secs)),
+        ))
+    } else {
+        aphrody_infra::probe::probe_remote(target_id, url, timeout_secs)
+    }
+}
+
+fn service_health(
+    root: &Path,
+    id: Option<&str>,
+    target_id: &str,
+    as_json: bool,
+    run: &mut Run,
+) -> Result<()> {
     let catalog = aphrody_infra::catalog::load_service_catalog(root)?;
-    let results: Vec<Value> = catalog.services.iter().filter(|service| id.is_none_or(|wanted| wanted == service.id))
-        .filter_map(|service| service.health.as_deref().map(|url| (service, aphrody_infra::probe::probe_url(url, std::time::Duration::from_secs(8)))))
-        .map(|(service, probe)| json!({ "id": service.id, "required": service.is_required(), "probe": probe }))
-        .collect();
+    let mut results: Vec<Value> = Vec::new();
+    for service in catalog
+        .services
+        .iter()
+        .filter(|service| !service.is_retired())
+        .filter(|service| id.is_none_or(|wanted| wanted == service.id))
+    {
+        if let Some(url) = service.health.as_deref() {
+            let probe = service_probe(target_id, url, 8)?;
+            results.push(
+                json!({ "id": service.id, "required": service.is_required(), "probe": probe }),
+            );
+        }
+    }
     if results.is_empty() {
-        bail!("aucun service avec health correspondant");
+        bail!("aucun service actif avec health correspondant");
     }
     let failed = results.iter().any(|result| {
         result["required"] == Value::Bool(true) && result["probe"]["ok"] == Value::Bool(false)
@@ -1434,7 +1465,7 @@ fn service_health(root: &Path, id: Option<&str>, as_json: bool, run: &mut Run) -
     run.action(
         "service.health",
         if failed { "failed" } else { "success" },
-        json!({ "results": results }),
+        json!({ "target": target_id, "results": results }),
     );
     if failed {
         bail!("au moins un service requis est indisponible");
@@ -1442,13 +1473,16 @@ fn service_health(root: &Path, id: Option<&str>, as_json: bool, run: &mut Run) -
     Ok(())
 }
 
-fn service_prewarm(root: &Path, as_json: bool, run: &mut Run) -> Result<()> {
+fn service_prewarm(root: &Path, target_id: &str, as_json: bool, run: &mut Run) -> Result<()> {
     let catalog = aphrody_infra::catalog::load_service_catalog(root)?;
     let service = catalog
         .services
         .iter()
         .find(|service| service.id == "nie-model-serve")
         .context("nie-model-serve absent du catalogue")?;
+    if service.is_retired() {
+        bail!("nie-model-serve est retiré du catalogue actif");
+    }
     let base = service
         .health
         .as_deref()
@@ -1464,17 +1498,14 @@ fn service_prewarm(root: &Path, as_json: bool, run: &mut Run) -> Result<()> {
         "k000010",
         "ka001901",
     ];
-    let health = aphrody_infra::probe::probe_url(
-        &format!("{base}/health"),
-        std::time::Duration::from_secs(8),
-    );
+    let health = service_probe(target_id, &format!("{base}/health"), 8)?;
     if !health.ok {
         bail!("nie-model-serve indisponible: {}", health.error.unwrap_or_default());
     }
     let items: Vec<Value> = codes.iter().map(|code| {
-        let probe = aphrody_infra::probe::probe_url(&format!("{base}/model-full/{code}.glb"), std::time::Duration::from_secs(15));
-        json!({ "code": code, "ok": probe.ok, "status": probe.status, "durationMs": probe.duration_ms })
-    }).collect();
+        let probe = service_probe(target_id, &format!("{base}/model-full/{code}.glb"), 15)?;
+        Ok(json!({ "code": code, "ok": probe.ok, "status": probe.status, "durationMs": probe.duration_ms }))
+    }).collect::<Result<Vec<_>>>()?;
     let success = items.iter().filter(|item| item["ok"] == Value::Bool(true)).count();
     let output =
         json!({ "target": base, "success": success, "total": items.len(), "items": items });
@@ -1516,8 +1547,8 @@ fn service_lifecycle(
             run.action("service.catalog", "success", json!({ "target": target_id }));
             Ok(())
         },
-        ServiceAction::Health => service_health(root, id, as_json, run),
-        ServiceAction::Prewarm => service_prewarm(root, as_json, run),
+        ServiceAction::Health => service_health(root, id, target_id, as_json, run),
+        ServiceAction::Prewarm => service_prewarm(root, target_id, as_json, run),
         ServiceAction::Status => {
             let statuses = aphrody_infra::lifecycle::get_service_statuses(root, target_id, id)?;
             if as_json {

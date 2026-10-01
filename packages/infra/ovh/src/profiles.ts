@@ -72,7 +72,7 @@ export interface ResolvedCredentials {
 /**
  * Parses credentials from a bash export file, an INI file, or an env-like file.
  */
-export function parseCredentialsText(content: string, sourceLabel: string): OvhClientOptions | null {
+export function parseCredentialsText(content: string, _sourceLabel: string): OvhClientOptions | null {
   // 1. Try bash export pattern: export OVH_APPLICATION_KEY="..."
   const bashMatch = {
     ak: content.match(/^\s*(?:export\s+)?(?:OVH_)?APPLICATION_KEY\s*=\s*["']?([^"'\s#]+)["']?/m)?.[1],

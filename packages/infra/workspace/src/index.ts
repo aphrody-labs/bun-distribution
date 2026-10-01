@@ -51,6 +51,7 @@ export { runDocsConsolidation } from "./docs-consolidation.ts";
 export { runGitignoredAudit } from "./gitignored-audit.ts";
 export { runRuntimeVersions } from "./runtime-versions.ts";
 export { runMonorepoGate } from "./monorepo-gate.ts";
+export { runInfraAudit, sourceInventory, observeCommand } from "./infra-audit.ts";
 
 export { runWindowsPaths, scanWindowsPaths } from "./windows-paths.ts";
 export type { WindowsPathFinding } from "./windows-paths.ts";

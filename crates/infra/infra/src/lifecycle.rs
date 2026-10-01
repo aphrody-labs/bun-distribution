@@ -43,6 +43,12 @@ pub struct ServiceActionResult {
     pub message: Option<String>,
 }
 
+/// Explicit host aliases always select SSH, including on Linux/WSL.
+/// Only the reserved `local` target selects this host's systemd instance.
+pub fn is_local_target(target_id: &str) -> bool {
+    target_id == "local"
+}
+
 pub fn execute_lifecycle(
     root: &Path,
     action: ServiceAction,
@@ -58,7 +64,7 @@ pub fn execute_lifecycle(
         bail!("aucun service correspondant à l'identifiant: {}", id.unwrap_or("<tous>"));
     }
 
-    let is_local = target_id == "local" || (cfg!(target_os = "linux") && target_id == "vps");
+    let is_local = is_local_target(target_id);
     let cmd_str = match action {
         ServiceAction::Catalog => bail!("action catalog traitée en amont"),
         ServiceAction::Status => "is-active",
@@ -154,7 +160,7 @@ pub fn get_service_statuses(
     let selected: Vec<_> =
         catalog.services.iter().filter(|s| id.is_none_or(|wanted| s.id == wanted)).collect();
 
-    let is_local = target_id == "local" || (cfg!(target_os = "linux") && target_id == "vps");
+    let is_local = is_local_target(target_id);
     let mut statuses = Vec::new();
 
     for service in selected {
@@ -192,4 +198,16 @@ pub fn get_service_statuses(
     }
 
     Ok(statuses)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::is_local_target;
+
+    #[test]
+    fn remote_aliases_never_select_local_systemd() {
+        assert!(is_local_target("local"));
+        assert!(!is_local_target("vps"));
+        assert!(!is_local_target("dbfr"));
+    }
 }

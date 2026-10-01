@@ -1,0 +1,2821 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-10-01T19:17:08.106365+00:00",
+  "deploymentQualified": false,
+  "scope": "Aphrody Infra Rust/Bun, WSL, VPS, dbfr; bounded Python and IECODE checks",
+  "privacy": {
+    "secretFilesReadByArchivist": false,
+    "rawA2ATranscriptsIncluded": false,
+    "internalRepositoryOnly": true
+  },
+  "restrictions": {
+    "cargoCompilation": false,
+    "nextBuild": false,
+    "browser": false,
+    "crawler": false,
+    "databaseWrites": false,
+    "productionDeployment": false
+  },
+  "sourceSnapshot": {
+    "head": "6e469ec9dd8cbdf6997e060b14798497c64452bc",
+    "dirty": true,
+    "statusSha256": "6316a5da2a515be03bb0c3ac46fc1d19c1ec87cf1562f7d7f9eb54222927a7d9",
+    "observedAt": "2026-10-01T18:57:06.811Z",
+    "inventorySha256": "7d689fdbe784cd339c6301b938fa09492875250b17cba9db5cc30c44c8d2afac",
+    "bunManifests": [
+      {
+        "path": "apps/koharu/editor/package.json",
+        "sha256": "48891f6279d4a4d2dbd864b7c4227dcb2e0150d747cc346d105a443d4693353b"
+      },
+      {
+        "path": "apps/rg/bot/package.json",
+        "sha256": "46e9041182f1f0256fdbe145bf11736966824e7f5b132ff89cc2b084f808377a"
+      },
+      {
+        "path": "apps/rg/website/package.json",
+        "sha256": "504ce56ce86c3391befe5ec8014af7f01a35965b7c514763200c5d55e68b5c4e"
+      },
+      {
+        "path": "apps/shenron/bot/package.json",
+        "sha256": "b9eb5ead858df2c60dcbde4a79b79ecb39b458de8588d9f9a41bc002092c2ec4"
+      },
+      {
+        "path": "apps/shenron/site/package.json",
+        "sha256": "9ebb51d7b360711ffdde21029152e836417727331bf85f74071a601decb0d784"
+      },
+      {
+        "path": "packages/ai/doc-ai/package.json",
+        "sha256": "6b40f086edba289072e53a6320af0fe0142446ecaab2a35752ecfcb191163aaf"
+      },
+      {
+        "path": "packages/ai/google/package.json",
+        "sha256": "3555eae5cfd0169b109f7bd3aa295e8c41d1ee3db76802c24b5176de26b41281"
+      },
+      {
+        "path": "packages/ai/xai/package.json",
+        "sha256": "adf4f3110644e0b72a7453fe45c26f8c082ee0416b7b5691ca307c9cf01e10c6"
+      },
+      {
+        "path": "packages/bun/test-dom/package.json",
+        "sha256": "19f18bed6eae9b4f189cd1118bdb84bbe8682c03dd4fd7b8ce3124ad7679450d"
+      },
+      {
+        "path": "packages/compat/n2b-client/package.json",
+        "sha256": "8e776c4fea8e9c784f4c39c8c3bd65318d23d293531a5cfa66b18af6d6218165"
+      },
+      {
+        "path": "packages/compat/n2b-plugin/package.json",
+        "sha256": "bd79add46b4f10586c674864a9bc8be443dcd51d102dfada730ac1116009bc1e"
+      },
+      {
+        "path": "packages/compat/n2b-shims/package.json",
+        "sha256": "eb8a5256d54651353de276f5566441381ee5a795b7f6841a6b4d3b7539f2da7d"
+      },
+      {
+        "path": "packages/compat/n2b-types/package.json",
+        "sha256": "fec3439063aa159063c9c98cfdd9ffe09671e52f5ce82b5208c511da0db4e792"
+      },
+      {
+        "path": "packages/discord/aphrody-messaging/package.json",
+        "sha256": "06b4db390a66e3f115daa80fc4befce4b114be854080ee9c83a566fbcf5461c7"
+      },
+      {
+        "path": "packages/discord/kit/package.json",
+        "sha256": "ec04a1e79d8a232d58e52a0d3ec322f31d7ae86c91104d32eafcdcd021eea5ee"
+      },
+      {
+        "path": "packages/fut/fut/package.json",
+        "sha256": "65302ef9ef60f3e6fbed92aa86734ffa53035fe27d91ec0cd48ad42cedd593eb"
+      },
+      {
+        "path": "packages/infra/ovh/package.json",
+        "sha256": "8e6162e9bc20eb2b315428d68eee276b6ee568994c81f3a319763a6766edf4f2"
+      },
+      {
+        "path": "packages/infra/paths/package.json",
+        "sha256": "464ea8cd22b6c068666067651424720ef30dd0124a093c4825904fee144535a5"
+      },
+      {
+        "path": "packages/infra/sql/package.json",
+        "sha256": "25fd2f29b5577f17d64b0d7287d38d8bea72b7b410126879c46849fff2c2401f"
+      },
+      {
+        "path": "packages/infra/workspace/package.json",
+        "sha256": "eaeceb09d92e9295050a2eebb85e87842fd59122013bd5473e3c67c98cf60c4a"
+      },
+      {
+        "path": "packages/interop/native/package.json",
+        "sha256": "7d612be5b0632943c777fb57f7d165f29ae08f0b59515cc33b37a16ee828522a"
+      },
+      {
+        "path": "packages/koharu/bridge/package.json",
+        "sha256": "8fff996f478f6284ac8476d63b4e495da9ba1135937b82fc891e6758d6c81e01"
+      },
+      {
+        "path": "packages/koharu/docs/package.json",
+        "sha256": "3ee9c470a9e8260f3aea2230a0a3f72812cf5298d5bab91c4607b66a3b34a35a"
+      },
+      {
+        "path": "packages/koharu/sdk/package.json",
+        "sha256": "eec8bfb376e596d4383a175f7d1273c6a0a6ec8e1e89048dbf2e45794efa2c17"
+      },
+      {
+        "path": "packages/koharu/ui/package.json",
+        "sha256": "36f9401a6568f3a3c202b901c867f9aff427189ee9c93c56802289fdfd5114e2"
+      },
+      {
+        "path": "packages/os/kernel-client/package.json",
+        "sha256": "495fb65d938a9cb099864fe7770b664dba802285ea7baa8660c571a3dc2b3824"
+      },
+      {
+        "path": "packages/os/winclean/package.json",
+        "sha256": "75ac8b1e379cc361aa122e7315093ad524794524c571cbe70f8ed688bed2b98e"
+      },
+      {
+        "path": "packages/rg/achillea-client/package.json",
+        "sha256": "7542d6e0ace2548feeb2f0ac329db64a79d9fb67a5dee69cea0a2bc67d88f064"
+      },
+      {
+        "path": "packages/rg/achillea-contract/package.json",
+        "sha256": "0d00673e2ab16c42f88654c1ec114c50921266de755429b6f8cded0024ca367f"
+      },
+      {
+        "path": "packages/rg/achillea-core/package.json",
+        "sha256": "283ba7938fad4e5e384b83975f9118ef4bc90273da39b6bf0c543bea7be82999"
+      },
+      {
+        "path": "packages/rg/achillea-types/package.json",
+        "sha256": "cfb1c9dd54c59539b76b4b11e29c639a2cc30d005ae46c98ac647cecdf76ed3b"
+      },
+      {
+        "path": "packages/rg/app-shell/package.json",
+        "sha256": "7b41a7267681d4d4faa60d8fd57304a9e262f4885ff3904f8e3b8ca03cb8d465"
+      },
+      {
+        "path": "packages/rg/assets/package.json",
+        "sha256": "18301d1d81ef25b40c0e94b06662abe344f3193521e35b4a4f5342e04a5d7a4b"
+      },
+      {
+        "path": "packages/rg/auth/package.json",
+        "sha256": "a4958a96e82d610eb3734656bee5eedc2ad836091552b57ac868723f0198b298"
+      },
+      {
+        "path": "packages/rg/azalee/package.json",
+        "sha256": "6df077ee001dc27c1b8514fc0ae59b31c7ad9f2a3b5ba83a5a6de71344d80456"
+      },
+      {
+        "path": "packages/rg/config/package.json",
+        "sha256": "7aff85d458cde4d188339b4b0a7f610af9f115966b65f6f6c5208ed5794bfe63"
+      },
+      {
+        "path": "packages/rg/cron/package.json",
+        "sha256": "0137f00c0d76ae184827c3441b1f65c80e0da0ba6e0569b8b073c75f6d80e4dc"
+      },
+      {
+        "path": "packages/rg/db/package.json",
+        "sha256": "5a7878a38429de3a3831b1a9dad7700e56e6b519de30e76df5889749e73520ab"
+      },
+      {
+        "path": "packages/rg/discord-sync/package.json",
+        "sha256": "5d536d211c034a803ea6c4b53c652e929a3dfdf08175400103ec22419e2f4c3e"
+      },
+      {
+        "path": "packages/rg/i18n/package.json",
+        "sha256": "d2a4e3f1c6d031dfd4be1b1ec7bd6eb09467b68688feddce1a4a97970d846ce7"
+      },
+      {
+        "path": "packages/rg/identity/package.json",
+        "sha256": "aabcc55f96e5af99d3886245a6fda272301afb642f8731341dcb612c3b85805c"
+      },
+      {
+        "path": "packages/rg/inagle/package.json",
+        "sha256": "b54d37533ad4b224715ec040c284fa0e48e0749bd2f86c23e0d8750936b88b8b"
+      },
+      {
+        "path": "packages/rg/inagle-cross/package.json",
+        "sha256": "0a63cb94657fb5594383babde825a1e29cfea97d63ba8421a0dfbd62064fa064"
+      },
+      {
+        "path": "packages/rg/patreon-bun/package.json",
+        "sha256": "b594c0f0081cb7d32bfa179031fa3cb60171fb54f148c3da900f30ed178287db"
+      },
+      {
+        "path": "packages/rg/patreon-bun/apps/worker-docs/package.json",
+        "sha256": "7510677325b97279a006b60970195538bff48e2b7ac76078847a0fe41d099be3"
+      },
+      {
+        "path": "packages/rg/patreon-bun/docs/package.json",
+        "sha256": "3afcc55240f50455e282c0134dc240879b6d68e4d1c388a182c7e320d8a28070"
+      },
+      {
+        "path": "packages/rg/patreon-bun/examples/bun-esm/package.json",
+        "sha256": "52810d555b6b8dde4045c5f46327d45aca963acdeaae7df800f02b12ab4d6dd1"
+      },
+      {
+        "path": "packages/rg/patreon-bun/examples/bun-webhook/package.json",
+        "sha256": "fbd18a94d4b18ec596b1a704af5ea4e28575809a24f178e125dcb0bd0e143dff"
+      },
+      {
+        "path": "packages/rg/patreon-bun/examples/cloudflare-webhook/package.json",
+        "sha256": "1ead9f7cbd8dcaea0746054b266ef8c6b435249efe4174d0de038a95277fd990"
+      },
+      {
+        "path": "packages/rg/preferences/package.json",
+        "sha256": "79250eb9c6098872c462d7a47af3816c3e6a8d71f2ab5fabd8492910853a576e"
+      },
+      {
+        "path": "packages/rg/search/package.json",
+        "sha256": "88759e2a104a81e45e3a581469ae8f6b41b569bd932be679dce3a4a42a0f5154"
+      },
+      {
+        "path": "packages/rg/types/package.json",
+        "sha256": "a2dcc1b18e2178ee4c9384c39fc11de6dbb732e7047ab0519770046e29d8919a"
+      },
+      {
+        "path": "packages/rg/ui/package.json",
+        "sha256": "ed1a76a4e848e15dc212d9fecc695357ec2ef4dbb302a729e4f3fac2d8ddcaf4"
+      },
+      {
+        "path": "packages/shenron/api/package.json",
+        "sha256": "5a8816b6ec2989ad03ba8c8ec745bb55b44f1737febe7299838772da72f84e20"
+      },
+      {
+        "path": "packages/shenron/auth/package.json",
+        "sha256": "40c850855286e0b5045cecf2d601bf6aaa036827da4b8c2aac65e847b850f088"
+      },
+      {
+        "path": "packages/shenron/config/package.json",
+        "sha256": "9b98ae44703c38af25c46ef3d5c3fb511550fa79ca04f585a0ab1ba2007a701d"
+      },
+      {
+        "path": "packages/shenron/db/package.json",
+        "sha256": "b4a77d31f0c4893b00daa9c570a49cdf2c3383deb90e3d280422d5505481fb3c"
+      },
+      {
+        "path": "packages/shenron/images/package.json",
+        "sha256": "b6901cd08995b55df9e35a7ee7ee8450c32d3f73bb321bedce46a802d7eac672"
+      },
+      {
+        "path": "packages/shenron/pipeline/package.json",
+        "sha256": "2410f199e6bb48ec61265b314cf6d8bf9d9ed71d7aa8ff339014cf27c520b49c"
+      },
+      {
+        "path": "packages/shenron/ui/package.json",
+        "sha256": "3414f230982fbcdfcd44a7b40c2985e26e0245c24eddff37b021bd552122509c"
+      },
+      {
+        "path": "packages/ui/assets/package.json",
+        "sha256": "6071fd925774b753a67627544fea32881f68b18fa3929204b08a9d538a7f6bd3"
+      },
+      {
+        "path": "packages/ui/canvas/package.json",
+        "sha256": "0ba207299f4e131cc7e539e225a280091dd0ea706d9e3b8adc4e7a0ac7c149a9"
+      },
+      {
+        "path": "packages/ui/eslint-plugin-m3/package.json",
+        "sha256": "364f78cf23b49daa1ff9dc44fcefd032da2bd1b86937393fc87e5163c3392f08"
+      },
+      {
+        "path": "packages/ui/m3/package.json",
+        "sha256": "828a2389791bbeb9b7b046931378ee69e2449b0e545bd84edd55ecb86de60d7a"
+      },
+      {
+        "path": "packages/ui/m3-ai/package.json",
+        "sha256": "161c3753aa2af095804fcebf3907a2bcdf41f5c6e6e809c594e1ec8b5075831e"
+      },
+      {
+        "path": "packages/ui/m3-config/package.json",
+        "sha256": "9aa1e4a396046754813df914701cef1323ead0447d8f48e44b9dcc0e2ff48b65"
+      },
+      {
+        "path": "packages/ui/m3-design/package.json",
+        "sha256": "b65100d14594f407789c0781fc5d88f6e791e8fa5460d5d0859a5054e1852ddc"
+      },
+      {
+        "path": "packages/ui/m3-explorer/package.json",
+        "sha256": "7ba7447194a25c8391b2e2efb3c14ade1b055d6345373151a770f64041be1cf6"
+      },
+      {
+        "path": "packages/ui/m3-fonts/package.json",
+        "sha256": "35eb2516f29297ddb180a446d331b46acb30c9030eca97c6f0f115c845649ed1"
+      },
+      {
+        "path": "packages/ui/m3-forms/package.json",
+        "sha256": "28cabd8158522a245c5885844628c34490baa0cd2c181c4b019e23487c55351c"
+      },
+      {
+        "path": "packages/ui/m3-icons/package.json",
+        "sha256": "dbf2e78cc977a0b2d97c8d97384f59458a9006e97f63bf60d42b6fef08845959"
+      },
+      {
+        "path": "packages/ui/m3-motion/package.json",
+        "sha256": "bb3e9ffddec020c60dbe0186fc09402de9566b5f563bcd2156dc7602df319f2a"
+      },
+      {
+        "path": "packages/ui/m3-next/package.json",
+        "sha256": "d15d44941c142da09685d2e7a2ca8aa2d241e919984fea708ca979e433c74f6e"
+      },
+      {
+        "path": "packages/ui/m3-next-migrate/package.json",
+        "sha256": "43de2d95f39ecc9dcdb9972432494ec1fde2dbfdbc95e267c0175c9e06615135"
+      },
+      {
+        "path": "packages/ui/m3-primitives/package.json",
+        "sha256": "f7852dc8348c86849d9a278c0b080823dcf87f9f5c8c31fc5a92cb082c1b8398"
+      },
+      {
+        "path": "packages/ui/m3-react/package.json",
+        "sha256": "189bda762cba8780e51d2eacf81c0250a0d8a9b26a090cc409e7531e82059f4a"
+      },
+      {
+        "path": "packages/ui/m3-reader/package.json",
+        "sha256": "247089c08346f524562ffd7bba9298586cb94f454618ed497b291ba36c0b233e"
+      },
+      {
+        "path": "packages/ui/m3-theme/package.json",
+        "sha256": "14cb636b5baa90ed9cfe3c4420ae2421a3780ac468992f512f3920e51d948eb4"
+      },
+      {
+        "path": "packages/ui/m3-tokens/package.json",
+        "sha256": "3c974912af3f299c6a5cc2f96a7013db813d9bd7405b160919c80dd6ba3a57c7"
+      },
+      {
+        "path": "packages/ui/material-web/package.json",
+        "sha256": "6ddc349d5406f814b4289dbbd8886b99769d761ce5e7cf57b13b54ff0ee46f76"
+      },
+      {
+        "path": "packages/ui/scaffold/package.json",
+        "sha256": "2e8160a5710adb1353c84f03e31fc807b550e9e79ff0715e19c879d99d6be683"
+      },
+      {
+        "path": "packages/ui/web-to-tauri/package.json",
+        "sha256": "2d3d5a1c0fe3d35a353a6dca46f0a2071305d0975974765537c05001dd8657a4"
+      },
+      {
+        "path": "packages/web/agent-browser/package.json",
+        "sha256": "581280b03e449232df124c068f6cad36a2426f583c9a0e8038293d8614acd3b3"
+      },
+      {
+        "path": "packages/web/aphrody-web-test/package.json",
+        "sha256": "1a4d6991d74bf2fbdfe8870b4ea3db1bcab4a35bcb79f19ea76e5c6fb88a6924"
+      },
+      {
+        "path": "packages/web/x/package.json",
+        "sha256": "f318894815b8db92c9ef5226faeacef0f2524a83ac7b6bd76d8aa42d8a4e9510"
+      }
+    ],
+    "controlFiles": [
+      {
+        "path": "Cargo.toml",
+        "sha256": "d1cb38dc36ae029ca7cc5d62215317ad24ad3435dab6545a4b87720eefbe57ae"
+      },
+      {
+        "path": "Cargo.lock",
+        "sha256": "6099c63e26dc0d72495b0f023e47492d87cb073d9c1447410b395a2656a2839a"
+      },
+      {
+        "path": "package.json",
+        "sha256": "f7338dda968c3ede437a7247c36de60710edf5c6693cd0e75107277199997ea1"
+      },
+      {
+        "path": "bun.lock",
+        "sha256": "8d4da2e700ae4734200670f5eca81a59ca72e1eae6c08d58f043df4f802e37ba"
+      },
+      {
+        "path": "config/service-catalog.json",
+        "sha256": "a1b04de548fbcf0ca2ff1bb631d68ff1e78637740c1adc8cba417907e68c8ca7"
+      },
+      {
+        "path": "config/pipeline.json",
+        "sha256": "c1629d1dc53cbe4c485bbc3e448c144995573b52941b1985fa31dcb1be60a10a"
+      }
+    ]
+  },
+  "inventory": {
+    "rustCrates": 185,
+    "infraRustCrates": 7,
+    "bunPackages": 85,
+    "infraSourceFiles": 181,
+    "scripts": 849,
+    "unexecutedChecks": 131,
+    "missingGates": 199
+  },
+  "gateSnapshot": {
+    "generatedAt": "2026-10-01T18:58:27.060Z",
+    "checks": 105,
+    "passed": 87,
+    "failed": 18,
+    "deferred": 131,
+    "missingGates": 199,
+    "status": "failed",
+    "immutable": true,
+    "laterCorrectionsDoNotRewriteSnapshot": true,
+    "commands": [
+      {
+        "name": "Frozen Bun install",
+        "argv": [
+          "bun",
+          "install",
+          "--frozen-lockfile",
+          "--dry-run",
+          "--ignore-scripts"
+        ],
+        "cwd": "/home/aphro/aphrody",
+        "exitCode": 0,
+        "status": "passed"
+      },
+      {
+        "name": "Rust formatting",
+        "argv": [
+          "cargo",
+          "fmt",
+          "--all",
+          "--check"
+        ],
+        "cwd": "/home/aphro/aphrody",
+        "exitCode": 1,
+        "status": "failed"
+      },
+      {
+        "name": "Rust workspace metadata (offline, no dependencies)",
+        "argv": [
+          "cargo",
+          "metadata",
+          "--no-deps",
+          "--offline",
+          "--locked",
+          "--format-version=1"
+        ],
+        "cwd": "/home/aphro/aphrody",
+        "exitCode": 0,
+        "status": "passed"
+      },
+      {
+        "name": "@aphrody/koharu-editor-example: typecheck",
+        "argv": [
+          "tsc",
+          "--noEmit"
+        ],
+        "cwd": "/home/aphro/aphrody/apps/koharu/editor",
+        "exitCode": 0,
+        "status": "passed"
+      },
+      {
+        "name": "@aphrody/koharu-editor-example: lint",
+        "argv": [
+          "oxlint",
+          "-c",
+          ".oxlintrc.json"
+        ],
+        "cwd": "/home/aphro/aphrody/apps/koharu/editor",
+        "exitCode": 0,
+        "status": "passed"
+      },
+      {
+        "name": "@rosegriffon/bot: typecheck",
+        "argv": [
+          "bun",
+          "--bun",
+          "tsc",
+          "--noEmit"
+        ],
+        "cwd": "/home/aphro/aphrody/apps/rg/bot",
+        "exitCode": 1,
+        "status": "failed"
+      },
+      {
+        "name": "@rosegriffon/bot: lint",
+        "argv": [
+          "oxlint",
+          "src"
+        ],
+        "cwd": "/home/aphro/aphrody/apps/rg/bot",
+        "exitCode": 0,
+        "status": "passed"
+      },
+      {
+        "name": "@rosegriffon/website: typecheck",
+        "argv": [
+          "bun",
+          "--bun",
+          "tsc",
+          "--noEmit"
+        ],
+        "cwd": "/home/aphro/aphrody/apps/rg/website",
+        "exitCode": 1,
+        "status": "failed"
+      },
+      {
+        "name": "@rosegriffon/website: format",
+        "argv": [
+          "oxfmt",
+          "--check",
+          "."
+        ],
+        "cwd": "/home/aphro/aphrody/apps/rg/website",
+        "exitCode": 1,
+        "status": "failed"
+      },
+      {
+        "name": "@shenron/bot: typecheck",
+        "argv": [
+          "tsgo",
+          "-p",
+          "tsconfig.json",
+          "--noEmit"
+        ],
+        "cwd": "/home/aphro/aphrody/apps/shenron/bot",
+        "exitCode": 0,
+        "status": "passed"
+      },
+      {
+        "name": "@shenron/bot: lint",
+        "argv": [
+          "oxlint"
+        ],
+        "cwd": "/home/aphro/aphrody/apps/shenron/bot",
+        "exitCode": 0,
+        "status": "passed"
+      },
+      {
+        "name": "@shenron/site: typecheck",
+        "argv": [
+          "tsgo",
+          "-p",
+          "tsconfig.json",
+          "--noEmit"
+        ],
+        "cwd": "/home/aphro/aphrody/apps/shenron/site",
+        "exitCode": 0,
+        "status": "passed"
+      },
+      {
+        "name": "@shenron/site: lint",
+        "argv": [
+          "oxlint",
+          "-c",
+          ".oxlintrc.json"
+        ],
+        "cwd": "/home/aphro/aphrody/apps/shenron/site",
+        "exitCode": 0,
+        "status": "passed"
+      },
+      {
+        "name": "@aphrody/doc-ai: typecheck",
+        "argv": [
+          "tsc",
+          "-p",
+          "tsconfig.json",
+          "--noEmit"
+        ],
+        "cwd": "/home/aphro/aphrody/packages/ai/doc-ai",
+        "exitCode": 0,
+        "status": "passed"
+      },
+      {
+        "name": "@aphrody/xai: typecheck",
+        "argv": [
+          "tsc",
+          "--noEmit"
+        ],
+        "cwd": "/home/aphro/aphrody/packages/ai/xai",
+        "exitCode": 0,
+        "status": "passed"
+      },
+      {
+        "name": "@aphrody/bun-test-dom: typecheck",
+        "argv": [
+          "bunx",
+          "--no-install",
+          "--bun",
+          "tsc",
+          "--project",
+          "tsconfig.json",
+          "--noEmit"
+        ],
+        "cwd": "/home/aphro/aphrody/packages/bun/test-dom",
+        "exitCode": 0,
+        "status": "passed"
+      },
+      {
+        "name": "@aphrody/n2b-core: typecheck",
+        "argv": [
+          "bunx",
+          "--no-install",
+          "--bun",
+          "tsc",
+          "--noEmit"
+        ],
+        "cwd": "/home/aphro/aphrody/packages/compat/n2b-client",
+        "exitCode": 0,
+        "status": "passed"
+      },
+      {
+        "name": "@aphrody/n2b-plugin: typecheck",
+        "argv": [
+          "bunx",
+          "--no-install",
+          "--bun",
+          "tsc",
+          "--noEmit"
+        ],
+        "cwd": "/home/aphro/aphrody/packages/compat/n2b-plugin",
+        "exitCode": 0,
+        "status": "passed"
+      },
+      {
+        "name": "@aphrody/n2b-shims: typecheck",
+        "argv": [
+          "bunx",
+          "--no-install",
+          "--bun",
+          "tsc",
+          "--noEmit"
+        ],
+        "cwd": "/home/aphro/aphrody/packages/compat/n2b-shims",
+        "exitCode": 0,
+        "status": "passed"
+      },
+      {
+        "name": "@aphrody/n2b-types: typecheck",
+        "argv": [
+          "bunx",
+          "--no-install",
+          "--bun",
+          "tsc",
+          "--noEmit"
+        ],
+        "cwd": "/home/aphro/aphrody/packages/compat/n2b-types",
+        "exitCode": 0,
+        "status": "passed"
+      },
+      {
+        "name": "@aphrody/messaging: typecheck",
+        "argv": [
+          "tsc",
+          "--noEmit",
+          "-p",
+          "tsconfig.json"
+        ],
+        "cwd": "/home/aphro/aphrody/packages/discord/aphrody-messaging",
+        "exitCode": 0,
+        "status": "passed"
+      },
+      {
+        "name": "@aphrody/discord-kit: typecheck",
+        "argv": [
+          "tsc",
+          "--noEmit",
+          "-p",
+          "tsconfig.json"
+        ],
+        "cwd": "/home/aphro/aphrody/packages/discord/kit",
+        "exitCode": 0,
+        "status": "passed"
+      },
+      {
+        "name": "@aphrody/fut: typecheck",
+        "argv": [
+          "tsc",
+          "--noEmit"
+        ],
+        "cwd": "/home/aphro/aphrody/packages/fut/fut",
+        "exitCode": 1,
+        "status": "failed"
+      },
+      {
+        "name": "@aphrody/ovh: typecheck",
+        "argv": [
+          "tsc",
+          "--noEmit"
+        ],
+        "cwd": "/home/aphro/aphrody/packages/infra/ovh",
+        "exitCode": 1,
+        "status": "failed"
+      },
+      {
+        "name": "@aphrody/ovh: test",
+        "argv": [
+          "bun",
+          "test"
+        ],
+        "cwd": "/home/aphro/aphrody/packages/infra/ovh",
+        "exitCode": 0,
+        "status": "passed"
+      },
+      {
+        "name": "@aphrody/paths: typecheck",
+        "argv": [
+          "bunx",
+          "--no-install",
+          "--bun",
+          "tsc",
+          "--noEmit",
+          "--target",
+          "esnext",
+          "--module",
+          "preserve",
+          "--moduleResolution",
+          "bundler",
+          "--allowImportingTsExtensions",
+          "--types",
+          "bun",
+          "src/index.ts",
+          "src/cli.ts"
+        ],
+        "cwd": "/home/aphro/aphrody/packages/infra/paths",
+        "exitCode": 0,
+        "status": "passed"
+      },
+      {
+        "name": "@aphrody/sql: typecheck",
+        "argv": [
+          "tsgo",
+          "-p",
+          "tsconfig.json",
+          "--noEmit"
+        ],
+        "cwd": "/home/aphro/aphrody/packages/infra/sql",
+        "exitCode": 0,
+        "status": "passed"
+      },
+      {
+        "name": "@aphrody/sql: lint",
+        "argv": [
+          "oxlint",
+          "-c",
+          "../../../.oxlintrc.json",
+          "src",
+          "test"
+        ],
+        "cwd": "/home/aphro/aphrody/packages/infra/sql",
+        "exitCode": 0,
+        "status": "passed"
+      },
+      {
+        "name": "@aphrody/sql: test",
+        "argv": [
+          "bun",
+          "test"
+        ],
+        "cwd": "/home/aphro/aphrody/packages/infra/sql",
+        "exitCode": 0,
+        "status": "passed"
+      },
+      {
+        "name": "@aphrody/workspace: typecheck",
+        "argv": [
+          "bunx",
+          "--no-install",
+          "--bun",
+          "tsc",
+          "--project",
+          "tsconfig.json",
+          "--noEmit"
+        ],
+        "cwd": "/home/aphro/aphrody/packages/infra/workspace",
+        "exitCode": 0,
+        "status": "passed"
+      },
+      {
+        "name": "@aphrody/workspace: lint",
+        "argv": [
+          "oxlint",
+          "src",
+          "test"
+        ],
+        "cwd": "/home/aphro/aphrody/packages/infra/workspace",
+        "exitCode": 0,
+        "status": "passed"
+      },
+      {
+        "name": "@aphrody/workspace: format",
+        "argv": [
+          "oxfmt",
+          "--check",
+          "src",
+          "test",
+          "package.json",
+          "tsconfig.json"
+        ],
+        "cwd": "/home/aphro/aphrody/packages/infra/workspace",
+        "exitCode": 0,
+        "status": "passed"
+      },
+      {
+        "name": "@aphrody/workspace: test",
+        "argv": [
+          "bun",
+          "test",
+          "test"
+        ],
+        "cwd": "/home/aphro/aphrody/packages/infra/workspace",
+        "exitCode": 0,
+        "status": "passed"
+      },
+      {
+        "name": "@aphrody/bun: typecheck",
+        "argv": [
+          "bunx",
+          "--no-install",
+          "--bun",
+          "tsc",
+          "--project",
+          "tsconfig.json",
+          "--noEmit"
+        ],
+        "cwd": "/home/aphro/aphrody/packages/interop/native",
+        "exitCode": 0,
+        "status": "passed"
+      },
+      {
+        "name": "@koharu/bridge: typecheck",
+        "argv": [
+          "tsc",
+          "--noEmit"
+        ],
+        "cwd": "/home/aphro/aphrody/packages/koharu/bridge",
+        "exitCode": 0,
+        "status": "passed"
+      },
+      {
+        "name": "@koharu/bridge: lint",
+        "argv": [
+          "oxlint",
+          "src",
+          "--ignore-pattern",
+          "src/protocol.ts",
+          "--ignore-pattern",
+          "src/wasm"
+        ],
+        "cwd": "/home/aphro/aphrody/packages/koharu/bridge",
+        "exitCode": 0,
+        "status": "passed"
+      },
+      {
+        "name": "@koharu/sdk: typecheck",
+        "argv": [
+          "tsc",
+          "--noEmit"
+        ],
+        "cwd": "/home/aphro/aphrody/packages/koharu/sdk",
+        "exitCode": 0,
+        "status": "passed"
+      },
+      {
+        "name": "@aphrody/koharu-ui: typecheck",
+        "argv": [
+          "tsc",
+          "--noEmit"
+        ],
+        "cwd": "/home/aphro/aphrody/packages/koharu/ui",
+        "exitCode": 0,
+        "status": "passed"
+      },
+      {
+        "name": "@aphrody/os: typecheck",
+        "argv": [
+          "tsc",
+          "-p",
+          "tsconfig.json",
+          "--noEmit"
+        ],
+        "cwd": "/home/aphro/aphrody/packages/os/kernel-client",
+        "exitCode": 0,
+        "status": "passed"
+      },
+      {
+        "name": "@aphrody/winclean: typecheck",
+        "argv": [
+          "tsc",
+          "--noEmit",
+          "-p",
+          "."
+        ],
+        "cwd": "/home/aphro/aphrody/packages/os/winclean",
+        "exitCode": 0,
+        "status": "passed"
+      },
+      {
+        "name": "@rosegriffon/achillea-client: typecheck",
+        "argv": [
+          "bun",
+          "--bun",
+          "tsc",
+          "--noEmit"
+        ],
+        "cwd": "/home/aphro/aphrody/packages/rg/achillea-client",
+        "exitCode": 0,
+        "status": "passed"
+      },
+      {
+        "name": "@rosegriffon/achillea-contract: typecheck",
+        "argv": [
+          "bun",
+          "--bun",
+          "tsc",
+          "--noEmit"
+        ],
+        "cwd": "/home/aphro/aphrody/packages/rg/achillea-contract",
+        "exitCode": 0,
+        "status": "passed"
+      },
+      {
+        "name": "@rosegriffon/achillea-core: typecheck",
+        "argv": [
+          "bun",
+          "--bun",
+          "tsc",
+          "--noEmit"
+        ],
+        "cwd": "/home/aphro/aphrody/packages/rg/achillea-core",
+        "exitCode": 0,
+        "status": "passed"
+      },
+      {
+        "name": "@rosegriffon/achillea-types: typecheck",
+        "argv": [
+          "bun",
+          "--bun",
+          "tsc",
+          "--noEmit"
+        ],
+        "cwd": "/home/aphro/aphrody/packages/rg/achillea-types",
+        "exitCode": 0,
+        "status": "passed"
+      },
+      {
+        "name": "@rosegriffon/app-shell: typecheck",
+        "argv": [
+          "bun",
+          "--bun",
+          "tsc",
+          "--noEmit"
+        ],
+        "cwd": "/home/aphro/aphrody/packages/rg/app-shell",
+        "exitCode": 1,
+        "status": "failed"
+      },
+      {
+        "name": "@rosegriffon/auth: typecheck",
+        "argv": [
+          "bun",
+          "--bun",
+          "tsc",
+          "--noEmit"
+        ],
+        "cwd": "/home/aphro/aphrody/packages/rg/auth",
+        "exitCode": 0,
+        "status": "passed"
+      },
+      {
+        "name": "@rosegriffon/azalee: typecheck",
+        "argv": [
+          "bun",
+          "--bun",
+          "tsc",
+          "--noEmit"
+        ],
+        "cwd": "/home/aphro/aphrody/packages/rg/azalee",
+        "exitCode": 0,
+        "status": "passed"
+      },
+      {
+        "name": "@rosegriffon/cron: typecheck",
+        "argv": [
+          "bun",
+          "--bun",
+          "tsc",
+          "-p",
+          "tsconfig.typecheck.json",
+          "--noEmit"
+        ],
+        "cwd": "/home/aphro/aphrody/packages/rg/cron",
+        "exitCode": 1,
+        "status": "failed"
+      },
+      {
+        "name": "@rosegriffon/db: typecheck",
+        "argv": [
+          "bun",
+          "--bun",
+          "tsc",
+          "--noEmit"
+        ],
+        "cwd": "/home/aphro/aphrody/packages/rg/db",
+        "exitCode": 0,
+        "status": "passed"
+      },
+      {
+        "name": "@rosegriffon/i18n: typecheck",
+        "argv": [
+          "bun",
+          "--bun",
+          "tsc",
+          "--noEmit"
+        ],
+        "cwd": "/home/aphro/aphrody/packages/rg/i18n",
+        "exitCode": 0,
+        "status": "passed"
+      },
+      {
+        "name": "@rosegriffon/identity: typecheck",
+        "argv": [
+          "bun",
+          "--bun",
+          "tsc",
+          "--noEmit"
+        ],
+        "cwd": "/home/aphro/aphrody/packages/rg/identity",
+        "exitCode": 0,
+        "status": "passed"
+      },
+      {
+        "name": "@rosegriffon/inagle: typecheck",
+        "argv": [
+          "bun",
+          "--bun",
+          "tsc",
+          "-p",
+          "tsconfig.json",
+          "--noEmit"
+        ],
+        "cwd": "/home/aphro/aphrody/packages/rg/inagle",
+        "exitCode": 1,
+        "status": "failed"
+      },
+      {
+        "name": "@rosegriffon/inagle-cross: typecheck",
+        "argv": [
+          "bun",
+          "--bun",
+          "tsc",
+          "--noEmit"
+        ],
+        "cwd": "/home/aphro/aphrody/packages/rg/inagle-cross",
+        "exitCode": 0,
+        "status": "passed"
+      },
+      {
+        "name": "@rosegriffon/patreon-bun: typecheck",
+        "argv": [
+          "bun",
+          "--bun",
+          "tsc",
+          "--noEmit"
+        ],
+        "cwd": "/home/aphro/aphrody/packages/rg/patreon-bun",
+        "exitCode": 0,
+        "status": "passed"
+      },
+      {
+        "name": "@rosegriffon/patreon-bun-worker-docs: typecheck",
+        "argv": [
+          "bun",
+          "--bun",
+          "tsc",
+          "-p",
+          "tsconfig.json",
+          "--noEmit"
+        ],
+        "cwd": "/home/aphro/aphrody/packages/rg/patreon-bun/apps/worker-docs",
+        "exitCode": 1,
+        "status": "failed"
+      },
+      {
+        "name": "@rosegriffon/patreon-bun-docs: typecheck",
+        "argv": [
+          "bun",
+          "--bun",
+          "tsc",
+          "-p",
+          "tsconfig.json",
+          "--noEmit"
+        ],
+        "cwd": "/home/aphro/aphrody/packages/rg/patreon-bun/docs",
+        "exitCode": 1,
+        "status": "failed"
+      },
+      {
+        "name": "@rosegriffon/patreon-bun-bun-esm: typecheck",
+        "argv": [
+          "bun",
+          "--bun",
+          "tsc",
+          "-p",
+          "tsconfig.json",
+          "--noEmit"
+        ],
+        "cwd": "/home/aphro/aphrody/packages/rg/patreon-bun/examples/bun-esm",
+        "exitCode": 1,
+        "status": "failed"
+      },
+      {
+        "name": "@rosegriffon/patreon-bun-bun-webhook: typecheck",
+        "argv": [
+          "tsc",
+          "--noEmit"
+        ],
+        "cwd": "/home/aphro/aphrody/packages/rg/patreon-bun/examples/bun-webhook",
+        "exitCode": 1,
+        "status": "failed"
+      },
+      {
+        "name": "@rosegriffon/patreon-bun-cloudflare-webhook: typecheck",
+        "argv": [
+          "bun",
+          "--bun",
+          "tsc",
+          "-p",
+          "tsconfig.json",
+          "--noEmit"
+        ],
+        "cwd": "/home/aphro/aphrody/packages/rg/patreon-bun/examples/cloudflare-webhook",
+        "exitCode": 1,
+        "status": "failed"
+      },
+      {
+        "name": "@rosegriffon/preferences: typecheck",
+        "argv": [
+          "bun",
+          "--bun",
+          "tsc",
+          "--noEmit"
+        ],
+        "cwd": "/home/aphro/aphrody/packages/rg/preferences",
+        "exitCode": 0,
+        "status": "passed"
+      },
+      {
+        "name": "@rosegriffon/search: typecheck",
+        "argv": [
+          "bun",
+          "--bun",
+          "tsc",
+          "--noEmit"
+        ],
+        "cwd": "/home/aphro/aphrody/packages/rg/search",
+        "exitCode": 0,
+        "status": "passed"
+      },
+      {
+        "name": "@rosegriffon/types: typecheck",
+        "argv": [
+          "bun",
+          "--bun",
+          "tsc",
+          "--noEmit"
+        ],
+        "cwd": "/home/aphro/aphrody/packages/rg/types",
+        "exitCode": 0,
+        "status": "passed"
+      },
+      {
+        "name": "@rosegriffon/ui: typecheck",
+        "argv": [
+          "bun",
+          "--bun",
+          "tsc",
+          "--noEmit"
+        ],
+        "cwd": "/home/aphro/aphrody/packages/rg/ui",
+        "exitCode": 0,
+        "status": "passed"
+      },
+      {
+        "name": "@shenron/api: typecheck",
+        "argv": [
+          "tsgo",
+          "-p",
+          "tsconfig.json",
+          "--noEmit"
+        ],
+        "cwd": "/home/aphro/aphrody/packages/shenron/api",
+        "exitCode": 0,
+        "status": "passed"
+      },
+      {
+        "name": "@shenron/api: lint",
+        "argv": [
+          "oxlint",
+          "-c",
+          "../.oxlintrc.json"
+        ],
+        "cwd": "/home/aphro/aphrody/packages/shenron/api",
+        "exitCode": 0,
+        "status": "passed"
+      },
+      {
+        "name": "@shenron/auth: typecheck",
+        "argv": [
+          "tsgo",
+          "-p",
+          "tsconfig.json",
+          "--noEmit"
+        ],
+        "cwd": "/home/aphro/aphrody/packages/shenron/auth",
+        "exitCode": 0,
+        "status": "passed"
+      },
+      {
+        "name": "@shenron/auth: lint",
+        "argv": [
+          "oxlint",
+          "-c",
+          "../.oxlintrc.json"
+        ],
+        "cwd": "/home/aphro/aphrody/packages/shenron/auth",
+        "exitCode": 0,
+        "status": "passed"
+      },
+      {
+        "name": "@shenron/config: typecheck",
+        "argv": [
+          "tsgo",
+          "-p",
+          "tsconfig.json",
+          "--noEmit"
+        ],
+        "cwd": "/home/aphro/aphrody/packages/shenron/config",
+        "exitCode": 0,
+        "status": "passed"
+      },
+      {
+        "name": "@shenron/config: lint",
+        "argv": [
+          "oxlint",
+          "-c",
+          "../.oxlintrc.json"
+        ],
+        "cwd": "/home/aphro/aphrody/packages/shenron/config",
+        "exitCode": 0,
+        "status": "passed"
+      },
+      {
+        "name": "@shenron/db: typecheck",
+        "argv": [
+          "tsgo",
+          "-p",
+          "tsconfig.json",
+          "--noEmit"
+        ],
+        "cwd": "/home/aphro/aphrody/packages/shenron/db",
+        "exitCode": 0,
+        "status": "passed"
+      },
+      {
+        "name": "@shenron/db: lint",
+        "argv": [
+          "oxlint",
+          "-c",
+          "../.oxlintrc.json"
+        ],
+        "cwd": "/home/aphro/aphrody/packages/shenron/db",
+        "exitCode": 0,
+        "status": "passed"
+      },
+      {
+        "name": "@shenron/images: typecheck",
+        "argv": [
+          "tsgo",
+          "-p",
+          "tsconfig.json",
+          "--noEmit"
+        ],
+        "cwd": "/home/aphro/aphrody/packages/shenron/images",
+        "exitCode": 0,
+        "status": "passed"
+      },
+      {
+        "name": "@shenron/pipeline: typecheck",
+        "argv": [
+          "tsgo",
+          "-p",
+          "tsconfig.json",
+          "--noEmit"
+        ],
+        "cwd": "/home/aphro/aphrody/packages/shenron/pipeline",
+        "exitCode": 0,
+        "status": "passed"
+      },
+      {
+        "name": "@shenron/pipeline: lint",
+        "argv": [
+          "oxlint",
+          "-c",
+          "../.oxlintrc.json"
+        ],
+        "cwd": "/home/aphro/aphrody/packages/shenron/pipeline",
+        "exitCode": 1,
+        "status": "failed"
+      },
+      {
+        "name": "@shenron/ui: typecheck",
+        "argv": [
+          "tsgo",
+          "-p",
+          "tsconfig.json",
+          "--noEmit"
+        ],
+        "cwd": "/home/aphro/aphrody/packages/shenron/ui",
+        "exitCode": 0,
+        "status": "passed"
+      },
+      {
+        "name": "@shenron/ui: lint",
+        "argv": [
+          "oxlint",
+          "-c",
+          "../.oxlintrc.json"
+        ],
+        "cwd": "/home/aphro/aphrody/packages/shenron/ui",
+        "exitCode": 0,
+        "status": "passed"
+      },
+      {
+        "name": "@aphrody/assets: typecheck",
+        "argv": [
+          "tsc",
+          "--noEmit"
+        ],
+        "cwd": "/home/aphro/aphrody/packages/ui/assets",
+        "exitCode": 0,
+        "status": "passed"
+      },
+      {
+        "name": "@aphrody/canvas: lint",
+        "argv": [
+          "oxlint",
+          "-c",
+          ".oxlintrc.json",
+          "--no-ignore",
+          "index.ts",
+          "site.ts",
+          "scripts/vendor-upstream.ts",
+          "index.test.ts",
+          "native.test.ts",
+          "vendor.test.ts",
+          "types.check.ts"
+        ],
+        "cwd": "/home/aphro/aphrody/packages/ui/canvas",
+        "exitCode": 0,
+        "status": "passed"
+      },
+      {
+        "name": "@aphrody/m3: typecheck",
+        "argv": [
+          "tsgo",
+          "-p",
+          "tsconfig.json",
+          "--noEmit"
+        ],
+        "cwd": "/home/aphro/aphrody/packages/ui/m3",
+        "exitCode": 1,
+        "status": "failed"
+      },
+      {
+        "name": "@aphrody/m3-ai: typecheck",
+        "argv": [
+          "tsc",
+          "--noEmit"
+        ],
+        "cwd": "/home/aphro/aphrody/packages/ui/m3-ai",
+        "exitCode": 0,
+        "status": "passed"
+      },
+      {
+        "name": "@aphrody/m3-config: typecheck",
+        "argv": [
+          "tsgo",
+          "-p",
+          "tsconfig.check.json",
+          "--noEmit"
+        ],
+        "cwd": "/home/aphro/aphrody/packages/ui/m3-config",
+        "exitCode": 0,
+        "status": "passed"
+      },
+      {
+        "name": "@aphrody/m3-design: typecheck",
+        "argv": [
+          "tsc",
+          "--noEmit"
+        ],
+        "cwd": "/home/aphro/aphrody/packages/ui/m3-design",
+        "exitCode": 0,
+        "status": "passed"
+      },
+      {
+        "name": "@aphrody/m3-explorer: typecheck",
+        "argv": [
+          "tsc",
+          "--noEmit"
+        ],
+        "cwd": "/home/aphro/aphrody/packages/ui/m3-explorer",
+        "exitCode": 0,
+        "status": "passed"
+      },
+      {
+        "name": "@aphrody/m3-fonts: typecheck",
+        "argv": [
+          "tsgo",
+          "-p",
+          "tsconfig.json",
+          "--noEmit"
+        ],
+        "cwd": "/home/aphro/aphrody/packages/ui/m3-fonts",
+        "exitCode": 0,
+        "status": "passed"
+      },
+      {
+        "name": "@aphrody/m3-forms: typecheck",
+        "argv": [
+          "tsc",
+          "--noEmit"
+        ],
+        "cwd": "/home/aphro/aphrody/packages/ui/m3-forms",
+        "exitCode": 0,
+        "status": "passed"
+      },
+      {
+        "name": "@aphrody/m3-icons: typecheck",
+        "argv": [
+          "tsgo",
+          "-p",
+          "tsconfig.json",
+          "--noEmit"
+        ],
+        "cwd": "/home/aphro/aphrody/packages/ui/m3-icons",
+        "exitCode": 0,
+        "status": "passed"
+      },
+      {
+        "name": "@aphrody/m3-motion: typecheck",
+        "argv": [
+          "tsc",
+          "--noEmit"
+        ],
+        "cwd": "/home/aphro/aphrody/packages/ui/m3-motion",
+        "exitCode": 0,
+        "status": "passed"
+      },
+      {
+        "name": "@aphrody/m3-next: typecheck",
+        "argv": [
+          "tsgo",
+          "-p",
+          "tsconfig.json",
+          "--noEmit"
+        ],
+        "cwd": "/home/aphro/aphrody/packages/ui/m3-next",
+        "exitCode": 1,
+        "status": "failed"
+      },
+      {
+        "name": "@aphrody/m3-next-migrate: typecheck",
+        "argv": [
+          "tsgo",
+          "-p",
+          "tsconfig.json",
+          "--noEmit"
+        ],
+        "cwd": "/home/aphro/aphrody/packages/ui/m3-next-migrate",
+        "exitCode": 0,
+        "status": "passed"
+      },
+      {
+        "name": "@aphrody/m3-primitives: typecheck",
+        "argv": [
+          "tsc",
+          "--noEmit"
+        ],
+        "cwd": "/home/aphro/aphrody/packages/ui/m3-primitives",
+        "exitCode": 0,
+        "status": "passed"
+      },
+      {
+        "name": "@aphrody/m3-react: typecheck",
+        "argv": [
+          "tsc",
+          "--noEmit"
+        ],
+        "cwd": "/home/aphro/aphrody/packages/ui/m3-react",
+        "exitCode": 0,
+        "status": "passed"
+      },
+      {
+        "name": "@aphrody/m3-reader: typecheck",
+        "argv": [
+          "tsc",
+          "--noEmit"
+        ],
+        "cwd": "/home/aphro/aphrody/packages/ui/m3-reader",
+        "exitCode": 0,
+        "status": "passed"
+      },
+      {
+        "name": "@aphrody/m3-theme: typecheck",
+        "argv": [
+          "tsc",
+          "--noEmit"
+        ],
+        "cwd": "/home/aphro/aphrody/packages/ui/m3-theme",
+        "exitCode": 0,
+        "status": "passed"
+      },
+      {
+        "name": "@aphrody/m3-theme: lint",
+        "argv": [
+          "oxlint"
+        ],
+        "cwd": "/home/aphro/aphrody/packages/ui/m3-theme",
+        "exitCode": 0,
+        "status": "passed"
+      },
+      {
+        "name": "@aphrody/m3-tokens: typecheck",
+        "argv": [
+          "tsc",
+          "-p",
+          "tsconfig.json",
+          "--noEmit"
+        ],
+        "cwd": "/home/aphro/aphrody/packages/ui/m3-tokens",
+        "exitCode": 0,
+        "status": "passed"
+      },
+      {
+        "name": "@aphrody/m3-tokens: lint",
+        "argv": [
+          "oxlint",
+          "src",
+          "test"
+        ],
+        "cwd": "/home/aphro/aphrody/packages/ui/m3-tokens",
+        "exitCode": 0,
+        "status": "passed"
+      },
+      {
+        "name": "@aphrody/material-web: typecheck",
+        "argv": [
+          "tsc",
+          "-p",
+          "tsconfig.json",
+          "--noEmit"
+        ],
+        "cwd": "/home/aphro/aphrody/packages/ui/material-web",
+        "exitCode": 0,
+        "status": "passed"
+      },
+      {
+        "name": "@aphrody/scaffold: typecheck",
+        "argv": [
+          "tsgo",
+          "-p",
+          "tsconfig.json",
+          "--noEmit"
+        ],
+        "cwd": "/home/aphro/aphrody/packages/ui/scaffold",
+        "exitCode": 0,
+        "status": "passed"
+      },
+      {
+        "name": "@aphrody/web-to-tauri: typecheck",
+        "argv": [
+          "tsgo",
+          "-p",
+          "tsconfig.json",
+          "--noEmit"
+        ],
+        "cwd": "/home/aphro/aphrody/packages/ui/web-to-tauri",
+        "exitCode": 0,
+        "status": "passed"
+      },
+      {
+        "name": "@aphrody/agent-browser: typecheck",
+        "argv": [
+          "tsc",
+          "--noEmit"
+        ],
+        "cwd": "/home/aphro/aphrody/packages/web/agent-browser",
+        "exitCode": 0,
+        "status": "passed"
+      },
+      {
+        "name": "@aphrody/agent-browser: lint",
+        "argv": [
+          "oxlint"
+        ],
+        "cwd": "/home/aphro/aphrody/packages/web/agent-browser",
+        "exitCode": 0,
+        "status": "passed"
+      },
+      {
+        "name": "@aphrody/web-test: typecheck",
+        "argv": [
+          "tsc",
+          "--noEmit"
+        ],
+        "cwd": "/home/aphro/aphrody/packages/web/aphrody-web-test",
+        "exitCode": 0,
+        "status": "passed"
+      },
+      {
+        "name": "@aphrody/web-test: lint",
+        "argv": [
+          "oxlint"
+        ],
+        "cwd": "/home/aphro/aphrody/packages/web/aphrody-web-test",
+        "exitCode": 0,
+        "status": "passed"
+      },
+      {
+        "name": "@aphrody/x: typecheck",
+        "argv": [
+          "tsc",
+          "--noEmit"
+        ],
+        "cwd": "/home/aphro/aphrody/packages/web/x",
+        "exitCode": 0,
+        "status": "passed"
+      },
+      {
+        "name": "@aphrody/x: lint",
+        "argv": [
+          "oxlint"
+        ],
+        "cwd": "/home/aphro/aphrody/packages/web/x",
+        "exitCode": 1,
+        "status": "failed"
+      }
+    ]
+  },
+  "postSnapshotValidation": [
+    {
+      "id": "infra-unit-tests",
+      "argv": [
+        "bun",
+        "test",
+        "packages/infra/workspace/test",
+        "packages/infra/ovh/test",
+        "packages/infra/sql/test",
+        "--coverage",
+        "--coverage-reporter=lcov",
+        "--coverage-dir",
+        "/tmp/aphrody-infra-e2e-2026-10-01/coverage-completion"
+      ],
+      "exitCode": 1,
+      "passed": 191,
+      "failed": 1,
+      "skipped": 1,
+      "total": 193,
+      "expectations": 760,
+      "evidence": "completion-tests.log",
+      "remainingFailure": "Bun workspace contract: SQL-owned apps/shenron/bot dependencies.drizzle-orm must inherit catalog"
+    },
+    {
+      "id": "workspace-typecheck",
+      "argv": [
+        "bunx",
+        "--no-install",
+        "--bun",
+        "tsc",
+        "--project",
+        "packages/infra/workspace/tsconfig.json",
+        "--noEmit"
+      ],
+      "exitCode": 0,
+      "evidence": "completion-workspace-types.log",
+      "exitCodeProvenance": "integrating lead tool result"
+    },
+    {
+      "id": "ovh-typecheck",
+      "argv": [
+        "bunx",
+        "--no-install",
+        "--bun",
+        "tsc",
+        "--project",
+        "packages/infra/ovh/tsconfig.json",
+        "--noEmit"
+      ],
+      "exitCode": 0,
+      "evidence": "completion-ovh-types.log",
+      "exitCodeProvenance": "integrating lead tool result",
+      "supersedesSnapshotFailure": "@aphrody/ovh: typecheck"
+    },
+    {
+      "id": "infra-lint",
+      "tool": "oxlint",
+      "exitCode": 0,
+      "evidence": "completion-lint.log",
+      "warningsRetained": true,
+      "exitCodeProvenance": "integrating lead tool result"
+    },
+    {
+      "id": "owned-format",
+      "argv": [
+        "bunx",
+        "--no-install",
+        "oxfmt",
+        "--check",
+        "packages/infra/workspace/src",
+        "packages/infra/workspace/test",
+        "packages/infra/ovh/src",
+        "packages/infra/ovh/test",
+        "scripts/check-infra.ts"
+      ],
+      "exitCode": 1,
+      "files": 112,
+      "filesWithFormatIssues": 1,
+      "evidence": "completion-owned-format.log",
+      "remainingPath": "packages/infra/workspace/src/workspace-layout.ts",
+      "qualification": "Concurrent source mutation; prior pass is historical and not claimed for current files"
+    },
+    {
+      "id": "broad-infra-format",
+      "status": "failed",
+      "filesWithFormatIssues": 13,
+      "evidence": "completion-format.log",
+      "qualification": "Includes SQL-owned sources and imported documentation; retained without editing another owner"
+    },
+    {
+      "id": "cached-rust-git-tests",
+      "passed": 20,
+      "failed": 0,
+      "evidence": "cached-rust-git-tests.log",
+      "qualification": "Existing test binary only; changed Rust source neither compiled nor qualified"
+    }
+  ],
+  "coverage": {
+    "format": "LCOV",
+    "validCounters": true,
+    "files": 43,
+    "linesFound": 10904,
+    "linesHit": 5405,
+    "linePercent": 49.57,
+    "functionsFound": 829,
+    "functionsHit": 623,
+    "functionPercent": 75.15,
+    "evidence": "coverage-completion.lcov.info",
+    "records": [
+      {
+        "path": "packages/infra/ovh/src/client.ts",
+        "linesFound": 148,
+        "linesHit": 138,
+        "functionsFound": 15,
+        "functionsHit": 12
+      },
+      {
+        "path": "packages/infra/ovh/src/dns.ts",
+        "linesFound": 207,
+        "linesHit": 87,
+        "functionsFound": 20,
+        "functionsHit": 14
+      },
+      {
+        "path": "packages/infra/ovh/src/email.ts",
+        "linesFound": 161,
+        "linesHit": 16,
+        "functionsFound": 9,
+        "functionsHit": 5
+      },
+      {
+        "path": "packages/infra/ovh/src/index.ts",
+        "linesFound": 35,
+        "linesHit": 29,
+        "functionsFound": 3,
+        "functionsHit": 2
+      },
+      {
+        "path": "packages/infra/ovh/src/profiles.ts",
+        "linesFound": 191,
+        "linesHit": 77,
+        "functionsFound": 4,
+        "functionsHit": 2
+      },
+      {
+        "path": "packages/infra/ovh/src/vps.ts",
+        "linesFound": 126,
+        "linesHit": 44,
+        "functionsFound": 9,
+        "functionsHit": 6
+      },
+      {
+        "path": "packages/infra/paths/src/index.ts",
+        "linesFound": 98,
+        "linesHit": 28,
+        "functionsFound": 16,
+        "functionsHit": 1
+      },
+      {
+        "path": "packages/infra/sql/src/env.ts",
+        "linesFound": 115,
+        "linesHit": 110,
+        "functionsFound": 14,
+        "functionsHit": 13
+      },
+      {
+        "path": "packages/infra/sql/src/postgres.ts",
+        "linesFound": 79,
+        "linesHit": 79,
+        "functionsFound": 9,
+        "functionsHit": 9
+      },
+      {
+        "path": "packages/infra/sql/src/redis.ts",
+        "linesFound": 28,
+        "linesHit": 27,
+        "functionsFound": 4,
+        "functionsHit": 4
+      },
+      {
+        "path": "packages/infra/sql/src/sqlite.ts",
+        "linesFound": 50,
+        "linesHit": 50,
+        "functionsFound": 6,
+        "functionsHit": 6
+      },
+      {
+        "path": "packages/infra/workspace/src/agent-live.ts",
+        "linesFound": 424,
+        "linesHit": 106,
+        "functionsFound": 23,
+        "functionsHit": 19
+      },
+      {
+        "path": "packages/infra/workspace/src/automation-inventory.ts",
+        "linesFound": 101,
+        "linesHit": 70,
+        "functionsFound": 16,
+        "functionsHit": 12
+      },
+      {
+        "path": "packages/infra/workspace/src/binaries.ts",
+        "linesFound": 52,
+        "linesHit": 43,
+        "functionsFound": 10,
+        "functionsHit": 9
+      },
+      {
+        "path": "packages/infra/workspace/src/bridges.ts",
+        "linesFound": 25,
+        "linesHit": 4,
+        "functionsFound": 2,
+        "functionsHit": 0
+      },
+      {
+        "path": "packages/infra/workspace/src/bun-workspace.ts",
+        "linesFound": 298,
+        "linesHit": 254,
+        "functionsFound": 38,
+        "functionsHit": 34
+      },
+      {
+        "path": "packages/infra/workspace/src/cargo-release-audit.ts",
+        "linesFound": 243,
+        "linesHit": 191,
+        "functionsFound": 34,
+        "functionsHit": 28
+      },
+      {
+        "path": "packages/infra/workspace/src/consolidation.ts",
+        "linesFound": 1164,
+        "linesHit": 179,
+        "functionsFound": 43,
+        "functionsHit": 14
+      },
+      {
+        "path": "packages/infra/workspace/src/docs-consolidation.ts",
+        "linesFound": 1456,
+        "linesHit": 1146,
+        "functionsFound": 150,
+        "functionsHit": 134
+      },
+      {
+        "path": "packages/infra/workspace/src/docs-links.ts",
+        "linesFound": 187,
+        "linesHit": 166,
+        "functionsFound": 11,
+        "functionsHit": 11
+      },
+      {
+        "path": "packages/infra/workspace/src/docs-overlaps.ts",
+        "linesFound": 84,
+        "linesHit": 35,
+        "functionsFound": 6,
+        "functionsHit": 5
+      },
+      {
+        "path": "packages/infra/workspace/src/ecosystem-deps.ts",
+        "linesFound": 111,
+        "linesHit": 64,
+        "functionsFound": 9,
+        "functionsHit": 8
+      },
+      {
+        "path": "packages/infra/workspace/src/fleet.ts",
+        "linesFound": 25,
+        "linesHit": 3,
+        "functionsFound": 1,
+        "functionsHit": 0
+      },
+      {
+        "path": "packages/infra/workspace/src/imports-exports.ts",
+        "linesFound": 476,
+        "linesHit": 353,
+        "functionsFound": 50,
+        "functionsHit": 42
+      },
+      {
+        "path": "packages/infra/workspace/src/infra-audit.ts",
+        "linesFound": 560,
+        "linesHit": 230,
+        "functionsFound": 27,
+        "functionsHit": 21
+      },
+      {
+        "path": "packages/infra/workspace/src/infra-config-import.ts",
+        "linesFound": 267,
+        "linesHit": 7,
+        "functionsFound": 8,
+        "functionsHit": 0
+      },
+      {
+        "path": "packages/infra/workspace/src/infra-scripts-import.ts",
+        "linesFound": 98,
+        "linesHit": 15,
+        "functionsFound": 4,
+        "functionsHit": 0
+      },
+      {
+        "path": "packages/infra/workspace/src/monorepo-gate.ts",
+        "linesFound": 375,
+        "linesHit": 277,
+        "functionsFound": 19,
+        "functionsHit": 17
+      },
+      {
+        "path": "packages/infra/workspace/src/packages.ts",
+        "linesFound": 96,
+        "linesHit": 54,
+        "functionsFound": 12,
+        "functionsHit": 9
+      },
+      {
+        "path": "packages/infra/workspace/src/pipeline-catalog.ts",
+        "linesFound": 129,
+        "linesHit": 20,
+        "functionsFound": 2,
+        "functionsHit": 0
+      },
+      {
+        "path": "packages/infra/workspace/src/python-quality.ts",
+        "linesFound": 50,
+        "linesHit": 43,
+        "functionsFound": 6,
+        "functionsHit": 5
+      },
+      {
+        "path": "packages/infra/workspace/src/repository-state.ts",
+        "linesFound": 203,
+        "linesHit": 175,
+        "functionsFound": 15,
+        "functionsHit": 11
+      },
+      {
+        "path": "packages/infra/workspace/src/rg.ts",
+        "linesFound": 565,
+        "linesHit": 28,
+        "functionsFound": 11,
+        "functionsHit": 3
+      },
+      {
+        "path": "packages/infra/workspace/src/runtime.ts",
+        "linesFound": 55,
+        "linesHit": 40,
+        "functionsFound": 6,
+        "functionsHit": 5
+      },
+      {
+        "path": "packages/infra/workspace/src/source-licenses-import.ts",
+        "linesFound": 138,
+        "linesHit": 6,
+        "functionsFound": 4,
+        "functionsHit": 0
+      },
+      {
+        "path": "packages/infra/workspace/src/stack-dedup.ts",
+        "linesFound": 364,
+        "linesHit": 172,
+        "functionsFound": 40,
+        "functionsHit": 32
+      },
+      {
+        "path": "packages/infra/workspace/src/submodule-inventory.ts",
+        "linesFound": 376,
+        "linesHit": 8,
+        "functionsFound": 11,
+        "functionsHit": 0
+      },
+      {
+        "path": "packages/infra/workspace/src/tauri-apps.ts",
+        "linesFound": 393,
+        "linesHit": 340,
+        "functionsFound": 43,
+        "functionsHit": 41
+      },
+      {
+        "path": "packages/infra/workspace/src/tauri-sync.ts",
+        "linesFound": 614,
+        "linesHit": 350,
+        "functionsFound": 47,
+        "functionsHit": 37
+      },
+      {
+        "path": "packages/infra/workspace/src/upstream-sources.ts",
+        "linesFound": 268,
+        "linesHit": 79,
+        "functionsFound": 13,
+        "functionsHit": 4
+      },
+      {
+        "path": "packages/infra/workspace/src/web-migration.ts",
+        "linesFound": 219,
+        "linesHit": 176,
+        "functionsFound": 38,
+        "functionsHit": 36
+      },
+      {
+        "path": "packages/infra/workspace/src/workspace-clean.ts",
+        "linesFound": 113,
+        "linesHit": 76,
+        "functionsFound": 14,
+        "functionsHit": 11
+      },
+      {
+        "path": "scripts/check-infra.ts",
+        "linesFound": 137,
+        "linesHit": 10,
+        "functionsFound": 7,
+        "functionsHit": 1
+      }
+    ],
+    "scope": "Only imported Bun code:42 packages/infra source files and scripts/check-infra.ts",
+    "wholeMonorepoCoverage": false,
+    "rustSourceCoverage": false
+  },
+  "live": {
+    "hosts": {
+      "wsl": {
+        "observed": true,
+        "healthy": true,
+        "failures": [],
+        "optionalFailures": [
+          "Unit nginx.service is unavailable or inactive",
+          "Unit postgresql.service is unavailable or inactive",
+          "Unit redis-server.service is unavailable or inactive",
+          "Redis readiness failed"
+        ]
+      },
+      "vps": {
+        "observed": true,
+        "healthy": false,
+        "failures": [
+          "shenron-site readiness failed (404)"
+        ],
+        "optionalFailures": []
+      },
+      "dbfr": {
+        "observed": true,
+        "healthy": true,
+        "failures": [],
+        "optionalFailures": []
+      }
+    },
+    "dataPlaneCounts": {
+      "pass": 33,
+      "fail": 2,
+      "unknown": 4,
+      "pending": 2,
+      "observed": 3,
+      "skipped": 1
+    },
+    "remaining": [
+      {
+        "id": "vps-shenron-readiness",
+        "status": "failed",
+        "httpStatus": 404,
+        "evidence": "current-report.json and rg-data-plane-audit.json"
+      },
+      {
+        "id": "wsl-supabase-object-download",
+        "status": "failed",
+        "httpStatus": 500,
+        "evidence": "rg-data-plane-audit.json"
+      },
+      {
+        "id": "neon-training-schema",
+        "status": "expected-empty",
+        "userTables": 0,
+        "migrationApplied": false,
+        "qualification": "Read-only connection succeeds; no training-schema production qualification",
+        "evidence": "rg-data-plane-audit.json"
+      },
+      {
+        "id": "sql-convergence",
+        "status": "owned-by-active-lead",
+        "claim": ".coord/claims/sql-convergence.json",
+        "qualification": "Retirement, restoration and migrations not taken over"
+      }
+    ]
+  },
+  "pythonIecode": {
+    "checks": [
+      {
+        "name": "py-lock",
+        "argv": [
+          "uv",
+          "lock",
+          "--check"
+        ],
+        "exitCode": 0,
+        "observedAt": "2026-10-01T18:50:06.765492+00:00",
+        "logSha256": "dfae2b64c483f9b4bfe5cb8a4d3bddd87cff03e65494d42236fc0039f7c2c466",
+        "pytestCounts": null,
+        "bunCounts": null
+      },
+      {
+        "name": "py-sdk-tests",
+        "argv": [
+          "uv",
+          "run",
+          "--frozen",
+          "--no-sync",
+          "pytest",
+          "packages/ai/py/aphrody/tests",
+          "-m",
+          "not integration"
+        ],
+        "exitCode": 0,
+        "observedAt": "2026-10-01T18:51:11.879746+00:00",
+        "logSha256": "e59031bad5c60c2ce92b7305ee6d501aac88d73e30901faad538874fc907d136",
+        "pytestCounts": {
+          "passed": 490,
+          "skipped": 15,
+          "deselected": 3
+        },
+        "bunCounts": null
+      },
+      {
+        "name": "py-other-tests",
+        "argv": [
+          "uv",
+          "run",
+          "--frozen",
+          "--no-sync",
+          "pytest",
+          "packages/ai/py/aphrody-train/tests",
+          "packages/shenron/relecture-ocr/tests",
+          "tools/ai/embedding-fixtures/tests",
+          "tools/koharu/model-tools/tests",
+          "tools/packaging/test_qualify_aphrody.py",
+          "-m",
+          "not integration"
+        ],
+        "exitCode": 0,
+        "observedAt": "2026-10-01T18:50:09.854719+00:00",
+        "logSha256": "b87f6e796384c5a125268c8d470438f0654efb92540a834176833acd4e3bdfd2",
+        "pytestCounts": {
+          "passed": 61,
+          "skipped": 0,
+          "deselected": 0
+        },
+        "bunCounts": null
+      },
+      {
+        "name": "py-lint",
+        "argv": [
+          "uv",
+          "run",
+          "--frozen",
+          "--no-sync",
+          "ruff",
+          "check",
+          "packages",
+          "tools",
+          "--output-format",
+          "json"
+        ],
+        "exitCode": 1,
+        "observedAt": "2026-10-01T18:50:06.830983+00:00",
+        "logSha256": "624240af0f9a5db25f7bdc8fc750c8e2d505d955e6fb66dc389727c1829a4183",
+        "pytestCounts": null,
+        "bunCounts": null
+      },
+      {
+        "name": "iecode-workspace",
+        "argv": [
+          "bun",
+          "run",
+          "check:workspace"
+        ],
+        "exitCode": 0,
+        "observedAt": "2026-10-01T18:50:08.265697+00:00",
+        "logSha256": "e812a61a961b09825d5e4a13139322b5d7d611ab36e546b33c00b4c6228ac167",
+        "pytestCounts": null,
+        "bunCounts": null
+      },
+      {
+        "name": "iecode-docs",
+        "argv": [
+          "bun",
+          "run",
+          "docs:check"
+        ],
+        "exitCode": 0,
+        "observedAt": "2026-10-01T18:50:08.382129+00:00",
+        "logSha256": "57c840ee3c91d769079ce9c503cb08ffbe81b429dd00158c4aef29d7d96da5ab",
+        "pytestCounts": null,
+        "bunCounts": null
+      },
+      {
+        "name": "iecode-typecheck",
+        "argv": [
+          "bun",
+          "run",
+          "typecheck"
+        ],
+        "exitCode": 0,
+        "observedAt": "2026-10-01T18:50:10.829723+00:00",
+        "logSha256": "b332ef6917d56127997ef25e9d8b210c4462a536522c2e3a5a2f7a823d034e3b",
+        "pytestCounts": null,
+        "bunCounts": null
+      },
+      {
+        "name": "iecode-typecheck-web",
+        "argv": [
+          "bun",
+          "run",
+          "typecheck:web"
+        ],
+        "exitCode": 0,
+        "observedAt": "2026-10-01T18:50:10.830897+00:00",
+        "logSha256": "08412037967c2a6e962d15f4ad8f7f25c66b0628cb9486670f3d8317c3e1eb3f",
+        "pytestCounts": null,
+        "bunCounts": null
+      },
+      {
+        "name": "iecode-tests",
+        "argv": [
+          "bun",
+          "test",
+          "packages/ieverse",
+          "packages/azalee/test",
+          "packages/azalee/tests",
+          "packages/inagle/tests"
+        ],
+        "exitCode": 1,
+        "observedAt": "2026-10-01T18:52:11.738821+00:00",
+        "logSha256": "d5b17430199f2cf7d489481403b7a7eb77eeda4469f009aa5d21cb6904b3c518",
+        "pytestCounts": null,
+        "bunCounts": {
+          "passed": 359,
+          "skipped": 4,
+          "failed": 3,
+          "errors": 1,
+          "files": 28
+        }
+      },
+      {
+        "name": "iecode-lint-ts",
+        "argv": [
+          "bun",
+          "run",
+          "lint:ts"
+        ],
+        "exitCode": 0,
+        "observedAt": "2026-10-01T18:50:11.152346+00:00",
+        "logSha256": "7a9ebad5babcb77a70a0a8051011742ff78325786d6422b42997ea9f9cd1aed4",
+        "pytestCounts": null,
+        "bunCounts": null
+      },
+      {
+        "name": "iecode-format-ts",
+        "argv": [
+          "bun",
+          "run",
+          "format:ts:check"
+        ],
+        "exitCode": 0,
+        "observedAt": "2026-10-01T18:50:12.336839+00:00",
+        "logSha256": "1af0634e04743344609f095e9102415fcbd788bbecdc00c1e93a94eca24196bc",
+        "pytestCounts": null,
+        "bunCounts": null
+      },
+      {
+        "name": "iecode-python-lock",
+        "argv": [
+          "uv",
+          "lock",
+          "--check"
+        ],
+        "exitCode": 0,
+        "observedAt": "2026-10-01T18:50:12.353785+00:00",
+        "logSha256": "3405fd0a1405c4e7982e696fe32f0f1ae5e52d29a3b7ceda4bc23b36307f62df",
+        "pytestCounts": null,
+        "bunCounts": null
+      },
+      {
+        "name": "iecode-python-lint",
+        "argv": [
+          "uv",
+          "run",
+          "--frozen",
+          "--no-sync",
+          "ruff",
+          "check",
+          ".",
+          "--output-format",
+          "json"
+        ],
+        "exitCode": 0,
+        "observedAt": "2026-10-01T18:50:12.470212+00:00",
+        "logSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "pytestCounts": null,
+        "bunCounts": null
+      },
+      {
+        "name": "iecode-python-tests",
+        "argv": [
+          "uv",
+          "run",
+          "--frozen",
+          "--no-sync",
+          "pytest",
+          "src/niepy/tests",
+          "-q"
+        ],
+        "exitCode": 0,
+        "observedAt": "2026-10-01T18:50:13.343809+00:00",
+        "logSha256": "22d2f64733a42c8801a3fbfd8f13024645741385a630b6dc130493547f43004a",
+        "pytestCounts": {
+          "passed": 125,
+          "skipped": 16,
+          "deselected": 0
+        },
+        "bunCounts": null
+      },
+      {
+        "name": "iecode-licenses",
+        "argv": [
+          "bun",
+          "run",
+          "check:licenses"
+        ],
+        "exitCode": 0,
+        "observedAt": "2026-10-01T18:50:13.962087+00:00",
+        "logSha256": "4143e1bb1248441d418879adbf248758cc2e87919d466def5c7ca7547eda323e",
+        "pytestCounts": null,
+        "bunCounts": null
+      },
+      {
+        "name": "iecode-diff-check",
+        "argv": [
+          "git",
+          "diff",
+          "--check"
+        ],
+        "exitCode": 0,
+        "observedAt": "2026-10-01T18:50:13.995211+00:00",
+        "logSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "pytestCounts": null,
+        "bunCounts": null
+      },
+      {
+        "name": "iecode-failures-isolated",
+        "argv": [
+          "timeout",
+          "70s",
+          "bun",
+          "test",
+          "packages/azalee/test/mirror-freshness.test.ts",
+          "packages/azalee/test/config.test.ts"
+        ],
+        "exitCode": 1,
+        "observedAt": null,
+        "logSha256": "bed7d3f2045e7124a5baee0ebf699ade25caef0fb7ed28e62bedac93f3a4499c",
+        "pytestCounts": null,
+        "bunCounts": {
+          "passed": 8,
+          "skipped": 2,
+          "failed": 1
+        }
+      },
+      {
+        "name": "py-antigravity-sdk-tests",
+        "argv": [
+          "timeout",
+          "90s",
+          "uv",
+          "run",
+          "--frozen",
+          "--no-sync",
+          "pytest",
+          "packages/ai/py/antigravity-sdk-python/google/antigravity",
+          "-o",
+          "addopts=--strict-markers",
+          "-q",
+          "--junitxml=/tmp/aphrody-infra-e2e-2026-10-01/py-antigravity-tests.xml"
+        ],
+        "exitCode": 1,
+        "observedAt": null,
+        "logSha256": "044fd7e53360e3b2d6fcc81ccf5316801a186cd8d0b67683e3109ebebbe0023f",
+        "pytestCounts": {
+          "passed": 596,
+          "failed": 11,
+          "skipped": 1,
+          "subtestsPassed": 2,
+          "warnings": 6
+        },
+        "bunCounts": null
+      }
+    ],
+    "findings": [
+      {
+        "id": "infra-python-tests-skipped",
+        "status": "fixed",
+        "scope": "packages/infra/workspace/src/python-quality.ts",
+        "detail": "Previous test gate returned0 for nested tests when root/tests absent; fixed configured/explicit/default roots; missing/no collected tests fail. No-build disables uv dependency installation/sync.",
+        "validation": "9 unit tests passed; workspace TS check+Oxc passed; actual infra no-build gate executed IECODE125 passed16 skipped."
+      },
+      {
+        "id": "iecode-stale-sqlite-mirror",
+        "status": "failed-reproduced",
+        "scope": "packages/azalee/src/config.ts",
+        "detail": "Setting NIERS_MIRROR to absent canonical path still resolves existing var/mirror.sqlite, contrary to test expectation. Did not alter IEVR source or private data."
+      },
+      {
+        "id": "iecode-mirror-suite-timeout",
+        "status": "transient-unresolved",
+        "detail": "Two mirror swap tests timed out in aggregate suite; same two passed isolated. Aggregate had1 SQLITE_CANTOPEN unhandled error; concurrent host load not proven as cause."
+      },
+      {
+        "id": "python-lint",
+        "status": "failed",
+        "count": 24,
+        "fileCount": 14,
+        "codes": {
+          "BLE001": 22,
+          "S110": 2
+        },
+        "detail": "Read-only audit; findings retained."
+      },
+      {
+        "id": "python-sqlite-policy",
+        "status": "failed-runtime-policy",
+        "runtimeVersion": "3.45.1",
+        "minimumOwnerVersion": "3.51.3",
+        "detail": "Python stdlib sqlite3 engine below SQL handoff minimum; SDK session_db force WAL without version gate. No production data opened for writing by this audit."
+      },
+      {
+        "id": "native-provenance",
+        "status": "limited",
+        "detail": "Native binaries already present passed targeted FFI tests. No compilation/clean-clone/source-to-binary provenance qualification performed."
+      },
+      {
+        "id": "iecode-production-acceptance",
+        "status": "not-demonstrated",
+        "detail": "REMAINING-WORK lists combined release gates, generated NIE fixtures, real emulator boot/graphics/replay coverage still pending; successful lightweight gates do not prove complete production readiness."
+      },
+      {
+        "id": "antigravity-sdk-tests",
+        "status": "failed",
+        "count": 11,
+        "groups": {
+          "staleDefaultModelExpectations": 2,
+          "McpInputSchemaFieldContract": 7,
+          "MissingOptionalVoicePatchSymbols": 2
+        },
+        "detail": "Upstream embedded SDK tests mocked transport/audio/input; no provider/browser/runtime builds. Retained all source unchanged."
+      },
+      {
+        "id": "antigravity-test-false-pass",
+        "status": "warning",
+        "scope": "google/antigravity/agent_test.py::AgentConfigTest::test_agent_with_response_schema",
+        "detail": "async test on unittest.TestCase emitted coroutine never awaited RuntimeWarning and return-non-None DeprecationWarning; counted PASS by upstream test runner despite unexecuted coroutine."
+      }
+    ],
+    "qualification": "Existing runtime environments/binaries; no clean-clone or rebuilt release qualification"
+  },
+  "bunContract": {
+    "fixedUnclaimedManifests": 4,
+    "remaining": 1,
+    "owner": "SQL convergence lead",
+    "path": "apps/shenron/bot/package.json",
+    "requiredChange": "dependencies.drizzle-orm: catalog:",
+    "lockResolvedPackages": 3341,
+    "lockResolvedPackagesUnchanged": true,
+    "evidence": "bun-contract-followup.json"
+  },
+  "finalToolResults": [
+    {
+      "name": "infra-lint",
+      "command": [
+        "bunx",
+        "--no-install",
+        "oxlint",
+        "packages/infra",
+        "scripts/check-infra.ts"
+      ],
+      "exitCode": 0,
+      "log": "/tmp/aphrody-infra-e2e-2026-10-01/completion-infra-lint.log",
+      "sha256": "1b72391dc5825233f3a9ed02bcdfd43c2c4ee056d199b85ceedabcbeea353f20"
+    },
+    {
+      "name": "owned-format",
+      "command": [
+        "bunx",
+        "--no-install",
+        "oxfmt",
+        "--check",
+        "packages/infra/workspace/src",
+        "packages/infra/workspace/test",
+        "packages/infra/ovh/src",
+        "packages/infra/ovh/test",
+        "scripts/check-infra.ts"
+      ],
+      "exitCode": 1,
+      "log": "/tmp/aphrody-infra-e2e-2026-10-01/completion-owned-format.log",
+      "sha256": "c920dd47532921a7cbb302968d123ec33567aabfaa184a548e4383ce407c4210"
+    },
+    {
+      "name": "rust-source-syntax",
+      "command": [
+        "rustfmt",
+        "--check",
+        "--edition",
+        "2024",
+        "--config",
+        "skip_children=true",
+        "crates/infra/infra/src/main.rs",
+        "crates/infra/infra/src/lifecycle.rs",
+        "crates/infra/infra/src/probe.rs"
+      ],
+      "exitCode": 0,
+      "log": "/tmp/aphrody-infra-e2e-2026-10-01/completion-rust-source-syntax.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "workspace-types",
+      "command": [
+        "bunx",
+        "--no-install",
+        "--bun",
+        "tsc",
+        "--project",
+        "packages/infra/workspace/tsconfig.json",
+        "--noEmit"
+      ],
+      "exitCode": 0,
+      "log": "/tmp/aphrody-infra-e2e-2026-10-01/completion-workspace-types.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "ovh-types",
+      "command": [
+        "bunx",
+        "--no-install",
+        "--bun",
+        "tsc",
+        "--project",
+        "packages/infra/ovh/tsconfig.json",
+        "--noEmit"
+      ],
+      "exitCode": 0,
+      "log": "/tmp/aphrody-infra-e2e-2026-10-01/completion-ovh-types.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "priorObjectiveRating": {
+    "global": 3,
+    "scale": 10,
+    "evidence": "../deployability-audit-2026-10-01.json",
+    "separateDimensions": [
+      "Rust",
+      "Bun",
+      "Python",
+      "apps",
+      "libs",
+      "Infra",
+      "GitHub",
+      "Git remotes",
+      "npm organization",
+      "npm packages",
+      "crates.io account",
+      "Cargo registry"
+    ],
+    "updatedGlobalRating": false
+  },
+  "artifacts": [
+    {
+      "path": "current-report.json",
+      "sourcePath": "/tmp/aphrody-infra-e2e-2026-10-01/current-report.json",
+      "sourceSha256": "5cbb02b5c0b0766c24bee51c52e6bcde0fa9fa0baec23d5dcbb15d9eb9e1c124",
+      "sha256": "5cbb02b5c0b0766c24bee51c52e6bcde0fa9fa0baec23d5dcbb15d9eb9e1c124",
+      "bytes": 724048,
+      "transformations": [],
+      "immutableSnapshot": true
+    },
+    {
+      "path": "python-iecode-audit.json",
+      "sourcePath": "/tmp/aphrody-infra-e2e-2026-10-01/python-iecode-audit.json",
+      "sourceSha256": "0dc9ef9f4b3db30d3e4a43ad15d807b817fbed2c568b32434a40c3ab4366b184",
+      "sha256": "0dc9ef9f4b3db30d3e4a43ad15d807b817fbed2c568b32434a40c3ab4366b184",
+      "bytes": 18353,
+      "transformations": [],
+      "immutableSnapshot": true
+    },
+    {
+      "path": "rg-data-plane-audit.json",
+      "sourcePath": "/tmp/aphrody-infra-e2e-2026-10-01/rg-data-plane-audit.json",
+      "sourceSha256": "5e772df109e9b7846e33c0be4ca356e443740b04a46801cd17cb213a81c0efb5",
+      "sha256": "5e772df109e9b7846e33c0be4ca356e443740b04a46801cd17cb213a81c0efb5",
+      "bytes": 22013,
+      "transformations": [],
+      "immutableSnapshot": true
+    },
+    {
+      "path": "bun-contract-followup.json",
+      "sourcePath": "/tmp/aphrody-infra-e2e-2026-10-01/bun-contract-followup.json",
+      "sourceSha256": "1365960ee9eae7103c96d06b955c8aba99bc07bfbbf81bbf98f6ee0e0f29c112",
+      "sha256": "2d95db4aa86748f56acaa8daf7bbdd3d31c46e07da806e944064995b78c130a0",
+      "bytes": 3855,
+      "transformations": [
+        "Raw local coordination envelopes omitted; concise outcome retained"
+      ],
+      "immutableSnapshot": true
+    },
+    {
+      "path": "completion-results.json",
+      "sourcePath": "/tmp/aphrody-infra-e2e-2026-10-01/completion-results.json",
+      "sourceSha256": "e1caabe46784acc01c2ab8f9834ae580fb88e00fe64f284970859da2f959263c",
+      "sha256": "e1caabe46784acc01c2ab8f9834ae580fb88e00fe64f284970859da2f959263c",
+      "bytes": 2072,
+      "transformations": [],
+      "immutableSnapshot": true
+    },
+    {
+      "path": "completion-tests.log",
+      "sourcePath": "/tmp/aphrody-infra-e2e-2026-10-01/completion-tests.log",
+      "sourceSha256": "a4729924b35c1e50cdebd58721138661e720f2140744eb96c8ee2352b4671f42",
+      "sha256": "a4729924b35c1e50cdebd58721138661e720f2140744eb96c8ee2352b4671f42",
+      "bytes": 22424,
+      "transformations": [],
+      "immutableSnapshot": true
+    },
+    {
+      "path": "completion-lint.log",
+      "sourcePath": "/tmp/aphrody-infra-e2e-2026-10-01/completion-lint.log",
+      "sourceSha256": "5ec9394e7afdec9f69fc4352c98cb14cf8ed86238accdbb81a77fce28eabc2e4",
+      "sha256": "5ec9394e7afdec9f69fc4352c98cb14cf8ed86238accdbb81a77fce28eabc2e4",
+      "bytes": 65113,
+      "transformations": [],
+      "immutableSnapshot": true
+    },
+    {
+      "path": "completion-owned-format.log",
+      "sourcePath": "/tmp/aphrody-infra-e2e-2026-10-01/completion-owned-format.log",
+      "sourceSha256": "c920dd47532921a7cbb302968d123ec33567aabfaa184a548e4383ce407c4210",
+      "sha256": "c920dd47532921a7cbb302968d123ec33567aabfaa184a548e4383ce407c4210",
+      "bytes": 196,
+      "transformations": [],
+      "immutableSnapshot": true
+    },
+    {
+      "path": "completion-format.log",
+      "sourcePath": "/tmp/aphrody-infra-e2e-2026-10-01/completion-format.log",
+      "sourceSha256": "e3bdd48524a534e23089a6211e2d96cc6354258ba888f40cd95dbf62d7cfc6bb",
+      "sha256": "e3bdd48524a534e23089a6211e2d96cc6354258ba888f40cd95dbf62d7cfc6bb",
+      "bytes": 738,
+      "transformations": [],
+      "immutableSnapshot": true
+    },
+    {
+      "path": "completion-workspace-types.log",
+      "sourcePath": "/tmp/aphrody-infra-e2e-2026-10-01/completion-workspace-types.log",
+      "sourceSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "transformations": [],
+      "immutableSnapshot": true
+    },
+    {
+      "path": "completion-ovh-types.log",
+      "sourcePath": "/tmp/aphrody-infra-e2e-2026-10-01/completion-ovh-types.log",
+      "sourceSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "transformations": [],
+      "immutableSnapshot": true
+    },
+    {
+      "path": "completion-infra-lint.log",
+      "sourcePath": "/tmp/aphrody-infra-e2e-2026-10-01/completion-infra-lint.log",
+      "sourceSha256": "1b72391dc5825233f3a9ed02bcdfd43c2c4ee056d199b85ceedabcbeea353f20",
+      "sha256": "1b72391dc5825233f3a9ed02bcdfd43c2c4ee056d199b85ceedabcbeea353f20",
+      "bytes": 65113,
+      "transformations": [],
+      "immutableSnapshot": true
+    },
+    {
+      "path": "completion-rust-source-syntax.log",
+      "sourcePath": "/tmp/aphrody-infra-e2e-2026-10-01/completion-rust-source-syntax.log",
+      "sourceSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "transformations": [],
+      "immutableSnapshot": true
+    },
+    {
+      "path": "cached-rust-git-tests.log",
+      "sourcePath": "/tmp/aphrody-infra-e2e-2026-10-01/cached-rust-git-tests.log",
+      "sourceSha256": "fd99eea54354ee8652f0b1030b9e3159eb0fa676e7399b6bc7a8889bd04202fe",
+      "sha256": "fd99eea54354ee8652f0b1030b9e3159eb0fa676e7399b6bc7a8889bd04202fe",
+      "bytes": 1356,
+      "transformations": [],
+      "immutableSnapshot": true
+    },
+    {
+      "path": "rg-deploy-fixtures.log",
+      "sourcePath": "/tmp/aphrody-infra-e2e-2026-10-01/rg-deploy-fixtures.log",
+      "sourceSha256": "92e37157e8b9a1eeef274986950c81718de2f8736c8abfbbb8ef708c47b0305e",
+      "sha256": "92e37157e8b9a1eeef274986950c81718de2f8736c8abfbbb8ef708c47b0305e",
+      "bytes": 50,
+      "transformations": [],
+      "immutableSnapshot": true
+    },
+    {
+      "path": "shenron-deploy-fixtures.log",
+      "sourcePath": "/tmp/aphrody-infra-e2e-2026-10-01/shenron-deploy-fixtures.log",
+      "sourceSha256": "edb92a831f829c4e0bc230d554d98d01604b8023e5f630a3c293d55a789f9546",
+      "sha256": "edb92a831f829c4e0bc230d554d98d01604b8023e5f630a3c293d55a789f9546",
+      "bytes": 74,
+      "transformations": [],
+      "immutableSnapshot": true
+    },
+    {
+      "path": "bundle-deploy-fixtures.log",
+      "sourcePath": "/tmp/aphrody-infra-e2e-2026-10-01/bundle-deploy-fixtures.log",
+      "sourceSha256": "942703f3160c21a3be7b4725c63e0a9c24d11892b828e74aa4e204020f074121",
+      "sha256": "942703f3160c21a3be7b4725c63e0a9c24d11892b828e74aa4e204020f074121",
+      "bytes": 74,
+      "transformations": [],
+      "immutableSnapshot": true
+    },
+    {
+      "path": "shared-sql-tests.log",
+      "sourcePath": "/tmp/aphrody-infra-e2e-2026-10-01/shared-sql-tests.log",
+      "sourceSha256": "b28189859b7e84c1e7e8b68c8152476c98eab7bbe8c088f4a6b059155ca158d2",
+      "sha256": "b28189859b7e84c1e7e8b68c8152476c98eab7bbe8c088f4a6b059155ca158d2",
+      "bytes": 2444,
+      "transformations": [],
+      "immutableSnapshot": true
+    },
+    {
+      "path": "rg-db-tests.log",
+      "sourcePath": "/tmp/aphrody-infra-e2e-2026-10-01/rg-db-tests.log",
+      "sourceSha256": "b6f83bd156d2a710b51e9ea2325445ebbdc7d2d2f2fb22d183da128f6d7362dc",
+      "sha256": "b6f83bd156d2a710b51e9ea2325445ebbdc7d2d2f2fb22d183da128f6d7362dc",
+      "bytes": 1188,
+      "transformations": [],
+      "immutableSnapshot": true
+    },
+    {
+      "path": "shenron-db-tests.log",
+      "sourcePath": "/tmp/aphrody-infra-e2e-2026-10-01/shenron-db-tests.log",
+      "sourceSha256": "24bd33dd6a8cfcc9c762ca4891f5a19b02bc910e815f5dd6ebfc5c8914f996eb",
+      "sha256": "24bd33dd6a8cfcc9c762ca4891f5a19b02bc910e815f5dd6ebfc5c8914f996eb",
+      "bytes": 6738,
+      "transformations": [],
+      "immutableSnapshot": true
+    },
+    {
+      "path": "coverage-completion.lcov.info",
+      "sourcePath": "/tmp/aphrody-infra-e2e-2026-10-01/coverage-completion/lcov.info",
+      "sourceSha256": "dacf1667742facd12a9639637043305376007a31ca3a712bf41bf5240c714f59",
+      "sha256": "dacf1667742facd12a9639637043305376007a31ca3a712bf41bf5240c714f59",
+      "bytes": 104887,
+      "transformations": [],
+      "immutableSnapshot": true
+    }
+  ],
+  "limits": [
+    "Snapshot gate numbers remain unchanged after scoped fixes",
+    "Static source/module/feature inventory does not mean execution coverage",
+    "Changed Rust sources were not compiled or tested",
+    "Running historical releases do not prove deployment of current sources",
+    "No complete monorepo deployment readiness assertion",
+    "Concurrent changes and dirty workspaces remain explicit"
+  ]
+}

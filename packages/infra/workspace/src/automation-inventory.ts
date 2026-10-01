@@ -1,5 +1,5 @@
-import { readdir } from "node:fs/promises";
-import { join, relative, resolve } from "node:path";
+import { readdir, stat } from "node:fs/promises";
+import { basename, join, relative, resolve } from "node:path";
 
 type Script = { path: string; kind: "check" | "release" | "sync" | "deploy" | "product" };
 type Repository = { name: string; scripts: Script[] };
@@ -12,6 +12,7 @@ const ignored = new Set([
   "third_party",
   "thirdparty",
   "vendor",
+  "upstream",
 ]);
 const extensions = new Set([
   ".ts",
@@ -42,9 +43,7 @@ async function scripts(root: string, current = root): Promise<Script[]> {
     if (ignored.has(entry.name)) continue;
     const full = join(current, entry.name);
     if (entry.isDirectory()) {
-      if (entry.name === "scripts" || current.includes(`${root}/scripts/`))
-        result.push(...(await scripts(root, full)));
-      else if (current === root) result.push(...(await scripts(root, full)));
+      result.push(...(await scripts(root, full)));
       continue;
     }
     const ext = entry.name.slice(entry.name.lastIndexOf("."));
@@ -56,33 +55,20 @@ async function scripts(root: string, current = root): Promise<Script[]> {
   return result;
 }
 
-export async function runAutomationInventory(args: string[]): Promise<number> {
-  let root = process.cwd();
-  let json = false;
-  for (const arg of args) {
-    if (arg === "--json") json = true;
-    else if (arg === "--help" || arg === "-h") {
-      console.log("Usage: aphrody-ops automation-inventory [--json] [--root <src>]");
-      return 0;
-    }
-  }
-  const rootIndex = args.indexOf("--root");
-  if (rootIndex >= 0) root = args[rootIndex + 1] ?? "";
-  if (!root) throw new Error("--root requires a source directory");
+export async function collectAutomationInventory(root: string) {
   root = resolve(root);
-  const entries = await readdir(root, { withFileTypes: true });
+  const hasGit = async (path: string) =>
+    stat(join(path, ".git"))
+      .then(() => true)
+      .catch(() => false);
   const repositories: Repository[] = [];
-  for (const entry of entries) {
-    if (!entry.isDirectory() || ignored.has(entry.name)) continue;
-    const repo = join(root, entry.name);
-    if (
-      !(await readdir(join(repo, ".git"))
-        .then(() => true)
-        .catch(() => false))
-    )
-      continue;
-    repositories.push({ name: entry.name, scripts: await scripts(repo) });
-  }
+  if (await hasGit(root)) repositories.push({ name: basename(root), scripts: await scripts(root) });
+  else
+    for (const entry of await readdir(root, { withFileTypes: true })) {
+      if (!entry.isDirectory() || ignored.has(entry.name)) continue;
+      const repo = join(root, entry.name);
+      if (await hasGit(repo)) repositories.push({ name: entry.name, scripts: await scripts(repo) });
+    }
   repositories.sort((a, b) => a.name.localeCompare(b.name));
   const counts = Object.fromEntries(
     ["check", "release", "sync", "deploy", "product"].map((kind) => [
@@ -90,13 +76,33 @@ export async function runAutomationInventory(args: string[]): Promise<number> {
       repositories.flatMap((repo) => repo.scripts).filter((script) => script.kind === kind).length,
     ]),
   );
-  const report = {
+  return {
     root,
     repositories,
     repositoriesWithScripts: repositories.filter((repo) => repo.scripts.length).length,
     scripts: repositories.flatMap((repo) => repo.scripts).length,
     counts,
   };
+}
+
+export async function runAutomationInventory(args: string[]): Promise<number> {
+  let root = process.cwd();
+  let json = false;
+  for (let i = 0; i < args.length; i++) {
+    const arg = args[i];
+    if (arg === "--root") {
+      const value = args[++i];
+      if (!value || value.startsWith("--")) throw new Error("--root requires a source directory");
+      root = value;
+    } else if (arg === "--json") json = true;
+    else if (arg === "--help" || arg === "-h") {
+      console.log("Usage: aphrody-ops automation-inventory [--json] [--root <src>]");
+      return 0;
+    } else throw new Error(`Unknown argument: ${arg}`);
+  }
+  if (!root) throw new Error("--root requires a source directory");
+  root = resolve(root);
+  const report = await collectAutomationInventory(root);
   if (json) console.log(JSON.stringify(report, null, 2));
   else
     console.log(

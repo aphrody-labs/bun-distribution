@@ -21,7 +21,7 @@ test("Infra runtime never compiles implicitly or ignores an invalid explicit bin
       infraExecutable(root, { HOME: root, APHRODY_INFRA_BIN: join(root, "missing") }),
     ).rejects.toThrow("Configured Infra binary is missing");
     expect(await infraExecutable(root, { APHRODY_INFRA_BUILD_FROM_SOURCE: "1" })).toEqual([
-      "cargo",
+      join(root, "scripts/build/rust/cargo-serial.sh"),
       "run",
       "--quiet",
       "--locked",
@@ -29,6 +29,12 @@ test("Infra runtime never compiles implicitly or ignores an invalid explicit bin
       "aphrody-infra",
       "--",
     ]);
+    await expect(
+      infraExecutable(root, {
+        APHRODY_INFRA_BUILD_FROM_SOURCE: "1",
+        APHRODY_NO_BUILD: "1",
+      }),
+    ).rejects.toThrow("Source compilation is disabled");
     expect(
       await infraExecutable(root, { APHRODY_INFRA_BIN: bin, APHRODY_INFRA_BUILD_FROM_SOURCE: "1" }),
     ).toEqual([bin]);

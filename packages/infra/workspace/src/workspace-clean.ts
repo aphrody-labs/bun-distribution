@@ -33,14 +33,27 @@ function git(root: string, args: string[]): { code: number; output: string } {
   const result = Bun.spawnSync(["git", "-C", root, ...args], { stdout: "pipe", stderr: "pipe" });
   return { code: result.exitCode, output: new TextDecoder().decode(result.stdout) };
 }
-async function measure(path: string): Promise<{ bytes: number; files: number }> {
-  const info = await lstat(path);
+function disappeared(error: unknown): boolean {
+  return typeof error === "object" && error !== null && "code" in error && error.code === "ENOENT";
+}
+async function entries(path: string): Promise<string[]> {
+  return readdir(path).catch((error: unknown) => {
+    if (disappeared(error)) return [];
+    throw error;
+  });
+}
+export async function measureArtifact(path: string): Promise<{ bytes: number; files: number }> {
+  const info = await lstat(path).catch((error: unknown) => {
+    if (disappeared(error)) return undefined;
+    throw error;
+  });
+  if (!info) return { bytes: 0, files: 0 };
   if (info.isSymbolicLink()) return { bytes: 0, files: 0 };
   if (!info.isDirectory()) return { bytes: info.size, files: 1 };
   let bytes = 0,
     files = 0;
-  for (const entry of await readdir(path)) {
-    const child = await measure(join(path, entry));
+  for (const entry of await entries(path)) {
+    const child = await measureArtifact(join(path, entry));
     bytes += child.bytes;
     files += child.files;
   }
@@ -53,7 +66,11 @@ export async function cleanWorkspace(root: string, apply = false): Promise<Clean
   const tracked = index.output.split("\0").filter(Boolean);
   const report: CleanupReport = { root, apply, removed: [], protected: [], bytes: 0, files: 0 };
   async function visit(current: string): Promise<void> {
-    for (const entry of await readdir(current, { withFileTypes: true })) {
+    const children = await readdir(current, { withFileTypes: true }).catch((error: unknown) => {
+      if (disappeared(error)) return [];
+      throw error;
+    });
+    for (const entry of children) {
       if (!entry.isDirectory() || entry.isSymbolicLink() || PRUNED.has(entry.name)) continue;
       const full = join(current, entry.name);
       const local = relative(root, full).replaceAll("\\", "/");
@@ -67,7 +84,7 @@ export async function cleanWorkspace(root: string, apply = false): Promise<Clean
         const ignored = git(root, ["check-ignore", "-q", "--", `${local}/`]).code === 0;
         const pythonCache = entry.name === "__pycache__";
         if (ignored || pythonCache) {
-          const size = await measure(full);
+          const size = await measureArtifact(full);
           report.removed.push({ path: local, ...size });
           report.bytes += size.bytes;
           report.files += size.files;

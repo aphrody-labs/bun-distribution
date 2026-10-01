@@ -47,6 +47,7 @@ import { runDocsConsolidation } from "./docs-consolidation.ts";
 import { runGitignoredAudit } from "./gitignored-audit.ts";
 import { runRuntimeVersions } from "./runtime-versions.ts";
 import { runMonorepoGate } from "./monorepo-gate.ts";
+import { runInfraAudit } from "./infra-audit.ts";
 import { runWindowsPaths } from "./windows-paths.ts";
 import { runGitAttribution } from "./git-attribution.ts";
 import { runRepositoryHealth } from "./repository-health.ts";
@@ -123,9 +124,10 @@ if (operation === "infra") {
     await runRustBridge("aphrody-infra", rest, { stdout: "inherit", stderr: "inherit" }),
   );
 }
+if (operation === "infra-audit") process.exit(await runInfraAudit(rest));
 if (operation === "orchestrate") {
   const [action = "status", ...args] = rest;
-  const usesTarget = !["catalog", "health", "prewarm"].includes(action);
+  const usesTarget = action !== "catalog";
   const target = usesTarget && !args.includes("--target") ? ["--target", "local"] : [];
   process.exit(
     await runRustBridge("aphrody-infra", ["service", action, ...args, ...target], {

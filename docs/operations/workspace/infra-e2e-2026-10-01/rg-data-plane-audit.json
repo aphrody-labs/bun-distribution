@@ -1,0 +1,788 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-10-01T18:53:34Z",
+  "scope": "Read-only RG/Shenron data plane, existing native Aphrody Infra SSH, @aphrody/sql live factories, WSL Supabase/Docker, Neon, bounded unit gates",
+  "ownership": {
+    "sharedSql": "packages/infra/sql and crates/infra/sql (SQL convergence lead active)",
+    "rgData": "packages/rg/db",
+    "shenronData": "packages/shenron/db",
+    "ievr": "/home/aphro/iecode; no source read or changed",
+    "claim": ".coord/claims/sql-convergence.json; not resumed"
+  },
+  "constraints": {
+    "cargoInvoked": false,
+    "nextBuildInvoked": false,
+    "browserOrCrawlerUsed": false,
+    "sqlMutation": false,
+    "servicesRestarted": false,
+    "filesChangedInRepository": false,
+    "credentialsOutput": false
+  },
+  "checks": [
+    {
+      "id": "vps.postgres",
+      "status": "pass",
+      "detail": {
+        "serverVersion": "18.6 (Ubuntu 18.6-0ubuntu0.26.04.1)",
+        "databases": [
+          {
+            "name": "postgres",
+            "bytes": 7870143,
+            "connections": 1
+          },
+          {
+            "name": "stack",
+            "bytes": 10835647,
+            "connections": 0
+          },
+          {
+            "name": "achillea",
+            "bytes": 32126655,
+            "connections": 1
+          },
+          {
+            "name": "rg",
+            "bytes": 441042623,
+            "connections": 16
+          },
+          {
+            "name": "aphrody_web",
+            "bytes": 10278591,
+            "connections": 0
+          },
+          {
+            "name": "aphrody",
+            "bytes": 391878335,
+            "connections": 0
+          }
+        ]
+      },
+      "evidence": "rg-remote-data-plane-evidence.json"
+    },
+    {
+      "id": "vps.redis",
+      "status": "pass",
+      "detail": {
+        "exit": 0,
+        "stdout": "PONG\n",
+        "stderr": ""
+      },
+      "evidence": "rg-remote-data-plane-evidence.json"
+    },
+    {
+      "id": "vps.sqlite./srv/rg/shared/discord-sync/discord.db",
+      "status": "pass",
+      "detail": {
+        "exists": true,
+        "bytes": 3870720,
+        "mtime": 1790880134.95014,
+        "quickCheck": "ok",
+        "tableCount": 10
+      },
+      "evidence": "rg-remote-data-plane-evidence.json"
+    },
+    {
+      "id": "vps.sqlite./srv/shenron/shared/bot/data/bot.db",
+      "status": "pass",
+      "detail": {
+        "exists": true,
+        "bytes": 285552640,
+        "mtime": 1790879740.8165,
+        "quickCheck": "ok",
+        "tableCount": 110
+      },
+      "evidence": "rg-remote-data-plane-evidence.json"
+    },
+    {
+      "id": "vps.sqlite./home/ubuntu/shenron/apps/bot/data/bot.db",
+      "status": "pass",
+      "detail": {
+        "exists": true,
+        "bytes": 225607680,
+        "mtime": 1789749541.1287262,
+        "quickCheck": "ok",
+        "tableCount": 95
+      },
+      "evidence": "rg-remote-data-plane-evidence.json"
+    },
+    {
+      "id": "vps.http.http://127.0.0.1:3004/",
+      "status": "pass",
+      "detail": {
+        "status": 200
+      },
+      "evidence": "rg-remote-data-plane-evidence.json"
+    },
+    {
+      "id": "vps.http.http://127.0.0.1:8800/health",
+      "status": "pass",
+      "detail": {
+        "status": 200
+      },
+      "evidence": "rg-remote-data-plane-evidence.json"
+    },
+    {
+      "id": "vps.http.http://127.0.0.1:4000/health/check",
+      "status": "pass",
+      "detail": {
+        "status": 200
+      },
+      "evidence": "rg-remote-data-plane-evidence.json"
+    },
+    {
+      "id": "vps.http.http://127.0.0.1:5011/api/health",
+      "status": "pass",
+      "detail": {
+        "status": 200
+      },
+      "evidence": "rg-remote-data-plane-evidence.json"
+    },
+    {
+      "id": "vps.http.http://127.0.0.1:5011/api/health/ready",
+      "status": "fail",
+      "detail": {
+        "status": 404
+      },
+      "evidence": "rg-remote-data-plane-evidence.json"
+    },
+    {
+      "id": "vps.http.http://127.0.0.1:5006/health",
+      "status": "pass",
+      "detail": {
+        "status": 200
+      },
+      "evidence": "rg-remote-data-plane-evidence.json"
+    },
+    {
+      "id": "vps.production.releases",
+      "status": "observed",
+      "detail": {
+        "/srv/rg/current": "/srv/rg/releases/5691ba4be97b94279878e00d264793c1b28f8cf1",
+        "/srv/shenron/current": "/srv/shenron/releases/4cac743f"
+      },
+      "evidence": "rg-remote-data-plane-evidence.json"
+    },
+    {
+      "id": "vps.sql.retirement",
+      "status": "pending",
+      "detail": {
+        "reason": "sql-convergence lead owns retirement; old databases remain; achillea has an active connection",
+        "databases": [
+          {
+            "name": "postgres",
+            "bytes": 7870143,
+            "connections": 1
+          },
+          {
+            "name": "stack",
+            "bytes": 10835647,
+            "connections": 0
+          },
+          {
+            "name": "achillea",
+            "bytes": 32126655,
+            "connections": 1
+          },
+          {
+            "name": "rg",
+            "bytes": 441042623,
+            "connections": 16
+          },
+          {
+            "name": "aphrody_web",
+            "bytes": 10278591,
+            "connections": 0
+          },
+          {
+            "name": "aphrody",
+            "bytes": 391878335,
+            "connections": 0
+          }
+        ]
+      },
+      "evidence": "rg-remote-data-plane-evidence.json"
+    },
+    {
+      "id": "vps.uniqueBackupArtifacts",
+      "status": "observed",
+      "detail": {
+        "root": "/var/backups/aphrody-unique/2026-10-01",
+        "files": 17,
+        "checksumVerificationPerformed": false,
+        "historyArchivesInProgress": true
+      },
+      "evidence": "rg-remote-data-plane-evidence.json"
+    },
+    {
+      "id": "vps.uniqueBackupRestoreReadiness",
+      "status": "unknown",
+      "detail": {
+        "reason": "snapshot lists artifacts; current in-progress manifests/checksums/restore not replayed to avoid conflicting with SQL ops worker"
+      },
+      "evidence": "rg-remote-data-plane-evidence.json"
+    },
+    {
+      "id": "dbfr.postgres",
+      "status": "pass",
+      "detail": {
+        "serverVersion": "18.6 (Ubuntu 18.6-0ubuntu0.26.04.1)",
+        "databases": [
+          {
+            "name": "postgres",
+            "bytes": 7861951,
+            "connections": 1
+          },
+          {
+            "name": "shenron_site",
+            "bytes": 1295390399,
+            "connections": 4
+          }
+        ]
+      },
+      "evidence": "rg-remote-data-plane-evidence.json"
+    },
+    {
+      "id": "dbfr.redis",
+      "status": "pass",
+      "detail": {
+        "exit": 0,
+        "stdout": "PONG\n",
+        "stderr": ""
+      },
+      "evidence": "rg-remote-data-plane-evidence.json"
+    },
+    {
+      "id": "dbfr.sqlite./home/ubuntu/shenron/apps/bot/data/bot.db",
+      "status": "pass",
+      "detail": {
+        "exists": true,
+        "bytes": 278818816,
+        "mtime": 1790161746.4586213,
+        "quickCheck": "ok",
+        "tableCount": 109
+      },
+      "evidence": "rg-remote-data-plane-evidence.json"
+    },
+    {
+      "id": "dbfr.uniqueBackupArtifacts",
+      "status": "observed",
+      "detail": {
+        "root": "/var/backups/aphrody-unique/2026-10-01",
+        "files": 7,
+        "checksumVerificationPerformed": false,
+        "historyArchivesInProgress": true
+      },
+      "evidence": "rg-remote-data-plane-evidence.json"
+    },
+    {
+      "id": "dbfr.uniqueBackupRestoreReadiness",
+      "status": "unknown",
+      "detail": {
+        "reason": "snapshot lists artifacts; current in-progress manifests/checksums/restore not replayed to avoid conflicting with SQL ops worker"
+      },
+      "evidence": "rg-remote-data-plane-evidence.json"
+    },
+    {
+      "id": "vps.scheduledBackup.rg-sauvegarde.timer",
+      "status": "pass",
+      "detail": {
+        "timer": "rg-sauvegarde.timer",
+        "scheduledObserved": true
+      },
+      "evidence": "rg-backup-scheduling-evidence.json"
+    },
+    {
+      "id": "vps.scheduledBackup.shenron-backup.timer",
+      "status": "pass",
+      "detail": {
+        "timer": "shenron-backup.timer",
+        "scheduledObserved": true
+      },
+      "evidence": "rg-backup-scheduling-evidence.json"
+    },
+    {
+      "id": "dbfr.scheduledBackup.shenron-pg-backup.timer",
+      "status": "pass",
+      "detail": {
+        "timer": "shenron-pg-backup.timer",
+        "scheduledObserved": true
+      },
+      "evidence": "rg-backup-scheduling-evidence.json"
+    },
+    {
+      "id": "dbfr.scheduledBackup.shenron-sqlite-replica-backup.timer",
+      "status": "pass",
+      "detail": {
+        "timer": "shenron-sqlite-replica-backup.timer",
+        "scheduledObserved": true
+      },
+      "evidence": "rg-backup-scheduling-evidence.json"
+    },
+    {
+      "id": "wsl.supabase.containers",
+      "status": "pass",
+      "detail": {
+        "count": 13,
+        "healthy": 13,
+        "containers": [
+          {
+            "name": "supabase-edge-functions",
+            "image": "supabase/edge-runtime:v1.76.2",
+            "health": "healthy"
+          },
+          {
+            "name": "supabase-kong",
+            "image": "kong/kong:3.9.3",
+            "health": "healthy"
+          },
+          {
+            "name": "supabase-vector",
+            "image": "timberio/vector:0.53.0-alpine",
+            "health": "healthy"
+          },
+          {
+            "name": "supabase-studio",
+            "image": "supabase/studio:2026.09.07-sha-7996410",
+            "health": "healthy"
+          },
+          {
+            "name": "supabase-storage",
+            "image": "supabase/storage-api:v1.74.0",
+            "health": "healthy"
+          },
+          {
+            "name": "supabase-analytics",
+            "image": "supabase/logflare:1.50.10",
+            "health": "healthy"
+          },
+          {
+            "name": "realtime-dev.supabase-realtime",
+            "image": "supabase/realtime:v2.134.10",
+            "health": "healthy"
+          },
+          {
+            "name": "supabase-meta",
+            "image": "supabase/postgres-meta:v0.99.0",
+            "health": "healthy"
+          },
+          {
+            "name": "supabase-pooler",
+            "image": "supabase/supavisor:2.9.12",
+            "health": "healthy"
+          },
+          {
+            "name": "supabase-auth",
+            "image": "supabase/gotrue:v2.196.0",
+            "health": "healthy"
+          },
+          {
+            "name": "supabase-rest",
+            "image": "postgrest/postgrest:v14.17",
+            "health": "healthy"
+          },
+          {
+            "name": "supabase-db",
+            "image": "supabase/postgres:17.6.1.136",
+            "health": "healthy"
+          },
+          {
+            "name": "supabase-imgproxy",
+            "image": "darthsim/imgproxy:v3.31.4",
+            "health": "healthy"
+          }
+        ]
+      },
+      "evidence": "rg-wsl-data-plane-evidence.json"
+    },
+    {
+      "id": "wsl.supabase.loopback",
+      "status": "pass",
+      "detail": {
+        "ports": [
+          54321,
+          54443,
+          54322,
+          54328,
+          54329
+        ],
+        "hostIp": "127.0.0.1",
+        "inspectVerified": true
+      },
+      "evidence": "rg-wsl-data-plane-evidence.json"
+    },
+    {
+      "id": "wsl.postgres.retirement",
+      "status": "pending",
+      "detail": {
+        "clusters": "Ver Cluster Port Status Owner    Data directory              Log file\n16  main    5433 online postgres /var/lib/postgresql/16/main /var/log/postgresql/postgresql-16-main.log\n18  main    5432 online postgres /var/lib/postgresql/18/main /var/log/postgresql/postgresql-18-main.log\n",
+        "databaseInventory": {
+          "version": "18.6 (Ubuntu 18.6-1.pgdg24.04+2)",
+          "databases": [
+            "postgres",
+            "shenron_site",
+            "aphrody",
+            "aphrody_web",
+            "stack",
+            "vps_postgres",
+            "rg",
+            "cmp_vps_stack",
+            "cmp_vps_aphrody_web",
+            "cmp_vps_achillea",
+            "cmp_vps_rg",
+            "cmp_vps_aphrody",
+            "cmp_dbfr_shenron_site"
+          ]
+        },
+        "note": "PG16 online; handoff snapshot stopped status is stale. SQL lead owns cleanup."
+      },
+      "evidence": "rg-wsl-data-plane-evidence.json"
+    },
+    {
+      "id": "sharedSql.live.supabaseDirect",
+      "status": "pass",
+      "detail": {
+        "status": "pass",
+        "rows": [
+          {
+            "version": "17.6",
+            "readonly": "on",
+            "user_tables": 165
+          }
+        ]
+      },
+      "evidence": "rg-sql-live-evidence.json"
+    },
+    {
+      "id": "sharedSql.live.supabaseSessionPooler",
+      "status": "pass",
+      "detail": {
+        "status": "pass",
+        "rows": [
+          {
+            "version": "17.6",
+            "readonly": "on",
+            "user_tables": 165
+          }
+        ]
+      },
+      "evidence": "rg-sql-live-evidence.json"
+    },
+    {
+      "id": "sharedSql.live.supabaseTransactionPooler",
+      "status": "pass",
+      "detail": {
+        "status": "pass",
+        "rows": [
+          {
+            "version": "17.6",
+            "readonly": "on",
+            "user_tables": 165
+          }
+        ]
+      },
+      "evidence": "rg-sql-live-evidence.json"
+    },
+    {
+      "id": "sharedSql.live.neonTrainingDirect",
+      "status": "pass",
+      "detail": {
+        "status": "pass",
+        "rows": [
+          {
+            "version": "18.6 (4e955f5)",
+            "readonly": "on",
+            "user_tables": 0
+          }
+        ]
+      },
+      "evidence": "rg-sql-live-evidence.json"
+    },
+    {
+      "id": "sharedSql.live.neonTrainingPooled",
+      "status": "pass",
+      "detail": {
+        "status": "pass",
+        "rows": [
+          {
+            "version": "18.6 (4e955f5)",
+            "readonly": "on",
+            "user_tables": 0
+          }
+        ]
+      },
+      "evidence": "rg-sql-live-evidence.json"
+    },
+    {
+      "id": "wsl.supabase.authenticatedHttp./project/default",
+      "status": "pass",
+      "detail": {
+        "status": 200
+      },
+      "evidence": "rg-sql-live-evidence.json"
+    },
+    {
+      "id": "wsl.supabase.authenticatedHttp./rest/v1/",
+      "status": "pass",
+      "detail": {
+        "status": 200
+      },
+      "evidence": "rg-sql-live-evidence.json"
+    },
+    {
+      "id": "wsl.supabase.authenticatedHttp./auth/v1/health",
+      "status": "pass",
+      "detail": {
+        "status": 200
+      },
+      "evidence": "rg-sql-live-evidence.json"
+    },
+    {
+      "id": "wsl.supabase.authenticatedHttp./storage/v1/status",
+      "status": "pass",
+      "detail": {
+        "status": 200
+      },
+      "evidence": "rg-sql-live-evidence.json"
+    },
+    {
+      "id": "wsl.supabase.authenticatedHttp./realtime/v1/api/ping",
+      "status": "pass",
+      "detail": {
+        "status": 200
+      },
+      "evidence": "rg-sql-live-evidence.json"
+    },
+    {
+      "id": "wsl.supabase.storageBytes",
+      "status": "fail",
+      "detail": {
+        "status": 500,
+        "objectIdentityRedacted": true
+      },
+      "evidence": "rg-sql-live-evidence.json"
+    },
+    {
+      "id": "wsl.supabase.vaultRestoration",
+      "status": "unknown",
+      "detail": {
+        "vaultSecrets": 0,
+        "reason": "source encryption key not restored; no readiness assertion for dependent vault consumers"
+      },
+      "evidence": "rg-wsl-data-plane-evidence.json"
+    },
+    {
+      "id": "neon.training.schema",
+      "status": "pass",
+      "detail": {
+        "userTablesDirect": 0,
+        "userTablesPooled": 0,
+        "expected": 0,
+        "migrationApplied": false
+      },
+      "evidence": "rg-sql-live-evidence.json"
+    },
+    {
+      "id": "bun.unit.shared-sql",
+      "status": "pass",
+      "detail": {
+        "passed": 33,
+        "failed": 0,
+        "command": "timeout 30s bun test",
+        "cwd": "packages/infra/sql"
+      },
+      "evidence": "shared-sql-tests.log"
+    },
+    {
+      "id": "bun.unit.rg-db",
+      "status": "pass",
+      "detail": {
+        "passed": 12,
+        "failed": 0,
+        "command": "timeout 50s bun test",
+        "cwd": "packages/rg/db"
+      },
+      "evidence": "rg-db-tests.log"
+    },
+    {
+      "id": "bun.unit.shenron-db",
+      "status": "pass",
+      "detail": {
+        "passed": 78,
+        "failed": 0,
+        "command": "timeout 50s bun test",
+        "cwd": "packages/shenron/db"
+      },
+      "evidence": "shenron-db-tests.log"
+    },
+    {
+      "id": "rust.sql.compilation",
+      "status": "skipped",
+      "detail": {
+        "reason": "current task prohibits Cargo; exclusively owned by concurrent SQL lead",
+        "source": "crates/infra/sql"
+      },
+      "evidence": "docs/plans/infra/sql-convergence-handoff.md"
+    },
+    {
+      "id": "newSource.productionDeployment",
+      "status": "unknown",
+      "detail": {
+        "reason": "live old releases passing health do not prove current monorepo release; no deployment, Cargo or Next build performed"
+      },
+      "evidence": "rg-remote-data-plane-evidence.json"
+    }
+  ],
+  "counts": {
+    "pass": 33,
+    "fail": 2,
+    "unknown": 4,
+    "pending": 2,
+    "observed": 3,
+    "skipped": 1
+  },
+  "historicalComparison": {
+    "generatedAt": "2026-10-01T18:19:38.707Z",
+    "hosts": [
+      {
+        "host": "local",
+        "bun": "1.4.2",
+        "sqlite": 1,
+        "packages": 2
+      },
+      {
+        "host": "vps",
+        "bun": "1.4.2",
+        "sqlite": 6,
+        "packages": 10
+      },
+      {
+        "host": "dbfr",
+        "bun": "1.4.2",
+        "sqlite": 7,
+        "packages": 0
+      }
+    ],
+    "failures": [],
+    "bestSqlite": {
+      "rg": {
+        "host": "vps",
+        "path": "/srv/rg/shared/discord-sync/discord.db",
+        "bytes": 3870720,
+        "totalRows": 13838,
+        "integrity": "ok",
+        "newestRow": "2026-10-01T18:12:14.918Z"
+      },
+      "shenron": {
+        "host": "vps",
+        "path": "/srv/shenron/shared/bot/data/bot.db",
+        "bytes": 285536256,
+        "totalRows": 638522,
+        "integrity": "ok",
+        "newestRow": "2026-10-01T18:19:20.302Z"
+      }
+    },
+    "note": "Earlier same-day comparator reused; table row counts are timestamped and not conflated with current quick_check."
+  },
+  "reproduce": {
+    "remoteTool": "mcp__aphrody__infra_exec",
+    "remoteCommandEvidence": "rg-remote-data-plane-evidence.json:commands.remote",
+    "backupCommandEvidence": "rg-backup-scheduling-evidence.json:command",
+    "sharedSqlLiveCommand": "timeout 60s bun --env-file /home/aphro/aphrody/.env /tmp/aphrody-infra-e2e-2026-10-01/rg-sql-live-probe.ts",
+    "wslCommands": {
+      "dockerVersion": [
+        "docker",
+        "version",
+        "--format",
+        "{{json .}}"
+      ],
+      "composeVersion": [
+        "docker",
+        "compose",
+        "version",
+        "--short"
+      ],
+      "dockerContainers": [
+        "docker",
+        "ps",
+        "--all",
+        "--format",
+        "{{json .}}"
+      ],
+      "supabaseBindingHealth": [
+        "docker",
+        "inspect",
+        "--format",
+        "{{.Name}} {{json .State.Health.Status}} {{json .NetworkSettings.Ports}}",
+        "supabase-db",
+        "supabase-kong",
+        "supabase-pooler"
+      ],
+      "supabaseUnit": [
+        "systemctl",
+        "--user",
+        "show",
+        "aphrody-supabase.service",
+        "-p",
+        "LoadState",
+        "-p",
+        "ActiveState",
+        "-p",
+        "SubState"
+      ],
+      "pgClusters": [
+        "pg_lsclusters"
+      ],
+      "hostPg": [
+        "sudo",
+        "-n",
+        "-u",
+        "postgres",
+        "env",
+        "PGOPTIONS=-c statement_timeout=10000 -c default_transaction_read_only=on",
+        "psql",
+        "-X",
+        "-A",
+        "-t",
+        "-c",
+        "SELECT json_build_object('version',current_setting('server_version'),'databases',(SELECT json_agg(datname) FROM pg_database WHERE NOT datistemplate));"
+      ],
+      "supabasePg": [
+        "docker",
+        "exec",
+        "supabase-db",
+        "psql",
+        "-U",
+        "postgres",
+        "-d",
+        "postgres",
+        "-X",
+        "-A",
+        "-t",
+        "-c",
+        "BEGIN READ ONLY; SET LOCAL statement_timeout='10s'; SELECT json_build_object('version',current_setting('server_version'),'publicTables',(SELECT count(*) FROM pg_tables WHERE schemaname='public'),'authUsers',(SELECT count(*) FROM auth.users),'storageObjects',(SELECT count(*) FROM storage.objects),'storageBuckets',(SELECT count(*) FROM storage.buckets),'vaultSecrets',(SELECT count(*) FROM vault.secrets)); ROLLBACK;"
+      ],
+      "http": {
+        "method": "GET",
+        "urls": [
+          "http://127.0.0.1:54321/",
+          "http://127.0.0.1:54321/auth/v1/health",
+          "http://127.0.0.1:54321/storage/v1/status",
+          "http://127.0.0.1:54321/realtime/v1/api/ping"
+        ],
+        "timeoutSeconds": 5
+      }
+    }
+  },
+  "evidenceSha256": {
+    "rg-deploy-fixtures.log": "92e37157e8b9a1eeef274986950c81718de2f8736c8abfbbb8ef708c47b0305e",
+    "rg-shenron-db-unit-tests.log": "6043908c8d26d62698476b88f737f39d5d3e91008d4155a81730902f5a37479c",
+    "shared-sql-tests.log": "b28189859b7e84c1e7e8b68c8152476c98eab7bbe8c088f4a6b059155ca158d2",
+    "rg-wsl-data-plane-evidence.json": "80f2bd48ad16b63a02aadd923aad4b143bca9f036cc12c9cb5bf52cb6b1951c4",
+    "shenron-db-tests.log": "24bd33dd6a8cfcc9c762ca4891f5a19b02bc910e815f5dd6ebfc5c8914f996eb",
+    "rg-db-tests.log": "b6f83bd156d2a710b51e9ea2325445ebbdc7d2d2f2fb22d183da128f6d7362dc",
+    "rg-sql-live-probe.ts": "8a273105a87f123bc33450d47ea50a20a25982848f83601d33f668a32b308706",
+    "rg-backup-scheduling-evidence.json": "dbd819f08effa798b185b1ac2eb4948757f4f57fc52d11bb4cefd9cb438fdaef",
+    "rg-remote-data-plane-evidence.json": "530a5c7c016a1ca457df068d7cb004e4a081fb2d34892be5c159e96d144dd978",
+    "rg-sql-live-evidence.json": "9f5e32c1b1ce2fa228b6235d671c71e5d590d4d2443ff92bcbca2c8cb38c23ab"
+  }
+}

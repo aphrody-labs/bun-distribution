@@ -7,7 +7,7 @@
  */
 
 import { OvhClient } from "./client.js";
-import { OvhDns, type DnsRecord } from "./dns.js";
+import { OvhDns } from "./dns.js";
 
 export interface EmailDomainInfo {
   domain: string;
@@ -158,18 +158,14 @@ export class OvhEmail {
 
     // 3. Audit DMARC
     const dmarcRec = records.find(
-      (r) =>
-        r.fieldType === "TXT" &&
-        r.subDomain === "_dmarc" &&
-        r.target.includes("v=DMARC1"),
+      (r) => r.fieldType === "TXT" && r.subDomain === "_dmarc" && r.target.includes("v=DMARC1"),
     );
     const dmarcValid = !!dmarcRec;
 
     // 4. Audit DKIM selectors
     const dkimRecords = records.filter(
       (r) =>
-        r.subDomain.includes("._domainkey") &&
-        (r.fieldType === "CNAME" || r.fieldType === "TXT"),
+        r.subDomain.includes("._domainkey") && (r.fieldType === "CNAME" || r.fieldType === "TXT"),
     );
     const dkimSelectors = dkimRecords.map((r) => `${r.subDomain} -> ${r.target}`);
     const dkimValid = dkimRecords.length >= 2;
@@ -182,16 +178,22 @@ export class OvhEmail {
 
     const recommendations: string[] = [];
     if (!mxValid) {
-      recommendations.push("Ensure OVH MX servers (1 mx0.mail.ovh.net, 5 mx1, 50 mx2, 100 mx3) are configured");
+      recommendations.push(
+        "Ensure OVH MX servers (1 mx0.mail.ovh.net, 5 mx1, 50 mx2, 100 mx3) are configured",
+      );
     }
     if (!spfValid) {
       recommendations.push("Configure SPF record with 'v=spf1 include:mx.ovh.com ~all'");
     }
     if (!dmarcValid) {
-      recommendations.push("Add DMARC policy record on _dmarc TXT: 'v=DMARC1; p=none; adkim=s; aspf=s'");
+      recommendations.push(
+        "Add DMARC policy record on _dmarc TXT: 'v=DMARC1; p=none; adkim=s; aspf=s'",
+      );
     }
     if (!dkimValid) {
-      recommendations.push("Ensure both ovhmo-selector-1 and ovhmo-selector-2 CNAME records are published for DKIM");
+      recommendations.push(
+        "Ensure both ovhmo-selector-1 and ovhmo-selector-2 CNAME records are published for DKIM",
+      );
     }
 
     let score: EmailDnsAuditScorecard["score"] = "SECURE";

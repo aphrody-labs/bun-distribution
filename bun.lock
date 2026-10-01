@@ -350,7 +350,7 @@
         "better-auth": "catalog:",
         "cmdk": "catalog:",
         "date-fns": "catalog:",
-        "drizzle-orm": "^0.45.3",
+        "drizzle-orm": "catalog:",
         "hls.js": "^1.7.2",
         "howler": "^2.2.4",
         "kysely": "catalog:",
@@ -1046,7 +1046,7 @@
       },
       "devDependencies": {
         "@types/bun": "catalog:",
-        "drizzle-orm": "^0.45.3",
+        "drizzle-orm": "catalog:",
         "typescript": "catalog:",
       },
     },
@@ -1061,7 +1061,7 @@
         "@types/bun": "catalog:",
         "@types/react": "catalog:",
         "better-auth": "catalog:",
-        "drizzle-orm": "^0.45.3",
+        "drizzle-orm": "catalog:",
         "hono": "catalog:",
         "next": "catalog:",
         "react": "catalog:",
@@ -1096,7 +1096,7 @@
       "dependencies": {
         "@paralleldrive/cuid2": "^3.3.0",
         "@shenron/config": "workspace:*",
-        "drizzle-orm": "^0.45.3",
+        "drizzle-orm": "catalog:",
         "postgres": "^3.4.9",
       },
       "devDependencies": {

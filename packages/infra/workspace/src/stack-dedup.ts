@@ -86,7 +86,10 @@ export interface StackReport {
 export function compareVersions(a: string, b: string): number {
   const parse = (version: string) => {
     const [core = "", pre] = version.split("+")[0]!.split("-", 2);
-    return { nums: core.split(".").map((part) => Number.parseInt(part, 10) || 0), pre: pre ?? null };
+    return {
+      nums: core.split(".").map((part) => Number.parseInt(part, 10) || 0),
+      pre: pre ?? null,
+    };
   };
   const left = parse(a);
   const right = parse(b);
@@ -103,7 +106,11 @@ export function compareVersions(a: string, b: string): number {
 function graph(meta: CargoMetadataLite) {
   const packages = new Map(meta.packages.map((entry) => [entry.id, entry]));
   const edges = new Map<string, string[]>();
-  for (const node of meta.resolve?.nodes ?? []) edges.set(node.id, node.deps.map((dep) => dep.pkg));
+  for (const node of meta.resolve?.nodes ?? [])
+    edges.set(
+      node.id,
+      node.deps.map((dep) => dep.pkg),
+    );
   return { packages, edges, workspace: new Set(meta.workspace_members) };
 }
 
@@ -152,8 +159,11 @@ export function crateTable(meta: CargoMetadataLite, root: string): CrateRow[] {
       name: entry.name,
       path: relative(root, dirname(entry.manifest_path)).replaceAll("\\", "/"),
       kinds: [...new Set(entry.targets.flatMap((target) => target.kind))].toSorted(),
-      publishable: entry.publish === undefined || entry.publish === null || entry.publish.length > 0,
-      dependents: [...(dependents.get(id) ?? [])].map((dependent) => packages.get(dependent)?.name ?? dependent).toSorted(),
+      publishable:
+        entry.publish === undefined || entry.publish === null || entry.publish.length > 0,
+      dependents: [...(dependents.get(id) ?? [])]
+        .map((dependent) => packages.get(dependent)?.name ?? dependent)
+        .toSorted(),
       freesPackages: frees,
     });
   }
@@ -172,7 +182,9 @@ export function olderVersionsPulledDirectly(meta: CargoMetadataLite): OlderVersi
   const out: OlderVersion[] = [];
   for (const [name, ids] of byName) {
     if (ids.length < 2) continue;
-    const latest = ids.map((id) => packages.get(id)!.version).reduce((a, b) => (compareVersions(a, b) >= 0 ? a : b));
+    const latest = ids
+      .map((id) => packages.get(id)!.version)
+      .reduce((a, b) => (compareVersions(a, b) >= 0 ? a : b));
     for (const id of ids) {
       const version = packages.get(id)!.version;
       if (version === latest) continue;
@@ -183,11 +195,16 @@ export function olderVersionsPulledDirectly(meta: CargoMetadataLite): OlderVersi
       if (pulledBy.length > 0) out.push({ name, version, latest, pulledBy });
     }
   }
-  return out.toSorted((a, b) => a.name.localeCompare(b.name) || compareVersions(a.version, b.version));
+  return out.toSorted(
+    (a, b) => a.name.localeCompare(b.name) || compareVersions(a.version, b.version),
+  );
 }
 
 /** Groups files with the same content; `minBytes` skips the small ones. */
-export function groupDuplicates(files: { path: string; size: number; hash: string }[], minBytes: number): DuplicateFiles[] {
+export function groupDuplicates(
+  files: { path: string; size: number; hash: string }[],
+  minBytes: number,
+): DuplicateFiles[] {
   const groups = new Map<string, { size: number; paths: string[] }>();
   for (const file of files) {
     if (file.size < minBytes) continue;
@@ -198,15 +215,24 @@ export function groupDuplicates(files: { path: string; size: number; hash: strin
   }
   return [...groups.values()]
     .filter((group) => group.paths.length > 1)
-    .map((group) => ({ bytes: group.size * (group.paths.length - 1), copies: group.paths.toSorted() }))
+    .map((group) => ({
+      bytes: group.size * (group.paths.length - 1),
+      copies: group.paths.toSorted(),
+    }))
     .toSorted((a, b) => b.bytes - a.bytes);
 }
 
 const SKIPPED_TOP = new Set(["docs", "upstream"]);
 
 /** Tracked files (git ls-files) outside `docs/` and `upstream/`, hashed. */
-export async function trackedFiles(root: string, minBytes: number): Promise<{ path: string; size: number; hash: string }[]> {
-  const child = Bun.spawn(["git", "-C", root, "ls-files", "-z"], { stdout: "pipe", stderr: "pipe" });
+export async function trackedFiles(
+  root: string,
+  minBytes: number,
+): Promise<{ path: string; size: number; hash: string }[]> {
+  const child = Bun.spawn(["git", "-C", root, "ls-files", "-z"], {
+    stdout: "pipe",
+    stderr: "pipe",
+  });
   const listing = await new Response(child.stdout).text();
   await child.exited;
   const out: { path: string; size: number; hash: string }[] = [];
@@ -246,8 +272,14 @@ export function jsFindings(summary: ImportsSummary): JsFindings {
   const names = new Set(summary.packages.map((entry) => entry.name));
   const used = new Set<string>();
   for (const entry of summary.packages) {
-    for (const reference of entry.imports) if (reference.packageName && reference.packageName !== entry.name) used.add(reference.packageName);
-    for (const key of [...Object.keys(entry.dependencies), ...Object.keys(entry.devDependencies), ...Object.keys(entry.peerDependencies)]) {
+    for (const reference of entry.imports)
+      if (reference.packageName && reference.packageName !== entry.name)
+        used.add(reference.packageName);
+    for (const key of [
+      ...Object.keys(entry.dependencies),
+      ...Object.keys(entry.devDependencies),
+      ...Object.keys(entry.peerDependencies),
+    ]) {
       if (names.has(key) && key !== entry.name) used.add(key);
     }
   }
@@ -255,7 +287,10 @@ export function jsFindings(summary: ImportsSummary): JsFindings {
     .map((entry) => ({
       package: entry.name,
       path: entry.path,
-      dependencies: entry.sourceUnmatchedDependencies.filter((dependency) => !dependency.startsWith("@types/") && !(dependency in entry.peerDependencies)),
+      dependencies: entry.sourceUnmatchedDependencies.filter(
+        (dependency) =>
+          !dependency.startsWith("@types/") && !(dependency in entry.peerDependencies),
+      ),
     }))
     .filter((entry) => entry.dependencies.length > 0)
     .toSorted((a, b) => b.dependencies.length - a.dependencies.length);
@@ -272,14 +307,23 @@ export function jsFindings(summary: ImportsSummary): JsFindings {
 /** Library crates (no binary, no cdylib) that nothing in the workspace depends on. */
 export function librariesWithoutDependents(rows: CrateRow[]): string[] {
   return rows
-    .filter((row) => row.dependents.length === 0 && !row.kinds.includes("bin") && !row.kinds.includes("cdylib"))
+    .filter(
+      (row) =>
+        row.dependents.length === 0 && !row.kinds.includes("bin") && !row.kinds.includes("cdylib"),
+    )
     .map((row) => row.name)
     .toSorted();
 }
 
 function inScope(path: string, scope: string[]): boolean {
   if (scope.length === 0) return true;
-  return scope.some((area) => path.startsWith(`crates/${area}/`) || path.startsWith(`packages/${area}/`) || path.startsWith(`apps/${area}/`) || path.startsWith(`${area}/`));
+  return scope.some(
+    (area) =>
+      path.startsWith(`crates/${area}/`) ||
+      path.startsWith(`packages/${area}/`) ||
+      path.startsWith(`apps/${area}/`) ||
+      path.startsWith(`${area}/`),
+  );
 }
 
 export async function buildReport(options: {
@@ -298,10 +342,13 @@ export async function buildReport(options: {
   const { packages } = graph(metadata);
   for (const id of everything) {
     const entry = packages.get(id);
-    if (entry && !metadata.workspace_members.includes(id)) names.set(entry.name, (names.get(entry.name) ?? 0) + 1);
+    if (entry && !metadata.workspace_members.includes(id))
+      names.set(entry.name, (names.get(entry.name) ?? 0) + 1);
   }
   const js = jsFindings(imports);
-  const duplicates = groupDuplicates(files, minBytes).filter((group) => group.copies.some((copy) => inScope(copy, scope)));
+  const duplicates = groupDuplicates(files, minBytes).filter((group) =>
+    group.copies.some((copy) => inScope(copy, scope)),
+  );
   const pathOf = new Map(all.map((row) => [row.name, row.path]));
   return {
     schema: "aphrody-stack-dedup/1",
@@ -309,10 +356,13 @@ export async function buildReport(options: {
     scope,
     rust: {
       workspaceCrates: all.length,
-      thirdPartyPackages: [...everything].filter((id) => !metadata.workspace_members.includes(id)).length,
+      thirdPartyPackages: [...everything].filter((id) => !metadata.workspace_members.includes(id))
+        .length,
       namesWithSeveralVersions: [...names.values()].filter((count) => count > 1).length,
       crates,
-      olderVersionsPulledDirectly: olderVersionsPulledDirectly(metadata).filter((entry) => entry.pulledBy.some((crate) => inScope(pathOf.get(crate) ?? "", scope))),
+      olderVersionsPulledDirectly: olderVersionsPulledDirectly(metadata).filter((entry) =>
+        entry.pulledBy.some((crate) => inScope(pathOf.get(crate) ?? "", scope)),
+      ),
       withoutDependents: librariesWithoutDependents(crates),
     },
     js: {
@@ -320,32 +370,78 @@ export async function buildReport(options: {
       versionSpecDifferences: js.versionSpecDifferences,
       withoutDependents: js.withoutDependents.filter((entry) => inScope(entry.path, scope)),
     },
-    assets: { groups: duplicates.length, wastedBytes: duplicates.reduce((total, group) => total + group.bytes, 0), duplicates },
+    assets: {
+      groups: duplicates.length,
+      wastedBytes: duplicates.reduce((total, group) => total + group.bytes, 0),
+      duplicates,
+    },
   };
 }
 
 export function renderReport(report: StackReport, top = 15): string {
   const lines: string[] = [];
   const scope = report.scope.length > 0 ? report.scope.join(",") : "all";
-  lines.push(`stack-dedup (${scope}): ${report.rust.workspaceCrates} workspace crates, ${report.rust.thirdPartyPackages} third-party packages, ${report.rust.namesWithSeveralVersions} names built in several versions`);
-  lines.push("", "heaviest crates (third-party packages freed if the crate and its dependents went away):");
+  lines.push(
+    `stack-dedup (${scope}): ${report.rust.workspaceCrates} workspace crates, ${report.rust.thirdPartyPackages} third-party packages, ${report.rust.namesWithSeveralVersions} names built in several versions`,
+  );
+  lines.push(
+    "",
+    "heaviest crates (third-party packages freed if the crate and its dependents went away):",
+  );
   for (const row of report.rust.crates.slice(0, top)) {
-    lines.push(`  ${String(row.freesPackages).padStart(4)}  ${row.name.padEnd(30)} ${row.path} (${row.dependents.length} dependents${row.publishable ? "" : ", publish=false"})`);
+    lines.push(
+      `  ${String(row.freesPackages).padStart(4)}  ${row.name.padEnd(30)} ${row.path} (${row.dependents.length} dependents${row.publishable ? "" : ", publish=false"})`,
+    );
   }
-  lines.push("", `library crates nothing depends on: ${report.rust.withoutDependents.join(", ") || "none"}`);
-  lines.push("", `older versions that our crates request directly (${report.rust.olderVersionsPulledDirectly.length}):`);
-  for (const entry of report.rust.olderVersionsPulledDirectly) lines.push(`  ${entry.name} ${entry.version} (latest ${entry.latest}) <- ${entry.pulledBy.join(", ")}`);
-  lines.push("", `Bun packages: ${report.js.unusedDependencies.length} with declared dependencies that no source imports`);
-  for (const entry of report.js.unusedDependencies) lines.push(`  ${entry.package}: ${entry.dependencies.join(", ")}`);
-  lines.push("", `Bun packages nothing depends on: ${report.js.withoutDependents.map((entry) => entry.package).join(", ") || "none"}`);
-  lines.push("", `tracked exact duplicates: ${report.assets.groups} groups, ${(report.assets.wastedBytes / 1e6).toFixed(1)} MB`);
-  for (const group of report.assets.duplicates.slice(0, top)) lines.push(`  ${(group.bytes / 1e6).toFixed(2)} MB  ${group.copies.join(" | ")}`);
+  lines.push(
+    "",
+    `library crates nothing depends on: ${report.rust.withoutDependents.join(", ") || "none"}`,
+  );
+  lines.push(
+    "",
+    `older versions that our crates request directly (${report.rust.olderVersionsPulledDirectly.length}):`,
+  );
+  for (const entry of report.rust.olderVersionsPulledDirectly)
+    lines.push(
+      `  ${entry.name} ${entry.version} (latest ${entry.latest}) <- ${entry.pulledBy.join(", ")}`,
+    );
+  lines.push(
+    "",
+    `Bun packages: ${report.js.unusedDependencies.length} with declared dependencies that no source imports`,
+  );
+  for (const entry of report.js.unusedDependencies)
+    lines.push(`  ${entry.package}: ${entry.dependencies.join(", ")}`);
+  lines.push(
+    "",
+    `Bun packages nothing depends on: ${report.js.withoutDependents.map((entry) => entry.package).join(", ") || "none"}`,
+  );
+  lines.push(
+    "",
+    `tracked exact duplicates: ${report.assets.groups} groups, ${(report.assets.wastedBytes / 1e6).toFixed(1)} MB`,
+  );
+  for (const group of report.assets.duplicates.slice(0, top))
+    lines.push(`  ${(group.bytes / 1e6).toFixed(2)} MB  ${group.copies.join(" | ")}`);
   return lines.join("\n");
 }
 
 async function cargoMetadata(root: string): Promise<CargoMetadataLite> {
-  const child = Bun.spawn(["cargo", "metadata", "--offline", "--format-version", "1", "--filter-platform", "x86_64-unknown-linux-gnu"], { cwd: root, stdout: "pipe", stderr: "pipe" });
-  const [code, stdout, stderr] = await Promise.all([child.exited, new Response(child.stdout).text(), new Response(child.stderr).text()]);
+  const child = Bun.spawn(
+    [
+      "cargo",
+      "metadata",
+      "--offline",
+      "--format-version",
+      "1",
+      "--filter-platform",
+      "x86_64-unknown-linux-gnu",
+    ],
+    { cwd: root, stdout: "pipe", stderr: "pipe" },
+  );
+  const [code, stdout, stderr] = await Promise.all([
+    child.exited,
+    new Response(child.stdout).text(),
+    new Response(child.stderr).text(),
+  ]);
   if (code !== 0) throw new Error(`cargo metadata failed: ${stderr.trim().split("\n").at(-1)}`);
   return JSON.parse(stdout) as CargoMetadataLite;
 }
@@ -366,15 +462,30 @@ export async function runStackDedup(args: string[]): Promise<number> {
     else if (arg === "--min-bytes") minBytes = Number(args[(index += 1)]);
     else if (arg === "--json") json = true;
     else if (arg === "--help" || arg === "-h") {
-      console.log("Usage: aphrody-ops stack-dedup [--root <repo>] [--scope ui,web] [--metadata <cargo-metadata.json>] [--min-bytes <n>] [--json] [--out <file>]");
+      console.log(
+        "Usage: aphrody-ops stack-dedup [--root <repo>] [--scope ui,web] [--metadata <cargo-metadata.json>] [--min-bytes <n>] [--json] [--out <file>]",
+      );
       return 0;
     } else throw new Error(`Unknown argument: ${arg}`);
   }
   if (!root || !Number.isFinite(minBytes)) throw new Error("invalid --root or --min-bytes");
   root = resolve(root);
-  const metadata = metadataPath && existsSync(metadataPath) ? (JSON.parse(readFileSync(metadataPath, "utf8")) as CargoMetadataLite) : await cargoMetadata(root);
-  const [imports, files] = await Promise.all([scanImportsExports(root), trackedFiles(root, minBytes)]);
-  const report = await buildReport({ root, scope, metadata, imports: imports as unknown as ImportsSummary, files, minBytes });
+  const metadata =
+    metadataPath && existsSync(metadataPath)
+      ? (JSON.parse(readFileSync(metadataPath, "utf8")) as CargoMetadataLite)
+      : await cargoMetadata(root);
+  const [imports, files] = await Promise.all([
+    scanImportsExports(root),
+    trackedFiles(root, minBytes),
+  ]);
+  const report = await buildReport({
+    root,
+    scope,
+    metadata,
+    imports: imports as unknown as ImportsSummary,
+    files,
+    minBytes,
+  });
   const text = json ? JSON.stringify(report, null, 2) : renderReport(report);
   if (out) {
     await mkdir(dirname(resolve(out)), { recursive: true });

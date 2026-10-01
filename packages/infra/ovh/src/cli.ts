@@ -8,7 +8,7 @@
  */
 
 import { AphrodyOvh } from "./index.js";
-import { KNOWN_PROFILES, loadCredentials } from "./profiles.js";
+import { KNOWN_PROFILES } from "./profiles.js";
 
 const args = process.argv.slice(2);
 
@@ -32,7 +32,12 @@ const profileArg = getOption("--profile");
 const positionals: string[] = [];
 for (let i = 0; i < args.length; i++) {
   if (args[i].startsWith("--")) {
-    if (args[i] === "--profile" || args[i] === "--type" || args[i] === "--subdomain" || args[i] === "--ttl") {
+    if (
+      args[i] === "--profile" ||
+      args[i] === "--type" ||
+      args[i] === "--subdomain" ||
+      args[i] === "--ttl"
+    ) {
       i++; // skip value
     }
   } else {
@@ -59,7 +64,7 @@ async function run() {
   if (category === "profiles") {
     output(Object.values(KNOWN_PROFILES), (profs) => {
       console.log("Registered Aphrody OVH Profiles:");
-      for (const p of profs as typeof KNOWN_PROFILES[string][]) {
+      for (const p of profs as (typeof KNOWN_PROFILES)[string][]) {
         console.log(`  - ${p.id.padEnd(18)} : ${p.name}`);
         console.log(`    Domains: ${p.domains.join(", ")}`);
         console.log(`    Region:  ${p.region}`);
@@ -68,9 +73,10 @@ async function run() {
     return;
   }
 
-  if (category === "status") {
+  if (category === "status" || category === "check") {
     const ovh = new AphrodyOvh(profileArg);
     const health = await ovh.checkHealth();
+    if (!health.authenticated) process.exitCode = 1;
     output(health, (h) => {
       const typedH = h as typeof health;
       console.log(`OVH Health Check:`);
@@ -121,11 +127,15 @@ async function run() {
       const records = await ovh.dns.listRecords(zoneName, { fieldType, subDomain });
       output(records, (recs) => {
         console.log(`DNS Records for ${zoneName} (${(recs as unknown[]).length} records):`);
-        console.log(`${"ID".padEnd(12)} ${"TYPE".padEnd(8)} ${"SUBDOMAIN".padEnd(20)} ${"TTL".padEnd(8)} TARGET`);
+        console.log(
+          `${"ID".padEnd(12)} ${"TYPE".padEnd(8)} ${"SUBDOMAIN".padEnd(20)} ${"TTL".padEnd(8)} TARGET`,
+        );
         console.log("-".repeat(70));
         for (const r of recs as any[]) {
           const sub = (r.subDomain || "@").padEnd(20);
-          console.log(`${String(r.id).padEnd(12)} ${r.fieldType.padEnd(8)} ${sub} ${String(r.ttl).padEnd(8)} ${r.target}`);
+          console.log(
+            `${String(r.id).padEnd(12)} ${r.fieldType.padEnd(8)} ${sub} ${String(r.ttl).padEnd(8)} ${r.target}`,
+          );
         }
       });
       return;
@@ -138,7 +148,9 @@ async function run() {
       const ttl = Number(getOption("--ttl") ?? 300);
 
       if (!type || target === undefined) {
-        console.error("usage: aphrody-ovh dns add <zone> <type> <subdomain> <target> [--ttl 300] [--apply]");
+        console.error(
+          "usage: aphrody-ovh dns add <zone> <type> <subdomain> <target> [--ttl 300] [--apply]",
+        );
         process.exit(1);
       }
 
@@ -192,7 +204,9 @@ async function run() {
         console.log(`  Anycast Active: ${a.hasDnsAnycast ? "YES" : "NO"}`);
         console.log(`  Total Records:  ${a.totalRecords}`);
         if (a.aphrodyInvariants) {
-          console.log(`  Aphrody Production Invariants: ${a.aphrodyInvariants.verified ? "VERIFIED" : "FAIL"}`);
+          console.log(
+            `  Aphrody Production Invariants: ${a.aphrodyInvariants.verified ? "VERIFIED" : "FAIL"}`,
+          );
           if (a.aphrodyInvariants.missingSubdomains.length > 0) {
             console.log(`    Missing: ${a.aphrodyInvariants.missingSubdomains.join(", ")}`);
           }
@@ -213,7 +227,9 @@ async function run() {
     const ovh = new AphrodyOvh(profileArg || domain);
 
     if (!domain) {
-      console.error("error: missing <domain> argument. Example: aphrody-ovh email domain aphrody.com");
+      console.error(
+        "error: missing <domain> argument. Example: aphrody-ovh email domain aphrody.com",
+      );
       process.exit(1);
     }
 
@@ -240,7 +256,9 @@ async function run() {
       const to = rest[2];
       const copy = hasFlag("--copy");
       if (!from || !to) {
-        console.error("usage: aphrody-ovh email add-redirection <domain> <from> <to> [--copy] [--apply]");
+        console.error(
+          "usage: aphrody-ovh email add-redirection <domain> <from> <to> [--copy] [--apply]",
+        );
         process.exit(1);
       }
       const res = await ovh.email.createRedirection(domain, from, to, copy, { apply });
@@ -264,10 +282,18 @@ async function run() {
       output(audit, (a: any) => {
         console.log(`Email Deliverability Audit for ${a.domain}:`);
         console.log(`  Status Score:   ${a.score}`);
-        console.log(`  MX Records:     ${a.mxValid ? "VALID" : "INVALID"} (${a.mxRecords.join(", ") || "none"})`);
-        console.log(`  SPF Record:     ${a.spfValid ? "VALID" : "INVALID"} (${a.spfRecord || "missing"})`);
-        console.log(`  DMARC Record:   ${a.dmarcValid ? "VALID" : "INVALID"} (${a.dmarcRecord || "missing"})`);
-        console.log(`  DKIM Selectors: ${a.dkimValid ? "VALID" : "INVALID"} (${a.dkimSelectors.length} selectors)`);
+        console.log(
+          `  MX Records:     ${a.mxValid ? "VALID" : "INVALID"} (${a.mxRecords.join(", ") || "none"})`,
+        );
+        console.log(
+          `  SPF Record:     ${a.spfValid ? "VALID" : "INVALID"} (${a.spfRecord || "missing"})`,
+        );
+        console.log(
+          `  DMARC Record:   ${a.dmarcValid ? "VALID" : "INVALID"} (${a.dmarcRecord || "missing"})`,
+        );
+        console.log(
+          `  DKIM Selectors: ${a.dkimValid ? "VALID" : "INVALID"} (${a.dkimSelectors.length} selectors)`,
+        );
         console.log(`  Autodiscover:   ${a.autodiscoverValid ? "VALID" : "NOT CONFIGURED"}`);
         if (a.recommendations.length > 0) {
           console.log(`  Recommendations:`);
@@ -294,7 +320,9 @@ async function run() {
     }
 
     if (!serviceName) {
-      console.error("error: missing <serviceName> argument. Example: aphrody-ovh vps info vps-203bea89.vps.ovh.net");
+      console.error(
+        "error: missing <serviceName> argument. Example: aphrody-ovh vps info vps-203bea89.vps.ovh.net",
+      );
       process.exit(1);
     }
 

@@ -45,7 +45,7 @@ test("gate plans locked all-target Rust checks, tests and release builds plus ea
   expect(plan.checks[0]!.command).toEqual(["bun", "install", "--frozen-lockfile"]);
   for (const subcommand of ["check", "clippy", "test", "build"]) {
     const check = plan.checks.find(
-      (item) => item.command[0] === "cargo" && item.command[1] === subcommand,
+      (item) => item.command[0].endsWith("cargo-serial.sh") && item.command[1] === subcommand,
     )!;
     expect(check.command).toContain("--workspace");
     expect(check.command).toContain("--all-targets");
@@ -184,4 +184,46 @@ test("discovery uses actual root workspace members, exclusions and overlapping p
   } finally {
     await rm(root, { recursive: true, force: true });
   }
+});
+
+test("no-build excludes Cargo compilation, arbitrary adapters, unsafe test hooks and Next builds", async () => {
+  const plan = fixture({
+    noBuild: true,
+    packages: [
+      {
+        ...packages[0]!,
+        scripts: {
+          typecheck: "tsc --noEmit",
+          lint: "oxlint src",
+          "format:check": "oxfmt --check src",
+          test: "bun test",
+          build: "next build",
+          pretypecheck: "cargo build",
+        },
+      },
+      {
+        name: "@owner/hook",
+        path: "packages/owner/hook",
+        scripts: {
+          typecheck: "bun scripts/check.ts",
+          test: "cargo test",
+          build: "bun run build-native",
+        },
+      },
+    ],
+  });
+  expect(plan.noBuild).toBe(true);
+  expect(plan.checks[0]!.command).toContain("--ignore-scripts");
+  expect(plan.checks[0]!.command).toContain("--dry-run");
+  expect(plan.checks.some((check) => /cargo-serial/.test(check.command[0]!))).toBe(false);
+  expect(plan.checks.find((check) => check.name === "@owner/app: typecheck")!.command).toEqual([
+    "tsc",
+    "--noEmit",
+  ]);
+  expect(
+    plan.checks.every((check) => !(check.command[0] === "bun" && check.command[1] === "run")),
+  ).toBe(true);
+  expect(plan.deferred!.some((check) => check.script === "next build")).toBe(true);
+  expect(plan.deferred!.some((check) => check.script === "bun test")).toBe(true);
+  expect((await executeMonorepoGate(plan, async () => 0)).passed).toBe(false);
 });

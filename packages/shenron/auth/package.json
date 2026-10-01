@@ -58,7 +58,7 @@
     "react": "catalog:",
     "@types/react": "catalog:",
     "@shenron/db": "workspace:*",
-    "drizzle-orm": "^0.45.3"
+    "drizzle-orm": "catalog:"
   },
   "peerDependencies": {
     "better-auth": "1.7.5",

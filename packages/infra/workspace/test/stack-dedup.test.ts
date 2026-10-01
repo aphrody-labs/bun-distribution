@@ -10,7 +10,14 @@ import {
   type CargoMetadataLite,
 } from "../src/stack-dedup.ts";
 
-const pkg = (id: string, name: string, version = "1.0.0", dir = `/r/${name}`, kinds = ["lib"], publish?: string[] | null) => ({
+const pkg = (
+  id: string,
+  name: string,
+  version = "1.0.0",
+  dir = `/r/${name}`,
+  kinds = ["lib"],
+  publish?: string[] | null,
+) => ({
   id,
   name,
   version,
@@ -87,14 +94,22 @@ describe("crateTable", () => {
 
 describe("olderVersionsPulledDirectly", () => {
   test("names the workspace crate that asks for the older version", () => {
-    expect(olderVersionsPulledDirectly(metadata)).toEqual([{ name: "serde", version: "0.9.5", latest: "1.2.0", pulledBy: ["tool"] }]);
+    expect(olderVersionsPulledDirectly(metadata)).toEqual([
+      { name: "serde", version: "0.9.5", latest: "1.2.0", pulledBy: ["tool"] },
+    ]);
   });
 
   test("ignores versions only transitive dependencies ask for", () => {
     const transitive: CargoMetadataLite = {
       ...metadata,
       resolve: {
-        nodes: metadata.resolve!.nodes.map((node) => (node.id === "tool" ? { id: "tool", deps: [{ pkg: "serde@1" }, { pkg: "heavy" }] } : node.id === "heavy" ? { id: "heavy", deps: [{ pkg: "heavy-sub" }, { pkg: "serde@0" }] } : node)),
+        nodes: metadata.resolve!.nodes.map((node) =>
+          node.id === "tool"
+            ? { id: "tool", deps: [{ pkg: "serde@1" }, { pkg: "heavy" }] }
+            : node.id === "heavy"
+              ? { id: "heavy", deps: [{ pkg: "heavy-sub" }, { pkg: "serde@0" }] }
+              : node,
+        ),
       },
     };
     expect(olderVersionsPulledDirectly(transitive)).toEqual([]);
@@ -104,7 +119,17 @@ describe("olderVersionsPulledDirectly", () => {
 describe("groupDuplicates", () => {
   const file = (path: string, hash: string, size: number) => ({ path, hash, size });
   test("groups identical content and counts the bytes of the extra copies", () => {
-    const groups = groupDuplicates([file("a/x.woff2", "h1", 1000), file("b/x.woff2", "h1", 1000), file("c/x.woff2", "h1", 1000), file("a/y", "h2", 500), file("b/y", "h2", 500), file("a/z", "h3", 9000)], 100);
+    const groups = groupDuplicates(
+      [
+        file("a/x.woff2", "h1", 1000),
+        file("b/x.woff2", "h1", 1000),
+        file("c/x.woff2", "h1", 1000),
+        file("a/y", "h2", 500),
+        file("b/y", "h2", 500),
+        file("a/z", "h3", 9000),
+      ],
+      100,
+    );
     expect(groups).toEqual([
       { bytes: 2000, copies: ["a/x.woff2", "b/x.woff2", "c/x.woff2"] },
       { bytes: 500, copies: ["a/y", "b/y"] },
@@ -121,18 +146,50 @@ describe("jsFindings", () => {
   const summary = {
     versionSpecDifferences: { react: { a: "^19", b: ">=18" } },
     packages: [
-      { path: "packages/ui/a", name: "@x/a", sourceFiles: 3, imports: [{ packageName: "@x/b" }], dependencies: {}, devDependencies: {}, peerDependencies: { tailwindcss: "^4" }, sourceUnmatchedDependencies: ["lodash", "@types/node", "tailwindcss"] },
-      { path: "packages/ui/b", name: "@x/b", sourceFiles: 2, imports: [], dependencies: {}, devDependencies: {}, peerDependencies: {}, sourceUnmatchedDependencies: [] },
-      { path: "packages/ui/c", name: "@x/c", sourceFiles: 4, imports: [], dependencies: {}, devDependencies: {}, peerDependencies: {}, sourceUnmatchedDependencies: [] },
+      {
+        path: "packages/ui/a",
+        name: "@x/a",
+        sourceFiles: 3,
+        imports: [{ packageName: "@x/b" }],
+        dependencies: {},
+        devDependencies: {},
+        peerDependencies: { tailwindcss: "^4" },
+        sourceUnmatchedDependencies: ["lodash", "@types/node", "tailwindcss"],
+      },
+      {
+        path: "packages/ui/b",
+        name: "@x/b",
+        sourceFiles: 2,
+        imports: [],
+        dependencies: {},
+        devDependencies: {},
+        peerDependencies: {},
+        sourceUnmatchedDependencies: [],
+      },
+      {
+        path: "packages/ui/c",
+        name: "@x/c",
+        sourceFiles: 4,
+        imports: [],
+        dependencies: {},
+        devDependencies: {},
+        peerDependencies: {},
+        sourceUnmatchedDependencies: [],
+      },
     ],
   };
 
   test("reports unimported dependencies but not types or peers", () => {
-    expect(jsFindings(summary).unusedDependencies).toEqual([{ package: "@x/a", path: "packages/ui/a", dependencies: ["lodash"] }]);
+    expect(jsFindings(summary).unusedDependencies).toEqual([
+      { package: "@x/a", path: "packages/ui/a", dependencies: ["lodash"] },
+    ]);
   });
 
   test("reports packages that nothing imports or declares", () => {
-    expect(jsFindings(summary).withoutDependents.map((entry) => entry.package)).toEqual(["@x/a", "@x/c"]);
+    expect(jsFindings(summary).withoutDependents.map((entry) => entry.package)).toEqual([
+      "@x/a",
+      "@x/c",
+    ]);
     expect(jsFindings(summary).versionSpecDifferences).toEqual({ react: { a: "^19", b: ">=18" } });
   });
 });

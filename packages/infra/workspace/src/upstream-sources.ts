@@ -75,7 +75,8 @@ export function parseManifest(text: string): Manifest {
 
 export function resolveSourceRoot(repo: string, manifest: Manifest, override?: string): string {
   const chosen = override ?? process.env.APHRODY_SOURCE_ROOT ?? manifest.root;
-  const expanded = chosen === "~" || chosen.startsWith("~/") ? join(homedir(), chosen.slice(1)) : chosen;
+  const expanded =
+    chosen === "~" || chosen.startsWith("~/") ? join(homedir(), chosen.slice(1)) : chosen;
   return resolve(repo, expanded);
 }
 
@@ -96,7 +97,10 @@ export type Row = {
   patches: Record<string, boolean>;
 };
 
-async function run(cmd: string[], cwd?: string): Promise<{ code: number; out: string; err: string }> {
+async function run(
+  cmd: string[],
+  cwd?: string,
+): Promise<{ code: number; out: string; err: string }> {
   const proc = Bun.spawn(cmd, { cwd, stdout: "pipe", stderr: "pipe" });
   const [out, err, code] = await Promise.all([
     new Response(proc.stdout).text(),
@@ -119,24 +123,46 @@ export async function inspect(root: string, source: Source): Promise<Row> {
   for (const patch of source.patches ?? []) {
     patches[patch.id] = await patchState(dir, patch);
   }
-  const unapplied = Object.entries(patches).filter(([, applied]) => !applied).map(([id]) => id);
+  const unapplied = Object.entries(patches)
+    .filter(([, applied]) => !applied)
+    .map(([id]) => id);
   let head: string | undefined;
   if (source.kind === "git") {
     const rev = await run(["git", "rev-parse", "HEAD"], dir);
-    if (rev.code !== 0) return { id: source.id, state: "drift", detail: "not a git checkout", patches };
+    if (rev.code !== 0)
+      return { id: source.id, state: "drift", detail: "not a git checkout", patches };
     head = rev.out;
     if (source.pinned && head !== source.commit) {
-      return { id: source.id, state: "drift", detail: `HEAD ${head.slice(0, 8)} != pin ${source.commit?.slice(0, 8)}`, head, patches };
+      return {
+        id: source.id,
+        state: "drift",
+        detail: `HEAD ${head.slice(0, 8)} != pin ${source.commit?.slice(0, 8)}`,
+        head,
+        patches,
+      };
     }
-    if (!(source.patches?.length)) {
+    if (!source.patches?.length) {
       const dirty = await run(["git", "status", "--porcelain"], dir);
-      if (dirty.out !== "") return { id: source.id, state: "dirty", detail: `${dirty.out.split("\n").length} changed paths`, head, patches };
+      if (dirty.out !== "")
+        return {
+          id: source.id,
+          state: "dirty",
+          detail: `${dirty.out.split("\n").length} changed paths`,
+          head,
+          patches,
+        };
     }
   }
   if (unapplied.length > 0) {
     return { id: source.id, state: "patch-missing", detail: unapplied.join(", "), head, patches };
   }
-  return { id: source.id, state: source.pinned ? "ok" : "tracked", detail: head?.slice(0, 8) ?? source.version ?? "", head, patches };
+  return {
+    id: source.id,
+    state: source.pinned ? "ok" : "tracked",
+    detail: head?.slice(0, 8) ?? source.version ?? "",
+    head,
+    patches,
+  };
 }
 
 async function fetchCrate(source: Source, dir: string): Promise<void> {
@@ -157,7 +183,15 @@ async function fetchCrate(source: Source, dir: string): Promise<void> {
 }
 
 async function cloneGit(source: Source, dir: string): Promise<void> {
-  const clone = ["git", "clone", "--quiet", "--filter=blob:none", "--no-checkout", source.url!, dir];
+  const clone = [
+    "git",
+    "clone",
+    "--quiet",
+    "--filter=blob:none",
+    "--no-checkout",
+    source.url!,
+    dir,
+  ];
   const cloned = await run(clone);
   if (cloned.code !== 0) throw new Error(`git clone: ${cloned.err}`);
   if (source.sparse?.length) {
@@ -199,7 +233,12 @@ export async function syncSource(repo: string, root: string, source: Source): Pr
 }
 
 /** Cargo path dependencies in the root Cargo.toml must match the manifest layout. */
-export function cargoProblems(cargoToml: string, repo: string, root: string, manifest: Manifest): string[] {
+export function cargoProblems(
+  cargoToml: string,
+  repo: string,
+  root: string,
+  manifest: Manifest,
+): string[] {
   const problems: string[] = [];
   for (const source of manifest.sources) {
     const expected = cargoPathFor(repo, root, source);
@@ -208,20 +247,32 @@ export function cargoProblems(cargoToml: string, repo: string, root: string, man
       problems.push(`Cargo.toml: no path dependency "${expected}" for ${source.id}`);
     }
   }
-  if (/path\s*=\s*"upstream\/(mcp-server-tauri|simdutf-rio|tauri-plugin-dialog|tauri-driver|tauri-plugin-webdriver|victauri)/.test(cargoToml)) {
+  if (
+    /path\s*=\s*"upstream\/(mcp-server-tauri|simdutf-rio|tauri-plugin-dialog|tauri-driver|tauri-plugin-webdriver|victauri)/.test(
+      cargoToml,
+    )
+  ) {
     problems.push("Cargo.toml: path dependency still points at a moved upstream/ tree");
   }
   return problems;
 }
 
-type Args = { repo: string; action: "status" | "sync" | "verify"; apply: boolean; json: boolean; only?: string; sourceRoot?: string };
+type Args = {
+  repo: string;
+  action: "status" | "sync" | "verify";
+  apply: boolean;
+  json: boolean;
+  only?: string;
+  sourceRoot?: string;
+};
 
 export function parseArgs(argv: string[]): Args {
   const args: Args = { repo: process.cwd(), action: "status", apply: false, json: false };
   const rest = [...argv];
   if (rest[0] && !rest[0].startsWith("-")) {
     const action = rest.shift();
-    if (action !== "status" && action !== "sync" && action !== "verify") throw new Error(`unknown action ${action}`);
+    if (action !== "status" && action !== "sync" && action !== "verify")
+      throw new Error(`unknown action ${action}`);
     args.action = action;
   }
   while (rest.length) {
@@ -243,10 +294,14 @@ export async function runUpstreamSources(argv: string[]): Promise<number> {
     args = parseArgs(argv);
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    console.log("Usage: aphrody-ops upstream-sources [status|sync|verify] [--root <repo>] [--source-root <dir>] [--only <id>] [--apply] [--json]");
+    console.log(
+      "Usage: aphrody-ops upstream-sources [status|sync|verify] [--root <repo>] [--source-root <dir>] [--only <id>] [--apply] [--json]",
+    );
     return message === "help" ? 0 : (console.error(message), 2);
   }
-  const manifest = parseManifest(await readFile(join(args.repo, "config/upstream-sources.json"), "utf8"));
+  const manifest = parseManifest(
+    await readFile(join(args.repo, "config/upstream-sources.json"), "utf8"),
+  );
   const root = resolveSourceRoot(args.repo, manifest, args.sourceRoot);
   const sources = manifest.sources.filter((source) => !args.only || source.id === args.only);
   if (args.only && sources.length === 0) return (console.error(`unknown source ${args.only}`), 2);
@@ -254,15 +309,33 @@ export async function runUpstreamSources(argv: string[]): Promise<number> {
   const actions: Record<string, string> = {};
   if (args.action === "sync") {
     for (const source of sources) {
-      const planned = existsSync(join(root, source.id)) ? "present" : source.kind === "crate" ? "would extract" : "would clone";
-      actions[source.id] = args.apply ? await syncSource(args.repo, root, source).catch((error: Error) => `FAILED: ${error.message}`) : planned;
+      const planned = existsSync(join(root, source.id))
+        ? "present"
+        : source.kind === "crate"
+          ? "would extract"
+          : "would clone";
+      actions[source.id] = args.apply
+        ? await syncSource(args.repo, root, source).catch(
+            (error: Error) => `FAILED: ${error.message}`,
+          )
+        : planned;
     }
   }
   const rows = await Promise.all(sources.map((source) => inspect(root, source)));
-  const problems = args.action === "status" ? [] : cargoProblems(await readFile(join(args.repo, "Cargo.toml"), "utf8"), args.repo, root, manifest);
+  const problems =
+    args.action === "status"
+      ? []
+      : cargoProblems(
+          await readFile(join(args.repo, "Cargo.toml"), "utf8"),
+          args.repo,
+          root,
+          manifest,
+        );
   const known = new Set(manifest.sources.map((source) => source.id));
   const unmanaged = existsSync(root)
-    ? (await readdir(root, { withFileTypes: true })).filter((entry) => entry.isDirectory() && !known.has(entry.name)).map((entry) => entry.name)
+    ? (await readdir(root, { withFileTypes: true }))
+        .filter((entry) => entry.isDirectory() && !known.has(entry.name))
+        .map((entry) => entry.name)
     : [];
   const bad = rows.filter((row) => row.state !== "ok" && row.state !== "tracked");
   const failed = Object.values(actions).some((value) => value.startsWith("FAILED"));
@@ -270,10 +343,14 @@ export async function runUpstreamSources(argv: string[]): Promise<number> {
     console.log(JSON.stringify({ root, rows, actions, problems, unmanaged }, null, 2));
   } else {
     console.log(`source root: ${root}`);
-    for (const row of rows) console.log(`${row.state.padEnd(13)} ${row.id.padEnd(24)} ${row.detail}${actions[row.id] ? `  [${actions[row.id]}]` : ""}`);
+    for (const row of rows)
+      console.log(
+        `${row.state.padEnd(13)} ${row.id.padEnd(24)} ${row.detail}${actions[row.id] ? `  [${actions[row.id]}]` : ""}`,
+      );
     if (unmanaged.length) console.log(`unmanaged (not in manifest): ${unmanaged.join(", ")}`);
     for (const problem of problems) console.log(`problem: ${problem}`);
-    if (args.action === "sync" && !args.apply) console.log("plan only; pass --apply to clone, extract and patch");
+    if (args.action === "sync" && !args.apply)
+      console.log("plan only; pass --apply to clone, extract and patch");
   }
   if (args.action === "status") return 0;
   return bad.length > 0 || problems.length > 0 || failed ? 1 : 0;

@@ -20,6 +20,8 @@ export type MonorepoGatePlan = {
   packages: WorkspacePackage[];
   checks: GateCheck[];
   gaps: GateGap[];
+  deferred?: Array<GateCheck & { reason: string }>;
+  noBuild?: boolean;
 };
 export type GateResult = {
   name: string;
@@ -50,8 +52,10 @@ export function buildMonorepoGatePlan(input: {
   hasBunLock: boolean;
   docsScript?: string;
   gaps?: GateGap[];
+  noBuild?: boolean;
 }): MonorepoGatePlan {
   const root = resolve(input.root);
+  const cargo = join(root, "scripts/build/rust/cargo-serial.sh");
   const gaps = [...(input.gaps ?? [])];
   const checks: GateCheck[] = [];
   const add = (name: string, command: string[]) => checks.push({ name, command, cwd: root });
@@ -61,9 +65,9 @@ export function buildMonorepoGatePlan(input: {
     if (!input.hasCargoLock)
       gaps.push({ path: "Cargo.lock", check: "lockfile", reason: "Rust lockfile missing" });
     add("Rust formatting", ["cargo", "fmt", "--all", "--check"]);
-    add("Rust all-target check", ["cargo", "check", "--workspace", "--all-targets", "--locked"]);
+    add("Rust all-target check", [cargo, "check", "--workspace", "--all-targets", "--locked"]);
     add("Rust Clippy", [
-      "cargo",
+      cargo,
       "clippy",
       "--workspace",
       "--all-targets",
@@ -72,10 +76,10 @@ export function buildMonorepoGatePlan(input: {
       "-D",
       "warnings",
     ]);
-    add("Rust all-target tests", ["cargo", "test", "--workspace", "--all-targets", "--locked"]);
-    add("Rust documentation tests", ["cargo", "test", "--workspace", "--doc", "--locked"]);
+    add("Rust all-target tests", [cargo, "test", "--workspace", "--all-targets", "--locked"]);
+    add("Rust documentation tests", [cargo, "test", "--workspace", "--doc", "--locked"]);
     add("Rust release build", [
-      "cargo",
+      cargo,
       "build",
       "--workspace",
       "--all-targets",
@@ -156,12 +160,71 @@ export function buildMonorepoGatePlan(input: {
       cwd: root,
       script: input.rootScripts[docsScript],
     });
-  return { root, packages: input.packages, checks, gaps };
+  const plan: MonorepoGatePlan = { root, packages: input.packages, checks, gaps };
+  return input.noBuild ? restrictToNoBuild(plan) : plan;
+}
+
+/** Fail closed for scripts with arbitrary adapters or lifecycle hooks. */
+export function noBuildScriptReason(check: GateCheck): string | undefined {
+  if (check.name.endsWith(": build")) return "Build stages are excluded in no-build mode";
+  const script = check.script?.trim();
+  if (!script) return "Only reviewed package leaf commands are executed in no-build mode";
+  if (/^(?:bunx --bun |bun --bun |bunx |bun )?(?:tsc|tsgo)\b[\w\s./:@=,-]*$/.test(script))
+    return undefined;
+  if (/^oxlint\b[\w\s./:@=,*-]*$/.test(script)) return undefined;
+  if (/^oxfmt --check\b[\w\s./:@=,*-]*$/.test(script)) return undefined;
+  // These suites are fixture-based. The native artifact integration test is opt-in.
+  if (
+    /packages[/\\]infra[/\\](?:workspace|ovh|sql)$/.test(check.cwd) &&
+    /^bun test(?: test)?$/.test(script)
+  )
+    return undefined;
+  return "Adapter/test/build requires separate review; excluded from automatic no-build execution";
+}
+
+export function restrictToNoBuild(plan: MonorepoGatePlan): MonorepoGatePlan {
+  const checks: GateCheck[] = [];
+  const deferred: Array<GateCheck & { reason: string }> = [];
+  for (const check of plan.checks) {
+    if (check.name === "Frozen Bun install") {
+      checks.push({
+        ...check,
+        command: ["bun", "install", "--frozen-lockfile", "--dry-run", "--ignore-scripts"],
+      });
+      continue;
+    }
+    if (check.name === "Rust formatting") {
+      checks.push(check);
+      checks.push({
+        name: "Rust workspace metadata (offline, no dependencies)",
+        cwd: plan.root,
+        command: ["cargo", "metadata", "--no-deps", "--offline", "--locked", "--format-version=1"],
+      });
+      continue;
+    }
+    const reason = noBuildScriptReason(check);
+    if (reason) deferred.push({ ...check, reason });
+    else checks.push(check);
+  }
+  // Type/lint/test scripts can have implicit Bun pre/post lifecycle hooks.
+  // Execute their reviewed leaf body directly, never `bun run <script>`.
+  for (const check of checks)
+    if (check.script) {
+      check.command = check.script.trim().split(/\s+/);
+      if (/\b(?:tsc|tsgo)\b/.test(check.script) && !check.command.includes("--noEmit"))
+        check.command.push("--noEmit");
+      if (check.command[0] === "bunx") {
+        check.command = check.command.filter((arg) => arg !== "--bun");
+        check.command.splice(1, 0, "--no-install", "--bun");
+      }
+    }
+  return { ...plan, checks, deferred, noBuild: true };
 }
 
 export async function discoverMonorepoGatePlan(
   rootPath: string,
   docsScript?: string,
+  noBuild = false,
 ): Promise<MonorepoGatePlan> {
   const root = await realpath(resolve(rootPath));
   const manifest = (await Bun.file(join(root, "package.json")).json()) as {
@@ -250,6 +313,7 @@ export async function discoverMonorepoGatePlan(
     hasCargoManifest: await Bun.file(join(root, "Cargo.toml")).exists(),
     hasCargoLock: await Bun.file(join(root, "Cargo.lock")).exists(),
     hasBunLock: await Bun.file(join(root, "bun.lock")).exists(),
+    noBuild,
   });
 }
 
@@ -284,7 +348,10 @@ export async function executeMonorepoGate(
     }
   }
   return {
-    passed: !plan.gaps.length && results.every((result) => result.status === "passed"),
+    passed:
+      !plan.gaps.length &&
+      !plan.deferred?.length &&
+      results.every((result) => result.status === "passed"),
     results,
   };
 }
@@ -293,6 +360,7 @@ export async function runMonorepoGate(args: string[]): Promise<number> {
   let root = process.cwd();
   let docsScript: string | undefined;
   let planOnly = false;
+  let noBuild = false;
   let json = false;
   let timeoutSeconds = 1200;
   for (let index = 0; index < args.length; index++) {
@@ -303,18 +371,19 @@ export async function runMonorepoGate(args: string[]): Promise<number> {
       if (arg === "--root") root = value;
       else if (arg === "--docs-script") docsScript = value;
       else timeoutSeconds = Number(value);
-    } else if (arg === "--plan") planOnly = true;
+    } else if (arg === "--no-build") noBuild = true;
+    else if (arg === "--plan") planOnly = true;
     else if (arg === "--json") json = true;
     else if (arg === "--help" || arg === "-h") {
       console.log(
-        "Usage: aphrody-ops monorepo-gate [--root <repository>] [--docs-script <bun-script>] [--plan] [--json] [--timeout-seconds <positive integer>]",
+        "Usage: aphrody-ops monorepo-gate [--root <repository>] [--docs-script <bun-script>] [--no-build] [--plan] [--json] [--timeout-seconds <positive integer>]",
       );
       return 0;
     } else throw new Error(`Unknown argument: ${arg}`);
   }
   if (!Number.isSafeInteger(timeoutSeconds) || timeoutSeconds < 1)
     throw new Error("--timeout-seconds must be a positive integer");
-  const plan = await discoverMonorepoGatePlan(root, docsScript);
+  const plan = await discoverMonorepoGatePlan(root, docsScript, noBuild);
   if (planOnly) {
     console.log(JSON.stringify({ status: "planned", executed: false, ...plan }, null, 2));
     return plan.gaps.length ? 1 : 0;
@@ -328,6 +397,14 @@ export async function runMonorepoGate(args: string[]): Promise<number> {
       stderr: "inherit",
       timeout: timeoutSeconds * 1000,
       killSignal: "SIGKILL",
+      env: noBuild
+        ? {
+            ...process.env,
+            APHRODY_NO_BUILD: "1",
+            APHRODY_INFRA_BUILD_FROM_SOURCE: "0",
+            APHRODY_NATIVE_BUILD_TEST: "0",
+          }
+        : process.env,
     });
     if (json && child.stdout) {
       const [exitCode] = await Promise.all([
@@ -355,6 +432,8 @@ export async function runMonorepoGate(args: string[]): Promise<number> {
   });
   if (json) console.log(JSON.stringify({ ...plan, executed: true, ...report }, null, 2));
   else {
+    for (const check of plan.deferred ?? [])
+      console.error(`DEFERRED ${check.name}: ${check.reason}`);
     for (const gap of plan.gaps) console.error(`GAP ${gap.path}: ${gap.check}: ${gap.reason}`);
     for (const result of report.results)
       console.log(

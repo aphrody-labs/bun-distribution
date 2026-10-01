@@ -75,7 +75,7 @@ export class OvhVps {
       memory: Number(model.memory || raw.memory || 0),
       vcore: Number(model.vcore || raw.vcore || 0),
       disk: Number(model.disk || raw.disk || 0),
-      sla: (raw.slaMonitoring ? "active" : "standard"),
+      sla: raw.slaMonitoring ? "active" : "standard",
     };
   }
 
@@ -89,7 +89,9 @@ export class OvhVps {
     const ips: VpsIp[] = [];
     for (const ip of ipStrings) {
       try {
-        const detail = await this.client.get<Record<string, unknown>>(`/vps/${serviceName}/ips/${ip}`);
+        const detail = await this.client.get<Record<string, unknown>>(
+          `/vps/${serviceName}/ips/${ip}`,
+        );
         ips.push({
           ip,
           version: ip.includes(":") ? "v6" : "v4",

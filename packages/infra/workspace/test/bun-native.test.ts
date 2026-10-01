@@ -90,9 +90,9 @@ test("native builder requires the aggregate monorepo owner", async () => {
       stderr: `bun-native: aggregate crate missing: ${join(root, "crates/interop/ffi/Cargo.toml")}\n`,
       code: 1,
     });
-    expect(await Bun.file(join(root, "packages/interop/native/native/manifest.json")).exists()).toBe(
-      false,
-    );
+    expect(
+      await Bun.file(join(root, "packages/interop/native/native/manifest.json")).exists(),
+    ).toBe(false);
   } finally {
     await rm(root, { recursive: true, force: true });
   }

@@ -19,19 +19,22 @@ import { OvhClient } from "./client.js";
 import { OvhDns } from "./dns.js";
 import { OvhEmail } from "./email.js";
 import { OvhVps } from "./vps.js";
-import { createClient, loadCredentials } from "./profiles.js";
+import { loadCredentials } from "./profiles.js";
 
 /**
  * Top-level Aphrody OVH unified controller.
  */
 export class AphrodyOvh {
+  private readonly credentialsSource: string;
   public readonly client: OvhClient;
   public readonly dns: OvhDns;
   public readonly email: OvhEmail;
   public readonly vps: OvhVps;
 
   constructor(profileOrDomain?: string) {
-    this.client = createClient(profileOrDomain);
+    const credentials = loadCredentials(profileOrDomain);
+    this.credentialsSource = credentials.source;
+    this.client = new OvhClient(credentials);
     this.dns = new OvhDns(this.client);
     this.email = new OvhEmail(this.client);
     this.vps = new OvhVps(this.client);
@@ -50,22 +53,18 @@ export class AphrodyOvh {
     error?: string;
   }> {
     try {
-      const creds = loadCredentials();
-      const [zones, vpsList] = await Promise.all([
-        this.dns.listZones().catch(() => []),
-        this.vps.listVps().catch(() => []),
-      ]);
+      const [zones, vpsList] = await Promise.all([this.dns.listZones(), this.vps.listVps()]);
 
       return {
         authenticated: true,
-        credentialsSource: creds.source,
+        credentialsSource: this.credentialsSource,
         zonesCount: zones.length,
         vpsCount: vpsList.length,
       };
     } catch (e) {
       return {
         authenticated: false,
-        credentialsSource: "unresolved",
+        credentialsSource: this.credentialsSource,
         error: e instanceof Error ? e.message : String(e),
       };
     }

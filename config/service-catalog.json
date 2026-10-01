@@ -239,6 +239,7 @@
       "runtime": "bun",
       "unit": "shenron-site.service",
       "health": "http://127.0.0.1:5011/api/health",
+      "readiness": "http://127.0.0.1:5011/api/health/ready",
       "port": 5011,
       "sourceRepo": "shenron",
       "workingDirectory": "/srv/shenron/current/apps/site",

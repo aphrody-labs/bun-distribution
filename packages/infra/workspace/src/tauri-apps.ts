@@ -115,7 +115,7 @@ export function npmTauriDeps(packageJson: string): { name: string; version: stri
   const out: { name: string; version: string }[] = [];
   for (const table of ["dependencies", "devDependencies", "optionalDependencies"]) {
     for (const [name, version] of Object.entries(manifest[table] ?? {})) {
-      if (name.startsWith("@tauri-apps/") || /^tauri-plugin-/.test(name))
+      if (name.startsWith("@tauri-apps/") || name.startsWith("tauri-plugin-"))
         out.push({ name, version });
     }
   }

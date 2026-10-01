@@ -1,0 +1,102 @@
+{
+  "generatedAt": "2026-10-01T19:05:42.221232+00:00",
+  "owner": "rg_data_plane_audit",
+  "catalogRange": "^0.45.3",
+  "changes": [
+    {
+      "path": "apps/shenron/site/package.json",
+      "sha256Before": "9ebb51d7b360711ffdde21029152e836417727331bf85f74071a601decb0d784",
+      "state": "fixed",
+      "sha256After": "7cf57a75e7fb50c26669ffa2faf41f7bff4176f248d5c43b201fcadaa1f1e510"
+    },
+    {
+      "path": "packages/shenron/api/package.json",
+      "sha256Before": "5a8816b6ec2989ad03ba8c8ec745bb55b44f1737febe7299838772da72f84e20",
+      "state": "fixed",
+      "sha256After": "87c42e369dfe32101dacef3d625bd3dda045c96833ba81394780c94698c163d1"
+    },
+    {
+      "path": "packages/shenron/auth/package.json",
+      "sha256Before": "40c850855286e0b5045cecf2d601bf6aaa036827da4b8c2aac65e847b850f088",
+      "state": "fixed",
+      "sha256After": "32b602d6eb444b1adb593ae5d632c58a86a27ccd3af408d7d246f2807c3ebdc5"
+    },
+    {
+      "path": "packages/shenron/db/package.json",
+      "sha256Before": "b4a77d31f0c4893b00daa9c570a49cdf2c3383deb90e3d280422d5505481fb3c",
+      "state": "fixed",
+      "sha256After": "192843f64d72568b9d1e34d54f963285f3e2594280fb02f92475a7b3bfe0f594"
+    }
+  ],
+  "blocked": [
+    {
+      "path": "apps/shenron/bot/package.json",
+      "sha256": "b9eb5ead858df2c60dcbde4a79b79ecb39b458de8588d9f9a41bc002092c2ec4",
+      "owner": "claude-lead (sql-convergence)",
+      "claim": ".coord/claims/sql-convergence.json",
+      "requiredChange": "dependencies.drizzle-orm: ^0.45.3 -> catalog:; root catalog remains ^0.45.3",
+      "state": "requested-through-A2A"
+    }
+  ],
+  "constraints": {
+    "cargo": false,
+    "nextBuild": false,
+    "databaseProbes": false,
+    "commits": false
+  },
+  "lockfile": {
+    "sha256Before": "ae1d2f91e4febe77cda615a2c8003983e92108ad3966151baf3e64681c20a813",
+    "baseline": "/tmp/aphrody-infra-e2e-2026-10-01/bun-contract-followup-before.lock",
+    "sha256After": "cf1aecb76200d718abed4ac2932a44e044b8ca33819d8e162d1d331fb0fa2f00",
+    "resolvedPackageCountBefore": 3341,
+    "resolvedPackageCountAfter": 3341,
+    "resolvedPackageMapUnchanged": true,
+    "resolvedPackageChanges": {},
+    "workspaceChanges": [
+      "packages/shenron/api",
+      "apps/shenron/site",
+      "packages/shenron/db",
+      "packages/shenron/auth"
+    ],
+    "ownDeltaPatch": "bun-contract-followup-lock.patch"
+  },
+  "validation": {
+    "bunCheck": {
+      "exitCode": 1,
+      "remainingViolations": 1,
+      "manifest": "apps/shenron/bot/package.json",
+      "log": "bun-contract-followup-check.log"
+    },
+    "frozenDryRun": {
+      "exitCode": 0,
+      "command": "bun install --frozen-lockfile --dry-run --ignore-scripts",
+      "log": "bun-contract-followup-frozen-after.log"
+    },
+    "bunWorkspaceTests": {
+      "pass": 7,
+      "fail": 1,
+      "failure": "repository contract detects SQL-owned bot drizzle spec",
+      "log": "bun-contract-followup-tests.log"
+    },
+    "lockfileGeneration": {
+      "command": "bun install --lockfile-only --ignore-scripts",
+      "exitCode": 0,
+      "log": "bun-contract-followup-lock.log"
+    }
+  },
+  "state": "four-of-five-fixed; remaining bot owned by SQL lead and handed off",
+  "finishedAt": "2026-10-01T19:07:56.200129+00:00",
+  "notes": [
+    "bun.lock carried substantial pre-existing Git differences; own delta changes only four workspace specifiers",
+    "Preserve SQL worker @aphrody/sql addition in packages/shenron/db/package.json",
+    "No npm publish/public visibility change",
+    "No user confirmation needed; active ownership prevents conflicting bot edit"
+  ],
+  "coordination": {
+    "recipient": "SQL convergence lead",
+    "status": "queued_file",
+    "outcome": "four unclaimed manifests fixed; remaining claimed bot manifest handed off",
+    "claim": ".coord/claims/sql-convergence.json",
+    "rawTranscriptsIncluded": false
+  }
+}

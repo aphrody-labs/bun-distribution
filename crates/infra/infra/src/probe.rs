@@ -6,7 +6,7 @@
 //! - HTTP status probing via loopback or target interface
 //! - Systemd active/state inspection
 
-use anyhow::Result;
+use anyhow::{Result, bail};
 use serde::{Deserialize, Serialize};
 use std::net::{SocketAddr, TcpStream, ToSocketAddrs};
 use std::process::Command;
@@ -122,46 +122,97 @@ pub fn probe_url(url: &str, timeout: Duration) -> ProbeResult {
 
 /// Remote probe execution over SSH on target host.
 pub fn probe_remote(target: &str, url: &str, timeout_secs: u32) -> Result<ProbeResult> {
-    let script = format!(
-        r#"
-if [[ "{url}" =~ ^tcp://([^:]+):([0-9]+)$ ]]; then
-    nc -z -w {timeout_secs} "${{BASH_REMATCH[1]}}" "${{BASH_REMATCH[2]}}" >/dev/null 2>&1
-    if [ $? -eq 0 ]; then echo "200"; else echo "000"; fi
-else
-    curl -s -o /dev/null -w "%{{http_code}}" --max-time {timeout_secs} "{url}" || echo "000"
-fi
-"#
-    );
+    if target.is_empty()
+        || target.starts_with('-')
+        || !target.bytes().all(|ch| ch.is_ascii_alphanumeric() || b"._-@:".contains(&ch))
+    {
+        bail!("invalid SSH target");
+    }
+    if timeout_secs == 0 {
+        bail!("probe timeout must be positive");
+    }
+    let start = Instant::now();
+    let script = remote_probe_script(url, timeout_secs);
 
     let output = Command::new("ssh")
-        .args(["-o", "BatchMode=yes", target, "bash", "-s"])
+        .args([
+            "-o",
+            "BatchMode=yes",
+            "-o",
+            "ConnectTimeout=10",
+            "-o",
+            "ServerAliveInterval=5",
+            "-o",
+            "ServerAliveCountMax=2",
+            target,
+            "bash",
+            "-s",
+        ])
         .stdin(std::process::Stdio::piped())
+        .stdout(std::process::Stdio::piped())
+        .stderr(std::process::Stdio::piped())
         .spawn()
         .and_then(|mut child| {
             use std::io::Write;
             if let Some(mut stdin) = child.stdin.take() {
-                let _ = stdin.write_all(script.as_bytes());
+                stdin.write_all(script.as_bytes())?;
             }
             child.wait_with_output()
         })?;
 
     let status_str = String::from_utf8_lossy(&output.stdout).trim().to_string();
     let status: u16 = status_str.parse().unwrap_or(0);
-    let ok = (200..400).contains(&status);
+    let ok = output.status.success() && (200..400).contains(&status);
+    let error = if !output.status.success() {
+        Some(format!(
+            "SSH probe failed (exit {:?}): {}",
+            output.status.code(),
+            String::from_utf8_lossy(&output.stderr).trim()
+        ))
+    } else if !ok {
+        Some(format!("statut {status}"))
+    } else {
+        None
+    };
 
     Ok(ProbeResult {
         url: url.to_string(),
         ok,
         status,
-        duration_ms: 0,
-        error: if ok { None } else { Some(format!("statut {}", status)) },
+        duration_ms: start.elapsed().as_millis() as u64,
+        error,
     })
+}
+
+fn remote_probe_script(url: &str, timeout_secs: u32) -> String {
+    let quoted_url = format!("'{}'", url.replace('\'', "'\\''"));
+    format!(
+        r#"url={quoted_url}
+if [[ "$url" =~ ^tcp://([^:]+):([0-9]+)$ ]]; then
+    if nc -z -w {timeout_secs} "${{BASH_REMATCH[1]}}" "${{BASH_REMATCH[2]}}" >/dev/null 2>&1; then echo 200; else echo 000; fi
+else
+    code=$(curl -s -o /dev/null -w "%{{http_code}}" --max-time {timeout_secs} -- "$url")
+    printf '%s\n' "${{code:-000}}"
+fi
+"#
+    )
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use std::net::TcpListener;
+
+    #[test]
+    fn remote_probe_quotes_url_data() {
+        let script = remote_probe_script("http://localhost/health?x='$(touch /tmp/no)'", 5);
+        let expected = format!(
+            "url='{}'",
+            "http://localhost/health?x='$(touch /tmp/no)'".replace('\'', "'\\''")
+        );
+        assert!(script.starts_with(&expected));
+        assert!(script.contains("-- \"$url\""));
+    }
 
     #[test]
     fn probe_tcp_detects_open_and_closed_ports() {

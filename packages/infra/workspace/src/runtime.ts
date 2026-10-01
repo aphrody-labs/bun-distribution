@@ -24,7 +24,7 @@ async function executable(path: string | null | undefined): Promise<string | und
 
 /** Installed runtime by default; source compilation requires explicit development opt-in. */
 export async function infraExecutable(
-  _root = infraRoot(),
+  root = infraRoot(),
   environment: Record<string, string | undefined> = process.env,
 ): Promise<string[]> {
   if (environment.APHRODY_INFRA_BIN) {
@@ -34,7 +34,17 @@ export async function infraExecutable(
     return [direct];
   }
   if (environment.APHRODY_INFRA_BUILD_FROM_SOURCE === "1") {
-    return ["cargo", "run", "--quiet", "--locked", "--bin", "aphrody-infra", "--"];
+    if (environment.APHRODY_NO_BUILD === "1")
+      throw new Error("Source compilation is disabled by APHRODY_NO_BUILD=1");
+    return [
+      join(root, "scripts/build/rust/cargo-serial.sh"),
+      "run",
+      "--quiet",
+      "--locked",
+      "--bin",
+      "aphrody-infra",
+      "--",
+    ];
   }
   const name = `aphrody-infra${process.platform === "win32" ? ".exe" : ""}`;
   const home = environment.HOME ?? environment.USERPROFILE;

@@ -1,7 +1,7 @@
 #!/usr/bin/env bun
 // SPDX-License-Identifier: Apache-2.0
 
-import { readdir, stat } from "node:fs/promises";
+import { stat } from "node:fs/promises";
 import { join, resolve } from "node:path";
 
 type JsonObject = Record<string, unknown>;
@@ -34,19 +34,27 @@ async function readJson<T>(relative: string): Promise<T> {
   return JSON.parse(await Bun.file(join(repo, relative)).text()) as T;
 }
 
-async function checkSensitiveFiles(directory: string): Promise<void> {
-  const sensitiveName = /^\.env($|\.)|\.pem$|\.key$|\.p12$|\.pfx$|\.sqlite($|[-.])|\.db$|\.dump$|\.sql$/i;
-  for (const entry of await readdir(directory, { withFileTypes: true })) {
-    const path = join(directory, entry.name);
-    if (sensitiveName.test(entry.name)) {
-      fail(`Sensitive-looking file detected: ${path.slice(repo.length + 1)}`);
-    }
-    if (entry.isDirectory()) await checkSensitiveFiles(path);
-    else if (entry.isSymbolicLink()) {
-      // Do not follow links outside or back into the repository during the scan.
-      continue;
-    }
-  }
+export function sensitiveInventoryPath(path: string): boolean {
+  const name = path.split("/").at(-1) ?? "";
+  if (/\.(?:example|sample|template)$/i.test(name)) return false;
+  return /^(?:\.env($|\.)|.*\.(?:pem|key|p12|pfx|sqlite|db|dump)$)/i.test(name);
+}
+
+async function checkSensitiveFiles(): Promise<void> {
+  // Check tracked Infra inventory, not protected .env files, caches, model data
+  // or node_modules elsewhere in the consolidated monorepo. Never read values.
+  const child = Bun.spawn(
+    ["git", "ls-files", "-z", "--", "config", "inventory", "systemd", "nginx"],
+    { cwd: repo, stdout: "pipe", stderr: "pipe" },
+  );
+  const [code, stdout, stderr] = await Promise.all([
+    child.exited,
+    new Response(child.stdout).text(),
+    new Response(child.stderr).text(),
+  ]);
+  if (code !== 0) fail(`Cannot inspect tracked Infra inventory: ${stderr.trim()}`);
+  for (const path of stdout.split("\0").filter(Boolean))
+    if (sensitiveInventoryPath(path)) fail(`Sensitive-looking tracked Infra file: ${path}`);
 }
 
 function hasOwn(value: object, key: string): boolean {
@@ -58,13 +66,13 @@ function escapeRegExp(value: string): string {
 }
 
 async function main(): Promise<void> {
-  await checkSensitiveFiles(repo);
+  await checkSensitiveFiles();
 
   const required = [
     "README.md",
     "inventory/vps-source.json",
-    "docs/TOPOLOGY.md",
-    "docs/MIGRATION-GUARDRAILS.md",
+    "docs/reference/infra/TOPOLOGY.md",
+    "docs/reference/infra/MIGRATION-GUARDRAILS.md",
     "systemd/aphrody-site.service.example",
     "systemd/aphrody-web-api.service.example",
     "systemd/aphrody-a2a.service.example",
@@ -84,9 +92,14 @@ async function main(): Promise<void> {
   }
 
   await readJson<JsonObject>("inventory/vps-source.json");
-  const a2a = await readJson<{ peers: A2aPeer[]; protocol: { rpcPath: string; agentCardPath: string } }>("config/a2a-peers.json");
+  const a2a = await readJson<{
+    peers: A2aPeer[];
+    protocol: { rpcPath: string; agentCardPath: string };
+  }>("config/a2a-peers.json");
   const routes = await readJson<{ routes: Route[]; internal: Route[] }>("config/nginx-routes.json");
-  const catalog = await readJson<{ services: Array<{ id: string }> }>("config/service-catalog.json");
+  const catalog = await readJson<{ services: Array<{ id: string }> }>(
+    "config/service-catalog.json",
+  );
   const ids = new Set<string>();
 
   for (const peer of a2a.peers) {
@@ -115,15 +128,22 @@ async function main(): Promise<void> {
       const hostname = new URL(endpoint).hostname;
       const publicRoute = routes.routes.find((route) => route.host === hostname);
       if (!publicRoute) fail(`a2a public host missing: ${hostname}`);
-      const route = publicRoute.service === peer.service
-        ? publicRoute
-        : routes.internal.find((candidate) => candidate.service === peer.service
-          && candidate.via === "nginx"
-          && hasOwn(candidate, "publicHost")
-          && candidate.publicHost === hostname);
-      const routePaths = route && hasOwn(route, "paths") ? route.paths ?? [] : [];
-      if (!route || (routePaths.length > 0
-        && (!routePaths.includes(rpcPath) || !routePaths.includes(a2a.protocol.agentCardPath)))) {
+      const route =
+        publicRoute.service === peer.service
+          ? publicRoute
+          : routes.internal.find(
+              (candidate) =>
+                candidate.service === peer.service &&
+                candidate.via === "nginx" &&
+                hasOwn(candidate, "publicHost") &&
+                candidate.publicHost === hostname,
+            );
+      const routePaths = route && hasOwn(route, "paths") ? (route.paths ?? []) : [];
+      if (
+        !route ||
+        (routePaths.length > 0 &&
+          (!routePaths.includes(rpcPath) || !routePaths.includes(a2a.protocol.agentCardPath)))
+      ) {
         fail(`a2a nginx route missing for ${hostname}`);
       }
     } else if (transport === "coord-file") {
@@ -145,7 +165,9 @@ async function main(): Promise<void> {
   });
   const exitCode = await child.exited;
   if (exitCode !== 0) {
-    fail("config/local-ai.env.example drifted from config/local-ai.json (run bun scripts/gen-local-ai-env.ts).");
+    fail(
+      "config/local-ai.env.example drifted from config/local-ai.json (run bun scripts/gen-local-ai-env.ts).",
+    );
   }
   console.log("infra-check: ok");
 }

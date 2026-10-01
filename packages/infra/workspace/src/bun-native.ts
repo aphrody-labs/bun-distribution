@@ -77,7 +77,8 @@ async function output(command: string[], cwd: string, signal: AbortSignal): Prom
 
 async function sha256(path: string): Promise<string> {
   const hash = new Bun.CryptoHasher("sha256");
-  for await (const chunk of Bun.file(path).stream() as unknown as AsyncIterable<Uint8Array>) hash.update(chunk);
+  for await (const chunk of Bun.file(path).stream() as unknown as AsyncIterable<Uint8Array>)
+    hash.update(chunk);
   return hash.digest("hex");
 }
 

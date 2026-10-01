@@ -52,7 +52,10 @@ export class OvhApiError extends Error {
  * Computes SHA1 hex digest using Bun native hasher when available, or node:crypto fallback.
  */
 export function sha1(content: string): string {
-  if (typeof Bun !== "undefined" && typeof (Bun as { CryptoHasher?: unknown }).CryptoHasher === "function") {
+  if (
+    typeof Bun !== "undefined" &&
+    typeof (Bun as { CryptoHasher?: unknown }).CryptoHasher === "function"
+  ) {
     const hasher = new Bun.CryptoHasher("sha1");
     hasher.update(content);
     return hasher.digest("hex");
@@ -81,7 +84,9 @@ export class OvhClient {
     this.timeoutMs = options.timeoutMs ?? 30_000;
 
     const endpoint = options.endpoint ?? "ovh-eu";
-    this.baseUrl = (ENDPOINT_URLS as Record<string, string>)[endpoint] ?? (endpoint.startsWith("http") ? endpoint : ENDPOINT_URLS["ovh-eu"]);
+    this.baseUrl =
+      (ENDPOINT_URLS as Record<string, string>)[endpoint] ??
+      (endpoint.startsWith("http") ? endpoint : ENDPOINT_URLS["ovh-eu"]);
   }
 
   /**
@@ -132,6 +137,8 @@ export class OvhClient {
     body?: unknown,
     query?: Record<string, string | number | boolean | undefined>,
   ): Promise<T> {
+    if (method === "GET" && body !== undefined)
+      throw new TypeError("OVH GET requests cannot have a body");
     if (!this.timeSynced) {
       await this.syncTime();
     }
@@ -170,19 +177,16 @@ export class OvhClient {
       "X-Ovh-Consumer": this.consumerKey,
       "X-Ovh-Timestamp": String(timestamp),
       "X-Ovh-Signature": signature,
-      "Accept": "application/json",
+      Accept: "application/json",
     };
 
     if (bodyStr) {
       headers["Content-Type"] = "application/json";
     }
 
-    const response = await fetch(fullUrl, {
-      method,
-      headers,
-      body: bodyStr || undefined,
-      signal: AbortSignal.timeout(this.timeoutMs),
-    });
+    const request: RequestInit = { method, headers, signal: AbortSignal.timeout(this.timeoutMs) };
+    if (method !== "GET" && body !== undefined) request.body = bodyStr;
+    const response = await fetch(fullUrl, request);
 
     const text = await response.text();
 
@@ -217,7 +221,10 @@ export class OvhClient {
     }
   }
 
-  public get<T = unknown>(path: string, query?: Record<string, string | number | boolean | undefined>): Promise<T> {
+  public get<T = unknown>(
+    path: string,
+    query?: Record<string, string | number | boolean | undefined>,
+  ): Promise<T> {
     return this.request<T>("GET", path, undefined, query);
   }
 

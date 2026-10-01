@@ -3,32 +3,151 @@
   "purpose": "production-stack-knowledge-for-aphrody-infra",
   "selectionRule": "value = production-fit + reuse + maintenance - duplication - runtime-cost",
   "repositories": [
-    { "id": "aphrody-ai", "role": "AI layer: agents, model clients, inference, RAG, MCP servers, the AI side of A2A and the aphrody CLI; builds the aphrody, aphrody-mcp (with the dragonball.* tools) and aphrody-embed release binaries", "source": "https://github.com/aphrody-code/aphrody-ai", "production": true },
-    { "id": "aphrody-os", "role": "System layer: aphrody-kernel control plane, sandbox, services, WinClean, reverse engineering and the Aphrody plugin marketplace", "source": "https://github.com/aphrody-code/aphrody-os", "production": true },
-    { "id": "aphrody-ui", "role": "UI layer: Tauri desktop, Material 3 design system (Rust crates and @aphrody/* packages), renderers, canvas, Aphrody Drive and the bun_rs native library (crate aphrody-bun) behind @aphrody/bun; its tracked crates/aphrody-app/ui-dist is the agent console embedded in the aphrody release binary", "source": "https://github.com/aphrody-code/aphrody-ui", "production": true },
-    { "id": "aphrody-web", "role": "Web layer: aphrody-site public origin, BXC Bun engine and Web API, Obscura browser, web engine, CDN-served web assets and the X client; builds the aphrody-site, aphrody-web-api, libaphrody_web_ffi and libbxc_render release artifacts", "source": "https://github.com/aphrody-code/aphrody-web", "production": true },
-    { "id": "aphrody-compat", "role": "Node-to-Bun compatibility: n2b analyzer and codemods, aphrody-toolchains (Bun/uv/Nushell discovery) and the offline Bun docs", "source": "https://github.com/aphrody-code/aphrody-compat", "production": true },
-    { "id": "aphrody-contracts", "role": "Protocol contracts: A2A v1 stack, app-server v2 protocol, agent protocol and N2B schemas", "source": "https://github.com/aphrody-code/aphrody-contracts", "production": true },
-    { "id": "aphrody-shell", "role": "Shell and terminal layer: embedded Nushell, PTY/WebSocket terminal backend and TUI", "source": "https://github.com/aphrody-code/aphrody-shell", "production": true },
-    { "id": "aphrody-native", "role": "Rust host probes for CPU, memory, CUDA and monotonic time; Llama and Whisper inference is owned by aphrody-ai", "source": "https://github.com/aphrody-code/aphrody-native", "production": true },
-    { "id": "aphrody-infra", "role": "single deployment, topology and policy authority; owns aphrody-ssh, aphrody-git, aphrody-vpn, aphrody-ovh and aphrody-yolo", "source": "https://github.com/aphrody-code/aphrody-infra", "production": true },
-    { "id": "rg", "role": "canonical Next/Bun/UI/Auth/API/DB platform", "source": "https://github.com/rose-griffon/rg", "production": true },
-    { "id": "shenron", "role": "Dragon Ball domain application on the RG runtime plane", "source": "https://github.com/aphrody-code/shenron", "production": true },
-    { "id": "aphrody-discord", "role": "Development-only Bun Discord bot, interactions endpoint and OAuth test app", "source": "https://github.com/aphrody-code/aphrody-discord", "production": false },
-    { "id": "nie", "role": "IEVR data and model runtime; desktop/source-first", "source": "https://github.com/aphrody-code/nie", "production": true },
-    { "id": "iecode", "role": "Inazuma Eleven modding toolchain (.NET, native C/C++, Rust, Bun, Python); desktop and WSL only", "source": "https://github.com/aphrody-code/iecode", "production": false }
+    {
+      "id": "aphrody",
+      "role": "Active unified Rust + Bun source workspace; owns crates/, packages/, apps/ and the Infra orchestration catalogs. Imported domains retain their compatibility names.",
+      "source": "https://github.com/aphrody-labs/aphrody",
+      "production": false,
+      "note": "Local monorepo is active. GitHub origin is private and archived; deployment qualification is pending. The pre-consolidation monolith retirement is historical, not the current source-workspace state."
+    },
+    {
+      "id": "aphrody-ai",
+      "role": "AI layer: agents, model clients, inference, RAG, MCP servers, the AI side of A2A and the aphrody CLI; builds the aphrody, aphrody-mcp (with the dragonball.* tools) and aphrody-embed release binaries",
+      "source": "https://github.com/aphrody-code/aphrody-ai",
+      "production": true
+    },
+    {
+      "id": "aphrody-os",
+      "role": "System layer: aphrody-kernel control plane, sandbox, services, WinClean, reverse engineering and the Aphrody plugin marketplace",
+      "source": "https://github.com/aphrody-code/aphrody-os",
+      "production": true
+    },
+    {
+      "id": "aphrody-ui",
+      "role": "UI layer: Tauri desktop, Material 3 design system (Rust crates and @aphrody/* packages), renderers, canvas, Aphrody Drive and the bun_rs native library (crate aphrody-bun) behind @aphrody/bun; its tracked crates/aphrody-app/ui-dist is the agent console embedded in the aphrody release binary",
+      "source": "https://github.com/aphrody-code/aphrody-ui",
+      "production": true
+    },
+    {
+      "id": "aphrody-web",
+      "role": "Web layer: aphrody-site public origin, BXC Bun engine and Web API, Obscura browser, web engine, CDN-served web assets and the X client; builds the aphrody-site, aphrody-web-api, libaphrody_web_ffi and libbxc_render release artifacts",
+      "source": "https://github.com/aphrody-code/aphrody-web",
+      "production": true
+    },
+    {
+      "id": "aphrody-compat",
+      "role": "Node-to-Bun compatibility: n2b analyzer and codemods, aphrody-toolchains (Bun/uv/Nushell discovery) and the offline Bun docs",
+      "source": "https://github.com/aphrody-code/aphrody-compat",
+      "production": true
+    },
+    {
+      "id": "aphrody-contracts",
+      "role": "Protocol contracts: A2A v1 stack, app-server v2 protocol, agent protocol and N2B schemas",
+      "source": "https://github.com/aphrody-code/aphrody-contracts",
+      "production": true
+    },
+    {
+      "id": "aphrody-shell",
+      "role": "Shell and terminal layer: embedded Nushell, PTY/WebSocket terminal backend and TUI",
+      "source": "https://github.com/aphrody-code/aphrody-shell",
+      "production": true
+    },
+    {
+      "id": "aphrody-native",
+      "role": "Rust host probes for CPU, memory, CUDA and monotonic time; Llama and Whisper inference is owned by aphrody-ai",
+      "source": "https://github.com/aphrody-code/aphrody-native",
+      "production": true
+    },
+    {
+      "id": "aphrody-infra",
+      "role": "single deployment, topology and policy authority; owns aphrody-ssh, aphrody-git, aphrody-vpn, aphrody-ovh and aphrody-yolo",
+      "source": "https://github.com/aphrody-code/aphrody-infra",
+      "production": true
+    },
+    {
+      "id": "rg",
+      "role": "canonical Next/Bun/UI/Auth/API/DB platform",
+      "source": "https://github.com/rose-griffon/rg",
+      "production": true
+    },
+    {
+      "id": "shenron",
+      "role": "Dragon Ball domain application on the RG runtime plane",
+      "source": "https://github.com/aphrody-code/shenron",
+      "production": true
+    },
+    {
+      "id": "aphrody-discord",
+      "role": "Development-only Bun Discord bot, interactions endpoint and OAuth test app",
+      "source": "https://github.com/aphrody-code/aphrody-discord",
+      "production": false
+    },
+    {
+      "id": "nie",
+      "role": "IEVR data and model runtime; desktop/source-first",
+      "source": "https://github.com/aphrody-code/nie",
+      "production": true
+    },
+    {
+      "id": "iecode",
+      "role": "Inazuma Eleven modding toolchain (.NET, native C/C++, Rust, Bun, Python); desktop and WSL only",
+      "source": "https://github.com/aphrody-code/iecode",
+      "production": false
+    }
   ],
-  "retiredRepositories": [
-    { "id": "aphrody", "replacedBy": ["aphrody-ai", "aphrody-os", "aphrody-ui", "aphrody-web", "aphrody-compat", "aphrody-contracts", "aphrody-shell", "aphrody-native"], "note": "AI monolith and its aphrody-os mirror, split into the category repositories on 2026-09-25; archived, never a build or deploy source" }
-  ],
+  "retiredRepositories": [],
   "aphrodyPackages": [
-    { "name": "@aphrody/bxc", "value": "high", "role": "Bun CLI/MCP/browser engine", "source": "https://www.npmjs.com/package/@aphrody/bxc", "policy": "adopt-before-new-browser-code" },
-    { "name": "@aphrody/x", "value": "high", "role": "headless X client with SQLite/FTS", "versionObserved": "1.2.5", "source": "https://www.npmjs.com/package/@aphrody/x", "policy": "reuse-for-agent-social-connectors" },
-    { "name": "@aphrody/xai", "value": "high", "role": "Bun xAI/Grok client and tool calling", "versionObserved": "1.1.5", "source": "https://www.npmjs.com/package/@aphrody/xai", "policy": "reuse-with-@aphrody/x" },
-    { "name": "@aphrody/challonge", "value": "medium", "role": "tournament data adapter", "source": "https://github.com/aphrody-code/bxc", "policy": "domain-optional" },
-    { "name": "@aphrody/zukan", "value": "medium", "role": "catalog/data adapter", "source": "local: rg workspace catalog", "policy": "reuse-before-reimplementation" },
-    { "name": "@aphrody/canvas", "value": "high", "role": "image/canvas primitives", "source": "git-submodule: aphrody-ui/third_party/canvas", "policy": "single-canonical-package" },
-    { "name": "@aphrody/bun", "value": "high", "role": "bun:ffi wrapper over the bun_rs native library (M3 tokens, icons, SVG)", "source": "local: aphrody-ui/packages/bun (crate aphrody-ui/crates/aphrody-bun)", "policy": "single-native-bun-bridge" }
+    {
+      "name": "@aphrody/bxc",
+      "value": "high",
+      "role": "Bun CLI/MCP/browser engine",
+      "source": "https://www.npmjs.com/package/@aphrody/bxc",
+      "policy": "adopt-before-new-browser-code"
+    },
+    {
+      "name": "@aphrody/x",
+      "value": "high",
+      "role": "headless X client with SQLite/FTS",
+      "versionObserved": "1.2.5",
+      "source": "https://www.npmjs.com/package/@aphrody/x",
+      "policy": "reuse-for-agent-social-connectors"
+    },
+    {
+      "name": "@aphrody/xai",
+      "value": "high",
+      "role": "Bun xAI/Grok client and tool calling",
+      "versionObserved": "1.1.5",
+      "source": "https://www.npmjs.com/package/@aphrody/xai",
+      "policy": "reuse-with-@aphrody/x"
+    },
+    {
+      "name": "@aphrody/challonge",
+      "value": "medium",
+      "role": "tournament data adapter",
+      "source": "https://github.com/aphrody-code/bxc",
+      "policy": "domain-optional"
+    },
+    {
+      "name": "@aphrody/zukan",
+      "value": "medium",
+      "role": "catalog/data adapter",
+      "source": "local: rg workspace catalog",
+      "policy": "reuse-before-reimplementation"
+    },
+    {
+      "name": "@aphrody/canvas",
+      "value": "high",
+      "role": "image/canvas primitives",
+      "source": "git-submodule: aphrody-ui/third_party/canvas",
+      "policy": "single-canonical-package"
+    },
+    {
+      "name": "@aphrody/bun",
+      "value": "high",
+      "role": "bun:ffi wrapper over the bun_rs native library (M3 tokens, icons, SVG)",
+      "source": "local: aphrody-ui/packages/bun (crate aphrody-ui/crates/aphrody-bun)",
+      "policy": "single-native-bun-bridge"
+    }
   ],
   "canonicalExternalStack": {
     "runtime": "Bun workspace + Rust native bridge + uv Python projects",
@@ -48,9 +167,42 @@
     "copying npm packages into vendor trees without provenance"
   ],
   "trainingInputPolicy": {
-    "include": ["README.md", "docs/", "package.json", "Cargo.toml", "lockfiles", "public API contracts", "deployment manifests"],
-    "exclude": [".env", "cookies", "tokens", "database dumps", "node_modules", "target", "generated build output", "private user data"],
+    "include": [
+      "README.md",
+      "docs/",
+      "package.json",
+      "Cargo.toml",
+      "lockfiles",
+      "public API contracts",
+      "deployment manifests"
+    ],
+    "exclude": [
+      ".env",
+      "cookies",
+      "tokens",
+      "database dumps",
+      "node_modules",
+      "target",
+      "generated build output",
+      "private user data"
+    ],
     "refresh": "on release or dependency policy change",
     "evidence": "source URL, observed version and local commit"
-  }
+  },
+  "historicalRepositoryLayouts": [
+    {
+      "id": "aphrody",
+      "replacedBy": [
+        "aphrody-ai",
+        "aphrody-os",
+        "aphrody-ui",
+        "aphrody-web",
+        "aphrody-compat",
+        "aphrody-contracts",
+        "aphrody-shell",
+        "aphrody-native"
+      ],
+      "note": "AI monolith and its aphrody-os mirror, split into the category repositories on 2026-09-25; archived, never a build or deploy source"
+    }
+  ]
 }

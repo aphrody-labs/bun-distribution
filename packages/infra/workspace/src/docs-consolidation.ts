@@ -272,7 +272,7 @@ const TOPIC_RULES: Array<[RegExp, Topic]> = [
   [/icons?|fonts?|typography|symbols|svg/i, "icons-fonts"],
   [/tokens?|theme|dynamic-color|palette/i, "design-tokens"],
   [/component|matrix|catalog|elements/i, "components"],
-  [/(^|[\/_-])(m3|md3|material)/i, "m3-spec"],
+  [/(^|[/_-])(m3|md3|material)/i, "m3-spec"],
   [/(^|\/)plans?\/|plan\.md$/i, "plans"],
   [/(^|\/)research\/|audit|parity|report/i, "research"],
   [/(^|\/)guides\/|contributing|setup|getting-started/i, "guides"],
@@ -750,7 +750,7 @@ export async function scanScope(options: ScanOptions): Promise<ScanResult> {
         /SIL Open Font License|Licensed under|Apache License|MIT License|GNU (Affero )?General Public/i.test(
           text.slice(0, 2400),
         ),
-      upstream: /(^|\/)(drive|upstream)\//.test(path) || /^UPSTREAM/.test(basename(path)),
+      upstream: /(^|\/)(drive|upstream)\//.test(path) || basename(path).startsWith("UPSTREAM"),
       outbound: [...new Set(outboundOf.get(path) ?? [])].sort(),
       unresolvedOutbound: [...new Set(unresolvedOf.get(path) ?? [])].sort(),
       inbound: [...(inbound.get(path) ?? [])].sort(),

@@ -50,6 +50,7 @@
     "./gitignored-audit": "./src/gitignored-audit.ts",
     "./runtime-versions": "./src/runtime-versions.ts",
     "./monorepo-gate": "./src/monorepo-gate.ts",
+    "./infra-audit": "./src/infra-audit.ts",
     "./windows-paths": "./src/windows-paths.ts",
     "./git-attribution": "./src/git-attribution.ts",
     "./repository-health": "./src/repository-health.ts",

@@ -41,7 +41,12 @@ class MockEmailVpsClient extends OvhClient {
       return { state: "running", ping: true, up: true } as T;
     }
     if (path === "/email/domain/aphrody.com") {
-      return { domain: "aphrody.com", status: "ok", offer: "mxplan", allowedAccountSize: [5000] } as T;
+      return {
+        domain: "aphrody.com",
+        status: "ok",
+        offer: "mxplan",
+        allowedAccountSize: [5000],
+      } as T;
     }
     if (path === "/email/domain/aphrody.com/account") {
       return ["contact", "admin"] as T;
