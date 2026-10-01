@@ -13,7 +13,7 @@
     "build": "bun run dashboard:css && bash scripts/build-bundle.sh",
     "dashboard:css": "bash scripts/build-dashboard-css.sh",
     "dashboard:watch": "bunx @tailwindcss/cli --input src/dashboard/styles.css --output src/dashboard/styles.compiled.css --watch",
-    "compile": "bun run dashboard:css && bun build src/index.ts --compile --minify --sourcemap --outfile=dist/shenron",
+    "compile": "bun run dashboard:css && bun build src/entry-standalone.ts --compile --minify --sourcemap --outfile=dist/shenron",
     "type-check": "bunx tsc --noEmit",
     "lint": "oxlint",
     "lint:fix": "oxlint --fix",

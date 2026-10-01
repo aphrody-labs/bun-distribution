@@ -266,6 +266,7 @@
     "docs:translate": "bun packages/ai/doc-ai/src/cli.ts translate",
     "docs:ai": "bun packages/ai/doc-ai/src/cli.ts sync",
     "discord:verify": "bun scripts/audit/discord-verify.ts --full",
+    "discord:compile": "bun scripts/build/compile-discord-bot.ts",
     "shenron:verify": "bun scripts/audit/shenron-layout.ts && bun run --filter '@shenron/*' type-check",
     "n2b:google": "aphrody n2b packages/ai/google",
     "scan": "bash scripts/audit/ai/scripts/scan-repo.sh",

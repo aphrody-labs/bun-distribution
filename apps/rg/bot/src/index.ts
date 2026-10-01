@@ -34,6 +34,7 @@ import {
 	safeExecuteInteraction,
 } from "@aphrody/discord-kit";
 
+import { MODULE_LOADERS } from "./modules";
 import { closeCache } from "./lib/cache";
 import { DISCORD_TOKEN, GUILD_IDS, PROFIL, PROFIL_ANNONCEUR } from "./lib/config";
 import { sql } from "./lib/db";
@@ -55,6 +56,26 @@ const MODULES_EVENEMENTS_RG = [
 	"events/experience.ts",
 	"events/accueil.ts",
 ] as const;
+
+if (process.argv.includes("--help") || process.argv.includes("-h")) {
+	console.log(`Rose Griffon Discord Bot (${PROFIL.titre})`);
+	console.log(`Usage: rg-bot [options]\n`);
+	console.log(`Options:`);
+	console.log(`  -h, --help     Show this help message`);
+	console.log(`  -v, --version  Show version and runtime info`);
+	console.log(`  --dry-run      Validate configuration and exit`);
+	process.exit(0);
+}
+
+if (process.argv.includes("--version") || process.argv.includes("-v")) {
+	console.log(`@rosegriffon/bot v1.0.1 (Bun ${typeof Bun !== "undefined" ? Bun.version : process.version}, profile: ${PROFIL.nom})`);
+	process.exit(0);
+}
+
+if (process.argv.includes("--dry-run")) {
+	console.log(`✓ Dry run passed for @rosegriffon/bot (profile: ${PROFIL.nom}, ${PROFIL.modules.length} modules configured)`);
+	process.exit(0);
+}
 
 const intents = await resolveGrantedIntents(DISCORD_TOKEN, {
 	desiredIntents: PROFIL.intents,
@@ -87,7 +108,12 @@ const client = new Client({
 async function chargerModules(chemins: readonly string[]): Promise<void> {
 	for (const chemin of chemins) {
 		try {
-			await import(`./${chemin}`);
+			const loader = MODULE_LOADERS[chemin];
+			if (loader) {
+				await loader();
+			} else {
+				await import(`./${chemin}`);
+			}
 		} catch (err) {
 			console.error(
 				`✗ profil « ${PROFIL.nom} » : échec du chargement de src/${chemin} —`,

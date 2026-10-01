@@ -55,4 +55,9 @@ if (process.argv.includes("--full")) {
   run(rgBot, "run", "test");
 }
 
+// 5. Gate native standalone compilation if requested with --compile
+if (process.argv.includes("--compile")) {
+  run(root, "run", "scripts/build/compile-discord-bot.ts", "all", "--smoke");
+}
+
 console.log("\nAll Discord monorepo gates, shared packages, and bot integrations passed successfully.");
