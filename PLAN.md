@@ -913,13 +913,20 @@ smoke documenté. Une mise en production est une opération distincte.
   `aphrody rag ingest-shenron` reste disponible pour les imports locaux et ses
   règles de compatibilité, mais n'est plus le consommateur par défaut du
   pipeline produit.
-- Restent à cartographier et basculer par propriétaire : OCR et revue,
-  embeddings/indexation/RAG, crawl/extraction Web, traduction et médias manga,
-  ainsi que les scripts d'ingestion et de dépôt qui demeurent spécifiques aux
-  contrats éditoriaux et bases Shenron. Pour chaque flux, le consommateur doit
-  appeler son propriétaire Rust via l'API Bun native ou une commande installée,
-  garder les règles éditoriales au niveau Shenron et prouver le contrat sur les
-  données de fixture avant de retirer son implémentation TypeScript.
+- La commande de traduction unifiée appelle maintenant le worker du site et
+  celui-ci passe ses segments au crate Rust `aphrody-translate`; le daemon Google
+  démarré depuis un checkout BXC a été retiré de ce flux. L'arbitrage et le dépôt
+  des databooks restent des règles produit Shenron.
+- Restent à migrer et qualifier : MCP et A2A (transport et stockage de tâches),
+  OCR et revue, import/crawl BXC vers Aphrody Web Rust, orchestration infra, et
+  médias/traduction manga. Réutiliser `aphrody-mcp`, `aphrody-a2a-server` /
+  `aphrody-a2a-client`, `aphrody-ocr`, `aphrody-translate`, `aphrody-infra`,
+  `aphrody-web` et Koharu ; ne pas recréer leurs moteurs dans Shenron.
+- Les consumers Shenron doivent garder les types, les options/configurations
+  et les contrats éditoriaux, appeler les propriétaires Aphrody par API/SDK ou
+  binaire installé, et déplacer données opérationnelles et jobs vers l'espace
+  Aphrody. La migration entière reste à prouver par contrat et exécution de bout
+  en bout ; l'inventaire MCP/A2A, OCR, BXC/crawl et infra n'est pas terminé.
 - La migration entière n'est pas validée : il reste à établir l'inventaire
   complet des consommateurs et propriétaires, les gates ABI/FFI depuis artefact
   construit, les vérifications Linux/Windows et les exécutions de bout en bout.

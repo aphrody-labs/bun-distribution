@@ -26,19 +26,15 @@
  *               un lexique et une mise en page, donc il rend des planches
  *               structurées (tableaux de puissance, fiches de personnage) que la
  *               traduction automatique classique massacre.
- *   `google`  — Google Traduction sans clé ni compte, par l'émulateur d'API de
- *               bxc (`bxc google translate --serve`, 127.0.0.1:8089). Il traduit
- *               un LOT de segments par appel, ce qui le rend tenable sur 12 000
- *               planches, et il rend les tableaux correctement. Mesuré le
- *               2026-09-12 : disponible quand `aphrody chat` est en 401.
+ *   `google`  — backend Google de `aphrody-translate` ; Aphrody Web Rust est
+ *               essayé avant les replis RPC, sans daemon BXC dans Shenron.
  *   `nllb`    — NLLB-200 distillé, **hors ligne**, via `@huggingface/transformers`
  *               (le même cache de modèles que le RAG). Aucune clé, aucun compte,
  *               aucun réseau. Il traduit de la prose correctement et bute sur les
  *               listes : le juge en refuse une bonne part, c'est voulu.
  *
- * `--moteur auto` (défaut) sonde `aphrody`, puis `agy`, puis retombe sur
- * `google`. NLLB reste le dernier recours : il est le seul à tourner sans
- * réseau, mais c'est aussi celui que le juge refuse le plus.
+ * `--moteur auto` (défaut) sonde `aphrody-translate`, puis `aphrody`, `agy` et
+ * le backend Google de la crate Rust. NLLB reste le dernier recours local.
  * Un moteur indisponible n'interrompt jamais la boucle : il la fait basculer.
  *
  * SIMULATION PAR DÉFAUT : sans `--appliquer`, rien n'est écrit en base.
@@ -84,20 +80,13 @@ const MOTEUR_DEMANDE = (opt("moteur", "auto") ?? "auto") as
 	| "agy"
 	| "google"
 	| "nllb";
-/** bxc depuis ses sources : le binaire compilé est cassé pour ces commandes. */
-const BXC_CLI =
-	process.env.BXC_CLI ??
-	(process.env.BXC_ROOT
-		? join(process.env.BXC_ROOT, "src", "cli", "index.ts")
-		: join(DEPOT, "..", "aphrody-web", "apps", "bxc", "src", "cli", "index.ts"));
-const BXC_COMMAND = BXC_CLI.endsWith(".ts") ? ["bun", BXC_CLI] : [BXC_CLI];
 const MODELE = opt("modele") ?? "Xenova/nllb-200-distilled-600M";
-/** Aphrody accepts `google`, not the BXC CLI label; BXC remains a separate fallback engine. */
-const APHRODY_TRANSLATE_BACKEND = process.env.APHRODY_TRANSLATE_BACKEND ?? "bxc";
+/** Rust translator: Aphrody Web Google, then its configured native fallbacks. */
+const APHRODY_TRANSLATE_BACKEND = process.env.APHRODY_TRANSLATE_BACKEND ?? "auto";
 const APHRODY_TRANSLATE_CANDIDATES = [
 	process.env.APHRODY_TRANSLATE_BIN,
 	Bun.which("aphrody") ?? (process.platform === "win32" ? "aphrody.exe" : "aphrody"),
-	join(DEPOT, "..", "aphrody-ai", "target", "release", process.platform === "win32" ? "aphrody-translate.exe" : "aphrody-translate"),
+	join(DEPOT, "target", "release", process.platform === "win32" ? "aphrody-translate.exe" : "aphrody-translate"),
 	process.platform === "win32" ? "aphrody-translate.exe" : "aphrody-translate",
 	"/srv/aphrody/current/bin/aphrody-translate",
 ].filter((value): value is string => Boolean(value));
@@ -243,11 +232,11 @@ function isAphrodyCli(bin: string): boolean {
 	return /(?:^|[\\/])aphrody(?:\.exe)?$/i.test(bin) && !/aphrody-translate/i.test(bin);
 }
 
-function commandeAphrodyTranslate(bin: string, text: string): string[] {
+function commandeAphrodyTranslate(bin: string, text: string, backend = APHRODY_TRANSLATE_BACKEND): string[] {
 	if (isAphrodyCli(bin)) {
-		return [bin, "translate", "-s", "ja", "-t", "fr", "-b", APHRODY_TRANSLATE_BACKEND, "--", text];
+		return [bin, "translate", "-s", "ja", "-t", "fr", "-b", backend, "--", text];
 	}
-	return [bin, "--source", "ja", "--target", "fr", "--backend", APHRODY_TRANSLATE_BACKEND, "--", text];
+	return [bin, "--source", "ja", "--target", "fr", "--backend", backend, "--", text];
 }
 
 function extraireTraductionAphrody(raw: string): string {
@@ -269,11 +258,11 @@ async function cheminAphrodyTranslate(): Promise<string | undefined> {
 }
 
 /** Probe the actual JA→FR contract, not the unrelated Aphrody chat command. */
-async function aphrodyTranslateDisponible(): Promise<boolean> {
+async function aphrodyTranslateDisponible(backend = APHRODY_TRANSLATE_BACKEND): Promise<boolean> {
 	const bin = await cheminAphrodyTranslate();
 	if (!bin) return false;
 	const r = await execute(
-		commandeAphrodyTranslate(bin, "孫悟空は界王拳を使った。"),
+		commandeAphrodyTranslate(bin, "孫悟空は界王拳を使った。", backend),
 		90_000
 	);
 	const text = extraireTraductionAphrody(r.sortie);
@@ -281,7 +270,7 @@ async function aphrodyTranslateDisponible(): Promise<boolean> {
 }
 
 /** Aphrody's dedicated translator with Dragon Ball lexicon protection. */
-async function moteurAphrodyTranslate(): Promise<Traducteur> {
+async function moteurAphrodyTranslate(backend = APHRODY_TRANSLATE_BACKEND): Promise<Traducteur> {
 	const bin = await cheminAphrodyTranslate();
 	if (!bin) throw new Error("binaire aphrody-translate introuvable");
 	return async (p, lexique) => {
@@ -299,7 +288,7 @@ async function moteurAphrodyTranslate(): Promise<Traducteur> {
 				largeur: APHRODY_TOKEN_WIDTH,
 			});
 			const r = await execute(
-				commandeAphrodyTranslate(bin, masque),
+				commandeAphrodyTranslate(bin, masque, backend),
 				120_000
 			);
 			if (!r.ok) throw new Error(`aphrody-translate : ${r.sortie.trim().slice(0, 200)}`);
@@ -371,77 +360,13 @@ async function moteurAgy(): Promise<Traducteur> {
  * rend parfois `界王拳` par « Kaioken » et parfois par « le poing du roi », et
  * seule la forme officielle du wiki doit atterrir en base.
  */
-const PORT_GOOGLE = Number(opt("port-google", "8089"));
-
 async function googleDisponible(): Promise<boolean> {
-	try {
-		const r = await fetch(`http://127.0.0.1:${PORT_GOOGLE}/language/translate/v2`, {
-			method: "POST",
-			headers: { "Content-Type": "application/json" },
-			body: JSON.stringify({ q: ["テスト"], source: "ja", target: "fr" }),
-			signal: AbortSignal.timeout(8_000),
-		});
-		return r.ok;
-	} catch {
-		return false;
-	}
+	return aphrodyTranslateDisponible("web");
 }
 
 async function moteurGoogle(): Promise<Traducteur> {
-	if (!(await googleDisponible())) {
-		// Le service n'est pas là : on le lève et on le laisse vivre le temps de
-		// la boucle. `unref` évite qu'il retienne le script à la sortie.
-		const proc = Bun.spawn([...BXC_COMMAND, "google", "translate", "--serve"], {
-			stdout: "ignore",
-			stderr: "ignore",
-		});
-		proc.unref();
-		for (let essai = 0; essai < 15; essai++) {
-			await Bun.sleep(1_000);
-			if (await googleDisponible()) break;
-		}
-		if (!(await googleDisponible())) {
-			throw new Error(`émulateur Google injoignable sur 127.0.0.1:${PORT_GOOGLE}`);
-		}
-	}
-
-	return async (p, lexique) => {
-		const lex = trierLexique(
-			lexique.map((t) => ({ ja: t.dansLaPlanche ?? t.ja, fr: t.fr, kind: t.kind }) as TermeLexique)
-		);
-		const segments = segmentsTraduisibles(p.texte);
-		// Un segment déjà latin (crédits, ISBN, numéro de tome) ne part pas au
-		// moteur : il en reviendrait « traduit ».
-		const aTraduire: { index: number; masque: string; table: Map<string, string> }[] = [];
-		const sortie: string[] = segments.map((s) => s);
-		segments.forEach((segment, index) => {
-			if (!contientJaponais(segment)) return;
-			const { masque, table } = protegerTermes(segment, lex);
-			aTraduire.push({ index, masque, table });
-		});
-		if (aTraduire.length === 0) return p.texte;
-
-		const reponse = await fetch(`http://127.0.0.1:${PORT_GOOGLE}/language/translate/v2`, {
-			method: "POST",
-			headers: { "Content-Type": "application/json" },
-			body: JSON.stringify({ q: aTraduire.map((s) => s.masque), source: "ja", target: "fr" }),
-			signal: AbortSignal.timeout(120_000),
-		});
-		if (!reponse.ok) throw new Error(`google : HTTP ${reponse.status}`);
-		const data = (await reponse.json()) as {
-			data?: { translations?: { translatedText?: string }[] };
-		};
-		const traductions = data.data?.translations ?? [];
-		if (traductions.length !== aTraduire.length) {
-			// Un lot rendu incomplet recollerait la traduction d'un segment sur un
-			// autre : mieux vaut échouer la planche que la fausser.
-			throw new Error(`google : ${traductions.length} traductions pour ${aTraduire.length} segments`);
-		}
-		aTraduire.forEach((s, i) => {
-			sortie[s.index] = restaurerOuEchouer(traductions[i]?.translatedText ?? "", s.table);
-		});
-		return sortie.join("\n").trim();
-	};
+	if (!(await googleDisponible())) throw new Error("Aphrody Web / Google translate indisponible");
+	return moteurAphrodyTranslate("web");
 }
 
 /**

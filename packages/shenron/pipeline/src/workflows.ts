@@ -270,20 +270,21 @@ export interface TranslationOptions {
 
 export async function runTranslation(options: TranslationOptions = {}): Promise<Record<string, unknown>> {
 	const args = options.args ?? [];
+	const root = join(import.meta.dir, "../../../..");
+	const supervisor = join(root, "apps/shenron/site/scripts/traduction-boucle.ts");
 	if (options.dryRun) {
 		return {
 			status: "planned",
-			entrypoint: "scripts/ops/translate-databooks-session.ts",
-			scope: "eligible databook pages -> protected FR -> RAG",
-			bunOnly: true,
+			entrypoint: supervisor,
+			scope: "eligible databook pages -> Aphrody Rust translation -> Shenron editorial gate and deposit",
 		};
 	}
 
 	const child = Bun.spawn(
-		[process.execPath, "scripts/ops/translate-databooks-session.ts", ...args.filter((arg) => arg !== "--dry-run")],
-		{ stdout: "inherit", stderr: "inherit", stdin: "inherit" },
+		[process.execPath, supervisor, ...args.filter((arg) => arg !== "--dry-run")],
+		{ cwd: root, stdout: "inherit", stderr: "inherit", stdin: "inherit" },
 	);
 	const code = await child.exited;
-	if (code !== 0) throw new Error(`translation supervisor exited with code ${code}`);
-	return { status: "completed", supervisor: "scripts/ops/translate-databooks-session.ts" };
+	if (code !== 0) throw new Error(`translation worker exited with code ${code}`);
+	return { status: "completed", supervisor };
 }

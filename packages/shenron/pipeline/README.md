@@ -61,10 +61,10 @@ déjà jugées au format `{image,text}`, pas `shenron.databook.review-candidate/
 Pour les règles de bascule et les preuves de production, voir
 `docs/APHRODY-OFFLOAD.md` à la racine du dépôt.
 
-La traduction des databooks est centralisée par
-`scripts/ops/translate-databooks-session.ts` : Aphrody `ja→fr` est sondé en
-premier, puis les replis déclarés, avec garde lexicale, juge unique, dépôt
-PostgreSQL atomique et ingestion RAG rejouable. PostgreSQL est l'autorité ; le
-JSON RAG est un artefact dérivé. Voir
+La commande `pipeline translation` délègue la traduction à
+`apps/shenron/site/scripts/traduction-boucle.ts`, qui consomme le propriétaire
+Rust `aphrody-translate` pour le moteur et conserve les règles de validation et
+de dépôt propres aux databooks. L'ancien démon Google/BXC du processus Shenron
+n'est plus utilisé par ce flux. Voir
 [`docs/TRADUCTION-DATABOOKS.md`](../../docs/TRADUCTION-DATABOOKS.md) pour les
 compteurs et le protocole d'arrêt/reprise.

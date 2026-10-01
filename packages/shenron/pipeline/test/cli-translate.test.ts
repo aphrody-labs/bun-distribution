@@ -19,11 +19,12 @@ async function runCli(command: string) {
 
 describe("pipeline translate", () => {
 	for (const command of ["translate", "translation"]) {
-		it(`\`${command}\` exposes the central supervisor plan`, async () => {
+		it(`\`${command}\` exposes the Aphrody translation owner plan`, async () => {
 			const { stdout, stderr, code } = await runCli(command);
 			expect(code).toBe(0);
 			expect(stderr).toBe("");
-			expect(stdout).toContain("translate-databooks-session.ts");
+			expect(stdout).toContain("traduction-boucle.ts");
+			expect(stdout).toContain("Aphrody Rust translation");
 		});
 	}
 
