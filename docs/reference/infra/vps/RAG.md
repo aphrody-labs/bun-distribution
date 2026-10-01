@@ -3,7 +3,7 @@
 
 Retrieval, embedding and synthesis engines that run on or are reached from the production VPS.
 Model names, dimensions, services and environment names are owned by
-[`config/local-ai.json`](../../config/local-ai.json) (validated by `aphrody-infra validate`) and
+[`config/local-ai.json`](../../../../config/local-ai.json) (validated by `aphrody-infra validate`) and
 by the model catalog of `aphrody-ai` (`crates/aphrody-models/catalog.json`); this page explains
 the pipelines. Restored from the retired `aphrody` monolith (`docs/vps/RAG.md`).
 
@@ -15,7 +15,7 @@ the pipelines. Restored from the retired `aphrody` monolith (`docs/vps/RAG.md`).
   selects a local SQLite index instead ([DATABASES.md](./DATABASES.md)).
 - Web ingestion: `aphrody rag web-ingest` reads pages from the BXC Web API on loopback and writes
   only to the AI database; the operator wrapper is
-  [`scripts/ops/aphrody-rag-web-ingest.sh`](../../scripts/ops/aphrody-rag-web-ingest.sh).
+  [`scripts/ops/aphrody-rag-web-ingest.sh`](../../../../scripts/ops/aphrody-rag-web-ingest.sh).
 - Indexes and their embedding spaces are declared under `indexes` in `config/local-ai.json`.
   Querying an index with another model or dimension is forbidden (`mix-embedding-spaces`); a
   mismatch falls back to lexical search.

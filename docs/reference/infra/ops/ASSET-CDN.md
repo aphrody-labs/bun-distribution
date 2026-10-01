@@ -17,7 +17,7 @@ raw game install publicly, is removed.
 | `/h/<sha16>.<ext>` | content-addressed copy | immutable, 1 year |
 | `/s/manifest.json` | every file: sha256, size, type, hashed URL | 60 s |
 
-Scopes come from [`config/asset-catalog.json`](../../config/asset-catalog.json):
+Scopes come from [`config/asset-catalog.json`](../../../../config/asset-catalog.json):
 
 | Scope | Source | Owns |
 | --- | --- | --- |
