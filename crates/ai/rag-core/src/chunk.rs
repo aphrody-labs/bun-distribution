@@ -74,6 +74,7 @@ pub enum ChunkKind {
 /// [`crate::text::measure`].
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
+#[derive(Default)]
 pub enum LengthUnit {
     /// UTF-16 code units — what JavaScript's `String.prototype.length`
     /// counts, and therefore what shenron's `maxChunkChars = 1400` actually
@@ -82,6 +83,7 @@ pub enum LengthUnit {
     /// passages roughly 3x too early (each kana/kanji is ~3 UTF-8 bytes but
     /// 1 UTF-16 unit) and French ones ~10% too early (each accented letter
     /// is 2 bytes but 1 unit).
+    #[default]
     Utf16,
     /// Unicode scalar values (`char::count`). Diverges from `Utf16` only
     /// inside astral-plane characters (each counts 1 here, 2 in UTF-16).
@@ -93,11 +95,6 @@ pub enum LengthUnit {
     Bytes,
 }
 
-impl Default for LengthUnit {
-    fn default() -> Self {
-        Self::Utf16
-    }
-}
 
 /// Tunable knobs shared by every chunker.
 #[derive(Debug, Clone, Copy, PartialEq)]

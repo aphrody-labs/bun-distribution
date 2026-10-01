@@ -2,6 +2,89 @@
 // SPDX-FileCopyrightText: 2026 aphrody contributors
 
 use pyo3::prelude::*;
+use pyo3::types::PyBytes;
+
+fn vector_error(error: &'static str) -> PyErr {
+    pyo3::exceptions::PyValueError::new_err(error)
+}
+
+#[pyfunction]
+fn unpack_embeddings(data: &[u8], rows: usize, width: usize) -> PyResult<Vec<Vec<f64>>> {
+    if rows.checked_mul(width).and_then(|size| size.checked_mul(8)) != Some(data.len()) {
+        return Err(vector_error("packed embedding dimensions do not match buffer length"));
+    }
+    if width == 0 {
+        return Ok(vec![vec![]; rows]);
+    }
+    let values: Vec<f64> =
+        data.as_chunks::<8>().0.iter().map(|bytes| f64::from_le_bytes(*bytes)).collect();
+    Ok(values.chunks_exact(width).map(<[f64]>::to_vec).collect())
+}
+
+fn pack_embeddings(py: Python<'_>, values: &[Vec<f64>]) -> Py<PyBytes> {
+    let bytes: Vec<u8> = values.iter().flatten().flat_map(|value| value.to_le_bytes()).collect();
+    PyBytes::new(py, &bytes).unbind()
+}
+
+#[pyfunction]
+fn normalize_embeddings_f64(
+    py: Python<'_>,
+    data: &[u8],
+    rows: usize,
+    width: usize,
+) -> PyResult<Py<PyBytes>> {
+    let batch = unpack_embeddings(data, rows, width)?;
+    let result =
+        py.detach(|| aphrody_rag_core::vectors_f64::normalize(&batch)).map_err(vector_error)?;
+    Ok(pack_embeddings(py, &result))
+}
+
+#[pyfunction]
+fn embedding_similarities_f64(
+    py: Python<'_>,
+    left: &[u8],
+    right: &[u8],
+    left_rows: usize,
+    right_rows: usize,
+    width: usize,
+) -> PyResult<Py<PyBytes>> {
+    let left_batch = unpack_embeddings(left, left_rows, width)?;
+    let right_batch = unpack_embeddings(right, right_rows, width)?;
+    let result = py
+        .detach(|| aphrody_rag_core::vectors_f64::similarities(&left_batch, &right_batch))
+        .map_err(vector_error)?;
+    Ok(pack_embeddings(py, &result))
+}
+
+#[pyfunction]
+fn mean_embeddings_f64(
+    py: Python<'_>,
+    data: &[u8],
+    rows: usize,
+    width: usize,
+) -> PyResult<Py<PyBytes>> {
+    let batch = unpack_embeddings(data, rows, width)?;
+    let result = py.detach(|| aphrody_rag_core::vectors_f64::mean(&batch)).map_err(vector_error)?;
+    Ok(pack_embeddings(py, &[result]))
+}
+
+#[pyfunction]
+fn update_cosine_centers_f64(
+    py: Python<'_>,
+    data: &[u8],
+    labels: Vec<usize>,
+    centers: &[u8],
+    rows: usize,
+    center_rows: usize,
+    width: usize,
+) -> PyResult<Py<PyBytes>> {
+    let batch = unpack_embeddings(data, rows, width)?;
+    let centers_batch = unpack_embeddings(centers, center_rows, width)?;
+    let result = py
+        .detach(|| aphrody_rag_core::vectors_f64::update_centers(&batch, &labels, &centers_batch))
+        .map_err(vector_error)?;
+    Ok(pack_embeddings(py, &result))
+}
 
 #[pyfunction]
 fn cosine_similarity(v1: Vec<f32>, v2: Vec<f32>) -> PyResult<f32> {
@@ -43,11 +126,17 @@ fn reciprocal_rank_fusion(
 ) -> PyResult<Vec<(usize, f32)>> {
     let lists: Vec<&[usize]> = rankings.iter().map(Vec::as_slice).collect();
     Ok(aphrody_rag_core::fusion::rrf(&lists, f64::from(k.unwrap_or(60.0)))
-        .into_iter().map(|(id, score)| (id, score as f32)).collect())
+        .into_iter()
+        .map(|(id, score)| (id, score as f32))
+        .collect())
 }
 
 #[pymodule]
 fn aphrody_rust(m: &Bound<'_, PyModule>) -> PyResult<()> {
+    m.add_function(wrap_pyfunction!(normalize_embeddings_f64, m)?)?;
+    m.add_function(wrap_pyfunction!(embedding_similarities_f64, m)?)?;
+    m.add_function(wrap_pyfunction!(mean_embeddings_f64, m)?)?;
+    m.add_function(wrap_pyfunction!(update_cosine_centers_f64, m)?)?;
     m.add_function(wrap_pyfunction!(cosine_similarity, m)?)?;
     m.add_function(wrap_pyfunction!(top_k_cosine_similarity, m)?)?;
     m.add_function(wrap_pyfunction!(reciprocal_rank_fusion, m)?)?;

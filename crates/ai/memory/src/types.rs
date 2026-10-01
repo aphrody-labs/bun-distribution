@@ -9,7 +9,7 @@
 //! ## Rationale
 //!
 //! The original [`crate::MemoryBackend`] trait targets vector recall (key/value
-//! + embedding search). The Tier-1 [`crate::provider::MemoryProvider`] trait
+//! and embedding search). The Tier-1 [`crate::provider::MemoryProvider`] trait
 //! targets *agent long-term context*: tag-filtered keyword search across runs,
 //! synced to a hosted service (Mem0, Honcho) or a local sqlite for offline
 //! mode. The two traits coexist — different consumers want different shapes.

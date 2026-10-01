@@ -112,7 +112,7 @@ impl EvictionPolicy {
                 let mut sorted: Vec<&MemoryRecord> = records.iter().collect();
                 // Sort newest-first; stable so records with identical timestamps
                 // keep their original relative order.
-                sorted.sort_by(|a, b| b.created_at_unix_ms.cmp(&a.created_at_unix_ms));
+                sorted.sort_by_key(|record| std::cmp::Reverse(record.created_at_unix_ms));
                 sorted.into_iter().skip(max_records).map(|r| r.id.clone()).collect()
             },
         }

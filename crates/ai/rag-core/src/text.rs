@@ -308,14 +308,12 @@ pub fn pack_lines_with_overlap(
             units.push(p);
             continue;
         }
-        let mut line_no = p.start_line;
-        for line in p.text.split('\n') {
+        for (line_no, line) in (p.start_line..).zip(p.text.split('\n')) {
             units.push(Paragraph {
                 text: line.to_string(),
                 start_line: line_no,
                 end_line: line_no,
             });
-            line_no += 1;
         }
     }
 

@@ -47,6 +47,7 @@ mod prose_chunker;
 mod rust_chunker;
 mod structural_chunker;
 pub mod text;
+pub mod vectors_f64;
 
 #[cfg(feature = "oxc")] mod jsts_chunker;
 

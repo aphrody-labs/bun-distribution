@@ -45,8 +45,8 @@ impl Chunker for MarkdownChunker {
         let mut line_no = 1u32;
 
         // Front-matter: a `---` delimited block at the very top of the file.
-        if lines.first().is_some_and(|l| l.trim() == "---") {
-            if let Some(close) = lines.iter().skip(1).position(|l| l.trim() == "---") {
+        if lines.first().is_some_and(|l| l.trim() == "---")
+            && let Some(close) = lines.iter().skip(1).position(|l| l.trim() == "---") {
                 let end = close + 1; // index of the closing `---`
                 let text = lines[..=end].join("\n");
                 out.push(Chunk::new(
@@ -61,7 +61,6 @@ impl Chunker for MarkdownChunker {
                 line_no = u32::try_from(end + 2).unwrap_or(line_no);
                 lines = lines.split_off(end + 1);
             }
-        }
 
         let mut sections: Vec<Section> = Vec::new();
         let mut hierarchy: Vec<String> = Vec::new();
@@ -132,8 +131,8 @@ impl Chunker for MarkdownChunker {
                 i += 1;
                 continue;
             }
-            if let (Some(prev), true) = (prev_line, SETEXT.is_match(line)) {
-                if !prev.trim().is_empty() {
+            if let (Some(prev), true) = (prev_line, SETEXT.is_match(line))
+                && !prev.trim().is_empty() {
                     // The previous line was a heading title, not content:
                     // pull it back out of the accumulated section lines.
                     current_lines.pop();
@@ -159,7 +158,6 @@ impl Chunker for MarkdownChunker {
                     i += 1;
                     continue;
                 }
-            }
             current_lines.push(line.to_string());
             prev_line = Some(line);
             i += 1;

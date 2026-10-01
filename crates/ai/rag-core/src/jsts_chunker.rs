@@ -148,8 +148,8 @@ fn collect_statement(
         Statement::VariableDeclaration(decl) => {
             let mut named = false;
             for d in &decl.declarations {
-                if let BindingPattern::BindingIdentifier(id) = &d.id {
-                    if matches!(
+                if let BindingPattern::BindingIdentifier(id) = &d.id
+                    && matches!(
                         d.init,
                         Some(Expression::ArrowFunctionExpression(_))
                             | Some(Expression::FunctionExpression(_))
@@ -157,7 +157,6 @@ fn collect_statement(
                         out.push((Some(id.name.to_string()), start, end));
                         named = true;
                     }
-                }
             }
             if !named {
                 out.push((None, start, end));

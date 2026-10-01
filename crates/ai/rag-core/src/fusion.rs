@@ -130,38 +130,34 @@ pub fn apply_source_weights<Id: Clone + Eq>(
     let mut top: Vec<WeightedCandidate<Id>> = ordered.iter().take(top_n).cloned().collect();
     let rest: Vec<WeightedCandidate<Id>> = ordered.into_iter().skip(top_n).collect();
 
-    if let Some(rule) = quota {
-        if rule.quota > 0 {
-            let is_quota_source =
-                |c: &WeightedCandidate<Id>| c.source_id.as_deref() == Some(rule.source_id.as_str());
-            let mut promotable: Vec<WeightedCandidate<Id>> = rest
-                .into_iter()
-                .filter(|c| is_quota_source(c) && boosted(weights, c) >= rule.min_score)
-                .collect();
-            promotable.sort_by(|a, b| {
-                boosted(weights, b).partial_cmp(&boosted(weights, a)).unwrap_or(Ordering::Equal)
-            });
+    if let Some(rule) = quota
+        && rule.quota > 0
+    {
+        let is_quota_source =
+            |c: &WeightedCandidate<Id>| c.source_id.as_deref() == Some(rule.source_id.as_str());
+        let mut promotable: Vec<WeightedCandidate<Id>> = rest
+            .into_iter()
+            .filter(|c| is_quota_source(c) && boosted(weights, c) >= rule.min_score)
+            .collect();
+        promotable.sort_by(|a, b| {
+            boosted(weights, b).partial_cmp(&boosted(weights, a)).unwrap_or(Ordering::Equal)
+        });
 
-            let mut have = top.iter().filter(|c| is_quota_source(c)).count();
-            for promoted in promotable {
-                if have >= rule.quota {
-                    break;
-                }
-                let worst = top.iter().rposition(|c| {
-                    !is_quota_source(c)
-                        && !c
-                            .kind
-                            .as_deref()
-                            .is_some_and(|k| protected_kinds.iter().any(|p| p == k))
-                });
-                let Some(worst_idx) = worst else { break };
-                top[worst_idx] = promoted;
-                have += 1;
+        let initial_count = top.iter().filter(|c| is_quota_source(c)).count();
+        for (have, promoted) in (initial_count..).zip(promotable) {
+            if have >= rule.quota {
+                break;
             }
-            top.sort_by(|a, b| {
-                boosted(weights, b).partial_cmp(&boosted(weights, a)).unwrap_or(Ordering::Equal)
+            let worst = top.iter().rposition(|c| {
+                !is_quota_source(c)
+                    && !c.kind.as_deref().is_some_and(|k| protected_kinds.iter().any(|p| p == k))
             });
+            let Some(worst_idx) = worst else { break };
+            top[worst_idx] = promoted;
         }
+        top.sort_by(|a, b| {
+            boosted(weights, b).partial_cmp(&boosted(weights, a)).unwrap_or(Ordering::Equal)
+        });
     }
     top
 }
@@ -283,11 +279,11 @@ pub fn top_k_exact(query: &[f32], matrix: &[f32], dim: usize, k: usize) -> Vec<(
         let score = cosine(query, row);
         if heap.len() < k {
             heap.push(std::cmp::Reverse(Scored(score, r)));
-        } else if let Some(std::cmp::Reverse(worst)) = heap.peek() {
-            if score > worst.0 {
-                heap.pop();
-                heap.push(std::cmp::Reverse(Scored(score, r)));
-            }
+        } else if let Some(std::cmp::Reverse(worst)) = heap.peek()
+            && score > worst.0
+        {
+            heap.pop();
+            heap.push(std::cmp::Reverse(Scored(score, r)));
         }
     }
     let mut out: Vec<(usize, f32)> =
