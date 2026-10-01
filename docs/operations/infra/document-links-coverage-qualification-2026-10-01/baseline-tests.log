@@ -1,0 +1,58 @@
+bun test v1.4.2 (744846f84)
+
+packages/infra/workspace/test/docs-links.test.ts:
+(pass) inline destinations include escaped labels, wrapped paths, balanced parentheses and titles [0.29ms]
+{
+  "scanned": 5,
+  "excluded": [],
+  "links": 0,
+  "broken": 0,
+  "findings": []
+}
+{
+  "scanned": 6,
+  "excluded": [],
+  "links": 0,
+  "broken": 0,
+  "findings": []
+}
+72 |     expect(await runDocsLinks(["--root", root, "--web-routes", "--json"])).toBe(0);
+73 |     await writeFile(
+74 |       join(migration, "broken.md"),
+75 |       '[missing](<../guides/owner/Missing (draft).md#intro> "Title")',
+76 |     );
+77 |     expect(await runDocsLinks(["--root", root, "--web-routes", "--json"])).toBe(1);
+                                                                                ^
+error: expect(received).toBe(expected)
+
+Expected: 1
+Received: 0
+
+      at <anonymous> (/home/aphro/aphrody/packages/infra/workspace/test/docs-links.test.ts:77:76)
+(fail) generated migration index and URL metadata resolve actual local files [4.59ms]
+{
+  "scanned": 2,
+  "excluded": [],
+  "links": 0,
+  "broken": 0,
+  "findings": []
+}
+87 |   try {
+88 |     await mkdir(join(root, "docs/migration"), { recursive: true });
+89 |     await writeFile(join(root, "docs/migration/snapshot.md"), "[legacy](missing.md)");
+90 |     await writeFile(join(root, "docs/active.md"), "# Active");
+91 |     const args = ["--root", root, "--json"];
+92 |     expect(await runDocsLinks(args)).toBe(1);
+                                          ^
+error: expect(received).toBe(expected)
+
+Expected: 1
+Received: 0
+
+      at <anonymous> (/home/aphro/aphrody/packages/infra/workspace/test/docs-links.test.ts:92:38)
+(fail) explicit historical exclusions do not hide active failures or accept stale paths [1.07ms]
+
+ 1 pass
+ 2 fail
+ 4 expect() calls
+Ran 3 tests across 1 file. [101.17s]

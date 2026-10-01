@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-import { expect, test } from "bun:test";
+import { expect, spyOn, test } from "bun:test";
 import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
@@ -47,11 +47,13 @@ test("generated migration index and URL metadata resolve actual local files", as
         target: "docs/guides/owner/question?#.md",
       },
     ];
-    for (const entry of entries) {
-      const path = join(root, entry.target);
-      await mkdir(dirname(path), { recursive: true });
-      await writeFile(path, "# Intro\n");
-    }
+    await Promise.all(
+      entries.map(async (entry) => {
+        const path = join(root, entry.target);
+        await mkdir(dirname(path), { recursive: true });
+        await writeFile(path, "# Intro\n");
+      }),
+    );
     await writeFile(
       join(migration, "IMPORTED-DOCS-INDEX.md"),
       renderDocumentationIndex(entries, root),
@@ -103,6 +105,64 @@ test("explicit historical exclusions do not hide active failures or accept stale
     );
     await expect(runDocsLinks([...args, "--exclude-file"])).rejects.toThrow("requires a path");
   } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+test("coverage includes imported, historical and active pages unless individually excluded", async () => {
+  const root = await mkdtemp(join(tmpdir(), "docs-links-coverage-"));
+  const output: string[] = [];
+  const logger = spyOn(console, "log").mockImplementation((message) =>
+    output.push(String(message)),
+  );
+  const paths = [
+    "docs/products/ai/README.md",
+    "docs/reference/ai/guide.md",
+    "docs/research/ai/review.md",
+    "docs/migration/snapshot.md",
+    "docs/products/ai/_source/README.md",
+    "docs/apis/upstream-bun/guide.md",
+    "docs/architecture/discord/architecture/upstreams/guide.md",
+    "docs/plans/ai/2026-09-29-requirements.md",
+  ];
+  try {
+    await Promise.all(
+      paths.map(async (path) => {
+        await mkdir(dirname(join(root, path)), { recursive: true });
+        await writeFile(join(root, path), "[missing](absent.md)");
+      }),
+    );
+    const args = ["--root", root, "--json"];
+    expect(await runDocsLinks(args)).toBe(1);
+    const full = JSON.parse(output.pop()!);
+    expect(full.scanned).toBe(paths.length);
+    expect(full.checked).toBe(paths.length);
+    expect(full.checkedFiles.toSorted()).toEqual([...paths].toSorted());
+    expect(full.broken).toBe(paths.length);
+    expect(full.findings.map((finding: { file: string }) => finding.file).toSorted()).toEqual(
+      [...paths].toSorted(),
+    );
+
+    const scoped = [...args, "--exclude-file", "docs/migration/snapshot.md"];
+    expect(await runDocsLinks(scoped)).toBe(1);
+    const remaining = JSON.parse(output.pop()!);
+    expect(remaining.scanned).toBe(paths.length);
+    expect(remaining.checked).toBe(paths.length - 1);
+    expect(remaining.excluded).toEqual(["docs/migration/snapshot.md"]);
+    expect(remaining.checkedFiles).not.toContain("docs/migration/snapshot.md");
+    expect(remaining.broken).toBe(paths.length - 1);
+
+    await Promise.all(
+      paths
+        .filter((path) => path !== "docs/migration/snapshot.md")
+        .map((path) => writeFile(join(root, path), "# Active")),
+    );
+    expect(await runDocsLinks(scoped)).toBe(0);
+    const clean = JSON.parse(output.pop()!);
+    expect(clean.checked + clean.excluded.length).toBe(clean.scanned);
+    expect(clean.broken).toBe(0);
+  } finally {
+    logger.mockRestore();
     await rm(root, { recursive: true, force: true });
   }
 });

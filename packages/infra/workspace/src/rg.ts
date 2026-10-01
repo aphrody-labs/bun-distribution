@@ -546,8 +546,9 @@ export async function runRg(args: string[], root = infraRoot()): Promise<number>
   if (action === "inventory") {
     const summary = await exportDetailedInventory(root);
     const outIndex = rest.indexOf("--out");
-    if (outIndex !== -1 && rest[outIndex + 1]) {
-      const targetPath = resolve(root, rest[outIndex + 1]);
+    const outPath = outIndex === -1 ? undefined : rest[outIndex + 1];
+    if (outPath) {
+      const targetPath = resolve(root, outPath);
       await Bun.write(targetPath, JSON.stringify(summary, null, 2) + "\n");
       console.log(`Inventory of ${summary.totalPackages} packages written to ${targetPath}`);
     } else {

@@ -120,56 +120,16 @@ export async function runDocsLinks(args: string[]): Promise<number> {
       throw new Error(`Excluded file is not an inventoried Markdown document: ${requested}`);
     excluded.add(file);
   }
+  const checkedFiles: string[] = [];
   let totalLinks = 0;
   let brokenLinks = 0;
   const findings: Array<{ file: string; link: string; target: string }> = [];
 
   for (const file of files) {
     if (excluded.has(file)) continue;
-    // Ignorer les fichiers de bundle générés qui contiennent beaucoup de liens absolus virtuels
-    if (file.endsWith("llms.txt") || file.endsWith("llms-full.txt")) continue;
+    checkedFiles.push(relative(ROOT_DIR, file).replaceAll("\\", "/"));
 
-    // `docs/reference/` est recopié depuis des documentations externes par la
-    // tâche cron `external-docs` : ses liens pointent vers les sites d'origine
-    // (`/docs/concepts/...`, `./LICENSE.md`) et n'ont aucun sens ici. Les
-    // vérifier ne signalerait que du bruit qu'on ne peut pas corriger — toute
-    // édition manuelle y est de toute façon écrasée.
-    if (file.includes("/docs/reference/") || file.includes("/docs/research/")) continue;
-    if (
-      file.includes("/docs/_root/") ||
-      file.includes("/docs/aphrody-os/n2b/node/") ||
-      file.includes("/docs/n2b/node/") ||
-      file.includes("/docs/n2b/bun/") ||
-      file.includes("/apps/bxc/specs/") ||
-      file.includes("/apps/bxc/.agents/skills/rust-best-practices/") ||
-      file.includes("/upstream-bun/") ||
-      file.includes("/upstream-oxc/") ||
-      file.includes("/compat/n2b/bun/") ||
-      file.includes("/docs/apis/discord/apps/guide/") ||
-      file.includes("/docs/guides/discord/apps/guide/") ||
-      file.includes("/docs/shenron/root/") ||
-      file.includes("/docs/shenron/kinto-un-analyse-visuelle.md") ||
-      file.includes("/docs/shenron/pipeline-svg.md") ||
-      file.includes("/docs/shenron/manga-scans.md") ||
-      file.includes("/docs/apis/ui/drive/") ||
-      file.includes("/docs/guides/nie/") ||
-      file.includes("/docs/products/") ||
-      file.includes("/_source/") ||
-      file.includes("/docs/products/ui/drive/") ||
-      file.includes("/docs/products/web/drive-server/") ||
-      file.includes("/docs/products/web/apps/bxc/") ||
-      file.includes("/docs/operations/os/drive/") ||
-      file.includes("/docs/operations/ui/drive/") ||
-      file.includes("/docs/operations/iecode/") ||
-      file.includes("/docs/plans/ai/plans/") ||
-      file.includes("2026-09-29-") ||
-      file.includes("/docs/migration/") ||
-      file.includes("/docs/architecture/ui/drive/") ||
-      file.includes("/docs/architecture/ui/packages/") ||
-      file.includes("/docs/architecture/discord/architecture/upstreams/")
-    )
-      continue;
-
+    // oxlint-disable-next-line no-await-in-loop -- Bound memory while scanning imported documentation.
     const content = await readFile(file, "utf-8");
     const relativeFile = file.replace(ROOT_DIR, "").replace(/^\//, "");
     const fileDir = dirname(file);
@@ -211,6 +171,7 @@ export async function runDocsLinks(args: string[]): Promise<number> {
         targets = [resolve(fileDir, path)];
       }
 
+      // oxlint-disable-next-line no-await-in-loop -- Bound outstanding filesystem probes to one destination.
       const exists = (await Promise.all(targets.map(verifyPath))).some(Boolean);
       if (!exists) {
         const targetPath = targets[0] ?? "<invalid route>";
@@ -229,6 +190,8 @@ export async function runDocsLinks(args: string[]): Promise<number> {
       JSON.stringify(
         {
           scanned: files.length,
+          checked: checkedFiles.length,
+          checkedFiles,
           excluded: [...excluded].map((file) => relative(ROOT_DIR, file).replaceAll("\\", "/")),
           links: totalLinks,
           broken: brokenLinks,
@@ -240,6 +203,8 @@ export async function runDocsLinks(args: string[]): Promise<number> {
     );
   else {
     console.log(`\n📊 Bilan de la vérification :`);
+    console.log(`   - Documents inventoriés : ${files.length}`);
+    console.log(`   - Documents vérifiés : ${checkedFiles.length}`);
     console.log(`   - Liens locaux vérifiés : ${totalLinks}`);
     console.log(`   - Liens cassés trouvés  : ${brokenLinks}`);
     for (const file of excluded)

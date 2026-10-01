@@ -1217,3 +1217,22 @@ heuristique ; aucun changement Git ne doit être attribué sans preuve.
   concurrentes préservées. Diff documentaire contrôlé ; aucun test propriétaire
   répété pour ce lot sans changement de code.
 - Preuves : [audit direct, hashes et périmètres](docs/operations/ai/documentation-navigation-qualification-2026-10-01.json).
+
+### Couverture documentaire explicite restaurée — 2026-10-01
+
+- FAIT : le vérificateur Infra n’exclut plus implicitement catégories, chemins
+  ou dates. Seuls les fichiers demandés par `--exclude-file` sont exclus ;
+  `scanned` conserve l’inventaire, `checked` et `checkedFiles` prouvent le périmètre.
+- Régression reproduite : deux tests existants échouaient car `docs/migration`
+  était ignoré. Désormais 115 tests Infra réussis, un natif ignoré, aucun échec ;
+  produit, référence, recherche, snapshot, upstream et index `_source` couverts.
+  TypeScript 7.0.2, Oxc strict, format et diff réussis. Narrowing de l’option
+  `rg inventory --out` corrigé sans changer son comportement.
+- INCOMPLET : scan complet (deux snapshots exclus explicitement), 5 870 documents
+  inventoriés, 5 868 vérifiés, 11 236 liens locaux, 2 719 destinations non résolues.
+  Ce total inclut routes importées, chemins historiques, assets et licences ;
+  il ne mesure pas les défauts actifs confirmés. Le classement reste ouvert.
+  Les deux pages de navigation AI sont maintenant couvertes, sans défaut de cible.
+- Les ancres et sites externes ne sont pas vérifiés. Documents de packages/apps
+  hors `docs` non inventoriés. Aucune preuve historique réécrite.
+- Preuves : [rapport, tests et inventaire exhaustif](docs/operations/infra/document-links-coverage-qualification-2026-10-01/report.json).
