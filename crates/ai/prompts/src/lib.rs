@@ -181,7 +181,7 @@ impl RenderContext {
 
     /// Convert to a minijinja value suitable for [`minijinja::Template::render`].
     fn to_jinja_value(&self) -> MjValue {
-        MjValue::from_serialize(&serde_json::Value::Object(self.inner.clone()))
+        MjValue::from_serialize(serde_json::Value::Object(self.inner.clone()))
     }
 }
 
