@@ -502,3 +502,19 @@ les adaptateurs de sessions canoniques et une mémoire commune.
  via `Cargo.toml` et `crates/infra/ssh/Cargo.toml`. Overrides explicites conservés ;
  test de layout actuel et rejet des archives ajouté. Aucun accès SSH distant
  n’est établi par ces tests.
+
+### Coordination commune : audit et première configuration
+
+- Audit délégué terminé ; [résultats et reste à traiter](docs/migration/a2a-centralization-audit-2026-10-01.json).
+- FAIT : registre A2A local, pairs retirés sans fallback public, Codex ajouté au
+  runner, alias agycli et cwd commun. Contexte AGENTS et résumés `.coord/shared`
+  injectés dans les prompts. CLAUDE.md et GEMINI.md pointent vers AGENTS.md.
+- FAIT : service utilisateur `aphrody-agent-session-sync` actif, ingestion
+  Claude/Codex/agy toutes les 30 secondes par le propriétaire session existant.
+  Source de service suivie sous config/systemd/user ; données privées hors Git.
+- 29 tests a2a-coord et clippy réussis. Provisioners Codex/agy corrigés vers
+  config/ai/plugins/aphrody ; check CLI en cours (session 2234, log
+  /tmp/shared-cli-check.log). Ne pas déclarer ces provisioners qualifiés avant résultat.
+- INCOMPLET : rappel SQLite croisé, claims atomiques, garde de branche,
+  déduplication brokers/proxies/enveloppes et simultanéité réelle des trois
+  CLIs restent ouverts. La configuration ne prouve pas l’exécution concurrente.

@@ -3,11 +3,11 @@
 //!
 //! Resolution order per peer (first hit wins):
 //! 1. env `APHRODY_A2A_PEER_<ID>_URL` (upper-case id, `-` -> `_`);
-//! 2. `../aphrody-infra/config/a2a-peers.json` (or `APHRODY_A2A_PEERS_FILE`),
+//! 2. `config/a2a-peers.json` (or `APHRODY_A2A_PEERS_FILE`),
 //!    shape `{"peers":[{"id":"shenron","transport":"https-jsonrpc","endpoint":"https://..."}]}`
 //!    (the legacy `url` field is still accepted; `coord-file` endpoints are paths,
 //!    not URLs, and keep the peer on the file channel);
-//! 3. canonical public default (only `shenron`).
+//! 3. local file coordination (no implicit retired public endpoint).
 //!
 //! Peers without an HTTP endpoint fall back to the `.coord` file channel.
 
@@ -59,10 +59,15 @@ struct CatalogPeer {
     endpoint: Option<String>,
     #[serde(default)]
     transport: Option<String>,
+    #[serde(default)]
+    status: Option<String>,
 }
 
 impl CatalogPeer {
     fn into_endpoint(self) -> PeerEndpoint {
+        if self.status.as_deref() == Some("retired") {
+            return PeerEndpoint { id: self.id, url: None };
+        }
         let is_http = |u: &str| u.starts_with("http://") || u.starts_with("https://");
         let endpoint = self.endpoint.filter(|e| {
             is_http(e) && self.transport.as_deref().is_none_or(|t| t.starts_with("http"))
@@ -100,8 +105,7 @@ impl PeerRegistry {
             .map(|id| {
                 let url = env(&env_key(&id))
                     .filter(|u| !u.trim().is_empty())
-                    .or_else(|| file_peers.iter().find(|p| p.id == id).and_then(|p| p.url.clone()))
-                    .or_else(|| (id == "shenron").then(|| SHENRON_DEFAULT_URL.to_owned()));
+                    .or_else(|| file_peers.iter().find(|p| p.id == id).and_then(|p| p.url.clone()));
                 PeerEndpoint { id, url }
             })
             .collect();
@@ -113,7 +117,7 @@ impl PeerRegistry {
     pub fn from_env(repo_root: &Path) -> Self {
         let catalog = std::env::var_os("APHRODY_A2A_PEERS_FILE")
             .map(PathBuf::from)
-            .unwrap_or_else(|| repo_root.join("../aphrody-infra/config/a2a-peers.json"));
+            .unwrap_or_else(|| repo_root.join("config/a2a-peers.json"));
         Self::resolve(Some(&catalog), |k| std::env::var(k).ok())
     }
 
@@ -134,11 +138,22 @@ mod tests {
     use super::*;
 
     #[test]
-    fn defaults_only_shenron_http() {
+    fn defaults_use_file_coordination() {
         let r = PeerRegistry::resolve(None, |_| None);
         assert_eq!(r.peers().len(), KNOWN_PEERS.len());
-        assert_eq!(r.get("shenron").unwrap().url.as_deref(), Some(SHENRON_DEFAULT_URL));
+        assert_eq!(r.get("shenron").unwrap().channel(), Channel::FileJsonl);
         assert_eq!(r.get("codex@x").unwrap().channel(), Channel::FileJsonl);
+    }
+
+    #[test]
+    fn retired_catalog_peer_never_revives_its_http_endpoint() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("peers.json");
+        std::fs::write(&path, r#"{"peers":[{"id":"shenron","status":"retired","transport":"https-jsonrpc","endpoint":"https://retired.invalid/a2a"}]}"#).unwrap();
+        assert_eq!(
+            PeerRegistry::resolve(Some(&path), |_| None).get("shenron").unwrap().channel(),
+            Channel::FileJsonl
+        );
     }
 
     #[test]

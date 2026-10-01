@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "owner": "aphrody-infra",
+  "owner": "@aphrody/workspace",
   "protocol": {
     "name": "A2A",
     "version": "1.0",
@@ -14,7 +14,18 @@
     "format": "jsonl",
     "inbox": ".coord/inbox-from-<peer>.jsonl",
     "outbox": ".coord/outbox-to-<peer>.jsonl",
-    "envelope": ["id", "from", "to", "ts", "kind", "method", "params"],
+    "envelope": [
+      "v",
+      "ts",
+      "id",
+      "from",
+      "to",
+      "kind",
+      "topic",
+      "body",
+      "re",
+      "channel_hint"
+    ],
     "gitPolicy": "untracked-runtime-state",
     "retention": "operator-rotated; never contains secrets"
   },
@@ -86,5 +97,26 @@
   "policy": {
     "secrets": "authEnv names an operator-managed environment variable; values never live in Git",
     "publicSurface": "Shenron's Aphrody-owned host publishes MCP, OAuth and A2A on mcp.dragonballfr.com; admin MCP tools require Bearer authorization"
+  },
+  "codingAgents": {
+    "workspace": "repository-root",
+    "branchPolicy": "same-current-branch",
+    "rules": "AGENTS.md",
+    "sessionOwner": "aphrody-session/external",
+    "syncCommand": [
+      "aphrody",
+      "ai",
+      "sync-sessions",
+      "--watch",
+      "--interval-secs",
+      "30",
+      "--json"
+    ],
+    "memoryStore": "~/.aphrody/memory/memory.sqlite",
+    "contextFiles": [
+      ".coord/shared/MEMORY.md",
+      ".coord/shared/CONVERSATIONS.md"
+    ],
+    "commitPolicy": "one-integrator; distinct-file-claims"
   }
 }

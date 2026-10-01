@@ -5,26 +5,19 @@
   "schema_version": "1.0.0",
   "kind": "agent",
   "name": "aphrody",
-  "description": "Aphrody AI layer: agent engine, model clients, RAG, embeddings, MCP and A2A 1.0 JSON-RPC with file JSONL coordination. Peers are listed in aphrody-infra config/a2a-peers.json.",
+  "description": "Aphrody monorepo agent coordination; shared session and memory owners, local A2A peers.",
   "a2a_protocol_version": "1.0",
-  "documentation_url": "https://github.com/aphrody-code/aphrody-contracts/blob/main/docs/a2a/README.md",
-  "agent_card_url": "https://aphrody.com/.well-known/agent-card.json",
+  "documentation_url": "https://github.com/aphrody-labs/aphrody",
   "peer_registry": {
-    "owner": "aphrody-infra",
+    "owner": "@aphrody/workspace",
     "path": "config/a2a-peers.json",
-    "note": "Single source of truth for A2A peers; resolved at runtime by aphrody-a2a-coord PeerRegistry (APHRODY_A2A_PEERS_FILE overrides the ../aphrody-infra path)."
+    "note": "Canonical monorepo peer registry; APHRODY_A2A_PEERS_FILE is an explicit override."
   },
   "provider": {
     "organization": "aphrody-code",
-    "url": "https://github.com/aphrody-code/aphrody-ai"
+    "url": "https://github.com/aphrody-labs/aphrody"
   },
-  "supported_interfaces": [
-    {
-      "url": "https://aphrody.com/api/v1/a2a",
-      "protocol_binding": "JSONRPC",
-      "protocol_version": "1.0"
-    }
-  ],
+  "supported_interfaces": [],
   "capabilities": {
     "streaming": true,
     "pushNotifications": false,
@@ -106,5 +99,6 @@
         "error"
       ]
     }
-  }
+  },
+  "deployment_status": "local-coordination; public A2A interface remains unqualified"
 }

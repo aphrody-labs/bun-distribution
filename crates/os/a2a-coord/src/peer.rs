@@ -11,6 +11,7 @@ use crate::manifest::PeerDef;
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum PeerId {
     Claude,
+    Codex,
     Grok,
     Agy,
     Bxc,
@@ -21,6 +22,7 @@ impl PeerId {
     pub const fn short(self) -> &'static str {
         match self {
             Self::Claude => "claude",
+            Self::Codex => "codex",
             Self::Grok => "grok",
             Self::Agy => "agy",
             Self::Bxc => "bxc",
@@ -30,8 +32,9 @@ impl PeerId {
     pub fn parse(s: &str) -> Option<Self> {
         match s.to_ascii_lowercase().as_str() {
             "claude" | "claude-code" => Some(Self::Claude),
+            "codex" => Some(Self::Codex),
             "grok" | "grok-build" => Some(Self::Grok),
-            "agy" | "gemini" | "antigravity" => Some(Self::Agy),
+            "agy" | "agycli" | "gemini" | "antigravity" => Some(Self::Agy),
             "bxc" => Some(Self::Bxc),
             _ => None,
         }
@@ -84,6 +87,8 @@ impl PeerInvoker {
     }
 
     pub fn invoke_prompt(&self, peer: PeerId, prompt: &str) -> Result<PeerInvokeResult, PeerError> {
+        let shared = self.shared_prompt(prompt);
+        let prompt = shared.as_str();
         if self.dry_run {
             return Ok(PeerInvokeResult {
                 peer,
@@ -100,8 +105,22 @@ impl PeerInvoker {
             PeerId::Grok => self.invoke_grok(prompt),
             PeerId::Agy => self.invoke_agy(prompt),
             PeerId::Claude => self.invoke_claude(prompt),
+            PeerId::Codex => self.invoke_codex(prompt),
             PeerId::Bxc => self.invoke_bxc(prompt),
         }
+    }
+
+    fn shared_prompt(&self, task: &str) -> String {
+        let mut context = String::new();
+        for relative in ["AGENTS.md", ".coord/shared/MEMORY.md", ".coord/shared/CONVERSATIONS.md"] {
+            if let Ok(text) = std::fs::read_to_string(self.cwd.join(relative)) {
+                let bounded: String = text.chars().take(16_384).collect();
+                context.push_str(&format!("\nRepository context ({relative}):\n{bounded}\n"));
+            }
+        }
+        format!(
+            "{task}\n\nShared repository context; follow the current task and repository rules:\n{context}"
+        )
     }
 
     pub fn invoke_peer_def(
@@ -171,6 +190,15 @@ impl PeerInvoker {
         self.run(PeerId::Claude, cmd)
     }
 
+    fn invoke_codex(&self, prompt: &str) -> Result<PeerInvokeResult, PeerError> {
+        let bin = Self::resolve_bin("CODEX_BIN", "codex");
+        let mut cmd = Command::new(&bin);
+        cmd.args(["exec", "--dangerously-bypass-approvals-and-sandbox", "--json", "-C"]);
+        cmd.arg(&self.cwd);
+        cmd.arg(prompt);
+        self.run(PeerId::Codex, cmd)
+    }
+
     fn invoke_bxc(&self, prompt: &str) -> Result<PeerInvokeResult, PeerError> {
         let bin = Self::resolve_bin("BXC_BIN", "bxc");
         let mut cmd = Command::new(&bin);
@@ -180,6 +208,7 @@ impl PeerInvoker {
     }
 
     fn run(&self, peer: PeerId, mut cmd: Command) -> Result<PeerInvokeResult, PeerError> {
+        cmd.current_dir(&self.cwd);
         cmd.stdin(Stdio::null());
         cmd.stdout(Stdio::piped());
         cmd.stderr(Stdio::piped());
@@ -190,5 +219,19 @@ impl PeerInvoker {
             stdout: String::from_utf8(out.stdout)?,
             stderr: String::from_utf8(out.stderr)?,
         })
+    }
+}
+
+#[cfg(test)]
+mod coordination_tests {
+    use super::*;
+    #[test]
+    fn common_coding_peers_are_routable() {
+        assert_eq!(PeerId::parse("codex"), Some(PeerId::Codex));
+        assert_eq!(PeerId::parse("agycli"), Some(PeerId::Agy));
+        let invoker = PeerInvoker::new(".").with_dry_run(true);
+        for peer in [PeerId::Claude, PeerId::Codex, PeerId::Agy] {
+            assert_eq!(invoker.invoke_prompt(peer, "shared task").unwrap().exit_code, Some(0));
+        }
     }
 }

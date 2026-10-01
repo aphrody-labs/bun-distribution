@@ -1,0 +1,57 @@
+{
+  "scope": "Current monorepo A2A and shared Claude/Codex/agy coordination",
+  "auditor": "read-only delegated audit",
+  "findings": [
+    {
+      "owner": "crates/os/a2a-coord",
+      "status": "implemented and tested",
+      "changes": [
+        "local config/a2a-peers.json registry",
+        "no retired Shenron implicit endpoint",
+        "Codex peer routing",
+        "agycli alias",
+        "common cwd",
+        "repository rules and shared summary injection"
+      ]
+    },
+    {
+      "owner": "apps/cli provisioning",
+      "status": "implemented; CLI qualification running",
+      "changes": [
+        "canonical config/ai/plugins/aphrody source paths"
+      ]
+    },
+    {
+      "owner": "aphrody-session/external",
+      "status": "existing canonical ingestion enabled as user service",
+      "service": "aphrody-agent-session-sync",
+      "memory": "~/.aphrody/memory/memory.sqlite",
+      "sessions": "~/.aphrody/sessions/{claude,codex,agy}"
+    },
+    {
+      "owner": "repository rules",
+      "status": "configured",
+      "rules": "AGENTS.md",
+      "projections": [
+        "CLAUDE.md",
+        "GEMINI.md"
+      ]
+    }
+  ],
+  "remaining": [
+    "Cross-agent SQLite recall (external agent ID filtering) must be exposed through canonical provider.",
+    "Atomic file/task claims and branch guard in runner remain to implement.",
+    "Live simultaneous Claude/Codex/agy execution not yet proven.",
+    "Duplicate bot brokers, terminal coord proxy and envelope projections remain to consolidate.",
+    "New native peer source must be installed before claiming installed CLI support."
+  ],
+  "tests": {
+    "a2aCoordPassed": 29,
+    "clippyExit": 0
+  },
+  "runtime": {
+    "serviceActive": true,
+    "mainPid": 1270539,
+    "observedRestarts": 0
+  }
+}
