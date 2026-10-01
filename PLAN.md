@@ -313,6 +313,22 @@ Critères : `bun test packages/infra/workspace/test`, typecheck et Oxc réelleme
 appliqués aux fichiers ; services actifs, état hors target, source-sync borné
 aux trois racines actives. WSL : disques, processus, shell et chemins revérifiés.
 
+### Kernel : découverte Infra active et gates — 2026-10-01
+
+- FAIT : la découverte automatique Infra du kernel ne sélectionne plus les
+  checkouts séparés ni `src/` ; elle exige le manifest racine et le propriétaire
+  actuel `crates/infra/ssh`. Les overrides explicites restent disponibles.
+- Tests : un clone relocalisé reste découvrable depuis cwd/exécutable ; une
+  archive legacy est rejetée ; le repli home exige le layout actuel.
+- [Logs de qualification](docs/migration/kernel-qualification-2026-10-01/test.log) :
+  79 tests réussis, un test GCS live ignoré faute de credentials/bucket de test.
+  Check all-targets et clippy all-targets verrouillés avec refus des lint warnings
+  réussis. Cargo conserve un avertissement de compatibilité future pour la
+  dépendance tierce `proc-macro-error2 2.0.1`. Format du fichier et diff-check réussis.
+- INCOMPLET : autres références legacy des outils/configurations, test GCS,
+  services installés, Windows et qualification kernel depuis clone propre restent
+  ouverts. Les services actifs ne sont pas redémarrés par ce lot de source.
+
 ## 4. UI et bibliothèques navigateur
 
 Propriétaire : `packages/ui`, `crates/ui`.

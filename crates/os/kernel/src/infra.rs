@@ -65,31 +65,16 @@ fn find_workspace_manifest(
     for start in cwd.into_iter().chain(executable.and_then(Path::parent)) {
         for root in start.ancestors() {
             let manifest = root.join("Cargo.toml");
-            if manifest.is_file()
-                && (root.join("crates/infra/ssh/Cargo.toml").is_file()
-                    || root.join("crates/aphrody-ssh/Cargo.toml").is_file())
-            {
+            if manifest.is_file() && root.join("crates/infra/ssh/Cargo.toml").is_file() {
                 return Some(manifest);
-            }
-            for legacy in [root.join("aphrody-infra"), root.join("../aphrody-infra")] {
-                let manifest = legacy.join("Cargo.toml");
-                if manifest.is_file() {
-                    return Some(manifest);
-                }
             }
         }
     }
     if let Some(home) = home {
-        for root in [
-            home.join("aphrody"),
-            home.join("src/aphrody"),
-            home.join("src/aphrody-infra"),
-            home.join("aphrody-infra"),
-        ] {
-            let manifest = root.join("Cargo.toml");
-            if manifest.is_file() {
-                return Some(manifest);
-            }
+        let root = home.join("aphrody");
+        let manifest = root.join("Cargo.toml");
+        if manifest.is_file() && root.join("crates/infra/ssh/Cargo.toml").is_file() {
+            return Some(manifest);
         }
     }
 
@@ -450,20 +435,29 @@ mod tests {
     }
 
     #[test]
-    fn preserves_legacy_sibling_and_home_discovery() {
+    fn home_fallback_requires_current_owner_layout() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let root = dir.path().join("aphrody");
+        std::fs::create_dir_all(&root).unwrap();
+        std::fs::write(root.join("Cargo.toml"), "[workspace]\n").unwrap();
+        assert_eq!(find_workspace_manifest(None, None, Some(dir.path())), None);
+        std::fs::create_dir_all(root.join("crates/infra/ssh")).unwrap();
+        std::fs::write(root.join("crates/infra/ssh/Cargo.toml"), "[package]\n").unwrap();
+        assert_eq!(
+            find_workspace_manifest(None, None, Some(dir.path())),
+            Some(root.join("Cargo.toml"))
+        );
+    }
+
+    #[test]
+    fn legacy_archives_are_not_automatically_discovered() {
         let dir = tempfile::tempdir().expect("tempdir");
         let legacy = dir.path().join("src/aphrody-infra");
         std::fs::create_dir_all(legacy.join("crates/aphrody-ssh")).unwrap();
         std::fs::write(legacy.join("Cargo.toml"), "[workspace]\n").unwrap();
         std::fs::write(legacy.join("crates/aphrody-ssh/Cargo.toml"), "[package]\n").unwrap();
-        let expected = Some(legacy.join("Cargo.toml"));
-        let sibling =
-            find_workspace_manifest(Some(&dir.path().join("src/aphrody-os")), None, None).unwrap();
-        assert_eq!(
-            sibling.canonicalize().unwrap(),
-            expected.as_ref().unwrap().canonicalize().unwrap()
-        );
-        assert_eq!(find_workspace_manifest(None, None, Some(dir.path())), expected);
+        assert_eq!(find_workspace_manifest(Some(&legacy), None, None), None);
+        assert_eq!(find_workspace_manifest(None, None, Some(dir.path())), None);
     }
 
     #[cfg(unix)]
