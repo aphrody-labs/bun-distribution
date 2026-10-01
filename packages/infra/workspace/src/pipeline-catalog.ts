@@ -56,8 +56,13 @@ export async function pipelineCatalog(root: string) {
     });
   const groups = new Map<string, { repo: string; command: string[] }[]>();
   const absent: { path: string; missing: string[] }[] = [];
-  for (const path of await firstPartyManifests(root)) {
-    const pkg = await Bun.file(join(root, path)).json();
+  const manifests = await Promise.all(
+    (await firstPartyManifests(root)).map(async (path) => ({
+      path,
+      pkg: await Bun.file(join(root, path)).json(),
+    })),
+  );
+  for (const { path, pkg } of manifests) {
     const domain = path.split("/")[1] ?? "other";
     const scripts: Record<string, string> = pkg.scripts ?? {};
     const selected = [["lint"], ["typecheck", "type-check"], ["test"], ["build"]].map(

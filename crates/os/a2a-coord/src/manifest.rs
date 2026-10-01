@@ -175,13 +175,13 @@ pub fn find_repo_root() -> Result<PathBuf, ManifestError> {
 mod tests {
     use super::*;
 
-    /// The shipped repository manifest must stay loadable and point at the
-    /// public A2A endpoint; peers live in `aphrody-infra/config/a2a-peers.json`.
+    /// The repository advertises local coordination until public deployment
+    /// has been qualified. Peers live in the monorepo catalogue.
     #[test]
-    fn repo_manifest_parses_and_targets_public_endpoint() {
+    fn repo_manifest_parses_without_unqualified_public_endpoint() {
         let manifest: AiManifest =
             serde_json::from_str(include_str!("../../../../ai.json")).expect("ai.json parses");
-        assert_eq!(manifest.supported_interfaces[0].url, "https://aphrody.com/api/v1/a2a");
-        assert!(manifest.peers.is_empty(), "peer list belongs to aphrody-infra");
+        assert!(manifest.supported_interfaces.is_empty());
+        assert!(manifest.peers.is_empty(), "peer list belongs to config/a2a-peers.json");
     }
 }

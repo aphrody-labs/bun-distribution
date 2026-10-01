@@ -60,7 +60,7 @@ fn mcp_bin_name() -> &'static str {
 }
 
 fn yolo_root(repo_root: &Path) -> PathBuf {
-    repo_root.join("..").join("aphrody-os").join("plugins").join("aphrody")
+    repo_root.join("config/ai/plugins/aphrody")
 }
 
 /// Resolve the `aphrody-kernel` binary, first match wins:

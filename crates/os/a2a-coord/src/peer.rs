@@ -57,6 +57,8 @@ pub enum PeerError {
     BinaryNotFound(String),
     #[error("io: {0}")]
     Io(#[from] std::io::Error),
+    #[error("shared branch mismatch: expected {expected}, observed {observed}")]
+    BranchMismatch { expected: String, observed: String },
     #[error("utf8")]
     Utf8(#[from] std::string::FromUtf8Error),
 }
@@ -87,6 +89,7 @@ impl PeerInvoker {
     }
 
     pub fn invoke_prompt(&self, peer: PeerId, prompt: &str) -> Result<PeerInvokeResult, PeerError> {
+        self.verify_shared_branch()?;
         let shared = self.shared_prompt(prompt);
         let prompt = shared.as_str();
         if self.dry_run {
@@ -108,6 +111,23 @@ impl PeerInvoker {
             PeerId::Codex => self.invoke_codex(prompt),
             PeerId::Bxc => self.invoke_bxc(prompt),
         }
+    }
+
+    fn verify_shared_branch(&self) -> Result<(), PeerError> {
+        let marker = self.cwd.join(".coord/shared/branch");
+        if !marker.exists() {
+            return Ok(());
+        }
+        let expected = std::fs::read_to_string(marker)?.trim().to_owned();
+        let output = Command::new("git")
+            .args(["branch", "--show-current"])
+            .current_dir(&self.cwd)
+            .output()?;
+        let observed = String::from_utf8(output.stdout)?.trim().to_owned();
+        if !output.status.success() || expected.is_empty() || observed != expected {
+            return Err(PeerError::BranchMismatch { expected, observed });
+        }
+        Ok(())
     }
 
     fn shared_prompt(&self, task: &str) -> String {
@@ -225,6 +245,35 @@ impl PeerInvoker {
 #[cfg(test)]
 mod coordination_tests {
     use super::*;
+    #[test]
+    fn branch_guard_rejects_switched_checkout_before_launch() {
+        let dir = tempfile::tempdir().unwrap();
+        assert!(
+            Command::new("git")
+                .args(["init", "--quiet", "-b", "main"])
+                .arg(dir.path())
+                .status()
+                .unwrap()
+                .success()
+        );
+        std::fs::create_dir_all(dir.path().join(".coord/shared")).unwrap();
+        std::fs::write(dir.path().join(".coord/shared/branch"), "main\n").unwrap();
+        let invoker = PeerInvoker::new(dir.path()).with_dry_run(true);
+        assert!(invoker.invoke_prompt(PeerId::Codex, "task").is_ok());
+        assert!(
+            Command::new("git")
+                .args(["symbolic-ref", "HEAD", "refs/heads/other"])
+                .current_dir(dir.path())
+                .status()
+                .unwrap()
+                .success()
+        );
+        assert!(matches!(
+            invoker.invoke_prompt(PeerId::Codex, "task"),
+            Err(PeerError::BranchMismatch { .. })
+        ));
+    }
+
     #[test]
     fn common_coding_peers_are_routable() {
         assert_eq!(PeerId::parse("codex"), Some(PeerId::Codex));
