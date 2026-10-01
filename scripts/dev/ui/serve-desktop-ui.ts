@@ -174,26 +174,178 @@ async function handleTauriCommand(cmd: string, args: Record<string, unknown> = {
     case "aphrody_model_verify":
       return { spec: args.spec || "default", intact: true, status: "valid" };
 
-    case "aphrody_fs_list": {
-      const { readdir } = await import("node:fs/promises");
-      const rel = typeof args.path === "string" ? args.path.replace(/^\/+/, "") : "";
-      const target = resolve(repoRoot, rel);
-      if (!target.startsWith(repoRoot)) throw new Error("Path traversal forbidden");
-      const items = await readdir(target, { withFileTypes: true });
-      return items.map((e) => ({
-        name: e.name,
-        isDirectory: e.isDirectory(),
-        isFile: e.isFile(),
-      }));
+    case "aphrody_runtime_layout": {
+      const home = process.env.HOME || "/home/aphro";
+      return {
+        appDataDir: join(home, ".aphrody"),
+        modelsDir: join(home, ".aphrody", "models"),
+        cacheDir: join(home, ".aphrody", "cache"),
+        logsDir: join(home, ".aphrody", "logs"),
+        configDir: join(home, ".aphrody", "config"),
+      };
     }
 
+    case "aphrody_system_cwd":
+      return { cwd: repoRoot };
+
+    case "aphrody_shell_window": {
+      const action = String(args.action || "state");
+      const isClose = action === "close";
+      const isMax = action === "maximize" || action === "toggle_maximize";
+      const isFs = action === "fullscreen" ? Boolean(args.fullscreen) : false;
+      const theme = String(args.theme || "dark");
+      return {
+        closed: isClose,
+        state: isClose
+          ? null
+          : {
+              label: "main",
+              title: "Aphrody OS",
+              focused: true,
+              minimized: action === "minimize",
+              maximized: isMax,
+              fullscreen: isFs,
+              decorated: false,
+              theme,
+            },
+      };
+    }
+
+    case "aphrody_quickbar":
+      return {
+        success: true,
+        action: args.action || "toggle",
+        visible: args.action === "show" || args.action === "toggle",
+      };
+
+    case "aphrody_capture_primary":
+      return { success: true, width: 1920, height: 1080, format: "png", data: "" };
+
+    case "aphrody_windows_host_status":
+      return { status: "available", host: "linux-wsl2", hyperv: false };
+
+    case "aphrody_windows_host_windows":
+      return { windows: [] };
+
+    case "aphrody_windows_host_observe":
+      return { foreground: null };
+
+    case "aphrody_app_ready":
+      return { ready: true };
+
+    case "aphrody_take_open_requests":
+      return [];
+
+    case "aphrody_desktop_integration":
+      return { autostart: false, pet: true, widget: true, updates: "up-to-date" };
+
+    case "aphrody_pet":
+      return { pet: true, active: true, state: "idle", frame: 0 };
+
+    case "aphrody_widget":
+      return { widget: true, visible: true, telemetry: true };
+
+    case "aphrody_check_update":
+    case "aphrody_install_update":
+      return { up_to_date: true, version: "1.0.0-canary" };
+
+    case "aphrody_pet_etat":
+      return { state: "idle", mood: "content", frame: 0, fps: 8 };
+
+    case "aphrody_pet_frame_png_b64":
+      return {
+        frame: 0,
+        png_b64:
+          "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
+      };
+
+    case "aphrody_pixel_mesurer":
+      return { width: 32, height: 32, palette_entries: 16 };
+
+    case "aphrody_pixel_tokens_css":
+      return ":root { --aphrody-pixel-scale: 2px; }";
+
+    case "aphrody_pixel_comparer":
+    case "aphrody_pixel_vectoriser":
+    case "aphrody_pixel_planche":
+      return { success: true };
+
+    case "aphrody_model_store_root":
+      return { root: join(process.env.HOME || "/home/aphro", ".aphrody", "models") };
+
+    case "aphrody_model_pull":
+      return { spec: args.spec || "mistral-7b-instruct", status: "completed", bytes: 4100000000 };
+
+    case "aphrody_model_cancel":
+      return { cancelled: true };
+
+    case "aphrody_model_remove":
+      return { removed: true, spec: args.spec };
+
+    case "aphrody_model_scan_external":
+      return [
+        {
+          source: "ollama",
+          models: ["mistral:latest", "llama3:latest"],
+          path: "/usr/share/ollama/.ollama/models",
+        },
+      ];
+
+    case "aphrody_reply":
+      return { acknowledged: true };
+
+    case "aphrody_session_stream":
+      return { subscribed: true, thread_id: String(args.thread_id || "default") };
+
+    case "aphrody_session_unstream":
+      return { unsubscribed: true };
+
+    case "aphrody_fs_read_dir":
+    case "aphrody_fs_list": {
+      const { readdir, stat } = await import("node:fs/promises");
+      const rel = typeof args.path === "string" ? args.path.replace(/^\/+/, "") : "";
+      const target = rel ? resolve(repoRoot, rel) : repoRoot;
+      if (!target.startsWith(repoRoot) && !target.startsWith(process.env.HOME || "/home/aphro")) {
+        throw new Error("Path traversal forbidden");
+      }
+      const items = await readdir(target, { withFileTypes: true });
+      const entries = await Promise.all(
+        items.map(async (e) => {
+          let size = 0;
+          try {
+            if (e.isFile()) {
+              const s = await stat(join(target, e.name));
+              size = s.size;
+            }
+          } catch {}
+          return {
+            name: e.name,
+            path: join(target, e.name),
+            is_dir: e.isDirectory(),
+            isDirectory: e.isDirectory(),
+            isFile: e.isFile(),
+            size,
+          };
+        }),
+      );
+      entries.sort((a, b) => {
+        if (a.is_dir !== b.is_dir) return b.is_dir ? 1 : -1;
+        return a.name.toLowerCase().localeCompare(b.name.toLowerCase());
+      });
+      return cmd === "aphrody_fs_read_dir" ? { path: target, entries } : entries;
+    }
+
+    case "aphrody_fs_read_text":
     case "aphrody_fs_read": {
       const rel = typeof args.path === "string" ? args.path.replace(/^\/+/, "") : "";
       const target = resolve(repoRoot, rel);
-      if (!target.startsWith(repoRoot)) throw new Error("Path traversal forbidden");
+      if (!target.startsWith(repoRoot) && !target.startsWith(process.env.HOME || "/home/aphro")) {
+        throw new Error("Path traversal forbidden");
+      }
       const f = Bun.file(target);
       if (!(await f.exists())) throw new Error(`File not found: ${rel}`);
-      return await f.text();
+      const text = await f.text();
+      return cmd === "aphrody_fs_read_text" ? { path: target, size: f.size, content: text } : text;
     }
 
     case "aphrody_shenron_chat": {
@@ -233,11 +385,108 @@ async function handleTauriCommand(cmd: string, args: Record<string, unknown> = {
       };
     }
 
+    case "aphrody_ocr":
+      return {
+        text: "Aphrody Document Engine",
+        confidence: 0.99,
+        blocks: [{ text: "Aphrody Document Engine", confidence: 0.99, bbox: [0, 0, 100, 100] }],
+      };
+
+    case "plugin:aphrody-drive|get_daemon_status":
+      return {
+        is_running: true,
+        socket_addr: "127.0.0.1:4242",
+        server_url: "http://127.0.0.1:4242",
+        started_by_us: false,
+      };
+
+    case "plugin:aphrody-drive|get_daemon_socket":
+      return "127.0.0.1:4242";
+
+    case "plugin:aphrody-drive|get_server_url":
+      return "http://127.0.0.1:4242";
+
+    case "plugin:aphrody-drive|open_drive":
+      return "main";
+
+    case "plugin:aphrody-drive|daemon_request":
+      return {
+        acknowledged: true,
+        result: {
+          volumes: ["local", "s3", "r2", "minio"],
+          files: [],
+          tags: [
+            { id: "1", canonical_name: "Favorites", color: "#3B82F6" },
+            { id: "2", canonical_name: "Documents", color: "#10B981" },
+            { id: "3", canonical_name: "Code", color: "#8B5CF6" },
+          ],
+        },
+      };
+
+    case "plugin:aphrody-drive|subscribe_to_events":
+      return 1;
+
+    case "plugin:aphrody-drive|unsubscribe_from_events":
+    case "plugin:aphrody-drive|app_ready":
+    case "plugin:aphrody-drive|start_daemon_process":
+    case "plugin:aphrody-drive|stop_daemon_process":
+      return {};
+
+    case "plugin:aphrody-drive|check_daemon_installed":
+      return true;
+
+    case "plugin:aphrody-drive|get_current_library_id":
+      return "default-library";
+
+    case "plugin:aphrody-drive|set_current_library_id":
+      return {};
+
     case "plugin:window|set_theme":
-      return { success: true, theme: (args as any).value };
+      return { success: true, theme: (args as any).value || (args as any).theme };
 
     case "plugin:window|minimize":
+    case "plugin:window|maximize":
+    case "plugin:window|toggle_maximize":
+    case "plugin:window|restore":
     case "plugin:window|close":
+    case "plugin:window|focus":
+    case "plugin:window|start_dragging":
+    case "plugin:window|set_fullscreen":
+      return { success: true };
+
+    case "plugin:window|is_maximized":
+    case "plugin:window|is_minimized":
+    case "plugin:window|is_fullscreen":
+      return false;
+
+    case "plugin:opener|open_url":
+      return { success: true, url: args.url };
+
+    case "plugin:notification|show":
+    case "plugin:notification|is_permission_granted":
+      return { shown: true, granted: true };
+
+    case "plugin:dialog|open":
+    case "plugin:dialog|save":
+      return { path: null };
+
+    case "plugin:store|get":
+      return { value: null };
+
+    case "plugin:store|set":
+      return { ok: true };
+
+    case "plugin:clipboard-manager|read_text":
+      return "";
+
+    case "plugin:clipboard-manager|write_text":
+      return { success: true };
+
+    case "plugin:autostart|is_enabled":
+      return false;
+
+    case "plugin:autostart|enable":
+    case "plugin:autostart|disable":
       return { success: true };
 
     default:

@@ -3,7 +3,7 @@ use std::{
     net::{IpAddr, Ipv4Addr, SocketAddr},
     sync::{
         Arc, OnceLock,
-        atomic::{AtomicU32, Ordering},
+        atomic::{AtomicBool, AtomicU32, Ordering},
     },
     time::{Duration, Instant},
 };
@@ -196,7 +196,7 @@ impl RequestMode {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone)]
 pub struct ResourceRequest {
     pub resource_type: ResourceType,
     /// Origin-bearing environment that owns the request. This controls CORS,
@@ -212,7 +212,29 @@ pub struct ResourceRequest {
     /// Hard limit for the decoded response body retained by this request.
     /// Callers can lower it for especially constrained resource consumers.
     pub max_response_bytes: usize,
+    /// Optional text-preview completion flag; ordinary requests retain strict size rejection.
+    pub body_preview: Option<Arc<AtomicBool>>,
 }
+
+impl PartialEq for ResourceRequest {
+    fn eq(&self, other: &Self) -> bool {
+        self.resource_type == other.resource_type
+            && self.initiator == other.initiator
+            && self.referrer == other.referrer
+            && self.mode == other.mode
+            && self.credentials == other.credentials
+            && self.max_response_bytes == other.max_response_bytes
+            && match (&self.body_preview, &other.body_preview) {
+                (None, None) => true,
+                (Some(a), Some(b)) => {
+                    Arc::ptr_eq(a, b) || a.load(Ordering::Relaxed) == b.load(Ordering::Relaxed)
+                },
+                _ => false,
+            }
+    }
+}
+
+impl Eq for ResourceRequest {}
 
 impl ResourceRequest {
     pub fn navigation() -> Self {
@@ -222,6 +244,7 @@ impl ResourceRequest {
             referrer: None,
             mode: RequestMode::Navigate,
             credentials: RequestCredentials::Include,
+            body_preview: None,
             max_response_bytes: 64 * 1024 * 1024,
         }
     }
@@ -251,6 +274,7 @@ impl ResourceRequest {
             referrer: Some(initiator.clone()),
             mode,
             credentials,
+            body_preview: None,
             max_response_bytes: match resource_type {
                 ResourceType::Stylesheet | ResourceType::Font => 16 * 1024 * 1024,
                 ResourceType::Script | ResourceType::Other => 32 * 1024 * 1024,
@@ -276,6 +300,7 @@ impl ResourceRequest {
             // OBSCURA_FETCH_MAX_BODY_BYTES (the fetch()/XHR override from #581)
             // also raises this cap: a large SPA bundle otherwise dies silently
             // at 32 MiB while fetch() of the same URL succeeds (#849).
+            body_preview: None,
             max_response_bytes: std::env::var("OBSCURA_FETCH_MAX_BODY_BYTES")
                 .ok()
                 .and_then(|v| v.parse().ok())
@@ -874,8 +899,11 @@ async fn read_reqwest_body_limited(
     mut response: reqwest::Response,
     url: &Url,
     limit: usize,
+    preview: Option<&AtomicBool>,
 ) -> Result<Vec<u8>, ObscuraNetError> {
-    reject_oversized_content_length(response.headers(), url, limit)?;
+    if preview.is_none() {
+        reject_oversized_content_length(response.headers(), url, limit)?;
+    }
     let capacity = response
         .content_length()
         .and_then(|length| usize::try_from(length).ok())
@@ -888,6 +916,11 @@ async fn read_reqwest_body_limited(
         .map_err(|error| ObscuraNetError::Network(format!("Failed to read body: {}", error)))?
     {
         if chunk.len() > limit.saturating_sub(body.len()) {
+            if let Some(truncated) = preview {
+                body.extend_from_slice(&chunk[..limit.saturating_sub(body.len())]);
+                truncated.store(true, Ordering::Relaxed);
+                break;
+            }
             return Err(response_too_large(url, limit));
         }
         body.extend_from_slice(&chunk);
@@ -1169,6 +1202,20 @@ impl ObscuraHttpClient {
         self.fetch_with_method(Method::GET, url, None, None).await
     }
 
+    /// Bounded textual preview through the canonical redirect/cookie/proxy path.
+    /// Binary bodies are skipped; oversized textual bodies return a prefix and truncation flag.
+    pub async fn fetch_text_preview(
+        &self,
+        url: &Url,
+        max_bytes: usize,
+    ) -> Result<(Response, bool), ObscuraNetError> {
+        let truncated = Arc::new(AtomicBool::new(false));
+        let mut request = ResourceRequest::navigation().with_max_response_bytes(max_bytes);
+        request.body_preview = Some(truncated.clone());
+        let response = self.fetch_resource_with_callbacks(url, request, None).await?;
+        Ok((response, truncated.load(Ordering::Relaxed)))
+    }
+
     /// `fetch` that also fires the page's passive on_request/on_response
     /// callbacks (issue #408: callbacks are page-scoped, so the page-driven
     /// fetch paths pass their registry in).
@@ -1233,6 +1280,7 @@ impl ObscuraHttpClient {
     ) -> Option<ResourceCacheKey> {
         if *method != Method::GET
             || body.is_some()
+            || request.body_preview.is_some()
             || request.resource_type == ResourceType::Document
             || !matches!(url.scheme(), "http" | "https")
             || self.interceptor.read().await.is_some()
@@ -1692,8 +1740,27 @@ impl ObscuraHttpClient {
                 }
             }
 
-            let body_bytes =
-                read_reqwest_body_limited(resp, &current_url, request.max_response_bytes).await?;
+            let text_response = response_headers
+                .iter()
+                .find(|(name, _)| name.eq_ignore_ascii_case("content-type"))
+                .is_some_and(|(_, value)| {
+                    let value = value.to_ascii_lowercase();
+                    value.contains("text/")
+                        || value.contains("json")
+                        || value.contains("xml")
+                        || value.contains("javascript")
+                });
+            let body_bytes = if request.body_preview.is_some() && !text_response {
+                Vec::new()
+            } else {
+                read_reqwest_body_limited(
+                    resp,
+                    &current_url,
+                    request.max_response_bytes,
+                    request.body_preview.as_deref(),
+                )
+                .await?
+            };
             drop(in_flight);
 
             let response = Response {
@@ -2265,6 +2332,30 @@ mod ssrf_tests {
             assert!(matches!(error, ObscuraNetError::ResponseTooLarge { limit: 6, .. }));
             assert_eq!(client.active_requests(), 0);
         }
+    }
+
+    #[tokio::test]
+    async fn text_previews_truncate_advertised_and_chunked_bodies() {
+        let advertised = "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: 8\r\nConnection: close\r\n\r\nabcdefgh";
+        let chunked = "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nTransfer-Encoding: chunked\r\nConnection: close\r\n\r\n4\r\nabcd\r\n4\r\nefgh\r\n0\r\n\r\n";
+        let exact = "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: 6\r\nConnection: close\r\n\r\nabcdef";
+        let binary = "HTTP/1.1 200 OK\r\nContent-Type: image/png\r\nContent-Length: 8\r\nConnection: close\r\n\r\nabcdefgh";
+        let (target, _) =
+            http_fixture(vec![advertised.into(), chunked.into(), exact.into(), binary.into()])
+                .await;
+        let client = ObscuraHttpClient::with_full_options(Arc::new(CookieJar::new()), None, true);
+        for _ in 0..2 {
+            let (response, truncated) = client.fetch_text_preview(&target, 6).await.unwrap();
+            assert_eq!(response.body, b"abcdef");
+            assert!(truncated);
+            assert_eq!(client.active_requests(), 0);
+        }
+        let (response, truncated) = client.fetch_text_preview(&target, 6).await.unwrap();
+        assert_eq!(response.body, b"abcdef");
+        assert!(!truncated);
+        let (response, truncated) = client.fetch_text_preview(&target, 6).await.unwrap();
+        assert!(response.body.is_empty());
+        assert!(!truncated);
     }
 
     async fn hanging_fixture() -> (Url, tokio::sync::oneshot::Receiver<()>) {

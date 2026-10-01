@@ -188,6 +188,153 @@ describe("serve-desktop-ui", () => {
       expect(appIds).toContain("shenron-site");
       expect(appIds).toContain("cli");
       expect(appIds).toContain("m3-framework");
+
+      // 16. M3 Window Controls & Chrome: aphrody_shell_window
+      const winStateRes = await fetch(`${baseUrl}/api/tauri/invoke`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ cmd: "aphrody_shell_window", args: { action: "state" } }),
+      });
+      expect(winStateRes.status).toBe(200);
+      const winState = (await winStateRes.json()) as any;
+      expect(winState.closed).toBe(false);
+      expect(winState.state.label).toBe("main");
+      expect(winState.state.title).toBe("Aphrody OS");
+      expect(winState.state.theme).toBe("dark");
+
+      const themeRes = await fetch(`${baseUrl}/api/tauri/invoke`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ cmd: "aphrody_shell_window", args: { action: "set_theme", theme: "light" } }),
+      });
+      expect(themeRes.status).toBe(200);
+      const themeData = (await themeRes.json()) as any;
+      expect(themeData.state.theme).toBe("light");
+
+      // 17. Quickbar Spotlight Launcher: aphrody_quickbar
+      const quickbarRes = await fetch(`${baseUrl}/api/tauri/invoke`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ cmd: "aphrody_quickbar", args: { action: "toggle" } }),
+      });
+      expect(quickbarRes.status).toBe(200);
+      const quickbarData = (await quickbarRes.json()) as any;
+      expect(quickbarData.success).toBe(true);
+
+      // 18. Filesystem browsing: aphrody_fs_read_dir & aphrody_fs_read_text
+      const fsDirRes = await fetch(`${baseUrl}/api/tauri/invoke`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ cmd: "aphrody_fs_read_dir", args: { path: "crates/ui/app" } }),
+      });
+      expect(fsDirRes.status).toBe(200);
+      const fsDirData = (await fsDirRes.json()) as any;
+      expect(fsDirData.entries.length).toBeGreaterThan(0);
+      const fileNames = fsDirData.entries.map((e: any) => e.name);
+      expect(fileNames).toContain("src");
+      expect(fileNames).toContain("Cargo.toml");
+
+      const fsTextRes = await fetch(`${baseUrl}/api/tauri/invoke`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ cmd: "aphrody_fs_read_text", args: { path: "crates/ui/app/Cargo.toml" } }),
+      });
+      expect(fsTextRes.status).toBe(200);
+      const fsTextData = (await fsTextRes.json()) as any;
+      expect(fsTextData.content).toContain('name = "aphrody-app"');
+      expect(fsTextData.size).toBeGreaterThan(0);
+
+      // 19. Spacedrive Explorer integration: plugin:aphrody-drive|*
+      const driveStatusRes = await fetch(`${baseUrl}/api/tauri/invoke`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ cmd: "plugin:aphrody-drive|get_daemon_status" }),
+      });
+      expect(driveStatusRes.status).toBe(200);
+      const driveStatus = (await driveStatusRes.json()) as any;
+      expect(driveStatus.is_running).toBe(true);
+      expect(driveStatus.socket_addr).toBe("127.0.0.1:4242");
+
+      const driveReqRes = await fetch(`${baseUrl}/api/tauri/invoke`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          cmd: "plugin:aphrody-drive|daemon_request",
+          args: { request: { query: "volumes.list" } },
+        }),
+      });
+      expect(driveReqRes.status).toBe(200);
+      const driveReqData = (await driveReqRes.json()) as any;
+      expect(driveReqData.result.volumes).toContain("local");
+      expect(driveReqData.result.volumes).toContain("s3");
+
+      // 20. Koharu OCR & Manga reading: koharu_rpc & aphrody_ocr
+      const koharuRes = await fetch(`${baseUrl}/api/tauri/invoke`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ cmd: "koharu_rpc", args: { method: "ping" } }),
+      });
+      expect(koharuRes.status).toBe(200);
+      const koharuData = (await koharuRes.json()) as any;
+      expect(koharuData.engine).toBe("deep-learning-ocr");
+
+      const ocrRes = await fetch(`${baseUrl}/api/tauri/invoke`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ cmd: "aphrody_ocr", args: { image_b64: "" } }),
+      });
+      expect(ocrRes.status).toBe(200);
+      const ocrData = (await ocrRes.json()) as any;
+      expect(ocrData.confidence).toBeGreaterThan(0.9);
+
+      // 21. Shenron Grounded Assistant: aphrody_shenron_chat
+      const shenronRes = await fetch(`${baseUrl}/api/tauri/invoke`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ cmd: "aphrody_shenron_chat", args: { message: "Test query" } }),
+      });
+      expect(shenronRes.status).toBe(200);
+      const shenronData = (await shenronRes.json()) as any;
+      expect(shenronData.source).toBe("dragonballfr.com");
+
+      // 22. Multi-window Pet & Widget surfaces
+      const petRes = await fetch(`${baseUrl}/api/tauri/invoke`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ cmd: "aphrody_pet", args: { action: "status" } }),
+      });
+      expect(petRes.status).toBe(200);
+      const petData = (await petRes.json()) as any;
+      expect(petData.pet).toBe(true);
+
+      const widgetRes = await fetch(`${baseUrl}/api/tauri/invoke`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ cmd: "aphrody_widget", args: { action: "status" } }),
+      });
+      expect(widgetRes.status).toBe(200);
+      const widgetData = (await widgetRes.json()) as any;
+      expect(widgetData.widget).toBe(true);
+
+      // 23. App-Server JSON-RPC & Session Streaming
+      const streamRes = await fetch(`${baseUrl}/api/tauri/invoke`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ cmd: "aphrody_session_stream", args: { thread_id: "thread-123" } }),
+      });
+      expect(streamRes.status).toBe(200);
+      const streamData = (await streamRes.json()) as any;
+      expect(streamData.subscribed).toBe(true);
+      expect(streamData.thread_id).toBe("thread-123");
+
+      const unstreamRes = await fetch(`${baseUrl}/api/tauri/invoke`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ cmd: "aphrody_session_unstream", args: { thread_id: "thread-123" } }),
+      });
+      expect(unstreamRes.status).toBe(200);
+      const unstreamData = (await unstreamRes.json()) as any;
+      expect(unstreamData.unsubscribed).toBe(true);
     } finally {
       server.stop(true);
     }
