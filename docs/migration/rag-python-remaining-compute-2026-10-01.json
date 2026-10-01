@@ -1,31 +1,41 @@
 {
   "scope": "Python RAG remaining compute after native math migration",
-  "pythonRevision": "ce2a9afc5cca28a8e6bb4f797c919d591758528c",
+  "pythonRevision": "978cf77",
   "canonicalMath": [
     "cosine",
     "RRF",
-    "top-k cosine scoring"
+    "top-k cosine scoring",
+    "float64 batch L2 normalization",
+    "float64 batch matrix products",
+    "spherical center means and normalization",
+    "Psi prototype means"
   ],
   "remaining": [
     {
       "path": "packages/ai/py/aphrody/aphrody/rag/raptor.py",
       "functions": [
-        "_normalize_embeddings",
         "_rank_leaf_pairs",
-        "_split_psi_buckets"
+        "_split_psi_buckets",
+        "_adjust_tree_nodes",
+        "_get_clusters_ahc",
+        "_get_optimal_clusters"
       ],
       "observedCompute": [
-        "NumPy float64 l2 norm and epsilon clamp",
-        "pairwise matrix product and rank sorting",
-        "batch clustering center assignment matrix products"
+        "NumPy pair-index construction and argsort tie policy",
+        "NumPy argmax assignment and bucket index policy",
+        "Euclidean centroid refinement and squared-distance broadcasting",
+        "AHC dendrogram gap statistics",
+        "GMM BIC selection and UMAP/GMM external algorithms"
       ],
       "requirements": [
-        "preserve float64 precision, zero-vector semantics and epsilon behavior",
-        "preserve bounded Psi bucket behavior and output ordering",
-        "move shared vector kernels to rag-core with batch bindings",
-        "qualify RAPTOR consumers and isolated native wheel"
+        "preserve existing ordering and bounded bucket behavior",
+        "qualify tie and near-tie decisions across backends",
+        "remove duplicated vector arithmetic remaining in centroid refinement",
+        "define and verify native performance budget",
+        "qualify all RAPTOR and other RAG consumers before global completion"
       ]
     }
   ],
-  "complete": false
+  "complete": false,
+  "canonicalCoreRevision": "82df0a90d8dfceb360c4a02bcbb4f97190bea54f"
 }
