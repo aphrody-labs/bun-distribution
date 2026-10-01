@@ -24,6 +24,11 @@ The unified architecture and consolidation plan for Bun 1.4.2, ElysiaJS, Colyseu
 [`plans/convergence/ROSE-GRIFFON-ACHILLEA-CONVERGENCE.md`](plans/convergence/ROSE-GRIFFON-ACHILLEA-CONVERGENCE.md) and
 [`architecture/convergence/BUN-ELYSIA-COLYSEUS-ARCHITECTURE.md`](architecture/convergence/BUN-ELYSIA-COLYSEUS-ARCHITECTURE.md).
 
+SQL engines, clients, topology, migrations, backups and dedup rules for all of
+Aphrody are decided in
+[`decisions/infra/sql-convergence.md`](decisions/infra/sql-convergence.md);
+the supporting 2026 research is in [`research/ai/sqllm/`](research/ai/sqllm/README.md).
+
 The Tauri 3 upstream line, runtime choice, centralized versions and sync
 script are documented in
 [`operations/ui/tauri-upstream.md`](operations/ui/tauri-upstream.md).

@@ -13,55 +13,55 @@
     {
       "id": "aphrody-ai",
       "role": "AI layer: agents, model clients, inference, RAG, MCP servers, the AI side of A2A and the aphrody CLI; builds the aphrody, aphrody-mcp (with the dragonball.* tools) and aphrody-embed release binaries",
-      "source": "https://github.com/aphrody-code/aphrody-ai",
+      "source": "https://github.com/aphrody-labs/aphrody-ai",
       "production": true
     },
     {
       "id": "aphrody-os",
       "role": "System layer: aphrody-kernel control plane, sandbox, services, WinClean, reverse engineering and the Aphrody plugin marketplace",
-      "source": "https://github.com/aphrody-code/aphrody-os",
+      "source": "https://github.com/aphrody-labs/aphrody-os",
       "production": true
     },
     {
       "id": "aphrody-ui",
       "role": "UI layer: Tauri desktop, Material 3 design system (Rust crates and @aphrody/* packages), renderers, canvas, Aphrody Drive and the bun_rs native library (crate aphrody-bun) behind @aphrody/bun; its tracked crates/aphrody-app/ui-dist is the agent console embedded in the aphrody release binary",
-      "source": "https://github.com/aphrody-code/aphrody-ui",
+      "source": "https://github.com/aphrody-labs/aphrody-ui",
       "production": true
     },
     {
       "id": "aphrody-web",
       "role": "Web layer: aphrody-site public origin, BXC Bun engine and Web API, Obscura browser, web engine, CDN-served web assets and the X client; builds the aphrody-site, aphrody-web-api, libaphrody_web_ffi and libbxc_render release artifacts",
-      "source": "https://github.com/aphrody-code/aphrody-web",
+      "source": "https://github.com/aphrody-labs/aphrody-web",
       "production": true
     },
     {
       "id": "aphrody-compat",
       "role": "Node-to-Bun compatibility: n2b analyzer and codemods, aphrody-toolchains (Bun/uv/Nushell discovery) and the offline Bun docs",
-      "source": "https://github.com/aphrody-code/aphrody-compat",
+      "source": "https://github.com/aphrody-labs/aphrody-compat",
       "production": true
     },
     {
       "id": "aphrody-contracts",
       "role": "Protocol contracts: A2A v1 stack, app-server v2 protocol, agent protocol and N2B schemas",
-      "source": "https://github.com/aphrody-code/aphrody-contracts",
+      "source": "https://github.com/aphrody-labs/aphrody-contracts",
       "production": true
     },
     {
       "id": "aphrody-shell",
       "role": "Shell and terminal layer: embedded Nushell, PTY/WebSocket terminal backend and TUI",
-      "source": "https://github.com/aphrody-code/aphrody-shell",
+      "source": "https://github.com/aphrody-labs/aphrody-shell",
       "production": true
     },
     {
       "id": "aphrody-native",
       "role": "Rust host probes for CPU, memory, CUDA and monotonic time; Llama and Whisper inference is owned by aphrody-ai",
-      "source": "https://github.com/aphrody-code/aphrody-native",
+      "source": "https://github.com/aphrody-labs/aphrody-native",
       "production": true
     },
     {
       "id": "aphrody-infra",
       "role": "single deployment, topology and policy authority; owns aphrody-ssh, aphrody-git, aphrody-vpn, aphrody-ovh and aphrody-yolo",
-      "source": "https://github.com/aphrody-code/aphrody-infra",
+      "source": "https://github.com/aphrody-labs/aphrody-infra",
       "production": true
     },
     {
@@ -79,7 +79,7 @@
     {
       "id": "aphrody-discord",
       "role": "Development-only Bun Discord bot, interactions endpoint and OAuth test app",
-      "source": "https://github.com/aphrody-code/aphrody-discord",
+      "source": "https://github.com/aphrody-labs/aphrody-discord",
       "production": false
     },
     {
