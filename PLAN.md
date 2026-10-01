@@ -153,6 +153,25 @@ Propriétaires : `crates/contracts`, `crates/native`, `crates/compat`,
 Critères : check/clippy/test des propriétaires concernés ; contrats JSON-RPC,
 ABI, erreurs et annulation vérifiés par des cas qui traversent les frontières.
 
+### Graphe direct des dépendances — 2026-10-01
+
+- FAIT : [inventaire des arêtes déclarées](docs/migration/dependency-graph-review-2026-10-01.json)
+  produit depuis les métadonnées Cargo verrouillées et les manifests des membres
+  Bun actuels : 186 membres Cargo, 84 membres Bun ; 468 arêtes Cargo locales
+  et 145 arêtes Bun locales, dont 142 et 68 traversent un domaine.
+- Layout réussi ; aucun `workspace:` Bun sans membre déclaré ; aucune arête
+  Cargo locale des contrats vers un autre domaine. Ce dernier résultat ne
+  prouve pas la pureté des sources ni des dépendances externes.
+- INCOMPLET : revue sémantique des dépendances croisées, pureté des contrats,
+  résolution transitive et qualification des features/targets restent ouvertes.
+- La FFI dépend toujours de `apps/cli` : deux appels directs à
+  `locate_home_shenron` et `run_async`, avec neuf features transférées au CLI.
+  L’extraction doit conserver dispatch, ABI et ces features ; supprimer seulement
+  la dépendance casserait la surface exportée actuelle.
+- Gates de ce lot : `cargo metadata --locked --no-deps --format-version 1`,
+  `bun run monorepo:layout`, vérification des membres Bun et `git diff --check`
+  réussis. Aucun build, test runtime ou contrôle ABI n’est établi par cet audit.
+
 ## 2. Interop et CLI
 
 Propriétaires : `crates/interop/ffi`, `packages/interop/native`, `apps/cli`.
