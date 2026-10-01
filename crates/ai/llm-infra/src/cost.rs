@@ -398,10 +398,10 @@ impl NdjsonUsageLog {
     pub async fn append(&self, event: &UsageEvent) -> Result<(), CostError> {
         let mut guard = self.writer.lock().await;
         if guard.is_none() {
-            if let Some(parent) = self.path.parent() {
-                if !parent.as_os_str().is_empty() {
-                    tokio::fs::create_dir_all(parent).await?;
-                }
+            if let Some(parent) = self.path.parent()
+                && !parent.as_os_str().is_empty()
+            {
+                tokio::fs::create_dir_all(parent).await?;
             }
             let file = OpenOptions::new().create(true).append(true).open(&self.path).await?;
             *guard = Some(file);
@@ -447,6 +447,11 @@ impl NdjsonUsageLog {
     /// Number of recorded events (re-reads the file).
     pub async fn len(&self) -> Result<usize, CostError> {
         Ok(self.read_all().await?.len())
+    }
+
+    /// Whether the log has no recorded events (re-reads the file).
+    pub async fn is_empty(&self) -> Result<bool, CostError> {
+        Ok(self.read_all().await?.is_empty())
     }
 }
 
@@ -559,6 +564,34 @@ impl CostCalculator {
 #[cfg(test)]
 mod inline_tests {
     use super::*;
+
+    #[tokio::test]
+    async fn usage_log_empty_state_tracks_events_and_parse_errors() {
+        let dir = tempfile::tempdir().unwrap();
+        let log = NdjsonUsageLog::new(dir.path().join("usage.ndjson"));
+        assert!(log.is_empty().await.unwrap());
+        assert_eq!(log.len().await.unwrap(), 0);
+        let event = UsageEvent {
+            ts: Utc::now(),
+            provider: Provider::Anthropic,
+            model: "test-model".to_owned(),
+            prompt_tokens: 1,
+            completion_tokens: 1,
+            cache_read_tokens: 0,
+            cache_write_tokens: 0,
+            cost_usd: 0.0,
+            request_id: None,
+            session_id: None,
+        };
+        log.append(&event).await.unwrap();
+        assert!(!log.is_empty().await.unwrap());
+        assert_eq!(log.len().await.unwrap(), 1);
+        let corrupt_path = dir.path().join("corrupt.ndjson");
+        tokio::fs::write(&corrupt_path, "not-json\n").await.unwrap();
+        let corrupt = NdjsonUsageLog::new(corrupt_path);
+        assert!(matches!(corrupt.is_empty().await, Err(CostError::Json(_))));
+        assert!(matches!(corrupt.len().await, Err(CostError::Json(_))));
+    }
 
     #[test]
     fn provider_all_yields_three_in_order() {

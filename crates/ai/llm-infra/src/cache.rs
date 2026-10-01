@@ -312,11 +312,11 @@ impl<V> LruCache<V> {
             if let Some(pos) = self.order.iter().position(|k| k == &key) {
                 self.order.remove(pos);
             }
-        } else if self.entries.len() >= self.capacity {
-            if let Some(victim) = self.order.pop_front() {
-                self.entries.remove(&victim);
-                self.evictions = self.evictions.saturating_add(1);
-            }
+        } else if self.entries.len() >= self.capacity
+            && let Some(victim) = self.order.pop_front()
+        {
+            self.entries.remove(&victim);
+            self.evictions = self.evictions.saturating_add(1);
         }
         self.entries.insert(key.clone(), CacheEntry::new(value, ttl_ms, now));
         self.order.push_back(key);
@@ -558,10 +558,10 @@ impl DiskCache {
     }
 
     async fn write_atomic(path: &Path, bytes: &[u8]) -> CacheResult<()> {
-        if let Some(parent) = path.parent() {
-            if !parent.as_os_str().is_empty() {
-                tokio::fs::create_dir_all(parent).await?;
-            }
+        if let Some(parent) = path.parent()
+            && !parent.as_os_str().is_empty()
+        {
+            tokio::fs::create_dir_all(parent).await?;
         }
         let mut tmp = path.to_path_buf();
         let mut ext = tmp.extension().map(|e| e.to_os_string()).unwrap_or_default();
@@ -671,12 +671,12 @@ impl Cache for DiskCache {
     async fn stats(&self) -> CacheStats {
         // Count live entries by scanning the directory for `.bin` files.
         let mut entries = 0usize;
-        if tokio::fs::try_exists(&self.base_dir).await.unwrap_or(false) {
-            if let Ok(mut rd) = tokio::fs::read_dir(&self.base_dir).await {
-                while let Ok(Some(ent)) = rd.next_entry().await {
-                    if ent.file_name().to_str().map(|n| n.ends_with(".bin")).unwrap_or(false) {
-                        entries = entries.saturating_add(1);
-                    }
+        if tokio::fs::try_exists(&self.base_dir).await.unwrap_or(false)
+            && let Ok(mut rd) = tokio::fs::read_dir(&self.base_dir).await
+        {
+            while let Ok(Some(ent)) = rd.next_entry().await {
+                if ent.file_name().to_str().map(|n| n.ends_with(".bin")).unwrap_or(false) {
+                    entries = entries.saturating_add(1);
                 }
             }
         }
