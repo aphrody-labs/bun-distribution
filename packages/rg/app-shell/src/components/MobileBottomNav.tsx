@@ -1,5 +1,6 @@
 "use client";
 
+import type { MouseEvent } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -45,7 +46,7 @@ function NavItemButton({
 		<Link
 			href={item.path}
 			aria-current={isActive ? "page" : undefined}
-			onClick={(e) => {
+			onClick={(e: MouseEvent<HTMLAnchorElement>) => {
 				if (isActive) {
 					e.preventDefault();
 					if (typeof window !== "undefined") {

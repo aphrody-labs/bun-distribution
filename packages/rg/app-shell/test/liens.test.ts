@@ -14,9 +14,9 @@ import {
 } from "../src/config/navigation";
 import { listerMotifsRoutes, motifAccepte, routeExiste } from "../src/lib/routes-next";
 
-const RACINE = join(import.meta.dir, "../../..");
+const RACINE = join(import.meta.dir, "../../../..");
 
-const APP = join(RACINE, "apps/website/src/app");
+const APP = join(RACINE, "apps/rg/website/src/app");
 
 describe("motifAccepte", () => {
 	test("segment littéral", () => {
