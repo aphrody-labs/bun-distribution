@@ -31,7 +31,7 @@
       "rxjs": "^7.8.2",
       "@supabase/ssr": "^0.10.3",
       "better-auth": "1.7.6",
-      "@rpbey/discordx": "^0.1.1",
+      "discordx": "^11.13.3",
       "discord.js": "^14.26.4",
       "discord-api-types": "^0.38.48",
       "tsyringe": "^4.10.0",

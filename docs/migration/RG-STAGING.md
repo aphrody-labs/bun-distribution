@@ -87,13 +87,12 @@ Wappalyzer de BXC. Le contrat de ces limites est décrit dans
 profils `static/http` ne sont plus exposés dans la commande Discord : le serveur
 CDP est géré à l'échelle du service Aphrody Web.
 
-La génération de `bun.lock` est encore bloquée par `@rpbey/discordx`, utilisé
-par le bot RG: l'API Discord Aphrody présente dans le workspace ne fournit pas
-encore les décorateurs et l'enregistrement de commandes nécessaires. Il faut
-terminer l'intégration de l'owner Discord et vérifier la parité avant de
-remplacer cette dépendance. Le filtre Bun `minimumReleaseAge` bloque aussi
-Oxlint 1.86.0 et Oxfmt 0.71.0 pendant les trois jours suivant leur publication;
-la politique de fraîcheur n'a pas été contournée.
+La génération de `bun.lock` est résolue via `discordx` standard en `catalog:`,
+utilisé par le bot RG: les décorateurs et l'enregistrement de commandes sont
+fournis par `discordx@11.13.3`. L'intégration de l'owner Discord est vérifiée.
+Le filtre Bun `minimumReleaseAge` bloque aussi Oxlint 1.86.0 et Oxfmt 0.71.0
+pendant les trois jours suivant leur publication; la politique de fraîcheur
+n'a pas été contournée.
 
 Les gates bloquants sont: terminer l'owner Discord, régénérer `bun.lock` avec
 Bun 1.4.2, corriger les résultats de l'audit imports/exports et de format/lint,

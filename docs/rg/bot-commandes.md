@@ -279,7 +279,7 @@ Pour remesurer avant d'ajouter quoi que ce soit (depuis `apps/bot`) :
 import "reflect-metadata";
 const { PROFILS } = await import("./src/lib/profil.ts");
 for (const m of PROFILS.rg.modules) await import(`./src/${m}`);
-const { MetadataStorage } = await import("@rpbey/discordx");
+const { MetadataStorage } = await import("discordx");
 await MetadataStorage.instance.build();
 function poids(n) {
   if (!n || typeof n !== "object") return 0;

@@ -63,7 +63,7 @@ production (systemd, Nginx, releases, bascule, backups) est déléguée à
 
 | Surface | Paquet | Rôle | Exploitation (`aphrody-infra`) |
 | --- | --- | --- | --- |
-| `apps/bot` | `@shenron/bot` | Bot Discord (discordy/discord.js, tsyringe, Drizzle + `bun:sqlite`), API REST/GraphQL/OpenAPI, dashboard | unité `shenron-bot` → `bot.dragonballfr.com` |
+| `apps/bot` | `@shenron/bot` | Bot Discord (discordx/discord.js, tsyringe, Drizzle + `bun:sqlite`), API REST/GraphQL/OpenAPI, dashboard | unité `shenron-bot` → `bot.dragonballfr.com` |
 | `apps/site` | `@shenron/site` | Next 16.3.5, React/React DOM 19.3.0, Tailwind v4.3, Drizzle/postgres-js ; lit PostgreSQL directement (stack stable, plus de canary) | unité `shenron-site` → `dragonballfr.com` |
 | `aphrody-ai/crates/aphrody-mcp` | (dépôt `aphrody-ai`) | Serveur MCP unifié Aphrody ; outils `dragonball.*` pour Shenron, plus les autres catalogues activés au build | binaire et exposition catalogués par `aphrody-infra` ; l'ancien service séparé `shenron-mcp` est retiré |
 | `../aphrody-ai/plugins/aphrody` | plugin Claude Code / Codex / Antigravity unique | Skills Dragon Ball, Aphrody AI/LLM, OS, Web, N2B et WinClean ; MCP `aphrody-mcp` + `aphrody-kernel` | marketplace `aphrody-ai` |
@@ -343,7 +343,7 @@ apps/
 ├── bot/        src/{commands,events,guards,services,api,lib,db,dashboard}, scripts/, data/ (hors Git)
 └── site/       src/{app,components,lib,db}, scripts/ (sources-wiki, depose-wiki, canon-ingest, traduction…)
 packages/       config, db, auth, ai, api, ui, images, aphrody, pipeline, bxc-bridge,
-                di, discordy, importer, internal, pagination, voiranime
+                di, importer, internal, pagination, voiranime
 Voir `../aphrody-ai/plugins/aphrody/` pour le plugin unifié et ses skills Dragon Ball.
 deploy/         proxy média (privoxy) — le reste de l'exploitation vit dans aphrody-infra
 docs/           référence (ENV, DEV-LOCAL, STACK, INFRA-DELEGATION, pieges…), audit/, archive/

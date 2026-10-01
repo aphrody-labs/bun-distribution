@@ -20,7 +20,7 @@ Infrastructure owns deployed units, releases, and public routes. The current ref
 ### Architecture and startup
 
 - Main: [`apps/bot/src/index.ts`](../../../../rg/apps/bot/src/index.ts). Bun executes TypeScript directly (`bun run src/index.ts`); `dev` uses `bun --watch`. Build script emits a Bun-targeted bundle to `dist`, though the production systemd template runs the source entrypoint.
-- Discord client: `@rpbey/discordx` over `discord.js`. `src/lib/profil.ts` is the profile registry (`rg` default, `azalee` optional); `src/lib/config.ts` resolves token, guild scope, branding, URLs, and announcement behavior. Command modules are dynamically imported sequentially before login, so only the active profile's command tree is registered.
+- Discord client: `discordx` over `discord.js`. `src/lib/profil.ts` is the profile registry (`rg` default, `azalee` optional); `src/lib/config.ts` resolves token, guild scope, branding, URLs, and announcement behavior. Command modules are dynamically imported sequentially before login, so only the active profile's command tree is registered.
 - RG profile loads the community command modules and member/community events; guild-scoped slash commands. The `azalee` profile uses the same executable and shared code with its own command modules and global command scope, but its dedicated systemd service is retired according to the app README.
 - On `clientReady`, slash commands are registered, tweet-post notification handling and an optional local admin HTTP surface start. Interaction failures receive an ephemeral fallback. SIGTERM/SIGINT stop timers/services, destroy the Discord client, close cache and PostgreSQL.
 - Member synchronization is normally delegated to `rg-cron`; production `rg-bot.service` sets `BOT_SYNC_MEMBRES=0`. The bot supports opting into it with `BOT_SYNC_MEMBRES=1` plus the privileged members intent. `RG_DISCORD_SYNC_SQLITE_PATH` and `RG_DISCORD_SYNC_REDIS_URL` are also present in the unit for the shared Discord sync contract.
@@ -30,8 +30,8 @@ Infrastructure owns deployed units, releases, and public routes. The current ref
 Declared in `apps/bot/package.json`:
 
 - Workspace packages: `@rosegriffon/achillea-client`, `@rosegriffon/azalee`, `@rosegriffon/db`, `@rosegriffon/types`, `@rosegriffon/ui` (`workspace:*`). `@rosegriffon/config` is a development dependency.
-- Main external runtime packages: `@rpbey/discordx` and `discord.js` (`catalog:`), `reflect-metadata` (`catalog:`), `zod` (`catalog:`), and `@aphrody/canvas` (`catalog:`).
-- Root catalog versions: `@rpbey/discordx ^0.1.1`, `discord.js ^14.26.4`, `zod ^4.6.4`, `@aphrody/canvas 0.1.99`, `reflect-metadata ^0.2.2`. Package manifest ranges/catalog are the declared provenance; Bun lockfile is the resolution source.
+- Main external runtime packages: `discordx` and `discord.js` (`catalog:`), `reflect-metadata` (`catalog:`), `zod` (`catalog:`), and `@aphrody/canvas` (`catalog:`).
+- Root catalog versions: `discordx 11.13.3`, `discord.js ^14.26.4`, `zod ^4.6.4`, `@aphrody/canvas 0.1.99`, `reflect-metadata ^0.2.2`. Package manifest ranges/catalog are the declared provenance; Bun lockfile is the resolution source.
 - PostgreSQL access is provided by workspace `@rosegriffon/db` via `@rosegriffon/db/bun-sql`; cache uses Redis when configured and can fall back in memory. This bot does not own a separate schema or migration set.
 
 ### Storage and integration contracts
@@ -77,7 +77,7 @@ The sample also mentions `SUPABASE_INTERNAL_URL`, `SUPABASE_SERVICE_ROLE_KEY`, a
 From `apps/achillea-bot/package.json`:
 
 - Workspace packages: `@rosegriffon/db`, `@rosegriffon/discord-sync`, `@rosegriffon/achillea-core`, `@rosegriffon/achillea-types`, `@rosegriffon/auth` (`workspace:*`). `@rosegriffon/achillea-contract` exists in the monorepo as the generated API contract package, though it is not a direct runtime dependency here.
-- Discord/runtime: `@aphrody/discordx ^0.1.0`, `discord.js ^14.26.4`, `discord-api-types ~0.38.48`.
+- Discord/runtime: `discordx ~11.13.3`, `discord.js ^14.26.4`, `discord-api-types ~0.38.48`.
 - Persistence/queues: `@mikro-orm/core`, `@mikro-orm/postgresql`, migrations and CLI `^7.1.x`; `kysely` from catalog (`^0.29.2`); `ioredis ^5.11.1`, `bullmq ^5.78.0`.
 - HTTP/realtime/game: `@tsed/common ^8.30.0`, `@tsed/platform-express ^8.30.0`, `express ^5.2.1`, `colyseus ^0.17.10`, `@colyseus/bun-websockets ^0.17.13`, `socket.io ^4.8.3`.
 - Other integrations include `axios ^1.17.0`, `dotenv ^17.4.2`, `envalid ^8.1.1`, `installoop ^1.1.0`, and `@aphrody/canvas 0.1.99`. Versions above are package declarations; `bun.lock` holds exact resolutions.

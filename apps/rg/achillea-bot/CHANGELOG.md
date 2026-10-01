@@ -36,9 +36,9 @@
 
 ## 2026-06-06 — monorepo, packages publics & ranked « double validation »
 
-- **Dépendances** : migration des scopes privés `@rpbey/*` / `@aphrody-code/*` vers les
-  **packages publics `@aphrody/*`** (discordx, importer, pagination, utilities, canvas) sur
-  npmjs — **aucun token requis à l'install**.
+- **Dépendances** : migration des packages vers les versions canoniques
+  (discordx, importer, pagination, utilities, canvas) sur
+  npmjs / catalog racine — **aucun token requis à l'install**.
 - **Monorepo** : le bot est désormais workspace du monorepo `rose-griffon/achillea`
   (`apps/achillea-web` + `apps/achillea-bot` + `packages/achillea-types` + `packages/achillea-core`), runner natif Bun
   (Turborepo retiré).
@@ -53,19 +53,19 @@
 
 ## v2.0.0 — 2026-04-25 (Bun-first migration)
 
-Migration complète Node.js → Bun + adoption `@rpbey/discordy` + perfection code-quality.
+Migration complète Node.js → Bun + adoption DiscordX sous Bun + perfection code-quality.
 
 ### Breaking changes
 
 - **Runtime cible** : Bun 1.3+ (Node n'est plus supporté)
 - **Imports** :
-  - `discordx` → `@rpbey/discordx`
-  - `@discordx/importer` → `@rpbey/importer`
-  - `@discordx/pagination` → `@rpbey/pagination`
-  - `@discordx/utilities` → `@rpbey/utilities`
+  - `discordx`
+  - `@discordx/importer`
+  - `@discordx/pagination`
+  - `@discordx/utilities`
 - **`engines.bun >= 1.3`** au lieu de `engines.node >= 22`
 - **`mikro-orm.useTsNode: false`** (Bun runs TS natively)
-- **Workspace** : `apps/achillea-bot` est maintenant workspace member du monorepo `~/vps` (résolution `@rpbey/*` via `packages/discordy/packages/*`)
+- **Workspace** : `apps/achillea-bot` est maintenant workspace member du monorepo (résolution DiscordX via le catalogue Bun)
 
 ### Sécurité
 
@@ -139,7 +139,7 @@ Migration complète Node.js → Bun + adoption `@rpbey/discordy` + perfection co
 
 ## Commits clés
 
-- `6078637` — chore: migration vers les forks @rpbey/discordy (PR #2)
+- `6078637` — chore: migration vers discordx sous Bun (PR #2)
 - `330bfb1` — chore: migration npm→Bun (PR #1, squash)
 - `9c7defe` — chore(lint): oxlint + type-aware via tsgolint
 - `98bdbea` — fix(docker,scripts): runtime Bun-natif
