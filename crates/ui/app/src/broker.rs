@@ -18,6 +18,7 @@
 
 use std::{
     collections::HashMap,
+    path::PathBuf,
     sync::{
         Arc,
         atomic::{AtomicBool, Ordering},
@@ -30,8 +31,42 @@ use serde_json::{Value, json};
 use tauri::{AppHandle, Emitter, ipc::Channel};
 use tokio::{
     io::{AsyncBufRead, AsyncBufReadExt, AsyncWriteExt, BufReader, DuplexStream, duplex},
+    process::Command,
     sync::{Mutex, oneshot},
 };
+
+/// The sidecar is declared as `externalBin` (`binaries/aphrody`, staged per target triple
+/// by `aphrody-ops tauri`); the bundler installs it next to the desktop executable without
+/// the triple suffix, and `aphrody-ops tauri` copies it beside the unbundled `cargo run`
+/// binary as well, so both cases resolve through the executable's directory.
+#[must_use]
+pub fn resolve_aphrody_bin() -> PathBuf {
+    if let Some(path) = std::env::var_os("APHRODY_BIN").filter(|value| !value.is_empty()) {
+        return PathBuf::from(path);
+    }
+    let file = format!("aphrody{}", std::env::consts::EXE_SUFFIX);
+    if let Some(sidecar) = std::env::current_exe()
+        .ok()
+        .and_then(|exe| exe.parent().map(|dir| dir.join(&file)))
+        .filter(|candidate| candidate.is_file())
+    {
+        return sidecar;
+    }
+    PathBuf::from(file)
+}
+
+/// A command for the `aphrody` binary that never opens a console window on Windows.
+#[must_use]
+pub fn aphrody_command() -> Command {
+    #[allow(unused_mut)]
+    let mut command = Command::new(resolve_aphrody_bin());
+    #[cfg(windows)]
+    {
+        const CREATE_NO_WINDOW: u32 = 0x0800_0000;
+        command.creation_flags(CREATE_NO_WINDOW);
+    }
+    command
+}
 
 /// Event carrying one server notification to the webviews.
 pub const NOTIFICATION_EVENT: &str = "aphrody://notification";
