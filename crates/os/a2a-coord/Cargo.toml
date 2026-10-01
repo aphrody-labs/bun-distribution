@@ -17,6 +17,7 @@ categories = ["network-programming", "asynchronous", "web-programming::http-serv
 workspace = true
 
 [dependencies]
+aphrody-proc = { workspace = true }
 aphrody-a2a = { workspace = true }
 aphrody-a2a-server = { workspace = true }
 axum = { workspace = true }

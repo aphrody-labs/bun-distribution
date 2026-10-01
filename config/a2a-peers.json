@@ -110,13 +110,26 @@
       "--watch",
       "--interval-secs",
       "30",
-      "--json"
+      "--json",
+      "--shared-workspace",
+      "."
     ],
     "memoryStore": "~/.aphrody/memory/memory.sqlite",
     "contextFiles": [
       ".coord/shared/MEMORY.md",
-      ".coord/shared/CONVERSATIONS.md"
+      ".coord/shared/CONVERSATIONS.md",
+      ".coord/shared/TRANSCRIPTS.md"
     ],
-    "commitPolicy": "one-integrator; distinct-file-claims"
+    "commitPolicy": "one-integrator; distinct-file-claims",
+    "claimCommand": [
+      "aphrody",
+      "a2a",
+      "invoke",
+      "--peer",
+      "<agent>",
+      "--claim",
+      "<relative-file-family>",
+      "<task>"
+    ]
   }
 }

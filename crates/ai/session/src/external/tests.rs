@@ -652,3 +652,26 @@ fn state_keys_ignore_separator_and_case_spelling() {
         );
     }
 }
+
+#[cfg(feature = "memory")]
+#[tokio::test]
+async fn shared_recall_filters_workspace_and_keeps_all_three_owners() {
+    use aphrody_memory::{provider::MemoryProvider, SqliteLocalProvider, types::MemoryRecord};
+    let provider = SqliteLocalProvider::open_in_memory().unwrap();
+    let workspace = tempfile::tempdir().unwrap();
+    for (index, agent) in [AgentKind::Claude, AgentKind::Codex, AgentKind::Agy].into_iter().enumerate() {
+        let mut record = MemoryRecord::new(format!("record-{index}"), super::memory_agent_id(agent), "shared");
+        record.created_at_unix_ms = index as u64;
+        record.metadata = serde_json::json!({"workspace": workspace.path()});
+        provider.add(record).await.unwrap();
+    }
+    provider.add(MemoryRecord::new("unknown", "external:codex", "no workspace")).await.unwrap();
+    provider.add(MemoryRecord::new("other", "external:claude", "other repo")
+        .with_metadata(serde_json::json!({"workspace": "/unrelated-repo"}))).await.unwrap();
+    let records = super::workspace_memory(&provider, workspace.path(), 3).await.unwrap();
+    assert_eq!(records.len(), 3);
+    assert_eq!(records[0].agent_id, "external:agy");
+    assert_eq!(records[1].agent_id, "external:codex");
+    assert_eq!(records[2].agent_id, "external:claude");
+    assert_eq!(super::workspace_memory(&provider, workspace.path(), 1).await.unwrap().len(), 1);
+}

@@ -12,6 +12,7 @@
 
 pub mod bridge;
 pub mod card;
+pub mod claims;
 pub mod envelope;
 pub mod executor;
 pub mod listener;

@@ -1174,13 +1174,16 @@ pub(crate) enum A2aAction {
         #[arg(long, default_value = "ping")]
         kind: String,
     },
-    /// Invoke a native peer CLI (grok, agy, claude, bxc).
+    /// Invoke a native peer CLI (grok, agy, claude, codex, bxc).
     Invoke {
         prompt: String,
         #[arg(long, default_value = "grok")]
         peer: String,
         #[arg(long)]
         dry_run: bool,
+        /// Claim a relative file family for this invocation (repeatable).
+        #[arg(long)]
+        claim: Vec<PathBuf>,
     },
     /// JSON-RPC `message/send` to a federation peer (HTTP `/a2a` or `.coord` fallback).
     Send {

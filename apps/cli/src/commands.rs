@@ -255,9 +255,17 @@ pub(crate) async fn dispatch_a2a(
                 .map_err(|e| miette::miette!("a2a tick: {e}"))?;
             println!("{}", serde_json::to_string_pretty(&env).unwrap_or_default());
         },
-        crate::A2aAction::Invoke { prompt, peer, dry_run } => {
+        crate::A2aAction::Invoke { prompt, peer, dry_run, claim } => {
             let peer_id = PeerId::parse(&peer)
-                .ok_or_else(|| miette::miette!("unknown peer {peer:?}; use grok|agy|claude|bxc"))?;
+                .ok_or_else(|| miette::miette!("unknown peer {peer:?}; use grok|agy|claude|codex|bxc"))?;
+            let _claims = claim.iter().map(|path| {
+                aphrody_a2a_coord::claims::FileClaim::acquire(&repo_root, path)
+                    .map_err(|e| miette::miette!("claim {}: {e}", path.display()))
+            }).collect::<miette::Result<Vec<_>>>()?;
+            let prompt = if claim.is_empty() { prompt } else {
+                let paths = claim.iter().map(|path| path.display().to_string()).collect::<Vec<_>>().join(", ");
+                format!("Edit only these claimed file families: {paths}. Other workers share this checkout. Do not switch branches or commit.\n\n{prompt}")
+            };
             let invoker = PeerInvoker::new(&repo_root).with_dry_run(dry_run);
             let result = invoker
                 .invoke_prompt(peer_id, &prompt)
@@ -471,7 +479,7 @@ impl TerminalCommand for AutoCommand {
             let prompt = self.args.join(" ");
             println!("✨ [Auto] Détection de langage naturel, bascule vers l'agent A2A...");
             return dispatch_a2a(
-                crate::A2aAction::Invoke { prompt, peer: "grok".to_string(), dry_run: false },
+                crate::A2aAction::Invoke { prompt, peer: "grok".to_string(), dry_run: false, claim: Vec::new() },
                 _ctx,
             )
             .await;

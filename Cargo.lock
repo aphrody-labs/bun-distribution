@@ -665,6 +665,7 @@ version = "1.0.0-canary"
 dependencies = [
  "aphrody-a2a",
  "aphrody-a2a-server",
+ "aphrody-proc",
  "async-trait",
  "axum",
  "chrono",
@@ -2680,6 +2681,7 @@ name = "aphrody-terminal-backend"
 version = "1.0.0-canary"
 dependencies = [
  "anyhow",
+ "aphrody-a2a-coord",
  "futures-util",
  "portable-pty",
  "rio-vt",

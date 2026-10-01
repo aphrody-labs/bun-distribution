@@ -44,11 +44,13 @@ mod agy;
 mod claude;
 mod codex;
 mod common;
-#[cfg(feature = "memory")] mod memory;
+#[cfg(feature = "memory")]
+mod memory;
 mod process;
 mod state;
 mod sync;
-#[cfg(test)] mod tests;
+#[cfg(test)]
+mod tests;
 
 use std::{
     fmt, io,
@@ -64,7 +66,7 @@ use thiserror::Error;
 #[cfg(feature = "memory")]
 pub use self::memory::{
     MEMORY_ROLES, feed_memory, memory_agent_id, memory_record_id, sync_into_memory,
-    to_memory_record,
+    to_memory_record, workspace_memory,
 };
 pub use self::{
     process::{LiveAgentProcess, classify_process, probe_live_processes},

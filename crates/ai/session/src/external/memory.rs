@@ -16,7 +16,7 @@
 
 use aphrody_memory::{
     provider::MemoryProvider,
-    types::{MemoryError, MemoryRecord, now_unix_ms},
+    types::{MemoryError, MemoryQuery, MemoryRecord, now_unix_ms},
 };
 use serde_json::json;
 
@@ -32,6 +32,32 @@ pub const MEMORY_ROLES: [Role; 2] = [Role::User, Role::Assistant];
 #[must_use]
 pub fn memory_agent_id(agent: AgentKind) -> String {
     format!("external:{agent}")
+}
+
+/// Recall recent conversations from all coding agents in one workspace.
+/// Unknown workspaces are excluded; native ownership and record ids remain intact.
+///
+/// # Errors
+/// Returns the underlying provider search error.
+pub async fn workspace_memory(
+    provider: &dyn MemoryProvider,
+    workspace: &std::path::Path,
+    limit: usize,
+) -> Result<Vec<MemoryRecord>, MemoryError> {
+    let workspace = workspace.canonicalize().unwrap_or_else(|_| workspace.to_path_buf());
+    let mut records = Vec::new();
+    for agent in [AgentKind::Claude, AgentKind::Codex, AgentKind::Agy] {
+        for record in provider.search(MemoryQuery::for_agent(memory_agent_id(agent))).await? {
+            let Some(path) = record.metadata["workspace"].as_str() else { continue };
+            let path = std::path::Path::new(path);
+            if path.canonicalize().unwrap_or_else(|_| path.to_path_buf()) == workspace {
+                records.push(record);
+            }
+        }
+    }
+    records.sort_by(|a, b| b.created_at_unix_ms.cmp(&a.created_at_unix_ms).then(a.id.cmp(&b.id)));
+    records.truncate(limit);
+    Ok(records)
 }
 
 /// Deterministic memory id of a record.

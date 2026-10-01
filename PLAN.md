@@ -485,13 +485,13 @@ Gemini et les catalogues historiques ne constituent pas l’état courant.
 ## 8. Coordination commune Claude / Codex / agy — demande active
 
 - [ ] Auditer et dédupliquer toutes les surfaces A2A sur le monorepo actuel.
-- [ ] Centraliser règles, mémoire et conversations par les propriétaires existants.
-- [ ] Configurer les trois agents pour travailler simultanément dans le même
+- [x] Centraliser règles, mémoire et conversations par les propriétaires existants.
+- [x] Configurer les trois agents pour travailler simultanément dans le même
   checkout et la même branche, avec attribution des fichiers et coordination.
 - [ ] Vérifier les launchers, imports de sessions et échanges réels ; distinguer
   configuration, dry-run et exécution concurrente prouvée.
 
-Le sous-agent `a2a_audit` effectue l’audit en lecture seule. Les formats natifs
+Le sous-agent `a2a_audit` a terminé l’audit en lecture seule. Les formats natifs
 Claude/Codex/agy ne sont pas interchangeables ; leur partage doit passer par
 les adaptateurs de sessions canoniques et une mémoire commune.
 
@@ -513,8 +513,29 @@ les adaptateurs de sessions canoniques et une mémoire commune.
   Claude/Codex/agy toutes les 30 secondes par le propriétaire session existant.
   Source de service suivie sous config/systemd/user ; données privées hors Git.
 - 29 tests a2a-coord et clippy réussis. Provisioners Codex/agy corrigés vers
-  config/ai/plugins/aphrody ; check CLI en cours (session 2234, log
-  /tmp/shared-cli-check.log). Ne pas déclarer ces provisioners qualifiés avant résultat.
-- INCOMPLET : rappel SQLite croisé, claims atomiques, garde de branche,
-  déduplication brokers/proxies/enveloppes et simultanéité réelle des trois
-  CLIs restent ouverts. La configuration ne prouve pas l’exécution concurrente.
+  config/ai/plugins/aphrody ; check CLI all-targets réussi (log /tmp/shared-cli-check.log).
+- Rappel croisé, claims, garde de branche, brokers/proxies et simultanéité
+  qualifiés ci-dessous. Projections d’enveloppes et endpoints legacy restent ouverts.
+
+### Coordination commune : contexte vivant et claims
+
+Rappel des trois propriétaires externes via aphrody-session, filtré sur le
+workspace et publié atomiquement dans `.coord/shared/TRANSCRIPTS.md`. Le service
+installé le renouvelle toutes les 30 secondes ; le launcher l’injecte. Claims
+de sous-arbres via les verrous OS aphrody-proc, garde de branche et commande
+`aphrody a2a invoke --peer <agent> --claim <famille> "tâche"` installées.
+Le terminal réexporte le proxy OS ; l’entrée historique du broker Shenron
+réexporte l’application. 32 tests coord, 37 session, 24 terminal et 8 broker
+réussis ; clippy sans dépendances et check CLI all-targets réussis. Le clippy
+avec dépendances échoue sur deux lints aphrody-config indépendants.
+
+Rapport agy vérifié partiellement : source legacy absente, remote cible absent,
+assets importés encore non suivis. 370 fichiers Shenron (3 253 903 477 octets)
+préservés sous `~/.aphrody/private/shenron/home`, hashes source/copie égaux ;
+copie source conservée et exclue de Git. Cela ne prouve pas les hashes du
+checkout legacy supprimé, les pushes legacy ou les 21 Go annoncés.
+
+Preuve native simultanée : Claude, Codex et agy lancés par le CLI installé,
+claims distincts, exits 0 en 9,61 / 11,17 / 18,10 s. Chaque agent confirme
+le cwd, main et les propriétaires des autres dans TRANSCRIPTS. Vérification
+en lecture seule ; aucune édition de code concurrente n’est revendiquée.

@@ -16,14 +16,14 @@
     },
     {
       "owner": "apps/cli provisioning",
-      "status": "implemented; CLI qualification running",
+      "status": "implemented; CLI check all-targets and installed native build passed",
       "changes": [
         "canonical config/ai/plugins/aphrody source paths"
       ]
     },
     {
       "owner": "aphrody-session/external",
-      "status": "existing canonical ingestion enabled as user service",
+      "status": "canonical ingestion and workspace-scoped shared recall enabled as user service",
       "service": "aphrody-agent-session-sync",
       "memory": "~/.aphrody/memory/memory.sqlite",
       "sessions": "~/.aphrody/sessions/{claude,codex,agy}"
@@ -36,22 +36,69 @@
         "CLAUDE.md",
         "GEMINI.md"
       ]
+    },
+    {
+      "owner": "crates/os/a2a-coord/claims",
+      "status": "implemented and tested",
+      "changes": [
+        "subtree claims reuse aphrody-proc OS file locks",
+        "ancestors shared and claimed family exclusive",
+        "release on process exit or crash",
+        "shared branch marker checked before native launch"
+      ]
+    },
+    {
+      "owner": "canonical broker and OS proxy",
+      "status": "implemented and tested",
+      "changes": [
+        "legacy Shenron broker entrypoint reexports application owner",
+        "terminal coord module reexports OS owner",
+        "public API compatibility preserved"
+      ]
     }
   ],
   "remaining": [
-    "Cross-agent SQLite recall (external agent ID filtering) must be exposed through canonical provider.",
-    "Atomic file/task claims and branch guard in runner remain to implement.",
-    "Live simultaneous Claude/Codex/agy execution not yet proven.",
-    "Duplicate bot brokers, terminal coord proxy and envelope projections remain to consolidate.",
-    "New native peer source must be installed before claiming installed CLI support."
+    "Envelope representations remain compatibility projections with different strictness and Shenron extensions; generated cross-language base projection needs qualification.",
+    "Kernel a2a/message/send is local tool dispatch, not remote target delivery; routing semantics need clarification in its API.",
+    "Full legacy/public A2A deployment qualification remains open."
   ],
   "tests": {
-    "a2aCoordPassed": 29,
-    "clippyExit": 0
+    "a2aCoordPassed": 32,
+    "sessionPassed": 37,
+    "terminalBackendPassed": 24,
+    "brokerPassed": 8,
+    "scopedClippyExit": 0,
+    "dependencyClippy": "blocked by two aphrody-config warnings",
+    "cliCheckAllTargetsExit": 0,
+    "installedBuildExit": 0
   },
   "runtime": {
     "serviceActive": true,
     "mainPid": 1270539,
-    "observedRestarts": 0
+    "observedRestarts": 0,
+    "codexModel": "gpt-6-sol from local advertised model cache; previous private config backed up",
+    "simultaneousNativeProof": {
+      "launcher": "installed aphrody a2a invoke",
+      "agents": [
+        "claude",
+        "codex",
+        "agy"
+      ],
+      "exitCodes": [
+        0,
+        0,
+        0
+      ],
+      "workspace": "/home/aphro/aphrody",
+      "branch": "main",
+      "otherAgentContextRead": true,
+      "distinctClaims": true,
+      "scope": "read-only live verification; no concurrent code edits",
+      "seconds": [
+        9.61,
+        11.17,
+        18.1
+      ]
+    }
   }
 }

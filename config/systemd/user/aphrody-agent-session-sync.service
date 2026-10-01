@@ -4,7 +4,7 @@ Description=Shared Claude Codex agy session and memory ingestion
 [Service]
 Type=simple
 WorkingDirectory=/home/aphro/aphrody
-ExecStart=/home/aphro/.local/bin/aphrody ai sync-sessions --watch --interval-secs 30 --json
+ExecStart=/home/aphro/.local/bin/aphrody ai sync-sessions --watch --interval-secs 30 --json --shared-workspace /home/aphro/aphrody
 Restart=on-failure
 RestartSec=10
 UMask=0077
