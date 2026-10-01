@@ -1,4 +1,4 @@
-import * as discordx from "@aphrody/discordx";
+import * as discordx from "discordx";
 const SlashChoiceX = (discordx as any).SlashChoice;
 
 import { constantPreserveDots } from "../functions/string";

@@ -1,5 +1,5 @@
 import { CommandInteraction, MessageFlags } from "discord.js";
-import { SimpleCommandMessage } from "@aphrody/discordx";
+import { SimpleCommandMessage } from "discordx";
 
 /**
  * Abstraction level to reply to either a slash command or a simple command message.

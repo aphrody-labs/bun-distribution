@@ -1,5 +1,5 @@
-export { Guard } from "@aphrody/discordx";
-export { RateLimit, PermissionGuard as UserPermissions } from "@aphrody/utilities";
+export { Guard } from "discordx";
+export { RateLimit, PermissionGuard as UserPermissions } from "@discordx/utilities";
 
 export * from "./disabled";
 export * from "./guildOnly";

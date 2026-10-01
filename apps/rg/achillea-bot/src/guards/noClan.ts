@@ -1,5 +1,5 @@
 import type { CommandInteraction } from "discord.js";
-import type { GuardFunction } from "@aphrody/discordx";
+import type { GuardFunction } from "discordx";
 
 import { Database } from "@/services";
 import {

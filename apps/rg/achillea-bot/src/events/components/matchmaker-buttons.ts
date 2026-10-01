@@ -1,6 +1,6 @@
 import type { ButtonInteraction } from "discord.js";
 import { MessageFlags } from "discord.js";
-import type { Client } from "@aphrody/discordx";
+import type { Client } from "discordx";
 
 import { ButtonComponent, Discord, Injectable } from "@/decorators";
 import { Matchmaker, RankedQueueService } from "@/services";

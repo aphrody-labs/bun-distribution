@@ -1,8 +1,8 @@
-import { Category } from "@aphrody/utilities";
+import { Category } from "@discordx/utilities";
 import type { CommandInteraction } from "discord.js";
 import { ComponentType, MessageFlags } from "discord.js";
-import type { Client } from "@aphrody/discordx";
-import { Guard } from "@aphrody/discordx";
+import type { Client } from "discordx";
+import { Guard } from "discordx";
 
 import { Discord, Injectable, Slash, SlashGroup } from "@/decorators";
 import { ClanEnabled } from "@/guards";

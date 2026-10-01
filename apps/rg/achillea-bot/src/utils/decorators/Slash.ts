@@ -1,8 +1,8 @@
 import type {
 	ApplicationCommandOptions as ApplicationCommandOptionsX,
 	VerifyName,
-} from "@aphrody/discordx";
-import * as discordx from "@aphrody/discordx";
+} from "discordx";
+import * as discordx from "discordx";
 const SlashX = (discordx as any).Slash;
 
 import {

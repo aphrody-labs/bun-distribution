@@ -1,6 +1,6 @@
-import { Category } from "@aphrody/utilities";
+import { Category } from "@discordx/utilities";
 import type { CommandInteraction } from "discord.js";
-import type { Client } from "@aphrody/discordx";
+import type { Client } from "discordx";
 
 import { urlsConfig } from "@/configs";
 import { Discord, Injectable, Slash } from "@/decorators";

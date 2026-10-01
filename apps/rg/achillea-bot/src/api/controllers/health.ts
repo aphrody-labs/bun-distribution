@@ -1,5 +1,5 @@
 import { Controller, Get, UseBefore } from "@tsed/common";
-import { Client } from "@aphrody/discordx";
+import { Client } from "discordx";
 
 import { DataStore } from "@/services/DataStore";
 import { Logger, Stats } from "@/services";

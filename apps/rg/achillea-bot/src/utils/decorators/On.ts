@@ -1,5 +1,5 @@
-import type { EventOptions, MethodDecoratorEx } from "@aphrody/discordx";
-import * as discordx from "@aphrody/discordx";
+import type { EventOptions, MethodDecoratorEx } from "discordx";
+import * as discordx from "discordx";
 const DOn = (discordx as any).DOn;
 const MetadataStorage = (discordx as any).MetadataStorage;
 

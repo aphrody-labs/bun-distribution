@@ -28,7 +28,7 @@
  * chaque fichier de groupe importe ce module pour effet de bord : l'ordre des
  * imports dans `src/index.ts` n'a alors plus d'importance.
  */
-import { Discord, SlashGroup } from "@aphrody/discordx";
+import { Discord, SlashGroup } from "discordx";
 import { PermissionFlagsBits } from "discord.js";
 
 @Discord()

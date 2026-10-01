@@ -18,7 +18,7 @@
  * Une suggestion écartée sans raison est pire qu'une suggestion ignorée : elle
  * dit « non » à quelqu'un qui a pris le temps d'écrire, sans rien lui apprendre.
  */
-import { Discord, Slash, SlashGroup, SlashOption } from "@aphrody/discordx";
+import { Discord, Slash, SlashGroup, SlashOption } from "discordx";
 import {
 	ApplicationCommandOptionType,
 	type ChatInputCommandInteraction,

@@ -12,7 +12,7 @@ import {
 } from "@tsed/common";
 import { BadRequest, Forbidden, Unauthorized } from "@tsed/exceptions";
 import type { Request, Response } from "express";
-import { Client, MetadataStorage } from "@aphrody/discordx";
+import { Client, MetadataStorage } from "discordx";
 
 import { CookieAuthorize } from "@/api/middlewares";
 import { urlsConfig } from "@/configs";

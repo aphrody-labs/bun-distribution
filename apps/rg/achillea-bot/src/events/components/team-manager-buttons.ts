@@ -1,7 +1,7 @@
 import { rel } from "@mikro-orm/core";
 import type { ButtonInteraction, ModalSubmitInteraction } from "discord.js";
 import { MessageFlags } from "discord.js";
-import type { Client } from "@aphrody/discordx";
+import type { Client } from "discordx";
 
 import { ButtonComponent, Discord, Guard, Injectable, ModalComponent } from "@/decorators";
 import { ClanMember, ClanTeamMember, User } from "@/entities";

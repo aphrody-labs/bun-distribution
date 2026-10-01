@@ -1,5 +1,5 @@
 import { CommandInteraction } from "discord.js";
-import type { ArgsOf, Client } from "@aphrody/discordx";
+import type { ArgsOf, Client } from "discordx";
 
 import { generalConfig } from "@/configs";
 import { Discord, Guard, Injectable, On } from "@/decorators";

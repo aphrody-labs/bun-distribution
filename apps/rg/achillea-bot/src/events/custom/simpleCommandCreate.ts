@@ -1,5 +1,5 @@
-import type { ArgsOf, Client } from "@aphrody/discordx";
-import { Guard, SimpleCommandMessage } from "@aphrody/discordx";
+import type { ArgsOf, Client } from "discordx";
+import { Guard, SimpleCommandMessage } from "discordx";
 
 import { Discord, Injectable, On, OnCustom } from "@/decorators";
 import { Guild, User } from "@/entities";

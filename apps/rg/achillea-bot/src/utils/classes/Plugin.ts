@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import { sep } from "node:path";
 
-import { importx, resolve } from "@aphrody/importer";
+import { importx, resolve } from "@discordx/importer";
 import type { AnyEntity, EntityClass } from "@mikro-orm/core";
 import semver from "semver";
 import type { BaseTranslation } from "typesafe-i18n";

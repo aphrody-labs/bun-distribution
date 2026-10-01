@@ -1,4 +1,4 @@
-import { Client } from "@aphrody/discordx";
+import { Client } from "discordx";
 
 import { Discord, Injectable, Once } from "@/decorators";
 import { resolveDependency } from "@/utils/functions";

@@ -1,6 +1,6 @@
 import type { Job } from "bullmq";
 import { Queue, Worker } from "bullmq";
-import { Client } from "@aphrody/discordx";
+import { Client } from "discordx";
 
 import { PREFIXE_FILES, redisConnection } from "@/configs";
 import { Service } from "@/decorators";

@@ -1,7 +1,7 @@
 import type { ContextMenuCommandInteraction } from "discord.js";
 import { CommandInteraction } from "discord.js";
-import type { GuardFunction } from "@aphrody/discordx";
-import { SimpleCommandMessage } from "@aphrody/discordx";
+import type { GuardFunction } from "discordx";
+import { SimpleCommandMessage } from "discordx";
 
 import { getLocaleFromInteraction, L } from "@/i18n";
 import { isDev, replyToInteraction, resolveUser } from "@/utils/functions";

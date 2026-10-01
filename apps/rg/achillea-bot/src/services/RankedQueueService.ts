@@ -8,7 +8,7 @@ import {
 	PermissionFlagsBits,
 	userMention,
 } from "discord.js";
-import { Client } from "@aphrody/discordx";
+import { Client } from "discordx";
 import { asyncScheduler } from "rxjs";
 
 import { coreManagerConfig } from "@/configs";

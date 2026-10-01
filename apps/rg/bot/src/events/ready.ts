@@ -1,4 +1,4 @@
-import { Discord, Once } from "@aphrody/discordx";
+import { Discord, Once } from "discordx";
 import type { Client } from "discord.js";
 
 import { syncAllMembers } from "../services/syncMembers";

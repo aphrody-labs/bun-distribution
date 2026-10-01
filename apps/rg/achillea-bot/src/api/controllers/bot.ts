@@ -3,7 +3,7 @@ import { NotFound, Unauthorized } from "@tsed/exceptions";
 import { Required } from "@tsed/schema";
 import type { BaseGuildTextChannel, BaseGuildVoiceChannel, NewsChannel } from "discord.js";
 import { ChannelType, PermissionsBitField } from "discord.js";
-import { Client, MetadataStorage } from "@aphrody/discordx";
+import { Client, MetadataStorage } from "discordx";
 
 import { BotOnline, DevAuthenticated } from "@/api/middlewares";
 import { generalConfig } from "@/configs";

@@ -1,4 +1,4 @@
-import { Client } from "@aphrody/discordx";
+import { Client } from "discordx";
 import type { TextChannel } from "discord.js";
 import { EmbedBuilder } from "discord.js";
 import type { Kysely } from "kysely";

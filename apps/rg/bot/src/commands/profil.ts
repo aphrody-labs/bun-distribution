@@ -25,7 +25,7 @@
  * `partager` pour celles qu'on veut montrer. C'est le membre qui décide de
  * faire du bruit, jamais le bot.
  */
-import { Discord, Slash, SlashChoice, SlashOption } from "@aphrody/discordx";
+import { Discord, Slash, SlashChoice, SlashOption } from "discordx";
 import {
 	ActionRowBuilder,
 	ApplicationCommandOptionType,

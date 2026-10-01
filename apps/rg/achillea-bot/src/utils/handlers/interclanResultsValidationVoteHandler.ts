@@ -1,6 +1,6 @@
 import type { BaseMessageOptions, ButtonInteraction } from "discord.js";
 import { roleMention } from "discord.js";
-import type { Client } from "@aphrody/discordx";
+import type { Client } from "discordx";
 
 import { coreManagerConfig } from "@/configs";
 import type { Vote, VoteProposal } from "@/entities";

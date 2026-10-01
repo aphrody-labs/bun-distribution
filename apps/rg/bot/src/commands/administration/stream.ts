@@ -34,7 +34,7 @@
  *     identifiant. D'où `modifier`, où « - » vide explicitement un champ
  *     facultatif — ce que l'ancien `COALESCE` rendait impossible.
  */
-import { Discord, Slash, SlashChoice, SlashGroup, SlashOption } from "@aphrody/discordx";
+import { Discord, Slash, SlashChoice, SlashGroup, SlashOption } from "discordx";
 import {
 	ApplicationCommandOptionType,
 	type AutocompleteInteraction,

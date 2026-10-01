@@ -1,5 +1,5 @@
 import { EmbedBuilder } from "discord.js";
-import { Client } from "@aphrody/discordx";
+import { Client } from "discordx";
 import { singleton } from "tsyringe";
 import type { Generated, Kysely } from "kysely";
 import { createAchilleaSql } from "@rosegriffon/db/achillea-sql";

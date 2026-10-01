@@ -8,7 +8,7 @@ export {
 	SelectMenuComponent,
 	SimpleCommand,
 	SimpleCommandOption,
-} from "@aphrody/discordx";
+} from "discordx";
 
 export * from "./Service";
 export * from "./Injectable";

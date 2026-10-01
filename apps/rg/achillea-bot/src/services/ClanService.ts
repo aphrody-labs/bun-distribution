@@ -4,7 +4,7 @@ import { BadRequest, NotFound, Unauthorized } from "@tsed/exceptions";
 import { plainToInstance } from "class-transformer";
 import type { BaseMessageOptions, GuildMember, TextChannel, User } from "discord.js";
 import { Colors, escapeMarkdown, roleMention, userMention } from "discord.js";
-import { Client } from "@aphrody/discordx";
+import { Client } from "discordx";
 
 import type { ClanInviteDTO } from "@/api/models/dtos";
 import { coreManagerConfig, urlsConfig } from "@/configs";

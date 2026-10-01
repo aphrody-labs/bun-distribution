@@ -10,7 +10,7 @@ import type {
 	User as DiscordUser,
 } from "discord.js";
 import { escapeMarkdown, userMention } from "discord.js";
-import type { Client } from "@aphrody/discordx";
+import type { Client } from "discordx";
 import GraphemeSplitter from "grapheme-splitter";
 
 import { coreManagerConfig } from "@/configs";

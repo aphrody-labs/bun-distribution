@@ -1,4 +1,4 @@
-import { Category } from "@aphrody/utilities";
+import { Category } from "@discordx/utilities";
 import type { CommandInteraction, User as DiscordUser } from "discord.js";
 import { ApplicationCommandOptionType, EmbedBuilder, MessageFlags } from "discord.js";
 

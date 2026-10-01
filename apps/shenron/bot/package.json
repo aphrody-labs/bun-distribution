@@ -48,9 +48,9 @@
   "dependencies": {
     "@napi-rs/canvas": "1.0.9",
     "@pothos/core": "^4.13.1",
-    "discordx": "11.13.3",
-    "@discordx/di": "3.3.4",
-    "@discordx/pagination": "4.4.2",
+    "discordx": "catalog:",
+    "@discordx/di": "catalog:",
+    "@discordx/pagination": "catalog:",
     "@shenron/auth": "workspace:*",
     "@shenron/images": "workspace:*",
     "@tanstack/react-query": "catalog:",

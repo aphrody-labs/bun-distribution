@@ -1,8 +1,8 @@
 import process from "node:process";
 
 import { constant } from "case";
-import type { SimpleCommandMessage } from "@aphrody/discordx";
-import { Client } from "@aphrody/discordx";
+import type { SimpleCommandMessage } from "discordx";
+import { Client } from "discordx";
 import type { Generated, Kysely } from "kysely";
 import { sql } from "kysely";
 import { createAchilleaSql } from "@rosegriffon/db/achillea-sql";

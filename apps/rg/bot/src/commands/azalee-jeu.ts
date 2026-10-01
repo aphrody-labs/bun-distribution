@@ -40,7 +40,7 @@ import {
 	SlashChoice,
 	SlashGroup,
 	SlashOption,
-} from "@aphrody/discordx";
+} from "discordx";
 import { dropCategoryLabel, dropSourceLabel } from "@rosegriffon/azalee/wiki/drops-shared";
 import {
 	ActionRowBuilder,

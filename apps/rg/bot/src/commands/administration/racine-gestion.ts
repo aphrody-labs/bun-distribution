@@ -11,7 +11,7 @@
  * `stream_schedules`) ; leur pendant en lecture est public (`/article`,
  * `/agenda`).
  */
-import { Discord, SlashGroup } from "@aphrody/discordx";
+import { Discord, SlashGroup } from "discordx";
 import { PermissionFlagsBits } from "discord.js";
 
 @Discord()

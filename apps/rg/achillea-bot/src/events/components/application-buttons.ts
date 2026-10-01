@@ -1,6 +1,6 @@
 import type { BaseMessageOptions, ButtonInteraction } from "discord.js";
 import { Colors, EmbedBuilder, MessageFlags, escapeMarkdown } from "discord.js";
-import type { Client } from "@aphrody/discordx";
+import type { Client } from "discordx";
 
 import { ButtonComponent, Discord, Guard, Injectable, SelectMenuComponent } from "@/decorators";
 import { Clan, ClanApplication, ClanMember } from "@/entities";

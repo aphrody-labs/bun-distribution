@@ -1,4 +1,4 @@
-import { type ArgsOf, Discord, On } from "@aphrody/discordx";
+import { type ArgsOf, Discord, On } from "discordx";
 import type { Client } from "discord.js";
 
 import { syncOneMember, syncOneUser } from "../services/syncMembers";

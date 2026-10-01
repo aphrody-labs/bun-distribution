@@ -26,7 +26,7 @@
  * republiable. `lib/sondage-format.ts` refuse tout lien `cdn.discordapp.com`,
  * y compris s'il arrivait par une colonne qu'on croyait propre.
  */
-import { ButtonComponent, Discord, Slash, SlashGroup, SlashOption } from "@aphrody/discordx";
+import { ButtonComponent, Discord, Slash, SlashGroup, SlashOption } from "discordx";
 import {
 	ActionRowBuilder,
 	ApplicationCommandOptionType,

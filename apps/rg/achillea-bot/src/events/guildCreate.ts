@@ -1,4 +1,4 @@
-import type { ArgsOf, Client } from "@aphrody/discordx";
+import type { ArgsOf, Client } from "discordx";
 import { syncDiscordGuildSnapshot } from "@rosegriffon/discord-sync";
 
 import { discordBotProfile } from "@/configs";

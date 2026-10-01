@@ -1,4 +1,4 @@
-import { Category } from "@aphrody/utilities";
+import { Category } from "@discordx/utilities";
 import { rel } from "@mikro-orm/core";
 import type { BaseMessageOptions, ButtonInteraction, CommandInteraction } from "discord.js";
 import {
@@ -8,8 +8,8 @@ import {
 	MessageFlags,
 	roleMention,
 } from "discord.js";
-import type { Client } from "@aphrody/discordx";
-import { Guard } from "@aphrody/discordx";
+import type { Client } from "discordx";
+import { Guard } from "discordx";
 
 import { Discord, Injectable, Slash, SlashGroup, SlashOption } from "@/decorators";
 import { Clan, ClanApplication, ClanMember, User as UserEntity } from "@/entities";

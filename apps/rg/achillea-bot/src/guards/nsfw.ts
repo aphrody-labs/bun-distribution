@@ -1,6 +1,6 @@
 import type { CommandInteraction } from "discord.js";
 import { TextChannel } from "discord.js";
-import type { GuardFunction, SimpleCommandMessage } from "@aphrody/discordx";
+import type { GuardFunction, SimpleCommandMessage } from "discordx";
 
 import { getLocaleFromInteraction, L } from "@/i18n";
 import { replyToInteraction, resolveChannel } from "@/utils/functions";

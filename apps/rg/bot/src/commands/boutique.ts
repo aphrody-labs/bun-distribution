@@ -13,7 +13,7 @@
  * `lib/boutique-format.ts`. Tout le calcul — prix, fourchettes, recherche, mise
  * en forme — y vit et y est testé ; ce fichier ne fait que peindre des embeds.
  */
-import { Discord, Slash, SlashGroup, SlashOption } from "@aphrody/discordx";
+import { Discord, Slash, SlashGroup, SlashOption } from "discordx";
 import {
 	ApplicationCommandOptionType,
 	type AutocompleteInteraction,

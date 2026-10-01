@@ -29,7 +29,7 @@
  * passerelle). Ce qui exigerait `MessageContent` ou `GuildPresences` n'est PAS
  * implémenté à moitié : ça n'est pas implémenté du tout.
  */
-import { ButtonComponent, Discord, Slash, SlashGroup, SlashOption } from "@aphrody/discordx";
+import { ButtonComponent, Discord, Slash, SlashGroup, SlashOption } from "discordx";
 import {
 	ActionRowBuilder,
 	ApplicationCommandOptionType,

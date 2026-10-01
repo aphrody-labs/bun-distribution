@@ -1,6 +1,6 @@
 import { ESCALATION_WINDOW_SEC, evaluateEscalation } from "@rosegriffon/achillea-core";
 import type { Job } from "bullmq";
-import { Client } from "@aphrody/discordx";
+import { Client } from "discordx";
 import { singleton } from "tsyringe";
 import { createAchilleaSql } from "@rosegriffon/db/achillea-sql";
 import type { Generated, Selectable } from "kysely";

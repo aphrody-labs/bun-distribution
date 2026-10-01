@@ -28,7 +28,7 @@
  * Form Body` à l'API, un message qui ne dit ni quel champ ni quelle borne.
  * On rend donc TOUS les refus d'un coup, en nommant la valeur fautive.
  */
-import { Discord, Slash, SlashGroup, SlashOption } from "@aphrody/discordx";
+import { Discord, Slash, SlashGroup, SlashOption } from "discordx";
 import {
 	ApplicationCommandOptionType,
 	ChannelType,

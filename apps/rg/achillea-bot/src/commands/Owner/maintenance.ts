@@ -1,7 +1,7 @@
 import type { CommandInteraction } from "discord.js";
 import { ApplicationCommandOptionType, MessageFlags } from "discord.js";
-import type { Client } from "@aphrody/discordx";
-import { Guild } from "@aphrody/discordx";
+import type { Client } from "discordx";
+import { Guild } from "discordx";
 
 import { adminManagerConfig } from "@/configs";
 import { Discord, Guard, Slash, SlashGroup, SlashOption } from "@/decorators";

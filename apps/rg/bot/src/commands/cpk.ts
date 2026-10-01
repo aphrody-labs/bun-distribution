@@ -33,7 +33,7 @@
  *    annoncer « pas de modèle » sur près des deux tiers de l'index. Le sondage
  *    retombe donc sur un `GET` dont le corps est relâché (cf. `methodeRefusee`).
  */
-import { ButtonComponent, Discord, Slash, SlashGroup, SlashOption } from "@aphrody/discordx";
+import { ButtonComponent, Discord, Slash, SlashGroup, SlashOption } from "discordx";
 import {
 	ActionRowBuilder,
 	ApplicationCommandOptionType,

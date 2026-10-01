@@ -8,7 +8,7 @@ import chalk from "chalk";
 import dayjs from "dayjs";
 import type { BaseMessageOptions, User } from "discord.js";
 import { NewsChannel, TextChannel, ThreadChannel } from "discord.js";
-import { Client, MetadataStorage } from "@aphrody/discordx";
+import { Client, MetadataStorage } from "discordx";
 import ora from "ora";
 import type { StackFrame } from "stacktrace-parser";
 import { parse } from "stacktrace-parser";

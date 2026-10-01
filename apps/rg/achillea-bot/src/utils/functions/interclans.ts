@@ -1,4 +1,4 @@
-import type { Client } from "@aphrody/discordx";
+import type { Client } from "discordx";
 
 import { coreManagerConfig } from "@/configs";
 import type { Clan, Interclan } from "@/entities";

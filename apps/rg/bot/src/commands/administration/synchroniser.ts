@@ -28,7 +28,7 @@
  * réclamés des membres partis. Effacer une ligne de `profiles` est irréversible
  * et n'a pas à se déclencher depuis un salon.
  */
-import { Discord, Slash, SlashGroup, SlashOption } from "@aphrody/discordx";
+import { Discord, Slash, SlashGroup, SlashOption } from "discordx";
 import {
 	ApplicationCommandOptionType,
 	type ChatInputCommandInteraction,

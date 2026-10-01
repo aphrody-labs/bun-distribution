@@ -13,7 +13,7 @@
  * savoir qui a voté quoi. Aucune adresse e-mail ni postale ne sort de ces
  * embeds — `getAdminStats()` ne renvoie que des entiers.
  */
-import { Discord, Slash, SlashGroup } from "@aphrody/discordx";
+import { Discord, Slash, SlashGroup } from "discordx";
 import type { ChatInputCommandInteraction } from "discord.js";
 
 import { sql } from "../../lib/db";

@@ -447,6 +447,19 @@ Propriétaires : `packages/rg`, `apps/rg`, domaines Discord/Koharu/FUT.
 Critères : imports des packages sans serveur, tests handlers/contrats puis
 smoke de chaque application, packaging autonome des assets partagés.
 
+### Autonomie Discord et élimination du fork upstream — 2026-10-01
+
+- FAIT : les dépendances Discord (`discordx`, `@discordx/di`, `@discordx/pagination`,
+  `@discordx/importer`, `@discordx/utilities`, `discord.js`, `discord-api-types`) sont
+  centralisées dans le `workspaces.catalog` racine sous Bun 1.4.2 et TypeScript 7.0.2.
+- Les applications consommatrices (`apps/shenron/bot`, `apps/rg/bot`, `apps/rg/achillea-bot`)
+  utilisent `catalog:` sans dépendre d'un fork local ni de paquets obsolètes.
+- Le dossier `upstream/discord` (2 232 fichiers, 3,9 Go libérés) a été supprimé.
+- `scripts/audit/discord-verify.ts` teste l'intégrité du catalog, `@aphrody/messaging`
+  (typecheck, 9 tests, build) et le typecheck de Shenron bot.
+- Gates vérifiés : `bun run discord:verify` réussi, tests `@shenron/bot` (412 tests passants),
+  tests `@aphrody/messaging` (9 tests passants).
+
 ## 7. Shenron, produit final
 
 Propriétaires : `packages/shenron`, `apps/shenron`.

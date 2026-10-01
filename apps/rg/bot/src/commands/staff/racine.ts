@@ -25,7 +25,7 @@
  * dépendre la description affichée par Discord de l'ordre des imports. On
  * préfère un endroit unique.
  */
-import { Discord, SlashGroup } from "@aphrody/discordx";
+import { Discord, SlashGroup } from "discordx";
 
 @Discord()
 @SlashGroup({

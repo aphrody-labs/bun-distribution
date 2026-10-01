@@ -38,7 +38,7 @@
  * sont en base (`discord_roles`, avec `name` et `position`) : on rend les vrais
  * noms, du plus haut au plus bas comme Discord les ordonne.
  */
-import { Discord, Slash, SlashGroup, SlashOption } from "@aphrody/discordx";
+import { Discord, Slash, SlashGroup, SlashOption } from "discordx";
 import {
 	ApplicationCommandOptionType,
 	AttachmentBuilder,

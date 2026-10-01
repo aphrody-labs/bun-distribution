@@ -1,5 +1,5 @@
-import { Category } from "@aphrody/utilities";
-import type { Client } from "@aphrody/discordx";
+import { Category } from "@discordx/utilities";
+import type { Client } from "discordx";
 import type { CommandInteraction } from "discord.js";
 import { ApplicationCommandOptionType, Colors, EmbedBuilder, MessageFlags } from "discord.js";
 

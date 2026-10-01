@@ -24,7 +24,7 @@
  * en retard, c'est une commande absente jusqu'au prochain redémarrage.
  */
 import "reflect-metadata";
-import { Client } from "@aphrody/discordx";
+import { Client } from "discordx";
 import { MessageFlags, Partials } from "discord.js";
 
 import { closeCache } from "./lib/cache";

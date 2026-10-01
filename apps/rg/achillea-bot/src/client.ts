@@ -1,5 +1,5 @@
 import { GatewayIntentBits, Partials } from "discord.js";
-import type { ClientOptions } from "@aphrody/discordx";
+import type { ClientOptions } from "discordx";
 
 import { generalConfig, logsConfig } from "@/configs";
 import { discordBotProfile } from "@/configs/discord-profile";

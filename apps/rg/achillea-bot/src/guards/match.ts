@@ -1,4 +1,4 @@
-import type { ArgsOf, GuardFunction } from "@aphrody/discordx";
+import type { ArgsOf, GuardFunction } from "discordx";
 
 /**
  * Pass only when the message match with a passed regular expression

@@ -29,7 +29,7 @@
  * lisible ; on lit donc l'existant avant d'écrire, et on MET À JOUR plutôt que
  * de créer.
  */
-import { Discord, Slash, SlashChoice, SlashGroup, SlashOption } from "@aphrody/discordx";
+import { Discord, Slash, SlashChoice, SlashGroup, SlashOption } from "discordx";
 import {
 	ApplicationCommandOptionType,
 	AutoModerationActionType,

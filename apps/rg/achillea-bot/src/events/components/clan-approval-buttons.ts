@@ -1,5 +1,5 @@
 import { BaseMessageOptions, ButtonInteraction, roleMention, userMention } from "discord.js";
-import { Client } from "@aphrody/discordx";
+import { Client } from "discordx";
 
 import { coreManagerConfig } from "@/configs";
 import { ButtonComponent, Discord, Guard, Injectable } from "@/decorators";

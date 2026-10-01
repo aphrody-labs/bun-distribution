@@ -13,7 +13,7 @@ import {
 	TextInputBuilder,
 	TextInputStyle,
 } from "discord.js";
-import type { Client } from "@aphrody/discordx";
+import type { Client } from "discordx";
 
 import type {
 	Clan,

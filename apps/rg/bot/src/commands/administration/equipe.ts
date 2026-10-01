@@ -39,7 +39,7 @@
  * salon Discord n'est pas un droit d'exploitation, c'est un droit d'édition du
  * site. La consultation reste ouverte à `staff` sous `/staff`, l'écriture non.
  */
-import { Discord, Slash, SlashChoice, SlashGroup, SlashOption } from "@aphrody/discordx";
+import { Discord, Slash, SlashChoice, SlashGroup, SlashOption } from "discordx";
 import {
 	ApplicationCommandOptionType,
 	type AutocompleteInteraction,

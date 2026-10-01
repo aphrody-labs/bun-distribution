@@ -1,8 +1,0 @@
-blank_issues_enabled: false
-contact_links:
-  - name: Discord server
-    url: https://discordx.js.org/discord
-    about: For upstream DiscordX support questions, use the community server.
-  - name: Aphrody architecture and migration plan
-    url: https://github.com/aphrody-code/aphrody-discord/blob/main/PLAN-DISCORD.md
-    about: Read the shared transport boundary and consumer migration gates first.

@@ -1,2 +1,0 @@
-bun run --filter=@aphrody/carbon-example typecheck
-bun run oxfmt --check apps/carbon-example/src/index.ts

@@ -20,7 +20,7 @@
  *     24, Azalée 9, Achilléa 28, lore 10, dessinateurs 18, production 7,
  *     réseaux 11, médiation 8, partenaires 2 — 122 membres actifs.
  */
-import { Discord, Slash, SlashChoice, SlashGroup, SlashOption } from "@aphrody/discordx";
+import { Discord, Slash, SlashChoice, SlashGroup, SlashOption } from "discordx";
 import {
 	ApplicationCommandOptionType,
 	AttachmentBuilder,

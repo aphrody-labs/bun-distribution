@@ -17,25 +17,25 @@ type SanitizedOptions = {
 type Sanitization<K> = Modify<K, SanitizedOptions>;
 
 type ApplicationCommandOptions = Sanitization<
-	WithOptional<import("@aphrody/discordx").ApplicationCommandOptions<string, string>, "description">
+	WithOptional<import("discordx").ApplicationCommandOptions<string, string>, "description">
 >;
 
 type SlashGroupOptions = Sanitization<
-	WithOptional<import("@aphrody/discordx").SlashGroupOptions<string, string, string>, "description">
+	WithOptional<import("discordx").SlashGroupOptions<string, string, string>, "description">
 >;
 
 type SlashOptionOptions = Sanitization<
-	WithOptional<import("@aphrody/discordx").SlashOptionOptions<string, string>, "description">
+	WithOptional<import("discordx").SlashOptionOptions<string, string>, "description">
 >;
 
 type SlashChoiceOption = Modify<
-	import("@aphrody/discordx").SlashChoiceType<string, string | number>,
+	import("discordx").SlashChoiceType<string, string | number>,
 	SanitizedOptions
 >;
 
 type ContextMenuOptionsX = Omit<
-	import("@aphrody/discordx").ApplicationCommandOptions<
-		import("@aphrody/discordx").NotEmpty<string>,
+	import("discordx").ApplicationCommandOptions<
+		import("discordx").NotEmpty<string>,
 		string
 	> & {
 		type: Exclude<

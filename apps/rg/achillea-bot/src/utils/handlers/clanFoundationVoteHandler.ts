@@ -1,7 +1,7 @@
 import type { EntityManager } from "@mikro-orm/core";
 import type { BaseMessageOptions, ButtonInteraction } from "discord.js";
 import { escapeMarkdown, userMention } from "discord.js";
-import type { Client } from "@aphrody/discordx";
+import type { Client } from "discordx";
 
 import { coreManagerConfig } from "@/configs";
 import type { Vote } from "@/entities";

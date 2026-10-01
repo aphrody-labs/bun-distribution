@@ -53,7 +53,7 @@
  * (v14.26.4) et citées à l'appel ; la logique qui décide est pure, dans
  * `lib/discord-admin.ts`, et couverte par `bun:test`.
  */
-import { Discord, Slash, SlashChoice, SlashGroup, SlashOption } from "@aphrody/discordx";
+import { Discord, Slash, SlashChoice, SlashGroup, SlashOption } from "discordx";
 import {
 	ActionRowBuilder,
 	ApplicationCommandOptionType,

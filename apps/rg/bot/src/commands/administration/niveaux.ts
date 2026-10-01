@@ -20,7 +20,7 @@
  * membres, annoncer chaque montée rend un salon illisible en une semaine, et le
  * staff finit toujours par couper le bot. On ne fête que ce qui se fête.
  */
-import { Discord, Slash, SlashChoice, SlashGroup, SlashOption } from "@aphrody/discordx";
+import { Discord, Slash, SlashChoice, SlashGroup, SlashOption } from "discordx";
 import {
 	ApplicationCommandOptionType,
 	ChannelType,

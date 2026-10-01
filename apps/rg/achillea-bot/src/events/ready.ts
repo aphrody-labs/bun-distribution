@@ -1,5 +1,5 @@
 import { ActivityType } from "discord.js";
-import { Client } from "@aphrody/discordx";
+import { Client } from "discordx";
 import { syncDiscordGuildSnapshot } from "@rosegriffon/discord-sync";
 
 import { discordBotProfile, generalConfig } from "@/configs";

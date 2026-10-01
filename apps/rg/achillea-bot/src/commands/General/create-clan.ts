@@ -1,4 +1,4 @@
-import { Category } from "@aphrody/utilities";
+import { Category } from "@discordx/utilities";
 import { rel } from "@mikro-orm/core";
 import type { BaseMessageOptions, CommandInteraction, GuildMember } from "discord.js";
 import {
@@ -9,8 +9,8 @@ import {
 	User,
 	userMention,
 } from "discord.js";
-import type { Client } from "@aphrody/discordx";
-import { Guard, Guild } from "@aphrody/discordx";
+import type { Client } from "discordx";
+import { Guard, Guild } from "discordx";
 import { container } from "tsyringe";
 
 import { coreManagerConfig } from "@/configs";

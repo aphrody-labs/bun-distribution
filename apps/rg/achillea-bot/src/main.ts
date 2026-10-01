@@ -3,7 +3,7 @@ import "dotenv/config";
 
 import process from "node:process";
 
-import { resolve } from "@aphrody/importer";
+import { resolve } from "@discordx/importer";
 import type { EntityManager } from "@mikro-orm/core";
 import { RequestContext } from "@mikro-orm/core";
 import chalk from "chalk";
@@ -14,7 +14,7 @@ import {
 	DIService,
 	MetadataStorage,
 	tsyringeDependencyRegistryEngine,
-} from "@aphrody/discordx";
+} from "discordx";
 import { container } from "tsyringe";
 import type { constructor } from "tsyringe/dist/typings/types";
 

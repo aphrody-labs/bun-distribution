@@ -1,5 +1,5 @@
 import type { Job } from "bullmq";
-import { Client } from "@aphrody/discordx";
+import { Client } from "discordx";
 
 import { MetricsService } from "@/services/MetricsService";
 import { SanctionService } from "@/services/SanctionService";

@@ -16,7 +16,7 @@
  * `required: true` — une consigne qu'aucun outil ne fait respecter n'est pas
  * une consigne.
  */
-import { ButtonComponent, Discord, ModalComponent, Slash, SlashChoice, SlashGroup, SlashOption } from "@aphrody/discordx";
+import { ButtonComponent, Discord, ModalComponent, Slash, SlashChoice, SlashGroup, SlashOption } from "discordx";
 import {
 	ActionRowBuilder,
 	ApplicationCommandOptionType,

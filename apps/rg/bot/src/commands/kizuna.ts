@@ -14,7 +14,7 @@
  * d'un salon. La table `bot_journal_kizuna` n'est d'ailleurs lisible par aucune
  * clé publique (RLS sans policy, cf. la migration).
  */
-import { Discord, Slash, SlashGroup, SlashOption } from "@aphrody/discordx";
+import { Discord, Slash, SlashGroup, SlashOption } from "discordx";
 import {
 	ApplicationCommandOptionType,
 	type ChatInputCommandInteraction,

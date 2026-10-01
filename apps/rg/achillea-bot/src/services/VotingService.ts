@@ -1,6 +1,6 @@
 import type { EntityManager } from "@mikro-orm/core";
 import type { ButtonInteraction } from "discord.js";
-import { Client } from "@aphrody/discordx";
+import { Client } from "discordx";
 
 import { evaluateProposalOutcome } from "@rosegriffon/achillea-core";
 import { delay, inject } from "tsyringe";

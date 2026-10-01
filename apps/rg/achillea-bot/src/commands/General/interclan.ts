@@ -1,8 +1,8 @@
-import { Category } from "@aphrody/utilities";
+import { Category } from "@discordx/utilities";
 import type { BaseMessageOptions, CommandInteraction } from "discord.js";
 import { ApplicationCommandOptionType, MessageFlags, userMention } from "discord.js";
-import type { Client } from "@aphrody/discordx";
-import { Guard } from "@aphrody/discordx";
+import type { Client } from "discordx";
+import { Guard } from "discordx";
 import { DateTime } from "luxon";
 
 import { Discord, Injectable, Slash, SlashGroup, SlashOption } from "@/decorators";

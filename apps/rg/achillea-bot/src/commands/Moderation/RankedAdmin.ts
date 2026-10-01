@@ -8,7 +8,7 @@ import {
 	MessageFlags,
 	userMention,
 } from "discord.js";
-import type { Client } from "@aphrody/discordx";
+import type { Client } from "discordx";
 
 import { adminManagerConfig } from "@/configs";
 import { Discord, Guild, Injectable, Slash, SlashGroup, SlashOption } from "@/decorators";

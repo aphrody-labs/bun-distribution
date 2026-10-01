@@ -26,7 +26,7 @@
  * permissions calculé dirait « ça devrait marcher » là où l'essai dit « ça
  * marche ».
  */
-import { Discord, Slash, SlashGroup, SlashOption } from "@aphrody/discordx";
+import { Discord, Slash, SlashGroup, SlashOption } from "discordx";
 import {
 	ApplicationCommandOptionType,
 	ChannelType,

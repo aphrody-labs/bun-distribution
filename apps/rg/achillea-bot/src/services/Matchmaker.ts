@@ -1,4 +1,4 @@
-import { Client } from "@aphrody/discordx";
+import { Client } from "discordx";
 import { asyncScheduler } from "rxjs";
 
 import { Schedule, Service } from "@/decorators";

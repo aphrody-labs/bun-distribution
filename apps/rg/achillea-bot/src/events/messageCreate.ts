@@ -1,4 +1,4 @@
-import type { ArgsOf, Client } from "@aphrody/discordx";
+import type { ArgsOf, Client } from "discordx";
 
 import { Discord, Guard, On } from "@/decorators";
 import { Maintenance } from "@/guards";

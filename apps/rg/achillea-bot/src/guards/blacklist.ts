@@ -1,6 +1,6 @@
 import { ButtonInteraction, CommandInteraction, ContextMenuCommandInteraction } from "discord.js";
-import type { ArgsOf, GuardFunction } from "@aphrody/discordx";
-import { SimpleCommandMessage } from "@aphrody/discordx";
+import type { ArgsOf, GuardFunction } from "discordx";
+import { SimpleCommandMessage } from "discordx";
 
 import { User } from "@/entities";
 import { Database } from "@/services";

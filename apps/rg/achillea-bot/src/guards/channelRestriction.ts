@@ -1,5 +1,5 @@
 import { CommandInteraction } from "discord.js";
-import type { GuardFunction } from "@aphrody/discordx";
+import type { GuardFunction } from "discordx";
 
 import { coreManagerConfig } from "@/configs";
 import { ClanMember } from "@/entities";

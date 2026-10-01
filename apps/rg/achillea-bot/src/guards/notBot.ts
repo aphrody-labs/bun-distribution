@@ -1,4 +1,4 @@
-import type { ArgsOf, GuardFunction } from "@aphrody/discordx";
+import type { ArgsOf, GuardFunction } from "discordx";
 
 import { resolveUser } from "@/utils/functions";
 

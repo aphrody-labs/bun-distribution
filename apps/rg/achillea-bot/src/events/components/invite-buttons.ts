@@ -1,7 +1,7 @@
 import { RequestContext } from "@mikro-orm/core";
 import type { BaseMessageOptions, ButtonInteraction } from "discord.js";
 import { MessageFlags, escapeMarkdown } from "discord.js";
-import type { Client } from "@aphrody/discordx";
+import type { Client } from "discordx";
 
 import { ButtonComponent, Discord, Guard, Injectable, SelectMenuComponent } from "@/decorators";
 import { ClanInvite, ClanMember } from "@/entities";

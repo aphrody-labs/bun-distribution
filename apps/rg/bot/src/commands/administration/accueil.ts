@@ -8,7 +8,7 @@
  * que verra vraiment le prochain arrivant — parce qu'un message d'accueil qu'on
  * découvre en production est un message qu'on corrige devant tout le monde.
  */
-import { Discord, Slash, SlashChoice, SlashGroup, SlashOption } from "@aphrody/discordx";
+import { Discord, Slash, SlashChoice, SlashGroup, SlashOption } from "discordx";
 import {
 	ApplicationCommandOptionType,
 	AttachmentBuilder,

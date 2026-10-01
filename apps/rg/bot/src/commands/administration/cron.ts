@@ -20,7 +20,7 @@
  * et la phrase de refus ; `packages/cron/src/lib/ipc-unix.ts` applique la MÊME
  * liste de son côté. Un garde qui ne vit que chez l'appelant n'est pas un garde.
  */
-import { Discord, Slash, SlashGroup, SlashOption } from "@aphrody/discordx";
+import { Discord, Slash, SlashGroup, SlashOption } from "discordx";
 import {
 	ApplicationCommandOptionType,
 	ChannelType,

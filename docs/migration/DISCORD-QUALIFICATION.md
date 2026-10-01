@@ -2,26 +2,16 @@
 
 # Discord qualification from the Aphrody root
 
-Run `bun run discord:verify` at the repository root. The command checks all
-2,232 source snapshot files against their recorded SHA-256 values, performs a
-frozen install of the nested Discord workspace, then runs its format, lint,
-build, typecheck, test, and external messaging package smoke checks. It also
-typechecks, tests, and builds the root `@aphrody/messaging` package.
+Run `bun run discord:verify` at the repository root.
 
-The independent source workspace lives at `upstream/discord` and remains byte-identical to `aphrody-discord` HEAD
-`959abfab4d026eed23aa038c7a78d97fc2837fac`. Bun places the declared
-`@typescript/typescript6` dependency under `packages/ui/node_modules`; the
-verification command exposes that locked copy at the nested workspace root so
-`unplugin-dts` can resolve the JavaScript compiler API. This creates only a
-link in ignored `node_modules` and does not modify the source manifest or lock.
+The verification audits the autonomous Discord contracts and packages:
+1. **Root catalog validation**: asserts that canonical Discord packages (`discordx`, `@discordx/di`, `@discordx/pagination`, `@discordx/importer`, `@discordx/utilities`, `discord.js`, `discord-api-types`) are locked in `workspaces.catalog`.
+2. **`@aphrody/messaging`**: runs typecheck, unit tests, and build under TypeScript 7.0.2 / Bun.
+3. **Consumer bots qualification (`--full`)**: runs typecheck against consumer apps (`@shenron/bot`).
 
-On 2026-09-29, `bun run discord:verify` passed: 39 build tasks, 61 typecheck
-tasks, 39 test tasks, the nested external messaging package smoke check, and
-the root messaging package's nine tests, typecheck, and build. The copied
-source's `@discordjs/rest` tests reported 103 passed and one skipped.
+## Autonomy and Upstream Elimination — 2026-10-01
 
-These checks qualify the copied code and package build. Consumer cutover,
-the root workspace closure, the real Discord OAuth consent callback, production
-permission profile, clean-clone release packaging, and deployed SHA/rollback
-proof remain separate release gates. Shenron's production bot and site continue
-to run from their current source and release paths until those gates pass.
+- The legacy nested checkout `upstream/discord` (3.9 GB, 2,232 files) was removed.
+- All consumer applications (`apps/shenron/bot`, `apps/rg/bot`, `apps/rg/achillea-bot`) now resolve unified `catalog:` versions from npm via the root `package.json`.
+- Missing type definitions in the former `@aphrody/discordx` fork were eliminated by migrating to standard `discordx@11.13.3`.
+- `packages/discord/aphrody-messaging` remains the active, Aphrody-owned Discord channel adapter.

@@ -30,7 +30,7 @@
  * échec de notre démon se lit comme un échec de la cible et envoie chercher au
  * mauvais endroit.
  */
-import { Discord, Slash, SlashGroup, SlashOption } from "@aphrody/discordx";
+import { Discord, Slash, SlashGroup, SlashOption } from "discordx";
 import { ApplicationCommandOptionType, type ChatInputCommandInteraction } from "discord.js";
 
 import { appelerCron } from "../../lib/cron-ipc";

@@ -38,7 +38,7 @@
  * le chemin contre l'origine du site qui publie, et borne au passage les images
  * du CDN (voir plus bas).
  */
-import { Discord, Slash, SlashChoice, SlashGroup, SlashOption } from "@aphrody/discordx";
+import { Discord, Slash, SlashChoice, SlashGroup, SlashOption } from "discordx";
 import {
 	ApplicationCommandOptionType,
 	AttachmentBuilder,

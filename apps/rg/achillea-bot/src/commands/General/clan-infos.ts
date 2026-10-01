@@ -1,4 +1,4 @@
-import { Category } from "@aphrody/utilities";
+import { Category } from "@discordx/utilities";
 import type {
 	BaseMessageOptions,
 	ButtonBuilder,
@@ -6,7 +6,7 @@ import type {
 	StringSelectMenuBuilder,
 } from "discord.js";
 import { ActionRowBuilder, ApplicationCommandOptionType, MessageFlags } from "discord.js";
-import type { Client } from "@aphrody/discordx";
+import type { Client } from "discordx";
 
 import { Discord, Injectable, Slash, SlashGroup, SlashOption } from "@/decorators";
 import { Clan } from "@/entities";

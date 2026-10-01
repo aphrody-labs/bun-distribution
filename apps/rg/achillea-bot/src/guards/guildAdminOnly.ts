@@ -1,5 +1,5 @@
 import { MessageFlags, PermissionFlagsBits } from "discord.js";
-import type { GuardFunction } from "@aphrody/discordx";
+import type { GuardFunction } from "discordx";
 
 import { followUpWithErrorEmbed } from "@/utils/functions";
 

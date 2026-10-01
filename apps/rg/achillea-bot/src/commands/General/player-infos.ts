@@ -1,4 +1,4 @@
-import { Category } from "@aphrody/utilities";
+import { Category } from "@discordx/utilities";
 import type { ButtonBuilder, CommandInteraction, GuildMember } from "discord.js";
 import {
 	ActionRowBuilder,
@@ -8,7 +8,7 @@ import {
 	MessageFlags,
 	User as DiscordUser,
 } from "discord.js";
-import type { Client } from "@aphrody/discordx";
+import type { Client } from "discordx";
 
 import { Discord, Injectable, Slash, SlashGroup, SlashOption } from "@/decorators";
 import { ClanMember, ClanMemberHistory, User } from "@/entities";

@@ -1,6 +1,6 @@
 import type { EntityManager } from "@mikro-orm/core";
 import { RequestContext } from "@mikro-orm/core";
-import type { GuardFunction } from "@aphrody/discordx";
+import type { GuardFunction } from "discordx";
 
 import { Database } from "@/services";
 import { resolveDependency } from "@/utils/functions";

@@ -17,7 +17,7 @@
  * `lib/tweets-format.ts`, qui est pur et couvert par ses propres tests. Ce
  * fichier ne fait que du câblage Discord.
  */
-import { ButtonComponent, Discord, Slash, SlashGroup, SlashOption } from "@aphrody/discordx";
+import { ButtonComponent, Discord, Slash, SlashGroup, SlashOption } from "discordx";
 import {
 	ActionRowBuilder,
 	ApplicationCommandOptionType,

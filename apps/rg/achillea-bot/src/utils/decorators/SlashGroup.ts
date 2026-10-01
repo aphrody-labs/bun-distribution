@@ -3,8 +3,8 @@ import type {
 	ClassMethodDecorator,
 	SlashGroupOptions as SlashGroupOptionsX,
 	VerifyName,
-} from "@aphrody/discordx";
-import * as discordx from "@aphrody/discordx";
+} from "discordx";
+import * as discordx from "discordx";
 const SlashGroupX = (discordx as any).SlashGroup;
 
 import {

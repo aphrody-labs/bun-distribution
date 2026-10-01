@@ -17,7 +17,7 @@
  *   `deploiement` — la version RÉELLEMENT servie par chaque application Next,
  *                   lue à la source (`state.json`, `live.env`, `RELEASE.json`).
  */
-import { Discord, Slash, SlashGroup, SlashOption } from "@aphrody/discordx";
+import { Discord, Slash, SlashGroup, SlashOption } from "discordx";
 import {
 	ApplicationCommandOptionType,
 	type AutocompleteInteraction,

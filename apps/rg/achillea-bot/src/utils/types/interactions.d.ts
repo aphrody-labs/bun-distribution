@@ -3,7 +3,7 @@
 
 type EmittedInteractions =
 	| import("discord.js").CommandInteraction
-	| import("@aphrody/discordx").SimpleCommandMessage
+	| import("discordx").SimpleCommandMessage
 	| import("discord.js").ContextMenuCommandInteraction;
 type OnTheFlyInteractions =
 	| import("discord.js").ButtonInteraction
@@ -21,8 +21,8 @@ type InteractionsConstants =
 	| "STRING_SELECT_MENU_INTERACTION"
 	| "MODAL_SUBMIT_INTERACTION";
 
-type CommandCategory = import("@aphrody/discordx").DApplicationCommand &
-	import("@aphrody/utilities").ICategory;
+type CommandCategory = import("discordx").DApplicationCommand &
+	import("@discordx/utilities").ICategory;
 
 type InteractionData = {
 	sanitizedLocale: import("src/i18n").Locales;

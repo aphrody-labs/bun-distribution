@@ -1,4 +1,4 @@
-import { Category } from "@aphrody/utilities";
+import { Category } from "@discordx/utilities";
 import type { CommandInteraction } from "discord.js";
 import { ApplicationCommandOptionType, AttachmentBuilder, MessageFlags } from "discord.js";
 

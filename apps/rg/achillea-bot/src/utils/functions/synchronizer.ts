@@ -1,6 +1,6 @@
 import type { User as DUser } from "discord.js";
 import { GuildMember } from "discord.js";
-import type { Client } from "@aphrody/discordx";
+import type { Client } from "discordx";
 
 import { Guild, User, UserElo, UserExperience } from "@/entities";
 import { Database, Logger, Stats } from "@/services";

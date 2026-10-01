@@ -1,5 +1,5 @@
 import type { Guild } from "discord.js";
-import { Client } from "@aphrody/discordx";
+import { Client } from "discordx";
 import { CompiledQuery, type Kysely } from "kysely";
 import { createAchilleaSql } from "@rosegriffon/db/achillea-sql";
 

@@ -11,7 +11,7 @@ import type {
 	StringSelectMenuInteraction,
 	VoiceState,
 } from "discord.js";
-import type { SimpleCommandMessage } from "@aphrody/discordx";
+import type { SimpleCommandMessage } from "discordx";
 
 import packageJson from "../../../package.json";
 

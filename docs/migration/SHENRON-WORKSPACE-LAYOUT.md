@@ -7,8 +7,8 @@
   `@shenron/*` workspace dependencies are preserved. Compatible TypeScript,
   Bun types, React, Zod, and Oxlint dependencies use Aphrody's root catalog.
 - `packages/discord/aphrody-messaging` is the Aphrody-owned Discord package.
-  The complete Discord.js/Discordx fork stays in its own pinned workspace at
-  `upstream/discord`, outside the root Bun workspace.
+  The Discord framework dependencies (`discordx`, `@discordx/*`, `discord.js`) are
+  managed autonomously via the root Bun catalog, with no upstream fork checkout.
 - `@aphrody/workspace` exposes Shenron through
   `packages/infra/aphrody-workspace/src/shenron.ts`: workspace status and
   declared-script execution, shared script audit, source-map migrations, and

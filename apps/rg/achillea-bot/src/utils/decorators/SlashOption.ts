@@ -1,6 +1,6 @@
 import { of } from "case";
-import type { SlashOptionOptions as SlashOptionOptionsX, VerifyName } from "@aphrody/discordx";
-import * as discordx from "@aphrody/discordx";
+import type { SlashOptionOptions as SlashOptionOptionsX, VerifyName } from "discordx";
+import * as discordx from "discordx";
 const SlashOptionX = (discordx as any).SlashOption;
 
 import { InvalidOptionName } from "@/errors";

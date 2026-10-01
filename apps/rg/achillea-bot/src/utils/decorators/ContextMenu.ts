@@ -1,5 +1,5 @@
 import { ApplicationCommandType } from "discord.js";
-import * as discordx from "@aphrody/discordx";
+import * as discordx from "discordx";
 const ContextMenuX = (discordx as any).ContextMenu;
 
 import {

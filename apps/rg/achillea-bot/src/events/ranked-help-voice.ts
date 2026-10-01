@@ -1,4 +1,4 @@
-import type { ArgsOf, Client } from "@aphrody/discordx";
+import type { ArgsOf, Client } from "discordx";
 import type { TextChannel } from "discord.js";
 
 import { coreManagerConfig } from "@/configs";

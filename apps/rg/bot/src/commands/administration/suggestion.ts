@@ -13,7 +13,7 @@
  * apprendre. C'est la même règle que le motif de fermeture d'un ticket, et pour
  * la même raison.
  */
-import { Discord, Slash, SlashChoice, SlashGroup, SlashOption } from "@aphrody/discordx";
+import { Discord, Slash, SlashChoice, SlashGroup, SlashOption } from "discordx";
 import {
 	ApplicationCommandOptionType,
 	ChannelType,

@@ -18,7 +18,7 @@
   },
   "dependencies": {
     "@aphrody/canvas": "workspace:*",
-    "@aphrody/discordx": "catalog:",
+    "discordx": "catalog:",
     "@rosegriffon/achillea-client": "workspace:*",
     "@rosegriffon/azalee": "workspace:*",
     "@rosegriffon/db": "workspace:*",

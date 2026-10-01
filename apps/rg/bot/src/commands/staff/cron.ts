@@ -12,7 +12,7 @@
  * avec le pont branché. Tant qu'elle manque, ces commandes le disent avec
  * l'unité à redémarrer — jamais « erreur inconnue ».
  */
-import { Discord, Slash, SlashGroup, SlashOption } from "@aphrody/discordx";
+import { Discord, Slash, SlashGroup, SlashOption } from "discordx";
 import {
 	ApplicationCommandOptionType,
 	type AutocompleteInteraction,

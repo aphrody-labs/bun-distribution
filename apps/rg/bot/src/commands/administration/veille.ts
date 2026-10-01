@@ -30,7 +30,7 @@
  * La catégorie `leak` est exclue EN DUR (`CATEGORIES_INTERDITES`) : aucune
  * option de cette commande ne peut la faire annoncer.
  */
-import { Discord, Slash, SlashGroup, SlashOption } from "@aphrody/discordx";
+import { Discord, Slash, SlashGroup, SlashOption } from "discordx";
 import {
 	ApplicationCommandOptionType,
 	ChannelType,
