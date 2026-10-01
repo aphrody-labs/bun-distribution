@@ -750,3 +750,22 @@ heuristique ; aucun changement Git ne doit être attribué sans preuve.
 - Preuves : [runtime domaines](docs/operations/ai/agent-domain-runtime-qualification-2026-10-01.json),
   [Docs DBFR](docs/operations/ai/dbfr-drive-markdown-2026-10-01.json),
   [sauvegarde modèles](docs/operations/ai/agent-home-trained-artifact-sync-2026-10-01.json).
+
+### RAPTOR euclidien et gates Agent Home — 2026-10-01
+
+- FAIT : moyennes et distances carrées du raffinement AHC appartiennent à
+  `rag-core`. Les adaptateurs Python préservent float32 UMAP et float64 ; tri,
+  argmin, arrêt avant remappage et itérations restent dans la politique Python.
+  Noyau direct sans tableau N×K×D ; réduction compatible avec les cas NumPy
+  vérifiés. Le contre-exemple seed37 qui change un label par promotion passe.
+- Gates : neuf tests de noyaux, Clippy Rust ciblé, 59 tests consommateur installé
+  et 15 tests packaging réussis. Wheel et sdist construits depuis la révision
+  Rust 2153ec6f ; reconstruction isolée réussie et extension identique.
+  Les wheels complets diffèrent par timestamp/UUID du SBOM et RECORD associé.
+- INCOMPLET : budget performance ouvert (float32 2,45× plus lent, float64
+  0,64× le temps NumPy sur 256×32×97, médiane sept runs). Le reste des calculs
+  et des consommateurs RAG reste à qualifier ; aucune clôture globale.
+- FAIT : intégrations Agent Home hermétiques, 104 unitaires + trois intégrations
+  + un doctest et Clippy ciblé réussis ; ancien gate profils privés corrigé.
+- Preuves : [RAPTOR euclidien](docs/operations/ai/raptor-euclidean-qualification-2026-10-01.json),
+  [Agent Home](docs/operations/ai/agent-home-integration-qualification-2026-10-01.json).

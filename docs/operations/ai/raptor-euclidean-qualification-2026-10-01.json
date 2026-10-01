@@ -1,0 +1,86 @@
+{
+  "scope": "RAPTOR centroid arithmetic through canonical Rust, dtype-preserving Python adapter and installed wheel",
+  "canonicalRevision": "2153ec6f0b1bc569e9c3939ba379c815a9e4b426",
+  "sourceArchiveSha256": "9aa5b9392581a8e51271701c42e39377eea257a5ca6826e2f458ceae8f5374b0",
+  "gates": {
+    "rustVectorTests": 9,
+    "scopedRustClippy": "pass -D warnings",
+    "pythonInstalledConsumerTests": 59,
+    "pythonBackendTests": 15,
+    "finalCombinedInstalledTests": 74,
+    "ruff": "pass",
+    "wheelBuild": "pass",
+    "isolatedSdistRebuild": "pass"
+  },
+  "cases": [
+    "float32 and float64",
+    "widths 0/1/7/8/12/16/97/129/257",
+    "NaNs, exact and near ties",
+    "negative and noncontiguous labels",
+    "max_iter 0/1/5",
+    "input labels preserved",
+    "UMAP seed37 float32 promotion counterexample"
+  ],
+  "artifacts": [
+    {
+      "path": "/tmp/aphrody-centroid-final-wheels/aphrody-0.1.0-cp311-abi3-linux_x86_64.whl",
+      "wheelSha256": "9d13184f34e99bd065f777929cc5dce15f1571c55aa8c8abfaed12e6cc12252e",
+      "extensionSha256": "53c6efd346a74076161091e7f190d7a9d6655d23b5d2c1ba7264bdff283c79fc"
+    },
+    {
+      "path": "/tmp/aphrody-centroid-sdist-rebuilt/aphrody-0.1.0-cp311-abi3-linux_x86_64.whl",
+      "wheelSha256": "f09744425910547b6eb3f1e264f977cd7492d6a5c44523ee49d15a729fc13803",
+      "extensionSha256": "53c6efd346a74076161091e7f190d7a9d6655d23b5d2c1ba7264bdff283c79fc"
+    }
+  ],
+  "reproducibility": {
+    "extensionByteIdentical": true,
+    "wholeWheelByteIdentical": false,
+    "differingMembers": [
+      "RECORD",
+      "CycloneDX SBOM"
+    ],
+    "difference": "SBOM timestamp and generated serialNumber only"
+  },
+  "benchmark": [
+    {
+      "dtype": "<class 'numpy.float32'>",
+      "shape": [
+        256,
+        32,
+        97
+      ],
+      "bitwiseDistancesEqual": true,
+      "medianSeconds": {
+        "numpy": 0.0005202370011829771,
+        "native": 0.0012745689964503981
+      },
+      "nativeToNumpyRatio": 2.449977593966078
+    },
+    {
+      "dtype": "<class 'numpy.float64'>",
+      "shape": [
+        256,
+        32,
+        97
+      ],
+      "bitwiseDistancesEqual": true,
+      "medianSeconds": {
+        "numpy": 0.0010925530004897155,
+        "native": 0.0007045820020721294
+      },
+      "nativeToNumpyRatio": 0.6448950318715104
+    }
+  ],
+  "limitations": [
+    "Performance budget remains open: measured float32 seam is slower than NumPy",
+    "Full RAG owner and consumers remain under qualification",
+    "No global PLAN completion claim"
+  ],
+  "logs": [
+    "/tmp/aphrody-centroid-final-consumer-tests.log",
+    "/tmp/aphrody-centroid-final-wheel-build.log",
+    "/tmp/aphrody-centroid-sdist-rebuild.log"
+  ],
+  "pythonRevision": "be45698"
+}
