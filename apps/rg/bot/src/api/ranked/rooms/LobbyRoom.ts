@@ -122,7 +122,7 @@ export class LobbyRoom extends Room<LobbyState> {
 	}
 
 	override async onAuth(_client: Client, options: any, request: any): Promise<SessionUser> {
-		const auth = authFromColyseus(options, request);
+		const auth = await authFromColyseus(options, request);
 		if (auth) return auth;
 		throw new Error("Non authentifié");
 	}

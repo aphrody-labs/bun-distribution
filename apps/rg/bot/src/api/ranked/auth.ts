@@ -1,80 +1,65 @@
-// Adaptateurs transport pour le contrat d'auth centralisé.
+// Transport adapters for the shared purpose-bound Achillea contract.
 import {
-	getCookieValue,
-	SESSION_COOKIE_NAME,
-	type SessionIdentity,
-	verifyRealtimeToken,
-	verifySessionToken,
-} from "@/auth";
+  ACHILLEA_SESSION_COOKIE_NAME,
+  type AchilleaSessionIdentity,
+  verifyAchilleaRealtimeToken,
+  verifyAchilleaSessionToken,
+} from "@rosegriffon/achillea-core/auth";
 
-export type SessionUser = SessionIdentity;
+export type SessionUser = AchilleaSessionIdentity;
 
 export function getCookie(cookieHeader: string | null, name: string): string | null {
-	return getCookieValue(cookieHeader, name);
+  return cookieHeader ? new Bun.CookieMap(cookieHeader).get(name) : null;
 }
 
-export function verifyToken(token: string): SessionUser {
-	return verifyRealtimeToken(token);
+export async function verifyToken(token: string): Promise<SessionUser> {
+  const user = await verifyAchilleaRealtimeToken(token, process.env.JWT_SECRET_KEY ?? "");
+  if (!user) throw new Error("Invalid realtime token");
+  return user;
 }
 
-export function authFromCookieHeader(header: string | null): SessionUser | null {
-	const token = getCookie(header, SESSION_COOKIE_NAME);
-	if (!token) return null;
-	try {
-		return verifySessionToken(token);
-	} catch {
-		return null;
-	}
+export async function authFromCookieHeader(header: string | null): Promise<SessionUser | null> {
+  const token = getCookie(header, ACHILLEA_SESSION_COOKIE_NAME);
+  return token ? verifyAchilleaSessionToken(token, process.env.JWT_SECRET_KEY ?? "") : null;
 }
 
-export function authFromAuthorization(header: string | null): SessionUser | null {
-	if (!header) return null;
-	const m = /^Bearer\s+(.+)$/i.exec(header);
-	if (!m) return null;
-	try {
-		return verifyToken(m[1]);
-	} catch {
-		return null;
-	}
+export async function authFromAuthorization(header: string | null): Promise<SessionUser | null> {
+  const token = header ? /^Bearer\s+(.+)$/i.exec(header.trim())?.[1] : undefined;
+  return token ? verifyAchilleaRealtimeToken(token, process.env.JWT_SECRET_KEY ?? "") : null;
 }
 
-// Lit un en-tête quel que soit le support : objet plain (`{ cookie: "..." }`)
-// ou instance Web `Headers` (transport Bun WebSockets → `headers.get(name)`).
+function readField(value: unknown, name: string): unknown {
+  return value !== null && typeof value === "object"
+    ? (value as Record<string, unknown>)[name]
+    : undefined;
+}
+
 function readHeader(headers: unknown, name: string): string | null {
-	if (!headers) return null;
-	if (typeof (headers as Headers).get === "function") {
-		return (headers as Headers).get(name);
-	}
-	const v = (headers as Record<string, unknown>)[name];
-	return typeof v === "string" ? v : null;
+  if (headers instanceof Headers) return headers.get(name);
+  if (headers !== null && typeof headers === "object") {
+    const entry = Object.entries(headers).find(([key]) => key.toLowerCase() === name);
+    if (typeof entry?.[1] === "string") return entry[1];
+  }
+  return null;
 }
 
-// Auth unifiée pour Colyseus `onAuth(client, options, context)`.
-// Colyseus 0.17 (transport Bun) fournit un `context = { token, headers, ip }` :
-//   - `context.token` = `_authToken` (query) ?? Bearer de l'en-tête Authorization,
-//   - `context.headers` = instance `Headers` (donc accès via `.get()`).
-// On tente, dans l'ordre : context.token → cookie `token` → Authorization → options.token.
-export function authFromColyseus(options: any, context: any): SessionUser | null {
-	const ctxToken = typeof context?.token === "string" ? context.token : null;
-	if (ctxToken) {
-		try {
-			return verifyToken(ctxToken);
-		} catch {
-			/* on continue avec les autres sources */
-		}
-	}
-	const cookieHeader = readHeader(context?.headers, "cookie");
-	const fromCookie = authFromCookieHeader(cookieHeader);
-	if (fromCookie) return fromCookie;
-	const authHeader = readHeader(context?.headers, "authorization");
-	const fromAuth = authFromAuthorization(authHeader);
-	if (fromAuth) return fromAuth;
-	if (typeof options?.token === "string") {
-		try {
-			return verifyToken(options.token);
-		} catch {
-			return null;
-		}
-	}
-	return null;
+/** Resolve Colyseus credentials in context, cookie, bearer, then options order. */
+export async function authFromColyseus(
+  options: unknown,
+  context: unknown,
+): Promise<SessionUser | null> {
+  const ctxToken = readField(context, "token");
+  if (typeof ctxToken === "string") {
+    const user = await verifyAchilleaRealtimeToken(ctxToken, process.env.JWT_SECRET_KEY ?? "");
+    if (user) return user;
+  }
+  const headers = readField(context, "headers");
+  const fromCookie = await authFromCookieHeader(readHeader(headers, "cookie"));
+  if (fromCookie) return fromCookie;
+  const fromAuth = await authFromAuthorization(readHeader(headers, "authorization"));
+  if (fromAuth) return fromAuth;
+  const optionsToken = readField(options, "token");
+  return typeof optionsToken === "string"
+    ? verifyAchilleaRealtimeToken(optionsToken, process.env.JWT_SECRET_KEY ?? "")
+    : null;
 }

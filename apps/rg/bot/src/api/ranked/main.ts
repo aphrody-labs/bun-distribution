@@ -76,9 +76,9 @@ const ALLOWED_ORIGINS = [
 await fs.mkdir(STORAGE_DIR, { recursive: true });
 
 // Resolve auth from a request (cookie ou Authorization header).
-function resolveAuth(req: express.Request): SessionUser | null {
+async function resolveAuth(req: express.Request): Promise<SessionUser | null> {
 	const cookieHeader = req.headers.cookie ?? null;
-	const fromCookie = authFromCookieHeader(cookieHeader);
+	const fromCookie = await authFromCookieHeader(cookieHeader);
 	if (fromCookie) return fromCookie;
 	return authFromAuthorization(req.headers.authorization ?? null);
 }
@@ -215,7 +215,7 @@ async function authorizeStaff(req: express.Request, needAdmin: boolean): Promise
 		const actor = req.headers["x-internal-actor"];
 		return { ok: true, actorId: typeof actor === "string" ? actor : null };
 	}
-	const auth = resolveAuth(req);
+	const auth = await resolveAuth(req);
 	if (!auth) return { ok: false, status: 401, error: "unauthenticated" };
 	const role = await userRole(auth.id);
 	if (role < (needAdmin ? 2 : 1)) return { ok: false, status: 403, error: "forbidden" };
@@ -339,7 +339,7 @@ const server = defineServer({
 		// toUserId? }. Si `toUserId` est fourni (revanche), une notification `rematch_offer` est
 		// poussée à ce joueur. Renvoie { code, url, mode, ranked, expiresAt }.
 		app.post("/api/ranked/challenge", async (req, res) => {
-			const auth = resolveAuth(req);
+			const auth = await resolveAuth(req);
 			if (!auth) {
 				res.status(401).json({ error: "unauthenticated" });
 				return;
@@ -397,8 +397,8 @@ const server = defineServer({
 		});
 
 		// GET /api/ranked/challenge/:code — aperçu d'un défi (qui invite, mode, classé).
-		app.get("/api/ranked/challenge/:code", (req, res) => {
-			const auth = resolveAuth(req);
+		app.get("/api/ranked/challenge/:code", async (req, res) => {
+			const auth = await resolveAuth(req);
 			if (!auth) {
 				res.status(401).json({ error: "unauthenticated" });
 				return;
@@ -435,7 +435,7 @@ const server = defineServer({
 		// la réservation de l'accepteur. L'inviteur (présent sur la page ranked) reçoit la
 		// sienne via la LobbyRoom ; à défaut, le push Socket.IO `match_found` (auto-join front).
 		app.post("/api/ranked/challenge/:code/accept", async (req, res) => {
-			const auth = resolveAuth(req);
+			const auth = await resolveAuth(req);
 			if (!auth) {
 				res.status(401).json({ error: "unauthenticated" });
 				return;
@@ -495,8 +495,8 @@ const server = defineServer({
 		});
 
 		// DELETE /api/ranked/challenge/:code — l'inviteur annule son défi en attente.
-		app.delete("/api/ranked/challenge/:code", (req, res) => {
-			const auth = resolveAuth(req);
+		app.delete("/api/ranked/challenge/:code", async (req, res) => {
+			const auth = await resolveAuth(req);
 			if (!auth) {
 				res.status(401).json({ error: "unauthenticated" });
 				return;
@@ -514,7 +514,7 @@ const server = defineServer({
 			"/api/ranked/:lobbyId/dispute",
 			express.text({ type: () => true, limit: "8mb" }),
 			async (req, res) => {
-				const auth = resolveAuth(req);
+				const auth = await resolveAuth(req);
 				if (!auth) {
 					res.status(401).json({ error: "unauthenticated" });
 					return;
