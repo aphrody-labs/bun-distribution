@@ -30,6 +30,10 @@ if [ -z "$NODE_BIN" ] || [ ! -x "$NODE_BIN" ]; then
 fi
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd -- "$SCRIPT_DIR/../.." && pwd)"
+# Shared Rose Griffon assets come from @rosegriffon/assets (single source); copy
+# the files the website serves into public/ before building.
+BUN_BIN="${BUN_BIN:-$(command -v bun || printf '%s' "$HOME/.bun/bin/bun")}"
+"$BUN_BIN" "$REPO_ROOT/packages/rg/assets/scripts/sync-website-public.ts" --to "$PWD/public" || exit 1
 APP_PATH="$(realpath --relative-to="$REPO_ROOT" "$PWD")"
 if [[ "$APP_PATH" == .. || "$APP_PATH" == ../* ]]; then
 	echo "✗ build lancé hors du workspace Aphrody" >&2

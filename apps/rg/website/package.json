@@ -3,6 +3,7 @@
   "version": "1.0.1",
   "private": true,
   "scripts": {
+    "predev": "bun ../../../packages/rg/assets/scripts/sync-website-public.ts --to public",
     "dev": "bun run --bun next dev",
     "test": "bun test src",
     "test:ui": "bun --bun vitest --ui",
