@@ -360,10 +360,10 @@ fn run_to_prompt(args: &ToPromptArgs) -> Result<u8> {
 fn find_in_registry(name: &str, source: Option<&str>) -> Vec<(SourceSlug, PathBuf)> {
     let mut hits = Vec::new();
     for spec in active_sources() {
-        if let Some(s) = source {
-            if spec.slug.as_str() != s {
-                continue;
-            }
+        if let Some(s) = source
+            && spec.slug.as_str() != s
+        {
+            continue;
         }
         for sk in discover_skills(spec) {
             if sk.name == name {
@@ -619,10 +619,10 @@ fn run_sync(args: &SyncArgs) -> Result<u8> {
         )?;
     }
     writeln!(stdout, "done — {total} skill(s), {total_bytes} bytes total.")?;
-    if !args.dry_run {
-        if let Ok(m) = read_manifest() {
-            writeln!(stdout, "manifest: {} entries tracked.", m.entries.len())?;
-        }
+    if !args.dry_run
+        && let Ok(m) = read_manifest()
+    {
+        writeln!(stdout, "manifest: {} entries tracked.", m.entries.len())?;
     }
     Ok(0)
 }
@@ -729,10 +729,10 @@ fn run_update(args: &UpdateArgs) -> Result<u8> {
 /// override (`APHRODY_PLUGIN_BASE`); the manifest resolves the rest.
 fn plugin_bases() -> Vec<PathBuf> {
     let mut bases: Vec<PathBuf> = Vec::new();
-    if let Ok(b) = std::env::var("APHRODY_PLUGIN_BASE") {
-        if !b.is_empty() {
-            bases.push(PathBuf::from(b));
-        }
+    if let Ok(b) = std::env::var("APHRODY_PLUGIN_BASE")
+        && !b.is_empty()
+    {
+        bases.push(PathBuf::from(b));
     }
     let cwd = std::env::current_dir().unwrap_or_else(|_| PathBuf::from("."));
     let mut dir = cwd.clone();

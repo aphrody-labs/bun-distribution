@@ -64,7 +64,7 @@ pub fn split_frontmatter(src: &str) -> (String, String) {
 fn strip_open_fence(s: &str) -> Option<&str> {
     let rest = s.strip_prefix("---")?;
     // Allow trailing spaces, then require a newline.
-    let rest = rest.trim_start_matches(|c: char| c == ' ' || c == '\t');
+    let rest = rest.trim_start_matches([' ', '\t']);
     if let Some(r) = rest.strip_prefix("\r\n") {
         return Some(r);
     }

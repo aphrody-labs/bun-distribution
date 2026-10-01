@@ -538,3 +538,70 @@ async fn test_qwen3_hybrid_rag_with_mrl_and_reranker() {
     assert!(result.hits[0].chunk.content.contains("Qwen3-Reranker-0.6B"));
     assert!(result.hits[0].score > 0.0);
 }
+
+/// A failed replacement must preserve metadata, lexical chunks and dense
+/// vectors together, so the unchanged hash remains retryable.
+#[tokio::test]
+async fn index_document_failure_preserves_previous_corpus_and_retries() {
+    let dir = tempdir().unwrap();
+    let db = dir.path().join("rag.sqlite");
+    let store = Arc::new(RagStore::open(&db).unwrap());
+    let indexer = RagIndexer::new(store.clone()).with_embedder(Arc::new(StubEmbedder::with_model_and_dim("stub-8", 8)));
+    let opts = IndexOptions::default();
+    let original = "# Original\n\nneedle original corpus.";
+    let replacement = "# Replacement\n\nreplacement corpus.";
+    indexer.index_document("source.md", original, 42, 1, &opts).await.unwrap();
+    let before = store.get_doc_by_path("source.md").await.unwrap().unwrap();
+    let before_stats = store.stats().await.unwrap();
+    assert!(before_stats.vector_count > 0);
+    let conn = rusqlite::Connection::open(&db).unwrap();
+    conn.execute_batch("CREATE TRIGGER reject_replacement BEFORE INSERT ON chunks BEGIN SELECT RAISE(ABORT, 'injected failure'); END;").unwrap();
+
+    assert!(indexer.index_document("source.md", replacement, 99, 2, &opts).await.is_err());
+    let after = store.get_doc_by_path("source.md").await.unwrap().unwrap();
+    assert_eq!(after.id, before.id);
+    assert_eq!(after.hash, before.hash);
+    assert_eq!(
+        (after.title, after.language, after.size_bytes, after.mtime_ms),
+        (before.title, before.language, before.size_bytes, before.mtime_ms)
+    );
+    let after_stats = store.stats().await.unwrap();
+    assert_eq!(after_stats.chunk_count, before_stats.chunk_count);
+    assert_eq!(after_stats.vector_count, before_stats.vector_count);
+    assert!(!store.search_lexical("needle", 10).await.unwrap().is_empty());
+    assert!(store.search_lexical("replacement", 10).await.unwrap().is_empty());
+
+    conn.execute_batch("DROP TRIGGER reject_replacement;").unwrap();
+    assert!(
+        indexer.index_document("source.md", replacement, 99, 2, &opts).await.unwrap().is_some()
+    );
+    assert!(store.search_lexical("needle", 10).await.unwrap().is_empty());
+    assert!(!store.search_lexical("replacement", 10).await.unwrap().is_empty());
+    assert_eq!(store.get_doc_by_path("source.md").await.unwrap().unwrap().mtime_ms, 2);
+}
+
+#[tokio::test]
+async fn index_document_empty_replacement_clears_chunks_and_vectors() {
+    let store = Arc::new(RagStore::open_in_memory().unwrap());
+    let indexer = RagIndexer::new(store.clone()).with_embedder(Arc::new(StubEmbedder::with_model_and_dim("stub-8", 8)));
+    let opts = IndexOptions::default();
+    indexer.index_document("source.md", "original needle", 15, 1, &opts).await.unwrap();
+    assert!(store.stats().await.unwrap().vector_count > 0);
+    assert_eq!(indexer.index_document("source.md", "", 0, 2, &opts).await.unwrap(), Some((0, 0)));
+    let stats = store.stats().await.unwrap();
+    assert_eq!((stats.doc_count, stats.chunk_count, stats.vector_count), (1, 0, 0));
+    assert!(store.search_lexical("needle", 10).await.unwrap().is_empty());
+    assert_eq!(indexer.index_document("source.md", "", 0, 3, &opts).await.unwrap(), None);
+}
+
+#[tokio::test]
+async fn upsert_doc_returns_its_own_id_after_other_inserts() {
+    let store = RagStore::open_in_memory().unwrap();
+    let first = store.upsert_doc("first.md", "old", None, None, 1, 10).await.unwrap();
+    let second = store.upsert_doc("second.md", "second", None, None, 1, 10).await.unwrap();
+    assert_ne!(first, second);
+    let updated = store.upsert_doc("first.md", "new", None, None, 2, 20).await.unwrap();
+    assert_eq!(updated, first);
+    assert_eq!(store.get_doc_by_path("first.md").await.unwrap().unwrap().hash, "new");
+    assert_eq!(store.get_doc_by_path("second.md").await.unwrap().unwrap().id, second);
+}

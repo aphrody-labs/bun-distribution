@@ -271,7 +271,7 @@ impl Supervisor {
     /// stopped; the agent is removed regardless.
     pub fn shutdown(&mut self, id: impl Into<AgentId>) -> Result<(), SupervisorError> {
         let id = id.into();
-        let entry = self.agents.remove(&id).ok_or_else(|| SupervisorError::UnknownAgent(id))?;
+        let entry = self.agents.remove(&id).ok_or(SupervisorError::UnknownAgent(id))?;
         // Best-effort: if the actor already stopped, the op is simply dropped.
         let _ = entry.handle.submit(Op::Shutdown);
         entry.forwarder.abort();

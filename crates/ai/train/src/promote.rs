@@ -5,6 +5,7 @@
 //! the untouched gold baseline without regressing specific tags:
 //! - ΔRecall@5 ≥ +0.01 (min improvement)
 //! - Max per-tag regression ≤ 0.03
+//!
 //! If rejected, an explanation is returned and exit code 3 is signaled.
 
 use std::{

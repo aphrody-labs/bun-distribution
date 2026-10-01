@@ -110,42 +110,42 @@ pub fn plugin_skill_dirs(base: &Path) -> Vec<PathBuf> {
 
     // marketplace.json (multi-plugin catalog).
     let marketplace = base.join(".claude-plugin").join("marketplace.json");
-    if let Ok(raw) = std::fs::read_to_string(&marketplace) {
-        if let Ok(m) = serde_json::from_str::<MarketplaceManifest>(&raw) {
-            let plugin_root = m.metadata.and_then(|x| x.plugin_root);
-            let valid_root = plugin_root.as_deref().is_none_or(is_valid_relative);
-            if valid_root {
-                for plugin in &m.plugins {
-                    let source = match &plugin.source {
-                        None => None,
-                        Some(serde_json::Value::String(s)) => Some(s.clone()),
-                        // Remote `{ source, repo }` object — not a local path.
-                        Some(_) => continue,
-                    };
-                    if let Some(s) = &source {
-                        if !is_valid_relative(s) {
-                            continue;
-                        }
-                    }
-                    let mut plugin_base = base.to_path_buf();
-                    if let Some(root) = &plugin_root {
-                        plugin_base = plugin_base.join(root);
-                    }
-                    if let Some(s) = &source {
-                        plugin_base = plugin_base.join(s);
-                    }
-                    add_plugin_skill_paths(&plugin_base, &plugin.skills, base, &mut dirs);
+    if let Ok(raw) = std::fs::read_to_string(&marketplace)
+        && let Ok(m) = serde_json::from_str::<MarketplaceManifest>(&raw)
+    {
+        let plugin_root = m.metadata.and_then(|x| x.plugin_root);
+        let valid_root = plugin_root.as_deref().is_none_or(is_valid_relative);
+        if valid_root {
+            for plugin in &m.plugins {
+                let source = match &plugin.source {
+                    None => None,
+                    Some(serde_json::Value::String(s)) => Some(s.clone()),
+                    // Remote `{ source, repo }` object — not a local path.
+                    Some(_) => continue,
+                };
+                if let Some(s) = &source
+                    && !is_valid_relative(s)
+                {
+                    continue;
                 }
+                let mut plugin_base = base.to_path_buf();
+                if let Some(root) = &plugin_root {
+                    plugin_base = plugin_base.join(root);
+                }
+                if let Some(s) = &source {
+                    plugin_base = plugin_base.join(s);
+                }
+                add_plugin_skill_paths(&plugin_base, &plugin.skills, base, &mut dirs);
             }
         }
     }
 
     // plugin.json (single plugin rooted at base).
     let plugin_json = base.join(".claude-plugin").join("plugin.json");
-    if let Ok(raw) = std::fs::read_to_string(&plugin_json) {
-        if let Ok(m) = serde_json::from_str::<PluginManifest>(&raw) {
-            add_plugin_skill_paths(base, &m.skills, base, &mut dirs);
-        }
+    if let Ok(raw) = std::fs::read_to_string(&plugin_json)
+        && let Ok(m) = serde_json::from_str::<PluginManifest>(&raw)
+    {
+        add_plugin_skill_paths(base, &m.skills, base, &mut dirs);
     }
 
     dirs.into_iter().collect()

@@ -101,19 +101,17 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     hash_input(&config.input_path, &mut input_hasher)?;
     hash_input(&config.gold_path, &mut input_hasher)?;
     let input_hash = input_hasher.finalize().to_hex().to_string();
-    if let Ok(bytes) = fs::read(&state_path) {
-        if let Ok(previous) = serde_json::from_slice::<State>(&bytes) {
-            if previous.revision == snapshot.revision
-                && previous.config_hash == config_hash
-                && previous.input_hash == input_hash
-            {
-                println!(
-                    "{}",
-                    serde_json::json!({"training":"unchanged","job_id":previous.job_id})
-                );
-                return Ok(());
-            }
-        }
+    if let Ok(bytes) = fs::read(&state_path)
+        && let Ok(previous) = serde_json::from_slice::<State>(&bytes)
+        && previous.revision == snapshot.revision
+        && previous.config_hash == config_hash
+        && previous.input_hash == input_hash
+    {
+        println!(
+            "{}",
+            serde_json::json!({"training":"unchanged","job_id":previous.job_id})
+        );
+        return Ok(());
     }
     let job_id =
         format!("dbfr-{}-{}-{}", config.kind.as_str(), &snapshot.revision[..8], &input_hash[..8]);

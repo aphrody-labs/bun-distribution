@@ -548,10 +548,10 @@ fn render_rule(rule: &ToolRule) -> String {
 /// Extract the canonical "subject" string for a tool call: the value that the
 /// matcher glob is tested against.
 fn derive_subject(tool: &str, args: &serde_json::Value) -> String {
-    if tool == "Bash" {
-        if let Some(cmd) = args.get("command").and_then(|v| v.as_str()) {
-            return cmd.to_string();
-        }
+    if tool == "Bash"
+        && let Some(cmd) = args.get("command").and_then(|v| v.as_str())
+    {
+        return cmd.to_string();
     }
     if PATH_TOOLS.contains(&tool) {
         for key in ["file_path", "path", "notebook_path", "pattern"] {

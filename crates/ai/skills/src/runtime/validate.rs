@@ -58,13 +58,11 @@ pub fn validate_frontmatter(fm: &FrontMatter, dir_name: Option<&str>) -> Vec<Val
     if !name.is_empty() && !is_kebab_case(&name) {
         errs.push(ValidationError::NameNotKebabCase(name.clone()));
     }
-    if let Some(expected) = dir_name {
-        if !name.is_empty() && name != expected {
-            errs.push(ValidationError::NameMismatch {
-                expected: expected.to_string(),
-                found: name,
-            });
-        }
+    if let Some(expected) = dir_name
+        && !name.is_empty()
+        && name != expected
+    {
+        errs.push(ValidationError::NameMismatch { expected: expected.to_string(), found: name });
     }
     match &fm.description {
         None => errs.push(ValidationError::MissingDescription),

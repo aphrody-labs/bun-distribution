@@ -27,6 +27,12 @@ pub struct Pkce {
     pub code_challenge: String,
 }
 
+impl Default for Pkce {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Pkce {
     /// Generate a fresh PKCE pair using the OS CSPRNG.
     ///

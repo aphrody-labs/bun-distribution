@@ -1151,3 +1151,20 @@ heuristique ; aucun changement Git ne doit être attribué sans preuve.
   sont préservées. Le déplacement persona FFI vers le profil DBFR est en cours.
 - Preuves : [chargeur](docs/operations/shenron/native-loader-consolidation-2026-10-01.json),
   [gates transitifs](docs/operations/ai/cli-mcp-dependency-qualification-2026-10-01.json).
+
+### Ingestion RAG commune et gates AI — 2026-10-01
+
+- FAIT : l’indexeur général et Shenron remplacent métadonnées/chunks via la
+  même transaction du store RAG. Échec d’insertion : métadonnées, FTS et
+  vecteurs précédents conservés, puis reprise réussie. Remplacement vide et
+  identifiant d’upsert après une autre insertion couverts par régressions.
+- FAIT : six propriétaires AI/A2A passent Clippy strict all-targets avec
+  dépendances. 159 tests/doctests uniques réussis : RAG 52, skills 35,
+  A2A 38, OAuth 17, train 8, supervisor 8 + un doctest. Contrats HTTP A2A
+  vérifiés sur auth, CRUD, isolation des namespaces, filtres et enveloppes.
+- INCOMPLET : gate CLI/MCP no-default échoue encore sur trois diagnostics
+  Discord et neuf terminal-backend. Features de production, clone propre,
+  artefacts installés et gates produit ouverts. Embeddings générés après la
+  transaction ; leur génération complète n’est pas atomique avec les chunks.
+- Preuves : [rapport et logs](docs/operations/ai/unified-owner-qualification-2026-10-01/report.json).
+  Checkout concurrent ; aucun remote Git configuré, commits locaux seulement.

@@ -45,6 +45,7 @@ impl SourceSlug {
     }
 
     #[must_use]
+    #[expect(clippy::should_implement_trait, reason = "Preserve the public optional parser API")]
     pub fn from_str(s: &str) -> Option<Self> {
         match s {
             "open-design" => Some(Self::OpenDesign),
@@ -98,10 +99,10 @@ pub struct SourceSpec {
 }
 
 fn worktree_root() -> PathBuf {
-    if let Ok(o) = env::var("APHRODY_WORKTREE") {
-        if !o.is_empty() {
-            return PathBuf::from(o);
-        }
+    if let Ok(o) = env::var("APHRODY_WORKTREE")
+        && !o.is_empty()
+    {
+        return PathBuf::from(o);
     }
     // 2026-05-21 : ancien défaut hardcodé `C:/worktree` retiré (le dossier
     // n'existe plus). On se rabat sur `<home>/worktree` sur toutes les
@@ -224,18 +225,13 @@ pub const SOURCES: &[SourceSpec] = &[
 /// Returns `None` if neither resolves to an existing directory.
 #[must_use]
 pub fn resolve_source_root(spec: &SourceSpec) -> Option<PathBuf> {
-    if let Ok(o) = env::var(spec.env) {
-        if !o.is_empty() {
-            let p = PathBuf::from(&o);
-            return p.exists().then_some(p);
-        }
+    if let Ok(o) = env::var(spec.env)
+        && !o.is_empty()
+    {
+        let p = PathBuf::from(&o);
+        return p.exists().then_some(p);
     }
-    for cand in (spec.defaults)() {
-        if cand.exists() {
-            return Some(cand);
-        }
-    }
-    None
+    (spec.defaults)().into_iter().find(|cand| cand.exists())
 }
 
 /// Apply `APHRODY_SKILLS_SOURCES` (comma-separated allowlist) to filter

@@ -56,8 +56,20 @@ fn authorized(headers: &HeaderMap, state: &ApiState) -> bool {
         .is_some_and(|(scheme, actual)| scheme.eq_ignore_ascii_case("Bearer") && actual == expected)
 }
 
-fn auth_error() -> axum::response::Response {
-    (StatusCode::UNAUTHORIZED, Json(json!({"error":"unauthorized"}))).into_response()
+// Keep handler results compact; materialize the HTTP body at the boundary.
+struct ApiResponse {
+    status: StatusCode,
+    value: Value,
+}
+
+impl IntoResponse for ApiResponse {
+    fn into_response(self) -> axum::response::Response {
+        (self.status, Json(self.value)).into_response()
+    }
+}
+
+fn auth_error() -> ApiResponse {
+    response(StatusCode::UNAUTHORIZED, json!({"error":"unauthorized"}))
 }
 
 fn valid_segment(value: &str) -> bool {
@@ -80,8 +92,8 @@ fn task_path(state: &ApiState, namespace: &str, task_id: &str) -> Result<PathBuf
     Ok(agent_dir(state, namespace)?.join("tasks").join(format!("{task_id}.json")))
 }
 
-fn response(status: StatusCode, value: Value) -> axum::response::Response {
-    (status, Json(value)).into_response()
+fn response(status: StatusCode, value: Value) -> ApiResponse {
+    ApiResponse { status, value }
 }
 
 async fn read_task(path: PathBuf) -> Result<Option<Value>, StatusCode> {
@@ -108,7 +120,7 @@ async fn list_tasks(
     Path(namespace): Path<String>,
     Query(query): Query<ListQuery>,
     headers: HeaderMap,
-) -> Result<Json<Value>, axum::response::Response> {
+) -> Result<Json<Value>, ApiResponse> {
     if !authorized(&headers, &state) {
         return Err(auth_error());
     }
@@ -132,16 +144,14 @@ async fn list_tasks(
         if entry.path().extension().is_none_or(|ext| ext != "json") {
             continue;
         }
-        if let Ok(bytes) = tokio::fs::read(entry.path()).await {
-            if let Ok(task) = serde_json::from_slice::<Value>(&bytes) {
-                if query
-                    .target
-                    .as_deref()
-                    .is_none_or(|target| task.get("target").and_then(Value::as_str) == Some(target))
-                {
-                    tasks.push(task);
-                }
-            }
+        if let Ok(bytes) = tokio::fs::read(entry.path()).await
+            && let Ok(task) = serde_json::from_slice::<Value>(&bytes)
+            && query
+                .target
+                .as_deref()
+                .is_none_or(|target| task.get("target").and_then(Value::as_str) == Some(target))
+        {
+            tasks.push(task);
         }
     }
     tasks.sort_by(|a, b| {
@@ -157,7 +167,7 @@ async fn create_task(
     Path(namespace): Path<String>,
     headers: HeaderMap,
     Json(task): Json<Value>,
-) -> Result<axum::response::Response, axum::response::Response> {
+) -> Result<ApiResponse, ApiResponse> {
     if !authorized(&headers, &state) {
         return Err(auth_error());
     }
@@ -184,7 +194,7 @@ async fn get_task(
     State(state): State<ApiState>,
     Path((namespace, task_id)): Path<(String, String)>,
     headers: HeaderMap,
-) -> Result<axum::response::Response, axum::response::Response> {
+) -> Result<ApiResponse, ApiResponse> {
     if !authorized(&headers, &state) {
         return Err(auth_error());
     }
@@ -204,7 +214,7 @@ async fn put_task(
     Path((namespace, task_id)): Path<(String, String)>,
     headers: HeaderMap,
     Json(task): Json<Value>,
-) -> Result<axum::response::Response, axum::response::Response> {
+) -> Result<ApiResponse, ApiResponse> {
     save_task(state, namespace, task_id, headers, task, false).await
 }
 
@@ -213,7 +223,7 @@ async fn patch_task(
     Path((namespace, task_id)): Path<(String, String)>,
     headers: HeaderMap,
     Json(patch): Json<Value>,
-) -> Result<axum::response::Response, axum::response::Response> {
+) -> Result<ApiResponse, ApiResponse> {
     save_task(state, namespace, task_id, headers, patch, true).await
 }
 
@@ -224,7 +234,7 @@ async fn save_task(
     headers: HeaderMap,
     mut task: Value,
     merge: bool,
-) -> Result<axum::response::Response, axum::response::Response> {
+) -> Result<ApiResponse, ApiResponse> {
     if !authorized(&headers, &state) {
         return Err(auth_error());
     }
@@ -264,7 +274,7 @@ async fn delete_task(
     State(state): State<ApiState>,
     Path((namespace, task_id)): Path<(String, String)>,
     headers: HeaderMap,
-) -> Result<axum::response::Response, axum::response::Response> {
+) -> Result<ApiResponse, ApiResponse> {
     if !authorized(&headers, &state) {
         return Err(auth_error());
     }
@@ -287,7 +297,7 @@ async fn list_envelopes(
     Path(namespace): Path<String>,
     Query(query): Query<ListQuery>,
     headers: HeaderMap,
-) -> Result<Json<Value>, axum::response::Response> {
+) -> Result<Json<Value>, ApiResponse> {
     if !authorized(&headers, &state) {
         return Err(auth_error());
     }
@@ -332,7 +342,7 @@ async fn append_envelope(
     Path(namespace): Path<String>,
     headers: HeaderMap,
     Json(envelope): Json<Envelope>,
-) -> Result<axum::response::Response, axum::response::Response> {
+) -> Result<ApiResponse, ApiResponse> {
     if !authorized(&headers, &state) {
         return Err(auth_error());
     }
@@ -362,4 +372,114 @@ async fn append_envelope(
         response(StatusCode::INTERNAL_SERVER_ERROR, json!({"error":"mailbox write failed"}))
     })?;
     Ok(response(StatusCode::CREATED, json!({"ok":true,"id":envelope.id})))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use axum::{body::Body, http::Request};
+    use http_body_util::BodyExt as _;
+    use tower::ServiceExt as _;
+
+    async fn request(
+        app: &Router,
+        method: &str,
+        path: &str,
+        value: Option<Value>,
+        token: Option<&str>,
+    ) -> (StatusCode, Value) {
+        let mut req = Request::builder().method(method).uri(path);
+        if let Some(token) = token {
+            req = req.header("authorization", format!("Bearer {token}"));
+        }
+        let body = if let Some(value) = value {
+            req = req.header("content-type", "application/json");
+            Body::from(value.to_string())
+        } else {
+            Body::empty()
+        };
+        let result = app.clone().oneshot(req.body(body).unwrap()).await.unwrap();
+        let status = result.status();
+        let bytes = result.into_body().collect().await.unwrap().to_bytes();
+        (status, serde_json::from_slice(&bytes).unwrap())
+    }
+
+    #[tokio::test]
+    async fn task_response_contract_preserves_auth_crud_and_namespace_isolation() {
+        let dir = tempfile::tempdir().unwrap();
+        let app = task_api_router(dir.path().to_path_buf(), Some("test-token".into()));
+        let tasks = "/coord/aphrody/tasks";
+        let task = "/coord/aphrody/tasks/task-1";
+        assert_eq!(
+            request(&app, "GET", tasks, None, None).await,
+            (StatusCode::UNAUTHORIZED, json!({"error":"unauthorized"}))
+        );
+        let doc = json!({"id":"task-1","target":"codex","status":"queued"});
+        assert_eq!(
+            request(&app, "POST", tasks, Some(doc.clone()), Some("test-token")).await,
+            (StatusCode::CREATED, doc.clone())
+        );
+        assert_eq!(
+            request(&app, "GET", task, None, Some("test-token")).await,
+            (StatusCode::OK, doc.clone())
+        );
+        assert_eq!(
+            request(&app, "POST", tasks, Some(doc), Some("test-token")).await.0,
+            StatusCode::CONFLICT
+        );
+        assert_eq!(
+            request(&app, "GET", "/coord/dbfr/tasks", None, Some("test-token")).await,
+            (StatusCode::OK, json!({"tasks":[],"total":0}))
+        );
+        let updated =
+            request(&app, "PATCH", task, Some(json!({"status":"done"})), Some("test-token")).await;
+        assert_eq!(
+            updated,
+            (StatusCode::OK, json!({"id":"task-1","target":"codex","status":"done"}))
+        );
+        assert_eq!(
+            request(&app, "GET", "/coord/aphrody/tasks?target=claude", None, Some("test-token"))
+                .await,
+            (StatusCode::OK, json!({"tasks":[],"total":0}))
+        );
+        let listed =
+            request(&app, "GET", "/coord/aphrody/tasks?target=codex", None, Some("test-token"))
+                .await;
+        assert_eq!(listed, (StatusCode::OK, json!({"tasks":[updated.1],"total":1})));
+        assert_eq!(
+            request(&app, "DELETE", task, None, Some("test-token")).await,
+            (StatusCode::OK, json!({"deleted":true,"id":"task-1"}))
+        );
+        assert_eq!(
+            request(&app, "GET", task, None, Some("test-token")).await,
+            (StatusCode::NOT_FOUND, json!({"error":"task not found"}))
+        );
+    }
+
+    #[tokio::test]
+    async fn mailbox_response_contract_preserves_envelopes_and_validation() {
+        let dir = tempfile::tempdir().unwrap();
+        let app = task_api_router(dir.path().to_path_buf(), None);
+        let path = "/coord/aphrody/envelopes";
+        let envelope = Envelope::new(
+            "codex@aphrody",
+            "claude@aphrody",
+            crate::envelope::EnvelopeKind::Ping,
+            "qualification",
+            "fixture",
+        );
+        let value = serde_json::to_value(&envelope).unwrap();
+        assert_eq!(
+            request(&app, "POST", path, Some(value.clone()), None).await,
+            (StatusCode::CREATED, json!({"ok":true,"id":envelope.id}))
+        );
+        assert_eq!(
+            request(&app, "GET", path, None, None).await,
+            (StatusCode::OK, json!({"envelopes":[value],"total":1}))
+        );
+        assert_eq!(
+            request(&app, "GET", "/coord/invalid.namespace/tasks", None, None).await,
+            (StatusCode::BAD_REQUEST, json!({"error":"invalid namespace"}))
+        );
+    }
 }

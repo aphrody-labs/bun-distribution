@@ -22,7 +22,7 @@ use tracing::info;
 use crate::{
     embedder::Embedder,
     error::{RagError, Result},
-    store::{NewChunk, RagStore},
+    store::{NewChunk, NewDoc, RagStore},
 };
 
 /// A normalized Shenron document before chunking and indexing.
@@ -384,12 +384,14 @@ pub async fn ingest_shenron_docs(
             .collect();
         let chunk_ids = match store
             .upsert_doc_chunks(
-                &unique_path,
-                &hash,
-                &title,
-                language,
-                0,
-                text.len() as i64,
+                NewDoc {
+                    path: &unique_path,
+                    hash: &hash,
+                    title: Some(&title),
+                    language: Some(language),
+                    mtime_ms: 0,
+                    size_bytes: text.len() as i64,
+                },
                 &chunks,
             )
             .await

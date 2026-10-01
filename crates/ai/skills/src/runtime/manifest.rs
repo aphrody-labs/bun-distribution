@@ -45,10 +45,10 @@ impl Default for Manifest {
 /// -> `.aphrody/skills`.
 #[must_use]
 pub fn skills_home() -> PathBuf {
-    if let Ok(o) = env::var("APHRODY_SKILLS_HOME") {
-        if !o.is_empty() {
-            return PathBuf::from(o);
-        }
+    if let Ok(o) = env::var("APHRODY_SKILLS_HOME")
+        && !o.is_empty()
+    {
+        return PathBuf::from(o);
     }
     // Root from `aphrody_models::paths`, the single authority. The chain that
     // lived here went straight to `HOME`/`USERPROFILE` and never consulted
@@ -91,11 +91,11 @@ pub fn read_manifest() -> Result<Manifest> {
 /// Persist a manifest as pretty-printed JSON (trailing newline, like TS).
 pub fn write_manifest(m: &Manifest) -> Result<()> {
     let path = manifest_path();
-    if let Some(parent) = path.parent() {
-        if !parent.exists() {
-            fs::create_dir_all(parent)
-                .with_context(|| format!("create manifest parent {}", parent.display()))?;
-        }
+    if let Some(parent) = path.parent()
+        && !parent.exists()
+    {
+        fs::create_dir_all(parent)
+            .with_context(|| format!("create manifest parent {}", parent.display()))?;
     }
     let mut body = serde_json::to_string_pretty(m).context("encode manifest as JSON")?;
     body.push('\n');

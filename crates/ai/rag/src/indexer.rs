@@ -11,7 +11,11 @@ use ignore::WalkBuilder;
 use serde::{Deserialize, Serialize};
 use tracing::{debug, warn};
 
-use crate::{embedder::Embedder, error::Result, store::RagStore};
+use crate::{
+    embedder::Embedder,
+    error::Result,
+    store::{NewChunk, NewDoc, RagStore},
+};
 
 /// Configuration options for the indexing pass.
 #[derive(Debug, Clone)]
@@ -237,53 +241,41 @@ impl RagIndexer {
 
         let lang = format!("{:?}", detect_language(&rel_path_str)).to_ascii_lowercase();
 
-        // Upsert doc record
-        let doc_id = self
-            .store
-            .upsert_doc(&rel_path_str, &content_hash, None, Some(&lang), mtime_ms, size_bytes)
-            .await?;
-
-        // Clear existing chunks for this document
-        self.store.clear_doc_chunks(doc_id).await?;
-
-        // Chunk document. The chunker is scoped so the non-Send `Box<dyn Chunker>`
-        // is dropped before the awaits below, keeping this future Send and thus
-        // usable from an agent toolcall.
+        // Prepare chunks before replacing anything. The shared store commits the
+        // document metadata and all replacement chunks in one transaction.
         let chunks = {
             let chunker = chunker_for_path(&rel_path_str);
             chunker.chunk(&rel_path_str, content_str, &opts.chunk_opts)
         };
-        if chunks.is_empty() {
+        let chunks: Vec<NewChunk> = chunks
+            .iter()
+            .map(|ch| NewChunk {
+                heading: ch.symbol.clone().filter(|_| matches!(ch.kind, ChunkKind::Heading)),
+                symbol: ch.symbol.clone().filter(|_| matches!(ch.kind, ChunkKind::Code)),
+                content: ch.text.clone(),
+                start_line: ch.start_line as usize,
+                end_line: ch.end_line as usize,
+                token_count: (ch.text.len() / 4).max(1),
+            })
+            .collect();
+        let inserted_chunk_ids = self
+            .store
+            .upsert_doc_chunks(
+                NewDoc {
+                    path: &rel_path_str,
+                    hash: &content_hash,
+                    title: None,
+                    language: Some(&lang),
+                    mtime_ms,
+                    size_bytes,
+                },
+                &chunks,
+            )
+            .await?;
+        if inserted_chunk_ids.is_empty() {
             return Ok(Some((0, 0)));
         }
-
-        let mut inserted_chunk_ids = Vec::with_capacity(chunks.len());
-        let mut chunk_texts = Vec::with_capacity(chunks.len());
-
-        for (idx, ch) in chunks.iter().enumerate() {
-            // Rough token estimate: ~4 chars per token
-            let est_tokens = (ch.text.len() / 4).max(1);
-            let heading_str =
-                ch.symbol.as_deref().filter(|_| matches!(ch.kind, ChunkKind::Heading));
-            let symbol_str = ch.symbol.as_deref().filter(|_| matches!(ch.kind, ChunkKind::Code));
-
-            let chunk_id = self
-                .store
-                .insert_chunk(
-                    doc_id,
-                    idx,
-                    heading_str,
-                    symbol_str,
-                    &ch.text,
-                    ch.start_line as usize,
-                    ch.end_line as usize,
-                    est_tokens,
-                )
-                .await?;
-
-            inserted_chunk_ids.push(chunk_id);
-            chunk_texts.push(ch.text.clone());
-        }
+        let chunk_texts: Vec<String> = chunks.into_iter().map(|chunk| chunk.content).collect();
 
         // Generate vector embeddings if embedder configured
         let mut vector_count = 0;

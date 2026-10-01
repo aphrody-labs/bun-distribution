@@ -61,6 +61,16 @@ pub struct ChunkRecord {
     pub token_count: usize,
 }
 
+/// Metadata written atomically with a document's replacement chunks.
+pub(crate) struct NewDoc<'a> {
+    pub path: &'a str,
+    pub hash: &'a str,
+    pub title: Option<&'a str>,
+    pub language: Option<&'a str>,
+    pub mtime_ms: i64,
+    pub size_bytes: i64,
+}
+
 /// Chunk fields written together with a document replacement.
 pub(crate) struct NewChunk {
     pub heading: Option<String>,
@@ -112,8 +122,8 @@ impl RagStore {
     /// Open or create the canonical persistent SQLite RAG database under the unified state directory
     /// (`~/.aphrody/vector/rag.sqlite`).
     pub fn open_default() -> Result<Self> {
-        let dir = aphrody_models::paths::vector_dir()
-            .map_err(|e| RagError::Other(e.to_string()))?;
+        let dir =
+            aphrody_models::paths::vector_dir().map_err(|e| RagError::Other(e.to_string()))?;
         std::fs::create_dir_all(&dir)?;
         let path = dir.join("rag.sqlite");
         Self::open(path)
@@ -153,7 +163,9 @@ impl RagStore {
             params![path, hash, title, language, mtime_ms, size_bytes],
         )?;
 
-        let doc_id = conn.last_insert_rowid();
+        // On conflict, last_insert_rowid still refers to an unrelated previous
+        // insert. Resolve the document by its unique path in both cases.
+        let doc_id = conn.query_row("SELECT id FROM docs WHERE path = ?1", [path], |row| row.get(0))?;
         Ok(doc_id)
     }
 
@@ -188,14 +200,10 @@ impl RagStore {
     /// Upsert one document and replace all of its chunks atomically.
     pub(crate) async fn upsert_doc_chunks(
         &self,
-        path: &str,
-        hash: &str,
-        title: &str,
-        language: &str,
-        mtime_ms: i64,
-        size_bytes: i64,
+        doc: NewDoc<'_>,
         chunks: &[NewChunk],
     ) -> Result<Vec<i64>> {
+        let NewDoc { path, hash, title, language, mtime_ms, size_bytes } = doc;
         let mut conn = self.conn.lock().await;
         let tx = conn.transaction()?;
         tx.execute(
@@ -212,7 +220,8 @@ impl RagStore {
             "#,
             params![path, hash, title, language, mtime_ms, size_bytes],
         )?;
-        let doc_id: i64 = tx.query_row("SELECT id FROM docs WHERE path = ?1", [path], |row| row.get(0))?;
+        let doc_id: i64 =
+            tx.query_row("SELECT id FROM docs WHERE path = ?1", [path], |row| row.get(0))?;
         tx.execute("DELETE FROM chunks WHERE doc_id = ?1", [doc_id])?;
         let mut ids = Vec::with_capacity(chunks.len());
         for chunk in chunks {
