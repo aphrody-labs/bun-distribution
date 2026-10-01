@@ -48,3 +48,10 @@ export {
 	type AphrodyInfraCheck,
 	type AphrodyInfraTargetCheck,
 } from "./infra";
+export {
+	AphrodyTranslateService,
+	TranslateOptionsSchema,
+	TranslationResultSchema,
+	type TranslateOptions,
+	type TranslationResult,
+} from "./translate";

@@ -974,6 +974,7 @@ pub(crate) struct TranslateCommand {
     pub target: String,
     pub backend: String,
     pub file: Option<PathBuf>,
+    pub json: bool,
 }
 
 #[async_trait]
@@ -987,6 +988,34 @@ impl TerminalCommand for TranslateCommand {
         let translator = aphrody_translate::Translator::new(cache_path, None)
             .map_err(|e| miette::miette!("{e}"))?
             .with_backend(backend);
+
+        if self.json {
+            let text = match (&self.text, &self.file) {
+                (Some(text), None) => text.clone(),
+                (None, Some(path)) => std::fs::read_to_string(path)
+                    .map_err(|error| miette::miette!("Lecture {}: {error}", path.display()))?,
+                _ => {
+                    return Err(miette::miette!(
+                        "Provide exactly one text or --file for JSON translation"
+                    ));
+                },
+            };
+            let translated = translator
+                .translate_with_lang_strict(&text, &self.source, &self.target)
+                .await
+                .map_err(|error| miette::miette!("{error}"))?;
+            println!(
+                "{}",
+                serde_json::json!({
+                    "translatedText": translated,
+                    "detectedSource": self.source,
+                    "target": self.target,
+                    "provider": "aphrody-translate",
+                })
+            );
+            translator.persist().map_err(|error| miette::miette!("{error}"))?;
+            return Ok(());
+        }
 
         if let Some(ref text) = self.text {
             let is_jp = self.source == "ja" || aphrody_translate::Translator::is_japanese(text);

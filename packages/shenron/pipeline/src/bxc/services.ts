@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 /** BXC domain clients sharing a single CLI contract and service module. */
 import { execBxc, execBxcJson } from "./spawn";
+import { AphrodyTranslateService } from "../aphrody/translate";
 import {
 	AnimesamaSearchResultSchema,
 	AnimesamaAnimeInfoSchema,
@@ -19,7 +20,6 @@ import {
 	WikiPageDossierSchema,
 	type WikiSearchResult,
 	type WikiPageDossier,
-	TranslationResultSchema,
 	type TranslationResult,
 	type TranslateOptions,
 	DbcnVolumeItemSchema,
@@ -256,155 +256,17 @@ export class WikiService {
   }
 }
 
-/**
- * Cache mémoire simple pour éviter les requêtes répétitives
- */
-const MEMORY_TRANSLATION_CACHE = new Map<string, string>();
-
+/** Compatibility name; translation execution and fallback policy belong to Rust Aphrody. */
 export class GoogleTranslateService {
-  constructor(private readonly defaultOptions: BxcSpawnOptions = {}) {}
-
-  /**
-   * Traduit un texte avec résilience multi-niveaux :
-   * 1. bxc CLI (`bxc google translate <text> --target <target> --source <source>`)
-   * 2. Si 429 / rate-limit ou indisponibilité : Lingva Translate (API publique sans clé)
-   * 3. Si échec : MyMemory API (traduction collaborative fiable)
-   * 4. Cache mémoire in-process
-   */
-  async translate(
-    text: string,
-    target = "en",
-    source = "auto",
-    options: Partial<TranslateOptions> & BxcSpawnOptions = {}
-  ): Promise<TranslationResult> {
-    const trimmed = text.trim();
-    if (!trimmed) {
-      return {
-        translatedText: text,
-        detectedSource: source,
-        target,
-        provider: "cache",
-      };
-    }
-
-    const cacheKey = `${source}:${target}:${trimmed}`;
-    if (MEMORY_TRANSLATION_CACHE.has(cacheKey)) {
-      return {
-        translatedText: MEMORY_TRANSLATION_CACHE.get(cacheKey)!,
-        detectedSource: source,
-        target,
-        provider: "cache",
-      };
-    }
-
-    const timeoutMs = options.timeoutMs ?? 10000;
-
-    // Tentative 1 : Via bxc CLI natif
-    try {
-      const args = ["google", "translate", trimmed, "--target", target];
-      if (source && source !== "auto") {
-        args.push("--source", source);
-      }
-      if (options.format === "html") {
-        args.push("--format", "html");
-      }
-
-      const stdout = await execBxc(args, {
-        ...this.defaultOptions,
-        ...options,
-        retries: 0, // Ne pas bloquer si Google rate-limit (429)
-        timeoutMs: Math.min(timeoutMs, 5000),
-      });
-
-      // Le CLI renvoie le texte traduit sur stdout
-      if (stdout && !stdout.includes("API Error 429")) {
-        const res = TranslationResultSchema.parse({
-          translatedText: stdout,
-          detectedSource: source,
-          target,
-          provider: "bxc-cli",
-        });
-        MEMORY_TRANSLATION_CACHE.set(cacheKey, res.translatedText);
-        return res;
-      }
-    } catch {
-      // Fallback vers les fournisseurs alternatifs
-    }
-
-    // Tentative 2 : Fallback Lingva Translate (proxy Google Translate décentralisé)
-    try {
-      const srcLang = source === "auto" ? "auto" : source;
-      const url = `https://lingva.ml/api/v1/${encodeURIComponent(srcLang)}/${encodeURIComponent(target)}/${encodeURIComponent(trimmed)}`;
-      // Utilisation d'un sous-processus sans proxy socks5 incompatible
-      const stdout = await execBxc(["curl", "-s", url], {
-        ...this.defaultOptions,
-        ...options,
-        retries: 0,
-        timeoutMs: Math.min(timeoutMs, 6000),
-      }).catch(async () => {
-        // Fallback curl direct si bxc curl n'existe pas
-        const p = Bun.spawn(["curl", "-s", "--max-time", "6", url], {
-          stdout: "pipe",
-          stderr: "pipe",
-          env: { ...process.env, HTTP_PROXY: "", HTTPS_PROXY: "", http_proxy: "", https_proxy: "", ALL_PROXY: "", all_proxy: "" },
-        });
-        return new Response(p.stdout).text();
-      });
-
-      if (stdout) {
-        const data = JSON.parse(stdout) as { translation?: string; info?: { detectedSource?: string } };
-        if (data && typeof data.translation === "string" && data.translation) {
-          const result = TranslationResultSchema.parse({
-            translatedText: data.translation,
-            detectedSource: data.info?.detectedSource || source,
-            target,
-            provider: "lingva",
-          });
-          MEMORY_TRANSLATION_CACHE.set(cacheKey, result.translatedText);
-          return result;
-        }
-      }
-    } catch {
-      // Fallback suivant
-    }
-
-    // Tentative 3 : Fallback MyMemory API
-    try {
-      const langpair = `${source === "auto" ? "fr" : source}|${target}`;
-      const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(trimmed)}&langpair=${encodeURIComponent(langpair)}`;
-      const p = Bun.spawn(["curl", "-s", "--max-time", "6", "-H", "User-Agent: Shenron-BxcBridge/1.0", url], {
-        stdout: "pipe",
-        stderr: "pipe",
-        env: { ...process.env, HTTP_PROXY: "", HTTPS_PROXY: "", http_proxy: "", https_proxy: "", ALL_PROXY: "", all_proxy: "" },
-      });
-      const stdout = await new Response(p.stdout).text();
-
-      if (stdout) {
-        const data = JSON.parse(stdout) as { responseData?: { translatedText?: string; match?: number } };
-        const translated = data.responseData?.translatedText;
-        if (translated && !translated.startsWith("MYMEMORY WARNING")) {
-          const result = TranslationResultSchema.parse({
-            translatedText: translated,
-            detectedSource: source,
-            target,
-            provider: "mymemory",
-            confidence: data.responseData?.match,
-          });
-          MEMORY_TRANSLATION_CACHE.set(cacheKey, result.translatedText);
-          return result;
-        }
-      }
-    } catch {
-      // Épuisé
-    }
-
-    // Si tout échoue, renvoie le texte d'origine pour ne jamais casser un rendu de page ou message Discord
-    return {
-      translatedText: trimmed,
-      detectedSource: source,
-      target,
-      provider: "cache",
-    };
+  private readonly translator: AphrodyTranslateService;
+  constructor(defaultOptions: BxcSpawnOptions = {}) {
+    this.translator = new AphrodyTranslateService({ timeoutMs: defaultOptions.timeoutMs });
+  }
+  translate(text: string, target = "en", source = "auto", options: Partial<TranslateOptions> & BxcSpawnOptions = {}): Promise<TranslationResult> {
+    return this.translator.translate(text, target, source, {
+      ...(options.timeoutMs === undefined ? {} : { timeoutMs: options.timeoutMs }),
+      ...(options.format === undefined ? {} : { format: options.format }),
+    });
   }
 }
 

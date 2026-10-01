@@ -34,7 +34,7 @@ propriété.
 | Navigation et pages protégées | Aphrody Web / Obscura browser | Capacité déjà exposée par `aphrody web browser`; pas de remplacement domaine spécifique nécessaire établi dans cet audit. |
 | MCP Shenron | `crates/ai/mcp` | Outils Dragon Ball/Shenron dispatchés vers l’API Shenron; pas de second client Shenron pipeline trouvé. |
 | A2A | `crates/os/a2a-coord` et listener | Contrat serveur durable en cours d’intégration; adaptateur Shenron en cours. |
-| Traduction | crate `aphrody-translate` | Le site délègue déjà la traduction à Aphrody. |
+| Traduction | crate `aphrody-translate` | Le site délègue déjà la traduction à Aphrody. `GoogleTranslateService` du pipeline est désormais un adaptateur du client `AphrodyTranslateService`; aucun repli réseau ni cache de traduction TypeScript ne reste dans ce service. |
 | OCR databooks | `aphrody-ocr` via API Aphrody | Reconnaissance/revue distantes; Shenron reste le validateur et l’écrivain des transcriptions. |
 | Infra | `aphrody-infra`, `@aphrody/workspace` | Adaptateur status/check ajouté; scripts ops avec SSH/gcloud encore à migrer opération par opération. |
 | Recherche, crawl, extraction Dragon Ball | Aphrody Web | Le crawler générique et MediaWiki sont disponibles; `crawl-guides.ts`, `rag-recon.ts` et scrape/recon/search/crawl-worker de `rag-harvest.ts` utilisent les clients Aphrody Web. Les adaptateurs de source et règles Dragon Ball restent des contrats de domaine à déplacer/conserver côté Shenron. |
@@ -72,6 +72,13 @@ propriété.
 - `aphrody web mediawiki` énumère un ensemble borné par l’Action API MediaWiki,
   applique un intervalle partagé aux requêtes et extrait le Markdown avec
   `aphrody-web-extract`.
+- `aphrody translate --json --source <lang> --target <lang> -- <text>` expose
+  une réponse `translatedText/detectedSource/target/provider` provenant de la
+  crate Rust. Ce mode respecte les langues demandées, propage les échecs et
+  refuse les réponses vides; il ne substitue pas le texte original après un
+  échec de fournisseur. Le mode interactif conserve son comportement existant.
+  Le consommateur requiert un binaire Aphrody incluant ce nouveau flag; le
+  chemin du binaire est configurable avec `APHRODY_BIN`.
 - Le worker `packages/shenron/pipeline/scripts/aphrody-web-corpus-crawl.ts`
   lit le plan de domaine Shenron, appelle ces contrats et écrit les exports
   dans l’espace DBFR Aphrody.

@@ -59,6 +59,10 @@ mod infer_cmd;
 #[cfg(all(not(target_arch = "wasm32"), feature = "jobs"))]
 mod job_cmd;
 #[cfg(not(target_arch = "wasm32"))]
+mod manga_cmd;
+#[cfg(all(not(target_arch = "wasm32"), feature = "koharu"))]
+mod manga_settings_cmd;
+#[cfg(not(target_arch = "wasm32"))]
 mod mcp_cmd;
 #[cfg(not(target_arch = "wasm32"))]
 mod memory_cmd;
@@ -66,10 +70,6 @@ mod memory_cmd;
 pub(crate) mod model_cmd;
 #[cfg(not(target_arch = "wasm32"))]
 pub(crate) mod nl_tokens;
-#[cfg(not(target_arch = "wasm32"))]
-mod manga_cmd;
-#[cfg(all(not(target_arch = "wasm32"), feature = "koharu"))]
-mod manga_settings_cmd;
 #[cfg(not(target_arch = "wasm32"))]
 mod oc_cmd;
 #[cfg(all(not(target_arch = "wasm32"), feature = "ocr"))]
@@ -495,7 +495,7 @@ enum Commands {
         #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
         args: Vec<String>,
     },
-    /// Traduction souveraine unifiée — combine Bxc Google Translate et Shenron JP->FR
+    /// Traduction unifiée via aphrody-translate, avec protection Shenron JP->FR
     #[cfg(not(target_arch = "wasm32"))]
     Translate {
         /// Texte à traduire directement
@@ -513,6 +513,9 @@ enum Commands {
         /// Fichier à traduire
         #[arg(short, long)]
         file: Option<std::path::PathBuf>,
+        /// Return a strict machine-readable translation result
+        #[arg(long)]
+        json: bool,
     },
     /// Execute the integrated N2B engine in-process.
     N2b {
@@ -1730,8 +1733,10 @@ async fn dispatch(ctx: &GoogleContext, cli: Cli) -> miette::Result<()> {
         Some(Commands::Google { args }) => {
             commands::GoogleCommand { args }.execute(ctx).await?;
         },
-        Some(Commands::Translate { text, source, target, backend, file }) => {
-            commands::TranslateCommand { text, source, target, backend, file }.execute(ctx).await?;
+        Some(Commands::Translate { text, source, target, backend, file, json }) => {
+            commands::TranslateCommand { text, source, target, backend, file, json }
+                .execute(ctx)
+                .await?;
         },
         Some(Commands::N2b { args }) => {
             commands::N2bCommand { args }.execute(ctx).await?;
@@ -2450,6 +2455,32 @@ pub fn run_wasm() {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    #[cfg(not(target_arch = "wasm32"))]
+    fn translate_json_preserves_languages_and_option_like_text() {
+        let cli = Cli::try_parse_from([
+            "aphrody",
+            "translate",
+            "--source",
+            "ja",
+            "--target",
+            "en",
+            "--json",
+            "--",
+            "--悟空",
+        ])
+        .expect("translation command");
+        match cli.command {
+            Some(Commands::Translate { text, source, target, json, .. }) => {
+                assert_eq!(text.as_deref(), Some("--悟空"));
+                assert_eq!(source, "ja");
+                assert_eq!(target, "en");
+                assert!(json);
+            },
+            _ => panic!("expected translation"),
+        }
+    }
 
     #[test]
     #[cfg(not(target_arch = "wasm32"))]

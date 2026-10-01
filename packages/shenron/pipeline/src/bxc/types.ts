@@ -162,22 +162,7 @@ export type WikiPageDossier = z.infer<typeof WikiPageDossierSchema>;
 // 4. GOOGLE TRANSLATE SCHEMAS & TYPES
 // ==========================================
 
-export const TranslateOptionsSchema = z.object({
-  target: z.string().default("en"),
-  source: z.string().default("auto"),
-  format: z.enum(["text", "html"]).default("text"),
-  timeoutMs: z.number().default(10000),
-});
-export type TranslateOptions = z.infer<typeof TranslateOptionsSchema>;
-
-export const TranslationResultSchema = z.object({
-  translatedText: z.string(),
-  detectedSource: z.string().default("auto"),
-  target: z.string(),
-  provider: z.enum(["bxc-cli", "lingva", "mymemory", "gemini-free", "cache"]),
-  confidence: z.number().optional(),
-});
-export type TranslationResult = z.infer<typeof TranslationResultSchema>;
+export { TranslateOptionsSchema, TranslationResultSchema, type TranslateOptions, type TranslationResult } from "../aphrody/translate";
 
 // ==========================================
 // 5. DRAGONBALLCN SCHEMAS & TYPES

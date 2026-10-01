@@ -26,7 +26,7 @@ use anyhow::{Context as _, Result};
 use dashmap::DashMap;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
-#[cfg(not(target_arch = "wasm32"))] use tracing::warn;
+use tracing::warn;
 
 use crate::{
     aphrodify,
@@ -122,14 +122,7 @@ impl Translator {
                 }
             }
 
-            Ok(Self {
-                backend: Backend::Auto,
-                lexique,
-                client,
-                cache,
-                cache_path,
-                contact_email,
-            })
+            Ok(Self { backend: Backend::Auto, lexique, client, cache, cache_path, contact_email })
         }
 
         #[cfg(target_arch = "wasm32")]
@@ -201,6 +194,23 @@ impl Translator {
         source: &str,
         target: &str,
     ) -> Result<String> {
+        match self.translate_with_lang_strict(text, source, target).await {
+            Ok(translated) => Ok(translated),
+            Err(error) => {
+                warn!(%error, "échec cascade traduction, conservation texte original");
+                Ok(text.trim().to_owned())
+            },
+        }
+    }
+
+    /// Translation for API consumers: backend failures remain failures.
+    /// The source text is never substituted for a failed translation.
+    pub async fn translate_with_lang_strict(
+        &self,
+        text: &str,
+        source: &str,
+        target: &str,
+    ) -> Result<String> {
         let stripped = text.trim();
         if stripped.is_empty() {
             return Ok(String::new());
@@ -214,7 +224,7 @@ impl Translator {
 
         #[cfg(target_arch = "wasm32")]
         {
-            return Ok(stripped.to_string());
+            anyhow::bail!("translation backends are unavailable on this WebAssembly target");
         }
 
         #[cfg(not(target_arch = "wasm32"))]
@@ -252,12 +262,12 @@ impl Translator {
                     if !final_res.is_empty() {
                         self.cache.insert(key, final_res.clone());
                     }
+                    if final_res.is_empty() {
+                        anyhow::bail!("translation backend returned an empty response");
+                    }
                     Ok(final_res)
                 },
-                Err(e) => {
-                    warn!(error = %e, "échec cascade traduction, conservation texte original");
-                    Ok(stripped.to_string())
-                },
+                Err(error) => Err(error),
             }
         }
     }
@@ -416,6 +426,27 @@ pub fn default_cache_path(root: &Path) -> PathBuf {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[tokio::test]
+    #[cfg(not(target_arch = "wasm32"))]
+    async fn strict_translation_reports_backend_failure_without_caching_source_text() {
+        let mut translator = Translator::new(PathBuf::new(), None)
+            .expect("translator")
+            .with_backend(Backend::GoogleRpc);
+        // A refused loopback proxy prevents any external request during this test.
+        translator.client = reqwest::Client::builder()
+            .proxy(reqwest::Proxy::all("http://127.0.0.1:0").expect("proxy"))
+            .timeout(std::time::Duration::from_millis(100))
+            .build()
+            .expect("client");
+        assert!(translator.translate_with_lang_strict("Hello", "en", "fr").await.is_err());
+        assert!(translator.cache.is_empty());
+        assert_eq!(
+            translator.translate_with_lang("Hello", "en", "fr").await.expect("fallback"),
+            "Hello"
+        );
+        assert!(translator.cache.is_empty());
+    }
 
     #[test]
     fn test_japanese_detection() {

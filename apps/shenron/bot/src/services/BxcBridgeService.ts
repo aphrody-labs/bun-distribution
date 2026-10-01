@@ -1,4 +1,5 @@
 import type { SQL } from "bun";
+import { AphrodyTranslateService } from "@shenron/pipeline/aphrody/translate";
 import { inject, singleton } from "tsyringe";
 import {
   bxc,
@@ -17,6 +18,7 @@ import { PgService } from "~/db/pg";
 @singleton()
 export class BxcBridgeService {
   private pgSignale = false;
+  private readonly translator = new AphrodyTranslateService();
 
   constructor(
     @inject(DatabaseService) private readonly dbService: DatabaseService,
@@ -158,9 +160,9 @@ export class BxcBridgeService {
   // =========================================================================
 
   /**
-   * Traduit un texte Dragon Ball avec fallback multi-fournisseurs
+   * Traduit via le propriétaire Rust Aphrody (replis et cache centralisés).
    */
   async translate(text: string, target = "fr", source = "ja") {
-    return bxc.google.translate(text, target, source);
+    return this.translator.translate(text, target, source);
   }
 }
