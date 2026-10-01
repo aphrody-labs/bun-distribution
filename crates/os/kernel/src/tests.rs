@@ -381,6 +381,28 @@ async fn a2a_envelope_uses_the_same_tool_dispatcher() {
 }
 
 #[tokio::test]
+async fn a2a_target_selects_the_owner_and_rejects_misdirected_side_effects() {
+    let kernel = Kernel::new();
+    let counter = Counter::new("counter");
+    kernel.register(counter.clone()).await.unwrap();
+    let client = connected(&kernel);
+    client.initialize("target-test").await.unwrap();
+    for target in [json!("claude"), json!(42), Value::Null, json!("")] {
+        let wrong = client.request("a2a/message/send", json!({
+            "target": target, "tool": "counter_add", "arguments": {"by": 9}
+        }), Duration::from_secs(5)).await;
+        assert!(matches!(wrong, Err(crate::client::ClientError::Rpc { code: -32602, .. })));
+    }
+    assert_eq!(counter.value.load(Ordering::SeqCst), 0);
+    let right = client.request("a2a/message/send", json!({
+        "target": "counter", "tool": "counter_add", "arguments": {"by": 7}
+    }), Duration::from_secs(5)).await.unwrap();
+    assert_eq!(right["target"], "counter");
+    assert_eq!(right["result"]["structuredContent"], json!({"result": 7}));
+    assert_eq!(counter.value.load(Ordering::SeqCst), 7);
+}
+
+#[tokio::test]
 async fn a_peer_registers_a_subsystem_and_serves_its_calls() {
     let kernel = Kernel::new();
     let mut peer = connected(&kernel);
@@ -416,6 +438,13 @@ async fn a_peer_registers_a_subsystem_and_serves_its_calls() {
         .await
         .expect("remote call");
     assert_eq!(result, json!({"url": "https://example.com", "status": 200}));
+    let client = connected(&kernel);
+    client.initialize("a2a-remote-client").await.unwrap();
+    let routed = client.request("a2a/message/send", json!({
+        "target": "bun_scraper", "tool": "fetch_dynamic_page",
+        "arguments": {"url": "https://example.org"}
+    }), Duration::from_secs(5)).await.unwrap();
+    assert_eq!(routed["result"]["structuredContent"], json!({"url": "https://example.org", "status": 200}));
     assert_eq!(kernel.subsystems().await[0]["remote"], true);
     drop(peer);
 }

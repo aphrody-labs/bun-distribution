@@ -290,8 +290,11 @@ impl Kernel {
             },
             "a2a/message/send" => {
                 let source = params.get("sourceAgent").and_then(Value::as_str).unwrap_or("unknown");
-                let target =
-                    params.get("target").and_then(Value::as_str).unwrap_or("aphrody-kernel");
+                let target = match params.get("target") {
+                    None => "aphrody-kernel",
+                    Some(Value::String(target)) if !target.trim().is_empty() => target.as_str(),
+                    _ => return Err(invalid("target must be a non-empty peer name".into())),
+                };
                 let tool = params
                     .get("tool")
                     .and_then(Value::as_str)
@@ -304,9 +307,12 @@ impl Kernel {
                     )));
                 }
                 let arguments = params.get("arguments").cloned().unwrap_or_else(|| json!({}));
-                let result = match self.call(tool, arguments).await {
+                let result = match self.call_target(target, tool, arguments).await {
                     Err(SubsystemError::UnknownTool(name)) => {
                         return Err(invalid(format!("unknown tool: {name}")));
+                    },
+                    Err(SubsystemError::InvalidArguments(message)) => {
+                        return Err(invalid(message));
                     },
                     outcome => call_result(outcome),
                 };

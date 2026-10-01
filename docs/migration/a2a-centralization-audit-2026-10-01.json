@@ -77,10 +77,20 @@
         "generator scoped clippy",
         "24 A2A tests and full pipeline suite"
       ]
+    },
+    {
+      "owner": "aphrody-kernel RPC registry",
+      "status": "target routes to registered tool owner, including remote IPC peers",
+      "checks": [
+        "79 kernel tests passed; 1 live GCS test ignored",
+        "registered remote peer A2A request/response",
+        "mismatched and malformed target rejected without side effects",
+        "scoped all-targets clippy passed"
+      ],
+      "limitation": "Unregistered HTTP peers are not forwarded by kernel; canonical HTTP fleet routing remains with a2a-coord."
     }
   ],
   "remaining": [
-    "Kernel a2a/message/send is local tool dispatch, not remote target delivery; routing semantics need clarification in its API.",
     "Full legacy/public A2A deployment qualification remains open."
   ],
   "tests": {

@@ -560,3 +560,16 @@ oxlint des deux fichiers et clippy du générateur réussis. Les tests A2A cibl�
 (24) et la suite pipeline complète passent ; aucun Cargo requis à l’exécution
 TypeScript. Les endpoints publics et la sémantique de routage kernel restent
 à qualifier ; cette étape ne ferme pas le plan global.
+
+### Routage A2A kernel vers les pairs enregistrés
+
+`a2a/message/send` sélectionne le propriétaire enregistré du tool par target ;
+le handle retenu protège la sélection contre les changements concurrents du
+registre. Les aliases kernel/aphrody-kernel et la cible omise conservent le
+dispatch général. Cible inconnue, incorrecte, vide ou non-string rejetée avant
+appel ; droits de session et policy conservés. Test IPC d’un pair distant
+bun_scraper et test de rejet sans effet de bord réussis dans la suite kernel
+(79 pass, 1 GCS live ignoré). Clippy scoped all-targets réussi ; avertissement
+Cargo future-incompatibility existant sur proc-macro-error2 2.0.1.
+Cette qualification couvre les pairs enregistrés via IPC, pas les endpoints
+HTTP publics ni les agents qui ne sont pas enregistrés au kernel.

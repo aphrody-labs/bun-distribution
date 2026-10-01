@@ -18,6 +18,7 @@
 //! | `system/subsystems` | Registered subsystems. |
 //! | `system/subsystem_tools` | Tools owned by one named subsystem. |
 //! | `system/register_subsystem` | The caller becomes a subsystem; the kernel sends it `tools/call` requests. |
+//! | `a2a/message/send` | Dispatch `tool`/`arguments` to its registered `target` owner; `kernel` and `aphrody-kernel` retain registry-wide dispatch. Unknown or mismatched peers are rejected. |
 //! | `system/subscribe`, `system/publish` | Receive bus events as `system/event` notifications; publish one. |
 
 pub mod admin;
@@ -433,6 +434,34 @@ impl Kernel {
                 .get(tool)
                 .cloned()
                 .ok_or_else(|| SubsystemError::UnknownTool(tool.to_owned()))?
+        };
+        subsystem.call(tool, arguments).await
+    }
+
+    /// Dispatch to a specific registered peer, retaining its handle across
+    /// concurrent registry changes. Kernel aliases retain ordinary dispatch.
+    pub(crate) async fn call_target(
+        &self,
+        target: &str,
+        tool: &str,
+        arguments: Value,
+    ) -> Result<Value, SubsystemError> {
+        if matches!(target, "kernel" | "aphrody-kernel") {
+            return self.call(tool, arguments).await;
+        }
+        if let Some(policy) = &self.policy {
+            policy.allows(tool).map_err(SubsystemError::Failed)?;
+        }
+        let subsystem = {
+            let registry = self.registry.read().await;
+            let subsystem = registry.dispatch.get(tool)
+                .ok_or_else(|| SubsystemError::UnknownTool(tool.to_owned()))?;
+            if subsystem.name() != target {
+                return Err(SubsystemError::InvalidArguments(format!(
+                    "target {target:?} does not own tool {tool:?}; owner is {:?}", subsystem.name()
+                )));
+            }
+            Arc::clone(subsystem)
         };
         subsystem.call(tool, arguments).await
     }
