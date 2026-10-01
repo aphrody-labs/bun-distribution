@@ -606,7 +606,6 @@ dependencies = [
  "aphrody-web-extract",
  "aphrody-web-frames",
  "aphrody-winclean",
- "aphrody-wsl",
  "aphrody-x",
  "assert_cmd",
  "async-trait",
