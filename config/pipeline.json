@@ -104,6 +104,15 @@
           "command": [
             "run",
             "--filter",
+            "@aphrody/n2b-plugin",
+            "test"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
             "@aphrody/n2b-shims",
             "typecheck"
           ]

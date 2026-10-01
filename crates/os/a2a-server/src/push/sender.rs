@@ -54,8 +54,8 @@ impl HttpPushSender {
             request = request.header("A2A-Notification-Token", token);
         }
 
-        if let Some(ref auth) = config.authentication {
-            if let Some(ref creds) = auth.credentials {
+        if let Some(ref auth) = config.authentication
+            && let Some(ref creds) = auth.credentials {
                 match auth.scheme.to_lowercase().as_str() {
                     "bearer" => {
                         request = request.header("Authorization", format!("Bearer {creds}"));
@@ -66,7 +66,6 @@ impl HttpPushSender {
                     _ => {},
                 }
             }
-        }
 
         match request.send().await {
             Ok(resp) => {

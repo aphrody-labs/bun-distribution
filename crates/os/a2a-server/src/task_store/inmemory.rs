@@ -61,17 +61,15 @@ impl TaskStore for InMemoryTaskStore {
             .values()
             .filter(|entry| {
                 // Filter by context_id if provided
-                if let Some(ref ctx_id) = req.context_id {
-                    if entry.task.context_id != *ctx_id {
+                if let Some(ref ctx_id) = req.context_id
+                    && entry.task.context_id != *ctx_id {
                         return false;
                     }
-                }
                 // Filter by status if provided
-                if let Some(ref status) = req.status {
-                    if entry.task.status.state != *status {
+                if let Some(ref status) = req.status
+                    && entry.task.status.state != *status {
                         return false;
                     }
-                }
                 true
             })
             .map(|e| e.task.clone())

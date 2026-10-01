@@ -62,7 +62,7 @@ mod native_impl {
             }
         }
 
-        const fn from_id(self) -> &'static str {
+        const fn sender_id(self) -> &'static str {
             match self {
                 Self::Aphrody => "aphrody@aphrody-code/aphrody",
                 Self::Winclean => "winclean@aphrody-code/winclean",
@@ -70,7 +70,7 @@ mod native_impl {
         }
 
         const fn to_id(self) -> &'static str {
-            self.peer().from_id()
+            self.peer().sender_id()
         }
 
         const fn id_prefix(self) -> &'static str {
@@ -226,7 +226,7 @@ mod native_impl {
         Envelope {
             id: envelope_id(cli.side, cli.iteration),
             ts: now_utc_iso(),
-            from: cli.side.from_id().to_owned(),
+            from: cli.side.sender_id().to_owned(),
             to: cli.side.to_id().to_owned(),
             env_type: cli.env_type,
             re: cli.re.clone(),

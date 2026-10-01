@@ -48,9 +48,9 @@ anyhow = "1.0.104"
 aes-gcm = { version = "0.10", features = [] }
 aphrody = { path = "apps/cli", features = [] }
 aphrody-a2a = { path = "crates/contracts/a2a", version = "0.3", features = [] }
-aphrody-a2a-client = { path = "crates/contracts/a2a-client", version = "0.1", default-features = false, features = [] }
-aphrody-a2a-coord = { path = "crates/contracts/a2a-coord", features = [] }
-aphrody-a2a-server = { path = "crates/contracts/a2a-server", version = "0.3", default-features = false, features = [] }
+aphrody-a2a-client = { path = "crates/os/a2a-client", version = "0.1", default-features = false, features = [] }
+aphrody-a2a-coord = { path = "crates/os/a2a-coord", features = [] }
+aphrody-a2a-server = { path = "crates/os/a2a-server", version = "0.3", default-features = false, features = [] }
 aphrody-a2a-pb = { path = "crates/contracts/a2a-pb", version = "0.1" }
 aphrody-kernel-client = { path = "crates/os/kernel-client", version = "1.0.0-canary" }
 aphrody-subsystem = { path = "crates/contracts/subsystem", version = "1.0.0-canary" }

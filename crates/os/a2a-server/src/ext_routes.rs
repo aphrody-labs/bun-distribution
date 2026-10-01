@@ -369,7 +369,7 @@ mod tests {
         assert_eq!(resp.status(), StatusCode::CREATED);
         let body = resp.into_body().collect().await.unwrap().to_bytes();
         let payload: Value = serde_json::from_slice(&body).unwrap();
-        assert!(payload["id"].as_str().unwrap().len() > 0);
+        assert!(!payload["id"].as_str().unwrap().is_empty());
     }
 
     #[tokio::test]

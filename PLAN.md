@@ -216,6 +216,21 @@ ABI, erreurs et annulation vérifiés par des cas qui traversent les frontières
   `bun run monorepo:layout`, vérification des membres Bun et `git diff --check`
   réussis. Aucun build, test runtime ou contrôle ABI n’est établi par cet audit.
 
+### A2A opérationnel sous OS — 2026-10-01
+
+- FAIT : `a2a-client`, `a2a-server`, `a2a-grpc` et `a2a-coord` déplacés de
+  `crates/contracts` vers `crates/os`. Noms publics, versions, features,
+  licences et APIs conservés ; manifests racine et pipeline régénéré alignés.
+- [Preuve source-vers-cible et logs](docs/migration/a2a-os-move-2026-10-01/report.json) :
+  62 fichiers avec empreintes avant/après ; sept fichiers ajustés pour clippy
+  (conditions simplifiées, assertion de chaîne vide, méthode privée renommée).
+- Gates Linux features par défaut : 293 tests réussis après corrections,
+  métadonnées Cargo verrouillées, check all-targets et clippy all-targets
+  avec refus des avertissements réussis ; `git diff --check` réussi.
+- INCOMPLET : consommateurs depuis clone propre, Windows, features optionnelles,
+  pureté des autres contrats et broadcast du subsystem restent à qualifier.
+  L’item global de séparation contrats/opérations reste ouvert.
+
 ## 2. Interop et CLI
 
 Propriétaires : `crates/interop/ffi`, `packages/interop/native`, `apps/cli`.

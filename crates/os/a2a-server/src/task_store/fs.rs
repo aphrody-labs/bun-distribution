@@ -183,16 +183,14 @@ impl TaskStore for FsTaskStore {
                 continue;
             }
             let Some(record) = self.read_record(&path).await? else { continue };
-            if let Some(ref ctx) = req.context_id {
-                if record.task.context_id != *ctx {
+            if let Some(ref ctx) = req.context_id
+                && record.task.context_id != *ctx {
                     continue;
                 }
-            }
-            if let Some(ref status) = req.status {
-                if record.task.status.state != *status {
+            if let Some(ref status) = req.status
+                && record.task.status.state != *status {
                     continue;
                 }
-            }
             tasks.push(record.task);
         }
 
