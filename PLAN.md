@@ -170,6 +170,18 @@ ABI, erreurs et annulation vérifiés par des cas qui traversent les frontières
   installé ; aucun rebuild du moteur Rust, test Windows ou contrôle ABI
   n’est établi par ce lot. La qualification générale Compat reste ouverte.
 
+### Qualification N2B Linux — 2026-10-01
+
+- FAIT : [rapport et logs](docs/migration/n2b-qualification-2026-10-01/report.json)
+  conservés pour `aphrody-n2b`, `aphrody-n2b-core` et le client Bun.
+- Build verrouillé réussi ; 49 tests Rust et 15 tests Bun réussis. Le client
+  utilise explicitement le binaire issu du checkout actuel, dont le SHA-256
+  est enregistré. Check et clippy `--all-targets --locked` avec refus des
+  avertissements réussis pour ces deux packages Rust.
+- INCOMPLET : features optionnelles, Windows/WASM, FFI N2B, ABI interop,
+  plugin et packaging release restent à qualifier. Cette preuve Linux avec
+  features par défaut ne clôt pas la qualification générale Compat.
+
 ### Graphe direct des dépendances — 2026-10-01
 
 - FAIT : [inventaire des arêtes déclarées](docs/migration/dependency-graph-review-2026-10-01.json)
