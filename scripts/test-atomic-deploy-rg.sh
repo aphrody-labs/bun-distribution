@@ -56,10 +56,10 @@ for service in api cron; do
 done
 
 build_release() {
-  local directory="$1" marker="$2"
+  local directory="$1" marker="$2" repository="$3"
   mkdir -p "$directory"/{apps,packages,systemd,nginx}
-  cat > "$directory/release.json" <<'JSON'
-{"schemaVersion":1,"repository":"rg","commit":"1111111111111111111111111111111111111111","builtAt":"2026-09-23T00:00:00Z","services":["rg-api","rg-cron"]}
+  cat > "$directory/release.json" <<JSON
+{"schemaVersion":1,"repository":"$repository","commit":"1111111111111111111111111111111111111111","builtAt":"2026-09-23T00:00:00Z","services":["rg-api","rg-cron"]}
 JSON
   printf '1111111111111111111111111111111111111111\n' > "$directory/RELEASE_SHA"
   for service in api cron; do
@@ -77,8 +77,13 @@ UNIT
 
 first="$fixture/rg/releases/first"
 second="$fixture/rg/releases/second"
-build_release "$first" first
-build_release "$second" second
+build_release "$first" first rg
+build_release "$second" second aphrody-labs/aphrody
+unknown="$fixture/rg/releases/unknown"
+build_release "$unknown" unknown unrelated/repository
+if bash "$script" "$unknown" >"$fixture/out" 2>&1; then echo 'accepted unknown repository' >&2; exit 1; fi
+[[ ! -e "$fixture/rg/current" && ! -e "$fixture/units/rg-api.service" ]]
+[[ ! -e "$fixture/rg.conf" ]]
 
 chmod 644 "$fixture/etc/rg-api.env"
 if bash "$script" "$first" >"$fixture/out" 2>&1; then echo 'accepted insecure env file' >&2; exit 1; fi
@@ -102,6 +107,15 @@ grep -q '# first' "$fixture/rg.conf"
 [[ -e "$fixture/state/rg-api.service.active" ]]
 if FAIL_PUBLIC=1 bash "$script" "$second" >"$fixture/out" 2>&1; then echo 'accepted failed public route' >&2; exit 1; fi
 [[ "$(readlink -f "$fixture/rg/current")" = "$first" ]]
+grep -q '# first' "$fixture/rg.conf"
+# Exercise successful monorepo activation and an explicit legacy rollback.
+bash "$script" "$second" >"$fixture/out" 2>&1
+[[ "$(readlink -f "$fixture/rg/current")" = "$second" ]]
+grep -q '# second' "$fixture/units/rg-api.service"
+grep -q '# second' "$fixture/rg.conf"
+bash "$script" "$first" >"$fixture/out" 2>&1
+[[ "$(readlink -f "$fixture/rg/current")" = "$first" ]]
+grep -q '# first' "$fixture/units/rg-api.service"
 grep -q '# first' "$fixture/rg.conf"
 [[ ! -e "$fixture/units/rg-cdn.service" ]] # retired services are never installed
 echo 'RG adapter preflight, activation and rollback: ok'

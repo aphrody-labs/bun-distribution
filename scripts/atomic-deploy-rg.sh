@@ -42,7 +42,8 @@ services = [item for item in catalog['services']
             if item['id'].startswith('rg-') and item['unit'].endswith('.service')
             and item.get('status') != 'retired']
 ids = [item['id'] for item in services]
-if (manifest.get('schemaVersion') != 1 or manifest.get('repository') != 'rg'
+# Retained pre-monorepo artifacts remain valid explicit rollback targets.
+if (manifest.get('schemaVersion') != 1 or manifest.get('repository') not in {'rg', 'aphrody-labs/aphrody'}
         or manifest.get('services') != ids):
     raise SystemExit('release.json does not match the installed RG service catalog')
 commit = manifest.get('commit', '')

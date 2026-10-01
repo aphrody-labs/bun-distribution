@@ -10,7 +10,6 @@ infra_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 releases_root="${RG_RELEASES_ROOT:-/srv/rg/releases}"
 catalog="${RG_CATALOG_PATH:-$infra_root/config/service-catalog.json}"
 website_env="${RG_WEBSITE_ENV_PATH:-/etc/rose-griffon/website.env}"
-build_env="${RG_BUILD_ENV:-/home/ubuntu/.rg-deploy-stage/root.env}"
 node_image="node:22-bookworm-slim"
 umask 027
 
@@ -28,9 +27,6 @@ git -C "$infra_root" diff --quiet HEAD -- systemd nginx/rg &&
 }
 [[ -f "$website_env" && "$(stat -c %a "$website_env")" = 600 ]] || {
   echo 'website build environment must exist with mode 0600' >&2; exit 2;
-}
-[[ -f "$build_env" && "$(stat -c %a "$build_env")" = 600 ]] || {
-  echo 'private Bun install environment must exist with mode 0600' >&2; exit 2;
 }
 # Every EnvironmentFile= declared by a cataloged RG unit must already exist, 0600.
 env_list="$(python3 - "$catalog" "$infra_root/systemd" <<'PY'
@@ -87,6 +83,18 @@ cleanup() {
 trap cleanup EXIT
 
 git archive --format=tar "$commit" | tar -xf - -C "$stage"
+# Python host tooling belongs to the sibling workspace, not this Bun runtime artifact.
+# Exclude only its thin dispatch symlinks; every other escaping link remains an error.
+python3 - "$stage" <<'PYTHON'
+import pathlib
+import sys
+root = pathlib.Path(sys.argv[1]).resolve()
+for path in (root / 'scripts').rglob('*.py'):
+    if path.is_symlink() and str(path.readlink()).endswith(
+        '/aphrody-py/tools/infra/scripts/python-workspace-dispatch.py'
+    ):
+        path.unlink()
+PYTHON
 python3 - "$stage" <<'PY'
 import pathlib
 import sys
@@ -100,30 +108,15 @@ for path in pathlib.Path(sys.argv[1]).rglob('*'):
         raise SystemExit('release source contains a secret-like file')
 PY
 cd "$stage"
-NODE_AUTH_TOKEN="$(python3 - "$build_env" <<'PY'
-import pathlib
-import shlex
-import sys
-for line in pathlib.Path(sys.argv[1]).read_text().splitlines():
-    if not line.startswith('NODE_AUTH_TOKEN='):
-        continue
-    parts = shlex.split(line.split('=', 1)[1], comments=False, posix=True)
-    if len(parts) != 1 or not parts[0]:
-        raise SystemExit('NODE_AUTH_TOKEN is empty or invalid')
-    print(parts[0], end='')
-    break
-else:
-    raise SystemExit('NODE_AUTH_TOKEN is missing')
-PY
-)" || exit 2
-export NODE_AUTH_TOKEN
+# IECODE dependencies are local pinned archives; no registry credential is required.
 bash scripts/rg/prepare-iecode-release.sh "$stage" "${APHRODY_IECODE_ROOT:-$source_root/../iecode}"
 bun install --frozen-lockfile
-unset NODE_AUTH_TOKEN
 
 # These workspace packages export dist/ files, which are absent from git.
 # Build them before Next resolves their package exports.
 (cd "$stage" && bun packages/infra/workspace/src/ops.ts rg prepare)
+# Public assets are generated from their single package owner before standalone tracing.
+bun packages/rg/assets/scripts/sync-website-public.ts --to apps/rg/website/public
 
 # Next 16 standalone must be built under Node 22; Bun is used for installs and
 # for the final runtime. Docker reads the protected env file on the host only.
