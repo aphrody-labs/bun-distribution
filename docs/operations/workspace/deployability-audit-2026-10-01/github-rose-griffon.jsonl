@@ -1,0 +1,11 @@
+{"archived":true,"default_branch":"main","fork":true,"name":"AchilleaWeb","permissions":{"admin":true,"maintain":true,"pull":true,"push":true,"triage":true},"private":true,"pushed_at":"2026-08-27T09:19:16Z"}
+{"archived":true,"default_branch":"main","fork":true,"name":"AchilleaBackend","permissions":{"admin":true,"maintain":true,"pull":true,"push":true,"triage":true},"private":true,"pushed_at":"2026-08-27T09:18:40Z"}
+{"archived":false,"default_branch":"main","fork":false,"name":"discordy","permissions":{"admin":true,"maintain":true,"pull":true,"push":true,"triage":true},"private":true,"pushed_at":"2026-08-27T09:19:08Z"}
+{"archived":false,"default_branch":"main","fork":false,"name":"tscord","permissions":{"admin":true,"maintain":true,"pull":true,"push":true,"triage":true},"private":true,"pushed_at":"2026-04-25T13:05:34Z"}
+{"archived":false,"default_branch":"main","fork":false,"name":"canvas","permissions":{"admin":true,"maintain":true,"pull":true,"push":true,"triage":true},"private":true,"pushed_at":"2026-08-27T09:18:56Z"}
+{"archived":false,"default_branch":"main","fork":false,"name":"patreon-bun","permissions":{"admin":true,"maintain":true,"pull":true,"push":true,"triage":true},"private":true,"pushed_at":"2026-10-01T05:36:47Z"}
+{"archived":false,"default_branch":"master","fork":false,"name":"brackets-viewer.js","permissions":{"admin":true,"maintain":true,"pull":true,"push":true,"triage":true},"private":true,"pushed_at":"2026-08-27T09:19:03Z"}
+{"archived":false,"default_branch":"master","fork":false,"name":"brackets-manager.js","permissions":{"admin":true,"maintain":true,"pull":true,"push":true,"triage":true},"private":true,"pushed_at":"2026-08-27T09:19:02Z"}
+{"archived":false,"default_branch":"master","fork":false,"name":"brackets-model","permissions":{"admin":true,"maintain":true,"pull":true,"push":true,"triage":true},"private":true,"pushed_at":"2026-08-27T09:19:02Z"}
+{"archived":false,"default_branch":"main","fork":false,"name":"rg","permissions":{"admin":true,"maintain":true,"pull":true,"push":true,"triage":true},"private":true,"pushed_at":"2026-09-29T00:51:51Z"}
+{"archived":false,"default_branch":"main","fork":false,"name":"achillea","permissions":{"admin":true,"maintain":true,"pull":true,"push":true,"triage":true},"private":true,"pushed_at":"2026-09-07T16:39:07Z"}

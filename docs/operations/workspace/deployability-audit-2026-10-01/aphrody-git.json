@@ -1,0 +1,11 @@
+{
+  "root": "/home/aphro/aphrody",
+  "head": "718e8ec988b096f6f92d3683c55b7948322cedc4",
+  "branch": "main",
+  "changed_entries": 426,
+  "untracked_entries": 131,
+  "remotes": [
+    "origin\tgit@github-dev:aphrody-labs/aphrody.git (fetch)",
+    "origin\tgit@github-dev:aphrody-labs/aphrody.git (push)"
+  ]
+}

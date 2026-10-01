@@ -1,0 +1,27 @@
+[0.02ms] ".env"
+bun pack v1.4.2 (744846f84)
+
+packed 1.32KB package.json
+packed 0.61KB bindings/M3CssRequest.ts
+packed 0.66KB src/cli.ts
+packed 26.1KB src/engine.ts
+packed 2.55KB src/icons.ts
+packed 9.0KB src/index.ts
+packed 16.11KB src/library.ts
+packed 4.46KB src/manga.ts
+packed 3.84KB src/n2b.ts
+packed 7.33KB src/native-artifact.ts
+packed 1.25KB src/native-response.ts
+packed 111B src/native.ts
+packed 1.65KB src/oxc.ts
+packed 2.64KB src/render.ts
+packed 3.00KB src/reproduce.ts
+packed 5.61KB src/scene-types.ts
+packed 405B src/shenron.ts
+packed 1.25KB src/svg.ts
+packed 134B src/web.ts
+
+aphrody-bun-3.3.3.tgz
+
+Total files: 19
+Unpacked size: 88.0KB

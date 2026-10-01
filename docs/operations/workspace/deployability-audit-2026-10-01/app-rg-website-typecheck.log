@@ -1,0 +1,71 @@
+@rosegriffon/website typecheck: next.config.ts(81,5): error TS2353: Object literal may only specify known properties, and 'viewTransition' does not exist in type 'ExperimentalConfig'.
+@rosegriffon/website typecheck: src/__tests__/unified-search.test.tsx(8,34): error TS2307: Cannot find module '../../../../packages/app-shell/src/components/UnifiedSearchBar' or its corresponding type declarations.
+@rosegriffon/website typecheck: src/app/(sousdossiers)/projets/nostalgie/page.tsx(549,21): error TS2322: Type '{ className: string; }' is not assignable to type 'IntrinsicAttributes & IconBaseProps'.
+@rosegriffon/website typecheck:   Property 'className' does not exist on type 'IntrinsicAttributes & IconBaseProps'.
+@rosegriffon/website typecheck: src/app/achillea/casts/casts-client.tsx(79,17): error TS2322: Type '{ className: string; }' is not assignable to type 'IntrinsicAttributes & IconBaseProps'.
+@rosegriffon/website typecheck:   Property 'className' does not exist on type 'IntrinsicAttributes & IconBaseProps'.
+@rosegriffon/website typecheck: src/app/achillea/guide/page.tsx(163,18): error TS2322: Type '{ className: string; }' is not assignable to type 'IntrinsicAttributes & IconBaseProps'.
+@rosegriffon/website typecheck:   Property 'className' does not exist on type 'IntrinsicAttributes & IconBaseProps'.
+@rosegriffon/website typecheck: src/app/achillea/guide/page.tsx(335,20): error TS2322: Type '{ className: string; }' is not assignable to type 'IntrinsicAttributes & IconBaseProps'.
+@rosegriffon/website typecheck:   Property 'className' does not exist on type 'IntrinsicAttributes & IconBaseProps'.
+@rosegriffon/website typecheck: src/app/achillea/guide/page.tsx(348,21): error TS2322: Type '{ className: string; }' is not assignable to type 'IntrinsicAttributes & IconBaseProps'.
+@rosegriffon/website typecheck:   Property 'className' does not exist on type 'IntrinsicAttributes & IconBaseProps'.
+@rosegriffon/website typecheck: src/app/achillea/guide/page.tsx(361,19): error TS2322: Type '{ className: string; }' is not assignable to type 'IntrinsicAttributes & IconBaseProps'.
+@rosegriffon/website typecheck:   Property 'className' does not exist on type 'IntrinsicAttributes & IconBaseProps'.
+@rosegriffon/website typecheck: src/app/achillea/guide/page.tsx(374,20): error TS2322: Type '{ className: string; }' is not assignable to type 'IntrinsicAttributes & IconBaseProps'.
+@rosegriffon/website typecheck:   Property 'className' does not exist on type 'IntrinsicAttributes & IconBaseProps'.
+@rosegriffon/website typecheck: src/app/achillea/users/[id]/user-profile-client.tsx(254,21): error TS2322: Type '{ className: string; }' is not assignable to type 'IntrinsicAttributes & IconBaseProps'.
+@rosegriffon/website typecheck:   Property 'className' does not exist on type 'IntrinsicAttributes & IconBaseProps'.
+@rosegriffon/website typecheck: src/app/achillea/users/[id]/user-profile-client.tsx(265,20): error TS2322: Type '{ className: string; }' is not assignable to type 'IntrinsicAttributes & IconBaseProps'.
+@rosegriffon/website typecheck:   Property 'className' does not exist on type 'IntrinsicAttributes & IconBaseProps'.
+@rosegriffon/website typecheck: src/app/api/admin/patreon/webhooks/route.ts(1,30): error TS2307: Cannot find module '@rosegriffon/patreon-bun' or its corresponding type declarations.
+@rosegriffon/website typecheck: src/app/api/auth/patreon/webhook/route.ts(1,37): error TS2307: Cannot find module '@rosegriffon/patreon-bun' or its corresponding type declarations.
+@rosegriffon/website typecheck: src/app/settings/account-client.tsx(107,54): error TS2353: Object literal may only specify known properties, and 'providerId' does not exist in type 'Prettify<{ accountId: string; } & { fetchOptions?: ClientFetchOption<Partial<{ accountId: string; }> & Record<string, any>, Partial<Record<string, any>> & Record<string, any>, Record<...> | undefined> | undefined; }>'.
+@rosegriffon/website typecheck: src/app/settings/account-client.tsx(283,31): error TS2339: Property 'backupCodes' does not exist on type 'NonNullable<{ method: "otp"; } | { method: "totp"; totpURI: string; backupCodes: string[]; }>'.
+@rosegriffon/website typecheck:   Property 'backupCodes' does not exist on type '{ method: "otp"; }'.
+@rosegriffon/website typecheck: src/app/settings/account-client.tsx(284,27): error TS2339: Property 'totpURI' does not exist on type 'NonNullable<{ method: "otp"; } | { method: "totp"; totpURI: string; backupCodes: string[]; }>'.
+@rosegriffon/website typecheck:   Property 'totpURI' does not exist on type '{ method: "otp"; }'.
+@rosegriffon/website typecheck: src/components/achillea/CastCard.tsx(57,18): error TS2322: Type '{ className: string; }' is not assignable to type 'IntrinsicAttributes & IconBaseProps'.
+@rosegriffon/website typecheck:   Property 'className' does not exist on type 'IntrinsicAttributes & IconBaseProps'.
+@rosegriffon/website typecheck: src/components/admin/media/media-uploader.tsx(24,68): error TS2345: Argument of type '{ accept: { "image/*": string[]; }; maxSize: number; onDrop: (acceptedFiles: File[]) => void; }' is not assignable to parameter of type 'DropzoneOptions'.
+@rosegriffon/website typecheck:   Type '{ accept: { "image/*": string[]; }; maxSize: number; onDrop: (acceptedFiles: File[]) => void; }' is missing the following properties from type 'Pick<React.HTMLProps<HTMLElement>, PropTypes>': multiple, onDragEnter, onDragLeave, onDragOver
+@rosegriffon/website typecheck: src/components/admin/media/media-uploader.tsx(89,6): error TS2559: Type '{ refKey?: string | undefined; }' has no properties in common with type 'DetailedHTMLProps<InputHTMLAttributes<HTMLInputElement>, HTMLInputElement>'.
+@rosegriffon/website typecheck: src/components/articles/ArticleEditor.tsx(180,18): error TS7006: Parameter 'e' implicitly has an 'any' type.
+@rosegriffon/website typecheck: src/components/patreon/PatreonConnectButton.tsx(4,35): error TS2307: Cannot find module '@rosegriffon/patreon-bun' or its corresponding type declarations.
+@rosegriffon/website typecheck: src/components/shared/ImageCropper.tsx(68,6): error TS2607: JSX element class does not support attributes because it does not have a 'props' property.
+@rosegriffon/website typecheck: src/components/shared/ImageCropper.tsx(68,7): error TS2786: 'Cropper' cannot be used as a JSX component.
+@rosegriffon/website typecheck:   Its type 'typeof Cropper' is not a valid JSX element type.
+@rosegriffon/website typecheck:     Type 'typeof Cropper' is not assignable to type 'new (props: any, context: any) => Component<any, any, any>'.
+@rosegriffon/website typecheck:       Type 'Cropper' is missing the following properties from type 'Component<any, any, any>': context, setState, forceUpdate, props
+@rosegriffon/website typecheck: src/components/shared/emotes/RgEmote.tsx(80,39): error TS7006: Parameter 'e' implicitly has an 'any' type.
+@rosegriffon/website typecheck: src/components/tools/TranslatorClient.tsx(439,22): error TS7006: Parameter 'e' implicitly has an 'any' type.
+@rosegriffon/website typecheck: src/components/wiki/CharacterSearchDialog.tsx(348,23): error TS7006: Parameter 'e' implicitly has an 'any' type.
+@rosegriffon/website typecheck: src/components/wiki/SearchResultRow.tsx(48,17): error TS7006: Parameter 'e' implicitly has an 'any' type.
+@rosegriffon/website typecheck: src/components/wiki/cutin/CutinScene.tsx(108,9): error TS2339: Property 'primitive' does not exist on type 'JSX.IntrinsicElements'.
+@rosegriffon/website typecheck: src/components/wiki/cutin/CutinScene.tsx(217,4): error TS2339: Property 'hemisphereLight' does not exist on type 'JSX.IntrinsicElements'.
+@rosegriffon/website typecheck: src/components/wiki/cutin/CutinScene.tsx(218,4): error TS2339: Property 'ambientLight' does not exist on type 'JSX.IntrinsicElements'.
+@rosegriffon/website typecheck: src/components/wiki/cutin/CutinScene.tsx(219,4): error TS2339: Property 'directionalLight' does not exist on type 'JSX.IntrinsicElements'.
+@rosegriffon/website typecheck: src/components/wiki/cutin/CutinScene.tsx(220,4): error TS2339: Property 'directionalLight' does not exist on type 'JSX.IntrinsicElements'.
+@rosegriffon/website typecheck: src/components/wiki/demo/ComposedHissatsuScene.tsx(97,9): error TS2339: Property 'primitive' does not exist on type 'JSX.IntrinsicElements'.
+@rosegriffon/website typecheck: src/components/wiki/demo/ComposedHissatsuScene.tsx(125,19): error TS7006: Parameter 'child' implicitly has an 'any' type.
+@rosegriffon/website typecheck: src/components/wiki/demo/ComposedHissatsuScene.tsx(154,9): error TS2339: Property 'primitive' does not exist on type 'JSX.IntrinsicElements'.
+@rosegriffon/website typecheck: src/components/wiki/demo/ComposedHissatsuScene.tsx(161,3): error TS2339: Property 'mesh' does not exist on type 'JSX.IntrinsicElements'.
+@rosegriffon/website typecheck: src/components/wiki/demo/ComposedHissatsuScene.tsx(162,4): error TS2339: Property 'planeGeometry' does not exist on type 'JSX.IntrinsicElements'.
+@rosegriffon/website typecheck: src/components/wiki/demo/ComposedHissatsuScene.tsx(163,4): error TS2339: Property 'meshBasicMaterial' does not exist on type 'JSX.IntrinsicElements'.
+@rosegriffon/website typecheck: src/components/wiki/demo/ComposedHissatsuScene.tsx(164,3): error TS2339: Property 'mesh' does not exist on type 'JSX.IntrinsicElements'.
+@rosegriffon/website typecheck: src/components/wiki/demo/ComposedHissatsuScene.tsx(276,4): error TS2339: Property 'hemisphereLight' does not exist on type 'JSX.IntrinsicElements'.
+@rosegriffon/website typecheck: src/components/wiki/demo/ComposedHissatsuScene.tsx(277,4): error TS2339: Property 'ambientLight' does not exist on type 'JSX.IntrinsicElements'.
+@rosegriffon/website typecheck: src/components/wiki/demo/ComposedHissatsuScene.tsx(278,4): error TS2339: Property 'directionalLight' does not exist on type 'JSX.IntrinsicElements'.
+@rosegriffon/website typecheck: src/components/wiki/demo/ComposedHissatsuScene.tsx(279,4): error TS2339: Property 'directionalLight' does not exist on type 'JSX.IntrinsicElements'.
+@rosegriffon/website typecheck: src/components/wiki/demo/ComposedHissatsuScene.tsx(282,4): error TS2339: Property 'mesh' does not exist on type 'JSX.IntrinsicElements'.
+@rosegriffon/website typecheck: src/components/wiki/demo/ComposedHissatsuScene.tsx(283,5): error TS2339: Property 'planeGeometry' does not exist on type 'JSX.IntrinsicElements'.
+@rosegriffon/website typecheck: src/components/wiki/demo/ComposedHissatsuScene.tsx(284,5): error TS2339: Property 'meshStandardMaterial' does not exist on type 'JSX.IntrinsicElements'.
+@rosegriffon/website typecheck: src/components/wiki/demo/ComposedHissatsuScene.tsx(285,4): error TS2339: Property 'mesh' does not exist on type 'JSX.IntrinsicElements'.
+@rosegriffon/website typecheck: src/lib/patreon/client.ts(1,38): error TS2307: Cannot find module '@rosegriffon/patreon-bun' or its corresponding type declarations.
+@rosegriffon/website typecheck: src/lib/patreon/client.ts(2,40): error TS2307: Cannot find module '@rosegriffon/patreon-bun' or its corresponding type declarations.
+@rosegriffon/website typecheck: src/lib/patreon/types.ts(1,35): error TS2307: Cannot find module '@rosegriffon/patreon-bun' or its corresponding type declarations.
+@rosegriffon/website typecheck: src/lib/patreon/webhooks.ts(1,41): error TS2307: Cannot find module '@rosegriffon/patreon-bun' or its corresponding type declarations.
+@rosegriffon/website typecheck: src/lib/shop/stripe.ts(23,3): error TS2322: Type '"2026-05-27.dahlia"' is not assignable to type '"2026-08-26.dahlia"'.
+@rosegriffon/website typecheck: ../../../packages/rg/app-shell/src/components/MobileBottomNav.tsx(48,14): error TS7006: Parameter 'e' implicitly has an 'any' type.
+@rosegriffon/website typecheck: error: "tsc" exited with code 1
+@rosegriffon/website typecheck: Exited with code 1

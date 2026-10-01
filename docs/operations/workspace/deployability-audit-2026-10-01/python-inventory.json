@@ -1,0 +1,84 @@
+[
+  {
+    "path": "packages/ai/py/aphrody",
+    "name": "aphrody",
+    "version": "0.1.0",
+    "requires_python": ">=3.11",
+    "build_system": {
+      "requires": [
+        "maturin==1.14.1"
+      ],
+      "build-backend": "build_backend",
+      "backend-path": [
+        "."
+      ]
+    },
+    "test_files": 65
+  },
+  {
+    "path": "packages/ai/py/aphrody-train",
+    "name": "aphrody-train",
+    "version": "0.1.0",
+    "requires_python": ">=3.12,<3.13",
+    "build_system": {
+      "requires": [
+        "hatchling"
+      ],
+      "build-backend": "hatchling.build"
+    },
+    "test_files": 6
+  },
+  {
+    "path": "tools/ai/embedding-fixtures",
+    "name": "aphrody-embedding-fixtures",
+    "version": "0.1.0",
+    "requires_python": ">=3.12",
+    "build_system": {
+      "requires": [
+        "hatchling"
+      ],
+      "build-backend": "hatchling.build"
+    },
+    "test_files": 1
+  },
+  {
+    "path": "tools/koharu/model-tools",
+    "name": "koharu-model-tools",
+    "version": "0.1.0",
+    "requires_python": ">=3.12",
+    "build_system": {
+      "requires": [
+        "hatchling"
+      ],
+      "build-backend": "hatchling.build"
+    },
+    "test_files": 1
+  },
+  {
+    "path": "packages/ai/py/antigravity-sdk-python",
+    "name": "google-antigravity",
+    "version": "0.1.1",
+    "requires_python": ">=3.10",
+    "build_system": {
+      "requires": [
+        "setuptools>=68.0",
+        "wheel"
+      ],
+      "build-backend": "setuptools.build_meta"
+    },
+    "test_files": 2
+  },
+  {
+    "path": "packages/shenron/relecture-ocr",
+    "name": "shenron-relecture-ocr",
+    "version": "0.1.0",
+    "requires_python": ">=3.12,<3.13",
+    "build_system": {
+      "requires": [
+        "hatchling"
+      ],
+      "build-backend": "hatchling.build"
+    },
+    "test_files": 1
+  }
+]

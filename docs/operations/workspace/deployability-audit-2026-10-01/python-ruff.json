@@ -1,0 +1,458 @@
+[
+  {
+    "cell": null,
+    "code": "BLE001",
+    "end_location": {
+      "column": 21,
+      "row": 74
+    },
+    "filename": "/home/aphro/aphrody-py/packages/os/drive/adapters/apple-notes/sync.py",
+    "fix": null,
+    "location": {
+      "column": 12,
+      "row": 74
+    },
+    "message": "Do not catch blind exception: `Exception`",
+    "name": "blind-except",
+    "noqa_row": 74,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/blind-except"
+  },
+  {
+    "cell": null,
+    "code": "BLE001",
+    "end_location": {
+      "column": 21,
+      "row": 110
+    },
+    "filename": "/home/aphro/aphrody-py/packages/os/drive/adapters/chrome-bookmarks/sync.py",
+    "fix": null,
+    "location": {
+      "column": 12,
+      "row": 110
+    },
+    "message": "Do not catch blind exception: `Exception`",
+    "name": "blind-except",
+    "noqa_row": 110,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/blind-except"
+  },
+  {
+    "cell": null,
+    "code": "BLE001",
+    "end_location": {
+      "column": 21,
+      "row": 77
+    },
+    "filename": "/home/aphro/aphrody-py/packages/os/drive/adapters/chrome-history/sync.py",
+    "fix": null,
+    "location": {
+      "column": 12,
+      "row": 77
+    },
+    "message": "Do not catch blind exception: `Exception`",
+    "name": "blind-except",
+    "noqa_row": 77,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/blind-except"
+  },
+  {
+    "cell": null,
+    "code": "BLE001",
+    "end_location": {
+      "column": 25,
+      "row": 126
+    },
+    "filename": "/home/aphro/aphrody-py/packages/os/drive/adapters/github/sync.py",
+    "fix": null,
+    "location": {
+      "column": 16,
+      "row": 126
+    },
+    "message": "Do not catch blind exception: `Exception`",
+    "name": "blind-except",
+    "noqa_row": 126,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/blind-except"
+  },
+  {
+    "cell": null,
+    "code": "BLE001",
+    "end_location": {
+      "column": 25,
+      "row": 144
+    },
+    "filename": "/home/aphro/aphrody-py/packages/os/drive/adapters/github/sync.py",
+    "fix": null,
+    "location": {
+      "column": 16,
+      "row": 144
+    },
+    "message": "Do not catch blind exception: `Exception`",
+    "name": "blind-except",
+    "noqa_row": 144,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/blind-except"
+  },
+  {
+    "cell": null,
+    "code": "BLE001",
+    "end_location": {
+      "column": 25,
+      "row": 174
+    },
+    "filename": "/home/aphro/aphrody-py/packages/os/drive/adapters/github/sync.py",
+    "fix": null,
+    "location": {
+      "column": 16,
+      "row": 174
+    },
+    "message": "Do not catch blind exception: `Exception`",
+    "name": "blind-except",
+    "noqa_row": 174,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/blind-except"
+  },
+  {
+    "cell": null,
+    "code": "BLE001",
+    "end_location": {
+      "column": 33,
+      "row": 260
+    },
+    "filename": "/home/aphro/aphrody-py/packages/os/drive/adapters/github/sync.py",
+    "fix": null,
+    "location": {
+      "column": 24,
+      "row": 260
+    },
+    "message": "Do not catch blind exception: `Exception`",
+    "name": "blind-except",
+    "noqa_row": 260,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/blind-except"
+  },
+  {
+    "cell": null,
+    "code": "BLE001",
+    "end_location": {
+      "column": 21,
+      "row": 170
+    },
+    "filename": "/home/aphro/aphrody-py/packages/os/drive/adapters/gmail/sync.py",
+    "fix": null,
+    "location": {
+      "column": 12,
+      "row": 170
+    },
+    "message": "Do not catch blind exception: `Exception`",
+    "name": "blind-except",
+    "noqa_row": 170,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/blind-except"
+  },
+  {
+    "cell": null,
+    "code": "S110",
+    "end_location": {
+      "column": 29,
+      "row": 337
+    },
+    "filename": "/home/aphro/aphrody-py/packages/os/drive/adapters/gmail/sync.py",
+    "fix": null,
+    "location": {
+      "column": 21,
+      "row": 336
+    },
+    "message": "`try`-`except`-`pass` detected, consider logging the exception",
+    "name": "try-except-pass",
+    "noqa_row": 336,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/try-except-pass"
+  },
+  {
+    "cell": null,
+    "code": "BLE001",
+    "end_location": {
+      "column": 37,
+      "row": 336
+    },
+    "filename": "/home/aphro/aphrody-py/packages/os/drive/adapters/gmail/sync.py",
+    "fix": null,
+    "location": {
+      "column": 28,
+      "row": 336
+    },
+    "message": "Do not catch blind exception: `Exception`",
+    "name": "blind-except",
+    "noqa_row": 336,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/blind-except"
+  },
+  {
+    "cell": null,
+    "code": "BLE001",
+    "end_location": {
+      "column": 21,
+      "row": 492
+    },
+    "filename": "/home/aphro/aphrody-py/packages/os/drive/adapters/gmail/sync.py",
+    "fix": null,
+    "location": {
+      "column": 12,
+      "row": 492
+    },
+    "message": "Do not catch blind exception: `Exception`",
+    "name": "blind-except",
+    "noqa_row": 492,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/blind-except"
+  },
+  {
+    "cell": null,
+    "code": "BLE001",
+    "end_location": {
+      "column": 21,
+      "row": 88
+    },
+    "filename": "/home/aphro/aphrody-py/packages/os/drive/adapters/macos-calendar/sync.py",
+    "fix": null,
+    "location": {
+      "column": 12,
+      "row": 88
+    },
+    "message": "Do not catch blind exception: `Exception`",
+    "name": "blind-except",
+    "noqa_row": 88,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/blind-except"
+  },
+  {
+    "cell": null,
+    "code": "BLE001",
+    "end_location": {
+      "column": 21,
+      "row": 92
+    },
+    "filename": "/home/aphro/aphrody-py/packages/os/drive/adapters/macos-contacts/sync.py",
+    "fix": null,
+    "location": {
+      "column": 12,
+      "row": 92
+    },
+    "message": "Do not catch blind exception: `Exception`",
+    "name": "blind-except",
+    "noqa_row": 92,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/blind-except"
+  },
+  {
+    "cell": null,
+    "code": "BLE001",
+    "end_location": {
+      "column": 25,
+      "row": 193
+    },
+    "filename": "/home/aphro/aphrody-py/packages/os/drive/adapters/obsidian/sync.py",
+    "fix": null,
+    "location": {
+      "column": 16,
+      "row": 193
+    },
+    "message": "Do not catch blind exception: `Exception`",
+    "name": "blind-except",
+    "noqa_row": 193,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/blind-except"
+  },
+  {
+    "cell": null,
+    "code": "BLE001",
+    "end_location": {
+      "column": 21,
+      "row": 124
+    },
+    "filename": "/home/aphro/aphrody-py/packages/os/drive/adapters/opencode/sync.py",
+    "fix": null,
+    "location": {
+      "column": 12,
+      "row": 124
+    },
+    "message": "Do not catch blind exception: `Exception`",
+    "name": "blind-except",
+    "noqa_row": 124,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/blind-except"
+  },
+  {
+    "cell": null,
+    "code": "BLE001",
+    "end_location": {
+      "column": 21,
+      "row": 77
+    },
+    "filename": "/home/aphro/aphrody-py/packages/os/drive/adapters/safari-history/sync.py",
+    "fix": null,
+    "location": {
+      "column": 12,
+      "row": 77
+    },
+    "message": "Do not catch blind exception: `Exception`",
+    "name": "blind-except",
+    "noqa_row": 77,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/blind-except"
+  },
+  {
+    "cell": null,
+    "code": "BLE001",
+    "end_location": {
+      "column": 21,
+      "row": 68
+    },
+    "filename": "/home/aphro/aphrody-py/tools/ai/scripts/download_gdrive.py",
+    "fix": null,
+    "location": {
+      "column": 12,
+      "row": 68
+    },
+    "message": "Do not catch blind exception: `Exception`",
+    "name": "blind-except",
+    "noqa_row": 68,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/blind-except"
+  },
+  {
+    "cell": null,
+    "code": "BLE001",
+    "end_location": {
+      "column": 29,
+      "row": 175
+    },
+    "filename": "/home/aphro/aphrody-py/tools/ai/scripts/download_gdrive.py",
+    "fix": null,
+    "location": {
+      "column": 20,
+      "row": 175
+    },
+    "message": "Do not catch blind exception: `Exception`",
+    "name": "blind-except",
+    "noqa_row": 175,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/blind-except"
+  },
+  {
+    "cell": null,
+    "code": "S110",
+    "end_location": {
+      "column": 17,
+      "row": 38
+    },
+    "filename": "/home/aphro/aphrody-py/tools/ai/scripts/merge_data.py",
+    "fix": null,
+    "location": {
+      "column": 9,
+      "row": 37
+    },
+    "message": "`try`-`except`-`pass` detected, consider logging the exception",
+    "name": "try-except-pass",
+    "noqa_row": 37,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/try-except-pass"
+  },
+  {
+    "cell": null,
+    "code": "BLE001",
+    "end_location": {
+      "column": 25,
+      "row": 37
+    },
+    "filename": "/home/aphro/aphrody-py/tools/ai/scripts/merge_data.py",
+    "fix": null,
+    "location": {
+      "column": 16,
+      "row": 37
+    },
+    "message": "Do not catch blind exception: `Exception`",
+    "name": "blind-except",
+    "noqa_row": 37,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/blind-except"
+  },
+  {
+    "cell": null,
+    "code": "BLE001",
+    "end_location": {
+      "column": 21,
+      "row": 122
+    },
+    "filename": "/home/aphro/aphrody-py/tools/ai/scripts/run-gpt-oss-reasoning.py",
+    "fix": null,
+    "location": {
+      "column": 12,
+      "row": 122
+    },
+    "message": "Do not catch blind exception: `Exception`",
+    "name": "blind-except",
+    "noqa_row": 122,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/blind-except"
+  },
+  {
+    "cell": null,
+    "code": "BLE001",
+    "end_location": {
+      "column": 17,
+      "row": 26
+    },
+    "filename": "/home/aphro/aphrody-py/tools/ai/scripts/test-gemini-embedding-2.py",
+    "fix": null,
+    "location": {
+      "column": 8,
+      "row": 26
+    },
+    "message": "Do not catch blind exception: `Exception`",
+    "name": "blind-except",
+    "noqa_row": 26,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/blind-except"
+  },
+  {
+    "cell": null,
+    "code": "BLE001",
+    "end_location": {
+      "column": 21,
+      "row": 105
+    },
+    "filename": "/home/aphro/aphrody-py/tools/ai/scripts/test-gemini-embedding-2.py",
+    "fix": null,
+    "location": {
+      "column": 12,
+      "row": 105
+    },
+    "message": "Do not catch blind exception: `Exception`",
+    "name": "blind-except",
+    "noqa_row": 105,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/blind-except"
+  },
+  {
+    "cell": null,
+    "code": "BLE001",
+    "end_location": {
+      "column": 21,
+      "row": 126
+    },
+    "filename": "/home/aphro/aphrody-py/tools/ai/scripts/test-gemini-embedding-2.py",
+    "fix": null,
+    "location": {
+      "column": 12,
+      "row": 126
+    },
+    "message": "Do not catch blind exception: `Exception`",
+    "name": "blind-except",
+    "noqa_row": 126,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/blind-except"
+  }
+]

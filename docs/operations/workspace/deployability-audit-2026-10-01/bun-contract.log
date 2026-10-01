@@ -1,0 +1,4 @@
+$ bun packages/infra/workspace/src/ops.ts bun-workspace --root .
+packages/infra/paths/package.json  [catalog]  dependencies.ts-morph ^28.0.0 -> catalog: (^28.0.0)  (--fix)
+84 first-party manifests, 1 violation(s)
+error: script "bun:check" exited with code 1

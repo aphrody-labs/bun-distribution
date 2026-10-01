@@ -1,0 +1,2612 @@
+[
+  {
+    "path": "apps/koharu/editor/package.json",
+    "name": "@aphrody/koharu-editor-example",
+    "version": "0.1.0",
+    "private": true,
+    "category": "apps",
+    "scripts": {
+      "dev": "bunx --bun next dev --port 3000",
+      "build": "bunx --bun next build --webpack",
+      "start": "bunx --bun next start",
+      "lint": "oxlint -c .oxlintrc.json",
+      "typecheck": "tsc --noEmit",
+      "test": "vitest run"
+    },
+    "bin": null,
+    "exports": null,
+    "files": null,
+    "publishConfig": null
+  },
+  {
+    "path": "apps/rg/bot/package.json",
+    "name": "@rosegriffon/bot",
+    "version": "1.0.1",
+    "private": true,
+    "category": "apps",
+    "scripts": {
+      "dev": "bun --watch src/index.ts",
+      "start": "bun src/index.ts",
+      "start:bot": "bun src/index.ts bot",
+      "start:api": "bun src/index.ts api",
+      "start:all": "bun src/index.ts all",
+      "build": "bun build src/index.ts --target=bun --packages=external --outdir=dist",
+      "compile": "bun build src/entry-standalone.ts --compile --minify --sourcemap --outfile=dist/rg-bot",
+      "type-check": "bun --bun tsc --noEmit",
+      "lint": "oxlint src",
+      "lint:fix": "oxlint --fix src",
+      "test": "bun test src",
+      "smoke:admin": "bun src/scripts/smoke-admin.ts",
+      "smoke:canvas": "bun src/scripts/smoke-canvas.ts",
+      "typecheck": "bun --bun tsc --noEmit"
+    },
+    "bin": null,
+    "exports": null,
+    "files": null,
+    "publishConfig": null
+  },
+  {
+    "path": "apps/rg/website/package.json",
+    "name": "@rosegriffon/website",
+    "version": "1.0.1",
+    "private": true,
+    "category": "apps",
+    "scripts": {
+      "dev": "bun run --bun next dev",
+      "test": "bun test src",
+      "test:ui": "bun --bun vitest --ui",
+      "test:run": "bun --bun vitest run",
+      "build": "bash ../../../scripts/rg/next-build.sh",
+      "qa:browser": "bash ../../../scripts/rg/qa/agent-browser-rg.sh",
+      "start": "bun run --bun next start",
+      "lint": "oxlint -A style -A pedantic -A restriction -A react/react-in-jsx-scope -A unicorn/consistent-function-scoping -A promise/no-multiple-resolved -A react-perf . && eslint .",
+      "lint:fix": "oxlint -A style -A pedantic -A restriction -A react/react-in-jsx-scope -A unicorn/consistent-function-scoping -A promise/no-multiple-resolved -A react-perf --fix . && eslint --fix .",
+      "format": "oxfmt .",
+      "format:check": "oxfmt --check .",
+      "analyze": "ANALYZE=true next build",
+      "type-check": "bun --bun tsc --noEmit",
+      "clean": "rm -rf .next .turbo dist",
+      "typecheck": "bun --bun tsc --noEmit"
+    },
+    "bin": null,
+    "exports": null,
+    "files": null,
+    "publishConfig": null
+  },
+  {
+    "path": "apps/shenron/bot/package.json",
+    "name": "@shenron/bot",
+    "version": "1.0.0",
+    "private": true,
+    "category": "apps",
+    "scripts": {
+      "dev": "bun --watch src/index.ts",
+      "start": "bun src/index.ts",
+      "build": "bun run dashboard:css && bash scripts/build-bundle.sh",
+      "dashboard:css": "bash scripts/build-dashboard-css.sh",
+      "dashboard:watch": "bunx @tailwindcss/cli --input src/dashboard/styles.css --output src/dashboard/styles.compiled.css --watch",
+      "compile": "bun run dashboard:css && bun build src/entry-standalone.ts --compile --minify --sourcemap --outfile=dist/shenron",
+      "type-check": "bunx tsc --noEmit",
+      "lint": "oxlint",
+      "lint:fix": "oxlint --fix",
+      "test": "bun test --isolate tests/",
+      "ids": "bun scripts/discover-ids.ts",
+      "watch-logs": "bun scripts/log-watcher.ts",
+      "bg:fetch": "bun scripts/fetch-backgrounds.ts --download",
+      "bg:optimize": "bun scripts/optimize-backgrounds.ts",
+      "bg:all": "bun scripts/fetch-backgrounds.ts --download && bun scripts/optimize-backgrounds.ts",
+      "gen:entries": "bun scripts/gen-entries.ts",
+      "db:generate": "bunx drizzle-kit generate",
+      "db:migrate": "bun src/db/migrate.ts",
+      "db:seed-wiki": "bun src/db/seed-wiki.ts",
+      "db:seed-triggers": "bun src/db/seed-triggers.ts",
+      "db:seed-levels": "bun src/db/seed-level-rewards.ts",
+      "db:seed-media": "bun src/db/seed-media.ts",
+      "db:seed-games": "bun src/db/seed-games.ts",
+      "db:seed-manga": "bun src/db/seed-manga.ts",
+      "db:seed-xv2-portraits": "bun src/db/seed-xv2-portraits.ts",
+      "db:seed-xv2-techniques": "bun src/db/seed-xv2-techniques.ts",
+      "db:seed-xv2-characters": "bun src/db/seed-xv2-characters.ts",
+      "db:seed-xv2-transformations": "bun src/db/seed-xv2-transformations.ts",
+      "db:seed-xv2-char-techniques": "bun src/db/seed-xv2-char-techniques.ts",
+      "db:seed-all": "bun src/db/seed-triggers.ts && bun src/db/seed-level-rewards.ts && bun src/db/seed-shop-banners.ts",
+      "db:sync-news": "bun scripts/sync-news.ts",
+      "db:studio": "bunx drizzle-kit studio",
+      "db:push": "bunx drizzle-kit push",
+      "db:seed-xv2-char-meta": "bun src/db/seed-xv2-char-meta.ts",
+      "db:seed-xv2-all": "bun src/db/seed-xv2-techniques.ts && bun src/db/seed-xv2-characters.ts && bun src/db/seed-xv2-char-meta.ts && bun src/db/seed-xv2-portraits.ts && bun src/db/seed-xv2-transformations.ts && bun src/db/seed-xv2-char-techniques.ts",
+      "typecheck": "tsgo -p tsconfig.json --noEmit"
+    },
+    "bin": null,
+    "exports": {
+      "./lib/rag": "./src/lib/rag.ts",
+      "./data/manga-spin-offs-manifest.json": "./data/manga-spin-offs-manifest.json"
+    },
+    "files": null,
+    "publishConfig": null
+  },
+  {
+    "path": "apps/shenron/site/package.json",
+    "name": "@shenron/site",
+    "version": "1.0.0",
+    "private": true,
+    "category": "apps",
+    "scripts": {
+      "dev": "NEXT_DIST_DIR=.next-dev bunx next dev --turbopack",
+      "build": "NEXT_DIST_DIR=.next-build bunx next build --turbopack",
+      "start": "bunx next start",
+      "lint": "oxlint -c .oxlintrc.json",
+      "test": "bun test --isolate tests/",
+      "type-check": "tsc --noEmit && tsc --noEmit -p tsconfig.tests.json",
+      "type-check:tests": "tsc --noEmit -p tsconfig.tests.json",
+      "wiki:repair-interviews": "bun scripts/repair-interview-databook-links.ts",
+      "manga:populate": "bun scripts/populate-manga-pages.ts",
+      "db:migrate": "bunx drizzle-kit migrate",
+      "db:push": "echo \"db:push est interdit : migrations via le runbook aphrody-infra (docs/STACK.md D5)\" >&2 && exit 1",
+      "db:studio": "bunx drizzle-kit studio",
+      "db:generate": "bunx drizzle-kit generate",
+      "typecheck": "tsgo -p tsconfig.json --noEmit"
+    },
+    "bin": null,
+    "exports": {
+      "./lib/wiki-slugs": "./src/lib/wiki-slugs.ts",
+      "./lib/databooks-defauts": "./src/lib/databooks-defauts.ts",
+      "./scripts/aphrody-corpus": "./scripts/_aphrody-corpus.ts"
+    },
+    "files": null,
+    "publishConfig": null
+  },
+  {
+    "path": "packages/ai/doc-ai/package.json",
+    "name": "@aphrody/doc-ai",
+    "version": "3.2.5",
+    "private": false,
+    "category": "packages",
+    "scripts": {
+      "build": "tsc -p tsconfig.build.json",
+      "typecheck": "tsc -p tsconfig.json --noEmit",
+      "typecheck:fast": "tsgo -p tsconfig.json --noEmit",
+      "test": "bun test"
+    },
+    "bin": {
+      "doc-ai": "./src/cli.ts"
+    },
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      }
+    },
+    "files": [
+      "dist",
+      "src"
+    ],
+    "publishConfig": {
+      "access": "public"
+    }
+  },
+  {
+    "path": "packages/ai/google/package.json",
+    "name": "@aphrody/google",
+    "version": "1.0.0-canary",
+    "private": true,
+    "category": "packages",
+    "scripts": {
+      "build": "bun build ./src/index.ts --outdir ./dist --target bun --format esm",
+      "build:cli": "bun build ./bin/aphrody-google.ts --compile --outfile ./dist/aphrody-google-bun",
+      "google:status": "bun ./bin/aphrody-google.ts drive status",
+      "google:sync": "bun ./bin/aphrody-google.ts drive sync",
+      "test": "bun test ./test",
+      "verify": "bun run test && bun run build"
+    },
+    "bin": {
+      "aphrody-google": "./bin/aphrody-google.ts"
+    },
+    "exports": {
+      ".": "./src/index.ts",
+      "./runtime": "./src/runtime.ts",
+      "./api": "./src/api.ts",
+      "./drive-sync": "./src/drive-sync.ts",
+      "./drive-model-sync": "./src/drive-model-sync.ts"
+    },
+    "files": null,
+    "publishConfig": null
+  },
+  {
+    "path": "packages/ai/xai/package.json",
+    "name": "@aphrody/xai",
+    "version": "1.1.6",
+    "private": false,
+    "category": "packages",
+    "scripts": {
+      "typecheck": "tsc --noEmit",
+      "test": "bun test"
+    },
+    "bin": null,
+    "exports": {
+      ".": "./src/index.ts"
+    },
+    "files": [
+      "src/",
+      "!src/**/*.test.ts",
+      "!src/**/*.spec.ts",
+      "README.md",
+      "LICENSE"
+    ],
+    "publishConfig": {
+      "access": "public"
+    }
+  },
+  {
+    "path": "packages/bun/test-dom/package.json",
+    "name": "@aphrody/bun-test-dom",
+    "version": "0.1.0",
+    "private": true,
+    "category": "packages",
+    "scripts": {
+      "typecheck": "bunx --bun tsc --project tsconfig.json"
+    },
+    "bin": null,
+    "exports": {
+      ".": "./src/index.ts"
+    },
+    "files": null,
+    "publishConfig": null
+  },
+  {
+    "path": "packages/compat/n2b-client/package.json",
+    "name": "@aphrody/n2b-core",
+    "version": "0.6.2",
+    "private": false,
+    "category": "packages",
+    "scripts": {
+      "build": "bunx --bun tsc -b",
+      "start": "bun src/start.ts",
+      "dev": "bun --watch src/index.ts",
+      "typecheck": "bunx --bun tsc --noEmit",
+      "test": "cargo build -p aphrody-n2b && bun test"
+    },
+    "bin": null,
+    "exports": {
+      ".": "./src/index.ts",
+      "./cli": "./src/cli.ts"
+    },
+    "files": [
+      "src"
+    ],
+    "publishConfig": {
+      "access": "public",
+      "registry": "https://registry.npmjs.org"
+    }
+  },
+  {
+    "path": "packages/compat/n2b-plugin/package.json",
+    "name": "@aphrody/n2b-plugin",
+    "version": "0.6.2",
+    "private": false,
+    "category": "packages",
+    "scripts": {
+      "typecheck": "bunx --bun tsc --noEmit",
+      "test": "bun test"
+    },
+    "bin": null,
+    "exports": {
+      ".": "./src/index.ts"
+    },
+    "files": [
+      "src"
+    ],
+    "publishConfig": {
+      "access": "public",
+      "registry": "https://registry.npmjs.org"
+    }
+  },
+  {
+    "path": "packages/compat/n2b-shims/package.json",
+    "name": "@aphrody/n2b-shims",
+    "version": "0.6.2",
+    "private": false,
+    "category": "packages",
+    "scripts": {
+      "build": "bunx --bun tsc -b",
+      "typecheck": "bunx --bun tsc --noEmit"
+    },
+    "bin": null,
+    "exports": {
+      ".": "./src/index.ts",
+      "./env": "./src/env.ts",
+      "./fs": "./src/fs.ts",
+      "./path": "./src/path.ts",
+      "./shell": "./src/shell.ts"
+    },
+    "files": [
+      "src"
+    ],
+    "publishConfig": {
+      "access": "public",
+      "registry": "https://registry.npmjs.org"
+    }
+  },
+  {
+    "path": "packages/compat/n2b-types/package.json",
+    "name": "@aphrody/n2b-types",
+    "version": "0.6.2",
+    "private": false,
+    "category": "packages",
+    "scripts": {
+      "build": "bunx --bun tsc -b",
+      "typecheck": "bunx --bun tsc --noEmit"
+    },
+    "bin": null,
+    "exports": {
+      ".": "./src/index.ts"
+    },
+    "files": [
+      "src"
+    ],
+    "publishConfig": {
+      "access": "public",
+      "registry": "https://registry.npmjs.org"
+    }
+  },
+  {
+    "path": "packages/discord/aphrody-messaging/package.json",
+    "name": "@aphrody/messaging",
+    "version": "0.1.0",
+    "private": true,
+    "category": "packages",
+    "scripts": {
+      "build": "tsdown src/index.ts --format esm --dts",
+      "test": "bun test test",
+      "typecheck": "tsc --noEmit -p tsconfig.json"
+    },
+    "bin": null,
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.mts",
+        "import": "./dist/index.mjs"
+      }
+    },
+    "files": [
+      "dist",
+      "README.md",
+      "LICENSE.txt"
+    ],
+    "publishConfig": null
+  },
+  {
+    "path": "packages/discord/kit/package.json",
+    "name": "@aphrody/discord-kit",
+    "version": "0.1.0",
+    "private": true,
+    "category": "packages",
+    "scripts": {
+      "build": "tsdown src/index.ts --format esm --dts",
+      "test": "bun test test",
+      "typecheck": "tsc --noEmit -p tsconfig.json"
+    },
+    "bin": null,
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.mts",
+        "import": "./dist/index.mjs"
+      }
+    },
+    "files": [
+      "dist",
+      "README.md",
+      "LICENSE.txt"
+    ],
+    "publishConfig": null
+  },
+  {
+    "path": "packages/fut/fut/package.json",
+    "name": "@aphrody/fut",
+    "version": "1.0.0",
+    "private": false,
+    "category": "packages",
+    "scripts": {
+      "build": "tsc",
+      "typecheck": "tsc --noEmit",
+      "test": "bun test"
+    },
+    "bin": null,
+    "exports": {
+      ".": "./src/index.ts",
+      "./futbin": "./src/futbin.ts",
+      "./futgg": "./src/futgg.ts",
+      "./squad": "./src/squad/index.ts",
+      "./engine": "./src/engine/index.ts",
+      "./sbc": "./src/sbc/index.ts",
+      "./trading": "./src/trading/index.ts",
+      "./prediction": "./src/prediction/index.ts",
+      "./social": "./src/social/index.ts",
+      "./scraper": "./src/scraper/index.ts",
+      "./crawler": "./src/crawler/index.ts",
+      "./importers": "./src/importers/index.ts",
+      "./services": "./src/services/index.ts",
+      "./api": "./src/api/index.ts",
+      "./extension": "./src/extension/index.ts",
+      "./bots": "./src/bots/index.ts",
+      "./leaks": "./src/leaks/index.ts"
+    },
+    "files": [
+      "src/",
+      "!src/**/*.test.ts",
+      "!src/**/*.spec.ts",
+      "README.md",
+      "LICENSE"
+    ],
+    "publishConfig": {
+      "access": "public"
+    }
+  },
+  {
+    "path": "packages/infra/ovh/package.json",
+    "name": "@aphrody/ovh",
+    "version": "0.2.0",
+    "private": false,
+    "category": "packages",
+    "scripts": {
+      "test": "bun test",
+      "typecheck": "tsc --noEmit",
+      "check": "bun ./src/cli.ts check",
+      "dns": "bun ./src/cli.ts dns",
+      "vps": "bun ./src/cli.ts vps",
+      "email": "bun ./src/cli.ts email"
+    },
+    "bin": {
+      "aphrody-ovh": "./src/cli.ts"
+    },
+    "exports": {
+      ".": "./src/index.ts",
+      "./client": "./src/client.ts",
+      "./dns": "./src/dns.ts",
+      "./vps": "./src/vps.ts",
+      "./email": "./src/email.ts",
+      "./profiles": "./src/profiles.ts"
+    },
+    "files": null,
+    "publishConfig": null
+  },
+  {
+    "path": "packages/infra/paths/package.json",
+    "name": "@aphrody/paths",
+    "version": "0.1.0",
+    "private": true,
+    "category": "packages",
+    "scripts": {
+      "paths:audit": "bun src/cli.ts",
+      "paths:fix": "bun src/cli.ts --apply",
+      "typecheck": "bunx --bun tsc --noEmit --target esnext --module preserve --moduleResolution bundler --allowImportingTsExtensions --types bun src/index.ts src/cli.ts"
+    },
+    "bin": null,
+    "exports": {
+      ".": "./src/index.ts"
+    },
+    "files": null,
+    "publishConfig": null
+  },
+  {
+    "path": "packages/infra/workspace/package.json",
+    "name": "@aphrody/workspace",
+    "version": "0.1.0",
+    "private": true,
+    "category": "packages",
+    "scripts": {
+      "build": "bun build ./src/cli.ts ./src/ops.ts --target=bun --outdir dist --sourcemap=linked",
+      "typecheck": "bunx --bun tsc --project tsconfig.json",
+      "lint": "oxlint src test",
+      "format": "oxfmt src test package.json tsconfig.json",
+      "format:check": "oxfmt --check src test package.json tsconfig.json",
+      "test": "bun test test"
+    },
+    "bin": {
+      "aphrody-ops": "./src/ops.ts",
+      "aphrody-workspace": "./src/cli.ts"
+    },
+    "exports": {
+      ".": "./src/index.ts",
+      "./client": "./src/client.ts",
+      "./imports-exports": "./src/imports-exports.ts",
+      "./monorepo-audit": "./src/monorepo-audit.ts",
+      "./bun-workspace": "./src/bun-workspace.ts",
+      "./bun-docs": "./src/bun-docs.ts",
+      "./ui-verify": "./src/ui-verify.ts",
+      "./drive-upstream-audit": "./src/drive-upstream-audit.ts",
+      "./drive-daemon": "./src/drive-daemon.ts",
+      "./tauri": "./src/tauri.ts",
+      "./tauri-apps": "./src/tauri-apps.ts",
+      "./tauri-sync": "./src/tauri-sync.ts",
+      "./bun-native": "./src/bun-native.ts",
+      "./ui-dedup-manifest": "./src/ui-dedup-manifest.ts",
+      "./spaceui-icons": "./src/spaceui-icons.ts",
+      "./desktop-smoke": "./src/desktop-smoke.ts",
+      "./spaceui-to-m3": "./src/spaceui-to-m3.ts",
+      "./docs-links": "./src/docs-links.ts",
+      "./vendor-license-audit": "./src/vendor-license-audit.ts",
+      "./workspace-deps": "./src/workspace-deps.ts",
+      "./bun-upstream-docs": "./src/bun-upstream-docs.ts",
+      "./ecosystem-deps": "./src/ecosystem-deps.ts",
+      "./workspace-layout": "./src/workspace-layout.ts",
+      "./cargo-boundaries": "./src/cargo-boundaries.ts",
+      "./automation-inventory": "./src/automation-inventory.ts",
+      "./runtime-gate": "./src/runtime-gate.ts",
+      "./iecode-doctor": "./src/iecode-doctor.ts",
+      "./koharu-release": "./src/koharu-release.ts",
+      "./powershell-syntax": "./src/powershell-syntax.ts",
+      "./workspace-clean": "./src/workspace-clean.ts",
+      "./ai-release-gate": "./src/ai-release-gate.ts",
+      "./agent-home": "./src/agent-home.ts",
+      "./agent-plugin-sync": "./src/agent-plugin-sync.ts",
+      "./python-quality": "./src/python-quality.ts",
+      "./docs-overlaps": "./src/docs-overlaps.ts",
+      "./docs-consolidation": "./src/docs-consolidation.ts",
+      "./gitignored-audit": "./src/gitignored-audit.ts",
+      "./runtime-versions": "./src/runtime-versions.ts",
+      "./monorepo-gate": "./src/monorepo-gate.ts",
+      "./windows-paths": "./src/windows-paths.ts",
+      "./git-attribution": "./src/git-attribution.ts",
+      "./clean-public-ai": "./src/clean-public-ai.ts",
+      "./repository-health": "./src/repository-health.ts",
+      "./workspace-repair": "./src/workspace-repair.ts",
+      "./cargo-package-repair": "./src/cargo-package-repair.ts",
+      "./cargo-release-audit": "./src/cargo-release-audit.ts",
+      "./consolidation": "./src/consolidation.ts",
+      "./rg": "./src/rg.ts",
+      "./shenron": "./src/shenron.ts",
+      "./agent-home-drive-sync": "./src/agent-home-drive-sync.ts",
+      "./web-migration": "./src/web-migration.ts",
+      "./repository-state": "./src/repository-state.ts",
+      "./pipeline-catalog": "./src/pipeline-catalog.ts",
+      "./agent-live": "./src/agent-live.ts",
+      "./stack-dedup": "./src/stack-dedup.ts"
+    },
+    "files": null,
+    "publishConfig": null
+  },
+  {
+    "path": "packages/interop/native/package.json",
+    "name": "@aphrody/bun",
+    "version": "3.3.3",
+    "private": true,
+    "category": "packages",
+    "scripts": {
+      "build": "cargo build --release --locked -p aphrody-ffi --features gpu",
+      "test": "cargo build --release --locked -p aphrody-ffi --features gpu && APHRODY_FFI_DEV=1 bun test test-library.test.ts test-native.test.ts test-native-artifact.test.ts && APHRODY_FFI_DEV=1 bun run test-ffi.ts && APHRODY_FFI_DEV=1 bun run test-cli-only.ts",
+      "typecheck": "bunx --bun tsc --project tsconfig.json --noEmit"
+    },
+    "bin": null,
+    "exports": {
+      ".": {
+        "types": "./src/index.ts",
+        "bun": "./src/index.ts",
+        "default": "./src/index.ts"
+      },
+      "./src/*.js": "./src/*.ts",
+      "./src/*": "./src/*",
+      "./cli": "./src/cli.ts",
+      "./manga": "./src/manga.ts",
+      "./shenron": "./src/shenron.ts",
+      "./web": "./src/web.ts",
+      "./n2b": "./src/n2b.ts",
+      "./oxc": "./src/oxc.ts"
+    },
+    "files": [
+      "src",
+      "bindings",
+      "native"
+    ],
+    "publishConfig": {
+      "access": "public"
+    }
+  },
+  {
+    "path": "packages/koharu/bridge/package.json",
+    "name": "@koharu/bridge",
+    "version": "0.1.0",
+    "private": false,
+    "category": "packages",
+    "scripts": {
+      "lint": "oxlint src --ignore-pattern src/protocol.ts --ignore-pattern src/wasm",
+      "typecheck": "tsc --noEmit",
+      "prepack": "bun run build",
+      "dev": "bunx --bun nodemon --watch ../../../crates/koharu/koharu-canvas --watch ../../../crates/koharu/koharu-rasterizer --ext rs,toml --delay 250ms --on-change-only --exec \"bun run build:dev\"",
+      "build": "bun x wasm-pack@0.15.0 build ../../../crates/koharu/koharu-canvas --release --target web --out-dir ../../../packages/koharu/bridge/src/wasm --out-name koharu_canvas --no-pack && bun scripts/prepare-wasm.ts",
+      "build:dev": "bun x wasm-pack@0.15.0 build ../../../crates/koharu/koharu-canvas --dev --target web --out-dir ../../../packages/koharu/bridge/src/wasm --out-name koharu_canvas --no-pack && bun scripts/prepare-wasm.ts"
+    },
+    "bin": null,
+    "exports": {
+      "./canvas": "./src/canvas.ts",
+      "./protocol": "./src/protocol.ts"
+    },
+    "files": [
+      "src"
+    ],
+    "publishConfig": null
+  },
+  {
+    "path": "packages/koharu/docs/package.json",
+    "name": "@koharu/docs",
+    "private": true,
+    "category": "packages",
+    "scripts": {
+      "dev": "mint dev --port 3001 --no-open"
+    },
+    "bin": null,
+    "exports": null,
+    "files": null,
+    "publishConfig": null
+  },
+  {
+    "path": "packages/koharu/sdk/package.json",
+    "name": "@koharu/sdk",
+    "version": "0.1.0",
+    "private": false,
+    "category": "packages",
+    "scripts": {
+      "typecheck": "tsc --noEmit"
+    },
+    "bin": null,
+    "exports": {
+      ".": {
+        "types": "./src/index.ts",
+        "default": "./src/index.ts"
+      },
+      "./tauri": {
+        "types": "./src/tauri.ts",
+        "default": "./src/tauri.ts"
+      },
+      "./native": {
+        "types": "./src/native.ts",
+        "default": "./src/native.ts"
+      },
+      "./settings": {
+        "types": "./src/settings.ts",
+        "default": "./src/settings.ts"
+      }
+    },
+    "files": [
+      "src"
+    ],
+    "publishConfig": null
+  },
+  {
+    "path": "packages/koharu/ui/package.json",
+    "name": "@aphrody/koharu-ui",
+    "version": "0.1.0",
+    "private": false,
+    "category": "packages",
+    "scripts": {
+      "typecheck": "tsc --noEmit"
+    },
+    "bin": null,
+    "exports": {
+      ".": {
+        "bun": "./src/index.ts",
+        "import": "./src/index.ts",
+        "types": "./src/index.ts",
+        "default": "./src/index.ts"
+      },
+      "./providers": "./src/providers.tsx",
+      "./navigation": "./src/navigation.ts",
+      "./components/editor/useCanvas": "./src/components/editor/useCanvas.ts",
+      "./components/preferences/models": "./src/components/preferences/models.ts",
+      "./components/*": "./src/components/*.tsx",
+      "./lib/*": "./src/lib/*.ts",
+      "./locales/*": "./src/locales/*",
+      "./assets/NotoSansCJK-VF.otf": "./src/assets/NotoSansCJK-VF.otf",
+      "./assets/OFL.txt": "./src/assets/OFL.txt",
+      "./styles.css": "./src/styles.css",
+      "./components/preferences/KoharuSettings": "./src/components/preferences/KoharuSettings.tsx"
+    },
+    "files": null,
+    "publishConfig": null
+  },
+  {
+    "path": "packages/os/kernel-client/package.json",
+    "name": "@aphrody/os",
+    "version": "0.1.0",
+    "private": false,
+    "category": "packages",
+    "scripts": {
+      "test": "bun test",
+      "typecheck": "tsc -p tsconfig.json --noEmit"
+    },
+    "bin": null,
+    "exports": {
+      ".": "./src/index.ts"
+    },
+    "files": null,
+    "publishConfig": null
+  },
+  {
+    "path": "packages/os/winclean/package.json",
+    "name": "@aphrody/winclean",
+    "version": "0.1.0",
+    "private": true,
+    "category": "packages",
+    "scripts": {
+      "typecheck": "tsc --noEmit -p .",
+      "test": "bun test"
+    },
+    "bin": null,
+    "exports": {
+      ".": "./src/index.ts"
+    },
+    "files": [
+      "src",
+      "README.md"
+    ],
+    "publishConfig": null
+  },
+  {
+    "path": "packages/rg/achillea-client/package.json",
+    "name": "@rosegriffon/achillea-client",
+    "version": "1.0.1",
+    "private": true,
+    "category": "packages",
+    "scripts": {
+      "lint": "bunx oxlint -c ../config/oxlintrc.json -A style -A pedantic -A restriction src tests",
+      "type-check": "bun --bun tsc --noEmit",
+      "test": "bun test tests",
+      "typecheck": "bun --bun tsc --noEmit"
+    },
+    "bin": null,
+    "exports": {
+      ".": "./src/index.ts",
+      "./v1": "./src/v1/index.ts"
+    },
+    "files": null,
+    "publishConfig": null
+  },
+  {
+    "path": "packages/rg/achillea-contract/package.json",
+    "name": "@rosegriffon/achillea-contract",
+    "version": "1.0.1",
+    "private": true,
+    "category": "packages",
+    "scripts": {
+      "generate": "bun src/cli.ts",
+      "check": "bun src/cli.ts --check",
+      "lint": "bunx oxlint -c ../config/oxlintrc.json -A style -A pedantic -A restriction src tests",
+      "type-check": "bun --bun tsc --noEmit",
+      "test": "bun test tests",
+      "typecheck": "bun --bun tsc --noEmit"
+    },
+    "bin": null,
+    "exports": {
+      ".": "./src/index.ts",
+      "./schema": "./generated/achillea.schema.json"
+    },
+    "files": null,
+    "publishConfig": null
+  },
+  {
+    "path": "packages/rg/achillea-core/package.json",
+    "name": "@rosegriffon/achillea-core",
+    "version": "1.0.1",
+    "private": true,
+    "category": "packages",
+    "scripts": {
+      "lint": "bunx oxlint -c ../config/oxlintrc.json -A style -A pedantic -A restriction src tests",
+      "lint:fix": "bunx oxlint -c ../config/oxlintrc.json -A style -A pedantic -A restriction --fix src tests",
+      "type-check": "bun --bun tsc --noEmit",
+      "format": "bunx oxfmt .",
+      "format:check": "bunx oxfmt --check .",
+      "test": "bun test",
+      "typecheck": "bun --bun tsc --noEmit"
+    },
+    "bin": null,
+    "exports": {
+      ".": "./src/index.ts",
+      "./access": "./src/access/index.ts",
+      "./auth": "./src/auth/index.ts",
+      "./brackets": "./src/brackets/index.ts",
+      "./casts": "./src/casts/index.ts",
+      "./clans": "./src/clans/index.ts",
+      "./elo": "./src/elo/index.ts",
+      "./enums": "./src/enums/index.ts",
+      "./format": "./src/format/index.ts",
+      "./http": "./src/http/index.ts",
+      "./identity": "./src/identity/index.ts",
+      "./labels": "./src/labels/index.ts",
+      "./league": "./src/league/index.ts",
+      "./licenses": "./src/licenses/index.ts",
+      "./names": "./src/names/index.ts",
+      "./numbers": "./src/numbers/index.ts",
+      "./oauth": "./src/oauth/index.ts",
+      "./pagination": "./src/pagination/index.ts",
+      "./participants": "./src/participants/index.ts",
+      "./presentation": "./src/presentation/index.ts",
+      "./ranking": "./src/ranking/index.ts",
+      "./ranked": "./src/ranked/index.ts",
+      "./reference": "./src/reference/index.ts",
+      "./rulesets": "./src/rulesets/index.ts",
+      "./sanctions": "./src/sanctions/index.ts",
+      "./stats": "./src/stats/index.ts",
+      "./tournaments": "./src/tournaments/index.ts",
+      "./validation": "./src/validation/index.ts",
+      "./votes": "./src/votes/index.ts",
+      "./wallet": "./src/wallet/index.ts"
+    },
+    "files": null,
+    "publishConfig": null
+  },
+  {
+    "path": "packages/rg/achillea-types/package.json",
+    "name": "@rosegriffon/achillea-types",
+    "version": "1.0.1",
+    "private": true,
+    "category": "packages",
+    "scripts": {
+      "lint": "bunx oxlint -c ../config/oxlintrc.json -A style -A pedantic -A restriction src test",
+      "type-check": "bun --bun tsc --noEmit",
+      "test": "bun test test",
+      "typecheck": "bun --bun tsc --noEmit"
+    },
+    "bin": null,
+    "exports": {
+      ".": "./src/index.ts",
+      "./enums": "./src/enums/index.ts",
+      "./enums/*": "./src/enums/*.ts",
+      "./domain/*": "./src/domain/*.ts"
+    },
+    "files": null,
+    "publishConfig": null
+  },
+  {
+    "path": "packages/rg/app-shell/package.json",
+    "name": "@rosegriffon/app-shell",
+    "version": "1.0.1",
+    "private": true,
+    "category": "packages",
+    "scripts": {
+      "lint": "bunx oxlint -c ../config/oxlintrc.json src",
+      "type-check": "bun --bun tsc --noEmit",
+      "test": "bun test test",
+      "typecheck": "bun --bun tsc --noEmit"
+    },
+    "bin": null,
+    "exports": {
+      ".": "./src/index.ts",
+      "./routes-next": "./src/lib/routes-next.ts"
+    },
+    "files": null,
+    "publishConfig": null
+  },
+  {
+    "path": "packages/rg/assets/package.json",
+    "name": "@rosegriffon/assets",
+    "version": "1.0.3",
+    "private": false,
+    "category": "packages",
+    "scripts": {},
+    "bin": null,
+    "exports": {
+      ".": "./src/index.ts",
+      "./public/*": "./public/*"
+    },
+    "files": null,
+    "publishConfig": {
+      "access": "public",
+      "registry": "https://registry.npmjs.org"
+    }
+  },
+  {
+    "path": "packages/rg/auth/package.json",
+    "name": "@rosegriffon/auth",
+    "version": "1.0.3",
+    "private": false,
+    "category": "packages",
+    "scripts": {
+      "type-check": "bun --bun tsc --noEmit",
+      "test": "bun test src",
+      "lint": "bunx oxlint -c ../config/oxlintrc.json src",
+      "typecheck": "bun --bun tsc --noEmit"
+    },
+    "bin": null,
+    "exports": {
+      ".": "./src/index.ts",
+      "./server": "./src/server.ts",
+      "./elysia": "./src/elysia.ts",
+      "./achillea-session": "./src/achillea-session.ts"
+    },
+    "files": null,
+    "publishConfig": {
+      "access": "public",
+      "registry": "https://registry.npmjs.org"
+    }
+  },
+  {
+    "path": "packages/rg/azalee/package.json",
+    "name": "@rosegriffon/azalee",
+    "version": "1.0.5",
+    "private": false,
+    "category": "packages",
+    "scripts": {
+      "build": "bun --bun tsc -p tsconfig.build.json",
+      "cli": "bun src/cli.ts",
+      "compile": "bun scripts/build-standalone.ts",
+      "serve": "bun src/cli.ts serve",
+      "test": "bun test",
+      "lint": "bunx oxlint -c ../config/oxlintrc.json -A style -A pedantic -A restriction src",
+      "lint:fix": "bunx oxlint -c ../config/oxlintrc.json -A style -A pedantic -A restriction --fix src",
+      "type-check": "bun --bun tsc --noEmit",
+      "clean": "rm -rf dist *.tsbuildinfo",
+      "prepublishOnly": "bun run build",
+      "typecheck": "bun --bun tsc --noEmit"
+    },
+    "bin": {
+      "azalee": "./src/cli.ts"
+    },
+    "exports": {
+      ".": "./src/index.ts",
+      "./config": "./src/config.ts",
+      "./db": "./src/db/index.ts",
+      "./db/*": "./src/db/*.ts",
+      "./wiki": "./src/wiki/index.ts",
+      "./wiki/*": "./src/wiki/*.ts",
+      "./cpk": "./src/cpk/index.ts",
+      "./cpk/*": "./src/cpk/*.ts",
+      "./game-text": "./src/game-text/index.ts",
+      "./game-text/*": "./src/game-text/*.ts",
+      "./cross": "./src/cross/index.ts",
+      "./cross/*": "./src/cross/*.ts",
+      "./images": "./src/images/index.ts",
+      "./search": "./src/search/index.ts",
+      "./search/*": "./src/search/*.ts",
+      "./text": "./src/text/index.ts",
+      "./text/*": "./src/text/*.ts",
+      "./game": "./src/game/index.ts",
+      "./game/*": "./src/game/*.ts",
+      "./remote": "./src/remote/index.ts",
+      "./remote/*": "./src/remote/*.ts",
+      "./server": "./src/server/index.ts",
+      "./server/*": "./src/server/*.ts",
+      "./package.json": "./package.json"
+    },
+    "files": [
+      "src",
+      "dist",
+      "README.md"
+    ],
+    "publishConfig": {
+      "access": "public",
+      "registry": "https://registry.npmjs.org"
+    }
+  },
+  {
+    "path": "packages/rg/config/package.json",
+    "name": "@rosegriffon/config",
+    "version": "1.0.3",
+    "private": false,
+    "category": "packages",
+    "scripts": {
+      "lint": "bunx oxlint -c ./oxlintrc.json ."
+    },
+    "bin": null,
+    "exports": {
+      "./tsconfig-base.json": "./tsconfig-base.json",
+      "./tsconfig-nextjs.json": "./tsconfig-nextjs.json",
+      "./tsconfig-bun.json": "./tsconfig-bun.json",
+      "./oxlintrc.json": "./oxlintrc.json",
+      "./tailwind-preset.ts": "./tailwind-preset.ts"
+    },
+    "files": [
+      "tsconfig-*.json",
+      "oxlintrc.json",
+      "tailwind-preset.ts"
+    ],
+    "publishConfig": {
+      "access": "public",
+      "registry": "https://registry.npmjs.org"
+    }
+  },
+  {
+    "path": "packages/rg/cron/package.json",
+    "name": "@rosegriffon/cron",
+    "version": "1.0.1",
+    "private": true,
+    "category": "packages",
+    "scripts": {
+      "test": "bun test src",
+      "start": "bun src/index.ts",
+      "qa:website": "bun src/index.ts --run website:qa",
+      "build": "bun build src/index.ts --compile --minify --sourcemap --bytecode --format esm --outfile dist/rg-cron",
+      "type-check": "bun --bun tsc -p tsconfig.typecheck.json --noEmit",
+      "lint": "bunx oxlint -c ../config/oxlintrc.json src",
+      "typecheck": "bun --bun tsc -p tsconfig.typecheck.json --noEmit"
+    },
+    "bin": null,
+    "exports": {
+      ".": "./src/index.ts"
+    },
+    "files": null,
+    "publishConfig": {
+      "access": "public",
+      "registry": "https://registry.npmjs.org"
+    }
+  },
+  {
+    "path": "packages/rg/db/package.json",
+    "name": "@rosegriffon/db",
+    "version": "1.0.3",
+    "private": false,
+    "category": "packages",
+    "scripts": {
+      "types:gen": "bun scripts/types-gen.ts",
+      "type-check": "bun --bun tsc --noEmit",
+      "test": "bun test",
+      "lint": "bunx oxlint -c ../config/oxlintrc.json src",
+      "typecheck": "bun --bun tsc --noEmit"
+    },
+    "bin": null,
+    "exports": {
+      ".": "./src/index.ts",
+      "./browser": "./src/browser.ts",
+      "./service": "./src/service.ts",
+      "./redis": "./src/redis.ts",
+      "./storage": "./src/storage.ts",
+      "./stats": "./src/services/stats.ts",
+      "./types": "./src/types.ts",
+      "./platform": "./src/platform.ts",
+      "./achillea": "./src/achillea.ts",
+      "./achillea-sql": "./src/achillea-sql.ts",
+      "./inagle": "./src/inagle.ts",
+      "./pg": "./src/pg.ts",
+      "./bun-sql": "./src/bun-sql.ts",
+      "./postgres-client": "./src/postgres-client.ts",
+      "./kysely-types": "./src/kysely-types.ts",
+      "./schema": "./src/schema/index.ts"
+    },
+    "files": null,
+    "publishConfig": {
+      "access": "public",
+      "registry": "https://registry.npmjs.org"
+    }
+  },
+  {
+    "path": "packages/rg/discord-sync/package.json",
+    "name": "@rosegriffon/discord-sync",
+    "version": "0.1.0",
+    "private": true,
+    "category": "packages",
+    "scripts": {
+      "test": "bun test"
+    },
+    "bin": null,
+    "exports": {
+      ".": "./src/index.ts"
+    },
+    "files": null,
+    "publishConfig": null
+  },
+  {
+    "path": "packages/rg/i18n/package.json",
+    "name": "@rosegriffon/i18n",
+    "version": "1.0.1",
+    "private": true,
+    "category": "packages",
+    "scripts": {
+      "lint": "bunx oxlint -c ../config/oxlintrc.json -A style -A pedantic -A restriction src test",
+      "type-check": "bun --bun tsc --noEmit",
+      "test": "bun test test",
+      "typecheck": "bun --bun tsc --noEmit"
+    },
+    "bin": null,
+    "exports": {
+      ".": {
+        "types": "./src/index.ts",
+        "default": "./src/index.ts"
+      }
+    },
+    "files": null,
+    "publishConfig": null
+  },
+  {
+    "path": "packages/rg/identity/package.json",
+    "name": "@rosegriffon/identity",
+    "version": "1.0.1",
+    "private": true,
+    "category": "packages",
+    "scripts": {
+      "lint": "bunx oxlint -c ../config/oxlintrc.json src",
+      "type-check": "bun --bun tsc --noEmit",
+      "test": "bun test test",
+      "typecheck": "bun --bun tsc --noEmit"
+    },
+    "bin": null,
+    "exports": {
+      ".": {
+        "types": "./src/index.ts",
+        "default": "./src/index.ts"
+      }
+    },
+    "files": null,
+    "publishConfig": null
+  },
+  {
+    "path": "packages/rg/inagle-cross/package.json",
+    "name": "@rosegriffon/inagle-cross",
+    "version": "1.0.3",
+    "private": false,
+    "category": "packages",
+    "scripts": {
+      "type-check": "bun --bun tsc --noEmit",
+      "lint": "bunx oxlint -c ../config/oxlintrc.json src",
+      "typecheck": "bun --bun tsc --noEmit"
+    },
+    "bin": null,
+    "exports": {
+      ".": "./src/index.ts"
+    },
+    "files": null,
+    "publishConfig": {
+      "access": "public",
+      "registry": "https://registry.npmjs.org"
+    }
+  },
+  {
+    "path": "packages/rg/inagle/package.json",
+    "name": "@rosegriffon/inagle",
+    "version": "2.0.4",
+    "private": false,
+    "category": "packages",
+    "scripts": {
+      "build": "bun --bun tsc -p tsconfig.build.json",
+      "cli": "bun src/cli.ts",
+      "push": "bun src/cli.ts push",
+      "import:cfgbin:postgres": "bun scripts/import-cfgbin-postgres.ts",
+      "import:passives:postgres": "bun scripts/import-passives-postgres.ts",
+      "import:passive-sheets:postgres": "bun scripts/import-passive-sheets-postgres.ts",
+      "import:formations:postgres": "bun scripts/import-formations-postgres.ts",
+      "import:skill-cutins:postgres": "bun scripts/import-skill-cutins-postgres.ts",
+      "import:asset-manifests:postgres": "bun scripts/import-asset-manifests-postgres.ts",
+      "import:cross-catalog:postgres": "bun scripts/import-cross-catalog-postgres.ts",
+      "import:cpk-index:postgres": "bun scripts/import-cpk-index-postgres.ts",
+      "import:game-text:postgres": "bun scripts/import-game-text-postgres.ts",
+      "prepublishOnly": "bun run build",
+      "test": "bun test",
+      "lint": "bunx oxlint -c ../config/oxlintrc.json -A style -A pedantic -A restriction src",
+      "lint:fix": "bunx oxlint -c ../config/oxlintrc.json -A style -A pedantic -A restriction --fix src",
+      "type-check": "bun --bun tsc -p tsconfig.json --noEmit",
+      "typecheck": "bun --bun tsc -p tsconfig.json --noEmit"
+    },
+    "bin": {
+      "inagle": "./dist/cli.js"
+    },
+    "exports": {
+      ".": "./src/index.ts",
+      "./asset-manifest": "./src/data/asset-manifest.generated.ts",
+      "./*": "./src/*.ts"
+    },
+    "files": [
+      "dist",
+      "src"
+    ],
+    "publishConfig": {
+      "access": "public",
+      "registry": "https://registry.npmjs.org"
+    }
+  },
+  {
+    "path": "packages/rg/patreon-bun/apps/worker-docs/package.json",
+    "name": "@rosegriffon/patreon-bun-worker-docs",
+    "version": "1.0.0",
+    "private": true,
+    "category": "packages",
+    "scripts": {
+      "typecheck": "bun --bun tsc -p tsconfig.json --noEmit"
+    },
+    "bin": null,
+    "exports": null,
+    "files": null,
+    "publishConfig": null
+  },
+  {
+    "path": "packages/rg/patreon-bun/docs/package.json",
+    "name": "@rosegriffon/patreon-bun-docs",
+    "private": true,
+    "category": "packages",
+    "scripts": {
+      "generate:api": "typedoc",
+      "docs:dev": "bun run generate:api && vitepress dev",
+      "docs:build": "bun run generate:api && vitepress build",
+      "docs:preview": "vitepress preview",
+      "typecheck": "bun --bun tsc -p tsconfig.json --noEmit"
+    },
+    "bin": null,
+    "exports": null,
+    "files": null,
+    "publishConfig": null
+  },
+  {
+    "path": "packages/rg/patreon-bun/examples/bun-esm/package.json",
+    "name": "@rosegriffon/patreon-bun-bun-esm",
+    "version": "1.0.0",
+    "private": true,
+    "category": "packages",
+    "scripts": {
+      "start": "bun index.js",
+      "typecheck": "bun --bun tsc -p tsconfig.json --noEmit"
+    },
+    "bin": null,
+    "exports": null,
+    "files": null,
+    "publishConfig": null
+  },
+  {
+    "path": "packages/rg/patreon-bun/examples/bun-webhook/package.json",
+    "name": "@rosegriffon/patreon-bun-bun-webhook",
+    "version": "1.0.0",
+    "private": true,
+    "category": "packages",
+    "scripts": {
+      "start": "bun src/index.ts",
+      "type-check": "tsc --noEmit",
+      "typecheck": "tsc --noEmit"
+    },
+    "bin": null,
+    "exports": null,
+    "files": null,
+    "publishConfig": null
+  },
+  {
+    "path": "packages/rg/patreon-bun/examples/cloudflare-webhook/package.json",
+    "name": "@rosegriffon/patreon-bun-cloudflare-webhook",
+    "version": "1.0.0",
+    "private": true,
+    "category": "packages",
+    "scripts": {
+      "deploy": "bunx wrangler deploy",
+      "typecheck": "bun --bun tsc -p tsconfig.json --noEmit"
+    },
+    "bin": null,
+    "exports": null,
+    "files": null,
+    "publishConfig": null
+  },
+  {
+    "path": "packages/rg/patreon-bun/package.json",
+    "name": "@rosegriffon/patreon-bun",
+    "version": "1.0.3",
+    "private": false,
+    "category": "packages",
+    "scripts": {
+      "test": "bun test --preload ./src/__tests__/server.ts src",
+      "build:js": "bun build src/index.ts --outdir dist --target bun --format esm",
+      "build:types": "bun --bun tsc --emitDeclarationOnly --noCheck",
+      "build": "bun run build:js && bun run build:types",
+      "prepublishOnly": "bun run build",
+      "type-check": "bun --bun tsc --noEmit",
+      "lint": "bunx oxlint -c ../config/oxlintrc.json -A style -A pedantic -A restriction src",
+      "typecheck": "bun --bun tsc --noEmit"
+    },
+    "bin": null,
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "import": "./dist/index.js"
+      }
+    },
+    "files": [
+      "dist",
+      "README.md",
+      "LICENSE"
+    ],
+    "publishConfig": {
+      "access": "public",
+      "registry": "https://registry.npmjs.org"
+    }
+  },
+  {
+    "path": "packages/rg/preferences/package.json",
+    "name": "@rosegriffon/preferences",
+    "version": "1.0.3",
+    "private": false,
+    "category": "packages",
+    "scripts": {
+      "lint": "bunx oxlint -c ../config/oxlintrc.json src",
+      "type-check": "bun --bun tsc --noEmit",
+      "test": "bun test test",
+      "typecheck": "bun --bun tsc --noEmit"
+    },
+    "bin": null,
+    "exports": {
+      ".": {
+        "types": "./src/index.ts",
+        "default": "./src/index.ts"
+      }
+    },
+    "files": [
+      "src"
+    ],
+    "publishConfig": {
+      "access": "public",
+      "registry": "https://registry.npmjs.org"
+    }
+  },
+  {
+    "path": "packages/rg/search/package.json",
+    "name": "@rosegriffon/search",
+    "version": "1.0.1",
+    "private": true,
+    "category": "packages",
+    "scripts": {
+      "lint": "bunx oxlint -c ../config/oxlintrc.json src",
+      "type-check": "bun --bun tsc --noEmit",
+      "test": "bun test test",
+      "typecheck": "bun --bun tsc --noEmit"
+    },
+    "bin": null,
+    "exports": {
+      ".": "./src/index.ts"
+    },
+    "files": null,
+    "publishConfig": null
+  },
+  {
+    "path": "packages/rg/types/package.json",
+    "name": "@rosegriffon/types",
+    "version": "1.0.3",
+    "private": false,
+    "category": "packages",
+    "scripts": {
+      "test": "bun test src",
+      "lint": "bunx oxlint -c ../config/oxlintrc.json src",
+      "type-check": "bun --bun tsc --noEmit",
+      "typecheck": "bun --bun tsc --noEmit"
+    },
+    "bin": null,
+    "exports": {
+      ".": "./src/index.ts",
+      "./roles": "./src/roles.ts",
+      "./user": "./src/user.ts",
+      "./discord": "./src/discord.ts",
+      "./discord-hierarchie": "./src/discord-hierarchie.ts",
+      "./bot": "./src/bot.ts",
+      "./profil": "./src/profil.ts",
+      "./experience": "./src/experience.ts",
+      "./cron": "./src/cron.ts",
+      "./article": "./src/article.ts",
+      "./stats": "./src/stats.ts",
+      "./visitor": "./src/visitor.ts",
+      "./event": "./src/event.ts",
+      "./stream": "./src/stream.ts",
+      "./team": "./src/team.ts",
+      "./instagram": "./src/instagram.ts",
+      "./schemas": "./src/schemas.ts"
+    },
+    "files": null,
+    "publishConfig": {
+      "access": "public",
+      "registry": "https://registry.npmjs.org"
+    }
+  },
+  {
+    "path": "packages/rg/ui/package.json",
+    "name": "@rosegriffon/ui",
+    "version": "1.0.3",
+    "private": false,
+    "category": "packages",
+    "scripts": {
+      "lint": "bunx oxlint -c ../config/oxlintrc.json src",
+      "type-check": "bun --bun tsc --noEmit",
+      "test": "bun test test",
+      "tokens": "bun scripts/generer-tokens.ts",
+      "typecheck": "bun --bun tsc --noEmit"
+    },
+    "bin": null,
+    "exports": {
+      ".": "./src/index.ts",
+      "./tokens": "./src/tokens.ts",
+      "./lib/utils": "./src/lib/utils.ts",
+      "./lib/adsense": "./src/lib/adsense.ts",
+      "./styles.css": "./src/styles.css",
+      "./hooks/*": "./src/hooks/*.ts",
+      "./*": "./src/components/*.tsx"
+    },
+    "files": null,
+    "publishConfig": {
+      "access": "public",
+      "registry": "https://registry.npmjs.org"
+    }
+  },
+  {
+    "path": "packages/shenron/api/package.json",
+    "name": "@shenron/api",
+    "version": "0.1.0",
+    "private": true,
+    "category": "packages",
+    "scripts": {
+      "type-check": "tsc --noEmit",
+      "lint": "oxlint -c ../.oxlintrc.json",
+      "test": "bun test",
+      "openapi": "bun scripts/openapi.ts",
+      "openapi:check": "bun scripts/openapi.ts --check",
+      "typecheck": "tsgo -p tsconfig.json --noEmit"
+    },
+    "bin": null,
+    "exports": {
+      "./contract": "./src/contract/index.ts",
+      "./client": "./src/client/index.ts",
+      "./http": "./src/http.ts",
+      "./server": "./src/server/index.ts",
+      "./next": "./src/next.ts",
+      "./openapi.json": "./openapi/public.json"
+    },
+    "files": null,
+    "publishConfig": null
+  },
+  {
+    "path": "packages/shenron/auth/package.json",
+    "name": "@shenron/auth",
+    "version": "0.1.0",
+    "private": true,
+    "category": "packages",
+    "scripts": {
+      "type-check": "tsc --noEmit",
+      "lint": "oxlint -c ../.oxlintrc.json",
+      "test": "bun test",
+      "typecheck": "tsgo -p tsconfig.json --noEmit"
+    },
+    "bin": null,
+    "exports": {
+      ".": "./src/index.ts",
+      "./origins": "./src/origins.ts",
+      "./a2a": "./src/a2a.ts",
+      "./crypto": "./src/crypto.ts",
+      "./tokens": "./src/tokens.ts",
+      "./acting-user": "./src/acting-user.ts",
+      "./staff": "./src/staff.ts",
+      "./ports": "./src/ports.ts",
+      "./guards": "./src/guards.ts",
+      "./options": "./src/options.ts",
+      "./policy": "./src/policy.ts",
+      "./agent-keys": "./src/agent-keys.ts",
+      "./next": "./src/next.ts",
+      "./hono": "./src/hono.ts",
+      "./client": "./src/client.ts"
+    },
+    "files": null,
+    "publishConfig": null
+  },
+  {
+    "path": "packages/shenron/config/package.json",
+    "name": "@shenron/config",
+    "version": "0.1.0",
+    "private": true,
+    "category": "packages",
+    "scripts": {
+      "type-check": "tsc --noEmit",
+      "lint": "oxlint -c ../.oxlintrc.json",
+      "test": "bun test",
+      "typecheck": "tsgo -p tsconfig.json --noEmit"
+    },
+    "bin": null,
+    "exports": {
+      "./env": "./src/env.ts",
+      "./net": "./src/net.ts",
+      "./paths": "./src/paths.ts",
+      "./public-urls": "./src/public-urls.ts",
+      "./services": "./src/services.ts",
+      "./guards": "./src/guards.ts",
+      "./testing": "./src/testing.ts",
+      "./zeni": "./src/zeni.ts",
+      "./races": "./src/races.ts",
+      "./races-alias": "./src/races-alias.ts",
+      "./economy-canon": "./src/economy-canon.ts",
+      "./inflation-rules": "./src/inflation-rules.ts",
+      "./fusion-names": "./src/fusion-names.ts",
+      "./xp": "./src/xp.ts",
+      "./techniques-types": "./src/techniques-types.ts",
+      "./tsconfig/base.json": "./tsconfig/base.json",
+      "./tsconfig/bun.json": "./tsconfig/bun.json",
+      "./tsconfig/react.json": "./tsconfig/react.json",
+      "./slug": "./src/slug.ts",
+      "./wiki-slugs": "./src/wiki-slugs.ts",
+      "./databooks-defauts": "./src/databooks-defauts.ts"
+    },
+    "files": null,
+    "publishConfig": null
+  },
+  {
+    "path": "packages/shenron/db/package.json",
+    "name": "@shenron/db",
+    "version": "0.1.0",
+    "private": true,
+    "category": "packages",
+    "scripts": {
+      "type-check": "tsc --noEmit",
+      "lint": "oxlint -c ../.oxlintrc.json",
+      "test": "bun test",
+      "audit:migrations": "bun scripts/migration-audit.ts --check",
+      "typecheck": "tsgo -p tsconfig.json --noEmit"
+    },
+    "bin": null,
+    "exports": {
+      ".": "./src/index.ts",
+      "./schema": "./src/schema.ts",
+      "./bot-schema": "./src/bot-schema.ts",
+      "./full-schema": "./src/full-schema.ts",
+      "./constants": "./src/constants.ts",
+      "./config": "./src/config.ts",
+      "./types": "./src/types.ts",
+      "./sql": "./src/sql.ts",
+      "./postgres-js": "./src/postgres-js.ts",
+      "./bun-sql": "./src/bun-sql.ts",
+      "./bun": "./src/bun.ts",
+      "./env": "./src/env.ts",
+      "./wiki-registry": "./src/wiki-registry.ts",
+      "./repos/wiki": "./src/repos/wiki.ts",
+      "./repos/agent-keys": "./src/repos/agent-keys.ts",
+      "./repos/accounts": "./src/repos/accounts.ts",
+      "./guards": "./src/guards.ts",
+      "./redis": "./src/redis.ts"
+    },
+    "files": null,
+    "publishConfig": null
+  },
+  {
+    "path": "packages/shenron/images/package.json",
+    "name": "@shenron/images",
+    "version": "0.1.0",
+    "private": true,
+    "category": "packages",
+    "scripts": {
+      "test": "bun test",
+      "type-check": "bunx tsc --noEmit",
+      "typecheck": "tsgo -p tsconfig.json --noEmit"
+    },
+    "bin": null,
+    "exports": {
+      ".": {
+        "types": "./src/index.ts",
+        "bun": "./src/index.ts",
+        "default": "./src/index.ts"
+      },
+      "./variants": {
+        "types": "./src/variants.ts",
+        "default": "./src/variants.ts"
+      },
+      "./resolve": {
+        "types": "./src/resolve.ts",
+        "default": "./src/resolve.ts"
+      },
+      "./ink-stroke": {
+        "types": "./src/ink-stroke.ts",
+        "default": "./src/ink-stroke.ts"
+      }
+    },
+    "files": null,
+    "publishConfig": null
+  },
+  {
+    "path": "packages/shenron/pipeline/package.json",
+    "name": "@shenron/pipeline",
+    "version": "0.1.0",
+    "private": true,
+    "category": "packages",
+    "scripts": {
+      "pipeline": "bun src/cli.ts",
+      "build": "bun build src/cli.ts --target=bun --outfile=dist/pipeline",
+      "type-check": "tsc --noEmit && tsc --noEmit -p tsconfig.scripts.json",
+      "lint": "oxlint -c ../.oxlintrc.json",
+      "test": "bun test",
+      "typecheck": "tsgo -p tsconfig.json --noEmit"
+    },
+    "bin": {
+      "pipeline": "./src/cli.ts"
+    },
+    "exports": {
+      ".": "./src/index.ts",
+      "./ai/config": "./src/ai/config.ts",
+      "./ai/prompts": "./src/ai/prompts.ts",
+      "./ai/chat": "./src/ai/chat.ts",
+      "./ai/embeddings": "./src/ai/embeddings.ts",
+      "./ai/ports": "./src/ai/ports.ts",
+      "./ai/generate": "./src/ai/generate.ts",
+      "./ai/eval": "./src/ai/eval.ts",
+      "./ai/index": "./src/ai/index.ts",
+      "./ai/aphrody": "./src/ai/aphrody.ts",
+      "./ai/provider": "./src/ai/provider.ts",
+      "./ai/wire": "./src/ai/wire.ts",
+      "./aphrody/remote-ocr": "./src/aphrody/remote-ocr.ts",
+      "./aphrody/a2a-probes": "./src/aphrody/a2a-probes.ts",
+      "./aphrody/shenron-embeddings": "./src/aphrody/shenron-embeddings.ts",
+      "./aphrody/a2a": "./src/aphrody/a2a.ts",
+      "./aphrody/cli": "./src/aphrody/cli.ts",
+      "./aphrody/compute": "./src/aphrody/compute.ts",
+      "./aphrody/index": "./src/aphrody/index.ts",
+      "./aphrody/native": "./src/aphrody/native.ts",
+      "./aphrody/web": "./src/aphrody/web.ts",
+      "./aphrody/translate": "./src/aphrody/translate.ts",
+      "./aphrody/wiki": "./src/aphrody/wiki.ts",
+      "./aphrody/mirror": "./src/aphrody/mirror.ts",
+      "./aphrody/frames": "./src/aphrody/frames.ts",
+      "./bxc/types": "./src/bxc/types.ts",
+      "./bxc/cli": "./src/bxc/cli.ts",
+      "./manga-ocr": "./src/manga-ocr.ts",
+      "./bxc/voiranime": "./src/bxc/services.ts",
+      "./bxc/spawn": "./src/bxc/spawn.ts",
+      "./bxc/wiki": "./src/bxc/services.ts",
+      "./bxc/db": "./src/bxc/services.ts",
+      "./bxc/media": "./src/bxc/services.ts",
+      "./bxc/animesama": "./src/bxc/services.ts",
+      "./bxc/index": "./src/bxc/index.ts",
+      "./bxc/google": "./src/bxc/services.ts",
+      "./bxc/frames": "./src/bxc/services.ts",
+      "./bxc/dragonballcn": "./src/bxc/services.ts",
+      "./compute": "./src/aphrody/compute.ts",
+      "./embeddings": "./src/aphrody/shenron-embeddings.ts",
+      "./web": "./src/aphrody/web.ts",
+      "./a2a": "./src/aphrody/a2a.ts",
+      "./cli": "./src/aphrody/cli.ts",
+      "./remote-ocr": "./src/aphrody/remote-ocr.ts",
+      "./native": "./src/aphrody/native.ts",
+      "./ai": "./src/ai/index.ts",
+      "./aphrody": "./src/aphrody/index.ts",
+      "./bxc": "./src/bxc/index.ts",
+      "./aphrody/embeddings": "./src/aphrody/shenron-embeddings.ts"
+    },
+    "files": null,
+    "publishConfig": null
+  },
+  {
+    "path": "packages/shenron/ui/package.json",
+    "name": "@shenron/ui",
+    "version": "0.1.0",
+    "private": true,
+    "category": "packages",
+    "scripts": {
+      "type-check": "tsc --noEmit",
+      "lint": "oxlint -c ../.oxlintrc.json",
+      "test": "bun test",
+      "tokens": "bun scripts/generate-tokens.ts",
+      "tokens:check": "bun scripts/generate-tokens.ts --check",
+      "css:equivalence": "bun scripts/check-css-equivalence.ts",
+      "assets:check": "bun scripts/sync-assets.ts --check",
+      "assets:sync": "bun scripts/sync-assets.ts",
+      "build:check": "bun scripts/production-check.ts",
+      "portability:check": "bun scripts/check-portability.ts",
+      "typecheck": "tsgo -p tsconfig.json --noEmit"
+    },
+    "bin": null,
+    "exports": {
+      ".": "./src/index.ts",
+      "./server": "./src/server.ts",
+      "./client": "./src/client.ts",
+      "./admin": "./src/admin.ts",
+      "./public": "./src/public.ts",
+      "./reader": "./src/reader/index.ts",
+      "./reader-styles.css": "./src/reader-styles.css",
+      "./reader-dragon-ball.css": "./src/reader-dragon-ball.css",
+      "./public/*": "./src/public/*.tsx",
+      "./assets": "./src/assets.ts",
+      "./assets/*": "./assets/*",
+      "./svg": "./src/toriyama-svg/index.ts",
+      "./lib/utils": "./src/lib/utils.ts",
+      "./lib/page-window": "./src/lib/page-window.ts",
+      "./styles.css": "./src/styles.css",
+      "./site.css": "./src/site.css",
+      "./toriyama.css": "./src/toriyama.css",
+      "./barre-nav.css": "./src/barre-nav.css",
+      "./editor.css": "./src/editor.css",
+      "./editorial.css": "./src/editorial.css",
+      "./tokens": "./src/tokens.ts",
+      "./icones": "./src/icones/index.tsx",
+      "./toriyama": "./src/toriyama/index.ts",
+      "./toriyama/*": "./src/toriyama/*.tsx",
+      "./toriyama-svg": "./src/toriyama-svg/index.ts",
+      "./toriyama-svg/*": "./src/toriyama-svg/*.ts",
+      "./cinematic": "./src/cinematic/index.ts",
+      "./cinematic/*": "./src/cinematic/*.tsx",
+      "./layout/*": "./src/layout/*.tsx",
+      "./navigation/*": "./src/navigation/*.tsx",
+      "./admin/*": "./src/admin/*.tsx",
+      "./*": "./src/components/*.tsx"
+    },
+    "files": null,
+    "publishConfig": null
+  },
+  {
+    "path": "packages/ui/assets/package.json",
+    "name": "@aphrody/assets",
+    "version": "0.1.0",
+    "private": false,
+    "category": "packages",
+    "scripts": {
+      "gen": "bun scripts/generate.ts",
+      "typecheck": "tsc --noEmit",
+      "test": "bun test"
+    },
+    "bin": null,
+    "exports": {
+      "./icons": "./icons/index.ts",
+      "./icons/*": "./icons/*",
+      "./images": "./images/index.ts",
+      "./images/*": "./images/*",
+      "./svgs/*": "./svgs/*",
+      "./svgs/ext/icons.json": "./svgs/ext/icons.json",
+      "./sounds": "./sounds/index.ts",
+      "./sounds/*": "./sounds/*",
+      "./videos/*": "./videos/*",
+      "./lottie/*": "./lottie/*",
+      "./util": "./util/index.ts",
+      "./util/mobile": "./util/mobile.ts"
+    },
+    "files": [
+      "icons",
+      "images",
+      "lottie",
+      "sounds",
+      "svgs",
+      "videos",
+      "util",
+      "types.d.ts",
+      "LICENSE.spacedrive",
+      "LICENSE.spaceui"
+    ],
+    "publishConfig": {
+      "access": "public"
+    }
+  },
+  {
+    "path": "packages/ui/canvas/package.json",
+    "name": "@aphrody/canvas",
+    "version": "1.0.9-aphrody.2",
+    "private": false,
+    "category": "packages",
+    "scripts": {
+      "typecheck": "bunx tsc --noEmit && bunx tsc --noEmit -p tsconfig.types.json",
+      "test": "bun test",
+      "lint": "oxlint -c .oxlintrc.json --no-ignore index.ts site.ts scripts/vendor-upstream.ts index.test.ts native.test.ts vendor.test.ts types.check.ts",
+      "format:check": "oxfmt --config .oxfmtrc.json --check index.ts index.d.ts site.ts site.d.ts scripts/vendor-upstream.ts index.test.ts native.test.ts vendor.test.ts types.check.ts",
+      "vendor": "bun scripts/vendor-upstream.ts",
+      "vendor:check": "bun scripts/vendor-upstream.ts --check",
+      "prepack": "bun scripts/vendor-upstream.ts --check"
+    },
+    "bin": null,
+    "exports": {
+      ".": {
+        "types": "./index.d.ts",
+        "default": "./index.ts"
+      },
+      "./site": {
+        "types": "./site.d.ts",
+        "default": "./site.ts"
+      },
+      "./browser": {
+        "types": "./site.d.ts",
+        "default": "./site.ts"
+      },
+      "./package.json": "./package.json"
+    },
+    "files": [
+      "index.ts",
+      "index.d.ts",
+      "site.ts",
+      "site.d.ts",
+      "scene-types.d.ts",
+      "vendor/index.js",
+      "vendor/js-binding.js",
+      "vendor/geometry.js",
+      "vendor/load-image.js",
+      "vendor/index.d.ts",
+      "vendor/package.json",
+      "vendor/LICENSE",
+      "vendor/UPSTREAM.md"
+    ],
+    "publishConfig": {
+      "access": "public"
+    }
+  },
+  {
+    "path": "packages/ui/eslint-plugin-m3/package.json",
+    "name": "@aphrody/eslint-plugin-m3",
+    "version": "3.3.3",
+    "private": false,
+    "category": "packages",
+    "scripts": {
+      "test": "bun test/run.ts",
+      "sync-symbols": "bun scripts/sync-symbol-names.ts"
+    },
+    "bin": null,
+    "exports": {
+      ".": "./index.js",
+      "./package.json": "./package.json"
+    },
+    "files": [
+      "index.js",
+      "rules/",
+      "data/",
+      "README.md"
+    ],
+    "publishConfig": {
+      "access": "public"
+    }
+  },
+  {
+    "path": "packages/ui/m3-ai/package.json",
+    "name": "@aphrody/m3-ai",
+    "version": "3.3.3",
+    "private": false,
+    "category": "packages",
+    "scripts": {
+      "build": "tsup && tsc -p tsconfig.build.json",
+      "typecheck": "tsc --noEmit",
+      "typecheck:fast": "tsgo --noEmit",
+      "test": "bun test"
+    },
+    "bin": null,
+    "exports": {
+      ".": {
+        "bun": "./src/index.ts",
+        "import": "./src/index.ts",
+        "types": "./src/index.ts",
+        "default": "./dist/index.js"
+      }
+    },
+    "files": [
+      "dist",
+      "LICENSE.spaceui"
+    ],
+    "publishConfig": {
+      "access": "public"
+    }
+  },
+  {
+    "path": "packages/ui/m3-config/package.json",
+    "name": "@aphrody/m3-config",
+    "version": "3.3.3",
+    "private": true,
+    "category": "packages",
+    "scripts": {
+      "test": "bun test",
+      "typecheck": "tsgo -p tsconfig.check.json --noEmit"
+    },
+    "bin": null,
+    "exports": {
+      "./package.json": "./package.json",
+      "./tsconfig.json": "./tsconfig.json",
+      "./tsconfig.build.json": "./tsconfig.build.json",
+      "./tsup": "./tsup.ts",
+      "./test/dom": "./test/dom.ts"
+    },
+    "files": null,
+    "publishConfig": null
+  },
+  {
+    "path": "packages/ui/m3-design/package.json",
+    "name": "@aphrody/m3-design",
+    "version": "3.3.3",
+    "private": false,
+    "category": "packages",
+    "scripts": {
+      "test": "bun test",
+      "typecheck": "tsc --noEmit",
+      "typecheck:fast": "tsgo --noEmit"
+    },
+    "bin": null,
+    "exports": null,
+    "files": null,
+    "publishConfig": {
+      "access": "public"
+    }
+  },
+  {
+    "path": "packages/ui/m3-explorer/package.json",
+    "name": "@aphrody/m3-explorer",
+    "version": "3.3.3",
+    "private": false,
+    "category": "packages",
+    "scripts": {
+      "build": "tsup && tsc -p tsconfig.build.json",
+      "typecheck": "tsc --noEmit",
+      "typecheck:fast": "tsgo --noEmit",
+      "test": "bun test"
+    },
+    "bin": null,
+    "exports": {
+      ".": {
+        "bun": "./src/index.ts",
+        "import": "./src/index.ts",
+        "types": "./src/index.ts",
+        "default": "./dist/index.js"
+      }
+    },
+    "files": [
+      "dist",
+      "LICENSE.spaceui"
+    ],
+    "publishConfig": {
+      "access": "public"
+    }
+  },
+  {
+    "path": "packages/ui/m3-fonts/package.json",
+    "name": "@aphrody/m3-fonts",
+    "version": "3.3.3",
+    "private": false,
+    "category": "packages",
+    "scripts": {
+      "gen": "bun scripts/generate.ts",
+      "subset": "bun scripts/subset.ts",
+      "typecheck": "tsgo -p tsconfig.json --noEmit",
+      "test": "bun test src"
+    },
+    "bin": null,
+    "exports": {
+      ".": "./src/index.ts",
+      "./fonts.css": "./src/fonts.css",
+      "./fonts-jp.css": "./src/fonts-jp.css",
+      "./fonts-symbols.css": "./src/fonts-symbols.css",
+      "./fonts/*": "./fonts/*"
+    },
+    "files": null,
+    "publishConfig": null
+  },
+  {
+    "path": "packages/ui/m3-forms/package.json",
+    "name": "@aphrody/m3-forms",
+    "version": "3.3.3",
+    "private": false,
+    "category": "packages",
+    "scripts": {
+      "build": "tsup && tsc -p tsconfig.build.json",
+      "typecheck": "tsc --noEmit",
+      "typecheck:fast": "tsgo --noEmit",
+      "test": "bun test"
+    },
+    "bin": null,
+    "exports": {
+      ".": {
+        "bun": "./src/index.ts",
+        "import": "./src/index.ts",
+        "types": "./src/index.ts",
+        "default": "./dist/index.js"
+      }
+    },
+    "files": [
+      "dist",
+      "LICENSE.spaceui"
+    ],
+    "publishConfig": {
+      "access": "public"
+    }
+  },
+  {
+    "path": "packages/ui/m3-icons/package.json",
+    "name": "@aphrody/m3-icons",
+    "version": "3.3.3",
+    "private": false,
+    "category": "packages",
+    "scripts": {
+      "build": "tsup && tsc -p tsconfig.build.json",
+      "typecheck": "tsgo -p tsconfig.json --noEmit",
+      "test": "bun test"
+    },
+    "bin": null,
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "./browser": {
+        "types": "./dist/browser.d.ts",
+        "default": "./dist/browser.js"
+      },
+      "./browser/lit": {
+        "types": "./dist/browser-lit.d.ts",
+        "default": "./dist/browser-lit.js"
+      },
+      "./plugin": {
+        "types": "./dist/plugin.d.ts",
+        "default": "./dist/plugin.js"
+      },
+      "./codegen": {
+        "types": "./dist/codegen.d.ts",
+        "default": "./dist/codegen.js"
+      },
+      "./package.json": "./package.json"
+    },
+    "files": [
+      "dist"
+    ],
+    "publishConfig": {
+      "access": "public"
+    }
+  },
+  {
+    "path": "packages/ui/m3-motion/package.json",
+    "name": "@aphrody/m3-motion",
+    "version": "3.3.3",
+    "private": false,
+    "category": "packages",
+    "scripts": {
+      "build": "tsup && tsc -p tsconfig.build.json",
+      "typecheck": "tsc --noEmit",
+      "typecheck:fast": "tsgo --noEmit",
+      "test": "bun test"
+    },
+    "bin": null,
+    "exports": {
+      ".": {
+        "bun": "./src/index.ts",
+        "import": "./src/index.ts",
+        "types": "./src/index.ts",
+        "default": "./dist/index.js"
+      }
+    },
+    "files": [
+      "dist"
+    ],
+    "publishConfig": {
+      "access": "public"
+    }
+  },
+  {
+    "path": "packages/ui/m3-next-migrate/package.json",
+    "name": "@aphrody/m3-next-migrate",
+    "version": "3.3.3",
+    "private": false,
+    "category": "packages",
+    "scripts": {
+      "build": "tsup && tsgo -p tsconfig.build.json",
+      "typecheck": "tsgo -p tsconfig.json --noEmit",
+      "test": "bun test"
+    },
+    "bin": {
+      "next-migrate": "./dist/cli.js",
+      "m3-next-migrate": "./dist/cli.js"
+    },
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "./cli": {
+        "types": "./dist/cli.d.ts",
+        "default": "./dist/cli.js"
+      },
+      "./shims/navigation": {
+        "types": "./dist/shims/navigation.d.ts",
+        "default": "./dist/shims/navigation.js"
+      },
+      "./shims/link": {
+        "types": "./dist/shims/link.d.ts",
+        "default": "./dist/shims/link.js"
+      },
+      "./shims/image": {
+        "types": "./dist/shims/image.d.ts",
+        "default": "./dist/shims/image.js"
+      },
+      "./shims/font": {
+        "types": "./dist/shims/font.d.ts",
+        "default": "./dist/shims/font.js"
+      },
+      "./shims/dynamic": {
+        "types": "./dist/shims/dynamic.d.ts",
+        "default": "./dist/shims/dynamic.js"
+      },
+      "./shims/headers": {
+        "types": "./dist/shims/headers.d.ts",
+        "default": "./dist/shims/headers.js"
+      },
+      "./shims/form": {
+        "types": "./dist/shims/form.d.ts",
+        "default": "./dist/shims/form.js"
+      },
+      "./shims/tauri-ipc": {
+        "types": "./dist/shims/tauri-ipc.d.ts",
+        "default": "./dist/shims/tauri-ipc.js"
+      },
+      "./shims/provider": {
+        "types": "./dist/shims/provider.d.ts",
+        "default": "./dist/shims/provider.js"
+      },
+      "./shims/metadata": {
+        "types": "./dist/shims/metadata.d.ts",
+        "default": "./dist/shims/metadata.js"
+      },
+      "./shims/server": {
+        "types": "./dist/shims/server.d.ts",
+        "default": "./dist/shims/server.js"
+      },
+      "./layout": {
+        "types": "./dist/layout.d.ts",
+        "default": "./dist/layout.js"
+      },
+      "./package.json": "./package.json"
+    },
+    "files": [
+      "dist"
+    ],
+    "publishConfig": {
+      "access": "public"
+    }
+  },
+  {
+    "path": "packages/ui/m3-next/package.json",
+    "name": "@aphrody/m3-next",
+    "version": "3.3.3",
+    "private": false,
+    "category": "packages",
+    "scripts": {
+      "build": "tsup && tsgo -p tsconfig.build.json",
+      "typecheck": "tsgo -p tsconfig.json --noEmit",
+      "test": "bun test"
+    },
+    "bin": null,
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "./server": {
+        "types": "./dist/server.d.ts",
+        "default": "./dist/server.js"
+      },
+      "./client": {
+        "types": "./dist/client.d.ts",
+        "default": "./dist/client.js"
+      },
+      "./m3.css": "./m3.css",
+      "./package.json": "./package.json"
+    },
+    "files": [
+      "dist",
+      "m3.css"
+    ],
+    "publishConfig": {
+      "access": "public"
+    }
+  },
+  {
+    "path": "packages/ui/m3-primitives/package.json",
+    "name": "@aphrody/m3-primitives",
+    "version": "3.3.3",
+    "private": false,
+    "category": "packages",
+    "scripts": {
+      "build": "tsup && tsc -p tsconfig.build.json",
+      "typecheck": "tsc --noEmit",
+      "typecheck:fast": "tsgo --noEmit",
+      "test": "bun test"
+    },
+    "bin": null,
+    "exports": {
+      ".": {
+        "bun": "./src/index.ts",
+        "import": "./src/index.ts",
+        "types": "./src/index.ts",
+        "default": "./dist/index.js"
+      }
+    },
+    "files": [
+      "dist",
+      "LICENSE.spaceui"
+    ],
+    "publishConfig": {
+      "access": "public"
+    }
+  },
+  {
+    "path": "packages/ui/m3-react/package.json",
+    "name": "@aphrody/m3-react",
+    "version": "3.3.3",
+    "private": false,
+    "category": "packages",
+    "scripts": {
+      "generate": "bun run generate.ts",
+      "build": "tsup && tsc -p tsconfig.build.json",
+      "typecheck": "tsc --noEmit",
+      "typecheck:fast": "tsgo --noEmit",
+      "test": "bun test"
+    },
+    "bin": null,
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "./transitions": {
+        "types": "./dist/transitions/index.d.ts",
+        "default": "./dist/transitions/index.js"
+      },
+      "./adaptive": {
+        "types": "./dist/adaptive/index.d.ts",
+        "default": "./dist/adaptive/index.js"
+      },
+      "./state": {
+        "types": "./dist/state/index.d.ts",
+        "default": "./dist/state/index.js"
+      },
+      "./adapters/tanstack": {
+        "types": "./dist/adapters/tanstack.d.ts",
+        "default": "./dist/adapters/tanstack.js"
+      },
+      "./package.json": "./package.json",
+      "./*": {
+        "types": "./dist/wrappers/*.d.ts",
+        "default": "./dist/wrappers/*.js"
+      }
+    },
+    "files": [
+      "dist"
+    ],
+    "publishConfig": {
+      "access": "public"
+    }
+  },
+  {
+    "path": "packages/ui/m3-reader/package.json",
+    "name": "@aphrody/m3-reader",
+    "version": "3.3.3",
+    "private": false,
+    "category": "packages",
+    "scripts": {
+      "build": "tsup && tsc -p tsconfig.build.json",
+      "typecheck": "tsc --noEmit",
+      "test": "bun test",
+      "typecheck:fast": "tsgo --noEmit"
+    },
+    "bin": null,
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "./source": {
+        "types": "./src/index.ts",
+        "default": "./src/index.ts"
+      },
+      "./styles.css": "./styles.css",
+      "./dragon-ball.css": "./dragon-ball.css"
+    },
+    "files": [
+      "dist",
+      "src",
+      "styles.css",
+      "dragon-ball.css"
+    ],
+    "publishConfig": {
+      "access": "public"
+    }
+  },
+  {
+    "path": "packages/ui/m3-theme/package.json",
+    "name": "@aphrody/m3-theme",
+    "version": "3.3.3",
+    "private": false,
+    "category": "packages",
+    "scripts": {
+      "generate": "bun run generate.ts && oxfmt tokens.css tailwind.css spaceui.css",
+      "build": "tsup && tsc -p tsconfig.build.json",
+      "lint": "oxlint",
+      "fmt": "oxfmt .",
+      "typecheck": "tsc --noEmit",
+      "typecheck:fast": "tsgo --noEmit",
+      "generate:fusion": "bun run generate",
+      "test": "bun test",
+      "fixture:mcu": "bun run scripts/mcu-fixture.ts"
+    },
+    "bin": null,
+    "exports": {
+      ".": {
+        "bun": "./src/index.ts",
+        "import": "./src/index.ts",
+        "types": "./src/index.ts",
+        "default": "./dist/index.js"
+      },
+      "./react": {
+        "bun": "./src/react.tsx",
+        "import": "./src/react.tsx",
+        "types": "./src/react.tsx",
+        "default": "./dist/react.js"
+      },
+      "./tauri": {
+        "bun": "./src/tauri.tsx",
+        "import": "./src/tauri.tsx",
+        "types": "./src/tauri.tsx",
+        "default": "./dist/tauri.js"
+      },
+      "./tokens.css": "./tokens.css",
+      "./tailwind.css": "./tailwind.css",
+      "./spaceui.css": "./spaceui.css"
+    },
+    "files": [
+      "dist",
+      "tokens.css",
+      "tailwind.css",
+      "spaceui.css"
+    ],
+    "publishConfig": {
+      "access": "public"
+    }
+  },
+  {
+    "path": "packages/ui/m3-tokens/package.json",
+    "name": "@aphrody/m3-tokens",
+    "version": "3.3.3",
+    "private": false,
+    "category": "packages",
+    "scripts": {
+      "build": "tsup && tsc -p tsconfig.build.json",
+      "typecheck": "tsc -p tsconfig.json --noEmit",
+      "lint": "oxlint src test",
+      "test": "bun test test/",
+      "demo": "bun run src/cli.ts"
+    },
+    "bin": null,
+    "exports": {
+      ".": "./src/theme-to-tokens.ts",
+      "./theme-to-tokens": "./src/theme-to-tokens.ts",
+      "./dynamic-color": "./src/dynamic-color.ts",
+      "./breakpoints": "./src/breakpoints.ts",
+      "./platform-contract": "./src/platform-contract.ts",
+      "./breakpoints.css": "./src/breakpoints.css",
+      "./m3-tokens.css": "./src/m3-tokens.css"
+    },
+    "files": [
+      "src/",
+      "dist/"
+    ],
+    "publishConfig": {
+      "access": "public"
+    }
+  },
+  {
+    "path": "packages/ui/m3/package.json",
+    "name": "@aphrody/m3",
+    "version": "3.3.3",
+    "private": false,
+    "category": "packages",
+    "scripts": {
+      "build": "tsup && tsgo -p tsconfig.build.json",
+      "typecheck": "tsgo -p tsconfig.json --noEmit",
+      "test": "bun test"
+    },
+    "bin": {
+      "m3": "./bin/m3.ts"
+    },
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "bun": "./src/index.ts",
+        "default": "./dist/index.js"
+      },
+      "./plugin": {
+        "types": "./dist/plugin.d.ts",
+        "bun": "./src/plugin.ts",
+        "default": "./dist/plugin.js"
+      },
+      "./server": {
+        "types": "./dist/server.d.ts",
+        "bun": "./src/server.ts",
+        "default": "./dist/server.js"
+      },
+      "./build": {
+        "types": "./dist/build.d.ts",
+        "bun": "./src/build.ts",
+        "default": "./dist/build.js"
+      },
+      "./config": {
+        "types": "./dist/config.d.ts",
+        "bun": "./src/config.ts",
+        "default": "./dist/config.js"
+      },
+      "./react": {
+        "types": "./dist/react.d.ts",
+        "default": "./dist/react.js"
+      },
+      "./lit": {
+        "types": "./dist/lit.d.ts",
+        "default": "./dist/lit.js"
+      },
+      "./client": {
+        "types": "./client.d.ts"
+      },
+      "./package.json": "./package.json"
+    },
+    "files": [
+      "dist",
+      "src",
+      "bin",
+      "client.d.ts"
+    ],
+    "publishConfig": {
+      "access": "public"
+    }
+  },
+  {
+    "path": "packages/ui/material-web/package.json",
+    "name": "@aphrody/material-web",
+    "version": "3.3.3",
+    "private": false,
+    "category": "packages",
+    "scripts": {
+      "build": "bun scripts/build.ts",
+      "build:ts": "bun scripts/build.ts ts",
+      "build:css-to-ts": "bun scripts/build.ts css-to-ts",
+      "build:sass": "bun scripts/build.ts sass",
+      "build:aphrody": "bun run aphrody-build.ts",
+      "typecheck": "tsc -p tsconfig.json --noEmit",
+      "typecheck:fast": "tsgo -p tsconfig.json --noEmit",
+      "typecheck:aphrody": "tsc -p tsconfig.aphrody.json",
+      "typecheck:bun": "tsc -p tsconfig.bun.json --noEmit",
+      "test": "bun run build && bun test",
+      "test:browser": "bun tests-web/run.ts"
+    },
+    "bin": null,
+    "exports": null,
+    "files": [
+      "**/*.js",
+      "**/*.js.map",
+      "**/*.d.ts",
+      "**/*.scss",
+      "**/*.css",
+      "**/*.css.map",
+      "!web-test-runner.config.js",
+      "!**/test/**",
+      "!**/*_test.*",
+      "!.wireit/**",
+      "!scripts/",
+      "!**/testing/**",
+      "testing/harness.{js,js.map,d.ts}",
+      "testing/transform-pseudo-classes.{js,js.map,d.ts}"
+    ],
+    "publishConfig": {
+      "access": "public"
+    }
+  },
+  {
+    "path": "packages/ui/scaffold/package.json",
+    "name": "@aphrody/scaffold",
+    "version": "1.0.0-canary",
+    "private": false,
+    "category": "packages",
+    "scripts": {
+      "typecheck": "tsgo -p tsconfig.json --noEmit",
+      "test": "bun test"
+    },
+    "bin": {
+      "aphrody-scaffold": "./src/cli.ts"
+    },
+    "exports": {
+      ".": "./src/index.ts",
+      "./pins": "./src/pins.ts",
+      "./png": "./src/png.ts",
+      "./names": "./src/names.ts",
+      "./files": "./src/files.ts",
+      "./tauri": "./src/tauri.ts",
+      "./package.json": "./package.json"
+    },
+    "files": [
+      "src",
+      "README.md"
+    ],
+    "publishConfig": null
+  },
+  {
+    "path": "packages/ui/web-to-tauri/package.json",
+    "name": "@aphrody/web-to-tauri",
+    "version": "1.0.0-canary",
+    "private": false,
+    "category": "packages",
+    "scripts": {
+      "typecheck": "tsgo -p tsconfig.json --noEmit",
+      "test": "bun test"
+    },
+    "bin": {
+      "web-to-tauri": "./src/cli.ts"
+    },
+    "exports": {
+      ".": "./src/index.ts",
+      "./policy": "./src/policy.ts",
+      "./probe": "./src/probe.ts",
+      "./plan": "./src/plan.ts",
+      "./generate": "./src/generate.ts",
+      "./parity": "./src/parity.ts",
+      "./types": "./src/types.ts",
+      "./package.json": "./package.json"
+    },
+    "files": [
+      "src",
+      "fixtures",
+      "README.md"
+    ],
+    "publishConfig": null
+  },
+  {
+    "path": "packages/web/agent-browser/package.json",
+    "name": "@aphrody/agent-browser",
+    "version": "1.0.0-canary",
+    "private": false,
+    "category": "packages",
+    "scripts": {
+      "typecheck": "tsc --noEmit",
+      "test": "bun test test/",
+      "lint": "oxlint"
+    },
+    "bin": {
+      "agent-browser": "./bin/agent-browser.js"
+    },
+    "exports": {
+      ".": "./src/index.ts",
+      "./client": "./src/client.ts",
+      "./types": "./src/types.ts",
+      "./cdp": "./src/cdp.ts",
+      "./config": "./src/config.ts",
+      "./engine": "./src/engine.ts",
+      "./service": "./src/service.ts",
+      "./test-preload": "./src/test-preload.ts",
+      "./tauri": "./src/tauri.ts"
+    },
+    "files": [
+      "src/",
+      "bin/",
+      "README.md"
+    ],
+    "publishConfig": null
+  },
+  {
+    "path": "packages/web/aphrody-web-test/package.json",
+    "name": "@aphrody/web-test",
+    "version": "0.2.6",
+    "private": false,
+    "category": "packages",
+    "scripts": {
+      "typecheck": "tsc --noEmit",
+      "lint": "oxlint",
+      "test": "bun test test/"
+    },
+    "bin": null,
+    "exports": {
+      ".": "./src/index.ts",
+      "./config": "./src/config.ts",
+      "./next": "./src/next/index.ts",
+      "./sites": "./src/sites/index.ts"
+    },
+    "files": [
+      "src/",
+      "!src/**/*.test.ts",
+      "!src/**/*.spec.ts",
+      "README.md",
+      "LICENSE"
+    ],
+    "publishConfig": {
+      "access": "public"
+    }
+  },
+  {
+    "path": "packages/web/x/package.json",
+    "name": "@aphrody/x",
+    "version": "1.3.0",
+    "private": false,
+    "category": "packages",
+    "scripts": {
+      "build": "tsc",
+      "typecheck": "tsc --noEmit",
+      "lint": "oxlint",
+      "test": "bun test",
+      "catalog:sync": "bun ../../../scripts/tools/web/x-catalog-sync.ts",
+      "coverage": "bun ../../../scripts/tools/web/x-coverage.ts"
+    },
+    "bin": null,
+    "exports": {
+      ".": "./src/index.ts"
+    },
+    "files": [
+      "src/",
+      "!src/**/*.test.ts",
+      "!src/**/*.spec.ts",
+      "README.md",
+      "LICENSE"
+    ],
+    "publishConfig": {
+      "access": "public"
+    }
+  }
+]

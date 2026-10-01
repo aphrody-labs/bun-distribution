@@ -1,0 +1,76 @@
+    Checking obscura-dom v0.1.1 (/home/aphro/aphrody/crates/web/obscura-dom)
+    Checking taffy v0.12.1 (/home/aphro/aphrody/crates/web/taffy)
+    Checking obscura-net v0.1.1 (/home/aphro/aphrody/crates/web/obscura-net)
+   Compiling obscura-js v0.1.0 (/home/aphro/aphrody/crates/web/obscura-js)
+    Checking aphrody-models v1.0.0 (/home/aphro/aphrody/crates/ai/models)
+   Compiling koharu-bindgen v0.83.5 (/home/aphro/aphrody/crates/koharu/koharu-bindgen)
+    Checking koharu-config v0.83.5 (/home/aphro/aphrody/crates/koharu/koharu-config)
+    Checking koharu-runtime v0.83.5 (/home/aphro/aphrody/crates/koharu/koharu-runtime)
+   Compiling koharu-diffusion-sys v0.83.5 (/home/aphro/aphrody/crates/koharu/koharu-diffusion-sys)
+    Checking obscura-render v0.1.0 (/home/aphro/aphrody/crates/web/obscura-render)
+   Compiling koharu-torch-sys v0.83.5 (/home/aphro/aphrody/crates/koharu/koharu-torch-sys)
+   Compiling koharu-llama-sys v0.83.5 (/home/aphro/aphrody/crates/koharu/koharu-llama-sys)
+    Checking aphrody-config v1.0.0 (/home/aphro/aphrody/crates/ai/config)
+    Checking aphrody-toolcall v1.0.0 (/home/aphro/aphrody/crates/ai/toolcall)
+    Checking aphrody-proc v1.0.0-canary (/home/aphro/aphrody/crates/os/proc)
+   Compiling obscura-mcp v0.1.0 (/home/aphro/aphrody/crates/web/obscura-mcp)
+    Checking aphrody-web-extract v1.0.0 (/home/aphro/aphrody/crates/web/web-extract)
+    Checking aphrody-translate v1.0.0 (/home/aphro/aphrody/crates/ai/translate)
+    Checking koharu-diffusion v0.83.5 (/home/aphro/aphrody/crates/koharu/koharu-diffusion)
+    Checking aphrody-subsystem v1.0.0-canary (/home/aphro/aphrody/crates/contracts/subsystem)
+    Checking aphrody-n2b-types v0.6.2 (/home/aphro/aphrody/crates/compat/n2b-types)
+   Compiling aphrody-a2a-pb v0.1.8 (/home/aphro/aphrody/crates/contracts/a2a-pb)
+    Checking aphrody-a2a v0.3.0 (/home/aphro/aphrody/crates/contracts/a2a)
+    Checking aphrody-agent-home v1.0.0 (/home/aphro/aphrody/crates/ai/agent-home)
+    Checking aphrody-model-client v1.0.0 (/home/aphro/aphrody/crates/ai/model-client)
+    Checking koharu-llama v0.83.5 (/home/aphro/aphrody/crates/koharu/koharu-llama)
+    Checking aphrody-n2b-registry v0.6.2 (/home/aphro/aphrody/crates/compat/n2b-registry)
+    Checking aphrody-m3-tokens v1.0.0-canary (/home/aphro/aphrody/crates/ui/m3-tokens)
+    Checking aphrody-agent-proto v1.0.0-canary (/home/aphro/aphrody/crates/contracts/agent-proto)
+    Checking aphrody-re v1.0.0-canary (/home/aphro/aphrody/crates/os/re)
+    Checking aphrody-fsindex v1.0.0-canary (/home/aphro/aphrody/crates/os/fsindex)
+    Checking aphrody-capture v1.0.0-canary (/home/aphro/aphrody/crates/os/capture)
+    Checking aphrody-a2a-server v0.3.0 (/home/aphro/aphrody/crates/os/a2a-server)
+    Checking aphrody-kernel-client v1.0.0-canary (/home/aphro/aphrody/crates/os/kernel-client)
+   Compiling aphrody-antigravity v1.0.0 (/home/aphro/aphrody/crates/ai/antigravity)
+    Checking aphrody-toolchains v1.0.0-canary (/home/aphro/aphrody/crates/compat/toolchains)
+    Checking aphrody-winclean v1.0.0-canary (/home/aphro/aphrody/crates/os/winclean)
+    Checking aphrody-llama-server v1.0.0 (/home/aphro/aphrody/crates/ai/llama-server)
+    Checking obscura-browser v0.1.0 (/home/aphro/aphrody/crates/web/obscura-browser)
+    Checking koharu-torch v0.83.5 (/home/aphro/aphrody/crates/koharu/koharu-torch)
+   Compiling simdutf v0.7.0 (/home/aphro/source/simdutf-rio)
+    Checking aphrody-a2a-coord v1.0.0-canary (/home/aphro/aphrody/crates/os/a2a-coord)
+    Checking aphrody-rag-core v1.0.0 (/home/aphro/aphrody/crates/ai/rag-core)
+    Checking rio-vt v0.5.28
+    Checking obscura v0.1.0 (/home/aphro/aphrody/crates/web/obscura)
+    Checking aphrody-gemini-web v0.2.1 (/home/aphro/aphrody/crates/ai/gemini-web)
+    Checking aphrody-n2b-util v0.6.2 (/home/aphro/aphrody/crates/compat/n2b-util)
+    Checking aphrody-events v1.0.0-canary (/home/aphro/aphrody/crates/os/events)
+    Checking obscura-cdp v0.1.0 (/home/aphro/aphrody/crates/web/obscura-cdp)
+    Checking aphrody-svg v1.0.0-canary (/home/aphro/aphrody/crates/ui/svg)
+    Checking aphrody-nu v1.0.0-canary (/home/aphro/aphrody/crates/shell/nu)
+    Checking aphrody-web-service v1.0.0 (/home/aphro/aphrody/crates/web/web-service)
+    Checking aphrody-tui v1.0.0-canary (/home/aphro/aphrody/crates/shell/tui)
+    Checking aphrody-web-bridge v1.0.0-canary (/home/aphro/aphrody/crates/web/web-bridge)
+    Checking aphrody-jev v1.0.0 (/home/aphro/aphrody/crates/ai/jev)
+    Checking aphrody-mcp-client v1.0.0 (/home/aphro/aphrody/crates/ai/mcp-client)
+    Checking aphrody-execpolicy v1.0.0-canary (/home/aphro/aphrody/crates/os/execpolicy)
+    Checking aphrody-terminal-backend v1.0.0-canary (/home/aphro/aphrody/crates/shell/terminal-backend)
+    Checking aphrody-memory v1.0.0 (/home/aphro/aphrody/crates/ai/memory)
+   Compiling aphrody-kernel v1.0.0-canary (/home/aphro/aphrody/crates/os/kernel)
+    Checking koharu-ml v0.83.5 (/home/aphro/aphrody/crates/koharu/koharu-ml)
+    Checking koharu-storage v0.83.5 (/home/aphro/aphrody/crates/koharu/koharu-storage)
+warning: ignoring -C extra-filename flag due to -o flag
+
+error[E0433]: cannot find module or crate `aphrody_rag_core` in this scope
+  --> crates/ai/memory/src/hnsw.rs:43:5
+   |
+43 | use aphrody_rag_core::fusion::{cosine_with_norm, norm};
+   |     ^^^^^^^^^^^^^^^^ use of unresolved module or unlinked crate `aphrody_rag_core`
+   |
+   = help: if you wanted to use a crate named `aphrody_rag_core`, use `cargo add aphrody_rag_core` to add it to your `Cargo.toml`
+
+For more information about this error, try `rustc --explain E0433`.
+warning: `aphrody-memory` (lib) generated 1 warning
+error: could not compile `aphrody-memory` (lib) due to 1 previous error; 1 warning emitted
+warning: build failed, waiting for other jobs to finish...

@@ -1,0 +1,2 @@
+$ bun packages/infra/workspace/src/ops.ts workspace-layout --root .
+Workspace layout OK (84 packages; external sources isolated).

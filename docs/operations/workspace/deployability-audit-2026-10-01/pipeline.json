@@ -1,0 +1,472 @@
+{
+  "stages": 15,
+  "steps": 224,
+  "missingGates": [
+    {
+      "path": "packages/ai/doc-ai/package.json",
+      "missing": [
+        "lint"
+      ]
+    },
+    {
+      "path": "packages/ai/google/package.json",
+      "missing": [
+        "lint",
+        "typecheck"
+      ]
+    },
+    {
+      "path": "packages/ai/xai/package.json",
+      "missing": [
+        "lint",
+        "build"
+      ]
+    },
+    {
+      "path": "packages/bun/test-dom/package.json",
+      "missing": [
+        "lint",
+        "test",
+        "build"
+      ]
+    },
+    {
+      "path": "packages/compat/n2b-client/package.json",
+      "missing": [
+        "lint"
+      ]
+    },
+    {
+      "path": "packages/compat/n2b-plugin/package.json",
+      "missing": [
+        "lint",
+        "build"
+      ]
+    },
+    {
+      "path": "packages/compat/n2b-shims/package.json",
+      "missing": [
+        "lint",
+        "test"
+      ]
+    },
+    {
+      "path": "packages/compat/n2b-types/package.json",
+      "missing": [
+        "lint",
+        "test"
+      ]
+    },
+    {
+      "path": "packages/discord/aphrody-messaging/package.json",
+      "missing": [
+        "lint"
+      ]
+    },
+    {
+      "path": "packages/discord/kit/package.json",
+      "missing": [
+        "lint"
+      ]
+    },
+    {
+      "path": "packages/fut/fut/package.json",
+      "missing": [
+        "lint"
+      ]
+    },
+    {
+      "path": "packages/infra/ovh/package.json",
+      "missing": [
+        "lint",
+        "build"
+      ]
+    },
+    {
+      "path": "packages/infra/paths/package.json",
+      "missing": [
+        "lint",
+        "test",
+        "build"
+      ]
+    },
+    {
+      "path": "packages/interop/native/package.json",
+      "missing": [
+        "lint"
+      ]
+    },
+    {
+      "path": "packages/koharu/bridge/package.json",
+      "missing": [
+        "test"
+      ]
+    },
+    {
+      "path": "packages/koharu/docs/package.json",
+      "missing": [
+        "lint",
+        "typecheck",
+        "test",
+        "build"
+      ]
+    },
+    {
+      "path": "packages/koharu/sdk/package.json",
+      "missing": [
+        "lint",
+        "test",
+        "build"
+      ]
+    },
+    {
+      "path": "packages/koharu/ui/package.json",
+      "missing": [
+        "lint",
+        "test",
+        "build"
+      ]
+    },
+    {
+      "path": "packages/os/kernel-client/package.json",
+      "missing": [
+        "lint",
+        "build"
+      ]
+    },
+    {
+      "path": "packages/os/winclean/package.json",
+      "missing": [
+        "lint",
+        "build"
+      ]
+    },
+    {
+      "path": "packages/rg/achillea-client/package.json",
+      "missing": [
+        "build"
+      ]
+    },
+    {
+      "path": "packages/rg/achillea-contract/package.json",
+      "missing": [
+        "build"
+      ]
+    },
+    {
+      "path": "packages/rg/achillea-core/package.json",
+      "missing": [
+        "build"
+      ]
+    },
+    {
+      "path": "packages/rg/achillea-types/package.json",
+      "missing": [
+        "build"
+      ]
+    },
+    {
+      "path": "packages/rg/app-shell/package.json",
+      "missing": [
+        "build"
+      ]
+    },
+    {
+      "path": "packages/rg/assets/package.json",
+      "missing": [
+        "lint",
+        "typecheck",
+        "test",
+        "build"
+      ]
+    },
+    {
+      "path": "packages/rg/auth/package.json",
+      "missing": [
+        "build"
+      ]
+    },
+    {
+      "path": "packages/rg/config/package.json",
+      "missing": [
+        "typecheck",
+        "test",
+        "build"
+      ]
+    },
+    {
+      "path": "packages/rg/db/package.json",
+      "missing": [
+        "build"
+      ]
+    },
+    {
+      "path": "packages/rg/discord-sync/package.json",
+      "missing": [
+        "lint",
+        "typecheck",
+        "build"
+      ]
+    },
+    {
+      "path": "packages/rg/i18n/package.json",
+      "missing": [
+        "build"
+      ]
+    },
+    {
+      "path": "packages/rg/identity/package.json",
+      "missing": [
+        "build"
+      ]
+    },
+    {
+      "path": "packages/rg/inagle-cross/package.json",
+      "missing": [
+        "test",
+        "build"
+      ]
+    },
+    {
+      "path": "packages/rg/patreon-bun/apps/worker-docs/package.json",
+      "missing": [
+        "lint",
+        "test",
+        "build"
+      ]
+    },
+    {
+      "path": "packages/rg/patreon-bun/docs/package.json",
+      "missing": [
+        "lint",
+        "test",
+        "build"
+      ]
+    },
+    {
+      "path": "packages/rg/patreon-bun/examples/bun-esm/package.json",
+      "missing": [
+        "lint",
+        "test",
+        "build"
+      ]
+    },
+    {
+      "path": "packages/rg/patreon-bun/examples/bun-webhook/package.json",
+      "missing": [
+        "lint",
+        "test",
+        "build"
+      ]
+    },
+    {
+      "path": "packages/rg/patreon-bun/examples/cloudflare-webhook/package.json",
+      "missing": [
+        "lint",
+        "test",
+        "build"
+      ]
+    },
+    {
+      "path": "packages/rg/preferences/package.json",
+      "missing": [
+        "build"
+      ]
+    },
+    {
+      "path": "packages/rg/search/package.json",
+      "missing": [
+        "build"
+      ]
+    },
+    {
+      "path": "packages/rg/types/package.json",
+      "missing": [
+        "build"
+      ]
+    },
+    {
+      "path": "packages/rg/ui/package.json",
+      "missing": [
+        "build"
+      ]
+    },
+    {
+      "path": "packages/shenron/api/package.json",
+      "missing": [
+        "build"
+      ]
+    },
+    {
+      "path": "packages/shenron/auth/package.json",
+      "missing": [
+        "build"
+      ]
+    },
+    {
+      "path": "packages/shenron/config/package.json",
+      "missing": [
+        "build"
+      ]
+    },
+    {
+      "path": "packages/shenron/db/package.json",
+      "missing": [
+        "build"
+      ]
+    },
+    {
+      "path": "packages/shenron/images/package.json",
+      "missing": [
+        "lint",
+        "build"
+      ]
+    },
+    {
+      "path": "packages/shenron/ui/package.json",
+      "missing": [
+        "build"
+      ]
+    },
+    {
+      "path": "packages/ui/assets/package.json",
+      "missing": [
+        "lint",
+        "build"
+      ]
+    },
+    {
+      "path": "packages/ui/canvas/package.json",
+      "missing": [
+        "build"
+      ]
+    },
+    {
+      "path": "packages/ui/eslint-plugin-m3/package.json",
+      "missing": [
+        "lint",
+        "typecheck",
+        "build"
+      ]
+    },
+    {
+      "path": "packages/ui/m3-ai/package.json",
+      "missing": [
+        "lint"
+      ]
+    },
+    {
+      "path": "packages/ui/m3-config/package.json",
+      "missing": [
+        "lint",
+        "build"
+      ]
+    },
+    {
+      "path": "packages/ui/m3-design/package.json",
+      "missing": [
+        "lint",
+        "build"
+      ]
+    },
+    {
+      "path": "packages/ui/m3-explorer/package.json",
+      "missing": [
+        "lint"
+      ]
+    },
+    {
+      "path": "packages/ui/m3-fonts/package.json",
+      "missing": [
+        "lint",
+        "build"
+      ]
+    },
+    {
+      "path": "packages/ui/m3-forms/package.json",
+      "missing": [
+        "lint"
+      ]
+    },
+    {
+      "path": "packages/ui/m3-icons/package.json",
+      "missing": [
+        "lint"
+      ]
+    },
+    {
+      "path": "packages/ui/m3-motion/package.json",
+      "missing": [
+        "lint"
+      ]
+    },
+    {
+      "path": "packages/ui/m3-next-migrate/package.json",
+      "missing": [
+        "lint"
+      ]
+    },
+    {
+      "path": "packages/ui/m3-next/package.json",
+      "missing": [
+        "lint"
+      ]
+    },
+    {
+      "path": "packages/ui/m3-primitives/package.json",
+      "missing": [
+        "lint"
+      ]
+    },
+    {
+      "path": "packages/ui/m3-react/package.json",
+      "missing": [
+        "lint"
+      ]
+    },
+    {
+      "path": "packages/ui/m3-reader/package.json",
+      "missing": [
+        "lint"
+      ]
+    },
+    {
+      "path": "packages/ui/m3/package.json",
+      "missing": [
+        "lint"
+      ]
+    },
+    {
+      "path": "packages/ui/material-web/package.json",
+      "missing": [
+        "lint"
+      ]
+    },
+    {
+      "path": "packages/ui/scaffold/package.json",
+      "missing": [
+        "lint",
+        "build"
+      ]
+    },
+    {
+      "path": "packages/ui/web-to-tauri/package.json",
+      "missing": [
+        "lint",
+        "build"
+      ]
+    },
+    {
+      "path": "packages/web/agent-browser/package.json",
+      "missing": [
+        "build"
+      ]
+    },
+    {
+      "path": "packages/web/aphrody-web-test/package.json",
+      "missing": [
+        "build"
+      ]
+    }
+  ]
+}

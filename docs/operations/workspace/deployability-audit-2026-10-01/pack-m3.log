@@ -1,0 +1,25 @@
+[0.02ms] ".env"
+bun pack v1.4.2 (744846f84)
+
+packed 3.1KB package.json
+packed 445B bin/m3.ts
+packed 508B client.d.ts
+packed 8.41KB src/build.ts
+packed 12.84KB src/cli.ts
+packed 5.63KB src/config.ts
+packed 1.46KB src/index.ts
+packed 1.79KB src/lit.ts
+packed 2.77KB src/native.ts
+packed 0.93KB src/new.ts
+packed 2.44KB src/paths.ts
+packed 7.81KB src/plugin.ts
+packed 3.94KB src/react.tsx
+packed 8.1KB src/server.ts
+packed 1.62KB src/tailwind.ts
+packed 4.0KB src/tokens.ts
+packed 2.14KB src/url-imports.ts
+
+aphrody-m3-3.3.3.tgz
+
+Total files: 17
+Unpacked size: 67.92KB
