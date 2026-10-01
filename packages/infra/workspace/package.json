@@ -53,6 +53,7 @@
     "./infra-audit": "./src/infra-audit.ts",
     "./windows-paths": "./src/windows-paths.ts",
     "./git-attribution": "./src/git-attribution.ts",
+    "./clean-public-ai": "./src/clean-public-ai.ts",
     "./repository-health": "./src/repository-health.ts",
     "./workspace-repair": "./src/workspace-repair.ts",
     "./cargo-package-repair": "./src/cargo-package-repair.ts",

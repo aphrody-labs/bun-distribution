@@ -1,7 +1,7 @@
 import { resolve } from "node:path";
 
 const TRAILER =
-  /^(co-authored-by:.*(?:claude|codex|gemini|copilot|openai|anthropic).*|claude-session:.*|.*generated with \[(?:claude code|codex)\].*)$/im;
+  /^(co-authored-by:.*(?:claude|codex|gemini|copilot|openai|anthropic|ai-agent|noreply@anthropic\.com).*|claude-session:.*|.*generated with \[(?:claude code|codex|gemini)\].*)$/im;
 
 export function stripAttributionTrailers(message: string): string {
   return `${message
@@ -35,7 +35,7 @@ function option(args: string[], name: string): string | undefined {
 export async function runGitAttribution(args: string[]): Promise<number> {
   if (args.includes("--help") || args.includes("-h")) {
     console.log(
-      "Usage: aphrody-ops git-attribution --repo <path> --branch <branch> [--since <ref>] [--apply]",
+      "Usage: aphrody-ops git-attribution --repo <path> --branch <branch> [--since <ref>] [--canonical-author] [--author-name <name>] [--author-email <email>] [--apply]",
     );
     return 0;
   }
@@ -43,18 +43,30 @@ export async function runGitAttribution(args: string[]): Promise<number> {
   const branch = option(args, "--branch");
   const since = option(args, "--since");
   const apply = args.includes("--apply");
-  const allowed = new Set(["--repo", "--branch", "--since", "--apply"]);
+  const canonicalAuthor = args.includes("--canonical-author");
+  const targetAuthorName = option(args, "--author-name") ?? "aphrody-code";
+  const targetAuthorEmail = option(args, "--author-email") ?? "contact@aphrody.com";
+
+  const allowed = new Set([
+    "--repo",
+    "--branch",
+    "--since",
+    "--apply",
+    "--canonical-author",
+    "--author-name",
+    "--author-email",
+  ]);
   for (let index = 0; index < args.length; index += 1) {
     const argument = args[index];
     if (!argument || !allowed.has(argument))
       throw new Error(
-        "Usage: aphrody-ops git-attribution --repo <path> --branch <branch> [--since <ref>] [--apply]",
+        "Usage: aphrody-ops git-attribution --repo <path> --branch <branch> [--since <ref>] [--canonical-author] [--author-name <name>] [--author-email <email>] [--apply]",
       );
-    if (argument !== "--apply") index += 1;
+    if (argument !== "--apply" && argument !== "--canonical-author") index += 1;
   }
   if (!repoOption || !branch)
     throw new Error(
-      "Usage: aphrody-ops git-attribution --repo <path> --branch <branch> [--since <ref>] [--apply]",
+      "Usage: aphrody-ops git-attribution --repo <path> --branch <branch> [--since <ref>] [--canonical-author] [--author-name <name>] [--author-email <email>] [--apply]",
     );
   const repo = resolve(repoOption);
   const oldTip = (await git(repo, ["rev-parse", branch])).trim();
@@ -78,7 +90,14 @@ export async function runGitAttribution(args: string[]): Promise<number> {
       .split("\0");
     const message = await git(repo, ["show", "-s", "--format=%B", commit]);
     const clean = stripAttributionTrailers(message);
-    if (clean.trimEnd() !== message.trimEnd()) changed += 1;
+    const authorNeedsRewrite =
+      canonicalAuthor &&
+      (metadata[0] !== targetAuthorName ||
+        metadata[1] !== targetAuthorEmail ||
+        metadata[3] !== targetAuthorName ||
+        metadata[4] !== targetAuthorEmail);
+
+    if (clean.trimEnd() !== message.trimEnd() || authorNeedsRewrite) changed += 1;
     const parents = (metadata[7] ?? "")
       .split(" ")
       .filter(Boolean)
@@ -86,18 +105,20 @@ export async function runGitAttribution(args: string[]): Promise<number> {
     const parentArgs = parents.flatMap((parent) => ["-p", parent]);
     const replacement = (
       await git(repo, ["commit-tree", metadata[6] ?? "", ...parentArgs], clean, {
-        GIT_AUTHOR_NAME: metadata[0] ?? "",
-        GIT_AUTHOR_EMAIL: metadata[1] ?? "",
+        GIT_AUTHOR_NAME: canonicalAuthor ? targetAuthorName : (metadata[0] ?? ""),
+        GIT_AUTHOR_EMAIL: canonicalAuthor ? targetAuthorEmail : (metadata[1] ?? ""),
         GIT_AUTHOR_DATE: metadata[2] ?? "",
-        GIT_COMMITTER_NAME: metadata[3] ?? "",
-        GIT_COMMITTER_EMAIL: metadata[4] ?? "",
+        GIT_COMMITTER_NAME: canonicalAuthor ? targetAuthorName : (metadata[3] ?? ""),
+        GIT_COMMITTER_EMAIL: canonicalAuthor ? targetAuthorEmail : (metadata[4] ?? ""),
         GIT_COMMITTER_DATE: metadata[5] ?? "",
       })
     ).trim();
     mapping.set(commit, replacement);
   }
   const newTip = mapping.get(oldTip) ?? oldTip;
-  console.log(`${commits.length} commit(s) in ${range}; ${changed} carried attribution trailers`);
+  console.log(
+    `${commits.length} commit(s) in ${range}; ${changed} rewritten (attributions / canonical authors)`,
+  );
   console.log(`${branch}: ${oldTip.slice(0, 10)} -> ${newTip.slice(0, 10)}`);
   if (newTip === oldTip) return 0;
   if (!apply) {
@@ -107,7 +128,7 @@ export async function runGitAttribution(args: string[]): Promise<number> {
   await git(repo, [
     "update-ref",
     "-m",
-    "strip attribution trailers",
+    "strip attribution trailers and normalize author metadata",
     `refs/heads/${branch}`,
     newTip,
     oldTip,

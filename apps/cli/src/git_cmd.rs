@@ -176,6 +176,36 @@ pub(crate) enum GitAction {
         #[arg(long)]
         pretty: bool,
     },
+    /// Audit and strip AI attributions, co-authors, and trailers from Git commits.
+    Attribution {
+        /// Repository path (ops.ts is resolved from `APHRODY_ROOT`, else the current directory).
+        #[arg(long, default_value = ".")]
+        repo: PathBuf,
+        /// Branch name.
+        #[arg(long, default_value = "main")]
+        branch: String,
+        /// Filter commits starting from this reference.
+        #[arg(long)]
+        since: Option<String>,
+        /// Rewrite author and committer to canonical Aphrody identities.
+        #[arg(long)]
+        canonical_author: bool,
+        /// Target canonical author name (owner identity).
+        #[arg(long, default_value = "aphrody-code")]
+        author_name: String,
+        /// Target canonical author email (defaults to contact@aphrody.com).
+        #[arg(long, default_value = "contact@aphrody.com")]
+        author_email: String,
+        /// Apply branch rewrite. Without this flag, emit a dry-run plan only.
+        #[arg(long)]
+        apply: bool,
+    },
+    /// Audit public web surfaces, products and repositories for private AI leaks.
+    CleanPublic {
+        /// Monorepo root.
+        #[arg(long, default_value = ".")]
+        root: PathBuf,
+    },
 }
 
 /// Operation on the upstream source manifest.
@@ -354,6 +384,58 @@ pub(crate) async fn run(action: GitAction) -> miette::Result<()> {
             emit(&serde_json::to_value(&report).map_err(to_report)?, pretty)?;
             if matches!(action, SourceAction::Verify) && !report.is_healthy() {
                 return Err(miette::miette!("upstream sources are not all healthy"));
+            }
+        },
+        GitAction::Attribution {
+            repo,
+            branch,
+            since,
+            canonical_author,
+            author_name,
+            author_email,
+            apply,
+        } => {
+            let ops = std::env::var_os("APHRODY_ROOT")
+                .map(PathBuf::from)
+                .unwrap_or_else(|| PathBuf::from("."))
+                .join("packages/infra/workspace/src/ops.ts");
+            let mut command = std::process::Command::new("bun");
+            command
+                .arg(ops)
+                .arg("git-attribution")
+                .arg("--repo")
+                .arg(&repo)
+                .arg("--branch")
+                .arg(&branch);
+            if let Some(s) = since {
+                command.arg("--since").arg(s);
+            }
+            if canonical_author {
+                command.arg("--canonical-author");
+            }
+            command
+                .arg("--author-name")
+                .arg(&author_name)
+                .arg("--author-email")
+                .arg(&author_email);
+            if apply {
+                command.arg("--apply");
+            }
+            let status = command.status().map_err(|error| miette::miette!("run bun git-attribution: {error}"))?;
+            if !status.success() {
+                return Err(miette::miette!("git attribution check/strip failed ({status})"));
+            }
+        },
+        GitAction::CleanPublic { root } => {
+            let mut command = std::process::Command::new("bun");
+            command
+                .arg(root.join("packages/infra/workspace/src/ops.ts"))
+                .arg("clean-public-ai")
+                .arg("--root")
+                .arg(&root);
+            let status = command.status().map_err(|error| miette::miette!("run bun clean-public-ai: {error}"))?;
+            if !status.success() {
+                return Err(miette::miette!("clean-public-ai check failed ({status})"));
             }
         },
     }

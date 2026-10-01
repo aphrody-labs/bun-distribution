@@ -56,10 +56,15 @@ export { runInfraAudit, sourceInventory, observeCommand } from "./infra-audit.ts
 export { runWindowsPaths, scanWindowsPaths } from "./windows-paths.ts";
 export type { WindowsPathFinding } from "./windows-paths.ts";
 export { runGitAttribution, stripAttributionTrailers } from "./git-attribution.ts";
+export { runCleanPublicAi, auditPublicSurfaces, scanFileForAiLeaks } from "./clean-public-ai.ts";
 export { runRepositoryHealth } from "./repository-health.ts";
 export { runWorkspaceRepair } from "./workspace-repair.ts";
 export { runCargoPackageRepair } from "./cargo-package-repair.ts";
-export { runCargoReleaseAudit, auditCargoRelease, classifyRequirements } from "./cargo-release-audit.ts";
+export {
+  runCargoReleaseAudit,
+  auditCargoRelease,
+  classifyRequirements,
+} from "./cargo-release-audit.ts";
 export { rgRoots, runRg } from "./rg.ts";
 export { runShenron, shenronRoots } from "./shenron.ts";
 export { getDiscordBotsStatus, runDiscord } from "./discord.ts";

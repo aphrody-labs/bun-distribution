@@ -127,6 +127,9 @@ if (operation === "repository-health") {
 if (operation === "git-attribution") {
   process.exit(await (await import("./git-attribution.ts")).runGitAttribution(rest));
 }
+if (operation === "clean-public-ai") {
+  process.exit(await (await import("./clean-public-ai.ts")).runCleanPublicAi(rest));
+}
 if (operation === "windows-paths") {
   process.exit(await (await import("./windows-paths.ts")).runWindowsPaths(rest));
 }
