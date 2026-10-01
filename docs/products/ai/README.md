@@ -14,11 +14,15 @@ that process boundary. Siblings never acquire a reverse dependency on AI.
 
 ## Start from source
 
-Check out the sibling paths declared in [Cargo.toml](Cargo.toml). Use the pinned
-Rust toolchain, Bun for `apps/` and `packages/`, and uv for `py/`.
+Use the root [Cargo workspace](../../../Cargo.toml) and
+[Bun workspace](../../../package.json) with their pinned toolchains.
+Rust sources live under `crates/ai` and the CLI under `apps/cli`; Python work
+belongs to `/home/aphro/aphrody-py`. Follow the [active root plan](../../../PLAN.md)
+and [repository rules](../../../AGENTS.md) for qualification and ownership.
+Run the following commands deliberately from the repository root to build
+and exercise source; installed consumers follow their artifact contracts.
 
 ```sh
-export RUSTC_WRAPPER=
 cargo run -p aphrody -- --help
 cargo run -p aphrody -- model list --json
 cargo run -p aphrody -- app-server
@@ -32,7 +36,7 @@ The legacy `chat` path does not qualify the desktop runtime.
 
 | Topic | Authority |
 | --- | --- |
-| Work remaining and release proof | [Delivery plan](../../plans/ai/PLAN.md) |
+| Work remaining and release proof | [Active root plan](../../../PLAN.md), [imported AI requirements](../../plans/ai/PLAN.md) |
 | Processes and capability owners | [Architecture](../../architecture/ai/ARCHITECTURE.md), [source of truth](../../reference/ai/SOURCE_OF_TRUTH.md) |
 | Wire subset and handshake | [App-server](./crates/aphrody-app-server/README.md) |
 | Setup, models and configuration | [Install](../../guides/ai/INSTALL.md), [local models](../../reference/ai/LOCAL-AI-MODELS.md), [config](../../reference/ai/config.md) |
@@ -52,10 +56,8 @@ First-party AI code is Apache-2.0. Preserve [Codex provenance](../../reference/a
 and independently qualify distributed dependencies, Drive/FSL sources and model
 terms. Existing source and local checks do not establish an installed OSS release.
 
-## Automatisation transversale
+## Shared orchestration
 
-`bun run ecosystem:check`, `bun run ecosystem:sync`, `bun run runtime:check`, `bun run verify:release`, `bun run agents:sync` et `bun run plugins:sync` délèguent à `aphrody-ops` du paquet `@aphrody/workspace`.
-
-## Automatisation transversale
-
-`bun run scan` délègue l’inventaire et les contrôles génériques à `aphrody-ops repository-health`; la liste de références historiques reste fournie par ce dépôt.
+[Infra/Workspace](../../../packages/infra/workspace/) owns inventories and
+qualification orchestration. Use commands from the current root and owner
+manifests; imported scripts and previous release checks require requalification.

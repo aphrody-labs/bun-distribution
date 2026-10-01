@@ -1196,3 +1196,24 @@ heuristique ; aucun changement Git ne doit être attribué sans preuve.
   et deux du miroir Web. Famille terminal déléguée et miroir concurrent préservés.
   Features produit, clone propre, plateformes et artefacts installés restent ouverts.
 - Preuves : [rapport et logs](docs/operations/ai/notebooklm-qualification-2026-10-01/report.json).
+
+### Navigation documentaire AI et périmètre réel — 2026-10-01
+
+- FAIT : README produit et index AI renvoient aux workspaces et au plan racine ;
+  les guides importés gardent leur périmètre. Retrait de l’opt-out sccache du
+  guide de démarrage et des commandes d’orchestration importées non qualifiées.
+- Contrôle direct via le parseur Infra existant : 32 destinations cassées avant,
+  zéro après sur 65 liens locaux. Existence des fichiers/dossiers vérifiée ;
+  ancres, sites externes et vérité des pages liées ne sont pas qualifiés.
+- Index importé préservé octet pour octet dans
+  [son snapshot](docs/migration/ai-documentation-index-before-monorepo-2026-10-01.md) ;
+  base historique `docs/products/ai/_source/` et hash consignés.
+- INCOMPLET : le vérificateur global exclut désormais `docs/products` et
+  `_source`, entre autres catégories. Ses 5 870 documents inventoriés, 751 liens
+  examinés et 95 destinations non résolues ne couvrent pas ces pages ; la baisse
+  par rapport aux anciens inventaires ne prouve pas une réparation globale.
+  Aucune exclusion générale ajoutée dans ce lot. Classement global toujours ouvert.
+- Gate CLI/MCP revalidé : mêmes trois diagnostics terminal/Web ; modifications
+  concurrentes préservées. Diff documentaire contrôlé ; aucun test propriétaire
+  répété pour ce lot sans changement de code.
+- Preuves : [audit direct, hashes et périmètres](docs/operations/ai/documentation-navigation-qualification-2026-10-01.json).

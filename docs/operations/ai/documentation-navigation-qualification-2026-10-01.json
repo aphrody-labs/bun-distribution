@@ -1,0 +1,716 @@
+{
+  "observedAt": "2026-10-01T09:39:51.263342+00:00",
+  "baseRevision": "3c154081a70f014af354ab1be6485a99888bae95",
+  "mode": "concurrent worktree; scoped OS claims held",
+  "roles": [
+    {
+      "path": "docs/products/ai/README.md",
+      "role": "active product navigation",
+      "authority": "root PLAN.md and root Cargo/Bun manifests"
+    },
+    {
+      "path": "docs/products/ai/_source/README.md",
+      "role": "active documentation index previously imported under _source",
+      "authority": "root PLAN.md; linked domain documents retain their original scope"
+    },
+    {
+      "path": "docs/migration/ai-documentation-index-before-monorepo-2026-10-01.md",
+      "role": "historical imported index snapshot",
+      "originalPath": "docs/products/ai/_source/README.md",
+      "relativeLinkBase": "docs/products/ai/_source/",
+      "byteIdenticalToBaseRevision": true,
+      "sha256": "f97943ec2d669e5e1b32a7f5c7db3018a2b7862c475c86033803bc3b06cf9ce1"
+    }
+  ],
+  "verification": {
+    "results": [
+      {
+        "phase": "before",
+        "path": "docs/products/ai/README.md",
+        "localLinks": 15,
+        "broken": 1,
+        "destinations": [
+          {
+            "link": "../../plans/ui/design/M3-MULTI-HOST-PLAN.md",
+            "target": "docs/plans/ui/design/M3-MULTI-HOST-PLAN.md",
+            "exists": true
+          },
+          {
+            "link": "Cargo.toml",
+            "target": "docs/products/ai/Cargo.toml",
+            "exists": false
+          },
+          {
+            "link": "../../plans/ai/PLAN.md",
+            "target": "docs/plans/ai/PLAN.md",
+            "exists": true
+          },
+          {
+            "link": "../../architecture/ai/ARCHITECTURE.md",
+            "target": "docs/architecture/ai/ARCHITECTURE.md",
+            "exists": true
+          },
+          {
+            "link": "../../reference/ai/SOURCE_OF_TRUTH.md",
+            "target": "docs/reference/ai/SOURCE_OF_TRUTH.md",
+            "exists": true
+          },
+          {
+            "link": "./crates/aphrody-app-server/README.md",
+            "target": "docs/products/ai/crates/aphrody-app-server/README.md",
+            "exists": true
+          },
+          {
+            "link": "../../guides/ai/INSTALL.md",
+            "target": "docs/guides/ai/INSTALL.md",
+            "exists": true
+          },
+          {
+            "link": "../../reference/ai/LOCAL-AI-MODELS.md",
+            "target": "docs/reference/ai/LOCAL-AI-MODELS.md",
+            "exists": true
+          },
+          {
+            "link": "../../reference/ai/config.md",
+            "target": "docs/reference/ai/config.md",
+            "exists": true
+          },
+          {
+            "link": "./plugins/aphrody/README.md",
+            "target": "docs/products/ai/plugins/aphrody/README.md",
+            "exists": true
+          },
+          {
+            "link": "./_source/README.md",
+            "target": "docs/products/ai/_source/README.md",
+            "exists": true
+          },
+          {
+            "link": "../../reference/ai/AGENTS.md",
+            "target": "docs/reference/ai/AGENTS.md",
+            "exists": true
+          },
+          {
+            "link": "./crates/aphrody-ffi/README.md",
+            "target": "docs/products/ai/crates/aphrody-ffi/README.md",
+            "exists": true
+          },
+          {
+            "link": "./crates/aphrody-manga/README.md",
+            "target": "docs/products/ai/crates/aphrody-manga/README.md",
+            "exists": true
+          },
+          {
+            "link": "../../reference/ai/THIRD_PARTY_CODEX.md",
+            "target": "docs/reference/ai/THIRD_PARTY_CODEX.md",
+            "exists": true
+          }
+        ]
+      },
+      {
+        "phase": "before",
+        "path": "docs/products/ai/_source/README.md",
+        "localLinks": 41,
+        "broken": 31,
+        "destinations": [
+          {
+            "link": "./README.md.a7d252bc425b",
+            "target": "docs/products/ai/_source/README.md.a7d252bc425b",
+            "exists": true
+          },
+          {
+            "link": "../../../plans/ai/_source/PLAN.md",
+            "target": "docs/plans/ai/_source/PLAN.md",
+            "exists": false
+          },
+          {
+            "link": "../../../reference/ui/_source/GUI.md",
+            "target": "docs/reference/ui/_source/GUI.md",
+            "exists": false
+          },
+          {
+            "link": "../../../plans/ai/_source/PLAN.md#delivery-sequence",
+            "target": "docs/plans/ai/_source/PLAN.md",
+            "exists": false
+          },
+          {
+            "link": "../../../plans/ai/_source/PLAN.md#release-acceptance",
+            "target": "docs/plans/ai/_source/PLAN.md",
+            "exists": false
+          },
+          {
+            "link": "../../../plans/ai/_source/PLAN.md#current-baseline",
+            "target": "docs/plans/ai/_source/PLAN.md",
+            "exists": false
+          },
+          {
+            "link": "../../../reference/ai/_source/SOURCE_OF_TRUTH.md",
+            "target": "docs/reference/ai/_source/SOURCE_OF_TRUTH.md",
+            "exists": false
+          },
+          {
+            "link": "../../../architecture/ai/_source/ARCHITECTURE.md",
+            "target": "docs/architecture/ai/_source/ARCHITECTURE.md",
+            "exists": false
+          },
+          {
+            "link": "../../../plans/ai/_source/PLAN.md#organization-and-ownership",
+            "target": "docs/plans/ai/_source/PLAN.md",
+            "exists": false
+          },
+          {
+            "link": "../../../reference/infra/_source/ecosystem/ECOSYSTEM.md",
+            "target": "docs/reference/infra/_source/ecosystem/ECOSYSTEM.md",
+            "exists": false
+          },
+          {
+            "link": "../../../plans/ai/_source/PLAN.md#capability-integration",
+            "target": "docs/plans/ai/_source/PLAN.md",
+            "exists": false
+          },
+          {
+            "link": "../../../plans/ai/_source/PLAN.md#koharu-aphrody-and-shenron-convergence",
+            "target": "docs/plans/ai/_source/PLAN.md",
+            "exists": false
+          },
+          {
+            "link": "../../../plans/ai/ROADMAP-AGENT-PILLARS.md",
+            "target": "docs/plans/ai/ROADMAP-AGENT-PILLARS.md",
+            "exists": true
+          },
+          {
+            "link": "../../../plans/ai/_source/PLAN.md#latency-budgets",
+            "target": "docs/plans/ai/_source/PLAN.md",
+            "exists": false
+          },
+          {
+            "link": "../../../reference/ai/_source/DOCUMENTATION-PIPELINE.md",
+            "target": "docs/reference/ai/_source/DOCUMENTATION-PIPELINE.md",
+            "exists": false
+          },
+          {
+            "link": "../../../reference/ai/_source/AGENTS.md",
+            "target": "docs/reference/ai/_source/AGENTS.md",
+            "exists": false
+          },
+          {
+            "link": "../../../guides/ai/_source/INSTALL.md",
+            "target": "docs/guides/ai/_source/INSTALL.md",
+            "exists": false
+          },
+          {
+            "link": "../../../reference/ai/_source/CLI.md",
+            "target": "docs/reference/ai/_source/CLI.md",
+            "exists": true
+          },
+          {
+            "link": "../../../reference/ai/config.md",
+            "target": "docs/reference/ai/config.md",
+            "exists": true
+          },
+          {
+            "link": "../../../reference/ai/_source/agent-console.md",
+            "target": "docs/reference/ai/_source/agent-console.md",
+            "exists": false
+          },
+          {
+            "link": "../../../reference/ai/TROUBLESHOOTING.md",
+            "target": "docs/reference/ai/TROUBLESHOOTING.md",
+            "exists": true
+          },
+          {
+            "link": "../../../reference/ai/PITFALLS.md",
+            "target": "docs/reference/ai/PITFALLS.md",
+            "exists": true
+          },
+          {
+            "link": "./agent-stack/README.md",
+            "target": "docs/products/ai/_source/agent-stack/README.md",
+            "exists": false
+          },
+          {
+            "link": "../../../reference/ai/MCP.md",
+            "target": "docs/reference/ai/MCP.md",
+            "exists": true
+          },
+          {
+            "link": "../../../guides/ai/MCP_SETUP.md",
+            "target": "docs/guides/ai/MCP_SETUP.md",
+            "exists": true
+          },
+          {
+            "link": "../../../reference/ai/_source/AGENT-SKILLS-PLUGINS-SPEC.md",
+            "target": "docs/reference/ai/_source/AGENT-SKILLS-PLUGINS-SPEC.md",
+            "exists": false
+          },
+          {
+            "link": "../../../reference/ai/computer-use.md",
+            "target": "docs/reference/ai/computer-use.md",
+            "exists": true
+          },
+          {
+            "link": "../../../reference/ai/_source/LOCAL-AI-MODELS.md",
+            "target": "docs/reference/ai/_source/LOCAL-AI-MODELS.md",
+            "exists": false
+          },
+          {
+            "link": "../../../reference/ai/RAG.md",
+            "target": "docs/reference/ai/RAG.md",
+            "exists": true
+          },
+          {
+            "link": "../../../reference/ai/_source/training.md",
+            "target": "docs/reference/ai/_source/training.md",
+            "exists": false
+          },
+          {
+            "link": "./google/README.md",
+            "target": "docs/products/ai/_source/google/README.md",
+            "exists": false
+          },
+          {
+            "link": "./grok/README.md",
+            "target": "docs/products/ai/_source/grok/README.md",
+            "exists": false
+          },
+          {
+            "link": "../../../reference/ai/_source/GIT-GITHUB.md",
+            "target": "docs/reference/ai/_source/GIT-GITHUB.md",
+            "exists": false
+          },
+          {
+            "link": "./cargo/README.md",
+            "target": "docs/products/ai/_source/cargo/README.md",
+            "exists": false
+          },
+          {
+            "link": "../../../operations/ai/_source/RELEASE-CHECKLIST.md",
+            "target": "docs/operations/ai/_source/RELEASE-CHECKLIST.md",
+            "exists": false
+          },
+          {
+            "link": "../../../reference/ai/_source/THIRD_PARTY_CODEX.md",
+            "target": "docs/reference/ai/_source/THIRD_PARTY_CODEX.md",
+            "exists": false
+          },
+          {
+            "link": "../../../research/ai/_source/SECURITY-MODEL.md",
+            "target": "docs/research/ai/_source/SECURITY-MODEL.md",
+            "exists": false
+          },
+          {
+            "link": "../../../reference/ai/_source/PRIVACY.md",
+            "target": "docs/reference/ai/_source/PRIVACY.md",
+            "exists": false
+          },
+          {
+            "link": "../../../apis/ai/_source/research/agent-protocol-and-desktop-factcheck-2026-09-26.md",
+            "target": "docs/apis/ai/_source/research/agent-protocol-and-desktop-factcheck-2026-09-26.md",
+            "exists": false
+          },
+          {
+            "link": "../../../research/ai/_source/research/codex-rust-parity-2026-09-26.md",
+            "target": "docs/research/ai/_source/research/codex-rust-parity-2026-09-26.md",
+            "exists": false
+          },
+          {
+            "link": "../../../plans/ai/_source/plans/codex-oss.md",
+            "target": "docs/plans/ai/_source/plans/codex-oss.md",
+            "exists": false
+          }
+        ]
+      },
+      {
+        "phase": "after",
+        "path": "docs/products/ai/README.md",
+        "localLinks": 20,
+        "broken": 0,
+        "destinations": [
+          {
+            "link": "../../plans/ui/design/M3-MULTI-HOST-PLAN.md",
+            "target": "docs/plans/ui/design/M3-MULTI-HOST-PLAN.md",
+            "exists": true
+          },
+          {
+            "link": "../../../Cargo.toml",
+            "target": "Cargo.toml",
+            "exists": true
+          },
+          {
+            "link": "../../../package.json",
+            "target": "package.json",
+            "exists": true
+          },
+          {
+            "link": "../../../PLAN.md",
+            "target": "PLAN.md",
+            "exists": true
+          },
+          {
+            "link": "../../../AGENTS.md",
+            "target": "AGENTS.md",
+            "exists": true
+          },
+          {
+            "link": "../../../PLAN.md",
+            "target": "PLAN.md",
+            "exists": true
+          },
+          {
+            "link": "../../plans/ai/PLAN.md",
+            "target": "docs/plans/ai/PLAN.md",
+            "exists": true
+          },
+          {
+            "link": "../../architecture/ai/ARCHITECTURE.md",
+            "target": "docs/architecture/ai/ARCHITECTURE.md",
+            "exists": true
+          },
+          {
+            "link": "../../reference/ai/SOURCE_OF_TRUTH.md",
+            "target": "docs/reference/ai/SOURCE_OF_TRUTH.md",
+            "exists": true
+          },
+          {
+            "link": "./crates/aphrody-app-server/README.md",
+            "target": "docs/products/ai/crates/aphrody-app-server/README.md",
+            "exists": true
+          },
+          {
+            "link": "../../guides/ai/INSTALL.md",
+            "target": "docs/guides/ai/INSTALL.md",
+            "exists": true
+          },
+          {
+            "link": "../../reference/ai/LOCAL-AI-MODELS.md",
+            "target": "docs/reference/ai/LOCAL-AI-MODELS.md",
+            "exists": true
+          },
+          {
+            "link": "../../reference/ai/config.md",
+            "target": "docs/reference/ai/config.md",
+            "exists": true
+          },
+          {
+            "link": "./plugins/aphrody/README.md",
+            "target": "docs/products/ai/plugins/aphrody/README.md",
+            "exists": true
+          },
+          {
+            "link": "./_source/README.md",
+            "target": "docs/products/ai/_source/README.md",
+            "exists": true
+          },
+          {
+            "link": "../../reference/ai/AGENTS.md",
+            "target": "docs/reference/ai/AGENTS.md",
+            "exists": true
+          },
+          {
+            "link": "./crates/aphrody-ffi/README.md",
+            "target": "docs/products/ai/crates/aphrody-ffi/README.md",
+            "exists": true
+          },
+          {
+            "link": "./crates/aphrody-manga/README.md",
+            "target": "docs/products/ai/crates/aphrody-manga/README.md",
+            "exists": true
+          },
+          {
+            "link": "../../reference/ai/THIRD_PARTY_CODEX.md",
+            "target": "docs/reference/ai/THIRD_PARTY_CODEX.md",
+            "exists": true
+          },
+          {
+            "link": "../../../packages/infra/workspace/",
+            "target": "packages/infra/workspace",
+            "exists": true
+          }
+        ]
+      },
+      {
+        "phase": "after",
+        "path": "docs/products/ai/_source/README.md",
+        "localLinks": 45,
+        "broken": 0,
+        "destinations": [
+          {
+            "link": "../README.md",
+            "target": "docs/products/ai/README.md",
+            "exists": true
+          },
+          {
+            "link": "../../../../PLAN.md",
+            "target": "PLAN.md",
+            "exists": true
+          },
+          {
+            "link": "../../../reference/ui/GUI.md",
+            "target": "docs/reference/ui/GUI.md",
+            "exists": true
+          },
+          {
+            "link": "../../../plans/ai/PLAN.md",
+            "target": "docs/plans/ai/PLAN.md",
+            "exists": true
+          },
+          {
+            "link": "../../../../PLAN.md",
+            "target": "PLAN.md",
+            "exists": true
+          },
+          {
+            "link": "../../../plans/ai/PLAN.md#delivery-sequence",
+            "target": "docs/plans/ai/PLAN.md",
+            "exists": true
+          },
+          {
+            "link": "../../../plans/ai/PLAN.md#release-acceptance",
+            "target": "docs/plans/ai/PLAN.md",
+            "exists": true
+          },
+          {
+            "link": "../../../plans/ai/PLAN.md#current-baseline",
+            "target": "docs/plans/ai/PLAN.md",
+            "exists": true
+          },
+          {
+            "link": "../../../reference/ai/SOURCE_OF_TRUTH.md",
+            "target": "docs/reference/ai/SOURCE_OF_TRUTH.md",
+            "exists": true
+          },
+          {
+            "link": "../../../architecture/ai/ARCHITECTURE.md",
+            "target": "docs/architecture/ai/ARCHITECTURE.md",
+            "exists": true
+          },
+          {
+            "link": "../../../plans/ai/PLAN.md#organization-and-ownership",
+            "target": "docs/plans/ai/PLAN.md",
+            "exists": true
+          },
+          {
+            "link": "../../../reference/infra/ecosystem/ECOSYSTEM.md",
+            "target": "docs/reference/infra/ecosystem/ECOSYSTEM.md",
+            "exists": true
+          },
+          {
+            "link": "../../../plans/ai/PLAN.md#capability-integration",
+            "target": "docs/plans/ai/PLAN.md",
+            "exists": true
+          },
+          {
+            "link": "../../../plans/ai/PLAN.md#koharu-aphrody-and-shenron-convergence",
+            "target": "docs/plans/ai/PLAN.md",
+            "exists": true
+          },
+          {
+            "link": "../../../plans/ai/ROADMAP-AGENT-PILLARS.md",
+            "target": "docs/plans/ai/ROADMAP-AGENT-PILLARS.md",
+            "exists": true
+          },
+          {
+            "link": "../../../plans/ai/PLAN.md#latency-budgets",
+            "target": "docs/plans/ai/PLAN.md",
+            "exists": true
+          },
+          {
+            "link": "../../../reference/ai/DOCUMENTATION-PIPELINE.md",
+            "target": "docs/reference/ai/DOCUMENTATION-PIPELINE.md",
+            "exists": true
+          },
+          {
+            "link": "../../../reference/ai/AGENTS.md",
+            "target": "docs/reference/ai/AGENTS.md",
+            "exists": true
+          },
+          {
+            "link": "../../../guides/ai/INSTALL.md",
+            "target": "docs/guides/ai/INSTALL.md",
+            "exists": true
+          },
+          {
+            "link": "../../../reference/ai/CLI.md",
+            "target": "docs/reference/ai/CLI.md",
+            "exists": true
+          },
+          {
+            "link": "../../../reference/ai/config.md",
+            "target": "docs/reference/ai/config.md",
+            "exists": true
+          },
+          {
+            "link": "../../../reference/ai/agent-console.md",
+            "target": "docs/reference/ai/agent-console.md",
+            "exists": true
+          },
+          {
+            "link": "../../../reference/ai/TROUBLESHOOTING.md",
+            "target": "docs/reference/ai/TROUBLESHOOTING.md",
+            "exists": true
+          },
+          {
+            "link": "../../../reference/ai/PITFALLS.md",
+            "target": "docs/reference/ai/PITFALLS.md",
+            "exists": true
+          },
+          {
+            "link": "../agent-stack/README.md",
+            "target": "docs/products/ai/agent-stack/README.md",
+            "exists": true
+          },
+          {
+            "link": "../../../reference/ai/MCP.md",
+            "target": "docs/reference/ai/MCP.md",
+            "exists": true
+          },
+          {
+            "link": "../../../guides/ai/MCP_SETUP.md",
+            "target": "docs/guides/ai/MCP_SETUP.md",
+            "exists": true
+          },
+          {
+            "link": "../../../reference/ai/AGENT-SKILLS-PLUGINS-SPEC.md",
+            "target": "docs/reference/ai/AGENT-SKILLS-PLUGINS-SPEC.md",
+            "exists": true
+          },
+          {
+            "link": "../../../reference/ai/computer-use.md",
+            "target": "docs/reference/ai/computer-use.md",
+            "exists": true
+          },
+          {
+            "link": "../../../reference/ai/LOCAL-AI-MODELS.md",
+            "target": "docs/reference/ai/LOCAL-AI-MODELS.md",
+            "exists": true
+          },
+          {
+            "link": "../../../reference/ai/RAG.md",
+            "target": "docs/reference/ai/RAG.md",
+            "exists": true
+          },
+          {
+            "link": "../../../reference/ai/training.md",
+            "target": "docs/reference/ai/training.md",
+            "exists": true
+          },
+          {
+            "link": "../google/README.md",
+            "target": "docs/products/ai/google/README.md",
+            "exists": true
+          },
+          {
+            "link": "../grok/README.md",
+            "target": "docs/products/ai/grok/README.md",
+            "exists": true
+          },
+          {
+            "link": "../../../reference/ai/GIT-GITHUB.md",
+            "target": "docs/reference/ai/GIT-GITHUB.md",
+            "exists": true
+          },
+          {
+            "link": "../cargo/README.md",
+            "target": "docs/products/ai/cargo/README.md",
+            "exists": true
+          },
+          {
+            "link": "../../../operations/ai/RELEASE-CHECKLIST.md",
+            "target": "docs/operations/ai/RELEASE-CHECKLIST.md",
+            "exists": true
+          },
+          {
+            "link": "../../../reference/ai/THIRD_PARTY_CODEX.md",
+            "target": "docs/reference/ai/THIRD_PARTY_CODEX.md",
+            "exists": true
+          },
+          {
+            "link": "../../../research/ai/SECURITY-MODEL.md",
+            "target": "docs/research/ai/SECURITY-MODEL.md",
+            "exists": true
+          },
+          {
+            "link": "../../../reference/ai/PRIVACY.md",
+            "target": "docs/reference/ai/PRIVACY.md",
+            "exists": true
+          },
+          {
+            "link": "../../../migration/ai-documentation-index-before-monorepo-2026-10-01.md",
+            "target": "docs/migration/ai-documentation-index-before-monorepo-2026-10-01.md",
+            "exists": true
+          },
+          {
+            "link": "../../../apis/ai/research/agent-protocol-and-desktop-factcheck-2026-09-26.md",
+            "target": "docs/apis/ai/research/agent-protocol-and-desktop-factcheck-2026-09-26.md",
+            "exists": true
+          },
+          {
+            "link": "../../../research/ai/research/codex-rust-parity-2026-09-26.md",
+            "target": "docs/research/ai/research/codex-rust-parity-2026-09-26.md",
+            "exists": true
+          },
+          {
+            "link": "../../../plans/ai/plans/codex-oss.md",
+            "target": "docs/plans/ai/plans/codex-oss.md",
+            "exists": true
+          },
+          {
+            "link": "../../../../packages/infra/workspace/",
+            "target": "packages/infra/workspace",
+            "exists": true
+          }
+        ]
+      }
+    ],
+    "limitations": [
+      "Local file/directory existence only; anchors, external sites and linked-page content not qualified",
+      "Direct audit bypasses current docs-links exclusions of docs/products and _source"
+    ]
+  },
+  "directAuditScript": "import {markdownLinkDestinations} from '/home/aphro/aphrody/packages/infra/workspace/src/docs-links.ts';\nimport {resolve,dirname} from 'node:path';\nimport {existsSync,readFileSync} from 'node:fs';\nconst root='/home/aphro/aphrody';\nconst paths=['docs/products/ai/README.md','docs/products/ai/_source/README.md'];\nconst results=[];\nfor(const phase of ['before','after']) {\n for(const path of paths) {\n const raw=phase==='before'?Bun.spawnSync(['git','show','3c154081a70f014af354ab1be6485a99888bae95:'+path],{cwd:root}).stdout.toString():readFileSync(resolve(root,path),'utf8');\n const links=markdownLinkDestinations(raw.replace(/```[\\s\\S]*?```/g,'').replace(/`[^`\\n]+`/g,''));\n const local=links.filter(link=>!/^https?:|^mailto:|^#/.test(link));\n const destinations=local.map(link=>{const target=resolve(dirname(resolve(root,path)),link.split('#')[0]);return {link,target:target.startsWith(root+'/')?target.slice(root.length+1):target,exists:existsSync(target)}});\n results.push({phase,path,localLinks:local.length,broken:destinations.filter(d=>!d.exists).length,destinations});\n }\n}\nconsole.log(JSON.stringify({results,limitations:['Local file/directory existence only; anchors, external sites and linked-page content not qualified','Direct audit bypasses current docs-links exclusions of docs/products and _source']},null,2));\n",
+  "globalChecks": {
+    "before": {
+      "command": "bun packages/infra/workspace/src/docs-links.ts --scope repository --exclude-file docs/migration/workspace-architecture-before-monorepo-2026-10-01.md --json",
+      "exitCode": 1,
+      "scanned": 5869,
+      "links": 751,
+      "broken": 95,
+      "excluded": [
+        "docs/migration/workspace-architecture-before-monorepo-2026-10-01.md"
+      ]
+    },
+    "after": {
+      "command": "bun packages/infra/workspace/src/docs-links.ts --scope repository --exclude-file docs/migration/workspace-architecture-before-monorepo-2026-10-01.md --exclude-file docs/migration/ai-documentation-index-before-monorepo-2026-10-01.md --json",
+      "exitCode": 1,
+      "scanned": 5870,
+      "links": 751,
+      "broken": 95,
+      "excluded": [
+        "docs/migration/workspace-architecture-before-monorepo-2026-10-01.md",
+        "docs/migration/ai-documentation-index-before-monorepo-2026-10-01.md"
+      ]
+    }
+  },
+  "sourceHashes": {
+    "docs/products/ai/README.md": "243ebdf94e5740a733745e25802ce8f7cc20f7fa4357c1d940f842132a52a58b",
+    "docs/products/ai/_source/README.md": "0a1a6d90e27d6577179b2406aadf5a28c0c97f237c5baefc9a82e9bc4205e9ff",
+    "packages/infra/workspace/src/docs-links.ts": "a0d2113e9cadf0bf8e1306018968aeef57e07ff08988f957615777b8a3221415"
+  },
+  "integratedGate": {
+    "command": "cargo clippy -p aphrody -p aphrody-mcp --all-targets --locked --no-default-features -- -D warnings",
+    "exitCode": 101,
+    "diagnostics": {
+      "aphrody-terminal-backend": 1,
+      "aphrody-web-crawl": 2
+    },
+    "logSha256": "fd970d480c3103737dd580de21fe5994642c4699ea5ea2fc8063fdc7b0c7e28c"
+  },
+  "limitations": [
+    "Current global checker skips all docs/products and _source paths; its unchanged totals do not qualify the repaired pages",
+    "Global unresolved references remain to classify; no full documentation qualification",
+    "Direct audit checks destination existence, not Markdown anchors, external sites or truth of linked content",
+    "Snapshot preserved without correcting its historical destinations",
+    "No source implementation changed; owner tests not repeated for this documentation batch",
+    "No Git remote configured"
+  ]
+}
