@@ -231,6 +231,23 @@ ABI, erreurs et annulation vérifiés par des cas qui traversent les frontières
   pureté des autres contrats et broadcast du subsystem restent à qualifier.
   L’item global de séparation contrats/opérations reste ouvert.
 
+### Gates Contrats Linux — 2026-10-01
+
+- FAIT : tests de `aphrody-a2a`, `aphrody-a2a-pb`, `aphrody-agent-proto` et
+  `aphrody-subsystem` réussis (172 tests, doc-tests inclus), ainsi que quatre
+  tests unitaires `aphrody-app-protocol`. Clippy all-targets verrouillé avec
+  refus des avertissements réussi sur ces cinq packages.
+- [Logs](docs/migration/contracts-qualification-2026-10-01/contracts-tests.log)
+  conservés avec le résultat clippy et les échecs upstream.
+- INCOMPLET : les deux tests `upstream_fixtures_test` d’app-protocol échouent
+  parce que `tests/fixtures/upstream/FIXTURES_REV` et les schémas sont absents.
+  Aucun de ces tests n’est ignoré ou remplacé par des fixtures synthétiques.
+  Leurs chemins sont désormais ancrés à `CARGO_MANIFEST_DIR`.
+- L’ancien checkout Contrats inspecté ne contient pas non plus ces fixtures.
+  Restaurer les schémas et leur provenance upstream vérifiée (révision attendue
+  `78245b4…`) reste nécessaire avant qualification complète du protocole.
+  Les consommateurs depuis clone propre et les autres plateformes restent ouverts.
+
 ## 2. Interop et CLI
 
 Propriétaires : `crates/interop/ffi`, `packages/interop/native`, `apps/cli`.

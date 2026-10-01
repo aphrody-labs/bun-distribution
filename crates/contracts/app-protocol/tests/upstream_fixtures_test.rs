@@ -3,14 +3,14 @@ use std::path::Path;
 
 #[test]
 fn test_fixtures_rev_matches_checkout() {
-    let rev_path = Path::new("tests/fixtures/upstream/FIXTURES_REV");
+    let rev_path = Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/upstream/FIXTURES_REV");
     let rev = std::fs::read_to_string(rev_path).expect("read FIXTURES_REV");
     assert!(rev.trim().starts_with("78245b4"), "Unexpected FIXTURES_REV: {rev}");
 }
 
 #[test]
 fn test_upstream_json_schemas_parse_valid() {
-    let fixture_dir = Path::new("tests/fixtures/upstream");
+    let fixture_dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/upstream");
     let entries = std::fs::read_dir(fixture_dir).expect("read fixture dir");
 
     let mut schema_count = 0;
