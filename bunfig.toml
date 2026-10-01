@@ -3,3 +3,11 @@ linker = "isolated"
 hoist = false
 saveTextLockfile = true
 minimumReleaseAge = 259200
+
+[jsx]
+runtime = "automatic"
+importSource = "react"
+
+[loader]
+".svg" = "text"
+".css" = "css"

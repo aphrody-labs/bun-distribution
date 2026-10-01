@@ -10,6 +10,9 @@ const CRC_TABLE = Array.from({ length: 256 }, (_, n) => {
 });
 
 function crc32(bytes: Uint8Array): number {
+  if (typeof Bun !== "undefined" && Bun.hash?.crc32) {
+    return Bun.hash.crc32(bytes);
+  }
   let crc = 0xffffffff;
   for (const byte of bytes) crc = (CRC_TABLE[(crc ^ byte) & 0xff] as number) ^ (crc >>> 8);
   return (crc ^ 0xffffffff) >>> 0;

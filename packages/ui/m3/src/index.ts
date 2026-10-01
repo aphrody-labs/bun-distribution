@@ -17,3 +17,4 @@ export type { M3PageProps, M3RouteValue, ServeM3Options } from "./server.js";
 export { BUNDLE_FILES, m3Tokens, SHEETS, writeTokenBundle } from "./tokens.js";
 export type { M3TokensOptions, TokenBundleOptions } from "./tokens.js";
 export { dataUrlFor, mimeFor } from "./url-imports.js";
+export * from "./i18n.js";

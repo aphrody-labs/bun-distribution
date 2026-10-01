@@ -12,6 +12,8 @@ export const SERVER_ONLY: Readonly<Record<string, string>> = {
   "canvas/index.ts": "native .node addon",
   "m3-config/test/dom.ts": "bun test preload",
   "m3-config/tsup.ts": "build tooling",
+  "m3-config/bun-build.ts": "Bun build preset",
+  "m3-config/cache-db.ts": "Bun SQLite cache (bun:sqlite)",
   "m3-icons/src/index.ts": "renders through the Bun FFI; browsers use ./browser and ./browser/lit",
   "m3-icons/src/codegen.ts": "build-time generator (Bun FFI)",
   "m3-icons/src/plugin.ts": "Bun build plugin (Bun FFI)",

@@ -43,8 +43,12 @@ export async function writeFiles(
   }
   const written: string[] = [];
   for (const { path, full } of targets) {
-    await mkdir(dirname(full), { recursive: true });
-    await writeFile(full, files[path] as string | Uint8Array);
+    if (typeof Bun !== "undefined") {
+      await Bun.write(full, files[path] as string | Uint8Array);
+    } else {
+      await mkdir(dirname(full), { recursive: true });
+      await writeFile(full, files[path] as string | Uint8Array);
+    }
     written.push(full);
   }
   if (targets.length === 0) await mkdir(root, { recursive: true });
