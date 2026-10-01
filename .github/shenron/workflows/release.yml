@@ -111,9 +111,9 @@ jobs:
             ## Installation depuis les sources
 
             ```bash
-            git clone https://github.com/aphrody-labs/shenron.git
-            cd shenron && bun install
-            cp apps/bot/.env.example apps/bot/.env   # remplis DISCORD_TOKEN / GUILD_ID / OWNER_ID
+            git clone https://github.com/aphrody-labs/aphrody.git
+            cd aphrody && bun run install:workspace
+            cp apps/shenron/bot/.env.example apps/shenron/bot/.env   # remplis DISCORD_TOKEN / GUILD_ID / OWNER_ID
             bun --filter @shenron/bot dev
             ```
           files: |

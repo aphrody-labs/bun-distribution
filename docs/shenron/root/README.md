@@ -288,7 +288,7 @@ les sources et la révision dans PostgreSQL. Ne lance pas une écriture de masse
 ## Démarrage
 
 ```bash
-git clone https://github.com/aphrody-labs/shenron && cd shenron
+git clone https://github.com/aphrody-labs/aphrody && cd aphrody/apps/shenron
 bun install
 cp apps/bot/.env.example apps/bot/.env   # token Discord, GUILD_ID, OWNER_ID
 # site : DATABASE_URL, Better Auth — voir docs/ENV.md

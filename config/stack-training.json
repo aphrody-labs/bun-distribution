@@ -91,8 +91,10 @@
     {
       "id": "shenron",
       "role": "Dragon Ball domain application on the RG runtime plane",
-      "source": "https://github.com/aphrody-labs/shenron",
-      "production": true
+      "source": "https://github.com/aphrody-labs/aphrody",
+      "production": true,
+      "monorepoPaths": "apps/shenron, packages/shenron",
+      "note": "Imported into the monorepo at shenron 58e03b40 (its last commit); the separate shenron repository was deleted on 2026-10-01 after a verified backup. The running vps release /srv/shenron/releases/4cac743f is a self-contained artifact."
     },
     {
       "id": "aphrody-discord",
