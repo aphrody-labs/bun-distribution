@@ -342,17 +342,12 @@ async function moteurAgy(): Promise<Traducteur> {
 }
 
 /**
- * Google Traduction, sans clé ni compte, par l'émulateur d'API de bxc.
- *
- * `bxc google translate --serve` ouvre sur 127.0.0.1:8089 un service qui parle
- * le protocole de Google Cloud Translation v2 et traduit **un lot de segments
- * par appel**. C'est ce qui le rend utilisable ici : un processus par segment
- * coûterait des heures sur 12 000 planches, un POST par planche coûte une
- * seconde.
+ * Backend Google sans clé ni compte, via le propriétaire Rust
+ * `aphrody-translate` et son adaptateur Aphrody Web.
  *
  * Sa place dans l'ordre de repli n'est pas arbitraire. Mesuré le 2026-09-12 :
- * `aphrody chat` reste en 401, `agy` répond ; ce moteur-ci répond lui aussi,
- * sans authentification, et rend correctement les tableaux et les listes que
+ * L'adaptateur Web répond sans authentification et rend correctement les
+ * tableaux et les listes que
  * NLLB refuse. Il passe donc devant NLLB, qui reste le dernier recours parce
  * qu'il est le seul à fonctionner sans réseau.
  *
