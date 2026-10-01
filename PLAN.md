@@ -248,6 +248,22 @@ ABI, erreurs et annulation vérifiés par des cas qui traversent les frontières
   `78245b4…`) reste nécessaire avant qualification complète du protocole.
   Les consommateurs depuis clone propre et les autres plateformes restent ouverts.
 
+### Fixtures app-protocol restaurées — 2026-10-01
+
+- FAIT : 13 schémas JSON upstream et `FIXTURES_REV` restaurés depuis les blobs
+  Git du commit source `96d1453…`, avant suppression par le nettoyage historique.
+  [Rapport de provenance](docs/migration/app-protocol-fixtures-restored-2026-10-01.json)
+  avec commit complet, chemins source/cible et SHA-256 de chaque fichier.
+- Aucun schéma régénéré. Attribution upstream documentée ; le test vérifie
+  maintenant la révision complète `78245b47af2a7aafcabe025828ceecca69db4df1`.
+- Les 17 tests d’app-protocol, dont les deux tests upstream précédemment rouges,
+  réussissent ; clippy all-targets verrouillé avec refus des avertissements et
+  `git diff --check` réussis. Logs de reprise conservés dans le dossier de
+  qualification Contrats.
+- INCOMPLET : ces fixtures historiques ne prouvent pas la compatibilité avec
+  le protocole upstream actuel, le runtime assemblé ou les autres plateformes.
+  La qualification complète des contrats et consommateurs reste ouverte.
+
 ## 2. Interop et CLI
 
 Propriétaires : `crates/interop/ffi`, `packages/interop/native`, `apps/cli`.

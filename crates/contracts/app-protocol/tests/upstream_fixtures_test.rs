@@ -3,9 +3,10 @@ use std::path::Path;
 
 #[test]
 fn test_fixtures_rev_matches_checkout() {
-    let rev_path = Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/upstream/FIXTURES_REV");
+    let rev_path =
+        Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/upstream/FIXTURES_REV");
     let rev = std::fs::read_to_string(rev_path).expect("read FIXTURES_REV");
-    assert!(rev.trim().starts_with("78245b4"), "Unexpected FIXTURES_REV: {rev}");
+    assert_eq!(rev.trim(), "78245b47af2a7aafcabe025828ceecca69db4df1", "Unexpected FIXTURES_REV");
 }
 
 #[test]
