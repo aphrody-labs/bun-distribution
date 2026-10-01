@@ -10,19 +10,24 @@ const bundleAnalyzer = withBundleAnalyzer({
 const CDN_URL = process.env.NEXT_PUBLIC_CDN_URL?.trim() || "";
 const CDN_LOADER = CDN_URL && process.env.NEXT_PUBLIC_CDN_LOADER === "1";
 
+// Producer archives are installed inside this workspace; tracing stays in Aphrody.
+const buildRoot = path.resolve(process.cwd(), "../../../");
+
 const nextConfig: NextConfig = {
   reactCompiler: true,
 
   // Sortie standalone : l'app est servie par systemd derrière nginx.
   output: "standalone",
-  outputFileTracingRoot: path.resolve(process.cwd(), "../../../"),
+  outputFileTracingRoot: buildRoot,
   turbopack: {
-    root: path.resolve(process.cwd(), "../../../"),
+    root: buildRoot,
   },
 
   compress: false,
   ...(CDN_URL && { assetPrefix: CDN_URL }),
   transpilePackages: [
+    "@rosegriffon/inagle",
+    "@rosegriffon/inagle-cross",
     "@rosegriffon/azalee",
     "@rosegriffon/ui",
     "@rosegriffon/app-shell",
@@ -38,6 +43,8 @@ const nextConfig: NextConfig = {
     "@rosegriffon/achillea-types",
     "@rosegriffon/achillea-core",
     "@rosegriffon/achillea-client",
+    // Mécanique SQL/Redis/env partagée sous @rosegriffon/db (ADR sql-convergence D7).
+    "@aphrody/sql",
   ],
 
   typescript: {
@@ -47,7 +54,6 @@ const nextConfig: NextConfig = {
   productionBrowserSourceMaps: false,
 
   serverExternalPackages: [
-    "@rosegriffon/inagle",
     "@sentry/nextjs",
     "better-auth",
     "@better-auth/kysely-adapter",

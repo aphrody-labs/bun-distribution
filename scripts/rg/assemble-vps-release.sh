@@ -5,7 +5,7 @@ set -Eeuo pipefail
 # (scripts/atomic-deploy-rg.sh), which also owns the systemd units and the nginx
 # gateway packaged here: rg only contributes application code.
 commit_arg="${1:?usage: assemble-vps-release.sh FULL_GIT_SHA}"
-source_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)/rg"
+source_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 infra_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 releases_root="${RG_RELEASES_ROOT:-/srv/rg/releases}"
 catalog="${RG_CATALOG_PATH:-$infra_root/config/service-catalog.json}"
@@ -117,13 +117,14 @@ else:
 PY
 )" || exit 2
 export NODE_AUTH_TOKEN
+bash scripts/rg/prepare-iecode-release.sh "$stage" "${APHRODY_IECODE_ROOT:-$source_root/../iecode}"
 bun install --frozen-lockfile
 unset NODE_AUTH_TOKEN
 
 # These workspace packages export dist/ files, which are absent from git.
 # Build them before Next resolves their package exports.
-(cd "$stage/packages/inagle" && bun run build)
-(cd "$stage/packages/patreon-bun" && bun run build)
+(cd "$stage/packages/rg/patreon-bun" && bun run build)
+(cd "$stage/packages/discord/kit" && bun run build)
 
 # Next 16 standalone must be built under Node 22; Bun is used for installs and
 # for the final runtime. Docker reads the protected env file on the host only.
@@ -177,23 +178,25 @@ PY
   -e NEXT_TELEMETRY_DISABLED=1 -e SENTRY_SKIP_UPLOAD=1 \
   -e NODE_OPTIONS=--max-old-space-size=8192 \
   -e HOME=/work/.build-home -e TMPDIR=/work/.build-tmp \
-  -v "$stage:/work" -w /work/apps/website \
+  -v "$stage:/work" -w /work/apps/rg/website \
   "$node_image" node node_modules/next/dist/bin/next build --turbopack
 rm -f -- "$docker_env"
-server="$stage/apps/website/.next/standalone/apps/website/server.js"
-[[ -s "$stage/apps/website/.next/BUILD_ID" && -s "$server" ]] || {
+server="$stage/apps/rg/website/.next/standalone/apps/rg/website/server.js"
+[[ -s "$stage/apps/rg/website/.next/BUILD_ID" && -s "$server" ]] || {
   echo 'Next standalone build incomplete' >&2; exit 1;
 }
-install -m 0644 "$server" "$stage/apps/website/server.js"
-rm -rf -- "$stage/apps/website/.next/standalone" "$stage/.build-tmp" "$stage/.build-home"
+install -m 0644 "$server" "$stage/apps/rg/website/server.js"
+rm -rf -- "$stage/apps/rg/website/.next/standalone" "$stage/.build-tmp" "$stage/.build-home"
 # Mount point for the shared Next cache (BindPaths= in rg-website.service).
-mkdir -p "$stage/apps/website/.next/cache"
+mkdir -p "$stage/apps/rg/website/.next/cache"
 
-(cd "$stage/apps/achillea-bot" && bun run build)
-[[ -s "$stage/apps/achillea-bot/build/main.js" && -s "$stage/apps/achillea-bot/build/ranked/main.js" ]] || {
+(cd "$stage/apps/rg/bot" && bun run compile &&
+  bun build src/api/index.ts --target bun --packages external --outfile build/main.js &&
+  bun build src/api/ranked/main.ts --target bun --packages external --outfile build/ranked/main.js)
+[[ -s "$stage/apps/rg/bot/build/main.js" && -s "$stage/apps/rg/bot/build/ranked/main.js" ]] || {
   echo 'Achillea bot build incomplete' >&2; exit 1;
 }
-mkdir -p "$stage/apps/achillea-bot/logs" "$stage/apps/achillea-bot/storage"
+mkdir -p "$stage/apps/rg/bot/logs" "$stage/apps/rg/bot/storage"
 
 mkdir -p "$stage/systemd" "$stage/nginx"
 install -m 0644 "$infra_root/nginx/rg/rg-production.conf" "$stage/nginx/rg.conf"
@@ -222,6 +225,8 @@ for service in services:
     if unit != f'{name}.service':
         raise SystemExit(f'catalog unit for {name} must be {name}.service')
     text = (infra_units / unit).read_text()
+    for old, new in [('apps/achillea-bot', 'apps/rg/bot'), ('apps/website', 'apps/rg/website'), ('apps/bot', 'apps/rg/bot'), ('packages/cron', 'packages/rg/cron')]:
+        text = text.replace('/srv/rg/current/' + old, '/srv/rg/current/' + new)
     # Same invariants as the activation adapter, checked before the build is sealed.
     if '/home/ubuntu/rg' in text or not re.search(
             r'^WorkingDirectory=/srv/rg/current(?:/[^\s]*)?$', text, re.MULTILINE):
@@ -232,7 +237,8 @@ for service in services:
 
 manifest = {
     'schemaVersion': 1,
-    'repository': 'rg',
+    'repository': 'aphrody-labs/aphrody',
+    'iecodeSource': json.loads((root / '.cache/iecode-packages/manifest.json').read_text()),
     'commit': commit,
     'builtAt': datetime.datetime.now(datetime.timezone.utc).isoformat().replace('+00:00', 'Z'),
     'services': [service['id'] for service in services],

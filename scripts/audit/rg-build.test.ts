@@ -4,12 +4,13 @@ import { chmod, mkdir, mkdtemp, rm, utimes } from "node:fs/promises";
 import { dirname, join, relative, resolve } from "node:path";
 
 const root = resolve(import.meta.dir, "../..");
+const buildRoot = root;
 
 async function build(mode: "complete" | "partial" | "failure" | "stale") {
   await mkdir(join(root, ".cache"), { recursive: true });
   const fixture = await mkdtemp(join(root, ".cache/rg-build-"));
   const app = join(fixture, "apps/rg/website");
-  const server = join(app, ".next/standalone", relative(root, app), "server.js");
+  const server = join(app, ".next/standalone", relative(buildRoot, app), "server.js");
   try {
     await mkdir(dirname(server), { recursive: true });
     await Bun.write(join(app, ".next/BUILD_ID"), "old-build");

@@ -7,6 +7,8 @@ on:
       - "packages/rg/**"
       - "docs/rg/**"
       - "config/rg/**"
+      - "config/sibling-checkouts.json"
+      - ".github/actions/setup-iecode/**"
       - "scripts/rg/**"
       - "scripts/audit/rg-build.test.ts"
       - "package.json"
@@ -21,6 +23,8 @@ on:
       - "packages/rg/**"
       - "docs/rg/**"
       - "config/rg/**"
+      - "config/sibling-checkouts.json"
+      - ".github/actions/setup-iecode/**"
       - "scripts/rg/**"
       - "scripts/audit/rg-build.test.ts"
       - "package.json"
@@ -29,14 +33,26 @@ on:
       - "packages/infra/workspace/**"
       - ".github/workflows/rg-migration.yml"
 
+permissions:
+  contents: read
+
 jobs:
   rg-pipeline:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: aphrody
     steps:
       - uses: actions/checkout@v4
+        with:
+          path: aphrody
+          persist-credentials: false
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: 1.4.2
+      - uses: ./aphrody/.github/actions/setup-iecode
+        with:
+          token: ${{ secrets.IECODE_CHECKOUT_TOKEN }}
       - run: bun install --frozen-lockfile
       - run: bun test packages/infra/workspace/test/rg.test.ts scripts/audit/rg-build.test.ts
       - run: bun --bun tsc --project packages/infra/workspace/tsconfig.json --noEmit

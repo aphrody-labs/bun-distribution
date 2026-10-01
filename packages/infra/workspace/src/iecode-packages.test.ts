@@ -147,3 +147,38 @@ test("packing rejects a CLI target absent from the clean archive", async () => {
     "missing archive entrypoint",
   );
 });
+
+test("release preparation uses the pinned snapshot without switching a dirty producer", async () => {
+  const options = await fixture();
+  const revision = (await run(["git", "rev-parse", "HEAD"], options.source)).trim();
+  await writeFile(join(options.source, "notes.txt"), "uncommitted developer data");
+  const stage = options.destination;
+  await mkdir(join(stage, "config"), { recursive: true });
+  await mkdir(join(stage, "packages/infra/workspace/src"), { recursive: true });
+  await writeFile(
+    join(stage, "config/sibling-checkouts.json"),
+    JSON.stringify({ iecode: { path: "../iecode", rev: revision } }),
+  );
+  await writeFile(
+    join(stage, "packages/infra/workspace/src/iecode-packages.ts"),
+    await readFile(join(import.meta.dir, "iecode-packages.ts"), "utf8"),
+  );
+  await run(
+    [
+      "bash",
+      join(import.meta.dir, "../../../../scripts/rg/prepare-iecode-release.sh"),
+      stage,
+      options.source,
+    ],
+    stage,
+  );
+  const manifest = JSON.parse(
+    await readFile(join(stage, ".cache/iecode-packages/manifest.json"), "utf8"),
+  );
+  expect(manifest.sourceRevision).toBe(revision);
+  expect(manifest.dirty).toBe(false);
+  expect(await readFile(join(options.source, "notes.txt"), "utf8")).toBe(
+    "uncommitted developer data",
+  );
+  expect((await run(["git", "rev-parse", "HEAD"], options.source)).trim()).toBe(revision);
+});

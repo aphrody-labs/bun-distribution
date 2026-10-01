@@ -35,7 +35,9 @@ if [[ "$APP_PATH" == .. || "$APP_PATH" == ../* ]]; then
 	echo "✗ build lancé hors du workspace Aphrody" >&2
 	exit 1
 fi
-SERVER_JS=".next/standalone/$APP_PATH/server.js"
+# IECODE archives are local installation inputs; no sibling source is traced.
+BUILD_ROOT="$REPO_ROOT"
+SERVER_JS=".next/standalone/$(realpath --relative-to="$BUILD_ROOT" "$PWD")/server.js"
 
 # TMPDIR sur disque (PAS le tmpfs /tmp, RAM-backed et souvent plein sur ce VPS) :
 # un /tmp saturé fait crasher le sous-process babel-loader (SIGTERM/EDQUOT).
