@@ -220,7 +220,7 @@ fn ensure_config(codex_dir: &Path) -> std::io::Result<bool> {
 /// In-tree yolo persona loader.
 fn persona_body(repo_root: Option<&Path>) -> Option<String> {
     let root = repo_root?;
-    let yolo_root = root.join("config/ai/plugins/aphrody");
+    let yolo_root = root.join("plugins/aphrody");
     let yolo_agents = yolo_root.join("home").join("AGENTS.md");
     let persona = std::fs::read_to_string(&yolo_agents).ok()?;
     let persona = persona

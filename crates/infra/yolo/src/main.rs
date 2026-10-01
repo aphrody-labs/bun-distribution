@@ -1027,10 +1027,7 @@ fn resolve_yolo_root(root: &Path, override_path: Option<&Path>) -> Result<PathBu
             vec![if path.is_absolute() { path.to_path_buf() } else { root.join(path) }]
         },
         None => vec![
-            root.join("config/ai/plugins/aphrody"),
             root.join("plugins/aphrody"),
-            root.join("../aphrody-os/plugins/aphrody"),
-            root.join("../aphrody-ai/plugins/aphrody"),
         ],
     };
     let path = candidates
@@ -1456,8 +1453,7 @@ mod tests {
     #[test]
     fn consolidated_plugin_supports_plan_and_check_without_override() {
         let fixture = Fixture::new();
-        let expected = fixture.plugin("config/ai/plugins/aphrody");
-        fixture.plugin("plugins/aphrody");
+        let expected = fixture.plugin("plugins/aphrody");
         let resources = resolve_yolo_root(&fixture.0, None).unwrap();
         assert_eq!(resources, expected);
         yolo_plan_resources(&fixture.0, &resources, true).unwrap();
@@ -1465,20 +1461,9 @@ mod tests {
     }
 
     #[test]
-    fn legacy_source_and_in_tree_plugin_roots_remain_supported() {
-        let fixture = Fixture::new();
-        let root = fixture.0.join("aphrody-infra");
-        fs::create_dir(&root).unwrap();
-        let peer = fixture.plugin("aphrody-ai/plugins/aphrody");
-        assert_eq!(resolve_yolo_root(&root, None).unwrap().canonicalize().unwrap(), peer);
-        let local = fixture.plugin("aphrody-infra/plugins/aphrody");
-        assert_eq!(resolve_yolo_root(&root, None).unwrap(), local);
-    }
-
-    #[test]
     fn explicit_resource_override_is_authoritative_and_validated() {
         let fixture = Fixture::new();
-        fixture.plugin("config/ai/plugins/aphrody");
+        fixture.plugin("plugins/aphrody");
         let external = fixture.plugin("custom plugin");
         assert_eq!(
             resolve_yolo_root(&fixture.0, Some(Path::new("custom plugin"))).unwrap(),
@@ -1494,7 +1479,7 @@ mod tests {
                 .to_string()
                 .contains("schema")
         );
-        fs::remove_file(fixture.0.join("config/ai/plugins/aphrody/yolo.json")).unwrap();
+        fs::remove_file(fixture.0.join("plugins/aphrody/yolo.json")).unwrap();
         assert!(resolve_yolo_root(&fixture.0, None).is_err());
     }
 
