@@ -8,7 +8,11 @@
  * `resolveDatabaseUrl` and is never logged nor echoed in a failure reason.
  */
 import { readFileSync } from "node:fs";
+import { lastAssignment } from "@aphrody/sql/env";
 import { type EnvSource, resolveDatabaseUrl } from "./config";
+
+/** Last active `NAME=value` of a dotenv text; shared parser of `@aphrody/sql/env`. */
+export { lastAssignment };
 
 export type DatabaseUrlSource =
 	| { kind: "env"; name: string }
@@ -24,35 +28,6 @@ export interface LoadDatabaseUrlOptions {
 	varNames?: readonly string[];
 	/** Dotenv-style files tried in order after the environment. */
 	fallbackFiles?: readonly { path: string; varName?: string }[];
-}
-
-function stripQuotes(value: string): string {
-	const v = value.trim();
-	if (v.length >= 2) {
-		const first = v[0];
-		const last = v[v.length - 1];
-		if ((first === '"' || first === "'" || first === "`") && last === first) return v.slice(1, -1);
-	}
-	return v;
-}
-
-/** Last active `NAME=value` of a dotenv text (comments and `export ` handled). */
-export function lastAssignment(text: string, name: string): string | undefined {
-	let found: string | undefined;
-	for (const rawLine of text.split(/\r?\n/)) {
-		let line = rawLine.trim();
-		if (!line || line.startsWith("#")) continue;
-		if (line.startsWith("export ")) line = line.slice(7).trimStart();
-		const eq = line.indexOf("=");
-		if (eq <= 0 || line.slice(0, eq).trim() !== name) continue;
-		let value = line.slice(eq + 1).trim();
-		if (!/^["'`]/.test(value)) {
-			const hash = value.search(/\s#/);
-			if (hash !== -1) value = value.slice(0, hash).trim();
-		}
-		found = stripQuotes(value);
-	}
-	return found;
 }
 
 function validate(raw: string): string | null {

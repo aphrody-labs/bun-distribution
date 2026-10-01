@@ -77,7 +77,7 @@
     "ai": "catalog:",
     "postgres": "^3.4.9",
     "sharp": "catalog:",
-    "sqlite-vec": "^0.1.1",
+    "sqlite-vec": "^0.1.9",
     "zod": "catalog:"
   },
   "devDependencies": {

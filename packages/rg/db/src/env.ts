@@ -13,6 +13,8 @@
 // l'unique cible que la conf nginx live (`rg-production.conf`) route réellement pour
 // `/storage/v1/` et `/realtime/v1/` ; `:8811` (`supabase-internal.conf`) n'est jamais
 // écouté par cette conf et est marqué superseded dans le catalogue.
+import { isUsableEnvValue } from "@aphrody/sql/env";
+
 const INTERNAL_URL = "http://127.0.0.1:8800";
 
 /**
@@ -39,26 +41,14 @@ function origineDeRepli(): string {
 		? (globalThis as unknown as { location: { origin: string } }).location.origin
 		: INTERNAL_URL;
 }
+// Valeurs vides, littéraux "undefined"/"null" et blobs dotenvx scellés (`eyJ2Ijo…`)
+// sont rejetés par le prédicat partagé `@aphrody/sql/env` (ADR sql-convergence D7).
 function isValidHttpUrl(value: string | undefined | null): value is string {
-	return (
-		typeof value === "string" &&
-		value.length > 0 &&
-		value !== "undefined" &&
-		value !== "null" &&
-		value.startsWith("http") &&
-		!value.startsWith("eyJ2Ijo")
-	);
+	return isUsableEnvValue(value) && value.startsWith("http");
 }
 
 function isValidKey(value: string | undefined | null): value is string {
-	return (
-		typeof value === "string" &&
-		value.length > 0 &&
-		value !== "undefined" &&
-		value !== "null" &&
-		!value.startsWith("{") &&
-		!value.startsWith("eyJ2Ijo")
-	);
+	return isUsableEnvValue(value) && !value.startsWith("{");
 }
 
 /** True pendant un prerender de build, sans variables d'environnement runtime. */

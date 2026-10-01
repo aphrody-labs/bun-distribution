@@ -33,6 +33,7 @@
     "typecheck": "bun --bun tsc --noEmit"
   },
   "dependencies": {
+    "@aphrody/sql": "workspace:*",
     "@rosegriffon/types": "workspace:*",
     "@supabase/ssr": "catalog:",
     "kysely": "catalog:",

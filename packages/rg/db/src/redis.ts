@@ -4,9 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import { redactUrl } from "@aphrody/sql/env";
+import { createRedisClient } from "@aphrody/sql/redis";
 import type { RedisClient } from "bun";
 
 // Initialisation globale avec auto-reconnect et gestion des queues hors-ligne
+// `||` volontaire (contrat historique) : toute valeur non vide est utilisée telle quelle.
 const REDIS_URL = process.env.REDIS_URL || "redis://127.0.0.1:6379";
 
 let clientInstance: RedisClient | null = null;
@@ -17,18 +20,17 @@ let clientInstance: RedisClient | null = null;
 export function getRedisClient(): RedisClient {
 	if (!clientInstance) {
 		try {
-			const { RedisClient: BunRedisClient } = require("bun");
-			clientInstance = new BunRedisClient(REDIS_URL, {
+			clientInstance = createRedisClient(REDIS_URL, {
 				connectionTimeout: 5000,
 				idleTimeout: 300000, // 5 minutes to avoid idle timeouts during crawls
 				autoReconnect: true,
 				maxRetries: 10,
 				enableOfflineQueue: true,
 				enableAutoPipelining: true,
-			}) as RedisClient;
+			});
 
 			clientInstance.onconnect = () => {
-				console.log(`[Redis] Connecté avec succès sur ${REDIS_URL.replace(/:[^:@]+@/, ":***@")}`);
+				console.log(`[Redis] Connecté avec succès sur ${redactUrl(REDIS_URL)}`);
 			};
 
 			clientInstance.onclose = (err) => {

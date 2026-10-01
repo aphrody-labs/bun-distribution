@@ -33,6 +33,7 @@
     "typecheck": "tsgo -p tsconfig.json --noEmit"
   },
   "dependencies": {
+    "@aphrody/sql": "workspace:*",
     "@paralleldrive/cuid2": "^3.3.0",
     "drizzle-orm": "catalog:",
     "postgres": "^3.4.9",

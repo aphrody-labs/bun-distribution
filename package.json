@@ -121,6 +121,9 @@
       "@envelop/graphql-jit": "^11.1.1",
       "@googlemaps/js-api-loader": "^2.1.0",
       "@leeoniya/ufuzzy": "^1.0.19",
+      "@rosegriffon/assets": "^1.0.3",
+      "@rosegriffon/db": "^1.0.3",
+      "drizzle-orm": "^0.45.3",
       "@lexical/code": "^0.45.0",
       "@hookform/resolvers": "^5.4.0",
       "@lexical/html": "^0.45.0",
@@ -249,8 +252,7 @@
       "@tauri-apps/plugin-opener": "3.0.0-alpha.1",
       "@rosegriffon/inagle": "file:.cache/iecode-packages/inagle-d4de50ba2a4b7154cb9e91f405cc30a343b04aed.tgz",
       "@rosegriffon/inagle-cross": "file:.cache/iecode-packages/inagle-cross-d4de50ba2a4b7154cb9e91f405cc30a343b04aed.tgz",
-      "@rosegriffon/azalee": "file:.cache/iecode-packages/azalee-d4de50ba2a4b7154cb9e91f405cc30a343b04aed.tgz",
-      "drizzle-orm": "^0.45.3"
+      "@rosegriffon/azalee": "file:.cache/iecode-packages/azalee-d4de50ba2a4b7154cb9e91f405cc30a343b04aed.tgz"
     }
   },
   "type": "module",
@@ -306,6 +308,7 @@
     "monorepo:layout": "bun packages/infra/workspace/src/ops.ts workspace-layout --root .",
     "monorepo:state": "bun packages/infra/workspace/src/ops.ts repository-state --root .",
     "monorepo:clean": "bun packages/infra/workspace/src/ops.ts workspace-clean --root .",
+    "db:compare": "bun scripts/audit/infra/db-compare/compare-rg-shenron.ts",
     "infra:pipeline:sync": "bun packages/infra/workspace/src/ops.ts pipeline-catalog --root . --apply",
     "iecode:prepare": "bun packages/infra/workspace/src/iecode-packages.ts prepare --config config/sibling-checkouts.json --destination .cache/iecode-packages --apply",
     "install:workspace": "bun run iecode:prepare && bun install --frozen-lockfile"
@@ -337,6 +340,10 @@
     "lmdb",
     "msgpackr-extract"
   ],
+  "dependencies": {
+    "@neon/config": "^1.8.2",
+    "@neon/env": "^1.4.7"
+  },
   "overrides": {
     "@rosegriffon/inagle": "file:.cache/iecode-packages/inagle-d4de50ba2a4b7154cb9e91f405cc30a343b04aed.tgz",
     "@rosegriffon/inagle-cross": "file:.cache/iecode-packages/inagle-cross-d4de50ba2a4b7154cb9e91f405cc30a343b04aed.tgz",

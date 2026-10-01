@@ -7,8 +7,9 @@
  * apps/shenron/bot/src/workers/indexer.ts). Here the client is disposable: once it is
  * dead it is dropped and a new one is built after a backoff. Commands issued
  * while no live client may be built (the dead window) reject with an explicit
- * error — never a silent no-op.
+ * error — never a silent no-op. Clients are built by `@aphrody/sql/redis`.
  */
+import { createRedisClient } from "@aphrody/sql/redis";
 
 export interface RedisLike {
 	send(command: string, args: string[]): Promise<unknown>;
@@ -51,8 +52,7 @@ export class RedisUnavailableError extends Error {
 }
 
 async function defaultFactory(url: string): Promise<RedisLike> {
-	const { RedisClient } = await import("bun");
-	return new RedisClient(url, {
+	return createRedisClient(url, {
 		autoReconnect: true,
 		maxRetries: 20,
 		enableOfflineQueue: true,

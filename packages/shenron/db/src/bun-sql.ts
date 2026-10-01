@@ -4,7 +4,8 @@
  * standalone API. Same schema and URL rules as the postgres-js entry point.
  * Runtime class: `bun`.
  */
-import { SQL } from "bun";
+import { createSql } from "@aphrody/sql/postgres";
+import type { SQL } from "bun";
 import { drizzle, type BunSQLDatabase } from "drizzle-orm/bun-sql";
 import { fullSchema, type FullSchema } from "./full-schema";
 import * as schema from "./schema";
@@ -37,9 +38,13 @@ export function bunSqlOptions(options: BunSqlOptions) {
 	};
 }
 
-/** Raw Bun.SQL pool (connects lazily). */
+/**
+ * Raw Bun.SQL pool (connects lazily). Built by `@aphrody/sql/postgres` with
+ * every option explicit; TLS stays with the URL (historical contract).
+ */
 export function createBunSql(options: BunSqlOptions): SQL {
-	return new SQL(bunSqlOptions(options));
+	const { url, ...rest } = bunSqlOptions(options);
+	return createSql(url, { ...rest, tls: "inherit" });
 }
 
 export interface CreateBunDbOptions extends Partial<BunSqlOptions> {
