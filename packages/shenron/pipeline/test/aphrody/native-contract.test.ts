@@ -27,7 +27,7 @@ test("native adapters preserve Shenron doctor routing and sanitized auth presenc
     }));
     const {aphrodyNative} = await import(${JSON.stringify(adapter)});
     assert.deepEqual(await aphrodyNative.doctor(), {pillar: "shenron_sovereign_bridge", status: "degraded"});
-    assert.deepEqual(args, ["shenron", "doctor", "--json"]);
+    assert.deepEqual(args, ["doctor", "--json"]);
     for (const configured of [false, true]) for (const present of [false, true]) {
       status = {configured, admin_credentials_present: present, secret: "must not project"};
       assert.deepEqual(aphrodyNative.authStatus(), {configured, adminCredentialsPresent: present});

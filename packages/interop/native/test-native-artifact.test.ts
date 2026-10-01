@@ -111,7 +111,13 @@ async function isolated(code: string, env: Record<string, string | undefined>, c
   const child = Bun.spawn({
     cmd: [process.execPath, "-e", code],
     cwd,
-    env: { ...process.env, APHRODY_FFI_DEV: undefined, APHRODY_FFI_LIB: undefined, ...env },
+    env: {
+      ...process.env,
+      APHRODY_FFI_DEV: undefined,
+      APHRODY_FFI_LIB: undefined,
+      SHENRON_FFI_LIB: undefined,
+      ...env,
+    },
     stdout: "pipe",
     stderr: "pipe",
   });
@@ -130,7 +136,7 @@ test("an installed package imports every public entry without checkout ancestors
   await isolated(
     `
     for (const name of ["index", "cli", "web", "shenron", "manga", "svg", "render", "reproduce", "icons", "n2b", "oxc"])
-      await import("./src" + name + ".ts");
+      await import("./src/" + name + ".ts");
     const { nativeLibraryLoaded } = await import("./src/library.ts");
     if (nativeLibraryLoaded()) throw new Error("native code loaded on import");
     console.log("ok");

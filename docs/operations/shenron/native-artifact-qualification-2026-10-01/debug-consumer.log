@@ -1,0 +1,14 @@
+bun test v1.4.2 (744846f84)
+
+packages/shenron/pipeline/test/aphrody/native.test.ts:
+(pass) @shenron/pipeline/aphrody/native FFI bridge > detects whether native library is available on host [0.03ms]
+(pass) @shenron/pipeline/aphrody/native FFI bridge > returns valid ABI version and version string when loaded [6.40ms]
+(pass) @shenron/pipeline/aphrody/native FFI bridge > executes captured doctor command in-process [150.75ms]
+(pass) @shenron/pipeline/aphrody/native FFI bridge > returns in-process RAG results with typed hits when present [26.34ms]
+(pass) @shenron/pipeline/aphrody/native FFI bridge > exposes only sanitized authentication presence flags [2.21ms]
+(pass) @shenron/pipeline/aphrody/native FFI bridge > loads sovereign persona prompt in-process [0.69ms]
+
+ 6 pass
+ 0 fail
+ 16 expect() calls
+Ran 6 tests across 1 file. [437.00ms]

@@ -1,0 +1,323 @@
+bun test v1.4.2 (744846f84)
+
+packages/shenron/pipeline/test/scripts-ratchet.test.ts:
+(pass) tsconfig.scripts.json ratchet > extends the package tsconfig and includes every script [0.42ms]
+(pass) tsconfig.scripts.json ratchet > never grows the exclude list beyond the baseline [0.25ms]
+(pass) tsconfig.scripts.json ratchet > excludes only exact existing files (no globs) [0.18ms]
+(pass) tsconfig.scripts.json ratchet > keeps the repaired scripts under the gate [0.42ms]
+
+packages/shenron/pipeline/test/dragonballcn-gallery.test.ts:
+(pass) dragonballcn gallery parser > listing dedups files and keeps the first directory [0.22ms]
+(pass) dragonballcn gallery parser > pages carry thumb, image and viewer URLs [0.19ms]
+(pass) dragonballcn gallery parser > missing title and plates [0.06ms]
+
+packages/shenron/pipeline/test/workflows-ia.test.ts:
+(pass) runIaTask (B5) > the fetched citations appear in the prompt sent to the model [11.24ms]
+(pass) runIaTask (B5) > without RAG the prompt carries the question only [0.54ms]
+(pass) runIaTask (B5) > an empty generation is an error, never a silent fallback [0.87ms]
+(pass) runIaTask (B5) > the legacy chat function receives the grounded prompt and names the model [0.92ms]
+
+packages/shenron/pipeline/test/rag-lexique-path.test.ts:
+(pass) resolveLexiquePath (B6) > resolves the bot lexicon on win32 without a leading slash [0.27ms]
+(pass) resolveLexiquePath (B6) > resolves the bot lexicon on posix [0.04ms]
+(pass) resolveLexiquePath (B6) > honours RAG_LEXIQUE [0.02ms]
+(pass) resolveLexiquePath (B6) > matches the file the bot reads in this checkout [0.03ms]
+(pass) resolveLexiquePath (B6) > derives the repository root from a script URL [0.02ms]
+(pass) script environment contract (B13, rule 9) > has no embedder default and names the variables [0.17ms]
+(pass) script environment contract (B13, rule 9) > reads the canonical APHRODY_AI_* names before the legacy aliases [0.09ms]
+(pass) script environment contract (B13, rule 9) > refuses to write vectors into another embedding space [0.21ms]
+(pass) script environment contract (B13, rule 9) > appends /v1 to EMBED_URL and keeps an explicit base [0.05ms]
+(pass) script environment contract (B13, rule 9) > refuses a destructive rebuild without RAG_DB or against the served database [0.11ms]
+
+packages/shenron/pipeline/test/cli-translate.test.ts:
+(pass) pipeline translate > `translate` exposes the Aphrody translation owner plan [69.28ms]
+(pass) pipeline translate > `translation` exposes the Aphrody translation owner plan [68.00ms]
+(pass) pipeline translate > exports the unified translation runner [1.34ms]
+
+packages/shenron/pipeline/test/bxc/index.live.test.ts:
+(pass) BxcBridge Native Client Suite > resolves valid bxc path [0.08ms]
+(pass) BxcBridge Native Client Suite > checks bxc version [13.40ms]
+(pass) BxcBridge Native Client Suite > Anime-Sama: search and getEpisodes typings and execution [431.07ms]
+(pass) BxcBridge Native Client Suite > VoirAnime: search and getAnime [2587.16ms]
+92 |       throw new Error(`Aphrody Wiki CLI unavailable: ${result.message}`);
+93 |     if (result.kind === "timeout")
+94 |       throw new Error(`Aphrody Wiki search timed out after ${result.timeoutMs} ms`);
+95 |     if (result.kind === "invalid_json")
+96 |       throw new Error(`Aphrody Wiki search returned invalid JSON: ${result.error}`);
+97 |     throw new Error(
+                   ^
+error: Aphrody Wiki search exited 1: × MediaWiki search failed: MediaWiki request returned
+  │ HTTP 403: https://terraria.wiki.gg/api.php?
+  │ action=query&format=json&formatversion=2&generator=search&gsrsearch=boss&g
+  │ srlimit=5&gsrnamespace=0&prop=info&inprop=url
+      at search (/home/aphro/aphrody/packages/shenron/pipeline/src/aphrody/wiki.ts:97:15)
+(fail) BxcBridge Native Client Suite > MediaWiki: search and markdown [210.59ms]
+(pass) BxcBridge Native Client Suite > Aphrody Translate: respects the requested target [58.16ms]
+(pass) BxcBridge Native Client Suite > DragonballCN: catalog [0.87ms]
+(pass) BxcBridge Native Client Suite > DragonballCN: versioned volume inventory preserves public-page boundaries [1.24ms]
+(pass) BxcBridge Native Client Suite > Frames: local index stats [10.42ms]
+(pass) BxcBridge Native Client Suite > BxcDbBridge: does not invent absent image URLs and normalizes players [0.31ms]
+
+packages/shenron/pipeline/test/ai/eval.test.ts:
+(pass) parseGold > apps/shenron/bot/tests/rag-gold.jsonl holds 172 cases [0.01ms]
+(pass) parseGold > invalid and comment lines are skipped [0.06ms]
+(pass) metrics equal the frozen rag-eval.ts values > per-case ranks and nDCG [0.64ms]
+(pass) metrics equal the frozen rag-eval.ts values > aggregate and per-tag aggregates [0.52ms]
+(pass) metrics equal the frozen rag-eval.ts values > runCase produces the same rank and nDCG [0.13ms]
+(pass) URL helpers > normalizeUrl and matchesExpectedUrl boundaries [0.02ms]
+(pass) URL helpers > recallAtK, mrr and URL-form ndcgAtK [0.11ms]
+
+packages/shenron/pipeline/test/ai/provider.test.ts:
+(pass) createShenronProvider > chat, chat-flash-lite, chat-pro, e5-query and e5-passage [3.21ms]
+(pass) createShenronProvider > disabled capabilities are absent [0.13ms]
+(pass) createShenronProvider > e5-direct transport from configuration [0.33ms]
+(pass) createShenronProvider > createOpenAICompatibleChat stays ready for APH-3 (not wired) [0.26ms]
+
+packages/shenron/pipeline/test/ai/config-constants.test.ts:
+(pass) SHENRON_E5 > matches the embedder served by aphrody-shenron-embed [0.02ms]
+(pass) SHENRON_E5 > is frozen and re-exported from the package root [0.02ms]
+
+packages/shenron/pipeline/test/ai/generate.test.ts:
+(pass) generateGroundedAnswer > grounded prompt: instructions with guard, context in the user message [0.68ms]
+(pass) generateGroundedAnswer > the fallback is never cached; a success is cached then served [1.72ms]
+(pass) generateGroundedAnswer > session turns are never cached and history is used [0.87ms]
+(pass) generateGroundedAnswer > cache scope changes with PROMPT_VERSION (and model, context) [0.18ms]
+(pass) generateGroundedAnswer > a missing chunk content (or a failing port) does not throw [1.19ms]
+(pass) generateGroundedAnswer > busy concurrency -> fallback, never cached [0.21ms]
+(pass) generateGroundedAnswer > chitchat: no context, chitchat rule [0.51ms]
+
+packages/shenron/pipeline/test/ai/chat.test.ts:
+(pass) createAphrodyChatModel > satisfies LanguageModelV4 (spec v4, provider, no supported URLs) [0.05ms]
+(pass) createAphrodyChatModel > instructions become the leading system message [0.47ms]
+(pass) createAphrodyChatModel > assistant history is forwarded as text [1.17ms]
+(pass) createAphrodyChatModel > tools are rejected with UnsupportedFunctionalityError [0.75ms]
+(pass) createAphrodyChatModel > images are rejected with UnsupportedFunctionalityError [1.58ms]
+(pass) createAphrodyChatModel > 33 messages are rejected, 32 accepted [1.48ms]
+(pass) createAphrodyChatModel > messages above 32 KiB are rejected [0.39ms]
+(pass) createAphrodyChatModel > timeout choice: 125 s for gemini-web/*, 90 s otherwise [0.88ms]
+(pass) createAphrodyChatModel > doStream yields a single text chunk [6.20ms]
+(pass) createAphrodyChatModel > HTTP failures surface as errors without the token [0.49ms]
+
+packages/shenron/pipeline/test/ai/prompts.test.ts:
+(pass) personas > ids, default and version [0.04ms]
+(pass) personas > resolvePersona normalises like persona() in llm.ts [0.09ms]
+(skip) personas > llm.ts takes personas from @shenron/pipeline/ai/prompts, no local copy
+(pass) personas > snapshot of persona ids and texts [0.18ms]
+(pass) grounding instructions > every instruction contains INJECTION_GUARD [0.17ms]
+(pass) grounding instructions > bot voice = persona text, newline, llm.ts rules, guard [0.05ms]
+(skip) grounding instructions > site-rag.ts builds site-short instructions from @shenron/pipeline/ai/prompts
+(pass) buildSourcesBlock > site format, per-hit and total limits [0.06ms]
+(pass) isChitchat > greetings vs questions [0.02ms]
+
+packages/shenron/pipeline/test/ai/portability.test.ts:
+(pass) @shenron/pipeline/ai manifest > exports every subpath of docs/STACK.md §3.4 with its runtime class [0.14ms]
+(pass) @shenron/pipeline/ai manifest > ./ai: pure source (no node:, bun:, process, Bun., host literal) [0.17ms]
+(pass) @shenron/pipeline/ai manifest > ./ai/index: pure source (no node:, bun:, process, Bun., host literal) [0.02ms]
+(pass) @shenron/pipeline/ai manifest > ./ai/config: pure source (no node:, bun:, process, Bun., host literal) [0.14ms]
+(pass) @shenron/pipeline/ai manifest > ./ai/wire: pure source (no node:, bun:, process, Bun., host literal) [0.07ms]
+(pass) @shenron/pipeline/ai manifest > ./ai/aphrody: pure source (no node:, bun:, process, Bun., host literal) [0.16ms]
+(pass) @shenron/pipeline/ai manifest > ./ai/embeddings: pure source (no node:, bun:, process, Bun., host literal) [0.08ms]
+(pass) @shenron/pipeline/ai manifest > ./ai/chat: pure source (no node:, bun:, process, Bun., host literal) [0.05ms]
+(pass) @shenron/pipeline/ai manifest > ./ai/provider: pure source (no node:, bun:, process, Bun., host literal) [6.33ms]
+(pass) @shenron/pipeline/ai manifest > ./ai/prompts: pure source (no node:, bun:, process, Bun., host literal) [0.19ms]
+(pass) @shenron/pipeline/ai manifest > ./ai/generate: pure source (no node:, bun:, process, Bun., host literal) [0.09ms]
+(pass) @shenron/pipeline/ai manifest > ./ai/eval: pure source (no node:, bun:, process, Bun., host literal) [0.20ms]
+(pass) @shenron/pipeline/ai manifest > ./ai/ports: pure source (no node:, bun:, process, Bun., host literal) [0.05ms]
+
+packages/shenron/pipeline/test/ai/config.test.ts:
+(pass) resolveAiConfig > empty env: nothing configured, reasons named, no throw [0.13ms]
+(pass) resolveAiConfig > canonical compute names: origin form, aphrody embed transport [0.06ms]
+(pass) resolveAiConfig > legacy compute aliases still work; canonical wins when both are set [0.03ms]
+(pass) resolveAiConfig > non-loopback URL and short token: issues name variables, never values [0.12ms]
+(pass) resolveAiConfig > URL without token is an issue naming the canonical token variable [0.12ms]
+(pass) resolveAiConfig > e5-direct transport from any embed name; compute configured wins [0.09ms]
+(pass) resolveAiConfig > chat and vision model ids: canonical, aliases in contract order, <= 128 chars [0.17ms]
+(pass) resolveAiConfig > ragBackend only on exact match; EMBED_TIMEOUT_MS [0.05ms]
+(pass) resolveAiConfig > chat timeout: 125 s for gemini-web/*, 90 s otherwise [0.02ms]
+(pass) embed base URL forms > base form must end with /v1 [0.05ms]
+(pass) embed base URL forms > EMBED_URL is an origin: /v1 is appended [0.02ms]
+(pass) embed base URL forms > APHRODY_RAG_EMBED_ENDPOINT is an endpoint: the operation path is removed [0.02ms]
+(pass) embed base URL forms > contract order: canonical, then APHRODY_SHENRON_EMBED_BASE_URL, EMBED_URL, APHRODY_RAG_EMBED_ENDPOINT [0.02ms]
+(pass) embed base URL forms > no default: missing is an error naming the variables [0.15ms]
+(pass) aphrody-ai-http require helpers > missing URL or token is an error naming canonical and legacy names [0.05ms]
+(pass) aphrody-ai-http require helpers > the URL is reduced to its origin; the token never appears in errors [0.06ms]
+(pass) embedding space (never mix spaces) > defaults to the contract index [0.02ms]
+(pass) embedding space (never mix spaces) > the same model, with or without its hub namespace, is accepted [0.01ms]
+(pass) embedding space (never mix spaces) > another dimension or another model is a hard error [0.04ms]
+(pass) embedding space (never mix spaces) > a malformed dimension is a configuration error [0.06ms]
+(pass) rerank dialects > optional: absent means disabled [0.02ms]
+(pass) rerank dialects > canonical base form posts to /v1/rerank in the llama-server dialect [0.03ms]
+(pass) rerank dialects > RERANK_URL keeps the Shenron sidecar dialect and its exact endpoint [0.01ms]
+(pass) rerank dialects > APHRODY_RAG_RERANK_ENDPOINT is a llama-server endpoint [0.01ms]
+(skip) aphrody-infra contract parity > AI_ENV mirrors the canonical names and alias order of local-ai.json
+(pass) source hygiene > no host or port literal in src/ [0.31ms]
+
+packages/shenron/pipeline/test/ai/aphrody.test.ts:
+(pass) createAphrodyCompute: request parity with AphrodyComputeClient > health [0.91ms]
+(pass) createAphrodyCompute: request parity with AphrodyComputeClient > chat [2.95ms]
+(pass) createAphrodyCompute: request parity with AphrodyComputeClient > embed [1.35ms]
+(pass) createAphrodyCompute: request parity with AphrodyComputeClient > ragSearch [0.26ms]
+(pass) createAphrodyCompute: request parity with AphrodyComputeClient > ragDocument [0.78ms]
+(pass) createAphrodyCompute: request parity with AphrodyComputeClient > ragStats [0.80ms]
+(pass) createAphrodyCompute: request parity with AphrodyComputeClient > ragIngest [0.83ms]
+(pass) createAphrodyCompute: request parity with AphrodyComputeClient > ragSyncFinish [0.64ms]
+(pass) createAphrodyCompute: request parity with AphrodyComputeClient > ocr (explicit gemini-web engine) [0.77ms]
+(pass) createAphrodyCompute: request parity with AphrodyComputeClient > values match the legacy client on the same fixtures [0.94ms]
+(pass) createAphrodyCompute: documented differences > ocr defaults to the ppocr engine [0.16ms]
+(pass) createAphrodyCompute: documented differences > embed: no client prefix, whitespace collapsed, batches of 16 [2.88ms]
+(pass) createAphrodyCompute: documented differences > embed: 383 dimensions or a missing vector is invalid [0.28ms]
+(pass) createAphrodyCompute: documented differences > ragDocument: 404 is null, invalid id is rejected without a call [0.11ms]
+(pass) createAphrodyCompute: documented differences > chat limits: 33 messages rejected before any call [0.06ms]
+(pass) createAphrodyCompute: failures > the token never appears in any failure [20.79ms]
+(pass) createAphrodyCompute: failures > replacing globalThis.fetch after client creation is honoured [0.20ms]
+(pass) createAphrodyCompute: failures > redirects are refused and every call carries a signal [0.14ms]
+(pass) createAphrodyCompute: failures > never gates ocr on health().ocr [0.16ms]
+(pass) createAphrodyCompute: failures > visionStructured posts the wire field names [0.51ms]
+(pass) parseRetryAfter > seconds and HTTP dates [0.04ms]
+
+packages/shenron/pipeline/test/ai/embeddings.test.ts:
+(pass) aphrody transport > no 'query: '/'passage: ' prefix, whitespace collapsed [1.00ms]
+(pass) aphrody transport > 40 passages -> 3 sequential calls 16/16/8 [3.32ms]
+(pass) aphrody transport > one fetch only on a 503 (no retry) [0.35ms]
+(pass) e5-direct transport > exactly one prefix, whitespace collapsed [3.83ms]
+(pass) e5-direct transport > 40 inputs -> 3 sequential calls 16/16/8 [3.17ms]
+(pass) e5-direct transport > a 383-dim or shuffled-index response fails [1.14ms]
+(pass) e5-direct transport > empty input is rejected without a call [0.20ms]
+(pass) e5-direct transport > one fetch only on a 503 (no retry) [0.86ms]
+(skip) e5-direct transport > parity with ShenronEmbeddingsClient request JSON and vectors
+(pass) selectEmbeddingModel > chosen by configuration [0.06ms]
+
+packages/shenron/pipeline/test/ai/wire.test.ts:
+(pass) wire fixtures > there is one fixture per route family [0.15ms]
+(pass) wire fixtures > chat-gemini-web.json parses and cites its source line [0.06ms]
+(pass) wire fixtures > chat.json parses and cites its source line [0.32ms]
+(pass) wire fixtures > embed.json parses and cites its source line [0.22ms]
+(pass) wire fixtures > error.json parses and cites its source line [0.09ms]
+(pass) wire fixtures > health.json parses and cites its source line [0.01ms]
+(pass) wire fixtures > ocr.json parses and cites its source line [0.30ms]
+(pass) wire fixtures > rag-document.json parses and cites its source line [0.03ms]
+(pass) wire fixtures > rag-ingest.json parses and cites its source line [0.38ms]
+(pass) wire fixtures > rag-search.json parses and cites its source line [0.03ms]
+(pass) wire fixtures > rag-stats.json parses and cites its source line [0.06ms]
+(pass) wire fixtures > rag-sync-finish.json parses and cites its source line [0.22ms]
+(pass) wire fixtures > vision-structured.json parses and cites its source line [0.23ms]
+(pass) wire fixtures > schemas reject malformed bodies [0.13ms]
+(pass) APHRODY_LIMITS > match http_rest.rs [0.02ms]
+
+packages/shenron/pipeline/test/aphrody/cli.test.ts:
+(pass) runAphrodyCli > parses JSON on success [4.23ms]
+(pass) runAphrodyCli > passes the repository to git inspect [3.33ms]
+(pass) runAphrodyCli > classifies a non-zero exit [3.00ms]
+(pass) runAphrodyCli > classifies a timeout [303.18ms]
+(pass) runAphrodyCli > classifies invalid JSON [4.06ms]
+(pass) runAphrodyCli > reports a missing binary as not_found [0.15ms]
+
+packages/shenron/pipeline/test/aphrody/frames.test.ts:
+(pass) Rust Frames consumer contract > routes search flags through the Aphrody CLI and validates JSON output [3.75ms]
+(pass) Rust Frames consumer contract > propagates owner errors and rejects malformed owner output [6.06ms]
+(pass) Rust Frames consumer contract > rejects invalid query values before invoking the owner [0.12ms]
+(pass) Rust Frames consumer contract > normalizes Aphrody trace quota to Shenron's used and total contract [3.18ms]
+
+packages/shenron/pipeline/test/aphrody/wiki.test.ts:
+(pass) MediaWiki endpoint resolution > preserves localized installations and Wikimedia API paths [0.08ms]
+(pass) MediaWiki endpoint resolution > rejects credentials and unsupported URLs instead of guessing a page URL [0.04ms]
+(pass) MediaWiki Rust CLI contract > retains API canonical URLs and preserves a Unicode query as one argument [3.57ms]
+(pass) MediaWiki Rust CLI contract > propagates remote failures and invalid result shapes [6.08ms]
+(pass) MediaWiki Rust CLI contract > rejects invalid limits before starting the owner CLI [0.08ms]
+(pass) MediaWiki Rust CLI contract > delegates complete page dossiers and Markdown to the native owner [7.92ms]
+(pass) MediaWiki Rust CLI contract > rejects incomplete dossiers and propagates page API errors [6.03ms]
+
+packages/shenron/pipeline/test/aphrody/native.test.ts:
+(pass) @shenron/pipeline/aphrody/native FFI bridge > detects whether native library is available on host [0.02ms]
+(pass) @shenron/pipeline/aphrody/native FFI bridge > returns valid ABI version and version string when loaded [0.46ms]
+(pass) @shenron/pipeline/aphrody/native FFI bridge > executes captured doctor command in-process [11.85ms]
+(pass) @shenron/pipeline/aphrody/native FFI bridge > returns in-process RAG results with typed hits when present [8.36ms]
+(pass) @shenron/pipeline/aphrody/native FFI bridge > exposes only sanitized authentication presence flags [0.76ms]
+(pass) @shenron/pipeline/aphrody/native FFI bridge > loads sovereign persona prompt in-process [0.32ms]
+
+packages/shenron/pipeline/test/aphrody/exports.test.ts:
+(pass) @shenron/pipeline/aphrody exports > root exposes the shared service clients and script adapters [0.04ms]
+(pass) @shenron/pipeline/aphrody exports > root no longer carries the FFI bridge nor the A2A hub [0.04ms]
+(pass) @shenron/pipeline/aphrody exports > cli subpath exposes the JSON wrappers [0.01ms]
+(pass) @shenron/pipeline/aphrody exports > manifest maps every subpath to source with a runtime class [0.02ms]
+(pass) @shenron/pipeline/aphrody exports > a2a subpath keeps the hub API [11.11ms]
+
+packages/shenron/pipeline/test/aphrody/portability.test.ts:
+(pass) portability > index.ts imports no Bun-native module [1.50ms]
+(pass) portability > aphrody/compute.ts imports no Bun-native module [0.05ms]
+(pass) portability > aphrody/shenron-embeddings.ts imports no Bun-native module [0.01ms]
+(pass) portability > aphrody/web.ts imports no Bun-native module [0.05ms]
+(pass) portability > a2a never imports an application module [0.16ms]
+(pass) portability > root bundles for node without bun:ffi, bun:sqlite, sharp or A2A code [21.51ms]
+
+packages/shenron/pipeline/test/aphrody/a2a-notifier.test.ts:
+(pass) ShenronA2AHub.configure > sends the same embed payload through the injected notifier [0.29ms]
+(pass) ShenronA2AHub.configure > uses brand and success colours and empty fields by default [0.06ms]
+(pass) ShenronA2AHub.configure > warns once and skips without a notifier [0.06ms]
+(pass) ShenronA2AHub.configure > swallows notifier failures with a warning [0.10ms]
+(pass) ShenronA2AHub.configure > coordDir override supplies the OCR heartbeat probe path [0.79ms]
+
+packages/shenron/pipeline/test/aphrody/a2a.test.ts:
+(pass) AgentCard A2A > reste conforme (nom, version, cibles, compétences) sans promettre de GPU [0.12ms]
+[A2A] Aucun notificateur #bot-admin configuré (ShenronA2AHub.configure) : alertes Discord ignorées.
+(pass) OCR / traduction : état mesuré, jamais présumé > statut OCR sans worker vivant → pas FAIT, manques nommés, aucun état GPU affirmé [2.62ms]
+(pass) OCR / traduction : état mesuré, jamais présumé > ordre OCR (« traiter 4 scans ») sans worker → submitted/INCOMPLET, aucun traitement présumé [0.25ms]
+(pass) OCR / traduction : état mesuré, jamais présumé > PostgreSQL injoignable → NON_FAIT avec bloqueur nommé [0.13ms]
+(pass) OCR / traduction : état mesuré, jamais présumé > FAIT seulement quand tout est mesuré et qu'un worker vivant est prouvé [0.19ms]
+(pass) OCR / traduction : état mesuré, jamais présumé > la sonde heartbeat lit .coord : frais → alive, ancien → stale, absent → none [0.52ms]
+(pass) RAG : recherche réelle > passages trouvés → FAIT avec titres et URL absolues [0.47ms]
+(pass) RAG : recherche réelle > aucun passage → INCOMPLET (manque nommé) [0.09ms]
+(pass) RAG : recherche réelle > API RAG injoignable → NON_FAIT / failed [0.15ms]
+(pass) Ordres de travail et clôture par un pair > un ordre à codex reste submitted/INCOMPLET (JSON-RPC message/send puis tasks/get) [0.98ms]
+(pass) Ordres de travail et clôture par un pair > tasks/update : FAIT sans artefact refusé, FAIT avec artefact → completed, puis tâche terminale [0.53ms]
+(pass) Ordres de travail et clôture par un pair > message/send avec taskId (continuation A2A) clôt la tâche en NON_FAIT avec bloqueur [0.17ms]
+(pass) Ordres de travail et clôture par un pair > une enveloppe reçue par l'adaptateur (re=…) fait basculer la tâche [0.61ms]
+(pass) Ordres de travail et clôture par un pair > enveloppe /msg « FAIT » sans artefact → rétrogradée INCOMPLET, la tâche reste ouverte [0.21ms]
+(pass) Ordres de travail et clôture par un pair > broadcast → completed au sens « déposé », jamais FAIT [0.07ms]
+(pass) Ordres de travail et clôture par un pair > ping → ack et garde les enveloppes du fallback de développement en mémoire [0.27ms]
+(pass) Ordres de travail et clôture par un pair > l'adaptateur parle l'API Aphrody namespacée et corrèle les réponses [4.99ms]
+(pass) Ordres de travail et clôture par un pair > ne retombe pas sur le cache mémoire si l'API Aphrody configurée échoue [1.50ms]
+(pass) Ordres de travail et clôture par un pair > enveloppe /msg au kind invalide → enveloppe error, aucune tâche créée [0.12ms]
+(pass) Ordres de travail et clôture par un pair > enveloppe error hors tâche → ack, escalade #bot-admin, aucune tâche créée [0.06ms]
+(pass) Ordres de travail et clôture par un pair > tasks/list renvoie les tâches persistées [0.16ms]
+
+packages/shenron/pipeline/test/aphrody/mirror.test.ts:
+(pass) Aphrody Web mirror CLI client > passes bounded mirror settings and accepts partial reports [4.22ms]
+(pass) Aphrody Web mirror CLI client > passes explicit CDN hosts as one argument [3.46ms]
+(pass) Aphrody Web mirror CLI client > propagates CLI failures and rejects malformed reports [8.94ms]
+
+packages/shenron/pipeline/test/aphrody/translate.test.ts:
+(pass) Rust translation consumer contract > preserves a requested Japanese target and option-like source text in its CLI request [3.35ms]
+(pass) Rust translation consumer contract > propagates owner failures instead of returning untranslated input or starting another provider [2.82ms]
+(pass) Rust translation consumer contract > rejects output for a different language [2.94ms]
+(pass) Rust translation consumer contract > keeps the historical compatibility entry point's empty-input contract [0.06ms]
+
+packages/shenron/pipeline/test/aphrody/native-contract.test.ts:
+(pass) native adapters preserve Shenron doctor routing and sanitized auth presence [4.78ms]
+
+packages/shenron/pipeline/test/aphrody/compute-facade.test.ts:
+(pass) AphrodyComputeClient facade: request bodies identical to the legacy client > every route sends the legacy method, path, query, headers and body [1.05ms]
+(pass) AphrodyComputeClient facade: request bodies identical to the legacy client > B18: embed collapses whitespace and sends batches of 16 [1.12ms]
+(pass) AphrodyComputeClient facade: request bodies identical to the legacy client > legacy errors and messages are preserved [0.27ms]
+(pass) facade defaults and call-time fetch > no address default: a missing URL is an error naming the variables [0.15ms]
+(pass) facade defaults and call-time fetch > canonical names first, legacy aliases next; global fetch read at call time [0.16ms]
+(pass) facade defaults and call-time fetch > EMBED_URL is an origin, APHRODY_SHENRON_EMBED_BASE_URL a base, no default [0.27ms]
+(pass) ShenronEmbeddingsClient facade > same URL, model and prefixed inputs as the legacy client, 16 per request [1.87ms]
+(pass) ShenronEmbeddingsClient facade > legacy error messages [1.05ms]
+(pass) aphrodyComputeFromChat > serves chat through the legacy-shaped function only [0.11ms]
+
+4 tests skipped:
+(skip) personas > llm.ts takes personas from @shenron/pipeline/ai/prompts, no local copy
+(skip) grounding instructions > site-rag.ts builds site-short instructions from @shenron/pipeline/ai/prompts
+(skip) aphrody-infra contract parity > AI_ENV mirrors the canonical names and alias order of local-ai.json
+(skip) e5-direct transport > parity with ShenronEmbeddingsClient request JSON and vectors
+
+
+1 tests failed:
+(fail) BxcBridge Native Client Suite > MediaWiki: search and markdown [210.59ms]
+
+ 230 pass
+ 4 skip
+ 1 fail
+ 1 snapshots, 838 expect() calls
+Ran 235 tests across 29 files. [4.27s]

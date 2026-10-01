@@ -27,7 +27,11 @@ test("all public subpaths can be imported without a native artifact", async () =
     `,
     ],
     cwd: import.meta.dir,
-    env: { ...process.env, APHRODY_FFI_LIB: join(import.meta.dir, "missing-native-artifact") },
+    env: {
+      ...process.env,
+      SHENRON_FFI_LIB: undefined,
+      APHRODY_FFI_LIB: join(import.meta.dir, "missing-native-artifact"),
+    },
     stdout: "pipe",
     stderr: "pipe",
   });

@@ -1,0 +1,159 @@
+{
+  "observedAt": "2026-10-01T10:08:36.001843+00:00",
+  "baseRevision": "0407da7e99bce5e81a88806f4a526bfe8c8a55ca",
+  "mode": "concurrent worktree; scoped claims; Linux native binaries built deliberately with configured sccache",
+  "changes": [
+    "Doctor adapter passes doctor --json to Shenron-scoped ABI; namespace added once by Rust",
+    "Native tests explicitly skip missing libraries; APHRODY_FFI_REQUIRE_NATIVE=1 fails the availability assertion",
+    "Required qualification compares persona bytes with explicit reference path; canonical DBFR snapshot replaces obsolete fixed persona words",
+    "Installed-package import fixture includes src/ separator; child env clears inherited SHENRON_FFI_LIB so absence and override tests remain isolated"
+  ],
+  "baselineFindings": {
+    "loadedLibrary": true,
+    "doctor": {
+      "code": 2,
+      "stderrClass": "unrecognized duplicate shenron subcommand"
+    },
+    "authStatus": "passed after source rebuild",
+    "persona": "obsolete Tori-bot literal contradicted configurable DBFR SOUL.md; initial private-profile output not retained"
+  },
+  "artifacts": {
+    "debug": {
+      "path": "target/debug/libaphrody_ffi.so",
+      "bytes": 1957483144,
+      "sha256": "ee39ed253f31e2bf0582327bcb8453b9e983f6377060856d1b9e95d63af82916",
+      "features": [],
+      "command": "cargo build --locked -p aphrody-ffi",
+      "exitCode": 0
+    },
+    "release": {
+      "path": "target/release/libaphrody_ffi.so",
+      "bytes": 259878760,
+      "sha256": "34b5995bac485314b8f605054c793cac7c73156db06812b78d0095c72b1eef6b",
+      "features": [
+        "gpu"
+      ],
+      "command": "cargo build --release --locked -p aphrody-ffi --features gpu",
+      "exitCode": 0
+    }
+  },
+  "fixture": {
+    "profile": "dbfr",
+    "contract": "crates/ai/agent-home/sync-contract.json",
+    "files": 7,
+    "soulSha256": "6a05ce187c1a6bc479cac8fc0da0fb7053efb26056565bc7191227c4f021d7dc",
+    "soulContent": "---\ntone: pr\u00e9cis\nbrevity: terse\n---\n\nShenron DBFR native qualification fixture.\n",
+    "healthOrigins": "127.0.0.1:9 for targeted smoke; default site/bot origins retained for full pipeline",
+    "source": "synthetic fixtures only; private identity stores unmodified"
+  },
+  "gates": {
+    "debugConsumer": {
+      "passed": 6,
+      "failed": 0,
+      "skipped": 0
+    },
+    "releaseConsumer": {
+      "passed": 6,
+      "failed": 0,
+      "skipped": 0,
+      "assertions": 16,
+      "nativeRequired": true
+    },
+    "nativeOwner": {
+      "passed": 14,
+      "failed": 0,
+      "skipped": "original Oxc/N2B bridges and compiled Bun fork unavailable",
+      "assertions": 62
+    },
+    "adapterMockContract": {
+      "passed": 1,
+      "failed": 0
+    },
+    "missingOptional": {
+      "exitCode": 0,
+      "passed": 1,
+      "skipped": 5
+    },
+    "missingRequired": {
+      "exitCode": 1,
+      "failed": 1,
+      "skipped": 5,
+      "expectedFailure": true
+    },
+    "abiSmoke": {
+      "command": "bun run packages/interop/native/test-ffi.ts",
+      "exitCode": 0
+    },
+    "cliOnlySmoke": {
+      "command": "bun run packages/interop/native/test-cli-only.ts",
+      "exitCode": 0
+    },
+    "pipelineSuite": {
+      "command": "bun test packages/shenron/pipeline/test",
+      "exitCode": 1,
+      "passed": 230,
+      "failed": 1,
+      "skipped": 4,
+      "snapshots": 1,
+      "failure": "live MediaWiki search: HTTP 403 from terraria.wiki.gg",
+      "note": "Removed targeted SHENRON_SITE_URL loopback override before final full suite to preserve URL expectations"
+    },
+    "typechecks": {
+      "packages": [
+        "packages/interop/native",
+        "packages/shenron/pipeline"
+      ],
+      "exitCode": 0
+    },
+    "lintFormatDiff": {
+      "paths": [
+        "packages/shenron/pipeline/src/aphrody/native.ts",
+        "packages/shenron/pipeline/test/aphrody/native.test.ts",
+        "packages/shenron/pipeline/test/aphrody/native-contract.test.ts",
+        "packages/interop/native/test-library.test.ts",
+        "packages/interop/native/test-native-artifact.test.ts"
+      ],
+      "exitCode": 0,
+      "lint": "oxlint --deny-warnings",
+      "format": "oxfmt --check"
+    }
+  },
+  "sourceHashes": {
+    "packages/shenron/pipeline/src/aphrody/native.ts": "d8f33f69ac0982f7997b4e4f8c92c4c1c9044f22a9d3a7d9abc401f74b66d6a8",
+    "packages/shenron/pipeline/test/aphrody/native.test.ts": "bd72ad5389dd68e80685fd8758aa5f50488e00dc674cfc8c064bfcb12c513631",
+    "packages/shenron/pipeline/test/aphrody/native-contract.test.ts": "ba054c2f286a498a05e9dad5868bcedc09f5b2934bda5198d4cfb698e157acae",
+    "packages/interop/native/test-library.test.ts": "c12245f5130d628118eb5fcb1f9e3e99d39048d56e0de6995fb2a71d1b1dd861",
+    "packages/interop/native/test-native-artifact.test.ts": "dbde066d47a3e1d5cba80f8315f530d26a05e03a3f6953c5f7002a50a0ea83b3",
+    "Cargo.toml": "6e92188ca45c5dabe44c2acae336579119c074a60aafb1e33c2d85e09ae49541",
+    "Cargo.lock": "c06f0ce46d35e2cb809035fb3d76be72142ac7cda405ad0d1204aff455f88d60",
+    "crates/interop/ffi/src/lib.rs": "95dd8a959283ba8e0a72b6f01f8e36f0b63ae755023648d59a50317681327ec8"
+  },
+  "artifactHashes": {
+    "debug-build.log": "cf72a7ad5d53351aa2f5aed95e8869a04edbb310af6b34ff4f653825320f58cc",
+    "release-build.log": "da95cb8197588b860640a697ce02cd869a5ff909dc2d9b4c49501ff9a2d938f9",
+    "debug-consumer.log": "f302c044c2412a86416d1427b069faba15a10006215e98453bc9add6346bb667",
+    "release-consumer.log": "e14fc290de720824da5c556b884c30aedd04aaf7a3613d6c2537ca0f6e60343e",
+    "native-owner-tests.log": "1109aefecdd5f5f5fab0ce910f27a814022a1a78f20bd343528987b0515f1536",
+    "native-contract.log": "012190570552a555874a22db62b31efb6b92171b981ab0163a507bc26f13eb7e",
+    "missing-optional.log": "6c5b5df31f2af72221d5a01d6b5c84d588dcdac72ee8466c6bd0d158c911b0ce",
+    "missing-required.log": "73fd77f397b75af0001b5542b7972719b5b8b45e39f2684ba59365ad8918b7a4",
+    "abi-smoke.log": "37d7244497c5c840ca5539b569b0d284a541229182b4ce2445729c8f84275565",
+    "cli-only-smoke.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "pipeline-tests.log": "a96cb354cc75a6207426f44b98a7d533b5e7a6035994ac92904ae5c86ed8f685",
+    "pipeline-typecheck.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "interop-typecheck.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "lint.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "format.log": "a2f7963e938c95d08909439477d05b0525160338614f959179fe524b4dbd382f"
+  },
+  "limitations": [
+    "Built and loaded release+gpu Linux library using APHRODY_FFI_DEV=1; no installed distribution manifest qualification",
+    "Concurrent dirty workspace, not a clean-clone release; source changes during builds prevent claiming fully reproducible provenance",
+    "Windows/macOS and clean packaging not qualified",
+    "GPU feature compiled; auto renderer smoke does not prove hardware GPU execution",
+    "Doctor accepts degraded synthetic health; service/product readiness not established",
+    "RAG result may be empty; no nonempty corpus/remote RAG readiness proof",
+    "Full pipeline retains live MediaWiki failure and four unrelated skipped checks",
+    "CLI/MCP strict gate still fails terminal and in-progress Web Frames; no new green integrated claim",
+    "No Git remote configured"
+  ]
+}

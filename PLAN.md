@@ -1236,3 +1236,24 @@ heuristique ; aucun changement Git ne doit être attribué sans preuve.
 - Les ancres et sites externes ne sont pas vérifiés. Documents de packages/apps
   hors `docs` non inventoriés. Aucune preuve historique réécrite.
 - Preuves : [rapport, tests et inventaire exhaustif](docs/operations/infra/document-links-coverage-qualification-2026-10-01/report.json).
+
+### Artefact natif réel et routage doctor Shenron — 2026-10-01
+
+- FAIT : la FFI Shenron ajoute déjà son namespace. L’adaptateur n’envoie plus
+  `shenron doctor` à cette ABI, mais `doctor --json` ; l’erreur de sous-commande
+  dupliquée reproduite sur l’artefact construit est corrigée. AuthStatus passe.
+- FAIT : builds Linux debug et release+gpu réussis ; six tests consommateur
+  passent sur chacun. Persona comparée octet pour octet à une fixture DBFR
+  complète ; aucun ancien mot fixe imposé au SOUL configuré. Quatorze tests
+  chargeur passent, quatre comparatifs de forks ignorés ; smokes ABI et CLI passent.
+- Qualification explicite : `APHRODY_FFI_REQUIRE_NATIVE=1` échoue si la librairie
+  manque ; sans ce mode, cinq tests sont déclarés ignorés. Les imports du package
+  isolé et l’isolation de l’alias SHENRON_FFI_LIB dans les fixtures sont corrigés.
+- Gates : deux typechecks, Oxc strict, format et diff réussis. Suite pipeline :
+  230 pass, quatre ignorés, un échec live MediaWiki (HTTP 403 terraria.wiki.gg).
+- INCOMPLET : bibliothèque release chargée avec APHRODY_FFI_DEV=1, sans manifeste
+  de distribution ; checkout concurrent, packaging propre et autres plateformes
+  non qualifiés. Features GPU compilées sans preuve d’exécution matérielle GPU.
+  Doctor dégradé et recherche éventuellement vide ne prouvent pas un produit prêt.
+  Gate CLI/MCP terminal/Web Frames encore ouvert ; aucun gate global vert annoncé.
+- Preuves : [rapport, hashes binaires et logs](docs/operations/shenron/native-artifact-qualification-2026-10-01/report.json).

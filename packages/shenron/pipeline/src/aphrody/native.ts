@@ -98,9 +98,9 @@ export class AphrodyNativeClient {
     };
   }
 
-  /** Fetch full sovereign doctor diagnostics in-process. */
+  /** Fetch doctor diagnostics through the Shenron-scoped ABI (which adds its namespace). */
   async doctor(): Promise<AphrodyDoctorResult | null> {
-    const res = await this.run<AphrodyDoctorResult>(["shenron", "doctor", "--json"]);
+    const res = await this.run<AphrodyDoctorResult>(["doctor", "--json"]);
     return res.kind === "exit" && res.ok ? (res.data ?? null) : null;
   }
 

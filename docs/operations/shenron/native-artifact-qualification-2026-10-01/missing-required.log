@@ -1,0 +1,28 @@
+bun test v1.4.2 (744846f84)
+
+packages/shenron/pipeline/test/aphrody/native.test.ts:
+11 | const requireNative = process.env.APHRODY_FFI_REQUIRE_NATIVE === "1";
+12 | 
+13 | describe("@shenron/pipeline/aphrody/native FFI bridge", () => {
+14 |   it("detects whether native library is available on host", () => {
+15 |     expect(typeof nativeAvailable).toBe("boolean");
+16 |     if (requireNative) expect(nativeAvailable).toBe(true);
+                                                    ^
+error: expect(received).toBe(expected)
+
+Expected: true
+Received: false
+
+      at <anonymous> (/home/aphro/aphrody/packages/shenron/pipeline/test/aphrody/native.test.ts:16:48)
+(fail) @shenron/pipeline/aphrody/native FFI bridge > detects whether native library is available on host [4.68ms]
+(skip) @shenron/pipeline/aphrody/native FFI bridge > returns valid ABI version and version string when loaded
+(skip) @shenron/pipeline/aphrody/native FFI bridge > executes captured doctor command in-process
+(skip) @shenron/pipeline/aphrody/native FFI bridge > returns in-process RAG results with typed hits when present
+(skip) @shenron/pipeline/aphrody/native FFI bridge > exposes only sanitized authentication presence flags
+(skip) @shenron/pipeline/aphrody/native FFI bridge > loads sovereign persona prompt in-process
+
+ 0 pass
+ 5 skip
+ 1 fail
+ 2 expect() calls
+Ran 6 tests across 1 file. [190.00ms]
