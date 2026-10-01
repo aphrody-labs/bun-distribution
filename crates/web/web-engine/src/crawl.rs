@@ -71,6 +71,10 @@ pub struct CrawlArgs {
     #[arg(long)]
     pub render: bool,
 
+    /// Import an existing Cookie-Editor/Obscura JSON cookie file (repeatable).
+    #[arg(long = "cookie-file", value_name = "PATH")]
+    pub cookie_files: Vec<std::path::PathBuf>,
+
     /// Honour robots.txt (Disallow and Crawl-delay) for every visited origin.
     #[arg(long)]
     pub obey_robots: bool,
@@ -388,6 +392,21 @@ pub fn render_report(report: &CrawlReportOut, format: CrawlFormat) -> Result<Str
     }
 }
 
+fn load_cookie_files(paths: &[std::path::PathBuf]) -> anyhow::Result<Arc<CookieJar>> {
+    let jar = Arc::new(CookieJar::new());
+    for path in paths {
+        // The existing jar importer treats absent storage files as empty. An explicitly
+        // requested CLI file must exist, and parser errors must never echo cookie values.
+        if !path.is_file() {
+            anyhow::bail!("cookie file is missing or is not a regular file: {}", path.display());
+        }
+        jar.load_from_file(path).map_err(|error| {
+            anyhow::anyhow!("cannot load cookie file {} ({:?})", path.display(), error.kind())
+        })?;
+    }
+    Ok(jar)
+}
+
 pub async fn run_crawl(args: CrawlArgs, proxy: Option<String>) -> anyhow::Result<()> {
     let allowed = if args.allowed_domains.is_empty() {
         seed_hosts(&args.urls).map_err(anyhow::Error::msg)?
@@ -395,8 +414,9 @@ pub async fn run_crawl(args: CrawlArgs, proxy: Option<String>) -> anyhow::Result
         args.allowed_domains.iter().map(|host| host.to_ascii_lowercase()).collect()
     };
 
+    let cookie_jar = load_cookie_files(&args.cookie_files)?;
     let client = ObscuraHttpClient::with_full_options(
-        Arc::new(CookieJar::new()),
+        cookie_jar.clone(),
         proxy.as_deref(),
         args.allow_private_network,
     );
@@ -420,15 +440,25 @@ pub async fn run_crawl(args: CrawlArgs, proxy: Option<String>) -> anyhow::Result
     }
 
     let rendered_context = args.render.then(|| {
-        Arc::new(BrowserContext::with_storage_and_network(
+        let mut context = BrowserContext::with_storage_and_network(
             "crawl".into(),
             proxy.clone(),
             false,
             Some(args.user_agent.clone()),
             None,
             args.allow_private_network,
-        ))
+        );
+        context.cookie_jar = cookie_jar.clone();
+        context.http_client = Arc::new(ObscuraHttpClient::with_full_options(
+            cookie_jar.clone(),
+            proxy.as_deref(),
+            args.allow_private_network,
+        ));
+        Arc::new(context)
     });
+    if let Some(context) = &rendered_context {
+        context.http_client.set_user_agent(&args.user_agent).await;
+    }
     let transport = CapturingTransport {
         inner: ObscuraTransport::new(client),
         rendered_context,
@@ -512,6 +542,7 @@ mod tests {
             include_url_regex: Vec::new(),
             exclude_url_regex: Vec::new(),
             render: false,
+            cookie_files: Vec::new(),
             obey_robots: true,
             sitemaps: false,
             delay_ms: 0,
@@ -525,6 +556,83 @@ mod tests {
             output: None,
             quiet: true,
         }
+    }
+
+    #[test]
+    fn cookie_file_import_preserves_scope_and_rejects_invalid_input_without_values() {
+        let path =
+            std::env::temp_dir().join(format!("aphrody-crawl-cookies-{}.json", std::process::id()));
+        let fixtures = serde_json::json!([
+            {"name":"host", "value":"fixture", "domain":"example.com", "path":"/account", "hostOnly":true, "secure":false, "httpOnly":true, "session":true, "expirationDate":1.5},
+            {"name":"secure", "value":"fixture", "domain":".example.com", "path":"/", "secure":true, "httpOnly":false},
+            {"name":"expired", "value":"fixture", "domain":"example.com", "path":"/", "secure":false, "httpOnly":false, "expires":1}
+        ]);
+        std::fs::write(&path, serde_json::to_vec(&fixtures).unwrap()).unwrap();
+        let jar = load_cookie_files(std::slice::from_ref(&path)).unwrap();
+        assert_eq!(
+            jar.get_cookie_header(&Url::parse("http://example.com/account/profile").unwrap()),
+            "host=fixture"
+        );
+        assert!(
+            jar.get_cookie_header(&Url::parse("http://example.com/accounting").unwrap()).is_empty()
+        );
+        assert!(
+            jar.get_cookie_header(&Url::parse("http://sub.example.com/account").unwrap())
+                .is_empty()
+        );
+        assert_eq!(
+            jar.get_cookie_header(&Url::parse("https://sub.example.com/").unwrap()),
+            "secure=fixture"
+        );
+        assert!(
+            jar.get_cookie_header(&Url::parse("https://elsewhere.example/").unwrap()).is_empty()
+        );
+        std::fs::write(&path, r#"[{"name":"fixture-secret-value","secure":"private-value"}]"#)
+            .unwrap();
+        let error = load_cookie_files(std::slice::from_ref(&path)).err().unwrap().to_string();
+        assert!(error.contains("InvalidData"));
+        assert!(!error.contains("fixture-secret-value"));
+        assert!(!error.contains("private-value"));
+        std::fs::remove_file(&path).unwrap();
+        assert!(load_cookie_files(&[path]).is_err());
+    }
+
+    #[tokio::test]
+    async fn imported_cookie_is_transmitted_by_native_http_transport() {
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let port = listener.local_addr().unwrap().port();
+        let server = tokio::spawn(async move {
+            let (mut socket, _) = listener.accept().await.unwrap();
+            let mut request = vec![0; 8192];
+            let size = socket.read(&mut request).await.unwrap();
+            let request = String::from_utf8_lossy(&request[..size]).to_ascii_lowercase();
+            assert!(request.contains("cookie: auth=fixture"), "fixture cookie was not transmitted");
+            let body = "<html><body><h1>Authenticated fixture</h1></body></html>";
+            socket.write_all(format!("HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}", body.len()).as_bytes()).await.unwrap();
+        });
+        let path = std::env::temp_dir()
+            .join(format!("aphrody-crawl-cookie-http-{}.json", std::process::id()));
+        std::fs::write(&path, r#"[{"name":"auth","value":"fixture","domain":"127.0.0.1","path":"/","hostOnly":true,"secure":false,"httpOnly":true}]"#).unwrap();
+        let jar = load_cookie_files(std::slice::from_ref(&path)).unwrap();
+        std::fs::remove_file(path).unwrap();
+        let transport =
+            ObscuraTransport::new(ObscuraHttpClient::with_full_options(jar, None, true));
+        let mut frontier = Frontier::memory(FrontierOptions::default()).unwrap();
+        frontier.enqueue(AddRequest::seed(format!("http://127.0.0.1:{port}/")), 0).unwrap();
+        let report = crawl_bounded(
+            &mut frontier,
+            &transport,
+            &CrawlOptions {
+                max_requests: 1,
+                allowed_domains: vec!["127.0.0.1".into()],
+                ..CrawlOptions::default()
+            },
+        )
+        .await
+        .unwrap();
+        server.await.unwrap();
+        assert!(report.errors.is_empty());
+        assert_eq!(report.pages.len(), 1);
     }
 
     /// Serves fixed pages over loopback HTTP/1.1; every response closes the connection.

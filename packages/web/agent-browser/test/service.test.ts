@@ -200,3 +200,38 @@ setInterval(() => {}, 1000);
     await rm(dir, { recursive: true, force: true });
   }
 });
+
+test("cookie files remain path-only native crawl arguments", () => {
+  const args = crawlArgs(["https://example.test/"], {
+    cookieFiles: ["/private/cookie file.json", "/private/second.json"],
+    render: true,
+  });
+  const files = args.flatMap((value, index) =>
+    value === "--cookie-file" ? [args[index + 1]] : [],
+  );
+  expect(files).toEqual(["/private/cookie file.json", "/private/second.json"]);
+  expect(args).toContain("--render");
+});
+
+test("original native response bytes survive invalid UTF-8 and forward identifying UA", async () => {
+  const dir = await mkdtemp(join(tmpdir(), "aphrody-web-bytes-"));
+  const binary = join(dir, "aphrody-web");
+  await writeFile(
+    binary,
+    `#!/usr/bin/env bun
+const args = process.argv.slice(2);
+if (args[0] !== "fetch" || !args.includes("--fail-on-http-error") || args[args.indexOf("--dump") + 1] !== "original" || args[args.indexOf("--user-agent") + 1] !== "Fixture/1") process.exit(9);
+await Bun.write(Bun.stdout, new Uint8Array([0, 137, 255, 254, 10]));
+`,
+    { mode: 0o700 },
+  );
+  try {
+    const service = new WebService({ binary });
+    expect(
+      await service.bytes("https://example.test/image.png", { userAgent: "Fixture/1" }),
+    ).toEqual(new Uint8Array([0, 137, 255, 254, 10]));
+    await expect(service.bytes("https://example.test/image.png")).rejects.toThrow(/exited with 9/);
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});

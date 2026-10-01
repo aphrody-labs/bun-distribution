@@ -98,6 +98,10 @@ enum Command {
     Fetch {
         url: String,
 
+        /// Reject non-success HTTP status before writing an original response body.
+        #[arg(long)]
+        fail_on_http_error: bool,
+
         #[arg(long, default_value = "html")]
         dump: DumpFormat,
 
@@ -307,6 +311,7 @@ async fn main() -> anyhow::Result<()> {
         },
         Some(Command::Fetch {
             url,
+            fail_on_http_error,
             dump,
             selector,
             wait,
@@ -332,6 +337,7 @@ async fn main() -> anyhow::Result<()> {
                 output,
                 quiet,
                 global_proxy,
+                fail_on_http_error,
             )
             .await?;
         },
@@ -551,13 +557,21 @@ async fn run_fetch(
     output: Option<std::path::PathBuf>,
     quiet: bool,
     proxy: Option<String>,
+    fail_on_http_error: bool,
 ) -> anyhow::Result<()> {
     // --dump original short-circuits the browser stack entirely: fetch the raw
     // response body via HTTP and stream the bytes verbatim. Useful for binary
     // payloads (images, fonts, …) and any non-HTML resource where parsing the
     // body through the DOM/JS layer would corrupt or discard data.
     if dump == DumpFormat::Original {
-        let bytes = fetch_original_bytes(url_str, proxy, user_agent.clone(), timeout_secs).await?;
+        let bytes = fetch_original_bytes(
+            url_str,
+            proxy,
+            user_agent.clone(),
+            timeout_secs,
+            fail_on_http_error,
+        )
+        .await?;
         write_or_print_bytes(&bytes, output.as_ref()).await?;
         return Ok(());
     }
@@ -630,6 +644,7 @@ async fn fetch_original_bytes(
     proxy: Option<String>,
     user_agent: Option<String>,
     timeout_secs: u64,
+    fail_on_http_error: bool,
 ) -> anyhow::Result<Vec<u8>> {
     let url = url::Url::parse(url_str)
         .map_err(|e| anyhow::anyhow!("Invalid URL '{}': {}", url_str, e))?;
@@ -648,6 +663,16 @@ async fn fetch_original_bytes(
         Err(_) => anyhow::bail!("Timed out fetching {} after {}s", url_str, timeout_secs),
     };
 
+    original_response_bytes(response, fail_on_http_error)
+}
+
+fn original_response_bytes(
+    response: obscura_net::client::Response,
+    fail_on_http_error: bool,
+) -> anyhow::Result<Vec<u8>> {
+    if fail_on_http_error && !(200..300).contains(&response.status) {
+        anyhow::bail!("HTTP status {}", response.status);
+    }
     Ok(response.body)
 }
 
@@ -1075,13 +1100,65 @@ mod tests {
         tokio::fs::write(&path, PNG_BYTES).await.expect("seed temp PNG fixture");
 
         let file_url = format!("file://{}", path.display());
-        let bytes = fetch_original_bytes(&file_url, None, None, 5)
+        let bytes = fetch_original_bytes(&file_url, None, None, 5, false)
             .await
             .expect("fetch_original_bytes should round-trip the file body");
 
         let _ = tokio::fs::remove_file(&path).await;
 
         assert_eq!(bytes, PNG_BYTES, "raw response body must match the file byte-for-byte");
+    }
+
+    #[tokio::test(flavor = "current_thread")]
+    async fn original_binary_http_status_gate_preserves_success_and_debug_failures() {
+        use tokio::io::{AsyncReadExt, AsyncWriteExt};
+        let payload = vec![0x89, b'P', b'N', b'G', 0, 255, 254];
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let port = listener.local_addr().unwrap().port();
+        let served_payload = payload.clone();
+        let server = tokio::spawn(async move {
+            for status in [200, 404] {
+                let (mut socket, _) = listener.accept().await.unwrap();
+                let mut request = [0; 1024];
+                socket.read(&mut request).await.unwrap();
+                socket.write_all(format!("HTTP/1.1 {status} Fixture\r\nContent-Type: image/png\r\nContent-Length: {}\r\nConnection: close\r\n\r\n", served_payload.len()).as_bytes()).await.unwrap();
+                socket.write_all(&served_payload).await.unwrap();
+            }
+        });
+        let client = obscura_net::ObscuraHttpClient::with_full_options(
+            std::sync::Arc::new(obscura_net::CookieJar::new()),
+            None,
+            true,
+        );
+        let url = url::Url::parse(&format!("http://127.0.0.1:{port}/fixture.png")).unwrap();
+        let success = client.fetch(&url).await.unwrap();
+        assert_eq!(super::original_response_bytes(success, true).unwrap(), payload);
+        let failure = client.fetch(&url).await.unwrap();
+        assert_eq!(
+            super::original_response_bytes(failure.clone(), true).unwrap_err().to_string(),
+            "HTTP status 404"
+        );
+        assert_eq!(super::original_response_bytes(failure, false).unwrap(), payload);
+        server.await.unwrap();
+        let default = Args::try_parse_from([
+            "aphrody-web",
+            "fetch",
+            "https://example.test/",
+            "--dump",
+            "original",
+        ])
+        .unwrap();
+        assert!(matches!(default.command, Some(Command::Fetch { fail_on_http_error: false, .. })));
+        let checked = Args::try_parse_from([
+            "aphrody-web",
+            "fetch",
+            "https://example.test/",
+            "--dump",
+            "original",
+            "--fail-on-http-error",
+        ])
+        .unwrap();
+        assert!(matches!(checked.command, Some(Command::Fetch { fail_on_http_error: true, .. })));
     }
 
     #[tokio::test(flavor = "current_thread")]
@@ -1298,6 +1375,7 @@ mod tests {
     fn matcher_still_uses_fetch_variant() {
         let cmd = Some(Command::Fetch {
             url: "https://x".to_string(),
+            fail_on_http_error: false,
             dump: super::DumpFormat::Html,
             selector: None,
             wait: 5,

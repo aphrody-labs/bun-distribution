@@ -68,10 +68,6 @@ async function runRecursiveScraper() {
     throw new RangeError("MAX_PAGES must be an integer between 1 and 10000");
   if (!Number.isSafeInteger(DELAY_MS) || DELAY_MS < 0 || DELAY_MS > 60000)
     throw new RangeError("DELAY_MS must be an integer between 0 and 60000");
-  if (hasFutggCookies || hasFutbinCookies || hasEaCookies)
-    throw new Error(
-      "Local cookie files are unsupported by the native crawl context; configure native Web cookie ownership before running this import.",
-    );
 
   const mappingPath = join(import.meta.dir, "../data/fut_domains_mapping.json");
   const mappingFile = Bun.file(mappingPath);
@@ -501,6 +497,11 @@ async function runRecursiveScraper() {
 
   const report = await new WebService().crawl(seedsToEnqueue, {
     allowedDomains,
+    cookieFiles: [
+      ...(hasFutggCookies ? [futggCookies] : []),
+      ...(hasFutbinCookies ? [futbinCookies] : []),
+      ...(hasEaCookies ? [eaCookies] : []),
+    ],
     maxPages: MAX_PAGES,
     maxDepth: MAX_DEPTH,
     concurrency: 3,

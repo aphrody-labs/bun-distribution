@@ -15,7 +15,7 @@ import { AgentBrowser, AgentPage } from "./client.ts";
 import { loadWebConfig, resolveEngineBinary, type WebConfig } from "./config.ts";
 import { installEngineCleanup, startEngine, type Engine, type EngineOptions } from "./engine.ts";
 
-export type FetchDump = "html" | "text" | "links" | "markdown" | "artifact";
+export type FetchDump = "html" | "text" | "links" | "markdown" | "artifact" | "original";
 
 export interface FetchOptions {
   dump?: FetchDump;
@@ -69,6 +69,8 @@ export interface CrawlOptions {
   concurrency?: number;
   allowedDomains?: string[];
   signal?: AbortSignal;
+  /** Existing private Cookie-Editor/Obscura JSON paths; native owner imports values. */
+  cookieFiles?: string[];
   includeUrlRegex?: string[];
   excludeUrlRegex?: string[];
   /** Discover links after native V8 page rendering. */
@@ -188,6 +190,7 @@ export function crawlArgs(
   if (options.obeyRobots ?? crawl?.obeyRobots ?? true) args.push("--obey-robots");
   if (options.sitemaps ?? crawl?.sitemaps) args.push("--sitemaps");
   if (options.allowPrivateNetwork) args.push("--allow-private-network");
+  for (const path of options.cookieFiles ?? []) args.push("--cookie-file", path);
   if (options.render) args.push("--render");
   if (options.includeHtml) args.push("--include-html");
   if (options.includeMarkdown) args.push("--include-markdown");
@@ -218,12 +221,12 @@ export class WebService {
     return this.#binary;
   }
 
-  async #run(
+  async #runBytes(
     args: string[],
     timeoutMs: number,
     env: Record<string, string | undefined> = {},
     signal?: AbortSignal,
-  ): Promise<string> {
+  ): Promise<Uint8Array> {
     signal?.throwIfAborted();
     const child = Bun.spawn([this.binary, ...args], {
       stdin: "ignore",
@@ -235,7 +238,7 @@ export class WebService {
       signal,
     });
     const [stdout, stderr, code] = await Promise.all([
-      new Response(child.stdout).text(),
+      new Response(child.stdout).arrayBuffer(),
       new Response(child.stderr).text(),
       child.exited,
     ]);
@@ -254,7 +257,16 @@ export class WebService {
         stderr.slice(-2000),
       );
     }
-    return stdout;
+    return new Uint8Array(stdout);
+  }
+
+  async #run(
+    args: string[],
+    timeoutMs: number,
+    env: Record<string, string | undefined> = {},
+    signal?: AbortSignal,
+  ): Promise<string> {
+    return new TextDecoder().decode(await this.#runBytes(args, timeoutMs, env, signal));
   }
 
   /** `aphrody-web --version`. */
@@ -273,6 +285,16 @@ export class WebService {
     const timeoutSecs = options.timeoutSecs ?? this.config.fetch.timeoutSecs;
     return await this.#run(
       fetchArgs(url, options, this.config),
+      (timeoutSecs + 15) * 1000,
+      options.allowPrivateNetwork ? { OBSCURA_ALLOW_PRIVATE_NETWORK: "1" } : {},
+    );
+  }
+
+  /** Original response bytes from the native fetch owner, without text decoding. */
+  async bytes(url: string, options: Omit<FetchOptions, "dump" | "eval"> = {}): Promise<Uint8Array> {
+    const timeoutSecs = options.timeoutSecs ?? this.config.fetch.timeoutSecs;
+    return this.#runBytes(
+      [...fetchArgs(url, { ...options, dump: "original" }, this.config), "--fail-on-http-error"],
       (timeoutSecs + 15) * 1000,
       options.allowPrivateNetwork ? { OBSCURA_ALLOW_PRIVATE_NETWORK: "1" } : {},
     );
