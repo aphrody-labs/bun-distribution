@@ -372,6 +372,25 @@ aux trois racines actives. WSL : disques, processus, shell et chemins revérifi�
   Installation, provenance/version des binaires, ABI interop, fleet/layering et
   consommateurs assemblés restent ouverts. Les binaires installés restent prioritaires.
 
+### Lancement Infra sans compilation implicite — 2026-10-01
+
+- FAIT : le bridge Bun Infra cherche par défaut un exécutable installé sous
+  `.local/bin` ou PATH ; il ne dépend plus de `target` et ne revient plus à
+  `cargo run` lorsque le binaire manque. Un override `APHRODY_INFRA_BIN`
+  invalide produit une erreur explicite, sans sélection silencieuse d’un autre binaire.
+- Développement : `APHRODY_INFRA_BUILD_FROM_SOURCE=1` active explicitement
+  `cargo run --quiet --locked --bin aphrody-infra --`. Un override binaire
+  explicite garde priorité. `APHRODY_INFRA_USE_INSTALLED=1` n’est plus nécessaire
+  puisque l’installation est le comportement par défaut.
+- Tests : présence/absence d’installation, override invalide, opt-in source et
+  priorité de l’override vérifiés. 47 tests Infra réussis, un natif conditionnel
+  ignoré ; typecheck, format et diff-check réussis. Oxc sans erreur, un
+  avertissement `no-await-in-loop` préexistant dans le résolveur.
+- INCOMPLET : qualification de l’exécutable installé, versions/ABI, autres
+  launchers et services de production restent ouverts. Les launchers de
+  développement comptant sur une compilation automatique doivent définir
+  l’opt-in explicite avant leur prochaine invocation.
+
 ## 4. UI et bibliothèques navigateur
 
 Propriétaire : `packages/ui`, `crates/ui`.

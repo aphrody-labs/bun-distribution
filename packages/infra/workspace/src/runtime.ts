@@ -22,23 +22,32 @@ async function executable(path: string | null | undefined): Promise<string | und
   return path && (await Bun.file(path).exists()) ? path : undefined;
 }
 
-/** Use the checkout's current Rust source by default; opt into an installed binary explicitly. */
-export async function infraExecutable(root = infraRoot()): Promise<string[]> {
-  if (!process.env.APHRODY_INFRA_BIN && process.env.APHRODY_INFRA_USE_INSTALLED !== "1") {
-    return ["cargo", "run", "--quiet", "--bin", "aphrody-infra", "--"];
+/** Installed runtime by default; source compilation requires explicit development opt-in. */
+export async function infraExecutable(
+  _root = infraRoot(),
+  environment: Record<string, string | undefined> = process.env,
+): Promise<string[]> {
+  if (environment.APHRODY_INFRA_BIN) {
+    const direct = await executable(environment.APHRODY_INFRA_BIN);
+    if (!direct)
+      throw new Error(`Configured Infra binary is missing: ${environment.APHRODY_INFRA_BIN}`);
+    return [direct];
   }
-  const home = process.env.HOME;
+  if (environment.APHRODY_INFRA_BUILD_FROM_SOURCE === "1") {
+    return ["cargo", "run", "--quiet", "--locked", "--bin", "aphrody-infra", "--"];
+  }
+  const name = `aphrody-infra${process.platform === "win32" ? ".exe" : ""}`;
+  const home = environment.HOME ?? environment.USERPROFILE;
   for (const candidate of [
-    process.env.APHRODY_INFRA_BIN,
-    home && join(home, ".local", "bin", "aphrody-infra"),
-    join(root, "target", "release", "aphrody-infra"),
-    join(root, "target", "debug", "aphrody-infra"),
-    Bun.which("aphrody-infra"),
+    home && join(home, ".local", "bin", name),
+    Bun.which(name, { PATH: environment.PATH ?? "" }),
   ]) {
     const direct = await executable(candidate);
     if (direct) return [direct];
   }
-  return ["cargo", "run", "--quiet", "--bin", "aphrody-infra", "--"];
+  throw new Error(
+    "Infra binary is not installed; set APHRODY_INFRA_BIN or explicitly enable APHRODY_INFRA_BUILD_FROM_SOURCE=1 for development",
+  );
 }
 
 export async function runInfra(invocation: InfraInvocation): Promise<InfraResult> {
