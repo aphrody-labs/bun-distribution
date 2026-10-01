@@ -790,3 +790,22 @@ heuristique ; aucun changement Git ne doit être attribué sans preuve.
   ni les produits matriciels. Le gate CLI/MCP avec dépendances progresse.
 - Preuves : [règles canoniques](docs/operations/shenron/canonical-rule-exports-2026-10-01.json),
   [optimisation euclidienne](docs/operations/ai/raptor-euclidean-optimization-2026-10-01.json).
+
+### Chargeur natif partagé et gates transitifs — 2026-10-01
+
+- FAIT : adaptateur Bun Shenron délègue au chargeur `@aphrody/bun`, avec
+  import différé, reprise, handle partagé et close/reload communs. L’alias
+  SHENRON_FFI_LIB est résolu par le propriétaire ; overrides contradictoires
+  rejetés. Dépendance workspace et son seul hunk bun.lock enregistrés.
+- Gates : quatre tests chargeur/17 assertions, deux typechecks, Oxc et format
+  réussis. INCOMPLET : deux des six tests consommateur échouent sur doctor et
+  authStatus ; ces défauts sont reproduits avec l’ancien adaptateur sur le
+  même artefact Linux de développement. Aucun gate release ABI n’est établi.
+- FAIT : RAG, prompts, context, LLM infra et secrets passent Clippy ciblé strict
+  et 116 tests/doctests cumulés. Le contrat insert_chunk neuf arguments est
+  préservé avec une exception de compatibilité localisée et documentée.
+- INCOMPLET : gate CLI/MCP all-targets no-default arrêté sur trois lints du
+  compilateur Discord ajouté concurremment, propriétaire informé ; ses sources
+  sont préservées. Le déplacement persona FFI vers le profil DBFR est en cours.
+- Preuves : [chargeur](docs/operations/shenron/native-loader-consolidation-2026-10-01.json),
+  [gates transitifs](docs/operations/ai/cli-mcp-dependency-qualification-2026-10-01.json).
