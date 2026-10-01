@@ -304,9 +304,21 @@ export interface InstalledTool {
 }
 
 /** Read installed tools without changing their installation. */
-export function collectInstalledTools(home = homedir()): InstalledTool[] {
+export function collectInstalledTools(
+  home = homedir(),
+  root = resolve(import.meta.dir, "..", "..", "..", ".."),
+): InstalledTool[] {
   const persistent = persistentPathDirs();
-  return BINARIES.map((name) => {
+  const catalogPath = join(root, "config", "developer-cli-tools.json");
+  const commands: string[] = [...BINARIES];
+  if (existsSync(catalogPath)) {
+    const catalog = JSON.parse(readFileSync(catalogPath, "utf8")) as {
+      tools: { command: string }[];
+    };
+    for (const tool of catalog.tools)
+      if (!commands.includes(tool.command)) commands.push(tool.command);
+  }
+  return commands.map((name) => {
     const state = locate(name, home, persistent);
     const path = state.kind === "absent" ? null : state.path;
     const version = path ? (run(path, ["--version"])?.split("\n")[0] ?? null) : null;
@@ -314,8 +326,8 @@ export function collectInstalledTools(home = homedir()): InstalledTool[] {
   });
 }
 
-function binaryTable(home: string): string[] {
-  return collectInstalledTools(home).map((tool) => {
+function binaryTable(home: string, root: string): string[] {
+  return collectInstalledTools(home, root).map((tool) => {
     const label =
       tool.state === "path"
         ? "ok"
@@ -428,7 +440,7 @@ export function renderTools(generatedAt: string, home: string, root: string): st
     "",
     "| Outil | État | Version | Chemin |",
     "|---|---|---|---|",
-    ...binaryTable(home),
+    ...binaryTable(home, root),
     "",
     "## Propriétaires et commandes",
     "",
@@ -452,9 +464,9 @@ export function renderTools(generatedAt: string, home: string, root: string): st
     "Ne pas créer de worktree/branche isolée pour ce mode ; ne pas attribuer une modification Git à un PID sans preuve.",
     "",
     "`aphrody ai sync-sessions --watch --interval-secs 30 --json` existe ; son mode historique agrège tous les agents.",
-    "Ne pas lancer ce mode global pour mélanger les domaines. Utiliser un routage par workspace avant ingestion des mémoires de profil.",
+    "Avec APHRODY_AGENT_DOMAIN=aphrody|dbfr|ie, le miroir et la mémoire utilisent le profil choisi ; les sessions non marquées sont exclues.",
     "Les associations PID/session historiques fondées sur cwd et mtime sont heuristiques si plusieurs sessions partagent un cwd.",
-    "Les conversations natives restent dans leurs stores privés ; utiliser un miroir filtré, pas un fichier natif commun.",
+    "Les conversations natives restent dans leurs stores privés ; le miroir filtré exige le marqueur de domaine du premier tour utilisateur.",
     "Pour dbfr/Shenron, le dossier synchronisé Google Drive conserve corpus/poids et entraînements ; vérifier le mapping privé avant de lancer.",
     "",
     "## Inventaire kernel effectif",
