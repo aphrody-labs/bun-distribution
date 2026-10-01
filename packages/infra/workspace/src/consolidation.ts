@@ -5,13 +5,24 @@ import { execFileSync } from "node:child_process";
 import { existsSync } from "node:fs";
 import { copyFile, mkdir, readFile, stat, unlink, writeFile } from "node:fs/promises";
 import { basename, dirname, join, relative, resolve } from "node:path";
+import { homedir } from "node:os";
 import { inventoryNestedFiles, inventorySubmodules } from "./submodule-inventory.ts";
 import { importInfraConfig } from "./infra-config-import.ts";
 import { importInfraScripts } from "./infra-scripts-import.ts";
 import { importSourceLicenses } from "./source-licenses-import.ts";
 
 type Mode = "extract" | "orchestrator-split" | "upstream-pinned" | "deferred" | "classify";
-type RootSpec = { key: string; path: string; owner: string; mode: Mode; rootDocsOnly?: boolean };
+type RootSpec = {
+  key: string;
+  path: string;
+  owner: string;
+  mode: Mode;
+  rootDocsOnly?: boolean;
+  markdownDocsAnywhere?: boolean;
+  excludedPrefixes?: string[];
+  license?: string;
+  sourcePath?: string;
+};
 type Entry = {
   source: string;
   kind: string;
@@ -27,6 +38,10 @@ type Entry = {
   targetReason?: string;
 };
 const DOC_EXTENSIONS = new Set([".md", ".mdx", ".rst", ".adoc", ".txt", ".pdf"]);
+const UPSTREAM_DOC_TEXT_EXTENSIONS = new Set([".md", ".mdx", ".rst", ".adoc", ".txt"]);
+const UPSTREAM_AGENT_INSTRUCTION_FILE =
+  /(?:^|\/)(?:(?:CLAUDE|AGENTS|GEMINI|CODEX)\.md|copilot-instructions\.md|\.cursorrules)$|(?:^|\/)\.(?:cursor|claude|agents|codex|gemini)\/|(?:^|\/)\.env/;
+const UPSTREAM_EXCLUDED_DOC_SOURCES = new Set(["upstream-WSL2-Linux-Kernel"]);
 const SCRIPT_EXTENSIONS = new Set([
   ".ts",
   ".mts",
@@ -116,7 +131,11 @@ function kindOf(path: string): { kind: string; category?: string } {
 function safeKey(path: string): string {
   return path.replaceAll("\\", "/").replace(/^\/+/, "");
 }
-export function targetPath(owner: string, path: string, info: ReturnType<typeof kindOf>): string | null {
+export function targetPath(
+  owner: string,
+  path: string,
+  info: ReturnType<typeof kindOf>,
+): string | null {
   if (info.kind === "protected-game-data") return null;
   const parts = path.split("/");
   const ext = basename(path).split(".").at(-1)?.toLowerCase();
@@ -186,8 +205,12 @@ async function rootSnapshot(
     if (
       spec.rootDocsOnly &&
       !(
-        path.startsWith("docs/") ||
-        /^(README|PLAN|AGENTS|ARCHITECTURE|\.gitmodules|manifest\.json)/i.test(path)
+        /^(?:docs?|documentation)\//i.test(path) ||
+        /^(README|PLAN|AGENTS|ARCHITECTURE|\.gitmodules|manifest\.json)/i.test(path) ||
+        (spec.markdownDocsAnywhere &&
+          (/\.(?:md|mdx)$/i.test(path) ||
+            (/^(?:docs?|documentation)\//i.test(path) &&
+              DOC_EXTENSIONS.has(`.${path.split(".").at(-1)?.toLowerCase() ?? ""}`))))
       )
     )
       continue;
@@ -240,6 +263,24 @@ async function rootSnapshot(
       spec.key === "iecode" &&
       info.kind !== "documentation" &&
       WITHDRAWN_IECODE_BUN_PATHS.some((prefix) => path.startsWith(prefix));
+    const excludedDocumentation =
+      info.kind === "documentation" &&
+      (spec.excludedPrefixes ?? []).some((prefix) => path.startsWith(prefix));
+    const unavailableUpstreamDocumentation =
+      spec.key.startsWith("upstream-") && info.kind === "documentation" && !exists;
+    const oversizedUpstreamDocumentation =
+      spec.key.startsWith("upstream-") &&
+      info.kind === "documentation" &&
+      (size ?? 0) > 10 * 1024 * 1024;
+    // Upstream documentation imports keep text documents only: no media, notebooks,
+    // lockfiles or env files, no upstream agent instruction files (agents would load
+    // them as rules), and no WSL kernel tree (WSL work waits for the Aphrody deploy).
+    const policyExcludedUpstreamDocumentation =
+      spec.key.startsWith("upstream-") &&
+      info.kind === "documentation" &&
+      (!UPSTREAM_DOC_TEXT_EXTENSIONS.has(`.${path.split(".").at(-1)?.toLowerCase() ?? ""}`) ||
+        UPSTREAM_AGENT_INSTRUCTION_FILE.test(path) ||
+        UPSTREAM_EXCLUDED_DOC_SOURCES.has(spec.key));
     const destination =
       rootLicense || upstreamLicense
         ? `docs/migration/source-licenses/${spec.key}/${path}`
@@ -247,6 +288,10 @@ async function rootSnapshot(
           ? path
           : spec.mode === "deferred" ||
               spec.mode === "classify" ||
+              excludedDocumentation ||
+              unavailableUpstreamDocumentation ||
+              oversizedUpstreamDocumentation ||
+              policyExcludedUpstreamDocumentation ||
               infraOwnedControl ||
               withdrawnIecodeBunStage
             ? null
@@ -269,7 +314,19 @@ async function rootSnapshot(
       target: destination,
       ...(withdrawnIecodeBunStage
         ? { targetReason: "withdrawn-unqualified-bun-stage-no-aphrody-consumer" }
-        : {}),
+        : excludedDocumentation
+          ? { targetReason: "excluded-by-source-license-boundary" }
+          : spec.key.startsWith("upstream-") && info.kind === "documentation" && external
+            ? { targetReason: "external-vendor-document-stays-with-source" }
+            : unavailableUpstreamDocumentation
+              ? { targetReason: "not-present-in-source-worktree" }
+              : oversizedUpstreamDocumentation
+                ? { targetReason: "documentation-asset-over-10-mib-import-limit" }
+                : policyExcludedUpstreamDocumentation
+                  ? { targetReason: "excluded-by-upstream-docs-import-policy" }
+                : spec.key === "upstream-openfox" && info.kind === "documentation"
+                  ? { targetReason: "source-license-unverified-no-copy" }
+                  : {}),
     });
   }
   const summary = {
@@ -277,9 +334,15 @@ async function rootSnapshot(
     owner: spec.owner,
     policy: spec.mode,
     sourcePath:
-      spec.key === "iecode" ? "../iecode" : spec.key === "src-root-docs" ? "." : `src/${spec.key}`,
+      spec.sourcePath ??
+      (spec.key === "iecode"
+        ? "../iecode"
+        : spec.key === "src-root-docs"
+          ? "."
+          : `src/${spec.key}`),
     head,
     branch,
+    ...(spec.license ? { license: spec.license } : {}),
     dirty: statuses.size > 0,
     dirtyPathCount: statuses.size,
     trackedAndUntrackedPathCount: entries.length,
@@ -365,7 +428,7 @@ export async function runConsolidation(args: string[]): Promise<number> {
   const [action = "inventory", ...rest] = args;
   if (action === "--help" || action === "-h" || action === "help") {
     console.log(
-      "Usage: aphrody-ops consolidation <inventory|submodules-inventory|infra-config-import|infra-scripts-import|source-licenses-import|docs-import|docs-index|scripts-import> [--owner name] [--source-root path] [--iecode-root path] [--aphrody-root path] [--python-root path]",
+      "Usage: aphrody-ops consolidation <inventory|submodules-inventory|infra-config-import|infra-scripts-import|source-licenses-import|docs-import|docs-index|scripts-import> [--owner name] [--source-root path] [--upstreams-root path] [--upstreams-only true] [--iecode-root path] [--aphrody-root path] [--python-root path]",
     );
     return 0;
   }
@@ -384,7 +447,8 @@ export async function runConsolidation(args: string[]): Promise<number> {
     );
   const options = argsOf(rest);
   const ownerFilter = options.get("--owner");
-  const sourceRoot = resolve(options.get("--source-root") ?? "/home/aphro/src");
+  const upstreamsOnly = options.get("--upstreams-only") === "true";
+  const sourceRoot = resolve(options.get("--source-root") ?? join(homedir(), "src"));
   const iecodeRoot = resolve(options.get("--iecode-root") ?? join(dirname(sourceRoot), "iecode"));
   const aphrodyRoot = resolve(
     options.get("--aphrody-root") ?? join(dirname(sourceRoot), "aphrody"),
@@ -424,6 +488,12 @@ export async function runConsolidation(args: string[]): Promise<number> {
     );
     return failure || missingTargets.length ? 1 : 0;
   }
+  const upstreamManifest = JSON.parse(
+    await readFile(join(aphrodyRoot, "config/upstream-sources.json"), "utf8"),
+  ) as { root?: string; sources?: Array<{ id: string; kind: string; license?: string }> };
+  const upstreamRoot = resolve(
+    options.get("--upstreams-root") ?? resolve(aphrodyRoot, upstreamManifest.root ?? "../source"),
+  );
   if (action === "infra-config-import") {
     const result = await importInfraConfig(sourceRoot, aphrodyRoot);
     console.log(JSON.stringify(result, null, 2));
@@ -449,7 +519,9 @@ export async function runConsolidation(args: string[]): Promise<number> {
       ["iecode", iecodeRoot],
     ]);
     for (const root of report.roots)
-      if (root.key !== "src-root-docs" && root.key !== "iecode")
+      if (root.key.startsWith("upstream-"))
+        sourceRoots.set(root.key, join(upstreamRoot, root.key.slice("upstream-".length)));
+      else if (root.key !== "src-root-docs" && root.key !== "iecode")
         sourceRoots.set(root.key, join(sourceRoot, root.key));
     const index = [
       "<!-- Generated by aphrody-ops consolidation scripts-import. -->",
@@ -592,10 +664,11 @@ export async function runConsolidation(args: string[]): Promise<number> {
       ["src-root-docs", sourceRoot],
       ["iecode", iecodeRoot],
     ]);
-    for (const root of report.roots) {
-      if (root.key !== "src-root-docs" && root.key !== "iecode")
+    for (const root of report.roots)
+      if (root.key.startsWith("upstream-"))
+        sourceRoots.set(root.key, join(upstreamRoot, root.key.slice("upstream-".length)));
+      else if (root.key !== "src-root-docs" && root.key !== "iecode")
         sourceRoots.set(root.key, join(sourceRoot, root.key));
-    }
     let copied = 0;
     let identical = 0;
     let aliases = 0;
@@ -614,10 +687,16 @@ export async function runConsolidation(args: string[]): Promise<number> {
       "docs/products/nie/README.md",
       "docs/products/upstream-bun/README.md",
     ]);
+    const isSelected = (entry: Entry) => {
+      const sourceRoot = entry.source.slice(0, entry.source.indexOf("/"));
+      return upstreamsOnly
+        ? sourceRoot.startsWith("upstream-")
+        : !ownerFilter || entry.source.startsWith(`${ownerFilter}/`);
+    };
     for (const entry of report.entries) {
       if (
         entry.kind !== "documentation" ||
-        (ownerFilter && !entry.source.startsWith(`${ownerFilter}/`)) ||
+        !isSelected(entry) ||
         !entry.importedTarget?.includes("/_source/") ||
         !entry.target ||
         protectedConflicts.has(entry.target)
@@ -644,19 +723,29 @@ export async function runConsolidation(args: string[]): Promise<number> {
         failures.push(`generated fallback kept because source changed: ${entry.source}`);
         continue;
       }
-      entry.importedSha256 = createHash("sha256")
+      const preferredHash = createHash("sha256")
         .update(await readFile(preferred))
         .digest("hex");
-      await unlink(fallback);
-      delete entry.importedTarget;
-      removedGeneratedFallbacks++;
+      if (preferredHash === sourceHash) {
+        entry.importedSha256 = preferredHash;
+        await unlink(fallback);
+        delete entry.importedTarget;
+        removedGeneratedFallbacks++;
+      } else {
+        const fallbackHash = createHash("sha256")
+          .update(await readFile(fallback))
+          .digest("hex");
+        if (fallbackHash !== sourceHash && fallbackHash !== entry.importedSha256) {
+          conflicts++;
+          failures.push(`preserved edited imported fallback: ${entry.source}`);
+          continue;
+        }
+        entry.importedSha256 = fallbackHash;
+        entry.importedSourceSha256 = sourceHash;
+      }
     }
     for (const entry of report.entries) {
-      if (
-        entry.kind !== "documentation" ||
-        (ownerFilter && !entry.source.startsWith(`${ownerFilter}/`))
-      )
-        continue;
+      if (entry.kind !== "documentation" || !isSelected(entry)) continue;
       if (entry.duplicateOf) {
         aliases++;
         continue;
@@ -709,6 +798,7 @@ export async function runConsolidation(args: string[]): Promise<number> {
         if (existingHash === actualHash) {
           identical++;
           entry.importedSourceSha256 = actualHash;
+          entry.importedSha256 = existingHash;
           rewriteSources.add(entry.source);
           continue;
         }
@@ -741,6 +831,7 @@ export async function runConsolidation(args: string[]): Promise<number> {
       await copyFile(source, target);
       copied++;
       entry.importedSourceSha256 = actualHash;
+      entry.importedSha256 = actualHash;
       rewriteSources.add(entry.source);
       imported.push(entry);
     }
@@ -803,7 +894,7 @@ export async function runConsolidation(args: string[]): Promise<number> {
     let rewrittenLinks = 0;
     const unresolvedLinks: string[] = [];
     for (const entry of report.entries) {
-      if (entry.kind !== "documentation" || entry.duplicateOf) continue;
+      if (!isSelected(entry) || entry.kind !== "documentation" || entry.duplicateOf) continue;
       const destination = entry.importedTarget ?? entry.target;
       if (!destination?.startsWith("docs/") || !/\.(md|mdx)$/i.test(destination)) continue;
       const slash = entry.source.indexOf("/");
@@ -875,6 +966,13 @@ export async function runConsolidation(args: string[]): Promise<number> {
       renderDocumentationIndex([...docsByCategory.values()].flat(), aphrodyRoot),
     );
     if (indexFailure) failures.push(indexFailure);
+    const preservedTargetConflicts = report.entries.filter(
+      (entry) =>
+        isSelected(entry) &&
+        entry.kind === "documentation" &&
+        entry.importedTarget?.includes("/_source/") &&
+        !!entry.target,
+    ).length;
     const result = {
       generatedAt: new Date().toISOString(),
       sourceMap: relative(aphrodyRoot, output),
@@ -887,7 +985,8 @@ export async function runConsolidation(args: string[]): Promise<number> {
       indexedDocuments: docsByCategory.size
         ? [...docsByCategory.values()].reduce((n, docs) => n + docs.length, 0)
         : 0,
-      conflicts,
+      conflicts: Math.max(conflicts, preservedTargetConflicts),
+      preservedTargetConflicts,
       failures,
       importedPaths: imported.length,
       mappedLocalMarkdownLinks: rewrittenLinks,
@@ -940,9 +1039,37 @@ export async function runConsolidation(args: string[]): Promise<number> {
       mode: mode as Mode,
     })),
     { key: "iecode", path: iecodeRoot, owner: "iecode", mode: "extract" },
+    ...(upstreamManifest.sources ?? []).flatMap((source) => {
+      if (source.kind !== "git") return [];
+      const sourcePath = join(upstreamRoot, source.id);
+      const rootLicense = ["LICENSE", "LICENSE.md", "COPYING", "NOTICE"].some((file) =>
+        existsSync(join(sourcePath, file)),
+      );
+      const license =
+        source.license ??
+        (rootLicense ? "See root license file; SPDX expression not normalized" : "unverified");
+      return [
+        {
+          key: `upstream-${source.id}`,
+          path: sourcePath,
+          owner: source.id,
+          mode:
+            source.id === "openfox" && !source.license && !rootLicense
+              ? ("classify" as const)
+              : ("upstream-pinned" as const),
+          rootDocsOnly: true,
+          markdownDocsAnywhere: true,
+          ...(source.id === "litellm" ? { excludedPrefixes: ["enterprise/"] } : {}),
+          license,
+          sourcePath: relative(aphrodyRoot, sourcePath).replaceAll("\\", "/"),
+        },
+      ];
+    }),
   ];
-  const specs = allSpecs.filter(
-    (spec) => !ownerFilter || spec.key === ownerFilter || spec.owner === ownerFilter,
+  const specs = allSpecs.filter((spec) =>
+    upstreamsOnly
+      ? spec.key.startsWith("upstream-")
+      : !ownerFilter || spec.key === ownerFilter || spec.owner === ownerFilter,
   );
   if (ownerFilter && !specs.length) throw new Error(`unknown consolidation owner: ${ownerFilter}`);
   if (action === "submodules-inventory") {
@@ -986,10 +1113,15 @@ export async function runConsolidation(args: string[]): Promise<number> {
     snapshots.push(await rootSnapshot(spec));
   }
   const entries = snapshots.flatMap((snapshot) => snapshot.entries);
+  let previousReport: Record<string, unknown> | undefined;
+  let previousEntries: Entry[] = [];
+  let previousRoots: Array<Record<string, unknown>> = [];
   if (existsSync(output)) {
     try {
-      const previous = JSON.parse(await readFile(output, "utf8")) as { entries?: Entry[] };
-      const priorBySource = new Map((previous.entries ?? []).map((entry) => [entry.source, entry]));
+      previousReport = JSON.parse(await readFile(output, "utf8")) as Record<string, unknown>;
+      previousEntries = (previousReport.entries as Entry[] | undefined) ?? [];
+      previousRoots = (previousReport.roots as Array<Record<string, unknown>> | undefined) ?? [];
+      const priorBySource = new Map(previousEntries.map((entry) => [entry.source, entry]));
       for (const entry of entries) {
         const prior = priorBySource.get(entry.source);
         if (!prior || prior.target !== entry.target || !entry.target) continue;
@@ -1004,6 +1136,19 @@ export async function runConsolidation(args: string[]): Promise<number> {
   }
   const seen = new Map<string, string>();
   const seenScripts = new Map<string, { target: string; python: boolean }>();
+  const replacedRootKeys = new Set(snapshots.map((snapshot) => snapshot.root.key));
+  if (upstreamsOnly) {
+    for (const entry of previousEntries) {
+      if (
+        entry.kind !== "documentation" ||
+        !entry.sha256 ||
+        !entry.target ||
+        [...replacedRootKeys].some((key) => entry.source.startsWith(`${key}/`))
+      )
+        continue;
+      seen.set(entry.sha256, entry.importedTarget ?? entry.target);
+    }
+  }
   for (const entry of entries) {
     if (!entry.sha256 || !entry.target) continue;
     if (entry.kind === "documentation") {
@@ -1024,15 +1169,29 @@ export async function runConsolidation(args: string[]): Promise<number> {
       } else seenScripts.set(entry.sha256, { target: entry.target, python });
     }
   }
-  const byKind = Object.fromEntries(
-    [...new Set(entries.map((entry) => entry.kind))]
-      .sort()
-      .map((kind) => [kind, entries.filter((entry) => entry.kind === kind).length]),
-  );
-  const submoduleInventory = inventorySubmodules(specs);
-  const nestedSourceMap = await inventoryNestedFiles(submoduleInventory.submodules, specs);
-  await writeFile(nestedOutput, `${JSON.stringify(nestedSourceMap, null, 2)}\n`);
+  const submoduleInventory = upstreamsOnly ? undefined : inventorySubmodules(specs);
+  const nestedSourceMap = upstreamsOnly
+    ? undefined
+    : await inventoryNestedFiles(submoduleInventory!.submodules, specs);
+  if (nestedSourceMap)
+    await writeFile(nestedOutput, `${JSON.stringify(nestedSourceMap, null, 2)}\n`);
+  const retainedEntries = upstreamsOnly
+    ? previousEntries.filter(
+        (entry) => ![...replacedRootKeys].some((key) => entry.source.startsWith(`${key}/`)),
+      )
+    : [];
+  const allEntries = upstreamsOnly ? [...retainedEntries, ...entries] : entries;
+  const retainedRoots = upstreamsOnly
+    ? previousRoots.filter((root) => !replacedRootKeys.has(String(root.key)))
+    : [];
+  const roots = upstreamsOnly
+    ? [
+        ...retainedRoots,
+        ...snapshots.map((snapshot) => snapshot.root as unknown as Record<string, unknown>),
+      ]
+    : snapshots.map((snapshot) => snapshot.root as unknown as Record<string, unknown>);
   const report = {
+    ...previousReport,
     schemaVersion: 1,
     observedAt: new Date().toISOString(),
     scope:
@@ -1042,15 +1201,31 @@ export async function runConsolidation(args: string[]): Promise<number> {
       python: pythonRoot,
       infraController: "src/aphrody-infra/packages/aphrody-workspace",
     },
-    roots: snapshots.map((snapshot) => snapshot.root),
-    totals: { roots: snapshots.length, paths: entries.length, byKind },
-    submodules: submoduleInventory.submodules,
-    missingRoots: submoduleInventory.missingRoots,
-    submoduleInventoryObservedAt: submoduleInventory.observedAt,
+    roots,
+    totals: {
+      roots: roots.length,
+      paths: allEntries.length,
+      byKind: Object.fromEntries(
+        [...new Set(allEntries.map((entry) => entry.kind))]
+          .sort()
+          .map((kind) => [kind, allEntries.filter((entry) => entry.kind === kind).length]),
+      ),
+    },
+    ...(submoduleInventory
+      ? {
+          submodules: submoduleInventory.submodules,
+          missingRoots: submoduleInventory.missingRoots,
+          submoduleInventoryObservedAt: submoduleInventory.observedAt,
+        }
+      : {}),
     nestedSourceMap: relative(aphrodyRoot, nestedOutput),
-    nestedSourceMapObservedAt: nestedSourceMap.observedAt,
-    nestedSourceTotals: nestedSourceMap.totals,
-    entries,
+    ...(nestedSourceMap
+      ? {
+          nestedSourceMapObservedAt: nestedSourceMap.observedAt,
+          nestedSourceTotals: nestedSourceMap.totals,
+        }
+      : {}),
+    entries: allEntries,
   };
   await mkdir(dirname(output), { recursive: true });
   await mkdir(dirname(pythonOutput), { recursive: true });
@@ -1063,7 +1238,8 @@ export async function runConsolidation(args: string[]): Promise<number> {
     entries: pythonEntries,
     totals: { roots: snapshots.length, paths: pythonEntries.length },
   };
-  await writeFile(pythonOutput, `${JSON.stringify(pythonReport, null, 2)}\n`, { flag: "w" });
+  if (!upstreamsOnly)
+    await writeFile(pythonOutput, `${JSON.stringify(pythonReport, null, 2)}\n`, { flag: "w" });
   console.log(
     JSON.stringify(
       {

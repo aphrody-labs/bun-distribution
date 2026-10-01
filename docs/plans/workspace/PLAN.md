@@ -723,6 +723,49 @@ base officiel, QLoRA qualifié, export et comparaison. Python migre dans
 `aphrody-py`, l'intégration Rust et Bun ensemble dans `aphrody`. Les anciennes
 estimations de mémoire GPU ne prouvent pas la capacité de l'hôte courant.
 
+### Import documentaire des dépôts upstream — 2026-10-01
+
+Les références Git de `config/upstream-sources.json` sont maintenant incluses
+dans `docs/migration/source-map.json` sous `upstream-<id>`, avec HEAD observé,
+état du checkout, hash par fichier et note de licence. Les docs retenues sont
+copiées directement sous `docs/<catégorie>/upstream-<id>/`; les doublons SHA
+exacts pointent vers une seule copie. La liste est dans
+[`IMPORTED-DOCS-INDEX.md`](../../migration/IMPORTED-DOCS-INDEX.md), les hashes et
+destinations dans [`source-map.json`](../../migration/source-map.json), et le
+bilan de lien dans [`document-import.json`](../../migration/document-import.json).
+
+- 18 checkouts Git inventoriés; 11 042 entrées documentaires candidates,
+  dont la documentation reStructuredText du noyau WSL2.
+- 10 653 fichiers copiés; 175 alias exacts et 3 collisions conservées sous
+  `_source/`. La vérification SHA-256 a comparé source et cible pour les
+  10 653 fichiers : aucun écart.
+- 1 414 liens Markdown locaux remappés; 863 références locales restent à
+  examiner (code, assets, fichiers absents ou syntaxe non résolue). L'import
+  n'affirme donc pas que tous les liens sont valides.
+- 214 entrées ne sont pas copiées : docs Enterprise LiteLLM (licence séparée),
+  openfox (licence non vérifiée), fichiers absents du checkout sparse Tauri,
+  assets de plus de 10 MiB et docs `vendor/third_party`. Chaque motif reste
+  visible dans la carte source.
+- Les checkouts dans `../source` restent intacts; le snapshot mcp-server-tauri
+  indique des changements de travail préexistants. L'import n'a modifié que
+  les documents Aphrody et la carte/report générés.
+
+Politique d'import (décision du 2026-10-01, appliquée dans `consolidation.ts`) :
+seuls les documents texte (`.md`, `.mdx`, `.rst`, `.adoc`, `.txt`) sont gardés.
+Médias, notebooks, code, lockfiles et fichiers env sont exclus, ainsi que les
+fichiers d'instructions d'agents amont (`CLAUDE.md`, `AGENTS.md`, `GEMINI.md`,
+dossiers `.claude`/`.cursor`/`.codex`…), que les agents chargeraient comme
+règles, et l'arbre `upstream-WSL2-Linux-Kernel` (WSL attend le déploiement
+d'Aphrody). Résultat : 4 168 nouveaux fichiers (32 Mo au lieu de 444 Mo),
+6 485 copies non suivies et 101 fichiers déjà suivis retirés, 6 585 entrées
+de la carte source requalifiées `excluded-by-upstream-docs-import-policy`.
+
+La passe a utilisé `consolidation inventory --upstreams-only true`, qui fusionne
+les racines upstream dans la carte existante, puis
+`consolidation docs-import --upstreams-only true`. Le map Python n'est pas
+réécrit dans ce mode. Le contrôle de liens global et la qualification des
+références non résolues restent ouverts.
+
 ## 11. Clôture du programme
 
 - [ ] Chaque source Rust, Bun/TS et Python possède une destination vérifiée,
