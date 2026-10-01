@@ -14,55 +14,52 @@
  * limitations under the License.
  */
 
-import { ImpersonatedClient } from "@aphrody/bxc/ffi/curl-impersonate";
+import { fetchFutResponse } from "../web.ts";
 import type { SbcCategory, SbcChallenge, SbcSet } from "./types.ts";
 
 export class FutSbcClient {
-	private client: ImpersonatedClient;
+  public async getCategories(gameYear: string = "27"): Promise<SbcCategory[]> {
+    const url = `https://www.fut.gg/api/fut/sbc/${gameYear}/categories/`;
+    const res = await fetchFutResponse(url);
+    if (res.status !== 200) {
+      throw new Error(`Failed to fetch SBC categories: HTTP ${res.status}`);
+    }
+    const json = await res.json();
+    return (json.data ?? json) as SbcCategory[];
+  }
 
-	constructor() {
-		this.client = new ImpersonatedClient({ profile: "chrome131" });
-	}
+  public async getSets(gameYear: string = "27", categorySlug?: string): Promise<SbcSet[]> {
+    const url = categorySlug
+      ? `https://www.fut.gg/api/fut/sbc/${gameYear}/?categorySlug=${encodeURIComponent(categorySlug)}`
+      : `https://www.fut.gg/api/fut/sbc/${gameYear}/`;
+    const res = await fetchFutResponse(url);
+    if (res.status !== 200) {
+      throw new Error(`Failed to fetch SBC sets: HTTP ${res.status}`);
+    }
+    const json = await res.json();
+    return (json.data ?? json) as SbcSet[];
+  }
 
-	public async getCategories(gameYear: string = "27"): Promise<SbcCategory[]> {
-		const url = `https://www.fut.gg/api/fut/sbc/${gameYear}/categories/`;
-		const res = await this.client.fetch(url);
-		if (res.status !== 200) {
-			throw new Error(`Failed to fetch SBC categories: HTTP ${res.status}`);
-		}
-		const json = await res.json();
-		return (json.data ?? json) as SbcCategory[];
-	}
+  public async getSetDetail(slug: string, gameYear: string = "27"): Promise<SbcSet> {
+    const url = `https://www.fut.gg/api/fut/sbc/${gameYear}/${slug}/`;
+    const res = await fetchFutResponse(url);
+    if (res.status !== 200) {
+      throw new Error(`Failed to fetch SBC detail for ${slug}: HTTP ${res.status}`);
+    }
+    const json = await res.json();
+    return json.data as SbcSet;
+  }
 
-	public async getSets(gameYear: string = "27", categorySlug?: string): Promise<SbcSet[]> {
-		const url = categorySlug
-			? `https://www.fut.gg/api/fut/sbc/${gameYear}/?categorySlug=${encodeURIComponent(categorySlug)}`
-			: `https://www.fut.gg/api/fut/sbc/${gameYear}/`;
-		const res = await this.client.fetch(url);
-		if (res.status !== 200) {
-			throw new Error(`Failed to fetch SBC sets: HTTP ${res.status}`);
-		}
-		const json = await res.json();
-		return (json.data ?? json) as SbcSet[];
-	}
-
-	public async getSetDetail(slug: string, gameYear: string = "27"): Promise<SbcSet> {
-		const url = `https://www.fut.gg/api/fut/sbc/${gameYear}/${slug}/`;
-		const res = await this.client.fetch(url);
-		if (res.status !== 200) {
-			throw new Error(`Failed to fetch SBC detail for ${slug}: HTTP ${res.status}`);
-		}
-		const json = await res.json();
-		return json.data as SbcSet;
-	}
-
-	public async getChallengeDetail(challengeEaId: number, gameYear: string = "27"): Promise<SbcChallenge> {
-		const url = `https://www.fut.gg/api/fut/sbc/${gameYear}/challenge/${challengeEaId}/`;
-		const res = await this.client.fetch(url);
-		if (res.status !== 200) {
-			throw new Error(`Failed to fetch SBC challenge ${challengeEaId}: HTTP ${res.status}`);
-		}
-		const json = await res.json();
-		return json.data as SbcChallenge;
-	}
+  public async getChallengeDetail(
+    challengeEaId: number,
+    gameYear: string = "27",
+  ): Promise<SbcChallenge> {
+    const url = `https://www.fut.gg/api/fut/sbc/${gameYear}/challenge/${challengeEaId}/`;
+    const res = await fetchFutResponse(url);
+    if (res.status !== 200) {
+      throw new Error(`Failed to fetch SBC challenge ${challengeEaId}: HTTP ${res.status}`);
+    }
+    const json = await res.json();
+    return json.data as SbcChallenge;
+  }
 }

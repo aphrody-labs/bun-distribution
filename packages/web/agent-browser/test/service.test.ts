@@ -167,3 +167,36 @@ console.log(JSON.stringify({ url: "https://example.test/final", status: 206, hea
     await rm(dir, { recursive: true, force: true });
   }
 });
+
+test("crawl cancellation stops the owning process and retains AbortError", async () => {
+  const dir = await mkdtemp(join(tmpdir(), "aphrody-web-cancel-"));
+  const binary = join(dir, "aphrody-web");
+  const ready = join(dir, "ready");
+  await writeFile(
+    binary,
+    `#!/usr/bin/env bun
+await Bun.write(${JSON.stringify(ready)}, "ready");
+setInterval(() => {}, 1000);
+`,
+    { mode: 0o700 },
+  );
+  const abort = new AbortController();
+  const service = new WebService({ binary });
+  const completed = service
+    .crawl(["https://example.test/"], { signal: abort.signal, timeoutSecs: 10 })
+    .then(
+      () => ({ error: null }),
+      (error: unknown) => ({ error }),
+    );
+  try {
+    const started = Date.now();
+    while (!(await Bun.file(ready).exists()) && Date.now() - started < 2000) await Bun.sleep(5);
+    expect(await Bun.file(ready).exists()).toBe(true);
+    abort.abort();
+    expect((await completed).error).toMatchObject({ name: "AbortError" });
+  } finally {
+    abort.abort();
+    await completed;
+    await rm(dir, { recursive: true, force: true });
+  }
+});

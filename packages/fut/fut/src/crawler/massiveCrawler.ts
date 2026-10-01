@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+import { WebService } from "@aphrody/agent-browser/service";
 import { Database } from "bun:sqlite";
 import { join } from "node:path";
 import { existsSync, mkdirSync } from "node:fs";
@@ -22,40 +23,48 @@ import { UniversalFutScraper } from "../scraper/universalScraper.ts";
 import { detectFutUrlType } from "../router/urlDetector.ts";
 
 export class MassiveFutCrawler {
-	private db: Database;
-	private scraper: UniversalFutScraper;
-	private concurrency: number;
-	private maxPages: number;
-	private onProgress?: (stats: FutCrawlStats) => void;
-	private queue: FutCrawlTarget[] = [];
-	private visitedHashes = new Set<bigint>();
-	private running = false;
-	private stats: FutCrawlStats = {
-		crawled: 0,
-		total: 0,
-		success: 0,
-		errors: 0,
-		currentConcurrency: 0,
-	};
+  private db: Database;
+  private scraper: UniversalFutScraper;
+  private concurrency: number;
+  private maxPages: number;
+  private abort: AbortController | undefined;
+  private rateLimitMs: number;
+  private onProgress?: (stats: FutCrawlStats) => void;
+  private seeds: FutCrawlTarget[] = [];
+  private running = false;
+  private stats: FutCrawlStats = {
+    crawled: 0,
+    total: 0,
+    success: 0,
+    errors: 0,
+    currentConcurrency: 0,
+  };
 
-	constructor(opts: FutCrawlerOptions = {}) {
-		this.concurrency = opts.concurrency || 6;
-		this.maxPages = opts.maxPages || 500;
-		this.onProgress = opts.onProgress;
-		this.scraper = new UniversalFutScraper();
+  constructor(opts: FutCrawlerOptions = {}) {
+    this.concurrency = opts.concurrency ?? 6;
+    this.maxPages = opts.maxPages ?? 500;
+    if (!Number.isSafeInteger(this.maxPages) || this.maxPages < 1 || this.maxPages > 10000)
+      throw new RangeError("maxPages must be an integer between 1 and 10000");
+    if (!Number.isSafeInteger(this.concurrency) || this.concurrency < 1 || this.concurrency > 128)
+      throw new RangeError("concurrency must be an integer between 1 and 128");
+    this.rateLimitMs = opts.rateLimitMs ?? 1000;
+    if (!Number.isSafeInteger(this.rateLimitMs) || this.rateLimitMs < 0)
+      throw new RangeError("rateLimitMs must be a nonnegative integer");
+    this.onProgress = opts.onProgress;
+    this.scraper = new UniversalFutScraper();
 
-		const dataDir = join(import.meta.dir, "../data");
-		if (!existsSync(dataDir)) {
-			mkdirSync(dataDir, { recursive: true });
-		}
+    const dataDir = join(import.meta.dir, "../data");
+    if (!existsSync(dataDir)) {
+      mkdirSync(dataDir, { recursive: true });
+    }
 
-		const dbPath = opts.dbPath || join(dataDir, "fut_extracted_database.sqlite");
-		this.db = new Database(dbPath);
-		this.initDatabase();
-	}
+    const dbPath = opts.dbPath || join(dataDir, "fut_extracted_database.sqlite");
+    this.db = new Database(dbPath);
+    this.initDatabase();
+  }
 
-	private initDatabase(): void {
-		this.db.exec(`
+  private initDatabase(): void {
+    this.db.exec(`
 			PRAGMA journal_mode = WAL;
 			PRAGMA synchronous = NORMAL;
 
@@ -75,125 +84,158 @@ export class MassiveFutCrawler {
 				crawled_at TEXT NOT NULL
 			);
 		`);
+  }
 
-		const rows = this.db.query("SELECT url_hash FROM visited_urls").all() as Array<{ url_hash: number | bigint }>;
-		for (const r of rows) {
-			this.visitedHashes.add(BigInt(r.url_hash));
-		}
-	}
+  public addSeed(url: string, priority: number = 1): void {
+    const hash = BigInt.asIntN(64, Bun.hash.wyhash(url));
+    // Completed domain records need no re-import; network deduplication belongs to Web.
+    if (
+      this.db
+        .query("SELECT 1 FROM visited_urls WHERE url_hash = ? AND status = 'SUCCESS'")
+        .get(hash)
+    )
+      return;
 
-	public addSeed(url: string, priority: number = 1): void {
-		const hash = BigInt.asIntN(64, Bun.hash.wyhash(url));
-		if (this.visitedHashes.has(hash)) return;
+    const detected = detectFutUrlType(url);
+    this.seeds.push({
+      url,
+      provider: detected.provider,
+      pageType: detected.pageType,
+      priority,
+    });
+    this.seeds.sort((a, b) => b.priority - a.priority);
+    this.stats.total = this.seeds.length + this.stats.crawled;
+  }
 
-		const detected = detectFutUrlType(url);
-		this.queue.push({
-			url,
-			provider: detected.provider,
-			pageType: detected.pageType,
-			priority,
-		});
-		this.queue.sort((a, b) => b.priority - a.priority);
-		this.stats.total = this.queue.length + this.stats.crawled;
-	}
+  public addSeeds(urls: string[]): void {
+    for (const u of urls) {
+      this.addSeed(u);
+    }
+  }
 
-	public addSeeds(urls: string[]): void {
-		for (const u of urls) {
-			this.addSeed(u);
-		}
-	}
+  public async start(): Promise<FutCrawlStats> {
+    if (this.running) return this.stats;
+    this.running = true;
 
-	public async start(): Promise<FutCrawlStats> {
-		if (this.running) return this.stats;
-		this.running = true;
+    if (this.seeds.length === 0) {
+      this.running = false;
+      return this.stats;
+    }
+    const seeds = this.seeds;
+    this.seeds = [];
+    this.abort = new AbortController();
+    try {
+      const report = await new WebService().crawl(
+        seeds.map((seed) => seed.url),
+        {
+          maxPages: this.maxPages,
+          maxDepth: 0,
+          concurrency: this.concurrency,
+          allowedDomains: [...new Set(seeds.map((seed) => new URL(seed.url).hostname))],
+          render: true,
+          includeHtml: true,
+          delayMs: this.rateLimitMs,
+          signal: this.abort.signal,
+        },
+      );
+      this.stats.total =
+        this.stats.crawled +
+        report.stats.frontierDone +
+        report.stats.frontierPending +
+        report.stats.frontierFailed;
+      this.stats.errors += report.errors.length;
+      for (const page of report.pages) {
+        if (!this.running) break;
+        await this.processPage(page.url, page.html ?? "");
+      }
+    } catch (error) {
+      this.seeds.push(...seeds);
+      if (!this.abort.signal.aborted) throw error;
+    } finally {
+      this.abort = undefined;
+      this.running = false;
+    }
 
-		const workers = Array.from({ length: this.concurrency }, () => this.runWorker());
-		await Promise.all(workers);
+    this.running = false;
+    return this.stats;
+  }
 
-		this.running = false;
-		return this.stats;
-	}
+  public stop(): void {
+    this.abort?.abort();
+    this.running = false;
+  }
 
-	public stop(): void {
-		this.running = false;
-	}
+  public close(): void {
+    this.stop();
+    this.scraper.close();
+    this.db.close();
+  }
 
-	public close(): void {
-		this.stop();
-		this.scraper.close();
-		this.db.close();
-	}
+  private async processPage(url: string, html: string): Promise<void> {
+    const detected = detectFutUrlType(url);
+    const target = { url, provider: detected.provider, pageType: detected.pageType };
+    const hash = BigInt.asIntN(64, Bun.hash.wyhash(url));
 
-	private async runWorker(): Promise<void> {
-		while (this.running && this.queue.length > 0 && this.stats.crawled < this.maxPages) {
-			const target = this.queue.shift();
-			if (!target) break;
+    this.stats.currentConcurrency++;
+    try {
+      let entity: { id: string; name: string };
+      switch (target.pageType) {
+        case "PLAYER": {
+          const player = await this.scraper.scrapePlayer(target.url, html);
+          entity = player;
+          break;
+        }
+        case "SBC": {
+          const sbc = await this.scraper.scrapeSbc(target.url);
+          entity = sbc;
+          break;
+        }
+        case "EVOLUTION": {
+          const evo = await this.scraper.scrapeEvolution(target.url);
+          entity = evo;
+          break;
+        }
+        case "SQUAD": {
+          const squad = await this.scraper.scrapeSquad(target.url);
+          entity = squad;
+          break;
+        }
+        default: {
+          await this.scraper.scrapeFodder(target.url);
+          entity = { id: "fodder-index", name: "Fodder Index" };
+          break;
+        }
+      }
 
-			const hash = BigInt.asIntN(64, Bun.hash.wyhash(target.url));
-			if (this.visitedHashes.has(hash)) continue;
-			this.visitedHashes.add(hash);
-
-			this.stats.currentConcurrency++;
-			try {
-				let entity: { id: string; name: string };
-				switch (target.pageType) {
-					case "PLAYER": {
-						const player = await this.scraper.scrapePlayer(target.url);
-						entity = player;
-						break;
-					}
-					case "SBC": {
-						const sbc = await this.scraper.scrapeSbc(target.url);
-						entity = sbc;
-						break;
-					}
-					case "EVOLUTION": {
-						const evo = await this.scraper.scrapeEvolution(target.url);
-						entity = evo;
-						break;
-					}
-					case "SQUAD": {
-						const squad = await this.scraper.scrapeSquad(target.url);
-						entity = squad;
-						break;
-					}
-					default: {
-						const fodder = await this.scraper.scrapeFodder(target.url);
-						entity = { id: "fodder-index", name: "Fodder Index" };
-						break;
-					}
-				}
-
-				this.db.run(
-					`INSERT OR REPLACE INTO crawled_entities (id, provider, page_type, name, raw_json, crawled_at)
+      this.db.run(
+        `INSERT OR REPLACE INTO crawled_entities (id, provider, page_type, name, raw_json, crawled_at)
 					 VALUES (?, ?, ?, ?, ?, datetime('now'))`,
-					[entity.id, target.provider, target.pageType, entity.name, JSON.stringify(entity)],
-				);
+        [entity.id, target.provider, target.pageType, entity.name, JSON.stringify(entity)],
+      );
 
-				this.db.run(
-					`INSERT OR REPLACE INTO visited_urls (url_hash, url, crawled_at, status)
+      this.db.run(
+        `INSERT OR REPLACE INTO visited_urls (url_hash, url, crawled_at, status)
 					 VALUES (?, ?, datetime('now'), 'SUCCESS')`,
-					[hash, target.url],
-				);
+        [hash, target.url],
+      );
 
-				this.stats.success++;
-				this.stats.lastEntity = entity.name;
-			} catch (err: unknown) {
-				this.stats.errors++;
-				this.db.run(
-					`INSERT OR REPLACE INTO visited_urls (url_hash, url, crawled_at, status)
+      this.stats.success++;
+      this.stats.lastEntity = entity.name;
+    } catch {
+      this.stats.errors++;
+      this.db.run(
+        `INSERT OR REPLACE INTO visited_urls (url_hash, url, crawled_at, status)
 					 VALUES (?, ?, datetime('now'), 'ERROR')`,
-					[hash, target.url],
-				);
-			} finally {
-				this.stats.crawled++;
-				this.stats.lastUrl = target.url;
-				this.stats.currentConcurrency--;
+        [hash, target.url],
+      );
+    } finally {
+      this.stats.crawled++;
+      this.stats.lastUrl = target.url;
+      this.stats.currentConcurrency--;
 
-				if (this.onProgress) {
-					this.onProgress({ ...this.stats });
-				}
-			}
-		}
-	}
+      if (this.onProgress) {
+        this.onProgress({ ...this.stats });
+      }
+    }
+  }
 }

@@ -57,14 +57,15 @@ export class UniversalFutScraper {
   /**
    * Universal player scraper for both FUTBin and FUT.GG.
    */
-  public async scrapePlayer(url: string): Promise<ScrapedPlayer> {
+  public async scrapePlayer(url: string, capturedHtml?: string): Promise<ScrapedPlayer> {
     const detected = detectFutUrlType(url);
     const provider = detected.provider;
 
     // 1. If FUT.GG, attempt TanStack / Seroval extraction
     if (provider === "FUTGG") {
       try {
-        const res = await this.fetchPage(url);
+        const res =
+          capturedHtml === undefined ? await this.fetchPage(url) : new Response(capturedHtml);
         if (res.status === 200) {
           const html = await res.text();
           const tsr = extractTsrPlayer(html);
@@ -105,7 +106,8 @@ export class UniversalFutScraper {
     // 2. If FUTBIN, attempt PHP SSR + live price endpoint extraction
     if (provider === "FUTBIN") {
       try {
-        const res = await this.fetchPage(url);
+        const res =
+          capturedHtml === undefined ? await this.fetchPage(url) : new Response(capturedHtml);
         if (res.status === 200) {
           const html = await res.text();
           const parsed = extractFutbinPlayer(html);

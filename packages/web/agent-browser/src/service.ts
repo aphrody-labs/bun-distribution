@@ -68,6 +68,7 @@ export interface CrawlOptions {
   maxPages?: number;
   concurrency?: number;
   allowedDomains?: string[];
+  signal?: AbortSignal;
   includeUrlRegex?: string[];
   excludeUrlRegex?: string[];
   /** Discover links after native V8 page rendering. */
@@ -221,7 +222,9 @@ export class WebService {
     args: string[],
     timeoutMs: number,
     env: Record<string, string | undefined> = {},
+    signal?: AbortSignal,
   ): Promise<string> {
+    signal?.throwIfAborted();
     const child = Bun.spawn([this.binary, ...args], {
       stdin: "ignore",
       stdout: "pipe",
@@ -229,12 +232,14 @@ export class WebService {
       env: { ...process.env, ...env },
       timeout: timeoutMs,
       killSignal: "SIGKILL",
+      signal,
     });
     const [stdout, stderr, code] = await Promise.all([
       new Response(child.stdout).text(),
       new Response(child.stderr).text(),
       child.exited,
     ]);
+    signal?.throwIfAborted();
     if (child.signalCode === "SIGKILL") {
       throw new WebServiceError(
         `aphrody-web ${args[0] === "--proxy" ? args[2] : args[0]} timed out after ${timeoutMs} ms`,
@@ -323,7 +328,12 @@ export class WebService {
   /** Bounded, robots-aware crawl over the static HTTP stack. */
   async crawl(seeds: readonly string[], options: CrawlOptions = {}): Promise<CrawlReport> {
     const timeoutSecs = options.timeoutSecs ?? this.config.crawl.timeoutSecs;
-    const out = await this.#run(crawlArgs(seeds, options, this.config), (timeoutSecs + 15) * 1000);
+    const out = await this.#run(
+      crawlArgs(seeds, options, this.config),
+      (timeoutSecs + 15) * 1000,
+      {},
+      options.signal,
+    );
     return JSON.parse(out) as CrawlReport;
   }
 
