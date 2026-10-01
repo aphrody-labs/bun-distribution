@@ -15,16 +15,15 @@
  *   4. hard-link the current file to `<target>.prev` (instant rollback), then rename() over.
  *   Readers that already had the old file open keep their inode and finish cleanly.
  *
- * Sender side (Windows GPU host) — take a consistent snapshot, never copy a live DB:
+ * Sender side from the Aphrody monorepo — take a consistent snapshot, never copy a live DB:
  *   sqlite3 <ocr-workspace>/results.db "VACUUM INTO '<ocr-workspace>/results.snapshot.db'"
- *   # binary-safe (Git Bash / cmd, NOT Windows PowerShell 5 which mangles `<` binary pipes):
- *   ssh dbfr "cd shenron && bun scripts/ops/recoit-ocr-results.ts" < <ocr-workspace>/results.snapshot.db
- *   # or, from PowerShell: upload beside the target, then hand it over
- *   scp <ocr-workspace>/results.snapshot.db dbfr:.aphrody/ocr/results.db.upload
- *   ssh dbfr "cd shenron && bun scripts/ops/recoit-ocr-results.ts --depuis ~/.aphrody/ocr/results.db.upload"
+ *   bun scripts/tools/shenron/scripts/ops/envoie-ocr-results.ts --snapshot <ocr-workspace>/results.snapshot.db
+ *   # Transfer goes through Aphrody SSH (in-process SFTP + its SSH command adapter).
+ * The imported Shenron checkout remains the remote receiver at `shenron/scripts/ops/recoit-ocr-results.ts`;
+ * the sender is owned by this Aphrody monorepo and is not expected in the legacy Shenron checkout.
  *
  * Options:
- *   --depuis <file>   take an already uploaded file instead of stdin (it is moved, not copied)
+ *   --depuis <file>   take an already uploaded file instead of stdin (internal receiver option; moved, not copied)
  *   --cible <file>    target database (default: $OCR_RESULTS_DB or ~/.aphrody/ocr/results.db)
  *   --force           accept a corpus with fewer pages than the current one
  *   --verifier        only inspect the target (read-only) and exit 0 when healthy
