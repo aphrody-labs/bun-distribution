@@ -20,6 +20,7 @@
  * texture et les messages localisés du mode. Quand il est là, la fiche ne se contente plus de
  * lister des noms de fichiers — elle montre ce qu'ils contiennent, images comprises.
  */
+import { iecodeDataPath } from "@aphrody/paths";
 import fs from "node:fs/promises";
 import path from "node:path";
 import type { Metadata } from "next";
@@ -58,10 +59,10 @@ type Mode = {
  * Racine des données du jeu — même convention que le reste de l'app (`DATA_PATH`), pour qu'un
  * déplacement du dump ne demande pas de toucher au code.
  */
-const CATALOGUE = path.join(process.env.DATA_PATH ?? "/home/ubuntu/nie/data", "modes.json");
+const CATALOGUE = path.join(process.env.DATA_PATH ?? iecodeDataPath(), "modes.json");
 
 /** Dossier des exports de contenu, un fichier par mode (`<slug>.json`). */
-const CONTENUS = path.join(process.env.DATA_PATH ?? "/home/ubuntu/nie/data", "mode-contenu");
+const CONTENUS = path.join(process.env.DATA_PATH ?? iecodeDataPath(), "mode-contenu");
 
 /** Le contenu des fichiers d'un mode, tel que l'exporte `niers mode contenu <slug>`. */
 type Contenu = {
@@ -186,7 +187,7 @@ type EcranRendu = {
 async function lireEcransRendus(slug: string): Promise<EcranRendu[]> {
 	if (!/^[a-z0-9-]+$/.test(slug)) return [];
 	const dossier = path.join(
-		process.env.DATA_PATH ?? "/home/ubuntu/nie/data",
+		process.env.DATA_PATH ?? iecodeDataPath(),
 		"mode-tex",
 		slug,
 		"screens",

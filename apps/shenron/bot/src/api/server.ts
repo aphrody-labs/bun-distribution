@@ -1,3 +1,4 @@
+import { tempPath } from "@aphrody/paths";
 import { resolveApiUrl, resolveSiteUrl } from "@shenron/config/public-urls";
 import os from "node:os";
 import { singleton, inject, container } from "tsyringe";
@@ -6741,7 +6742,7 @@ async function mapLimitDeadline<T, R>(
 const COORD_DIR = Bun.env.COORD_DIR ?? `${process.cwd().replace(/\/apps\/bot\/?$/, "")}/.coord`;
 const COORD_MESSAGES = `${COORD_DIR}/messages.jsonl`;
 const COORD_TASKS = `${COORD_DIR}/tasks.json`;
-const COORD_LOCK = "/tmp/dbfr-tasks.lock";
+const COORD_LOCK = tempPath("dbfr-tasks.lock");
 const a2aSubscribers = new Set<(event: unknown) => void>();
 
 function a2aBroadcast(event: unknown): void {

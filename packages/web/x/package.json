@@ -53,6 +53,7 @@
     "typescript": "catalog:"
   },
   "dependencies": {
+    "@aphrody/paths": "workspace:*",
     "@aphrody/bun": "workspace:*",
     "zod": "catalog:"
   },

@@ -308,12 +308,15 @@
     "monorepo:layout": "bun packages/infra/workspace/src/ops.ts workspace-layout --root .",
     "monorepo:state": "bun packages/infra/workspace/src/ops.ts repository-state --root .",
     "monorepo:clean": "bun packages/infra/workspace/src/ops.ts workspace-clean --root .",
+    "paths:audit": "bun packages/infra/paths/src/cli.ts",
+    "paths:fix": "bun packages/infra/paths/src/cli.ts --apply",
     "db:compare": "bun scripts/audit/infra/db-compare/compare-rg-shenron.ts",
     "infra:pipeline:sync": "bun packages/infra/workspace/src/ops.ts pipeline-catalog --root . --apply",
     "iecode:prepare": "bun packages/infra/workspace/src/iecode-packages.ts prepare --config config/sibling-checkouts.json --destination .cache/iecode-packages --apply",
     "install:workspace": "bun run iecode:prepare && bun install --frozen-lockfile"
   },
   "devDependencies": {
+    "@aphrody/paths": "workspace:*",
     "@types/bun": "catalog:",
     "@types/node": "catalog:",
     "undici-types": "catalog:",

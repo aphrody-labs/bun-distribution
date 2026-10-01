@@ -1,4 +1,5 @@
 #!/usr/bin/env bun
+import { tempPath } from "@aphrody/paths";
 /**
  * **Poste de commande d'une campagne de traduction par agents.**
  *
@@ -67,7 +68,7 @@ async function ouvragesEnAttente(): Promise<{ id: number; reste: number; titre: 
 if (commande === "prepare") {
 	const vague = Number(opt("vague", "8"));
 	const taille = Number(opt("lot", "120"));
-	const sortie = opt("sortie", "/tmp/vague")!;
+	const sortie = opt("sortie", tempPath("vague"))!;
 	// Les ouvrages déjà confiés à un agent encore au travail. La file ne rétrécit
 	// qu'au DÉPÔT : sans cette exclusion, une seconde vague reprendrait les mêmes
 	// planches que la première est en train de traduire, et on paierait deux fois

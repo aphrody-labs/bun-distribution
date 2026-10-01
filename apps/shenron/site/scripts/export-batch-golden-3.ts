@@ -1,3 +1,4 @@
+import { tempPath } from "@aphrody/paths";
 import { $ } from "bun";
 import { resolve } from "node:path";
 
@@ -29,5 +30,5 @@ const output = {
 	lexique: uniqueLex,
 };
 
-await Bun.write("/tmp/batch-golden-3.json", JSON.stringify(output, null, 2) + "\n");
+await Bun.write(tempPath("batch-golden-3.json"), JSON.stringify(output, null, 2) + "\n");
 console.log(`Exporté ${allPlanches.length} planches pour les databooks ${batchIds.join(", ")}`);

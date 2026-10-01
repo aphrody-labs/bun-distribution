@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
+import { tempPath } from "@aphrody/paths";
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "bun:test";
 import { mkdtempSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -63,7 +64,7 @@ function noWorkerProbes(overrides: Partial<A2AProbes> = {}): Partial<A2AProbes> 
 					? { unit, state: "inactive" as const, subState: "dead", since: "Fri 2026-09-11 06:53:40 UTC" }
 					: { unit, state: "active" as const, subState: "running" }
 			),
-		ocrResultsDb: async () => ({ path: "/tmp/results.db", state: "ok", bytes: 44224512, messages: ["ok"] }),
+		ocrResultsDb: async () => ({ path: tempPath("results.db"), state: "ok", bytes: 44224512, messages: ["ok"] }),
 		ocrHeartbeat: async () => ({ state: "none", maxAgeMinutes: 15 }),
 		ragContext: async () => ({ ok: false, endpoint: "fake", error: "non utilisé" }),
 		...overrides,

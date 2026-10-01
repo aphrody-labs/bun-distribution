@@ -12,11 +12,12 @@
  *
  * Usage : bun apps/bot/scripts/notebooklm-sync.ts
  */
+import { homePath } from "@aphrody/paths";
 import { readdirSync, existsSync } from "node:fs";
 import { join } from "node:path";
 
 const RAG_DIR = new URL("../data/rag/", import.meta.url).pathname;
-const APHRODY_BIN = "/home/ubuntu/.local/bin/aphrody";
+const APHRODY_BIN = homePath(".local", "bin", "aphrody");
 
 async function runCmd(args: string[]): Promise<{ code: number; stdout: string; stderr: string }> {
 	const proc = Bun.spawn([APHRODY_BIN, ...args], {

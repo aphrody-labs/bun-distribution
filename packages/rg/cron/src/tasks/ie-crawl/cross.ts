@@ -4,11 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import { iecodeDataPath } from "@aphrody/paths";
 import { WebCdpPage, waitForSelector } from "../../lib/web-cdp";
 import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
-const DATA_ROOT = "/home/ubuntu/nie/data/inazuma-cross.jp";
+const DATA_ROOT = iecodeDataPath('inazuma-cross.jp');
 
 interface CrossPageTarget {
 	lang: string;

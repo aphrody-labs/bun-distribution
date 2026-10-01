@@ -1,4 +1,5 @@
 #!/usr/bin/env bun
+import { tempPath } from "@aphrody/paths";
 /**
  * Bridge A2A Unix socket — variante low-latency du endpoint HTTP /api/a2a/*
  * pour les agents tournant sur le même host. Sert exactement le même payload
@@ -26,12 +27,12 @@ import {
 } from "node:fs";
 import { dirname } from "node:path";
 
-export const SOCKET = Bun.env.A2A_SOCKET ?? "/tmp/dbfr-a2a.sock";
+export const SOCKET = Bun.env.A2A_SOCKET ?? tempPath("dbfr-a2a.sock");
 export const COORD_DIR =
 	Bun.env.COORD_DIR ?? `${process.cwd().replace(/\/apps\/bot\/?$/, "")}/.coord`;
 export const MESSAGES = `${COORD_DIR}/messages.jsonl`;
 export const TASKS = `${COORD_DIR}/tasks.json`;
-export const LOCK = "/tmp/dbfr-tasks.lock";
+export const LOCK = tempPath("dbfr-tasks.lock");
 
 /**
  * Assure que le répertoire de coordination existe sur disque.

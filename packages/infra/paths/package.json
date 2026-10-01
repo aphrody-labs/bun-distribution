@@ -1,0 +1,23 @@
+{
+  "name": "@aphrody/paths",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Cross-platform path resolution for Aphrody workspaces and runtime data",
+  "license": "Apache-2.0",
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "paths:audit": "bun src/cli.ts",
+    "paths:fix": "bun src/cli.ts --apply",
+    "typecheck": "bunx --bun tsc --noEmit --target esnext --module preserve --moduleResolution bundler --allowImportingTsExtensions --types bun src/index.ts src/cli.ts"
+  },
+  "dependencies": {
+    "ts-morph": "catalog:"
+  },
+  "engines": {
+    "bun": ">=1.4.2"
+  }
+}

@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import { iecodeDataPath } from "@aphrody/paths";
 import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { WebCdpPage } from "../../lib/web-cdp";
@@ -553,7 +554,7 @@ Pages rendues via Aphrody Web CDP. La détection multi-signal DNS/Wappalyzer n�
  * (renvoie {success} comme les autres crawlers, n'émet pas d'exception).
  */
 export async function crawlWebReconTask(
-  outDir = "/home/ubuntu/nie/data/inazuma.jp/victory-road/_recon/fr",
+  outDir = iecodeDataPath('inazuma.jp/victory-road/_recon/fr'),
 ): Promise<{ success: boolean; pages?: number; endpoints?: number; error?: string }> {
   try {
     const res = await crawlWebRecon({ outDir });

@@ -22,6 +22,7 @@
     "typecheck": "bun --bun tsc -p tsconfig.typecheck.json --noEmit"
   },
   "dependencies": {
+    "@aphrody/paths": "workspace:*",
     "@aphrody/agent-browser": "workspace:*",
     "@aphrody/x": "workspace:*",
     "@asteasolutions/zod-to-openapi": "catalog:",

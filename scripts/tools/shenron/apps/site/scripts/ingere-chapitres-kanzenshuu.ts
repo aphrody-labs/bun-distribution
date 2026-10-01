@@ -1,4 +1,5 @@
 #!/usr/bin/env bun
+import { tempPath } from "@aphrody/paths";
 /**
  * Titre japonais et date de première parution des CHAPITRES du manga.
  *
@@ -63,7 +64,7 @@ const flag = (nom: string) => args.includes(`--${nom}`);
 const APPLIQUER = flag("appliquer");
 const RECRIRE = flag("recrire");
 const SERIE = opt("serie");
-const CACHE = opt("cache", "/tmp/kanzenshuu-cache")!;
+const CACHE = opt("cache", tempPath("kanzenshuu-cache"))!;
 const AGENT = `${new URL(SITE_URL).host}-bibliographie/1.0 (metadonnees d'edition; +${SITE_URL})`;
 
 /** Les deux relevés : la page source, et la série de NOTRE base qu'elle alimente. */

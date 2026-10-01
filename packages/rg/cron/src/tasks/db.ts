@@ -1,3 +1,4 @@
+import { checkoutRoot } from "@aphrody/paths";
 import { $ } from "bun";
 
 /**
@@ -29,7 +30,7 @@ const BUN = process.execPath;
  * `NIERS_ROOT` permet de le déplacer sans toucher au code ; le repli est le chemin de
  * la machine, seul endroit où il reste écrit.
  */
-const RACINE_JEU = process.env.NIERS_ROOT ?? "/home/ubuntu/nie";
+const RACINE_JEU = process.env.NIERS_ROOT ?? checkoutRoot("iecode");
 
 /**
  * Exécute la commande de push d'Inagle pour synchroniser la base de données

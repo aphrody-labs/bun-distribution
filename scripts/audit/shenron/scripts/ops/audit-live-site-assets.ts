@@ -9,12 +9,13 @@
  *   SITE_AUDIT_MAX_PAGES=500 SITE_AUDIT_MAX_ASSETS=2000 bun scripts/ops/audit-live-site-assets.ts
  */
 
+import { tempPath } from "@aphrody/paths";
 const siteOrigin = (process.env.SITE_URL ?? "https://dragonballfr.com").replace(/\/+$/, "");
 const concurrency = Math.max(1, Number(process.env.SITE_AUDIT_CONCURRENCY ?? 24) || 24);
 const timeoutMs = Math.max(2_000, Number(process.env.SITE_AUDIT_TIMEOUT_MS ?? 20_000) || 20_000);
 const maxPages = Math.max(0, Number(process.env.SITE_AUDIT_MAX_PAGES ?? 0) || 0);
 const maxAssets = Math.max(0, Number(process.env.SITE_AUDIT_MAX_ASSETS ?? 0) || 0);
-const output = process.env.SITE_AUDIT_OUTPUT ?? "/tmp/shenron-live-site-assets.json";
+const output = process.env.SITE_AUDIT_OUTPUT ?? tempPath("shenron-live-site-assets.json");
 const agent = "shenron-live-site-asset-audit/1.0";
 
 type Failure = { url: string; status: number; phase: "page" | "asset"; error?: string };

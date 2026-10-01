@@ -1,3 +1,4 @@
+import { tempPath } from "@aphrody/paths";
 import "./setup";
 import "reflect-metadata";
 import { describe, expect, test } from "bun:test";
@@ -18,7 +19,7 @@ const fakeUser = (id: string, name: string) =>
 		displayAvatarURL: () => `https://cdn.discordapp.com/embed/avatars/${Number(id) % 5}.png`,
 	}) as any;
 
-const OUT = "/tmp/shenron-canvas";
+const OUT = tempPath("shenron-canvas");
 import { mkdirSync } from "node:fs";
 mkdirSync(OUT, { recursive: true });
 

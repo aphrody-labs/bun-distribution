@@ -4,12 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import { iecodeDataPath } from "@aphrody/paths";
 import { getDiscordClient, GUILD_ID } from "../../lib/discord.js";
 import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { existsSync } from "node:fs";
 
-const DATA_ROOT = "/home/ubuntu/nie/data/discord";
+const DATA_ROOT = iecodeDataPath('discord');
 
 interface DiscordMessage {
 	id: string;

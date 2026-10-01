@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
+import { tempPath } from "@aphrody/paths";
 import { beforeEach, describe, expect, test } from "bun:test";
 import {
 	DATA_PATH_ENV,
@@ -23,7 +24,7 @@ describe("DATA_PATH_ENV", () => {
 
 describe("resolveDataPath", () => {
 	test("first set alias wins", () => {
-		const env = { RAG_GOLD_PATH: "/srv/shared/rag-gold.jsonl", RAG_GOLD: "/tmp/other.jsonl" };
+		const env = { RAG_GOLD_PATH: "/srv/shared/rag-gold.jsonl", RAG_GOLD: tempPath("other.jsonl") };
 		expect(resolveDataPath("ragGold", { env, legacyDefault: "tests/rag-gold.jsonl" })).toEqual({
 			key: "ragGold",
 			path: "/srv/shared/rag-gold.jsonl",

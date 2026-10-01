@@ -49,6 +49,7 @@
 // Défauts : slug `iergday`, mode de poids `par_oeuvre`, sortie
 // `apps/website/src/data/campagnes/<slug>-roster.json` (`--complet` → `<slug>-roster-complet.json`).
 // `--verifier` n'écrit rien : il recalcule tout et compare au fichier déjà sur disque.
+import { checkoutRoot } from "@aphrody/paths";
 import { createBunSql } from "@rosegriffon/db/bun-sql";
 
 import { SQL_CREATIONS } from "../../apps/website/src/lib/x-campagnes/sql-creations";
@@ -65,7 +66,7 @@ import {
 
 // ───────────────────────── Réglages ─────────────────────────
 
-const RACINE_REPO = Bun.env.RG_REPO_ROOT ?? "/home/ubuntu/rg";
+const RACINE_REPO = Bun.env.RG_REPO_ROOT ?? checkoutRoot("rg");
 const DOSSIER_SORTIE = `${RACINE_REPO}/apps/website/src/data/campagnes`;
 
 /**

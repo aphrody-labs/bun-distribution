@@ -1,4 +1,5 @@
 #!/usr/bin/env bun
+import { tempPath } from "@aphrody/paths";
 /**
  * rag-status.ts — Script de diagnostic et statut du RAG et de la base Dragon Ball.
  *
@@ -24,7 +25,7 @@ import { requireAphrodyApiUrl, requireEmbedBaseUrl } from "./lib/script-env";
 
 const ROOT = fileURLToPath(new URL("../../../../", import.meta.url));
 const DB_PROD = process.env.RAG_DB ?? join(ROOT, "apps/shenron/bot/data/bot.db");
-const DB_TMP = "/tmp/rag.db";
+const DB_TMP = tempPath("rag.db");
 
 function formatBytes(bytes: number): string {
 	if (bytes === 0) return "0 B";

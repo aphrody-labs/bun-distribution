@@ -20,6 +20,7 @@
     "typecheck": "bun --bun tsc --noEmit"
   },
   "dependencies": {
+    "@aphrody/paths": "workspace:*",
     "@better-auth/passkey": "1.6.28",
     "@colyseus/sdk": "^0.17.42",
     "@dnd-kit/core": "catalog:",

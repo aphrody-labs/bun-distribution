@@ -4,13 +4,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import { iecodeDataPath } from "@aphrody/paths";
 import { WebCdpPage, waitForSelector } from "../../lib/web-cdp";
 import * as cheerio from "cheerio";
 import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { existsSync } from "node:fs";
 
-const DATA_ROOT = "/home/ubuntu/nie/data/inazuma.jp/victory-road";
+const DATA_ROOT = iecodeDataPath('inazuma.jp/victory-road');
 
 async function safeGoto(page: WebCdpPage, url: string, timeout = 30000): Promise<unknown> {
 	return Promise.race([

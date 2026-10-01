@@ -38,6 +38,7 @@
  * On subsequent runs: compares and logs any price changes.
  */
 
+import { tempPath } from "@aphrody/paths";
 import type { Page } from "../../../src/api/browser.ts";
 import { Browser } from "../../../src/api/browser.ts";
 import type { DetectedTech } from "../../../src/detect.ts";
@@ -104,7 +105,7 @@ interface ElementHandle {
 // Baseline persistence (Bun-native: Bun.file, Bun.write)
 // ---------------------------------------------------------------------------
 
-const BASELINE_PATH = "/tmp/prices-baseline.json";
+const BASELINE_PATH = tempPath("prices-baseline.json");
 
 async function loadBaseline(): Promise<PriceBaseline> {
 	const f = Bun.file(BASELINE_PATH);

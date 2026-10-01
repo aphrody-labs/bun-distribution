@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import { iecodeDataPath } from "@aphrody/paths";
 import {
 	getDiscordClient,
 	hasVerifiedDiscordRoster,
@@ -315,7 +316,7 @@ export async function runDiscordChannelScan(): Promise<{
 		};
 
 		// Écriture du rapport sur le disque en utilisant Bun.write (API native rapide)
-		const reportPath = "/home/ubuntu/nie/data/discord-channels-scan.json";
+		const reportPath = iecodeDataPath('discord-channels-scan.json');
 		const reportContent = JSON.stringify({ stats, channels: results }, null, 2);
 
 		await Bun.write(reportPath, reportContent);

@@ -23,6 +23,7 @@
 // Le script est idempotent : un visuel déjà présent dans `storage.objects` ET
 // servi par le service Storage n'est ni re-téléchargé ni ré-encodé (`--force`
 // pour l'y contraindre).
+import { checkoutRoot } from "@aphrody/paths";
 import { createBunSql } from "@rosegriffon/db/bun-sql";
 
 // ───────────────────────── Table de description ─────────────────────────
@@ -221,7 +222,7 @@ const LARGEUR_RENDU = 1600;
 const QUALITE_RENDU = 82;
 const QUALITE_ORIGINAL = 90;
 
-const RACINE_REPO = Bun.env.RG_REPO_ROOT ?? "/home/ubuntu/rg";
+const RACINE_REPO = Bun.env.RG_REPO_ROOT ?? checkoutRoot("rg");
 /** Service Storage self-host (`apps/storage/server.ts`). */
 const STORAGE_INTERNE = Bun.env.RG_STORAGE_INTERNAL_URL ?? "http://127.0.0.1:8810";
 /**

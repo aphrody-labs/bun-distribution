@@ -1,9 +1,10 @@
+import { homePath } from "@aphrody/paths";
 import { appendFile, readFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import { join, basename } from "node:path";
 import { recogniseRemotePage, toOcrResultV2 } from "@shenron/pipeline/aphrody/remote-ocr";
 
-const LOTS_DIR = process.env.SHENRON_OCR_LOTS_DIR ?? "/home/ubuntu/ocr-lots";
+const LOTS_DIR = process.env.SHENRON_OCR_LOTS_DIR ?? homePath("ocr-lots");
 const lots = ["lot-001", "lot-003"];
 
 for (const lot of lots) {

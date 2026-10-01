@@ -4,11 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import { iecodeDataPath } from "@aphrody/paths";
 import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { existsSync } from "node:fs";
 
-const DATA_ROOT = "/home/ubuntu/nie/data/reddit";
+const DATA_ROOT = iecodeDataPath('reddit');
 
 interface RedditPost {
 	id: string;

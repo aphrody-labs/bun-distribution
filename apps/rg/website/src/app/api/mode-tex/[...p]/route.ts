@@ -8,6 +8,7 @@
  * Aucune conversion à la volée ici : le décodage BC1/BC3/BC7 coûte trop cher pour être fait à
  * chaque requête, et la sortie est immuable — elle ne change que si le jeu est mis à jour.
  */
+import { iecodeDataPath } from "@aphrody/paths";
 import fs from "node:fs/promises";
 import path from "node:path";
 
@@ -15,7 +16,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const RACINE = path.resolve(
-	path.join(process.env.DATA_PATH ?? "/home/ubuntu/nie/data", "mode-tex"),
+	path.join(process.env.DATA_PATH ?? iecodeDataPath(), "mode-tex"),
 );
 
 export async function GET(

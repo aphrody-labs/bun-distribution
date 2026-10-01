@@ -29,10 +29,11 @@
  * du port servi est vérifiable, elle, par la sonde HTTP des services `wiki` et
  * `site` — c'est elle qui est affichée.
  */
+import { homePath } from "@aphrody/paths";
 import { analyserRelease, type VersionDeployee } from "./format";
 
 /** Racine des versions figées. Surchargeable pour un poste de développement. */
-export const RACINE_VERSIONS = (Bun.env.RG_RELEASES_ROOT ?? "/home/ubuntu/rg-releases").replace(
+export const RACINE_VERSIONS = (Bun.env.RG_RELEASES_ROOT ?? homePath("rg-releases")).replace(
 	/\/+$/,
 	""
 );

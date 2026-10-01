@@ -1,4 +1,5 @@
 #!/usr/bin/env bun
+import { tempPath } from "@aphrody/paths";
 /**
  * Crawls public, text-based documentary sources and indexes the resulting RAG corpus.
  * Usage: bun scripts/bxc-crawl-massive.ts
@@ -12,7 +13,7 @@ import { embedHealthUrl } from "@shenron/pipeline/ai/config";
 const ROOT = join(import.meta.dirname, "..");
 const DOC_LINKS_PATH = join(ROOT, "data/doc-links.json");
 const RAG_RAW_DIR = join(ROOT, "apps/bot/data/rag/raw/google-doc");
-const SHARD_PATH = "/tmp/shard-google-doc.json";
+const SHARD_PATH = tempPath("shard-google-doc.json");
 const DB_PROD = join(ROOT, "apps/bot/data/bot.db");
 const candidateRoots = [
 	process.env.BXC_DIR,
@@ -201,30 +202,30 @@ async function main() {
 	// Build on a database copy, then swap only after successful completion.
 	if (existsSync(DB_PROD)) {
 		console.log("[RAG] Creating a consistent production database copy...");
-		if (existsSync("/tmp/rag.db")) {
+		if (existsSync(tempPath("rag.db"))) {
 			try {
 				const { unlinkSync } = await import("node:fs");
-				unlinkSync("/tmp/rag.db");
+				unlinkSync(tempPath("rag.db"));
 			} catch {}
 		}
 		const { Database } = await import("bun:sqlite");
 		const db = new Database(DB_PROD);
-		db.run("VACUUM INTO '/tmp/rag.db'");
+		db.run(`VACUUM INTO '${tempPath("rag.db").replaceAll("'", "''")}'`);
 		db.close();
 	}
-	process.env.RAG_DB = "/tmp/rag.db";
+	process.env.RAG_DB = tempPath("rag.db");
 	const withVectors = await embeddingsAvailable();
 	if (!withVectors) console.warn("[RAG] Embedding service unavailable; building the lexical FTS index only.");
 	await runCmd(["bun", "apps/bot/scripts/rag-build.ts", ...(withVectors ? [] : ["--no-vectors"])]);
 
 	// Replace the RAG database only after the index build succeeds.
-	if (existsSync("/tmp/rag.db")) {
+	if (existsSync(tempPath("rag.db"))) {
 		console.log(`[RAG] Replacing ${DB_PROD} with the rebuilt database...`);
 		const dbBackup = `${DB_PROD}.bak`;
 		if (existsSync(DB_PROD)) {
 			copyFileSync(DB_PROD, dbBackup);
 		}
-		copyFileSync("/tmp/rag.db", DB_PROD);
+		copyFileSync(tempPath("rag.db"), DB_PROD);
 		console.log("RAG database updated.");
 	}
 

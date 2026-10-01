@@ -1,3 +1,4 @@
+import { tempPath } from "@aphrody/paths";
 import { expect, test } from "bun:test";
 import {
   classify,
@@ -182,7 +183,7 @@ test("report summary, rendering and exit codes", () => {
 });
 
 test("argument parsing", () => {
-  expect(parseArgs(["--check", "--json", "--root", "/tmp/x"]).root).toBe("/tmp/x");
+  expect(parseArgs(["--check", "--json", "--root", tempPath("x")]).root).toBe(tempPath("x"));
   expect(parseArgs(["--apply"], "/repo").apply).toBe(true);
   expect(() => parseArgs(["--apply", "--offline"])).toThrow();
   expect(() => parseArgs(["--apply", "--check"])).toThrow();

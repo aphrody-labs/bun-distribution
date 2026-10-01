@@ -1,4 +1,5 @@
 #!/usr/bin/env bun
+import { userHome } from "@aphrody/paths";
 /**
  * orchestre-donnees.ts — la chaîne complète qui mène les données du dépôt
  * jusqu'à ce que l'API sert réellement.
@@ -61,7 +62,7 @@ async function urlPostgres(): Promise<string> {
 	if (direct) return direct;
 	for (const chemin of [
 		join(DEPOT, "apps/site/.env"),
-		join(process.env.HOME ?? "/home/ubuntu", ".shenron-neon.env"),
+		join(userHome(), ".shenron-neon.env"),
 	]) {
 		const texte = await Bun.file(chemin)
 			.text()

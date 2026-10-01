@@ -3,18 +3,19 @@
 /* eslint-disable no-await-in-loop -- Resumable chunks and state transitions must execute sequentially. */
 // Infrastructure orchestration for the canonical @aphrody/google Drive sync.
 import { watch } from "node:fs";
+import { statePath, workspacePath } from "@aphrody/paths";
 import { infraRoot } from "./runtime.ts";
 
 const ROOT = process.env.APHRODY_ROOT ?? infraRoot();
 const ENV = `${ROOT}/.env`;
 const GOOGLE_CLI = `${ROOT}/packages/ai/google/bin/aphrody-google.ts`;
-const WORKSPACE = "/home/aphro/.aphrody/workspaces/dbfr";
+const WORKSPACE = statePath("workspaces", "dbfr");
 const MEMORY_DB = process.env.APHRODY_AGENT_HOME_MEMORY_DB ?? `${WORKSPACE}/db/agent.db`;
 const MEMORY_BIN =
   process.env.APHRODY_AGENT_HOME_MEMORY_BIN ?? Bun.which("aphrody-agent-home-memory") ?? "";
 const TRAIN_BIN = process.env.APHRODY_AGENT_TRAIN_BIN ?? Bun.which("aphrody-agent-train") ?? "";
-const TRAIN_CONFIG = "/home/aphro/.aphrody/private/agent-training.json";
-const TRAIN_STATE = "/home/aphro/.aphrody/train/dbfr/pipeline-state.json";
+const TRAIN_CONFIG = statePath("private", "agent-training.json");
+const TRAIN_STATE = statePath("train", "dbfr", "pipeline-state.json");
 const DEFAULT_DOCS = new Set<string>(
   (await Bun.file(`${ROOT}/crates/ai/agent-home/sync-contract.json`).json()) as string[],
 );
@@ -72,7 +73,7 @@ async function sync(): Promise<void> {
         cwd: ROOT,
         env: {
           ...process.env,
-          APHRODY_ROOT: "/home/aphro",
+          APHRODY_ROOT: workspacePath(),
           APHRODY_AGENT_HOME: WORKSPACE,
           APHRODY_AGENT_TRAIN_CONFIG: TRAIN_CONFIG,
           APHRODY_AGENT_TRAIN_STATE: TRAIN_STATE,

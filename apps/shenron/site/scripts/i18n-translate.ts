@@ -23,6 +23,7 @@
  * knows exactly what no human has read yet. That file is internal: nothing
  * about it reaches a public page.
  */
+import { userHome } from "@aphrody/paths";
 import path from "node:path";
 import { protect, restore, type GlossaryTerm } from "@/lib/i18n/glossary";
 import type { SupportedLocale } from "@/lib/i18n/types";
@@ -59,7 +60,7 @@ function valeur(nom: string): string | undefined {
  * browser-engine commands (documented in the project memory). `BXC_CLI`
  * overrides it when the checkout moves.
  */
-const BXC = process.env.BXC_CLI ?? path.join(process.env.HOME ?? "/home/ubuntu", "bxc/src/cli/index.ts");
+const BXC = process.env.BXC_CLI ?? path.join(userHome(), "bxc/src/cli/index.ts");
 
 type Arbre = { [k: string]: string | Arbre };
 

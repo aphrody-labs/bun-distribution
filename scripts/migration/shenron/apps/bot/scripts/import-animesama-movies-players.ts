@@ -1,4 +1,5 @@
 #!/usr/bin/env bun
+import { homePath, userHome } from "@aphrody/paths";
 /**
  * import-animesama-movies-players.ts — Lecteurs anime-sama pour les films qui
  * n'en ont aucun dans une langue.
@@ -31,8 +32,8 @@ import postgres from "postgres";
 const BXC_BIN =
 	process.env.BXC_BIN ||
 	Bun.which("bxc") ||
-	(await Bun.file("/home/ubuntu/.local/bin/bxc").exists() ? "/home/ubuntu/.local/bin/bxc" : null);
-const BXC_CLI = process.env.BXC_CLI ?? join(process.env.HOME ?? "/home/ubuntu", "bxc/src/cli/index.ts");
+	(await Bun.file(homePath(".local", "bin", "bxc")).exists() ? homePath(".local", "bin", "bxc") : null);
+const BXC_CLI = process.env.BXC_CLI ?? join(userHome(), "bxc/src/cli/index.ts");
 const SLUGS = ["dragon-ball", "dragon-ball-z", "dragon-ball-gt", "dragon-ball-super"];
 const LANGUES = ["vf", "vostfr"] as const;
 const APPLIQUER = process.argv.includes("--appliquer");

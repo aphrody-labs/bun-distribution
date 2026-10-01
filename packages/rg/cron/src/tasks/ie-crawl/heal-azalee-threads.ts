@@ -1,3 +1,4 @@
+import { tempPath } from "@aphrody/paths";
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { XClient, XSession } from "@aphrody/x";
 import { createPostgresClient } from "@rosegriffon/db/service";
@@ -12,7 +13,7 @@ import { syncThread } from "./sync-specific-thread";
 //    sont PAS re-sondés au relancement → resume sans gaspiller d'API.
 //  - sur N erreurs consécutives (429), on attend 16 min puis on reprend, au
 //    lieu d'abandonner. Plafonné pour ne pas tourner indéfiniment.
-const CHECKPOINT = "/tmp/heal_azalee_verified.json";
+const CHECKPOINT = tempPath("heal_azalee_verified.json");
 
 function loadVerified(): Set<string> {
 	try {

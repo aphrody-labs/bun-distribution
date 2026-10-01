@@ -1,4 +1,5 @@
 #!/usr/bin/env bun
+import { userHome } from "@aphrody/paths";
 /**
  * jimaku-subtitles.ts — Sous-titres JAPONAIS depuis jimaku.cc vers la base :
  * épisodes (`bot.db_episodes.subtitles`) et films (`bot.db_movies.subtitles`),
@@ -160,7 +161,7 @@ const FORCER_ALIGNEMENT = flag("forcer-alignement");
 const APPLIQUER = flag("appliquer");
 const CORRESP_WIKI = flag("wikipedia");
 const RECALER = flag("recaler");
-const BXC_CLI = process.env.BXC_CLI ?? join(process.env.HOME ?? "/home/ubuntu", "bxc/src/cli/index.ts");
+const BXC_CLI = process.env.BXC_CLI ?? join(userHome(), "bxc/src/cli/index.ts");
 const BOT_LOCAL = process.env.SHENRON_BOT_URL ?? "http://127.0.0.1:5006";
 
 const MAX_OCTETS = 2 * 1024 * 1024; // même plafond que /api/assets/upload-subtitle

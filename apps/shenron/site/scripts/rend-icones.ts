@@ -16,6 +16,7 @@
  *   bun apps/shenron/site/scripts/rend-icones.ts --dry-run     (rend tout en mémoire, n'écrit rien)
  */
 
+import { tempPath } from "@aphrody/paths";
 import { mkdirSync } from "node:fs";
 import { join } from "node:path";
 import sharp from "sharp";
@@ -36,7 +37,7 @@ const ZOOM = 6;
 async function main() {
 	const args = process.argv.slice(2);
 	const essai = args.includes("--dry-run");
-	const sortie = args.find((a) => !a.startsWith("--")) ?? "/tmp/icones";
+	const sortie = args.find((a) => !a.startsWith("--")) ?? tempPath("icones");
 	if (!essai) mkdirSync(sortie, { recursive: true });
 
 	for (const taille of TAILLES) {

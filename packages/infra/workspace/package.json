@@ -76,6 +76,7 @@
     "test": "bun test test"
   },
   "dependencies": {
+    "@aphrody/paths": "workspace:*",
     "@typescript/typescript6": "^6.0.2"
   },
   "engines": {

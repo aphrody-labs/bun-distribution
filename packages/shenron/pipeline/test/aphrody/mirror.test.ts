@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
+import { tempPath } from "@aphrody/paths";
 import { afterAll, describe, expect, it } from "bun:test";
 import { chmodSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -35,7 +36,7 @@ console.log(${JSON.stringify(JSON.stringify(partialReport))});`,
     const report = await aphrodyWebMirror(
       {
         url: "https://wiki.example/",
-        outputDir: "/tmp/mirror",
+        outputDir: tempPath("mirror"),
         maxPages: 7,
         resolveCdns: true,
       },
@@ -55,7 +56,7 @@ console.log(${JSON.stringify(JSON.stringify({ ...partialReport, failures: [] }))
       aphrodyWebMirror(
         {
           url: "https://wiki.example/",
-          outputDir: "/tmp/mirror",
+          outputDir: tempPath("mirror"),
           resolveCdns: ["static.example", "cdn.example"],
         },
         { bin },
@@ -66,7 +67,7 @@ console.log(${JSON.stringify(JSON.stringify({ ...partialReport, failures: [] }))
   it("propagates CLI failures and rejects malformed reports", async () => {
     const failed = fixture("mirror-failed", 'console.error("transport failed");process.exit(6);');
     await expect(
-      aphrodyWebMirror({ url: "https://wiki.example/", outputDir: "/tmp/mirror" }, { bin: failed }),
+      aphrodyWebMirror({ url: "https://wiki.example/", outputDir: tempPath("mirror") }, { bin: failed }),
     ).rejects.toThrow("exited 6");
 
     const invalid = fixture(
@@ -75,7 +76,7 @@ console.log(${JSON.stringify(JSON.stringify({ ...partialReport, failures: [] }))
     );
     await expect(
       aphrodyWebMirror(
-        { url: "https://wiki.example/", outputDir: "/tmp/mirror" },
+        { url: "https://wiki.example/", outputDir: tempPath("mirror") },
         { bin: invalid },
       ),
     ).rejects.toThrow("invalid report");
@@ -86,7 +87,7 @@ console.log(${JSON.stringify(JSON.stringify({ ...partialReport, failures: [] }))
     );
     await expect(
       aphrodyWebMirror(
-        { url: "https://wiki.example/", outputDir: "/tmp/mirror" },
+        { url: "https://wiki.example/", outputDir: tempPath("mirror") },
         { bin: invalidFailure },
       ),
     ).rejects.toThrow("invalid report");

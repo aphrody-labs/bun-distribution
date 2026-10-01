@@ -1,4 +1,5 @@
 #!/usr/bin/env bun
+import { tempPath } from "@aphrody/paths";
 /**
  * Écrit les motifs de couverture depuis la géométrie de `src/lib/couverture.ts` :
  *   public/dbz/marque/banc-nuage.svg   tuile de volutes, répétable en x
@@ -72,6 +73,6 @@ if (Bun.argv.includes("--rendu")) {
 	await sharp(Buffer.from(tuile))
 		.resize({ width: 960 })
 		.png()
-		.toFile("/tmp/couverture-banc-nuage.png");
-	console.log("/tmp/couverture-banc-nuage.png");
+		.toFile(tempPath("couverture-banc-nuage.png"));
+	console.log(tempPath("couverture-banc-nuage.png"));
 }

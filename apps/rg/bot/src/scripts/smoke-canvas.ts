@@ -12,6 +12,7 @@
  * écrits dans le dépôt.
  */
 
+import { tempPath } from "@aphrody/paths";
 import { resolve } from "node:path";
 
 import type * as ServicesSite from "../services/website";
@@ -24,7 +25,7 @@ import {
 	renderTeamGrid,
 } from "../lib/canvas/cards";
 
-const SORTIE = resolve(Bun.env.CANVAS_SMOKE_DIR ?? "/tmp/rg-canvas");
+const SORTIE = resolve(Bun.env.CANVAS_SMOKE_DIR ?? tempPath("rg-canvas"));
 
 async function ecrire(nom: string, png: Buffer): Promise<void> {
 	const chemin = `${SORTIE}/${nom}.png`;

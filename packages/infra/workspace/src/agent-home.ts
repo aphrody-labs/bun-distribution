@@ -23,9 +23,9 @@
 // unknown.
 //
 // Usage:
-//   aphrody-ops agent-home --source /home/aphro            # write the context
-//   aphrody-ops agent-home --source /home/aphro --dry-run  # print it, touch nothing
-//   aphrody-ops agent-home --source /home/aphro --profile shenron   # workspace-shenron
+//   aphrody-ops agent-home --source <aphrody-root>            # write the context
+//   aphrody-ops agent-home --source <aphrody-root> --dry-run  # print it, touch nothing
+//   aphrody-ops agent-home --source <aphrody-root> --profile shenron   # workspace-shenron
 
 import { spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";

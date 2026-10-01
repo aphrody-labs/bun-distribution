@@ -32,7 +32,6 @@ export const KNOWN_PROFILES: Record<string, ProfileDefinition> = {
     region: "ovh-eu",
     domains: ["aphrody.com"],
     candidatePaths: [
-      "/home/ubuntu/.bash_secrets",
       join(homedir(), ".bash_secrets"),
       join(homedir(), ".config", "ovh", "aphrody.conf"),
     ],
@@ -43,7 +42,6 @@ export const KNOWN_PROFILES: Record<string, ProfileDefinition> = {
     region: "ovh-eu",
     domains: ["rosegriffon.fr"],
     candidatePaths: [
-      "/home/ubuntu/.ovh.conf",
       join(homedir(), ".ovh.conf"),
       join(homedir(), ".config", "ovh", "rosegriffon.conf"),
     ],
@@ -54,7 +52,6 @@ export const KNOWN_PROFILES: Record<string, ProfileDefinition> = {
     region: "ovh-eu",
     domains: ["dragonballfr.com"],
     candidatePaths: [
-      "/home/ubuntu/.config/ovh/dbfr.conf",
       join(homedir(), ".config", "ovh", "dbfr.conf"),
       "/etc/letsencrypt/ovh-dbfr.ini",
     ],
@@ -72,11 +69,18 @@ export interface ResolvedCredentials {
 /**
  * Parses credentials from a bash export file, an INI file, or an env-like file.
  */
-export function parseCredentialsText(content: string, _sourceLabel: string): OvhClientOptions | null {
+export function parseCredentialsText(
+  content: string,
+  _sourceLabel: string,
+): OvhClientOptions | null {
   // 1. Try bash export pattern: export OVH_APPLICATION_KEY="..."
   const bashMatch = {
-    ak: content.match(/^\s*(?:export\s+)?(?:OVH_)?APPLICATION_KEY\s*=\s*["']?([^"'\s#]+)["']?/m)?.[1],
-    as: content.match(/^\s*(?:export\s+)?(?:OVH_)?APPLICATION_SECRET\s*=\s*["']?([^"'\s#]+)["']?/m)?.[1],
+    ak: content.match(
+      /^\s*(?:export\s+)?(?:OVH_)?APPLICATION_KEY\s*=\s*["']?([^"'\s#]+)["']?/m,
+    )?.[1],
+    as: content.match(
+      /^\s*(?:export\s+)?(?:OVH_)?APPLICATION_SECRET\s*=\s*["']?([^"'\s#]+)["']?/m,
+    )?.[1],
     ck: content.match(/^\s*(?:export\s+)?(?:OVH_)?CONSUMER_KEY\s*=\s*["']?([^"'\s#]+)["']?/m)?.[1],
     ep: content.match(/^\s*(?:export\s+)?(?:OVH_)?ENDPOINT\s*=\s*["']?([^"'\s#]+)["']?/m)?.[1],
   };
@@ -93,7 +97,10 @@ export function parseCredentialsText(content: string, _sourceLabel: string): Ovh
   // 2. Try INI / config format (e.g. [ovh-eu] section or dns_ovh_* keys)
   const iniGet = (key: string): string | undefined => {
     const rx = new RegExp(`^\\s*(?:dns_ovh_)?${key}\\s*=\\s*(.+)\\s*$`, "m");
-    return content.match(rx)?.[1]?.trim().replace(/^["']|["']$/g, "");
+    return content
+      .match(rx)?.[1]
+      ?.trim()
+      .replace(/^["']|["']$/g, "");
   };
 
   const ak = iniGet("application_key") || iniGet("app_key");
@@ -164,8 +171,10 @@ export function loadCredentials(profileOrDomain?: string): ResolvedCredentials {
   if (!matchedProfile) {
     // Check fallback aliases
     if (target === "aphrody" || target === "vps") matchedProfile = KNOWN_PROFILES["aphrody.com"];
-    else if (target === "rosegriffon" || target === "rg") matchedProfile = KNOWN_PROFILES["rosegriffon.fr"];
-    else if (target === "dbfr" || target === "dragonball") matchedProfile = KNOWN_PROFILES["dragonballfr.com"];
+    else if (target === "rosegriffon" || target === "rg")
+      matchedProfile = KNOWN_PROFILES["rosegriffon.fr"];
+    else if (target === "dbfr" || target === "dragonball")
+      matchedProfile = KNOWN_PROFILES["dragonballfr.com"];
   }
 
   if (matchedProfile) {

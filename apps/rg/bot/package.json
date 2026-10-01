@@ -21,6 +21,7 @@
     "typecheck": "bun --bun tsc --noEmit"
   },
   "dependencies": {
+    "@aphrody/paths": "workspace:*",
     "@aphrody/canvas": "workspace:*",
     "@aphrody/discord-kit": "workspace:*",
     "@elysia/eden": "^1.4.10",

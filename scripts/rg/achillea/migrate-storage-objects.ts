@@ -1,4 +1,5 @@
 #!/usr/bin/env bun
+import { statePath } from "@aphrody/paths";
 import { createHash } from "node:crypto";
 import {
 	appendFile,
@@ -17,7 +18,7 @@ const repositoryRoot = path.resolve(import.meta.dir, "../..");
 const DEFAULT_SOURCE_PROJECT_REF = "yftdclwvehxxffwqvhmc";
 const EXPECTED_TARGET_ORIGIN = "http://127.0.0.1:8823";
 const EXPECTED_TARGET_ROOT = "/var/www/achillea-storage";
-const DEFAULT_STATE_DIRECTORY = "/home/ubuntu/achillea-storage-migration";
+const DEFAULT_STATE_DIRECTORY = statePath("achillea-storage-migration");
 const PAGE_SIZE = 1_000;
 const MAGIC_PREFIX_BYTES = 512;
 const CONFIRMATION = "ACHILLEA_STORAGE_MIGRATION";

@@ -4,13 +4,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import { iecodeDataPath } from "@aphrody/paths";
 import { WebCdpPage, waitForSelector } from "../../lib/web-cdp";
 import * as cheerio from "cheerio";
 import { existsSync } from "node:fs";
 import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
-const DATA_ROOT = "/home/ubuntu/nie/data/level5.co.jp/inazuma";
+const DATA_ROOT = iecodeDataPath('level5.co.jp/inazuma');
 
 interface NewsItem {
 	id: string;

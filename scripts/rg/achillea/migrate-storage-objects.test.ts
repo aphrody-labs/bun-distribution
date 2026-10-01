@@ -1,3 +1,4 @@
+import { tempPath } from "@aphrody/paths";
 import { afterEach, describe, expect, test } from "bun:test";
 import { chmod, mkdtemp, readFile, rm, stat } from "node:fs/promises";
 import path from "node:path";
@@ -33,7 +34,7 @@ function environment(overrides: Record<string, string> = {}) {
 }
 
 async function temporaryConfig(): Promise<StorageMigrationConfig> {
-	const directory = await mkdtemp("/tmp/achillea-storage-migration-test-");
+	const directory = await mkdtemp(tempPath("achillea-storage-migration-test-"));
 	temporaryDirectories.push(directory);
 	return resolveStorageMigrationConfig(
 		environment({ ACHILLEA_STORAGE_MIGRATION_DIR: path.join(directory, "state") })

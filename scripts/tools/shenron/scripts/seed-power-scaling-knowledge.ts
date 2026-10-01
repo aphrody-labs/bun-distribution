@@ -1,10 +1,9 @@
+import { statePath } from "@aphrody/paths";
 import { Database } from "bun:sqlite";
 
 const dbPath =
 	process.env.KNOWLEDGE_DB_PATH ||
-	(process.platform === "win32"
-		? "C:/Users/aphro/.aphrody/workspace/knowledge.db"
-		: "/home/ubuntu/.aphrody/workspace/knowledge.db");
+	statePath("workspace", "knowledge.db");
 const db = new Database(dbPath);
 
 const docs = [

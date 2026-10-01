@@ -1,4 +1,5 @@
 #!/usr/bin/env bun
+import { userHome } from "@aphrody/paths";
 /**
  * images-attribution.ts — d'où vient vraiment l'image d'une fiche d'épisode ?
  *
@@ -44,7 +45,7 @@ import { join } from "node:path";
 const ROOT = new URL("..", import.meta.url).pathname; // apps/shenron/bot/
 const ETAT = join(ROOT, "data", "attribution-images.json");
 const RAPPORT = join(ROOT, "..", "..", "docs", "attribution-images.md");
-const BXC = process.env.BXC_CLI ?? join(process.env.HOME ?? "/home/ubuntu", "bxc/src/cli/index.ts");
+const BXC = process.env.BXC_CLI ?? join(userHome(), "bxc/src/cli/index.ts");
 
 const args = process.argv.slice(2);
 const flag = (n: string) => args.includes(`--${n}`);

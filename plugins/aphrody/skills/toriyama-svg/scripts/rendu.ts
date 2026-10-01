@@ -1,4 +1,5 @@
 #!/usr/bin/env bun
+import { tempPath } from "@aphrody/paths";
 /**
  * Rastérise un SVG à plusieurs tailles et monte une planche de contrôle sur
  * fond clair et sur fond sombre — l'image qu'on ouvre ensuite pour REGARDER
@@ -29,7 +30,7 @@ const lire = (nom: string, defaut: string) => {
 	const i = args.indexOf(nom);
 	return i >= 0 && args[i + 1] ? args[i + 1] : defaut;
 };
-const sortie = lire("--sortie", "/tmp/rendu");
+const sortie = lire("--sortie", tempPath("rendu"));
 const iT = args.indexOf("--tailles");
 const tailles =
 	iT >= 0

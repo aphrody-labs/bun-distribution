@@ -1,3 +1,4 @@
+import { tempPath } from "@aphrody/paths";
 import { fileURLToPath } from "node:url";
 
 export interface WebsiteQaResult {
@@ -14,7 +15,7 @@ const workflowScript = fileURLToPath(
 
 /** Read-only website crawl/render/API QA. External IE crawling remains disabled. */
 export async function runWebsiteQa(): Promise<WebsiteQaResult> {
-	const reportDir = Bun.env.RG_BROWSER_CRON_OUT_DIR ?? "/tmp/rg-agent-browser";
+	const reportDir = Bun.env.RG_BROWSER_CRON_OUT_DIR ?? tempPath("rg-agent-browser");
 	const child = Bun.spawn(["bash", workflowScript], {
 		cwd: repositoryRoot,
 		env: {

@@ -6,12 +6,13 @@
  * Remplace rag_chunks (FTS5) + vec_chunks (vec0) + rag_meta en préservant les
  * rowid (alignement chunk↔vecteur). Source = $RAG_COPY (défaut /tmp/ragbuild.db).
  */
+import { tempPath } from "@aphrody/paths";
 import { Database } from "bun:sqlite";
 import * as sqliteVec from "sqlite-vec";
 import { join } from "node:path";
 
 const LIVE = join(import.meta.dir, "..", "data", "bot.db");
-const COPY = process.env.RAG_COPY ?? "/tmp/ragbuild.db";
+const COPY = process.env.RAG_COPY ?? tempPath("ragbuild.db");
 const EMBED_DIM = 384;
 
 const db = new Database(LIVE);

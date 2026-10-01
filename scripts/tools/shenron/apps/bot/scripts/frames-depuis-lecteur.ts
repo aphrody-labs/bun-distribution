@@ -1,4 +1,5 @@
 #!/usr/bin/env bun
+import { userHome } from "@aphrody/paths";
 /**
  * frames-depuis-lecteur.ts — des captures d'épisode SANS vidéo locale.
  *
@@ -80,7 +81,7 @@ const ROOT = new URL("..", import.meta.url).pathname; // apps/bot/
 const ASSETS_DIR = join(ROOT, "assets", "ext", "db_episodes_frames");
 const DATA_DIR = join(ROOT, "data", "dbz-frames");
 /** bxc depuis ses sources : le binaire compilé est cassé pour ces commandes. */
-const BXC = process.env.BXC_CLI ?? join(process.env.HOME ?? "/home/ubuntu", "bxc/src/cli/index.ts");
+const BXC = process.env.BXC_CLI ?? join(userHome(), "bxc/src/cli/index.ts");
 
 const args = process.argv.slice(2);
 const flag = (n: string) => args.includes(`--${n}`);
