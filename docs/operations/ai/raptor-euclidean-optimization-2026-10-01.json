@@ -1,0 +1,68 @@
+{
+  "samples": 41,
+  "alternatingOrder": true,
+  "binaryHashes": {
+    "before": "53c6efd346a74076161091e7f190d7a9d6655d23b5d2c1ba7264bdff283c79fc",
+    "after": "ff3740ecd73eb829449bdf0340f049511a8723d74a1af7969b463a528c3418a3"
+  },
+  "results": [
+    {
+      "dtype": "<class 'numpy.float32'>",
+      "shape": [
+        256,
+        32,
+        97
+      ],
+      "bitwiseDistancesEqual": true,
+      "medianSeconds": {
+        "numpy": 0.0005524489970412105,
+        "before": 0.0011543989967321977,
+        "after": 0.00030583499756176025
+      },
+      "afterToBeforeRatio": 0.2649300618135491,
+      "afterToNumpyRatio": 0.5535986112740579
+    },
+    {
+      "dtype": "<class 'numpy.float64'>",
+      "shape": [
+        256,
+        32,
+        97
+      ],
+      "bitwiseDistancesEqual": true,
+      "medianSeconds": {
+        "numpy": 0.0008890939934644848,
+        "before": 0.0007041310018394142,
+        "after": 0.00031702300475444645
+      },
+      "afterToBeforeRatio": 0.45023298779102394,
+      "afterToNumpyRatio": 0.35656860476485724
+    }
+  ],
+  "canonicalRevision": "812c3b0f83a1ab892dc7788b633e9f5f6e3ac57d",
+  "change": "Monomorphized Fn parameters only; reduction arithmetic order unchanged",
+  "gates": {
+    "rustVectorTests": 9,
+    "scopedClippy": "pass -D warnings",
+    "installedWheelAndBackendTests": 74,
+    "wheelAndSdistBuild": "pass",
+    "isolatedSdistRebuild": "pass"
+  },
+  "wheelArtifacts": [
+    {
+      "path": "/tmp/aphrody-centroid-optimized-final/aphrody-0.1.0-cp311-abi3-linux_x86_64.whl",
+      "extensionSha256": "ff3740ecd73eb829449bdf0340f049511a8723d74a1af7969b463a528c3418a3",
+      "wheelSha256": "1daa2c4d8f9849a8094c21722204ebacc87f1ece93fbb4f0b4fcc50b16a244eb"
+    },
+    {
+      "path": "/tmp/aphrody-centroid-optimized-rebuilt/aphrody-0.1.0-cp311-abi3-linux_x86_64.whl",
+      "extensionSha256": "ff3740ecd73eb829449bdf0340f049511a8723d74a1af7969b463a528c3418a3",
+      "wheelSha256": "df4e291a048a46a8783a860651e9357575ec339dce7cb46234cea3a02ccc28ea"
+    }
+  ],
+  "limitations": [
+    "Measured speedup covers one centroid shape only",
+    "Whole RAG performance budget remains open",
+    "Matrix product performance remains separately unqualified"
+  ]
+}

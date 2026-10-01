@@ -576,7 +576,7 @@ smoke de chaque application, packaging autonome des assets partagés.
 
 Propriétaires : `packages/shenron`, `apps/shenron`.
 
-- [ ] Examiner puis intégrer les trois fichiers laissés non suivis par Gemini :
+- [x] Examiner puis intégrer les trois fichiers laissés non suivis par Gemini :
   `databooks-defauts.ts`, `slug.ts`, `wiki-slugs.ts`. Ils restent préservés ;
   une copie présente ne prouve pas que les consommateurs ont migré.
 - [ ] Donner règles wiki/databooks et registres au package config ; retirer les
@@ -769,3 +769,24 @@ heuristique ; aucun changement Git ne doit être attribué sans preuve.
   + un doctest et Clippy ciblé réussis ; ancien gate profils privés corrigé.
 - Preuves : [RAPTOR euclidien](docs/operations/ai/raptor-euclidean-qualification-2026-10-01.json),
   [Agent Home](docs/operations/ai/agent-home-integration-qualification-2026-10-01.json).
+
+### Règles Shenron et optimisation euclidienne — 2026-10-01
+
+- FAIT : les trois fichiers `slug`, `wiki-slugs`, `databooks-defauts` sont
+  exportés comme modules purs de `@shenron/config`. Les deux scripts RAG du
+  pipeline importent ce package ; les anciens chemins du site réexportent
+  les 32 valeurs/fonctions canoniques, vérifiées identiques, sans copie de calcul.
+  44 tests config, 250 tests pipeline (quatre ignorés), 26 tests règles du site
+  avant/après, typechecks config/pipeline et deux bundles scripts réussis.
+- Limite : qualification sur worktree concurrent ; correction préexistante
+  dans config/databooks-defauts préservée hors de ces commits. Autres règles
+  et registres et qualification depuis clone propre restent ouverts.
+- FAIT : réduction euclidienne monomorphisée, arithmétique inchangée ; 74 tests
+  wheel installé/packaging, neuf tests noyaux et Clippy ciblé réussis.
+  Révision Rust 812c3b0f et pin Python 9e6a827 ; sdist reconstruit hors dépôt.
+  Mesure release alternée 41 samples : float32 1,154→0,306 ms et float64
+  0,704→0,317 ms pour 256×32×97 ; résultats identiques bit à bit à NumPy.
+- INCOMPLET : cette mesure ne qualifie pas le budget global, les autres formes
+  ni les produits matriciels. Le gate CLI/MCP avec dépendances progresse.
+- Preuves : [règles canoniques](docs/operations/shenron/canonical-rule-exports-2026-10-01.json),
+  [optimisation euclidienne](docs/operations/ai/raptor-euclidean-optimization-2026-10-01.json).
