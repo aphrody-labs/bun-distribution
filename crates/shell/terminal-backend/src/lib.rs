@@ -819,4 +819,200 @@ mod tests {
         read_until_closed(&mut client).await;
         assert_session_ended(server).await;
     }
+
+    // ── Security & Hardening Tests (T-01) ──────────────────────────────────────
+
+    #[test]
+    fn origin_validation_rules() {
+        let bound: SocketAddr = "127.0.0.1:8788".parse().unwrap();
+
+        // Null origin (local files / sandboxed iframes) is allowed
+        assert!(is_origin_allowed("null", Some(bound)));
+        assert!(is_origin_allowed("NULL", Some(bound)));
+
+        // Localhost and loopback origins are allowed
+        assert!(is_origin_allowed("http://localhost", Some(bound)));
+        assert!(is_origin_allowed("http://localhost:8788", Some(bound)));
+        assert!(is_origin_allowed("http://localhost:5173", Some(bound)));
+        assert!(is_origin_allowed("http://127.0.0.1", Some(bound)));
+        assert!(is_origin_allowed("http://127.0.0.1:8788", Some(bound)));
+        assert!(is_origin_allowed("http://[::1]:8788", Some(bound)));
+        assert!(is_origin_allowed("https://localhost:8788", Some(bound)));
+        assert!(is_origin_allowed("tauri://localhost", Some(bound)));
+
+        // Foreign / untrusted browser origins MUST be rejected
+        assert!(!is_origin_allowed("http://evil.com", Some(bound)));
+        assert!(!is_origin_allowed("https://attacker.site:8788", Some(bound)));
+        assert!(!is_origin_allowed("http://localhost.evil.com", Some(bound)));
+        assert!(!is_origin_allowed("javascript:alert(1)", Some(bound)));
+        assert!(!is_origin_allowed("invalid-url", Some(bound)));
+
+        // Bound host matching
+        let lan_bound: SocketAddr = "192.168.1.50:8788".parse().unwrap();
+        assert!(is_origin_allowed("http://192.168.1.50:8788", Some(lan_bound)));
+        assert!(!is_origin_allowed("http://192.168.1.99:8788", Some(lan_bound)));
+    }
+
+    #[test]
+    fn host_validation_rules() {
+        let bound: SocketAddr = "127.0.0.1:8788".parse().unwrap();
+
+        // Valid host headers
+        assert!(is_host_allowed("localhost:8788", Some(bound)));
+        assert!(is_host_allowed("127.0.0.1:8788", Some(bound)));
+        assert!(is_host_allowed("[::1]:8788", Some(bound)));
+        assert!(is_host_allowed("localhost", Some(bound)));
+
+        // DNS rebinding domains MUST be rejected
+        assert!(!is_host_allowed("evil.com:8788", Some(bound)));
+        assert!(!is_host_allowed("attacker.site", Some(bound)));
+        assert!(!is_host_allowed("localhost.evil.com:8788", Some(bound)));
+
+        // Mismatched port MUST be rejected
+        assert!(!is_host_allowed("127.0.0.1:9999", Some(bound)));
+
+        // Non-loopback bound matching
+        let wildcard_bound: SocketAddr = "0.0.0.0:8788".parse().unwrap();
+        assert!(is_host_allowed("192.168.1.50:8788", Some(wildcard_bound)));
+        assert!(is_host_allowed("127.0.0.1:8788", Some(wildcard_bound)));
+        // Even with 0.0.0.0, external domains are blocked to prevent DNS rebinding
+        assert!(!is_host_allowed("evil.com:8788", Some(wildcard_bound)));
+
+        // Empty host header
+        assert!(!is_host_allowed("", Some(bound)));
+    }
+
+    #[test]
+    fn token_generation_and_constant_time_equality() {
+        let tok1 = generate_token();
+        let tok2 = generate_token();
+        assert_eq!(tok1.len(), 32);
+        assert_eq!(tok2.len(), 32);
+        assert_ne!(tok1, tok2);
+        assert!(tok1.chars().all(|c| c.is_ascii_hexdigit()));
+
+        assert!(constant_time_eq("abcdef", "abcdef"));
+        assert!(!constant_time_eq("abcdef", "abcdeg"));
+        assert!(!constant_time_eq("abcdef", "abcde"));
+    }
+
+    #[tokio::test]
+    async fn serve_rejects_non_loopback_without_auth() {
+        let addr: SocketAddr = "0.0.0.0:8788".parse().unwrap();
+        let cfg = PtyConfig {
+            auth_token: None,
+            ..PtyConfig::default()
+        };
+        // Unset env var if set
+        let _env = lock_notify_env();
+        unsafe { std::env::remove_var("APHRODY_OS_AUTH_TOKEN"); }
+        let res = serve(addr, cfg).await;
+        assert!(res.is_err());
+        let err_msg = res.unwrap_err().to_string();
+        assert!(err_msg.contains("non-loopback"), "error was: {err_msg}");
+    }
+
+    use tokio_tungstenite::tungstenite::client::IntoClientRequest;
+
+    #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+    async fn authenticated_session_accepts_valid_tokens_and_rejects_invalid() {
+        let _guard = SESSION_TEST_LOCK.lock().await;
+        let token = "test-token-123456789012345678901234";
+
+        let listener = TcpListener::bind("127.0.0.1:0").await.expect("bind");
+        let addr = listener.local_addr().expect("local addr");
+        let cfg = PtyConfig {
+            shell: Some(test_shell()),
+            auth_token: Some(token.to_string()),
+            ..PtyConfig::default()
+        };
+
+        let server = tokio::spawn(async move {
+            let (stream, _) = listener.accept().await.expect("accept");
+            handle_conn(stream, cfg).await
+        });
+
+        // 1. Missing token -> rejected (401)
+        let res_missing = connect_async(format!("ws://{addr}")).await;
+        assert!(res_missing.is_err(), "missing token should fail handshake");
+
+        // Server exits on rejected connection, wait for it
+        let _ = server.await;
+
+        // 2. Query param token -> accepted
+        let listener2 = TcpListener::bind("127.0.0.1:0").await.expect("bind");
+        let addr2 = listener2.local_addr().expect("local addr");
+        let cfg2 = PtyConfig {
+            shell: Some(test_shell()),
+            auth_token: Some(token.to_string()),
+            ..PtyConfig::default()
+        };
+        let server2 = tokio::spawn(async move {
+            let (stream, _) = listener2.accept().await.expect("accept");
+            handle_conn(stream, cfg2).await
+        });
+        let (mut client2, _) = connect_async(format!("ws://{addr2}?token={token}")).await.expect("connect with query token");
+        client2.close(None).await.expect("close");
+        let _ = server2.await;
+
+        // 3. Authorization Bearer header -> accepted
+        let listener3 = TcpListener::bind("127.0.0.1:0").await.expect("bind");
+        let addr3 = listener3.local_addr().expect("local addr");
+        let cfg3 = PtyConfig {
+            shell: Some(test_shell()),
+            auth_token: Some(token.to_string()),
+            ..PtyConfig::default()
+        };
+        let server3 = tokio::spawn(async move {
+            let (stream, _) = listener3.accept().await.expect("accept");
+            handle_conn(stream, cfg3).await
+        });
+        let mut req = format!("ws://{addr3}").into_client_request().expect("request");
+        req.headers_mut().insert("Authorization", format!("Bearer {token}").parse().unwrap());
+        let (mut client3, _) = connect_async(req).await.expect("connect with Bearer header");
+        client3.close(None).await.expect("close");
+        let _ = server3.await;
+    }
+
+    #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+    async fn origin_and_host_checks_in_handshake() {
+        let _guard = SESSION_TEST_LOCK.lock().await;
+
+        let listener = TcpListener::bind("127.0.0.1:0").await.expect("bind");
+        let addr = listener.local_addr().expect("local addr");
+        let cfg = PtyConfig {
+            shell: Some(test_shell()),
+            ..PtyConfig::default()
+        };
+
+        let server = tokio::spawn(async move {
+            let (stream, _) = listener.accept().await.expect("accept");
+            handle_conn(stream, cfg).await
+        });
+
+        // Connect with forbidden origin
+        let mut req = format!("ws://{addr}").into_client_request().expect("request");
+        req.headers_mut().insert("Origin", "http://evil.com".parse().unwrap());
+        let res = connect_async(req).await;
+        assert!(res.is_err(), "evil.com Origin must be rejected");
+
+        let _ = server.await;
+
+        // Connect with allowed origin
+        let listener2 = TcpListener::bind("127.0.0.1:0").await.expect("bind");
+        let addr2 = listener2.local_addr().expect("local addr");
+        let cfg2 = PtyConfig {
+            shell: Some(test_shell()),
+            ..PtyConfig::default()
+        };
+        let server2 = tokio::spawn(async move {
+            let (stream, _) = listener2.accept().await.expect("accept");
+            handle_conn(stream, cfg2).await
+        });
+        let mut req2 = format!("ws://{addr2}").into_client_request().expect("request");
+        req2.headers_mut().insert("Origin", "http://localhost:8788".parse().unwrap());
+        let (mut client2, _) = connect_async(req2).await.expect("localhost Origin must be accepted");
+        client2.close(None).await.expect("close");
+        let _ = server2.await;
+    }
 }
