@@ -40,6 +40,7 @@ use std::{
     path::{Path, PathBuf},
 };
 
+use aphrody_rag_core::fusion::{cosine_with_norm, norm};
 use async_trait::async_trait;
 use serde_json::Deserializer;
 use tokio::fs;
@@ -163,8 +164,8 @@ impl HnswBackend {
     /// keep the 100k-record p95 under the R3.7 budget without an ANN index:
     ///
     /// 1. The **query norm is hoisted out of the loop** (`cosine_similarity` recomputes it per
-    ///    record; here it is computed once and the per-record work is one fused dot-and-norm pass —
-    ///    see [`Self::scaled_cosine`]).
+    ///    record; here it is computed once with the shared `aphrody-rag-core` kernel
+    ///    [`norm`] and each record is scored by [`cosine_with_norm`]).
     /// 2. **Scoring borrows** records (`&MemoryRecord`) rather than cloning all `n`; only the `k`
     ///    survivors are cloned at the very end.
     /// 3. **`select_nth_unstable_by`** (quickselect) partitions the `k` best in linear time; only
@@ -174,7 +175,7 @@ impl HnswBackend {
         // turns the per-record cost from two norms + a dot into one norm + a
         // dot. A zero-magnitude query yields all-zero cosines (matching
         // `cosine_similarity`), so there is nothing to rank.
-        let query_norm = l2_norm(query);
+        let query_norm = norm(query);
         if query_norm == 0.0 {
             return Vec::new();
         }
@@ -185,7 +186,7 @@ impl HnswBackend {
             if emb.len() != query.len() {
                 continue;
             }
-            scored.push((Self::scaled_cosine(query, query_norm, emb), r));
+            scored.push((cosine_with_norm(query, query_norm, emb), r));
         }
 
         // Descending order: best (highest similarity) first. NaN scores are

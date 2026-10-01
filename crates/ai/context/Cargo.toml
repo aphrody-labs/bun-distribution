@@ -9,10 +9,17 @@ authors.workspace      = true
 homepage.workspace     = true
 repository.workspace   = true
 license.workspace      = true
-description            = "LLM context-window manager — heuristic token counting, sliding-window trim with pinned-message preservation, summarization triggers, and JSON snapshot/restore."
+description            = "LLM context-window manager — in-process token estimation (heuristic, BPE-shaped lexical, exact tokenizer.json), sliding-window trim with pinned-message preservation, summarization triggers, and JSON snapshot/restore."
 
 [lints]
 workspace = true
+
+[features]
+default = []
+# `TokenizerFileEstimator`: exact in-process token counts from any Hugging Face
+# `tokenizer.json` (host only). Replaces the former `aphrody-tokenizer-go`
+# subprocess; off by default so the crate stays dependency-light and wasm-safe.
+tokenizers = ["dep:tokenizers"]
 
 [dependencies]
 serde      = { workspace = true, features = ["derive"] }
@@ -20,6 +27,7 @@ serde_json = { workspace = true }
 thiserror  = { workspace = true }
 tracing    = { workspace = true }
 chrono     = { workspace = true, features = ["serde"] }
+tokenizers = { workspace = true, optional = true }
 
 [package.metadata.cargo-machete]
 # tracing is consumed via macros only; keep it explicit so machete doesn't

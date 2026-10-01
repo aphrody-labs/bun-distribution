@@ -22,6 +22,14 @@
 //! * [`mask_value`] — helper for safely surfacing partial secrets in user-facing logs (e.g.
 //!   `sk-a…ghi`).
 //!
+//! ## Locations
+//!
+//! No store chooses a location: [`FileSecretStore::new`] and [`EncryptedFileSecretStore::new`]
+//! take the path from the caller and [`EnvSecretStore`] reads the process environment. Nothing
+//! here assumes a repository, a home directory or a user name; secrets stay in the protected
+//! store the caller selects (conventionally under the Aphrody state directory, `$APHRODY_HOME`
+//! else `~/.aphrody`).
+//!
 //! ## Threat model
 //!
 //! * `Display` and `Debug` always emit `"***REDACTED***"`. The regression tests assert *both* "must

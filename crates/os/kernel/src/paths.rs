@@ -80,10 +80,14 @@ pub(crate) fn binary_search_directories(
 }
 
 /// A fixed environment table for tests: nothing reads the process environment.
+///
+/// The result owns its data and borrows nothing from `pairs`, so a test can build it from
+/// temporaries (a boxed trait object, because an `impl Fn` return would capture the lifetimes of
+/// `K` and `V` and keep those temporaries borrowed).
 #[cfg(test)]
 pub(crate) fn table<K, V>(
     pairs: impl IntoIterator<Item = (K, V)>,
-) -> impl Fn(&str) -> Option<OsString>
+) -> Box<dyn Fn(&str) -> Option<OsString>>
 where
     K: AsRef<str>,
     V: AsRef<std::ffi::OsStr>,
@@ -92,7 +96,7 @@ where
         .into_iter()
         .map(|(key, value)| (key.as_ref().to_owned(), value.as_ref().to_owned()))
         .collect();
-    move |key| map.get(key).cloned()
+    Box::new(move |key| map.get(key).cloned())
 }
 
 #[cfg(test)]

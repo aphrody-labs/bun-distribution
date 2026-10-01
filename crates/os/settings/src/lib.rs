@@ -18,8 +18,17 @@
 //!  4. Env       (process environment, `APHRODY_FOO__BAR=baz` → {"foo":{"bar":"baz"}})
 //!  3. Local     (`.aphrody/settings.local.json` — git-ignored)
 //!  2. Project   (`.aphrody/settings.json`       — checked in)
-//!  1. User      (`$HOME/.aphrody/settings.json`)
+//!  1. User      (`<state dir>/settings.json`)
 //! ```
+//!
+//! ## Locations
+//!
+//! The loader never chooses a location: callers pass the path of each file layer
+//! ([`SettingsLoader::with_user_path`] and friends), so nothing here assumes a repository, a
+//! home directory or a user name. The Aphrody convention is `<state dir>/settings.json` for the
+//! user layer, where the state directory is `$APHRODY_HOME` when set (the directory itself, not
+//! a home) and `~/.aphrody` otherwise, and `.aphrody/settings.json` /
+//! `.aphrody/settings.local.json` under the project root for the other two file layers.
 //!
 //! ## Path access
 //!
@@ -54,7 +63,7 @@ use thiserror::Error;
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum SettingsLayer {
-    /// `$HOME/.aphrody/settings.json` — lowest precedence.
+    /// `<state dir>/settings.json` (`$APHRODY_HOME`, else `~/.aphrody`) — lowest precedence.
     User = 0,
     /// `.aphrody/settings.json` — project default checked into the repo.
     Project = 1,
@@ -391,7 +400,8 @@ impl SettingsLoader {
         Self::default()
     }
 
-    /// Set the user-layer path (typically `$HOME/.aphrody/settings.json`).
+    /// Set the user-layer path (conventionally `<state dir>/settings.json`: `$APHRODY_HOME`,
+    /// else `~/.aphrody`).
     #[must_use]
     pub fn with_user_path<P: Into<PathBuf>>(mut self, path: P) -> Self {
         self.user_path = Some(path.into());

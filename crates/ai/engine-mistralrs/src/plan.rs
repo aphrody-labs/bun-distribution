@@ -366,8 +366,6 @@ fn parse_effort(raw: &str) -> Result<Effort, PlanError> {
 
 #[cfg(test)]
 mod tests {
-    use serde_json::json;
-
     use super::*;
 
     fn user(text: &str) -> ChatMessage {

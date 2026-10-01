@@ -91,18 +91,28 @@ pub fn ollama_host_to_url(host: &str) -> String {
         Some((authority, path)) => (authority, format!("/{path}")),
         None => (rest, String::new()),
     };
-    let has_port = if let Some(stripped) = authority.strip_prefix('[') {
-        // Bracketed IPv6: a port follows the closing bracket.
-        stripped.split_once(']').is_some_and(|(_, tail)| tail.starts_with(':'))
-    } else {
-        authority.contains(':')
-    };
     let authority = if authority.is_empty() {
         format!("127.0.0.1:{default_port}")
-    } else if has_port {
-        authority.to_string()
+    } else if let Ok(ip) = authority.parse::<std::net::Ipv6Addr>() {
+        // A bare IPv6 address has no port and needs brackets in a URL.
+        format!("[{ip}]:{default_port}")
     } else {
-        format!("{authority}:{default_port}")
+        let has_port = if let Some(stripped) = authority.strip_prefix('[') {
+            // Bracketed IPv6: a port follows the closing bracket.
+            stripped.split_once(']').is_some_and(|(_, tail)| tail.starts_with(':'))
+        } else {
+            authority.contains(':')
+        };
+        if has_port { authority.to_string() } else { format!("{authority}:{default_port}") }
+    };
+    // `0.0.0.0` / `[::]` are valid to bind but not to connect to (they fail on
+    // Windows); Ollama's `ConnectableHost` maps them to loopback.
+    let authority = if let Some(port) = authority.strip_prefix("0.0.0.0") {
+        format!("127.0.0.1{port}")
+    } else if let Some(port) = authority.strip_prefix("[::]") {
+        format!("[::1]{port}")
+    } else {
+        authority
     };
     format!("{scheme}://{authority}{}", path.trim_end_matches('/'))
 }
@@ -459,8 +469,7 @@ where
 ///     .with_num_ctx(16_384);
 /// // Refine the capabilities from /api/show before the turn loop adapts to them.
 /// let capabilities = client.probe_capabilities().await?;
-/// assert_eq!(capabilities.context_window.is_some(), true);
-/// # let _ = client.model_id();
+/// println!("{} supports tools: {}", client.model_id(), capabilities.tools);
 /// # Ok(())
 /// # }
 /// ```
@@ -626,7 +635,6 @@ mod tests {
         Router,
         extract::State,
         http::StatusCode,
-        response::IntoResponse,
         routing::{delete, get, post},
     };
     use pretty_assertions::assert_eq;
@@ -674,12 +682,18 @@ mod tests {
     fn ollama_host_values_resolve_like_the_go_client() {
         assert_eq!(ollama_host_to_url(""), "http://localhost:11434");
         assert_eq!(ollama_host_to_url("127.0.0.1"), "http://127.0.0.1:11434");
-        assert_eq!(ollama_host_to_url("0.0.0.0:8080"), "http://0.0.0.0:8080");
+        // A bind address is not a connect address.
+        assert_eq!(ollama_host_to_url("0.0.0.0:8080"), "http://127.0.0.1:8080");
+        assert_eq!(ollama_host_to_url("0.0.0.0"), "http://127.0.0.1:11434");
         assert_eq!(ollama_host_to_url("http://gpu-box"), "http://gpu-box:80");
         assert_eq!(ollama_host_to_url("https://gpu-box"), "https://gpu-box:443");
-        assert_eq!(ollama_host_to_url("https://gpu-box:8443/ollama/"), "https://gpu-box:8443/ollama");
+        assert_eq!(
+            ollama_host_to_url("https://gpu-box:8443/ollama/"),
+            "https://gpu-box:8443/ollama"
+        );
         assert_eq!(ollama_host_to_url("ollama.com"), "https://ollama.com:443");
         assert_eq!(ollama_host_to_url("[::1]"), "http://[::1]:11434");
+        assert_eq!(ollama_host_to_url("::1"), "http://[::1]:11434");
         assert_eq!(ollama_host_to_url("http://[::1]:9000"), "http://[::1]:9000");
     }
 
@@ -877,16 +891,19 @@ mod tests {
             }),
         );
         let base = serve(router).await;
-        let client = OllamaClient::local(base, "qwen3:8b");
+        let client = OllamaClient::local(base.clone(), "qwen3:8b");
         assert!(!client.capabilities().reasoning);
 
         let probed = client.probe_capabilities().await.expect("probe");
         assert!(probed.reasoning && probed.tools);
         assert_eq!(client.capabilities().context_window, Some(40960));
-        // A configured num_ctx is what the model runs with.
-        let capped = client.clone().with_num_ctx(8192);
-        // The probe result is shared across clones: the first probe won.
-        assert_eq!(capped.capabilities().context_window, Some(40960));
+        // The probe result is shared by clones: the first probe wins.
+        assert_eq!(client.clone().capabilities().context_window, Some(40960));
+
+        // A configured `num_ctx` is what the model is loaded with, so it caps
+        // the reported window.
+        let capped = OllamaClient::local(base, "qwen3:8b").with_num_ctx(8192);
+        assert_eq!(capped.probe_capabilities().await.expect("probe").context_window, Some(8192));
     }
 
     #[tokio::test]
@@ -1027,6 +1044,5 @@ mod tests {
         assert!(client.embed(&[]).await.expect("empty").is_empty());
         let error = EmbedClient::embed(&client, &["a", "b"]).await.err().expect("mismatch");
         assert!(matches!(error, ModelError::Stream(_)), "{error}");
-        let _ = IntoResponse::into_response(());
     }
 }

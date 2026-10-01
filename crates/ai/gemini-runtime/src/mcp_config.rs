@@ -36,19 +36,30 @@
 //! 3. On Windows: `%APPDATA%\aphrody\mcp.json`.
 //! 4. Fallback: `<repo>/.mcp.json` for in-tree development.
 //!
-//! This loader is intentionally minimal — the rich `aphrody-terminal-config`
-//! shim is the reference parser for `.mcp.json` (with environment-variable
-//! placeholder expansion in headers). For the gemini runtime we want a
-//! single-file, dependency-free entry point so it can be exercised from
-//! `aphrody mcp list` without dragging in the full terminal-config stack.
+//! # One server model
+//!
+//! The typed model of an MCP server entry is [`aphrody_config::mcp::McpServerConfig`], the same
+//! one `config.toml` `[mcp_servers.*]` uses and [`aphrody_mcp_client::McpClient::from_config`]
+//! connects from. [`parse_mcp_servers`], [`load_mcp_servers`] and [`load_default_mcp_servers`]
+//! read this Claude Desktop / Cursor / Continue compatible JSON file straight into it, as a
+//! [`McpServers`] map keyed by server name. This module is only the *file format adapter*:
+//! `headers` becomes `http_headers`, an exact `Authorization: Bearer ${VAR}` header becomes
+//! `bearer_token_env_var` (secrets stay in the environment), and an entry without a `command`
+//! but with a `url` is a streamable HTTP server.
+//!
+//! [`McpConfig`], [`McpServerConfig`] and [`McpTransportConfig`] are the **legacy view** that
+//! `aphrody mcp` (`apps/cli/src/mcp_cmd.rs`) was written against. They are kept, with identical
+//! parsing, until that command migrates to the canonical model; new code must not use them.
 
 use std::{
-    collections::HashMap,
+    collections::{BTreeMap, HashMap},
     fs,
     path::{Path, PathBuf},
 };
 
+use aphrody_config::mcp::McpServerConfig as CanonicalServer;
 use serde::{Deserialize, Serialize};
+use serde_json::{Map, Value};
 use thiserror::Error;
 
 // ---------------------------------------------------------------------------

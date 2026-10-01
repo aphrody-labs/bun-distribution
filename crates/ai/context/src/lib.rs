@@ -8,12 +8,15 @@
 //! handoff.
 //!
 //! It deliberately stays orthogonal to the LLM provider layer: there is no
-//! HTTP client, no tokenizer dependency, no model registry. The
-//! [`TokenEstimator`] trait is the only seam, and the bundled
-//! [`HeuristicTokenEstimator`] is a small `chars / divisor` approximation that
-//! is good enough for budgeting on the hot path — callers wanting BPE-grade
-//! precision can plug in their own estimator without pulling extra weight
-//! into this crate.
+//! HTTP client and no model registry. The [`TokenEstimator`] trait is the only
+//! seam. Three estimators ship, all in-process (no subprocess):
+//!
+//! * [`HeuristicTokenEstimator`] — a `chars / divisor` approximation, the default for budgeting on
+//!   the hot path;
+//! * [`LexicalTokenEstimator`] — a dependency-free model of BPE pre-tokenisation that tracks code,
+//!   digits and non-Latin scripts far better than `chars / 4`;
+//! * `TokenizerFileEstimator` (cargo feature `tokenizers`, host only) — exact counts from any
+//!   Hugging Face `tokenizer.json`, loaded once and shared.
 //!
 //! ## Cohesion with the wider aphrody workspace
 //!
@@ -224,124 +227,259 @@ impl TokenEstimator for HeuristicTokenEstimator {
     }
 }
 
-/// Token estimator that delegates to the `aphrody-tokenizer-go` binary.
+/// In-process, dependency-free token estimator shaped like a BPE tokenizer.
 ///
-/// Gated under `#[cfg(not(target_arch = "wasm32"))]` because process spawning
-/// is unsupported on WASM.
-#[cfg(not(target_arch = "wasm32"))]
-#[derive(Debug, Clone)]
-pub struct GoTokenEstimator {
-    encoding: String,
-}
+/// [`HeuristicTokenEstimator`] divides the character count by a constant,
+/// which is far off for code (many short punctuation tokens), numbers and
+/// non-Latin scripts (CJK text costs about one token per character, four
+/// times what `chars / 4` predicts). This estimator instead walks the text the
+/// way the `cl100k_base` family pre-tokenises it and charges each run its
+/// typical BPE cost:
+///
+/// * a run of letters costs one token up to about eight letters, then one more
+///   per four letters, and at least one per camelCase word;
+/// * digits cost one token per group of three;
+/// * a run of punctuation costs one token per three characters;
+/// * a space or tab attaches to the following word at no cost; a newline run
+///   is one token;
+/// * ideographs cost one token each, kana three quarters of one, Hangul one
+///   and a half, other alphabets one per two letters, emoji two and a half.
+///
+/// It is an **approximation** built from the published structure of those
+/// tokenizers, not a vocabulary, and no error bound is claimed: it is
+/// deterministic and grows with the text, but it can over- or under-count
+/// text a given vocabulary merges unusually well or badly (accented Latin
+/// text, rare identifiers). Use `TokenizerFileEstimator` (feature
+/// `tokenizers`) when an exact count of one specific model's tokenizer is
+/// required.
+///
+/// It replaces the former subprocess estimator: it never spawns a process,
+/// reads no file and allocates nothing, so it is safe on the hot path and on
+/// every target including WASM.
+#[derive(Debug, Clone, Copy, Default)]
+pub struct LexicalTokenEstimator;
 
-/// Generic process-based token estimator (alias for backward compatibility).
+/// The former `aphrody-tokenizer-go` subprocess estimator.
+///
+/// It spawned a Go binary per call and walked the filesystem to find it; it now
+/// resolves to the in-process [`LexicalTokenEstimator`].
 #[cfg(not(target_arch = "wasm32"))]
-pub type ExternalProcessTokenEstimator = GoTokenEstimator;
+#[deprecated(
+    since = "1.0.0",
+    note = "no subprocess is spawned any more: use LexicalTokenEstimator, or TokenizerFileEstimator \
+            (feature `tokenizers`) for exact counts"
+)]
+pub type GoTokenEstimator = LexicalTokenEstimator;
 
+/// Generic process-based token estimator (alias kept for backward compatibility).
 #[cfg(not(target_arch = "wasm32"))]
-impl GoTokenEstimator {
-    /// Create a new Go-based exact BPE estimator.
-    ///
-    /// `encoding` defaults to `cl100k_base` if not specified.
+#[deprecated(
+    since = "1.0.0",
+    note = "no subprocess is spawned any more: use LexicalTokenEstimator, or TokenizerFileEstimator \
+            (feature `tokenizers`) for exact counts"
+)]
+pub type ExternalProcessTokenEstimator = LexicalTokenEstimator;
+
+impl LexicalTokenEstimator {
+    /// Source-compatible with the constructor of the former subprocess
+    /// estimator. The encoding name is accepted and ignored: the cost model
+    /// below is shared by the BPE families it approximates (`cl100k_base`,
+    /// `o200k_base`, ...).
     #[must_use]
     pub fn new(encoding: Option<&str>) -> Self {
-        Self { encoding: encoding.unwrap_or("cl100k_base").to_string() }
+        let _ = encoding;
+        Self
     }
+}
 
-    /// Resolve the path to the `aphrody-tokenizer-go` binary.
-    fn resolve_bin() -> Option<std::path::PathBuf> {
-        // Step 1: Env override
-        if let Ok(explicit) = std::env::var("APHRODY_TOKENIZER_GO_BIN") {
-            let p = std::path::PathBuf::from(explicit.trim());
-            if p.exists() {
-                return Some(p);
-            }
+impl TokenEstimator for LexicalTokenEstimator {
+    fn estimate(&self, text: &str) -> u32 {
+        if text.is_empty() {
+            return 0;
         }
+        let tokens = lexical_quarter_tokens(text).div_ceil(4);
+        u32::try_from(tokens).unwrap_or(u32::MAX).max(1)
+    }
+}
 
-        // Step 2: Sibling of the running binary (supporting nextest where binary is in deps/)
-        if let Ok(exe) = std::env::current_exe()
-            && let Some(dir) = exe.parent()
+/// Peekable character cursor shared by the run scanners below.
+type Cursor<'a> = std::iter::Peekable<std::str::Chars<'a>>;
+
+/// Writing system of a letter, as far as BPE token density is concerned.
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum Script {
+    Latin,
+    Ideograph,
+    Kana,
+    Hangul,
+    Other,
+}
+
+fn script_of(c: char) -> Script {
+    match c {
+        'A'..='Z' | 'a'..='z' | '\u{00C0}'..='\u{024F}' | '\u{1E00}'..='\u{1EFF}' => Script::Latin,
+        '\u{3400}'..='\u{4DBF}'
+        | '\u{4E00}'..='\u{9FFF}'
+        | '\u{F900}'..='\u{FAFF}'
+        | '\u{20000}'..='\u{2FFFF}' => Script::Ideograph,
+        '\u{3040}'..='\u{30FF}' | '\u{FF66}'..='\u{FF9F}' => Script::Kana,
+        '\u{1100}'..='\u{11FF}' | '\u{3130}'..='\u{318F}' | '\u{AC00}'..='\u{D7AF}' => {
+            Script::Hangul
+        },
+        _ => Script::Other,
+    }
+}
+
+/// Zero-width joiners and variation selectors that glue emoji sequences
+/// together: counted with the emoji they belong to, never on their own.
+fn is_emoji_glue(c: char) -> bool {
+    matches!(c, '\u{200D}' | '\u{FE0E}' | '\u{FE0F}')
+}
+
+/// Estimated token count of `text` in quarter-tokens (4 = one token).
+///
+/// The scanner follows the pre-tokenisation of the `cl100k_base` BPE family
+/// (runs of letters, groups of up to three digits, runs of punctuation,
+/// whitespace that attaches to the following word) and charges each run the
+/// typical BPE cost of its class.
+fn lexical_quarter_tokens(text: &str) -> u64 {
+    let mut quarters = 0_u64;
+    let mut chars: Cursor<'_> = text.chars().peekable();
+    while let Some(&c) = chars.peek() {
+        if c.is_whitespace() {
+            quarters += whitespace_quarters(&mut chars);
+        } else if c.is_alphabetic() {
+            quarters += letters_quarters(&mut chars);
+        } else if c.is_numeric() {
+            quarters += digits_quarters(&mut chars);
+        } else if is_emoji_glue(c) {
+            chars.next();
+        } else if u32::from(c) > 0xFFFF {
+            // Astral symbol or emoji: a few bytes of byte-level BPE fallback.
+            chars.next();
+            quarters += 10;
+        } else {
+            quarters += punctuation_quarters(&mut chars);
+        }
+    }
+    quarters
+}
+
+/// One maximal whitespace run.
+///
+/// Everything up to the last newline is a single pre-token. Spaces after it
+/// (or a run with no newline) attach to the next word or punctuation run, so
+/// only their surplus costs a token; before a digit group, or at the end of
+/// the text, a single space stands alone.
+fn whitespace_quarters(chars: &mut Cursor<'_>) -> u64 {
+    let mut len = 0_u64;
+    let mut trailing = 0_u64;
+    let mut saw_newline = false;
+    while let Some(&c) = chars.peek() {
+        if !c.is_whitespace() {
+            break;
+        }
+        chars.next();
+        len += 1;
+        if c == '\n' || c == '\r' {
+            saw_newline = true;
+            trailing = 0;
+        } else {
+            trailing += 1;
+        }
+    }
+    let mut quarters = 0_u64;
+    let mut spaces = len;
+    if saw_newline {
+        let through_last_newline = len - trailing;
+        quarters += 4 * (1 + through_last_newline.saturating_sub(1) / 32);
+        spaces = trailing;
+    }
+    if spaces > 0 {
+        quarters += match chars.peek() {
+            Some(next) if !next.is_numeric() => {
+                if spaces > 1 {
+                    4
+                } else {
+                    0
+                }
+            },
+            Some(_) => {
+                if spaces > 1 {
+                    8
+                } else {
+                    4
+                }
+            },
+            None => 4,
+        };
+    }
+    quarters
+}
+
+/// One maximal run of letters of a single writing system.
+fn letters_quarters(chars: &mut Cursor<'_>) -> u64 {
+    let Some(&first) = chars.peek() else {
+        return 0;
+    };
+    let script = script_of(first);
+    let mut len = 0_u64;
+    let mut camel_breaks = 0_u64;
+    let mut previous_lower = false;
+    while let Some(&c) = chars.peek() {
+        if !c.is_alphabetic() || script_of(c) != script {
+            break;
+        }
+        chars.next();
+        len += 1;
+        if script == Script::Latin {
+            if previous_lower && c.is_uppercase() {
+                camel_breaks += 1;
+            }
+            previous_lower = c.is_lowercase();
+        }
+    }
+    match script {
+        // Common words (up to about eight letters) are one token; longer or
+        // camelCase words split roughly every four letters / case change.
+        Script::Latin => 4 * (1 + len.saturating_sub(8).div_ceil(4)).max(1 + camel_breaks),
+        Script::Ideograph => 4 * len,
+        Script::Kana => 3 * len,
+        Script::Hangul => 6 * len,
+        // Cyrillic, Greek, Arabic, Hebrew, Thai, ...: about two letters per token.
+        Script::Other => (2 * len).max(4),
+    }
+}
+
+/// One maximal run of digits: groups of up to three digits are one token each.
+fn digits_quarters(chars: &mut Cursor<'_>) -> u64 {
+    let mut len = 0_u64;
+    while let Some(&c) = chars.peek() {
+        if !c.is_numeric() {
+            break;
+        }
+        chars.next();
+        len += 1;
+    }
+    4 * len.div_ceil(3)
+}
+
+/// One maximal run of punctuation or symbols: about three characters per token.
+fn punctuation_quarters(chars: &mut Cursor<'_>) -> u64 {
+    let mut len = 0_u64;
+    while let Some(&c) = chars.peek() {
+        if c.is_whitespace()
+            || c.is_alphanumeric()
+            || c.is_numeric()
+            || is_emoji_glue(c)
+            || u32::from(c) > 0xFFFF
         {
-            for cand in ["aphrody-tokenizer-go.exe", "aphrody-tokenizer-go"] {
-                let p = dir.join(cand);
-                if p.exists() {
-                    return Some(p);
-                }
-                if let Some(parent) = dir.parent() {
-                    let p2 = parent.join(cand);
-                    if p2.exists() {
-                        return Some(p2);
-                    }
-                }
-            }
+            break;
         }
-
-        // Step 3: PATH walk
-        if let Some(path_var) = std::env::var_os("PATH") {
-            for dir in std::env::split_paths(&path_var) {
-                for cand in ["aphrody-tokenizer-go.exe", "aphrody-tokenizer-go"] {
-                    let p = dir.join(cand);
-                    if p.exists() {
-                        return Some(p);
-                    }
-                }
-            }
-        }
-
-        // Étape 4 : binaire compilé sous go/ (dev local).
-        if let Ok(cwd) = std::env::current_dir() {
-            let mut current = Some(cwd.as_path());
-            while let Some(path) = current {
-                for cand in [
-                    "go/gogcli/cmd/aphrody-tokenizer-go/aphrody-tokenizer-go.exe",
-                    "go/gogcli/cmd/aphrody-tokenizer-go/aphrody-tokenizer-go",
-                    "go/aphrody-tokenizer-go/aphrody-tokenizer-go.exe",
-                    "go/aphrody-tokenizer-go/aphrody-tokenizer-go",
-                ] {
-                    let p = path.join(cand);
-                    if p.exists() {
-                        return Some(p);
-                    }
-                }
-                // Cas où on est déjà dans le dossier aphrody-tokenizer-go
-                for cand in ["aphrody-tokenizer-go.exe", "aphrody-tokenizer-go"] {
-                    let p = path.join(cand);
-                    if p.exists() && path.ends_with("aphrody-tokenizer-go") {
-                        return Some(p);
-                    }
-                }
-                current = path.parent();
-            }
-        }
-
-        // Étape 5 : dépôt frère aphrody-go (layout monorepo-sibling standard).
-        //
-        // Le binaire est produit par `go build ./cmd/aphrody-tokenizer-go` dans
-        // le dépôt `aphrody-go` (C:\src\aphrody-go ou ~/src/aphrody-go).
-        // On remonte jusqu'à un répertoire qui possède un voisin `aphrody-go/`
-        // contenant le binaire dans le sous-chemin canonique.
-        if let Ok(cwd) = std::env::current_dir() {
-            let mut current = Some(cwd.as_path());
-            while let Some(path) = current {
-                if let Some(parent) = path.parent() {
-                    // Chemin canonique dans le dépôt frère Go.
-                    let sibling = parent.join("aphrody-go");
-                    for cand in [
-                        "gogcli/cmd/aphrody-tokenizer-go/aphrody-tokenizer-go.exe",
-                        "gogcli/cmd/aphrody-tokenizer-go/aphrody-tokenizer-go",
-                    ] {
-                        let p = sibling.join(cand);
-                        if p.exists() {
-                            return Some(p);
-                        }
-                    }
-                }
-                current = path.parent();
-            }
-        }
-
-        None
+        chars.next();
+        len += 1;
     }
+    4 * len.div_ceil(3).max(1)
 }
 
 /// Exact in-process token counts from a Hugging Face `tokenizer.json`
@@ -474,6 +612,10 @@ pub enum ContextError {
     /// An operation requires at least one message but the window is empty.
     #[error("context window is empty")]
     EmptyWindow,
+    /// A tokenizer definition could not be loaded (`TokenizerFileEstimator`,
+    /// feature `tokenizers`).
+    #[error("tokenizer error: {0}")]
+    Tokenizer(String),
 }
 
 // ---------------------------------------------------------------------------

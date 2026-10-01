@@ -7,10 +7,9 @@
 
 use std::sync::Arc;
 
-#[cfg(not(target_arch = "wasm32"))] use aphrody_context::GoTokenEstimator;
 use aphrody_context::{
-    ContextError, ContextMessage, ContextWindow, HeuristicTokenEstimator, MessageRole,
-    TokenEstimator,
+    ContextError, ContextMessage, ContextWindow, HeuristicTokenEstimator, LexicalTokenEstimator,
+    MessageRole, TokenEstimator,
 };
 
 // ---------------------------------------------------------------------------
@@ -246,18 +245,65 @@ fn pin_unknown_id_returns_error() {
 }
 
 // ---------------------------------------------------------------------------
-// 10. go_token_estimator_smoke
+// 10. lexical_estimator — in-process, replaces the former Go subprocess one
 // ---------------------------------------------------------------------------
 
-#[cfg(not(target_arch = "wasm32"))]
 #[test]
-fn go_token_estimator_smoke() {
-    let est = GoTokenEstimator::default();
-    let tokens = est.estimate("hello world");
-    assert!(
-        tokens == 2 || tokens == 3,
-        "expected 2 (exact BPE) or 3 (heuristic fallback), got {tokens}"
-    );
+fn lexical_estimator_matches_known_pre_tokenisation() {
+    let est = LexicalTokenEstimator;
     assert_eq!(est.estimate(""), 0);
     assert_eq!(est.estimate("x"), 1);
+    assert_eq!(est.estimate("hello world"), 2);
+    assert_eq!(est.estimate("The quick brown fox jumps over the lazy dog."), 10);
+    assert_eq!(est.estimate("12345"), 2);
+    assert_eq!(est.estimate("foo(bar, baz);"), 6);
+    assert_eq!(est.estimate("a\nb"), 3);
+    assert_eq!(est.estimate("getUserNameFromRequest"), 5);
+    assert!(est.estimate("   ") >= 1, "non-empty text never costs zero");
+}
+
+#[test]
+fn lexical_estimator_does_not_collapse_cjk_and_emoji_like_chars_over_four() {
+    let est = LexicalTokenEstimator;
+    let cjk = "日本語のテキスト";
+    let cjk_tokens = est.estimate(cjk);
+    assert!((5..=8).contains(&cjk_tokens), "got {cjk_tokens}");
+    assert!(cjk_tokens > HeuristicTokenEstimator::default().estimate(cjk));
+    assert!((2..=4).contains(&est.estimate("😀")));
+}
+
+#[test]
+fn lexical_estimator_grows_with_the_text_and_drives_a_window() {
+    let est = LexicalTokenEstimator;
+    assert!(est.estimate(&"word ".repeat(10)) < est.estimate(&"word ".repeat(100)));
+
+    let mut w = ContextWindow::new(1_000, Arc::new(LexicalTokenEstimator));
+    w.push(make_msg(MessageRole::User, "hello world"));
+    assert_eq!(w.total_tokens(), 2);
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+#[allow(deprecated)]
+#[test]
+fn former_go_estimator_names_are_in_process_aliases() {
+    let est = aphrody_context::GoTokenEstimator::default();
+    assert_eq!(est.estimate("hello world"), 2);
+    let named = aphrody_context::GoTokenEstimator::new(Some("cl100k_base"));
+    assert_eq!(named.estimate("hello world"), 2);
+    let external: aphrody_context::ExternalProcessTokenEstimator = Default::default();
+    assert_eq!(external.estimate(""), 0);
+}
+
+#[cfg(all(feature = "tokenizers", not(target_arch = "wasm32")))]
+#[test]
+fn tokenizer_file_estimator_counts_with_the_loaded_vocabulary() {
+    use aphrody_context::TokenizerFileEstimator;
+
+    let json = br#"{"version":"1.0","truncation":null,"padding":null,"added_tokens":[],"normalizer":null,"pre_tokenizer":{"type":"Whitespace"},"post_processor":null,"decoder":null,"model":{"type":"WordLevel","vocab":{"[UNK]":0,"hello":1,"world":2},"unk_token":"[UNK]"}}"#;
+    let est = TokenizerFileEstimator::from_json(json).expect("valid tokenizer definition");
+    assert_eq!(est.estimate("hello world"), 2);
+    assert_eq!(est.estimate("hello brave new world"), 4);
+    assert_eq!(est.estimate(""), 0);
+    assert!(TokenizerFileEstimator::from_json(b"not json").is_err());
+    assert!(TokenizerFileEstimator::from_file("/definitely/missing/tokenizer.json").is_err());
 }
