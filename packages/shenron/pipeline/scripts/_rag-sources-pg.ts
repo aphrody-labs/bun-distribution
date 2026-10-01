@@ -23,13 +23,13 @@ import { join } from "node:path";
 import { loadDatabaseUrl } from "@shenron/db/env";
 import { createSql } from "@shenron/db/sql";
 import { chunkDocument } from "./_rag-chunk";
-import { defautDePlanche } from "../../../../apps/shenron/site/src/lib/databooks-defauts";
+import { defautDePlanche } from "@shenron/config/databooks-defauts";
 import {
 	CHARACTER_DUPLICATE_REDIRECTS,
 	formatCharacterSlug,
 	formatPlanetSlug,
 	formatTransformationSlug,
-} from "../../../../apps/shenron/site/src/lib/wiki-slugs";
+} from "@shenron/config/wiki-slugs";
 
 type Sql = postgres.Sql;
 type Row = Record<string, unknown>;

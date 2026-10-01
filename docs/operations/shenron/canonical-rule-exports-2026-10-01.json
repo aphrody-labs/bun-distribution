@@ -1,0 +1,38 @@
+{
+  "scope": "Canonical rules exported by @shenron/config and consumed by two RAG pipeline scripts",
+  "exports": [
+    "./slug",
+    "./wiki-slugs",
+    "./databooks-defauts"
+  ],
+  "runtime": "pure",
+  "consumers": [
+    "packages/shenron/pipeline/scripts/ingest-databooks-rag.ts",
+    "packages/shenron/pipeline/scripts/_rag-sources-pg.ts"
+  ],
+  "gates": {
+    "configTests": 44,
+    "pipelineTests": 250,
+    "pipelineSkipped": 4,
+    "configTypecheck": "pass",
+    "pipelineTypecheckIncludingScripts": "pass",
+    "bothScriptBundles": "pass",
+    "oxlint": "pass",
+    "manifestOxfmt": "pass"
+  },
+  "validationMode": "Concurrent working tree",
+  "preexistingChangesPreserved": [
+    "packages/shenron/config/src/databooks-defauts.ts"
+  ],
+  "limitations": [
+    "Site compatibility copies still exist and are not modified in this batch",
+    "Clean-clone qualification not established",
+    "Database ingestion and product deployment not exercised"
+  ],
+  "logs": [
+    "/tmp/aphrody-shenron-config-rule-exports-tests.log",
+    "/tmp/aphrody-shenron-config-rule-exports-typecheck.log",
+    "/tmp/aphrody-shenron-rule-pipeline-typecheck.log",
+    "/tmp/aphrody-shenron-rule-pipeline-tests.log"
+  ]
+}

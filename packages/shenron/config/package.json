@@ -22,7 +22,10 @@
     "./techniques-types": "./src/techniques-types.ts",
     "./tsconfig/base.json": "./tsconfig/base.json",
     "./tsconfig/bun.json": "./tsconfig/bun.json",
-    "./tsconfig/react.json": "./tsconfig/react.json"
+    "./tsconfig/react.json": "./tsconfig/react.json",
+    "./slug": "./src/slug.ts",
+    "./wiki-slugs": "./src/wiki-slugs.ts",
+    "./databooks-defauts": "./src/databooks-defauts.ts"
   },
   "scripts": {
     "type-check": "tsc --noEmit",
@@ -36,6 +39,9 @@
   "devDependencies": {
     "@types/bun": "catalog:",
     "typescript": "catalog:"
+  },
+  "engines": {
+    "bun": ">=1.4.2"
   },
   "shenron": {
     "runtime": {
@@ -56,10 +62,10 @@
       "./techniques-types": "pure",
       "./tsconfig/base.json": "json",
       "./tsconfig/bun.json": "json",
-      "./tsconfig/react.json": "json"
+      "./tsconfig/react.json": "json",
+      "./slug": "pure",
+      "./wiki-slugs": "pure",
+      "./databooks-defauts": "pure"
     }
-  },
-  "engines": {
-    "bun": ">=1.4.2"
   }
 }
