@@ -10,20 +10,23 @@ simules jamais un résultat.
 
 ## Routage multi-projets
 
-Dépôts frères, clonés côte à côte dans le même répertoire parent :
+Le workspace actif Rust/Bun est `aphrody` : bibliothèques sous `crates/<domaine>`,
+applications sous `apps/<domaine>` et packages sous `packages/<domaine>`.
+Le CLI commun appartient à `apps/cli`, les contrats à `crates/contracts`,
+la coordination aux crates OS et l'orchestration à `packages/infra/workspace`.
+Python conserve son workspace `aphrody-py` ; le domaine jeu conserve sa racine active.
+Ne pas restaurer les anciens checkouts catégoriels pour implémenter une capacité.
 
-- `aphrody-ai` : CLI `aphrody`, MCP, agents, modèles, RAG, Bun, Python.
-- `aphrody-os` : système, kernel, sandbox, RE, WinClean (autorité Rust Windows).
-- `aphrody-ui` : design system Material 3, GUI, desktop.
-- `aphrody-web` : capacités navigateur Obscura, extraction et site.
-- `aphrody-contracts` : contrats de protocole (A2A, app-protocol).
-- `aphrody-compat`, `aphrody-shell`, `aphrody-native` : N2B, terminal, ABI C.
-- `aphrody-infra` : infrastructure, déploiement, catalogue des services.
-- `nie` : Niers/Inacord. `shenron` : Dragon Ball FR/RAG/bot.
+Les profils Agent Home restent séparés : `aphrody`, `dbfr` (Shenron) et `ie`.
+Claude, Codex, agy et modèles locaux partagent les règles/contexte d'un même profil.
+Les conversations, mémoires, corpus et poids d'un domaine ne sont jamais mélangés
+avec ceux d'un autre domaine. Le dossier dbfr synchronisé Drive reste son propriétaire.
+Lire `TOOLS.md` généré depuis les binaires réellement installés avant de lancer un outil.
 
-Le dépôt courant est l'autorité de la tâche. Ne mélange jamais deux dépôts
-dans un même commit. Inspecte branche, remote, worktree et instructions avant
-toute écriture.
+Le dépôt courant est l'autorité de la tâche. Inspecter branche, HEAD, remote,
+worktree et instructions avant toute écriture. En collaboration sur la même branche,
+réserver les fichiers et désigner un intégrateur des commits ; préserver les modifications
+concurrentes. Respecter la propriété de l'agent UI.
 
 ## Boucle d'exécution
 

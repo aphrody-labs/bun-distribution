@@ -54,11 +54,49 @@ const REPOS: readonly RepoSpec[] = [
 ];
 
 /** Binaries this ecosystem installs, and how an agent checks for them. */
-const BINARIES = ["aphrody", "aphrody-mcp", "bxc", "bun", "uv", "cargo"] as const;
+const BINARIES = [
+  "aphrody",
+  "aphrody-kernel",
+  "aphrody-mcp",
+  "claude",
+  "codex",
+  "agy",
+  "bun",
+  "bunx",
+  "uv",
+  "uvx",
+  "cargo",
+  "rustc",
+  "rustup",
+  "sccache",
+  "oxlint",
+  "oxfmt",
+  "tsgo",
+  "git",
+  "gh",
+  "nu",
+  "rg",
+  "fd",
+  "sd",
+  "eza",
+  "bat",
+  "dust",
+  "procs",
+  "btm",
+  "ssh",
+  "pwsh",
+  "python3",
+  "gcloud",
+  "rclone",
+  "ffmpeg",
+  "llama-server",
+  "bxc",
+  "n2b",
+] as const;
 
 /** Run a command and return trimmed stdout, or `null` when it fails. */
 function run(cmd: string, args: string[], cwd?: string): string | null {
-  const out = spawnSync(cmd, args, { cwd, encoding: "utf8", shell: false });
+  const out = spawnSync(cmd, args, { cwd, encoding: "utf8", shell: false, timeout: 15_000 });
   if (out.status !== 0 || out.stdout == null) return null;
   const text = out.stdout.trim();
   return text.length > 0 ? text : null;
@@ -258,21 +296,34 @@ function locate(bin: string, home: string, persistent: readonly string[]): BinSt
   return { kind: "absent" };
 }
 
-/** Which of the expected binaries exist, and whether the PATH finds them. */
-function binaryTable(home: string): string[] {
-  const rows: string[] = [];
+export interface InstalledTool {
+  name: string;
+  state: BinState["kind"];
+  path: string | null;
+  version: string | null;
+}
+
+/** Read installed tools without changing their installation. */
+export function collectInstalledTools(home = homedir()): InstalledTool[] {
   const persistent = persistentPathDirs();
-  for (const bin of BINARIES) {
-    const state = locate(bin, home, persistent);
-    if (state.kind === "absent") {
-      rows.push(`| \`${bin}\` | **absent de cette machine** | — | — |`);
-      continue;
-    }
-    const version = run(state.path, ["--version"])?.split("\n")[0] ?? null;
-    const label = state.kind === "path" ? "ok" : "**installé, hors PATH**";
-    rows.push(`| \`${bin}\` | ${label} | ${version ?? "—"} | \`${state.path}\` |`);
-  }
-  return rows;
+  return BINARIES.map((name) => {
+    const state = locate(name, home, persistent);
+    const path = state.kind === "absent" ? null : state.path;
+    const version = path ? (run(path, ["--version"])?.split("\n")[0] ?? null) : null;
+    return { name, state: state.kind, path, version };
+  });
+}
+
+function binaryTable(home: string): string[] {
+  return collectInstalledTools(home).map((tool) => {
+    const label =
+      tool.state === "path"
+        ? "ok"
+        : tool.state === "off-path"
+          ? "**installé, hors PATH**"
+          : "**absent de cette machine**";
+    return `| \`${tool.name}\` | ${label} | ${tool.version ?? "—"} | ${tool.path ? `\`${tool.path}\`` : "—"} |`;
+  });
 }
 
 function renderRepos(all: readonly RepoFacts[], generatedAt: string, source: string): string {
@@ -335,59 +386,84 @@ function renderRepos(all: readonly RepoFacts[], generatedAt: string, source: str
 
   lines.push("## Points d'attention", "");
   lines.push(
-    "- Le moteur YOLO canonique est `aphrody-os/crates/aphrody-yolo`; ses skills et sa persona",
-    "  vivent dans `aphrody-ai/plugins/aphrody`. Ne pas restaurer un checkout YOLO parallèle.",
-  );
-  lines.push(
-    "- `niers` a pour remote `nie.git` : le dossier et le dépôt ne portent pas le",
-    "  même nom, ne pas chercher un dépôt `niers` sur GitHub.",
-    "- `aphrody-os` contient BXC et N2B. Ne pas restaurer les anciens clones",
-    "  `~/bxc` ou `~/n2b` : Aphrody les consomme déjà via le workspace frère,",
-    "  et N2B s'utilise par `aphrody n2b`.",
+    "- Le monorepo `aphrody` contient les domaines Rust/Bun ; ne pas restaurer les anciens checkouts catégoriels.",
+    "- Python reste dans `aphrody-py`, le domaine jeu dans sa racine active vérifiée.",
+    "- Les contextes Agent Home `aphrody`, `dbfr` (Shenron) et `ie` restent distincts.",
+    "- Un seul contexte par domaine est partagé par Claude, Codex, agy et les modèles locaux.",
+    "- Les poids, conversations, mémoires et bases utilisateur restent dans leurs stores privés.",
     "",
   );
   return lines.join("\n");
 }
 
-function renderTools(generatedAt: string, home: string): string {
+export function renderTools(generatedAt: string, home: string, root: string): string {
+  const kernel = locate("aphrody-kernel", home, persistentPathDirs());
+  let toolRows: string[] = [];
+  let kernelStatus = "Non interrogé : binaire kernel absent.";
+  if (kernel.kind !== "absent") {
+    const raw = run(kernel.path, ["tools"], root);
+    if (raw != null) {
+      try {
+        const inventory = JSON.parse(raw) as { tools?: { name: string; description?: string }[] };
+        toolRows = (inventory.tools ?? []).map(
+          (tool) =>
+            `| \`${tool.name}\` | ${(tool.description ?? "").replaceAll("|", "\\|").replaceAll("\n", " ")} |`,
+        );
+        kernelStatus = `${toolRows.length} outils effectivement exposés par le kernel installé.`;
+      } catch {
+        kernelStatus = "Inventaire kernel non décodable ; aucune capacité supposée.";
+      }
+    } else kernelStatus = "Inventaire kernel indisponible ou timeout ; aucune capacité supposée.";
+  }
   return [
     "<!-- GENERATED by aphrody-ops agent-home — do not edit by hand. -->",
-    "# Outils locaux",
+    "# Outils et contextes Agent Home",
     "",
-    `Relevé le **${generatedAt}**. Trois états, à ne pas confondre :`,
-    "`ok` (le PATH le trouve), **installé, hors PATH** (présent mais à invoquer",
-    "par son chemin absolu — surtout ne pas réinstaller), **absent de cette",
-    "machine** (ne rien bâtir dessus).",
+    `Relevé le **${generatedAt}** depuis \`${root}\`.`,
+    "",
+    "## Binaires réellement installés",
+    "",
+    "`ok` : trouvé sur PATH ; `installé, hors PATH` : invoquer le chemin indiqué ; absent : installer avant usage.",
+    "Une version inconnue signifie que la sonde --version a échoué, pas que le binaire fonctionne.",
     "",
     "| Outil | État | Version | Chemin |",
     "|---|---|---|---|",
     ...binaryTable(home),
     "",
-    "## Toolbox d'inférence locale",
+    "## Propriétaires et commandes",
     "",
-    "Le binaire `aphrody` expose la toolbox si — et seulement si — il a été",
-    "construit avec ses features (`CLAUDE.md` §7 : une feature opt-in n'est",
-    "gardée par personne).",
+    "- Inventaire des commandes : CLI.md à la racine du monorepo ; consulter --help du binaire installé.",
+    "- Kernel OS : `aphrody-kernel tools`, `aphrody-kernel call <outil> '<JSON>'`, `aphrody-kernel mcp`.",
+    "- Nushell : `nu_eval` reçoit code/cwd/vars ; transmettre les données via vars. Cet outil peut modifier le système.",
+    "- Git : `github_status` reçoit repo_path ; sa liste de modifications ne prouve pas leur auteur.",
+    "- Agent Home : crates/ai/agent-home ; génération : packages/infra/workspace/src/agent-home.ts.",
+    "- Sessions externes : crates/ai/session/src/external ; mémoire : crates/ai/memory.",
+    "- A2A : config/a2a-peers.json ; transport : crates/os/a2a-coord ; contrat : crates/contracts/a2a.",
+    "- Modèles locaux : crates/ai/llama-server et crates/ai/models ; ne pas déplacer les poids.",
+    "- Contrôles Rust : cargo check/clippy/test sur les packages modifiés ; Bun : oxlint/oxfmt, tsgo, bun test selon manifests.",
     "",
-    "```bash",
-    "aphrody model recommend --task ocr --prefer fast   # que faire tourner ici",
-    "aphrody model pull whisper-base-en                 # vérifié par digest",
-    "aphrody ocr page <image>                           # feature `ocr`",
-    "aphrody job transcribe <audio> && aphrody job run  # feature `jobs`",
-    "aphrody infer runtime                              # feature `infer`",
-    "```",
+    "## Séparation des domaines et collaboration",
     "",
-    "Rien n'est téléchargé pendant une inférence : un modèle absent rend une",
-    "erreur qui cite la commande `aphrody model pull` à lancer.",
+    "Choisir un profil avant le lancement : ~/.aphrody/workspaces/aphrody, dbfr ou ie.",
+    "APHRODY_WORKSPACE désigne le profil Agent Home ; le cwd de travail reste la racine de code du domaine.",
+    "Claude, Codex, agy et modèles locaux partagent les règles et le contexte uniquement au sein du domaine choisi.",
+    "Les règles du dépôt (AGENTS.md, et projections CLAUDE.md/GEMINI.md) restent applicables.",
+    "Partager une branche exige de vérifier branche et HEAD avant chaque tâche ; réserver les fichiers et désigner un intégrateur Git.",
+    "Ne pas créer de worktree/branche isolée pour ce mode ; ne pas attribuer une modification Git à un PID sans preuve.",
     "",
-    "Les mêmes capacités sont exposées en MCP par `aphrody-mcp` construit avec",
-    "`--features toolbox` : `aphrody_ocr`, `aphrody_describe_image`,",
-    "`aphrody_transcribe`, `aphrody_job_submit` / `aphrody_job_status`.",
+    "`aphrody ai sync-sessions --watch --interval-secs 30 --json` existe ; son mode historique agrège tous les agents.",
+    "Ne pas lancer ce mode global pour mélanger les domaines. Utiliser un routage par workspace avant ingestion des mémoires de profil.",
+    "Les associations PID/session historiques fondées sur cwd et mtime sont heuristiques si plusieurs sessions partagent un cwd.",
+    "Les conversations natives restent dans leurs stores privés ; utiliser un miroir filtré, pas un fichier natif commun.",
+    "Pour dbfr/Shenron, le dossier synchronisé Google Drive conserve corpus/poids et entraînements ; vérifier le mapping privé avant de lancer.",
     "",
-    "**`aphrody_ocr` et `aphrody_describe_image` ne sont pas interchangeables** :",
-    "le premier n'a pas le droit de décrire une image (une légende classée comme",
-    "transcription corrompt un corpus en silence), le second l'a. Choisir selon",
-    "que la réponse doit être une transcription ou une description.",
+    "## Inventaire kernel effectif",
+    "",
+    kernelStatus,
+    "",
+    "| Outil | Contrat descriptif du binaire installé |",
+    "|---|---|",
+    ...toolRows,
     "",
   ].join("\n");
 }
@@ -405,22 +481,44 @@ export function runAgentHome(args: string[]): number {
   if (!source) throw new Error("--source requires a workspace directory");
 
   const home = homedir();
-  const workspace = join(
-    home,
-    ".aphrody",
-    profile != null && profile.length > 0 ? `workspace-${profile}` : "workspace",
-  );
+  const workspaceIndex = args.indexOf("--workspace");
+  const explicitWorkspace = workspaceIndex >= 0 ? args[workspaceIndex + 1] : undefined;
+  if (workspaceIndex >= 0 && !explicitWorkspace)
+    throw new Error("--workspace requires a directory");
+  const canonicalProfile = profile ? join(home, ".aphrody", "workspaces", profile) : undefined;
+  const workspace = explicitWorkspace
+    ? resolve(explicitWorkspace)
+    : process.env.APHRODY_WORKSPACE ||
+      (canonicalProfile && existsSync(canonicalProfile)
+        ? canonicalProfile
+        : join(home, ".aphrody", profile ? `workspace-${profile}` : "workspace"));
   const facts = REPOS.map((spec) => inspect(spec, source));
   const generatedAt = new Date().toISOString().slice(0, 19).replace("T", " ") + " UTC";
   const repos = renderRepos(facts, generatedAt, source);
-  const tools = renderTools(generatedAt, home);
+  const root = existsSync(join(source, "Cargo.toml")) ? source : join(source, "aphrody");
+  const tools = renderTools(generatedAt, home, root);
   if (dryRun) {
     process.stdout.write(`${repos}\n---\n${tools}\n`);
     return 0;
   }
   mkdirSync(workspace, { recursive: true });
-  writeFileSync(join(workspace, "REPOS.md"), repos, "utf8");
-  writeFileSync(join(workspace, "TOOLS.md"), tools, "utf8");
+  for (const [name, content] of [
+    ["REPOS.md", repos],
+    ["TOOLS.md", tools],
+  ]) {
+    const path = join(workspace, name!);
+    if (existsSync(path)) {
+      const previous = readFileSync(path, "utf8");
+      if (
+        !previous.startsWith("<!-- GENERATED by aphrody-ops agent-home") &&
+        previous !== content
+      ) {
+        const backup = `${path}.before-agent-home-${Date.now()}`;
+        writeFileSync(backup, previous, { mode: 0o600, flag: "wx" });
+      }
+    }
+    writeFileSync(path, content!, "utf8");
+  }
   const missing = facts.filter((fact) => !fact.present).map((fact) => fact.spec.dir);
   process.stderr.write(
     `wrote ${join(workspace, "REPOS.md")} and TOOLS.md\n${facts.length - missing.length}/${facts.length} repo(s) present${missing.length > 0 ? ` — absent: ${missing.join(", ")}` : ""}\n`,
