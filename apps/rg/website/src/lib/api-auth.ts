@@ -68,7 +68,7 @@ export async function requireApiAdmin(): Promise<ApiAuthResult> {
 
 /**
  * API-route equivalent of `requirePatreonCreator()` — restreint l'accès au
- * créateur Patreon principal (rosegriffonfr@gmail.com) ou à la whitelist
+ * créateur Patreon principal (`PATREON_CREATOR_EMAIL`) ou à la whitelist
  * Discord définie dans `lib/patreon/admin-access.ts`. Renvoie 401/403 JSON.
  */
 export async function requireApiPatreonCreator(): Promise<ApiAuthResult> {

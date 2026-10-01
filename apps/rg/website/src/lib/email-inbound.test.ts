@@ -34,7 +34,7 @@ describe("Gestion de Réception de Mail (Inbound Email Service)", () => {
 
 	describe("categorizeEmail", () => {
 		it("catégorise les demandes pour la cellule de médiation", () => {
-			expect(categorizeEmail(["rosegriffon.mediation@gmail.com"], "Signalement")).toBe(
+			expect(categorizeEmail(["mediation@rosegriffon.fr"], "Signalement")).toBe(
 				"mediation"
 			);
 			expect(categorizeEmail(["contact@rosegriffon.fr"], "Demande d'aide médiation")).toBe(

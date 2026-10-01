@@ -11,7 +11,7 @@ export async function GET() {
 			primary: "#a14b3f", // Rouge Roy
 			secondary: "#2f6e9c", // Bleu Gaëlle
 		},
-		contact: "rosegriffonfr@gmail.com",
+		contact: "contact@rosegriffon.fr",
 		mascots: {
 			gaelle: {
 				color: "#2f6e9c",

@@ -469,7 +469,7 @@ export async function sendMediationRequestEmail(data: {
 	senderEmail?: string;
 	senderName?: string;
 }): Promise<SendEmailResult> {
-	const recipient = "rosegriffon.mediation@gmail.com";
+	const recipient = process.env.RG_MEDIATION_EMAIL?.trim() || "contact@rosegriffon.fr";
 
 	const html = `<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8"></head>
 <body style="margin:0;padding:24px;background:#f5f5f5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;color:#1a1a1a">

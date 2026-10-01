@@ -24,7 +24,7 @@ export const metadata: Metadata = {
 	},
 };
 
-const ADRESSE_MEDIATION = "rosegriffon.mediation@gmail.com";
+const ADRESSE_MEDIATION = "contact@rosegriffon.fr";
 
 /** Les trois missions de la cellule. */
 const MISSIONS = [

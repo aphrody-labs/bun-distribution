@@ -4,9 +4,11 @@ import { cache } from "react";
 import { createPostgresClient } from "@rosegriffon/db/service";
 
 /**
- * Email du compte créateur Patreon Rose Griffon (autorisation principale).
+ * Email du compte créateur Patreon Rose Griffon (autorisation principale), fourni par
+ * l'environnement serveur (`PATREON_CREATOR_EMAIL`) pour ne pas figer d'adresse
+ * personnelle dans le code. Sans valeur, seule la whitelist Discord donne accès.
  */
-const PATREON_CREATOR_EMAIL = "rosegriffonfr@gmail.com";
+const PATREON_CREATOR_EMAIL = process.env.PATREON_CREATOR_EMAIL?.trim().toLowerCase() || null;
 
 /**
  * Whitelist Discord — IDs additionnels autorisés à accéder aux outils
@@ -36,7 +38,7 @@ export const isPatreonAdmin = cache(async (user: UserLike | null): Promise<boole
 	if (!user) {
 		return false;
 	}
-	if (user.email?.toLowerCase() === PATREON_CREATOR_EMAIL) {
+	if (PATREON_CREATOR_EMAIL && user.email?.toLowerCase() === PATREON_CREATOR_EMAIL) {
 		return true;
 	}
 
