@@ -2,6 +2,7 @@
 //! Shared crawl frontier, page processing and injectable network transport.
 
 mod frontier;
+mod mediawiki;
 mod revisit;
 mod robots;
 mod runner;
@@ -9,6 +10,7 @@ mod scoring;
 mod sitemap;
 
 pub use frontier::{AddRequest, Frontier, FrontierOptions, FrontierStats, Lease, RequestState};
+pub use mediawiki::{crawl_mediawiki, MediaWikiDocument, MediaWikiError, MediaWikiOptions};
 pub use revisit::{
     ChangeHistory, RevisitPolicy, estimate_change_rate, revisit_interval_ms, revisit_priority,
 };

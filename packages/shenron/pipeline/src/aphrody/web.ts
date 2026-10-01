@@ -1,5 +1,54 @@
 // SPDX-License-Identifier: Apache-2.0
 /** Authenticated crawl jobs and index access owned by Aphrody Web. */
+import { runAphrodyCli, type AphrodyCliOptions, type CliResult } from "./cli";
+
+export interface AphrodyWebScrapeOptions extends Omit<AphrodyCliOptions, "json"> {
+	profile?: "static" | "http" | "fast" | "stealth" | "max";
+	selector?: string;
+	max?: number;
+}
+
+/** Scrapes one page through the shared Aphrody Web Rust CLI and returns Markdown. */
+export async function aphrodyWebScrape(url: string, options: AphrodyWebScrapeOptions = {}): Promise<string> {
+	const parsed = new URL(url);
+	if (!["http:", "https:"].includes(parsed.protocol) || parsed.username || parsed.password) {
+		throw new Error("Aphrody Web scrape requires an HTTP(S) URL without credentials");
+	}
+	const args = ["web", "scrape", url];
+	if (options.selector) args.push(options.selector);
+	else args.push("--markdown");
+	args.push("--profile", options.profile ?? "static");
+	if (options.max !== undefined) args.push("--max", String(options.max));
+	const result = await runAphrodyCli(args, { timeoutMs: 120_000, ...options });
+	if (result.kind === "exit" && result.ok) return result.stdout.trimEnd();
+	throw new Error(formatCliError(result));
+}
+
+/** Fetches a JSON reconnaissance report through Aphrody Web. */
+export async function aphrodyWebRecon<T = Record<string, unknown>>(
+	url: string,
+	options: AphrodyWebScrapeOptions = {},
+): Promise<T> {
+	const parsed = new URL(url);
+	if (!["http:", "https:"].includes(parsed.protocol) || parsed.username || parsed.password) {
+		throw new Error("Aphrody Web recon requires an HTTP(S) URL without credentials");
+	}
+	const result: CliResult<T> = await runAphrodyCli<T>(["web", "recon", url, "--json", "--profile", options.profile ?? "static"], {
+		timeoutMs: 120_000,
+		...options,
+		json: true,
+	});
+	if (result.kind === "exit" && result.ok) return result.data as T;
+	throw new Error(formatCliError(result));
+}
+
+function formatCliError(result: CliResult): string {
+	if (result.kind === "not_found") return `Aphrody CLI unavailable (${result.bin}): ${result.message}`;
+	if (result.kind === "timeout") return `Aphrody CLI timed out after ${result.timeoutMs} ms: ${result.stderr.trim()}`;
+	if (result.kind === "invalid_json") return `Aphrody CLI returned invalid JSON: ${result.error}`;
+	return `Aphrody CLI exited ${result.code}: ${result.stderr.trim() || result.stdout.trim()}`;
+}
+
 export interface AphrodyCrawlOptions {
 	baseUrl?: string;
 	token?: string;
@@ -34,7 +83,7 @@ export class AphrodyWebClient {
 		if ((this.baseUrl.protocol !== "https:" && !(this.baseUrl.protocol === "http:" && ["127.0.0.1", "[::1]", "localhost"].includes(this.baseUrl.hostname))) || this.baseUrl.username || this.baseUrl.password) {
 			throw new Error("Aphrody Web URL must use HTTPS or loopback HTTP");
 		}
-		this.token = options.token ?? process.env.APHRODY_BXC_API_TOKEN ?? "";
+		this.token = options.token ?? process.env.APHRODY_WEB_API_TOKEN ?? process.env.APHRODY_BXC_API_TOKEN ?? "";
 		if (!this.token.trim()) throw new Error("Aphrody Web token is not configured");
 		this.fetcher = options.fetcher ?? fetch;
 		this.apiPrefix = this.baseUrl.protocol === "http:" && this.baseUrl.port === "3007" && ["127.0.0.1", "[::1]", "localhost"].includes(this.baseUrl.hostname)

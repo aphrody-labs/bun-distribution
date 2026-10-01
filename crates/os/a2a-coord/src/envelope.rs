@@ -4,6 +4,8 @@ pub use aphrody_a2a::coord::EnvelopeKind;
 use chrono::Utc;
 use getrandom::getrandom;
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
+use std::collections::BTreeMap;
 
 /// JSONL mailbox envelope (v1). Legacy `type`/`subject` aliases accepted on read.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -26,6 +28,9 @@ pub struct Envelope {
     pub re: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub channel_hint: Option<Vec<String>>,
+    /// Preserve domain extensions such as Shenron's `taskId`, `verdict` and `artifacts`.
+    #[serde(flatten)]
+    pub extensions: BTreeMap<String, Value>,
 }
 
 impl Envelope {
@@ -61,6 +66,7 @@ impl From<CoordEnvelope> for Envelope {
             channel_hint: Some(
                 value.channel_hint.into_iter().map(|hint| hint.as_str().to_owned()).collect(),
             ),
+            extensions: BTreeMap::new(),
         }
     }
 }

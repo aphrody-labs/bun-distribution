@@ -200,15 +200,12 @@ export interface CrawlTarget {
 }
 
 /**
- * Canonical Dragon Ball corpus locations (aphrody-web `bxc corpus` crawler, aphrody-rag store).
- * The crawl config and evaluation fixtures belong to this Aphrody checkout;
- * the BXC source checkout remains configurable until its crawler is migrated.
+ * Aphrody-owned Dragon Ball crawl and RAG locations for the Shenron profile.
  */
 export function corpusLocations(root: string, env: Record<string, string | undefined> = process.env) {
 	const crawlDir = env.APHRODY_CORPUS_CRAWL_DIR?.trim() || join(env.APHRODY_HOME?.trim() || join(homedir(), ".aphrody"), "workspaces", "dbfr", "crawl");
 	const datasetDir = env.APHRODY_DRAGONBALL_DATASET_DIR?.trim() || join(root, "crates", "ai", "rag-eval", "datasets", "dragonball");
 	return {
-		bxcRoot: env.BXC_ROOT?.trim() || join(root, "..", "aphrody-web", "apps", "bxc"),
 		datasetDir,
 		crawlConfig: join(datasetDir, "crawl.config.json"),
 		crawlDir,
@@ -216,13 +213,13 @@ export function corpusLocations(root: string, env: Record<string, string | undef
 	};
 }
 
-/** Ingests every `bxc corpus` JSONL export into the canonical aphrody-rag store. */
+/** Ingests every Aphrody Web corpus JSONL export into the Aphrody RAG owner. */
 export async function runCorpusIngest(options: { dryRun?: boolean; runner?: CommandRunner } = {}): Promise<PipelineExecution> {
 	const root = join(import.meta.dir, "../../../..");
 	const loc = corpusLocations(root);
 	const corpusDir = join(loc.crawlDir, "corpus");
 	const exports = existsSync(corpusDir) ? readdirSync(corpusDir).filter((f) => f.endsWith(".jsonl")).sort().map((f) => join(corpusDir, f)) : [];
-	if (!exports.length && !options.dryRun) throw new Error(`aucun export bxc corpus dans ${corpusDir}; lancer d'abord: pipeline crawl universal`);
+	if (!exports.length && !options.dryRun) throw new Error(`aucun export Aphrody Web dans ${corpusDir}; lancer d'abord: pipeline crawl universal`);
 	const command = ["bun", join(root, "packages/shenron/pipeline/scripts/rag-sync-aphrody.ts"), "--corpus-crawl", `--crawl-dir=${loc.crawlDir}`];
 	if (!options.dryRun) command.push("--appliquer");
 	return executeCommand(command, { cwd: root, dryRun: options.dryRun, runner: options.runner });
@@ -239,9 +236,9 @@ export async function runCrawl(target: CrawlTarget): Promise<PipelineExecution> 
 			command = ["bun", join(root, "scripts/tools/shenron/scripts/ops/crawl-dragon-ball-official-aphrody.ts"), target.dryRun ? "--dry-run" : "--apply"];
 			break;
 		case "universal": {
-			// Every registry source (Fandom included, operator decision 2026-09-26) through the canonical crawler.
-			const loc = corpusLocations(root);
-			command = ["bun", join(loc.bxcRoot, "src", "cli", "index.ts"), "corpus", "crawl", "--config", loc.crawlConfig, "--crawl-dir", loc.crawlDir];
+			// Aphrody Web Rust owns crawling/extraction; Shenron supplies its DBFR plan.
+			command = ["bun", join(root, "packages/shenron/pipeline/scripts/aphrody-web-corpus-crawl.ts")];
+			if (target.dryRun) command.push("--dry-run");
 			if (target.depth !== undefined || target.outDir) throw new Error("crawl universal: profondeur et sortie viennent de crawl.config.json et APHRODY_CORPUS_CRAWL_DIR");
 			return executeCommand(command, { cwd: root, dryRun: target.dryRun, runner: target.runner });
 		}

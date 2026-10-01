@@ -16,6 +16,8 @@ blake3 = { workspace = true }
 chrono = { workspace = true }
 futures = { workspace = true }
 rusqlite = { workspace = true }
+regex = { workspace = true }
+serde_json = { workspace = true }
 tokio = { workspace = true }
 url = { workspace = true }
 

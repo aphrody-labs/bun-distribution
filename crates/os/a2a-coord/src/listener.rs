@@ -76,6 +76,7 @@ fn router_with_mailbox(cfg: &ListenerConfig, mailbox: Mailbox) -> Router {
     let a2a_rest = rest_router(handler);
 
     let state_mailbox = mailbox.clone();
+    let task_api_root = mailbox.coord_dir.clone();
     let state = AppState { mailbox };
 
     let coord = Router::new()
@@ -87,6 +88,10 @@ fn router_with_mailbox(cfg: &ListenerConfig, mailbox: Mailbox) -> Router {
     Router::new()
         .merge(coord)
         .merge(crate::bridge::a2a_router(state_mailbox, cfg.manifest.id.clone()))
+        .merge(crate::task_api::task_api_router(
+            task_api_root,
+            std::env::var("APHRODY_A2A_COORD_TOKEN").ok().filter(|token| !token.is_empty()),
+        ))
         .merge(agent_card_router(card_producer))
         .merge(a2a_rpc)
         .merge(a2a_rest)

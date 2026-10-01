@@ -9,6 +9,7 @@ use aphrody_web_extract::{
 use futures::{StreamExt, stream::FuturesUnordered};
 use obscura_dom::parse_html;
 use obscura_net::ObscuraHttpClient;
+use regex::Regex;
 use url::Url;
 
 use crate::frontier::{AddRequest, Frontier, FrontierStats, PageRecord, StoredPage};
@@ -65,6 +66,9 @@ pub struct CrawlOptions {
     pub max_requests: usize,
     pub max_concurrency: usize,
     pub allowed_domains: Vec<String>,
+    /// URL regex filters applied before fetching. Excludes always take priority.
+    pub include_url_regex: Vec<String>,
+    pub exclude_url_regex: Vec<String>,
     pub max_links_per_page: usize,
     pub obey_robots: bool,
     pub ingest_sitemaps: bool,
@@ -80,6 +84,8 @@ impl Default for CrawlOptions {
             max_requests: 25,
             max_concurrency: 4,
             allowed_domains: Vec::new(),
+            include_url_regex: Vec::new(),
+            exclude_url_regex: Vec::new(),
             max_links_per_page: 10_000,
             obey_robots: false,
             ingest_sitemaps: false,
@@ -126,6 +132,20 @@ pub async fn crawl_bounded<T: CrawlTransport>(
     let concurrency = options.max_concurrency.clamp(1, 128);
     let allowed: HashSet<String> =
         options.allowed_domains.iter().map(|s| s.to_ascii_lowercase()).collect();
+    let include_url_regex = match compile_url_patterns(&options.include_url_regex, "include") {
+        Ok(patterns) => patterns,
+        Err(error) => {
+            report.errors.push(("include-url-regex".into(), error));
+            return Ok(report);
+        },
+    };
+    let exclude_url_regex = match compile_url_patterns(&options.exclude_url_regex, "exclude") {
+        Ok(patterns) => patterns,
+        Err(error) => {
+            report.errors.push(("exclude-url-regex".into(), error));
+            return Ok(report);
+        },
+    };
     let mut robots = HashMap::<String, RobotsFile>::new();
     if options.ingest_sitemaps {
         ingest_seed_sitemaps(frontier, transport, options, &allowed, &mut robots, &mut report)
@@ -141,6 +161,10 @@ pub async fn crawl_bounded<T: CrawlTransport>(
                 report
                     .errors
                     .push((lease.url.to_string(), "URL is outside allowed_domains".into()));
+                continue;
+            }
+            if !url_matches_filters(&lease.url, &include_url_regex, &exclude_url_regex) {
+                frontier.mark_rejected(&lease, "URL excluded by crawl plan")?;
                 continue;
             }
             if options.obey_robots {
@@ -218,7 +242,10 @@ pub async fn crawl_bounded<T: CrawlTransport>(
                 if is_html && lease.depth < options.max_depth && status == StoredPage::New {
                     let links = extract_links(&response.body, &response_url)
                         .into_iter()
-                        .filter(|(url, _)| domain_allowed(url, &allowed))
+                        .filter(|(url, _)| {
+                            domain_allowed(url, &allowed)
+                                && url_matches_filters(url, &include_url_regex, &exclude_url_regex)
+                        })
                         .take(options.max_links_per_page);
                     discovered_links = frontier.enqueue_children(&lease, links, now_ms())?;
                 }
@@ -260,6 +287,22 @@ fn domain_allowed(url: &Url, allowed: &HashSet<String>) -> bool {
     let host = url.host_str().unwrap_or_default().to_ascii_lowercase();
     allowed.is_empty()
         || allowed.iter().any(|domain| host == *domain || host.ends_with(&format!(".{domain}")))
+}
+
+fn url_matches_filters(url: &Url, include: &[Regex], exclude: &[Regex]) -> bool {
+    let value = url.as_str();
+    !exclude.iter().any(|pattern| pattern.is_match(value))
+        && (include.is_empty() || include.iter().any(|pattern| pattern.is_match(value)))
+}
+
+fn compile_url_patterns(patterns: &[String], kind: &str) -> Result<Vec<Regex>, String> {
+    patterns
+        .iter()
+        .map(|pattern| {
+            Regex::new(pattern)
+                .map_err(|error| format!("invalid {kind} URL regex {pattern:?}: {error}"))
+        })
+        .collect()
 }
 
 async fn load_robots<'a, T: CrawlTransport>(

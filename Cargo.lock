@@ -604,6 +604,7 @@ dependencies = [
  "ort",
  "predicates",
  "rayon",
+ "regex",
  "reqwest 0.13.5",
  "rusqlite",
  "rustls",
@@ -2960,7 +2961,9 @@ dependencies = [
  "futures",
  "obscura-dom",
  "obscura-net",
+ "regex",
  "rusqlite",
+ "serde_json",
  "tokio",
  "url",
 ]

@@ -164,6 +164,12 @@ pub(crate) enum WebAction {
         /// Restrict discovered links to these domains
         #[arg(long, value_delimiter = ',')]
         allowed_domains: Vec<String>,
+        /// Include only discovered URLs matching these regular expressions (repeatable)
+        #[arg(long = "include-url-regex")]
+        include_url_regex: Vec<String>,
+        /// Reject discovered URLs matching these regular expressions (repeatable)
+        #[arg(long = "exclude-url-regex")]
+        exclude_url_regex: Vec<String>,
         /// Minimum delay between requests to one host
         #[arg(long, default_value_t = 0)]
         per_host_delay: i64,
@@ -191,6 +197,33 @@ pub(crate) enum WebAction {
         /// Emit a structured report
         #[arg(long)]
         json: bool,
+    },
+    /// Enumerate and extract pages through a MediaWiki Action API
+    Mediawiki {
+        /// Action API endpoint, such as https://example.org/w/api.php
+        #[arg(long)]
+        api_url: String,
+        /// Article path with $1 as the encoded title
+        #[arg(long, default_value = "/wiki/$1")]
+        article_path: String,
+        /// Restrict titles to this prefix
+        #[arg(long)]
+        prefix: Option<String>,
+        /// Include article URLs matching these expressions (repeatable)
+        #[arg(long = "include-url-regex")]
+        include_url_regex: Vec<String>,
+        /// Exclude article URLs matching these expressions (repeatable)
+        #[arg(long = "exclude-url-regex")]
+        exclude_url_regex: Vec<String>,
+        /// Maximum documents to return (hard capped by the library)
+        #[arg(long, default_value_t = 200)]
+        max_pages: usize,
+        /// Titles per allpages API request
+        #[arg(long, default_value_t = 50)]
+        batch_size: usize,
+        /// Minimum interval between API requests, in milliseconds
+        #[arg(long, default_value_t = 250)]
+        request_interval_ms: u64,
     },
 }
 
@@ -309,6 +342,8 @@ pub(crate) async fn handle_web(action: WebAction) -> miette::Result<()> {
                 "hls-variants",
                 "native-browser-snapshot",
                 "bounded-crawl",
+                "crawl-url-regex-filters",
+                "structured-crawl-extraction",
                 "robots",
                 "sitemaps",
                 "revisits",
@@ -591,6 +626,8 @@ pub(crate) async fn handle_web(action: WebAction) -> miette::Result<()> {
             max_requests,
             concurrency,
             allowed_domains,
+            include_url_regex,
+            exclude_url_regex,
             per_host_delay,
             max_per_host,
             max_retries,
@@ -608,6 +645,8 @@ pub(crate) async fn handle_web(action: WebAction) -> miette::Result<()> {
                 max_requests,
                 concurrency,
                 allowed_domains,
+                include_url_regex,
+                exclude_url_regex,
                 per_host_delay,
                 max_per_host,
                 max_retries,
@@ -620,8 +659,72 @@ pub(crate) async fn handle_web(action: WebAction) -> miette::Result<()> {
             })
             .await?;
         },
+        WebAction::Mediawiki {
+            api_url,
+            article_path,
+            prefix,
+            include_url_regex,
+            exclude_url_regex,
+            max_pages,
+            batch_size,
+            request_interval_ms,
+        } => {
+            handle_web_mediawiki(
+                api_url,
+                article_path,
+                prefix,
+                include_url_regex,
+                exclude_url_regex,
+                max_pages,
+                batch_size,
+                request_interval_ms,
+            )
+            .await?;
+        },
     }
     Ok(())
+}
+
+async fn handle_web_mediawiki(
+    api_url: String,
+    article_path: String,
+    prefix: Option<String>,
+    include_url_regex: Vec<String>,
+    exclude_url_regex: Vec<String>,
+    max_pages: usize,
+    batch_size: usize,
+    request_interval_ms: u64,
+) -> miette::Result<()> {
+    if max_pages == 0 || batch_size == 0 {
+        return Err(miette!("--max-pages and --batch-size must be positive"));
+    }
+    let api_url = reqwest::Url::parse(&api_url).into_diagnostic()?;
+    let client = obscura_net::ObscuraHttpClient::new();
+    let options = aphrody_web_crawl::MediaWikiOptions {
+        api_url,
+        article_path,
+        prefix,
+        include_url_regex,
+        exclude_url_regex,
+        max_pages,
+        page_batch_size: batch_size,
+        request_interval: Duration::from_millis(request_interval_ms),
+    };
+    let pages = aphrody_web_crawl::crawl_mediawiki(&client, &options)
+        .await
+        .map_err(|error| miette!("MediaWiki crawl failed: {error}"))?;
+    let pages = pages
+        .into_iter()
+        .map(|page| {
+            serde_json::json!({
+                "pageId": page.page_id,
+                "title": page.title,
+                "url": page.url,
+                "markdown": page.markdown,
+            })
+        })
+        .collect::<Vec<_>>();
+    print_web_json(&serde_json::json!({ "pages": pages }))
 }
 
 fn print_web_json(value: &serde_json::Value) -> miette::Result<()> {
@@ -830,6 +933,8 @@ struct WebCrawlRequest {
     max_requests: usize,
     concurrency: usize,
     allowed_domains: Vec<String>,
+    include_url_regex: Vec<String>,
+    exclude_url_regex: Vec<String>,
     per_host_delay: i64,
     max_per_host: u32,
     max_retries: u32,
@@ -845,12 +950,17 @@ async fn handle_web_crawl(request: WebCrawlRequest) -> miette::Result<()> {
     use aphrody_web_crawl::{
         AddRequest, CrawlOptions, Frontier, FrontierOptions, ObscuraTransport,
     };
+    use regex::Regex;
 
     if request.max_requests == 0 || request.concurrency == 0 || request.max_per_host == 0 {
         return Err(miette!("--max-requests, --concurrency and --max-per-host must be positive"));
     }
     if request.per_host_delay < 0 {
         return Err(miette!("--per-host-delay must be nonnegative"));
+    }
+    for pattern in request.include_url_regex.iter().chain(&request.exclude_url_regex) {
+        Regex::new(pattern)
+            .map_err(|error| miette!("invalid crawl URL regex {pattern:?}: {error}"))?;
     }
     if request.sitemaps && request.max_sitemaps == 0 {
         return Err(miette!("--max-sitemaps must be positive when --sitemaps is enabled"));
@@ -897,6 +1007,8 @@ async fn handle_web_crawl(request: WebCrawlRequest) -> miette::Result<()> {
         max_requests: request.max_requests,
         max_concurrency: request.concurrency,
         allowed_domains,
+        include_url_regex: request.include_url_regex,
+        exclude_url_regex: request.exclude_url_regex,
         obey_robots: request.obey_robots,
         ingest_sitemaps: request.sitemaps,
         max_sitemaps: request.max_sitemaps,

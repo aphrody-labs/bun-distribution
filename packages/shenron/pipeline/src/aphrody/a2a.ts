@@ -17,8 +17,16 @@
  * - Alertes dans le salon Discord #bot-admin (1548677623935139901).
  */
 
-import * as fs from "node:fs";
 import * as path from "node:path";
+import {
+	appendRemoteEnvelope,
+	aphrodyA2aStoreEnabled,
+	createRemoteTask,
+	getRemoteTask,
+	listRemoteEnvelopes,
+	listRemoteTasks,
+	putRemoteTask,
+} from "./a2a-remote";
 import {
 	defaultA2AProbes,
 	resolveCoordDir,
@@ -229,63 +237,15 @@ function newEnvelopeId(): string {
 }
 
 // ============================================================================
-// 2. Registre des Tâches A2A (mémoire + instantanés `.coord/a2a-tasks.jsonl`)
+// 2. Cache mémoire des tâches (source durable : Aphrody A2A Coord API)
 // ============================================================================
 
 /**
- * Les tâches vivent en mémoire ET sont journalisées en instantanés append-only dans
- * `.coord/a2a-tasks.jsonl` : le MCP, le site et un pair qui clôt une tâche depuis un
- * autre processus voient le même état, et un redéploiement ne les efface pas.
- * Le dernier instantané (par `updatedAt`) fait foi.
+ * Le cache accélère la requête courante seulement. Les écritures durables passent
+ * par `a2a-remote.ts`, qui cible l'espace Shenron isolé dans Aphrody.
  */
 class TaskStore {
 	private tasks = new Map<string, A2ATask>();
-
-	private snapshotFile(): string {
-		return path.join(resolveCoordDir(), "a2a-tasks.jsonl");
-	}
-
-	private persist(task: A2ATask): void {
-		try {
-			const file = this.snapshotFile();
-			fs.mkdirSync(path.dirname(file), { recursive: true });
-			fs.appendFileSync(file, JSON.stringify(task) + "\n", "utf8");
-		} catch (e) {
-			console.warn(`[A2A] Instantané de tâche non persisté :`, e);
-		}
-	}
-
-	private readSnapshots(): Map<string, A2ATask> {
-		const latest = new Map<string, A2ATask>();
-		try {
-			const content = fs.readFileSync(this.snapshotFile(), "utf8");
-			for (const line of content.split("\n")) {
-				if (!line.trim()) continue;
-				try {
-					const raw = JSON.parse(line) as any;
-					const id = raw.id ?? raw.taskId;
-					if (!id) continue;
-					const t: A2ATask = {
-						id,
-						target: raw.target,
-						status: raw.status ?? "submitted",
-						verdict: raw.verdict,
-						description: raw.description ?? raw.instruction ?? "",
-						createdAt: raw.createdAt ?? raw.created_at ?? new Date().toISOString(),
-						updatedAt: raw.updatedAt ?? raw.updated_at ?? raw.createdAt ?? raw.created_at ?? new Date().toISOString(),
-						history: raw.history ?? [],
-						artifacts: raw.artifacts ?? [],
-						metadata: raw.metadata ?? { envelopeId: raw.envelopeId, plan: raw.plan },
-						resultMarkdown: raw.resultMarkdown,
-						resultData: raw.resultData,
-					};
-					const prev = latest.get(id);
-					if (!prev || (t.updatedAt ?? "") >= (prev.updatedAt ?? "")) latest.set(id, t);
-				} catch {}
-			}
-		} catch {}
-		return latest;
-	}
 
 	create(target: A2ATarget, description: string, metadata: Record<string, unknown> = {}): A2ATask {
 		const id = `task-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
@@ -307,18 +267,17 @@ class TaskStore {
 			},
 		};
 		this.tasks.set(id, task);
-		this.persist(task);
 		return task;
 	}
 
 	get(id: string): A2ATask | undefined {
-		const mem = this.tasks.get(id);
-		const disk = this.readSnapshots().get(id);
-		if (disk && (!mem || disk.updatedAt > mem.updatedAt)) {
-			this.tasks.set(id, disk);
-			return disk;
-		}
-		return mem;
+		return this.tasks.get(id);
+	}
+
+	hydrate(task: A2ATask): A2ATask {
+		const current = this.tasks.get(task.id);
+		if (!current || task.updatedAt >= current.updatedAt) this.tasks.set(task.id, task);
+		return this.tasks.get(task.id)!;
 	}
 
 	/** Recherche une tâche par l'id de son enveloppe d'origine (`metadata.envelopeId`). */
@@ -327,15 +286,7 @@ class TaskStore {
 	}
 
 	list(targetFilter?: A2ATarget): A2ATask[] {
-		const merged = new Map(this.tasks);
-		for (const [id, disk] of this.readSnapshots()) {
-			const mem = merged.get(id);
-			if (!mem || disk.updatedAt > mem.updatedAt) {
-				merged.set(id, disk);
-				this.tasks.set(id, disk);
-			}
-		}
-		const all = Array.from(merged.values()).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+		const all = Array.from(this.tasks.values()).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 		return targetFilter ? all.filter((t) => t.target === targetFilter) : all;
 	}
 
@@ -348,7 +299,6 @@ class TaskStore {
 		const updatedAt = now > task.updatedAt ? now : new Date(Date.parse(task.updatedAt) + 1).toISOString();
 		Object.assign(task, patch, { updatedAt });
 		this.tasks.set(id, task);
-		this.persist(task);
 		return task;
 	}
 }
@@ -356,7 +306,7 @@ class TaskStore {
 export const a2aTaskStore = new TaskStore();
 
 // ============================================================================
-// 2b. Boîte aux lettres & Enveloppes .coord (compatible ai.json v1 & a2a-ui)
+// 2b. Cache mémoire des enveloppes (source durable : Aphrody A2A Coord API)
 // ============================================================================
 
 class CoordMailboxStore {
@@ -367,68 +317,78 @@ class CoordMailboxStore {
 		return hubConfig.coordDir ?? resolveCoordDir();
 	}
 
-	ensureDir() {
-		try {
-			if (!fs.existsSync(this.coordDir)) {
-				fs.mkdirSync(this.coordDir, { recursive: true });
-			}
-		} catch {}
-	}
-
-	/** Écrit l'enveloppe ; renvoie le fichier écrit, ou `null` si le disque a refusé. */
+	/** Cache l'enveloppe dans la requête courante ; la source distante est écrite par l'adaptateur. */
 	append(env: A2AEnvelope): string | null {
 		this.memoryEnvelopes.push(env);
-		try {
-			this.ensureDir();
-			const peerFrom = (env.from || "peer").replace(/[^a-zA-Z0-9_-]/g, "_");
-			const filePath = path.join(this.coordDir, `inbox-from-${peerFrom}.jsonl`);
-			fs.appendFileSync(filePath, JSON.stringify(env) + "\n", "utf8");
-			return filePath;
-		} catch (e) {
-			console.warn(`[A2A Coord] Impossible d'écrire l'enveloppe sur disque :`, e);
-			return null;
-		}
+		return null;
 	}
 
 	list(limit = 100): A2AEnvelope[] {
-		const list = [...this.memoryEnvelopes];
-		const seen = new Set(list.map((e) => e.id));
-		try {
-			const dir = this.coordDir;
-			if (fs.existsSync(dir)) {
-				const files = fs
-					.readdirSync(dir)
-					.filter((f) => f.startsWith("inbox-from-") && f.endsWith(".jsonl"));
-				for (const file of files) {
-					const content = fs.readFileSync(path.join(dir, file), "utf8");
-					for (const line of content.split("\n")) {
-						const trimmed = line.trim();
-						if (!trimmed || trimmed.startsWith("//")) continue;
-						try {
-							const parsed = JSON.parse(trimmed) as A2AEnvelope;
-							if (!seen.has(parsed.id)) {
-								seen.add(parsed.id);
-								list.push(parsed);
-							}
-						} catch {}
-					}
-				}
-			}
-		} catch {}
-		return list.sort((a, b) => (b.ts || "").localeCompare(a.ts || "")).slice(0, limit);
+		return [...this.memoryEnvelopes].sort((a, b) => (b.ts || "").localeCompare(a.ts || "")).slice(0, limit);
 	}
 
-	bumpHeartbeat(peer: string) {
-		try {
-			this.ensureDir();
-			const cleanPeer = peer.replace(/[^a-zA-Z0-9_-]/g, "_");
-			const hbPath = path.join(this.coordDir, `heartbeat-${cleanPeer}.txt`);
-			fs.writeFileSync(hbPath, new Date().toISOString(), "utf8");
-		} catch {}
+	merge(envelopes: A2AEnvelope[]) {
+		const seen = new Set(this.memoryEnvelopes.map((envelope) => envelope.id));
+		for (const envelope of envelopes) {
+			if (!seen.has(envelope.id)) this.memoryEnvelopes.push(envelope);
+		}
 	}
 }
 
 export const coordMailboxStore = new CoordMailboxStore();
+
+function requireDurableStoreInProduction(): void {
+	if (!aphrodyA2aStoreEnabled() && process.env.NODE_ENV === "production") {
+		throw new Error("APHRODY_A2A_COORD_API is required for durable Shenron A2A in production");
+	}
+}
+
+async function storeEnvelope(envelope: A2AEnvelope): Promise<string> {
+	coordMailboxStore.append(envelope);
+	if (aphrodyA2aStoreEnabled()) {
+		await appendRemoteEnvelope(envelope);
+		return `aphrody-a2a://${SHENRON_A2A_AGENT_ID}/envelopes/${encodeURIComponent(envelope.id)}`;
+	}
+	requireDurableStoreInProduction();
+	return `memory://${SHENRON_A2A_AGENT_ID}/envelopes/${encodeURIComponent(envelope.id)}`;
+}
+
+async function loadTask(taskId: string): Promise<A2ATask | undefined> {
+	if (aphrodyA2aStoreEnabled()) {
+		const remote = await getRemoteTask(taskId);
+		if (remote) return a2aTaskStore.hydrate(remote);
+	}
+	requireDurableStoreInProduction();
+	return a2aTaskStore.get(taskId);
+}
+
+async function loadTasks(target?: A2ATarget): Promise<A2ATask[]> {
+	if (aphrodyA2aStoreEnabled()) {
+		const remote = await listRemoteTasks(target);
+		return remote.map((task) => a2aTaskStore.hydrate(task));
+	}
+	requireDurableStoreInProduction();
+	return a2aTaskStore.list(target);
+}
+
+async function persistTask(task: A2ATask, create = false): Promise<void> {
+	if (!aphrodyA2aStoreEnabled()) {
+		requireDurableStoreInProduction();
+		return;
+	}
+	if (create) await createRemoteTask(task);
+	else await putRemoteTask(task);
+}
+
+async function loadEnvelopes(limit: number): Promise<A2AEnvelope[]> {
+	if (!aphrodyA2aStoreEnabled()) {
+		requireDurableStoreInProduction();
+		return coordMailboxStore.list(limit);
+	}
+	const remote = await listRemoteEnvelopes(limit);
+	coordMailboxStore.merge(remote);
+	return coordMailboxStore.list(limit);
+}
 
 // ============================================================================
 // 3. Mesures d'état (OCR / traduction) et rendu
@@ -761,8 +721,9 @@ export class ShenronA2AHub {
 			inputData: data,
 			envelopeId: incomingEnv.id,
 		});
+		await persistTask(task, true);
 		incomingEnv.taskId = task.id;
-		const mailboxFile = coordMailboxStore.append(incomingEnv);
+		const mailboxFile = await storeEnvelope(incomingEnv);
 
 		task.history.push({
 			role: "user",
@@ -977,8 +938,9 @@ export class ShenronA2AHub {
 			verdict,
 			channel_hint: ["file_jsonl", "http_jsonrpc"],
 		};
-		coordMailboxStore.append(responseEnvelope);
-		a2aTaskStore.update(task.id, task);
+		await storeEnvelope(responseEnvelope);
+		const savedTask = a2aTaskStore.update(task.id, task);
+		if (savedTask) await persistTask(savedTask);
 
 		await this.notifyDiscordBoAdmin(
 			`${target.toUpperCase()} — ${status} [${verdict}]`,
@@ -1001,7 +963,7 @@ export class ShenronA2AHub {
 	 * - Sans verdict : simple progression (`working` / `input_required`).
 	 */
 	static async updateTask(params: A2ATaskUpdateParams): Promise<A2ATaskUpdateResult> {
-		const task = a2aTaskStore.get(params.taskId);
+		const task = await loadTask(params.taskId);
 		if (!task) return { ok: false, code: -32004, message: `Task not found: ${params.taskId}` };
 		if (TERMINAL_STATUSES.includes(task.status)) {
 			return {
@@ -1097,11 +1059,12 @@ export class ShenronA2AHub {
 				artifacts: artifacts.length ? artifacts : undefined,
 				channel_hint: ["file_jsonl", "http_jsonrpc"],
 			};
-			coordMailboxStore.append(env);
+			await storeEnvelope(env);
 			applied.add(env.id);
 		}
 		task.metadata.appliedEnvelopes = [...applied];
-		a2aTaskStore.update(task.id, task);
+		const savedTask = a2aTaskStore.update(task.id, task);
+		if (savedTask) await persistTask(savedTask);
 
 		if (verdict) {
 			await this.notifyDiscordBoAdmin(
@@ -1146,8 +1109,7 @@ export class ShenronA2AHub {
 		const envelopeId = task.metadata?.envelopeId;
 		if (typeof envelopeId !== "string" || TERMINAL_STATUSES.includes(task.status)) return task;
 		const applied = new Set((task.metadata.appliedEnvelopes as string[] | undefined) ?? []);
-		const replies = coordMailboxStore
-			.list(5000)
+		const replies = (await loadEnvelopes(5000))
 			.filter(
 				(e) =>
 					(e.re === envelopeId || e.taskId === task.id) &&
@@ -1167,14 +1129,14 @@ export class ShenronA2AHub {
 		return current;
 	}
 
-	/** Tâche à jour (instantané le plus récent + réponses de pairs déposées dans `.coord`). */
+	/** Tâche à jour depuis Aphrody puis réconciliée avec les enveloppes de réponse. */
 	static async getTask(taskId: string): Promise<A2ATask | undefined> {
-		const task = a2aTaskStore.get(taskId);
+		const task = await loadTask(taskId);
 		return task ? this.reconcileTask(task) : undefined;
 	}
 
 	static async listTasks(target?: A2ATarget): Promise<A2ATask[]> {
-		const tasks = a2aTaskStore.list(target);
+		const tasks = await loadTasks(target);
 		return Promise.all(tasks.map((t) => this.reconcileTask(t)));
 	}
 
@@ -1183,6 +1145,10 @@ export class ShenronA2AHub {
 	 */
 	static listEnvelopes(limit = 100): A2AEnvelope[] {
 		return coordMailboxStore.list(limit);
+	}
+
+	static async listStoredEnvelopes(limit = 100): Promise<A2AEnvelope[]> {
+		return loadEnvelopes(limit);
 	}
 
 	/**
@@ -1209,7 +1175,7 @@ export class ShenronA2AHub {
 				re: typeof payload?.id === "string" ? payload.id : undefined,
 				channel_hint: ["file_jsonl", "http_jsonrpc"],
 			};
-			coordMailboxStore.append(errEnv);
+			await storeEnvelope(errEnv);
 			return errEnv;
 		}
 		const kind = rawKind as A2AEnvelopeKind;
@@ -1230,9 +1196,9 @@ export class ShenronA2AHub {
 			channel_hint: payload?.channel_hint ?? ["file_jsonl", "http_jsonrpc"],
 		};
 
-		coordMailboxStore.append(incomingEnv);
+		await storeEnvelope(incomingEnv);
 
-		const ackTo = (topicText: string, text: string, ackKind: A2AEnvelopeKind = "ack", extra: Partial<A2AEnvelope> = {}) => {
+		const ackTo = async (topicText: string, text: string, ackKind: A2AEnvelopeKind = "ack", extra: Partial<A2AEnvelope> = {}) => {
 			const ackEnv: A2AEnvelope = {
 				v: 1,
 				ts: new Date().toISOString(),
@@ -1246,12 +1212,11 @@ export class ShenronA2AHub {
 				channel_hint: ["file_jsonl", "http_jsonrpc"],
 				...extra,
 			};
-			coordMailboxStore.append(ackEnv);
+			await storeEnvelope(ackEnv);
 			return ackEnv;
 		};
 
 		if (kind === "ping") {
-			coordMailboxStore.bumpHeartbeat(from);
 			return ackTo(`Pong: ${topic}`, `Shenron A2A hub v${A2A_PROTOCOL_VERSION} : heartbeat de ${from} enregistré.`);
 		}
 
@@ -1264,9 +1229,11 @@ ${body}`.slice(0, 4000), "error");
 
 		// Réponse d'un pair à un ordre existant → mise à jour de la tâche.
 		if (incomingEnv.re || incomingEnv.taskId) {
-			const task =
-				(incomingEnv.taskId ? a2aTaskStore.get(incomingEnv.taskId) : undefined) ??
-				(incomingEnv.re ? a2aTaskStore.findByEnvelopeId(incomingEnv.re) : undefined);
+			const task = incomingEnv.taskId
+				? await loadTask(incomingEnv.taskId)
+				: incomingEnv.re
+					? (await loadTasks()).find((candidate) => candidate.metadata?.envelopeId === incomingEnv.re)
+					: undefined;
 			if (!task) {
 				return ackTo(
 					`Re: ${topic}`,
@@ -1445,7 +1412,7 @@ ${body}`.slice(0, 4000), "error");
 				case "envelopes/list":
 				case "mailbox/list": {
 					const params = req.params as { limit?: number };
-					const envelopes = this.listEnvelopes(params?.limit ?? 100);
+					const envelopes = await this.listStoredEnvelopes(params?.limit ?? 100);
 					return { jsonrpc: "2.0", id: id!, result: { envelopes, total: envelopes.length } };
 				}
 

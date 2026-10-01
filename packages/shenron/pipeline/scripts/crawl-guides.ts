@@ -1,5 +1,5 @@
 /**
- * crawl-guides.ts — Crawl de guides et traductions de référence de Dragon Ball (Kanzenshuu) via bxc.
+ * crawl-guides.ts — Crawl de guides et traductions de référence Dragon Ball via Aphrody Web.
  *
  * Utilise la CLI bxc local pour récupérer les pages sous forme de Markdown propre,
  * extrait le contenu utile en enlevant le header, la navigation et le footer,
@@ -10,7 +10,7 @@
 
 import { existsSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
-import { bxcCommand } from "@shenron/pipeline/bxc/cli";
+import { aphrodyWebScrape } from "@shenron/pipeline/aphrody";
 
 const OUT_DIR = new URL("../data/rag/raw/guides/", import.meta.url).pathname;
 
@@ -48,19 +48,9 @@ if (!existsSync(OUT_DIR)) {
 	mkdirSync(OUT_DIR, { recursive: true });
 }
 
-async function runBxcScrape(url: string): Promise<string> {
-	console.log(`[CRAWL GUIDE] Ingestion via bxc scrape de : ${url}`);
-	const proc = Bun.spawn(
-		[...(await bxcCommand()), "scrape", url, "--markdown", "--profile", "static"],
-		{
-			stdout: "pipe",
-			stderr: "ignore",
-		}
-	);
-
-	const rawText = await new Response(proc.stdout).text();
-	const exitCode = await proc.exited;
-	return exitCode === 0 ? rawText : "";
+async function runAphrodyScrape(url: string): Promise<string> {
+	console.log(`[CRAWL GUIDE] Ingestion via Aphrody Web : ${url}`);
+	return await aphrodyWebScrape(url, { profile: "static" });
 }
 
 function cleanMarkdown(rawMarkdown: string, title: string, url: string): string {
@@ -128,7 +118,7 @@ async function main() {
 	for (const src of SOURCES) {
 		const finalPath = join(OUT_DIR, `${src.slug}.md`);
 
-		const rawText = await runBxcScrape(src.url);
+		const rawText = await runAphrodyScrape(src.url);
 		if (!rawText) {
 			console.error(`✗ Échec de la récupération pour ${src.slug}`);
 			continue;

@@ -1,5 +1,5 @@
 /**
- * rag-recon.ts — Scrape toutes nos sources Dragon Ball via `bxc recon`
+ * rag-recon.ts — Scrape toutes nos sources Dragon Ball via Aphrody Web
  * (HTML → Markdown propre) et agrège dans un gros JSON + fichiers .md.
  *
  * Sources = table db_sources + seeds high-value (Wikipédia, sources officielles).
@@ -12,11 +12,11 @@
 import { Database } from "bun:sqlite";
 import { mkdirSync, writeFileSync } from "node:fs";
 
-import { bxcCommand } from "@shenron/pipeline/bxc/cli";
+import { aphrodyWebScrape } from "@shenron/pipeline/aphrody";
 
 const DB = new URL("../data/bot.db", import.meta.url).pathname;
 const OUT = new URL("../data/rag/", import.meta.url).pathname;
-const BXC_PROFILE = process.env.BXC_PROFILE ?? "max"; // recon/scrape: static|fast|http|stealth|max
+const WEB_PROFILE = process.env.APHRODY_WEB_PROFILE ?? process.env.BXC_PROFILE ?? "max";
 mkdirSync(OUT, { recursive: true });
 
 const db = new Database(DB, { readonly: true });
@@ -53,15 +53,12 @@ const SEEDS: { id: string; name: string; url: string }[] = [
 ];
 
 async function recon(url: string): Promise<string | null> {
-	const cmd = [...(await bxcCommand()), "scrape", url, "--markdown", "--profile", BXC_PROFILE];
-	const proc = Bun.spawn(cmd, {
-		stdout: "pipe",
-		stderr: "ignore",
-	});
-	const out = await new Response(proc.stdout).text();
-	const code = await proc.exited;
-	if (code !== 0 || out.length < 50) return null;
-	return out;
+	try {
+		const markdown = await aphrodyWebScrape(url, { profile: WEB_PROFILE as "static" | "http" | "fast" | "stealth" | "max" });
+		return markdown.length >= 50 ? markdown : null;
+	} catch {
+		return null;
+	}
 }
 
 async function main() {
