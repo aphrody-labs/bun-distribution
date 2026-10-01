@@ -423,6 +423,9 @@ mod domain_tests {
             DomainContext::validated("dbfr".into(), profile.clone(), profile.clone()).unwrap();
         let prompt = PeerInvoker::new(&repo).shared_prompt("task", Some(&context));
         assert!(prompt.starts_with("[APHRODY_AGENT_DOMAIN=dbfr]"));
+        assert!(prompt.starts_with("[APHRODY_AGENT_DOMAIN=dbfr]\ntask\n"));
+        assert!(prompt.find("task").unwrap() < prompt.find("repository rules").unwrap());
+        assert!(prompt.contains("repository rules") && prompt.contains("dbfr rules"));
         assert!(prompt.contains("dbfr private memory"));
         assert!(!prompt.contains("aphrody private memory"));
         assert!(DomainContext::validated("ie".into(), repo, profile).is_err());

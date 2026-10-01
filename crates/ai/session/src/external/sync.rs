@@ -748,6 +748,11 @@ mod domain_isolation_tests {
         write(&["dbfr"], "user");
         let tagged = fs::read_to_string(&path).unwrap();
         let unknown = serde_json::json!({"type":"response_item","payload":{"type":"message","role":"user","content":[{"type":"input_text","text":"untagged earlier task"}]}}).to_string();
+        let bootstrap = serde_json::json!({"type":"response_item","payload":{"type":"message","role":"user","content":[{"type":"input_text","text":"# AGENTS.md instructions"}],"internal_chat_message_metadata_passthrough":{"content_item_kinds":["agents_md.instructions","environments.environment_context"]}}}).to_string();
+        write(&["dbfr"], "user");
+        let original = std::fs::read_to_string(&path).unwrap();
+        std::fs::write(&path, format!("{bootstrap}\n{original}")).unwrap();
+        assert!(source_matches_filters(&source, &options).unwrap());
         fs::write(&path, format!("{unknown}\n{tagged}")).unwrap();
         assert!(!source_matches_filters(&source, &options).unwrap());
         write(&["dbfr"], "assistant");

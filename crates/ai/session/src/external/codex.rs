@@ -164,7 +164,29 @@ fn parse_response_item(
 ) {
     match str_field(item, "type").unwrap_or_default() {
         "message" => {
-            let role = Role::from_message_role(str_field(item, "role").unwrap_or_default());
+            let mut role = Role::from_message_role(str_field(item, "role").unwrap_or_default());
+            // Native Codex writes injected AGENTS/environment context as a user
+            // message. Only its explicit item-kind metadata distinguishes that
+            // bootstrap from an actual, possibly untagged, conversational turn.
+            if role == Role::User
+                && item
+                    .pointer("/internal_chat_message_metadata_passthrough/content_item_kinds")
+                    .and_then(Value::as_array)
+                    .is_some_and(|kinds| {
+                        !kinds.is_empty()
+                            && kinds.iter().all(|kind| {
+                                matches!(
+                                    kind.as_str(),
+                                    Some(
+                                        "agents_md.instructions"
+                                            | "environments.environment_context"
+                                    )
+                                )
+                            })
+                    })
+            {
+                role = Role::System;
+            }
             push(out, role, content_text(item.get("content")), ts);
         },
         "reasoning" => {
@@ -236,5 +258,31 @@ fn output_text(output: Option<&Value>) -> String {
             )
         },
         other => content_text(other),
+    }
+}
+
+#[cfg(test)]
+mod domain_bootstrap_tests {
+    use super::*;
+
+    #[test]
+    fn only_explicit_native_context_metadata_changes_user_role() {
+        for (kinds, expected) in [
+            (
+                serde_json::json!(["agents_md.instructions", "environments.environment_context"]),
+                Role::System,
+            ),
+            (serde_json::json!(["user.text"]), Role::User),
+            (serde_json::json!(["agents_md.instructions", "user.text"]), Role::User),
+            (serde_json::json!([]), Role::User),
+            (serde_json::Value::Null, Role::User),
+        ] {
+            let value = serde_json::json!({"type":"response_item", "payload": {
+                "type":"message", "role":"user", "content":[{"type":"input_text", "text":"# AGENTS.md instructions"}],
+                "internal_chat_message_metadata_passthrough":{"content_item_kinds":kinds}
+            }});
+            let drafts = parse_line(&value, &mut LineContext { workspace: None });
+            assert_eq!(drafts[0].role, expected);
+        }
     }
 }
