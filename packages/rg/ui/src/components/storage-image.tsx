@@ -59,13 +59,13 @@ export function StorageImage({
 				height={height}
 				quality={quality}
 				{...props}
-				onLoad={(e) => {
+				onLoad={(e: React.SyntheticEvent<HTMLImageElement, Event>) => {
 					setIsLoading(false);
 					if (props.onLoad) {
 						props.onLoad(e);
 					}
 				}}
-				onError={(e) => {
+				onError={(e: React.SyntheticEvent<HTMLImageElement, Event>) => {
 					setHasError(true);
 					setIsLoading(false);
 					if (props.onError) {

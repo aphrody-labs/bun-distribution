@@ -42,6 +42,16 @@ import { demarrerServeurAdmin, type ServeurAdmin } from "./lib/serveur-admin";
 import { startApiServer } from "./api/server";
 import { demarrerNotifieurTweets } from "./services/tweetsNotifier";
 
+/**
+ * Modules chargés en plus des commandes, pour le seul profil Rose Griffon.
+ */
+const MODULES_EVENEMENTS_RG = [
+	"events/ready.ts",
+	"events/memberEvents.ts",
+	"events/experience.ts",
+	"events/accueil.ts",
+] as const;
+
 const isApiMode = process.argv.includes("api");
 const isBotMode = process.argv.includes("bot");
 const isAllMode = process.argv.includes("all") || (!isApiMode && !isBotMode);

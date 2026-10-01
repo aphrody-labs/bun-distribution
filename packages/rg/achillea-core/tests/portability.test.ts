@@ -86,11 +86,11 @@ describe("portabilité", () => {
 		) as { exports: Record<string, string> };
 
 		for (const [subpath, target] of Object.entries(manifest.exports)) {
-			const module = (await import(join(import.meta.dir, "..", target))) as Record<
+			const mod = (await import(join(import.meta.dir, "..", target))) as Record<
 				string,
 				unknown
 			>;
-			expect(Object.keys(module).length, `${subpath} est vide`).toBeGreaterThan(0);
+			expect(Object.keys(mod).length, `${subpath} est vide`).toBeGreaterThan(0);
 		}
 	});
 });

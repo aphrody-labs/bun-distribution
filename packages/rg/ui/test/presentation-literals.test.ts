@@ -28,10 +28,10 @@
 import { describe, expect, test } from "bun:test";
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join, relative, resolve } from "node:path";
-import ts from "typescript";
+import * as ts from "@typescript/typescript6";
 
-const REPO_ROOT = resolve(import.meta.dir, "../../..");
-const WEBSITE_SRC = join(REPO_ROOT, "apps/website/src");
+const REPO_ROOT = resolve(import.meta.dir, "../../../..");
+const WEBSITE_SRC = join(REPO_ROOT, "apps/rg/website/src");
 const BASELINE_PATH = join(import.meta.dir, "presentation-literals-baseline.json");
 
 const CATEGORIES = [
@@ -74,13 +74,16 @@ const ALLOWLIST: readonly AllowRule[] = [
 			"arbitraryTextPx",
 			"inlineFontFamily",
 		],
-		matches: (path) => path === "apps/website/src/app/globals.css",
+		matches: (path) =>
+			path === "apps/rg/website/src/app/globals.css" ||
+			path === "apps/website/src/app/globals.css",
 		reason: "point d'entrée canonique des variables CSS et déclarations de fontes de l'app",
 	},
 	{
 		categories: ALL_CATEGORIES,
 		matches: (path) =>
 			/(?:^|\/)(?:opengraph-image|twitter-image)\.tsx$/u.test(path) ||
+			path.startsWith("apps/rg/website/src/app/api/og/") ||
 			path.startsWith("apps/website/src/app/api/og/"),
 		reason: "rendus bitmap sociaux autonomes, sans cascade CSS du document",
 	},
@@ -237,7 +240,7 @@ describe("ratchet des littéraux de présentation", () => {
 	test("aucune catégorie n'augmente par rapport à la baseline", async () => {
 		const baseline = (await Bun.file(BASELINE_PATH).json()) as Baseline;
 		expect(baseline.schemaVersion).toBe(1);
-		expect(baseline.scope).toBe("apps/website/src/**/*.{tsx,css}");
+		expect(baseline.scope).toMatch(/^apps\/(?:rg\/)?website\/src\/\*\*\/\*\.\{tsx,css\}$/);
 		expect(Object.keys(baseline.counts).sort()).toEqual([...CATEGORIES].sort());
 
 		const current = currentCounts();

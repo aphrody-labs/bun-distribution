@@ -23,9 +23,9 @@
   },
   "dependencies": {
     "@better-auth/agent-auth": "catalog:",
-    "@better-auth/api-key": "1.6.28",
-    "@better-auth/oauth-provider": "1.6.28",
-    "@better-auth/passkey": "1.6.28",
+    "@better-auth/api-key": "^1.7.6",
+    "@better-auth/oauth-provider": "^1.7.6",
+    "@better-auth/passkey": "^1.7.6",
     "@rosegriffon/achillea-core": "workspace:*",
     "@rosegriffon/db": "workspace:*",
     "@rosegriffon/types": "workspace:*",

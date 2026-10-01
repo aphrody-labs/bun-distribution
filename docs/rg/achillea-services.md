@@ -1,6 +1,6 @@
 # Services et stockage Achillea
 
-> **Note d'architecture (23/09/2026)** : Le frontend autonome Angular d'Achilléa a été retiré et intégré dans `apps/rg/website` (`/achillea`). Les unités `achillea-postgrest`, `achillea-storage` et `achillea-realtime` (ports 8820-8822) ainsi que le GoTrue dédié (`achillea-auth` port 8824) ont été retirés. La base Achilléa est désormais un schéma natif de la base `rg` (`scripts/rg/ops/achillea-merge.ts`), et l'authentification est unifiée via Better Auth (`/api/achillea/session`). Seul `achillea-bot.service` reste actif aux côtés de `rg-api.service`.
+> **Note d'architecture (01/10/2026)** : L'ensemble de la stack Rose Griffon et Achilléa est consolidé selon le plan canonique (`docs/plans/convergence/ROSE-GRIFFON-ACHILLEA-CONVERGENCE.md`). Le démon unifié `apps/rg/bot` intègre l'API ElysiaJS :8800 (153 routes), les flux temps réel WebSocket (`/v1/achillea/ws`), le moteur Colyseus Ranked in-process, et le bot Discord multi-profils (`rg`, `azalee`, `achillea`). Le site `apps/rg/website` héberge l'ensemble des routes front (`/achillea`). Les anciennes unités séparées (`rg-achillea-bot.service` :4000/:4002/:4005) sont intégralement retirées au profit de `rg-bot.service` (:8800) et `rg-website.service` (:3004).
 
 Cette fiche décrit la configuration déclarative du portage Achillea. Elle ne constitue pas
 une activation de production : aucune unité systemd, configuration Nginx, migration ou
@@ -10,25 +10,17 @@ La source de vérité machine-readable est le [catalogue de services
 Infra](https://github.com/aphrody-code/aphrody-infra/blob/main/config/service-catalog.json).
 Les routes et unités sont contrôlées avec le dépôt Infra, sans réseau ni secret.
 
-## Topologie
+## Topologie Unifiée
 
 | Surface                  | Écoute locale      | Exposition                                                      | Propriétaire                   |
 | ------------------------ | ------------------ | --------------------------------------------------------------- | ------------------------------ |
-| API REST Ts.ED           | `127.0.0.1:4000`   | via le proxy ranked ; upload `/api/proxy/*` en direct par Nginx | processus backend              |
-| API unifiée Elysia/Kysely | `127.0.0.1:8800` | `https://api.rosegriffon.fr/v1/` et `/health` | `rg-api.service`               |
-| Ranked REST + Colyseus   | `127.0.0.1:4002`   | `https://ranked.rosegriffon.fr`                                 | enfant du backend              |
-| Socket.IO                | `127.0.0.1:4005`   | `https://ranked.rosegriffon.fr/socket.io/`                      | processus backend              |
-| Front Achilléa            | route Next         | `https://rosegriffon.fr/achillea`                               | `apps/rg/website`             |
+| API unifiée Elysia (Achilléa, RG, Azalée) | `127.0.0.1:8800` | `https://api.rosegriffon.fr/v1/` et `/health` | `apps/rg/bot` (`rg-bot.service`) |
+| Hub WebSocket temps réel | `127.0.0.1:8800` | `wss://api.rosegriffon.fr/v1/achillea/ws`                      | `apps/rg/bot` (`rg-bot.service`) |
+| Moteur Ranked Colyseus   | `127.0.0.1:8800` | in-process Kysely / routeur ranked                             | `apps/rg/bot` (`rg-bot.service`) |
+| Bot Discord multi-profils | —                 | Gateway Discord (profils `rg`, `azalee`, `achillea`)           | `apps/rg/bot` (`rg-bot.service`) |
+| Front unifié Achilléa     | `127.0.0.1:3004`   | `https://rosegriffon.fr/achillea`                               | `apps/rg/website` (`rg-website.service`) |
 
-`achillea-bot.service` supervise le backend, l'API historique, Socket.IO et le sous-processus
-ranked. `rg-api.service` porte l'API unifiée Elysia/Kysely sur le même schéma PostgreSQL
-`achillea`; les nouvelles surfaces migrées passent par `api.rosegriffon.fr/v1/`.
-`KillMode=control-group` garantit que ranked s'arrête avec son parent. Le front de production
-est rendu par `apps/rg/website`; `achillea.rosegriffon.fr` redirige vers cette route.
-
-L'unité candidate est
-[`systemd/rg-achillea-bot.service`](https://github.com/aphrody-code/aphrody-infra/blob/main/systemd/rg-achillea-bot.service).
-Elle n'est ni copiée ni démarrée par les tests de configuration.
+`rg-bot.service` supervise le démon unique (`apps/rg/bot` : API ElysiaJS + WebSockets + Ranked + Bot Discord multi-profils). Le front de production est rendu par `apps/rg/website` ; `achillea.rosegriffon.fr` redirige vers `rosegriffon.fr/achillea`.
 
 ## Secrets
 

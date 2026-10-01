@@ -16,25 +16,20 @@ Last verified: **2026-09-20 UTC** on the Rose Griffon VPS.
 
 ## Live surfaces
 
-- `rosegriffon.fr` : application Next.js 16 unifiée (`apps/website`, `website-web.service` :3004 / `-b` :3014)
-  regroupant le portail Rose Griffon, le wiki complet Inazuma Eleven: Victory Road (`/wiki`), les actualités
-  et chroniques (`/news`, `/chroniques`), la boutique (`/shop`), l'espace communauté (`/community`),
-  l'administration (`/admin`) et l'authentification Better Auth.
-- `azalee.rosegriffon.fr` : domaine historique sans application ni service propre ; nginx applique une
-  redirection permanente vers `https://rosegriffon.fr/wiki`.
-- `rosegriffon.fr/achillea` : tournois, classements ELO, licences et clans Achilléa, rendus par
-  `apps/website`; `achillea.rosegriffon.fr` redirige vers cette surface. Les routes métier déjà
-  contractées (`tournaments`, `leagues`, `organizations`, `licenses/verify`, `wallet`,
-  `users/leaderboard`, liste `clans`, `sanctions`) passent par `rg-api` ; le ranked (:4002),
-  Socket.IO (:4005) et les mutations encore non portées restent temporairement dans
-  `achillea-bot` (:4000).
-- Postgres (port 5432), PostgREST (:8809), Storage (:8810), Realtime (:8812), CDN (:8804, :8788),
-  API unifiée (`rg-api.service`, montage Azalée `/v1/azalee`) et bot Achilléa (`achillea-bot.service`)
-  actifs. Les anciens `azalee-api` et `azalee-bot` sont retirés.
-- Toutes les sondes HTTP publiques et internes retournent `200 OK`.
-- Validation automatisée monorepo : 100% tests unitaires verts (18/18 tâches Turborepo, 850+ tests),
-  100% type-check vert (20/20 tâches Turborepo), 100% lint vert (14/14 tâches Turborepo), build de
-  production validé.
+- `rosegriffon.fr` : application Next.js 16 unique (`apps/rg/website`, `rg-website.service` :3004 / `-b` :3014)
+  regroupant le portail Rose Griffon, le wiki complet Inazuma Eleven: Victory Road (`/wiki`), les tournois
+  et compétitif Achilléa (`/achillea`), les actualités et chroniques (`/news`, `/chroniques`), la boutique (`/shop`),
+  l'espace communauté (`/community`), l'administration (`/admin`) et l'authentification Better Auth unifiée.
+- `azalee.rosegriffon.fr` & `achillea.rosegriffon.fr` : domaines historiques sans application ni service propre ; nginx applique une
+  redirection permanente respectivement vers `https://rosegriffon.fr/wiki` et `https://rosegriffon.fr/achillea`.
+- `api.rosegriffon.fr` : API unifiée ElysiaJS :8800 (`apps/rg/bot/src/api`), 153 routes englobant
+  l'ensemble des services Rose Griffon, Achilléa (`/v1/achillea/*`), le bridge Azalée (`/v1/azalee/*`), le moteur de jeu Colyseus Ranked,
+  le hub temps réel WebSocket (`/v1/achillea/ws`), et les services intégrés in-process Storage, CDN et Realtime.
+- `apps/rg/bot` (`rg-bot.service`) : démon et bot Discord souverain unique multi-profils (`rg`, `azalee`, `achillea`),
+  compilable en binaire ELF autonome AOT (`dist/rg-bot`).
+- Toutes les unités fragmentées historiques (`rg-achillea-bot.service` :4000/:4002/:4005, `rg-cdn.service` :8801,
+  `rg-storage.service` :8810, `rg-realtime.service` :8812, `azalee-bot.service`, `azalee-api`) sont définitivement retirées et consolidées.
+- Validation automatisée monorepo : 100% tests unitaires verts (RG, Achilléa, Azalée), 100% type-check vert, builds de production validés.
 
 ## Retired surfaces
 

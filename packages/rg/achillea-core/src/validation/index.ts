@@ -36,6 +36,7 @@ export function isSafeInternalPath(value: unknown): value is string {
 		!value.startsWith("/") ||
 		value.startsWith("//") ||
 		value.includes("\\") ||
+		// eslint-disable-next-line no-control-regex
 		/[\u0000-\u001f\u007f]/.test(value)
 	) {
 		return false;

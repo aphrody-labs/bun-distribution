@@ -4,16 +4,13 @@ Inventory checked against the `rg` workspace source and its companion `aphrody-i
 
 ## System view
 
-There are two deployed Discord bot applications/processes in the current architecture:
+In accordance with the canonical convergence plan (`docs/plans/convergence/ROSE-GRIFFON-ACHILLEA-CONVERGENCE.md`), the previous split between `apps/rg/bot` and `apps/rg/achillea-bot` has been consolidated into **a single unified daemon**:
 
-| Bot | Source workspace | Entrypoint | Runtime unit | Responsibilities |
+| Bot Daemon | Source workspace | Entrypoint | Runtime unit | Responsibilities |
 |---|---|---|---|---|
-| Rose Griffon (RG) | `rg/apps/bot` (`@rosegriffon/bot`) | `src/index.ts` | `rg-bot.service` | Community/editorial/staff slash commands, tickets, member experience and community operations. |
-| Achilléa | `rg/apps/achillea-bot` (`@rosegriffon/achillea-bot`) | `src/main.ts` (plus a child `src/ranked/main.ts`) | `rg-achillea-bot.service` | Achilléa Discord commands, REST API, Socket.IO, queues/scheduled work and Colyseus ranked service. |
+| Rose Griffon Unified (`rg`, `azalee`, `achillea`) | `apps/rg/bot` (`@rosegriffon/bot`) | `src/entry-standalone.ts` / `src/index.ts` | `rg-bot.service` | Unified Discord commands (community, Azalée, Achilléa), Unified ElysiaJS API (:8800), WebSocket hub, and Colyseus ranked engine. |
 
-Both are Bun/TypeScript workspaces in the same monorepo, but they are separate OS services, use separate Discord profiles/tokens, and have distinct responsibilities. The `azalee` profile in `apps/bot` is a selectable profile of the RG bot executable, not a third current service. `apps/bot/README.md` says the former `azalee-bot.service` is retired. Do not confuse this with the Azalée wiki/API now provided by the unified website and `rg-api`.
-
-Infrastructure owns deployed units, releases, and public routes. The current reference is `aphrody-infra/config/service-catalog.json` and its corresponding `systemd/rg-bot.service`, `systemd/rg-achillea-bot.service` templates. Production `WorkingDirectory` is under `/srv/rg/current`; unit `EnvironmentFile`s are outside the source tree. Secrets are intentionally not included here.
+The standalone `rg-achillea-bot.service` and the legacy ports (4000, 4002, 4005) have been retired. All Discord bot identities (`rg`, `azalee`, `achillea`) are loaded dynamically through the multi-profile engine in `apps/rg/bot/src/lib/profil.ts`, and can be compiled into a single AOT native binary (`dist/rg-bot`) via `aphrody discord compile rg --smoke`.
 
 ## 1. RG community bot (`apps/bot`)
 

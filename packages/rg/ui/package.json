@@ -80,6 +80,7 @@
     "@types/bun": "catalog:",
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",
+    "@typescript/typescript6": "^6.0.2",
     "tailwindcss": "catalog:",
     "typescript": "catalog:"
   },

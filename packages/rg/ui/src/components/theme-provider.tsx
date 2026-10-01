@@ -35,8 +35,9 @@ export function ThemeProvider({
 	disableTransitionOnChange = true,
 	...props
 }: RGThemeProviderProps) {
+	const Provider = NextThemesProvider as React.ComponentType<any>;
 	return (
-		<NextThemesProvider
+		<Provider
 			attribute={attribute}
 			defaultTheme={defaultTheme}
 			storageKey={storageKey}
@@ -46,7 +47,7 @@ export function ThemeProvider({
 			{...props}
 		>
 			{children}
-		</NextThemesProvider>
+		</Provider>
 	);
 }
 

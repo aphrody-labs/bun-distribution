@@ -27,8 +27,10 @@ export function formatProviderOAuthState(discordId: string, token: string): stri
 export function parseProviderOAuthState(value: unknown): ProviderOAuthState | null {
 	if (typeof value !== "string") return null;
 	const match = PROVIDER_STATE_PATTERN.exec(value);
-	if (!match?.groups) return null;
-	return { discordId: match.groups.discordId, token: match.groups.token };
+	const discordId = match?.groups?.discordId;
+	const token = match?.groups?.token;
+	if (!discordId || !token) return null;
+	return { discordId, token };
 }
 
 export function buildTwitchOAuthUrl(config: ProviderOAuthConfig): string {

@@ -42,9 +42,9 @@ export function AdSenseScript({ client = ADSENSE_CLIENT }: { client?: string }) 
 		return null;
 	}
 
+	const ScriptTag = Script as React.ComponentType<any>;
 	return (
-		<Script
-			async
+		<ScriptTag
 			crossOrigin="anonymous"
 			id="google-adsense"
 			src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${client}`}

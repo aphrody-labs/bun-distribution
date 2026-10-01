@@ -80,9 +80,9 @@ const TIER_ELO_FACTORS: readonly TierEloFactors[] = [
 
 /** Facteurs (winK, lossK) du palier d'index donné (clampé aux bornes de la table). */
 export function tierEloFactors(tierIndex: number): TierEloFactors {
-	if (!Number.isFinite(tierIndex) || tierIndex <= 0) return TIER_ELO_FACTORS[0];
+	if (!Number.isFinite(tierIndex) || tierIndex <= 0) return TIER_ELO_FACTORS[0]!;
 	const i = Math.min(Math.floor(tierIndex), TIER_ELO_FACTORS.length - 1);
-	return TIER_ELO_FACTORS[i];
+	return TIER_ELO_FACTORS[i] ?? TIER_ELO_FACTORS[0]!;
 }
 
 /**

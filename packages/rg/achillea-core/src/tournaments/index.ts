@@ -146,7 +146,7 @@ export function circuitPointsToTier(points: number): CircuitTier {
 	for (const tier of CIRCUIT_TIERS) {
 		if (p >= tier.minPoints && p <= tier.maxPoints) return tier;
 	}
-	return CIRCUIT_TIERS[0];
+	return CIRCUIT_TIERS[0]!;
 }
 
 /**

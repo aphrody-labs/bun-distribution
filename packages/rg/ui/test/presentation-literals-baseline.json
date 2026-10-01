@@ -1,12 +1,12 @@
 {
 	"schemaVersion": 1,
-	"scope": "apps/website/src/**/*.{tsx,css}",
+	"scope": "apps/rg/website/src/**/*.{tsx,css}",
 	"counts": {
-		"rawColorLiteral": 1005,
-		"paletteColorUtility": 2295,
-		"arbitraryColorUtility": 529,
-		"arbitraryTextPx": 599,
-		"inlineFontFamily": 60,
-		"jsxUiText": 4631
+		"rawColorLiteral": 1020,
+		"paletteColorUtility": 2171,
+		"arbitraryColorUtility": 521,
+		"arbitraryTextPx": 545,
+		"inlineFontFamily": 61,
+		"jsxUiText": 4587
 	}
 }
