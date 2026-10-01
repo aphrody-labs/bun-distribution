@@ -1,0 +1,131 @@
+   Compiling aphrody-rag v1.0.0 (/home/aphro/aphrody/crates/ai/rag)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.44s
+     Running unittests src/lib.rs (target/debug/deps/aphrody_rag-28fa73acbef00de2)
+
+running 40 tests
+test config_resolve::config_resolve_tests::invalid_dimension_override_is_reported_not_panicked ... ok
+test config_resolve::config_resolve_tests::rerank_available_probes_without_erroring_or_defaulting_a_model ... ok
+test config_resolve::config_resolve_tests::no_backend_and_no_endpoint_degrades_to_lexical_without_error ... ok
+test config_resolve::config_resolve_tests::dimension_override_disagreeing_with_the_catalog_is_rejected_not_silently_chosen ... ok
+test config_resolve::config_resolve_tests::canonical_name_wins_over_configured_value ... ok
+test config_resolve::config_resolve_tests::http_backend_without_any_endpoint_is_a_clear_error ... ok
+test config_resolve::config_resolve_tests::dimension_override_matching_the_catalog_is_accepted ... ok
+test config_resolve::config_resolve_tests::rerank_disabled_never_touches_the_environment_or_errors ... ok
+test config_resolve::config_resolve_tests::ort_backend_needs_no_endpoint ... ok
+test config_resolve::config_resolve_tests::canonical_embed_base_url_alone_infers_the_llama_server_backend_and_local_role_default ... ok
+test config_resolve::config_resolve_tests::rerank_enabled_without_any_endpoint_is_a_clear_error ... ok
+test config_resolve::config_resolve_tests::ort_backend_defaults_to_its_own_whitelist_not_local_role_embed ... ok
+test config_resolve::config_resolve_tests::legacy_alias_for_embed_model_is_still_honoured ... ok
+test config_resolve::config_resolve_tests::legacy_dimension_alias_reports_itself_as_the_source_on_mismatch ... ok
+test config_resolve::config_resolve_tests::rerank_enabled_resolves_canonical_endpoint_and_local_role_default_model ... ok
+test config_resolve::config_resolve_tests::rerank_legacy_alias_and_api_key_are_honoured ... ok
+test config_resolve::config_resolve_tests::uncatalogued_model_falls_back_to_configured_vector_dim ... ok
+test config_resolve::config_resolve_tests::uncatalogued_model_without_any_dimension_source_is_a_clear_error ... ok
+test dragonball::tests::chat_is_unavailable_without_env ... ok
+test dragonball::tests::chat_resolves_canonical_and_origin_alias ... ok
+test dragonball::tests::chat_honours_contract_forms_and_default_model ... ok
+test dragonball::tests::persona_defaults_to_toriyama_in_yolo_and_env_override_otherwise ... ok
+test embedder::tests::test_format_query_or_passage_qwen3 ... ok
+test embedder::tests::test_truncate_and_normalize_mrl ... ok
+test embedder::tests::test_format_query_or_passage_e5 ... ok
+test tools::web_api_tests::web_api_requires_token_for_every_store_and_rejects_non_loopback ... ok
+test dragonball::tests::ask_falls_back_to_direct_synthesis_without_model ... ok
+test embedder::stub::tests::test_stub_embedder_deterministic_and_normalized ... ok
+test dragonball::tests::embedded_corpus_answers_and_context_respects_budget ... ok
+test dragonball::tests::user_persona_round_trips ... ok
+test redis_cache::tests::encode_resp_format ... ok
+test postgres::tests::title_comes_from_real_markdown_or_url ... ok
+test postgres::tests::invalid_input_never_connects_to_postgres ... ok
+test redis_cache::tests::disabled_cache_fails_gracefully ... ok
+test dragonball::tests::paths_follow_overrides ... ok
+test shenron::tests::parse_corpus_doc_json ... ok
+test redis_cache::tests::parse_bulk_string_valid ... ok
+test shenron::tests::ingest_shenron_docs_in_memory ... ok
+test dragonball::tests::filters_and_store_are_applied ... ok
+test tools::web_api_tests::web_api_fetches_os_markdown_and_rejects_failure_body ... ok
+
+test result: ok. 40 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.08s
+
+     Running tests/rag_store_tests.rs (target/debug/deps/rag_store_tests-972c1b61d896b71b)
+
+running 12 tests
+test test_index_document_ingests_scraped_content_under_a_url_key ... ok
+test test_rag_agent_tools ... ok
+test upsert_doc_returns_its_own_id_after_other_inserts ... ok
+test test_reranker_failure_is_reported_as_an_honest_fallback ... ok
+test test_rag_hybrid_searcher_and_honest_degrade ... ok
+test test_rag_store_dense_vector_storage_and_scan ... ok
+test test_qwen3_hybrid_rag_with_mrl_and_reranker ... ok
+test test_rag_store_in_memory_crud_and_fts ... ok
+test context_skips_oversized_first_hit_and_escapes_source_delimiters ... ok
+test index_document_empty_replacement_clears_chunks_and_vectors ... ok
+test test_rag_indexer_incremental_walk ... ok
+test index_document_failure_preserves_previous_corpus_and_retries ... ok
+
+test result: ok. 12 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.10s
+
+     Running tests/trained_onnx_smoke.rs (target/debug/deps/trained_onnx_smoke-585c4e66f028acc8)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/lib.rs (target/debug/deps/aphrody_skills-a61d6ed9f8db702b)
+
+running 35 tests
+test hooks::tests::event_kind_round_trip ... ok
+test hooks::tests::dispatcher_rejects_invalid_glob ... ok
+test hooks::tests::hook_outcome_parses_allow_payload ... ok
+test hooks::tests::hook_outcome_parses_block_payload ... ok
+test hooks::tests::hook_outcome_continue_on_unrelated_json ... ok
+test permissions::inline::derive_subject_bash_uses_command ... ok
+test hooks::tests::hook_outcome_continue_on_empty_stdout ... ok
+test permissions::inline::derive_subject_path_tool_uses_file_path ... ok
+test permissions::inline::mode_round_trip ... ok
+test permissions::inline::rule_parse_bare_tool ... ok
+test permissions::inline::rule_parse_missing_close_paren_errors ... ok
+test permissions::inline::rule_parse_with_matcher ... ok
+test runtime::discover::tests::discover_skills_returns_empty_for_missing_root ... ok
+test runtime::frontmatter::tests::parse_basic_fields ... ok
+test runtime::frontmatter::tests::parse_handles_crlf ... ok
+test runtime::frontmatter::tests::parse_tolerates_missing_fence ... ok
+test runtime::frontmatter::tests::parse_triggers_and_od ... ok
+test runtime::manifest::tests::iso8601_format_known_value ... ok
+test runtime::frontmatter::tests::split_extracts_fm_and_body ... ok
+test runtime::frontmatter::tests::split_no_fence_returns_empty_fm ... ok
+test runtime::sources::tests::source_by_slug_finds_all ... ok
+test runtime::sources::tests::slug_roundtrip ... ok
+test runtime::validate::tests::flags_missing_name ... ok
+test runtime::sources::tests::registry_has_eight_entries ... ok
+test runtime::validate::tests::flags_empty_description ... ok
+test runtime::validate::tests::flags_dir_name_mismatch ... ok
+test runtime::validate::tests::validates_minimum_contract ... ok
+test runtime::validate::tests::flags_non_kebab_case ... ok
+test runtime::discover::tests::discover_skills_in_temp_dir ... ok
+test runtime::plugin_manifest::tests::marketplace_resolves_plugin_skills_dir ... ok
+test runtime::plugin_manifest::tests::no_manifest_yields_nothing ... ok
+test runtime::plugin_manifest::tests::explicit_skill_paths_add_parent_dir ... ok
+test runtime::plugin_manifest::tests::remote_object_source_is_skipped ... ok
+test runtime::plugin_manifest::tests::traversal_outside_base_is_rejected ... ok
+test runtime::plugin_manifest::tests::plugin_json_adds_conventional_skills_dir ... ok
+
+test result: ok. 35 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/runtime/bin/agent_skills.rs (target/debug/deps/aphrody_skills-bb9f860806be0c19)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests aphrody_rag
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests aphrody_skills
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

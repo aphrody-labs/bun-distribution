@@ -1,0 +1,82 @@
+{
+  "observedAt": "2026-10-01T08:51:43.542859+00:00",
+  "baseRevision": "f60b00e57d6ad1601f95799e63a4bcf80589bea7",
+  "mode": "concurrent worktree; scoped file-family claims held",
+  "owners": [
+    "aphrody-rag",
+    "aphrody-skills",
+    "aphrody-supervisor",
+    "aphrody-train",
+    "aphrody-a2a-coord",
+    "aphrody-mcp-oauth"
+  ],
+  "changes": [
+    "General RAG indexing and Shenron ingestion use the same atomic metadata/chunk replacement transaction",
+    "Document upsert resolves its id by unique path on both insert and update",
+    "Public optional SourceSlug parser contract preserved with a localized lint expectation",
+    "Compact A2A HTTP handler results materialize status and JSON at IntoResponse; wire behavior qualified",
+    "Supervisor, training and OAuth strict diagnostics corrected"
+  ],
+  "tests": {
+    "rag": 52,
+    "skills": 35,
+    "a2aCoord": 38,
+    "mcpOauth": 17,
+    "train": 8,
+    "supervisor": 8,
+    "supervisorDoctest": 1,
+    "uniquePassed": 159,
+    "failed": 0
+  },
+  "regressions": [
+    "Injected SQLite chunk insertion failure preserves metadata, FTS and dense vectors; subsequent retry succeeds",
+    "Empty document replacement removes chunks and vectors and remains incremental",
+    "Document upsert id remains stable after another document insert",
+    "A2A HTTP status/body, auth, CRUD, namespace isolation, filtering, envelopes and invalid namespace"
+  ],
+  "clippy": {
+    "command": "cargo clippy -p aphrody-rag -p aphrody-skills -p aphrody-supervisor -p aphrody-train -p aphrody-a2a-coord -p aphrody-mcp-oauth --all-targets --locked -- -D warnings",
+    "result": "pass",
+    "dependencies": "included"
+  },
+  "integratedGate": {
+    "command": "cargo clippy -p aphrody -p aphrody-mcp --all-targets --no-default-features --locked -- -D warnings",
+    "result": "failed",
+    "remainingDiagnostics": {
+      "aphrody-discord-compiler": 3,
+      "aphrody-terminal-backend": 9
+    }
+  },
+  "sourceHashes": {
+    "crates/ai/mcp-oauth/src/pkce.rs": "67fd0edb0be600f535f84c405577b3ff4cf6519e6860e24b3e6375ae251d67ca",
+    "crates/ai/rag/src/indexer.rs": "a439e63caab1f789f3feecb665144e0637685ab4011015286004285241cd2f66",
+    "crates/ai/rag/src/shenron.rs": "103df552a2ea2f9e569f88855b0873f311effe7db64d2901ef1089c5c52f06b3",
+    "crates/ai/rag/src/store.rs": "cf7789e9537f8cf8008bddc9ccd4bd77d805a32b0bb9f75123078394594e9c26",
+    "crates/ai/rag/tests/rag_store_tests.rs": "db5d9acfe7d9666990e8010c42fcffc10ef514fac57d5b1c3810cf9a2ffa3617",
+    "crates/ai/skills/src/permissions.rs": "203f44a08750819aac6bf6946bbab824b8c97ff78952991895accdc7d3458a05",
+    "crates/ai/skills/src/runtime/bin/agent_skills.rs": "912e83ff0e899cb816f23bba0bb798768fb3bd1660d7aa1c6136e6056404ef11",
+    "crates/ai/skills/src/runtime/frontmatter.rs": "1d29c7324afc8cff4082d458ccbcc8dc06c756fbb3cc4255a1517cd6185d48a8",
+    "crates/ai/skills/src/runtime/manifest.rs": "5f6ddf57c3e17e76a1042733a6fc05a570150cdaa30f19eed8ed03a076517a18",
+    "crates/ai/skills/src/runtime/plugin_manifest.rs": "0cb371f73af23b97f2cb2f7a7cd19992022bc49c283fa5fd629508c398513829",
+    "crates/ai/skills/src/runtime/sources.rs": "baed6d41a5e7b3ec4ee6197f041162dd32fc196435dfebc9d5b0c9a49b0cbb20",
+    "crates/ai/skills/src/runtime/validate.rs": "3b525d9c638beb625e1c5a3f37ba7a2e47ebee7f93bd43b1d4cb55253e318844",
+    "crates/ai/supervisor/src/lib.rs": "1507f0b47d1927ccfcb636facd5fe5ef96ef8cd0dcf3232044cf49d961f52169",
+    "crates/ai/train/src/bin/aphrody-agent-train.rs": "56aa383079387d68a9b109932dca595887a48c0646d372e2746edd228deff51c",
+    "crates/ai/train/src/promote.rs": "cf9b70c0e9c1ee0173d384f679f889079e51f58164917b543727a5e74e3528e0",
+    "crates/os/a2a-coord/src/task_api.rs": "60a37a922a5886288ed118d69bd8722996c517ad80b1fedf8f29eb94388983ce"
+  },
+  "logs": {
+    "skills-rag-tests.log": "68db79bc244fe75a878e318665413a02c8026ddc549cfef0b67fa823cb3ce4d2",
+    "a2a-oauth-train-tests.log": "97e0ca110050244a0d180a8860bed46ad3c99758ec2041bf6c2c453a4d769af8",
+    "supervisor-transitive-tests.log": "ccef2f94f921e020013a38a4ab3e8da78beaac83d707343fb30c579ecd7e0588",
+    "owner-clippy.log": "4710f6e1b4a851eb12047e43520ebbea1c559adb0601bf6e790a67a2d34167dd",
+    "integrated-clippy.log": "d04a78f2c6f76e8621959c3abc6a234e091bc162587bcbad2749c5e28cb28c44"
+  },
+  "limitations": [
+    "No clean-clone or deployed artifact qualification in this batch",
+    "Default and optional CLI/MCP feature gates remain open",
+    "The integrated gate fails; production readiness is not established",
+    "Dense embedding generation remains outside the replacement transaction; this batch proves preservation on chunk insertion failure",
+    "No Git remote is configured in this checkout; local commits cannot be pushed"
+  ]
+}
