@@ -409,33 +409,42 @@ pub fn power_shell(command: &str, timeout_seconds: u64) -> io::Result<serde_json
         return Err(io::Error::new(io::ErrorKind::InvalidInput, "command must be non-empty"));
     }
     let timeout = timeout_seconds.clamp(1, 600);
-    let executable = if cfg!(windows) { "pwsh.exe" } else { "pwsh" };
-    let mut child = std::process::Command::new(executable)
-        .args(["-NoLogo", "-NoProfile", "-NonInteractive", "-Command", command])
-        .stdin(std::process::Stdio::null())
-        .stdout(std::process::Stdio::piped())
-        .stderr(std::process::Stdio::piped())
-        .spawn()?;
+    let executable = if cfg!(windows) {
+        let modern = std::path::PathBuf::from(
+            std::env::var_os("ProgramFiles").unwrap_or_else(|| "C:\\Program Files".into()),
+        )
+        .join("PowerShell/7/pwsh.exe");
+        if modern.is_file() {
+            modern
+        } else {
+            std::path::PathBuf::from(
+                std::env::var_os("SystemRoot").unwrap_or_else(|| "C:\\Windows".into()),
+            )
+            .join("System32/WindowsPowerShell/v1.0/powershell.exe")
+        }
+    } else {
+        std::path::PathBuf::from("pwsh")
+    };
+    let encoded_command = format!(
+        "[Console]::OutputEncoding = [Text.UTF8Encoding]::new($false); $OutputEncoding = [Console]::OutputEncoding; {command}"
+    );
     let started = std::time::Instant::now();
-    loop {
-        if child.try_wait()?.is_some() {
-            break;
-        }
-        if started.elapsed() >= std::time::Duration::from_secs(timeout) {
-            let _ = child.kill();
-            let _ = child.wait();
-            return Ok(
-                serde_json::json!({"stdout":"","stderr":"command timed out","exitCode":null,"timedOut":true,"durationMs":started.elapsed().as_millis()}),
-            );
-        }
-        std::thread::sleep(std::time::Duration::from_millis(25));
-    }
-    let output = child.wait_with_output()?;
+    let output = crate::wsl::capture(
+        std::process::Command::new(executable).args([
+            "-NoLogo",
+            "-NoProfile",
+            "-NonInteractive",
+            "-Command",
+            &encoded_command,
+        ]),
+        std::time::Duration::from_secs(timeout),
+    )?;
     Ok(serde_json::json!({
-        "stdout": String::from_utf8_lossy(&output.stdout),
-        "stderr": String::from_utf8_lossy(&output.stderr),
+        "stdout": crate::wsl::decode(&output.stdout),
+        "stderr": crate::wsl::decode(&output.stderr),
         "exitCode": output.status.code(),
-        "timedOut": false,
+        "timedOut": output.timed_out,
+        "outputTruncated": output.truncated,
         "durationMs": started.elapsed().as_millis(),
     }))
 }
@@ -792,72 +801,6 @@ fn valid_guid(value: &str) -> bool {
         })
 }
 
-fn wsl_result(args: &[String]) -> serde_json::Value {
-    #[cfg(not(windows))]
-    {
-        let _ = args;
-        serde_json::json!({"Success": false, "ExitCode": -1, "Stdout": "", "Stderr": "WSL management is Windows-only.", "DurationSeconds": 0.0, "TimedOut": false, "Error": "unsupported"})
-    }
-    #[cfg(windows)]
-    {
-        let started = std::time::Instant::now();
-        let mut child = match std::process::Command::new("wsl.exe")
-            .args(args)
-            .stdout(std::process::Stdio::piped())
-            .stderr(std::process::Stdio::piped())
-            .spawn()
-        {
-            Ok(child) => child,
-            Err(error) => {
-                return serde_json::json!({"Success": false, "ExitCode": -1, "Stdout": "", "Stderr": "", "DurationSeconds": started.elapsed().as_secs_f64(), "TimedOut": false, "Error": error.to_string()});
-            },
-        };
-        let mut timed_out = false;
-        loop {
-            match child.try_wait() {
-                Ok(Some(_)) => break,
-                Ok(None) if started.elapsed() < std::time::Duration::from_secs(30) => {
-                    std::thread::sleep(std::time::Duration::from_millis(25))
-                },
-                Ok(None) => {
-                    timed_out = true;
-                    let _ = child.kill();
-                    break;
-                },
-                Err(error) => {
-                    return serde_json::json!({"Success": false, "ExitCode": -1, "Stdout": "", "Stderr": "", "DurationSeconds": started.elapsed().as_secs_f64(), "TimedOut": false, "Error": error.to_string()});
-                },
-            }
-        }
-        let output = match child.wait_with_output() {
-            Ok(output) => output,
-            Err(error) => {
-                return serde_json::json!({"Success": false, "ExitCode": -1, "Stdout": "", "Stderr": "", "DurationSeconds": started.elapsed().as_secs_f64(), "TimedOut": timed_out, "Error": error.to_string()});
-            },
-        };
-        let stdout = decode_wsl_output(&output.stdout);
-        let stderr = decode_wsl_output(&output.stderr);
-        let code = if timed_out { 124 } else { output.status.code().unwrap_or(-1) };
-        serde_json::json!({"Success": !timed_out && output.status.success(), "ExitCode": code, "Stdout": stdout, "Stderr": stderr, "DurationSeconds": started.elapsed().as_secs_f64(), "TimedOut": timed_out, "Error": null})
-    }
-}
-
-#[cfg(windows)]
-fn decode_wsl_output(bytes: &[u8]) -> String {
-    let pairs = (bytes.len() / 2).min(64);
-    let utf16 = bytes.starts_with(&[0xff, 0xfe])
-        || (pairs > 0 && (0..pairs).filter(|index| bytes[index * 2 + 1] == 0).count() * 2 >= pairs);
-    if utf16 {
-        let mut units = Vec::with_capacity(bytes.len() / 2);
-        for chunk in bytes.chunks_exact(2) {
-            units.push(u16::from_le_bytes([chunk[0], chunk[1]]));
-        }
-        String::from_utf16_lossy(&units)
-    } else {
-        String::from_utf8_lossy(bytes).into_owned()
-    }
-}
-
 fn validate_wsl_distribution(distribution: &str) -> io::Result<()> {
     if distribution.trim().is_empty()
         || distribution.len() > 128
@@ -869,16 +812,16 @@ fn validate_wsl_distribution(distribution: &str) -> io::Result<()> {
 }
 
 pub fn wsl_get_status() -> serde_json::Value {
-    wsl_result(&["--status".to_owned()])
+    crate::wsl::result(&["--status".to_owned()])
 }
 
 pub fn wsl_list_distributions() -> serde_json::Value {
-    wsl_result(&["--list".to_owned(), "--verbose".to_owned()])
+    crate::wsl::result(&["--list".to_owned(), "--verbose".to_owned()])
 }
 
 pub fn wsl_list_processes(distribution: &str) -> io::Result<serde_json::Value> {
     validate_wsl_distribution(distribution)?;
-    Ok(wsl_result(&[
+    Ok(crate::wsl::result(&[
         "--distribution".to_owned(),
         distribution.to_owned(),
         "--exec".to_owned(),
@@ -916,7 +859,7 @@ pub fn wsl_read_only_probe(distribution: &str, probe: &str) -> io::Result<serde_
     };
     let mut args = vec!["--distribution".to_owned(), distribution.to_owned(), "--exec".to_owned()];
     args.extend(command.iter().map(|value| (*value).to_owned()));
-    Ok(wsl_result(&args))
+    Ok(crate::wsl::result(&args))
 }
 
 pub fn wsl_execute(distribution: &str, command: &[String]) -> io::Result<serde_json::Value> {
@@ -934,7 +877,7 @@ pub fn wsl_execute(distribution: &str, command: &[String]) -> io::Result<serde_j
     }
     let mut args = vec!["--distribution".to_owned(), distribution.to_owned(), "--exec".to_owned()];
     args.extend(command.iter().cloned());
-    Ok(wsl_result(&args))
+    Ok(crate::wsl::result(&args))
 }
 
 pub fn wsl_send_signal(

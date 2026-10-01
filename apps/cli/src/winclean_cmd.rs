@@ -95,7 +95,28 @@ pub(crate) async fn run(action: WincleanAction) -> miette::Result<()> {
         },
         WincleanAction::Call { tool, args, kv, json, images } => {
             let arguments = build_arguments(args.as_deref(), &kv)?;
-            let result = load()?.call_async(&tool, &arguments).await.into_diagnostic()?;
+            let result = if ["windows_", "desktop_", "privileged_"]
+                .iter()
+                .any(|prefix| tool.starts_with(prefix))
+            {
+                let client = aphrody_kernel::client::Client::connect(
+                    &aphrody_kernel::transport::default_endpoint(),
+                )
+                .await
+                .into_diagnostic()?;
+                client.initialize("aphrody-winclean-cli").await.into_diagnostic()?;
+                let result = client
+                    .request(
+                        "tools/call",
+                        serde_json::json!({"name": tool, "arguments": arguments}),
+                        std::time::Duration::from_secs(300),
+                    )
+                    .await
+                    .into_diagnostic()?;
+                serde_json::from_value::<ToolResult>(result).into_diagnostic()?
+            } else {
+                load()?.call_async(&tool, &arguments).await.into_diagnostic()?
+            };
             if json {
                 println!("{}", serde_json::to_string_pretty(&result).into_diagnostic()?);
             } else {

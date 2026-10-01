@@ -17,6 +17,33 @@ pub const DEFAULT_REQUEST_TIMEOUT: Duration = Duration::from_secs(30);
 /// Maximum inbound or outbound JSON-RPC frame size.
 pub const MAX_MESSAGE_BYTES: usize = 64 * 1024 * 1024;
 
+/// Fixed read-only diagnostics suitable for native desktop UI commands.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum WslProbe {
+    /// Linux kernel information.
+    SystemInfo,
+    /// Installed reverse-engineering packages.
+    ReToolchain,
+    /// Linux process inventory.
+    Processes,
+    /// Mounted file systems.
+    Mounts,
+    /// Network interface addresses.
+    Network,
+}
+
+impl WslProbe {
+    const fn name(self) -> &'static str {
+        match self {
+            Self::SystemInfo => "system-info",
+            Self::ReToolchain => "re-toolchain",
+            Self::Processes => "processes",
+            Self::Mounts => "mounts",
+            Self::Network => "network",
+        }
+    }
+}
+
 /// Errors returned by the local kernel client.
 #[derive(Debug, Error)]
 pub enum KernelClientError {
@@ -184,6 +211,29 @@ impl KernelClient {
     ) -> Result<Value, KernelClientError> {
         self.ensure_initialized().await?;
         self.request(method, params).await
+    }
+
+    /// Read-only WSL installation status for native desktop consumers.
+    pub async fn wsl_status(&self) -> Result<Value, KernelClientError> {
+        self.call_tool("wsl_get_status", json!({})).await
+    }
+
+    /// Read-only WSL distribution inventory for native desktop consumers.
+    pub async fn wsl_distributions(&self) -> Result<Value, KernelClientError> {
+        self.call_tool("wsl_list_distributions", json!({})).await
+    }
+
+    /// Run a fixed diagnostic; the kernel validates the distribution and probe.
+    pub async fn wsl_probe(
+        &self,
+        distribution: &str,
+        probe: WslProbe,
+    ) -> Result<Value, KernelClientError> {
+        self.call_tool(
+            "wsl_read_only_probe",
+            json!({"distribution": distribution, "probe": probe.name()}),
+        )
+        .await
     }
 
     async fn ensure_initialized(&self) -> Result<(), KernelClientError> {

@@ -186,28 +186,36 @@ impl Command for AphrodyUtils {
     }
 }
 
-enum KernelError {
+pub(super) enum KernelError {
     Interrupted,
     Failed(String),
 }
 
-fn kernel_error(cause: KernelError, span: Span) -> ShellError {
+pub(super) fn kernel_error(cause: KernelError, span: Span) -> ShellError {
     match cause {
         KernelError::Interrupted => ShellError::Interrupted { span },
         KernelError::Failed(message) => error("Aphrody OS kernel request failed", message, span),
     }
 }
 
-fn run_kernel<F, Fut>(timeout_ms: u64, signals: Signals, operation: F) -> Result<Json, KernelError>
+pub(super) fn run_kernel<F, Fut>(
+    timeout_ms: u64,
+    signals: Signals,
+    operation: F,
+) -> Result<Json, KernelError>
 where
-    F: FnOnce(KernelClient) -> Fut,
-    Fut: Future<Output = Result<Json, aphrody_kernel_client::KernelClientError>>,
+    F: FnOnce(KernelClient) -> Fut + Send,
+    Fut: Future<Output = Result<Json, aphrody_kernel_client::KernelClientError>> + Send,
 {
     if tokio::runtime::Handle::try_current().is_ok() {
-        return Err(KernelError::Failed(
-            "kernel utility commands require blocking Nushell evaluation off the async executor"
-                .to_owned(),
-        ));
+        // spawn_blocking retains Tokio's current handle. A separate scoped
+        // thread lets synchronous Nushell commands drive their own RPC runtime.
+        return std::thread::scope(|scope| {
+            scope
+                .spawn(move || run_kernel(timeout_ms, signals, operation))
+                .join()
+                .unwrap_or_else(|_| Err(KernelError::Failed("kernel RPC thread panicked".into())))
+        });
     }
 
     let runtime = Builder::new_current_thread()
@@ -311,7 +319,7 @@ fn bounded_option(
     Ok(value)
 }
 
-fn error(title: &str, message: impl Into<String>, span: Span) -> ShellError {
+pub(super) fn error(title: &str, message: impl Into<String>, span: Span) -> ShellError {
     ShellError::Generic(GenericError::new(title.to_owned(), message.into(), span))
 }
 

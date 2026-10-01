@@ -12,7 +12,7 @@ use std::{
 
 use serde_json::{Value, json};
 use tokio::{
-    io::{AsyncBufReadExt, AsyncWriteExt, BufReader, BufWriter},
+    io::{AsyncWriteExt, BufReader, BufWriter},
     sync::{mpsc, oneshot},
 };
 
@@ -95,9 +95,11 @@ impl Client {
         });
         let reader_pending = Arc::clone(&pending);
         let reader = tokio::spawn(async move {
-            let mut lines = BufReader::new(reader).lines();
-            while let Ok(Some(line)) = lines.next_line().await {
-                let Ok(message) = serde_json::from_str::<Value>(&line) else { continue };
+            let mut reader = BufReader::new(reader);
+            while let Ok(Some(line)) =
+                crate::transport::read_line_limited(&mut reader, 64 * 1024 * 1024).await
+            {
+                let Ok(message) = serde_json::from_slice::<Value>(&line) else { continue };
                 let is_response = message.get("method").is_none() && message.get("id").is_some();
                 if is_response {
                     let key = id_key(&message["id"]);

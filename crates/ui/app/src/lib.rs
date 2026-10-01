@@ -503,6 +503,21 @@ async fn aphrody_capture_primary() -> Result<serde_json::Value, String> {
     desktop::capture_primary().await
 }
 
+#[tauri::command]
+async fn aphrody_windows_host_status() -> Result<serde_json::Value, String> {
+    desktop::windows_host_status().await
+}
+
+#[tauri::command]
+async fn aphrody_windows_host_windows() -> Result<serde_json::Value, String> {
+    desktop::windows_host_windows().await
+}
+
+#[tauri::command]
+async fn aphrody_windows_host_observe() -> Result<serde_json::Value, String> {
+    desktop::windows_host_observe().await
+}
+
 /// Return the current process working directory for project context.
 #[tauri::command]
 fn aphrody_system_cwd() -> Result<serde_json::Value, String> {
@@ -809,6 +824,9 @@ pub fn run() {
             aphrody_session_unstream,
             aphrody_runtime_layout,
             aphrody_capture_primary,
+            aphrody_windows_host_status,
+            aphrody_windows_host_windows,
+            aphrody_windows_host_observe,
             aphrody_system_cwd,
             aphrody_shell_window,
             aphrody_quickbar,

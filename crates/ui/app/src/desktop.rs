@@ -40,6 +40,21 @@ pub async fn computer_observe() -> Result<Value, String> {
     tool("computer_observe", json!({ "windowHandle": 0 })).await
 }
 
+/// Windows host inventory over the persistent Hyper-V tunnel.
+pub async fn windows_host_status() -> Result<Value, String> {
+    tool("windows_get_system_profile", json!({})).await
+}
+
+/// Interactive Windows windows, through the user-session companion.
+pub async fn windows_host_windows() -> Result<Value, String> {
+    tool("desktop_list_windows", json!({})).await
+}
+
+/// Windows foreground window observation, independent of the WSLg desktop.
+pub async fn windows_host_observe() -> Result<Value, String> {
+    tool("desktop_computer_observe", json!({"windowHandle":0})).await
+}
+
 /// List all systemd units and services through the kernel supervisor.
 pub async fn systemd_list_units() -> Result<Value, String> {
     tool("systemd_list_units", json!({})).await

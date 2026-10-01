@@ -32,6 +32,7 @@ mod windows_search;
 pub mod winml;
 #[cfg(windows)]
 mod winreg;
+mod wsl;
 
 use base64::Engine as _;
 pub use generated::*;

@@ -1567,13 +1567,16 @@ dependencies = [
  "async-trait",
  "clap",
  "gix",
+ "libc",
  "reqwest 0.13.5",
  "rustls",
+ "serde",
  "serde_json",
  "tempfile",
  "thiserror 2.0.21",
  "tokio",
  "tracing",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]

@@ -22,6 +22,7 @@
 //! | `system/subscribe`, `system/publish` | Receive bus events as `system/event` notifications; publish one. |
 
 pub mod admin;
+pub mod hvsock;
 mod audit;
 mod auth;
 pub mod client;

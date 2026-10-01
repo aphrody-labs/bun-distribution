@@ -51,7 +51,10 @@ impl SystemSubsystem for AdminSubsystem {
                 registration.dispatch
             )));
         }
-        call_rust(tool, arguments)
+        let tool = tool.to_owned();
+        tokio::task::spawn_blocking(move || call_rust(&tool, arguments))
+            .await
+            .map_err(|error| SubsystemError::Failed(format!("WinClean worker: {error}")))?
     }
 }
 

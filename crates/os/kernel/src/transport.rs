@@ -204,6 +204,24 @@ impl<T: AsyncRead + AsyncWrite + Unpin + Send> ClientIo for T {}
 /// # Errors
 /// When no kernel listens on `endpoint`.
 pub async fn connect(endpoint: &str) -> std::io::Result<ClientStream> {
+    if let Some(port) = endpoint.strip_prefix("vsock://") {
+        let port = port.parse::<u32>().map_err(|_| {
+            std::io::Error::new(
+                std::io::ErrorKind::InvalidInput,
+                "vsock endpoint must be vsock://<host-port>",
+            )
+        })?;
+        #[cfg(target_os = "linux")]
+        return crate::hvsock::connect_guest(port).await;
+        #[cfg(not(target_os = "linux"))]
+        {
+            let _ = port;
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::Unsupported,
+                "vsock client requires Linux",
+            ));
+        }
+    }
     #[cfg(windows)]
     {
         use tokio::net::windows::named_pipe::ClientOptions;

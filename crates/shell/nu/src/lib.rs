@@ -31,6 +31,7 @@ use nu_protocol::{
 use serde_json::{Map, Value as Json, json};
 
 mod utils;
+mod wsl;
 
 /// Default upper bound for one evaluation.
 pub const DEFAULT_TIMEOUT: Duration = Duration::from_secs(120);
@@ -61,6 +62,7 @@ impl NuShell {
         engine = nu_cmd_extra::add_extra_command_context(engine);
         let mut working_set = StateWorkingSet::new(&engine);
         working_set.add_decl(Box::new(utils::AphrodyUtils));
+        working_set.add_decl(Box::new(wsl::AphrodyWsl));
         engine
             .merge_delta(working_set.render())
             .map_err(|error| format!("register Aphrody utility commands: {error}"))?;

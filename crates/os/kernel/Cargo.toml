@@ -31,6 +31,10 @@ name = "aphrody-kernel"
 path = "src/main.rs"
 required-features = ["builtins"]
 
+[[bin]]
+name = "aphrody-host-service"
+path = "src/host_service.rs"
+
 [dependencies]
 aphrody-subsystem = { workspace = true }
 aphrody-events = { workspace = true }
@@ -45,6 +49,8 @@ serde_json = { workspace = true }
 thiserror = { workspace = true }
 tokio = { workspace = true }
 tracing = { workspace = true }
+serde = { workspace = true }
+
 # The binary's built-in subsystems (feature `builtins`).
 anyhow = { workspace = true, optional = true }
 aphrody-bun-docs = { workspace = true, optional = true }
@@ -53,6 +59,12 @@ aphrody-coreutils = { workspace = true, optional = true }
 aphrody-shell = { workspace = true, optional = true }
 aphrody-systemd = { workspace = true, optional = true }
 clap = { workspace = true, optional = true }
+
+[target.'cfg(target_os = "linux")'.dependencies]
+libc = { workspace = true }
+
+[target.'cfg(windows)'.dependencies]
+windows-sys = { workspace = true, features = ["Win32_Networking_WinSock", "Win32_System_Services", "Win32_System_HostComputeSystem"] }
 
 [dev-dependencies]
 tempfile = { workspace = true }
