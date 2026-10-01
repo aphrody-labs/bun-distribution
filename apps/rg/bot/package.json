@@ -2,7 +2,7 @@
   "name": "@rosegriffon/bot",
   "version": "1.0.1",
   "private": true,
-  "description": "Bot Discord Rose Griffon \u2014 slash commands public + admin, sync members, canvas cards",
+  "description": "Bot Discord Rose Griffon — slash commands public + admin, sync members, canvas cards",
   "type": "module",
   "scripts": {
     "dev": "bun --watch src/index.ts",
@@ -21,9 +21,12 @@
     "typecheck": "bun --bun tsc --noEmit"
   },
   "dependencies": {
-    "@aphrody/paths": "workspace:*",
     "@aphrody/canvas": "workspace:*",
     "@aphrody/discord-kit": "workspace:*",
+    "@aphrody/paths": "workspace:*",
+    "@colyseus/bun-websockets": "catalog:",
+    "@colyseus/core": "catalog:",
+    "@colyseus/schema": "catalog:",
     "@elysia/eden": "^1.4.10",
     "@elysiajs/cors": "^1.4.2",
     "@elysiajs/swagger": "^1.3.1",
@@ -41,6 +44,8 @@
     "discord.js": "catalog:",
     "discordx": "catalog:",
     "elysia": "^1.4.28",
+    "express": "catalog:",
+    "http-proxy-middleware": "catalog:",
     "kysely": "catalog:",
     "pg": "catalog:",
     "reflect-metadata": "catalog:",
@@ -49,6 +54,7 @@
   "devDependencies": {
     "@rosegriffon/config": "workspace:*",
     "@types/bun": "catalog:",
+    "@types/express": "catalog:",
     "oxlint": "catalog:",
     "typescript": "catalog:"
   },

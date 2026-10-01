@@ -648,7 +648,7 @@ export async function adminResolveLobby(
 		SELECT state FROM lobby WHERE id = ${lobbyId} LIMIT 1
 	`;
 	if (lobbyState[0]?.state === "Finished" || lobbyState[0]?.state === "Canceled") {
-		return { eloDelta: { p1: 0, p2: 0 } };
+		return { applied: false, eloDelta: { p1: 0, p2: 0 } };
 	}
 
 	// Récupère les 2 joueurs pour calcul Elo

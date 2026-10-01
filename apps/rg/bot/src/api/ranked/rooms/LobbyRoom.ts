@@ -11,7 +11,7 @@
 //         à chacun + push Socket.IO match_found (mutualisé avec QueueRoom).
 //       * refus  → l'inviteur reçoit "invite-declined".
 
-import { Room, Client } from "colyseus";
+import { Room, type Client } from "@colyseus/core";
 import { parseMode } from "@rosegriffon/achillea-core";
 
 import type { SessionUser } from "../auth";
@@ -40,9 +40,9 @@ interface PendingInvite {
 	expiresAt: number;
 }
 
-export class LobbyRoom extends Room<LobbyState> {
-	maxClients = 500;
-	autoDispose = false;
+export class LobbyRoom extends Room<{ state: LobbyState }> {
+	override maxClients = 500;
+	override autoDispose = false;
 
 	// Instance courante (la lobby est un singleton : `defineRoom(LobbyRoom)` sans filterBy).
 	// Permet aux handlers REST (défi par lien) de livrer une réservation à un joueur présent.

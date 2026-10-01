@@ -2,7 +2,7 @@
 // dans une fenêtre elo±200. Une fois apparié, on crée un MatchRoom et on
 // envoie une seat reservation aux 2 clients.
 
-import { Room, Client } from "colyseus";
+import { Room, type Client } from "@colyseus/core";
 import { parseMode, selectQueuePair } from "@rosegriffon/achillea-core";
 
 import type { SessionUser } from "../auth";
@@ -25,7 +25,7 @@ interface QueueClient {
 }
 
 export class QueueRoom extends Room {
-	maxClients = 200;
+	override maxClients = 200;
 
 	// État local en RAM — pas de schema sync, le client n'a pas besoin de voir la queue.
 	private waiting: QueueClient[] = [];

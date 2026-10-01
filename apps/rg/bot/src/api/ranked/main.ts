@@ -3,7 +3,7 @@
 // les routes REST (profil, contestation upload, admin validate) via la couche
 // Express compat de BunWebSockets.
 
-import { defineServer, defineRoom } from "colyseus";
+import { defineServer, defineRoom } from "@colyseus/core";
 import { BunWebSockets } from "@colyseus/bun-websockets";
 import {
 	activeChallengeCount,
@@ -308,7 +308,7 @@ const server = defineServer({
 		// Salon de présence partagé (défi direct) — une seule instance pour tous.
 		lobby: defineRoom(LobbyRoom),
 	},
-	express: (app) => {
+	express: (app: express.Express) => {
 		app.use(corsMiddleware);
 		app.use(express.json({ limit: "100kb" }));
 
@@ -1033,7 +1033,7 @@ const server = defineServer({
 		// path-rewrite par défaut conserve le path après le mount prefix.
 		app.use(
 			"/api",
-			createProxyMiddleware({
+			createProxyMiddleware<express.Request, express.Response>({
 				target: `http://127.0.0.1:${BOT_API_PORT}`,
 				changeOrigin: true,
 				on: {

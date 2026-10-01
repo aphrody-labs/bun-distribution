@@ -252,7 +252,11 @@
       "@tauri-apps/plugin-opener": "3.0.0-alpha.1",
       "@rosegriffon/inagle": "file:.cache/iecode-packages/inagle-d4de50ba2a4b7154cb9e91f405cc30a343b04aed.tgz",
       "@rosegriffon/inagle-cross": "file:.cache/iecode-packages/inagle-cross-d4de50ba2a4b7154cb9e91f405cc30a343b04aed.tgz",
-      "@rosegriffon/azalee": "file:.cache/iecode-packages/azalee-d4de50ba2a4b7154cb9e91f405cc30a343b04aed.tgz"
+      "@rosegriffon/azalee": "file:.cache/iecode-packages/azalee-d4de50ba2a4b7154cb9e91f405cc30a343b04aed.tgz",
+      "@colyseus/core": "^0.17.51",
+      "@colyseus/bun-websockets": "^0.17.13",
+      "@colyseus/schema": "^4.0.31",
+      "http-proxy-middleware": "^3.0.7"
     }
   },
   "type": "module",
@@ -316,16 +320,25 @@
     "iecode:prepare": "bun packages/infra/workspace/src/iecode-packages.ts prepare --config config/sibling-checkouts.json --destination .cache/iecode-packages --apply",
     "install:workspace": "bun run iecode:prepare && bun install --frozen-lockfile"
   },
+  "dependencies": {
+    "@neon/config": "^1.8.2",
+    "@neon/env": "^1.4.7"
+  },
   "devDependencies": {
     "@aphrody/paths": "workspace:*",
     "@types/bun": "catalog:",
     "@types/node": "catalog:",
-    "undici-types": "catalog:",
     "cheerio": "catalog:",
     "oxfmt": "catalog:",
     "oxlint": "catalog:",
     "turbo": "catalog:",
-    "typescript": "catalog:"
+    "typescript": "catalog:",
+    "undici-types": "catalog:"
+  },
+  "overrides": {
+    "@rosegriffon/azalee": "file:.cache/iecode-packages/azalee-d4de50ba2a4b7154cb9e91f405cc30a343b04aed.tgz",
+    "@rosegriffon/inagle": "file:.cache/iecode-packages/inagle-d4de50ba2a4b7154cb9e91f405cc30a343b04aed.tgz",
+    "@rosegriffon/inagle-cross": "file:.cache/iecode-packages/inagle-cross-d4de50ba2a4b7154cb9e91f405cc30a343b04aed.tgz"
   },
   "engines": {
     "bun": ">=1.4.2"
@@ -343,14 +356,5 @@
     "esbuild",
     "lmdb",
     "msgpackr-extract"
-  ],
-  "dependencies": {
-    "@neon/config": "^1.8.2",
-    "@neon/env": "^1.4.7"
-  },
-  "overrides": {
-    "@rosegriffon/inagle": "file:.cache/iecode-packages/inagle-d4de50ba2a4b7154cb9e91f405cc30a343b04aed.tgz",
-    "@rosegriffon/inagle-cross": "file:.cache/iecode-packages/inagle-cross-d4de50ba2a4b7154cb9e91f405cc30a343b04aed.tgz",
-    "@rosegriffon/azalee": "file:.cache/iecode-packages/azalee-d4de50ba2a4b7154cb9e91f405cc30a343b04aed.tgz"
-  }
+  ]
 }

@@ -10,7 +10,7 @@
 // validé + ELO (nul possible). Désaccord → litige : preuve, lobby 'Contested', arbitrage
 // admin. Tout le flow est journalisé (télémétrie).
 
-import { Room, Client } from "colyseus";
+import { Room, type Client } from "@colyseus/core";
 import {
 	clampScore,
 	parseMode,
@@ -59,9 +59,9 @@ interface MatchOptions {
 	}>;
 }
 
-export class MatchRoom extends Room<MatchState> {
-	maxClients = 4; // 2 joueurs en 1v1, 4 en 2v2 (futur)
-	autoDispose = false;
+export class MatchRoom extends Room<{ state: MatchState }> {
+	override maxClients = 4; // 2 joueurs en 1v1, 4 en 2v2 (futur)
+	override autoDispose = false;
 
 	private timeoutHandle: ReturnType<typeof setTimeout> | null = null;
 	private kFactor = 32;
@@ -265,7 +265,7 @@ export class MatchRoom extends Room<MatchState> {
 		// "start"), pas par la connexion : un joueur qui revient (refresh) ne re-déclenche rien.
 	}
 
-	override async onLeave(client: Client, _consented: boolean) {
+	override async onLeave(client: Client, _code?: number) {
 		const userId = this.sessionToUser.get(client.sessionId);
 		this.sessionToUser.delete(client.sessionId);
 		if (!userId) return;

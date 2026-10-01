@@ -3,7 +3,7 @@
 // chacun des 2 joueurs, et déclenche le toast Socket.IO `match_found` côté front.
 // Zéro duplication : tout passe par createRankedMatch().
 
-import { matchMaker } from "colyseus";
+import { matchMaker } from "@colyseus/core";
 
 // Représentation minimale d'un joueur pour la création de match. Reprend
 // exactement le payload attendu par MatchRoom.onCreate (MatchOptions.players).

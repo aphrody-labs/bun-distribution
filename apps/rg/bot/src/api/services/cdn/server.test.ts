@@ -98,7 +98,7 @@ afterAll(async () => {
 describe("/health", () => {
   test("200 + JSON { ok:true }", async () => {
     const res = await fetch(`${base}/health`);
-    const body = await res.json();
+    const body = (await res.json()) as { ok: boolean; storage: string };
     expect(res.status).toBe(200);
     expect(body.ok).toBe(true);
     expect(body.storage).toBe(storageDir);
@@ -121,7 +121,7 @@ describe("auth x-api-key sur écritures", () => {
       headers: { "content-type": "image/png" },
       body: new Uint8Array([1, 2, 3]),
     });
-    const body = await res.json();
+    const body = (await res.json()) as { error: string };
     expect(res.status).toBe(401);
     expect(body.error).toBe("Unauthorized");
   });
@@ -165,7 +165,7 @@ describe("auth x-api-key sur écritures", () => {
       },
       body: png,
     });
-    const body = await res.json();
+    const body = (await res.json()) as { id: string; url: string };
     expect(res.status).toBe(200);
     expect(body.id).toMatch(/^[a-f0-9]{16}\.png$/);
     // Host non whitelisté → URL = FALLBACK_PUBLIC_BASE (cdn.rosegriffon.fr par défaut).
@@ -184,7 +184,7 @@ describe("auth x-api-key sur écritures", () => {
       },
       body: new Uint8Array([0x89, 0x50, 0x4e, 0x47]),
     });
-    const body = await res.json();
+    const body = (await res.json()) as { id: string; url: string };
     expect(res.status).toBe(200);
     expect(body.url).toBe(`https://cdn.rosegriffon.fr/${body.id}`);
   });
@@ -213,7 +213,7 @@ describe("auth x-api-key sur écritures", () => {
 describe("/api/assets/<scope>/<path> — résolution + anti-traversal", () => {
   test("scope inconnu → 404 JSON", async () => {
     const res = await fetch(`${base}/api/assets/unknown-scope/x.png`);
-    const body = await res.json();
+    const body = (await res.json()) as { error: string };
     expect(res.status).toBe(404);
     expect(body.error).toContain("unknown scope");
   });
@@ -252,7 +252,7 @@ describe("manifest absent", () => {
   test("GET /api/assets/manifest sans fichier → 503", async () => {
     const res = await fetch(`${base}/api/assets/manifest`);
     expect(res.status).toBe(503);
-    const body = await res.json();
+    const body = (await res.json()) as { error: string };
     expect(body.error).toContain("Manifest");
   });
 });
