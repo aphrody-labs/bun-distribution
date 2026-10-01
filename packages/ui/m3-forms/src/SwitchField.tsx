@@ -17,7 +17,11 @@ function SwitchField({ name, label, description, disabled, required }: SwitchFie
     <FormField
       name={name}
       render={({ field }) => (
-        <FormItem data-disabled={disabled || undefined}>
+        <FormItem
+          data-disabled={disabled || undefined}
+          data-m3-component="SwitchField"
+          data-testid={`field-${name}`}
+        >
           <div className="flex min-h-14 flex-row items-center justify-between gap-4">
             <div className="flex flex-col gap-1">
               {label && (

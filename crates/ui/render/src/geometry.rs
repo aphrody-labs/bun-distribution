@@ -47,11 +47,11 @@ pub fn shadow_alpha(d: f32, sigma: f32) -> f32 {
 
 /// M3 elevation level (`0..=5`) mapped to a shadow offset (in pixels, applied
 /// downward) and Gaussian blur sigma, both derived from
-/// `aphrody_m3::motion::elevation::dp` scaled by `scale` (physical pixels per
+/// `aphrody_m3_tokens::elevation::dp` scaled by `scale` (physical pixels per
 /// dp).
 #[must_use]
 pub fn shadow_params(level: u8, scale: f32) -> (f32, f32) {
-    let dp = f32::from(aphrody_m3::motion::dp(level as usize));
+    let dp = f32::from(aphrody_m3_tokens::facade::motion::dp(level as usize));
     let offset_y = (dp * 0.5).min(12.0) * scale;
     let sigma = (dp * 0.75 + 1.0) * scale;
     (offset_y, sigma)

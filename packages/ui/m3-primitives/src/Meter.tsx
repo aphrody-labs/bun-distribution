@@ -17,6 +17,7 @@ export const MeterRoot = forwardRef<HTMLDivElement, MeterRootProps>(
     <MeterPrimitive.Root
       ref={ref}
       className={withClassName("flex flex-col gap-1.5 w-full", className)}
+      data-m3-component="Meter"
       {...props}
     />
   ),
@@ -95,7 +96,7 @@ export interface MeterProps extends MeterPrimitive.Root.Props {
 /** Pre-composed M3 Meter with label, track, indicator and formatted value. */
 export function Meter({ label, showValue = true, tone = "primary", ...props }: MeterProps) {
   return (
-    <MeterRoot tone={tone} {...props}>
+    <MeterRoot tone={tone} aria-label={typeof label === "string" ? label : undefined} {...props}>
       {(label || showValue) && (
         <div className="flex items-center justify-between">
           {label && <MeterLabel>{label}</MeterLabel>}

@@ -6,14 +6,15 @@
 
 use std::ffi::c_char;
 
-mod icons;
+pub mod icons;
+mod icons_ffi;
 mod render;
 mod reproduce;
 mod svg;
 mod symbols;
 mod validator;
-pub use icons::icon_svg_json;
-pub use icons::{bun_rs_icon_names, bun_rs_icon_svg};
+pub use icons_ffi::icon_svg_json;
+pub use icons_ffi::{bun_rs_icon_names, bun_rs_icon_svg};
 pub use render::{bun_rs_render_free, bun_rs_render_png, bun_rs_render3d_png};
 pub use reproduce::{bun_rs_m3_reproduce, bun_rs_m3_seed_from_image};
 pub use svg::bun_rs_svg;

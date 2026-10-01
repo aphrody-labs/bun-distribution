@@ -63,6 +63,7 @@ export const TabBar = forwardRef<HTMLDivElement, TabBarProps>(
   ({ layoutId = "tab-bar", trailing, className, children, ...props }, ref) => (
     <div
       ref={ref}
+      data-m3-component="TabBar"
       className={clsx(
         "flex h-10 shrink-0 items-stretch gap-1 border-b border-outline-variant bg-surface",
         className,

@@ -1,0 +1,11 @@
+--- a/plugins/dialog/src/desktop.rs	2006-07-24 03:21:28.000000000 +0200
++++ b/plugins/dialog/src/desktop.rs	2026-10-01 04:57:06.277866396 +0200
+@@ -11,7 +11,7 @@
+ use raw_window_handle::{HasDisplayHandle, HasWindowHandle, RawDisplayHandle, RawWindowHandle};
+ use rfd::{AsyncFileDialog, AsyncMessageDialog};
+ use serde::de::DeserializeOwned;
+-use tauri::{AppHandle, Runtime, plugin::PluginApi};
++use tauri::{AppHandle, Manager, Runtime, plugin::PluginApi};
+ 
+ use crate::{FileDialogBuilder, FilePath, MessageDialogBuilder, models::*};
+ 

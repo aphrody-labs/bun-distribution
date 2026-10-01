@@ -14,6 +14,9 @@ import { runUiVerify } from "./ui-verify.ts";
 import { runDriveUpstreamAudit } from "./drive-upstream-audit.ts";
 import { runDriveDaemon } from "./drive-daemon.ts";
 import { runTauri } from "./tauri.ts";
+import { runTauriApps } from "./tauri-apps.ts";
+import { runStackDedup } from "./stack-dedup.ts";
+import { runTauriSync } from "./tauri-sync.ts";
 import { runBunNative } from "./bun-native.ts";
 import { runUiDedupManifest } from "./ui-dedup-manifest.ts";
 import { runSpaceUiIcons } from "./spaceui-icons.ts";
@@ -39,6 +42,7 @@ import { runAgentHome } from "./agent-home.ts";
 import { runAgentPluginSync } from "./agent-plugin-sync.ts";
 import { runPythonQuality } from "./python-quality.ts";
 import { runDocsOverlaps } from "./docs-overlaps.ts";
+import { runDocsConsolidation } from "./docs-consolidation.ts";
 import { runGitignoredAudit } from "./gitignored-audit.ts";
 import { runRuntimeVersions } from "./runtime-versions.ts";
 import { runMonorepoGate } from "./monorepo-gate.ts";
@@ -50,12 +54,16 @@ import { runCargoPackageRepair } from "./cargo-package-repair.ts";
 import { runConsolidation } from "./consolidation.ts";
 import { runRg } from "./rg.ts";
 import { runShenron } from "./shenron.ts";
+import { runDiscord } from "./discord.ts";
 import { runWebMigration } from "./web-migration.ts";
 import { runAgentLive } from "./agent-live.ts";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const [operation, ...rest] = process.argv.slice(2);
+if (operation === "discord") {
+  process.exit(await runDiscord(rest));
+}
 if (operation === "agent-live") {
   process.exit(await runAgentLive(rest));
 }
@@ -172,6 +180,9 @@ if (operation === "gitignored-audit") {
 if (operation === "docs-overlaps") {
   process.exit(runDocsOverlaps(rest));
 }
+if (operation === "docs-consolidate") {
+  process.exit(await runDocsConsolidation(rest));
+}
 if (operation === "python-quality") {
   process.exit(runPythonQuality(rest));
 }
@@ -246,6 +257,30 @@ if (operation === "bun-native") {
 }
 if (operation === "tauri") {
   process.exit(await runTauri(rest));
+}
+if (operation === "tauri-apps") {
+  process.exit(await runTauriApps(rest));
+}
+if (operation === "tauri-sync") {
+  process.exit(await runTauriSync(rest));
+}
+if (operation === "stack-dedup") {
+  process.exit(await runStackDedup(rest));
+}
+// UI scaffolding CLIs: one process each, arguments passed through.
+const UI_CLIS: Record<string, string> = {
+  "web-to-tauri": "../../../ui/web-to-tauri/src/cli.ts",
+  scaffold: "../../../ui/scaffold/src/cli.ts",
+};
+if (operation !== undefined && operation in UI_CLIS) {
+  const entry = new URL(UI_CLIS[operation]!, import.meta.url);
+  const child = Bun.spawn([process.execPath, fileURLToPath(entry), ...rest], {
+    cwd: process.cwd(),
+    stdin: "inherit",
+    stdout: "inherit",
+    stderr: "inherit",
+  });
+  process.exit(await child.exited);
 }
 if (operation === "drive-daemon") {
   process.exit(await runDriveDaemon(rest));

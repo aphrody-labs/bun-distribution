@@ -607,14 +607,11 @@ fn run_state(pretty: bool) -> miette::Result<()> {
                 "is_unified_state_sync": e.is_unified_state_sync,
                 "looks_like_signin_state": e.looks_like_signin_state,
             });
-            if e.is_unified_state_sync {
-                if let Some(raw_val) = item_json.get(&e.key).and_then(|v| v.as_str()) {
-                    if let Ok(decoded) =
-                        aphrody_antigravity::state_sync::decode_unified_state(raw_val)
-                    {
-                        obj["decoded"] = decoded;
-                    }
-                }
+            if e.is_unified_state_sync
+                && let Some(raw_val) = item_json.get(&e.key).and_then(|v| v.as_str())
+                && let Ok(decoded) = aphrody_antigravity::state_sync::decode_unified_state(raw_val)
+            {
+                obj["decoded"] = decoded;
             }
             obj
         })

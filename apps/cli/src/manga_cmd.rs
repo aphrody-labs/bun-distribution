@@ -3,7 +3,7 @@
 
 //! CLI command `aphrody manga`: Koharu page analysis, cleanup, and PSD export.
 
-use std::{io::Write, path::PathBuf};
+use std::{io::Write, path::{Path, PathBuf}};
 use clap::{Subcommand, ValueEnum};
 use miette::{IntoDiagnostic, Result};
 use aphrody_manga::{
@@ -172,7 +172,7 @@ fn validate_sha256(value: String) -> Result<String> {
     Ok(value.to_ascii_lowercase())
 }
 
-fn require_extension(path: &PathBuf, expected: &str) -> Result<()> {
+fn require_extension(path: &Path, expected: &str) -> Result<()> {
     if path.extension().and_then(|value| value.to_str())
         .is_some_and(|value| value.eq_ignore_ascii_case(expected))
     {
@@ -291,8 +291,10 @@ pub(crate) async fn run(action: MangaAction) -> Result<()> {
         }
         MangaAction::Detect { image, json, device } => {
             let bytes = std::fs::read(&image).into_diagnostic()?;
-            let mut options = MangaPipelineOptions::default();
-            options.cpu = device == MangaDevice::Cpu;
+            let options = MangaPipelineOptions {
+                cpu: device == MangaDevice::Cpu,
+                ..Default::default()
+            };
             let page_result = MangaPipeline::detect_image_bytes(&bytes, &options)
                 .await
                 .map_err(|e| miette::miette!("Manga detection failed: {e}"))?
@@ -372,9 +374,10 @@ pub(crate) async fn run(action: MangaAction) -> Result<()> {
             }
             let bytes = std::fs::read(&image).into_diagnostic()?;
             assert_image_sha256(&aphrody_manga::sha256_hex(&bytes), image_sha256)?;
-            let mut options = MangaPipelineOptions::default();
-            options.target_language = to.clone();
-            options.cpu = device == MangaDevice::Cpu;
+            let options = MangaPipelineOptions {
+                target_language: to.clone(),
+                cpu: device == MangaDevice::Cpu,
+            };
 
             let run = MangaPipeline::process_image_bytes(&bytes, &options).await
                 .map_err(|e| miette::miette!("Pipeline execution failed: {e}"))?;
@@ -440,8 +443,10 @@ pub(crate) async fn run(action: MangaAction) -> Result<()> {
         MangaAction::Cdn { url, to, output } => {
             require_extension(&output, "psd")?;
             let client = MangaCdnClient::new();
-            let mut options = MangaPipelineOptions::default();
-            options.target_language = to.clone();
+            let options = MangaPipelineOptions {
+                target_language: to.clone(),
+                ..Default::default()
+            };
 
             println!("Streaming plate from CDN: {url}...");
             let (res, psd_bytes) = client.scanlate_cdn_plate(&url, &options).await
@@ -459,9 +464,10 @@ pub(crate) async fn run(action: MangaAction) -> Result<()> {
                 let _ = validate_sha256(digest.clone())?;
             }
             let client = MangaCdnClient::new();
-            let mut options = MangaPipelineOptions::default();
-            options.target_language = to.clone();
-            options.cpu = device == MangaDevice::Cpu;
+            let options = MangaPipelineOptions {
+                target_language: to.clone(),
+                cpu: device == MangaDevice::Cpu,
+            };
 
             if !json {
                 println!("Streaming databook #{id} plate #{page} from catalog...");
@@ -490,9 +496,10 @@ pub(crate) async fn run(action: MangaAction) -> Result<()> {
                 let _ = validate_sha256(digest.clone())?;
             }
             let client = MangaCdnClient::new();
-            let mut options = MangaPipelineOptions::default();
-            options.target_language = to.clone();
-            options.cpu = device == MangaDevice::Cpu;
+            let options = MangaPipelineOptions {
+                target_language: to.clone(),
+                cpu: device == MangaDevice::Cpu,
+            };
 
             if !json {
                 println!("Streaming manga chapter #{id} plate #{page} from catalog...");

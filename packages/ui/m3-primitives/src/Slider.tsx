@@ -46,6 +46,7 @@ export const Slider = ({
 
   return (
     <SliderPrimitive.Root
+      data-m3-component="Slider"
       {...props}
       onValueChange={onValueChange && ((value, details) => onValueChange(asArray(value), details))}
       onValueCommitted={

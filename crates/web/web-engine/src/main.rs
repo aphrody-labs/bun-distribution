@@ -2,6 +2,8 @@
 
 use std::{sync::Arc, time::Instant};
 
+mod crawl;
+
 use aphrody_web_service::{
     extract_main, html_to_markdown, normalize_v8_flags, page_artifact, validate_page_url,
     validate_render_proxy,
@@ -135,6 +137,10 @@ enum Command {
         quiet: bool,
     },
 
+    /// Bounded, robots-aware crawl of one or more seeds with the static Obscura HTTP stack.
+    /// Reports what a native crawler or an LLM agent can extract from the initial HTML.
+    Crawl(crawl::CrawlArgs),
+
     ChromePath,
 }
 
@@ -182,7 +188,9 @@ fn select_log_filter(verbose: bool, quiet: bool) -> &'static str {
 fn is_quiet_command(cmd: &Option<Command>) -> bool {
     matches!(
         cmd,
-        Some(Command::Fetch { quiet: true, .. }) | Some(Command::Scrape { quiet: true, .. })
+        Some(Command::Fetch { quiet: true, .. })
+            | Some(Command::Scrape { quiet: true, .. })
+            | Some(Command::Crawl(crawl::CrawlArgs { quiet: true, .. }))
     )
 }
 
@@ -299,6 +307,9 @@ async fn main() -> anyhow::Result<()> {
             )
             .await?;
         },
+        Some(Command::Crawl(crawl_args)) => {
+            crawl::run_crawl(crawl_args, global_proxy).await?;
+        },
         Some(Command::ChromePath) => {
             let path = resolve_chrome_path()?;
             println!("{}", path.display());
@@ -339,7 +350,9 @@ async fn run_multi_worker_serve(
     use tokio::{io::AsyncWriteExt as _, net::TcpListener};
 
     let exe = std::env::current_exe()?;
-    let mut children = Vec::new();
+    // Workers must never outlive the load balancer: the guard kills and reaps them on every
+    // exit path (shutdown signal, accept error, panic).
+    let mut children = WorkerGuard(Vec::new());
 
     for i in 0..workers {
         let worker_port = port + 1 + i;
@@ -359,7 +372,7 @@ async fn run_multi_worker_serve(
 
         let child = cmd.spawn()?;
         tracing::info!("Worker {} on port {}", i + 1, worker_port);
-        children.push(child);
+        children.0.push(child);
     }
 
     tokio::time::sleep(tokio::time::Duration::from_millis(500)).await;
@@ -369,9 +382,17 @@ async fn run_multi_worker_serve(
     tracing::info!("Load balancer on port {}, {} workers", port, workers);
 
     let mut next_worker: u16 = 0;
+    let shutdown = shutdown_signal();
+    tokio::pin!(shutdown);
 
     loop {
-        let (client_stream, peer_addr) = listener.accept().await?;
+        let (client_stream, peer_addr) = tokio::select! {
+            accepted = listener.accept() => accepted?,
+            () = &mut shutdown => {
+                tracing::info!("Shutdown signal received; stopping {} workers", workers);
+                return Ok(());
+            },
+        };
         let worker_port = port + 1 + (next_worker % workers);
         next_worker = next_worker.wrapping_add(1);
 
@@ -446,6 +467,34 @@ async fn run_multi_worker_serve(
             }
         });
     }
+}
+
+/// Owns the spawned worker processes and terminates them when dropped.
+struct WorkerGuard(Vec<std::process::Child>);
+
+impl Drop for WorkerGuard {
+    fn drop(&mut self) {
+        for child in &mut self.0 {
+            let _ = child.kill();
+            let _ = child.wait();
+        }
+    }
+}
+
+/// Resolves on Ctrl-C or, on Unix, SIGTERM.
+async fn shutdown_signal() {
+    #[cfg(unix)]
+    {
+        use tokio::signal::unix::{SignalKind, signal};
+        if let Ok(mut term) = signal(SignalKind::terminate()) {
+            tokio::select! {
+                _ = tokio::signal::ctrl_c() => {},
+                _ = term.recv() => {},
+            }
+            return;
+        }
+    }
+    let _ = tokio::signal::ctrl_c().await;
 }
 
 #[allow(clippy::too_many_arguments)]

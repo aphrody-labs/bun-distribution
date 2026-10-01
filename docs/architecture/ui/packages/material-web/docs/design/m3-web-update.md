@@ -24,7 +24,7 @@
 Consolide le **scrape récursif** de Material Design 3 — index glossaire +
 toutes les pages composants — en un plan d'update concret pour `packages/ui/material-web`
 (le « M3 web »). Référence : [`m3-glossary.md`](./m3-glossary.md),
-[`m3-components-spec.md`](./m3-components-spec.md), [`DESIGN-PACKAGE.md`](../../../../docs/design/DESIGN-PACKAGE.md).
+[`m3-components-spec.md`](../../../../../../../packages/ui/material-web/docs/design/m3-components-spec.md), [`DESIGN-PACKAGE.md`](../../../../docs/design/DESIGN-PACKAGE.md).
 
 ## Méthode (et statut aphrody-web)
 

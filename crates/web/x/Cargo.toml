@@ -42,9 +42,10 @@ dirs.workspace = true
 json5.workspace = true
 time.workspace = true
 
-# X For You algorithm (native ranking). Additive, used for optional local re-ranking
-# of this crate's Tweet/User results (timelines, search, etc). See `rank_tweets`,
-# `tweet_to_algo_candidate` and the re-exported `x_algorithm::*` types.
-aphrody-x-algorithm = { workspace = true }
+# The X For You algorithm (native ranking, `aphrody_x::algorithm`, formerly the
+# `aphrody-x-algorithm` crate) needs nothing beyond serde, serde_json and thiserror above.
+# It is used for optional local re-ranking of this crate's Tweet/User results (timelines,
+# search, etc). See `rank_tweets`, `tweet_to_algo_candidate` and the re-exported
+# `AlgoPostCandidate`/`AlgoRankingContext`/`AlgoScoredPost` types.
 [dev-dependencies]
 tokio       = { workspace = true }

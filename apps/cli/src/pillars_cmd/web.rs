@@ -728,11 +728,11 @@ async fn handle_web_x(cookie: Option<String>, action: WebXAction) -> miette::Res
 struct WebMediaTransport;
 
 #[async_trait::async_trait]
-impl aphrody_web_media::MediaTransport for WebMediaTransport {
+impl aphrody_web_extract::media::MediaTransport for WebMediaTransport {
     async fn fetch(
         &self,
-        request: aphrody_web_media::MediaRequest,
-    ) -> Result<aphrody_web_media::MediaResponse, String> {
+        request: aphrody_web_extract::media::MediaRequest,
+    ) -> Result<aphrody_web_extract::media::MediaResponse, String> {
         if request.method != "GET" {
             return Err(format!("unsupported media HTTP method: {}", request.method));
         }
@@ -755,7 +755,7 @@ impl aphrody_web_media::MediaTransport for WebMediaTransport {
         if response.body.len() > 8 * 1024 * 1024 {
             return Err("media response exceeds 8 MiB extraction limit".to_owned());
         }
-        Ok(aphrody_web_media::MediaResponse {
+        Ok(aphrody_web_extract::media::MediaResponse {
             status: response.status,
             body: response.text(),
             url: Some(response.url.to_string()),
@@ -767,21 +767,21 @@ async fn handle_web_media(action: WebMediaAction) -> miette::Result<()> {
     let transport = WebMediaTransport;
     match action {
         WebMediaAction::Resolve { url, referer, variants, timeout_ms } => {
-            let mut options = aphrody_web_media::ResolveOptions::new(&transport);
+            let mut options = aphrody_web_extract::media::ResolveOptions::new(&transport);
             options.referer = referer.as_deref();
             options.enumerate_variants = variants;
             options.timeout_ms = Some(timeout_ms);
-            let result = aphrody_web_media::resolve_embed(&url, &options).await;
+            let result = aphrody_web_extract::media::resolve_embed(&url, &options).await;
             print_web_json(&serde_json::to_value(&result).into_diagnostic()?)?;
             if let Some(error) = result.error {
                 return Err(miette!("media resolution: {error}"));
             }
         },
         WebMediaAction::Variants { url, referer, timeout_ms } => {
-            let mut options = aphrody_web_media::ResolveOptions::new(&transport);
+            let mut options = aphrody_web_extract::media::ResolveOptions::new(&transport);
             options.referer = referer.as_deref();
             options.timeout_ms = Some(timeout_ms);
-            let variants = aphrody_web_media::resolve_variants(&url, &options).await;
+            let variants = aphrody_web_extract::media::resolve_variants(&url, &options).await;
             print_web_json(&serde_json::to_value(&variants).into_diagnostic()?)?;
             if variants.is_empty() {
                 return Err(miette!("no HLS variants found at {url}"));

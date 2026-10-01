@@ -50,6 +50,6 @@ Bun side lazily dlopen the lib on first use; falls back to pure JS for some path
 5. Add tests (cargo test in the crate + Bun test that exercises the FFI path)
 6. Document in the skill or references/
 
-See `crates/aphrody-x` and `crates/aphrody-x-algorithm` for patterns (the ranking algorithm was split out of the client for clean separation).
+See `crates/web/x` for patterns (client in `src/`, ranking in `src/algorithm.rs`; the ranking was a separate `aphrody-x-algorithm` crate until the 2026-10-01 consolidation).
 
 Use the web-rust-ffi-reviewer agent for reviews.

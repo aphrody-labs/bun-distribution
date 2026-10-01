@@ -1,0 +1,42 @@
+# SPDX-License-Identifier: Apache-2.0
+[package]
+name = "aphrody-tauri-wrap"
+description = "Runtime plugin of web-to-tauri: turns a website, web app or built bundle into a native Tauri 3 window with the navigation policy, downloads, loopback server and sidecar that keep the page, its API and its backend unchanged. Also hosts the feature-gated debug bridge for Tauri 3 apps (`debug`)."
+version = "1.0.0-canary"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+homepage.workspace = true
+repository.workspace = true
+publish = false
+
+[lints]
+workspace = true
+
+[features]
+default = ["bundle"]
+# Loopback server of the `bundle` mode (assets + backend reverse proxy): axum, reqwest, rustls,
+# tokio. Without it `mode: bundle` is refused at startup; `remote` and `sidecar` need none of it
+# (the sidecar is std only), nor does the debug bridge.
+bundle = ["dep:axum", "dep:http", "dep:reqwest", "dep:rustls", "dep:tokio"]
+# Compiles the debug bridge of `debug::init()`. Without it `init()` is an empty plugin and no
+# bridge code is linked. Even with it the bridge starts only in debug builds and only when
+# APHRODY_TAURI_DEBUG=1.
+debug-bridge = ["dep:tauri-plugin-mcp-bridge", "dep:uuid"]
+
+[dependencies]
+open = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+tauri = { workspace = true }
+url = { workspace = true }
+axum = { workspace = true, optional = true }
+http = { workspace = true, optional = true }
+reqwest = { workspace = true, optional = true }
+rustls = { workspace = true, optional = true }
+tokio = { workspace = true, optional = true }
+uuid = { workspace = true, optional = true }
+# Pinned upstream (hypothesi/mcp-server-tauri, MIT) carrying the Aphrody Tauri 3 patch set,
+# see patches/tauri-plugin-mcp-bridge-0.13.0-tauri3.patch. Never copied into crates/.
+tauri-plugin-mcp-bridge = { workspace = true, optional = true }

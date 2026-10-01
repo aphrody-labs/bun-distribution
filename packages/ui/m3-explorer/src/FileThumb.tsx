@@ -82,6 +82,7 @@ export function FileThumb({
 
   return (
     <div
+      data-m3-component="FileThumb"
       className={clsx(
         "relative pointer-events-none flex shrink-0 grow-0 items-center justify-center",
         className,

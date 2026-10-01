@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// X ranking is implemented once in aphrody-x-algorithm and exposed by aphrody-ffi.
+// X ranking is implemented once in aphrody-x (module algorithm) and exposed by aphrody-ffi.
 import { webXAlgorithmRank } from "@aphrody/bun/web";
 
 export interface PostCandidate {

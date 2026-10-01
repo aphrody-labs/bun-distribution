@@ -1,6 +1,6 @@
 import type { BaseCharacter, Item } from "@rosegriffon/inagle";
 import type { Skill, Team } from "@rosegriffon/inagle";
-import { ElementNames } from "@rosegriffon/inagle/core/types";
+import { ElementNames } from "@rosegriffon/inagle";
 import type { Database } from "@rosegriffon/db";
 import { createAchilleaSql, sql } from "@rosegriffon/db/achillea-sql";
 import type { Database as SqlDatabase } from "@rosegriffon/db/schema";

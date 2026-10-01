@@ -23,7 +23,7 @@ feature of the product, with its own runtime and provenance boundary.
 | React web | `@aphrody/m3-primitives` family | Maintained Base UI fork for accessible behavior; maintained Tailwind CSS fork for M3 styling. |
 | Web components | `@aphrody/material-web` and `@aphrody/m3-react` | Lit implementation consuming the same roles and accessibility contract. |
 | Build and hosts | `@aphrody/m3`, `@aphrody/m3-next`, `aphrody-app` | Bun, Next.js and Tauri adapters; host authority stays outside components. |
-| Native Rust | `aphrody-m3`, `aphrody-render` and optional GUI packages | Reuse tokens and rendering contracts; native widgets need their own interaction and accessibility proof. |
+| Native Rust | `aphrody-m3-tokens`, `aphrody-render` and optional GUI packages | Reuse tokens and rendering contracts; native widgets need their own interaction and accessibility proof. |
 
 Base UI renders React DOM and Tailwind emits CSS. Neither is a mobile native widget engine.
 Their forked source belongs to the web renderer, including desktop and mobile webviews.

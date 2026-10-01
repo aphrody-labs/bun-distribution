@@ -6,11 +6,15 @@
  * Usage:
  *   bun scripts/tauri.ts [check|build|run|dev|bundle] [--bundles <bundles>]
  */
+import { existsSync, readFileSync } from "node:fs";
 import { copyFile, mkdir, stat } from "node:fs/promises";
 import { resolve, join } from "node:path";
 
 const VALID_ACTIONS = ["check", "build", "run", "dev", "bundle"] as const;
-const TAURI_CLI_VERSION = "2.11.5";
+// The CLI version is centralized in config/tauri-upstream.json (kept current by `bun run tauri:sync`).
+const TAURI_CLI_VERSION: string = JSON.parse(
+  readFileSync(new URL("../../../../config/tauri-upstream.json", import.meta.url), "utf8"),
+).js.cli.version;
 type Action = (typeof VALID_ACTIONS)[number];
 
 function parseArgs(args: string[]): { action: Action; bundles: string; repo: string } {
@@ -36,7 +40,13 @@ function parseArgs(args: string[]): { action: Action; bundles: string; repo: str
 
 export async function runTauri(args: string[]): Promise<number> {
   const { action, bundles, repo } = parseArgs(args);
-  const appDir = join(repo, "crates", "aphrody-app");
+  // Monorepo layout first (`crates/ui/app`); the legacy aphrody-ui checkout keeps `crates/aphrody-app`.
+  const appDir =
+    ["crates/ui/app", "crates/aphrody-app"]
+      .map((path) => join(repo, path))
+      .find((path) => existsSync(join(path, "Cargo.toml"))) ?? join(repo, "crates", "ui", "app");
+  // The app UI source (`@aphrody/app-ui`) is not part of this workspace yet: without it the prebuilt
+  // `ui-dist` bundle committed beside the app is what Tauri embeds.
   const uiDir = join(repo, "packages", "app-ui");
   const isWindows = process.platform === "win32";
   const isLinux = process.platform === "linux";
@@ -65,6 +75,32 @@ export async function runTauri(args: string[]): Promise<number> {
     return host;
   }
 
+  /**
+   * Workspace that builds a sidecar: the sibling checkout when present (legacy multi-repo layout),
+   * otherwise this monorepo when its root manifest is a workspace carrying the package.
+   */
+  function sidecarWorkspace(
+    sibling: string,
+    pkg: string,
+  ): { dir: string; manifest: string } | undefined {
+    const legacy = join(repo, "..", sibling);
+    if (existsSync(join(legacy, "Cargo.toml")))
+      return { dir: legacy, manifest: join(legacy, "Cargo.toml") };
+    const root = join(repo, "Cargo.toml");
+    if (
+      existsSync(root) &&
+      Bun.spawnSync(["cargo", "pkgid", "-p", pkg, "--manifest-path", root], {
+        cwd: repo,
+        env: cleanEnv,
+        stdout: "ignore",
+        stderr: "ignore",
+      }).exitCode === 0
+    ) {
+      return { dir: repo, manifest: root };
+    }
+    return undefined;
+  }
+
   async function isFile(path: string): Promise<boolean> {
     return stat(path).then(
       (entry) => entry.isFile(),
@@ -77,8 +113,8 @@ export async function runTauri(args: string[]): Promise<number> {
    * to externalBin names, as for the Drive daemon in drive/xtask) and beside the unbundled
    * desktop binary, where broker.rs resolves it before `PATH`.
    *
-   * Source: `$APHRODY_SIDECAR_SOURCE` when set (a prebuilt binary), otherwise the sibling
-   * `../aphrody-ai` workspace is built with `--locked` and its target directory is read from
+   * Source: `$APHRODY_SIDECAR_SOURCE` when set (a prebuilt binary), otherwise this workspace (or the
+   * legacy sibling `../aphrody-ai`) is built with `--locked` and its target directory is read from
    * `cargo metadata`, so no checkout or target path is hard-coded.
    */
   async function stageAphrodySidecar(profile: "debug" | "release") {
@@ -86,17 +122,19 @@ export async function runTauri(args: string[]): Promise<number> {
     const suffix = host.includes("windows") ? ".exe" : "";
     let source = Bun.env.APHRODY_SIDECAR_SOURCE ?? "";
     if (!source) {
-      const manifest = join(repo, "..", "aphrody-ai", "Cargo.toml");
-      if (!(await isFile(manifest))) {
+      const workspace = sidecarWorkspace("aphrody-ai", "aphrody");
+      if (!workspace) {
         throw new Error(
-          `aphrody-ai must be checked out beside aphrody-ui (${manifest}) or APHRODY_SIDECAR_SOURCE set`,
+          `the aphrody package is not in this workspace and aphrody-ai is not checked out beside it (${join(repo, "..", "aphrody-ai")}); set APHRODY_SIDECAR_SOURCE`,
         );
       }
+      const { manifest } = workspace;
       const metadata = Bun.spawnSync(
         ["cargo", "metadata", "--format-version", "1", "--no-deps", "--manifest-path", manifest],
-        { cwd: repo, env: cleanEnv, stdout: "pipe", stderr: "inherit" },
+        { cwd: workspace.dir, env: cleanEnv, stdout: "pipe", stderr: "inherit" },
       );
-      if (metadata.exitCode !== 0) throw new Error("cargo metadata failed for aphrody-ai");
+      if (metadata.exitCode !== 0)
+        throw new Error("cargo metadata failed for the aphrody workspace");
       const targetDir = (
         JSON.parse(new TextDecoder().decode(metadata.stdout)) as { target_directory: string }
       ).target_directory;
@@ -138,18 +176,19 @@ export async function runTauri(args: string[]): Promise<number> {
     const suffix = host.includes("windows") ? ".exe" : "";
     let source = Bun.env.KOHARU_SDK_SIDECAR_SOURCE ?? "";
     if (!source) {
-      const koharuDir = join(repo, "..", "aphrody-koharu");
-      const manifest = join(koharuDir, "Cargo.toml");
-      if (!(await isFile(manifest))) {
+      const workspace = sidecarWorkspace("aphrody-koharu", "koharu-library");
+      if (!workspace) {
         throw new Error(
-          `aphrody-koharu must be checked out beside aphrody-ui (${manifest}) or KOHARU_SDK_SIDECAR_SOURCE set`,
+          `the koharu-library package is not in this workspace and aphrody-koharu is not checked out beside it (${join(repo, "..", "aphrody-koharu")}); set KOHARU_SDK_SIDECAR_SOURCE`,
         );
       }
+      const { dir: koharuDir, manifest } = workspace;
       const metadata = Bun.spawnSync(
         ["cargo", "metadata", "--format-version", "1", "--no-deps", "--manifest-path", manifest],
         { cwd: koharuDir, env: cleanEnv, stdout: "pipe", stderr: "inherit" },
       );
-      if (metadata.exitCode !== 0) throw new Error("cargo metadata failed for aphrody-koharu");
+      if (metadata.exitCode !== 0)
+        throw new Error("cargo metadata failed for the koharu workspace");
       const targetDir = (
         JSON.parse(new TextDecoder().decode(metadata.stdout)) as { target_directory: string }
       ).target_directory;
@@ -214,8 +253,14 @@ export async function runTauri(args: string[]): Promise<number> {
   try {
     // Step 1: Build M3 UI unless action is 'check'
     if (action !== "check") {
-      console.log("[tauri] Building M3 App UI...");
-      runSync(["bun", "run", "build"], uiDir, "Aphrody M3 UI build failed");
+      if (existsSync(join(uiDir, "package.json"))) {
+        console.log("[tauri] Building M3 App UI...");
+        runSync(["bun", "run", "build"], uiDir, "Aphrody M3 UI build failed");
+      } else {
+        console.warn(
+          `[tauri] No app-ui workspace at ${uiDir}: embedding the prebuilt ui-dist bundle.`,
+        );
+      }
     }
 
     // Step 2: Prepare Drive daemon unless action is 'check'

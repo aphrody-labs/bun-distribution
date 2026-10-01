@@ -38,7 +38,7 @@
         },
         {
           "name": "aphrody-a2a-client",
-          "path": "crates/contracts/a2a-client",
+          "path": "crates/os/a2a-client",
           "description": "A2A v1 async client with protocol binding factory",
           "bins": [
             "a2a-duel-loop"
@@ -51,14 +51,14 @@
         },
         {
           "name": "aphrody-a2a-coord",
-          "path": "crates/contracts/a2a-coord",
+          "path": "crates/os/a2a-coord",
           "description": "Aphrody A2A coordination: ai.json manifest, JSONL mailboxes and their NDJSON/SSE proxy, native Claude/Grok/agy peers, HTTP listener.",
           "bins": [],
           "features": []
         },
         {
           "name": "aphrody-a2a-grpc",
-          "path": "crates/contracts/a2a-grpc",
+          "path": "crates/os/a2a-grpc",
           "description": "A2A v1 gRPC protocol binding for client and server",
           "bins": [],
           "features": [
@@ -77,7 +77,7 @@
         },
         {
           "name": "aphrody-a2a-server",
-          "path": "crates/contracts/a2a-server",
+          "path": "crates/os/a2a-server",
           "description": "A2A v1 async server framework",
           "bins": [],
           "features": [
@@ -144,6 +144,17 @@
             "default",
             "grpc",
             "local-ls"
+          ]
+        },
+        {
+          "name": "aphrody-app",
+          "path": "crates/ui/app",
+          "description": "Aphrody OS desktop (Tauri 3): the GUI and window manager; drives the aphrody agent over its app-server protocol.",
+          "bins": [
+            "aphrody-app"
+          ],
+          "features": [
+            "custom-protocol"
           ]
         },
         {
@@ -241,6 +252,13 @@
           "name": "aphrody-cron",
           "path": "crates/os/cron",
           "description": "Lightweight async cron / interval / daily-time scheduler with pluggable JSON-backed job store for aphrody background tasks.",
+          "bins": [],
+          "features": []
+        },
+        {
+          "name": "aphrody-discord-compiler",
+          "path": "crates/discord/aphrody-discord-compiler",
+          "description": "Native Rust + Bun compiler and AST orchestrator for Discord bots in Aphrody.",
           "bins": [],
           "features": []
         },
@@ -389,17 +407,6 @@
           "features": []
         },
         {
-          "name": "aphrody-icons",
-          "path": "crates/ui/icons",
-          "description": "Material Design Icons & Symbols (Web Fonts, CSS, JSON) as a workspace crate",
-          "bins": [],
-          "features": [
-            "default",
-            "serde",
-            "svg"
-          ]
-        },
-        {
           "name": "aphrody-identity",
           "path": "crates/ui/identity",
           "description": "Aphrody product identity: brand icons, favicon and webmanifest, the measured palette (design tokens, M3 seed), and the typed 2D pet runtime (RGBA atlas, timed animations, directions).",
@@ -490,20 +497,6 @@
           "features": []
         },
         {
-          "name": "aphrody-logo",
-          "path": "crates/ui/logo",
-          "description": "The canonical aphrody character icon (assets/aphrody.webp) embedded once, with Windows .ico, scalable .svg, and M3 maskable PNG derivations.",
-          "bins": [],
-          "features": []
-        },
-        {
-          "name": "aphrody-m3",
-          "path": "crates/ui/m3",
-          "description": "Unified Material 3 facade for Aphrody OS: tokens, adaptive layout, themes, motion, typography and platform contracts.",
-          "bins": [],
-          "features": []
-        },
-        {
           "name": "aphrody-m3-reproduce",
           "path": "crates/ui/m3-reproduce",
           "description": "Reproduce a site in Material 3: seed colors, fonts, shapes and a component tree from a screenshot or a crawl, emitted as an @aphrody/m3 app scaffold.",
@@ -511,7 +504,6 @@
             "aphrody-m3-reproduce"
           ],
           "features": [
-            "capture",
             "cli",
             "crawl",
             "default",
@@ -641,7 +633,9 @@
           "bins": [
             "aphrody-model-view"
           ],
-          "features": []
+          "features": [
+            "debug-bridge"
+          ]
         },
         {
           "name": "aphrody-models",
@@ -1083,13 +1077,6 @@
           "features": []
         },
         {
-          "name": "aphrody-tauri-m3",
-          "path": "crates/ui/tauri-m3",
-          "description": "Material Design 3 for native Tauri v2 apps: M3 sheets rendered in Rust, the OS accent colour as dynamic-colour seed, and the window surface kept in the scheme.",
-          "bins": [],
-          "features": []
-        },
-        {
           "name": "aphrody-tauri-mcp",
           "path": "crates/ui/tauri-mcp",
           "description": "Native MCP adapter for Aphrody Tauri desktop webview inspection.",
@@ -1097,6 +1084,17 @@
             "aphrody-tauri-mcp"
           ],
           "features": []
+        },
+        {
+          "name": "aphrody-tauri-wrap",
+          "path": "crates/ui/tauri-wrap",
+          "description": "Runtime plugin of web-to-tauri: turns a website, web app or built bundle into a native Tauri 3 window with the navigation policy, downloads, loopback server and sidecar that keep the page, its API and its backend unchanged. Also hosts the feature-gated debug bridge for Tauri 3 apps (`debug`).",
+          "bins": [],
+          "features": [
+            "bundle",
+            "debug-bridge",
+            "default"
+          ]
         },
         {
           "name": "aphrody-telemetry",
@@ -1192,13 +1190,6 @@
           "features": []
         },
         {
-          "name": "aphrody-web",
-          "path": "crates/web/web",
-          "description": "Canonical Aphrody Web and browser surface: Obscura headless browser, CDP and scraping.",
-          "bins": [],
-          "features": []
-        },
-        {
           "name": "aphrody-web-bridge",
           "path": "crates/web/web-bridge",
           "description": "Aphrody Web bridge: in-process Rust content conversion, native DOM/DNS compatibility and browser subprocess.",
@@ -1246,7 +1237,7 @@
         {
           "name": "aphrody-web-extract",
           "path": "crates/web/web-extract",
-          "description": "Aphrody Web content extraction, Markdown, chunking, SimHash and URL metadata.",
+          "description": "Aphrody Web content extraction, Markdown, chunking, SimHash, URL metadata, media and embed resolution.",
           "bins": [],
           "features": [
             "profiling"
@@ -1256,13 +1247,6 @@
           "name": "aphrody-web-index",
           "path": "crates/web/web-index",
           "description": "HNSW approximate nearest-neighbour index with scalar int8 quantisation and mmap persistence",
-          "bins": [],
-          "features": []
-        },
-        {
-          "name": "aphrody-web-media",
-          "path": "crates/web/web-media",
-          "description": "Shared Rust media extraction and embed resolution for Aphrody Web",
           "bins": [],
           "features": []
         },
@@ -1291,13 +1275,6 @@
           "bins": [
             "x-cli"
           ],
-          "features": []
-        },
-        {
-          "name": "aphrody-x-algorithm",
-          "path": "crates/web/x-algorithm",
-          "description": "Native Rust adaptation of X (Twitter) For You feed ranking algorithm (pipeline + filters + weighted scorer + diversity) for Aphrody Web",
-          "bins": [],
           "features": []
         },
         {
@@ -1647,10 +1624,16 @@
         {
           "name": "@aphrody/agent-browser",
           "path": "packages/web/agent-browser",
-          "description": "Fast browser automation CLI and SDK for AI agents in Bun, backed by native agent-browser & Obscura CDP.",
+          "description": "Aphrody Web Bun client: CDP browser automation (agent-browser), engine lifecycle, web service client (fetch, scrape, crawl, sessions) and config reader, backed by the native aphrody-web engine.",
           "bins": [
             "agent-browser"
           ]
+        },
+        {
+          "name": "@aphrody/assets",
+          "path": "packages/ui/assets",
+          "description": "File-kind icons, extension badges, brand logos, images, sounds, videos and lottie animations, with icon resolution (getIcon, getLayeredIcon, getBeardedIcon, getIcon20): the Spacedrive @sd/assets set, merged with SpaceUI's @spacedrive/icons, for the Material Design 3 explorer surfaces.",
+          "bins": []
         },
         {
           "name": "@aphrody/bun",
@@ -1671,9 +1654,9 @@
           "bins": []
         },
         {
-          "name": "@aphrody/carbon-example",
-          "path": "upstream/discord/apps/carbon-example",
-          "description": "",
+          "name": "@aphrody/discord-kit",
+          "path": "packages/discord/kit",
+          "description": "Unified Discord bot core kit: pre-flight intent negotiation, memory-bounded caching, resilient interaction dispatching, lifecycle management and guards for Bun.",
           "bins": []
         },
         {
@@ -1769,7 +1752,7 @@
         {
           "name": "@aphrody/m3-icons",
           "path": "packages/ui/m3-icons",
-          "description": "Material Symbols icons for @aphrody/m3: pixel-perfect inline SVG rendered from the aphrody-icons variable fonts, no icon font shipped at runtime.",
+          "description": "Material Symbols icons for @aphrody/m3: pixel-perfect inline SVG rendered from the aphrody-bun icons module (variable fonts), no icon font shipped at runtime.",
           "bins": []
         },
         {
@@ -1836,12 +1819,6 @@
           "bins": []
         },
         {
-          "name": "@aphrody/messaging",
-          "path": "upstream/discord/packages/aphrody-messaging",
-          "description": "Aphrody messaging channel contracts and Discord REST adapter.",
-          "bins": []
-        },
-        {
           "name": "@aphrody/n2b-core",
           "path": "packages/compat/n2b-client",
           "description": "TypeScript façade thin pour le binaire Rust n2b — wrapper CLI (scan, rules, promptMarkdown).",
@@ -1880,22 +1857,26 @@
           ]
         },
         {
-          "name": "@aphrody/tsup-tool",
-          "path": "upstream/discord/tools/tsup",
-          "description": "",
-          "bins": []
-        },
-        {
-          "name": "@aphrody/typedoc-tool",
-          "path": "upstream/discord/tools/typedoc",
-          "description": "",
-          "bins": []
+          "name": "@aphrody/scaffold",
+          "path": "packages/ui/scaffold",
+          "description": "The single project scaffolder of the UI stack: Tauri 3 shell (pins, config, capabilities, icon), M3 web and app templates, the canonical example and a writer that never overwrites. Used by m3 new, m3-next-migrate and web-to-tauri.",
+          "bins": [
+            "aphrody-scaffold"
+          ]
         },
         {
           "name": "@aphrody/web-test",
           "path": "packages/web/aphrody-web-test",
           "description": "Playwright-compatible browser and site test runner for Bun, backed by the shared Rust Obscura CDP server.",
           "bins": []
+        },
+        {
+          "name": "@aphrody/web-to-tauri",
+          "path": "packages/ui/web-to-tauri",
+          "description": "Converts a website, web app or built web bundle into a native Tauri 3 app: probes the target, plans a regression-free mode (remote, bundle, sidecar), generates the project and checks parity against the original.",
+          "bins": [
+            "web-to-tauri"
+          ]
         },
         {
           "name": "@aphrody/winclean",
@@ -1925,232 +1906,26 @@
           "bins": []
         },
         {
-          "name": "@discordjs/actions",
-          "path": "upstream/discord/packages/actions",
-          "description": "A set of actions that we use for our workflows",
-          "bins": []
-        },
-        {
-          "name": "@discordjs/api-extractor",
-          "path": "upstream/discord/packages/api-extractor",
-          "description": "Analyze the exported API for a TypeScript library and generate reviews, documentation, and .d.ts rollups",
+          "name": "@hypothesi/tauri-mcp-cli",
+          "path": "upstream/mcp-server-tauri/packages/cli",
+          "description": "CLI wrapper for calling the Tauri MCP server tools directly from the terminal",
           "bins": [
-            "api-extractor"
+            "intent",
+            "tauri-mcp"
           ]
         },
         {
-          "name": "@discordjs/api-extractor-model",
-          "path": "upstream/discord/packages/api-extractor-model",
-          "description": "A helper library for loading and saving the .api.json files created by API Extractor",
-          "bins": []
-        },
-        {
-          "name": "@discordjs/api-extractor-utils",
-          "path": "upstream/discord/packages/api-extractor-utils",
-          "description": "Utilities for api-extractor",
-          "bins": []
-        },
-        {
-          "name": "@discordjs/brokers",
-          "path": "upstream/discord/packages/brokers",
-          "description": "Powerful set of message brokers",
-          "bins": []
-        },
-        {
-          "name": "@discordjs/builders",
-          "path": "upstream/discord/packages/builders",
-          "description": "A set of builders that you can use when creating your bot",
-          "bins": []
-        },
-        {
-          "name": "@discordjs/collection",
-          "path": "upstream/discord/packages/collection",
-          "description": "Utility data structure used in discord.js",
-          "bins": []
-        },
-        {
-          "name": "@discordjs/core",
-          "path": "upstream/discord/packages/core",
-          "description": "A thinly abstracted wrapper around the rest API, and gateway.",
-          "bins": []
-        },
-        {
-          "name": "@discordjs/docgen",
-          "path": "upstream/discord/packages/docgen",
-          "description": "The docs.json generator for discord.js and its related projects",
+          "name": "@hypothesi/tauri-mcp-server",
+          "path": "upstream/mcp-server-tauri/packages/mcp-server",
+          "description": "A Model Context Protocol server for use with Tauri v2 applications",
           "bins": [
-            "docgen"
+            "mcp-server-tauri"
           ]
         },
         {
-          "name": "@discordjs/formatters",
-          "path": "upstream/discord/packages/formatters",
-          "description": "A set of functions to format strings for Discord.",
-          "bins": []
-        },
-        {
-          "name": "@discordjs/guide",
-          "path": "upstream/discord/apps/guide",
-          "description": "Imagine a bot... the most popular way to build discord bots",
-          "bins": []
-        },
-        {
-          "name": "@discordjs/next",
-          "path": "upstream/discord/packages/next",
-          "description": "A powerful TypeScript library for interacting with the Discord API",
-          "bins": []
-        },
-        {
-          "name": "@discordjs/proxy",
-          "path": "upstream/discord/packages/proxy",
-          "description": "Tools for running an HTTP proxy for Discord's API",
-          "bins": []
-        },
-        {
-          "name": "@discordjs/proxy-container",
-          "path": "upstream/discord/apps/proxy-container",
-          "description": "Lightweight HTTP proxy for Discord's API, brought to you as a container 📦",
-          "bins": []
-        },
-        {
-          "name": "@discordjs/rest",
-          "path": "upstream/discord/packages/rest",
-          "description": "The REST API for discord.js",
-          "bins": []
-        },
-        {
-          "name": "@discordjs/rpc",
-          "path": "upstream/discord/packages/rpc",
-          "description": "A simple RPC client for Discord",
-          "bins": []
-        },
-        {
-          "name": "@discordjs/scripts",
-          "path": "upstream/discord/packages/scripts",
-          "description": "A set of scripts that we use for our workflows",
-          "bins": [
-            "generate-split-documentation",
-            "sort-labels"
-          ]
-        },
-        {
-          "name": "@discordjs/structures",
-          "path": "upstream/discord/packages/structures",
-          "description": "Wrapper around Discord's structures",
-          "bins": []
-        },
-        {
-          "name": "@discordjs/template-bun-javascript",
-          "path": "upstream/discord/packages/create-discord-bot/template/Bun/JavaScript",
-          "description": "",
-          "bins": []
-        },
-        {
-          "name": "@discordjs/template-bun-typescript",
-          "path": "upstream/discord/packages/create-discord-bot/template/Bun/TypeScript",
-          "description": "",
-          "bins": []
-        },
-        {
-          "name": "@discordjs/template-javascript",
-          "path": "upstream/discord/packages/create-discord-bot/template/JavaScript",
-          "description": "",
-          "bins": []
-        },
-        {
-          "name": "@discordjs/template-typescript",
-          "path": "upstream/discord/packages/create-discord-bot/template/TypeScript",
-          "description": "",
-          "bins": []
-        },
-        {
-          "name": "@discordjs/ui",
-          "path": "upstream/discord/packages/ui",
-          "description": "",
-          "bins": []
-        },
-        {
-          "name": "@discordjs/util",
-          "path": "upstream/discord/packages/util",
-          "description": "Utilities shared across Discord.js packages",
-          "bins": []
-        },
-        {
-          "name": "@discordjs/voice",
-          "path": "upstream/discord/packages/voice",
-          "description": "Implementation of the Discord Voice API for Node.js",
-          "bins": []
-        },
-        {
-          "name": "@discordjs/website",
-          "path": "upstream/discord/apps/website",
-          "description": "Imagine a bot... the most popular way to build discord bots",
-          "bins": []
-        },
-        {
-          "name": "@discordjs/ws",
-          "path": "upstream/discord/packages/ws",
-          "description": "Wrapper around Discord's gateway",
-          "bins": []
-        },
-        {
-          "name": "@discordx/di",
-          "path": "upstream/discord/packages/di",
-          "description": "dependency injection service with TSyringe support",
-          "bins": []
-        },
-        {
-          "name": "@discordx/importer",
-          "path": "upstream/discord/packages/importer",
-          "description": "A solution to import files on the module and commonjs at the same time",
-          "bins": []
-        },
-        {
-          "name": "@discordx/internal",
-          "path": "upstream/discord/packages/internal",
-          "description": "Internal methods for discordx",
-          "bins": []
-        },
-        {
-          "name": "@discordx/lava-player",
-          "path": "upstream/discord/packages/lava-player",
-          "description": "Powerful Lavalink player library written in TypeScript for Node.js",
-          "bins": []
-        },
-        {
-          "name": "@discordx/lava-queue",
-          "path": "upstream/discord/packages/lava-queue",
-          "description": "Queue system for @discordx/lava-player",
-          "bins": []
-        },
-        {
-          "name": "@discordx/music",
-          "path": "upstream/discord/packages/music",
-          "description": "Powerful Discord music player library using YTDL",
-          "bins": []
-        },
-        {
-          "name": "@discordx/pagination",
-          "path": "upstream/discord/packages/pagination",
-          "description": "Library for creating pagination messages in Discord bots",
-          "bins": []
-        },
-        {
-          "name": "@discordx/plugin-lava-player",
-          "path": "upstream/discord/packages/plugin-lava-player",
-          "description": "Fully-featured Discord music player leveraging the power of Lavalink",
-          "bins": []
-        },
-        {
-          "name": "@discordx/plugin-ytdl-player",
-          "path": "upstream/discord/packages/plugin-ytdl-player",
-          "description": "Fully-featured Discord music player utilizing YTDL",
-          "bins": []
-        },
-        {
-          "name": "@discordx/utilities",
-          "path": "upstream/discord/packages/utilities",
-          "description": "Utilities package for enhancing discordx functionality",
+          "name": "@hypothesi/tauri-plugin-mcp-bridge",
+          "path": "upstream/mcp-server-tauri/packages/tauri-plugin-mcp-bridge",
+          "description": "A Tauri plugin that exposes an MCP server interface via WebSockets.",
           "bins": []
         },
         {
@@ -2173,7 +1948,7 @@
         },
         {
           "name": "@material-symbols/metadata",
-          "path": "crates/ui/icons/metadata",
+          "path": "crates/ui/bun/icons/metadata",
           "description": "Metadata for Material Symbols.",
           "bins": []
         },
@@ -2187,12 +1962,6 @@
           "name": "@rose-griffon/monorepo",
           "path": "docs/rg/root",
           "description": "Rose Griffon monorepo — site communautaire (azalee wiki IEVR + website rosegriffon + bot Discord). Stack Next 16.2 / React 19.2 / Bun 1.3 / Supabase / Turborepo.",
-          "bins": []
-        },
-        {
-          "name": "@rosegriffon/achillea-bot",
-          "path": "apps/rg/achillea-bot",
-          "description": "Achillea Backend — Bot Discord + API REST + WebSocket pour la plateforme Achillea (Bun + Ts.ED + PostgreSQL/Kysely)",
           "bins": []
         },
         {
@@ -2217,12 +1986,6 @@
           "name": "@rosegriffon/achillea-types",
           "path": "packages/rg/achillea-types",
           "description": "Contrats d'API partagés (DTO + enums) — source unique pour le bot et le web",
-          "bins": []
-        },
-        {
-          "name": "@rosegriffon/api",
-          "path": "apps/rg/api",
-          "description": "API unique et unifiée Rose Griffon (ElysiaJS + Kysely + Bun)",
           "bins": []
         },
         {
@@ -2259,7 +2022,7 @@
         },
         {
           "name": "@rosegriffon/cdn",
-          "path": "apps/rg/cdn",
+          "path": "apps/rg/bot/src/api/services/cdn",
           "description": "",
           "bins": []
         },
@@ -2345,7 +2108,7 @@
         },
         {
           "name": "@rosegriffon/realtime",
-          "path": "apps/rg/realtime",
+          "path": "apps/rg/bot/src/api/services/realtime",
           "description": "",
           "bins": []
         },
@@ -2357,7 +2120,7 @@
         },
         {
           "name": "@rosegriffon/storage",
-          "path": "apps/rg/storage",
+          "path": "apps/rg/bot/src/api/services/storage",
           "description": "",
           "bins": []
         },
@@ -2436,55 +2199,27 @@
           "bins": []
         },
         {
+          "name": "@tauri-plugin/mcp-bridge",
+          "path": "upstream/mcp-server-tauri/packages/tauri-plugin-mcp-bridge/guest-js",
+          "description": "Guest bindings for MCP Bridge Tauri plugin",
+          "bins": []
+        },
+        {
           "name": "aphrody",
           "path": ".",
           "description": "",
           "bins": []
         },
         {
-          "name": "aphrody-discord",
-          "path": "upstream/discord",
-          "description": "Shared Bun Discord transport, contracts, and framework adapters for Aphrody applications.",
-          "bins": []
-        },
-        {
-          "name": "create-discord-bot",
-          "path": "upstream/discord/packages/create-discord-bot",
-          "description": "A simple way to create a startup Discord bot.",
-          "bins": [
-            "create-discord-bot"
-          ]
-        },
-        {
-          "name": "create-discordx",
-          "path": "upstream/discord/packages/create-discordx",
-          "description": "create discordx apps with one command",
-          "bins": [
-            "create-discordx"
-          ]
-        },
-        {
-          "name": "discord.js",
-          "path": "upstream/discord/packages/discord.js",
-          "description": "A powerful library for interacting with the Discord API",
-          "bins": []
-        },
-        {
-          "name": "discordx",
-          "path": "upstream/discord/packages/discordx",
-          "description": "Create a discord bot with TypeScript and Decorators!",
-          "bins": []
-        },
-        {
-          "name": "docusaurus",
-          "path": "upstream/discord/docs",
-          "description": "discordx documentation",
-          "bins": []
-        },
-        {
           "name": "material-symbols",
-          "path": "crates/ui/icons/material-symbols",
+          "path": "crates/ui/bun/icons/material-symbols",
           "description": "Latest variable icon fonts and CSS for Material Symbols.",
+          "bins": []
+        },
+        {
+          "name": "mcp-server-tauri-workspace",
+          "path": "upstream/mcp-server-tauri",
+          "description": "",
           "bins": []
         },
         {
@@ -2497,6 +2232,18 @@
           "name": "shenron-monorepo",
           "path": "docs/shenron/root",
           "description": "",
+          "bins": []
+        },
+        {
+          "name": "test-app",
+          "path": "upstream/mcp-server-tauri/packages/test-app",
+          "description": "",
+          "bins": []
+        },
+        {
+          "name": "victauri",
+          "path": "upstream/victauri/editors/vscode",
+          "description": "Full-stack testing and inspection for Tauri apps",
           "bins": []
         }
       ],
@@ -3999,6 +3746,44 @@
           ]
         },
         {
+          "name": "aphrody-egui-wgpu",
+          "path": "crates/aphrody-egui-wgpu",
+          "description": "",
+          "bins": [],
+          "features": [
+            "capture",
+            "default",
+            "fragile-send-sync-non-atomic-wasm",
+            "macos-window-resize-jitter-fix",
+            "wayland",
+            "winit",
+            "x11"
+          ]
+        },
+        {
+          "name": "aphrody-egui-winit",
+          "path": "crates/aphrody-egui-winit",
+          "description": "Bindings for using egui with winit",
+          "bins": [],
+          "features": [
+            "accesskit",
+            "android-game-activity",
+            "android-native-activity",
+            "arboard",
+            "bytemuck",
+            "clipboard",
+            "default",
+            "document-features",
+            "links",
+            "serde",
+            "smithay-clipboard",
+            "wayland",
+            "wayland-cursor",
+            "webbrowser",
+            "x11"
+          ]
+        },
+        {
           "name": "aphrody-emu-utils",
           "path": "crates/emu/utils",
           "description": "",
@@ -4991,6 +4776,13 @@
           "features": []
         },
         {
+          "name": "aphrody-wii-debug",
+          "path": "crates/emu/wii/debug",
+          "description": "",
+          "bins": [],
+          "features": []
+        },
+        {
           "name": "aphrody-wii-dff",
           "path": "crates/emu/wii/dff",
           "description": "",
@@ -5015,6 +4807,19 @@
           ]
         },
         {
+          "name": "aphrody-wii-render",
+          "path": "crates/emu/wii/render",
+          "description": "",
+          "bins": [],
+          "features": [
+            "default",
+            "dump-wgsl",
+            "gx-stats",
+            "hotpath",
+            "renderdoc-capture"
+          ]
+        },
+        {
           "name": "aphrody-wii-runtime",
           "path": "crates/emu/wii/core",
           "description": "Retained Gecko Wii/GameCube interpreter and device runtime",
@@ -5022,9 +4827,20 @@
           "features": [
             "default",
             "fps-counter",
+            "gx-stats",
             "hooks",
             "hooks-mut-traps",
             "rendersink-blackbox"
+          ]
+        },
+        {
+          "name": "aphrody-wii-web",
+          "path": "apps/web/wii/crate",
+          "description": "",
+          "bins": [],
+          "features": [
+            "debug",
+            "default"
           ]
         }
       ],
@@ -5042,6 +4858,28 @@
           "bins": [
             "iecode-homebrew"
           ]
+        },
+        {
+          "name": "@rosegriffon/azalee",
+          "path": "packages/azalee",
+          "description": "Bibliothèque Bun du wiki Azalée (Inazuma Eleven: Victory Road) — accès PostgreSQL, index CPK, recherche et CLI.",
+          "bins": [
+            "azalee"
+          ]
+        },
+        {
+          "name": "@rosegriffon/inagle",
+          "path": "packages/inagle",
+          "description": "Universal Game Data API for Inazuma Eleven: Victory Road — parsers, types, and tools for IEVR game data",
+          "bins": [
+            "inagle"
+          ]
+        },
+        {
+          "name": "@rosegriffon/inagle-cross",
+          "path": "packages/inagle-cross",
+          "description": "API de données et de rétro-conception pour Inazuma Eleven Cross — types, schémas, et analyseurs d'assets",
+          "bins": []
         },
         {
           "name": "iecode-workspace",
@@ -5114,7 +4952,7 @@
       "binary": "a2a-duel-loop",
       "crate": "aphrody-a2a-client",
       "repo": "aphrody",
-      "source": "crates/contracts/a2a-client/src/bin/a2a_duel_loop.rs#Cli",
+      "source": "crates/os/a2a-client/src/bin/a2a_duel_loop.rs#Cli",
       "commands": []
     },
     {
@@ -5837,7 +5675,7 @@
             },
             {
               "name": "invoke",
-              "about": "Invoke a native peer CLI (grok, agy, claude, bxc).",
+              "about": "Invoke a native peer CLI (grok, agy, claude, codex, bxc).",
               "aliases": [],
               "cfg": [],
               "children": []
@@ -6033,6 +5871,37 @@
             {
               "name": "call",
               "about": "Invoke a single tool on a configured MCP server.",
+              "aliases": [],
+              "cfg": [],
+              "children": []
+            }
+          ]
+        },
+        {
+          "name": "discord",
+          "about": "Discord bot compilation, inspection, and monorepo verification.",
+          "aliases": [],
+          "cfg": [
+            "not(target_arch = \"wasm32\")"
+          ],
+          "children": [
+            {
+              "name": "compile",
+              "about": "Compile one or all Discord bots into a native standalone binary via Bun + Oxc.",
+              "aliases": [],
+              "cfg": [],
+              "children": []
+            },
+            {
+              "name": "inspect",
+              "about": "Inspect a Discord bot configuration, TypeScript decorators, and Oxc AST syntax.",
+              "aliases": [],
+              "cfg": [],
+              "children": []
+            },
+            {
+              "name": "verify",
+              "about": "Run the comprehensive Discord monorepo verification gate (catalog, kit, messaging, bots, compile).",
               "aliases": [],
               "cfg": [],
               "children": []
@@ -7196,7 +7065,7 @@
         },
         {
           "name": "logo",
-          "about": "Export the canonical aphrody logo (`assets/aphrody.webp`).",
+          "about": "Export the canonical aphrody logo (`crates/ui/identity/assets/logo/aphrody.webp`).",
           "aliases": [],
           "cfg": [
             "not(target_arch = \"wasm32\")"
@@ -8295,7 +8164,7 @@
                 },
                 {
                   "name": "invoke",
-                  "about": "Invoke a native peer CLI (grok, agy, claude, bxc).",
+                  "about": "Invoke a native peer CLI (grok, agy, claude, codex, bxc).",
                   "aliases": [],
                   "cfg": [],
                   "children": []
@@ -8491,6 +8360,37 @@
                 {
                   "name": "call",
                   "about": "Invoke a single tool on a configured MCP server.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "name": "discord",
+              "about": "Discord bot compilation, inspection, and monorepo verification.",
+              "aliases": [],
+              "cfg": [
+                "not(target_arch = \"wasm32\")"
+              ],
+              "children": [
+                {
+                  "name": "compile",
+                  "about": "Compile one or all Discord bots into a native standalone binary via Bun + Oxc.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "inspect",
+                  "about": "Inspect a Discord bot configuration, TypeScript decorators, and Oxc AST syntax.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "verify",
+                  "about": "Run the comprehensive Discord monorepo verification gate (catalog, kit, messaging, bots, compile).",
                   "aliases": [],
                   "cfg": [],
                   "children": []
@@ -9654,7 +9554,7 @@
             },
             {
               "name": "logo",
-              "about": "Export the canonical aphrody logo (`assets/aphrody.webp`).",
+              "about": "Export the canonical aphrody logo (`crates/ui/identity/assets/logo/aphrody.webp`).",
               "aliases": [],
               "cfg": [
                 "not(target_arch = \"wasm32\")"
@@ -10586,6 +10486,13 @@
           "children": []
         },
         {
+          "name": "crawl",
+          "about": "Bounded, robots-aware crawl of one or more seeds with the static Obscura HTTP stack. Reports what a native crawler or an LLM agent can extract from the initial HTML.",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
           "name": "chrome-path",
           "about": "",
           "aliases": [],
@@ -10619,6 +10526,13 @@
         {
           "name": "scrape",
           "about": "",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "crawl",
+          "about": "Bounded, robots-aware crawl of one or more seeds with the static Obscura HTTP stack. Reports what a native crawler or an LLM agent can extract from the initial HTML.",
           "aliases": [],
           "cfg": [],
           "children": []
@@ -14622,6 +14536,11 @@
       "repo": "aphrody"
     },
     {
+      "binary": "aphrody-app",
+      "crate": "aphrody-app",
+      "repo": "aphrody"
+    },
+    {
       "binary": "aphrody-backend",
       "crate": "aphrody-backend",
       "repo": "aphrody"
@@ -14881,7 +14800,236 @@
       ]
     },
     {
-      "server": "aphrody subsystem `tauri`",
+      "server": "aphrody (VictauriMcpHandler)",
+      "repo": "aphrody",
+      "kind": "rmcp",
+      "tools": [
+        {
+          "name": "animation",
+          "description": "Animation introspection (no CDP). Reads the Web Animations API to reveal what the webview's animation engine is actually running — duration, delay, easing, iterations, keyframes, current progress, and the animating element. Standard DOM, so it works identically on WebView2/WKWebView/WebKitGTK. Actions: - `list`: return all running CSS animations/transitions (optionally scoped by `selector`), each with declared `timing`, `computed` progress, `keyframes`, and `target`. - `scrub`: deterministically pause the target's animation and seek it to `points` evenly-spaced steps (default 20), returning the exact geometry curve (rect + transform + opacity per step). With `capture=true`, also returns a single contact-sheet filmstrip PNG (one image of the whole arc) plus a `manifest` mapping each cell to its progress/time. Frozen frames are jank-free, so this beats real-time capture for fast sweeps. CSS-driven animations only (JS/rAF animations are not seekable — use `list`/`sample`). - `sample`: real-time motion recorder. `record=true` arms a requestAnimationFrame watcher on `selector` (or the first animating element); then trigger the animation; then call with `record=false` to read the measured per-frame curve plus jank stats (dropped frames, max frame gap) and declared-vs-measured duration. Works for ANY animation including JS/rAF-driven ones. `clear=true` resets recorded sessions. NOTE: an animation only appears while it is running or pending — trigger it (e.g. show the notification) just before calling `list`/`scrub`, or arm `sample` before triggering.",
+          "file": "upstream/victauri/crates/victauri-plugin/src/mcp/mod.rs"
+        },
+        {
+          "name": "app_info",
+          "description": "Get comprehensive app info: Tauri config (identifier, product name, version), app directory paths (data, config, log, local_data), process environment variables, and database files found in app directories. Provides direct backend context without going through the webview.",
+          "file": "upstream/victauri/crates/victauri-plugin/src/mcp/mod.rs"
+        },
+        {
+          "name": "app_state",
+          "description": "Read application-defined backend state via a registered probe. With no `probe`, lists available probe names. With a `probe` name, runs it and returns its JSON snapshot. Probes give first-class, discoverable access to domain state (e.g. a scoring pipeline's version + stale-item count, a queue's depth, cache stats) that would otherwise need query_db + log-grepping. Probes run in the Rust process with no IPC round-trip. Apps register them via VictauriBuilder::probe(name, closure).",
+          "file": "upstream/victauri/crates/victauri-plugin/src/mcp/mod.rs"
+        },
+        {
+          "name": "assert_semantic",
+          "description": "Run a semantic assertion: evaluate a JS expression and check the result against an expected condition. Conditions: equals, not_equals, contains, greater_than, less_than, truthy, falsy, exists, type_is. A result of `undefined` is treated as `null` (JSON has no undefined; like JS `x == null`): `exists` is false, `falsy` is true, `equals null` and `type_is \"null\"` pass.",
+          "file": "upstream/victauri/crates/victauri-plugin/src/mcp/mod.rs"
+        },
+        {
+          "name": "check_ipc_integrity",
+          "description": "Check IPC round-trip integrity: find stale (stuck) pending calls and errored calls. Returns health status and lists of problematic IPC calls.",
+          "file": "upstream/victauri/crates/victauri-plugin/src/mcp/mod.rs"
+        },
+        {
+          "name": "css",
+          "description": "CSS injection. Actions: inject (add custom CSS to page), remove (remove previously injected CSS). Subject to privacy controls.",
+          "file": "upstream/victauri/crates/victauri-plugin/src/mcp/mod.rs"
+        },
+        {
+          "name": "detect_ghost_commands",
+          "description": "Detect ghost commands (frontend calls with no backend handler) by IPC OUTCOME, not by guessing from Victauri's registry. Returns: `confirmed_ghosts` = commands invoked that NEVER returned success and errored 'not found' — real missing-handler bugs, HIGH confidence and independent of whether the app uses #[inspectable]; `verified_handlers` = count of commands that returned success at least once (they provably HAVE a handler, so they are never flagged — this is why a real command like `set_language` is no longer a false positive); `frontend_only` = the WEAKER candidate tier (invoked, never observed succeeding, NOT a Tauri/plugin framework builtin, and absent from the introspection registry) — confirm against the app's `tauri::generate_handler!` before filing; `excluded_builtins` = framework `plugin:*` commands (never app ghosts); `registry_only` = registered commands never invoked (informational). The `reliability` field describes only `frontend_only`; `confirmed_ghosts` is high-confidence regardless. Reads the JS-side IPC interception log (ACCUMULATES all session traffic). For a clean signal scope with `since_ms` (e.g. 5000) — invoke the suspect action, then call this with `since_ms` — or `logs {action:'clear'}` then exercise the app.",
+          "file": "upstream/victauri/crates/victauri-plugin/src/mcp/mod.rs"
+        },
+        {
+          "name": "dom_snapshot",
+          "description": "Get the DOM snapshot with stable ref handles. Default: compact accessible text (70-80%% fewer tokens). Set format=\"json\" for full tree. Returns tree + stale_refs (refs invalidated since last snapshot).",
+          "file": "upstream/victauri/crates/victauri-plugin/src/mcp/mod.rs"
+        },
+        {
+          "name": "eval_js",
+          "description": "Evaluate JavaScript in the Tauri webview and return the result. Async expressions are wrapped automatically.",
+          "file": "upstream/victauri/crates/victauri-plugin/src/mcp/mod.rs"
+        },
+        {
+          "name": "explain",
+          "description": "Correlate recent activity across all layers into a coherent narrative. CDP shows raw events per layer; Victauri correlates IPC + DOM + console + network + window events across the Rust backend and webview simultaneously. Actions: - `summary`: High-level activity summary for the last N seconds (default 30). Counts IPC calls, DOM mutations, console entries, state changes (incl. network requests), errors. With no recording active it reads the window's live event stream (`webview_label`, default main). - `last_action`: Correlate the most recent burst of events into a causal timeline (e.g. 'IPC call → DOM update → console.log'). - `diff`: What changed in the last N seconds — event counts, errors, new IPC commands.",
+          "file": "upstream/victauri/crates/victauri-plugin/src/mcp/mod.rs"
+        },
+        {
+          "name": "fault",
+          "description": "Probe a backend command handler under failure by faulting it for chaos engineering. Simulate slow commands, backend errors, dropped responses, and corrupted data. SCOPE: faults apply ONLY to commands you run via this server's `invoke_command` tool — they do NOT intercept the app's real user-driven IPC (window.__TAURI_INTERNALS__.invoke), which runs below the layer Victauri can reach. Use this to test a handler's error path when YOU drive it; it does not reproduce a failure a user clicking the UI would see. Actions: - `inject`: Add a fault rule (requires `command`, `fault_type`). Optional: `delay_ms` (max 120000), `error_message`, `max_triggers`. `delay` sleeps then runs the command; `error` returns the error without running it; `drop` returns `{}` without running it; `corrupt` runs it and replaces the response with a fixed `{\"__corrupted\":true,…}` marker. Rules expire after 15 minutes. - `list`: List all active fault injection rules. - `clear`: Remove a specific fault rule (requires `command`). - `clear_all`: Remove all fault rules.",
+          "file": "upstream/victauri/crates/victauri-plugin/src/mcp/mod.rs"
+        },
+        {
+          "name": "find_elements",
+          "description": "Search for elements by text, role, test_id, CSS selector (via `css` or `selector` param), or accessible name without a full snapshot. Returns lightweight matches with ref handles.",
+          "file": "upstream/victauri/crates/victauri-plugin/src/mcp/mod.rs"
+        },
+        {
+          "name": "get_diagnostics",
+          "description": "Run environment diagnostics: detect service workers (break IPC interception), closed shadow DOM (invisible to snapshots), iframes (bridge absent), large DOM warnings, and CSP status. Call this first when connecting to an unfamiliar app.",
+          "file": "upstream/victauri/crates/victauri-plugin/src/mcp/mod.rs"
+        },
+        {
+          "name": "get_memory_stats",
+          "description": "Get real-time process memory statistics from the OS (working set, page file usage). On Windows returns detailed metrics; on Linux returns virtual/resident size.",
+          "file": "upstream/victauri/crates/victauri-plugin/src/mcp/mod.rs"
+        },
+        {
+          "name": "get_plugin_info",
+          "description": "Inspect the Victauri plugin's own configuration: port, enabled/disabled tools, command filters, privacy settings, capacities, and version. Useful for agents to understand their capabilities before acting.",
+          "file": "upstream/victauri/crates/victauri-plugin/src/mcp/mod.rs"
+        },
+        {
+          "name": "get_registry",
+          "description": "List or search all registered Tauri commands with their argument schemas. Pass query to filter by name/description substring. Commands are registered via the #[inspectable] macro — apps that don't use it return names with null schemas; for those, use `introspect command_catalog` to recover real argument/result shapes from the live IPC log.",
+          "file": "upstream/victauri/crates/victauri-plugin/src/mcp/mod.rs"
+        },
+        {
+          "name": "input",
+          "description": "Text and keyboard input. Actions: fill (set input value), type_text (character-by-character typing), press_key (trigger a keyboard key). Subject to privacy controls. An input the page refuses (element not fillable, covered, disabled, or ref not found) returns an error with the reason and a [hint: RETRY_LATER|CHECK_INPUT].",
+          "file": "upstream/victauri/crates/victauri-plugin/src/mcp/mod.rs"
+        },
+        {
+          "name": "inspect",
+          "description": "CSS and visual inspection. Actions: get_styles (computed CSS for element), get_bounding_boxes (layout rects), highlight (debug overlay), clear_highlights, audit_accessibility (a11y audit), get_performance (timing/heap/DOM metrics).",
+          "file": "upstream/victauri/crates/victauri-plugin/src/mcp/mod.rs"
+        },
+        {
+          "name": "interact",
+          "description": "DOM element interactions. Actions: click, double_click, hover, focus, scroll_into_view, select_option. Requires ref_id from a dom_snapshot for most actions. An action the page refuses (element covered, disabled, hidden, detached, or ref not found) returns an error with the reason and a [hint: RETRY_LATER|CHECK_INPUT].",
+          "file": "upstream/victauri/crates/victauri-plugin/src/mcp/mod.rs"
+        },
+        {
+          "name": "introspect",
+          "description": "Deep backend introspection — command profiling, IPC contract testing, coverage, startup timing, capability auditing, database diagnostics, process enumeration, and event bus monitoring. These features exploit Victauri's position inside the Rust process. Actions: - `command_timings`: Per-command execution timing stats (min/max/avg/p95). Set `slow_threshold_ms` to filter. - `coverage`: Which registered commands have been called during this session. - `command_catalog`: Per-command argument + result SHAPES mined from the live IPC log, merged with the registry — real call/return schemas even for apps that don't use #[inspectable] (where get_registry is names-only). The highest-signal way to learn how to drive an app's commands. - `contract_record`: Record a command's response shape as a baseline (requires `command`). - `contract_check`: Check all recorded contracts for schema drift. - `contract_list`: List all recorded contract baselines. - `contract_clear`: Clear all recorded contract baselines. - `startup_timing`: Victauri plugin initialization phase-by-phase timing breakdown. - `capabilities`: Enumerate Tauri v2 capabilities, security config (CSP, freeze_prototype), configured plugins, and window definitions. - `db_health`: Read-only SQLite diagnostics: journal mode, page stats, freelist, per-table row counts, and SQLite `quick_check` — each phase budgeted; a phase that runs out is reported (`row_counts_complete`, `integrity_check: \"not completed…\"`) instead of failing. - `plugin_state`: Snapshot of the Victauri plugin's internal state (event log, registry, faults, recording, timings, etc.). - `processes`: Enumerate the host process and all child processes (sidecars, background workers) with PID, name, and memory usage. - `plugin_tasks`: List Victauri's own spawned async tasks (MCP server, event drain) with status. - `event_bus`: List captured Tauri events + app events (auto-intercepted via listen_any — no app opt-in needed). Returns the newest events per category (default 100) so the full buffers (up to ~11k events / megabytes) never overflow the result; `count` is the true total and `truncated` flags a capped slice. Scope via the `args` object: `{\"action\":\"event_bus\",\"args\":{\"limit\":500,\"since_ms\":5000}}`. - `event_bus_clear`: Clear the event bus capture buffer.",
+          "file": "upstream/victauri/crates/victauri-plugin/src/mcp/mod.rs"
+        },
+        {
+          "name": "invoke_command",
+          "description": "Invoke a registered Tauri command via IPC, just like the frontend would. Goes through the real IPC pipeline so calls are logged and verifiable. Returns the command's result. Waits up to the eval timeout (30s) — pass `timeout_ms` (max 300000) for a legitimately slow command. Subject to privacy command filtering.",
+          "file": "upstream/victauri/crates/victauri-plugin/src/mcp/mod.rs"
+        },
+        {
+          "name": "list_app_dir",
+          "description": "List files in the app's data, config, log, or local_data directories. Useful for discovering databases, config files, logs, and cached data on the backend — without going through the webview.",
+          "file": "upstream/victauri/crates/victauri-plugin/src/mcp/mod.rs"
+        },
+        {
+          "name": "logs",
+          "description": "Application logs and monitoring. Actions: console (captured console.log/warn/error), network (intercepted fetch/XHR), ipc (IPC call log — set wait_for_capture=true to await response capture up to 500ms), navigation (URL change history), dialogs (alert/confirm/prompt events), events (combined event stream), slow_ipc (find slow IPC calls), clear (DELETES the captured IPC + network logs — use for per-test isolation).",
+          "file": "upstream/victauri/crates/victauri-plugin/src/mcp/mod.rs"
+        },
+        {
+          "name": "navigate",
+          "description": "Navigation and dialog control. Actions: go_to (navigate to URL), go_back (browser back), get_history (navigation log), set_dialog_response (auto-respond to alert/confirm/prompt), get_dialog_log (captured dialog events). Subject to privacy controls for go_to and set_dialog_response.",
+          "file": "upstream/victauri/crates/victauri-plugin/src/mcp/mod.rs"
+        },
+        {
+          "name": "query_db",
+          "description": "Execute a bounded, read-only SQL query against a SQLite database in the app's data directory. The SQL goes in the `query` field (alias: `sql`). Auto-discovers database files if no path is specified. Only SELECT/PRAGMA/EXPLAIN/WITH queries are allowed. CPU time, cell size, row count, and returned bytes are capped. Returns rows as JSON objects with column names as keys. This provides direct backend database access without going through the webview or IPC.",
+          "file": "upstream/victauri/crates/victauri-plugin/src/mcp/mod.rs"
+        },
+        {
+          "name": "read_app_file",
+          "description": "Read a file from the app's data, config, log, or local_data directory. Returns UTF-8 text by default, or base64 for binary files. Directly reads backend files without going through the webview.",
+          "file": "upstream/victauri/crates/victauri-plugin/src/mcp/mod.rs"
+        },
+        {
+          "name": "recording",
+          "description": "Time-travel recording. Actions: start (begin recording), stop (end and return session), checkpoint (save state snapshot), list_checkpoints, get_events (since index), events_between (two checkpoints), get_replay (IPC replay sequence), export (session as JSON), import (load a session from JSON as the active recording; refused while one is in progress), replay (re-invoke the recorded IPC commands that succeeded with no arguments, each in the window that made it — their side effects happen again; calls that had arguments, failed, never completed, or were answered by a route rule are skipped, and webview_label limits replay to that window's calls), flush (immediately drain pending events into recording without waiting for the 1-second poll).",
+          "file": "upstream/victauri/crates/victauri-plugin/src/mcp/mod.rs"
+        },
+        {
+          "name": "resolve_command",
+          "description": "Resolve a natural language query to matching Tauri commands. Returns scored results ranked by relevance, using command names, descriptions, intents, categories, and examples.",
+          "file": "upstream/victauri/crates/victauri-plugin/src/mcp/mod.rs"
+        },
+        {
+          "name": "route",
+          "description": "Network request interception (Playwright route() equivalent, no CDP). Matches webview fetch/XHR by URL and blocks, mocks, or delays them. Actions: - `add`: add a rule. `pattern` (+ optional `match_type`: substring/glob/regex/exact, and `method`) selects requests; `behavior` is `block` (abort), `fulfill` (return a mock `status`/`headers`/`body`/`content_type`), or `delay` (proceed after `delay_ms`). `times` limits how often it fires. Rules are page-scoped (cleared on reload). - `list`: list active rules. - `clear` (by `id`) / `clear_all`: remove rules. - `matches`: log of intercepted requests. Note: fetch supports all behaviors; XHR supports block/delay (fulfill is fetch-only). Top-level navigation, sub-resource (img/css), and WebSocket traffic are not intercepted. Tauri IPC (ipc.localhost) is OBSERVE-ONLY: such calls appear in `matches`, but block/fulfill/delay do NOT take effect on them — Tauri serves IPC below the JS fetch layer, so it cannot be controlled cross-platform without CDP. There is no IPC-control tool; the `fault` tool only affects commands you drive via `invoke_command`, not real user IPC.",
+          "file": "upstream/victauri/crates/victauri-plugin/src/mcp/mod.rs"
+        },
+        {
+          "name": "screenshot",
+          "description": "Capture a screenshot of a Tauri window as a base64-encoded PNG image. Works on Windows (PrintWindow), macOS (CGWindowListCreateImage), and Linux X11/XWayland. Pure Wayland fails safely because its available fallback would capture the full desktop rather than the requested window. A hidden (non-visible) window has no on-screen surface to capture, so requesting one returns a clear error (show it first via `window` manage_action=show) rather than a stale or wrong-window image.",
+          "file": "upstream/victauri/crates/victauri-plugin/src/mcp/mod.rs"
+        },
+        {
+          "name": "storage",
+          "description": "Browser storage operations. Actions: get (read localStorage/sessionStorage), set (write), delete (remove key), get_cookies. Subject to privacy controls for set and delete.",
+          "file": "upstream/victauri/crates/victauri-plugin/src/mcp/mod.rs"
+        },
+        {
+          "name": "trace",
+          "description": "Screencast / visual trace (no CDP). Captures the window at a fixed interval into a ring buffer, forming a visual timeline that pairs with `recording` (events) and `logs` (network/console). Actions: - `start`: begin capturing (`interval_ms` default 500, `max_frames` default 60). Set `with_events=true` to also start the event recorder. Hidden windows are skipped (no frame), the buffer is capped at 256 MB, and an abandoned trace auto-stops after 30 minutes. - `stop`: stop and return a summary (frame count, duration, timestamps); also stops the recording that `with_events` started (never one started separately). - `status`: active flag + buffered frame count. - `frames`: return captured frames as base64 PNGs, newest first up to a 25 MB response (`limit` caps how many).",
+          "file": "upstream/victauri/crates/victauri-plugin/src/mcp/mod.rs"
+        },
+        {
+          "name": "verify_state",
+          "description": "Compare frontend state (evaluated via JS expression) against backend state to detect divergences. Returns a VerificationResult with any mismatches.",
+          "file": "upstream/victauri/crates/victauri-plugin/src/mcp/mod.rs"
+        },
+        {
+          "name": "wait_for",
+          "description": "Wait for a condition to be met. Polls at regular intervals until satisfied or timeout. Conditions: text (text appears), text_gone (text disappears), selector (CSS selector matches), selector_gone, url (URL contains value), ipc_idle (no pending IPC calls), network_idle (no pending network requests), expression (poll a JS expression in `value` until truthy or until it equals `expected` — may `await`, e.g. await a fire-and-forget command's status), event (block until the Tauri event named in `value` fires, with `since_ms` look-back). Use expression/event to await async backend work to true completion instead of guessing with a fixed sleep.",
+          "file": "upstream/victauri/crates/victauri-plugin/src/mcp/mod.rs"
+        },
+        {
+          "name": "window",
+          "description": "Window management. Actions: get_state (window positions/sizes/visibility), list (all window labels), manage (minimize/maximize/close/focus/show/hide/fullscreen/always_on_top), resize, move_to, set_title, introspectability (probe every window and report which Victauri can actually see — a visible window that comes back introspectable:false is almost always missing the \"victauri:default\" capability; run this FIRST when eval_js/dom_snapshot/animation return nothing for a multi-window app).",
+          "file": "upstream/victauri/crates/victauri-plugin/src/mcp/mod.rs"
+        }
+      ]
+    },
+    {
+      "server": "aphrody-agent-tools",
+      "repo": "aphrody",
+      "kind": "kernel-subsystem",
+      "tools": [
+        {
+          "name": "apply_patch",
+          "description": "Apply a patch document to the filesystem. Use this to create, delete, rename, and edit files. The patch is framed by `*** Begin Patch` / `*** End Patch` and uses `*** Add/Delete/Update File:` directives with `@@` context and `-`/`+` body lines.",
+          "file": "crates/ai/agent-tools/src/apply_patch.rs"
+        },
+        {
+          "name": "google_ai",
+          "description": "Query Google AI models keylessly via native session and retrieve generated text.",
+          "file": "crates/ai/agent-tools/src/web_tools.rs"
+        },
+        {
+          "name": "js_eval",
+          "description": "Execute JavaScript code in an isolated native V8 runtime and return output.",
+          "file": "crates/ai/agent-tools/src/web_tools.rs"
+        },
+        {
+          "name": "read_file",
+          "description": "Read a bounded local UTF-8 file for repository inspection, RAG preparation, or data mining.",
+          "file": "crates/ai/agent-tools/src/read_file.rs"
+        },
+        {
+          "name": "search_text",
+          "description": "Search local repository text with ripgrep and return bounded line-numbered matches for data mining.",
+          "file": "crates/ai/agent-tools/src/search_text.rs"
+        },
+        {
+          "name": "shell",
+          "description": "Run a command and capture its combined stdout/stderr output and exit code. The command is given as an argv vector and executed directly (no shell interpretation). Long output is truncated.",
+          "file": "crates/ai/agent-tools/src/shell.rs"
+        },
+        {
+          "name": "web_scrape",
+          "description": "Scrape and convert any public web page directly into clean Markdown.",
+          "file": "crates/ai/agent-tools/src/web_tools.rs"
+        },
+        {
+          "name": "web_search",
+          "description": "Search the live web and return curated, markdown-formatted results.",
+          "file": "crates/ai/agent-tools/src/web_tools.rs"
+        }
+      ]
+    },
+    {
+      "server": "aphrody-app subsystem `tauri`",
       "repo": "aphrody",
       "kind": "kernel-subsystem",
       "tools": [
@@ -14963,7 +15111,7 @@
       ]
     },
     {
-      "server": "aphrody subsystem `window`",
+      "server": "aphrody-app subsystem `window`",
       "repo": "aphrody",
       "kind": "kernel-subsystem",
       "tools": [
@@ -15016,53 +15164,6 @@
           "name": "window_set_title",
           "description": "Change a window title.",
           "file": "crates/ui/app/src/window.rs"
-        }
-      ]
-    },
-    {
-      "server": "aphrody-agent-tools",
-      "repo": "aphrody",
-      "kind": "kernel-subsystem",
-      "tools": [
-        {
-          "name": "apply_patch",
-          "description": "Apply a patch document to the filesystem. Use this to create, delete, rename, and edit files. The patch is framed by `*** Begin Patch` / `*** End Patch` and uses `*** Add/Delete/Update File:` directives with `@@` context and `-`/`+` body lines.",
-          "file": "crates/ai/agent-tools/src/apply_patch.rs"
-        },
-        {
-          "name": "google_ai",
-          "description": "Query Google AI models keylessly via native session and retrieve generated text.",
-          "file": "crates/ai/agent-tools/src/web_tools.rs"
-        },
-        {
-          "name": "js_eval",
-          "description": "Execute JavaScript code in an isolated native V8 runtime and return output.",
-          "file": "crates/ai/agent-tools/src/web_tools.rs"
-        },
-        {
-          "name": "read_file",
-          "description": "Read a bounded local UTF-8 file for repository inspection, RAG preparation, or data mining.",
-          "file": "crates/ai/agent-tools/src/read_file.rs"
-        },
-        {
-          "name": "search_text",
-          "description": "Search local repository text with ripgrep and return bounded line-numbered matches for data mining.",
-          "file": "crates/ai/agent-tools/src/search_text.rs"
-        },
-        {
-          "name": "shell",
-          "description": "Run a command and capture its combined stdout/stderr output and exit code. The command is given as an argv vector and executed directly (no shell interpretation). Long output is truncated.",
-          "file": "crates/ai/agent-tools/src/shell.rs"
-        },
-        {
-          "name": "web_scrape",
-          "description": "Scrape and convert any public web page directly into clean Markdown.",
-          "file": "crates/ai/agent-tools/src/web_tools.rs"
-        },
-        {
-          "name": "web_search",
-          "description": "Search the live web and return curated, markdown-formatted results.",
-          "file": "crates/ai/agent-tools/src/web_tools.rs"
         }
       ]
     },
@@ -17218,14 +17319,14 @@
     "aphrodyRepos": 3,
     "experimentRepos": 0,
     "sharedRepos": 0,
-    "crates": 384,
-    "binaries": 117,
-    "bunPackages": 143,
+    "crates": 385,
+    "binaries": 118,
+    "bunPackages": 108,
     "pythonPackages": 20,
     "cliBinaries": 66,
-    "cliCommands": 1227,
-    "mcpServers": 22,
-    "mcpTools": 438,
-    "mcpUniqueToolNames": 418
+    "cliCommands": 1237,
+    "mcpServers": 23,
+    "mcpTools": 473,
+    "mcpUniqueToolNames": 452
   }
 }

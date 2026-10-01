@@ -95,7 +95,7 @@ au chantier NIE sont :
   capacités Rust/Bun génériques rejoignent `aphrody`, et Python suit la même
   frontière entre le scripting IEVR d'IECODE et l'outillage générique de
   `aphrody-py`. Pas de
-  dépôt NIE/engine séparé. `aphrody-m3` et ses packages restent également dans
+  dépôt NIE/engine séparé. `aphrody-m3-tokens` et ses packages restent également dans
   le monorepo `aphrody`; les packages npm gardent leurs noms et APIs.
 - Le crate `nie-ffi` expose l'adaptation du domaine, tandis que `aphrody-ffi`
   demeure l'unique agrégateur FFI Aphrody. Le build Emscripten est un artefact

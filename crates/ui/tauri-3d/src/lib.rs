@@ -93,7 +93,7 @@ pub struct ModelOptions {
 
 fn default_material() -> Material {
     Material {
-        base: Paint::Role(aphrody_m3::color::Role::Primary),
+        base: Paint::Role(aphrody_m3_tokens::facade::color::Role::Primary),
         metallic: 0.0,
         roughness: 0.45,
         emissive: None,

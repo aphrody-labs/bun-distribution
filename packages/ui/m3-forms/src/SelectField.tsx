@@ -38,7 +38,11 @@ function SelectField({
     <FormField
       name={name}
       render={({ field, fieldState }) => (
-        <FormItem data-disabled={disabled || undefined}>
+        <FormItem
+          data-disabled={disabled || undefined}
+          data-m3-component="SelectField"
+          data-testid={`field-${name}`}
+        >
           {label && <FormLabel required={required}>{label}</FormLabel>}
           <SelectRoot
             onValueChange={field.onChange}

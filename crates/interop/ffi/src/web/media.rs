@@ -3,7 +3,7 @@
 
 use std::{ffi::c_char, sync::OnceLock, time::Duration};
 
-use aphrody_web_media::{MediaRequest, MediaResponse, MediaTransport, ResolveOptions};
+use aphrody_web_extract::media::{MediaRequest, MediaResponse, MediaTransport, ResolveOptions};
 use reqwest::header::{HeaderName, HeaderValue, REFERER};
 use serde::Deserialize;
 use url::Url;
@@ -101,8 +101,8 @@ pub unsafe extern "C" fn aphrody_web_media_extract(
             Err(error) => return error_json(error),
         };
         let payload = serde_json::json!({
-            "candidates": aphrody_web_media::extract_media_candidates(source, &base_url),
-            "poster": aphrody_web_media::extract_poster(source, &base_url),
+            "candidates": aphrody_web_extract::media::extract_media_candidates(source, &base_url),
+            "poster": aphrody_web_extract::media::extract_poster(source, &base_url),
         });
         into_c_string(payload.to_string())
     })
@@ -145,7 +145,7 @@ pub unsafe extern "C" fn aphrody_web_media_resolve_submit(
             resolve.enumerate_variants = options.enumerate_variants.unwrap_or(false);
             resolve.max_hops = options.max_hops.unwrap_or(1).min(8);
             resolve.timeout_ms = (timeout_ms != 0).then_some(u64::from(timeout_ms));
-            to_json_string(&aphrody_web_media::resolve_embed(&url, &resolve).await)
+            to_json_string(&aphrody_web_extract::media::resolve_embed(&url, &resolve).await)
         })
     })
 }

@@ -11,8 +11,9 @@ use std::{convert::Infallible, net::SocketAddr, sync::Arc};
 
 use axum::{
     Json, Router,
-    extract::State,
-    http::{HeaderMap, HeaderValue, StatusCode, header},
+    extract::{Request, State},
+    http::{HeaderMap, HeaderValue, Method, StatusCode, header},
+    middleware::{self, Next},
     response::{
         IntoResponse, Response,
         sse::{Event, KeepAlive, Sse},
@@ -43,6 +44,114 @@ pub struct OpenAiChatCompletionsRequest {
     pub stream: bool,
 }
 
+/// Check if the given origin is an allowed localhost / loopback origin.
+#[must_use]
+pub fn is_allowed_origin(origin: &str) -> bool {
+    let Ok(parsed) = url::Url::parse(origin) else {
+        return false;
+    };
+    let scheme = parsed.scheme();
+    if scheme != "http" && scheme != "https" && scheme != "tauri" {
+        return false;
+    }
+    match parsed.host_str() {
+        Some(host) => {
+            host == "localhost"
+                || host == "127.0.0.1"
+                || host == "[::1]"
+                || host == "::1"
+                || host == "tauri.localhost"
+        },
+        None => false,
+    }
+}
+
+/// Attach CORS headers to a header map, allowing only validated localhost origins.
+pub fn add_cors_headers(headers: &mut HeaderMap, origin: Option<&HeaderValue>) {
+    headers.insert(header::VARY, HeaderValue::from_static("Origin"));
+    if let Some(origin_val) = origin {
+        if let Ok(origin_str) = origin_val.to_str() {
+            if is_allowed_origin(origin_str) {
+                headers.insert(header::ACCESS_CONTROL_ALLOW_ORIGIN, origin_val.clone());
+                headers.insert(
+                    header::ACCESS_CONTROL_ALLOW_CREDENTIALS,
+                    HeaderValue::from_static("true"),
+                );
+            }
+        }
+    }
+    headers.insert(
+        header::ACCESS_CONTROL_ALLOW_METHODS,
+        HeaderValue::from_static("GET, POST, OPTIONS, PUT, DELETE"),
+    );
+    headers.insert(
+        header::ACCESS_CONTROL_ALLOW_HEADERS,
+        HeaderValue::from_static("Content-Type, Authorization, X-Requested-With, Origin, Accept"),
+    );
+}
+
+/// Middleware ensuring only localhost origins receive `Access-Control-Allow-Origin`.
+async fn cors_middleware(req: Request, next: Next) -> Response {
+    let origin = req.headers().get(header::ORIGIN).cloned();
+    let mut response = next.run(req).await;
+    add_cors_headers(response.headers_mut(), origin.as_ref());
+    response
+}
+
+/// Middleware validating `APHRODY_OS_AUTH_TOKEN` when configured in the environment.
+async fn auth_middleware(req: Request, next: Next) -> Response {
+    // OPTIONS preflight requests do not carry credentials and must be allowed through
+    if req.method() == Method::OPTIONS {
+        return next.run(req).await;
+    }
+
+    // Health probes remain unauthenticated
+    let path = req.uri().path();
+    if path == "/health" || path == "/healthz" {
+        return next.run(req).await;
+    }
+
+    if let Ok(expected_token) = std::env::var("APHRODY_OS_AUTH_TOKEN") {
+        let expected_token = expected_token.trim();
+        if !expected_token.is_empty() {
+            let auth_header = req
+                .headers()
+                .get(header::AUTHORIZATION)
+                .and_then(|val| val.to_str().ok());
+
+            let authorized = match auth_header {
+                Some(header_val) => {
+                    let trimmed = header_val.trim();
+                    if let Some(token) = trimmed.strip_prefix("Bearer ") {
+                        token.trim() == expected_token
+                    } else if let Some(token) = trimmed.strip_prefix("bearer ") {
+                        token.trim() == expected_token
+                    } else {
+                        false
+                    }
+                },
+                None => false,
+            };
+
+            if !authorized {
+                return (
+                    StatusCode::UNAUTHORIZED,
+                    Json(json!({
+                        "error": {
+                            "message": "Unauthorized: invalid or missing Bearer token",
+                            "type": "authentication_error",
+                            "code": "invalid_api_key"
+                        }
+                    })),
+                )
+                    .into_response();
+            }
+        }
+    }
+
+    next.run(req).await
+}
+
 /// Construct the Axum router for the gateway HTTP service.
 pub fn router(state: GatewayState) -> Router {
     Router::new()
@@ -50,6 +159,8 @@ pub fn router(state: GatewayState) -> Router {
         .route("/healthz", get(health_handler).options(cors_preflight))
         .route("/v1/models", get(models_handler).options(cors_preflight))
         .route("/v1/chat/completions", post(chat_completions_handler).options(cors_preflight))
+        .layer(middleware::from_fn(auth_middleware))
+        .layer(middleware::from_fn(cors_middleware))
         .with_state(state)
 }
 
@@ -59,6 +170,15 @@ pub async fn serve_gateway(
     adapter: Arc<dyn GatewayAdapter>,
     model_ids: Vec<String>,
 ) -> Result<(), GatewayError> {
+    let auth_configured = std::env::var("APHRODY_OS_AUTH_TOKEN")
+        .ok()
+        .is_some_and(|t| !t.trim().is_empty());
+    if !addr.ip().is_loopback() && !auth_configured {
+        eprintln!(
+            "WARNING [SECURITY]: aphrody-gateway binding to non-loopback address {addr} without APHRODY_OS_AUTH_TOKEN configured! Loopback binding is strongly recommended for unauthenticated gateways."
+        );
+    }
+
     let state = GatewayState { adapter, model_ids };
     let app = router(state);
     let listener = tokio::net::TcpListener::bind(addr)
@@ -71,25 +191,15 @@ pub async fn serve_gateway(
 }
 
 async fn health_handler() -> impl IntoResponse {
-    let mut headers = HeaderMap::new();
-    add_cors_headers(&mut headers);
-    headers.insert(header::CONTENT_TYPE, HeaderValue::from_static("application/json"));
-    (
-        headers,
-        Json(json!({
-            "ok": true,
-            "status": "healthy",
-            "service": "aphrody-gateway",
-            "version": env!("CARGO_PKG_VERSION")
-        })),
-    )
+    Json(json!({
+        "ok": true,
+        "status": "healthy",
+        "service": "aphrody-gateway",
+        "version": env!("CARGO_PKG_VERSION")
+    }))
 }
 
 async fn models_handler(State(state): State<GatewayState>) -> impl IntoResponse {
-    let mut headers = HeaderMap::new();
-    add_cors_headers(&mut headers);
-    headers.insert(header::CONTENT_TYPE, HeaderValue::from_static("application/json"));
-
     let data: Vec<Value> = state
         .model_ids
         .iter()
@@ -103,7 +213,7 @@ async fn models_handler(State(state): State<GatewayState>) -> impl IntoResponse 
         })
         .collect();
 
-    (headers, Json(json!({ "object": "list", "data": data })))
+    Json(json!({ "object": "list", "data": data }))
 }
 
 async fn chat_completions_handler(
@@ -152,25 +262,19 @@ async fn chat_completions_handler(
                 });
 
                 let sse = Sse::new(sse_stream).keep_alive(KeepAlive::default());
-                let mut res = sse.into_response();
-                add_cors_headers(res.headers_mut());
-                res
+                sse.into_response()
             },
             // Intentionally NOT unified with aphrody-http-error - mimics OpenAI's own error wire shape for client drop-in compatibility; see aphrody-contracts/docs/API.md section 6.8.
-            Err(err) => {
-                let mut res = (
-                    StatusCode::BAD_GATEWAY,
-                    Json(json!({
-                        "error": {
-                            "message": err.to_string(),
-                            "type": "gateway_error"
-                        }
-                    })),
-                )
-                    .into_response();
-                add_cors_headers(res.headers_mut());
-                res
-            },
+            Err(err) => (
+                StatusCode::BAD_GATEWAY,
+                Json(json!({
+                    "error": {
+                        "message": err.to_string(),
+                        "type": "gateway_error"
+                    }
+                })),
+            )
+                .into_response(),
         }
     } else {
         match state.adapter.chat(req).await {
@@ -194,43 +298,71 @@ async fn chat_completions_handler(
                         "total_tokens": resp.total_tokens.unwrap_or(0)
                     }
                 });
-                let mut res = (StatusCode::OK, Json(body)).into_response();
-                add_cors_headers(res.headers_mut());
-                res
+                (StatusCode::OK, Json(body)).into_response()
             },
             // Intentionally NOT unified with aphrody-http-error - mimics OpenAI's own error wire shape for client drop-in compatibility; see aphrody-contracts/docs/API.md section 6.8.
-            Err(err) => {
-                let mut res = (
-                    StatusCode::BAD_GATEWAY,
-                    Json(json!({
-                        "error": {
-                            "message": err.to_string(),
-                            "type": "gateway_error"
-                        }
-                    })),
-                )
-                    .into_response();
-                add_cors_headers(res.headers_mut());
-                res
-            },
+            Err(err) => (
+                StatusCode::BAD_GATEWAY,
+                Json(json!({
+                    "error": {
+                        "message": err.to_string(),
+                        "type": "gateway_error"
+                    }
+                })),
+            )
+                .into_response(),
         }
     }
 }
 
 async fn cors_preflight() -> impl IntoResponse {
-    let mut headers = HeaderMap::new();
-    add_cors_headers(&mut headers);
-    (StatusCode::NO_CONTENT, headers)
+    StatusCode::NO_CONTENT
 }
 
-fn add_cors_headers(headers: &mut HeaderMap) {
-    headers.insert(header::ACCESS_CONTROL_ALLOW_ORIGIN, HeaderValue::from_static("*"));
-    headers.insert(
-        header::ACCESS_CONTROL_ALLOW_METHODS,
-        HeaderValue::from_static("GET, POST, OPTIONS, PUT, DELETE"),
-    );
-    headers.insert(
-        header::ACCESS_CONTROL_ALLOW_HEADERS,
-        HeaderValue::from_static("Content-Type, Authorization, X-Requested-With, Origin, Accept"),
-    );
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_allowed_origins() {
+        // Allowed localhost origins
+        assert!(is_allowed_origin("http://localhost"));
+        assert!(is_allowed_origin("http://localhost:8083"));
+        assert!(is_allowed_origin("https://localhost:3000"));
+        assert!(is_allowed_origin("http://127.0.0.1"));
+        assert!(is_allowed_origin("http://127.0.0.1:8795"));
+        assert!(is_allowed_origin("https://127.0.0.1:443"));
+        assert!(is_allowed_origin("http://[::1]:8080"));
+        assert!(is_allowed_origin("http://tauri.localhost"));
+        assert!(is_allowed_origin("https://tauri.localhost"));
+        assert!(is_allowed_origin("tauri://localhost"));
+
+        // Disallowed / external origins
+        assert!(!is_allowed_origin("http://localhost.evil.com"));
+        assert!(!is_allowed_origin("http://127.0.0.1.attacker.com"));
+        assert!(!is_allowed_origin("https://example.com"));
+        assert!(!is_allowed_origin("https://evil.org:8083"));
+        assert!(!is_allowed_origin("ftp://localhost"));
+        assert!(!is_allowed_origin("null"));
+        assert!(!is_allowed_origin(""));
+        assert!(!is_allowed_origin("invalid-origin"));
+    }
+
+    #[test]
+    fn test_add_cors_headers_filters_origin() {
+        let mut headers = HeaderMap::new();
+        let evil_origin = HeaderValue::from_static("http://evil.com");
+        add_cors_headers(&mut headers, Some(&evil_origin));
+        assert!(!headers.contains_key(header::ACCESS_CONTROL_ALLOW_ORIGIN));
+        assert_eq!(headers.get(header::VARY).unwrap(), "Origin");
+
+        let mut headers = HeaderMap::new();
+        let local_origin = HeaderValue::from_static("http://localhost:8083");
+        add_cors_headers(&mut headers, Some(&local_origin));
+        assert_eq!(
+            headers.get(header::ACCESS_CONTROL_ALLOW_ORIGIN).unwrap(),
+            "http://localhost:8083"
+        );
+        assert_eq!(headers.get(header::ACCESS_CONTROL_ALLOW_CREDENTIALS).unwrap(), "true");
+    }
 }

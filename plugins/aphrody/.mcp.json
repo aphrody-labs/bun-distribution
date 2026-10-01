@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "aphrody": {
+      "type": "stdio",
+      "command": "aphrody-kernel",
+      "args": [
+        "mcp"
+      ]
+    }
+  }
+}

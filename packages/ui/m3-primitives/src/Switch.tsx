@@ -92,6 +92,7 @@ export const Switch = forwardRef<HTMLButtonElement, SwitchProps>(
     <SwitchPrimitive.Root
       nativeButton
       render={<button type="button" />}
+      data-m3-component="Switch"
       {...props}
       ref={ref}
       className={withClassName(switchStyles({ size }), className)}

@@ -21,7 +21,10 @@
       "@rosegriffon/ui": ["../../../packages/rg/ui/src/index.ts"],
       "@rosegriffon/ui/*": ["../../../packages/rg/ui/src/*"],
       "@rosegriffon/app-shell": ["../../../packages/rg/app-shell/src/index.ts"],
-      "@rosegriffon/app-shell/*": ["../../../packages/rg/app-shell/src/*"]
+      "@rosegriffon/app-shell/*": ["../../../packages/rg/app-shell/src/*"],
+      "@rosegriffon/inagle": ["../../../packages/rg/inagle/dist/index.d.ts"],
+      "@rosegriffon/inagle/asset-manifest": ["../../../packages/rg/inagle/src/data/asset-manifest.generated.ts"],
+      "@rosegriffon/inagle/*": ["../../../packages/rg/inagle/dist/*"]
     }
   },
   "include": [

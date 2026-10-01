@@ -15,7 +15,7 @@ publish = false
 workspace = true
 
 [dependencies]
-aphrody-m3 = { workspace = true }
+aphrody-m3-tokens = { workspace = true }
 aphrody-render = { workspace = true, features = ["gpu"] }
 aphrody-subsystem = { workspace = true }
 aphrody-softraster = { workspace = true }

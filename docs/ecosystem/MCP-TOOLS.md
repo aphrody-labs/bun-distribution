@@ -7,7 +7,7 @@ Every MCP tool registered in source, grouped by server: rmcp `#[tool]` routers, 
 full text is in [ecosystem.json](ecosystem.json). The kernel re-exports its subsystems' tools through
 `aphrody-kernel`, so one tool name can appear under several servers.
 
-Totals: 22 servers, 438 tool registrations, 418 unique tool names.
+Totals: 23 servers, 473 tool registrations, 452 unique tool names.
 
 ## aphrody — aphrody
 
@@ -17,7 +17,64 @@ Kind: kernel-subsystem. 1 tools.
 | --- | --- |
 | `update_plan` | Update or record the agent's multi-step execution plan and current progress. |
 
-## aphrody — aphrody subsystem `tauri`
+## aphrody — aphrody (VictauriMcpHandler)
+
+Kind: rmcp. 35 tools.
+
+| Tool | Description |
+| --- | --- |
+| `animation` | Animation introspection (no CDP). Reads the Web Animations API to reveal what the webview's animation engine is actually running — duration, delay, easing, iterations, keyframes, current progress, an… |
+| `app_info` | Get comprehensive app info: Tauri config (identifier, product name, version), app directory paths (data, config, log, local_data), process environment variables, and database files found in app direc… |
+| `app_state` | Read application-defined backend state via a registered probe. With no `probe`, lists available probe names. With a `probe` name, runs it and returns its JSON snapshot. Probes give first-class, disco… |
+| `assert_semantic` | Run a semantic assertion: evaluate a JS expression and check the result against an expected condition. Conditions: equals, not_equals, contains, greater_than, less_than, truthy, falsy, exists, type_i… |
+| `check_ipc_integrity` | Check IPC round-trip integrity: find stale (stuck) pending calls and errored calls. Returns health status and lists of problematic IPC calls. |
+| `css` | CSS injection. Actions: inject (add custom CSS to page), remove (remove previously injected CSS). Subject to privacy controls. |
+| `detect_ghost_commands` | Detect ghost commands (frontend calls with no backend handler) by IPC OUTCOME, not by guessing from Victauri's registry. Returns: `confirmed_ghosts` = commands invoked that NEVER returned success and… |
+| `dom_snapshot` | Get the DOM snapshot with stable ref handles. Default: compact accessible text (70-80%% fewer tokens). Set format="json" for full tree. Returns tree + stale_refs (refs invalidated since last snapshot… |
+| `eval_js` | Evaluate JavaScript in the Tauri webview and return the result. Async expressions are wrapped automatically. |
+| `explain` | Correlate recent activity across all layers into a coherent narrative. CDP shows raw events per layer; Victauri correlates IPC + DOM + console + network + window events across the Rust backend and we… |
+| `fault` | Probe a backend command handler under failure by faulting it for chaos engineering. Simulate slow commands, backend errors, dropped responses, and corrupted data. SCOPE: faults apply ONLY to commands… |
+| `find_elements` | Search for elements by text, role, test_id, CSS selector (via `css` or `selector` param), or accessible name without a full snapshot. Returns lightweight matches with ref handles. |
+| `get_diagnostics` | Run environment diagnostics: detect service workers (break IPC interception), closed shadow DOM (invisible to snapshots), iframes (bridge absent), large DOM warnings, and CSP status. Call this first… |
+| `get_memory_stats` | Get real-time process memory statistics from the OS (working set, page file usage). On Windows returns detailed metrics; on Linux returns virtual/resident size. |
+| `get_plugin_info` | Inspect the Victauri plugin's own configuration: port, enabled/disabled tools, command filters, privacy settings, capacities, and version. Useful for agents to understand their capabilities before ac… |
+| `get_registry` | List or search all registered Tauri commands with their argument schemas. Pass query to filter by name/description substring. Commands are registered via the #[inspectable] macro — apps that don't us… |
+| `input` | Text and keyboard input. Actions: fill (set input value), type_text (character-by-character typing), press_key (trigger a keyboard key). Subject to privacy controls. An input the page refuses (elemen… |
+| `inspect` | CSS and visual inspection. Actions: get_styles (computed CSS for element), get_bounding_boxes (layout rects), highlight (debug overlay), clear_highlights, audit_accessibility (a11y audit), get_perfor… |
+| `interact` | DOM element interactions. Actions: click, double_click, hover, focus, scroll_into_view, select_option. Requires ref_id from a dom_snapshot for most actions. An action the page refuses (element covere… |
+| `introspect` | Deep backend introspection — command profiling, IPC contract testing, coverage, startup timing, capability auditing, database diagnostics, process enumeration, and event bus monitoring. These feature… |
+| `invoke_command` | Invoke a registered Tauri command via IPC, just like the frontend would. Goes through the real IPC pipeline so calls are logged and verifiable. Returns the command's result. Waits up to the eval time… |
+| `list_app_dir` | List files in the app's data, config, log, or local_data directories. Useful for discovering databases, config files, logs, and cached data on the backend — without going through the webview. |
+| `logs` | Application logs and monitoring. Actions: console (captured console.log/warn/error), network (intercepted fetch/XHR), ipc (IPC call log — set wait_for_capture=true to await response capture up to 500… |
+| `navigate` | Navigation and dialog control. Actions: go_to (navigate to URL), go_back (browser back), get_history (navigation log), set_dialog_response (auto-respond to alert/confirm/prompt), get_dialog_log (capt… |
+| `query_db` | Execute a bounded, read-only SQL query against a SQLite database in the app's data directory. The SQL goes in the `query` field (alias: `sql`). Auto-discovers database files if no path is specified.… |
+| `read_app_file` | Read a file from the app's data, config, log, or local_data directory. Returns UTF-8 text by default, or base64 for binary files. Directly reads backend files without going through the webview. |
+| `recording` | Time-travel recording. Actions: start (begin recording), stop (end and return session), checkpoint (save state snapshot), list_checkpoints, get_events (since index), events_between (two checkpoints),… |
+| `resolve_command` | Resolve a natural language query to matching Tauri commands. Returns scored results ranked by relevance, using command names, descriptions, intents, categories, and examples. |
+| `route` | Network request interception (Playwright route() equivalent, no CDP). Matches webview fetch/XHR by URL and blocks, mocks, or delays them. Actions: - `add`: add a rule. `pattern` (+ optional `match_ty… |
+| `screenshot` | Capture a screenshot of a Tauri window as a base64-encoded PNG image. Works on Windows (PrintWindow), macOS (CGWindowListCreateImage), and Linux X11/XWayland. Pure Wayland fails safely because its av… |
+| `storage` | Browser storage operations. Actions: get (read localStorage/sessionStorage), set (write), delete (remove key), get_cookies. Subject to privacy controls for set and delete. |
+| `trace` | Screencast / visual trace (no CDP). Captures the window at a fixed interval into a ring buffer, forming a visual timeline that pairs with `recording` (events) and `logs` (network/console). Actions: -… |
+| `verify_state` | Compare frontend state (evaluated via JS expression) against backend state to detect divergences. Returns a VerificationResult with any mismatches. |
+| `wait_for` | Wait for a condition to be met. Polls at regular intervals until satisfied or timeout. Conditions: text (text appears), text_gone (text disappears), selector (CSS selector matches), selector_gone, ur… |
+| `window` | Window management. Actions: get_state (window positions/sizes/visibility), list (all window labels), manage (minimize/maximize/close/focus/show/hide/fullscreen/always_on_top), resize, move_to, set_ti… |
+
+## aphrody — aphrody-agent-tools
+
+Kind: kernel-subsystem. 8 tools.
+
+| Tool | Description |
+| --- | --- |
+| `apply_patch` | Apply a patch document to the filesystem. Use this to create, delete, rename, and edit files. The patch is framed by `*** Begin Patch` / `*** End Patch` and uses `*** Add/Delete/Update File:` directi… |
+| `google_ai` | Query Google AI models keylessly via native session and retrieve generated text. |
+| `js_eval` | Execute JavaScript code in an isolated native V8 runtime and return output. |
+| `read_file` | Read a bounded local UTF-8 file for repository inspection, RAG preparation, or data mining. |
+| `search_text` | Search local repository text with ripgrep and return bounded line-numbered matches for data mining. |
+| `shell` | Run a command and capture its combined stdout/stderr output and exit code. The command is given as an argv vector and executed directly (no shell interpretation). Long output is truncated. |
+| `web_scrape` | Scrape and convert any public web page directly into clean Markdown. |
+| `web_search` | Search the live web and return curated, markdown-formatted results. |
+
+## aphrody — aphrody-app subsystem `tauri`
 
 Kind: kernel-subsystem. 15 tools.
 
@@ -39,7 +96,7 @@ Kind: kernel-subsystem. 15 tools.
 | `webview_get_pointed_element` | Inspect the DOM element at viewport coordinates in a local Tauri webview. |
 | `webview_select_element` | Select a DOM element by CSS selector and return its geometry in a local Tauri webview. |
 
-## aphrody — aphrody subsystem `window`
+## aphrody — aphrody-app subsystem `window`
 
 Kind: kernel-subsystem. 10 tools.
 
@@ -55,21 +112,6 @@ Kind: kernel-subsystem. 10 tools.
 | `window_set_bounds` | Move and/or resize a window (physical pixels). |
 | `window_set_state` | Minimize, maximize, restore, hide or show a window. |
 | `window_set_title` | Change a window title. |
-
-## aphrody — aphrody-agent-tools
-
-Kind: kernel-subsystem. 8 tools.
-
-| Tool | Description |
-| --- | --- |
-| `apply_patch` | Apply a patch document to the filesystem. Use this to create, delete, rename, and edit files. The patch is framed by `*** Begin Patch` / `*** End Patch` and uses `*** Add/Delete/Update File:` directi… |
-| `google_ai` | Query Google AI models keylessly via native session and retrieve generated text. |
-| `js_eval` | Execute JavaScript code in an isolated native V8 runtime and return output. |
-| `read_file` | Read a bounded local UTF-8 file for repository inspection, RAG preparation, or data mining. |
-| `search_text` | Search local repository text with ripgrep and return bounded line-numbered matches for data mining. |
-| `shell` | Run a command and capture its combined stdout/stderr output and exit code. The command is given as an argv vector and executed directly (no shell interpretation). Long output is truncated. |
-| `web_scrape` | Scrape and convert any public web page directly into clean Markdown. |
-| `web_search` | Search the live web and return curated, markdown-formatted results. |
 
 ## aphrody — aphrody-bun-docs subsystem `bun_docs`
 

@@ -1066,9 +1066,12 @@ impl CompiledSelector {
     /// Shadow-tree stylesheets use this to retain only `:host` selectors when
     /// matching against the host in their own tree scope.
     pub fn matches_featureless_host(&self) -> bool {
-        self.sel
-            .matches_featureless_host_selector_or_pseudo_element()
-            .contains(parser::FeaturelessHostMatches::FOR_HOST)
+        // selectors 0.38 replaced `FeaturelessHostMatches::FOR_HOST` with
+        // `matches_featureless_host(scope_matches_featureless_host)`. Passing
+        // `false` keeps the old meaning: only a real `:host` component (alone
+        // or in an all-featureless `:is()`/`:where()`) qualifies, never a bare
+        // `:scope`.
+        self.sel.matches_featureless_host(false).may_match()
     }
 
     /// Whether this selector contains the `::slotted()` pseudo-element and

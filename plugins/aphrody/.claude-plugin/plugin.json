@@ -1,0 +1,51 @@
+{
+  "$schema": "https://code.claude.com/schema/plugin.json",
+  "name": "aphrody",
+  "version": "1.5.0",
+  "description": "Unified Aphrody plugin: AI/LLM, Dragon Ball/Shenron, OS kernel, Aphrody Web, N2B and WinClean.",
+  "author": {
+    "name": "aphrody-code",
+    "email": "37252373+aphrody-code@users.noreply.github.com",
+    "url": "https://github.com/aphrody-code"
+  },
+  "homepage": "https://github.com/aphrody-code/aphrody-ai/tree/main/plugins/aphrody",
+  "repository": "https://github.com/aphrody-code/aphrody-ai",
+  "license": "Apache-2.0",
+  "keywords": [
+    "aphrody",
+    "rust",
+    "cross-platform",
+    "wasm",
+    "claude-code",
+    "gemini",
+    "n2b",
+    "google",
+    "search",
+    "scraping",
+    "browser-automation",
+    "bun",
+    "web"
+  ],
+  "icon": "icon.webp",
+  "category": "productivity",
+  "mcpServers": "./.mcp.json",
+  "interface": {
+    "icon": "icon.webp",
+    "displayName": "Aphrody",
+    "shortDescription": "One plugin for Aphrody AI, Dragon Ball/Shenron, system and web tools.",
+    "longDescription": "Unified Aphrody plugin for local AI and LLM workflows, Dragon Ball/Shenron research, the Aphrody kernel, WinClean, web and N2B capabilities. It bundles the skills and agents for these surfaces and connects to the unified local aphrody-kernel MCP server. Secrets remain in the host environment.",
+    "brandColor": "#CE422B",
+    "category": "Productivity",
+    "capabilities": [
+      "Automation",
+      "Research",
+      "Reference"
+    ],
+    "defaultPrompt": [
+      "Use the Aphrody AI, RAG or local model workflow for this task.",
+      "Research a Dragon Ball question with cited sources and check canon separately.",
+      "Use the Aphrody kernel tools for the requested operating-system capability."
+    ]
+  },
+  "skills": "./skills/"
+}

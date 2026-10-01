@@ -20,7 +20,8 @@ use std::{
 };
 
 use aphrody_tauri_3d::ModelOptions;
-use tauri::{WebviewUrl, WebviewWindowBuilder};
+use tauri::{Manager, WebviewUrl, WebviewWindowBuilder};
+use tauri_runtime_wry::Wry;
 
 struct Args {
     path: PathBuf,
@@ -72,7 +73,11 @@ fn main() -> std::process::ExitCode {
         },
     };
     let result = tauri::Builder::default()
+        .runtime(Wry::default())
         .plugin(aphrody_tauri_3d::init())
+        // Empty unless built with `--features debug-bridge` in a debug build and started with
+        // APHRODY_TAURI_DEBUG=1; see docs/guides/web/TAURI-DEBUG.md.
+        .plugin(aphrody_tauri_wrap::debug::init())
         .setup(move |app| {
             let size = f64::from(args.size.unwrap_or(640));
             let window =

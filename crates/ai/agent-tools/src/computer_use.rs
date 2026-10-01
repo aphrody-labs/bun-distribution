@@ -709,10 +709,10 @@ impl ComputerBackend for MockComputerBackend {
         action: &ComputerAction,
         policy: &ComputerPolicy,
     ) -> Result<ToolOutput, ToolError> {
-        if let ComputerAction::FocusWindow { window_title: Some(title), .. } = action {
-            if let Err(denial) = policy.verify_target(title) {
-                return Ok(ToolOutput::error(denial));
-            }
+        if let ComputerAction::FocusWindow { window_title: Some(title), .. } = action
+            && let Err(denial) = policy.verify_target(title)
+        {
+            return Ok(ToolOutput::error(denial));
         }
 
         let mut rec = self.recorded.lock().unwrap();
@@ -786,6 +786,10 @@ pub struct ComputerUseTool;
 impl ComputerUseTool {
     /// Create a computer tool registered with the legacy name `computer_use`.
     #[must_use]
+    #[expect(
+        clippy::new_ret_no_self,
+        reason = "Existing public legacy constructor retained for runtime consumer compatibility"
+    )]
     pub fn new() -> ComputerTool {
         ComputerTool::with_name("computer_use")
     }

@@ -109,9 +109,11 @@ export const contientBoucle = (texte: string): boolean => {
 	if (monosigne && /[\p{L}\p{N}]/u.test(monosigne[1]!)) return true;
 	BOUCLE.lastIndex = 0;
 	for (let m = BOUCLE.exec(sansTableau); m; m = BOUCLE.exec(sansTableau)) {
+		const motif = m[1];
+		if (!motif) continue;
 		// Un motif fait d'un seul signe répété est une mise en page, pas une
 		// boucle — on continue de chercher au lieu de conclure.
-		if (!/^(.)\1*$/s.test(m[1]) && !motifDeMiseEnPage(m[1])) {
+		if (!/^(.)\1*$/s.test(motif) && !motifDeMiseEnPage(motif)) {
 			BOUCLE.lastIndex = 0;
 			return true;
 		}

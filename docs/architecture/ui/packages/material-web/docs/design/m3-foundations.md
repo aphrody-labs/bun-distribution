@@ -14,7 +14,7 @@
 > **Out of scope (cross-linked, not duplicated):**
 >
 > - Layout (overview, scaffold, grids/spacing, breakpoints, RTL, canonical
->   examples) → see [`m3-layout.md`](./m3-layout.md).
+>   examples) → see [`m3-layout.md`](../../../../../../../packages/ui/material-web/docs/design/m3-layout.md).
 > - Material A–Z terminology → see [`m3-glossary.md`](./m3-glossary.md).
 
 ---
@@ -231,8 +231,8 @@ proficiency.
 | M3 foundation                              | aphrody artifact                                                                             | Notes                                                                                                                                                                 |
 | ------------------------------------------ | -------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Interaction states / state-layer opacities | [`crates/aphrody-m3-tokens/src/state.rs`](../../../../crates/aphrody-m3-tokens/src/state.rs)                       | `HOVER 0.08`, `FOCUS 0.10`, `PRESSED 0.10`, `DRAGGED 0.16` (+ `DISABLED_CONTENT 0.38`, `DISABLED_CONTAINER 0.12`); CSS export `--md-sys-state-*-state-layer-opacity`. |
-| Design tokens (ref/sys/comp tiers)         | [`m3-design-tokens.md`](./m3-design-tokens.md), [`aphrody-m3-tokens.md`](./aphrody-m3-tokens.md) | Token taxonomy + the `m3-tokens` crate.                                                                                                                               |
-| Layout                                     | [`m3-layout.md`](./m3-layout.md)                                                               | Scaffold, grids/spacing, breakpoints, RTL, canonical examples.                                                                                                        |
+| Design tokens (ref/sys/comp tiers)         | [`m3-design-tokens.md`](./m3-design-tokens.md), [`aphrody-m3-tokens.md`](../../../../../../../packages/ui/material-web/docs/design/aphrody-m3-tokens.md) | Token taxonomy + the `m3-tokens` crate.                                                                                                                               |
+| Layout                                     | [`m3-layout.md`](../../../../../../../packages/ui/material-web/docs/design/m3-layout.md)                                                               | Scaffold, grids/spacing, breakpoints, RTL, canonical examples.                                                                                                        |
 | Material A–Z terms                         | [`m3-glossary.md`](./m3-glossary.md)                                                           | Glossary cross-link (state layer, on-color, dynamic color, tonal palette…).                                                                                           |
 | Motion (usability tactic)                  | [`m3-motion.md`](./m3-motion.md)                                                               | Expressive / physics-based motion detail.                                                                                                                             |
 

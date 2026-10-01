@@ -107,7 +107,8 @@ export async function fetchPremiumUpsells(client: XClient): Promise<PremiumUpsel
 export async function fetchPremiumBundle(
   client: XClient,
   handle: string,
-  userId: string,
+  // Kept for the public signature; the bundle is resolved from the handle.
+  _userId: string,
 ): Promise<{ upsells: PremiumUpsells; flags: PremiumAccountFlags; raw: Record<string, unknown> }> {
   const [upsellsJson, viewerJson, userJson] = await Promise.all([
     client.graphqlWaiting("Upsells", {}),

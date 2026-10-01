@@ -2,6 +2,8 @@
 
 # Intégration de Tauri 2.0 & Material Design 3 (2026)
 
+> **Statut : historique (contexte Tauri 2).** Ce guide décrit l'hôte Tauri 2. Le workspace épingle désormais Tauri 3 alpha (`tauri =3.0.0-alpha.3`, runtime par défaut `tauri-runtime-wry`, `tauri-runtime-cef` réservé à Koharu) : voir [la ligne Tauri 3](<../../../../docs/operations/ui/tauri-upstream.md>) et [`config/tauri-apps.json`](<../../../../config/tauri-apps.json>). Le contenu ci-dessous reste un contexte de compatibilité tant que l'hôte desktop n'est pas requalifié sous Tauri 3 (Verify).
+
 Ce guide détaille comment intégrer et optimiser le monorepo `material-web` (Lit components + React wrappers + Dynamic Theming) au sein d'une application de bureau ou mobile propulsée par **Tauri 2.0**.
 
 ---

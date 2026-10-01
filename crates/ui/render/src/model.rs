@@ -12,7 +12,7 @@
 
 use std::path::Path;
 
-use aphrody_m3::color::DynamicScheme;
+use aphrody_m3_tokens::facade::color::DynamicScheme;
 use base64::Engine;
 use serde::Serialize;
 use serde_json::json;
@@ -571,7 +571,7 @@ pub fn studio_scene(
     height: u32,
     options: &StudioOptions,
 ) -> Result<crate::scene3d::Scene3d, ModelError> {
-    use aphrody_m3::color::{Role, Variant};
+    use aphrody_m3_tokens::facade::color::{Role, Variant};
 
     use crate::scene3d::{Light, Scene3d, ShadowSettings};
 
@@ -645,7 +645,7 @@ pub fn frame_camera(
 
 #[cfg(test)]
 mod tests {
-    use aphrody_m3::color::{Role, Variant};
+    use aphrody_m3_tokens::facade::color::{Role, Variant};
 
     use super::*;
 

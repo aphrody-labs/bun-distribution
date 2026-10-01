@@ -88,8 +88,8 @@ export const JAPANESE_BASE_RANGES: [number, number][] = [
 /** Ideographs per Japanese chunk: one page of text pulls a few chunks, not the whole font. */
 export const JAPANESE_CHUNK = 500;
 
-const GS = "../../assets/fonts";
-const MS = "../../crates/ui/aphrody-icons/material-symbols";
+const GS = "../../../assets/fonts";
+const MS = "../../../crates/ui/bun/icons/material-symbols";
 
 export const SUBSET_JOBS: readonly SubsetJob[] = [
   { id: "google-sans-flex", source: `${GS}/google-sans-flex/GoogleSansFlex-Variable.ttf`, out: "fonts/web/GoogleSansFlex-latin.woff2", ranges: LATIN_CORE_RANGES },
@@ -194,7 +194,7 @@ export const FONTS: readonly FontFamily[] = [
       role: "icon",
       script: "latin",
       sheet: "symbols",
-      source: "crates/ui/icons/material-symbols",
+      source: "crates/ui/bun/icons/material-symbols",
       sourceFile: file,
       faces: [face(`Material Symbols ${v}`, file, null, { weight: [100, 700], display: "block" })],
     };

@@ -70,7 +70,8 @@
 
 #![forbid(unsafe_code)]
 
-#[cfg(not(target_arch = "wasm32"))] pub mod external;
+#[cfg(not(target_arch = "wasm32"))]
+pub mod external;
 
 use std::{
     collections::HashSet,

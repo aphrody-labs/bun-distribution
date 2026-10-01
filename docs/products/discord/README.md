@@ -1,102 +1,121 @@
-# Aphrody Discord
+<!-- SPDX-License-Identifier: Apache-2.0 -->
 
-[![Build](https://github.com/aphrody-code/aphrody-discord/actions/workflows/build.yml/badge.svg)](https://github.com/aphrody-code/aphrody-discord/actions/workflows/build.yml)
+# Aphrody Discord Ecosystem
+
 [![Bun](https://img.shields.io/badge/runtime-Bun%201.4.2-black?logo=bun)](https://bun.sh)
+[![TypeScript](https://img.shields.io/badge/typescript-7.0.2-blue?logo=typescript)](https://www.typescriptlang.org)
+[![Rust](https://img.shields.io/badge/compiler-Rust%202024-orange?logo=rust)](https://rust-lang.org)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue)](LICENSE.txt)
 
-A Bun-managed TypeScript monorepo for developing Discord libraries and bots. It
-combines current source snapshots from [Discord.js](https://github.com/discordjs/discord.js)
-and [DiscordX](https://github.com/discordx-ts/discordx); upstream package
-sources remain under their original names and keep their license notices.
-This repository is the shared home for reusable Aphrody Discord transport and
-runtime packages. Applications retain their own domain logic, persistence,
-authorization policy and secrets. The project removes duplicated Discord
-clients without creating a second bot runtime.
+Aphrody Discord provides a sovereign, unified Discord bot platform and native compilation toolchain for all Aphrody bots and services.
 
-## Goal and ownership
+Historically reliant on a 3.9 GB vendored snapshot (`upstream/discord`), the ecosystem has transitioned to **100% monorepo autonomy** using standard npm dependencies via `workspaces.catalog`, dedicated shared packages, a Rust + Bun compiler, and zero-dependency standalone native binaries.
 
-The goal is one maintained Discord foundation for Aphrody applications:
+---
 
-- shared contracts for messages, attachments, rooms, capabilities and errors;
-- one tested REST/Gateway/interaction lifecycle per Discord application;
-- thin Discord.js and DiscordX adapters where their APIs add value;
-- Bun-native packages consumable by Shenron, RG, Achilléa and Aphrody
-  notifications.
+## 1. Product & Package Map
 
-This repository owns Discord protocol and framework code. It does not own
-Dragon Ball or RG commands, application databases, business authorization,
-OAuth grants, production tokens or deployment. Those remain with the consuming
-application and `aphrody-infra`.
-
-## Workspaces
-
-- `packages/*`: Discord.js, DiscordX, and their support packages.
-- `apps/guide` and `apps/website`: Discord.js guides and API website.
-- `apps/proxy-container`: Discord.js proxy service.
-- `docs`: DiscordX framework documentation.
-- `apps/carbon-example`: small Bun runtime example using Carbon from npm.
-- `packages/aphrody-messaging`: shared message contracts and Bun-native Discord
-  REST adapter (send text/files, create DMs, enumerate rooms, cancellable inbox
-  polling), with no direct runtime package dependencies.
-
-### Package map
-
-| Package family                                   | Purpose                                               | Provenance                  |
-| ------------------------------------------------ | ----------------------------------------------------- | --------------------------- |
-| `@aphrody/messaging`                             | Message/room contracts and injectable REST operations | Aphrody-owned               |
-| `discord.js`, `@discordjs/*`, `create-discord-*` | Discord REST, Gateway, builders, docs and examples    | Discord.js snapshot         |
-| `discordx`, `@discordx/*`                        | Decorators, DI, importers, pagination and utilities   | DiscordX snapshot           |
-| `@aphrody/carbon-example`                        | OAuth/interactions development example                | Aphrody integration example |
-
-See [upstream provenance](../../reference/discord/UPSTREAMS.md) for exact revisions, licenses and
-refresh rules; the repository never silently replaces an upstream snapshot.
-See the
-[stack notes](../../reference/discord/STACK.md) for the framework comparison and development tools.
-See [shared architecture and upstream bot audits](../../architecture/discord/architecture/README.md)
-for the Aphrody AI, RG/Achilléa and NIE architecture reports and the migration
-plan toward one shared Discord framework. The current package map and remaining
-work are tracked in [docs/PLAN.md](../../plans/discord/PLAN.md); the executable blocker and
-release plan is [PLAN-DISCORD.md](../../plans/discord/PLAN-DISCORD.md). Carbon's OAuth scopes,
-installation permissions, and Discord approval limits are documented in
-[docs/carbon-oauth.md](../../reference/discord/carbon-oauth.md).
-
-## Commands
-
-Requires Bun `1.4.2` or newer and TypeScript `7` from the workspace catalog.
-
-```sh
-bun install
-bun run check
-bun run format
-bun run typecheck
-bun run build
-bun run test
+```
+aphrody/
+├── packages/discord/
+│   ├── kit/                  # @aphrody/discord-kit — Shared runtime, intents, cache & lifecycle
+│   └── aphrody-messaging/    # @aphrody/messaging — Zero-dependency channel & REST adapter
+├── crates/discord/
+│   └── aphrody-discord-compiler/ # aphrody-discord-compiler — Native Rust + Bun AOT orchestrator
+├── apps/
+│   ├── shenron/bot/          # @shenron/bot — Dragon Ball bot + Public HTTP/REST/GraphQL API
+│   │   └── dist/shenron      # Native standalone binary (~151.6 MB)
+│   └── rg/
+│       ├── bot/              # @rosegriffon/bot — Rose Griffon & Azalée community bot
+│       │   └── dist/rg-bot   # Native standalone binary (~144.9 MB)
+│       └── achillea-bot/     # @rosegriffon/achillea-bot — Tournament engine bot
+└── systemd/
+    ├── shenron-bot.service   # Systemd unit running dist/shenron
+    └── rg-bot.service        # Systemd unit running dist/rg-bot
 ```
 
-Check the messaging adapter independently with
-`cd packages/aphrody-messaging && bun run typecheck`.
+### Shared Packages
 
-Run a docs site with `bun run dev:discordx-docs`,
-`bun run dev:discordjs-guide`, or `bun run dev:discordjs-website`.
+| Package | Path | Purpose | Dependencies |
+| :--- | :--- | :--- | :--- |
+| **`@aphrody/discord-kit`** | `packages/discord/kit` | Intent preflight checks, production cache sweepers, safe interaction dispatcher, guards, runtime environment detection (`isCompiledBinary`). | `discordx`, `discord.js`, `reflect-metadata` |
+| **`@aphrody/messaging`** | `packages/discord/aphrody-messaging` | Channel contracts (`ChannelPort`), message & file sending, room discovery, inbox streaming, and 429 rate limit backoff. | Zero package dependencies (pure Web API & Bun) |
 
-The imported upstream apps may require additional service credentials and
-external services for deploy or production builds. No upstream `.env` files are
-included; use local untracked environment files when needed.
+### Consumer Applications
 
-## Consumer integration
+| Application | Domain | Standalone Binary | Systemd Unit |
+| :--- | :--- | :--- | :--- |
+| **`@shenron/bot`** | Dragon Ball universe, card games, OCR, public API (`:5006`) | `dist/shenron` (~151.6 MB) | `systemd/shenron-bot.service` |
+| **`@rosegriffon/bot`** | Inazuma Eleven community, Azalée game bot, moderation, XP | `dist/rg-bot` (~144.9 MB) | `systemd/rg-bot.service` |
+| **`@rosegriffon/achillea-bot`** | Inazuma Eleven tournament automation | `dist/achillea` | `systemd/rg-achillea-bot.service` |
 
-Consumers should depend on a published package or an explicit immutable commit,
-not on an implicit sibling checkout. Shenron is migrating its transport boundary
-while retaining its commands, canon, PostgreSQL/SQLite, API and auth; see its
-[integration note](https://github.com/aphrody-code/shenron/blob/main/docs/APHRODY-DISCORD-INTEGRATION.md).
+---
 
-Gateway delivery and signed HTTP interactions are explicit mutually exclusive
-modes for each Discord application. Shared packages must not open a second
-Gateway connection or hide a second REST client in a consumer.
+## 2. Autonomy and Upstream Elimination
 
-## Status
+On **October 1, 2026**:
+- **3.9 GB freed**: The nested `upstream/discord` checkout (2,232 files) was removed entirely from the repository.
+- **Root Catalog (`workspaces.catalog`)**: All Discord libraries are centrally pinned in root `package.json`:
+  - `discordx`: `11.13.3`
+  - `@discordx/di`: `^3.3.4`
+  - `@discordx/pagination`: `^4.4.2`
+  - `@discordx/importer`: `^1.3.3`
+  - `@discordx/utilities`: `^8.0.0`
+  - `discord.js`: `^14.27.0`
+  - `discord-api-types`: `^0.38.55`
+  - `@discordjs/rest`: `^2.6.3`
+- **Compiler Toolchain**: Bun 1.4.2 and TypeScript 7.0.2 across all packages.
 
-`@aphrody/messaging` is the first shared slice. REST rate-limit/error tests,
-Gateway lifecycle, signed interactions, command registration and package
-publication remain gated work in [PLAN-DISCORD.md](../../plans/discord/PLAN-DISCORD.md).
-`aphrody-infra` owns release and deployment evidence.
+---
+
+## 3. Native Standalone Binaries
+
+Aphrody Discord bots are compiled ahead-of-time (AOT) into standalone native executable binaries using Bun's native compiler orchestrated by Rust (`aphrody-discord-compiler`).
+
+### Compilation Pipeline Highlights
+
+1. **Reflection & Decorator Ordering (`src/entry-standalone.ts`)**:
+   Guarantees that `reflect-metadata` is loaded synchronously into memory before TypeScript decorators (`@Discord`, `@Slash`, `@Guard`) are evaluated. Also provides standard CLI flags (`--help`, `--version`, `--dry-run`) without opening a Discord connection.
+2. **Static Loader Table (`apps/rg/bot/src/modules.ts`)**:
+   Replaces dynamic directory scans (`fs.readdirSync`) with explicit static import loaders (`MODULE_LOADERS`), allowing Bun's bundler to discover and compile all 50+ command modules while preserving runtime profile selection (`rg` vs `azalee`).
+3. **Host Zero-Dependency Model**:
+   The output binaries (`dist/shenron`, `dist/rg-bot`) are completely self-contained. Target hosts running `systemd` do not need `node_modules` or a host Bun installation.
+
+---
+
+## 4. Key Workflows & Commands
+
+### Compiling Discord Bots
+
+```bash
+# Compile both Shenron and RG bots with smoke testing via Aphrody CLI
+aphrody discord compile all --smoke
+
+# Or using the root Bun script
+bun run discord:compile all --smoke
+
+# Compile a specific target
+aphrody discord compile shenron
+aphrody discord compile rg
+```
+
+### Inspecting Bot Integrity
+
+```bash
+# Inspect bot TypeScript decorators and Oxc AST syntax
+aphrody discord inspect shenron
+aphrody discord inspect rg --json
+```
+
+### Verification Gate
+
+Run the comprehensive monorepo verification gate:
+```bash
+bun run discord:verify --compile
+```
+This single gate verifies:
+1. Catalog consistency (8 packages)
+2. `@aphrody/discord-kit` (typecheck, 16 unit tests, build)
+3. `@aphrody/messaging` (typecheck, 9 unit tests, build)
+4. Consumer bots (`@shenron/bot` 412 unit tests, `@rosegriffon/bot` 1,228 unit tests)
+5. Standalone native compilation (`dist/shenron`, `dist/rg-bot`) and smoke test execution (`--help`).

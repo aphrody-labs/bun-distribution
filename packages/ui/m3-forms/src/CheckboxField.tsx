@@ -17,7 +17,11 @@ function CheckboxField({ name, label, description, disabled, required }: Checkbo
     <FormField
       name={name}
       render={({ field, fieldState }) => (
-        <FormItem data-disabled={disabled || undefined}>
+        <FormItem
+          data-disabled={disabled || undefined}
+          data-m3-component="CheckboxField"
+          data-testid={`field-${name}`}
+        >
           <div className="flex flex-row items-start gap-3">
             <FormControl>
               <Checkbox

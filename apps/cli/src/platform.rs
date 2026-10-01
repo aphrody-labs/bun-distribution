@@ -36,7 +36,7 @@ pub(crate) fn config_dir() -> Result<PathBuf> {
         if let Some(xdg) = env::var_os("XDG_CONFIG_HOME").filter(|v| !v.is_empty()) {
             return Ok(PathBuf::from(xdg));
         }
-        return home_dir().map(|h| h.join(".config"));
+        home_dir().map(|h| h.join(".config"))
     }
     #[cfg(target_family = "wasm")]
     {

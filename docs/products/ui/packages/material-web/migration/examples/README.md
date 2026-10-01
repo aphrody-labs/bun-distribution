@@ -3,13 +3,13 @@
 Cet exemple montre **la même UI** écrite deux fois : en MUI (`before/`) puis
 migrée vers les wrappers `@aphrody/m3-react` + layout Tailwind + tokens M3
 (`after/`). Il sert de référence concrète au reste du kit de migration et
-respecte le contrat partagé [`../00-CONVENTIONS.md`](../../../../../../reference/ui/packages/material-web/migration/00-CONVENTIONS.md).
+respecte le contrat partagé [`../00-CONVENTIONS.md`](../../../../../../../packages/ui/material-web/migration/00-CONVENTIONS.md).
 
 > Le code n'est pas destiné à être buildé ici (pas de toolchain montée dans
 > `examples/`). Il est **réaliste, cohérent et fidèle** aux éléments `md-*`
 > réels : tous les noms d'éléments, props, slots et events ont été vérifiés
 > dans `material-web/` (renvois `material-web/...:ligne` dans
-> [`MIGRATION-NOTES.md`](../../../../../../reference/ui/packages/material-web/migration/examples/MIGRATION-NOTES.md)).
+> [`MIGRATION-NOTES.md`](../../../../../../../packages/ui/material-web/migration/examples/MIGRATION-NOTES.md)).
 
 ## L'écran migré
 
@@ -48,21 +48,21 @@ examples/
 
 | Dimension              | AVANT (MUI)                                                    | APRÈS (M3)                                                                             | Illustre                                                                                        |
 | ---------------------- | -------------------------------------------------------------- | -------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
-| **Composants**         | `<Button variant>`, `<TextField>`, `<Select>`, `<Dialog>`…     | wrappers `Md*` d'éléments `<md-*>` réels                                               | mapping canonique — contrat §3 / [`01-component-mapping.md`](../../../../../../reference/ui/packages/material-web/migration/01-component-mapping.md)        |
+| **Composants**         | `<Button variant>`, `<TextField>`, `<Select>`, `<Dialog>`…     | wrappers `Md*` d'éléments `<md-*>` réels                                               | mapping canonique — contrat §3 / [`01-component-mapping.md`](../../../../../../../packages/ui/material-web/migration/01-component-mapping.md)        |
 | **Variantes**          | une prop `variant`                                             | **un élément par variante** (`MdFilledButton` vs `MdOutlinedButton` vs `MdTextButton`) | éclatement variant→élément — §3                                                                 |
-| **Theming**            | `createTheme` + `ThemeProvider` (Emotion)                      | tokens `--md-sys-*` dans `theme.css`                                                   | source de vérité couleur — §5 / [`02-theme-token-migration.md`](../../../../../../reference/ui/packages/material-web/migration/02-theme-token-migration.md) |
-| **Layout**             | `Box`/`Stack`/`Grid` + `sx`                                    | `<div>` + utilitaires **Tailwind**                                                     | layout hors shadow DOM — §6 / [`06-tailwind-material-web.md`](../../../../../../reference/ui/packages/material-web/migration/06-tailwind-material-web.md)   |
-| **Events controlled**  | `onChange={(e, val) => …}` / `e.target.value`                  | events natifs `onInput`/`onChange` → `e.target.value` / `.checked` / `.selected`       | signature React modifiée — §4 / [`03-react-integration.md`](../../../../../../reference/ui/packages/material-web/migration/03-react-integration.md)         |
+| **Theming**            | `createTheme` + `ThemeProvider` (Emotion)                      | tokens `--md-sys-*` dans `theme.css`                                                   | source de vérité couleur — §5 / [`02-theme-token-migration.md`](../../../../../../../packages/ui/material-web/migration/02-theme-token-migration.md) |
+| **Layout**             | `Box`/`Stack`/`Grid` + `sx`                                    | `<div>` + utilitaires **Tailwind**                                                     | layout hors shadow DOM — §6 / [`06-tailwind-material-web.md`](../../../../../../../packages/ui/material-web/migration/06-tailwind-material-web.md)   |
+| **Events controlled**  | `onChange={(e, val) => …}` / `e.target.value`                  | events natifs `onInput`/`onChange` → `e.target.value` / `.checked` / `.selected`       | signature React modifiée — §4 / [`03-react-integration.md`](../../../../../../../packages/ui/material-web/migration/03-react-integration.md)         |
 | **Ouverture overlays** | `open={state}` (Dialog)                                        | **ref impérative** `ref.show()` / `ref.close()`                                        | pattern Lit + top-layer — §3 / `03-…`                                                           |
 | **Slots**              | sous-composants (`DialogTitle`, `CardHeader`, `ListItemText`…) | **slots** `slot="headline"`, `slot="start"`…                                           | children/props → slots — §4                                                                     |
-| **Gaps**               | `Alert`                                                        | **shim** `M3Alert` (pas de `md-alert`)                                                 | composant sans équivalent — [`05-gap-analysis.md`](../../../../../../reference/ui/packages/material-web/migration/05-gap-analysis.md)                       |
+| **Gaps**               | `Alert`                                                        | **shim** `M3Alert` (pas de `md-alert`)                                                 | composant sans équivalent — [`05-gap-analysis.md`](../../../../../../../packages/ui/material-web/migration/05-gap-analysis.md)                       |
 
 ## Comment lire l'exemple
 
 1. Ouvrir `before/AccountSettings.tsx` puis `after/AccountSettings.tsx` côte à
    côte : la structure logique (état React, branches d'onglets) est **conservée**,
    seuls le rendu et les handlers changent.
-2. Suivre [`MIGRATION-NOTES.md`](../../../../../../reference/ui/packages/material-web/migration/examples/MIGRATION-NOTES.md) pour le détail composant par
+2. Suivre [`MIGRATION-NOTES.md`](../../../../../../../packages/ui/material-web/migration/examples/MIGRATION-NOTES.md) pour le détail composant par
    composant et la liste des pièges (controlled inputs, slots, `sx` supprimé,
    `selected` vs `checked`).
 3. Pour les wrappers eux-mêmes, voir `../wrappers/` (créés selon le contrat §2).

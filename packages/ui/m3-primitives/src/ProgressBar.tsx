@@ -41,6 +41,8 @@ export const ProgressBar = memo((props: ProgressBarProps) => {
       <ProgressPrimitive.Root
         value={null}
         aria-busy="true"
+        aria-label="Loading"
+        data-m3-component="ProgressBar"
         className={clsx("indeterminate-progress-bar", track, props.className)}
       >
         <ProgressPrimitive.Track className="block h-full">
@@ -60,7 +62,12 @@ export const ProgressBar = memo((props: ProgressBarProps) => {
   }
   const clamped = Math.min(100, Math.max(0, percentage));
   return (
-    <ProgressPrimitive.Root value={clamped} className={clsx(track, "w-[94%]", props.className)}>
+    <ProgressPrimitive.Root
+      value={clamped}
+      aria-label="Progress"
+      data-m3-component="ProgressBar"
+      className={clsx(track, "w-[94%]", props.className)}
+    >
       <ProgressPrimitive.Track className="block h-full">
         <ProgressPrimitive.Indicator
           style={{ width: `${clamped}%` }}

@@ -115,20 +115,26 @@ fn empty_scene() -> Scene3d {
 }
 
 impl NativeLayer {
-    /// Create a surface on `window` from the process-wide GPU context.
+    /// Create a surface on any raw window/display handle target from the process-wide GPU context.
     ///
     /// On Windows with DX12 the surface is a DirectComposition visual under
-    /// the webview (per-pixel alpha); elsewhere it is the window itself.
+    /// the target (per-pixel alpha); elsewhere it is the window itself.
     ///
     /// # Errors
     /// A description of the GPU, handle or surface failure.
-    pub fn attach<R: tauri::Runtime>(window: &tauri::Window<R>) -> Result<Self, String> {
+    pub fn attach_target<T>(target: T, width: u32, height: u32) -> Result<Self, String>
+    where
+        T: raw_window_handle::HasWindowHandle
+            + raw_window_handle::HasDisplayHandle
+            + Send
+            + Sync
+            + 'static,
+    {
         let context = shared_context().map_err(|e| e.to_string())?;
-        let size = window.inner_size().map_err(|e| e.to_string())?;
         #[cfg(windows)]
-        let (surface, composition) = Self::windows_surface(&context, window)?;
+        let (surface, composition) = Self::windows_surface(&context, target)?;
         #[cfg(not(windows))]
-        let surface = context.instance.create_surface(window.clone()).map_err(|e| e.to_string())?;
+        let surface = context.instance.create_surface(target).map_err(|e| e.to_string())?;
         let caps = surface.get_capabilities(&context.adapter);
         let format = caps
             .formats
@@ -148,8 +154,9 @@ impl NativeLayer {
         let config = wgpu::SurfaceConfiguration {
             usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
             format,
-            width: size.width.max(1),
-            height: size.height.max(1),
+            color_space: wgpu::SurfaceColorSpace::Auto,
+            width: width.max(1),
+            height: height.max(1),
             present_mode: wgpu::PresentMode::AutoVsync,
             desired_maximum_frame_latency: 2,
             alpha_mode,
@@ -175,15 +182,36 @@ impl NativeLayer {
         })
     }
 
+    /// Create a surface on `window` from the process-wide GPU context.
+    ///
+    /// Delegates to [`Self::attach_target`] with `window.clone()` and the window's physical inner size.
+    ///
+    /// On Windows with DX12 the surface is a DirectComposition visual under
+    /// the webview (per-pixel alpha); elsewhere it is the window itself.
+    ///
+    /// # Errors
+    /// A description of the GPU, handle or surface failure.
+    pub fn attach<R: tauri::Runtime>(window: &tauri::Window<R>) -> Result<Self, String> {
+        let size = window.inner_size().map_err(|e| e.to_string())?;
+        Self::attach_target(window.clone(), size.width, size.height)
+    }
+
     #[cfg(windows)]
-    fn windows_surface<R: tauri::Runtime>(
+    fn windows_surface<T>(
         context: &GpuContext,
-        window: &tauri::Window<R>,
-    ) -> Result<(wgpu::Surface<'static>, Option<crate::dcomp::Composition>), String> {
-        use aphrody_render::wgpu::rwh::{HasWindowHandle, RawWindowHandle};
+        target: T,
+    ) -> Result<(wgpu::Surface<'static>, Option<crate::dcomp::Composition>), String>
+    where
+        T: raw_window_handle::HasWindowHandle
+            + raw_window_handle::HasDisplayHandle
+            + Send
+            + Sync
+            + 'static,
+    {
+        use raw_window_handle::{HasWindowHandle, RawWindowHandle};
 
         if context.report.backend == "Dx12" {
-            let handle = window.window_handle().map_err(|e| e.to_string())?;
+            let handle = target.window_handle().map_err(|e| e.to_string())?;
             if let RawWindowHandle::Win32(win32) = handle.as_raw() {
                 let composition = crate::dcomp::Composition::new(win32.hwnd.get())
                     .map_err(|e| format!("DirectComposition: {e}"))?;
@@ -199,7 +227,7 @@ impl NativeLayer {
                 return Ok((surface, Some(composition)));
             }
         }
-        let surface = context.instance.create_surface(window.clone()).map_err(|e| e.to_string())?;
+        let surface = context.instance.create_surface(target).map_err(|e| e.to_string())?;
         Ok((surface, None))
     }
 
@@ -242,12 +270,24 @@ impl NativeLayer {
         }
         let prepared = self.renderer.prepare(&self.scene).map_err(|e| e.to_string())?;
         let frame = match self.surface.get_current_texture() {
-            Ok(frame) => frame,
-            Err(wgpu::SurfaceError::Outdated | wgpu::SurfaceError::Lost) => {
+            wgpu::CurrentSurfaceTexture::Success(frame)
+            | wgpu::CurrentSurfaceTexture::Suboptimal(frame) => frame,
+            wgpu::CurrentSurfaceTexture::Outdated | wgpu::CurrentSurfaceTexture::Lost => {
                 self.surface.configure(&self.context.device, &self.config);
-                self.surface.get_current_texture().map_err(|e| e.to_string())?
+                match self.surface.get_current_texture() {
+                    wgpu::CurrentSurfaceTexture::Success(frame)
+                    | wgpu::CurrentSurfaceTexture::Suboptimal(frame) => frame,
+                    // Still unavailable after reconfiguring: skip this frame, retry on the next.
+                    wgpu::CurrentSurfaceTexture::Timeout
+                    | wgpu::CurrentSurfaceTexture::Occluded => return Ok(()),
+                    other => return Err(format!("surface texture unavailable: {other:?}")),
+                }
             },
-            Err(error) => return Err(error.to_string()),
+            // Documented handling: skip the frame and try again later.
+            wgpu::CurrentSurfaceTexture::Timeout | wgpu::CurrentSurfaceTexture::Occluded => {
+                return Ok(());
+            },
+            other => return Err(format!("surface texture unavailable: {other:?}")),
         };
         let view = frame.texture.create_view(&wgpu::TextureViewDescriptor::default());
         self.renderer.render_to_view(
@@ -257,7 +297,7 @@ impl NativeLayer {
             (self.config.width, self.config.height),
             (x, y),
         );
-        frame.present();
+        self.context.queue.present(frame);
         #[cfg(windows)]
         if let Some(composition) = &self.composition {
             composition.commit();

@@ -89,6 +89,8 @@ export const CircularProgress: FunctionComponent<CircularProgressProps> = ({
     <div
       // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role -- M3 circular determinate indicator renders SVG track and arc; a native <progress> cannot render them.
       role="progressbar"
+      aria-label="Progress"
+      data-m3-component="CircularProgress"
       aria-valuemin={0}
       aria-valuemax={100}
       aria-valuenow={Math.min(100, Math.max(0, progress))}
@@ -99,6 +101,8 @@ export const CircularProgress: FunctionComponent<CircularProgressProps> = ({
       }}
     >
       <svg
+        aria-hidden="true"
+        focusable="false"
         width={svgSize}
         height={svgSize}
         viewBox={viewBox}

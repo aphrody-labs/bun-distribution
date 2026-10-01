@@ -14,8 +14,8 @@ desktop host; standalone Rust GUIs are evaluated for packaging under the
 | Owner | Role |
 | --- | --- |
 | `crates/aphrody-m3-tokens` | Canonical token contract: HCT, tonal palettes, 2021 dynamic schemes (exact port of `@material/material-color-utilities` 0.4.0), roles, typography, shape, state, elevation, motion, adaptive layout, Google Sans Flex/Code. `sheets` renders `tokens.css`, `tailwind.css`, `spaceui.css`, scheme CSS. |
-| `crates/aphrody-m3` | Facade over the tokens (layout, accessibility, icon policy, platform contract). |
-| `crates/aphrody-icons` | Material Symbols fonts (single font source) and SVG generation ([`M3-ICONS.md`](../../../architecture/ui/design/M3-ICONS.md)). |
+| `crates/ui/m3-tokens` (`facade` module) | Facade over the tokens (layout, accessibility, icon policy, platform contract); formerly the `aphrody-m3` crate. |
+| `crates/ui/bun/icons` (module `icons` of `aphrody-bun`) | Material Symbols fonts (single font source) and SVG generation ([`M3-ICONS.md`](../../../architecture/ui/design/M3-ICONS.md)). |
 | `@aphrody/bun` (`packages/bun` + `crates/aphrody-bun`) | FFI to the Rust crates: `m3Css`, HCT maths, Sass compile, icons, render, reproduce. |
 | `@aphrody/m3` | Dev server, build, plugin, `M3App`, `m3` CLI. |
 | `@aphrody/m3-theme` | Generated sheets, `M3ThemeProvider`, Tauri bridge. |
@@ -39,7 +39,7 @@ Two lineages share only tokens and theme: Lit (`material-web` -> `m3-react`) and
   hosts follow the [delivery plan](./M3-MULTI-HOST-PLAN.md); no mobile adapter is shipped yet.
 - **D4** Lockstep `aphrody.m3Version` for the published M3 family, enforced by
   `bun run bun:check` (rule `m3`).
-- **D5** Fonts and icons ship from crates (`aphrody-icons`, `aphrody-m3-tokens`) and
+- **D5** Fonts and icons ship from crates (`aphrody-bun` icons module, `aphrody-m3-tokens`) and
   `packages/m3-fonts`; no copies under `assets/` or in other packages.
 - **D6** Upstream-derived application trees (`packages/aphrody-spaceui`, `drive`) remain
   provenance archives or runtime owners. Tauri and its plugins are external pinned Git
@@ -96,7 +96,7 @@ sheets, the `@aphrody/m3` framework), 3b-3d, 4a, 4b, 4c, 4d, 4e, 5a, 5b and 5c a
 ```sh
 bun install --frozen-lockfile && bun run bun:check
 bun run typecheck && bun run test && bun run build
-cargo test -p aphrody-m3-tokens -p aphrody-m3
+cargo test -p aphrody-m3-tokens
 cargo clippy --workspace --all-targets -- -D warnings
 (cd ../aphrody-ai && cargo check --workspace)
 ```

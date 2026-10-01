@@ -10,7 +10,7 @@ use anyhow::{Result, anyhow};
 use rookie_cookies::{FromPathRequest, from_path};
 use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct Cookie {
     pub host_key: String,
     pub name: String,
@@ -21,6 +21,23 @@ pub struct Cookie {
     pub is_httponly: bool,
     pub is_session: bool,
     pub samesite: i64,
+}
+
+/// `Debug` never prints the cookie value: logs and error chains must not carry credentials.
+impl std::fmt::Debug for Cookie {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Cookie")
+            .field("host_key", &self.host_key)
+            .field("name", &self.name)
+            .field("value", &"<redacted>")
+            .field("path", &self.path)
+            .field("expires_utc", &self.expires_utc)
+            .field("is_secure", &self.is_secure)
+            .field("is_httponly", &self.is_httponly)
+            .field("is_session", &self.is_session)
+            .field("samesite", &self.samesite)
+            .finish()
+    }
 }
 
 /// Sanitized profile metadata safe to expose through the kernel.
@@ -228,6 +245,24 @@ mod tests {
         assert_eq!(json["host_key"], ".example.com");
         assert_eq!(json["is_httponly"], true);
         assert_eq!(json["samesite"], 2);
+    }
+
+    #[test]
+    fn debug_output_redacts_the_cookie_value() {
+        let cookie = Cookie::from(rookie_cookies::enums::Cookie {
+            domain: ".example.com".into(),
+            path: "/".into(),
+            secure: true,
+            expires: None,
+            name: "session".into(),
+            value: "hunter2-secret-value".into(),
+            http_only: true,
+            same_site: 0,
+        });
+        let debug = format!("{cookie:?} {:#?}", vec![cookie.clone()]);
+        assert!(!debug.contains("hunter2-secret-value"));
+        assert!(debug.contains("<redacted>"));
+        assert!(debug.contains("session"));
     }
 
     #[test]

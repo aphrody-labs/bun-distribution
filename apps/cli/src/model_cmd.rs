@@ -57,10 +57,10 @@ impl OutputOpts {
         if self.json {
             return Ok(Format::Json);
         }
-        if let Some(path) = &self.out {
-            if let Some(inferred) = Format::from_extension(&path.to_string_lossy()) {
-                return Ok(inferred);
-            }
+        if let Some(path) = &self.out
+            && let Some(inferred) = Format::from_extension(&path.to_string_lossy())
+        {
+            return Ok(inferred);
         }
         Ok(Format::Text)
     }
@@ -103,11 +103,11 @@ impl OutputOpts {
 
 /// Write a report to disk, creating parent directories as needed.
 fn write_out(path: &Path, body: &str) -> miette::Result<()> {
-    if let Some(parent) = path.parent() {
-        if !parent.as_os_str().is_empty() {
-            std::fs::create_dir_all(parent)
-                .map_err(|e| miette::miette!("create {}: {e}", parent.display()))?;
-        }
+    if let Some(parent) = path.parent()
+        && !parent.as_os_str().is_empty()
+    {
+        std::fs::create_dir_all(parent)
+            .map_err(|e| miette::miette!("create {}: {e}", parent.display()))?;
     }
     std::fs::write(path, body).map_err(|e| miette::miette!("write {}: {e}", path.display()))?;
     eprintln!("wrote {} ({} bytes)", path.display(), body.len());

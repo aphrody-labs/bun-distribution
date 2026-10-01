@@ -68,6 +68,7 @@ const Banner = forwardRef<HTMLDivElement, BannerProps>(
         ref={ref}
         role="alert"
         className={clsx(bannerVariants({ variant }), className)}
+        data-m3-component="Banner"
         {...props}
       >
         {showDot && <span className={clsx(dotVariants({ variant }))} />}

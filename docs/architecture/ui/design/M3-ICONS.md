@@ -2,23 +2,25 @@
 # M3 icons: Material Symbols as SVG
 
 UI icons are inline SVG generated from the Material Symbols variable fonts; no icon font is
-loaded at runtime. The fonts in `crates/aphrody-icons/material-symbols/*.woff2`
+loaded at runtime. The fonts in `crates/ui/bun/icons/material-symbols/*.woff2`
 (`material-symbols` 0.44.8) are the only outline source.
 
 ```
-crates/aphrody-icons (svg feature)  WOFF2 decode -> variable instance -> outline -> SVG path
-crates/aphrody-bun                  bun_rs_icon_svg, bun_rs_icon_names (native FFI)
+crates/ui/bun, module `icons`        WOFF2 decode -> variable instance -> outline -> SVG path
+(formerly crate aphrody-icons)
+crates/ui/bun, `icons_ffi`           bun_rs_icon_svg, bun_rs_icon_names (native FFI)
 packages/bun                        m3Icon(options), m3IconNames(style)
 packages/ui/m3-icons                   <M3Icon>, <m3-icon>, generateIcons, m3IconPlugin
 ```
 
-## Rust (`aphrody-icons`, feature `svg`)
+## Rust (`bun_rs::icons` (package `aphrody-bun`), formerly the `aphrody-icons` crate and its `svg` feature)
 
-- Default features stay `no_std` and embed-only; `svg` adds `std`, `skrifa`/`read-fonts` and a
-  vendored `woff2` fork (`crates/aphrody-icons/vendor/woff2`, rationale in its `UPSTREAM.md`).
+- The module is `std` (the former `no_std` embed-only build and the `svg` feature are gone: its only
+  consumer, `aphrody-bun`, always enabled `svg`); it depends on `skrifa`/`read-fonts` and
+  `woff2` (`woff2-patched`, workspace dependency).
 - Names resolve through the font's own `GSUB` ligatures (feature `rlig`, reached through
   `LookupType 7` extension subtables), never through the published `.codepoints` tables, which
-  drift between font releases. The vendored `metadata/codepoints/*.txt` only list which names
+  drift between font releases. The vendored `crates/ui/bun/icons/metadata/codepoints/*.txt` only list which names
   exist.
 - Coordinates follow Google's exports: `viewBox="0 -960 960 960"`, `x * 960/upem`,
   `y * -960/upem`; `size` never changes the viewBox.

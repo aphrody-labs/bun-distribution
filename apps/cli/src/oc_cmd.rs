@@ -79,16 +79,16 @@ fn pairing_store_path() -> miette::Result<PathBuf> {
 fn is_unsafe_removal_target(target: &Path) -> bool {
     let resolved = target;
     // Refuse FS root (e.g. `/`, `C:\`).
-    if let Some(root) = resolved.ancestors().last() {
-        if resolved == root {
-            return true;
-        }
+    if let Some(root) = resolved.ancestors().last()
+        && resolved == root
+    {
+        return true;
     }
     // Refuse the literal home directory.
-    if let Ok(home) = home_dir() {
-        if resolved == home.as_path() {
-            return true;
-        }
+    if let Ok(home) = home_dir()
+        && resolved == home.as_path()
+    {
+        return true;
     }
     false
 }
@@ -434,7 +434,7 @@ impl TerminalCommand for PairingCommand {
                 let filtered: Vec<&PairingRequest> = store
                     .pending
                     .iter()
-                    .filter(|r| channel.as_deref().map_or(true, |c| r.channel == c))
+                    .filter(|r| channel.as_deref().is_none_or(|c| r.channel == c))
                     .collect();
                 if *json {
                     let body = serde_json::to_string_pretty(&filtered).into_diagnostic()?;
@@ -598,7 +598,8 @@ fn unix_to_ymd_hms(secs: u64) -> (u64, u64, u64, u64, u64, u64) {
 
 #[cfg(test)]
 mod tests {
-    use std::sync::{Mutex, Once};
+    use std::sync::Once;
+    use tokio::sync::Mutex;
 
     use super::*;
 
@@ -607,13 +608,10 @@ mod tests {
     // panics out of guarded sections, but we still recover from a poisoned
     // mutex (the test runner may panic on assertion failures in other
     // serialized tests; the lock state itself is irrelevant after that).
-    static ENV_LOCK: Mutex<()> = Mutex::new(());
+    static ENV_LOCK: Mutex<()> = Mutex::const_new(());
 
-    fn lock_env() -> std::sync::MutexGuard<'static, ()> {
-        match ENV_LOCK.lock() {
-            Ok(g) => g,
-            Err(poisoned) => poisoned.into_inner(),
-        }
+    async fn lock_env() -> tokio::sync::MutexGuard<'static, ()> {
+        ENV_LOCK.lock().await
     }
 
     // `GoogleContext::new()` constructs a reqwest client; reqwest panics
@@ -641,7 +639,7 @@ mod tests {
 
     #[tokio::test]
     async fn onboard_creates_state_and_seed_config() {
-        let _guard = lock_env();
+        let _guard = lock_env().await;
         let _tmp = isolated_home("aphrody-onboard");
         let ctx = fresh_ctx();
 
@@ -663,7 +661,7 @@ mod tests {
 
     #[tokio::test]
     async fn onboard_non_interactive_without_accept_risk_errs() {
-        let _guard = lock_env();
+        let _guard = lock_env().await;
         let _tmp = isolated_home("aphrody-onboard-norisk");
         let ctx = fresh_ctx();
 
@@ -680,7 +678,7 @@ mod tests {
 
     #[tokio::test]
     async fn reset_config_scope_removes_only_config() {
-        let _guard = lock_env();
+        let _guard = lock_env().await;
         let _tmp = isolated_home("aphrody-reset");
         let ctx = fresh_ctx();
 
@@ -710,7 +708,7 @@ mod tests {
 
     #[tokio::test]
     async fn reset_full_scope_removes_state_and_workspace() {
-        let _guard = lock_env();
+        let _guard = lock_env().await;
         let _tmp = isolated_home("aphrody-reset-full");
         let ctx = fresh_ctx();
         OnboardCommand {
@@ -733,7 +731,7 @@ mod tests {
 
     #[tokio::test]
     async fn reset_dry_run_does_not_touch_disk() {
-        let _guard = lock_env();
+        let _guard = lock_env().await;
         let _tmp = isolated_home("aphrody-reset-dry");
         let ctx = fresh_ctx();
         OnboardCommand {
@@ -756,7 +754,7 @@ mod tests {
 
     #[tokio::test]
     async fn uninstall_state_scope_removes_state_dir() {
-        let _guard = lock_env();
+        let _guard = lock_env().await;
         let _tmp = isolated_home("aphrody-uninstall");
         let ctx = fresh_ctx();
         OnboardCommand {
@@ -788,7 +786,7 @@ mod tests {
 
     #[tokio::test]
     async fn uninstall_without_scope_errs() {
-        let _guard = lock_env();
+        let _guard = lock_env().await;
         let _tmp = isolated_home("aphrody-uninstall-noscope");
         let ctx = fresh_ctx();
         let err = UninstallCommand {
@@ -808,7 +806,7 @@ mod tests {
 
     #[tokio::test]
     async fn pairing_add_then_list_then_approve() {
-        let _guard = lock_env();
+        let _guard = lock_env().await;
         let _tmp = isolated_home("aphrody-pairing");
         let ctx = fresh_ctx();
 
@@ -855,7 +853,7 @@ mod tests {
 
     #[tokio::test]
     async fn pairing_approve_unknown_code_errs() {
-        let _guard = lock_env();
+        let _guard = lock_env().await;
         let _tmp = isolated_home("aphrody-pairing-bad");
         let ctx = fresh_ctx();
         let err = PairingCommand {
@@ -872,7 +870,7 @@ mod tests {
 
     #[tokio::test]
     async fn docs_url_only_prints_url_with_query() {
-        let _guard = lock_env();
+        let _guard = lock_env().await;
         let _tmp = isolated_home("aphrody-docs");
         let ctx = fresh_ctx();
         // Smoke — assert no panic, no browser launch (url_only=true).

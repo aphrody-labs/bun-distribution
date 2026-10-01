@@ -17,7 +17,7 @@ import {
  * `--md-icon-wght`, `--md-icon-grad`, `--md-icon-opsz`) so light-DOM icons and Material Web icons
  * theme together. The font is not bundled: register it once, e.g. with `ensureMaterialSymbols()`
  * from `@aphrody/material-web/icon/material-symbols.js`, or self-host the woff2 shipped by
- * `crates/ui/icons`.
+ * `crates/ui/bun/icons`.
  */
 export interface IconProps extends Omit<HTMLAttributes<HTMLSpanElement>, "children"> {
   /** Material Symbols name, snake_case (`search`, `chevron_right`, `more_horiz`). */
@@ -48,6 +48,7 @@ export const Icon = forwardRef<HTMLSpanElement, IconProps>(
         aria-label={label}
         aria-hidden={label ? undefined : true}
         translate="no"
+        data-m3-component="Icon"
         className={clsx("m3-icon", className)}
         style={{
           fontFamily: "var(--md-icon-font, 'Material Symbols Outlined')",

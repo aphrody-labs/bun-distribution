@@ -1,0 +1,117 @@
+{
+  "schema": "aphrody-web.crawlability-baseline/1",
+  "note": "Ratchet: thresholds equal the measured state when written by `bun scripts/audit/web-crawlability.ts --update-baseline`. A metric above its max, a missing landmark/hook/JSON-LD, or text coverage under the minimum fails the gate (exit 1). Tighten, never loosen, without review.",
+  "max": {
+    "imagesMissingAlt": 0,
+    "unnamedInteractive": 0,
+    "unlabeledFormControls": 0,
+    "duplicateIds": 0,
+    "brokenIdRefs": 0,
+    "clickOnlyLinks": 0,
+    "emptyCustomElements": 0,
+    "mediaWithoutAlt": 0,
+    "invalidJsonLd": 0,
+    "headingSkips": 0,
+    "emptyHeadings": 0,
+    "pagesWithoutSingleH1": 0,
+    "pagesWithoutSingleMain": 0,
+    "unnamedNavigations": 0,
+    "pagesWithoutLang": 0,
+    "pagesWithoutTitle": 0,
+    "pagesWithoutDescription": 0,
+    "pagesWithoutCanonical": 0,
+    "unreachablePages": 0,
+    "metadataMismatches": 0
+  },
+  "min": {
+    "pages": 8,
+    "crawledPages": 8,
+    "textCoverage": 0.24
+  },
+  "kinds": {
+    "landing": {
+      "landmarks": [
+        "banner",
+        "navigation",
+        "main",
+        "contentinfo",
+        "region"
+      ],
+      "minTestIds": 1,
+      "minComponents": 45,
+      "jsonLd": true,
+      "minInternalLinks": 19,
+      "minVisibleWords": 200
+    },
+    "primitives": {
+      "landmarks": [
+        "banner",
+        "navigation",
+        "main",
+        "contentinfo",
+        "region"
+      ],
+      "minTestIds": 1,
+      "minComponents": 48,
+      "jsonLd": true,
+      "minInternalLinks": 13,
+      "minVisibleWords": 164
+    },
+    "forms": {
+      "landmarks": [
+        "banner",
+        "navigation",
+        "main",
+        "contentinfo",
+        "form"
+      ],
+      "minTestIds": 7,
+      "minComponents": 25,
+      "jsonLd": true,
+      "minInternalLinks": 12,
+      "minVisibleWords": 100
+    },
+    "explorer": {
+      "landmarks": [
+        "banner",
+        "navigation",
+        "main",
+        "contentinfo",
+        "region"
+      ],
+      "minTestIds": 4,
+      "minComponents": 14,
+      "jsonLd": true,
+      "minInternalLinks": 12,
+      "minVisibleWords": 63
+    },
+    "reader": {
+      "landmarks": [
+        "banner",
+        "navigation",
+        "main",
+        "contentinfo",
+        "region"
+      ],
+      "minTestIds": 2,
+      "minComponents": 7,
+      "jsonLd": true,
+      "minInternalLinks": 12,
+      "minVisibleWords": 54
+    },
+    "data": {
+      "landmarks": [
+        "banner",
+        "navigation",
+        "main",
+        "contentinfo",
+        "region"
+      ],
+      "minTestIds": 1,
+      "minComponents": 9,
+      "jsonLd": true,
+      "minInternalLinks": 12,
+      "minVisibleWords": 103
+    }
+  }
+}

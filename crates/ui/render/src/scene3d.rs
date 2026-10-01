@@ -18,7 +18,7 @@
 
 use std::{collections::HashMap, sync::Arc};
 
-use aphrody_m3::color::{DynamicScheme, Variant};
+use aphrody_m3_tokens::facade::color::{DynamicScheme, Variant};
 use serde::{Deserialize, Serialize};
 
 use crate::{
@@ -972,7 +972,7 @@ pub fn frustum_planes(view_proj: &Mat4) -> [[f32; 4]; 6] {
 
 #[cfg(test)]
 mod tests {
-    use aphrody_m3::color::Role;
+    use aphrody_m3_tokens::facade::color::Role;
 
     use super::*;
 

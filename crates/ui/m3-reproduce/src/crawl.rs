@@ -122,7 +122,7 @@ pub fn extract_font_stacks(html: &str) -> Vec<String> {
             counts.push((stack, 1));
         }
     }
-    counts.sort_by(|a, b| b.1.cmp(&a.1));
+    counts.sort_by_key(|a| std::cmp::Reverse(a.1));
     counts.into_iter().map(|(s, _)| s).collect()
 }
 

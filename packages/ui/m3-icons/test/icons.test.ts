@@ -11,7 +11,7 @@ import "../src/lit.ts";
 import { generateIcons } from "../src/codegen.ts";
 import { m3IconPlugin } from "../src/plugin.ts";
 
-describe("m3Icon / m3IconNames (via @aphrody/bun -> aphrody-icons)", () => {
+describe("m3Icon / m3IconNames (via @aphrody/bun -> bun_rs::icons)", () => {
   test("renders a known icon as an SVG document", () => {
     const svg = m3Icon({ name: "home" });
     expect(svg).toStartWith("<svg");

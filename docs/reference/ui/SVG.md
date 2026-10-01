@@ -41,7 +41,7 @@ caller now uses `aphrody-svg`.
 | 2 | `aphrody-ui/crates/aphrody-icons/tests/svg_parity.rs` | own resvg rasterize + compare | Converged: `aphrody_svg::diff::diff_svg`; the 8 pixel-parity tests pass. |
 | 3 | `aphrody-ui/crates/aphrody-identity/src/pixel.rs` `rasteriser_svg` | resvg SVG → RGBA | Converged: delegates to `aphrody_svg::raster::render`; direct resvg/usvg/tiny-skia deps removed. |
 | 4 | `aphrody-ui/crates/aphrody-bun/src/icons.rs`, `packages/bun/src/icons.ts` | Material Symbols over FFI | Kept (thin, icon-specific); new sibling FFI `bun_rs_svg` for the generic operations. |
-| 5 | `aphrody-ui/packages/ui/m3-icons/src/{plugin,codegen}.ts` | Bun plugin/codegen over #1 | Kept: thin wrappers of `aphrody-icons`, no SVG logic. |
+| 5 | `aphrody-ui/packages/ui/m3-icons/src/{plugin,codegen}.ts` | Bun plugin/codegen over #1 | Kept: thin wrappers of the `icons` module of `aphrody-bun`, no SVG logic. |
 | 6 | `aphrody-ui/crates/aphrody-identity/src/pixel.rs` `vectoriser`, `assets.rs` `svg_depuis_png` | raster → SVG tracing | Kept in `aphrody-identity`: domain algorithm (mask tracing) that produces SVG, not SVG processing. |
 | 7 | `aphrody-ui/crates/aphrody-sprite-sheet/src/lib.rs` `vers_svg` | `<symbol>` over PNG atlas regions | Kept: raster atlases; vector sprites use `aphrody_svg::sprite`. |
 | 8 | `aphrody-ui/crates/aphrody-logo`, `aphrody-render/src/geometry.rs` (`parse_svg_path`) | logo `format!`, CPU path parser | Kept: generator of one asset; the CPU raster path parser feeds the no-resvg software renderer. |

@@ -9,7 +9,7 @@ export const M3_UI_CATALOG = Object.freeze({
   ai: "@aphrody/m3-ai",
   explorer: "@aphrody/m3-explorer",
   reader: "@aphrody/m3-reader",
-  icons: "crates/ui/icons/material-symbols",
+  icons: "crates/ui/bun/icons/material-symbols",
   native: "crates/ui/m3-tokens",
   shell: "crates/aphrody-app",
   showcase: "examples/m3-spaceui-showcase",

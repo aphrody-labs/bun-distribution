@@ -55,17 +55,18 @@ impl HttpPushSender {
         }
 
         if let Some(ref auth) = config.authentication
-            && let Some(ref creds) = auth.credentials {
-                match auth.scheme.to_lowercase().as_str() {
-                    "bearer" => {
-                        request = request.header("Authorization", format!("Bearer {creds}"));
-                    },
-                    "basic" => {
-                        request = request.header("Authorization", format!("Basic {creds}"));
-                    },
-                    _ => {},
-                }
+            && let Some(ref creds) = auth.credentials
+        {
+            match auth.scheme.to_lowercase().as_str() {
+                "bearer" => {
+                    request = request.header("Authorization", format!("Bearer {creds}"));
+                },
+                "basic" => {
+                    request = request.header("Authorization", format!("Basic {creds}"));
+                },
+                _ => {},
             }
+        }
 
         match request.send().await {
             Ok(resp) => {

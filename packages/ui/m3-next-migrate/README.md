@@ -12,7 +12,7 @@ Next.js 16 introduces React 19, Server Actions, Async Request APIs (`await param
 1. **AST & Import Codemod**:
    - Strips `"use client"` and adapts `"use server"` boundaries.
    - Rewrites `next/navigation` hooks (`useRouter`, `usePathname`, `useSearchParams`, `useParams`, `redirect`, `notFound`).
-   - Rewrites `next/link` with automatic desktop shell delegation (external links open in OS browser via `@tauri-apps/plugin-shell`, internal links route via client router).
+   - Rewrites `next/link` with automatic desktop shell delegation (external links open in OS browser via `@tauri-apps/plugin-opener`, internal links route via client router).
    - Rewrites `next/image` with responsive `<img>` and `fill` mode support.
    - Rewrites `next/font/google` and `next/font/local` to standard CSS variables and fonts.
    - Rewrites `next/dynamic` to `React.lazy` + `Suspense`.
@@ -78,6 +78,9 @@ const report = await migrateProject({
   scaffold: true,
 });
 ```
+
+The generated project is written by [`@aphrody/scaffold`](../scaffold) (the `app` template), the single scaffolder of the
+UI stack; `TAURI_3` is re-exported from there. See [`docs/guides/ui/SCAFFOLD.md`](../../../docs/guides/ui/SCAFFOLD.md).
 
 ---
 

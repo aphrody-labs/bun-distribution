@@ -12,6 +12,8 @@ import { M3_BASELINE_SEED, type M3ThemeMode } from "./constants";
 
 export type { ColorRoleMap, SchemeVariant };
 export * from "./constants";
+// Crawler-facing files: sitemap.xml, robots.txt, llms.txt and a script-safe JSON-LD serializer.
+export * from "./crawl";
 
 /**
  * The published M3 packages a Next app compiles from source. They ship modern ESM with

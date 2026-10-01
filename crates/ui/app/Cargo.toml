@@ -1,12 +1,12 @@
 # SPDX-License-Identifier: Apache-2.0
 #
-# aphrody-app: the Aphrody OS desktop (Tauri v2), GUI and window manager.
+# aphrody-app: the Aphrody OS desktop (Tauri 3), GUI and window manager.
 # The agent runs out of process (`aphrody app-server` over stdio JSON-RPC, see
 # src/broker.rs), so this crate has no dependency on the AI layer.
 
 [package]
 name = "aphrody-app"
-description = "Aphrody OS desktop (Tauri v2): the GUI and window manager; drives the aphrody agent over its app-server protocol."
+description = "Aphrody OS desktop (Tauri 3): the GUI and window manager; drives the aphrody agent over its app-server protocol."
 version = "1.0.0-canary"
 edition.workspace = true
 rust-version.workspace = true
@@ -33,11 +33,10 @@ workspace = true
 custom-protocol = ["tauri/custom-protocol"]
 
 [build-dependencies]
-tauri-build = { git = "https://github.com/aphrody-code/tauri.git", rev = "89499afc6c19068746a850e7bee71f7e4ed36ecf", version = "2.6.3" }
+tauri-build = { workspace = true }
 
 [dependencies]
 reqwest = { workspace = true }
-aphrody-web = { workspace = true }
 aphrody-capture = { workspace = true }
 aphrody-compat = { workspace = true }
 aphrody-coreutils = { workspace = true }
@@ -52,7 +51,8 @@ aphrody-subsystem = { workspace = true }
 aphrody-systemd = { workspace = true }
 async-trait = { workspace = true }
 base64 = { workspace = true }
-tauri = { git = "https://github.com/aphrody-code/tauri.git", rev = "89499afc6c19068746a850e7bee71f7e4ed36ecf", version = "2.11.6", features = ["image-ico", "tray-icon"] }
+tauri = { workspace = true, features = ["dynamic-acl", "image-ico", "tray-icon"] }
+tauri-runtime-wry = { workspace = true }
 tokio = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
@@ -60,18 +60,18 @@ log = { workspace = true }
 mimalloc = { workspace = true }
 url = { workspace = true }
 
-tauri-plugin-os = { git = "https://github.com/aphrody-code/plugins-workspace.git", rev = "5baf71a47292d8490f0ba3d53f15224e55c48327", version = "2.3.2" }
-tauri-plugin-dialog = { git = "https://github.com/aphrody-code/plugins-workspace.git", rev = "5baf71a47292d8490f0ba3d53f15224e55c48327", version = "2.7.3" }
-tauri-plugin-clipboard-manager = { git = "https://github.com/aphrody-code/plugins-workspace.git", rev = "5baf71a47292d8490f0ba3d53f15224e55c48327", version = "2.3.3" }
-tauri-plugin-notification = { git = "https://github.com/aphrody-code/plugins-workspace.git", rev = "5baf71a47292d8490f0ba3d53f15224e55c48327", version = "2.4.0" }
-tauri-plugin-process = { git = "https://github.com/aphrody-code/plugins-workspace.git", rev = "5baf71a47292d8490f0ba3d53f15224e55c48327", version = "2.3.1" }
-tauri-plugin-log = { git = "https://github.com/aphrody-code/plugins-workspace.git", rev = "5baf71a47292d8490f0ba3d53f15224e55c48327", version = "2.9.2" }
-tauri-plugin-window-state = { git = "https://github.com/aphrody-code/plugins-workspace.git", rev = "5baf71a47292d8490f0ba3d53f15224e55c48327", version = "2.4.1" }
-tauri-plugin-single-instance = { git = "https://github.com/aphrody-code/plugins-workspace.git", rev = "5baf71a47292d8490f0ba3d53f15224e55c48327", version = "2.4.5", features = ["deep-link"] }
-tauri-plugin-store = { git = "https://github.com/aphrody-code/plugins-workspace.git", rev = "5baf71a47292d8490f0ba3d53f15224e55c48327", version = "2.4.5" }
-tauri-plugin-updater = { git = "https://github.com/aphrody-code/plugins-workspace.git", rev = "5baf71a47292d8490f0ba3d53f15224e55c48327", version = "2.12.0" }
-tauri-plugin-global-shortcut = { git = "https://github.com/aphrody-code/plugins-workspace.git", rev = "5baf71a47292d8490f0ba3d53f15224e55c48327", version = "2.3.2" }
-tauri-plugin-autostart = { git = "https://github.com/aphrody-code/plugins-workspace.git", rev = "5baf71a47292d8490f0ba3d53f15224e55c48327", version = "2.5.1" }
-tauri-plugin-deep-link = { git = "https://github.com/aphrody-code/plugins-workspace.git", rev = "5baf71a47292d8490f0ba3d53f15224e55c48327", version = "2.4.10" }
-tauri-plugin-fs = { git = "https://github.com/aphrody-code/plugins-workspace.git", rev = "5baf71a47292d8490f0ba3d53f15224e55c48327", version = "2.5.2" }
-tauri-plugin-opener = { git = "https://github.com/aphrody-code/plugins-workspace.git", rev = "5baf71a47292d8490f0ba3d53f15224e55c48327", version = "2.5.5" }
+tauri-plugin-os = { workspace = true }
+tauri-plugin-dialog = { workspace = true }
+tauri-plugin-clipboard-manager = { workspace = true }
+tauri-plugin-notification = { workspace = true }
+tauri-plugin-process = { workspace = true }
+tauri-plugin-log = { workspace = true }
+tauri-plugin-window-state = { workspace = true }
+tauri-plugin-single-instance = { workspace = true, features = ["deep-link"] }
+tauri-plugin-store = { workspace = true }
+tauri-plugin-updater = { workspace = true }
+tauri-plugin-global-shortcut = { workspace = true }
+tauri-plugin-autostart = { workspace = true }
+tauri-plugin-deep-link = { workspace = true }
+tauri-plugin-fs = { workspace = true }
+tauri-plugin-opener = { workspace = true }

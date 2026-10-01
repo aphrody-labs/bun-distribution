@@ -1,0 +1,36 @@
+# EditorConfig is awesome: https://EditorConfig.org
+# Based on Silvermine standards
+
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 3
+
+[*.{js,ts,jsx,tsx,cjs,mjs}]
+indent_size = 3
+
+[*.md]
+trim_trailing_whitespace = false
+indent_size = 3
+
+[Makefile]
+indent_style = tab
+
+[*.{css,scss,sass}]
+indent_size = 3
+max_line_length = off
+
+# Rust files
+[*.rs]
+indent_style = space
+indent_size = 4
+
+# TOML files
+[*.toml]
+indent_style = space
+indent_size = 3

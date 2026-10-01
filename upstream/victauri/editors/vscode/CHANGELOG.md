@@ -1,0 +1,187 @@
+# Changelog
+
+All notable changes to the Victauri VS Code extension will be documented in this file.
+
+## 0.9.0
+
+Version-synced with the Victauri 0.9.0 release. Extension changes:
+
+- **Discovery also scans the plugin's home-directory fallback root on Unix.** When another
+  local user has pre-created the predictable `/tmp/victauri-<uid>`, the plugin now registers
+  under `$XDG_STATE_HOME/victauri` (default `~/.local/state/victauri`); the extension scans it
+  after `<temp>/victauri-<uid>`, before the legacy root, with the same ownership checks.
+- **A discovery entry planted by another Windows user is no longer trusted.** Discovery
+  trusted every directory under `%TEMP%\victauri` on Windows. When `TEMP` is shared (an app
+  launched from MSYS2 uses `C:\msys64\tmp`), another user could plant
+  `victauri\<live pid>\{port,token}` pointing at a port they control and receive the
+  extension's requests. A discovery directory outside your user profile is now used only if
+  you own it (or `BUILTIN\Administrators` does and you are a member — the plugin's own rule),
+  checked with one batched, cached `Get-Acl` call (10 s timeout; it fails closed). The default
+  `%LOCALAPPDATA%\Temp`, inside your profile, needs no check: Windows gives no other
+  non-admin user access to a profile.
+- **The auth token stops following a port its app no longer owns.** The extension resolved the
+  port and token once and then sent the token to that port every poll, forever — after the
+  app exited, any local process that bound the port received it. Before each token-bearing
+  request the extension now re-reads discovery and requires a live, trusted entry that still
+  maps that port to that token and app; if the app restarted on another port it follows it by
+  identity and checks `/info`'s `app_identifier` before anything else carries the new token,
+  and if nothing vouches for the port the token is not sent. The poller also no longer
+  overlaps itself when a refresh outlasts the poll interval.
+
+- **"Generate Test for Element" can no longer be used for code injection.** The DOM node's
+  accessible name (and ref id) — page-controlled text — was interpolated into the generated
+  Rust unescaped, so a page could break out of `Locator::text("…")` and add Rust that runs on
+  `cargo test`. Every interpolated value is now escaped exactly like the Rust recorder's
+  `escape_rust_str` (backslash, quote, control and bidi characters as `\u{…}`); a test proves
+  `rustc` reads each literal back as the original text. The command CodeLens generator uses
+  the same escaping.
+- **A configured `victauri.authToken` is never sent to whoever holds the default port.** With
+  a token set but `victauri.port` left at its default, the token went to `127.0.0.1:7373` — on
+  a shared machine, a squatter there received it. The token is now sent only to an explicitly
+  configured port, or to the running app whose own discovery token equals it; otherwise
+  connect fails with a message telling you to set `victauri.port`.
+- **Several running apps are named instead of silently skipped.** Auto-discovery with more
+  than one live app used to fall back to the default port with no token; it now lists each
+  app (`identifier (port N, pid P)`) and asks you to set `victauri.port`.
+- **An app whose process can't be verified is reported.** On Windows an `EPERM` from the
+  liveness probe (typically an app running elevated while VS Code is not) now produces a
+  warning explaining why nothing was found, instead of silence. Its token is still never used.
+- **A rate-limited server is not "disconnected".** `/health` and the auth probe treat
+  `429 Too Many Requests` as alive, so a local request flood can't make the extension drop a
+  live connection.
+- Unit tests (`npm test`) cover code generation, discovery/connection resolution and the
+  health check, runnable under plain Node.
+
+Earlier 0.9.0 changes:
+
+- **DOM Explorer now shows the tree.** It read a `body` key that `dom_snapshot` never
+  returns (the tool returns `{ tree, stale_refs, format }`), so the view was always empty.
+  It now reads `tree` from the `format: "json"` snapshot.
+- **Window state targets the right window.** `window get_state` was sent `webview_label`,
+  which the `window` tool ignores (its field is `label`), so every entry showed the default
+  window's state.
+- **Connect verifies the auth token.** `/health` is unauthenticated, so a wrong or missing
+  token used to "connect" and then fail every refresh silently. Connect now also probes the
+  auth-gated `/info` and reports a 401 clearly.
+- **Disconnection is detected.** Per-view refresh errors were swallowed, so a dead or
+  restarted app never flipped the status to disconnected. Each poll now runs an
+  authenticated liveness probe first.
+- **Auto-discovery ignores stale discovery dirs** whose app process has exited, and rejects
+  malformed port files.
+- **Auto-discovery finds Victauri 0.9 apps on Unix** in their per-user discovery root
+  (`$XDG_RUNTIME_DIR/victauri` or `<temp>/victauri-<uid>`), still reading the legacy
+  `<temp>/victauri` for older apps.
+- **A discovery entry whose PID now belongs to another user's process is not live.** An
+  `EPERM` from the liveness probe counted as alive, so a recycled PID could make a stale
+  entry (and its token) look current.
+- REST tool errors now report the real HTTP status (e.g. 401/500) instead of a JSON parse
+  error on non-JSON bodies.
+
+## 0.8.5 (2026-06-20)
+
+- Version-synced with the Victauri 0.8.5 release (pre-publish adversarial audit hardening
+  and release metadata fixes). No extension runtime code changes; the extension talks to
+  the embedded server, which carries the fixes.
+
+## 0.8.4 (2026-06-20)
+
+- Version-synced with the Victauri 0.8.4 release (CLI↔plugin version-skew compatibility + in-the-wild
+  DX fixes). The stateless MCP transport now backfills a constant `Mcp-Session-Id: stateless` so
+  old/strict clients no longer abort the handshake with "no mcp-session-id header"; `victauri check`
+  and `doctor` warn on CLI↔plugin version skew; connection-failure diagnostics distinguish auth (401)
+  from version skew; and "bridge not responding" errors now name the page-not-loaded case. No extension
+  code changes — the extension talks to the embedded server, which carries the fixes.
+
+## 0.8.3 (2026-06-16)
+
+- Version-synced with the Victauri 0.8.3 release (server-side DX/safety fixes, GPT-5.5
+  audit-hardened): `screenshot` of a non-visible window now returns a clear error instead of
+  silently capturing the wrong window's pixels (both the explicit-label and the omitted-label
+  cases), and `query_db` accepts `sql` as an alias for the `query` field. The 0.8.1/0.8.2
+  host-crash fixes are also in this line. No extension code changes — the extension talks to the
+  embedded server, which carries the fixes.
+
+## 0.8.0 (2026-06-14)
+
+- Version-synced with the Victauri 0.8.0 release. Ships the security hardening from
+  the 0.7.10 red-team audit that never reached a published `.vsix` (the marketplace was
+  last updated at 0.7.9):
+  - **No token leak to auto-discovered services.** A configured `authToken` is now
+    treated as an explicit credential for the configured port only — it is no longer
+    sent to a different auto-discovered localhost service.
+  - **Discovery-tree trust check.** The discovery root is verified as trusted before any
+    child entry is read, so a hostile root owner can't swap in a previously-checked dir.
+  - Dependency security bumps (pinned `@vscode/vsce`/`ovsx`, refreshed lockfile).
+- No new extension features; the Victauri 0.8.0 release itself is a Rust public-API
+  cleanup (tool behaviour/output unchanged).
+
+## 0.7.8 (2026-06-06)
+
+- Version-synced with the Victauri 0.7.8 release. Crates-only build-correctness patch:
+  `victauri-plugin` now compiles with `default-features = false` and in the release
+  profile under `-Dwarnings`. No extension code changes.
+
+## 0.7.7 (2026-06-05)
+
+- Version-synced with the Victauri 0.7.7 release. Crates-only patch: `victauri test`'s
+  smoke suite no longer fails on headless CI (the screenshot check tolerates the absence
+  of a native window handle). No extension code changes.
+
+## 0.7.6 (2026-06-05)
+
+- Version-synced with the Victauri 0.7.6 release: async-completion awareness
+  (`wait_for` gains `expression`/`event` conditions to await fire-and-forget backend
+  work without sleeps), the `app_state` tool + `VictauriBuilder::probe` for first-class
+  in-process backend-state probes, and actionable connection diagnostics. Plus a
+  GPT-5.5 red-team pass (MCP `result.isError` now honored by the SDK, read-only
+  `Observe` privacy profile tightened, tool-invocation double-count fixed). **35 tools.**
+
+## 0.7.5 (2026-06-02)
+
+- Version-synced with the Victauri 0.7.5 release (two cross-model red-team passes:
+  intent-resolution exact-match ranking fix, `assert_semantic`/`recording.checkpoint`
+  UX footgun fixes, bridge-version self-check, ghost-command report split, directory
+  traversal guard, and a Chrome-test dependency CVE bump).
+
+## 0.7.3 (2026-06-01)
+
+- Version-synced with the Victauri 0.7.3 release (security-audit hardening: npm RCE
+  pin, browser-bridge nonce fix, debugger/CDP permission dropped, command-filter
+  enforcement, core DoS bounds, and MCP client 422 stale-session auto-recovery).
+
+## 0.7.2 (2026-05-31)
+
+- Version-synced with the Victauri workspace 0.7.2 release (animation-debugging suite, per-window introspectability diagnostic, loud-fail on blank window capture).
+- Connects to the embedded Victauri MCP/REST server exposing all 34 tools.
+
+## 0.2.0 (2026-05-14)
+
+- New logo — minimalist glowing V with electric blue glow on dark background
+- Updated gallery banner color to match new branding
+- Cleaned up VSIX packaging (117 KB, no unused assets)
+
+## 0.1.1 (2026-05-14)
+
+- Improved marketplace listing with badges, compatibility table, and better documentation
+- Added keywords for discoverability
+- Added Quick Start guide
+
+## 0.1.0 (2026-05-14)
+
+Initial release.
+
+### Features
+
+- **Activity Bar** — three tree views: App State, DOM Explorer, IPC Log
+- **Live Polling** — windows, memory, DOM, IPC traffic, performance metrics, diagnostics
+- **Screenshot Panel** — inline webview with refresh and save-to-disk
+- **CodeLens** — "Generate Victauri test" on every `#[tauri::command]` in Rust files
+- **DOM Interactions** — right-click to click, highlight, inspect styles, copy ref IDs, generate tests
+- **Accessibility Audit** — comprehensive WCAG checks with violation reporting
+- **Performance Metrics** — navigation timing, JS heap, DOM stats, long tasks, resources
+- **Diagnostics** — CSP, bridge method, shadow DOM, service worker compatibility checks
+- **Evaluate JS** — run JavaScript in the Tauri webview via input box
+- **Status Bar** — connection state indicator with click-to-connect
+- **Auto-Connect** — detects `tauri.conf.json` in workspace and connects on activation
+- **Port Discovery** — reads `victauri.port` from temp directory for non-default ports
+- **Bearer Token Auth** — supports authenticated connections via settings

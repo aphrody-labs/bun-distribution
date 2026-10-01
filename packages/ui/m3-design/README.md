@@ -302,7 +302,8 @@ All modules are clean, type-safe ESM exports:
 - `src/hct.ts`: tonal-palette approximation for Material themes.
 - `src/prompts.ts`: directive mappings, the seed template, and visual catalogs.
 - `src/generator.ts`: the layout compiler.
-- `src/server.ts`: Bun-native HTTP server and CLI.
+- `src/handlers.ts`: side-effect-free HTTP handler and CLI runner.
+- `src/server.ts`: application entrypoint (starts the HTTP server or runs the CLI).
 
 ### Testing
 

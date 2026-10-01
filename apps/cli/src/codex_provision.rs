@@ -101,12 +101,12 @@ fn resolve_mcp_bin() -> Option<PathBuf> {
         }
     }
     let name = if cfg!(windows) { "aphrody-kernel.exe" } else { "aphrody-kernel" };
-    if let Ok(exe) = std::env::current_exe() {
-        if let Some(dir) = exe.parent() {
-            let p = dir.join(name);
-            if p.exists() {
-                return Some(p);
-            }
+    if let Ok(exe) = std::env::current_exe()
+        && let Some(dir) = exe.parent()
+    {
+        let p = dir.join(name);
+        if p.exists() {
+            return Some(p);
         }
     }
     which::which(name).ok()
@@ -288,10 +288,10 @@ pub(crate) fn provision(repo_root: Option<&Path>) -> CodexProvisioned {
         out.config = c;
     }
 
-    if let Some(body) = persona_body(repo_root) {
-        if let Ok(c) = ensure_persona(&dir, &body) {
-            out.persona = c;
-        }
+    if let Some(body) = persona_body(repo_root)
+        && let Ok(c) = ensure_persona(&dir, &body)
+    {
+        out.persona = c;
     }
 
     out

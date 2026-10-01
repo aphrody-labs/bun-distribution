@@ -8,7 +8,7 @@ Aphrody Web integration, data transfer, or deployment.
 
 ## Working-tree update (2026-09-28)
 
-Koharu's new headless [`koharu-library`](../../../products/koharu/crates/koharu-library/README.md)
+Koharu's new headless [`koharu-library`](../../../../crates/koharu/koharu-library/README.md)
 is consumed by the optional `aphrody-manga` feature in Aphrody AI; its focused
 Cargo check passed. The image, ZIP/CBZ, RAR, and PDF importer moved from the
 Tauri command module into [`koharu-library/src/import/`](../../../aphrody-koharu/crates/koharu-library/src/import/),

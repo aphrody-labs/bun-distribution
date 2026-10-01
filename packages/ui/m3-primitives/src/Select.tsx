@@ -157,7 +157,7 @@ export const Select = forwardRef(
     const size: SelectSize = props.size ?? "sm";
     const items = collectItems(props.children);
     return (
-      <div className={props.containerClassName} ref={ref}>
+      <div className={props.containerClassName} data-m3-component="Select" ref={ref}>
         <SelectSizeContext.Provider value={size}>
           <RS.Root
             value={props.value}

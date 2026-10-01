@@ -290,6 +290,24 @@
           "command": [
             "run",
             "--filter",
+            "@aphrody/assets",
+            "typecheck"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@aphrody/assets",
+            "test"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
             "@aphrody/canvas",
             "lint"
           ]
@@ -633,6 +651,15 @@
             "run",
             "--filter",
             "@aphrody/m3-reader",
+            "test"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@aphrody/m3-reader",
             "build"
           ]
         },
@@ -760,6 +787,42 @@
             "--filter",
             "@aphrody/material-web",
             "build"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@aphrody/scaffold",
+            "typecheck"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@aphrody/scaffold",
+            "test"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@aphrody/web-to-tauri",
+            "typecheck"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@aphrody/web-to-tauri",
+            "test"
           ]
         }
       ]
@@ -768,6 +831,15 @@
       "id": "bun-web",
       "parallel": false,
       "steps": [
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@aphrody/agent-browser",
+            "lint"
+          ]
+        },
         {
           "repo": "aphrody",
           "command": [
@@ -948,6 +1020,33 @@
             "run",
             "--filter",
             "@aphrody/messaging",
+            "build"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@aphrody/discord-kit",
+            "typecheck"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@aphrody/discord-kit",
+            "test"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@aphrody/discord-kit",
             "build"
           ]
         }

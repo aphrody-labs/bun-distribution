@@ -59,6 +59,8 @@ export function GridItem({
       onContextMenu={onContextMenu}
       aria-pressed={selected}
       title={displayName}
+      data-m3-component="GridItem"
+      data-testid={`grid-item-${displayName}`}
       className={clsx(
         "relative isolate flex cursor-default flex-col items-center gap-2 rounded-medium border-0 p-2",
         "transition-colors duration-200 ease-standard",

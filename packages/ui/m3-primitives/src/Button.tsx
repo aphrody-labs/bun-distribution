@@ -129,6 +129,7 @@ export const Button = forwardRef<
   );
   return isLink ? (
     <a
+      data-m3-component="Button"
       {...(rest as LinkButtonProps)}
       aria-busy={loading || undefined}
       aria-disabled={loading || undefined}
@@ -140,6 +141,7 @@ export const Button = forwardRef<
   ) : (
     <button
       type="button"
+      data-m3-component="Button"
       {...(rest as ButtonProps)}
       aria-busy={loading || undefined}
       ref={ref as any}

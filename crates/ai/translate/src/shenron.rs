@@ -60,7 +60,7 @@ pub struct TexteProtege {
 /// un mot composé (ex: "サイヤ" ne doit pas casser "サイヤ人").
 pub fn proteger_termes(texte: &str, lexique: &[TermeLexique]) -> TexteProtege {
     let mut lex_trie = lexique.to_vec();
-    lex_trie.sort_by(|a, b| b.ja.len().cmp(&a.ja.len()));
+    lex_trie.sort_by_key(|term| std::cmp::Reverse(term.ja.len()));
 
     let mut table = HashMap::new();
     let mut masque = texte.to_string();
@@ -89,7 +89,7 @@ pub fn proteger_termes(texte: &str, lexique: &[TermeLexique]) -> TexteProtege {
 pub fn restaurer_termes(traduction: &str, table: &HashMap<String, String>) -> String {
     let mut out = traduction.to_string();
     let mut jetons: Vec<_> = table.keys().collect();
-    jetons.sort_by(|a, b| b.len().cmp(&a.len()));
+    jetons.sort_by_key(|jeton| std::cmp::Reverse(jeton.len()));
 
     for jeton in jetons {
         if let Some(fr) = table.get(jeton) {

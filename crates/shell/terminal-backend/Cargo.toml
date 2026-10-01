@@ -26,6 +26,8 @@ thiserror           = { workspace = true }
 tracing             = { workspace = true }
 serde               = { workspace = true }
 serde_json          = { workspace = true }
+url                 = { workspace = true }
+getrandom           = { workspace = true }
 
 # PATH/PATHEXT lookup for the default shell, in-process instead of spawning `where.exe`.
 [target.'cfg(target_os = "windows")'.dependencies]

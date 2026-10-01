@@ -31,7 +31,7 @@ all-gpu = ["vulkan", "dx12", "metal", "webgpu", "webgl"]
 workspace = true
 
 [dependencies]
-aphrody-m3 = { workspace = true }
+aphrody-m3-tokens = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }
 png = { workspace = true }

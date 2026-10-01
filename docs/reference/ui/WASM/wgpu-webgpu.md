@@ -8,9 +8,9 @@ wasm-bindgen docs (Context7) instead of copying snippets.
 
 | Crate / tool | Pin | Rule |
 | --- | --- | --- |
-| `wgpu` | `26` (`default-features = false`) | Production line until the 26 -> 29 migration below lands in one change. |
-| `wasm-bindgen` | `=0.2.128` | Exact pin; `wasm-bindgen-cli` must be the same version (`cargo install wasm-bindgen-cli --version =0.2.128 --locked`). Same pin in `nie`. |
-| `web-sys` | `0.3` | WebGPU bindings need `--cfg=web_sys_unstable_apis`. |
+| `wgpu` | `30.0.1` (`default-features = false`) | Verified 2026-10-01 in root `Cargo.toml` `[workspace.dependencies]` (the earlier text of this page said `26`, with the 26 -> 29 migration below as the plan). One direct version, see [`rust-crate-gpu-window-ownership.md`](../../../architecture/rust-crate-gpu-window-ownership.md). |
+| `wasm-bindgen` | `0.2.128` | Root `Cargo.toml` declares a caret requirement `"0.2.128"` (the earlier text said exact `=0.2.128`; Verify whether the exact pin is still required). `wasm-bindgen-cli` must match the resolved version (`cargo install wasm-bindgen-cli --version =0.2.128 --locked`). |
+| `web-sys` | `0.3.105` | WebGPU bindings need `--cfg=web_sys_unstable_apis`. |
 | `wee_alloc` | banned | Archived and leaks memory; use the default allocator and `wasm-opt -Oz`. |
 
 ## Browser notes
@@ -20,7 +20,9 @@ wasm-bindgen docs (Context7) instead of copying snippets.
 - Drive rendering from `requestAnimationFrame`; the surface is not ready before the first paint.
 - Next.js with Turbopack does not bundle WASM; use `next dev --webpack` where WASM is needed.
 
-## Migration 26 -> 29 (breaking)
+## Migration 26 -> 29 (breaking, historical)
+
+Kept as written when the workspace was on 26. The workspace is now on `30.0.1`; the 29 -> 30 delta is not documented here (Verify against the wgpu changelog).
 
 1. `Surface::get_current_texture` returns the `CurrentSurfaceTexture` enum (`Success`, `Timeout`,
    `Occluded`, `Outdated`, `Suboptimal`, `Lost`, `Validation`) instead of a `Result`.

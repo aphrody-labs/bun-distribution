@@ -239,6 +239,10 @@ export function MangaReader({
 			ref={containerRef}
 			className="m3-reader m3-reader-container m3-reader-scroll flex h-[85vh] min-h-[460px] w-full min-w-0 max-w-full flex-col overflow-hidden rounded-xl bg-[var(--reader-surface)] [&:fullscreen]:h-screen [&:fullscreen]:min-h-screen [&:fullscreen]:rounded-none"
 			data-manga-reader
+			data-m3-component="MangaReader"
+			data-testid="manga-reader"
+			role="region"
+			aria-label={title}
 		>
 			{/* Barre de contrôles Toriyama HUD */}
 			<div className="m3-reader-hud z-10 flex flex-wrap items-center justify-between gap-2 px-3.5 py-2.5">

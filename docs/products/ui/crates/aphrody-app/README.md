@@ -80,6 +80,16 @@ Plugin rationale: `docs/tauri/plugins.md`. Integration design:
 `@aphrody/m3-primitives` surfaces. Material Symbols are copied from the one
 local canonical font during this build.
 
+`ui-dist/index.html`, `app.js`, `app.css` and the SVGs under `ui-dist/fonts/` are committed.
+The binary assets of `ui-dist/fonts/` (webfonts, file-kind icons, sounds) are not: `build.rs`
+copies them from their single canonical packages (`packages/ui/m3-fonts`,
+`crates/ui/bun/icons/material-symbols`, `packages/ui/assets`) into `ui-dist/fonts/` before
+`tauri::generate_context!()` embeds the directory, as listed in `ui-dist.manifest`. A clean
+clone therefore builds with no staging command; `cargo test -p aphrody-app --test
+ui_dist_assets` checks that every listed file is staged byte-for-byte and that every font
+`app.css` loads is present. The shipped configuration (`--features custom-protocol`) fails the
+build if a source is missing; a plain `cargo check` only warns.
+
 The desktop build helper prefers the OS-owned FSL workspace at
 `../aphrody-os/drive/Cargo.toml` (or `APHRODY_DRIVE_WORKSPACE`) and falls back to
 the retained UI Drive workspace for standalone checkouts. It stages the daemon

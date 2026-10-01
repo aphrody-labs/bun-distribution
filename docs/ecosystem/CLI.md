@@ -6,13 +6,13 @@ Exact subcommand trees of every shipped binary, read from its clap derive defini
 commands omitted; `cfg:` marks commands compiled only under a feature or target). Flags are not
 listed: run `<command> --help` for them. See [ECOSYSTEM.md](ECOSYSTEM.md) for the crates behind them.
 
-Totals: 66 binaries with a clap surface, 1227 commands.
+Totals: 66 binaries with a clap surface, 1237 commands.
 
 ## aphrody
 
 ### `a2a-duel-loop`
 
-Crate `aphrody-a2a-client`, parser `crates/contracts/a2a-client/src/bin/a2a_duel_loop.rs#Cli`, 0 commands.
+Crate `aphrody-a2a-client`, parser `crates/os/a2a-client/src/bin/a2a_duel_loop.rs#Cli`, 0 commands.
 
 _No subcommands (flags only)._
 
@@ -24,7 +24,7 @@ _No subcommands (flags only)._
 
 ### `aphrody`
 
-Crate `aphrody`, parser `apps/cli/src/lib.rs#Cli`, 301 commands.
+Crate `aphrody`, parser `apps/cli/src/lib.rs#Cli`, 305 commands.
 
 - `aphrody rag` — Index and retrieve local code and documentation. _(cfg: all(not(target_arch = "wasm32"), feature = "rag"))_
   - `aphrody rag index` — Index a directory incrementally, including vectors when configured.
@@ -119,7 +119,7 @@ Crate `aphrody`, parser `apps/cli/src/lib.rs#Cli`, 301 commands.
 - `aphrody a2a` — A2A coordination (serve, tick, invoke peers)
   - `aphrody a2a serve` — Start HTTP listener (`/ping`, `/msg`, JSON-RPC, agent card) on :8788.
   - `aphrody a2a tick` — Append one JSONL envelope (duel-tick / coord loop).
-  - `aphrody a2a invoke` — Invoke a native peer CLI (grok, agy, claude, bxc).
+  - `aphrody a2a invoke` — Invoke a native peer CLI (grok, agy, claude, codex, bxc).
   - `aphrody a2a send` — JSON-RPC `message/send` to a federation peer (HTTP `/a2a` or `.coord` fallback).
   - `aphrody a2a peers` — List resolved federation peers (env > aphrody-infra catalog > default).
 - `aphrody cros` — Compilation hyper-optimisée de ChromeOS
@@ -146,6 +146,10 @@ Crate `aphrody`, parser `apps/cli/src/lib.rs#Cli`, 301 commands.
   - `aphrody mcp get` — Show a configured server without exposing environment values.
   - `aphrody mcp list` — List configured MCP servers + (by default) probe `tools/list` for each.
   - `aphrody mcp call` — Invoke a single tool on a configured MCP server.
+- `aphrody discord` — Discord bot compilation, inspection, and monorepo verification. _(cfg: not(target_arch = "wasm32"))_
+  - `aphrody discord compile` — Compile one or all Discord bots into a native standalone binary via Bun + Oxc.
+  - `aphrody discord inspect` — Inspect a Discord bot configuration, TypeScript decorators, and Oxc AST syntax.
+  - `aphrody discord verify` — Run the comprehensive Discord monorepo verification gate (catalog, kit, messaging, bots, compile).
 - `aphrody git` — Native Git inspection, GitHub REST/GraphQL, and ecosystem distribution. _(cfg: not(target_arch = "wasm32"))_
   - `aphrody git inspect` — Inspect branch, HEAD, remotes and status with pure-Rust gix.
   - `aphrody git repo` — Fetch canonical GitHub repository metadata.
@@ -299,7 +303,7 @@ Crate `aphrody`, parser `apps/cli/src/lib.rs#Cli`, 301 commands.
   - `aphrody antigravity state-sync` — Decode a `state.vscdb` `antigravityUnifiedStateSync.*` blob.
   - `aphrody antigravity item-table` — Summarise a JSON dump of the `state.vscdb` `ItemTable`.
   - `aphrody antigravity cloud-code` — Generic Cloud Code `v1internal` RPC call.
-- `aphrody logo` — Export the canonical aphrody logo (`assets/aphrody.webp`). _(cfg: not(target_arch = "wasm32"))_
+- `aphrody logo` — Export the canonical aphrody logo (`crates/ui/identity/assets/logo/aphrody.webp`). _(cfg: not(target_arch = "wasm32"))_
 - `aphrody design` — Material 3 design-token tooling (color CSS export + UI fusion sheet). _(cfg: not(target_arch = "wasm32"))_
   - `aphrody design tokens` — Emit Material 3 color tokens as CSS custom properties.
 - `aphrody ide` — Antigravity IDE installation inspector — info, extensions, RE, state, and launch. _(cfg: not(target_arch = "wasm32"))_
@@ -344,7 +348,7 @@ Crate `aphrody-google`, parser `crates/ai/google/src/main.rs#Cli`, 9 commands.
 
 ### `aphrody-infra`
 
-Crate `aphrody-infra`, parser `crates/infra/infra/src/main.rs#Cli`, 361 commands.
+Crate `aphrody-infra`, parser `crates/infra/infra/src/main.rs#Cli`, 365 commands.
 
 - `aphrody-infra status` — Show target, repository and runtime state without mutation.
 - `aphrody-infra inventory` — Run the existing deep resource inventory through the canonical Bun adapter.
@@ -454,7 +458,7 @@ Crate `aphrody-infra`, parser `crates/infra/infra/src/main.rs#Cli`, 361 commands
   - `aphrody-infra ssh a2a` — A2A coordination (serve, tick, invoke peers)
     - `aphrody-infra ssh a2a serve` — Start HTTP listener (`/ping`, `/msg`, JSON-RPC, agent card) on :8788.
     - `aphrody-infra ssh a2a tick` — Append one JSONL envelope (duel-tick / coord loop).
-    - `aphrody-infra ssh a2a invoke` — Invoke a native peer CLI (grok, agy, claude, bxc).
+    - `aphrody-infra ssh a2a invoke` — Invoke a native peer CLI (grok, agy, claude, codex, bxc).
     - `aphrody-infra ssh a2a send` — JSON-RPC `message/send` to a federation peer (HTTP `/a2a` or `.coord` fallback).
     - `aphrody-infra ssh a2a peers` — List resolved federation peers (env > aphrody-infra catalog > default).
   - `aphrody-infra ssh cros` — Compilation hyper-optimisée de ChromeOS
@@ -481,6 +485,10 @@ Crate `aphrody-infra`, parser `crates/infra/infra/src/main.rs#Cli`, 361 commands
     - `aphrody-infra ssh mcp get` — Show a configured server without exposing environment values.
     - `aphrody-infra ssh mcp list` — List configured MCP servers + (by default) probe `tools/list` for each.
     - `aphrody-infra ssh mcp call` — Invoke a single tool on a configured MCP server.
+  - `aphrody-infra ssh discord` — Discord bot compilation, inspection, and monorepo verification. _(cfg: not(target_arch = "wasm32"))_
+    - `aphrody-infra ssh discord compile` — Compile one or all Discord bots into a native standalone binary via Bun + Oxc.
+    - `aphrody-infra ssh discord inspect` — Inspect a Discord bot configuration, TypeScript decorators, and Oxc AST syntax.
+    - `aphrody-infra ssh discord verify` — Run the comprehensive Discord monorepo verification gate (catalog, kit, messaging, bots, compile).
   - `aphrody-infra ssh git` — Native Git inspection, GitHub REST/GraphQL, and ecosystem distribution. _(cfg: not(target_arch = "wasm32"))_
     - `aphrody-infra ssh git inspect` — Inspect branch, HEAD, remotes and status with pure-Rust gix.
     - `aphrody-infra ssh git repo` — Fetch canonical GitHub repository metadata.
@@ -634,7 +642,7 @@ Crate `aphrody-infra`, parser `crates/infra/infra/src/main.rs#Cli`, 361 commands
     - `aphrody-infra ssh antigravity state-sync` — Decode a `state.vscdb` `antigravityUnifiedStateSync.*` blob.
     - `aphrody-infra ssh antigravity item-table` — Summarise a JSON dump of the `state.vscdb` `ItemTable`.
     - `aphrody-infra ssh antigravity cloud-code` — Generic Cloud Code `v1internal` RPC call.
-  - `aphrody-infra ssh logo` — Export the canonical aphrody logo (`assets/aphrody.webp`). _(cfg: not(target_arch = "wasm32"))_
+  - `aphrody-infra ssh logo` — Export the canonical aphrody logo (`crates/ui/identity/assets/logo/aphrody.webp`). _(cfg: not(target_arch = "wasm32"))_
   - `aphrody-infra ssh design` — Material 3 design-token tooling (color CSS export + UI fusion sheet). _(cfg: not(target_arch = "wasm32"))_
     - `aphrody-infra ssh design tokens` — Emit Material 3 color tokens as CSS custom properties.
   - `aphrody-infra ssh ide` — Antigravity IDE installation inspector — info, extensions, RE, state, and launch. _(cfg: not(target_arch = "wasm32"))_
@@ -801,20 +809,22 @@ _No subcommands (flags only)._
 
 ### `aphrody-web`
 
-Crate `aphrody-web-engine`, parser `crates/web/web-engine/src/main.rs#Args`, 4 commands.
+Crate `aphrody-web-engine`, parser `crates/web/web-engine/src/main.rs#Args`, 5 commands.
 
 - `aphrody-web launch` _(aliases: serve)_
 - `aphrody-web fetch`
 - `aphrody-web scrape`
+- `aphrody-web crawl` — Bounded, robots-aware crawl of one or more seeds with the static Obscura HTTP stack. Reports what a native crawler or an LLM agent can extract from the initial HTML.
 - `aphrody-web chrome-path`
 
 ### `aphrody-web-worker`
 
-Crate `aphrody-web-engine`, parser `crates/web/web-engine/src/main.rs#Args`, 4 commands.
+Crate `aphrody-web-engine`, parser `crates/web/web-engine/src/main.rs#Args`, 5 commands.
 
 - `aphrody-web-worker launch` _(aliases: serve)_
 - `aphrody-web-worker fetch`
 - `aphrody-web-worker scrape`
+- `aphrody-web-worker crawl` — Bounded, robots-aware crawl of one or more seeds with the static Obscura HTTP stack. Reports what a native crawler or an LLM agent can extract from the initial HTML.
 - `aphrody-web-worker chrome-path`
 
 ### `aphrody-yolo`
@@ -1610,6 +1620,7 @@ _No subcommands (flags only)._
 
 - `aphrody-agent-home-memory` (aphrody / `aphrody-memory`)
 - `aphrody-agent-train` (aphrody / `aphrody-train`)
+- `aphrody-app` (aphrody / `aphrody-app`)
 - `aphrody-backend` (aphrody / `aphrody-backend`)
 - `aphrody-canvas` (aphrody / `aphrody-render`)
 - `aphrody-embed` (aphrody / `aphrody-embed`)

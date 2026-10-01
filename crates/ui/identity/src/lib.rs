@@ -22,6 +22,9 @@ pub mod codex;
 /// Le design system du site : les couleurs de l'interface **dérivées** de la palette mesurée
 /// d'Aphrody, et la feuille `game-tokens.css` qu'elles produisent.
 pub mod design;
+/// L'icône canonique du personnage (`assets/logo/aphrody.webp`), embarquée une fois et dérivée en
+/// `.ico` Windows, `.svg` embarqué et PNG maskable M3 (ex-crate `aphrody-logo`).
+pub mod logo;
 /// Le contrat « pet » de Codex : manifeste, pistes minutées, états. Dérivé d'`openai/codex`
 /// (Apache-2.0) — voir `NOTICE`.
 pub mod pets;
@@ -433,7 +436,7 @@ impl Pet {
         let rgba = match info.color_type {
             png::ColorType::Rgba => buf[..info.buffer_size()].to_vec(),
             png::ColorType::Rgb => buf[..info.buffer_size()]
-                .chunks_exact(3)
+                .as_chunks::<3>().0.iter()
                 .flat_map(|p| [p[0], p[1], p[2], 255])
                 .collect(),
             _ => return Err(Error::Invalid("l'atlas doit être RGB ou RGBA".into())),
@@ -496,7 +499,7 @@ impl Pet {
                 let mut min_y = CELL_HEIGHT;
                 let mut max_x = 0;
                 let mut max_y = 0;
-                for (i, px) in cell.chunks_exact(4).enumerate() {
+                for (i, px) in cell.as_chunks::<4>().0.iter().enumerate() {
                     if px[3] != 0 {
                         non_transparent += 1;
                         let x = i as u32 % CELL_WIDTH;

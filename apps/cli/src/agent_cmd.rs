@@ -84,7 +84,7 @@ pub(crate) trait Sink: Send + Sync {
 // ── Config + result ───────────────────────────────────────────────────────────
 
 /// Runtime knobs for the agent loop.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub(crate) struct AgentConfig {
     /// When `true`, inbound audio is transcribed and replies are also voiced
     /// (the full voice-to-voice loop). When `false`, the agent is text-only.
@@ -92,12 +92,6 @@ pub(crate) struct AgentConfig {
     /// Only act on messages whose text contains this trigger (e.g. a mention).
     /// Empty string = respond to everything.
     pub(crate) trigger: String,
-}
-
-impl Default for AgentConfig {
-    fn default() -> Self {
-        Self { voice: false, trigger: String::new() }
-    }
 }
 
 /// Outcome of processing one inbound message.
@@ -117,7 +111,7 @@ pub(crate) struct AgentTurn {
 
 /// First audio attachment on a message, if any (`audio/*` MIME).
 #[must_use]
-pub(crate) fn first_audio<'a>(msg: &'a InboundMessage) -> Option<&'a Attachment> {
+pub(crate) fn first_audio(msg: &InboundMessage) -> Option<&Attachment> {
     msg.attachments.iter().find(|a| a.mime_type.starts_with("audio/"))
 }
 
@@ -188,12 +182,12 @@ where
 
     // 4b. Voice reply (full voice-to-voice outbound leg).
     let mut voiced = false;
-    if cfg.voice {
-        if let Some(tts) = speaker {
-            let (audio, mime) = tts.to_audio(&reply).await?;
-            sink.reply_audio(&msg.room, &audio, &mime).await?;
-            voiced = true;
-        }
+    if cfg.voice
+        && let Some(tts) = speaker
+    {
+        let (audio, mime) = tts.to_audio(&reply).await?;
+        sink.reply_audio(&msg.room, &audio, &mime).await?;
+        voiced = true;
     }
 
     Ok(AgentTurn { user_text, reply, voiced, from_audio, skipped: false })

@@ -627,7 +627,7 @@ pub fn comparer(a: &Image, b: &Image, tolerance: u8) -> Result<Comparaison, Erro
         )));
     }
     let mut dedans = 0usize;
-    for (pa, pb) in a.rgba.chunks_exact(4).zip(b.rgba.chunks_exact(4)) {
+    for (pa, pb) in a.rgba.as_chunks::<4>().0.iter().zip(b.rgba.as_chunks::<4>().0) {
         if pa.iter().zip(pb).all(|(x, y)| x.abs_diff(*y) <= tolerance) {
             dedans += 1;
         }
@@ -641,7 +641,7 @@ pub fn comparer(a: &Image, b: &Image, tolerance: u8) -> Result<Comparaison, Erro
     let vers_rgb = |img: &Image| {
         let plat: Vec<u8> = img
             .rgba
-            .chunks_exact(4)
+            .as_chunks::<4>().0.iter()
             .flat_map(|p| [p[0], p[1], p[2]])
             .collect();
         image::RgbImage::from_raw(img.largeur, img.hauteur, plat)

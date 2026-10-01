@@ -35,7 +35,9 @@ Environment=BUN_RUNTIME_TRANSPILER_CACHE_PATH=/srv/shenron/shared/bot/bun-cache
 Environment=BUN_JSC_forceRAMSize=2147483648
 Environment=UV_THREADPOOL_SIZE=12
 
-ExecStart=/home/ubuntu/.bun/bin/bun src/index.ts
+# Binaire natif autonome compilé via `aphrody discord compile shenron` (ou `bun run discord:compile shenron`).
+# Aucun runtime Bun ni répertoire node_modules n'est requis sur l'hôte.
+ExecStart=/srv/shenron/current/apps/bot/dist/shenron
 
 ExecStop=/bin/kill -SIGTERM $MAINPID
 TimeoutStopSec=30

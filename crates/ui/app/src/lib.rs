@@ -8,7 +8,7 @@
 //! commands and the `aphrody://notification` / `aphrody://backend` events, nothing else.
 
 //! At start the desktop also hosts the Aphrody OS kernel ([`aphrody_kernel`]) with
-//! aphrody_web (Obscura and the optional MCP provider) and window
+//! web ([`web_subsystem::WebSubsystem`]: Obscura and the optional MCP provider) and window
 //! ([`window::WindowSubsystem`]) subsystems on the local endpoint, or joins the kernel already
 //! serving it with the window subsystem.
 
@@ -21,6 +21,7 @@ pub mod models;
 pub mod quickbar;
 pub mod runtime;
 pub mod shenron;
+pub mod web_subsystem;
 pub mod window;
 
 use std::{
@@ -75,7 +76,7 @@ async fn start_kernel(app: tauri::AppHandle) {
             },
         };
     for subsystem in [
-        Arc::new(aphrody_web::WebSubsystem::new(provider)) as Arc<dyn SystemSubsystem>,
+        Arc::new(web_subsystem::WebSubsystem::new(provider)) as Arc<dyn SystemSubsystem>,
         windows,
         Arc::new(TauriWebviewSubsystem::new(app.clone())) as Arc<dyn SystemSubsystem>,
         admin,
@@ -665,6 +666,8 @@ fn aphrody_quickbar(window: WebviewWindow, action: quickbar::QuickbarAction) -> 
 #[allow(clippy::exit)]
 pub fn run() {
     tauri::Builder::default()
+        // Tauri 3 has no implicit runtime: the system webview (wry) is the Aphrody default.
+        .runtime(tauri_runtime_wry::Wry::default())
         // single-instance must be the first plugin: a second launch focuses this window.
         // Its callback forwards the second launch's files and `aphrody://` links to this window.
         .plugin(tauri_plugin_single_instance::init(|app, args, cwd| {

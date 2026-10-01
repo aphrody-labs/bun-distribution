@@ -2,7 +2,8 @@
 
 //! Font glyph outlines to SVG path data with `skrifa` (the fontations stack Chrome and resvg
 //! use): TrueType/CFF/CFF2, variable axes, collections. The [`SvgPathPen`] is also what
-//! `aphrody-icons` walks its Material Symbols ligature glyphs with.
+//! the `icons` module of `aphrody-bun` (formerly `aphrody-icons`) walks its Material Symbols
+//! ligature glyphs with.
 
 use skrifa::{
     FontRef, GlyphId, MetadataProvider,

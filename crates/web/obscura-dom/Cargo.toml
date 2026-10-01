@@ -8,8 +8,8 @@ repository = "https://github.com/h4ckf0r0day/obscura"
 
 [dependencies]
 html5ever = { workspace = true }
-selectors = "0.26"
-cssparser = "0.34"
+selectors = "0.38"
+cssparser = "0.37"
 precomputed-hash = "0.1"
 
 [dev-dependencies]

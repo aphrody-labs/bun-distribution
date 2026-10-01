@@ -43,6 +43,7 @@
     "@material/material-color-utilities": "catalog:"
   },
   "devDependencies": {
+    "@aphrody/m3-config": "workspace:*",
     "@types/bun": "catalog:",
     "@types/node": "catalog:",
     "tsup": "catalog:",

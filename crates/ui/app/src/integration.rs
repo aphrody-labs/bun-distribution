@@ -24,7 +24,7 @@ use std::{
 
 use serde::{Deserialize, Serialize};
 use tauri::{
-    AppHandle, Emitter, LogicalPosition, Manager, PhysicalPosition, WebviewWindow, Wry,
+    AppHandle, DynRuntime, Emitter, LogicalPosition, Manager, PhysicalPosition, WebviewWindow,
     menu::{CheckMenuItem, Menu, MenuItem, PredefinedMenuItem},
     tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
 };
@@ -143,9 +143,9 @@ impl HitRect {
 
 /// Tray check items kept to mirror toggles made from the settings page or the pet.
 struct TrayItems {
-    pet: CheckMenuItem<Wry>,
-    widget: CheckMenuItem<Wry>,
-    autostart: CheckMenuItem<Wry>,
+    pet: CheckMenuItem<DynRuntime>,
+    widget: CheckMenuItem<DynRuntime>,
+    autostart: CheckMenuItem<DynRuntime>,
 }
 
 /// Process-wide integration state.
@@ -262,7 +262,7 @@ pub fn set_widget(app: &AppHandle, on: bool) {
 
 /// Enable or disable launching Aphrody (in the background) at session start.
 pub fn set_autostart(app: &AppHandle, on: bool) -> Result<(), String> {
-    let manager = app.autolaunch();
+    let manager = app.autostart();
     if on { manager.enable() } else { manager.disable() }.map_err(|error| error.to_string())?;
     if let Some(items) = lock(&app.state::<Integration>().tray).as_ref() {
         let _ = items.autostart.set_checked(on);
@@ -271,7 +271,7 @@ pub fn set_autostart(app: &AppHandle, on: bool) -> Result<(), String> {
 }
 
 fn autostart_enabled(app: &AppHandle) -> bool {
-    app.autolaunch().is_enabled().unwrap_or(false)
+    app.autostart().is_enabled().unwrap_or(false)
 }
 
 /// Current integration state for the settings page.

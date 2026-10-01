@@ -6,7 +6,7 @@ A complete A–Z recap of the Material Design 3 terminology, mapped from
 <https://m3.material.io/foundations/glossary>. All definitions below are
 **paraphrased in our own words** (short summaries, not Google's verbatim text);
 defer to the source page for canonical wording. Where a term corresponds to a
-token already defined in [`aphrody-m3-tokens.md`](./aphrody-m3-tokens.md), an
+token already defined in [`aphrody-m3-tokens.md`](../../../../../../../packages/ui/material-web/docs/design/aphrody-m3-tokens.md), an
 "→ aphrody" cross-reference is added.
 
 > Scrape récursif (2026-05-22) : glossaire + les 35 pages composants liées + pages

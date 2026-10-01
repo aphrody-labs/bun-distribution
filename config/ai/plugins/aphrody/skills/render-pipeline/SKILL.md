@@ -17,8 +17,9 @@ lanes, while sharing geometry and validation.
   `packages/ui/material-web`.
 - Tauri/Wry and Obscura host native or web surfaces; they do not duplicate
   backend policy.
-- `aphrody-m3` and `aphrody-m3-tokens` remain the source of M3 layout, theme,
-  typography and accessibility contracts.
+- `aphrody-m3-tokens` (with its `facade` module, the former `aphrody-m3` crate)
+  remains the source of M3 layout, theme, typography and accessibility
+  contracts.
 - The `gpu` feature is real (wgpu, DX12 first on Windows): every GPU user goes
   through `gpu::shared_context()`; never open a second device. CPU
   (`raster3d`, `raster`) stays the deterministic reference and GPU output must

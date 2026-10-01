@@ -11,6 +11,8 @@
 //! - [`simhash64`], [`hamming_distance`], [`is_near_duplicate`]: 64-bit Charikar SimHash
 //!   near-duplicate detection.
 //! - [`resolve_canonical`]: `<link rel=canonical>` / `og:url` resolution.
+//! - [`media`]: transport-independent media candidate extraction, HLS playlist parsing, packer
+//!   unpacking and embed resolution (formerly the `aphrody-web-media` crate).
 //!
 //! Every public function accepts arbitrary input (NUL bytes, broken markup,
 //! huge documents) and never panics: HTML is parsed by html5ever through
@@ -32,6 +34,7 @@ mod chunk;
 mod date;
 mod dom;
 mod extract;
+pub mod media;
 mod meta;
 mod patterns;
 mod render;

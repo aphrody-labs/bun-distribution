@@ -89,7 +89,7 @@ fn failed(why: impl std::fmt::Display) -> SubsystemError {
 
 fn default_material() -> Material {
     Material {
-        base: Paint::Role(aphrody_m3::color::Role::Primary),
+        base: Paint::Role(aphrody_m3_tokens::facade::color::Role::Primary),
         metallic: 0.0,
         roughness: 0.45,
         emissive: None,
@@ -205,11 +205,11 @@ impl Render3dSubsystem {
         })
         .await
         .map_err(failed)?
-        .map_err(|e| invalid(e))?;
+        .map_err(invalid)?;
         let png = frame.to_png().map_err(failed)?;
         let path = self.out_path(output.out, stem, "png")?;
         std::fs::write(&path, &png).map_err(failed)?;
-        let prepared = triangles_scene.prepare().map_err(|e| invalid(e))?;
+        let prepared = triangles_scene.prepare().map_err(invalid)?;
         let backend = match frame.backend {
             RenderedBy::Cpu => json!({ "kind": "cpu" }),
             RenderedBy::Gpu { adapter, api } => {

@@ -179,12 +179,12 @@ async fn build_provider(
             let path = sqlite_path.map(Path::to_path_buf).unwrap_or_else(default_sqlite_path);
             // Ensure parent dir exists so `~/.aphrody/memory.sqlite` works
             // on a fresh install without `mkdir -p` first.
-            if let Some(parent) = path.parent() {
-                if !parent.as_os_str().is_empty() {
-                    std::fs::create_dir_all(parent).into_diagnostic().wrap_err_with(|| {
-                        format!("failed to create parent dir {}", parent.display())
-                    })?;
-                }
+            if let Some(parent) = path.parent()
+                && !parent.as_os_str().is_empty()
+            {
+                std::fs::create_dir_all(parent).into_diagnostic().wrap_err_with(|| {
+                    format!("failed to create parent dir {}", parent.display())
+                })?;
             }
             let p = SqliteLocalProvider::open(&path)
                 .map_err(|e| miette::miette!("sqlite_local: {e} (path={})", path.display()))?;
@@ -194,9 +194,9 @@ async fn build_provider(
             #[cfg(not(feature = "memory-lancedb"))]
             {
                 let _ = (lancedb_path, lancedb_ndims);
-                return Err(miette::miette!(
+                Err(miette::miette!(
                     "LanceDB is optional; rebuild Aphrody with --features memory-lancedb"
-                ));
+                ))
             }
             #[cfg(feature = "memory-lancedb")]
             {

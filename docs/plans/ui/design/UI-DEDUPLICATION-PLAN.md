@@ -56,7 +56,7 @@ feature parity or prove that a retained reference can be deleted.
 | Repeated package configuration | Six identical `tsup.config.ts` files; four matching TypeScript/build configs; seven copied lint/format configs | Tooling boilerplate | Centralize only shared policy in `m3-config` or root config if package-specific overrides remain possible. Keep license/provenance files at required locations. |
 
 Other similar names are **separate outputs or layers**: Rust `aphrody-m3-tokens` generates
-`m3-theme`; `aphrody-icons` feeds `m3-icons` SVGs and `m3-fonts`; `m3` serves Bun/Tauri while
+`m3-theme`; the `icons` module of `aphrody-bun` feeds `m3-icons` SVGs and `m3-fonts`; `m3` serves Bun/Tauri while
 `m3-next` adapts Next.js; `svg` wraps the Rust SVG library; `canvas` supplies a separate rendering
 facade. The Lit showcase, React SpaceUI showcase, and Next.js example are host fixtures, not
 three authorities for components. The retired copy under the SpaceUI reference now points to the

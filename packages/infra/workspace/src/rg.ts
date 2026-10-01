@@ -26,8 +26,40 @@ interface PackageInfo {
   hasTests: boolean;
 }
 
+export interface RgDetailedPackage {
+  name: string;
+  subDomain: "achillea" | "azalee" | "rg-app" | "rg-patreon" | "rg-shared";
+  version: string;
+  private: boolean;
+  description: string;
+  path: string;
+  absolutePath: string;
+  type: string;
+  main?: string;
+  module?: string;
+  types?: string;
+  exports?: unknown;
+  bin?: unknown;
+  engines?: Record<string, string>;
+  scripts: Record<string, string>;
+  internalDependencies: Record<string, string>;
+  externalDependencies: Record<string, { spec: string; resolved: string | null }>;
+  devDependencies: Record<string, { spec: string; resolved: string | null }>;
+  peerDependencies: Record<string, string>;
+}
+
+export interface RgInventorySummary {
+  module: "rg";
+  generatedAt: string;
+  monorepoRoot: string;
+  totalPackages: number;
+  bySubDomain: Record<string, number>;
+  packages: RgDetailedPackage[];
+}
+
 interface RootManifest {
   workspaces?: string[] | { packages?: string[] };
+  catalog?: Record<string, string>;
 }
 
 export function rgRoots(root = infraRoot()): string[] {
@@ -382,6 +414,116 @@ async function pipeline(root: string, dryRun: boolean): Promise<number> {
   return status;
 }
 
+export async function exportDetailedInventory(root = infraRoot()): Promise<RgInventorySummary> {
+  const rootManifest = (await Bun.file(join(root, "package.json")).json()) as RootManifest;
+  const workspacePatterns = Array.isArray(rootManifest.workspaces)
+    ? rootManifest.workspaces
+    : (rootManifest.workspaces?.packages ?? []);
+  const catalog = rootManifest.catalog ?? {};
+
+  const packages: RgDetailedPackage[] = [];
+
+  for (const workspace of rgRoots(root)) {
+    // oxlint-disable-next-line no-await-in-loop
+    for await (const manifestPath of new Bun.Glob("**/package.json").scan({
+      cwd: workspace,
+      absolute: true,
+      onlyFiles: true,
+    })) {
+      const path = manifestPath.slice(0, -"/package.json".length);
+      if (!isRootWorkspaceMember(root, path, workspacePatterns)) continue;
+      // oxlint-disable-next-line no-await-in-loop
+      const pkg = (await Bun.file(manifestPath).json()) as Record<string, any>;
+      const relPath = relative(root, path);
+
+      const internalDeps: Record<string, string> = {};
+      const externalDeps: Record<string, { spec: string; resolved: string | null }> = {};
+      const devDeps: Record<string, { spec: string; resolved: string | null }> = {};
+      const peerDeps: Record<string, string> = {};
+
+      for (const [dep, spec] of Object.entries(pkg.dependencies ?? {})) {
+        const specStr = String(spec);
+        if (specStr.startsWith("workspace:") || specStr.startsWith("file:")) {
+          internalDeps[dep] = specStr;
+        } else if (specStr.startsWith("catalog:")) {
+          const catKey = specStr.slice("catalog:".length);
+          externalDeps[dep] = { spec: specStr, resolved: catalog[catKey] ?? null };
+        } else {
+          externalDeps[dep] = { spec: specStr, resolved: specStr };
+        }
+      }
+
+      for (const [dep, spec] of Object.entries(pkg.devDependencies ?? {})) {
+        const specStr = String(spec);
+        if (specStr.startsWith("workspace:") || specStr.startsWith("file:")) {
+          internalDeps[dep] = specStr;
+        } else if (specStr.startsWith("catalog:")) {
+          const catKey = specStr.slice("catalog:".length);
+          devDeps[dep] = { spec: specStr, resolved: catalog[catKey] ?? null };
+        } else {
+          devDeps[dep] = { spec: specStr, resolved: specStr };
+        }
+      }
+
+      for (const [dep, spec] of Object.entries(pkg.peerDependencies ?? {})) {
+        peerDeps[dep] = String(spec);
+      }
+
+      let subDomain: "achillea" | "azalee" | "rg-app" | "rg-patreon" | "rg-shared" = "rg-shared";
+      if (pkg.name?.includes("achillea") || relPath.includes("achillea")) {
+        subDomain = "achillea";
+      } else if (pkg.name?.includes("azalee") || relPath.includes("azalee")) {
+        subDomain = "azalee";
+      } else if (relPath.startsWith("apps/rg/")) {
+        subDomain = "rg-app";
+      } else if (pkg.name?.includes("patreon") || relPath.includes("patreon")) {
+        subDomain = "rg-patreon";
+      }
+
+      packages.push({
+        name: pkg.name ?? relPath,
+        subDomain,
+        version: pkg.version ?? "0.0.0",
+        private: pkg.private ?? false,
+        description: pkg.description ?? "",
+        path: relPath,
+        absolutePath: path,
+        type: pkg.type ?? "commonjs",
+        main: pkg.main,
+        module: pkg.module,
+        types: pkg.types ?? pkg.typings,
+        exports: pkg.exports,
+        bin: pkg.bin,
+        engines: pkg.engines,
+        scripts: pkg.scripts ?? {},
+        internalDependencies: internalDeps,
+        externalDependencies: externalDeps,
+        devDependencies: devDeps,
+        peerDependencies: peerDeps,
+      });
+    }
+  }
+
+  packages.sort((a, b) => a.name.localeCompare(b.name));
+
+  const bySubDomain = packages.reduce(
+    (acc, p) => {
+      acc[p.subDomain] = (acc[p.subDomain] || 0) + 1;
+      return acc;
+    },
+    {} as Record<string, number>,
+  );
+
+  return {
+    module: "rg",
+    generatedAt: new Date().toISOString(),
+    monorepoRoot: root,
+    totalPackages: packages.length,
+    bySubDomain,
+    packages,
+  };
+}
+
 /** RG command facade: validation is explicit and releases are delegated to Aphrody Infra. */
 export async function runRg(args: string[], root = infraRoot()): Promise<number> {
   const [action = "status", ...rest] = args;
@@ -399,6 +541,18 @@ export async function runRg(args: string[], root = infraRoot()): Promise<number>
         2,
       ),
     );
+    return 0;
+  }
+  if (action === "inventory") {
+    const summary = await exportDetailedInventory(root);
+    const outIndex = rest.indexOf("--out");
+    if (outIndex !== -1 && rest[outIndex + 1]) {
+      const targetPath = resolve(root, rest[outIndex + 1]);
+      await Bun.write(targetPath, JSON.stringify(summary, null, 2) + "\n");
+      console.log(`Inventory of ${summary.totalPackages} packages written to ${targetPath}`);
+    } else {
+      console.log(JSON.stringify(summary, null, 2));
+    }
     return 0;
   }
   if (action === "pipeline") {
@@ -482,5 +636,5 @@ export async function runRg(args: string[], root = infraRoot()): Promise<number>
       )
     ).exited;
   }
-  throw new Error("usage: aphrody-ops rg <status|pipeline|check|deploy|migrate> ...");
+  throw new Error("usage: aphrody-ops rg <status|inventory|pipeline|check|deploy|migrate> ...");
 }

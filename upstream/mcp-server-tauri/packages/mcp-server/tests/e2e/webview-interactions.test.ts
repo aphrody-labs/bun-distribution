@@ -1,0 +1,318 @@
+import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { manageDriverSession } from '../../src/driver/session-manager';
+import {
+   interact,
+   screenshot,
+   keyboard,
+   waitFor,
+   executeJavaScript,
+} from '../../src/driver/webview-interactions';
+import { getTestAppPort } from '../test-utils';
+
+/**
+ * E2E tests for webview interactions.
+ * Now uses native Tauri IPC - works on all platforms (Linux, Windows, macOS)!
+ */
+describe('Webview Interactions E2E Tests', () => {
+   const TIMEOUT = 10000;
+
+   beforeAll(async () => {
+      // App is already started globally - connect to the dynamically assigned port
+      await manageDriverSession('start', undefined, getTestAppPort());
+   });
+
+   afterAll(async () => {
+      // Don't stop the app - it's managed globally
+      await manageDriverSession('stop');
+   });
+
+   describe('Gesture Interactions', () => {
+      it('should perform click interaction by selector', async () => {
+         const result = await interact({ action: 'click', selector: 'button' });
+
+         expect(result).toContain('Clicked');
+      }, TIMEOUT);
+
+      it('should perform click interaction by coordinates', async () => {
+         const result = await interact({ action: 'click', x: 100, y: 100 });
+
+         expect(result).toContain('Clicked');
+      }, TIMEOUT);
+
+      it('should perform double-click interaction', async () => {
+         const result = await interact({ action: 'double-click', selector: 'button' });
+
+         expect(result).toContain('Double-clicked');
+      }, TIMEOUT);
+
+      it('should perform long-press interaction', async () => {
+         const result = await interact({ action: 'long-press', selector: 'button', duration: 1000 });
+
+         expect(result).toContain('Long-pressed');
+      }, TIMEOUT);
+
+      it('should perform swipe gesture', async () => {
+         const result = await interact({
+            action: 'swipe',
+            fromX: 100,
+            fromY: 100,
+            toX: 300,
+            toY: 300,
+            duration: 500,
+         });
+
+         expect(result).toContain('Swiped');
+      }, TIMEOUT);
+
+      it('should perform scroll interaction', async () => {
+         const result = await interact({ action: 'scroll', scrollY: 100 });
+
+         expect(result).toContain('Scrolled');
+      }, TIMEOUT);
+   });
+
+   describe('Screenshot', () => {
+      it('should take full webview screenshot with valid data', async () => {
+         const result = await screenshot({});
+
+         // Result should be a ScreenshotResult with content array (not a file result)
+         expect('content' in result).toBe(true);
+         if (!('content' in result)) {
+            throw new Error('Expected ScreenshotResult with content');
+         }
+
+         expect(Array.isArray(result.content)).toBe(true);
+         expect(result.content.length).toBeGreaterThanOrEqual(2);
+
+         // First item should be text context
+         type ContentItem = { type: string; text?: string; data?: string; mimeType?: string };
+         const textContent = result.content.find((c: ContentItem) => { return c.type === 'text'; }) as ContentItem | undefined;
+
+         expect(textContent).toBeDefined();
+         expect(textContent?.type).toBe('text');
+         if (textContent?.type === 'text') {
+            expect(textContent.text).toContain('Screenshot captured');
+         }
+
+         // Second item should be image content
+         const imageContent = result.content.find((c: ContentItem) => { return c.type === 'image'; }) as ContentItem | undefined;
+
+         expect(imageContent).toBeDefined();
+         expect(imageContent?.type).toBe('image');
+         if (imageContent?.type === 'image' && imageContent.data) {
+            expect(imageContent.mimeType).toMatch(/^image\/(png|jpeg)$/);
+            expect(imageContent.data).toBeTruthy();
+
+            // Ensure the screenshot has meaningful content (not just a 1x1 pixel)
+            // A minimal valid PNG is about 67 characters,
+            // anything substantial should be much larger
+            expect(imageContent.data.length).toBeGreaterThan(100);
+
+            // Verify it's valid base64 (will throw if invalid)
+            const data = imageContent.data;
+
+            expect(() => { return Buffer.from(data, 'base64'); }).not.toThrow();
+         }
+      }, TIMEOUT);
+
+      it('should resize screenshot when maxWidth is smaller than image width', async () => {
+         // Take a screenshot with maxWidth constraint
+         const result = await screenshot({ maxWidth: 100 });
+
+         expect('content' in result).toBe(true);
+         if (!('content' in result)) {
+            throw new Error('Expected ScreenshotResult with content');
+         }
+
+         type ContentItem = { type: string; text?: string; data?: string; mimeType?: string };
+         const imageContent = result.content.find((c: ContentItem) => { return c.type === 'image'; }) as ContentItem | undefined;
+
+         expect(imageContent).toBeDefined();
+         expect(imageContent?.type).toBe('image');
+
+         if (imageContent?.type === 'image' && imageContent.data) {
+            // Decode the image and check its dimensions
+            const buffer = Buffer.from(imageContent.data, 'base64');
+
+            // PNG header: width is at bytes 16-19 (big-endian)
+            // Check if it's a PNG (starts with PNG signature)
+            const isPng = buffer[0] === 0x89 && buffer[1] === 0x50 && buffer[2] === 0x4E && buffer[3] === 0x47;
+
+            if (isPng) {
+               const width = buffer.readUInt32BE(16);
+
+               expect(width).toBeLessThanOrEqual(100);
+            }
+         }
+      }, TIMEOUT);
+
+      it('should not upscale when maxWidth is larger than image width', async () => {
+         // First take a screenshot without maxWidth to get original size
+         const originalResult = await screenshot({});
+
+         expect('content' in originalResult).toBe(true);
+         if (!('content' in originalResult)) {
+            throw new Error('Expected ScreenshotResult with content');
+         }
+
+         type ContentItem = { type: string; text?: string; data?: string; mimeType?: string };
+         const originalImage = originalResult.content.find((c: ContentItem) => { return c.type === 'image'; }) as ContentItem | undefined;
+
+         // Take another screenshot with very large maxWidth
+         const result = await screenshot({ maxWidth: 10000 });
+
+         expect('content' in result).toBe(true);
+         if (!('content' in result)) {
+            throw new Error('Expected ScreenshotResult with content');
+         }
+
+         const imageContent = result.content.find((c: ContentItem) => { return c.type === 'image'; }) as ContentItem | undefined;
+
+         expect(imageContent).toBeDefined();
+
+         if (originalImage?.data && imageContent?.data) {
+            const originalBuffer = Buffer.from(originalImage.data, 'base64'),
+                  newBuffer = Buffer.from(imageContent.data, 'base64');
+
+            // Check PNG dimensions
+            const isPngOriginal = originalBuffer[0] === 0x89 && originalBuffer[1] === 0x50,
+                  isPngNew = newBuffer[0] === 0x89 && newBuffer[1] === 0x50;
+
+            if (isPngOriginal && isPngNew) {
+               const originalWidth = originalBuffer.readUInt32BE(16),
+                     newWidth = newBuffer.readUInt32BE(16);
+
+               // Width should be the same (not upscaled)
+               expect(newWidth).toBe(originalWidth);
+            }
+         }
+      }, TIMEOUT);
+
+      it('should capture the viewport with a large offscreen DOM', async () => {
+         await executeJavaScript({
+            script: `
+               const root = document.createElement('div');
+               const fragment = document.createDocumentFragment();
+
+               root.id = 'screenshot-stress-test';
+               for (let index = 0; index < 10000; index++) {
+                  const row = document.createElement('div');
+
+                  row.textContent = 'Offscreen row ' + index;
+                  row.style.height = '32px';
+                  fragment.appendChild(row);
+               }
+               root.appendChild(fragment);
+               document.body.appendChild(root);
+               return document.querySelectorAll('*').length;
+            `,
+         });
+
+         try {
+            const result = await screenshot({ format: 'png' });
+
+            expect('content' in result).toBe(true);
+            if (!('content' in result)) {
+               throw new Error('Expected ScreenshotResult with content');
+            }
+
+            const context = result.content.find((item) => { return item.type === 'text'; });
+
+            expect(context?.type).toBe('text');
+            if (process.platform === 'linux' && context?.type === 'text') {
+               expect(context.text).toContain('native API');
+            }
+         } finally {
+            await executeJavaScript({
+               script: `
+                  document.querySelector('#screenshot-stress-test')?.remove();
+                  return true;
+               `,
+            });
+         }
+      }, TIMEOUT);
+   });
+
+   describe('Keyboard Interactions', () => {
+      it('should type text into an element', async () => {
+         const result = await keyboard({ action: 'type', selectorOrKey: '#greet-input', textOrModifiers: 'Hello World' });
+
+         expect(result).toContain('Typed "Hello World"');
+      }, TIMEOUT);
+
+      it('should press a key', async () => {
+         const result = await keyboard({ action: 'press', selectorOrKey: 'Enter' });
+
+         expect(result).toContain('Pressed key: Enter');
+      }, TIMEOUT);
+
+      it('should press a key with modifiers', async () => {
+         const result = await keyboard({ action: 'press', selectorOrKey: 'a', textOrModifiers: [ 'Control' ] });
+
+         expect(result).toContain('Pressed key: a');
+         expect(result).toContain('Control');
+      }, TIMEOUT);
+
+      it('should perform key down', async () => {
+         const result = await keyboard({ action: 'down', selectorOrKey: 'Shift' });
+
+         expect(result).toContain('Key down: Shift');
+      }, TIMEOUT);
+
+      it('should perform key up', async () => {
+         const result = await keyboard({ action: 'up', selectorOrKey: 'Shift' });
+
+         expect(result).toContain('Key up: Shift');
+      }, TIMEOUT);
+   });
+
+   describe('Wait Operations', () => {
+      it('should wait for element selector', async () => {
+         const result = await waitFor({ type: 'selector', value: 'body', timeout: 5000 });
+
+         expect(result).toContain('Element found');
+      }, TIMEOUT);
+
+      it('should wait for text content', async () => {
+         const result = await waitFor({ type: 'text', value: 'Tauri MCP', timeout: 5000 });
+
+         expect(result).toBeDefined();
+         expect(result).toContain('Text found');
+      }, TIMEOUT);
+   });
+
+   describe('JavaScript Execution', () => {
+      it('should execute JavaScript code', async () => {
+         const result = await executeJavaScript({ script: 'return 2 + 2' });
+
+         expect(result).toContain('4');
+      }, TIMEOUT);
+
+      it('should execute JavaScript with arguments', async () => {
+         const result = await executeJavaScript({
+            script: 'function(a, b) { return a + b; }',
+            args: [ 5, 3 ],
+         });
+
+         expect(result).toContain('8');
+      }, TIMEOUT);
+   });
+
+   describe('Focus and Keyboard Management', () => {
+      it('should focus on element via interact action', async () => {
+         const result = await interact({ action: 'focus', selector: 'input' });
+
+         expect(result).toContain('Focused element');
+      }, TIMEOUT);
+
+      it('should dismiss keyboard via executeJavaScript', async () => {
+         // First focus an element
+         await interact({ action: 'focus', selector: 'input' });
+
+         // Then dismiss keyboard by blurring
+         const result = await executeJavaScript({ script: 'document.activeElement?.blur(); return "dismissed"' });
+
+         expect(result).toContain('dismissed');
+      }, TIMEOUT);
+   });
+});

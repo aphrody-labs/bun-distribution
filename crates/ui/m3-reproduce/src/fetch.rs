@@ -4,7 +4,7 @@
 //! Uses `reqwest`'s blocking client directly rather than adding a browser dependency: the goal is
 //! reproducing a page's declared theme, fonts and layout, which live in markup and CSS the server
 //! sends, not in JavaScript-rendered DOM state. Sites that build their entire UI client-side will
-//! need a rendered capture (`--image` on a screenshot, or the `capture` feature) instead.
+//! need a rendered capture (`--image` on a screenshot) instead.
 //!
 //! Native targets only: `reqwest::blocking` does not exist on `wasm32`, where the host must fetch
 //! the HTML itself and pass it to [`crate::ReproductionPlan::from_html`].

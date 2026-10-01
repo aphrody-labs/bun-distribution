@@ -1,9 +1,10 @@
 {
-  "$schema": "https://schema.tauri.app/config/2",
+  "$schema": "https://raw.githubusercontent.com/tauri-apps/tauri/tauri-v3.0.0-alpha.3/crates/tauri-schema-generator/schemas/config.schema.json",
   "productName": "aphrody-model-view",
   "identifier": "dev.aphrody.modelview",
   "build": { "frontendDist": "ui" },
   "app": {
+    "macOSPrivateApi": true,
     "withGlobalTauri": true,
     "windows": [],
     "security": {

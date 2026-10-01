@@ -1,6 +1,8 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 # Native desktop and distribution boundary
 
+> **Tauri version note (historical).** Mentions of Tauri v2 below describe the former host. The workspace now pins Tauri 3 alpha (`tauri =3.0.0-alpha.3`, default runtime `tauri-runtime-wry`, `tauri-runtime-cef` only for Koharu): see [the Tauri 3 upstream line](../../operations/ui/tauri-upstream.md) and [`config/tauri-apps.json`](../../../config/tauri-apps.json). The product-boundary rules on this page are unchanged; host details need requalification under Tauri 3 (Verify).
+
 Tauri v2 is the current host for Aphrody's public Chat, Files, Models and Settings webview.
 Rust M3, rendering and window crates remain reusable foundations, not a commitment to build
 an Aphrody-owned operating-system shell or browser from scratch.

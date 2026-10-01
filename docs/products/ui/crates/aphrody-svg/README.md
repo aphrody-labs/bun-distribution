@@ -17,7 +17,7 @@ Inventory, migration map and remaining work: [`docs/SVG.md`](../../../../referen
 | `diff` | `raster` | Pixel diff of two SVGs or RGBA buffers (max/mean delta, mismatch %). |
 
 Default features: `raster`, `glyph`. The workspace entry sets `default-features = false`, so
-consumers name what they use (`aphrody-icons` takes only `glyph`).
+consumers name what they use (the `icons` module of `aphrody-bun` takes only `glyph`).
 
 ```rust
 use aphrody_svg::{raster, sanitize, theme::Theme};

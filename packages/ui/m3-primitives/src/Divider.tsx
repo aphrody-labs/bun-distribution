@@ -19,6 +19,7 @@ export const Divider = ({ className, orientation = "horizontal", ...props }: Div
       orientation === "vertical" ? "mx-1 my-0 h-full w-px self-stretch" : "mx-0 my-1 h-px w-full",
       className,
     )}
+    data-m3-component="Divider"
     {...props}
   />
 );

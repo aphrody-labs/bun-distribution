@@ -7,7 +7,7 @@ A recap of the Material Design 3 **design-tokens foundation**, mapped from
 **paraphrased in our own words** (short summaries, not Google's verbatim text);
 defer to the source page for canonical wording. The closing section maps these
 concepts onto our [`crates/aphrody-m3-tokens`](../../../../crates/aphrody-m3-tokens) crate. See also
-the [M3 glossary](./m3-glossary.md) and the [aphrody token subset](./aphrody-m3-tokens.md).
+the [M3 glossary](./m3-glossary.md) and the [aphrody token subset](../../../../../../../packages/ui/material-web/docs/design/aphrody-m3-tokens.md).
 
 ## What a design token is
 

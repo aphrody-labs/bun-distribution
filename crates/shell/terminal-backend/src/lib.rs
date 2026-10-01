@@ -43,7 +43,11 @@ use tokio::{
     net::{TcpListener, TcpStream},
     sync::mpsc,
 };
-use tokio_tungstenite::tungstenite::Message;
+use tokio_tungstenite::tungstenite::{
+    Message,
+    handshake::server::{ErrorResponse, Request, Response},
+    http::StatusCode,
+};
 use tracing::{debug, info, warn};
 
 // ── Configuration ─────────────────────────────────────────────────────────────
@@ -65,12 +69,213 @@ pub struct PtyConfig {
     pub args: Vec<String>,
     /// Extra environment variables for the shell, on top of the inherited environment.
     pub env: Vec<(String, String)>,
+    /// Authentication token required to connect to the WebSocket terminal.
+    /// If [`None`], the backend falls back to the `APHRODY_OS_AUTH_TOKEN` environment variable.
+    pub auth_token: Option<String>,
 }
 
 impl Default for PtyConfig {
     fn default() -> Self {
-        Self { cols: 80, rows: 24, shell: None, cwd: None, args: Vec::new(), env: Vec::new() }
+        Self {
+            cols: 80,
+            rows: 24,
+            shell: None,
+            cwd: None,
+            args: Vec::new(),
+            env: Vec::new(),
+            auth_token: None,
+        }
     }
+}
+
+impl PtyConfig {
+    /// Return the explicit auth token if configured, or fall back to `APHRODY_OS_AUTH_TOKEN` from env.
+    pub fn effective_auth_token(&self) -> Option<String> {
+        self.auth_token.clone().or_else(|| {
+            std::env::var("APHRODY_OS_AUTH_TOKEN")
+                .ok()
+                .filter(|s| !s.is_empty())
+        })
+    }
+}
+
+/// Generate a cryptographically random 32-character hexadecimal token.
+pub fn generate_token() -> String {
+    let mut bytes = [0u8; 16];
+    if getrandom::getrandom(&mut bytes).is_err() {
+        let nanos = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|d| d.as_nanos())
+            .unwrap_or(0);
+        return format!("{nanos:032x}");
+    }
+    let mut s = String::with_capacity(32);
+    for b in bytes {
+        use std::fmt::Write as _;
+        let _ = write!(s, "{b:02x}");
+    }
+    s
+}
+
+/// Constant-time string equality check to prevent timing attacks.
+fn constant_time_eq(left: &str, right: &str) -> bool {
+    if left.len() != right.len() {
+        return false;
+    }
+    left.bytes()
+        .zip(right.bytes())
+        .fold(0u8, |diff, (l, r)| diff | (l ^ r))
+        == 0
+}
+
+/// Validate whether an `Origin` header is allowed to connect.
+///
+/// Returns `true` if `origin` is `"null"` (local file/sandboxed iframe) or a local/loopback origin
+/// or matches the bound host IP. Untrusted external web browser origins are rejected (CSRF defense).
+pub fn is_origin_allowed(origin: &str, bound_addr: Option<SocketAddr>) -> bool {
+    let trimmed = origin.trim();
+    if trimmed.eq_ignore_ascii_case("null") {
+        return true;
+    }
+    let Ok(url) = url::Url::parse(trimmed) else {
+        return false;
+    };
+    match url.scheme() {
+        "http" | "https" | "tauri" | "app" | "vscode-webview" => {},
+        _ => return false,
+    }
+    match url.host() {
+        Some(url::Host::Domain(domain)) => {
+            domain.eq_ignore_ascii_case("localhost") || domain.ends_with(".localhost")
+        },
+        Some(url::Host::Ipv4(ip)) => {
+            if ip.is_loopback() {
+                return true;
+            }
+            if let Some(bound) = bound_addr {
+                if let std::net::IpAddr::V4(bip) = bound.ip() {
+                    if !bip.is_unspecified() && ip == bip {
+                        return true;
+                    }
+                }
+            }
+            false
+        },
+        Some(url::Host::Ipv6(ip)) => {
+            if ip.is_loopback() {
+                return true;
+            }
+            if let Some(bound) = bound_addr {
+                if let std::net::IpAddr::V6(bip) = bound.ip() {
+                    if !bip.is_unspecified() && ip == bip {
+                        return true;
+                    }
+                }
+            }
+            false
+        },
+        None => false,
+    }
+}
+
+/// Validate whether a `Host` header is acceptable (prevents DNS rebinding).
+///
+/// Returns `true` if the host header matches loopback, localhost, or the bound address/port.
+pub fn is_host_allowed(host_header: &str, bound_addr: Option<SocketAddr>) -> bool {
+    let trimmed = host_header.trim();
+    if trimmed.is_empty() {
+        return false;
+    }
+    let Ok(url) = url::Url::parse(&format!("http://{trimmed}/")) else {
+        return false;
+    };
+
+    // If port is specified in Host header and bound_addr has a known port, check port match.
+    if let (Some(bound), Some(header_port)) = (bound_addr, url.port()) {
+        if bound.port() != 0 && header_port != bound.port() {
+            return false;
+        }
+    }
+
+    match url.host() {
+        Some(url::Host::Domain(domain)) => {
+            domain.eq_ignore_ascii_case("localhost") || domain.ends_with(".localhost")
+        },
+        Some(url::Host::Ipv4(ip)) => {
+            if ip.is_loopback() {
+                return true;
+            }
+            if let Some(bound) = bound_addr {
+                match bound.ip() {
+                    std::net::IpAddr::V4(bip) => bip.is_unspecified() || bip == ip,
+                    std::net::IpAddr::V6(bip) => bip.is_unspecified(),
+                }
+            } else {
+                false
+            }
+        },
+        Some(url::Host::Ipv6(ip)) => {
+            if ip.is_loopback() {
+                return true;
+            }
+            if let Some(bound) = bound_addr {
+                match bound.ip() {
+                    std::net::IpAddr::V6(bip) => bip.is_unspecified() || bip == ip,
+                    std::net::IpAddr::V4(bip) => bip.is_unspecified(),
+                }
+            } else {
+                false
+            }
+        },
+        None => false,
+    }
+}
+
+/// Validate request authentication against expected token.
+///
+/// Supports `Authorization: Bearer <token>` and `?token=<token>`.
+fn is_authenticated(req: &Request, expected_token: &str) -> bool {
+    // 1. Authorization header: "Bearer <token>"
+    if let Some(auth_val) = req.headers().get("authorization").and_then(|v| v.to_str().ok()) {
+        let auth_val = auth_val.trim();
+        if let Some(token) = auth_val.strip_prefix("Bearer ") {
+            if constant_time_eq(token.trim(), expected_token) {
+                return true;
+            }
+        }
+    }
+
+    // 2. Query parameter: ?token=<token>
+    if let Some(query) = req.uri().query() {
+        for (key, val) in url::form_urlencoded::parse(query.as_bytes()) {
+            if key == "token" && constant_time_eq(&val, expected_token) {
+                return true;
+            }
+        }
+    }
+
+    false
+}
+
+fn forbidden_response(reason: &str) -> ErrorResponse {
+    let body = format!("{{\"error\":\"{reason}\"}}");
+    tokio_tungstenite::tungstenite::http::Response::builder()
+        .status(StatusCode::FORBIDDEN)
+        .header("Content-Type", "application/json")
+        .header("Connection", "close")
+        .body(Some(body))
+        .unwrap_or_else(|_| tokio_tungstenite::tungstenite::http::Response::new(None))
+}
+
+fn unauthorized_response(reason: &str) -> ErrorResponse {
+    let body = format!("{{\"error\":\"{reason}\"}}");
+    tokio_tungstenite::tungstenite::http::Response::builder()
+        .status(StatusCode::UNAUTHORIZED)
+        .header("Content-Type", "application/json")
+        .header("WWW-Authenticate", "Bearer")
+        .header("Connection", "close")
+        .body(Some(body))
+        .unwrap_or_else(|_| tokio_tungstenite::tungstenite::http::Response::new(None))
 }
 
 /// Resolve the default shell for the current platform.
@@ -125,7 +330,24 @@ enum ControlMsg {
 ///
 /// This function runs indefinitely.  Cancel the surrounding task to shut down
 /// the server.
-pub async fn serve(addr: SocketAddr, cfg: PtyConfig) -> Result<()> {
+pub async fn serve(addr: SocketAddr, mut cfg: PtyConfig) -> Result<()> {
+    let token = cfg.effective_auth_token();
+    if !addr.ip().is_loopback() && token.is_none() {
+        anyhow::bail!(
+            "refusing to bind terminal backend to non-loopback address {addr} without authentication; set auth_token in PtyConfig or APHRODY_OS_AUTH_TOKEN"
+        );
+    }
+
+    if cfg.auth_token.is_none() {
+        if let Some(tok) = token {
+            cfg.auth_token = Some(tok);
+        } else {
+            let generated = generate_token();
+            eprintln!("aphrody-terminal-backend: generated auth token: {generated}");
+            cfg.auth_token = Some(generated);
+        }
+    }
+
     let listener = TcpListener::bind(addr).await.with_context(|| format!("bind {addr}"))?;
     info!("aphrody-terminal-backend listening on {addr}");
 
@@ -154,7 +376,45 @@ pub async fn serve(addr: SocketAddr, cfg: PtyConfig) -> Result<()> {
 /// shell is stopped (`TerminateProcess` on Windows, `SIGHUP` on Unix) and the pty is closed;
 /// when the shell exits, the remaining output is flushed and the WebSocket is closed.
 async fn handle_conn(stream: TcpStream, cfg: PtyConfig) -> Result<()> {
-    let ws_stream = tokio_tungstenite::accept_async(stream).await.context("WebSocket handshake")?;
+    let bound_addr = stream.local_addr().ok();
+    let auth_token = cfg.effective_auth_token();
+
+    let callback = move |req: &Request, resp: Response| -> Result<Response, ErrorResponse> {
+        // 1. Check Origin: if Origin header is present and is not null / local allowed origin, reject.
+        if let Some(origin) = req.headers().get("origin").and_then(|v| v.to_str().ok()) {
+            if !is_origin_allowed(origin, bound_addr) {
+                warn!("rejected websocket connection with forbidden origin: {origin}");
+                return Err(forbidden_response("forbidden origin"));
+            }
+        }
+
+        // 2. Check Host: ensure host matches loopback/localhost or the bound host.
+        match req.headers().get("host").and_then(|v| v.to_str().ok()) {
+            Some(host) if is_host_allowed(host, bound_addr) => {},
+            Some(host) => {
+                warn!("rejected websocket connection with foreign host: {host}");
+                return Err(forbidden_response("forbidden host"));
+            },
+            None => {
+                warn!("rejected websocket connection missing host header");
+                return Err(forbidden_response("missing host header"));
+            },
+        }
+
+        // 3. Check Authentication Token (if configured or present in environment)
+        if let Some(ref expected) = auth_token {
+            if !is_authenticated(req, expected) {
+                warn!("rejected unauthenticated websocket connection");
+                return Err(unauthorized_response("authentication required"));
+            }
+        }
+
+        Ok(resp)
+    };
+
+    let ws_stream = tokio_tungstenite::accept_hdr_async(stream, callback)
+        .await
+        .context("WebSocket handshake")?;
     let (mut ws_sink, mut ws_source) = ws_stream.split();
 
     let (events_tx, mut events_rx) = mpsc::channel::<PtyEvent>(256);

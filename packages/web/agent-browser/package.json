@@ -1,7 +1,7 @@
 {
   "name": "@aphrody/agent-browser",
   "version": "1.0.0-canary",
-  "description": "Fast browser automation CLI and SDK for AI agents in Bun, backed by native agent-browser & Obscura CDP.",
+  "description": "Aphrody Web Bun client: CDP browser automation (agent-browser), engine lifecycle, web service client (fetch, scrape, crawl, sessions) and config reader, backed by the native aphrody-web engine.",
   "type": "module",
   "main": "./src/index.ts",
   "types": "./src/index.ts",
@@ -9,7 +9,12 @@
     ".": "./src/index.ts",
     "./client": "./src/client.ts",
     "./types": "./src/types.ts",
-    "./cdp": "./src/cdp.ts"
+    "./cdp": "./src/cdp.ts",
+    "./config": "./src/config.ts",
+    "./engine": "./src/engine.ts",
+    "./service": "./src/service.ts",
+    "./test-preload": "./src/test-preload.ts",
+    "./tauri": "./src/tauri.ts"
   },
   "bin": {
     "agent-browser": "./bin/agent-browser.js"
@@ -24,7 +29,8 @@
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "test": "bun test test/"
+    "test": "bun test test/",
+    "lint": "oxlint"
   },
   "devDependencies": {
     "@types/bun": "catalog:",

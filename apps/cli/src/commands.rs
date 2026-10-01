@@ -141,16 +141,16 @@ fn read_gemini_oauth() -> Option<serde_json::Value> {
 fn read_antigravity_oauth() -> Option<serde_json::Value> {
     #[cfg(unix)]
     {
-        if let Some(home) = platform::home_dir().ok() {
+        if let Ok(home) = platform::home_dir() {
             for rel in [
                 [".config", "aphrody", "antigravity-token.json"],
                 [".gemini", "antigravity-cli", "antigravity-oauth-token"],
             ] {
                 let path = rel.iter().fold(home.clone(), |p, seg| p.join(seg));
-                if let Ok(content) = std::fs::read_to_string(&path) {
-                    if let Ok(v) = serde_json::from_str(&content) {
-                        return Some(v);
-                    }
+                if let Ok(content) = std::fs::read_to_string(&path)
+                    && let Ok(v) = serde_json::from_str(&content)
+                {
+                    return Some(v);
                 }
             }
         }
@@ -256,15 +256,27 @@ pub(crate) async fn dispatch_a2a(
             println!("{}", serde_json::to_string_pretty(&env).unwrap_or_default());
         },
         crate::A2aAction::Invoke { prompt, peer, dry_run, claim } => {
-            let peer_id = PeerId::parse(&peer)
-                .ok_or_else(|| miette::miette!("unknown peer {peer:?}; use grok|agy|claude|codex|bxc"))?;
-            let _claims = claim.iter().map(|path| {
-                aphrody_a2a_coord::claims::FileClaim::acquire(&repo_root, path)
-                    .map_err(|e| miette::miette!("claim {}: {e}", path.display()))
-            }).collect::<miette::Result<Vec<_>>>()?;
-            let prompt = if claim.is_empty() { prompt } else {
-                let paths = claim.iter().map(|path| path.display().to_string()).collect::<Vec<_>>().join(", ");
-                format!("Edit only these claimed file families: {paths}. Other workers share this checkout. Do not switch branches or commit.\n\n{prompt}")
+            let peer_id = PeerId::parse(&peer).ok_or_else(|| {
+                miette::miette!("unknown peer {peer:?}; use grok|agy|claude|codex|bxc")
+            })?;
+            let _claims = claim
+                .iter()
+                .map(|path| {
+                    aphrody_a2a_coord::claims::FileClaim::acquire(&repo_root, path)
+                        .map_err(|e| miette::miette!("claim {}: {e}", path.display()))
+                })
+                .collect::<miette::Result<Vec<_>>>()?;
+            let prompt = if claim.is_empty() {
+                prompt
+            } else {
+                let paths = claim
+                    .iter()
+                    .map(|path| path.display().to_string())
+                    .collect::<Vec<_>>()
+                    .join(", ");
+                format!(
+                    "Edit only these claimed file families: {paths}. Other workers share this checkout. Do not switch branches or commit.\n\n{prompt}"
+                )
             };
             let invoker = PeerInvoker::new(&repo_root).with_dry_run(dry_run);
             let result = invoker
@@ -479,7 +491,12 @@ impl TerminalCommand for AutoCommand {
             let prompt = self.args.join(" ");
             println!("✨ [Auto] Détection de langage naturel, bascule vers l'agent A2A...");
             return dispatch_a2a(
-                crate::A2aAction::Invoke { prompt, peer: "grok".to_string(), dry_run: false, claim: Vec::new() },
+                crate::A2aAction::Invoke {
+                    prompt,
+                    peer: "grok".to_string(),
+                    dry_run: false,
+                    claim: Vec::new(),
+                },
                 _ctx,
             )
             .await;
@@ -872,7 +889,7 @@ impl TerminalCommand for BxcCommand {
             && bin_path
                 .extension()
                 .and_then(|e| e.to_str())
-                .map_or(false, |ext| ext.eq_ignore_ascii_case("cmd"))
+                .is_some_and(|ext| ext.eq_ignore_ascii_case("cmd"))
         {
             std::process::Command::new("cmd").arg("/c").arg(&bin_path).args(&self.args).status()
         } else {
@@ -1206,10 +1223,10 @@ impl TerminalCommand for SearchCommand {
         // Both are honest answers, so neither is turned into a failure here —
         // but a reader who sees zero results needs to know the engine actually
         // answered, and with what code, to tell that apart from a block.
-        if let Some(code) = results.exit_code {
-            if code != 0 {
-                println!("{}", format!("code de sortie Web : {code}").dimmed());
-            }
+        if let Some(code) = results.exit_code
+            && code != 0
+        {
+            println!("{}", format!("code de sortie Web : {code}").dimmed());
         }
 
         if results.partial > 0 {
@@ -1570,11 +1587,11 @@ fn parse_age_from_result(r: &CheckResult) -> (Option<u64>, bool) {
     // Look for pattern "(NNN s ago"
     if let Some(start) = text.find('(') {
         let inner = &text[start + 1..];
-        if let Some(end) = inner.find(" s ago") {
-            if let Ok(age) = inner[..end].trim().parse::<u64>() {
-                let is_stale = age > HEARTBEAT_TTL_SECS;
-                return (Some(age), is_stale);
-            }
+        if let Some(end) = inner.find(" s ago")
+            && let Ok(age) = inner[..end].trim().parse::<u64>()
+        {
+            let is_stale = age > HEARTBEAT_TTL_SECS;
+            return (Some(age), is_stale);
         }
     }
     (None, false)
@@ -1607,12 +1624,11 @@ fn repo_root() -> Option<std::path::PathBuf> {
     let mut dir = std::env::current_dir().ok()?;
     loop {
         let candidate = dir.join("Cargo.toml");
-        if candidate.exists() {
-            if let Ok(content) = std::fs::read_to_string(&candidate) {
-                if content.contains("[workspace]") {
-                    return Some(dir);
-                }
-            }
+        if candidate.exists()
+            && let Ok(content) = std::fs::read_to_string(&candidate)
+            && content.contains("[workspace]")
+        {
+            return Some(dir);
         }
         if !dir.pop() {
             break;
@@ -1625,12 +1641,11 @@ fn repo_root() -> Option<std::path::PathBuf> {
     let mut dir = exe.parent()?.to_path_buf();
     loop {
         let candidate = dir.join("Cargo.toml");
-        if candidate.exists() {
-            if let Ok(content) = std::fs::read_to_string(&candidate) {
-                if content.contains("[workspace]") {
-                    return Some(dir);
-                }
-            }
+        if candidate.exists()
+            && let Ok(content) = std::fs::read_to_string(&candidate)
+            && content.contains("[workspace]")
+        {
+            return Some(dir);
         }
         if !dir.pop() {
             break;
@@ -1771,8 +1786,7 @@ fn check_inbox() -> CheckResult {
     // Extract the id field from the last non-empty line.
     let last_id = text
         .lines()
-        .filter(|l| !l.trim().is_empty())
-        .next_back()
+        .rfind(|l| !l.trim().is_empty())
         .and_then(|line| {
             extract_json_str_field(line, "id").or_else(|| extract_json_str_field(line, "from"))
         })
@@ -1836,8 +1850,7 @@ fn extract_json_str_field(text: &str, key: &str) -> Option<String> {
     // Skip whitespace and colon.
     let colon = after_key.find(':')?;
     let after_colon = after_key[colon + 1..].trim_start();
-    if after_colon.starts_with('"') {
-        let inner = &after_colon[1..];
+    if let Some(inner) = after_colon.strip_prefix('"') {
         let end = inner.find('"')?;
         Some(inner[..end].to_string())
     } else {

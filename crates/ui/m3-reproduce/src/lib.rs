@@ -14,10 +14,9 @@
 //! | `image`   | (default) [`theme::theme_from_image_bytes`] — PNG/JPEG capture bytes to a seed color, via `aphrody-m3-tokens`'s `sourceColorFromImage` port. |
 //! | `crawl`   | [`crawl`] — regex-based color/font/landmark extraction from an already-fetched HTML string. No network, no DOM/CSS engine: light by design. |
 //! | `network` | [`fetch`] — fetches a URL's HTML before crawling it (`reqwest` blocking). |
-//! | `capture` | Windows-only screen/window capture (`aphrody-capture`) for local screenshot workflows; feeds [`theme::theme_from_image_bytes`] once the caller encodes the capture to PNG. |
 //! | `cli`     | The `aphrody-m3-reproduce` binary (`--url`, `--image`, `--out`, `--json`). |
 //!
-//! Only [`theme`] and [`plan`] are unconditionally compiled; every network- or capture-adjacent
+//! Only [`theme`] and [`plan`] are unconditionally compiled; every network-adjacent
 //! piece is feature-gated so the core stays a light, deterministic library.
 
 pub mod plan;

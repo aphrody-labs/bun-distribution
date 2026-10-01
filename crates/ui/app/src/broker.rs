@@ -231,14 +231,13 @@ impl AppServerBroker {
             },
         };
         response["id"] = original_id;
-        if method == "thread/close" {
-            if let Some(thread_id) = message
+        if method == "thread/close"
+            && let Some(thread_id) = message
                 .get("params")
                 .and_then(|params| params.get("threadId"))
                 .and_then(Value::as_str)
-            {
-                self.unsubscribe(thread_id);
-            }
+        {
+            self.unsubscribe(thread_id);
         }
         Ok(response)
     }

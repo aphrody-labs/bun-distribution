@@ -26,6 +26,7 @@ export const AccordionRoot = forwardRef<HTMLDivElement, AccordionRootProps>(
       <AccordionPrimitive.Root
         ref={ref}
         className={withClassName(clsx("w-full overflow-hidden transition-all duration-200", variantStyles), className)}
+        data-m3-component="Accordion"
         {...props}
       />
     );
@@ -81,6 +82,7 @@ export const AccordionTrigger = forwardRef<HTMLButtonElement, AccordionTriggerPr
         )}
         render={child.render}
         nativeButton={child.nativeButton}
+        data-m3-component="AccordionTrigger"
         {...props}
       >
         {child.render ? undefined : (

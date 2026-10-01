@@ -151,7 +151,7 @@ export default function App() {
   layouts.forEach((layoutFile, idx) => {
     const varName = `Layout_${idx}`;
     layoutVarMap.set(layoutFile, varName);
-    const cleanPath = `./components/${layoutFile.replace(\.(tsx|jsx|js|ts)$/, "")}`;
+    const cleanPath = `./components/${layoutFile.replace(/\.(tsx|jsx|js|ts)$/, "")}`;
     layoutImports.push(`import ${varName} from '${cleanPath}';`);
   });
 
@@ -161,7 +161,7 @@ export default function App() {
   routes.forEach((route, idx) => {
     const varName = `Page_${idx}`;
     pageVarMap.set(route.pageFile, varName);
-    const cleanPath = `./components/${route.pageFile.replace(\.(tsx|jsx|js|ts)$/, "")}`;
+    const cleanPath = `./components/${route.pageFile.replace(/\.(tsx|jsx|js|ts)$/, "")}`;
     pageImports.push(`import ${varName} from '${cleanPath}';`);
   });
 

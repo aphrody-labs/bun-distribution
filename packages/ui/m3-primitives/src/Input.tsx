@@ -131,6 +131,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
 
     const field = (
       <div
+        data-m3-component="Input"
         className={clsx(
           "group flex",
           inputStyles({
@@ -239,6 +240,7 @@ export const TextArea = forwardRef<HTMLTextAreaElement, TextareaProps>(
     const dense = isDense(size);
     const area = (
       <textarea
+        data-m3-component="TextArea"
         {...props}
         ref={ref}
         aria-invalid={error ? true : undefined}
@@ -276,6 +278,7 @@ export interface LabelProps extends Omit<React.ComponentProps<"label">, "htmlFor
 export function Label({ slug, children, className, ...props }: LabelProps) {
   return (
     <label
+      data-m3-component="Label"
       htmlFor={slug}
       className={clsx("text-label-large text-on-surface", className)}
       {...props}

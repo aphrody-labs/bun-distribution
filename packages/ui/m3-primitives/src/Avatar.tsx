@@ -43,6 +43,7 @@ export const AvatarRoot = forwardRef<HTMLSpanElement, AvatarRootProps>(
         clsx(avatarVariants({ size, shape }), "bg-primary-container text-on-primary-container"),
         className,
       )}
+      data-m3-component="Avatar"
       {...props}
     />
   ),

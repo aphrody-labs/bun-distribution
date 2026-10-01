@@ -58,10 +58,10 @@ fn edit_add(
     if url.is_some() == !command.is_empty() {
         return Err(miette::miette!("provide exactly one of --url or a command after --"));
     }
-    if let Some(url) = url {
-        if !(url.starts_with("https://") || url.starts_with("http://")) {
-            return Err(miette::miette!("MCP server URL must use http:// or https://"));
-        }
+    if let Some(url) = url
+        && !(url.starts_with("https://") || url.starts_with("http://"))
+    {
+        return Err(miette::miette!("MCP server URL must use http:// or https://"));
     }
     let servers = server_table_mut(document)?;
     if servers.contains_key(name) {

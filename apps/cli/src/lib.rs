@@ -37,6 +37,8 @@ mod context;
 #[cfg(not(target_arch = "wasm32"))]
 mod design_cmd;
 #[cfg(not(target_arch = "wasm32"))]
+mod discord_cmd;
+#[cfg(not(target_arch = "wasm32"))]
 mod docs_cmd;
 #[cfg(not(target_arch = "wasm32"))]
 mod exec_cmd;
@@ -555,6 +557,12 @@ enum Commands {
         #[command(subcommand)]
         action: McpAction,
     },
+    /// Discord bot compilation, inspection, and monorepo verification.
+    #[cfg(not(target_arch = "wasm32"))]
+    Discord {
+        #[command(subcommand)]
+        action: discord_cmd::DiscordAction,
+    },
     /// Native Git inspection, GitHub REST/GraphQL, and ecosystem distribution.
     #[cfg(not(target_arch = "wasm32"))]
     Git {
@@ -978,7 +986,7 @@ enum Commands {
         #[command(subcommand)]
         action: antigravity_cmd::AntigravityAction,
     },
-    /// Export the canonical aphrody logo (`assets/aphrody.webp`).
+    /// Export the canonical aphrody logo (`crates/ui/identity/assets/logo/aphrody.webp`).
     #[cfg(not(target_arch = "wasm32"))]
     Logo {
         /// Write a multi-resolution Windows `.ico` (16/32/48/64/128/256) here.
@@ -1751,6 +1759,9 @@ async fn dispatch(ctx: &GoogleContext, cli: Cli) -> miette::Result<()> {
                 mcp_cmd::McpCallCommand { config, server, tool, args }.execute(ctx).await?;
             },
         },
+        Some(Commands::Discord { action }) => {
+            discord_cmd::run_discord(action).await?;
+        },
         Some(Commands::Git { action }) => {
             git_cmd::run(action).await?;
         },
@@ -2136,19 +2147,20 @@ async fn dispatch(ctx: &GoogleContext, cli: Cli) -> miette::Result<()> {
         },
         Some(Commands::Antigravity { action }) => antigravity_cmd::run(action).await?,
         Some(Commands::Logo { ico, svg, maskable, size }) => {
+            use aphrody_identity::logo;
             let mut wrote = false;
             if let Some(p) = ico {
-                aphrody_logo::write_ico(&p).map_err(|e| miette::miette!("logo ico: {e}"))?;
+                logo::write_ico(&p).map_err(|e| miette::miette!("logo ico: {e}"))?;
                 println!("wrote {}", p.display());
                 wrote = true;
             }
             if let Some(p) = svg {
-                aphrody_logo::write_svg(&p).map_err(|e| miette::miette!("logo svg: {e}"))?;
+                logo::write_svg(&p).map_err(|e| miette::miette!("logo svg: {e}"))?;
                 println!("wrote {}", p.display());
                 wrote = true;
             }
             if let Some(p) = maskable {
-                let png = aphrody_logo::maskable_png(size, aphrody_logo::BRAND_BG)
+                let png = logo::maskable_png(size, logo::BRAND_BG)
                     .map_err(|e| miette::miette!("logo maskable: {e}"))?;
                 std::fs::write(&p, png)
                     .map_err(|e| miette::miette!("write {}: {e}", p.display()))?;

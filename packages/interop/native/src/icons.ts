@@ -3,7 +3,7 @@
 import { CString } from "bun:ffi";
 import { nativeSymbols as lib } from "./library";
 
-/** Material Symbols style: the three variable fonts embedded by `aphrody-icons`. */
+/** Material Symbols style: the three variable fonts embedded by the `icons` module of `aphrody-bun`. */
 export type M3IconStyle = "outlined" | "rounded" | "sharp";
 
 export interface M3IconOptions {
@@ -36,7 +36,7 @@ function callJson(
 ): IconEnvelope {
   const buf = Buffer.from(payload);
   const ptr = symbol(buf, buf.length);
-  if (!ptr) throw new Error("aphrody-icons FFI call returned a null pointer");
+  if (!ptr) throw new Error("aphrody-bun icons FFI call returned a null pointer");
   let envelope: IconEnvelope;
   try {
     envelope = JSON.parse(new CString(ptr as any).toString()) as IconEnvelope;
@@ -44,13 +44,13 @@ function callJson(
     lib.bun_rs_free_string(ptr as any);
   }
   if (typeof envelope.ok !== "boolean")
-    throw new Error("aphrody-icons returned an invalid response");
+    throw new Error("aphrody-bun icons returned an invalid response");
   return envelope;
 }
 
 /**
  * Renders a Material Symbols icon as a standalone SVG document string, generated from the
- * variable font outlines by `aphrody-icons` (no icon font shipped or loaded by the caller).
+ * variable font outlines by the `icons` module of `aphrody-bun` (no icon font shipped or loaded by the caller).
  */
 export function m3Icon(options: M3IconOptions): string {
   const envelope = callJson(lib.bun_rs_icon_svg as any, JSON.stringify(options));

@@ -18,6 +18,45 @@ export interface NextMigrateContextValue {
   openExternal: (url: string) => Promise<void>;
 }
 
+/** Minimal window surface used to hand external URLs to the OS (Tauri plugins or the browser). */
+export interface ExternalOpenerWindow {
+  __TAURI__?: {
+    opener?: { openUrl?: (url: string) => Promise<void> };
+    shell?: { open?: (url: string) => Promise<void> };
+  };
+  __TAURI_PLUGIN_SHELL__?: { open?: (url: string) => Promise<void> };
+  open: (url: string, target: string, features: string) => unknown;
+}
+
+/**
+ * Open `url` outside the app. Tauri 3 apps expose `plugin-opener` (`openUrl`), Tauri 2 apps `plugin-shell`
+ * (`open`); anything else falls back to `window.open`.
+ */
+export async function openExternalUrl(
+  url: string,
+  mode: RouterMode,
+  win: ExternalOpenerWindow | undefined,
+): Promise<void> {
+  if (!win) return;
+  if (mode === "tauri") {
+    try {
+      const opener = win.__TAURI__?.opener;
+      if (opener?.openUrl) {
+        await opener.openUrl(url);
+        return;
+      }
+      const shell = win.__TAURI__?.shell ?? win.__TAURI_PLUGIN_SHELL__;
+      if (shell?.open) {
+        await shell.open(url);
+        return;
+      }
+    } catch {
+      // Fall back to window.open
+    }
+  }
+  win.open(url, "_blank", "noopener,noreferrer");
+}
+
 const NextMigrateContext = createContext<NextMigrateContextValue | null>(null);
 
 export interface NextMigrateProviderProps {
@@ -38,7 +77,8 @@ export function NextMigrateProvider({
   onNavigate,
 }: NextMigrateProviderProps) {
   // Autodetect hash routing if in file:// or specified
-  const isHash = useHashRouting ?? (typeof window !== "undefined" && window.location.protocol === "file:");
+  const isHash =
+    useHashRouting ?? (typeof window !== "undefined" && window.location.protocol === "file:");
 
   const parseLocation = (): { pathname: string; search: string } => {
     if (typeof window === "undefined") {
@@ -148,22 +188,8 @@ export function NextMigrateProvider({
     setCurrentLoc(parseLocation());
   };
 
-  const openExternal = async (url: string) => {
-    if (mode === "tauri" && typeof window !== "undefined") {
-      try {
-        const shell = (window as any).__TAURI__?.shell || (window as any).__TAURI_PLUGIN_SHELL__;
-        if (shell?.open) {
-          await shell.open(url);
-          return;
-        }
-      } catch {
-        // Fallback to window.open
-      }
-    }
-    if (typeof window !== "undefined") {
-      window.open(url, "_blank", "noopener,noreferrer");
-    }
-  };
+  const openExternal = (url: string) =>
+    openExternalUrl(url, mode, typeof window === "undefined" ? undefined : window);
 
   const value: NextMigrateContextValue = {
     pathname: currentLoc.pathname,

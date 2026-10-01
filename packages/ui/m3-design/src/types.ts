@@ -72,6 +72,24 @@ export interface GenerationResult {
       innovation: number;
     };
     rationale: string;
-    issues?: any[];
+    issues?: SpecIssue[];
   };
 }
+
+export interface SpecIssue {
+  level: "error" | "warning" | (string & {});
+  line: number;
+  rule: string;
+  message: string;
+}
+
+export interface SpecValidation {
+  score: number;
+  issues: SpecIssue[];
+}
+
+/** Checks generated source against M3 specification rules. */
+export type SpecValidator = (code: string) => SpecValidation;
+
+/** Returns the `tokens.css` body of a design system, or `undefined` when unknown. */
+export type DesignSystemLoader = (id: string) => string | undefined;

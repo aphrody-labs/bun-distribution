@@ -24,4 +24,4 @@ When given a task:
 
 Output production-ready code + explanation of FFI invariants preserved.
 
-Prefer the patterns from `crates/aphrody-x` and `crates/aphrody-x-algorithm`.
+Prefer the patterns from `crates/web/x` (client in `src/`, ranking in `src/algorithm.rs`).

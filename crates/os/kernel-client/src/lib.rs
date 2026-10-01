@@ -217,27 +217,35 @@ impl KernelClient {
             let mut stream = self.stream.lock().await;
             stream.get_mut().write_all(&line).await.map_err(KernelClientError::Io)?;
             stream.get_mut().flush().await.map_err(KernelClientError::Io)?;
-            let response = read_frame(&mut stream).await?;
-            let response: Value = serde_json::from_slice(&response)
-                .map_err(|error| KernelClientError::Protocol(error.to_string()))?;
-            if response.get("id").and_then(Value::as_u64) != Some(id) {
-                return Err(KernelClientError::Protocol(
-                    "response id does not match request".into(),
-                ));
-            }
-            if let Some(error) = response.get("error") {
-                return Err(KernelClientError::Rpc {
-                    code: error.get("code").and_then(Value::as_i64).unwrap_or(-32000),
-                    message: error
-                        .get("message")
-                        .and_then(Value::as_str)
-                        .unwrap_or("unknown error")
-                        .to_owned(),
+            loop {
+                let response = read_frame(&mut stream).await?;
+                let response: Value = serde_json::from_slice(&response)
+                    .map_err(|error| KernelClientError::Protocol(error.to_string()))?;
+                if !response.is_object() {
+                    return Err(KernelClientError::Protocol("expected JSON-RPC object".into()));
+                }
+                if response.get("method").is_some() || response.get("id").is_none() {
+                    continue;
+                }
+                if response.get("id").and_then(Value::as_u64) != Some(id) {
+                    return Err(KernelClientError::Protocol(
+                        "response id does not match request".into(),
+                    ));
+                }
+                if let Some(error) = response.get("error") {
+                    return Err(KernelClientError::Rpc {
+                        code: error.get("code").and_then(Value::as_i64).unwrap_or(-32000),
+                        message: error
+                            .get("message")
+                            .and_then(Value::as_str)
+                            .unwrap_or("unknown error")
+                            .to_owned(),
+                    });
+                }
+                return response.get("result").cloned().ok_or_else(|| {
+                    KernelClientError::Protocol("response has neither result nor error".into())
                 });
             }
-            response.get("result").cloned().ok_or_else(|| {
-                KernelClientError::Protocol("response has neither result nor error".into())
-            })
         })
         .await
         .map_err(|_| KernelClientError::Timeout)?
@@ -359,5 +367,94 @@ mod tests {
         assert!(!format!("{options:?}").contains("secret-token"));
         let client = KernelClient::from_stream(Box::new(client_io), None, Duration::from_millis(5));
         assert!(matches!(client.tools().await, Err(KernelClientError::Timeout)));
+    }
+
+    #[tokio::test]
+    async fn ignores_interleaved_notifications_before_request_response() {
+        let (client_io, mut server_io) = tokio::io::duplex(4096);
+        let client = KernelClient::from_stream(Box::new(client_io), None, Duration::from_secs(1));
+        let server = tokio::spawn(async move {
+            let mut reader = tokio::io::BufReader::new(&mut server_io);
+            let mut line = String::new();
+
+            // Handshake: initialize
+            reader.read_line(&mut line).await.unwrap();
+            let initialize: Value = serde_json::from_str(&line).unwrap();
+            assert_eq!(initialize["method"], "initialize");
+            let id = initialize["id"].clone();
+            let mut response =
+                serde_json::to_vec(&json!({ "jsonrpc": "2.0", "id": id, "result": {} })).unwrap();
+            response.push(b'\n');
+            reader.get_mut().write_all(&response).await.unwrap();
+
+            // notifications/initialized from client
+            line.clear();
+            reader.read_line(&mut line).await.unwrap();
+            assert_eq!(
+                serde_json::from_str::<Value>(&line).unwrap()["method"],
+                "notifications/initialized"
+            );
+
+            // Method call from client
+            line.clear();
+            reader.read_line(&mut line).await.unwrap();
+            let call: Value = serde_json::from_str(&line).unwrap();
+            assert_eq!(call["method"], "desktop/window_list");
+            let id = call["id"].clone();
+
+            // Interleave an asynchronous notification before replying to the request
+            let mut notification = serde_json::to_vec(&json!({
+                "jsonrpc": "2.0",
+                "method": "desktop/notify",
+                "params": { "title": "Background Notification", "level": "info" }
+            }))
+            .unwrap();
+            notification.push(b'\n');
+            reader.get_mut().write_all(&notification).await.unwrap();
+
+            // Send the actual response matching the request id
+            let mut response = serde_json::to_vec(&json!({
+                "jsonrpc": "2.0",
+                "id": id,
+                "result": { "windows": ["main", "terminal"] }
+            }))
+            .unwrap();
+            response.push(b'\n');
+            reader.get_mut().write_all(&response).await.unwrap();
+        });
+
+        let result = client.call_method("desktop/window_list", json!({})).await.unwrap();
+        assert_eq!(result, json!({ "windows": ["main", "terminal"] }));
+        server.await.unwrap();
+    }
+
+    #[tokio::test]
+    async fn mismatched_response_id_fails() {
+        let (client_io, mut server_io) = tokio::io::duplex(4096);
+        let client = KernelClient::from_stream(Box::new(client_io), None, Duration::from_secs(1));
+        let server = tokio::spawn(async move {
+            let mut reader = tokio::io::BufReader::new(&mut server_io);
+            let mut line = String::new();
+            reader.read_line(&mut line).await.unwrap();
+            let initialize: Value = serde_json::from_str(&line).unwrap();
+            let id = initialize["id"].as_u64().unwrap();
+            let mut response = serde_json::to_vec(&json!({
+                "jsonrpc": "2.0",
+                "id": id + 999,
+                "result": {}
+            }))
+            .unwrap();
+            response.push(b'\n');
+            reader.get_mut().write_all(&response).await.unwrap();
+        });
+
+        let result = client.call_method("test", json!({})).await;
+        match result {
+            Err(KernelClientError::Protocol(msg)) => {
+                assert_eq!(msg, "response id does not match request");
+            },
+            other => panic!("expected Protocol error, got {other:?}"),
+        }
+        server.await.unwrap();
     }
 }

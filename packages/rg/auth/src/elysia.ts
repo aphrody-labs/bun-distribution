@@ -1,7 +1,7 @@
 import { agentAuth } from "@better-auth/agent-auth";
 import { apiKey } from "@better-auth/api-key";
 import { betterAuth } from "better-auth";
-import { admin, jwt, mcp, openAPI } from "better-auth/plugins";
+import { admin, jwt, openAPI } from "better-auth/plugins";
 import nodemailer from "nodemailer";
 import { getPgPool } from "@rosegriffon/db/pg";
 import { commonAuthOptions } from "./core";
@@ -75,7 +75,6 @@ export const elysiaAuth = betterAuth({
 			rateLimit: { enabled: true, maxRequests: 1_000, timeWindow: 60 * 60 * 1_000 },
 		}) as unknown as ReturnType<typeof admin>,
 		jwt(),
-		mcp({ loginPage: "/login", resource: `${baseURL}/v1/auth/mcp` }),
 		agentAuth({
 			providerName: "Rose Griffon",
 			providerDescription: "Rose Griffon authentication and community capabilities.",

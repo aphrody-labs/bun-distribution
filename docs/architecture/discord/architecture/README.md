@@ -1,33 +1,35 @@
-# Aphrody Discord architecture
+<!-- SPDX-License-Identifier: Apache-2.0 -->
 
-This monorepo is the shared home for Discord transport and runtime capabilities used across Aphrody repositories. Applications keep their own domain logic, persistence, and product APIs; shared packages own reusable Discord contracts, REST/Gateway/interaction adapters, and framework integrations.
+# Aphrody Discord Architecture & Upstream Consolidation
 
-## Audited upstreams
+> [!NOTE]
+> Canonical documentation for Discord architecture and standalone native compilation is located at:
+> - [**Aphrody Discord Architecture**](../README.md)
+> - [**Discord Bot Compiler Architecture (`aphrody-discord-compiler`)**](../COMPILER.md)
+> - [**Discord Operations & Systemd Units**](../../operations/discord/SYSTEMD-SERVICES.md)
 
-| Repository or bot | Audit | Main shape |
+This directory preserves historical audits and records the completion of the Discord architecture consolidation in the Aphrody monorepo.
+
+---
+
+## 1. Audited Upstreams Status
+
+| Repository or bot | Historical Audit | Current Status (October 2026) |
 | --- | --- | --- |
-| Aphrody AI messaging | [aphrody-ai-messaging-discord.md](./upstreams/aphrody-ai-messaging-discord.md) | Rust messaging contract and REST-only Discord adapter, now ported as Bun-first `@aphrody/messaging`. |
-| Shenron | [Shenron integration](../../shenron/docs/APHRODY-DISCORD-INTEGRATION.md) | Bun Dragon Ball bot; keeps commands, canon, auth, PostgreSQL/SQLite and API while adopting shared Discord transport incrementally. |
-| Rosegriffon (`rg`) | [rg-discord-bots.md](./upstreams/rg-discord-bots.md) | Separate DiscordX bot and Achillea application with substantial REST, Socket.IO, persistence, and tournament domains. |
-| NIE Wunderbot | [nie-wunderbot.md](./upstreams/nie-wunderbot.md) | Current upstream and published package review; local NIE checkout was not a valid source at audit time. |
+| **Aphrody AI messaging** | [aphrody-ai-messaging-discord.md](./upstreams/aphrody-ai-messaging-discord.md) | Fully ported and active as `@aphrody/messaging` (`packages/discord/aphrody-messaging`). Zero-runtime-dependency REST channel transport. |
+| **Shenron** | [Shenron integration](../../shenron/APHRODY-DISCORD-INTEGRATION.md) | Fully autonomous using `@aphrody/discord-kit`. Compiles to standalone native binary `dist/shenron` (~151.6 MB) executed by `shenron-bot.service`. |
+| **Rose Griffon (`rg`)** | [rg-discord-bots.md](./upstreams/rg-discord-bots.md) | Fully autonomous using `@aphrody/discord-kit`. Dynamic profile dispatch (`rg` vs `azalee`) via static loader registry `src/modules.ts`. Compiles to native binary `dist/rg-bot` (~144.9 MB) executed by `rg-bot.service`. |
+| **NIE Wunderbot** | [nie-wunderbot.md](./upstreams/nie-wunderbot.md) | Historical upstream review; superseded by shared framework. |
 
-Reports document dependency names and configuration key names only. They do not copy secrets or claim that all upstream runtime states are deployed.
+---
 
-## Current shared package
+## 2. Consolidation Completion Status (October 1, 2026)
 
-`packages/aphrody-messaging` contains the platform-neutral channel data contract and a Bun-native Discord REST implementation. It supports text/file sends, DM creation, room discovery, and cancellable polling. It has no direct runtime dependencies; Bun Fetch, URL, FormData, Web APIs, and `Bun.file` replace the Rust adapter's transport/runtime dependencies.
+All six phases of the original consolidation plan have been **fully achieved**:
 
-The legacy inbox poller is a compatibility path, not the preferred event runtime. A shared production framework should use a single Gateway connection for gateway events, and a separately selected signed HTTP interactions endpoint where that deployment mode is required. Discord only permits one interaction delivery mode per application at a time; configure the application's deployment mode explicitly.
-
-## Consolidation plan
-
-1. **Shared contracts:** stabilize message, attachment, room, error, and capability types in `@aphrody/messaging`; keep transport operations injectable for application testing.
-2. **One Discord runtime:** centralize token validation, REST rate-limit/retry behavior, Gateway lifecycle/reconnect/sharding, interaction signature validation, command registration, and health/readiness contracts in shared packages. Keep Gateway and HTTP interaction delivery as explicit mutually exclusive modes.
-3. **Framework adapters:** provide thin adapters for the chosen Discord framework(s). Reuse Discord.js or DiscordX only where their maintained API adds value; do not duplicate their gateway or REST stacks in Aphrody packages.
-4. **App migration:** migrate Aphrody AI notifications first, then RG and Achillea, then NIE Wunderbot. Each application retains its domain modules, database schemas, job queues, and product-specific commands; replace only shared Discord infrastructure.
-5. **Compatibility and retirement:** add import-boundary checks and package dependency audits; preserve old entry points as short-lived facades, migrate consumers, then remove duplicate clients and stale packages.
-6. **Release gate:** require Bun typecheck/lint, focused adapter tests with mocked Fetch/WebSocket, package export checks, and a test-guild smoke run before publishing a shared package.
-
-## Ownership boundary
-
-Shared framework code may own Discord protocols and common runtime lifecycle. It must not own Shenron/RG/NIE content models, application database access, bot-specific authorization policy, or secrets. Each consuming app supplies those through explicit interfaces.
+1. **Shared contracts:** Stabilized in `@aphrody/messaging` (platform-neutral channel contracts, 9 unit tests passing, tsdown build).
+2. **One Discord runtime (`@aphrody/discord-kit`):** Centralized in `packages/discord/kit` with intent preflight checks (`resolveGrantedIntents`), production cache limits and sweepers (`createProductionCacheOptions`), resilient interaction error recovery (`safeExecuteInteraction`), and runtime detection (`isCompiledBinary`).
+3. **Elimination of upstream forks:** The legacy nested fork `upstream/discord` (3.9 GB, 2,232 files) was entirely deleted. Dependencies are resolved strictly via npm catalog entries (`workspaces.catalog`) in the root `package.json` under **Bun 1.4.2** and **TypeScript 7.0.2**.
+4. **App migration:** `@shenron/bot`, `@rosegriffon/bot`, and `@rosegriffon/achillea-bot` now consume `@aphrody/discord-kit` and catalog dependencies.
+5. **Standalone Native Compiler:** Crate `crates/discord/aphrody-discord-compiler` and `apps/cli/src/discord_cmd.rs` provide native compilation (`aphrody discord compile all --smoke`) producing self-contained native binaries (`dist/shenron`, `dist/rg-bot`).
+6. **Release & verification gate:** `bun run discord:verify --compile` runs catalog verification, kit unit tests, messaging unit tests, bot test suites (412 tests for Shenron, 1,228 tests for RG), and standalone binary smoke tests with 100% pass rate.

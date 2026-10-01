@@ -10,7 +10,11 @@ import { withClassName } from "./base-ui";
 export type RootProps = TabsPrimitive.Root.Props;
 
 export const Root = ({ className, ...props }: RootProps) => (
-  <TabsPrimitive.Root className={withClassName("flex flex-col", className)} {...props} />
+  <TabsPrimitive.Root
+    className={withClassName("flex flex-col", className)}
+    data-m3-component="Tabs"
+    {...props}
+  />
 );
 
 export type ContentProps = TabsPrimitive.Panel.Props;
@@ -22,6 +26,7 @@ export const Content = ({ className, ...props }: ContentProps) => (
       "outline-none focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-secondary",
       className,
     )}
+    data-m3-component="TabsContent"
     {...props}
   />
 );
@@ -40,6 +45,7 @@ export const List = ({ className, activateOnFocus = true, ...props }: ListProps)
       "relative flex flex-row items-center border-b border-outline-variant",
       className,
     )}
+    data-m3-component="TabsList"
     {...props}
   />
 );
@@ -75,6 +81,7 @@ export const Trigger = ({ className, size = "md", ...props }: TriggerProps) => (
       ),
       className,
     )}
+    data-m3-component="TabsTrigger"
     {...props}
   />
 );

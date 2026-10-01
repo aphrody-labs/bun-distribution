@@ -203,10 +203,10 @@ pub(crate) async fn execute_awesome(action: AwesomeAction) -> miette::Result<()>
             out.push_str(&format!("Source: https://github.com/{}\n\n", index.repository));
 
             for cat in &index.categories {
-                if let Some(ref filter) = category {
-                    if !cat.name.to_lowercase().contains(&filter.to_lowercase()) {
-                        continue;
-                    }
+                if let Some(ref filter) = category
+                    && !cat.name.to_lowercase().contains(&filter.to_lowercase())
+                {
+                    continue;
                 }
                 out.push_str(&format!("## {}\n\n", cat.name));
                 for item in &cat.items {

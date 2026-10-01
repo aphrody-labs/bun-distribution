@@ -30,7 +30,11 @@ function RadioGroupField({
     <FormField
       name={name}
       render={({ field, fieldState }) => (
-        <FormItem data-disabled={disabled || undefined}>
+        <FormItem
+          data-disabled={disabled || undefined}
+          data-m3-component="RadioGroupField"
+          data-testid={`field-${name}`}
+        >
           {label && <FormLabel required={required}>{label}</FormLabel>}
           <FormControl>
             <RadioGroup

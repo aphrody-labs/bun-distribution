@@ -158,13 +158,13 @@ async fn subscribe_to_events(
                 _ = &mut cancelled => break,
                 result = reader.read_line(&mut line) => {
                     if !matches!(result, Ok(count) if count > 0) { break; }
-                    if let Ok(message) = rpc::decode_line(&line) {
-                        if let Some(event) = rpc::event_payload(&message) {
-                            let _ = app.emit("aphrody-drive:core-event", serde_json::json!({
-                                "subscription_id": id,
-                                "event": event,
-                            }));
-                        }
+                    if let Ok(message) = rpc::decode_line(&line)
+                        && let Some(event) = rpc::event_payload(&message)
+                    {
+                        let _ = app.emit("aphrody-drive:core-event", serde_json::json!({
+                            "subscription_id": id,
+                            "event": event,
+                        }));
                     }
                 }
             }

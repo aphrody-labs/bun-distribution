@@ -21,9 +21,10 @@ workspace = true
 tauri-plugin = { workspace = true, features = ["build"] }
 
 [dependencies]
-aphrody-m3 = { workspace = true }
+aphrody-m3-tokens = { workspace = true }
 aphrody-render = { workspace = true, features = ["gpu"] }
 log = { workspace = true }
+raw-window-handle = "0.6"
 serde = { workspace = true }
 serde_json = { workspace = true }
 tauri = { workspace = true }

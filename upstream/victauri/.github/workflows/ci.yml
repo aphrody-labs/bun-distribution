@@ -1,0 +1,779 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+permissions:
+  contents: read
+
+# Cancel superseded runs on the same ref. PRs cancel aggressively (a new push
+# makes the old run moot); pushes to main are left to finish so the release
+# workflow's `require-ci-green` gate always has a conclusive run to point at.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  CARGO_TERM_COLOR: always
+  RUSTFLAGS: "-Dwarnings"
+  # Incremental compilation wastes time and cache space in CI (every job is a
+  # cold-ish build); disabling it shrinks the cache and speeds linking.
+  CARGO_INCREMENTAL: "0"
+
+jobs:
+  check:
+    name: Check & Lint
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Install system dependencies (Linux)
+        if: runner.os == 'Linux'
+        uses: ./.github/actions/linux-deps
+
+      - uses: dtolnay/rust-toolchain@3c5f7ea28cd621ae0bf5283f0e981fb97b8a7af9 # master (2026-06)
+        with:
+          toolchain: stable
+          components: clippy, rustfmt
+
+      - uses: Swatinem/rust-cache@9d47c6ad4b02e050fd481d890b2ea34778fd09d6 # v2.7.8
+        with:
+          # Save the cache only from main — PR builds reuse it but don't churn it.
+          save-if: ${{ github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master' }}
+
+      - name: Clippy
+        run: cargo clippy --workspace --all-targets -- -D warnings
+
+      # Our normal build only ever exercises ONE configuration (default features,
+      # debug). These guards cover the build configs real consumers hit that we
+      # otherwise never compile — each has shipped a bug we missed:
+      #   * default-features = false  → query_db broke the rmcp tool_router macro
+      #   * release profile           → debug-only tests/imports failed -Dwarnings
+      - name: Clippy (no default features — incl. tests)
+        if: matrix.os == 'ubuntu-latest'
+        run: cargo clippy --workspace --all-targets --no-default-features -- -D warnings
+
+      # The workspace step above does NOT compile the plugin without SQLite: demo-app and
+      # gauntlet-app depend on victauri-plugin with default features, and cargo's feature
+      # unification keeps `sqlite` on for every member. Only a `-p victauri-plugin` build
+      # actually compiles the `not(feature = "sqlite")` paths a consumer with
+      # `default-features = false` gets.
+      - name: Clippy (plugin alone, no SQLite)
+        if: matrix.os == 'ubuntu-latest'
+        run: cargo clippy -p victauri-plugin --all-targets --no-default-features -- -D warnings
+
+      - name: Plugin unit tests (no SQLite)
+        if: matrix.os == 'ubuntu-latest'
+        run: cargo test -p victauri-plugin --no-default-features --lib
+
+      - name: Clippy (release profile — incl. tests)
+        if: matrix.os == 'ubuntu-latest'
+        run: cargo clippy --workspace --all-targets --release -- -D warnings
+
+      - name: Check formatting
+        if: matrix.os == 'ubuntu-latest'
+        run: cargo fmt --all -- --check
+
+      - name: Doc-count lint (headline numbers match the code)
+        if: matrix.os == 'ubuntu-latest'
+        run: bash scripts/check-doc-counts.sh
+
+      # Enforce the pre-push gate installer's security regressions in CI (not just the local hook). Runs on
+      # all 3 OSes so the platform-gated cases actually execute somewhere: macOS exercises real symlinks +
+      # case-insensitive folding (R6-02/R7-02, R3/R4/R5 case-fold), Linux exercises real symlinks on a
+      # case-sensitive FS, Windows exercises case-insensitive NTFS. Seven adversarial rounds hardened this
+      # file; this keeps the bypasses (R2..R7) from silently regressing.
+      - name: Gate installer integrity tests
+        run: bash tools/test-install-gate.sh
+
+  test:
+    name: Test
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Install system dependencies (Linux)
+        if: runner.os == 'Linux'
+        uses: ./.github/actions/linux-deps
+
+      - uses: dtolnay/rust-toolchain@3c5f7ea28cd621ae0bf5283f0e981fb97b8a7af9 # master (2026-06)
+        with:
+          toolchain: stable
+
+      - uses: Swatinem/rust-cache@9d47c6ad4b02e050fd481d890b2ea34778fd09d6 # v2.7.8
+        with:
+          save-if: ${{ github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master' }}
+
+      - name: Install bridge test dependencies
+        working-directory: crates/victauri-plugin/tests/bridge_tests
+        run: npm ci --no-audit --no-fund
+
+      - name: Run tests
+        run: cargo test --workspace
+
+  # The canonical "below the glass" proof, run live on every desktop platform.
+  # On macOS no external tool can even attach to the WKWebView (Tauri docs:
+  # tauri-driver is "only Windows and Linux ... due to macOS not having a
+  # WKWebView driver tool available"), and WebDriver everywhere is DOM-only (no
+  # Rust backend / IPC / DB). This launches a real Tauri app on macOS, Linux, and
+  # Windows and asserts the full stack live: webview + DOM + IPC→Rust backend +
+  # registry + native. On Linux it additionally runs the adversarial E2E suite
+  # against the same running app (folded in from the old standalone job so the
+  # app is built and launched once, not twice). Screenshot and trusted input are
+  # excluded — they need display/Screen-Recording/Accessibility grants headless
+  # CI cannot give; the same-process introspection that is the wedge needs none.
+  live-app:
+    name: Live-App Proof (${{ matrix.os }})
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Install system dependencies (Linux)
+        if: runner.os == 'Linux'
+        uses: ./.github/actions/linux-deps
+        with:
+          xvfb: "true"
+
+      - uses: dtolnay/rust-toolchain@3c5f7ea28cd621ae0bf5283f0e981fb97b8a7af9 # master (2026-06)
+        with:
+          toolchain: stable
+
+      - uses: Swatinem/rust-cache@9d47c6ad4b02e050fd481d890b2ea34778fd09d6 # v2.7.8
+        with:
+          save-if: ${{ github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master' }}
+
+      - name: Build demo-app (debug → Victauri plugin active)
+        run: cargo build -p demo-app --bin demo-app
+
+      # Compile the adversarial test up front (Linux only) so launching the app
+      # and then running tests doesn't relink a running binary.
+      - name: Pre-compile adversarial E2E (Linux)
+        if: runner.os == 'Linux'
+        run: cargo test -p demo-app --test adversarial --no-run
+
+      - name: Prove full-stack introspection live on ${{ matrix.os }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          BIN=./target/debug/demo-app
+          [ "$RUNNER_OS" = "Windows" ] && BIN=./target/debug/demo-app.exe
+
+          case "$RUNNER_OS" in
+            Linux)
+              export WEBKIT_DISABLE_DMABUF_RENDERER=1 WEBKIT_DISABLE_COMPOSITING_MODE=1 LIBGL_ALWAYS_SOFTWARE=1
+              xvfb-run -a --server-args="-screen 0 1280x800x24" "$BIN" > app.log 2>&1 &
+              ;;
+            *)
+              "$BIN" > app.log 2>&1 &
+              ;;
+          esac
+          APP_PID=$!
+
+          up=false
+          for i in $(seq 1 90); do
+            if curl -sf http://127.0.0.1:7373/health >/dev/null 2>&1; then
+              echo "MCP server up after ${i}s"; up=true; break
+            fi
+            kill -0 "$APP_PID" 2>/dev/null || { echo "::error::app exited before the server came up"; cat app.log; exit 1; }
+            sleep 1
+          done
+          [ "$up" = true ] || { echo "::error::MCP server never became reachable"; cat app.log; kill "$APP_PID" 2>/dev/null || true; exit 1; }
+
+          B=http://127.0.0.1:7373/api/tools
+          fail() { echo "::error::$1"; echo '--- app.log ---'; cat app.log; kill "$APP_PID" 2>/dev/null || true; exit 1; }
+          call() { curl -sf -X POST "$B/$1" -H 'content-type: application/json' --data-binary "$2"; }
+
+          # The axum server binds before the webview finishes initializing — WebView2's
+          # cold init in particular can lag the server by several seconds. Wait for the
+          # webview to become eval-able before asserting (no-op once it's ready).
+          wv=false
+          for i in $(seq 1 45); do
+            r=$(call eval_js '{"code":"return 6*7"}' 2>/dev/null || true)
+            if echo "$r" | grep -q '42'; then echo "webview eval-able after ${i} tries"; wv=true; break; fi
+            sleep 2
+          done
+          [ "$wv" = true ] || fail "webview never became eval-able (last: ${r:-none})"
+
+          echo "================ FULL-STACK PROOF on $RUNNER_OS ================"
+
+          # 1. WEBVIEW — eval JS inside the live webview
+          ev=$(call eval_js '{"code":"return 6*7"}');                       echo "[1 webview ] eval 6*7      -> $ev"
+          echo "$ev"  | grep -q '42'     || fail "eval_js"
+
+          # 2. DOM — accessible snapshot with ref handles
+          dom=$(call dom_snapshot '{}');                                    echo "[2 dom     ] snapshot bytes -> ${#dom}"
+          echo "$dom" | grep -q 'ref'    || fail "dom_snapshot"
+
+          # 3. IPC → RUST BACKEND — invoke a real command (WebDriver CANNOT do this)
+          ipc=$(call invoke_command '{"command":"get_counter","args":{}}'); echo "[3 ipc->rust] get_counter  -> $ipc"
+          echo "$ipc" | grep -q 'result' || fail "invoke_command (IPC→backend)"
+
+          # 4. BACKEND — enumerate the registered command surface (no web API exists)
+          reg=$(call get_registry '{}'); n=$(echo "$reg" | jq '.result | length'); echo "[4 backend ] registry      -> $n"
+          [ "${n:-0}" -ge 1 ]           || fail "get_registry"
+
+          # 5. NATIVE — same-process OS introspection
+          mem=$(call get_memory_stats '{}');                                echo "[5 native  ] memory        -> $mem"
+          echo "$mem" | grep -qiE 'bytes|resident|working_set' || fail "get_memory_stats"
+
+          echo "PROVEN on $RUNNER_OS: webview + DOM + IPC→Rust backend + registry + native."
+          echo "=============================================================="
+
+          # On Linux, run the full adversarial suite against the same live app
+          # (sequential — the tests mutate shared app state).
+          if [ "$RUNNER_OS" = "Linux" ]; then
+            echo "=== adversarial E2E suite (live) ==="
+            set +e
+            VICTAURI_E2E=1 cargo test -p demo-app --test adversarial -- --test-threads=1 --nocapture
+            adv=$?
+            set -e
+            [ $adv -eq 0 ] || fail "adversarial E2E suite failed (exit $adv)"
+          fi
+
+          kill "$APP_PID" 2>/dev/null || true
+
+      - name: Upload app log on failure
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: live-app-log-${{ matrix.os }}
+          path: app.log
+          if-no-files-found: ignore
+
+  gauntlet:
+    name: Scale Gauntlet (${{ matrix.os }})
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    # REQUIRED GATE on BOTH moat platforms. The gauntlet drives a hostile 4DA-scale
+    # app and asserts every tool stays correct + bounded under load. Its first
+    # WebKitGTK run caught a moat-threatening bug — IPC-derived tools were blind on
+    # Linux because Tauri uses `ipc://localhost/` there, not WebView2's
+    # `http://ipc.localhost/`. The macOS (WKWebView) leg validates the SAME moat
+    # platform for free; it ran 21/21 green on the GitHub runner AND was confirmed
+    # 21/21 (twice, deterministically) on real Apple-silicon hardware (Tahoe 26.3 /
+    # M2 Pro, 2026-06-13), so it now gates merge too. It runs the 18 headless tests;
+    # the 3 display tests skip without a window server / Screen-Recording grant
+    # (only a real Mac provides those — see .claude/plans/macos-validation-runbook.md).
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Install system dependencies (Linux)
+        if: runner.os == 'Linux'
+        uses: ./.github/actions/linux-deps
+        with:
+          xvfb: "true"
+
+      - uses: dtolnay/rust-toolchain@3c5f7ea28cd621ae0bf5283f0e981fb97b8a7af9 # master (2026-06)
+        with:
+          toolchain: stable
+
+      - uses: Swatinem/rust-cache@9d47c6ad4b02e050fd481d890b2ea34778fd09d6 # v2.7.8
+        with:
+          save-if: ${{ github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master' }}
+
+      - name: Build gauntlet-app (debug → Victauri plugin active)
+        run: cargo build -p gauntlet-app --bin gauntlet-app
+
+      - name: Pre-compile the gauntlet battery
+        run: cargo test -p gauntlet-app --test gauntlet --no-run
+
+      - name: Run the scale gauntlet against the live app
+        shell: bash
+        run: |
+          set -euo pipefail
+          case "$RUNNER_OS" in
+            Linux)
+              export WEBKIT_DISABLE_DMABUF_RENDERER=1 WEBKIT_DISABLE_COMPOSITING_MODE=1 LIBGL_ALWAYS_SOFTWARE=1
+              xvfb-run -a --server-args="-screen 0 1280x800x24" ./target/debug/gauntlet-app > gauntlet.log 2>&1 &
+              ;;
+            *)
+              # macOS: GitHub runners have an Aqua window server, so the app + WKWebview
+              # launch directly. The 3 display tests still skip (no Screen-Recording grant).
+              ./target/debug/gauntlet-app > gauntlet.log 2>&1 &
+              ;;
+          esac
+          APP_PID=$!
+
+          up=false
+          for i in $(seq 1 90); do
+            if curl -sf http://127.0.0.1:7373/health >/dev/null 2>&1; then echo "server up after ${i}s"; up=true; break; fi
+            kill -0 "$APP_PID" 2>/dev/null || { echo "::error::gauntlet app exited before the server came up"; cat gauntlet.log; exit 1; }
+            sleep 1
+          done
+          [ "$up" = true ] || { echo "::error::gauntlet server never became reachable"; cat gauntlet.log; kill "$APP_PID" 2>/dev/null || true; exit 1; }
+
+          # Wait for the webview to become eval-able (cold init can lag the server).
+          wv=false
+          for i in $(seq 1 45); do
+            r=$(curl -sf -X POST http://127.0.0.1:7373/api/tools/eval_js -H 'content-type: application/json' --data-binary '{"code":"return 6*7"}' 2>/dev/null || true)
+            if echo "$r" | grep -q '42'; then echo "webview eval-able after ${i} tries"; wv=true; break; fi
+            sleep 2
+          done
+          [ "$wv" = true ] || { echo "::error::gauntlet webview never became eval-able"; cat gauntlet.log; kill "$APP_PID" 2>/dev/null || true; exit 1; }
+
+          set +e
+          VICTAURI_GAUNTLET=1 VICTAURI_PORT=7373 cargo test -p gauntlet-app --test gauntlet -- --test-threads=1 --nocapture
+          rc=$?
+          set -e
+          kill "$APP_PID" 2>/dev/null || true
+          [ $rc -eq 0 ] || { echo "::error::scale gauntlet failed (exit $rc)"; echo '--- gauntlet.log ---'; cat gauntlet.log; exit 1; }
+
+      - name: Upload gauntlet log on failure
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: gauntlet-log-${{ matrix.os }}
+          path: gauntlet.log
+          if-no-files-found: ignore
+
+  # The VS Code extension: typecheck, bundle, and its unit tests (code generation escaping,
+  # discovery/connection resolution, health semantics) under plain Node.
+  vscode:
+    name: VS Code extension
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    defaults:
+      run:
+        working-directory: editors/vscode
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+
+      # rustc lets the codegen test prove each generated literal lexes back to its input.
+      - uses: dtolnay/rust-toolchain@3c5f7ea28cd621ae0bf5283f0e981fb97b8a7af9 # master (2026-06)
+        with:
+          toolchain: stable
+
+      - name: Install dependencies (no install scripts)
+        run: npm ci --ignore-scripts --no-audit --no-fund
+
+      - name: Typecheck
+        run: npm run lint
+
+      - name: Build
+        run: npm run build
+
+      - name: Unit tests
+        run: npm test
+
+  docs:
+    name: Docs
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Install system dependencies
+        uses: ./.github/actions/linux-deps
+
+      - uses: dtolnay/rust-toolchain@3c5f7ea28cd621ae0bf5283f0e981fb97b8a7af9 # master (2026-06)
+        with:
+          toolchain: stable
+
+      - uses: Swatinem/rust-cache@9d47c6ad4b02e050fd481d890b2ea34778fd09d6 # v2.7.8
+        with:
+          save-if: ${{ github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master' }}
+
+      - name: Build docs
+        run: cargo doc --workspace --no-deps
+        env:
+          RUSTDOCFLAGS: "-Dwarnings"
+
+  msrv:
+    name: MSRV (1.88)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Install system dependencies
+        uses: ./.github/actions/linux-deps
+
+      - uses: dtolnay/rust-toolchain@3c5f7ea28cd621ae0bf5283f0e981fb97b8a7af9 # master (2026-06)
+        with:
+          toolchain: "1.88"
+
+      - uses: Swatinem/rust-cache@9d47c6ad4b02e050fd481d890b2ea34778fd09d6 # v2.7.8
+        with:
+          save-if: ${{ github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master' }}
+
+      # --locked: check the committed lockfile's versions (the ones CI and a fresh
+      # `cargo install --locked` resolve), and fail if Cargo.lock is out of date instead of
+      # silently re-resolving.
+      - name: Check MSRV
+        run: cargo check --workspace --locked
+
+  # victauri-plugin accepts rusqlite `>=0.32, <0.41` so cargo unifies onto the app's own
+  # rusqlite (`links = "sqlite3"` allows one libsqlite3-sys per build). The lockfile pins the
+  # OLD end; this job proves the NEW end: the security setters changed return type across the
+  # range (`SetupOutcome` in database.rs keeps them fail-closed on every version).
+  rusqlite-range:
+    name: rusqlite range (newest)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+
+      - name: Install system dependencies
+        uses: ./.github/actions/linux-deps
+
+      - uses: dtolnay/rust-toolchain@3c5f7ea28cd621ae0bf5283f0e981fb97b8a7af9 # master (2026-06)
+        with:
+          toolchain: stable
+
+      - name: Move rusqlite to the newest version the range allows
+        # Fails if the update did not reach the newest minor the workspace range allows
+        # (`>=0.32, <0.41` in Cargo.toml) — otherwise this job would silently keep testing 0.32.
+        # Widen NEWEST together with the range.
+        env:
+          NEWEST: "0.40."
+        run: |
+          cargo update -p rusqlite
+          resolved=$(grep -A1 '^name = "rusqlite"' Cargo.lock | sed -n 's/^version = "\(.*\)"/\1/p')
+          echo "rusqlite resolved to ${resolved:-<none>}"
+          case "$resolved" in
+            "$NEWEST"*) ;;
+            *) echo "::error::rusqlite resolved to '$resolved', expected $NEWEST* (the newest the range allows)"; exit 1 ;;
+          esac
+
+      - name: Clippy (plugin, sqlite)
+        run: cargo clippy -p victauri-plugin --all-targets --features sqlite -- -D warnings
+
+      - name: Plugin unit tests (incl. query_db / db_health)
+        run: cargo test -p victauri-plugin --features sqlite --lib
+
+  security:
+    name: Security Audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - uses: dtolnay/rust-toolchain@3c5f7ea28cd621ae0bf5283f0e981fb97b8a7af9 # master (2026-06)
+        with:
+          toolchain: stable
+
+      # Prebuilt binary — avoids ~3 min compiling cargo-audit from source.
+      - uses: taiki-e/install-action@25435dc8dd3baed7417e0c96d3fe89013a5b2e09 # v2
+        with:
+          tool: cargo-audit
+
+      - name: Run audit
+        run: cargo audit
+
+  deny:
+    name: Dependency Checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      # Third-party action pinned to a commit SHA (supply-chain hardening); v2 tag.
+      - uses: EmbarkStudios/cargo-deny-action@bb137d7af7e4fb67e5f82a49c4fce4fad40782fe # v2
+
+  coverage:
+    name: Code Coverage
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Install system dependencies
+        uses: ./.github/actions/linux-deps
+
+      - uses: dtolnay/rust-toolchain@3c5f7ea28cd621ae0bf5283f0e981fb97b8a7af9 # master (2026-06)
+        with:
+          toolchain: stable
+          components: llvm-tools-preview
+
+      - uses: Swatinem/rust-cache@9d47c6ad4b02e050fd481d890b2ea34778fd09d6 # v2.7.8
+        with:
+          save-if: ${{ github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master' }}
+
+      - uses: taiki-e/install-action@25435dc8dd3baed7417e0c96d3fe89013a5b2e09 # v2
+        with:
+          tool: cargo-llvm-cov
+
+      - name: Install bridge test dependencies
+        working-directory: crates/victauri-plugin/tests/bridge_tests
+        run: npm ci --no-audit --no-fund
+
+      - name: Generate coverage
+        run: cargo llvm-cov --workspace --lcov --output-path lcov.info
+
+      # No Codecov upload: without a token it failed on every run (tokenless upload
+      # refused) while reporting green, and the action ran an unverified `latest`
+      # CLI. The report is kept as an artifact instead.
+      - name: Keep the coverage report
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: lcov
+          path: lcov.info
+          retention-days: 14
+
+  semver:
+    name: Semver Checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          fetch-depth: 0
+
+      - name: Install system dependencies
+        uses: ./.github/actions/linux-deps
+
+      - uses: dtolnay/rust-toolchain@3c5f7ea28cd621ae0bf5283f0e981fb97b8a7af9 # master (2026-06)
+        with:
+          toolchain: stable
+
+      - uses: Swatinem/rust-cache@9d47c6ad4b02e050fd481d890b2ea34778fd09d6 # v2.7.8
+        with:
+          save-if: ${{ github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master' }}
+
+      # Prebuilt binary — avoids ~3 min compiling cargo-semver-checks from source.
+      # Pinned: the version this action pin defaults to (0.48) cannot read the rustdoc JSON of
+      # current stable ("unsupported rustdoc format v60"), and failed before checking anything.
+      - uses: taiki-e/install-action@25435dc8dd3baed7417e0c96d3fe89013a5b2e09 # v2
+        with:
+          tool: cargo-semver-checks@0.50.0
+
+      # INFORMATIONAL — not a required gate: a new stable rustdoc JSON format can outrun
+      # the pinned cargo-semver-checks, which is a tooling failure, not an API break. Note
+      # that for a 0.x MAJOR bump (0.8.8 -> 0.9.0) this step checks NOTHING: every lint is
+      # already permitted by a major bump, so it reports "0 checks … 254 skip" and passes.
+      # It only has teeth between patch releases of one 0.x line. RELEASING.md step 3 covers
+      # what to run for a major bump (`--release-type minor`, to list what actually broke).
+      # A failure is surfaced as a warning annotation below, never swallowed silently;
+      # RELEASING.md makes the local run the pre-release gate.
+      - name: Check semver (informational)
+        id: semver
+        continue-on-error: true
+        run: cargo semver-checks check-release --workspace
+      - name: Surface a semver-checks failure
+        if: steps.semver.outcome == 'failure'
+        run: echo "::warning title=Semver Checks::cargo semver-checks failed (API break, or a toolchain/tool mismatch) — read the log above"
+
+  e2e:
+    name: E2E Integration (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 40
+    # Run on PRs too, not just push-to-main. The real-app E2E (which drives a live Tauri
+    # app and includes the webview thread-safety stress test) is the ONLY gate that catches
+    # real-process regressions like the 0.8.0 host-crash — running it only after merge meant
+    # such bugs shipped before anyone saw red. Gate before merge.
+    if: github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref == 'refs/heads/main')
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Install system dependencies (Linux)
+        if: runner.os == 'Linux'
+        uses: ./.github/actions/linux-deps
+        with:
+          xvfb: "true"
+
+      - uses: dtolnay/rust-toolchain@3c5f7ea28cd621ae0bf5283f0e981fb97b8a7af9 # master (2026-06)
+        with:
+          toolchain: stable
+
+      - uses: Swatinem/rust-cache@9d47c6ad4b02e050fd481d890b2ea34778fd09d6 # v2.7.8
+        with:
+          save-if: ${{ github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master' }}
+
+      - name: Install bridge test dependencies
+        working-directory: crates/victauri-plugin/tests/bridge_tests
+        run: npm ci --no-audit --no-fund
+
+      - name: Build demo app
+        run: cargo build -p demo-app
+
+      # The app's stderr is CAPTURED, not discarded. When the host dies mid-suite, the test only
+      # reports "connection refused" — the actual cause (e.g. glibc's `malloc(): unaligned tcache
+      # chunk detected` for the WebKitGTK main-thread-round-trip corruption) is printed by the app
+      # itself and was previously lost, which is why that crash went undiagnosed for so long.
+      - name: Start demo app (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          xvfb-run -a ./target/debug/demo-app >/tmp/demo-app.out 2>/tmp/demo-app.err &
+          echo "APP_PID=$!" >> "$GITHUB_ENV"
+
+      - name: Start demo app (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          ./target/debug/demo-app >/tmp/demo-app.out 2>/tmp/demo-app.err &
+          echo "APP_PID=$!" >> "$GITHUB_ENV"
+
+      - name: Start demo app (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          # Run a COPY so the later `cargo test` is free to relink
+          # target\debug\demo-app.exe — Windows can't remove a running .exe, which
+          # otherwise fails the E2E step with "Access is denied".
+          Copy-Item .\target\debug\demo-app.exe .\target\debug\demo-app-run.exe -Force
+          $proc = Start-Process -FilePath .\target\debug\demo-app-run.exe -PassThru
+          "APP_PID=$($proc.Id)" | Out-File -Append -FilePath $env:GITHUB_ENV -Encoding utf8
+
+      - name: Victauri smoke tests
+        uses: ./.github/actions/victauri-test
+        with:
+          check: "true"
+          # Validate THIS repo's victauri-cli, not the published crate — otherwise
+          # the E2E job tests the previously-released version and can't catch a
+          # regression in the code about to ship (it didn't, pre-0.7.6).
+          cli-source-path: crates/victauri-cli
+
+      - name: Run E2E tests
+        run: cargo test -p demo-app --test integration -- --test-threads=1
+        env:
+          VICTAURI_E2E: "1"
+
+      # One run of the suite is a weak detector for a host crash that depends on timing: the
+      # 0.9.0 Linux heap corruption (a Tauri handle cloned/dropped off the main thread) killed the
+      # host in only ~25-50% of runs and hid behind nine green single runs. So on Linux the
+      # heap-sensitive tests run again against three FRESH apps, and any dead host fails the job.
+      - name: Heap-safety repeats against fresh apps (Linux)
+        if: runner.os == 'Linux'
+        env:
+          VICTAURI_E2E: "1"
+        run: |
+          # The suite's app is stopped on purpose here; clear APP_PID so the failure step below
+          # does not report it as a host that died.
+          if [ -n "$APP_PID" ]; then kill "$APP_PID" 2>/dev/null || true; fi
+          echo "APP_PID=" >> "$GITHUB_ENV"
+          sleep 1
+          deaths=0
+          for i in 1 2 3; do
+            xvfb-run -a ./target/debug/demo-app >/tmp/repeat-$i.out 2>/tmp/repeat-$i.err &
+            pid=$!
+            for t in $(seq 1 60); do
+              code=$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:7373/health || true)
+              case "$code" in 2??|429) break ;; esac
+              sleep 1
+            done
+            cargo test -q -p demo-app --test integration -- --test-threads=1 --exact \
+              concurrent_window_introspection_is_heap_safe \
+              webview_access_main_thread_safe_under_ipc_load \
+              webview_reload_during_introspection_is_safe || true
+            sleep 2
+            if ! pgrep -x demo-app >/dev/null || grep -qE 'malloc|corrupted|double free|unaligned|free\(\)' /tmp/repeat-$i.err /tmp/repeat-$i.out; then
+              deaths=$((deaths + 1))
+              echo "::error::repeat $i: the demo-app host died"
+              tail -n 40 /tmp/repeat-$i.err /tmp/repeat-$i.out
+            fi
+            pkill -x demo-app || true
+            kill "$pid" 2>/dev/null || true
+            sleep 1
+          done
+          echo "host deaths: $deaths/3"
+          test "$deaths" -eq 0
+
+      # Only on failure, and only where we captured it. If the host died, its own output names
+      # the cause; without this the log shows nothing but "connection refused".
+      - name: Show demo app output on failure (Unix)
+        if: failure() && runner.os != 'Windows'
+        run: |
+          echo "::group::demo-app stderr"
+          tail -n 200 /tmp/demo-app.err 2>/dev/null || echo "(no stderr captured)"
+          echo "::endgroup::"
+          echo "::group::demo-app stdout"
+          tail -n 100 /tmp/demo-app.out 2>/dev/null || echo "(no stdout captured)"
+          echo "::endgroup::"
+          if [ -n "$APP_PID" ] && ! kill -0 "$APP_PID" 2>/dev/null; then
+            echo "::warning::demo-app (PID $APP_PID) is NOT running — the host process died during the suite."
+          fi
+
+      - name: Cleanup (Unix)
+        if: always() && runner.os != 'Windows'
+        run: |
+          if [ -n "$APP_PID" ]; then
+            kill "$APP_PID" 2>/dev/null || true
+          fi
+
+      - name: Cleanup (Windows)
+        if: always() && runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          if ($env:APP_PID) {
+            Stop-Process -Id $env:APP_PID -Force -ErrorAction SilentlyContinue
+          }
+
+  # ─────────────────────────────────────────────────────────────────────
+  # Aggregate gate: a SINGLE required status check for branch protection.
+  # Listing ~15 matrix legs as required checks is brittle (a renamed job
+  # silently stops being required). This job depends on all of them and fails
+  # if any FAILED or was CANCELLED — a SKIPPED job (a conditional leg that
+  # legitimately did not apply, e.g. `semver` on a push to main) passes.
+  # Require ONLY "CI Success" in branch protection.
+  # ─────────────────────────────────────────────────────────────────────
+  ci-success:
+    name: CI Success
+    if: always()
+    needs:
+      [
+        check,
+        test,
+        live-app,
+        gauntlet,
+        docs,
+        vscode,
+        msrv,
+        rusqlite-range,
+        security,
+        deny,
+        coverage,
+        e2e,
+      ]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Verify all required jobs succeeded
+        run: |
+          results='${{ join(needs.*.result, ',') }}'
+          echo "dependency results: $results"
+          case ",$results," in
+            *,failure,* | *,cancelled,*)
+              echo "::error::a required CI job failed or was cancelled ($results)"
+              exit 1
+              ;;
+            *)
+              echo "all required CI jobs succeeded (or were skipped as not-applicable)"
+              ;;
+          esac

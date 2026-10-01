@@ -1,6 +1,8 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 # Tauri v2 plugins and capabilities
 
+> **Status: historical (Tauri 2 context).** This page describes the Tauri 2 desktop host. The workspace now pins Tauri 3 alpha (`tauri =3.0.0-alpha.3`, default runtime `tauri-runtime-wry`, `tauri-runtime-cef` only for Koharu): see [the Tauri 3 upstream line](../../../operations/ui/tauri-upstream.md) and [`config/tauri-apps.json`](../../../../config/tauri-apps.json). Keep the content below as compatibility context until the desktop host is requalified under Tauri 3 (Verify). Paths such as `crates/aphrody-app` and `packages/app-ui` predate the layout migration: the host is `crates/ui/app`, and `@aphrody/app-ui` is not yet part of this workspace.
+
 The plugins in use and what each one does are listed in
 [`../DESKTOP-INTEGRATION.md`](../DESKTOP-INTEGRATION.md). This page holds the selection rules.
 

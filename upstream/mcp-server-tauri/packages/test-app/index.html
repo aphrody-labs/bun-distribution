@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="stylesheet" href="/src/styles.css" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Tauri MCP Demo</title>
+    <script type="module" src="/src/main.ts" defer></script>
+  </head>
+
+  <body>
+    <div class="app">
+      <header class="header">
+        <div class="header-brand">
+          <img src="/src/assets/tauri.svg" class="header-logo" alt="Tauri" />
+          <h1>Tauri MCP</h1>
+        </div>
+        <span class="header-badge">Demo App</span>
+      </header>
+
+      <main class="main">
+        <section class="card greet-card">
+          <h2>Say Hello</h2>
+          <form class="greet-form" id="greet-form">
+            <input id="greet-input" type="text" placeholder="Enter your name..." />
+            <button type="submit" class="btn btn-primary">Greet</button>
+          </form>
+          <p id="greet-msg" class="greet-msg"></p>
+        </section>
+
+        <section class="card dialog-card">
+          <h2>Dialogs</h2>
+          <p class="card-subtitle">Test native dialog interactions</p>
+          <div class="dialog-buttons">
+            <button id="dialog-message" class="btn btn-secondary">Message</button>
+            <button id="dialog-ask" class="btn btn-secondary">Ask (Yes/No)</button>
+            <button id="dialog-confirm" class="btn btn-secondary">Confirm (Ok/Cancel)</button>
+            <button id="dialog-open" class="btn btn-secondary">Open File</button>
+            <button id="dialog-save" class="btn btn-secondary">Save File</button>
+          </div>
+          <p id="dialog-result" class="dialog-result"></p>
+        </section>
+
+        <section class="card scroll-card">
+          <h2>Scrollable Content</h2>
+          <p class="card-subtitle">Scroll to explore demo items</p>
+          <div class="scroll-area" id="scroll-area">
+            <div class="item" data-index="1">
+              <span class="item-icon">🚀</span>
+              <div class="item-content">
+                <strong>Launch Ready</strong>
+                <span>Your app is running in Tauri</span>
+              </div>
+            </div>
+            <div class="item" data-index="2">
+              <span class="item-icon">🔌</span>
+              <div class="item-content">
+                <strong>MCP Connected</strong>
+                <span>Bridge plugin is active</span>
+              </div>
+            </div>
+            <div class="item" data-index="3">
+              <span class="item-icon">🎯</span>
+              <div class="item-content">
+                <strong>Element Selection</strong>
+                <span>Find and interact with DOM elements</span>
+              </div>
+            </div>
+            <div class="item" data-index="4">
+              <span class="item-icon">⌨️</span>
+              <div class="item-content">
+                <strong>Keyboard Input</strong>
+                <span>Type text and send key events</span>
+              </div>
+            </div>
+            <div class="item" data-index="5">
+              <span class="item-icon">🖱️</span>
+              <div class="item-content">
+                <strong>Click Actions</strong>
+                <span>Click, double-click, and more</span>
+              </div>
+            </div>
+            <div class="item" data-index="6">
+              <span class="item-icon">📜</span>
+              <div class="item-content">
+                <strong>Scroll Control</strong>
+                <span>Scroll elements programmatically</span>
+              </div>
+            </div>
+            <div class="item" data-index="7">
+              <span class="item-icon">📸</span>
+              <div class="item-content">
+                <strong>Screenshots</strong>
+                <span>Capture webview state</span>
+              </div>
+            </div>
+            <div class="item" data-index="8">
+              <span class="item-icon">🔍</span>
+              <div class="item-content">
+                <strong>Style Inspection</strong>
+                <span>Read computed CSS styles</span>
+              </div>
+            </div>
+            <div class="item" data-index="9">
+              <span class="item-icon">📡</span>
+              <div class="item-content">
+                <strong>IPC Monitoring</strong>
+                <span>Track invoke calls and events</span>
+              </div>
+            </div>
+            <div class="item" data-index="10">
+              <span class="item-icon">🪟</span>
+              <div class="item-content">
+                <strong>Window Management</strong>
+                <span>List and resize windows</span>
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <footer class="footer">
+        <span class="status-dot"></span>
+        <span>Ready for automation</span>
+      </footer>
+    </div>
+  </body>
+</html>

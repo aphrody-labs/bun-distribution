@@ -56,6 +56,7 @@ export const CheckBox = forwardRef<HTMLInputElement, CheckBoxProps>(
     <input
       {...props}
       type="checkbox"
+      data-m3-component="CheckBox"
       ref={ref}
       aria-invalid={error ? true : undefined}
       className={styles({ error, className })}
@@ -128,6 +129,7 @@ export const CheckboxRoot = forwardRef<HTMLButtonElement, CheckboxRootProps>(
       nativeButton
       render={<button type="button" />}
       aria-invalid={error ? true : undefined}
+      data-m3-component="CheckboxRoot"
       className={withClassName(rootStyles(error), className)}
       {...props}
       {...checkedProps({ checked, defaultChecked, indeterminate })}

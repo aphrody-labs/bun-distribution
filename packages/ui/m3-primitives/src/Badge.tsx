@@ -45,7 +45,13 @@ export interface BadgeProps
   extends React.HTMLAttributes<HTMLDivElement>, VariantProps<typeof badgeVariants> {}
 
 function Badge({ className, variant, size, ...props }: BadgeProps) {
-  return <div className={clsx(badgeVariants({ variant, size }), className)} {...props} />;
+  return (
+    <div
+      className={clsx(badgeVariants({ variant, size }), className)}
+      data-m3-component="Badge"
+      {...props}
+    />
+  );
 }
 
 export { Badge, badgeVariants };

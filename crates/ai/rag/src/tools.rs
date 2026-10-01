@@ -510,6 +510,44 @@ impl WebIngestTool {
     }
 }
 
+#[async_trait]
+impl ToolExecutor for WebIngestTool {
+    fn definition(&self) -> &ToolDefinition {
+        &self.definition
+    }
+
+    async fn handle(&self, arguments: JsonValue) -> Result<ToolOutput, ToolError> {
+        let url = arguments.get("url").and_then(JsonValue::as_str).ok_or_else(|| {
+            ToolError::InvalidArguments {
+                tool: "web_ingest".to_string(),
+                message: "`url` is required".to_string(),
+            }
+        })?;
+        let force = arguments.get("force").and_then(JsonValue::as_bool).unwrap_or(false);
+        let markdown = match scrape_web_markdown(url, force, self.budget).await {
+            Ok(markdown) => markdown,
+            Err(error) => return Ok(ToolOutput::error(format!("web_ingest: {error}"))),
+        };
+
+        let size = i64::try_from(markdown.len()).unwrap_or(i64::MAX);
+        let now_ms = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map_or(0, |elapsed| i64::try_from(elapsed.as_millis()).unwrap_or(i64::MAX));
+        let opts = IndexOptions { force_reindex: force, ..IndexOptions::default() };
+
+        match self.indexer.index_document(url, &markdown, size, now_ms, &opts).await {
+            Ok(Some((chunks, vectors))) => Ok(ToolOutput::ok(format!(
+                "Indexed {url}: {chunks} chunk(s), {vectors} vector(s), {size} byte(s) of \
+                 markdown."
+            ))),
+            Ok(None) => Ok(ToolOutput::ok(format!(
+                "{url} is already indexed with identical content; pass force=true to re-index."
+            ))),
+            Err(error) => Ok(ToolOutput::error(format!("web_ingest: indexing failed: {error}"))),
+        }
+    }
+}
+
 #[cfg(test)]
 mod web_api_tests {
     use std::{
@@ -587,43 +625,5 @@ mod web_api_tests {
             .await
             .unwrap_err();
         assert!(error.contains("empty Markdown"));
-    }
-}
-
-#[async_trait]
-impl ToolExecutor for WebIngestTool {
-    fn definition(&self) -> &ToolDefinition {
-        &self.definition
-    }
-
-    async fn handle(&self, arguments: JsonValue) -> Result<ToolOutput, ToolError> {
-        let url = arguments.get("url").and_then(JsonValue::as_str).ok_or_else(|| {
-            ToolError::InvalidArguments {
-                tool: "web_ingest".to_string(),
-                message: "`url` is required".to_string(),
-            }
-        })?;
-        let force = arguments.get("force").and_then(JsonValue::as_bool).unwrap_or(false);
-        let markdown = match scrape_web_markdown(url, force, self.budget).await {
-            Ok(markdown) => markdown,
-            Err(error) => return Ok(ToolOutput::error(format!("web_ingest: {error}"))),
-        };
-
-        let size = i64::try_from(markdown.len()).unwrap_or(i64::MAX);
-        let now_ms = std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .map_or(0, |elapsed| i64::try_from(elapsed.as_millis()).unwrap_or(i64::MAX));
-        let opts = IndexOptions { force_reindex: force, ..IndexOptions::default() };
-
-        match self.indexer.index_document(url, &markdown, size, now_ms, &opts).await {
-            Ok(Some((chunks, vectors))) => Ok(ToolOutput::ok(format!(
-                "Indexed {url}: {chunks} chunk(s), {vectors} vector(s), {size} byte(s) of \
-                 markdown."
-            ))),
-            Ok(None) => Ok(ToolOutput::ok(format!(
-                "{url} is already indexed with identical content; pass force=true to re-index."
-            ))),
-            Err(error) => Ok(ToolOutput::error(format!("web_ingest: indexing failed: {error}"))),
-        }
     }
 }

@@ -47,7 +47,14 @@ export interface OptionListItemProps
     VariantProps<typeof optionListItemStyles> {}
 
 const OptionList = forwardRef<HTMLDivElement, OptionListProps>(({ className, ...props }, ref) => {
-  return <div ref={ref} className={clsx("flex flex-col gap-0.5", className)} {...props} />;
+  return (
+    <div
+      ref={ref}
+      className={clsx("flex flex-col gap-0.5", className)}
+      data-m3-component="OptionList"
+      {...props}
+    />
+  );
 });
 
 OptionList.displayName = "OptionList";
@@ -59,6 +66,7 @@ const OptionListItem = forwardRef<HTMLButtonElement, OptionListItemProps>(
         ref={ref}
         type={type}
         aria-pressed={!!selected}
+        data-m3-component="OptionListItem"
         className={clsx(optionListItemStyles({ size, selected: !!selected }), className)}
         {...props}
       />

@@ -1,0 +1,47 @@
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+
+# Tauri documentation hub
+
+Current line: Tauri 3 alpha (`tauri =3.0.0-alpha.3`, runtime `tauri-runtime-wry` by default,
+`tauri-runtime-cef` for Koharu only), pinned in the root `Cargo.toml` and described in
+[`docs/operations/ui/tauri-upstream.md`](../../../operations/ui/tauri-upstream.md) and
+[`config/tauri-apps.json`](../../../../config/tauri-apps.json) (registry of every Tauri project).
+Tauri 2 pages below are kept as historical or compatibility context and carry a banner. Parent map:
+[`../../../architecture/ui/README.md`](../../../architecture/ui/README.md).
+
+## Desktop host (Tauri 2 context, requalification pending)
+
+<!-- docs-hub:begin include="*.md;!README.md;../DESKTOP-INTEGRATION.md;../NATIVE-DESKTOP.md;../GUI.md" -->
+| Document | Contenu | Statut | Mis à jour |
+| --- | --- | --- | --- |
+| [Desktop integration (aphrody-app)](../DESKTOP-INTEGRATION.md) | How the Tauri v2 desktop integrates with Windows and Linux: installers, updates, "Open with Aphrody", deep links, tray, loading screen, desktop pet a… | legacy | 2026-09-29 |
+| [Desktop GUI contract](../GUI.md) | packages/app-ui is the single public-facing desktop webview, hosted by the current Tauri v2 app in crates/aphrody-app. | legacy | 2026-09-29 |
+| [Native desktop and distribution boundary](../NATIVE-DESKTOP.md) | Tauri v2 is the current host for Aphrody's public Chat, Files, Models and Settings webview. | legacy | 2026-09-29 |
+| [Tauri v2 integration](aphrody-integration.md) | How crates/aphrody-app hosts the UI and reaches the rest of Aphrody. | legacy | 2026-09-29 |
+| [Tauri v2 plugins and capabilities](plugins.md) | The plugins in use and what each one does are listed in ../DESKTOP-INTEGRATION.md. | legacy | 2026-09-29 |
+<!-- docs-hub:end -->
+
+## MCP and webview inspection
+
+- [`tauri-mcp.md`](../integrations/tauri-mcp.md): ownership, transport and tool list (the upstream
+  MIT notice is kept in [`tauri-mcp-upstream.LICENSE`](../integrations/tauri-mcp-upstream.LICENSE)).
+- [`tauri-mcp-parity.md`](../../../research/ui/integrations/tauri-mcp-parity.md): dated parity table
+  against the upstream reference revision.
+
+## Material Web and Tauri
+
+Owner documents in [`packages/ui/material-web/docs/tauri/`](../../../../packages/ui/material-web/docs/tauri/README.md)
+(prerequisites, project setup, desktop and mobile platforms, type safety) and the French guide
+[`tauri-2.0.md`](../../../../packages/ui/material-web/docs/tauri-2.0.md) (Tauri 2.0 and Material Design 3; historical).
+
+## Koharu
+
+[`KOHARU.md`](../integrations/KOHARU.md) (integration), the Koharu crates under
+[`crates/koharu`](../../../../crates/koharu/koharu/README.md) and the user docs in
+[`packages/koharu/docs`](../../../../packages/koharu/docs/en/index.mdx). Koharu keeps the CEF runtime.
+
+## Historical records
+
+- [`docs/rg/azalee-tauri.md`](../../../rg/azalee-tauri.md): archived Azalee Tauri client (no longer part of the monorepo).
+- [`docs/plans/ai/plans/tauri-app.md`](../../../plans/ai/plans/tauri-app.md): superseded in-process Tauri plan (2026-09-20 snapshot).
+- Agent skill for Tauri 2 (owned by the AI domain): [`config/ai/plugins/aphrody/skills/tauri-v2`](../../../../config/ai/plugins/aphrody/skills/tauri-v2/SKILL.md).

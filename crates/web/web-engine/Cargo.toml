@@ -27,7 +27,10 @@ stealth = ["render", "aphrody-web-service/stealth", "obscura-browser/stealth", "
 
 [dependencies]
 obscura-browser = { workspace = true }
+aphrody-web-crawl = { workspace = true }
+aphrody-web-extract = { workspace = true }
 aphrody-web-service = { workspace = true }
+obscura-dom = { workspace = true }
 obscura-cdp = { workspace = true }
 obscura-net = { workspace = true }
 obscura-js = { workspace = true }

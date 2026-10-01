@@ -85,6 +85,7 @@ export function RenameInput({ name, extension, onSave, onCancel, className }: Re
 
   return (
     <div
+      data-m3-component="RenameInput"
       className={clsx(
         "inline-flex items-center rounded-extra-small bg-surface-container-highest px-1 text-body-medium text-on-surface",
         "outline-primary transition-[outline-color] duration-200 ease-standard focus-within:outline-2",

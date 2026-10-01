@@ -7181,16 +7181,21 @@ fn split_css_top_level(value: &str, separator: char) -> Vec<&str> {
 /// the burst) came back blank, and the failure was cached permanently. The
 /// backoff both recovers them and paces the burst back under the limit.
 fn http_get_bytes(url: &str) -> Option<Vec<u8>> {
+    // ureq 3 builds an `http::Uri` from the string, which (unlike ureq 2, which
+    // went through `url::Url`) rejects spaces and non-ASCII. Normalise with
+    // `url` first so every absolute URL that used to load still does; an
+    // unparsable URL could never load before either (it only burned the retries).
+    let target = url::Url::parse(url).ok()?;
     let mut backoff = std::time::Duration::from_millis(200);
     for attempt in 0..3 {
         // Advertise only formats that this build can decode. Content-negotiating
         // CDNs otherwise commonly choose AVIF and leave the image blank.
-        let res = image_agent().get(url).set("Accept", IMAGE_ACCEPT).call();
+        let res = image_agent().get(target.as_str()).header("Accept", IMAGE_ACCEPT).call();
         match res {
             Ok(resp) => {
                 let mut buf = Vec::new();
                 use std::io::Read;
-                return resp.into_reader().read_to_end(&mut buf).ok().map(|_| buf);
+                return resp.into_body().into_reader().read_to_end(&mut buf).ok().map(|_| buf);
             },
             // 429 (rate limit) and 5xx are transient: a short backoff clears a
             // brief blip. A sustained limit (Wikimedia 429s a 60-image burst
@@ -7199,13 +7204,17 @@ fn http_get_bytes(url: &str) -> Option<Vec<u8>> {
             // minutes, so fast-fail to the grey placeholder instead. Real
             // fidelity for that case needs an HTTP/2 image client (multiplexing
             // like Chrome), not blocking retries.
-            Err(ureq::Error::Status(code, _))
+            Err(ureq::Error::StatusCode(code))
                 if matches!(code, 429 | 500 | 502 | 503 | 504) && attempt < 2 =>
             {
                 std::thread::sleep(backoff);
                 backoff *= 2;
             },
-            Err(ureq::Error::Transport(_)) if attempt < 2 => {
+            // Any other HTTP status (4xx, or a 5xx after the last attempt) is final.
+            Err(ureq::Error::StatusCode(_)) => return None,
+            // ureq 3 has no `Transport` wrapper: every non-status error (I/O,
+            // timeout, DNS, TLS) is a transport failure, retried like before.
+            Err(_) if attempt < 2 => {
                 std::thread::sleep(backoff);
                 backoff *= 2;
             },
@@ -7224,15 +7233,21 @@ fn http_get_bytes(url: &str) -> Option<Vec<u8>> {
 fn image_agent() -> &'static ureq::Agent {
     static AGENT: std::sync::OnceLock<ureq::Agent> = std::sync::OnceLock::new();
     AGENT.get_or_init(|| {
-        ureq::AgentBuilder::new()
-            .timeout(std::time::Duration::from_secs(10))
+        // ureq 3 config. Pinned to the ureq 2 behaviour: 10 s overall timeout,
+        // at most 5 redirects, no proxy from the environment (ureq 2 without
+        // `proxy-from-env` ignored it; ureq 3 reads it by default).
+        let config = ureq::Agent::config_builder()
+            .timeout_global(Some(std::time::Duration::from_secs(10)))
+            .max_redirects(5)
+            .proxy(None)
             // Present the same normal browser identity the engine uses for the
             // document. A bot-identifying UA got image requests filtered by CDNs
             // that gate on User-Agent (Akamai/Cloudflare image endpoints on
             // cnbc, techcrunch, arstechnica), so the images Chrome loads came
             // back blank; a real browser UA loads the same bytes Chrome does.
             .user_agent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36")
-            .build()
+            .build();
+        ureq::Agent::new_with_config(config)
     })
 }
 

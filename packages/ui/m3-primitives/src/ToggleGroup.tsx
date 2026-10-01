@@ -41,6 +41,7 @@ const ToggleGroup = forwardRef<HTMLDivElement, ToggleGroupProps>(
         value={[value]}
         onValueChange={(values) => values[0] !== undefined && onChange(values[0])}
         disabled={disabled}
+        data-m3-component="ToggleGroup"
         className={clsx(
           "inline-flex h-8 items-stretch divide-x rounded-full border",
           disabled ? "divide-on-surface/12 border-on-surface/12" : "divide-outline border-outline",

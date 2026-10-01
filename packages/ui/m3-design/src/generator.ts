@@ -1,14 +1,33 @@
 // SPDX-License-Identifier: Apache-2.0
 //! Core compiler orchestrating the automated M3 design generation workflow.
 
-import fs from "node:fs";
 import { parseBrief } from "./parser.ts";
 import { generateTheme } from "./hct.ts";
 import { SEED_TEMPLATE } from "./prompts.ts";
-import { validateSpec } from "@aphrody/bun";
-import type { DesignBrief, GenerationResult, GeneratedFile, M3Theme } from "./types.ts";
+import type {
+  DesignBrief,
+  GenerationResult,
+  GeneratedFile,
+  M3Theme,
+  DesignSystemLoader,
+  SpecValidator,
+} from "./types.ts";
 
 export class DesignCompiler {
+  private readonly validateSpec?: SpecValidator;
+  private readonly loadDesignSystem?: DesignSystemLoader;
+
+  /**
+   * @param options.validateSpec Optional M3 spec validator (e.g. the native one from `native.ts`).
+   * @param options.loadDesignSystem Optional design-system token loader (e.g. `node.ts`, from disk).
+   */
+  constructor(
+    options: { validateSpec?: SpecValidator; loadDesignSystem?: DesignSystemLoader } = {},
+  ) {
+    this.validateSpec = options.validateSpec;
+    this.loadDesignSystem = options.loadDesignSystem;
+  }
+
   /**
    * Compiles a raw design brief into a structured project workspace.
    * Runs the automated HCT theme generator, resolves prompt guidelines,
@@ -24,36 +43,16 @@ export class DesignCompiler {
     // Load design system tokens overrides if present
     let systemCss = "";
     if (designSystemId) {
-      const possiblePaths = [
-        // Self-contained fixtures shipped with the package (resolved relative
-        // to this module so the lookup is CWD-independent and cross-platform).
-        import.meta.dir ? `${import.meta.dir}/../design-systems/${designSystemId}/tokens.css` : "",
-        new URL(`../design-systems/${designSystemId}/tokens.css`, import.meta.url).pathname,
-        // Legacy in-repo locations kept as a fallback.
-        `packages/open-design/design-systems/${designSystemId}/tokens.css`,
-        `../../packages/open-design/design-systems/${designSystemId}/tokens.css`,
-        `../packages/open-design/design-systems/${designSystemId}/tokens.css`,
-      ].filter(Boolean);
-      let dsPath = "";
-      for (const p of possiblePaths) {
-        if (fs.existsSync(p)) {
-          dsPath = p;
-          break;
-        }
+      try {
+        systemCss = this.loadDesignSystem?.(designSystemId) ?? "";
+      } catch {
+        // Ignore loader failures, fall back to standard M3 colors
       }
-
-      if (dsPath) {
-        try {
-          systemCss = fs.readFileSync(dsPath, "utf8");
-          // If no seedColor was specified, fall back to the design system's accent color
-          if (!seedColor && !rawBrief.match(/#([0-9a-fA-F]{6}|[0-9a-fA-F]{3})/)) {
-            const accentMatch = systemCss.match(/--accent:\s*(#[0-9a-fA-F]{6}|#[0-9a-fA-F]{3})/);
-            if (accentMatch) {
-              brief.seedColor = accentMatch[1];
-            }
-          }
-        } catch {
-          // Ignore file read exceptions, fall back to standard M3 colors
+      // If no seedColor was specified, fall back to the design system's accent color
+      if (systemCss && !seedColor && !rawBrief.match(/#([0-9a-fA-F]{6}|[0-9a-fA-F]{3})/)) {
+        const accentMatch = systemCss.match(/--accent:\s*(#[0-9a-fA-F]{6}|#[0-9a-fA-F]{3})/);
+        if (accentMatch) {
+          brief.seedColor = accentMatch[1];
         }
       }
     }
@@ -467,15 +466,17 @@ export class DesignCompiler {
   }
 
   private performSelfCritique(brief: DesignBrief, code: string) {
-    const validation = validateSpec(code);
+    const validation = this.validateSpec?.(code);
+
+    const issues = validation?.issues ?? [];
 
     const hasLitProps = code.includes("@aphrody/m3-react");
     const hasActionRouter = code.includes("Action Router");
     const hasSpringTiming = code.includes("cubic-bezier");
 
     // Adjust the base scores using the real FFI validation results!
-    const errorsCount = validation.issues.filter((i) => i.level === "error").length;
-    const warningsCount = validation.issues.filter((i) => i.level === "warning").length;
+    const errorsCount = issues.filter((i) => i.level === "error").length;
+    const warningsCount = issues.filter((i) => i.level === "warning").length;
 
     // Deduct from scores based on violations
     const detailDeduction = warningsCount * 2;
@@ -489,13 +490,14 @@ export class DesignCompiler {
       innovation: hasActionRouter ? 94 : 70,
     };
 
-    const issuesSummary =
-      validation.issues.length > 0
-        ? ` Detected ${validation.issues.length} design system specification issue(s): ${validation.issues.map((i) => `[Line ${i.line}: ${i.rule}] ${i.message}`).join("; ")}.`
+    const issuesSummary = !validation
+      ? " Spec validator not configured; M3 specification check skipped."
+      : issues.length > 0
+        ? ` Detected ${issues.length} design system specification issue(s): ${issues.map((i) => `[Line ${i.line}: ${i.rule}] ${i.message}`).join("; ")}.`
         : " Zero M3 design system spec violations detected.";
 
-    const rationale = `M3 design compiler successfully mapped the brief for "${brief.audience}". Enforced touch targets at 48dp. Spring dynamics are configured with a ${hasSpringTiming ? "spatial bounce curve" : "fallback curve"}. Event delegation is handled in a single listener for high interaction performance. FFI Spec Check Score: ${validation.score}/100.${issuesSummary}`;
+    const rationale = `M3 design compiler successfully mapped the brief for "${brief.audience}". Enforced touch targets at 48dp. Spring dynamics are configured with a ${hasSpringTiming ? "spatial bounce curve" : "fallback curve"}. Event delegation is handled in a single listener for high interaction performance. Spec Check Score: ${validation ? `${validation.score}/100` : "n/a"}.${issuesSummary}`;
 
-    return { scores, rationale, issues: validation.issues };
+    return { scores, rationale, issues };
   }
 }

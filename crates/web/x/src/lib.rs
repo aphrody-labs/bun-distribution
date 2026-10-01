@@ -35,6 +35,7 @@
 //! session (DevTools → Network → CreateTweet request headers) and pass it
 //! via the `XSession::transaction_id` field.
 
+pub mod algorithm;
 pub mod api;
 pub mod archive;
 pub mod catalog;
@@ -57,7 +58,7 @@ pub mod x_pro_deck;
 // xai-org/x-algorithm: candidate pipeline, filters, weighted multi-action
 // scorer, author diversity). Integrated here for convenient ranking of
 // XClient results (timelines, search, etc.).
-pub use aphrody_x_algorithm::{
+pub use algorithm::{
     PostCandidate as AlgoPostCandidate, RankingContext as AlgoRankingContext,
     ScoredPost as AlgoScoredPost, rank_posts as rank_posts_algo,
     rank_posts_json as rank_posts_json_algo,
@@ -142,7 +143,7 @@ pub type Result<T> = std::result::Result<T, XError>;
 pub fn tweet_to_algo_candidate(
     tweet: &Tweet,
     in_network: bool,
-) -> aphrody_x_algorithm::PostCandidate {
+) -> algorithm::PostCandidate {
     let created_at = tweet
         .created_at
         .as_ref()
@@ -154,7 +155,7 @@ pub fn tweet_to_algo_candidate(
         })
         .unwrap_or(0);
 
-    aphrody_x_algorithm::PostCandidate {
+    algorithm::PostCandidate {
         id: tweet.id.clone(),
         author_id: tweet.author_id.clone().unwrap_or_default(),
         author_handle: Some(tweet.author.username.clone()),
@@ -174,20 +175,20 @@ pub fn tweet_to_algo_candidate(
 
 /// Rank a slice of this crate's `Tweet`s with the native X For You algorithm.
 ///
-/// Convenience wrapper that converts + calls `aphrody_x_algorithm::rank_posts`.
+/// Convenience wrapper that converts + calls `algorithm::rank_posts`.
 /// Returns scored candidates (with explainable `reasons`).
 ///
 /// Example:
 /// ```ignore
 /// let page: TweetPage = ...;
-/// let ctx = aphrody_x_algorithm::RankingContext { viewer_id: Some(uid), ..Default::default() };
+/// let ctx = aphrody_x::algorithm::RankingContext { viewer_id: Some(uid), ..Default::default() };
 /// let ranked = aphrody_x::rank_tweets(&page.tweets, ctx, 20);
 /// ```
 pub fn rank_tweets(
     tweets: &[Tweet],
-    context: aphrody_x_algorithm::RankingContext,
+    context: algorithm::RankingContext,
     top_k: usize,
-) -> Vec<aphrody_x_algorithm::ScoredPost> {
+) -> Vec<algorithm::ScoredPost> {
     let cands: Vec<_> = tweets.iter().map(|t| tweet_to_algo_candidate(t, false)).collect();
-    aphrody_x_algorithm::rank_posts(cands, &context, top_k)
+    algorithm::rank_posts(cands, &context, top_k)
 }

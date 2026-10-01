@@ -1,0 +1,1186 @@
+diff -ruN a/upstream/mcp-server-tauri/packages/tauri-plugin-mcp-bridge/Cargo.toml b/upstream/mcp-server-tauri/packages/tauri-plugin-mcp-bridge/Cargo.toml
+--- a/upstream/mcp-server-tauri/packages/tauri-plugin-mcp-bridge/Cargo.toml	2026-10-01 05:57:36.280666357 +0200
++++ b/upstream/mcp-server-tauri/packages/tauri-plugin-mcp-bridge/Cargo.toml	2026-10-01 05:57:36.316713909 +0200
+@@ -4,7 +4,7 @@
+ description = "MCP Bridge plugin for use with Tauri applications - enables IPC monitoring and backend inspection"
+ authors = ["hypothesi"]
+ edition = "2021"
+-rust-version = "1.70"
++rust-version = "1.97"
+ license = "MIT"
+ repository = "https://github.com/hypothesi/mcp-server-tauri"
+ documentation = "https://docs.rs/tauri-plugin-mcp-bridge"
+@@ -20,14 +20,17 @@
+ 
+ [lib]
+ name = "tauri_plugin_mcp_bridge"
+-crate-type = ["staticlib", "cdylib", "rlib"]
++# Aphrody patch (Tauri 3, desktop only): the mobile static/dynamic library targets are dropped.
++crate-type = ["rlib"]
+ 
+ [dependencies]
+-tauri = "2"
++# Aphrody patch: Tauri 3 selects its runtime through the runtime crate; pins mirror the root workspace.
++tauri = { version = "=3.0.0-alpha.3", default-features = false }
++tauri-runtime-wry = { version = "=3.0.0-alpha.3", default-features = false }
+ serde = { version = "1", features = ["derive"] }
+ serde_json = "1"
+ tokio = { version = "1", features = ["full"] }
+-tokio-tungstenite = "0.28"
++tokio-tungstenite = "0.26"
+ futures-util = "0.3"
+ uuid = { version = "1", features = ["v4"] }
+ base64 = "0.22.1"
+@@ -45,11 +48,12 @@
+ # Platform-specific dependencies for native screenshot
+ 
+ [target.'cfg(target_os = "macos")'.dependencies]
+-objc2 = "0.5"
+-block2 = "0.5"
+-objc2-foundation = { version = "0.2", features = ["NSData", "NSError", "NSString", "NSDictionary"] }
+-objc2-app-kit = { version = "0.2", features = ["NSImage", "NSImageRep", "NSBitmapImageRep"] }
+-objc2-web-kit = { version = "0.2", features = ["WKWebView", "WKSnapshotConfiguration", "block2", "objc2-app-kit"] }
++# Aphrody patch: aligned with wry 0.57 (UNVERIFIED on macOS: no macOS host available).
++objc2 = "0.6.4"
++block2 = "0.6"
++objc2-foundation = { version = "0.3.2", features = ["NSData", "NSError", "NSString", "NSDictionary"] }
++objc2-app-kit = { version = "0.3.2", features = ["NSImage", "NSImageRep", "NSBitmapImageRep"] }
++objc2-web-kit = { version = "0.3.2", features = ["WKWebView", "WKSnapshotConfiguration", "block2", "objc2-app-kit"] }
+ 
+ [target.'cfg(all(target_vendor = "apple", not(target_os = "macos")))'.dependencies]
+ objc2 = "0.5"
+@@ -61,12 +65,13 @@
+ objc2-web-kit = { version = "0.2", features = ["WKSnapshotConfiguration", "block2"] }
+ 
+ [target.'cfg(target_os = "windows")'.dependencies]
+-webview2-com = "0.38"
+-windows = { version = "0.61", features = ["Win32_System_Com", "Win32_System_Com_StructuredStorage", "Win32_Foundation"] }
+-windows-core = "0.61"
++# Aphrody patch: aligned with wry 0.57 (UNVERIFIED on Windows: no Windows host available).
++webview2-com = "0.39"
++windows = { version = "0.62", features = ["Win32_System_Com", "Win32_System_Com_StructuredStorage", "Win32_Foundation"] }
++windows-core = "0.62"
+ 
+ [target.'cfg(target_os = "linux")'.dependencies]
+-webkit2gtk = "2.0"
++webkit2gtk = "=2.0.2"
+ cairo-rs = { version = "0.18", features = ["png"] }
+ gio = "0.18"
+ 
+@@ -75,7 +80,7 @@
+ jni = "0.21"
+ 
+ [build-dependencies]
+-tauri-plugin = { version = "2", features = ["build"] }
++tauri-plugin = { version = "=3.0.0-alpha.2", features = ["build"] }
+ 
+ [lints.clippy]
+ too_many_lines = "warn"
+diff -ruN a/upstream/mcp-server-tauri/packages/tauri-plugin-mcp-bridge/src/bridge.js b/upstream/mcp-server-tauri/packages/tauri-plugin-mcp-bridge/src/bridge.js
+--- a/upstream/mcp-server-tauri/packages/tauri-plugin-mcp-bridge/src/bridge.js	2026-10-01 05:57:36.283310008 +0200
++++ b/upstream/mcp-server-tauri/packages/tauri-plugin-mcp-bridge/src/bridge.js	2026-10-01 05:57:36.323035940 +0200
+@@ -7,6 +7,7 @@
+ 
+    var ipcMonitorEnabled = false,
+        originalInvoke = null,
++       originalInternalsInvoke = null,
+        origLog, origDebug, origInfo, origWarn, origError, bridgeLogger;
+ 
+    // MCP bridge logger - scoped with levels and tags
+@@ -113,9 +114,9 @@
+       var startTime = Date.now();
+ 
+       function reportEvent(result, error, duration) {
+-         var reportPromise;
++         var buffer;
+ 
+-         if (!originalInvoke) {
++         if (!ipcMonitorEnabled) {
+             return;
+          }
+ 
+@@ -124,17 +125,30 @@
+             return;
+          }
+ 
+-         reportPromise = originalInvoke('plugin:mcp-bridge|report_ipc_event', {
++         // Aphrody patch: keep events in a page-side ring buffer that the host reads through
++         // eval, instead of reporting each one through an IPC command. This needs no
++         // `mcp-bridge:allow-report-ipc-event` permission in the app's capabilities.
++         buffer = window.__MCP_IPC_BUFFER__ = window.__MCP_IPC_BUFFER__ || [];
++         buffer.push({
++            timestamp: Date.now(),
+             command: cmd,
+-            args: args || {},
+-            result: result,
++            args: cloneForReport(args || {}),
++            result: cloneForReport(result),
+             error: error,
+-            durationMs: duration,
++            duration_ms: duration,
+          });
+ 
+-         reportPromise.catch(function() {
+-            // Ignore errors from reporting
+-         });
++         if (buffer.length > 500) {
++            buffer.shift();
++         }
++      }
++
++      function cloneForReport(value) {
++         try {
++            return value === undefined ? null : JSON.parse(JSON.stringify(value));
++         } catch (e) {
++            return String(value);
++         }
+       }
+ 
+       return originalFn.apply(thisArg, [ cmd, args ])
+@@ -148,6 +162,29 @@
+          });
+    }
+ 
++   // Aphrody patch: shared recorder for calls that reach `__TAURI_INTERNALS__.invoke`.
++   function recordInternalsCall(cmd, args, result, error, duration) {
++      var buffer;
++
++      if (!ipcMonitorEnabled || (typeof cmd === 'string' && cmd.startsWith('plugin:mcp-bridge|'))) {
++         return;
++      }
++
++      buffer = window.__MCP_IPC_BUFFER__ = window.__MCP_IPC_BUFFER__ || [];
++      buffer.push({
++         timestamp: Date.now(),
++         command: cmd,
++         args: args === undefined ? {} : args,
++         result: result === undefined ? null : result,
++         error: error,
++         duration_ms: duration,
++      });
++
++      if (buffer.length > 500) {
++         buffer.shift();
++      }
++   }
++
+    /**
+      * Enables IPC monitoring by replacing the Tauri core object.
+      * Called from Rust via execute_js when start_ipc_monitor is invoked.
+@@ -170,6 +207,7 @@
+       originalCore = window.__TAURI__.core;
+       originalInvoke = originalCore.invoke;
+       ipcMonitorEnabled = true;
++      window.__MCP_IPC_BUFFER__ = [];
+ 
+       wrappedInvoke = function(cmd, args) {
+          return reportAround(originalInvoke, this, cmd, args);
+@@ -178,6 +216,31 @@
+       // Create a new core object with all original properties plus wrapped invoke
+       window.__TAURI__.core = Object.assign({}, originalCore, { invoke: wrappedInvoke });
+ 
++      // Aphrody patch: `@tauri-apps/api` modules call `__TAURI_INTERNALS__.invoke` directly, which
++      // bypasses `__TAURI__.core`; wrap it as well when the property is writable.
++      try {
++         if (window.__TAURI_INTERNALS__ && typeof window.__TAURI_INTERNALS__.invoke === 'function') {
++            originalInternalsInvoke = window.__TAURI_INTERNALS__.invoke;
++            window.__TAURI_INTERNALS__.invoke = function(cmd, args, options) {
++               var startTime = Date.now();
++               var internals = this;
++
++               return originalInternalsInvoke.call(internals, cmd, args, options)
++                  .then(function(result) {
++                     recordInternalsCall(cmd, args, result, null, Date.now() - startTime);
++                     return result;
++                  })
++                  .catch(function(error) {
++                     recordInternalsCall(cmd, args, null, (error && error.message) || String(error), Date.now() - startTime);
++                     throw error;
++                  });
++            };
++         }
++      } catch (e) {
++         originalInternalsInvoke = null;
++         bridgeLogger.warn('Could not wrap __TAURI_INTERNALS__.invoke:', e && e.message);
++      }
++
+       bridgeLogger.info('IPC monitoring started');
+    };
+ 
+@@ -194,6 +257,15 @@
+       window.__TAURI__.core = Object.assign({}, window.__TAURI__.core, { invoke: originalInvoke });
+       originalInvoke = null;
+ 
++      if (originalInternalsInvoke) {
++         try {
++            window.__TAURI_INTERNALS__.invoke = originalInternalsInvoke;
++         } catch (e) {
++            // already read-only: the wrapper stays but records nothing once monitoring is off
++         }
++         originalInternalsInvoke = null;
++      }
++
+       ipcMonitorEnabled = false;
+ 
+       bridgeLogger.info('IPC monitoring stopped');
+diff -ruN a/upstream/mcp-server-tauri/packages/tauri-plugin-mcp-bridge/src/commands/execute_js.rs b/upstream/mcp-server-tauri/packages/tauri-plugin-mcp-bridge/src/commands/execute_js.rs
+--- a/upstream/mcp-server-tauri/packages/tauri-plugin-mcp-bridge/src/commands/execute_js.rs	2026-10-01 05:57:36.288904704 +0200
++++ b/upstream/mcp-server-tauri/packages/tauri-plugin-mcp-bridge/src/commands/execute_js.rs	2026-10-01 05:57:36.325615536 +0200
+@@ -1,318 +1,115 @@
+ //! JavaScript execution in webview.
++//!
++//! Aphrody patch (Tauri 3): the macOS-only native path and the `__script_result` IPC round trip
++//! are replaced by one portable mechanism that needs no IPC permission and no
++//! `withGlobalTauri`: the script runs inside an async wrapper that stores its outcome in
++//! `window.__APHRODY_DEBUG_RESULTS__`, and the host polls that slot with
++//! `WebviewWindow::eval_with_callback` (implemented by the wry and CEF runtimes).
+ 
+ use super::script_executor::ScriptExecutor;
+-use crate::logging::mcp_log_error;
+ use serde_json::Value;
+-use tauri::{command, Listener, Runtime, State, WebviewWindow};
++use std::sync::{Arc, Mutex};
++use std::time::Duration;
++use tauri::{command, Runtime, State, WebviewWindow};
+ use tokio::sync::oneshot;
+ use uuid::Uuid;
+ 
+-/// Executes JavaScript code in the webview context.
+-///
+-/// On macOS, uses WKWebView's native evaluateJavaScript:completionHandler:
+-/// to get results directly via the completion handler, bypassing the
+-/// eval-and-IPC-callback approach which fails on some setups.
+-///
+-/// On other platforms, falls back to the eval + event listener approach.
++/// Upper bound for one script, including awaited promises.
++const SCRIPT_TIMEOUT: Duration = Duration::from_secs(10);
++/// Interval between result probes.
++const POLL_INTERVAL: Duration = Duration::from_millis(40);
++
++/// Executes JavaScript code in the webview context and returns
++/// `{ "success": bool, "data" | "error": ... }`.
+ #[command]
+ pub async fn execute_js<R: Runtime>(
+     window: WebviewWindow<R>,
+     script: String,
+-    state: State<'_, ScriptExecutor>,
++    _state: State<'_, ScriptExecutor>,
+ ) -> Result<Value, String> {
+-    // Try native evaluation first (macOS), fall back to eval + IPC
+-    #[cfg(target_os = "macos")]
+-    {
+-        let prepared_script = prepare_script(&script);
+-
+-        // Wrap the user script to return a JSON string.
+-        // Avoid async/await here since WKWebView's evaluateJavaScript
+-        // doesn't handle Promise results well in the completion handler.
+-        let wrapped_script = format!(
+-            r#"
+-            (function() {{
+-                try {{
+-                    var __result = (function() {{ {prepared_script} }})();
+-                    return __result !== undefined ? JSON.stringify(__result) : "null";
+-                }} catch (error) {{
+-                    return JSON.stringify({{ "__mcp_error__": error.message || String(error) }});
+-                }}
+-            }})()
+-            "#
+-        );
+-
+-        if should_use_native_evaluation(&script) {
+-            match native_evaluate_js(&window, &wrapped_script) {
+-                Ok(result) => return Ok(result),
+-                Err(e) => {
+-                    mcp_log_error(
+-                        "EXECUTE_JS",
+-                        &format!("Native eval failed, falling back: {e}"),
+-                    );
+-                }
+-            }
+-        }
+-    }
+-
+-    // Fallback: eval + event listener approach
+-    eval_with_ipc_callback(&window, &script, &state).await
++    eval_and_poll(&window, &script).await
+ }
+ 
+-/// macOS: Use WKWebView's evaluateJavaScript:completionHandler: directly
+-/// to get results without needing IPC callbacks.
+-#[cfg(target_os = "macos")]
+-fn native_evaluate_js<R: Runtime>(
+-    window: &WebviewWindow<R>,
+-    script: &str,
+-) -> Result<Value, String> {
+-    use block2::RcBlock;
+-    use objc2_foundation::{NSError, NSString};
+-    use objc2_web_kit::WKWebView;
+-    use std::sync::mpsc;
+-    use std::sync::{Arc, Mutex};
+-
+-    let (tx, rx) = mpsc::channel::<Result<Value, String>>();
++/// Evaluates `js` and returns the callback value parsed as JSON.
++async fn eval_json<R: Runtime>(window: &WebviewWindow<R>, js: String) -> Result<Value, String> {
++    let (tx, rx) = oneshot::channel::<String>();
+     let tx = Arc::new(Mutex::new(Some(tx)));
+-
+-    let script_ns = NSString::from_str(script);
+-    let script_ptr = Arc::new(script_ns);
+-
+-    let script_for_closure = Arc::clone(&script_ptr);
+-
+     window
+-        .with_webview(move |webview| {
+-            unsafe {
+-                let wkwebview: &WKWebView = &*(webview.inner() as *const _ as *const WKWebView);
+-
+-                let tx_clone = tx.clone();
+-                let handler = RcBlock::new(
+-                    move |result: *mut objc2::runtime::AnyObject, error: *mut NSError| {
+-                        if let Some(tx) = tx_clone.lock().unwrap().take() {
+-                            if !error.is_null() {
+-                                let err = &*error;
+-                                let desc = err.localizedDescription();
+-                                let _ = tx.send(Err(desc.to_string()));
+-                            } else if !result.is_null() {
+-                                let result_str = result_to_string(result);
+-                                match result_str {
+-                                    Some(s) => {
+-                                        // Check for error sentinel
+-                                        if let Ok(val) = serde_json::from_str::<Value>(&s) {
+-                                            if let Some(err) =
+-                                                val.get("__mcp_error__").and_then(|v| v.as_str())
+-                                            {
+-                                                let _ = tx.send(Ok(serde_json::json!({
+-                                                    "success": false,
+-                                                    "error": err
+-                                                })));
+-                                            } else {
+-                                                let _ = tx.send(Ok(serde_json::json!({
+-                                                    "success": true,
+-                                                    "data": val
+-                                                })));
+-                                            }
+-                                        } else {
+-                                            let _ = tx.send(Ok(serde_json::json!({
+-                                                "success": true,
+-                                                "data": s
+-                                            })));
+-                                        }
+-                                    }
+-                                    None => {
+-                                        let _ = tx.send(Ok(serde_json::json!({
+-                                            "success": true,
+-                                            "data": null
+-                                        })));
+-                                    }
+-                                }
+-                            } else {
+-                                let _ = tx.send(Ok(serde_json::json!({
+-                                    "success": true,
+-                                    "data": null
+-                                })));
+-                            }
+-                        }
+-                    },
+-                );
+-
+-                wkwebview.evaluateJavaScript_completionHandler(&script_for_closure, Some(&handler));
++        .eval_with_callback(js, move |value| {
++            if let Some(tx) = tx.lock().unwrap_or_else(std::sync::PoisonError::into_inner).take() {
++                let _ = tx.send(value);
+             }
+         })
+-        .map_err(|e| format!("Failed to access webview: {e}"))?;
+-
+-    match rx.recv_timeout(std::time::Duration::from_secs(10)) {
+-        Ok(result) => result,
+-        Err(_) => Err("Script execution timeout (native)".to_string()),
+-    }
+-}
+-
+-/// Convert an ObjC result object to a Rust String.
+-#[cfg(target_os = "macos")]
+-unsafe fn result_to_string(obj: *mut objc2::runtime::AnyObject) -> Option<String> {
+-    use objc2_foundation::NSString;
+-
+-    if obj.is_null() {
+-        return None;
+-    }
+-
+-    // Try to get description (works for NSString, NSNumber, etc.)
+-    let desc: *mut NSString = objc2::msg_send![obj, description];
+-    if !desc.is_null() {
+-        Some((*desc).to_string())
+-    } else {
+-        None
+-    }
++        .map_err(|e| format!("Failed to evaluate script: {e}"))?;
++    let raw = tokio::time::timeout(SCRIPT_TIMEOUT, rx)
++        .await
++        .map_err(|_| "Script evaluation timed out".to_string())?
++        .map_err(|_| "Script evaluation channel closed".to_string())?;
++    serde_json::from_str(&raw).map_err(|e| format!("Webview returned invalid JSON: {e}"))
+ }
+ 
+-#[cfg(target_os = "macos")]
+-fn should_use_native_evaluation(script: &str) -> bool {
+-    let trimmed = script.trim();
+-
+-    !trimmed.contains("await ")
+-        && !trimmed.contains("async ")
+-        && !trimmed.contains("(async")
+-        && !trimmed.contains(".then(")
+-        && !trimmed.contains("Promise.")
+-        && !trimmed.contains("new Promise(")
+-}
+-
+-/// Fallback: eval + IPC event listener approach.
+-/// Used on non-macOS platforms.
+-async fn eval_with_ipc_callback<R: Runtime>(
+-    window: &WebviewWindow<R>,
+-    script: &str,
+-    state: &State<'_, ScriptExecutor>,
+-) -> Result<Value, String> {
+-    let exec_id = Uuid::new_v4().to_string();
+-    let (tx, rx) = oneshot::channel();
+-
+-    {
+-        let mut pending = state.pending_results.lock().await;
+-        pending.insert(exec_id.clone(), tx);
+-    }
+-
+-    let exec_id_clone = exec_id.clone();
+-    let pending_clone = state.pending_results.clone();
+-
+-    let unlisten = window.listen("__script_result", move |event| {
+-        let raw_payload = event.payload();
+-        match serde_json::from_str::<serde_json::Map<String, Value>>(raw_payload) {
+-            Ok(payload) => {
+-                if let Some(Value::String(event_exec_id)) = payload.get("exec_id") {
+-                    if event_exec_id == &exec_id_clone {
+-                        let pending = pending_clone.clone();
+-                        let payload = payload.clone();
+-                        let exec_id_for_task = exec_id_clone.clone();
+-                        tokio::spawn(async move {
+-                            let mut pending_guard = pending.lock().await;
+-                            if let Some(sender) = pending_guard.remove(&exec_id_for_task) {
+-                                let result = if payload
+-                                    .get("success")
+-                                    .and_then(|v| v.as_bool())
+-                                    .unwrap_or(false)
+-                                {
+-                                    serde_json::json!({
+-                                        "success": true,
+-                                        "data": payload.get("data").cloned().unwrap_or(Value::Null)
+-                                    })
+-                                } else {
+-                                    serde_json::json!({
+-                                        "success": false,
+-                                        "error": payload.get("error")
+-                                            .and_then(|v| v.as_str())
+-                                            .unwrap_or("Unknown error")
+-                                    })
+-                                };
+-                                let _ = sender.send(result);
+-                            }
+-                        });
+-                    }
+-                }
+-            }
+-            Err(e) => {
+-                mcp_log_error(
+-                    "EXECUTE_JS",
+-                    &format!("Failed to parse __script_result payload: {e}. Raw: {raw_payload}"),
+-                );
+-            }
+-        }
+-    });
+-
+-    let prepared_script = prepare_script(script);
+-
+-    let wrapped_script = format!(
+-        r#"
+-        (function() {{
+-            function __sendResult(success, data, error) {{
+-                try {{
+-                    if (window.__TAURI__ && window.__TAURI__.core && window.__TAURI__.core.invoke) {{
+-                        window.__TAURI__.core.invoke('plugin:mcp-bridge|script_result', {{
+-                            execId: '{exec_id}',
+-                            success: success,
+-                            data: data !== undefined ? data : null,
+-                            error: error
+-                        }}).catch(function(e) {{
+-                            console.error('[MCP] Failed to invoke script_result:', e);
+-                        }});
+-                    }} else if (window.__TAURI__ && window.__TAURI__.event) {{
+-                        window.__TAURI__.event.emit('__script_result', {{
+-                            exec_id: '{exec_id}',
+-                            success: success,
+-                            data: data,
+-                            error: error
+-                        }});
+-                    }} else {{
+-                        console.error('[MCP] __TAURI__ not available, cannot send result');
+-                    }}
+-                }} catch (e) {{
+-                    console.error('[MCP] Failed to send result:', e);
+-                }}
+-            }}
+-
++/// Builds the wrapper that runs `prepared_script` and stores the outcome under `exec_id`.
++fn wrap_script(exec_id: &str, prepared_script: &str) -> String {
++    format!(
++        r#"(function() {{
++            var __slot = (window.__APHRODY_DEBUG_RESULTS__ = window.__APHRODY_DEBUG_RESULTS__ || {{}});
+             (async () => {{
+                 try {{
+                     const __executeScript = async () => {{
+                         {prepared_script}
+                     }};
+                     const __result = await __executeScript();
+-                    __sendResult(true, __result !== undefined ? __result : null, null);
++                    __slot['{exec_id}'] = {{ success: true, data: __result !== undefined ? __result : null }};
+                 }} catch (error) {{
+-                    __sendResult(false, null, error.message || String(error));
++                    __slot['{exec_id}'] = {{ success: false, error: (error && error.message) || String(error) }};
+                 }}
+-            }})().catch(function(error) {{
+-                __sendResult(false, null, error.message || String(error));
+-            }});
+-        }})();
+-        "#
+-    );
+-
+-    if let Err(e) = window.eval(&wrapped_script) {
+-        let mut pending = state.pending_results.lock().await;
+-        pending.remove(&exec_id);
++            }})();
++        }})();"#
++    )
++}
++
++/// Builds the probe that returns and clears the stored outcome ("" while still running).
++fn probe_script(exec_id: &str) -> String {
++    format!(
++        r#"(function() {{
++            var __slot = window.__APHRODY_DEBUG_RESULTS__;
++            if (!__slot || !('{exec_id}' in __slot)) {{ return ""; }}
++            var __value = __slot['{exec_id}'];
++            delete __slot['{exec_id}'];
++            try {{ return JSON.stringify(__value); }}
++            catch (error) {{ return JSON.stringify({{ success: false, error: 'result is not JSON serializable' }}); }}
++        }})()"#
++    )
++}
++
++async fn eval_and_poll<R: Runtime>(window: &WebviewWindow<R>, script: &str) -> Result<Value, String> {
++    let exec_id = Uuid::new_v4().simple().to_string();
++    let wrapped = wrap_script(&exec_id, &prepare_script(script));
++    if let Err(e) = window.eval(&wrapped) {
+         return Ok(serde_json::json!({
+             "success": false,
+-            "error": format!("Failed to execute script: {}", e)
++            "error": format!("Failed to execute script: {e}")
+         }));
+     }
+ 
+-    let result = match tokio::time::timeout(std::time::Duration::from_secs(5), rx).await {
+-        Ok(Ok(result)) => Ok(result),
+-        Ok(Err(_)) => Ok(serde_json::json!({
+-            "success": false,
+-            "error": "Script execution failed: channel closed"
+-        })),
+-        Err(_) => {
+-            let mut pending = state.pending_results.lock().await;
+-            pending.remove(&exec_id);
+-            Ok(serde_json::json!({
++    let probe = probe_script(&exec_id);
++    let deadline = tokio::time::Instant::now() + SCRIPT_TIMEOUT;
++    loop {
++        // The callback value of a JS string is a JSON string literal; "" means "not ready".
++        if let Value::String(text) = eval_json(window, probe.clone()).await? {
++            if !text.is_empty() {
++                return serde_json::from_str(&text)
++                    .map_err(|e| format!("Script result is not valid JSON: {e}"));
++            }
++        }
++        if tokio::time::Instant::now() >= deadline {
++            return Ok(serde_json::json!({
+                 "success": false,
+                 "error": "Script execution timeout"
+-            }))
++            }));
+         }
+-    };
+-
+-    window.unlisten(unlisten);
+-    result
++        tokio::time::sleep(POLL_INTERVAL).await;
++    }
+ }
+ 
+ /// Prepare script by adding return statement if needed.
+@@ -360,9 +157,6 @@
+ mod tests {
+     use super::prepare_script;
+ 
+-    #[cfg(target_os = "macos")]
+-    use super::should_use_native_evaluation;
+-
+     #[test]
+     fn adds_return_for_simple_expression() {
+         assert_eq!(prepare_script("document.title"), "return document.title");
+@@ -374,15 +168,13 @@
+         assert_eq!(prepare_script(script), script);
+     }
+ 
+-    #[cfg(target_os = "macos")]
+     #[test]
+-    fn skips_native_eval_for_async_scripts() {
+-        assert!(!should_use_native_evaluation(
+-            "return (async () => await document.title)();"
+-        ));
+-        assert!(!should_use_native_evaluation(
+-            "return fetch('/').then((r) => r.text());"
+-        ));
+-        assert!(should_use_native_evaluation("return document.title;"));
++    fn wrapper_and_probe_share_the_exec_id() {
++        let wrapped = super::wrap_script("abc123", "return 1;");
++        assert!(wrapped.contains("__slot['abc123']"));
++        assert!(wrapped.contains("return 1;"));
++        let probe = super::probe_script("abc123");
++        assert!(probe.contains("'abc123' in __slot"));
++        assert!(probe.contains("delete __slot['abc123']"));
+     }
+ }
+diff -ruN a/upstream/mcp-server-tauri/packages/tauri-plugin-mcp-bridge/src/config.rs b/upstream/mcp-server-tauri/packages/tauri-plugin-mcp-bridge/src/config.rs
+--- a/upstream/mcp-server-tauri/packages/tauri-plugin-mcp-bridge/src/config.rs	2026-10-01 05:57:36.293758505 +0200
++++ b/upstream/mcp-server-tauri/packages/tauri-plugin-mcp-bridge/src/config.rs	2026-10-01 05:57:36.326535483 +0200
+@@ -3,23 +3,47 @@
+ //! This module provides configuration options for customizing the plugin behavior,
+ //! including the WebSocket server bind address.
+ 
++use std::net::SocketAddr;
++use std::sync::Arc;
++
++/// Callback invoked once with the address the WebSocket server actually bound to.
++///
++/// Aphrody patch: lets a host publish the real (possibly ephemeral) port, for example in a
++/// discovery file, without scanning ports.
++#[derive(Clone)]
++pub struct ListenHook(pub Arc<dyn Fn(SocketAddr) + Send + Sync>);
++
++impl std::fmt::Debug for ListenHook {
++    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
++        f.write_str("ListenHook(..)")
++    }
++}
++
+ /// Configuration for the MCP Bridge plugin.
+ #[derive(Clone, Debug)]
+ pub struct Config {
+     /// The address to bind the WebSocket server to.
+-    /// Default: "0.0.0.0" (all interfaces, for remote device support)
+-    /// Use "127.0.0.1" for localhost-only access.
++    /// Aphrody patch: default "127.0.0.1" (loopback only; upstream defaulted to "0.0.0.0").
+     pub bind_address: String,
+     /// The base port for the WebSocket server.
+     /// Default: 9223. The plugin will scan up to 100 ports from this base.
++    /// Aphrody patch: `0` binds an ephemeral port chosen by the OS.
+     pub base_port: u16,
++    /// Aphrody patch: shared secret every client must present, either as the `token` query
++    /// parameter of the WebSocket URL or as `Authorization: Bearer <token>`. `None` disables
++    /// the check; Host and Origin checks always apply.
++    pub token: Option<String>,
++    /// Aphrody patch: called once with the bound address.
++    pub on_listen: Option<ListenHook>,
+ }
+ 
+ impl Default for Config {
+     fn default() -> Self {
+         Self {
+-            bind_address: "0.0.0.0".to_string(),
++            bind_address: "127.0.0.1".to_string(),
+             base_port: 9223,
++            token: None,
++            on_listen: None,
+         }
+     }
+ }
+@@ -29,16 +53,13 @@
+     pub fn new(bind_address: &str) -> Self {
+         Self {
+             bind_address: bind_address.to_string(),
+-            base_port: 9223,
++            ..Self::default()
+         }
+     }
+ 
+     /// Creates a configuration that binds to localhost only.
+     pub fn localhost_only() -> Self {
+-        Self {
+-            bind_address: "127.0.0.1".to_string(),
+-            base_port: 9223,
+-        }
++        Self::default()
+     }
+ }
+ 
+@@ -113,6 +134,18 @@
+         self
+     }
+ 
++    /// Aphrody patch: requires clients to present this token (query `token=` or bearer header).
++    pub fn token(mut self, token: &str) -> Self {
++        self.config.token = Some(token.to_string());
++        self
++    }
++
++    /// Aphrody patch: registers a callback that receives the bound socket address.
++    pub fn on_listen(mut self, hook: impl Fn(SocketAddr) + Send + Sync + 'static) -> Self {
++        self.config.on_listen = Some(ListenHook(Arc::new(hook)));
++        self
++    }
++
+     /// Builds the plugin with the configured options.
+     pub fn build<R: tauri::Runtime>(self) -> tauri::plugin::TauriPlugin<R> {
+         crate::init_with_config(self.config)
+diff -ruN a/upstream/mcp-server-tauri/packages/tauri-plugin-mcp-bridge/src/discovery.rs b/upstream/mcp-server-tauri/packages/tauri-plugin-mcp-bridge/src/discovery.rs
+--- a/upstream/mcp-server-tauri/packages/tauri-plugin-mcp-bridge/src/discovery.rs	2026-10-01 05:57:36.294075186 +0200
++++ b/upstream/mcp-server-tauri/packages/tauri-plugin-mcp-bridge/src/discovery.rs	2026-10-01 05:57:36.327288229 +0200
+@@ -14,6 +14,10 @@
+ ///
+ /// An available port number in the range base_port to base_port+99, or base_port if none are available.
+ pub fn find_available_port(bind_address: &str, base_port: u16) -> u16 {
++    // Aphrody patch: port 0 asks the OS for an ephemeral port at bind time.
++    if base_port == 0 {
++        return 0;
++    }
+     let max_attempts = 100;
+ 
+     for offset in 0..max_attempts {
+@@ -54,6 +58,11 @@
+     }
+ 
+     #[test]
++    fn port_zero_is_passed_through_for_ephemeral_binding() {
++        assert_eq!(find_available_port("127.0.0.1", 0), 0);
++    }
++
++    #[test]
+     fn test_port_availability_custom_base() {
+         let port = find_available_port("127.0.0.1", 9400);
+         assert!(port >= 9400);
+diff -ruN a/upstream/mcp-server-tauri/packages/tauri-plugin-mcp-bridge/src/lib.rs b/upstream/mcp-server-tauri/packages/tauri-plugin-mcp-bridge/src/lib.rs
+--- a/upstream/mcp-server-tauri/packages/tauri-plugin-mcp-bridge/src/lib.rs	2026-10-01 05:57:36.294721941 +0200
++++ b/upstream/mcp-server-tauri/packages/tauri-plugin-mcp-bridge/src/lib.rs	2026-10-01 05:57:36.330479105 +0200
+@@ -88,7 +88,7 @@
+ pub mod utils;
+ pub mod websocket;
+ 
+-pub use config::{Builder, Config};
++pub use config::{Builder, Config, ListenHook};
+ 
+ use commands::ScriptExecutor;
+ use discovery::find_available_port;
+@@ -157,6 +157,10 @@
+ pub fn init_with_config<R: Runtime>(config: Config) -> TauriPlugin<R> {
+     let bind_address = config.bind_address.clone();
+     let base_port = config.base_port;
++    let security = websocket::Security {
++        token: config.token.clone(),
++        on_listen: config.on_listen.clone(),
++    };
+ 
+     PluginBuilder::<R>::new("mcp-bridge")
+         .invoke_handler(tauri::generate_handler![
+@@ -174,7 +178,8 @@
+             commands::list_windows::list_windows,
+             commands::script_injection::request_script_injection,
+         ])
+-        .js_init_script(include_str!("bridge.js").to_string())
++        // Aphrody patch (Tauri 3): `js_init_script` became `initialization_script`.
++        .initialization_script(include_str!("bridge.js"))
+         .setup(move |app, _api| {
+             // Initialize script executor state
+             app.manage(ScriptExecutor::new());
+@@ -209,7 +214,8 @@
+             // Start WebSocket server in background
+             let app_handle = app.clone();
+             let ws_server =
+-                websocket::WebSocketServer::new(port, &bind_address, app_handle, event_tx);
++                websocket::WebSocketServer::new(port, &bind_address, app_handle, event_tx)
++                    .with_security(security.clone());
+ 
+             tauri::async_runtime::spawn(async move {
+                 if let Err(e) = ws_server.start().await {
+diff -ruN a/upstream/mcp-server-tauri/packages/tauri-plugin-mcp-bridge/src/screenshot/linux.rs b/upstream/mcp-server-tauri/packages/tauri-plugin-mcp-bridge/src/screenshot/linux.rs
+--- a/upstream/mcp-server-tauri/packages/tauri-plugin-mcp-bridge/src/screenshot/linux.rs	2026-10-01 05:57:36.298370674 +0200
++++ b/upstream/mcp-server-tauri/packages/tauri-plugin-mcp-bridge/src/screenshot/linux.rs	2026-10-01 05:57:36.332843197 +0200
+@@ -18,7 +18,13 @@
+ 
+         window
+             .with_webview(move |platform_webview| {
+-                let webview = platform_webview.inner();
++                // Aphrody patch (Tauri 3): reach the wry webview through `downcast_ref`; any
++                // other runtime (CEF) has no WebKitGTK snapshot and must use CDP instead.
++                let Some(wry_webview) = platform_webview.downcast_ref::<tauri_runtime_wry::Webview>() else {
++                    let _ = tx.send(Err(ScreenshotError::PlatformUnsupported));
++                    return;
++                };
++                let webview = wry_webview.inner();
+ 
+                 webview.snapshot(
+                     SnapshotRegion::Visible,
+diff -ruN a/upstream/mcp-server-tauri/packages/tauri-plugin-mcp-bridge/src/screenshot/macos.rs b/upstream/mcp-server-tauri/packages/tauri-plugin-mcp-bridge/src/screenshot/macos.rs
+--- a/upstream/mcp-server-tauri/packages/tauri-plugin-mcp-bridge/src/screenshot/macos.rs	2026-10-01 05:57:36.299727067 +0200
++++ b/upstream/mcp-server-tauri/packages/tauri-plugin-mcp-bridge/src/screenshot/macos.rs	2026-10-01 05:57:36.334661463 +0200
+@@ -30,9 +30,17 @@
+         // Use Tauri's with_webview to access the platform-specific webview
+         window
+             .with_webview(move |webview| {
++                // Aphrody patch (Tauri 3, UNVERIFIED on macOS): reach the wry webview through
++                // `downcast_ref`; any other runtime (CEF) must use CDP instead.
++                let Some(webview) = webview.downcast_ref::<tauri_runtime_wry::Webview>() else {
++                    if let Some(tx) = tx.lock().unwrap().take() {
++                        let _ = tx.send(Err(ScreenshotError::PlatformUnsupported));
++                    }
++                    return;
++                };
+                 unsafe {
+                     // Get the WKWebView from Tauri's webview handle
+-                    let wkwebview: &WKWebView = &*(webview.inner() as *const _ as *const WKWebView);
++                    let wkwebview: &WKWebView = &*(webview.inner() as *const WKWebView);
+ 
+                     // Create snapshot configuration (nil means capture visible viewport)
+                     let config = WKSnapshotConfiguration::new();
+diff -ruN a/upstream/mcp-server-tauri/packages/tauri-plugin-mcp-bridge/src/screenshot/windows.rs b/upstream/mcp-server-tauri/packages/tauri-plugin-mcp-bridge/src/screenshot/windows.rs
+--- a/upstream/mcp-server-tauri/packages/tauri-plugin-mcp-bridge/src/screenshot/windows.rs	2026-10-01 05:57:36.304305678 +0200
++++ b/upstream/mcp-server-tauri/packages/tauri-plugin-mcp-bridge/src/screenshot/windows.rs	2026-10-01 05:57:36.336591946 +0200
+@@ -23,6 +23,12 @@
+ 
+         window
+             .with_webview(move |webview| {
++                // Aphrody patch (Tauri 3, UNVERIFIED on Windows): reach the wry webview through
++                // `downcast_ref`; any other runtime (CEF) must use CDP instead.
++                let Some(webview) = webview.downcast_ref::<tauri_runtime_wry::Webview>() else {
++                    let _ = tx.send(Err(ScreenshotError::PlatformUnsupported));
++                    return;
++                };
+                 unsafe {
+                     // Get ICoreWebView2 from Tauri's webview handle
+                     let controller = webview.controller();
+diff -ruN a/upstream/mcp-server-tauri/packages/tauri-plugin-mcp-bridge/src/utils.rs b/upstream/mcp-server-tauri/packages/tauri-plugin-mcp-bridge/src/utils.rs
+--- a/upstream/mcp-server-tauri/packages/tauri-plugin-mcp-bridge/src/utils.rs	2026-10-01 05:57:36.304934489 +0200
++++ b/upstream/mcp-server-tauri/packages/tauri-plugin-mcp-bridge/src/utils.rs	2026-10-01 05:57:36.337163927 +0200
+@@ -16,7 +16,11 @@
+ 
+     window
+         .with_webview(move |webview| unsafe {
+-            let wkwebview: &WKWebView = &*(webview.inner() as *const _ as *const WKWebView);
++            // Aphrody patch (Tauri 3, UNVERIFIED on macOS): `downcast_ref` to the wry webview.
++            let Some(webview) = webview.downcast_ref::<tauri_runtime_wry::Webview>() else {
++                return;
++            };
++            let wkwebview: &WKWebView = &*(webview.inner() as *const WKWebView);
+             let ns_window: *mut objc2::runtime::AnyObject = objc2::msg_send![wkwebview, window];
+ 
+             if !ns_window.is_null() && is_window_fully_occluded(ns_window) {
+diff -ruN a/upstream/mcp-server-tauri/packages/tauri-plugin-mcp-bridge/src/websocket.rs b/upstream/mcp-server-tauri/packages/tauri-plugin-mcp-bridge/src/websocket.rs
+--- a/upstream/mcp-server-tauri/packages/tauri-plugin-mcp-bridge/src/websocket.rs	2026-10-01 05:57:36.305866121 +0200
++++ b/upstream/mcp-server-tauri/packages/tauri-plugin-mcp-bridge/src/websocket.rs	2026-10-01 05:57:36.337322766 +0200
+@@ -13,7 +13,111 @@
+ use tauri::{AppHandle, Manager, Runtime, WebviewWindow};
+ use tokio::net::{TcpListener, TcpStream};
+ use tokio::sync::{broadcast, mpsc};
+-use tokio_tungstenite::{accept_async, tungstenite::Message};
++use tokio_tungstenite::{
++    accept_hdr_async,
++    tungstenite::{
++        handshake::server::{ErrorResponse, Request, Response},
++        http::StatusCode,
++        Message,
++    },
++};
++
++use crate::config::ListenHook;
++
++/// Aphrody patch: connection security shared by every WebSocket handshake.
++#[derive(Clone, Default)]
++pub struct Security {
++    /// Shared secret clients must present (`?token=` or `Authorization: Bearer`).
++    pub token: Option<String>,
++    /// Called once with the bound address.
++    pub on_listen: Option<ListenHook>,
++}
++
++/// Host names that identify the local machine.
++fn is_loopback_host(host: &str) -> bool {
++    matches!(host, "127.0.0.1" | "localhost" | "::1" | "[::1]")
++}
++
++/// Splits `host[:port]` (also `[v6]:port`) and returns the bare host.
++fn host_without_port(authority: &str) -> &str {
++    if let Some(rest) = authority.strip_prefix('[') {
++        return rest.split(']').next().map_or(authority, |inner| {
++            // Keep the bracketed form recognised by `is_loopback_host`.
++            if inner == "::1" {
++                "::1"
++            } else {
++                inner
++            }
++        });
++    }
++    authority.rsplit_once(':').map_or(authority, |(host, port)| {
++        if port.chars().all(|c| c.is_ascii_digit()) {
++            host
++        } else {
++            authority
++        }
++    })
++}
++
++/// Origin header host (`scheme://host[:port]`), if it parses.
++fn origin_host(origin: &str) -> Option<&str> {
++    let rest = origin.split_once("://")?.1;
++    Some(host_without_port(rest.split('/').next()?))
++}
++
++/// Constant-time comparison so token checks do not leak the match length.
++fn constant_time_eq(a: &str, b: &str) -> bool {
++    let (a, b) = (a.as_bytes(), b.as_bytes());
++    if a.len() != b.len() {
++        return false;
++    }
++    a.iter().zip(b).fold(0u8, |acc, (x, y)| acc | (x ^ y)) == 0
++}
++
++/// Query parameter `token` of a request target (`/path?token=...`).
++fn query_token(target: &str) -> Option<&str> {
++    let query = target.split_once('?')?.1;
++    query
++        .split('&')
++        .find_map(|pair| pair.strip_prefix("token="))
++}
++
++/// Aphrody patch: decides whether a WebSocket handshake may proceed.
++///
++/// * `Host` must be a loopback name (blocks DNS rebinding).
++/// * `Origin`, when present, must be a loopback host (blocks cross-site WebSocket hijacking,
++///   upstream issue #36); non-browser clients send no `Origin`.
++/// * When a token is configured it must match (`?token=` or `Authorization: Bearer`).
++pub(crate) fn authorize_handshake(
++    host: Option<&str>,
++    origin: Option<&str>,
++    authorization: Option<&str>,
++    target: &str,
++    expected_token: Option<&str>,
++) -> Result<(), &'static str> {
++    let Some(host) = host else {
++        return Err("missing Host header");
++    };
++    if !is_loopback_host(host_without_port(host)) {
++        return Err("Host is not a loopback name");
++    }
++    if let Some(origin) = origin {
++        match origin_host(origin) {
++            Some(origin_host) if is_loopback_host(origin_host) => {}
++            _ => return Err("Origin is not loopback"),
++        }
++    }
++    if let Some(expected) = expected_token {
++        let presented = authorization
++            .and_then(|value| value.strip_prefix("Bearer "))
++            .or_else(|| query_token(target));
++        match presented {
++            Some(token) if constant_time_eq(token, expected) => {}
++            _ => return Err("missing or invalid token"),
++        }
++    }
++    Ok(())
++}
+ 
+ /// WebSocket server for real-time event streaming to MCP clients.
+ ///
+@@ -51,6 +155,7 @@
+     addr: SocketAddr,
+     event_tx: broadcast::Sender<String>,
+     app: AppHandle<R>,
++    security: Security,
+ }
+ 
+ impl<R: Runtime> WebSocketServer<R> {
+@@ -87,9 +192,17 @@
+             addr,
+             event_tx,
+             app,
++            security: Security::default(),
+         }
+     }
+ 
++    /// Aphrody patch: attaches token authentication and the listen hook.
++    #[must_use]
++    pub fn with_security(mut self, security: Security) -> Self {
++        self.security = security;
++        self
++    }
++
+     /// Starts the WebSocket server and begins accepting connections.
+     ///
+     /// This method runs indefinitely, accepting new WebSocket connections and
+@@ -120,18 +233,24 @@
+     /// ```
+     pub async fn start(self) -> Result<(), Box<dyn std::error::Error>> {
+         let listener = TcpListener::bind(&self.addr).await?;
++        // Aphrody patch: report the real address (port 0 binds an ephemeral port).
++        let bound = listener.local_addr()?;
++        if let Some(hook) = &self.security.on_listen {
++            (hook.0)(bound);
++        }
+         mcp_log_info(
+             "WS_SERVER",
+-            &format!("WebSocket server listening on: {}", self.addr),
++            &format!("WebSocket server listening on: {bound}"),
+         );
+ 
+         loop {
+             let (stream, _) = listener.accept().await?;
+             let event_tx = self.event_tx.clone();
+             let app = self.app.clone();
++            let security = self.security.clone();
+ 
+             tokio::spawn(async move {
+-                if let Err(e) = handle_connection(stream, event_tx, app).await {
++                if let Err(e) = handle_connection(stream, event_tx, app, security).await {
+                     mcp_log_error("WS_SERVER", &format!("WebSocket connection error: {e}"));
+                 }
+             });
+@@ -223,10 +342,27 @@
+                 Err(e) => error_response(id, e),
+             }
+         }
+-        "plugin:mcp-bridge|get_ipc_events" => match commands::get_ipc_events(app.state()).await {
+-            Ok(data) => success_response(id, data),
+-            Err(e) => error_response(id, e),
+-        },
++        "plugin:mcp-bridge|get_ipc_events" => {
++            // Aphrody patch: events live in a page-side buffer (`window.__MCP_IPC_BUFFER__`), so
++            // no `report_ipc_event` IPC permission is needed.
++            let script = "return JSON.parse(JSON.stringify(window.__MCP_IPC_BUFFER__ || []));";
++            match commands::resolve_window(app, window_label) {
++                Ok(window) => {
++                    let executor_state: tauri::State<'_, ScriptExecutor> = app.state();
++                    match commands::execute_js(window, script.to_string(), executor_state).await {
++                        Ok(result) if result.get("success").and_then(Value::as_bool) == Some(true) => {
++                            success_response(id, result.get("data").cloned().unwrap_or(Value::Array(vec![])))
++                        }
++                        Ok(result) => error_response(
++                            id,
++                            result.get("error").and_then(Value::as_str).unwrap_or("could not read IPC events"),
++                        ),
++                        Err(e) => error_response(id, e),
++                    }
++                }
++                Err(e) => error_response(id, e),
++            }
++        }
+         "plugin:mcp-bridge|emit_event" => {
+             let Some(event_name) = args
+                 .get("args")
+@@ -681,8 +817,31 @@
+     stream: TcpStream,
+     event_tx: broadcast::Sender<String>,
+     app: AppHandle<R>,
++    security: Security,
+ ) -> Result<(), Box<dyn std::error::Error>> {
+-    let ws_stream = match accept_async(stream).await {
++    let expected_token = security.token.clone();
++    let check = move |request: &Request, response: Response| -> Result<Response, ErrorResponse> {
++        let header = |name: &str| request.headers().get(name).and_then(|value| value.to_str().ok());
++        let target = request
++            .uri()
++            .path_and_query()
++            .map_or("/", |value| value.as_str());
++        match authorize_handshake(
++            header("host"),
++            header("origin"),
++            header("authorization"),
++            target,
++            expected_token.as_deref(),
++        ) {
++            Ok(()) => Ok(response),
++            Err(reason) => {
++                let mut rejection = ErrorResponse::new(Some(reason.to_string()));
++                *rejection.status_mut() = StatusCode::FORBIDDEN;
++                Err(rejection)
++            }
++        }
++    };
++    let ws_stream = match accept_hdr_async(stream, check).await {
+         Ok(ws_stream) => ws_stream,
+         // A client that opens the TCP connection but drops before completing the WebSocket
+         // upgrade (port probes, health checks, browsers/agents reconnecting) surfaces here as a
+@@ -898,3 +1057,62 @@
+ 
+     Ok(scripts.len())
+ }
++
++#[cfg(test)]
++mod security_tests {
++    use super::authorize_handshake;
++
++    const TOKEN: Option<&str> = Some("s3cret-token-value");
++
++    #[test]
++    fn loopback_hosts_without_origin_pass_when_the_token_matches() {
++        for host in ["127.0.0.1:9333", "localhost:9333", "[::1]:9333", "127.0.0.1"] {
++            assert_eq!(
++                authorize_handshake(Some(host), None, None, "/?token=s3cret-token-value", TOKEN),
++                Ok(()),
++                "{host}"
++            );
++        }
++    }
++
++    #[test]
++    fn bearer_header_is_accepted_and_wrong_or_missing_tokens_are_rejected() {
++        assert_eq!(
++            authorize_handshake(Some("127.0.0.1:1"), None, Some("Bearer s3cret-token-value"), "/", TOKEN),
++            Ok(())
++        );
++        for target in ["/", "/?token=", "/?token=wrong", "/?token=s3cret-token-valuX"] {
++            assert_eq!(
++                authorize_handshake(Some("127.0.0.1:1"), None, None, target, TOKEN),
++                Err("missing or invalid token"),
++                "{target}"
++            );
++        }
++        // No token configured: only the Host and Origin checks apply.
++        assert_eq!(authorize_handshake(Some("127.0.0.1:1"), None, None, "/", None), Ok(()));
++    }
++
++    #[test]
++    fn rebinding_hosts_and_cross_site_origins_are_rejected() {
++        assert_eq!(
++            authorize_handshake(None, None, None, "/?token=s3cret-token-value", TOKEN),
++            Err("missing Host header")
++        );
++        assert_eq!(
++            authorize_handshake(Some("evil.example:9333"), None, None, "/?token=s3cret-token-value", TOKEN),
++            Err("Host is not a loopback name")
++        );
++        assert_eq!(
++            authorize_handshake(Some("127.0.0.1:1"), Some("https://evil.example"), None, "/?token=s3cret-token-value", TOKEN),
++            Err("Origin is not loopback")
++        );
++        assert_eq!(
++            authorize_handshake(Some("127.0.0.1:1"), Some("null"), None, "/?token=s3cret-token-value", TOKEN),
++            Err("Origin is not loopback")
++        );
++        assert_eq!(
++            authorize_handshake(Some("127.0.0.1:1"), Some("http://localhost:3000"), None, "/?token=s3cret-token-value", TOKEN),
++            Ok(())
++        );
++    }
++}

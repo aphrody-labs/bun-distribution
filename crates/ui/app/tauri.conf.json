@@ -1,5 +1,5 @@
 {
-  "$schema": "https://schema.tauri.app/config/2",
+  "$schema": "https://raw.githubusercontent.com/tauri-apps/tauri/tauri-v3.0.0-alpha.3/crates/tauri-schema-generator/schemas/config.schema.json",
   "productName": "aphrody",
   "identifier": "dev.aphrody.desktop",
   "build": {
@@ -9,6 +9,7 @@
     "beforeBuildCommand": "bun run --filter @aphrody/app-ui build"
   },
   "app": {
+    "macOSPrivateApi": true,
     "withGlobalTauri": true,
     "windows": [
       {

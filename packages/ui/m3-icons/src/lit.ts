@@ -7,7 +7,7 @@ import { m3Icon, type M3IconStyle } from "@aphrody/bun";
 
 /**
  * `<m3-icon>`: renders a Material Symbols icon as inline SVG, generated from the variable font
- * outlines by `aphrody-icons` (no icon font requested, loaded or applied via CSS).
+ * outlines by the `icons` module of `aphrody-bun` (no icon font requested, loaded or applied via CSS).
  *
  * ```html
  * <m3-icon name="home" variant="rounded" fill="1" weight="500"></m3-icon>

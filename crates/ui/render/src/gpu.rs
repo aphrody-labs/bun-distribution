@@ -624,7 +624,10 @@ fn align_bytes_per_row(unaligned: u32) -> u32 {
     unaligned.div_ceil(ALIGN) * ALIGN
 }
 
-fn background_clear(scene: &Scene, scheme: &aphrody_m3::color::DynamicScheme) -> wgpu::Color {
+fn background_clear(
+    scene: &Scene,
+    scheme: &aphrody_m3_tokens::facade::color::DynamicScheme,
+) -> wgpu::Color {
     let Some(bg) = scene.background else {
         return wgpu::Color::TRANSPARENT;
     };
@@ -695,6 +698,10 @@ fn draw_fill<'pass>(
     pass.draw(0..4, 0..1);
 }
 
+#[expect(
+    clippy::too_many_arguments,
+    reason = "GPU draw helper: each argument is a distinct wgpu resource or shadow parameter"
+)]
 fn draw_shadow<'pass>(
     device: &wgpu::Device,
     queue: &wgpu::Queue,
@@ -872,7 +879,7 @@ fn draw_textured<'pass>(
 
 #[cfg(test)]
 mod tests {
-    use aphrody_m3::color::{Role, Variant};
+    use aphrody_m3_tokens::facade::color::{Role, Variant};
 
     use super::*;
     use crate::{

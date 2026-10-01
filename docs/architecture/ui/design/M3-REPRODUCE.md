@@ -26,7 +26,6 @@ instead of `Math.random()`, matched in the fixture script, so output is determin
 | `image` | yes | `ReproductionPlan::from_image_bytes` (capture bytes to seed). |
 | `crawl` | no | Regex extraction from fetched HTML: theme colours, font stacks, median radius, images, flat landmark list mapped to M3 components (`crawl.rs::LANDMARK_TO_M3`). No DOM, no cascade, no JS. |
 | `network` | no | Fetches the URL before crawling. |
-| `capture` | no | Windows screen/window capture (`aphrody-capture`). |
 | `cli` | no | The `aphrody-m3-reproduce` binary. |
 
 ```sh

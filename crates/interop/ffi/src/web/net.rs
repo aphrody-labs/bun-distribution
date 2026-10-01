@@ -411,7 +411,7 @@ pub unsafe extern "C" fn web_internal_x_community_info_and_tweets_submit(
     })
 }
 
-/// Rank post candidates (JSON array of `aphrody_x_algorithm::PostCandidate`) with the
+/// Rank post candidates (JSON array of `aphrody_x::algorithm::PostCandidate`) with the
 /// native For You algorithm. `context_json_ptr` may be null. CPU-only, so it
 /// stays synchronous.
 ///
@@ -433,7 +433,7 @@ pub unsafe extern "C" fn web_internal_x_algorithm_rank(
             return error_json("invalid utf8 in candidates json");
         };
         let context = unsafe { borrow_str(context_json_ptr) }.unwrap_or_default();
-        match aphrody_x_algorithm::rank_posts_json(candidates, context, top_k) {
+        match aphrody_x::algorithm::rank_posts_json(candidates, context, top_k) {
             Ok(json) => into_c_string(json),
             Err(e) => error_json(e),
         }

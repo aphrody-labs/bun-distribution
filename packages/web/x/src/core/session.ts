@@ -42,7 +42,7 @@ export class XSession implements XSessionData {
       session.filePath = path;
       return session;
     } catch (e: any) {
-      throw new Error(`Failed to load session file ${path}: ${e.message}`);
+      throw new Error(`Failed to load session file ${path}: ${e.message}`, { cause: e });
     }
   }
 

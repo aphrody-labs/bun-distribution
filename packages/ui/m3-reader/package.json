@@ -33,6 +33,7 @@
   "scripts": {
     "build": "tsup && tsc -p tsconfig.build.json",
     "typecheck": "tsc --noEmit",
+    "test": "bun test",
     "typecheck:fast": "tsgo --noEmit"
   },
   "dependencies": {

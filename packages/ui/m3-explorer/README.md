@@ -23,7 +23,7 @@ Peer dependencies: `react` and `react-dom` 18 or 19, `tailwindcss` 4.1+.
 
 The components use the M3 Tailwind utilities. Import the token sheets and let Tailwind scan the
 package, as described in
-[`SPACEUI-M3-FUSION.md` → Integration](../../docs/architecture/ui/design/SPACEUI-M3-FUSION.md#integration):
+[`SPACEUI-M3-FUSION.md` → Integration](../../../docs/architecture/ui/design/SPACEUI-M3-FUSION.md#integration):
 
 ```css
 @import "tailwindcss";

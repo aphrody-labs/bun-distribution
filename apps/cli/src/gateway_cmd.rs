@@ -124,16 +124,16 @@ fn resolve_adapter(provider: &str) -> miette::Result<(Arc<dyn GatewayAdapter>, V
         }
     }
 
-    if provider == "openai" || provider == "auto" {
-        if let Ok(adapter) = OpenAiProxyAdapter::from_env() {
-            return Ok((Arc::new(adapter), advertised_models("openai")));
-        }
+    if (provider == "openai" || provider == "auto")
+        && let Ok(adapter) = OpenAiProxyAdapter::from_env()
+    {
+        return Ok((Arc::new(adapter), advertised_models("openai")));
     }
 
-    if provider == "gemini-cli" || provider == "auto" {
-        if let Ok(adapter) = GeminiCliAdapter::from_env() {
-            return Ok((Arc::new(adapter), advertised_models("gemini-cli")));
-        }
+    if (provider == "gemini-cli" || provider == "auto")
+        && let Ok(adapter) = GeminiCliAdapter::from_env()
+    {
+        return Ok((Arc::new(adapter), advertised_models("gemini-cli")));
     }
 
     Err(unconfigured_provider_error(provider))

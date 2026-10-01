@@ -3,7 +3,7 @@
 The single SVG owner of the Aphrody ecosystem. Every repository that parses, cleans, recolours,
 merges, optimizes, rasterizes or compares SVG uses this crate (Rust), `@aphrody/svg` (Bun,
 `bun:ffi` over `crates/ui/bun`), instead of carrying its own implementation.
-Inventory, migration map and remaining work: [`docs/SVG.md`](../../docs/SVG.md).
+Inventory, migration map and remaining work: [`docs/SVG.md`](../../../docs/reference/ui/SVG.md).
 
 | Module | Feature | What |
 | --- | --- | --- |
@@ -17,7 +17,8 @@ Inventory, migration map and remaining work: [`docs/SVG.md`](../../docs/SVG.md).
 | `diff` | `raster` | Pixel diff of two SVGs or RGBA buffers (max/mean delta, mismatch %). |
 
 Default features: `raster`, `glyph`. The workspace entry sets `default-features = false`, so
-consumers name what they use (`aphrody-icons` takes only `glyph`).
+consumers name what they use (the `icons` module of `aphrody-bun`, formerly `aphrody-icons`,
+needs `glyph`).
 
 ```rust
 use aphrody_svg::{raster, sanitize, theme::Theme};

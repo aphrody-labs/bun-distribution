@@ -88,21 +88,24 @@ impl Fixture {
                 "WorkspaceURIs": ["file:///c%3A/elsewhere"] } } } })
             .to_string(),
         );
-        write_lines(&self.agy_transcript(), &[
-            json!({"step_index": 0, "source": "USER_EXPLICIT", "type": "USER_INPUT",
+        write_lines(
+            &self.agy_transcript(),
+            &[
+                json!({"step_index": 0, "source": "USER_EXPLICIT", "type": "USER_INPUT",
                    "status": "DONE", "created_at": "2026-09-25T03:37:29Z",
                    "content": "explore the docs"}),
-            json!({"step_index": 1, "source": "MODEL", "type": "PLANNER_RESPONSE",
+                json!({"step_index": 1, "source": "MODEL", "type": "PLANNER_RESPONSE",
                    "status": "DONE", "created_at": "2026-09-25T03:37:30Z",
                    "thinking": "Listing the repositories first.",
                    "tool_calls": [{"name": "run_command",
                                    "args": {"CommandLine": "\"ls\"", "Cwd": "\"C:\\\\src\""}}]}),
-            json!({"step_index": 2, "source": "MODEL", "type": "GENERIC", "status": "DONE",
+                json!({"step_index": 2, "source": "MODEL", "type": "GENERIC", "status": "DONE",
                    "created_at": "2026-09-25T03:37:33Z",
                    "content": "The command exited with code 0.\nOutput: aphrody"}),
-            json!({"step_index": 3, "source": "SYSTEM", "type": "CHECKPOINT", "status": "DONE",
+                json!({"step_index": 3, "source": "SYSTEM", "type": "CHECKPOINT", "status": "DONE",
                    "created_at": "2026-09-25T03:40:00Z", "content": "# Resuming from a compaction"}),
-        ]);
+            ],
+        );
     }
 
     fn write_codex(&self) {
@@ -117,52 +120,58 @@ impl Fixture {
         );
         // An archived rollout must never be read (it would duplicate lines).
         write(&root.join("archived_sessions").join(format!("rollout-x-{CODEX_ID}.jsonl")), "{}\n");
-        write_lines(&self.codex_rollout(), &[
-            json!({"timestamp": "2026-09-25T06:26:17.680Z", "type": "session_meta",
+        write_lines(
+            &self.codex_rollout(),
+            &[
+                json!({"timestamp": "2026-09-25T06:26:17.680Z", "type": "session_meta",
                    "payload": {"id": CODEX_ID, "cwd": self.workspace, "originator": "codex-tui"}}),
-            json!({"timestamp": "2026-09-25T06:26:18.000Z", "type": "response_item",
+                json!({"timestamp": "2026-09-25T06:26:18.000Z", "type": "response_item",
                    "payload": {"type": "message", "role": "developer",
                                "content": [{"type": "input_text", "text": "<permissions>"}]}}),
-            json!({"timestamp": "2026-09-25T06:26:19.000Z", "type": "response_item",
+                json!({"timestamp": "2026-09-25T06:26:19.000Z", "type": "response_item",
                    "payload": {"type": "message", "role": "user",
                                "content": [{"type": "input_text", "text": "write the plan"}]}}),
-            json!({"timestamp": "2026-09-25T06:26:19.500Z", "type": "event_msg",
+                json!({"timestamp": "2026-09-25T06:26:19.500Z", "type": "event_msg",
                    "payload": {"type": "user_message", "message": "write the plan"}}),
-            json!({"timestamp": "2026-09-25T06:26:20.000Z", "type": "response_item",
+                json!({"timestamp": "2026-09-25T06:26:20.000Z", "type": "response_item",
                    "payload": {"type": "reasoning", "summary": [], "encrypted_content": "gAAAA"}}),
-            json!({"timestamp": "2026-09-25T06:26:21.000Z", "type": "response_item",
+                json!({"timestamp": "2026-09-25T06:26:21.000Z", "type": "response_item",
                    "payload": {"type": "function_call", "name": "exec_command",
                                "arguments": "{\"cmd\":\"ls\"}", "call_id": "call_1"}}),
-            json!({"timestamp": "2026-09-25T06:26:22.000Z", "type": "response_item",
+                json!({"timestamp": "2026-09-25T06:26:22.000Z", "type": "response_item",
                    "payload": {"type": "function_call_output", "call_id": "call_1",
                                "output": "Cargo.toml\nsrc"}}),
-            json!({"timestamp": "2026-09-25T06:26:23.000Z", "type": "response_item",
+                json!({"timestamp": "2026-09-25T06:26:23.000Z", "type": "response_item",
                    "payload": {"type": "message", "role": "assistant",
                                "content": [{"type": "output_text", "text": "Plan written."}]}}),
-        ]);
+            ],
+        );
     }
 
     fn write_claude(&self) {
-        write_lines(&self.claude_transcript(), &[
-            json!({"type": "permission-mode", "permissionMode": "bypass", "sessionId": CLAUDE_ID}),
-            json!({"type": "user", "sessionId": CLAUDE_ID, "cwd": self.workspace,
+        write_lines(
+            &self.claude_transcript(),
+            &[
+                json!({"type": "permission-mode", "permissionMode": "bypass", "sessionId": CLAUDE_ID}),
+                json!({"type": "user", "sessionId": CLAUDE_ID, "cwd": self.workspace,
                    "timestamp": "2026-09-25T07:00:00.000Z",
                    "message": {"role": "user", "content": "fix the build"}}),
-            json!({"type": "assistant", "sessionId": CLAUDE_ID, "cwd": self.workspace,
+                json!({"type": "assistant", "sessionId": CLAUDE_ID, "cwd": self.workspace,
                    "timestamp": "2026-09-25T07:00:05.000Z",
                    "message": {"role": "assistant", "content": [
                        {"type": "thinking", "thinking": "Check cargo first."},
                        {"type": "text", "text": "Running the check."},
                        {"type": "tool_use", "id": "toolu_1", "name": "Bash",
                         "input": {"command": "cargo check"}}]}}),
-            json!({"type": "user", "sessionId": CLAUDE_ID, "cwd": self.workspace,
+                json!({"type": "user", "sessionId": CLAUDE_ID, "cwd": self.workspace,
                    "timestamp": "2026-09-25T07:00:30.000Z",
                    "message": {"role": "user", "content": [
                        {"type": "tool_result", "tool_use_id": "toolu_1",
                         "content": [{"type": "text", "text": "Finished dev profile"}]}]}}),
-            json!({"type": "attachment", "sessionId": CLAUDE_ID, "cwd": self.workspace,
+                json!({"type": "attachment", "sessionId": CLAUDE_ID, "cwd": self.workspace,
                    "attachment": {"type": "file"}}),
-        ]);
+            ],
+        );
     }
 }
 
@@ -200,16 +209,19 @@ fn syncs_all_three_formats() {
 
     // Antigravity CLI: user, reasoning + tool call, tool output, system note.
     let agy = read_mirror(&fixture.mirror(AgentKind::Agy, AGY_ID));
-    assert_eq!(roles_and_texts(&agy), vec![
-        (Role::User, "explore the docs".to_owned()),
-        (Role::Reasoning, "Listing the repositories first.".to_owned()),
-        (
-            Role::ToolCall,
-            r#"run_command {"CommandLine":"\"ls\"","Cwd":"\"C:\\\\src\""}"#.to_owned()
-        ),
-        (Role::ToolResult, "The command exited with code 0.\nOutput: aphrody".to_owned()),
-        (Role::System, "# Resuming from a compaction".to_owned()),
-    ]);
+    assert_eq!(
+        roles_and_texts(&agy),
+        vec![
+            (Role::User, "explore the docs".to_owned()),
+            (Role::Reasoning, "Listing the repositories first.".to_owned()),
+            (
+                Role::ToolCall,
+                r#"run_command {"CommandLine":"\"ls\"","Cwd":"\"C:\\\\src\""}"#.to_owned()
+            ),
+            (Role::ToolResult, "The command exited with code 0.\nOutput: aphrody".to_owned()),
+            (Role::System, "# Resuming from a compaction".to_owned()),
+        ]
+    );
     // last_conversations.json outranks the metadata's workspace URI.
     assert!(
         agy.iter().all(|record| record.workspace.as_deref() == Some(fixture.workspace.as_str()))
@@ -220,13 +232,16 @@ fn syncs_all_three_formats() {
 
     // Codex: session_meta and event_msg produce nothing, encrypted reasoning is dropped.
     let codex = read_mirror(&fixture.mirror(AgentKind::Codex, CODEX_ID));
-    assert_eq!(roles_and_texts(&codex), vec![
-        (Role::System, "<permissions>".to_owned()),
-        (Role::User, "write the plan".to_owned()),
-        (Role::ToolCall, r#"exec_command {"cmd":"ls"}"#.to_owned()),
-        (Role::ToolResult, "Cargo.toml\nsrc".to_owned()),
-        (Role::Assistant, "Plan written.".to_owned()),
-    ]);
+    assert_eq!(
+        roles_and_texts(&codex),
+        vec![
+            (Role::System, "<permissions>".to_owned()),
+            (Role::User, "write the plan".to_owned()),
+            (Role::ToolCall, r#"exec_command {"cmd":"ls"}"#.to_owned()),
+            (Role::ToolResult, "Cargo.toml\nsrc".to_owned()),
+            (Role::Assistant, "Plan written.".to_owned()),
+        ]
+    );
     assert!(
         codex.iter().all(|record| record.workspace.as_deref() == Some(fixture.workspace.as_str()))
     );
@@ -234,13 +249,16 @@ fn syncs_all_three_formats() {
 
     // Claude Code: blocks become parts; bookkeeping lines are skipped.
     let claude = read_mirror(&fixture.mirror(AgentKind::Claude, CLAUDE_ID));
-    assert_eq!(roles_and_texts(&claude), vec![
-        (Role::User, "fix the build".to_owned()),
-        (Role::Reasoning, "Check cargo first.".to_owned()),
-        (Role::Assistant, "Running the check.".to_owned()),
-        (Role::ToolCall, r#"Bash {"command":"cargo check"}"#.to_owned()),
-        (Role::ToolResult, "Finished dev profile".to_owned()),
-    ]);
+    assert_eq!(
+        roles_and_texts(&claude),
+        vec![
+            (Role::User, "fix the build".to_owned()),
+            (Role::Reasoning, "Check cargo first.".to_owned()),
+            (Role::Assistant, "Running the check.".to_owned()),
+            (Role::ToolCall, r#"Bash {"command":"cargo check"}"#.to_owned()),
+            (Role::ToolResult, "Finished dev profile".to_owned()),
+        ]
+    );
     assert_eq!(claude[3].part, 2);
     assert_eq!(claude[0].source_path, fixture.claude_transcript().display().to_string());
 
@@ -364,18 +382,19 @@ fn a_deleted_mirror_is_rebuilt_from_its_source() {
 fn a_rewritten_source_is_ingested_again_and_its_mirror_rebuilt() {
     let fixture = Fixture::new();
     sync(&fixture.options()).expect("first sync");
-    write_lines(&fixture.claude_transcript(), &[
-        json!({"type": "user", "sessionId": CLAUDE_ID, "cwd": fixture.workspace,
-               "message": {"role": "user", "content": "a different conversation, longer than the old head"}}),
-    ]);
+    write_lines(
+        &fixture.claude_transcript(),
+        &[json!({"type": "user", "sessionId": CLAUDE_ID, "cwd": fixture.workspace,
+               "message": {"role": "user", "content": "a different conversation, longer than the old head"}})],
+    );
     let report = sync(&fixture.options()).expect("resync");
     assert_eq!(report.records_ingested, 1);
     assert!(report.issues.iter().any(|issue| issue.message.contains("ingesting it again")));
     let claude = read_mirror(&fixture.mirror(AgentKind::Claude, CLAUDE_ID));
-    assert_eq!(roles_and_texts(&claude), vec![(
-        Role::User,
-        "a different conversation, longer than the old head".to_owned()
-    )]);
+    assert_eq!(
+        roles_and_texts(&claude),
+        vec![(Role::User, "a different conversation, longer than the old head".to_owned())]
+    );
 }
 
 #[test]
@@ -656,18 +675,26 @@ fn state_keys_ignore_separator_and_case_spelling() {
 #[cfg(feature = "memory")]
 #[tokio::test]
 async fn shared_recall_filters_workspace_and_keeps_all_three_owners() {
-    use aphrody_memory::{provider::MemoryProvider, SqliteLocalProvider, types::MemoryRecord};
+    use aphrody_memory::{SqliteLocalProvider, provider::MemoryProvider, types::MemoryRecord};
     let provider = SqliteLocalProvider::open_in_memory().unwrap();
     let workspace = tempfile::tempdir().unwrap();
-    for (index, agent) in [AgentKind::Claude, AgentKind::Codex, AgentKind::Agy].into_iter().enumerate() {
-        let mut record = MemoryRecord::new(format!("record-{index}"), super::memory_agent_id(agent), "shared");
+    for (index, agent) in
+        [AgentKind::Claude, AgentKind::Codex, AgentKind::Agy].into_iter().enumerate()
+    {
+        let mut record =
+            MemoryRecord::new(format!("record-{index}"), super::memory_agent_id(agent), "shared");
         record.created_at_unix_ms = index as u64;
         record.metadata = serde_json::json!({"workspace": workspace.path()});
         provider.add(record).await.unwrap();
     }
     provider.add(MemoryRecord::new("unknown", "external:codex", "no workspace")).await.unwrap();
-    provider.add(MemoryRecord::new("other", "external:claude", "other repo")
-        .with_metadata(serde_json::json!({"workspace": "/unrelated-repo"}))).await.unwrap();
+    provider
+        .add(
+            MemoryRecord::new("other", "external:claude", "other repo")
+                .with_metadata(serde_json::json!({"workspace": "/unrelated-repo"})),
+        )
+        .await
+        .unwrap();
     let records = super::workspace_memory(&provider, workspace.path(), 3).await.unwrap();
     assert_eq!(records.len(), 3);
     assert_eq!(records[0].agent_id, "external:agy");

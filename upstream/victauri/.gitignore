@@ -1,0 +1,54 @@
+/target
+**/*.rs.bk
+*.pdb
+.env
+*.db
+*.db-shm
+*.db-wal
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Tauri generated
+**/gen/
+
+# Claude Code
+.claude/
+
+# the gate local self-gate scratch — HMAC key + rebuildable caches. Never commit (the key is a local trust
+# input; §177 bridge audit flagged it committable here — gate's own repo already ignores these).
+.gate/*.key
+.gate/pipeline-cache.json
+.gate/cache-hmac.key
+
+# Data artifacts
+data/
+
+# Bridge test dependencies (npm)
+**/node_modules/
+# Keep package-lock.json committed for reproducible CI builds
+
+# VS Code extension build output
+editors/vscode/dist/
+editors/vscode/media/screenshots/
+editors/vscode/*.vsix
+
+# Security audit (triaged status + private working copy) — local only
+SECURITY-AUDIT.md
+AUDIT_WORK.md
+
+# Codex agent instructions (per-terminal local artifact, like CLAUDE.md but tool-generated)
+AGENTS.md
+
+# npm pack artifacts
+extensions/npm/*.tgz
+
+# Verax runtime scratch (cache HMAC key + pipeline cache) - operator-local, never committable.
+/.verax/

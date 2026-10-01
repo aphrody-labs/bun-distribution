@@ -36,6 +36,7 @@ const Card = forwardRef<HTMLDivElement, CardProps>(
     <div
       ref={ref}
       className={clsx("rounded-medium text-on-surface", variantStyles[variant], className)}
+      data-m3-component="Card"
       {...props}
     />
   ),
@@ -45,7 +46,12 @@ Card.displayName = "Card";
 
 const CardHeader = forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
   ({ className, ...props }, ref) => (
-    <div ref={ref} className={clsx("flex flex-col gap-1 p-4", className)} {...props} />
+    <div
+      ref={ref}
+      className={clsx("flex flex-col gap-1 p-4", className)}
+      data-m3-component="CardHeader"
+      {...props}
+    />
   ),
 );
 
@@ -53,7 +59,12 @@ CardHeader.displayName = "CardHeader";
 
 const CardTitle = forwardRef<HTMLParagraphElement, React.HTMLAttributes<HTMLHeadingElement>>(
   ({ className, children, ...props }, ref) => (
-    <h3 ref={ref} className={clsx("text-title-large text-on-surface", className)} {...props}>
+    <h3
+      ref={ref}
+      className={clsx("text-title-large text-on-surface", className)}
+      data-m3-component="CardTitle"
+      {...props}
+    >
       {children}
     </h3>
   ),
@@ -65,14 +76,24 @@ const CardDescription = forwardRef<
   HTMLParagraphElement,
   React.HTMLAttributes<HTMLParagraphElement>
 >(({ className, ...props }, ref) => (
-  <p ref={ref} className={clsx("text-body-medium text-on-surface-variant", className)} {...props} />
+  <p
+    ref={ref}
+    className={clsx("text-body-medium text-on-surface-variant", className)}
+    data-m3-component="CardDescription"
+    {...props}
+  />
 ));
 
 CardDescription.displayName = "CardDescription";
 
 const CardContent = forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
   ({ className, ...props }, ref) => (
-    <div ref={ref} className={clsx("p-4 pt-0 text-body-medium", className)} {...props} />
+    <div
+      ref={ref}
+      className={clsx("p-4 pt-0 text-body-medium", className)}
+      data-m3-component="CardContent"
+      {...props}
+    />
   ),
 );
 
@@ -80,7 +101,12 @@ CardContent.displayName = "CardContent";
 
 const CardFooter = forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
   ({ className, ...props }, ref) => (
-    <div ref={ref} className={clsx("flex items-center gap-2 p-4 pt-0", className)} {...props} />
+    <div
+      ref={ref}
+      className={clsx("flex items-center gap-2 p-4 pt-0", className)}
+      data-m3-component="CardFooter"
+      {...props}
+    />
   ),
 );
 

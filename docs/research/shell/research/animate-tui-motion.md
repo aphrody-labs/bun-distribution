@@ -7,8 +7,8 @@
 > **Contexte depuis le découpage en dépôts (2026-09-25)** : le front TUI de ce dépôt est
 > `aphrody-tui` (`crates/aphrody-tui`, Ratatui 0.30) — la question « `aphrody-terminal` est-il
 > Ratatui-based ? » ci-dessous est donc tranchée : oui, la feature `ratatui` d'`animate`
-> s'applique. `aphrody-logo` vit dans le dépôt frère `aphrody-ui`
-> (`../aphrody-ui/crates/aphrody-logo`) ; les étapes qui le concernent s'y exécutent.
+> s'applique. le logo vit désormais dans ce monorepo, module `logo` de
+> `aphrody-identity` (`crates/ui/identity/src/logo.rs`, ex-crate `aphrody-logo`).
 
 ## 1. Ce qu'est `animate`
 
@@ -30,7 +30,7 @@ Apache-2.0 — pas de contamination, cf. politique licences §5).
 
 Deux besoins concrets, déjà spécifiés, n'ont pas de moteur de motion :
 
-1. **Animation du logo terminal** (`crates/aphrody-logo`) :
+1. **Animation du logo terminal** (`crates/ui/identity/src/logo.rs`) :
    - **« Pause Point »** (design spec §4.3) : respiration guidée 4 s inspiration
      lumineuse / 6 s expiration diffuse — un `#[tween]` `alternate` sur
      l'opacité/luminance du logo, easing `cubic_in_out`.
@@ -88,7 +88,7 @@ stiffness/damping) en est l'analogue direct côté Rust/TUI :
   acceptable pour une feature non critique (cosmétique de logo / motion UI).
 - **Boucle de rendu** : animer le logo exige une boucle de frames + contrôle
   terminal (alt-screen ou réécriture in-place) — coût d'intégration côté
-  `aphrody-logo`/`aphrody-terminal`, pas côté `animate`.
+  `aphrody-identity` (logo)/`aphrody-terminal`, pas côté `animate`.
 
 ## 4. Décision recommandée
 
@@ -109,7 +109,7 @@ Rust légère, pas un runtime externe.
       crates/aphrody-terminal-*/Cargo.toml`) → décide de la feature `ratatui`.
 - [ ] Pin `animate = "0.4"` workspace + `cargo deny check` (licence MIT,
       advisories) avant adoption.
-- [ ] `aphrody-logo` : ajouter `breathe(cols, fps, cycle)` derrière feature
+- [ ] `aphrody-identity` (module `logo`) : ajouter `breathe(cols, fps, cycle)` derrière feature
       `motion` (dep `animate`), boucle `tick()` → re-render half-block, easing
       `cubic_in_out`, 4 s/6 s par défaut. Verify : smoke visuel + test que la
       séquence d'opacité est monotone par phase.
@@ -119,5 +119,5 @@ Rust légère, pas un runtime externe.
 
 **Recommandé** comme moteur de motion (logo breathing/pulse + UI
 `aphrody-terminal`), en dépendance directe MIT légère. Complémentaire au logo
-statique déjà livré (`aphrody-logo`) : `animate` n'apporte que la dimension
-temporelle, le rendu reste celui d'`aphrody-logo`.
+statique déjà livré (`aphrody-identity`, module `logo`) : `animate` n'apporte que la dimension
+temporelle, le rendu reste celui d'`aphrody-identity::logo`.

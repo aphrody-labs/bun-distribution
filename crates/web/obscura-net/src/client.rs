@@ -2645,7 +2645,10 @@ mod ssrf_tests {
 
         let leaf_key = rcgen::KeyPair::generate().unwrap();
         let leaf_params = rcgen::CertificateParams::new(vec!["127.0.0.1".to_string()]).unwrap();
-        let leaf_cert = leaf_params.signed_by(&leaf_key, &ca_cert, &ca_key).unwrap();
+        // rcgen 0.14: leaf signing takes an `Issuer` (CA params + CA key) instead
+        // of the issued CA `Certificate`.
+        let ca_issuer = rcgen::Issuer::from_params(&ca_params, &ca_key);
+        let leaf_cert = leaf_params.signed_by(&leaf_key, &ca_issuer).unwrap();
 
         let certs =
             vec![tokio_rustls::rustls::pki_types::CertificateDer::from(leaf_cert.der().to_vec())];

@@ -10,7 +10,7 @@
 // with that module; `aphrody-render`'s own round-trip test
 // (`scene::tests::scene_round_trips_through_json`) is the source of truth.
 
-/** Kebab-case M3 colour role name (`aphrody_m3::color::Role::name()`). */
+/** Kebab-case M3 colour role name (`aphrody_m3_tokens::scheme::Role::name()`). */
 export type M3Role = string;
 
 export type Rect = { x: number; y: number; w: number; h: number };
@@ -57,7 +57,7 @@ export type SceneNode =
   | { node: "icon"; rect: Rect; path: string; color: Paint }
   | { node: "image"; rect: Rect; width: number; height: number; rgba: number[] };
 
-/** M3 dynamic-scheme variant name (`aphrody_m3::color::Variant::name()`). */
+/** M3 dynamic-scheme variant name (`aphrody_m3_tokens::scheme::Variant::name()`). */
 export type SchemeVariant =
   | "monochrome"
   | "neutral"

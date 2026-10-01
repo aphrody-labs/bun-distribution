@@ -417,6 +417,10 @@ export function DatabookReader({ pages, title, resolveAssetUrl = (path) => path,
 			ref={containerRef}
 			className="m3-reader m3-reader-container m3-reader-scroll flex h-[84svh] min-h-[460px] w-full min-w-0 flex-col overflow-hidden rounded-xl bg-[var(--reader-surface)] [contain:inline-size] [&:fullscreen]:h-screen [&:fullscreen]:min-h-screen [&:fullscreen]:rounded-none"
 			data-databook-reader
+			data-m3-component="DatabookReader"
+			data-testid="databook-reader"
+			role="region"
+			aria-label={title}
 		>
 			{/* Barre de contrôles Toriyama HUD */}
 			<div className="m3-reader-hud z-10 flex flex-nowrap items-center gap-2 px-3 py-2.5 sm:flex-wrap">

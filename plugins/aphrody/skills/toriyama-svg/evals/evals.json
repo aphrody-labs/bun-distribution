@@ -1,0 +1,26 @@
+{
+	"skill_name": "toriyama-svg",
+	"evals": [
+		{
+			"id": 0,
+			"name": "boule-cristal-favicon",
+			"prompt": "J'ai besoin d'une boule de cristal à 4 étoiles en SVG pour dragonballfr.com. Elle doit servir d'illustration sur les fiches ET de favicon, donc il faut qu'elle tienne à 16 px. Sors-moi les fichiers.",
+			"expected_output": "Un SVG mesuré sur une source réelle + une variante ou un traitement pour les petites tailles + le jeu de favicons, avec les mesures consignées.",
+			"files": []
+		},
+		{
+			"id": 1,
+			"name": "animation-kamehameha",
+			"prompt": "Fais-moi une animation SVG d'un Kaméhaméha pour mettre sur la home du site. Ça doit boucler et rester propre en mobile.",
+			"expected_output": "Un SVG animé découpé en phases (charge, détente, faisceau, dissipation), sans JavaScript, avec prefers-reduced-motion, et un contrôle visuel du rendu.",
+			"files": []
+		},
+		{
+			"id": 2,
+			"name": "tete-shenron",
+			"prompt": "Dessine-moi la tête de Shenron en SVG, fidèle au manga, en haute qualité. C'est pour le logo du bot Discord.",
+			"expected_output": "Un SVG construit sur des proportions mesurées sur des planches réelles (pas de mémoire), aplats + trait d'encre, contrôlé visuellement à plusieurs tailles.",
+			"files": []
+		}
+	]
+}

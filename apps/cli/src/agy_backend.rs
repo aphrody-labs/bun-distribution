@@ -85,10 +85,9 @@ impl AgyBackend {
         let project = tokio::sync::OnceCell::new();
         if let Ok(p) = std::env::var("APHRODY_CLOUDCODE_PROJECT")
             .or_else(|_| std::env::var("GOOGLE_CLOUD_PROJECT"))
-        {
-            if !p.is_empty() {
-                let _ = project.set(p);
-            }
+            && !p.is_empty()
+            {
+            let _ = project.set(p);
         }
 
         // `APHRODY_VERTEX_FALLBACK=1` skips Cloud Code entirely and routes

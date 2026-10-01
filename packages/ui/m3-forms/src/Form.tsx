@@ -2,7 +2,16 @@
 // Derived from SpaceUI (packages/aphrody-spaceui/packages/forms/src/Form.tsx), MIT, rebuilt on Material Design 3.
 import { Icon } from "@aphrody/m3-primitives";
 import { clsx } from "clsx";
-import { cloneElement, createContext, isValidElement, useContext, useId, useMemo } from "react";
+import {
+  Children,
+  cloneElement,
+  createContext,
+  Fragment,
+  isValidElement,
+  useContext,
+  useId,
+  useMemo,
+} from "react";
 import {
   Controller,
   FormProvider,
@@ -62,7 +71,49 @@ const useFormField = () => {
 
 type FormItemContextValue = {
   id: string;
+  /**
+   * False only when the item's children provably hold no `FormDescription`, so `FormControl`
+   * does not point `aria-describedby` at an id that is not in the document. A self-closing custom
+   * component counts as "might render one" (the previous behavior).
+   */
+  hasDescription?: boolean;
 };
+
+/** Scans the element tree of one item for a `FormDescription`; nested items and the control have their own scope. */
+function mayHaveDescription(children: React.ReactNode): boolean {
+  let found = false;
+  Children.forEach(children, (child) => {
+    if (found || !isValidElement(child)) return;
+    const type = child.type as unknown;
+    if (type === FormDescription) found = true;
+    else if (
+      type === FormControl ||
+      type === FormLabel ||
+      type === FormMessage ||
+      type === FormItem
+    )
+      return;
+    else {
+      // Host elements, fragments and wrappers that receive their content as children are scanned;
+      // a self-closing custom component might render a description itself.
+      const inner = (child.props as { children?: React.ReactNode }).children;
+      if (
+        typeof type === "string" ||
+        type === Fragment ||
+        typeof type === "function" ||
+        typeof type === "object"
+      ) {
+        if (
+          inner === undefined
+            ? typeof type !== "string" && type !== Fragment
+            : mayHaveDescription(inner)
+        )
+          found = true;
+      } else found = true;
+    }
+  });
+  return found;
+}
 
 const FormItemContext = createContext<FormItemContextValue>({} as FormItemContextValue);
 
@@ -72,11 +123,16 @@ const FormItemContext = createContext<FormItemContextValue>({} as FormItemContex
  */
 const FormItem = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => {
   const id = useId();
-  const itemContext = useMemo(() => ({ id }), [id]);
+  const hasDescription = mayHaveDescription(props.children);
+  const itemContext = useMemo(() => ({ id, hasDescription }), [id, hasDescription]);
 
   return (
     <FormItemContext.Provider value={itemContext}>
-      <div className={clsx("group/field flex flex-col gap-1", className)} {...props} />
+      <div
+        className={clsx("group/field flex flex-col gap-1", className)}
+        data-m3-component="FormItem"
+        {...props}
+      />
     </FormItemContext.Provider>
   );
 };
@@ -102,6 +158,7 @@ const FormLabel = ({
 
   return (
     <label
+      data-m3-component="FormLabel"
       htmlFor={formItemId}
       className={clsx(
         "text-on-surface group-data-[disabled]/field:cursor-not-allowed group-data-[disabled]/field:opacity-38",
@@ -127,7 +184,13 @@ interface FormControlProps {
 
 const FormControl = ({ children }: FormControlProps) => {
   const { error, formItemId, formDescriptionId, formMessageId } = useFormField();
-  const describedBy = !error ? formDescriptionId : `${formDescriptionId} ${formMessageId}`;
+  const { hasDescription } = useContext(FormItemContext);
+  const describedBy = [
+    hasDescription !== false ? formDescriptionId : undefined,
+    error ? formMessageId : undefined,
+  ]
+    .filter(Boolean)
+    .join(" ");
 
   if (!isValidElement(children)) {
     return null;
@@ -145,7 +208,7 @@ const FormControl = ({ children }: FormControlProps) => {
 
   return cloneElement(children, {
     id: formItemId,
-    "aria-describedby": mergedDescribed,
+    "aria-describedby": mergedDescribed || undefined,
     "aria-invalid": !!error,
   } as React.HTMLAttributes<HTMLElement>);
 };
@@ -157,6 +220,7 @@ const FormDescription = ({ className, ...props }: React.HTMLAttributes<HTMLParag
   return (
     <p
       id={formDescriptionId}
+      data-m3-component="FormDescription"
       className={clsx(
         "text-body-small text-on-surface-variant group-data-[disabled]/field:opacity-38",
         className,
@@ -182,6 +246,7 @@ const FormMessage = ({
   return (
     <p
       id={formMessageId}
+      data-m3-component="FormMessage"
       className={clsx("flex items-start gap-1 text-body-small text-error", className)}
       {...props}
     >

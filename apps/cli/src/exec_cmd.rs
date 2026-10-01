@@ -131,13 +131,12 @@ pub(crate) fn load_config(overrides: &CliOverrides) -> miette::Result<Config> {
             std::env::var_os(if cfg!(windows) { "USERPROFILE" } else { "HOME" })
                 .map(|path| PathBuf::from(path).join(".codex"))
         });
-        if let Some(path) = codex_home {
-            if let Some(layer) = aphrody_config::load_codex_compat_layer(&path.join("config.toml"))
+        if let Some(path) = codex_home
+            && let Some(layer) = aphrody_config::load_codex_compat_layer(&path.join("config.toml"))
                 .map_err(|error| miette::miette!("exec: {error}"))?
             {
                 layers.insert(1, layer);
             }
-        }
     }
     let (config, warnings) = aphrody_config::resolve(layers, &overrides, "llama", &BTreeMap::new())
         .map_err(|error| miette::miette!("exec: {error}"))?;
@@ -458,18 +457,18 @@ pub(crate) async fn run(args: ExecArgs, mut overrides: CliOverrides) -> miette::
                 if let EventMsg::TurnComplete { last_agent_message } = &event.msg {
                     final_message.clone_from(last_agent_message);
                     completed = true;
-                    if let Some((_, validator)) = &output_schema {
-                        if let Err(error) = validate_output_message(validator, final_message.as_deref()) {
-                            failure = Some(error.to_string());
-                        }
+                    if let Some((_, validator)) = &output_schema
+                        && let Err(error) = validate_output_message(validator, final_message.as_deref())
+                    {
+                        failure = Some(error.to_string());
                     }
                 }
                 for translated in translator.translate(&event.msg) {
-                    if !matches!(translated, ThreadEvent::TurnCompleted(_)) || failure.is_none() {
-                        if let Err(error) = emit(&translated, args.json) {
-                            failure = Some(error.to_string());
-                            break;
-                        }
+                    if (!matches!(translated, ThreadEvent::TurnCompleted(_)) || failure.is_none())
+                        && let Err(error) = emit(&translated, args.json)
+                    {
+                        failure = Some(error.to_string());
+                        break;
                     }
                 }
                 if failure.is_some() || completed { break; }
@@ -501,10 +500,10 @@ pub(crate) async fn run(args: ExecArgs, mut overrides: CliOverrides) -> miette::
     if let Some(path) = args.output_last_message {
         std::fs::write(path, final_message.as_deref().unwrap_or("")).into_diagnostic()?;
     }
-    if !args.json {
-        if let Some(message) = final_message {
-            println!("{message}");
-        }
+    if !args.json
+        && let Some(message) = final_message
+    {
+        println!("{message}");
     }
     Ok(())
 }

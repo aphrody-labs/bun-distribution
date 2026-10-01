@@ -79,12 +79,12 @@ fn resolve_aphrody_mcp_bin() -> Option<PathBuf> {
         }
     }
     let name = mcp_bin_name();
-    if let Ok(exe) = std::env::current_exe() {
-        if let Some(dir) = exe.parent() {
-            let p = dir.join(name);
-            if p.exists() {
-                return Some(p);
-            }
+    if let Ok(exe) = std::env::current_exe()
+        && let Some(dir) = exe.parent()
+    {
+        let p = dir.join(name);
+        if p.exists() {
+            return Some(p);
         }
     }
     if let Ok(p) = which::which(name) {

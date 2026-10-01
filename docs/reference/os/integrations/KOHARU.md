@@ -8,7 +8,7 @@ release, or runtime test.
 
 ## Working-tree update (2026-09-28)
 
-Koharu now exposes the headless Rust [`koharu-library`](../../../products/koharu/crates/koharu-library/README.md)
+Koharu now exposes the headless Rust [`koharu-library`](../../../../crates/koharu/koharu-library/README.md)
 for page import, detection, OCR, translation, inpainting, typed scene results,
 and PNG/PSD export. `aphrody-ai` consumes it through the optional `koharu`
 feature of `aphrody-manga`; the feature's focused Cargo check passed. The
@@ -40,9 +40,9 @@ source snapshot from 2026-09-27.
 
 ## Evidence in Koharu source
 
-- Crates and ownership: [`koharu-app`](../../../products/koharu/crates/koharu-app/README.md),
+- Crates and ownership: [`koharu-app`](../../../../crates/koharu/koharu-app/README.md),
   [`koharu-runtime`](../../../aphrody-koharu/crates/koharu-runtime/Cargo.toml),
-  [`koharu-pipeline`](../../../products/koharu/crates/koharu-pipeline/README.md), and the root
+  [`koharu-pipeline`](../../../../crates/koharu/koharu-pipeline/README.md), and the root
   [`Cargo.toml`](../../../aphrody-koharu/Cargo.toml).
 - Runtime package planning and activation: [`runtime/mod.rs`](../../../aphrody-koharu/crates/koharu-runtime/src/runtime/mod.rs),
   [`store.rs`](../../../aphrody-koharu/crates/koharu-runtime/src/store.rs),

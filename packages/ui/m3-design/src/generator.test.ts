@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 import { expect, test, describe } from "bun:test";
 import { DesignCompiler } from "./generator.ts";
+import { loadDesignSystemFromDisk } from "./node.ts";
 
 describe("DesignCompiler React code generation", () => {
   const compiler = new DesignCompiler();
@@ -86,8 +87,9 @@ describe("DesignCompiler React code generation", () => {
   });
 
   test("should load custom design system overrides and fall back to its accent color", () => {
-    // Custom design system "material" has --accent: #1a73e8; in packages/open-design/design-systems/material/tokens.css
-    const result = compiler.compile("Crée un layout", undefined, "material");
+    // Custom design system "material" has --accent: #1a73e8; in design-systems/material/tokens.css
+    const withDisk = new DesignCompiler({ loadDesignSystem: loadDesignSystemFromDisk });
+    const result = withDisk.compile("Crée un layout", undefined, "material");
     const themeFile = result.files.find((f) => f.path === "src/theme.css");
     expect(themeFile).toBeDefined();
     expect(themeFile!.content).toContain("/* --- Design System Override: material --- */");
@@ -95,5 +97,18 @@ describe("DesignCompiler React code generation", () => {
 
     // Seed color should fall back to the design system's accent color (#1a73e8)
     expect(result.brief.seedColor).toBe("#1a73e8");
+  });
+
+  test("ignores design systems when no loader is configured", () => {
+    const result = compiler.compile("Crée un layout", undefined, "material");
+    const themeFile = result.files.find((f) => f.path === "src/theme.css");
+    expect(themeFile!.content).not.toContain("Design System Override");
+  });
+
+  test("disk loader rejects path traversal and unknown ids", () => {
+    expect(loadDesignSystemFromDisk("../package")).toBeUndefined();
+    expect(loadDesignSystemFromDisk("..")).toBeUndefined();
+    expect(loadDesignSystemFromDisk("does-not-exist")).toBeUndefined();
+    expect(loadDesignSystemFromDisk("material")).toContain("--accent");
   });
 });

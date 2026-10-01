@@ -122,14 +122,14 @@ impl Translator {
                 }
             }
 
-            return Ok(Self {
+            Ok(Self {
                 backend: Backend::Auto,
                 lexique,
                 client,
                 cache,
                 cache_path,
                 contact_email,
-            });
+            })
         }
 
         #[cfg(target_arch = "wasm32")]

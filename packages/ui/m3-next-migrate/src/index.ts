@@ -3,7 +3,7 @@
 // Core Migration Engine
 export { transformComponent, type TransformOptions, type TransformResult } from "./transform";
 export { scanNextDirectory, type ScanStats } from "./scanner";
-export { scaffoldTargetProject, type ScaffoldOptions } from "./scaffolder";
+export { scaffoldTargetProject, TAURI_3, type ScaffoldOptions } from "./scaffolder";
 export { migrateProject, type MigrateProjectOptions, type MigrateProjectReport } from "./migrator";
 export {
   buildRouteHierarchy,

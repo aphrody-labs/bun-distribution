@@ -1,12 +1,13 @@
 # SPDX-License-Identifier: Apache-2.0
 [workspace]
 resolver = "3"
-members = ["crates/ui/*", "crates/infra/*", "crates/contracts/*", "crates/os/*", "crates/shell/*", "crates/compat/*", "crates/native/*", "crates/koharu/*", "crates/ai/*", "crates/interop/*", "apps/cli", "crates/web/*"]
+members = ["crates/ui/*", "crates/infra/*", "crates/contracts/*", "crates/os/*", "crates/shell/*", "crates/compat/*", "crates/native/*", "crates/koharu/*", "crates/ai/*", "crates/interop/*", "apps/cli", "crates/web/*", "crates/discord/*"]
 exclude = [
   "crates/contracts/schema",
   "crates/os/drive",
   "crates/web/drive-server",
-  "crates/ui/app",
+  # Patched upstream bridge plugin (optional path dependency of aphrody-tauri-wrap, feature debug-bridge); not a workspace member.
+  "upstream/mcp-server-tauri/packages/tauri-plugin-mcp-bridge",
 ]
 
 [workspace.package]
@@ -42,6 +43,7 @@ oxc_linter = { git = "https://github.com/aphrody-code/oxc.git", rev = "31d5266e1
 oxc_minifier = { git = "https://github.com/aphrody-code/oxc.git", rev = "31d5266e150ff17af52f0c2fc798cc27dc9a5a59" }
 oxc_semantic = { git = "https://github.com/aphrody-code/oxc.git", rev = "31d5266e150ff17af52f0c2fc798cc27dc9a5a59" }
 aphrody-bun = { path = "crates/ui/bun", version = "1.0.0-canary" }
+aphrody-discord-compiler = { path = "crates/discord/aphrody-discord-compiler", version = "1.0.0" }
 tokio-postgres-rustls = { version = "0.14", default-features = false, features = ["ring", "native-certs"] }
 pyo3 = { version = "0.29", features = [] }
 anyhow = "1.0.104"
@@ -59,6 +61,7 @@ aphrody-agent-proto = { path = "crates/contracts/agent-proto", version = "1.0.0-
 aphrody-agent-runtime = { path = "crates/ai/agent-runtime", features = [] }
 aphrody-agent-tools = { path = "crates/ai/agent-tools", features = [] }
 aphrody-a2a-ui = { path = "crates/ui/a2a-ui", version = "1.0.0-canary" }
+aphrody-gui-core = { path = "crates/ui/gui-core", version = "1.0.0-canary" }
 aphrody-identity = { path = "crates/ui/identity", version = "1.0.0-canary" }
 aphrody-model-view = { path = "crates/ui/model-view", version = "1.0.0-canary" }
 aphrody-antigravity = { path = "crates/ai/antigravity", features = [] }
@@ -90,7 +93,6 @@ aphrody-jobs = { path = "crates/os/jobs", version = "1.0.0-canary", features = [
 aphrody-kernel = { path = "crates/os/kernel", version = "1.0.0-canary", default-features = false, features = [] }
 aphrody-llama-server = { path = "crates/ai/llama-server", features = [] }
 aphrody-llm-infra = { path = "crates/ai/llm-infra", features = [] }
-aphrody-logo = { path = "crates/ui/logo", version = "1.0.0-canary", features = [] }
 aphrody-m3-tokens = { path = "crates/ui/m3-tokens", version = "1.0.0-canary", features = [] }
 aphrody-manga = { path = "crates/ai/manga", features = [] }
 aphrody-mcp-client = { path = "crates/ai/mcp-client", features = [] }
@@ -141,15 +143,12 @@ aphrody-vpn = { path = "crates/infra/vpn", features = [] }
 aphrody-web-bridge = { path = "crates/web/web-bridge", version = "1.0.0-canary", features = [] }
 aphrody-web-crawl = { path = "crates/web/web-crawl", version = "1.0.0", features = [] }
 aphrody-web-detect = { path = "crates/web/web-detect", version = "1.0.0", features = [] }
-aphrody-web-media = { path = "crates/web/web-media", version = "1.0.0", features = [] }
 aphrody-web-chromium = { path = "crates/web/web-chromium", version = "1.0.0-canary", features = [] }
 aphrody-web-engine = { path = "crates/web/web-engine", version = "1.0.0", features = [] }
-aphrody-web = { path = "crates/web/web", version = "1.0.0" }
 aphrody-web-extract = { path = "crates/web/web-extract", version = "1.0.0", features = [] }
 aphrody-web-index = { path = "crates/web/web-index", version = "0.1.0", features = [] }
 aphrody-web-service = { path = "crates/web/web-service", version = "1.0.0", features = [] }
 aphrody-x = { path = "crates/web/x", version = "0.3.1", features = [] }
-aphrody-x-algorithm = { path = "crates/web/x-algorithm", version = "0.2.1", features = [] }
 aphrody-winclean = { path = "crates/os/winclean", version = "1.0.0-canary", features = [] }
 arc-swap = "1.9.2"
 arrow-array = { version = "58", features = [] }
@@ -169,7 +168,6 @@ clap = { version = "4.6.6", features = ["derive", "env", "color"] }
 clap_complete = { version = "4", features = [] }
 colored = { version = "3", features = [] }
 console_error_panic_hook = "0.1.7"
-zbus = { version = "5", default-features = false, features = ["blocking-api", "async-io"] }
 cookie = "=0.18.2"
 criterion = { version = "0.8.2", features = ["html_reports"] }
 dashmap = { version = "6", features = [] }
@@ -412,14 +410,27 @@ jieba-rs = "0.10.3"
 fontique = "0.11.1"
 pollster = "1.0.1"
 vello = "0.10.0"
-tauri = { version = "=3.0.0-alpha.2", default-features = false, features = ["compression", "dynamic-acl", "macos-private-api", "specta"] }
-tauri-build = "=3.0.0-alpha.1"
-tauri-runtime-cef = { version = "=3.0.0-alpha.2", features = ["macos-private-api"] }
-tauri-plugin-log = "=3.0.0-alpha.1"
-tauri-plugin-opener = "=3.0.0-alpha.1"
-tauri-plugin-process = "=3.0.0-alpha.1"
-tauri-plugin-single-instance = "=3.0.0-alpha.1"
-tauri-plugin-window-state = "=3.0.0-alpha.1"
+tauri = { version = "=3.0.0-alpha.3", default-features = false, features = ["compression", "macos-private-api"] }
+tauri-build = "=3.0.0-alpha.2"
+tauri-runtime-wry = { version = "=3.0.0-alpha.3", default-features = false, features = ["x11", "macos-private-api"] }
+tauri-runtime-cef = { version = "=3.0.0-alpha.4", features = ["macos-private-api"] }
+tauri-plugin-log = "=3.0.0-alpha.2"
+tauri-plugin-opener = "=3.0.0-alpha.2"
+tauri-plugin-process = "=3.0.0-alpha.2"
+tauri-plugin-single-instance = "=3.0.0-alpha.2"
+tauri-plugin-window-state = "=3.0.0-alpha.2"
+tauri-plugin-os = "=3.0.0-alpha.2"
+tauri-plugin-dialog = "=3.0.0-alpha.2"
+tauri-plugin-clipboard-manager = "=3.0.0-alpha.2"
+tauri-plugin-notification = "=3.0.0-alpha.2"
+tauri-plugin-store = "=3.0.0-alpha.2"
+tauri-plugin-updater = "=3.0.0-alpha.2"
+tauri-plugin-global-shortcut = "=3.0.0-alpha.2"
+tauri-plugin-autostart = "=3.0.0-alpha.2"
+tauri-plugin-deep-link = "=3.0.0-alpha.2"
+tauri-plugin-fs = "=3.0.0-alpha.2"
+# Debug bridge: hypothesi bridge pinned under upstream/ with patches/tauri-plugin-mcp-bridge-0.13.0-tauri3.patch.
+tauri-plugin-mcp-bridge = { path = "upstream/mcp-server-tauri/packages/tauri-plugin-mcp-bridge" }
 tauri-specta = { git = "https://github.com/koharu-rs/tauri-specta", tag = "v2.0.0-rc.25-koharu.1", features = ["derive", "typescript"] }
 atomicwrites = "0.4.4"
 fs4 = "1.1.0"
@@ -441,13 +452,11 @@ bindgen = "0.73.2"
 prettyplease = "0.3.0"
 quote = "1.0.47"
 
-aphrody-icons = { path = "crates/ui/icons", version = "1.0.0-canary" }
-aphrody-m3 = { path = "crates/ui/m3", version = "1.0.0-canary" }
 aphrody-m3-reproduce = { path = "crates/ui/m3-reproduce", version = "1.0.0-canary" }
 aphrody-render3d = { path = "crates/ui/render-tools", version = "1.0.0-canary" }
 aphrody-tauri-3d = { path = "crates/ui/tauri-3d", version = "1.0.0-canary" }
-aphrody-tauri-m3 = { path = "crates/ui/tauri-m3", version = "1.0.0-canary" }
 aphrody-tauri-mcp = { path = "crates/ui/tauri-mcp", version = "1.0.0-canary" }
+aphrody-tauri-wrap = { path = "crates/ui/tauri-wrap", version = "1.0.0-canary", default-features = false }
 aphrody-render = { path = "crates/ui/render", version = "1.0.0-canary" }
 aphrody-svg = { path = "crates/ui/svg", version = "1.0.0-canary", default-features = false }
 ts-rs = {"version" = "12", "features" = ["serde-compat"]}
@@ -468,7 +477,7 @@ grass = "0.13"
 aphrody-drive = { path = "crates/ui/drive", version = "1.0.0-canary" }
 tokio-util = { version = "0.7", features = ["io"] }
 swift-rs = { version = "1.0" }
-tauri-plugin = { version = "=3.0.0-alpha.1" }
+tauri-plugin = { version = "=3.0.0-alpha.2" }
 [workspace.lints.rust]
 unsafe_op_in_unsafe_fn = "deny"
 unused_must_use = "deny"
@@ -484,3 +493,5 @@ perf = { level = "warn", priority = -1 }
 [patch.crates-io]
 taffy = { path = "crates/web/taffy" }
 simdutf = { path = "upstream/simdutf-rio" }
+# tauri-plugin-dialog 3.0.0-alpha.2 predates tauri 3.0.0-alpha.3 (Manager::run_on_main_thread); see config/tauri-upstream.json
+tauri-plugin-dialog = { path = "upstream/tauri-plugin-dialog" }

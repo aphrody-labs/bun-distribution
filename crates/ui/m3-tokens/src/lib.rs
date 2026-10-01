@@ -6,6 +6,10 @@
 //! specification.  The crate is `no_std` by default; the `std` feature
 //! (enabled by default) gates helpers that allocate (e.g. [`export_css`]).
 //!
+//! `facade` (`std` only) is the unified integration surface for native, Tauri/Wry, WASM and FFI
+//! consumers (layout contract, accessibility, icon policy, theme); it re-exports the modules
+//! below and owns no token table of its own.
+//!
 //! # Feature flags
 //!
 //! | Flag  | Default | Effect |
@@ -40,6 +44,7 @@ pub mod color;
 #[cfg(feature = "std")]
 pub mod dynamic;
 pub mod elevation;
+#[cfg(feature = "std")] pub mod facade;
 pub mod gemini_brand;
 pub mod google_sans_code;
 pub mod google_sans_flex;

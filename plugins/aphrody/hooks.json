@@ -1,0 +1,17 @@
+{
+  "aphrody": {
+    "enabled": true,
+    "SessionStart": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo aphrody ready",
+            "timeout": 5
+          }
+        ]
+      }
+    ]
+  }
+}

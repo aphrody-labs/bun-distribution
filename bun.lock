@@ -166,6 +166,7 @@
         "@elysiajs/cors": "^1.4.2",
         "@elysiajs/swagger": "^1.3.1",
         "@rosegriffon/achillea-core": "workspace:*",
+        "@rosegriffon/assets": "workspace:*",
         "@rosegriffon/auth": "workspace:*",
         "@rosegriffon/azalee": "workspace:*",
         "@rosegriffon/db": "workspace:*",
@@ -183,13 +184,25 @@
       "dependencies": {
         "@aphrody/canvas": "workspace:*",
         "@aphrody/discord-kit": "workspace:*",
+        "@elysia/eden": "^1.4.10",
+        "@elysiajs/cors": "^1.4.2",
+        "@elysiajs/swagger": "^1.3.1",
         "@rosegriffon/achillea-client": "workspace:*",
+        "@rosegriffon/achillea-core": "workspace:*",
+        "@rosegriffon/assets": "workspace:*",
+        "@rosegriffon/auth": "workspace:*",
         "@rosegriffon/azalee": "workspace:*",
         "@rosegriffon/db": "workspace:*",
+        "@rosegriffon/inagle": "workspace:*",
         "@rosegriffon/types": "workspace:*",
         "@rosegriffon/ui": "workspace:*",
+        "brackets-manager": "^1.11.0",
+        "brackets-model": "catalog:",
         "discord.js": "catalog:",
         "discordx": "catalog:",
+        "elysia": "^1.4.28",
+        "kysely": "catalog:",
+        "pg": "catalog:",
         "reflect-metadata": "catalog:",
         "zod": "catalog:",
       },
@@ -197,39 +210,6 @@
         "@rosegriffon/config": "workspace:*",
         "@types/bun": "catalog:",
         "oxlint": "catalog:",
-        "typescript": "catalog:",
-      },
-    },
-    "apps/rg/cdn": {
-      "name": "@rosegriffon/cdn",
-      "version": "1.0.1",
-      "dependencies": {
-        "@rosegriffon/assets": "workspace:*",
-      },
-      "devDependencies": {
-        "@types/bun": "catalog:",
-        "typescript": "catalog:",
-      },
-    },
-    "apps/rg/realtime": {
-      "name": "@rosegriffon/realtime",
-      "version": "1.0.1",
-      "dependencies": {
-        "@rosegriffon/db": "workspace:*",
-      },
-      "devDependencies": {
-        "@types/bun": "catalog:",
-        "typescript": "catalog:",
-      },
-    },
-    "apps/rg/storage": {
-      "name": "@rosegriffon/storage",
-      "version": "1.0.1",
-      "dependencies": {
-        "@rosegriffon/db": "workspace:*",
-      },
-      "devDependencies": {
-        "@types/bun": "catalog:",
         "typescript": "catalog:",
       },
     },
@@ -1383,6 +1363,7 @@
       },
       "devDependencies": {
         "@aphrody/m3-config": "workspace:*",
+        "@aphrody/scaffold": "workspace:*",
         "@types/bun": "catalog:",
         "@types/react": "catalog:",
         "@types/react-dom": "catalog:",
@@ -1447,6 +1428,7 @@
       "version": "3.3.3",
       "dependencies": {
         "@aphrody/bun": "workspace:*",
+        "@material/material-color-utilities": "catalog:",
       },
       "devDependencies": {
         "@aphrody/m3-config": "workspace:*",
@@ -1595,6 +1577,7 @@
       },
       "devDependencies": {
         "@aphrody/m3-config": "workspace:*",
+        "@aphrody/scaffold": "workspace:*",
         "@types/bun": "catalog:",
         "@types/react": "catalog:",
         "@typescript/native-preview": "catalog:",
@@ -1702,6 +1685,7 @@
         "@material/material-color-utilities": "catalog:",
       },
       "devDependencies": {
+        "@aphrody/m3-config": "workspace:*",
         "@types/bun": "catalog:",
         "@types/node": "catalog:",
         "tsup": "catalog:",
@@ -1727,6 +1711,36 @@
         "bun-types": "catalog:",
         "sass-embedded": "^1.100.0",
         "sass-true": "catalog:",
+        "typescript": "catalog:",
+      },
+    },
+    "packages/ui/scaffold": {
+      "name": "@aphrody/scaffold",
+      "version": "1.0.0-canary",
+      "bin": {
+        "aphrody-scaffold": "./src/cli.ts",
+      },
+      "devDependencies": {
+        "@aphrody/m3-config": "workspace:*",
+        "@types/bun": "catalog:",
+        "@typescript/native-preview": "catalog:",
+        "typescript": "catalog:",
+      },
+    },
+    "packages/ui/web-to-tauri": {
+      "name": "@aphrody/web-to-tauri",
+      "version": "1.0.0-canary",
+      "bin": {
+        "web-to-tauri": "./src/cli.ts",
+      },
+      "dependencies": {
+        "@aphrody/agent-browser": "workspace:*",
+        "@aphrody/scaffold": "workspace:*",
+      },
+      "devDependencies": {
+        "@aphrody/m3-config": "workspace:*",
+        "@types/bun": "catalog:",
+        "@typescript/native-preview": "catalog:",
         "typescript": "catalog:",
       },
     },
@@ -1853,8 +1867,8 @@
     "@tanstack/react-query": "^5.101.0",
     "@tanstack/react-query-persist-client": "^5.101.0",
     "@tanstack/react-table": "^8.21.3",
-    "@tauri-apps/api": "^2.12.0",
-    "@tauri-apps/plugin-opener": "^2.0.0",
+    "@tauri-apps/api": "3.0.0-alpha.2",
+    "@tauri-apps/plugin-opener": "3.0.0-alpha.1",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
     "@tiptap/core": "^3.25.0",
@@ -2149,7 +2163,11 @@
 
     "@aphrody/ovh": ["@aphrody/ovh@workspace:packages/infra/ovh"],
 
+    "@aphrody/scaffold": ["@aphrody/scaffold@workspace:packages/ui/scaffold"],
+
     "@aphrody/web-test": ["@aphrody/web-test@workspace:packages/web/aphrody-web-test"],
+
+    "@aphrody/web-to-tauri": ["@aphrody/web-to-tauri@workspace:packages/ui/web-to-tauri"],
 
     "@aphrody/winclean": ["@aphrody/winclean@workspace:packages/os/winclean"],
 
@@ -3527,8 +3545,6 @@
 
     "@rosegriffon/bot": ["@rosegriffon/bot@workspace:apps/rg/bot"],
 
-    "@rosegriffon/cdn": ["@rosegriffon/cdn@workspace:apps/rg/cdn"],
-
     "@rosegriffon/config": ["@rosegriffon/config@workspace:packages/rg/config"],
 
     "@rosegriffon/cron": ["@rosegriffon/cron@workspace:packages/rg/cron"],
@@ -3559,11 +3575,7 @@
 
     "@rosegriffon/preferences": ["@rosegriffon/preferences@workspace:packages/rg/preferences"],
 
-    "@rosegriffon/realtime": ["@rosegriffon/realtime@workspace:apps/rg/realtime"],
-
     "@rosegriffon/search": ["@rosegriffon/search@workspace:packages/rg/search"],
-
-    "@rosegriffon/storage": ["@rosegriffon/storage@workspace:apps/rg/storage"],
 
     "@rosegriffon/types": ["@rosegriffon/types@workspace:packages/rg/types"],
 
@@ -3867,9 +3879,9 @@
 
     "@tanstack/virtual-core": ["@tanstack/virtual-core@3.17.11", "", {}, "sha512-+ILjvtHup6Y2hzQ6YzwMgX1Q+oQpxEGOXCEsCNaPoIP0VxMbizIBTmYTDtkerkIQS8/CbP1BRuyt8V/8BCsy1g=="],
 
-    "@tauri-apps/api": ["@tauri-apps/api@2.12.0", "", {}, "sha512-fUSxFX8VABYe9W9K5ROdEaKVkNUFRcMSRofjruvaxztXA+I0XnQHcYHF8m/a6iExRUxsUf0HsFWhPBuH9IgzJw=="],
+    "@tauri-apps/api": ["@tauri-apps/api@3.0.0-alpha.2", "", {}, "sha512-W5MTTRAsbNqxSO5hf6U6gHwtTfW0ZnEyIWkmn9L6XYWFcSi0n1JtVQAIsJ6EZHLpJkchGEFwSeVBy+IcrtXl4g=="],
 
-    "@tauri-apps/plugin-opener": ["@tauri-apps/plugin-opener@2.6.0", "", { "dependencies": { "@tauri-apps/api": "^2.12.0" } }, "sha512-KIl9qkBGyAUrbzfCtdk+NRPTXUOwpMyUKsKN57H6/qA0q8auVywXpfUyWClqX6I/iH8PHmqAUa/KK9YZPWVQew=="],
+    "@tauri-apps/plugin-opener": ["@tauri-apps/plugin-opener@3.0.0-alpha.1", "", { "dependencies": { "@tauri-apps/api": "^3.0.0-alpha.1" } }, "sha512-3QTvnEqaVXhDrf5N5rmoghReOc0kuSPHpNDgX6R3oWbOdwQBTCriCb2DIkE6uSukuHKFRCx2bjmHcQbr1Gb6GQ=="],
 
     "@testing-library/dom": ["@testing-library/dom@10.4.2", "", { "dependencies": { "@babel/code-frame": "^7.10.4", "@babel/runtime": "^7.12.5", "@types/aria-query": "^5.0.1", "aria-query": "5.3.0", "dom-accessibility-api": "^0.5.9", "lz-string": "^1.5.0", "picocolors": "1.1.1", "pretty-format": "^27.0.2" } }, "sha512-yzr2S9HyAIdhz2/6qHgbs665Q7PKVcDF05vsOlHPxG1mo36gKVesdYVeDLnXgfjJ03CrKRk08knc6+E/9m8v2Q=="],
 

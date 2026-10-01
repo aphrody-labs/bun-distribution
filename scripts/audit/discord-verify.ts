@@ -57,7 +57,7 @@ if (process.argv.includes("--full")) {
 
 // 5. Gate native standalone compilation if requested with --compile
 if (process.argv.includes("--compile")) {
-  run(root, "run", "scripts/build/compile-discord-bot.ts", "all", "--smoke");
+  run(root, "run", "packages/infra/workspace/src/ops.ts", "discord", "compile", "all", "--smoke");
 }
 
 console.log("\nAll Discord monorepo gates, shared packages, and bot integrations passed successfully.");

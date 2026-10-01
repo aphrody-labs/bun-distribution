@@ -433,10 +433,10 @@ fn find_toml_string(text: &str, key: &str) -> Option<String> {
             continue;
         }
         let v = parts.next()?.trim();
-        if let Some(s) = v.strip_prefix('"') {
-            if let Some(end) = s.find('"') {
-                return Some(s[..end].to_string());
-            }
+        if let Some(s) = v.strip_prefix('"')
+            && let Some(end) = s.find('"')
+        {
+            return Some(s[..end].to_string());
         }
     }
     None
@@ -574,12 +574,12 @@ fn write_report(output: Option<&Path>, report: &Value) -> miette::Result<()> {
     }
 
     let path = output.unwrap();
-    if let Some(parent) = path.parent() {
-        if !parent.as_os_str().is_empty() {
-            std::fs::create_dir_all(parent)
-                .into_diagnostic()
-                .wrap_err_with(|| format!("failed to create {}", parent.display()))?;
-        }
+    if let Some(parent) = path.parent()
+        && !parent.as_os_str().is_empty()
+    {
+        std::fs::create_dir_all(parent)
+            .into_diagnostic()
+            .wrap_err_with(|| format!("failed to create {}", parent.display()))?;
     }
     std::fs::write(path, &json)
         .into_diagnostic()

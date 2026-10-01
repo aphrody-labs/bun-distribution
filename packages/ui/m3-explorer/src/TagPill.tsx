@@ -34,6 +34,7 @@ export function TagPill({
 
   return (
     <span
+      data-m3-component="TagPill"
       className={clsx(
         "relative isolate inline-flex max-w-full items-center rounded-small border",
         "transition-colors duration-200 ease-standard",

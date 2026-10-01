@@ -3,15 +3,12 @@ import { describe, expect, test } from "bun:test";
 import { renderToStaticMarkup } from "react-dom/server";
 
 import {
-  Accordion,
   AccordionItem,
   AccordionPanel,
   AccordionRoot,
   AccordionTrigger,
   AlertDialog,
-  Avatar,
   AvatarFallback,
-  AvatarImage,
   AvatarRoot,
   Drawer,
   Field,

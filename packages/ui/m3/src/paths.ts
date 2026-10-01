@@ -1,17 +1,17 @@
 // SPDX-License-Identifier: Apache-2.0
 // Where the Aphrody OS assets live. Fonts and icons ship from the crates (docs/design/M3-PLAN.md,
-// decision D5): `crates/ui/icons/material-symbols/*.woff2` and
+// decision D5): `crates/ui/bun/icons/material-symbols/*.woff2` and
 // the `@aphrody/m3-fonts` package. The repository root is discovered by walking up from a start
 // directory; `APHRODY_OS_ROOT` or an explicit `root` option override it.
 import { existsSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 
 /** Repository-relative directory of the Material Symbols woff2 files. */
-export const SYMBOLS_DIR = "crates/ui/icons/material-symbols";
+export const SYMBOLS_DIR = "crates/ui/bun/icons/material-symbols";
 /** Repository-relative directory of the Google Sans Flex variable font. */
 export const SANS_FLEX_DIR = "assets/fonts/google-sans-flex";
 
-/** The three Material Symbols styles shipped by `aphrody-icons`. */
+/** The three Material Symbols styles shipped by the `aphrody-bun` icons module. */
 export const SYMBOL_STYLES = ["outlined", "rounded", "sharp"] as const;
 export type SymbolStyle = (typeof SYMBOL_STYLES)[number];
 

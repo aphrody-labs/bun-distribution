@@ -47,7 +47,10 @@ Environment=RG_DISCORD_SYNC_REDIS_URL=redis://127.0.0.1:6379
 Environment=WEBSITE_URL=https://rosegriffon.fr
 Environment=WEBSITE_API_URL=https://rosegriffon.fr
 
-ExecStart=/home/ubuntu/.bun/bin/bun run src/index.ts
+# Binaire natif autonome compilé via `aphrody discord compile rg` (ou `bun run discord:compile rg`).
+# Aucun runtime Bun ni répertoire node_modules n'est requis sur l'hôte ; le binaire AOT
+# embarque le runtime Bun et résout reflect-metadata et tsconfig à l'avance.
+ExecStart=/srv/rg/current/apps/bot/dist/rg-bot
 # `always` : une déconnexion Discord qui se solde par une sortie en code 0 n'était
 # jamais relancée — le bot restait silencieux sans qu'aucune unité ne soit en échec.
 Restart=always

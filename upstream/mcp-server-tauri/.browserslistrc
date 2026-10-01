@@ -1,0 +1,7 @@
+# Browsers that we support
+# Based on Silvermine standards
+
+last 2 versions
+> 1%
+not dead
+not ie <= 11

@@ -62,7 +62,7 @@ Tailwind resolves its own `@import`s and cannot see plugin modules.
 | --- | --- |
 | `m3:theme.css` (`m3:tokens.css`) | Fusion tokens (M3, shadcn, Tailwind aliases, light and dark) for `theme` of `m3.config.ts`. |
 | `m3:tailwind.css`, `m3:spaceui.css`, `m3:scheme.css` | The other `m3Css` sheets. |
-| `m3:symbols.css`, `m3:symbols-rounded.css`, `m3:symbols-sharp.css` | Material Symbols from `crates/aphrody-icons`. |
+| `m3:symbols.css`, `m3:symbols-rounded.css`, `m3:symbols-sharp.css` | Material Symbols from the `icons` module of `aphrody-bun` (`crates/ui/bun/icons`). |
 | `m3:fonts.css` | Google Sans Flex from `assets/fonts/google-sans-flex`. |
 | `./file.ext?url` | The file inlined as a `data:` URL (`.scss` line comments stripped). |
 

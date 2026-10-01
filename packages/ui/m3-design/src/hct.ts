@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
-//! Material Design 3 CorePalette generator using the native HCT implementation.
+//! Material Design 3 CorePalette generator using the pure-JS HCT implementation.
 
-import { argbToHct, hctToArgb } from "@aphrody/bun";
+import { Hct } from "@material/material-color-utilities";
 import type { M3Theme, TonalPalette } from "./types.ts";
 
 const toneSteps = [0, 6, 10, 12, 20, 22, 30, 40, 50, 60, 70, 80, 90, 94, 95, 98, 99, 100];
@@ -13,9 +13,8 @@ function parseSeedArgb(hex: string): number {
   }
 
   const digits = match[1]!;
-  const rgb = digits.length === 3
-    ? [...digits].map((digit) => `${digit}${digit}`).join("")
-    : digits;
+  const rgb =
+    digits.length === 3 ? [...digits].map((digit) => `${digit}${digit}`).join("") : digits;
   return (0xff000000 | Number.parseInt(rgb, 16)) >>> 0;
 }
 
@@ -26,15 +25,17 @@ function argbToHex(argb: number): string {
 function createPalette(name: string, hue: number, chroma: number): TonalPalette {
   const tones: Record<number, string> = {};
   for (const tone of toneSteps) {
-    tones[tone] = argbToHex(hctToArgb(hue, chroma, tone));
+    tones[tone] = argbToHex(Hct.from(hue, chroma, tone).toInt());
   }
   return { name, tones };
 }
 
 /** Generate an M3 CorePalette and light/dark CSS tokens from a seed color. */
 export function generateTheme(seedHex: string): M3Theme {
-  const seed = seedHex.trim().startsWith("#") ? seedHex.trim().toUpperCase() : `#${seedHex.trim().toUpperCase()}`;
-  const { hue, chroma } = argbToHct(parseSeedArgb(seedHex));
+  const seed = seedHex.trim().startsWith("#")
+    ? seedHex.trim().toUpperCase()
+    : `#${seedHex.trim().toUpperCase()}`;
+  const { hue, chroma } = Hct.fromInt(parseSeedArgb(seedHex));
 
   // These are the CorePalette.of relationships used by Material Color Utilities.
   const primary = createPalette("primary", hue, Math.max(48, chroma));

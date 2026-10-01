@@ -17,7 +17,11 @@ export type CollapsibleProps = CollapsiblePrimitive.Root.Props;
  * `emphasizedAccelerate` (short4) in plain CSS, from the measured `--collapsible-panel-height`.
  */
 const Collapsible: FC<CollapsibleProps> = ({ className, ...props }) => (
-  <CollapsiblePrimitive.Root className={withClassName("rounded-medium", className)} {...props} />
+  <CollapsiblePrimitive.Root
+    className={withClassName("rounded-medium", className)}
+    data-m3-component="Collapsible"
+    {...props}
+  />
 );
 
 export interface CollapsibleTriggerProps extends CollapsiblePrimitive.Trigger.Props, AsChildProp {

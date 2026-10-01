@@ -38,7 +38,8 @@ cosmic-text = { package = "athena-text", version = "=0.14.2", default-features =
 # shaping and rasterization.
 swash = { version = "=0.2.0", default-features = false, features = ["std", "scale", "render"], optional = true }
 image = { version = "0.25", default-features = false, features = ["bmp", "gif", "ico", "jpeg", "png", "webp"], optional = true }
-ureq = { version = "2.9", default-features = false, features = ["tls"], optional = true }
+# ureq 3 via the workspace pin (rustls + ring + webpki-roots, same TLS stack as ureq 2 "tls").
+ureq = { workspace = true, optional = true }
 base64 = { workspace = true, optional = true }
 # SVG rasterization for <img src="*.svg">, inline <svg>, and background-image
 # SVGs, all extremely common for logos/icons. Pure Rust, CPU, no system deps,
@@ -46,7 +47,7 @@ base64 = { workspace = true, optional = true }
 resvg = { version = "0.47", default-features = false, features = ["text", "raster-images"], optional = true }
 usvg = { version = "0.47", default-features = false, optional = true }
 url = { workspace = true, optional = true }
-cssparser = "0.34"
+cssparser = "0.37"
 wuff = { version = "0.2.7", optional = true }
 # Same `log` instance usvg emits glyph-fallback warnings through, so tests can
 # install a collector and assert on them.

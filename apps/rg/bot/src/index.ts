@@ -39,44 +39,28 @@ import { closeCache } from "./lib/cache";
 import { DISCORD_TOKEN, GUILD_IDS, PROFIL, PROFIL_ANNONCEUR } from "./lib/config";
 import { sql } from "./lib/db";
 import { demarrerServeurAdmin, type ServeurAdmin } from "./lib/serveur-admin";
+import { startApiServer } from "./api/server";
 import { demarrerNotifieurTweets } from "./services/tweetsNotifier";
 
-/**
- * Modules chargés en plus des commandes, pour le seul profil Rose Griffon.
- *
- * `events/ready.ts` et `events/memberEvents.ts` parlent de synchronisation de
- * MEMBRES : ils lisent `GUILD_ID` (la guilde dont `discord_members` décrit la
- * communauté) et appellent `syncOneMember`. Le bot Azalée n'a même pas l'intent
- * `GuildMembers` — les brancher chez lui serait au mieux inerte, au pire une
- * écriture de membres sous la mauvaise identité.
- */
-const MODULES_EVENEMENTS_RG = [
-	"events/ready.ts",
-	"events/memberEvents.ts",
-	"events/experience.ts",
-	"events/accueil.ts",
-] as const;
+const isApiMode = process.argv.includes("api");
+const isBotMode = process.argv.includes("bot");
+const isAllMode = process.argv.includes("all") || (!isApiMode && !isBotMode);
 
-if (process.argv.includes("--help") || process.argv.includes("-h")) {
-	console.log(`Rose Griffon Discord Bot (${PROFIL.titre})`);
-	console.log(`Usage: rg-bot [options]\n`);
-	console.log(`Options:`);
-	console.log(`  -h, --help     Show this help message`);
-	console.log(`  -v, --version  Show version and runtime info`);
-	console.log(`  --dry-run      Validate configuration and exit`);
-	process.exit(0);
+let apiServerInstance: ReturnType<typeof startApiServer> | null = null;
+
+if (isApiMode) {
+	console.log(`[rg-backend] Démarrage du serveur API unifié Rose Griffon (ElysiaJS + WebSockets)...`);
+	apiServerInstance = startApiServer();
+} else {
+	if (isAllMode && (process.env.START_API === "1" || process.env.API_PORT || !DISCORD_TOKEN)) {
+		console.log(`[rg-backend] Démarrage des services d'API unifiés (port ${process.env.API_PORT ?? 8800})...`);
+		apiServerInstance = startApiServer();
+	}
 }
 
-if (process.argv.includes("--version") || process.argv.includes("-v")) {
-	console.log(`@rosegriffon/bot v1.0.1 (Bun ${typeof Bun !== "undefined" ? Bun.version : process.version}, profile: ${PROFIL.nom})`);
-	process.exit(0);
-}
-
-if (process.argv.includes("--dry-run")) {
-	console.log(`✓ Dry run passed for @rosegriffon/bot (profile: ${PROFIL.nom}, ${PROFIL.modules.length} modules configured)`);
-	process.exit(0);
-}
-
+if (!isApiMode && (!DISCORD_TOKEN && !isBotMode)) {
+	console.log(`[rg-backend] Aucun DISCORD_TOKEN spécifié, le serveur API tourne de manière autonome.`);
+} else if (!isApiMode) {
 const intents = await resolveGrantedIntents(DISCORD_TOKEN, {
 	desiredIntents: PROFIL.intents,
 });
@@ -265,10 +249,20 @@ async function arreter(signal: string): Promise<void> {
 		);
 	}
 
+	if (apiServerInstance) {
+		try {
+			apiServerInstance.stop();
+		} catch {}
+		apiServerInstance = null;
+	}
+
 	process.exit(0);
 }
 
 process.on("SIGTERM", () => void arreter("SIGTERM"));
 process.on("SIGINT", () => void arreter("SIGINT"));
 
-await client.login(DISCORD_TOKEN);
+if (DISCORD_TOKEN) {
+	await client.login(DISCORD_TOKEN);
+}
+}

@@ -20,7 +20,7 @@
 //! SHA-256 of the TTF:
 //! `74642762fae66d5883077794a763e1086394b8cb72f2623e456e06359dc5c64b`.
 //!
-//! Item names carry a `code`/`CODE` prefix because `aphrody-m3` glob
+//! Item names carry a `code`/`CODE` prefix because the `facade::typography` glob
 //! re-exports this module next to [`crate::google_sans_flex`].
 
 use crate::google_sans_flex::Axis;

@@ -30191,9 +30191,11 @@
       "size": 374,
       "status": "clean",
       "sha256": "094f087fcdf7f0fe4b539cf12c5b3ade83a990126def201480a89dde5c9fad20",
-      "target": "docs/products/koharu/crates/koharu-app/README.md",
+      "target": null,
       "importedSha256": "094f087fcdf7f0fe4b539cf12c5b3ade83a990126def201480a89dde5c9fad20",
-      "importedSourceSha256": "094f087fcdf7f0fe4b539cf12c5b3ade83a990126def201480a89dde5c9fad20"
+      "importedSourceSha256": "094f087fcdf7f0fe4b539cf12c5b3ade83a990126def201480a89dde5c9fad20",
+      "duplicateOf": "crates/koharu/koharu-app/README.md",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/products/koharu/crates/koharu-app/README.md removed as a duplicate of crates/koharu/koharu-app/README.md"
     },
     {
       "source": "aphrody-koharu/crates/koharu-app/src/app.rs",
@@ -30373,9 +30375,11 @@
       "size": 2105,
       "status": "clean",
       "sha256": "db78c4b7c08610cfb76228015ce57538035cb521c970b3eddb56e5b3fbc0a209",
-      "target": "docs/products/koharu/crates/koharu-canvas/README.md",
+      "target": null,
       "importedSha256": "db78c4b7c08610cfb76228015ce57538035cb521c970b3eddb56e5b3fbc0a209",
-      "importedSourceSha256": "db78c4b7c08610cfb76228015ce57538035cb521c970b3eddb56e5b3fbc0a209"
+      "importedSourceSha256": "db78c4b7c08610cfb76228015ce57538035cb521c970b3eddb56e5b3fbc0a209",
+      "duplicateOf": "crates/koharu/koharu-canvas/README.md",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/products/koharu/crates/koharu-canvas/README.md removed as a duplicate of crates/koharu/koharu-canvas/README.md"
     },
     {
       "source": "aphrody-koharu/crates/koharu-canvas/src/cache.rs",
@@ -30447,9 +30451,11 @@
       "size": 585,
       "status": "clean",
       "sha256": "e5585f2165bd8b4028107cbfc9158fbf02971319e064b43ebf6b86293be26a6a",
-      "target": "docs/products/koharu/crates/koharu-desktop/README.md",
+      "target": null,
       "importedSha256": "e5585f2165bd8b4028107cbfc9158fbf02971319e064b43ebf6b86293be26a6a",
-      "importedSourceSha256": "e5585f2165bd8b4028107cbfc9158fbf02971319e064b43ebf6b86293be26a6a"
+      "importedSourceSha256": "e5585f2165bd8b4028107cbfc9158fbf02971319e064b43ebf6b86293be26a6a",
+      "duplicateOf": "crates/koharu/koharu-desktop/README.md",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/products/koharu/crates/koharu-desktop/README.md removed as a duplicate of crates/koharu/koharu-desktop/README.md"
     },
     {
       "source": "aphrody-koharu/crates/koharu-desktop/src/lib.rs",
@@ -30638,9 +30644,11 @@
       "size": 4286,
       "status": "clean",
       "sha256": "37c5b046bec5723a1a9e0d610218ffb8fa581e32d7e1ac4df461d40160f5a606",
-      "target": "docs/products/koharu/crates/koharu-library/README.md",
+      "target": null,
       "importedSha256": "37c5b046bec5723a1a9e0d610218ffb8fa581e32d7e1ac4df461d40160f5a606",
-      "importedSourceSha256": "37c5b046bec5723a1a9e0d610218ffb8fa581e32d7e1ac4df461d40160f5a606"
+      "importedSourceSha256": "37c5b046bec5723a1a9e0d610218ffb8fa581e32d7e1ac4df461d40160f5a606",
+      "duplicateOf": "crates/koharu/koharu-library/README.md",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/products/koharu/crates/koharu-library/README.md removed as a duplicate of crates/koharu/koharu-library/README.md"
     },
     {
       "source": "aphrody-koharu/crates/koharu-library/src/agent_host.rs",
@@ -31081,9 +31089,11 @@
       "size": 217,
       "status": "clean",
       "sha256": "cb429b39e9de265801cdf5a4e7b57011215fd95097aefdbc8cce57d04d423336",
-      "target": "docs/products/koharu/crates/koharu-metrics/README.md",
+      "target": null,
       "importedSha256": "cb429b39e9de265801cdf5a4e7b57011215fd95097aefdbc8cce57d04d423336",
-      "importedSourceSha256": "cb429b39e9de265801cdf5a4e7b57011215fd95097aefdbc8cce57d04d423336"
+      "importedSourceSha256": "cb429b39e9de265801cdf5a4e7b57011215fd95097aefdbc8cce57d04d423336",
+      "duplicateOf": "crates/koharu/koharu-metrics/README.md",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/products/koharu/crates/koharu-metrics/README.md removed as a duplicate of crates/koharu/koharu-metrics/README.md"
     },
     {
       "source": "aphrody-koharu/crates/koharu-metrics/src/fields.rs",
@@ -31209,9 +31219,11 @@
       "size": 758,
       "status": "clean",
       "sha256": "9069d4471dfb4e71bcdb374b1e6c588106a25b6b48589fd238bafe7c488056c7",
-      "target": "docs/products/koharu/crates/koharu-ml/benches/fixtures/inpaint/README.md",
+      "target": null,
       "importedSha256": "9069d4471dfb4e71bcdb374b1e6c588106a25b6b48589fd238bafe7c488056c7",
-      "importedSourceSha256": "9069d4471dfb4e71bcdb374b1e6c588106a25b6b48589fd238bafe7c488056c7"
+      "importedSourceSha256": "9069d4471dfb4e71bcdb374b1e6c588106a25b6b48589fd238bafe7c488056c7",
+      "duplicateOf": "crates/koharu/koharu-ml/benches/fixtures/inpaint/README.md",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/products/koharu/crates/koharu-ml/benches/fixtures/inpaint/README.md removed as a duplicate of crates/koharu/koharu-ml/benches/fixtures/inpaint/README.md"
     },
     {
       "source": "aphrody-koharu/crates/koharu-ml/benches/fixtures/inpaint/image_4k.jpg",
@@ -32337,9 +32349,11 @@
       "size": 8424,
       "status": "clean",
       "sha256": "f200265793317a44d9e0a84d6c407da6c59313370f05342c46cca1625b2e9125",
-      "target": "docs/products/koharu/crates/koharu-pipeline/README.md",
+      "target": null,
       "importedSha256": "f200265793317a44d9e0a84d6c407da6c59313370f05342c46cca1625b2e9125",
-      "importedSourceSha256": "f200265793317a44d9e0a84d6c407da6c59313370f05342c46cca1625b2e9125"
+      "importedSourceSha256": "f200265793317a44d9e0a84d6c407da6c59313370f05342c46cca1625b2e9125",
+      "duplicateOf": "crates/koharu/koharu-pipeline/README.md",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/products/koharu/crates/koharu-pipeline/README.md removed as a duplicate of crates/koharu/koharu-pipeline/README.md"
     },
     {
       "source": "aphrody-koharu/crates/koharu-pipeline/src/accelerator.rs",
@@ -32663,9 +32677,11 @@
       "size": 946,
       "status": "clean",
       "sha256": "75b59bc83496d691ff0b96041ff15752f989274debeaeb6aaf0e9b64c8e35e54",
-      "target": "docs/products/koharu/crates/koharu-rasterizer/README.md",
+      "target": null,
       "importedSha256": "75b59bc83496d691ff0b96041ff15752f989274debeaeb6aaf0e9b64c8e35e54",
-      "importedSourceSha256": "75b59bc83496d691ff0b96041ff15752f989274debeaeb6aaf0e9b64c8e35e54"
+      "importedSourceSha256": "75b59bc83496d691ff0b96041ff15752f989274debeaeb6aaf0e9b64c8e35e54",
+      "duplicateOf": "crates/koharu/koharu-rasterizer/README.md",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/products/koharu/crates/koharu-rasterizer/README.md removed as a duplicate of crates/koharu/koharu-rasterizer/README.md"
     },
     {
       "source": "aphrody-koharu/crates/koharu-rasterizer/src/compositor.rs",
@@ -32746,9 +32762,11 @@
       "size": 11073,
       "status": "clean",
       "sha256": "ca382e7faa03898950bdf884e8bcb326906084b3489dabae0fa40ae15d40a9a1",
-      "target": "docs/products/koharu/crates/koharu-renderer/README.md",
+      "target": null,
       "importedSha256": "ca382e7faa03898950bdf884e8bcb326906084b3489dabae0fa40ae15d40a9a1",
-      "importedSourceSha256": "ca382e7faa03898950bdf884e8bcb326906084b3489dabae0fa40ae15d40a9a1"
+      "importedSourceSha256": "ca382e7faa03898950bdf884e8bcb326906084b3489dabae0fa40ae15d40a9a1",
+      "duplicateOf": "crates/koharu/koharu-renderer/README.md",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/products/koharu/crates/koharu-renderer/README.md removed as a duplicate of crates/koharu/koharu-renderer/README.md"
     },
     {
       "source": "aphrody-koharu/crates/koharu-renderer/benches/rendering.rs",
@@ -33144,9 +33162,11 @@
       "size": 6234,
       "status": "clean",
       "sha256": "85bee0445458bd3715305ca161ac8887e58fe53e559665394639467507fe32c9",
-      "target": "docs/products/koharu/crates/koharu-scene/README.md",
+      "target": null,
       "importedSha256": "85bee0445458bd3715305ca161ac8887e58fe53e559665394639467507fe32c9",
-      "importedSourceSha256": "85bee0445458bd3715305ca161ac8887e58fe53e559665394639467507fe32c9"
+      "importedSourceSha256": "85bee0445458bd3715305ca161ac8887e58fe53e559665394639467507fe32c9",
+      "duplicateOf": "crates/koharu/koharu-scene/README.md",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/products/koharu/crates/koharu-scene/README.md removed as a duplicate of crates/koharu/koharu-scene/README.md"
     },
     {
       "source": "aphrody-koharu/crates/koharu-scene/benches/scene.rs",
@@ -33398,9 +33418,11 @@
       "size": 5563,
       "status": "clean",
       "sha256": "2cd9db939ee033bb20a1ad9731a80396ea299e0256bf752d2fff5ad743b8e6ba",
-      "target": "docs/products/koharu/crates/koharu-storage/README.md",
+      "target": null,
       "importedSha256": "2cd9db939ee033bb20a1ad9731a80396ea299e0256bf752d2fff5ad743b8e6ba",
-      "importedSourceSha256": "2cd9db939ee033bb20a1ad9731a80396ea299e0256bf752d2fff5ad743b8e6ba"
+      "importedSourceSha256": "2cd9db939ee033bb20a1ad9731a80396ea299e0256bf752d2fff5ad743b8e6ba",
+      "duplicateOf": "crates/koharu/koharu-storage/README.md",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/products/koharu/crates/koharu-storage/README.md removed as a duplicate of crates/koharu/koharu-storage/README.md"
     },
     {
       "source": "aphrody-koharu/crates/koharu-storage/benches/storage.rs",
@@ -33598,9 +33620,11 @@
       "size": 12290,
       "status": "clean",
       "sha256": "945c170078fe84a1b84937fe9136bc0dbd40544a162bc9998e7cf3290a01b9ce",
-      "target": "docs/products/koharu/crates/koharu-torch/README.md",
+      "target": null,
       "importedSha256": "945c170078fe84a1b84937fe9136bc0dbd40544a162bc9998e7cf3290a01b9ce",
-      "importedSourceSha256": "945c170078fe84a1b84937fe9136bc0dbd40544a162bc9998e7cf3290a01b9ce"
+      "importedSourceSha256": "945c170078fe84a1b84937fe9136bc0dbd40544a162bc9998e7cf3290a01b9ce",
+      "duplicateOf": "crates/koharu/koharu-torch/README.md",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/products/koharu/crates/koharu-torch/README.md removed as a duplicate of crates/koharu/koharu-torch/README.md"
     },
     {
       "source": "aphrody-koharu/crates/koharu-torch/src/data.rs",
@@ -34138,9 +34162,11 @@
       "size": 1051,
       "status": "clean",
       "sha256": "e958a9f18a85a64bee1cfe41f402652de23e4b31abfe4fd2dd74581591bc600a",
-      "target": "docs/products/koharu/crates/koharu-translator/README.md",
+      "target": null,
       "importedSha256": "e958a9f18a85a64bee1cfe41f402652de23e4b31abfe4fd2dd74581591bc600a",
-      "importedSourceSha256": "e958a9f18a85a64bee1cfe41f402652de23e4b31abfe4fd2dd74581591bc600a"
+      "importedSourceSha256": "e958a9f18a85a64bee1cfe41f402652de23e4b31abfe4fd2dd74581591bc600a",
+      "duplicateOf": "crates/koharu/koharu-translator/README.md",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/products/koharu/crates/koharu-translator/README.md removed as a duplicate of crates/koharu/koharu-translator/README.md"
     },
     {
       "source": "aphrody-koharu/crates/koharu-translator/src/backend.rs",
@@ -34374,9 +34400,11 @@
       "size": 1463,
       "status": "clean",
       "sha256": "ae8f8fd7f54d33e13f351d6f12eeaec58356535de796db84a573c7af6b519f36",
-      "target": "docs/products/koharu/crates/koharu/README.md",
+      "target": null,
       "importedSha256": "ae8f8fd7f54d33e13f351d6f12eeaec58356535de796db84a573c7af6b519f36",
-      "importedSourceSha256": "ae8f8fd7f54d33e13f351d6f12eeaec58356535de796db84a573c7af6b519f36"
+      "importedSourceSha256": "ae8f8fd7f54d33e13f351d6f12eeaec58356535de796db84a573c7af6b519f36",
+      "duplicateOf": "crates/koharu/koharu/README.md",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/products/koharu/crates/koharu/README.md removed as a duplicate of crates/koharu/koharu/README.md"
     },
     {
       "source": "aphrody-koharu/crates/koharu/build.rs",
@@ -34673,9 +34701,11 @@
       "size": 913,
       "status": "clean",
       "sha256": "b2965467739523916be4694ad2b23d284c5196c2d3b04e45f92ed585502fa194",
-      "target": "docs/products/koharu/packages/bridge/README.md",
+      "target": null,
       "importedSha256": "b2965467739523916be4694ad2b23d284c5196c2d3b04e45f92ed585502fa194",
-      "importedSourceSha256": "b2965467739523916be4694ad2b23d284c5196c2d3b04e45f92ed585502fa194"
+      "importedSourceSha256": "b2965467739523916be4694ad2b23d284c5196c2d3b04e45f92ed585502fa194",
+      "duplicateOf": "packages/koharu/bridge/README.md",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/products/koharu/packages/bridge/README.md removed as a duplicate of packages/koharu/bridge/README.md"
     },
     {
       "source": "aphrody-koharu/packages/bridge/package.json",
@@ -34758,9 +34788,11 @@
       "size": 2090,
       "status": "clean",
       "sha256": "d4362015ce0a4fb6b0cc624ff7f798c76770e0d988f7135f65be2d458847142e",
-      "target": "docs/reference/koharu/packages/docs/en/agent/projects.mdx",
+      "target": null,
       "importedSha256": "d4362015ce0a4fb6b0cc624ff7f798c76770e0d988f7135f65be2d458847142e",
-      "importedSourceSha256": "d4362015ce0a4fb6b0cc624ff7f798c76770e0d988f7135f65be2d458847142e"
+      "importedSourceSha256": "d4362015ce0a4fb6b0cc624ff7f798c76770e0d988f7135f65be2d458847142e",
+      "duplicateOf": "packages/koharu/docs/en/agent/projects.mdx",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/reference/koharu/packages/docs/en/agent/projects.mdx removed as a duplicate of packages/koharu/docs/en/agent/projects.mdx"
     },
     {
       "source": "aphrody-koharu/packages/docs/en/agent/setup.mdx",
@@ -34769,9 +34801,11 @@
       "size": 1896,
       "status": "clean",
       "sha256": "23f6ee4f8f8bc733e64a0493aa4d38833d076f8dc5c46d0dfb06b35073ef5d82",
-      "target": "docs/guides/koharu/packages/docs/en/agent/setup.mdx",
+      "target": null,
       "importedSha256": "23f6ee4f8f8bc733e64a0493aa4d38833d076f8dc5c46d0dfb06b35073ef5d82",
-      "importedSourceSha256": "23f6ee4f8f8bc733e64a0493aa4d38833d076f8dc5c46d0dfb06b35073ef5d82"
+      "importedSourceSha256": "23f6ee4f8f8bc733e64a0493aa4d38833d076f8dc5c46d0dfb06b35073ef5d82",
+      "duplicateOf": "packages/koharu/docs/en/agent/setup.mdx",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/guides/koharu/packages/docs/en/agent/setup.mdx removed as a duplicate of packages/koharu/docs/en/agent/setup.mdx"
     },
     {
       "source": "aphrody-koharu/packages/docs/en/development/architecture.mdx",
@@ -34780,9 +34814,11 @@
       "size": 4441,
       "status": "clean",
       "sha256": "5a1bf0fc5ba465f9f29757b3bbd4cf93cbbdde3b1e217c96bd20dadcd01279c9",
-      "target": "docs/architecture/koharu/packages/docs/en/development/architecture.mdx",
+      "target": null,
       "importedSha256": "5a1bf0fc5ba465f9f29757b3bbd4cf93cbbdde3b1e217c96bd20dadcd01279c9",
-      "importedSourceSha256": "5a1bf0fc5ba465f9f29757b3bbd4cf93cbbdde3b1e217c96bd20dadcd01279c9"
+      "importedSourceSha256": "5a1bf0fc5ba465f9f29757b3bbd4cf93cbbdde3b1e217c96bd20dadcd01279c9",
+      "duplicateOf": "packages/koharu/docs/en/development/architecture.mdx",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/architecture/koharu/packages/docs/en/development/architecture.mdx removed as a duplicate of packages/koharu/docs/en/development/architecture.mdx"
     },
     {
       "source": "aphrody-koharu/packages/docs/en/development/contributing.mdx",
@@ -34791,9 +34827,11 @@
       "size": 3834,
       "status": "clean",
       "sha256": "ac6839799b1808bf4f2ffe60e5fb69f6a7bea38d02dcd610d81c83d30f29f5c4",
-      "target": "docs/guides/koharu/packages/docs/en/development/contributing.mdx",
+      "target": null,
       "importedSha256": "ac6839799b1808bf4f2ffe60e5fb69f6a7bea38d02dcd610d81c83d30f29f5c4",
-      "importedSourceSha256": "ac6839799b1808bf4f2ffe60e5fb69f6a7bea38d02dcd610d81c83d30f29f5c4"
+      "importedSourceSha256": "ac6839799b1808bf4f2ffe60e5fb69f6a7bea38d02dcd610d81c83d30f29f5c4",
+      "duplicateOf": "packages/koharu/docs/en/development/contributing.mdx",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/guides/koharu/packages/docs/en/development/contributing.mdx removed as a duplicate of packages/koharu/docs/en/development/contributing.mdx"
     },
     {
       "source": "aphrody-koharu/packages/docs/en/development/documentation.mdx",
@@ -34802,9 +34840,11 @@
       "size": 2580,
       "status": "clean",
       "sha256": "1ce4716784929e54b06ddfecd4077b9a4da7a06ae760baaab7018f6a19f0a92e",
-      "target": "docs/reference/koharu/packages/docs/en/development/documentation.mdx",
+      "target": null,
       "importedSha256": "1ce4716784929e54b06ddfecd4077b9a4da7a06ae760baaab7018f6a19f0a92e",
-      "importedSourceSha256": "1ce4716784929e54b06ddfecd4077b9a4da7a06ae760baaab7018f6a19f0a92e"
+      "importedSourceSha256": "1ce4716784929e54b06ddfecd4077b9a4da7a06ae760baaab7018f6a19f0a92e",
+      "duplicateOf": "packages/koharu/docs/en/development/documentation.mdx",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/reference/koharu/packages/docs/en/development/documentation.mdx removed as a duplicate of packages/koharu/docs/en/development/documentation.mdx"
     },
     {
       "source": "aphrody-koharu/packages/docs/en/development/rendering.mdx",
@@ -34813,9 +34853,11 @@
       "size": 3829,
       "status": "clean",
       "sha256": "e8e5944bc5206487e09290e9b6e7c7f9afeaad592d13dcb284c5a7e1b7263200",
-      "target": "docs/reference/koharu/packages/docs/en/development/rendering.mdx",
+      "target": null,
       "importedSha256": "e8e5944bc5206487e09290e9b6e7c7f9afeaad592d13dcb284c5a7e1b7263200",
-      "importedSourceSha256": "e8e5944bc5206487e09290e9b6e7c7f9afeaad592d13dcb284c5a7e1b7263200"
+      "importedSourceSha256": "e8e5944bc5206487e09290e9b6e7c7f9afeaad592d13dcb284c5a7e1b7263200",
+      "duplicateOf": "packages/koharu/docs/en/development/rendering.mdx",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/reference/koharu/packages/docs/en/development/rendering.mdx removed as a duplicate of packages/koharu/docs/en/development/rendering.mdx"
     },
     {
       "source": "aphrody-koharu/packages/docs/en/development/scene.mdx",
@@ -34824,9 +34866,11 @@
       "size": 2698,
       "status": "clean",
       "sha256": "5fac4ffd2ae9c861445ebf5f0aca86d225f670daa83f7dab37cee2f07059debf",
-      "target": "docs/reference/koharu/packages/docs/en/development/scene.mdx",
+      "target": null,
       "importedSha256": "5fac4ffd2ae9c861445ebf5f0aca86d225f670daa83f7dab37cee2f07059debf",
-      "importedSourceSha256": "5fac4ffd2ae9c861445ebf5f0aca86d225f670daa83f7dab37cee2f07059debf"
+      "importedSourceSha256": "5fac4ffd2ae9c861445ebf5f0aca86d225f670daa83f7dab37cee2f07059debf",
+      "duplicateOf": "packages/koharu/docs/en/development/scene.mdx",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/reference/koharu/packages/docs/en/development/scene.mdx removed as a duplicate of packages/koharu/docs/en/development/scene.mdx"
     },
     {
       "source": "aphrody-koharu/packages/docs/en/development/setup.mdx",
@@ -34835,9 +34879,11 @@
       "size": 2590,
       "status": "clean",
       "sha256": "24472b878b0956bc37c66966330fae8ff39d1de6bca3ef9ca6a745c90ee6ffa5",
-      "target": "docs/guides/koharu/packages/docs/en/development/setup.mdx",
+      "target": null,
       "importedSha256": "24472b878b0956bc37c66966330fae8ff39d1de6bca3ef9ca6a745c90ee6ffa5",
-      "importedSourceSha256": "24472b878b0956bc37c66966330fae8ff39d1de6bca3ef9ca6a745c90ee6ffa5"
+      "importedSourceSha256": "24472b878b0956bc37c66966330fae8ff39d1de6bca3ef9ca6a745c90ee6ffa5",
+      "duplicateOf": "packages/koharu/docs/en/development/setup.mdx",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/guides/koharu/packages/docs/en/development/setup.mdx removed as a duplicate of packages/koharu/docs/en/development/setup.mdx"
     },
     {
       "source": "aphrody-koharu/packages/docs/en/guides/canvas.mdx",
@@ -34846,9 +34892,11 @@
       "size": 2359,
       "status": "clean",
       "sha256": "c82609d3e5f99c7edfad98c6b946d3ad04f1319cb1820ffc66dc216683025e96",
-      "target": "docs/guides/koharu/packages/docs/en/guides/canvas.mdx",
+      "target": null,
       "importedSha256": "c82609d3e5f99c7edfad98c6b946d3ad04f1319cb1820ffc66dc216683025e96",
-      "importedSourceSha256": "c82609d3e5f99c7edfad98c6b946d3ad04f1319cb1820ffc66dc216683025e96"
+      "importedSourceSha256": "c82609d3e5f99c7edfad98c6b946d3ad04f1319cb1820ffc66dc216683025e96",
+      "duplicateOf": "packages/koharu/docs/en/guides/canvas.mdx",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/guides/koharu/packages/docs/en/guides/canvas.mdx removed as a duplicate of packages/koharu/docs/en/guides/canvas.mdx"
     },
     {
       "source": "aphrody-koharu/packages/docs/en/guides/cleanup.mdx",
@@ -34857,9 +34905,11 @@
       "size": 2154,
       "status": "clean",
       "sha256": "79f6fd57a9da13555f0b5f66549709bcc80e4fbc3a49eafb2e21dc558237a320",
-      "target": "docs/guides/koharu/packages/docs/en/guides/cleanup.mdx",
+      "target": null,
       "importedSha256": "79f6fd57a9da13555f0b5f66549709bcc80e4fbc3a49eafb2e21dc558237a320",
-      "importedSourceSha256": "79f6fd57a9da13555f0b5f66549709bcc80e4fbc3a49eafb2e21dc558237a320"
+      "importedSourceSha256": "79f6fd57a9da13555f0b5f66549709bcc80e4fbc3a49eafb2e21dc558237a320",
+      "duplicateOf": "packages/koharu/docs/en/guides/cleanup.mdx",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/guides/koharu/packages/docs/en/guides/cleanup.mdx removed as a duplicate of packages/koharu/docs/en/guides/cleanup.mdx"
     },
     {
       "source": "aphrody-koharu/packages/docs/en/guides/export.mdx",
@@ -34868,9 +34918,11 @@
       "size": 2305,
       "status": "clean",
       "sha256": "f0f5ac60ad46826efd327efe7e8a7d7a11dd85b19229f1eebe471c6a298d3dd6",
-      "target": "docs/guides/koharu/packages/docs/en/guides/export.mdx",
+      "target": null,
       "importedSha256": "f0f5ac60ad46826efd327efe7e8a7d7a11dd85b19229f1eebe471c6a298d3dd6",
-      "importedSourceSha256": "f0f5ac60ad46826efd327efe7e8a7d7a11dd85b19229f1eebe471c6a298d3dd6"
+      "importedSourceSha256": "f0f5ac60ad46826efd327efe7e8a7d7a11dd85b19229f1eebe471c6a298d3dd6",
+      "duplicateOf": "packages/koharu/docs/en/guides/export.mdx",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/guides/koharu/packages/docs/en/guides/export.mdx removed as a duplicate of packages/koharu/docs/en/guides/export.mdx"
     },
     {
       "source": "aphrody-koharu/packages/docs/en/guides/processing.mdx",
@@ -34879,9 +34931,11 @@
       "size": 2812,
       "status": "clean",
       "sha256": "287122373155214d295274d29ea911e751065d8ec0f0b5f696efd0cfe46e8b38",
-      "target": "docs/guides/koharu/packages/docs/en/guides/processing.mdx",
+      "target": null,
       "importedSha256": "287122373155214d295274d29ea911e751065d8ec0f0b5f696efd0cfe46e8b38",
-      "importedSourceSha256": "287122373155214d295274d29ea911e751065d8ec0f0b5f696efd0cfe46e8b38"
+      "importedSourceSha256": "287122373155214d295274d29ea911e751065d8ec0f0b5f696efd0cfe46e8b38",
+      "duplicateOf": "packages/koharu/docs/en/guides/processing.mdx",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/guides/koharu/packages/docs/en/guides/processing.mdx removed as a duplicate of packages/koharu/docs/en/guides/processing.mdx"
     },
     {
       "source": "aphrody-koharu/packages/docs/en/guides/projects.mdx",
@@ -34890,9 +34944,11 @@
       "size": 2864,
       "status": "clean",
       "sha256": "e615445c04e0987dc1fcfdf5b607f700e85a23f4adecc193221b7c9efe2c03d8",
-      "target": "docs/guides/koharu/packages/docs/en/guides/projects.mdx",
+      "target": null,
       "importedSha256": "e615445c04e0987dc1fcfdf5b607f700e85a23f4adecc193221b7c9efe2c03d8",
-      "importedSourceSha256": "e615445c04e0987dc1fcfdf5b607f700e85a23f4adecc193221b7c9efe2c03d8"
+      "importedSourceSha256": "e615445c04e0987dc1fcfdf5b607f700e85a23f4adecc193221b7c9efe2c03d8",
+      "duplicateOf": "packages/koharu/docs/en/guides/projects.mdx",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/guides/koharu/packages/docs/en/guides/projects.mdx removed as a duplicate of packages/koharu/docs/en/guides/projects.mdx"
     },
     {
       "source": "aphrody-koharu/packages/docs/en/guides/review.mdx",
@@ -34901,9 +34957,11 @@
       "size": 2344,
       "status": "clean",
       "sha256": "b49a7c93ee09992b2711f01eba7e20e01a3d28e4341ca5c2871c5d35c4d55127",
-      "target": "docs/guides/koharu/packages/docs/en/guides/review.mdx",
+      "target": null,
       "importedSha256": "b49a7c93ee09992b2711f01eba7e20e01a3d28e4341ca5c2871c5d35c4d55127",
-      "importedSourceSha256": "b49a7c93ee09992b2711f01eba7e20e01a3d28e4341ca5c2871c5d35c4d55127"
+      "importedSourceSha256": "b49a7c93ee09992b2711f01eba7e20e01a3d28e4341ca5c2871c5d35c4d55127",
+      "duplicateOf": "packages/koharu/docs/en/guides/review.mdx",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/guides/koharu/packages/docs/en/guides/review.mdx removed as a duplicate of packages/koharu/docs/en/guides/review.mdx"
     },
     {
       "source": "aphrody-koharu/packages/docs/en/guides/typesetting.mdx",
@@ -34912,9 +34970,11 @@
       "size": 2140,
       "status": "clean",
       "sha256": "1a43f758633c49f9630ef3a5730e192c6aee6215931ae3cc0f89a3bc75dbcb65",
-      "target": "docs/guides/koharu/packages/docs/en/guides/typesetting.mdx",
+      "target": null,
       "importedSha256": "1a43f758633c49f9630ef3a5730e192c6aee6215931ae3cc0f89a3bc75dbcb65",
-      "importedSourceSha256": "1a43f758633c49f9630ef3a5730e192c6aee6215931ae3cc0f89a3bc75dbcb65"
+      "importedSourceSha256": "1a43f758633c49f9630ef3a5730e192c6aee6215931ae3cc0f89a3bc75dbcb65",
+      "duplicateOf": "packages/koharu/docs/en/guides/typesetting.mdx",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/guides/koharu/packages/docs/en/guides/typesetting.mdx removed as a duplicate of packages/koharu/docs/en/guides/typesetting.mdx"
     },
     {
       "source": "aphrody-koharu/packages/docs/en/hardware.mdx",
@@ -34923,9 +34983,11 @@
       "size": 4163,
       "status": "clean",
       "sha256": "90dc30e88c038fd66bc7958193fc93eb1f2ee665df45e60b611330d891242dcf",
-      "target": "docs/reference/koharu/packages/docs/en/hardware.mdx",
+      "target": null,
       "importedSha256": "90dc30e88c038fd66bc7958193fc93eb1f2ee665df45e60b611330d891242dcf",
-      "importedSourceSha256": "90dc30e88c038fd66bc7958193fc93eb1f2ee665df45e60b611330d891242dcf"
+      "importedSourceSha256": "90dc30e88c038fd66bc7958193fc93eb1f2ee665df45e60b611330d891242dcf",
+      "duplicateOf": "packages/koharu/docs/en/hardware.mdx",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/reference/koharu/packages/docs/en/hardware.mdx removed as a duplicate of packages/koharu/docs/en/hardware.mdx"
     },
     {
       "source": "aphrody-koharu/packages/docs/en/index.mdx",
@@ -34934,9 +34996,11 @@
       "size": 6459,
       "status": "clean",
       "sha256": "b0bbadf9513b26917e5c4b25f4b65737af1919111ca50e4633f62cd2e1ed5236",
-      "target": "docs/reference/koharu/packages/docs/en/index.mdx",
+      "target": null,
       "importedSha256": "b0bbadf9513b26917e5c4b25f4b65737af1919111ca50e4633f62cd2e1ed5236",
-      "importedSourceSha256": "b0bbadf9513b26917e5c4b25f4b65737af1919111ca50e4633f62cd2e1ed5236"
+      "importedSourceSha256": "b0bbadf9513b26917e5c4b25f4b65737af1919111ca50e4633f62cd2e1ed5236",
+      "duplicateOf": "packages/koharu/docs/en/index.mdx",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/reference/koharu/packages/docs/en/index.mdx removed as a duplicate of packages/koharu/docs/en/index.mdx"
     },
     {
       "source": "aphrody-koharu/packages/docs/en/installation.mdx",
@@ -34945,9 +35009,11 @@
       "size": 1993,
       "status": "clean",
       "sha256": "792357d9451553fe44b98b6413ccc2838ef8dba5653a44289043d4325ca8605c",
-      "target": "docs/guides/koharu/packages/docs/en/installation.mdx",
+      "target": null,
       "importedSha256": "792357d9451553fe44b98b6413ccc2838ef8dba5653a44289043d4325ca8605c",
-      "importedSourceSha256": "792357d9451553fe44b98b6413ccc2838ef8dba5653a44289043d4325ca8605c"
+      "importedSourceSha256": "792357d9451553fe44b98b6413ccc2838ef8dba5653a44289043d4325ca8605c",
+      "duplicateOf": "packages/koharu/docs/en/installation.mdx",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/guides/koharu/packages/docs/en/installation.mdx removed as a duplicate of packages/koharu/docs/en/installation.mdx"
     },
     {
       "source": "aphrody-koharu/packages/docs/en/models/providers.mdx",
@@ -34956,9 +35022,11 @@
       "size": 2885,
       "status": "clean",
       "sha256": "58e802f9ec591f7084b10df47ec8daf2835d88f7c8907a3ddaf76d3d02c22534",
-      "target": "docs/reference/koharu/packages/docs/en/models/providers.mdx",
+      "target": null,
       "importedSha256": "58e802f9ec591f7084b10df47ec8daf2835d88f7c8907a3ddaf76d3d02c22534",
-      "importedSourceSha256": "58e802f9ec591f7084b10df47ec8daf2835d88f7c8907a3ddaf76d3d02c22534"
+      "importedSourceSha256": "58e802f9ec591f7084b10df47ec8daf2835d88f7c8907a3ddaf76d3d02c22534",
+      "duplicateOf": "packages/koharu/docs/en/models/providers.mdx",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/reference/koharu/packages/docs/en/models/providers.mdx removed as a duplicate of packages/koharu/docs/en/models/providers.mdx"
     },
     {
       "source": "aphrody-koharu/packages/docs/en/models/translation.mdx",
@@ -34967,9 +35035,11 @@
       "size": 2642,
       "status": "clean",
       "sha256": "2bd4074c57c8542bc5a1a2a3f57525d4751339742bf0cc485bf2bb461664dc9c",
-      "target": "docs/reference/koharu/packages/docs/en/models/translation.mdx",
+      "target": null,
       "importedSha256": "2bd4074c57c8542bc5a1a2a3f57525d4751339742bf0cc485bf2bb461664dc9c",
-      "importedSourceSha256": "2bd4074c57c8542bc5a1a2a3f57525d4751339742bf0cc485bf2bb461664dc9c"
+      "importedSourceSha256": "2bd4074c57c8542bc5a1a2a3f57525d4751339742bf0cc485bf2bb461664dc9c",
+      "duplicateOf": "packages/koharu/docs/en/models/translation.mdx",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/reference/koharu/packages/docs/en/models/translation.mdx removed as a duplicate of packages/koharu/docs/en/models/translation.mdx"
     },
     {
       "source": "aphrody-koharu/packages/docs/en/models/vision.mdx",
@@ -34978,9 +35048,11 @@
       "size": 2408,
       "status": "clean",
       "sha256": "35839393b37d5ceb798f850df638f9d65e0f8a74d62b94bec2d3328efff4b050",
-      "target": "docs/reference/koharu/packages/docs/en/models/vision.mdx",
+      "target": null,
       "importedSha256": "35839393b37d5ceb798f850df638f9d65e0f8a74d62b94bec2d3328efff4b050",
-      "importedSourceSha256": "35839393b37d5ceb798f850df638f9d65e0f8a74d62b94bec2d3328efff4b050"
+      "importedSourceSha256": "35839393b37d5ceb798f850df638f9d65e0f8a74d62b94bec2d3328efff4b050",
+      "duplicateOf": "packages/koharu/docs/en/models/vision.mdx",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/reference/koharu/packages/docs/en/models/vision.mdx removed as a duplicate of packages/koharu/docs/en/models/vision.mdx"
     },
     {
       "source": "aphrody-koharu/packages/docs/en/quickstart.mdx",
@@ -34989,9 +35061,11 @@
       "size": 2844,
       "status": "clean",
       "sha256": "2a05d045906e67df175caf4ab3831ae4481a6c878d343ddeae6e60839baaee31",
-      "target": "docs/reference/koharu/packages/docs/en/quickstart.mdx",
+      "target": null,
       "importedSha256": "2a05d045906e67df175caf4ab3831ae4481a6c878d343ddeae6e60839baaee31",
-      "importedSourceSha256": "2a05d045906e67df175caf4ab3831ae4481a6c878d343ddeae6e60839baaee31"
+      "importedSourceSha256": "2a05d045906e67df175caf4ab3831ae4481a6c878d343ddeae6e60839baaee31",
+      "duplicateOf": "packages/koharu/docs/en/quickstart.mdx",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/reference/koharu/packages/docs/en/quickstart.mdx removed as a duplicate of packages/koharu/docs/en/quickstart.mdx"
     },
     {
       "source": "aphrody-koharu/packages/docs/en/reference/data.mdx",
@@ -35000,9 +35074,11 @@
       "size": 2402,
       "status": "clean",
       "sha256": "a76dff8df64da7eed8ca6603518f1192c41abfb3698873a1a26c9db2e4aa6a98",
-      "target": "docs/reference/koharu/packages/docs/en/reference/data.mdx",
+      "target": null,
       "importedSha256": "a76dff8df64da7eed8ca6603518f1192c41abfb3698873a1a26c9db2e4aa6a98",
-      "importedSourceSha256": "a76dff8df64da7eed8ca6603518f1192c41abfb3698873a1a26c9db2e4aa6a98"
+      "importedSourceSha256": "a76dff8df64da7eed8ca6603518f1192c41abfb3698873a1a26c9db2e4aa6a98",
+      "duplicateOf": "packages/koharu/docs/en/reference/data.mdx",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/reference/koharu/packages/docs/en/reference/data.mdx removed as a duplicate of packages/koharu/docs/en/reference/data.mdx"
     },
     {
       "source": "aphrody-koharu/packages/docs/en/reference/settings.mdx",
@@ -35011,9 +35087,11 @@
       "size": 2207,
       "status": "clean",
       "sha256": "48a0cff8f38dbee1fcbff10432636c8c540a2381103b5f32ef563da435573718",
-      "target": "docs/reference/koharu/packages/docs/en/reference/settings.mdx",
+      "target": null,
       "importedSha256": "48a0cff8f38dbee1fcbff10432636c8c540a2381103b5f32ef563da435573718",
-      "importedSourceSha256": "48a0cff8f38dbee1fcbff10432636c8c540a2381103b5f32ef563da435573718"
+      "importedSourceSha256": "48a0cff8f38dbee1fcbff10432636c8c540a2381103b5f32ef563da435573718",
+      "duplicateOf": "packages/koharu/docs/en/reference/settings.mdx",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/reference/koharu/packages/docs/en/reference/settings.mdx removed as a duplicate of packages/koharu/docs/en/reference/settings.mdx"
     },
     {
       "source": "aphrody-koharu/packages/docs/en/reference/shortcuts.mdx",
@@ -35022,9 +35100,11 @@
       "size": 2244,
       "status": "clean",
       "sha256": "949ca0c75ee87d66d8d5a6a6606b81ab5c63a6efb91a18c2661961f1d184d418",
-      "target": "docs/reference/koharu/packages/docs/en/reference/shortcuts.mdx",
+      "target": null,
       "importedSha256": "949ca0c75ee87d66d8d5a6a6606b81ab5c63a6efb91a18c2661961f1d184d418",
-      "importedSourceSha256": "949ca0c75ee87d66d8d5a6a6606b81ab5c63a6efb91a18c2661961f1d184d418"
+      "importedSourceSha256": "949ca0c75ee87d66d8d5a6a6606b81ab5c63a6efb91a18c2661961f1d184d418",
+      "duplicateOf": "packages/koharu/docs/en/reference/shortcuts.mdx",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/reference/koharu/packages/docs/en/reference/shortcuts.mdx removed as a duplicate of packages/koharu/docs/en/reference/shortcuts.mdx"
     },
     {
       "source": "aphrody-koharu/packages/docs/en/reference/troubleshooting.mdx",
@@ -35033,9 +35113,11 @@
       "size": 7047,
       "status": "clean",
       "sha256": "823b3bac3ee93c91afd32d4a29691b2a4d739ac2ab4796a5d49096dfb6bd0c15",
-      "target": "docs/reference/koharu/packages/docs/en/reference/troubleshooting.mdx",
+      "target": null,
       "importedSha256": "823b3bac3ee93c91afd32d4a29691b2a4d739ac2ab4796a5d49096dfb6bd0c15",
-      "importedSourceSha256": "823b3bac3ee93c91afd32d4a29691b2a4d739ac2ab4796a5d49096dfb6bd0c15"
+      "importedSourceSha256": "823b3bac3ee93c91afd32d4a29691b2a4d739ac2ab4796a5d49096dfb6bd0c15",
+      "duplicateOf": "packages/koharu/docs/en/reference/troubleshooting.mdx",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/reference/koharu/packages/docs/en/reference/troubleshooting.mdx removed as a duplicate of packages/koharu/docs/en/reference/troubleshooting.mdx"
     },
     {
       "source": "aphrody-koharu/packages/docs/ja/agent/projects.mdx",
@@ -35044,9 +35126,11 @@
       "size": 2579,
       "status": "clean",
       "sha256": "aee9a250269b28b7852f18026c59308cf297c1ab9fcd740d7f92a50390c78735",
-      "target": "docs/reference/koharu/packages/docs/ja/agent/projects.mdx",
+      "target": null,
       "importedSha256": "aee9a250269b28b7852f18026c59308cf297c1ab9fcd740d7f92a50390c78735",
-      "importedSourceSha256": "aee9a250269b28b7852f18026c59308cf297c1ab9fcd740d7f92a50390c78735"
+      "importedSourceSha256": "aee9a250269b28b7852f18026c59308cf297c1ab9fcd740d7f92a50390c78735",
+      "duplicateOf": "packages/koharu/docs/ja/agent/projects.mdx",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/reference/koharu/packages/docs/ja/agent/projects.mdx removed as a duplicate of packages/koharu/docs/ja/agent/projects.mdx"
     },
     {
       "source": "aphrody-koharu/packages/docs/ja/agent/setup.mdx",
@@ -35055,9 +35139,11 @@
       "size": 2387,
       "status": "clean",
       "sha256": "7b7dc38d323b8b666eac70d69b222f8f61df35a2c8fb5e8974343be1299317f6",
-      "target": "docs/guides/koharu/packages/docs/ja/agent/setup.mdx",
+      "target": null,
       "importedSha256": "7b7dc38d323b8b666eac70d69b222f8f61df35a2c8fb5e8974343be1299317f6",
-      "importedSourceSha256": "7b7dc38d323b8b666eac70d69b222f8f61df35a2c8fb5e8974343be1299317f6"
+      "importedSourceSha256": "7b7dc38d323b8b666eac70d69b222f8f61df35a2c8fb5e8974343be1299317f6",
+      "duplicateOf": "packages/koharu/docs/ja/agent/setup.mdx",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/guides/koharu/packages/docs/ja/agent/setup.mdx removed as a duplicate of packages/koharu/docs/ja/agent/setup.mdx"
     },
     {
       "source": "aphrody-koharu/packages/docs/ja/development/architecture.mdx",
@@ -35066,9 +35152,11 @@
       "size": 5191,
       "status": "clean",
       "sha256": "c20e7acb2e20c37a0a5bbb1c53e45af34ee6ed3b67b87194f2d012dc08e4ad13",
-      "target": "docs/architecture/koharu/packages/docs/ja/development/architecture.mdx",
+      "target": null,
       "importedSha256": "c20e7acb2e20c37a0a5bbb1c53e45af34ee6ed3b67b87194f2d012dc08e4ad13",
-      "importedSourceSha256": "c20e7acb2e20c37a0a5bbb1c53e45af34ee6ed3b67b87194f2d012dc08e4ad13"
+      "importedSourceSha256": "c20e7acb2e20c37a0a5bbb1c53e45af34ee6ed3b67b87194f2d012dc08e4ad13",
+      "duplicateOf": "packages/koharu/docs/ja/development/architecture.mdx",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/architecture/koharu/packages/docs/ja/development/architecture.mdx removed as a duplicate of packages/koharu/docs/ja/development/architecture.mdx"
     },
     {
       "source": "aphrody-koharu/packages/docs/ja/development/contributing.mdx",
@@ -35077,9 +35165,11 @@
       "size": 4195,
       "status": "clean",
       "sha256": "3ead6cb80a9af3b12963afab3a353770e03a0f91f8e6cc3051af1bd149b17cb9",
-      "target": "docs/guides/koharu/packages/docs/ja/development/contributing.mdx",
+      "target": null,
       "importedSha256": "3ead6cb80a9af3b12963afab3a353770e03a0f91f8e6cc3051af1bd149b17cb9",
-      "importedSourceSha256": "3ead6cb80a9af3b12963afab3a353770e03a0f91f8e6cc3051af1bd149b17cb9"
+      "importedSourceSha256": "3ead6cb80a9af3b12963afab3a353770e03a0f91f8e6cc3051af1bd149b17cb9",
+      "duplicateOf": "packages/koharu/docs/ja/development/contributing.mdx",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/guides/koharu/packages/docs/ja/development/contributing.mdx removed as a duplicate of packages/koharu/docs/ja/development/contributing.mdx"
     },
     {
       "source": "aphrody-koharu/packages/docs/ja/development/documentation.mdx",
@@ -35088,9 +35178,11 @@
       "size": 3008,
       "status": "clean",
       "sha256": "d90d2fe9e85941eacbe97834fa2f5e3808dea703c9ebe26135ed96156dced1e0",
-      "target": "docs/reference/koharu/packages/docs/ja/development/documentation.mdx",
+      "target": null,
       "importedSha256": "d90d2fe9e85941eacbe97834fa2f5e3808dea703c9ebe26135ed96156dced1e0",
-      "importedSourceSha256": "d90d2fe9e85941eacbe97834fa2f5e3808dea703c9ebe26135ed96156dced1e0"
+      "importedSourceSha256": "d90d2fe9e85941eacbe97834fa2f5e3808dea703c9ebe26135ed96156dced1e0",
+      "duplicateOf": "packages/koharu/docs/ja/development/documentation.mdx",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/reference/koharu/packages/docs/ja/development/documentation.mdx removed as a duplicate of packages/koharu/docs/ja/development/documentation.mdx"
     },
     {
       "source": "aphrody-koharu/packages/docs/ja/development/rendering.mdx",
@@ -35099,9 +35191,11 @@
       "size": 4638,
       "status": "clean",
       "sha256": "a578a033908e348888f8b6026d3a6ccfe378ad5ef9efd226fce307261230bdd9",
-      "target": "docs/reference/koharu/packages/docs/ja/development/rendering.mdx",
+      "target": null,
       "importedSha256": "a578a033908e348888f8b6026d3a6ccfe378ad5ef9efd226fce307261230bdd9",
-      "importedSourceSha256": "a578a033908e348888f8b6026d3a6ccfe378ad5ef9efd226fce307261230bdd9"
+      "importedSourceSha256": "a578a033908e348888f8b6026d3a6ccfe378ad5ef9efd226fce307261230bdd9",
+      "duplicateOf": "packages/koharu/docs/ja/development/rendering.mdx",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/reference/koharu/packages/docs/ja/development/rendering.mdx removed as a duplicate of packages/koharu/docs/ja/development/rendering.mdx"
     },
     {
       "source": "aphrody-koharu/packages/docs/ja/development/scene.mdx",
@@ -35110,9 +35204,11 @@
       "size": 3254,
       "status": "clean",
       "sha256": "38249a24154d5bb49be613f793fc1ff9dfc86bb4282575589347258a8bdfd5c8",
-      "target": "docs/reference/koharu/packages/docs/ja/development/scene.mdx",
+      "target": null,
       "importedSha256": "38249a24154d5bb49be613f793fc1ff9dfc86bb4282575589347258a8bdfd5c8",
-      "importedSourceSha256": "38249a24154d5bb49be613f793fc1ff9dfc86bb4282575589347258a8bdfd5c8"
+      "importedSourceSha256": "38249a24154d5bb49be613f793fc1ff9dfc86bb4282575589347258a8bdfd5c8",
+      "duplicateOf": "packages/koharu/docs/ja/development/scene.mdx",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/reference/koharu/packages/docs/ja/development/scene.mdx removed as a duplicate of packages/koharu/docs/ja/development/scene.mdx"
     },
     {
       "source": "aphrody-koharu/packages/docs/ja/development/setup.mdx",
@@ -35121,9 +35217,11 @@
       "size": 3143,
       "status": "clean",
       "sha256": "d7e4e35b222c526dee0faf5b5c48044f5bf06e0c2febfe19f007a11e1b647049",
-      "target": "docs/guides/koharu/packages/docs/ja/development/setup.mdx",
+      "target": null,
       "importedSha256": "d7e4e35b222c526dee0faf5b5c48044f5bf06e0c2febfe19f007a11e1b647049",
-      "importedSourceSha256": "d7e4e35b222c526dee0faf5b5c48044f5bf06e0c2febfe19f007a11e1b647049"
+      "importedSourceSha256": "d7e4e35b222c526dee0faf5b5c48044f5bf06e0c2febfe19f007a11e1b647049",
+      "duplicateOf": "packages/koharu/docs/ja/development/setup.mdx",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/guides/koharu/packages/docs/ja/development/setup.mdx removed as a duplicate of packages/koharu/docs/ja/development/setup.mdx"
     },
     {
       "source": "aphrody-koharu/packages/docs/ja/guides/canvas.mdx",
@@ -35132,9 +35230,11 @@
       "size": 3192,
       "status": "clean",
       "sha256": "2602971aa6c2607716b3a7826d8e1c58054e8e9318ef11e2ed13a0b713bb1ffa",
-      "target": "docs/guides/koharu/packages/docs/ja/guides/canvas.mdx",
+      "target": null,
       "importedSha256": "2602971aa6c2607716b3a7826d8e1c58054e8e9318ef11e2ed13a0b713bb1ffa",
-      "importedSourceSha256": "2602971aa6c2607716b3a7826d8e1c58054e8e9318ef11e2ed13a0b713bb1ffa"
+      "importedSourceSha256": "2602971aa6c2607716b3a7826d8e1c58054e8e9318ef11e2ed13a0b713bb1ffa",
+      "duplicateOf": "packages/koharu/docs/ja/guides/canvas.mdx",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/guides/koharu/packages/docs/ja/guides/canvas.mdx removed as a duplicate of packages/koharu/docs/ja/guides/canvas.mdx"
     },
     {
       "source": "aphrody-koharu/packages/docs/ja/guides/cleanup.mdx",
@@ -35143,9 +35243,11 @@
       "size": 2592,
       "status": "clean",
       "sha256": "8639da2560d8345d24a610518c99e5152a7c65b0bc83b5c455b6e7da5cd3badd",
-      "target": "docs/guides/koharu/packages/docs/ja/guides/cleanup.mdx",
+      "target": null,
       "importedSha256": "8639da2560d8345d24a610518c99e5152a7c65b0bc83b5c455b6e7da5cd3badd",
-      "importedSourceSha256": "8639da2560d8345d24a610518c99e5152a7c65b0bc83b5c455b6e7da5cd3badd"
+      "importedSourceSha256": "8639da2560d8345d24a610518c99e5152a7c65b0bc83b5c455b6e7da5cd3badd",
+      "duplicateOf": "packages/koharu/docs/ja/guides/cleanup.mdx",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/guides/koharu/packages/docs/ja/guides/cleanup.mdx removed as a duplicate of packages/koharu/docs/ja/guides/cleanup.mdx"
     },
     {
       "source": "aphrody-koharu/packages/docs/ja/guides/export.mdx",
@@ -35154,9 +35256,11 @@
       "size": 2861,
       "status": "clean",
       "sha256": "b78a974bafe9fa26f5560c84533c178681a9cafc8d00edb47c704f6f72e99900",
-      "target": "docs/guides/koharu/packages/docs/ja/guides/export.mdx",
+      "target": null,
       "importedSha256": "b78a974bafe9fa26f5560c84533c178681a9cafc8d00edb47c704f6f72e99900",
-      "importedSourceSha256": "b78a974bafe9fa26f5560c84533c178681a9cafc8d00edb47c704f6f72e99900"
+      "importedSourceSha256": "b78a974bafe9fa26f5560c84533c178681a9cafc8d00edb47c704f6f72e99900",
+      "duplicateOf": "packages/koharu/docs/ja/guides/export.mdx",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/guides/koharu/packages/docs/ja/guides/export.mdx removed as a duplicate of packages/koharu/docs/ja/guides/export.mdx"
     },
     {
       "source": "aphrody-koharu/packages/docs/ja/guides/processing.mdx",
@@ -35165,9 +35269,11 @@
       "size": 3400,
       "status": "clean",
       "sha256": "53cef0eaeb6509d451a39a50422be873621c9e304cd5d098e379dc5ef47c82b3",
-      "target": "docs/guides/koharu/packages/docs/ja/guides/processing.mdx",
+      "target": null,
       "importedSha256": "53cef0eaeb6509d451a39a50422be873621c9e304cd5d098e379dc5ef47c82b3",
-      "importedSourceSha256": "53cef0eaeb6509d451a39a50422be873621c9e304cd5d098e379dc5ef47c82b3"
+      "importedSourceSha256": "53cef0eaeb6509d451a39a50422be873621c9e304cd5d098e379dc5ef47c82b3",
+      "duplicateOf": "packages/koharu/docs/ja/guides/processing.mdx",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/guides/koharu/packages/docs/ja/guides/processing.mdx removed as a duplicate of packages/koharu/docs/ja/guides/processing.mdx"
     },
     {
       "source": "aphrody-koharu/packages/docs/ja/guides/projects.mdx",
@@ -35176,9 +35282,11 @@
       "size": 3511,
       "status": "clean",
       "sha256": "dd98c85d23d982f5bb21ca7efd0b68520ec69e9b5b35596384c6aa8de5e04b29",
-      "target": "docs/guides/koharu/packages/docs/ja/guides/projects.mdx",
+      "target": null,
       "importedSha256": "dd98c85d23d982f5bb21ca7efd0b68520ec69e9b5b35596384c6aa8de5e04b29",
-      "importedSourceSha256": "dd98c85d23d982f5bb21ca7efd0b68520ec69e9b5b35596384c6aa8de5e04b29"
+      "importedSourceSha256": "dd98c85d23d982f5bb21ca7efd0b68520ec69e9b5b35596384c6aa8de5e04b29",
+      "duplicateOf": "packages/koharu/docs/ja/guides/projects.mdx",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/guides/koharu/packages/docs/ja/guides/projects.mdx removed as a duplicate of packages/koharu/docs/ja/guides/projects.mdx"
     },
     {
       "source": "aphrody-koharu/packages/docs/ja/guides/review.mdx",
@@ -35187,9 +35295,11 @@
       "size": 2891,
       "status": "clean",
       "sha256": "2a40d34cbe02d1e3320e2f0f9b234f7b1bdfd9c819266ee779a0ddf95e70b2ed",
-      "target": "docs/guides/koharu/packages/docs/ja/guides/review.mdx",
+      "target": null,
       "importedSha256": "2a40d34cbe02d1e3320e2f0f9b234f7b1bdfd9c819266ee779a0ddf95e70b2ed",
-      "importedSourceSha256": "2a40d34cbe02d1e3320e2f0f9b234f7b1bdfd9c819266ee779a0ddf95e70b2ed"
+      "importedSourceSha256": "2a40d34cbe02d1e3320e2f0f9b234f7b1bdfd9c819266ee779a0ddf95e70b2ed",
+      "duplicateOf": "packages/koharu/docs/ja/guides/review.mdx",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/guides/koharu/packages/docs/ja/guides/review.mdx removed as a duplicate of packages/koharu/docs/ja/guides/review.mdx"
     },
     {
       "source": "aphrody-koharu/packages/docs/ja/guides/typesetting.mdx",
@@ -35198,9 +35308,11 @@
       "size": 2617,
       "status": "clean",
       "sha256": "b6de6203beaabf663082b623678950de4ce0232f5e88da71a882f1d5f922e7d5",
-      "target": "docs/guides/koharu/packages/docs/ja/guides/typesetting.mdx",
+      "target": null,
       "importedSha256": "b6de6203beaabf663082b623678950de4ce0232f5e88da71a882f1d5f922e7d5",
-      "importedSourceSha256": "b6de6203beaabf663082b623678950de4ce0232f5e88da71a882f1d5f922e7d5"
+      "importedSourceSha256": "b6de6203beaabf663082b623678950de4ce0232f5e88da71a882f1d5f922e7d5",
+      "duplicateOf": "packages/koharu/docs/ja/guides/typesetting.mdx",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/guides/koharu/packages/docs/ja/guides/typesetting.mdx removed as a duplicate of packages/koharu/docs/ja/guides/typesetting.mdx"
     },
     {
       "source": "aphrody-koharu/packages/docs/ja/hardware.mdx",
@@ -35209,9 +35321,11 @@
       "size": 5188,
       "status": "clean",
       "sha256": "c4cb8a483ac8ea96f6e29a2d57634646ee8bcca4e162776daa0f9bbd7d82ab1d",
-      "target": "docs/reference/koharu/packages/docs/ja/hardware.mdx",
+      "target": null,
       "importedSha256": "c4cb8a483ac8ea96f6e29a2d57634646ee8bcca4e162776daa0f9bbd7d82ab1d",
-      "importedSourceSha256": "c4cb8a483ac8ea96f6e29a2d57634646ee8bcca4e162776daa0f9bbd7d82ab1d"
+      "importedSourceSha256": "c4cb8a483ac8ea96f6e29a2d57634646ee8bcca4e162776daa0f9bbd7d82ab1d",
+      "duplicateOf": "packages/koharu/docs/ja/hardware.mdx",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/reference/koharu/packages/docs/ja/hardware.mdx removed as a duplicate of packages/koharu/docs/ja/hardware.mdx"
     },
     {
       "source": "aphrody-koharu/packages/docs/ja/index.mdx",
@@ -35220,9 +35334,11 @@
       "size": 7246,
       "status": "clean",
       "sha256": "3c12e772771f7b16344e1a43288563757fec34babcc7c00d0b3e54ce21de7436",
-      "target": "docs/reference/koharu/packages/docs/ja/index.mdx",
+      "target": null,
       "importedSha256": "3c12e772771f7b16344e1a43288563757fec34babcc7c00d0b3e54ce21de7436",
-      "importedSourceSha256": "3c12e772771f7b16344e1a43288563757fec34babcc7c00d0b3e54ce21de7436"
+      "importedSourceSha256": "3c12e772771f7b16344e1a43288563757fec34babcc7c00d0b3e54ce21de7436",
+      "duplicateOf": "packages/koharu/docs/ja/index.mdx",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/reference/koharu/packages/docs/ja/index.mdx removed as a duplicate of packages/koharu/docs/ja/index.mdx"
     },
     {
       "source": "aphrody-koharu/packages/docs/ja/installation.mdx",
@@ -35231,9 +35347,11 @@
       "size": 2601,
       "status": "clean",
       "sha256": "b46e56b59ed3fe8b2835e91e0849020ff37d753dc9515d2256aeb0588121bf64",
-      "target": "docs/guides/koharu/packages/docs/ja/installation.mdx",
+      "target": null,
       "importedSha256": "b46e56b59ed3fe8b2835e91e0849020ff37d753dc9515d2256aeb0588121bf64",
-      "importedSourceSha256": "b46e56b59ed3fe8b2835e91e0849020ff37d753dc9515d2256aeb0588121bf64"
+      "importedSourceSha256": "b46e56b59ed3fe8b2835e91e0849020ff37d753dc9515d2256aeb0588121bf64",
+      "duplicateOf": "packages/koharu/docs/ja/installation.mdx",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/guides/koharu/packages/docs/ja/installation.mdx removed as a duplicate of packages/koharu/docs/ja/installation.mdx"
     },
     {
       "source": "aphrody-koharu/packages/docs/ja/models/providers.mdx",
@@ -35242,9 +35360,11 @@
       "size": 3399,
       "status": "clean",
       "sha256": "03384b9bf682f1c8a1b7f01958ed599feff2487882e6e6ac85d98dfc859f5a4a",
-      "target": "docs/reference/koharu/packages/docs/ja/models/providers.mdx",
+      "target": null,
       "importedSha256": "03384b9bf682f1c8a1b7f01958ed599feff2487882e6e6ac85d98dfc859f5a4a",
-      "importedSourceSha256": "03384b9bf682f1c8a1b7f01958ed599feff2487882e6e6ac85d98dfc859f5a4a"
+      "importedSourceSha256": "03384b9bf682f1c8a1b7f01958ed599feff2487882e6e6ac85d98dfc859f5a4a",
+      "duplicateOf": "packages/koharu/docs/ja/models/providers.mdx",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/reference/koharu/packages/docs/ja/models/providers.mdx removed as a duplicate of packages/koharu/docs/ja/models/providers.mdx"
     },
     {
       "source": "aphrody-koharu/packages/docs/ja/models/translation.mdx",
@@ -35253,9 +35373,11 @@
       "size": 3083,
       "status": "clean",
       "sha256": "a2f8651d2a9afa89921f88982b1b73d65cf11dae2f8b6e562c0ce6e1a4487239",
-      "target": "docs/reference/koharu/packages/docs/ja/models/translation.mdx",
+      "target": null,
       "importedSha256": "a2f8651d2a9afa89921f88982b1b73d65cf11dae2f8b6e562c0ce6e1a4487239",
-      "importedSourceSha256": "a2f8651d2a9afa89921f88982b1b73d65cf11dae2f8b6e562c0ce6e1a4487239"
+      "importedSourceSha256": "a2f8651d2a9afa89921f88982b1b73d65cf11dae2f8b6e562c0ce6e1a4487239",
+      "duplicateOf": "packages/koharu/docs/ja/models/translation.mdx",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/reference/koharu/packages/docs/ja/models/translation.mdx removed as a duplicate of packages/koharu/docs/ja/models/translation.mdx"
     },
     {
       "source": "aphrody-koharu/packages/docs/ja/models/vision.mdx",
@@ -35264,9 +35386,11 @@
       "size": 2809,
       "status": "clean",
       "sha256": "66dc578bcf3a084df8f518614b08acec9b9682ca7cd96c37e8c780e29aad37f1",
-      "target": "docs/reference/koharu/packages/docs/ja/models/vision.mdx",
+      "target": null,
       "importedSha256": "66dc578bcf3a084df8f518614b08acec9b9682ca7cd96c37e8c780e29aad37f1",
-      "importedSourceSha256": "66dc578bcf3a084df8f518614b08acec9b9682ca7cd96c37e8c780e29aad37f1"
+      "importedSourceSha256": "66dc578bcf3a084df8f518614b08acec9b9682ca7cd96c37e8c780e29aad37f1",
+      "duplicateOf": "packages/koharu/docs/ja/models/vision.mdx",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/reference/koharu/packages/docs/ja/models/vision.mdx removed as a duplicate of packages/koharu/docs/ja/models/vision.mdx"
     },
     {
       "source": "aphrody-koharu/packages/docs/ja/quickstart.mdx",
@@ -35275,9 +35399,11 @@
       "size": 3558,
       "status": "clean",
       "sha256": "36b5a7555afee88b6256bab2b564a4e671fef1fe23185b1bb353775c73878a69",
-      "target": "docs/reference/koharu/packages/docs/ja/quickstart.mdx",
+      "target": null,
       "importedSha256": "36b5a7555afee88b6256bab2b564a4e671fef1fe23185b1bb353775c73878a69",
-      "importedSourceSha256": "36b5a7555afee88b6256bab2b564a4e671fef1fe23185b1bb353775c73878a69"
+      "importedSourceSha256": "36b5a7555afee88b6256bab2b564a4e671fef1fe23185b1bb353775c73878a69",
+      "duplicateOf": "packages/koharu/docs/ja/quickstart.mdx",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/reference/koharu/packages/docs/ja/quickstart.mdx removed as a duplicate of packages/koharu/docs/ja/quickstart.mdx"
     },
     {
       "source": "aphrody-koharu/packages/docs/ja/reference/data.mdx",
@@ -35286,9 +35412,11 @@
       "size": 3003,
       "status": "clean",
       "sha256": "181197d3a6e76899ab4729a2c14a30ea9f5003e484632799181a7a57f2666765",
-      "target": "docs/reference/koharu/packages/docs/ja/reference/data.mdx",
+      "target": null,
       "importedSha256": "181197d3a6e76899ab4729a2c14a30ea9f5003e484632799181a7a57f2666765",
-      "importedSourceSha256": "181197d3a6e76899ab4729a2c14a30ea9f5003e484632799181a7a57f2666765"
+      "importedSourceSha256": "181197d3a6e76899ab4729a2c14a30ea9f5003e484632799181a7a57f2666765",
+      "duplicateOf": "packages/koharu/docs/ja/reference/data.mdx",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/reference/koharu/packages/docs/ja/reference/data.mdx removed as a duplicate of packages/koharu/docs/ja/reference/data.mdx"
     },
     {
       "source": "aphrody-koharu/packages/docs/ja/reference/settings.mdx",
@@ -35297,9 +35425,11 @@
       "size": 2591,
       "status": "clean",
       "sha256": "5a63f77a236e61942a6814885adc10c3f17e2140ce05fe38768f063ea272d69a",
-      "target": "docs/reference/koharu/packages/docs/ja/reference/settings.mdx",
+      "target": null,
       "importedSha256": "5a63f77a236e61942a6814885adc10c3f17e2140ce05fe38768f063ea272d69a",
-      "importedSourceSha256": "5a63f77a236e61942a6814885adc10c3f17e2140ce05fe38768f063ea272d69a"
+      "importedSourceSha256": "5a63f77a236e61942a6814885adc10c3f17e2140ce05fe38768f063ea272d69a",
+      "duplicateOf": "packages/koharu/docs/ja/reference/settings.mdx",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/reference/koharu/packages/docs/ja/reference/settings.mdx removed as a duplicate of packages/koharu/docs/ja/reference/settings.mdx"
     },
     {
       "source": "aphrody-koharu/packages/docs/ja/reference/shortcuts.mdx",
@@ -35308,9 +35438,11 @@
       "size": 2884,
       "status": "clean",
       "sha256": "81b650e6f43d068d5b765017141bdc686395ff0cfeae22b6f59783a5498749e0",
-      "target": "docs/reference/koharu/packages/docs/ja/reference/shortcuts.mdx",
+      "target": null,
       "importedSha256": "81b650e6f43d068d5b765017141bdc686395ff0cfeae22b6f59783a5498749e0",
-      "importedSourceSha256": "81b650e6f43d068d5b765017141bdc686395ff0cfeae22b6f59783a5498749e0"
+      "importedSourceSha256": "81b650e6f43d068d5b765017141bdc686395ff0cfeae22b6f59783a5498749e0",
+      "duplicateOf": "packages/koharu/docs/ja/reference/shortcuts.mdx",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/reference/koharu/packages/docs/ja/reference/shortcuts.mdx removed as a duplicate of packages/koharu/docs/ja/reference/shortcuts.mdx"
     },
     {
       "source": "aphrody-koharu/packages/docs/ja/reference/troubleshooting.mdx",
@@ -35319,9 +35451,11 @@
       "size": 8626,
       "status": "clean",
       "sha256": "c926388025f76a91629af82ea3be38f2b830b2a6390c4feb441955962be8d295",
-      "target": "docs/reference/koharu/packages/docs/ja/reference/troubleshooting.mdx",
+      "target": null,
       "importedSha256": "c926388025f76a91629af82ea3be38f2b830b2a6390c4feb441955962be8d295",
-      "importedSourceSha256": "c926388025f76a91629af82ea3be38f2b830b2a6390c4feb441955962be8d295"
+      "importedSourceSha256": "c926388025f76a91629af82ea3be38f2b830b2a6390c4feb441955962be8d295",
+      "duplicateOf": "packages/koharu/docs/ja/reference/troubleshooting.mdx",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/reference/koharu/packages/docs/ja/reference/troubleshooting.mdx removed as a duplicate of packages/koharu/docs/ja/reference/troubleshooting.mdx"
     },
     {
       "source": "aphrody-koharu/packages/docs/package.json",
@@ -35348,9 +35482,11 @@
       "size": 1811,
       "status": "clean",
       "sha256": "7bad55c3117b43f502046312dcd8f2020a4258c121a057ed8451bcb62358459b",
-      "target": "docs/reference/koharu/packages/docs/zh/agent/projects.mdx",
+      "target": null,
       "importedSha256": "7bad55c3117b43f502046312dcd8f2020a4258c121a057ed8451bcb62358459b",
-      "importedSourceSha256": "7bad55c3117b43f502046312dcd8f2020a4258c121a057ed8451bcb62358459b"
+      "importedSourceSha256": "7bad55c3117b43f502046312dcd8f2020a4258c121a057ed8451bcb62358459b",
+      "duplicateOf": "packages/koharu/docs/zh/agent/projects.mdx",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/reference/koharu/packages/docs/zh/agent/projects.mdx removed as a duplicate of packages/koharu/docs/zh/agent/projects.mdx"
     },
     {
       "source": "aphrody-koharu/packages/docs/zh/agent/setup.mdx",
@@ -35359,9 +35495,11 @@
       "size": 1691,
       "status": "clean",
       "sha256": "b39912c9410774c4e37091c5dd8804bcf821458f617a1876f4ea7bbbc4253a6f",
-      "target": "docs/guides/koharu/packages/docs/zh/agent/setup.mdx",
+      "target": null,
       "importedSha256": "b39912c9410774c4e37091c5dd8804bcf821458f617a1876f4ea7bbbc4253a6f",
-      "importedSourceSha256": "b39912c9410774c4e37091c5dd8804bcf821458f617a1876f4ea7bbbc4253a6f"
+      "importedSourceSha256": "b39912c9410774c4e37091c5dd8804bcf821458f617a1876f4ea7bbbc4253a6f",
+      "duplicateOf": "packages/koharu/docs/zh/agent/setup.mdx",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/guides/koharu/packages/docs/zh/agent/setup.mdx removed as a duplicate of packages/koharu/docs/zh/agent/setup.mdx"
     },
     {
       "source": "aphrody-koharu/packages/docs/zh/development/architecture.mdx",
@@ -35370,9 +35508,11 @@
       "size": 3921,
       "status": "clean",
       "sha256": "22003cb3651ed8c2480a671fe5f47f6103dce0a4aafacc8fa6c6ad7e6c51d3c1",
-      "target": "docs/architecture/koharu/packages/docs/zh/development/architecture.mdx",
+      "target": null,
       "importedSha256": "22003cb3651ed8c2480a671fe5f47f6103dce0a4aafacc8fa6c6ad7e6c51d3c1",
-      "importedSourceSha256": "22003cb3651ed8c2480a671fe5f47f6103dce0a4aafacc8fa6c6ad7e6c51d3c1"
+      "importedSourceSha256": "22003cb3651ed8c2480a671fe5f47f6103dce0a4aafacc8fa6c6ad7e6c51d3c1",
+      "duplicateOf": "packages/koharu/docs/zh/development/architecture.mdx",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/architecture/koharu/packages/docs/zh/development/architecture.mdx removed as a duplicate of packages/koharu/docs/zh/development/architecture.mdx"
     },
     {
       "source": "aphrody-koharu/packages/docs/zh/development/contributing.mdx",
@@ -35381,9 +35521,11 @@
       "size": 3191,
       "status": "clean",
       "sha256": "568ffc5b34f21a504fb65613653b661680f9e1a94217284bf9de3708f4cb000a",
-      "target": "docs/guides/koharu/packages/docs/zh/development/contributing.mdx",
+      "target": null,
       "importedSha256": "568ffc5b34f21a504fb65613653b661680f9e1a94217284bf9de3708f4cb000a",
-      "importedSourceSha256": "568ffc5b34f21a504fb65613653b661680f9e1a94217284bf9de3708f4cb000a"
+      "importedSourceSha256": "568ffc5b34f21a504fb65613653b661680f9e1a94217284bf9de3708f4cb000a",
+      "duplicateOf": "packages/koharu/docs/zh/development/contributing.mdx",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/guides/koharu/packages/docs/zh/development/contributing.mdx removed as a duplicate of packages/koharu/docs/zh/development/contributing.mdx"
     },
     {
       "source": "aphrody-koharu/packages/docs/zh/development/documentation.mdx",
@@ -35392,9 +35534,11 @@
       "size": 2301,
       "status": "clean",
       "sha256": "9da59840cc0d9f917b1c926a1d54d72d8e579e70d6ce7749425d00d3824082d5",
-      "target": "docs/reference/koharu/packages/docs/zh/development/documentation.mdx",
+      "target": null,
       "importedSha256": "9da59840cc0d9f917b1c926a1d54d72d8e579e70d6ce7749425d00d3824082d5",
-      "importedSourceSha256": "9da59840cc0d9f917b1c926a1d54d72d8e579e70d6ce7749425d00d3824082d5"
+      "importedSourceSha256": "9da59840cc0d9f917b1c926a1d54d72d8e579e70d6ce7749425d00d3824082d5",
+      "duplicateOf": "packages/koharu/docs/zh/development/documentation.mdx",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/reference/koharu/packages/docs/zh/development/documentation.mdx removed as a duplicate of packages/koharu/docs/zh/development/documentation.mdx"
     },
     {
       "source": "aphrody-koharu/packages/docs/zh/development/rendering.mdx",
@@ -35403,9 +35547,11 @@
       "size": 3265,
       "status": "clean",
       "sha256": "a577ae78947d364830c695aefd799e2a392740becbebdb06d3e210654be10af8",
-      "target": "docs/reference/koharu/packages/docs/zh/development/rendering.mdx",
+      "target": null,
       "importedSha256": "a577ae78947d364830c695aefd799e2a392740becbebdb06d3e210654be10af8",
-      "importedSourceSha256": "a577ae78947d364830c695aefd799e2a392740becbebdb06d3e210654be10af8"
+      "importedSourceSha256": "a577ae78947d364830c695aefd799e2a392740becbebdb06d3e210654be10af8",
+      "duplicateOf": "packages/koharu/docs/zh/development/rendering.mdx",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/reference/koharu/packages/docs/zh/development/rendering.mdx removed as a duplicate of packages/koharu/docs/zh/development/rendering.mdx"
     },
     {
       "source": "aphrody-koharu/packages/docs/zh/development/scene.mdx",
@@ -35414,9 +35560,11 @@
       "size": 2342,
       "status": "clean",
       "sha256": "45d50a7ddca2ca1019a19ee3dd1bf155cb03b438338be60343bb9d17984b17e5",
-      "target": "docs/reference/koharu/packages/docs/zh/development/scene.mdx",
+      "target": null,
       "importedSha256": "45d50a7ddca2ca1019a19ee3dd1bf155cb03b438338be60343bb9d17984b17e5",
-      "importedSourceSha256": "45d50a7ddca2ca1019a19ee3dd1bf155cb03b438338be60343bb9d17984b17e5"
+      "importedSourceSha256": "45d50a7ddca2ca1019a19ee3dd1bf155cb03b438338be60343bb9d17984b17e5",
+      "duplicateOf": "packages/koharu/docs/zh/development/scene.mdx",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/reference/koharu/packages/docs/zh/development/scene.mdx removed as a duplicate of packages/koharu/docs/zh/development/scene.mdx"
     },
     {
       "source": "aphrody-koharu/packages/docs/zh/development/setup.mdx",
@@ -35425,9 +35573,11 @@
       "size": 2359,
       "status": "clean",
       "sha256": "f5fe31390b86478861ea45712d93efd5c8c7cde33224122ce15432668b57bc84",
-      "target": "docs/guides/koharu/packages/docs/zh/development/setup.mdx",
+      "target": null,
       "importedSha256": "f5fe31390b86478861ea45712d93efd5c8c7cde33224122ce15432668b57bc84",
-      "importedSourceSha256": "f5fe31390b86478861ea45712d93efd5c8c7cde33224122ce15432668b57bc84"
+      "importedSourceSha256": "f5fe31390b86478861ea45712d93efd5c8c7cde33224122ce15432668b57bc84",
+      "duplicateOf": "packages/koharu/docs/zh/development/setup.mdx",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/guides/koharu/packages/docs/zh/development/setup.mdx removed as a duplicate of packages/koharu/docs/zh/development/setup.mdx"
     },
     {
       "source": "aphrody-koharu/packages/docs/zh/guides/canvas.mdx",
@@ -35436,9 +35586,11 @@
       "size": 2065,
       "status": "clean",
       "sha256": "994a28333ef5dc1b612890d76572205837c9110529c0dafe81ab2973a7705705",
-      "target": "docs/guides/koharu/packages/docs/zh/guides/canvas.mdx",
+      "target": null,
       "importedSha256": "994a28333ef5dc1b612890d76572205837c9110529c0dafe81ab2973a7705705",
-      "importedSourceSha256": "994a28333ef5dc1b612890d76572205837c9110529c0dafe81ab2973a7705705"
+      "importedSourceSha256": "994a28333ef5dc1b612890d76572205837c9110529c0dafe81ab2973a7705705",
+      "duplicateOf": "packages/koharu/docs/zh/guides/canvas.mdx",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/guides/koharu/packages/docs/zh/guides/canvas.mdx removed as a duplicate of packages/koharu/docs/zh/guides/canvas.mdx"
     },
     {
       "source": "aphrody-koharu/packages/docs/zh/guides/cleanup.mdx",
@@ -35447,9 +35599,11 @@
       "size": 1815,
       "status": "clean",
       "sha256": "387e5343558aab26be6337186806f45b8d4ac86535769d5442a3f9f3873f5ea3",
-      "target": "docs/guides/koharu/packages/docs/zh/guides/cleanup.mdx",
+      "target": null,
       "importedSha256": "387e5343558aab26be6337186806f45b8d4ac86535769d5442a3f9f3873f5ea3",
-      "importedSourceSha256": "387e5343558aab26be6337186806f45b8d4ac86535769d5442a3f9f3873f5ea3"
+      "importedSourceSha256": "387e5343558aab26be6337186806f45b8d4ac86535769d5442a3f9f3873f5ea3",
+      "duplicateOf": "packages/koharu/docs/zh/guides/cleanup.mdx",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/guides/koharu/packages/docs/zh/guides/cleanup.mdx removed as a duplicate of packages/koharu/docs/zh/guides/cleanup.mdx"
     },
     {
       "source": "aphrody-koharu/packages/docs/zh/guides/export.mdx",
@@ -35458,9 +35612,11 @@
       "size": 2120,
       "status": "clean",
       "sha256": "bd6e3cf91563a1d6e7a6fe0f87ebabd0e28e60cf8f6f74cbb2b2fe790d44aeb7",
-      "target": "docs/guides/koharu/packages/docs/zh/guides/export.mdx",
+      "target": null,
       "importedSha256": "bd6e3cf91563a1d6e7a6fe0f87ebabd0e28e60cf8f6f74cbb2b2fe790d44aeb7",
-      "importedSourceSha256": "bd6e3cf91563a1d6e7a6fe0f87ebabd0e28e60cf8f6f74cbb2b2fe790d44aeb7"
+      "importedSourceSha256": "bd6e3cf91563a1d6e7a6fe0f87ebabd0e28e60cf8f6f74cbb2b2fe790d44aeb7",
+      "duplicateOf": "packages/koharu/docs/zh/guides/export.mdx",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/guides/koharu/packages/docs/zh/guides/export.mdx removed as a duplicate of packages/koharu/docs/zh/guides/export.mdx"
     },
     {
       "source": "aphrody-koharu/packages/docs/zh/guides/processing.mdx",
@@ -35469,9 +35625,11 @@
       "size": 2484,
       "status": "clean",
       "sha256": "bee493aaae57b8dc48fda5a464e8380fa20e6ae43a7b176bab141738dd713a63",
-      "target": "docs/guides/koharu/packages/docs/zh/guides/processing.mdx",
+      "target": null,
       "importedSha256": "bee493aaae57b8dc48fda5a464e8380fa20e6ae43a7b176bab141738dd713a63",
-      "importedSourceSha256": "bee493aaae57b8dc48fda5a464e8380fa20e6ae43a7b176bab141738dd713a63"
+      "importedSourceSha256": "bee493aaae57b8dc48fda5a464e8380fa20e6ae43a7b176bab141738dd713a63",
+      "duplicateOf": "packages/koharu/docs/zh/guides/processing.mdx",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/guides/koharu/packages/docs/zh/guides/processing.mdx removed as a duplicate of packages/koharu/docs/zh/guides/processing.mdx"
     },
     {
       "source": "aphrody-koharu/packages/docs/zh/guides/projects.mdx",
@@ -35480,9 +35638,11 @@
       "size": 2488,
       "status": "clean",
       "sha256": "c31c97740527136ee64e04e0dd9325787963c7d140dfd894e334ed9430e3629f",
-      "target": "docs/guides/koharu/packages/docs/zh/guides/projects.mdx",
+      "target": null,
       "importedSha256": "c31c97740527136ee64e04e0dd9325787963c7d140dfd894e334ed9430e3629f",
-      "importedSourceSha256": "c31c97740527136ee64e04e0dd9325787963c7d140dfd894e334ed9430e3629f"
+      "importedSourceSha256": "c31c97740527136ee64e04e0dd9325787963c7d140dfd894e334ed9430e3629f",
+      "duplicateOf": "packages/koharu/docs/zh/guides/projects.mdx",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/guides/koharu/packages/docs/zh/guides/projects.mdx removed as a duplicate of packages/koharu/docs/zh/guides/projects.mdx"
     },
     {
       "source": "aphrody-koharu/packages/docs/zh/guides/review.mdx",
@@ -35491,9 +35651,11 @@
       "size": 2027,
       "status": "clean",
       "sha256": "633e0967371bf276fa8e1e91fe77039751aff9ac1389a6099d14b7494fe576e2",
-      "target": "docs/guides/koharu/packages/docs/zh/guides/review.mdx",
+      "target": null,
       "importedSha256": "633e0967371bf276fa8e1e91fe77039751aff9ac1389a6099d14b7494fe576e2",
-      "importedSourceSha256": "633e0967371bf276fa8e1e91fe77039751aff9ac1389a6099d14b7494fe576e2"
+      "importedSourceSha256": "633e0967371bf276fa8e1e91fe77039751aff9ac1389a6099d14b7494fe576e2",
+      "duplicateOf": "packages/koharu/docs/zh/guides/review.mdx",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/guides/koharu/packages/docs/zh/guides/review.mdx removed as a duplicate of packages/koharu/docs/zh/guides/review.mdx"
     },
     {
       "source": "aphrody-koharu/packages/docs/zh/guides/typesetting.mdx",
@@ -35502,9 +35664,11 @@
       "size": 1888,
       "status": "clean",
       "sha256": "842f9123bb9e02eb98e4b4675fc4ef979c97c873218538c0b2156a98c7d950c7",
-      "target": "docs/guides/koharu/packages/docs/zh/guides/typesetting.mdx",
+      "target": null,
       "importedSha256": "842f9123bb9e02eb98e4b4675fc4ef979c97c873218538c0b2156a98c7d950c7",
-      "importedSourceSha256": "842f9123bb9e02eb98e4b4675fc4ef979c97c873218538c0b2156a98c7d950c7"
+      "importedSourceSha256": "842f9123bb9e02eb98e4b4675fc4ef979c97c873218538c0b2156a98c7d950c7",
+      "duplicateOf": "packages/koharu/docs/zh/guides/typesetting.mdx",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/guides/koharu/packages/docs/zh/guides/typesetting.mdx removed as a duplicate of packages/koharu/docs/zh/guides/typesetting.mdx"
     },
     {
       "source": "aphrody-koharu/packages/docs/zh/hardware.mdx",
@@ -35513,9 +35677,11 @@
       "size": 3751,
       "status": "clean",
       "sha256": "03d11509897d3b5e843ebf3ee74cecb40dfe79ada6bd9871a0dc23012bc6cc9b",
-      "target": "docs/reference/koharu/packages/docs/zh/hardware.mdx",
+      "target": null,
       "importedSha256": "03d11509897d3b5e843ebf3ee74cecb40dfe79ada6bd9871a0dc23012bc6cc9b",
-      "importedSourceSha256": "03d11509897d3b5e843ebf3ee74cecb40dfe79ada6bd9871a0dc23012bc6cc9b"
+      "importedSourceSha256": "03d11509897d3b5e843ebf3ee74cecb40dfe79ada6bd9871a0dc23012bc6cc9b",
+      "duplicateOf": "packages/koharu/docs/zh/hardware.mdx",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/reference/koharu/packages/docs/zh/hardware.mdx removed as a duplicate of packages/koharu/docs/zh/hardware.mdx"
     },
     {
       "source": "aphrody-koharu/packages/docs/zh/index.mdx",
@@ -35524,9 +35690,11 @@
       "size": 6217,
       "status": "clean",
       "sha256": "00e7fe2b763f162e264375c62314009149de9efd10a7e15788a06a74cbc06338",
-      "target": "docs/reference/koharu/packages/docs/zh/index.mdx",
+      "target": null,
       "importedSha256": "00e7fe2b763f162e264375c62314009149de9efd10a7e15788a06a74cbc06338",
-      "importedSourceSha256": "00e7fe2b763f162e264375c62314009149de9efd10a7e15788a06a74cbc06338"
+      "importedSourceSha256": "00e7fe2b763f162e264375c62314009149de9efd10a7e15788a06a74cbc06338",
+      "duplicateOf": "packages/koharu/docs/zh/index.mdx",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/reference/koharu/packages/docs/zh/index.mdx removed as a duplicate of packages/koharu/docs/zh/index.mdx"
     },
     {
       "source": "aphrody-koharu/packages/docs/zh/installation.mdx",
@@ -35535,9 +35703,11 @@
       "size": 1872,
       "status": "clean",
       "sha256": "86af840596c57f1910d3c160ad6a61aeffd26f1bc41da0a206ed26c53e289e7f",
-      "target": "docs/guides/koharu/packages/docs/zh/installation.mdx",
+      "target": null,
       "importedSha256": "86af840596c57f1910d3c160ad6a61aeffd26f1bc41da0a206ed26c53e289e7f",
-      "importedSourceSha256": "86af840596c57f1910d3c160ad6a61aeffd26f1bc41da0a206ed26c53e289e7f"
+      "importedSourceSha256": "86af840596c57f1910d3c160ad6a61aeffd26f1bc41da0a206ed26c53e289e7f",
+      "duplicateOf": "packages/koharu/docs/zh/installation.mdx",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/guides/koharu/packages/docs/zh/installation.mdx removed as a duplicate of packages/koharu/docs/zh/installation.mdx"
     },
     {
       "source": "aphrody-koharu/packages/docs/zh/models/providers.mdx",
@@ -35546,9 +35716,11 @@
       "size": 2477,
       "status": "clean",
       "sha256": "6fd3854bcb29054e9c37ee7bd03071dad02915b05d7c57a3e2e92c87fb727938",
-      "target": "docs/reference/koharu/packages/docs/zh/models/providers.mdx",
+      "target": null,
       "importedSha256": "6fd3854bcb29054e9c37ee7bd03071dad02915b05d7c57a3e2e92c87fb727938",
-      "importedSourceSha256": "6fd3854bcb29054e9c37ee7bd03071dad02915b05d7c57a3e2e92c87fb727938"
+      "importedSourceSha256": "6fd3854bcb29054e9c37ee7bd03071dad02915b05d7c57a3e2e92c87fb727938",
+      "duplicateOf": "packages/koharu/docs/zh/models/providers.mdx",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/reference/koharu/packages/docs/zh/models/providers.mdx removed as a duplicate of packages/koharu/docs/zh/models/providers.mdx"
     },
     {
       "source": "aphrody-koharu/packages/docs/zh/models/translation.mdx",
@@ -35557,9 +35729,11 @@
       "size": 2204,
       "status": "clean",
       "sha256": "76d85eca342d3a889cf092aa58fe77a5a2f572e60e63aa8a7ff6205d2ac3aeb6",
-      "target": "docs/reference/koharu/packages/docs/zh/models/translation.mdx",
+      "target": null,
       "importedSha256": "76d85eca342d3a889cf092aa58fe77a5a2f572e60e63aa8a7ff6205d2ac3aeb6",
-      "importedSourceSha256": "76d85eca342d3a889cf092aa58fe77a5a2f572e60e63aa8a7ff6205d2ac3aeb6"
+      "importedSourceSha256": "76d85eca342d3a889cf092aa58fe77a5a2f572e60e63aa8a7ff6205d2ac3aeb6",
+      "duplicateOf": "packages/koharu/docs/zh/models/translation.mdx",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/reference/koharu/packages/docs/zh/models/translation.mdx removed as a duplicate of packages/koharu/docs/zh/models/translation.mdx"
     },
     {
       "source": "aphrody-koharu/packages/docs/zh/models/vision.mdx",
@@ -35568,9 +35742,11 @@
       "size": 2108,
       "status": "clean",
       "sha256": "6e527ab07ddddaa23f66900bebdbe3276b5d69c934e9b03be8d9608fd6a276ab",
-      "target": "docs/reference/koharu/packages/docs/zh/models/vision.mdx",
+      "target": null,
       "importedSha256": "6e527ab07ddddaa23f66900bebdbe3276b5d69c934e9b03be8d9608fd6a276ab",
-      "importedSourceSha256": "6e527ab07ddddaa23f66900bebdbe3276b5d69c934e9b03be8d9608fd6a276ab"
+      "importedSourceSha256": "6e527ab07ddddaa23f66900bebdbe3276b5d69c934e9b03be8d9608fd6a276ab",
+      "duplicateOf": "packages/koharu/docs/zh/models/vision.mdx",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/reference/koharu/packages/docs/zh/models/vision.mdx removed as a duplicate of packages/koharu/docs/zh/models/vision.mdx"
     },
     {
       "source": "aphrody-koharu/packages/docs/zh/quickstart.mdx",
@@ -35579,9 +35755,11 @@
       "size": 2559,
       "status": "clean",
       "sha256": "9d91cb036917e444f372aa0cbf99b6b28368f00512b9261f86ff95c85aa378bd",
-      "target": "docs/reference/koharu/packages/docs/zh/quickstart.mdx",
+      "target": null,
       "importedSha256": "9d91cb036917e444f372aa0cbf99b6b28368f00512b9261f86ff95c85aa378bd",
-      "importedSourceSha256": "9d91cb036917e444f372aa0cbf99b6b28368f00512b9261f86ff95c85aa378bd"
+      "importedSourceSha256": "9d91cb036917e444f372aa0cbf99b6b28368f00512b9261f86ff95c85aa378bd",
+      "duplicateOf": "packages/koharu/docs/zh/quickstart.mdx",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/reference/koharu/packages/docs/zh/quickstart.mdx removed as a duplicate of packages/koharu/docs/zh/quickstart.mdx"
     },
     {
       "source": "aphrody-koharu/packages/docs/zh/reference/data.mdx",
@@ -35590,9 +35768,11 @@
       "size": 2104,
       "status": "clean",
       "sha256": "434e1a7f783c96587cd55c3d8d48e514084ebdec191ea28ca2f0d3269d7eb6c0",
-      "target": "docs/reference/koharu/packages/docs/zh/reference/data.mdx",
+      "target": null,
       "importedSha256": "434e1a7f783c96587cd55c3d8d48e514084ebdec191ea28ca2f0d3269d7eb6c0",
-      "importedSourceSha256": "434e1a7f783c96587cd55c3d8d48e514084ebdec191ea28ca2f0d3269d7eb6c0"
+      "importedSourceSha256": "434e1a7f783c96587cd55c3d8d48e514084ebdec191ea28ca2f0d3269d7eb6c0",
+      "duplicateOf": "packages/koharu/docs/zh/reference/data.mdx",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/reference/koharu/packages/docs/zh/reference/data.mdx removed as a duplicate of packages/koharu/docs/zh/reference/data.mdx"
     },
     {
       "source": "aphrody-koharu/packages/docs/zh/reference/settings.mdx",
@@ -35601,9 +35781,11 @@
       "size": 1810,
       "status": "clean",
       "sha256": "8d576d24481c495ea57b28d7d8d3aca87d1c0aac96ca8c530514a3b0c5570b0b",
-      "target": "docs/reference/koharu/packages/docs/zh/reference/settings.mdx",
+      "target": null,
       "importedSha256": "8d576d24481c495ea57b28d7d8d3aca87d1c0aac96ca8c530514a3b0c5570b0b",
-      "importedSourceSha256": "8d576d24481c495ea57b28d7d8d3aca87d1c0aac96ca8c530514a3b0c5570b0b"
+      "importedSourceSha256": "8d576d24481c495ea57b28d7d8d3aca87d1c0aac96ca8c530514a3b0c5570b0b",
+      "duplicateOf": "packages/koharu/docs/zh/reference/settings.mdx",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/reference/koharu/packages/docs/zh/reference/settings.mdx removed as a duplicate of packages/koharu/docs/zh/reference/settings.mdx"
     },
     {
       "source": "aphrody-koharu/packages/docs/zh/reference/shortcuts.mdx",
@@ -35612,9 +35794,11 @@
       "size": 2043,
       "status": "clean",
       "sha256": "d7a0ff6d731ccd698550ecc7fc0b9cf6d533f3ccdabbf9671c41dd531191770f",
-      "target": "docs/reference/koharu/packages/docs/zh/reference/shortcuts.mdx",
+      "target": null,
       "importedSha256": "d7a0ff6d731ccd698550ecc7fc0b9cf6d533f3ccdabbf9671c41dd531191770f",
-      "importedSourceSha256": "d7a0ff6d731ccd698550ecc7fc0b9cf6d533f3ccdabbf9671c41dd531191770f"
+      "importedSourceSha256": "d7a0ff6d731ccd698550ecc7fc0b9cf6d533f3ccdabbf9671c41dd531191770f",
+      "duplicateOf": "packages/koharu/docs/zh/reference/shortcuts.mdx",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/reference/koharu/packages/docs/zh/reference/shortcuts.mdx removed as a duplicate of packages/koharu/docs/zh/reference/shortcuts.mdx"
     },
     {
       "source": "aphrody-koharu/packages/docs/zh/reference/troubleshooting.mdx",
@@ -35623,9 +35807,11 @@
       "size": 6255,
       "status": "clean",
       "sha256": "001f5cb4dfe87db729b86afe1e7e8157f7f7f7ae28eb2da1edde6ea4c8ed896d",
-      "target": "docs/reference/koharu/packages/docs/zh/reference/troubleshooting.mdx",
+      "target": null,
       "importedSha256": "001f5cb4dfe87db729b86afe1e7e8157f7f7f7ae28eb2da1edde6ea4c8ed896d",
-      "importedSourceSha256": "001f5cb4dfe87db729b86afe1e7e8157f7f7f7ae28eb2da1edde6ea4c8ed896d"
+      "importedSourceSha256": "001f5cb4dfe87db729b86afe1e7e8157f7f7f7ae28eb2da1edde6ea4c8ed896d",
+      "duplicateOf": "packages/koharu/docs/zh/reference/troubleshooting.mdx",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/reference/koharu/packages/docs/zh/reference/troubleshooting.mdx removed as a duplicate of packages/koharu/docs/zh/reference/troubleshooting.mdx"
     },
     {
       "source": "aphrody-koharu/packages/sdk/package.json",
@@ -63486,9 +63672,11 @@
       "size": 10817,
       "status": "clean",
       "sha256": "fecd0abde48e3a1d2ac7a3cf2fd9086005ea5d2f3a0d60969b97f4f69bd1bac6",
-      "target": "docs/reference/ui/crates/aphrody-drive/permissions/autogenerated/reference.md",
+      "target": null,
       "importedSha256": "fecd0abde48e3a1d2ac7a3cf2fd9086005ea5d2f3a0d60969b97f4f69bd1bac6",
-      "importedSourceSha256": "fecd0abde48e3a1d2ac7a3cf2fd9086005ea5d2f3a0d60969b97f4f69bd1bac6"
+      "importedSourceSha256": "fecd0abde48e3a1d2ac7a3cf2fd9086005ea5d2f3a0d60969b97f4f69bd1bac6",
+      "duplicateOf": "crates/ui/drive/permissions/autogenerated/reference.md",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/reference/ui/crates/aphrody-drive/permissions/autogenerated/reference.md removed as a duplicate of crates/ui/drive/permissions/autogenerated/reference.md"
     },
     {
       "source": "aphrody-ui/crates/aphrody-drive/permissions/default.toml",
@@ -63713,9 +63901,11 @@
       "size": 2811,
       "status": "clean",
       "sha256": "a9726145a13494288a1278b390909208ec7ffaf6d2a64ee0c25f36f1a8021528",
-      "target": "docs/products/ui/crates/aphrody-icons/README.md",
+      "target": null,
       "importedSha256": "a9726145a13494288a1278b390909208ec7ffaf6d2a64ee0c25f36f1a8021528",
-      "importedSourceSha256": "a9726145a13494288a1278b390909208ec7ffaf6d2a64ee0c25f36f1a8021528"
+      "importedSourceSha256": "a9726145a13494288a1278b390909208ec7ffaf6d2a64ee0c25f36f1a8021528",
+      "duplicateOf": "crates/ui/icons/README.md",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/products/ui/crates/aphrody-icons/README.md removed as a duplicate of crates/ui/icons/README.md"
     },
     {
       "source": "aphrody-ui/crates/aphrody-icons/_config.yml",
@@ -63832,9 +64022,11 @@
       "size": 3324,
       "status": "clean",
       "sha256": "739f15760c5ab1925bb75ab70eafb91fec28fa8b1c2994e5e651666dc3adcaad",
-      "target": "docs/products/ui/crates/aphrody-icons/material-symbols/README.md",
+      "target": null,
       "importedSha256": "739f15760c5ab1925bb75ab70eafb91fec28fa8b1c2994e5e651666dc3adcaad",
-      "importedSourceSha256": "739f15760c5ab1925bb75ab70eafb91fec28fa8b1c2994e5e651666dc3adcaad"
+      "importedSourceSha256": "739f15760c5ab1925bb75ab70eafb91fec28fa8b1c2994e5e651666dc3adcaad",
+      "duplicateOf": "crates/ui/icons/material-symbols/README.md",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/products/ui/crates/aphrody-icons/material-symbols/README.md removed as a duplicate of crates/ui/icons/material-symbols/README.md"
     },
     {
       "source": "aphrody-ui/crates/aphrody-icons/material-symbols/_core.scss",
@@ -63978,9 +64170,11 @@
       "size": 1145,
       "status": "clean",
       "sha256": "0860c2eac096766c55154422fb64536d960bdfb4a850b473892fde4071740220",
-      "target": "docs/products/ui/crates/aphrody-icons/metadata/README.md",
+      "target": null,
       "importedSha256": "0860c2eac096766c55154422fb64536d960bdfb4a850b473892fde4071740220",
-      "importedSourceSha256": "0860c2eac096766c55154422fb64536d960bdfb4a850b473892fde4071740220"
+      "importedSourceSha256": "0860c2eac096766c55154422fb64536d960bdfb4a850b473892fde4071740220",
+      "duplicateOf": "crates/ui/icons/metadata/README.md",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/products/ui/crates/aphrody-icons/metadata/README.md removed as a duplicate of crates/ui/icons/metadata/README.md"
     },
     {
       "source": "aphrody-ui/crates/aphrody-icons/metadata/codepoints/LICENSE-NOTICE.txt",
@@ -63999,8 +64193,10 @@
       "size": 79029,
       "status": "clean",
       "sha256": "c18564f64d7d92dd3a6895a2c59ea69adfb56d6f553bcbbc88811c328159d715",
-      "target": "docs/reference/ui/crates/aphrody-icons/metadata/codepoints/outlined.txt",
-      "importedSourceSha256": "c18564f64d7d92dd3a6895a2c59ea69adfb56d6f553bcbbc88811c328159d715"
+      "target": null,
+      "importedSourceSha256": "c18564f64d7d92dd3a6895a2c59ea69adfb56d6f553bcbbc88811c328159d715",
+      "duplicateOf": "crates/ui/icons/metadata/codepoints/outlined.txt",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/reference/ui/crates/aphrody-icons/metadata/codepoints/outlined.txt removed as a duplicate of crates/ui/icons/metadata/codepoints/outlined.txt"
     },
     {
       "source": "aphrody-ui/crates/aphrody-icons/metadata/codepoints/rounded.txt",
@@ -64165,9 +64361,11 @@
       "size": 1975,
       "status": "clean",
       "sha256": "b8856b8b86c0bc0f30187abafc8f9c63145f8ac30bce4fd1c7d845ed95f3f35e",
-      "target": "docs/products/ui/crates/aphrody-identity/assets/aphrody/README.md",
+      "target": null,
       "importedSha256": "b8856b8b86c0bc0f30187abafc8f9c63145f8ac30bce4fd1c7d845ed95f3f35e",
-      "importedSourceSha256": "b8856b8b86c0bc0f30187abafc8f9c63145f8ac30bce4fd1c7d845ed95f3f35e"
+      "importedSourceSha256": "b8856b8b86c0bc0f30187abafc8f9c63145f8ac30bce4fd1c7d845ed95f3f35e",
+      "duplicateOf": "crates/ui/identity/assets/aphrody/README.md",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/products/ui/crates/aphrody-identity/assets/aphrody/README.md removed as a duplicate of crates/ui/identity/assets/aphrody/README.md"
     },
     {
       "source": "aphrody-ui/crates/aphrody-identity/assets/aphrody/animations.json",
@@ -64320,9 +64518,11 @@
       "size": 3948,
       "status": "clean",
       "sha256": "c624cd4e00127a56ba09a8f553a4c5766b32fd31c4dbef3176fa66fcd2323992",
-      "target": "docs/reference/ui/crates/aphrody-identity/assets/dossier/aphrody.md",
+      "target": null,
       "importedSha256": "c624cd4e00127a56ba09a8f553a4c5766b32fd31c4dbef3176fa66fcd2323992",
-      "importedSourceSha256": "c624cd4e00127a56ba09a8f553a4c5766b32fd31c4dbef3176fa66fcd2323992"
+      "importedSourceSha256": "c624cd4e00127a56ba09a8f553a4c5766b32fd31c4dbef3176fa66fcd2323992",
+      "duplicateOf": "crates/ui/identity/assets/dossier/aphrody.md",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/reference/ui/crates/aphrody-identity/assets/dossier/aphrody.md removed as a duplicate of crates/ui/identity/assets/dossier/aphrody.md"
     },
     {
       "source": "aphrody-ui/crates/aphrody-identity/docs/pipeline-svg.md",
@@ -64342,9 +64542,11 @@
       "size": 7230,
       "status": "clean",
       "sha256": "12f99e3cd373d565291d160f87fef266619e352a8bdbf9b0f8dea2a7c6cb215e",
-      "target": "docs/reference/ui/crates/aphrody-identity/docs/toolchain-image-2026.md",
+      "target": null,
       "importedSha256": "12f99e3cd373d565291d160f87fef266619e352a8bdbf9b0f8dea2a7c6cb215e",
-      "importedSourceSha256": "12f99e3cd373d565291d160f87fef266619e352a8bdbf9b0f8dea2a7c6cb215e"
+      "importedSourceSha256": "12f99e3cd373d565291d160f87fef266619e352a8bdbf9b0f8dea2a7c6cb215e",
+      "duplicateOf": "crates/ui/identity/docs/toolchain-image-2026.md",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/reference/ui/crates/aphrody-identity/docs/toolchain-image-2026.md removed as a duplicate of crates/ui/identity/docs/toolchain-image-2026.md"
     },
     {
       "source": "aphrody-ui/crates/aphrody-identity/examples/diagnose.rs",
@@ -64551,8 +64753,10 @@
       "size": 4749,
       "status": "clean",
       "sha256": "31160f28ae297d3fbd121ed0092c146cb56fb35d2578669a29cc2a6b5288b810",
-      "target": "docs/plans/ui/crates/aphrody-m3-reproduce/src/plan.rs",
-      "importedSourceSha256": "31160f28ae297d3fbd121ed0092c146cb56fb35d2578669a29cc2a6b5288b810"
+      "target": null,
+      "importedSourceSha256": "31160f28ae297d3fbd121ed0092c146cb56fb35d2578669a29cc2a6b5288b810",
+      "duplicateOf": "crates/ui/m3-reproduce/src/plan.rs",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/plans/ui/crates/aphrody-m3-reproduce/src/plan.rs removed as a duplicate of crates/ui/m3-reproduce/src/plan.rs"
     },
     {
       "source": "aphrody-ui/crates/aphrody-m3-reproduce/src/scaffold.rs",
@@ -64950,9 +65154,11 @@
       "size": 976,
       "status": "clean",
       "sha256": "75a2307ef8e46dd7041e658e14a8b8c4c8121c99767aca6282975b152e8e5817",
-      "target": "docs/products/ui/crates/aphrody-m3/README.md",
+      "target": null,
       "importedSha256": "75a2307ef8e46dd7041e658e14a8b8c4c8121c99767aca6282975b152e8e5817",
-      "importedSourceSha256": "75a2307ef8e46dd7041e658e14a8b8c4c8121c99767aca6282975b152e8e5817"
+      "importedSourceSha256": "75a2307ef8e46dd7041e658e14a8b8c4c8121c99767aca6282975b152e8e5817",
+      "duplicateOf": "crates/ui/m3/README.md",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/products/ui/crates/aphrody-m3/README.md removed as a duplicate of crates/ui/m3/README.md"
     },
     {
       "source": "aphrody-ui/crates/aphrody-m3/src/lib.rs",
@@ -65586,9 +65792,11 @@
       "size": 2259,
       "status": "clean",
       "sha256": "83529732ae3666cc4fcd2eecf823e5071cea8ea2a03e4465af3df6d2160796a9",
-      "target": "docs/reference/ui/crates/aphrody-tauri-3d/permissions/autogenerated/reference.md",
+      "target": null,
       "importedSha256": "83529732ae3666cc4fcd2eecf823e5071cea8ea2a03e4465af3df6d2160796a9",
-      "importedSourceSha256": "83529732ae3666cc4fcd2eecf823e5071cea8ea2a03e4465af3df6d2160796a9"
+      "importedSourceSha256": "83529732ae3666cc4fcd2eecf823e5071cea8ea2a03e4465af3df6d2160796a9",
+      "duplicateOf": "crates/ui/tauri-3d/permissions/autogenerated/reference.md",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/reference/ui/crates/aphrody-tauri-3d/permissions/autogenerated/reference.md removed as a duplicate of crates/ui/tauri-3d/permissions/autogenerated/reference.md"
     },
     {
       "source": "aphrody-ui/crates/aphrody-tauri-3d/permissions/default.toml",
@@ -65696,9 +65904,11 @@
       "size": 1420,
       "status": "clean",
       "sha256": "6794c659504077bd4291e2e5a89d5c763eb0edc26ddd9a8a6bb0bd522903384b",
-      "target": "docs/reference/ui/crates/aphrody-tauri-m3/permissions/autogenerated/reference.md",
+      "target": null,
       "importedSha256": "6794c659504077bd4291e2e5a89d5c763eb0edc26ddd9a8a6bb0bd522903384b",
-      "importedSourceSha256": "6794c659504077bd4291e2e5a89d5c763eb0edc26ddd9a8a6bb0bd522903384b"
+      "importedSourceSha256": "6794c659504077bd4291e2e5a89d5c763eb0edc26ddd9a8a6bb0bd522903384b",
+      "duplicateOf": "crates/ui/tauri-m3/permissions/autogenerated/reference.md",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/reference/ui/crates/aphrody-tauri-m3/permissions/autogenerated/reference.md removed as a duplicate of crates/ui/tauri-m3/permissions/autogenerated/reference.md"
     },
     {
       "source": "aphrody-ui/crates/aphrody-tauri-m3/permissions/default.toml",
@@ -98192,9 +98402,11 @@
       "size": 5707,
       "status": "clean",
       "sha256": "0a1a0a7ce52675945835bf2bb7b77568b38714e37522a77289c97069f1a4b4a4",
-      "target": "docs/products/ui/packages/canvas/README.md",
+      "target": null,
       "importedSha256": "0a1a0a7ce52675945835bf2bb7b77568b38714e37522a77289c97069f1a4b4a4",
-      "importedSourceSha256": "0a1a0a7ce52675945835bf2bb7b77568b38714e37522a77289c97069f1a4b4a4"
+      "importedSourceSha256": "0a1a0a7ce52675945835bf2bb7b77568b38714e37522a77289c97069f1a4b4a4",
+      "duplicateOf": "packages/ui/canvas/README.md",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/products/ui/packages/canvas/README.md removed as a duplicate of packages/ui/canvas/README.md"
     },
     {
       "source": "aphrody-ui/packages/canvas/index.d.ts",
@@ -98322,9 +98534,11 @@
       "size": 5671,
       "status": "clean",
       "sha256": "e781e4f34043679c5f2b91f9bae067f1391bf7c28c1127900640b986abea9860",
-      "target": "docs/products/ui/packages/eslint-plugin-m3/README.md",
+      "target": null,
       "importedSha256": "e781e4f34043679c5f2b91f9bae067f1391bf7c28c1127900640b986abea9860",
-      "importedSourceSha256": "e781e4f34043679c5f2b91f9bae067f1391bf7c28c1127900640b986abea9860"
+      "importedSourceSha256": "e781e4f34043679c5f2b91f9bae067f1391bf7c28c1127900640b986abea9860",
+      "duplicateOf": "packages/ui/eslint-plugin-m3/README.md",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/products/ui/packages/eslint-plugin-m3/README.md removed as a duplicate of packages/ui/eslint-plugin-m3/README.md"
     },
     {
       "source": "aphrody-ui/packages/eslint-plugin-m3/data/material-symbols-names.js",
@@ -98607,9 +98821,11 @@
       "size": 2315,
       "status": "clean",
       "sha256": "d3edd1826fcc515ffdb8a516bc13cce95f5d17b7584339730a0a5209e3fe9c56",
-      "target": "docs/products/ui/packages/koharu-ui/README.md",
+      "target": null,
       "importedSha256": "d3edd1826fcc515ffdb8a516bc13cce95f5d17b7584339730a0a5209e3fe9c56",
-      "importedSourceSha256": "d3edd1826fcc515ffdb8a516bc13cce95f5d17b7584339730a0a5209e3fe9c56"
+      "importedSourceSha256": "d3edd1826fcc515ffdb8a516bc13cce95f5d17b7584339730a0a5209e3fe9c56",
+      "duplicateOf": "packages/koharu/ui/README.md",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/products/ui/packages/koharu-ui/README.md removed as a duplicate of packages/koharu/ui/README.md"
     },
     {
       "source": "aphrody-ui/packages/koharu-ui/package.json",
@@ -101046,9 +101262,11 @@
       "size": 8101,
       "status": "clean",
       "sha256": "1c0c5da92fc251fd54a8436eefb8f3e8f3959b88d3e19f1bd28a7cd2f3747159",
-      "target": "docs/products/ui/packages/m3-motion/README.md",
+      "target": null,
       "importedSha256": "1c0c5da92fc251fd54a8436eefb8f3e8f3959b88d3e19f1bd28a7cd2f3747159",
-      "importedSourceSha256": "1c0c5da92fc251fd54a8436eefb8f3e8f3959b88d3e19f1bd28a7cd2f3747159"
+      "importedSourceSha256": "1c0c5da92fc251fd54a8436eefb8f3e8f3959b88d3e19f1bd28a7cd2f3747159",
+      "duplicateOf": "packages/ui/m3-motion/README.md",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/products/ui/packages/m3-motion/README.md removed as a duplicate of packages/ui/m3-motion/README.md"
     },
     {
       "source": "aphrody-ui/packages/m3-motion/package.json",
@@ -102152,9 +102370,11 @@
       "size": 2486,
       "status": "clean",
       "sha256": "7475d231915252fc3e1d966870259c54cb56b9a0e1b2eedfb0892aed7d49ae0e",
-      "target": "docs/products/ui/packages/m3-reader/README.md",
+      "target": null,
       "importedSha256": "7475d231915252fc3e1d966870259c54cb56b9a0e1b2eedfb0892aed7d49ae0e",
-      "importedSourceSha256": "7475d231915252fc3e1d966870259c54cb56b9a0e1b2eedfb0892aed7d49ae0e"
+      "importedSourceSha256": "7475d231915252fc3e1d966870259c54cb56b9a0e1b2eedfb0892aed7d49ae0e",
+      "duplicateOf": "packages/ui/m3-reader/README.md",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/products/ui/packages/m3-reader/README.md removed as a duplicate of packages/ui/m3-reader/README.md"
     },
     {
       "source": "aphrody-ui/packages/m3-reader/dragon-ball.css",
@@ -104479,9 +104699,11 @@
       "size": 37195,
       "status": "clean",
       "sha256": "28a8ae4abe419fa271a3b4b7487d418f74807800a6a6f89be8eda0f770328838",
-      "target": "docs/reference/ui/packages/material-web/docs/01-md3-spec-foundations.fr.md",
+      "target": null,
       "importedSha256": "28a8ae4abe419fa271a3b4b7487d418f74807800a6a6f89be8eda0f770328838",
-      "importedSourceSha256": "28a8ae4abe419fa271a3b4b7487d418f74807800a6a6f89be8eda0f770328838"
+      "importedSourceSha256": "28a8ae4abe419fa271a3b4b7487d418f74807800a6a6f89be8eda0f770328838",
+      "duplicateOf": "packages/ui/material-web/docs/01-md3-spec-foundations.fr.md",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/reference/ui/packages/material-web/docs/01-md3-spec-foundations.fr.md removed as a duplicate of packages/ui/material-web/docs/01-md3-spec-foundations.fr.md"
     },
     {
       "source": "aphrody-ui/packages/material-web/docs/01-md3-spec-foundations.md",
@@ -104490,9 +104712,11 @@
       "size": 36052,
       "status": "clean",
       "sha256": "ed651779513e903a4c4bcb6c14d328d27408a9ae8963b8f7ed098f2998751734",
-      "target": "docs/reference/ui/packages/material-web/docs/01-md3-spec-foundations.md",
+      "target": null,
       "importedSha256": "ed651779513e903a4c4bcb6c14d328d27408a9ae8963b8f7ed098f2998751734",
-      "importedSourceSha256": "ed651779513e903a4c4bcb6c14d328d27408a9ae8963b8f7ed098f2998751734"
+      "importedSourceSha256": "ed651779513e903a4c4bcb6c14d328d27408a9ae8963b8f7ed098f2998751734",
+      "duplicateOf": "packages/ui/material-web/docs/01-md3-spec-foundations.md",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/reference/ui/packages/material-web/docs/01-md3-spec-foundations.md removed as a duplicate of packages/ui/material-web/docs/01-md3-spec-foundations.md"
     },
     {
       "source": "aphrody-ui/packages/material-web/docs/02-tokens-theming-web.fr.md",
@@ -104501,9 +104725,11 @@
       "size": 24434,
       "status": "clean",
       "sha256": "281b185ee8c6309cd6421c8d58747d7e28c0db0d813125a20d48181300e60f95",
-      "target": "docs/reference/ui/packages/material-web/docs/02-tokens-theming-web.fr.md",
+      "target": null,
       "importedSha256": "281b185ee8c6309cd6421c8d58747d7e28c0db0d813125a20d48181300e60f95",
-      "importedSourceSha256": "281b185ee8c6309cd6421c8d58747d7e28c0db0d813125a20d48181300e60f95"
+      "importedSourceSha256": "281b185ee8c6309cd6421c8d58747d7e28c0db0d813125a20d48181300e60f95",
+      "duplicateOf": "packages/ui/material-web/docs/02-tokens-theming-web.fr.md",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/reference/ui/packages/material-web/docs/02-tokens-theming-web.fr.md removed as a duplicate of packages/ui/material-web/docs/02-tokens-theming-web.fr.md"
     },
     {
       "source": "aphrody-ui/packages/material-web/docs/02-tokens-theming-web.md",
@@ -104512,9 +104738,11 @@
       "size": 24336,
       "status": "clean",
       "sha256": "65d76417cd344cd3e99d142cfaf92c7e6d1cbb1633086aabc3116107fecccd3b",
-      "target": "docs/reference/ui/packages/material-web/docs/02-tokens-theming-web.md",
+      "target": null,
       "importedSha256": "65d76417cd344cd3e99d142cfaf92c7e6d1cbb1633086aabc3116107fecccd3b",
-      "importedSourceSha256": "65d76417cd344cd3e99d142cfaf92c7e6d1cbb1633086aabc3116107fecccd3b"
+      "importedSourceSha256": "65d76417cd344cd3e99d142cfaf92c7e6d1cbb1633086aabc3116107fecccd3b",
+      "duplicateOf": "packages/ui/material-web/docs/02-tokens-theming-web.md",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/reference/ui/packages/material-web/docs/02-tokens-theming-web.md removed as a duplicate of packages/ui/material-web/docs/02-tokens-theming-web.md"
     },
     {
       "source": "aphrody-ui/packages/material-web/docs/03-material-web-google.fr.md",
@@ -104545,9 +104773,11 @@
       "size": 17754,
       "status": "clean",
       "sha256": "8898621da989c9b1f791c1244d970b1964b4b478575763fae3fd586b212c1deb",
-      "target": "docs/reference/ui/packages/material-web/docs/04-mui-react.fr.md",
+      "target": null,
       "importedSha256": "8898621da989c9b1f791c1244d970b1964b4b478575763fae3fd586b212c1deb",
-      "importedSourceSha256": "8898621da989c9b1f791c1244d970b1964b4b478575763fae3fd586b212c1deb"
+      "importedSourceSha256": "8898621da989c9b1f791c1244d970b1964b4b478575763fae3fd586b212c1deb",
+      "duplicateOf": "packages/ui/material-web/docs/04-mui-react.fr.md",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/reference/ui/packages/material-web/docs/04-mui-react.fr.md removed as a duplicate of packages/ui/material-web/docs/04-mui-react.fr.md"
     },
     {
       "source": "aphrody-ui/packages/material-web/docs/04-mui-react.md",
@@ -104556,9 +104786,11 @@
       "size": 17360,
       "status": "clean",
       "sha256": "749cceff4b23ccbf8c282b084240967f016eda0f3dcb22bee144e873ba128c69",
-      "target": "docs/reference/ui/packages/material-web/docs/04-mui-react.md",
+      "target": null,
       "importedSha256": "749cceff4b23ccbf8c282b084240967f016eda0f3dcb22bee144e873ba128c69",
-      "importedSourceSha256": "749cceff4b23ccbf8c282b084240967f016eda0f3dcb22bee144e873ba128c69"
+      "importedSourceSha256": "749cceff4b23ccbf8c282b084240967f016eda0f3dcb22bee144e873ba128c69",
+      "duplicateOf": "packages/ui/material-web/docs/04-mui-react.md",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/reference/ui/packages/material-web/docs/04-mui-react.md removed as a duplicate of packages/ui/material-web/docs/04-mui-react.md"
     },
     {
       "source": "aphrody-ui/packages/material-web/docs/05-tailwind-ecosystem-md3.fr.md",
@@ -104589,9 +104821,11 @@
       "size": 19911,
       "status": "clean",
       "sha256": "b51d29e92129d1ad287f89291cbc69279429bd4cbb809588bf3e4a65e2cb1dd4",
-      "target": "docs/reference/ui/packages/material-web/docs/06-landscape-recommendations.fr.md",
+      "target": null,
       "importedSha256": "b51d29e92129d1ad287f89291cbc69279429bd4cbb809588bf3e4a65e2cb1dd4",
-      "importedSourceSha256": "b51d29e92129d1ad287f89291cbc69279429bd4cbb809588bf3e4a65e2cb1dd4"
+      "importedSourceSha256": "b51d29e92129d1ad287f89291cbc69279429bd4cbb809588bf3e4a65e2cb1dd4",
+      "duplicateOf": "packages/ui/material-web/docs/06-landscape-recommendations.fr.md",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/reference/ui/packages/material-web/docs/06-landscape-recommendations.fr.md removed as a duplicate of packages/ui/material-web/docs/06-landscape-recommendations.fr.md"
     },
     {
       "source": "aphrody-ui/packages/material-web/docs/06-landscape-recommendations.md",
@@ -104600,9 +104834,11 @@
       "size": 19696,
       "status": "clean",
       "sha256": "fc4fe7dc9c497aa22d62890698bd955b7feeaf78a19f922ae46e90c526c67b12",
-      "target": "docs/reference/ui/packages/material-web/docs/06-landscape-recommendations.md",
+      "target": null,
       "importedSha256": "fc4fe7dc9c497aa22d62890698bd955b7feeaf78a19f922ae46e90c526c67b12",
-      "importedSourceSha256": "fc4fe7dc9c497aa22d62890698bd955b7feeaf78a19f922ae46e90c526c67b12"
+      "importedSourceSha256": "fc4fe7dc9c497aa22d62890698bd955b7feeaf78a19f922ae46e90c526c67b12",
+      "duplicateOf": "packages/ui/material-web/docs/06-landscape-recommendations.md",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/reference/ui/packages/material-web/docs/06-landscape-recommendations.md removed as a duplicate of packages/ui/material-web/docs/06-landscape-recommendations.md"
     },
     {
       "source": "aphrody-ui/packages/material-web/docs/DEPENDENCIES.md",
@@ -104611,9 +104847,11 @@
       "size": 2317,
       "status": "clean",
       "sha256": "88bcbcb5c249ab2e515d6ea3aa9b506a1881a5308ef5b83acddd62bd52e84609",
-      "target": "docs/reference/ui/packages/material-web/docs/DEPENDENCIES.md",
+      "target": null,
       "importedSha256": "88bcbcb5c249ab2e515d6ea3aa9b506a1881a5308ef5b83acddd62bd52e84609",
-      "importedSourceSha256": "88bcbcb5c249ab2e515d6ea3aa9b506a1881a5308ef5b83acddd62bd52e84609"
+      "importedSourceSha256": "88bcbcb5c249ab2e515d6ea3aa9b506a1881a5308ef5b83acddd62bd52e84609",
+      "duplicateOf": "packages/ui/material-web/docs/DEPENDENCIES.md",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/reference/ui/packages/material-web/docs/DEPENDENCIES.md removed as a duplicate of packages/ui/material-web/docs/DEPENDENCIES.md"
     },
     {
       "source": "aphrody-ui/packages/material-web/docs/STACK.md",
@@ -104622,9 +104860,11 @@
       "size": 10258,
       "status": "clean",
       "sha256": "799137e69f97c716cdd17b91a3ac302d592ddfcdc4b21a6f9d73afad95fd0602",
-      "target": "docs/reference/ui/packages/material-web/docs/STACK.md",
+      "target": null,
       "importedSha256": "799137e69f97c716cdd17b91a3ac302d592ddfcdc4b21a6f9d73afad95fd0602",
-      "importedSourceSha256": "799137e69f97c716cdd17b91a3ac302d592ddfcdc4b21a6f9d73afad95fd0602"
+      "importedSourceSha256": "799137e69f97c716cdd17b91a3ac302d592ddfcdc4b21a6f9d73afad95fd0602",
+      "duplicateOf": "packages/ui/material-web/docs/STACK.md",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/reference/ui/packages/material-web/docs/STACK.md removed as a duplicate of packages/ui/material-web/docs/STACK.md"
     },
     {
       "source": "aphrody-ui/packages/material-web/docs/_config.yml",
@@ -104642,9 +104882,11 @@
       "size": 5017,
       "status": "clean",
       "sha256": "74e9cff4d53fc43301bb46f212d968bff8321d3cf5173fa73907b3f220946da3",
-      "target": "docs/reference/ui/packages/material-web/docs/aphrody-bun/BEST_PRACTICES.md",
+      "target": null,
       "importedSha256": "74e9cff4d53fc43301bb46f212d968bff8321d3cf5173fa73907b3f220946da3",
-      "importedSourceSha256": "74e9cff4d53fc43301bb46f212d968bff8321d3cf5173fa73907b3f220946da3"
+      "importedSourceSha256": "74e9cff4d53fc43301bb46f212d968bff8321d3cf5173fa73907b3f220946da3",
+      "duplicateOf": "packages/ui/material-web/docs/aphrody-bun/BEST_PRACTICES.md",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/reference/ui/packages/material-web/docs/aphrody-bun/BEST_PRACTICES.md removed as a duplicate of packages/ui/material-web/docs/aphrody-bun/BEST_PRACTICES.md"
     },
     {
       "source": "aphrody-ui/packages/material-web/docs/aphrody-bun/INSPIRATIONS.md",
@@ -104653,9 +104895,11 @@
       "size": 3233,
       "status": "clean",
       "sha256": "0e16e9ede024ad7ecea59028ec6e1a219b3e03b8cf8baf0fd810244e7fac3b1f",
-      "target": "docs/reference/ui/packages/material-web/docs/aphrody-bun/INSPIRATIONS.md",
+      "target": null,
       "importedSha256": "0e16e9ede024ad7ecea59028ec6e1a219b3e03b8cf8baf0fd810244e7fac3b1f",
-      "importedSourceSha256": "0e16e9ede024ad7ecea59028ec6e1a219b3e03b8cf8baf0fd810244e7fac3b1f"
+      "importedSourceSha256": "0e16e9ede024ad7ecea59028ec6e1a219b3e03b8cf8baf0fd810244e7fac3b1f",
+      "duplicateOf": "packages/ui/material-web/docs/aphrody-bun/INSPIRATIONS.md",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/reference/ui/packages/material-web/docs/aphrody-bun/INSPIRATIONS.md removed as a duplicate of packages/ui/material-web/docs/aphrody-bun/INSPIRATIONS.md"
     },
     {
       "source": "aphrody-ui/packages/material-web/docs/aphrody-bun/PLAN.md",
@@ -104686,9 +104930,11 @@
       "size": 5614,
       "status": "clean",
       "sha256": "68d000b7027ee339e98b2113591c4619a5b2bc0fcaabd5514a7471097772c3df",
-      "target": "docs/reference/ui/packages/material-web/docs/aphrody-bun/REFERENCES.md",
+      "target": null,
       "importedSha256": "68d000b7027ee339e98b2113591c4619a5b2bc0fcaabd5514a7471097772c3df",
-      "importedSourceSha256": "68d000b7027ee339e98b2113591c4619a5b2bc0fcaabd5514a7471097772c3df"
+      "importedSourceSha256": "68d000b7027ee339e98b2113591c4619a5b2bc0fcaabd5514a7471097772c3df",
+      "duplicateOf": "packages/ui/material-web/docs/aphrody-bun/REFERENCES.md",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/reference/ui/packages/material-web/docs/aphrody-bun/REFERENCES.md removed as a duplicate of packages/ui/material-web/docs/aphrody-bun/REFERENCES.md"
     },
     {
       "source": "aphrody-ui/packages/material-web/docs/aphrody-bun/RESOURCES.md",
@@ -104750,9 +104996,11 @@
       "size": 7117,
       "status": "clean",
       "sha256": "70cbec50a8b9aec92f09dafdc9d95973fb7c17b5c5c0078e88a5d28cd4a57c4f",
-      "target": "docs/architecture/ui/packages/material-web/docs/design/aphrody-m3-tokens.md",
+      "target": null,
       "importedSha256": "70cbec50a8b9aec92f09dafdc9d95973fb7c17b5c5c0078e88a5d28cd4a57c4f",
-      "importedSourceSha256": "70cbec50a8b9aec92f09dafdc9d95973fb7c17b5c5c0078e88a5d28cd4a57c4f"
+      "importedSourceSha256": "70cbec50a8b9aec92f09dafdc9d95973fb7c17b5c5c0078e88a5d28cd4a57c4f",
+      "duplicateOf": "packages/ui/material-web/docs/design/aphrody-m3-tokens.md",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/architecture/ui/packages/material-web/docs/design/aphrody-m3-tokens.md removed as a duplicate of packages/ui/material-web/docs/design/aphrody-m3-tokens.md"
     },
     {
       "source": "aphrody-ui/packages/material-web/docs/design/gemini/README.md",
@@ -104783,8 +105031,10 @@
       "size": 13919,
       "status": "clean",
       "sha256": "e95029de5d9b99c1e0f559b888307dd5c8207de9fc9e3a93a6b41589c6c90c52",
-      "target": "docs/architecture/ui/packages/material-web/docs/design/google-design-llms.txt",
-      "importedSourceSha256": "e95029de5d9b99c1e0f559b888307dd5c8207de9fc9e3a93a6b41589c6c90c52"
+      "target": null,
+      "importedSourceSha256": "e95029de5d9b99c1e0f559b888307dd5c8207de9fc9e3a93a6b41589c6c90c52",
+      "duplicateOf": "packages/ui/material-web/docs/design/google-design-llms.txt",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/architecture/ui/packages/material-web/docs/design/google-design-llms.txt removed as a duplicate of packages/ui/material-web/docs/design/google-design-llms.txt"
     },
     {
       "source": "aphrody-ui/packages/material-web/docs/design/google/ANALYSE.md",
@@ -104793,9 +105043,11 @@
       "size": 16790,
       "status": "clean",
       "sha256": "c5775dd6f9a798e5d263c0d90617121f27b2d4ff8abf46ae6210d4f93d92acd3",
-      "target": "docs/architecture/ui/packages/material-web/docs/design/google/ANALYSE.md",
+      "target": null,
       "importedSha256": "c5775dd6f9a798e5d263c0d90617121f27b2d4ff8abf46ae6210d4f93d92acd3",
-      "importedSourceSha256": "c5775dd6f9a798e5d263c0d90617121f27b2d4ff8abf46ae6210d4f93d92acd3"
+      "importedSourceSha256": "c5775dd6f9a798e5d263c0d90617121f27b2d4ff8abf46ae6210d4f93d92acd3",
+      "duplicateOf": "packages/ui/material-web/docs/design/google/ANALYSE.md",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/architecture/ui/packages/material-web/docs/design/google/ANALYSE.md removed as a duplicate of packages/ui/material-web/docs/design/google/ANALYSE.md"
     },
     {
       "source": "aphrody-ui/packages/material-web/docs/design/google/ai_mode.png",
@@ -104840,9 +105092,11 @@
       "size": 15541,
       "status": "clean",
       "sha256": "6f6a133041ae76e561ce08694c455dd121dfe835a1e6f5c2d70ad1c65cef48e7",
-      "target": "docs/architecture/ui/packages/material-web/docs/design/m3-components-spec.md",
+      "target": null,
       "importedSha256": "6f6a133041ae76e561ce08694c455dd121dfe835a1e6f5c2d70ad1c65cef48e7",
-      "importedSourceSha256": "6f6a133041ae76e561ce08694c455dd121dfe835a1e6f5c2d70ad1c65cef48e7"
+      "importedSourceSha256": "6f6a133041ae76e561ce08694c455dd121dfe835a1e6f5c2d70ad1c65cef48e7",
+      "duplicateOf": "packages/ui/material-web/docs/design/m3-components-spec.md",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/architecture/ui/packages/material-web/docs/design/m3-components-spec.md removed as a duplicate of packages/ui/material-web/docs/design/m3-components-spec.md"
     },
     {
       "source": "aphrody-ui/packages/material-web/docs/design/m3-components.md",
@@ -104851,9 +105105,11 @@
       "size": 28489,
       "status": "clean",
       "sha256": "00b60b9f95659e8acb6097dee7817a8aa92e152d80f5aad77e75315b5a0048b6",
-      "target": "docs/architecture/ui/packages/material-web/docs/design/m3-components.md",
+      "target": null,
       "importedSha256": "00b60b9f95659e8acb6097dee7817a8aa92e152d80f5aad77e75315b5a0048b6",
-      "importedSourceSha256": "00b60b9f95659e8acb6097dee7817a8aa92e152d80f5aad77e75315b5a0048b6"
+      "importedSourceSha256": "00b60b9f95659e8acb6097dee7817a8aa92e152d80f5aad77e75315b5a0048b6",
+      "duplicateOf": "packages/ui/material-web/docs/design/m3-components.md",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/architecture/ui/packages/material-web/docs/design/m3-components.md removed as a duplicate of packages/ui/material-web/docs/design/m3-components.md"
     },
     {
       "source": "aphrody-ui/packages/material-web/docs/design/m3-design-tokens.md",
@@ -104895,9 +105151,11 @@
       "size": 11716,
       "status": "clean",
       "sha256": "ef0a48db26eff31b780132d45eb2a287bbf73817d8e13a02113986f4e33e78f7",
-      "target": "docs/architecture/ui/packages/material-web/docs/design/m3-layout.md",
+      "target": null,
       "importedSha256": "ef0a48db26eff31b780132d45eb2a287bbf73817d8e13a02113986f4e33e78f7",
-      "importedSourceSha256": "ef0a48db26eff31b780132d45eb2a287bbf73817d8e13a02113986f4e33e78f7"
+      "importedSourceSha256": "ef0a48db26eff31b780132d45eb2a287bbf73817d8e13a02113986f4e33e78f7",
+      "duplicateOf": "packages/ui/material-web/docs/design/m3-layout.md",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/architecture/ui/packages/material-web/docs/design/m3-layout.md removed as a duplicate of packages/ui/material-web/docs/design/m3-layout.md"
     },
     {
       "source": "aphrody-ui/packages/material-web/docs/design/m3-material-io-llms.txt",
@@ -104906,8 +105164,10 @@
       "size": 22373,
       "status": "clean",
       "sha256": "b2fafebc849f11214086e6b1d68de9db1f430bc0ccc10f538d711f9be2f62f21",
-      "target": "docs/architecture/ui/packages/material-web/docs/design/m3-material-io-llms.txt",
-      "importedSourceSha256": "b2fafebc849f11214086e6b1d68de9db1f430bc0ccc10f538d711f9be2f62f21"
+      "target": null,
+      "importedSourceSha256": "b2fafebc849f11214086e6b1d68de9db1f430bc0ccc10f538d711f9be2f62f21",
+      "duplicateOf": "packages/ui/material-web/docs/design/m3-material-io-llms.txt",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/architecture/ui/packages/material-web/docs/design/m3-material-io-llms.txt removed as a duplicate of packages/ui/material-web/docs/design/m3-material-io-llms.txt"
     },
     {
       "source": "aphrody-ui/packages/material-web/docs/design/m3-motion.md",
@@ -104960,9 +105220,11 @@
       "size": 1547,
       "status": "clean",
       "sha256": "15436be001402daabea00129dd9a12823b76b944428d10b25d64bc1b35821221",
-      "target": "docs/architecture/ui/packages/material-web/docs/design/references/reinfurt-true-not-new.md",
+      "target": null,
       "importedSha256": "15436be001402daabea00129dd9a12823b76b944428d10b25d64bc1b35821221",
-      "importedSourceSha256": "15436be001402daabea00129dd9a12823b76b944428d10b25d64bc1b35821221"
+      "importedSourceSha256": "15436be001402daabea00129dd9a12823b76b944428d10b25d64bc1b35821221",
+      "duplicateOf": "packages/ui/material-web/docs/design/references/reinfurt-true-not-new.md",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/architecture/ui/packages/material-web/docs/design/references/reinfurt-true-not-new.md removed as a duplicate of packages/ui/material-web/docs/design/references/reinfurt-true-not-new.md"
     },
     {
       "source": "aphrody-ui/packages/material-web/docs/design/references/transparent-screens-glimmer.md",
@@ -104982,9 +105244,11 @@
       "size": 4931,
       "status": "clean",
       "sha256": "08a10a7979931860b8216c12bcffb6fd34cb8ba3e329277927a5560090df63a1",
-      "target": "docs/reference/ui/packages/material-web/docs/index.md",
+      "target": null,
       "importedSha256": "08a10a7979931860b8216c12bcffb6fd34cb8ba3e329277927a5560090df63a1",
-      "importedSourceSha256": "08a10a7979931860b8216c12bcffb6fd34cb8ba3e329277927a5560090df63a1"
+      "importedSourceSha256": "08a10a7979931860b8216c12bcffb6fd34cb8ba3e329277927a5560090df63a1",
+      "duplicateOf": "packages/ui/material-web/docs/index.md",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/reference/ui/packages/material-web/docs/index.md removed as a duplicate of packages/ui/material-web/docs/index.md"
     },
     {
       "source": "aphrody-ui/packages/material-web/docs/jsx/analysis.md",
@@ -104993,9 +105257,11 @@
       "size": 16910,
       "status": "clean",
       "sha256": "d9ab0065258c56d76bd3b843058b0b3752dbd51538519a5e1420104f67a59263",
-      "target": "docs/reference/ui/packages/material-web/docs/jsx/analysis.md",
+      "target": null,
       "importedSha256": "d9ab0065258c56d76bd3b843058b0b3752dbd51538519a5e1420104f67a59263",
-      "importedSourceSha256": "d9ab0065258c56d76bd3b843058b0b3752dbd51538519a5e1420104f67a59263"
+      "importedSourceSha256": "d9ab0065258c56d76bd3b843058b0b3752dbd51538519a5e1420104f67a59263",
+      "duplicateOf": "packages/ui/material-web/docs/jsx/analysis.md",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/reference/ui/packages/material-web/docs/jsx/analysis.md removed as a duplicate of packages/ui/material-web/docs/jsx/analysis.md"
     },
     {
       "source": "aphrody-ui/packages/material-web/docs/lit-best-practices.fr.md",
@@ -105004,9 +105270,11 @@
       "size": 3141,
       "status": "clean",
       "sha256": "203a6a22e0ed7ff9b71af3979c6b6b4f0bf75e765cce5c8f69f0d61669b1cfe3",
-      "target": "docs/reference/ui/packages/material-web/docs/lit-best-practices.fr.md",
+      "target": null,
       "importedSha256": "203a6a22e0ed7ff9b71af3979c6b6b4f0bf75e765cce5c8f69f0d61669b1cfe3",
-      "importedSourceSha256": "203a6a22e0ed7ff9b71af3979c6b6b4f0bf75e765cce5c8f69f0d61669b1cfe3"
+      "importedSourceSha256": "203a6a22e0ed7ff9b71af3979c6b6b4f0bf75e765cce5c8f69f0d61669b1cfe3",
+      "duplicateOf": "packages/ui/material-web/docs/lit-best-practices.fr.md",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/reference/ui/packages/material-web/docs/lit-best-practices.fr.md removed as a duplicate of packages/ui/material-web/docs/lit-best-practices.fr.md"
     },
     {
       "source": "aphrody-ui/packages/material-web/docs/lit-best-practices.md",
@@ -105015,9 +105283,11 @@
       "size": 3092,
       "status": "clean",
       "sha256": "4e062e70ac1c5207ec398c4039ab17c38bf15c5813c692cc64742c8bf1522462",
-      "target": "docs/reference/ui/packages/material-web/docs/lit-best-practices.md",
+      "target": null,
       "importedSha256": "4e062e70ac1c5207ec398c4039ab17c38bf15c5813c692cc64742c8bf1522462",
-      "importedSourceSha256": "4e062e70ac1c5207ec398c4039ab17c38bf15c5813c692cc64742c8bf1522462"
+      "importedSourceSha256": "4e062e70ac1c5207ec398c4039ab17c38bf15c5813c692cc64742c8bf1522462",
+      "duplicateOf": "packages/ui/material-web/docs/lit-best-practices.md",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/reference/ui/packages/material-web/docs/lit-best-practices.md removed as a duplicate of packages/ui/material-web/docs/lit-best-practices.md"
     },
     {
       "source": "aphrody-ui/packages/material-web/docs/logo.png",
@@ -105046,9 +105316,11 @@
       "size": 17583,
       "status": "clean",
       "sha256": "e23af4f467634de922672acde8efae5fe8c5636345411fe1a9a56e3d3e4e5dc5",
-      "target": "docs/reference/ui/packages/material-web/docs/strategy/m3-expressive-evolution.md",
+      "target": null,
       "importedSha256": "e23af4f467634de922672acde8efae5fe8c5636345411fe1a9a56e3d3e4e5dc5",
-      "importedSourceSha256": "e23af4f467634de922672acde8efae5fe8c5636345411fe1a9a56e3d3e4e5dc5"
+      "importedSourceSha256": "e23af4f467634de922672acde8efae5fe8c5636345411fe1a9a56e3d3e4e5dc5",
+      "duplicateOf": "packages/ui/material-web/docs/strategy/m3-expressive-evolution.md",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/reference/ui/packages/material-web/docs/strategy/m3-expressive-evolution.md removed as a duplicate of packages/ui/material-web/docs/strategy/m3-expressive-evolution.md"
     },
     {
       "source": "aphrody-ui/packages/material-web/docs/strategy/mui-fork-analysis.md",
@@ -105057,9 +105329,11 @@
       "size": 24252,
       "status": "clean",
       "sha256": "725600ba822b7ef18c3532215fe20d7662c587cacf817d87046ebc317bd111f3",
-      "target": "docs/reference/ui/packages/material-web/docs/strategy/mui-fork-analysis.md",
+      "target": null,
       "importedSha256": "725600ba822b7ef18c3532215fe20d7662c587cacf817d87046ebc317bd111f3",
-      "importedSourceSha256": "725600ba822b7ef18c3532215fe20d7662c587cacf817d87046ebc317bd111f3"
+      "importedSourceSha256": "725600ba822b7ef18c3532215fe20d7662c587cacf817d87046ebc317bd111f3",
+      "duplicateOf": "packages/ui/material-web/docs/strategy/mui-fork-analysis.md",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/reference/ui/packages/material-web/docs/strategy/mui-fork-analysis.md removed as a duplicate of packages/ui/material-web/docs/strategy/mui-fork-analysis.md"
     },
     {
       "source": "aphrody-ui/packages/material-web/docs/strategy/rust-react-integration-crates.md",
@@ -105068,9 +105342,11 @@
       "size": 5637,
       "status": "clean",
       "sha256": "d052233c74185a721f4b8c5a0000e241b0909ddd7d0f43e60031883ce29696da",
-      "target": "docs/reference/ui/packages/material-web/docs/strategy/rust-react-integration-crates.md",
+      "target": null,
       "importedSha256": "d052233c74185a721f4b8c5a0000e241b0909ddd7d0f43e60031883ce29696da",
-      "importedSourceSha256": "d052233c74185a721f4b8c5a0000e241b0909ddd7d0f43e60031883ce29696da"
+      "importedSourceSha256": "d052233c74185a721f4b8c5a0000e241b0909ddd7d0f43e60031883ce29696da",
+      "duplicateOf": "packages/ui/material-web/docs/strategy/rust-react-integration-crates.md",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/reference/ui/packages/material-web/docs/strategy/rust-react-integration-crates.md removed as a duplicate of packages/ui/material-web/docs/strategy/rust-react-integration-crates.md"
     },
     {
       "source": "aphrody-ui/packages/material-web/docs/tauri-2.0.md",
@@ -105079,9 +105355,11 @@
       "size": 5856,
       "status": "clean",
       "sha256": "696647b45e590332fbc2722da835ef694b019e6001ae0ab76b713ef47bf0d271",
-      "target": "docs/reference/ui/packages/material-web/docs/tauri-2.0.md",
+      "target": null,
       "importedSha256": "696647b45e590332fbc2722da835ef694b019e6001ae0ab76b713ef47bf0d271",
-      "importedSourceSha256": "696647b45e590332fbc2722da835ef694b019e6001ae0ab76b713ef47bf0d271"
+      "importedSourceSha256": "696647b45e590332fbc2722da835ef694b019e6001ae0ab76b713ef47bf0d271",
+      "duplicateOf": "packages/ui/material-web/docs/tauri-2.0.md",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/reference/ui/packages/material-web/docs/tauri-2.0.md removed as a duplicate of packages/ui/material-web/docs/tauri-2.0.md"
     },
     {
       "source": "aphrody-ui/packages/material-web/docs/tauri/01-prerequisites.md",
@@ -105966,9 +106244,11 @@
       "size": 224,
       "status": "clean",
       "sha256": "47f5f6d7fc8203c9d6ecc4bf5a0b104147d2f5aabf4839fdc4152fa595d39c99",
-      "target": "docs/products/ui/packages/material-web/internal/README.md",
+      "target": null,
       "importedSha256": "47f5f6d7fc8203c9d6ecc4bf5a0b104147d2f5aabf4839fdc4152fa595d39c99",
-      "importedSourceSha256": "47f5f6d7fc8203c9d6ecc4bf5a0b104147d2f5aabf4839fdc4152fa595d39c99"
+      "importedSourceSha256": "47f5f6d7fc8203c9d6ecc4bf5a0b104147d2f5aabf4839fdc4152fa595d39c99",
+      "duplicateOf": "packages/ui/material-web/internal/README.md",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/products/ui/packages/material-web/internal/README.md removed as a duplicate of packages/ui/material-web/internal/README.md"
     },
     {
       "source": "aphrody-ui/packages/material-web/internal/aria/aria.ts",
@@ -106076,9 +106356,11 @@
       "size": 192,
       "status": "clean",
       "sha256": "397ae497e7c35079ed560169493dae5282744f0b4d58d852957c9502f297759c",
-      "target": "docs/products/ui/packages/material-web/labs/README.md",
+      "target": null,
       "importedSha256": "397ae497e7c35079ed560169493dae5282744f0b4d58d852957c9502f297759c",
-      "importedSourceSha256": "397ae497e7c35079ed560169493dae5282744f0b4d58d852957c9502f297759c"
+      "importedSourceSha256": "397ae497e7c35079ed560169493dae5282744f0b4d58d852957c9502f297759c",
+      "duplicateOf": "packages/ui/material-web/labs/README.md",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/products/ui/packages/material-web/labs/README.md removed as a duplicate of packages/ui/material-web/labs/README.md"
     },
     {
       "source": "aphrody-ui/packages/material-web/labs/badge/_badge.scss",
@@ -107914,9 +108196,11 @@
       "size": 17200,
       "status": "clean",
       "sha256": "c64b6ab41ba2a1bf3123458a4c5827f3511a92b5ce6cb01e57effdbdd57f53fb",
-      "target": "docs/reference/ui/packages/material-web/migration/00-CONVENTIONS.md",
+      "target": null,
       "importedSha256": "c64b6ab41ba2a1bf3123458a4c5827f3511a92b5ce6cb01e57effdbdd57f53fb",
-      "importedSourceSha256": "c64b6ab41ba2a1bf3123458a4c5827f3511a92b5ce6cb01e57effdbdd57f53fb"
+      "importedSourceSha256": "c64b6ab41ba2a1bf3123458a4c5827f3511a92b5ce6cb01e57effdbdd57f53fb",
+      "duplicateOf": "packages/ui/material-web/migration/00-CONVENTIONS.md",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/reference/ui/packages/material-web/migration/00-CONVENTIONS.md removed as a duplicate of packages/ui/material-web/migration/00-CONVENTIONS.md"
     },
     {
       "source": "aphrody-ui/packages/material-web/migration/01-component-mapping.md",
@@ -107925,9 +108209,11 @@
       "size": 86441,
       "status": "clean",
       "sha256": "6042f0dfb2a764b658c2cd67c87802c5b15d656ea444750fbeb367a687c52a95",
-      "target": "docs/reference/ui/packages/material-web/migration/01-component-mapping.md",
+      "target": null,
       "importedSha256": "6042f0dfb2a764b658c2cd67c87802c5b15d656ea444750fbeb367a687c52a95",
-      "importedSourceSha256": "6042f0dfb2a764b658c2cd67c87802c5b15d656ea444750fbeb367a687c52a95"
+      "importedSourceSha256": "6042f0dfb2a764b658c2cd67c87802c5b15d656ea444750fbeb367a687c52a95",
+      "duplicateOf": "packages/ui/material-web/migration/01-component-mapping.md",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/reference/ui/packages/material-web/migration/01-component-mapping.md removed as a duplicate of packages/ui/material-web/migration/01-component-mapping.md"
     },
     {
       "source": "aphrody-ui/packages/material-web/migration/02-theme-token-migration.md",
@@ -107936,9 +108222,11 @@
       "size": 23445,
       "status": "clean",
       "sha256": "dd4ba455887a329266d6070dab07c2d45f74fbbd3fa0dd39830943735ccea33e",
-      "target": "docs/reference/ui/packages/material-web/migration/02-theme-token-migration.md",
+      "target": null,
       "importedSha256": "dd4ba455887a329266d6070dab07c2d45f74fbbd3fa0dd39830943735ccea33e",
-      "importedSourceSha256": "dd4ba455887a329266d6070dab07c2d45f74fbbd3fa0dd39830943735ccea33e"
+      "importedSourceSha256": "dd4ba455887a329266d6070dab07c2d45f74fbbd3fa0dd39830943735ccea33e",
+      "duplicateOf": "packages/ui/material-web/migration/02-theme-token-migration.md",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/reference/ui/packages/material-web/migration/02-theme-token-migration.md removed as a duplicate of packages/ui/material-web/migration/02-theme-token-migration.md"
     },
     {
       "source": "aphrody-ui/packages/material-web/migration/03-react-integration.md",
@@ -107947,9 +108235,11 @@
       "size": 35962,
       "status": "clean",
       "sha256": "415db1e404ac87b8c1516ebbc7c74810ef209187081d7634ca836c2a9a1ddd67",
-      "target": "docs/reference/ui/packages/material-web/migration/03-react-integration.md",
+      "target": null,
       "importedSha256": "415db1e404ac87b8c1516ebbc7c74810ef209187081d7634ca836c2a9a1ddd67",
-      "importedSourceSha256": "415db1e404ac87b8c1516ebbc7c74810ef209187081d7634ca836c2a9a1ddd67"
+      "importedSourceSha256": "415db1e404ac87b8c1516ebbc7c74810ef209187081d7634ca836c2a9a1ddd67",
+      "duplicateOf": "packages/ui/material-web/migration/03-react-integration.md",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/reference/ui/packages/material-web/migration/03-react-integration.md removed as a duplicate of packages/ui/material-web/migration/03-react-integration.md"
     },
     {
       "source": "aphrody-ui/packages/material-web/migration/04-migration-playbook.md",
@@ -107958,9 +108248,11 @@
       "size": 40789,
       "status": "clean",
       "sha256": "276b203243cf68b76f612ae637d2bd223a66eb60c1625d07ae850f5b6f99c47f",
-      "target": "docs/reference/ui/packages/material-web/migration/04-migration-playbook.md",
+      "target": null,
       "importedSha256": "276b203243cf68b76f612ae637d2bd223a66eb60c1625d07ae850f5b6f99c47f",
-      "importedSourceSha256": "276b203243cf68b76f612ae637d2bd223a66eb60c1625d07ae850f5b6f99c47f"
+      "importedSourceSha256": "276b203243cf68b76f612ae637d2bd223a66eb60c1625d07ae850f5b6f99c47f",
+      "duplicateOf": "packages/ui/material-web/migration/04-migration-playbook.md",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/reference/ui/packages/material-web/migration/04-migration-playbook.md removed as a duplicate of packages/ui/material-web/migration/04-migration-playbook.md"
     },
     {
       "source": "aphrody-ui/packages/material-web/migration/05-gap-analysis.md",
@@ -107969,9 +108261,11 @@
       "size": 33107,
       "status": "clean",
       "sha256": "d501e86da09aa8617d2d119d73cd3523feae8eb47f9a4f9d48c5b4f77a4fd224",
-      "target": "docs/reference/ui/packages/material-web/migration/05-gap-analysis.md",
+      "target": null,
       "importedSha256": "d501e86da09aa8617d2d119d73cd3523feae8eb47f9a4f9d48c5b4f77a4fd224",
-      "importedSourceSha256": "d501e86da09aa8617d2d119d73cd3523feae8eb47f9a4f9d48c5b4f77a4fd224"
+      "importedSourceSha256": "d501e86da09aa8617d2d119d73cd3523feae8eb47f9a4f9d48c5b4f77a4fd224",
+      "duplicateOf": "packages/ui/material-web/migration/05-gap-analysis.md",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/reference/ui/packages/material-web/migration/05-gap-analysis.md removed as a duplicate of packages/ui/material-web/migration/05-gap-analysis.md"
     },
     {
       "source": "aphrody-ui/packages/material-web/migration/06-tailwind-material-web.md",
@@ -107980,9 +108274,11 @@
       "size": 44329,
       "status": "clean",
       "sha256": "1fe265aa3d122ebb2211cc32dadd6c78f9e103c460beb5f067f8acf81ee0a59e",
-      "target": "docs/reference/ui/packages/material-web/migration/06-tailwind-material-web.md",
+      "target": null,
       "importedSha256": "1fe265aa3d122ebb2211cc32dadd6c78f9e103c460beb5f067f8acf81ee0a59e",
-      "importedSourceSha256": "1fe265aa3d122ebb2211cc32dadd6c78f9e103c460beb5f067f8acf81ee0a59e"
+      "importedSourceSha256": "1fe265aa3d122ebb2211cc32dadd6c78f9e103c460beb5f067f8acf81ee0a59e",
+      "duplicateOf": "packages/ui/material-web/migration/06-tailwind-material-web.md",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/reference/ui/packages/material-web/migration/06-tailwind-material-web.md removed as a duplicate of packages/ui/material-web/migration/06-tailwind-material-web.md"
     },
     {
       "source": "aphrody-ui/packages/material-web/migration/07-coverage-mui.md",
@@ -107991,9 +108287,11 @@
       "size": 25220,
       "status": "clean",
       "sha256": "229160eddd689dd8afc94a18a5a55af898c1b0878e99bdff3fcfa6fed0e0d988",
-      "target": "docs/reference/ui/packages/material-web/migration/07-coverage-mui.md",
+      "target": null,
       "importedSha256": "229160eddd689dd8afc94a18a5a55af898c1b0878e99bdff3fcfa6fed0e0d988",
-      "importedSourceSha256": "229160eddd689dd8afc94a18a5a55af898c1b0878e99bdff3fcfa6fed0e0d988"
+      "importedSourceSha256": "229160eddd689dd8afc94a18a5a55af898c1b0878e99bdff3fcfa6fed0e0d988",
+      "duplicateOf": "packages/ui/material-web/migration/07-coverage-mui.md",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/reference/ui/packages/material-web/migration/07-coverage-mui.md removed as a duplicate of packages/ui/material-web/migration/07-coverage-mui.md"
     },
     {
       "source": "aphrody-ui/packages/material-web/migration/08-coverage-mui-x.md",
@@ -108002,9 +108300,11 @@
       "size": 29823,
       "status": "clean",
       "sha256": "d4584514b56b8d99bae71867c0e98381e964e60f20c978f9be6ec204bf48c0b4",
-      "target": "docs/reference/ui/packages/material-web/migration/08-coverage-mui-x.md",
+      "target": null,
       "importedSha256": "d4584514b56b8d99bae71867c0e98381e964e60f20c978f9be6ec204bf48c0b4",
-      "importedSourceSha256": "d4584514b56b8d99bae71867c0e98381e964e60f20c978f9be6ec204bf48c0b4"
+      "importedSourceSha256": "d4584514b56b8d99bae71867c0e98381e964e60f20c978f9be6ec204bf48c0b4",
+      "duplicateOf": "packages/ui/material-web/migration/08-coverage-mui-x.md",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/reference/ui/packages/material-web/migration/08-coverage-mui-x.md removed as a duplicate of packages/ui/material-web/migration/08-coverage-mui-x.md"
     },
     {
       "source": "aphrody-ui/packages/material-web/migration/09-coverage-tailwind.md",
@@ -108013,9 +108313,11 @@
       "size": 35165,
       "status": "clean",
       "sha256": "19add99a8d92d60c34c64f10cfb293aeda74097aa8d82c0759e73e9090488a03",
-      "target": "docs/reference/ui/packages/material-web/migration/09-coverage-tailwind.md",
+      "target": null,
       "importedSha256": "19add99a8d92d60c34c64f10cfb293aeda74097aa8d82c0759e73e9090488a03",
-      "importedSourceSha256": "19add99a8d92d60c34c64f10cfb293aeda74097aa8d82c0759e73e9090488a03"
+      "importedSourceSha256": "19add99a8d92d60c34c64f10cfb293aeda74097aa8d82c0759e73e9090488a03",
+      "duplicateOf": "packages/ui/material-web/migration/09-coverage-tailwind.md",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/reference/ui/packages/material-web/migration/09-coverage-tailwind.md removed as a duplicate of packages/ui/material-web/migration/09-coverage-tailwind.md"
     },
     {
       "source": "aphrody-ui/packages/material-web/migration/11-material-symbols.md",
@@ -108024,9 +108326,11 @@
       "size": 8269,
       "status": "clean",
       "sha256": "5cb64be18cc4a368cf2fee4bba1de6425fc21e649d37eb209f93e2b1d2ca4a06",
-      "target": "docs/reference/ui/packages/material-web/migration/11-material-symbols.md",
+      "target": null,
       "importedSha256": "5cb64be18cc4a368cf2fee4bba1de6425fc21e649d37eb209f93e2b1d2ca4a06",
-      "importedSourceSha256": "5cb64be18cc4a368cf2fee4bba1de6425fc21e649d37eb209f93e2b1d2ca4a06"
+      "importedSourceSha256": "5cb64be18cc4a368cf2fee4bba1de6425fc21e649d37eb209f93e2b1d2ca4a06",
+      "duplicateOf": "packages/ui/material-web/migration/11-material-symbols.md",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/reference/ui/packages/material-web/migration/11-material-symbols.md removed as a duplicate of packages/ui/material-web/migration/11-material-symbols.md"
     },
     {
       "source": "aphrody-ui/packages/material-web/migration/README.md",
@@ -108322,9 +108626,11 @@
       "size": 17985,
       "status": "clean",
       "sha256": "937e1d8ffd4a126c3316e56f218d3d69ef284160edaf4142b9ac4454ed3bc338",
-      "target": "docs/reference/ui/packages/material-web/migration/examples/MIGRATION-NOTES.md",
+      "target": null,
       "importedSha256": "937e1d8ffd4a126c3316e56f218d3d69ef284160edaf4142b9ac4454ed3bc338",
-      "importedSourceSha256": "937e1d8ffd4a126c3316e56f218d3d69ef284160edaf4142b9ac4454ed3bc338"
+      "importedSourceSha256": "937e1d8ffd4a126c3316e56f218d3d69ef284160edaf4142b9ac4454ed3bc338",
+      "duplicateOf": "packages/ui/material-web/migration/examples/MIGRATION-NOTES.md",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/reference/ui/packages/material-web/migration/examples/MIGRATION-NOTES.md removed as a duplicate of packages/ui/material-web/migration/examples/MIGRATION-NOTES.md"
     },
     {
       "source": "aphrody-ui/packages/material-web/migration/examples/README.md",
@@ -108389,8 +108695,10 @@
       "size": 1756,
       "status": "clean",
       "sha256": "4e3b9206d99922bcef7214fa1e1a1ad6b20cadcc28ec8507e4a8be8a49702126",
-      "target": "docs/reference/ui/packages/material-web/migration/scripts/md-elements.txt",
-      "importedSourceSha256": "4e3b9206d99922bcef7214fa1e1a1ad6b20cadcc28ec8507e4a8be8a49702126"
+      "target": null,
+      "importedSourceSha256": "4e3b9206d99922bcef7214fa1e1a1ad6b20cadcc28ec8507e4a8be8a49702126",
+      "duplicateOf": "packages/ui/material-web/migration/scripts/md-elements.txt",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/reference/ui/packages/material-web/migration/scripts/md-elements.txt removed as a duplicate of packages/ui/material-web/migration/scripts/md-elements.txt"
     },
     {
       "source": "aphrody-ui/packages/material-web/migration/scripts/theme-to-tokens.ts",
@@ -109446,9 +109754,11 @@
       "size": 1248,
       "status": "clean",
       "sha256": "773dddb3791f8c7d496f07c43fce047cc21f62b4fef32eb244d603caa40608d4",
-      "target": "docs/products/ui/packages/material-web/switch/internal/README.md",
+      "target": null,
       "importedSha256": "773dddb3791f8c7d496f07c43fce047cc21f62b4fef32eb244d603caa40608d4",
-      "importedSourceSha256": "773dddb3791f8c7d496f07c43fce047cc21f62b4fef32eb244d603caa40608d4"
+      "importedSourceSha256": "773dddb3791f8c7d496f07c43fce047cc21f62b4fef32eb244d603caa40608d4",
+      "duplicateOf": "packages/ui/material-web/switch/internal/README.md",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/products/ui/packages/material-web/switch/internal/README.md removed as a duplicate of packages/ui/material-web/switch/internal/README.md"
     },
     {
       "source": "aphrody-ui/packages/material-web/switch/internal/_handle.scss",
@@ -111367,9 +111677,11 @@
       "size": 590,
       "status": "clean",
       "sha256": "44b45ccacd0e4b0925feeb58e19af465021a5e54a86cdbf3c4d5962fc6614440",
-      "target": "docs/products/ui/packages/material-web/tokens/versions/README.md",
+      "target": null,
       "importedSha256": "44b45ccacd0e4b0925feeb58e19af465021a5e54a86cdbf3c4d5962fc6614440",
-      "importedSourceSha256": "44b45ccacd0e4b0925feeb58e19af465021a5e54a86cdbf3c4d5962fc6614440"
+      "importedSourceSha256": "44b45ccacd0e4b0925feeb58e19af465021a5e54a86cdbf3c4d5962fc6614440",
+      "duplicateOf": "packages/ui/material-web/tokens/versions/README.md",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/products/ui/packages/material-web/tokens/versions/README.md removed as a duplicate of packages/ui/material-web/tokens/versions/README.md"
     },
     {
       "source": "aphrody-ui/packages/material-web/tokens/versions/latest/sass/_index.scss",
@@ -114375,9 +114687,11 @@
       "size": 7039,
       "status": "clean",
       "sha256": "61bc0261937fb3e013ab9e0e74a6fcecd513d15cc54e713711c7a1b546a6ff13",
-      "target": "docs/reference/ui/packages/react/FRAMEWORKS.md",
+      "target": null,
       "importedSha256": "61bc0261937fb3e013ab9e0e74a6fcecd513d15cc54e713711c7a1b546a6ff13",
-      "importedSourceSha256": "61bc0261937fb3e013ab9e0e74a6fcecd513d15cc54e713711c7a1b546a6ff13"
+      "importedSourceSha256": "61bc0261937fb3e013ab9e0e74a6fcecd513d15cc54e713711c7a1b546a6ff13",
+      "duplicateOf": "packages/ui/m3-react/FRAMEWORKS.md",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/reference/ui/packages/react/FRAMEWORKS.md removed as a duplicate of packages/ui/m3-react/FRAMEWORKS.md"
     },
     {
       "source": "aphrody-ui/packages/react/README.md",
@@ -114386,9 +114700,11 @@
       "size": 22368,
       "status": "clean",
       "sha256": "7bc5d9580273adceb4e8aa6e527f2d8ac599625848aa66bb9a8a062d9c5427b3",
-      "target": "docs/products/ui/packages/react/README.md",
+      "target": null,
       "importedSha256": "7bc5d9580273adceb4e8aa6e527f2d8ac599625848aa66bb9a8a062d9c5427b3",
-      "importedSourceSha256": "7bc5d9580273adceb4e8aa6e527f2d8ac599625848aa66bb9a8a062d9c5427b3"
+      "importedSourceSha256": "7bc5d9580273adceb4e8aa6e527f2d8ac599625848aa66bb9a8a062d9c5427b3",
+      "duplicateOf": "packages/ui/m3-react/README.md",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/products/ui/packages/react/README.md removed as a duplicate of packages/ui/m3-react/README.md"
     },
     {
       "source": "aphrody-ui/packages/react/adapters/tanstack.ts",
@@ -114460,8 +114776,10 @@
       "size": 1766,
       "status": "clean",
       "sha256": "801f2b39c4f52857034f9db7c3967cd64d4eaeac1f9a72feba6984592105e8d4",
-      "target": "docs/reference/ui/packages/react/md-elements.txt",
-      "importedSourceSha256": "801f2b39c4f52857034f9db7c3967cd64d4eaeac1f9a72feba6984592105e8d4"
+      "target": null,
+      "importedSourceSha256": "801f2b39c4f52857034f9db7c3967cd64d4eaeac1f9a72feba6984592105e8d4",
+      "duplicateOf": "packages/ui/m3-react/md-elements.txt",
+      "targetReason": "consolidated ui-docs-consolidation-2026-10-01: docs/reference/ui/packages/react/md-elements.txt removed as a duplicate of packages/ui/m3-react/md-elements.txt"
     },
     {
       "source": "aphrody-ui/packages/react/package.json",

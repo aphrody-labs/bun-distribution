@@ -24,7 +24,8 @@
     "typecheck:fast": "tsgo --noEmit"
   },
   "dependencies": {
-    "@aphrody/bun": "workspace:*"
+    "@aphrody/bun": "workspace:*",
+    "@material/material-color-utilities": "catalog:"
   },
   "devDependencies": {
     "@aphrody/m3-config": "workspace:*",

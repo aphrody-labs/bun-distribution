@@ -228,7 +228,7 @@ pub struct RenderSurface {
     /// Physical pixels per logical pixel, expressed in thousandths.
     pub scale_factor_milli: u32,
     /// M3 adaptive layout resolved for the logical width.
-    pub layout: aphrody_m3::platform::LayoutContract,
+    pub layout: aphrody_m3_tokens::facade::platform::LayoutContract,
 }
 
 impl RenderSurface {
@@ -336,8 +336,11 @@ pub const fn select_backend(config: &RenderConfig) -> Option<Backend> {
 
 /// Resolve the M3 layout contract used by a frame.
 #[must_use]
-pub fn layout_for_frame(width_dp: u32, _height_dp: u32) -> aphrody_m3::platform::LayoutContract {
-    aphrody_m3::platform::LayoutContract::from_width_dp(width_dp)
+pub fn layout_for_frame(
+    width_dp: u32,
+    _height_dp: u32,
+) -> aphrody_m3_tokens::facade::platform::LayoutContract {
+    aphrody_m3_tokens::facade::platform::LayoutContract::from_width_dp(width_dp)
 }
 
 /// Report whether a backend is compiled into this target.

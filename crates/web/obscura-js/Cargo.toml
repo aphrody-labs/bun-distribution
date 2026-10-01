@@ -37,19 +37,19 @@ reqwest = { workspace = true }
 html5ever = { workspace = true }
 deno_error = "0.7"
 base64 = { workspace = true }
-sha1 = "0.10"
-sha2 = "0.10"
+sha1 = "0.11"
+sha2 = "0.11"
 # WebCrypto (crypto.subtle) primitives. RustCrypto, pure Rust, no CMake/OpenSSL,
-# and they unify on the digest 0.10 / cipher 0.4 stack already in the tree.
-hmac = "0.12"
-aes = "0.8"
-aes-gcm = "0.10"
-cbc = { version = "0.1", features = ["alloc"] }
-ctr = "0.9"
-pbkdf2 = { version = "0.12", default-features = false, features = ["hmac"] }
-hkdf = "0.12"
+# and they unify on the digest 0.11 / cipher 0.5 stack already in the tree.
+hmac = "0.13"
+aes = "0.9"
+aes-gcm = "0.11"
+cbc = { version = "0.2", features = ["alloc"] }
+ctr = "0.10"
+pbkdf2 = { version = "0.13", default-features = false, features = ["hmac"] }
+hkdf = "0.13"
 # CSPRNG for getRandomValues / randomUUID (replaces Math.random).
-getrandom = "0.2"
+getrandom = "0.4"
 obscura-render = { workspace = true, optional = true }
 # Vendored upstream code (h4ckf0r0day/obscura): not held to the aphrody lint
 # set, so the workspace -D warnings gate does not rewrite upstream style.

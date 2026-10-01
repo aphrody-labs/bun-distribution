@@ -24,7 +24,10 @@ gpu = ["aphrody-render/gpu"]
 memchr.workspace = true
 aphrody-m3-tokens = { workspace = true }
 aphrody-m3-reproduce = { workspace = true, features = ["crawl", "network"] }
-aphrody-icons = { workspace = true, features = ["svg"] }
+# `icons` module (formerly the `aphrody-icons` crate): pure-Rust variable-font instancing.
+skrifa.workspace = true
+read-fonts.workspace = true
+woff2.workspace = true
 aphrody-svg = { workspace = true, features = ["raster", "glyph", "m3"] }
 base64.workspace = true
 aphrody-render = { workspace = true }

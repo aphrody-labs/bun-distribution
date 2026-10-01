@@ -43,11 +43,11 @@ export function CollectionReader({ title, editions, initialEdition, initialChapt
   }, [edition, chapter, onSelectionChange]);
 
   if (!edition || !chapter) {
-    return <p className="m3-reader-collection-empty">{emptyLabel}</p>;
+    return <p className="m3-reader-collection-empty" data-m3-component="CollectionReader" data-testid="collection-reader-empty">{emptyLabel}</p>;
   }
 
   return (
-    <section className="m3-reader m3-reader-collection" aria-label={title}>
+    <section className="m3-reader m3-reader-collection" aria-label={title} data-m3-component="CollectionReader" data-testid="collection-reader">
       <div className="m3-reader-collection-toolbar">
         <div className="m3-reader-collection-editions" role="group" aria-label={title}>
           {available.map((item) => (
@@ -57,7 +57,7 @@ export function CollectionReader({ title, editions, initialEdition, initialChapt
             </button>
           ))}
         </div>
-        <button type="button" className="m3-reader-btn" aria-expanded={contentsOpen} aria-controls={contentsId}
+        <button type="button" className="m3-reader-btn" aria-expanded={contentsOpen} aria-controls={contentsOpen ? contentsId : undefined}
           onClick={() => setContentsOpen((value) => !value)}>{contentsLabel} ({edition.chapters.length})</button>
       </div>
       {contentsOpen && (

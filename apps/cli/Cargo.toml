@@ -121,7 +121,6 @@ aphrody-web-bridge                = { workspace = true }
 aphrody-web-crawl                 = { workspace = true }
 aphrody-web-detect                = { workspace = true }
 aphrody-web-extract               = { workspace = true }
-aphrody-web-media                 = { workspace = true }
 aphrody-x                         = { workspace = true }
 obscura                           = { workspace = true }
 obscura-net                       = { workspace = true }
@@ -149,6 +148,7 @@ aphrody-kernel            = { workspace = true }
 # Messaging (outbound connectors + bidirectional channels: Slack/Telegram/Matrix/Discord/X).
 # Native-only because reqwest + tokio do not compile on wasm32.
 aphrody-messaging         = { workspace = true }
+aphrody-discord-compiler  = { workspace = true }
 # `aphrody hermes` voice-to-voice agent — STT (Whisper/ElevenLabs) + TTS (ElevenLabs).
 aphrody-voice             = { workspace = true }
 # `aphrody scan {tree, manifests}` — parallel filesystem walk + manifest parse.
@@ -182,9 +182,10 @@ aphrody-firefly           = { workspace = true, optional = true }
 # supply-chain surface is introduced.
 sha2                      = { workspace = true, optional = true }
 hex                       = { workspace = true, optional = true }
-# `aphrody logo` — canonical icon (assets/aphrody.webp) -> .ico / .svg / M3
-# maskable PNG + pixel-perfect terminal rendering. Native-only (image+ico).
-aphrody-logo              = { workspace = true }
+# `aphrody logo` — canonical icon (identity/assets/logo/aphrody.webp) -> .ico / .svg / M3
+# maskable PNG + pixel-perfect terminal rendering (module `aphrody_identity::logo`).
+# Native-only (image+ico).
+aphrody-identity          = { workspace = true }
 # `aphrody design tokens [--fusion]` — Material 3 color tokens as CSS custom
 # properties (+ shadcn/Tailwind fusion sheet). Native-only (std export).
 aphrody-m3-tokens                 = { workspace = true }

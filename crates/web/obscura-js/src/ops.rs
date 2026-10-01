@@ -5013,7 +5013,8 @@ fn op_subtle_hmac(
     #[buffer] key: &[u8],
     #[buffer] data: &[u8],
 ) -> Result<Vec<u8>, deno_error::JsErrorBox> {
-    use hmac::{Hmac, Mac};
+    // hmac 0.13: `new_from_slice` moved from `Mac` to `KeyInit` (digest 0.11).
+    use hmac::{Hmac, KeyInit, Mac};
     macro_rules! run {
         ($d:ty) => {{
             let mut mac = Hmac::<$d>::new_from_slice(key).map_err(crypto_err)?;
@@ -5045,16 +5046,20 @@ fn op_subtle_aes_gcm(
 ) -> Result<Vec<u8>, deno_error::JsErrorBox> {
     use aes_gcm::{
         AesGcm, Nonce,
-        aead::{Aead, KeyInit, Payload},
+        aead::{Aead, KeyInit, Payload, consts::U12},
         aes::{Aes192, Aes256},
     };
-    type Aes192Gcm = AesGcm<Aes192, aes_gcm::aead::consts::U12>;
-    type Aes256Gcm = AesGcm<Aes256, aes_gcm::aead::consts::U12>;
+    type Aes192Gcm = AesGcm<Aes192, U12>;
+    type Aes256Gcm = AesGcm<Aes256, U12>;
 
     if iv.len() != 12 {
         return Err(crypto_err("AES-GCM requires a 96-bit (12-byte) IV"));
     }
-    let nonce = Nonce::from_slice(iv);
+    // aes-gcm 0.11 (hybrid-array): `Nonce::from_slice` is deprecated, convert
+    // with `TryFrom<&[u8]>`. The length was checked above, so the error arm is
+    // unreachable but still mapped to the same OperationError text.
+    let nonce: &Nonce<U12> =
+        iv.try_into().map_err(|_| crypto_err("AES-GCM requires a 96-bit (12-byte) IV"))?;
     macro_rules! run {
         ($ty:ty) => {{
             let cipher = <$ty>::new_from_slice(key).map_err(crypto_err)?;
@@ -5089,7 +5094,8 @@ fn op_subtle_aes_cbc(
 ) -> Result<Vec<u8>, deno_error::JsErrorBox> {
     use cbc::{
         Decryptor, Encryptor,
-        cipher::{BlockDecryptMut, BlockEncryptMut, KeyIvInit, block_padding::Pkcs7},
+        // cipher 0.5 renamed `Block{En,De}cryptMut` to `BlockMode{En,De}crypt`.
+        cipher::{BlockModeDecrypt, BlockModeEncrypt, KeyIvInit, block_padding::Pkcs7},
     };
 
     if iv.len() != 16 {
@@ -5100,11 +5106,11 @@ fn op_subtle_aes_cbc(
             if encrypt {
                 Encryptor::<$cipher>::new_from_slices(key, iv)
                     .map_err(crypto_err)?
-                    .encrypt_padded_vec_mut::<Pkcs7>(data)
+                    .encrypt_padded_vec::<Pkcs7>(data)
             } else {
                 Decryptor::<$cipher>::new_from_slices(key, iv)
                     .map_err(crypto_err)?
-                    .decrypt_padded_vec_mut::<Pkcs7>(data)
+                    .decrypt_padded_vec::<Pkcs7>(data)
                     .map_err(|_| crypto_err("AES-CBC decryption failed: invalid padding"))?
             }
         }};
@@ -5286,7 +5292,8 @@ fn random_bytes(len: u32) -> Result<Vec<u8>, deno_error::JsErrorBox> {
         )));
     }
     let mut buf = vec![0u8; len as usize];
-    getrandom::getrandom(&mut buf).map_err(|e| crypto_err(format!("getrandom failed: {e}")))?;
+    // getrandom 0.4: `getrandom::getrandom` was replaced by `getrandom::fill`.
+    getrandom::fill(&mut buf).map_err(|e| crypto_err(format!("getrandom failed: {e}")))?;
     Ok(buf)
 }
 

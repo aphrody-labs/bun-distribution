@@ -92,7 +92,6 @@ aphrody-web-extract = { workspace = true }
 aphrody-web-detect = { workspace = true }
 aphrody-web-crawl = { workspace = true }
 aphrody-x          = { workspace = true }
-aphrody-x-algorithm = { workspace = true }
 rmcp               = { workspace = true }
 tokio-postgres     = { workspace = true }
 aphrody-a2a                = { workspace = true }

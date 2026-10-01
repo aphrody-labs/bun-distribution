@@ -107,6 +107,7 @@ export const CircleButton = forwardRef<HTMLButtonElement, CircleButtonProps>(
           children && "w-auto gap-2 px-4",
           className,
         )}
+        data-m3-component="CircleButton"
         {...props}
       >
         {icon !== undefined &&

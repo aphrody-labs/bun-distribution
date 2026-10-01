@@ -782,7 +782,7 @@ pub fn render_scene3d_png(scene: &Scene3d) -> Result<Vec<u8>, Render3dPngError> 
 
 #[cfg(test)]
 mod tests {
-    use aphrody_m3::color::Role;
+    use aphrody_m3_tokens::facade::color::Role;
 
     use super::*;
     use crate::{

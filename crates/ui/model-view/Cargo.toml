@@ -21,7 +21,13 @@ workspace = true
 [build-dependencies]
 tauri-build = { workspace = true }
 
+[features]
+# Debug bridge for aphrody-web / aphrody-tauri-mcp (loopback, token, debug builds only).
+debug-bridge = ["aphrody-tauri-wrap/debug-bridge"]
+
 [dependencies]
 aphrody-tauri-3d = { workspace = true }
+aphrody-tauri-wrap = { workspace = true, default-features = false }
 log = { workspace = true }
 tauri = { workspace = true }
+tauri-runtime-wry = { workspace = true }

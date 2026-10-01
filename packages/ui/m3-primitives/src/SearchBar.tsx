@@ -59,6 +59,7 @@ export const SearchBar = forwardRef<HTMLInputElement, SearchBarProps>(
 
     return (
       <div
+        data-m3-component="SearchBar"
         className={clsx(
           "relative flex items-center",
           containerSizes[size],
