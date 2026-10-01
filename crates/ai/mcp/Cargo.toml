@@ -61,6 +61,8 @@ rag       = ["dep:aphrody-rag"]
 # Local ONNX Runtime embedder for RAG. Keep it out of the default server; the
 # full local-inference toolbox enables it explicitly.
 rag-ort   = ["rag", "aphrody-rag/ort"]
+native    = ["rag", "aphrody-rag/native"]
+rag-native = ["native"]
 # `dragonball.*` — the Dragon Ball tools of the single Aphrody MCP (ported from
 # the retired Bun `apps/shenron-mcp`): Shenron bot/site API proxies plus the
 # local corpus, persona and `APHRODY_AI_*` chat of `aphrody-rag::dragonball`.

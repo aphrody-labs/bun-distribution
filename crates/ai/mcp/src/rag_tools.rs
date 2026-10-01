@@ -65,6 +65,22 @@ async fn embedder_from_env() -> Result<Option<Arc<dyn aphrody_rag::Embedder>>, S
         return Ok(None);
     };
     let embedder: Arc<dyn aphrody_rag::Embedder> = match resolved.backend {
+        EmbedBackend::Native => {
+            #[cfg(feature = "native")]
+            {
+                let loaded = tokio::task::spawn_blocking(move || {
+                    aphrody_rag::NativeEmbedder::load_or_install(&resolved.model)
+                })
+                .await
+                .map_err(|e| e.to_string())?
+                .map_err(|e| e.to_string())?;
+                Arc::new(loaded)
+            }
+            #[cfg(not(feature = "native"))]
+            {
+                return Err("aphrody-rag built without feature `native`".to_string());
+            }
+        },
         EmbedBackend::Ort => embedder_ort(resolved.model).await?,
         EmbedBackend::LlamaServer => {
             let endpoint = resolved.endpoint.unwrap_or_default();

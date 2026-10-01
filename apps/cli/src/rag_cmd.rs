@@ -169,6 +169,25 @@ async fn build_embedder(config: &RagConfig) -> miette::Result<Option<Arc<dyn Emb
     };
 
     let embedder: Arc<dyn Embedder> = match resolved.backend {
+        EmbedBackend::Native => {
+            #[cfg(feature = "native")]
+            {
+                let model = resolved.model.clone();
+                let loaded = tokio::task::spawn_blocking(move || {
+                    aphrody_rag::NativeEmbedder::load_or_install(&model)
+                })
+                .await
+                .into_diagnostic()?
+                .into_diagnostic()?;
+                Arc::new(loaded)
+            }
+            #[cfg(not(feature = "native"))]
+            {
+                return Err(miette::miette!(
+                    "native embedding backend selected but aphrody-rag was built without the `native` feature"
+                ));
+            }
+        },
         EmbedBackend::Ort => {
             let model = resolved.model.clone();
             let loaded = tokio::task::spawn_blocking(move || OrtEmbedder::load(&model))

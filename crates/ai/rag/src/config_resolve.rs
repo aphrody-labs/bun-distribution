@@ -93,6 +93,7 @@ fn api_key_from(env: &EnvReader<'_>) -> Option<String> {
 /// instead.
 fn default_embed_model(backend: EmbedBackend) -> &'static str {
     match backend {
+        EmbedBackend::Native => "bge-small-en-v1.5",
         EmbedBackend::Ort => default_ort_model(),
         EmbedBackend::LlamaServer | EmbedBackend::OpenaiCompat => LocalRole::Embed.default_model(),
     }
@@ -181,7 +182,7 @@ fn resolve_embed_with(config: &RagConfig, env: &EnvReader<'_>) -> Result<Option<
     let dimension = resolve_dimension(&model, config.vector_dim, env)?;
 
     let endpoint = match backend {
-        EmbedBackend::Ort => None,
+        EmbedBackend::Native | EmbedBackend::Ort => None,
         EmbedBackend::LlamaServer | EmbedBackend::OpenaiCompat => {
             let endpoint = env_endpoint
                 .or_else(|| {

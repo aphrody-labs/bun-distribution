@@ -8,6 +8,8 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum EmbedBackend {
+    /// Pure-Rust in-process BERT/cross-encoder via `aphrody-embed::native`.
+    Native,
     /// ONNX Runtime, in-process, via `aphrody-embed`.
     Ort,
     /// A locally supervised `llama-server` instance's `/v1/embeddings`.
