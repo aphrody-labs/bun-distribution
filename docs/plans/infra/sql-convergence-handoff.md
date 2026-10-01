@@ -129,35 +129,56 @@ Each worker reports in its own files; check them, do not assume success.
    that appeared in the session transcript. 4 historical commits carry AI
    `Co-Authored-By` trailers (history rewrite not done).
 
-## Integration status (2026-10-01, end of session)
+## Final state (2026-10-02) — read this first
 
-Steps 1–5 are done. Aphrody `a2c040ba8..a8a721559` and aphrody-py
-`fa4d504..a555238` are pushed to `aphrody-labs` under `aphrody-code`, without
-AI trailers. The lead also integrated the orphan work left by earlier sessions:
-native RAG backend, `@aphrody/paths`, `.env.example` catalogue, developer
-bootstrap, IECODE follow-up for RG, plugin paths and OpenCode config, LiteLLM
-decision. It restored `publish = false` on 147 manifests (no publication
-without an owner decision).
+Owner delegated every project to Claude, Codex and agy (full YOLO, no human in
+the loop). Binding rules: private repositories, no AI trailers/apps/public
+mentions, no publication, **no duplicate anywhere** (repos, backups, files),
+no WSL work until Aphrody is deployed.
 
-Parked in `git stash` (do not restore without the noted condition):
+**Done and pushed** (aphrody-labs/aphrody `main`, aphrody-py `main`):
+SQL convergence (`aphrody-sql`, `@aphrody/sql`, training registry on Neon
+`aphrody`), IEVR moved to IECODE, `@aphrody/paths`, env catalogue, developer
+bootstrap, native RAG backend, upstream docs (text only), attribution and
+public-surface audits, single plugin source `plugins/aphrody`, Codex marketplace
+served from the monorepo, 37 packages marked private.
 
-- `aphrody wsl-build` and the WSL/Ubuntu distro builds: owner rule, touch WSL
-  only once Aphrody is deployed.
-- `aphrody-llama-server` `in_process` module: does not compile with the
-  `in-process` feature.
+**GitHub** (`docs/reference/infra/GITHUB-OWNERSHIP.md`): `aphrody-labs` holds only
+`aphrody`, `aphrody-py`, `iecode`, `oxc`, `bun`; 29 duplicate repositories were
+deleted after verified backups; `dot-aphrody` is under `aphrody-code`;
+`aphrody-dev` owns the org and has no repository.
 
-Left uncommitted, waiting for an owner decision:
+**Backups**: one copy only, `~/.aphrody/private/backups/aphrody-unique/<date>/`
+(sha256 set) and `~/.aphrody/private/backups/github/aphrody-labs-2026-10-01/`
+(15 GB, includes the 7.5 GB bxc release assets). Nothing on vps, dbfr or C:.
 
-- `packages/infra/workspace/src/git-attribution.ts` and `aphrody git
-  attribution`: history rewriter that strips every `Co-Authored-By` (human
-  ones included) and rewrites authors to `aphrody-dev`, while the rule says
-  `aphrody-code`.
-- `clean-public-ai` scanner and the RG e-mail changes: the scanner's
-  personal-address rule forced `rosegriffonfr@gmail.com` →
-  `contact@aphrody.com` in RG mediation, info and Patreon admin access, which
-  is an authorization change.
-- Bulk upstream documentation import (`consolidation.ts`,
-  `docs/migration/{IMPORTED-DOCS-INDEX.md,document-import.json,source-map.json}`,
-  10 653 untracked files under `docs/*/upstream-*`, about 54 MB): includes
-  GPL-2.0 kernel docs, a whole website (jan) and upstream
-  `AGENTS.md`/`CLAUDE.md` files that agents would load as instructions.
+**Deduplicated**: 339 Shenron script mirrors, 129 docs copies, plugin copies
+(259 doc files), `py/aphrody-train`, 236 UI binaries (staged by `build.rs`), 93
+shared site assets (generated from `@shenron/ui` and `@rosegriffon/assets`);
+dbfr 26 GB of media identical to vps; vps leftover checkouts.
+
+**Open, in order**:
+1. aphrody-code mirrors of third-party projects (38 repos: tauri, bevy, iced,
+   puppeteer, …): `/tmp/mirror-verdict.tsv` records, per repo, how many refs are
+   not in upstream. Delete only repos with `not-upstream=0`, then repoint
+   `config/tauri-upstream.json` at the upstream URLs. Keep `challonge`,
+   `voiranime`, `worldbeyblade`, `xai`, `x`, `x-client` (RG `config/rg`
+   dependencies) and every repo with local commits. `YOLO` is 63 % identical to
+   `plugins/aphrody` (111 of 175 files): review the other 64 before deleting.
+2. agy (UI/M3/Tauri, in the monorepo): resolve the 11 `retained-duplicate`
+   items (no copy allowed), report remaining exact-duplicate groups = 0.
+3. Codex (IECODE, RG): CI twin checkout per `config/sibling-checkouts.json`
+   (pin `d4de50ba` stays until inagle, inagle-cross or azalee change); RG
+   `ranked` work in the working tree; `docs/rg/root/{AGENTS,CLAUDE}.md`
+   untracked.
+4. Parked in `git stash` (do not restore early): WSL build family (owner rule),
+   llama-server `in_process` (does not compile).
+5. Owner-only: `gh auth refresh -h github.com -u aphrody-code -s
+   admin:org,admin:public_key` then invite `aphrody-dev` as `rose-griffon` owner
+   and register `~/.ssh/github_aphrody_code.pub`; rotate the Neon password;
+   4 historical commits with AI trailers (`aphrody git attribution` lists them,
+   rewriting needs a force-push).
+6. Data leftovers: vps `rg` nightly dumps keep newest only; dbfr
+   `~/shenron/apps/bot/data` is a stale bot.db replica (timer
+   `shenron-sqlite-replica-backup`); lost without copy: vps `root.env` in the
+   removed `.rg-deploy-stage`.
