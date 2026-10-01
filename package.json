@@ -330,8 +330,11 @@
   },
   "devDependencies": {
     "@aphrody/paths": "workspace:*",
+    "@happy-dom/global-registrator": "catalog:",
     "@types/bun": "catalog:",
     "@types/node": "catalog:",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
     "cheerio": "catalog:",
     "oxfmt": "catalog:",
     "oxlint": "catalog:",

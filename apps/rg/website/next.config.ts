@@ -76,16 +76,6 @@ const nextConfig: NextConfig = {
 
   experimental: {
     /**
-     * Transitions de vue natives entre les pages.
-     *
-     * Le site est une application unique depuis la fusion des trois fronts,
-     * mais chaque navigation le faisait clignoter comme trois sites collés :
-     * le contenu disparaissait d'un coup, le chrome se repeignait. L'API
-     * View Transitions du navigateur enchaîne les deux états ; là où elle
-     * n'existe pas, la navigation reste exactement ce qu'elle était.
-     */
-    viewTransition: true,
-    /**
      * Production runs from an immutable release (/srv/rg/releases/<id>,
      * ProtectSystem=strict): regenerated ISR pages must not be written back
      * into `.next/server/app`, which is read-only and produced thousands of
