@@ -3,6 +3,7 @@
 // Mikro-ORM mappe camelCase TS → snake_case SQL.
 
 import { sql, getRanks, type RankRow } from "./db";
+import { parseRankedId } from "./ids";
 import { progressiveEloDelta, applyEloUpdate } from "./elo";
 
 const RANKED_EVENT_ID_KEY = "RANKED_PERPETUAL_EVENT_ID";
@@ -24,21 +25,21 @@ function tierIndexForElo(elo: number, ranks: RankRow[]): number {
 // lobbies de matchmaking. Un seul event sert pour toute la durée d'une season.
 export async function getOrCreatePerpetualRankedEventId(): Promise<number> {
 	const fromEnv = process.env[RANKED_EVENT_ID_KEY];
-	if (fromEnv) return Number(fromEnv);
+	if (fromEnv) return parseRankedId(fromEnv);
 
 	const existing = await sql<Array<{ id: number }>>`
-		SELECT id FROM event
+		SELECT id FROM achillea.event
 		WHERE type = 'RANKED' AND name = 'Ranked perpétuel'
 		LIMIT 1
 	`;
-	if (existing[0]) return existing[0].id;
+	if (existing[0]) return parseRankedId(existing[0].id);
 
 	const created = await sql<Array<{ id: number }>>`
-		INSERT INTO event (name, description, type, created_at, updated_at)
+		INSERT INTO achillea.event (name, description, type, created_at, updated_at)
 		VALUES ('Ranked perpétuel', 'Container ranked matchmaking', 'RANKED', NOW(), NOW())
 		RETURNING id
 	`;
-	return created[0].id;
+	return parseRankedId(created[0].id);
 }
 
 export interface PersistMatchInput {
@@ -60,7 +61,7 @@ export async function persistDisputedLobby(
 ): Promise<PersistMatchOutput> {
 	return await sql.begin(async (tx: any) => {
 		const lobby = await tx`
-			INSERT INTO lobby (
+			INSERT INTO achillea.lobby (
 				event_id, event_type, mode, state, match_format, created_at, updated_at
 			)
 			VALUES (
@@ -68,13 +69,13 @@ export async function persistDisputedLobby(
 			)
 			RETURNING id
 		`;
-		const lobbyId = lobby[0].id;
+		const lobbyId = parseRankedId(lobby[0].id);
 
 		// Litige : on stocke les 2 scorelines COMPLÈTES réclamées (score perso + score
 		// attribué à l'adversaire) pour que l'admin arbitre. validated_result=false,
 		// state='Pending' (le lobby reste 'Contested' tant que l'admin n'a pas tranché).
 		await tx`
-			INSERT INTO lobby_user (
+			INSERT INTO achillea.lobby_user (
 				user_id, lobby_id, team, score, claimed_opponent_score, forfeit, validated_result, state, created_at, updated_at
 			)
 			VALUES
@@ -83,7 +84,7 @@ export async function persistDisputedLobby(
 		`;
 
 		await tx`
-			INSERT INTO lobby_match (
+			INSERT INTO achillea.lobby_match (
 				lobby_id, game_number, score_team1, score_team2, team1validated, team2validated, admin_validated, created_at, updated_at
 			)
 			VALUES (
@@ -112,7 +113,7 @@ export interface OngoingLobbyInput {
 export async function createOngoingLobby(input: OngoingLobbyInput): Promise<PersistMatchOutput> {
 	return await sql.begin(async (tx: any) => {
 		const lobby = await tx`
-			INSERT INTO lobby (
+			INSERT INTO achillea.lobby (
 				event_id, event_type, mode, state, match_format, created_at, updated_at
 			)
 			VALUES (
@@ -120,10 +121,10 @@ export async function createOngoingLobby(input: OngoingLobbyInput): Promise<Pers
 			)
 			RETURNING id
 		`;
-		const lobbyId = lobby[0].id;
+		const lobbyId = parseRankedId(lobby[0].id);
 
 		await tx`
-			INSERT INTO lobby_user (
+			INSERT INTO achillea.lobby_user (
 				user_id, lobby_id, team, score, forfeit, validated_result, state, created_at, updated_at
 			)
 			VALUES
@@ -132,7 +133,7 @@ export async function createOngoingLobby(input: OngoingLobbyInput): Promise<Pers
 		`;
 
 		await tx`
-			INSERT INTO lobby_match (
+			INSERT INTO achillea.lobby_match (
 				lobby_id, game_number, score_team1, score_team2, team1validated, team2validated, admin_validated, created_at, updated_at
 			)
 			VALUES (
@@ -188,32 +189,32 @@ export async function finalizeOngoingLobby(
 	await sql.begin(async (tx: any) => {
 		// Idempotence : ne ré-applique pas l'ELO si le lobby est déjà finalisé
 		// (double-clic / retry réseau / timeout + saisie concurrente).
-		const cur = await tx`SELECT state FROM lobby WHERE id = ${lobbyId} FOR UPDATE`;
+		const cur = await tx`SELECT state FROM achillea.lobby WHERE id = ${lobbyId} FOR UPDATE`;
 		if (!cur[0] || cur[0].state === "Finished" || cur[0].state === "Canceled") {
 			return;
 		}
-		await tx`UPDATE lobby SET state = 'Finished', updated_at = NOW() WHERE id = ${lobbyId}`;
+		await tx`UPDATE achillea.lobby SET state = 'Finished', updated_at = NOW() WHERE id = ${lobbyId}`;
 		await tx`
-			UPDATE lobby_match SET
+			UPDATE achillea.lobby_match SET
 				score_team1 = ${input.p1.score}, score_team2 = ${input.p2.score},
 				team1validated = true, team2validated = true, admin_validated = ${input.adminValidated},
 				updated_at = NOW()
 			WHERE lobby_id = ${lobbyId}
 		`;
 		await tx`
-			UPDATE lobby_user SET
+			UPDATE achillea.lobby_user SET
 				score = ${input.p1.score}, forfeit = ${p1Forfeit}, elo_variation = ${upP1.clampedDelta},
 				validated_result = true, state = 'Finished', updated_at = NOW()
 			WHERE lobby_id = ${lobbyId} AND team = 1
 		`;
 		await tx`
-			UPDATE lobby_user SET
+			UPDATE achillea.lobby_user SET
 				score = ${input.p2.score}, forfeit = ${p2Forfeit}, elo_variation = ${upP2.clampedDelta},
 				validated_result = true, state = 'Finished', updated_at = NOW()
 			WHERE lobby_id = ${lobbyId} AND team = 2
 		`;
 		await tx`
-			UPDATE user_elo SET
+			UPDATE achillea.user_elo SET
 				elo = elo + ${upP1.clampedDelta},
 				peak_rating = GREATEST(peak_rating, elo + ${upP1.clampedDelta}),
 				games_played = games_played + 1,
@@ -223,7 +224,7 @@ export async function finalizeOngoingLobby(
 			WHERE user_id = ${input.p1.userId} AND mode = ${input.mode}
 		`;
 		await tx`
-			UPDATE user_elo SET
+			UPDATE achillea.user_elo SET
 				elo = elo + ${upP2.clampedDelta},
 				peak_rating = GREATEST(peak_rating, elo + ${upP2.clampedDelta}),
 				games_played = games_played + 1,
@@ -251,25 +252,25 @@ export async function contestOngoingLobby(
 	input: Omit<PersistMatchInput, "adminValidated">
 ): Promise<void> {
 	await sql.begin(async (tx: any) => {
-		const cur = await tx`SELECT state FROM lobby WHERE id = ${lobbyId} FOR UPDATE`;
+		const cur = await tx`SELECT state FROM achillea.lobby WHERE id = ${lobbyId} FOR UPDATE`;
 		if (!cur[0] || cur[0].state === "Finished" || cur[0].state === "Canceled") {
 			return;
 		}
-		await tx`UPDATE lobby SET state = 'Contested', updated_at = NOW() WHERE id = ${lobbyId}`;
+		await tx`UPDATE achillea.lobby SET state = 'Contested', updated_at = NOW() WHERE id = ${lobbyId}`;
 		await tx`
-			UPDATE lobby_user SET
+			UPDATE achillea.lobby_user SET
 				score = ${input.p1.score}, claimed_opponent_score = ${input.p1.claimedOpp ?? null},
 				validated_result = false, state = 'Pending', updated_at = NOW()
 			WHERE lobby_id = ${lobbyId} AND team = 1
 		`;
 		await tx`
-			UPDATE lobby_user SET
+			UPDATE achillea.lobby_user SET
 				score = ${input.p2.score}, claimed_opponent_score = ${input.p2.claimedOpp ?? null},
 				validated_result = false, state = 'Pending', updated_at = NOW()
 			WHERE lobby_id = ${lobbyId} AND team = 2
 		`;
 		await tx`
-			UPDATE lobby_match SET
+			UPDATE achillea.lobby_match SET
 				score_team1 = ${input.p1.score}, score_team2 = ${input.p2.score}, updated_at = NOW()
 			WHERE lobby_id = ${lobbyId}
 		`;
@@ -283,7 +284,7 @@ export async function setLobbyUserScreenshot(
 	url: string
 ): Promise<void> {
 	await sql`
-		UPDATE lobby_user SET screenshot_url = ${url}, updated_at = NOW()
+		UPDATE achillea.lobby_user SET screenshot_url = ${url}, updated_at = NOW()
 		WHERE lobby_id = ${lobbyId} AND user_id = ${userId}
 	`;
 }
@@ -301,7 +302,7 @@ export async function recordLobbyUserScore(
 	oppScore: number
 ): Promise<void> {
 	await sql`
-		UPDATE lobby_user
+		UPDATE achillea.lobby_user
 		SET score = ${myScore}, claimed_opponent_score = ${oppScore}, state = 'Ready', updated_at = NOW()
 		WHERE lobby_id = ${lobbyId} AND user_id = ${userId}
 	`;
@@ -315,16 +316,16 @@ export async function recordLobbyUserScore(
  */
 export async function cancelLobby(lobbyId: number): Promise<boolean> {
 	const cur = await sql<Array<{ state: string; event_type: string }>>`
-		SELECT state, event_type FROM lobby WHERE id = ${lobbyId} LIMIT 1
+		SELECT state, event_type FROM achillea.lobby WHERE id = ${lobbyId} LIMIT 1
 	`;
 	if (!cur[0]) return false;
 	// Garde-fou : l'arbitrage ranked ne touche QUE des lobbies ranked.
 	if (cur[0].event_type !== "RANKED") return false;
 	if (cur[0].state === "Finished" || cur[0].state === "Canceled") return false;
 	await sql.begin(async (tx: any) => {
-		await tx`UPDATE lobby SET state = 'Canceled', updated_at = NOW() WHERE id = ${lobbyId}`;
-		await tx`UPDATE lobby_user SET validated_result = false, updated_at = NOW() WHERE lobby_id = ${lobbyId}`;
-		await tx`UPDATE lobby_match SET admin_validated = true, updated_at = NOW() WHERE lobby_id = ${lobbyId}`;
+		await tx`UPDATE achillea.lobby SET state = 'Canceled', updated_at = NOW() WHERE id = ${lobbyId}`;
+		await tx`UPDATE achillea.lobby_user SET validated_result = false, updated_at = NOW() WHERE lobby_id = ${lobbyId}`;
+		await tx`UPDATE achillea.lobby_match SET admin_validated = true, updated_at = NOW() WHERE lobby_id = ${lobbyId}`;
 	});
 	return true;
 }
@@ -368,7 +369,7 @@ export async function persistAndApplyMatch(
 
 	const lobbyId = await sql.begin(async (tx: any) => {
 		const lobby = await tx`
-			INSERT INTO lobby (
+			INSERT INTO achillea.lobby (
 				event_id, event_type, mode, state, match_format, created_at, updated_at
 			)
 			VALUES (
@@ -377,10 +378,10 @@ export async function persistAndApplyMatch(
 			)
 			RETURNING id
 		`;
-		const id = lobby[0].id;
+		const id = parseRankedId(lobby[0].id);
 
 		await tx`
-			INSERT INTO lobby_user (
+			INSERT INTO achillea.lobby_user (
 				user_id, lobby_id, team, score, forfeit, elo_variation, validated_result, state, created_at, updated_at
 			)
 			VALUES
@@ -389,7 +390,7 @@ export async function persistAndApplyMatch(
 		`;
 
 		await tx`
-			INSERT INTO lobby_match (
+			INSERT INTO achillea.lobby_match (
 				lobby_id, game_number, score_team1, score_team2,
 				team1validated, team2validated, admin_validated,
 				created_at, updated_at
@@ -402,7 +403,7 @@ export async function persistAndApplyMatch(
 		`;
 
 		await tx`
-			UPDATE user_elo SET
+			UPDATE achillea.user_elo SET
 				elo = elo + ${upP1.clampedDelta},
 				peak_rating = GREATEST(peak_rating, elo + ${upP1.clampedDelta}),
 				games_played = games_played + 1,
@@ -413,7 +414,7 @@ export async function persistAndApplyMatch(
 		`;
 
 		await tx`
-			UPDATE user_elo SET
+			UPDATE achillea.user_elo SET
 				elo = elo + ${upP2.clampedDelta},
 				peak_rating = GREATEST(peak_rating, elo + ${upP2.clampedDelta}),
 				games_played = games_played + 1,
@@ -473,9 +474,9 @@ export async function listDisputedLobbies(): Promise<
 			lu.claimed_opponent_score,
 			lu.screenshot_url,
 			u.display_name
-		FROM lobby l
-		JOIN lobby_user lu ON lu.lobby_id = l.id
-		JOIN "user" u ON u.id = lu.user_id
+		FROM achillea.lobby l
+		JOIN achillea.lobby_user lu ON lu.lobby_id = l.id
+		JOIN achillea."user" u ON u.id = lu.user_id
 		WHERE l.state = 'Contested'
 		ORDER BY l.created_at DESC
 	`;
@@ -490,7 +491,7 @@ export async function listDisputedLobbies(): Promise<
 		}
 	>();
 	for (const r of rows) {
-		const slot = grouped.get(r.lobby_id) ?? {
+		const slot = grouped.get(parseRankedId(r.lobby_id)) ?? {
 			mode: r.mode,
 			createdAt: r.created_at,
 		};
@@ -503,7 +504,7 @@ export async function listDisputedLobbies(): Promise<
 		};
 		if (r.team === 1) slot.p1 = player;
 		else slot.p2 = player;
-		grouped.set(r.lobby_id, slot);
+		grouped.set(parseRankedId(r.lobby_id), slot);
 	}
 
 	return Array.from(grouped.entries())
@@ -558,9 +559,9 @@ export async function listActiveLobbies(): Promise<
 			l.id AS lobby_id, l.mode, l.created_at,
 			lu.user_id, lu.team, lu.score, lu.claimed_opponent_score, lu.screenshot_url,
 			u.display_name
-		FROM lobby l
-		JOIN lobby_user lu ON lu.lobby_id = l.id
-		JOIN "user" u ON u.id = lu.user_id
+		FROM achillea.lobby l
+		JOIN achillea.lobby_user lu ON lu.lobby_id = l.id
+		JOIN achillea."user" u ON u.id = lu.user_id
 		WHERE l.state = 'Ongoing' AND l.event_type = 'RANKED'
 		ORDER BY l.created_at DESC
 	`;
@@ -570,7 +571,7 @@ export async function listActiveLobbies(): Promise<
 		{ mode: number; createdAt: string; p1?: ActiveLobbyPlayer; p2?: ActiveLobbyPlayer }
 	>();
 	for (const r of rows) {
-		const slot = grouped.get(r.lobby_id) ?? { mode: r.mode, createdAt: r.created_at };
+		const slot = grouped.get(parseRankedId(r.lobby_id)) ?? { mode: r.mode, createdAt: r.created_at };
 		const player: ActiveLobbyPlayer = {
 			userId: r.user_id,
 			displayName: r.display_name,
@@ -582,7 +583,7 @@ export async function listActiveLobbies(): Promise<
 		};
 		if (r.team === 1) slot.p1 = player;
 		else slot.p2 = player;
-		grouped.set(r.lobby_id, slot);
+		grouped.set(parseRankedId(r.lobby_id), slot);
 	}
 
 	return Array.from(grouped.entries())
@@ -614,13 +615,13 @@ export async function getRankedOverview(): Promise<{
 		}>
 	>`
 		SELECT
-			(SELECT COUNT(*) FROM lobby WHERE event_type = 'RANKED' AND state = 'Ongoing') AS active_matches,
-			(SELECT COUNT(*) FROM lobby WHERE event_type = 'RANKED' AND state = 'Contested') AS contested_matches,
-			(SELECT COUNT(*) FROM lobby WHERE event_type = 'RANKED' AND state = 'Finished'
+			(SELECT COUNT(*) FROM achillea.lobby WHERE event_type = 'RANKED' AND state = 'Ongoing') AS active_matches,
+			(SELECT COUNT(*) FROM achillea.lobby WHERE event_type = 'RANKED' AND state = 'Contested') AS contested_matches,
+			(SELECT COUNT(*) FROM achillea.lobby WHERE event_type = 'RANKED' AND state = 'Finished'
 				AND updated_at >= date_trunc('day', now())) AS finished_today,
-			(SELECT COUNT(*) FROM lobby WHERE event_type = 'RANKED'
+			(SELECT COUNT(*) FROM achillea.lobby WHERE event_type = 'RANKED'
 				AND created_at >= date_trunc('day', now())) AS matches_today,
-			(SELECT COUNT(*) FROM user_elo WHERE games_played > 0) AS total_players
+			(SELECT COUNT(*) FROM achillea.user_elo WHERE games_played > 0) AS total_players
 	`;
 	const r = rows[0];
 	return {
@@ -645,7 +646,7 @@ export async function adminResolveLobby(
 	// Le verrou authoritatif est posé DANS la transaction (SELECT … FOR UPDATE) ci-dessous,
 	// pour sérialiser 2 validations admin concurrentes.
 	const lobbyState = await sql<Array<{ state: string }>>`
-		SELECT state FROM lobby WHERE id = ${lobbyId} LIMIT 1
+		SELECT state FROM achillea.lobby WHERE id = ${lobbyId} LIMIT 1
 	`;
 	if (lobbyState[0]?.state === "Finished" || lobbyState[0]?.state === "Canceled") {
 		return { applied: false, eloDelta: { p1: 0, p2: 0 } };
@@ -654,8 +655,8 @@ export async function adminResolveLobby(
 	// Récupère les 2 joueurs pour calcul Elo
 	const players = await sql<Array<{ user_id: string; team: number; elo: number }>>`
 		SELECT lu.user_id, lu.team, COALESCE(ue.elo, 0) AS elo
-		FROM lobby_user lu
-		LEFT JOIN user_elo ue ON ue.user_id = lu.user_id AND ue.mode = ${mode}
+		FROM achillea.lobby_user lu
+		LEFT JOIN achillea.user_elo ue ON ue.user_id = lu.user_id AND ue.mode = ${mode}
 		WHERE lu.lobby_id = ${lobbyId}
 		ORDER BY lu.team ASC
 	`;
@@ -694,17 +695,17 @@ export async function adminResolveLobby(
 	await sql.begin(async (tx: any) => {
 		// Verrou + re-vérification idempotente sous transaction : si une autre validation
 		// concurrente a déjà finalisé/annulé le lobby, on n'applique RIEN (anti double-ELO).
-		const cur = await tx`SELECT state FROM lobby WHERE id = ${lobbyId} FOR UPDATE`;
+		const cur = await tx`SELECT state FROM achillea.lobby WHERE id = ${lobbyId} FOR UPDATE`;
 		if (!cur[0] || cur[0].state === "Finished" || cur[0].state === "Canceled") {
 			applied = false;
 			return;
 		}
 		await tx`
-			UPDATE lobby SET state = 'Finished', updated_at = NOW()
+			UPDATE achillea.lobby SET state = 'Finished', updated_at = NOW()
 			WHERE id = ${lobbyId}
 		`;
 		await tx`
-			UPDATE lobby_match SET
+			UPDATE achillea.lobby_match SET
 				score_team1 = ${s1},
 				score_team2 = ${s2},
 				team1validated = true,
@@ -714,19 +715,19 @@ export async function adminResolveLobby(
 			WHERE lobby_id = ${lobbyId}
 		`;
 		await tx`
-			UPDATE lobby_user SET
+			UPDATE achillea.lobby_user SET
 				score = ${s1}, forfeit = ${p1Forfeit}, elo_variation = ${upP1.clampedDelta},
 				validated_result = true, state = 'Finished', updated_at = NOW()
 			WHERE lobby_id = ${lobbyId} AND team = 1
 		`;
 		await tx`
-			UPDATE lobby_user SET
+			UPDATE achillea.lobby_user SET
 				score = ${s2}, forfeit = ${p2Forfeit}, elo_variation = ${upP2.clampedDelta},
 				validated_result = true, state = 'Finished', updated_at = NOW()
 			WHERE lobby_id = ${lobbyId} AND team = 2
 		`;
 		await tx`
-			UPDATE user_elo SET
+			UPDATE achillea.user_elo SET
 				elo = elo + ${upP1.clampedDelta},
 				peak_rating = GREATEST(peak_rating, elo + ${upP1.clampedDelta}),
 				games_played = games_played + 1,
@@ -736,7 +737,7 @@ export async function adminResolveLobby(
 			WHERE user_id = ${p1.user_id} AND mode = ${mode}
 		`;
 		await tx`
-			UPDATE user_elo SET
+			UPDATE achillea.user_elo SET
 				elo = elo + ${upP2.clampedDelta},
 				peak_rating = GREATEST(peak_rating, elo + ${upP2.clampedDelta}),
 				games_played = games_played + 1,
@@ -761,8 +762,8 @@ export async function adminResolveLobby(
  */
 export async function cleanupStaleOngoingLobbies(maxAgeHours = 24): Promise<number> {
 	const rows = await sql<Array<{ id: number }>>`
-		UPDATE lobby SET state = 'Canceled', updated_at = now()
-		WHERE state = 'Ongoing' AND created_at < now() - make_interval(hours => ${maxAgeHours})
+		UPDATE achillea.lobby SET state = 'Canceled', updated_at = now()
+		WHERE event_type = 'RANKED' AND state = 'Ongoing' AND created_at < now() - make_interval(hours => ${maxAgeHours})
 		RETURNING id
 	`;
 	return rows.length;

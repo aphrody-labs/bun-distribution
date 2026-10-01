@@ -2,6 +2,7 @@
 // Best-effort : un échec d'écriture ne doit JAMAIS interrompre un match.
 
 import { sql } from "./db";
+import { parseRankedId } from "./ids";
 
 export type RankedEventType =
 	// matchmaking (file aléatoire)
@@ -59,10 +60,10 @@ export interface MatchEventInput {
 export async function logMatchEvent(evt: MatchEventInput): Promise<void> {
 	try {
 		await sql`
-			INSERT INTO ranked_match_event (lobby_id, room_code, mode, user_id, event_type, detail)
+			INSERT INTO achillea.ranked_match_event (lobby_id, room_code, mode, user_id, event_type, detail)
 			VALUES (
 				${evt.lobbyId ?? null}, ${evt.roomCode ?? null}, ${evt.mode ?? null},
-				${evt.userId ?? null}, ${evt.type}, ${JSON.stringify(evt.detail ?? {})}::jsonb
+				${evt.userId ?? null}, ${evt.type}, ${evt.detail ?? {}}::jsonb
 			)
 		`;
 	} catch (err) {
@@ -98,15 +99,20 @@ export async function listMatchEvents(
 	const lobbyId = opts.lobbyId ?? null;
 	const roomCode = opts.roomCode ?? null;
 	const userId = opts.userId ?? null;
-	return await sql<MatchEventRow[]>`
+	const rows = await sql<MatchEventRow[]>`
 		SELECT e.id, e.created_at, e.lobby_id, e.room_code, e.mode, e.user_id,
 		       u.display_name, e.event_type, e.detail
-		FROM ranked_match_event e
-		LEFT JOIN "user" u ON u.id = e.user_id
+		FROM achillea.ranked_match_event e
+		LEFT JOIN achillea."user" u ON u.id = e.user_id
 		WHERE (${lobbyId}::int IS NULL OR e.lobby_id = ${lobbyId})
 		  AND (${roomCode}::text IS NULL OR e.room_code = ${roomCode})
 		  AND (${userId}::text IS NULL OR e.user_id = ${userId})
 		ORDER BY e.id DESC
 		LIMIT ${limit}
 	`;
+	for (const row of rows) {
+		row.id = parseRankedId(row.id);
+		row.lobby_id = row.lobby_id === null ? null : parseRankedId(row.lobby_id);
+	}
+	return rows;
 }

@@ -85,7 +85,7 @@ async function resolveAuth(req: express.Request): Promise<SessionUser | null> {
 
 async function userRole(userId: string): Promise<number> {
 	const row = await sql<Array<{ role: number }>>`
-		SELECT role FROM "user" WHERE id = ${userId} LIMIT 1
+		SELECT role FROM achillea."user" WHERE id = ${userId} LIMIT 1
 	`;
 	return row[0]?.role ?? 0;
 }
@@ -137,7 +137,7 @@ function notifyProofToBot(lobbyId: number, userId: string, url: string): void {
 async function notifyDisputeResolved(lobbyId: number, cancelled: boolean): Promise<void> {
 	try {
 		const lob = await sql<Array<{ mode: number }>>`
-			SELECT mode FROM lobby WHERE id = ${lobbyId} LIMIT 1
+			SELECT mode FROM achillea.lobby WHERE id = ${lobbyId} LIMIT 1
 		`;
 		const mode = lob[0]?.mode ?? 2;
 		const rows = await sql<
@@ -152,8 +152,8 @@ async function notifyDisputeResolved(lobbyId: number, cancelled: boolean): Promi
 		>`
 			SELECT lu.user_id, lu.team, lu.score, lu.forfeit, lu.elo_variation,
 				COALESCE(ue.elo, 0) AS elo
-			FROM lobby_user lu
-			LEFT JOIN user_elo ue ON ue.user_id = lu.user_id AND ue.mode = ${mode}
+			FROM achillea.lobby_user lu
+			LEFT JOIN achillea.user_elo ue ON ue.user_id = lu.user_id AND ue.mode = ${mode}
 			WHERE lu.lobby_id = ${lobbyId}
 			ORDER BY lu.team ASC
 		`;
@@ -549,7 +549,7 @@ const server = defineServer({
 				try {
 					// Vérifier que le user fait partie du lobby
 					const ownership = await sql<Array<{ team: number }>>`
-						SELECT team FROM lobby_user
+						SELECT team FROM achillea.lobby_user
 						WHERE lobby_id = ${lobbyId} AND user_id = ${auth.id} LIMIT 1
 					`;
 					if (!ownership[0]) {
@@ -720,7 +720,7 @@ const server = defineServer({
 			try {
 				// Récupère le mode + season du lobby
 				const lobby = await sql<Array<{ mode: number }>>`
-				SELECT mode FROM lobby WHERE id = ${lobbyId} LIMIT 1
+				SELECT mode FROM achillea.lobby WHERE id = ${lobbyId} LIMIT 1
 			`;
 				if (!lobby[0]) {
 					res.status(404).json({ error: "not_found" });
@@ -729,7 +729,7 @@ const server = defineServer({
 				// Un forfait ne peut viser qu'un joueur réel du lobby (sinon ignoré en silence).
 				if (body.forfeitUserId) {
 					const players = await sql<Array<{ user_id: string }>>`
-						SELECT user_id FROM lobby_user WHERE lobby_id = ${lobbyId}
+						SELECT user_id FROM achillea.lobby_user WHERE lobby_id = ${lobbyId}
 					`;
 					if (!players.some((p) => p.user_id === body.forfeitUserId)) {
 						res.status(400).json({ error: "forfeit_user_not_in_lobby" });
