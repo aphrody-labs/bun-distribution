@@ -43,7 +43,7 @@ interface DependancesIpcTest {
 	lancerTache(nom: string): Promise<{ success: boolean; error?: string }> | null;
 }
 
-const cheminIpcUnix = new URL("../../../../packages/cron/src/lib/ipc-unix.ts", import.meta.url)
+const cheminIpcUnix = new URL("../../../../../packages/rg/cron/src/lib/ipc-unix.ts", import.meta.url)
 	.href;
 const { demarrerIpcUnix } = (await import(cheminIpcUnix)) as {
 	demarrerIpcUnix: (deps: DependancesIpcTest) => PontIpcTest;

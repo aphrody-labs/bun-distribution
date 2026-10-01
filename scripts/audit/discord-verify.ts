@@ -16,6 +16,7 @@ const requiredCatalog = [
   "@discordx/utilities",
   "discord.js",
   "discord-api-types",
+  "@discordjs/rest",
 ];
 
 for (const pkg of requiredCatalog) {
@@ -32,16 +33,26 @@ function run(cwd: string, ...args: string[]): void {
   if (result.status !== 0) process.exit(result.status ?? 1);
 }
 
-// 2. Gate @aphrody/messaging (Aphrody-owned transport & adapter)
+// 2. Gate @aphrody/discord-kit (Unified Discord bot core framework)
+const discordKit = resolve(root, "packages/discord/kit");
+for (const gate of ["typecheck", "test", "build"]) {
+  run(discordKit, "run", gate);
+}
+
+// 3. Gate @aphrody/messaging (Aphrody-owned transport & adapter)
 const messaging = resolve(root, "packages/discord/aphrody-messaging");
 for (const gate of ["typecheck", "test", "build"]) {
   run(messaging, "run", gate);
 }
 
-// 3. Gate consumer bots typecheck & integrity if requested with --full
+// 4. Gate consumer bots typecheck & integrity if requested with --full
 if (process.argv.includes("--full")) {
   const shenronBot = resolve(root, "apps/shenron/bot");
   run(shenronBot, "run", "type-check");
+  run(shenronBot, "run", "test");
+
+  const rgBot = resolve(root, "apps/rg/bot");
+  run(rgBot, "run", "test");
 }
 
-console.log("\nAll Discord monorepo gates and messaging packages passed successfully.");
+console.log("\nAll Discord monorepo gates, shared packages, and bot integrations passed successfully.");

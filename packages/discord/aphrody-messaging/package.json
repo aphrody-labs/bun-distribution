@@ -26,7 +26,7 @@
     "typescript": "catalog:"
   },
   "dependencies": {
-    "@discordjs/rest": "2.5.0"
+    "@discordjs/rest": "catalog:"
   },
   "engines": {
     "bun": ">=1.4.2"

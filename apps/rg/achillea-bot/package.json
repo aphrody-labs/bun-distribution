@@ -52,6 +52,7 @@
   },
   "dependencies": {
     "@aphrody/canvas": "workspace:*",
+    "@aphrody/discord-kit": "workspace:*",
     "discordx": "catalog:",
     "@discordx/importer": "catalog:",
     "@discordx/utilities": "catalog:",

@@ -18,6 +18,7 @@
   },
   "dependencies": {
     "@aphrody/canvas": "workspace:*",
+    "@aphrody/discord-kit": "workspace:*",
     "discordx": "catalog:",
     "@rosegriffon/achillea-client": "workspace:*",
     "@rosegriffon/azalee": "workspace:*",

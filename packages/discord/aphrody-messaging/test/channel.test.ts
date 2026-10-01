@@ -147,6 +147,10 @@ test('streamInbox aborts room discovery in flight', async () => {
 		fetch: (async (_input, init) => {
 			started();
 			return new Promise<Response>((_resolve, reject) => {
+				if (init?.signal?.aborted) {
+					reject(new DOMException('Aborted', 'AbortError'));
+					return;
+				}
 				init?.signal?.addEventListener('abort', () => reject(new DOMException('Aborted', 'AbortError')), {
 					once: true,
 				});

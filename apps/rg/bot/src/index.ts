@@ -25,7 +25,14 @@
  */
 import "reflect-metadata";
 import { Client } from "discordx";
-import { MessageFlags, Partials } from "discord.js";
+import { Partials } from "discord.js";
+import {
+	clearGuildCommandsSafe,
+	createProductionCacheOptions,
+	initApplicationCommandsSafe,
+	resolveGrantedIntents,
+	safeExecuteInteraction,
+} from "@aphrody/discord-kit";
 
 import { closeCache } from "./lib/cache";
 import { DISCORD_TOKEN, GUILD_IDS, PROFIL, PROFIL_ANNONCEUR } from "./lib/config";
@@ -49,33 +56,16 @@ const MODULES_EVENEMENTS_RG = [
 	"events/accueil.ts",
 ] as const;
 
+const intents = await resolveGrantedIntents(DISCORD_TOKEN, {
+	desiredIntents: PROFIL.intents,
+});
+
 const client = new Client({
-	// Les intents viennent du PROFIL, et ce n'est pas cosmétique : `GuildMembers`
-	// est un intent privilégié qu'il faut cocher dans le portail développeur de
-	// chaque application. Demandé sans être accordé, Discord ferme la connexion
-	// (« Used disallowed intents ») et le service ne démarre pas du tout — c'est
-	// le cas de l'application Azalée, qui n'en a pas besoin.
-	intents: [...PROFIL.intents],
+	intents: [...intents],
 	partials: [Partials.GuildMember, Partials.User],
 	silent: false,
-	// `botId` de discordx : sans effet tant qu'un processus ne pilote qu'un
-	// client (une commande sans `@Bot(...)` est acceptée par tous), mais il rend
-	// les journaux lisibles et prépare le jour où l'on voudrait les deux bots
-	// dans un seul processus.
 	botId: PROFIL.identifiantBot,
-	// Portée des commandes — c'est ici que se joue « bot d'un serveur » contre
-	// « bot public ».
-	//
-	// `guildes` : intersection entre les guildes VOULUES et celles où le bot est
-	// réellement présent. Lister en dur une guilde qu'il n'a pas encore rejointe
-	// ferait échouer l'enregistrement (l'API refuse une guilde inconnue) et
-	// priverait AUSSI l'autre serveur des siennes ; ici, une guilde pas encore
-	// autorisée est simplement ignorée, et prise en compte au redémarrage suivant.
-	//
-	// `globale` : aucune liste. discordx publie alors les commandes sur
-	// l'application elle-même, donc sur tout serveur qui l'invite — y compris
-	// ceux qui n'existent pas encore. C'est la seule portée qui tienne pour un
-	// bot public : sans elle, chaque nouvelle invitation demanderait un commit.
+	...createProductionCacheOptions(),
 	...(PROFIL.porteeCommandes === "guildes"
 		? {
 				botGuilds: [
@@ -132,46 +122,11 @@ let serveurAdmin: ServeurAdmin | null = null;
 // chaque démarrage et aurait rendu le bot muet en v15. Les deux sont émis à la
 // suite dans cette version, la bascule est donc sans effet de bord.
 client.once("clientReady", async () => {
-	try {
-		await client.initApplicationCommands();
-	} catch (err) {
-		// `Invalid Form Body` seul est indiagnosticable : Discord met le CHEMIN du
-		// champ fautif (`3.options.1.description`) dans `rawError.errors`, que
-		// `err.message` n'expose pas. Sans lui, on cherche à l'aveugle parmi
-		// soixante sous-commandes.
-		const brut = (err as { rawError?: unknown }).rawError;
-		console.error(
-			"✗ initApplicationCommands failed:",
-			err instanceof Error ? err.message : err,
-			brut ? `\n  détail : ${JSON.stringify(brut)}` : ""
-		);
-	}
+	await initApplicationCommandsSafe(client);
 
 	// Portée globale : effacer les commandes de guilde héritées de l'ancien mode.
-	// Discord ADDITIONNE les deux portées — sans ce nettoyage, un membre de Rose
-	// Griffon verrait chaque commande deux fois, sans moyen de distinguer laquelle
-	// répond. L'ordre compte : les globales sont déjà publiées ci-dessus, donc
-	// aucun serveur ne se retrouve sans commande entre les deux appels.
-	//
-	// Seules les guildes réellement rejointes sont nettoyées : l'API refuse une
-	// guilde inconnue, et l'erreur ferait échouer tout le lot.
 	if (PROFIL.porteeCommandes === "globale") {
-		const àNettoyer = PROFIL.guildes.filter((id) => client.guilds.cache.has(id));
-		if (àNettoyer.length > 0) {
-			try {
-				await client.clearApplicationCommands(...àNettoyer);
-				console.log(
-					`✓ Commandes de guilde effacées sur ${àNettoyer.length} serveur(s) — les globales prennent le relais.`
-				);
-			} catch (err) {
-				// Un nettoyage raté laisse des doublons visibles, pas un bot muet :
-				// on le signale sans empêcher le démarrage.
-				console.warn(
-					"⚠ Nettoyage des commandes de guilde impossible (doublons possibles) :",
-					err instanceof Error ? err.message : err
-				);
-			}
-		}
+		await clearGuildCommandsSafe(client, PROFIL.guildes);
 	}
 
 	// Dire OÙ les commandes ont atterri, et surtout où elles manquent : un bot en
@@ -228,47 +183,11 @@ client.once("clientReady", async () => {
  * ne reprenait la main : l'interaction restait sur « réfléchit… » pour
  * toujours. `editReply` est le seul chemin possible dans cet état — `reply()`
  * lèverait `InteractionAlreadyReplied`.
- */
 client.on("interactionCreate", async (interaction) => {
-	let echec: unknown;
-	try {
-		await client.executeInteraction(interaction);
-	} catch (err) {
-		echec = err;
-		console.error(
-			"✗ executeInteraction a levé :",
-			err instanceof Error ? (err.stack ?? err.message) : err
-		);
-	}
-
-	// Une interaction d'autocomplétion n'est pas répondable : elle se sert par
-	// `respond()`, et la laisser passer ici lèverait à chaque frappe.
-	if (!interaction.isRepliable()) {
-		return;
-	}
-
-	try {
-		if (interaction.replied) {
-			// La commande a déjà parlé : ne rien ajouter.
-			return;
-		}
-		if (interaction.deferred) {
-			if (echec) {
-				await interaction.editReply({
-					content: "❌ La commande a échoué. Le détail est dans le journal du service.",
-				});
-			}
-			return;
-		}
-		await interaction.reply({
-			content: echec
-				? "❌ La commande a échoué. Le détail est dans le journal du service."
-				: "Commande inconnue ou expirée. Recharge Discord (Ctrl+R) pour rafraîchir la liste.",
-			flags: MessageFlags.Ephemeral,
-		});
-	} catch {
-		// Jeton d'interaction expiré (3 s pour la première réponse, 15 min ensuite).
-	}
+	await safeExecuteInteraction(client, interaction, {
+		failureMessage: "❌ La commande a échoué. Le détail est dans le journal du service.",
+		unhandledMessage: "Commande inconnue ou expirée. Recharge Discord (Ctrl+R) pour rafraîchir la liste.",
+	});
 });
 
 /**

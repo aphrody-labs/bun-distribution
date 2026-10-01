@@ -1,5 +1,6 @@
 import { CommandInteraction } from "discord.js";
 import type { ArgsOf, Client } from "discordx";
+import { safeExecuteInteraction } from "@aphrody/discord-kit";
 
 import { generalConfig } from "@/configs";
 import { Discord, Guard, Injectable, On } from "@/decorators";
@@ -36,6 +37,6 @@ export default class InteractionCreateEvent {
 		await this.stats.registerInteraction(interaction as AllInteractions);
 		this.logger.logInteraction(interaction as AllInteractions);
 
-		client.executeInteraction(interaction);
+		await safeExecuteInteraction(client, interaction);
 	}
 }

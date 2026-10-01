@@ -450,15 +450,19 @@ smoke de chaque application, packaging autonome des assets partagés.
 ### Autonomie Discord et élimination du fork upstream — 2026-10-01
 
 - FAIT : les dépendances Discord (`discordx`, `@discordx/di`, `@discordx/pagination`,
-  `@discordx/importer`, `@discordx/utilities`, `discord.js`, `discord-api-types`) sont
-  centralisées dans le `workspaces.catalog` racine sous Bun 1.4.2 et TypeScript 7.0.2.
-- Les applications consommatrices (`apps/shenron/bot`, `apps/rg/bot`, `apps/rg/achillea-bot`)
-  utilisent `catalog:` sans dépendre d'un fork local ni de paquets obsolètes.
-- Le dossier `upstream/discord` (2 232 fichiers, 3,9 Go libérés) a été supprimé.
-- `scripts/audit/discord-verify.ts` teste l'intégrité du catalog, `@aphrody/messaging`
-  (typecheck, 9 tests, build) et le typecheck de Shenron bot.
-- Gates vérifiés : `bun run discord:verify` réussi, tests `@shenron/bot` (412 tests passants),
-  tests `@aphrody/messaging` (9 tests passants).
+  `@discordx/importer`, `@discordx/utilities`, `discord.js` ^14.27.0, `discord-api-types` ^0.38.55,
+  `@discordjs/rest` ^2.6.3) sont unifiées et cataloguées dans le `workspaces.catalog` racine sous Bun 1.4.2 et TypeScript 7.0.2.
+- FAIT : création du package partagé `@aphrody/discord-kit` (`packages/discord/kit`) qui centralise :
+  - Négociation d'intents pré-vol (`resolveGrantedIntents`, `assertDiscordTokenMatchesProfile`) pour éviter la coupure fatale 4014 ("Disallowed intents").
+  - Limites de cache mémoire et sweepers de production (`createProductionCacheOptions`) calibrés pour Bun en 24/7.
+  - Dispatcher d'interactions résilient (`safeExecuteInteraction`) récupérant les pannes avec `editReply` si différé, réponses éphémères propres et garde autocomplétion.
+  - Initialisation sécurisée des commandes avec parsing du `rawError` Discord (`initApplicationCommandsSafe`, `clearGuildCommandsSafe`).
+  - Guards partagés (`NotBot`, `createMonoGuildGuard`).
+  - Gestion du cycle de vie et arrêt gracieux (`registerGracefulShutdown`).
+- FAIT : alignement et montée en gamme des trois bots (`apps/shenron/bot`, `apps/rg/bot`, `apps/rg/achillea-bot`) qui consomment désormais `@aphrody/discord-kit`.
+- FAIT : élimination complète de `upstream/discord` (2 232 fichiers, 3,9 Go libérés) et des références legacy.
+- FAIT : `scripts/audit/discord-verify.ts` contrôle désormais l'intégrité du catalog (8 paquets), `@aphrody/discord-kit` (typecheck, 14 tests, build), `@aphrody/messaging` (typecheck, 9 tests, build), `@shenron/bot` (type-check, 412 tests), et `@rosegriffon/bot` (1 228 tests).
+- Gates validés : 100% passants (14/14 tests kit, 9/9 tests messaging, 412/412 tests shenron, 1 228/1 228 tests rg-bot).
 
 ## 7. Shenron, produit final
 

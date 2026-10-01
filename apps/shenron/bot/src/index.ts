@@ -5,7 +5,13 @@ import { tsyringeDependencyRegistryEngine } from "@discordx/di";
 
 DIService.engine = tsyringeDependencyRegistryEngine.setInjector(container);
 
-import { Partials, Options } from "discord.js";
+import { Partials } from "discord.js";
+import {
+	createProductionCacheOptions,
+	initApplicationCommandsSafe,
+	resolveGrantedIntents,
+	safeExecuteInteraction,
+} from "@aphrody/discord-kit";
 import { migrate } from "drizzle-orm/bun-sqlite/migrator";
 import { env } from "./lib/env";
 import { logger } from "./lib/logger";
@@ -66,7 +72,17 @@ try {
 
 // Un seul client Gateway : les anciens noms de personas restent des alias
 // pour l'API et le dashboard, mais ne créent plus de connexions ni de caches.
-const intents = [...new Set(Object.values(PERSONAS).flatMap((p) => p.intents))];
+const desiredIntents = [...new Set(Object.values(PERSONAS).flatMap((p) => p.intents))];
+const intents = PERSONAS.shenron.token
+	? await resolveGrantedIntents(PERSONAS.shenron.token, {
+			desiredIntents,
+			logger: {
+				warn: (msg) => logger.warn(msg),
+				error: (msg) => logger.error(msg),
+			},
+		})
+	: desiredIntents;
+
 const client = new Client({
 	botId: "shenron",
 	intents,
@@ -80,16 +96,7 @@ const client = new Client({
 	silent: env.NODE_ENV === "production",
 	botGuilds: [env.GUILD_ID],
 	guards: [CommandPermissions],
-	makeCache: Options.cacheWithLimits({
-		MessageManager: 200,
-		ThreadManager: 50,
-		ReactionManager: 0,
-	}),
-	sweepers: {
-		...Options.DefaultSweeperSettings,
-		messages: { interval: 3600, lifetime: 1800 },
-		threads: { interval: 3600, lifetime: 3600 },
-	},
+	...createProductionCacheOptions(),
 });
 const clients = new Map<PersonaId, Client>(PERSONA_IDS.map((id) => [id, client]));
 
@@ -118,7 +125,12 @@ client.once("clientReady", async () => {
 		await guild.leave().catch((err) => logger.error({ err, gid }, "guild.leave failed"));
 	}
 
-	await client.initApplicationCommands();
+	await initApplicationCommandsSafe(client, {
+		logger: {
+			info: (msg) => logger.info(msg),
+			error: (msg, ...args) => logger.error({ args }, msg),
+		},
+	});
 	logger.info(`✓ Shenron connecté en tant que ${client.user?.username}`);
 	await runBootAudit(client).catch((err) => logger.error({ err }, "boot-audit failed"));
 	try {
@@ -134,8 +146,13 @@ client.on("guildCreate", async (guild) => {
 	await guild.leave().catch((err) => logger.error({ err, gid: guild.id }, "guild.leave failed"));
 });
 
-client.on("interactionCreate", (interaction) => {
-	client.executeInteraction(interaction);
+client.on("interactionCreate", async (interaction) => {
+	await safeExecuteInteraction(client, interaction, {
+		logger: {
+			error: (msg, ...args) => logger.error({ args }, msg),
+			warn: (msg, ...args) => logger.warn({ args }, msg),
+		},
+	});
 });
 
 export async function shutdown(
