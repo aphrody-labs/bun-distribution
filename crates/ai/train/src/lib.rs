@@ -7,17 +7,24 @@
 //! - Gold-leak guarded dataset triples generation.
 //! - Metric-driven candidate promotion gates (ΔRecall@5 ≥ +0.01, per-tag regression ≤ 0.03).
 //! - Automatic model registration in [`aphrody_models::ModelStore`].
+//! - Optional PostgreSQL training registry (feature `registry`, ADR D11): dataset lineage, runs,
+//!   artifacts, metrics and promotions, recorded only when `APHRODY_TRAINING_DATABASE_URL[_POOLED]`
+//!   is set.
 
 mod events;
 mod job;
 mod lease;
 mod promote;
+#[cfg(feature = "registry")]
+pub mod registry;
 mod runner;
 
 pub use events::TrainEvent;
 pub use job::{TrainKind, TrainingJob};
 pub use lease::acquire_training_lease;
 pub use promote::{PromoteCriteria, PromoteVerdict, evaluate_candidate, register_promoted_model};
+#[cfg(feature = "registry")]
+pub use registry::{Registry, RegistryError, RunRecorder};
 pub use runner::{JobOutcome, TrainError, find_python_train_project, run_training_job};
 
 #[cfg(test)]

@@ -14,11 +14,19 @@ description            = "Training surface for aphrody: exclusive GPU lease, job
 [lints]
 workspace = true
 
+[features]
+default = []
+# Generic training registry (ADR D11): dataset lineage, runs, artifacts, metrics and
+# promotions in PostgreSQL through `aphrody-sql`. Inert unless
+# `APHRODY_TRAINING_DATABASE_URL[_POOLED]` is set.
+registry = ["dep:aphrody-sql"]
+
 [dependencies]
 aphrody-models   = { workspace = true }
 aphrody-agent-home = { workspace = true }
 aphrody-proc     = { workspace = true }
 aphrody-rag-core = { workspace = true }
+aphrody-sql      = { workspace = true, features = ["postgres"], optional = true }
 # uv resolution (`$APHRODY_UV_BIN`, else PATH) owned by aphrody-os.
 aphrody-toolchains = { workspace = true }
 serde            = { workspace = true }

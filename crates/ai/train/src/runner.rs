@@ -86,11 +86,31 @@ pub fn find_python_train_project(repo_root: &Path) -> PathBuf {
 ///
 /// Refuses to run on hosts without a CUDA GPU unless `job.allow_cpu` is true.
 ///
+/// With the `registry` feature and `APHRODY_TRAINING_DATABASE_URL[_POOLED]` set, the run, its
+/// artifacts and its metrics are also recorded in the training registry (best effort: registry
+/// failures are logged and never fail the job). Without the feature or the variable the behaviour
+/// is unchanged.
+///
 /// # Errors
 ///
 /// Returns [`TrainError`] if GPU requirements are not met, lease cannot be acquired,
 /// or the training process fails.
 pub async fn run_training_job(
+    job: &TrainingJob,
+    repo_root: &Path,
+    locks_dir: &Path,
+) -> Result<JobOutcome, TrainError> {
+    #[cfg(feature = "registry")]
+    let recorder = crate::registry::RunRecorder::begin_from_env(job, repo_root).await;
+    let result = run_training_job_unrecorded(job, repo_root, locks_dir).await;
+    #[cfg(feature = "registry")]
+    if let Some(recorder) = recorder {
+        recorder.finish(&result).await;
+    }
+    result
+}
+
+async fn run_training_job_unrecorded(
     job: &TrainingJob,
     repo_root: &Path,
     locks_dir: &Path,

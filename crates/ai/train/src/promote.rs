@@ -138,6 +138,28 @@ pub fn evaluate_candidate(
     }
 }
 
+impl PromoteVerdict {
+    /// Record this verdict in the training registry (feature `registry`): a
+    /// `recall@5.delta` metric, a proposal for `(kind, alias)` and the promotion
+    /// or rejection. Returns the promotion id. Opt-in: callers decide when to
+    /// record; nothing is written by [`evaluate_candidate`] itself.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`crate::RegistryError`] on database failures.
+    #[cfg(feature = "registry")]
+    pub async fn record(
+        &self,
+        registry: &crate::registry::Registry,
+        kind: &str,
+        alias: &str,
+        artifact_id: &str,
+        decided_by: &str,
+    ) -> Result<String, crate::registry::RegistryError> {
+        registry.record_verdict(kind, alias, artifact_id, None, self, decided_by).await
+    }
+}
+
 /// Register a promoted model into the local [`ModelStore`].
 ///
 /// # Errors

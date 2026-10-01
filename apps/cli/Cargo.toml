@@ -20,7 +20,7 @@ workspace = true
 default = []
 koharu = ["aphrody-manga/koharu"]
 rag = ["dep:aphrody-rag", "aphrody-rag/ort", "aphrody-agent-runtime/rag", "aphrody-app-server/rag"]
-train = ["dep:aphrody-train"]
+train = ["dep:aphrody-train", "aphrody-train/registry"]
 memory-lancedb = ["aphrody-memory/lancedb"]
 # Native Google Magika deep-learning file-type classification, exposed via
 # `aphrody re classify <path>`. Opt-in because it links the ONNX Runtime

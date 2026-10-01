@@ -6,7 +6,8 @@
 use std::path::PathBuf;
 
 use aphrody_train::{
-    TrainKind, TrainingJob, acquire_training_lease, find_python_train_project, run_training_job,
+    Registry, TrainKind, TrainingJob, acquire_training_lease, find_python_train_project,
+    run_training_job,
 };
 use clap::{Args, Subcommand, ValueEnum};
 use miette::{IntoDiagnostic, Result};
@@ -54,6 +55,9 @@ enum TrainAction {
         #[arg(long)]
         base_model: Option<String>,
     },
+    /// Apply the training registry migrations (schema `training`) over the direct
+    /// `APHRODY_TRAINING_DATABASE_URL`.
+    RegistryMigrate,
     /// Reserved for measured shadow-index A/B promotion; currently refuses installation.
     Promote {
         /// Path to the candidate model artifact file.
@@ -98,6 +102,22 @@ pub(crate) async fn run(args: TrainArgs) -> Result<()> {
              that workflow is not implemented",
             artifact.display()
         ));
+    }
+    if matches!(args.action, TrainAction::RegistryMigrate) {
+        let report = Registry::migrate_from_env()
+            .await
+            .map_err(|e| miette::miette!("Training registry migration failed: {e}"))?
+            .ok_or_else(|| {
+                miette::miette!("APHRODY_TRAINING_DATABASE_URL is not set; nothing to migrate")
+            })?;
+        let applied: Vec<String> =
+            report.applied.iter().map(|(v, name)| format!("{v:04}_{name}")).collect();
+        let summary = serde_json::json!({
+            "applied": applied,
+            "already_applied": report.already_applied,
+        });
+        println!("{}", serde_json::to_string_pretty(&summary).into_diagnostic()?);
+        return Ok(());
     }
     let state_dir = aphrody_models::paths::state_dir().into_diagnostic()?;
     let locks_dir = state_dir.join("locks");
@@ -163,6 +183,7 @@ pub(crate) async fn run(args: TrainArgs) -> Result<()> {
             }
         },
         TrainAction::Promote { .. } => unreachable!("promotion was refused before state access"),
+        TrainAction::RegistryMigrate => unreachable!("registry migration returned before state access"),
     }
     Ok(())
 }
