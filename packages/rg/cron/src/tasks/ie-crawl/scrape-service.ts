@@ -1017,6 +1017,12 @@ async function clientX(): Promise<XClient> {
 
 async function verbeScrapePage(requete: Record<string, unknown>): Promise<ReponseScrape> {
   const url = validerUrl(requete.url);
+  if (requete.profil !== undefined) {
+    throw new ErreurScrape(
+      "requete_invalide",
+      "Browser profile selection is unsupported; use the shared Aphrody Web endpoint.",
+    );
+  }
   const debut = Bun.nanoseconds();
   let page: WebCdpPage;
   try {
