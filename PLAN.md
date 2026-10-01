@@ -356,6 +356,22 @@ aux trois racines actives. WSL : disques, processus, shell et chemins revérifi�
   qualification complète des bridges restent ouverts. Aucun checkout UI inspecté
   par la nouvelle découverte et aucun service modifié.
 
+### Catalogue des binaires borné à la racine — 2026-10-01
+
+- FAIT : discovery conserve la priorité des exécutables installés puis recherche
+  uniquement les `target/release` et `target/debug` de la racine fournie.
+  Les builds des anciens checkouts frères ne sont plus ajoutés au bridge.
+- Les noms `.exe` sont normalisés pour la comparaison au catalogue ; les
+  installations locales Windows utilisent le suffixe exécutable adapté.
+- Test de layout isolé : builds frères legacy/UI rejetés, priorité release sur
+  debug vérifiée, noms `.exe` catalogués et artefacts `.pdb`/hors domaine ignorés.
+- Gates : 46 tests Infra réussis, un test natif conditionnel ignoré ; typecheck,
+  format et diff-check réussis. Oxc sans erreur, trois avertissements préexistants
+  dans le fichier (`no-await-in-loop` deux fois, `no-array-sort`).
+- INCOMPLET : le test reconnaît des chemins `.exe`, sans exécuter Windows.
+  Installation, provenance/version des binaires, ABI interop, fleet/layering et
+  consommateurs assemblés restent ouverts. Les binaires installés restent prioritaires.
+
 ## 4. UI et bibliothèques navigateur
 
 Propriétaire : `packages/ui`, `crates/ui`.

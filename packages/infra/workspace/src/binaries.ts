@@ -1,4 +1,4 @@
-import { basename, join, resolve } from "node:path";
+import { basename, join } from "node:path";
 import { infraRoot } from "./runtime.ts";
 
 export type AphrodyBinary = {
@@ -28,12 +28,12 @@ async function cataloguedNames(root: string): Promise<Set<string>> {
   );
 }
 
-/** Discover only trusted local-bin and sibling-workspace build outputs, never arbitrary PATH files. */
+/** Discover only trusted installed binaries and the supplied workspace build outputs, never arbitrary PATH files. */
 export async function discoverAphrodyBinaries(root = infraRoot()): Promise<AphrodyBinary[]> {
   const catalogued = await cataloguedNames(root);
   const found = new Map<string, AphrodyBinary>();
   const add = async (path: string, source: AphrodyBinary["source"]): Promise<void> => {
-    const name = basename(path);
+    const name = basename(path).replace(/\.exe$/i, "");
     if (
       !isAphrodyBinary(name) ||
       name.includes(".") ||
@@ -47,13 +47,15 @@ export async function discoverAphrodyBinaries(root = infraRoot()): Promise<Aphro
   const home = process.env.HOME;
   if (home) {
     for (const name of new Set([...catalogued, "n2b"])) {
-      await add(join(home, ".local", "bin", name), "local-bin");
+      await add(
+        join(home, ".local", "bin", `${name}${process.platform === "win32" ? ".exe" : ""}`),
+        "local-bin",
+      );
     }
   }
-  const workspace = resolve(root, "..");
   for (const profile of ["release", "debug"] as const) {
-    for await (const path of new Bun.Glob(`*/target/${profile}/*`).scan({
-      cwd: workspace,
+    for await (const path of new Bun.Glob(`target/${profile}/*`).scan({
+      cwd: root,
       absolute: true,
     })) {
       await add(path, profile);
