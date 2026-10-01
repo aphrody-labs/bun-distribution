@@ -128,3 +128,36 @@ Each worker reports in its own files; check them, do not assume success.
    (shenron, nie, iecode, bxc, …) to `aphrody-labs`? Rotate the Neon password
    that appeared in the session transcript. 4 historical commits carry AI
    `Co-Authored-By` trailers (history rewrite not done).
+
+## Integration status (2026-10-01, end of session)
+
+Steps 1–5 are done. Aphrody `a2c040ba8..a8a721559` and aphrody-py
+`fa4d504..a555238` are pushed to `aphrody-labs` under `aphrody-code`, without
+AI trailers. The lead also integrated the orphan work left by earlier sessions:
+native RAG backend, `@aphrody/paths`, `.env.example` catalogue, developer
+bootstrap, IECODE follow-up for RG, plugin paths and OpenCode config, LiteLLM
+decision. It restored `publish = false` on 147 manifests (no publication
+without an owner decision).
+
+Parked in `git stash` (do not restore without the noted condition):
+
+- `aphrody wsl-build` and the WSL/Ubuntu distro builds: owner rule, touch WSL
+  only once Aphrody is deployed.
+- `aphrody-llama-server` `in_process` module: does not compile with the
+  `in-process` feature.
+
+Left uncommitted, waiting for an owner decision:
+
+- `packages/infra/workspace/src/git-attribution.ts` and `aphrody git
+  attribution`: history rewriter that strips every `Co-Authored-By` (human
+  ones included) and rewrites authors to `aphrody-dev`, while the rule says
+  `aphrody-code`.
+- `clean-public-ai` scanner and the RG e-mail changes: the scanner's
+  personal-address rule forced `rosegriffonfr@gmail.com` →
+  `contact@aphrody.com` in RG mediation, info and Patreon admin access, which
+  is an authorization change.
+- Bulk upstream documentation import (`consolidation.ts`,
+  `docs/migration/{IMPORTED-DOCS-INDEX.md,document-import.json,source-map.json}`,
+  10 653 untracked files under `docs/*/upstream-*`, about 54 MB): includes
+  GPL-2.0 kernel docs, a whole website (jan) and upstream
+  `AGENTS.md`/`CLAUDE.md` files that agents would load as instructions.
