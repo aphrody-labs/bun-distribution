@@ -592,49 +592,47 @@ pub fn parse_sse_frame(json: &str) -> Result<Vec<ModelStreamEvent>, ModelError> 
 
     let candidate = value.get("candidates").and_then(Value::as_array).and_then(|c| c.first());
 
-    if let Some(candidate) = candidate {
-        if let Some(parts) =
+    if let Some(candidate) = candidate
+        && let Some(parts) =
             candidate.get("content").and_then(|c| c.get("parts")).and_then(Value::as_array)
-        {
-            for part in parts {
-                let signature = part.get(GEMINI_THOUGHT_SIGNATURE).and_then(Value::as_str);
-                if let Some(text) = part.get("text").and_then(Value::as_str) {
-                    let is_thought = part.get("thought").and_then(Value::as_bool).unwrap_or(false);
-                    if is_thought {
-                        if !text.is_empty() {
-                            events.push(ModelStreamEvent::ReasoningDelta(text.to_string()));
-                        }
-                        if let Some(signature) = signature {
-                            events.push(ModelStreamEvent::ReasoningItem {
-                                text: text.to_string(),
-                                opaque: json!({ GEMINI_THOUGHT_SIGNATURE: signature }),
-                            });
-                        }
-                    } else if !text.is_empty() {
-                        events.push(ModelStreamEvent::TextDelta(text.to_string()));
+    {
+        for part in parts {
+            let signature = part.get(GEMINI_THOUGHT_SIGNATURE).and_then(Value::as_str);
+            if let Some(text) = part.get("text").and_then(Value::as_str) {
+                let is_thought = part.get("thought").and_then(Value::as_bool).unwrap_or(false);
+                if is_thought {
+                    if !text.is_empty() {
+                        events.push(ModelStreamEvent::ReasoningDelta(text.to_string()));
                     }
-                } else if let Some(call) = part.get("functionCall").and_then(Value::as_object) {
-                    let name =
-                        call.get("name").and_then(Value::as_str).unwrap_or_default().to_string();
-                    let arguments = call.get("args").cloned().unwrap_or(Value::Null);
-                    let id = call
-                        .get("id")
-                        .and_then(Value::as_str)
-                        .filter(|id| !id.is_empty())
-                        .map_or_else(|| generate_call_id(&name), str::to_string);
-                    // The signature must come back on this exact functionCall
-                    // part; record which call it belongs to.
                     if let Some(signature) = signature {
                         events.push(ModelStreamEvent::ReasoningItem {
-                            text: String::new(),
-                            opaque: json!({
-                                GEMINI_THOUGHT_SIGNATURE: signature,
-                                GEMINI_SIGNATURE_FOR_CALL: id,
-                            }),
+                            text: text.to_string(),
+                            opaque: json!({ GEMINI_THOUGHT_SIGNATURE: signature }),
                         });
                     }
-                    events.push(ModelStreamEvent::ToolCall { id, name, arguments });
+                } else if !text.is_empty() {
+                    events.push(ModelStreamEvent::TextDelta(text.to_string()));
                 }
+            } else if let Some(call) = part.get("functionCall").and_then(Value::as_object) {
+                let name = call.get("name").and_then(Value::as_str).unwrap_or_default().to_string();
+                let arguments = call.get("args").cloned().unwrap_or(Value::Null);
+                let id = call
+                    .get("id")
+                    .and_then(Value::as_str)
+                    .filter(|id| !id.is_empty())
+                    .map_or_else(|| generate_call_id(&name), str::to_string);
+                // The signature must come back on this exact functionCall
+                // part; record which call it belongs to.
+                if let Some(signature) = signature {
+                    events.push(ModelStreamEvent::ReasoningItem {
+                        text: String::new(),
+                        opaque: json!({
+                            GEMINI_THOUGHT_SIGNATURE: signature,
+                            GEMINI_SIGNATURE_FOR_CALL: id,
+                        }),
+                    });
+                }
+                events.push(ModelStreamEvent::ToolCall { id, name, arguments });
             }
         }
     }
@@ -1051,16 +1049,19 @@ mod tests {
         let frame = r#"{"usageMetadata":{"promptTokenCount":100,"candidatesTokenCount":20,
             "totalTokenCount":130,"cachedContentTokenCount":64,"thoughtsTokenCount":10}}"#;
         let events = parse_sse_frame(frame).unwrap();
-        assert_eq!(events, vec![ModelStreamEvent::Completed {
-            usage: Some(TokenUsage {
-                input_tokens: 100,
-                output_tokens: 20,
-                total_tokens: 130,
-                cached_input_tokens: 64,
-                reasoning_output_tokens: 10,
-            }),
-            finish_reason: None,
-        }]);
+        assert_eq!(
+            events,
+            vec![ModelStreamEvent::Completed {
+                usage: Some(TokenUsage {
+                    input_tokens: 100,
+                    output_tokens: 20,
+                    total_tokens: 130,
+                    cached_input_tokens: 64,
+                    reasoning_output_tokens: 10,
+                }),
+                finish_reason: None,
+            }]
+        );
     }
 
     #[test]
@@ -1127,13 +1128,16 @@ mod tests {
             "usageMetadata":{"promptTokenCount":12,"candidatesTokenCount":7,"totalTokenCount":19}
         }"#;
         let events = parse_sse_frame(frame).unwrap();
-        assert_eq!(events, vec![
-            ModelStreamEvent::TextDelta("done".to_string()),
-            ModelStreamEvent::Completed {
-                usage: Some(TokenUsage::new(12, 7, 19)),
-                finish_reason: Some("STOP".to_string()),
-            },
-        ]);
+        assert_eq!(
+            events,
+            vec![
+                ModelStreamEvent::TextDelta("done".to_string()),
+                ModelStreamEvent::Completed {
+                    usage: Some(TokenUsage::new(12, 7, 19)),
+                    finish_reason: Some("STOP".to_string()),
+                },
+            ]
+        );
     }
 
     #[test]

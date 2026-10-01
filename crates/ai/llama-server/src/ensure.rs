@@ -240,15 +240,14 @@ async fn ensure_ollama_ready(opts: &OssReadyOptions<'_>) -> Result<OssReadyOutco
     let mut exists = false;
     if let Some(models) = tags_json.get("models").and_then(|m| m.as_array()) {
         for m in models {
-            if let Some(name) = m.get("name").and_then(|n| n.as_str()) {
-                if name == model
+            if let Some(name) = m.get("name").and_then(|n| n.as_str())
+                && (name == model
                     || name == format!("{model}:latest")
                     || name.starts_with(&format!("{model}:"))
-                    || model.starts_with(&format!("{name}:"))
-                {
-                    exists = true;
-                    break;
-                }
+                    || model.starts_with(&format!("{name}:")))
+            {
+                exists = true;
+                break;
             }
         }
     }

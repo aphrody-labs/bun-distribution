@@ -384,10 +384,12 @@ mod tests {
         });
     }
 
+    type CapturedRequest = (HeaderMap, Vec<(String, String)>, Value);
+
     #[derive(Default)]
     struct Seen {
         calls: AtomicUsize,
-        last: Mutex<Option<(HeaderMap, Vec<(String, String)>, Value)>>,
+        last: Mutex<Option<CapturedRequest>>,
     }
 
     const CHAT_SSE: &str = concat!(
@@ -502,11 +504,14 @@ mod tests {
         let client = OpenAiCompatClient::from_provider(runtime, OpenAiWire::Chat, "qwen2.5-coder");
 
         let events = collect(&client, user_turn("hello")).await;
-        assert_eq!(events, vec![
-            ModelStreamEvent::Created,
-            ModelStreamEvent::TextDelta("hi".into()),
-            ModelStreamEvent::Completed { usage: None, finish_reason: Some("stop".into()) },
-        ]);
+        assert_eq!(
+            events,
+            vec![
+                ModelStreamEvent::Created,
+                ModelStreamEvent::TextDelta("hi".into()),
+                ModelStreamEvent::Completed { usage: None, finish_reason: Some("stop".into()) },
+            ]
+        );
 
         let (headers, query, body) = seen.last.lock().expect("lock").take().expect("request seen");
         assert_eq!(headers["authorization"], "Bearer sk-test");

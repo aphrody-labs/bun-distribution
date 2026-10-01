@@ -196,12 +196,11 @@ fn extract_embedded_json(bytes: &[u8]) -> Option<serde_json::Value> {
         let open = start + rel;
         if let Some(end) = balanced_object_end(bytes, open) {
             // `end` is the index just past the closing '}'.
-            if let Ok(text) = std::str::from_utf8(&bytes[open..end]) {
-                if let Ok(value) = serde_json::from_str::<serde_json::Value>(text) {
-                    if value.is_object() {
-                        return Some(value);
-                    }
-                }
+            if let Ok(text) = std::str::from_utf8(&bytes[open..end])
+                && let Ok(value) = serde_json::from_str::<serde_json::Value>(text)
+                && value.is_object()
+            {
+                return Some(value);
             }
         }
         start = open + 1;

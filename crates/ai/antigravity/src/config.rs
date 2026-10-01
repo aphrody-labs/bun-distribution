@@ -39,7 +39,8 @@
 //! assert_eq!(cfg.extra.get("x"), Some(&serde_json::json!(1)));
 //! ```
 
-#[cfg(not(target_arch = "wasm32"))] use std::path::Path;
+#[cfg(not(target_arch = "wasm32"))]
+use std::path::Path;
 use std::path::PathBuf;
 
 use serde::{Deserialize, Serialize};
@@ -212,10 +213,10 @@ impl GeminiConfig {
     /// [`ConfigError::Io`] if the directory or file cannot be written.
     #[cfg(not(target_arch = "wasm32"))]
     pub fn save(&self, path: &Path) -> Result<(), ConfigError> {
-        if let Some(parent) = path.parent() {
-            if !parent.as_os_str().is_empty() {
-                std::fs::create_dir_all(parent)?;
-            }
+        if let Some(parent) = path.parent()
+            && !parent.as_os_str().is_empty()
+        {
+            std::fs::create_dir_all(parent)?;
         }
         let json = self.to_json_string()?;
         std::fs::write(path, json)?;

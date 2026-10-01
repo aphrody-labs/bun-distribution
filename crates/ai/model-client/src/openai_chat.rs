@@ -26,13 +26,13 @@ use crate::{
 pub fn build_chat_completions_request(turn: &ChatTurn, model: &str) -> Value {
     let mut messages: Vec<Value> = Vec::new();
 
-    if let Some(system) = &turn.system {
-        if !system.is_empty() {
-            messages.push(json!({
-                "role": "system",
-                "content": system,
-            }));
-        }
+    if let Some(system) = &turn.system
+        && !system.is_empty()
+    {
+        messages.push(json!({
+            "role": "system",
+            "content": system,
+        }));
     }
 
     for message in &turn.messages {
@@ -413,17 +413,16 @@ impl ChatCompletionsStreamParser {
             self.pending_tool_calls.last_mut().unwrap()
         };
 
-        if let Some(id) = tc.get("id").and_then(Value::as_str) {
-            if !id.is_empty() {
-                entry.id = id.to_string();
-            }
+        if let Some(id) = tc.get("id").and_then(Value::as_str)
+            && !id.is_empty()
+        {
+            entry.id = id.to_string();
         }
         if let Some(name) =
             tc.pointer("/function/name").or_else(|| tc.get("name")).and_then(Value::as_str)
+            && !name.is_empty()
         {
-            if !name.is_empty() {
-                entry.name.push_str(name);
-            }
+            entry.name.push_str(name);
         }
         let mut fragment = String::new();
         if let Some(args) = tc.pointer("/function/arguments").or_else(|| tc.get("arguments")) {

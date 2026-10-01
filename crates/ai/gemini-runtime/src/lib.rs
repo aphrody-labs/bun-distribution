@@ -320,11 +320,12 @@ impl GeminiRuntime {
             vec!["--output-format".into(), "stream-json".into(), "--yolo".into()];
 
         // Append --model only when a non-default model is requested.
-        if let Some(ref model) = opts.model {
-            if model != "default" && !model.is_empty() {
-                args.push("--model".into());
-                args.push(model.clone());
-            }
+        if let Some(ref model) = opts.model
+            && model != "default"
+            && !model.is_empty()
+        {
+            args.push("--model".into());
+            args.push(model.clone());
         }
 
         // Attach image paths if any.
@@ -407,7 +408,7 @@ where
                         return Some((event, (lines, child, stderr_task, false)));
                     },
                     Ok(None) => {
-                        let Some(mut process) = child.take() else { return None };
+                        let mut process = child.take()?;
                         let status = process.wait().await;
                         if let Some(task) = stderr_task.take() {
                             let _ = task.await;
@@ -490,13 +491,13 @@ fn resolve_bin_in(
     }
 
     // Step 2 : sibling of the running aphrody binary.
-    if let Some(exe) = executable {
-        if let Some(dir) = exe.parent() {
-            for cand in ["gemini.exe", "gemini"] {
-                let p = dir.join(cand);
-                if p.exists() {
-                    return Ok(p);
-                }
+    if let Some(exe) = executable
+        && let Some(dir) = exe.parent()
+    {
+        for cand in ["gemini.exe", "gemini"] {
+            let p = dir.join(cand);
+            if p.exists() {
+                return Ok(p);
             }
         }
     }

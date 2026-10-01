@@ -2,7 +2,7 @@
 //! Gemini Web Search via Google grounding (`tools: [{google_search: ...}]`).
 //!
 //! Ports `openclaw/extensions/google/src/gemini-web-search-provider.runtime.ts`
-//! + `.shared.ts` to Rust. The provider issues a single `generateContent`
+//! and `.shared.ts` to Rust. The provider issues a single `generateContent`
 //! call with `google_search` grounding, parses the returned `candidates →
 //! content → parts` + `groundingMetadata.groundingChunks` payload, and
 //! returns structured [`SearchResults`].
@@ -283,10 +283,10 @@ pub fn parse_response(query: &str, v: &serde_json::Value) -> Result<SearchResult
 
     let mut text_parts: Vec<&str> = Vec::with_capacity(parts.len());
     for p in parts {
-        if let Some(t) = p.get("text").and_then(serde_json::Value::as_str) {
-            if !t.is_empty() {
-                text_parts.push(t);
-            }
+        if let Some(t) = p.get("text").and_then(serde_json::Value::as_str)
+            && !t.is_empty()
+        {
+            text_parts.push(t);
         }
     }
     if text_parts.is_empty() {

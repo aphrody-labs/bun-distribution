@@ -475,10 +475,10 @@ pub fn default_creds_path() -> Result<PathBuf, AuthError> {
 
 fn pick_str(v: &serde_json::Value, keys: &[&str]) -> Option<String> {
     for k in keys {
-        if let Some(s) = v.get(*k).and_then(serde_json::Value::as_str) {
-            if !s.is_empty() {
-                return Some(s.to_owned());
-            }
+        if let Some(s) = v.get(*k).and_then(serde_json::Value::as_str)
+            && !s.is_empty()
+        {
+            return Some(s.to_owned());
         }
     }
     None

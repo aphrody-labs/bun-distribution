@@ -223,10 +223,10 @@ pub fn parse_mcp_config(json: &str) -> Result<McpConfig, ConfigError> {
 /// Returns [`ConfigError::NoHome`] if no candidate can be constructed (e.g.
 /// when running in a sandbox with no `$HOME` and no `%APPDATA%`).
 pub fn default_config_path() -> Result<PathBuf, ConfigError> {
-    if let Ok(p) = std::env::var("APHRODY_MCP_CONFIG") {
-        if !p.is_empty() {
-            return Ok(PathBuf::from(p));
-        }
+    if let Ok(p) = std::env::var("APHRODY_MCP_CONFIG")
+        && !p.is_empty()
+    {
+        return Ok(PathBuf::from(p));
     }
     let candidates = candidate_paths();
     if candidates.is_empty() {

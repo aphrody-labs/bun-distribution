@@ -602,13 +602,12 @@ pub fn parse_sse_event(raw: &str) -> Option<Result<GenerateContentResponse, SdkE
     }
 
     // Try parsing as CloudCodeGenerateContentResponse envelope first
-    if let Ok(wrapped) = serde_json::from_str::<CloudCodeGenerateContentResponse>(&payload) {
-        if !wrapped.response.candidates.is_empty()
+    if let Ok(wrapped) = serde_json::from_str::<CloudCodeGenerateContentResponse>(&payload)
+        && (!wrapped.response.candidates.is_empty()
             || wrapped.response.usage_metadata.is_some()
-            || wrapped.response.model_version.is_some()
-        {
-            return Some(Ok(wrapped.response));
-        }
+            || wrapped.response.model_version.is_some())
+    {
+        return Some(Ok(wrapped.response));
     }
 
     // Fall back to direct GenerateContentResponse
