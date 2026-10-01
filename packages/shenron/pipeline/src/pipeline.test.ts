@@ -10,13 +10,10 @@ import { runCrawl } from "./workflows";
 
 const okRunner: CommandRunner = async (command) => ({ code: 0, stdout: JSON.stringify({ command }), stderr: "" });
 const originalProfileHome = process.env.APHRODY_PROFILE_HOME;
-const originalRagBackend = process.env.RAG_BACKEND;
 
 afterEach(() => {
 	if (originalProfileHome === undefined) delete process.env.APHRODY_PROFILE_HOME;
 	else process.env.APHRODY_PROFILE_HOME = originalProfileHome;
-	if (originalRagBackend === undefined) delete process.env.RAG_BACKEND;
-	else process.env.RAG_BACKEND = originalRagBackend;
 });
 
 describe("@shenron/pipeline — exécution vérifiable", () => {
@@ -27,8 +24,7 @@ describe("@shenron/pipeline — exécution vérifiable", () => {
 		expect(called).toBe(false);
 	});
 
-	it("synchronise toutes les sources Aphrody après la bascule RAG", async () => {
-		process.env.RAG_BACKEND = "aphrody";
+	it("synchronise toutes les sources vers Aphrody par défaut", async () => {
 		const result = await buildRagIndex({ runner: okRunner });
 		expect(result.command.at(1)?.endsWith("rag-sync-aphrody.ts")).toBe(true);
 		expect(result.command).toContain("--toutes");

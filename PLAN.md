@@ -890,6 +890,11 @@ smoke documenté. Une mise en production est une opération distincte.
 
 ### Migration du calcul du pipeline vers ses propriétaires Rust — en cours
 
+- Frontière demandée : Shenron ne conserve que les types/contrats, la
+  configuration, le site, le bot, l'IA produit et l'UI. Aphrody possède les
+  exécutions partagées, les traitements, le crawl et les données opérationnelles ;
+  préférer ses services distants pour éviter un backend ou un stockage Shenron.
+
 - Le chunking partagé de `packages/shenron/pipeline/scripts/_rag-chunk.ts` a
   été remplacé par l'appel Bun FFI `shenronRagChunk`, implémenté par
   `aphrody-rag-core::MarkdownChunker` avec les options de parité Shenron. Les
@@ -901,12 +906,13 @@ smoke documenté. Une mise en production est une opération distincte.
   typecheck du pipeline et celui du package natif Bun passent ;
   `cargo check -p aphrody-ffi --offline` et `cargo fmt --check -p aphrody-ffi`
   passent également dans l'état courant du checkout.
-- L'ingestion des exports `bxc corpus` utilise maintenant la commande locale
-  `aphrody rag ingest-shenron` au lieu du script Bun du checkout séparé
-  `../aphrody-ai`. Le chemin par défaut des configurations/fixtures RAG pointe
-  vers `crates/ai/rag-eval/datasets/dragonball`. Le propriétaire Rust accepte
-  les anciens hash SHA-256 inchangés en plus de son hash BLAKE3, et l'appel peut
-  préserver les URL d'origine et désactiver l'embedding dense pour ce flux.
+- L'export `bxc corpus` est maintenant synchronisé vers le RAG Aphrody par son
+  API distante, avec génération, retrait des documents obsolètes et vecteurs
+  requis ; le manifeste de reprise vit dans l'espace Aphrody sous `~/.aphrody`.
+  Le flux n'écrit donc plus un index SQLite Shenron/local. La commande Rust
+  `aphrody rag ingest-shenron` reste disponible pour les imports locaux et ses
+  règles de compatibilité, mais n'est plus le consommateur par défaut du
+  pipeline produit.
 - Restent à cartographier et basculer par propriétaire : OCR et revue,
   embeddings/indexation/RAG, crawl/extraction Web, traduction et médias manga,
   ainsi que les scripts d'ingestion et de dépôt qui demeurent spécifiques aux

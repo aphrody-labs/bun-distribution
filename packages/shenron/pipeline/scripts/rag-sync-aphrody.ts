@@ -3,12 +3,13 @@
 /** Continuous, source-scoped PostgreSQL editorial RAG sync to Aphrody. */
 import postgres from "postgres";
 import { AphrodyComputeClient } from "@shenron/pipeline/aphrody";
-import { mkdir, open, readFile, rename, unlink, writeFile } from "node:fs/promises";
+import { mkdir, open, readFile, readdir, rename, unlink, writeFile } from "node:fs/promises";
+import { homedir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { PG_SOURCES, urlPostgres } from "./_rag-sources-pg";
 import { syncSource, type SyncManifest, type SyncResult } from "./_rag-aphrody-sync";
-import { CORPUS_DIR, loadCorpusDocs, renderCorpusDocs } from "./_rag-corpus-sources";
-import type { SourceChunk } from "./_rag-sources-pg";
+import { CORPUS_DIR, corpusSourceId, isFandom, loadCorpusDocs, renderCorpusDocs, type CorpusDoc } from "./_rag-corpus-sources";
+import { resolveEntity, type SourceChunk } from "./_rag-sources-pg";
 import { requireScriptEmbeddingSpace } from "./lib/script-env";
 
 const root = resolve(import.meta.dir, "../../../..");
@@ -17,10 +18,13 @@ const apply = args.includes("--appliquer");
 const all = args.includes("--toutes");
 const force = args.includes("--force") || args.includes("--reparer");
 const list = args.includes("--liste");
+const crawlOnly = args.includes("--corpus-crawl");
 const option = (name: string) => args.find((arg) => arg.startsWith(`${name}=`))?.slice(name.length + 1);
-const manifestPath = resolve(option("--manifest") ?? join(root, "apps/shenron/bot/data/rag/aphrody-sync-manifest.json"));
+const crawlDir = resolve(option("--crawl-dir") ?? join(process.env.APHRODY_HOME?.trim() || join(homedir(), ".aphrody"), "workspaces/dbfr/crawl"));
+const manifestPath = resolve(option("--manifest") ?? join(process.env.APHRODY_HOME?.trim() || join(homedir(), ".aphrody"), "workspaces/dbfr/indexes/shenron-aphrody-sync-manifest.json"));
 const reportPath = option("--report");
 const corpusGroups = new Map<string, SourceChunk[]>();
+const crawlGroups = new Map<string, SourceChunk[]>();
 const missingCorpora: string[] = [];
 for (const [name, author] of [["corpus.json", false], ["corpus-xv2.json", false], ["corpus-aphrody.json", true]] as const) {
 	const path = join(CORPUS_DIR, name);
@@ -34,13 +38,51 @@ for (const [name, author] of [["corpus.json", false], ["corpus-xv2.json", false]
 		corpusGroups.set(passage.sourceId, group);
 	}
 }
+if (crawlOnly || all) {
+	const crawlCorpusDir = join(crawlDir, "corpus");
+	let names: string[] = [];
+	try { names = (await readdir(crawlCorpusDir)).filter((name) => name.endsWith(".jsonl")).sort(); }
+	catch (error) { if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error; }
+	for (const name of names) {
+		const path = join(crawlCorpusDir, name);
+		const content = await readFile(path, "utf8");
+		for (const [lineIndex, line] of content.split(/\r?\n/).entries()) {
+			if (!line.trim()) continue;
+			let value: unknown;
+			try { value = JSON.parse(line); } catch { throw new Error(`Invalid crawl corpus JSON at ${path}:${lineIndex + 1}`); }
+			if (!value || typeof value !== "object" || Array.isArray(value)) throw new Error(`Invalid crawl corpus row at ${path}:${lineIndex + 1}`);
+			const row = value as Partial<CorpusDoc> & { kind?: unknown; entity?: unknown };
+			if (typeof row.id !== "string" || !row.id.trim() || typeof row.name !== "string" || !row.name.trim() ||
+				typeof row.url !== "string" || typeof row.markdown !== "string" || !row.markdown.trim()) {
+				throw new Error(`Incomplete crawl corpus row at ${path}:${lineIndex + 1}`);
+			}
+			const doc: CorpusDoc = { id: row.id, name: row.name, url: row.url, markdown: row.markdown,
+				...(typeof row.lang === "string" ? { lang: row.lang } : {}) };
+			if (isFandom(doc)) continue;
+			const source = corpusSourceId(doc.id);
+			if (!/^[a-z0-9_]{1,64}$/.test(source)) throw new Error(`Invalid crawl corpus source ID ${source}`);
+			const rendered = renderCorpusDocs([doc]);
+			const group = crawlGroups.get(source) ?? [];
+			for (const passage of rendered.passages) {
+				group.push({ ...passage, kind: typeof row.kind === "string" ? row.kind : passage.kind,
+					entity: typeof row.entity === "string" && row.entity.trim() ? row.entity : passage.entity || resolveEntity(doc.name) });
+			}
+			crawlGroups.set(source, group);
+		}
+	}
+}
+for (const [source, chunks] of crawlGroups) {
+	corpusGroups.set(source, [...(corpusGroups.get(source) ?? []), ...chunks]);
+}
+const crawlSources = new Set([...crawlGroups.keys()]);
 const sources = [...new Set([...Object.keys(PG_SOURCES), ...corpusGroups.keys()])];
-const targets = all ? [...sources] : args.filter((arg) => !arg.startsWith("--"));
+const targets = crawlOnly ? [...crawlSources] : all ? [...sources] : args.filter((arg) => !arg.startsWith("--"));
 
 if (list) {
 	console.log(`Sources resynchronisables :\n  ${sources.join("\n  ")}`);
 	process.exit(0);
 }
+if (crawlOnly && !targets.length) throw new Error(`No crawl corpus exports found under ${join(crawlDir, "corpus")}`);
 if (!targets.length || targets.some((source) => !sources.includes(source))) {
 	throw new Error(`Usage: rag-sync-aphrody.ts <source|--toutes> [--appliquer] [--force] [--report=PATH]. Sources: ${sources.join(", ")}`);
 }
@@ -74,7 +116,7 @@ async function persistManifest(): Promise<void> {
 // Aphrody embeds in the index space of the contract (shenron-rag); a configuration
 // asking for another space is refused before any document is sent.
 if (apply) requireScriptEmbeddingSpace(process.env);
-const sql = postgres(await urlPostgres(), { max: 2, prepare: false });
+const sql = crawlOnly ? null : postgres(await urlPostgres(), { max: 2, prepare: false });
 const client = apply ? new AphrodyComputeClient() : null;
 const results: SyncResult[] = [];
 let failed = false;
@@ -83,11 +125,11 @@ try {
 	for (const source of targets) {
 		try {
 			const chunks = [
-				...(PG_SOURCES[source] ? await PG_SOURCES[source]!(sql) : []),
-				...(corpusGroups.get(source) ?? []),
+				...(!crawlOnly && PG_SOURCES[source] ? await PG_SOURCES[source]!(sql!) : []),
+			...(crawlOnly ? crawlGroups.get(source) ?? [] : corpusGroups.get(source) ?? []),
 			];
 			const { result, state } = await syncSource(client, source, chunks, manifest.sources[source], {
-				apply, force, requireVectors: process.env.RAG_BACKEND === "aphrody",
+				apply, force, requireVectors: true,
 			});
 			results.push(result);
 			console.log(`${result.unchanged ? "=" : apply ? "✓" : "→"} ${source}: ${result.rendered} rendered, ${result.indexed} indexed, ${result.retired} retired${result.unchanged ? " (unchanged)" : ""}`);
@@ -101,7 +143,7 @@ try {
 		}
 	}
 } finally {
-	await sql.end();
+	await sql?.end();
 }
 if (reportPath) {
 	const path = resolve(reportPath);

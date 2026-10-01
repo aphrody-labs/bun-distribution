@@ -142,7 +142,7 @@ export async function runMangaOcr(options: OcrJobOptions = {}): Promise<Pipeline
 export async function runDatabooksOcr(options: OcrJobOptions = {}): Promise<PipelineExecution> {
 	const root = join(import.meta.dir, "../../../..");
 	if (options.lotId) throw new Error("Le worker databooks continu ne prend pas de lotId");
-	const command = ["bun", join(root, "scripts/ops/gpu-continuous-ocr.ts")];
+	const command = ["bun", join(root, "scripts/tools/shenron/scripts/ops/gpu-continuous-ocr.ts")];
 	if (options.concurrency !== undefined) command.push("--limite-lots", String(options.concurrency));
 	return executeCommand(command, { cwd: root, dryRun: options.dryRun, runner: options.runner });
 }
@@ -174,13 +174,7 @@ export interface RagSearchResultItem {
 export async function buildRagIndex(options: RagBuildOptions = {}): Promise<PipelineExecution> {
 	if (options.source && options.source !== "all") throw new Error("source ciblée: utilisez rag-resync-entites");
 	const root = join(import.meta.dir, "../../../..");
-	if (process.env.RAG_BACKEND === "aphrody") {
-		return executeCommand(["bun", join(root, "packages/shenron/pipeline/scripts/rag-sync-aphrody.ts"), "--toutes", ...(options.dryRun ? [] : ["--appliquer"])], {
-			cwd: root, dryRun: options.dryRun, runner: options.runner,
-		});
-	}
-	const dbPath = process.env.RAG_DB ?? join(root, "apps/shenron/bot/data/bot.db");
-	return executeCommand(["bun", join(root, "scripts/ops/offload-rag-to-aphrody.ts"), "--db", dbPath, ...(options.dryRun ? [] : ["--apply"])], {
+	return executeCommand(["bun", join(root, "packages/shenron/pipeline/scripts/rag-sync-aphrody.ts"), "--toutes", ...(options.dryRun ? [] : ["--appliquer"])], {
 		cwd: root, dryRun: options.dryRun, runner: options.runner,
 	});
 }
@@ -191,7 +185,7 @@ export async function searchRagIndex(query: string, limit = 5): Promise<RagSearc
 
 export async function evaluateRag(options: { dryRun?: boolean; runner?: CommandRunner } = {}): Promise<PipelineExecution> {
 	const root = join(import.meta.dir, "../../../..");
-	return executeCommand(["bun", join(root, "scripts/ops/eval-aphrody-rag.ts"), "--ci"], {
+	return executeCommand(["bun", join(root, "scripts/tools/shenron/scripts/ops/eval-aphrody-rag.ts"), "--ci"], {
 		cwd: root, dryRun: options.dryRun, runner: options.runner,
 	});
 }
@@ -229,17 +223,8 @@ export async function runCorpusIngest(options: { dryRun?: boolean; runner?: Comm
 	const corpusDir = join(loc.crawlDir, "corpus");
 	const exports = existsSync(corpusDir) ? readdirSync(corpusDir).filter((f) => f.endsWith(".jsonl")).sort().map((f) => join(corpusDir, f)) : [];
 	if (!exports.length && !options.dryRun) throw new Error(`aucun export bxc corpus dans ${corpusDir}; lancer d'abord: pipeline crawl universal`);
-	const command = [
-		process.env.APHRODY_BIN?.trim() || "aphrody",
-		"rag",
-		"--db",
-		loc.ragDb,
-		"ingest-shenron",
-		...exports,
-		"--lexical-only",
-		"--preserve-url",
-		"--legacy-chunks",
-	];
+	const command = ["bun", join(root, "packages/shenron/pipeline/scripts/rag-sync-aphrody.ts"), "--corpus-crawl", `--crawl-dir=${loc.crawlDir}`];
+	if (!options.dryRun) command.push("--appliquer");
 	return executeCommand(command, { cwd: root, dryRun: options.dryRun, runner: options.runner });
 }
 
@@ -251,7 +236,7 @@ export async function runCrawl(target: CrawlTarget): Promise<PipelineExecution> 
 		case "kanzenshuu": command = ["bun", join(root, "packages/shenron/pipeline/scripts/crawl-kanzenshuu-rag.ts")]; break;
 		case "databooks": command = ["bun", join(root, "packages/shenron/pipeline/scripts/crawl-databooks-rag.ts")]; break;
 		case "official":
-			command = ["bun", join(root, "scripts/ops/crawl-dragon-ball-official-aphrody.ts"), target.dryRun ? "--dry-run" : "--apply"];
+			command = ["bun", join(root, "scripts/tools/shenron/scripts/ops/crawl-dragon-ball-official-aphrody.ts"), target.dryRun ? "--dry-run" : "--apply"];
 			break;
 		case "universal": {
 			// Every registry source (Fandom included, operator decision 2026-09-26) through the canonical crawler.
@@ -263,7 +248,7 @@ export async function runCrawl(target: CrawlTarget): Promise<PipelineExecution> 
 		case "custom":
 			if (!target.url) throw new Error("crawl custom exige une URL");
 			if (target.outDir) throw new Error("crawl distant Aphrody ne prend pas --out; les pages restent dans l'index Aphrody Web");
-			command = ["bun", join(root, "scripts/ops/aphrody-web-crawl.ts"), target.url];
+			command = ["bun", join(root, "scripts/tools/shenron/scripts/ops/aphrody-web-crawl.ts"), target.url];
 			break;
 	}
 	if (target.outDir) command.push("--out", target.outDir);
