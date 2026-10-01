@@ -428,7 +428,7 @@ Propriétaires : `crates/ai`, `crates/web`, `packages/ai`, `packages/web`.
 
 - [ ] Faire de `rag-core` le propriétaire unique des calculs RAG ; adapter
   Python à ce cœur et supprimer ses calculs dupliqués.
-- [ ] Corriger l’écart RRF : le premier résultat doit suivre la convention du
+- [x] Corriger l’écart RRF : le premier résultat doit suivre la convention du
   cœur `1/(k+rang+1)` ; tester parité Python/Rust et cas vides/doublons.
 - [ ] Requalifier les contrats Web/AI et reprendre les gates ouverts des plans
   historiques. Vérifier services externes séparément des tests déterministes.
@@ -586,3 +586,17 @@ bun_scraper et test de rejet sans effet de bord réussis dans la suite kernel
 Cargo future-incompatibility existant sur proc-macro-error2 2.0.1.
 Cette qualification couvre les pairs enregistrés via IPC, pas les endpoints
 HTTP publics ni les agents qui ne sont pas enregistrés au kernel.
+
+### Calculs RAG Python raccordés au cœur
+
+Binding Rust : cosine et RRF délégués à aphrody-rag-core ; top-k conserve
+validation/mapping des IDs et utilise cosine canonique. Python ne calcule plus
+ces opérations ; noms py_* conservés comme aliases, extension manquante explicite.
+RRF utilise 1/(k+rank+1), égalités déterministes et doublons selon le cœur.
+52 tests rag-core, 30 tests adaptation/packaging réussis ; clippy native scoped
+réussi. Cas vides, k=0, doublons, égalités et vecteurs invalides vérifiés via
+l’extension compilée. Artefact Python contient les bytes fusion canoniques
+et le wrapper avec glue de module ; hashes/provenance vérifiés. Wheel et
+sdist construits hors workspace puis installés dans des environnements isolés
+avec smoke RRF corrigé. Rapport de qualification suivi sous docs/migration ;
+qualification effectuée en mode worktree explicite. Pas de publication externe.

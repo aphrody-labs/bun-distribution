@@ -11,7 +11,7 @@ name = "aphrody_rust"
 crate-type = ["cdylib"]
 
 [dependencies]
-aphrody-rag-core = { workspace = true, default-features = false }
+aphrody-rag-core = { workspace = true }
 pyo3 = { workspace = true, features = ["extension-module", "abi3-py311"] }
 
 [lints]
