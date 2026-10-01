@@ -29,6 +29,12 @@ pub struct ChatResponse {
 /// admin credentials and cannot select an arbitrary host or backend route.
 #[tauri::command]
 pub async fn aphrody_shenron_chat(query: String) -> Result<ChatResponse, String> {
+    // RG and Shenron are strictly kept out of Aphrody UI and App until production
+    // readiness qualification and explicit user agreement (see GEMINI.md).
+    if std::env::var("APHRODY_SHENRON_PRODUCTION_READY").as_deref() != Ok("1") {
+        return Err("Shenron and RG are kept out of Aphrody UI and App pending production readiness qualification and explicit user agreement (see GEMINI.md).".into());
+    }
+
     let query = query.trim();
     if query.is_empty() || query.encode_utf16().count() > MAX_QUERY_CHARS {
         return Err("Shenron query must contain between 1 and 600 characters".into());

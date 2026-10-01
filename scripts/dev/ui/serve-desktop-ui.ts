@@ -349,6 +349,11 @@ async function handleTauriCommand(cmd: string, args: Record<string, unknown> = {
     }
 
     case "aphrody_shenron_chat": {
+      if (process.env.APHRODY_SHENRON_PRODUCTION_READY !== "1") {
+        throw new Error(
+          "Shenron and RG are kept out of Aphrody UI and App pending production readiness qualification and explicit user agreement (see GEMINI.md).",
+        );
+      }
       const message = String(args.message || args.prompt || "");
       try {
         const res = await fetch("https://dragonballfr.com/api/chat", {
@@ -635,20 +640,6 @@ export function startDesktopUiServer(options: { port?: number; host?: string } =
               capabilities: ["deep-learning-ocr", "manga-translation", "wasm-canvas"],
             },
             {
-              id: "rg-website",
-              name: "Rose Griffon Platform",
-              type: "web",
-              runtime: "next-bun",
-              path: "apps/rg/website",
-            },
-            {
-              id: "shenron-site",
-              name: "Shenron Grounded RAG Platform",
-              type: "web",
-              runtime: "next-bun",
-              path: "apps/shenron/site",
-            },
-            {
               id: "cli",
               name: "Aphrody General CLI",
               type: "cli",
@@ -662,6 +653,20 @@ export function startDesktopUiServer(options: { port?: number; host?: string } =
               type: "framework",
               runtime: "bun-rust-ffi",
               packages: ["m3", "m3-tokens", "m3-theme", "m3-primitives", "m3-react", "material-web", "m3-motion", "m3-ai", "m3-explorer", "m3-reader", "m3-config"],
+            },
+          ],
+          quarantinedApps: [
+            {
+              id: "rg-website",
+              name: "Rose Griffon Platform",
+              status: "quarantined-pending-production-readiness",
+              reason: "Shenron and RG are kept out of Aphrody UI and App pending production readiness qualification and explicit user agreement (see GEMINI.md).",
+            },
+            {
+              id: "shenron-site",
+              name: "Shenron Grounded RAG Platform",
+              status: "quarantined-pending-production-readiness",
+              reason: "Shenron and RG are kept out of Aphrody UI and App pending production readiness qualification and explicit user agreement (see GEMINI.md).",
             },
           ],
         };
@@ -773,10 +778,21 @@ export function startDesktopUiServer(options: { port?: number; host?: string } =
                 subprocess: false,
               },
               shenron: {
-                status: "grounded-rag",
+                status: "guarded-pending-qualification",
+                guarded: true,
+                activeInUi: false,
                 endpoint: "https://dragonballfr.com/api/chat",
                 persona: "shenron",
                 domains: ["dbfr", "wiki", "databooks"],
+                reason:
+                  "Shenron and RG are kept out of Aphrody UI and App pending production readiness qualification and explicit user agreement (see GEMINI.md).",
+              },
+              rg: {
+                status: "guarded-pending-qualification",
+                guarded: true,
+                activeInUi: false,
+                reason:
+                  "Shenron and RG are kept out of Aphrody UI and App pending production readiness qualification and explicit user agreement (see GEMINI.md).",
               },
               shell: {
                 status: "available",
@@ -795,6 +811,55 @@ export function startDesktopUiServer(options: { port?: number; host?: string } =
         return new Response(capabilities, {
           headers: { "Content-Type": "application/json; charset=utf-8", "Access-Control-Allow-Origin": "*" },
         });
+      }
+
+      // Gemini Web M3 Real-Time Design Compiler endpoint
+      if (req.method === "POST" && url.pathname === "/api/m3/design") {
+        try {
+          const body = (await req.json()) as { prompt?: string; seedColor?: string; designSystemId?: string };
+          const { DesignCompiler } = await import("../../../packages/ui/m3-design/src/generator.ts");
+          const compiler = new DesignCompiler();
+          const result = compiler.compile(body.prompt || "Modern dashboard", body.seedColor, body.designSystemId);
+          return Response.json(result, {
+            headers: {
+              "Content-Type": "application/json; charset=utf-8",
+              "Access-Control-Allow-Origin": "*",
+            },
+          });
+        } catch (err: any) {
+          return new Response(JSON.stringify({ error: err.message || String(err) }), {
+            status: 400,
+            headers: {
+              "Content-Type": "application/json; charset=utf-8",
+              "Access-Control-Allow-Origin": "*",
+            },
+          });
+        }
+      }
+
+      // Google Design System & Real-Time M3 Showcase Webpage
+      if (
+        url.pathname === "/m3" ||
+        url.pathname === "/design" ||
+        url.pathname === "/google-design" ||
+        url.pathname === "/showcase"
+      ) {
+        const showcasePath = join(REPO_ROOT, "packages", "ui", "m3", "src", "showcase.html");
+        if (existsSync(showcasePath)) {
+          let html = await Bun.file(showcasePath).text();
+          if (html.includes("</head>")) {
+            html = html.replace("</head>", `${TAURI_BRIDGE_SCRIPT}\n</head>`);
+          } else {
+            html = `${TAURI_BRIDGE_SCRIPT}\n${html}`;
+          }
+          return new Response(html, {
+            headers: {
+              "Content-Type": "text/html; charset=utf-8",
+              "Access-Control-Allow-Origin": "*",
+              "Cache-Control": "no-cache",
+            },
+          });
+        }
       }
 
       // Resolve requested file inside ui-dist

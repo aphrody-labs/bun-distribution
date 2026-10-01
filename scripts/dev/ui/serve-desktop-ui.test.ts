@@ -176,7 +176,7 @@ describe("serve-desktop-ui", () => {
       expect(Array.isArray(modelsData)).toBe(true);
       expect(modelsData.length).toBeGreaterThan(0);
 
-      // 15. Unified applications registry API: /api/apps
+      // 15. Unified applications registry API: /api/apps (active apps only, RG & Shenron quarantined)
       const appsRes = await fetch(`${baseUrl}/api/apps`);
       expect(appsRes.status).toBe(200);
       const appsData = await appsRes.json();
@@ -184,10 +184,14 @@ describe("serve-desktop-ui", () => {
       const appIds = appsData.apps.map((a: any) => a.id);
       expect(appIds).toContain("aphrody-app");
       expect(appIds).toContain("koharu-editor");
-      expect(appIds).toContain("rg-website");
-      expect(appIds).toContain("shenron-site");
       expect(appIds).toContain("cli");
       expect(appIds).toContain("m3-framework");
+      // RG and Shenron are quarantined pending production-readiness qualification
+      expect(appIds).not.toContain("rg-website");
+      expect(appIds).not.toContain("shenron-site");
+      const quarantinedIds = appsData.quarantinedApps.map((a: any) => a.id);
+      expect(quarantinedIds).toContain("rg-website");
+      expect(quarantinedIds).toContain("shenron-site");
 
       // 16. M3 Window Controls & Chrome: aphrody_shell_window
       const winStateRes = await fetch(`${baseUrl}/api/tauri/invoke`, {
@@ -287,15 +291,28 @@ describe("serve-desktop-ui", () => {
       const ocrData = (await ocrRes.json()) as any;
       expect(ocrData.confidence).toBeGreaterThan(0.9);
 
-      // 21. Shenron Grounded Assistant: aphrody_shenron_chat
-      const shenronRes = await fetch(`${baseUrl}/api/tauri/invoke`, {
+      // 21. Shenron Grounded Assistant runtime quarantine guard
+      // By default (without APHRODY_SHENRON_PRODUCTION_READY=1), Shenron is quarantined out of UI/App
+      const shenronGuardedRes = await fetch(`${baseUrl}/api/tauri/invoke`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ cmd: "aphrody_shenron_chat", args: { message: "Test query" } }),
       });
-      expect(shenronRes.status).toBe(200);
-      const shenronData = (await shenronRes.json()) as any;
-      expect(shenronData.source).toBe("dragonballfr.com");
+      expect(shenronGuardedRes.status).toBe(400);
+      const shenronGuardedData = await shenronGuardedRes.json();
+      expect(shenronGuardedData.error).toContain("Shenron and RG are kept out of Aphrody UI and App");
+
+      // When production-ready qualification is explicitly enabled
+      process.env.APHRODY_SHENRON_PRODUCTION_READY = "1";
+      const shenronAllowedRes = await fetch(`${baseUrl}/api/tauri/invoke`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ cmd: "aphrody_shenron_chat", args: { message: "Test query" } }),
+      });
+      expect(shenronAllowedRes.status).toBe(200);
+      const shenronAllowedData = (await shenronAllowedRes.json()) as any;
+      expect(shenronAllowedData.source).toBe("dragonballfr.com");
+      delete process.env.APHRODY_SHENRON_PRODUCTION_READY;
 
       // 22. Multi-window Pet & Widget surfaces
       const petRes = await fetch(`${baseUrl}/api/tauri/invoke`, {
@@ -335,6 +352,36 @@ describe("serve-desktop-ui", () => {
       expect(unstreamRes.status).toBe(200);
       const unstreamData = (await unstreamRes.json()) as any;
       expect(unstreamData.unsubscribed).toBe(true);
+
+      // 24. Google Design & Real-Time M3 Showcase route
+      const showcaseRes = await fetch(`${baseUrl}/m3`);
+      expect(showcaseRes.status).toBe(200);
+      expect(showcaseRes.headers.get("content-type")).toContain("text/html");
+      const showcaseHtml = await showcaseRes.text();
+      expect(showcaseHtml).toContain("Material Design 3 (M3)");
+      expect(showcaseHtml).toContain("Google Design System");
+      expect(showcaseHtml).toContain("Compilateur de Design IA M3");
+
+      // Also accessible via /design and /google-design
+      const designRes = await fetch(`${baseUrl}/design`);
+      expect(designRes.status).toBe(200);
+
+      // 25. Gemini Web M3 Real-Time Design Compiler endpoint
+      const compileRes = await fetch(`${baseUrl}/api/m3/design`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          prompt: "Modern analytical dashboard with deep blue cards and side drawer",
+          seedColor: "#0288D1",
+        }),
+      });
+      expect(compileRes.status).toBe(200);
+      const compileData = await compileRes.json();
+      expect(compileData.brief).toBeDefined();
+      expect(compileData.brief.outputKind).toBe("dashboard");
+      expect(compileData.brief.layoutType).toBe("feed");
+      expect(compileData.files.length).toBeGreaterThan(0);
+      expect(compileData.critique).toBeDefined();
     } finally {
       server.stop(true);
     }
