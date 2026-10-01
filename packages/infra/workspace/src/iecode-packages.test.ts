@@ -13,7 +13,12 @@ afterEach(async () => {
   for (const path of temporary.splice(0)) await rm(path, { recursive: true, force: true });
 });
 async function run(argv: string[], cwd: string) {
-  const child = Bun.spawn(argv, { cwd, stdout: "pipe", stderr: "pipe" });
+  const child = Bun.spawn(argv, {
+    cwd,
+    env: { ...process.env, BUN_INSTALL_CACHE_DIR: join(cwd, ".fixture-cache") },
+    stdout: "pipe",
+    stderr: "pipe",
+  });
   const [out, err, code] = await Promise.all([
     new Response(child.stdout).text(),
     new Response(child.stderr).text(),
@@ -55,7 +60,7 @@ async function fixture() {
   await mkdir(zod);
   await writeFile(join(zod, "package.json"), JSON.stringify({ name: "zod", version: "3.25.76" }));
   await run([process.execPath, "install", "--offline", "--ignore-scripts"], source);
-  await writeFile(join(source, ".gitignore"), "node_modules/\n");
+  await writeFile(join(source, ".gitignore"), "node_modules/\n.fixture-cache/\n");
   await run(["git", "init", "-q"], source);
   await run(["git", "add", "."], source);
   await run(
@@ -110,8 +115,35 @@ test("packing preserves producer metadata and emits checksummed translated archi
 });
 
 test("archive checks reject private inputs and entries beyond the allowlist", () => {
+  expect(() => validateArchiveEntries(["package/src/data/schema.ts"], ["src"])).not.toThrow();
+  expect(() => validateArchiveEntries(["package/data/private.json"], ["data"])).toThrow("Private");
   expect(() => validateArchiveEntries(["package/src/.env"], ["src"])).toThrow("Private");
   expect(() => validateArchiveEntries(["package/src/game.cpk"], ["src"])).toThrow("Private");
   expect(() => validateArchiveEntries(["package/../escape"], ["src"])).toThrow("unsafe");
   expect(() => validateArchiveEntries(["package/other.ts"], ["src"])).toThrow("allowlist");
+});
+
+test("packing rejects a CLI target absent from the clean archive", async () => {
+  const options = await fixture();
+  const path = join(options.source, "packages/inagle/package.json");
+  const metadata = JSON.parse(await readFile(path, "utf8"));
+  metadata.bin = { inagle: "./dist/missing.js" };
+  await writeFile(path, JSON.stringify(metadata));
+  await run(["git", "add", "."], options.source);
+  await run(
+    [
+      "git",
+      "-c",
+      "user.name=aphrody-code",
+      "-c",
+      "user.email=contact@aphrody.com",
+      "commit",
+      "-m",
+      "fixture CLI",
+    ],
+    options.source,
+  );
+  await expect(prepareIecodePackages({ ...options, apply: true })).rejects.toThrow(
+    "missing archive entrypoint",
+  );
 });

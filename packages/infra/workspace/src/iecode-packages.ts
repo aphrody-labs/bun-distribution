@@ -5,11 +5,11 @@
 import { createHash } from "node:crypto";
 import { copyFile, mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { join, relative, resolve } from "node:path";
+import { dirname, join, relative, resolve } from "node:path";
 
 const members = ["inagle", "inagle-cross", "azalee"] as const;
 const forbidden =
-  /(^|\/)(?:\.env(?:\.[^/]*)?|node_modules|data|var|target|build|\.git|[^/]*\.(?:nds|nsp|nca|xci|cia|3ds|cpk|keys|pem|pfx|live_save|exe|dll|iso|rom|sav|sqlite|db|7z|zip))($|\/)/i;
+  /(^|\/)(?:\.env(?:\.[^/]*)?|node_modules|target|build|\.git|[^/]*\.(?:nds|nsp|nca|xci|cia|3ds|cpk|keys|pem|pfx|live_save|exe|dll|iso|rom|sav|sqlite|db|7z|zip))($|\/)/i;
 
 async function command(argv: string[], cwd: string): Promise<string> {
   const child = Bun.spawn(argv, { cwd, stdout: "pipe", stderr: "pipe" });
@@ -26,7 +26,12 @@ export function validateArchiveEntries(entries: string[], allowed: string[]): vo
   for (const entry of entries) {
     const path = entry.replace(/^package\//, "").replace(/\/$/, "");
     if (!path) continue;
-    if (entry.startsWith("/") || path.split("/").includes("..") || forbidden.test(path))
+    if (
+      entry.startsWith("/") ||
+      path.split("/").includes("..") ||
+      forbidden.test(path) ||
+      /^(?:data|var)(?:\/|$)/.test(path)
+    )
       throw new Error(`Private or unsafe archive entry: ${entry}`);
     if (!allowed.some((item) => path === item || path.startsWith(`${item}/`)))
       throw new Error(`Archive entry outside package allowlist: ${entry}`);
@@ -38,10 +43,13 @@ export async function prepareIecodePackages(options: {
   destination: string;
   apply?: boolean;
   allowDirty?: boolean;
+  expectedRevision?: string;
 }) {
   const source = resolve(options.source);
   const destination = resolve(options.destination);
   const revision = await command(["git", "rev-parse", "HEAD"], source);
+  if (options.expectedRevision && revision !== options.expectedRevision)
+    throw new Error(`IECODE revision differs from configured source: ${revision}`);
   const dirty = Boolean(
     await command(["git", "status", "--porcelain", "--untracked-files=all"], source),
   );
@@ -76,9 +84,12 @@ export async function prepareIecodePackages(options: {
     packages.push({
       name: metadata.name as string,
       version: metadata.version as string,
-      archive: `${member}.tgz`,
+      archive: `${member}-${revision}.tgz`,
       directory,
       allowed,
+      entrypoints: [metadata.main, metadata.types, ...Object.values(metadata.bin ?? {})].filter(
+        (value): value is string => typeof value === "string",
+      ),
     });
   }
   const provenance = {
@@ -92,7 +103,9 @@ export async function prepareIecodePackages(options: {
     return {
       ...provenance,
       applied: false,
-      packages: packages.map(({ directory: _directory, allowed: _allowed, ...item }) => item),
+      packages: packages.map(
+        ({ directory: _directory, allowed: _allowed, entrypoints: _entrypoints, ...item }) => item,
+      ),
     };
   if (destination === source || !relative(source, destination).startsWith(".."))
     throw new Error("Archive destination must be outside the producer checkout.");
@@ -105,10 +118,12 @@ export async function prepareIecodePackages(options: {
         [process.execPath, "pm", "pack", "--ignore-scripts", "--filename", archive],
         item.directory,
       );
-      validateArchiveEntries(
-        (await command(["tar", "-tzf", archive], source)).split("\n"),
-        item.allowed,
-      );
+      const entries = (await command(["tar", "-tzf", archive], source)).split("\n");
+      validateArchiveEntries(entries, item.allowed);
+      for (const entrypoint of item.entrypoints) {
+        if (!entries.includes(`package/${entrypoint.replace(/^\.\//, "")}`))
+          throw new Error(`${item.name} has a missing archive entrypoint: ${entrypoint}`);
+      }
       const sha256 = createHash("sha256")
         .update(await readFile(archive))
         .digest("hex");
@@ -131,16 +146,33 @@ if (import.meta.main) {
     throw new Error(
       "Usage: iecode-packages prepare --source <IECODE> --destination <output> [--apply] [--allow-dirty]",
     );
-  const options = { source: "", destination: "", apply: false, allowDirty: false };
+  const options = {
+    source: "",
+    destination: "",
+    apply: false,
+    allowDirty: false,
+    expectedRevision: "",
+  };
+  let configPath = "";
   while (args.length) {
     const flag = args.shift();
     if (flag === "--apply") options.apply = true;
     else if (flag === "--allow-dirty") options.allowDirty = true;
-    else if (flag === "--source" || flag === "--destination") {
+    else if (flag === "--config") {
+      configPath = args.shift() ?? "";
+      if (!configPath || configPath.startsWith("--")) throw new Error("Missing value for --config");
+    } else if (flag === "--source" || flag === "--destination") {
       const value = args.shift();
       if (!value || value.startsWith("--")) throw new Error(`Missing value for ${flag}`);
       options[flag === "--source" ? "source" : "destination"] = value;
     } else throw new Error(`Unknown option: ${flag}`);
+  }
+  if (configPath) {
+    const configuration = JSON.parse(await readFile(configPath, "utf8")).iecode;
+    if (!/^[a-f0-9]{40}$/.test(configuration.rev))
+      throw new Error("IECODE requires a pinned revision.");
+    options.source ||= resolve(dirname(resolve(configPath)), "..", configuration.path);
+    options.expectedRevision = configuration.rev;
   }
   if (!options.source || !options.destination)
     throw new Error("Both --source and --destination are required.");
