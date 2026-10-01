@@ -1,0 +1,261 @@
+# Changelog
+
+All notable changes to this project will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [Unreleased]
+
+## [0.13.0] - 2026-08-28
+
+### Added
+- Return structured element details, optional computed styles, match counts, and `nth` disambiguation from `webview_find_element`.
+- Add hover and right-click interactions plus focus, minimize, and maximize window actions.
+- Report plugin/server versions and screenshot pixel-to-CSS scale metadata.
+- Add console log level filtering and bounded output controls.
+
+### Changed
+- Route application IPC commands through the target webview so Tauri capability rules still apply.
+- Fold `webview_get_styles` into `webview_find_element` and remove the unused keyboard injection script.
+- Reject ambiguous text interactions with candidate details instead of silently choosing the first match.
+
+### Fixed
+- Re-inject the `__MCP__` helper once after a page reload or HMR update.
+- Preserve multiline and quoted text during keyboard input.
+- Report whether JavaScript timeouts came from the script, transport, or an unresponsive webview.
+
+### Fixed
+- `webview_screenshot` only uses the interactive Screen Capture API fallback when `allowScreenCapture` is explicitly enabled.
+- Constrain html2canvas fallback output to the visible viewport instead of allocating a full-document canvas.
+- Keep bridge WebSockets alive with ping/pong heartbeats and reconnect stale cached sessions when `driver_session start` is called again.
+
+## [0.12.0] - 2026-07-05
+
+### Added
+- `resolveTargetApp` can route by current working directory when multiple apps are connected and no `appIdentifier` is passed.
+- Add `getCwdHint()` and the `MCP_BRIDGE_CWD` environment override for worktree-specific routing.
+- `driver_session` status output now includes each connected app's `cwd`.
+
+### Changed
+- Docs now point users to `aix add mcp` for setup instead of the older `install-mcp` flow.
+
+### Fixed
+- Device listing now times out SDK probes instead of waiting indefinitely when `adb` or `xcrun` hangs.
+- Starting a session after auto-discovery now reuses an already connected port instead of opening a duplicate connection.
+
+## [0.11.2] - 2026-05-19
+
+### Changed
+- Warn about Claude Code `/select` argument bugs in prompt docs
+
+### Fixed
+- Wait for bridge plugin readiness in global test setup
+- Align session restart E2E test expectations with idempotent start behavior
+
+## [0.11.1] - 2026-04-25
+
+### Changed
+- Deduplicate webview scripts (`element-picker`, `html2canvas-loader`, scripts index)
+- Extract `SETUP_INSTRUCTIONS` to a dedicated constants module
+
+### Fixed
+- Resolve lint and formatting errors in `prompts-registry` and `tools-registry`
+
+## [0.11.0] - 2026-04-07
+
+### Added
+- Improve React compatibility, text strategy fallbacks, and auto-connect
+
+### Fixed
+- Honor windowId in webview tools
+- Keep async JS and Node 24 builds working
+
+## [0.10.0] - 2026-03-16
+
+### Added
+- Export reusable server bootstrap APIs for the companion CLI package
+
+## [0.9.0] - 2026-02-20
+
+### Added
+- Add `webview_select_element` tool: agent-initiated visual element picker overlay — user clicks an element and the tool returns rich metadata plus an element screenshot
+- Add `webview_get_pointed_element` tool: retrieve element metadata for an element the user previously pointed at via Alt+Shift+Click
+- Add `/select` slash command (prompt) for guided element selection workflows with optional user message
+
+## [0.8.3] - 2026-02-17
+
+### Fixed
+- Support selection by text content in tools with selectors
+- Remove sourceMappingURL from html2canvas file to prevent 404
+
+## [0.8.2] - 2026-02-10
+
+### Fixed
+- Fix window timing race condition: retry commands with exponential backoff when Tauri window is not yet registered after WebSocket connect
+
+### Changed
+- Consolidate `window.__MCP__` namespace and extract `resolveRef` into a standalone persistent script registered once at session init
+- Update setup tool instructions with feature-flag workflow, conditional capabilities, and dev script configuration
+
+## [0.8.1] - 2026-01-25
+
+### Fixed
+- Replace `html2canvas` with `html2canvas-pro` to fix screenshot failures with modern CSS color functions like `oklch()` (#4)
+
+## [0.8.0] - 2025-01-15
+
+### Added
+- Add `webview_dom_snapshot` tool for accessibility tree snapshots (YAML format with roles, names, states, and element refs)
+- Add `structure` snapshot type to `webview_dom_snapshot` for DOM hierarchy inspection
+- Enable ref IDs from `dom_snapshot` to work with other webview tools (`webview_interact`, `webview_keyboard`, etc.)
+
+### Changed
+- Remove `tauri_` prefix from all tool names (e.g., `tauri_driver_session` → `driver_session`)
+
+### Fixed
+- Convert PNG to JPEG in screenshots when requested format is JPEG
+- Update server.json version dynamically in publish workflow
+
+## [0.7.0] - 2026-01-06
+
+### Added
+- Implement IPC monitoring with JS-side interception for capturing `invoke()` calls
+- Derive plugin version programmatically from package.json
+
+## [0.6.5] - 2025-12-31
+
+### Added
+- Add `maxWidth` parameter to `tauri_webview_screenshot` tool for automatic image resizing
+- Support `TAURI_MCP_SCREENSHOT_MAX_WIDTH` environment variable for default max width
+
+### Fixed
+- Search common paths for `adb` when `ANDROID_HOME` is not set
+
+## [0.6.4] - 2025-12-28
+
+### Fixed
+- Update MCP server.json version and GitHub URL for registry compatibility
+
+## [0.6.3] - 2025-12-28
+
+### Fixed
+- Fix logger interfering with MCP communication by using stderr instead of stdout
+
+## [0.6.2] - 2025-12-24
+
+### Fixed
+- Convert update-server-json-version script to ES modules to fix CI compatibility
+
+## [0.6.1] - 2025-12-23
+
+### Added
+- MCP Registry server metadata (`server.json`) for registry integration
+- Automated `server.json` version synchronization script
+- `mcpName` field in package.json for registry verification
+
+### Documentation
+- Added comprehensive MCP Registry publishing guide
+
+## [0.6.0] - 2025-12-23
+
+### Added
+- Multi-app support: connect to multiple Tauri apps simultaneously and select targets via `appIdentifier`
+- Add `appIdentifier` support to console log reads
+
+### Changed
+- `tauri_driver_session` stop without identifier stops all sessions
+
+## [0.5.1] - 2025-12-21
+
+### Fixed
+- Fix plugin client singleton to reset when host/port parameters change
+- Require active session before webview tools can connect to prevent connecting to wrong app
+
+## [0.5.0] - 2025-12-21
+
+### Added
+- Add `tauri_manage_window` tool combining list, info, and resize window actions
+- Add `tauri_get_setup_instructions` tool for AI-assisted plugin setup
+- Add app identifier to `tauri_driver_session` status response for session verification
+
+### Changed
+- Update `/setup` prompt to require user permission before making changes
+
+## [0.4.0] - 2025-12-05
+
+### Changed
+- Improve MCP logging and capture of unhandled errors for better debuggability and observability
+
+## [0.3.1] - 2025-12-02
+
+### Fixed
+- Increase `find_element` outerHTML truncation limit from 200 to 5000 characters
+
+### Documentation
+- Add links to MCP prompts specification in docs
+- Add workaround for editors that don't support MCP prompts (e.g., Windsurf)
+- Add copy button for setup instructions in Getting Started guide
+- Clarify `tauri_webview_execute_js` script format and return value requirements
+
+## [0.3.0] - 2025-12-02
+
+### Added
+- Add `filePath` option to screenshot tool for saving screenshots to disk
+- Return MCP SDK image shape for screenshots (base64 data with mimeType)
+- Simplify MCP tools and add `/setup` prompt
+
+### Fixed
+- Resolve adb path from ANDROID_HOME for log reading
+
+## [0.2.2] - 2025-12-01
+
+_No changes to this package._
+
+## [0.2.1] - 2025-11-30
+
+_No changes to this package._
+
+## [0.2.0] - 2025-11-29
+
+### Added
+- MCP prompts for guided workflows (setup, debugging, testing, mobile development)
+- Multi-window support for targeting specific webview windows
+
+### Changed
+- Improve MCP tool descriptions and metadata for better AI agent comprehension
+
+## [0.1.3] - 2025-11-26
+
+### Documentation
+- README for NPM package with usage instructions and tool reference
+
+## [0.1.2] - 2025-11-26
+
+_No changes to this package._
+
+## [0.1.1] - 2025-11-26
+
+### Fixed
+- Handle WebSocket disconnects reliably during port scanning by always cleaning up `PluginClient` connections
+- Prevent uncaught exceptions from orphaned WebSocket error events by adding default error handler
+- Reject pending requests when WebSocket connection closes unexpectedly
+- Auto-reconnect with exponential backoff (max 30s) instead of fixed retry limit
+- Handle MCP server connection errors gracefully (broken pipe, EPIPE)
+- Improve `execute_js` timeout coordination (7s client timeout vs 5s Rust timeout)
+
+### Changed
+- Expand tool descriptions for `tauri_plugin_ipc_monitor`, `tauri_plugin_ipc_get_events`, and `tauri_plugin_emit_event` for better AI agent comprehension
+- `sendCommand` now auto-reconnects if WebSocket is not connected
+
+### Added
+- Initial release of @hypothesi/tauri-mcp-server
+- Comprehensive MCP server for Tauri v2 development
+- Tauri CLI command execution
+- Configuration file management
+- Mobile device and emulator management
+- Native UI automation capabilities
+- IPC monitoring via MCP Bridge plugin
+- Log monitoring (Android/iOS/system)
+- Native capability management
+- Tauri documentation retrieval
