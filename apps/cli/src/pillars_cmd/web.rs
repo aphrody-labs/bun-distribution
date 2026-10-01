@@ -225,6 +225,57 @@ pub(crate) enum WebAction {
         #[arg(long, default_value_t = 250)]
         request_interval_ms: u64,
     },
+    /// Mirror HTML pages and their linked CSS/assets through Obscura
+    Mirror {
+        /// Seed page URL
+        url: String,
+        /// Local mirror destination
+        output_dir: std::path::PathBuf,
+        /// Follow in-scope page links recursively
+        #[arg(long)]
+        recursive: bool,
+        /// Maximum HTML pages, including the seed
+        #[arg(long, default_value_t = 100)]
+        max_pages: usize,
+        /// Maximum linked non-HTML resources
+        #[arg(long, default_value_t = 2000)]
+        max_assets: usize,
+        /// Maximum page-link depth from the seed
+        #[arg(long, default_value_t = 3)]
+        max_depth: u32,
+        /// Concurrent HTTP requests
+        #[arg(long, default_value_t = 4)]
+        concurrency: usize,
+        /// Minimum delay between request starts, in milliseconds
+        #[arg(long, default_value_t = 500)]
+        delay_ms: u64,
+        /// Restrict followed page links (comma-separated hostnames)
+        #[arg(long, value_delimiter = ',')]
+        allowed_domains: Vec<String>,
+        /// Follow common CDN hostnames, or provide an explicit comma-separated host list
+        #[arg(long, default_value = "false")]
+        resolve_cdns: String,
+        /// Optional HTTP/SOCKS proxy passed to Obscura
+        #[arg(long)]
+        proxy: Option<String>,
+        /// Emit a structured report
+        #[arg(long)]
+        json: bool,
+    },
+    /// Search a MediaWiki installation through its Action API
+    WikiSearch {
+        /// Action API endpoint, such as https://example.org/w/api.php
+        api_url: String,
+        /// Search terms
+        #[arg(required = true, num_args = 1..)]
+        query: Vec<String>,
+        /// Maximum results (1..100)
+        #[arg(long, default_value_t = 20)]
+        limit: usize,
+        /// Emit a structured JSON array
+        #[arg(long)]
+        json: bool,
+    },
 }
 
 #[derive(Clone, Copy, Debug, ValueEnum)]
@@ -681,6 +732,39 @@ pub(crate) async fn handle_web(action: WebAction) -> miette::Result<()> {
             )
             .await?;
         },
+        WebAction::Mirror {
+            url,
+            output_dir,
+            recursive,
+            max_pages,
+            max_assets,
+            max_depth,
+            concurrency,
+            delay_ms,
+            allowed_domains,
+            resolve_cdns,
+            proxy,
+            json,
+        } => {
+            handle_web_mirror(
+                url,
+                output_dir,
+                recursive,
+                max_pages,
+                max_assets,
+                max_depth,
+                concurrency,
+                delay_ms,
+                allowed_domains,
+                resolve_cdns,
+                proxy,
+                json,
+            )
+            .await?;
+        },
+        WebAction::WikiSearch { api_url, query, limit, json } => {
+            handle_web_wiki_search(api_url, query.join(" "), limit, json).await?;
+        },
     }
     Ok(())
 }
@@ -725,6 +809,122 @@ async fn handle_web_mediawiki(
         })
         .collect::<Vec<_>>();
     print_web_json(&serde_json::json!({ "pages": pages }))
+}
+
+#[allow(clippy::too_many_arguments)]
+async fn handle_web_mirror(
+    raw_url: String,
+    output_dir: std::path::PathBuf,
+    recursive: bool,
+    max_pages: usize,
+    max_assets: usize,
+    max_depth: u32,
+    concurrency: usize,
+    delay_ms: u64,
+    allowed_domains: Vec<String>,
+    resolve_cdns: String,
+    proxy: Option<String>,
+    json: bool,
+) -> miette::Result<()> {
+    if max_pages == 0 || max_pages > 10_000 || max_assets > 20_000 {
+        return Err(miette!("--max-pages must be 1..=10000 and --max-assets must be <= 20000"));
+    }
+    if concurrency == 0 || concurrency > 64 {
+        return Err(miette!("--concurrency must be 1..=64"));
+    }
+    let seed_url = reqwest::Url::parse(&raw_url).into_diagnostic()?;
+    let client = if let Some(proxy_url) = proxy.as_deref() {
+        obscura_net::ObscuraHttpClient::with_options(
+            std::sync::Arc::new(obscura_net::CookieJar::new()),
+            Some(proxy_url),
+        )
+    } else {
+        obscura_net::ObscuraHttpClient::new()
+    };
+    let mut options = aphrody_web_crawl::MirrorOptions::new(seed_url, output_dir);
+    options.recursive = recursive;
+    options.max_pages = max_pages;
+    options.max_assets = max_assets;
+    options.max_depth = max_depth;
+    options.max_concurrency = concurrency;
+    options.request_delay = Duration::from_millis(delay_ms);
+    options.allowed_domains = allowed_domains;
+    match resolve_cdns.trim().to_ascii_lowercase().as_str() {
+        "" | "false" | "0" => {},
+        "true" | "1" => options.resolve_cdns = true,
+        hosts => {
+            options.cdn_domains = hosts
+                .split(',')
+                .map(str::trim)
+                .filter(|host| !host.is_empty())
+                .map(str::to_owned)
+                .collect();
+        },
+    }
+    let report = aphrody_web_crawl::mirror_site(&client, &options)
+        .await
+        .map_err(|error| miette!("Web mirror failed: {error}"))?;
+    if json {
+        print_web_json(&serde_json::json!({
+            "requests": report.requests,
+            "pagesWritten": report.pages_written,
+            "assetsWritten": report.assets_written,
+            "bytesWritten": report.bytes_written,
+            "files": report.files,
+            "failures": report.failures.iter().map(|failure| serde_json::json!({
+                "url": failure.url,
+                "error": failure.error,
+            })).collect::<Vec<_>>(),
+        }))
+    } else {
+        println!(
+            "Mirror complete: {} pages, {} assets, {} requests, {} failures, {} bytes",
+            report.pages_written,
+            report.assets_written,
+            report.requests,
+            report.failures.len(),
+            report.bytes_written,
+        );
+        for failure in report.failures {
+            eprintln!("Mirror failed {}: {}", failure.url, failure.error);
+        }
+        Ok(())
+    }
+}
+
+async fn handle_web_wiki_search(
+    api_url: String,
+    query: String,
+    limit: usize,
+    json: bool,
+) -> miette::Result<()> {
+    if !(1..=100).contains(&limit) {
+        return Err(miette!("--limit must be between 1 and 100"));
+    }
+    let api_url = reqwest::Url::parse(&api_url).into_diagnostic()?;
+    let options = aphrody_web_crawl::MediaWikiOptions::new(api_url);
+    let client = obscura_net::ObscuraHttpClient::new();
+    let hits = aphrody_web_crawl::wiki::search_mediawiki(&client, &options, &query, limit)
+        .await
+        .map_err(|error| miette!("MediaWiki search failed: {error}"))?;
+    if json {
+        let hits = hits
+            .into_iter()
+            .map(|hit| {
+                let mut value = serde_json::json!({ "titre": hit.title, "url": hit.url });
+                if let Some(size) = hit.size {
+                    value["taille"] = serde_json::json!(size);
+                }
+                value
+            })
+            .collect::<Vec<_>>();
+        print_web_json(&serde_json::json!(hits))
+    } else {
+        for hit in hits {
+            println!("{}\n{}", hit.title, hit.url);
+        }
+        Ok(())
+    }
 }
 
 fn print_web_json(value: &serde_json::Value) -> miette::Result<()> {

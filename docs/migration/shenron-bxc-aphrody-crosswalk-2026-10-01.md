@@ -33,7 +33,7 @@ propriété.
 | Crawl Web générique et extraction HTML/Markdown | `aphrody-web-crawl`, `aphrody-web-extract`, `aphrody web` | Export JSON enrichi; filtres URL; chemin dédié MediaWiki ajouté; adaptateur du corpus Shenron remplace l’appel BXC pour `crawl universal`. |
 | Navigation et pages protégées | Aphrody Web / Obscura browser | Capacité déjà exposée par `aphrody web browser`; pas de remplacement domaine spécifique nécessaire établi dans cet audit. |
 | MCP Shenron | `crates/ai/mcp` | Outils Dragon Ball/Shenron dispatchés vers l’API Shenron; pas de second client Shenron pipeline trouvé. |
-| A2A | `crates/os/a2a-coord` et listener | Contrat serveur durable en cours d’intégration; adaptateur Shenron en cours. |
+| A2A | `crates/os/a2a-coord` et listener | Contrat serveur durable intégré; Shenron délègue au propriétaire. Qualification des anciennes attentes de stockage local en cours. |
 | Traduction | crate `aphrody-translate` | Le site délègue déjà la traduction à Aphrody. `GoogleTranslateService` du pipeline est désormais un adaptateur du client `AphrodyTranslateService`; aucun repli réseau ni cache de traduction TypeScript ne reste dans ce service. |
 | OCR databooks | `aphrody-ocr` via API Aphrody | Reconnaissance/revue distantes; Shenron reste le validateur et l’écrivain des transcriptions. |
 | Infra | `aphrody-infra`, `@aphrody/workspace` | Adaptateur status/check ajouté; scripts ops avec SSH/gcloud encore à migrer opération par opération. |
@@ -42,14 +42,19 @@ propriété.
 
 ## Points encore à migrer
 
-- `bxc-asset-harvest.ts` et `bxc-ingest.ts` utilisent désormais Aphrody Web
-  pour le scrape/reconnaissance. Le téléchargement miroir récursif d'assets
-  dans `bxc-asset-harvest.ts` reste BXC : l'API Crawl Aphrody renvoie pages,
-  contenu structuré et liens découverts, mais n'aspire pas les binaires liés
-  dans une arborescence locale. `rag-harvest.ts` conserve aussi BXC pour ce
-  besoin de miroir. Plusieurs scripts médias et tâches d'exploitation
+- `bxc-asset-harvest.ts`, `bxc-ingest.ts` et `rag-harvest.ts` utilisent désormais
+  Aphrody Web pour leurs opérations Web. Le miroir récursif HTML/CSS/assets
+  est fourni par `aphrody-web-crawl`; le profil HTTP précédemment utilisé est
+  conservé, sans exécution JavaScript. Les fichiers réussis d'un rapport
+  partiel restent utilisables par le harvest. Plusieurs scripts médias et tâches d'exploitation
   spécialisées restent à migrer après rapprochement de leurs contrats avec
-  `aphrody web frames`, le navigateur et les clients Infra.
+  Frames, le navigateur et les clients Infra. L'inventaire actuel ne trouve
+  pas de propriétaire Rust Frames dans ce checkout : le paquet installé
+  `@aphrody/frames` est encore TypeScript. Le port réutilisable est en cours.
+- `WikiService.search` utilise l'API native `aphrody web wiki-search`, avec
+  URLs canoniques fournies par MediaWiki. Les méthodes dossier et Markdown
+  attendent le port de la révision, des infobox, tableaux et images; elles
+  restent BXC jusqu'à qualification de ce contrat complet.
 - Le flux `crawl universal` est redirigé vers le worker Aphrody Web, mais il
   doit être validé sur un petit lot réel avant de remplacer les anciennes
   sorties. Les crawls complets Fandom sont volontairement hors exécution de
@@ -57,7 +62,8 @@ propriété.
   requêtes.
 - L’adaptateur infra fournit status/check; déploiement, accès base et opérations
   spécifiques restent à porter dans Aphrody avant de supprimer leurs appels
-  SSH/gcloud.
+  SSH/gcloud. L'envoi de snapshots OCR validés utilise maintenant
+  `aphrody-ssh`, avec un fichier distant unique pour chaque transfert.
 - Le dépôt BXC distant reste intact. Cette migration ne prétend pas transférer
   ni supprimer son historique, ses fonctions génériques non Shenron ou ses
   données protégées.
@@ -72,6 +78,13 @@ propriété.
 - `aphrody web mediawiki` énumère un ensemble borné par l’Action API MediaWiki,
   applique un intervalle partagé aux requêtes et extrait le Markdown avec
   `aphrody-web-extract`.
+- `aphrody web wiki-search <api-url> <query> --limit <n> --json` effectue
+  recherche et résolution des URLs canoniques en une requête MediaWiki.
+- `aphrody web mirror <url> <output-dir> --recursive --json` écrit une
+  arborescence HTML/CSS/assets et réécrit les liens locaux. Le JSON mesure
+  requêtes, pages, assets et octets écrits, liste les fichiers réussis et les
+  échecs. Les limites de pages/assets/profondeur/concurrence/délai et le
+  filtrage CDN sont exposés; les échecs ne sont pas cachés dans un succès complet.
 - `aphrody translate --json --source <lang> --target <lang> -- <text>` expose
   une réponse `translatedText/detectedSource/target/provider` provenant de la
   crate Rust. Ce mode respecte les langues demandées, propage les échecs et

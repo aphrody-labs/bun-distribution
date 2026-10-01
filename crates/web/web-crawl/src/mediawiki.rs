@@ -67,6 +67,7 @@ pub struct MediaWikiDocument {
 /// Errors encountered while enumerating or parsing MediaWiki pages.
 #[derive(Debug)]
 pub enum MediaWikiError {
+    InvalidOptions(String),
     InvalidArticlePath(String),
     Http(String),
     HttpStatus { url: String, status: u16 },
@@ -77,6 +78,7 @@ pub enum MediaWikiError {
 impl std::fmt::Display for MediaWikiError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
+            Self::InvalidOptions(message) => write!(f, "invalid MediaWiki options: {message}"),
             Self::InvalidArticlePath(message) => {
                 write!(f, "invalid MediaWiki article path: {message}")
             },
@@ -202,7 +204,7 @@ pub async fn crawl_mediawiki(
 const MAX_MEDIAWIKI_PAGES: usize = 10_000;
 const MAX_ALLPAGES_BATCH: usize = 500;
 
-fn validate_options(options: &MediaWikiOptions) -> Result<(), MediaWikiError> {
+pub(crate) fn validate_options(options: &MediaWikiOptions) -> Result<(), MediaWikiError> {
     if options.api_url.scheme() != "http" && options.api_url.scheme() != "https" {
         return Err(MediaWikiError::InvalidResponse("api_url must use HTTP or HTTPS".into()));
     }
@@ -258,7 +260,7 @@ fn article_url(options: &MediaWikiOptions, title: &str) -> Result<Url, MediaWiki
     wiki_root.join(&path).map_err(|error| MediaWikiError::InvalidArticlePath(error.to_string()))
 }
 
-async fn request_json(
+pub(crate) async fn request_json(
     client: &ObscuraHttpClient,
     options: &MediaWikiOptions,
     params: &[(&str, String)],
@@ -288,7 +290,7 @@ async fn request_json(
         .map_err(|error| MediaWikiError::InvalidResponse(error.to_string()))
 }
 
-fn api_error(response: &Value) -> Option<String> {
+pub(crate) fn api_error(response: &Value) -> Option<String> {
     let error = response.get("error")?;
     let code = error.get("code").and_then(Value::as_str).unwrap_or("unknown");
     let info = error.get("info").and_then(Value::as_str).unwrap_or("no details");

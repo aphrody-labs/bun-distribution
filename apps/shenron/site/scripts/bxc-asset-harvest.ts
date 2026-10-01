@@ -2,13 +2,12 @@
 /**
  * bxc-asset-harvest.ts — extraction d'assets via Aphrody Web.
  *
- * Scrape et reconnaissance passent par l'owner Aphrody Web. Le miroir récursif
- * reste provisoirement sur BXC, faute d'API miroir Aphrody équivalente.
+ * Scrape, reconnaissance et miroir récursif passent par l'owner Aphrody Web.
  *
  * Pipeline (aligné shenron crawl) :
  *  1. `aphrody web scrape <url> --markdown`         → MD + extraction liens média
  *  2. `aphrody web recon <url> --json`              → assets[] structurés
- *  3. `bxc mirror <url> <dir> --recursive …`       → graphe HTML/CSS/assets
+ *  3. `aphrody web mirror <url> <dir> --recursive`  → graphe HTML/CSS/assets
  *  4. Download des URLs image/audio découvertes → public/{sfx,dbz,sprites}/bxc/
  *
  * Usage :
@@ -16,7 +15,7 @@
  *   bun apps/shenron/site/scripts/bxc-asset-harvest.ts --profile max --delay 800
  *   bun apps/shenron/site/scripts/bxc-asset-harvest.ts --mirror-only
  *   bun apps/shenron/site/scripts/bxc-asset-harvest.ts --max-sources 1 --no-mirror
- *   BXC_DIR=../bxc BXC_PROFILE=max bun apps/shenron/site/scripts/bxc-asset-harvest.ts
+ *   APHRODY_BIN=aphrody bun apps/shenron/site/scripts/bxc-asset-harvest.ts
  *
  * Voir aussi : `bun apps/shenron/bot/scripts/rag-harvest.ts run-seeds`
  */
@@ -24,7 +23,7 @@ import { mkdirSync, writeFileSync, existsSync, readFileSync, appendFileSync } fr
 import { join, dirname, basename, extname } from "node:path";
 import { createHash } from "node:crypto";
 import { aphrodyWebRecon, aphrodyWebScrape } from "@shenron/pipeline/aphrody";
-import { bxcCommand } from "@shenron/pipeline/bxc/cli";
+import { aphrodyWebMirror } from "@shenron/pipeline/aphrody/mirror";
 import { BOT_HOST, CDN_ORIGIN, SITE_URL } from "../src/lib/config";
 
 const SITE_ROOT = join(import.meta.dir, "..");
@@ -53,8 +52,14 @@ function opt(name: string, dflt?: string): string | undefined {
 	if (i >= 0 && argv[i + 1] && !argv[i + 1]!.startsWith("--")) return argv[i + 1];
 	return dflt;
 }
-const profile = opt("profile", process.env.APHRODY_WEB_PROFILE ?? process.env.BXC_PROFILE ?? "max")!;
-const proxy = opt("proxy", process.env.BXC_PROXY ?? process.env.PROXY);
+const profile = opt(
+  "profile",
+  process.env.APHRODY_WEB_PROFILE ?? process.env.BXC_PROFILE ?? "max",
+)!;
+const proxy = opt(
+  "proxy",
+  process.env.APHRODY_WEB_PROXY ?? process.env.BXC_PROXY ?? process.env.PROXY,
+);
 const delayMs = parseInt(opt("delay", "800")!, 10);
 const maxPages = parseInt(opt("max-pages", "25")!, 10);
 const maxDepth = parseInt(opt("max-depth", "3")!, 10);
@@ -63,8 +68,7 @@ const MIRROR_ONLY = argv.includes("--mirror-only");
 const SKIP_MIRROR = argv.includes("--no-mirror");
 const CDN_BASE = (process.env.BXC_ASSET_CDN_BASE ?? BOT_HOST).replace(/\/$/, "");
 const CDN_ALLOWED_ORIGINS = new Set(
-	(process.env.BXC_ASSET_CDN_ALLOWED_ORIGINS ??
-		[SITE_URL, BOT_HOST, CDN_ORIGIN].join(","))
+  (process.env.BXC_ASSET_CDN_ALLOWED_ORIGINS ?? [SITE_URL, BOT_HOST, CDN_ORIGIN].join(","))
 		.split(",")
 		.map((origin) => origin.trim().replace(/\/$/, ""))
 		.filter(Boolean),
@@ -380,7 +384,7 @@ type AssetHit = {
 	url: string;
 	type: string;
 	fromPage: string;
-	via: "aphrody-web-recon" | "aphrody-web-scrape" | "bxc-recon" | "bxc-scrape" | "bxc-mirror";
+  via: "aphrody-web-recon" | "aphrody-web-scrape" | "aphrody-web-mirror";
 };
 
 type DlRec = {
@@ -399,52 +403,6 @@ type DlRec = {
 function log(line: string) {
 	console.log(line);
 	appendFileSync(LOG, line + "\n");
-}
-
-/** Exact same resolution strategy as apps/shenron/bot/scripts/rag-harvest.ts */
-async function execBxc(
-	subcmd: string,
-	subcmdArgs: string[],
-	opts: { proxy?: string; profile?: string } = {}
-): Promise<{ code: number; stdout: string; stderr: string }> {
-	const cmd = await bxcCommand();
-
-	if (opts.proxy) {
-		cmd.push("--proxy", opts.proxy);
-	}
-
-	cmd.push(subcmd);
-
-	if (opts.profile && ["recon", "scrape", "mirror", "crawl-worker"].includes(subcmd)) {
-		// scrape takes --profile after subcmd; recon/mirror too
-		// rag-harvest pushes profile via opts only for those subcmds — for scrape
-		// profile is also in subcmdArgs sometimes. We inject here if not present.
-		if (!subcmdArgs.includes("--profile")) {
-			cmd.push("--profile", opts.profile);
-		}
-	}
-
-	cmd.push(...subcmdArgs);
-
-	const spawnOpts: { stdout: "pipe"; stderr: "pipe" } = {
-		stdout: "pipe",
-		stderr: "pipe",
-	};
-
-	log(`  $ ${cmd.join(" ")}`);
-	const proc = Bun.spawn(cmd, spawnOpts);
-	const timeout = setTimeout(() => {
-		try {
-			proc.kill();
-		} catch {
-			/* */
-		}
-	}, 120_000);
-	const stdout = await new Response(proc.stdout).text();
-	const stderr = await new Response(proc.stderr).text();
-	const code = await proc.exited;
-	clearTimeout(timeout);
-	return { code, stdout, stderr };
 }
 
 const MEDIA_EXT = /\.(mp3|wav|ogg|m4a|png|jpe?g|webp|gif|svg|avif)(\?|$)/i;
@@ -485,7 +443,10 @@ function extractFromReconJson(stdout: string, page: string): AssetHit[] {
 	} catch {
 		// also harvest media URLs from plain recon markdown dump
 		hits.push(
-			...extractFromMarkdown(stdout, page).map((h) => ({ ...h, via: "aphrody-web-recon" as const }))
+      ...extractFromMarkdown(stdout, page).map((h) => ({
+        ...h,
+        via: "aphrody-web-recon" as const,
+      })),
 		);
 	}
 	return hits;
@@ -607,7 +568,8 @@ async function promoteToCdn(records: DlRec[]): Promise<number> {
 			record.cdnUrl = null;
 			continue;
 		}
-		const extension = extname(record.path).toLowerCase() || (record.kind === "audio" ? ".mp3" : ".bin");
+    const extension =
+      extname(record.path).toLowerCase() || (record.kind === "audio" ? ".mp3" : ".bin");
 		const key = `${createHash("sha256").update(record.url).digest("hex").slice(0, 24)}${extension}`;
 		const relativePath = `./assets/ext/bxc/${key}`;
 		const destination = join(BOT_ASSET_ROOT, key);
@@ -632,7 +594,10 @@ async function harvestSource(src: (typeof SOURCES)[0]): Promise<AssetHit[]> {
 		// 1) scrape markdown through the Aphrody Web owner
 		log(`[*] Aphrody Web scrape --markdown ${src.url}`);
 		try {
-			const markdown = await aphrodyWebScrape(src.url, { profile: profile as "static" | "http" | "fast" | "stealth" | "max", bin: process.env.APHRODY_BIN });
+      const markdown = await aphrodyWebScrape(src.url, {
+        profile: profile as "static" | "http" | "fast" | "stealth" | "max",
+        bin: process.env.APHRODY_BIN,
+      });
 			if (markdown.length > 80) {
 				const mdHits = extractFromMarkdown(markdown, src.url);
 				log(`  [scrape] ${mdHits.length} media URLs from markdown (${markdown.length} chars)`);
@@ -666,26 +631,36 @@ async function harvestSource(src: (typeof SOURCES)[0]): Promise<AssetHit[]> {
 	if (doMirror) {
 		const outDir = join(OUT_MIRROR, src.id);
 		mkdirSync(outDir, { recursive: true });
-		log(`[*] bxc mirror --recursive ${src.url} → ${outDir}`);
-		const mirrorArgs = [
-			src.url,
-			outDir,
-			"--recursive",
-			"--max-pages",
-			String(maxPages),
-			"--max-depth",
-			String(maxDepth),
-			"--concurrency",
-			"4",
-			"--delay-ms",
-			String(delayMs),
-			"--resolve-cdns",
-			"true",
-		];
-		const mir = await execBxc("mirror", mirrorArgs, { proxy, profile: "http" });
-		if (mir.code === 0) {
-			log(`  [mirror] ok (stdout ${mir.stdout.length}B)`);
-			// Scan mirrored tree for media files already on disk
+    log(`[*] Aphrody Web mirror --recursive ${src.url} → ${outDir}`);
+    try {
+      const mir = await aphrodyWebMirror(
+        {
+          url: src.url,
+          outputDir: outDir,
+          recursive: true,
+          maxPages,
+          maxAssets: parseInt(opt("max-assets", "1000")!, 10),
+          maxDepth,
+          maxConcurrency: 4,
+          delayMs,
+          resolveCdns: true,
+          ...(proxy ? { proxy } : {}),
+        },
+        { bin: process.env.APHRODY_BIN, timeoutMs: 600_000 },
+      );
+      if (mir.failures.length === 0) {
+        log(
+          `  [mirror] ok: ${mir.pagesWritten} pages, ${mir.assetsWritten} assets (${mir.bytesWritten} bytes)`,
+        );
+      } else {
+        log(
+          `  [mirror] partial: ${mir.pagesWritten} pages, ${mir.assetsWritten} assets, ${mir.failures.length} failures`,
+        );
+        for (const failure of mir.failures.slice(0, 20))
+          log(`    ${failure.url}: ${failure.error}`);
+      }
+
+      // Keep harvesting files that succeeded even when another mirror request failed.
 			const { readdirSync } = await import("node:fs");
 			function walk(d: string) {
 				let n = 0;
@@ -695,7 +670,6 @@ async function harvestSource(src: (typeof SOURCES)[0]): Promise<AssetHit[]> {
 						if (ent.isDirectory()) n += walk(p);
 						else if (MEDIA_EXT.test(ent.name)) {
 							n++;
-							// copy into harvest folders
 							const kind = classify(ent.name);
 							if (kind === "other") continue;
 							const dest = destPath(p, kind);
@@ -708,23 +682,23 @@ async function harvestSource(src: (typeof SOURCES)[0]): Promise<AssetHit[]> {
 										url: `file://${p}`,
 										type: kind,
 										fromPage: src.url,
-										via: "bxc-mirror",
+                    via: "aphrody-web-mirror",
 									});
 								}
 							} catch {
-								/* */
+                /* best effort per file */
 							}
 						}
 					}
 				} catch {
-					/* */
+          /* best effort per directory */
 				}
 				return n;
 			}
 			const n = walk(outDir);
-			log(`  [mirror] media files on disk: ${n}`);
-		} else {
-			log(`  [mirror] fail code=${mir.code} ${mir.stderr.slice(0, 300)}`);
+      log(`  [mirror] files on disk: ${n}`);
+    } catch (error) {
+      log(`  [mirror] failed: ${error instanceof Error ? error.message : String(error)}`);
 		}
 	}
 
@@ -769,10 +743,12 @@ async function main() {
 	mkdirSync(OUT_IMG, { recursive: true });
 	mkdirSync(OUT_SPRITES, { recursive: true });
 	mkdirSync(OUT_MIRROR, { recursive: true });
-	writeFileSync(LOG, `=== bxc asset harvest (repo pattern) ${new Date().toISOString()} ===\n`);
+  writeFileSync(
+    LOG,
+    `=== Shenron asset harvest through Aphrody Web ${new Date().toISOString()} ===\n`,
+  );
 
-	const resolvedBxcCommand = await bxcCommand();
-	log(`BXC resolution: ${resolvedBxcCommand.join(" ")} profile=${profile}`);
+  log(`Aphrody Web mirror owner: ${process.env.APHRODY_BIN ?? "aphrody"} profile=${profile}`);
 
 	const sources = loadAllSources().slice(0, maxSources);
 	log(`[*] ${sources.length} sources uniques (catalogue + db_sources)`);
@@ -813,9 +789,8 @@ async function main() {
 	const promoted = await promoteToCdn(results);
 	const inv = {
 		generatedAt: new Date().toISOString(),
-		engine: "bxc",
+    engine: "aphrody-web",
 		profile,
-		resolution: { command: resolvedBxcCommand },
 		summary: {
 			sources: sources.length,
 			uniqueUrls: allHits.length,

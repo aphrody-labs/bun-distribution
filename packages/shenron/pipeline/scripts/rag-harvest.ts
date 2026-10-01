@@ -1,7 +1,7 @@
 #!/usr/bin/env bun
 /**
  * rag-harvest.ts — Orchestre la récolte RAG Dragon Ball through Aphrody Web.
- * BXC mirror support remains for raw site mirrors until Aphrody Web owns that contract.
+ * Recursive site mirrors use the Aphrody Web Rust owner.
  * Extrait du markdown brut, normalise, et versionne dans data/rag/raw/.
  *
  * Usage : bun apps/shenron/bot/scripts/rag-harvest.ts <subcommand> [options]
@@ -12,7 +12,7 @@ import { createHash } from "node:crypto";
 import { fileURLToPath } from "node:url";
 import { homedir } from "node:os";
 import { aphrodyWebCrawl, aphrodyWebRecon, aphrodyWebScrape, aphrodyWebSearch } from "@shenron/pipeline/aphrody";
-import { bxcCommand } from "@shenron/pipeline/bxc/cli";
+import { aphrodyWebMirror } from "@shenron/pipeline/aphrody/mirror";
 
 // Paths
 const DB_PATH = fileURLToPath(new URL("../data/bot.db", import.meta.url));
@@ -47,8 +47,8 @@ for (let i = 0; i < subArgs.length; i++) {
 }
 
 // Map configuration options
-const profile = (options.profile as string) || process.env.BXC_PROFILE || "max";
-const proxy = (options.proxy as string) || process.env.BXC_PROXY || process.env.PROXY || undefined;
+const profile = (options.profile as string) || process.env.APHRODY_WEB_PROFILE || process.env.BXC_PROFILE || "max";
+const proxy = (options.proxy as string) || process.env.APHRODY_WEB_PROXY || process.env.BXC_PROXY || process.env.PROXY || undefined;
 const delayMs = parseInt((options.delay as string) || "1000", 10);
 const sourceIdOpt = (options["source-id"] as string) || undefined;
 const outputDir = (options["output-dir"] as string) || OUT_RAW;
@@ -173,39 +173,6 @@ const SEEDS = [
 		url: "https://en.wikipedia.org/wiki/Akira_Toriyama",
 	},
 ];
-
-// Temporary raw-site mirror adapter; other web operations use Aphrody Web.
-async function execBxc(
-	subcmd: string,
-	subcmdArgs: string[],
-	opts: { proxy?: string; profile?: string } = {}
-): Promise<{ code: number; stdout: string; stderr: string }> {
-	const cmd = await bxcCommand();
-
-	if (opts.proxy) {
-		cmd.push("--proxy", opts.proxy);
-	}
-
-	cmd.push(subcmd);
-
-	if (opts.profile && ["recon", "scrape", "mirror", "crawl-worker"].includes(subcmd)) {
-		cmd.push("--profile", opts.profile);
-	}
-
-	cmd.push(...subcmdArgs);
-
-	const spawnOpts: { stdout: "pipe"; stderr: "pipe" } = {
-		stdout: "pipe",
-		stderr: "pipe",
-	};
-
-	const proc = Bun.spawn(cmd, spawnOpts);
-	const stdout = await new Response(proc.stdout).text();
-	const stderr = await new Response(proc.stderr).text();
-	const code = await proc.exited;
-
-	return { code, stdout, stderr };
-}
 
 // Slugifier
 function getSlug(urlStr: string): string {
@@ -420,24 +387,23 @@ async function handleMirror(url: string) {
 	const outDir = `${outputDir}/${sourceId}/mirror`;
 	mkdirSync(outDir, { recursive: true });
 
-	console.log(`[*] Mirroring site via the BXC compatibility adapter: ${url} -> ${outDir}`);
+	console.log(`[*] Mirroring site through Aphrody Web: ${url} -> ${outDir}`);
 
-	const cmdArgs = [url, outDir];
-	if (isRecursive) {
-		cmdArgs.push("--recursive");
-		cmdArgs.push("--max-pages", String(maxPages));
-		cmdArgs.push("--max-depth", String(maxDepth));
-		cmdArgs.push("--delay-ms", String(delayMs));
-	}
-
-	const { code, stderr } = await execBxc("mirror", cmdArgs, { proxy, profile });
-
-	if (code !== 0) {
-		console.error(`[-] Error mirroring ${url}: bxc exited with code ${code}. Stderr: ${stderr}`);
-		return null;
-	}
-
-	console.log(`[+] Successfully mirrored: ${url} to ${outDir}`);
+	const report = await aphrodyWebMirror({
+		url,
+		outputDir: outDir,
+		recursive: isRecursive,
+		maxPages,
+		maxAssets: parseInt((options["max-assets"] as string) || "1000", 10),
+		maxDepth,
+		maxConcurrency: 4,
+		delayMs,
+		...(allowedDomains ? { allowedDomains: allowedDomains.split(",").map((domain) => domain.trim()).filter(Boolean) } : {}),
+		...(proxy ? { proxy } : {}),
+	}, { bin: process.env.APHRODY_BIN, timeoutMs: 600_000 });
+	console.log(`[+] Mirror report: ${report.pagesWritten} pages, ${report.assetsWritten} assets, ${report.failures.length} failures`);
+	for (const failure of report.failures) console.warn(`  [mirror] ${failure.url}: ${failure.error}`);
+	if (report.failures.length > 0) return null;
 	return outDir;
 }
 
@@ -541,14 +507,15 @@ Usage:
 Subcommands:
   recon <url>            Harvest Markdown and structural report through Aphrody Web
   scrape <url>           Extract content using Aphrody Web (CSS selector or Markdown)
-  mirror <url>           Download a complete site locally using the BXC compatibility path
+  mirror <url>           Mirror HTML, CSS and linked assets through Aphrody Web
   search <query>         Query Google Search through Aphrody Web
   crawl-worker [urls]    Run a bounded persistent Aphrody Web crawl
   run-seeds              Harvest all seeds from db_sources and pre-configured links
 
 Options:
   --profile <name>       Stealth profile (static | fast | http | stealth | max) [default: max]
-  --proxy <url>          Use HTTP/Socks5 proxy for the BXC mirror compatibility path
+  --proxy <url>          Use HTTP/Socks5 proxy for Aphrody Web mirror requests
+  --max-assets <N>       Maximum linked assets to mirror [default: 1000]
   --delay <ms>           Rate-limiting delay between requests in milliseconds [default: 1000]
   --source-id <id>       Override source ID (for folders and manifest) [default: derived from hostname]
   --output-dir <dir>     Output base directory [default: apps/shenron/bot/data/rag/raw/]

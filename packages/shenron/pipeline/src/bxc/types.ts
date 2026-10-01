@@ -134,12 +134,7 @@ export const WikiSectionSchema = z.object({
 });
 export type WikiSection = z.infer<typeof WikiSectionSchema>;
 
-export const WikiSearchResultSchema = z.object({
-  titre: z.string(),
-  url: z.string(),
-  taille: z.number().optional(),
-});
-export type WikiSearchResult = z.infer<typeof WikiSearchResultSchema>;
+export { WikiSearchResultSchema, type WikiSearchResult } from "../aphrody/wiki";
 
 export const WikiPageDossierSchema = z.object({
   url: z.string(),

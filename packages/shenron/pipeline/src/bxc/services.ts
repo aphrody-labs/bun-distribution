@@ -2,6 +2,7 @@
 /** BXC domain clients sharing a single CLI contract and service module. */
 import { execBxc, execBxcJson } from "./spawn";
 import { AphrodyTranslateService } from "../aphrody/translate";
+import { AphrodyWikiSearchService } from "../aphrody/wiki";
 import {
 	AnimesamaSearchResultSchema,
 	AnimesamaAnimeInfoSchema,
@@ -16,7 +17,6 @@ import {
 	type VoiranimeSearchResult,
 	type VoiranimeAnimeInfo,
 	type VoiranimeResolvedSource,
-	WikiSearchResultSchema,
 	WikiPageDossierSchema,
 	type WikiSearchResult,
 	type WikiPageDossier,
@@ -228,15 +228,10 @@ export class WikiService {
     if (!trimmedUrl) throw new Error("Wiki base URL is required");
     if (!trimmedQuery) return [];
 
-    const raw = await execBxcJson<unknown[]>(
-      ["wiki", "search", trimmedUrl, trimmedQuery, "--limite", String(limit)],
-      {
-        ...this.defaultOptions,
-        ...options,
-      }
-    );
-
-    return raw.map((item) => WikiSearchResultSchema.parse(item));
+    const timeoutMs = options?.timeoutMs ?? this.defaultOptions.timeoutMs;
+    return new AphrodyWikiSearchService(
+      timeoutMs === undefined ? {} : { timeoutMs }
+    ).search(trimmedUrl, trimmedQuery, limit);
   }
 
   /**

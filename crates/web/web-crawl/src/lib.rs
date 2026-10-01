@@ -3,14 +3,19 @@
 
 mod frontier;
 mod mediawiki;
+mod mirror;
 mod revisit;
 mod robots;
 mod runner;
 mod scoring;
 mod sitemap;
+pub mod wiki;
 
 pub use frontier::{AddRequest, Frontier, FrontierOptions, FrontierStats, Lease, RequestState};
-pub use mediawiki::{crawl_mediawiki, MediaWikiDocument, MediaWikiError, MediaWikiOptions};
+pub use mediawiki::{MediaWikiDocument, MediaWikiError, MediaWikiOptions, crawl_mediawiki};
+pub use mirror::{
+    MirrorError, MirrorFailure, MirrorFile, MirrorOptions, MirrorReport, mirror_site,
+};
 pub use revisit::{
     ChangeHistory, RevisitPolicy, estimate_change_rate, revisit_interval_ms, revisit_priority,
 };

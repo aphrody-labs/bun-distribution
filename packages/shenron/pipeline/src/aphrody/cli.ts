@@ -4,8 +4,8 @@
  * scripts only). Every call is a `Bun.spawn` with a timeout; the outcome is always a
  * classified {@link CliResult}, never a throw and never a fabricated success.
  *
- * Only commands with JSON output are wrapped (`doctor --json`, `git inspect`);
- * `translate` and `notify` print free text and are intentionally not wrapped.
+ * Commands with JSON output are wrapped (`doctor --json`, `git inspect`, and
+ * the consumer clients for translation and Web); `notify` prints free text.
  */
 
 export const DEFAULT_APHRODY_CLI_TIMEOUT_MS = 30_000;
