@@ -35,15 +35,15 @@ compiled.** Expect an error-fix loop.
 
 | Track | State | To finish |
 |---|---|---|
-| T1 RAG | started `rag-core` fusion kernels, W1 to W7 mostly unstarted | rerun worker on `rag-native-integration.md` |
-| T2a | chat-template layer (minijinja) and `InProcessLlama` in progress | finish, then retire supervisor/daemon/caps |
+| T1 RAG | W1 `EmbedBackend::Native` wired in CLI and MCP (e42205f2d, cargo-checked); `rag-core` fusion kernels started; W2–W7 unverified | rerun worker on `rag-native-integration.md` |
+| T2a | `in_process` module parked in `git stash` (does not compile with `in-process`: `ModelCapabilities` fields, `stream` signature) | fix, then retire supervisor/daemon/caps |
 | T2b | NDJSON decoder, Ollama/vLLM/HF request helpers in progress | finish `http.rs`, native Ollama/vLLM clients |
 | T2c | read router/gateway; engine crate scaffold only | build `aphrody-engine-mistralrs`, rebuild gateway over `ModelClient`, grep-prove router removal |
-| T3 | W2/W3/W5/W7/W8 partly edited in `crates/ui/app` | finish, W4 and W6 after T2 |
-| T4 | read-only so far | `marketplace` generator, `.codex/`, `.opencode/`, `opencode.json` |
+| T3 | `broker::aphrody_command`/`resolve_aphrody_bin` restored (781ed9a38, `aphrody-app` checks); W2/W3/W5/W7/W8 otherwise unverified | finish, W4 and W6 after T2 |
+| T4 | `plugins/aphrody/opencode.json` rewritten to the OpenCode schema (31a92782c) | `marketplace` generator, `.codex/` |
 | T5 | `mcp_config.rs` canonical loader, `call_tool_raw` in progress | dedup MCP clients |
 | T6 | docs edited (agy hooks: `Stop` not `AfterAgent`) | A2A peers, conformance tests |
-| T7, T8 | partial rewrites of plugin agents and skills (hardcoded paths) | rerun, then validator |
+| T7, T8 | skill path fixes committed (38873cfb3); agents not rerun | rerun, then validator |
 | T9 | no file written | cross-tool reference docs |
 | T10 | `paths.rs`, kernel-client endpoint resolver in progress | finish, remove hardcoded paths |
 | T11 | `web_fetch.rs` mid-edit | subprocess sweep |
