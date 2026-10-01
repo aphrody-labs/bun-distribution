@@ -3,13 +3,45 @@
 //! array shape and ordering; the arithmetic has one owner here.
 
 /// A batch must be rectangular; empty batches are accepted.
-fn dimensions(rows: &[Vec<f64>]) -> Result<Option<usize>, &'static str> {
+pub(crate) fn dimensions<T>(rows: &[Vec<T>]) -> Result<Option<usize>, &'static str> {
     let width = rows.first().map(Vec::len);
     if rows.iter().any(|row| Some(row.len()) != width) {
         return Err("embedding batch must be rectangular");
     }
     Ok(width)
 }
+
+// Match NumPy fast-axis reduction ordering (eight lanes, 128-element blocks).
+// Algorithm reference: numpy/_core/src/umath/loops_utils.h.src, pairwise_sum.
+macro_rules! numpy_sum {
+    ($name:ident, $float:ty) => {
+        pub(crate) fn $name(length: usize, at: &dyn Fn(usize) -> $float) -> $float {
+            fn reduce(start: usize, length: usize, at: &dyn Fn(usize) -> $float) -> $float {
+                if length < 8 {
+                    return (start..start + length).fold(-0.0, |sum, index| sum + at(index));
+                }
+                if length > 128 {
+                    let split = (length / 2) & !7;
+                    return reduce(start, split, at) + reduce(start + split, length - split, at);
+                }
+                let mut lanes: [$float; 8] = std::array::from_fn(|index| at(start + index));
+                let aligned = length & !7;
+                for block in (8..aligned).step_by(8) {
+                    for (lane, sum) in lanes.iter_mut().enumerate() {
+                        *sum += at(start + block + lane);
+                    }
+                }
+                let low = (lanes[0] + lanes[1]) + (lanes[2] + lanes[3]);
+                let high = (lanes[4] + lanes[5]) + (lanes[6] + lanes[7]);
+                (aligned..length).fold(low + high, |sum, index| sum + at(start + index))
+            }
+            // NumPy's add reduction combines its zero identity with the block.
+            0.0 + reduce(0, length, at)
+        }
+    };
+}
+numpy_sum!(sum_f64, f64);
+numpy_sum!(sum_f32, f32);
 
 /// L2 normalize each row with the RAPTOR 1e-12 denominator clamp.
 /// NaNs propagate, matching the former NumPy maximum rather than f64::max.
@@ -96,6 +128,9 @@ pub fn similarities_flat(
 /// Mean embedding in input order. An empty batch has no prototype.
 pub fn mean(rows: &[Vec<f64>]) -> Result<Vec<f64>, &'static str> {
     let width = dimensions(rows)?.ok_or("mean requires at least one embedding")?;
+    if width == 1 {
+        return Ok(vec![sum_f64(rows.len(), &|index| rows[index][0]) / rows.len() as f64]);
+    }
     let mut result = vec![0.0; width];
     for row in rows {
         for (total, value) in result.iter_mut().zip(row) {
@@ -106,6 +141,38 @@ pub fn mean(rows: &[Vec<f64>]) -> Result<Vec<f64>, &'static str> {
         *total /= rows.len() as f64;
     }
     Ok(result)
+}
+
+/// Squared Euclidean distances, in row-major row/centroid order.
+/// Subtract before squaring (no dot-product expansion or normalization),
+/// use NumPy fast-axis reduction order, and propagate NaNs.
+pub fn squared_distances(
+    rows: &[Vec<f64>],
+    centroids: &[Vec<f64>],
+) -> Result<Vec<Vec<f64>>, &'static str> {
+    let row_width = dimensions(rows)?;
+    let centroid_width = dimensions(centroids)?;
+    if row_width.is_some() && centroid_width.is_some() && row_width != centroid_width {
+        return Err("embedding dimensions do not match");
+    }
+    rows.len()
+        .checked_mul(centroids.len())
+        .filter(|size| *size <= isize::MAX as usize / 8)
+        .ok_or("distance result shape overflow")?;
+    Ok(rows
+        .iter()
+        .map(|row| {
+            centroids
+                .iter()
+                .map(|centroid| {
+                    sum_f64(row.len(), &|index| {
+                        let difference = row[index] - centroid[index];
+                        difference * difference
+                    })
+                })
+                .collect()
+        })
+        .collect())
 }
 
 /// Recompute normalized cluster means in one batch. Empty clusters retain
@@ -151,6 +218,36 @@ pub fn update_centers(
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn euclidean_means_and_distances_keep_scale_order_and_ties() {
+        let center = mean(&[vec![2.0, 4.0], vec![4.0, 8.0]]).unwrap();
+        assert_eq!(center, vec![3.0, 6.0]);
+        assert_eq!(
+            squared_distances(&[vec![3.0, 6.0], vec![2.0, 4.0]], &[center, vec![1.0, 2.0]])
+                .unwrap(),
+            vec![vec![0.0, 20.0], vec![5.0, 5.0]]
+        );
+        // Direct subtraction retains small distances between large values.
+        assert_eq!(squared_distances(&[vec![1e16 + 2.0]], &[vec![1e16]]).unwrap(), vec![vec![4.0]]);
+        assert!(squared_distances(&[vec![f64::NAN]], &[vec![0.0]]).unwrap()[0][0].is_nan());
+        assert!(mean(&[vec![f64::NAN], vec![1.0]]).unwrap()[0].is_nan());
+    }
+
+    #[test]
+    fn euclidean_distances_preserve_empty_shapes_and_validate_every_batch() {
+        assert_eq!(squared_distances(&[], &[vec![1.0]]).unwrap(), Vec::<Vec<f64>>::new());
+        assert_eq!(
+            squared_distances(&[vec![1.0], vec![2.0]], &[]).unwrap(),
+            vec![Vec::<f64>::new(), Vec::new()]
+        );
+        assert_eq!(
+            squared_distances(&[vec![], vec![]], &[vec![]]).unwrap(),
+            vec![vec![0.0], vec![0.0]]
+        );
+        assert!(squared_distances(&[vec![1.0]], &[vec![1.0, 2.0]]).is_err());
+        assert!(squared_distances(&[], &[vec![1.0], vec![]]).is_err());
+        assert!(squared_distances(&[vec![1.0], vec![]], &[]).is_err());
+    }
     #[test]
     fn preserves_float64_and_small_zero_rows() {
         assert_eq!(

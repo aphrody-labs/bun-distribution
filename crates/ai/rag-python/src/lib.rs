@@ -42,6 +42,39 @@ fn pack_embeddings(py: Python<'_>, values: &[Vec<f64>]) -> PyResult<Py<PyByteArr
 }
 
 #[pyfunction]
+fn unpack_embeddings_f32(data: &[u8], rows: usize, width: usize) -> PyResult<Vec<Vec<f32>>> {
+    if rows.checked_mul(width).and_then(|size| size.checked_mul(4)) != Some(data.len()) {
+        return Err(vector_error("packed embedding dimensions do not match buffer length"));
+    }
+    if width == 0 {
+        return Ok(vec![vec![]; rows]);
+    }
+    let values: Vec<f32> =
+        data.as_chunks::<4>().0.iter().map(|bytes| f32::from_le_bytes(*bytes)).collect();
+    Ok(values.chunks_exact(width).map(<[f32]>::to_vec).collect())
+}
+
+fn pack_values_f32<'a>(
+    py: Python<'_>,
+    values: impl ExactSizeIterator<Item = &'a f32>,
+) -> PyResult<Py<PyByteArray>> {
+    let size =
+        values.len().checked_mul(4).ok_or_else(|| vector_error("packed result size overflow"))?;
+    PyByteArray::new_with(py, size, |bytes| {
+        for (chunk, value) in bytes.as_chunks_mut::<4>().0.iter_mut().zip(values) {
+            chunk.copy_from_slice(&value.to_le_bytes());
+        }
+        Ok(())
+    })
+    .map(Bound::unbind)
+}
+
+fn pack_embeddings_f32(py: Python<'_>, values: &[Vec<f32>]) -> PyResult<Py<PyByteArray>> {
+    let flattened: Vec<f32> = values.iter().flatten().copied().collect();
+    pack_values_f32(py, flattened.iter())
+}
+
+#[pyfunction]
 fn normalize_embeddings_f64(
     py: Python<'_>,
     data: &[u8],
@@ -96,6 +129,52 @@ fn mean_embeddings_f64(
     let batch = unpack_embeddings(data, rows, width)?;
     let result = py.detach(|| aphrody_rag_core::vectors_f64::mean(&batch)).map_err(vector_error)?;
     pack_values(py, result.iter())
+}
+
+#[pyfunction]
+fn squared_embedding_distances_f64(
+    py: Python<'_>,
+    left: &[u8],
+    right: &[u8],
+    left_rows: usize,
+    right_rows: usize,
+    width: usize,
+) -> PyResult<Py<PyByteArray>> {
+    let rows = unpack_embeddings(left, left_rows, width)?;
+    let centroids = unpack_embeddings(right, right_rows, width)?;
+    let result = py
+        .detach(|| aphrody_rag_core::vectors_f64::squared_distances(&rows, &centroids))
+        .map_err(vector_error)?;
+    pack_embeddings(py, &result)
+}
+
+#[pyfunction]
+fn mean_embeddings_f32(
+    py: Python<'_>,
+    data: &[u8],
+    rows: usize,
+    width: usize,
+) -> PyResult<Py<PyByteArray>> {
+    let batch = unpack_embeddings_f32(data, rows, width)?;
+    let result = py.detach(|| aphrody_rag_core::vectors_f32::mean(&batch)).map_err(vector_error)?;
+    pack_values_f32(py, result.iter())
+}
+
+#[pyfunction]
+fn squared_embedding_distances_f32(
+    py: Python<'_>,
+    left: &[u8],
+    right: &[u8],
+    left_rows: usize,
+    right_rows: usize,
+    width: usize,
+) -> PyResult<Py<PyByteArray>> {
+    let rows = unpack_embeddings_f32(left, left_rows, width)?;
+    let centroids = unpack_embeddings_f32(right, right_rows, width)?;
+    let result = py
+        .detach(|| aphrody_rag_core::vectors_f32::squared_distances(&rows, &centroids))
+        .map_err(vector_error)?;
+    pack_embeddings_f32(py, &result)
 }
 
 #[pyfunction]
@@ -166,6 +245,9 @@ fn aphrody_rust(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(normalize_embeddings_f64, m)?)?;
     m.add_function(wrap_pyfunction!(embedding_similarities_f64, m)?)?;
     m.add_function(wrap_pyfunction!(mean_embeddings_f64, m)?)?;
+    m.add_function(wrap_pyfunction!(mean_embeddings_f32, m)?)?;
+    m.add_function(wrap_pyfunction!(squared_embedding_distances_f32, m)?)?;
+    m.add_function(wrap_pyfunction!(squared_embedding_distances_f64, m)?)?;
     m.add_function(wrap_pyfunction!(update_cosine_centers_f64, m)?)?;
     m.add_function(wrap_pyfunction!(cosine_similarity, m)?)?;
     m.add_function(wrap_pyfunction!(top_k_cosine_similarity, m)?)?;
