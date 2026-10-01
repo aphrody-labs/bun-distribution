@@ -30,6 +30,25 @@ bun packages/infra/workspace/src/ops.ts ui-verify --root ../aphrody-ui --quick
 
 The `client` export is the typed fetch boundary for `aphrody-infra serve`.
 
+`cargo-release-audit` inventories active Cargo members, publishing policy, path
+and Git dependencies without a registry version, external paths, and divergent
+direct registry requirements. The integrating agent supplies fresh metadata:
+
+```bash
+scripts/build/rust/cargo-serial.sh metadata --no-deps --format-version 1 > /tmp/cargo-metadata.json
+bun packages/infra/workspace/src/ops.ts cargo-release-audit --metadata /tmp/cargo-metadata.json --out /tmp/cargo-release-audit.json
+```
+
+The audit never invokes Cargo, installs, publishes or changes a manifest.
+`--check` returns an error for detected publishing restrictions, missing or
+wildcard registry versions on normal/build dependencies, or unreadable manifests. A successful
+audit does not prove release readiness: full resolution, registry availability,
+package validation and scoped build gates remain the integrating agent's work.
+Caret intersections respect Cargo's pre-1.0 rules; complex requirements remain
+marked for review. Dev dependencies are inventoried separately because crates.io
+does not require their registry fallback. Every manifest read has a SHA-256 in
+the report so the observation can be compared after concurrent changes.
+
 `fleet` reads the generated ecosystem and the pipeline catalogue, so the package
 shows every catalogued Aphrody repository and its delivery stages without a
 second registry. `n2b` forwards full Node-to-Bun migrations to the Aphrody N2B

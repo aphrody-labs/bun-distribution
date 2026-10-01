@@ -52,6 +52,7 @@ import { runGitAttribution } from "./git-attribution.ts";
 import { runRepositoryHealth } from "./repository-health.ts";
 import { runWorkspaceRepair } from "./workspace-repair.ts";
 import { runCargoPackageRepair } from "./cargo-package-repair.ts";
+import { runCargoReleaseAudit } from "./cargo-release-audit.ts";
 import { runConsolidation } from "./consolidation.ts";
 import { runRg } from "./rg.ts";
 import { runShenron } from "./shenron.ts";
@@ -159,6 +160,9 @@ if (operation === "monorepo-gate") {
 }
 if (operation === "cargo-package-repair") {
   process.exit(await runCargoPackageRepair(rest));
+}
+if (operation === "cargo-release-audit") {
+  process.exit(await runCargoReleaseAudit(rest));
 }
 if (operation === "workspace-repair") {
   process.exit(await runWorkspaceRepair(rest));

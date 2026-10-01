@@ -55,6 +55,7 @@
     "./repository-health": "./src/repository-health.ts",
     "./workspace-repair": "./src/workspace-repair.ts",
     "./cargo-package-repair": "./src/cargo-package-repair.ts",
+    "./cargo-release-audit": "./src/cargo-release-audit.ts",
     "./consolidation": "./src/consolidation.ts",
     "./rg": "./src/rg.ts",
     "./shenron": "./src/shenron.ts",
