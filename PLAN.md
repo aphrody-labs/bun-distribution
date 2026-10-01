@@ -341,6 +341,21 @@ aux trois racines actives. WSL : disques, processus, shell et chemins revérifi�
   autres consommateurs restent à qualifier. Cette reprise clôt la limite
   « kernel depuis clone propre » du lot précédent, pas le gate OS/Infra global.
 
+### Bridge Bun limité au monorepo actif — 2026-10-01
+
+- FAIT : la découverte des workspaces Bun par Infra utilise uniquement la
+  racine fournie (par défaut `/home/aphro/aphrody`). Elle ne parcourt plus les
+  checkouts frères, les remotes Git ou le catalogue historique pour ajouter
+  des racines. La forme publique du catalogue est conservée.
+- Le test crée une racine relocalisée et des frères legacy/UI : seule la racine
+  fournie est retournée. Le contrôle réel retourne uniquement `aphrody`.
+- Gates : 45 tests Infra réussis, un test natif conditionnel ignoré ; typecheck,
+  format et diff-check réussis. Oxc sans erreur, trois avertissements préexistants
+  (`no-map-spread`, `no-array-sort`, `no-await-in-loop`) restent dans le fichier.
+- INCOMPLET : catalogue des binaires, fleet/layering, installation figée et
+  qualification complète des bridges restent ouverts. Aucun checkout UI inspecté
+  par la nouvelle découverte et aucun service modifié.
+
 ## 4. UI et bibliothèques navigateur
 
 Propriétaire : `packages/ui`, `crates/ui`.

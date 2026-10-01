@@ -15,8 +15,6 @@ type PackageManifest = {
   workspaces?: string[] | { packages?: string[] };
 };
 
-type Ecosystem = { repos?: Array<{ name?: string }> };
-
 export type BunPackageWorkspace = {
   id: string;
   name: string;
@@ -31,16 +29,6 @@ export type BunPackageWorkspace = {
 
 async function exists(path: string): Promise<boolean> {
   return (await Bun.file(path).exists()) && (await Bun.file(path).size) >= 0;
-}
-
-async function hasFirstPartyRemote(root: string): Promise<boolean> {
-  const child = Bun.spawn(["git", "-C", root, "remote", "get-url", "origin"], {
-    stdout: "pipe",
-    stderr: "ignore",
-  });
-  if ((await child.exited) !== 0) return false;
-  const remote = (await new Response(child.stdout).text()).trim();
-  return /github\.com[/:]aphrody-(?:code|labs)\//.test(remote);
 }
 
 async function configuredRegistry(
@@ -59,19 +47,13 @@ async function configuredRegistry(
   return { registry: OFFICIAL_NPM_REGISTRY, registrySource: "bun-default" };
 }
 
-/** Discover only first-party Bun roots; upstream checkouts are excluded. */
+/** Discover the supplied monorepo Bun root without inspecting sibling checkouts. */
 export async function discoverBunPackageWorkspaces(
   root = infraRoot(),
 ): Promise<BunPackageWorkspace[]> {
-  const sourceRoot = dirname(root);
-  const ecosystem = (await Bun.file(
-    join(root, "docs", "ecosystem", "ecosystem.json"),
-  ).json()) as Ecosystem;
-  const owned = new Set((ecosystem.repos ?? []).flatMap((repo) => (repo.name ? [repo.name] : [])));
-  owned.add(basename(root));
-  const manifestPaths = await Array.fromAsync(
-    new Bun.Glob("*/package.json").scan({ cwd: sourceRoot, absolute: true }),
-  );
+  const rootManifestPath = join(root, "package.json");
+  if (!(await Bun.file(rootManifestPath).exists())) return [];
+  const manifestPaths = [rootManifestPath];
   const candidates = await Promise.all(
     manifestPaths.map(async (manifestPath) => {
       const workspaceRoot = dirname(manifestPath);
@@ -82,8 +64,7 @@ export async function discoverBunPackageWorkspaces(
         manifest.packageManager?.startsWith("bun@") ||
         Boolean(manifest.engines?.bun) ||
         Boolean(manifest.devDependencies?.["@types/bun"]);
-      if (!declaresBun || (!owned.has(id) && !(await hasFirstPartyRemote(workspaceRoot))))
-        return undefined;
+      if (!declaresBun) return undefined;
       const config = await configuredRegistry(workspaceRoot);
       const workspaces = Array.isArray(manifest.workspaces)
         ? manifest.workspaces
