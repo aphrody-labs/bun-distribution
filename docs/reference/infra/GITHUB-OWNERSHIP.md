@@ -30,9 +30,9 @@ helper. No token value belongs in a repository.
 | `bun` | Bun fork (`config/bun-fork.json`), keeps its `oven-sh/bun` fork relationship. |
 
 Deleted on 2026-10-01 (verified: the organization lists only `aphrody`, `aphrody-py`, `bun`, `iecode`, `oxc`) after a verified mirror, bundle and metadata backup
-(`~/.aphrody/private/backups/github/aphrody-labs-2026-10-01/`, 15 GB, and a
-SHA-256-verified copy without the 7.5 GB `bxc` release assets in
-`C:\Users\aphro\AphrodyBackups\github-aphrody-labs-2026-10-01`): the former split layer
+(`~/.aphrody/private/backups/github/aphrody-labs-2026-10-01/`, 15 GB;
+the former Windows and remote copies were removed after SHA-256 verification
+on 2026-10-02 under the single-copy rule): the former split layer
 repositories `aphrody-ai`, `-os`, `-ui`, `-web`, `-compat`, `-contracts`,
 `-shell`, `-native`, `-infra`, `-discord`, `-koharu`, `-src`, `-go`, `-ts`,
 `aphrody-legacy`, `shenron` (imported into `apps/shenron` and `packages/shenron` at its last commit `58e03b40`; the running vps release is a self-contained artifact), and `bxc`, `fut`, `n2b`, `winclean`, `nie`, `iepy`,
@@ -54,6 +54,9 @@ repository for 90 days from the organization settings.
   name. Update `origin` remotes, `config/*.json` and references in one commit.
 - Before deleting a repository: `git clone --mirror`, `git bundle create --all`
   and `git bundle verify`, export issues and releases, record SHA-256 sums and
-  keep a second copy on another host.
-- GitHub Actions runs end in `startup_failure` because of the account billing
-  lock; CI is not a gate until billing is fixed.
+  retain one verified set on WSL under [ADR D12](../../decisions/infra/sql-convergence.md).
+  Do not create a second backup on Windows, vps or dbfr.
+- Inspect the current Actions run instead of assuming a historical billing
+  failure still applies. RG run `36934495176` executed and failed on the retired
+  Zukan documentation import; the successor `36935223127` for `d7feb4c5d`
+  is being qualified. A running workflow is not a successful release gate.

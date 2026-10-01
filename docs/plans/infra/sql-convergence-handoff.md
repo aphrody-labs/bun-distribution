@@ -167,10 +167,14 @@ dbfr 26 GB of media identical to vps; vps leftover checkouts.
    `plugins/aphrody` (111 of 175 files): review the other 64 before deleting.
 2. agy (UI/M3/Tauri, in the monorepo): resolve the 11 `retained-duplicate`
    items (no copy allowed), report remaining exact-duplicate groups = 0.
-3. Codex (IECODE, RG): CI twin checkout per `config/sibling-checkouts.json`
-   (pin `d4de50ba` stays until inagle, inagle-cross or azalee change); RG
-   `ranked` work in the working tree; `docs/rg/root/{AGENTS,CLAUDE}.md`
-   untracked.
+3. IECODE/RG integration: published ranked namespace/telemetry corrections
+   (`402365df1`, `a88892805`) and producer/consumer catalog contracts
+   (`92e027f6` in IECODE, `d7feb4c5d` here). The twin checkout now pins
+   `92e027f647744ba20be55a18b992400131ad2eca` because Inagle changed.
+   Clean installed website typechecking and 402 tests pass; four disposable
+   PostgreSQL fixture tests pass, without production schema mutation.
+   RG production build, complete CI and deployment remain open. Imported RG
+   agent documents are historical references, not local execution contracts.
 4. Parked in `git stash` (do not restore early): WSL build family (owner rule),
    llama-server `in_process` (does not compile).
 5. Owner-only: `gh auth refresh -h github.com -u aphrody-code -s
