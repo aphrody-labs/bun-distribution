@@ -1,32 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
-use chrono::{SecondsFormat, Utc};
+use aphrody_a2a::coord::CoordEnvelope;
+pub use aphrody_a2a::coord::EnvelopeKind;
+use chrono::Utc;
 use getrandom::getrandom;
 use serde::{Deserialize, Serialize};
-
-/// Envelope kind — file channel + HTTP `/msg`.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "lowercase")]
-pub enum EnvelopeKind {
-    Ping,
-    Ask,
-    Fact,
-    Ack,
-    #[serde(rename = "error")]
-    Error,
-}
-
-impl EnvelopeKind {
-    #[must_use]
-    pub const fn as_str(self) -> &'static str {
-        match self {
-            Self::Ping => "ping",
-            Self::Ask => "ask",
-            Self::Fact => "fact",
-            Self::Ack => "ack",
-            Self::Error => "error",
-        }
-    }
-}
 
 /// JSONL mailbox envelope (v1). Legacy `type`/`subject` aliases accepted on read.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -60,17 +37,30 @@ impl Envelope {
         topic: impl Into<String>,
         body: impl Into<String>,
     ) -> Self {
+        let mut envelope = Self::from(CoordEnvelope::new(from, to, kind, topic, body));
+        // Retain the established OS mailbox id format.
+        envelope.id = new_id("env");
+        envelope
+    }
+}
+
+/// Compatibility projection: inbound legacy fields remain permissive while
+/// outbound defaults and enum spellings come from the contracts owner.
+impl From<CoordEnvelope> for Envelope {
+    fn from(value: CoordEnvelope) -> Self {
         Self {
-            v: Some(1),
-            ts: Utc::now().to_rfc3339_opts(SecondsFormat::Secs, true),
-            id: new_id("env"),
-            from: from.into(),
-            to: Some(to.into()),
-            kind: kind.as_str().to_owned(),
-            topic: topic.into(),
-            body: body.into(),
-            re: None,
-            channel_hint: Some(vec!["file_jsonl".to_owned(), "http_jsonrpc".to_owned()]),
+            v: Some(value.v),
+            ts: value.ts,
+            id: value.id,
+            from: value.from,
+            to: Some(value.to),
+            kind: value.kind.as_str().to_owned(),
+            topic: value.topic,
+            body: value.body,
+            re: value.re,
+            channel_hint: Some(
+                value.channel_hint.into_iter().map(|hint| hint.as_str().to_owned()).collect(),
+            ),
         }
     }
 }
@@ -88,5 +78,39 @@ pub fn new_id(prefix: &str) -> String {
 mod hex {
     pub(super) fn encode(bytes: [u8; 4]) -> String {
         bytes.iter().map(|b| format!("{b:02x}")).collect()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn projection_preserves_canonical_wire_fields() {
+        for kind in [
+            EnvelopeKind::Ask,
+            EnvelopeKind::Fact,
+            EnvelopeKind::Ack,
+            EnvelopeKind::Ping,
+            EnvelopeKind::Error,
+        ] {
+            let canonical = CoordEnvelope::new("codex", "claude", kind, "work", "task");
+            let expected = serde_json::to_value(&canonical).unwrap();
+            let projected = serde_json::to_value(Envelope::from(canonical)).unwrap();
+            assert_eq!(projected, expected);
+        }
+    }
+    #[test]
+    fn legacy_aliases_and_mailbox_id_are_preserved() {
+        let value: Envelope =
+            serde_json::from_str(r#"{"id":"legacy","from":"agy","type":"ask","subject":"work"}"#)
+                .unwrap();
+        assert_eq!(value.kind, "ask");
+        assert_eq!(value.topic, "work");
+        assert_eq!(value.v, None);
+        assert!(
+            Envelope::new("codex", "claude", EnvelopeKind::Ask, "work", "task")
+                .id
+                .starts_with("env-")
+        );
     }
 }

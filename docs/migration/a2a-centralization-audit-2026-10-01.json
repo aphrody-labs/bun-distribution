@@ -55,6 +55,16 @@
         "terminal coord module reexports OS owner",
         "public API compatibility preserved"
       ]
+    },
+    {
+      "owner": "crates/contracts/a2a/coord",
+      "status": "canonical enums and outbound defaults reused by OS; legacy inbound adapter preserved",
+      "qualification": [
+        "five-kind canonical wire projection equality",
+        "legacy aliases and OS id format regression tests",
+        "full aphrody-a2a and a2a-coord tests",
+        "scoped clippy without dependencies"
+      ]
     }
   ],
   "remaining": [

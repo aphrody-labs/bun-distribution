@@ -37,12 +37,37 @@ pub enum EnvelopeKind {
     Error,
 }
 
+impl EnvelopeKind {
+    /// Canonical spelling used by compatibility projections.
+    #[must_use]
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            Self::Ask => "ask",
+            Self::Fact => "fact",
+            Self::Ack => "ack",
+            Self::Ping => "ping",
+            Self::Error => "error",
+        }
+    }
+}
+
 /// Transport a sender suggests for delivery/reply.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum ChannelHint {
     FileJsonl,
     HttpJsonrpc,
+}
+
+impl ChannelHint {
+    /// Canonical spelling used by compatibility projections.
+    #[must_use]
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            Self::FileJsonl => "file_jsonl",
+            Self::HttpJsonrpc => "http_jsonrpc",
+        }
+    }
 }
 
 /// `.coord` envelope, ai.json v1. One JSON object per line on the file channel.

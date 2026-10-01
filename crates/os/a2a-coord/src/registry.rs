@@ -49,7 +49,7 @@ struct PeersFile {
     peers: Vec<CatalogPeer>,
 }
 
-/// One entry of `aphrody-infra/config/a2a-peers.json`.
+/// One entry of the monorepo `config/a2a-peers.json`.
 #[derive(Debug, Deserialize)]
 struct CatalogPeer {
     id: String,

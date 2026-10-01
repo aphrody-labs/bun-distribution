@@ -539,3 +539,13 @@ Preuve native simultanée : Claude, Codex et agy lancés par le CLI installé,
 claims distincts, exits 0 en 9,61 / 11,17 / 18,10 s. Chaque agent confirme
 le cwd, main et les propriétaires des autres dans TRANSCRIPTS. Vérification
 en lecture seule ; aucune édition de code concurrente n’est revendiquée.
+
+### Enveloppes A2A : propriétaire des valeurs sortantes
+
+OS réexporte EnvelopeKind depuis aphrody-a2a ; sa construction projette le
+CoordEnvelope canonique. Les variantes de canal et leurs graphies appartiennent
+au contrat. La projection entrante reste permissive pour préserver les aliases
+type/subject et les champs historiques ; les identifiants OS env-* restent
+compatibles. Tests de projection des cinq kinds et de lecture legacy réussis,
+avec tests complets aphrody-a2a/a2a-coord et clippy scoped sans dépendances.
+La projection TypeScript Shenron étendue reste à qualifier.
