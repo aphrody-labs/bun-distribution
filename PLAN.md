@@ -329,6 +329,18 @@ aux trois racines actives. WSL : disques, processus, shell et chemins revérifi�
   services installés, Windows et qualification kernel depuis clone propre restent
   ouverts. Les services actifs ne sont pas redémarrés par ce lot de source.
 
+### Kernel depuis clone propre — 2026-10-01
+
+- FAIT : [rapport et logs](docs/migration/kernel-clean-clone-2026-10-01/report.json)
+  depuis le clone propre du commit `c8bd44d7`, avec features par défaut/builtins.
+  79 tests réussis ; check et clippy all-targets verrouillés réussis. Sources
+  du clone utilisées, artefacts de compilation et registre Cargo partagés.
+- Un test GCS live reste ignoré ; Cargo conserve le rapport de compatibilité
+  future de `proc-macro-error2 2.0.1`. Le clone reste propre après les gates.
+- INCOMPLET : services installés, Windows, GCS, catalogues/fleet/bridges et
+  autres consommateurs restent à qualifier. Cette reprise clôt la limite
+  « kernel depuis clone propre » du lot précédent, pas le gate OS/Infra global.
+
 ## 4. UI et bibliothèques navigateur
 
 Propriétaire : `packages/ui`, `crates/ui`.
