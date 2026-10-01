@@ -26,14 +26,14 @@ Write-Host "==========================================================" -Foregro
 # 1. STORAGE RECLAMATION
 Write-Host "`n[*] Phase 1: Reclaiming Storage & Caches..." -ForegroundColor Yellow
 
-# Clean sccache if present
+# Keep Rust caches warm: deleting them forces large cold builds that can
+# saturate Windows while Cargo recompiles the monorepo.
 if (Get-Command sccache -ErrorAction SilentlyContinue) {
-    sccache --zero-stats | Out-Null
+    sccache --show-stats
 }
 $sccacheDir = "$env:LOCALAPPDATA\Mozilla\sccache\cache"
 if (Test-Path $sccacheDir) {
-    Remove-Item -LiteralPath $sccacheDir -Recurse -Force -ErrorAction SilentlyContinue
-    Write-Host "  -> Purged sccache local directory" -ForegroundColor Green
+    Write-Host "  -> Preserving reusable sccache data at $sccacheDir" -ForegroundColor DarkGray
 }
 
 # Clean Temp folders
@@ -46,12 +46,12 @@ foreach ($td in $tempDirs) {
 }
 Write-Host "  -> Purged User & Windows Temp folders" -ForegroundColor Green
 
-# Clean Cargo Registry download caches
+# Keep registry downloads and unpacked sources; Cargo reuses them between builds.
 $cargoCache = "$env:USERPROFILE\.cargo\registry\cache"
 $cargoSrc = "$env:USERPROFILE\.cargo\registry\src"
-if (Test-Path $cargoCache) { Remove-Item -LiteralPath $cargoCache -Recurse -Force -ErrorAction SilentlyContinue }
-if (Test-Path $cargoSrc) { Remove-Item -LiteralPath $cargoSrc -Recurse -Force -ErrorAction SilentlyContinue }
-Write-Host "  -> Trimmed Cargo registry cache" -ForegroundColor Green
+if ((Test-Path $cargoCache) -or (Test-Path $cargoSrc)) {
+    Write-Host "  -> Preserving reusable Cargo registry caches" -ForegroundColor DarkGray
+}
 
 # Clean NVIDIA OTA updates
 $nvOta = "C:\ProgramData\NVIDIA Corporation\NVIDIA app\UpdateFramework\ota-artifacts"
