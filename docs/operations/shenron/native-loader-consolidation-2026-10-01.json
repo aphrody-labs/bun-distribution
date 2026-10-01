@@ -1,0 +1,34 @@
+{
+  "scope": "Shenron Bun adapter delegates to canonical @aphrody/bun native owner",
+  "revision": "ab60c814",
+  "lockRevision": "2513ff98",
+  "owner": "packages/interop/native/src/library.ts",
+  "consumer": "packages/shenron/pipeline/src/aphrody/native.ts",
+  "behavior": [
+    "Shared global handle and close/reload lifecycle",
+    "Lazy import and retry after transient unavailability",
+    "SHENRON_FFI_LIB compatibility alias; inconsistent overrides rejected",
+    "Existing public response adapters retained"
+  ],
+  "gates": {
+    "loaderTests": 4,
+    "loaderAssertions": 17,
+    "typecheckInterop": "pass",
+    "typecheckPipeline": "pass",
+    "oxlint": "pass",
+    "oxfmt": "pass",
+    "consumerTestsPassed": 4,
+    "consumerTestsFailed": 2
+  },
+  "baselineFailures": [
+    "doctor pillar missing",
+    "authStatus null"
+  ],
+  "baselineReproducedWithOldAdapter": true,
+  "qualificationMode": "Actual Linux library, development mode",
+  "limitations": [
+    "Existing artifact doctor/authStatus failures still require qualification",
+    "No release packaging or cross-platform ABI proof",
+    "FFI still depends on CLI dispatch; persona migration underway"
+  ]
+}
