@@ -9,6 +9,6 @@ See packages/x/README.md (the canonical, complete, readable one created as part 
 
 Key exports: XClient, XSession, rankTweets, tweetToPostCandidate, XTools (in xai package).
 
-Cross-platform: pure TS + optional Rust companion in `crates/aphrody-x`.
+Cross-platform: pure TS + optional Rust companion in `crates/web/x`.
 
 Use the web-engineer agent for deep integration work.

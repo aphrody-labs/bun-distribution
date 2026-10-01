@@ -38,7 +38,7 @@ a profile or option. Keep crawls bounded and avoid collecting unrelated data.
 The canonical implementation is Rust in the unified Aphrody workspace. Find the
 owner crate with `aphrody workspace` before editing; reuse its public API from
 CLI, MCP and browser surfaces. MCP tools are implemented in
-`crates/ai/aphrody-mcp`; keep inputs validated, execution and output bounded,
+`crates/ai/mcp`; keep inputs validated, execution and output bounded,
 errors actionable, and stdio free of non-protocol output. Build and run only the
 owner's scoped checks. Do not introduce a parallel browser, scraper, MCP server,
 FFI bridge or duplicate implementation when an existing Rust capability owns it.

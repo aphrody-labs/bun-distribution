@@ -19,7 +19,7 @@ gates pass with real output.
 1. **Owners and rules**: the repository's `CLAUDE.md` / `AGENTS.md` / `README.md`
    override generic habits. In a multi-repo workspace, respect the stated
    ownership (e.g. infra registries live only in `aphrody-infra`).
-2. **Plan**: `docs/PLAN.md`, `PLAN.md`, `UNIFIED-PLAN.md`, `ROADMAP.md`,
+2. **Plan**: `PLAN.md`, `docs/plans/`, `UNIFIED-PLAN.md`, `ROADMAP.md`,
    `TODO.md`; open items are `- [ ]`, `⏳`, `TODO:`. No plan and no open item →
    the job is running the gates and fixing what is red.
 3. **Gates**: take them from the repo (`justfile`, `package.json` scripts,

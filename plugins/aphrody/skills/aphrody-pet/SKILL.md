@@ -5,7 +5,7 @@ description: "Charger, valider et extraire les frames du pet Codex Aphrody v2 (a
 
 # Runtime Aphrody v2
 
-> **S'applique quand :** le monorepo Aphrody est le répertoire de travail (crate `crates/ui/identity`, paquet `aphrody-identity`) ; la dernière section (référence 3D) exige en plus le checkout IECODE (racine contenant `crates/nie/`), dont les chemins sont préfixés `iecode:`. **Sinon :** ne pas inventer de chemin de sprite ni de code de personnage ; décrire le contrat 2D ci-dessous et dire que la vérification n'a pas pu être faite.
+> **S'applique quand :** le monorepo Aphrody est le répertoire de travail (crate `crates/ui/identity`, paquet `aphrody-identity`) ; la dernière section (référence 3D) exige en plus le checkout IECODE (racine contenant `iecode/crates/nie/`), dont les chemins sont préfixés `iecode:`. **Sinon :** ne pas inventer de chemin de sprite ni de code de personnage ; décrire le contrat 2D ci-dessous et dire que la vérification n'a pas pu être faite.
 
 Le package Aphrody est un asset 2D Codex, pas un modèle Level-5. Le point d'entrée Rust canonique
 est `aphrody-identity` (`crates/ui/identity`). Il charge `pet.json`, `animations.json` et

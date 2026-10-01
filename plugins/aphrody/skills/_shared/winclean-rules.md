@@ -9,7 +9,7 @@ Canonical source for the rule block previously duplicated across WinClean Claude
 3. **Linting**: NEVER use ESLint or Prettier. ALWAYS use `oxlint` and `oxfmt` directly (never via bunx).
 4. **Data**: ALL volatile JSON and data files MUST be written to `${WINCLEAN_ROOT}/var/json/` (default `<repo>\var\json\`). Read `WINCLEAN_ROOT` from the environment; fall back to `<repo>` only when unset.
 5. **Runtime boundary**: Windows capability code belongs to the Rust owner
-   declared in `docs/WINCLEAN-RUST-CONVERGENCE.md`; do not add .NET, NuGet,
+   declared in `docs/reference/os/WINCLEAN-RUST-CONVERGENCE.md`; do not add .NET, NuGet,
    DLL-loading, or second-MCP dependencies.
 6. **Python**: `uv` / `uvx` only — never `pip` / `poetry` / `virtualenv`. Requires Python 3.14.
 7. **WSL**: banned. Do not assume it exists on the host.

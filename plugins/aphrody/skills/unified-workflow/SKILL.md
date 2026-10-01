@@ -7,7 +7,7 @@ description: Route Aphrody, WinClean, niers, Ghidra and Computer Use work throug
 
 Use this skill for any non-trivial task that crosses Aphrody, WinClean, niers,
 Ghidra, a visible Windows surface or a live MCP endpoint. Read
-`docs/WORKFLOW-UNIFIE.md` in `aphrody-infra` first; it is the single normative
+`docs/reference/infra/WORKFLOW-UNIFIE.md` first; it is the single normative
 contract (app repositories keep no copy).
 
 ## Start every run

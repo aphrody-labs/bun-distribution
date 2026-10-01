@@ -5,7 +5,7 @@ description: "Kernel cloud control plane: native GitHub inspection (status, bran
 
 # cloud — kernel cloud control plane
 
-The `cloud` subsystem (`crates/aphrody-kernel/src/cloud.rs`) embeds native, privileged
+The `cloud` subsystem (`crates/os/kernel/src/cloud.rs`) embeds native, privileged
 Git repository analysis and Google Cloud Platform / Gemini environment verification
 directly into `aphrody-kernel`. All tools are read-only and run in-process.
 

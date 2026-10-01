@@ -50,7 +50,7 @@ paraît instable au lieu de battre la mesure.
 
 **Aura** — un contour flou (`filter: blur`) qui monte, avec des mèches
 d'énergie tracées comme des mèches de cheveux (voir `meche()` dans
-`scripts/geometrie.ts`). L'aura de Toriyama est faite de pointes, pas d'un halo
+`plugins/aphrody/skills/toriyama-svg/scripts/geometrie.ts`). L'aura de Toriyama est faite de pointes, pas d'un halo
 radial lisse.
 
 **Particules aspirées** — `<animateMotion>` sur un chemin qui converge vers la

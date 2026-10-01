@@ -9,7 +9,7 @@ description: "Deploy, restart, provision or clean Aphrody hosts (vps, dbfr, WSL)
 only execute through it and never keep a second host registry.
 
 Host management is available through two synchronized control layers:
-1. **The kernel `infra` subsystem** (`crates/aphrody-kernel/src/infra.rs`): In-process SSH, native SFTP, differential sync and remote Git tools directly callable over MCP.
+1. **The kernel `infra` subsystem** (`crates/os/kernel/src/infra.rs`): In-process SSH, native SFTP, differential sync and remote Git tools directly callable over MCP.
 2. **`aphrody-infra` CLI** (`../aphrody-infra`): Declarative catalogs (`config/service-catalog.json`, `config/nginx-routes.json`), host inventories, and release playbooks.
 
 Read `aphrody-infra/README.md` and `aphrody-infra/docs/PLAN.md` before mutations.
@@ -46,5 +46,5 @@ The kernel resolves the infrastructure runner dynamically through a five-stage f
 Rules: plan (`apply: false` / no `--apply`) first; services and nginx routes are added to
 `config/service-catalog.json` / `config/nginx-routes.json`, never hand-written
 on a host; data (PostgreSQL, SQLite, assets) is backed up and checksum-verified
-before any move; refresh `inventory/` and `docs/PLAN.md` after every mutation.
+before any move; refresh `inventory/` and `PLAN.md` after every mutation.
 Host playbook and pitfalls: `yolo` skill §5.

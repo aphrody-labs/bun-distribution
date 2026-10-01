@@ -71,7 +71,7 @@ reproduits ici faute de mesure rejouée.
 - **`import.meta.dir` est une API Bun** : `undefined` sous Turbopack. Le dossier
   des ressources se résout **à l'appel**, par essais, jamais à l'évaluation du
   module — un build a échoué là-dessus.
-- Les ressources (`apps/shenron/site/.ja-data/`) sont gitignorées, donc absentes
+- Les ressources (dossier local `.ja-data` sous `apps/shenron/site`) sont gitignorées, donc absentes
   d'une version déployée tant que `ja-preparer.ts` n'y a pas été exécuté : sans
   elles l'analyse peut répondre « 0 anomalie » alors qu'elle en trouve en local.
   Un résultat rassurant et faux est pire qu'une erreur. (Le mécanisme de

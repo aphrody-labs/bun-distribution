@@ -36,11 +36,11 @@ Avant d'aller sur le web, regarder ce qui est déjà hébergé :
 
 | Quoi                       | Où                                                             |
 | -------------------------- | -------------------------------------------------------------- |
-| Manga au trait, par volume | `apps/bot/assets/manga/DB/regular/vol<N>/<planche>.webp`       |
-| Manga en couleur           | `apps/bot/assets/manga/DB/fullcolor/<arc>/t<N>/<planche>.webp` |
-| Planches de databooks      | `apps/site/public/wiki/databooks/<uuid>.jpg`                   |
-| Assets de fiches wiki      | `apps/site/public/wiki/`                                       |
-| Chapitres par identifiant  | `apps/bot/assets/manga/DB/regular/ch<N>/`                      |
+| Manga au trait, par volume | `apps/shenron/bot/assets/manga/DB/regular/vol<N>/<planche>.webp`       |
+| Manga en couleur           | `apps/shenron/bot/assets/manga/DB/fullcolor/<arc>/t<N>/<planche>.webp` |
+| Planches de databooks      | `apps/shenron/site/public/databooks/<uuid>.jpg`                   |
+| Assets de fiches wiki      | `apps/shenron/site/public/`                                       |
+| Chapitres par identifiant  | `apps/shenron/bot/assets/manga/DB/regular/ch<N>/`                      |
 
 Pour retrouver la bonne planche sans ouvrir cinquante fichiers, passer par le
 MCP `dragonball` (`manga_search`, `manga_page`, `databooks_search`,

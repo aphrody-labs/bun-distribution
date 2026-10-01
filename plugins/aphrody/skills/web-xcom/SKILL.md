@@ -7,7 +7,7 @@ metadata:
 
 # @aphrody/xcom
 
-Scraper de pages de profil x.com (`packages/xcom`).
+Scraper de pages de profil x.com (`packages/web/x`).
 
 ## Surface
 
