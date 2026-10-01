@@ -33,11 +33,7 @@
       "@rosegriffon/assets": ["../assets/src/index.ts"],
       "@rosegriffon/assets/*": ["../assets/src/*"],
       "@rosegriffon/patreon-bun": ["../patreon-bun/src/index.ts"],
-      "@rosegriffon/patreon-bun/*": ["../patreon-bun/src/*"],
-      "@rosegriffon/inagle": ["../inagle/src/index.ts"],
-      "@rosegriffon/inagle/*": ["../inagle/src/*"],
-      "@rosegriffon/inagle-cross": ["../inagle-cross/src/index.ts"],
-      "@rosegriffon/inagle-cross/*": ["../inagle-cross/src/*"]
+      "@rosegriffon/patreon-bun/*": ["../patreon-bun/src/*"]
     }
   },
   "exclude": ["node_modules", "dist", "build", ".turbo", "coverage"]
