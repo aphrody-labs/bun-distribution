@@ -1,0 +1,99 @@
+{
+  "observedAt": "2026-10-01T16:32:54.478889+00:00",
+  "command": "scripts/build/rust/cargo-serial.sh metadata --all-features --locked --format-version 1",
+  "exitCode": 0,
+  "workspaceMembers": 184,
+  "resolutionVerified": true,
+  "buildVerified": false,
+  "publicationVerified": false,
+  "files": {
+    "Cargo.toml": "d4587b04876c031510232317403008b7955a7a7dd42402d1e8a67c9fa26fd252",
+    "Cargo.lock": "f7d2d27302e6db42a706308fdf5e9273f7422241ed7488d0ce522e18bac6ed12",
+    "config/upstream-sources.json": "c1f64d7935e28d811265af8c9c62150389ba5468063e30d8816bf0a728864085",
+    "patches/serde-saphyr-0.0.16-regex.patch": "75c9e807ddeb85d60583427aecc1c673ef2aa2cff521518cf997b5cfb39b609a"
+  },
+  "packages": [
+    {
+      "name": "lazy-regex",
+      "version": "3.6.1",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "manifest": "/home/aphro/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/lazy-regex-3.6.1/Cargo.toml",
+      "regexDependencies": [
+        {
+          "name": "regex",
+          "version": "1.13.1"
+        }
+      ]
+    },
+    {
+      "name": "lazy-regex-proc_macros",
+      "version": "3.6.1",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "manifest": "/home/aphro/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/lazy-regex-proc_macros-3.6.1/Cargo.toml",
+      "regexDependencies": [
+        {
+          "name": "regex",
+          "version": "1.13.1"
+        }
+      ]
+    },
+    {
+      "name": "mistralrs",
+      "version": "0.9.4",
+      "source": "git+https://github.com/EricLBuehler/mistral.rs.git?rev=3f2515e9b5adc2ac44949c128c50a13b15721294#3f2515e9b5adc2ac44949c128c50a13b15721294",
+      "manifest": "/home/aphro/.cargo/git/checkouts/mistral.rs-d7a5d833e16ad691/3f2515e/mistralrs/Cargo.toml",
+      "regexDependencies": []
+    },
+    {
+      "name": "mistralrs-core",
+      "version": "0.9.4",
+      "source": "git+https://github.com/EricLBuehler/mistral.rs.git?rev=3f2515e9b5adc2ac44949c128c50a13b15721294#3f2515e9b5adc2ac44949c128c50a13b15721294",
+      "manifest": "/home/aphro/.cargo/git/checkouts/mistral.rs-d7a5d833e16ad691/3f2515e/mistralrs-core/Cargo.toml",
+      "regexDependencies": [
+        {
+          "name": "regex",
+          "version": "1.13.1"
+        },
+        {
+          "name": "regex-automata",
+          "version": "0.4.18"
+        }
+      ]
+    },
+    {
+      "name": "regex",
+      "version": "1.13.1",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "manifest": "/home/aphro/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/regex-1.13.1/Cargo.toml",
+      "regexDependencies": [
+        {
+          "name": "regex-automata",
+          "version": "0.4.18"
+        },
+        {
+          "name": "regex-syntax",
+          "version": "0.8.11"
+        }
+      ]
+    },
+    {
+      "name": "serde-saphyr",
+      "version": "0.0.16",
+      "source": null,
+      "manifest": "/home/aphro/source/serde-saphyr/Cargo.toml",
+      "regexDependencies": [
+        {
+          "name": "regex",
+          "version": "1.13.1"
+        }
+      ]
+    },
+    {
+      "name": "serde-saphyr",
+      "version": "1.3.0",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "manifest": "/home/aphro/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-saphyr-1.3.0/Cargo.toml",
+      "regexDependencies": []
+    }
+  ]
+}

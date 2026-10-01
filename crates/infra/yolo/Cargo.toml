@@ -20,7 +20,7 @@ path = "src/lib.rs"
 [dependencies]
 anyhow.workspace = true
 aphrody-git = { path = "../git", version = "0.1.0" }
-aphrody-kernel-client = { path = "../../os/kernel-client" }
+aphrody-kernel-client = { workspace = true }
 blake3.workspace = true
 chrono.workspace = true
 clap = { workspace = true, features = ["derive"] }

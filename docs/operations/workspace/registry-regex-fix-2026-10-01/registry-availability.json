@@ -1,0 +1,614 @@
+[
+  {
+    "name": "aphrody-ai",
+    "version": "1.0.0",
+    "registryAvailable": false,
+    "error": "HTTP Error 404: Not Found"
+  },
+  {
+    "name": "koharu-canvas",
+    "version": "0.83.5",
+    "registryAvailable": false,
+    "error": "HTTP Error 404: Not Found"
+  },
+  {
+    "name": "oxc_codegen",
+    "version": "0.152.0",
+    "registryAvailable": true,
+    "yanked": false
+  },
+  {
+    "name": "oxc_formatter",
+    "version": "0.71.0",
+    "registryAvailable": false,
+    "error": "HTTP Error 404: Not Found"
+  },
+  {
+    "name": "oxc_linter",
+    "version": "1.86.0",
+    "registryAvailable": false,
+    "error": "HTTP Error 404: Not Found"
+  },
+  {
+    "name": "oxc_minifier",
+    "version": "0.152.0",
+    "registryAvailable": true,
+    "yanked": false
+  },
+  {
+    "name": "oxc_semantic",
+    "version": "0.152.0",
+    "registryAvailable": true,
+    "yanked": false
+  },
+  {
+    "name": "aphrody",
+    "version": "1.0.0",
+    "registryAvailable": false,
+    "error": "HTTP Error 404: Not Found"
+  },
+  {
+    "name": "aphrody-a2a-coord",
+    "version": "1.0.0-canary",
+    "registryAvailable": false,
+    "error": "HTTP Error 404: Not Found"
+  },
+  {
+    "name": "aphrody-agent-home",
+    "version": "1.0.0",
+    "registryAvailable": false,
+    "error": "HTTP Error 404: Not Found"
+  },
+  {
+    "name": "aphrody-agent-runtime",
+    "version": "1.0.0",
+    "registryAvailable": false,
+    "error": "HTTP Error 404: Not Found"
+  },
+  {
+    "name": "aphrody-agent-tools",
+    "version": "1.0.0",
+    "registryAvailable": false,
+    "error": "HTTP Error 404: Not Found"
+  },
+  {
+    "name": "aphrody-antigravity",
+    "version": "1.0.0",
+    "registryAvailable": false,
+    "error": "HTTP Error 404: Not Found"
+  },
+  {
+    "name": "aphrody-app-server",
+    "version": "1.0.0",
+    "registryAvailable": false,
+    "error": "HTTP Error 404: Not Found"
+  },
+  {
+    "name": "aphrody-chat",
+    "version": "1.0.0",
+    "registryAvailable": false,
+    "error": "HTTP Error 404: Not Found"
+  },
+  {
+    "name": "aphrody-config",
+    "version": "1.0.0",
+    "registryAvailable": false,
+    "error": "HTTP Error 404: Not Found"
+  },
+  {
+    "name": "aphrody-context",
+    "version": "1.0.0",
+    "registryAvailable": false,
+    "error": "HTTP Error 404: Not Found"
+  },
+  {
+    "name": "aphrody-ecosystem",
+    "version": "1.0.0",
+    "registryAvailable": false,
+    "error": "HTTP Error 404: Not Found"
+  },
+  {
+    "name": "aphrody-embed",
+    "version": "1.0.0",
+    "registryAvailable": false,
+    "error": "HTTP Error 404: Not Found"
+  },
+  {
+    "name": "aphrody-engine",
+    "version": "1.0.0",
+    "registryAvailable": false,
+    "error": "HTTP Error 404: Not Found"
+  },
+  {
+    "name": "aphrody-exec-events",
+    "version": "1.0.0",
+    "registryAvailable": false,
+    "error": "HTTP Error 404: Not Found"
+  },
+  {
+    "name": "aphrody-firefly",
+    "version": "1.0.0",
+    "registryAvailable": false,
+    "error": "HTTP Error 404: Not Found"
+  },
+  {
+    "name": "aphrody-gateway",
+    "version": "1.0.0",
+    "registryAvailable": false,
+    "error": "HTTP Error 404: Not Found"
+  },
+  {
+    "name": "aphrody-gemini-runtime",
+    "version": "1.0.0",
+    "registryAvailable": false,
+    "error": "HTTP Error 404: Not Found"
+  },
+  {
+    "name": "aphrody-gemini-web",
+    "version": "0.2.1",
+    "registryAvailable": false,
+    "error": "HTTP Error 404: Not Found"
+  },
+  {
+    "name": "aphrody-git",
+    "version": "0.1.0",
+    "registryAvailable": false,
+    "error": "HTTP Error 404: Not Found"
+  },
+  {
+    "name": "aphrody-google",
+    "version": "1.0.0",
+    "registryAvailable": false,
+    "error": "HTTP Error 404: Not Found"
+  },
+  {
+    "name": "aphrody-http-error",
+    "version": "1.0.0",
+    "registryAvailable": false,
+    "error": "HTTP Error 404: Not Found"
+  },
+  {
+    "name": "aphrody-infer",
+    "version": "1.0.0",
+    "registryAvailable": false,
+    "error": "HTTP Error 404: Not Found"
+  },
+  {
+    "name": "aphrody-jev",
+    "version": "1.0.0",
+    "registryAvailable": false,
+    "error": "HTTP Error 404: Not Found"
+  },
+  {
+    "name": "aphrody-llama-server",
+    "version": "1.0.0",
+    "registryAvailable": false,
+    "error": "HTTP Error 404: Not Found"
+  },
+  {
+    "name": "aphrody-llm-infra",
+    "version": "1.0.0",
+    "registryAvailable": false,
+    "error": "HTTP Error 404: Not Found"
+  },
+  {
+    "name": "aphrody-manga",
+    "version": "1.0.0",
+    "registryAvailable": false,
+    "error": "HTTP Error 404: Not Found"
+  },
+  {
+    "name": "aphrody-mcp-client",
+    "version": "1.0.0",
+    "registryAvailable": false,
+    "error": "HTTP Error 404: Not Found"
+  },
+  {
+    "name": "aphrody-mcp-oauth",
+    "version": "1.0.0",
+    "registryAvailable": false,
+    "error": "HTTP Error 404: Not Found"
+  },
+  {
+    "name": "aphrody-memory",
+    "version": "1.0.0",
+    "registryAvailable": false,
+    "error": "HTTP Error 404: Not Found"
+  },
+  {
+    "name": "aphrody-messaging",
+    "version": "1.0.0",
+    "registryAvailable": false,
+    "error": "HTTP Error 404: Not Found"
+  },
+  {
+    "name": "aphrody-model-antigravity",
+    "version": "1.0.0",
+    "registryAvailable": false,
+    "error": "HTTP Error 404: Not Found"
+  },
+  {
+    "name": "aphrody-model-client",
+    "version": "1.0.0",
+    "registryAvailable": false,
+    "error": "HTTP Error 404: Not Found"
+  },
+  {
+    "name": "aphrody-models",
+    "version": "1.0.0",
+    "registryAvailable": false,
+    "error": "HTTP Error 404: Not Found"
+  },
+  {
+    "name": "aphrody-n2b",
+    "version": "0.6.2",
+    "registryAvailable": false,
+    "error": "HTTP Error 404: Not Found"
+  },
+  {
+    "name": "aphrody-n2b-core",
+    "version": "0.6.2",
+    "registryAvailable": false,
+    "error": "HTTP Error 404: Not Found"
+  },
+  {
+    "name": "aphrody-n2b-report",
+    "version": "0.6.2",
+    "registryAvailable": false,
+    "error": "HTTP Error 404: Not Found"
+  },
+  {
+    "name": "aphrody-n2b-types",
+    "version": "0.6.2",
+    "registryAvailable": false,
+    "error": "HTTP Error 404: Not Found"
+  },
+  {
+    "name": "aphrody-notebooklm",
+    "version": "1.0.0",
+    "registryAvailable": false,
+    "error": "HTTP Error 404: Not Found"
+  },
+  {
+    "name": "aphrody-ocr",
+    "version": "1.0.0",
+    "registryAvailable": false,
+    "error": "HTTP Error 404: Not Found"
+  },
+  {
+    "name": "aphrody-ocr-core",
+    "version": "1.0.0",
+    "registryAvailable": false,
+    "error": "HTTP Error 404: Not Found"
+  },
+  {
+    "name": "aphrody-ocr-onnx",
+    "version": "1.0.0",
+    "registryAvailable": false,
+    "error": "HTTP Error 404: Not Found"
+  },
+  {
+    "name": "aphrody-ocr-vlm",
+    "version": "1.0.0",
+    "registryAvailable": false,
+    "error": "HTTP Error 404: Not Found"
+  },
+  {
+    "name": "aphrody-patch",
+    "version": "1.0.0",
+    "registryAvailable": false,
+    "error": "HTTP Error 404: Not Found"
+  },
+  {
+    "name": "aphrody-project-doc",
+    "version": "1.0.0",
+    "registryAvailable": false,
+    "error": "HTTP Error 404: Not Found"
+  },
+  {
+    "name": "aphrody-prompts",
+    "version": "1.0.0",
+    "registryAvailable": false,
+    "error": "HTTP Error 404: Not Found"
+  },
+  {
+    "name": "aphrody-providers",
+    "version": "1.0.0",
+    "registryAvailable": false,
+    "error": "HTTP Error 404: Not Found"
+  },
+  {
+    "name": "aphrody-rag",
+    "version": "1.0.0",
+    "registryAvailable": false,
+    "error": "HTTP Error 404: Not Found"
+  },
+  {
+    "name": "aphrody-rag-core",
+    "version": "1.0.0",
+    "registryAvailable": false,
+    "error": "HTTP Error 404: Not Found"
+  },
+  {
+    "name": "aphrody-rag-eval",
+    "version": "1.0.0",
+    "registryAvailable": false,
+    "error": "HTTP Error 404: Not Found"
+  },
+  {
+    "name": "aphrody-rollout",
+    "version": "1.0.0",
+    "registryAvailable": false,
+    "error": "HTTP Error 404: Not Found"
+  },
+  {
+    "name": "aphrody-router",
+    "version": "1.0.0",
+    "registryAvailable": false,
+    "error": "HTTP Error 404: Not Found"
+  },
+  {
+    "name": "aphrody-session",
+    "version": "1.0.0",
+    "registryAvailable": false,
+    "error": "HTTP Error 404: Not Found"
+  },
+  {
+    "name": "aphrody-skills",
+    "version": "1.0.0",
+    "registryAvailable": false,
+    "error": "HTTP Error 404: Not Found"
+  },
+  {
+    "name": "aphrody-ssh",
+    "version": "0.1.0",
+    "registryAvailable": false,
+    "error": "HTTP Error 404: Not Found"
+  },
+  {
+    "name": "aphrody-supervisor",
+    "version": "1.0.0",
+    "registryAvailable": false,
+    "error": "HTTP Error 404: Not Found"
+  },
+  {
+    "name": "aphrody-toolcall",
+    "version": "1.0.0",
+    "registryAvailable": false,
+    "error": "HTTP Error 404: Not Found"
+  },
+  {
+    "name": "aphrody-toolcall-repair",
+    "version": "1.0.0",
+    "registryAvailable": false,
+    "error": "HTTP Error 404: Not Found"
+  },
+  {
+    "name": "aphrody-tools",
+    "version": "1.0.0",
+    "registryAvailable": false,
+    "error": "HTTP Error 404: Not Found"
+  },
+  {
+    "name": "aphrody-train",
+    "version": "1.0.0",
+    "registryAvailable": false,
+    "error": "HTTP Error 404: Not Found"
+  },
+  {
+    "name": "aphrody-translate",
+    "version": "1.0.0",
+    "registryAvailable": false,
+    "error": "HTTP Error 404: Not Found"
+  },
+  {
+    "name": "aphrody-vision",
+    "version": "1.0.0",
+    "registryAvailable": false,
+    "error": "HTTP Error 404: Not Found"
+  },
+  {
+    "name": "aphrody-voice",
+    "version": "1.0.0",
+    "registryAvailable": false,
+    "error": "HTTP Error 404: Not Found"
+  },
+  {
+    "name": "aphrody-vpn",
+    "version": "0.1.0",
+    "registryAvailable": false,
+    "error": "HTTP Error 404: Not Found"
+  },
+  {
+    "name": "koharu-library",
+    "version": "0.83.5",
+    "registryAvailable": false,
+    "error": "HTTP Error 404: Not Found"
+  },
+  {
+    "name": "mistralrs",
+    "version": "0.9.4",
+    "registryAvailable": false,
+    "error": "HTTP Error 404: Not Found"
+  },
+  {
+    "name": "oxc_allocator",
+    "version": "0.152.0",
+    "registryAvailable": true,
+    "yanked": false
+  },
+  {
+    "name": "oxc_ast",
+    "version": "0.152.0",
+    "registryAvailable": true,
+    "yanked": false
+  },
+  {
+    "name": "oxc_parser",
+    "version": "0.152.0",
+    "registryAvailable": true,
+    "yanked": false
+  },
+  {
+    "name": "oxc_span",
+    "version": "0.152.0",
+    "registryAvailable": true,
+    "yanked": false
+  },
+  {
+    "name": "oxc_ast_visit",
+    "version": "0.152.0",
+    "registryAvailable": true,
+    "yanked": false
+  },
+  {
+    "name": "koharu-app",
+    "version": "0.83.5",
+    "registryAvailable": false,
+    "error": "HTTP Error 404: Not Found"
+  },
+  {
+    "name": "koharu-bindgen",
+    "version": "0.83.5",
+    "registryAvailable": false,
+    "error": "HTTP Error 404: Not Found"
+  },
+  {
+    "name": "koharu-config",
+    "version": "0.83.5",
+    "registryAvailable": false,
+    "error": "HTTP Error 404: Not Found"
+  },
+  {
+    "name": "koharu-storage",
+    "version": "0.83.5",
+    "registryAvailable": false,
+    "error": "HTTP Error 404: Not Found"
+  },
+  {
+    "name": "koharu-scene",
+    "version": "0.83.5",
+    "registryAvailable": false,
+    "error": "HTTP Error 404: Not Found"
+  },
+  {
+    "name": "koharu-diffusion",
+    "version": "0.83.5",
+    "registryAvailable": false,
+    "error": "HTTP Error 404: Not Found"
+  },
+  {
+    "name": "koharu-diffusion-sys",
+    "version": "0.83.5",
+    "registryAvailable": false,
+    "error": "HTTP Error 404: Not Found"
+  },
+  {
+    "name": "koharu-llama",
+    "version": "0.83.5",
+    "registryAvailable": false,
+    "error": "HTTP Error 404: Not Found"
+  },
+  {
+    "name": "koharu-llama-sys",
+    "version": "0.83.5",
+    "registryAvailable": false,
+    "error": "HTTP Error 404: Not Found"
+  },
+  {
+    "name": "koharu-runtime",
+    "version": "0.83.5",
+    "registryAvailable": false,
+    "error": "HTTP Error 404: Not Found"
+  },
+  {
+    "name": "koharu-torch",
+    "version": "0.83.5",
+    "registryAvailable": false,
+    "error": "HTTP Error 404: Not Found"
+  },
+  {
+    "name": "koharu-torch-sys",
+    "version": "0.83.5",
+    "registryAvailable": false,
+    "error": "HTTP Error 404: Not Found"
+  },
+  {
+    "name": "koharu-agent",
+    "version": "0.83.5",
+    "registryAvailable": false,
+    "error": "HTTP Error 404: Not Found"
+  },
+  {
+    "name": "koharu-ml",
+    "version": "0.83.5",
+    "registryAvailable": false,
+    "error": "HTTP Error 404: Not Found"
+  },
+  {
+    "name": "koharu-metrics",
+    "version": "0.83.5",
+    "registryAvailable": false,
+    "error": "HTTP Error 404: Not Found"
+  },
+  {
+    "name": "koharu-pipeline",
+    "version": "0.83.5",
+    "registryAvailable": false,
+    "error": "HTTP Error 404: Not Found"
+  },
+  {
+    "name": "koharu-translator",
+    "version": "0.83.5",
+    "registryAvailable": false,
+    "error": "HTTP Error 404: Not Found"
+  },
+  {
+    "name": "koharu-psd",
+    "version": "0.83.5",
+    "registryAvailable": false,
+    "error": "HTTP Error 404: Not Found"
+  },
+  {
+    "name": "koharu-renderer",
+    "version": "0.83.5",
+    "registryAvailable": false,
+    "error": "HTTP Error 404: Not Found"
+  },
+  {
+    "name": "koharu-rasterizer",
+    "version": "0.83.5",
+    "registryAvailable": false,
+    "error": "HTTP Error 404: Not Found"
+  },
+  {
+    "name": "koharu-desktop",
+    "version": "0.83.5",
+    "registryAvailable": false,
+    "error": "HTTP Error 404: Not Found"
+  },
+  {
+    "name": "koharu-secrets",
+    "version": "0.83.5",
+    "registryAvailable": false,
+    "error": "HTTP Error 404: Not Found"
+  },
+  {
+    "name": "hf-hub",
+    "version": "1.1.0",
+    "registryAvailable": false,
+    "error": "HTTP Error 404: Not Found"
+  },
+  {
+    "name": "tauri-plugin-mcp-bridge",
+    "version": "0.13.0",
+    "registryAvailable": true,
+    "yanked": false
+  },
+  {
+    "name": "tauri-specta",
+    "version": "2.0.0-rc.25",
+    "registryAvailable": true,
+    "yanked": false
+  }
+]

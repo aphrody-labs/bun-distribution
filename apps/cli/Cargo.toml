@@ -133,7 +133,7 @@ aphrody-ecosystem         = { workspace = true }
 aphrody-backend                   = { workspace = true }
 aphrody-toolchains                = { workspace = true }
 rustls                    = { workspace = true }
-aphrody-ai                = { path = "../../crates/ai/ai" }
+aphrody-ai                = { workspace = true }
 aphrody-native            = { workspace = true }
 aphrody-terminal-backend  = { workspace = true }
 # Natural-language fallback (`auto_command`) routes prompts to a running

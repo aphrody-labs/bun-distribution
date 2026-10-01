@@ -225,6 +225,29 @@
       "commit": "6942bb534b537302a7a22617261d9274db3cfa37",
       "pinned": false,
       "role": "reference"
+    },
+    {
+      "id": "serde-saphyr",
+      "kind": "crate",
+      "crate": "serde-saphyr",
+      "version": "0.0.16",
+      "upstreamUrl": "https://github.com/bourumir-wyngs/serde-saphyr",
+      "pinned": true,
+      "role": "dependency",
+      "license": "MIT OR Apache-2.0",
+      "cargoPathDep": "",
+      "patches": [
+        {
+          "id": "serde-saphyr-regex-semver",
+          "file": "patches/serde-saphyr-0.0.16-regex.patch",
+          "strip": 1,
+          "marker": {
+            "file": "Cargo.toml",
+            "contains": "version = \">= 1.0, < 2.0\""
+          }
+        }
+      ],
+      "note": "Preserve the Mistral.rs YAML API while allowing SemVer-compatible regex 1.x required by OXC. The upstream test suite must pass against the workspace-selected regex version."
     }
   ]
 }

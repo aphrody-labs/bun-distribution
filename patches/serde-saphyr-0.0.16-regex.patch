@@ -1,0 +1,10 @@
+--- a/Cargo.toml
++++ b/Cargo.toml
+@@ -486 +486 @@
+-version = ">= 1.0, < 1.13"
++version = ">= 1.0, < 2.0"
+--- a/Cargo.toml.orig
++++ b/Cargo.toml.orig
+@@ -23 +23 @@
+-regex = { version = ">= 1.0, < 1.13"} # range tested
++regex = { version = ">= 1.0, < 2.0"} # SemVer-compatible regex 1.x; validated by the upstream test suite.

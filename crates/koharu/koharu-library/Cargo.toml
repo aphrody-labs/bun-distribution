@@ -48,4 +48,4 @@ tracing = { workspace = true }
 zip = { workspace = true }
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
-koharu-canvas = { path = "../koharu-canvas" }
+koharu-canvas = { workspace = true }
