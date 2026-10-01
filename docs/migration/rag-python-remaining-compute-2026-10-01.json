@@ -37,5 +37,10 @@
   ],
   "complete": false,
   "canonicalCoreRevision": "2153ec6f0b1bc569e9c3939ba379c815a9e4b426",
-  "centroidQualification": "docs/operations/ai/raptor-euclidean-qualification-2026-10-01.json"
+  "centroidQualification": "docs/operations/ai/raptor-euclidean-qualification-2026-10-01.json",
+  "ahcTreeReuse": {
+    "optimization": "_get_clusters_ahc reuses the Ward linkage tree for cluster cutting via sklearn.cluster._agglomerative._hc_cut; removes a second AgglomerativeClustering fit while retaining dendrogram gap statistics in Python.",
+    "pythonRevision": "f4ad42d",
+    "qualification": "docs/operations/ai/raptor-ahc-tree-reuse-2026-10-01.json"
+  }
 }

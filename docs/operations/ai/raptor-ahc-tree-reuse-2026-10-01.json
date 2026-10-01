@@ -1,0 +1,46 @@
+{
+  "scope": "RAPTOR AHC linkage-tree reuse microbenchmark",
+  "pythonRepository": "aphrody-py",
+  "pythonCommit": "f4ad42d",
+  "method": {
+    "baseline": "two AgglomerativeClustering fits: full Ward tree for gap statistics, then second fit_predict for labels",
+    "candidate": "reuse full_clust.children_ with sklearn _hc_cut",
+    "numpySeed": 271,
+    "dimensions": 48,
+    "maxClusters": 32,
+    "threadpoolLimit": 1,
+    "warmupRuns": 1,
+    "alternatingSamples": 8,
+    "lockedScikitLearn": "1.9.1"
+  },
+  "results": [
+    {
+      "n": 256,
+      "baselineMedianMs": 2.173,
+      "candidateMedianMs": 1.266,
+      "speedup": 1.717,
+      "labelsIdentical": true
+    },
+    {
+      "n": 512,
+      "baselineMedianMs": 7.528,
+      "candidateMedianMs": 4.129,
+      "speedup": 1.823,
+      "labelsIdentical": true
+    },
+    {
+      "n": 1024,
+      "baselineMedianMs": 28.779,
+      "candidateMedianMs": 15.23,
+      "speedup": 1.89,
+      "labelsIdentical": true
+    }
+  ],
+  "interpretation": "Eliminates one of two hierarchical fits (50% fewer fits); measured speedup rises from 1.72x to 1.89x on these inputs. Dendrogram-gap calculation remains Python.",
+  "limitations": [
+    "Microbenchmark only; no full RAPTOR/RAG qualification or test suite run.",
+    "_hc_cut is a private scikit-learn API; project metadata permits versions >=1.4, so compatibility across the full declared range remains unqualified.",
+    "Measurements use the installed locked scikit-learn 1.9.1 and synthetic seeded vectors."
+  ],
+  "complete": false
+}

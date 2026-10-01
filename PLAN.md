@@ -809,3 +809,9 @@ heuristique ; aucun changement Git ne doit être attribué sans preuve.
   sont préservées. Le déplacement persona FFI vers le profil DBFR est en cours.
 - Preuves : [chargeur](docs/operations/shenron/native-loader-consolidation-2026-10-01.json),
   [gates transitifs](docs/operations/ai/cli-mcp-dependency-qualification-2026-10-01.json).
+
+### RAPTOR AHC linkage tree reuse — 2026-10-01
+
+- FAIT : `_get_clusters_ahc` réutilise l'arbre Ward déjà construit pour couper les clusters, supprimant le second ajustement hiérarchique. Benchmark apparié : 1,72× (256 vecteurs), 1,82× (512), 1,89× (1024) ; labels identiques aux trois tailles.
+- INCOMPLET : mesure microbenchmark seulement ; statistiques de gap restent en Python, qualification globale RAPTOR/RAG ouverte. L'appel `_hc_cut` est une API privée ; la compatibilité sur toute la plage déclarée scikit-learn reste à vérifier.
+- Preuve : [réutilisation AHC](docs/operations/ai/raptor-ahc-tree-reuse-2026-10-01.json).
