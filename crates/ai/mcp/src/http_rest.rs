@@ -11,8 +11,9 @@ use aphrody_models::ModelStore;
 use aphrody_sql::pg::Client;
 use axum::{
     Json, Router,
-    extract::{DefaultBodyLimit, Query},
+    extract::{DefaultBodyLimit, Query, Request},
     http::{HeaderMap, StatusCode, header},
+    middleware::{self, Next},
     response::{IntoResponse, Response},
     routing::{get, post},
 };
@@ -105,15 +106,35 @@ struct ShenronEmbedRequest {
     kind: Option<String>,
 }
 
+// This flag records qualification and explicit owner agreement; never enable it implicitly.
+const SHENRON_QUARANTINE: &str = "Shenron and RG are kept out of Aphrody UI and App pending production readiness qualification and explicit user agreement (see GEMINI.md).";
+
+fn shenron_ready(value: Option<&str>) -> bool {
+    value == Some("1")
+}
+
 pub(crate) fn router() -> Router {
-    Router::new()
+    let configured = std::env::var("APHRODY_SHENRON_PRODUCTION_READY").ok();
+    router_with_shenron_readiness(shenron_ready(configured.as_deref()))
+}
+
+async fn shenron_readiness_guard(enabled: bool, request: Request, next: Next) -> Response {
+    if !enabled {
+        return shenron_error(StatusCode::SERVICE_UNAVAILABLE, SHENRON_QUARANTINE);
+    }
+    next.run(request).await
+}
+
+fn router_with_shenron_readiness(enabled: bool) -> Router {
+    let base = Router::new()
         .route("/healthz", get(health_handler))
         .route("/api/v1/models", get(models_handler))
         .route("/v1/models", get(openai_models_handler))
         .route("/v1/chat/completions", post(openai_chat_completions_handler))
         .route("/api/v1/aphrody/status", get(aphrody_status_handler))
         .route("/api/v1/rag/query", get(rag_query_handler))
-        .route("/api/v1/rag/stats", get(rag_stats_handler))
+        .route("/api/v1/rag/stats", get(rag_stats_handler));
+    let shenron = Router::new()
         .route("/api/v1/shenron/rag/search", get(shenron_rag_search))
         .route("/api/v1/shenron/rag/document", get(shenron_rag_document))
         .route("/api/v1/shenron/rag/stats", get(shenron_rag_stats))
@@ -130,6 +151,10 @@ pub(crate) fn router() -> Router {
             "/api/v1/shenron/ocr",
             post(shenron_ocr).layer(DefaultBodyLimit::max(24 * 1024 * 1024)),
         )
+        .route_layer(middleware::from_fn(move |request, next| {
+            shenron_readiness_guard(enabled, request, next)
+        }));
+    base.merge(shenron)
 }
 
 fn shenron_auth(headers: &HeaderMap) -> Option<Response> {
@@ -1861,6 +1886,74 @@ mod tests {
     use axum::body::to_bytes;
 
     use super::*;
+
+    #[test]
+    fn shenron_readiness_requires_exact_explicit_configuration() {
+        for value in [None, Some(""), Some("0"), Some("true"), Some("yes"), Some(" 1"), Some("1 ")]
+        {
+            assert!(!shenron_ready(value), "unexpected readiness: {value:?}");
+        }
+        assert!(shenron_ready(Some("1")));
+    }
+
+    #[tokio::test]
+    async fn shenron_quarantine_precedes_auth_and_payload_extraction() {
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let address = listener.local_addr().unwrap();
+        let server = tokio::spawn(async move {
+            axum::serve(listener, router_with_shenron_readiness(false)).await
+        });
+        let client = reqwest::Client::new();
+        for (method, path) in [
+            (reqwest::Method::GET, "rag/search"),
+            (reqwest::Method::GET, "rag/document"),
+            (reqwest::Method::GET, "rag/stats"),
+            (reqwest::Method::GET, "health"),
+            (reqwest::Method::POST, "rag/ingest"),
+            (reqwest::Method::POST, "rag/sync/finish"),
+            (reqwest::Method::POST, "llm/chat"),
+            (reqwest::Method::POST, "embed"),
+            (reqwest::Method::POST, "vision/structured"),
+            (reqwest::Method::POST, "ocr"),
+        ] {
+            // Invalid JSON and absent credentials must not reach the handler/extractors.
+            let response = client
+                .request(method, format!("http://{address}/api/v1/shenron/{path}"))
+                .header("content-type", "application/json")
+                .body("{")
+                .send()
+                .await
+                .unwrap();
+            assert_eq!(response.status(), StatusCode::SERVICE_UNAVAILABLE, "{path}");
+            assert_eq!(response.headers()[header::CACHE_CONTROL], "no-store", "{path}");
+            assert!(response.text().await.unwrap().contains(SHENRON_QUARANTINE), "{path}");
+        }
+        let health = client.get(format!("http://{address}/healthz")).send().await.unwrap();
+        assert_eq!(health.status(), StatusCode::OK);
+        assert_eq!(health.json::<Value>().await.unwrap()["status"], "ok");
+        let query =
+            client.get(format!("http://{address}/api/v1/rag/query?q=")).send().await.unwrap();
+        assert_eq!(query.status(), StatusCode::OK);
+        assert_eq!(query.json::<Value>().await.unwrap()["status"], "query_required");
+        server.abort();
+    }
+
+    #[tokio::test]
+    async fn shenron_readiness_allows_handler_only_after_explicit_configuration() {
+        let enabled = shenron_ready(Some("1"));
+        let app = Router::new()
+            .route("/probe", get(|| async { StatusCode::ACCEPTED }))
+            .route_layer(middleware::from_fn(move |request, next| {
+                shenron_readiness_guard(enabled, request, next)
+            }));
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let address = listener.local_addr().unwrap();
+        let server = tokio::spawn(async move { axum::serve(listener, app).await });
+        let response =
+            reqwest::Client::new().get(format!("http://{address}/probe")).send().await.unwrap();
+        assert_eq!(response.status(), StatusCode::ACCEPTED);
+        server.abort();
+    }
 
     #[tokio::test]
     async fn loopback_router_exposes_liveness_and_query_contract() {
