@@ -52,14 +52,12 @@
 //! parsing, until that command migrates to the canonical model; new code must not use them.
 
 use std::{
-    collections::{BTreeMap, HashMap},
+    collections::HashMap,
     fs,
     path::{Path, PathBuf},
 };
 
-use aphrody_config::mcp::McpServerConfig as CanonicalServer;
 use serde::{Deserialize, Serialize};
-use serde_json::{Map, Value};
 use thiserror::Error;
 
 // ---------------------------------------------------------------------------

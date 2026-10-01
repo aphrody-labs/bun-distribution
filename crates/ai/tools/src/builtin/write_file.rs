@@ -89,12 +89,11 @@ impl Tool for WriteFileTool {
             serde_json::from_value(args).map_err(|e| ToolError::InvalidArgs(e.to_string()))?;
         let path = PathBuf::from(&parsed.file_path);
 
-        if parsed.create_parents {
-            if let Some(parent) = path.parent() {
-                if !parent.as_os_str().is_empty() {
-                    tokio::fs::create_dir_all(parent).await?;
-                }
-            }
+        if parsed.create_parents
+            && let Some(parent) = path.parent()
+            && !parent.as_os_str().is_empty()
+        {
+            tokio::fs::create_dir_all(parent).await?;
         }
 
         let bytes = parsed.content.as_bytes();

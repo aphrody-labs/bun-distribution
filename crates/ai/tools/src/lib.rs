@@ -412,10 +412,10 @@ impl ToolRegistry {
         // Required fields
         if let Some(required) = schema.get("required").and_then(Value::as_array) {
             for r in required {
-                if let Some(field) = r.as_str() {
-                    if !args_obj.contains_key(field) {
-                        return Err(ToolsError::MissingRequiredField(field.to_string()));
-                    }
+                if let Some(field) = r.as_str()
+                    && !args_obj.contains_key(field)
+                {
+                    return Err(ToolsError::MissingRequiredField(field.to_string()));
                 }
             }
         }
@@ -424,12 +424,12 @@ impl ToolRegistry {
             schema.get("additionalProperties").and_then(Value::as_bool).unwrap_or(true);
         let properties: Option<&Map<String, Value>> =
             schema.get("properties").and_then(Value::as_object);
-        if !additional_allowed {
-            if let Some(props) = properties {
-                for key in args_obj.keys() {
-                    if !props.contains_key(key) {
-                        return Err(ToolsError::AdditionalProperty(key.clone()));
-                    }
+        if !additional_allowed
+            && let Some(props) = properties
+        {
+            for key in args_obj.keys() {
+                if !props.contains_key(key) {
+                    return Err(ToolsError::AdditionalProperty(key.clone()));
                 }
             }
         }
@@ -439,14 +439,14 @@ impl ToolRegistry {
                 let Some(supplied) = args_obj.get(field) else {
                     continue;
                 };
-                if let Some(expected_ty) = sub_schema.get("type").and_then(Value::as_str) {
-                    if !json_type_matches(supplied, expected_ty) {
-                        return Err(ToolsError::TypeMismatch {
-                            field: field.clone(),
-                            expected: expected_ty.to_string(),
-                            got: json_type_name(supplied).to_string(),
-                        });
-                    }
+                if let Some(expected_ty) = sub_schema.get("type").and_then(Value::as_str)
+                    && !json_type_matches(supplied, expected_ty)
+                {
+                    return Err(ToolsError::TypeMismatch {
+                        field: field.clone(),
+                        expected: expected_ty.to_string(),
+                        got: json_type_name(supplied).to_string(),
+                    });
                 }
             }
         }

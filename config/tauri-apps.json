@@ -128,6 +128,32 @@
       "kind": "integration",
       "path": "packages/ui/m3",
       "note": "buildM3 / M3App Tauri webview layout; no Tauri dependency."
+    },
+    {
+      "id": "aphrody-shell-tauri",
+      "kind": "plugin",
+      "path": "crates/shell/tauri",
+      "package": "aphrody-shell-tauri",
+      "runtime": "wry",
+      "workspace": "member",
+      "gate": true,
+      "note": "Tauri 3 plugin exposing native PTY shell sessions to the aphrody-shell-web webview client."
+    },
+    {
+      "id": "aphrody-shell-tauri-e2e",
+      "kind": "app",
+      "path": "crates/shell/tauri-e2e",
+      "package": "aphrody-shell-tauri-e2e",
+      "runtime": "wry",
+      "workspace": "member",
+      "confs": [
+        "tauri.conf.json"
+      ],
+      "gate": true,
+      "generated": [
+        "crates/shell/tauri-e2e/gen"
+      ],
+      "note": "Minimal real Tauri app running WASM shell through aphrody-shell-tauri plugin."
     }
   ]
 }

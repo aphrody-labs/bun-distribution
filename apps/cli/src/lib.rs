@@ -2457,44 +2457,62 @@ pub fn run_wasm() {
 mod tests {
     use super::*;
 
+    #[cfg(not(target_arch = "wasm32"))]
+    fn in_large_stack<F, R>(f: F) -> R
+    where
+        F: FnOnce() -> R + Send + 'static,
+        R: Send + 'static,
+    {
+        std::thread::Builder::new()
+            .stack_size(8 * 1024 * 1024)
+            .spawn(f)
+            .expect("failed to spawn test thread")
+            .join()
+            .expect("test thread panicked")
+    }
+
     #[test]
     #[cfg(not(target_arch = "wasm32"))]
     fn translate_json_preserves_languages_and_option_like_text() {
-        let cli = Cli::try_parse_from([
-            "aphrody",
-            "translate",
-            "--source",
-            "ja",
-            "--target",
-            "en",
-            "--json",
-            "--",
-            "--悟空",
-        ])
-        .expect("translation command");
-        match cli.command {
-            Some(Commands::Translate { text, source, target, json, .. }) => {
-                assert_eq!(text.as_deref(), Some("--悟空"));
-                assert_eq!(source, "ja");
-                assert_eq!(target, "en");
-                assert!(json);
-            },
-            _ => panic!("expected translation"),
-        }
+        in_large_stack(|| {
+            let cli = Cli::try_parse_from([
+                "aphrody",
+                "translate",
+                "--source",
+                "ja",
+                "--target",
+                "en",
+                "--json",
+                "--",
+                "--悟空",
+            ])
+            .expect("translation command");
+            match cli.command {
+                Some(Commands::Translate { text, source, target, json, .. }) => {
+                    assert_eq!(text.as_deref(), Some("--悟空"));
+                    assert_eq!(source, "ja");
+                    assert_eq!(target, "en");
+                    assert!(json);
+                },
+                _ => panic!("expected translation"),
+            }
+        });
     }
 
     #[test]
     #[cfg(not(target_arch = "wasm32"))]
     fn session_serve_http_defaults_to_app_server_port() {
-        let cli = Cli::try_parse_from(["aphrody", "session", "serve", "--http"])
-            .expect("session serve parses");
-        match cli.command {
-            Some(Commands::Session { action: SessionAction::Serve { http, addr } }) => {
-                assert!(http);
-                assert_eq!(addr, "127.0.0.1:8765");
-            },
-            _ => panic!("expected session serve"),
-        }
+        in_large_stack(|| {
+            let cli = Cli::try_parse_from(["aphrody", "session", "serve", "--http"])
+                .expect("session serve parses");
+            match cli.command {
+                Some(Commands::Session { action: SessionAction::Serve { http, addr } }) => {
+                    assert!(http);
+                    assert_eq!(addr, "127.0.0.1:8765");
+                },
+                _ => panic!("expected session serve"),
+            }
+        });
     }
 
     #[test]
@@ -2503,70 +2521,80 @@ mod tests {
         assert!(bare_cli_opens_tui(true, true));
         assert!(!bare_cli_opens_tui(true, false));
         assert!(!bare_cli_opens_tui(false, true));
-        let cli = Cli::try_parse_from(["aphrody", "-i", "inspect the workspace"])
-            .expect("interactive prompt parses");
-        assert_eq!(cli.interactive.as_deref(), Some("inspect the workspace"));
-        assert!(cli.command.is_none());
+        in_large_stack(|| {
+            let cli = Cli::try_parse_from(["aphrody", "-i", "inspect the workspace"])
+                .expect("interactive prompt parses");
+            assert_eq!(cli.interactive.as_deref(), Some("inspect the workspace"));
+            assert!(cli.command.is_none());
+        });
     }
 
     #[test]
     #[cfg(all(not(target_arch = "wasm32"), not(feature = "rag")))]
     fn disabled_feature_command_reports_required_feature() {
-        let cli = Cli::try_parse_from(["aphrody", "rag", "search", "query"])
-            .expect("external subcommand parses");
-        let Some(Commands::Auto(args)) = cli.command else { panic!("external command") };
-        assert_eq!(missing_command_feature(&args), Some("rag"));
+        in_large_stack(|| {
+            let cli = Cli::try_parse_from(["aphrody", "rag", "search", "query"])
+                .expect("external subcommand parses");
+            let Some(Commands::Auto(args)) = cli.command else { panic!("external command") };
+            assert_eq!(missing_command_feature(&args), Some("rag"));
+        });
     }
 
     #[test]
     #[cfg(not(target_arch = "wasm32"))]
     fn command_graph_has_no_inherited_agent_flag_conflicts() {
-        Cli::command().debug_assert();
+        in_large_stack(|| {
+            Cli::command().debug_assert();
+        });
     }
 
     #[test]
     #[cfg(not(target_arch = "wasm32"))]
     fn agent_flags_preserve_legacy_short_flags_and_mcp_config_type() {
-        let cli = Cli::try_parse_from(["aphrody", "chat", "-p", "hello", "-m", "legacy-model"])
-            .expect("chat keeps its prompt shorthand");
-        assert!(
-            matches!(cli.command, Some(Commands::Chat { prompt: Some(prompt), .. }) if prompt == "hello")
-        );
-        let cli = Cli::try_parse_from(["aphrody", "mcp", "list", "--config", "custom.json"])
-            .expect("MCP config remains a filesystem path");
-        assert!(cli.agent_options.config.is_empty());
-        let cli = Cli::try_parse_from([
-            "aphrody",
-            "-m",
-            "root-model",
-            "exec",
-            "--stub",
-            "-m",
-            "exec-model",
-            "resume",
-            "--last",
-            "-m",
-            "session-model",
-            "continue",
-        ])
-        .expect("agent options work at each agent command boundary");
-        let Some(Commands::Exec(args)) = cli.command else { panic!("exec") };
-        let inherited = args.options.apply_to(cli.agent_options.overrides());
-        let Some(exec_cmd::ExecCommand::Resume(session)) = args.command else { panic!("resume") };
-        assert_eq!(session.options.apply_to(inherited).model.as_deref(), Some("session-model"));
+        in_large_stack(|| {
+            let cli = Cli::try_parse_from(["aphrody", "chat", "-p", "hello", "-m", "legacy-model"])
+                .expect("chat keeps its prompt shorthand");
+            assert!(
+                matches!(cli.command, Some(Commands::Chat { prompt: Some(prompt), .. }) if prompt == "hello")
+            );
+            let cli = Cli::try_parse_from(["aphrody", "mcp", "list", "--config", "custom.json"])
+                .expect("MCP config remains a filesystem path");
+            assert!(cli.agent_options.config.is_empty());
+            let cli = Cli::try_parse_from([
+                "aphrody",
+                "-m",
+                "root-model",
+                "exec",
+                "--stub",
+                "-m",
+                "exec-model",
+                "resume",
+                "--last",
+                "-m",
+                "session-model",
+                "continue",
+            ])
+            .expect("agent options work at each agent command boundary");
+            let Some(Commands::Exec(args)) = cli.command else { panic!("exec") };
+            let inherited = args.options.apply_to(cli.agent_options.overrides());
+            let Some(exec_cmd::ExecCommand::Resume(session)) = args.command else { panic!("resume") };
+            assert_eq!(session.options.apply_to(inherited).model.as_deref(), Some("session-model"));
+        });
     }
 
     #[test]
     #[cfg(not(target_arch = "wasm32"))]
     fn ssh_subcommand_parses_arbitrary_arguments() {
-        let cli = Cli::try_parse_from(["aphrody", "ssh", "status", "--host", "vps"])
-            .expect("aphrody ssh should parse");
-        match cli.command {
-            Some(Commands::Ssh { args }) => {
-                assert_eq!(args, vec!["status", "--host", "vps"]);
-            },
-            _ => panic!("expected Commands::Ssh"),
-        }
+        in_large_stack(|| {
+            let cli = Cli::try_parse_from(["aphrody", "ssh", "status", "--host", "vps"])
+                .expect("aphrody ssh should parse");
+            match cli.command {
+                Some(Commands::Ssh { args }) => {
+                    assert_eq!(args, vec!["status", "--host", "vps"]);
+                },
+                _ => panic!("expected Commands::Ssh"),
+            }
+        });
     }
 
     #[test]

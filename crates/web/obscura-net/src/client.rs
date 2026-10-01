@@ -1198,6 +1198,43 @@ impl ObscuraHttpClient {
         self.proxy_url.as_deref()
     }
 
+    /// One authenticated HTTP request with explicit headers/body and no redirects.
+    /// No process-global cookie state is injected into this request.
+    pub async fn send_single(
+        &self,
+        method: &str,
+        url: &Url,
+        headers: &HashMap<String, String>,
+        body: &[u8],
+    ) -> Result<Response, ObscuraNetError> {
+        validate_url(url, self.allow_private_network)?;
+        let method = method
+            .parse::<Method>()
+            .map_err(|_| ObscuraNetError::Network("invalid HTTP method".into()))?;
+        let mut request = self.request_client().await.request(method, url.as_str());
+        for (name, value) in headers {
+            request = request.header(name, value);
+        }
+        if !body.is_empty() {
+            request = request.body(body.to_vec());
+        }
+        let response = request
+            .send()
+            .await
+            .map_err(|_| ObscuraNetError::Network("HTTP request failed".into()))?;
+        let status = response.status().as_u16();
+        let mut headers = HashMap::new();
+        for (name, value) in response.headers() {
+            merge_response_header(
+                &mut headers,
+                name.as_str().to_lowercase(),
+                value.to_str().unwrap_or("").to_string(),
+            );
+        }
+        let body = read_reqwest_body_limited(response, url, 64 * 1024 * 1024, None).await?;
+        Ok(Response { url: url.clone(), status, headers, body, redirected_from: Vec::new() })
+    }
+
     pub async fn fetch(&self, url: &Url) -> Result<Response, ObscuraNetError> {
         self.fetch_with_method(Method::GET, url, None, None).await
     }
@@ -1827,7 +1864,7 @@ pub enum ObscuraNetError {
 }
 
 #[cfg(test)]
-mod ssrf_tests {
+pub(crate) mod ssrf_tests {
     use std::{
         collections::HashMap,
         net::IpAddr,
@@ -2086,7 +2123,7 @@ mod ssrf_tests {
         assert_eq!(request_referrer(&request, &downgrade), None);
     }
 
-    async fn http_fixture(
+    pub(crate) async fn http_fixture(
         responses: Vec<String>,
     ) -> (Url, tokio::sync::mpsc::UnboundedReceiver<String>) {
         use tokio::io::{AsyncReadExt, AsyncWriteExt};
@@ -2109,8 +2146,18 @@ mod ssrf_tests {
                         break;
                     }
                     request.extend_from_slice(&buffer[..read]);
-                    if request.windows(4).any(|window| window == b"\r\n\r\n") {
-                        break;
+                    if let Some(end) = request.windows(4).position(|window| window == b"\r\n\r\n") {
+                        let header = String::from_utf8_lossy(&request[..end]).to_ascii_lowercase();
+                        let body_len = header
+                            .lines()
+                            .find_map(|line| {
+                                line.strip_prefix("content-length:")
+                                    .and_then(|value| value.trim().parse::<usize>().ok())
+                            })
+                            .unwrap_or(0);
+                        if request.len() >= end + 4 + body_len {
+                            break;
+                        }
                     }
                 }
                 let _ = request_tx.send(String::from_utf8_lossy(&request).into_owned());
@@ -2119,6 +2166,58 @@ mod ssrf_tests {
             }
         });
         (Url::parse(&format!("http://{address}/resource")).unwrap(), request_rx)
+    }
+
+    pub(crate) async fn assert_explicit_api_transport(stealth: bool) {
+        let responses = vec![
+            ok_response("X-Test: first\r\n", "{\"ok\":true}"),
+            ok_response("", "post"), ok_response("", "put"),
+            "HTTP/1.1 302 Found\r\nLocation: https://example.org/login\r\nContent-Length: 0\r\nConnection: close\r\n\r\n".into(),
+        ];
+        let (target, mut received) = http_fixture(responses).await;
+        let jar = Arc::new(CookieJar::new());
+        jar.set_cookie("unrelated=must-not-leak; Path=/", &target);
+        let plain = ObscuraHttpClient::with_full_options(jar.clone(), None, true);
+        #[cfg(feature = "stealth")]
+        let native = crate::StealthHttpClient::with_proxy(jar, None, true);
+        for method in ["GET", "POST", "PUT", "DELETE"] {
+            let body: &[u8] = if method == "GET" { b"" } else { b"{\"item\":42}" };
+            let headers = HashMap::from([
+                ("cookie".into(), "sid=fixture-cookie".into()),
+                ("x-ut-sid".into(), "fixture-session".into()),
+                ("authorization".into(), "Bearer fixture-token".into()),
+                ("content-type".into(), "application/json".into()),
+            ]);
+            let response = if stealth {
+                #[cfg(feature = "stealth")]
+                {
+                    native.send_single(method, &target, &headers, body, false, false).await.unwrap()
+                }
+                #[cfg(not(feature = "stealth"))]
+                {
+                    panic!("stealth fixture requires the stealth feature")
+                }
+            } else {
+                plain.send_single(method, &target, &headers, body).await.unwrap()
+            };
+            assert_eq!(response.status, if method == "DELETE" { 302 } else { 200 });
+            if method == "DELETE" {
+                assert_eq!(response.header("location"), Some("https://example.org/login"));
+            }
+            let request = received.recv().await.unwrap();
+            let lower = request.to_ascii_lowercase();
+            assert!(request.starts_with(&format!("{method} /resource ")));
+            assert!(lower.contains("cookie: sid=fixture-cookie\r\n"));
+            assert!(lower.contains("x-ut-sid: fixture-session\r\n"));
+            assert!(lower.contains("authorization: bearer fixture-token\r\n"));
+            assert!(!lower.contains("unrelated=must-not-leak"));
+            assert!(request.ends_with(std::str::from_utf8(body).unwrap()));
+        }
+    }
+
+    #[tokio::test]
+    async fn authenticated_single_requests_preserve_method_headers_body_and_redirect() {
+        assert_explicit_api_transport(false).await;
     }
 
     fn ok_response(headers: &str, body: &str) -> String {

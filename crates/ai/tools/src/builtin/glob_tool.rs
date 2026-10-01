@@ -156,7 +156,7 @@ fn scan_glob(
             entry.metadata().ok().and_then(|m| m.modified().ok()).unwrap_or(std::time::UNIX_EPOCH);
         entries.push((entry.into_path(), mtime));
     }
-    entries.sort_by(|a, b| b.1.cmp(&a.1));
+    entries.sort_by_key(|a| std::cmp::Reverse(a.1));
     entries.truncate(max);
     Ok(entries.into_iter().map(|(p, _)| p).collect())
 }

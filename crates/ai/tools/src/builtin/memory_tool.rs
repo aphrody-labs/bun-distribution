@@ -138,10 +138,10 @@ impl Tool for MemoryTool {
                 }))
             },
             MemoryOp::Clear => {
-                if let Some(parent) = path.parent() {
-                    if !parent.as_os_str().is_empty() {
-                        tokio::fs::create_dir_all(parent).await?;
-                    }
+                if let Some(parent) = path.parent()
+                    && !parent.as_os_str().is_empty()
+                {
+                    tokio::fs::create_dir_all(parent).await?;
                 }
                 tokio::fs::write(&path, "").await?;
                 Ok(json!({
@@ -157,19 +157,19 @@ fn resolve_path(override_path: Option<&str>) -> PathBuf {
     if let Some(p) = override_path {
         return PathBuf::from(p);
     }
-    if let Ok(env) = std::env::var(ENV_MEMORY_FILE) {
-        if !env.is_empty() {
-            return PathBuf::from(env);
-        }
+    if let Ok(env) = std::env::var(ENV_MEMORY_FILE)
+        && !env.is_empty()
+    {
+        return PathBuf::from(env);
     }
     std::env::current_dir().unwrap_or_default().join(DEFAULT_FILENAME)
 }
 
 async fn save_fact(path: &std::path::Path, fact: &str) -> Result<(), ToolError> {
-    if let Some(parent) = path.parent() {
-        if !parent.as_os_str().is_empty() {
-            tokio::fs::create_dir_all(parent).await?;
-        }
+    if let Some(parent) = path.parent()
+        && !parent.as_os_str().is_empty()
+    {
+        tokio::fs::create_dir_all(parent).await?;
     }
     let existing = match tokio::fs::read_to_string(path).await {
         Ok(s) => s,

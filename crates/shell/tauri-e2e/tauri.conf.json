@@ -1,4 +1,5 @@
 {
+  "$schema": "https://raw.githubusercontent.com/tauri-apps/tauri/tauri-v3.0.0-alpha.3/crates/tauri-schema-generator/schemas/config.schema.json",
   "productName": "aphrody-shell-e2e",
   "identifier": "dev.aphrody.shell-e2e",
   "build": { "frontendDist": "frontend" },

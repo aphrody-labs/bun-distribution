@@ -209,39 +209,6 @@ impl HnswBackend {
         top.sort_unstable_by(desc);
         top.iter().map(|(score, r)| ((*r).clone(), *score)).collect()
     }
-
-    /// Cosine similarity with the query's L2 norm supplied by the caller.
-    ///
-    /// `query_norm` must equal `l2_norm(query)` and be non-zero. Folds the dot
-    /// product and the candidate norm into a single pass over `embedding`.
-    #[inline]
-    fn scaled_cosine(query: &[f32], query_norm: f32, embedding: &[f32]) -> f32 {
-        let len = query.len().min(embedding.len());
-        if len == 0 {
-            return 0.0;
-        }
-        let q = &query[..len];
-        let e = &embedding[..len];
-        let mut dot = 0.0_f32;
-        let mut norm_sq = 0.0_f32;
-        for i in 0..len {
-            let q_val = q[i];
-            let e_val = e[i];
-            dot += q_val * e_val;
-            norm_sq += e_val * e_val;
-        }
-        if norm_sq == 0.0 { 0.0 } else { dot / (query_norm * norm_sq.sqrt()) }
-    }
-}
-
-/// L2 (Euclidean) norm of a vector.
-#[inline]
-fn l2_norm(v: &[f32]) -> f32 {
-    let mut sum = 0.0_f32;
-    for &x in v {
-        sum += x * x;
-    }
-    sum.sqrt()
 }
 
 // ---------------------------------------------------------------------------
@@ -420,7 +387,7 @@ mod tests {
         ];
         for (q, e) in cases {
             let reference = crate::cosine_similarity(q, e);
-            let scaled = HnswBackend::scaled_cosine(q, l2_norm(q), e);
+            let scaled = cosine_with_norm(q, norm(q), e);
             assert!(
                 (reference - scaled).abs() < 1e-6,
                 "scaled_cosine diverged: ref={reference} scaled={scaled} for {q:?} vs {e:?}",

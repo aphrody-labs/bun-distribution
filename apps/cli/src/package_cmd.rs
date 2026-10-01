@@ -453,7 +453,10 @@ mod tests {
     #[test]
     fn every_package_has_https_repo_and_binary() {
         for p in PACKAGES {
-            assert!(p.repository.starts_with("https://github.com/aphrody-code/"));
+            assert!(
+                p.repository.starts_with("https://github.com/aphrody-labs/")
+                    || p.repository.starts_with("https://github.com/aphrody-code/")
+            );
             assert!(!p.binaries.is_empty());
         }
     }

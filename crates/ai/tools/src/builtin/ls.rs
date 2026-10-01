@@ -169,10 +169,10 @@ fn list_dir(
         };
         let path = entry.path();
         let rel = path.strip_prefix(root).unwrap_or(path);
-        if let Some(gs) = &ignore {
-            if gs.is_match(rel) {
-                continue;
-            }
+        if let Some(gs) = &ignore
+            && gs.is_match(rel)
+        {
+            continue;
         }
         let is_dir = entry.file_type().is_dir();
         let size = if is_dir { 0 } else { entry.metadata().map(|m| m.len()).unwrap_or(0) };

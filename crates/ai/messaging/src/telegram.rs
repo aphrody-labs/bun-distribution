@@ -127,10 +127,10 @@ impl Connector for TelegramConnector {
 
         let env: TelegramEnvelope<SentMessage> = resp.json().await?;
         if !env.ok {
-            if let Some(p) = env.parameters {
-                if let Some(retry) = p.retry_after {
-                    return Err(MessageError::RateLimit { retry_after_secs: retry });
-                }
+            if let Some(p) = env.parameters
+                && let Some(retry) = p.retry_after
+            {
+                return Err(MessageError::RateLimit { retry_after_secs: retry });
             }
             return Err(MessageError::ApiError {
                 code: env

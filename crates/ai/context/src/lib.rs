@@ -396,22 +396,12 @@ fn whitespace_quarters(chars: &mut Cursor<'_>) -> u64 {
         spaces = trailing;
     }
     if spaces > 0 {
-        quarters += match chars.peek() {
-            Some(next) if !next.is_numeric() => {
-                if spaces > 1 {
-                    4
-                } else {
-                    0
-                }
-            },
-            Some(_) => {
-                if spaces > 1 {
-                    8
-                } else {
-                    4
-                }
-            },
-            None => 4,
+        quarters += match (chars.peek(), spaces > 1) {
+            (Some(next), true) if !next.is_numeric() => 4,
+            (Some(next), false) if !next.is_numeric() => 0,
+            (Some(_), true) => 8,
+            (Some(_), false) => 4,
+            (None, _) => 4,
         };
     }
     quarters

@@ -35,7 +35,7 @@ pub const MEDIA_TYPE_SYSTEM: &str = "application/vnd.ollama.image.system";
 pub const MEDIA_TYPE_PARAMS: &str = "application/vnd.ollama.image.params";
 /// Media type of the multimodal projector layer.
 pub const MEDIA_TYPE_PROJECTOR: &str = "application/vnd.ollama.image.projector";
-/// Media type of a LoRA adapter layer.
+/// Media type of a `LoRA` adapter layer.
 pub const MEDIA_TYPE_ADAPTER: &str = "application/vnd.ollama.image.adapter";
 
 /// A fully-qualified Ollama model name.
@@ -197,12 +197,11 @@ impl OllamaStore {
                 let path = entry.path();
                 if depth < 3 && path.is_dir() {
                     stack.push((path, depth + 1));
-                } else if depth == 3 && path.is_file() {
-                    if let Ok(rel) = path.strip_prefix(&base) {
-                        let parts: Vec<_> = rel.iter().map(|p| p.to_string_lossy()).collect();
-                        if let [host, ns, model, tag] = parts.as_slice() {
-                            out.push(format!("{host}/{ns}/{model}:{tag}"));
-                        }
+                } else if depth == 3 && path.is_file()
+                    && let Ok(rel) = path.strip_prefix(&base) {
+                    let parts: Vec<_> = rel.iter().map(|p| p.to_string_lossy()).collect();
+                    if let [host, ns, model, tag] = parts.as_slice() {
+                        out.push(format!("{host}/{ns}/{model}:{tag}"));
                     }
                 }
             }

@@ -267,10 +267,10 @@ impl ModelBackend for GeminiBackend {
             }
         }
 
-        if content.is_empty() && tool_calls.is_empty() {
-            if let Some(msg) = latest_error {
-                return Err(ChatError::BackendFailure(msg));
-            }
+        if content.is_empty() && tool_calls.is_empty()
+            && let Some(msg) = latest_error
+        {
+            return Err(ChatError::BackendFailure(msg));
         }
 
         Ok(BackendResponse {

@@ -59,12 +59,11 @@ impl RepairingModelClient {
             })
             .collect();
         let mut candidate = text.trim();
-        if let Some((header, body)) = candidate.split_once('\n') {
-            if matches!(header.trim(), "```" | "```json") {
-                if let Some(body) = body.trim_end().strip_suffix("```") {
-                    candidate = body.trim();
-                }
-            }
+        if let Some((header, body)) = candidate.split_once('\n')
+            && matches!(header.trim(), "```" | "```json")
+            && let Some(body) = body.trim_end().strip_suffix("```")
+        {
+            candidate = body.trim();
         }
         let calls = extract_inline_tool_calls(candidate, self.profile.tool_dialect);
         if calls.is_empty()
@@ -80,14 +79,12 @@ impl RepairingModelClient {
             };
             let (mut arguments, _) =
                 aphrody_toolcall_repair::coerce_arguments(&call.arguments, &tool.parameters);
-            if call.name == "apply_patch" {
-                if let Some(patch) = arguments.get("patch").and_then(serde_json::Value::as_str) {
-                    if let Ok(patch) =
-                        aphrody_toolcall_repair::normalize_to_codex_patch(patch, &|_| None)
-                    {
-                        arguments["patch"] = serde_json::Value::String(patch);
-                    }
-                }
+            if call.name == "apply_patch"
+                && let Some(patch) = arguments.get("patch").and_then(serde_json::Value::as_str)
+                && let Ok(patch) =
+                    aphrody_toolcall_repair::normalize_to_codex_patch(patch, &|_| None)
+            {
+                arguments["patch"] = serde_json::Value::String(patch);
             }
             recovered.push(ModelStreamEvent::ToolCall {
                 id: aphrody_agent_proto::Event::new(aphrody_agent_proto::EventMsg::TurnStarted).id,

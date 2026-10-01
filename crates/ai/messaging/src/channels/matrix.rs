@@ -389,20 +389,20 @@ impl MessagingChannel for MatrixChannel {
                 let sync: SyncResponse = resp.json().await.map_err(ChannelError::Http)?;
                 since = Some(sync.next_batch.clone());
 
-                if let Some(rooms) = sync.rooms {
-                    if let Some(joined) = rooms.join {
-                        for (room_id, room) in joined {
-                            let events = room
-                                .timeline
-                                .and_then(|t| t.events)
-                                .unwrap_or_default();
+                if let Some(rooms) = sync.rooms
+                    && let Some(joined) = rooms.join
+                {
+                    for (room_id, room) in joined {
+                        let events = room
+                            .timeline
+                            .and_then(|t| t.events)
+                            .unwrap_or_default();
 
-                            for event in events {
-                                if event.event_type != "m.room.message" {
-                                    continue;
-                                }
-                                yield MatrixChannel::timeline_event_to_inbound(event, &room_id);
+                        for event in events {
+                            if event.event_type != "m.room.message" {
+                                continue;
                             }
+                            yield MatrixChannel::timeline_event_to_inbound(event, &room_id);
                         }
                     }
                 }

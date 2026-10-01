@@ -684,7 +684,7 @@ mod tests {
         let dir = armed_ws(5);
         let ws = dir.path().to_path_buf();
         let payload = stop_payload(&ws, "encore du travail");
-        let reply = handle_hook_in(HookEvent::Stop, &payload, &[ws.clone()]).unwrap();
+        let reply = handle_hook_in(HookEvent::Stop, &payload, std::slice::from_ref(&ws)).unwrap();
         assert_eq!(reply["decision"], "continue");
         let reason = reply["reason"].as_str().unwrap();
         assert!(reason.contains("ship feature X"), "{reason}");
@@ -701,7 +701,7 @@ mod tests {
         let dir = armed_ws(5);
         let ws = dir.path().to_path_buf();
         let payload = stop_payload(&ws, "tout est vert et committé\nAPHRODY_LOOP_DONE");
-        let reply = handle_hook_in(HookEvent::Stop, &payload, &[ws.clone()]).unwrap();
+        let reply = handle_hook_in(HookEvent::Stop, &payload, std::slice::from_ref(&ws)).unwrap();
         assert_eq!(reply["decision"], "allow_stop");
         assert!(reply["reason"].as_str().unwrap().contains("objectif atteint"));
         assert!(load_state(&ws).is_none(), "l'état est effacé à la terminaison");
@@ -712,7 +712,7 @@ mod tests {
         let dir = armed_ws(5);
         let ws = dir.path().to_path_buf();
         let payload = stop_payload(&ws, "je finirai par écrire APHRODY_LOOP_DONE si tout est vert");
-        let reply = handle_hook_in(HookEvent::Stop, &payload, &[ws.clone()]).unwrap();
+        let reply = handle_hook_in(HookEvent::Stop, &payload, std::slice::from_ref(&ws)).unwrap();
         assert_eq!(reply["decision"], "continue");
     }
 
@@ -722,11 +722,11 @@ mod tests {
         let ws = dir.path().to_path_buf();
         let payload = stop_payload(&ws, "pas fini");
         for expected in 1..=2 {
-            let reply = handle_hook_in(HookEvent::Stop, &payload, &[ws.clone()]).unwrap();
+            let reply = handle_hook_in(HookEvent::Stop, &payload, std::slice::from_ref(&ws)).unwrap();
             assert_eq!(reply["decision"], "continue");
             assert_eq!(load_state(&ws).unwrap().iteration, expected);
         }
-        let reply = handle_hook_in(HookEvent::Stop, &payload, &[ws.clone()]).unwrap();
+        let reply = handle_hook_in(HookEvent::Stop, &payload, std::slice::from_ref(&ws)).unwrap();
         assert_eq!(reply["decision"], "allow_stop");
         assert!(reply["reason"].as_str().unwrap().contains("plafond"));
         assert!(load_state(&ws).is_none());
@@ -738,7 +738,7 @@ mod tests {
         let ws = dir.path().to_path_buf();
         std::fs::write(stop_path(&ws), b"stop\n").unwrap();
         let payload = stop_payload(&ws, "pas fini");
-        let reply = handle_hook_in(HookEvent::Stop, &payload, &[ws.clone()]).unwrap();
+        let reply = handle_hook_in(HookEvent::Stop, &payload, std::slice::from_ref(&ws)).unwrap();
         assert_eq!(reply["decision"], "allow_stop");
         assert!(!stop_path(&ws).exists(), "le marqueur est consommé");
     }
@@ -758,12 +758,12 @@ mod tests {
         let ws = dir.path().to_path_buf();
         let mut payload = stop_payload(&ws, "pas fini");
         payload["parentConversationId"] = json!("parent-1");
-        let reply = handle_hook_in(HookEvent::Stop, &payload, &[ws.clone()]).unwrap();
+        let reply = handle_hook_in(HookEvent::Stop, &payload, std::slice::from_ref(&ws)).unwrap();
         assert_eq!(reply, json!({}));
         assert_eq!(load_state(&ws).unwrap().iteration, 0);
         let mut post = post_invocation_payload(&ws, 1, "APHRODY_LOOP_DONE");
         post["parentConversationId"] = json!("parent-1");
-        handle_hook_in(HookEvent::PostInvocation, &post, &[ws.clone()]).unwrap();
+        handle_hook_in(HookEvent::PostInvocation, &post, std::slice::from_ref(&ws)).unwrap();
         let st = load_state(&ws).unwrap();
         assert_eq!(st.invocations, 0);
         assert!(!st.done_seen);
@@ -775,7 +775,7 @@ mod tests {
         let ws = dir.path().to_path_buf();
         let mut payload = stop_payload(&ws, "");
         payload["terminationReason"] = json!("user_canceled");
-        let reply = handle_hook_in(HookEvent::Stop, &payload, &[ws.clone()]).unwrap();
+        let reply = handle_hook_in(HookEvent::Stop, &payload, std::slice::from_ref(&ws)).unwrap();
         assert_eq!(reply["decision"], "allow_stop");
         assert!(reply["reason"].as_str().unwrap().contains("interrompu"));
         assert!(load_state(&ws).is_none());
@@ -789,19 +789,19 @@ mod tests {
         failing["terminationReason"] = json!("error");
         failing["error"] = json!("quota");
         for _ in 1..MAX_ERROR_STREAK {
-            let reply = handle_hook_in(HookEvent::Stop, &failing, &[ws.clone()]).unwrap();
+            let reply = handle_hook_in(HookEvent::Stop, &failing, std::slice::from_ref(&ws)).unwrap();
             assert_eq!(reply["decision"], "continue");
         }
         assert_eq!(load_state(&ws).unwrap().error_streak, MAX_ERROR_STREAK - 1);
         // Un arrêt sain remet la série à zéro.
         let healthy = stop_payload(&ws, "pas fini");
-        handle_hook_in(HookEvent::Stop, &healthy, &[ws.clone()]).unwrap();
+        handle_hook_in(HookEvent::Stop, &healthy, std::slice::from_ref(&ws)).unwrap();
         assert_eq!(load_state(&ws).unwrap().error_streak, 0);
         // MAX_ERROR_STREAK erreurs consécutives désarment la boucle.
         for _ in 1..MAX_ERROR_STREAK {
-            handle_hook_in(HookEvent::Stop, &failing, &[ws.clone()]).unwrap();
+            handle_hook_in(HookEvent::Stop, &failing, std::slice::from_ref(&ws)).unwrap();
         }
-        let reply = handle_hook_in(HookEvent::Stop, &failing, &[ws.clone()]).unwrap();
+        let reply = handle_hook_in(HookEvent::Stop, &failing, std::slice::from_ref(&ws)).unwrap();
         assert_eq!(reply["decision"], "allow_stop");
         assert!(reply["reason"].as_str().unwrap().contains("erreur"));
         assert!(load_state(&ws).is_none());
@@ -812,7 +812,7 @@ mod tests {
         let dir = armed_ws(5);
         let ws = dir.path().to_path_buf();
         let payload = post_invocation_payload(&ws, 3, "je continue");
-        let reply = handle_hook_in(HookEvent::PostInvocation, &payload, &[ws.clone()]).unwrap();
+        let reply = handle_hook_in(HookEvent::PostInvocation, &payload, std::slice::from_ref(&ws)).unwrap();
         assert_eq!(reply, json!({}));
         let st = load_state(&ws).unwrap();
         assert_eq!((st.invocations, st.last_invocation_num, st.iteration), (1, 3, 0));
@@ -824,11 +824,11 @@ mod tests {
         let dir = armed_ws(5);
         let ws = dir.path().to_path_buf();
         let post = post_invocation_payload(&ws, 4, "tout est vert\nAPHRODY_LOOP_DONE");
-        handle_hook_in(HookEvent::PostInvocation, &post, &[ws.clone()]).unwrap();
+        handle_hook_in(HookEvent::PostInvocation, &post, std::slice::from_ref(&ws)).unwrap();
         assert!(load_state(&ws).unwrap().done_seen);
         // `finalModelOutput` vide : la sentinelle captée au tour précédent suffit.
         let reply =
-            handle_hook_in(HookEvent::Stop, &stop_payload(&ws, ""), &[ws.clone()]).unwrap();
+            handle_hook_in(HookEvent::Stop, &stop_payload(&ws, ""), std::slice::from_ref(&ws)).unwrap();
         assert_eq!(reply["decision"], "allow_stop");
         assert!(load_state(&ws).is_none());
     }
@@ -843,14 +843,14 @@ mod tests {
             "prompt_response": "pas fini",
         });
         assert_eq!(detect_event(&payload), HookEvent::AfterAgent);
-        let reply = handle_hook_in(HookEvent::AfterAgent, &payload, &[ws.clone()]).unwrap();
+        let reply = handle_hook_in(HookEvent::AfterAgent, &payload, std::slice::from_ref(&ws)).unwrap();
         assert_eq!(reply["decision"], "deny");
         assert!(reply["reason"].as_str().unwrap().contains("ship feature X"));
         let done = json!({
             "hook_event_name": "AfterAgent",
             "prompt_response": "ok\nAPHRODY_LOOP_DONE",
         });
-        let reply = handle_hook_in(HookEvent::AfterAgent, &done, &[ws.clone()]).unwrap();
+        let reply = handle_hook_in(HookEvent::AfterAgent, &done, std::slice::from_ref(&ws)).unwrap();
         assert_eq!(reply["continue"], true);
         assert!(reply["systemMessage"].as_str().unwrap().contains("objectif atteint"));
         assert!(load_state(&ws).is_none());

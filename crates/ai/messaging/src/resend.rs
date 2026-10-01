@@ -139,10 +139,10 @@ impl Connector for ResendConnector {
         if let Some(subject) = msg.subject.as_deref() {
             validate_mail_value("subject", subject)?;
         }
-        if let Some(key) = msg.idempotency_key.as_deref() {
-            if key.is_empty() || key.len() > 256 || key.contains(['\r', '\n', '\0']) {
-                return Err(MessageError::Unexpected("invalid idempotency key".to_owned()));
-            }
+        if let Some(key) = msg.idempotency_key.as_deref()
+            && (key.is_empty() || key.len() > 256 || key.contains(['\r', '\n', '\0']))
+        {
+            return Err(MessageError::Unexpected("invalid idempotency key".to_owned()));
         }
         // Validate the envelope form even though Resend receives the friendly
         // name unchanged. This catches malformed addresses before network I/O.

@@ -58,7 +58,7 @@ use tokio::{
     io::{AsyncBufRead, AsyncBufReadExt, AsyncWrite, AsyncWriteExt},
     sync::{
         Mutex,
-        mpsc::{UnboundedReceiver, error::TryRecvError},
+        mpsc::UnboundedReceiver,
     },
 };
 
@@ -897,19 +897,14 @@ impl AppServer {
                 })?;
                 let mut events = Vec::new();
                 let mut completed = false;
-                loop {
-                    match thread.events.try_recv() {
-                        Ok(event) => {
-                            completed = completed
-                                || matches!(
-                                    &event.msg,
-                                    EventMsg::TurnComplete { .. } | EventMsg::Error { .. }
-                                );
-                            self.notifications.extend(thread.observe(&event));
-                            events.push(event);
-                        },
-                        Err(TryRecvError::Empty | TryRecvError::Disconnected) => break,
-                    }
+                while let Ok(event) = thread.events.try_recv() {
+                    completed = completed
+                        || matches!(
+                            &event.msg,
+                            EventMsg::TurnComplete { .. } | EventMsg::Error { .. }
+                        );
+                    self.notifications.extend(thread.observe(&event));
+                    events.push(event);
                 }
                 let notifications = std::mem::take(&mut self.notifications);
                 Ok(serde_json::to_value(TurnEventsResponse {
