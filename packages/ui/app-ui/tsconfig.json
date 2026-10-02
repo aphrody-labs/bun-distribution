@@ -15,6 +15,6 @@
       "@react-three/fiber"
     ]
   },
-  "include": ["src", "build.ts", "m3.config.ts", "../assets/types.d.ts"],
+  "include": ["src", "build.ts", "undeclared-deps.ts", "m3.config.ts", "../assets/types.d.ts"],
   "exclude": ["src/**/*.test.ts"]
 }
