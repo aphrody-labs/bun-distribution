@@ -30,7 +30,7 @@ of native rendering parity.
 `RustModelViewport` (`../shell/rust-model-viewport.tsx`) is the OTHER model surface in this
 repository, and it is the one every page uses: `/avatar`, `/models-3d` and the game viewer all
 reach `nie-render3d` through WebGPU, its WebGL 2 backend in `nie-viewer-web`, or the CPU
-rasteriser, in that order (`apps/nie-web/src/game/native-viewer.ts`). That chain replaced a
+rasteriser, in that order (`apps/nie-web/src/game/native-viewer.ts` (not in repo)). That chain replaced a
 445-line TypeScript WebGL viewer in 2026-09; this file is what is left of the same class.
 
 What keeps them apart is measured, not rhetorical. This viewport adds a node outliner with

@@ -2,7 +2,7 @@
 
 Google's open-source AI/ML Python ecosystem spans foundation model weights, agent frameworks, JAX-based training infrastructure, NLP tooling, RL environments, and domain-specific research code. The repositories range from actively maintained production libraries to archived research artifacts accompanying published papers.
 
-> Part of [`docs/google/`](../../../../products/ai/google/README.md). Full mechanical listing: [`all-repos.md`](../all-repos.md). This page covers 80 repos (55 active / 25 archived).
+> Part of [`docs/google/` (not in repo)](../../../../products/ai/google/README.md). Full mechanical listing: [`all-repos.md`](../all-repos.md). This page covers 80 repos (55 active / 25 archived).
 
 ## Foundation Models & LLMs
 

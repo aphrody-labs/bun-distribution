@@ -21,7 +21,7 @@ Aphrody provides an embedded hybrid search engine for repository navigation and 
    - **Model Abstractions**: `Embedder` and `Reranker` traits with implementations for ONNX Runtime (`OrtEmbedder`), `LlamaServerEmbedder` (`/v1/embeddings`), and remote APIs.
    - **Honest Mode Serving**: If vector embedding fails or is unavailable, queries degrade gracefully to `lexical` search, setting `mode_served = "lexical"` without aborting turns.
 3. **`aphrody-rag-eval`**:
-   - Automated evaluation harness matching the exact scoring metrics and gold fixture format of `apps/bot/src/lib/rag-eval.ts` from Dragon Ball FR.
+   - Automated evaluation harness matching the exact scoring metrics and gold fixture format of `apps/shenron/bot/src/lib/rag-eval.ts` from Dragon Ball FR.
 
 ---
 
@@ -41,7 +41,7 @@ The [Shenron audit from 2026-09-14](https://github.com/aphrody-code/shenron/blob
 
 ### Local offline feasibility on 2026-09-24
 
-The local Shenron `apps/bot/data/bot.db` and `data/test.db` contain no `rag_chunks` table. The former has four stored evaluation histories, each covering only three cases; they cannot stand in for the 172-case gold run. The Aphrody indexes under `var/proofs/codex-oss-rag-vector/20260920` and `var/proofs/codex-oss-api-rag/20260920-142900` contain only two and one synthetic Markdown documents respectively. Their paths do not match the gold source URLs. No current 172-case offline retrieval score is available from these files.
+The local Shenron `apps/shenron/bot/data/bot.db` and `data/test.db` (not in repo) contain no `rag_chunks` table. The former has four stored evaluation histories, each covering only three cases; they cannot stand in for the 172-case gold run. The Aphrody indexes under `var/proofs/codex-oss-rag-vector/20260920` (not in repo) and `var/proofs/codex-oss-api-rag/20260920-142900` (not in repo) contain only two and one synthetic Markdown documents respectively. Their paths do not match the gold source URLs. No current 172-case offline retrieval score is available from these files.
 
 The public GET benchmark attempted at 2 QPS returned three HTTP 429 responses. Do not repeat that run until the endpoint owner provides an approved evaluation window. The Shenron evaluation script writes its report to Redis after querying, so it must not be run as a read-only probe. Both local databases were inspected with `sqlite3 -readonly`; no Shenron file or service was modified.
 

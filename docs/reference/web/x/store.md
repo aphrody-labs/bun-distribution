@@ -74,7 +74,7 @@ no live API quota.
 
 ## Archive import
 
-Ingest an official Twitter/X data export — the JS-wrapped `data/tweets.js`
+Ingest an official Twitter/X data export — the JS-wrapped `data/tweets.js` (not in repo)
 (`window.YTD.tweets.part0 = [ … ]`) or a plain JSON array — into the store:
 
 ```bash
@@ -104,7 +104,7 @@ This surpasses birdclaw's launchd-only schedulers with cross-OS coverage.
 
 ## Vector Embeddings & RAG Search
 
-`packages/x` integrates local SQLite database storage with vector embedding generation and Redis-backed similarity search to build a high-performance Hybrid RAG engine:
+`packages/web/x` integrates local SQLite database storage with vector embedding generation and Redis-backed similarity search to build a high-performance Hybrid RAG engine:
 
 1. **Embedding Generation**: Text content is passed to `gemini-embedding-001` (requesting `outputDimensionality: 768`) to yield 768-dimensional normalized float32 vectors, stored directly as BLOBs in the SQLite `tweet_embeddings` table.
 2. **Redis Vector Sync**: Stored embeddings are continuously synchronized to the Redis vector set (`tweet_embeddings`) under key-value indices via the `VADD` command.

@@ -23,7 +23,7 @@ comes from m3.material.io (or Context7), not from copies in this repository.
 
 Design and method maps describe the intended product. `GUI.md` separates implemented surfaces
 from proposed adapters, source findings from operator-reported validation, and runtime release
-evidence. The frontend is consolidated in `packages/app-ui`; FSL-derived Drive source remains
+evidence. The frontend is consolidated in `packages/app-ui` (not in repo); FSL-derived Drive source remains
 a provenance/release gate.
 
 ## Material 3 layer

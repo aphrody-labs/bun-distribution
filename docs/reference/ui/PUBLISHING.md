@@ -35,8 +35,8 @@ the M3 family on `aphrody.m3Version`), commit, then `git tag m3-v<version>` and 
 | `packages/ui/eslint-plugin-m3` | `@aphrody/eslint-plugin-m3` |
 | `packages/ui/m3` | `@aphrody/m3` |
 
-Published elsewhere: `@aphrody/m3-tokens` from `aphrody-web` (`packages/m3-tokens`, consumed here
-through the root `catalog`). `@aphrody/bun` (`packages/bun`, native crate `crates/aphrody-bun`) is
+Published elsewhere: `@aphrody/m3-tokens` from `aphrody-web` (`packages/ui/m3-tokens`, consumed here
+through the root `catalog`). `@aphrody/bun` (`packages/bun`, native crate `crates/ui/bun`) is
 not in the workflow's publish list. `build:sass` falls back to
 `sass-embedded` when the native library is absent, so a release needs no Rust toolchain.
 

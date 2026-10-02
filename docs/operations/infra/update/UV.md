@@ -12,14 +12,14 @@ prove the result. The pipeline overview is [UPDATE.md](../UPDATE.md). The Python
 | Lock | Resolves | Used by |
 | --- | --- | --- |
 | `uv.lock` (root) | the six workspace members, Python `==3.12.*`, `aphrody-train` extras `full` and `mine` as conflicting forks | `uv sync --all-packages --locked`, every test and ruff gate |
-| `packages/ai/py/aphrody/uv.lock` | the SDK on its own, Python `>=3.11` (forks per interpreter and platform) | CI distribution jobs, `uv build` of the SDK |
-| `packages/ai/py/aphrody-train/uv.lock` | the training package on its own, Python 3.12, CUDA torch from `download.pytorch.org/whl/cu129` | standalone training environment |
+| `packages/ai/py/aphrody/uv.lock` (not in repo) | the SDK on its own, Python `>=3.11` (forks per interpreter and platform) | CI distribution jobs, `uv build` of the SDK |
+| `packages/ai/py/aphrody-train/uv.lock` (not in repo) | the training package on its own, Python 3.12, CUDA torch from `download.pytorch.org/whl/cu129` | standalone training environment |
 
 All three move together: `apply` runs `uv lock --upgrade` in each directory and `verify` runs `uv lock --check` in each.
 `docs/migration/locks/**` holds archived migration snapshots; the module never reads or edits them. Lock revision is
 whatever the installed uv writes (revision 5 since uv 0.12.22).
 
-Two environment facts that bite: `uv run` inside `packages/ai/py/aphrody` or `aphrody-train` uses that package's own
+Two environment facts that bite: `uv run` inside `packages/ai/py/aphrody` (not in repo) or `aphrody-train` uses that package's own
 `uv.lock` and its own `.venv` (they are standalone projects, the `dev` group does not exist there), and `uv sync` run
 inside them is exact and strips extras. Run every gate from the repository root.
 
@@ -27,7 +27,7 @@ inside them is exact and strips extras. Run every gate from the repository root.
 
 - uv follows the latest published release. Four places must agree: the installed binary, `config/system-packages.json`
   (source of truth in `config/update/pins.json`), `required-version = "==X"` in the workspace `pyproject.toml` and the
-  `setup-uv` version in `.github/workflows/python-sdk.yml` (plus the README and the CLI/TOOLS reference tables). The
+  `setup-uv` version in `.github/workflows/python-sdk.yml` (not in repo) (plus the README and the CLI/TOOLS reference tables). The
   pin manifest rewrites all of them: `aphrody-update tools uv --apply` installs and re-pins, or
   `aphrody-update pins apply uv <version>` when the binary is already in place. `required-version` refuses any other uv, so
   update the binary first.
@@ -45,7 +45,7 @@ inside them is exact and strips extras. Run every gate from the repository root.
   reached through the lock's per-interpreter forks, not by raising the floor. uv-managed interpreters run the newest patch
   of their minor (`uv python upgrade`); the system interpreter (`/usr/bin/python3.12`) is not touched.
 - Ruff has no suppressions: a diagnostic is fixed in the code. The only exclusion is the vendored upstream SDK
-  `packages/ai/py/antigravity-sdk-python`. `ruff format` is not a gate (28 files would be reformatted today).
+  `packages/ai/py/antigravity-sdk-python` (not in repo). `ruff format` is not a gate (28 files would be reformatted today).
 - No cargo is run here. A bump that needs a native build (maturin) is qualified by the lead through the serialized
   Cargo wrapper.
 
@@ -135,7 +135,7 @@ shared with `deps inventory`, plus one OSV batch). They belong in the weekly `ap
 - Ruff: 24 legacy diagnostics (BLE001 and S110 in the retained Drive adapters and four AI scripts) are fixed by
   narrowing the handlers to the exceptions each call raises (`OSError` for file copies, `OSError` and `ValueError` for HTTP
   and JSON, `gdown` and `google-genai` error classes for the SDK scripts); the gmail "message deleted" branch now logs a
-  warning instead of `pass`. Hashes and transformation notes in `docs/migration/python-import-manifest.json` were updated.
+  warning instead of `pass`. Hashes and transformation notes in `docs/migration/python-import-manifest.json` (not in repo) were updated.
   `ruff check .` reports zero. The Drive adapters were not run against a real Spacedrive runtime.
 - Gates: `uv lock --check` on the three locks, `ruff check .`, pytest: SDK 490 passed and 18 skipped, training 44 passed,
   OCR 2, embedding fixtures 5, Koharu tools 5.

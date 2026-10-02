@@ -3,7 +3,7 @@
 - mode : `check`
 - racine : `~/rsbun/wasm/wasm-pack`
 
-## `.github/workflows/test.yml`
+## `packages/rg/patreon-bun/.github/workflows/test.yml`
 
 | ligne | règle | message | remplacement |
 | --- | --- | --- | --- |

@@ -14,7 +14,7 @@
 ## Research and audits (point-in-time)
 
 These record findings at a given date. Paths and crate names in them may predate the category
-split (for example `C:/src/aphrody`, `crates/aphrody-ffi` or `/tmp/bun`); the root
+split (for example `C:/src/aphrody`, `crates/interop/ffi` or `/tmp/bun`); the root
 [README](./README.md.038abe5c2ce0) is authoritative for the current layout.
 
 | Document | Content |

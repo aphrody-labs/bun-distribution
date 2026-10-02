@@ -24,7 +24,7 @@ The [ecosystem catalogue](../../ecosystem/ECOSYSTEM.md) is the generated invento
 
 ## Runtime evidence
 
-`config/bun-fork.json` records the historical Linux debug verification and the
+`config/bun-fork.json` (not in repo) records the historical Linux debug verification and the
 native ABI versions for `bun:aphrody`. It also records unresolved distribution
 and consumer-selection gates. Source presence and an installed upstream Bun
 binary do not prove the fork module is running.

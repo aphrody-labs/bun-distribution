@@ -7,8 +7,8 @@ thumbnail and a selectable grid tile. They are presentational: props in, callbac
 fetching, no context. Consumers wire their own state.
 
 This is SpaceUI's `@spacedrive/explorer` rebuilt on Material Design 3. The upstream source lives in
-`packages/aphrody-spaceui/packages/explorer`; the fusion rules are in
-[`docs/design/SPACEUI-M3-FUSION.md`](../../../../architecture/ui/design/SPACEUI-M3-FUSION.md).
+`packages/aphrody-spaceui/packages/explorer` (not in repo); the fusion rules are in
+[`docs/architecture/ui/design/SPACEUI-M3-FUSION.md`](../../../../architecture/ui/design/SPACEUI-M3-FUSION.md).
 
 ## Install
 

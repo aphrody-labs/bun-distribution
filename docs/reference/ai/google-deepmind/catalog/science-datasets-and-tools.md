@@ -2,7 +2,7 @@
 
 Computational science applications (physics, chemistry, biology, climate), published datasets and benchmarks for language and reasoning, and developer tooling.
 
-> Part of [`docs/google-deepmind/`](../../../../products/ai/google-deepmind/README.md). Full mechanical listing: [`all-repos.md`](../all-repos.md). This page covers 76 repos (65 active / 11 archived).
+> Part of [`docs/google-deepmind/` (not in repo)](../../../../products/ai/google-deepmind/README.md). Full mechanical listing: [`all-repos.md`](../all-repos.md). This page covers 76 repos (65 active / 11 archived).
 
 ## Computational biology and chemistry
 

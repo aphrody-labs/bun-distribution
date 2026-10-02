@@ -33,7 +33,7 @@ wire clients until those checks and runtime migration are completed.
 
 ## Known safety gap
 
-[`crates/archive/src/safety.rs`](../../../../crates/os/drive/crates/archive/src/safety.rs) is a stub whose
+[`crates/os/drive/crates/archive/src/safety.rs`](../../../../crates/os/drive/crates/archive/src/safety.rs) is a stub whose
 batch screening returns score 0 and safe for every record. The archive engine
 currently logs “safety screening model loaded (Prompt Guard 2 22M)” after
 constructing that stub. The fallback in `engine.rs` can also mark unscreened

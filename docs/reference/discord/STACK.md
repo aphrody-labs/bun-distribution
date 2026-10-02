@@ -9,7 +9,7 @@
 - Discord.js as the general-purpose Gateway, REST, voice and API foundation;
   DiscordX remains available for its decorator-driven framework and utilities.
 - Carbon `@buape/carbon@0.16.0` as an optional Bun-first HTTP interaction
-  framework, demonstrated by the small `apps/carbon-example` workspace. It is
+  framework, demonstrated by the small `apps/carbon-example` (not in repo) workspace. It is
   an npm dependency and its source is not copied into this monorepo.
 
 The Discord.js upstream declares Node.js `>=24.17.0` in its root manifest.

@@ -6,7 +6,7 @@ Aphrody provides a high-performance, modular RAG pipeline that integrates layout
 > - [`rag-unified-pattern.md`](./rag-unified-pattern.md) — the **canonical cross-repo contract**
 >   for downstream bots: the shared `multilingual-e5-small`
 >   sidecar, hybrid BM25/FTS5 ∪ dense RRF retrieval, the `/embed`+`/rerank` HTTP contract, the
->   OpenAI-compatible LLM seam, and the resource-aware execution profile (`scripts/rag-nice.sh`).
+>   OpenAI-compatible LLM seam, and the resource-aware execution profile (`scripts/tools/ai/scripts/rag-nice.sh`).
 
 ## Production Vector & Cache Storage
  

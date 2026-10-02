@@ -92,7 +92,7 @@ Les paths non-ASCII sont **percent-encodés en UTF-8** par WHATWG: `/é` → `/%
 | Encodage UTF-8 vs Latin-1 dans le path | UTF-8 obligatoire en URL | sources HTML peuvent référencer Latin-1, à transcoder |
 | Trailing whitespace dans `href="...  "` | strip nécessaire avant `new URL()` | sinon throws |
 
-## 8. Compliance checklist côté `scripts/url-to-docs.ts`
+## 8. Compliance checklist côté `scripts/url-to-docs.ts` (not in repo)
 
 - [x] `new URL()` pour parsing (WHATWG)
 - [x] `u.hash = ""` avant store/compare

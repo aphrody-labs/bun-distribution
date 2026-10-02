@@ -47,7 +47,7 @@ Then point your MCP client at the binary. Example `mcp.json` snippet:
 
 ## Exposed tools
 
-Source of truth: `crates/aphrody-mcp/src/main.rs` (`#[tool_router]` impl on
+Source of truth: `crates/ai/mcp/src/main.rs` (`#[tool_router]` impl on
 `GoogleMcpServer`). The current registry exposes eight tools:
 
 | Tool | Description |
@@ -64,7 +64,7 @@ Source of truth: `crates/aphrody-mcp/src/main.rs` (`#[tool_router]` impl on
 ### Dragon Ball (`dragonball.*`, feature `dragonball`, on by default)
 
 The Dragon Ball tools are served by `src/dragonball_tools.rs` and registered
-in `src/main.rs`. The former Bun `apps/shenron-mcp` is retired. The current
+in `src/main.rs`. The former Bun `apps/shenron-mcp` (not in repo) is retired. The current
 registry includes `rag_search`, `rag_context`, `rag_ask`,
 `sources`, `data_coverage`, `wiki_{search,list,get,categories}`,
 `manga_{search,tomes,page,chapitre,planche,recherche,scanlate}`, `chronologie`,

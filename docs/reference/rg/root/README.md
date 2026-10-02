@@ -9,12 +9,12 @@ et l'espace compétitif Achilléa.
 | Élément | Responsabilité |
 | --- | --- |
 | `apps/rg/website` | Application Next.js unique : portail, `/wiki`, `/achillea`, administration et authentification. |
-| `apps/achillea-bot`, `apps/bot` | Automatisation Discord, API et temps réel. |
-| `apps/cdn`, `apps/storage`, `apps/realtime` | Services Bun pour les assets, fichiers et notifications. |
-| `packages/rg/azalee`, `packages/rg/inagle` | Bibliothèque et pipeline de données Victory Road. |
+| `apps/achillea-bot` (not in repo), `apps/rg/bot` | Automatisation Discord, API et temps réel. |
+| `apps/rg/bot/src/api/services/cdn`, `apps/rg/bot/src/api/services/storage`, `apps/rg/bot/src/api/services/realtime` | Services Bun pour les assets, fichiers et notifications. |
+| `packages/rg/azalee` (not in repo), `packages/rg/inagle` (not in repo) | Bibliothèque et pipeline de données Victory Road. |
 | `packages/achillea-*` | Contrats, règles métier et client HTTP Achilléa. |
-| `packages/assets`, `packages/ui`, `packages/app-shell` | Assets, design system et navigation communs. |
-| `packages/auth`, `packages/db`, `packages/cron` | Authentification, données et tâches récurrentes. |
+| `packages/rg/assets`, `packages/ui`, `packages/rg/app-shell` | Assets, design system et navigation communs. |
+| `packages/rg/auth`, `packages/rg/db`, `packages/rg/cron` | Authentification, données et tâches récurrentes. |
 | `../aphrody-infra` | Unités systemd, nginx, Docker et Cloud Run de RG (`systemd/rg-*`, `nginx/rg/`, `docker/rg-vps-replica/`, `cloud/rg-website/`). |
 
 L’ancien frontend Angular Achilléa et le frontend Azalée autonome sont retirés.
@@ -36,10 +36,10 @@ toute version partagée.
 
 ## Assets et données
 
-`packages/assets/public` est la source unique des visuels partagés. La tâche
+`packages/rg/assets/public` est la source unique des visuels partagés. La tâche
 CDN les publie sous `https://cdn.rosegriffon.fr/static/rg/public/` ; les assets
 extraits du jeu restent sous les surfaces Azalée dédiées et les fichiers des
-utilisateurs restent dans Storage. Voir [assets-cdn.md](../assets-cdn.md).
+utilisateurs restent dans Storage. Voir [assets-cdn.md](../../../operations/rg/assets-cdn.md).
 
 Les données Victory Road viennent du pipeline `inagle` et du miroir SQLite ;
 elles ne sont pas éditées directement dans un export généré.
@@ -57,13 +57,13 @@ bun run deploy:status
 ```
 
 Website est publié en bleu/vert : portail, wiki et Achilléa passent dans le
-même build Next. Voir [deploy.md](../deploy.md),
-[deploiement-sans-coupure.md](../deploiement-sans-coupure.md) et
-[cloud-deployment.md](../cloud-deployment.md).
+même build Next. Voir [deploy.md](../../../operations/rg/deploy.md),
+[deploiement-sans-coupure.md](../../../operations/rg/deploiement-sans-coupure.md) et
+[cloud-deployment.md](../../../operations/rg/cloud-deployment.md).
 
 ## Documentation
 
-[README.md](../README.md) est l’index de la documentation produit et
+[README.md](../../../products/rg/README.md) est l’index de la documentation produit et
 d’exploitation. Les secrets, journaux et notes locales restent hors Git.
 
 ## Licence

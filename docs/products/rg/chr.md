@@ -7,7 +7,7 @@ Référence canonique des deux arbres d'assets personnages d'**Inazuma Eleven: V
 
 > **Constat capital** : `common/chr` et `dx11/chr` ont **0 fichier loose sur disque**. Les deux
 > arbres vivent **intégralement dans les CPK chiffrés** (clé `0x1717E18E`), accessibles **uniquement
-> via l'index**. Les GLB pré-convertis (faces) vivent à part dans `data/dx11/model/` (6028 fichiers),
+> via l'index**. Les GLB pré-convertis (faces) vivent à part dans `data/dx11/model/` (not in repo) (6028 fichiers),
 > **absents** de l'index fichiers.
 
 ## 1. L'index (source de vérité)
@@ -17,9 +17,9 @@ Référence canonique des deux arbres d'assets personnages d'**Inazuma Eleven: V
 | **Redis db3 `iev:file:index`** | `redis-cli -n 3 HGETALL iev:file:index` (HASH path→cpk) | Index maître de l'arbre du jeu | **250 800** entrées |
 | **`iev:tex:<path>`** | HASH (W/H/format/mips/textures) | Dimensions des g4tx | 2002 clés (792 sous `dx11/chr`) |
 | **`iev:cpk:<id>:toc`** | HASH | TOC déchiffré par CPK | 921 TOC |
-| **`var/model-crc-manifest.ndjson`** | CRC32→cpk→path | Index des **modèles** g4md/g4mg | 24 624 (18 457 sous `common/chr`, 2621 g4md uniforme) |
-| **`var/g4tx-xval.ndjson`** | cross-val dims (Rust↔C#) | Validation g4tx | 1038 (271 `chr/_face`) |
-| Miroir SQLite (`apps/website/data/mirror.sqlite`) | `inagle_characters.internal_code`, `inagle_uniforms`, `inagle_teams` | Roster + liaison | 6148 perso |
+| **`var/model-crc-manifest.ndjson` (not in repo)** | CRC32→cpk→path | Index des **modèles** g4md/g4mg | 24 624 (18 457 sous `common/chr`, 2621 g4md uniforme) |
+| **`var/g4tx-xval.ndjson` (not in repo)** | cross-val dims (Rust↔C#) | Validation g4tx | 1038 (271 `chr/_face`) |
+| Miroir SQLite (`apps/website/data/mirror.sqlite` (not in repo)) | `inagle_characters.internal_code`, `inagle_uniforms`, `inagle_teams` | Roster + liaison | 6148 perso |
 
 `niers.sqlite` = index RE du **binaire** nie.exe (functions/rtti/xref), **PAS** un index d'assets.
 Le streaming live g4tx→png passe par `iecode-cdn:8788` (cf. `docs/` CDN).

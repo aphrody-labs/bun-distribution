@@ -35,14 +35,14 @@ Trois surfaces aphrody coexistent : `agy` (forward binaire) · `antigravity`
 
 ### 1.1 Déclaration de la commande
 
-- Variante CLI : `crates/aphrody/src/lib.rs:166` — `Commands::Agy { args: Vec<String> }`,
+- Variante CLI : `apps/cli/src/lib.rs:166` — `Commands::Agy { args: Vec<String> }`,
   doc-comment lib.rs:162-164.
-- Dispatch : `crates/aphrody/src/lib.rs:1026-1028` → `commands::AgyCommand { args }.execute(ctx)`.
-- Nom de télémétrie : `crates/aphrody/src/lib.rs:1584` (`Commands::Agy { .. } => "agy"`).
+- Dispatch : `apps/cli/src/lib.rs:1026-1028` → `commands::AgyCommand { args }.execute(ctx)`.
+- Nom de télémétrie : `apps/cli/src/lib.rs:1584` (`Commands::Agy { .. } => "agy"`).
 
 ### 1.2 Résolution du binaire `agy`
 
-Fonction `resolve_agy_bin()` — `crates/aphrody/src/commands.rs:627-657`. Premier match
+Fonction `resolve_agy_bin()` — `apps/cli/src/commands.rs:627-657`. Premier match
 gagne :
 
 | Priorité | Source | Détail (code) |
@@ -64,7 +64,7 @@ Sur cette machine, `agy` est résolu via PATH : `~/.local/bin/agy`
 
 ### 1.3 Passthrough / exécution
 
-`AgyCommand::execute` — `crates/aphrody/src/commands.rs:666-690` :
+`AgyCommand::execute` — `apps/cli/src/commands.rs:666-690` :
 
 ```
 std::process::Command::new(&bin_path).args(&self.args).status()
@@ -253,8 +253,8 @@ pouvait pas relancer la boucle.
 
 | Cmd | Effet (code) |
 |-----|--------------|
-| `start --goal "<txt>" [--max N]` | Écrit `.agents/aphrody-loop.json` (`goal`, `iteration:0`, `max_iterations`, `started_at`, compteurs `invocations`, `last_invocation_num`, `done_seen`, `error_streak`). `--max` défaut **50** (`DEFAULT_MAX_ITERATIONS`). Lève un éventuel marqueur stop résiduel. |
-| `stop` | Pose `.agents/aphrody-loop.stop` ET efface l'état. Le stop est capté au prochain hook. |
+| `start --goal "<txt>" [--max N]` | Écrit `.agents/aphrody-loop.json` (not in repo) (`goal`, `iteration:0`, `max_iterations`, `started_at`, compteurs `invocations`, `last_invocation_num`, `done_seen`, `error_streak`). `--max` défaut **50** (`DEFAULT_MAX_ITERATIONS`). Lève un éventuel marqueur stop résiduel. |
+| `stop` | Pose `.agents/aphrody-loop.stop` (not in repo) ET efface l'état. Le stop est capté au prochain hook. |
 | `status` | Imprime l'état JSON courant, ou « (boucle inactive) ». |
 | `hook [--event stop\|post-invocation\|after-agent]` | Driver stdin/stdout — **pas pour usage manuel**. Sans `--event`, l'évènement est déduit du JSON (`hook_event_name`, sinon `invocationNum` ⇒ `PostInvocation`, `prompt_response` ⇒ `AfterAgent` hérité, `Stop` par défaut). |
 | `hooks-json` | Affiche le fragment `hooks.json` agy ci-dessus (pas d'écriture de fichier). |
@@ -278,7 +278,7 @@ des deux gagne ; l'état reste armé et la boucle reprend au prochain arrêt.
    réponse devient `{}`).
 2. Résout le workspace : `workspacePaths` (agy), puis `cwd` (Gemini CLI), puis le
    répertoire courant du hook (et son parent si c'est `.agents`).
-3. **Boucle inactive** (pas de `.agents/aphrody-loop.json`) ⇒ émet `{}` et sort
+3. **Boucle inactive** (pas de `.agents/aphrody-loop.json` (not in repo)) ⇒ émet `{}` et sort
    (n'interfère jamais avec un arrêt normal). Une conversation de sous-agent
    (`parentConversationId` non vide) ⇒ `{}` aussi.
 4. `PostInvocation` : incrémente `invocations`, retient `invocationNum`, capte la
@@ -306,8 +306,8 @@ seul sur la dernière ligne que lorsque tout est vert et committé.
 
 ### 3.5 Logging / état
 
-- État : `.agents/aphrody-loop.json` (`STATE_REL`, l.29) ; stop :
-  `.agents/aphrody-loop.stop` (`STOP_REL`, l.32) — relatifs au **workspace**.
+- État : `.agents/aphrody-loop.json` (not in repo) (`STATE_REL`, l.29) ; stop :
+  `.agents/aphrody-loop.stop` (not in repo) (`STOP_REL`, l.32) — relatifs au **workspace**.
 - Pas de fichier de log dédié côté aphrody-loop : la trace vit dans les
   transcripts d'agy (`~/.gemini/antigravity-cli/brain/<uuid>/.system_generated/
   logs/transcript*.jsonl`) [VÉRIFIÉ — le terme `agy-loop` y apparaît].
@@ -508,13 +508,13 @@ HTTP nativement.
 
 | Élément | Chemin |
 |---------|--------|
-| Forwarder `agy` (résolution + spawn) | `crates/aphrody/src/commands.rs:614-690` |
+| Forwarder `agy` (résolution + spawn) | `apps/cli/src/commands.rs:614-690` |
 | Variante CLI + dispatch | `crates/aphrody/src/lib.rs:162-166, 1026-1028` |
-| Backend chat agy (RPC Cloud Code, sans binaire) | `crates/aphrody/src/agy_backend.rs` |
-| Boucle autonome `agy-loop` | `apps/cli/src/agy_loop.rs` (anciennement `crates/aphrody/src/agy_loop.rs`) |
-| Sélection backend de `chat/hermes` | `crates/aphrody/src/agent_cmd.rs:475-487` |
+| Backend chat agy (RPC Cloud Code, sans binaire) | `apps/cli/src/agy_backend.rs` |
+| Boucle autonome `agy-loop` | `apps/cli/src/agy_loop.rs` (anciennement `apps/cli/src/agy_loop.rs`) |
+| Sélection backend de `chat/hermes` | `apps/cli/src/agent_cmd.rs:475-487` |
 | SDK Antigravity (token, RPC, config) | `crates/aphrody-antigravity/src/{auth,client,config,endpoints,models}.rs` |
-| Surface `aphrody antigravity` | `crates/aphrody/src/antigravity_cmd.rs` |
-| Surface `aphrody agent` | `crates/aphrody/src/agent_cmd.rs`, `agent_run.rs`, `crates/aphrody-agent-runtime/` |
+| Surface `aphrody antigravity` | `apps/cli/src/antigravity_cmd.rs` |
+| Surface `aphrody agent` | `apps/cli/src/agent_cmd.rs`, `agent_run.rs`, `crates/ai/agent-runtime/` |
 | Skill commandes IA | `~/.gemini/config/plugins/aphrody/skills/aphrody-cmd-ai-creative/SKILL.md` |
 | Hook wiring agy-loop | fragment : `aphrody agy-loop hooks-json` ; à installer dans `<workspace>/.agents/hooks.json`, `~/.gemini/config/hooks.json` ou `plugins/<nom>/hooks.json` |

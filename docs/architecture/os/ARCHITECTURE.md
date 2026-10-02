@@ -167,7 +167,7 @@ see [`YOLO-AUTHORITY.md`](../../reference/os/YOLO-AUTHORITY.md).
 
 ### Cloud subsystem (`cloud`)
 
-The `cloud` subsystem (`crates/aphrody-kernel/src/cloud.rs`) embeds native, privileged git repository analysis and Google Cloud / Gemini environment verification directly into the kernel:
+The `cloud` subsystem (`crates/os/kernel/src/cloud.rs`) embeds native, privileged git repository analysis and Google Cloud / Gemini environment verification directly into the kernel:
 
 - **`github_status`**: Current branch, upstream tracking (`ahead`/`behind` counters), status porcelain v1 modified and untracked file inventory, and last commit metadata. Resolves `repo_path` or falls back safely to current working directory.
 - **`github_branches`**: Enumerates all local and tracking remote branches with commit SHA, upstream target and divergence status.
@@ -177,7 +177,7 @@ The `cloud` subsystem (`crates/aphrody-kernel/src/cloud.rs`) embeds native, priv
 
 ### Dynamic infrastructure subsystem (`infra`)
 
-The `infra` subsystem (`crates/aphrody-kernel/src/infra.rs`) provides remote host control and synchronization targeting production aliases (`vps`, `dbfr`):
+The `infra` subsystem (`crates/os/kernel/src/infra.rs`) provides remote host control and synchronization targeting production aliases (`vps`, `dbfr`):
 
 - **`infra_exec`**: Runs remote commands over in-process SSH with JSON output and exit status tracking.
 - **`infra_sftp_list`**: Traverses remote directories over native SFTP, returning entry metadata (size, file permissions, `is_dir`).
@@ -225,7 +225,7 @@ The same wire protocol serves a uv (Python) process: connect to the endpoint, `i
 ## Architecture References & Roadmaps
 
 - [Rust OS Architecture & Bare-Metal Research](./research/RUST-OS-ARCHITECTURE-AND-BAREMETAL-ANALYSIS.md) - Deep dive into Rust bare-metal vs user-space control plane, Limine, memory allocators, TTAS locking, and driver stratification.
-- Graphical OS Shell Specification (`docs/design/GRAPHICAL-OS-SHELL-SPEC.md` in the sibling `aphrody-ui` repository) - 8 Pillars of the Aphrody OS desktop shell (`libaphrody`, `app-ui`, `aphrody-systemd`, `aphrody-coreutils`, `aphrody-compat`).
+- Graphical OS Shell Specification (`docs/design/GRAPHICAL-OS-SHELL-SPEC.md` (not in repo) in the sibling `aphrody-ui` repository) - 8 Pillars of the Aphrody OS desktop shell (`libaphrody`, `app-ui`, `aphrody-systemd`, `aphrody-coreutils`, `aphrody-compat`).
 
 ## Roadmap & Planned Extensions
 

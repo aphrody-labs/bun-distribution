@@ -9,7 +9,7 @@ placeholder**.
 Les tables wiki-éditoriales (`db_characters`, `db_planets`, `db_arcs`, `db_sagas`,
 `db_techniques`, `db_transformations`, …) vivent dans **PostgreSQL** (source de
 vérité), reverse-syncées PG→SQLite toutes les 15 min (`shenron-neon-pull`, liste
-dans `apps/bot/scripts/_wiki-editorial.ts`). Le **site lit PG en direct** ; le
+dans `apps/shenron/bot/scripts/_wiki-editorial.ts`). Le **site lit PG en direct** ; le
 **bot Discord + le RAG lisent le réplica SQLite**.
 
 ## Le pipeline Fandom a été retiré (2026-09-10)
@@ -19,7 +19,7 @@ Les scripts `ingest-fandom-*.ts`, `enrich-fandom-descriptions.ts`,
 `fix-character-images.ts` et `src/db/seed-techniques.ts` ont été **supprimés** :
 Fandom est une source interdite (cf. `CLAUDE.md`). Dans le même mouvement, les
 2 250 citations Fandom des `article_sources` ont été purgées (script rejouable
-`apps/bot/scripts/purge-fandom-sources.ts`) et les ~29 300 chunks Fandom du RAG
+`apps/shenron/bot/scripts/purge-fandom-sources.ts`) et les ~29 300 chunks Fandom du RAG
 retirés de l'index.
 
 Ce qu'il reste à faire, et qui ne s'automatise pas : **ré-ancrer** sur le manga
@@ -36,7 +36,7 @@ Manga et databooks hébergés en propre, catalogues d'éditeurs (Shueisha, Toei,
 Viz, Bandai), site officiel Dragon Ball, guides Kanzenshuu, et les APIs publiques
 AniList / Jikan / Kitsu / dragonball-api pour les **métadonnées** (dates, staff,
 numéros d'épisode) — jamais pour la rédaction. Détail de la doctrine :
-[`docs/wiki-editorial.md`](wiki-editorial.md).
+[`docs/products/shenron/wiki-editorial.md`](../../products/shenron/wiki-editorial.md).
 
 ## Zéro placeholder (mandat)
 
@@ -59,7 +59,7 @@ valeur par défaut en PG** (jamais NULL) pour ces colonnes. Vérif après ingest
 1. Écrire dans PG (`bot.*`) depuis un ingest licite ou l'éditeur du site.
 2. `systemctl start shenron-neon-pull.service` (→ bot SQLite à jour)
 3. Le site montre la data (lecture PG directe) ; redeploy pour figer l'ISR.
-4. RAG : cf. [`docs/rag-enrichment.md`](rag-enrichment.md).
+4. RAG : cf. [`docs/architecture/shenron/rag-enrichment.md`](../../architecture/shenron/rag-enrichment.md).
 
 ## Crawl BXC Dragon Ball (état 2026-09-15)
 

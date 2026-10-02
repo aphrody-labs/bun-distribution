@@ -1,19 +1,19 @@
-# Achilléa → `apps/website` — plan de migration du front
+# Achilléa → `apps/rg/website` — plan de migration du front
 
-Plan d'exécution pour absorber **`apps/achillea-web` (Angular 21 + PrimeNG)** dans
-**`apps/website` (Next 16 + React 19 + `@rose-griffon/ui`)**, de sorte que
+Plan d'exécution pour absorber **`apps/achillea-web` (not in repo) (Angular 21 + PrimeNG)** dans
+**`apps/rg/website` (Next 16 + React 19 + `@rose-griffon/ui`)**, de sorte que
 `rosegriffon.fr` devienne l'unique site du réseau : portail, wiki Azalée et
 Achilléa compétitif.
 
 > Statut : **migration applicative terminée le 21/9/2026**. Le rendu public est
-> assuré par `apps/website` sous `/achillea`, les routes Angular sont couvertes
+> assuré par `apps/rg/website` sous `/achillea`, les routes Angular sont couvertes
 > par des tests de parité et `achillea.rosegriffon.fr` redirige vers Next. Le
 > dossier Angular a été retiré, avec ses dépendances exclusives, après la
 > validation de parité. Ce document conserve seulement le journal de migration.
 > Il prolonge
-> `docs/achillea-modulaire.md` (§ « Prochaine étape si l'on migre le front ») et
+> `docs/architecture/rg/achillea-modulaire.md` (§ « Prochaine étape si l'on migre le front ») et
 > ne redit pas ce qui y est déjà décrit. Contexte d'intégration :
-> `docs/achillea.md`. Services et ports : `docs/achillea-services.md`.
+> `docs/products/rg/achillea.md`. Services et ports : `docs/architecture/rg/achillea-services.md`.
 
 ---
 
@@ -31,7 +31,7 @@ redirections 301 sont triviales et le risque SEO s'effondre.
 
 ### 0.2 — Authentification : cookie élargi à `.rosegriffon.fr`, pas de pont de jetons
 
-Fait constaté : `apps/achillea-bot/src/auth/session.ts` pose un cookie de session
+Fait constaté : `apps/rg/bot/src/api/modules/auth/session.ts` pose un cookie de session
 `httpOnly`, `sameSite: "lax"`, **sans `domain`** — donc *host-only* sur l'hôte de
 l'API. Conséquences réelles :
 
@@ -65,7 +65,7 @@ jamais `*`.
 
 Le portage est **exécuté par l'agent déjà en vol** (assets, `auth-context.tsx`,
 `hero-bg-fx.ts`, 6 composants partagés sous `src/components/achillea/`). Ce
-document est la référence d'architecture et de revue ; `docs/achillea-migration-plan.md`
+document est la référence d'architecture et de revue ; `docs/achillea-migration-plan.md` (not in repo)
 est absorbé ici et supprimé — un seul plan, sinon les deux dérivent.
 
 ---
@@ -73,20 +73,20 @@ est absorbé ici et supprimé — un seul plan, sinon les deux dérivent.
 ## 1. Ce qui existe déjà et ne doit PAS être recréé
 
 C'est le point décisif : **les trois couches basses sont déjà portées, typées,
-testées et branchées sur `apps/website`.** La migration n'est pas une
+testées et branchées sur `apps/rg/website`.** La migration n'est pas une
 réécriture d'application, c'est le remplacement d'un adaptateur d'affichage.
 
 | Brique existante | Emplacement | Ce qu'elle couvre déjà |
 | --- | --- | --- |
-| Contrat pur | `packages/achillea-types` | DTO, enums, domaine. Zéro dépendance. Regénère JSON Schema/Rust/Swift/Kotlin via `bun run achillea:contract`. |
-| Métier multi-runtime | `packages/achillea-core` | 24 modules : `elo`, `ranking`, `brackets`, `tournaments`, `clans`, `casts`, `licenses`, `sanctions`, `wallet`, `access`, `format`, `labels`, `presentation`, `validation`… Interdit d'y toucher depuis le front. |
-| Client HTTP isomorphe | `packages/achillea-client` | `AchilleaClient` + **16 ressources** (`admin`, `auth`, `casts`, `clans`, `guilds`, `leagues`, `licenses`, `notifications`, `organizations`, `playerNotes`, `ranked`, `sanctions`, `stats`, `tournaments`, `users`, `wallet`). Ne lève jamais : rend `{ ok, … }`. Fonctionne en RSC, en route handler et en îlot client. |
-| Adaptateur Next | `apps/website/src/lib/achillea/` | `createAchilleaClient()`, `achilleaApiUrl()`, `tone.ts` (mapping tons → variantes de badge), ré-exports `core`/`types`. Tests : `apps/website/src/lib/achillea/achillea.test.ts`. |
-| Dépendances déclarées | `apps/website/package.json` | `@rosegriffon/achillea-{client,core,types}` sont **déjà** en `workspace:*`. Rien à installer. |
-| Route publique | `apps/website/src/app/api/public/achillea/info/route.ts` | Première consommation en production. |
-| Entrée visuelle | `apps/website/src/components/home/AchilleaBanner.tsx` | Bloc Achilléa de la home unifiée. |
+| Contrat pur | `packages/rg/achillea-types` | DTO, enums, domaine. Zéro dépendance. Regénère JSON Schema/Rust/Swift/Kotlin via `bun run achillea:contract`. |
+| Métier multi-runtime | `packages/rg/achillea-core` | 24 modules : `elo`, `ranking`, `brackets`, `tournaments`, `clans`, `casts`, `licenses`, `sanctions`, `wallet`, `access`, `format`, `labels`, `presentation`, `validation`… Interdit d'y toucher depuis le front. |
+| Client HTTP isomorphe | `packages/rg/achillea-client` | `AchilleaClient` + **16 ressources** (`admin`, `auth`, `casts`, `clans`, `guilds`, `leagues`, `licenses`, `notifications`, `organizations`, `playerNotes`, `ranked`, `sanctions`, `stats`, `tournaments`, `users`, `wallet`). Ne lève jamais : rend `{ ok, … }`. Fonctionne en RSC, en route handler et en îlot client. |
+| Adaptateur Next | `apps/rg/website/src/lib/achillea/` | `createAchilleaClient()`, `achilleaApiUrl()`, `tone.ts` (mapping tons → variantes de badge), ré-exports `core`/`types`. Tests : `apps/rg/website/src/lib/achillea/achillea.test.ts`. |
+| Dépendances déclarées | `apps/rg/website/package.json` | `@rosegriffon/achillea-{client,core,types}` sont **déjà** en `workspace:*`. Rien à installer. |
+| Route publique | `apps/rg/website/src/app/api/public/achillea/info/route.ts` | Première consommation en production. |
+| Entrée visuelle | `apps/rg/website/src/components/home/AchilleaBanner.tsx` | Bloc Achilléa de la home unifiée. |
 | Design system | `packages/ui` (58 composants MD3) | Remplace PrimeNG. Tokens FR : `succes`, `alerte`, `info` — jamais `success`/`warning`. |
-| Chrome partagé | `packages/app-shell` | Navigation unique, source unique non paramétrée (`NavBases` a été retiré avec l'app azalee autonome). C'est là qu'on ajoute l'entrée Achilléa, **pas** dans `apps/*/config/navigation.ts`. |
+| Chrome partagé | `packages/rg/app-shell` | Navigation unique, source unique non paramétrée (`NavBases` a été retiré avec l'app azalee autonome). C'est là qu'on ajoute l'entrée Achilléa, **pas** dans `apps/*/config/navigation.ts`. |
 
 **Corollaire** : les ~4 746 lignes de `apps/achillea-web/src/app/shared/services/**`
 (16 services Angular) et les 35 modèles de `core/models/**` n'ont plus de logique
@@ -95,7 +95,7 @@ métier à sauver — ce sont des appels HTTP et de la mise en forme que `client
 
 ### Inventaire à porter (le vrai périmètre)
 
-`apps/achillea-web/src/app/views` + `shared/components` = **35 394 lignes**
+`apps/achillea-web/src/app/views` (not in repo) + `shared/components` = **35 394 lignes**
 (138 `.ts`, 78 `.html`, 62 `.css`), soit 29 vues et 30 composants partagés.
 
 | Vue | LOC | Vue | LOC |
@@ -181,7 +181,7 @@ une redirection permanente dans `next.config` vers son équivalent préfixé
 | `ngx-lottie` / `lottie-web` | `lottie-web` dans un îlot client | dépendance conservée |
 | `socket.io-client` (notifications) | îlot client + hook `useNotifications` | dernier lot, cf. §5 phase 4 |
 | `@colyseus/sdk` (`ranked-room-service`) | îlot client dédié `ranked/match` | idem — seul endroit où Angular n'est pas un simple adaptateur |
-| `environment.ts` / `achillea-config.js` (runtime) | `NEXT_PUBLIC_ACHILLEA_API_URL` + variantes | ⚠️ `NEXT_PUBLIC_*` inliné au **build** : lancer `bun run deploy website` depuis `apps/website`, jamais depuis la racine |
+| `environment.ts` / `achillea-config.js` (runtime) | `NEXT_PUBLIC_ACHILLEA_API_URL` + variantes | ⚠️ `NEXT_PUBLIC_*` inliné au **build** : lancer `bun run deploy website` depuis `apps/rg/website`, jamais depuis la racine |
 | `@casl/ability` | `access` de `achillea-core` | à vérifier vue par vue ; si un cas manque, il va dans `core`, pas dans l'app |
 
 ---
@@ -190,10 +190,10 @@ une redirection permanente dans `next.config` vers son équivalent préfixé
 
 Deux systèmes cohabitent aujourd'hui.
 
-- `apps/website` : `@rosegriffon/auth` (better-auth) + Supabase self-host,
+- `apps/rg/website` : `@rosegriffon/auth` (better-auth) + Supabase self-host,
   cookie de session sur `rosegriffon.fr`.
 - Achilléa : session Discord propre, posée par
-  `apps/achillea-bot/src/auth/session.ts` (`httpOnly`, `sameSite: "lax"`,
+  `apps/rg/bot/src/api/modules/auth/session.ts` (`httpOnly`, `sameSite: "lax"`,
   host-only), plus un **jeton temps réel** distinct (`getRealtimeToken`, marge
   de renouvellement 30 s) pour Socket.IO et Colyseus — le cookie `httpOnly`
   n'étant pas exploitable en WSS cross-domaine.
@@ -210,7 +210,7 @@ session Achilléa lisible par le serveur Next.
 2. CORS de l'API : autoriser `https://rosegriffon.fr` en origine **explicite**
    avec `Access-Control-Allow-Credentials: true`. Jamais `*` — la combinaison
    est refusée par le navigateur, et le serait à raison.
-3. `apps/website/src/lib/achillea/session.ts` (serveur) : lit les cookies
+3. `apps/website/src/lib/achillea/session.ts` (not in repo) (serveur) : lit les cookies
    entrants, les relaie à `client.auth.me()`, mémoïse par requête. C'est la
    brique qui permet `redirect()` **avant** rendu sur les pages gardées.
 4. Les gardes de rôle réutilisent `access` de `@rosegriffon/achillea-core` —
@@ -220,7 +220,7 @@ session Achilléa lisible par le serveur Next.
    seul à décider qui voit quoi.
 
 `safeReturnUrl()` de `core/auth/auth-session.service.ts` est la seule fonction
-de ce fichier à conserver — elle part dans `apps/website/src/lib/achillea/`.
+de ce fichier à conserver — elle part dans `apps/rg/website/src/lib/achillea/`.
 
 **Invariant non négociable** : une garde côté client est un confort
 d'affichage. Toute action sensible reste refusée côté API, comme aujourd'hui
@@ -230,17 +230,17 @@ d'affichage. Toute action sensible reste refusée côté API, comme aujourd'hui
 
 ## 5. Phases, chacune livrable et réversible
 
-Ordre choisi pour que **rien ne casse à aucun moment** : `apps/achillea-web`
+Ordre choisi pour que **rien ne casse à aucun moment** : `apps/achillea-web` (not in repo)
 reste en production et servi par `achillea.rosegriffon.fr` jusqu'à la phase 5.
 Les deux fronts coexistent sur la même API.
 
 ### Phase 0 — socle (sans écran)
-- `apps/website/src/app/achillea/layout.tsx` : chrome Achilléa via `app-shell`,
-  entrée de navigation ajoutée dans le registre unique de `packages/app-shell`
+- `apps/rg/website/src/app/achillea/layout.tsx` : chrome Achilléa via `app-shell`,
+  entrée de navigation ajoutée dans le registre unique de `packages/rg/app-shell`
   (voir `BASE_ESPORT` dans `src/config/routes.ts`, `NavBases` a été retiré).
 - Reprise de `src/assets/i18n/fr.json` et des assets `public/` d'Achilléa.
 - Thème : vérifier que les 4 thèmes déclarent le même jeu de variables
-  (`packages/ui/test/tokens.test.ts`) après ajout éventuel de tokens Achilléa.
+  (`packages/rg/ui/test/tokens.test.ts`) après ajout éventuel de tokens Achilléa.
 - **Gate** : `type-check` + `build` + `bun test packages/ui packages/app-shell`.
 
 ### Phase 1 — écrans en lecture seule (≈ 6 200 LOC source)
@@ -253,7 +253,7 @@ Components, ISR court sur ce qui bouge (classements : 60 s).
 - **Gate** : parité de données prouvée — un test qui compare, pour un même
   identifiant, la réponse de l'API et ce que la page rend (comptes, ordre,
   libellés) ; plus `bun run build` et les tests de liens
-  (`packages/app-shell/test/liens.test.ts`, `sidebar-config.test.ts`) qui
+  (`packages/rg/app-shell/test/liens.test.ts`, `sidebar-config.test.ts`) qui
   refuseront toute entrée de menu sans page.
 
 ### Phase 2 — authentification + écrans de session (≈ 3 000 LOC)
@@ -282,17 +282,17 @@ lui seul) : à découper en sous-lots par onglet.
 1. `achillea.rosegriffon.fr` → **301** vers `rosegriffon.fr/achillea/*`
    (`infra/nginx/achillea.rosegriffon.conf`), redirections de chemins en place.
 2. Période d'observation avec les deux fronts encore déployables.
-3. Retrait : `apps/achillea-web`, son entrée d'espace de travail, ses ~20
+3. Retrait : `apps/achillea-web` (not in repo), son entrée d'espace de travail, ses ~20
    dépendances exclusives (`@angular/*`, `primeng`, `@primeuix/themes`,
    `primeicons`, `primelocale`, `zone.js`, `ngx-*`, `karma*`, `jasmine*`,
    `@types/jasmine`, `puppeteer`, `tailwindcss-primeui`, `@angular/build`,
    `@angular/cli`), `angular.json`, ses `tsconfig.*`, sa CI.
 4. `@colyseus/sdk`, `socket.io-client`, `brackets-viewer`, `brackets-model`,
    `lottie-web`, `iso-639-1`, `valibot`, `@sindresorhus/transliterate` **ne
-   sont pas** des dépendances Angular : elles déménagent vers `apps/website`
+   sont pas** des dépendances Angular : elles déménagent vers `apps/rg/website`
    (ou `packages/ui`) au moment où la phase qui les consomme atterrit.
 
-**Ce qui reste un adaptateur** : `apps/achillea-bot` conserve le gateway Discord,
+**Ce qui reste un adaptateur** : `apps/achillea-bot` (not in repo) conserve le gateway Discord,
 les commandes, les embeds, les notifications et les contrôleurs de compatibilité.
 Les règles métier portables sont progressivement extraites vers
 `@rosegriffon/achillea-core` et les formes vers `@rosegriffon/achillea-types`;
@@ -308,7 +308,7 @@ migrations restent inchangés comme infrastructure d'exécution.
 - **Couches** : un DTO ou une règle métier qui réapparaît dans
   `apps/website/src/app/achillea/**` est une régression. Destination :
   `achillea-types` (contrat pur) ou `achillea-core` (métier).
-- Toute modification de `packages/achillea-types` impose
+- Toute modification de `packages/rg/achillea-types` impose
   `bun run achillea:contract` ; la CI lance `achillea:contract:check`.
 - Un export lu côté serveur ne doit jamais venir d'un module `"use client"` :
   crash au `build`, pas au `type-check`. Toujours `bun run build`, pas
@@ -341,13 +341,13 @@ cd apps/website && bun run build
 | URLs perdues | Régression SEO durable | Tableau de redirections exhaustif, vérifié par un test |
 | `admin-dashboard` (4 961 LOC) | Lot ingérable | Découpage par onglet en phase 3 |
 | Temps réel Colyseus/Socket.IO | Matchs ranked cassés | Dernier lot, front Angular encore déployable |
-| `NEXT_PUBLIC_*` inliné | Front pointant sur la mauvaise API | Déployer depuis `apps/website` |
+| `NEXT_PUBLIC_*` inliné | Front pointant sur la mauvaise API | Déployer depuis `apps/rg/website` |
 
 ---
 
 ## 9. Annexe — détail fonctionnel par section
 
-Absorbé de `docs/achillea-migration-plan.md` (supprimé). Ce que chaque écran doit
+Absorbé de `docs/achillea-migration-plan.md` (not in repo) (supprimé). Ce que chaque écran doit
 rendre, pour que « porté » veuille dire quelque chose de vérifiable.
 
 - **Hub `/achillea`** — hero interactif (parallaxe + canvas de particules,
@@ -394,7 +394,7 @@ déjà `azalee.rosegriffon.fr` → `/wiki`.
 ### Première étape : le miroir FDW, et sa limite
 
 Le schéma `public` d'`achillea` a d'abord été exposé en LECTURE dans `rg`, sous
-le schéma `achillea`, via `postgres_fdw` (`scripts/ops/achillea-fdw.ts`, retiré
+le schéma `achillea`, via `postgres_fdw` (`scripts/ops/achillea-fdw.ts` (not in repo), retiré
 depuis). La jointure marchait sans copier un octet, mais elle ne réglait que la
 moitié du problème :
 
@@ -409,7 +409,7 @@ moitié du problème :
 ### Ce qui a été fait
 
 `achillea` est désormais un **schéma de la base `rg`**, avec de vraies tables :
-`scripts/ops/achillea-merge.ts` (`--verify`, `--copy`, `--copy-storage`,
+`scripts/rg/ops/achillea-merge.ts` (`--verify`, `--copy`, `--copy-storage`,
 `--cutover`).
 
 - 69 tables, 67 politiques RLS reprises telles quelles, et les ACL d'origine —
@@ -481,9 +481,9 @@ même chrome, pour le même compte Discord. Un membre sans Discord lié reçoit 
 ### Reste à faire
 
 - **Assets** : le doublon de 575 fichiers (**74 Mo**) entre `azalee` et
-  `website` a disparu avec le retrait complet de l'app `apps/azalee`
+  `website` a disparu avec le retrait complet de l'app `apps/azalee` (not in repo)
   (`d74cee35`) ; `azalee.rosegriffon.fr` reste une redirection **301** vers
-  `rosegriffon.fr/wiki`, sans app ni `public/` propre. `packages/assets`
+  `rosegriffon.fr/wiki`, sans app ni `public/` propre. `packages/rg/assets`
   (`@rosegriffon/assets`, export `./public/*`) reste la destination des assets
   réellement partagés.
 - **Pages d'administration** : la couche de données croisée existe

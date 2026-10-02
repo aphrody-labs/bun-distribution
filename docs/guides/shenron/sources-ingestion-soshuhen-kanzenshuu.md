@@ -65,7 +65,7 @@ Kanzenshuu (fusion de Daizenshuu EX et Kanzentai) constitue la référence inter
 
 ## 3. Script Opérationnel Préparatoire
 
-Le script `scripts/ops/prepare-soshuhen-kanzenshuu-ingest.ts` permet de :
+Le script `scripts/tools/shenron/scripts/ops/prepare-soshuhen-kanzenshuu-ingest.ts` permet de :
 1. Valider l'intégrité des manifestes de chapitres Sōshūhen (1 à 18).
 2. Vérifier les doublons de citations d'interviews avant insertion en base.
 3. Préparer les chunks d'ingestion RAG au format `rag_chunks` avec les bons tags d'autorité.

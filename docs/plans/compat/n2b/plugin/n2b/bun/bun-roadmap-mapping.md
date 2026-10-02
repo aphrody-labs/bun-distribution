@@ -70,7 +70,7 @@ Startup ~3×, install 2-3×, API intégrée (FFI, shell, sqlite), `bun build --c
 
 ### ✅ Fait (2026-04-17)
 1. **n2b monorepo** — refacto Bun workspaces + Cargo workspace committée (`8b83771`)
-   - `packages/n2b` (@n2b/core) + `packages/n2b-cli` (@n2b/cli)
+   - `packages/n2b` (not in repo) (@n2b/core) + `packages/n2b-cli` (not in repo) (@n2b/cli)
    - `turbo.json` + tsconfig composite (project references)
    - Scanners Rust ajoutés : `components_json`, `tauri_conf`, `turbo_json`
    - Nouveau `ui_cmd` (scaffold TUI)

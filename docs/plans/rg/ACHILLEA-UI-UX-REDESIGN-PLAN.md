@@ -1,6 +1,6 @@
 # Plan de redesign et de correction UI/UX Achilléa
 
-État de référence : 25 septembre 2026, release vérifiée `bf0000a`. Ce plan couvre les pages publiques `/achillea/tournaments`, `/achillea/tournaments/circuit/ranking`, `/achillea/ranked`, `/achillea/ranked/history`, `/achillea/ranked/leaderboard`, leurs fiches et composants liés. Les constats Chrome distinguent le chargement final des états transitoires. La matrice détaillée des parcours reste dans [achillea-qa-matrix.md](achillea-qa-matrix.md) et les preuves de production dans [achillea-live-qa-2026-09-25.md](../operations/workspace/HISTORY.md).
+État de référence : 25 septembre 2026, release vérifiée `bf0000a`. Ce plan couvre les pages publiques `/achillea/tournaments`, `/achillea/tournaments/circuit/ranking`, `/achillea/ranked`, `/achillea/ranked/history`, `/achillea/ranked/leaderboard`, leurs fiches et composants liés. Les constats Chrome distinguent le chargement final des états transitoires. La matrice détaillée des parcours reste dans [achillea-qa-matrix.md](../../reference/rg/achillea-qa-matrix.md) et les preuves de production dans [achillea-live-qa-2026-09-25.md](../../operations/workspace/HISTORY.md).
 
 ## Résultat attendu
 

@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 # UI rules
 
-Binding product rules for every view of the desktop app (`packages/app-ui`, Drive, examples).
+Binding product rules for every view of the desktop app (`packages/app-ui` (not in repo), Drive, examples).
 Target surfaces: [`GUI.md`](./GUI.md).
 
 ## Scope

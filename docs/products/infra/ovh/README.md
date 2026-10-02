@@ -6,8 +6,8 @@ This directory is the repository-side runbook for the OVHcloud services used
 by Aphrody. It complements the reusable global OVH skill (if installed),
 the native OVH engine (`crates/infra/ovh`), the SSH operator
 (`crates/infra/ssh`) and the account and zone reference
-[`docs/ops/OVH.md`](../../../reference/infra/ops/OVH.md). Restored from the retired `aphrody` monolith
-(`docs/aphrody-os/ovh/README.md`).
+[`docs/reference/infra/ops/OVH.md`](../../../reference/infra/ops/OVH.md). Restored from the retired `aphrody` monolith
+(`docs/aphrody-os/ovh/README.md` (not in repo)).
 
 ## Scope
 

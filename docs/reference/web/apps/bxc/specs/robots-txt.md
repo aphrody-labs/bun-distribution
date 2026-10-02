@@ -89,7 +89,7 @@ Les directives `Sitemap` peuvent apparaître n'importe où dans le fichier — p
 - [ ] Lire la directive `Sitemap:` pour bootstrap du crawl
 - [ ] Flag CLI `--respect-robots` (default off pour la doc owner-controlled, on pour crawls externes)
 
-> Statut côté `scripts/url-to-docs.ts` au 2026-05-10: pas encore implémenté. Le script crawle uniquement le site qu'on possède ou dont on est autorisé à crawler la doc. Ajouter le check robots.txt avant de l'exposer comme outil générique.
+> Statut côté `scripts/url-to-docs.ts` (not in repo) au 2026-05-10: pas encore implémenté. Le script crawle uniquement le site qu'on possède ou dont on est autorisé à crawler la doc. Ajouter le check robots.txt avant de l'exposer comme outil générique.
 
 ## 9. Exemple parsé par bxc
 

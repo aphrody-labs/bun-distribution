@@ -69,8 +69,8 @@ répertoires ; son total ne prouve pas la couverture complète de `src`.
 
 | Source vérifiée | Constat utile à la fusion |
 | --- | --- |
-| `aphrody-ui/packages/bun/package.json`, `crates/aphrody-bun/Cargo.toml` | `@aphrody/bun` 3.3.3, crate `aphrody-bun` 1.0.0-canary, bibliothèque `bun_rs`, cdylib + rlib. Les versions ne sont pas un contrat ABI commun. |
-| `aphrody-ui/packages/bun/src/`, `packages/svg/src/` | Plusieurs chargements du même `bun_rs`, recherche de `target/`, appels natifs dès l'import du module principal. M3, Sass, icônes, SVG, rendu et reproduction doivent tous être conservés. |
+| `aphrody-ui/packages/bun/package.json`, `crates/ui/bun/Cargo.toml` | `@aphrody/bun` 3.3.3, crate `aphrody-bun` 1.0.0-canary, bibliothèque `bun_rs`, cdylib + rlib. Les versions ne sont pas un contrat ABI commun. |
+| `aphrody-ui/packages/bun/src/`, `packages/svg/src/` (not in repo) | Plusieurs chargements du même `bun_rs`, recherche de `target/`, appels natifs dès l'import du module principal. M3, Sass, icônes, SVG, rendu et reproduction doivent tous être conservés. |
 | `aphrody-ai/crates/aphrody-ffi/src/lib.rs` | ABI Aphrody v1, exports CLI, Shenron/RAG/persona et manga, runtime Tokio persistant, capture stdio. Le seul wrapper `bun/index.ts` ne couvre pas toute cette surface. |
 | `bun/src/js/bun/aphrody.ts` | Le module **`bun:aphrody`** charge séparément `aphrody_ffi` ABI 1, N2B ABI 2 et Oxc ABI 1. Il expose `runCaptured`, scan, format, minify et lint. Ce n'est pas encore une liaison Rust statique au moteur. |
 | `aphrody-compat/crates/aphrody-n2b-native`, `oxc/apps/aphrody-oxc` | Sources natives spécifiques déjà présentes ; comparer leur graphe Oxc, leurs fonctions et leurs features avant fusion. |
@@ -283,7 +283,7 @@ vendored) ; les traiter dans P0 selon leur propriétaire, licence et graphe.
 La cible est **un seul workspace Aphrody, avec Rust comme propriétaire par
 défaut de toute capacité portable ou native**. Le code Rust du navigateur,
 DOM, réseau, exécution JS, CDP, extraction, index, rendu, crawl, service, X,
-CLI et MCP converge dans des crates canoniques `crates/web/` et `crates/x/`.
+CLI et MCP converge dans des crates canoniques `crates/web/` et `crates/web/x/`.
 Les crates Cargo peuvent rester séparées quand elles matérialisent une
 frontière de sécurité, un backend moteur, une licence, un coût de compilation
 ou une API publique distincte ; la déduplication porte sur l'implémentation
@@ -553,7 +553,7 @@ régressions nouvelles ne sont pas transformées en skips pour livrer.
 <a id="nie-convergence"></a>
 ### NIE, IECODE, Files et les applications
 
-Le plan NIE actif, NIE → Aphrody (archivé dans IECODE `docs/history/aphrody-docs-2026-10-01/plans/nie/PLAN.md`), et sa
+Le plan NIE actif, NIE → Aphrody (archivé dans IECODE `docs/history/aphrody-docs-2026-10-01/plans/nie/PLAN.md` (not in repo)), et sa
 [matrice de capacités](../../reference/workspace/NIE-CAPABILITY-MAP.md) détaillent le chantier,
 les propriétaires et les preuves requises. Ce plan racine fixe la destination
 physique commune : tout Rust et Bun NIE rejoint `aphrody`; ses projets Python
@@ -567,7 +567,7 @@ ces propriétaires.
 
 Le plan NIE rapporte un transfert initial de 686 fichiers suivis depuis NIE
 vers UI, Web et IECODE. C'est une étape de déplacement, pas une preuve de
-parité ni d'activation. `apps/nie-web` reste hors workspace Bun actif ; la
+parité ni d'activation. `apps/nie-web` (not in repo) reste hors workspace Bun actif ; la
 feature de site IEVR ne compile pas sans les données de jeu nommées dans le
 plan ; l'état actuel des packages et des données manquantes doit être relu
 avant chaque lot. Ne pas générer de JSON factice pour faire passer le build.
@@ -653,7 +653,7 @@ est [M3-PLAN.md](../ui/design/M3-PLAN.md), avec son
 ### Décisions consolidées qui restaient implicites dans le plan NIE
 
 Ces choix ferment les options d'architecture du
-plan NIE (IECODE `docs/history/aphrody-docs-2026-10-01/plans/nie/PLAN.md`). Les cases P0–P4 restent des preuves d'exécution ;
+plan NIE (IECODE `docs/history/aphrody-docs-2026-10-01/plans/nie/PLAN.md` (not in repo)). Les cases P0–P4 restent des preuves d'exécution ;
 une case ouverte ne rouvre pas une décision ci-dessous.
 
 - **Dépôts et propriété :** IECODE garde le domaine IEVR ; ses sources Rust
@@ -704,7 +704,7 @@ une case ouverte ne rouvre pas une décision ci-dessous.
 - NIE/IECODE : forge G4–G6, golden bytes, formats et saves, écrans/captures,
   parité native/headless/WASM et persistance Inacord. La
   [matrice NIE](../../reference/workspace/NIE-CAPABILITY-MAP.md) et le plan NIE
-  (IECODE `docs/history/aphrody-docs-2026-10-01/plans/nie/PLAN.md`)
+  (IECODE `docs/history/aphrody-docs-2026-10-01/plans/nie/PLAN.md` (not in repo))
   guident l'absorption ; Rust et Bun rejoignent `aphrody`, Python `aphrody-py`.
 - UI : M3, Tauri courant, qualification de l'hôte natif selon le
   [plan multi-hôtes](../ui/design/M3-MULTI-HOST-PLAN.md), desktop,

@@ -1,9 +1,9 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 # M3 reproduce: a screenshot or a crawl to an M3 theme
 
-`crates/aphrody-m3-reproduce` derives a seed colour and dynamic scheme, fonts, shape and a coarse
+`crates/ui/m3-reproduce` derives a seed colour and dynamic scheme, fonts, shape and a coarse
 component list from a capture or a page, and emits a minimal `@aphrody/m3` scaffold. Colours
-come from the exact `material-color-utilities` 0.4.0 port in `crates/aphrody-m3-tokens`, so they
+come from the exact `material-color-utilities` 0.4.0 port in `crates/ui/m3-tokens`, so they
 are bit-identical to the reference for the same pixels.
 
 ## Pieces
@@ -11,10 +11,10 @@ are bit-identical to the reference for the same pixels.
 | Piece | Path |
 | --- | --- |
 | Quantize and score (`QuantizerCelebi`, `QuantizerMap`, `Score`, `sourceColorFromImage`) | `crates/aphrody-m3-tokens/src/{quantize*,score,image}.rs` (`image` feature: PNG/JPEG only) |
-| Pipeline and CLI | `crates/aphrody-m3-reproduce` (`ReproductionPlan`, theme, crawl, fetch, scaffold) |
-| FFI | `crates/aphrody-bun/src/reproduce.rs`: `bun_rs_m3_reproduce`, `bun_rs_m3_seed_from_image` |
-| Bun | `packages/bun/src/reproduce.ts`: `m3Reproduce(opts)`, `m3SeedFromImage(bytes)` |
-| Parity fixture | `packages/ui/m3-theme/scripts/mcu-image-fixture.ts`, `crates/aphrody-m3-tokens/tests/mcu_image_parity.rs` |
+| Pipeline and CLI | `crates/ui/m3-reproduce` (`ReproductionPlan`, theme, crawl, fetch, scaffold) |
+| FFI | `crates/ui/bun/src/reproduce.rs`: `bun_rs_m3_reproduce`, `bun_rs_m3_seed_from_image` |
+| Bun | `packages/interop/native/src/reproduce.ts`: `m3Reproduce(opts)`, `m3SeedFromImage(bytes)` |
+| Parity fixture | `packages/ui/m3-theme/scripts/mcu-image-fixture.ts`, `crates/ui/m3-tokens/tests/mcu_image_parity.rs` |
 
 The one deviation from upstream: `QuantizerWsmeans` seeds from an explicit `mulberry32` RNG
 instead of `Math.random()`, matched in the fixture script, so output is deterministic.

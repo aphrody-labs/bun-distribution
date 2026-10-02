@@ -22,7 +22,7 @@ of an installed, secured, and monitored production service.
 `cargo fmt --check`, `cargo check --workspace --all-targets`,
 `cargo clippy --workspace --all-targets -- -D warnings`, `cargo test --workspace`,
 `cargo deny check`, `bun install --frozen-lockfile`, `bun run typecheck`, `bun test`,
-and `git diff --check` passed. `scripts/verify-winclean-integration.ps1` started a local kernel,
+and `git diff --check` passed. `scripts/audit/os/scripts/verify-winclean-integration.ps1` started a local kernel,
 observed 166 catalog, Rust, ledger and kernel tools, and called `get_os_info` through IPC.
 `cargo check --workspace` passed in
 the AI, UI and Web consumers. These are source, build and local runtime checks only.
@@ -37,7 +37,7 @@ and live IPC probes answered `tools/list` and `get_os_info` with all 166 WinClea
 
 Historical check: `third_party/bun` and `third_party/uv` were initialised at
 `bf80d21c69c3` and `a9e231a7e377`, and
-`scripts/verify-third-party-runtimes.ps1` passed. Commit `c3a99838` later removed
+`scripts/verify-third-party-runtimes.ps1` (not in repo) passed. Commit `c3a99838` later removed
 both source submodules. The current runtime uses the external system Bun/uv
 installations; optional Bun docs remain outside the repository.
 

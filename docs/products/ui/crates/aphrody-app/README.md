@@ -69,8 +69,8 @@ HTTP or database plugin.
 Domain routes use typed Rust commands or the local kernel/Drive RPC boundary; the
 webview is not a general system API. The window loads only first-party assets.
 
-Plugin rationale: `docs/tauri/plugins.md`. Integration design:
-`docs/tauri/aphrody-integration.md`.
+Plugin rationale: `docs/reference/ui/tauri/plugins.md`. Integration design:
+`docs/reference/ui/tauri/aphrody-integration.md`.
 
 ## Build, run and package on Windows
 

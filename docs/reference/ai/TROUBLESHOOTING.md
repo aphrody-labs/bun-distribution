@@ -7,7 +7,7 @@ Common pitfalls hit by engineers working on `aphrody`. Each entry follows a
 mitigations; this page exists to short-circuit the rediscovery loop.
 
 If your issue is not here, see `FAQ.md` or open a GitHub issue
-using `.github/ISSUE_TEMPLATE/bug_report.yml`.
+using `packages/rg/patreon-bun/.github/ISSUE_TEMPLATE/bug_report.yml`.
 
 ## 1. `aphrody --version` panics with "No provider set"
 
@@ -15,7 +15,7 @@ using `.github/ISSUE_TEMPLATE/bug_report.yml`.
   any `reqwest::Client::new()` call. Without it the TLS stack panics on first
   use.
 - **Fix**: This should NOT happen in the shipped binary — it is already wired
-  in `crates/aphrody/src/main.rs:177` via
+  in `apps/cli/src/main.rs:177` via
   `rustls::crypto::ring::default_provider().install_default()`. If you observe
   the panic you are likely running an outdated binary. Confirm with
   `aphrody doctor` (rustls CryptoProvider section).
@@ -70,10 +70,10 @@ using `.github/ISSUE_TEMPLATE/bug_report.yml`.
   peer catalog (`a2a-peers.json`) and start the coordinator:
   `aphrody a2a serve --bind 127.0.0.1:8788`.
 
-## 8. `docs/SUMMARY.md` is out of date
+## 8. `docs/reference/ai/SUMMARY.md` is out of date
 
 - **Cause**: Hand edits or a doc was added/removed without regenerating.
-- **Fix**: DO NOT hand-edit `docs/SUMMARY.md`. Re-run
+- **Fix**: DO NOT hand-edit `docs/reference/ai/SUMMARY.md`. Re-run
   `cargo run -p aphrody-summary` after any doc add, remove, or rename. The
   script is the single source of truth.
 
@@ -122,5 +122,5 @@ using `.github/ISSUE_TEMPLATE/bug_report.yml`.
 ## 14. Got more?
 
 Skim `FAQ.md` first. If still stuck, open a GitHub issue using
-`.github/ISSUE_TEMPLATE/bug_report.yml` and attach the output of
+`packages/rg/patreon-bun/.github/ISSUE_TEMPLATE/bug_report.yml` and attach the output of
 `aphrody doctor`.

@@ -16,10 +16,10 @@ and tick boxes as you go.
 - [ ] All Dependabot PRs reviewed; deny-list (per
       `dependabot.yml`) intact.
 - [ ] All in-flight Discussions answered or moved to issues.
-- [ ] [`docs/PLAN.md`](../../plans/ai/PLAN.md) reviewed; all `Pending` items
+- [ ] [`docs/PLAN.md` (not in repo)](../../plans/ai/PLAN.md) reviewed; all `Pending` items
       either shipped or explicitly punted.
-- [ ] [`docs/ROADMAP.md`](../../plans/ai/ROADMAP.md) reflects current quarter targets.
-- [ ] [`docs/FAQ.md`](../../reference/ai/FAQ.md) covers new features in this release.
+- [ ] [`docs/plans/upstream-oxc/crates/oxc_minifier/docs/ROADMAP.md`](../../plans/ai/ROADMAP.md) reflects current quarter targets.
+- [ ] [`docs/reference/ai/FAQ.md`](../../reference/ai/FAQ.md) covers new features in this release.
 
 ## 2. Test gates (run locally)
 
@@ -39,7 +39,7 @@ and tick boxes as you go.
 - [ ] [`CHANGELOG.md`](../../reference/ai/CHANGELOG.md) Unreleased section reflects all
       merged work since last tag (preview with
       `git log <last-tag>..HEAD --oneline`).
-- [ ] [`docs/SUMMARY.md`](../../reference/ai/SUMMARY.md) regenerated
+- [ ] [`docs/reference/ai/SUMMARY.md`](../../reference/ai/SUMMARY.md) regenerated
       (`cargo run -p aphrody-summary`).
 - [ ] All cross-links resolve (manual spot-check on
       [`README.md`](../../products/ai/README.md), [`PLAN.md`](../../plans/ai/PLAN.md), [`docs/README.md`](../../products/ai/_source/README.md)).
@@ -49,7 +49,7 @@ and tick boxes as you go.
 
 - [ ] `Cargo.toml [workspace.package].version` matches the planned release version.
 - [ ] Versions are bumped by hand (no release-please since the split, see
-      [`docs/CI-CD.md`](./CI-CD.md#releases)); sibling path dependencies carry matching `version`s.
+      [`docs/operations/ai/CI-CD.md`](./CI-CD.md#releases)); sibling path dependencies carry matching `version`s.
 - [ ] Per-crate `version.workspace = true` everywhere (no per-crate overrides).
 - [ ] All `publish = true` crates have a `description`, `license`,
       `homepage`, `repository`, `keywords`, and `categories` set.
@@ -73,7 +73,7 @@ and tick boxes as you go.
 - [ ] Verify the GitHub Release page lists all expected artefacts
       (binaries per OS/arch, SBOM, checksums, source tarball).
 - [ ] If the library release set changed: follow
-      [`docs/cargo/PUBLISH-LADDER.md`](../../reference/ai/cargo/PUBLISH-LADDER.md)
+      [`docs/reference/ai/cargo/PUBLISH-LADDER.md`](../../reference/ai/cargo/PUBLISH-LADDER.md)
       (21 crates from `aphrody-contracts`, `aphrody-native` and `aphrody-compat`, 6 rungs in
       order; no `aphrody-ai` crate is published).
 - [ ] Update Homebrew tap, Scoop bucket, AUR, and any other downstream
@@ -89,7 +89,7 @@ launch flow and post only to the project Discussions board).
 If a release breaks production for users:
 
 - Yank the affected library crates from crates.io: `cargo yank --version <version> <name>`
-  (per [`docs/cargo/PUBLISH-LADDER.md`](../../reference/ai/cargo/PUBLISH-LADDER.md) section 7).
+  (per [`docs/reference/ai/cargo/PUBLISH-LADDER.md`](../../reference/ai/cargo/PUBLISH-LADDER.md) section 7).
 - Revert the offending commit on `main`; tag `v<version>.1` patch with
   the fix.
 - DO NOT delete the tag or release on GitHub (history immutability).

@@ -25,8 +25,8 @@ Merci d'inclure si possible :
 
 ## Périmètre
 
-Ce dépôt contient un bot Discord (`apps/bot`) et un site compagnon
-(`apps/site`). Sont particulièrement sensibles :
+Ce dépôt contient un bot Discord (`apps/shenron/bot`) et un site compagnon
+(`apps/shenron/site`). Sont particulièrement sensibles :
 
 - l'API REST du bot et son dashboard admin (auth, tokens) ;
 - l'authentification Discord OAuth (Better Auth, côté bot **et** site) ;
@@ -37,8 +37,8 @@ Ce dépôt contient un bot Discord (`apps/bot`) et un site compagnon
 
 - Aucun secret dans le dépôt : `.env` est ignoré, la production utilise des
   variables d'environnement gérées côté `aphrody-infra` (systemd
-  `EnvironmentFile`, plus de Vercel — cf. `docs/INFRA-DELEGATION.md`).
-  Voir `apps/bot/.env.example` pour la liste des variables attendues (valeurs
+  `EnvironmentFile`, plus de Vercel — cf. `docs/operations/shenron/INFRA-DELEGATION.md`).
+  Voir `apps/shenron/bot/.env.example` pour la liste des variables attendues (valeurs
   factices uniquement).
 - Ne jamais committer `apps/bot/data/*.db`, `guild-scan.json`, ni aucun export
   de données utilisateurs.

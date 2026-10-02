@@ -34,7 +34,7 @@ Deux conséquences de configuration, faites dans le même mouvement :
 4 559 noms distincts), **164 fichiers seulement n'existaient nulle part
 ailleurs**. Ceux-là sont revenus (43 Mo) ; les autres ont été supprimés, parce
 qu'un extrait d'archive dont l'archive est intacte à côté n'est pas une
-sauvegarde, c'est un doublon. `data/packs` reste sur le VPS principal, donc la
+sauvegarde, c'est un doublon. `data/packs` (not in repo) reste sur le VPS principal, donc la
 régénération est possible à tout moment.
 
 ## Méthode de vérification employée à l'époque
@@ -49,7 +49,7 @@ instructions pour lancer un nouvel archivage.
 
 | Contenu | Volume | Pourquoi c'est froid |
 | --- | --- | --- |
-| `data/dx11/menu` (69 624 PNG) | 12 Go | Cache pur — voir ci-dessous |
+| `data/dx11/menu` (not in repo) (69 624 PNG) | 12 Go | Cache pur — voir ci-dessous |
 | `niers/var/niers.sqlite` | 6,8 Go | Base de reverse-engineering, lue seulement par `nie-cli` et `nie-explorer` en développement ; aucune unité systemd ne la référence |
 | `niers/var/ghidra-proj` | 450 Mo | Projet Ghidra, outillage hors ligne |
 | `niers/data/backups` | 105 Mo | Sauvegardes de données inagle |
@@ -70,7 +70,7 @@ Android du système (`adb`, `apksigner`, `libapksig-java`, `android-udev-rules`,
 
 Ce qui reste, et qui suffit : les données **dérivées** de cette extraction sont
 committées et légères — `packages/azalee/src/data/cross/*.json` (1,6 Mo) et
-`packages/inagle-cross` (1,8 Mo). La page `/cross` d'azalée continue de répondre
+`packages/inagle-cross` (not in repo) (1,8 Mo). La page `/cross` d'azalée continue de répondre
 200 ; aucun module du dépôt ne lisait `niers/data/cross-apk` à l'exécution.
 
 Une seule perte : le test `hca_ievr_dechiffrement_cle_correcte` de
@@ -89,7 +89,7 @@ toléré pour les tests et le scraping. Ses journaux ne mentionnent Chrome nulle
 part sur trois jours (il travaille en `lightpanda` et `curl-impersonate`), mais le
 retirer casserait le repli d'un service en production pour 370 Mo.
 
-## Le cas `data/dx11/menu` — pourquoi 12 Go étaient redondants
+## Le cas `data/dx11/menu` (not in repo) — pourquoi 12 Go étaient redondants
 
 Ce dossier contenait 69 624 PNG **pré-décodés** par `niers menu-predecode`. Ce
 n'est pas une source : c'est un cache du décodage G4TX→PNG que
@@ -152,12 +152,12 @@ nginx était déjà prêt pour ça : `location ^~ /dx11/` fait
 `try_files $uri @cpk_live`, et `@cpk_live` proxifie vers le décodeur. Le dump
 absent, tout passe par le décodeur sans changement de configuration.
 
-`data/dx11/model` (227 Mo) reste en local : l'unité `nie-model-serve` le référence
+`data/dx11/model` (not in repo) (227 Mo) reste en local : l'unité `nie-model-serve` le référence
 explicitement (`--glb-dir`).
 
 ### Effet de bord corrigé dans `cdn-variants`
 
-`apps/cdn-variants/server.ts` (passé dans `niers`) tentait d'abord l'ancien décodeur `iecode-cdn`
+`apps/cdn-variants/server.ts` (not in repo) (passé dans `niers`) tentait d'abord l'ancien décodeur `iecode-cdn`
 (:8788), retiré du dépôt le 11 août 2026 et dont le port ne répond plus, puis
 seulement niers. Tant que le dump couvrait presque tout, cet aller-retour perdu
 restait rare ; le dump parti, il serait devenu le cas courant. `nie-model-serve`
@@ -165,9 +165,9 @@ est donc passé en primaire, `LIVE_ORIGIN` en simple repli.
 
 ## Ce qui ne doit jamais être déporté
 
-- **`data/packs` (57 Go)** — les archives CPK. C'est la source de tout le contenu
+- **`data/packs` (not in repo) (57 Go)** — les archives CPK. C'est la source de tout le contenu
   décodé en direct par le CDN. Les déporter couperait `cdn.rosegriffon.fr`.
-- **`data/dx11/model`** — référencé par l'unité `nie-model-serve`.
+- **`data/dx11/model` (not in repo)** — référencé par l'unité `nie-model-serve`.
 - **`/opt/google/chrome`** — le navigateur que pilote `bxc`.
 - **`niers/target`** — contient le binaire `nie-model-serve` en service.
 

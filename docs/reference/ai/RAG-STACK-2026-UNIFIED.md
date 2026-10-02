@@ -136,6 +136,6 @@ L'écosystème Aphrody est déjà rigoureusement aligné avec ce standard d'exce
    - Crate `aphrody-gateway` : routeur HTTP OpenAI-compatible desservant les modèles avec SSE streaming token-par-token.
    - Extension C-ABI Maturin (`py/aphrody/src/lib.rs`) fournissant le calcul vectoriel SIMD natif (`reciprocal_rank_fusion`, `cosine_similarity`).
 2. **Collecte & Ingestion Bun** :
-   - Moteur BXC (`packages/bxc`) assurant le crawling furtif et la conversion HTML en Markdown propre sans dépendances Node.
+   - Moteur BXC (`packages/bxc` (not in repo)) assurant le crawling furtif et la conversion HTML en Markdown propre sans dépendances Node.
 3. **Intelligence Python (uv)** :
    - Dossier `py/aphrody/` managé par `uv` avec sa suite de 281 tests validant la fidélité mathématique et l'intégration continue.

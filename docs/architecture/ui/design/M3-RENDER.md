@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 # M3 render: the native rendering layer
 
-`crates/aphrody-render` owns the retained M3 scene model and its backends: a deterministic CPU
+`crates/ui/render` owns the retained M3 scene model and its backends: a deterministic CPU
 rasterizer (default, `#![forbid(unsafe_code)]`) and a headless `wgpu` backend behind the `gpu`
 feature. Pins: [`../WASM/wgpu-webgpu.md`](../../../reference/ui/WASM/wgpu-webgpu.md). Agent guide: the
 `render-pipeline` skill.
@@ -51,12 +51,12 @@ through `serde` with kebab-case role names matching the CSS properties.
 
 Native hosts:
 
-- `crates/aphrody-tauri-3d` (plugin `aphrody-3d`): a wgpu layer under a transparent webview
+- `crates/aphrody-tauri-3d` (not in repo) (plugin `aphrody-3d`): a wgpu layer under a transparent webview
   (DirectComposition visual on Windows, window surface elsewhere). The page sends intents only
   (`attach`, `set_scene`, `load_model`, `set_viewport`, `orbit`, `info`); `md-native-3d` is the
   element that reports its rect.
-- `crates/aphrody-model-view`: frameless transparent viewer with live reload.
-- `crates/aphrody-render3d` (kernel subsystem `render3d`): agent tools `render3d_model_inspect`,
+- `crates/aphrody-model-view` (not in repo): frameless transparent viewer with live reload.
+- `crates/aphrody-render3d` (not in repo) (kernel subsystem `render3d`): agent tools `render3d_model_inspect`,
   `render3d_model_scene`, `render3d_render`, `render3d_model_render`, `render3d_export_glb`,
   `render3d_view`; outputs under `<temp>/aphrody-render3d`, edges capped at 8192 px.
 
@@ -64,7 +64,7 @@ Native hosts:
 
 - `bun_rs_render_png` (CPU 2D) and `bun_rs_render3d_png` (policy 0 CPU, 1 auto, 2 GPU), freed
   with `bun_rs_render_free`; exposed as `m3Render(scene)` and `m3Render3d(scene, policy)` by
-  `@aphrody/bun`. Wire types in `packages/bun/src/scene-types.ts` mirror `scene.rs` by hand
+  `@aphrody/bun`. Wire types in `packages/interop/native/src/scene-types.ts` mirror `scene.rs` by hand
   (kept honest by the JSON round-trip test).
 - `@aphrody/canvas` `drawM3Scene` / `drawM3Scene3d` import `@aphrody/bun` lazily (optional peer);
   `packages/ui/canvas/scene-types.d.ts` is a drift-checked copy of the wire types.

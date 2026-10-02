@@ -38,4 +38,4 @@ Every repo is assigned to exactly one thematic page (the five counts below sum t
 See [`all-repos.md`](../../../reference/ai/google-deepmind/all-repos.md) for the complete, exhaustive list of all 236 repositories.
 
 ---
-_Generated from `docs/data/google-deepmind-repos.json`. Thematic pages under `catalog/` are enriched with real GitHub topics and README excerpts._
+_Generated from `docs/reference/ai/data/google-deepmind-repos.json`. Thematic pages under `catalog/` are enriched with real GitHub topics and README excerpts._

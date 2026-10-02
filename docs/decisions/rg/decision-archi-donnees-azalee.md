@@ -33,10 +33,10 @@ Les sections suivantes décrivent l’ancienne stratégie hybride et ne doivent 
 ## 1. Contexte
 
 > **Mise à jour 2026-09-20 :** la topologie frontend décrite dans la décision
-> originale est retirée. Azalée est maintenant servie par `apps/website` sous
+> originale est retirée. Azalée est maintenant servie par `apps/rg/website` sous
 > `/wiki`, avec le seul build Website. Les choix de couche de données ci-dessous
 > restent une trace de décision, mais aucune mention d'`azalee-web` ne constitue
-> une instruction d'exploitation actuelle. Voir [azalee.md](azalee.md).
+> une instruction d'exploitation actuelle. Voir [azalee.md](../../products/rg/azalee.md).
 
 Azalée est un wiki IEVR public, read-heavy, intégré à l'application Website. La donnée de jeu = ~44-63 tables `inagle_*` STATIQUES (ne changent qu'à un re-dump du jeu) : ~6148 personnages (5204 base_slug), ~1002 skills, ~1668 items, auras/keshins/tactics, etc. → des milliers de pages adressables.
 
@@ -49,7 +49,7 @@ Les anciens incidents Supabase restent documentés pour l’historique ; ils ne
 justifient plus une seconde source de vérité, puisque les lectures durables
 passent par PostgreSQL direct.
 
-Fragilités historiques du miroir corrigées : `SQLITE_DB_PATH` est maintenant épinglé sur le chemin canonique et `nie-miroir.timer` valide puis publie les snapshots. Les anciens fichiers de `data/backups/` peuvent encore contenir de la PII et restent donc un repli local à purger selon la politique de rétention, jamais une source de production.
+Fragilités historiques du miroir corrigées : `SQLITE_DB_PATH` est maintenant épinglé sur le chemin canonique et `nie-miroir.timer` valide puis publie les snapshots. Les anciens fichiers de `data/backups/` (not in repo) peuvent encore contenir de la PII et restent donc un repli local à purger selon la politique de rétention, jamais une source de production.
 
 ## 2. Axes de durabilité évalués
 

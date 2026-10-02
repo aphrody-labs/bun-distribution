@@ -1,7 +1,7 @@
 # Catalogue définitif des slash commandes — bot Discord
 
 Ce document fixe l'arbre **définitif** des commandes du bot communautaire
-(`apps/bot`, profil `rg`) et le plan de bascule pour y arriver. C'est un document de **planification** : il ne
+(`apps/rg/bot`, profil `rg`) et le plan de bascule pour y arriver. C'est un document de **planification** : il ne
 modifie aucun fichier `.ts`, il prépare la mise en œuvre à venir.
 
 État relevé le **14/8/2026**, sources vérifiées listées en fin de document
@@ -209,7 +209,7 @@ Poids mesuré le 29/8/2026 : **2 743 / 8 000** (34 %).
 Lecture seule, publique : elle n'expose que ce que l'API d'Achillea publie déjà, sans
 aucune donnée de membre. Sans `identifiant`, elle vise le serveur courant, et Achillea
 par défaut. Les données viennent de `GET /guilds/:id` du bot Achillea, validées à
-l'exécution par des schémas Zod (`services/achillea.ts`) : les deux dépôts sont séparés,
+l'exécution par des schémas Zod (`apps/rg/bot/src/services/achillea.ts`) : les deux dépôts sont séparés,
 aucun type ne traverse, donc la vérification remplace la garantie du compilateur. Voir
 [`achillea.md`](achillea.md).
 
@@ -246,14 +246,14 @@ existantes la contredisent** :
   « `/azalee`, `/cpk`, `/rag`, `/cdn` » + « `/x` » + « toute la racine
   `/staff` » — sans un mot sur `/article`, et en listant `/staff` qui n'y est
   plus) ;
-- `docs/bot-azalee.md` §7 (« Il ne fait pas : […] aucune commande
+- `docs/products/rg/bot-azalee.md` §7 (« Il ne fait pas : […] aucune commande
   communautaire de Rose Griffon : ni `/agenda`, ni `/membre`, […] ni
   `/article` »).
 
 Traité au §4.2 comme un **déplacement** (`/article` → `MODULES_RG`), pour
 recoller la racine à son domaine (les deux sites, pas le seul jeu) et à ces
 deux textes. Ce document ne corrige pas ces deux fichiers (hors mandat de
-cette mission, qui ne touche aucun `.ts` et ne livre que `docs/bot-commandes.md`) —
+cette mission, qui ne touche aucun `.ts` et ne livre que `docs/products/rg/bot-commandes.md`) —
 la mise en œuvre qui appliquera §4.2 devra aussi rafraîchir ce commentaire et
 ce paragraphe.
 
@@ -272,7 +272,7 @@ valeurs des choix et sous-évaluaient `/gestion` de 45 %.
 | `administration` | rg | **4 839** (mesuré) | 60 % |
 | `staff` | rg | **2 743** (mesuré) | 34 % |
 
-Pour remesurer avant d'ajouter quoi que ce soit (depuis `apps/bot`) :
+Pour remesurer avant d'ajouter quoi que ce soit (depuis `apps/rg/bot`) :
 
 ```ts
 // bun -e '...' — construit l'arbre réel et applique la métrique de Discord
@@ -356,10 +356,10 @@ d'une introspection de leurs commandes réelles sur ce serveur précis.
 
 | Bot | ID application | Rôle | Commandes/fonctions principales (doc publique) | Remplacement par notre catalogue |
 | --- | --- | --- | --- | --- |
-| **Noctaly** | `875811233616519219` | Tout-en-un : niveaux, économie, rôles à réaction, message de bienvenue, modération auto, appels de bannissement, journaux | XP texte/vocal/réactions, classement auto-publié, réglages de rôles à réaction, auto-modération anti-spam/invites | **Partiel.** Niveaux repris avec la vraie courbe du jeu (`/profil`, `/classement`, `/gestion niveaux`) — cf. `docs/bot-communaute.md` §1. **Non repris** : rôles à réaction, message de bienvenue, modération auto, appels de bannissement, journal de suppression de message. |
-| **UnbelievaBoat** | `292953664492929025` | Économie/jeu générique : solde, banque, boutique, jobs, casino, classement | `balance`, `bank`, `shop`, `jobs`, jeux de hasard, classement d'argent | **Partiel.** Solde/don/classement repris en version thématique (`/kizuna`, `/classement`), sans casino ni jobs virtuels (choix délibéré, cf. `docs/bot-communaute.md` : « aucun gain par message », pas de jeu de hasard). |
+| **Noctaly** | `875811233616519219` | Tout-en-un : niveaux, économie, rôles à réaction, message de bienvenue, modération auto, appels de bannissement, journaux | XP texte/vocal/réactions, classement auto-publié, réglages de rôles à réaction, auto-modération anti-spam/invites | **Partiel.** Niveaux repris avec la vraie courbe du jeu (`/profil`, `/classement`, `/gestion niveaux`) — cf. `docs/products/rg/bot-communaute.md` §1. **Non repris** : rôles à réaction, message de bienvenue, modération auto, appels de bannissement, journal de suppression de message. |
+| **UnbelievaBoat** | `292953664492929025` | Économie/jeu générique : solde, banque, boutique, jobs, casino, classement | `balance`, `bank`, `shop`, `jobs`, jeux de hasard, classement d'argent | **Partiel.** Solde/don/classement repris en version thématique (`/kizuna`, `/classement`), sans casino ni jobs virtuels (choix délibéré, cf. `docs/products/rg/bot-communaute.md` : « aucun gain par message », pas de jeu de hasard). |
 | **EasyPoll** | `437618149505105920` | Sondages avec options multiples, durée, anonymat | `/poll`, `/timepoll`, `/schedulepoll`, `/listpolls` | **Remplacé** pour l'usage courant : `/gestion sondage creer` publie un **sondage natif Discord** (post-EasyPoll, la fonctionnalité native n'existait pas à l'installation d'EasyPoll) archivé sur le site. Écart résiduel : pas de sondage **programmé** (`/schedulepoll`). |
-| **Tickets** (ticketsbot.net) | `508391840525975553` | Tickets d'assistance | Panneaux, fils privés, transcriptions | **Remplacé.** Bot **discontinué** depuis le 5/3/2025 (sunset officiel) ; notre `/ticket` + `/gestion ticket` reprend la numérotation à 86 (cf. `docs/bot-communaute.md` §1). Présence résiduelle sur le serveur = résidu d'un bot mort, à retirer. |
+| **Tickets** (ticketsbot.net) | `508391840525975553` | Tickets d'assistance | Panneaux, fils privés, transcriptions | **Remplacé.** Bot **discontinué** depuis le 5/3/2025 (sunset officiel) ; notre `/ticket` + `/gestion ticket` reprend la numérotation à 86 (cf. `docs/products/rg/bot-communaute.md` §1). Présence résiduelle sur le serveur = résidu d'un bot mort, à retirer. |
 | **Ticket Tool** (tt.bot) | `557628352828014614` | Tickets d'assistance (alternative) | `/panel`, `/close`, `/reopen`, `/delete` | **Remplacé** par le même `/ticket` + `/gestion ticket` — probablement le bot de secours utilisé après le sunset de Tickets. Redondant une fois `/ticket` validé en production. |
 | **Patreon** (officiel) | `216303189073461248` | Synchronisation des rôles Discord avec les paliers Patreon | attribution automatique de rôle par palier | **Non remplacé, complémentaire.** `/patreon etat`/`moi` ne fait que **lire** le statut ; l'attribution de rôle reste gérée par ce bot officiel (aucune raison de la dupliquer). |
 | **Wiki-Bot** | `461189216198590464` | Recherche/lien vers un wiki MediaWiki (Wikipedia, Fandom) configuré par `!wiki settings` | `!wiki <terme>`, `!wiki random`, `!wiki verify` | **Probablement remplacé pour Inazuma Eleven** par `/azalee` (fiches plus complètes, données du jeu réel plutôt qu'un wiki communautaire) — mais **surface exacte non déterminée** : impossible de savoir sans accès au tableau de bord quel(s) wiki(s) sont réglés sur ce serveur. |
@@ -371,7 +371,7 @@ d'une introspection de leurs commandes réelles sur ce serveur précis.
 | **Virtual Farmer** | `631216892606152714` | Jeu de simulation agricole (clicker), sans lien avec Inazuma Eleven | `/play`, `/profile`, `/coinflip` | **Non remplacé, hors périmètre.** |
 | **eara** | `472714545723342848` | Bot de musique (lecture YouTube/Spotify/SoundCloud) | lecture, file d'attente, effets audio | **Non remplacé, hors périmètre.** Aucune de nos commandes ne touche à l'audio. |
 | **Log bot** | `922263994474045540` | Fonction imprécise (documentation publique absente) — description Discord : « View commands in slash commands » | inconnu | **Non déterminé.** Aucune doc publique trouvée ; recoupement possible mais non confirmé avec `/staff discord journal` (journal d'audit). À vérifier directement sur le serveur plutôt qu'en supposer la fonction. |
-| **Secrétaire RG** | `1226107197973467197` | Origine **non documentée** — ni dans ce dépôt (`grep` + `git log`), ni sur le web public. Description Discord : « Pour tout problème, signalez aux modérateurs de Rose Griffon » | inconnu | **Probablement recouvert** par `/ticket ouvrir categorie:signalement` (qui route explicitement « qu'à la direction », cf. `docs/bot-communaute.md` §6) — présomption raisonnable au vu de la description, **pas une certitude vérifiée**. À confirmer avec le staff avant toute décision. |
+| **Secrétaire RG** | `1226107197973467197` | Origine **non documentée** — ni dans ce dépôt (`grep` + `git log`), ni sur le web public. Description Discord : « Pour tout problème, signalez aux modérateurs de Rose Griffon » | inconnu | **Probablement recouvert** par `/ticket ouvrir categorie:signalement` (qui route explicitement « qu'à la direction », cf. `docs/products/rg/bot-communaute.md` §6) — présomption raisonnable au vu de la description, **pas une certitude vérifiée**. À confirmer avec le staff avant toute décision. |
 
 ### 2.3 Ce qui n'a pas pu être établi
 
@@ -409,7 +409,7 @@ C'est cette limite de 8 000 caractères qui a fait éclater l'ancien
 (`/administration`, `/gestion`, `/moderation`) — `APPLICATION_COMMAND_TOO_LARGE`
 (code 50035) refuse l'enregistrement **de bloc**, pas seulement des groupes en
 trop : un dépassement bloque **toutes** les commandes du bot, pas seulement la
-racine fautive (cf. en-tête de `apps/bot/src/commands/administration/racine-moderation.ts`).
+racine fautive (cf. en-tête de `apps/rg/bot/src/commands/administration/racine-moderation.ts`).
 
 ### 3.2 Règles de la maison
 
@@ -420,8 +420,8 @@ racine fautive (cf. en-tête de `apps/bot/src/commands/administration/racine-mod
 | **Sous-commande qui consulte = nom** (`liste`, `voir`, `info`, `fiche`, `etat`, `reglages`) | Un verbe (`voir`, `lister`) reste acceptable **seulement** pour l'action « regarder un élément précis » (`voir`, déjà utilisé) — la différence lecture/écriture doit rester perceptible d'un coup d'œil dans l'autocomplétion, pas cachée dans la conjugaison. |
 | **Sous-commande qui règle un comportement global (pas une ressource identifiée) reste un nom**, même si elle modifie un état (`niveaux annonce`, `role masse`, `niveaux salon`) | Forcer un verbe partout (`regler-annonce`) écarté : ces sous-commandes sont des **panneaux de réglages**, pas des créations ponctuelles — le nom dit ce qu'on règle, pas l'action de régler. |
 | **Mot composé = kebab-case avec tiret** (`jours-messages`, `role-source`, `aussi-le-compte` — déjà la norme sur les options) | Concaténation collée (`joursmessages`) écartée : illisible dans l'autocomplétion, et `\p{L}` autorise le tiret — aucune raison technique de s'en priver. `moderation leverexclusion` (seul nom collé du dépôt) est un oubli de cette règle, pas une exception voulue. |
-| **Pas d'accent dans les noms de commande**, bien que `\p{L}` les autorise | Accents autorisés mais écartés : la frappe doit rester identique quel que soit le clavier (QWERTY US très présent chez les développeurs et une partie des membres), et évite une hésitation d'autocomplétion entre `créer`/`creer`. Corrige au passage `docs/bot-format.md`, qui affirme à tort que les tirets sont interdits par l'API — ils ne le sont pas, seuls les accents sont un choix de style, pas une contrainte. |
-| **Lecture vs écriture : racine dédiée par domaine, pas une option** — `/staff` = tout ce qui consulte l'exploitation, `/administration`+`/gestion`+`/moderation` = tout ce qui écrit, chaque ressource éditoriale a sa paire publique/staff (`/article` ↔ `/gestion article`, `/agenda` ↔ `/gestion evenement`+`/gestion stream`, `/sondage` ↔ `/gestion sondage`) | Un drapeau `--staff`/option caché sur une commande unique écarté : c'était exactement le risque nommé dans `apps/bot/src/commands/staff/racine.ts` (`/rg-user ban` et `/rg-user info` à une lettre l'une de l'autre) — deux racines séparées rendent une commande destructrice injoignable par erreur de frappe. |
+| **Pas d'accent dans les noms de commande**, bien que `\p{L}` les autorise | Accents autorisés mais écartés : la frappe doit rester identique quel que soit le clavier (QWERTY US très présent chez les développeurs et une partie des membres), et évite une hésitation d'autocomplétion entre `créer`/`creer`. Corrige au passage `docs/products/rg/bot-format.md`, qui affirme à tort que les tirets sont interdits par l'API — ils ne le sont pas, seuls les accents sont un choix de style, pas une contrainte. |
+| **Lecture vs écriture : racine dédiée par domaine, pas une option** — `/staff` = tout ce qui consulte l'exploitation, `/administration`+`/gestion`+`/moderation` = tout ce qui écrit, chaque ressource éditoriale a sa paire publique/staff (`/article` ↔ `/gestion article`, `/agenda` ↔ `/gestion evenement`+`/gestion stream`, `/sondage` ↔ `/gestion sondage`) | Un drapeau `--staff`/option caché sur une commande unique écarté : c'était exactement le risque nommé dans `apps/rg/bot/src/commands/staff/racine.ts` (`/rg-user ban` et `/rg-user info` à une lettre l'une de l'autre) — deux racines séparées rendent une commande destructrice injoignable par erreur de frappe. |
 | **Nouvelle ressource écrite → groupe sous une racine existante**, jamais une 4ᵉ racine d'écriture | Une nouvelle racine à chaque nouvelle ressource écartée : elle exploserait vite le compteur de 100 commandes globales pour un gain nul — le vrai plafond qui compte est le groupe (25 sous-commandes, 25 groupes), largement disponible sur les trois racines d'écriture actuelles (3 à 6 groupes sur 25). Le choix de la racine suit le domaine : contenu éditorial → `/gestion`, pouvoir Discord (rôle/salon/bannissement) → `/moderation`, tout le reste (comptes, réglages, synchronisation) → `/administration`. |
 | **Nouvelle surface publique autonome → racine plate si une seule opération, groupe si ≥ 2** (`/profil` reste plat ; `/kizuna` a 4 sous-commandes) | Forcer un sous-groupe même pour une commande à une seule action (`/profil voir`) écarté : ça rallonge la commande la plus tapée du bot sans bénéfice — le plafond de 100 commandes globales est à 23/100 sur `rg`, aucune urgence à économiser des racines. |
 | **Deux bots, deux listes de modules strictement disjointes** (déjà en place, `MODULES_RG` ∩ `MODULES_AZALEE` = ∅) | Un préfixe distinctif par bot (`/rg-agenda`, `/az-cpk`) écarté : alourdit **chaque** commande pour résoudre un problème qui n'existe déjà plus — la disjonction des modules le résout sans toucher un seul nom. |
@@ -596,7 +596,7 @@ de se répéter.
 
 | Actuelle | Définitive | Action | Pourquoi |
 | --- | --- | --- | --- |
-| `/article derniers` (bot Azalée) | `/article derniers` (bot **Rose Griffon**) | **déplacer** | `/article` couvre les deux sites, pas que le jeu — cf. §1.3 et la contradiction avec `profil.ts` (commentaire) et `docs/bot-azalee.md` §7 |
+| `/article derniers` (bot Azalée) | `/article derniers` (bot **Rose Griffon**) | **déplacer** | `/article` couvre les deux sites, pas que le jeu — cf. §1.3 et la contradiction avec `profil.ts` (commentaire) et `docs/products/rg/bot-azalee.md` §7 |
 | `/article lire` | idem, bot RG | **déplacer** | idem |
 | `/article recherche` | idem, bot RG | **déplacer** | idem |
 | `/azalee <19 sous-commandes>` | *(inchangé)* | garder | conforme ; 19/25 sous-commandes, à surveiller avant d'en ajouter une 6ᵉ famille |
@@ -655,23 +655,23 @@ modules restent strictement **disjointes** :
 
 Aucun nom de racine n'apparaît dans les deux listes après ce déplacement — la
 propriété qui rend possible la coexistence des deux bots sur la même guilde
-(`apps/bot/src/lib/profil.ts`, commentaire de `SALON_ANNONCE_AZALEE`) reste
+(`apps/rg/bot/src/lib/profil.ts`, commentaire de `SALON_ANNONCE_AZALEE`) reste
 vraie.
 
 ---
 
 ## 5. Vérification de cohérence
 
-- **`docs/bot-azalee.md` §7** contredit désormais le code sur `/article` (cf.
+- **`docs/products/rg/bot-azalee.md` §7** contredit désormais le code sur `/article` (cf.
   §1.3) — à rafraîchir par la mise en œuvre qui appliquera ce plan, en même
   temps que le commentaire d'en-tête de `MODULES_AZALEE` dans `profil.ts`.
-- **`docs/bot-format.md`** affirme que les noms de commande sont « sans
+- **`docs/products/rg/bot-format.md`** affirme que les noms de commande sont « sans
   accent ni tiret » — seule la partie « sans accent » est un choix de style
   du dépôt (retenu au §3.2) ; « sans tiret » est **factuellement faux** (huit
   options existantes en portent déjà : `jours-messages`, `aussi-le-compte`,
   `role-source`, `role-a-donner`, `en-cours`…). À corriger dans une prochaine
   passe sur ce fichier, hors mandat de cette mission.
-- **`docs/bot-communaute.md` §7** liste déjà `/profil`, `/classement`,
+- **`docs/products/rg/bot-communaute.md` §7** liste déjà `/profil`, `/classement`,
   `/kizuna`, `/collection`, `/personnaliser`, `/ticket`, `/gestion
   niveaux`, `/gestion ticket`, `/gestion sondage` — cohérent avec
   l'inventaire du §1.2 de ce document, aucune contradiction relevée.
@@ -681,12 +681,12 @@ vraie.
 ## 6. Sources
 
 - Code : `apps/bot/src/commands/**/*.ts` (lecture intégrale des 49 fichiers de
-  commandes), `apps/bot/src/lib/profil.ts`.
+  commandes), `apps/rg/bot/src/lib/profil.ts`.
 - Journaux : `journalctl -u rg-bot.service -u azalee-bot.service --since "-2
   hours"`, relevé le 14/8/2026 ~08 h 21 UTC (derniers enregistrements après
   les commits `3ccd1774`, `694bb438`, `6dedfa27`).
-- Historique : `git log` sur `apps/bot/src/lib/profil.ts` et
-  `apps/bot/src/commands/article.ts` (commit `08f96dda` pour le déplacement
+- Historique : `git log` sur `apps/rg/bot/src/lib/profil.ts` et
+  `apps/rg/bot/src/commands/article.ts` (commit `08f96dda` pour le déplacement
   de `/article` vers Azalée).
 - API Discord (jeton `DISCORD_BOT_TOKEN`, lecture seule) : `GET
   /guilds/1072991720268111892/integrations`, `GET

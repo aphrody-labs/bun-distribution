@@ -52,7 +52,7 @@ Allowed siblings (all optional):
 |-------------------------------|---------------------------------------------------|----------------------------------------------------------|
 | `start` (`../../plugins/aphrody/skills/start/SKILL.md`)                 | `/start`, "lance", "go"            | Continuous autonomous execution mode (drives PLAN.md)    |
 | `vps-commander` (`../../plugins/aphrody/skills/vps-commander/SKILL.md`) | "start the tunnel"                 | OVH VPS SSH-tunnel operator (chrome/postgres/bun/SOCKS5) |
-| `google-design` (`../../plugins/aphrody/skills/google-design/SKILL.md`) | `/google-design`, any M3 / Gemini / Google Sans / token / color / shape / motion / adaptive question | Canonical Google/Material 3 authority — grounds answers in `docs/design/` + `crates/aphrody-m3-tokens` + `mui-rs`; reading list = `../../aphrody-os/docs/design/notebook-google-design-corpus.md` |
+| `google-design` (`../../plugins/aphrody/skills/google-design/SKILL.md`) | `/google-design`, any M3 / Gemini / Google Sans / token / color / shape / motion / adaptive question | Canonical Google/Material 3 authority — grounds answers in `docs/design/` (not in repo) + `crates/ui/m3-tokens` + `mui-rs`; reading list = `../../aphrody-os/docs/design/notebook-google-design-corpus.md` |
 | `n2b` (`../../plugins/aphrody/skills/n2b/SKILL.md`)                     | `/n2b`, "n2b", "Node to Bun"       | Scan and migrate Node.js codebase to Bun using n2b.       |
 | `bxc` (`../../plugins/aphrody/skills/bxc/SKILL.md`)                     | `/bxc`, "bxc", "crawler"           | Bxc stealth browser and scraping engine.                  |
 
@@ -153,7 +153,7 @@ bun run skills:sync:claude-official    # anthropics/skills
 bun run scripts/skills-sync.ts <org>/<repo>[#<ref>]   # arbitrary repo
 ```
 
-The sync script (`scripts/skills-sync.ts`):
+The sync script (`scripts/skills-sync.ts` (not in repo)):
 1. Shallow-clones the source repo into a tmp dir.
 2. Walks for every `SKILL.md`.
 3. Reads its `name:` frontmatter (fallback: directory basename).
@@ -203,10 +203,10 @@ After install:
 
 ## 6. Validation gate
 
-`skills` are part of the Google Mode Golden Gate (cf. `docs/cargo/GOOGLE_MODE.md`):
+`skills` are part of the Google Mode Golden Gate (cf. `docs/reference/ai/cargo/GOOGLE_MODE.md`):
 
 ```bash
 bun run skills:validate         # must exit 0 — frontmatter + spec compliance
 ```
 
-CI integration is tracked in `docs/PLAN.md` (P13 — Skill ecosystem hardening).
+CI integration is tracked in `docs/PLAN.md` (not in repo) (P13 — Skill ecosystem hardening).

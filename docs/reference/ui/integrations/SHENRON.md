@@ -5,7 +5,7 @@
 
 The Aphrody desktop remains an independent UI-layer process. Do not link
 `aphrody-ffi` into `aphrody-app`: `aphrody-ui/AGENTS.md`, the workspace manifest,
-and `docs/tauri/aphrody-integration.md` require the desktop to keep the AI layer
+and `docs/reference/ui/tauri/aphrody-integration.md` require the desktop to keep the AI layer
 out of its dependency graph. The FFI crate itself depends on the full `aphrody`
 CLI/library and is not a narrow Shenron SDK.
 

@@ -38,29 +38,29 @@ est le premier palier; la production relève ensuite du flux `aphrody-infra`.
 
 - Bun workspace avec `packageManager: bun@1.4.2`, `minimumReleaseAge = 259200`
   pour les nouvelles résolutions, TypeScript `7.0.2`, Oxlint/Oxfmt et Turborepo.
-- Application concernée : `apps/bot`, package `@shenron/bot`; build Bun,
+- Application concernée : `apps/bot` (not in repo), package `@shenron/bot`; build Bun,
   `bun build --compile`, exécution Gateway Bun et imports TypeScript en source.
 - Le catalogue Shenron fixe `discord.js` à `^14.27.0`. Aphrody Discord publie
   également une copie source locale de Discord.js, version `14.16.3`; elle ne
   correspond pas au SDK déjà utilisé par Shenron et ne doit donc pas être liée
   au bot. Garder `14.27.0` depuis npm jusqu’à ce que la version source locale
   soit alignée et vérifiée séparément.
-- `apps/bot` déclare `@aphrody/discordy` (`catalog:`), `@aphrody/di`
+- `apps/bot` (not in repo) déclare `@aphrody/discordy` (`catalog:`), `@aphrody/di`
   (`workspace:*`), `@aphrody/pagination` (`workspace:*`) et `discord.js`
   (`catalog:`). Les imports directs de framework sont nombreux dans commandes,
   événements, gardes, services et API; le client Discord.js est également
   utilisé directement partout.
-- Les packages Shenron `packages/discordy`, `packages/di`,
-  `packages/internal`, `packages/importer` et `packages/pagination` reprennent
+- Les packages Shenron `packages/discordy` (not in repo), `packages/di` (not in repo),
+  `packages/internal` (not in repo), `packages/importer` (not in repo) et `packages/pagination` (not in repo) reprennent
   les sources/contrats du projet DiscordX amont avec noms et versions Aphrody.
   Ils sont les doublons prioritaires à retirer après bascule des consommateurs.
-  `packages/discordy` contient aussi des tests et un README à inventorier avant
+  `packages/discordy` (not in repo) contient aussi des tests et un README à inventorier avant
   suppression; toute différence locale réellement Shenron doit être migrée,
   pas jetée.
 
 ### Runtime et chargement du bot
 
-`apps/bot/src/index.ts` installe `reflect-metadata`, configure TSyringe comme
+`apps/rg/bot/src/index.ts` installe `reflect-metadata`, configure TSyringe comme
 moteur d’injection de DiscordX, importe le barrel latéral `src/_entries.ts`,
 applique les migrations SQLite au démarrage, vérifie l’espace vectoriel RAG,
 hydrate les caches, crée un client Gateway unique, enregistre les commandes,
@@ -71,7 +71,7 @@ les partials et limites de cache/sweepers propres au bot. Les listeners
 mono-guilde font partie du comportement à préserver.
 
 Les commandes et événements sont chargés par décorateurs DiscordX. Le générateur
-`apps/bot/scripts/gen-entries.ts` produit statiquement `src/_entries.ts` pour
+`apps/shenron/bot/scripts/gen-entries.ts` produit statiquement `src/_entries.ts` pour
 que le bundle compilé Bun/SWC conserve ces modules. Après toute modification
 commande/event/guard, exécuter `bun run gen:entries` dans le package bot et
 inclure le fichier généré.
@@ -79,13 +79,13 @@ inclure le fichier généré.
 ### Surfaces et volume inspectés
 
 Le relevé a couvert les manifests/configs, le graphe d’import Discord, tous les
-fichiers source TS de `apps/bot/src` (146 fichiers TS à la date du parcours),
+fichiers source TS de `apps/bot/src` (not in repo) (146 fichiers TS à la date du parcours),
 les catégories commands (31), events (19), guards (7), services (40 fichiers
 dont jeux), les API, DB, libs, workers, tests, ainsi que les scripts TS (128).
 Le répertoire `assets/` et les exports de données volumineux ont été exclus du
 parcours ligne par ligne : ils ne sont pas des dépendances de framework; leur
 contenu n’est pas candidat au déplacement ou à la suppression. Aucune donnée
-runtime ignorée (`apps/bot/data`, `var`, SQLite, médias locaux) ne doit être
+runtime ignorée (`apps/shenron/bot/data`, `var`, SQLite, médias locaux) ne doit être
 ajoutée au dépôt Aphrody Discord.
 
 Intégrations Discord identifiées :
@@ -104,7 +104,7 @@ Intégrations Discord identifiées :
   Databooks, Economy et Level.
 - Discord REST/webhooks indépendants du framework : wrappers locaux
   `src/lib/discord-rest.ts`, `src/lib/discord-webhook.ts` et outils de
-  `scripts/lib/discord-rest.ts`; vérifier s’ils restent utiles après migration,
+  `apps/shenron/bot/scripts/lib/discord-rest.ts`; vérifier s’ils restent utiles après migration,
   ne pas les remplacer automatiquement par `@discordjs/rest`.
 - Les 128 scripts contiennent des clients Gateway d’administration/import,
   outils de scan/historique et des clients REST. Ils doivent compiler contre
@@ -142,11 +142,11 @@ bot.
 Les cinq packages DiscordX à maintenir dans Aphrody Discord et à exposer en
 workspace frère sont :
 
-1. `discordx` (`packages/discordx`), consommé directement par le bot;
-2. `@discordx/di` (`packages/di`), consommé directement par le bot;
-3. `@discordx/pagination` (`packages/pagination`), consommé par les commandes;
-4. `@discordx/internal` (`packages/internal`), dépendance interne;
-5. `@discordx/importer` (`packages/importer`), dépendance interne/outillage.
+1. `discordx` (`packages/discordx` (not in repo)), consommé directement par le bot;
+2. `@discordx/di` (`packages/di` (not in repo)), consommé directement par le bot;
+3. `@discordx/pagination` (`packages/pagination` (not in repo)), consommé par les commandes;
+4. `@discordx/internal` (`packages/internal` (not in repo)), dépendance interne;
+5. `@discordx/importer` (`packages/importer` (not in repo)), dépendance interne/outillage.
 
 Déclarer seulement ceux qui sont requis comme workspaces, mais conserver le
 graphe de cinq packages source dans Aphrody Discord. Les manifests upstream
@@ -196,7 +196,7 @@ Le client reste sur npm `14.27.0`; ne pas résoudre avec deux versions installé
    depuis Shenron; ne pas déclarer le package source local `discord.js`.
    Enregistrer le SHA source dans la doc du monorepo et verrouiller les chemins
    sélectionnés dans `bun.lock`.
-2. Utiliser les noms canoniques upstream dans `apps/bot/package.json` :
+2. Utiliser les noms canoniques upstream dans `apps/rg/bot/package.json` :
    `discordx`, `@discordx/di`, `@discordx/pagination` avec ranges semver
    publiés compatibles avec les versions locales du SHA choisi. Ces
    dépendances doivent accepter le repli npm en l’absence du checkout frère.
@@ -248,8 +248,8 @@ typecheck sont obligatoires avant de considérer le nouveau graphe utilisable.
 ### Vague 3 — Suppression des copies redondantes dans Shenron
 
 1. Après gate verte, supprimer les manifests et le code des packages Shenron
-   `packages/discordy`, `packages/di`, `packages/internal`,
-   `packages/importer`, `packages/pagination`, ainsi que leurs exports,
+   `packages/discordy` (not in repo), `packages/di` (not in repo), `packages/internal` (not in repo),
+   `packages/importer` (not in repo), `packages/pagination` (not in repo), ainsi que leurs exports,
    dépendances, références de workspace, scripts, tests, docs, CI, changesets,
    catalogues et liens de build.
 2. Garder tout patch utile aux besoins Shenron dans Aphrody Discord au bon

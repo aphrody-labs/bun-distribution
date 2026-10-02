@@ -44,6 +44,6 @@ est vide, si le JSONL augmente sans résultat valide, ou si le GPU manque de VRA
 ## État au 2026-09-06
 
 - PostgreSQL : 2 729 planches non transcrites.
-- Export local : 1 866/1 866 images rapatriées dans `data/sj-ocr`.
+- Export local : 1 866/1 866 images rapatriées dans `data/sj-ocr` (not in repo).
 - Aphrody OCR : installé, feature `ocr` disponible ; runner actif et reprenable
-  dans `scripts/run-databooks-ocr.ps1`.
+  dans `scripts/tools/shenron/scripts/run-databooks-ocr.ps1`.

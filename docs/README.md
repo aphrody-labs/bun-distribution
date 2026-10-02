@@ -28,7 +28,8 @@ Regenerate with `bun run docs:gen`; `bun run docs:check` gates drift; the `aphro
 | architecture | [discord](architecture/discord/) | 6 | [Aphrody Discord Architecture](architecture/discord/README.md) |
 | architecture | [interop](architecture/interop/) | 1 | - |
 | architecture | [os](architecture/os/) | 4 | - |
-| architecture | [rg](architecture/rg/) | 1 | - |
+| architecture | [rg](architecture/rg/) | 6 | - |
+| architecture | [shenron](architecture/shenron/) | 11 | - |
 | architecture | [ui](architecture/ui/) | 55 | [UI, GUI, wgpu, Tauri, Google design and M3 / M3D: documentation map](architecture/ui/README.md) |
 | architecture | [upstream-bun](architecture/upstream-bun/) vendored upstream copy | 2 | - |
 | architecture | [upstream-oxc](architecture/upstream-oxc/) vendored upstream copy | 3 | - |
@@ -41,7 +42,7 @@ Regenerate with `bun run docs:gen`; `bun run docs:check` gates drift; the `aphro
 | apis | [contracts](apis/contracts/) | 1 | - |
 | apis | [discord](apis/discord/) | 10 | - |
 | apis | [infra](apis/infra/) | 1 | - |
-| apis | [rg](apis/rg/) | 1 | - |
+| apis | [rg](apis/rg/) | 6 | - |
 | apis | [ui](apis/ui/) | 9 | - |
 | apis | [upstream-bun](apis/upstream-bun/) vendored upstream copy | 29 | - |
 | apis | [upstream-jan](apis/upstream-jan/) vendored upstream copy | 1 | - |
@@ -52,13 +53,14 @@ Regenerate with `bun run docs:gen`; `bun run docs:check` gates drift; the `aphro
 | apis | [upstream-WSL](apis/upstream-WSL/) vendored upstream copy | 25 | - |
 | apis | [web](apis/web/) | 3 | - |
 | decisions | [ai](decisions/ai/) | 1 | - |
-| decisions | [infra](decisions/infra/) | 1 | - |
-| decisions | [rg](decisions/rg/) | 1 | - |
+| decisions | [infra](decisions/infra/) | 2 | - |
+| decisions | [rg](decisions/rg/) | 2 | - |
 | decisions | [shell](decisions/shell/) | 1 | - |
 | guides | [ai](guides/ai/) | 7 | - |
 | guides | [compat](guides/compat/) | 5 | - |
 | guides | [discord](guides/discord/) | 67 | - |
 | guides | [koharu](guides/koharu/) | 1 | - |
+| guides | [shenron](guides/shenron/) | 11 | - |
 | guides | [ui](guides/ui/) | 10 | [UI guides](guides/ui/README.md) |
 | guides | [upstream-bun](guides/upstream-bun/) vendored upstream copy | 203 | - |
 | guides | [upstream-codex](guides/upstream-codex/) vendored upstream copy | 1 | - |
@@ -75,6 +77,8 @@ Regenerate with `bun run docs:gen`; `bun run docs:check` gates drift; the `aphro
 | operations | [discord](operations/discord/) | 2 | [Discord Operations Runbooks & Guides](operations/discord/README.md) |
 | operations | [infra](operations/infra/) | 15 | - |
 | operations | [os](operations/os/) | 1 | - |
+| operations | [rg](operations/rg/) | 10 | - |
+| operations | [shenron](operations/shenron/) | 11 | - |
 | operations | [ui](operations/ui/) | 11 | - |
 | operations | [upstream-bun](operations/upstream-bun/) vendored upstream copy | 11 | - |
 | operations | [upstream-litellm](operations/upstream-litellm/) vendored upstream copy | 1 | - |
@@ -89,9 +93,9 @@ Regenerate with `bun run docs:gen`; `bun run docs:check` gates drift; the `aphro
 | plans | [infra](plans/infra/) | 4 | [Aphrody Infra plan](plans/infra/PLAN.md) |
 | plans | [native](plans/native/) | 1 | [PLAN — aphrody-native](plans/native/PLAN.md) |
 | plans | [os](plans/os/) | 1 | - |
-| plans | [rg](plans/rg/) | 1 | - |
+| plans | [rg](plans/rg/) | 5 | - |
 | plans | [shell](plans/shell/) | 1 | - |
-| plans | [shenron](plans/shenron/) | 1 | - |
+| plans | [shenron](plans/shenron/) | 3 | - |
 | plans | [ui](plans/ui/) | 8 | [UI plans](plans/ui/README.md) |
 | plans | [upstream-bun](plans/upstream-bun/) vendored upstream copy | 1 | - |
 | plans | [upstream-oxc](plans/upstream-oxc/) vendored upstream copy | 1 | - |
@@ -105,7 +109,9 @@ Regenerate with `bun run docs:gen`; `bun run docs:check` gates drift; the `aphro
 | products | [koharu](products/koharu/) | 2 | [Aphrody Koharu](products/koharu/README.md) |
 | products | [native](products/native/) | 1 | [Aphrody Native](products/native/README.md) |
 | products | [os](products/os/) | 10 | [Aphrody OS](products/os/README.md) |
+| products | [rg](products/rg/) | 62 | [Documentation — monorepo Rose Griffon](products/rg/README.md) |
 | products | [shell](products/shell/) | 4 | [Aphrody Shell](products/shell/README.md) |
+| products | [shenron](products/shenron/) | 10 | - |
 | products | [ui](products/ui/) | 56 | [Aphrody UI](products/ui/README.md) |
 | products | [upstream-antigravity-sdk-python](products/upstream-antigravity-sdk-python/) vendored upstream copy | 1 | [Google Antigravity SDK](products/upstream-antigravity-sdk-python/README.md) |
 | products | [upstream-bun](products/upstream-bun/) vendored upstream copy | 65 | [with install script (recommended)](products/upstream-bun/README.md) |
@@ -125,7 +131,7 @@ Regenerate with `bun run docs:gen`; `bun run docs:check` gates drift; the `aphro
 | products | [upstream-wslg](products/upstream-wslg/) vendored upstream copy | 1 | [Welcome to WSLg](products/upstream-wslg/README.md) |
 | products | [web](products/web/) | 12 | [Aphrody Web](products/web/README.md) |
 | products | [workspace](products/workspace/) | 1 | [Aphrody source workspace](products/workspace/README.md) |
-| reference | [ai](reference/ai/) | 246 | - |
+| reference | [ai](reference/ai/) | 240 | - |
 | reference | [compat](reference/compat/) | 102 | - |
 | reference | [contracts](reference/contracts/) | 2 | - |
 | reference | [discord](reference/discord/) | 100 | - |
@@ -134,8 +140,9 @@ Regenerate with `bun run docs:gen`; `bun run docs:check` gates drift; the `aphro
 | reference | [koharu](reference/koharu/) | 5 | - |
 | reference | [native](reference/native/) | 2 | - |
 | reference | [os](reference/os/) | 31 | - |
-| reference | [rg](reference/rg/) | 2 | - |
+| reference | [rg](reference/rg/) | 23 | - |
 | reference | [shell](reference/shell/) | 9 | - |
+| reference | [shenron](reference/shenron/) | 16 | - |
 | reference | [ui](reference/ui/) | 230 | [UI reference documents](reference/ui/README.md) |
 | reference | [upstream-antigravity-sdk-python](reference/upstream-antigravity-sdk-python/) vendored upstream copy | 5 | - |
 | reference | [upstream-bun](reference/upstream-bun/) vendored upstream copy | 2045 | - |
@@ -167,7 +174,7 @@ Regenerate with `bun run docs:gen`; `bun run docs:check` gates drift; the `aphro
 | research | [web](research/web/) | 117 | - |
 | research | [workspace](research/workspace/) | 2 | - |
 | ecosystem (outside the category layout) | [(files)](ecosystem/) | 4 | - |
-| migration (outside the category layout) | [(files)](migration/) | 102 | [Migration records](migration/README.md) |
+| migration (outside the category layout) | [(files)](migration/) | 104 | [Migration records](migration/README.md) |
 | migration (outside the category layout) | [a2a-os-move-2026-10-01](migration/a2a-os-move-2026-10-01/) | 4 | - |
 | migration (outside the category layout) | [contracts-clean-clone-2026-10-01](migration/contracts-clean-clone-2026-10-01/) | 4 | - |
 | migration (outside the category layout) | [contracts-qualification-2026-10-01](migration/contracts-qualification-2026-10-01/) | 6 | - |
@@ -177,14 +184,5 @@ Regenerate with `bun run docs:gen`; `bun run docs:check` gates drift; the `aphro
 | migration (outside the category layout) | [n2b-qualification-2026-10-01](migration/n2b-qualification-2026-10-01/) | 6 | - |
 | migration (outside the category layout) | [source-licenses](migration/source-licenses/) | 10 | - |
 | migration (outside the category layout) | [stack-dedup](migration/stack-dedup/) | 8 | - |
-| rg (outside the category layout) | [(files)](rg/) | 47 | [Documentation — monorepo Rose Griffon](products/rg/README.md) |
-| rg (outside the category layout) | [infra](rg/infra/) | 1 | - |
-| rg (outside the category layout) | [qa](operations/rg/qa/) | 1 | - |
-| rg (outside the category layout) | [root](reference/rg/root/) | 14 | [Rose Griffon](reference/rg/root/README.md) |
-| rg (outside the category layout) | [tools](products/rg/tools/) | 45 | [Archive — outils Azalée autonomes](products/rg/tools/README.md) |
-| shenron (outside the category layout) | [(files)](shenron/) | 48 | - |
-| shenron (outside the category layout) | [measurements](operations/shenron/measurements/) | 1 | - |
-| shenron (outside the category layout) | [operations](shenron/operations/) | 1 | - |
-| shenron (outside the category layout) | [root](reference/shenron/root/) | 11 | [Shenron — dragonballfr.com](reference/shenron/root/README.md) |
 
-Total: 5100 files.
+Total: 5097 files.

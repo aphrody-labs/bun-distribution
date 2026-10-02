@@ -8,10 +8,10 @@ Standalone Rust/Bun library extracted from Koharu revision `c697b31e`.
 
 | Owner | Surface |
 | --- | --- |
-| `crates/koharu-library` and workspace crates | Projects, scenes, processing, translation, agent, render/export |
+| `crates/koharu/koharu-library` and workspace crates | Projects, scenes, processing, translation, agent, render/export |
 | `koharu-sdk` binary | Headless JSONL requests: `id`, `method`, `params`; response `result` or `error` |
-| `packages/sdk` | Host-neutral Bun client plus native, settings and Tauri adapters |
-| `packages/bridge` | Generated commands and WASM/WebGPU canvas bindings |
+| `packages/koharu/sdk` | Host-neutral Bun client plus native, settings and Tauri adapters |
+| `packages/koharu/bridge` | Generated commands and WASM/WebGPU canvas bindings |
 | `packages/koharu/ui` and `apps/koharu/editor` | Editor components, styles and standalone consumer |
 
 ```sh
@@ -19,7 +19,7 @@ RUSTC_WRAPPER= cargo build -p koharu-library --bin koharu-sdk
 ```
 
 The binary accepts `--root <directory>`. Current methods live in
-`packages/sdk/src/native.ts` and `crates/koharu-library/src/bin/koharu-sdk.rs`.
+`packages/koharu/sdk/src/native.ts` and `crates/koharu/koharu-library/src/bin/koharu-sdk.rs`.
 UI's `koharu_rpc` broker uses the JSONL settings contract; the complete editor
 is not yet mounted. Keep native durable scene/export work separate from transient
 WebGPU canvas interaction.
@@ -44,4 +44,4 @@ visual judgment, authorization and editorial database writes remain in Shenron.
 ## Documentation
 
 Run `bun run docs:check` to validate local Markdown/MDX links and Mint
-root-relative routes under `packages/docs`.
+root-relative routes under `packages/koharu/docs`.

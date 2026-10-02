@@ -1,9 +1,9 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 # WinClean live artifacts
 
-`scripts/live-winclean-artifacts.ps1` localise par défaut le binaire GUI ChatGPT
+`scripts/tools/os/scripts/live-winclean-artifacts.ps1` localise par défaut le binaire GUI ChatGPT
 de l'installation MSIX `OpenAI.Codex` (`app/ChatGPT.exe`), exécute le noyau compilé
-sur Windows réel et écrit les résultats dans `var/winclean-live/latest` ainsi que
+sur Windows réel et écrit les résultats dans `var/winclean-live/latest` (not in repo) ainsi que
 dans un répertoire de session horodaté. Ce n'est pas un dry-run : les appels passent
 par le named pipe du kernel et les opérations d'analyse lisent le binaire installé.
 

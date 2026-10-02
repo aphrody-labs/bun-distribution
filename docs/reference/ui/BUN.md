@@ -64,7 +64,7 @@ timeout. CI gates the workspace contract and high/critical security scan after i
 install; the full local audit also includes Knip and the import inventory.
 
 `bun run monorepo:compile` builds a standalone audit executable at
-`target/aphrody/monorepo-audit`. The workspace contract uses Bun's filesystem, glob and TOML
+`target/aphrody/monorepo-audit` (not in repo). The workspace contract uses Bun's filesystem, glob and TOML
 APIs in-process. The compiled binary can also search its embedded Bun documentation snapshot
 offline with `--docs <terms>`; refresh or verify that snapshot with `bun run bun:docs:fetch`
 and `bun run bun:docs:check`. Lockfile, registry security, Knip and import analysis still

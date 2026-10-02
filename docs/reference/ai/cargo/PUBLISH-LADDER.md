@@ -4,15 +4,15 @@
 
 Cross-repository runbook for publishing the curated crates.io release set of the Aphrody
 ecosystem. Read top to bottom; never skip a rung. Decision recorded on 2026-09-26 in
-[`docs/PLAN.md`](../../../plans/ai/PLAN.md) and in the `docs/PLAN.md` of `aphrody-contracts`, `aphrody-native`
+[`docs/PLAN.md` (not in repo)](../../../plans/ai/PLAN.md) and in the `docs/PLAN.md` (not in repo) of `aphrody-contracts`, `aphrody-native`
 and `aphrody-compat`.
 
 Cross-references:
 
-- [`docs/CI-CD.md`](../../../operations/ai/CI-CD.md#releases): the monolith release-please and tag-release workflows
+- [`docs/operations/ai/CI-CD.md`](../../../operations/ai/CI-CD.md#releases): the monolith release-please and tag-release workflows
   were removed with the split; binary packaging belongs to the `aphrody-infra` release plane.
-- [`docs/cargo/SUPPLY_CHAIN.md`](./SUPPLY_CHAIN.md): cargo-deny / cargo-vet policy.
-- [`docs/RELEASE-CHECKLIST.md`](../../../operations/ai/RELEASE-CHECKLIST.md): the per-release checklist of `aphrody`.
+- [`docs/reference/ai/cargo/SUPPLY_CHAIN.md`](./SUPPLY_CHAIN.md): cargo-deny / cargo-vet policy.
+- [`docs/operations/ai/RELEASE-CHECKLIST.md`](../../../operations/ai/RELEASE-CHECKLIST.md): the per-release checklist of `aphrody`.
 
 Execute an authorized publication task under [NHITL](../AGENTS.md): run the
 technical gates and publish without an extra maintainer-confirmation step. Missing
@@ -195,7 +195,7 @@ version (`max_stable_version` stays `null`).
 
 - Check that docs.rs built every crate (`https://docs.rs/crate/<name>/<version>`).
 - Smoke-test the CLI from the registry: `cargo install aphrody-n2b --locked` then `n2b --version`.
-- Record the published versions in the `docs/PLAN.md` of the three repositories.
+- Record the published versions in the `docs/PLAN.md` (not in repo) of the three repositories.
 - Consumers keep their `path` + `version` dependencies; nothing else changes for local builds.
 
 ## 7. Yank policy

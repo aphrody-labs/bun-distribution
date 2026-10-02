@@ -12,7 +12,7 @@ dans le `package.json` racine ; les dépendances internes utilisent
 - Avant un commit de dépendances : `bun install --frozen-lockfile --dry-run` puis
   `bun run check:catalog`.
 - Conserver le linker `hoisted` : le lancement du site en production attend
-  `node_modules/next` à la racine.
+  `node_modules/next` (not in repo) à la racine.
 - L'installation automatique à l'exécution est désactivée. Ajouter une
   dépendance nécessite donc une modification explicite du manifeste et du lock.
 - Bun ne lance pas les scripts de cycle de vie des dépendances sauf confiance

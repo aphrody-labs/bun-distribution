@@ -41,7 +41,7 @@ and never recreates a token system.
 - Windows follows `prefers-color-scheme` and `prefers-contrast`; no registry theme is written.
   GTK/GNOME follows the system scheme. The OS accent colour is not bridged to the webview: the
   unused `aphrody-tauri-m3` plugin was removed (2026-10-01, no consumer; recoverable from git
-  history at `crates/ui/tauri-m3`).
+  history at `crates/ui/tauri-m3` (not in repo)).
 - Imported assets keep their manifest and provenance.
 
 ## Rendering

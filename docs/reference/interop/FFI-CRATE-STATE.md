@@ -4,7 +4,7 @@ Generated 2026-10-02 by static inspection only (no cargo run). Method and limits
 
 ## Summary
 
-- Cargo manifests under `crates/` and `apps/`: 211 found; 187 are workspace members (directory matches a `members` glob of the root `Cargo.toml`); 23 are excluded by the root `exclude` list or live under the excluded `crates/os/drive` tree (`crates/os/drive`, `crates/contracts/schema` and `crates/web/drive-server` are excluded explicitly; `crates/contracts/schema` has no `Cargo.toml`); 1 manifest without `[package]` (`crates/os/drive`).
+- Cargo manifests under `crates/` and `apps/`: 211 found; 187 are workspace members (directory matches a `members` glob of the root `Cargo.toml`); 23 are excluded by the root `exclude` list or live under the excluded `crates/os/drive` tree (`crates/os/drive`, `crates/contracts/schema` and `crates/web/drive-server` (not in repo) are excluded explicitly; `crates/contracts/schema` has no `Cargo.toml`); 1 manifest without `[package]` (`crates/os/drive`).
 - Member crates with at least one `#[test]`/`#[tokio::test]` (static count, tests not run): 171; with none: 16.
 - Member crates linked into the `aphrody-ffi` cdylib according to `Cargo.lock` reachability from `aphrody-ffi`: 148 (15 as direct dependencies). Only 4 library crates plus `aphrody-ffi` itself define C symbols (see the FFI map).
 - Member crates with their own `cdylib` crate-type: 5. Member crates with a binary target: 37.
@@ -208,7 +208,7 @@ Columns: Kind = lib/bin/cdylib targets; FFI = how the crate reaches the single `
 | `crates/ui/svg` | `aphrody-svg` | lib | linked transitively, no C symbols | - | 21 | 0/0 | 0/0 | member(glob) |
 | `crates/ui/tauri-mcp` | `aphrody-tauri-mcp` | bin*1 | not linked | - | 0 | 0/0 | 0/0 | member(glob) |
 | `crates/ui/tauri-wrap` | `aphrody-tauri-wrap` | lib | not linked | - | 28 | 0/0 | 0/0 | member(glob) |
-| `crates/web/drive-server` | `sd-server` | bin*2 | not linked | - | 0 | 0/0 | 0/0 | EXCLUDED |
+| `crates/web/drive-server` (not in repo) | `sd-server` | bin*2 | not linked | - | 0 | 0/0 | 0/0 | EXCLUDED |
 | `crates/web/obscura` | `obscura` | lib | linked transitively, no C symbols | - | 33 | 0/0 | 0/0 | member(glob) |
 | `crates/web/obscura-browser` | `obscura-browser` | lib | linked transitively, no C symbols | - | 108 | 0/0 | 0/0 | member(glob) |
 | `crates/web/obscura-cdp` | `obscura-cdp` | lib | not linked | - | 235 | 0/0 | 0/0 | member(glob) |

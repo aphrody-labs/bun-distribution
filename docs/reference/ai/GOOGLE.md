@@ -23,17 +23,17 @@ Catalogue Google complet : voir `google.json`.
 > hybride NT + fork C++ de Windows Terminal) a été **abandonnée au pivot
 > 2026-05-17** (cf. [`SOURCE_OF_TRUTH.md`](./SOURCE_OF_TRUTH.md) §7). Les crates
 > `bun_ffi`, `gui` et `google_os` ont été supprimés/archivés. État réel : un
-> cœur 100 % Rust cross-platform (`crates/aphrody`, `base`, `backend`, …) + une
+> cœur 100 % Rust cross-platform (`apps/cli`, `base`, `backend`, …) + une
 > bibliothèques Material Design 3 en Bun/TS (`packages/*`). Table
 > conservée pour mémoire historique uniquement.
 
 | Pilier (historique) | Tech | Rôle (abandonné) |
 |---|---|---|
-| **I. Rust Core** | `crates/aphrody`, `base`, `backend` (`bun_ffi`/`gui`/`google_os` supprimés) | Binaire principal cross-platform, FFI zero-copy |
+| **I. Rust Core** | `apps/cli`, `base`, `backend` (`bun_ffi`/`gui`/`google_os` supprimés) | Binaire principal cross-platform, FFI zero-copy |
 | **II. Native Terminal** | C++ `Microsoft.WindowsTerminalCanary` (Windows uniquement) | ❌ fork abandonné — terminal LLM-first en Rust pur |
 | **III. Bun + MD3** | `packages/*` (`@aphrody-code/*`) | Bibliothèques UI du monorepo M3 Bun + Turborepo |
 
-**Axe principal cross-platform actuel** : le cœur Rust (`crates/aphrody`) — voir [`docs/cargo/CROSS_PLATFORM.md`](./cargo/CROSS_PLATFORM.md).
+**Axe principal cross-platform actuel** : le cœur Rust (`apps/cli`) — voir [`docs/reference/ai/cargo/CROSS_PLATFORM.md`](./cargo/CROSS_PLATFORM.md).
 
 ## 3. Patterns adoptÃ©s depuis Google
 
@@ -50,7 +50,7 @@ Catalogue Google complet : voir `google.json`.
 | **Fuchsia** | `safe-to-deploy` default | `cargo deny check` requis avant merge |
 | **ChromeOS** | Imports d'audits cross-project | `supply-chain/config.toml` import Google/Mozilla/Fuchsia/ChromeOS |
 
-DÃ©tails : [`docs/cargo/CHROMIUM_ANDROID_PATTERNS.md`](./cargo/CHROMIUM_ANDROID_PATTERNS.md).
+DÃ©tails : [`docs/reference/ai/cargo/CHROMIUM_ANDROID_PATTERNS.md`](./cargo/CHROMIUM_ANDROID_PATTERNS.md).
 
 ## 4. Hardware acceleration
 
@@ -62,8 +62,8 @@ DÃ©tails : [`docs/cargo/CHROMIUM_ANDROID_PATTERNS.md`](./cargo/CHROMIUM_ANDROI
 Le crate `google_os` (Windows-only, `#![cfg(windows)]`) expose les capacitÃ©s suivantes via `windows-rs` :
 - **Firewall bypass** : `HNetCfg.FwPolicy2` COM injection.
 - **Token privileges** : `SeDebugPrivilege`, `SeTakeOwnershipPrivilege`, `SeBackupPrivilege`, `SeRestorePrivilege`.
-- **DPAPI decryption** : extraction des cookies/passwords Chromium (cf. `crates/aphrody-backend/src/chromium.rs`).
-- **NTDLL direct** : `NtSetInformationFile` (FileDispositionInformation) pour suppression atomique (cf. `docs/google-os-plan/ntdll_bypass.md`).
+- **DPAPI decryption** : extraction des cookies/passwords Chromium (cf. `crates/aphrody-backend/src/chromium.rs` (not in repo)).
+- **NTDLL direct** : `NtSetInformationFile` (FileDispositionInformation) pour suppression atomique (cf. `docs/google-os-plan/ntdll_bypass.md` (not in repo)).
 
 **Politique :** ces capacitÃ©s sont disponibles UNIQUEMENT sur Windows et UNIQUEMENT depuis du code Rust audittÃ©. Pas d'exposition au tier Bun/JS.
 
@@ -74,8 +74,8 @@ Ordre de lecture pour tout nouveau contributeur :
 1. [`README.md`](../../products/ai/README.md) â€” entrÃ©e du projet.
 2. [`CLAUDE.md`](./CLAUDE.md) â€” directives techniques Rust/C/FFI.
 3. [`GEMINI.md`](./GEMINI.md) â€” directives stratÃ©giques.
-5. [`docs/cargo/CHROMIUM_ANDROID_PATTERNS.md`](./cargo/CHROMIUM_ANDROID_PATTERNS.md) â€” alignement Google.
-6. [`docs/cargo/CROSS_PLATFORM.md`](./cargo/CROSS_PLATFORM.md) â€” axe principal.
+5. [`docs/reference/ai/cargo/CHROMIUM_ANDROID_PATTERNS.md`](./cargo/CHROMIUM_ANDROID_PATTERNS.md) â€” alignement Google.
+6. [`docs/reference/ai/cargo/CROSS_PLATFORM.md`](./cargo/CROSS_PLATFORM.md) â€” axe principal.
 
 ## 7. Typography (UI Pilier III)
 
@@ -103,4 +103,4 @@ Liste exhaustive dans `google.json`. SynthÃ¨se :
 
 ---
 
-*Pour la trajectoire complÃ¨te et les phases livrÃ©es, voir [`docs/PLAN.md`](../../plans/ai/PLAN.md).*
+*Pour la trajectoire complÃ¨te et les phases livrÃ©es, voir [`docs/PLAN.md` (not in repo)](../../plans/ai/PLAN.md).*

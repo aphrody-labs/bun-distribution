@@ -24,7 +24,7 @@ is authoritative for names, schemas and annotations.
 
 ## Local stdio
 
-`crates/aphrody-mcp` provides the broader local server:
+`crates/ai/mcp` provides the broader local server:
 
 ```sh
 cargo run -p aphrody-mcp

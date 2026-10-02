@@ -43,10 +43,10 @@ Apache-2.0. Keep upstream pins and data outside source inventories distinct.
 
 ## Automatisation transversale
 
-`scripts/fix-all.nu` conserve son entrée Nushell et délègue les liens, références, dépendances et contrôles au module `aphrody-ops workspace-repair`.
+`scripts/tools/os/scripts/fix-all.nu` conserve son entrée Nushell et délègue les liens, références, dépendances et contrôles au module `aphrody-ops workspace-repair`.
 
 `bun run check:runtimes` délègue les versions Bun/uv à `aphrody-ops runtime-versions`.
 
-`scripts/strip-ai-trailers.nu` conserve sa syntaxe et délègue la réécriture explicite d’une branche non publiée à `aphrody-ops git-attribution`.
+`scripts/tools/os/scripts/strip-ai-trailers.nu` conserve sa syntaxe et délègue la réécriture explicite d’une branche non publiée à `aphrody-ops git-attribution`.
 
-`scripts/repair-cargo-p.nu` est l’entrée compatible de `aphrody-ops cargo-package-repair`.
+`scripts/tools/os/scripts/repair-cargo-p.nu` est l’entrée compatible de `aphrody-ops cargo-package-repair`.

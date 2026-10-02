@@ -2,10 +2,10 @@
 
 Le RAG hybride (BM25 `rag_chunks` FTS5 + embeddings denses `vec_chunks` vec0, fusion
 RRF + rerank) sert la recherche du site, `/ask`, le Discord `/ask` et l'assistant.
-Pipeline runtime : `apps/bot/src/lib/rag.ts` (cf. **Exploitation** ci-dessous pour le
-scoring/dédup/filtrage). Build : `apps/bot/scripts/rag-build.ts`.
+Pipeline runtime : `apps/shenron/bot/src/lib/rag.ts` (cf. **Exploitation** ci-dessous pour le
+scoring/dédup/filtrage). Build : `packages/shenron/pipeline/scripts/rag-build.ts`.
 
-## Exploitation (runtime — `apps/bot/src/lib/rag.ts`)
+## Exploitation (runtime — `apps/shenron/bot/src/lib/rag.ts`)
 
 - **Score normalisé** : chaque `RagHit` porte un `score` ∈ [0,1]. En `hybrid+rerank` =
   sigmoïde du logit du cross-encoder ; en `hybrid`/`lexical` = min-max planché à 0.4.
@@ -23,10 +23,10 @@ scoring/dédup/filtrage). Build : `apps/bot/scripts/rag-build.ts`.
   les filtres `lang`/`entity`/`sourceId` + `score` (et `rag_ask` se fie aux `hits`
   sourcés, le rédacteur LLM étant OFF) ; Discord `/ask` affiche citations `[n]` + mode +
   % de pertinence ; site = puces de pertinence + îlot `WikiRagArchives` sur la page saga.
-- Tests : `apps/bot/tests/rag-filter.test.ts` (score ∈ [0,1], dédup URL, dédup
+- Tests : `apps/shenron/bot/tests/rag-filter.test.ts` (score ∈ [0,1], dédup URL, dédup
   titre-vide, manga non-fusionné, tolérance stopwords).
 
-## Corpus PostgreSQL (source de vérité) — `apps/bot/scripts/_rag-sources-pg.ts`
+## Corpus PostgreSQL (source de vérité) — `packages/shenron/pipeline/scripts/_rag-sources-pg.ts`
 
 Depuis le 2026-09-14, toutes les sources éditoriales sont rendues **depuis
 PostgreSQL** (le réplica SQLite n'a ni `article`, ni sections de fiches, ni
@@ -63,7 +63,7 @@ EMBED_PORT=5017 TRANSFORMERS_CACHE=$PWD/.models nice -n 10 bun embed-server.ts &
 APHRODY_AI_EMBED_BASE_URL=http://127.0.0.1:5017/v1 bun scripts/rag-resync-entites.ts manga --appliquer
 ```
 
-> **MANQUANT** : `apps/bot/embed-server.ts` a été supprimé en `5b031301`
+> **MANQUANT** : `apps/bot/embed-server.ts` (not in repo) a été supprimé en `5b031301`
 > (unification de l'offload dans `@shenron/pipeline`) et n'a pas été
 > restauré. Vérifier sa présence avant de rejouer cette commande.
 
@@ -71,7 +71,7 @@ Débit mesuré le 2026-09-14 (CPU partagé avec l'OCR) : ≈1 passage long/s par
 sidecar ; ne pas en lancer plus de deux sur 6 cœurs (onnxruntime-node ouvre déjà
 un pool de threads par processus).
 
-## Évaluation v2 — `tests/rag-gold.jsonl`, `src/lib/rag-eval.ts`
+## Évaluation v2 — `apps/shenron/bot/tests/rag-gold.jsonl`, `src/lib/rag-eval.ts`
 
 Un cas vise la **source** (`expectUrl`, préfixe d'URL, ancres comprises) ou, quand
 l'URL du site n'est pas fiable, le **titre** (`expectTitle`) ; `expect` (sous-chaîne
@@ -96,9 +96,9 @@ absolues, dans un budget `maxChars` (500–16 000). Outil MCP `rag_context`. Fil
 communs à `/rag/search`, `/rag/chat`, GraphQL `ragSearch` et MCP : `lang`, `entity`,
 `sourceId`, `kind`. Chaque hit expose désormais `sourceId` et `lang`.
 
-## Expansion des requêtes — `scripts/rag-lexique.ts`
+## Expansion des requêtes — `packages/shenron/pipeline/scripts/rag-lexique.ts`
 
-`data/rag/lexique-requetes.json` regroupe les graphies équivalentes d'une entité
+`data/rag/lexique-requetes.json` (not in repo) regroupe les graphies équivalentes d'une entité
 (nom FR, japonais, romaji, localisations anglaises : Freezer/Frieza/フリーザ). Quand
 une forme apparaît dans la question, les autres forment un **second classement
 BM25** fusionné avec un poids `RAG_EXPANSION_WEIGHT` (0,5 ; 1 pour une question en
@@ -106,18 +106,18 @@ japonais). Le volet dense et le rerank gardent la question d'origine. Régénér
 chaque nuit par l'orchestration ; lu au démarrage du bot (`RAG_QUERY_EXPANSION=0`
 pour désactiver).
 
-## Tables (dans `apps/bot/data/bot.db`)
+## Tables (dans `apps/shenron/bot/data/bot.db`)
 
 - `rag_chunks` — FTS5 (`kind, title, url, content, lang, source_id, entity`).
 - `vec_chunks` — vec0 (`embedding float[384]`), aligné par **rowid** sur `rag_chunks`.
 - `rag_meta` — (`model, dim, count, built_at`).
 
 `rag-build.ts` lit la base (`RAG_DB` env, défaut `bot.db`) pour les entités
-structurées **+** `data/rag/corpus.json` (full-text scrapé), chunke (sémantique,
+structurées **+** `data/rag/corpus.json` (not in repo) (full-text scrapé), chunke (sémantique,
 ~1400 chars, overlap 15 %), et **embed via le sidecar `:5007`** (`shenron-embed`,
 `sqliteVec.load(db)`).
 
-## Corpus (`apps/bot/data/rag/corpus.json`)
+## Corpus (`apps/bot/data/rag/corpus.json` (not in repo))
 
 Format `{generatedAt, count, docs:[{id, name, url, markdown}]}`. État après la purge Fandom du 2026-09-10 : **403 docs** dans `corpus.json`, plus le
 **manga OCR (147 tomes)**, les **2058 docs Xenoverse 2** et les **11 079 planches de
@@ -148,7 +148,7 @@ bun apps/bot/scripts/ingest-aphrody-rag.ts --injecte  # écriture à chaud
 ```
 
 La liste des documents admis n'est PAS redéfinie côté bot : elle est importée de
-`apps/site/scripts/_aphrody-corpus.ts` (`DOCUMENTS`, `REFUSÉ`), pour que la règle
+`apps/shenron/site/scripts/_aphrody-corpus.ts` (`DOCUMENTS`, `REFUSÉ`), pour que la règle
 « ni wiki de fans, ni forum » soit écrite une seule fois.
 
 `--injecte` écrit directement dans `rag_chunks` (`kind='author'`,
@@ -191,7 +191,7 @@ lignes en préservant le **rowid** (alignement chunk↔vecteur). Source = `$RAG_
 
 ### Rebuild des vecteurs seuls (sans downtime)
 
-`apps/bot/scripts/rag-embed-vectors.ts` (re)calcule **uniquement `vec_chunks`** depuis un
+`packages/shenron/pipeline/scripts/rag-embed-vectors.ts` (re)calcule **uniquement `vec_chunks`** depuis un
 `rag_chunks` déjà bon, **sans arrêter le bot** : l'embedding ne fait que des appels HTTP
 au sidecar (aucun verrou d'écriture), et l'insertion finale est **atomique** ⇒ bascule
 nette `lexical`→`hybride`. À utiliser après un correctif data (`fix-*`) ou un `rag:build`
@@ -210,12 +210,12 @@ sqlite3 apps/bot/data/bot.db "SELECT count(*) FROM rag_chunks"                  
   l'unité `shenron-bot` le référence dans `ReadWritePaths` ; s'il a été supprimé (nettoyage
   disque), `mkdir -p ~/.gemini` avant restart.
 - **bxc** : le binaire compilé plante sur les commandes navigateur (`awaitPromise`) ;
-  le `bxc` global route vers la source. Cf. [`docs/bxc.md`](#) / mémoire.
+  le `bxc` global route vers la source. Cf. [`docs/bxc.md` (not in repo)](#) / mémoire.
 - **Fuite d'infobox (ancien ingest de wiki de fans)** : il pouvait faire fuiter des paramètres d'infobox
   dans des champs de `bot.db_characters` (`name_ja`, `name_romaji`, `race`,
   `affiliation`, ex. `race = "Giras|Concepteur=…}}"`) — donc dans le corpus structuré
   lu par `rag-build`. La root cause a été corrigée à l'époque dans l'ingest (depuis
   supprimé) ; data déjà polluée nettoyée par
-  `scripts/fix-infobox-leak.ts` (idempotent, 306 cellules, sur le Postgres `bot.*`
+  `apps/shenron/bot/scripts/fix-infobox-leak.ts` (idempotent, 306 cellules, sur le Postgres `bot.*`
   source de vérité → propagé au SQLite par le reverse-sync). Re-propager au RAG via
   `rag-embed-vectors.ts` (ou un rebuild si le texte des chunks a changé).

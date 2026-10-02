@@ -74,7 +74,7 @@ before using an old command, dependency or service name.
 
 ## Generated documentation
 
-`SUMMARY.md`, `llms.txt` and `docs/_root/` mirrors are owned by
+`SUMMARY.md`, `llms.txt` and `docs/_root/` (not in repo) mirrors are owned by
 `aphrody-summary`; regenerate them rather than editing them by hand.
 The generator includes historical Markdown in its context output, so each
 historical page must state its scope. Read current authorities before dated

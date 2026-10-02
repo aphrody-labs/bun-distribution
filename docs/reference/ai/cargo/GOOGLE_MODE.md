@@ -13,7 +13,7 @@
 | **Workspace deps centralisées** | Android `rustlibs:` | `[workspace.dependencies]` 80 deps | ✅ |
 | **Workspace inheritance** | Android Soong | `[workspace.package]` + `*.workspace = true` | ✅ |
 | **`crate-type` cdylib+rlib** | Android `rust_ffi` | `bun_ffi`, `google_os`, `python_ffi` | ✅ |
-| **Lints android-strict** | Android `lints: "android"` | Preset opt-in `docs/cargo/LINTS.md` | ✅ |
+| **Lints android-strict** | Android `lints: "android"` | Preset opt-in `docs/reference/ai/cargo/LINTS.md` | ✅ |
 | **`cxx` primary FFI** | Chromium | `cxx` + `cxx-build` workspace deps prêts | ✅ |
 | **`bindgen` large APIs** | Chromium `//build/rust/rust_bindgen.gni` | `bindgen` workspace dep prêt | ✅ |
 | **Crubit auto-bindings** | Chromium (exp) | Non adopté (comme Chromium) | ⏸ |
@@ -22,18 +22,18 @@
 | **`cargo-deny`** | Mozilla supply-chain | `deny.toml` 4 axes (CVE/licence/bans/sources) | ✅ |
 | **`cargo-auditable` SBOM** | 2026 industry standard | Alias `dist-auditable`, profil `reproducible` | ✅ |
 | **Lockfile-only (no vendor)** | Modern Go module proxy style | `Cargo.lock` SHA-256 + sparse registry | ✅ |
-| **Cross-platform binary** | Chromium release engineering | 14 targets + `crates/aphrody/src/platform.rs` | ✅ |
+| **Cross-platform binary** | Chromium release engineering | 14 targets + `apps/cli/src/platform.rs` | ✅ |
 | **Android NDK targets** | AOSP | 4 archis Android dans toolchain + doc | ✅ |
 | **MUSL static** | Distroless Docker | `Dockerfile` MUSL static + 2 targets | ✅ |
-| **Fuzz at attacker boundary** | Fuchsia 2026 best practice | `crates/bun_ffi/fuzz/` libfuzzer-sys | ✅ |
+| **Fuzz at attacker boundary** | Fuchsia 2026 best practice | `crates/bun_ffi/fuzz/` (not in repo) libfuzzer-sys | ✅ |
 | **`miri` UB detector** | Rust nightly standard | Composant + alias `cargo miri-test` | ✅ |
 | **`cargo-careful` extra UB** | rust-secure-code | Alias + profile `careful` | ✅ |
 | **Sanitizers (ASAN/MSAN/TSAN)** | Chromium / Google sanitizer suite | Aliases + profile `asan` | ✅ |
 | **Deterministic builds** | Bazel / Buck reproducibility | `--remap-path-prefix`, profile `reproducible`, `SOURCE_DATE_EPOCH` | ✅ |
-| **CI matrix multi-OS** | Chromium / Fuchsia waterfalls | `.github/workflows/cross-platform.yml` 6 OS + Android NDK | ✅ |
-| **Release multi-target** | Chromium release builders | `.github/workflows/release.yml` 8 archis + SHA256 | ✅ |
-| **Coverage llvm-cov** | Standard 2026 | `.github/workflows/coverage.yml` + Codecov | ✅ |
-| **Docs CI + GH Pages** | Standard | `.github/workflows/docs.yml` rustdoc + mdBook | ✅ |
+| **CI matrix multi-OS** | Chromium / Fuchsia waterfalls | `.github/workflows/cross-platform.yml` (not in repo) 6 OS + Android NDK | ✅ |
+| **Release multi-target** | Chromium release builders | `.github/shenron/workflows/release.yml` 8 archis + SHA256 | ✅ |
+| **Coverage llvm-cov** | Standard 2026 | `.github/workflows/coverage.yml` (not in repo) + Codecov | ✅ |
+| **Docs CI + GH Pages** | Standard | `.github/workflows/docs.yml` (not in repo) rustdoc + mdBook | ✅ |
 | **Pre-commit hooks** | Standard | `.pre-commit-config.yaml` fmt/clippy/deny/machete | ✅ |
 | **`.editorconfig`** | Cross-IDE consistency | `.editorconfig` Google/Chromium style | ✅ |
 | **VSCode workspace** | Rust ecosystem default | `.vscode/settings.json` + `extensions.json` | ✅ |

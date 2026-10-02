@@ -129,7 +129,7 @@ enum OutputMode {
 }
 ```
 
-### 3.5 Le schéma partagé (`crates/shared/`)
+### 3.5 Le schéma partagé (`crates/shared/` (not in repo))
 Source **canonique** des types échangés macro↔CLI. Le macro et le CLI **doivent avoir exactement la même version** (`SCHEMA_VERSION = "0.2.118"` — `const` enforced). Si mismatch → erreur à la génération.
 
 ---
@@ -147,7 +147,7 @@ Bindings **stables** de tous les globals JS.
 - 26 316 lignes WebIDL en entrée → 19 761 `pub fn` en sortie
 - Couvre DOM, Canvas, WebGL, WebGPU, Fetch, WebRTC, Web Audio, etc.
 - Chaque API est **feature-gated** (`features = ["HtmlCanvasElement", "CanvasRenderingContext2d"]`) — sinon le binaire exploserait
-- Le générateur vit dans `crates/webidl/`
+- Le générateur vit dans `crates/webidl/` (not in repo)
 
 ### 4.3 `wasm-bindgen-futures` (201 M DL)
 Bridge Rust `Future` ↔ JS `Promise` :
@@ -168,7 +168,7 @@ Commits au-delà de `main` :
 ```
 
 ### 5.1 Détection runtime Bun
-`crates/aphrody/src/wasm_bindgen_test_runner/runtime.rs` (nouveau) :
+`crates/aphrody/src/wasm_bindgen_test_runner/runtime.rs` (not in repo) (nouveau) :
 ```rust
 enum JsRuntime { Bun { bin: String }, Node { bin: String } }
 

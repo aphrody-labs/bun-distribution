@@ -4,7 +4,7 @@ Audit en lecture seule du 25 septembre 2026, release observée sur le VPS : `8ac
 
 ## Routage du site actuellement livré
 
-`apps/website/src/lib/achillea/client.ts` choisit `NEXT_PUBLIC_ACHILLEA_API_URL` puis la valeur par défaut de `packages/achillea-client/src/v1/http.ts`, `https://ranked.rosegriffon.fr/api`. La variable n'est pas définie dans `/etc/rose-griffon/website.env` ni dans le `.env.production` de la release consultée. Un chunk client de cette release contient la valeur historique. Le site livré appelle donc cette origine par défaut pour les vues étudiées. `ranked.rosegriffon.fr` reste aussi nécessaire au WebSocket du matchmaking ; ce protocole n'est pas couvert par la migration des lectures REST.
+`apps/rg/website/src/lib/achillea/client.ts` choisit `NEXT_PUBLIC_ACHILLEA_API_URL` puis la valeur par défaut de `packages/rg/achillea-client/src/v1/http.ts`, `https://ranked.rosegriffon.fr/api`. La variable n'est pas définie dans `/etc/rose-griffon/website.env` ni dans le `.env.production` de la release consultée. Un chunk client de cette release contient la valeur historique. Le site livré appelle donc cette origine par défaut pour les vues étudiées. `ranked.rosegriffon.fr` reste aussi nécessaire au WebSocket du matchmaking ; ce protocole n'est pas couvert par la migration des lectures REST.
 
 | Vue | Lecture utilisée par le client | API RG équivalente | Observation anonyme |
 | --- | --- | --- | --- |
@@ -18,7 +18,7 @@ Audit en lecture seule du 25 septembre 2026, release observée sur le VPS : `8ac
 
 ## Écart de contrat confirmé : liste des tournois
 
-Pour `GET /tournaments?page=1&pageSize=2`, l'API historique répond `meta={page:1,limit:25,total:9,pageCount:1}` ; l'API RG répond `meta={page:1,limit:2,total:9,pageCount:5}`. La première entrée a le même ID (`32`) et les mêmes clés. Le code RG accepte `pageSize` ou `pagination` (maximum 50) dans `apps/api/src/modules/achillea/tournaments/index.ts`. Le client typé expose les deux paramètres. Une bascule d'origine changerait donc la pagination visible si le site passe `pageSize` : vérifier les contrôles et la charge, puis choisir explicitement le comportement voulu. Ne pas confondre une différence de réponse avec une différence de données sources.
+Pour `GET /tournaments?page=1&pageSize=2`, l'API historique répond `meta={page:1,limit:25,total:9,pageCount:1}` ; l'API RG répond `meta={page:1,limit:2,total:9,pageCount:5}`. La première entrée a le même ID (`32`) et les mêmes clés. Le code RG accepte `pageSize` ou `pagination` (maximum 50) dans `apps/rg/bot/src/api/modules/achillea/tournaments/index.ts`. Le client typé expose les deux paramètres. Une bascule d'origine changerait donc la pagination visible si le site passe `pageSize` : vérifier les contrôles et la charge, puis choisir explicitement le comportement voulu. Ne pas confondre une différence de réponse avec une différence de données sources.
 
 ## Blocages avant la bascule
 

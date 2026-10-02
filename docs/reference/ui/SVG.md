@@ -2,8 +2,8 @@
 # SVG convergence: `aphrody-svg`
 
 One owner for SVG across the workspace: the Rust crate
-[`crates/aphrody-svg`](../../products/ui/crates/aphrody-svg/README.md), its `bun:ffi` surface
-(`bun_rs_svg` in `crates/aphrody-bun/src/svg.rs`) and the thin Bun package
+[`crates/ui/svg`](../../products/ui/crates/aphrody-svg/README.md), its `bun:ffi` surface
+(`bun_rs_svg` in `crates/ui/bun/src/svg.rs`) and the thin Bun package
 `@aphrody/svg`. The owner is `aphrody-ui`: it is the 2D rendering layer and
 already hosted the icon, identity and sprite crates the other repos consume by relative path.
 It does not depend on `aphrody-ai`.
@@ -40,7 +40,7 @@ caller now uses `aphrody-svg`.
 | 1 | `aphrody-ui/crates/aphrody-icons/src/svg.rs` (`PathPen`, `ScaledPen`) | glyph outline pen | Converged: uses `aphrody_svg::glyph::SvgPathPen` (fixed 2-decimal output); GSUB ligature lookup stays (Material Symbols specific). |
 | 2 | `aphrody-ui/crates/aphrody-icons/tests/svg_parity.rs` | own resvg rasterize + compare | Converged: `aphrody_svg::diff::diff_svg`; the 8 pixel-parity tests pass. |
 | 3 | `aphrody-ui/crates/aphrody-identity/src/pixel.rs` `rasteriser_svg` | resvg SVG → RGBA | Converged: delegates to `aphrody_svg::raster::render`; direct resvg/usvg/tiny-skia deps removed. |
-| 4 | `aphrody-ui/crates/aphrody-bun/src/icons.rs`, `packages/bun/src/icons.ts` | Material Symbols over FFI | Kept (thin, icon-specific); new sibling FFI `bun_rs_svg` for the generic operations. |
+| 4 | `aphrody-ui/crates/aphrody-bun/src/icons.rs`, `packages/interop/native/src/icons.ts` | Material Symbols over FFI | Kept (thin, icon-specific); new sibling FFI `bun_rs_svg` for the generic operations. |
 | 5 | `aphrody-ui/packages/ui/m3-icons/src/{plugin,codegen}.ts` | Bun plugin/codegen over #1 | Kept: thin wrappers of the `icons` module of `aphrody-bun`, no SVG logic. |
 | 6 | `aphrody-ui/crates/aphrody-identity/src/pixel.rs` `vectoriser`, `assets.rs` `svg_depuis_png` | raster → SVG tracing | Kept in `aphrody-identity`: domain algorithm (mask tracing) that produces SVG, not SVG processing. |
 | 7 | `aphrody-ui/crates/aphrody-sprite-sheet/src/lib.rs` `vers_svg` | `<symbol>` over PNG atlas regions | Kept: raster atlases; vector sprites use `aphrody_svg::sprite`. |

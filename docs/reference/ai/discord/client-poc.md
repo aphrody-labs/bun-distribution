@@ -24,7 +24,7 @@ Chaque PoC a produit des artefacts sous `var/discord/poc/0N-*/` (gitignore).
 | 2 | Lire la memoire ? | Oui (CDP heap V8 + ReadProcessMemory) | CDP :9223, RPM Win32 |
 | 3 | Plugin de features ? | Oui (plugin BetterDiscord fonctionnel) | BdApi |
 | 4 | Inspection par injection ? | Attache + enum oui ; hook **bloque par CIG** | Frida, psapi |
-| + | Charger `discord_voice.node` ? | Oui sous Bun et node (95 exports) | `var/discord/discord.ts` |
+| + | Charger `discord_voice.node` ? | Oui sous Bun et node (95 exports) | `var/discord/discord.ts` (not in repo) |
 
 ## PoC 1 — Langage / framework (preuves)
 
@@ -100,7 +100,7 @@ process Discord.
 
 ## Bonus — Charger `discord_voice.node` hors Discord
 
-Script `var/discord/discord.ts` (Bun + node). Le `.node` est un addon N-API
+Script `var/discord/discord.ts` (not in repo) (Bun + node). Le `.node` est un addon N-API
 C++ qui depend de : `mediapipe.dll` (dossier voix), **`ffmpeg.dll`** (dossier
 parent `app-<ver>/`) et **`node.exe`** (host des symboles N-API). En ajoutant
 ces dossiers au chemin de recherche DLL, l'addon **se charge** :
@@ -121,7 +121,7 @@ Pour la voix d'aphrody-hermes, la voie portable reste neanmoins
 **songbird/serenity** (Rust, RTP/Opus, cf. `serenity-framework-voice.md`) :
 ce `.node` est specifique a l'ABI Electron de Discord et a son host.
 
-## Reproductibilite (artefacts gitignore sous `var/discord/poc/`)
+## Reproductibilite (artefacts gitignore sous `var/discord/poc/` (not in repo))
 
 | PoC | Dossier / fichiers cles |
 |---|---|
@@ -129,7 +129,7 @@ ce `.node` est specifique a l'ABI Electron de Discord et a son host.
 | 2 memoire | `02-memory/report.md`, `cdp_probe3.mjs`, `rpm_native.ps1` |
 | 3 plugin | `03-plugin/AphrodyProbe.plugin.js`, `report.md` |
 | 4 injection | `04-injection/report.md`, `probe.js`, `run_probe.py`, `psapi_modules_*.txt` |
-| bonus voix | `var/discord/discord.ts` |
+| bonus voix | `var/discord/discord.ts` (not in repo) |
 
 ## Mises en garde
 

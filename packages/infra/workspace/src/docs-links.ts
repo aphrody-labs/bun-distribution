@@ -35,10 +35,28 @@ export function importedUpstreamMatcher(
   };
 }
 
-/** Evidence trees whose backtick paths deliberately record historical or source-repository paths. */
-const HISTORICAL_PATH_TREES = [new Bun.Glob("docs/migration/**"), new Bun.Glob("docs/plans/**/archive/**")];
+/** Default location of documents whose backtick-path check is explicitly deferred. */
+export const DOC_PATH_CHECK_DEFERRED_CONFIG = "config/docs/doc-path-check-deferred.json";
 
-const BACKTICK_PATH = /^[A-Za-z0-9_.@-][A-Za-z0-9_.@+\/-]*$/;
+function deferredPathCheckFiles(root: string): Set<string> {
+  const file = resolve(root, DOC_PATH_CHECK_DEFERRED_CONFIG);
+  if (!existsSync(file)) return new Set();
+  const config = JSON.parse(readFileSync(file, "utf8")) as { deferred?: Array<{ file: string }> };
+  return new Set((config.deferred ?? []).map((entry) => entry.file));
+}
+
+/** Evidence trees whose backtick paths deliberately record historical or source-repository paths. */
+const HISTORICAL_PATH_TREES = [
+  new Bun.Glob("docs/migration/**"),
+  new Bun.Glob("docs/plans/**/archive/**"),
+];
+
+/** Document-level opt-out: the document's backtick paths name another repository layout or git history. */
+export const EXTERNAL_PATHS_MARKER = "<!-- docs-links: external-paths";
+/** Inline marker placed right after a code span whose path is intentionally absent from this checkout. */
+const ABSENT_PATH_SUFFIX = /^\s*\(not in repo\)/;
+
+const BACKTICK_PATH = /^[A-Za-z0-9_.@-][A-Za-z0-9_.@+/-]*$/;
 
 /**
  * Extract inline-code spans that name a repository path: no whitespace, no glob or
@@ -48,6 +66,12 @@ export function backtickRepositoryPaths(content: string, rootEntries: Set<string
   const paths: string[] = [];
   const prose = content.replace(/^(```|~~~)[\s\S]*?^\1/gm, "");
   for (const match of prose.matchAll(/(?<!`)`([^`\n]+)`(?!`)/g)) {
+    if (
+      ABSENT_PATH_SUFFIX.test(
+        prose.slice(match.index! + match[0].length, match.index! + match[0].length + 16),
+      )
+    )
+      continue;
     let value = match[1]!.trim();
     value = value.replace(/:\d+(?:[-:]\d+)?$/, "").replace(/#.*$/, "");
     if (value.startsWith("./")) value = value.slice(2);
@@ -197,6 +221,7 @@ export async function runDocsLinks(args: string[]): Promise<number> {
   }
   const isImported = importedUpstreamMatcher(ROOT_DIR, importedConfig);
   const rootEntries = new Set(await readdir(ROOT_DIR));
+  const deferredPathCheck = deferredPathCheckFiles(ROOT_DIR);
   const checkedFiles: string[] = [];
   const importedSkipped = new Map<string, number>();
   let totalLinks = 0;
@@ -220,7 +245,14 @@ export async function runDocsLinks(args: string[]): Promise<number> {
     const relativeFile = file.replace(ROOT_DIR, "").replace(/^\//, "");
     const fileDir = dirname(file);
 
-    if (backtickPaths && !HISTORICAL_PATH_TREES.some((glob) => glob.match(rootRelative))) {
+    if (
+      backtickPaths &&
+      !HISTORICAL_PATH_TREES.some((glob) => glob.match(rootRelative)) &&
+      !deferredPathCheck.has(rootRelative) &&
+      !content.includes(EXTERNAL_PATHS_MARKER) &&
+      // Generated pages are validated by their generator (docs:check), not by hand edits.
+      !content.slice(0, 400).includes("<!-- @generated")
+    ) {
       for (const path of backtickRepositoryPaths(content, rootEntries)) {
         totalBacktickPaths++;
         if (pathExists(join(ROOT_DIR, path)) || pathExists(join(fileDir, path))) continue;

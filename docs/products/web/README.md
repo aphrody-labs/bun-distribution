@@ -8,7 +8,7 @@ X clients, native FFI and the `aphrody-site` HTTP origin.
 
 - `crates/aphrody-web*`: facade, engine/service, BXC bridge, FFI, render, extraction,
   indexing and Chromium profile support.
-- `crates/aphrody-obscura`: pinned upstream engine; `aphrody-browser` exposes its
+- `docs/reference/web/crates/aphrody-obscura`: pinned upstream engine; `aphrody-browser` exposes its
   subsystem on a dedicated V8 thread.
 - `crates/aphrody-site`, `aphrody-x*`: HTTP origin and X client/ranking.
 - `drive-server/`: isolated FSL-1.1-ALv2 `sd-server` migration workspace;

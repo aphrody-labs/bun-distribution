@@ -15,7 +15,7 @@ add repository constraints, not a separate approval workflow.
 - Crate paths and public APIs are consumed by siblings: migrate/check consumers
   when changing them. Infra owns public routes, services and deployments.
 - Record Obscura changes in `crates/aphrody-obscura/OBSCURA-UPSTREAM.txt`.
-  Do not edit `apps/bxc/vendor/`; BXC work also follows its local `AGENTS.md`.
+  Do not edit `apps/bxc/vendor/` (not in repo); BXC work also follows its local `AGENTS.md`.
 - Commit `bun.lock` with manifest changes. Use nextest for process-global-state
   tests; keep environment-dependent skips explicit.
 

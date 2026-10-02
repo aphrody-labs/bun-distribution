@@ -26,10 +26,10 @@ Skills are maintained in `.agents/skills/`; the unified Aphrody plugin lives in 
 | Skill | Path | Description |
 |---|---|---|
 | `rust-native-scanner` | `.agents/skills/rust-native-scanner` | High-performance codebase validation and Oxlint verification via native Rust binary. |
-| `bxc-api` | `.agents/skills/bxc-api` | Browser automation API usage. |
-| `bxc-detect` | `.agents/skills/bxc-detect` | Framework / fingerprint detection. |
-| `bxc-recon` | `.agents/skills/bxc-recon` | URL reconnaissance and data extraction. |
-| `bxc-scrape` | `.agents/skills/bxc-scrape` | Markdown / structured scraping. |
+| `bxc-api` | `.agents/skills/bxc-api` (not in repo) | Browser automation API usage. |
+| `bxc-detect` | `.agents/skills/bxc-detect` (not in repo) | Framework / fingerprint detection. |
+| `bxc-recon` | `.agents/skills/bxc-recon` (not in repo) | URL reconnaissance and data extraction. |
+| `bxc-scrape` | `.agents/skills/bxc-scrape` (not in repo) | Markdown / structured scraping. |
 
 ## Notes for plugin developers
 

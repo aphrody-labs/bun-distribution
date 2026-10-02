@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 # Cross-platform build
 
-> Réf. : `rust-toolchain.toml`, `crates/aphrody-models/src/paths.rs`, `crates/aphrody-agent-home/src/paths.rs`.
+> Réf. : `rust-toolchain.toml`, `crates/ai/models/src/paths.rs`, `crates/ai/agent-home/src/paths.rs`.
 > Axe principal du projet (2026-05-17) : **un binaire Rust unique cross-platform** Windows / Linux / macOS / wasm.
 
 ## Cibles supportées
@@ -142,7 +142,7 @@ Le `rust-toolchain.toml` garantit que **chaque runner installe exactement la mê
 
 ### Chromium
 - ✅ **Toolchain pinnée** via `rust-toolchain.toml` (équivalent `tools/rust/`).
-- ✅ **Lints android-strict** disponibles en preset opt-in per-crate (cf. `docs/cargo/LINTS.md`).
+- ✅ **Lints android-strict** disponibles en preset opt-in per-crate (cf. `docs/reference/ai/cargo/LINTS.md`).
 - ✅ **Supply-chain audits** : `cargo-vet` avec feeds Google/Mozilla/Fuchsia/ChromeOS.
 - ✅ **`cxx` + `bindgen`** ajoutés à `workspace.dependencies` (pas encore utilisés — quand surface FFI grandit).
 - ⏸ **`crubit`** (expérimental, non adopté — comme Chromium).

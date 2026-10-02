@@ -7,8 +7,8 @@ Each field composes a control from `@aphrody/m3-primitives` with the M3 text-fie
 the control, then supporting text (or error text) 4dp below it.
 
 This is SpaceUI's `@spacedrive/forms` rebuilt on Material Design 3. The upstream source lives in
-`packages/aphrody-spaceui/packages/forms`; the fusion rules are in
-[`docs/design/SPACEUI-M3-FUSION.md`](../../../../architecture/ui/design/SPACEUI-M3-FUSION.md).
+`packages/aphrody-spaceui/packages/forms` (not in repo); the fusion rules are in
+[`docs/architecture/ui/design/SPACEUI-M3-FUSION.md`](../../../../architecture/ui/design/SPACEUI-M3-FUSION.md).
 
 ## Install
 

@@ -15,7 +15,7 @@ commands, data, authorization policy and secrets.
    first and describe the compatibility and migration path.
 4. Preserve the license and copyright notices in every Discord.js or DiscordX
    snapshot package. Do not copy upstream code into `@aphrody/messaging` without
-   recording its provenance in `docs/UPSTREAMS.md`.
+   recording its provenance in `docs/UPSTREAMS.md` (not in repo).
 
 ## Local checks
 

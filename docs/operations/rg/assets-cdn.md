@@ -9,7 +9,7 @@ status: "stable"
 
 ## Source de vérité
 
-`packages/assets/public/` est la seule source versionnée des visuels communs :
+`packages/rg/assets/public/` est la seule source versionnée des visuels communs :
 logos Rose Griffon, identités des projets, images Open Graph, icônes, fonds et
 polices. Le paquet `@rosegriffon/assets` expose à la fois ces fichiers et les
 helpers d'URL client-safe. Une application ne copie pas ces fichiers dans son
@@ -19,7 +19,7 @@ Les assets se répartissent volontairement en trois classes :
 
 | Classe | Source | URL publique | Responsable |
 | --- | --- | --- | --- |
-| Communs / marque | `packages/assets/public/` | `https://cdn.rosegriffon.fr/static/rg/public/<fichier>` | tâche cron `cdn` |
+| Communs / marque | `packages/rg/assets/public/` | `https://cdn.rosegriffon.fr/static/rg/public/<fichier>` | tâche cron `cdn` |
 | Données du jeu Azalée | extraction CPK et services `niers` | `https://cdn.rosegriffon.fr/static/azalee/...`, `/dx11`, `/model-*`, `/audio`, etc. | pipeline de données du jeu |
 | Fichiers utilisateurs | buckets Storage | URL Storage signée ou publique selon le bucket | service Storage |
 
@@ -68,7 +68,7 @@ des consommateurs historiques ; la nouvelle tâche n'y écrit déjà plus.
 
 ## Règles de contribution
 
-- Ajouter un visuel commun sous `packages/assets/public/`, jamais dans deux apps.
+- Ajouter un visuel commun sous `packages/rg/assets/public/`, jamais dans deux apps.
 - Utiliser un nom stable, sans écraser un fichier déjà publié ; le CDN applique
   un cache immutable d'un an.
 - Préférer un nouveau nom versionné pour une modification incompatible.

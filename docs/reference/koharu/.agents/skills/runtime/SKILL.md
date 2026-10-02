@@ -15,7 +15,7 @@ The script updates only the vendored C/C++ headers and prints the latest publish
 
 Use those versions to update:
 
-- `crates/koharu-runtime/src/runtime/packages/llama.rs`
-- `crates/koharu-runtime/src/runtime/packages/diffusion.rs`
+- `crates/koharu/koharu-runtime/src/runtime/packages/llama.rs`
+- `crates/koharu/koharu-runtime/src/runtime/packages/diffusion.rs`
 
 Then review the generated bindings, update the safe wrappers as needed, and run the focused Cargo checks for the five runtime crates.

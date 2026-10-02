@@ -2,7 +2,7 @@
 
 Google's security and forensics Python repositories cover the full defensive stack: scalable fuzzing infrastructure, remote live-forensics agents, collaborative timeline analysis, network security testing, cryptographic artifact auditing, ACL generation, USB attack prevention, and CTF challenge archives.
 
-> Part of [`docs/google/`](../../../../products/ai/google/README.md). Full mechanical listing: [`all-repos.md`](../../../../reference/ai/google/all-repos.md). This page covers 29 repos (20 active / 9 archived).
+> Part of [`docs/google/` (not in repo)](../../../../products/ai/google/README.md). Full mechanical listing: [`all-repos.md`](../../../../reference/ai/google/all-repos.md). This page covers 29 repos (20 active / 9 archived).
 
 ---
 

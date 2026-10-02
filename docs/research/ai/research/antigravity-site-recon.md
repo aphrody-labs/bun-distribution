@@ -30,7 +30,7 @@ apt/yum repos, all under GCP project `974169037036`.
 - Recon date: **2026-05-21**.
 - Connect IP: **216.239.32.61** (Google LLC netblock 216.239.32.0/19).
 - Server: `Google Frontend`; HTTP/1.1 + HTTP/3 (`Alt-Svc h3`).
-- Raw artifacts: `var/data/antigravity-site/` (gitignored — see Manifest §7).
+- Raw artifacts: `var/data/antigravity-site/` (not in repo) (gitignored — see Manifest §7).
 
 ## 1. Pages map
 
@@ -57,7 +57,7 @@ permission). Note: `/docs/rest-api` currently renders the get-started content
 
 ## 2. Assets inventory
 
-Counts (full tree with sizes in `var/data/antigravity-site/MANIFEST.txt`):
+Counts (full tree with sizes in `var/data/antigravity-site/MANIFEST.txt` (not in repo)):
 
 - **HTML**: 26 page shells (`site/html/`), all identical SPA bootstrap.
 - **JS**: `main-ULJOXPIW.js` (1.77 MB decompressed), `chunk-E6TGZIGP.js` (esbuild
@@ -68,7 +68,7 @@ Counts (full tree with sizes in `var/data/antigravity-site/MANIFEST.txt`):
 - **Images**: 34 (brand lockups/icons PNG, use-case SVGs, 7 og "sitecard" PNGs,
   3 large landing thumbnails ~2 MB JPG each, 11 THREE.js texture PNGs).
 - **Video**: 8 referenced; 7 downloaded (459 KB – 9.7 MB), 1 over the 50 MB cap
-  recorded URL-only: `assets/video/use-cases/pmm/hero-bg-pmm.mp4` (54,103,792 B).
+  recorded URL-only: `assets/video/use-cases/pmm/hero-bg-pmm.mp4` (not in repo) (54,103,792 B).
 - **Fonts**: Google Sans Flex, Google Sans Code, Google Symbols (served from
   `fonts.gstatic.com`, not re-hosted — URLs catalogued in `index.html`).
 - **Meta**: `robots.txt`, `sitemap.xml`, `favicon.ico` exist. **404**:
@@ -137,7 +137,7 @@ No JSON-LD on the page. Open Graph / Twitter (from `index.html`): site name
 "Google Antigravity", description "Build the new way", card
 `summary_large_image`, `twitter:site @antigravity`, og image
 `/assets/image/sitecards/sitecard-default.png` (7 sitecards exist, one per
-section). Full structured extract: `var/data/antigravity-site/site/data/embedded.json`.
+section). Full structured extract: `var/data/antigravity-site/site/data/embedded.json` (not in repo).
 
 ## 5. Infra fingerprint (CDN / headers / DNS)
 
@@ -163,7 +163,7 @@ section). Full structured extract: `var/data/antigravity-site/site/data/embedded
 
 ## 6. What this tells us vs the desktop client RE
 
-Cross-reference: [`docs/research/antigravity-sdk-analysis.md`](./antigravity-sdk-analysis.md)
+Cross-reference: [`docs/research/ai/research/antigravity-sdk-analysis.md`](./antigravity-sdk-analysis.md)
 §0.0 (forensic RE of the installed Antigravity 2.0.1 desktop client).
 
 - **Two complementary surfaces, cleanly separated.** The desktop RE established
@@ -178,7 +178,7 @@ Cross-reference: [`docs/research/antigravity-sdk-analysis.md`](./antigravity-sdk
 - **New CLI (`agy`) not covered by the SDK analysis.** The site reveals a separate
   `agy` CLI (PyPI `google-antigravity`, repo `antigravity-cli`, v1.0.0) with its
   own Cloud Run manifest+SHA512 self-update flow — distinct from the IDE/Hub
-  channels and from the Python SDK (`crates/aphrody-antigravity` ports the SDK's Cloud
+  channels and from the Python SDK (`crates/google/antigravity` ports the SDK's Cloud
   path #1, not this CLI). The CLI's `--standalone --subclient_type hub` LS spawn in
   §0.0 path #2 is the likely runtime the `agy` binary fronts.
 - **Version reconciliation.** SDK analysis pinned the desktop client at 2.0.1; the
@@ -195,11 +195,11 @@ Cross-reference: [`docs/research/antigravity-sdk-analysis.md`](./antigravity-sdk
   `*.googleapis.com` API beyond what §0.0 already documented; it only adds the
   distribution Cloud Run + GCS + pkg.dev infrastructure above.
 
-## 7. Artifact manifest (saved under `var/data/antigravity-site/`)
+## 7. Artifact manifest (saved under `var/data/antigravity-site/` (not in repo))
 
 Gitignored (proven: `git check-ignore var/data/antigravity-site/` → match).
 **91 files, ~25.7 MB total.** Tree summary (full per-file sizes in
-`var/data/antigravity-site/MANIFEST.txt`):
+`var/data/antigravity-site/MANIFEST.txt` (not in repo)):
 
 ```
 var/data/antigravity-site/

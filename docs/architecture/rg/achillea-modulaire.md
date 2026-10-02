@@ -38,13 +38,13 @@ consomme, et aucune des trois premières couches ne sait qu'Angular existe.
 
 Ces règles ne sont pas déclaratives : elles sont **tenues par des tests**.
 
-- `packages/achillea-types/test/purity.test.ts` — refuse toute fonction, toute
+- `packages/rg/achillea-types/test/purity.test.ts` — refuse toute fonction, toute
   dépendance runtime, tout import hors paquet.
-- `packages/achillea-core/tests/portability.test.ts` — scanne les sources et
+- `packages/rg/achillea-core/tests/portability.test.ts` — scanne les sources et
   refuse `node:`, `bun:`, `@angular/`, `react`, `rxjs`, `discord.js`,
   `@mikro-orm/`, `tsyringe`, `Bun.`, `process.env`, `window.`, `document.`,
   `localStorage`.
-- `apps/website/src/lib/achillea/achillea.test.ts` — vérifie que les trois
+- `apps/rg/website/src/lib/achillea/achillea.test.ts` — vérifie que les trois
   paquets s'importent et fonctionnent dans la chaîne de build Next.js.
 
 Un glissement casse la CI le jour même, pas six mois plus tard.
@@ -79,7 +79,7 @@ tient en une phrase — `Number()` seul ne borne rien, `Number(null)` vaut `0`.
 
 ## Le contrat comme frontière réelle
 
-`packages/achillea-contract` lit les sources de `achillea-types` (AST
+`packages/rg/achillea-contract` lit les sources de `achillea-types` (AST
 TypeScript) et régénère à chaque build :
 
 | Fichier                | Cible                          |
@@ -97,7 +97,7 @@ bun --filter @rosegriffon/achillea-contract check      # CI : échoue si périm�
 C'est ce qui rend l'énoncé « migrable vers un jeu Rust ou une app mobile »
 vérifiable plutôt que déclaratif : les 226 formes du domaine ne sont jamais
 retapées à la main. Détails et conventions de traduction :
-`packages/achillea-contract/README.md`.
+`packages/rg/achillea-contract/README.md`.
 
 Le générateur échoue bruyamment sur ce qu'il ne sait pas traduire, plutôt que
 d'aplatir en `unknown` : `Omit`/`Pick` hors clause d'héritage, littéral de type
@@ -155,9 +155,9 @@ Les valeurs de `Tone` (`success`, `warn`, `info`, `danger`, `secondary`,
 et que `TONE_TO_SHADCN_BADGE` / `TONE_TO_TAILWIND` traduisent côté React. Une
 troisième cible ajoute sa propre table, sans toucher au métier.
 
-## Consommer Achilléa depuis `apps/website`
+## Consommer Achilléa depuis `apps/rg/website`
 
-Les trois paquets sont déclarés dans `apps/website/package.json` et listés dans
+Les trois paquets sont déclarés dans `apps/rg/website/package.json` et listés dans
 `transpilePackages` de `next.config.ts` (ils sont consommés en source
 TypeScript, comme les autres workspaces).
 
@@ -219,7 +219,7 @@ bun --filter @rosegriffon/achillea-bot      type-check
 bun --filter @rosegriffon/website           type-check
 ```
 
-Tout est enchaîné dans `.github/workflows/ci.yml`.
+Tout est enchaîné dans `.github/rg/workflows/ci.yml`.
 
 ## Prochaine étape si l'on migre le front
 
@@ -227,7 +227,7 @@ L'ordre qui minimise le risque, sachant que les trois couches basses sont déjà
 prêtes :
 
 1. Monter les écrans lecture seule (classement, tournois, profils) dans
-   `apps/website` en Server Components — ils ne dépendent que de `client` +
+   `apps/rg/website` en Server Components — ils ne dépendent que de `client` +
    `core`, déjà branchés et testés.
 2. Porter les écrans authentifiés, en remplaçant `AuthSessionService` par le
    `getAuthToken` / `credentials` du client.

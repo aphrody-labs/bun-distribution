@@ -4,10 +4,10 @@ Relevé des couleurs et des proportions du nuage magique sur les cels Toei puis 
 manga (tome 1 ch. 4, édition couleur), et dessin d'un Kinto-Un original — illustration,
 icône carrée, favicons de toutes tailles — à partir de ces seules mesures.
 
-- Géométrie (source unique) : [`apps/site/src/lib/kinto-un.ts`](../../apps/shenron/site/src/lib/kinto-un.ts)
-- Illustration : [`apps/site/public/dbz/kinto-un.svg`](../../packages/shenron/ui/assets/dbz/kinto-un.svg) · icône : [`kinto-un-icone.svg`](../../packages/shenron/ui/assets/dbz/kinto-un-icone.svg)
-- Composant : [`apps/site/src/components/KintoUn.tsx`](../../apps/shenron/site/src/components/KintoUn.tsx) (`<KintoUn>`, `<KintoUnLoader>`)
-- Générateurs : [`genere-kinto-un.ts`](../../apps/shenron/site/scripts/genere-kinto-un.ts) (SVG) et [`genere-icones.ts`](../../apps/shenron/site/scripts/genere-icones.ts) (favicons site + bot)
+- Géométrie (source unique) : [`apps/shenron/site/src/lib/kinto-un.ts`](../../../apps/shenron/site/src/lib/kinto-un.ts)
+- Illustration : [`apps/shenron/site/public/dbz/kinto-un.svg`](../../../packages/shenron/ui/assets/dbz/kinto-un.svg) · icône : [`kinto-un-icone.svg`](../../../packages/shenron/ui/assets/dbz/kinto-un-icone.svg)
+- Composant : [`apps/shenron/site/src/components/KintoUn.tsx`](../../../apps/shenron/site/src/components/KintoUn.tsx) (`<KintoUn>`, `<KintoUnLoader>`)
+- Générateurs : [`genere-kinto-un.ts`](../../../apps/shenron/site/scripts/genere-kinto-un.ts) (SVG) et [`genere-icones.ts`](../../../apps/shenron/site/scripts/genere-icones.ts) (favicons site + bot)
 - Mesures faites le 2026-09-04.
 
 ## Nom et graphie
@@ -98,7 +98,7 @@ exploitable directement (Goku est assis dedans, il coupe la crête entre 25 % et
 ## D — manga, la référence finale
 
 Contrôle de fidélité sur _tome 1, chapitre 4_ : planche 70 (trait original N&B,
-`apps/bot/assets/manga/DB/regular/vol1/070.webp`) et planche 81 de l'édition couleur
+`apps/bot/assets/manga/DB/regular/vol1/070.webp` (not in repo)) et planche 81 de l'édition couleur
 (`fullcolor/enfance-goku/t901/081.webp`). Le dépôt place le manga au-dessus de l'anime.
 
 **Forme — Toriyama dessine autrement que Toei :**
@@ -156,8 +156,8 @@ Chaîne de fabrication mesurée par l'étude favicon : `sharp` seul (déjà à l
 redondante (`favicons` exige un second `sharp` ; `to-ico` abandonné en 2017 ; `cli-real-favicon`
 téléverse l'asset chez un tiers), et un `bun add` côté site a déjà cassé le déploiement.
 
-Fichiers produits, identiques pour le site (`apps/site/public/`) et le dashboard du bot
-(`apps/bot/public/`) :
+Fichiers produits, identiques pour le site (`apps/shenron/site/public/`) et le dashboard du bot
+(`apps/shenron/bot/public/`) :
 
 | Fichier                        | Taille              | Fond                | Corrige                                                                   |
 | ------------------------------ | ------------------- | ------------------- | ------------------------------------------------------------------------- |
@@ -168,7 +168,7 @@ Fichiers produits, identiques pour le site (`apps/site/public/`) et le dashboard
 | `icon-maskable-512.png`        | `purpose: maskable` | opaque, nuage à 0,8 | l'ancien 512 déclaré `any maskable` perdait 27 % de ses pixels au rognage |
 | `mstile-150.png`               | 150                 | opaque              | + meta `msapplication-*`, pas de `browserconfig.xml`                      |
 | `safari-pinned-tab.svg`        | vectoriel           | silhouette noire    | nouveau (`mask-icon`)                                                     |
-| `apps/bot/assets/logo.webp`    | 1024                | pastille            | logo du dashboard bot                                                     |
+| `apps/shenron/bot/assets/logo.webp`    | 1024                | pastille            | logo du dashboard bot                                                     |
 
 OG / Twitter : rien à faire, `app/opengraph-image.tsx` couvre les deux.
 
@@ -176,10 +176,10 @@ OG / Twitter : rien à faire, `app/opengraph-image.tsx` couvre les deux.
 
 | Surface                                                              | Fichier                                                                                  |
 | -------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
-| Favicons, manifest, `mask-icon`, tuile Windows                       | `apps/site/src/app/layout.tsx`, `public/manifest.webmanifest`                            |
-| Wordmark du header (s'envole au survol)                              | `apps/site/src/components/SiteNav.tsx`                                                   |
-| Chargement de page et barre de navigation                            | `apps/site/src/app/loading.tsx`, `components/NavigationProgress.tsx` (`<KintoUnLoader>`) |
-| Dashboard bot : favicons, manifest, logo (`Layout.tsx`, `Login.tsx`) | `apps/bot/public/`, `apps/bot/assets/logo.webp`                                          |
+| Favicons, manifest, `mask-icon`, tuile Windows                       | `apps/shenron/site/src/app/layout.tsx`, `public/manifest.webmanifest`                            |
+| Wordmark du header (s'envole au survol)                              | `apps/shenron/site/src/components/SiteNav.tsx`                                                   |
+| Chargement de page et barre de navigation                            | `apps/shenron/site/src/app/loading.tsx`, `components/NavigationProgress.tsx` (`<KintoUnLoader>`) |
+| Dashboard bot : favicons, manifest, logo (`Layout.tsx`, `Login.tsx`) | `apps/shenron/bot/public/`, `apps/shenron/bot/assets/logo.webp`                                          |
 | JSON-LD `Organization.logo`                                          | `apple-touch-icon.png`                                                                   |
 
 ## Reproduire

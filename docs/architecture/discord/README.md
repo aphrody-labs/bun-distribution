@@ -131,7 +131,7 @@ Detailed in [`COMPILER.md`](COMPILER.md):
    - Dual-profile dynamic dispatching (`rg` vs `azalee`) via static module loader registry (`src/modules.ts`).
    - Entry point: `src/entry-standalone.ts`.
    - Output binary: `dist/rg-bot` (~144.9 MB).
-3. **`apps/rg/achillea-bot` (`@rosegriffon/achillea-bot`)**:
+3. **`apps/rg/achillea-bot` (not in repo) (`@rosegriffon/achillea-bot`)**:
    - Tournament match automation and bracket management.
 
 ### Layer 5: Host Systemd Services (`systemd/`)

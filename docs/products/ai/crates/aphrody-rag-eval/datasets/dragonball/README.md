@@ -3,7 +3,7 @@
 Source registry, crawl plan and ingestion for the Dragon Ball RAG corpus. The
 operator decided on 2026-09-25 to index every source in the registry in depth.
 The decision is recorded in the superproject ledger
-`docs/governance/OPEN-RESERVATIONS.md`, under Resolved.
+`docs/governance/OPEN-RESERVATIONS.md` (not in repo), under Resolved.
 
 | File | Role |
 | --- | --- |

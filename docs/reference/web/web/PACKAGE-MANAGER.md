@@ -12,8 +12,8 @@ release, de manifeste `aphrody-package.json`, d'installeur ni de commande
   relaie les routes Web autorisées sous `/api/v1/web/*`.
 - `aphrody-web-ffi` fournit le pont Rust natif. Le build du workspace produit
   la bibliothèque propre à la plateforme (`.so`, `.dylib` ou `.dll`).
-- `@aphrody/bxc` reste une bibliothèque Bun du workspace. Les shims `bin/bxc`
-  et `bin/bxc.mjs` lancent uniquement la CLI source pour le développement ;
+- `@aphrody/bxc` reste une bibliothèque Bun du workspace. Les shims `bin/bxc` (not in repo)
+  et `bin/bxc.mjs` (not in repo) lancent uniquement la CLI source pour le développement ;
   le paquet ne publie plus de commande `bin`.
 
 Le gestionnaire de paquets met à jour Aphrody OS comme une seule release.

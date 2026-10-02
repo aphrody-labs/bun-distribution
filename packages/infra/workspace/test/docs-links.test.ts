@@ -166,3 +166,54 @@ test("coverage includes imported, historical and active pages unless individuall
     await rm(root, { recursive: true, force: true });
   }
 });
+
+test("declared imported upstream trees are skipped and dead backtick paths fail first-party docs", async () => {
+  const root = await mkdtemp(join(tmpdir(), "docs-links-imported-"));
+  const output: string[] = [];
+  const logger = spyOn(console, "log").mockImplementation((message) =>
+    output.push(String(message)),
+  );
+  try {
+    await mkdir(join(root, "config/docs"), { recursive: true });
+    await mkdir(join(root, "docs/reference/upstream-x"), { recursive: true });
+    await mkdir(join(root, "docs/reference/upstream-x/local"), { recursive: true });
+    await mkdir(join(root, "packages/real"), { recursive: true });
+    await writeFile(join(root, "packages/real/index.ts"), "");
+    await writeFile(
+      join(root, "config/docs/imported-upstream-docs.json"),
+      JSON.stringify({
+        trees: [
+          { id: "x", include: ["docs/*/upstream-x/**"], except: ["docs/*/upstream-x/local/**"] },
+        ],
+      }),
+    );
+    await writeFile(
+      join(root, "docs/reference/upstream-x/page.md"),
+      "[up](absent.md) `packages/gone.ts`",
+    );
+    await writeFile(join(root, "docs/reference/upstream-x/local/ours.md"), "# Ours");
+    await writeFile(
+      join(root, "docs/active.md"),
+      "`packages/real/index.ts:3` and `packages/gone/x.ts`",
+    );
+    const args = ["--root", root, "--json"];
+    expect(await runDocsLinks(args)).toBe(1);
+    const report = JSON.parse(output.pop()!);
+    expect(report.importedSkipped).toEqual({ x: 1 });
+    expect(report.broken).toBe(0);
+    expect(report.deadPaths).toEqual([{ file: "docs/active.md", path: "packages/gone/x.ts" }]);
+
+    await writeFile(join(root, "docs/active.md"), "`packages/gone/x.ts` (not in repo)");
+    expect(await runDocsLinks(args)).toBe(0);
+    await writeFile(
+      join(root, "docs/active.md"),
+      "<!-- docs-links: external-paths — another repository -->\n`packages/gone/x.ts`",
+    );
+    expect(await runDocsLinks(args)).toBe(0);
+    await writeFile(join(root, "docs/reference/upstream-x/local/ours.md"), "[x](absent.md)");
+    expect(await runDocsLinks(args)).toBe(1);
+  } finally {
+    logger.mockRestore();
+    await rm(root, { recursive: true, force: true });
+  }
+});

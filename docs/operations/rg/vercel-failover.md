@@ -2,7 +2,7 @@
 
 ## Portée
 
-Le secours Vercel couvre uniquement `apps/website`, qui inclut le wiki Azalée
+Le secours Vercel couvre uniquement `apps/rg/website`, qui inclut le wiki Azalée
 sous `/wiki`. Il n'existe aucun projet ou build Vercel Azalée distinct. Il ne remplace pas les
 services persistants du VPS : PostgreSQL/PostgREST, Storage, Realtime SSE, CDN
 dynamique, RAG, MCP, bots Discord, cron et génération de modèles NIE.

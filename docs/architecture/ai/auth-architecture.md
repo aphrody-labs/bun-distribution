@@ -35,7 +35,7 @@ This interface is implemented using Python's `ctypes` library to load `advapi32.
 
 ### POSIX Fallback & Cache File
 On non-Windows platforms (like Linux or macOS) or as a fallback cache, Aphrody uses a private file named `antigravity-token.json`.
-* **Path Resolution**: The path defaults to `var/secrets/antigravity-token.json` when running in a repository workspace, or `~/.aphrody/antigravity-token.json` in global installations.
+* **Path Resolution**: The path defaults to `var/secrets/antigravity-token.json` (not in repo) when running in a repository workspace, or `~/.aphrody/antigravity-token.json` in global installations.
 * **Override Hook**: Developers can override this path by setting the `APHRODY_TOKEN_PATH` environment variable.
 
 ### Cross-Platform File Permissions Enforcement
@@ -135,8 +135,8 @@ This command runs `setup_secrets()` in `aphrody/cli/setup.py` to configure a loc
 ### Execution Steps
 1. **Repository Root Resolution**: Dynamically resolves the repository root directory by walking up from the current directory looking for a `.git` folder.
 2. **GCloud Environment Verification**: Checks if the `gcloud` CLI is installed and accessible in the system `PATH`.
-3. **Secrets Directory Provisioning**: Creates `var/secrets/` in the repository root.
-4. **Key Generation & Download**: Runs `gcloud iam service-accounts keys create` to generate a new key for the service account `aphrody-bot@aphrody.iam.gserviceaccount.com` and writes it to `var/secrets/aphrody-bot-key.json`.
+3. **Secrets Directory Provisioning**: Creates `var/secrets/` (not in repo) in the repository root.
+4. **Key Generation & Download**: Runs `gcloud iam service-accounts keys create` to generate a new key for the service account `aphrody-bot@aphrody.iam.gserviceaccount.com` and writes it to `var/secrets/aphrody-bot-key.json` (not in repo).
 5. **GCloud Activation**: Runs `gcloud auth activate-service-account` to log `gcloud` in as the service account using the newly created key file.
 6. **IAM Policy Binding**: Binds the service account to the `roles/owner` role for the GCP project `aphrody`.
 7. **Batch API Enablement**: Enables the complete suite of required Google APIs (`aiplatform`, `drive`, `sheets`, `translate`, `books`, `dns`, `generativelanguage`, `iam`, `cloudresourcemanager`, and `docs`) in a single execution of `gcloud services enable`.

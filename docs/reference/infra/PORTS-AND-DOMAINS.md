@@ -98,7 +98,7 @@ closed 2026-09-26.
 | `bot.dragonballfr.com` | `/` | shenron-bot :5006 | live |
 | `cdn.dragonballfr.com` | `/_next/static/`, `/_next/image`, `/wiki/`, `/assets/` | shenron-site :5011 | live |
 | `mcp.dragonballfr.com` | `/a2a`, `/.well-known/agent-card.json` | shenron-mcp :5010 | retired 2026-09-25, superseded by `aphrody-mcp dragonball.*` |
-| `rpbey.fr`, `www.rpbey.fr`, `api.rpbey.fr`, `cdn.rpbey.fr`, `play.rpbey.fr` | — | — | **retired 2026-09-26: domain sold, operator decision (see `docs/PLAN.md`).** Removed entirely, not just marked dead — see §4 item 12. |
+| `rpbey.fr`, `www.rpbey.fr`, `api.rpbey.fr`, `cdn.rpbey.fr`, `play.rpbey.fr` | — | — | **retired 2026-09-26: domain sold, operator decision (see `docs/PLAN.md` (not in repo)).** Removed entirely, not just marked dead — see §4 item 12. |
 | `bot.rosegriffon.fr` | — | nothing | dead DNS record, resolves to the VPS with no `server_name` (docs/ops/OVH.md); not fixable from this repo (DNS mutation is out of scope) |
 
 **2026-09-26 (all-in-one bundle):** `fut-api` / `fut.aphrody.com` (8088), registered the same
@@ -118,7 +118,7 @@ Fixed in this pass (see `config/service-catalog.json`, `config/production-topolo
 3. The A2A peer record for `aphrody` pointed at a retired service/route without saying so — now
    carries `status`/`retiredAt` like the `shenron` peer already did.
 4. `nginx/rg/supabase-compat.inc`'s `/rest/v1/` and `/graphql/v1/` blocks hard-coded
-   `127.0.0.1:8809` (`rg-postgrest`), a service `docs/PLAN.md`'s ledger records as removed with no
+   `127.0.0.1:8809` (`rg-postgrest`), a service `docs/PLAN.md` (not in repo)'s ledger records as removed with no
    consumer (2026-09-23) and for which no systemd unit exists anywhere in this repo — marked
    retired in place (not deleted, so the location shape survives if it's ever redeployed).
 5. Six pre-consolidation per-host RG nginx templates (`rosegriffon.conf`,
@@ -144,14 +144,14 @@ Fixed in this pass (see `config/service-catalog.json`, `config/production-topolo
 
 Resolved by the `rg` sibling audit (§5) the same day — no longer open:
 
-8. ~~rg-cdn vs rg-api for `cdn.rosegriffon.fr`~~ — **answered.** `apps/api/src/index.ts` (in the
-   `rg` repo) imports `handleCdn`/`handleStorage`/`handleRealtime` from the sibling `apps/cdn`,
-   `apps/storage`, `apps/realtime` packages and mounts them **in-process** on `rg-api:8800`, with
+8. ~~rg-cdn vs rg-api for `cdn.rosegriffon.fr`~~ — **answered.** `apps/api/src/index.ts` (not in repo) (in the
+   `rg` repo) imports `handleCdn`/`handleStorage`/`handleRealtime` from the sibling `apps/rg/bot/src/api/services/cdn`,
+   `apps/rg/bot/src/api/services/storage`, `apps/rg/bot/src/api/services/realtime` packages and mounts them **in-process** on `rg-api:8800`, with
    its own comments confirming the intent: `// remplace rg-cdn:8801`, `// remplace rg-storage:8810`,
    `// remplace rg-realtime:8812`. So `rg-production.conf` proxying everything to `:8800` is correct,
    not a regression; `rg-cdn.service`/`rg-storage.service`/`rg-realtime.service` are an
    alternate/older standalone deployment mode of the *same code*, currently superseded by the
-   unified `rg-api` path for live traffic (one exception: `apps/website/src/lib/db/platform.ts`'s
+   unified `rg-api` path for live traffic (one exception: `apps/rg/website/src/lib/db/platform.ts`'s
    admin health dashboard still probes `:8810`/`:8812` directly as a standalone-service check).
    `config/service-catalog.json`'s notes for these three services were corrected accordingly.
 9. ~~rg-storage/rg-realtime: proxied via rg-api, or a dead standalone unit?~~ — same answer as #8.
@@ -185,18 +185,18 @@ of 2026-09-26 — nothing in this section is open any more:
     Neither side of the contradiction stands any more, so instead of picking one this pass removed
     the domain outright: the four `nginx/rg/*rpbey.fr*.conf` templates and the `rpbey.fr` block in
     the live `rg-production.conf` (server_name list and the 503 maintenance server); the `rpbey.fr`
-    entry in the `aphrody.com` OVH profile's domain set (`packages/aphrody-ovh/src/profiles.ts`,
-    `crates/aphrody-ovh/src/profile.rs`, and their tests); the `cdn.rpbey.fr` entry in `rg`'s
-    `apps/cdn/server.ts` `ALLOWED_PUBLIC_HOSTS` (and its test in `apps/cdn/server.test.ts`); and
+    entry in the `aphrody.com` OVH profile's domain set (`packages/aphrody-ovh/src/profiles.ts` (not in repo),
+    `crates/infra/ovh/src/profile.rs`, and their tests); the `cdn.rpbey.fr` entry in `rg`'s
+    `apps/rg/bot/src/api/services/cdn/server.ts` `ALLOWED_PUBLIC_HOSTS` (and its test in `apps/rg/bot/src/api/services/cdn/server.test.ts`); and
     the `rpbey.fr`/`*.rpbey.fr` branch of the nginx-stats parser in `rg`'s
-    `packages/cron/src/tasks/stats/achillea.ts`. `docs/ops/OVH.md` and `docs/ovh/README.md` now
+    `packages/rg/cron/src/tasks/stats/achillea.ts`. `docs/reference/infra/ops/OVH.md` and `docs/ovh/README.md` (not in repo) now
     record the sale instead of describing a live-but-unserved zone. No route ever existed in
     `config/nginx-routes.json`/`config/service-catalog.json` for this domain, so no catalog entry
     needed removing there. CHANGELOG/history mentions (e.g. `shenron/docs/archive/`) were left
     untouched, per the "history stays" rule.
 13. ~~Port 8811 (`SUPABASE_INTERNAL_URL`)~~ — **resolved 2026-09-26: routed to `rg-api:8800`
-    (absorbed), not un-superseded.** `rg`'s own `packages/db/src/env.ts` (`INTERNAL_URL`),
-    `packages/cron/src/lib/storage-assets.ts` (`baseStorage()`) and `apps/website/next.config.ts`'s
+    (absorbed), not un-superseded.** `rg`'s own `packages/rg/db/src/env.ts` (`INTERNAL_URL`),
+    `packages/rg/cron/src/lib/storage-assets.ts` (`baseStorage()`) and `apps/rg/website/next.config.ts`'s
     storage `rewrites()` (`FALLBACK_STORAGE_URL`) all now default `SUPABASE_INTERNAL_URL` to
     `http://127.0.0.1:8800` instead of `:8811`, since `rg-api` absorbs storage/realtime in-process
     (items 8/9 above) and is the only backend `rg-production.conf` actually routes `/storage/v1/`
@@ -213,20 +213,20 @@ commit trailers in each repo for any fix that landed):
 - **aphrody-os**: zero hits against the catalog; no fix needed.
 - **aphrody-ai**: every literal that duplicates a canonical `APHRODY_AI_*` value already resolves
   through that env var first; nothing trivial to fix. One drift found and fixed 2026-09-26:
-  `crates/aphrody-rag-eval/src/main.rs`'s `DEFAULT_MCP_URL` defaulted to `https://aphrody.com/mcp`,
+  `crates/ai/rag-eval/src/main.rs`'s `DEFAULT_MCP_URL` defaulted to `https://aphrody.com/mcp`,
   a path/host with no live entry in `config/nginx-routes.json` (its `aphrody-site` backend is
   retired). Made env-driven (`APHRODY_MCP_HTTP_URL`, checked before the local default) with the
   local default repointed at `http://127.0.0.1:8789/mcp` — `aphrody-mcp http`'s own `--bind`
-  default and `/mcp` mount (`crates/aphrody-mcp/src/main.rs`), the one MCP HTTP origin this
+  default and `/mcp` mount (`crates/ai/mcp/src/main.rs`), the one MCP HTTP origin this
   ecosystem actually runs locally by convention. `--url` (CLI) still wins over both.
 - **aphrody-ui**: same pattern (env-first, literal only as fallback); nothing trivial to fix. One
-  drift flagged for the owner: `packages/app-ui/src/shenron-studio.tsx`'s "local model inference"
+  drift flagged for the owner: `packages/app-ui/src/shenron-studio.tsx` (not in repo)'s "local model inference"
   field defaults to `127.0.0.1:8790`, which is actually `nie-model-serve`'s port, not a generic
   local-inference port, and (unlike the sibling `embedUrl` field) isn't persisted — needs a product
   decision on what it should really point at.
 - **aphrody-web**: fixed and committed (`8bd5380`) two literal-duplicates-in-scope-value cases —
-  `crates/aphrody-site/src/gateway.rs` now calls the existing `aphrody_api::a2a_url()` helper
-  instead of repeating `"http://127.0.0.1:8788"`, and `apps/bxc/src/db/AphrodyRedis.ts` now imports
+  `crates/aphrody-site/src/gateway.rs` (not in repo) now calls the existing `aphrody_api::a2a_url()` helper
+  instead of repeating `"http://127.0.0.1:8788"`, and `apps/bxc/src/db/AphrodyRedis.ts` (not in repo) now imports
   the already-exported `DEFAULT_REDIS_URL` instead of repeating the Redis literal. Everything else
   (aphrody-site's own 8083/3007/8788 defaults, bxc's CDP debug ports, dev-server defaults) matches
   the catalog or is out of scope (local tooling).
@@ -234,23 +234,23 @@ commit trailers in each repo for any fix that landed):
   upstream: `nie net server`'s default no longer collides with `nie-site` (bumped to `127.0.0.1:8796`
   with an explicit comment), and the `ai.json` `127.0.0.1:8792` A2A literal is not dead, it is
   `nie`'s documented slot in the cross-repo A2A convention, bound externally by the `aphrody` CLI
-  (`aphrody a2a serve --bind 127.0.0.1:8792`, `docs/A2A-CODEX.md`).
+  (`aphrody a2a serve --bind 127.0.0.1:8792`, `docs/A2A-CODEX.md` (not in repo)).
 - **rg**: fixed and committed (`60fa573`) two literal-duplication cases (a `:8800` log literal next
-  to the `PORT` constant already in scope in `apps/api/src/index.ts`; a repeated
+  to the `PORT` constant already in scope in `apps/api/src/index.ts` (not in repo); a repeated
   `"http://127.0.0.1:8811"` fallback extracted to `FALLBACK_STORAGE_URL` in
-  `apps/website/next.config.ts`). Also answered the two open architecture questions this audit had
+  `apps/rg/website/next.config.ts`). Also answered the two open architecture questions this audit had
   left for the `rg` owner (§4 items 8/9, now resolved) and surfaced two new findings recorded above
   as §4 items 12 (the `rpbey.fr` contradiction) and 13 (the live `:8811` default), both since
   resolved (2026-09-26, see those items) — and
   independently confirmed the `rg-postgrest`/`:8809` retirement claim is accurate from `rg`'s own
   source (no live call site; the real PostgREST-successor type-generation script now targets
   `pg-meta` on `:8813`, not `:8809`).
-- **shenron**: fixed and committed (`d00c8825`) one case (`apps/site/scripts/index-databooks-redis.ts`
+- **shenron**: fixed and committed (`d00c8825`) one case (`apps/shenron/site/scripts/index-databooks-redis.ts`
   now reuses the shared `resolveRedisUrl()` instead of a literal). Flagged for the owner, not fixed
   (a different agent was already mid-edit on the same MCP-retirement cleanup, so these were
   reported rather than raced against): several executable, live dependencies on the retired
   `mcp.dragonballfr.com` / `127.0.0.1:5010` remain — `ai.json`'s own agent-card
   (`supported_interfaces`, `coord.http_bind`), the `dragon-ball` MCP plugin's client config
-  (`plugins/dragon-ball/mcp_config.json`, `.mcp.json`), and three ops scripts that actively probe or
-  call the dead host (`scripts/ops/test-a2a-live.ts`, `scripts/ops/observability-snapshot.ts`,
-  `scripts/monitor-shenron-engine.ts`).
+  (`plugins/dragon-ball/mcp_config.json` (not in repo), `.mcp.json`), and three ops scripts that actively probe or
+  call the dead host (`scripts/audit/shenron/scripts/ops/test-a2a-live.ts`, `scripts/tools/shenron/scripts/ops/observability-snapshot.ts`,
+  `scripts/tools/shenron/scripts/monitor-shenron-engine.ts`).

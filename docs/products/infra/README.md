@@ -18,15 +18,15 @@ The development Discord application is declared as an Infra-owned service at
 `https://bot.aphrody.com`, bound to loopback port `4010` in the catalogue; DNS,
 TLS, Nginx, systemd, immutable releases, and its external env file are managed
 here. Its dated deployment observation and OAuth redirect registration are recorded in
-[`docs/IMMUTABLE-RELEASES.md`](../../operations/infra/IMMUTABLE-RELEASES.md) and
-[`docs/PLAN.md`](../../plans/infra/PLAN.md). Reusable Discord code and upstream bot
+[`docs/operations/infra/IMMUTABLE-RELEASES.md`](../../operations/infra/IMMUTABLE-RELEASES.md) and
+[`docs/PLAN.md` (not in repo)](../../plans/infra/PLAN.md). Reusable Discord code and upstream bot
 architecture audits belong to the separate
 [Aphrody Discord monorepo](https://github.com/aphrody-labs/aphrody).
 Its Carbon profile login requests `identify`. Its separate bot installation
 requests `bot applications.commands` and permission bitfield `8` for the
 development guild; Discord-specific
 scope/approval limits are documented in that repository's
-[`docs/carbon-oauth.md`](https://github.com/aphrody-labs/aphrody).
+[`docs/reference/discord/carbon-oauth.md`](https://github.com/aphrody-labs/aphrody).
 
 ## Operations
 

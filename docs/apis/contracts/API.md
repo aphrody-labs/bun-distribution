@@ -63,7 +63,7 @@ Owner: `aphrody-a2a` (types), `aphrody-a2a-server`/`aphrody-a2a-client`
 (transport), `aphrody-a2a-grpc`/`aphrody-a2a-pb` (gRPC binding),
 `aphrody-a2a-coord` (fleet `.coord` bridge).
 
-Protocol version: `aphrody_a2a::VERSION = "1.0"` (`crates/aphrody-a2a/src/lib.rs`),
+Protocol version: `aphrody_a2a::VERSION = "1.0"` (`crates/contracts/a2a/src/lib.rs`),
 carried on HTTP via the `A2A-Version` header (`SVC_PARAM_VERSION`).
 
 | Method | Purpose |
@@ -78,7 +78,7 @@ carried on HTTP via the `A2A-Version` header (`SVC_PARAM_VERSION`).
 | `GetExtendedAgentCard` | Authenticated agent-card fetch (capabilities, skills). |
 
 All request/response structs use `#[serde(rename_all = "camelCase")]`
-(`crates/aphrody-a2a/src/types.rs`, `agent_card.rs`, `event.rs`).
+(`crates/contracts/a2a/src/types.rs`, `agent_card.rs`, `event.rs`).
 
 Legacy/fleet alias: `message/send` (`aphrody_a2a::coord::FLEET_MESSAGE_SEND`)
 is the lowercase-slash method name used on the `.coord` HTTP bridge; kept
@@ -95,8 +95,8 @@ alone; when SLIMRPC is re-enabled, its constants should import
 ## 3. Codex app-server v2 (stdio JSON-RPC, `aphrody app-server`)
 
 Owner (types): `aphrody-app-protocol`. Implemented by `aphrody-ai`
-`crates/aphrody-app-server` (`AppServer::dispatch`,
-`crates/aphrody-app-server/src/lib.rs:531-985`). Every request/response/
+`crates/ai/app-server` (`AppServer::dispatch`,
+`crates/ai/app-server/src/lib.rs:531-985`). Every request/response/
 notification struct is `#[serde(rename_all = "camelCase")]`.
 
 **Important caveat, found during this audit:** `aphrody-app-server` does
@@ -117,7 +117,7 @@ audit.
 `thread/read`, `thread/archive`, `thread/unarchive`, `thread/close`,
 `thread/compact/start`, `turn/start`, `turn/steer`, `turn/interrupt`,
 `turn/events`, `model/list` (server also accepts the alias `models/list`),
-`config/read`, `account/login/start`, `account/read`, `mcpServerStatus/list`,
+`config/read` (not in repo), `account/login/start`, `account/read`, `mcpServerStatus/list`,
 `tools/list`, `notifications/drain` (server also accepts the alias
 `aphrody/notifications`), `shutdown`.
 
@@ -142,7 +142,7 @@ pass.
 (`TurnEventsParams`/`TurnEventsResponse`, all four in
 `aphrody-app-protocol/src/types/extensions.rs`) were added to `ClientRequest`
 by this pass — see §3.3. Implemented by `aphrody-ai`
-`crates/aphrody-app-server/src/lib.rs`: `thread/unarchive` (`:653`),
+`crates/ai/app-server/src/lib.rs`: `thread/unarchive` (`:653`),
 `thread/close` (`:878`), `turn/events` (`:710`), `tools/list` (`:740`),
 `notifications/drain` (`:801`), `shutdown` (`:980`).
 
@@ -225,11 +225,11 @@ and `EventMsg` enums tagged `rename_all = "snake_case"`.
 | # | Where | Problem | Fix |
 | --- | --- | --- | --- |
 | 1 | `aphrody-contracts` `aphrody-app-protocol` + `aphrody-ui` `shenron-studio.tsx` | `probeAppServer()` called `aphrodyRpc("aphrody/status")`. The method turned out to be real and working (`aphrody-ai lib.rs:805`, aliased `system/status`) but was **not typed in `aphrody-contracts`** — a genuine contracts gap, not a client bug. | Added `AphrodyStatusParams`/`AphrodyStatusCapabilities`/`AphrodyStatusResponse` and a `ClientRequest::AphrodyStatus` (`aphrody/status`) variant to `aphrody-app-protocol`, matching the shape `aphrody-ai` already returns, plus a contract test (`tier1_contract.rs`). The TS client call needed no change. |
-| 2 | `aphrody-ui` `packages/app-ui/src/shenron-studio.tsx` (`runModelInferenceTest`) | Called `turn/start` without `threadId`, which `TurnStartParams.thread_id` requires (not `Option`); always failed with an invalid-params error. | Calls `thread/start` first, then `turn/start` with the returned `threadId`, mirroring the working pattern already used in `quickbar.tsx`/`app.tsx`. |
-| 3 | `aphrody-ui` `packages/app-ui/src/shenron-studio.tsx` | `RagSearchResult.chunkId` read as `r.chunkId ?? r.chunk_id`, a dead fallback masking uncertainty about the wire shape (the contract is unconditionally camelCase). | Removed the `chunk_id` fallback; kept `chunkId` only, with a comment pointing at the contract. |
-| 4 | `aphrody-ui` `packages/app-ui/src/shenron-studio.tsx` | Local `AppServerThread.updated_at` interface field declared snake_case while the real wire field (`Thread.updatedAt`) is camelCase (latent — the field was never read). | Renamed the interface field to `updatedAt`. |
-| 5 | `aphrody-web` `apps/bxc/src/mcp/server.ts` (`bxc_x_algorithm_rank`) | MCP tool schema exposed `top_k` (snake_case) even though the TS binding one layer below (`@aphrody/x` `rankPosts(candidates, context, topK)`, `packages/x/src/algo.ts`) already renamed the same value to `topK`. Same concept, casing flipped mid-chain. | Schema's primary field is now `topK`; `top_k` kept as a deprecated optional alias so already-shipped callers keep working (`args.topK ?? args.top_k`). |
-| 6 | `aphrody-web` `apps/bxc/src/mcp/server.ts` (`bxc_xpro_deck`) | `deck_id` was the only snake_case field in an otherwise camelCase tool (`name`, `query`, `count`, `cookie`). | Schema's primary field is now `deckId`; `deck_id` kept as a deprecated optional alias. |
+| 2 | `aphrody-ui` `packages/app-ui/src/shenron-studio.tsx` (not in repo) (`runModelInferenceTest`) | Called `turn/start` without `threadId`, which `TurnStartParams.thread_id` requires (not `Option`); always failed with an invalid-params error. | Calls `thread/start` first, then `turn/start` with the returned `threadId`, mirroring the working pattern already used in `quickbar.tsx`/`app.tsx`. |
+| 3 | `aphrody-ui` `packages/app-ui/src/shenron-studio.tsx` (not in repo) | `RagSearchResult.chunkId` read as `r.chunkId ?? r.chunk_id`, a dead fallback masking uncertainty about the wire shape (the contract is unconditionally camelCase). | Removed the `chunk_id` fallback; kept `chunkId` only, with a comment pointing at the contract. |
+| 4 | `aphrody-ui` `packages/app-ui/src/shenron-studio.tsx` (not in repo) | Local `AppServerThread.updated_at` interface field declared snake_case while the real wire field (`Thread.updatedAt`) is camelCase (latent — the field was never read). | Renamed the interface field to `updatedAt`. |
+| 5 | `aphrody-web` `apps/bxc/src/mcp/server.ts` (not in repo) (`bxc_x_algorithm_rank`) | MCP tool schema exposed `top_k` (snake_case) even though the TS binding one layer below (`@aphrody/x` `rankPosts(candidates, context, topK)`, `packages/web/x/src/algo.ts`) already renamed the same value to `topK`. Same concept, casing flipped mid-chain. | Schema's primary field is now `topK`; `top_k` kept as a deprecated optional alias so already-shipped callers keep working (`args.topK ?? args.top_k`). |
+| 6 | `aphrody-web` `apps/bxc/src/mcp/server.ts` (not in repo) (`bxc_xpro_deck`) | `deck_id` was the only snake_case field in an otherwise camelCase tool (`name`, `query`, `count`, `cookie`). | Schema's primary field is now `deckId`; `deck_id` kept as a deprecated optional alias. |
 
 Note: `bxc_x_algorithm_rank`'s `context` object (`viewer_id`,
 `followed_author_ids`, `recent_engagement_author_ids`, `muted_keywords`,
@@ -246,7 +246,7 @@ targets.
 Open items are recorded so the next pass has a starting point.
 
 1. **DONE — `browser_*` MCP tool name collision.** `aphrody-web`
-   `apps/bxc/src/mcp/server.ts` now registers its 13 tools as `bxc_browser_*`
+   `apps/bxc/src/mcp/server.ts` (not in repo) now registers its 13 tools as `bxc_browser_*`
    (canonical) and keeps the old `browser_*` names as deprecated aliases (same
    schema and handler, description flagged deprecated). `obscura-mcp` keeps
    its own `browser_*` names. `capabilities.ts` and `AGENTS.md` updated
@@ -288,7 +288,7 @@ Open items are recorded so the next pass has a starting point.
    layer nor `aphrody-ui`'s Tauri/TS layer imports generated types from
    this repository; every surface hand-declares its own Zod schema or TS
    interface. On the Rust side, `aphrody-ui`'s desktop broker
-   (`crates/aphrody-app/src/broker.rs`) forwards raw `serde_json::Value`
+   (`crates/ui/app/src/broker.rs`) forwards raw `serde_json::Value`
    and hand-builds two JSON-RPC envelopes by literal (`initialize`,
    `initialized`) instead of importing `ClientRequest` — even though
    `aphrody-ui`'s own `CLAUDE.md` allows a path dependency on
@@ -296,7 +296,7 @@ Open items are recorded so the next pass has a starting point.
    repo, just not `aphrody-app-protocol`). This is why bugs #2 and the
    original #1 in §5 existed undetected: nothing checked the method name or
    required fields at compile time. Recommendation: add
-   `aphrody-app-protocol` as a path dependency of `crates/aphrody-app` and
+   `aphrody-app-protocol` as a path dependency of `crates/ui/app` and
    have `broker.rs` deserialize into `ClientRequest` for at least
    validation/logging; generate a matching TS package for the frontend
    (e.g. via `ts-rs`) so `tauri-bridge.ts`/`app.tsx`/`quickbar.tsx`/
@@ -319,7 +319,7 @@ Open items are recorded so the next pass has a starting point.
    (OpenAI `{"error":{"message","type"}}`) and `aphrody-jev` (Anthropic
    `{"detail":{"error_type","message"}}`) — their clients require those
    shapes. External consumer to adapt if adopted: `shenron`
-   `packages/ai/src/wire.ts` `ErrorBody` (unused today).
+   `packages/ai/src/wire.ts` (not in repo) `ErrorBody` (unused today).
 9. **The same "OpenAI chat message" shape is independently defined at least
    three times inside `aphrody-ai`**: `aphrody-gateway`'s
    `OpenAiChatCompletionsRequest`, `aphrody-mcp`'s `ChatRequest`

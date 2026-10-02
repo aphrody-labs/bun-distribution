@@ -14,7 +14,7 @@ reproduction of the source list.
   - Raw README ingested: <https://raw.githubusercontent.com/vaaaaanquish/Awesome-Rust-MachineLearning/main/README.md>
   - License of the upstream list: that repository is published under its own
     terms (an awesome-list of links). The RAW upstream file is kept locally,
-    gitignored, at `var/data/awesome-rust-ml/README.upstream.md` and is NOT
+    gitignored, at `var/data/awesome-rust-ml/README.upstream.md` (not in repo) and is NOT
     committed verbatim to avoid redistributing a third-party document.
 - Date of analysis: 2026-05-21. Crate versions/licenses below were
   fact-checked against crates.io on that date (per CLAUDE.md §2.5).
@@ -108,7 +108,7 @@ wired today.
 
 Covered in §1. `ort 2.0.0-rc.12`, MIT OR Apache-2.0. This is aphrody's only
 real neural-inference dependency today, pulled transitively by `magika` and
-declared as an optional direct dep in `crates/aphrody/Cargo.toml`
+declared as an optional direct dep in `apps/cli/Cargo.toml`
 (`ort = { version = "=2.0.0-rc.12", optional = true }`) behind the `magika`
 feature. The pin is exact (`=2.0.0-rc.12`) because the 2.x line is a release
 candidate (production-ready but not API-stable). Verified building offline
@@ -133,7 +133,7 @@ candidate (production-ready but not API-stable). Verified building offline
 - **`instant-distance`** would be the pure-Rust HNSW upgrade for the current
   brute-force `aphrody-memory::hnsw` module, but it is documented as **not
   present in this workspace's offline registry cache** (see the comment in
-  `crates/aphrody-memory/Cargo.toml`), so it cannot be added under the
+  `crates/ai/memory/Cargo.toml`), so it cannot be added under the
   hermetic-offline build today without first populating the cache.
 
 Recommendation: keep LanceDB. Pair it with `fastembed` (§2) for the embedding
@@ -146,10 +146,10 @@ Grepped the workspace `Cargo.toml` files for `candle`, `ort`, `tokenizers`,
 
 | Crate | Status | Where |
 |-------|--------|-------|
-| `magika` | **WIRED** (opt-in `magika` feature) | `crates/aphrody-re/Cargo.toml` (`magika = "1.1.0"`), impl in `crates/aphrody-re/src/magika.rs` |
-| `ort` | **WIRED** (transitive via `magika` + optional direct dep) | `crates/aphrody/Cargo.toml` (`=2.0.0-rc.12`, `magika` feature) |
-| `lancedb` | **WIRED** | workspace `Cargo.toml` (`0.29`), `crates/aphrody-memory/Cargo.toml` |
-| `arrow-array` / `arrow-schema` | **WIRED** (LanceDB backend) | `crates/aphrody-memory/Cargo.toml` |
+| `magika` | **WIRED** (opt-in `magika` feature) | `crates/os/re/Cargo.toml` (`magika = "1.1.0"`), impl in `crates/os/re/src/magika.rs` |
+| `ort` | **WIRED** (transitive via `magika` + optional direct dep) | `apps/cli/Cargo.toml` (`=2.0.0-rc.12`, `magika` feature) |
+| `lancedb` | **WIRED** | workspace `Cargo.toml` (`0.29`), `crates/ai/memory/Cargo.toml` |
+| `arrow-array` / `arrow-schema` | **WIRED** (LanceDB backend) | `crates/ai/memory/Cargo.toml` |
 | `candle` | not used | — (recommended for future in-process inference) |
 | `tract` | not used | — (recommended as WASM/hermetic ONNX fallback) |
 | `fastembed` | not used | — (recommended for `aphrody-memory` embeddings) |
@@ -159,7 +159,7 @@ Grepped the workspace `Cargo.toml` files for `candle`, `ort`, `tokenizers`,
 | `tch` | not used | rejected (libtorch / non-hermetic) |
 
 The magika path is the only neural-ML code currently compiled into aphrody.
-`MagikaClass` / `Classifier` (`crates/aphrody-re/src/magika.rs`) projects
+`MagikaClass` / `Classifier` (`crates/os/re/src/magika.rs`) projects
 Magika's `FileType` + `TypeInfo` into an owned, serde-serializable result and
 runs the embedded ONNX model through `ort`. The feature is correctly host-only
 and opt-in because `ort`'s prebuilt-runtime download is incompatible with the

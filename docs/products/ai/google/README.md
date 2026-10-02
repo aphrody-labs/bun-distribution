@@ -57,5 +57,5 @@ Reference catalog of every public Python repository owned by the [google](https:
 | 30 | [spatial-media](https://github.com/google/spatial-media) | 2073 | active | Specifications and tools for 360º video and spatial audio. |
 
 ---
-_Generated from `docs/data/repos.json`. Thematic pages under `catalog/` are enriched with real GitHub topics and README excerpts._
+_Generated from `docs/reference/ai/data/repos.json`. Thematic pages under `catalog/` are enriched with real GitHub topics and README excerpts._
 

@@ -127,7 +127,7 @@ liveness et readiness) sont implémentées et validées par leurs tests unitaire
 2. Répartir les responsabilités : scripts de schéma dans `packages/shenron/db`,
    pipeline/RAG dans `packages/shenron/pipeline`, outils de bot/site dans leurs
    workspaces, et coordination transversale dans
-   `packages/infra/aphrody-workspace/src/shenron/`.
+   `packages/infra/aphrody-workspace/src/shenron/` (not in repo).
 3. Migrer opérations, maintenance, synchronisations et vérifications vers des
    fonctions TS avec arguments typés et appels `Bun.spawn(argv, { cwd })` ;
    remplacer les scripts shell/PowerShell portables par ces fonctions lorsque

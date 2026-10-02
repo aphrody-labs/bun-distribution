@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 # Android target — Cross-compile via `cargo-ndk`
 
-> Réf. : `rust-toolchain.toml`, `.cargo/config.toml`, `.github/workflows/cross-platform.yml`.
+> Réf. : `rust-toolchain.toml`, `.cargo/config.toml`, `.github/workflows/cross-platform.yml` (not in repo).
 > Aligné [Android NDK guide](https://developer.android.com/ndk/guides/other_build_systems).
 
 ## Pré-requis
@@ -69,7 +69,7 @@ class Aphrody {
 
 ## CI Android
 
-Voir `.github/workflows/cross-platform.yml` job `android` :
+Voir `.github/workflows/cross-platform.yml` (not in repo) job `android` :
 
 ```yaml
 android:

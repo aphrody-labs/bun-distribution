@@ -5,8 +5,8 @@
 > références courantes sous `docs/operations/infra/`. Les noms de checkout
 > `aphrody-infra` ci-dessous décrivent la migration et les chemins historiques.
 > Pour la topologie observée le 2026-10-02, consulter
-> [`TOPOLOGY-OBSERVATION-2026-10-02.md`](../operations/infra/TOPOLOGY-OBSERVATION-2026-10-02.md)
-> et [`VPS-STATUS-2026-10-02.md`](../operations/infra/VPS-STATUS-2026-10-02.md).
+> [`TOPOLOGY-OBSERVATION-2026-10-02.md`](../infra/TOPOLOGY-OBSERVATION-2026-10-02.md)
+> et [`VPS-STATUS-2026-10-02.md`](../infra/VPS-STATUS-2026-10-02.md).
 
 Depuis la migration décrite dans `aphrody-infra/docs/SHENRON-MIGRATION.md` et
 `aphrody-infra/docs/PRODUCTION-ALLOCATION.md`, l'exploitation de Shenron n'est
@@ -45,7 +45,7 @@ Better Auth / Postgres / backups pour Shenron (contrats
 il n'existe ni unité `shenron-api` ni vhost `shenron-api` dédiés. Les routes
 publiques de l'API sont servies par les vhosts du bot et du site déclarés dans
 `config/nginx-routes.json`. Contrat, montages et limiteurs :
-[`docs/STACK.md`](STACK.md) (§3.6 `@shenron/api`, ticket INFRA-5 du §7.3).
+[`packages/ui/material-web/docs/STACK.md`](../../architecture/shenron/STACK.md) (§3.6 `@shenron/api`, ticket INFRA-5 du §7.3).
 
 ## Dépendances d'exécution (catalogue de l'Infra du monorepo)
 
@@ -62,7 +62,7 @@ en dur ici ni dans le code :
 
 Sans ces services, les modules RAG, LLM, cache sémantique et entraînement du
 bot s'importent sans erreur et `PgService` reste nul (test
-`apps/bot/tests/boot-without-services.test.ts`).
+`apps/shenron/bot/tests/boot-without-services.test.ts`).
 
 ## Ce que possède `aphrody-os`
 
@@ -75,18 +75,18 @@ bot s'importent sans erreur et `PgService` reste nul (test
 
 ## Ce qui reste dans `shenron`
 
-- Le code applicatif (`apps/bot`, `apps/site`, `packages/*`). Le MCP Shenron
+- Le code applicatif (`apps/shenron/bot`, `apps/shenron/site`, `packages/*`). Le MCP Shenron
   passe par le MCP unifié `aphrody-ai/crates/aphrody-mcp` (`dragonball.*`), pas
   par un service/package Shenron séparé. La ligne infra historique `shenron-mcp`
   est retirée/supersédée ; le catalogue infra fait foi.
 - Les scripts de fabrication d'artefact de build, propres au monorepo :
-  `scripts/ops/package-site-artifact.ts` (empaquetage du `.next-build` pour
-  import blue/green) et `scripts/ops/build-site-external.ts` (build Next hors
+  `scripts/build/shenron/scripts/ops/package-site-artifact.ts` (empaquetage du `.next-build` pour
+  import blue/green) et `scripts/build/shenron/scripts/ops/build-site-external.ts` (build Next hors
   VPS, tunnel DB, artefact scellé). Ils produisent l'artefact que
   l'Infra du monorepo consomme ; ils ne pilotent pas le systemd/nginx cible.
-- La CI applicative : `.github/workflows/ci.yml` (type-check/lint/test/build),
-  `.github/workflows/codeql.yml` (scan sécurité) et
-  `.github/workflows/release.yml` (binaires + GitHub Release taggée). Ces
+- La CI applicative : `.github/shenron/workflows/ci.yml` (type-check/lint/test/build),
+  `.github/shenron/workflows/codeql.yml` (scan sécurité) et
+  `.github/shenron/workflows/release.yml` (binaires + GitHub Release taggée). Ces
   workflows valident le code, ils ne déploient rien en production.
 
 ## Historique de consolidation (plan de suppression clôturé)
@@ -103,27 +103,27 @@ ancienne table.
 | `fly.toml` | Cible Fly retirée du plan (aucune cible infra de repli attendue — suppression simple après confirmation que `deploy-fly.yml` est désactivé) |
 | `vercel.json` | Cible Vercel retirée du plan de production (standby documenté ailleurs, pas remplacé par un équivalent infra) |
 | `Dockerfile` | Aucun runtime conteneur dans `config/service-catalog.json` — suppression une fois confirmé qu'aucun mainteneur ne dépend du build Docker |
-| `.github/workflows/deploy-fly.yml` | Pipeline de release infra couvrant le déploiement (aphrody-infra) |
-| `.github/workflows/deploy-vercel.yml` | idem — cible Vercel hors plan |
-| `.github/workflows/neon-branch.yml` | Migration DB pilotée par le pipeline infra (Postgres géré côté de l'Infra du monorepo/RG) |
-| `scripts/deploy-shenron.sh`, `scripts/deploy-shenron.ps1` | Unité `shenron-bot.service` + procédure de release infra |
-| `scripts/deploy-site.sh`, `scripts/deploy-site.ps1` | Unité `shenron-site.service` + bascule blue/green infra |
-| `scripts/deploy-mcp.sh` | Ancienne unité supprimée ; outils Dragon Ball portés par `aphrody-mcp` unifié |
-| `scripts/ship-shenron.sh`, `scripts/ship-shenron.ps1` | Pipeline de release infra (build + transfert + bascule) |
-| `scripts/ship-site.sh` | idem, volet site |
-| `scripts/ship-vps-dbfr.sh`, `scripts/ship-vps-dbfr.ps1` | Le flux `vps` → `dbfr` disparaît : `dbfr` n'héberge plus le site (cf. faits de cible) |
-| `scripts/release-dbfr.sh` | idem — release pilotée par l'Infra du monorepo, plus par `dbfr` |
-| `scripts/build-vps.sh` | Validation de build assurée par la CI + le pipeline infra |
-| `scripts/fly-init.sh` | Cible Fly retirée du plan |
-| `scripts/clean-vps.sh` (et la commande `bun run clean:vps` / `scripts/ops/clean-vps.ts`) | Politique de rétention et nettoyage portée par l'Infra du monorepo (`config/scheduler-policy.json`) |
-| `scripts/watchdog.sh` | Auto-remédiation portée par le superviseur infra (systemd + probes du catalogue) |
-| `scripts/reactivate.sh` | Provisioning complet remplacé par le provisioning infra (`deploy/install.sh` infra équivalent) |
-| `scripts/backup-shenron-pg.sh` | `shenron-backup.timer` (ou équivalent Postgres) du catalogue infra, DB restant sur `dbfr` |
-| `scripts/healthcheck.sh`, `scripts/healthcheck.ps1` | Probes de santé du catalogue infra (`health` par service dans `config/service-catalog.json`) |
+| `.github/workflows/deploy-fly.yml` (not in repo) | Pipeline de release infra couvrant le déploiement (aphrody-infra) |
+| `.github/workflows/deploy-vercel.yml` (not in repo) | idem — cible Vercel hors plan |
+| `.github/workflows/neon-branch.yml` (not in repo) | Migration DB pilotée par le pipeline infra (Postgres géré côté de l'Infra du monorepo/RG) |
+| `scripts/deploy-shenron.sh` (not in repo), `scripts/deploy-shenron.ps1` (not in repo) | Unité `shenron-bot.service` + procédure de release infra |
+| `scripts/deploy-site.sh` (not in repo), `scripts/deploy-site.ps1` (not in repo) | Unité `shenron-site.service` + bascule blue/green infra |
+| `scripts/deploy-mcp.sh` (not in repo) | Ancienne unité supprimée ; outils Dragon Ball portés par `aphrody-mcp` unifié |
+| `scripts/ship-shenron.sh` (not in repo), `scripts/ship-shenron.ps1` (not in repo) | Pipeline de release infra (build + transfert + bascule) |
+| `scripts/ship-site.sh` (not in repo) | idem, volet site |
+| `scripts/ship-vps-dbfr.sh` (not in repo), `scripts/ship-vps-dbfr.ps1` (not in repo) | Le flux `vps` → `dbfr` disparaît : `dbfr` n'héberge plus le site (cf. faits de cible) |
+| `scripts/release-dbfr.sh` (not in repo) | idem — release pilotée par l'Infra du monorepo, plus par `dbfr` |
+| `scripts/build-vps.sh` (not in repo) | Validation de build assurée par la CI + le pipeline infra |
+| `scripts/fly-init.sh` (not in repo) | Cible Fly retirée du plan |
+| `scripts/clean-vps.sh` (not in repo) (et la commande `bun run clean:vps` / `scripts/ops/clean-vps.ts` (not in repo)) | Politique de rétention et nettoyage portée par l'Infra du monorepo (`config/scheduler-policy.json`) |
+| `scripts/watchdog.sh` (not in repo) | Auto-remédiation portée par le superviseur infra (systemd + probes du catalogue) |
+| `scripts/reactivate.sh` (not in repo) | Provisioning complet remplacé par le provisioning infra (`deploy/install.sh` infra équivalent) |
+| `scripts/ops/backup-shenron-pg.sh` | `shenron-backup.timer` (ou équivalent Postgres) du catalogue infra, DB restant sur `dbfr` |
+| `scripts/healthcheck.sh` (not in repo), `scripts/healthcheck.ps1` (not in repo) | Probes de santé du catalogue infra (`health` par service dans `config/service-catalog.json`) |
 | `scripts/ops/ovh-dns.ts` (migré) | Bascule DNS pilotée par le plan infra si un jour nécessaire (hors scope applicatif) |
 
 Ne sont **pas** dans cette liste (hors périmètre de cette tâche, code
-applicatif) : `scripts/shenron-guild-sync.sh`, `scripts/backup-shenron-sqlite.sh`,
+applicatif) : `scripts/tools/shenron/scripts/shenron-guild-sync.sh`, `scripts/ops/backup-shenron-sqlite.sh`,
 les timers de sync Neon/PG applicatifs, et tout ce qui touche à l'ingestion ou
 au RAG.
 
@@ -137,7 +137,7 @@ au RAG.
 
 La liste gated ci-dessus a été exécutée (parité confirmée dans l'Infra du monorepo).
 
-- **Supprimés** : `apps/mcp` (ancien doublon de MCP ; commande `pipeline mcp` et
+- **Supprimés** : `apps/mcp` (not in repo) (ancien doublon de MCP ; commande `pipeline mcp` et
   scripts `mcp:*` retirés ; outils Dragon Ball désormais dans
   `aphrody-ai/crates/aphrody-mcp`) ; Fly/Vercel/Neon/
   Docker (`deploy-fly.yml`, `deploy-vercel.yml`, `neon-branch.yml`, `Dockerfile`,
@@ -147,13 +147,13 @@ La liste gated ci-dessus a été exécutée (parité confirmée dans l'Infra du 
   `apps/bot/scripts/{deploy.ts,install.*,setup.sh,start.sh,doctor.sh,fly-init.sh,
   sync-sqlite-to-neon.ts,sync-neon-to-sqlite.ts,log-watcher.service}` ;
   `deploy/{systemd,nginx,filebrowser,migrate}`, `deploy/install.sh`,
-  `deploy/setup-swap.sh` ; `scripts/ops/offload-rag-vectors-to-aphrody.ts` et
-  `scripts/ops/ingest_rag_to_aphrody.py` (one-shot, sans référence).
+  `deploy/setup-swap.sh` ; `scripts/ops/offload-rag-vectors-to-aphrody.ts` (not in repo) et
+  `scripts/ops/ingest_rag_to_aphrody.py` (not in repo) (one-shot, sans référence).
 - **Déplacés vers l'Infra du monorepo** : `scripts/ops/backup-shenron-{pg,sqlite}.sh`
   (les copies locales restent gelées tant que les timers DBFR exécutent
   l'ancien checkout `~/shenron/scripts/…` sur `dbfr`) ; `systemd/privoxy.service.d/shenron-media.conf` ;
   `nginx/cdn.dragonballfr.com.conf.example` (non routé, décision ouverte).
-- **Artefact site** : `bun run site:artifact` (`scripts/ops/build-site-external.ts`,
+- **Artefact site** : `bun run site:artifact` (`scripts/build/shenron/scripts/ops/build-site-external.ts`,
   base de build via `SITE_BUILD_DATABASE_URL` ou `.env.remote-db`) produit
   `artifacts/site-build.tar.gz{,.sha256}` ; `bun run site:migrate` applique les
   migrations Drizzle du site. Le pipeline release l'Infra du monorepo appelle ces deux
@@ -168,5 +168,5 @@ La liste gated ci-dessus a été exécutée (parité confirmée dans l'Infra du 
   runtime du modèle.
 - **Restent ici** (hors infra) : `deploy/install-media-vpn-proxy.sh` et
   `deploy/privoxy/*` (lit le drop-in dans `../aphrody-infra`) ;
-  `apps/bot/scripts/log-watcher.ts` reste un outil CLI manuel. Son unité
+  `apps/shenron/bot/scripts/log-watcher.ts` reste un outil CLI manuel. Son unité
   systemd est retirée du catalogue et ne doit pas être recréée implicitement.

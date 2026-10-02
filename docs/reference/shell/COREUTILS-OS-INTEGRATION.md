@@ -225,9 +225,9 @@ and every unsupported capability states its platform/owner.
 
 | Repository | Owner paths | Purpose |
 | --- | --- | --- |
-| `aphrody-os` | `crates/aphrody-coreutils`, `crates/aphrody-kernel`, `third_party/uutils-*`, build/package scripts | Runtime and MCP authority |
+| `aphrody-os` | `crates/os/coreutils`, `crates/os/kernel`, `third_party/uutils-*`, build/package scripts | Runtime and MCP authority |
 | `aphrody-contracts` when needed | transport/client contract only | Break any dependency cycle without duplication |
-| `aphrody-shell` | `crates/aphrody-nu`, `crates/aphrody-terminal-backend`, tests and this document | IPC bridge, structured commands, opted-in PTY bootstrap |
+| `aphrody-shell` | `crates/shell/nu`, `crates/shell/terminal-backend`, tests and this document | IPC bridge, structured commands, opted-in PTY bootstrap |
 | `aphrody-infra` | package/deployment evidence | Runtime artifact and live-host proof |
 
 No change belongs in `aphrody-ui` unless it presents the shell session; no

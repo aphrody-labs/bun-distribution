@@ -2,7 +2,7 @@
 
 Python libraries and tools for ML data loading, geospatial analysis (Earth Engine, Xarray), weather/climate data pipelines, advertising data workflows, binary protocol tooling, quantum computing clients, and general-purpose data structures.
 
-> Part of [`docs/google/`](../../../../products/ai/google/README.md). Full mechanical listing: [`all-repos.md`](../all-repos.md). This page covers 24 repos (9 active / 15 archived).
+> Part of [`docs/google/` (not in repo)](../../../../products/ai/google/README.md). Full mechanical listing: [`all-repos.md`](../all-repos.md). This page covers 24 repos (9 active / 15 archived).
 
 ## ML Data Loading
 

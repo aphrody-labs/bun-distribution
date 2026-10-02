@@ -41,7 +41,7 @@ assert_eq!(message.text(), Some("hello peer"));
 
 ## Re-exports
 
-Source of truth: `crates/aphrody-a2a/src/lib.rs`. The crate re-exports every public
+Source of truth: `crates/contracts/a2a/src/lib.rs`. The crate re-exports every public
 item from seven submodules through `pub use <mod>::*;`:
 
 - `agent_card` — `AgentCard` and the well-known descriptor types served at

@@ -55,7 +55,7 @@ copies of `scripts/atomic-deploy-aphrody-stack.sh`, `atomic-deploy-shenron.sh`,
 `/usr/local/share/aphrody-infra/ADAPTER.json` recording the infra commit). Each
 accepts only a release below its own root, verifies checksums and preconditions,
 probes loopback and HTTPS routes and restores the previous `current` on failure
-(`docs/IMMUTABLE-RELEASES.md`).
+(`docs/operations/infra/IMMUTABLE-RELEASES.md`).
 
 ## Former split-repository ownership model
 

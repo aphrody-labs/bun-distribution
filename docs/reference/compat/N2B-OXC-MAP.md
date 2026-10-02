@@ -18,9 +18,9 @@ All crates live in `crates/compat/`, inherit versions from the root
 | `aphrody-n2b-native` | `crates/compat/n2b-native` | rlib (C ABI exported via `aphrody-ffi`) | n2b-core | memchr; dev: tempfile | none |
 | `aphrody-n2b-types` | `crates/compat/n2b-types` | lib (generated `schema.rs` + `types.rs`) | none | serde | none |
 
-Integration tests of n2b-core: `tests/proptest_package_json.rs`, `tests/proptest_source.rs`,
-`tests/rules_cli_commands.rs` (was `n2b-rules/tests/cli_commands.rs`), `tests/util_edits.rs`
-(was `n2b-util/tests/edits.rs`). n2b keeps `tests/contract.rs`, `tests/baselines/`, `tests/fixtures/`.
+Integration tests of n2b-core: `crates/compat/n2b-core/tests/proptest_package_json.rs`, `crates/compat/n2b-core/tests/proptest_source.rs`,
+`crates/compat/n2b-core/tests/rules_cli_commands.rs` (was `n2b-rules/tests/cli_commands.rs`), `crates/compat/n2b-core/tests/util_edits.rs`
+(was `n2b-util/tests/edits.rs`). n2b keeps `crates/compat/n2b/tests/contract.rs`, `crates/compat/n2b/tests/baselines/`, `tests/fixtures/` (not in repo).
 
 Resolved external versions (Cargo.lock): `fastembed 5.17.3`, `octocrab 0.54.2` (crates.io).
 
@@ -131,7 +131,7 @@ No `.github/workflows` file runs oxlint/oxfmt (grep).
 ## 5. Stale references to the deleted forks
 
 The forks `aphrody-labs/bun` and `aphrody-labs/oxc` (aliased `aphrody-code/*`)
-were deleted on 2026-10-02. `config/bun-fork.json` and `upstream/` do not exist
+were deleted on 2026-10-02. `config/bun-fork.json` (not in repo) and `upstream/` do not exist
 in the tree. Cargo.lock and bun.lock contain no fork reference.
 
 Live code (behaviour depends on a `bun:aphrody` module that stock Bun lacks):
@@ -151,7 +151,7 @@ Current docs that still describe the forks as live:
 | `docs/plans/workspace/PLAN.md:75,76,231,368` | `bun:aphrody`, `oxc/apps/aphrody-oxc` |
 | `docs/plans/infra/PLAN.md:150` | `bun:aphrody` on Aphrody `main` |
 | `docs/reference/infra/UPSTREAMS.md:56,57` | `aphrody-labs/bun`, `aphrody-code/oxc` rows |
-| `docs/reference/infra/APHRODY-BUN-PLATFORM.md:13,18,28` | links missing `config/bun-fork.json`, `aphrody-labs/oxc` |
+| `docs/reference/infra/APHRODY-BUN-PLATFORM.md:13,18,28` | links missing `config/bun-fork.json` (not in repo), `aphrody-labs/oxc` |
 | `docs/reference/compat/n2b/BUN-SURFACE.md:5,36` | `bun:aphrody` API |
 | `docs/reference/compat/BUN-RUST-INTEGRATION.md:14` | fork's `bun:aphrody` |
 | `docs/reference/web/WEB-RUNTIME.md:144` | fork `bun/`, `bun:aphrody` |
@@ -169,7 +169,7 @@ Historical evidence (dated logs/JSON, keep as record): `inventory/2026-09-30-{bu
 `docs/operations/**/2026-10-01*/*.{log,json}` (rev `31d5266e...` on `aphrody-code/oxc`),
 `docs/migration/n2b-qualification-2026-10-01/*.log`, `docs/migration/source-map.json`,
 `docs/migration/{unified-ui-ffi,native-rust-extraction}.json`, `docs/migration/IMPORTED-DOCS-INDEX.md`,
-`docs/plans/2026-09-29-consolidation-initial-archive.md`,
+`docs/plans/2026-09-29-consolidation-initial-archive.md` (not in repo),
 `docs/research/os/low-level-audit-2026-10-01/{bun-chaine,abi}.md`,
 `apps/shenron/bot/dist/shenron.map` (build output).
 
@@ -201,7 +201,7 @@ Nothing below was compiled: Cargo is run only by the integrating agent. Bun gate
 | private `write` + `which` copies in `n2b/src/{app,linux,wasm,win32}_cmd.rs` | `crates/compat/n2b/src/scaffold_fs.rs` (`write_tagged`, `which`) | output and log tags unchanged |
 | `@aphrody/n2b-shims` sources | `@aphrody/n2b-core/shims{,/env,/fs,/path,/shell}` (`packages/compat/n2b-client/src/shims/`) | `@aphrody/n2b-shims` 0.6.2 is published on npm: the package stays as a re-export alias |
 | 309 Bun doc files in `docs/*/compat/n2b/bun/` | `docs/*/upstream-bun/` | per-file aliases + SHA-256 in `docs/migration/n2b-dedup-2026-10-02.json` |
-| `docs/apis/contracts/v2.json` | `crates/contracts/schema/v2.json` | `include_str!` in mcp repointed; alias recorded in the same JSON |
+| `docs/apis/contracts/v2.json` (not in repo) | `crates/contracts/schema/v2.json` | `include_str!` in mcp repointed; alias recorded in the same JSON |
 | Node-to-Bun mapping list in `plugins/aphrody/skills/n2b/SKILL.md` | pointer to `crates/compat/n2b-registry/registry/*.toml`, `aphrody n2b rules`, MCP `bun_node_equivalent` | skill name and triggers unchanged |
 | `update-bun-docs.{sh,ps1}`, `n2b-env.{sh,ps1}`, `refactor-{start,state}.{sh,ps1}` | deleted | `aphrody-ops bun-upstream-docs` remains the Bun-docs entry point |
 

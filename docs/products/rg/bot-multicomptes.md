@@ -81,7 +81,7 @@ et `lib/multicomptes.test.ts` le verrouille.
 Le rapprochement ne stocke aucun score : il recalcule tout à chaque appel, parce
 qu'un score figé se périme à la première réinscription. Ce qui persiste, c'est la
 décision humaine, dans `bot_multicomptes_verdicts` (migration
-`apps/website/sql/migrations/20260829_bot_multicomptes.sql`).
+`apps/rg/website/sql/migrations/20260829_bot_multicomptes.sql`).
 
 - `confirme` — une note, rien de plus : elle ne bannit personne.
 - `ecarte` — la paire cesse de remonter dans `balayage`. Elle reste visible sur
@@ -102,7 +102,7 @@ account, profiles┘   (SQL, cache 5 min)          (module pur, testé)
 - **`lib/multicomptes.ts`** — module pur : normalisation des pseudos (accents,
   « leet », alphabets décoratifs, suffixes de double compte), distance de
   Levenshtein plafonnée, poids, seuils, regroupement.
-- **`services/multicomptes.ts`** — les requêtes, le cliché en mémoire, les
+- **`apps/rg/bot/src/services/multicomptes.ts`** — les requêtes, le cliché en mémoire, les
   verdicts. Les liaisons sont des empreintes opaques (`courriel:<md5>`), le
   condensat étant calculé par Postgres : aucune adresse ne transite par le bot.
 - **`commands/administration/multicomptes.ts`** — les quatre sous-commandes.

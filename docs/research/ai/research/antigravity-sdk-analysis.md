@@ -450,4 +450,4 @@ toutes recomptées individuellement dans ce total).
   **hors périmètre du SDK**, donc INCOMPLET ici par nature — à reverse-engineer
   depuis l'app desktop Antigravity si la stratégie (B) est retenue.
 
-**Aucune modification hors `docs/research/antigravity-sdk-analysis.md`. Aucun commit.**
+**Aucune modification hors `docs/research/ai/research/antigravity-sdk-analysis.md`. Aucun commit.**

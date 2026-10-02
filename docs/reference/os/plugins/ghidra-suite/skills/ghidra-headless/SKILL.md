@@ -111,7 +111,7 @@ The PS `find-ghidra.ps1` searches in this order:
 
 ## Built-in Export Scripts (Java GhidraScripts)
 
-Located under `scripts/ghidra_scripts/`. Run via `-Script <Name>.java` (PS) or `-s <Name>.java` (bash).
+Located under `scripts/ghidra_scripts/` (not in repo). Run via `-Script <Name>.java` (PS) or `-s <Name>.java` (bash).
 
 ### ExportAll.java
 Runs summary + decompile + functions + strings + interesting-pattern exports. Best first pass.

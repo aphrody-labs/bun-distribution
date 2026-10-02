@@ -23,7 +23,7 @@ authenticated `x.com` client-web build on 2026-05-22.
 | Payments | `pay.x.com`, `money.x.com`, `payments-*.x.com` (Plaid/Stripe/Adyen per CSP) |
 | SKUs | `BlueVerified`, `BlueVerifiedPlus`, `PremiumBasic`, … (client enum) |
 | CLI | `x-cli premium` / `x-cli premium --raw` |
-| TS twin | `@aphrody/x` → `packages/x/docs/PREMIUM.md`, `scripts/x-premium-recon.ts` |
+| TS twin | `@aphrody/x` → `packages/x/docs/PREMIUM.md` (not in repo), `scripts/tools/web/apps/bxc/scripts/x-premium-recon.ts` |
 
 Full aphrody-web recon artifacts: `~/aphrody-web/storage/premium-recon/PREMIUM_RECON.json`.
 
@@ -36,12 +36,12 @@ cargo run -p aphrody-x -- coverage --probe-premium
 cd packages/x && bun run coverage -- --probe
 ```
 
-See `packages/x/docs/COVERAGE.md`.
+See `packages/x/docs/COVERAGE.md` (not in repo).
 
 ## Operation catalog
 
 - **158 operations** total: **94 queries**, **64 mutations**. Full machine-readable
-  map in [`data/x-graphql-catalog.json`](../../../../../crates/web/x/data/x-graphql-catalog.json):
+  map in [`crates/web/x/data/x-graphql-catalog.json`](../../../../../crates/web/x/data/x-graphql-catalog.json):
   `{ operationName: { queryId, operationType, featureSwitches[] } }`.
 - Embedded into the binary via `src/catalog.rs` (`include_str!`), looked up at
   runtime so a queryId rotation only needs a catalog refresh, not a recompile.
@@ -105,7 +105,7 @@ follow-up; the framework works without it today.
 | Entitlement | **Premium+** (`premium_plus` / `BlueVerifiedPlus` SKU in bundle) |
 | Rust module | `x_pro_deck` (proposed) |
 | TS service | `XProDeckService` (proposed) |
-| Docs | `packages/x/docs/X_PRO.md` |
+| Docs | `packages/x/docs/X_PRO.md` (not in repo) |
 | Artifacts | `~/aphrody-web/storage/x-pro-recon/` — `recon.json`, `bundle-scan.json`, `graphql-ops.json`, `graphql-probe.json`, `pro-deck.har` |
 
-Gryphon operations are **not** in `data/x-graphql-catalog.json` (responsive-web only). Sync from Gryphon `main.*.js` or maintain a Gryphon overlay catalog before exposing `x-cli pro` helpers.
+Gryphon operations are **not** in `crates/web/x/data/x-graphql-catalog.json` (responsive-web only). Sync from Gryphon `main.*.js` or maintain a Gryphon overlay catalog before exposing `x-cli pro` helpers.

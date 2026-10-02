@@ -1,6 +1,6 @@
 # Archive — ancien éditeur d'avatar Azalée
 
-Cette documentation décrivait la page autonome `apps/azalee/app/avatar`,
+Cette documentation décrivait la page autonome `apps/azalee/app/avatar` (not in repo),
 retirée avec l'application Azalée historique. Elle ne constitue plus une
 procédure de développement ou de déploiement.
 

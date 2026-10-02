@@ -34,8 +34,8 @@ BXC in `aphrody-web`; Material 3, GUI, Tauri and rendering in `aphrody-ui`; Bun 
 | [winclean-native-import.md](../../../reference/os/winclean-native-import.md) | Rust-only WinClean ownership and the kernel `admin` boundary. |
 | [WINCLEAN-RUST-CONVERGENCE.md](../../../reference/os/WINCLEAN-RUST-CONVERGENCE.md) | WinClean to native Rust convergence plan and ledger. |
 | [WINCLEAN-RUST-LIBRARY-GAP.md](../../../reference/os/WINCLEAN-RUST-LIBRARY-GAP.md) | Windows Rust library choices (UIA, capture, ONNX/WinML, ViGEm, Windows Search). |
-| [WINCLEAN-LIVE-ARTIFACTS.md](../../../reference/os/WINCLEAN-LIVE-ARTIFACTS.md) | Live WinClean artifact capture (`scripts/live-winclean-artifacts.ps1`). |
-| [OPENAI-LOCAL-INVENTORY.md](../../../reference/os/OPENAI-LOCAL-INVENTORY.md) | Read-only local OpenAI / ChatGPT inventory (`scripts/live-openai-inventory.ps1`). |
+| [WINCLEAN-LIVE-ARTIFACTS.md](../../../reference/os/WINCLEAN-LIVE-ARTIFACTS.md) | Live WinClean artifact capture (`scripts/tools/os/scripts/live-winclean-artifacts.ps1`). |
+| [OPENAI-LOCAL-INVENTORY.md](../../../reference/os/OPENAI-LOCAL-INVENTORY.md) | Read-only local OpenAI / ChatGPT inventory (`scripts/tools/os/scripts/live-openai-inventory.ps1`). |
 
 ## Records
 

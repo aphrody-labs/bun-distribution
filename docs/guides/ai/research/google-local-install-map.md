@@ -11,7 +11,7 @@ Windows** install on the operator's own machine. Account anonymised to
 are listed by path/size/structure only.
 
 - **Target root**: `C:\Users\<user>\AppData\Local\Google\Google`
-- **Machine map artefact** (gitignored): `var/data/google-local-map/tree.json`
+- **Machine map artefact** (gitignored): `var/data/google-local-map/tree.json` (not in repo)
   (676 files, 585 hashed, 71 secret-meta-only)
 - **Reproduce**: `pwsh -NoProfile -File scripts/forensics/map-google-local.ps1`
   or `bash scripts/forensics/map-google-local.sh` (see §5)
@@ -181,7 +181,7 @@ opened the contents of any artefact on the denylist (§5).
 
 ## 5. Reproduction (non-interactive)
 
-Both scripts produce `var/data/google-local-map/tree.json` deterministically
+Both scripts produce `var/data/google-local-map/tree.json` (not in repo) deterministically
 and never read secret-file contents (denylist enforced in code):
 
 - Windows: `pwsh -NoProfile -File scripts/forensics/map-google-local.ps1`

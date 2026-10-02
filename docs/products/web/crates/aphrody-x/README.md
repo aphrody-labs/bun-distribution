@@ -28,7 +28,7 @@ A high-performance polyglot (Rust & Bun/TypeScript) headless client to interact 
 cargo build --release
 ```
 
-See sibling crate `../x-algorithm` (and `packages/x/src/algo.ts`) for the native port of the X For You recommendation algorithm (candidate pipeline, filters, weighted scorer, diversity) from xai-org/x-algorithm. Exposed as `aphrody_web_x_algorithm_rank` in the cdylib and `rankPosts()` in the TS client. Use to locally re-rank search/timeline results the X way.
+See sibling crate `../x-algorithm` (and `packages/web/x/src/algo.ts`) for the native port of the X For You recommendation algorithm (candidate pipeline, filters, weighted scorer, diversity) from xai-org/x-algorithm. Exposed as `aphrody_web_x_algorithm_rank` in the cdylib and `rankPosts()` in the TS client. Use to locally re-rank search/timeline results the X way.
 
 ### Install TypeScript dependencies:
 ```bash

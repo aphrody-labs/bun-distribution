@@ -46,19 +46,19 @@ backups et probes.
   spécialisées déclarées dans le catalogue ;
 - exposition publique : Nginx uniquement, déclarée dans
   `config/nginx-routes.json` ; les vhosts sont des gabarits reviewables sous
-  `nginx/*.conf.example`, concaténés en `nginx/shenron.conf` dans le bundle et
+  `nginx/*.conf.example`, concaténés en `nginx/shenron.conf` (not in repo) dans le bundle et
   installés par l'adaptateur ;
 - déploiement : `scripts/atomic-deploy-shenron.sh` (`assemble` puis
   `activate`, rollback vers le `current` précédent), seul ou comme deuxième
-  étape du bundle tout-en-un (`docs/IMMUTABLE-RELEASES.md`).
+  étape du bundle tout-en-un (`docs/operations/infra/IMMUTABLE-RELEASES.md`).
 
 ## Décision — process unique bot/API (résout l'écart signalé par
 `shenron/docs/INFRA-DELEGATION.md`)
 
-`docs/infra-vps.md` et `apps/bot/src/lib/env.ts` (côté Shenron) confirment un
+`docs/infra-vps.md` (not in repo) et `apps/shenron/bot/src/lib/env.ts` (côté Shenron) confirment un
 seul workload Bun : `discordx` (gateway Discord) et `Bun.serve` (API REST/
 GraphQL/OpenAPI, `API_PORT` par défaut `5006`) tournent dans le même process,
-démarré par `bun src/index.ts` depuis `apps/bot`. Le catalogue infra a donc été
+démarré par `bun src/index.ts` depuis `apps/bot` (not in repo). Le catalogue infra a donc été
 aligné sur ce fait : **`shenron-api.service` est retiré** (ajouté à
 `policies.retiredUnits` dans `config/service-catalog.json`) et
 `shenron-bot.service` porte à la fois le bot et le `health` public
@@ -105,18 +105,18 @@ une release RG scellée. Shenron possède donc sa propre racine :
 
 - `/srv/shenron/releases/<sha>` : source `git archive` du commit Shenron, plus
   l'artefact `site-build.tar.gz` (`bun run site:artifact`, vérifié par sha256)
-  extrait dans `apps/site/.next-build`, plus `bun install --frozen-lockfile` ;
+  extrait dans `apps/shenron/site/.next-build`, plus `bun install --frozen-lockfile` ;
 - `/srv/shenron/current` : lien basculé atomiquement (`ln -sfn` puis `mv -T`),
   la release précédente reste disponible pour le rollback ;
 - `/srv/shenron/shared` : les données mutables, reliées dans la release par des
-  liens symboliques (`apps/site/public/wiki`, `apps/bot/data`,
-  `apps/bot/assets`, `apps/site/.next-build/cache`). Les fichiers suivis par git
+  liens symboliques (`apps/site/public/wiki` (not in repo), `apps/shenron/bot/data`,
+  `apps/shenron/bot/assets`, `apps/shenron/site/.next-build/cache`). Les fichiers suivis par git
   sont rafraîchis depuis la release, et rien n'y est supprimé.
 
 Secrets : `/etc/rose-griffon/shenron-{site,bot}.env` (0600 root), copiés d'hôte
 à hôte depuis l'ancien checkout dbfr sans être affichés. Seul `DATABASE_URL`
 est réécrit vers le tunnel (127.0.0.1:15433). Un build hors VPS doit disposer
-de `apps/site/.env` : les `NEXT_PUBLIC_*` (CDN, AdSense, URLs) sont inlinés
+de `apps/site/.env` (not in repo) : les `NEXT_PUBLIC_*` (CDN, AdSense, URLs) sont inlinés
 au build.
 
 Base : PostgreSQL de dbfr n'écoute que sur loopback, et 5432 n'est jamais public.
@@ -195,13 +195,13 @@ filebrowser, watchdog et superviseurs propres à Shenron sont retirées du plan.
 ## Décisions ouvertes
 
 - ~~Adaptateur de déploiement Shenron~~ — **fermé le 2026-09-26** : l'ancien
-  `scripts/atomic-deploy.sh` (site Aphrody seul) est supprimé ; Shenron a son
+  `scripts/atomic-deploy.sh` (not in repo) (site Aphrody seul) est supprimé ; Shenron a son
   adaptateur `scripts/atomic-deploy-shenron.sh` sur sa propre racine, RG le
   sien (`scripts/atomic-deploy-rg.sh`, release active `5691ba4b`), et
   `aphrody-infra deploy --stack shenron|bundle` les pilote.
 - **Privoxy / proxy média Shenron** (`shenron/deploy/privoxy/shenron-media*`) :
   hors périmètre de cette tâche, signalé côté Shenron
-  (`docs/INFRA-DELEGATION.md`) comme candidat à un composant `aphrody-os`
+  (`docs/operations/shenron/INFRA-DELEGATION.md`) comme candidat à un composant `aphrody-os`
   mutualisé plutôt qu'une unité par application. Non traité ici.
 
 ## Audit de parité VPS/DBFR (2026-09-24, lecture seule)
@@ -213,9 +213,9 @@ filebrowser, watchdog et superviseurs propres à Shenron sont retirées du plan.
   5006/5010/5011/15433/8789/8794 en écoute loopback, sondes du catalogue en 200.
   Aucune unité `shenron.target`, `shenron-runtime` ni `shenron-api`.
 - Catalogue corrigé : `aphrody-shenron-embed.workingDirectory` pointe
-  `apps/shenron-embed` ; `staged` retiré de `aphrody-shenron-embed`,
+  `apps/shenron-embed` (not in repo) ; `staged` retiré de `aphrody-shenron-embed`,
   `shenron-mcp` et `shenron-backup` (actifs en production). Source
-  `systemd/shenron-zswap.service` supprimée (unité retirée, absente des deux hôtes).
+  `systemd/shenron-zswap.service` (not in repo) supprimée (unité retirée, absente des deux hôtes).
 - Écart résolu (2026-09-30) : sur DBFR, `shenron-pg-backup.service` et
   `shenron-sqlite-replica-backup.service` disposent d'un fallback direct et
   résilient vers `/home/ubuntu/shenron/scripts/backup-shenron-{pg,sqlite}.sh`
@@ -256,6 +256,6 @@ stricte entre les dépôts (`aphrody` et `aphrody-infra`) et les serveurs réels
    - DBFR : `shenron-sqlite-replica-backup.service` (SQLite réplica 127 Mo compressé, status 0/SUCCESS).
 
 5. **Nettoyage et Purge des Résidus** :
-   - Monorepo : suppression du répertoire orphelin `packages/shenron/_preview` (457 fichiers) et masquage de `/.coord/` dans `.gitignore`.
+   - Monorepo : suppression du répertoire orphelin `packages/shenron/_preview` (not in repo) (457 fichiers) et masquage de `/.coord/` dans `.gitignore`.
    - VPS & DBFR : suppression de `/home/ubuntu/.shenron-build-tmp` et `.shenron-isr-release-dir`.
    - Validation `aphrody-infra validate` : 23 services, 25 routes, 0 violation.

@@ -65,7 +65,7 @@ grafting: OS → UI and other reverse category dependencies remain forbidden.
 
 | Public surface | Current collision | Target owner and cutover |
 | --- | --- | --- |
-| Agent plugin | `aphrody-ai/plugins/aphrody` exists; NIE contains a Bun preload, a Blender add-on and `.agents/skills/yolo`. | AI publishes one agent plugin. Bun loaders and Blender remain format adapters; compare YOLO scripts with Infra's `aphrody-yolo` before removing the duplicate package. |
+| Agent plugin | `aphrody-ai/plugins/aphrody` exists; NIE contains a Bun preload, a Blender add-on and `plugins/aphrody/skills/yolo`. | AI publishes one agent plugin. Bun loaders and Blender remain format adapters; compare YOLO scripts with Infra's `aphrody-yolo` before removing the duplicate package. |
 | MCP | The plugin manifest (historical path: `../aphrody-ai/plugins/aphrody/.mcp.json`) declares `aphrody-kernel mcp` and `aphrody-mcp server`; the NIE relay (historical path: `../aphrody-ai/crates/aphrody-mcp/src/nie_tools.rs`) starts `nie-mcp`. UI/Web also have specialist MCP binaries. | `aphrody-mcp` is the sole published stdio endpoint. OS kernel, UI, Web and IEVR remain capability owners through libraries or internal IPC. Migrate tool schemas and clients before removing child servers. |
 | UI library | `@aphrody/m3` (historical path: `../aphrody-ui/packages/m3/package.json`) and its modules coexist with the Vite alias `@nie/inacord-ui`; NIE web still depends on Radix and Rosegriffon UI. | One M3 public framework API. Generic primitives and Explorer components move to UI; IEVR tokens, layouts and game rules move to IECODE as a client of that API. Migrate consumers before dropping aliases. Radix stays outside the active Aphrody UI graph. |
 | Desktop | `aphrody-app` (historical path: `../aphrody-ui/crates/aphrody-app/Cargo.toml`) is the Tauri host; `aphrody-model-view` (historical path: `../aphrody-ui/crates/aphrody-model-view/Cargo.toml`) is another Tauri binary. `nie-game` is winit/wgpu; `nie-editor` is eframe. | One Tauri app and one qualified native wgpu 3D app under UI. Move reusable host/viewer code there; IECODE provides IEVR scenes and editing actions. Qualify accessibility, installed workflows and the UI wgpu 26 versus NIE wgpu 29 dependency gap. |
@@ -98,22 +98,22 @@ contains each manifest, binary and feature.
 
 | NIE source | Destination | Consumer to migrate |
 | --- | --- | --- |
-| `packages/nie-game` (`@nie/game`) | IECODE game domain package | Game and Explorer; preserve formations/text/rules without a second TS game implementation. |
-| `packages/asset-source` (`@nie/asset-source`) | IECODE game asset client; Contracts only for messages crossing processes | `nie-web` and desktop loading consume OS Files/Web transport. Preserve `/f`, `/b` compatibility only behind the existing access policy. |
-| `packages/nie-bridge` (`@nie/bridge`) | IECODE IEVR command DTO; Contracts for neutral control envelope | AI/UI clients call the single MCP/Files APIs after migration. |
-| `packages/nie` (`@aphrody/nie`) | IECODE Bun FFI binding over its game libraries | Native decoding callers can reuse UI's `@aphrody/bun` bridge mechanics. Resolve MIT versus commercial Rust metadata first. |
-| `packages/nie-plugin` (`@nie/plugin`) | IECODE Bun loaders for game formats | Generic happy-dom/test preload may reuse Compat/UI tooling; it is not an agent plugin. |
-| `packages/nie-media` (`nie-media`) | IECODE episode/media domain logic | Aphrody Web supplies host/player transport; this package is no scraper, bot or encoder. |
-| `apps/nie-web` (`nie-web`) | IECODE IEVR pages, `/inacord` game views and browser game client | Web serves the bundle through `aphrody-site`; UI owns reusable Explorer/editor components and M3 shell. Current Vite alias `@nie/inacord-ui` has 109 users; `src/desktop/Workspace.tsx` mounts Explorer only. Migrate Radix/Rosegriffon imports to M3/Base UI before cutover. |
+| `packages/nie-game` (not in repo) (`@nie/game`) | IECODE game domain package | Game and Explorer; preserve formations/text/rules without a second TS game implementation. |
+| `packages/asset-source` (not in repo) (`@nie/asset-source`) | IECODE game asset client; Contracts only for messages crossing processes | `nie-web` and desktop loading consume OS Files/Web transport. Preserve `/f`, `/b` compatibility only behind the existing access policy. |
+| `packages/nie-bridge` (not in repo) (`@nie/bridge`) | IECODE IEVR command DTO; Contracts for neutral control envelope | AI/UI clients call the single MCP/Files APIs after migration. |
+| `packages/nie` (not in repo) (`@aphrody/nie`) | IECODE Bun FFI binding over its game libraries | Native decoding callers can reuse UI's `@aphrody/bun` bridge mechanics. Resolve MIT versus commercial Rust metadata first. |
+| `packages/nie-plugin` (not in repo) (`@nie/plugin`) | IECODE Bun loaders for game formats | Generic happy-dom/test preload may reuse Compat/UI tooling; it is not an agent plugin. |
+| `packages/nie-media` (not in repo) (`nie-media`) | IECODE episode/media domain logic | Aphrody Web supplies host/player transport; this package is no scraper, bot or encoder. |
+| `apps/nie-web` (not in repo) (`nie-web`) | IECODE IEVR pages, `/inacord` game views and browser game client | Web serves the bundle through `aphrody-site`; UI owns reusable Explorer/editor components and M3 shell. Current Vite alias `@nie/inacord-ui` has 109 users; `src/desktop/Workspace.tsx` mounts Explorer only. Migrate Radix/Rosegriffon imports to M3/Base UI before cutover. |
 | NIE Bun root `nie-monorepo` | No final runtime | Keep its lockfile/build scripts until consumers and reproducible builds are transferred. |
-| `.agents/skills/yolo` (`@aphrody/yolo`) | Infra's `aphrody-yolo` plus the single AI plugin | Compare commands and scripts before deleting a second automation package. |
+| `plugins/aphrody/skills/yolo` (`@aphrody/yolo`) | Infra's `aphrody-yolo` plus the single AI plugin | Compare commands and scripts before deleting a second automation package. |
 | `nie-tools`, `niepy` uv projects | IECODE game RE/format adapters, with OS/AI public bindings | Inventory Python imports and Ren'Py/Blender consumers before deciding which code stays as optional tooling. |
 
-`@nie/inacord-ui` is a Vite alias into `apps/nie-web/src/inacord`, not a
+`@nie/inacord-ui` is a Vite alias into `docs/products/ui/apps/nie-web/src/inacord`, not a
 published package. Its game-specific views belong to IECODE; reusable M3
-components belong to UI. `plugins/nie-blender` stays an IECODE game-format
+components belong to UI. `plugins/nie-blender` (not in repo) stays an IECODE game-format
 add-on, not a
-second agent plugin. `crates/archive/nie-engine` and `nie-rs` remain source
+second agent plugin. `crates/archive/nie-engine` (not in repo) and `nie-rs` remain source
 references outside the 46 live crates. Koharu receives no complete NIE crate:
 its manga scene and pipeline already have owners. Shell receives no NIE
 terminal; Discord receives no NIE bot package in the current checkout.

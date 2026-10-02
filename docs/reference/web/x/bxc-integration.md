@@ -1,16 +1,16 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 # bxc + `@aphrody-code/x` integration
 
-**Naming:** `docs/x/` documents **Twitter/X** (x.com). **xAI Grok** is documented under [`aphrody-ai/docs/grok/README.md`](../../../products/ai/grok/README.md).
+**Naming:** `docs/x/` (not in repo) documents **Twitter/X** (x.com). **xAI Grok** is documented under [`aphrody-ai/docs/grok/README.md`](../../../products/ai/grok/README.md).
 
 ## Repos and packages
 
 | Piece | Path in `aphrody-web` | Role |
 | --- | --- | --- |
-| **bxc** workspace | `apps/bxc` | Zero-spawn browser engine, REST `:3000`, **bxc-mcp** (40 tools) |
-| **`@aphrody/x`** | `packages/x` | TypeScript X.com client (GraphQL + REST, cookie auth) |
-| **x FFI** (Rust) | `crates/aphrody-web-ffi`, `crates/aphrody-web-bridge` | FFI for `bxc_x_*` |
-| **aphrody-x** | `crates/aphrody-x` | Standalone Rust CLI (`aphrody-x`, 47 subcommands) |
+| **bxc** workspace | `apps/bxc` (not in repo) | Zero-spawn browser engine, REST `:3000`, **bxc-mcp** (40 tools) |
+| **`@aphrody/x`** | `packages/web/x` | TypeScript X.com client (GraphQL + REST, cookie auth) |
+| **x FFI** (Rust) | `crates/aphrody-web-ffi` (not in repo), `crates/web/web-bridge` | FFI for `bxc_x_*` |
+| **aphrody-x** | `crates/web/x` | Standalone Rust CLI (`aphrody-x`, 47 subcommands) |
 
 ## CLI surfaces
 

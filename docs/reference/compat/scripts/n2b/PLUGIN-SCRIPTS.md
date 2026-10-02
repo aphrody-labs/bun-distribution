@@ -10,7 +10,7 @@ Audit + coverage automation pour le plugin `n2b`.
 > `crates/contracts/schema/v2.json`. `coverage-check.ts` reads the canonical Bun docs
 > (`docs/reference/upstream-bun/`, override `N2B_DOCS_BUN`), the n2b notes
 > (`docs/reference/compat/n2b/plugin/n2b/`) and the plugin tree (`plugins/aphrody/`, override
-> `CLAUDE_PLUGIN_ROOT`); it writes its report to `var/audit/n2b-coverage/` (override
+> `CLAUDE_PLUGIN_ROOT`); it writes its report to `var/audit/n2b-coverage/` (not in repo) (override
 > `N2B_COVERAGE_DIR`). Run the commands below from the repository root with the full script path
 > (`bun scripts/audit/compat/scripts/n2b/coverage-check.ts`, `bun scripts/tools/compat/scripts/n2b/coverage-daemon.ts`).
 >
@@ -21,11 +21,11 @@ Audit + coverage automation pour le plugin `n2b`.
 
 ## `coverage-check.ts` — audit one-shot
 
-Scanne `docs/bun/` pour extraire toutes les APIs Bun mentionnées, croise avec :
-- les règles `n2b` (via `n2b rules --report json` si installé, sinon fallback sur `docs/plugin/n2b/`)
+Scanne `packages/infra/workspace/docs/bun/` pour extraire toutes les APIs Bun mentionnées, croise avec :
+- les règles `n2b` (via `n2b rules --report json` si installé, sinon fallback sur `docs/plugin/n2b/` (not in repo))
 - les fichiers du plugin (`agents/`, `commands/`, `skills/`, `hooks/`, `output-styles/`)
 
-Génère un rapport Markdown dans `docs/plugin/coverage/report-YYYY-MM-DD.md` + symlink `latest.md`.
+Génère un rapport Markdown dans `docs/plugin/coverage/report-YYYY-MM-DD.md` (not in repo) + symlink `latest.md`.
 
 ```bash
 # One-shot, print summary
@@ -61,7 +61,7 @@ N2B_COVERAGE_SCHEDULE='@daily' bun scripts/n2b/coverage-daemon.ts
 bun scripts/n2b/coverage-daemon.ts --once
 ```
 
-État persisté dans `docs/plugin/coverage/.daemon-state.json` (runs, last_run, last_summary).
+État persisté dans `docs/plugin/coverage/.daemon-state.json` (not in repo) (runs, last_run, last_summary).
 
 ## Déploiement comme systemd user timer
 

@@ -34,10 +34,10 @@ aphrody), pensé pour l'automatisation à l'échelle, pas le desktop browsing.
 
 ## 2. Le manque qu'il comble
 
-Depuis la suppression de `crates/bxc-engine` (2026-05-21), aphrody n'a **plus
-aucun rendu JavaScript** : `aphrody scrape` (`crates/aphrody/src/commands.rs`)
+Depuis la suppression de `crates/bxc-engine` (not in repo) (2026-05-21), aphrody n'a **plus
+aucun rendu JavaScript** : `aphrody scrape` (`apps/cli/src/commands.rs`)
 parse du HTML statique via `reqwest` + `scraper::Html`. Tout le pilier **R4**
-de `docs/PLAN.md` est donc orphelin de moteur :
+de `docs/PLAN.md` (not in repo) est donc orphelin de moteur :
 
 | Item R4 | Besoin | Couverture Obscura |
 |---|---|---|
@@ -62,7 +62,7 @@ Chromium, mais à ~1/7 de l'empreinte mémoire.
 ## 4. Décision d'intégration recommandée — façade binaire externe
 
 Reproduire le pattern éprouvé `gemini_runtime::resolve_bin()`
-(`crates/aphrody-gemini-runtime/src/lib.rs:430`, env `APHRODY_GEMINI_BIN` > sibling de
+(`crates/google/gemini-runtime/src/lib.rs:430`, env `APHRODY_GEMINI_BIN` > sibling de
 `current_exe()` > PATH), déjà utilisé pour gemini / Aphrody Web / n2b :
 
 1. `aphrody scrape --engine obscura` (ou auto si binaire présent) spawn le
@@ -84,8 +84,8 @@ git (build V8, edition mismatch, lock bloat).
 - [ ] Crate `obscura-runtime` (≈ `gemini-runtime`) : `resolve_bin()` + wrapper
       typé autour de `obscura fetch`/`scrape` (JSON out), erreurs structurées.
 - [ ] Wire `aphrody scrape --engine {static|obscura}` dans
-      `crates/aphrody/src/commands.rs` (défaut auto-détecté).
-- [ ] Flip R4.2/R4.5/R4.7 de `docs/PLAN.md` une fois le wrapper + smoke verts
+      `apps/cli/src/commands.rs` (défaut auto-détecté).
+- [ ] Flip R4.2/R4.5/R4.7 de `docs/PLAN.md` (not in repo) une fois le wrapper + smoke verts
       (`obscura fetch https://tls.peet.ws --format json`).
 - [ ] Garder R4.1 (curl-impersonate, spoofing JA4 TLS) distinct : Obscura
       stealth opère au niveau JS/DOM, pas TLS — les deux sont complémentaires.

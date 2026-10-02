@@ -2,7 +2,7 @@
 # Drive interface source audit
 
 Snapshot of `drive/packages/interface/src` (FSL-1.1-ALv2 archive) against the active
-`packages/app-ui/src`. Per-file SHA-256 and byte counts are in
+`packages/app-ui/src` (not in repo). Per-file SHA-256 and byte counts are in
 [`drive-interface-source-hashes.json`](./drive-interface-source-hashes.json).
 
 | Same relative path | Files | FSL bytes | app-ui bytes |
@@ -22,7 +22,7 @@ imports are not workspace consumers.
 
 ## Deduplication decision
 
-Keep `packages/app-ui` as the single maintained UI implementation. Keep the FSL tree as a
+Keep `packages/app-ui` (not in repo) as the single maintained UI implementation. Keep the FSL tree as a
 non-buildable archive and use its README as the pointer to app-ui and the Drive migration notes.
 The 203 matching files identify substantial overlap, but byte identity does not establish the
 license terms for replacing or deleting the corresponding FSL copies. The 40 divergent and 32

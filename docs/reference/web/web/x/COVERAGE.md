@@ -12,7 +12,7 @@ See `index.test.ts` for "X Algo (For You ranking - from x-algorithm)" describe a
 
 | Layer | TS | Rust |
 | --- | --- | --- |
-| Catalog (158 ops) | `x-graphql-catalog.json` | `data/x-graphql-catalog.json` |
+| Catalog (158 ops) | `x-graphql-catalog.json` | `crates/web/x/data/x-graphql-catalog.json` |
 | Runtime queryIds | `QueryIdStore` | `QueryIdStore` |
 | Bundle sync | `syncCatalogFromBundles()` | `x-cli catalog --sync` |
 | Surface constants | `x-surface.ts` | `surface.rs` |

@@ -95,9 +95,9 @@ render, install, and rollout functions.
 
 ## Managed caller and local installation
 
-The reusable workflow at `.github/workflows/aphrody-reusable-ci.yml` is
+The reusable workflow at `.github/workflows/aphrody-reusable-ci.yml` (not in repo) is
 consumed through one generated file,
-`.github/workflows/aphrody-ci.yml`, containing this shape:
+`.github/shenron/workflows/aphrody-ci.yml`, containing this shape:
 
 ```yaml
 # SPDX-License-Identifier: Apache-2.0
@@ -191,7 +191,7 @@ defaults.
 
 ## Shared scripts through the composite action
 
-The composite action `.github/actions/aphrody-toolkit/action.yml` of the source
+The composite action `.github/actions/aphrody-toolkit/action.yml` (not in repo) of the source
 repository `aphrody-code/aphrody-infra` (not of this category repository) exposes
 the checked-out Aphrody action root as output `root` and appends its
 `scripts/` directory to `GITHUB_PATH`. A consumer workflow must first check out
@@ -207,7 +207,7 @@ steps:
 
 The Aphrody reference is immutable in this migration, and every third-party
 action used by the reusable workflow is pinned to a full commit SHA. The
-toolkit action verifies its canonical root plus `scripts/scan-repo.sh`, exposes
+toolkit action verifies its canonical root plus `scripts/audit/ai/scripts/scan-repo.sh`, exposes
 `root`, `scripts`, and `scan-repo` outputs, and adds only the verified scripts
 directory to `PATH`.
 

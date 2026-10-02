@@ -9,8 +9,8 @@ and migration steps; a source copy or successful crate check is not parity.
 
 | Surface                    | Current owner and evidence                                                                                                                                                                                                                              | Target boundary                                                                                                  |
 | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
-| IEVR schemas and pure data | IECODE `crates/ievr-data`, package `iecode-ievr-data`, library name `nie_data`; copied as the first slice to `crates/iecode/ievr-data`.                                                                                                                 | Aphrody Rust crate with IECODE source/API identity retained.                                                     |
-| Native format, VFS and FFI | IECODE `crates/ffi` is package `iecode-ffi`, whose Cargo target is `iecode_ffi`; its current schema is `iecode.ffi/v1` with `iecode_*` exports. The former `@aphrody/iecode-ffi` staging wrapper has been removed from this Bun workspace. | Reintroduce a Bun binding only after validating it against the integrated Rust artifact and the IEVR data/license contract. |
+| IEVR schemas and pure data | IECODE `crates/ievr-data` (not in repo), package `iecode-ievr-data`, library name `nie_data`; copied as the first slice to `crates/iecode/ievr-data` (not in repo).                                                                                                                 | Aphrody Rust crate with IECODE source/API identity retained.                                                     |
+| Native format, VFS and FFI | IECODE `crates/interop/ffi` is package `iecode-ffi`, whose Cargo target is `iecode_ffi`; its current schema is `iecode.ffi/v1` with `iecode_*` exports. The former `@aphrody/iecode-ffi` staging wrapper has been removed from this Bun workspace. | Reintroduce a Bun binding only after validating it against the integrated Rust artifact and the IEVR data/license contract. |
 | NIE MCP implementation     | `nie-mcp` is a thin binary that calls `nie_cli::main_entry_with(["nie", "mcp"])`; MCP handlers live in `nie-cli/src/mcp.rs`.                                                                                                                            | One unified `aphrody-mcp` server with the same IEVR tool schemas, behavior and error model.                      |
 | AI MCP integration         | `aphrody-ai/crates/aphrody-mcp/src/nie_tools.rs` launches a long-lived `NIE_MCP_BIN` child (default `nie-mcp`) over JSON-RPC stdio. `main.rs` registers generic catalog/call tools and typed helpers.                                                   | In-process calls after native/service APIs and persistent explorer behavior are integrated and qualified.        |
 | MCP endpoint               | Current `nie/.mcp.json` configures only `aphrody-mcp` over stdio.                                                                                                                                                                                       | Keep one endpoint; do not introduce a second public server.                                                      |
@@ -24,13 +24,13 @@ Focused audits on 2026-09-29 observed clean IECODE HEAD
 current MCP contract are in the migration records.
 
 The FFI audit found a real ABI split in the current source. Rust
-`crates/ffi` exports `iecode_core_version`, `iecode_ffi_schema`,
+`crates/interop/ffi` exports `iecode_core_version`, `iecode_ffi_schema`,
 `iecode_emu_registry_json_out`, `iecode_pipeline_validate_json`, and
 `iecode_bytes_free_fields`; Cargo reports the native library target as
-`iecode_ffi`. The IECODE `packages/nie/src/index.ts` still requests `nie_*`
+`iecode_ffi`. The IECODE `packages/nie/src/index.ts` (not in repo) still requests `nie_*`
 symbols and searches for `libiecode`, so it cannot load that provider. The Rust
-provider is integrated here under `crates/iecode/ffi`; its previous Bun wrapper
-at `packages/iecode/iecode-ffi/src/index.ts` was removed with the other IECODE
+provider is integrated here under `crates/iecode/ffi` (not in repo); its previous Bun wrapper
+at `packages/iecode/iecode-ffi/src/index.ts` (not in repo) was removed with the other IECODE
 staging packages. The Rust crate check does not qualify a Bun consumer.
 
 The Bun extraction and source hashes are recorded in

@@ -19,7 +19,7 @@ Archived snapshot: **2026-09-25**. Historical project path: `~/src/aphrody-ai` (
 ## Agent home (`~/.aphrody`)
 
 - La mémoire curatée et la politique agent-home sous `~/.aphrody/workspace/` sont des fichiers d'exécution locaux, absents de ce checkout.
-- Doc repo: `docs/dot-aphrody/README.md`
+- Doc repo: `docs/dot-aphrody/README.md` (not in repo)
 
 ## Build rules (Linux & Windows)
 
@@ -32,7 +32,7 @@ Archived snapshot: **2026-09-25**. Historical project path: `~/src/aphrody-ai` (
 
 - Shared: `~/.config/aphrody/mcp.json` — `aphrody-mcp`, `bxc-mcp`; secrets in `~/.aphrody/.env`, not JSON
 - Claude uses aphrody plugin + same binaries
-- Dragon Ball tools are `dragonball.*` in `aphrody-mcp` (feature `dragonball`, default); the Bun `apps/shenron-mcp` is retired
+- Dragon Ball tools are `dragonball.*` in `aphrody-mcp` (feature `dragonball`, default); the Bun `apps/shenron-mcp` (not in repo) is retired
 
 ## Tooling / Bun & Python
 
@@ -45,7 +45,7 @@ Archived snapshot: **2026-09-25**. Historical project path: `~/src/aphrody-ai` (
 - System & Web: `aphrody-os` owns OS kernel, browser/BXC, GUI, Canvas and Tauri.
 - Infra & Deploy: `aphrody-infra` owns targets, systemd services, releases and Nginx routes.
 - Product plane: `rg`, `shenron`, `nie`, `iecode` consume infra and models.
-- `docs/rag-unified-pattern.md` — shared e5-small sidecar + RRF retrieval
+- `docs/reference/ai/rag-unified-pattern.md` — shared e5-small sidecar + RRF retrieval
 
 ## A2A (Rust)
 

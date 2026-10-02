@@ -4,7 +4,7 @@
 Status: **accepted 2026-10-01** (owner directive: "tranche tout le côté SQL de
 A à Z"). Inputs: [docs/research/ai/sqllm](../../research/ai/sqllm/README.md),
 the RG/Shenron comparison (`scripts/audit/infra/db-compare`), the host inventory and
-dedup run (`docs/operations/infra/db-dedup-2026-10-01.md`). Development phase:
+dedup run (`docs/operations/infra/db-dedup-2026-10-01.md` (not in repo)). Development phase:
 private, non-commercial; every licence is acceptable but recorded.
 
 ## Decisions

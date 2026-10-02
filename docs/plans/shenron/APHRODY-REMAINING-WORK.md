@@ -50,7 +50,7 @@ recomptabiliser avant toute reprise.
 - [x] Le MCP Dragon Ball est porté par `aphrody-ai/crates/aphrody-mcp` et le
   plugin Shenron pointe vers le serveur local stdio `aphrody-mcp`.
 - [x] Les docs, contrats de test et constantes Shenron ont été mis à jour pour
-  retirer la dépendance au registre Bun supprimé `apps/shenron-mcp`.
+  retirer la dépendance au registre Bun supprimé `apps/shenron-mcp` (not in repo).
 - [x] Les propriétaires sont clarifiés : Aphrody fournit le calcul, les outils
   et les modèles ; Shenron garde PostgreSQL éditorial, le jugement canonique,
   les juges métier et la publication.
@@ -62,7 +62,7 @@ recomptabiliser avant toute reprise.
 ### 1. Fermer et livrer le changement documentaire et plugin
 
 - [ ] Relire le diff complet, notamment les références historiques dans
-  `docs/STACK.md`, `docs/APHRODY-ECOSYSTEM.md` et le plugin, pour qu'aucun ancien
+  `packages/ui/material-web/docs/STACK.md`, `docs/architecture/shenron/APHRODY-ECOSYSTEM.md` et le plugin, pour qu'aucun ancien
   MCP public ou paquet supprimé ne soit présenté comme actif.
 - [ ] Exécuter les contrôles locaux ciblés du dépôt et vérifier les liens,
   manifestes JSON et contrats MCP.

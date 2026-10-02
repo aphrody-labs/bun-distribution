@@ -2,7 +2,7 @@
 
 Research libraries, agent implementations, multi-agent environments, and evaluation suites for reinforcement learning.
 
-> Part of [`docs/google-deepmind/`](../../../../products/ai/google-deepmind/README.md). Full mechanical listing: [`all-repos.md`](../all-repos.md). This page covers 52 repos (45 active / 7 archived).
+> Part of [`docs/google-deepmind/` (not in repo)](../../../../products/ai/google-deepmind/README.md). Full mechanical listing: [`all-repos.md`](../all-repos.md). This page covers 52 repos (45 active / 7 archived).
 
 ## Agent libraries and frameworks
 

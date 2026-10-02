@@ -20,8 +20,8 @@ complete les notes `serenity-*.md` (cote bibliotheque/bot) : ici on regarde le
 
 | Etape | Outil | Artefact |
 |---|---|---|
-| Inventaire complet de l'install | `var/discord/scan-discord.ps1` (pwsh) | `var/discord/discord-scan.json` |
-| RE en masse des binaires PE | `aphrody re auto <dir> --json` | `var/discord/re/auto-batch.json` |
+| Inventaire complet de l'install | `var/discord/scan-discord.ps1` (not in repo) (pwsh) | `var/discord/discord-scan.json` (not in repo) |
+| RE en masse des binaires PE | `aphrody re auto <dir> --json` | `var/discord/re/auto-batch.json` (not in repo) |
 | Detection de famille Electron/V8 | `aphrody re google <fichier> --pretty` | `var/discord/re/google-*.json` |
 | Structure interne des archives | parse d'en-tete asar (pwsh) | `var/discord/asar-*.list.txt` |
 

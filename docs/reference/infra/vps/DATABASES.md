@@ -16,7 +16,7 @@ bounded local cache (`deduplication.database` in
 [`config/application-contracts.json`](../../../../config/application-contracts.json)). Ports and
 private paths are declared in [`config/production-topology.json`](../../../../config/production-topology.json)
 and the catalog; connection strings are operator secrets and never appear in this repository.
-Restored from the retired `aphrody` monolith (`docs/vps/DATABASES.md`); the remote database host
+Restored from the retired `aphrody` monolith (`docs/reference/infra/vps/DATABASES.md`); the remote database host
 it used to print was removed.
 
 ## 1. PostgreSQL
@@ -29,10 +29,10 @@ socket and loopback TCP only; the local `ubuntu` role uses `peer` authentication
 | `aphrody_web` | `aphrody-site` and the BXC Web API (Web rankings, SEO) | `APHRODY_WEB_DATABASE_URL` |
 | `aphrody` | `aphrody-ai-http` RAG (`aphrody rag web-ingest`, `search`, `stats`) | `APHRODY_MCP_DATABASE_URL` |
 | RG databases | `rg-api`, `rg-bot`, `rg-cron` (Better Auth, Drizzle ORM) | defined by the `rg` release environment |
-| `shenron_site` | Shenron site and bot, on `dbfr`, reached through `shenron-pg-tunnel` | see [`docs/SHENRON-MIGRATION.md`](../SHENRON-MIGRATION.md) |
+| `shenron_site` | Shenron site and bot, on `dbfr`, reached through `shenron-pg-tunnel` | see [`docs/reference/infra/SHENRON-MIGRATION.md`](../SHENRON-MIGRATION.md) |
 
 DSNs live in the root-owned `/etc/<plane>/*.env` files (mode `0600`). The relationships between
-the Web and AI databases are described in [`docs/TOPOLOGY.md`](../TOPOLOGY.md).
+the Web and AI databases are described in [`docs/reference/infra/TOPOLOGY.md`](../TOPOLOGY.md).
 
 ## 2. Redis
 
@@ -58,13 +58,13 @@ Embedded `bun:sqlite` stores for crawl, inference and scraping logs.
 ### B. BXC stores (`bxc.sqlite`, `bxc-memory.sqlite`)
 
 - Path: the shared Web state directory of the `aphrody` plane (`/srv/aphrody/shared/bxc`, see
-  `docs/TOPOLOGY.md`); crawler queues are under `BXC_STORAGE_DIR` next to it.
+  `docs/reference/infra/TOPOLOGY.md`); crawler queues are under `BXC_STORAGE_DIR` next to it.
 - WAL journal, 5 s busy timeout, 16 MB page cache (`aphrody-web/apps/bxc/src/db/BxcDB.ts`).
 - Tables: `scrapes` (id, url, profile, status, content, metadata JSON, timestamp, canonical URL,
   content hash and SimHash bands), `chunks`, and `cookie_jars` (browser cookie JSON by id). Indexes
   cover URL, timestamp, canonical URL, content hash and each SimHash band.
 - Cookie jars are sensitive runtime state: they are never copied into Git or agent memory
-  ([`docs/COOKIE-OPERATIONS.md`](../../../operations/infra/COOKIE-OPERATIONS.md)).
+  ([`docs/operations/infra/COOKIE-OPERATIONS.md`](../../../operations/infra/COOKIE-OPERATIONS.md)).
 
 ### C. Shenron local caches
 

@@ -62,7 +62,7 @@ observations in the append-only ledger retain their original dates and scope.
 
 - Treat the Aphrody Bun fork as the primary platform
   development track. Pin its `main` and upstream revisions in
-  `config/bun-fork.json`, qualify native ABI and
+  `config/bun-fork.json` (not in repo), qualify native ABI and
   cross-platform artifacts, then connect verified consumers.
 
 ### P0 — correctness of the working tree
@@ -283,7 +283,7 @@ sections current and store operational detail in its existing runbook.
   `{"status":"ok","gatewayConnected":true}`. The provisioning runbook now
   installs the hook for new hosts. Shared Discord runtime/package consolidation
   is owned by Aphrody Discord; its architecture audit and Bun messaging port are
-  tracked in that repository's `docs/PLAN.md`.
+  tracked in that repository's `docs/PLAN.md` (not in repo).
 - **2026-09-28:** closed the Discord OAuth portal prerequisite: the callback
   `https://bot.aphrody.com/oauth/callback` is now in the application's redirect
   allowlist. A read-only Discord API check confirmed the registration, and the
@@ -467,7 +467,7 @@ sections current and store operational detail in its existing runbook.
   Aphrody repos each returned zero forks, PRs and releases at observation time. GitHub Packages
   returned 403 because the active token has no `read:packages` scope. Obscura upstream commit
   `1a3169da276d7720732c7b20535474942917fb83` was API-verified and fetched into ignored
-  `target/research/obscura-upstream`; the digest covered 382 files. Reports are local research
+  `target/research/obscura-upstream` (not in repo); the digest covered 382 files. Reports are local research
   artifacts and do not prove a permanent external archive.
 - **2026-09-28:** added `scripts/source-sync.ts`, `workspace-git-audit` and package workflow aliases.
   Source sync plans by default; apply fetches all remotes and only fast-forwards clean branches.

@@ -9,9 +9,9 @@ FSL-1.1-ALv2 provenance.
 
 ## Where everything went
 
-| SpaceUI (`packages/aphrody-spaceui/`, reference copy) | Aphrody |
+| SpaceUI (`packages/aphrody-spaceui/` (not in repo), reference copy) | Aphrody |
 | --- | --- |
-| `packages/tokens` (7 HSL themes, `app/ink/sidebar/menu/accent/status`) | `crates/aphrody-m3-tokens/src/spaceui.rs`, `@aphrody/m3-theme` `spaceui.css` / `tailwind.css` |
+| `packages/tokens` (not in repo) (7 HSL themes, `app/ink/sidebar/menu/accent/status`) | `crates/ui/m3-tokens/src/spaceui.rs`, `@aphrody/m3-theme` `spaceui.css` / `tailwind.css` |
 | `@spacedrive/primitives` | `@aphrody/m3-primitives` (Base UI headless layer) |
 | `@spacedrive/forms` | `@aphrody/m3-forms` |
 | `@spacedrive/ai` | `@aphrody/m3-ai` |
@@ -19,7 +19,7 @@ FSL-1.1-ALv2 provenance.
 | `@spacedrive/icons` | `@aphrody/assets` |
 | `examples/showcase` | `examples/m3-spaceui-showcase` (Bun) |
 
-`scripts/spaceui-to-m3.ts` is the deterministic first pass over upstream class names; component
+`scripts/spaceui-to-m3.ts` (not in repo) is the deterministic first pass over upstream class names; component
 anatomy is then aligned by hand to the rules below. Production code never imports the reference
 copy.
 

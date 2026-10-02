@@ -546,7 +546,7 @@ Au-dela de la couche protocole :
 
 ### 12.4. PoC Opus etabli
 
-Le PoC `var/discord/opus-poc/` valide le binding `@discordjs/opus` sous Bun et
+Le PoC `var/discord/opus-poc/` (not in repo) valide le binding `@discordjs/opus` sous Bun et
 Node : `OpusEncoder(48000, 2)`, trame 20 ms = 3840 octets PCM s16le ->
 ~388 octets Opus (compression ~9,9x), round-trip encode/decode integre. Cote
 Rust, l'equivalent est le crate `audiopus` (binding libopus) ou `opus` crate,
@@ -561,7 +561,7 @@ avec les memes parametres (48000 Hz, 2 voies, 960 echantillons/trame).
 - [`client-electron-re.md`](./client-electron-re.md) -- architecture Electron et modules natifs Discord
 - [`web-network-recon.md`](./web-network-recon.md) -- gateway principal Discord (ETF/JSON, WSS)
 
-Sources de code inspectees (chemins relatifs a `var/discord/discord.js/packages/voice/src/`) :
+Sources de code inspectees (chemins relatifs a `var/discord/discord.js/packages/voice/src/` (not in repo)) :
 - `VoiceConnection.ts` -- machine a etats haute niveau
 - `joinVoiceChannel.ts` -- API d'entree publique
 - `DataStore.ts` -- boucle audio globale et creation du payload VoiceStateUpdate

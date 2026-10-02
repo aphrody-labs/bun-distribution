@@ -1,4 +1,5 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- docs-links: external-paths — backtick paths in this document name files of the microsoft/playwright upstream repository, not of this checkout. -->
 
 # `@aphrody/bxc-test` — Playwright-compatible test package plan
 

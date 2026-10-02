@@ -1,3 +1,4 @@
+<!-- docs-links: external-paths — backtick paths in this document name files of the wasm-bindgen upstream repository, not of this checkout. -->
 # node2bun report
 
 - mode : `check`
@@ -78,7 +79,7 @@
 | 1:1 | `ecosystem/serde` | crate Rust `serde` détecté (Serde (ser/deserialize)) — doc : https://serde.rs/ | `https://serde.rs/` |
 | 1:1 | `ecosystem/serde-json` | crate Rust `serde_json` détecté (serde_json) — doc : https://docs.rs/serde_json | `https://docs.rs/serde_json` |
 
-## `crates/aphrody/Cargo.toml`
+## `apps/cli/Cargo.toml`
 
 | ligne | règle | message | remplacement |
 | --- | --- | --- | --- |

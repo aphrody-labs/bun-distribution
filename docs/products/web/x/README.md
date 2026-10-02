@@ -3,7 +3,7 @@
 
 > **Not xAI:** This directory is **Twitter/X** (x.com). For **xAI Grok** (API `api.x.ai`, Grok CLI), see [`aphrody-ai/docs/grok/README.md`](../../ai/grok/README.md). For **bxc** integration see [`bxc-integration.md`](../../../reference/web/x/bxc-integration.md).
 
-> **Migré vers bxc le 2026-09-07.** Le crate `crates/aphrody-x-client` a été
+> **Migré vers bxc le 2026-09-07.** Le crate `crates/aphrody-x-client` (not in repo) a été
 > supprimé : il était un fork de `bxc/rust-bridge/crates/x-client`, lequel est
 > en avance de quatre modules (`catalog_sync`, `premium`, `surface`,
 > `x_pro_deck`) — `client.rs` et `parse.rs` y étaient identiques octet pour

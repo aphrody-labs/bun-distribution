@@ -2,7 +2,7 @@
 
 Open-source process design kits (PDKs) and hardware abstraction tooling developed or co-developed by Google, enabling community access to manufacturable silicon at SkyWater Technology Foundry (130nm SKY130) and GlobalFoundries (180nm GF180MCU), alongside retro hardware projects and low-level HAL utilities.
 
-> Part of [`docs/google/`](../../../../products/ai/google/README.md). Full mechanical listing: [`all-repos.md`](../all-repos.md). This page covers 6 repos (1 active / 5 archived).
+> Part of [`docs/google/` (not in repo)](../../../../products/ai/google/README.md). Full mechanical listing: [`all-repos.md`](../all-repos.md). This page covers 6 repos (1 active / 5 archived).
 
 ## Process Design Kits (PDK)
 

@@ -114,7 +114,7 @@ explicit operator acknowledgement.
 - **Build integrity**: `cargo-auditable` embeds an SBOM in the binary;
   `dtolnay/rust-toolchain` action pinned by SHA in every workflow.
 - **Web**: rustls 0.23 with the `ring` provider initialised before the first
-  `reqwest::Client::new()` call (see `crates/aphrody/src/main.rs`).
+  `reqwest::Client::new()` call (see `apps/cli/src/main.rs`).
 - **Crypto**: AES-GCM via the `aes-gcm` crate (RFC 5116); no hand-rolled
   primitives.
 - **Sandboxing**: Flatpak manifest declares minimal `finish-args`
@@ -128,7 +128,7 @@ explicit operator acknowledgement.
   with annotated rotation log.
 - Inbox JSONL has no rate limit on file-based writes (only the HTTP overlay
   benefits from OS-level connection limits). A file-watcher rate limiter is
-  tracked in `docs/PLAN.md`.
+  tracked in `docs/PLAN.md` (not in repo).
 - No production fuzzing of the envelope parser. A `cargo-fuzz` skeleton is
   checked in; targets for `envelope.parse`, `manifest.load`, `coord.append`
   are pending.

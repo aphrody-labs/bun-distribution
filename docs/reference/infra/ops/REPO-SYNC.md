@@ -14,7 +14,7 @@ d'automatisation dans Niers.
 | Miroirs SQLite, `var/`, `target/`, `.next/`, cache modèle | machine qui exécute le service | services locaux | Artefacts régénérables, hors Git et hors synchronisation. |
 | CDN originaux et variantes | service partagé du VPS | RG et Niers | `rg-cdn.service` et `cdn-variants.service` restent actifs : les arrêter casserait les deux sites. |
 
-`nie/data/azalee` (ex-`nie/apps/azalee/data` : l'app `apps/azalee` de
+`nie/data/azalee` (ex-`nie/apps/azalee/data` : l'app `apps/azalee` (not in repo) de
 `niers` n'existe plus) est encore un chemin de compatibilité consommé par le
 MCP et certains scripts. L'API publique Azalée est désormais montée dans
 `rg-api.service`; il n'existe plus de démon `azalee-api` séparé. Il ne s'agit

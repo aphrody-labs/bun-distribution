@@ -5,18 +5,18 @@
 (commit `1950048`, banner produit **v0.1.5**, `Cargo.toml` workspace `version = "0.1.0"`,
 edition 2021, Apache-2.0). 7 crates : `obscura-{dom,net,browser,cdp,js,mcp,cli}`.
 **Lecture exhaustive du code** (toutes citations `fichier:ligne` ci-dessous référencent
-le checkout `obscura-src/`). À lire en complément : `docs/research/obscura-headless-browser.md`
+le checkout `obscura-src/`). À lire en complément : `docs/reference/web/web/obscura-headless-browser.md`
 (décision déjà actée : façade binaire externe, jamais en dépendance de compilation).
 
 > **Corrections vs `obscura-headless-browser.md`** :
-> - Version réelle = **v0.1.5** (banner `crates/obscura-cli/src/main.rs:169`), pas v0.1.0.
+> - Version réelle = **v0.1.5** (banner `crates/obscura-cli/src/main.rs:169` (not in repo)), pas v0.1.0.
 > - V8 est embarqué via **`deno_core 0.350`** (`crates/obscura-js/Cargo.toml:7,12`), PAS
 >   rusty_v8 brut. Les ops JS↔Rust sont des `#[op2]` deno_core.
-> - MCP expose **12 outils** `browser_*` (`crates/obscura-mcp/src/lib.rs:140-274`), pas 9.
+> - MCP expose **12 outils** `browser_*` (`crates/web/obscura-mcp/src/lib.rs:140-274`), pas 9.
 > - Stealth = 2 couches distinctes : (a) polyfills/fingerprint JS **toujours actifs**
 >   dans `bootstrap.js` ; (b) impersonation **TLS** via `wreq`/`wreq-util` gated
 >   `--features stealth` ET seulement câblé sur `cfg(linux/android)` avec `prefix-symbols`
->   (`crates/obscura-net/Cargo.toml:25-29`). Le flag `--stealth` runtime active aussi le
+>   (`crates/web/obscura-net/Cargo.toml:25-29`). Le flag `--stealth` runtime active aussi le
 >   tracker-blocking (3520 domaines) indépendamment de la feature compile-time.
 
 ---
@@ -24,7 +24,7 @@ le checkout `obscura-src/`). À lire en complément : `docs/research/obscura-hea
 ## État de l'intégration Aphrody (2026-09-28)
 
 Ce rapport décrit l'audit historique et sa recommandation initiale de façade binaire.
-L'intégration active est désormais le fork in-process `crates/aphrody-obscura`, appelé
+L'intégration active est désormais le fork in-process `docs/reference/web/crates/aphrody-obscura`, appelé
 par `aphrody-web-service::WebSession`. `render` est une feature facultative, et
 `stealth` active également `render`, conformément au guide upstream. Les consommateurs
 DOM/CDP/MCP sans capture raster n'ont donc plus la pile Taffy/peinture dans leur graphe
@@ -36,7 +36,7 @@ profils de compilation.
 
 ### 1.1 `obscura-cli` — binaire `obscura` + `obscura-worker`
 
-Args globaux (clap `Args`, `crates/obscura-cli/src/main.rs:10-40`) :
+Args globaux (clap `Args`, `crates/obscura-cli/src/main.rs:10-40` (not in repo)) :
 
 | Flag global | Type/défaut | fichier:ligne |
 |---|---|---|
@@ -118,13 +118,13 @@ Gardes runtime notables :
 - Multi-worker `serve` (main.rs:305-430) : load-balancer round-robin TCP devant N process
   `serve` sur ports `port+1..`, proxy `copy_bidirectional`, gestion spéciale `/json` CDP.
 
-**`obscura-worker`** (`crates/obscura-cli/src/worker.rs`) : binaire séparé piloté par
+**`obscura-worker`** (`crates/obscura-cli/src/worker.rs` (not in repo)) : binaire séparé piloté par
 JSON-lines stdin. `WorkerCommand` (worker.rs:8-23) : `navigate`, `evaluate`, `title`,
 `dump_html`, `dump_text`, `shutdown`. `WorkerResponse {ok, result?, error?}` (worker.rs:25-41).
 
 ### 1.2 `obscura-cdp` — serveur Chrome DevTools Protocol (WebSocket :9222)
 
-Bootstrap serveur (`crates/obscura-cdp/src/server.rs`) : `start_with_host_and_security`
+Bootstrap serveur (`crates/web/obscura-cdp/src/server.rs`) : `start_with_host_and_security`
 (server.rs:62-110), bind TCP, `tokio::LocalSet` (V8 `!Send`), un seul `cdp_processor`
 (server.rs:112-175). Détection HTTP vs WS sur peek 4 octets (`GET ` → endpoints `/json`,
 server.rs:664-684). Endpoints HTTP discovery : `/json/version`, `/json/list`,
@@ -135,7 +135,7 @@ server.rs:664-684). Endpoints HTTP discovery : `/json/version`, `/json/list`,
 Page.enable, Target.getBrowserContexts, Browser.getVersion…) hors de la file pour éviter le
 starvation Puppeteer.
 
-Dispatch par domaine (`crates/obscura-cdp/src/dispatch.rs:196-218`), V8 lock global
+Dispatch par domaine (`crates/web/obscura-cdp/src/dispatch.rs:196-218`), V8 lock global
 process-wide autour de chaque dispatch (dispatch.rs:182, fix issue #19 V8_Fatal). Unwrap
 `Target.sendMessageToTarget` récursif (dispatch.rs:159, 229-284, compat headless_chrome).
 
@@ -321,7 +321,7 @@ Erreur : `{"content":[{"type":"text","text":"Error: ..."}],"isError":true}`.
 
 Principe directeur (confirme `obscura-headless-browser.md` §4) : **façade binaire externe**,
 zéro dep de compilation, zéro V8 dans `cargo ci-offline`. Reproduire le pattern
-`gemini_runtime::resolve_bin()` (`crates/aphrody-gemini-runtime/src/lib.rs`, env > sibling
+`gemini_runtime::resolve_bin()` (`crates/google/gemini-runtime/src/lib.rs`, env > sibling
 `current_exe()` > PATH). Résolution proposée : **`$APHRODY_OBSCURA_BIN` > sibling > PATH**,
 + `$APHRODY_OBSCURA_WORKER_BIN` pour le worker (sibling requis pour `scrape`).
 
@@ -419,7 +419,7 @@ parallèle) — décrire seulement l'intégration cible.
 | 8 | Backend `obscura` dans `aphrody-terminal-browser` (LP.getMarkdown) — **autre PR, agents grind** | n/a (hors scope, ne pas toucher crates/) | bloqué (parallèle) |
 | 9 | Proxy MCP : option immédiate via `aphrody_mcp_call` ; native = 12 wrappers `inputSchema` §1.3 | `obscura mcp` + appel `tools/list` → 12 outils ; `tools/call browser_navigate` | non |
 | 10 | TLS stealth (R4.1) : valider impersonation Chrome145 | `obscura fetch https://tls.peet.ws/api/all --stealth --dump original` → JA3/JA4 Chrome | non (binaire release Linux a la feature) |
-| 11 | Flip `docs/PLAN.md` R4.2/R4.5/R4.7 une fois #2-#9 verts | relire PLAN.md | non |
+| 11 | Flip `docs/PLAN.md` (not in repo) R4.2/R4.5/R4.7 une fois #2-#9 verts | relire PLAN.md | non |
 | 12 | Garder R4.1 (curl-impersonate, chemin non-JS) et R4.4 (HTTP/3) distincts d'Obscura | n/a | non |
 
 ---

@@ -2,7 +2,7 @@
 
 Cible : `C:\Users\<user>\AppData\Local\Programs\Antigravity IDE`
 Analyse : read-only, machine perso (logiciel installé par le user, analyse autorisée).
-Date : 2026-05-22. Artefacts bruts : `var/data/antigravity-ide-re/`.
+Date : 2026-05-22. Artefacts bruts : `var/data/antigravity-ide-re/` (not in repo).
 
 Classification de complétude (par phase) :
 
@@ -18,7 +18,7 @@ Découverte majeure : **Antigravity est un fork Google de Windsurf / Codeium** (
 
 ## 1. Identité / versions
 
-Source : `var/data/antigravity-ide-re/tree-map.json` (l.4-8) + `re-google.json`.
+Source : `var/data/antigravity-ide-re/tree-map.json` (not in repo) (l.4-8) + `re-google.json`.
 
 - IDE **Antigravity 2.0.2**, base **VSCode 1.107.0**, commit `bd0307c171dbaf4cd6135192515e160af7d9d132` (2026-05-21).
 - **Electron 39.2.3**, **Chromium 142.0.7444.175** (confirmé par `re google` sur l'exe : `re-google.json` l.3).
@@ -35,12 +35,12 @@ Réf. `tree-map.json` (1578 entrées top-level IDE) + `scan-tree.json` (récursi
 
 Sous-dossiers cœur `resources/app/extensions/antigravity/` :
 - `dist/extension.js` — 1.96 Mo, point d'entrée VSCode (mince : juste de la glu).
-- `bin/language_server_windows_x64.exe` — **133 599 744 octets (~133 Mo)** : le vrai cerveau (Go, Codeium-derived).
-- `bin/sandbox-wrapper.sh` + `.LICENSE` — wrapper d'exécution sandboxée du code agent.
+- `bin/language_server_windows_x64.exe` (not in repo) — **133 599 744 octets (~133 Mo)** : le vrai cerveau (Go, Codeium-derived).
+- `bin/sandbox-wrapper.sh` (not in repo) + `.LICENSE` — wrapper d'exécution sandboxée du code agent.
 - `dist/languageServer/cert.pem` — 1250 octets : certificat pour le endpoint HTTPS local self-signed du LS.
 - `out/jetskiAgent/main.js` — **12.4 Mo** : webview de l'agent UI « Jetski ».
 - `cascade-panel.html`, `auth-success-jetski.html` — webviews.
-- `schemas/mcp_config.schema.json`, `customEditor/`, `assets/auth/google_signin.svg`.
+- `schemas/mcp_config.schema.json`, `customEditor/`, `assets/auth/google_signin.svg` (not in repo).
 
 Note interne révélée par le schema MCP (`mcp_config.schema.json`) :
 `$comment: Keep in sync with google3/third_party/jetski/cortex/utils/mcp/config.schema.json`
@@ -94,7 +94,7 @@ Forks des extensions **open-remote-ssh / open-remote-wsl** (cf. `LICENSE.open-re
 
 ## 5. Endpoints / RPC / auth (extraits du language server natif)
 
-Tous extraits par `strings` + grep sur `bin/language_server_windows_x64.exe`. Aucun token/secret en clair recopié.
+Tous extraits par `strings` + grep sur `bin/language_server_windows_x64.exe` (not in repo). Aucun token/secret en clair recopié.
 
 ### 5.1 Hosts backend Google
 - `https://cloudcode-pa.googleapis.com` (**Cloud Code Private API — surface principale**)
@@ -104,7 +104,7 @@ Tous extraits par `strings` + grep sur `bin/language_server_windows_x64.exe`. Au
 - `https://feedback-pa.googleapis.com`, `play.googleapis.com/log`, `alkalimakersuiteapplets.pa.googleapis.com` (telemetry / feedback)
 - `docs.googleapis.com`, `secretmanager.googleapis.com`, `cloudkms.googleapis.com`, `iamcredentials.googleapis.com`, `modelarmor.googleapis.com` (sécurité / enterprise)
 
-### 5.2 Méthodes RPC Cloud Code `v1internal:*` — **37 méthodes** (liste complète : `var/data/antigravity-ide-re/v1internal-methods.txt`)
+### 5.2 Méthodes RPC Cloud Code `v1internal:*` — **37 méthodes** (liste complète : `var/data/antigravity-ide-re/v1internal-methods.txt` (not in repo))
 
 Génération / agent :
 `generateContent`, `streamGenerateContent`, `generateChat`, `streamGenerateChat`, `generateCode`, `completeCode`, `transformCode`, `tabChat`, **`internalAtomicAgenticChat`** (cœur agentique), `countTokens`.
@@ -143,7 +143,7 @@ Transcoding gRPC↔REST via connect-go (`/v1/connect.*`).
 
 ## 6. Sortie pipeline `aphrody re`
 
-`cargo check -p aphrody --offline` → **exit 0** (build OK ; warnings de profil swc non bloquants). Pipeline exécuté, artefacts dans `var/data/antigravity-ide-re/` :
+`cargo check -p aphrody --offline` → **exit 0** (build OK ; warnings de profil swc non bloquants). Pipeline exécuté, artefacts dans `var/data/antigravity-ide-re/` (not in repo) :
 
 - `re-triage.json` (256 Ko) — triage de `Antigravity IDE.exe`.
 - `re-google.json` — `family: electron`, `chromium_version: 142.0.7444.175`, `code_sign_subject: "Google Inc"`. **`oauth_client_ids`, `google_endpoints`, `grpc_*` vides** : le détecteur `re google` cible l'exe Electron, où ces artefacts sont absents.
@@ -155,7 +155,7 @@ Transcoding gRPC↔REST via connect-go (`/v1/connect.*`).
 
 ---
 
-## 7. Corrélation avec `crates/aphrody-antigravity/` + gaps
+## 7. Corrélation avec `crates/google/antigravity/` + gaps
 
 Ce que le SDK couvre **et qui est confirmé exact** par cette RE :
 - `ANTIGRAVITY_CLIENT_ID` + `_SECONDARY` : **les deux exacts**, byte-for-byte.
@@ -189,7 +189,7 @@ Ce que le SDK couvre **et qui est confirmé exact** par cette RE :
 
 ## 8. Recommandations pour `aphrody agy` / `aphrody antigravity` / `aphrody ide`
 
-1. **Étendre `endpoints.rs` aux 37 méthodes `v1internal`** (au moins en constantes `METHOD_*`), en priorité `streamGenerateContent`, `internalAtomicAgenticChat`, `countTokens`, `retrieveUserQuota`, `fetchUserInfo`, `listModelConfigs`. Source de vérité : `var/data/antigravity-ide-re/v1internal-methods.txt`.
+1. **Étendre `endpoints.rs` aux 37 méthodes `v1internal`** (au moins en constantes `METHOD_*`), en priorité `streamGenerateContent`, `internalAtomicAgenticChat`, `countTokens`, `retrieveUserQuota`, `fetchUserInfo`, `listModelConfigs`. Source de vérité : `var/data/antigravity-ide-re/v1internal-methods.txt` (not in repo).
 2. **Ajouter le device-code flow** (`oauth2.googleapis.com/device/code`) à `oauth.rs` → débloque `aphrody agy login --headless` pour CI / VPS, aligné §0.1 (zéro humain dans la boucle).
 3. **Mettre à jour `ANTIGRAVITY_SCOPES`** : ajouter `aicode` (et, derrière un flag, la famille Drive) pour parité agent.
 4. **Rafraîchir la liste de modèles** (`models.rs` doc + une éventuelle table) vers la gamme gemini-3.x, et modéliser `BYOM`.

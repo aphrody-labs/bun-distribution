@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 # Inventaire local OpenAI / ChatGPT
 
-`scripts/live-openai-inventory.ps1` exécute un inventaire réel et en lecture seule
+`scripts/tools/os/scripts/live-openai-inventory.ps1` exécute un inventaire réel et en lecture seule
 avec `aphrody-yolo` et le kernel WinClean. La cible d’installation est résolue depuis
 le package MSIX `OpenAI.Codex`; les racines utilisateur présentes sont ajoutées
 automatiquement (`AppData`, `LocalCache`, `LocalState`, `.codex`, `.chatgpt`).
@@ -11,7 +11,7 @@ La cible GUI observée est `OpenAI.Codex_26.915.4065.0_x64__2p2nqsd0c76g0\\app\\
 pwsh -NoProfile -File scripts/live-openai-inventory.ps1
 ```
 
-Résultats : `var/winclean-live/openai/latest`.
+Résultats : `var/winclean-live/openai/latest` (not in repo).
 
 - `file-map.json` : tous les fichiers vus, chemin, racine, taille, extension,
   date et classification.

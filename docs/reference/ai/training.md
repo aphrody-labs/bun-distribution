@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 # Aphrody training
 
-The Rust supervisor in `crates/aphrody-train` runs the `aphrody-train` member
+The Rust supervisor in `crates/ai/train` runs the `aphrody-train` member
 of the shared `/home/aphro/aphrody-py` workspace (or `APHRODY_PY_ROOT`) through
 `uv`. Python 3.12 is pinned for the training
 environment. The worker sends JSONL `start`, `progress`, `eval`, `artifact`,
@@ -43,7 +43,7 @@ Both exports passed `onnx.checker` and artifact digest verification. The
 embedding export was loaded by Rust `OrtEmbedder::load_user_defined` and
 produced three finite, nonzero 384-dimensional vectors. Its cosine for a
 related pair was 0.767620, compared with 0.003446 for an unrelated pair.
-The opt-in test is `crates/aphrody-rag/tests/trained_onnx_smoke.rs`; it needs
+The opt-in test is `crates/ai/rag/tests/trained_onnx_smoke.rs`; it needs
 `APHRODY_TRAIN_SMOKE_MODEL_DIR` and a local ONNX Runtime library.
 
 A separate one-step CPU smoke used two synthetic, gold-disjoint rollout

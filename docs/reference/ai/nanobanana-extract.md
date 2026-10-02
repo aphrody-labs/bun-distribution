@@ -24,7 +24,7 @@ Key capabilities extracted:
   base64 — the google-genai SDK already decodes them).
 - **Aspect ratio**: passed as `ImageConfig(aspect_ratio=...)` inside
   `GenerateContentConfig`.
-- **Model ids** used (from `config/settings.py`):
+- **Model ids** used (from `config/settings.py` (not in repo)):
   - `gemini-2.5-flash-image` — Flash-speed image model (**our primary target**)
   - `gemini-3-pro-image-preview` — 4K quality model
   - `gemini-3.1-flash-image-preview` — Nano Banana 2 (thinking support)

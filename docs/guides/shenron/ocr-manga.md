@@ -3,7 +3,7 @@
 Objectif : transcrire le texte des planches manga (bulles + cartouches) en
 **markdown** par tome — pour la lecture texte, l'accessibilité et l'indexation RAG.
 Le manga self-hosté est majoritairement **français** (VF) ; cf.
-[`docs/manga-scans.md`](manga-scans.md).
+[`docs/guides/shenron/manga-scans.md`](manga-scans.md).
 
 Pour une revue hors ligne, `manga-revue-agents.ts prepare` accepte aussi
 `--candidates <candidates.jsonl>` après conversion des sorties Koharu ou
@@ -76,7 +76,7 @@ VPS, laisser le reverse-sync PostgreSQL → SQLite terminer afin que le filtre d
 planches manquantes parte d'un réplica frais.
 
 Un run est immuable et adressé par le SHA-256 des sources et des paramètres de
-réduction. `data/manga-ocr/current.json` pointe vers le run courant. Chaque
+réduction. `data/manga-ocr/current.json` (not in repo) pointe vers le run courant. Chaque
 entrée de lot porte :
 
 - l'identité stable `DB:vol12:7` ou `DBS:ch1315:29` ;
@@ -86,7 +86,7 @@ entrée de lot porte :
   transcrit.
 
 Le schéma versionné est
-`apps/bot/scripts/manga-ocr-manifest.schema.json`. Une couverture non numérotée,
+`packages/shenron/pipeline/scripts/manga-ocr-manifest.schema.json`. Une couverture non numérotée,
 une autre série ou un doublon `(series,tome,planche)` est refusé.
 
 ### 2. Transcrire et auditer
@@ -171,7 +171,7 @@ bun apps/bot/scripts/ingest-manga-rag.ts
 ```
 
 La matérialisation relit PostgreSQL et réécrit atomiquement un Markdown par
-tome/chapitre sous `assets/manga/transcripts/`. Le build RAG reste une opération
+tome/chapitre sous `assets/manga/transcripts/` (not in repo). Le build RAG reste une opération
 séparée : conformément aux règles d'exploitation, ne jamais lancer `rag:build`
 au premier plan sur le service de production.
 

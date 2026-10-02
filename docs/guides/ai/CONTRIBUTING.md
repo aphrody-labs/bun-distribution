@@ -26,7 +26,7 @@ rather than working around it.
 
 ## What gets merged
 
-Pull requests that move [`docs/PLAN.md`](../../plans/ai/PLAN.md) forward are the
+Pull requests that move [`docs/PLAN.md` (not in repo)](../../plans/ai/PLAN.md) forward are the
 easiest review: pick a pending row, do it end to end (code, test, plan line
 updated in the same commit). Other changes are welcome with the reason stated
 in the description.

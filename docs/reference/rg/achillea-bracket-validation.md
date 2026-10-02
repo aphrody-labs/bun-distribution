@@ -53,8 +53,8 @@ en lecture seule.
 - Vérifié dans le code : les routes publiques ci-dessus existent ; la page de
   détail consomme le troisième élément du tuple ; l'API charge maintenant les
   données réelles via `tournamentBracketData`.
-- Vérifié localement : typecheck de `apps/api` après cette correction.
-  La suite `apps/api/test/api.test.ts` a donné 61 réussites et 17 échecs
+- Vérifié localement : typecheck de `packages/shenron/api` après cette correction.
+  La suite `apps/rg/bot/test/api.test.ts` a donné 61 réussites et 17 échecs
   (plusieurs réponses SQL à 500 et des délais dépassés, y compris la liste des
   tournois). Le test du triplet passe par saut lorsque la liste ne fournit aucun
   identifiant ; il ne valide donc pas le contenu d'un bracket réel.

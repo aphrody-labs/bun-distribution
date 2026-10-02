@@ -39,7 +39,7 @@ heading as current instructions; use the Rust CLI or Nushell entry point above.
 
 The old scanner implementation remains in the repository for migration
 reference. Its registry checks, YOLO dispatch, external Cargo tools and
-ignored `target/aphrody-crates-mrx/` reports have not been requalified against
+ignored `target/aphrody-crates-mrx/` (not in repo) reports have not been requalified against
 the current workspace layout.
 
 References: [Cargo metadata](https://doc.rust-lang.org/cargo/commands/cargo-metadata.html),

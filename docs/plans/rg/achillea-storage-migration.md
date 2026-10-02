@@ -6,7 +6,7 @@ la pile RG/Azalée, ne supprime rien côté source et ne réalise aucune opérat
 réseau par défaut.
 
 L’outil associé est
-[`migrate-storage-objects.ts`](../../scripts/rg/achillea/migrate-storage-objects.ts).
+[`migrate-storage-objects.ts`](../../../scripts/rg/achillea/migrate-storage-objects.ts).
 Il utilise uniquement les API Storage : les secrets ne sont acceptés que par
 variables d’environnement, jamais dans les arguments, le manifeste ou les
 logs.
@@ -39,7 +39,7 @@ par extension ni par en-tête HTTP.
    ce dépôt.
 2. Restaurer et valider la base PostgreSQL Cloud dans la base locale nommée
    exactement `achillea`, conformément à
-   [`docs/achillea-services.md`](achillea-services.md). Cette restauration crée
+   [`docs/architecture/rg/achillea-services.md`](../../architecture/rg/achillea-services.md). Cette restauration crée
    les lignes `storage.buckets` et `storage.objects`; elle ne transporte pas les
    octets.
 3. Appliquer le contrat Storage d’Achillea et confirmer `images.public=true`

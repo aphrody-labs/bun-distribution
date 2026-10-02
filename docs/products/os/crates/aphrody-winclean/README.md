@@ -21,4 +21,4 @@ wc.computer_click(&ComputerClickArgs::new().window_handle(0).x(120).y(48))?.ok()
   no DLL discovery, C ABI loader, NativeAOT runtime, or managed fallback.
 - Example: `cargo run -p aphrody-winclean --example observe`.
 
-See [`docs/winclean-native-import.md`](../../../../reference/os/winclean-native-import.md).
+See [`docs/reference/os/winclean-native-import.md`](../../../../reference/os/winclean-native-import.md).

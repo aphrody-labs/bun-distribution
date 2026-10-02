@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 # xAI / Grok model ids
 
-## RAGFlow vendor (`var/ragflow/conf/models/xai.json`)
+## RAGFlow vendor (`var/ragflow/conf/models/xai.json` (not in repo))
 
 | Model | max_tokens | Types |
 | --- | --- | --- |

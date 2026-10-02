@@ -118,13 +118,13 @@ targets (`make lint`, `make fmt`, `make docs`).
 ## 9. Migration assistance
 
 Stuck on a recipe? Open a GitHub issue using the `question.yml` template
-at `.github/ISSUE_TEMPLATE/question.yml`. Tag it `migration` so the
+at `.github/ISSUE_TEMPLATE/question.yml` (not in repo). Tag it `migration` so the
 triage rotation can route it correctly. Include the source tool, the
 recipe you are trying to convert, and what you tried.
 
 Migration recipe pull requests are explicitly welcome. The
 [`CONTRIBUTING.md`](../../guides/ai/CONTRIBUTING.md) guide describes the workflow:
-fork, add your recipe under `docs/MIGRATION.md` (or a sibling cookbook
+fork, add your recipe under `docs/MIGRATION.md` (not in repo) (or a sibling cookbook
 file if substantial), open the PR, and link the upstream tool's
 documentation so reviewers can verify the mapping. Honest disclaimers
 ("aphrody does not cover X — keep tool Y") are encouraged, not penalised.

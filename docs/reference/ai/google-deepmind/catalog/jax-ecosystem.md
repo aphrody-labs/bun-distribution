@@ -2,7 +2,7 @@
 
 Libraries, utilities, and research tools built on JAX, covering neural network construction, optimization, probabilistic inference, graph learning, and scientific computing.
 
-> Part of [`docs/google-deepmind/`](../../../../products/ai/google-deepmind/README.md). Full mechanical listing: [`all-repos.md`](../all-repos.md). This page covers 38 repos (32 active / 6 archived).
+> Part of [`docs/google-deepmind/` (not in repo)](../../../../products/ai/google-deepmind/README.md). Full mechanical listing: [`all-repos.md`](../all-repos.md). This page covers 38 repos (32 active / 6 archived).
 
 ## Core neural network libraries
 

@@ -11,7 +11,7 @@ Shipped 2026-06-04 in bxc (`~/bxc`, commit `11a923d`). Three Next/
 Playwright test surfaces, all on bxc's **in-process CDP** layer (`src/cdp/
 domains/*`) — no Chromium bundling, no `@playwright/test` runtime dep:
 
-- **`packages/test` → `@aphrody-code/bxc-test`** — Playwright-shaped
+- **`packages/test` (not in repo) → `@aphrody-code/bxc-test`** — Playwright-shaped
   `test`/`expect`/`TestPage`/`BxcLocator` over CDP DOM + `bun:test`. Web-first
   auto-retry matchers, `getBy*` selectors, `defineConfig` fixture seam. `static`
   profile = fully offline (`Bun.serve({port:0})`). 15 tests. Honest caveats:
@@ -19,8 +19,8 @@ domains/*`) — no Chromium bundling, no `@playwright/test` runtime dep:
   (`getBoxModel` → zero box) → "visible" = attached & not hidden; `getByRole` is
   a role→CSS heuristic, not a real a11y tree (roadmap = `fast`/Lightpanda
   profile).
-- **`packages/next-playwright` → `@aphrody-code/next-playwright`** — faithful
-  port of vercel `packages/next-playwright` (`16.3.0-canary.39`, MIT). The
+- **`packages/next-playwright` (not in repo) → `@aphrody-code/next-playwright`** — faithful
+  port of vercel `packages/next-playwright` (not in repo) (`16.3.0-canary.39`, MIT). The
   `instant()` cookie protocol is copied **byte-for-byte** (constant
   `next-instant-navigation-testing`, value `JSON.stringify([0,"p"+Math.random()])`,
   nesting guard via `context().cookies()`, `resolveURL`+error text,
@@ -40,7 +40,7 @@ release) was broken offline. Implemented in `src/cdp/domains/Network.ts`
 (name + optional domain/path scope) with domain tests.
 
 Plan/compat tables: `bxc/docs/test-package-plan.md` (§8 = next-playwright).
-aphrody ref: `docs/nextjs-canary-reference.md` (port marked SHIPPED).
+aphrody ref: `docs/nextjs-canary-reference.md` (not in repo) (port marked SHIPPED).
 Build: agent 1 built bxc-test; orchestrator assembled next-playwright + the
 Network fix. Run: `bun test packages/test/test/ packages/next-playwright/test/`.
 See [[bun-test-runner-pattern]].

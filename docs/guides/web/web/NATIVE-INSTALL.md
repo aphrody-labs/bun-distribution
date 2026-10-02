@@ -15,7 +15,7 @@ Le mode complet est idempotent et installe dans le répertoire de données Aphro
 - Lightpanda pour la plateforme courante ;
 - la bibliothèque dynamique précompilée `curl-impersonate` ;
 - le workspace Rust en `rust-bridge/target/release` quand le dépôt source est
-  présent, ou le pont Rust de la release Aphrody Web sous `bin/native` pour un paquet
+  présent, ou le pont Rust de la release Aphrody Web sous `bin/native` (not in repo) pour un paquet
   npm sans sources.
 
 Les archives natives sont téléchargées depuis les releases amont et ne sont

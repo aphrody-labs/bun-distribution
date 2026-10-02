@@ -10,16 +10,16 @@ qu'on en retient pour aphrody*. Aucune copie verbatim — distillation.
 
 ## Sources
 
-- Rust in Chromium (`docs/rust.md`) :
+- Rust in Chromium (`docs/rust.md` (not in repo)) :
   <https://chromium.googlesource.com/chromium/src/+/refs/heads/main/docs/rust.md>
   (version taguée lue : `.../+/refs/tags/135.0.7040.0/docs/rust.md`)
-- Unsafe Rust policy (`docs/rust-unsafe.md`) :
+- Unsafe Rust policy (`docs/rust-unsafe.md` (not in repo)) :
   <https://chromium.googlesource.com/chromium/src/+/refs/tags/135.0.7040.0/docs/rust-unsafe.md>
-- FFI C/C++ ↔ Rust (`docs/rust/ffi.md`) :
+- FFI C/C++ ↔ Rust (`docs/rust/ffi.md` (not in repo)) :
   <https://chromium.googlesource.com/experimental/chromium/src/+/HEAD/docs/rust/ffi.md>
 - Politique d'import de crates tierces (`third_party/rust/README-importing-new-crates.md`) :
   <https://chromium.googlesource.com/chromium/src.git/+/HEAD/third_party/rust/README-importing-new-crates.md>
-- Process général d'ajout de tiers (`docs/adding_to_third_party.md`), référencé par le doc ci-dessus.
+- Process général d'ajout de tiers (`docs/adding_to_third_party.md` (not in repo)), référencé par le doc ci-dessus.
 - `cxx` (FFI sûr Rust↔C++) : <https://github.com/dtolnay/cxx>
 
 ## 1. Politique d'ajout de crates tierces

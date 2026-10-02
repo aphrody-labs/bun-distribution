@@ -1,6 +1,6 @@
 # google-deepmind — Python repositories (exhaustive catalog)
 
-Auto-generated from the GitHub Search API (`org:google-deepmind language:python`). Source of truth: `docs/data/google-deepmind-repos.json`.
+Auto-generated from the GitHub Search API (`org:google-deepmind language:python`). Source of truth: `docs/reference/ai/data/google-deepmind-repos.json`.
 
 Total: **236** repos — **205** active, **31** archived. Sorted by stars.
 

@@ -22,13 +22,13 @@
 - **Divine Palette**: Celestial Gold (`#d4af37`), Platinum / Deep Dark (`#0b0b0f`), Material 3 Accent Blue (`#a8c7fa`).
 - **Minimalism**: Zero clutter, zero unnecessary text, absolute clarity.
 - **Graphic Assets**:
-  - `assets/byron/aphrodi_avatar.png`: 128x128 pixel-art iconic avatar.
-  - `assets/byron/aphrody.webp`: Primary character cel-shaded portrait.
-  - `assets/byron/aphrody-body.webp`: Full body render.
-  - `assets/byron/byron_classic.webp`: High-res classic archive portrait.
-  - `assets/byron/rendered_turntable.webp`: 360-degree rotation render turntable.
-  - `assets/byron/aphrody_r0.webp` to `aphrody_r7.webp`: 8-direction sprite rotations.
-  - `assets/byron/aphrody_body_r0.webp` to `aphrody_body_r7.webp`: 8-direction full body rotations.
+  - `assets/ai/byron/aphrodi_avatar.png`: 128x128 pixel-art iconic avatar.
+  - `assets/ai/byron/aphrody.webp`: Primary character cel-shaded portrait.
+  - `assets/ai/byron/aphrody-body.webp`: Full body render.
+  - `assets/ai/byron/byron_classic.webp`: High-res classic archive portrait.
+  - `assets/ai/byron/rendered_turntable.webp`: 360-degree rotation render turntable.
+  - `assets/ai/byron/aphrody_r0.webp` to `aphrody_r7.webp`: 8-direction sprite rotations.
+  - `assets/ai/byron/aphrody_body_r0.webp` to `aphrody_body_r7.webp`: 8-direction full body rotations.
 
 ## 4. Operational Rule
 

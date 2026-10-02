@@ -5,7 +5,7 @@ Branch: `perf` (from `main` @ 7a7c403)
 ---
 
 ## Hotspot 1 — `write_class` inspectable fold
-**File:** `crates/cli-support/src/js/mod.rs:1656`
+**File:** `crates/cli-support/src/js/mod.rs:1656` (not in repo)
 **Commit:** `5a81fba`
 
 The `readable_properties.fold(String::from("\n"), |fields, field_name| format!("{fields}{field_name}: this.{field_name},\n"))` pattern allocates a brand-new `String` on every iteration because `format!` always allocates. For a struct with N inspectable properties this is O(N) heap allocations in a tight loop.

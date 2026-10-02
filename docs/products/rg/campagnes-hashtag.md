@@ -10,8 +10,8 @@ quelques jours avant le lancement.
 
 | Source | Collecteur | Table |
 | --- | --- | --- |
-| X (le hashtag) | `packages/cron/src/tasks/ie-crawl/hashtag-harvest.ts` | `x_campagne_posts` × `tweets` |
-| Discord (salon de dépôt) | `packages/cron/src/tasks/campagnes-discord.ts` | `campagne_creations_discord` × `discord_messages` |
+| X (le hashtag) | `packages/rg/cron/src/tasks/ie-crawl/hashtag-harvest.ts` | `x_campagne_posts` × `tweets` |
+| Discord (salon de dépôt) | `packages/rg/cron/src/tasks/campagnes-discord.ts` | `campagne_creations_discord` × `discord_messages` |
 | Instagram (dépôt manuel) | **aucun collecteur possible** — formulaire `/iergday` | `campagne_creations_instagram` |
 
 Instagram est autorisé par le règlement, mais **aucun collecteur de hashtag
@@ -24,11 +24,11 @@ liens toutes les 12 h : sans elle, un post supprimé chez Instagram laisserait u
 carte morte dans la galerie pour toujours.
 
 Les trois sources remontent dans la même galerie publique
-(`apps/website/src/lib/x-campagnes/queries.ts`), discriminées par `source`.
+(`apps/rg/website/src/lib/x-campagnes/queries.ts`), discriminées par `source`.
 
 ## Anticiper les fautes de frappe
 
-`packages/cron/src/tasks/ie-crawl/hashtag-variantes.ts` — module **pur**, 33 tests.
+`packages/rg/cron/src/tasks/ie-crawl/hashtag-variantes.ts` — module **pur**, 33 tests.
 
 Un participant recopie le hashtag à la main, depuis une affiche, souvent sur un
 téléphone. `#IERGDay` arrive donc aussi en `#IERG_Day`, `#iergday2026`,
@@ -58,7 +58,7 @@ hashtag, éditions précédentes comprises.
 
 ## Relais Discord
 
-`packages/cron/src/tasks/campagnes-relais-discord.ts` — toutes les 15 minutes
+`packages/rg/cron/src/tasks/campagnes-relais-discord.ts` — toutes les 15 minutes
 (`campagnes:relais`).
 
 Le bot dépose **chaque création, quelle que soit sa source**, dans

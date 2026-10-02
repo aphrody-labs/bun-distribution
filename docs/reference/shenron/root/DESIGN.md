@@ -342,14 +342,14 @@ la ligne de base pour ne pas hacher les jambages.
 
 | Élément                        | Fichier                                           |
 | :----------------------------- | :------------------------------------------------ |
-| Tokens de palette et de police | `apps/site/src/app/globals.css` (`@theme inline`) |
-| Chargement des polices         | `apps/site/src/app/layout.tsx` (`next/font`)      |
-| Primitives de page partagées   | `apps/site/src/components/kit/`                   |
+| Tokens de palette et de police | `apps/shenron/site/src/app/globals.css` (`@theme inline`) |
+| Chargement des polices         | `apps/shenron/site/src/app/layout.tsx` (`next/font`)      |
+| Primitives de page partagées   | `apps/shenron/site/src/components/kit/`                   |
 | Corps du wiki                  | `.wiki-content` dans `globals.css`                |
-| Lecture des actualités         | `apps/site/src/styles/editorial.css`              |
+| Lecture des actualités         | `apps/site/src/styles/editorial.css` (not in repo)              |
 | Surcharge de thème au runtime  | `/admin/design` → `lib/site-theme.ts`             |
-| Module d'édition               | `apps/site/src/components/editor/`                |
-| Accents de rubrique            | `apps/site/src/lib/wiki-section-accents.ts`       |
+| Module d'édition               | `apps/shenron/site/src/components/editor/`                |
+| Accents de rubrique            | `apps/shenron/site/src/lib/wiki-section-accents.ts`       |
 
 ### Écart connu entre ce document et le code (2026-09-12)
 

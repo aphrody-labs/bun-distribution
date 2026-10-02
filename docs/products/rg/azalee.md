@@ -8,7 +8,7 @@ status: "stable"
 # Azalée dans Website
 
 Azalée n'est plus une application web autonome. Le portail Rose Griffon et le
-wiki IEVR sont une seule application Next.js : [`apps/rg/website`](../../apps/rg/website).
+wiki IEVR sont une seule application Next.js : [`apps/rg/website`](../../../apps/rg/website).
 Les pages du wiki sont servies sous `https://rosegriffon.fr/wiki`.
 
 ## Invariants
@@ -17,7 +17,7 @@ Les pages du wiki sont servies sous `https://rosegriffon.fr/wiki`.
 - Un seul `next build` : celui du workspace `@rosegriffon/website`.
 - Une seule release bleu/vert : `website-web.service` et
   `website-web-b.service`.
-- Aucun workspace `apps/azalee`, aucune unité `azalee-web`, aucun watchdog et
+- Aucun workspace `apps/azalee` (not in repo), aucune unité `azalee-web`, aucun watchdog et
   aucun script `ship-azalee` ne doivent être recréés.
 - `azalee.rosegriffon.fr` est uniquement une entrée de compatibilité. nginx
   redirige chaque requête vers le chemin correspondant sous
@@ -43,7 +43,7 @@ bun run deploy:status
 Le changement est valide lorsque les pages `rosegriffon.fr/wiki/**` répondent
 depuis la release Website et que le domaine historique retourne une redirection
 permanente vers `/wiki`. Une commande ou une documentation proposant
-`next build` dans `apps/azalee`, `deploy azalee` ou le redémarrage
+`next build` dans `apps/azalee` (not in repo), `deploy azalee` ou le redémarrage
 d'`azalee-web.service` est obsolète et doit être supprimée.
 
 ## Responsabilités
@@ -52,6 +52,6 @@ d'`azalee-web.service` est obsolète et doit être supprimée.
 | --- | --- |
 | Routes et composants du wiki | `apps/rg/website/src/app/wiki` et composants Website associés |
 | Navigation, thèmes et préférences | `apps/rg/website` et packages partagés |
-| Données IEVR | packages de données et miroir documentés dans IECODE `docs/nie/architecture-unifiee-ievr.md` |
-| Publication frontend | [deploiement-sans-coupure.md](deploiement-sans-coupure.md) |
+| Données IEVR | packages de données et miroir documentés dans IECODE `docs/nie/architecture-unifiee-ievr.md` (not in repo) |
+| Publication frontend | [deploiement-sans-coupure.md](../../operations/rg/deploiement-sans-coupure.md) |
 | Domaine historique | configuration nginx de redirection, sans upstream Azalée |

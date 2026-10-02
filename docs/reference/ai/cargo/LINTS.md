@@ -172,8 +172,8 @@ module_name_repetitions        = "allow"   # intentional in our crates
 ### Crates actuellement en `android-strict`
 | Crate | Statut |
 |---|---|
-| `crates/aphrody-base` | candidat (crypto DPAPI, AES-GCM) |
-| `crates/bun_ffi` | candidat (FFI zero-copy) |
+| `crates/aphrody-base` (not in repo) | candidat (crypto DPAPI, AES-GCM) |
+| `crates/bun_ffi` (not in repo) | candidat (FFI zero-copy) |
 | autres | TBD per-crate quand stabilisées |
 
 ## Lints Cargo (RFC 3389, unstable on stable)

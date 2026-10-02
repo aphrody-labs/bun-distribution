@@ -2,7 +2,7 @@
 
 Python tooling for the Android ecosystem: ADB and Fastboot protocol implementations, Android emulator container orchestration, file synchronization over ADB, automated device testing utilities, and AIY (AI-on-Raspberry-Pi) maker kits.
 
-> Part of [`docs/google/`](../../../../products/ai/google/README.md). Full mechanical listing: [`all-repos.md`](../all-repos.md). This page covers 12 repos (4 active / 8 archived).
+> Part of [`docs/google/` (not in repo)](../../../../products/ai/google/README.md). Full mechanical listing: [`all-repos.md`](../all-repos.md). This page covers 12 repos (4 active / 8 archived).
 
 ## Android Emulator
 

@@ -23,7 +23,7 @@ et reproductible (CLAUDE.md §0.1).
 
 > **Provisionné le 2026-05-23.** Source de vérité opérationnelle : les scripts
 > [`scripts/gcp-sa-setup.{ps1,sh}`](../../../../scripts/aphrody) et
-> [`scripts/gcp-enable-all.sh`](../../../../scripts/aphrody/gcp-enable-all.sh). Cette doc
+> [`scripts/aphrody/gcp-enable-all.sh`](../../../../scripts/aphrody/gcp-enable-all.sh). Cette doc
 > décrit l'état cible ; relancer un script suffit à le reconstituer.
 
 ---
@@ -131,9 +131,9 @@ APIs clés pour aphrody : `aiplatform` (Vertex AI), `generativelanguage`
 
 | Script | Plateforme | Rôle |
 |--------|------------|------|
-| [`scripts/gcp-sa-setup.ps1`](../../../../scripts/aphrody/gcp-sa-setup.ps1) | Windows (hôte) | SA + owner + 37 APIs cœur + clé JSON + clé API + `.env` + vérif |
-| [`scripts/gcp-sa-setup.sh`](../../../../scripts/aphrody/gcp-sa-setup.sh) | Linux (cible #1) | idem, miroir bash |
-| [`scripts/gcp-enable-all.sh`](../../../../scripts/aphrody/gcp-enable-all.sh) | Linux/bash | active **toutes** les 525 APIs first-party (lots de 20, repli individuel) |
+| [`scripts/aphrody/gcp-sa-setup.ps1`](../../../../scripts/aphrody/gcp-sa-setup.ps1) | Windows (hôte) | SA + owner + 37 APIs cœur + clé JSON + clé API + `.env` + vérif |
+| [`scripts/aphrody/gcp-sa-setup.sh`](../../../../scripts/aphrody/gcp-sa-setup.sh) | Linux (cible #1) | idem, miroir bash |
+| [`scripts/aphrody/gcp-enable-all.sh`](../../../../scripts/aphrody/gcp-enable-all.sh) | Linux/bash | active **toutes** les 525 APIs first-party (lots de 20, repli individuel) |
 
 Tous **idempotents** et **non-interactifs**.
 

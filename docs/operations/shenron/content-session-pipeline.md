@@ -2,7 +2,7 @@
 
 `shenron-content-session.timer` runs a resumable enrichment session after boot
 and then every six hours. Its state is stored atomically in
-`data/session-pipeline/latest.json`; it contains no credentials or source body.
+`data/session-pipeline/latest.json` (not in repo); it contains no credentials or source body.
 
 Each session imports completed BXC crawl databases into
 `public.external_source_records`, optionally refreshes available media readers,

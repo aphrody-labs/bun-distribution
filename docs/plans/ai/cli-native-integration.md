@@ -40,7 +40,7 @@ audited): `agent-tools/shell.rs` (the agent shell tool), `agent-tools/search_tex
 | Capability | Copies found | Canonical owner | Action |
 |---|---|---|---|
 | MCP client | `mcp-client` (registry, transports, executor); `mcp/src/client_cmd.rs`; `gemini-runtime/src/mcp_client.rs` | `aphrody-mcp-client` | Make `client_cmd` and gemini-runtime thin callers. |
-| MCP server config | `config/src/mcp.rs` `McpServerConfig`; `gemini-runtime/src/mcp_config.rs`; hand-rolled TOML/JSON upserts in `apps/cli/src/codex_provision.rs` and `agy_provision.rs` | `aphrody-config` | One typed model, serialized by per-tool adapters (section 3). |
+| MCP server config | `crates/ai/config/src/mcp.rs` `McpServerConfig`; `gemini-runtime/src/mcp_config.rs`; hand-rolled TOML/JSON upserts in `apps/cli/src/codex_provision.rs` and `agy_provision.rs` | `aphrody-config` | One typed model, serialized by per-tool adapters (section 3). |
 | Config loader | `aphrody-config` (layers, profiles, policy) and `apps/cli/src/config_cmd.rs` | `aphrody-config` | CLI only renders. |
 | Skills discovery | `skills/src/runtime/discover.rs`; `skills-forge/src/registry.rs`; `sdk/src/skills.rs` | `aphrody-skills` (discovery), `skills-forge` (authoring) | `sdk/skills.rs` re-exports discovery. |
 | Plugin / marketplace | `marketplace` (index, semver, sha256); `skills/runtime/lockfile.rs`; manifests hand-maintained under `plugins/aphrody` | `aphrody-marketplace` | Add a single `PluginManifest` source (section 3). |
@@ -55,10 +55,10 @@ Authoritative source: `plugins/aphrody/plugin.json` (portable manifest,
 
 | Tool | Reads | Adapter output |
 |---|---|---|
-| Claude Code | `.claude-plugin/plugin.json`, `.mcp.json`, `hooks/hooks.json`, `agents/`, `skills/` | manifest, MCP, hooks |
-| Codex | `plugin.json` or `.codex-plugin/plugin.json`, `.agents/plugins/marketplace.json`, `.agents/skills`, `hooks.json` (needs `features.hooks`), `.codex/agents/*.toml`, `config.toml` `[mcp_servers]` | manifest, marketplace entry, agents TOML, MCP table |
-| Antigravity (agy) | `plugin.json`, `.agents/{plugins,skills,agents,rules}`, `.agents/hooks.json`, `.agents/mcp_config.json` | hooks restricted to PreToolUse, PostToolUse, PreInvocation, PostInvocation, Stop; MCP file |
-| OpenCode | `opencode.json` (`mcp`, `plugin`, `instructions`, `agent`, `command`), `.opencode/{plugins,skills,agents,commands}`; also reads `.claude/skills` and `.agents/skills` | `opencode.json` fragment. Skills need no copy since OpenCode reads the shared dirs. |
+| Claude Code | `.claude-plugin/plugin.json` (not in repo), `.mcp.json`, `hooks/hooks.json`, `agents/`, `skills/` | manifest, MCP, hooks |
+| Codex | `plugin.json` or `.codex-plugin/plugin.json`, `.agents/plugins/marketplace.json`, `.agents/skills` (not in repo), `hooks.json` (needs `features.hooks`), `.codex/agents/*.toml`, `config.toml` `[mcp_servers]` | manifest, marketplace entry, agents TOML, MCP table |
+| Antigravity (agy) | `plugin.json`, `.agents/{plugins,skills,agents,rules}`, `.agents/hooks.json` (not in repo), `.agents/mcp_config.json` (not in repo) | hooks restricted to PreToolUse, PostToolUse, PreInvocation, PostInvocation, Stop; MCP file |
+| OpenCode | `opencode.json` (`mcp`, `plugin`, `instructions`, `agent`, `command`), `.opencode/{plugins,skills,agents,commands}`; also reads `.claude/shenron/skills` and `.agents/skills` (not in repo) | `opencode.json` fragment. Skills need no copy since OpenCode reads the shared dirs. |
 
 Home placement (`$CODEX_HOME`, `~/.gemini`) currently done by
 `codex_provision.rs` / `agy_provision.rs` becomes adapter output written by the

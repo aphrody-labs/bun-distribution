@@ -1,3 +1,4 @@
+<!-- docs-links: external-paths — backtick paths in this document name files of the pre-monorepo bxc repository (historical changelog), not of this checkout. -->
 # Changelog
 
 All notable changes to Bxc will be documented in this file.
@@ -101,7 +102,7 @@ Implementation of `PLAN.md` (hardening, algorithmic core, agent index). Metrics:
   Les routes REST `/fut/players` et `/fut/stats/summary` (accès SQL direct
   au fichier sqlite interne du package) sont retirées — dupliquaient le
   `FutResolver` GraphQL déjà branché, qui gère son propre chemin de base.
-- **Retrait du code mort confirmé** dans `src/` et `packages/x/` (audit
+- **Retrait du code mort confirmé** dans `src/` et `packages/web/x/` (audit
   fichier → consommateur → décision, sur toute la couche Bun) :
   `src/ai/` (actor/skills/tools jamais branchés au MCP réel), `src/plugin/`
   (~1500 lignes de plugins Bun next/react-compiler/tailwind/lightpanda sans
@@ -112,7 +113,7 @@ Implementation of `PLAN.md` (hardening, algorithmic core, agent index). Metrics:
   (shim déjà marqué `@deprecated`), `packages/x/examples/07-max-turnstile-solver.ts`
   (référence un profil `max` jamais implémenté).
 - **14 exemples `packages/x/examples/*.ts` réparés** : un rename passé
-  (`examples/` → `packages/x/examples/`) n'avait jamais mis à jour leurs
+  (`examples/` → `packages/web/x/examples/`) n'avait jamais mis à jour leurs
   imports relatifs vers `src/` — ils ne compilaient plus depuis, malgré des
   README les présentant comme fonctionnels.
 - Exports `package.json` manquants ajoutés pour `./next`, `./react`,
@@ -347,7 +348,7 @@ que leurs tags existent. Cette publication les livre toutes d'un coup, avec les 
   elle refuse plutôt que de dégrader en hash nu. 100 % local, rien ne sort de la
   machine. Tests : `test/privacy/pii.test.ts`.
 - **Purges autonomes X** — noyau partagé
-  `packages/x/src/services/purge-engine.ts` (`RateGovernor`, taxonomie
+  `packages/web/x/src/services/purge-engine.ts` (`RateGovernor`, taxonomie
   d'erreurs, `runMutationQueue`, `readWithBackoff`) : trois freins indépendants
   (jitter 4-11 s, 45 / fenêtre de 15 min, 400 / 24 h), lecture des en-têtes
   `x-rate-limit-*`, journaux reprenables en 0600 sous `~/.aphrody/`.
@@ -421,7 +422,7 @@ que leurs tags existent. Cette publication les livre toutes d'un coup, avec les 
 
 ### Added
 
-- **X Pro (Gryphon)** — `pro.x.com/i/decks` recon (`bxc detect` / `recon` / `har`), `scripts/x-pro-recon.ts`, docs for the extracted `@aphrody/x` package.
+- **X Pro (Gryphon)** — `pro.x.com/i/decks` recon (`bxc detect` / `recon` / `har`), `scripts/tools/web/apps/bxc/scripts/x-pro-recon.ts`, docs for the extracted `@aphrody/x` package.
 - **`@aphrody/x` 1.0.6** — Gryphon GraphQL catalog overlay (12 deck ops: `ViewerAccountSync`, `CreateDeck`, …), `x-pro-deck` service, **Radar** (`SearchTimeline` + `querySource: radar`), `radar-surface`, `x-pro-surface`.
 - **Rust `x-cli`** — `xpro` subcommand (`probe`, `sync`, `deck`, `create`, `remove`).
 - **MCP** — `bxc_xpro_deck` tool (decks sync, radar search, probe).
@@ -446,7 +447,7 @@ que leurs tags existent. Cette publication les livre toutes d'un coup, avec les 
 ### Changed
 
 - `bxc-native-mcp` MCP server bumped to 0.5.0; `bxc-gemini` extension manifest bumped to 0.6.0.
-- Relocated the top-level `examples/` directory under `packages/x/examples/`.
+- Relocated the top-level `examples/` directory under `packages/web/x/examples/`.
 
 ---
 
@@ -574,7 +575,7 @@ que leurs tags existent. Cette publication les livre toutes d'un coup, avec les 
 
 ### Added — Phase 2 (performance)
 
-- Cold start measured with `scripts/measure-coldstart.ts` (5-10 runs, p50/p95 table, exit 1 on miss)
+- Cold start measured with `scripts/tools/web/apps/bxc/scripts/measure-coldstart.ts` (5-10 runs, p50/p95 table, exit 1 on miss)
 - Static profile cold start: **p50 = 25.4 ms** (target <50 ms), Fast profile cold start: **p50 = 35.4 ms** (target <80 ms) — both pass
 - Lazy imports of `StaticDomTransport` and `HttpProfileTransport` in `serve.ts` (FFI libs not dlopen'd until first WS connection)
 - `Bun.serve` port bound *before* Lightpanda spawn in `startFast` (early `/json/version` synthesis)
@@ -597,7 +598,7 @@ que leurs tags existent. Cette publication les livre toutes d'un coup, avec les 
 - **Multi-platform standalone executables**: `scripts/build-standalone.ts` produces 4 binaries (`linux-x64`, `linux-arm64`, `darwin-x64`, `darwin-arm64`) via `bun build --compile --target=bun-<platform>`
 - `BXC_TARGETS=linux-x64,darwin-arm64` env flag for subset builds; `BXC_HOST_ONLY=1` for host arch only
 - Output table `target | ok | sizeMB | error` rendered after build; exit 0 if at least one target succeeds, exit 1 if all fail
-- CI release matrix `.github/workflows/release.yml`: 4 native runners (ubuntu-latest x2 for linux x64/arm64, macos-latest x2 for darwin x64/arm64); upload-artifact + softprops/action-gh-release on `v*` tags; npm publish job on tagged stable releases
+- CI release matrix `.github/shenron/workflows/release.yml`: 4 native runners (ubuntu-latest x2 for linux x64/arm64, macos-latest x2 for darwin x64/arm64); upload-artifact + softprops/action-gh-release on `v*` tags; npm publish job on tagged stable releases
 - Note on local builds: only the host target builds reliably on a single VPS; cross-compile darwin/arm64 from linux-x64 may fail at link time (FFI libs are runtime-resolved, but Bun's compile target depends on host capabilities). **Multi-platform builds are produced via the CI matrix** — local builds default to host arch via `BXC_HOST_ONLY=1`.
 - `linux-x64` standalone size: ~96 MB ; cold start ~50 ms ; CDP `/json/version` smoke test pass
 

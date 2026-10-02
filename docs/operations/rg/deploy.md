@@ -15,14 +15,14 @@ explicite sur le VPS ; un `git push` seul ne déploie rien.
 
 | Surface | Source | Runtime |
 | --- | --- | --- |
-| Rose Griffon et wiki Azalée `/wiki` | `apps/website` | `website-web.service` :3004 / `website-web-b.service` :3014 |
-| Achilléa `/achillea` | `apps/website` | rendu Next unifié ; API et temps réel restent dans `apps/achillea-bot` |
+| Rose Griffon et wiki Azalée `/wiki` | `apps/rg/website` | `website-web.service` :3004 / `website-web-b.service` :3014 |
+| Achilléa `/achillea` | `apps/rg/website` | rendu Next unifié ; API et temps réel restent dans `apps/achillea-bot` (not in repo) |
 | `azalee.rosegriffon.fr` | redirection vers `rosegriffon.fr/wiki` | aucun service, aucun build |
 
 Azalée n'est pas un frontend autonome. Le nom reste utilisé par la
 bibliothèque de données et le montage `/v1/azalee` de l'API unifiée ; cela ne
 justifie jamais un second build Next ni un second bot Discord. Voir
-[azalee.md](azalee.md).
+[azalee.md](../../products/rg/azalee.md).
 
 ## Publier Website
 
@@ -84,8 +84,8 @@ un upstream `azalee-web`.
 Le miroir SQLite des tables `inagle_*` est produit dans le dépôt `niers`, puis
 consommé par les packages de données et Website. Une correction ne se fait
 jamais directement dans le miroir. Les responsabilités sont détaillées dans
-IECODE `docs/nie/architecture-unifiee-ievr.md` et
-[database.md](database.md).
+IECODE `docs/nie/architecture-unifiee-ievr.md` (not in repo) et
+[database.md](../../architecture/rg/database.md).
 
 ## Règles de sécurité opérationnelle
 

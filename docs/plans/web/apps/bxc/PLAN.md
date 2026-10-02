@@ -52,7 +52,7 @@ those three.
 | F5 | Dead Rust modules referencing undeclared deps (`lol_html`, `cxx`) | `rust-bridge/src/obscura_engine.rs`, `chromium_cxx.rs` (not in `lib.rs`) | Misleading; `static mut` + `unwrap()` on CString if ever wired |
 | F6 | No ABI compatibility check at dlopen time (only `>0` in doctor) | `src/rust/bridge.ts`, `src/cli/doctor.ts:52` | Silent memory corruption after a mismatched build |
 | F7 | `stringPtr()` passes pointer to a temporary Buffer with no lifetime pin | `src/rust/bridge.ts` | GC-timing dependent UB across the FFI boundary |
-| F8 | Two divergent copies of `@aphrody/fut` (local `packages/fut/src` vs npm 0.2.1) | `src/cli/fut.ts:41` vs `src/crawler/MassiveFutCrawler.ts:21`, `src/server/index.ts:9` | Behaviour drift, untestable |
+| F8 | Two divergent copies of `@aphrody/fut` (local `packages/fut/fut/src` vs npm 0.2.1) | `src/cli/fut.ts:41` vs `src/crawler/MassiveFutCrawler.ts:21`, `src/server/index.ts:9` | Behaviour drift, untestable |
 | F9 | Three HTTP API stacks, three HTML→Markdown implementations, two dlopen loaders | `src/server/index.ts`, `src/cli/api.ts`, `src/serverless/`; `html2md`, `obscura-js/markdown.rs`, `src/internal/html-to-markdown.ts`; `bridge.ts:150`, `curl-impersonate.ts:404` | Maintenance cost, inconsistent output |
 | F10 | Stale Zig references (`build-lightpanda-static.ts`, Makefile `zig-out`, `turbo.json`, `StaticDomTransport.ts:206-290` comments, `isZigQueryAvailable()` always true) | listed | Confuses contributors and acquirers |
 | F11 | Scratch files committed at repo root (`--help`, `--pipeline`, `debug-serp.html`, `sync_crawl.tar.gz`, `bxc-memory.sqlite*`) | repo root | Hygiene |

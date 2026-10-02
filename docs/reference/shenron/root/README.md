@@ -59,7 +59,7 @@ serveur Discord.
 
 Tout tourne sur **Bun** — jamais Node, npm, pnpm ni yarn. L'exploitation de
 production (systemd, Nginx, releases, bascule, backups) est déléguée à
-Infra du monorepo ; cf. [`docs/INFRA-DELEGATION.md`](../INFRA-DELEGATION.md).
+Infra du monorepo ; cf. [`docs/operations/shenron/INFRA-DELEGATION.md`](../../../operations/shenron/INFRA-DELEGATION.md).
 
 ## Les quatre surfaces
 
@@ -74,18 +74,18 @@ Ports, unités systemd et routes Nginx sont catalogués côté Infra du monorepo
 (`config/service-catalog.json`, `config/nginx-routes.json`) ; ce dépôt ne fait
 plus foi sur l'état de publication (release Git ≠ release déployée). Les
 contrats et commandes d'intégration Aphrody sont décrits dans
-[`docs/APHRODY-ECOSYSTEM.md`](../APHRODY-ECOSYSTEM.md) ; le code du serveur
+[`docs/architecture/shenron/APHRODY-ECOSYSTEM.md`](../../../architecture/shenron/APHRODY-ECOSYSTEM.md) ; le code du serveur
 MCP est dans `crates/ai/mcp`, pas dans une application Shenron.
 La feuille de route cross-repo des piliers appartient désormais à
-[`docs/plans/ai/ROADMAP-AGENT-PILLARS.md`](../../plans/ai/ROADMAP-AGENT-PILLARS.md) ;
+[`docs/plans/ai/ROADMAP-AGENT-PILLARS.md`](../../../plans/ai/ROADMAP-AGENT-PILLARS.md) ;
 les métriques qui y figurent sont datées et doivent être revalidées auprès de leur propriétaire.
 La comparaison ciblée avec le pipeline manga de Koharu est documentée dans
-[`docs/KOHARU-CAPABILITY-MAP.md`](../KOHARU-CAPABILITY-MAP.md) ; elle ne
+[`docs/architecture/shenron/KOHARU-CAPABILITY-MAP.md`](../../../architecture/shenron/KOHARU-CAPABILITY-MAP.md) ; elle ne
 signale ni intégration ni transfert de données.
 Le plan des contrôles et tâches restant à réaliser est dans
-[`docs/APHRODY-REMAINING-WORK.md`](../APHRODY-REMAINING-WORK.md).
+[`docs/plans/shenron/APHRODY-REMAINING-WORK.md`](../../../plans/shenron/APHRODY-REMAINING-WORK.md).
 
-`packages/*` : bibliothèques partagées source-first (`@shenron/*`, `@aphrody/*`, `@aphrody/*`) — carte détaillée dans [`docs/STACK.md`](../STACK.md) §3.
+`packages/*` : bibliothèques partagées source-first (`@shenron/*`, `@aphrody/*`, `@aphrody/*`) — carte détaillée dans [`packages/ui/material-web/docs/STACK.md`](../../../architecture/shenron/STACK.md) §3.
 
 Le bot n'a **qu'un seul client Gateway** (`shenron`). Les identifiants
 historiques `beerus`, `whis`, `grandPretre`, `enma`, `kaio` restent des alias
@@ -106,7 +106,7 @@ La cible native est une intégration par couches : `aphrody-discord` fournit le
 transport et les adaptateurs, Shenron fournit les ports métier et les commandes,
 et `aphrody-ai`/`aphrody-mcp` orchestre les outils sans ouvrir PostgreSQL
 directement. Les gates sont décrites dans
-[`docs/APHRODY-DISCORD-INTEGRATION.md`](../APHRODY-DISCORD-INTEGRATION.md).
+[`docs/architecture/shenron/APHRODY-DISCORD-INTEGRATION.md`](../../../architecture/shenron/APHRODY-DISCORD-INTEGRATION.md).
 
 ## Doctrine éditoriale
 
@@ -215,7 +215,7 @@ utilise Aphrody `ja→fr`, le lexique/juges Shenron, le dépôt atomique puis le
 La dernière campagne a été arrêtée proprement (`stopped`) après les lanes 1 et
 2 ; le RAG a été réindexé séparément : 24 775 documents, dont 10 286 traduits.
 Il reste 2 556 pages éligibles et 2 528 pages à corriger côté OCR/source.
-Le détail opératoire est dans [`docs/TRADUCTION-DATABOOKS.md`](../TRADUCTION-DATABOOKS.md).
+Le détail opératoire est dans [`docs/guides/shenron/TRADUCTION-DATABOOKS.md`](../../../guides/shenron/TRADUCTION-DATABOOKS.md).
 - **Espace membre** : favoris, historique, sessions, export RGPD, suppression
   avec anonymisation des contributions.
 - **Administration** (`/admin`, `requireAdmin()`, non indexé) : home, canon,
@@ -238,7 +238,7 @@ protégés par les jetons API côté processus. La liste de schémas de `tools/l
 fait foi. Le serveur MCP public séparé a été retiré. L'API éditoriale reste
 servie par Shenron ; les appels RAG/LLM/OCR/vision des processus bot/site
 passent par le client `@shenron/pipeline/ai` vers les routes privées Aphrody documentées
-dans [`docs/APHRODY-ECOSYSTEM.md`](../APHRODY-ECOSYSTEM.md).
+dans [`docs/architecture/shenron/APHRODY-ECOSYSTEM.md`](../../../architecture/shenron/APHRODY-ECOSYSTEM.md).
 
 Les routes databooks et canon sont des lectures ; les traductions ne sont pas
 écrites par l'API publique. L'écriture autorisée passe par le superviseur Bun
@@ -274,7 +274,7 @@ l'image avant le dépôt PostgreSQL.
   seuls les chunks nouveaux ou modifiés sont réembarqués, le bot continue de servir.
   Une planche traduite le matin est citable le soir sans attendre le `rag:build`
   hebdomadaire, qui reste interdit au premier plan en production.
-- Avant tout changement de sync : [`docs/INFRA-DELEGATION.md`](../INFRA-DELEGATION.md), `../pieges.md`.
+- Avant tout changement de sync : [`docs/operations/shenron/INFRA-DELEGATION.md`](../../../operations/shenron/INFRA-DELEGATION.md), `../pieges.md`.
 
 ### Recherche et ré-ancrage des sources wiki
 
@@ -308,8 +308,8 @@ bun --filter @shenron/site run dev
 ```
 
 Référence des variables (noms canoniques, alias historiques, résolveurs de
-`@shenron/config`) : [`docs/ENV.md`](../ENV.md). Poste Windows/WSL, tunnels et
-`.env.local` par app : [`docs/DEV-LOCAL.md`](../DEV-LOCAL.md). Les `.env` ne sont jamais
+`@shenron/config`) : [`docs/operations/shenron/ENV.md`](../../../operations/shenron/ENV.md). Poste Windows/WSL, tunnels et
+`.env.local` par app : [`docs/operations/shenron/DEV-LOCAL.md`](../../../operations/shenron/DEV-LOCAL.md). Les `.env` ne sont jamais
 affichés ni commités.
 
 ## Vérifications et déploiement
@@ -328,10 +328,10 @@ Les principaux paquets internes comprennent `@shenron/config`, `@shenron/db`,
 OCR/RAG/traduction/crawl.
 
 Ces cinq commandes sont le gate à faire passer localement avant toute PR (GitHub Actions est désactivé sur
-l'organisation ; `.github/workflows/ci.yml` documente seulement le gate). Le déploiement en production (systemd, Nginx,
+l'organisation ; `.github/shenron/workflows/ci.yml` documente seulement le gate). Le déploiement en production (systemd, Nginx,
 bascule, backups, rollback) n'est plus piloté depuis ce dépôt : voir
 [`DEPLOY.md`](DEPLOY.md) (build/tests/compilation locaux) et
-[`docs/INFRA-DELEGATION.md`](../INFRA-DELEGATION.md) (frontière avec
+[`docs/operations/shenron/INFRA-DELEGATION.md`](../../../operations/shenron/INFRA-DELEGATION.md) (frontière avec
 Infra du monorepo, qui porte désormais le catalogue de services, les routes
 Nginx et la politique de rétention). `aphrody-shenron-embed` reste nécessaire
 au RAG et ne doit pas être tué ; ne jamais lancer `rag:build` au premier plan
@@ -357,11 +357,11 @@ scripts/        dev/local-env.ts, ops/, test-all.ts
 | Avant de… | Lire |
 | --- | --- |
 | diagnostiquer | `../pieges.md` — faits mesurés, jamais des hypothèses |
-| configurer l'environnement | [`docs/ENV.md`](../ENV.md), [`docs/DEV-LOCAL.md`](../DEV-LOCAL.md) |
-| comprendre les paquets | [`docs/STACK.md`](../STACK.md) |
-| toucher l'infra ou la sync | [`docs/INFRA-DELEGATION.md`](../INFRA-DELEGATION.md), [`DEPLOY.md`](DEPLOY.md) |
-| écrire dans le wiki | `docs/wiki-editorial.md` |
-| travailler les databooks | `docs/databooks-doctrine.md`, `docs/databooks-transcription.md` |
+| configurer l'environnement | [`docs/operations/shenron/ENV.md`](../../../operations/shenron/ENV.md), [`docs/operations/shenron/DEV-LOCAL.md`](../../../operations/shenron/DEV-LOCAL.md) |
+| comprendre les paquets | [`packages/ui/material-web/docs/STACK.md`](../../../architecture/shenron/STACK.md) |
+| toucher l'infra ou la sync | [`docs/operations/shenron/INFRA-DELEGATION.md`](../../../operations/shenron/INFRA-DELEGATION.md), [`DEPLOY.md`](DEPLOY.md) |
+| écrire dans le wiki | `docs/products/shenron/wiki-editorial.md` |
+| travailler les databooks | `docs/reference/shenron/databooks-doctrine.md`, `docs/guides/shenron/databooks-transcription.md` |
 | modifier le site | `CLAUDE.md` / `AGENTS.md` (racine — pas d'AGENTS.md dédié sous `apps/shenron/site`), stack Next 16.3.5 stable |
 | lancer un agent | [`AGENTS.md`](AGENTS.md) (canonique ; `CLAUDE.md` et `CODEX.md` y renvoient) |
 

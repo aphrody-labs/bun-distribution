@@ -170,8 +170,8 @@ Les valeurs de stats par niveau/race vivent dans des binaires `system/*` propri�
 | ------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
 | Noms & traits des races, sexes, style de combat, médailles PT | `data1/data/msg/tribeselect_text_fr.msg(.json)`                                                      |
 | Noms des 6 stats + tendances QQ Bang                          | `data1/data/msg/customize_status_text_fr.msg(.json)`                                                 |
-| Table d'EXP, niveau max                                       | `data/data/system/avatar_growth_data.agd`                                                            |
-| Coûts de niveau                                               | `data/data/system/CharacterLevelupPriceList.clv`                                                     |
+| Table d'EXP, niveau max                                       | `data/data/system/avatar_growth_data.agd` (not in repo)                                                            |
+| Coûts de niveau                                               | `data/data/system/CharacterLevelupPriceList.clv` (not in repo)                                                     |
 | Croissance des paramètres avatar                              | `data/data/system/{level_character_parameter.lcp, parameter_spec_avater.psa, powerup_parameter.pup}` |
 | Tutoriels / aide                                              | `data1/data/msg/{tutorial_text_fr, lobby_tutorial_text_fr}.msg(.json)`                               |
 
@@ -201,22 +201,22 @@ choix de race.
 
 ### Implémentation (fichiers)
 
-- **Catalogue + logique pure** (testée) : `apps/bot/src/lib/races.ts` (`tests/races.test.ts`).
-- **Commande** : `apps/bot/src/commands/race/Race.ts` (`/race` — embed + boutons, persona `kaio`).
+- **Catalogue + logique pure** (testée) : `apps/shenron/bot/src/lib/races.ts` (`apps/shenron/bot/tests/races.test.ts`).
+- **Commande** : `apps/shenron/bot/src/commands/race/Race.ts` (`/race` — embed + boutons, persona `kaio`).
 - **Schéma** : `users.race` / `race_chosen_at` / `race_boost_until` (Zenkai) / `last_race_regen_at`
   (migration `0013`).
 - **Application des perks** : XP → `events/MessageXP.ts` + `events/VoiceXP.ts` ; zéni paliers +
-  Zenkai → `services/LevelService.ts` ; zéni général/jeux → `services/EconomyService.ts`
+  Zenkai → `apps/shenron/bot/src/services/LevelService.ts` ; zéni général/jeux → `apps/shenron/bot/src/services/EconomyService.ts`
   (`addZeni(..., { kind: "game" })`).
 
-> Source de vérité runtime = `apps/bot/data/bot.db` (SQLite, forward-sync Neon). Ne **pas**
+> Source de vérité runtime = `apps/shenron/bot/data/bot.db` (SQLite, forward-sync Neon). Ne **pas**
 > écrire la progression dans le wiki éditorial (`wiki-write-guard`). Les valeurs sont des
 > points de départ équilibrables (cf. `lib/races.ts`).
 
 ### Phase 2 — rôles de palier PAR RACE — ✅ infra en place
 
-- **Échelles de transformations par race** : `apps/bot/src/lib/race-levels.ts`
-  (`RACE_LEVEL_ROLES`, module pur testé `tests/race-levels.test.ts`). Chaque race a sa
+- **Échelles de transformations par race** : `apps/shenron/bot/src/lib/race-levels.ts`
+  (`RACE_LEVEL_ROLES`, module pur testé `apps/shenron/bot/tests/race-levels.test.ts`). Chaque race a sa
   propre suite de rôles de palier (niveaux 1..10). **Saiyan** est peuplée (Kaioken → UI
   Parfait, source unique réutilisée par `seed-level-rewards.ts`) ; les **autres races
   sont vides** → à compléter avec les rôles Discord créés côté serveur.

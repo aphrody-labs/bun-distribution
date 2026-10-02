@@ -90,7 +90,7 @@ as the second argument.
 
 Analyse of our stack:
 - `@aphrody/x`: native cookie-auth X/Twitter client maintained in the sibling Aphrody OS checkout and consumed here as a published package.
-- `packages/xai`: this package, now with high-level fluent Chat (create/append/sample/stream) + low-level OpenAI compat, using the same keyless SuperGrok token.
+- `packages/ai/xai`: this package, now with high-level fluent Chat (create/append/sample/stream) + low-level OpenAI compat, using the same keyless SuperGrok token.
 
 Use them together for agentic Grok: let Grok decide to call an `x_search` tool, then fulfill it with the native `XClient` from `@aphrody/x` (no extra keys, fully local/native).
 
@@ -135,7 +135,7 @@ const xTools = new XTools(mockX);
 
 Corresponding tool defs (`xSearchToolDef`, etc.) and the `xNativeTools` array are exported for easy use in `createChat({ tools: xNativeTools })`.
 
-`XTools` and the tool definitions are owned by `@aphrody/x` in aphrody-web (`packages/x/src/tools/function-tools.ts`, which also provides `XTools.execute(name, args)` and `isXToolName`); this package re-exports them. The dependency points one way: the AI layer consumes the web layer.
+`XTools` and the tool definitions are owned by `@aphrody/x` in aphrody-web (`packages/web/x/src/tools/function-tools.ts`, which also provides `XTools.execute(name, args)` and `isXToolName`); this package re-exports them. The dependency points one way: the AI layer consumes the web layer.
 
 Simple agent loop with native X tools:
 ```ts
@@ -211,6 +211,6 @@ See also the `@aphrody/x` package in the sibling aphrody-web checkout (`../aphro
 - Keep packages light (dynamic zod for structured if present at runtime).
 - Prefer tools + XTools for agentic X access over legacy search_parameters.
 - `@aphrody/x` is installed from the sibling checkout (`file:../../../aphrody-web/packages/x`); `bun run ecosystem:check` validates the path and `aphrody-ops ecosystem-deps --ai-root . --write --registry` pins the published version for a registry build.
-- Tests: `bun run test` from `packages/xai` (unit-only by default; live opt-in via env flags). Coverage includes Chat, XTools, native X dispatch and the bounded research helper.
+- Tests: `bun run test` from `packages/ai/xai` (unit-only by default; live opt-in via env flags). Coverage includes Chat, XTools, native X dispatch and the bounded research helper.
 
 See `index.test.ts` and `agent.test.ts` for details (all mocks, no live service required for core coverage).

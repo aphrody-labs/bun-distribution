@@ -5,7 +5,7 @@
 
 > RE-useful facts mined from `electron/electron`, `electron/asar`, and
 > `electron/fuses` (upstream, `main` branch, fetched 2026-05-21). Used to drive
-> `crates/aphrody-re/src/electron.rs`. **No secrets.** Everything below is the
+> `crates/os/re/src/electron.rs`. **No secrets.** Everything below is the
 > public on-disk / on-binary wire format of an Electron application.
 
 ## 1. ASAR archive format (`electron/asar`)
@@ -37,7 +37,7 @@ Files flagged `"unpacked": true` in the header are **not** stored inside
 `asar pack --unpack-dir "{x1,x2}"` controls which paths are externalised
 (README "Excluding multiple resources from being packed").
 
-### ASAR integrity (`src/integrity.ts` + `docs/tutorial/asar-integrity.md`)
+### ASAR integrity (`src/integrity.ts` + `docs/tutorial/asar-integrity.md` (not in repo))
 
 - Algorithm fixed at **SHA256**, default `blockSize` = 4 MiB (`4 * 1024 * 1024`).
 - Per-file integrity: `{ algorithm: "SHA256", hash, blockSize, blocks: [...] }`
@@ -52,7 +52,7 @@ Files flagged `"unpacked": true` in the header are **not** stored inside
   - **Windows** (electron ≥ 30) embeds it in the binary / resource. Integrity
     checking is supported macOS ≥ 16.0.0, Windows ≥ 30.0.0.
 
-## 2. Electron Fuses (`electron/fuses` + `docs/tutorial/fuses.md`)
+## 2. Electron Fuses (`electron/fuses` + `docs/tutorial/fuses.md` (not in repo))
 
 Fuses are "magic bits" flipped at package time, *before* code signing, so the
 OS code-signature (Gatekeeper / AppLocker) prevents them being flipped back.
@@ -130,7 +130,7 @@ into running arbitrary Node — a "living off the land" surface. `OnlyLoadAppFro
 
 ## What aphrody-re should implement
 
-Implemented in `crates/aphrody-re/src/electron.rs` over a raw `&[u8]`:
+Implemented in `crates/os/re/src/electron.rs` over a raw `&[u8]`:
 
 1. **Fuse sentinel scan** via `memchr::memmem::find` for
    `dL7pKGdnNz796PbbjQWNKmHXBZaB9tsX`; on hit, read `version`/`length` header

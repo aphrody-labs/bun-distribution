@@ -27,7 +27,7 @@ Only markdown is kept here; binary assets (images, icons, logos) are stripped.
 
 `aphrody-ops bun-upstream-docs [--root <repo>] [--ref <branch-or-tag>]`
 (`packages/infra/workspace/src/bun-upstream-docs.ts`) still writes the legacy
-`docs/n2b/bun/` path; it must be pointed at `docs/<category>/upstream-bun/`
+`docs/n2b/bun/` (not in repo) path; it must be pointed at `docs/<category>/upstream-bun/`
 before it is used again (owner: Infra).
 
 ### `node/` — manual
@@ -72,7 +72,7 @@ Rules enforced on critical Bun packages:
 The n2b scan of `aphrody-ai/packages/google` reports no error; the only remaining warning is
 `Bun.spawn`, already used natively by its CLI launcher. Known issue: `aphrody n2b audit` panics
 with `Cannot start a runtime from within a runtime` because `aphrody-ai`
-(`crates/aphrody/src/commands.rs`, `N2bCommand`) calls the synchronous `aphrody_n2b::run_from`
+(`apps/cli/src/commands.rs`, `N2bCommand`) calls the synchronous `aphrody_n2b::run_from`
 from its async executor; it needs a `spawn_blocking` wrapper there. Rule and package scans are
 unaffected. Drop this note once that fix lands.
 

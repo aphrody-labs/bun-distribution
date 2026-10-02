@@ -2,9 +2,9 @@
 # Analyse runtime des interactions design.google / Gemini → framework React
 
 Analyse en profondeur (2026-05-23, via claude-in-chrome `javascript_tool` sur
-les pages live + recoupement `crates/gemini-web`) du comportement **scroll /
+les pages live + recoupement `crates/google/gemini-web`) du comportement **scroll /
 clic / longue réflexion** des deux surfaces, et les primitives React qui en
-découlent dans `apps/m3-react/src/interactions.tsx`.
+découlent dans `apps/m3-react/src/interactions.tsx` (not in repo).
 
 ## design.google — observé
 
@@ -35,11 +35,11 @@ pas des animations de reveal tape-à-l'œil.
 | `on-load-fade-in` / `lm-fade-in-up` / `on-load-slide-in` | messages qui **apparaissent en fade/slide-up** |
 
 **Streaming** : la réponse arrive **token-par-token** (backend `StreamGenerate`,
-chunks length-préfixés — cf. `crates/gemini-web/src/boq.rs`), chaque bloc
+chunks length-préfixés — cf. `crates/google/gemini-web/src/boq.rs`), chaque bloc
 `fade-in-up` à l'arrivée. Cycle au clic d'envoi : composer → anneau gradient
 animé (`input-area-spin`) + shimmer → premier token → reveal streaming → fin.
 
-## Améliorations apportées à `apps/m3-react` (`interactions.tsx`)
+## Améliorations apportées à `packages/ui/m3-react` (`interactions.tsx`)
 
 Toutes reduced-motion aware, sur APIs plateforme standard (typecheck `tsc` 0) :
 
@@ -53,7 +53,7 @@ Toutes reduced-motion aware, sur APIs plateforme standard (typecheck `tsc` 0) :
 | `<GradientBorder active>` | `input-area-spin` | anneau gradient de marque animé autour du composer pendant la génération |
 | `<StreamingText>` / `useStreamingText()` | streaming token-par-token | reveal progressif + caret clignotant + `fade-in-up`, branché sur un `AsyncIterable<string>` (lecteur `StreamGenerate`) |
 
-Exporté depuis `apps/m3-react/src/index.ts`. Exemple longue réflexion :
+Exporté depuis `apps/m3-react/src/index.ts` (not in repo). Exemple longue réflexion :
 
 ```tsx
 const {text, done} = useStreamingText(stream); // stream du backend gemini-web
@@ -63,6 +63,6 @@ return generating
 ```
 
 ## Pointeurs
-- Primitives : `apps/m3-react/src/interactions.tsx`.
+- Primitives : `apps/m3-react/src/interactions.tsx` (not in repo).
 - Streaming backend : `crates/gemini-web/src/{boq,client}.rs`.
-- Démos statiques : `packages/ui/material-web/demos/`. Parité : `docs/design/angular-material-parity.md`.
+- Démos statiques : `packages/ui/material-web/demos/` (not in repo). Parité : `docs/architecture/ui/packages/material-web/docs/design/angular-material-parity.md`.

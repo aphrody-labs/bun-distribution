@@ -19,7 +19,7 @@ tests on its own; the verifier checks them one by one.
 - `@aphrody/google` in `packages/google/google` is a Bun facade over that binary.
 - `@aphrody/doc-ai` in `packages/ai/doc-ai` is a separate Vertex ADC adapter.
 - `aphrody.google` is the Python facade in the sibling `aphrody-py` workspace,
-  under `packages/ai/py/aphrody`.
+  under `packages/ai/py/aphrody` (not in repo).
 - Kernel/MCP and desktop integration belong to `crates/os`; provider business
   logic remains with the Google owners.
 

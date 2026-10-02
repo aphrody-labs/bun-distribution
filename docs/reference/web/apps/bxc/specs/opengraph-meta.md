@@ -84,7 +84,7 @@ Cette priorité inverse le réflexe naïf "lis la meta d'abord" parce que sur le
 
 Si le crawler arrive sur `/foo?utm_source=twitter` mais le canonical pointe vers `/foo`, on stocke sous `/foo` et on évite de re-fetch. C'est aussi le bon endroit pour dé-dupliquer les `?lang=fr` et autres paramètres.
 
-> Statut côté `scripts/url-to-docs.ts` au 2026-05-10: pas implémenté. À ajouter dans `extract()` via une 4e pass HTMLRewriter `link[rel='canonical']`.
+> Statut côté `scripts/url-to-docs.ts` (not in repo) au 2026-05-10: pas implémenté. À ajouter dans `extract()` via une 4e pass HTMLRewriter `link[rel='canonical']`.
 
 ## 7. `<meta name="robots">` — directives par-page
 
@@ -115,7 +115,7 @@ L'équivalent en HTTP header: `X-Robots-Tag: noindex, nofollow`.
 
 À utiliser pour ne pas crawler 5 fois la même page traduite. Bxc peut filtrer via `--include="/en/**"` côté CLI.
 
-## 9. Compliance checklist côté `scripts/url-to-docs.ts`
+## 9. Compliance checklist côté `scripts/url-to-docs.ts` (not in repo)
 
 - [x] Extract `<title>` via HTMLRewriter
 - [x] Extract `<meta name="description">` via HTMLRewriter

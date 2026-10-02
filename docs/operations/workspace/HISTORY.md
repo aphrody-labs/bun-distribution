@@ -1,4 +1,5 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- docs-links: external-paths — backtick paths in this document name files of files archived to git history (read them with git show), not of this checkout. -->
 # Archived dated reports
 
 Dated status reports, qualification evidence and audit snapshots were collapsed
@@ -51,4 +52,4 @@ Current state is generated: see [STATE.md](../../reference/workspace/STATE.md).
 | `docs/INDEX.md` | 1 | eddd8ddc0 2026-10-01 |
 | `docs/ARCHITECTURE-legacy.md` | 1 | 4c97c1060 2026-10-01 |
 | `docs/nu-legacy.md` | 1 | 4c97c1060 2026-10-01 |
-| `docs/FILE-SURFACE-AUDIT.md` | 1 | 1f0a8f4f9 2026-10-02 |
+| `docs/research/workspace/FILE-SURFACE-AUDIT.md` | 1 | 1f0a8f4f9 2026-10-02 |

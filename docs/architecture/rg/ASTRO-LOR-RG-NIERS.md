@@ -41,7 +41,7 @@ parseur JSON que les projets existants.
 
 La fiche `/wiki/chara/astro-lor` est une donnée du wiki et peut être complète sans être un personnage
 installable dans `nie.exe`. Le manifeste Niers (`astro/manifeste-assets.json`) mesure actuellement
-12 assets propres, dont 2 sources d'icône prêtes et 10 à produire. Le plan `docs/ASTRO-LOR.md`
+12 assets propres, dont 2 sources d'icône prêtes et 10 à produire. Le plan `docs/ASTRO-LOR.md` (not in repo)
 relève aussi deux verrous indépendants :
 
 1. le réencodage `cfg.bin` n'est pas encore byte-exact sur les tables de personnages ;

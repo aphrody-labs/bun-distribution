@@ -79,7 +79,7 @@ does not imply identical semantics to every upstream method with the same name.
 | Handshake and lifecycle | `initialize`, `initialized` notification, `shutdown` |
 | Threads | `thread/start`, `thread/resume`, `thread/fork`, `thread/list`, `thread/read`, `thread/archive`, `thread/unarchive`, `thread/close`, `thread/compact/start` |
 | Turns | `turn/start`, `turn/steer`, `turn/interrupt`, `turn/events` |
-| Discovery | `model/list`, `config/read`, `tools/list`, `mcpServerStatus/list` |
+| Discovery | `model/list`, `config/read` (not in repo), `tools/list`, `mcpServerStatus/list` |
 | Local account facade | `account/login/start`, `account/read`, `account/logout` |
 | Notification drain | `notifications/drain` |
 | Aphrody extensions | `aphrody/status`, `aphrody/rag/search`, `aphrody/rag/context`, `aphrody/rag/status`, `aphrody/llama/status`, `aphrody/train/status` |

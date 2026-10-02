@@ -57,7 +57,7 @@ Les outils (`pytest`, `ruff`) sont déclarés dans le groupe PEP 735
 
 1. **Zéro stub** : Tout code modifié ou créé doit contenir son implémentation finale complète. Pas de `todo` ou de stubs temporaires.
 2. **Sécurité et Isolation** :
-   - Les clés privées et tokens d'accès doivent toujours être stockés de manière sécurisée sous le dossier `var/secrets/` (chemin résolu dynamiquement via `aphrody._paths`).
+   - Les clés privées et tokens d'accès doivent toujours être stockés de manière sécurisée sous le dossier `var/secrets/` (not in repo) (chemin résolu dynamiquement via `aphrody._paths`).
    - Verrouillez les permissions des dossiers sensibles à `0700` et les fichiers de credentials à `0600` via `enforce_private_permissions` au moment de leur écriture.
    - Ne logguez et n'affichez jamais de tokens ou cookies en texte clair dans les sorties standard ou les `__repr__` d'objets (toujours masquer les chaînes sensibles).
 3. **Robustesse réseau** :

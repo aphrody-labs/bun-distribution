@@ -30,7 +30,7 @@ dependency — pure Rust compiled to WASM.
 
 ### 2. Build
 
-Run from the workspace root or from `crates/aphrody-a2a-ui/`:
+Run from the workspace root or from `crates/ui/a2a-ui/`:
 
 ```sh
 # From workspace root

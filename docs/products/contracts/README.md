@@ -7,8 +7,8 @@ kernel client types, plus N2B schemas. No sibling repository dependency.
 ## Layout
 
 - `crates/aphrody-a2a*`: types, protobuf, clients, server, gRPC and coordination.
-- `crates/aphrody-agent-proto`, `aphrody-app-protocol`: agent and desktop wire formats.
-- `crates/aphrody-subsystem`, `aphrody-kernel-client`: kernel contract and client.
+- `crates/contracts/agent-proto`, `aphrody-app-protocol`: agent and desktop wire formats.
+- `crates/contracts/subsystem`, `aphrody-kernel-client`: kernel contract and client.
 - `schema/`: N2B project/report schemas; `ai.json`: reference agent manifest.
 - `aphrody-a2a-slimrpc` is excluded until its upstream binding blocker is resolved.
   The A2A UI belongs to `aphrody-ui`.

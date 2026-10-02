@@ -4,9 +4,9 @@
 > **Document de Référence & Architecture Système**  
 > **Auteur :** Lead Autonomous System Engineer (Aphrody Core Engine)  
 > **Date de rédaction :** 12 Septembre 2026  
-> **Cible :** `docs/research/gemini-spark-spec.md`  
+> **Cible :** `docs/research/ai/research/gemini-spark-spec.md`  
 > **Statut :** Spécification technique consolidée (Production-Ready)  
-> **Périmètre :** Google Gemini Spark (Agent Mode), Connecteurs MCP Distants & Locaux, Découverte OAuth 2.0 (RFC 8414 & RFC 9728), et Convergence Codebase (`crates/aphrody-mcp`, `crates/aphrody-gemini-runtime`, `crates/aphrody-antigravity`).
+> **Périmètre :** Google Gemini Spark (Agent Mode), Connecteurs MCP Distants & Locaux, Découverte OAuth 2.0 (RFC 8414 & RFC 9728), et Convergence Codebase (`crates/ai/mcp`, `crates/google/gemini-runtime`, `crates/google/antigravity`).
 
 ---
 
@@ -29,13 +29,13 @@
    - 4.3 [Spécification RFC 8414 (OAuth 2.0 Authorization Server Metadata)](#43-spécification-rfc-8414-oauth-20-authorization-server-metadata)
    - 4.4 [Schéma de Nommage Google des Client IDs User-Bound](#44-schéma-de-nommage-google-des-client-ids-user-bound)
 5. [Étude de Cas Réelle : Le Connecteur `shenron-gemini-spark` (Dragon Ball FR)](#5-étude-de-cas-réelle--le-connecteur-shenron-gemini-spark-dragon-ball-fr)
-   - 5.1 [Architecture du Serveur `apps/mcp`](#51-architecture-du-serveur-appsmcp)
+   - 5.1 [Architecture du Serveur `apps/mcp` (not in repo)](#51-architecture-du-serveur-appsmcp)
    - 5.2 [Surface d'Outils Publics vs Admin Protégée](#52-surface-doutils-publics-vs-admin-protégée)
    - 5.3 [Fiche de Configuration Gemini Spark du Serveur](#53-fiche-de-configuration-gemini-spark-du-serveur)
 6. [Exploration du Code Source Existant & Points de Convergence](#6-exploration-du-code-source-existant--points-de-convergence)
-   - 6.1 [Crate `crates/aphrody-mcp` (`aphrody-mcp`)](#61-crate-cratesgoogle_mcp-aphrody-mcp)
-   - 6.2 [Crate `crates/aphrody-gemini-runtime`](#62-crate-cratesgemini-runtime)
-   - 6.3 [Crate `crates/aphrody-antigravity`](#63-crate-cratesantigravity-sdk)
+   - 6.1 [Crate `crates/ai/mcp` (`aphrody-mcp`)](#61-crate-cratesgoogle_mcp-aphrody-mcp)
+   - 6.2 [Crate `crates/google/gemini-runtime`](#62-crate-cratesgemini-runtime)
+   - 6.3 [Crate `crates/google/antigravity`](#63-crate-cratesantigravity-sdk)
    - 6.4 [Blueprint de Convergence & Passerelle Unifiée](#64-blueprint-de-convergence--passerelle-unifiée)
 7. [Références Normatives, Spécifications & URLs](#7-références-normatives-spécifications--urls)
 
@@ -418,9 +418,9 @@ shenron-gemini-spark
 
 Le déploiement en production sur le serveur distant `dbfr` (`51.255.162.6`) illustre l'implémentation complète de cette architecture.
 
-### 5.1 Architecture du Serveur `apps/mcp`
+### 5.1 Architecture du Serveur `apps/mcp` (not in repo)
 
-Le service MCP Dragon Ball FR est développé en TypeScript / Bun (`apps/mcp/src/index.ts`) :
+Le service MCP Dragon Ball FR est développé en TypeScript / Bun (`apps/mcp/src/index.ts` (not in repo)) :
 - **Framework :** `@modelcontextprotocol/sdk` (`McpServer`).
 - **Transport :** `WebStandardStreamableHTTPServerTransport` (natif Bun, sans `node:http`).
 - **Stateless pur :** Une instance serveur et transport neuve par requête HTTP (`sessionIdGenerator: undefined`, `enableJsonResponse: true`).
@@ -470,7 +470,7 @@ Pour raccorder Gemini Spark à `mcp.dragonballfr.com` avec privilèges complets 
 
 Notre monorepo dispose de trois briques logicielles majeures écrites en Rust qui convergent pour former la passerelle unifiée vers Gemini Spark.
 
-### 6.1 Crate `crates/aphrody-mcp` (`aphrody-mcp`)
+### 6.1 Crate `crates/ai/mcp` (`aphrody-mcp`)
 
 - **Binaire produit :** `aphrody-mcp` (6.5 Mo, compilation pure Rust, cold-start < 1 ms).
 - **Architecture :** Construit sur le framework `rmcp` avec macro `#[tool_router]`.
@@ -479,7 +479,7 @@ Notre monorepo dispose de trois briques logicielles majeures écrites en Rust qu
   - **Client MCP (`client_cmd.rs`) :** Permet à `aphrody-mcp` d'agir en client pour sonder (`probe`), lister (`list`) ou invoquer (`call`) des serveurs tiers via `gemini_runtime::McpClient`.
 - **Toolbox feature-gated :** `--features toolbox` active les modules `ocr` (PP-OCRv5 ONNX + llama.cpp), `vision` (Florence-2), `stt-local` (Whisper), `jobs` (queue SQLite) et `dbfr`.
 
-### 6.2 Crate `crates/aphrody-gemini-runtime`
+### 6.2 Crate `crates/google/gemini-runtime`
 
 - **Rôle :** Adaptateur d'exécution du CLI Gemini et client MCP universel.
 - **Client MCP Réutilisable (`mcp_client.rs`) :**
@@ -497,7 +497,7 @@ Notre monorepo dispose de trois briques logicielles majeures écrites en Rust qu
   - `ToolRegistry` et trait polymorphe `Tool`.
   - `McpProxyTool` : Emballe n'importe quel outil MCP (distant ou local) pour le rendre immédiatement appelable dans la boucle d'inférence de Gemini CLI.
 
-### 6.3 Crate `crates/aphrody-antigravity`
+### 6.3 Crate `crates/google/antigravity`
 
 - **Rôle :** SDK natif Rust pour l'environnement Antigravity et l'inférence Cloud Code / Vertex AI.
 - **Authentification Keyless Windows :**

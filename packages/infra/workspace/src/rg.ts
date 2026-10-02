@@ -394,7 +394,9 @@ async function pipeline(root: string, dryRun: boolean): Promise<number> {
         for (const category of RG_DOC_CATEGORIES) {
           const docs = join("docs", category, "rg");
           if (!existsSync(join(root, docs))) continue;
-          status ||= await runDocsLinks(["--root", root, "--docs", docs, "--scope", "docs"]);
+          // oxlint-disable-next-line no-await-in-loop -- Keep each category report contiguous.
+          const result = await runDocsLinks(["--root", root, "--docs", docs, "--scope", "docs"]);
+          status ||= result;
         }
         return status;
       },

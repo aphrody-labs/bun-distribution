@@ -2,7 +2,7 @@
 
 Python tools and libraries for network protocol testing, SSL/TLS inspection, transport benchmarking, protobuf tooling, USB/Bluetooth device control, transit feed processing, and web infrastructure utilities.
 
-> Part of [`docs/google/`](../../../../products/ai/google/README.md). Full mechanical listing: [`all-repos.md`](../all-repos.md). This page covers 22 repos (7 active / 15 archived).
+> Part of [`docs/google/` (not in repo)](../../../../products/ai/google/README.md). Full mechanical listing: [`all-repos.md`](../all-repos.md). This page covers 22 repos (7 active / 15 archived).
 
 ## Networking — Protocol Testing / Management
 

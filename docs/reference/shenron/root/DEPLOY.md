@@ -6,7 +6,7 @@
 > Nginx, blue/green, backups, rollback) n'est plus pilotée depuis ce dépôt
 > mais depuis Infra du monorepo (`config/service-catalog.json`,
 > `config/nginx-routes.json`, `config/application-contracts.json`). Voir
-> [`docs/INFRA-DELEGATION.md`](../INFRA-DELEGATION.md) pour le détail de la
+> [`docs/operations/shenron/INFRA-DELEGATION.md`](../../../operations/shenron/INFRA-DELEGATION.md) pour le détail de la
 > frontière et la liste des fichiers d'ops en cours de retrait. Ce document ne
 > garde que ce qui reste local au repo : build, tests et compilation.
 
@@ -37,7 +37,7 @@ Checklist avant de marquer une version prête :
 - [ ] `bun run type-check` passe
 - [ ] `bun run lint` passe
 - [ ] `bun run test:all` passe
-- [ ] `.env` local créé depuis `apps/bot/.env.example` (secrets jamais commités)
+- [ ] `.env` local créé depuis `apps/shenron/bot/.env.example` (secrets jamais commités)
 
 ---
 
@@ -48,9 +48,9 @@ bun run compile                         # → dist/shenron (~70 MB), via bun bui
 ```
 
 Le binaire inclut Bun + tout le code JS. Il **n'inclut pas** `data/`,
-`assets/cards/`, ni `assets/backgrounds/` — à fournir à côté. Les 5 cibles
+`assets/cards/` (not in repo), ni `assets/backgrounds/` (not in repo) — à fournir à côté. Les 5 cibles
 (linux-x64/arm64, darwin-x64/arm64, windows-x64) sont compilées par
-`.github/workflows/release.yml` sur tag `v*` (SHA256SUMS + GitHub Release).
+`.github/shenron/workflows/release.yml` sur tag `v*` (SHA256SUMS + GitHub Release).
 
 ---
 
@@ -59,11 +59,11 @@ Le binaire inclut Bun + tout le code JS. Il **n'inclut pas** `data/`,
 Règle d'or : **jamais de secret dans git**, jamais de secret dans un log,
 jamais de secret dans un arg visible (`ps aux`).
 
-- Local (`.env`) : créé par `scripts/setup.sh` avec `chmod 600`, ignoré par
+- Local (`.env`) : créé par `scripts/tools/ui/drive/scripts/setup.sh` avec `chmod 600`, ignoré par
   git, lu par Bun via `process.env`.
 - **Rotation token Discord volé** : Portail dev → **Bot → Reset Token** → met
   à jour `.env` → redémarrage géré par l'infra (voir
-  `docs/INFRA-DELEGATION.md`).
+  `docs/operations/shenron/INFRA-DELEGATION.md`).
 - **Rotation PAT GitHub volé** : github.com → **Settings → Developer
   settings → Tokens → Revoke** → regen → `gh secret set GH_PACKAGES_TOKEN`.
 - Les secrets de production (base de données, tokens d'API, `EnvironmentFile`
@@ -127,7 +127,7 @@ pipeline `deploy-fly`/`deploy-vercel`, monitoring VPS, sauvegardes VPS,
 rollback bleu/vert) est **historique** : il décrivait un mode d'exploitation
 que ce repo ne porte plus. Les commandes qu'il contenait (`fly deploy`,
 `systemctl restart shenron`, `scripts/deploy-*`, `scripts/ship-*`,
-`scripts/release-dbfr.sh`, etc.) sont obsolètes et ne sont pas reproduites ici
+`scripts/release-dbfr.sh` (not in repo), etc.) sont obsolètes et ne sont pas reproduites ici
 pour éviter qu'elles soient exécutées par erreur.
 
 Pour l'état courant de l'exploitation (units systemd, routes Nginx, backups,
@@ -137,5 +137,5 @@ rollback, blue/green), se référer à :
 - `aphrody-infra/docs/PRODUCTION-ALLOCATION.md`
 - `config/service-catalog.json`
 - `config/nginx-routes.json`
-- [`docs/INFRA-DELEGATION.md`](../INFRA-DELEGATION.md) (frontière et liste
+- [`docs/operations/shenron/INFRA-DELEGATION.md`](../../../operations/shenron/INFRA-DELEGATION.md) (frontière et liste
   de suppression gated des fichiers d'ops encore présents dans ce repo)

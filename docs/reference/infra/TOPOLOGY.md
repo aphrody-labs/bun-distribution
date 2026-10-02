@@ -12,16 +12,16 @@
 
 | Surface | Repository | Responsibility |
 |---|---|---|
-| Public web origin, Web API, BXC, browser/render FFI | `aphrody-web` | `aphrody-site` on `127.0.0.1:8083`; the integrated Web API (`apps/bxc/src/server/index.ts`) on `127.0.0.1:3007` with `libaphrody_web_ffi.so` and the V8 renderer `libbxc_render.so`; BXC has one source tree under `apps/bxc`. |
+| Public web origin, Web API, BXC, browser/render FFI | `aphrody-web` | `aphrody-site` on `127.0.0.1:8083`; the integrated Web API (`packages/shenron/api/src/server/index.ts`) on `127.0.0.1:3007` with `libaphrody_web_ffi.so` and the V8 renderer `libbxc_render.so`; BXC has one source tree under `apps/bxc` (not in repo). |
 | AI agents, A2A, RAG, MCP, embeddings | `aphrody-ai` | `aphrody a2a serve` on `127.0.0.1:8788`; `aphrody-mcp http` on `127.0.0.1:8789` (MCP on `/mcp` with the `dragonball.*` tools, REST under `/api/v1`); `aphrody-embed serve` (E5) on `127.0.0.1:8794`. |
-| Agent console, M3 design system, `bun_rs` | `aphrody-ui` | Tracked `crates/aphrody-app/ui-dist` embedded into the `aphrody` binary at build time; `@aphrody/bun` over the `aphrody-bun` crate. |
+| Agent console, M3 design system, `bun_rs` | `aphrody-ui` | Tracked `crates/ui/app/ui-dist` embedded into the `aphrody` binary at build time; `@aphrody/bun` over the `aphrody-bun` crate. |
 | OS control plane | `aphrody-os` | `aphrody-kernel`; not deployed on the VPS (a build-time path dependency of the category workspaces). |
 | Dragon Ball site and bot | `shenron` | `shenron-site` `127.0.0.1:5011`, `shenron-bot` (bot + public API) `127.0.0.1:5006`, released under `/srv/shenron`. |
 | Rose Griffon platform | `rg` | `rg-*` services released under `/srv/rg`. |
 | Deployment and host inventory | `aphrody-infra` | Catalogs, unit and vhost templates, release build, deploy adapters, probes and migration evidence. |
 
 The superproject `aphrody-src` pins all 13 repositories; a release is built from
-one superproject commit (`docs/IMMUTABLE-RELEASES.md`).
+one superproject commit (`docs/operations/infra/IMMUTABLE-RELEASES.md`).
 
 ## VPS boundary
 

@@ -5,7 +5,7 @@ dépendances installées, les bibliothèques de géométrie et les composants qu
 consomment, la chaîne complète de la planche de référence au favicon déployé, et
 une exécution de bout en bout sur une image d'exemple.
 
-Doctrine du dessin : [`../aphrody-ai/plugins/aphrody/skills/toriyama-svg/SKILL.md`](../../plugins/aphrody/skills/toriyama-svg/SKILL.md).
+Doctrine du dessin : [`../aphrody-ai/plugins/aphrody/skills/toriyama-svg/SKILL.md`](../../../plugins/aphrody/skills/toriyama-svg/SKILL.md).
 Ce document-ci est l'inventaire, pas la méthode.
 
 ## 1. Dépendances
@@ -14,13 +14,13 @@ Ce document-ci est l'inventaire, pas la méthode.
 
 | Rôle                                                                 | Outil                       | Où                                                  | Version mesurée            |
 | -------------------------------------------------------------------- | --------------------------- | --------------------------------------------------- | -------------------------- |
-| SVG → PNG/WebP/ICO, redimensionnement, composition, métadonnées      | `sharp`                     | **`package.json` racine** (jamais dans `apps/site`) | 0.35.4, libvips 8.18.6     |
+| SVG → PNG/WebP/ICO, redimensionnement, composition, métadonnées      | `sharp`                     | **`package.json` racine** (jamais dans `apps/shenron/site`) | 0.35.4, libvips 8.18.6     |
 | Masque, k-means, HSL/OKLCH, profil de silhouette, épaisseur du trait | Pillow + numpy              | système (`apt install python3-pil python3-numpy`)   | Pillow 12.1.1, numpy 2.3.5 |
-| Dessin raster côté bot (runtime Discord)                             | `@napi-rs/canvas`           | `apps/bot`                                          | 1.0.9                      |
-| Rendu d'image sociale (OG)                                           | `next/og` (`ImageResponse`) | `apps/site`                                         | Next 16.3.5 (stable)       |
+| Dessin raster côté bot (runtime Discord)                             | `@napi-rs/canvas`           | `apps/shenron/bot`                                          | 1.0.9                      |
+| Rendu d'image sociale (OG)                                           | `next/og` (`ImageResponse`) | `apps/shenron/site`                                         | Next 16.3.5 (stable)       |
 
-`sharp` vit dans le `node_modules` **racine** : l'installer depuis `apps/site`
-dé-hoiste `next` et casse `deploy-site.ts` (cf. [`pieges.md`](pieges.md)).
+`sharp` vit dans le `node_modules` **racine** : l'installer depuis `apps/shenron/site`
+dé-hoiste `next` et casse `deploy-site.ts` (cf. [`pieges.md`](../../guides/shenron/pieges.md)).
 
 ### Ce qui n'est pas installé, et pourquoi
 
@@ -42,9 +42,9 @@ Aucune dépendance : le vecteur est produit par des fonctions TypeScript qui
 
 | Fichier                                                                                                                           | Contenu                                                                                                             | Consommateurs                                                                                   |
 | --------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
-| [`apps/site/src/lib/kinto-un.ts`](../../apps/shenron/site/src/lib/kinto-un.ts)                                                               | `arcs`, `volute`, `corpsNuage`, `svgIllustration`, `svgIcone`, `svgMonochrome`, `KINTO_UN_COULEURS`                 | `KintoUn.tsx`, `genere-kinto-un.ts`, `genere-icones.ts`, `opengraph-image.tsx`, `couverture.ts` |
-| [`apps/site/src/lib/couverture.ts`](../../apps/shenron/site/src/lib/couverture.ts)                                                           | `anneauxCadre`, `bancNuage`, `etoilePath`, `anneauPastille`, `svgBancNuage` (importe `arcs`/`volute` de `kinto-un`) | `MotifsCouverture.tsx`, `genere-motifs-couverture.ts`                                           |
-| [`packages/ui/src/icones/geometries.ts`](../../packages/shenron/ui/src/icones/geometries.ts)                                                | `GEOMETRIES` — glyphes maison, `BOITE_ICONE` 24, `TRAIT_ICONE` 2                                                    | `glyphe.tsx`, `rend-icones.ts`                                                                  |
+| [`apps/shenron/site/src/lib/kinto-un.ts`](../../../apps/shenron/site/src/lib/kinto-un.ts)                                                               | `arcs`, `volute`, `corpsNuage`, `svgIllustration`, `svgIcone`, `svgMonochrome`, `KINTO_UN_COULEURS`                 | `KintoUn.tsx`, `genere-kinto-un.ts`, `genere-icones.ts`, `opengraph-image.tsx`, `couverture.ts` |
+| [`apps/shenron/site/src/lib/couverture.ts`](../../../apps/shenron/site/src/lib/couverture.ts)                                                           | `anneauxCadre`, `bancNuage`, `etoilePath`, `anneauPastille`, `svgBancNuage` (importe `arcs`/`volute` de `kinto-un`) | `MotifsCouverture.tsx`, `genere-motifs-couverture.ts`                                           |
+| [`packages/shenron/ui/src/icones/geometries.ts`](../../../packages/shenron/ui/src/icones/geometries.ts)                                                | `GEOMETRIES` — glyphes maison, `BOITE_ICONE` 24, `TRAIT_ICONE` 2                                                    | `glyphe.tsx`, `rend-icones.ts`                                                                  |
 | `../aphrody-ai/plugins/aphrody/skills/toriyama-svg/scripts/geometrie.ts` | primitives à copier pour un **nouveau** sujet : `arcs`, `volute`, `meche`, `planDombre`, `trait`, `miroir`, `svg`   | modèle, pas importé                                                                             |
 
 Règle qui tient tout : **une seule source de géométrie par sujet**, consommée à
@@ -55,12 +55,12 @@ Sinon l'icône et l'illustration divergent au premier ajustement.
 
 | Composant                                                                      | Ce qu'il rend                                                          | Particularité                                                                                                                                                           |
 | ------------------------------------------------------------------------------ | ---------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [`KintoUn.tsx`](../../apps/shenron/site/src/components/KintoUn.tsx)                       | le nuage, variantes `illustration` (1200 × 648) et `icone` (512 carré) | SVG pur, 0 JS, server-safe ; préfixes d'id `kt-*`/`kti-*` pour que deux nuages ne se volent pas leur `clipPath`                                                         |
-| [`packages/ui/src/icones/glyphe.tsx`](../../packages/shenron/ui/src/icones/glyphe.tsx)     | les glyphes maison                                                      | API calquée sur `lucide-react` (`size`, `strokeWidth`, `color`, `ref`), `aria-hidden` par défaut ; exportée par `@shenron/ui/icones`                                   |
-| [`DragonBall.tsx`](../../apps/shenron/site/src/components/DragonBall.tsx)                 | la boule de cristal                                                    | dégradé à 10 arrêts, foyer mesuré à (−0,30 ; −0,39) R sur la couverture du tome 1                                                                                       |
-| [`MotifsCouverture.tsx`](../../apps/shenron/site/src/components/MotifsCouverture.tsx)     | étoile, cadre, pastille, banc de nuages                                | **mixte assumé** : SVG pour la forme, `box-shadow`/`radial-gradient` pour les couronnes (évite des ids dupliqués sur une grille), fichier statique répété pour la frise |
-| [`home/KintoUnVolant.tsx`](../../apps/shenron/site/src/components/home/KintoUnVolant.tsx) | le nuage animé de l'accueil                                            | trois transformations sur trois nœuds imbriqués (défilement / survol / clic)                                                                                            |
-| [`app/opengraph-image.tsx`](../../apps/shenron/site/src/app/opengraph-image.tsx)          | l'image sociale 1200 × 630                                             | `next/og` + `svgIllustration()` en data-URI                                                                                                                             |
+| [`KintoUn.tsx`](../../../apps/shenron/site/src/components/KintoUn.tsx)                       | le nuage, variantes `illustration` (1200 × 648) et `icone` (512 carré) | SVG pur, 0 JS, server-safe ; préfixes d'id `kt-*`/`kti-*` pour que deux nuages ne se volent pas leur `clipPath`                                                         |
+| [`packages/shenron/ui/src/icones/glyphe.tsx`](../../../packages/shenron/ui/src/icones/glyphe.tsx)     | les glyphes maison                                                      | API calquée sur `lucide-react` (`size`, `strokeWidth`, `color`, `ref`), `aria-hidden` par défaut ; exportée par `@shenron/ui/icones`                                   |
+| [`DragonBall.tsx`](../../../apps/shenron/site/src/components/DragonBall.tsx)                 | la boule de cristal                                                    | dégradé à 10 arrêts, foyer mesuré à (−0,30 ; −0,39) R sur la couverture du tome 1                                                                                       |
+| [`MotifsCouverture.tsx`](../../../apps/shenron/site/src/components/MotifsCouverture.tsx)     | étoile, cadre, pastille, banc de nuages                                | **mixte assumé** : SVG pour la forme, `box-shadow`/`radial-gradient` pour les couronnes (évite des ids dupliqués sur une grille), fichier statique répété pour la frise |
+| [`home/KintoUnVolant.tsx`](../../../apps/shenron/site/src/components/home/KintoUnVolant.tsx) | le nuage animé de l'accueil                                            | trois transformations sur trois nœuds imbriqués (défilement / survol / clic)                                                                                            |
+| [`app/opengraph-image.tsx`](../../../apps/shenron/site/src/app/opengraph-image.tsx)          | l'image sociale 1200 × 630                                             | `next/og` + `svgIllustration()` en data-URI                                                                                                                             |
 
 Fichiers vectoriels versionnés — **5 seulement**, tous générés sauf le dernier :
 
@@ -112,14 +112,14 @@ Scripts, par rôle :
 | `plugins/.../scripts/mesurer.py`                | mesure (Python)                                              |
 | `plugins/.../scripts/rendu.ts`                  | planches de contrôle multi-tailles + comparaison (Bun)       |
 | `plugins/.../scripts/icones.ts`                 | jeu de favicons générique (modèle)                           |
-| `apps/site/scripts/genere-kinto-un.ts`          | écrit les 3 SVG du nuage, `--rendu` pour les PNG de contrôle |
-| `apps/site/scripts/genere-motifs-couverture.ts` | écrit la tuile `banc-nuage.svg`                              |
-| `apps/site/scripts/genere-icones.ts`            | rastérise le jeu complet, site **et** bot                    |
-| `apps/site/scripts/rend-icones.ts`              | planche de contact des 76 glyphes à 16/24/32 px, zoom ×6     |
+| `apps/shenron/site/scripts/genere-kinto-un.ts`          | écrit les 3 SVG du nuage, `--rendu` pour les PNG de contrôle |
+| `apps/shenron/site/scripts/genere-motifs-couverture.ts` | écrit la tuile `banc-nuage.svg`                              |
+| `apps/shenron/site/scripts/genere-icones.ts`            | rastérise le jeu complet, site **et** bot                    |
+| `apps/shenron/site/scripts/rend-icones.ts`              | planche de contact des 76 glyphes à 16/24/32 px, zoom ×6     |
 
 ## 4. Exécution d'exemple, bout en bout
 
-Fait le 2026-09-05 sur `apps/bot/assets/ext/db_manga_volumes/82.jpg`
+Fait le 2026-09-05 sur `apps/bot/assets/ext/db_manga_volumes/82.jpg` (not in repo)
 (couverture du tome 1, 1000 × 1500, RGB), boule de cristal du logo.
 
 ### Temps Python — mesurer
@@ -187,7 +187,7 @@ lui qui a produit cette variante.
 ## 5. Créer une nouvelle image
 
 1. **Sourcer.** Corpus local d'abord (`apps/bot/assets/manga/DB/{regular,fullcolor}/`,
-   `apps/site/public/wiki/databooks/`, MCP `dragonball` pour localiser la planche).
+   `apps/shenron/site/src/app/wiki/databooks/`, MCP `dragonball` pour localiser la planche).
    Hiérarchie : manga au trait pour la FORME, manga couleur pour la COULEUR,
    anime en dernier recours. Fandom banni. Travailler dans `/tmp/<sujet>/`.
 2. **Mesurer.** `mesurer.py` sur au moins **deux** sources ; sans `mesures.json`,

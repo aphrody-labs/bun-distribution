@@ -6,8 +6,8 @@ dependencies and is built with the pinned toolchain.
 
 | Path | Role |
 | --- | --- |
-| `crates/aphrody-native` | CPU, memory, CUDA and monotonic clock probes |
-| `docs/libc.md` | Host C runtime and Rust libc choices |
+| `crates/native/native` | CPU, memory, CUDA and monotonic clock probes |
+| `docs/reference/native/libc.md` | Host C runtime and Rust libc choices |
 
 `NativePlatform` reads CPU and memory information from the host operating system.
 Its CUDA probe loads the driver at runtime, so the crate also runs without CUDA.

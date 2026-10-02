@@ -41,9 +41,9 @@ are source placement categories, not evidence of runtime parity.
 | UI | The audit found missing Overview, Redundancy, File Kinds, Jobs, Daemon and Spacebot routes. `/file-kinds` and `/redundancy` were still produced by navigation; `/jobs` redirected to Explorer despite an existing screen. The three missing Spacebot pages in upstream's interface are placeholders, not working features. | File Kinds, Jobs and Redundancy routes now use live backend hooks; installed-host behavior is unqualified. Overview remains open; OS/AI ownership needs separate integration evidence. See [route audit](../../architecture/ui/design/DRIVE-ROUTE-PARITY.md). |
 | CLI | `apps/cli/src/domains/logs/{args.rs,mod.rs}` were absent although `sd-cli` imports and dispatches `LogsCmd`. | Restored the two files from imported revision `60369e9`; their Git blob hashes match upstream. `cargo check -p sd-cli --bin sd-cli` passed. |
 | Mobile | 156 `apps/mobile/**` source files are absent from the Aphrody UI tree. | No Android/iOS Files host is qualified; retain this as a real delivery gap under the [M3 host plan](../../plans/ui/design/M3-MULTI-HOST-PLAN.md). |
-| Server | Four upstream `apps/server` Docker/TrueNAS deployment files and root `build-server.sh` are absent from the UI tree; `sd-server` source is staged in `aphrody-web/drive-server` with the deployment recipes. | `aphrody-web/crates/aphrody-site` owns the HTTP origin and optional Drive gateway. Qualify Drive HTTP routes, auth, SSE, sidecars and offline UI assets before retiring the old binary. |
+| Server | Four upstream `docs/architecture/ui/drive/apps/server` Docker/TrueNAS deployment files and root `build-server.sh` are absent from the UI tree; `sd-server` source is staged in `aphrody-web/drive-server` with the deployment recipes. | `aphrody-web/crates/aphrody-site` owns the HTTP origin and optional Drive gateway. Qualify Drive HTTP routes, auth, SSE, sidecars and offline UI assets before retiring the old binary. |
 | Assets | Of 676 upstream `packages/assets/**` files, 674 paths exist under root `packages/assets/**`; 658 are byte-identical. | Preserve license and check the 16 divergent files by behavior and content. README and old generator are tooling, not runtime assets. |
-| Desktop | Upstream `apps/tauri/**` is replaced by `crates/aphrody-app` and `crates/aphrody-drive`. | Verify installed Files workflows; matching source paths are not expected. |
+| Desktop | Upstream `apps/tauri/**` is replaced by `crates/ui/app` and `crates/ui/drive`. | Verify installed Files workflows; matching source paths are not expected. |
 
 The [SpaceUI upstream revision](https://github.com/spacedriveapp/spaceui/tree/a48b170)
 matches `packages/aphrody-spaceui/UPSTREAM.txt`. The four Explorer components exported by its
@@ -55,7 +55,7 @@ execution history belongs to AI and OS clients outside this webview. M3 `TabBar`
 match their ARIA composite roles.
 
 The upstream SpaceUI README describes memory, cron and autonomy components that are absent
-from its actual [`packages/ai/src` source](https://github.com/spacedriveapp/spaceui/tree/a48b17047d3ff1d05268acb6f88a79460ad4fa7b/packages/ai/src);
+from its actual [`packages/ai/src` (not in repo) source](https://github.com/spacedriveapp/spaceui/tree/a48b17047d3ff1d05268acb6f88a79460ad4fa7b/packages/ai/src);
 these descriptions are not evidence of a lost implementation. Likewise, Spacedrive's
 [`Memories`, `Autonomy` and `Schedule` routes](https://github.com/spacedriveapp/spacedrive/tree/6dfeccf2113039e35f2ce735f945e70dc3e4ea45/packages/interface/src/Spacebot/routes)
 are placeholder pages. The separate [Spacebot runtime](https://github.com/spacedriveapp/spacebot)
@@ -71,15 +71,15 @@ quarantine until a real model, failure path and index-time enforcement are quali
 
 | Area | Upstream | Aphrody | Rationale |
 | --- | --- | --- | --- |
-| `apps/tauri`, `apps/mobile`, `xtask` iOS/Android/mobile commands, `mobile` Cargo feature, `profile.mobile-dev` | Present | Removed | Desktop host is `crates/aphrody-app` (commit `6286df2`); mobile targets out of scope. No `feature = "mobile"` cfg remains. |
-| `packages/assets` | In `drive/` | Moved to repository `packages/assets` (with `LICENSE.spacedrive`) | Consolidated vendor assets (commit `b4d69a4`); tsconfigs point there. |
-| `apps/web` Vite files, `packages/ts-client` Jest files, `bun.lockb`, `.nvmrc`, `.eslintignore` | Vite / Jest / old lockfile | Bun build and `bun test`, repository-level `bun.lock` | Bun-native toolchain. |
+| `apps/tauri` (not in repo), `apps/mobile` (not in repo), `xtask` iOS/Android/mobile commands, `mobile` Cargo feature, `profile.mobile-dev` | Present | Removed | Desktop host is `crates/ui/app` (commit `6286df2`); mobile targets out of scope. No `feature = "mobile"` cfg remains. |
+| `packages/assets` (not in repo) | In `drive/` | Moved to repository `packages/assets` (not in repo) (with `LICENSE.spacedrive`) | Consolidated vendor assets (commit `b4d69a4`); tsconfigs point there. |
+| `apps/web` (not in repo) Vite files, `packages/ts-client` (not in repo) Jest files, `bun.lockb`, `.nvmrc`, `.eslintignore` | Vite / Jest / old lockfile | Bun build and `bun test`, repository-level `bun.lock` | Bun-native toolchain. |
 | `packages/interface/src/Spacebot/routes/{Memories,Autonomy,Schedule}Route.tsx` | Routed | Dropped with their router entries; "coming soon" placeholders redirect to `/explorer` | No placeholder UI. |
-| `.github`, `.vscode`, `.zed`, `apps/server` Docker/TrueNAS scripts, `build-server.sh`, `test_extension.wasm` | Present | Removed | Repository-level CI and infra (`aphrody-infra`) own these; binary artifact not vendored. |
+| `.github`, `.vscode`, `.zed`, `docs/architecture/ui/drive/apps/server` Docker/TrueNAS scripts, `build-server.sh`, `test_extension.wasm` | Present | Removed | Repository-level CI and infra (`aphrody-infra`) own these; binary artifact not vendored. |
 | Root `Cargo.toml` `[patch.crates-io]` | None | `ffmpeg-sys-next`, `whisper-rs-sys` local patches | bindgen 0.72 for libclang 21+ (see `drive/patches/README.md`). |
-| `apps/server` | Base server | Adds `data_dir`, library lookup, `tokio` `fs`, `tokio-util`, `uuid` | Aphrody feature additions. |
+| `docs/architecture/ui/drive/apps/server` | Base server | Adds `data_dir`, library lookup, `tokio` `fs`, `tokio-util`, `uuid` | Aphrody feature additions. |
 | `core/src/library/lock.rs` | `ps` / `tasklist` subprocess | `sysinfo` single-PID refresh | Locale-independent, no subprocess. |
 | `core/src/ops/core/status/query.rs` | Hard-coded `running: true` | Real watcher/network state | Replaces upstream TODO. |
 | `core/src/service/sync/{backfill,state}.rs`, `infra/sync/checkpoints.rs` | No-op checkpoint `save`/`load` | Durable `BackfillCheckpointStore` in `sync.db` + restart test | Replaces upstream TODO. |
 | `core/build.rs` | `cargo:warning` when Swift client absent | `rerun-if-changed` | Swift client not vendored; avoids warning noise. |
-| `crates/archive/*`, `crates/task-system/src/system.rs` | Unused imports/bindings; `fetch_update` | Removed; `try_update` | Warning-clean under current toolchain. |
+| `crates/archive/*`, `crates/os/drive/crates/task-system/src/system.rs` | Unused imports/bindings; `fetch_update` | Removed; `try_update` | Warning-clean under current toolchain. |

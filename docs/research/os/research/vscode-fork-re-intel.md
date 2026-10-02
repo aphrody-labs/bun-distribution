@@ -98,7 +98,7 @@ rebrands by overwriting these keys. Observed in upstream OSS build:
 - A Codeium/Antigravity fork hooks this by shipping a built-in extension (see
   `builtInExtensions` in §1) whose `activate()` spawns the proprietary
   `language_server` binary (the Go `language_server.exe`, cf.
-  `docs/plans/antigravity-exploitation.md` launch contract) and proxies
+  `docs/plans/ai/plans/antigravity-exploitation.md` launch contract) and proxies
   agent/Cascade RPCs. The extension's contributed commands + the LS launch args
   are the RE seam between the open VSCode shell and the proprietary core.
 - `webviewContentExternalBaseUrlTemplate` + the fork's contributed webview

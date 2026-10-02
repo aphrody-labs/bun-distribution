@@ -1,7 +1,7 @@
 # OpenClaw vs aphrody — Comparative Audit
 
 **Audit date:** 2026-05-23
-**openclaw clone:** `var/openclaw` @ `4f0c9020` (`feat(diagnostics): trace gateway secret preparation (#83019)`)
+**openclaw clone:** `var/openclaw` (not in repo) @ `4f0c9020` (`feat(diagnostics): trace gateway secret preparation (#83019)`)
 **aphrody:** this repo (`C:\src\aphrody`), Rust-only, branch `main`
 **Method:** on-disk verification only (`ls`/`grep`/`cat` real). No web claims.
 
@@ -26,9 +26,9 @@ out-of-scope-by-design, not a gap.
 
 | Provider | openclaw | aphrody | Evidence (aphrody) | Improvement |
 |----------|----------|---------|--------------------|-------------|
-| **Google / Gemini** | `extensions/google`, `googlechat` | ✅ keyless OAuth + cookie + CLI + BYOK | `crates/aphrody-gemini-runtime`, `gemini-web`, `antigravity-sdk`, `aphrody-gateway/src/byok/gemini.rs`, `google_antigravity.rs`, `gemini_cli.rs` | Keyless: agy token (Credential Manager via antigravity-sdk), `gemini-web` cookie auth, Vertex/Cloud-Code OAuth, `gemini-cli` gated. Streaming SSE normalized. |
-| **Anthropic / Claude** | `extensions/anthropic`, `anthropic-vertex` | ✅ BYOK Messages API | `crates/aphrody-gateway/src/byok/anthropic.rs` (360 LOC), `byok/mod.rs` | Native SSE streaming, tool_use accumulation, SSRF guard, `NormalizedChunk` model. Wire shape explicitly mirrors openclaw daemon route `/api/proxy/anthropic/stream`. |
-| Image gen | `comfy`, `fal`, `runway`, `image-generation-core` | ✅ Google Nano Banana Pro + Adobe Firefly | `crates/aphrody-images`, `aphrody-firefly`, the `aphrody-bun` icons module, `aphrody-identity` logo; MCP `gemini_image`, `firefly_generate` | Nano Banana Pro (gemini-3-pro-image-preview, Vertex global) + Firefly S2S OAuth. |
+| **Google / Gemini** | `extensions/google`, `googlechat` | ✅ keyless OAuth + cookie + CLI + BYOK | `crates/google/gemini-runtime`, `gemini-web`, `antigravity-sdk`, `aphrody-gateway/src/byok/gemini.rs`, `google_antigravity.rs`, `gemini_cli.rs` | Keyless: agy token (Credential Manager via antigravity-sdk), `gemini-web` cookie auth, Vertex/Cloud-Code OAuth, `gemini-cli` gated. Streaming SSE normalized. |
+| **Anthropic / Claude** | `extensions/anthropic`, `anthropic-vertex` | ✅ BYOK Messages API | `crates/ai/gateway/src/byok/anthropic.rs` (360 LOC), `byok/mod.rs` | Native SSE streaming, tool_use accumulation, SSRF guard, `NormalizedChunk` model. Wire shape explicitly mirrors openclaw daemon route `/api/proxy/anthropic/stream`. |
+| Image gen | `comfy`, `fal`, `runway`, `image-generation-core` | ✅ Google Nano Banana Pro + Adobe Firefly | `crates/aphrody-images` (not in repo), `aphrody-firefly`, the `aphrody-bun` icons module, `aphrody-identity` logo; MCP `gemini_image`, `firefly_generate` | Nano Banana Pro (gemini-3-pro-image-preview, Vertex global) + Firefly S2S OAuth. |
 | Video gen | `video-generation-core`, `runway` | ✅ Veo | MCP `gemini_video`; `cli/src/main.rs` veo refs | Google Veo via Gemini. |
 | Deep research | (none first-class) | ✅ | MCP `gemini_deep_research`; `notebooklm/src/research.rs` | NotebookLM + Gemini deep-research — net-new capability. |
 | LLM infra (cache/cost/retry/rate) | scattered | ✅ unified | `crates/aphrody-llm-infra/src/{cache,cost,retry,rateguard}.rs` | Consolidated latency/cost layer. |
@@ -47,8 +47,8 @@ Mission keeps only Discord + X.
 
 | Channel | openclaw | aphrody | Evidence |
 |---------|----------|---------|----------|
-| **Discord** | `extensions/discord`, `skills/discord` | ✅ | `crates/aphrody-messaging/src/channels/discord.rs`, `aphrody-voice/src/discord_shim.rs` (voice), hermes |
-| **X (Twitter)** | (not a channel in openclaw) | ✅ net-new | `crates/aphrody-x-client` (158 GraphQL ops, cookie auth, no key), `aphrody-messaging/src/channels/x.rs`, hermes |
+| **Discord** | `extensions/discord`, `skills/discord` | ✅ | `crates/ai/messaging/src/channels/discord.rs`, `aphrody-voice/src/discord_shim.rs` (voice), hermes |
+| **X (Twitter)** | (not a channel in openclaw) | ✅ net-new | `crates/aphrody-x-client` (not in repo) (158 GraphQL ops, cookie auth, no key), `aphrody-messaging/src/channels/x.rs`, hermes |
 
 Aphrody additionally retains Slack/Telegram/Matrix connectors (`aphrody-messaging/src/channels/`)
 as bonus, plus **hermes** (voice-to-voice multi-channel agent: Discord + X full-duplex) — beyond
@@ -62,32 +62,32 @@ openclaw's text inbox. Other channels (iMessage Apple, WhatsApp, Signal, …) = 
 
 | Subsystem | openclaw | Apple-specific? | aphrody equivalent | Evidence | Status |
 |-----------|----------|-----------------|--------------------|----------|--------|
-| Gateway / control plane | `src/gateway` | no | `crates/aphrody-gateway` | `byok/`, `cloudflare.rs`, `vercel.rs`, `lib.rs` | ✅ |
-| Multi-agent routing | `src/routing` | no | `crates/aphrody-router` | `router/src/lib.rs` | ✅ |
-| Sessions | `src/sessions` | no | `crates/aphrody-session` | `session/src/lib.rs` | ✅ |
-| Memory / RAG | `extensions/memory-*`, `memory-lancedb`, `memory-wiki` | no | `crates/aphrody-memory` | `lancedb.rs`, `hnsw.rs`, `honcho.rs`/`honcho_v3.rs`, `mem0.rs`/`mem0_v3.rs`, `jsonl.rs`, `eviction.rs` | ✅ (richer: LanceDB + HNSW + Honcho/mem0 v3) |
-| Skills | `skills/`, `src/skills` | no | `crates/aphrody-skills`, `aphrody-skills-forge` | `skills/src/{lib,hooks,permissions}.rs`, `runtime/` | ✅ |
-| Skills registry (ClawHub) | `skills/clawhub` | no | `crates/aphrody-marketplace` | `marketplace/src/awesome.rs` | ✅ |
+| Gateway / control plane | `src/gateway` | no | `crates/ai/gateway` | `byok/`, `cloudflare.rs`, `vercel.rs`, `lib.rs` | ✅ |
+| Multi-agent routing | `src/routing` | no | `crates/ai/router` | `router/src/lib.rs` | ✅ |
+| Sessions | `src/sessions` | no | `crates/ai/session` | `session/src/lib.rs` | ✅ |
+| Memory / RAG | `extensions/memory-*`, `memory-lancedb`, `memory-wiki` | no | `crates/ai/memory` | `lancedb.rs`, `hnsw.rs`, `honcho.rs`/`honcho_v3.rs`, `mem0.rs`/`mem0_v3.rs`, `jsonl.rs`, `eviction.rs` | ✅ (richer: LanceDB + HNSW + Honcho/mem0 v3) |
+| Skills | `skills/`, `src/skills` | no | `crates/ai/skills`, `aphrody-skills-forge` | `skills/src/{lib,hooks,permissions}.rs`, `runtime/` | ✅ |
+| Skills registry (ClawHub) | `skills/clawhub` | no | `crates/ai/marketplace` | `marketplace/src/awesome.rs` | ✅ |
 | Hooks | `src/hooks` (gmail, message, plugin) | no | `aphrody-skills/src/hooks.rs`, `aphrody-events`, MCP `native_hooks` | `events/src/lib.rs` | ✅ (Gmail Pub/Sub hook = not ported, see GAPS) |
 | Permissions / tool policy | `src/security/audit-tool-policy` | no | `aphrody-skills/src/permissions.rs`, `aphrody-tools/src/permissions.rs` | builtin tools | ✅ |
-| Tools | `src/tools` (browser, canvas, cron, sessions) | no | `crates/aphrody-tools` | `tools/src/builtin`, `aphrody-terminal-browser` | ✅ |
-| MCP | `src/mcp` (channel/tools serve) | no | `crates/aphrody-mcp`→`aphrody-mcp` bin, `aphrody-mcp` (OAuth/PKCE) | `aphrody-mcp/src/{pkce,registration,discovery}.rs`, `google_mcp` | ✅ (50+ tools incl. OAuth flow) |
-| Cron / scheduling | `src/cron` (large) | no | `crates/aphrody-cron` | `cron/src/lib.rs` | ⚠️ thin (see GAPS) |
-| Auth / secrets | `src/secrets`, auth-profiles | no | `crates/aphrody-secrets`, `aphrody-gateway/byok` | `secrets/src/lib.rs` | ✅ |
-| Config | `src/config` | no | `crates/aphrody-settings` | `settings/src/lib.rs` | ✅ |
+| Tools | `src/tools` (browser, canvas, cron, sessions) | no | `crates/ai/tools` | `tools/src/builtin`, `aphrody-terminal-browser` | ✅ |
+| MCP | `src/mcp` (channel/tools serve) | no | `crates/ai/mcp`→`aphrody-mcp` bin, `aphrody-mcp` (OAuth/PKCE) | `aphrody-mcp/src/{pkce,registration,discovery}.rs`, `google_mcp` | ✅ (50+ tools incl. OAuth flow) |
+| Cron / scheduling | `src/cron` (large) | no | `crates/os/cron` | `cron/src/lib.rs` | ⚠️ thin (see GAPS) |
+| Auth / secrets | `src/secrets`, auth-profiles | no | `crates/os/secrets`, `aphrody-gateway/byok` | `secrets/src/lib.rs` | ✅ |
+| Config | `src/config` | no | `crates/os/settings` | `settings/src/lib.rs` | ✅ |
 | CLI / onboarding | `openclaw onboard/pairing/doctor` | no | `cli` `oc-onboard/oc-pairing/oc-reset/oc-uninstall/doctor` | `cli/src/oc_cmd.rs` (897 LOC) | ✅ (explicit openclaw-compat surface) |
 | DM pairing / allowlist | `dmPolicy`, `pairing approve` | no | `oc-pairing` (`~/.aphrody/pairing.json`) | `cli/src/oc_cmd.rs:340-468` | ✅ |
 | Sandbox (Docker/SSH/OpenShell) | `agents.defaults.sandbox` | no | `SandboxShell` | `aphrody-sdk/src/shell.rs:85-181`, `aphrody-sdk/src/fs.rs` | ⚠️ host shell sandbox only, no Docker/SSH backend (see GAPS) |
-| Web / API surface | `ui/`, web RPC | no | `crates/aphrody-a2a-ui`, `aphrody-gateway` HTTP, `tuono*` | `a2a-ui/src/native` | ✅ |
-| Voice (TTS/STT) | `src/talk`, `elevenlabs`, mlx-tts | macOS TTS partly Apple | `crates/aphrody-voice` | `voice/src/{elevenlabs,web}.rs`, `stt/` | ✅ (ElevenLabs + STT; system TTS) |
+| Web / API surface | `ui/`, web RPC | no | `crates/ui/a2a-ui`, `aphrody-gateway` HTTP, `tuono*` | `a2a-ui/src/native` | ✅ |
+| Voice (TTS/STT) | `src/talk`, `elevenlabs`, mlx-tts | macOS TTS partly Apple | `crates/ai/voice` | `voice/src/{elevenlabs,web}.rs`, `stt/` | ✅ (ElevenLabs + STT; system TTS) |
 | Realtime transcription | `src/realtime-transcription` | no | `aphrody-voice/src/stt` | stt module | ✅ |
-| Observability / OTel | `extensions/diagnostics-otel/-prometheus` | no | `crates/aphrody-telemetry` | `telemetry/src/lib.rs` | ✅ |
+| Observability / OTel | `extensions/diagnostics-otel/-prometheus` | no | `crates/os/telemetry` | `telemetry/src/lib.rs` | ✅ |
 | Terminal | (none; uses host) | no | 8× `aphrody-terminal-*` | `aphrody-terminal-{vt,browser,llm,markdown,…}` | ✅ net-new (LLM-first terminal) |
-| Reverse engineering / forensics | (none) | no | `crates/aphrody-re`, `cli re/forensics/scan` | `aphrody-re/src/` | ✅ net-new |
-| **Apple HIG / design** | macOS/iOS SwiftUI, Apple HIG | **Apple** | **Material Design 3 / M3 Expressive** | `crates/aphrody-m3-tokens` (hct, color, typography Google Sans, motion, shape, elevation, gemini_brand), `aphrody-design`, `mui-rs-components`, `aphrody-wgpu-material` | ✅ Google equivalent |
-| **macOS menu-bar app** | `apps/macos` | **Apple** | M3 native UI (`mui-rs`, `gui`, `a2a-ui`) + cross-platform CLI | `crates/mui-rs*`, `gui` | ✅ Google/cross-plat equivalent |
+| Reverse engineering / forensics | (none) | no | `crates/os/re`, `cli re/forensics/scan` | `aphrody-re/src/` | ✅ net-new |
+| **Apple HIG / design** | macOS/iOS SwiftUI, Apple HIG | **Apple** | **Material Design 3 / M3 Expressive** | `crates/ui/m3-tokens` (hct, color, typography Google Sans, motion, shape, elevation, gemini_brand), `aphrody-design`, `mui-rs-components`, `aphrody-wgpu-material` | ✅ Google equivalent |
+| **macOS menu-bar app** | `apps/macos` (not in repo) | **Apple** | M3 native UI (`mui-rs`, `gui`, `a2a-ui`) + cross-platform CLI | `crates/mui-rs*`, `gui` | ✅ Google/cross-plat equivalent |
 | **iOS/Android nodes** | `apps/{ios,android}` | **Apple/mobile** | Android/Compose patterns via M3; `aphrody-react-reconciler` | `m3-tokens/src/adaptive.rs` | ✅ (Google/M3) |
-| **Live Canvas / A2UI** | `apps/.../canvas` | partly Apple | `crates/aphrody-a2a-ui` + A2A protocol (`crates/a2a*`) | `a2a-ui/src/native`, `a2a-server`, `a2a-pb` | ✅ A2A-based equivalent |
+| **Live Canvas / A2UI** | `apps/.../canvas` | partly Apple | `crates/ui/a2a-ui` + A2A protocol (`crates/a2a*`) | `a2a-ui/src/native`, `a2a-server`, `a2a-pb` | ✅ A2A-based equivalent |
 | **iMessage** | `extensions/imessage` | **Apple** | n/a (Apple channel; Discord/X kept) | — | out-of-scope (Apple) |
 | Link understanding | `src/link-understanding` | no | `aphrody-context`, `universal_web_fetch` MCP | `aphrody-context/src/lib.rs` | ✅ (web fetch + context) |
 | Auto-reply loop | `src/auto-reply` | no | `agy-loop`, hermes agent | `cli/src/agy_loop.rs`, `agent_cmd.rs` | ✅ (agentic loop) |
@@ -101,7 +101,7 @@ Honest list of *neutral* subsystems thin/absent in aphrody, or Apple subsystems 
 
 1. **Cron/scheduling is thin.** openclaw's `src/cron` is a large, battle-tested scheduler
    (delivery plans, heartbeats, session reaper, dozens of regression tests). aphrody's
-   `crates/aphrody-cron` is a single `lib.rs`. The CLI orchestrates scheduling via skills/loops,
+   `crates/os/cron` is a single `lib.rs`. The CLI orchestrates scheduling via skills/loops,
    but there is no equivalent persistent cron service with delivery/heartbeat semantics.
    **Real gap (neutral).**
 

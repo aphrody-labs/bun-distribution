@@ -14,7 +14,7 @@ L'écosystème Aphrody unifie ses surfaces d'interface utilisateur (Desktop Taur
 
 1. **Zéro Hardcoding & Calquage Backend Réel** :  
    L'UI n'invente aucune donnée, texte ou état fictif. Toutes les fonctionnalités, statuts de sous-systèmes, listes de modèles, métriques d'agents et topologies de stockage sont calqués sur les contrats natifs du runtime :
-   - FFI (`@aphrody/bun` / `crates/ui/m3`)
+   - FFI (`@aphrody/bun` / `packages/ui/m3`)
    - Moteur App-Server JSON-RPC 2.0 (`crates/ai/app-server`)
    - Noyau OS & sous-systèmes IPC (`crates/os/kernel`)
    - Système de stockage VDFS et daemon supervisé (`crates/ui/drive`, `crates/os/drive`, `sd-daemon`)

@@ -8,7 +8,7 @@ Provides compile-time constants for:
 - **Type scale** — 15 canonical type styles (Display/Headline/Title/Body/Label, L/M/S).
 - **Elevation** — 6 levels with dp values and CSS `box-shadow` strings.
 - **Motion** — 7 easing curves + 16 duration tokens.
-- **SpaceUI fusion** (`spaceui`) — the SpaceUI vocabulary mapped onto M3 roles and state layers, and its seven themes as M3 dynamic-scheme seeds (`docs/design/SPACEUI-M3-FUSION.md`).
+- **SpaceUI fusion** (`spaceui`) — the SpaceUI vocabulary mapped onto M3 roles and state layers, and its seven themes as M3 dynamic-scheme seeds (`docs/architecture/ui/design/SPACEUI-M3-FUSION.md`).
 
 The crate is `no_std` by default.  Enable the `std` feature (on by default) for
 `export_css`, which emits a complete `:root { --md-sys-color-* }` CSS block.

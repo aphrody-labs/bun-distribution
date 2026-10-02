@@ -20,4 +20,4 @@ const os = (await wc.call("get_os_info")).json();
 - `src/generated.ts` mirrors the canonical Rust catalog; do not edit it by hand.
 - Tests: `bun test`.
 
-See [`docs/winclean-native-import.md`](../../../../reference/os/winclean-native-import.md).
+See [`docs/reference/os/winclean-native-import.md`](../../../../reference/os/winclean-native-import.md).

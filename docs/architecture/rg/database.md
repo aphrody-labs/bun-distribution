@@ -1,17 +1,17 @@
 # Architecture de Base de Données & Cache Hybride (docs/database.md)
 
-Ce document décrit l'architecture de la base de données du projet **Rose Griffon** (particulièrement pour le wiki **Azalée**, servi par [`apps/rg/website`](../../apps/rg/website)), le flux de sauvegarde et de mise en cache, ainsi qu'une analyse de la gestion native du SQL par le runtime **Bun**.
+Ce document décrit l'architecture de la base de données du projet **Rose Griffon** (particulièrement pour le wiki **Azalée**, servi par [`apps/rg/website`](../../../apps/rg/website)), le flux de sauvegarde et de mise en cache, ainsi qu'une analyse de la gestion native du SQL par le runtime **Bun**.
 
 > [!NOTE]
 > Pour les spécifications d'architecture et de référence complètes, consulter :
-> - Architecture globale API & Base de données : [`docs/architecture/rg/API-AND-DATABASE-STACK.md`](../architecture/rg/API-AND-DATABASE-STACK.md)
-> - Spécification de l'API unifiée : [`docs/apis/rg/UNIFIED-API-SPECIFICATION.md`](../apis/rg/UNIFIED-API-SPECIFICATION.md)
-> - Référence Kysely & PostgreSQL : [`docs/reference/rg/DATABASE-AND-KYSELY-REFERENCE.md`](../reference/rg/DATABASE-AND-KYSELY-REFERENCE.md)
+> - Architecture globale API & Base de données : [`docs/architecture/rg/API-AND-DATABASE-STACK.md`](API-AND-DATABASE-STACK.md)
+> - Spécification de l'API unifiée : [`docs/apis/rg/UNIFIED-API-SPECIFICATION.md`](../../apis/rg/UNIFIED-API-SPECIFICATION.md)
+> - Référence Kysely & PostgreSQL : [`docs/reference/rg/DATABASE-AND-KYSELY-REFERENCE.md`](../../reference/rg/DATABASE-AND-KYSELY-REFERENCE.md)
 
 Depuis le 11/8/2026, la pile est **entièrement self-hostée sur le VPS** (plus de
 projet Supabase Cloud, plus d'URL `*.supabase.co`) : voir
-[self-host-supabase.md](self-host-supabase.md) pour le détail des services de
-remplacement (PostgREST, Storage, Realtime) et [deploy.md](deploy.md) pour la
+[self-host-supabase.md](../../operations/rg/self-host-supabase.md) pour le détail des services de
+remplacement (PostgREST, Storage, Realtime) et [deploy.md](../../operations/rg/deploy.md) pour la
 publication.
 
 ---
@@ -89,9 +89,9 @@ L'API `import { sql } from "bun"` unifie l'accès à PostgreSQL, MySQL et SQLite
 
 ### A. Miroir SQLite du wiki
 
-Le miroir `apps/rg/website/data/mirror.sqlite` est produit côté dépôt `niers`
+Le miroir `apps/rg/website/data/mirror.sqlite` (not in repo) est produit côté dépôt `niers`
 (matérialisation des tables `inagle_*`) puis republié avec la release, via
-`scripts/ops/release-stack.ts` (étape `nie-mirror`, désactivable avec
+`scripts/ops/release-stack.ts` (not in repo) (étape `nie-mirror`, désactivable avec
 `--skip-mirror`). Il n'y a plus de script de bascule Supabase Cloud → SQLite :
 la base source est déjà locale.
 

@@ -66,7 +66,7 @@ Rapporté au TTFB mesuré de bout en bout (0,5 à 0,6 ms), les deux couches réu
 page.
 
 **Le routage n'est pas le facteur limitant.** À ~20 µs, il est un à deux ordres de grandeur sous
-le TTFB mesuré de bout en bout (`scripts/e2e-site.sh` : 0,5 à 0,6 ms sur les catalogues).
+le TTFB mesuré de bout en bout (`scripts/e2e-site.sh` (not in repo) : 0,5 à 0,6 ms sur les catalogues).
 Optimiser le routeur n'améliorerait rien de perceptible ; c'est l'accès aux données et le réseau
 qui décident.
 
@@ -106,6 +106,6 @@ l'énumération du VFS, pas l'indexation. C'est pourquoi il se fait en tâche de
 
 ## Comparer plus tard
 
-`criterion` conserve la mesure précédente dans `target/criterion/` et affiche l'écart au
+`criterion` conserve la mesure précédente dans `target/criterion/` (not in repo) et affiche l'écart au
 passage suivant. Un `cargo bench` sur une machine chargée rend des chiffres plus élevés sans que
 rien n'ait changé : lire l'écart relatif, jamais la valeur absolue d'un seul passage.

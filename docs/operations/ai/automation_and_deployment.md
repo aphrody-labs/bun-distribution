@@ -38,7 +38,7 @@ uv run aphrody setup
 When running headlessly (either with CLI overrides or environment variables, without `-i` or `--interactive` flag):
 1. **Repository root** is dynamically resolved (searches parent folders containing `.git`).
 2. **`gcloud` CLI installation** is checked.
-3. **Secrets Directory** (`var/secrets/` in-repo or `~/.aphrody`) is created with locked permissions (`0700`).
+3. **Secrets Directory** (`var/secrets/` (not in repo) in-repo or `~/.aphrody`) is created with locked permissions (`0700`).
 4. **Service account keys** are created and saved securely (`0600` permissions).
 5. **GCloud authorization** activates the service account key.
 6. **IAM Policy** adds owner bindings to the service account.
@@ -76,7 +76,7 @@ graph TD
 
 ## 3. Autopilot Background Loops
 
-The repository includes loop scripts to run background tasks continuously (e.g. for continuous development or cron operations). The loop reads tasks from `docs/PLAN.md`, starts executing them with Claude Code, audits them with Gemini, and marks them completed.
+The repository includes loop scripts to run background tasks continuously (e.g. for continuous development or cron operations). The loop reads tasks from `docs/PLAN.md` (not in repo), starts executing them with Claude Code, audits them with Gemini, and marks them completed.
 
 ### Linux (Bash)
 
@@ -87,8 +87,8 @@ To start the Linux loop from the repository root:
 - **Interval**: Frequency of execution ticks (in seconds).
 - **Max Ticks**: Exits after a set number of loops (e.g., `--max-ticks 10`).
 - **Single Run**: `--once` runs a single tick and exits.
-- **Process ID**: Logged to `var/run/autopilot.pid`.
-- **Logs**: Written as NDJSON format to `var/log/autopilot.jsonl`.
+- **Process ID**: Logged to `var/run/autopilot.pid` (not in repo).
+- **Logs**: Written as NDJSON format to `var/log/autopilot.jsonl` (not in repo).
 - **Heartbeats**: Emitted to `ai/heartbeat.txt`.
 - **Current plan behavior**: the delivery plan uses work packages rather than
   `⏳` task markers, so this legacy loop remains idle unless a matching marker is

@@ -10,11 +10,11 @@ proves completion. [PLAN.md](../../plans/ai/PLAN.md) is the only active product 
 | Class | Location | Maintenance rule |
 | --- | --- | --- |
 | Product entry | `README.md`, `docs/README.md` | Keep short; link to current authorities and working entry points. |
-| Current architecture and delivery | `docs/PLAN.md`, `ARCHITECTURE.md`, `SOURCE_OF_TRUTH.md` | Update with decisions and implementation; label targets and observations separately. |
-| Operational guides | `docs/INSTALL.md`, `CLI.md`, `config.md`, topic directories | Check commands against the actual binary and owning implementation. |
+| Current architecture and delivery | `docs/PLAN.md` (not in repo), `ARCHITECTURE.md`, `SOURCE_OF_TRUTH.md` | Update with decisions and implementation; label targets and observations separately. |
+| Operational guides | `docs/guides/ai/INSTALL.md`, `CLI.md`, `config.md`, topic directories | Check commands against the actual binary and owning implementation. |
 | Historical evidence | Dated audits, research and retained implementation reports | Keep revision, scope and limitations; link to the current plan when superseded. |
 | Compatibility entry | Former plan paths such as `ROADMAP.md` and `plans/codex-oss.md` | Retain short redirects and referenced anchors; no second task list. |
-| Generated | `docs/SUMMARY.md`, `docs/llms.txt`, `docs/_root/` | Regenerate through `aphrody-summary`; never edit by hand. |
+| Generated | `docs/reference/ai/SUMMARY.md`, `docs/llms.txt` (not in repo), `docs/_root/` (not in repo) | Regenerate through `aphrody-summary`; never edit by hand. |
 
 ## Editing workflow
 
@@ -52,11 +52,11 @@ the owning repository's applicable gates.
 
 [aphrody-summary](../../../crates/ai/summary/src/lib.rs) builds the Markdown
 navigation and context output from the docs tree. It also mirrors selected
-root files into `docs/_root/`; generation happens before the `--check`
+root files into `docs/_root/` (not in repo); generation happens before the `--check`
 comparison, so `--check` can refresh those mirrors.
 
 The scanner used by the generator skips dot/underscore-prefixed paths except
-`_root`, and the copied `docs/aphrody-os` tree. Ordinary historical Markdown
+`_root`, and the copied `docs/aphrody-os` (not in repo) tree. Ordinary historical Markdown
 is included in `llms.txt`; its presence does not grant it current authority.
 Do not add another full historical plan merely to archive a replaced file.
 

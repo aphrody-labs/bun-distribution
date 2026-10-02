@@ -116,7 +116,7 @@ Conventions communes:
 - **Redirects**: max 10 (default `fetch`)
 - **Body size cap**: stop à 10 MB pour des pages HTML, sinon on ramasse du PDF/binaire mal taggé
 
-## 9. Compliance checklist côté `scripts/url-to-docs.ts`
+## 9. Compliance checklist côté `scripts/url-to-docs.ts` (not in repo)
 
 - [x] `User-Agent: bunmium-url-to-docs/0.2 (+https://github.com/bunmium)`
 - [x] `Accept: text/html,application/xhtml+xml`

@@ -1,3 +1,4 @@
+<!-- docs-links: external-paths — backtick paths in this document name files of a local serenity upstream checkout (var/serenity), not of this checkout. -->
 # serenity 0.12.5 -- Architecture générale
 
 Documentation technique de référence. Source : `var/serenity/` (cloné en local).

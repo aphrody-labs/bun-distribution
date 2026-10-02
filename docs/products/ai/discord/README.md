@@ -8,7 +8,7 @@ Index de la documentation Discord d'aphrody.
 Documentation Discord pour aphrody, sous **deux angles complementaires** :
 
 1. **Cote bibliotheque / bot** — le protocole Discord vu depuis Rust, distille
-   du code source de **serenity 0.12.5** (clone dans `var/serenity`). C'est la
+   du code source de **serenity 0.12.5** (clone dans `var/serenity` (not in repo)). C'est la
    reference pour faire evoluer `aphrody-hermes` (l'agent Discord multi-canaux).
 2. **Cote client / reseau** — reverse engineering du **client desktop**
    (Electron/V8) et **cartographie reseau** de l'infrastructure, produits par
@@ -65,12 +65,12 @@ ces notes :
 
 | Source | Emplacement (gitignore) |
 |---|---|
-| Code serenity clone | `var/serenity/` |
-| Inventaire de l'install client | `var/discord/discord-scan.json` (+ `scan-discord.ps1`) |
-| Sorties `aphrody re` | `var/discord/re/` |
+| Code serenity clone | `var/serenity/` (not in repo) |
+| Inventaire de l'install client | `var/discord/discord-scan.json` (not in repo) (+ `scan-discord.ps1`) |
+| Sorties `aphrody re` | `var/discord/re/` (not in repo) |
 | Listings asar | `var/discord/asar-*.list.txt` |
-| Recon DNS/IP | `var/discord/recon-discord.json` |
-| Cookies (metadonnees, sans valeurs) | `var/discord/cookies.json` |
+| Recon DNS/IP | `var/discord/recon-discord.json` (not in repo) |
+| Cookies (metadonnees, sans valeurs) | `var/discord/cookies.json` (not in repo) |
 
 Les artefacts bruts restent hors versionnement (`var/`) ; ces documents en
 sont le distillat versionnable.

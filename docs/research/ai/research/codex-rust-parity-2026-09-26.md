@@ -71,7 +71,7 @@ They are retained as provenance and were not rerun for this correction.
   at 8.2k tokens, and two core README files, estimated at 1.6k tokens.
   The include filter did not retrieve the requested Rust implementation;
   `aphrody git api` supplied the exact pinned files instead.
-- Local ingestion of `crates/aphrody-app-server` covered six files, estimated
+- Local ingestion of `crates/ai/app-server` covered six files, estimated
   at 39.7k tokens. It supported navigation, not runtime verification.
 - `aphrody infra status --json` reported its configured layer nominal;
   `aphrody web status --json` reported an active engine. Neither established
@@ -79,8 +79,8 @@ They are retained as provenance and were not rerun for this correction.
   usable page content; ACP community results from `aphrody docs search` did
   not establish Codex or Aphrody behavior.
 - Local ingestion of `thirdparty/codex` wrote the ignored runtime digests
-  `var/codex-sandboxing.digest.md` (one file, 5.4k estimated tokens) and
-  `var/codex-orchestrator.digest.md` (one file, 6.6k estimated tokens).
+  `var/codex-sandboxing.digest.md` (not in repo) (one file, 5.4k estimated tokens) and
+  `var/codex-orchestrator.digest.md` (not in repo) (one file, 6.6k estimated tokens).
   Digests are analysis artifacts, not extracted source or transferred code.
 - The source review covered the AI engine, runtime, app-server, MCP client,
   rollout and sibling protocol owners. The OS review observed discarded

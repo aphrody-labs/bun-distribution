@@ -7,9 +7,9 @@ dispatchés directement vers Rust. Aucun client ne charge de DLL NativeAOT, C AB
 
 Surfaces canoniques :
 
-- Rust : `crates/aphrody-winclean`, registre et dispatch typés ;
+- Rust : `crates/os/winclean`, registre et dispatch typés ;
 - kernel/MCP/CLI/A2A : subsystem `admin` ;
-- Bun : `packages/winclean`, façade privée sur `@aphrody/os` ;
+- Bun : `packages/os/winclean`, façade privée sur `@aphrody/os` ;
 - plugin : `../aphrody-ai/plugins/aphrody` uniquement.
 
 Validation :

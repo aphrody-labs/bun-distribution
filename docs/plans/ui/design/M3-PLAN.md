@@ -13,10 +13,10 @@ desktop host; standalone Rust GUIs are evaluated for packaging under the
 
 | Owner | Role |
 | --- | --- |
-| `crates/aphrody-m3-tokens` | Canonical token contract: HCT, tonal palettes, 2021 dynamic schemes (exact port of `@material/material-color-utilities` 0.4.0), roles, typography, shape, state, elevation, motion, adaptive layout, Google Sans Flex/Code. `sheets` renders `tokens.css`, `tailwind.css`, `spaceui.css`, scheme CSS. |
+| `crates/ui/m3-tokens` | Canonical token contract: HCT, tonal palettes, 2021 dynamic schemes (exact port of `@material/material-color-utilities` 0.4.0), roles, typography, shape, state, elevation, motion, adaptive layout, Google Sans Flex/Code. `sheets` renders `tokens.css`, `tailwind.css`, `spaceui.css`, scheme CSS. |
 | `crates/ui/m3-tokens` (`facade` module) | Facade over the tokens (layout, accessibility, icon policy, platform contract); formerly the `aphrody-m3` crate. |
 | `crates/ui/bun/icons` (module `icons` of `aphrody-bun`) | Material Symbols fonts (single font source) and SVG generation ([`M3-ICONS.md`](../../../architecture/ui/design/M3-ICONS.md)). |
-| `@aphrody/bun` (`packages/bun` + `crates/aphrody-bun`) | FFI to the Rust crates: `m3Css`, HCT maths, Sass compile, icons, render, reproduce. |
+| `@aphrody/bun` (`packages/bun` + `crates/ui/bun`) | FFI to the Rust crates: `m3Css`, HCT maths, Sass compile, icons, render, reproduce. |
 | `@aphrody/m3` | Dev server, build, plugin, `M3App`, `m3` CLI. |
 | `@aphrody/m3-theme` | Generated sheets, `M3ThemeProvider`, Tauri bridge. |
 | `@aphrody/material-web`, `@aphrody/m3-react` | Lit `md-*` components and their React wrappers. |
@@ -27,7 +27,7 @@ Two lineages share only tokens and theme: Lit (`material-web` -> `m3-react`) and
 
 ## Decisions
 
-- **D1** `crates/aphrody-m3-tokens` is the canonical token contract. Generated sheets come
+- **D1** `crates/ui/m3-tokens` is the canonical token contract. Generated sheets come
   from `@aphrody/bun` calling Rust (`m3Css`); the existing TypeScript dynamic-colour API
   computes runtime schemes with Material Color Utilities and requires parity checks.
   `m3-design/src/hct.ts` still has a separate HSL approximation and must migrate to the
@@ -40,8 +40,8 @@ Two lineages share only tokens and theme: Lit (`material-web` -> `m3-react`) and
 - **D4** Lockstep `aphrody.m3Version` for the published M3 family, enforced by
   `bun run bun:check` (rule `m3`).
 - **D5** Fonts and icons ship from crates (`aphrody-bun` icons module, `aphrody-m3-tokens`) and
-  `packages/m3-fonts`; no copies under `assets/` or in other packages.
-- **D6** Upstream-derived application trees (`packages/aphrody-spaceui`, `drive`) remain
+  `packages/ui/m3-fonts`; no copies under `assets/` or in other packages.
+- **D6** Upstream-derived application trees (`packages/aphrody-spaceui` (not in repo), `drive`) remain
   provenance archives or runtime owners. Tauri and its plugins are external pinned Git
   dependencies of the current desktop host, not vendored source trees in this repository.
 - **D7** Untracked local originals are never deleted by agents.
@@ -78,7 +78,7 @@ All Phases 0 through 5 are complete and verified across the monorepo.
 | Item | Scope | Status | Evidence |
 | --- | --- | --- | --- |
 | 0 | Baseline & ledger | `FAIT` | Full package inventory and lockstep versioning established; verified with `bun run bun:check` (82 packages, 0 violations). |
-| 1 | Canonical token contract | `FAIT` | Exact MCU 0.4.0 port in `crates/aphrody-m3-tokens`; generates HCT dynamic schemes, CSS sheets, Tailwind v4 aliases, and shadcn tokens. |
+| 1 | Canonical token contract | `FAIT` | Exact MCU 0.4.0 port in `crates/ui/m3-tokens`; generates HCT dynamic schemes, CSS sheets, Tailwind v4 aliases, and shadcn tokens. |
 | 2 | Bun native FFI & presets | `FAIT` | `@aphrody/bun` FFI bindings, `@aphrody/m3-config/bun-build` native preset with code-splitting and `'use client'` AST preservation, zero-overhead bundling. |
 | 3 | Framework core & hosts | `FAIT` | `@aphrody/m3`, `@aphrody/m3-theme`, `@aphrody/m3-primitives` (108 tests passing), `@aphrody/m3-react` (52 tests passing), `@aphrody/m3-tokens` (114 tests passing). |
 | 4a | Host configuration & bundling | `FAIT` | Unified `m3BunBuild` preset and automatic JSX runtime configured in root `bunfig.toml`. |
@@ -94,7 +94,7 @@ All Phases 0 through 5 are complete and verified across the monorepo.
 ## Regeneration
 
 - Theme sheets: `bun run --cwd packages/m3-theme generate && bun run --cwd packages/m3-theme generate:fusion`.
-- Tauri webview: `bun run --cwd packages/app-ui build` writes `crates/aphrody-app/ui-dist/`.
+- Tauri webview: `bun run --cwd packages/app-ui build` writes `crates/ui/app/ui-dist/`.
 - Token bundle: `m3 tokens --bundle <dir>`.
 - Material Web: `bun run --cwd packages/material-web build` (tokens, Sass, CSSResult, both
   TypeScript projects).

@@ -8,7 +8,7 @@
 
 Real-browser visual-QA harness for the showcase "Gemini AI Mode" demo
 (`src/components/GeminiAiMode.tsx`, the live transposition of the Google Search
-/ AI Mode grammar from `docs/design/google/ANALYSE.md` onto real M3 components
+/ AI Mode grammar from `packages/ui/material-web/docs/design/google/ANALYSE.md` onto real M3 components
 and `--md-sys-color-*` tokens).
 
 ## What it does

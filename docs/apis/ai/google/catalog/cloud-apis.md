@@ -2,7 +2,7 @@
 
 Python tooling for Google Cloud Platform services: SRE/SLO management, security scanning, BigQuery integrations, Workspace/Gmail utilities, Kubernetes, Spanner ORM, and Ads API adapters.
 
-> Part of [`docs/google/`](../../../../products/ai/google/README.md). Full mechanical listing: [`all-repos.md`](../../../../reference/ai/google/all-repos.md). This page covers 24 repos (12 active / 12 archived).
+> Part of [`docs/google/` (not in repo)](../../../../products/ai/google/README.md). Full mechanical listing: [`all-repos.md`](../../../../reference/ai/google/all-repos.md). This page covers 24 repos (12 active / 12 archived).
 
 ## SRE / SLO Tooling
 

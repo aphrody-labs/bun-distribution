@@ -15,7 +15,7 @@ bun run verify
 ```
 
 Use the root workspace lockfiles and crates. Add first-party Rust code under
-`crates/aphrody-*`, Bun code under `apps/bxc` or `packages/`, and deployment
+`crates/aphrody-*`, Bun code under `apps/bxc` (not in repo) or `packages/`, and deployment
 changes in `aphrody-infra`. Run focused tests during development; `bun run
 verify` is the BXC gate before submitting a pull request to `aphrody-os`.
 Never commit credentials, cookies, generated indexes, or production data.

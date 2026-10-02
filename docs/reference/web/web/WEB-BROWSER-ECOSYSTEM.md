@@ -8,8 +8,8 @@ paquets et d'outils historiques restent des identifiants de compatibilité.
 | Couche | Autorité et rôle | Accès programmatique |
 | --- | --- | --- |
 | `aphrody-kernel` / `aphrody_web` | Autorité locale des outils et des événements ; Obscura rend les pages ; le fournisseur MCP héberge le transport HTTP et les missions. | Rust `Kernel::call` ou client IPC, Bun `@aphrody/os`, Python `WebBrowserClient.call_tool`, MCP |
-| `apps/bxc/src/api/browser.ts` | Pages, contextes et transport CDP intégrés. | Bun `@aphrody/bxc` et `@aphrody/bxc/browser` |
-| `apps/bxc/src/api/WebBrowser.ts` | Passes autonomes bornées, reprise de frontière, recherche de passages et miroir. | Bun `WebBrowser` ; outils `web_browser_*` du noyau |
+| `apps/bxc/src/api/browser.ts` (not in repo) | Pages, contextes et transport CDP intégrés. | Bun `@aphrody/bxc` et `@aphrody/bxc/browser` |
+| `apps/bxc/src/api/WebBrowser.ts` (not in repo) | Passes autonomes bornées, reprise de frontière, recherche de passages et miroir. | Bun `WebBrowser` ; outils `web_browser_*` du noyau |
 | `MassiveCrawler` / `RequestQueue` | Frontière SQLite, déduplication URL/contenu, politiques par domaine, robots, Crawl-delay, reprise et recrawl. | Bun `@aphrody/bxc/crawler` |
 | `BxcDB` | Documents et passages SQLite/FTS5, provenance et vecteurs locaux facultatifs. | Bun `@aphrody/bxc/db`, `WebBrowser.search`, `web_browser_index_search` |
 | `src/cluster` et `AphrodyPg` | Frontière répartie et sink PostgreSQL déjà disponibles pour les volumes supérieurs à une machine ; l'autopilote local reste une instance. | Worker et serveur de cluster existants, `APHRODY_PG_URL` |

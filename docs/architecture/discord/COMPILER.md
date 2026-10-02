@@ -42,7 +42,7 @@ flowchart TD
 - **`BotTarget`**: Enum identifying supported targets:
   - `BotTarget::Shenron`: Root `apps/shenron/bot`, entry `src/entry-standalone.ts`, output `dist/shenron`.
   - `BotTarget::RoseGriffon`: Root `apps/rg/bot`, entry `src/entry-standalone.ts`, output `dist/rg-bot`.
-  - `BotTarget::Achillea`: Root `apps/rg/achillea-bot`, entry `src/main.ts`, output `dist/achillea`.
+  - `BotTarget::Achillea`: Root `apps/rg/achillea-bot` (not in repo), entry `src/main.ts`, output `dist/achillea`.
   - `BotTarget::Custom(PathBuf)`: Arbitrary external Discord bot.
 - **`CompilerOptions`**:
   ```rust

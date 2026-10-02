@@ -1,3 +1,4 @@
+<!-- docs-links: external-paths — backtick paths in this document name files of a local serenity upstream checkout (var/serenity), not of this checkout. -->
 # serenity 0.12.5 -- Framework de commandes et voix
 
 Documentation du `StandardFramework` (déprécié), de la proc-macro `command_attr`,
@@ -224,9 +225,9 @@ Définis dans `var/serenity/voice-model/src/opcode.rs:11-36` :
 
 ### 5.4. Payloads voix clés
 
-Tous définis dans `var/serenity/voice-model/src/payload.rs`.
+Tous définis dans `crates/google/gemini-web/src/payload.rs`.
 
-**Speaking** (`var/serenity/voice-model/src/payload.rs:119-134`) :
+**Speaking** (`crates/google/gemini-web/src/payload.rs:119-134`) :
 
 ```rust
 pub struct Speaking {
@@ -241,7 +242,7 @@ Le champ `user_id` dans `Speaking` reçu du serveur permet de mapper SSRC -> Use
 indispensable pour identifier quel utilisateur parle lors de la réception de paquets
 RTP.
 
-**SessionDescription** (`var/serenity/voice-model/src/payload.rs:109-116`) :
+**SessionDescription** (`crates/google/gemini-web/src/payload.rs:109-116`) :
 
 ```rust
 pub struct SessionDescription {

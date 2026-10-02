@@ -95,7 +95,7 @@
       "doneWhen": "Measurements with workload and hardware context are recorded",
       "evidence": {
         "profiler": "apps/shenron/bot/scripts/profile-workloads.ts",
-        "report": "docs/shenron/measurements/bot-profile-report.json",
+        "report": "docs/operations/shenron/measurements/bot-profile-report.json",
         "summary": "Baseline RSS 18.14MB, Event Loop p99 2.02ms, API p50 0.06ms; during indexing Event Loop p99 6.17ms, API p50 0.15ms"
       }
     },
@@ -140,10 +140,10 @@
       "action": "Decide whether a separate Shenron API process is justified by measurements and singleton job behavior; keep MCP, RAG, LLM and crawler in Aphrody",
       "doneWhen": "Decision records measured benefit, memory cost and migration gate; prototype only if justified",
       "decision": "rejected",
-      "rationale": "Measurements in docs/shenron/measurements/bot-profile-report.json prove that event loop delay remains under 2ms (p99 6.17ms under extreme worker indexing) and API latency p50 remains 0.15ms. A separate process would duplicate DI containers adding ~140MB RSS overhead without measurable latency gains. Option C hybrid runtime remains ratified.",
+      "rationale": "Measurements in docs/operations/shenron/measurements/bot-profile-report.json prove that event loop delay remains under 2ms (p99 6.17ms under extreme worker indexing) and API latency p50 remains 0.15ms. A separate process would duplicate DI containers adding ~140MB RSS overhead without measurable latency gains. Option C hybrid runtime remains ratified.",
       "evidence": {
-        "report": "docs/shenron/measurements/bot-profile-report.json",
-        "architectureDoc": "docs/shenron/RUNTIME.md"
+        "report": "docs/operations/shenron/measurements/bot-profile-report.json",
+        "architectureDoc": "docs/architecture/shenron/RUNTIME.md"
       }
     }
   ]

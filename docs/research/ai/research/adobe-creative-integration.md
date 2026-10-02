@@ -61,7 +61,7 @@ holds pre-signed download links.
 
 ## What landed
 
-- **`crates/aphrody-firefly`** — pure-Rust client. `auth` (IMS S2S token, cached,
+- **`crates/ai/firefly`** — pure-Rust client. `auth` (IMS S2S token, cached,
   secret-redacted `Debug`), `models` (typed request/response, camelCase wire,
   `JobStatus` with `Unknown` fallback), `client` (`FireflyClient`: submit → poll
   → concurrent download → atomic save). `#![forbid(unsafe_code)]`,
@@ -71,7 +71,7 @@ holds pre-signed download links.
   --size WxH --content-class photo|art --negative … --locale … --json]`
   (feature `firefly`, host-only). Credentials from `FIREFLY_CLIENT_ID` /
   `FIREFLY_CLIENT_SECRET` (never CLI args — keeps secrets out of shell history).
-- **aphrody-mcp** — tool `firefly_generate` (`crates/aphrody-mcp/src/firefly_tools.rs`):
+- **aphrody-mcp** — tool `firefly_generate` (`crates/ai/mcp/src/firefly_tools.rs`):
   cached client, optional `save_dir`, returns `{ count, outputs:[{ seed,
   content_type, bytes, saved_path? }] }`.
 
@@ -142,7 +142,7 @@ Gemini↔Photoshop capability is delivered **in-policy** as: (1) the Rust bridge
 + `firefly_to_photoshop` MCP tool above, and (2) the `gemini_*` MCP tools. A
 UXP panel that simply calls `aphrody-mcp` is the out-of-policy, **user-owned**
 artifact — its manifest + a thin `fetch()` bridge are documented in
-`docs/integrations/photoshop-uxp-panel.md`; it is intentionally *not* committed
+`docs/reference/ai/integrations/photoshop-uxp-panel.md`; it is intentionally *not* committed
 as source to keep the repo Rust-only. Override only on explicit instruction.
 
 ## Maximal Photoshop automation — Lightroom + Sensei ops (landed)
@@ -195,11 +195,11 @@ The cloud APIs are headless but bounded. To expose the **entire** Photoshop
 surface — every menu, filter, adjustment and recorded action — aphrody also
 drives the *running* desktop Photoshop from the inside:
 
-- **UXP panel** (`apps/photoshop-uxp/`, the one explicitly-authorized JS
+- **UXP panel** (`apps/photoshop-uxp/` (not in repo), the one explicitly-authorized JS
   artifact) runs inside Photoshop and is a WebSocket *client*. It executes
   `batchPlay` (the universal ActionDescriptor executor) and an `eval` escape
   hatch with the full UXP DOM in scope.
-- **Rust bridge** (`crates/aphrody-mcp/src/photoshop_bridge.rs`) is a local
+- **Rust bridge** (`crates/ai/mcp/src/photoshop_bridge.rs`) is a local
   WebSocket *server* on `127.0.0.1:8765` (tokio-tungstenite), started lazily on
   the first `photoshop_live_*` call, correlating each `{id,op,args}` request to
   its `{id,ok,result}` response.

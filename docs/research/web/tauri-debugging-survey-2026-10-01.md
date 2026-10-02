@@ -1,3 +1,4 @@
+<!-- docs-links: external-paths — backtick paths in this document name files of the tauri-apps upstream repositories, not of this checkout. -->
 # Tauri debugging, MCP and browser-control tools: survey and fork decision
 
 Survey date: 2026-10-01. Scope: what `aphrody-web` can use to debug and test

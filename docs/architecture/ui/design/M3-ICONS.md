@@ -27,7 +27,7 @@ packages/ui/m3-icons                   <M3Icon>, <m3-icon>, generateIcons, m3Ico
 - API: `icon_svg(name, Style, Axes, size)`, `icon_path(..)`, `icon_names(Style)`. `Axes` defaults
   to FILL 0, wght 400, GRAD 0, opsz 24 (clamped FILL 0..1, wght 100..700, GRAD -25..200,
   opsz 20..48). Decoded fonts are cached once per style.
-- `tests/svg_parity.rs` rasterizes generated and Google-exported SVGs and requires pixel equality
+- `tests/svg_parity.rs` (not in repo) rasterizes generated and Google-exported SVGs and requires pixel equality
   within one step (Outlined fixtures only).
 
 ## Bun

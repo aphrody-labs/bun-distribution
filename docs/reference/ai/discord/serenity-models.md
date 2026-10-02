@@ -1,7 +1,8 @@
+<!-- docs-links: external-paths — backtick paths in this document name files of a local serenity upstream checkout (var/serenity), not of this checkout. -->
 # serenity 0.12.5 -- Types du domaine Discord
 
 Documentation des types principaux du module `model`. Sources :
-- `var/serenity/src/model/` (tous sous-modules)
+- `crates/koharu/koharu-llama/src/model/` (tous sous-modules)
 - `var/serenity/src/model/id.rs`
 - `var/serenity/src/model/permissions.rs`
 - `var/serenity/src/model/guild/mod.rs`

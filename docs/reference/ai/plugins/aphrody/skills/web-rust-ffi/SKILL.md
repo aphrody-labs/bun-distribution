@@ -10,8 +10,8 @@ metadata:
 The hot path of aphrody web lives in Rust, exposed to Bun via cdylib + N-API style FFI (or raw extern "C" with bun:ffi or manual).
 
 ## Crate Layout (in rust-bridge/)
-- `crates/aphrody-web-ffi` (the cdylib exporting the bxc_* C symbols; library name `bxc_rust_bridge`)
-- `crates/aphrody-x` (native X GraphQL/REST + rusqlite store + ranking helpers)
+- `crates/aphrody-web-ffi` (not in repo) (the cdylib exporting the bxc_* C symbols; library name `bxc_rust_bridge`)
+- `crates/web/x` (native X GraphQL/REST + rusqlite store + ranking helpers)
 - crates/x-algorithm (pure Rust port of xai-org/x-algorithm For You ranking, used via FFI or re-exported)
 
 ## Critical Rules

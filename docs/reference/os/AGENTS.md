@@ -45,10 +45,10 @@ Layout and entry points: [README](../../products/os/README.md). Reuse the
 
 ## Automatisation transversale
 
-`scripts/fix-all.nu` conserve son entrée Nushell et délègue les liens, références, dépendances et contrôles au module `aphrody-ops workspace-repair`. Conserver cette entrée locale lors de toute évolution du module central.
+`scripts/tools/os/scripts/fix-all.nu` conserve son entrée Nushell et délègue les liens, références, dépendances et contrôles au module `aphrody-ops workspace-repair`. Conserver cette entrée locale lors de toute évolution du module central.
 
 `bun run check:runtimes` utilise `aphrody-ops runtime-versions` pour la gate Bun/uv.
 
-`scripts/strip-ai-trailers.nu` conserve la syntaxe historique et délègue à `aphrody-ops git-attribution`; son action reste limitée à la branche explicitement fournie.
+`scripts/tools/os/scripts/strip-ai-trailers.nu` conserve la syntaxe historique et délègue à `aphrody-ops git-attribution`; son action reste limitée à la branche explicitement fournie.
 
-`scripts/repair-cargo-p.nu` est l’entrée compatible de `aphrody-ops cargo-package-repair`.
+`scripts/tools/os/scripts/repair-cargo-p.nu` est l’entrée compatible de `aphrody-ops cargo-package-repair`.

@@ -97,7 +97,7 @@ Formats acceptés (du moins précis au plus précis):
 
 `TZD` = `Z` (UTC) ou `+hh:mm` / `-hh:mm`. Bxc émet `YYYY-MM-DD` (suffisant + le plus court).
 
-## 8. Compliance checklist côté `scripts/url-to-docs.ts`
+## 8. Compliance checklist côté `scripts/url-to-docs.ts` (not in repo)
 
 - [x] Déclaration XML `<?xml version="1.0" encoding="UTF-8"?>`
 - [x] `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">`

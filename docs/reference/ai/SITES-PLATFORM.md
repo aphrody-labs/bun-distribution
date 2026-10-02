@@ -49,7 +49,7 @@ when WebAssembly, WebGPU, or WebGL 2 is unavailable.
 - `/mcp`: the single MCP JSON-RPC transport for Aphrody and BXC tools.
 - `/api/v1/openapi.json`: the complete OpenAPI 3.1 document.
 
-Every route is owned by `crates/aphrody-site`, versioned with the Aphrody
+Every route is owned by `docs/products/web/crates/aphrody-site`, versioned with the Aphrody
 binary, and tested without requiring an independently deployed BXC or N2B
 site. Compatibility hostnames may redirect or proxy to these canonical paths;
 they cannot introduce a second implementation.

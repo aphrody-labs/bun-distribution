@@ -3,7 +3,7 @@
 Measured on this VPS (`51.77.147.152`) on **2026-09-07** with `scripts/ops/ovh.py`, `dig`,
 `curl` and `openssl`; the OVH zone-list result was rechecked on **2026-09-29** after rotating
 the local and VPS API credentials. Where this file and a plan disagree, this file is right.
-[`docs/TOPOLOGY.md`](../TOPOLOGY.md) says what answers on which port; this one says
+[`docs/reference/infra/TOPOLOGY.md`](../TOPOLOGY.md) says what answers on which port; this one says
 what DNS and the registrar hold, and how to change it without breaking mail or TLS.
 
 ## 1. Three accounts, three disjoint sets of zones

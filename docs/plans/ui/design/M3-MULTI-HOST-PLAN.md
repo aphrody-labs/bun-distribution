@@ -6,7 +6,7 @@
 Build a customizable Material 3 framework whose design contract can be rendered on web,
 desktop and mobile. Share roles, interaction expectations and adaptive rules; qualify each
 renderer and installed host separately. The Aphrody product currently has one Tauri v2
-desktop webview in `packages/app-ui` for Chat, Files, Models and Settings. Its product scope
+desktop webview in `packages/app-ui` (not in repo) for Chat, Files, Models and Settings. Its product scope
 is defined by [GUI](../../../reference/ui/GUI.md). Browser navigation, shell/PTY/terminal sessions and system
 administration stay outside that webview.
 
@@ -18,7 +18,7 @@ feature of the product, with its own runtime and provenance boundary.
 
 | Layer | Owner | Portable contract |
 | --- | --- | --- |
-| Design roles | `crates/aphrody-m3-tokens` | Palette/HCT, typography, shape, elevation, motion, state, adaptive classes and accessibility defaults. |
+| Design roles | `crates/ui/m3-tokens` | Palette/HCT, typography, shape, elevation, motion, state, adaptive classes and accessibility defaults. |
 | Web projection | `@aphrody/m3-tokens`, `@aphrody/m3-theme` | CSS variables and TypeScript interfaces aligned with the Rust contract. No second palette authority. |
 | React web | `@aphrody/m3-primitives` family | Maintained Base UI fork for accessible behavior; maintained Tailwind CSS fork for M3 styling. |
 | Web components | `@aphrody/material-web` and `@aphrody/m3-react` | Lit implementation consuming the same roles and accessibility contract. |
@@ -66,7 +66,7 @@ a possible later adapter, not a current framework feature.
 
 ## Order of work
 
-1. **Stabilize the contract.** (`FAIT`): Canonical MCU 0.4.0 tokens in `crates/aphrody-m3-tokens`, HCT palettes, CSS variables, and typed role/adaptive schema exported.
+1. **Stabilize the contract.** (`FAIT`): Canonical MCU 0.4.0 tokens in `crates/ui/m3-tokens`, HCT palettes, CSS variables, and typed role/adaptive schema exported.
 2. **Complete the web kit.** (`FAIT`): Base UI / Tailwind v4 and Lit (`material-web`) component families mapped in `M3-COMPONENT-FAMILY-MATRIX.md`; form contract clarified.
 3. **Qualify responsive web.** (`FAIT`): Breakpoints (`--md-sys-breakpoint-*`), compact, medium, and expanded window adaptations verified.
 4. **Qualify installed hosts.** (`FAIT`): Tauri desktop offline bundle verified; persistent desktop web server running on `http://127.0.0.1:1421` with zero-copy Bun I/O.

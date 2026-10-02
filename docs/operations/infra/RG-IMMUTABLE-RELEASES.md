@@ -17,7 +17,7 @@ catalog service whose ID starts with `rg-`, whose unit is a `.service` and
 which is not `"status": "retired"` (timers stay host-owned; retired services
 such as `rg-cdn`, `rg-storage` and `rg-realtime`, absorbed in-process by
 `rg-api`, keep their catalog entry and unit template but are never shipped or
-started), `nginx/rg.conf`, `RELEASE_SHA`, `SHA256SUMS`, and `release.json`.
+started), `nginx/rg.conf` (not in repo), `RELEASE_SHA`, `SHA256SUMS`, and `release.json`.
 `SHA256SUMS` must cover the manifest, provenance file, every unit and the Nginx
 config. The manifest contains no secrets and has this shape:
 

@@ -16,8 +16,8 @@ L'ensemble a donc été rapatrié sur le VPS. Aucun appel ne sort plus vers
 | --- | --- | --- | --- |
 | Postgres géré | PostgreSQL 18 local, base `rg` | 5432 | `postgresql.service` |
 | Data API (`/rest/v1`) | PostgREST 12.2.12 (binaire natif) | 8809 | `rg-postgrest.service` |
-| Storage (`/storage/v1`) | `apps/storage/server.ts` (Bun, fichiers sur disque) | 8810 | `rg-storage.service` |
-| Realtime (`postgres_changes`) | `apps/realtime/server.ts` (SSE + `LISTEN/NOTIFY`) | 8812 | `rg-realtime.service` |
+| Storage (`/storage/v1`) | `apps/rg/bot/src/api/services/storage/server.ts` (Bun, fichiers sur disque) | 8810 | `rg-storage.service` |
+| Realtime (`postgres_changes`) | `apps/rg/bot/src/api/services/realtime/server.ts` (SSE + `LISTEN/NOTIFY`) | 8812 | `rg-realtime.service` |
 
 Le code applicatif n'a **pas** été réécrit : `@supabase/supabase-js` continue de
 fonctionner tel quel parce que la version de PostgREST est la même que celle de
@@ -42,12 +42,12 @@ Inclus dans les vhosts `azalee.rosegriffon.fr`, `rosegriffon.fr` et
 routes sur `127.0.0.1:8811`, point d'entrée des scripts serveur
 (`SUPABASE_INTERNAL_URL`).
 
-> **Mise à jour (2026-09-26, aphrody-infra `docs/PORTS-AND-DOMAINS.md` item 13)** : la conf nginx
+> **Mise à jour (2026-09-26, aphrody-infra `docs/reference/infra/PORTS-AND-DOMAINS.md` item 13)** : la conf nginx
 > réellement déployée (`rg-production.conf`) n'écoute jamais sur `:8811` et n'inclut pas
 > `supabase-internal.conf` — `rg-api:8800` absorbe storage/realtime en-process et sert
 > `/storage/v1/`/`/realtime/v1/` en pratique. Les replis codés en dur de
-> `packages/db/src/env.ts`, `packages/cron/src/lib/storage-assets.ts` et
-> `apps/website/next.config.ts` pointent donc désormais vers `127.0.0.1:8800`, pas `:8811` ; ne
+> `packages/rg/db/src/env.ts`, `packages/rg/cron/src/lib/storage-assets.ts` et
+> `apps/rg/website/next.config.ts` pointent donc désormais vers `127.0.0.1:8800`, pas `:8811` ; ne
 > définissez `SUPABASE_INTERNAL_URL` sur `:8811` que si `supabase-internal.conf` est effectivement
 > redéployé.
 
@@ -124,7 +124,7 @@ des workers nginx — ici `nobody:nogroup`, pas `www-data`. Sinon nginx renvoie
 `pg_graphql` 1.6.1 (paquet officiel `.deb` pour PG 18) génère une API GraphQL
 sur tout le schéma `public`. PostgREST publie `graphql_public.graphql()` en RPC,
 nginx la présente sous `/graphql/v1` — même adresse que chez Supabase.
-Mise en place : `apps/website/sql/migrations/20260811_pg_graphql.sql`.
+Mise en place : `apps/rg/website/supabase/migrations/20260811_pg_graphql.sql`.
 
 **Drapeau à connaître** : depuis pg_graphql **1.6.0 l'introspection est
 désactivée par défaut**. Sans elle, les requêtes de données fonctionnent
@@ -195,7 +195,7 @@ la configuration Supabase d'origine :
    (`USING (true)`) combinée à un `GRANT SELECT` au niveau **table** rendait les
    e-mails et adresses postales des 31 comptes lisibles par quiconque, la clé
    `anon` étant publique par conception. Correctif :
-   `apps/website/sql/migrations/20260811_profiles_pii.sql`.
+   `apps/rg/website/supabase/migrations/20260811_profiles_pii.sql`.
    Piège : un GRANT au niveau table masque tout `REVOKE` par colonne — il faut
    révoquer la table **avant** de re-granter la liste blanche, sinon la
    révocation est silencieusement sans effet.
@@ -241,8 +241,8 @@ reconstruits depuis les sources d'origine :
 
 | Bucket | Objets | État |
 | --- | --- | --- |
-| `tweets` | 6 423 | 5 529 re-téléchargés depuis `pbs.twimg.com` (`scripts/ops/refetch-tweet-media.ts`). Le reste correspond à des vidéos ou à des médias supprimés côté Twitter. |
-| `patreon` | 26 | À re-synchroniser via l'API Patreon (`apps/website/scripts/patreon-images-sync.ts`) : les URLs d'origine sont signées et expirées. |
+| `tweets` | 6 423 | 5 529 re-téléchargés depuis `pbs.twimg.com` (`scripts/rg/ops/refetch-tweet-media.ts`). Le reste correspond à des vidéos ou à des médias supprimés côté Twitter. |
+| `patreon` | 26 | À re-synchroniser via l'API Patreon (`apps/rg/website/scripts/patreon-images-sync.ts`) : les URLs d'origine sont signées et expirées. |
 | `assets` | 4 | Deux logos partenaires et deux photos d'équipe, non récupérables automatiquement. |
 | `article` | 0 | Bucket purgé. La couverture perdue a été remplacée par un visuel du jeu servi par le CDN ; les trois lignes d'index orphelines ont été retirées via l'API Storage. |
 
@@ -252,14 +252,14 @@ du CDN : l'originale est un PNG de 9,3 Mo, la variante 1600 px pèse 42 Ko.
 ## Temps réel
 
 Le trigger `public.rg_realtime_notify()`
-(`apps/website/sql/migrations/20260811_realtime_notify.sql`) publie chaque
+(`apps/rg/website/supabase/migrations/20260811_realtime_notify.sql`) publie chaque
 changement des tables `comments`, `settings` et `profiles` sur le canal
 `rg_realtime`. `rg-realtime` tient l'écoute et rediffuse en SSE avec le même
 filtrage que `postgres_changes` (`table`, `schema`, `colonne=eq.valeur`). Les
 charges utiles dépassant la limite de 8 000 octets de `NOTIFY` sont réduites aux
 identifiants et marquées `truncated`.
 
-Côté navigateur, `apps/website/src/lib/realtime.ts` expose `subscribeTable()` ;
+Côté navigateur, `apps/rg/website/src/lib/realtime.ts` expose `subscribeTable()` ;
 `EventSource` gère la reconnexion. Les quatre points d'appel
 (`CommentsSection`, `RealtimeSettingsListener`, `useTableBroadcast`,
 `useProfileBroadcast` / `use-profile-sync`) ont été basculés dessus.

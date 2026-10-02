@@ -19,7 +19,7 @@ This tree documents **xAI** (Grok API + Grok Build CLI) as used with Aphrody.
 
 1. **Grok CLI session** — `~/.grok/auth.json` (`grok login`) — preferred for Grok Build and **`bxc grok`** (no developer key)
 2. **`XAI_API_KEY`** — OpenAI-compatible REST (`api.x.ai`) — metered fallback; set in `~/.bash_secrets`
-3. **Antigravity / agy OAuth** — Gemini/Code Assist, not xAI — see `docs/agy-cli/`
+3. **Antigravity / agy OAuth** — Gemini/Code Assist, not xAI — see `docs/agy-cli/` (not in repo)
 
 ## Quick verify
 

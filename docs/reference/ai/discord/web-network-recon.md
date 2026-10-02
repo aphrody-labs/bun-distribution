@@ -122,7 +122,7 @@ Le token d'API n'apparait dans **aucun** cookie ; il reste dans le
 ```
 
 > Le releve brut (noms, domaines, flags, expirations — jamais les valeurs) est
-> conserve hors versionnement sous `var/discord/cookies.json` (gitignore).
+> conserve hors versionnement sous `var/discord/cookies.json` (not in repo) (gitignore).
 > Cette note ne reproduit aucune valeur de secret.
 
 ## 6. Reproduire
@@ -136,4 +136,4 @@ aphrody dns recon gateway.discord.gg
 aphrody dns advanced discord.com --ports 80,443   # selon la CLI; cf. MCP advanced_recon
 ```
 
-Artefact brut : `var/discord/recon-discord.json`.
+Artefact brut : `var/discord/recon-discord.json` (not in repo).

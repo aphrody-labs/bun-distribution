@@ -4,7 +4,7 @@ Inventory checked against the `rg` workspace source and the Infra service catalo
 
 ## System view
 
-In accordance with the canonical convergence plan (`docs/plans/convergence/ROSE-GRIFFON-ACHILLEA-CONVERGENCE.md`), the previous split between `apps/rg/bot` and `apps/rg/achillea-bot` has been consolidated into **a single unified daemon**:
+In accordance with the canonical convergence plan (`docs/plans/convergence/ROSE-GRIFFON-ACHILLEA-CONVERGENCE.md`), the previous split between `apps/rg/bot` and `apps/rg/achillea-bot` (not in repo) has been consolidated into **a single unified daemon**:
 
 | Bot Daemon | Source workspace | Entrypoint | Runtime unit | Responsibilities |
 |---|---|---|---|---|
@@ -12,11 +12,11 @@ In accordance with the canonical convergence plan (`docs/plans/convergence/ROSE-
 
 The standalone `rg-achillea-bot.service` and the legacy ports (4000, 4002, 4005) have been retired. All Discord bot identities (`rg`, `azalee`, `achillea`) are loaded dynamically through the multi-profile engine in `apps/rg/bot/src/lib/profil.ts`, and can be compiled into a single AOT native binary (`dist/rg-bot`) via `aphrody discord compile rg --smoke`.
 
-## 1. RG community bot (`apps/bot`)
+## 1. RG community bot (`apps/bot` (not in repo))
 
 ### Architecture and startup
 
-- Main: `apps/bot/src/index.ts`. Bun executes TypeScript directly (`bun run src/index.ts`); `dev` uses `bun --watch`. Build script emits a Bun-targeted bundle to `dist`, though the production systemd template runs the source entrypoint.
+- Main: `apps/rg/bot/src/index.ts`. Bun executes TypeScript directly (`bun run src/index.ts`); `dev` uses `bun --watch`. Build script emits a Bun-targeted bundle to `dist`, though the production systemd template runs the source entrypoint.
 - Discord client: `discordx` over `discord.js`. `src/lib/profil.ts` is the profile registry (`rg` default, `azalee` optional); `src/lib/config.ts` resolves token, guild scope, branding, URLs, and announcement behavior. Command modules are dynamically imported sequentially before login, so only the active profile's command tree is registered.
 - RG profile loads the community command modules and member/community events; guild-scoped slash commands. The `azalee` profile uses the same executable and shared code with its own command modules and global command scope, but its dedicated systemd service is retired according to the app README.
 - On `clientReady`, slash commands are registered, tweet-post notification handling and an optional local admin HTTP surface start. Interaction failures receive an ephemeral fallback. SIGTERM/SIGINT stop timers/services, destroy the Discord client, close cache and PostgreSQL.
@@ -24,7 +24,7 @@ The standalone `rg-achillea-bot.service` and the legacy ports (4000, 4002, 4005)
 
 ### Internal dependencies
 
-Declared in `apps/bot/package.json`:
+Declared in `apps/rg/bot/package.json`:
 
 - Workspace packages: `@rosegriffon/achillea-client`, `@rosegriffon/azalee`, `@rosegriffon/db`, `@rosegriffon/types`, `@rosegriffon/ui` (`workspace:*`). `@rosegriffon/config` is a development dependency.
 - Main external runtime packages: `discordx` and `discord.js` (`catalog:`), `reflect-metadata` (`catalog:`), `zod` (`catalog:`), and `@aphrody/canvas` (`catalog:`).
@@ -43,7 +43,7 @@ Declared in `apps/bot/package.json`:
 
 ### Configuration key names
 
-The committed `apps/bot/.env.example` has a legacy/incomplete sample. Current code and `src/lib/profil.ts` establish these keys (some optional, feature-dependent):
+The committed `apps/rg/bot/.env.example` has a legacy/incomplete sample. Current code and `src/lib/profil.ts` establish these keys (some optional, feature-dependent):
 
 - Discord/profile: `RG_PROFIL_BOT`, `DISCORD_BOT_TOKEN` (RG), `DISCORD_TOKEN` (RG fallback), `AZALEE_DISCORD_BOT_TOKEN` (Azalée profile), `GUILD_ID`, `BOT_COMMAND_GUILDS` (legacy/alternate source where referenced), `TEST_GUILD_ID`.
 - Profile-specific URLs and announcement controls: `WEBSITE_URL`, `AZALEE_WEBSITE_URL`, `DISCORD_NEWS_CHANNEL_ID`, `AZALEE_DISCORD_NEWS_CHANNEL_ID`, `DISCORD_WIKI_ANNOUNCEMENTS_CHANNEL_ID`, `DISCORD_WEBSITE_ANNOUNCEMENTS_CHANNEL_ID`.
@@ -58,11 +58,11 @@ The sample also mentions `SUPABASE_INTERNAL_URL`, `SUPABASE_SERVICE_ROLE_KEY`, a
 
 `systemd/rg-bot.service` is a simple Bun service with `WorkingDirectory=/srv/rg/current/apps/bot`, external `EnvironmentFile`, `ExecStart` of `bun run src/index.ts`, restart-on-exit, and journal logs. It is deployed from immutable RG releases. `rg-bot` is private/internal as a service; it has no declared public listener. Cron owns broader community synchronization and HTTP announcement duties. These deployment details are the 2026-09-28 snapshot described above.
 
-## 2. Achilléa bot/backend (`apps/achillea-bot`)
+## 2. Achilléa bot/backend (`apps/achillea-bot` (not in repo))
 
 ### Architecture and startup
 
-- Main: `apps/achillea-bot/src/main.ts`. Development executes `bun --watch src/main.ts`; production compiles TypeScript/aliases to `build/` and starts `bun build/main.js`. The build separately emits ranked ESM under `build/ranked/`.
+- Main: `apps/achillea-bot/src/main.ts` (not in repo). Development executes `bun --watch src/main.ts`; production compiles TypeScript/aliases to `build/` and starts `bun build/main.js`. The build separately emits ranked ESM under `build/ranked/`.
 - Discord: `@aphrody/discordx`/discordx decorators, `discord.js`, profile selected by `BOT_PROFILE` (`current` in the production unit; `legacy` is supported). `src/client.ts` validates the token against its selected application ID using Discord REST and resolves granted privileged intents before creating the client. Commands and events are loaded from `src/commands` and `src/events`, plus plugins.
 - Main process initializes plugin services, MikroORM, Socket.IO and a child Bun process for Colyseus ranked, then starts the Ts.ED REST server. The Discord gateway is initialized afterward; REST/Socket.IO/ranked are designed to remain running even if Discord login fails. Graceful shutdown stops API, Socket.IO, watchers, scheduler/workers, Discord, ranked child and database.
 - REST server: Ts.ED + Express compatibility at `API_HOST:API_PORT` (production unit binds loopback port 4000), health endpoint `/health/check`, Swagger `/docs`.
@@ -71,7 +71,7 @@ The sample also mentions `SUPABASE_INTERNAL_URL`, `SUPABASE_SERVICE_ROLE_KEY`, a
 
 ### Internal dependencies
 
-From `apps/achillea-bot/package.json`:
+From `apps/achillea-bot/package.json` (not in repo):
 
 - Workspace packages: `@rosegriffon/db`, `@rosegriffon/discord-sync`, `@rosegriffon/achillea-core`, `@rosegriffon/achillea-types`, `@rosegriffon/auth` (`workspace:*`). `@rosegriffon/achillea-contract` exists in the monorepo as the generated API contract package, though it is not a direct runtime dependency here.
 - Discord/runtime: `discordx ~11.13.3`, `discord.js ^14.26.4`, `discord-api-types ~0.38.48`.
@@ -81,7 +81,7 @@ From `apps/achillea-bot/package.json`:
 
 ### Storage and integration contracts
 
-- PostgreSQL: MikroORM 7 against the unified RG PostgreSQL database, with Kysely/Bun SQL used by the ranked child. `DATABASE_URL` is preferred; legacy host/name/user/password fields remain supported. The schema is now native `achillea` in database `rg` (per current `docs/achillea-services.md` and root instructions), while `database/migrations/` preserves Achilléa TypeScript migrations. ORM initialization does not mutate schema; migrations are explicit deployment operations. Do not infer a separate active DB service from the older app README's portage note.
+- PostgreSQL: MikroORM 7 against the unified RG PostgreSQL database, with Kysely/Bun SQL used by the ranked child. `DATABASE_URL` is preferred; legacy host/name/user/password fields remain supported. The schema is now native `achillea` in database `rg` (per current `docs/architecture/rg/achillea-services.md` and root instructions), while `database/migrations/` preserves Achilléa TypeScript migrations. ORM initialization does not mutate schema; migrations are explicit deployment operations. Do not infer a separate active DB service from the older app README's portage note.
 - Authentication: Discord bot OAuth/session integration coexists with unified Better Auth; `@rosegriffon/auth` is internal dependency. The website's `/api/achillea/session` is the current user-facing session contract; the legacy bot also has API auth/session modules. `JWT_SECRET_KEY` and cookie domain affect legacy session handling.
 - Redis: `ioredis`/BullMQ queues. `src/configs/redis.ts` uses logical DB 2 and key prefix `achillea`; test uses DB 9. Inputs `REDIS_HOST`, `REDIS_PORT` (defaults local host/port). This separates its queues from RG's logical Redis DB.
 - Supabase Storage: server-side service secret for public `images` and private `ranked-proofs` buckets; private proofs use signed URL TTL. Image uploads validate size/type and do not fall back to disk in production. Ranked proof storage can use Supabase or development-local storage according to `src/ranked/storage.ts`.

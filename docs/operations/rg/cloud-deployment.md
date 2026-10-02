@@ -16,11 +16,11 @@ Functions.
 
 | Surface | Cible recommandée | Contrat |
 | --- | --- | --- |
-| `apps/website` | Vercel | projet avec Root Directory `apps/website` et `apps/website/vercel.json` |
-| `apps/website` | Fly.io / Cloud Run | image `infra/cloud/website.Dockerfile`, port `PORT`, écoute `0.0.0.0` |
+| `apps/rg/website` | Vercel | projet avec Root Directory `apps/rg/website` et `apps/rg/website/vercel.json` |
+| `apps/rg/website` | Fly.io / Cloud Run | image `infra/cloud/website.Dockerfile`, port `PORT`, écoute `0.0.0.0` |
 | Postgres + Auth + Storage + Realtime | Supabase Cloud | URL publique, clé publishable et service-role via secrets |
 | Postgres seul | Neon | `DATABASE_URL` poolée ; conserver Supabase Cloud pour Auth, Storage et Realtime |
-| `apps/bot`, `apps/achillea-bot`, `packages/cron` | Fly Machine / Cloud Run Job ou worker | secrets runtime, une instance par consommateur Discord/Cron |
+| `apps/rg/bot`, `apps/achillea-bot` (not in repo), `packages/rg/cron` | Fly Machine / Cloud Run Job ou worker | secrets runtime, une instance par consommateur Discord/Cron |
 
 Ne pas connecter directement une base Neon à un client navigateur :
 `DATABASE_URL` est exclusivement serveur. Le navigateur continue d’employer

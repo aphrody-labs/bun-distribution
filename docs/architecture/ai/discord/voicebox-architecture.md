@@ -1,6 +1,6 @@
 # Architecture de voicebox
 
-**Depot source explore :** `var/discord/voicebox/` (clone de `github.com/jamiepine/voicebox`, v0.5.0)
+**Depot source explore :** `var/discord/voicebox/` (not in repo) (clone de `github.com/jamiepine/voicebox`, v0.5.0)
 
 ---
 
@@ -226,7 +226,7 @@ Biome (`@biomejs/biome 2.3.12`) remplace ESLint + Prettier pour le lint et le fo
 
 ## 6. Comparaison avec l'app desktop aphrody
 
-| Critere                    | voicebox                                       | aphrody `apps/desktop`                                   |
+| Critere                    | voicebox                                       | aphrody `apps/desktop` (not in repo)                                   |
 |----------------------------|------------------------------------------------|----------------------------------------------------------|
 | Coquille desktop           | Tauri 2 (Rust)                                 | Tauri 2 (Rust)                                           |
 | Frontend                   | React 18 + Radix UI + Tailwind 4               | Angular 21.2 + Angular Material 21.2                     |

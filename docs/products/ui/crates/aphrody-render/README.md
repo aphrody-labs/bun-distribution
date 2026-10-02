@@ -3,7 +3,7 @@
 Native rendering for Aphrody OS: the M3 2D scene, the M3 3D scene graph, a
 deterministic CPU reference for both, and a `wgpu` backend (feature `gpu`) with
 pixel parity against it. Design, benchmarks and validation are in
-[`docs/design/M3-RENDER.md`](../../../../architecture/ui/design/M3-RENDER.md).
+[`docs/architecture/ui/design/M3-RENDER.md`](../../../../architecture/ui/design/M3-RENDER.md).
 
 ## Surfaces and backends
 
@@ -32,11 +32,11 @@ wasm WebGPU, WebGL, CPU); GPU backends are reported only when `gpu` is compiled.
 ## Consumers
 
 - Native: `packages/ui/canvas` and `@aphrody/bun` (`m3Render`, `m3Render3d`).
-- Browser: `packages/ui/canvas/site` and `packages/ui/material-web` (`md-3d-scene`,
+- Browser: `packages/ui/canvas/site` (not in repo) and `packages/ui/material-web` (`md-3d-scene`,
   `md-native-3d`).
-- Tauri: `crates/aphrody-tauri-3d` (native layer under a transparent webview)
-  and `crates/aphrody-model-view` (frameless desktop model viewer).
-- Agents: `crates/aphrody-render3d` (`render3d_*` kernel tools).
+- Tauri: `crates/aphrody-tauri-3d` (not in repo) (native layer under a transparent webview)
+  and `crates/aphrody-model-view` (not in repo) (frameless desktop model viewer).
+- Agents: `crates/aphrody-render3d` (not in repo) (`render3d_*` kernel tools).
 
 Hosts never duplicate backend policy; they call this crate.
 

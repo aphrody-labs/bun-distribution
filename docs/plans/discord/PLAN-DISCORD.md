@@ -1,7 +1,7 @@
 # PLAN-DISCORD — clôture de bout en bout
 
 Référence : 28 septembre 2026. Feuille d'exécution de la prochaine session
-`aphrody-discord`. [`docs/PLAN.md`](./PLAN.md) décrit l'architecture;
+`aphrody-discord`. [`docs/PLAN.md` (not in repo)](./PLAN.md) décrit l'architecture;
 [`docs/architecture`](../../architecture/discord/architecture/README.md) contient les audits des
 bots. Les constats datés ci-dessous doivent être revérifiés avant action.
 
@@ -45,10 +45,10 @@ La release Discord de développement observée était
 
 ### 0. Reconstituer la vérité courante
 
-1. Lire les règles, `README.md`, ce plan, `docs/PLAN.md`,
-   [`docs/UPSTREAMS.md`](../../reference/discord/UPSTREAMS.md), [`docs/STACK.md`](../../reference/discord/STACK.md)
-   et les audits. Dans Shenron lire `AGENTS.md`, `docs/GOALS.md`,
-   `docs/ADMIN-REPORTS.md`, `docs/INFRA-DELEGATION.md`. Dans Infra lire les
+1. Lire les règles, `README.md`, ce plan, `docs/PLAN.md` (not in repo),
+   [`docs/UPSTREAMS.md` (not in repo)](../../reference/discord/UPSTREAMS.md), [`packages/ui/material-web/docs/STACK.md`](../../reference/discord/STACK.md)
+   et les audits. Dans Shenron lire `AGENTS.md`, `docs/products/shenron/GOALS.md`,
+   `docs/operations/shenron/ADMIN-REPORTS.md`, `docs/operations/shenron/INFRA-DELEGATION.md`. Dans Infra lire les
    contrats et runbooks de release. `aphrody-ui` appartient à son agent : ne
    pas l'inspecter ni le modifier.
 2. Relever branches, SHAs, arbres Git, lockfiles, versions upstream/publiées,
@@ -138,7 +138,7 @@ n'est qu'une preuve du parcours de développement actuel.
 | Consommateur   | Action                                                                                                                                                                                                                                                                                     | Gate                                                                              |
 | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------- |
 | Aphrody AI     | Raccorder notifications et transport partagé au client Rust via interface explicite; laisser logique agent et secrets chez AI.                                                                                                                                                             | Tests de contrats et notification en guilde de test.                              |
-| RG et Achilléa | Revérifier les audits dans [`docs/architecture/upstreams`](../../architecture/discord/architecture/README.md); remplacer connexions et REST dupliqués, garder files, données et commandes métier.                                                                                                                | Une pile par bot, CI locale et smoke de guilde.                                   |
+| RG et Achilléa | Revérifier les audits dans [`docs/architecture/discord/architecture/upstreams`](../../architecture/discord/architecture/README.md); remplacer connexions et REST dupliqués, garder files, données et commandes métier.                                                                                                                | Une pile par bot, CI locale et smoke de guilde.                                   |
 | NIE Wunderbot  | Vérifier qu'une application actuelle existe; l'audit n'attestait qu'un paquet historique.                                                                                                                                                                                                  | Migration si code actif, sinon `NON_FAIT` motivé.                                 |
 | Shenron        | Résoudre les cinq workspaces externes avec versions publiées/pinnées ou clôture de sources explicite en CI/release; retirer le couplage Turbo externe. Unifier Discord.js, réparer `@discordjs/collection`, les tests BXC et la fixture. Régénérer les entrées après commande/event/guard. | `bun ci`, audits, typecheck, lint, tests stricts et smoke depuis checkout vierge. |
 

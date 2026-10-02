@@ -15,8 +15,8 @@ of the current aphrody search/RE/forensics code.
 | Surface | Crate / path | What it does | Gap |
 | --- | --- | --- | --- |
 | `aphrody search <query>` | `cli` → `commands::SearchCommand` | Google **web** search (network) | not local, not offline |
-| `aphrody-search` | `crates/aphrody-search` | In-memory BM25-lite inverted index over `Document{title,body,tags}`; JSON persist | only indexes memory/marketplace docs, never the filesystem |
-| `aphrody forensics map` | `crates/aphrody/forensics_cmd.rs` | Parallel `walkdir` → `{path,size,ext}` JSON (now also `sha256`/`modified`/`mtime_unix`) | one-shot dump, no queryable index |
+| `aphrody-search` | `crates/os/search` | In-memory BM25-lite inverted index over `Document{title,body,tags}`; JSON persist | only indexes memory/marketplace docs, never the filesystem |
+| `aphrody forensics map` | `crates/aphrody/forensics_cmd.rs` (not in repo) | Parallel `walkdir` → `{path,size,ext}` JSON (now also `sha256`/`modified`/`mtime_unix`) | one-shot dump, no queryable index |
 | `aphrody re classify` | `aphrody-re/magika` (feat `magika`) | Magika content type for one file | per-file, not corpus-wide |
 | `aphrody re leveldb` / `forensics sqlite` | `aphrody-re/leveldb`, `forensics_cmd` | Read-only LevelDB enum / SQLite schema dump | no content search across stores |
 | `dns_recon` / `advanced_recon` | `google_mcp` MCP tools | network recon | unrelated to local search |
@@ -104,7 +104,7 @@ crates under concurrent edit.
 
 ## 4. Implemented in this work (small, self-contained, compiling)
 
-`aphrody forensics map` (`crates/aphrody/forensics_cmd.rs`) now records, per file,
+`aphrody forensics map` (`crates/aphrody/forensics_cmd.rs` (not in repo)) now records, per file,
 in addition to `path/size/ext`:
 
 - `sha256` — SHA-256 hex of files at or below a size cap (default 1 MiB),

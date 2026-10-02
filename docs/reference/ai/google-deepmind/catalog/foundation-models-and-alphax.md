@@ -2,7 +2,7 @@
 
 Foundational model releases and the AlphaX programme: protein structure prediction, geometric reasoning, mathematical discovery, language models, and weather forecasting.
 
-> Part of [`docs/google-deepmind/`](../../../../products/ai/google-deepmind/README.md). Full mechanical listing: [`all-repos.md`](../all-repos.md). This page covers 24 repos (23 active / 1 archived).
+> Part of [`docs/google-deepmind/` (not in repo)](../../../../products/ai/google-deepmind/README.md). Full mechanical listing: [`all-repos.md`](../all-repos.md). This page covers 24 repos (23 active / 1 archived).
 
 ## Protein structure prediction
 

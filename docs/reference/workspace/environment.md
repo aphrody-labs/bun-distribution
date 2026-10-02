@@ -32,7 +32,7 @@ ne sont pas magiquement disponibles à une commande `cargo` lancée séparément
   locale RG; les commandes Next/Bun les lisent selon leur cwd, mode ou appelant.
 - `packages/rg/cron/.env` : configuration du cron RG lorsque lancé depuis ce
   package.
-- `apps/shenron/site/.env` et `apps/shenron/bot/.env` : secrets privés
+- `apps/shenron/site/.env` (not in repo) et `apps/shenron/bot/.env` (not in repo) : secrets privés
   facultatifs lus explicitement par plusieurs scripts Shenron. Le dépôt ne
   fournit pas ces fichiers privés; les exemples suivis sont
   [`apps/shenron/bot/.env.example`](../../../apps/shenron/bot/.env.example).

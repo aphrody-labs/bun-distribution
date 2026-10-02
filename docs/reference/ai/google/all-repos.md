@@ -1,6 +1,6 @@
 # google — Python repositories (exhaustive catalog)
 
-Auto-generated from the GitHub Search API (`org:google language:python`). Source of truth: `docs/data/repos.json`.
+Auto-generated from the GitHub Search API (`org:google language:python`). Source of truth: `docs/reference/ai/data/repos.json`.
 
 Total: **590** repos — **194** active, **396** archived. Sorted by stars.
 

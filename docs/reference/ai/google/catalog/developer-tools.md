@@ -2,7 +2,7 @@
 
 Google's Python developer-tool releases span code formatting and static analysis, hardware and E2E test frameworks, CLI scaffolding, AST manipulation, configuration/dependency-injection libraries, and a set of eclectic Python utilities maintained at Google scale.
 
-> Part of [`docs/google/`](../../../../products/ai/google/README.md). Full mechanical listing: [`all-repos.md`](../all-repos.md). This page covers 50 repos (35 active / 15 archived).
+> Part of [`docs/google/` (not in repo)](../../../../products/ai/google/README.md). Full mechanical listing: [`all-repos.md`](../all-repos.md). This page covers 50 repos (35 active / 15 archived).
 
 ---
 

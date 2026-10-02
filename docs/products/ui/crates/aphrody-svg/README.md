@@ -2,8 +2,8 @@
 
 The single SVG owner of the Aphrody ecosystem. Every repository that parses, cleans, recolours,
 merges, optimizes, rasterizes or compares SVG uses this crate (Rust), `@aphrody/svg` (Bun,
-`bun:ffi` over `crates/aphrody-bun`), instead of carrying its own implementation.
-Inventory, migration map and remaining work: [`docs/SVG.md`](../../../../reference/ui/SVG.md).
+`bun:ffi` over `crates/ui/bun`), instead of carrying its own implementation.
+Inventory, migration map and remaining work: [`docs/reference/ui/SVG.md`](../../../../reference/ui/SVG.md).
 
 | Module | Feature | What |
 | --- | --- | --- |

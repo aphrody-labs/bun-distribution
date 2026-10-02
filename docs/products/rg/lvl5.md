@@ -107,7 +107,7 @@ Rust for performance » (vérifié via `gh api`).
 
 | Outil | Repo | Formats | État | Licence | Pertinence IEVR |
 | --- | --- | --- | --- | --- | --- |
-| **inagle** (maison) | local `packages/inagle` | Parser TS du `cfg.bin` IEVR + g4tx ; ~70 domaines de gamedata, crc32 hash | Actif (privé) | MIT (`packages/inagle/LICENSE`) | **Directe** |
+| **inagle** (maison) | local `packages/inagle` (not in repo) | Parser TS du `cfg.bin` IEVR + g4tx ; ~70 domaines de gamedata, crc32 hash | Actif (privé) | MIT (`packages/inagle/LICENSE` (not in repo)) | **Directe** |
 | **CriTools** | `kohos/CriTools` | Extraction audio CRIWARE en JS (ACB/AWB/HCA/USM) | Actif (2026-05) | déclarée | **Transverse** |
 | **vitorfdl/game-inazuma-eleven** | `vitorfdl/game-inazuma-eleven` | Wiki + TeamBuilder IEVR (consomme un dataset, pas RE) | 2026-03 | aucune | Indirecte (front data) |
 | **SceneScriptData** | `Tiniifan/SceneScriptData` | Extension VS Code : compile/décompile Scene Script Data Level-5 | Actif (2026-04) | aucune | Indirecte→partielle (scène) |
@@ -177,9 +177,9 @@ l'aveugle.
 
 ### inagle (TypeScript) — gamedata cfg.bin
 
-`packages/inagle` (MIT) est le parser de **vérité terrain** du `cfg.bin` IEVR :
+`packages/inagle` (not in repo) (MIT) est le parser de **vérité terrain** du `cfg.bin` IEVR :
 ~70 domaines de gamedata (personnages, skills, auras, quêtes, équipes,
-items, magasins, dialogues…) listés sous `packages/inagle/src/parsers/` +
+items, magasins, dialogues…) listés sous `packages/inagle/src/parsers/` (not in repo) +
 parsers binaires `binary/cfgbin-parser.ts`, `binary/g4tx-parser.ts`, et
 `hash/crc32.ts`. Le pipeline iecode délègue tout le parsing gamedata complet à
 inagle plutôt que de le dupliquer en C#.

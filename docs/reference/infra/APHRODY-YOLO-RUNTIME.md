@@ -1,10 +1,10 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 # Aphrody YOLO runtime
 
-`aphrody-yolo` (`crates/aphrody-yolo` in this repository) is the autonomous execution runtime of
+`aphrody-yolo` (`crates/infra/yolo` in this repository) is the autonomous execution runtime of
 Aphrody. It carries the YOLO doctrine: continuous autonomy, deterministic orchestration,
 reversible decisions taken without waiting, and validation before delivery. Restored from the
-retired `aphrody-os` monolith (`docs/APHRODY-YOLO-RUNTIME.md`); the kernel and the plugin it
+retired `aphrody-os` monolith (`docs/reference/infra/APHRODY-YOLO-RUNTIME.md`); the kernel and the plugin it
 drives now live in the `aphrody-os` category repository.
 
 It is not defined as a CLI, a library or an MCP server: those are control and integration
@@ -27,7 +27,7 @@ authenticated markers are defined in `~/.codex/YOLO-NHITL.md`.
 | Traceability | Per-tick manifest, JSONL journal, heartbeat and A2A envelopes. |
 | Recovery | Lane prompts request owner gates; Git records changes for audit and rollback. YOLO does not invoke `verify` during `autopilot`. |
 
-The canonical launcher of an administrator kernel is `scripts/aphrody-admin.ps1` in
+The canonical launcher of an administrator kernel is `scripts/tools/os/scripts/aphrody-admin.ps1` in
 `aphrody-os`. It runs the kernel through the native Windows sudo and keeps the current
 directory. YOLO then connects to the kernel socket:
 
@@ -82,9 +82,9 @@ Persistent artifacts:
 | Path | Content |
 |---|---|
 | `var/yolo/runs/<run-id>/manifest.json` | Tasks, roles and tick identity. |
-| `var/yolo/ticks.jsonl` | Append-only tick journal. |
-| `.coord/heartbeat-aphrody-yolo.txt` | Peer heartbeat. |
-| `.coord/inbox-from-aphrody-yolo.jsonl` | A2A `fact` envelopes. |
+| `var/yolo/ticks.jsonl` (not in repo) | Append-only tick journal. |
+| `.coord/heartbeat-aphrody-yolo.txt` (not in repo) | Peer heartbeat. |
+| `.coord/inbox-from-aphrody-yolo.jsonl` (not in repo) | A2A `fact` envelopes. |
 
 ## Local control plane
 

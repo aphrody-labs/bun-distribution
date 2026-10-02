@@ -18,11 +18,11 @@ Ce document constitue la feuille de route canonique de consolidation définitive
    - Migration des flux temps réel vers le routeur WebSocket natif d'Elysia (`app.ws("/v1/achillea/ws")`) et les SSE (`/realtime/v1/stream`), éliminant la dépendance à `socket.io`.
 
 3. **Moteur Compétitif Ranked Colyseus (`@colyseus/bun-websockets`)** :
-   - Rapatriement du moteur Colyseus (`QueueRoom`, `MatchRoom`, `LobbyRoom`) sous le contrôle de la stack serveur unifiée (`apps/rg/api/src/ranked`).
+   - Rapatriement du moteur Colyseus (`QueueRoom`, `MatchRoom`, `LobbyRoom`) sous le contrôle de la stack serveur unifiée (`packages/rg/achillea-core/src/ranked`).
    - Élimination des proxys de compatibilité HTTP internes vers un port 4000 défunt, au profit d'appels directs aux requêtes Kysely partagées.
 
 4. **Objectif 2 Applications Roses Griffon (`apps/rg/website` & `apps/rg/bot`) — RÉALISÉ** :
-   - Suppression définitive des applications doublons `apps/rg/cdn`, `apps/rg/realtime`, `apps/rg/storage`, `apps/rg/api`, `apps/rg/achillea-bot`, `apps/rg/azalee`.
+   - Suppression définitive des applications doublons `apps/rg/cdn` (not in repo), `apps/rg/realtime` (not in repo), `apps/rg/storage` (not in repo), `apps/rg/api` (not in repo), `apps/rg/achillea-bot` (not in repo), `apps/rg/azalee` (not in repo).
    - Intégration de l'ensemble de la couche API REST ElysiaJS (153 routes), WebSockets natifs et moteur Colyseus Ranked au sein de `apps/rg/bot/src/api`.
    - Build de production Next.js 16 (Turbopack) validé à 100% pour `apps/rg/website`.
    - Transfert des bibliothèques de jeu Inazuma (`azalee`, `inagle`, `inagle-cross`) dans le monorepo `iecode` (`/home/aphro/iecode/packages/`).
@@ -35,8 +35,8 @@ Ce document constitue la feuille de route canonique de consolidation définitive
 | Composant | État Initial (Fragmenté) | État Final Unifié | Statut |
 | :--- | :--- | :--- | :--- |
 | **Bot Discord RG** | `apps/rg/bot` (Profils `rg` et `azalee`) | `apps/rg/bot` (Profils `rg`, `azalee`, `achillea`) | **Actif** |
-| **Bot Discord Achilléa** | `apps/rg/achillea-bot` (Daemon hybride lourd) | Intégré dans `apps/rg/bot` (profil `achillea`) | **Actif** |
-| **API REST Achilléa & RG**| `apps/rg/achillea-bot` (:4000) & `apps/rg/api` | `apps/rg/bot/src/api` (ElysiaJS :8800, 153 routes) | **Actif** |
+| **Bot Discord Achilléa** | `apps/rg/achillea-bot` (not in repo) (Daemon hybride lourd) | Intégré dans `apps/rg/bot` (profil `achillea`) | **Actif** |
+| **API REST Achilléa & RG**| `apps/rg/achillea-bot` (not in repo) (:4000) & `apps/rg/api` (not in repo) | `apps/rg/bot/src/api` (ElysiaJS :8800, 153 routes) | **Actif** |
 | **Live Notifications** | `socket.io` (:4005) dans `achillea-bot` | Elysia WebSocket natif (`/v1/achillea/ws` :8800) | **Actif** |
 | **Moteur Ranked** | Colyseus subprocess managé par `achillea-bot` | Colyseus Engine intégré (`apps/rg/bot/src/api/ranked`) | **Actif** |
 | **ORM & Base SQL** | MikroORM 7 + Kysely (dual-stack) | **Kysely** + SQL typesafe unifié (`@rosegriffon/db`) | **Actif** |

@@ -244,7 +244,7 @@ Les mêmes types `Project` sont utilisés par :
 
 ### 3.2 Si « TypeDB » = le produit (graph DB)
 
-TypeDB (anciennement Grakn) a un [client Rust officiel](https://github.com/vaticle/typedb-client-rust). Remplace `sqlx` par `typedb_client` dans `crates/db/`.
+TypeDB (anciennement Grakn) a un [client Rust officiel](https://github.com/vaticle/typedb-client-rust). Remplace `sqlx` par `typedb_client` dans `crates/db/` (not in repo).
 
 ### 3.3 Offline-first avec SQLite embarqué
 
@@ -651,7 +651,7 @@ fn setup_native() {}
 
 ## 5. Mobile — UI distincte
 
-`crates/ui-mobile` expose des composants adaptés tactile :
+`crates/ui-mobile` (not in repo) expose des composants adaptés tactile :
 
 ```rust
 #[component]

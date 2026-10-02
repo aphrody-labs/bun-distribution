@@ -3,12 +3,12 @@
 # Tauri 3 upstream line
 
 Machine-readable source: [`config/tauri-upstream.json`](../../../config/tauri-upstream.json).
-Sync command: `bun run tauri:sync` (module `packages/infra/workspace/src/tauri-sync.ts`).
+Sync command: `bun run tauri:sync` (module `packages/infra/workspace/src/tauri-sync.ts` (not in repo)).
 
 ## Which upstream ref is current
 
-`tauri-apps/tauri` branch `v3` is the Tauri 3 line (`crates/tauri` 3.0.0-alpha.3,
-tag `tauri-v3.0.0-alpha.3`). Branch `dev` is the 2.x line (`crates/tauri` 2.12.1)
+`tauri-apps/tauri` branch `v3` is the Tauri 3 line (`crates/shell/tauri` 3.0.0-alpha.3,
+tag `tauri-v3.0.0-alpha.3`). Branch `dev` is the 2.x line (`crates/shell/tauri` 2.12.1)
 and moves faster; it must not be used for Tauri 3. Stable releases on GitHub are
 still `tauri-v2.12.1`. Only released alphas are pinned; nothing is taken from a
 git branch, except the local patches listed below.

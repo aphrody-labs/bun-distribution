@@ -3,7 +3,7 @@
 
 Status: canonical execution plan  
 Date: 2026-09-22  
-Scope: `crates/aphrody-winclean`, Aphrody OS capability crates, kernel, desktop, Bun bindings, and the single Aphrody plugin
+Scope: `crates/os/winclean`, Aphrody OS capability crates, kernel, desktop, Bun bindings, and the single Aphrody plugin
 Supersedes: the separation decisions of the 2026-05-19 winclean/aphrody unification audit (retired; git history)
 
 ## 1. Decision
@@ -37,13 +37,13 @@ The following facts were observed in the current workspace on 2026-09-22.
 
 | Area | Current state | Target |
 |---|---|---|
-| Source placement | Rust catalog, generated DTOs and handlers are under `crates/aphrody-winclean` | Legacy C#/C++/SDK corpus removed; provenance docs remain outside the runtime path |
+| Source placement | Rust catalog, generated DTOs and handlers are under `crates/os/winclean` | Legacy C#/C++/SDK corpus removed; provenance docs remain outside the runtime path |
 | Rust facade | `aphrody-winclean` dispatches directly in-process | Direct Rust implementations; no `libloading`, DLL discovery or managed fallback |
 | Tool surface | `src/tools.json` contains 166 tools | All 166 names mapped to a Rust owner and served by the kernel |
 | Kernel | `AdminSubsystem` republishes the complete catalog | Dispatch directly to typed Rust capability handlers |
 | Runtime proof | Kernel probe exposed 166 admin tools | Preserve count and JSON contracts through the migration |
 | Native build | Legacy NativeAOT projects removed | No .NET/NuGet build is part of the workspace |
-| Bun | `packages/winclean` tests and typecheck pass | Thin client over `@aphrody/os`; no direct native DLL access |
+| Bun | `packages/os/winclean` tests and typecheck pass | Thin client over `@aphrody/os`; no direct native DLL access |
 | Plugin | `../aphrody-ai/plugins/aphrody` is the only active authority | No nested WinClean plugin authority |
 | Desktop | `aphrody-app` already owns Tauri window integration | Absorb WinClean Shell and WinUI behavior into the M3 desktop |
 | Reverse engineering | `aphrody-re` already implements PE/ELF/Mach-O triage, strings, entropy, disassembly, Go and ASAR support | Fill parity gaps and delete `Winclean.ReverseEngine` |
@@ -120,7 +120,7 @@ The live ledger currently selects Rust for all 166 tools. WinML uses the dynamic
 adapter in `aphrody-winclean::winml`; runtime proof still requires a machine with the DLL and
 the requested execution providers installed.
 
-The compatibility boundaries are also deduplicated: `packages/winclean` is a private local
+The compatibility boundaries are also deduplicated: `packages/os/winclean` is a private local
 Bun facade over `@aphrody/os`; it is not a second publishable runtime. The obsolete
 The historical SDK re-export fixtures are removed; Windows Rust dependencies are
 workspace-owned and shared by capture and WinClean. Remote-process byte/scalar access is now
@@ -216,7 +216,7 @@ those crates never depend back on it.
 | Notifications and clipboard | `aphrody-app` window subsystem, fallback in `aphrody-winclean` for headless sessions | Tauri plugins first, Win32 headless backend second | `NotificationTools`, `ClipboardTools` |
 | Shell execution | kernel `shell` subsystem | Nushell structured evaluation | `power_shell`, WinClean CLI shell helpers |
 | Desktop shell and explorer UX | `aphrody-app` plus M3 packages | Tauri/Wry session shell, adaptive window chrome and explorer surfaces | `Winclean.Shell`, `Winclean.Ui`, Explorer hook UX |
-| Bun access | `@aphrody/os`; transitional `packages/winclean` alias | Kernel RPC client and generated TypeScript types | `Winclean.Bun`, Bun FFI DLL loading |
+| Bun access | `@aphrody/os`; transitional `packages/os/winclean` alias | Kernel RPC client and generated TypeScript types | `Winclean.Bun`, Bun FFI DLL loading |
 | MCP | `aphrody-kernel` | Single MCP server for all OS subsystems | `Winclean.Mcp`, `Winclean.Mcp.Linux` |
 
 ## 6. Legacy project disposition
@@ -242,7 +242,7 @@ those crates never depend back on it.
 
 ## 7. Complete 166-tool migration ledger
 
-`crates/aphrody-winclean/src/tools.json` is the frozen compatibility input. The following inventory
+`crates/os/winclean/src/tools.json` is the frozen compatibility input. The following inventory
 accounts for every currently published tool.
 
 | Count | Prefix/family | Tools | Primary Rust owner |
@@ -269,7 +269,7 @@ accounts for every currently published tool.
 | 1 each | singleton families | `analyze_pe`, `aob_scan`, `asar_list`, `click`, `copy_path`, `disable_scheduled_task`, `enable_scheduled_task`, `golang_scan`, `kill_process`, `launch_app`, `power_shell`, `query_event_log`, `read_file`, `resize_window`, `restart_service`, `run_scheduled_task`, `scrape`, `screenshot`, `scroll`, `send_notification`, `shortcut`, `snapshot`, `start_service`, `stop_service`, `switch_to_window`, `trim_process_working_set`, `type`, `wait`, `write_file` | mapped by domain above |
 
 The migration ledger must become machine-readable as
-`crates/aphrody-winclean/tool-migration.json`. Each entry contains:
+`crates/os/winclean/tool-migration.json`. Each entry contains:
 
 ```json
 {
@@ -339,7 +339,7 @@ runtime authority. Rust owns:
 - a typed `ToolHandler` registry;
 - capability metadata: platform, required token, side effects, timeout class, and binary output;
 - stable conversion to MCP content blocks;
-- generated TypeScript types for `@aphrody/os` and transitional `packages/winclean` exports.
+- generated TypeScript types for `@aphrody/os` and transitional `packages/os/winclean` exports.
 
 The kernel receives typed results and performs transport serialization once. Binary frames remain
 binary until the transport boundary; base64 is never used internally between Rust modules.
@@ -490,7 +490,7 @@ Gate: WSL and Steam fixture suites plus local smoke tests pass; coordination has
 
 Deliverables:
 
-1. Make `packages/winclean` a compatibility facade over `@aphrody/os`.
+1. Make `packages/os/winclean` a compatibility facade over `@aphrody/os`.
 2. Remove Bun FFI, Node-API NativeAOT, and native DLL discovery.
 3. Replace WinClean CLI behavior with kernel CLI plus Nushell.
 4. Replace WinClean Shell and WinUI pages with `aphrody-app` routes and M3 components.
@@ -507,7 +507,7 @@ After every ledger entry is `rust`:
 2. delete NativeAOT SDK binaries, C headers, duplicate Rust SDK and DLL build scripts (done);
 3. delete duplicate PowerShell implementations already represented by Rust or canonical scripts;
 4. retain only legally required license/provenance text and non-duplicated fixtures;
-5. move retained historical design records to `docs/history/winclean` if still useful;
+5. move retained historical design records to `docs/products/os/packages/winclean` if still useful;
 6. rename no Tauri/Wry public compatibility symbol;
 7. remove .NET, NuGet, NativeAOT and WinClean DLL steps from CI and installers;
 8. remove `libloading` from `aphrody-winclean` (done);

@@ -10,7 +10,7 @@ jamais versionner de clé privée ou de `rclone.conf` :
 ## Cibles
 
 Les adresses, rôles et services de chaque hôte ne sont pas recopiés ici : ils vivent dans
-`aphrody-infra` (`inventory/`, `config/service-catalog.json`, `docs/PRODUCTION-ALLOCATION.md`).
+`aphrody-infra` (`inventory/`, `config/service-catalog.json`, `docs/products/infra/PRODUCTION-ALLOCATION.md`).
 Rôles actuels, résumés dans [`INFRA-DELEGATION.md`](INFRA-DELEGATION.md) :
 
 | Alias  | Rôle opérationnel |

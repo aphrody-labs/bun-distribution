@@ -9,7 +9,7 @@ adopted from Spacedrive stay FSL-1.1-ALv2 with their provenance files.
 
 ## Current integration and target ownership
 
-- `crates/aphrody-app` is the only desktop host; the old `drive/apps/tauri` host is deleted.
+- `crates/ui/app` is the only desktop host; the old `drive/apps/tauri` host is deleted.
   Drive appears as the Files surface of the app navigation, not as a second shell.
 - `sd-daemon` stays a supervised local process. Its FSL Cargo workspace is now copied to
   `aphrody-os/drive`; the desktop build helper prefers that workspace and falls back to
@@ -17,7 +17,7 @@ adopted from Spacedrive stay FSL-1.1-ALv2 with their provenance files.
   here for active client code and provenance. Installed-runtime
   and data parity have not yet been qualified. OS owns the VDFS, index, libraries,
   sidecars, jobs and file actions.
-- `crates/aphrody-drive` is the only native bridge (daemon supervision, socket/RPC, event
+- `crates/ui/drive` is the only native bridge (daemon supervision, socket/RPC, event
   subscriptions, local HTTP server, file opening, keybinds, drag). Only the host adapter calls
   `plugin:aphrody-drive|*`; Drive components never do.
 - `aphrody-kernel` keeps generic OS capabilities; the webview gets no filesystem or policy
@@ -35,7 +35,7 @@ adopted from Spacedrive stay FSL-1.1-ALv2 with their provenance files.
 | Layer | Holds | Does not hold |
 | --- | --- | --- |
 | `@aphrody/m3-*` | Generic components driven by props and callbacks (`TagPill`, `RenameInput`, `FileThumb`, `GridItem`) | `SdPath`, library context, Drive router, Tauri plugins |
-| `packages/app-ui` | Global navigation, public Chat/Files/Models/Settings views, consolidated Drive views | Direct SQLite, arbitrary filesystem bypass, browser and infrastructure administration |
+| `packages/app-ui` (not in repo) | Global navigation, public Chat/Files/Models/Settings views, consolidated Drive views | Direct SQLite, arbitrary filesystem bypass, browser and infrastructure administration |
 | `drive/packages/interface` | Non-buildable FSL source archive; no package manifest, exports, or active imports | Active desktop or web mounting |
 
 The target migration does not change FSL terms or move the public Files UI into the
@@ -50,7 +50,7 @@ it. "Cloud oriented" here means connecting a user's own cloud volumes and synchr
 their devices. A public hosted Drive offering requires separate rights or an independent
 implementation; moving source to `aphrody-site` does not alter the license.
 
-`packages/app-ui` is the sole maintained implementation of Aphrody navigation and its Files
+`packages/app-ui` (not in repo) is the sole maintained implementation of Aphrody navigation and its Files
 surface. Tauri is the current desktop host. Optional HTTP delivery serves the same UI and does
 not create a second Drive product or embed browser navigation in Aphrody.
 
@@ -62,7 +62,7 @@ not supported: the UI offers these actions only when `Platform` provides them.
 - The archived Overview `ContentBreakdown` and `ProjectCards` use simulated data. They are not
   active UI; any restored overview needs real daemon queries.
 - The archived interface stylesheet styled `html` / `body` globally and hid every scrollbar. It
-  is not mounted; keep any active styles scoped to `packages/app-ui`'s Files view.
+  is not mounted; keep any active styles scoped to `packages/app-ui` (not in repo)'s Files view.
 - The `aphrody-drive` HTTP server listens on a random loopback port with
   `Access-Control-Allow-Origin: *` and no token, and path checks are lexical. Restrict it to the
   app origin/session and canonicalize paths before serving previews.

@@ -1,6 +1,6 @@
 # Matrice QA de l'API Achilléa
 
-État au 25 septembre 2026. L'inventaire des routes déclarées dans le checkout courant se trouve dans [`achillea-api-route-inventory.csv`](./achillea-api-route-inventory.csv) : 94 routes Elysia de l'API unifiée, 170 routes TSed du bot et 21 routes Express du service ranked, soit 285 déclarations. Les routes du bot sont montées sur `/` dans TSed puis relayées sous `/api` par le serveur ranked ; le CSV conserve leur chemin TSed. Le proxy générique `/api/*`, les assets statiques en développement et les routes de plugins chargés dynamiquement ne sont pas des entrées finies dans le CSV. Une route déclarée dans le code ne prouve ni son déploiement ni son bon fonctionnement en production.
+État au 25 septembre 2026. L'inventaire des routes déclarées dans le checkout courant se trouve dans [`achillea-api-route-inventory.csv`](achillea-api-route-inventory.csv) : 94 routes Elysia de l'API unifiée, 170 routes TSed du bot et 21 routes Express du service ranked, soit 285 déclarations. Les routes du bot sont montées sur `/` dans TSed puis relayées sous `/api` par le serveur ranked ; le CSV conserve leur chemin TSed. Le proxy générique `/api/*`, les assets statiques en développement et les routes de plugins chargés dynamiquement ne sont pas des entrées finies dans le CSV. Une route déclarée dans le code ne prouve ni son déploiement ni son bon fonctionnement en production.
 
 ## Niveaux de preuve
 
@@ -20,8 +20,8 @@ Le CSV donne `SOURCE_ONLY` à chaque route par défaut. Ne promouvoir un statut 
 | --- | --- | --- | --- |
 | `GET /api/ranked/leaderboard?mode=2&page=0&pageSize=3` | `ranked.rosegriffon.fr`, public | HTTP 200, `total=12`, trois entrées observées | Pas de session ; ne prouve pas le filtre Elo ajouté dans le checkout. |
 | `GET /v1/achillea/ranked/leaderboard` via `app.handle` | local, `.env` | HTTP 500, `ECONNREFUSED 127.0.0.1:5432` | La base locale n'écoute pas ; test de projection impossible. |
-| `bun run test --test-name-pattern ranked` | local, `apps/api` | 6 passent, 2 lectures leaderboard échouent avec 500 | Même panne de connexion DB ; aucune validation authentifiée complète. |
-| `bun run type-check` | local, `apps/api` et `packages/achillea-client` | succès | Contrôle statique uniquement. |
+| `bun run test --test-name-pattern ranked` | local, `packages/shenron/api` | 6 passent, 2 lectures leaderboard échouent avec 500 | Même panne de connexion DB ; aucune validation authentifiée complète. |
+| `bun run type-check` | local, `packages/shenron/api` et `packages/rg/achillea-client` | succès | Contrôle statique uniquement. |
 
 ## Campagne authentifiée encore requise
 

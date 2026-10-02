@@ -4,7 +4,7 @@
 ## bxc xAI integration (`bxc grok`)
 
 bxc (aphrody-web) does not depend on this repository: it calls the xAI REST API through its own
-minimal client (`apps/bxc/src/integrations/xai.ts`). The full SDK, `packages/xai` here, consumes
+minimal client (`apps/bxc/src/integrations/xai.ts` (not in repo)). The full SDK, `packages/ai/xai` here, consumes
 aphrody-web's `@aphrody/x` for `XTools`.
 
 | Component | Twitter/X | xAI Grok |

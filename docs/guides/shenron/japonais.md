@@ -14,7 +14,7 @@ produit qu'un contresens bien formé.
 bun apps/site/scripts/ja-preparer.ts        # installe les ressources (~25 Mo)
 ```
 
-Deux ressources, hors dépôt, dans `apps/site/.ja-data/` (gitignoré) :
+Deux ressources, hors dépôt, dans `apps/site/.ja-data/` (not in repo) (gitignoré) :
 
 | Ressource                              | Rôle                                 | Poids  |
 | -------------------------------------- | ------------------------------------ | ------ |
@@ -27,7 +27,7 @@ graphies. Le script n'en garde que les formes écrites — le JSON d'origine pè
 
 ## Modules
 
-`apps/site/src/lib/ja/`
+`apps/shenron/site/src/lib/ja/`
 
 | Fichier            | Contenu                                                  | Dépendances   |
 | ------------------ | -------------------------------------------------------- | ------------- |
@@ -39,7 +39,7 @@ graphies. Le script n'en garde que les formes écrites — le JSON d'origine pè
 | `index.ts`         | `anomaliesJaponais`, `avecFurigana`, `motsDeRequete`     | `server-only` |
 
 Les deux premiers sont purs, donc testés sans dictionnaire ni base
-(`apps/site/tests/ja.test.ts`).
+(`apps/shenron/site/tests/ja.test.ts`).
 
 ## Détecter les fautes de lecture
 

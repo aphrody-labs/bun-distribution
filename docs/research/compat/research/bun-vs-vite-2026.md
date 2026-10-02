@@ -1,4 +1,5 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- docs-links: external-paths — backtick paths in this document name files of the vitejs/vite upstream repository and a local benchmark checkout, not of this checkout. -->
 # Bun vs Vite as the frontend build/dev toolchain — 2026, with real benchmarks
 
 Research-only document. Compares **Bun** (oven-sh/bun) and **Vite** (vitejs/vite)

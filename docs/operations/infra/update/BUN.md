@@ -94,7 +94,7 @@ aphrody-update bun rollback                                         # restore th
 
 ## Rollback
 
-`aphrody-update bun rollback` restores the newest snapshot (`target/update/bun/`, not committed). A bump that was
+`aphrody-update bun rollback` restores the newest snapshot (`target/update/bun/` (not in repo), not committed). A bump that was
 committed is reverted with `git revert` of that commit. After either, run `bun install` to realign `node_modules`.
 
 ## Bun fork

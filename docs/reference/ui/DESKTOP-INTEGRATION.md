@@ -62,7 +62,7 @@ Settings > Desktop integration.
 - `bundle.fileAssociations`: `.aphrody` (owner, `application/x-aphrody`); `.md`/`.markdown`,
   `.txt`/`.log`, `.json` as alternate viewers. NSIS writes the "Open with" registry entries; the
   Linux `.desktop` gets `MimeType=` (associations plus `x-scheme-handler/aphrody`).
-- `crates/aphrody-app/linux/aphrody.desktop` is the deb desktop template: identical to the
+- `crates/ui/app/linux/aphrody.desktop` is the deb desktop template: identical to the
   bundler default plus `Exec=... %U`, without which Linux would not pass files or URLs.
 - Native side: arguments of the first launch and of second launches are classified
   (`classify_args`: `aphrody:` URLs, existing files, flags ignored), queued, and the main window

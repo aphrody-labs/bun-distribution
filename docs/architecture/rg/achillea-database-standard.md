@@ -4,7 +4,7 @@
 
 La base canonique est PostgreSQL `rg`. Achilléa possède le schéma `achillea`
 dans cette base ; `public`, `auth` et `storage` restent les schémas transverses
-RG. La migration SQL `apps/website/sql/migrations/20260921_achillea_schema_standard.sql`
+RG. La migration SQL `apps/rg/website/sql/migrations/20260921_achillea_schema_standard.sql`
 est idempotente et ne copie ni ne supprime de données.
 
 Le standard d’accès serveur devient **Kysely + `pg` + migrations SQL** :

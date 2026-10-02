@@ -26,8 +26,8 @@ Master map of official Google open-source repositories, SDKs, agent blueprints, 
 | Upstream Resource | Aphrody Subsystem | Role |
 |---|---|---|
 | `google-genai` / `vertexai` | `py/aphrody/aphrody/vertex.py` | Keyless access to Gemini 3.8 Flash via on-device Antigravity OAuth tokens. |
-| `google-antigravity/antigravity-cli` | `crates/aphrody/src/commands.rs` (`aphrody agy`) & `agy_loop.rs` | Auto-discovery and zero-overhead execution of the official `agy` binary with autonomous looping. |
+| `google-antigravity/antigravity-cli` | `apps/cli/src/commands.rs` (`aphrody agy`) & `agy_loop.rs` | Auto-discovery and zero-overhead execution of the official `agy` binary with autonomous looping. |
 | `google-antigravity` (SDK) | `py/antigravity-sdk-python/` | Agent loop, tool context, thinking effort levels (`minimal`, `low`, `medium`, `high`). |
-| `gemini-cli` / Cloud Code | `crates/aphrody/src/agy_backend.rs` | High-throughput in-process chat dispatch over Cloud Code daily endpoint. |
-| MCP Servers | `crates/aphrody-mcp-oauth` | Native Rust MCP client/server implementing RFC 9728/8414 OAuth 2.1 authentication. |
-| Local Gemma Models | `crates/aphrody-models` & `~/.aphrody/models` | Local ONNX/GGUF model lifecycle management (pull, verify, evict). |
+| `gemini-cli` / Cloud Code | `apps/cli/src/agy_backend.rs` | High-throughput in-process chat dispatch over Cloud Code daily endpoint. |
+| MCP Servers | `crates/ai/mcp-oauth` | Native Rust MCP client/server implementing RFC 9728/8414 OAuth 2.1 authentication. |
+| Local Gemma Models | `crates/ai/models` & `~/.aphrody/models` | Local ONNX/GGUF model lifecycle management (pull, verify, evict). |

@@ -8,12 +8,12 @@ les planches sont téléchargées sur le VPS et servies depuis `bot.dragonballfr
 
 - **Sur disque** : `apps/bot/assets/manga/<SÉRIE>/...` (gitignored — VPS-only,
   régénérable par les scripts). Converti en **WebP**.
-- **Servi** par le bot : route `/assets/*` (`apps/bot/src/api/server.ts` →
+- **Servi** par le bot : route `/assets/*` (`apps/shenron/bot/src/api/server.ts` →
   `serveAsset`) → `bot.dragonballfr.com/assets/manga/...`.
 - **En base (Neon)** : `bot.db_manga_chapters.pages` (jsonb, **Neon-only**) stocke
   des chemins relatifs `./assets/manga/...`. Le site lit Neon en direct et résout
-  via `assetUrl()` (`apps/site/src/lib/assets.ts`). Le lecteur =
-  `apps/site/src/components/manga/MangaReader.tsx`.
+  via `assetUrl()` (`apps/shenron/site/src/lib/assets.ts`). Le lecteur =
+  `apps/shenron/site/src/components/manga/MangaReader.tsx`.
 - Schéma de chemin : `assets/manga/<SÉRIE>/<sous-dossier>/<NNN>.webp`. Ex. :
   - DBS N&B : `assets/manga/DBS/ch<id>/NNN.webp`
   - DB original VF : `assets/manga/DB/regular/vol<N>/NNN.webp`
@@ -38,9 +38,9 @@ databooks et hors-séries), **476 couvertures** (100 % des ouvrages ont désorma
 leur couverture hébergée sur le CDN, les 135 databooks/hors-séries étant reliés aux
 assets HD de `bot.db_databooks`), **362 ISBN** (contre 87 initialement) et leurs dates
 de parution officielles. Les 341 couvertures originales du site sont hébergées sous
-`apps/bot/assets/covers/dragonballcn/`. Rangé sous `apps/bot/assets/dragonballcn/`
-(cf. son [README](../../apps/shenron/bot/assets/dragonballcn/README.md)) ; les 12 pages de
-catalogue sont archivées sous `apps/bot/data/catalogues/pages/`.
+`apps/shenron/bot/assets/covers/dragonballcn/`. Rangé sous `apps/shenron/bot/assets/dragonballcn/`
+(cf. son [README](../../../apps/shenron/bot/assets/dragonballcn/README.md)) ; les 12 pages de
+catalogue sont archivées sous `apps/bot/data/catalogues/pages/` (not in repo).
 
 **464 ouvrages sur 476 ont leur pagination relevée**, soit **60 563 planches
 recensées** — nommées et datées dans `dragonballcn-inventaire.json`. Il a fallu
@@ -54,7 +54,7 @@ optionnel et sert uniquement à améliorer la disponibilité ou les performances
 Le script de rapatriement `telecharge-planches-dragonballcn.ts` reste disponible
 pour constituer un miroir local, avec simulation par défaut et journal de reprise.
 
-## Scripts d'ingestion (`apps/bot/scripts/`)
+## Scripts d'ingestion (`apps/shenron/bot/scripts/`)
 
 Tous prennent `DATABASE_URL` (Neon) et ont un **garde-fou disque** (stop sous un
 seuil de Go libres) + conversion WebP (`sharp`).
@@ -77,13 +77,13 @@ seuil de Go libres) + conversion WebP (`sharp`).
   `bxc-mcp`, seul client que les fiches servent — **relançable, il ne redemande que
   les fiches muettes**), récupération des rubriques/dates/fils de forum que les
   listes d'index portent pour les 135 hors-séries, puis constitution du miroir sous
-  `assets/dragonballcn/` (couvertures WebP + `index.json`). Aucune planche : cf. la
+  `apps/shenron/bot/assets/dragonballcn/` (couvertures WebP + `index.json`). Aucune planche : cf. la
   section ci-dessus.
 - **`clean-fullcolor-promos.ts`** — retire par **OCR** (tesseract fra+eng) les
   planches non-contenu : pubs « SUSHISCAN.FR » (texte « lisez … chapitres »), pages
   de crédits staff, pages blanches. Garde-fou : abort si > 18 % d'un tome retiré.
 
-## UI (`apps/site/src/components/manga/`)
+## UI (`apps/shenron/site/src/components/manga/`)
 
 - `MangaVolumeGrid.tsx` — onglets DBS / **Dragon Ball (édition couleur)** / Scans /
   Succès. **Zéro placeholder** : seuls les tomes/chapitres ayant des scans sont
@@ -101,4 +101,4 @@ seuil de Go libres) + conversion WebP (`sharp`).
 - **Pubs scanlation** : Sushi Scan/anime-sama insèrent des pages pub/crédits → passer
   `clean-fullcolor-promos.ts` après toute ingestion couleur. Le DB régulier (Sushi
   Scan) n'a pas de pub aux bords.
-- À venir : **OCR des planches → markdown** (cf. [`docs/ocr-manga.md`](ocr-manga.md)).
+- À venir : **OCR des planches → markdown** (cf. [`docs/guides/shenron/ocr-manga.md`](ocr-manga.md)).

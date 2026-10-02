@@ -134,10 +134,10 @@ façon fiable et gratuite :
 
 | Fichier | Rôle | Réseau ? |
 | --- | --- | --- |
-| `packages/types/src/instagram.ts` | analyse d'un permalien, pseudo, hashtag, **verdict**, appel oEmbed | l'appel seul |
-| `apps/website/src/app/iergday/actions.ts` | server action `deposerCreationInstagram` | oui |
-| `apps/website/src/app/iergday/DepotInstagram.tsx` | l'îlot client (formulaire replié) | non |
-| `packages/cron/src/tasks/campagnes-instagram.ts` | revalidation périodique (`campagnes:instagram`) | oui |
+| `packages/rg/types/src/instagram.ts` | analyse d'un permalien, pseudo, hashtag, **verdict**, appel oEmbed | l'appel seul |
+| `apps/rg/website/src/app/iergday/actions.ts` | server action `deposerCreationInstagram` | oui |
+| `apps/rg/website/src/app/iergday/DepotInstagram.tsx` | l'îlot client (formulaire replié) | non |
+| `packages/rg/cron/src/tasks/campagnes-instagram.ts` | revalidation périodique (`campagnes:instagram`) | oui |
 
 > **Pourquoi ces règles vivent dans `@rosegriffon/types` et pas dans l'app.**
 > Deux surfaces posent la MÊME question à Meta : le site quand un membre dépose,
@@ -174,7 +174,7 @@ laisserait une carte vide dans la galerie.
 ### 4.3 La table
 
 `public.campagne_creations_instagram` — migration
-`apps/website/sql/migrations/20260813_campagne_creations_instagram.sql`,
+`apps/rg/website/sql/migrations/20260813_campagne_creations_instagram.sql`,
 **appliquée**, 0 ligne à ce jour.
 
 ```
@@ -227,7 +227,7 @@ personne.
 
 ### 4.5 La revalidation — `campagnes:instagram`
 
-`packages/cron/src/tasks/campagnes-instagram.ts`, **toutes les heures à la
+`packages/rg/cron/src/tasks/campagnes-instagram.ts`, **toutes les heures à la
 minute 35**.
 
 Les deux autres sources se corrigent seules : un tweet supprimé disparaît de
@@ -340,5 +340,5 @@ psql "$DATABASE_URL" -f apps/website/sql/migrations/20260814_campagne_creations_
 
 - [campagnes-hashtag.md](campagnes-hashtag.md) — les trois sources d'une
   campagne, la tolérance aux fautes de frappe sur le hashtag, le relais Discord.
-- `apps/website/src/lib/x-campagnes/queries.ts` — l'union des trois sources de la
+- `apps/rg/website/src/lib/x-campagnes/queries.ts` — l'union des trois sources de la
   galerie, et les gardes de publication recopiées dans chaque branche.

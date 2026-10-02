@@ -1,8 +1,9 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- docs-links: external-paths — backtick paths in this document name files of the oven-sh/bun upstream repository (var/bun checkout), not of this checkout. -->
 
 # Bun + Rust FFI: best practices extracted from Bun's source
 
-Read-only research deliverable for the `crates/aphrody-ffi` crate (the native
+Read-only research deliverable for the `crates/interop/ffi` crate (the native
 C-ABI `cdylib` that exposes the whole aphrody CLI in-process to Bun via
 `bun:ffi`). Every claim below is grounded in a clone of the Bun source tree at
 `var/bun` (shallow clone of `oven-sh/bun`, gitignored, never committed) and the
@@ -46,7 +47,7 @@ crates most relevant to FFI/ABI work:
 Beyond the workspace, two first-party Rust packages ship to crates.io and are
 the cleanest references for "Rust author of a Bun-loaded native module":
 
-- `packages/bun-native-plugin-rs` (`bun-native-plugin` 0.2.0, `var/bun/packages/bun-native-plugin-rs/Cargo.toml`)
+- `docs/products/upstream-bun/packages/bun-native-plugin-rs` (`bun-native-plugin` 0.2.0, `var/bun/packages/bun-native-plugin-rs/Cargo.toml`)
   — a Rustified wrapper for writing **native bundler plugins**, which are
   technically N-API modules exporting a `#[no_mangle] extern "C"` lifecycle hook.
   Ships a companion proc-macro crate `bun-macro` (`#[bun]`).
@@ -186,7 +187,7 @@ This is the section most relevant to aphrody's ZERO-ALLOCATION directive.
     buffer and you only mutate it, or (ii) you pass a real deallocator.
 
 - **C strings.** Two distinct things:
-  - As an **argument**, `cstring` is identical to `ptr` (`docs/runtime/ffi.mdx:217`).
+  - As an **argument**, `cstring` is identical to `ptr` (`docs/reference/compat/n2b/bun/runtime/ffi.mdx:217`).
   - As a **return type**, `cstring` coerces the returned `char*` into a JS string
     by *copying* it into a WTFString (`new_cstring` ->
     `bun_string_jsc::create_utf8_for_js`, `FFIObject.rs:84-98`). The JS
@@ -194,12 +195,12 @@ This is the section most relevant to aphrody's ZERO-ALLOCATION directive.
     to free the C pointer afterward — the docs are explicit:
     "The `new CString()` constructor clones the C string, so it is safe to
     continue using `myString` after `ptr` has been freed"
-    (`docs/runtime/ffi.mdx:174-211`). Implication: a Rust function returning a
+    (`docs/reference/compat/n2b/bun/runtime/ffi.mdx:174-211`). Implication: a Rust function returning a
     `cstring` must still own and later free that buffer; the coercion does not
     take ownership.
 
 - **Direct reads.** For short-lived scalar reads `bun:ffi` exposes `read.u8`,
-  `read.i32`, `read.ptr`, etc. (`docs/runtime/ffi.mdx:399-427`) which read
+  `read.i32`, `read.ptr`, etc. (`docs/reference/compat/n2b/bun/runtime/ffi.mdx:399-427`) which read
   through the raw address with no `DataView`/`ArrayBuffer` allocation
   (`FFIObject.rs:295-329`, `read_unaligned_at`). Useful if aphrody returns a
   small `#[repr(C)]` struct by pointer and JS wants to peek a couple of fields
@@ -265,7 +266,7 @@ This is the section most relevant to aphrody's ZERO-ALLOCATION directive.
   one mimalloc heap and any `OnceLock` you put in the crate).
 - **Callbacks into JS (`FFIType.function`) need `threadsafe: true` if invoked
   off the JS thread.** `JSCallback` defaults `threadsafe=false`
-  (`ffi.ts:82-116`, `docs/runtime/ffi.mdx:314-322`). The native side stores an
+  (`ffi.ts:82-116`, `docs/reference/compat/n2b/bun/runtime/ffi.mdx:314-322`). The native side stores an
   opaque `ctx` pointer (`bun_core::heap::into_raw(Box::new(...))`,
   `ffi_body.rs:1328-1337`) that JS passes back to `closeCallback` for teardown
   (`ffi_body.rs:1272-1276`). If aphrody ever exposes a progress/streaming
@@ -322,7 +323,7 @@ addon instead of (or alongside) the raw `cdylib`:
   bodies in `catch_unwind` and converts panics to thrown JS errors. Bun's
   native-plugin macro does the same and additionally warns it "may catch *some*
   panics but [is] **not guaranteed to catch all**" — "avoid panics at all costs"
-  (`var/bun/packages/bun-native-plugin-rs/README.md:141-152`). Combine
+  (`docs/products/upstream-bun/packages/bun-native-plugin-rs/README.md:141-152`). Combine
   `catch_unwind` with `panic = "abort"` awareness (section d).
 - **Error handling: return errors, do not `.unwrap()`.** Bun's own Rust
   guidance: "Don't `.unwrap()` a fallible path that user input or the OS can hit
@@ -338,7 +339,7 @@ addon instead of (or alongside) the raw `cdylib`:
 
 ---
 
-## (d) Critical review and concrete recommendations for `crates/aphrody-ffi`
+## (d) Critical review and concrete recommendations for `crates/interop/ffi`
 
 Current exported surface under review: `aphrody_abi_version()`,
 `aphrody_version()`, `aphrody_run(argc, argv)`, `aphrody_run_json(args_json)`,
@@ -400,7 +401,7 @@ written; the `Cargo.toml` choices are already sound.)
    returned by pointer, with `stdout_ptr`/`stderr_ptr` either (i) owned by Rust
    and freed by a paired `aphrody_captured_free`, or (ii) written into
    JS-provided `Uint8Array`s. JS reads the four scalars with `read.i32`/
-   `read.ptr`/`read.u64` (`docs/runtime/ffi.mdx:399-427`) and views the bytes
+   `read.ptr`/`read.u64` (`docs/reference/compat/n2b/bun/runtime/ffi.mdx:399-427`) and views the bytes
    with `toArrayBuffer(ptr, 0, len, ctx, free_cb)` — true zero-copy. This keeps
    the JSON path as the portable default and adds a fast path.
 
@@ -445,7 +446,7 @@ written; the `Cargo.toml` choices are already sound.)
      ctx)` where `done_cb` is a `FFIType.function` created `threadsafe: true`
      on the JS side, invoked from the tokio runtime when the command finishes.
      This is the `bun:ffi` callback + `JSCallback({ threadsafe: true })` path
-     (`ffi.ts:82-116`, `docs/runtime/ffi.mdx:314-322`) and the N-API
+     (`ffi.ts:82-116`, `docs/reference/compat/n2b/bun/runtime/ffi.mdx:314-322`) and the N-API
      `ThreadsafeFunction` discipline (`napi_body.rs:2583-2671`): do the work on
      any thread, hop to the JS thread to fire the callback. This is more work
      but is the only way to expose a long-running CLI command without freezing
@@ -530,7 +531,7 @@ touching the cli crate.
   "callable on any thread, multiple times at once" concurrency contract.
 - `bench/ffi/src/src/lib.rs` — side-by-side raw-FFI vs `#[napi]` of identical
   logic (the `(ptr, len)` -> `from_raw_parts` zero-copy exemplar).
-- `docs/runtime/ffi.mdx` — official contract: type table, `CString` clones,
+- `docs/reference/compat/n2b/bun/runtime/ffi.mdx` — official contract: type table, `CString` clones,
   memory management / deallocator signature, pointer alignment, "FFI does not
   manage memory for you".
 - `Cargo.toml`, `CLAUDE.md`, `src/CLAUDE.md` — workspace shape (~200 Rust

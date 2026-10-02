@@ -36,7 +36,7 @@ submodules before `bun install --frozen-lockfile` in a fresh checkout.
 | Package | Tree | Role |
 | --- | --- | --- |
 | `@aphrody/m3` | `packages/ui/m3` | Plugin, `serveM3`, `buildM3`, `M3App`, Lit entry, `m3` CLI. |
-| `@aphrody/bun` | `packages/bun` + `crates/aphrody-bun` | FFI: HCT maths, `m3Css`, Sass compile (`sassRustPlugin`). |
+| `@aphrody/bun` | `packages/bun` + `crates/ui/bun` | FFI: HCT maths, `m3Css`, Sass compile (`sassRustPlugin`). |
 | `@aphrody/m3-theme` | `packages/ui/m3-theme` | Generated `tokens.css`, `tailwind.css`, `spaceui.css`; `M3ThemeProvider`; Tauri bridge. |
 | `@aphrody/m3-tokens` | `../aphrody-web/packages/m3-tokens` | TypeScript tokens: dynamic colour, breakpoints, platform contract. |
 | `@aphrody/m3-motion` | `packages/ui/m3-motion` | Springs, easings, durations. |
@@ -81,7 +81,7 @@ my-app/
 
 ## Adaptive layout
 
-Window size classes come from `crates/aphrody-m3-tokens/src/adaptive.rs`: compact `< 600`,
+Window size classes come from `crates/ui/m3-tokens/src/adaptive.rs`: compact `< 600`,
 medium `600-839`, expanded `840-1199`, large `1200-1599`, extra-large `>= 1600` (dp), with pane
 counts, navigation (bar -> collapsed rail -> expanded rail), grid columns (4/12), margins (16/24)
 and `export_breakpoints_css()` (`--md-sys-breakpoint-*` plus Tailwind `--breakpoint-*`). The web

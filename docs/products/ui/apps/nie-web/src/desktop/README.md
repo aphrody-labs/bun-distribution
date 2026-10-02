@@ -19,6 +19,6 @@ the resource source and the platform work.
 - `styles.css` is a token layer of `src/app.css`, not a Tailwind entry: it must not re-import
   `tailwindcss`, or the document gets a second preflight and a second, conflicting palette.
 
-`apps/nie-web/tsconfig.json` is the single TypeScript project: one `include`, one `@/*` alias.
-The native backend `apps/inacord/src-tauri` was removed on 2026-09-26 (the desktop is aphrody-ui
+`apps/nie-web/tsconfig.json` (not in repo) is the single TypeScript project: one `include`, one `@/*` alias.
+The native backend `apps/inacord/src-tauri` (not in repo) was removed on 2026-09-26 (the desktop is aphrody-ui
 `aphrody-app`; IEVR stays in nie web).

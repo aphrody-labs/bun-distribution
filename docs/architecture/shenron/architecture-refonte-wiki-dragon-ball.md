@@ -7,7 +7,7 @@ Depuis la consolidation du 2026-09-23, l'exploitation (releases, unités,
 Nginx, probes et rétention) est détenue par `aphrody-infra`. Ce document et son
 registre daté ci-dessous conservent des preuves historiques; leurs anciennes
 commandes de déploiement local ne sont plus exécutables. La frontière actuelle
-est décrite dans `docs/INFRA-DELEGATION.md`.
+est décrite dans `docs/operations/shenron/INFRA-DELEGATION.md`.
 
 Ce document est un contrat d’architecture. Il ne constitue pas une migration exécutable :
 toute écriture de contenu doit passer par une migration idempotente, un snapshot et une
@@ -20,29 +20,29 @@ La boucle s’appuie sur des artefacts réellement présents dans le dépôt, v�
 
 | Artefact | Rôle | Contrôle |
 |---|---|---|
-| `apps/site/src/db/migrations/0017_wiki_media_publications.sql` | migration PG des publications et redirections | existence + clauses idempotence/visibilité/redirection |
-| `apps/bot/src/db/migrations/0017_refonte_media_publications.sql` | miroir de migration côté bot, appliqué par le journal Drizzle | existence + alignement de schéma + journal |
-| `apps/site/src/db/migrations/0018_media_works_and_editions.sql` | tables PG des œuvres, éditions, volumes et assets | idempotence, FK et déduplication SHA-256 |
-| `apps/bot/src/db/migrations/0018_refonte_media_works_editions.sql` | miroir SQLite de l’ontologie média | présence et alignement des tables miroir |
-| `apps/site/src/db/migrations/0019_narrative_graph_and_contributors.sql` | graphe narratif, timelines et contributeurs | idempotence, visibilité et relations référentielles |
-| `apps/bot/src/db/migrations/0019_refonte_narrative_contributors.sql` | miroir SQLite du graphe et des crédits | présence et alignement des tables miroir |
-| `apps/site/src/components/manga/UnifiedVolumeReader.tsx` | lecteur N&B/Full Color et tiroir des chapitres | type-check + parcours UI |
-| `apps/site/tests/databook-features.test.ts` | régression des fonctions databooks/publications | 24 tests ciblés |
-| `apps/site/src/app/wiki/staff/page.tsx` | hub « Autour de Dragon Ball » et spotlight | type-check du site |
-| `apps/site/tests/page-banners-wiring.test.ts` | contrat des héros configurables, dont le hub staff | 3 tests ciblés |
-| `apps/site/src/app/api/wiki/events/route.ts` | API publique des événements narratifs | recherche, facettes et canonicité |
-| `apps/site/tests/wiki-events-api.test.ts` | contrat de l’API événements | filtres, pagination et timeline |
-| `apps/bot/scripts/_rag-sources-pg.ts` | sources PG des œuvres, timelines, événements et contributeurs | filtres `visible`, entité et rendu de chunks |
-| `apps/site/tests/rag-refonte-sources.test.ts` | contrat des quatre sources RAG de la refonte | 4 renderers et schéma de chunks vérifiés |
-| `apps/site/tests/refonte-migrations.test.ts` | invariants des migrations média et narratif | tables/index idempotents, aucune suppression physique |
-| `scripts/ops/build-site-external.ts` + `scripts/ops/package-site-artifact.ts` | build et scellement hors VPS | manifeste de commit/build, SHA-256 et fichiers Next requis |
-| `.github/workflows/site-artifact.yml` | production de l'artefact site | build et upload sans accès SSH ni bascule de service |
-| `scripts/ops/observability-snapshot.ts` | sonde read-only du miroir public, services A2A et dépendance RAG | snapshot `shenron-observability/v1`, `siteHealth` requis et `optionalServices.ragSidecar` informatif |
-| `scripts/ops/audit-live-site-assets.ts` | audit read-only du sitemap et des assets first-party | échantillon borné ou exhaustif, rapport des 404/5xx |
-| `scripts/ops/audit-refonte-api-latency.ts` | sonde read-only des endpoints publics de la refonte | statuts déterministes et p50/p95 par route |
+| `apps/shenron/site/src/db/migrations/0017_wiki_media_publications.sql` | migration PG des publications et redirections | existence + clauses idempotence/visibilité/redirection |
+| `apps/shenron/bot/src/db/migrations/0017_refonte_media_publications.sql` | miroir de migration côté bot, appliqué par le journal Drizzle | existence + alignement de schéma + journal |
+| `apps/shenron/site/src/db/migrations/0018_media_works_and_editions.sql` | tables PG des œuvres, éditions, volumes et assets | idempotence, FK et déduplication SHA-256 |
+| `apps/shenron/bot/src/db/migrations/0018_refonte_media_works_editions.sql` | miroir SQLite de l’ontologie média | présence et alignement des tables miroir |
+| `apps/shenron/site/src/db/migrations/0019_narrative_graph_and_contributors.sql` | graphe narratif, timelines et contributeurs | idempotence, visibilité et relations référentielles |
+| `apps/shenron/bot/src/db/migrations/0019_refonte_narrative_contributors.sql` | miroir SQLite du graphe et des crédits | présence et alignement des tables miroir |
+| `apps/shenron/site/src/components/manga/UnifiedVolumeReader.tsx` | lecteur N&B/Full Color et tiroir des chapitres | type-check + parcours UI |
+| `apps/shenron/site/tests/databook-features.test.ts` | régression des fonctions databooks/publications | 24 tests ciblés |
+| `apps/shenron/site/src/app/wiki/staff/page.tsx` | hub « Autour de Dragon Ball » et spotlight | type-check du site |
+| `apps/shenron/site/tests/page-banners-wiring.test.ts` | contrat des héros configurables, dont le hub staff | 3 tests ciblés |
+| `apps/shenron/site/src/app/api/wiki/events/route.ts` | API publique des événements narratifs | recherche, facettes et canonicité |
+| `apps/shenron/site/tests/wiki-events-api.test.ts` | contrat de l’API événements | filtres, pagination et timeline |
+| `packages/shenron/pipeline/scripts/_rag-sources-pg.ts` | sources PG des œuvres, timelines, événements et contributeurs | filtres `visible`, entité et rendu de chunks |
+| `apps/shenron/site/tests/rag-refonte-sources.test.ts` | contrat des quatre sources RAG de la refonte | 4 renderers et schéma de chunks vérifiés |
+| `apps/shenron/site/tests/refonte-migrations.test.ts` | invariants des migrations média et narratif | tables/index idempotents, aucune suppression physique |
+| `scripts/build/shenron/scripts/ops/build-site-external.ts` + `scripts/build/shenron/scripts/ops/package-site-artifact.ts` | build et scellement hors VPS | manifeste de commit/build, SHA-256 et fichiers Next requis |
+| `.github/shenron/workflows/site-artifact.yml` | production de l'artefact site | build et upload sans accès SSH ni bascule de service |
+| `scripts/tools/shenron/scripts/ops/observability-snapshot.ts` | sonde read-only du miroir public, services A2A et dépendance RAG | snapshot `shenron-observability/v1`, `siteHealth` requis et `optionalServices.ragSidecar` informatif |
+| `scripts/audit/shenron/scripts/ops/audit-live-site-assets.ts` | audit read-only du sitemap et des assets first-party | échantillon borné ou exhaustif, rapport des 404/5xx |
+| `scripts/audit/shenron/scripts/ops/audit-refonte-api-latency.ts` | sonde read-only des endpoints publics de la refonte | statuts déterministes et p50/p95 par route |
 | `apps/bot/scripts/rag-resync-entites.ts --reparer` | contrôle chunks ↔ vecteurs sans écriture par défaut | 0 vecteur orphelin et 0 chunk sans vecteur |
-| `docs/architecture-refonte-runtime-report.schema.json` | contrat machine-readable du rapport runtime | validation des champs A2A/CI |
-| `scripts/ops/audit-refonte-architecture.ts` | garde-fou structurel de cette spécification | `bun run audit:architecture` |
+| `docs/architecture/shenron/architecture-refonte-runtime-report.schema.json` | contrat machine-readable du rapport runtime | validation des champs A2A/CI |
+| `scripts/audit/shenron/scripts/ops/audit-refonte-architecture.ts` | garde-fou structurel de cette spécification | `bun run audit:architecture` |
 
 Cette table ne transforme pas une présence de fichier en validation fonctionnelle : les critères
 de migration, d’accessibilité, de données et de production restent ceux des Sprints 2 à 6.
@@ -581,9 +581,9 @@ l’intervalle suivant.
 Pour neutraliser les interactions de mocks entre fichiers pendant la suite exhaustive,
 ajouter `REFONTE_AUDIT_SERIAL=1` avec `REFONTE_AUDIT_FULL=1` ; le watcher transmet alors
 `--parallel=1` à Bun et conserve ce mode dans le journal de démarrage.
-Chaque tour écrit aussi le dernier verdict dans `.coord/architecture-refonte-last.json` (chemin
+Chaque tour écrit aussi le dernier verdict dans `.coord/architecture-refonte-last.json` (not in repo) (chemin
 modifiable avec `REFONTE_AUDIT_REPORT`) pour permettre une reprise après interruption.
-Il append également le verdict runtime dans `.coord/architecture-refonte-history.jsonl`, borné
+Il append également le verdict runtime dans `.coord/architecture-refonte-history.jsonl` (not in repo), borné
 aux 200 derniers tours ; le chemin est modifiable avec `REFONTE_AUDIT_HISTORY`. Ce journal JSONL
 conserve la tendance `failureStreak` après chaque relance, sans remplacer le dernier
 rapport consommé par les outils.
@@ -616,7 +616,7 @@ un service.
 
 Ordre de priorité permanent : (1) intégrité et canon, (2) FK/slug/redirects, (3) sources et
 RAG, (4) performances API, (5) lecteur et ergonomie, (6) enrichissements éditoriaux. Une
-anomalie répétée trois tours de suite est escaladée dans `docs/ADMIN-REPORTS.md` et via le
+anomalie répétée trois tours de suite est escaladée dans `docs/operations/shenron/ADMIN-REPORTS.md` et via le
 canal admin ; elle ne doit pas être masquée par une modification de présentation.
 
 Critères d’arrêt global : toutes les cases de livraison sont prouvées sur un miroir de

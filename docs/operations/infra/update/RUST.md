@@ -44,8 +44,8 @@ so the lock always resolves to the newest release.
 | --- | --- |
 | `rust status [--strict] [--json]` | pinned vs installed vs latest stable and nightly; every direct requirement behind the crates.io sparse index (`range` = newer release inside the requirement, `beyond` = a breaking release outside it, with MSRV note, `YANKED`); OSV advisories on `Cargo.lock` that are not in `advisory-holds.json` (`--strict` exits 1 when open); lock pins that drifted; Cargo git remotes and `~/source` pins that moved (`sources/drift.ts`) |
 | `rust plan [--no-cargo] [--json]` | what `apply` would do: the `cargo update --dry-run` list, the precise updates, the lock pins to restore, **majors** with the consumers and manifests that must change, and the held crates |
-| `rust apply [--majors a,b+c] [--skip-refresh] [--keep]` | 1. in-range refresh through `cargo.ts` (snapshot `target/update/Cargo.lock.before`, journal run); 2. `cargo update -p name@ver --precise X` for direct crates the refresh left behind (a transitive requirement blocks some: reported as `blocked`, not fatal); 3. lock pins and their `relock` repair; 4. `cargo check --workspace`; 5. each `--majors` group as a transaction. `a,b` = two transactions, `a+b` = one transaction for crates that must move together (`nu-command+nu-engine`, `resvg+usvg`). `--skip-refresh` runs only the majors. `--keep` leaves a failing major in place so the code can be fixed forward |
-| `rust verify [--crates a,b]` | `cargo check --workspace`, `cargo clippy -p <touched>` (touched crates are recorded by `apply` in `target/update/rust-touched.json`), `cargo deny --format json check advisories` when `cargo-deny` is installed; crates named in `advisory-holds.json` are expected findings, any other flagged crate fails the step |
+| `rust apply [--majors a,b+c] [--skip-refresh] [--keep]` | 1. in-range refresh through `cargo.ts` (snapshot `target/update/Cargo.lock.before` (not in repo), journal run); 2. `cargo update -p name@ver --precise X` for direct crates the refresh left behind (a transitive requirement blocks some: reported as `blocked`, not fatal); 3. lock pins and their `relock` repair; 4. `cargo check --workspace`; 5. each `--majors` group as a transaction. `a,b` = two transactions, `a+b` = one transaction for crates that must move together (`nu-command+nu-engine`, `resvg+usvg`). `--skip-refresh` runs only the majors. `--keep` leaves a failing major in place so the code can be fixed forward |
+| `rust verify [--crates a,b]` | `cargo check --workspace`, `cargo clippy -p <touched>` (touched crates are recorded by `apply` in `target/update/rust-touched.json` (not in repo)), `cargo deny --format json check advisories` when `cargo-deny` is installed; crates named in `advisory-holds.json` are expected findings, any other flagged crate fails the step |
 
 | `rust doctor [--fix] [--only a,b] [--skip a,b] [--strict] [--allow-dirty] [--verbose]` | every gate of the workspace in one action, see [Doctor](#doctor-one-action-for-the-whole-workspace) |
 | `rust fix [...]` | `doctor --fix` |
@@ -70,7 +70,7 @@ derived from `dep:crate` entries), not blindly.
 | `compile` | `cargo clippy --workspace --all-targets --keep-going`: errors, warnings and lints with crate, file and line | `cargo clippy --fix` for machine-applicable suggestions, then `cargo fmt` of the crates that were formatted |
 | `features` | one `cargo check --workspace --all-targets` with every member feature switched on, minus `features.skip` | |
 | `targets` | `cargo check --target <triple>` for `targets[]`: `wasm32-unknown-unknown`, and `x86_64-pc-windows-msvc` through `cargo xwin` (downloads and caches the MSVC CRT and SDK on first use) | |
-| `test` | `cargo nextest run --workspace --profile doctor` (JUnit at `target/nextest/doctor/junit.xml`, one retry marks a test flaky) and `cargo test --workspace --doc` | |
+| `test` | `cargo nextest run --workspace --profile doctor` (JUnit at `target/nextest/doctor/junit.xml` (not in repo), one retry marks a test flaky) and `cargo test --workspace --doc` | |
 | `deny` | `cargo deny check advisories`; crates in `advisory-holds.json` are notes, any other one is an error | |
 | `bumps` | `rust status`: toolchain pin against stable, yanked or in-range releases left behind, open OSV advisories, held crates | |
 
@@ -100,7 +100,7 @@ Rules of the repair:
 Severity and exit code: `error` (does not compile, failing test, open advisory, yanked crate, drifted pin) exits 1;
 `warning` (lint, formatting, flaky test, unproven target, pin behind stable) exits 1 only with `--strict`; `info` are the
 documented notes. `--only` and `--skip` take stage names; `--verbose` lists the notes and streams Cargo's own output.
-The report is `target/update/rust-doctor/report.json`, with the raw output of each stage next to it (`<stage>.out`,
+The report is `target/update/rust-doctor/report.json` (not in repo), with the raw output of each stage next to it (`<stage>.out`,
 `<stage>.log`). A warning already reported by `compile` is not repeated by `features` or `targets`.
 
 Cost on a warm cache: `lock`, `format` and `compile` take about a minute. `features`, `targets` and `test` compile code

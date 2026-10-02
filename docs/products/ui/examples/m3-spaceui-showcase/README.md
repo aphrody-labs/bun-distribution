@@ -8,7 +8,7 @@
 
 Every SpaceUI component rebuilt on Material Design 3 (`@aphrody/m3-primitives`, `m3-forms`,
 `m3-ai`, `m3-explorer`, `assets`), switchable across the seven SpaceUI themes rendered as M3
-dynamic schemes (`@aphrody/m3-theme/spaceui.css`). Port of `packages/aphrody-spaceui/examples/showcase`,
+dynamic schemes (`@aphrody/m3-theme/spaceui.css`). Port of `docs/products/ui/packages/aphrody-spaceui/examples/showcase`,
 on Bun instead of Vite.
 
 ```sh

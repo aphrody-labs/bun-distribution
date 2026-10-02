@@ -4,7 +4,7 @@
 > bleu/vert sur les ports `3000`/`3010`, Nginx local). `dbfr` ne sert plus le
 > site depuis la délégation à `aphrody-infra` (unités `shenron-site`, `shenron-mcp`,
 > `shenron-bot`, sur le VPS principal partagé avec RG/Aphrody/NIE) — voir
-> [`INFRA-DELEGATION.md`](INFRA-DELEGATION.md). Les stratégies de cache
+> [`INFRA-DELEGATION.md`](../../operations/shenron/INFRA-DELEGATION.md). Les stratégies de cache
 > Nginx décrites ci-dessous restent une référence technique, sans garantie
 > que les zones/ports correspondent à la configuration actuelle.
 
@@ -14,9 +14,9 @@
 - **Ressources Machine :** 11 Go RAM, 16 Go Swap.
 - **Stockage Critique :** Partition racine `/dev/root` à 90 % d'utilisation (70 Go occupés, **7.9 Go libres**).
 - **Empreinte Données :**
-  - `apps/site/public/wiki` : ~19 Go (vidéos MP4, webm, clips d'épisodes).
-  - `apps/bot/assets` : ~2.9 Go (assets personnages, bannières, sprites DBZ).
-  - `apps/site/.next/cache/images` : cache interne de transformation Next.js.
+  - `apps/site/public/wiki` (not in repo) : ~19 Go (vidéos MP4, webm, clips d'épisodes).
+  - `apps/shenron/bot/assets` : ~2.9 Go (assets personnages, bannières, sprites DBZ).
+  - `apps/site/.next/cache/images` (not in repo) : cache interne de transformation Next.js.
 - **DNS / SSL :** Zone `dragonballfr.com` chez OVH, résolution DNS directe (A) vers l'hôte frontal, certificats Let's Encrypt via certbot (ECDSA / RSA).
 - **Services locaux unifiés :**
   - `shenron-site.service` (Next.js 16 sous Bun, port 5011, un seul process)

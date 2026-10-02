@@ -3,7 +3,7 @@
 
 > **Document de Référence Technique & Artistique**  
 > **Auteur :** Lead Développeur Principal & Direction Artistique Shenron (Akihiro Hino x Akira Toriyama Engine)  
-> **Périmètre :** `apps/site/src/components/ui/dragon-ball/` & `apps/site/src/app/globals.css`  
+> **Périmètre :** `apps/site/src/components/ui/dragon-ball/` (not in repo) & `apps/shenron/site/src/app/globals.css`  
 > **Mécanisme d'Extraction :** `bxc frames` (MPEG-7 ColorLayout Y/Cb/Cr DCT)  
 > **Date de Calibrage :** 2026-09-11  
 
@@ -143,7 +143,7 @@ Akira Toriyama possédait la science inégalée du dynamisme sur papier. Pour tr
 
 ---
 
-## V. Architecture des Nouveaux Composants UI (`apps/site/src/components/ui/dragon-ball/`)
+## V. Architecture des Nouveaux Composants UI (`apps/site/src/components/ui/dragon-ball/` (not in repo))
 
 Pour enrichir notre suite de composants spécialisés, nous implémentons les briques suivantes :
 
@@ -160,7 +160,7 @@ Pour enrichir notre suite de composants spécialisés, nous implémentons les br
 
 ---
 
-## VI. Spécification des Tokens CSS dans `apps/site/src/app/globals.css`
+## VI. Spécification des Tokens CSS dans `apps/shenron/site/src/app/globals.css`
 
 Les déclarations s'intègrent dans le système Tailwind v4 du site :
 

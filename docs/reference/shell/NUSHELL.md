@@ -15,8 +15,8 @@ complétions communautaires et les chemins de configuration Bash/Nu, voir le
 | Surface | Emplacement | Rôle |
 | --- | --- | --- |
 | Moteur embarqué | `crates/shell/nu` | Construit un contexte Nushell dans le processus Aphrody et évalue du code Nu |
-| Script de maintenance | `scripts/shell_maintenance_workflow.nu` | Audite et nettoie certains artefacts dans le répertoire courant |
-| Nettoyage Windows | `scripts/winclean.nu` | Pipeline de purge et d’optimisation Windows, à effets système |
+| Script de maintenance | `scripts/tools/shell/scripts/shell_maintenance_workflow.nu` | Audite et nettoie certains artefacts dans le répertoire courant |
+| Nettoyage Windows | `scripts/tools/shell/scripts/winclean.nu` | Pipeline de purge et d’optimisation Windows, à effets système |
 | Configuration interactive | Hors dépôt, `~/.config/nushell/{env.nu,config.nu}` | Plugins, fonctions, complétions, invite et alias locaux |
 
 Les plugins listés dans le guide du workspace et les commandes interactives de
@@ -95,7 +95,7 @@ aussi injecter une variable propre à une évaluation via l’argument `vars` de
 
 ## Scripts versionnés
 
-### `scripts/shell_maintenance_workflow.nu`
+### `scripts/tools/shell/scripts/shell_maintenance_workflow.nu`
 
 Lancer depuis la racine du dépôt concerné :
 
@@ -114,7 +114,7 @@ contient `tmp`, `var` ou `cache`. Le filtrage des répertoires ignorés est
 heuristique ; inspecter le répertoire courant et faire un dry-run avant toute
 exécution destructive.
 
-### `scripts/winclean.nu`
+### `scripts/tools/shell/scripts/winclean.nu`
 
 Script destiné à Nushell 0.115+ sous Windows. L’aide est consultable avec :
 

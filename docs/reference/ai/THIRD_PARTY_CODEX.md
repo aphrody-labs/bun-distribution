@@ -9,7 +9,7 @@ comes from it and how, as the licence's attribution terms require.
 ## Provenance of existing extracted code
 
 The verbatim and adapted items below were originally compared with
-`var/codex` (git-ignored), openai/codex at commit
+`var/codex` (not in repo) (git-ignored), openai/codex at commit
 `78245b47af2a7aafcabe025828ceecca69db4df1` (2026-09-19). Keep that revision
 as the provenance for those files unless their source is re-audited.
 
@@ -30,7 +30,7 @@ provenance of existing ports or fixtures.
 | aphrody path | Upstream source | Adaptation |
 |---|---|---|
 | `py/aphrody/aphrody/agent.py` | `sdk/python/src/openai_codex/{client,_message_router}.py` | Subprocess JSONL transport and response/notification routing adapted to the synchronous Aphrody client; standard library only. |
-| `crates/aphrody-ffi/bun/agent.ts` | `sdk/python/src/openai_codex/{client,_message_router}.py` | The same transport and routing ported to Bun subprocess streams with typed session and turn handles. |
+| `crates/interop/ffi/bun/agent.ts` | `sdk/python/src/openai_codex/{client,_message_router}.py` | The same transport and routing ported to Bun subprocess streams with typed session and turn handles. |
 
 Both clients retain module-level upstream attribution. This source reuse does not imply
 full Codex SDK or app-server feature parity.

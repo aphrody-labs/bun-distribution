@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 # Migration C++ → Rust
 
-> Réf. : `CLAUDE.md`, `GEMINI.md`, `docs/PLAN.md`.
+> Réf. : `CLAUDE.md`, `GEMINI.md`, `docs/PLAN.md` (not in repo).
 > Stratégie : incrémentale, par sous-système, sans régression fonctionnelle.
 
 ## Principes
@@ -14,15 +14,15 @@
 ## État actuel (2026-05-16)
 
 ### Migré
-- Forensics Chromium : `src/CryptoHelper.cpp`, `src/ChromiumParser.cpp` → `crates/aphrody-backend/src/chromium.rs`
-- DPAPI wrappers : `crates/aphrody-base/src/lib.rs` (AES-GCM via aes-gcm crate, DPAPI via windows-rs)
-- Process management : `crates/google_os/src/kernel/process.rs` (NtOpenProcess, TerminateProcess via windows-rs)
-- Network DNS : `crates/aphrody-backend/src/dns.rs`
+- Forensics Chromium : `src/CryptoHelper.cpp`, `src/ChromiumParser.cpp` → `crates/aphrody-backend/src/chromium.rs` (not in repo)
+- DPAPI wrappers : `crates/aphrody-base/src/lib.rs` (not in repo) (AES-GCM via aes-gcm crate, DPAPI via windows-rs)
+- Process management : `crates/google_os/src/kernel/process.rs` (not in repo) (NtOpenProcess, TerminateProcess via windows-rs)
+- Network DNS : `crates/aphrody-backend/src/dns.rs` (not in repo)
 
 ### En cours
-- `injector/injector.cpp` → `crates/aphrody-base/src/injector.rs` (déjà entamé)
-- ProcessManager kernel-side → `crates/google_os/src/kernel/process.rs`
-- io_uring émulation → `crates/google_os/src/kernel/io_uring.rs` (à brancher sur Win11 IoRing API)
+- `injector/injector.cpp` → `crates/os/base/src/injector.rs` (déjà entamé)
+- ProcessManager kernel-side → `crates/google_os/src/kernel/process.rs` (not in repo)
+- io_uring émulation → `crates/google_os/src/kernel/io_uring.rs` (not in repo) (à brancher sur Win11 IoRing API)
 
 ### À faire
 - DxEngine renderer (C++) → Rust pur via windows-rs `Win32_Graphics_*`

@@ -17,28 +17,28 @@ Follow [workspace rules](../workspace/AGENTS.md) and the user's global policy:
 ## n2b external contract (frozen)
 
 `n2b` is consumed as a subprocess (CLI-as-API, see
-[`tests/rpb-dashboard-baseline/INVOCATIONS.md`](../../../crates/compat/n2b/tests/baselines/rpb-dashboard-baseline/INVOCATIONS.md)).
+[`crates/compat/n2b/tests/baselines/rpb-dashboard-baseline/INVOCATIONS.md`](../../../crates/compat/n2b/tests/baselines/rpb-dashboard-baseline/INVOCATIONS.md)).
 Change one of these surfaces only as a justified breaking change with regenerated baselines;
 otherwise add a new rule or flag instead of altering an existing one.
 
 | Surface | Source of truth |
 | --- | --- |
-| CLI flags and subcommands | `crates/aphrody-n2b/src/cli/args.rs` |
-| Exit codes (`0` clean, `1` findings, `2` error) | `crates/aphrody-n2b/src/commands/scan.rs`, `crates/aphrody-n2b/src/main.rs` |
+| CLI flags and subcommands | `crates/compat/n2b/src/cli/args.rs` |
+| Exit codes (`0` clean, `1` findings, `2` error) | `crates/compat/n2b/src/commands/scan.rs`, `crates/compat/n2b/src/main.rs` |
 | JSON report v2 (bump to v3 on a breaking change) | `../aphrody-contracts/schema/v2.json` |
 | Rule IDs (`cli/*`, `imports/node-prefix`, `shebang/node`, ...) | `crates/compat/n2b-registry/registry/*.toml`, `crates/compat/n2b-core/src/rules/` |
-| cdylib ABI v2 (`find_newlines_u16`, `node2bun_abi_version`, `node2bun_scan_json`, `node2bun_scan_with_options_json`, `node2bun_string_free`) | `crates/aphrody-n2b-native/src/lib.rs` |
+| cdylib ABI v2 (`find_newlines_u16`, `node2bun_abi_version`, `node2bun_scan_json`, `node2bun_scan_with_options_json`, `node2bun_string_free`) | `crates/compat/n2b-native/src/lib.rs` |
 
-- Safety net: `crates/aphrody-n2b/tests/contract.rs` (`assert_cmd` + `jsonschema` against the
-  contracts schema, over `test/fixture/`) and `crates/aphrody-n2b/src/schema_test.rs` (round-trip
+- Safety net: `crates/compat/n2b/tests/contract.rs` (`assert_cmd` + `jsonschema` against the
+  contracts schema, over `test/fixture/`) and `crates/compat/n2b/src/schema_test.rs` (round-trip
   of the baselines under `tests/`).
 - `--report=md` and `--report=markdown` are equivalent; `n2b rules --report json` prints a flat
   JSON array.
 - Scanners and rules do not know each other; their only contract is `Finding`
-  (`crates/aphrody-n2b-types`).
+  (`crates/compat/n2b-types`).
 - Migration side effects (`--migrate`: `bun install`, rival lockfile removal, `package.json`
-  edits) run only from `crates/aphrody-n2b/src/commands/migrate.rs` and go through `BackupGuard`
-  (`crates/aphrody-n2b/src/subprocess/bun.rs`), which restores the backups on failure or panic.
+  edits) run only from `crates/compat/n2b/src/commands/migrate.rs` and go through `BackupGuard`
+  (`crates/compat/n2b/src/subprocess/bun.rs`), which restores the backups on failure or panic.
 - The scanner property tests (`crates/aphrody-n2b-core/tests/proptest_*.rs`, proptest default
   case count): fix a panic they uncover in the scanner, never lower the case count.
 - Versions: the `aphrody-n2b*` crates and `@aphrody/n2b-*` packages move together;

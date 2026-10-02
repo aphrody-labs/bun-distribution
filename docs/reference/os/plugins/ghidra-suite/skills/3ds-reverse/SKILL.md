@@ -41,7 +41,7 @@ The user runs **Azahar** (Citra fork). On Windows the data directory is `$env:AP
 | `cheats/<title-id>.txt` | Action Replay-style cheats |
 | `states/<title-id>.NN.cst` | Save states (full RAM snapshot — ANALYZABLE!) |
 | `log/azahar_log.txt` | Runtime log — service calls, errors |
-| `config/qt-config.ini` | Emulator config |
+| `config/qt-config.ini` (not in repo) | Emulator config |
 | `source/` | Azahar built from source |
 | `azahar-mcp/` | The user already has an Azahar MCP integration — coordinate with it |
 

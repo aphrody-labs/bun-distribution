@@ -101,7 +101,7 @@ or `text/event-stream` (`data: <line>\n\n` per envelope) when `Accept` contains
 and only emit complete lines, so a concurrent writer never produces half an
 envelope. Lines are forwarded verbatim; validating them is the producer's job.
 
-The earlier file-transport specification (`docs/PROTOCOL.md` of the monorepo,
+The earlier file-transport specification (`docs/PROTOCOL.md` (not in repo) of the monorepo,
 with `type`/`subject` envelopes and a `.well-known/ai.json` copy) no longer
 matches the implementation and was removed.
 

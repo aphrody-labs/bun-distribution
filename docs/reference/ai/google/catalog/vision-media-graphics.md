@@ -2,7 +2,7 @@
 
 Google's open-source vision and media Python repositories span neural rendering (NeRF variants), generative image models (GANs, diffusion), 3D graphics and depth estimation, video analysis and synthesis, audio/speech processing, 360-degree spatial media, and CJK typography tooling. Most repositories are research code accompanying published papers at CVPR, SIGGRAPH, NeurIPS, and ICCV.
 
-> Part of [`docs/google/`](../../../../products/ai/google/README.md). Full mechanical listing: [`all-repos.md`](../all-repos.md). This page covers 44 repos (13 active / 31 archived).
+> Part of [`docs/google/` (not in repo)](../../../../products/ai/google/README.md). Full mechanical listing: [`all-repos.md`](../all-repos.md). This page covers 44 repos (13 active / 31 archived).
 
 ## 360-Degree & Spatial Media
 

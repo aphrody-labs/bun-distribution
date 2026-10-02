@@ -18,8 +18,8 @@ spawns and supervises it.
 Evidence it is Go:
 
 - Embedded symbol namespace `codeium_common_go_proto` and the `exa.*_pb`
-  protobuf package suffix (`docs/research/antigravity-sdk-analysis.md` §0.0;
-  `var/data/antigravity-extract/REPORT.md` §TL;DR — local, gitignored).
+  protobuf package suffix (`docs/research/ai/research/antigravity-sdk-analysis.md` §0.0;
+  `var/data/antigravity-extract/REPORT.md` (not in repo) §TL;DR — local, gitignored).
 - Publicly, Codeium/Windsurf's language server is a Go binary speaking gRPC +
   protobuf — Exafunction/codeium issues
   <https://github.com/Exafunction/codeium/issues/285>,
@@ -38,8 +38,8 @@ HTTPS bound to `127.0.0.1`**, on an **OS-assigned port** chosen at launch.
 - **Port discovery**: the server prints its bound port to stdout/log, matched by
   the regex `listening on \w+ port at (\d+) for HTTP(S)?` (case-insensitive).
   Source: shipped `languageServer.js` `PORT_PATTERN`
-  (`var/data/antigravity-extract/src/app/dist/languageServer.js:106-107`),
-  reproduced in [`crates/aphrody-antigravity/src/local_ls.rs`](../../../crates/google/antigravity/src/local_ls.rs)
+  (`var/data/antigravity-extract/src/app/dist/languageServer.js:106-107` (not in repo)),
+  reproduced in [`crates/google/antigravity/src/local_ls.rs`](../../../crates/google/antigravity/src/local_ls.rs)
   (`read_port`, regex at the `DEFAULT_PORT_TIMEOUT` site).
 - **Certificate**: self-signed, so WebPKI chain validation cannot apply. The
   client pins the certificate's `SubjectPublicKeyInfo` SHA-256 (Chromium HPKP
@@ -53,7 +53,7 @@ HTTPS bound to `127.0.0.1`**, on an **OS-assigned port** chosen at launch.
 ## 3. Launch contract
 
 Recovered verbatim from the shipped launcher
-`var/data/antigravity-extract/src/app/dist/languageServer.js` (function
+`var/data/antigravity-extract/src/app/dist/languageServer.js` (not in repo) (function
 `startLanguageServer`, lines ~187-210; the flag set was confirmed by listing all
 `--*` tokens in that file). aphrody reproduces it exactly in
 [`local_ls.rs`](../../../crates/google/antigravity/src/local_ls.rs) (`LanguageServer::launch`).
@@ -107,8 +107,8 @@ aphrody never embeds the binary; it must already be present on the host.
 The full RPC name set was recovered by RE of the shipped `languageServer.js`
 launcher and the Go binary's embedded symbols (`codeium_common_go_proto`).
 Recovered RPCs on `exa.language_server_pb.LanguageServerService`
-(`var/data/antigravity-extract/REPORT.md` §3; proto header comment in
-[`crates/aphrody-antigravity/proto/exa_language_server.proto`](../../../crates/google/antigravity/proto/exa_language_server.proto)):
+(`var/data/antigravity-extract/REPORT.md` (not in repo) §3; proto header comment in
+[`crates/google/antigravity/proto/exa_language_server.proto`](../../../crates/google/antigravity/proto/exa_language_server.proto)):
 
 - `FetchUserInfo`
 - `GetAuthStatus`
@@ -129,7 +129,7 @@ The Rust `.proto` is a **deliberately small, hand-written, INFERRED subset** —
 enough to compile a usable, extensible tonic client. It is **not** a faithful
 descriptor dump (a full `google.protobuf.FileDescriptorSet` extraction via
 GoReSym is documented as optional / not-done; see the proto header comment and
-`var/data/antigravity-extract/REPORT.md` §Completion → "NON_FAIT: deep Go-binary
+`var/data/antigravity-extract/REPORT.md` (not in repo) §Completion → "NON_FAIT: deep Go-binary
 protobuf descriptor extraction").
 
 Declared in [`exa_language_server.proto`](../../../crates/google/antigravity/proto/exa_language_server.proto):
@@ -151,12 +151,12 @@ reverse-engineered.
 
 ## 5. The Rust bridge (`local_ls.rs`)
 
-[`crates/aphrody-antigravity/src/local_ls.rs`](../../../crates/google/antigravity/src/local_ls.rs)
+[`crates/google/antigravity/src/local_ls.rs`](../../../crates/google/antigravity/src/local_ls.rs)
 reproduces the launch contract and speaks gRPC to the Go server directly,
 without the proprietary Electron shell.
 
 - **Feature-gated, host-only**: behind the non-default `local-ls` cargo feature
-  ([`crates/aphrody-antigravity/Cargo.toml`](../../../crates/google/antigravity/Cargo.toml),
+  ([`crates/google/antigravity/Cargo.toml`](../../../crates/google/antigravity/Cargo.toml),
   feature `local-ls` pulls `dep:prost`, `dep:tonic`, `dep:tonic-prost`,
   `dep:tonic-prost-build`). Never compiled in the default build, CI, or `wasm32`.
 - **Codegen**: `build.rs` compiles the `.proto` into `OUT_DIR`; the module
@@ -184,7 +184,7 @@ without the proprietary Electron shell.
    `:fetchAvailableModels`, `:onboardUser`) with `Authorization: Bearer …`.
    Needs no proprietary binary; this is the crate's primary surface
    (`AntigravityClient`). See
-   [`docs/research/antigravity-sdk-analysis.md`](../../research/ai/research/antigravity-sdk-analysis.md) §0.0.
+   [`docs/research/ai/research/antigravity-sdk-analysis.md`](../../research/ai/research/antigravity-sdk-analysis.md) §0.0.
 2. **Local gRPC LS (this module)**: spawn the Go `language_server.exe`, discover
    its port, pin its cert, send CSRF, call `exa.language_server_pb` — full agent
    surface (Cascade / MCP / worktrees) but requires the proprietary binary.
@@ -193,18 +193,18 @@ Auth note (anti-hallucination): the live OAuth client_ids, scopes, and token
 live in the **desktop app** (Windows Credential Manager target
 `gemini:antigravity`), **not** in the Go binary's wire surface and **not** in
 the `google-antigravity` Python SDK. No token/cookie values are reproduced here.
-See [`docs/research/antigravity-sdk-analysis.md`](../../research/ai/research/antigravity-sdk-analysis.md) §2.
+See [`docs/research/ai/research/antigravity-sdk-analysis.md`](../../research/ai/research/antigravity-sdk-analysis.md) §2.
 
 ## Sources
 
-- In-repo: [`crates/aphrody-antigravity/proto/exa_language_server.proto`](../../../crates/google/antigravity/proto/exa_language_server.proto),
-  [`crates/aphrody-antigravity/src/local_ls.rs`](../../../crates/google/antigravity/src/local_ls.rs),
-  [`crates/aphrody-antigravity/Cargo.toml`](../../../crates/google/antigravity/Cargo.toml),
-  [`docs/research/antigravity-sdk-analysis.md`](../../research/ai/research/antigravity-sdk-analysis.md),
-  [`docs/research/vscode-fork-re-intel.md`](../../research/os/research/vscode-fork-re-intel.md),
-  [`docs/research/electron-re-intel.md`](../../research/os/research/electron-re-intel.md).
-  Local (gitignored): `var/data/antigravity-extract/REPORT.md`,
-  `var/data/antigravity-extract/src/app/dist/languageServer.js`.
+- In-repo: [`crates/google/antigravity/proto/exa_language_server.proto`](../../../crates/google/antigravity/proto/exa_language_server.proto),
+  [`crates/google/antigravity/src/local_ls.rs`](../../../crates/google/antigravity/src/local_ls.rs),
+  [`crates/google/antigravity/Cargo.toml`](../../../crates/google/antigravity/Cargo.toml),
+  [`docs/research/ai/research/antigravity-sdk-analysis.md`](../../research/ai/research/antigravity-sdk-analysis.md),
+  [`docs/research/os/research/vscode-fork-re-intel.md`](../../research/os/research/vscode-fork-re-intel.md),
+  [`docs/research/os/research/electron-re-intel.md`](../../research/os/research/electron-re-intel.md).
+  Local (gitignored): `var/data/antigravity-extract/REPORT.md` (not in repo),
+  `var/data/antigravity-extract/src/app/dist/languageServer.js` (not in repo).
 - External: <https://github.com/Exafunction/codeium/issues/285>,
   <https://github.com/Exafunction/codeium/issues/286>,
   <https://docs.windsurf.com/plugins/getting-started>,

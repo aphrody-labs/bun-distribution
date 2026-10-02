@@ -10,11 +10,11 @@ to `aphrody-ui`.
 | Path | Role |
 | --- | --- |
 | `crates/aphrody-n2b*` | Analyzer, rule registry, transformations, reports and CLI |
-| `crates/aphrody-toolchains` | Runtime discovery, repository pins and launch environment |
-| `crates/aphrody-bun-docs` | Offline documentation kernel subsystem |
+| `crates/compat/toolchains` | Runtime discovery, repository pins and launch environment |
+| `crates/compat/bun-docs` | Offline documentation kernel subsystem |
 | `packages/n2b*` | Bun CLI facade, report types, shims and plugin |
 | `test/fixture/`, `tests/` | Deliberate Node input and frozen CLI/report baselines |
-| `docs/n2b/` | Knowledge base, imported references and historical research |
+| `docs/n2b/` (not in repo) | Knowledge base, imported references and historical research |
 
 Contracts owns the subsystem types and `schema/v2.json`. The N2B CLI release
 closure has no sibling dependency; the documentation subsystem uses Contracts.

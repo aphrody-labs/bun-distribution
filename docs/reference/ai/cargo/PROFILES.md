@@ -73,7 +73,7 @@ Discouraged outside hot loops — prefer central workspace control. Legitimate c
 
 ## 6. WASM profile considerations
 
-`crates/aphrody-wasm` ships via `wasm-pack` and post-processes with `wasm-opt`:
+`crates/aphrody-wasm` (not in repo) ships via `wasm-pack` and post-processes with `wasm-opt`:
 
 ```toml
 [package.metadata.wasm-pack.profile.release]
@@ -87,10 +87,10 @@ wasm-opt = ["-O", "--enable-simd", "--enable-bulk-memory"]
 
 ## 7. Profile and CI matrix
 
-- `.github/workflows/cross-platform.yml` — default `release` profile for the matrix (Linux, Windows, WASM); caps `CARGO_PROFILE_DEV_DEBUG=limited`.
-- `.github/workflows/bench.yml` — Criterion harness auto-selects `bench`.
-- `.github/workflows/release.yml` — shipped binary built with `--profile reproducible` for byte-for-byte verifiable artefacts.
-- `.github/workflows/build.yml` — workspace defaults, no override.
+- `.github/workflows/cross-platform.yml` (not in repo) — default `release` profile for the matrix (Linux, Windows, WASM); caps `CARGO_PROFILE_DEV_DEBUG=limited`.
+- `.github/workflows/bench.yml` (not in repo) — Criterion harness auto-selects `bench`.
+- `.github/shenron/workflows/release.yml` — shipped binary built with `--profile reproducible` for byte-for-byte verifiable artefacts.
+- `.github/workflows/build.yml` (not in repo) — workspace defaults, no override.
 
 ## 8. Choosing a profile
 
@@ -105,6 +105,6 @@ wasm-opt = ["-O", "--enable-simd", "--enable-bulk-memory"]
 ## 9. References
 
 - Cargo profiles: https://doc.rust-lang.org/cargo/reference/profiles.html
-- `docs/PERFORMANCE.md` — bench recipes per profile.
-- `docs/cargo/SECURITY-DEEP.md` — `cargo-auditable` wraps `release`.
-- `docs/cargo/CROSS_PLATFORM.md` — per-target `RUSTFLAGS` in `.cargo/config.toml`.
+- `docs/reference/ai/PERFORMANCE.md` — bench recipes per profile.
+- `docs/research/ai/cargo/SECURITY-DEEP.md` — `cargo-auditable` wraps `release`.
+- `docs/reference/ai/cargo/CROSS_PLATFORM.md` — per-target `RUSTFLAGS` in `.cargo/config.toml`.

@@ -3,7 +3,7 @@
 # @aphrody/m3-primitives
 
 Material Design 3 React primitives. This is the SpaceUI component set (`@spacedrive/primitives`,
-MIT, © Spacedrive, vendored in `packages/aphrody-spaceui`) rebuilt on the aphrody M3 system: M3 color
+MIT, © Spacedrive, vendored in `packages/aphrody-spaceui` (not in repo)) rebuilt on the aphrody M3 system: M3 color
 roles and state layers, the 10-step shape scale, the M3 typescale, the M3 focus ring, elevation,
 Material Symbols and the M3 easings of `@aphrody/m3-motion`. [Base UI](https://base-ui.com)
 (`@base-ui/react`) is the headless layer: it owns behavior, keyboard interaction, focus
@@ -14,7 +14,7 @@ works; the Radix-era props (`asChild`, `checked="indeterminate"`, `delayDuration
 accepted as well.
 
 Fusion rules, token mapping and the Material Web equivalents of each component:
-[`docs/design/SPACEUI-M3-FUSION.md`](../../../../architecture/ui/design/SPACEUI-M3-FUSION.md).
+[`docs/architecture/ui/design/SPACEUI-M3-FUSION.md`](../../../../architecture/ui/design/SPACEUI-M3-FUSION.md).
 
 ## Install
 

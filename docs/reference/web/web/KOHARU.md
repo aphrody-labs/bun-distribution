@@ -20,22 +20,22 @@ commit-pinned source links below describe the 2026-09-27 snapshot.
 
 | Koharu area | Koharu source | Aphrody Web counterpart | Boundary |
 | --- | --- | --- | --- |
-| Remote text translation providers | `crates/koharu-translator/src/provider.rs`, `src/remote/` | `docs/web/GOOGLE-TRANSLATE.md`; BXC Google helpers in `apps/bxc/src/google/` | Koharu owns a provider-configured manga translation interface, including Google Cloud Translation and several LLM and MT providers. Aphrody Web's Google Translate implementation exposes its own Google-like REST/MCP surface. It is a possible transport/service option only after a deliberate adapter maps Koharu's request, response, authentication, and error contracts; it is not currently Koharu's provider implementation. |
-| Model/runtime asset downloads | Koharu's `crates/koharu-runtime/src/source/` | `crates/aphrody-web-ffi/src/native_http.rs` (`bxc_obscura_fetch`), `apps/bxc/src/api/browser.ts`, Obscura network crates | Koharu's source loaders obtain runtime/model assets; Aphrody Web exposes generic URL and page transports. Those transports do not form a Koharu model loader and no manga source downloader or Koharu archive importer is provided here. |
-| Browser driven web views and UI smoke checks | Koharu's Tauri and web UI under `packages/koharu/` | `apps/bxc/src/api/browser.ts`, `packages/bxc-test/` | BXC can automate supported web content and `@aphrody/bxc-test` provides a Playwright-shaped Bun test surface. This does not establish a Koharu Tauri integration, validate its native GPU output, or replace the Koharu canvas/WebGPU path. |
+| Remote text translation providers | `crates/koharu/koharu-translator/src/provider.rs`, `src/remote/` | `docs/reference/web/web/GOOGLE-TRANSLATE.md`; BXC Google helpers in `apps/bxc/src/google/` (not in repo) | Koharu owns a provider-configured manga translation interface, including Google Cloud Translation and several LLM and MT providers. Aphrody Web's Google Translate implementation exposes its own Google-like REST/MCP surface. It is a possible transport/service option only after a deliberate adapter maps Koharu's request, response, authentication, and error contracts; it is not currently Koharu's provider implementation. |
+| Model/runtime asset downloads | Koharu's `crates/koharu/koharu-runtime/src/source/` | `crates/aphrody-web-ffi/src/native_http.rs` (not in repo) (`bxc_obscura_fetch`), `apps/bxc/src/api/browser.ts` (not in repo), Obscura network crates | Koharu's source loaders obtain runtime/model assets; Aphrody Web exposes generic URL and page transports. Those transports do not form a Koharu model loader and no manga source downloader or Koharu archive importer is provided here. |
+| Browser driven web views and UI smoke checks | Koharu's Tauri and web UI under `packages/koharu/` | `apps/bxc/src/api/browser.ts` (not in repo), `docs/products/web/packages/bxc-test/` | BXC can automate supported web content and `@aphrody/bxc-test` provides a Playwright-shaped Bun test surface. This does not establish a Koharu Tauri integration, validate its native GPU output, or replace the Koharu canvas/WebGPU path. |
 
 ## Koharu responsibilities that remain Koharu-owned
 
 - Manga page ingestion in the current [`koharu-library/src/import/`](../../../../crates/koharu/koharu-library/src/import)
   handles raster files, ZIP/CBZ, RAR, and PDF. The 2026-09-27 snapshot placed
-  this parser in `crates/koharu-app/src/commands/import/`. It reads local paths
+  this parser in `crates/koharu-app/src/commands/import/` (not in repo). It reads local paths
   and decodes image pages; it is not an Aphrody Web crawl/import API.
 - Image understanding and translation orchestration remain in Koharu's own
   `koharu-ml`, `koharu-pipeline`, and `koharu-translator` crates. Aphrody Web's
   text extraction, browser automation, Google Translate service, and generic HTTP
   transport do not implement manga detection, OCR, inpainting, typesetting, or
   Koharu's structured page results.
-- The Koharu browser canvas in `crates/koharu-canvas/src/web.rs` prepares and
+- The Koharu browser canvas in `crates/koharu/koharu-canvas/src/web.rs` prepares and
   presents Koharu's page manifest/resources through WebGPU. Aphrody Web's Obscura
   is a headless web engine, not Koharu's desktop renderer.
 
@@ -49,5 +49,5 @@ currently calls the other.
 
 ## Sources
 
-- Koharu historical snapshot at `c697b31e`: [`crates/koharu-translator/src/provider.rs`](https://github.com/koharu-rs/koharu/blob/c697b31eb1de016d9272743a2973f0e6a67eae6c/crates/koharu-translator/src/provider.rs), [`crates/koharu-translator/src/remote/`](https://github.com/koharu-rs/koharu/tree/c697b31eb1de016d9272743a2973f0e6a67eae6c/crates/koharu-translator/src/remote), [`crates/koharu-app/src/commands/import/`](https://github.com/koharu-rs/koharu/tree/c697b31eb1de016d9272743a2973f0e6a67eae6c/crates/koharu-app/src/commands/import), [`crates/koharu-canvas/src/web.rs`](https://github.com/koharu-rs/koharu/blob/c697b31eb1de016d9272743a2973f0e6a67eae6c/crates/koharu-canvas/src/web.rs). Current importer: [`crates/koharu-library/src/import/`](../../../../crates/koharu/koharu-library/src/import).
+- Koharu historical snapshot at `c697b31e`: [`crates/koharu/koharu-translator/src/provider.rs`](https://github.com/koharu-rs/koharu/blob/c697b31eb1de016d9272743a2973f0e6a67eae6c/crates/koharu-translator/src/provider.rs), [`crates/koharu/koharu-translator/src/remote/`](https://github.com/koharu-rs/koharu/tree/c697b31eb1de016d9272743a2973f0e6a67eae6c/crates/koharu-translator/src/remote), [`crates/koharu-app/src/commands/import/` (not in repo)](https://github.com/koharu-rs/koharu/tree/c697b31eb1de016d9272743a2973f0e6a67eae6c/crates/koharu-app/src/commands/import), [`crates/koharu/koharu-canvas/src/web.rs`](https://github.com/koharu-rs/koharu/blob/c697b31eb1de016d9272743a2973f0e6a67eae6c/crates/koharu-canvas/src/web.rs). Current importer: [`crates/koharu/koharu-library/src/import/`](../../../../crates/koharu/koharu-library/src/import).
 - Aphrody Web, [`GOOGLE-TRANSLATE.md`](./GOOGLE-TRANSLATE.md), `native_http.rs`, `browser.ts`, [`@aphrody/bxc-test`](../../../products/web/packages/bxc-test/README.md).

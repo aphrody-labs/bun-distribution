@@ -7,7 +7,7 @@ Ce document constitue le guide de référence pour l'utilisation, le typage, la 
 
 ## 1. Topologie & Schémas PostgreSQL
 
-Depuis la fusion complète (`scripts/ops/achillea-merge.ts`), Rose Griffon n'utilise plus qu'**une seule instance PostgreSQL locale (version 18)** hébergée sur le VPS de production (`51.77.147.152:5432`), éliminant définitivement les connexions distantes, les proxies et les tables étrangères `postgres_fdw`.
+Depuis la fusion complète (`scripts/rg/ops/achillea-merge.ts`), Rose Griffon n'utilise plus qu'**une seule instance PostgreSQL locale (version 18)** hébergée sur le VPS de production (`51.77.147.152:5432`), éliminant définitivement les connexions distantes, les proxies et les tables étrangères `postgres_fdw`.
 
 La base unique `rg` est organisée en deux schémas logiques principaux :
 

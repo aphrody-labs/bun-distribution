@@ -78,7 +78,7 @@ jamais eu que 15).
 - Un lot mixte n'est pas publié partiellement par défaut : séparer les pages
   saines des pages fautives, puis auditer le sous-lot avant dépôt.
 - Le dépôt utilise `merge` : seules les pages transcrites du lot sont ciblées.
-- Le jeton vient de `apps/shenron/site/.env` (bridge `shenron`) ou de `$DBFR_TOKEN`
+- Le jeton vient de `apps/shenron/site/.env` (not in repo) (bridge `shenron`) ou de `$DBFR_TOKEN`
   côté `aphrody` (bridge `dbfr`) ; il n'est jamais affiché dans les journaux ni
   dans ce document.
 - Le serveur résident `llama-server` n'est pas utilisé : il est expérimental
@@ -119,15 +119,15 @@ bun apps/shenron/site/scripts/databooks.ts depose <dir>/resultats.jsonl
 Ne pas utiliser `--force` pour contourner l'audit : une page `vide`, en boucle
 ou dans une langue étrangère doit être relue sur son scan. Après un dépôt
 accepté, vérifier les compteurs via l'API, puis lancer le reverse-sync et la
-mise à jour RAG selon [`databooks-doctrine.md`](databooks-doctrine.md).
+mise à jour RAG selon [`databooks-doctrine.md`](../../reference/shenron/databooks-doctrine.md).
 
 ## Références
 
-- [`databooks-doctrine.md`](databooks-doctrine.md) — doctrine de qualité et de
+- [`databooks-doctrine.md`](../../reference/shenron/databooks-doctrine.md) — doctrine de qualité et de
   relecture.
-- [`databooks-transcription.md`](databooks-transcription.md) — contrat API et
+- [`databooks-transcription.md`](../../guides/shenron/databooks-transcription.md) — contrat API et
   format JSONL.
-- [`prompt-aphrody-ocr-databooks.md`](prompt-aphrody-ocr-databooks.md) — contrat
+- [`prompt-aphrody-ocr-databooks.md`](../../guides/shenron/prompt-aphrody-ocr-databooks.md) — contrat
   de sortie OCR.
 - `apps/cli/src/ocr_dbfr.rs` — pont HTTP natif
   (`aphrody ocr dbfr`).

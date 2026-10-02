@@ -1,16 +1,16 @@
 # Bot Azalée — mise en service
 
 Le serveur Discord **Azalée** (« 𝓐𝔃𝓪𝓵𝓮́𝓮 🌸 », guilde `1349526851672080414`) a
-son propre bot. Ce bot **n'a pas de code à lui** : c'est `apps/bot`, le même
+son propre bot. Ce bot **n'a pas de code à lui** : c'est `apps/rg/bot`, le même
 programme que le bot Rose Griffon, lancé une seconde fois avec un autre
 **profil** et un autre **jeton**.
 
 > Pourquoi ce détour plutôt qu'un second dossier : un correctif appliqué à une
 > commande doit valoir pour les deux serveurs sans être écrit deux fois. Une
-> copie de `apps/bot` aurait produit deux bases divergentes dès le premier
+> copie de `apps/rg/bot` aurait produit deux bases divergentes dès le premier
 > correctif appliqué d'un seul côté. Tout ce qui diffère entre les deux bots
 > passe donc par la **configuration** — le registre de profils
-> (`apps/bot/src/lib/profil.ts`) — et jamais par un fichier dupliqué.
+> (`apps/rg/bot/src/lib/profil.ts`) — et jamais par un fichier dupliqué.
 
 ## 1. Le principe : un processus, un profil
 
@@ -283,6 +283,6 @@ partout.
 sudo systemctl restart azalee-bot.service
 ```
 
-> `rg-bot.service` n'existe plus sur cette machine et `apps/bot` n'y est plus
+> `rg-bot.service` n'existe plus sur cette machine et `apps/rg/bot` n'y est plus
 > déployé : ne pas le réanimer sans demande explicite. La règle ci-dessus vaut
 > dès que les deux services coexistent.

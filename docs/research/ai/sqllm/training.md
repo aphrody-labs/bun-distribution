@@ -95,7 +95,7 @@ JOIN gold_examples g USING (text_sha256);   -- must be 0
 
 - Training JSONL: `{"query", "pos": [], "neg": [], "pos_scores": [], "neg_scores": [], "prompt", "type"}`.
   [embedder README](https://github.com/FlagOpen/FlagEmbedding/blob/master/examples/finetune/embedder/README.md)
-- **`scripts/hn_mine.py`:** `--range_for_sampling` defaults to `10-210`; use
+- **`scripts/hn_mine.py` (not in repo):** `--range_for_sampling` defaults to `10-210`; use
   `60-300` for easier negatives. `--negative_number` defaults to 15;
   `--candidate_pool` sets the corpus. Mining is rank-only, so false negatives
   are possible. [hn_mine.py](https://github.com/FlagOpen/FlagEmbedding/blob/master/scripts/hn_mine.py)

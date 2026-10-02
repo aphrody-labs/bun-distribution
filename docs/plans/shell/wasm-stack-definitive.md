@@ -3,7 +3,7 @@
 
 Date: 2026-10-02. Status: plan only; nothing in this file is implemented unless listed under "Real today".
 Rules: root `CLAUDE.md`. Workers never run Cargo; the lead runs one check at a time through
-`scripts/build/rust/cargo-serial.sh`. Claim each owner path in `.coord/claims/shell-wasm-stack.json` before editing.
+`scripts/build/rust/cargo-serial.sh`. Claim each owner path in `.coord/claims/shell-wasm-stack.json` (not in repo) before editing.
 
 ## 1. Verified state (read from the repo, 2026-10-02)
 
@@ -109,7 +109,7 @@ serially.
 - Test: conformance suite on `MemVfs` (native) and wasm32 check; property tests for path normalisation.
 
 ### T3. Extend LocalShell onto session + vfs (the in-wasm engine)
-- Owner: `crates/shell/web/src/local.rs`, new `crates/shell/web/src/engine/` (if split), `crates/shell/web/Cargo.toml`.
+- Owner: `crates/shell/web/src/local.rs`, new `packages/fut/fut/src/engine/` (if split), `crates/shell/web/Cargo.toml`.
 - Deps: T1, T2. Parser choice ADR from T6 (parser-only part may start with a handwritten tokenizer).
 - Content: line editor with history/arrow keys, cwd, quoting, pipes, redirects, `&&`/`||`, env expansion, command registry
   trait `ShellCommand`, builtins (`cd pwd ls cat mkdir rm cp mv touch` over the Vfs) kept in-crate until T7 lands.
@@ -126,14 +126,14 @@ serially.
   `tauriTransport` update is T8's.
 
 ### T5. OPFS Vfs backend + worker host
-- Owner: `crates/shell/vfs-opfs/` (new crate, wasm32 only, `web-sys` features for `FileSystem*`), and
-  `packages/shell/web/src/worker.ts` (new file only).
+- Owner: `crates/shell/vfs-opfs/` (not in repo) (new crate, wasm32 only, `web-sys` features for `FileSystem*`), and
+  `packages/shell/web/src/worker.ts` (not in repo) (new file only).
 - Deps: T2 (trait + conformance suite), T3 (engine to host).
 - Content: `OpfsVfs` using `FileSystemSyncAccessHandle` (worker only); worker entry that owns `WebShell` engine +
   `OpfsVfs`, exchanging bytes with the main thread via `postMessage` (transferable `ArrayBuffer`). `index.ts` is not
   touched (T8).
 - Test: conformance suite run in headless Chrome via the existing `APHRODY_CHROME` path used by `browser.test.ts`
-  (new test file `packages/shell/web/test/opfs.test.ts` owned by T5); persistence across reload asserted.
+  (new test file `packages/shell/web/test/opfs.test.ts` (not in repo) owned by T5); persistence across reload asserted.
 
 ### T6. Parser/crate selection spike and ADR
 - Owner: `docs/decisions/shell/wasm-shell-engine.md` (new). Read-only elsewhere.
@@ -143,7 +143,7 @@ serially.
 - Test: ADR lists the exact commands and results; no claim without a recorded build.
 
 ### T7. Coreutils-in-wasm registry
-- Owner: `crates/shell/wasm-utils/` (new crate `aphrody-shell-wasm-utils`); consumed by T3 via the `ShellCommand` trait.
+- Owner: `crates/shell/wasm-utils/` (not in repo) (new crate `aphrody-shell-wasm-utils`); consumed by T3 via the `ShellCommand` trait.
 - Deps: T1 (trait), T2 (Vfs), T6 (allow-list).
 - Content: per-utility registration over `Vfs`, uutils crates as libraries where they build for wasm32, small
   reimplementations otherwise, each tagged `source = uutils|own` in a generated table. Does not touch `crates/os/coreutils`.
@@ -158,7 +158,7 @@ serially.
 - Test: `bun test` in `packages/shell/web` (WASM in Bun) plus `typecheck`; browser test with headless Chrome.
 
 ### T9. Nushell-in-wasm feasibility spike (optional, non-blocking)
-- Owner: `docs/research/shell/nushell-wasm.md` (new). No code in the tree unless the spike succeeds, then a follow-up task.
+- Owner: `docs/research/shell/nushell-wasm.md` (not in repo) (new). No code in the tree unless the spike succeeds, then a follow-up task.
 - Deps: T6.
 - Content: build `nu-parser`/`nu-engine`/`nu-command` with `default-features = false` and without `os`/`network`/`sqlite`
   for wasm32; report what compiles, what a Vfs-backed `nu` would need. Do not change `aphrody-nu`.
@@ -174,8 +174,8 @@ serially.
   `packages/shell/web/test/live-backend.test.ts` still passes (it will need the token env; update by T8).
 
 ### T11. SandboxHost trait + mock host + wire contract
-- Owner: `crates/shell/sandbox-host/` (new crate `aphrody-shell-sandbox-host`), contract doc
-  `docs/apis/shell/sandbox-host.md`.
+- Owner: `crates/shell/sandbox-host/` (not in repo) (new crate `aphrody-shell-sandbox-host`), contract doc
+  `docs/apis/shell/sandbox-host.md` (not in repo).
 - Deps: T1.
 - Content: `SandboxHost` trait (spawn/kill/ttl/limits/files), session = `ShellSession` speaking existing wire frames,
   `MockHost` (in-process, backed by `MemVfs` + T3 engine) and `LocalPtyHost` (wraps `aphrody-terminal-backend`, native).
@@ -184,7 +184,7 @@ serially.
   live test with `APHRODY_SHELL_LIVE_BIN`.
 
 ### T12. Cloud provider adapter (first one only)
-- Owner: `crates/shell/sandbox-host-<provider>/` (name fixed when chosen), `docs/decisions/shell/sandbox-provider.md`.
+- Owner: `crates/shell/sandbox-host-<provider>/` (name fixed when chosen), `docs/decisions/shell/sandbox-provider.md` (not in repo).
 - Deps: T10, T11. Decision first: pick one provider from {Cloudflare Containers/Sandbox, E2B, Fly Machines, Firecracker on
   owned hosts}; use `aphrody:deploy` and `docs` skills for current APIs; record cost, cold start and licence. Secrets stay
   in the existing protected stores; never in the repo.
@@ -199,9 +199,9 @@ serially.
   of the running app for the shell panel.
 
 ### T14. Docs and gates
-- Owner: `docs/products/shell/README.md`, `docs/architecture/shell/` (new), `scripts/build/shell/` (new script files only).
+- Owner: `docs/products/shell/README.md`, `docs/architecture/shell/` (not in repo) (new), `scripts/build/shell/` (new script files only).
 - Deps: after T3, T5, T8 land; update as others land.
-- Content: replace the "WASM, web and Tauri" section with the layer model; add `scripts/build/shell/check-all.sh` that
+- Content: replace the "WASM, web and Tauri" section with the layer model; add `scripts/build/shell/check-all.sh` (not in repo) that
   chains the existing owners (`build-wasm.sh`, `bun test`, `tauri-e2e.sh`) without new runners.
 - Test: running the script (lead); doc links checked by the workspace doc audit (`bun run` owner script of `@aphrody/workspace`).
 

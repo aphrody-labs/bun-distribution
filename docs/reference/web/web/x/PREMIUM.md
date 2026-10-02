@@ -1,6 +1,6 @@
 # X Premium / Blue Verified — API surface
 
-Recon source: `aphrody web recon` (profile **max**), `scripts/x-premium-recon.ts`, live bundle `main.*.js` (2026-06).
+Recon source: `aphrody web recon` (profile **max**), `scripts/tools/web/apps/bxc/scripts/x-premium-recon.ts`, live bundle `main.*.js` (2026-06).
 
 ## Primary URL
 

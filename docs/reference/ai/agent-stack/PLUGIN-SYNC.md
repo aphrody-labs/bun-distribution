@@ -3,7 +3,7 @@
 
 The canonical catalog is `.agents/plugins/marketplace.json`. It currently
 contains the `aphrody` and `yolo` plugins. Generated adapters are written to
-`plugins/.claude-plugin/marketplace.json` and the user's agy skills registry.
+`plugins/aphrody/.claude-plugin/marketplace.json` and the user's agy skills registry.
 
 Run `bun run plugins:sync` after editing a plugin. Use `bun run plugins:watch`
 during development to synchronize manifest and skill edits automatically.
@@ -15,7 +15,7 @@ credentials are read or changed by the synchronizer.
 
 For GitHub-wide ranking and duplicate detection, run
 `bun run github:intelligence`. It uses the authenticated `gh` CLI, writes
-`.agents/plugins/github-repository-intelligence.json`, and never archives or
+`.agents/plugins/github-repository-intelligence.json` (not in repo), and never archives or
 deletes repositories.
 
 Run `bun run github:audit` for a redacted account-wide audit of repository

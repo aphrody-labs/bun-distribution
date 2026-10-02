@@ -2,7 +2,7 @@
 # Gemini web app (`gemini.google.com`) — consolidated protocol reference
 
 The definitive reverse-engineering reference for the Gemini consumer web app, as
-implemented by the `crates/gemini-web` SDK. Captured live 2026-05-21 against
+implemented by the `crates/google/gemini-web` SDK. Captured live 2026-05-21 against
 build `boq_assistant-bard-web-server_2026051x` (account-owner session,
 anonymised `<user>`). No secret/token/cookie values appear here.
 
@@ -76,7 +76,7 @@ research via explicit prompt-routing + media extraction; mode-chip flag capture
 (for guaranteed routing + plan-confirm + poll-to-completion) is the documented
 enhancement.
 
-## 5. SDK mapping (`crates/gemini-web`)
+## 5. SDK mapping (`crates/google/gemini-web`)
 
 | Protocol element | SDK |
 |---|---|

@@ -6,7 +6,7 @@ suppose de balayer les branches : `gh api .../contents/<chemin>?ref=<branche>` p
 l'arbre récursif de HEAD ne montrant que la branche par défaut.
 
 Le document décrit la chaîne SVG de shenron. Ce dépôt-ci produit aujourd'hui ses icônes
-autrement — `crates/aphrody-identity/src/assets.rs`, en Rust, depuis l'atlas du pet — donc
+autrement — `crates/ui/identity/src/assets.rs`, en Rust, depuis l'atlas du pet — donc
 les deux approches coexistent plutôt qu'elles ne se remplacent : celle-ci vaut pour un dessin
 vectoriel conçu comme tel, celle de la crate pour tout ce qui dérive du sprite.
 -->
@@ -18,7 +18,7 @@ dépendances installées, les bibliothèques de géométrie et les composants qu
 consomment, la chaîne complète de la planche de référence au favicon déployé, et
 une exécution de bout en bout sur une image d'exemple.
 
-Doctrine du dessin : [`plugins/dragon-ball/skills/toriyama-svg/SKILL.md`](../../../../../../plugins/aphrody/skills/toriyama-svg/SKILL.md).
+Doctrine du dessin : [`plugins/aphrody/skills/toriyama-svg/SKILL.md`](../../../../../../plugins/aphrody/skills/toriyama-svg/SKILL.md).
 Ce document-ci est l'inventaire, pas la méthode.
 
 ## 1. Dépendances
@@ -27,12 +27,12 @@ Ce document-ci est l'inventaire, pas la méthode.
 
 | Rôle | Outil | Où | Version mesurée |
 |---|---|---|---|
-| SVG → PNG/WebP/ICO, redimensionnement, composition, métadonnées | `sharp` | **`package.json` racine** (jamais dans `apps/site`) | 0.35.4, libvips 8.18.6 |
+| SVG → PNG/WebP/ICO, redimensionnement, composition, métadonnées | `sharp` | **`package.json` racine** (jamais dans `apps/shenron/site`) | 0.35.4, libvips 8.18.6 |
 | Masque, k-means, HSL/OKLCH, profil de silhouette, épaisseur du trait | Pillow + numpy | système (`apt install python3-pil python3-numpy`) | Pillow 12.1.1, numpy 2.3.5 |
-| Dessin raster côté bot (runtime Discord) | `@aphrody/canvas` | `apps/bot` | ^0.1.99 |
-| Rendu d'image sociale (OG) | `next/og` (`ImageResponse`) | `apps/site` | Next 16 canary |
+| Dessin raster côté bot (runtime Discord) | `@aphrody/canvas` | `apps/bot` (not in repo) | ^0.1.99 |
+| Rendu d'image sociale (OG) | `next/og` (`ImageResponse`) | `apps/shenron/site` | Next 16 canary |
 
-`sharp` vit dans le `node_modules` **racine** : l'installer depuis `apps/site`
+`sharp` vit dans le `node_modules` **racine** : l'installer depuis `apps/shenron/site`
 dé-hoiste `next` et casse `deploy-site.ts` (cf. `pieges.md`).
 
 ### Ce qui n'est pas installé, et pourquoi
@@ -55,10 +55,10 @@ Aucune dépendance : le vecteur est produit par des fonctions TypeScript qui
 
 | Fichier | Contenu | Consommateurs |
 |---|---|---|
-| [`apps/site/src/lib/kinto-un.ts`](../../../../../../apps/shenron/site/src/lib/kinto-un.ts) | `arcs`, `volute`, `corpsNuage`, `svgIllustration`, `svgIcone`, `svgMonochrome`, `KINTO_UN_COULEURS` | `KintoUn.tsx`, `genere-kinto-un.ts`, `genere-icones.ts`, `opengraph-image.tsx`, `couverture.ts` |
-| [`apps/site/src/lib/couverture.ts`](../../../../../../apps/shenron/site/src/lib/couverture.ts) | `anneauxCadre`, `bancNuage`, `etoilePath`, `anneauPastille`, `svgBancNuage` (importe `arcs`/`volute` de `kinto-un`) | `MotifsCouverture.tsx`, `genere-motifs-couverture.ts` |
-| `apps/site/src/lib/icones.ts` | `GEOMETRIES` — **76 glyphes** maison, `BOITE_ICONE` 24, `TRAIT_ICONE` 2, `svgIcone(nom)` | `Glyphe.tsx`, `rend-icones.ts` |
-| `plugins/dragon-ball/skills/toriyama-svg/scripts/geometrie.ts` | primitives à copier pour un **nouveau** sujet : `arcs`, `volute`, `meche`, `planDombre`, `trait`, `miroir`, `svg` | modèle, pas importé |
+| [`apps/shenron/site/src/lib/kinto-un.ts`](../../../../../../apps/shenron/site/src/lib/kinto-un.ts) | `arcs`, `volute`, `corpsNuage`, `svgIllustration`, `svgIcone`, `svgMonochrome`, `KINTO_UN_COULEURS` | `KintoUn.tsx`, `genere-kinto-un.ts`, `genere-icones.ts`, `opengraph-image.tsx`, `couverture.ts` |
+| [`apps/shenron/site/src/lib/couverture.ts`](../../../../../../apps/shenron/site/src/lib/couverture.ts) | `anneauxCadre`, `bancNuage`, `etoilePath`, `anneauPastille`, `svgBancNuage` (importe `arcs`/`volute` de `kinto-un`) | `MotifsCouverture.tsx`, `genere-motifs-couverture.ts` |
+| `apps/site/src/lib/icones.ts` (not in repo) | `GEOMETRIES` — **76 glyphes** maison, `BOITE_ICONE` 24, `TRAIT_ICONE` 2, `svgIcone(nom)` | `Glyphe.tsx`, `rend-icones.ts` |
+| `plugins/dragon-ball/skills/toriyama-svg/scripts/geometrie.ts` (not in repo) | primitives à copier pour un **nouveau** sujet : `arcs`, `volute`, `meche`, `planDombre`, `trait`, `miroir`, `svg` | modèle, pas importé |
 
 Règle qui tient tout : **une seule source de géométrie par sujet**, consommée à
 la fois par le composant, le générateur de fichiers et le script d'icônes.
@@ -125,14 +125,14 @@ Scripts, par rôle :
 | `plugins/.../scripts/mesurer.py` | mesure (Python) |
 | `plugins/.../scripts/rendu.ts` | planches de contrôle multi-tailles + comparaison (Bun) |
 | `plugins/.../scripts/icones.ts` | jeu de favicons générique (modèle) |
-| `apps/site/scripts/genere-kinto-un.ts` | écrit les 3 SVG du nuage, `--rendu` pour les PNG de contrôle |
-| `apps/site/scripts/genere-motifs-couverture.ts` | écrit la tuile `banc-nuage.svg` |
-| `apps/site/scripts/genere-icones.ts` | rastérise le jeu complet, site **et** bot |
-| `apps/site/scripts/rend-icones.ts` | planche de contact des 76 glyphes à 16/24/32 px, zoom ×6 |
+| `apps/shenron/site/scripts/genere-kinto-un.ts` | écrit les 3 SVG du nuage, `--rendu` pour les PNG de contrôle |
+| `apps/shenron/site/scripts/genere-motifs-couverture.ts` | écrit la tuile `banc-nuage.svg` |
+| `apps/shenron/site/scripts/genere-icones.ts` | rastérise le jeu complet, site **et** bot |
+| `apps/shenron/site/scripts/rend-icones.ts` | planche de contact des 76 glyphes à 16/24/32 px, zoom ×6 |
 
 ## 4. Exécution d'exemple, bout en bout
 
-Fait le 2026-09-05 sur `apps/bot/assets/ext/db_manga_volumes/82.jpg`
+Fait le 2026-09-05 sur `apps/bot/assets/ext/db_manga_volumes/82.jpg` (not in repo)
 (couverture du tome 1, 1000 × 1500, RGB), boule de cristal du logo.
 
 ### Temps Python — mesurer
@@ -200,7 +200,7 @@ lui qui a produit cette variante.
 ## 5. Créer une nouvelle image
 
 1. **Sourcer.** Corpus local d'abord (`apps/bot/assets/manga/DB/{regular,fullcolor}/`,
-   `apps/site/public/wiki/databooks/`, MCP `dragonball` pour localiser la planche).
+   `apps/shenron/site/src/app/wiki/databooks/`, MCP `dragonball` pour localiser la planche).
    Hiérarchie : manga au trait pour la FORME, manga couleur pour la COULEUR,
    anime en dernier recours. Fandom banni. Travailler dans `/tmp/<sujet>/`.
 2. **Mesurer.** `mesurer.py` sur au moins **deux** sources ; sans `mesures.json`,
@@ -221,7 +221,7 @@ lui qui a produit cette variante.
 
 ## RE anchors
 
-Knowledge base (`var/nie.sqlite`) tables:
+Knowledge base (`var/nie.sqlite` (not in repo)) tables:
 - `hash_name` — CRC32 and string hashes for UI sprites and icons
 - `function` — 2D vector blitting and texture rasterization in `nie.exe`
 - `coverage` — 2D raster engine coverage

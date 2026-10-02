@@ -87,7 +87,7 @@ The runtime inventory from `bxc capabilities --json` is authoritative. The follo
 
 1. **Browser Automation (13)**:
    `bxc_browser_navigate`, `bxc_browser_snapshot`, `bxc_browser_click`, `bxc_browser_fill`, `bxc_browser_hover`, `bxc_browser_pdf`, `bxc_browser_type`, `bxc_browser_press_key`, `bxc_browser_select_option`, `bxc_browser_evaluate`, `bxc_browser_wait_for`, `bxc_browser_screenshot`, `bxc_browser_close`, plus `bxc_cdp_evaluate`.
-   Each `bxc_browser_*` tool was renamed from a bare `browser_*` name to resolve a collision with the separate Rust/CDP MCP server (`crates/aphrody-obscura/crates/obscura-mcp`), which registers its own, incompatible (snake_case-param) `browser_*` tools. The old bare names (`browser_navigate`, `browser_snapshot`, `browser_click`, `browser_fill`, `browser_hover`, `browser_pdf`, `browser_type`, `browser_press_key`, `browser_select_option`, `browser_evaluate`, `browser_wait_for`, `browser_screenshot`, `browser_close`) are still registered on this server as deprecated aliases (identical schema/handler) for backward compatibility — new integrations should use the `bxc_browser_*` names. See `aphrody-contracts/docs/API.md` §6.1.
+   Each `bxc_browser_*` tool was renamed from a bare `browser_*` name to resolve a collision with the separate Rust/CDP MCP server (`crates/aphrody-obscura/crates/obscura-mcp` (not in repo)), which registers its own, incompatible (snake_case-param) `browser_*` tools. The old bare names (`browser_navigate`, `browser_snapshot`, `browser_click`, `browser_fill`, `browser_hover`, `browser_pdf`, `browser_type`, `browser_press_key`, `browser_select_option`, `browser_evaluate`, `browser_wait_for`, `browser_screenshot`, `browser_close`) are still registered on this server as deprecated aliases (identical schema/handler) for backward compatibility — new integrations should use the `bxc_browser_*` names. See `aphrody-contracts/docs/API.md` §6.1.
 2. **Scraping, Crawling & Extraction (15)**:
    `bxc_scrape_markdown`, `bxc_search`, `bxc_mirror`, `bxc_recon`, `bxc_detect_frameworks`, `bxc_extract_schema`, `bxc_get_url_data`, `bxc_get_url_openapi`, `bxc_get_url_types`, `bxc_crawl_recursive`, `bxc_crawl_massive`, `bxc_crawl_stats`, `bxc_crawl_replay_failed`, `bxc_export_dataset`, `bxc_actor_run`.
 3. **Search & Memory Tuning (5)**:
@@ -181,7 +181,7 @@ BXC establishes a unified multi-agent system bridging **OpenAI Codex**, **Google
 ### Multi-Agent Interaction Protocols
 - **Codex**: Loads the unified `../../../aphrody-os/plugins/aphrody/.codex-plugin/plugin.json`, uses skills in `skills/bxc-*`, executes via A2A 1.0 protocols and background daemon loops.
 - **Antigravity / Gemini CLI**: Loads `gemini-extension.json`, invokes subagents via `invoke_subagent` and `define_subagent`, and communicates via `send_message`.
-- **Claude Code**: Loads `.claude-plugin/plugin.json`, invokes specialized subagents from `.claude/agents/*.md`, and communicates via the `Agent` tool.
+- **Claude Code**: Loads `.claude-plugin/plugin.json` (not in repo), invokes specialized subagents from `.claude/agents/*.md`, and communicates via the `Agent` tool.
 - **Reactive Wakeup & Non-Polling**: Subagents run asynchronously in the background. Orchestrators do NOT poll in sleep loops; they yield control and resume upon reactive notification.
 - **Shared State**: Subagents share workspace state via Git branches, worktrees, or shared JSONL telemetry logs.
 

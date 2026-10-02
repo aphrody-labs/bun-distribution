@@ -33,7 +33,7 @@ composant React que dans une commande Discord ou une route Next.
 Porte le **schéma des réglages de communauté** — celui qui valide
 `bot_reglages_guilde.valeurs`, une colonne `jsonb` sans schéma côté base.
 
-Il vivait dans `apps/bot/src/lib/reglages-communaute.ts`, et il y était bien
+Il vivait dans `apps/rg/bot/src/lib/reglages-communaute.ts`, et il y était bien
 tant que le bot était seul à écrire. À partir du moment où le site édite la même
 colonne, deux écrivains la partagent : un schéma recopié aurait garanti qu'un
 jour le formulaire enregistre une valeur que le bot refuse de relire — et comme
@@ -41,7 +41,7 @@ jour le formulaire enregistre une valeur que le bot refuse de relire — et comm
 c'est-à-dire aurait **effacé en pratique tous les réglages du serveur** sans le
 moindre signal.
 
-`apps/bot/src/lib/reglages-communaute.ts` reste en place comme réexport : une
+`apps/rg/bot/src/lib/reglages-communaute.ts` reste en place comme réexport : une
 quarantaine de fichiers l'importent par ce chemin.
 
 Contient aussi `PROFILS_BOT` (les deux identités, leur unité systemd, leur
@@ -68,7 +68,7 @@ rendre le champ facultatif, et **recommence sur les sous-objets** (`niveaux.gain
 est le seul aujourd'hui, mais c'est exactement là que le piège se referme : un
 formulaire qui n'expose que le délai anti-spam remettrait la fourchette d'XP à
 15–25). Absent veut alors dire absent, et `fusionnerReglages()` garde la valeur
-en place. Deux tests de `packages/types/src/bot.test.ts` verrouillent ce
+en place. Deux tests de `packages/rg/types/src/bot.test.ts` verrouillent ce
 comportement.
 
 ### `@rosegriffon/types/cron`
@@ -91,7 +91,7 @@ Deux défauts corrigés au passage, tous deux relevés par `catalogue.test.ts` :
 - **`GET /tasks` recopiait sa liste à la main.** Elle rend maintenant
   `TACHES_CRON`, `PLANIFICATIONS` et `CATALOGUE_TACHES` tels quels.
 
-`packages/cron/src/catalogue.test.ts` relie le `runnerMap` du démon au catalogue
+`packages/rg/cron/src/catalogue.test.ts` relie le `runnerMap` du démon au catalogue
 partagé : ajouter une entrée d'un côté sans la décrire de l'autre fait échouer la
 CI, avec le nom manquant dans le message.
 
@@ -99,7 +99,7 @@ CI, avec le nom manquant dans le message.
 
 ## Le serveur d'administration du bot
 
-`apps/bot/src/lib/serveur-admin.ts`, démarré après `clientReady`, sur
+`apps/rg/bot/src/lib/serveur-admin.ts`, démarré après `clientReady`, sur
 `127.0.0.1` uniquement.
 
 | Profil | Port | Unité |
@@ -206,7 +206,7 @@ sans le dire inviterait à des comparaisons fausses.
 La provenance se déduit de l'archive, sans colonne supplémentaire : la réponse
 d'API porte `totalXp`, l'entrée de classement porte `userID`, et l'absence
 d'archive signale l'historique. Voir `couvertureImport()` et `provenanceDe()`
-dans `apps/website/src/lib/bot/membres.ts`.
+dans `apps/rg/website/src/lib/bot/membres.ts`.
 
 ⚠ **Coupure serveur / client obligatoire.** `lib/bot/membres.ts` porte
 `import "server-only"` (il ouvre le pool Postgres) ; le tableau est un îlot
@@ -276,4 +276,4 @@ curl -s http://127.0.0.1:3007/sante
 - [bot-commandes.md](bot-commandes.md) — catalogue des slash commands et plan de bascule
 - [bot-communaute.md](bot-communaute.md) — niveaux, jetons Kizuna, tickets
 - [bot-azalee.md](bot-azalee.md) — le second profil et son registre
-- [deploy.md](deploy.md) — services, procédures, interdits
+- [deploy.md](../../operations/rg/deploy.md) — services, procédures, interdits

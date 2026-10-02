@@ -51,7 +51,7 @@ Open `index.html` for distribution, regression vs previous run, violin plots.
 ## 3. Bench results (criterion runs)
 
 The five micro-benches in
-[`crates/aphrody-backend/benches/backend_bench.rs`](../../../crates/os/backend/benches/backend_bench.rs)
+[`crates/os/backend/benches/backend_bench.rs`](../../../crates/os/backend/benches/backend_bench.rs)
 exercise the algorithmic primitives that dominate hot paths in the backend
 crate. Expected ranges on the reference laptop:
 
@@ -185,8 +185,8 @@ benches outside its expected band.
 ## 10. Performance regressions
 
 Criterion benches run in the extended job of
-[`.github/workflows/cross-platform.yml`](../../../crates/compat/n2b/tests/fixtures/node-project/.github/workflows/ci.yml).
-The job stores the previous baseline under `target/criterion/` and criterion
+[`.github/workflows/cross-platform.yml` (not in repo)](../../../crates/compat/n2b/tests/fixtures/node-project/.github/workflows/ci.yml).
+The job stores the previous baseline under `target/criterion/` (not in repo) and criterion
 reports percent change automatically. Open an issue tagged `perf` if you see
 a **>20% regression** on any of the five benches versus the baseline — that
 threshold catches real algorithmic regressions while tolerating noise from

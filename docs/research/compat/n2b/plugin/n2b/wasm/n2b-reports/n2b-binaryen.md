@@ -3,7 +3,7 @@
 - mode : `check`
 - racine : `~/rsbun/wasm/binaryen`
 
-## `.github/workflows/ci.yml`
+## `.github/rg/workflows/ci.yml`
 
 | ligne | règle | message | remplacement |
 | --- | --- | --- | --- |
@@ -14,7 +14,7 @@
 | 294:9 | `cli/npm-install` | bun install → bun install | `bun install` |
 | 332:9 | `cli/npm-install` | bun install → bun install | `bun install` |
 
-## `scripts/benchmarking/bench.js`
+## `scripts/benchmarking/bench.js` (not in repo)
 
 | ligne | règle | message | remplacement |
 | --- | --- | --- | --- |
@@ -22,20 +22,20 @@
 | 137:19 | `api/performance-now` | Bun.nanoseconds() offre une horloge haute précision (retourne nanosecondes depuis démarrage) |  |
 | 139:25 | `api/performance-now` | Bun.nanoseconds() offre une horloge haute précision (retourne nanosecondes depuis démarrage) |  |
 
-## `scripts/fuzz_shell.js`
+## `scripts/fuzz_shell.js` (not in repo)
 
 | ligne | règle | message | remplacement |
 | --- | --- | --- | --- |
 | 22:25 | `imports/node-prefix` | préfixer 'fs' avec 'node:' (recommandé) | `node:fs` |
 
-## `scripts/test/node-esm-loader.mjs`
+## `scripts/test/node-esm-loader.mjs` (not in repo)
 
 | ligne | règle | message | remplacement |
 | --- | --- | --- | --- |
 | 4:22 | `imports/node-prefix` | préfixer 'process' avec 'node:' (recommandé) | `node:process` |
 | 3:19 | `imports/node-prefix` | préfixer 'path' avec 'node:' (recommandé) | `node:path` |
 
-## `scripts/validation_shell.js`
+## `scripts/validation_shell.js` (not in repo)
 
 | ligne | règle | message | remplacement |
 | --- | --- | --- | --- |

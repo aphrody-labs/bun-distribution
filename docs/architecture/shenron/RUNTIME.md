@@ -2,15 +2,15 @@
 
 Statut : proposition rédigée le 2026-09-24 ; elle ne décrit pas l'état actuel de
 la production. L'observation VPS/DBFR du 2026-10-02 est dans
-[`TOPOLOGY-OBSERVATION-2026-10-02.md`](../operations/infra/TOPOLOGY-OBSERVATION-2026-10-02.md)
-et [`VPS-STATUS-2026-10-02.md`](../operations/infra/VPS-STATUS-2026-10-02.md).
+[`TOPOLOGY-OBSERVATION-2026-10-02.md`](../../operations/infra/TOPOLOGY-OBSERVATION-2026-10-02.md)
+et [`VPS-STATUS-2026-10-02.md`](../../operations/infra/VPS-STATUS-2026-10-02.md).
 Les unités systemd, les routes nginx, le catalogue et la politique de
 planification relèvent de l'Infra du monorepo (voir
-[`INFRA-DELEGATION.md`](INFRA-DELEGATION.md)).
+[`INFRA-DELEGATION.md`](../../operations/shenron/INFRA-DELEGATION.md)).
 Aucun hôte, IP ou port littéral n'apparaît ici. On utilise les noms de service du catalogue
 (`shenron-site`, `shenron-bot` → `shenron-runtime`, `shenron-pg-tunnel`,
 `aphrody-ai-http`, `aphrody-shenron-embed`) et des variables d'environnement (`API_PORT`, `PORT`,
-`DATABASE_URL`, `REDIS_URL`, `APHRODY_AI_*` (voir [`ENV.md`](ENV.md)), `RUNTIME_*`).
+`DATABASE_URL`, `REDIS_URL`, `APHRODY_AI_*` (voir [`ENV.md`](../../operations/shenron/ENV.md)), `RUNTIME_*`).
 
 ## 1. Objectif
 
@@ -81,7 +81,7 @@ Options écartées :
 
 - **A, un seul processus Bun avec Next, API et passerelle.** L'économie mémoire est proche de zéro,
   car chaque Worker est une VM JSC complète. A fusionne les domaines de panne du site et de la
-  passerelle, malgré l'historique d'OOM (`docs/pieges.md:65-78`). A demande une dérogation de
+  passerelle, malgré l'historique d'OOM (`docs/guides/shenron/pieges.md:65-78`). A demande une dérogation de
   politique et fait transiter les écritures SQLite par l'IPC de la passerelle.
   **A reste ouverte comme Phase 4**, sous seuils (§11).
 - **B, une unité avec un superviseur Bun et des enfants.** B n'économise rien (MemoryMax 11G sur
@@ -121,7 +121,7 @@ Les routes nginx ne changent pas. Seul le nom d'unité derrière `bot.` change.
 
 ### Diff proposé pour Infra du monorepo (non appliqué)
 
-`systemd/shenron.target` (nouveau) :
+`systemd/shenron.target` (not in repo) (nouveau) :
 
 ```ini
 [Unit]
@@ -132,7 +132,7 @@ After=network-online.target
 WantedBy=multi-user.target
 ```
 
-`systemd/shenron-bot.service` → `systemd/shenron-runtime.service` :
+`systemd/shenron-bot.service` → `systemd/shenron-runtime.service` (not in repo) :
 
 ```diff
 -Description=Shenron bot (discordx + Bun.serve API)
@@ -164,7 +164,7 @@ se fait donc par une unité `shenron-bot.service` minimale, gardée une release,
 `shenron-site.service` et `shenron-pg-tunnel.service` reçoivent `PartOf=shenron.target` et
 `WantedBy=shenron.target`.
 
-On supprime `systemd/shenron-backup.{service,timer}` et `systemd/shenron-zswap.service`.
+On supprime `systemd/shenron-backup.{service,timer}` et `systemd/shenron-zswap.service` (not in repo).
 
 `config/scheduler-policy.json` : l'entrée `shenron-backup` change de propriétaire et devient
 `shenron-runtime-scheduler` (`owns: ["shenron-sqlite-local-cache"]`). Elle reste l'exception
@@ -194,7 +194,7 @@ apps/shenron/bot/src/api/cron-registry.ts  shim de ré-export vers packages/runt
 apps/shenron/site                    processus inchangé ; un seul client Redis partagé
 ```
 
-Intégration avec `docs/STACK.md` :
+Intégration avec `packages/ui/material-web/docs/STACK.md` :
 
 - `@shenron/config` fournit le schéma d'env, validé au démarrage, sans jamais journaliser de
   valeur.
@@ -214,7 +214,7 @@ Ordre de démarrage :
 5. `startGateway`, avec backoff de 5 s à 5 min. Le processus sort seulement après
    `RUNTIME_GATEWAY_FATAL_AFTER` (15 min par défaut).
 
-Les dépendances de vagues (`var/stack-research/runtime-breakdown.json`) sont les suivantes :
+Les dépendances de vagues (`var/stack-research/runtime-breakdown.json` (not in repo)) sont les suivantes :
 
 - `server.ts` appartient à la vague 4 (`api`).
 - Les services PG et le worker appartiennent à la vague 3 (`db`).
@@ -232,8 +232,8 @@ Les dépendances de vagues (`var/stack-research/runtime-breakdown.json`) sont le
 
 Ces chiffres sont des propositions, pas des mesures. La Phase 3 mesure pendant 7 jours
 (p50/p99 RSS, lag de boucle), puis ajuste. La directive « pas de MemoryMax »
-(`docs/pieges.md:21`) est remplacée pour le runtime. Les OOM venaient du build Next
-(`pieges.md:65-78`), et ce build reste externe (`scripts/ops/build-site-external.ts`). Il n'y a
+(`docs/guides/shenron/pieges.md:21`) est remplacée pour le runtime. Les OOM venaient du build Next
+(`pieges.md:65-78`), et ce build reste externe (`scripts/build/shenron/scripts/ops/build-site-external.ts`). Il n'y a
 pas de CPUQuota. `UV_THREADPOOL_SIZE=12` et `BUN_CONFIG_MAX_HTTP_REQUESTS=2048` sont conservés.
 
 ## 7. Isolation des pannes et arrêt gracieux
@@ -288,14 +288,14 @@ Arrêt sur SIGTERM, en moins de `TimeoutStopSec=30` :
   durée et échecs des jobs, pic RSS des enfants, attente du pool PG.
 - Les logs pino partent vers journald. Les sorties des enfants sont préfixées `{job,pid}` et les
   secrets sont masqués. `journalctl -u 'shenron-*'` donne la vue unifiée.
-- Un job en échec déclenche un hook `scripts/ops/notify-admin-lab.ts`. Aucun watchdog Shenron
+- Un job en échec déclenche un hook `scripts/tools/shenron/scripts/ops/notify-admin-lab.ts`. Aucun watchdog Shenron
   n'est réintroduit : `rg-infra-monitor` peut scraper les métriques.
 
 ## 10. Phasage
 
-**Phase 1 : shenron, en local, maintenant.** Voir `var/stack-research/runtime-breakdown.json`.
+**Phase 1 : shenron, en local, maintenant.** Voir `var/stack-research/runtime-breakdown.json` (not in repo).
 
-- Créer `packages/runtime` avec config, pools, http, health, lifecycle, scheduler v2 persistant,
+- Créer `packages/runtime` (not in repo) avec config, pools, http, health, lifecycle, scheduler v2 persistant,
   enfant borné et job sqlite-backup.
 - Découper `apps/shenron/bot/src/index.ts`. Le wrapper de compatibilité maintient l'unité actuelle
   fonctionnelle.

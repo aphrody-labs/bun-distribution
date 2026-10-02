@@ -8,7 +8,7 @@ the canonical source.
 | --------------------------------------------------------------- | --------------------------------------------------------------- | ------------------------------------------------------------------------- |
 | [discordjs/discord.js](https://github.com/discordjs/discord.js) | `8a22bc3eedccf5331dcddac6fb01d2339b0f75a8` (`main`, 2026-09-28) | 22 packages, 3 apps, package-local docs, scripts, licenses, and notices   |
 | [discordx-ts/discordx](https://github.com/discordx-ts/discordx) | `017c6e8c34908e6ca359bed9986fff43c0ce41cc` (`main`, 2026-07-29) | 12 packages and the DiscordX documentation site                           |
-| [buape/carbon](https://github.com/buape/carbon)                 | npm `@buape/carbon@0.16.0` (MIT)                                | external dependency used by `apps/carbon-example`; source is not vendored |
+| [buape/carbon](https://github.com/buape/carbon)                 | npm `@buape/carbon@0.16.0` (MIT)                                | external dependency used by `apps/carbon-example` (not in repo); source is not vendored |
 
 ## Discord.js packages
 
@@ -25,8 +25,8 @@ support packages:
 `@discordjs/util`, `@discordjs/voice`, `@discordjs/ws`,
 `create-discord-bot`, and `discord.js`.
 
-The three upstream apps are kept in `apps/guide`, `apps/website`, and
-`apps/proxy-container`. DiscordX's existing Docusaurus app remains in `docs/`;
+The three upstream apps are kept in `apps/guide` (not in repo), `apps/rg/website`, and
+`docs/products/discord/apps/proxy-container`. DiscordX's existing Docusaurus app remains in `docs/`;
 it covers the DiscordX framework and is not a duplicate of the Discord.js API
 reference or guide.
 

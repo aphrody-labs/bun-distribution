@@ -1,13 +1,13 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 # aphrody-x — architecture & internals
 
-## Module map (`crates/aphrody-x-client/src`)
+## Module map (`crates/aphrody-x-client/src` (not in repo))
 
 | Module | Responsibility |
 |--------|----------------|
 | `session.rs` | Credential resolution (`XSession`): file / env / cookie-string. |
 | `client.rs` | `XClient` — reqwest client, auth headers, generic GraphQL invoker, rate-limit capture, 404 recovery. |
-| `catalog.rs` | Embedded 158-op GraphQL catalog (`data/x-graphql-catalog.json`). |
+| `catalog.rs` | Embedded 158-op GraphQL catalog (`crates/web/x/data/x-graphql-catalog.json`). |
 | `runtime_query_ids.rs` | Live queryId discovery + on-disk cache. |
 | `features.rs` | GraphQL feature-flag blobs. |
 | `parse.rs` | Typed tweet/user extraction from timeline trees. |

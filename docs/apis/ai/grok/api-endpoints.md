@@ -3,7 +3,7 @@
 
 Official base URL: **`https://api.x.ai/v1`**
 
-Source in-repo: `var/ragflow/conf/models/xai.json`, `var/ragflow/conf/llm_factories.json`.
+Source in-repo: `var/ragflow/conf/models/xai.json` (not in repo), `var/ragflow/conf/llm_factories.json` (not in repo).
 
 ## REST routes
 

@@ -1,4 +1,5 @@
 <!--
+<!-- docs-links: external-paths — backtick paths in this document name files of the pre-monorepo aphrody-ai repository (historical changelog), not of this checkout. -->
 SPDX-License-Identifier: Apache-2.0
 SPDX-FileCopyrightText: 2026 aphrody-code contributors
 -->
@@ -40,7 +41,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `Qwen3-VL-8B-Instruct-Q4_K_M.gguf` multimodal vision and bounding box extraction.
   - `Qwen3-Embedding-0.6B` and `Qwen3-Reranker-0.6B` Matryoshka dimension reduction (1024 -> 512) and cross-encoder re-ranking.
 - Verified `aphrody-mcp` HTTP REST bridge (`/api/v1/shenron/*`) end-to-end with Shenron's `@shenron/ai` and Vercel AI SDK `generateText()`.
-- Validated Shenron's 203 unit and integration tests across `@shenron/ai`, `@shenron/aphrody`, `apps/site`, and `apps/bot`.
+- Validated Shenron's 203 unit and integration tests across `@shenron/ai`, `@shenron/aphrody`, `apps/shenron/site`, and `apps/bot`.
 
 ### NIE tools converge into aphrody-mcp (2026-09-26)
 
@@ -94,19 +95,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   removed; `array-bytes` license clarified); `.gitattributes` normalizes LF with
   CRLF for Windows scripts; `nextest.toml` moved to `.config/nextest.toml`.
 - `.gitignore` anchors `target/` to the root: the unanchored pattern had kept
-  `crates/aphrody-rag-eval/src/target/` (a source module) out of Git, so a
+  `crates/ai/rag-eval/src/target/` (a source module) out of Git, so a
   fresh clone did not compile.
 - `py/aphrody` (pyo3 extension) is self-rooted and excluded from the root
   workspace, so `uv sync` in `py/` builds it again without the sibling repos.
-- CI replaced by `.github/workflows/ci.yml` (Linux + Windows, sibling
+- CI replaced by `.github/rg/workflows/ci.yml` (Linux + Windows, sibling
   checkouts, check/clippy/test, cargo-deny, Bun typecheck/test, generated-docs
   check). The monolith workflows (reusable CI, build, cross-platform, bench,
   coverage, CodeQL, docs, release, release-please) and the ecosystem CI
   distribution files (`aphrody-ecosystem.toml`, `.github/actions/aphrody-toolkit`)
   were removed; Dependabot no longer tracks Cargo.
 - Docs: new `README.md`, `CLAUDE.md`, `AGENTS.md`, `docs/README.md`,
-  `docs/ARCHITECTURE.md`, `docs/SOURCE_OF_TRUTH.md`, `docs/PITFALLS.md` (the
-  still-true pitfalls of the old guide), `docs/CI-CD.md`; monolith-layout
+  `docs/architecture/upstream-oxc/crates/oxc_minifier/docs/ARCHITECTURE.md`, `docs/reference/ai/SOURCE_OF_TRUTH.md`, `docs/reference/ai/PITFALLS.md` (the
+  still-true pitfalls of the old guide), `docs/operations/ai/CI-CD.md`; monolith-layout
   pages removed (`docs/INDEX.md`, `docs/UNIFIED-PLATFORM.md`,
   `docs/monorepo-absorption.md`, `docs/origin/`, workspace/crate/build-cache
   pages under `docs/cargo/`) and links repointed to the sibling repositories;
@@ -147,7 +148,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Host-ops scripts moved to `aphrody-infra/scripts/aphrody/`: `vps-setup-all.sh`,
   `vps-sync-agent-stack.sh`, `fetch-ai-llms.sh`, `gcp-enable-all.sh`,
   `gcp-sa-setup.{sh,ps1}`, `proxy-status.sh` (paths now come from `APHRODY_ROOT`,
-  `BXC_DATA_DIR`, `PROXY_LISTEN`/`PROXY_EXIT`). `scripts/setup-app-proxies.ps1`
+  `BXC_DATA_DIR`, `PROXY_LISTEN`/`PROXY_EXIT`). `scripts/aphrody/setup-app-proxies.ps1`
   stays here because `aphrody vpn app setup` invokes it.
 - `ai-collaboration.json` deleted; `ai.json` drops its embedded peer list, points to
   `aphrody-infra/config/a2a-peers.json` and advertises `https://aphrody.com/api/v1/a2a`.
@@ -190,10 +191,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- **`scripts/fetch-ai-llms.sh`** — Refresh `docs/agent-stack/*-llms.txt` (xAI, Bun, Anthropic, Claude Code) and CLI `--help` snapshots.
+- **`scripts/aphrody/fetch-ai-llms.sh`** — Refresh `docs/agent-stack/*-llms.txt` (xAI, Bun, Anthropic, Claude Code) and CLI `--help` snapshots.
 - **`docs/agent-stack/`** — Unified VPS agent config: CLI `--help` snapshots (agy, grok, claude, bxc, aphrody), `llms.txt` mirrors (xAI, Bun, Anthropic, Claude Code), MCP/env/session matrix, [X Pro integration](https://github.com/aphrody-code/aphrody/blob/main/docs/agent-stack/x-pro-integration.md).
 - **X / Twitter stack** — `@aphrody-code/x` 1.0.6 (Gryphon decks + Radar), bxc 0.6.1 (`bxc_xpro_deck` MCP) and the `x-cli xpro` Rust subcommand.
-- **`scripts/vps-sync-agent-stack.sh`** — One-shot: rebuild bxc-mcp/aphrody-mcp, sync MCP JSON to Claude/Grok, verify services.
+- **`scripts/aphrody/vps-sync-agent-stack.sh`** — One-shot: rebuild bxc-mcp/aphrody-mcp, sync MCP JSON to Claude/Grok, verify services.
 
 ### Added (prior)
 
@@ -222,15 +223,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (commit 96ae82e).
 - `aphrody completions <shell>` subcommand for bash/zsh/fish/powershell
   shell completion script generation (commit 588cd25).
-- `docs/ARCHITECTURE.md` — workspace topology, dependency flow, target
+- `docs/architecture/upstream-oxc/crates/oxc_minifier/docs/ARCHITECTURE.md` — workspace topology, dependency flow, target
   matrix, A2A coordination boundary (staged, no commit yet).
 - `docs/ADR/0000-template.md` Michael Nygard ADR template plus 3 ratified
   ADRs: `0001-cross-platform-rust.md`, `0002-a2a-file-based.md`,
   `0003-yolo-parallel-grind.md` (commit b228509).
-- `docs/ROADMAP.md` (477 words, Q2 2026 to Q1 2027 horizon) and
-  `docs/FAQ.md` (672 words, 12 questions) for OSS-launch readiness
+- `docs/plans/upstream-oxc/crates/oxc_minifier/docs/ROADMAP.md` (477 words, Q2 2026 to Q1 2027 horizon) and
+  `docs/reference/ai/FAQ.md` (672 words, 12 questions) for OSS-launch readiness
   (commit b228509).
-- `docs/COMPARISON.md` — 11-row capability table vs `just` / `taskfile`
+- `docs/reference/ai/COMPARISON.md` — 11-row capability table vs `just` / `taskfile`
   / `gh` / `devcontainer` / `asdf` (commit b228509).
 - `docs/launch/SHOW-HN.md` — 5 title candidates, pre-launch checklist
   (commit b228509).
@@ -254,12 +255,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `a2a-lf` (staged, no commit yet); updates to `a2a`, `a2a-client`,
   `a2a-grpc`, `a2a-pb`, `a2a-server`, `aphrody-translate` READMEs
   (staged, no commit yet).
-- `crates/cli/tests/doctor.rs` — 6 integration tests using `assert_cmd`
+- `apps/cli/tests/doctor.rs` — 6 integration tests using `assert_cmd`
   + `predicates`, nextest exit 0, DEGRADED exit 0, JSON deserialise
   verified (commit b228509).
-- `crates/backend/benches/backend_bench.rs` — 180-line criterion bench
+- `crates/os/backend/benches/backend_bench.rs` — 180-line criterion bench
   suite for the backend crate (commit b228509).
-- `.github/workflows/codeql.yml` — 70-line CodeQL security scan, on
+- `.github/shenron/workflows/codeql.yml` — 70-line CodeQL security scan, on
   push/pr to main, weekly cron (commit b228509).
 - `.github/workflows/release-please.yml` + `release-please-config.json`
   + `.release-please-manifest.json` — automated semver release + tag +
@@ -308,11 +309,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   for Linux/macOS/Windows (32b04690b).
 - `BENCHMARKS.md` — mrx scan real numbers (19k files / 1.4s) (a24b887bf).
 - `CONTRIBUTING.md` + `CODE_OF_CONDUCT.md` for OSS launch readiness (cf9bcadd8).
-- `.mcp.json` team-wide MCP server config + `docs/MCP_SETUP.md` (15be649d1).
+- `.mcp.json` team-wide MCP server config + `docs/guides/ai/MCP_SETUP.md` (15be649d1).
 - `/a2a-duel-loop` skill — sustained 2-Claude coordination tick (8bcbbbd97).
 - `/aphrody-yolo-grind` skill + `yolo-prod-ready` agent for 4-agent parallel
   grind (50bbba056).
-- `docs/SOURCE_OF_TRUTH.md` consolidated reference (efa4477e7).
+- `docs/reference/ai/SOURCE_OF_TRUTH.md` consolidated reference (efa4477e7).
 - Workspace deps pinned for `ievr-engine` handoff — `glam=0.30`,
   `bytemuck=1.25` (e55e37d93).
 - D+14 technical post draft on `ai.json` A2A coordination (7343772de).
@@ -325,7 +326,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `supply-chain/audits.toml` + `supply-chain/config.toml` cargo-vet
   formatting drift cleared, 5 attestations + 7 import URLs preserved
   (commit b228509).
-- `crates/cli/src/commands.rs` `DoctorCommand` body shipped — 493 lines
+- `apps/cli/src/commands.rs` `DoctorCommand` body shipped — 493 lines
   of helpers + variant + match-arm dispatch (commit 588cd25).
 - `crates/cli/src/main.rs` Commands enum gains `Doctor { json }` arm
   wired into Pre + Post dispatch tables (commit 2a721d2).
@@ -383,7 +384,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Security
 
-- `.github/workflows/codeql.yml` CodeQL security analysis pipeline —
+- `.github/shenron/workflows/codeql.yml` CodeQL security analysis pipeline —
   push + pr + weekly cron (commit b228509).
 - `docs/extensions/honest-delivery-v1.md` A2A extension formalising
   FAIT/NON_FAIT/INCOMPLET delivery classification so security claims
@@ -478,7 +479,7 @@ port, pipeline optimization.
 - `crates/aphrody-terminal-wasm` NEW (339+ lines) — wasm-bindgen DOM mount,
   M3 colors via m3-tokens, keyboard ANSI mapping (arrows, Enter, BS, Tab),
   one span per cell, dirty-row rerender (commit 9355ddc5).
-- `crates/aphrody-terminal-backend` NEW (287 lines) — portable-pty
+- `crates/shell/terminal-backend` NEW (287 lines) — portable-pty
   (ConPTY/openpty) + tokio-tungstenite WS server + JSON resize protocol +
   cross-platform shell autodetect (commit 9355ddc5).
 - `crates/aphrody-terminal-llm` NEW (1060 lines, 13 tests) — EventBus tokio
@@ -501,9 +502,9 @@ port, pipeline optimization.
 - `crates/aphrody-terminal-config` NEW (uncommitted) — schemars
   `~/.aphrody/terminal.json` + claude.json/mcp.json/settings.json import
   shims + merge precedence.
-- `crates/aphrody-tui` NEW (uncommitted) — pure Rust ratatui-style DSL,
+- `crates/shell/tui` NEW (uncommitted) — pure Rust ratatui-style DSL,
   60fps target.
-- `crates/a2a-ui/src/native/` + `examples/a2a-tui.rs` — ratatui TUI feature
+- `crates/ai/embed/src/native/` + `examples/a2a-tui.rs` — ratatui TUI feature
   `native` (default off, preserves WASM cdylib), header peer status +
   envelope list + detail JSON + footer keymap; ratatui added to
   `workspace.dependencies` (commit 04a5f676).
@@ -514,11 +515,11 @@ port, pipeline optimization.
   port of Next.js gemini.google.com/app, link:next resolved to fork
   next@16.3.0-canary.2, M3 tokens + WebGPU gradient + voice hooks
   (commit 2c1602cb).
-- `crates/cli/src/auto_command.rs` NEW (uncommitted) — autonomous CLI agent
+- `apps/cli/src/auto_command.rs` NEW (uncommitted) — autonomous CLI agent
   NL → A2A streaming via JsonRpcTransport.
-- `crates/base/benches/base_bench.rs` NEW (uncommitted) — criterion suite,
+- `crates/os/base/benches/base_bench.rs` NEW (uncommitted) — criterion suite,
   6 benches across vfs and aes-gcm.
-- `crates/a2a-client/src/transport.rs` — `TransportKind` enum cross-platform
+- `crates/os/a2a-client/src/transport.rs` — `TransportKind` enum cross-platform
   observability (NativeHyper / BrowserFetch / Unsupported) (uncommitted).
 - `crates/aphrody-wasm/examples/aphrody-terminal-demo.html` NEW (1361 lines,
   uncommitted) — pixel-perfect M3 showcase 8 panes, HTTP 200 verified.
@@ -562,7 +563,7 @@ port, pipeline optimization.
   `auto_detect_skills`, `bxc_cdp_{snapshot,evaluate,logs}`);
   `BXC_MEMORY_DB` → `var/data/` gitignored; smoke test green
   (commit 9355ddc5).
-- Voice WASM real implementations: `crates/aphrody-voice/src/web.rs`
+- Voice WASM real implementations: `crates/ai/voice/src/web.rs`
   (125 lines, WebSpeechSynth via web-sys SpeechSynthesis) +
   `crates/aphrody-voice-stt/src/web.rs` (162 lines, WebSpeechRecognition
   via `js_sys::Reflect` with webkit prefix), 11 methods total
@@ -600,7 +601,7 @@ port, pipeline optimization.
   `README.md` Documentation refs PLAN-MOONSHOT + spec + matrix,
   `docs/terminal/README.md` 3 forward-links design + matrix + moonshot
   (commit 04a5f676).
-- `docs/SUMMARY.md` regenerated via `cargo run -p aphrody-summary`
+- `docs/reference/ai/SUMMARY.md` regenerated via `cargo run -p aphrody-summary`
   (commits 04a5f676, 2c1602cb).
 - `docs/PLAN.md` audit: 19 → 11 ⏳ (8 flips ⏳→✅ with file:line proofs),
   PLAN-MOONSHOT 5 ⏳ legit (external registries not-yet-published)
@@ -612,7 +613,7 @@ port, pipeline optimization.
   (cargo machete cleanup) (commit d8863d5b).
 - `crates/a2a-slimrpc/Cargo.toml` — drop unused `prost-types` dependency
   (commit d8863d5b).
-- `crates/aphrody-voice/Cargo.toml` + `crates/aphrody-voice-stt/Cargo.toml`
+- `crates/ai/voice/Cargo.toml` + `crates/aphrody-voice-stt/Cargo.toml`
   — native items gated `not(target_arch = "wasm32")`; wasm32 deps gated
   in Cargo.toml; `cargo-machete ignored` for wasm-bindgen and friends
   (commit 2c1602cb).

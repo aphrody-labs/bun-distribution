@@ -8,7 +8,7 @@ metadata:
 # @aphrody/next-playwright
 
 Portage de la primitive `instant()` de `@next/playwright` sur le runner CDP de
-Aphrody Web (`packages/next-playwright`) — **sans dépendance runtime à
+Aphrody Web (`packages/next-playwright` (not in repo)) — **sans dépendance runtime à
 `@playwright/test`**.
 
 ## Surface

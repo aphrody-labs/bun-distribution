@@ -135,13 +135,13 @@ are met.
 | Unit | Binary (release `bin/`) | Listener | Source |
 | --- | --- | --- | --- |
 | `aphrody-site` | `aphrody-site` | `127.0.0.1:8083` | `aphrody-web` |
-| `aphrody-web-api` | `aphrody-web-api` (Bun `--compile` of `apps/bxc/src/server/index.ts`) + `lib/libaphrody_web_ffi.so`, `lib/libbxc_render.so` | `127.0.0.1:3007` | `aphrody-web` |
+| `aphrody-web-api` | `aphrody-web-api` (Bun `--compile` of `packages/shenron/api/src/server/index.ts`) + `lib/libaphrody_web_ffi.so`, `lib/libbxc_render.so` | `127.0.0.1:3007` | `aphrody-web` |
 | `aphrody-a2a` | `aphrody a2a serve` | `127.0.0.1:8788` | `aphrody-ai` (feature `aphrody/rag`) |
 | `aphrody-ai-http` | `aphrody-mcp http` (MCP on `/mcp`, incl. the `dragonball.*` tools that replaced `shenron-mcp`; REST `/api/v1/*`) | `127.0.0.1:8789` | `aphrody-ai` (feature `aphrody-mcp/ocr`) |
 | `aphrody-shenron-embed` | `aphrody-embed serve` (pure Rust E5) | `127.0.0.1:8794` | `aphrody-ai` (feature `server`) |
 
 The agent console served by `aphrody` is `aphrody-ui`'s tracked
-`crates/aphrody-app/ui-dist`, embedded at compile time by
+`crates/ui/app/ui-dist`, embedded at compile time by
 `aphrody-app-server`; a build that falls back to its placeholder page fails.
 Nginx serves `/ai.json` byte-for-byte from `/srv/aphrody/current/ai.json` and
 routes the apex (`nginx/aphrody/aphrody-apex.conf`: `aphrody.com`,

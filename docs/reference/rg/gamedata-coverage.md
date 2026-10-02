@@ -4,7 +4,7 @@
 > (items, teams, uniformes, passifs, skills, auras, emblèmes, telop/video waza, textures & modèles chr,
 > drop-rates par élément, shops, tous les cfg.bin, tous les lua, tout le code C).
 > Ancré au réel : `/home/ubuntu/nie/data/common/gamedata/**` (sources), `packages/inagle/src/parsers/**` (66 parseurs),
-> `packages/inagle/src/cli-push.ts` (push Supabase), tables `inagle_*` Supabase. **Aucune valeur inventée.**
+> `packages/inagle/src/cli-push.ts` (not in repo) (push Supabase), tables `inagle_*` Supabase. **Aucune valeur inventée.**
 
 ## Sources réelles
 
@@ -57,7 +57,7 @@
 ## Surfaçage azalee (contenu jeu → page wiki)
 
 Le `/goal` ne s'arrête pas à la DB : la donnée doit être **navigable**. État du surfaçage des tables
-`inagle_*` dans des pages azalee (vérifié 2026-06-06, routes réelles sous `apps/azalee/app/` à
+`inagle_*` dans des pages azalee (vérifié 2026-06-06, routes réelles sous `apps/azalee/app/` (not in repo) à
 l'époque de l'audit ; le wiki est depuis fusionné dans `apps/website/src/app/wiki/**` et chaque
 route ci-dessous est préfixée par `/wiki`).
 
@@ -84,19 +84,19 @@ route ci-dessous est préfixée par `/wiki`).
 | `inagle_events` (4708), `inagle_event_subtitles` (2093) | — | **PAS DE PAGE** (cf. RESTANT) |
 
 > Pattern de page wiki récente (RSC) : lib serveur `lib/wiki/<x>.ts` (`import "server-only"`, lit le miroir
-> SQLite) + `<x>-shared.ts` client-safe (types/helpers) ; nav dans `config/navigation.ts` + locales
+> SQLite) + `<x>-shared.ts` client-safe (types/helpers) ; nav dans `packages/rg/app-shell/src/config/navigation.ts` + locales
 > fr/en/ja. Frontière stricte : un `"use client"` n'importe **jamais** une lib qui touche sqlite (sinon
-> build casse `Can't resolve 'tls'`). Cf. `docs/cpk-browser.md` (même frontière pour `lib/cpk`).
+> build casse `Can't resolve 'tls'`). Cf. `docs/products/rg/cpk-browser.md` (même frontière pour `lib/cpk`).
 
 ## État CPK-mirror (navigateur de fichiers)
 
 **FAIT côté données/API, sans page dédiée** — l'**arbre des fichiers** des CPK (pas seulement les
 données parsées) reste exposé via l'API `/api/cpk` (pas de page `/cpk/[[...path]]`, l'explorateur UI a
 été retiré, `84461f04`) : miroir des **250 800 fichiers** (common 193 540 / dx11 57 260, source Redis
-db3 `iev:file:index`). Index tracké `apps/website/data/cpk-index.ndjson.gz` (~3,9 Mo) → matérialisé en
+db3 `iev:file:index`). Index tracké `apps/rg/website/data/cpk-index.ndjson.gz` (~3,9 Mo) → matérialisé en
 SQLite runtime sur `/tmp`. Contenu décodé live par le CDN : g4tx→png (:8788), g4md/g4mg→GLB
 **texturé complet** (corps+visage+uniforme) via `nie-model-serve` :8790 `/model-full/<code>.glb`. Doc dédiée :
-`docs/cpk-browser.md`. C'est la concrétisation « extraction totale → exploration totale » du `/goal`.
+`docs/products/rg/cpk-browser.md`. C'est la concrétisation « extraction totale → exploration totale » du `/goal`.
 
 ## RESTANT (domaines non surfacés / à câbler)
 
@@ -135,7 +135,7 @@ video waza) demandent un **nouveau parseur**. Plus : vérifier les drop-rates **
 6. **Code C** : niers continue (déjà 92,43 %).
 
 > Chaque livrable est classé **FAIT / INCOMPLET / NON_FAIT** et vérifié contre la donnée réelle (parseur exécuté,
-> `COUNT(*)` Supabase, octets du config). Voir aussi `docs/iecode-inagle-supabase.md` (audit consolidé).
+> `COUNT(*)` Supabase, octets du config). Voir aussi `docs/iecode-inagle-supabase.md` (not in repo) (audit consolidé).
 
 ## Batches (découpage exécutable en workflows dynamiques)
 
@@ -148,7 +148,7 @@ video waza) demandent un **nouveau parseur**. Plus : vérifier les drop-rates **
 | **B5** | **Assets chr** : extraire/indexer g4tx + g4mg/g4md/g4sk → manifest/DB + index arbre du jeu → Redis | `iecode` (C#) + `niers` (nie-formats) | **FAIT (voie C#)** (`319af59` ; `TextureManifestExport.cs` + `index-textures-to-redis.ts` ; **2000 g4tx → 20479 textures** en-têtes W/H/format/mips dans Redis db3 `iev:tex:*` vérifié `SCARD`=2000 + `HGETALL` échantillon `w14h015`=2048×2048 DX10 mips10 ; test 1293 assert ; arbre→Redis `0ba8a8a` 250800 fic/921 CPK). **CORRECTION honnête** : l'« extraction CPK » niers `c91faeb`/`a0e5333` était **cassée sur les vrais CPK** (modèle storage @UTF faux : nibble haut traité en enum au lieu de bits HasName/HasDefault/RowStorage → 0% extrait sur CPK textures) → fix Rust en cours (ancré au C# `UtfTable.cs`) + validation croisée Rust↔C#) |
 | **B6** | Événements : `ev*`/`Subtitle_ev*` (~16k) → index/typage des scripts d'event (dialogues, video waza in-game) | `rg` + Supabase | **FAIT** (`7e0cb0e` ; 3 familles réelles tracées : `Subtitle_ev*`=timing 5 vars, `text/<lang>/event/ev*`=TEXT_INFO localisé, `ev*_map`=washa 17 vars, jointes par hash Int signé ; `inagle_events`=**4708** + `inagle_event_subtitles`=**2093** vérifiés REST count=exact, dont **1572** lignes texte FR non-null, 521 NULL légitimes lyrics ; RLS+`Public Read` ; type-check vert ; texte stocké brut tags `<MNT:>`/furigana préservés) |
 | **B7** | Code C : niers continue (nie-wasm, câblage runtime sim, levier feuilles) | `niers` | EN COURS (axe séparé) |
-| **B8** | **RAG unifié — vecteurs précis + liens** : sidecar embeddings self-host (`rg-rag-embed.service`, multilingual-e5-small, zéro clé), graphe `inagle_rag_edges`, ingestion du texte de jeu (kind `text`) | `rg` (`packages/db`+`cron`, `scripts/rag-*`) + Supabase | **FAIT** (`c5569c4`,`c07e2c0` ; **41 491 arêtes** references/has_face/has_icon/is_texture/has_miximax ; texte de jeu **formaté/UTF-8** `[C…]` résiduel 0 / 259 899 entrées ; reembed 9850 PoC hash→e5 + ingestion ~70 k chunks `text` via sidecar ; doc `docs/rag-unified.md`) |
+| **B8** | **RAG unifié — vecteurs précis + liens** : sidecar embeddings self-host (`rg-rag-embed.service`, multilingual-e5-small, zéro clé), graphe `inagle_rag_edges`, ingestion du texte de jeu (kind `text`) | `rg` (`packages/rg/db`+`cron`, `scripts/rag-*`) + Supabase | **FAIT** (`c5569c4`,`c07e2c0` ; **41 491 arêtes** references/has_face/has_icon/is_texture/has_miximax ; texte de jeu **formaté/UTF-8** `[C…]` résiduel 0 / 259 899 entrées ; reembed 9850 PoC hash→e5 + ingestion ~70 k chunks `text` via sidecar ; doc `docs/rag-unified.md` (not in repo)) |
 | **B9** | **Surfaçage UI / drift data↔UI** (audit read-only 66 tables) : combler P0/P1 | `rg/apps/azalee` | **FAIT (P0/P1)** (`637ad44` ; `/item` 6→19 catégories ~1078 objets débloqués ; section `/succes` 228 trophées ; fusion `special_tactics` dans `/tactic` 70→80 ; retrait stats Lv30/50 mortes — vrai calcul = `lib/wiki/chara-stats.ts`) |
 
 ## Surfaçage UI — drift restant (audit read-only, 66 tables)

@@ -3,18 +3,18 @@
 
 Operator overview of the production application VPS (SSH alias `vps`). It explains the layers
 and where each fact is recorded; it deliberately does not restate addresses, ports or unit lists,
-which drift. Restored from the retired `aphrody` monolith (`docs/vps/`) and rewritten against the
+which drift. Restored from the retired `aphrody` monolith (`docs/vps/` (not in repo)) and rewritten against the
 catalogs of this repository.
 
 | Fact | Source of truth |
 |---|---|
 | Workloads, units, health URLs, loopback ports, source repositories | [`config/service-catalog.json`](../../../../config/service-catalog.json) |
 | Public hosts, Nginx upstreams and internal routes | [`config/nginx-routes.json`](../../../../config/nginx-routes.json) |
-| Host roles, priorities, public and loopback-only ports | [`config/production-topology.json`](../../../../config/production-topology.json), [`docs/PRODUCTION-ALLOCATION.md`](../PRODUCTION-ALLOCATION.md) |
+| Host roles, priorities, public and loopback-only ports | [`config/production-topology.json`](../../../../config/production-topology.json), [`docs/products/infra/PRODUCTION-ALLOCATION.md`](../PRODUCTION-ALLOCATION.md) |
 | Targets and SSH aliases | [`inventory/targets.json`](../../../../inventory/targets.json) |
 | Last dated observation of the host | [`inventory/vps-source.json`](../../../../inventory/vps-source.json) (evidence, never live state) |
 | Kernel, sysctl and journald tuning | [`host/aphrody-os/VPS-TUNING.md`](../../../../host/aphrody-os/VPS-TUNING.md) (legacy owner path), [`host/sysctl/`](../../../../host/sysctl/) |
-| Release layout and activation | [`docs/IMMUTABLE-RELEASES.md`](../../../operations/infra/IMMUTABLE-RELEASES.md), [`docs/RG-IMMUTABLE-RELEASES.md`](../../../operations/infra/RG-IMMUTABLE-RELEASES.md) |
+| Release layout and activation | [`docs/operations/infra/IMMUTABLE-RELEASES.md`](../../../operations/infra/IMMUTABLE-RELEASES.md), [`docs/operations/infra/RG-IMMUTABLE-RELEASES.md`](../../../operations/infra/RG-IMMUTABLE-RELEASES.md) |
 
 The 2026-10-02 [VPS observation](../../../operations/infra/VPS-STATUS-2026-10-02.md)
 is the latest host snapshot represented here. A unit present in a catalogue is

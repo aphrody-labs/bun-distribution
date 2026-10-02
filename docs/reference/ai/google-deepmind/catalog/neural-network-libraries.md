@@ -2,7 +2,7 @@
 
 TensorFlow-era and framework-agnostic neural network libraries, graph learning, sequence models, and research implementations of published architectures.
 
-> Part of [`docs/google-deepmind/`](../../../../products/ai/google-deepmind/README.md). Full mechanical listing: [`all-repos.md`](../all-repos.md). This page covers 46 repos (40 active / 6 archived).
+> Part of [`docs/google-deepmind/` (not in repo)](../../../../products/ai/google-deepmind/README.md). Full mechanical listing: [`all-repos.md`](../all-repos.md). This page covers 46 repos (40 active / 6 archived).
 
 ## TensorFlow neural network libraries
 

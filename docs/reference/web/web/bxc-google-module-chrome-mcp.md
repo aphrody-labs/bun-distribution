@@ -1,12 +1,12 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 # Aphrody Web Google module → aphrody Chrome MCP / CDP upgrade design
 
-> Reference clone: `var/data/bxc-ref/` (gitignored, reference only — `gh repo clone aphrody-code/bxc`, depth 1).
+> Reference clone: `var/data/bxc-ref/` (not in repo) (gitignored, reference only — `gh repo clone aphrody-code/bxc`, depth 1).
 > aphrody web is a Bun/TypeScript + Rust engine. Per `CLAUDE.md` aphrody is 100% Rust with **no JS/TS in the distribution**,
 > so aphrody web is treated strictly as REFERENCE material; the deliverable is a Rust port design.
 >
 > NON-OVERLAP: the Gemini `batchexecute` *send-payload wire spec* is owned by a separate workstream
-> (`docs/research/gemini-web-cdp-exploitation.md` + `var/data/gemini-web-recon/gemini-send-payload-spec.json`).
+> (`docs/reference/web/web/gemini-web-cdp-exploitation.md` + `var/data/gemini-web-recon/gemini-send-payload-spec.json` (not in repo)).
 > This document owns Aphrody Web's Google module + the chrome-MCP impersonation/bootstrap upgrade.
 
 ---
@@ -17,7 +17,7 @@ Aphrody Web (`@aphrody-code/bxc` v0.3.1) is a "Zero-Spawn" browser-automation en
 Rust FFI bridge (`rust-bridge/`, the `obscura-*` crates) that embeds a V8 runtime + a from-scratch DOM and a
 CDP-compatible server. It is a **stealth scraping / site-audit engine**, not a Google-auth client.
 
-### 1.1 The "native Google module": `var/data/bxc-ref/src/google/`
+### 1.1 The "native Google module": `var/data/bxc-ref/src/google/` (not in repo)
 
 | File | Role |
 | --- | --- |
@@ -35,16 +35,16 @@ CDP-compatible server. It is a **stealth scraping / site-audit engine**, not a G
 ### 1.2 Key finding — aphrody web has NO Google AUTH/Boq bootstrap
 
 A full-tree grep for `SNlM0e | batchexecute | SAPISIDHASH | f.sid | __Secure-1PSID | cfb2h` across
-`var/data/bxc-ref/src/` returns **zero matches**. aphrody web never mints an `at`/`bl`/`f.sid` token, never computes a
+`var/data/bxc-ref/src/` (not in repo) returns **zero matches**. aphrody web never mints an `at`/`bl`/`f.sid` token, never computes a
 `SAPISIDHASH`, never scrapes the `WIZ_global_data`/`SNlM0e` bootstrap blob from a logged-in Google page. Its only
 Google "auth" is the synthetic anonymous `CONSENT` cookie for SERP scraping (`search.ts:106-117`).
 
 Consequence: Aphrody Web's contribution to aphrody is **not** an auth bootstrap — it is the **Chrome TLS-impersonation
 transport** and the **anti-bot detection heuristics**. The Boq `batchexecute` bootstrap already exists, far more
-completely, inside aphrody's own `crates/aphrody-notebooklm/` (see §4.2). The upgrade grafts Aphrody Web's impersonation onto
+completely, inside aphrody's own `crates/google/notebooklm/` (see §4.2). The upgrade grafts Aphrody Web's impersonation onto
 that existing bootstrap.
 
-### 1.3 The Rust bridge (`var/data/bxc-ref/rust-bridge/crates/`)
+### 1.3 The Rust bridge (`var/data/bxc-ref/rust-bridge/crates/` (not in repo))
 
 This is the part directly relevant to an aphrody Rust port:
 
@@ -88,7 +88,7 @@ let builder = wreq::Client::builder()
 
 ### 2.2 Legacy TS path — libcurl-impersonate FFI (`chrome131`)
 
-`var/data/bxc-ref/src/ffi/curl-impersonate.ts` — a `bun:ffi` `dlopen` wrapper over
+`var/data/bxc-ref/src/ffi/curl-impersonate.ts` (not in repo) — a `bun:ffi` `dlopen` wrapper over
 `libcurl-impersonate` (lexiforest/curl-impersonate). Relevant facts for the impersonation surface:
 
 - Default profile **`chrome131`** for one-shot helpers (`curl-impersonate.ts:43`, `:933`); the class default is
@@ -151,9 +151,9 @@ domain/secure/path matching, CDP-cookie ingest, `httpOnly` JS-visibility split �
 
 ## 4. aphrody's current chrome-MCP surface (what we're upgrading)
 
-### 4.1 The MCP server: `crates/aphrody-mcp/` (binary `aphrody-mcp`)
+### 4.1 The MCP server: `crates/ai/mcp/` (binary `aphrody-mcp`)
 
-`crates/aphrody-mcp/src/main.rs` is an `rmcp` stdio server. Chrome-relevant tools:
+`crates/ai/mcp/src/main.rs` is an `rmcp` stdio server. Chrome-relevant tools:
 
 - **`auth_extract`** (`main.rs:511-559`) — Windows-only forensic credential extraction. Reads Chrome **Canary**
   (`Google/Chrome SxS/User Data`) DPAPI-wrapped cookies via `backend::chromium::ChromiumParser`, looks for
@@ -168,7 +168,7 @@ domain/secure/path matching, CDP-cookie ingest, `httpOnly` JS-visibility split �
 Summary: **the chrome MCP today can read a real Chrome's on-disk/in-memory secrets, but has no capability to
 *originate* a convincing Google session over the wire.** That is the gap.
 
-### 4.2 The existing pure-HTTP Google bootstrap: `crates/aphrody-notebooklm/`
+### 4.2 The existing pure-HTTP Google bootstrap: `crates/google/notebooklm/`
 
 This is aphrody's real Boq client and the thing Aphrody Web's transport would enhance:
 
@@ -245,7 +245,7 @@ crates/
         └── refresh.rs             #   re-run bootstrap on NotebookError::Auth (401/403) → set_tokens()
 ```
 
-MCP wiring — add one tool to `crates/aphrody-mcp/src/main.rs` alongside `auth_extract`:
+MCP wiring — add one tool to `crates/ai/mcp/src/main.rs` alongside `auth_extract`:
 
 ```
 google_session_bootstrap { profile?: "chrome131"|"chrome142", cookies_path?: String, target?: String }
@@ -292,5 +292,5 @@ It must return **booleans/labels only — never token or cookie VALUES** (those 
 ## Provenance
 
 All aphrody web claims cite `var/data/bxc-ref/...` (clone of `aphrody-code/bxc`, depth 1). aphrody claims cite
-`crates/aphrody-mcp/` and `crates/aphrody-notebooklm/`. No cookie/token values appear in this document; the example
+`crates/ai/mcp/` and `crates/google/notebooklm/`. No cookie/token values appear in this document; the example
 account is referred to only as `<user>`. This file is design + reference only — no `crates/` code was modified.

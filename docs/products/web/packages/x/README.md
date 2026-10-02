@@ -281,7 +281,7 @@ Building blocks are exported separately: `captureArchive`, `collectTimeline`,
 
 - **Store & state**: SQLite with tweet/user/community edges, FTS5 search, digest, archive import.
 - **Catalog & recon**: Dynamic query IDs from X JS bundles (`sync-x-catalog.ts`), surface recon, premium graph.
-- **X Pro / Radar**: Decks, columns, radar search (see `src/services/x-pro-deck.ts`, `src/config/radar-surface.ts` and `docs/web/x/X_PRO.md`).
+- **X Pro / Radar**: Decks, columns, radar search (see `src/services/x-pro-deck.ts`, `src/config/radar-surface.ts` and `docs/reference/web/web/x/X_PRO.md`).
 
 ## MCP
 
@@ -313,7 +313,7 @@ See:
 - Root `README.md` and `CLAUDE.md`
 - [aphrody-ai packages/xai/README.md](../../../ai/packages/xai/README.md) (high-level Grok Chat SDK)
 - `src/cli/x.ts`, `src/mcp/server.ts`
-- `docs/web/x/` (X_PRO.md, COVERAGE.md, PREMIUM.md)
+- `docs/web/x/` (not in repo) (X_PRO.md, COVERAGE.md, PREMIUM.md)
 - Examples in `examples/`
 
 **Production notes**: Cookie sessions expire/rotate; use stealth profiles; prefer local algo + store over repeated live calls. All verified in unit tests (no live required for core + algo).
@@ -324,7 +324,7 @@ See `index.test.ts` for units (catalog, store, archive, algo/ranking, ingest/RAG
 
 Run: `bun test packages/x`
 
-The Grok tool loop is tested in `apps/bxc/test/unit/grok-x-research-actor.test.ts`.
+The Grok tool loop is tested in `apps/bxc/test/unit/grok-x-research-actor.test.ts` (not in repo).
 
 ## License
 

@@ -1,6 +1,6 @@
 # ROADMAP-AGENT-PILLARS.md — Piliers Shenron et Aphrody AI
 
-> **Autorité de ce document :** Aphrody AI (`docs/PLAN.md` reste le plan de livraison maître).
+> **Autorité de ce document :** Aphrody AI (`docs/PLAN.md` (not in repo) reste le plan de livraison maître).
 > **Propriétaires des faits :** Shenron pour les données éditoriales et l'API;
 > Aphrody AI pour le CLI, les outils MCP et les agents; Aphrody UI pour la surface desktop;
 > `aphrody-infra` pour les services, routes, hôtes et déploiements.
@@ -136,7 +136,7 @@ configurés, pas une validation du chemin admin UI.
    - Suite au signalement #21 résolu, les fausses planches DBFC françaises ont été purgées.
    - Les chapitres 35002 à 35018 restent en statut « À compléter » (`visible = false`).
    - Action requise : Dès acquisition des scans originaux Shueisha B5 du Weekly Shōnen Jump (posters dépliants, pages 4C/2C, dossiers Jump ERA), réintégrer les planches japonaises authentiques.
-2. **Indexation des interviews de Toriyama** : Vérifier la correspondance 1:1 entre les sections d'interviews extraites et le registre canonique `docs/toriyama-interviews.md`.
+2. **Indexation des interviews de Toriyama** : Vérifier la correspondance 1:1 entre les sections d'interviews extraites et le registre canonique `docs/products/shenron/toriyama-interviews.md`.
 3. **Métadonnées des mini-guides** : Finaliser le catalogage des ouvrages annexes (Carddass, Comics d'animation de films).
 
 ---
@@ -158,7 +158,7 @@ configurés, pas une validation du chemin admin UI.
 
 #### État Actuel Vérifié :
 - **Pages traduites** : 11 318 pages de databooks disposent d'une traduction française rigoureuse.
-- **Dictionnaire canonique** : Alignement strict sur `dragon-ball-japonais` et `apps/site/scripts/inventaires/canon-citations-fr.json` (terminologie Toriyama : Kamehameha, Genki Dama, Kaio-ken, Super Saiyan, etc.).
+- **Dictionnaire canonique** : Alignement strict sur `dragon-ball-japonais` et `apps/shenron/site/scripts/inventaires/canon-citations-fr.json` (terminologie Toriyama : Kamehameha, Genki Dama, Kaio-ken, Super Saiyan, etc.).
 - **Worker d'arrière-plan** : Script `traduction-boucle.ts` opérationnel avec filtres anti-hallucination et élimination du bruit résiduel.
 
 #### Backlog Restant :
@@ -214,8 +214,8 @@ Lorsqu'un agent démarre une mission sur Shenron :
    aphrody shenron auth status
    ```
 2. **Consulter les objectifs et anomalies ouvertes** :
-   - Lire `docs/GOALS.md`
-   - Lire `docs/ADMIN-REPORTS.md`
+   - Lire `docs/products/shenron/GOALS.md`
+   - Lire `docs/operations/shenron/ADMIN-REPORTS.md`
 3. **Respecter les invariants techniques** :
    - Toujours utiliser `bun` (`bun run ...`, `bun test --isolate ...`).
    - Jamais de suppression physique (`DELETE`) en base de données -> toujours `visible = false`.

@@ -14,8 +14,8 @@ Latest release: `brush-shell-v0.4.0` (2026-05-03), tag `brush-v0.4.0` = `96a26d0
 
 | Item | Finding | Evidence |
 | --- | --- | --- |
-| wasm32-unknown-unknown | Supported. Built in CI on ubuntu-24.04 via `cross`. Changelog: "Enable building for wasm32-unknown-unknown (#425)". Needs rustflag `--cfg getrandom_backend="wasm_js"` | `.github/workflows/ci.yaml`, `.cargo/config.toml`, `CHANGELOG.md` |
-| wasm32-wasip2 | Supported. CI builds it and runs a subset of integration tests under wasmtime (`xtask test`, "Add basic wasm32-wasip2 tests to CI (#1098)"). Built with minimal features | `.github/workflows/ci.yaml`, `xtask/src/test.rs` |
+| wasm32-unknown-unknown | Supported. Built in CI on ubuntu-24.04 via `cross`. Changelog: "Enable building for wasm32-unknown-unknown (#425)". Needs rustflag `--cfg getrandom_backend="wasm_js"` | `.github/workflows/ci.yaml` (not in repo), `.cargo/config.toml`, `CHANGELOG.md` |
+| wasm32-wasip2 | Supported. CI builds it and runs a subset of integration tests under wasmtime (`xtask test`, "Add basic wasm32-wasip2 tests to CI (#1098)"). Built with minimal features | `.github/workflows/ci.yaml` (not in repo), `xtask/src/test.rs` |
 | Platform layer | `brush-core/src/sys/wasm/{mod.rs,fs.rs}`; everything else (process, signal, terminal, fd, pipes, poll, users, network, env, input, commands) reuses `sys/stubs`. So no subprocess spawn, no job control, no terminal ioctls on wasm | `brush-core/src/sys/wasm/mod.rs` |
 | Known wasip2 gap | `File::try_clone()` is unsupported on wasip2, so `OpenFile::clone()` falls back to a failing writer: output redirection is broken under wasi (test marked `incompatible_platforms: ["wasi"]`) | `brush-shell/tests/cases/brush/tracing.yaml` |
 | Excluded from wasi tests | compat, interactive and completion suites | `xtask/src/test.rs` |
@@ -48,7 +48,7 @@ Source: https://github.com/coder/ghostty-web, `1858a5947767a3e1c9e98dbf53b2ff87f
 | npm package | `ghostty-web` 0.4.0 (README also references `@ghostty-web/demo`) |
 | Licence | MIT (`package.json`, `LICENSE`) |
 | Description | Ghostty VT parser compiled to WASM, ~400 KB, zero runtime deps, canvas renderer (`CanvasRenderer`) |
-| Build | Zig + Bun; Ghostty source plus `patches/ghostty-wasm-api.patch`. Not built by us |
+| Build | Zig + Bun; Ghostty source plus `patches/ghostty-wasm-api.patch` (not in repo). Not built by us |
 | Load wasm | `import { init, Terminal } from 'ghostty-web'; await init();` (`init()` calls `Ghostty.load()` once, shared instance). The wasm is `ghostty-vt.wasm`, exported as `ghostty-web/ghostty-vt.wasm` and copied to `dist/`. Custom instance: `const ghostty = await Ghostty.load(); new Terminal({ ghostty })`. How `Ghostty.load()` resolves the URL (import.meta.url vs path option): unverified, read `lib/ghostty.ts` |
 | Entry points | ESM `dist/ghostty-web.js`, UMD `dist/ghostty-web.umd.cjs`, types `dist/index.d.ts` |
 
@@ -82,7 +82,7 @@ Source: https://github.com/uutils/coreutils, `2b85f6f12875d97abcbe8e2157000d7dde
 
 | Item | Finding |
 | --- | --- |
-| CI | `.github/workflows/wasi.yml` runs unit tests for `wasm32-wasip1` and `wasm32-wasip2` under wasmtime. Per-utility excluded set: `df\|du\|env\|more` (`EXCLUDE` list; derived from `./util/show-utils.sh`) |
+| CI | `.github/workflows/wasi.yml` (not in repo) runs unit tests for `wasm32-wasip1` and `wasm32-wasip2` under wasmtime. Per-utility excluded set: `df\|du\|env\|more` (`EXCLUDE` list; derived from `./util/show-utils.sh`) |
 | Selection feature | `feat_wasm = ["feat_common_core", "nproc"]` in root `Cargo.toml`. Build: `cargo build --target wasm32-wasip2 --no-default-features --features feat_wasm` (CI uses the `CICD.yml` flags at line ~391) |
 | Per-utility | `-p uu_<name>` crates, or `--no-default-features --features <name>` on `coreutils`. The wasi.yml TODO list names utilities not yet integration-tested, and the integration list names those that are (base32/64, basename, cat, comm, cp, cut, dirname, echo, expand, expr, factor, false, fold, head, link, ln, mktemp, nl, numfmt, od, paste, printf, shuf, sum, tail, tee, test, touch, tr, true, truncate, unexpand, unlink, wc, yes, plus two `ls` cases) |
 | Embedded caveat | Issue #14561 (open, 2026-09-14): `uucore` panics with empty argv in a component (`util_name()` / `EXECUTION_PHRASE` index `ARGV[0]`), which is a trap on wasm. Directly relevant to calling utilities as in-process library calls |

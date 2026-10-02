@@ -1,7 +1,7 @@
 > Historical source reference from the imported RG repository. Its paths,
 > versions and instructions are not current configuration. The only active
-> repository rules are [root AGENTS.md](../../../AGENTS.md); current ownership
-> follows the [IECODE package decision](../../decisions/rg/ievr-packages-from-iecode.md).
+> repository rules are [root AGENTS.md](../../../../AGENTS.md); current ownership
+> follows the [IECODE package decision](../../../decisions/rg/ievr-packages-from-iecode.md).
 
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 # CLAUDE.md — Rose Griffon

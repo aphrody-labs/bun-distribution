@@ -61,7 +61,7 @@ Pick per task through `aphrody-models`; licenses differ per model, read the mode
 
 ## Awesome presets (`aphrody awesome fetch <preset>`)
 
-Defined in `crates/aphrody-git/src/awesome.rs`; each checked with `gh api repos/<repo>`
+Defined in `crates/infra/git/src/awesome.rs`; each checked with `gh api repos/<repo>`
 (exists, not archived, default branch) on 2026-09-26.
 
 | Preset | Repository | Branch |

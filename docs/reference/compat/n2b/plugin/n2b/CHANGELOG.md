@@ -1,3 +1,4 @@
+<!-- docs-links: external-paths — backtick paths in this document name files of the pre-monorepo n2b repository (historical changelog), not of this checkout. -->
 # Changelog
 
 Toutes les évolutions notables de n2b — format [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), versionnage [SemVer](https://semver.org/lang/fr/).
@@ -18,14 +19,14 @@ Refactor massif pour maintenabilité et précision Rust↔Bun.
 
 ### Ajouté
 
-- **Contrat CLI-as-API formel** : `tests/compare-baseline.sh` (13 assertions snapshot) + `crates/n2b-cli/tests/contract.rs` (9 tests `assert_cmd` avec validation `jsonschema` contre `schema/v2.json`). Toute régression sur l'output JSON casse la CI.
+- **Contrat CLI-as-API formel** : `tests/compare-baseline.sh` (13 assertions snapshot) + `crates/compat/n2b/tests/contract.rs` (9 tests `assert_cmd` avec validation `jsonschema` contre `schema/v2.json`). Toute régression sur l'output JSON casse la CI.
 - **Codegen de types depuis le schéma** : `scripts/generate-schema-types.ts` produit `crates/n2b-core/src/schema.rs` (via `cargo-typify`) et `packages/n2b/src/schema.ts` (via `json-schema-to-typescript`). Mode `--check` en CI détecte la dérive.
-- **Tests round-trip** : `crates/n2b-cli/src/schema_test.rs` désérialise les baselines capturées sur `test/fixture/` et `rpb-dashboard/` dans `N2bReport`.
-- **Rollback transactionnel de migration** : `crates/n2b-cli/src/subprocess/bun.rs` — `BackupGuard` sauvegarde `package.json`, `pnpm-workspace.yaml` et les lockfiles rivaux en `.n2b-bak` avant side-effects ; `restore_all()` sur échec `bun install`.
+- **Tests round-trip** : `crates/compat/n2b/src/schema_test.rs` désérialise les baselines capturées sur `test/fixture/` et `rpb-dashboard/` dans `N2bReport`.
+- **Rollback transactionnel de migration** : `crates/compat/n2b/src/subprocess/bun.rs` — `BackupGuard` sauvegarde `package.json`, `pnpm-workspace.yaml` et les lockfiles rivaux en `.n2b-bak` avant side-effects ; `restore_all()` sur échec `bun install`.
 - **Property tests** sur les scanners critiques (`scanners/package_json.rs`, `scanners/source.rs`) via `proptest`.
-- **CI** : `.github/workflows/ci.yml` matrice Ubuntu+macOS — `cargo fmt --check`, `cargo clippy -D warnings`, `cargo test --workspace`, `bun typecheck`, `scripts/compare-baseline.sh`, `scripts/generate-schema-types.ts --check`.
+- **CI** : `.github/rg/workflows/ci.yml` matrice Ubuntu+macOS — `cargo fmt --check`, `cargo clippy -D warnings`, `cargo test --workspace`, `bun typecheck`, `scripts/compare-baseline.sh`, `scripts/generate-schema-types.ts --check`.
 - **Configs lint** : `rustfmt.toml`, `clippy.toml` (msrv 1.75, `avoid-breaking-exported-api`).
-- **Shims Bun** : `packages/n2b/src/shims/env.ts` (lecture typée de `Bun.env`), `fs.ts` (wrappers `Bun.file`), `path.ts` (équivalents `fileURLToPath`/`__dirname`), `shell.ts` (alias `Bun.$`).
+- **Shims Bun** : `packages/compat/n2b-client/src/shims/env.ts` (lecture typée de `Bun.env`), `fs.ts` (wrappers `Bun.file`), `path.ts` (équivalents `fileURLToPath`/`__dirname`), `shell.ts` (alias `Bun.$`).
 
 ### Modifié
 

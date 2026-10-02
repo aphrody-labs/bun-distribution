@@ -15,7 +15,7 @@ Citation Chromium :
 
 **Notre application** :
 - **Tout nouveau code en Rust** (cf. `CLAUDE.md`).
-- **C/C++ retiré progressivement** par sous-système (cf. `docs/cargo/MIGRATION.md`).
+- **C/C++ retiré progressivement** par sous-système (cf. `docs/reference/ai/cargo/MIGRATION.md`).
 
 ## 2. Toolchain pinning (alignement Chromium `tools/rust/`)
 
@@ -60,7 +60,7 @@ serde = { workspace = true }
 tokio = { workspace = true }
 ```
 
-→ 80 deps centralisées, mises à jour atomiques, audit unique (cf. `docs/cargo/DEPENDENCIES.md`).
+→ 80 deps centralisées, mises à jour atomiques, audit unique (cf. `docs/cargo/DEPENDENCIES.md` (not in repo)).
 
 ## 4. Lints stricts (alignement Android `lints: "android"`)
 
@@ -79,7 +79,7 @@ Chromium recommande `cxx` comme outil principal, `bindgen` pour les APIs trop la
 - **Actuellement** : FFI manuelle via `windows-rs` (plus précis que bindgen pour WinAPI) + `bun_ffi` (zero-copy raw pointers + `mem::forget` pattern).
 - **`crubit`** : non adopté (comme Chromium, statut expérimental).
 
-Référence : [`docs/cargo/FFI_POLICY.md`](./FFI_POLICY.md).
+Référence : [`docs/reference/ai/cargo/FFI_POLICY.md`](./FFI_POLICY.md).
 
 ### Pattern `cxx::bridge` à suivre (Chromium best practice)
 
@@ -155,7 +155,7 @@ Chromium `//third_party/rust` + audits manuels.
 Android : `Cargo.toml` formal review.
 Fuchsia : `cargo vet` + `third_party/rust_crates/supply-chain/`.
 
-**Notre application — synthèse moderne** : `cargo-vet` import des audits Google + Mozilla + Fuchsia + ChromeOS + Bytecode Alliance + Embark + Zcash. Cf. `docs/cargo/SUPPLY_CHAIN.md`.
+**Notre application — synthèse moderne** : `cargo-vet` import des audits Google + Mozilla + Fuchsia + ChromeOS + Bytecode Alliance + Embark + Zcash. Cf. `docs/reference/ai/cargo/SUPPLY_CHAIN.md`.
 
 ```toml
 # supply-chain/config.toml
@@ -184,7 +184,7 @@ Chromium : usage de features Rust unstable → approbation préalable de la Rust
 **Notre application** :
 - Nightly est notre canal — nous **utilisons** les unstable features (`#![feature(thread_local)]` dans `google_os`, etc.).
 - **Avant `1.0.0-LTS`** : freeze des unstable features utilisées, audit pour s'assurer qu'elles sont en track de stabilisation OU avoir un fallback stable.
-- Documenter dans `docs/PLAN.md` Phase P9 (Release LTS).
+- Documenter dans `docs/PLAN.md` (not in repo) Phase P9 (Release LTS).
 
 ## 11. Différences délibérées
 
@@ -205,7 +205,7 @@ Là où on s'écarte des patterns Chromium/Android par choix :
 - [x] **Cross-platform `cli` binary** (platform.rs)
 - [x] **Multi-target aliases** (.cargo/config.toml)
 - [x] **`cxx`/`bindgen` workspace deps préparés**
-- [ ] **CI multi-target** (`.github/workflows/cross-platform.yml`)
+- [ ] **CI multi-target** (`.github/workflows/cross-platform.yml` (not in repo))
 - [ ] **Premier `cxx::bridge` réel** (quand on intègre un binding C++ non trivial)
 - [ ] **`cargo fuzz`** pour `google_os` / `bun_ffi` (équivalent `rust_fuzz` Soong)
 - [ ] **`rust_bindgen`-style `build.rs`** quand on bind une API C large

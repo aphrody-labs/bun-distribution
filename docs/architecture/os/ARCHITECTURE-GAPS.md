@@ -57,7 +57,7 @@ resource-exhaustion risk within the local trust boundary and makes overload beha
 control.
 
 Evidence: [`transport.rs`](../../../crates/os/kernel/src/transport.rs) (`MAX_LINE`, unbounded queue,
-request task spawn); [`packages/os/src/index.ts`](../../../packages/os/kernel-client/src/index.ts) (`#receive`).
+request task spawn); [`packages/os/kernel-client/src/index.ts`](../../../packages/os/kernel-client/src/index.ts) (`#receive`).
 
 **Direction:** add bounded queues, request/concurrency quotas, output and input limits appropriate
 to binary/image payloads, and cancellation or deadlines for work that outlives its peer.
@@ -112,9 +112,9 @@ addition, `Winclean.listTools()` advertises every tool with the generic schema
 metadata and generated argument types to drift without the documented gate noticing.
 
 Evidence: [`verify-winclean-integration.ps1`](../../../scripts/audit/os/scripts/verify-winclean-integration.ps1),
-[`packages/winclean/src/index.ts`](../../../packages/os/winclean/src/index.ts) (`listTools`),
-[`packages/winclean/src/generated.ts`](../../../packages/os/winclean/src/generated.ts), and
-[`crates/aphrody-winclean/src/tools.json`](../../../crates/os/winclean/src/tools.json).
+[`packages/os/winclean/src/index.ts`](../../../packages/os/winclean/src/index.ts) (`listTools`),
+[`packages/os/winclean/src/generated.ts`](../../../packages/os/winclean/src/generated.ts), and
+[`crates/os/winclean/src/tools.json`](../../../crates/os/winclean/src/tools.json).
 
 **Direction:** check in or otherwise pin a deterministic generator and have the gate compare the
 full tool-name/schema surface across Rust and Bun. Return the actual schema from `listTools()`.
@@ -166,7 +166,7 @@ mirror an explicit configuration and return an aggregate error when required ass
 **Priority: P2.**
 
 The current convergence plan says all 166 tools dispatch to Rust and the NativeAOT migration is
-complete. `docs/ARCHITECTURE.md` still describes Rust handlers as replacing the legacy oracle
+complete. `docs/architecture/upstream-oxc/crates/oxc_minifier/docs/ARCHITECTURE.md` still describes Rust handlers as replacing the legacy oracle
 incrementally and lists NativeAOT as a Windows target component. Those statements conflict with
 the completed, Rust-only WinClean product path and make the architecture index unreliable for
 deciding what is implemented versus historical. References to external .NET compatibility support

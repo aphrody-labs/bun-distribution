@@ -14,8 +14,8 @@ typefaces and icons. Type scale and axes: [`TYPOGRAPHY.md`](./TYPOGRAPHY.md).
 | Material Symbols font | Opt-in sheet, never in the core sheet; UI icons are inline SVG from `@aphrody/m3-icons` | `src/fonts-symbols.css`, `crates/ui/bun/icons` |
 | System fallbacks | Bundled faces, then platform faces per OS, then the generic family | `FONT_STACKS` in `packages/ui/m3-fonts/src/index.ts` |
 | Delivery in Tauri | Fonts are part of `frontendDist` (`ui-dist`), embedded and served by the custom protocol; no `bundle.resources`, no `asset:` protocol | `@aphrody/m3` `buildM3` |
-| CSP | `font-src 'self' data:` (Bun inlines small fonts as `data:` URLs) | `crates/aphrody-app/tauri.conf.json` |
-| App icons | `icon.ico` with 16/24/32/48/64/128/256 layers; PNGs 16-512 for the Linux hicolor theme | `crates/aphrody-app/icons` |
+| CSP | `font-src 'self' data:` (Bun inlines small fonts as `data:` URLs) | `crates/ui/app/tauri.conf.json` |
+| App icons | `icon.ico` with 16/24/32/48/64/128/256 layers; PNGs 16-512 for the Linux hicolor theme | `crates/ui/app/icons` |
 
 ## Platform notes
 

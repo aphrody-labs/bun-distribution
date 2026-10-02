@@ -170,7 +170,7 @@ These are aliases, not additional runtimes. Existing `http`, `static`, `render`,
 `fast`, `stealth` and `max` profiles remain compatible.
 
 The complete native transport contract and cross-platform deployment matrix are
-documented in [`docs/CURL-IMPERSONATE.md`](../../../../reference/web/apps/bxc/docs/CURL-IMPERSONATE.md).
+documented in [`docs/reference/web/apps/bxc/docs/CURL-IMPERSONATE.md`](../../../../reference/web/apps/bxc/docs/CURL-IMPERSONATE.md).
 
 ## Library API
 
@@ -189,7 +189,7 @@ await page.close();
 Public exports include browser/page primitives, detection, Google helpers,
 media utilities, framework adapters, the SDK client, and explicit Rust and
 curl-impersonate FFI bindings. See the package `exports` map and
-[`docs/web/INDEX.md`](../../../../reference/web/web/INDEX.md) for the complete reference.
+[`docs/reference/web/web/INDEX.md`](../../../../reference/web/web/INDEX.md) for the complete reference.
 
 ## Packages
 

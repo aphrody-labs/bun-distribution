@@ -2,7 +2,7 @@
 
 Python repos from `google` that do not fit the major thematic categories — predominantly archived research/paper code, Python utilities and libraries, IT operations and infrastructure tooling, advertising/analytics tools, and a mix of internal experiments, samples, and one-off projects. Approximately 271 of the 299 repos are archived.
 
-> Part of [`docs/google/`](../../../../products/ai/google/README.md). Full mechanical listing: [`all-repos.md`](../all-repos.md). This page covers 299 repos (28 active / 271 archived).
+> Part of [`docs/google/` (not in repo)](../../../../products/ai/google/README.md). Full mechanical listing: [`all-repos.md`](../all-repos.md). This page covers 299 repos (28 active / 271 archived).
 
 ---
 

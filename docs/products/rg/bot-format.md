@@ -6,7 +6,7 @@ embed isolé, c'est la **répétition** : la même couleur veut toujours dire la
 même chose, le même bouton fait toujours la même chose, le pied de page dit
 toujours d'où vient la réponse.
 
-Tout ce qui suit vit dans **`apps/bot/src/lib/ui/`** et n'a qu'un point
+Tout ce qui suit vit dans **`apps/rg/bot/src/lib/ui/`** et n'a qu'un point
 d'entrée :
 
 ```ts

@@ -7,7 +7,7 @@ status: "stable"
 
 # Déploiement Website sans coupure
 
-Le portail et le wiki Azalée sont publiés ensemble depuis `apps/website`.
+Le portail et le wiki Azalée sont publiés ensemble depuis `apps/rg/website`.
 Cette procédure lance exactement **un build Next**, celui de Website.
 
 ```bash
@@ -59,4 +59,4 @@ bun scripts/ops/deploy.ts preview-off website
 - Ne pas effacer les fichiers d'une release active ; publier une nouvelle
   release immuable puis basculer.
 
-Le contrat complet de la surface wiki est dans [azalee.md](azalee.md).
+Le contrat complet de la surface wiki est dans [azalee.md](../../products/rg/azalee.md).

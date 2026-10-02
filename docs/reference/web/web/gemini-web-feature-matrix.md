@@ -1,5 +1,5 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
-# Gemini web app — feature-exploitation matrix (`crates/gemini-web`)
+# Gemini web app — feature-exploitation matrix (`crates/google/gemini-web`)
 
 Honest verification of which `gemini.google.com/app` capabilities the
 `gemini-web` crate exploits today, captured live 2026-05-21 (build

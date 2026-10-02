@@ -15,10 +15,10 @@ adopting its API-key auth model.
 - Gemini API REST reference: <https://ai.google.dev/api/generate-content>
 - Model catalog: <https://ai.google.dev/gemini-api/docs/models>
 
-**Sources (aphrody, read-only cross-ref):** `crates/aphrody-gemini-runtime/`,
-`crates/gemini-web/`, `crates/aphrody-mcp/`, `crates/aphrody-images/`,
-`crates/aphrody-antigravity/`, `crates/aphrody/src/agy_backend.rs`,
-`crates/aphrody-gateway/src/byok/gemini.rs`.
+**Sources (aphrody, read-only cross-ref):** `crates/google/gemini-runtime/`,
+`crates/google/gemini-web/`, `crates/ai/mcp/`, `crates/aphrody-images/` (not in repo),
+`crates/google/antigravity/`, `apps/cli/src/agy_backend.rs`,
+`crates/ai/gateway/src/byok/gemini.rs`.
 
 ---
 
@@ -31,22 +31,22 @@ built around two auth modes — **API key** (`generativelanguage.googleapis.com`
 `Authorization: Bearer`). The agy OAuth token is **rejected** by the public
 `generativelanguage` host (`401 ACCESS_TOKEN_TYPE_UNSUPPORTED` /
 `403 ACCESS_TOKEN_SCOPE_INSUFFICIENT`, documented at
-`crates/aphrody-antigravity/src/endpoints.rs:67-74` and
-`crates/aphrody/src/agy_backend.rs:27-31`), so aphrody reaches Gemini via two
+`crates/google/antigravity/src/endpoints.rs:67-74` and
+`apps/cli/src/agy_backend.rs:27-31`), so aphrody reaches Gemini via two
 keyless transports instead:
 
 1. **Cloud Code modelbackend** — `POST cloudcode-pa.googleapis.com/v1internal:generateContent`,
    envelope `{ model, project, request }` (the path agy.exe uses).
-   `crates/aphrody-antigravity/src/endpoints.rs:130-136`.
+   `crates/google/antigravity/src/endpoints.rs:130-136`.
 2. **Regional Vertex AI** — `POST {loc}-aiplatform.googleapis.com/v1/projects/{project}/locations/{loc}/publishers/google/models/{model}:generateContent`
-   (the agy token *is* accepted here). `crates/aphrody-antigravity/src/endpoints.rs:69-74`.
+   (the agy token *is* accepted here). `crates/google/antigravity/src/endpoints.rs:69-74`.
 
 **Conclusion:** adopt js-genai's **request/response shapes, model ids, and
 patterns** (they are identical across all transports — same `GenerateContentRequest`
 JSON, same method *suffixes* `:generateContent` / `:streamGenerateContent?alt=sse`
 / `:embedContent` / `:predict` / `:predictLongRunning`). Do **not** adopt its
 API-key header injection for the default path. A BYOK API-key adapter already
-exists and is correctly isolated (`crates/aphrody-gateway/src/byok/gemini.rs`).
+exists and is correctly isolated (`crates/ai/gateway/src/byok/gemini.rs`).
 
 ---
 
@@ -166,7 +166,7 @@ js-genai samples. **Exact code strings:**
 
 ### P0 — correctness (do first)
 1. **Drop / replace the shut-down `gemini-3-pro-preview`.**
-   - **File:** `crates/aphrody-gemini-runtime/src/lib.rs:87` (the `FALLBACK_MODELS` tuple)
+   - **File:** `crates/google/gemini-runtime/src/lib.rs:87` (the `FALLBACK_MODELS` tuple)
      and the assertion at `:621` (`assert!(ids.contains(&"gemini-3-pro-preview"))`).
    - **Change:** replace `("gemini-3-pro-preview", …)` with the live
      `("gemini-3.1-pro-preview", "gemini-3.1-pro-preview")` (the current Pro
@@ -184,7 +184,7 @@ js-genai samples. **Exact code strings:**
 ### P1 — high-value capability parity (keyless-compatible)
 3. **Extend the keyless `GenerateContentRequest` to carry `tools` + `toolConfig`
    and enrich `Part`.**
-   - **File:** `crates/aphrody-antigravity/src/models.rs:261-274` (add
+   - **File:** `crates/google/antigravity/src/models.rs:261-274` (add
      `#[serde(skip_serializing_if="Option::is_none")] tools: Option<Value>` and
      `tool_config: Option<Value>`); `Part` (`:216-222`) gains optional
      `function_call`, `function_response`, `inline_data`, `file_data` variants.
@@ -205,7 +205,7 @@ js-genai samples. **Exact code strings:**
      directly improves the autonomy objective.
 
 5. **Streaming on the keyless agy/Vertex path.**
-   - **File:** `crates/aphrody-antigravity/src/client.rs` (add a
+   - **File:** `crates/google/antigravity/src/client.rs` (add a
      `generate_content_stream` calling the `:streamGenerateContent?alt=sse`
      suffix on the Cloud Code/Vertex host) consumed by `agy_backend.rs`.
    - **Pattern to port:** js-genai `generateContentStream` — SSE frames, each a
@@ -226,7 +226,7 @@ js-genai samples. **Exact code strings:**
    (`agy_backend.rs:189`) stops being hard-coded `0`.
 
 ### Implications for the future GUI views (image / video / deep-research)
-The desktop app (`apps/desktop`) calls aphrody in-process. For new GUI views,
+The desktop app (`apps/desktop` (not in repo)) calls aphrody in-process. For new GUI views,
 the **exact keyless call** to wire is:
 
 - **Chat / structured / tools view:** `AgyBackend::complete` →

@@ -451,7 +451,7 @@ L'installer (`install.ps1` dans le repo Aphrody Web) :
 6. Vérifie via `bxc.exe --version`.
 
 Mise à jour ensuite : `aphrody web self-update` (`--check` pour comparer sans rien
-écrire). `scripts/install-bxc.ps1` est déprécié et redirige vers `install.ps1`.
+écrire). `scripts/install-bxc.ps1` (not in repo) est déprécié et redirige vers `install.ps1`.
 
 ---
 

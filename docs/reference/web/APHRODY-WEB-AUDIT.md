@@ -6,7 +6,7 @@ approximate (awk counts dependency lines in `[dependencies]`, `[dev-dependencies
 
 ## 1. Inventory
 
-Workspace: root `Cargo.toml:4` members include `crates/web/*`; `crates/web/drive-server` is excluded (`Cargo.toml:8`).
+Workspace: root `Cargo.toml:4` members include `crates/web/*`; `crates/web/drive-server` (not in repo) is excluded (`Cargo.toml:8`).
 Workspace deps pin each crate (`Cargo.toml:156-165, 219-226, 505`).
 
 | Crate (package) | Kind | deps | test files | todo!/unimpl! | wasm/windows cfg |
@@ -89,7 +89,7 @@ Security:
 - `APHRODY_WEB_BIN` is read from env (web-bridge resolve.rs/error.rs, agent-browser config.ts); a poisoned env can redirect execution.
 - Secrets in config: not scanned (unverified); `config/web.json` not read.
 Licences: obscura* Apache-2.0 manifests; taffy MIT with local patches (`docs/reference/web/VENDOR.md`). Upstream licences of wreq, obscura upstream not verified. `sd-server` (drive-server) is Spacedrive-derived (AGPL upstream; unverified), excluded from the workspace.
-Stale docs: `docs/reference/web/VENDOR.md` still points at `crates/aphrody-obscura/vendor/taffy` and `crates/aphrody-obscura/crates/obscura-render`, and "latest published taffy 0.12.2" (dated 2026-09-25); current path is `crates/web/taffy`. Also `docs/reference/web/_source`, `apps`, `chromium` subdirs not reviewed.
+Stale docs: `docs/reference/web/VENDOR.md` still points at `crates/aphrody-obscura/vendor/taffy` (not in repo) and `crates/aphrody-obscura/crates/obscura-render`, and "latest published taffy 0.12.2" (dated 2026-09-25); current path is `crates/web/taffy`. Also `docs/reference/web/_source` (not in repo), `apps`, `chromium` subdirs not reviewed.
 Dead code:
 - `aphrody-web-engine`: zero Cargo consumers, but it is the binary package (fine).
 - `drive-server` (sd-server): excluded, zero consumers, no tests.
@@ -122,7 +122,7 @@ Dead code:
 - obscura-mcp `browser_*`: not a duplicate catalogue. `web-service` and `crates/ai/mcp` consume `obscura_mcp::aphrody::tools()/call()`,
   so the 40 tools are declared once. Nothing removed, no aliases needed.
 - drive-server: retired 2026-10-02. Zero consumers (excluded crate, no member/dep lines, no tests); the 9 tracked files were
-  removed from `crates/web/drive-server`, dropped from root `Cargo.toml` `exclude` and from the owner-duplicate roots in
+  removed from `crates/web/drive-server` (not in repo), dropped from root `Cargo.toml` `exclude` and from the owner-duplicate roots in
   `docs-consolidation.ts`; `docs/migration/drive-rust-extraction.json` keeps the record marked `retired` (recoverable from git).
 - `web-engine` `dump_links` now calls `aphrody_web_crawl::extract_links_opts` (same `url\ttext` lines; now de-duplicated,
   http(s)-only and fragment-normalised like every other extractor; a page with no URL yields no links).

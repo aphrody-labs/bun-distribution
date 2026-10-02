@@ -1,7 +1,7 @@
 # Vie de communauté des bots Discord
 
 Niveaux, jetons Kizuna, collection de joueurs, tickets. Tout vit dans
-`apps/bot`, sous le profil **`rg`** (le bot Rose Griffon) ; le profil `azalee`
+`apps/rg/bot`, sous le profil **`rg`** (le bot Rose Griffon) ; le profil `azalee`
 ne charge aucun de ces modules.
 
 > **Trois principes gouvernent tout ce document.**
@@ -26,7 +26,7 @@ d'articles) est **éteint** tant qu'un humain ne l'a pas allumé.
 
 ## Le défaut que cette règle a fait trouver
 
-`packages/cron/src/index.ts` exposait un service HTTP d'annonces (port 3006)
+`packages/rg/cron/src/index.ts` exposait un service HTTP d'annonces (port 3006)
 avec trois problèmes, corrigés le 14/8/2026 :
 
 - le secret valait `default-secret-key-12345` **des deux côtés** quand
@@ -38,10 +38,10 @@ avec trois problèmes, corrigés le 14/8/2026 :
 Le service refuse désormais tout sans secret (503), n'écoute que `127.0.0.1`,
 et exige un salon **désigné**.
 
-Le secret n'était pas seulement absent : `packages/cron/.env` le fixait
+Le secret n'était pas seulement absent : `packages/rg/cron/.env` le fixait
 **explicitement à la valeur publique** `default-secret-key-12345`, des deux
 côtés du fil (site et cron). Il a été remplacé par 32 octets aléatoires dans
-les trois fichiers concernés, et `packages/cron/.env.example` ne livre plus de
+les trois fichiers concernés, et `packages/rg/cron/.env.example` ne livre plus de
 valeur utilisable.
 
 ⚠ **À arbitrer par le staff** : `DISCORD_NEWS_CHANNEL_ID` vaut
@@ -78,7 +78,7 @@ réellement passe par lui — jamais par un salon vu par les membres.
 
 #### Avant la clé — le dépouillement de l'historique
 
-`apps/bot/src/scripts/import-xp-tiers.ts` avait récupéré **65 membres sur
+`apps/rg/bot/src/scripts/import-xp-tiers.ts` avait récupéré **65 membres sur
 ~1 902** (3,4 %). Deux modes : le premier (top 10, image `/leaderboard` du
 9/8/2026, XP arrondie à la centaine) puis `--source=historique`, qui a dépouillé
 l'historique COMPLET de six salons plutôt qu'un seul instantané — fusion
@@ -127,8 +127,8 @@ leurs deux XP sur un seul profil.
 
 ### L'import complet par l'API — `import-noctaly.ts`
 
-`apps/bot/src/scripts/import-noctaly.ts` reprend **tout** ce que l'API Noctaly
-expose en lecture, une fois la clé posée dans `apps/bot/.env`
+`apps/rg/bot/src/scripts/import-noctaly.ts` reprend **tout** ce que l'API Noctaly
+expose en lecture, une fois la clé posée dans `apps/rg/bot/.env`
 (`NOCTALY_API_KEY`, générée sur `noctaly.com/dashboard` par un compte ayant
 « Gérer le serveur » — une clé par serveur, connexion humaine obligatoire) :
 
@@ -290,7 +290,7 @@ déduit du salon `#🎀〡rôles`, donc rien à corriger en base.
 
 ## 2. Niveaux — la courbe du jeu
 
-`apps/bot/src/lib/experience.ts` recopie les **100 paliers de
+`apps/rg/bot/src/lib/experience.ts` recopie les **100 paliers de
 `inagle_exp_table`**, la table d'expérience d'Inazuma Eleven Victory Road. Ce
 n'est pas décoratif : monter de niveau sur le Discord coûte exactement ce que ça
 coûte en jeu.
@@ -334,7 +334,7 @@ semaine sur un serveur de deux mille membres.
 
 `/gestion niveaux recompense` attribue un rôle **tout seul, sans qu'un humain
 regarde**. Quatre familles de rôles sont donc **refusées**
-(`apps/bot/src/lib/hierarchie.ts`) :
+(`apps/rg/bot/src/lib/hierarchie.ts`) :
 
 1. `@everyone` ;
 2. les rôles **gérés par une intégration** (bot, Patreon, boost Nitro) — Discord
@@ -471,7 +471,7 @@ membres ordinaires (confort d'interface) ; `exigerDroits` lit le rôle réel dan
 
 ## 8. Base de données
 
-`apps/website/sql/migrations/20260814_bot_communaute.sql` (+ `_reglages`, `_kizuna`).
+`apps/rg/website/sql/migrations/20260814_bot_communaute.sql` (+ `_reglages`, `_kizuna`).
 
 | Table | Contenu | Lisible publiquement ? |
 | --- | --- | --- |

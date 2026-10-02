@@ -15,7 +15,7 @@ Registry of pins and patches: the `debuggers` block of
 | Patch set over the hypothesi bridge     | `patches/tauri-plugin-mcp-bridge-0.13.0-tauri3.patch` (11 files), applied to `../source/mcp-server-tauri/packages/tauri-plugin-mcp-bridge` | Applies to the pristine pin and reproduces the working tree. **Not compiled or run** after patching.        |
 | Feature-gated host plugin               | `crates/ui/tauri-wrap` (`aphrody_tauri_wrap::debug`, feature `debug-bridge`)              | **Not compiled.** Registered in `config/tauri-apps.json`; `bun run tauri:apps:check` passes.                                   |
 | Bun client                              | `@aphrody/agent-browser/tauri` (`listTauriApps`, `TauriBridge`)                           | 6 tests pass against a fake bridge; the DOM snapshot script runs in the aphrody-web engine on a fixture page.                 |
-| App wiring                              | `crates/ui/model-view` feature `debug-bridge`                                             | **Not compiled.** Window launch under X11 was seen with a build that predates the plugin (see below).                          |
+| App wiring                              | `crates/ui/model-view` (not in repo) feature `debug-bridge`                                             | **Not compiled.** Window launch under X11 was seen with a build that predates the plugin (see below).                          |
 
 No Tauri window has been driven through the debug channel yet. `aphrody-model-view` (built before
 this change) opened under `GDK_BACKEND=x11 WEBKIT_DISABLE_DMABUF_RENDERER=1`: `xwininfo -root -tree`

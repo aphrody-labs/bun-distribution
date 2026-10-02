@@ -18,7 +18,7 @@ AI (`google-genai`) and the Cloud Code `v1internal` API.
 
 The OAuth client id and endpoints are public; the user's tokens
 are read at runtime, stored only under the git-ignored secrets dir
-(`var/secrets/` inside the repo, else `~/.aphrody/`; override with
+(`var/secrets/` (not in repo) inside the repo, else `~/.aphrody/`; override with
 `APHRODY_SECRETS_DIR`), mode `0600`, and never embedded, logged, or committed.
 The Antigravity client is a *confidential* desktop client, so aphrody refreshes
 by re-reading the OS credential store (which the app keeps current) rather than
@@ -118,7 +118,7 @@ callers remove it when no longer needed.
 
 | Module | Purpose |
 |--------|---------|
-| `aphrody._paths` | resolve the private secrets dir (`var/secrets/` ▸ `~/.aphrody`) |
+| `aphrody._paths` | resolve the private secrets dir (`var/secrets/` (not in repo) ▸ `~/.aphrody`) |
 | `aphrody.auth.tokens` | `OAuthToken` value type + expiry logic |
 | `aphrody.auth.credential_store` | Windows Credential Manager + token-file source/cache |
 | `aphrody.auth.oauth` | refresh / tokeninfo / userinfo |
@@ -138,4 +138,4 @@ callers remove it when no longer needed.
 
 ## License
 
-Apache-2.0. Mirrors the native Rust `crates/aphrody-antigravity` surface.
+Apache-2.0. Mirrors the native Rust `crates/google/antigravity` surface.

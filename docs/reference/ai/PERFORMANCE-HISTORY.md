@@ -3,7 +3,7 @@
 # Performance History — `aphrody` Bench Ledger
 
 Long-term ledger of criterion bench results across releases. Manual entry per
-release, supplemented by the `.github/workflows/bench.yml` CI artifact archive.
+release, supplemented by the `.github/workflows/bench.yml` (not in repo) CI artifact archive.
 
 ## 1. Purpose
 
@@ -129,11 +129,11 @@ When a row shows `[REGRESSION]`:
 4. Apply profile-guided optimisation (`cargo pgo`) if the regression is in
    a hot inner loop that benefits from PGO.
 5. If the regression is genuine and structural, open an issue; consider
-   yanking the affected version per `docs/cargo/PUBLISH-LADDER.md` section 5.
+   yanking the affected version per `docs/reference/ai/cargo/PUBLISH-LADDER.md` section 5.
 
 ## 6. CI artifact archive
 
-`.github/workflows/bench.yml` uploads a `bench-output.txt` artifact per run,
+`.github/workflows/bench.yml` (not in repo) uploads a `bench-output.txt` artifact per run,
 retained 30 days. To pull a historical bench from CI:
 
 ```bash
@@ -148,22 +148,22 @@ traceability between a published version and its measured bench numbers.
 We do NOT (yet) use `criterion-compare-action`. It requires baseline
 persistence across runs and a sustained CI baseline store, which is more
 infrastructure than we currently maintain. When that lands (planned Q3 2026
-per `docs/ROADMAP.md`), the manual ledger will be supplemented, not
+per `docs/plans/upstream-oxc/crates/oxc_minifier/docs/ROADMAP.md`), the manual ledger will be supplemented, not
 replaced — the manual version captures release-version-level snapshots; the
 CI version captures per-PR deltas. Both views matter.
 
 ## 8. Reference
 
-- `crates/aphrody-backend/benches/backend_bench.rs` — backend primitives bench source
-- `crates/aphrody/benches/cold_start.rs` — `aphrody version` cold-start bench
+- `crates/os/backend/benches/backend_bench.rs` — backend primitives bench source
+- `apps/cli/benches/cold_start.rs` — `aphrody version` cold-start bench
   (R-A R1.5 phase 1)
-- `crates/aphrody-mcp/benches/initialize_handshake.rs` — `aphrody-mcp` stdio
+- `crates/ai/mcp/benches/initialize_handshake.rs` — `aphrody-mcp` stdio
   MCP handshake bench (R-A R1.5 phase 2)
-- `crates/aphrody-re/benches/triage.rs` — RE `triage()` throughput bench at
+- `crates/os/re/benches/triage.rs` — RE `triage()` throughput bench at
   64 KiB / 1 MiB / 5 MiB + isolated `extract_strings` (pillar R5 metric)
-- `docs/PERFORMANCE.md` — bench claims with reproduction recipes
-- `docs/PLAN.md` §R-A R1.5 — acceptance criterion (p50 cold-start < 5 ms,
+- `docs/reference/ai/PERFORMANCE.md` — bench claims with reproduction recipes
+- `docs/PLAN.md` (not in repo) §R-A R1.5 — acceptance criterion (p50 cold-start < 5 ms,
   p50 MCP initialize < 20 ms on reference hardware)
-- `.github/workflows/bench.yml` — CI bench gate
-- `docs/ROADMAP.md` — planned `criterion-compare-action` wiring
-- `docs/cargo/PUBLISH-LADDER.md` — yank policy referenced in section 5
+- `.github/workflows/bench.yml` (not in repo) — CI bench gate
+- `docs/plans/upstream-oxc/crates/oxc_minifier/docs/ROADMAP.md` — planned `criterion-compare-action` wiring
+- `docs/reference/ai/cargo/PUBLISH-LADDER.md` — yank policy referenced in section 5

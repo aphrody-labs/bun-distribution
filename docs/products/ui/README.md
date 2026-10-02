@@ -17,8 +17,8 @@ system applications over rebuilding them in this workspace.
 | `crates/aphrody-app` | Current Tauri host and resident app-server broker |
 | `crates/aphrody-render*`, `aphrody-m3*` | Rendering and canonical design tokens |
 | `packages/m3-*`, `material-web`, `react` | Shared web components and adapters |
-| `drive/`, `crates/aphrody-drive` | Drive runtime/plugin and source lineage |
-| `packages/koharu-ui` | Extracted editor presentation |
+| `drive/`, `crates/ui/drive` | Drive runtime/plugin and source lineage |
+| `packages/koharu/ui` | Extracted editor presentation |
 
 AI runs out of process through `aphrody app-server`; UI never links AI crates.
 The desktop UI contains no shell, PTY or terminal session layer. Contracts owns

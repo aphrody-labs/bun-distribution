@@ -48,11 +48,11 @@
 | SH-P1-006 | P1 | [ ] | wiki-canon | Ré-ancrer articles et techniques sans sources primaires. Tranche exacte : 126 fiches ré-ancrées et révisées le 2026-09-14 ; 335 restent sans preuve exacte. Dernière vague MCP Dragon Ball : Awamo, Chilled, Chronoa, Chapchai et Cocotte, neuf ancrages exacts et cinq révisions transactionnelles ; Basaku, Chevil et Comfrey restent intacts faute de correspondance exacte non ambiguë. | 0 article rédigé sans sources ; chaque ajout sourcé et révisé. |
 | SH-P1-007 | P1 | [ ] | ocr | Terminer 1 508 pages, priorité #465, #1, #463, #461, #34, #35, #29, #462. Sept lots #29 : 8 textes exacts et 20 planches visuelles. Deux lots #36 : 8 textes exacts. Deux lots #27/#28/#5/#22 : 6 textes exacts et 2 planches visuelles. Deux lots Anime Comics supplémentaires : sept synopsis japonais longs (#443/#446/#447/#451/#452/#454/#456) et le seul logotype visible #445. Lot #52:2 : une planche personnages de densité moyenne transcrite après double lecture de l'original et de deux agrandissements ; SHA-256/Sharp valides, `verifie` 1/1 et dépôt simulé 1/1, zéro PG. #34/#35 sans scan local ; premières entrées #462 absentes. #465 reste HTTP 403 sans contournement : source autorisée requise. | 100 % texte ou no-text visuel ; needs-review=0 ; santé stricte verte. |
 | SH-P1-008 | P1 | [ ] | translation | Reprendre sous canary 11 401 traductions après revue des 291 suspectes. **Progrès 2026-09-14 :** 102/291 planches uniques relues sur scans : 85 verdicts de retrait, 17 conservations prouvées. Manifest canary atomique de 86 actions avec hash attendu et rollback par révision préparé ; 0 écriture sous freeze. Le décompte corrige deux revues dupliquées (`12/81`, `30/3`). | Gel levé après SH-P0-003 ; lexique protégé ; aucune corruption. |
-| SH-P1-009 | P1 | [x] | entity-integrity | 15 identités déterministes consolidées et versionnées ; 31→22 groupes, tous les restants classés comme déclinaisons/homonymies dans `docs/audit/2026-09-14-name-ja-groups.json` ; variantes orphelines 21→0, `#2330` mise en quarantaine logique faute de cible canonique exacte. | Zéro doublon non justifié et variante visible orpheline ; révisions. |
+| SH-P1-009 | P1 | [x] | entity-integrity | 15 identités déterministes consolidées et versionnées ; 31→22 groupes, tous les restants classés comme déclinaisons/homonymies dans `docs/audit/2026-09-14-name-ja-groups.json` (not in repo) ; variantes orphelines 21→0, `#2330` mise en quarantaine logique faute de cible canonique exacte. | Zéro doublon non justifié et variante visible orpheline ; révisions. |
 | SH-P1-010 | P1 | [x] | site-audit | Corriger `audit-wiki-couverture.ts` : `[]`/`{}` sont vides ; auditer les 11 zones restantes. | Rapport JSON daté ; 38 frames, 12 subtitles épisodes, 3 players/streams et 2 subtitles films correctement comptés. |
 | SH-P1-011 | P1 | [x] | backend-resilience | Remplacer les rate limits process-local par compteur atomique partagé. | Tests multi-instance/concurrence, `Retry-After`, comportement de panne documenté. |
 | SH-P2-012 | P2 | [x] | observability | Unifier télémétrie MCP/A2A et résiduels UI/API reproductibles. | Snapshot courant explicite ; pas de `200 []` sur panne DB ; health, URL canonique, JA et hydratation testés. |
-| SH-P2-013 | P2 | [x] | a2a | Hub A2A 1.0 canonique (`mcp.dragonballfr.com/a2a`) : `/msg` rejette les `kind` hors ai.json v1 (enveloppe `error`, aucun ordre) ; `error` hors tâche escaladé sur #bot-admin sans créer de tâche. Décision 2026-09-23 : étendre `packages/pipeline/src/aphrody/a2a.ts`, pas de second registre. | `bun test` package pipeline/Aphrody 21/22 (échec gix préexistant, hors A2A). |
+| SH-P2-013 | P2 | [x] | a2a | Hub A2A 1.0 canonique (`mcp.dragonballfr.com/a2a`) : `/msg` rejette les `kind` hors ai.json v1 (enveloppe `error`, aucun ordre) ; `error` hors tâche escaladé sur #bot-admin sans créer de tâche. Décision 2026-09-23 : étendre `packages/shenron/pipeline/src/aphrody/a2a.ts`, pas de second registre. | `bun test` package pipeline/Aphrody 21/22 (échec gix préexistant, hors A2A). |
 | SH-P1-016 | P1 | [x] | stack-unification | Unifier DB, auth, UI, API et IA en paquets modulaires hors Next (`@shenron/{config,db,auth,images,api,ui,pipeline}`), en TypeScript 7 (tsc natif) et oxlint. Livré et qualifié : 9 paquets propres, 0 erreur de lint, 0 erreur de typecheck, 2 105 tests passants. | 9 paquets modulaires validés ; gates vertes ; tests exhaustifs. |
 | SH-P0-017 | P0 | [x] | backend-security | S1 : `checkAdmin` du bot accorde l’admin selon la politique staff (OWNER_ID ∪ OAUTH_ALLOWED_USERS), 403 sinon. | Tests négatifs et staff checks validés (`check-admin-staff.test.ts`). |
 | SH-P1-018 | P1 | [x] | a2a | S5 : écritures A2A bot/site sans jeton ; contrôle `SHENRON_A2A_TOKEN` derrière `SHENRON_A2A_ENFORCE` (avertissement par défaut) jusqu’aux tickets INFRA-2/MCP-1. | Drapeau testé ; suite A2A verte (`a2a-auth.test.ts`). |
@@ -68,8 +68,8 @@
 ## Sources déclassées
 
 - Les anciens audits étaient des preuves seulement ; ils ont été retirés du dépôt.
-- `docs/GOALS.md` et `docs/ADMIN-REPORTS.md` : miroirs ; aucune mention « nominal » ne prévaut sur freeze/gate rouge.
-- Seule la boîte racine `.coord/a2a-tasks.jsonl` est retenue, avec verdict final prioritaire.
+- `docs/products/shenron/GOALS.md` et `docs/operations/shenron/ADMIN-REPORTS.md` : miroirs ; aucune mention « nominal » ne prévaut sur freeze/gate rouge.
+- Seule la boîte racine `.coord/a2a-tasks.jsonl` (not in repo) est retenue, avec verdict final prioritaire.
 - Les chiffres du 12 septembre doivent être rejoués ; ses suggestions Fandom sont nulles.
 
 ## Journal de validation
@@ -150,7 +150,7 @@
 
 - `deploy/systemd/shenron-zswap.service` → `systemd/` (réglage hôte) ;
   `deploy/setup-swap.sh` l'installe depuis `../../systemd/`.
-- `scripts/ovh-dns.ts` → `scripts/ops/ovh-dns.ts` (doublon du client OVH de nie).
+- `scripts/ops/ovh-dns.ts` → `scripts/ops/ovh-dns.ts` (doublon du client OVH de nie).
 - Restent ici, car liés aux releases Shenron : sauvegardes, `clean-vps`, `watchdog.sh`,
   `healthcheck.sh`, `install.sh`.
 - Gate : `bun test apps/site/tests/deploy-site-invariants.test.ts` → 11 pass, 0 fail.
@@ -170,12 +170,12 @@ son workspace. Les bibliothèques Discordx publiées restent des dépendances
 tierces du bot.
 
 - Décisions (SH-P1-016) : TypeScript 7.0.2 partout (`next build` passe par `experimental.useTypeScriptCli`, défaut de Next 16.3.5) ; ESLint retiré au profit d’oxlint (typescript-eslint plafonne `typescript <6.1`) ; Drizzle 0.45.3 avec postgres-js (site) et Bun.SQL (bot, scripts, API) ; Better Auth 1.7.5 ; Hono 4.13 + zod-openapi 1.6 monté dans les processus existants (pas de nouvelle unité) ; Vercel AI SDK v7 devant `aphrody-ai-http` ; Base UI 1.8 + Tailwind v4 ; canvas = version aphrody-os de `@aphrody/canvas`.
-- Recherche : cartes des surfaces (6 lecteurs + critique), scan Aphrody (4 scanners, 2 vérificateurs), panel de 3 architectures et 2 juges → `docs/STACK.md`.
-- Canvas : `@aphrody/canvas@1.0.9-aphrody.2` publié depuis aphrody-os `208db180` ; bot : `tests/canvas-render.test.ts` 5/5 en natif sous win32, suite bot 306 pass / 1 skip / 0 fail.
+- Recherche : cartes des surfaces (6 lecteurs + critique), scan Aphrody (4 scanners, 2 vérificateurs), panel de 3 architectures et 2 juges → `packages/ui/material-web/docs/STACK.md`.
+- Canvas : `@aphrody/canvas@1.0.9-aphrody.2` publié depuis aphrody-os `208db180` ; bot : `apps/shenron/bot/tests/canvas-render.test.ts` 5/5 en natif sous win32, suite bot 306 pass / 1 skip / 0 fail.
 - Préparation orchestrateur : catalogue (retrait ESLint, `@ai-sdk/react`, `@modelcontextprotocol/sdk` ; ajout `@ai-sdk/provider`, `postcss`), squelette `@shenron/config`, manifestes des paquets ; `bun install --frozen-lockfile` : 1 336 installations, aucun changement.
 - Vagues 1 à 3 livrées (`eae47eeb` → `47ef816d`) : `@shenron/config`, `db`, `auth`, `ai`, `aphrody` (source-first), `ui` (Base UI), `api` (contrat OpenAPI, client, serveur Hono) ; site et bot branchés sur les paquets. Typecheck site/bot vert ; paquets : db 79, auth 93, ai 107, aphrody 53, ui 26 tests, 0 échec ; bot 376 pass / 1 fail intermittent (`rag-filter.test.ts`, planches manga) / 1 skip. Restent vagues 4 (api, auth, ai, ui) et 5 (outillage).
-- Runtime : option C retenue (`b50b4f6b`, `docs/RUNTIME.md`) — `shenron.target` + un runtime applicatif, site séparé ; unités et tickets côté aphrody-infra.
-- Dev local : `scripts/dev/local-env.ts` (`5e1d35e9`) génère `apps/{site,bot}/.env.local` (dédoublonné, sans `NODE_ENV`) et ouvre les tunnels depuis le catalogue aphrody-infra (Windows et WSL) ; `next build` vert dans WSL. Cause du prérendu cassé : `NODE_ENV=development` hérité du `.env` racine. Cf. `docs/DEV-LOCAL.md`.
+- Runtime : option C retenue (`b50b4f6b`, `docs/architecture/shenron/RUNTIME.md`) — `shenron.target` + un runtime applicatif, site séparé ; unités et tickets côté aphrody-infra.
+- Dev local : `scripts/dev/shenron/scripts/dev/local-env.ts` (`5e1d35e9`) génère `apps/{site,bot}/.env.local` (dédoublonné, sans `NODE_ENV`) et ouvre les tunnels depuis le catalogue aphrody-infra (Windows et WSL) ; `next build` vert dans WSL. Cause du prérendu cassé : `NODE_ENV=development` hérité du `.env` racine. Cf. `docs/operations/shenron/DEV-LOCAL.md`.
 
 ## Traduction databooks — arrêt propre et reprise — 2026-09-25
 

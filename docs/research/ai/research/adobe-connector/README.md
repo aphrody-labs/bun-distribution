@@ -19,7 +19,7 @@ licence for reference.
 | Captured from | `…\Packages\Claude_pzs8sxrjxfjjc\LocalCache\Roaming\Claude\local-agent-mode-sessions\…\rpm\plugin_017FSfZwAM3GF7xTpsbDUHoA\` |
 
 Each `skills/*/SKILL.md` retains its original Apache-2.0 frontmatter and author.
-No file was modified; `.mcp.json` → `mcp.json` and `.claude-plugin/plugin.json`
+No file was modified; `.mcp.json` → `mcp.json` and `.claude-plugin/plugin.json` (not in repo)
 → `plugin.json` were renamed only so they are not hidden in the tree.
 
 ## What it is

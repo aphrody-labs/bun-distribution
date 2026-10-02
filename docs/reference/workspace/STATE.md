@@ -37,7 +37,6 @@ Root `Cargo.toml` `[workspace] exclude`:
 
 - `crates/contracts/schema`
 - `crates/os/drive`
-- `crates/web/drive-server`
 
 Tracked Cargo manifests outside the root workspace (excluded, nested workspaces or fixtures):
 
@@ -64,7 +63,6 @@ Tracked Cargo manifests outside the root workspace (excluded, nested workspaces 
 - `crates/os/drive/patches/ffmpeg-sys-next`
 - `crates/os/drive/patches/whisper-rs-sys`
 - `crates/os/drive/xtask`
-- `crates/web/drive-server`
 
 ## ai
 

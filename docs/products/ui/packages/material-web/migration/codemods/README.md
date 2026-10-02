@@ -41,7 +41,7 @@ Tous les transforms utilisent le **parser `tsx`** (exporté par chaque module, d
 | `transforms/fields.ts`       | **dédié** `TextField` / `Select` / `NativeSelect` (+ `MenuItem`)        | `bunx jscodeshift -t transforms/fields.ts --parser=tsx --extensions=tsx <fichiers>`           |
 | `transforms/icons.ts`        | **dédié** `@mui/icons-material` → `<md-icon>` (Material Symbols, ~96 %) | `bunx jscodeshift -t transforms/icons.ts --parser=tsx --extensions=tsx <fichiers>`            |
 
-Le transform `icons.ts` est **séparé** (l'orchestrateur ne touche pas `@mui/icons-material`) : convertit `<CloseIcon/>` → `<md-icon>close</md-icon>` via `lib/icon-names.ts` (PascalCase → snake_case, validé contre les **4253 glyphes** officiels `data/material-symbols-names.json`). Logos de marque (GitHub, X…) gardés + TODO ; voir `../11-material-symbols.md`. Le mapping consolidé (composants + icônes) est exporté en `../mui-m3-map.json` (`bun run scripts/export-map-json.ts`).
+Le transform `icons.ts` est **séparé** (l'orchestrateur ne touche pas `@mui/icons-material`) : convertit `<CloseIcon/>` → `<md-icon>close</md-icon>` via `lib/icon-names.ts` (PascalCase → snake_case, validé contre les **4253 glyphes** officiels `packages/ui/material-web/migration/codemods/data/material-symbols-names.json`). Logos de marque (GitHub, X…) gardés + TODO ; voir `../11-material-symbols.md`. Le mapping consolidé (composants + icônes) est exporté en `../mui-m3-map.json` (`bun run scripts/export-map-json.ts`).
 
 Les transforms ciblés (`button`, `fields`) ne touchent **que** leurs composants ; les
 autres imports/JSX MUI sont laissés intacts (migration par lots).

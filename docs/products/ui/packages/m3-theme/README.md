@@ -43,7 +43,7 @@ M3_SEED=#1a73e8 M3_VARIANT=vibrant bun run generate  # another seed / variant fo
 bun run fixture:mcu                                # refresh the Rust parity fixture
 ```
 
-The sheets are rendered in Rust (`crates/aphrody-m3-tokens/src/sheets.rs`) and reached through
+The sheets are rendered in Rust (`crates/ui/m3-tokens/src/sheets.rs`) and reached through
 `m3Css()` of `@aphrody/bun`; this package holds no colour tables. The Rust colour science is an
 exact port of `@material/material-color-utilities` (2021 spec): `test/sheets.test.ts` and
 `cargo test -p aphrody-m3-tokens` check every role against it. `tokens.css` is the tonal-spot
@@ -69,8 +69,8 @@ scheme of the M3 baseline seed `#6750A4`, all 49 roles, light and dark.
 @import "@aphrody/m3-theme/tailwind.css";
 ```
 
-The SpaceUI tables mirror `crates/aphrody-m3-tokens/src/spaceui.rs`; `bun test` fails when they
-drift or when a committed sheet is stale. Mapping and rules: `docs/design/SPACEUI-M3-FUSION.md`.
+The SpaceUI tables mirror `crates/ui/m3-tokens/src/spaceui.rs`; `bun test` fails when they
+drift or when a committed sheet is stale. Mapping and rules: `docs/architecture/ui/design/SPACEUI-M3-FUSION.md`.
 
 ## Dynamic Runtime Theme System
 

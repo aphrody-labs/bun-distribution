@@ -72,7 +72,7 @@ Exemple: `https://example.com/docs/install` → `https://example.com/docs/instal
 
 Bxc produit `llms.txt` (index) et `llms-full.txt` (concat de tous les markdowns), équivalent ctx-full.
 
-## 7. Compliance checklist côté `scripts/url-to-docs.ts`
+## 7. Compliance checklist côté `scripts/url-to-docs.ts` (not in repo)
 
 - [x] H1 obligatoire — `# ${siteTitle}`
 - [x] Blockquote `>` immédiatement après le H1

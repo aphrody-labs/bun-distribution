@@ -5,8 +5,8 @@ d'inférence sont concernées : **LLM conversationnel**, **RAG** (embeddings + r
 Sur le VPS elles tournent toutes en CPU ; sur une machine GPU on les sert sur CUDA — réponses quasi
 instantanées et OCR du batch de planches en minutes au lieu d'heures.
 
-> Référence croisée : [`rag-enrichment.md`](rag-enrichment.md)
-> (pipeline RAG hybride), [`ocr-manga.md`](ocr-manga.md) (transcription manga).
+> Référence croisée : [`rag-enrichment.md`](../../architecture/shenron/rag-enrichment.md)
+> (pipeline RAG hybride), [`ocr-manga.md`](../../guides/shenron/ocr-manga.md) (transcription manga).
 
 ## Machine de référence
 
@@ -24,7 +24,7 @@ instantanées et OCR du batch de planches en minutes au lieu d'heures.
 | ------------------------------- | -------------- | ------------------------------------------------------------------- | ----------------------------------- |
 | **LLM conversationnel**         | 11434 (Ollama) | **Ollama + `gemma4:12b`** sur CUDA (`think:false`)                  | `src/lib/llm.ts` (backend `ollama`) |
 | **Embeddings + reranker (RAG)** | 5007           | sidecar Python `sentence-transformers` CUDA (drop-in du sidecar TS) | `embed-server-gpu.py`               |
-| **OCR manga**                   | —              | `paddlepaddle-gpu` + `device="gpu"`                                 | `scripts/transcribe-manga.py`       |
+| **OCR manga**                   | —              | `paddlepaddle-gpu` + `device="gpu"`                                 | `scripts/transcribe-manga.py` (not in repo)       |
 | _LLM alt. (secondaire)_         | 5008           | llama.cpp `-DGGML_CUDA=ON` + `-ngl 99`, Qwen2.5-3B GGUF             | —                                   |
 
 **Budget VRAM (12 Go, ~10 Go libres hors desktop)** — les trois ne tiennent pas tous à fond en même temps :
@@ -79,7 +79,7 @@ La voie historique (`LLM_BACKEND=local` → endpoint OpenAI `:5008`, pour llama.
 `OLLAMA_NUM_PARALLEL` est laissé à **1** : sur 12 Go partagés, chaque slot parallèle ajoute un KV-cache
 (ctx 8192) et ferait sauter le budget VRAM. À monter seulement si la VRAM le permet.
 
-### Configuration (`apps/bot/.env`)
+### Configuration (`apps/rg/bot/.env`)
 
 ```
 LLM_BACKEND=ollama
@@ -88,8 +88,8 @@ LLM_NUM_CTX=8192
 LLM_KEEP_ALIVE=30m
 ```
 
-> `.env` est gitignored — l'écrire avec `printf` (jamais `echo`). Bun auto-charge `apps/bot/.env` quand on
-> lance depuis `apps/bot`, donc ces clés s'appliquent au bot et aux scripts.
+> `.env` est gitignored — l'écrire avec `printf` (jamais `echo`). Bun auto-charge `apps/rg/bot/.env` quand on
+> lance depuis `apps/shenron/bot`, donc ces clés s'appliquent au bot et aux scripts.
 
 ### Vérification
 
@@ -133,7 +133,7 @@ ne peut pas prouver la disponibilité du modèle à l'exécution.
 
 ## 3. OCR manga sur GPU (PaddleOCR)
 
-`scripts/transcribe-manga.py` a été rendu portable + pilotable par env, et **corrigé d'un bug de
+`scripts/transcribe-manga.py` (not in repo) a été rendu portable + pilotable par env, et **corrigé d'un bug de
 recognizer** (le vrai gain de qualité — cf. ci-dessous) :
 
 - **Chemin dynamique** : `ROOT` est résolu via `__file__` (plus de `/home/ubuntu/...` codé en dur) →
@@ -212,27 +212,27 @@ Adaptation du LLM au **style manga DBZ** via QLoRA continued-pretrain sur les tr
   (`Cannot allocate memory`) sous 15 Go de RAM. Fix : WSL `.wslconfig` → `memory=24GB swap=16GB` +
   `sysctl vm.overcommit_memory=1` (non persistant, à re-poser après reboot). VRAM training ≈ 9,8 Go
   (4-bit + LoRA + activations), tient sur la 4070.
-- **Données** : `data/llm/prepare_manga_data.py` produit `manga_pretrain.jsonl` depuis les transcripts
+- **Données** : `data/llm/prepare_manga_data.py` (not in repo) produit `manga_pretrain.jsonl` depuis les transcripts
   bruts avec un **nettoyage TRAINING agressif** (drop watermarks scanlation `SCANTRAD.NET`/`BLEACH-MX`,
   timestamps, dates, n° de page, crédits, garbage OCR). **Critique** : sans ce filtre, le modèle apprend
   à cracher les watermarks (overfit constaté sur v1). Limite résiduelle : l'OCR en ordre de lecture
   entrelace les bulles → prose un peu brouillée (plafond de qualité du continued-pretrain sur cette donnée).
-- **Training** : `data/llm/finetune_manga.py` (`FastModel`, `load_in_4bit=True`, r=8, `max_seq=512`,
+- **Training** : `data/llm/finetune_manga.py` (not in repo) (`FastModel`, `load_in_4bit=True`, r=8, `max_seq=512`,
   1 epoch, LR 1e-4, gradient-checkpointing Unsloth). ~2 h sur la 4070.
 - **Servir sans merger les 23,9 Go** : `convert_lora_to_gguf.py` (llama.cpp, supporte gemma4) → adapter
   GGUF 131 Mo → Modelfile `FROM gemma4:12b` + `ADAPTER` → `ollama create gemma4-manga`.
 - **Honnêteté** : le fine-tune apporte la **voix/style** manga mais aussi du **bruit factuel** (OCR). En
   prod, garder la base `gemma4:12b` pour les faits (via le RAG focus manga). Ne PAS activer `gemma4-manga`
-  par défaut tant que le bruit n'est pas maîtrisé. `data/llm/test_lora.py` pour juger une itération.
+  par défaut tant que le bruit n'est pas maîtrisé. `data/llm/test_lora.py` (not in repo) pour juger une itération.
 
 ### Branche encyclopédique `gemma4-db-full` (faits) — bilan : ne pas câbler
 
 Variante du même pipeline visant les **faits** (pas le style) : continued-pretrain QLoRA de
-`unsloth/gemma-4-12b-it` sur `data/llm/db_full_pretrain.jsonl` (~50 Mo = dump complet de la connaissance
-DB de l'époque, corpus depuis purgé de Fandom), `r=16`, `max_seq=768`, 1 epoch, LR 5e-5. `data/llm/finalize-v3.sh`
+`unsloth/gemma-4-12b-it` sur `data/llm/db_full_pretrain.jsonl` (not in repo) (~50 Mo = dump complet de la connaissance
+DB de l'époque, corpus depuis purgé de Fandom), `r=16`, `max_seq=768`, 1 epoch, LR 5e-5. `data/llm/finalize-v3.sh` (not in repo)
 automatise LoRA → adapter GGUF → `ollama create gemma4-db-full` → test connaissances.
 
-- **Résilience (obligatoire pour les runs longs)** : `data/llm/train-supervised.sh` relance
+- **Résilience (obligatoire pour les runs longs)** : `data/llm/train-supervised.sh` (not in repo) relance
   `finetune_manga.py` après crash et **reprend au dernier checkpoint** (`save_strategy="steps"`,
   `save_steps=500`, `resume_from_checkpoint`). Un run lancé sans cette version **ne checkpointe pas →
   crash = perte totale** (piège vécu : 15,5 h sans filet). Run de référence : 1 epoch ≈ **5861 steps,
@@ -253,6 +253,6 @@ automatise LoRA → adapter GGUF → `ollama create gemma4-db-full` → test con
   best-practice configurables (`LLM_MODEL`, `LLM_NUM_CTX`, `LLM_KEEP_ALIVE`, `LLM_NUM_PREDICT`, `OLLAMA_URL`).
   Voie OpenAI/`local` préservée.
 - `@shenron/pipeline/aphrody` — client embeddings E5 loopback compatible OpenAI (`ShenronEmbeddingsClient`, adresse `APHRODY_AI_EMBED_BASE_URL`).
-- `scripts/transcribe-manga.py` — `ROOT` dynamique + `OCR_DEVICE` (GPU/CPU), fallback CPU inchangé.
+- `scripts/transcribe-manga.py` (not in repo) — `ROOT` dynamique + `OCR_DEVICE` (GPU/CPU), fallback CPU inchangé.
 
 Aucun secret commité ; `.env`, `.models/`, venvs (`~/.rag-gpu`, `~/.ocr-gpu`) restent hors Git.

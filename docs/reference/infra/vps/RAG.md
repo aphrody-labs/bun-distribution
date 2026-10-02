@@ -13,8 +13,8 @@
 Retrieval, embedding and synthesis engines that run on or are reached from the production VPS.
 Model names, dimensions, services and environment names are owned by
 [`config/local-ai.json`](../../../../config/local-ai.json) (validated by `aphrody-infra validate`) and
-by the model catalog of `aphrody-ai` (`crates/aphrody-models/catalog.json`); this page explains
-the pipelines. Restored from the retired `aphrody` monolith (`docs/vps/RAG.md`).
+by the model catalog of `aphrody-ai` (`crates/ai/models/catalog.json`); this page explains
+the pipelines. Restored from the retired `aphrody` monolith (`docs/reference/infra/vps/RAG.md`).
 
 ## 1. Platform RAG (`aphrody-ai`)
 
@@ -62,7 +62,7 @@ Before relying on these weights, locate the live implementation in `aphrody-web`
 ## 4. Local open-weight models
 
 Managed `llama-server` instances (chat, code, reasoning, small, vision, embeddings, rerank) are
-planned and supervised by `aphrody-ai` (`crates/aphrody-llama-server`) with dynamic loopback
+planned and supervised by `aphrody-ai` (`crates/ai/llama-server`) with dynamic loopback
 ports; `aphrody ai env` prints their canonical `APHRODY_AI_*` variables on hosts that run them.
 The VPS row of `targets` in `config/local-ai.json` records which capabilities are available there
 and which are deliberately unavailable.

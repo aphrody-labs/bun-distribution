@@ -65,12 +65,12 @@ distants.
 Achilléa a vécu successivement sur Supabase Cloud, puis dans une base `achillea`
 dédiée du cluster local, exposée à `rg` par `postgres_fdw` — des tables
 étrangères, lisibles mais jamais écrivables, et une identité coupée en deux.
-Depuis [`achillea-merge.ts`](../../scripts/rg/ops/achillea-merge.ts), ses
+Depuis [`achillea-merge.ts`](../../../scripts/rg/ops/achillea-merge.ts), ses
 69 tables sont de VRAIES tables du schéma `achillea` de la base `rg`.
 
 Ce que ça change concrètement :
 
-- une seule base à sauvegarder (`scripts/ops/sauvegarde.ts` la couvrait déjà,
+- une seule base à sauvegarder (`scripts/ops/sauvegarde.ts` (not in repo) la couvrait déjà,
   elle couvre maintenant tout) ;
 - les jointures `public.profiles ⋈ achillea."user"` se font dans Postgres, sans
   connexion distante ni fenêtre de divergence ;
