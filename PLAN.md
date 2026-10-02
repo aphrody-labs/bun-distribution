@@ -80,7 +80,12 @@ routes de sites, exemples et snapshots historiques demandent une classification.
   conventionnelles, 2 vides. 13 copies `scripts/` sans consommateur, doublons
   de leur paquet propriétaire, supprimées (liste dans
   [SCRIPTS-INVENTORY.md](docs/reference/workspace/SCRIPTS-INVENTORY.md)) ;
-  restent assets, licences et code inter-apps à qualifier par propriétaire.
+  `crates/ui/app/ui-dist/fonts` : 226 copies identiques à leurs sources
+  canoniques (`packages/ui/assets`, `packages/ui/m3-fonts`, `crates/ui/bun`),
+  déjà ignorées par `.gitignore` et recopiées par `build.rs` depuis
+  `ui-dist.manifest` avant l’embarquement Tauri : retirées de l’index (≈ 20 Mo),
+  fichiers conservés sur disque. Restent licences (copies par paquet, voulues),
+  assets RG/Koharu et code inter-apps à qualifier par propriétaire.
 - [ ] Classer les documents historiques et corriger les liens réellement cassés
   dans la documentation active. Ne pas réécrire les preuves de migration.
 - [ ] Classer les scripts importés par commande utilisée, propriétaire et
