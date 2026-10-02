@@ -933,7 +933,10 @@ Propriétaires : `packages/rg`, `apps/rg`, domaines Discord/Koharu/FUT.
   212, cron 173, patreon-bun 174) ; discord aphrody-messaging 9, kit 20
   (typecheck réparé : `skipLibCheck`, `@sapphire/shapeshift@4` incompatible avec
   `@types/node` 26) ; koharu bridge/sdk/ui typecheck, editor ; fut 148. Reste :
-  smoke de chaque application (base Postgres et services requis).
+  smoke de chaque application. Prérequis constaté : `apps/rg/website/sql/migrations`
+  ne contient que des migrations incrémentales (2026-08+), sans schéma de base ;
+  la seule base locale est le Supabase auto-hébergé RG (non jetable). Un smoke
+  exige un dump de schéma RG à importer dans un Postgres jetable.
 
 Critères : imports des packages sans serveur, tests handlers/contrats puis
 smoke de chaque application, packaging autonome des assets partagés.
@@ -980,7 +983,9 @@ Propriétaires : `packages/shenron`, `apps/shenron`.
   Gates 2026-10-03 (`APHRODY_FFI_DEV=1`) : tests bot 426, site 1278 (+1 échec
   sur la page non suivie `wiki/manga/revue` du lot Koharu non commité, conteneur
   écrit à la main au lieu de `<PageShell>`), api 97, auth 94, config 47, db 78,
-  images 18, pipeline 286, ui 47. Typecheck : les 9 scripts appelaient `tsgo`,
+  images 18, pipeline 286, ui 47 (la page `wiki/manga/revue` corrigée dans le
+  working tree avec `<PageShell as="main">` : design-system 11/11 ; fichier
+  toujours non suivi, à committer par l’auteur du lot Koharu). Typecheck : les 9 scripts appelaient `tsgo`,
   absent ; passés à `tsc` (TypeScript 7 natif épinglé) : 9/9 verts. Reste : bout
   en bout site/bot/pipeline.
 - [ ] Valider le produit assemblé après passage des gates de ses dépendances.
