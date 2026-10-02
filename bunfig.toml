@@ -15,3 +15,7 @@ importSource = "react"
 [loader]
 ".svg" = "text"
 ".css" = "css"
+
+[test]
+preload = ["./packages/bun/test-dom/src/index.ts"]
+

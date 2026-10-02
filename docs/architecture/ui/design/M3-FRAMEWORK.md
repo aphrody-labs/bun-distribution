@@ -19,7 +19,7 @@ packages/ui/m3 (@aphrody/m3)   m3Plugin | serveM3 | buildM3 | M3App (/react) | /
         |
         +-- packages/ui/material-web (Lit md-*), packages/ui/m3-react (@aphrody/m3-react)
         +-- packages/ui/m3-primitives, m3-forms, m3-explorer, m3-ai (React 19 + Tailwind v4)
-                -> packages/app-ui (Tauri webview), Drive
+                -> packages/ui/app-ui (Tauri webview), Drive
 ```
 
 CSS custom properties (`--md-sys-*`) are the common layer: the only values that cross the
@@ -38,13 +38,13 @@ submodules before `bun install --frozen-lockfile` in a fresh checkout.
 | `@aphrody/m3` | `packages/ui/m3` | Plugin, `serveM3`, `buildM3`, `M3App`, Lit entry, `m3` CLI. |
 | `@aphrody/bun` | `packages/bun` + `crates/ui/bun` | FFI: HCT maths, `m3Css`, Sass compile (`sassRustPlugin`). |
 | `@aphrody/m3-theme` | `packages/ui/m3-theme` | Generated `tokens.css`, `tailwind.css`, `spaceui.css`; `M3ThemeProvider`; Tauri bridge. |
-| `@aphrody/m3-tokens` | `../aphrody-web/packages/m3-tokens` | TypeScript tokens: dynamic colour, breakpoints, platform contract. |
+| `@aphrody/m3-tokens` | `packages/ui/m3-tokens` | TypeScript tokens: dynamic colour, breakpoints, platform contract. |
 | `@aphrody/m3-motion` | `packages/ui/m3-motion` | Springs, easings, durations. |
 | `@aphrody/m3-fonts` | `packages/ui/m3-fonts` | WOFF2 subsets and font stacks ([`FONTS-AND-ICONS.md`](./FONTS-AND-ICONS.md)). |
 | `@aphrody/m3-icons` | `packages/ui/m3-icons` | Material Symbols as inline SVG ([`M3-ICONS.md`](./M3-ICONS.md)). |
 | `@aphrody/material-web` | `packages/ui/material-web` | Lit `md-*` fork plus Aphrody extension elements. |
 | `@aphrody/m3-react` | `packages/ui/m3-react` | `@lit/react` wrappers, `adaptive`, `state`, `transitions`. |
-| `@aphrody/m3-primitives`, `-forms`, `-explorer`, `-ai` | `packages/m3-*` | React components for application shells (D2). |
+| `@aphrody/m3-primitives`, `-forms`, `-explorer`, `-ai` | `packages/ui/m3-*` | React components for application shells (D2). |
 | `@aphrody/m3-next` | `packages/ui/m3-next` | Next.js 16 App Router adapter (`examples/m3-next`). |
 | `@aphrody/m3-config` | `packages/ui/m3-config` | Shared tsconfig, tsup and test presets (private). |
 | `@aphrody/eslint-plugin-m3` | `packages/ui/eslint-plugin-m3` | M3 lint rules. |

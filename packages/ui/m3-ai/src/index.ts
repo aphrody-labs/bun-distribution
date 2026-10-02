@@ -50,6 +50,22 @@ export type { ModelSelectorProps, ModelOptionListProps } from "./ModelSelector";
 export { ChatComposer } from "./ChatComposer";
 export type { ChatComposerProps } from "./ChatComposer";
 
+// Google & Gemini Desktop / Web benchmark components
+export { GoogleSpotlightBar } from "./GoogleSpotlightBar";
+export type { GoogleSpotlightBarProps } from "./GoogleSpotlightBar";
+export {
+  GeminiAccountMenu,
+  ComposerMoreUploadsMenu,
+} from "./GeminiAccountMenu";
+export type {
+  GeminiAccountMenuProps,
+  ComposerMoreUploadsMenuProps,
+  MenuItem,
+} from "./GeminiAccountMenu";
+export { GeminiPersonalContextEdit } from "./GeminiPersonalContextEdit";
+export type { GeminiPersonalContextEditProps } from "./GeminiPersonalContextEdit";
+
+
 // Task components
 export { TaskStatusIcon } from "./TaskStatusIcon";
 export type { TaskStatusIconProps } from "./TaskStatusIcon";

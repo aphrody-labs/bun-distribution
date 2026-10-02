@@ -6,6 +6,12 @@ export { M3_PLATFORM_CONTRACT, platformState } from "@aphrody/m3-tokens/platform
 export type { M3PlatformState } from "@aphrody/m3-tokens/platform-contract";
 export { M3_UI_CATALOG, resolveM3Layer } from "./catalog.js";
 export type { M3UiLayer } from "./catalog.js";
+export {
+  GEMINI_BRAND_COLORS,
+  GEMINI_BRAND_GRADIENTS,
+  GEMINI_BRAND_SHAPES,
+  getGeminiBrandCss,
+} from "./brand.js";
 
 // shadcn/ui token -> M3 system role mappings.
 // Derived from generate.ts ALIASES.

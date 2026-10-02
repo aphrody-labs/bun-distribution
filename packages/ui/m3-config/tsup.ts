@@ -6,7 +6,7 @@
 //
 // `.d.ts` files come from `tsc -p tsconfig.build.json`: tsup's rollup dts pipeline trips over the
 // `baseUrl` deprecation in TypeScript 6+, so `dts` stays off here.
-import { readdir } from "node:fs/promises";
+import { readFile, readdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { defineConfig, type Options } from "tsup";
 
@@ -38,8 +38,8 @@ export async function prependUseClient(dir: string, only?: readonly string[]): P
         return;
       }
       if (!entry.name.endsWith(".js") || (only && !only.includes(entry.name))) return;
-      const src = await Bun.file(full).text();
-      if (!src.startsWith(USE_CLIENT)) await Bun.write(full, USE_CLIENT + src);
+      const src = await readFile(full, "utf8");
+      if (!src.startsWith(USE_CLIENT)) await writeFile(full, USE_CLIENT + src, "utf8");
     }),
   );
 }
