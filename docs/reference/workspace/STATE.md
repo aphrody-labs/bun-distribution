@@ -289,7 +289,7 @@ Tracked Cargo manifests outside the root workspace (excluded, nested workspaces 
 | `aphrody-secrets` | [crates/os/secrets](../../../crates/os/secrets) | rust crate | 1.0.0-canary | lib | yes | 0 | 2026-10-02 |
 | `aphrody-settings` | [crates/os/settings](../../../crates/os/settings) | rust crate | 1.0.0-canary | lib | yes | 0 | 2026-10-02 |
 | `aphrody-stdio-capture` | [crates/os/stdio-capture](../../../crates/os/stdio-capture) | rust crate | 1.0.0-canary | lib | yes | 0 | 2026-10-02 |
-| `aphrody-subsystem` | [crates/os/subsystem](../../../crates/os/subsystem) | rust crate | 1.0.0-canary | lib | yes | 0 | uncommitted |
+| `aphrody-subsystem` | [crates/os/subsystem](../../../crates/os/subsystem) | rust crate | 1.0.0-canary | lib | yes | 0 | 2026-10-03 |
 | `aphrody-systemd` | [crates/os/systemd](../../../crates/os/systemd) | rust crate | 1.0.0-canary | lib | yes | 0 | 2026-10-02 |
 | `aphrody-task-runner` | [crates/os/task-runner](../../../crates/os/task-runner) | rust crate | 1.0.0-canary | lib | yes | 0 | 2026-10-02 |
 | `aphrody-telemetry` | [crates/os/telemetry](../../../crates/os/telemetry) | rust crate | 1.0.0-canary | lib | yes | 0 | 2026-10-02 |
