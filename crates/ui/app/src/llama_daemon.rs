@@ -14,8 +14,9 @@
 //! ended for a normal reason, `1` when it could not be brought up (the reason is also published
 //! for the waiting client), `2` on a usage error, like `aphrody-llama-daemon`.
 //!
-//! This is a bridge, not a destination: when the in-process engines of the inference track
-//! replace the detached daemon, this module goes with it.
+//! With the default `in-process` feature the desktop never takes this path: the supervisor is
+//! bypassed and `aphrody_llama_server::InferenceBackend` selects the in-process engine. This
+//! entry only serves builds without the feature, or an explicit `APHRODY_LLAMA_BACKEND=spawn`.
 
 use std::{
     ffi::{OsStr, OsString},

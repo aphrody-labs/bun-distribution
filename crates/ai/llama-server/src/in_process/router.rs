@@ -110,6 +110,7 @@ impl Router {
     }
 
     /// Everything the model decoded so far, uncut.
+    #[cfg(test)]
     pub(crate) fn raw(&self) -> &str {
         &self.raw
     }

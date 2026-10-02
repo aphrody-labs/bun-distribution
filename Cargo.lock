@@ -2557,6 +2557,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "aphrody-shell-sandbox-host"
+version = "1.0.0-canary"
+dependencies = [
+ "aphrody-shell-session",
+ "aphrody-shell-vfs",
+ "aphrody-shell-web",
+ "aphrody-terminal-backend",
+ "tokio",
+]
+
+[[package]]
 name = "aphrody-shell-session"
 version = "1.0.0-canary"
 

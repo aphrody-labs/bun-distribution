@@ -8,8 +8,8 @@ use std::{
 
 use aphrody_config::{Config, ManagedRuntime};
 use aphrody_llama_server::{
-    Budget, DaemonCommand, EnsureOptions, LoraAdapter, ModelFacts, OssReadyOptions,
-    OssReadyOutcome, PlanRequest, Role, ServerCapabilities, StateDirs, Supervisor,
+    Budget, DaemonCommand, EnsureOptions, InferenceBackend, LoraAdapter, ModelFacts,
+    OssReadyOptions, OssReadyOutcome, PlanRequest, Role, ServerCapabilities, StateDirs, Supervisor,
 };
 
 /// Failure while resolving weights, probing a runtime, or starting its server.
@@ -27,6 +27,21 @@ impl ManagedProviderError {
 #[derive(Debug, Default)]
 pub struct ProviderLease {
     heartbeat: Option<tokio::task::JoinHandle<()>>,
+    /// The in-process engine endpoint, when the model runs in this process. Held only to
+    /// keep the shared engine alive for the lease's lifetime.
+    #[cfg(feature = "in-process")]
+    #[allow(dead_code, reason = "keep-alive handle, never read")]
+    server: Option<std::sync::Arc<aphrody_llama_server::InProcessServer>>,
+}
+
+impl ProviderLease {
+    fn with_heartbeat(heartbeat: Option<tokio::task::JoinHandle<()>>) -> Self {
+        Self {
+            heartbeat,
+            #[cfg(feature = "in-process")]
+            server: None,
+        }
+    }
 }
 
 impl Drop for ProviderLease {
@@ -226,7 +241,26 @@ pub async fn prepare_managed_provider_in(
         }
     }
 
-    let binary = if managed { Some(resolve_binary(config, cwd)?) } else { None };
+    // The engine of a managed model: in this process when the build has it (the desktop app),
+    // else the detached `llama-server` daemon. `APHRODY_LLAMA_BACKEND` overrides.
+    let backend = if managed {
+        InferenceBackend::from_env().map_err(ManagedProviderError::message)?
+    } else {
+        InferenceBackend::Spawn
+    };
+    let spawned = managed && backend == InferenceBackend::Spawn;
+    if managed && backend == InferenceBackend::InProcess {
+        if adapter.is_some() {
+            return Err(ManagedProviderError::message(
+                "`llama.lora` needs the spawned engine: set APHRODY_LLAMA_BACKEND=spawn",
+            ));
+        }
+        if config.llama.extra_args.as_ref().is_some_and(|args| !args.is_empty()) {
+            tracing::warn!("`llama.extra_args` apply to llama-server only; the in-process engine ignores them");
+        }
+    }
+
+    let binary = if spawned { Some(resolve_binary(config, cwd)?) } else { None };
     let caps = if let Some(binary) = binary.clone() {
         Some(
             tokio::task::spawn_blocking(move || ServerCapabilities::probe(&binary))
@@ -258,6 +292,9 @@ pub async fn prepare_managed_provider_in(
     .map_err(ManagedProviderError::message)?;
     match ready {
         OssReadyOutcome::LlamaReady { model_id, primary_path, all_paths, .. } => {
+            if backend == InferenceBackend::InProcess {
+                return start_in_process(config, model_id, primary_path).await;
+            }
             let caps =
                 caps.ok_or_else(|| ManagedProviderError::message("missing runtime capabilities"))?;
             let binary =
@@ -317,7 +354,7 @@ pub async fn prepare_managed_provider_in(
                     }
                 })
             });
-            Ok(ProviderLease { heartbeat })
+            Ok(ProviderLease::with_heartbeat(heartbeat))
         },
         OssReadyOutcome::OllamaReady { model, endpoint } => {
             config.model = Some(model);
@@ -336,6 +373,60 @@ pub async fn prepare_managed_provider_in(
             Ok(ProviderLease::default())
         },
     }
+}
+
+/// Serve `primary_path` from this process and point the provider at the loopback endpoint.
+#[cfg(feature = "in-process")]
+async fn start_in_process(
+    config: &mut Config,
+    model_id: String,
+    primary_path: PathBuf,
+) -> Result<ProviderLease, ManagedProviderError> {
+    use std::sync::{Arc, Mutex, OnceLock, Weak};
+
+    use aphrody_llama_server::{InProcessLlama, InProcessServer, in_process::LoadOptions};
+
+    // One loaded copy per file and context size while any session still holds it.
+    type LoadedServers = Vec<(PathBuf, Option<u32>, Weak<InProcessServer>)>;
+    static LOADED: OnceLock<Mutex<LoadedServers>> = OnceLock::new();
+    let loaded = LOADED.get_or_init(Mutex::default);
+    let ctx = config.llama.ctx;
+    let live = loaded.lock().ok().and_then(|mut list| {
+        list.retain(|(_, _, server)| server.strong_count() > 0);
+        list.iter()
+            .find(|(path, size, _)| *path == primary_path && *size == ctx)
+            .and_then(|(_, _, server)| server.upgrade())
+    });
+    let server = if let Some(server) = live {
+        server
+    } else {
+        let engine = InProcessLlama::load(
+            &primary_path,
+            model_id.clone(),
+            LoadOptions { ctx, ..LoadOptions::default() },
+        )
+        .await
+        .map_err(ManagedProviderError::message)?;
+        let server = Arc::new(
+            InProcessServer::start(engine).await.map_err(ManagedProviderError::message)?,
+        );
+        if let Ok(mut list) = loaded.lock() {
+            list.push((primary_path, ctx, Arc::downgrade(&server)));
+        }
+        server
+    };
+    config.model = Some(model_id);
+    config.provider.info.base_url = Some(server.base_url());
+    Ok(ProviderLease { heartbeat: None, server: Some(server) })
+}
+
+#[cfg(not(feature = "in-process"))]
+async fn start_in_process(
+    _config: &mut Config,
+    _model_id: String,
+    _primary_path: PathBuf,
+) -> Result<ProviderLease, ManagedProviderError> {
+    Err(ManagedProviderError::message("this build has no in-process inference engine"))
 }
 
 #[cfg(test)]

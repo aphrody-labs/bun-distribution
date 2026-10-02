@@ -17,6 +17,9 @@ workspace = true
 [features]
 default = []
 rag = ["dep:aphrody-rag"]
+# Managed local models run inside this process (libllama through koharu-llama) instead of a
+# detached `llama-server` daemon that re-executes the host executable. Needs libclang to build.
+in-process = ["aphrody-llama-server/in-process"]
 
 [dependencies]
 aphrody-engine       = { workspace = true }

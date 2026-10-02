@@ -20,6 +20,7 @@
 //!
 //! Host-only: the crate spawns processes and is not part of the wasm matrix.
 
+mod backend;
 mod caps;
 mod client;
 pub mod daemon;
@@ -30,7 +31,13 @@ mod plan;
 mod spec;
 mod state;
 mod supervisor;
+#[cfg(feature = "in-process")]
+pub mod in_process;
 
+#[cfg(feature = "in-process")]
+pub use in_process::{InProcessLlama, InProcessServer, LlamaLoadError};
+
+pub use backend::{BACKEND_ENV, BackendError, InferenceBackend};
 pub use caps::{CapabilityError, FlashAttnSyntax, ServerCapabilities};
 pub use client::{ClientError, Health, LoraStatus, ServerClient};
 pub use ensure::{

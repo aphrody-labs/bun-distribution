@@ -17,6 +17,8 @@ workspace = true
 [features]
 default = []
 rag = ["dep:aphrody-rag", "dep:aphrody-toolcall", "aphrody-agent-runtime/rag"]
+# Managed local models run inside the host process (no re-executed daemon).
+in-process = ["aphrody-agent-runtime/in-process"]
 
 [dependencies]
 axum = { workspace = true }
