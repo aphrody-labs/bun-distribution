@@ -133,3 +133,19 @@ export const nativeAi = {
   /** Open the full Shenron admin dashboard in its native window (local-AI bridge injected). */
   openAdmin: (url?: string) => studio<null>("studio_open_shenron_admin", { url: url ?? null }),
 };
+
+export type TrainKind = "embed" | "rerank";
+
+export type TrainEvent =
+  | { state: "started"; kind: TrainKind; steps: number; baseModel: string }
+  | { state: "finished"; kind: TrainKind; output: string }
+  | { state: "failed"; kind: TrainKind; error: string };
+
+export const training = {
+  start: (kind: TrainKind, steps: number, allowCpu: boolean, baseModel?: string) =>
+    studio<null>("studio_shenron_train_start", { kind, steps, allowCpu, baseModel: baseModel ?? null }),
+  async onEvent(handler: (event: TrainEvent) => void): Promise<() => void> {
+    if (!window.__TAURI__?.event) return () => undefined;
+    return window.__TAURI__.event.listen("studio://train", (event) => handler(event.payload as TrainEvent));
+  },
+};

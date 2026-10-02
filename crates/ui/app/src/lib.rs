@@ -834,6 +834,7 @@ pub fn run() {
             studio::studio_native_ai_status,
             studio::studio_native_chat,
             studio::studio_open_shenron_admin,
+            studio::studio_shenron_train_start,
             koharu::koharu_rpc,
             shenron::aphrody_shenron_chat,
             aphrody_meta,

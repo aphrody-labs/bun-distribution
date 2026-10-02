@@ -143,3 +143,43 @@ pub async fn studio_open_shenron_admin(
 
 const ADMIN_LABEL: &str = "shenron-admin";
 const DEFAULT_ADMIN_URL: &str = "https://dragonballfr.com/admin";
+
+static TRAINING: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+
+/// Start a Shenron `embed` or `rerank` candidate training in the background; progress is reported
+/// on the `studio://train` event (`started`, then `finished` with the candidate dir or `failed`).
+#[tauri::command]
+pub async fn studio_shenron_train_start(
+    app: tauri::AppHandle,
+    window: tauri::WebviewWindow,
+    kind: String,
+    steps: Option<usize>,
+    base_model: Option<String>,
+    allow_cpu: Option<bool>,
+) -> Result<(), String> {
+    use std::sync::atomic::Ordering;
+    use tauri::Emitter;
+    main_window_only(&window)?;
+    let base_model = match (kind.as_str(), base_model) {
+        (_, Some(model)) if !model.trim().is_empty() => model,
+        ("embed", _) => "intfloat/multilingual-e5-small".to_string(),
+        ("rerank", _) => "BAAI/bge-reranker-base".to_string(),
+        _ => return Err("type d'entraînement inconnu (embed ou rerank)".into()),
+    };
+    if TRAINING.swap(true, Ordering::SeqCst) {
+        return Err("un entraînement est déjà en cours".into());
+    }
+    let steps = steps.unwrap_or(10);
+    let allow_cpu = allow_cpu.unwrap_or(false);
+    let _ = app.emit("studio://train", serde_json::json!({"state": "started", "kind": kind, "steps": steps, "baseModel": base_model}));
+    tauri::async_runtime::spawn(async move {
+        let result = aphrody_command::shenron_cmd::train_candidate(&kind, None, steps, base_model, allow_cpu).await;
+        let payload = match result {
+            Ok(output) => serde_json::json!({"state": "finished", "kind": kind, "output": output.display().to_string()}),
+            Err(error) => serde_json::json!({"state": "failed", "kind": kind, "error": format!("{error:?}")}),
+        };
+        TRAINING.store(false, Ordering::SeqCst);
+        let _ = app.emit("studio://train", payload);
+    });
+    Ok(())
+}

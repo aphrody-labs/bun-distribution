@@ -752,22 +752,32 @@ async fn handle_train(action: ShenronTrainAction) -> miette::Result<()> {
             println!("{}", output.display());
         },
         ShenronTrainAction::Embed { triples, steps, base_model, allow_cpu } => {
-            train_model("embed", triples, steps, base_model, allow_cpu).await?;
+            let output = train_candidate("embed", triples, steps, base_model, allow_cpu).await?;
+            println!(
+                "Candidat écrit sous {}. Promotion soumise aux métriques de l'index shadow.",
+                output.display()
+            );
         },
         ShenronTrainAction::Rerank { triples, steps, base_model, allow_cpu } => {
-            train_model("rerank", triples, steps, base_model, allow_cpu).await?;
+            let output = train_candidate("rerank", triples, steps, base_model, allow_cpu).await?;
+            println!(
+                "Candidat écrit sous {}. Promotion soumise aux métriques de l'index shadow.",
+                output.display()
+            );
         },
     }
     Ok(())
 }
 
-async fn train_model(
+/// Train a Shenron `embed` or `rerank` candidate from triples (Python `aphrody-train` via `uv`);
+/// returns the candidate directory. Promotion stays gated by the shadow-index metrics.
+pub async fn train_candidate(
     kind: &str,
     triples: Option<PathBuf>,
     steps: usize,
     base_model: String,
     allow_cpu: bool,
-) -> miette::Result<()> {
+) -> miette::Result<PathBuf> {
     let triples = triples.unwrap_or(shenron_training_dir()?.join("triples.jsonl"));
     if !triples.is_file() {
         return Err(miette::miette!("Triplets JSONL introuvables: {}", triples.display()));
@@ -806,11 +816,7 @@ async fn train_model(
     if !status.success() {
         return Err(miette::miette!("Entraînement {kind} échoué"));
     }
-    println!(
-        "Candidat écrit sous {}. Promotion soumise aux métriques de l'index shadow.",
-        output.display()
-    );
-    Ok(())
+    Ok(output)
 }
 
 async fn handle_web(action: ShenronWebAction) -> miette::Result<()> {

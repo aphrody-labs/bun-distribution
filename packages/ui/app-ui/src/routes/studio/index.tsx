@@ -7,6 +7,7 @@ import { Card } from "@aphrody/m3-primitives";
 import { MangaStudio } from "./MangaStudio";
 import { ShenronStudio } from "./ShenronStudio";
 import { AdminStudio } from "./AdminStudio";
+import { TrainingStudio } from "./TrainingStudio";
 
 export type StudioSection = "shenron" | "manga" | "admin" | "training" | "databooks" | "drive";
 
@@ -20,8 +21,7 @@ export const studioSections: Array<{ id: StudioSection; label: string; icon: str
 ];
 
 /** Native owner each pending section will call once its Tauri command exists (plan phase 2/5). */
-const pendingOwner: Record<Exclude<StudioSection, "manga" | "shenron" | "admin">, string> = {
-  training: "aphrody-train / `aphrody train run` (commandes aphrody_train_* à brancher)",
+const pendingOwner: Record<Exclude<StudioSection, "manga" | "shenron" | "admin" | "training">, string> = {
   databooks: "corpus @shenron/config et API databooks (commandes aphrody_databooks_* à brancher)",
   drive: "aphrody-drive, volume Google Drive OpenDAL sur le dossier dbfr (à monter)",
 };
@@ -59,6 +59,8 @@ export function StudioRoute() {
       <section role="tabpanel" aria-label={studioSections.find((entry) => entry.id === section)?.label}>
         {section === "shenron" ? (
           <ShenronStudio />
+        ) : section === "training" ? (
+          <TrainingStudio />
         ) : section === "admin" ? (
           <AdminStudio />
         ) : section === "manga" ? (
