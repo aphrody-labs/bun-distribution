@@ -23,6 +23,7 @@
             "koharu",
             "magika",
             "memory-lancedb",
+            "native",
             "ocr",
             "rag",
             "train",
@@ -237,9 +238,12 @@
         {
           "name": "aphrody-context",
           "path": "crates/ai/context",
-          "description": "LLM context-window manager — heuristic token counting, sliding-window trim with pinned-message preservation, summarization triggers, and JSON snapshot/restore.",
+          "description": "LLM context-window manager — in-process token estimation (heuristic, BPE-shaped lexical, exact tokenizer.json), sliding-window trim with pinned-message preservation, summarization triggers, and JSON snapshot/restore.",
           "bins": [],
-          "features": []
+          "features": [
+            "default",
+            "tokenizers"
+          ]
         },
         {
           "name": "aphrody-coreutils",
@@ -265,7 +269,7 @@
         {
           "name": "aphrody-drive",
           "path": "crates/ui/drive",
-          "description": "Aphrody Drive, the Aphrody OS file explorer: Tauri v2 plugin that supervises the sd-daemon core and bridges it to the explorer webview.",
+          "description": "Aphrody Drive, the Aphrody OS file explorer: Tauri 3 plugin that supervises the sd-daemon core and bridges it to the explorer webview.",
           "bins": [],
           "features": []
         },
@@ -297,6 +301,24 @@
           "description": "The unified aphrody agent turn loop: drives a ModelClient stream, maps unified ModelStreamEvent into the SQ/EQ EventMsg protocol, runs tool calls via a ToolRegistry, re-injects tool results for multi-turn reasoning, and records the session to a rollout. The single engine shared by every surface (CLI / TUI / desktop / MCP). Inspired by OpenAI Codex (Apache-2.0).",
           "bins": [],
           "features": []
+        },
+        {
+          "name": "aphrody-engine-mistralrs",
+          "path": "crates/ai/engine-mistralrs",
+          "description": "In-process mistral.rs inference backend for Aphrody: a `ModelClient` (text, vision, tool calls, streaming) and an embedder over the `mistralrs` crate for safetensors, GGUF and UQFF weights, with ISQ and paged attention. Every mistral.rs dependency sits behind the off-by-default `engine` feature; without it the crate is a small shell that compiles on every target (wasm32 included) and reports `Unavailable`.",
+          "bins": [],
+          "features": [
+            "accelerate",
+            "cuda",
+            "cudnn",
+            "cutile",
+            "default",
+            "engine",
+            "flash-attn",
+            "metal",
+            "mkl",
+            "nccl"
+          ]
         },
         {
           "name": "aphrody-events",
@@ -363,7 +385,7 @@
         {
           "name": "aphrody-gemini-runtime",
           "path": "crates/ai/gemini-runtime",
-          "description": "Cross-platform Gemini CLI runtime adapter: detect, version, turn streaming.",
+          "description": "Cross-platform Gemini CLI runtime adapter: detect, version, turn streaming, plus the mcp.json loader and the legacy MCP client facade over aphrody-mcp-client.",
           "bins": [],
           "features": []
         },
@@ -396,6 +418,13 @@
           "name": "aphrody-guard",
           "path": "crates/os/guard",
           "description": "Autonomous-agent safety guardrails: pre-main process hardening (disable core dumps, block ptrace attach, strip LD_*/DYLD_* loader env) and a cross-platform shell command-safety classifier (Allow / Prompt / Forbidden) for gating agent-issued commands. Inspired by OpenAI Codex (Apache-2.0).",
+          "bins": [],
+          "features": []
+        },
+        {
+          "name": "aphrody-gui-core",
+          "path": "crates/ui/gui-core",
+          "description": "Neutral GUI abstractions for Aphrody OS: WindowHost, SurfaceProvider, ThemeProvider, KernelBridge",
           "bins": [],
           "features": []
         },
@@ -463,6 +492,7 @@
           "path": "crates/os/kernel",
           "description": "The Aphrody OS privileged user-space control plane: administration, MCP tools, skills and bus events over local IPC.",
           "bins": [
+            "aphrody-host-service",
             "aphrody-kernel"
           ],
           "features": [
@@ -486,6 +516,7 @@
             "aphrody-llama-daemon"
           ],
           "features": [
+            "in-process",
             "test-support"
           ]
         },
@@ -493,6 +524,13 @@
           "name": "aphrody-llm-infra",
           "path": "crates/ai/llm-infra",
           "description": "LLM runtime infrastructure: cost tracking, rate limiting, retry primitives, two-tier caching.",
+          "bins": [],
+          "features": []
+        },
+        {
+          "name": "aphrody-local-ai",
+          "path": "crates/ui/local-ai",
+          "description": "Toolkit-free local-AI model hub for Aphrody GUIs: typed, in-process access to the model catalog, store, hardware profile and resumable pulls.",
           "bins": [],
           "features": []
         },
@@ -557,9 +595,11 @@
             "dragonball",
             "jobs",
             "koharu",
+            "native",
             "native-browser",
             "ocr",
             "rag",
+            "rag-native",
             "rag-ort",
             "stt-local",
             "toolbox",
@@ -570,7 +610,7 @@
         {
           "name": "aphrody-mcp-client",
           "path": "crates/ai/mcp-client",
-          "description": "Model Context Protocol client for Aphrody: stdio and streamable HTTP transports, ToolExecutor adapter, built-in tools, and shared Rust web tools.",
+          "description": "Model Context Protocol client for Aphrody: the single MCP client of the workspace. Stdio and streamable HTTP transports, ToolExecutor adapter, fail-closed credential expansion, built-in tools, and shared Rust web tools.",
           "bins": [],
           "features": []
         },
@@ -625,17 +665,6 @@
           "description": "Provider abstraction for the aphrody agent engine: the async `ModelClient` trait, a unified `ModelStreamEvent` (text delta / tool call / reasoning / completed+usage), and a Gemini generateContent streaming client that maps Google's SSE wire onto the unified events. Lets the turn loop stay provider-agnostic (Gemini REST / gemini-web / agy).",
           "bins": [],
           "features": []
-        },
-        {
-          "name": "aphrody-model-view",
-          "path": "crates/ui/model-view",
-          "description": "Frameless, transparent native 3D view of a glTF/GLB/OBJ model or Scene3d file on the desktop (Tauri + aphrody-tauri-3d); reloads live when the file changes.",
-          "bins": [
-            "aphrody-model-view"
-          ],
-          "features": [
-            "debug-bridge"
-          ]
         },
         {
           "name": "aphrody-models",
@@ -839,6 +868,7 @@
           "bins": [],
           "features": [
             "default",
+            "native",
             "ort"
           ]
         },
@@ -891,15 +921,6 @@
             "webgl",
             "webgpu"
           ]
-        },
-        {
-          "name": "aphrody-render3d",
-          "path": "crates/ui/render-tools",
-          "description": "Native 3D for Aphrody agents: glTF/OBJ inspection, M3 scene modelling, GPU/CPU rendering to PNG, GLB export and live native views, as a kernel subsystem.",
-          "bins": [
-            "aphrody-render3d-mcp"
-          ],
-          "features": []
         },
         {
           "name": "aphrody-rollout",
@@ -975,6 +996,43 @@
           "features": []
         },
         {
+          "name": "aphrody-shell-session",
+          "path": "crates/shell/session",
+          "description": "Transport-neutral shell session and engine traits (input bytes in, output bytes out) with a scripted fake engine.",
+          "bins": [],
+          "features": []
+        },
+        {
+          "name": "aphrody-shell-tauri",
+          "path": "crates/shell/tauri",
+          "description": "Tauri 3 plugin exposing native PTY shell sessions to the aphrody-shell-web webview client.",
+          "bins": [],
+          "features": []
+        },
+        {
+          "name": "aphrody-shell-tauri-e2e",
+          "path": "crates/shell/tauri-e2e",
+          "description": "Minimal real Tauri app (wry webview) that runs the WASM shell through the aphrody-shell-tauri plugin.",
+          "bins": [
+            "aphrody-shell-tauri-e2e"
+          ],
+          "features": []
+        },
+        {
+          "name": "aphrody-shell-vfs",
+          "path": "crates/shell/vfs",
+          "description": "Byte-path virtual filesystem trait, in-memory backend and shared conformance suite for the WASM shell.",
+          "bins": [],
+          "features": []
+        },
+        {
+          "name": "aphrody-shell-web",
+          "path": "crates/shell/web",
+          "description": "Aphrody shell for WebAssembly: browser and Tauri webview terminal, local shell and wire protocol.",
+          "bins": [],
+          "features": []
+        },
+        {
           "name": "aphrody-skills",
           "path": "crates/ai/skills",
           "description": "Unified skills infrastructure: SKILL.md runtime + lifecycle hooks + tool-level permissions.",
@@ -1003,6 +1061,18 @@
           "description": "Sprite atlas to web sheet (CSS image/mask classes, standalone SVG symbols, JSON manifest); no_std + alloc, no input format.",
           "bins": [],
           "features": []
+        },
+        {
+          "name": "aphrody-sql",
+          "path": "crates/infra/sql",
+          "description": "Shared SQL owner for Aphrody: PostgreSQL pool (TLS by URL, pgvector), SQLite open policy (WAL, sqlite-vec), checksummed plain-SQL migrations and database URL resolution.",
+          "bins": [],
+          "features": [
+            "default",
+            "postgres",
+            "sqlite",
+            "vec"
+          ]
         },
         {
           "name": "aphrody-ssh",
@@ -1070,13 +1140,6 @@
           "features": []
         },
         {
-          "name": "aphrody-tauri-3d",
-          "path": "crates/ui/tauri-3d",
-          "description": "Native 3D layer for Tauri v2: the aphrody-render wgpu scene presented under a transparent M3 webview (DirectComposition on Windows).",
-          "bins": [],
-          "features": []
-        },
-        {
           "name": "aphrody-tauri-mcp",
           "path": "crates/ui/tauri-mcp",
           "description": "Native MCP adapter for Aphrody Tauri desktop webview inspection.",
@@ -1107,6 +1170,13 @@
           "name": "aphrody-terminal-backend",
           "path": "crates/shell/terminal-backend",
           "description": "Native pty driver and WebSocket server for aphrody-terminal (cross-platform via portable-pty).",
+          "bins": [],
+          "features": []
+        },
+        {
+          "name": "aphrody-terminal-core",
+          "path": "crates/shell/terminal-core",
+          "description": "Portable Rio VT terminal state shared by the native PTY backend, WASM and Tauri hosts.",
           "bins": [],
           "features": []
         },
@@ -1145,7 +1215,10 @@
           "bins": [
             "aphrody-agent-train"
           ],
-          "features": []
+          "features": [
+            "default",
+            "registry"
+          ]
         },
         {
           "name": "aphrody-translate",
@@ -1244,6 +1317,13 @@
           ]
         },
         {
+          "name": "aphrody-web-frames",
+          "path": "crates/web/web-frames",
+          "description": "MPEG-7 ColorLayout frame indexing and trace.moe client for Aphrody Web",
+          "bins": [],
+          "features": []
+        },
+        {
           "name": "aphrody-web-index",
           "path": "crates/web/web-index",
           "description": "HNSW approximate nearest-neighbour index with scalar int8 quantisation and mmap persistence",
@@ -1266,6 +1346,15 @@
           "path": "crates/os/winclean",
           "description": "Rust-owned compatibility surface for 166 WinClean Windows tools.",
           "bins": [],
+          "features": []
+        },
+        {
+          "name": "aphrody-wsl",
+          "path": "crates/os/aphrody-wsl",
+          "description": "Pinned WSL, Linux kernel, WSLg and Aphrody OS distribution build workbench",
+          "bins": [
+            "aphrody-wsl"
+          ],
           "features": []
         },
         {
@@ -1857,11 +1946,37 @@
           ]
         },
         {
+          "name": "@aphrody/paths",
+          "path": "packages/infra/paths",
+          "description": "Cross-platform path resolution for Aphrody workspaces and runtime data",
+          "bins": []
+        },
+        {
           "name": "@aphrody/scaffold",
           "path": "packages/ui/scaffold",
           "description": "The single project scaffolder of the UI stack: Tauri 3 shell (pins, config, capabilities, icon), M3 web and app templates, the canonical example and a writer that never overwrites. Used by m3 new, m3-next-migrate and web-to-tauri.",
           "bins": [
             "aphrody-scaffold"
+          ]
+        },
+        {
+          "name": "@aphrody/shell-web",
+          "path": "packages/shell/web",
+          "description": "Aphrody shell for browsers and Tauri webviews: WASM VT core, local shell and WebSocket/Tauri transports.",
+          "bins": []
+        },
+        {
+          "name": "@aphrody/sql",
+          "path": "packages/infra/sql",
+          "description": "Shared Bun database mechanics for Aphrody: env/URL resolution, Bun.SQL and Redis factories, bun:sqlite open policy with optional sqlite-vec",
+          "bins": []
+        },
+        {
+          "name": "@aphrody/update",
+          "path": "packages/infra/update",
+          "description": "Unified update pipeline: tool pins, dependency sync, Cargo lock refresh, user systemd units and dev-env checks",
+          "bins": [
+            "aphrody-update"
           ]
         },
         {
@@ -1903,29 +2018,6 @@
           "name": "@aphrody/xai",
           "path": "packages/ai/xai",
           "description": "Headless xAI Grok API client for Bun — high-level fluent Chat API (createChat/append/sample/stream/executeToolCalls/sampleStructured, reasoning, structured, XTools for native X tool fulfillment) + SUPER_GROK_TOKEN keyless + OIDC. OpenAI-compatible REST, deep native integration with @aphrody/x.",
-          "bins": []
-        },
-        {
-          "name": "@hypothesi/tauri-mcp-cli",
-          "path": "upstream/mcp-server-tauri/packages/cli",
-          "description": "CLI wrapper for calling the Tauri MCP server tools directly from the terminal",
-          "bins": [
-            "intent",
-            "tauri-mcp"
-          ]
-        },
-        {
-          "name": "@hypothesi/tauri-mcp-server",
-          "path": "upstream/mcp-server-tauri/packages/mcp-server",
-          "description": "A Model Context Protocol server for use with Tauri v2 applications",
-          "bins": [
-            "mcp-server-tauri"
-          ]
-        },
-        {
-          "name": "@hypothesi/tauri-plugin-mcp-bridge",
-          "path": "upstream/mcp-server-tauri/packages/tauri-plugin-mcp-bridge",
-          "description": "A Tauri plugin that exposes an MCP server interface via WebSockets.",
           "bins": []
         },
         {
@@ -2007,14 +2099,6 @@
           "bins": []
         },
         {
-          "name": "@rosegriffon/azalee",
-          "path": "packages/rg/azalee",
-          "description": "Bibliothèque Bun du wiki Azalée (Inazuma Eleven: Victory Road) — accès PostgreSQL, index CPK, recherche et CLI.",
-          "bins": [
-            "azalee"
-          ]
-        },
-        {
           "name": "@rosegriffon/bot",
           "path": "apps/rg/bot",
           "description": "Bot Discord Rose Griffon — slash commands public + admin, sync members, canvas cards",
@@ -2060,20 +2144,6 @@
           "name": "@rosegriffon/identity",
           "path": "packages/rg/identity",
           "description": "Compte unique Rose Griffon : identité native et connexions liées (Discord, Patreon, Twitch, Google, Steam, Achilléa)",
-          "bins": []
-        },
-        {
-          "name": "@rosegriffon/inagle",
-          "path": "packages/rg/inagle",
-          "description": "Universal Game Data API for Inazuma Eleven: Victory Road — parsers, types, and tools for IEVR game data",
-          "bins": [
-            "inagle"
-          ]
-        },
-        {
-          "name": "@rosegriffon/inagle-cross",
-          "path": "packages/rg/inagle-cross",
-          "description": "API de données et de rétro-conception pour Inazuma Eleven Cross — types, schémas, et analyseurs d'assets",
           "bins": []
         },
         {
@@ -2199,12 +2269,6 @@
           "bins": []
         },
         {
-          "name": "@tauri-plugin/mcp-bridge",
-          "path": "upstream/mcp-server-tauri/packages/tauri-plugin-mcp-bridge/guest-js",
-          "description": "Guest bindings for MCP Bridge Tauri plugin",
-          "bins": []
-        },
-        {
           "name": "aphrody",
           "path": ".",
           "description": "",
@@ -2217,44 +2281,13 @@
           "bins": []
         },
         {
-          "name": "mcp-server-tauri-workspace",
-          "path": "upstream/mcp-server-tauri",
-          "description": "",
-          "bins": []
-        },
-        {
           "name": "shenron-monorepo",
           "path": "config/shenron",
           "description": "",
           "bins": []
-        },
-        {
-          "name": "shenron-monorepo",
-          "path": "docs/shenron/root",
-          "description": "",
-          "bins": []
-        },
-        {
-          "name": "test-app",
-          "path": "upstream/mcp-server-tauri/packages/test-app",
-          "description": "",
-          "bins": []
-        },
-        {
-          "name": "victauri",
-          "path": "upstream/victauri/editors/vscode",
-          "description": "Full-stack testing and inspection for Tauri apps",
-          "bins": []
         }
       ],
-      "pythonPackages": [
-        {
-          "name": "aphrody-train",
-          "path": "py/aphrody-train",
-          "description": "Training surface for aphrody: dataset generation, embedding/reranker fine-tuning, LoRA",
-          "scripts": []
-        }
-      ],
+      "pythonPackages": [],
       "errors": []
     },
     {
@@ -2295,39 +2328,9 @@
           "scripts": []
         },
         {
-          "name": "buscador-inazuma",
-          "path": "packages/iecode/src/Buscador-Inazuma",
-          "description": "Tk desktop search tool for Inazuma Eleven Nintendo DS ROM assets",
-          "scripts": []
-        },
-        {
           "name": "google-antigravity",
           "path": "packages/ai/py/antigravity-sdk-python",
           "description": "Google Antigravity SDK for building AI agents",
-          "scripts": []
-        },
-        {
-          "name": "iecode-python-workspace",
-          "path": "packages/iecode",
-          "description": "Shared UV workspace for the repository's Python tools",
-          "scripts": []
-        },
-        {
-          "name": "iestrikers-tools",
-          "path": "packages/iecode/src/IEStrikers",
-          "description": "Python tooling for the Inazuma Eleven Go Strikers 2013 decompilation",
-          "scripts": []
-        },
-        {
-          "name": "inazuma-eleven-go-mapenv",
-          "path": "packages/iecode/src/InazumaElevenGoMapenv",
-          "description": "Compiler and decompiler for Inazuma Eleven Go mapenv files",
-          "scripts": []
-        },
-        {
-          "name": "inz-cond",
-          "path": "packages/iecode/src/inz_cond",
-          "description": "Level-5 condition data encoder, decoder, and code generator",
           "scripts": []
         },
         {
@@ -2338,12 +2341,6 @@
             "koharu-export-dinov2",
             "koharu-export-efficientnet"
           ]
-        },
-        {
-          "name": "renpy",
-          "path": "packages/iecode/src/iepy",
-          "description": "",
-          "scripts": []
         },
         {
           "name": "shenron-relecture-ocr",
@@ -2367,1296 +2364,6 @@
           "description": "Portable AArch64 decoder and bounded interpreter extracted from rdynarmic",
           "bins": [],
           "features": []
-        },
-        {
-          "name": "aphrody-bevy-a11y",
-          "path": "crates/bevy/bevy_a11y",
-          "description": "Provides accessibility support for Bevy Engine",
-          "bins": [],
-          "features": [
-            "bevy_reflect",
-            "critical-section",
-            "default",
-            "serialize",
-            "std"
-          ]
-        },
-        {
-          "name": "aphrody-bevy-android",
-          "path": "crates/bevy/bevy_android",
-          "description": "Provides android functionality for Bevy Engine.",
-          "bins": [],
-          "features": [
-            "default"
-          ]
-        },
-        {
-          "name": "aphrody-bevy-animation",
-          "path": "crates/bevy/bevy_animation",
-          "description": "Provides animation functionality for Bevy Engine",
-          "bins": [],
-          "features": [
-            "bevy_mesh"
-          ]
-        },
-        {
-          "name": "aphrody-bevy-animation-macros",
-          "path": "crates/bevy/bevy_animation/macros",
-          "description": "Macros for bevy_animation",
-          "bins": [],
-          "features": []
-        },
-        {
-          "name": "aphrody-bevy-anti-alias",
-          "path": "crates/bevy/bevy_anti_alias",
-          "description": "Provides various anti-aliasing implementations for Bevy Engine",
-          "bins": [],
-          "features": [
-            "dlss",
-            "force_disable_dlss",
-            "smaa_luts",
-            "trace",
-            "webgl",
-            "webgpu"
-          ]
-        },
-        {
-          "name": "aphrody-bevy-app",
-          "path": "crates/bevy/bevy_app",
-          "description": "Provides core App functionality for Bevy Engine",
-          "bins": [],
-          "features": [
-            "bevy_debug_stepping",
-            "bevy_reflect",
-            "critical-section",
-            "default",
-            "error_panic_hook",
-            "hotpatching",
-            "reflect_auto_register",
-            "reflect_functions",
-            "std",
-            "trace",
-            "web"
-          ]
-        },
-        {
-          "name": "aphrody-bevy-asset",
-          "path": "crates/bevy/bevy_asset",
-          "description": "Provides asset functionality for Bevy Engine",
-          "bins": [],
-          "features": [
-            "asset_processor",
-            "blocking",
-            "embedded_watcher",
-            "file_watcher",
-            "http",
-            "https",
-            "multi_threaded",
-            "notify-debouncer-full",
-            "trace",
-            "ureq",
-            "watch",
-            "web_asset_cache"
-          ]
-        },
-        {
-          "name": "aphrody-bevy-asset-macros",
-          "path": "crates/bevy/bevy_asset/macros",
-          "description": "Derive implementations for bevy_asset",
-          "bins": [],
-          "features": []
-        },
-        {
-          "name": "aphrody-bevy-audio",
-          "path": "crates/bevy/bevy_audio",
-          "description": "Provides audio functionality for Bevy Engine",
-          "bins": [],
-          "features": [
-            "aac",
-            "flac",
-            "mp3",
-            "mp4",
-            "symphonia-flac",
-            "symphonia-vorbis",
-            "symphonia-wav",
-            "vorbis",
-            "wav"
-          ]
-        },
-        {
-          "name": "aphrody-bevy-auto-register-static",
-          "path": "examples/reflection/auto_register_static",
-          "description": "",
-          "bins": [
-            "main"
-          ],
-          "features": []
-        },
-        {
-          "name": "aphrody-bevy-benches",
-          "path": "benches",
-          "description": "Benchmarks that test Bevy's performance",
-          "bins": [],
-          "features": []
-        },
-        {
-          "name": "aphrody-bevy-bistro",
-          "path": "examples/large_scenes/bistro",
-          "description": "",
-          "bins": [
-            "bistro"
-          ],
-          "features": [
-            "debug_text",
-            "default",
-            "pbr_anisotropy_texture",
-            "pbr_multi_layer_material_textures",
-            "pbr_specular_textures",
-            "pbr_transmission_textures"
-          ]
-        },
-        {
-          "name": "aphrody-bevy-build-easefunction-graphs",
-          "path": "tools/build/easefunction-graphs",
-          "description": "Tool that generates a svg for each EaseFunction to be included in the docs",
-          "bins": [
-            "build-easefunction-graphs"
-          ],
-          "features": []
-        },
-        {
-          "name": "aphrody-bevy-build-templated-pages",
-          "path": "tools/build/templated-pages",
-          "description": "Tool that checks and fixes undocumented features and examples",
-          "bins": [
-            "build-templated-pages"
-          ],
-          "features": []
-        },
-        {
-          "name": "aphrody-bevy-build-wasm-example",
-          "path": "tools/build/wasm-example",
-          "description": "Tool for building example for Wasm",
-          "bins": [
-            "build-wasm-example"
-          ],
-          "features": []
-        },
-        {
-          "name": "aphrody-bevy-caldera-hotel",
-          "path": "examples/large_scenes/caldera_hotel",
-          "description": "",
-          "bins": [
-            "caldera_hotel"
-          ],
-          "features": []
-        },
-        {
-          "name": "aphrody-bevy-camera",
-          "path": "crates/bevy/bevy_camera",
-          "description": "Provides a camera abstraction for Bevy Engine",
-          "bins": [],
-          "features": [
-            "default"
-          ]
-        },
-        {
-          "name": "aphrody-bevy-camera-controller",
-          "path": "crates/bevy/bevy_camera_controller",
-          "description": "Premade camera controllers for Bevy",
-          "bins": [],
-          "features": [
-            "bevy_asset",
-            "bevy_core_pipeline",
-            "bevy_reflect",
-            "default",
-            "extension_anchor_indicator",
-            "extension_independent_skybox",
-            "free_camera",
-            "libm",
-            "pan_camera",
-            "pan_orbit_camera"
-          ]
-        },
-        {
-          "name": "aphrody-bevy-ci",
-          "path": "tools/ci",
-          "description": "Tool that enables running CI checks locally.",
-          "bins": [
-            "ci"
-          ],
-          "features": []
-        },
-        {
-          "name": "aphrody-bevy-city",
-          "path": "examples/large_scenes/bevy_city",
-          "description": "",
-          "bins": [
-            "bevy_city"
-          ],
-          "features": []
-        },
-        {
-          "name": "aphrody-bevy-clipboard",
-          "path": "crates/bevy/bevy_clipboard",
-          "description": "Provides clipboard support for Bevy Engine",
-          "bins": [],
-          "features": [
-            "default",
-            "image",
-            "system_clipboard",
-            "wayland"
-          ]
-        },
-        {
-          "name": "aphrody-bevy-color",
-          "path": "crates/bevy/bevy_color",
-          "description": "Types for representing and manipulating color values",
-          "bins": [],
-          "features": [
-            "alloc",
-            "bevy_reflect",
-            "critical-section",
-            "default",
-            "encase",
-            "libm",
-            "serde",
-            "serialize",
-            "std",
-            "wgpu-types"
-          ]
-        },
-        {
-          "name": "aphrody-bevy-compile-fail-utils",
-          "path": "tools/compile_fail_utils",
-          "description": "Utils for compile tests used in the engine",
-          "bins": [],
-          "features": []
-        },
-        {
-          "name": "aphrody-bevy-core-pipeline",
-          "path": "crates/bevy/bevy_core_pipeline",
-          "description": "Provides a core render pipeline for Bevy Engine.",
-          "bins": [],
-          "features": [
-            "tonemapping_luts",
-            "trace",
-            "webgl",
-            "webgpu"
-          ]
-        },
-        {
-          "name": "aphrody-bevy-curve",
-          "path": "crates/bevy/bevy_curve",
-          "description": "Provides curve functionality for Bevy Engine",
-          "bins": [],
-          "features": [
-            "alloc",
-            "approx",
-            "bevy_reflect",
-            "default",
-            "serialize",
-            "std"
-          ]
-        },
-        {
-          "name": "aphrody-bevy-derive",
-          "path": "crates/bevy/bevy_derive",
-          "description": "Provides derive implementations for Bevy Engine",
-          "bins": [],
-          "features": []
-        },
-        {
-          "name": "aphrody-bevy-derive-compile-fail",
-          "path": "crates/bevy/bevy_derive/compile_fail",
-          "description": "Compile fail tests for Bevy Engine's various macros",
-          "bins": [],
-          "features": []
-        },
-        {
-          "name": "aphrody-bevy-dev-tools",
-          "path": "crates/bevy/bevy_dev_tools",
-          "description": "Collection of developer tools for the Bevy Engine",
-          "bins": [],
-          "features": [
-            "bevy_ci_testing",
-            "render",
-            "schedule_data",
-            "screenrecording",
-            "serialize",
-            "webgl",
-            "webgpu"
-          ]
-        },
-        {
-          "name": "aphrody-bevy-diagnostic",
-          "path": "crates/bevy/bevy_diagnostic",
-          "description": "Provides diagnostic functionality for Bevy Engine",
-          "bins": [],
-          "features": [
-            "critical-section",
-            "default",
-            "dynamic_linking",
-            "serialize",
-            "std",
-            "sysinfo",
-            "sysinfo_plugin"
-          ]
-        },
-        {
-          "name": "aphrody-bevy-dylib",
-          "path": "crates/bevy/bevy_dylib",
-          "description": "Force the Bevy Engine to be dynamically linked for faster linking",
-          "bins": [],
-          "features": []
-        },
-        {
-          "name": "aphrody-bevy-ecs",
-          "path": "crates/bevy/bevy_ecs",
-          "description": "Bevy Engine's entity component system",
-          "bins": [],
-          "features": [
-            "async_executor",
-            "backtrace",
-            "bevy_debug_stepping",
-            "bevy_reflect",
-            "critical-section",
-            "debug",
-            "default",
-            "detailed_trace",
-            "hotpatching",
-            "multi_threaded",
-            "reflect_auto_register",
-            "reflect_functions",
-            "serialize",
-            "std",
-            "trace",
-            "track_location"
-          ]
-        },
-        {
-          "name": "aphrody-bevy-ecs-compile-fail",
-          "path": "crates/bevy/bevy_ecs/compile_fail",
-          "description": "Compile fail tests for Bevy Engine's entity component system",
-          "bins": [],
-          "features": []
-        },
-        {
-          "name": "aphrody-bevy-ecs-macro-logic",
-          "path": "crates/bevy/bevy_ecs/macro_logic",
-          "description": "Shared Bevy ECS Macro internals",
-          "bins": [],
-          "features": []
-        },
-        {
-          "name": "aphrody-bevy-ecs-macros",
-          "path": "crates/bevy/bevy_ecs/macros",
-          "description": "Bevy ECS Macros",
-          "bins": [],
-          "features": []
-        },
-        {
-          "name": "aphrody-bevy-encase-derive",
-          "path": "crates/bevy/bevy_encase_derive",
-          "description": "Bevy derive macro for encase",
-          "bins": [],
-          "features": []
-        },
-        {
-          "name": "aphrody-bevy-errors",
-          "path": "errors",
-          "description": "Documentation and tests for Bevy's error codes",
-          "bins": [],
-          "features": []
-        },
-        {
-          "name": "aphrody-bevy-example-showcase",
-          "path": "tools/example-showcase",
-          "description": "Tool for running examples or generating a showcase page for the website.",
-          "bins": [
-            "example-showcase"
-          ],
-          "features": []
-        },
-        {
-          "name": "aphrody-bevy-export-content",
-          "path": "tools/export-content",
-          "description": "",
-          "bins": [
-            "export-content"
-          ],
-          "features": []
-        },
-        {
-          "name": "aphrody-bevy-extract",
-          "path": "crates/bevy/bevy_extract",
-          "description": "Provides extract functionality between ECS worlds for Bevy Engine",
-          "bins": [],
-          "features": [
-            "default",
-            "trace"
-          ]
-        },
-        {
-          "name": "aphrody-bevy-extract-macros",
-          "path": "crates/bevy/bevy_extract/macros",
-          "description": "Derive implementations for bevy_extract",
-          "bins": [],
-          "features": []
-        },
-        {
-          "name": "aphrody-bevy-feathers",
-          "path": "crates/bevy/bevy_feathers",
-          "description": "A collection of UI widgets for building editors and utilities in Bevy",
-          "bins": [],
-          "features": [
-            "default",
-            "webgl",
-            "webgpu"
-          ]
-        },
-        {
-          "name": "aphrody-bevy-gilrs",
-          "path": "crates/bevy/bevy_gilrs",
-          "description": "Gamepad system made using Gilrs for Bevy Engine",
-          "bins": [],
-          "features": []
-        },
-        {
-          "name": "aphrody-bevy-gizmos",
-          "path": "crates/bevy/bevy_gizmos",
-          "description": "Provides gizmos for Bevy Engine",
-          "bins": [],
-          "features": [
-            "bevy_mesh"
-          ]
-        },
-        {
-          "name": "aphrody-bevy-gizmos-macros",
-          "path": "crates/bevy/bevy_gizmos/macros",
-          "description": "Derive implementations for bevy_gizmos",
-          "bins": [],
-          "features": []
-        },
-        {
-          "name": "aphrody-bevy-gizmos-render",
-          "path": "crates/bevy/bevy_gizmos_render",
-          "description": "Provides gizmos rendering for Bevy Engine",
-          "bins": [],
-          "features": [
-            "bevy_pbr",
-            "bevy_sprite_render",
-            "webgl",
-            "webgpu"
-          ]
-        },
-        {
-          "name": "aphrody-bevy-gltf",
-          "path": "crates/bevy/bevy_gltf",
-          "description": "Bevy Engine GLTF loading",
-          "bins": [],
-          "features": [
-            "bevy_animation",
-            "pbr_anisotropy_texture",
-            "pbr_multi_layer_material_textures",
-            "pbr_specular_textures",
-            "pbr_transmission_textures"
-          ]
-        },
-        {
-          "name": "aphrody-bevy-image",
-          "path": "crates/bevy/bevy_image",
-          "description": "Provides image types for Bevy Engine",
-          "bins": [],
-          "features": [
-            "basis-universal",
-            "bevy_reflect",
-            "bmp",
-            "compressed_image_saver",
-            "compressed_image_saver_universal",
-            "dds",
-            "ddsfile",
-            "default",
-            "exr",
-            "ff",
-            "flate2",
-            "gif",
-            "hdr",
-            "ico",
-            "jpeg",
-            "ktx2",
-            "png",
-            "pnm",
-            "qoi",
-            "serialize",
-            "tga",
-            "tiff",
-            "webp",
-            "zlib",
-            "zstd",
-            "zstd_c",
-            "zstd_rust"
-          ]
-        },
-        {
-          "name": "aphrody-bevy-input",
-          "path": "crates/bevy/bevy_input",
-          "description": "Provides input functionality for Bevy Engine",
-          "bins": [],
-          "features": [
-            "bevy_reflect",
-            "critical-section",
-            "default",
-            "gamepad",
-            "gestures",
-            "keyboard",
-            "libm",
-            "mouse",
-            "serde",
-            "serialize",
-            "smol_str",
-            "std",
-            "touch"
-          ]
-        },
-        {
-          "name": "aphrody-bevy-input-focus",
-          "path": "crates/bevy/bevy_input_focus",
-          "description": "Keyboard focus management",
-          "bins": [],
-          "features": [
-            "bevy_picking",
-            "bevy_reflect",
-            "critical-section",
-            "default",
-            "gamepad",
-            "keyboard",
-            "libm",
-            "mouse",
-            "serialize",
-            "std"
-          ]
-        },
-        {
-          "name": "aphrody-bevy-inspector",
-          "path": "crates/bevy/bevy_inspector",
-          "description": "An entity inspector built on bevy_ui and bevy_feathers",
-          "bins": [],
-          "features": [
-            "default"
-          ]
-        },
-        {
-          "name": "aphrody-bevy-internal",
-          "path": "crates/bevy/bevy_internal",
-          "description": "An internal Bevy crate used to facilitate optional dynamic linking via the 'dynamic_linking' feature",
-          "bins": [],
-          "features": [
-            "aac",
-            "accesskit_unix",
-            "android-game-activity",
-            "android-native-activity",
-            "area_light_luts",
-            "asset_processor",
-            "async-io",
-            "async_executor",
-            "basis-universal",
-            "bevy-settings",
-            "bevy_animation",
-            "bevy_anti_alias",
-            "bevy_asset",
-            "bevy_audio",
-            "bevy_camera",
-            "bevy_camera_controller",
-            "bevy_ci_testing",
-            "bevy_clipboard",
-            "bevy_color",
-            "bevy_core_pipeline",
-            "bevy_curve",
-            "bevy_debug_stepping",
-            "bevy_dev_tools",
-            "bevy_extract",
-            "bevy_feathers",
-            "bevy_gilrs",
-            "bevy_gizmos",
-            "bevy_gizmos_render",
-            "bevy_gltf",
-            "bevy_image",
-            "bevy_input_focus",
-            "bevy_inspector",
-            "bevy_light",
-            "bevy_log",
-            "bevy_material",
-            "bevy_mesh",
-            "bevy_mikktspace",
-            "bevy_pbr",
-            "bevy_picking",
-            "bevy_post_process",
-            "bevy_remote",
-            "bevy_remote_client",
-            "bevy_render",
-            "bevy_scene",
-            "bevy_settings",
-            "bevy_shader",
-            "bevy_solari",
-            "bevy_sprite",
-            "bevy_sprite_render",
-            "bevy_state",
-            "bevy_text",
-            "bevy_ui",
-            "bevy_ui_debug",
-            "bevy_ui_render",
-            "bevy_ui_widgets",
-            "bevy_window",
-            "bevy_winit",
-            "bevy_world_serialization",
-            "bluenoise_texture",
-            "bmp",
-            "clipboard_image",
-            "complex_script_segmentation",
-            "compressed_image_saver",
-            "compressed_image_saver_universal",
-            "critical-section",
-            "custom_cursor",
-            "dds",
-            "debug",
-            "debug_glam_assert",
-            "default_font",
-            "detailed_trace",
-            "dfg_lut",
-            "dlss",
-            "dynamic_linking",
-            "embedded_watcher",
-            "experimental_pbr_pcss",
-            "exr",
-            "ff",
-            "file_watcher",
-            "flac",
-            "force_disable_dlss",
-            "free_camera",
-            "gamepad",
-            "gestures",
-            "ghost_nodes",
-            "gif",
-            "glam_assert",
-            "gltf_animation",
-            "hdr",
-            "hotpatching",
-            "http",
-            "https",
-            "ico",
-            "jpeg",
-            "keyboard",
-            "ktx2",
-            "libm",
-            "linux_game_mode",
-            "mesh_picking",
-            "meshlet",
-            "meshlet_processor",
-            "morph",
-            "morph_animation",
-            "mouse",
-            "mp3",
-            "mp4",
-            "multi_threaded",
-            "pan_camera",
-            "pan_orbit_camera",
-            "pan_orbit_gizmo",
-            "pbr_anisotropy_texture",
-            "pbr_clustered_decals",
-            "pbr_light_textures",
-            "pbr_multi_layer_material_textures",
-            "pbr_specular_textures",
-            "pbr_transmission_textures",
-            "png",
-            "pnm",
-            "qoi",
-            "raw_vulkan_init",
-            "reflect_auto_register",
-            "reflect_auto_register_static",
-            "reflect_documentation",
-            "reflect_functions",
-            "render_dev_tools",
-            "schedule_data",
-            "screenrecording",
-            "serialize",
-            "shader_format_spirv",
-            "smaa_luts",
-            "spirv_shader_passthrough",
-            "sprite_picking",
-            "statically-linked-dxc",
-            "std",
-            "symphonia-flac",
-            "symphonia-vorbis",
-            "symphonia-wav",
-            "sysinfo_plugin",
-            "system_clipboard",
-            "system_font_discovery",
-            "tga",
-            "tiff",
-            "tonemapping_luts",
-            "touch",
-            "trace",
-            "trace_chrome",
-            "trace_tracy",
-            "trace_tracy_memory",
-            "track_location",
-            "type_label_buffers",
-            "ui_picking",
-            "vorbis",
-            "wav",
-            "wayland",
-            "web",
-            "web_asset_cache",
-            "webgl",
-            "webgpu",
-            "webp",
-            "x11",
-            "zlib",
-            "zstd",
-            "zstd_c",
-            "zstd_rust"
-          ]
-        },
-        {
-          "name": "aphrody-bevy-light",
-          "path": "crates/bevy/bevy_light",
-          "description": "Keeps the lights on at Bevy Engine",
-          "bins": [],
-          "features": [
-            "bevy_gizmos",
-            "default",
-            "experimental_pbr_pcss",
-            "webgl",
-            "webgpu"
-          ]
-        },
-        {
-          "name": "aphrody-bevy-log",
-          "path": "crates/bevy/bevy_log",
-          "description": "Provides logging for Bevy Engine",
-          "bins": [],
-          "features": [
-            "trace",
-            "trace_tracy_memory",
-            "tracing-chrome",
-            "tracing-error",
-            "tracing-tracy"
-          ]
-        },
-        {
-          "name": "aphrody-bevy-macro-utils",
-          "path": "crates/bevy/bevy_macro_utils",
-          "description": "A collection of utils for Bevy Engine",
-          "bins": [],
-          "features": []
-        },
-        {
-          "name": "aphrody-bevy-material",
-          "path": "crates/bevy/bevy_material",
-          "description": "Provides a material abstraction for Bevy Engine",
-          "bins": [],
-          "features": []
-        },
-        {
-          "name": "aphrody-bevy-material-macros",
-          "path": "crates/bevy/bevy_material/macros",
-          "description": "Derive implementations for bevy_material",
-          "bins": [],
-          "features": []
-        },
-        {
-          "name": "aphrody-bevy-math",
-          "path": "crates/bevy/bevy_math",
-          "description": "Provides math functionality for Bevy Engine",
-          "bins": [],
-          "features": [
-            "alloc",
-            "approx",
-            "bevy_reflect",
-            "debug_glam_assert",
-            "default",
-            "glam_assert",
-            "libm",
-            "mint",
-            "nostd-libm",
-            "rand",
-            "serialize",
-            "std"
-          ]
-        },
-        {
-          "name": "aphrody-bevy-mesh",
-          "path": "crates/bevy/bevy_mesh",
-          "description": "Provides mesh types for Bevy Engine",
-          "bins": [],
-          "features": [
-            "bevy_mikktspace",
-            "default",
-            "glam",
-            "morph",
-            "serialize"
-          ]
-        },
-        {
-          "name": "aphrody-bevy-mipmap-generator",
-          "path": "examples/large_scenes/mipmap_generator",
-          "description": "",
-          "bins": [],
-          "features": [
-            "bevy_zstd_c",
-            "bevy_zstd_rust",
-            "compress",
-            "debug_text",
-            "default",
-            "pbr_anisotropy_texture",
-            "pbr_multi_layer_material_textures",
-            "pbr_specular_textures",
-            "pbr_transmission_textures"
-          ]
-        },
-        {
-          "name": "aphrody-bevy-no-std-library",
-          "path": "examples/no_std/library",
-          "description": "",
-          "bins": [],
-          "features": [
-            "critical-section",
-            "default",
-            "libm",
-            "std",
-            "web"
-          ]
-        },
-        {
-          "name": "aphrody-bevy-pbr",
-          "path": "crates/bevy/bevy_pbr",
-          "description": "Adds PBR rendering to Bevy Engine",
-          "bins": [],
-          "features": [
-            "area_light_luts",
-            "bevy_gltf",
-            "bluenoise_texture",
-            "dfg_lut",
-            "experimental_pbr_pcss",
-            "meshlet",
-            "meshlet_processor",
-            "pbr_anisotropy_texture",
-            "pbr_clustered_decals",
-            "pbr_light_textures",
-            "pbr_multi_layer_material_textures",
-            "pbr_specular_textures",
-            "pbr_transmission_textures",
-            "trace",
-            "webgl",
-            "webgpu"
-          ]
-        },
-        {
-          "name": "aphrody-bevy-picking",
-          "path": "crates/bevy/bevy_picking",
-          "description": "Provides screen picking functionality for Bevy Engine",
-          "bins": [],
-          "features": [
-            "custom_cursor",
-            "mesh_picking"
-          ]
-        },
-        {
-          "name": "aphrody-bevy-platform",
-          "path": "crates/bevy/bevy_platform",
-          "description": "Provides common platform agnostic APIs, as well as platform-specific features for Bevy Engine",
-          "bins": [],
-          "features": [
-            "alloc",
-            "async-io",
-            "bytemuck",
-            "critical-section",
-            "default",
-            "futures-lite",
-            "rayon",
-            "serialize",
-            "std",
-            "web"
-          ]
-        },
-        {
-          "name": "aphrody-bevy-post-process",
-          "path": "crates/bevy/bevy_post_process",
-          "description": "Provides post process effects for Bevy Engine.",
-          "bins": [],
-          "features": [
-            "trace",
-            "webgl",
-            "webgpu"
-          ]
-        },
-        {
-          "name": "aphrody-bevy-ptr",
-          "path": "crates/bevy/bevy_ptr",
-          "description": "Utilities for working with untyped pointers in a more safe way",
-          "bins": [],
-          "features": []
-        },
-        {
-          "name": "aphrody-bevy-reflect",
-          "path": "crates/bevy/bevy_reflect",
-          "description": "Dynamically interact with Rust types",
-          "bins": [],
-          "features": [
-            "auto_register",
-            "auto_register_inventory",
-            "auto_register_static",
-            "critical-section",
-            "debug",
-            "debug_stack",
-            "default",
-            "functions",
-            "glam",
-            "hashbrown",
-            "indexmap",
-            "petgraph",
-            "reflect_documentation",
-            "smallvec",
-            "smol_str",
-            "std",
-            "uuid",
-            "web",
-            "wgpu-types"
-          ]
-        },
-        {
-          "name": "aphrody-bevy-reflect-compile-fail",
-          "path": "crates/bevy/bevy_reflect/compile_fail",
-          "description": "Compile fail tests for Bevy Engine's reflection system",
-          "bins": [],
-          "features": []
-        },
-        {
-          "name": "aphrody-bevy-reflect-derive",
-          "path": "crates/bevy/bevy_reflect/derive",
-          "description": "Derive implementations for bevy_reflect",
-          "bins": [],
-          "features": [
-            "auto_register",
-            "auto_register_inventory",
-            "auto_register_static",
-            "default",
-            "functions",
-            "reflect_documentation"
-          ]
-        },
-        {
-          "name": "aphrody-bevy-remote",
-          "path": "crates/bevy/bevy_remote",
-          "description": "The Bevy Remote Protocol",
-          "bins": [],
-          "features": [
-            "bevy_asset",
-            "bevy_debug_stepping",
-            "bevy_render",
-            "client",
-            "default",
-            "http"
-          ]
-        },
-        {
-          "name": "aphrody-bevy-render",
-          "path": "crates/bevy/bevy_render",
-          "description": "Provides rendering functionality for Bevy Engine",
-          "bins": [],
-          "features": [
-            "ci_limits",
-            "debug",
-            "detailed_trace",
-            "gles",
-            "morph",
-            "multi_threaded",
-            "profiling",
-            "raw_vulkan_init",
-            "reflect_auto_register",
-            "reflect_functions",
-            "serialize",
-            "shader_format_spirv",
-            "spirv_shader_passthrough",
-            "statically-linked-dxc",
-            "trace",
-            "tracing-tracy",
-            "type_label_buffers",
-            "vulkan-portability",
-            "webgl",
-            "webgpu"
-          ]
-        },
-        {
-          "name": "aphrody-bevy-render-macros",
-          "path": "crates/bevy/bevy_render/macros",
-          "description": "Derive implementations for bevy_render",
-          "bins": [],
-          "features": []
-        },
-        {
-          "name": "aphrody-bevy-scene",
-          "path": "crates/bevy/bevy_scene",
-          "description": "Provides scene functionality for Bevy Engine",
-          "bins": [],
-          "features": []
-        },
-        {
-          "name": "aphrody-bevy-scene-macros",
-          "path": "crates/bevy/bevy_scene/macros",
-          "description": "Derive implementations for bevy_scene",
-          "bins": [],
-          "features": []
-        },
-        {
-          "name": "aphrody-bevy-settings",
-          "path": "crates/bevy/bevy_settings",
-          "description": "User settings framework for Bevy Engine",
-          "bins": [],
-          "features": [
-            "default"
-          ]
-        },
-        {
-          "name": "aphrody-bevy-shader",
-          "path": "crates/bevy/bevy_shader",
-          "description": "Provides shader asset types and import resolution for Bevy",
-          "bins": [],
-          "features": []
-        },
-        {
-          "name": "aphrody-bevy-shape",
-          "path": "crates/bevy/bevy_shape",
-          "description": "Provides primitive shape data definitions for Bevy Engine",
-          "bins": [],
-          "features": [
-            "alloc",
-            "approx",
-            "bevy_reflect",
-            "default",
-            "rand",
-            "serialize",
-            "std"
-          ]
-        },
-        {
-          "name": "aphrody-bevy-solari",
-          "path": "crates/bevy/bevy_solari",
-          "description": "Provides raytraced lighting for Bevy Engine",
-          "bins": [],
-          "features": [
-            "dlss",
-            "force_disable_dlss"
-          ]
-        },
-        {
-          "name": "aphrody-bevy-sprite",
-          "path": "crates/bevy/bevy_sprite",
-          "description": "Provides sprite functionality for Bevy Engine",
-          "bins": [],
-          "features": [
-            "bevy_picking",
-            "bevy_text",
-            "bevy_window"
-          ]
-        },
-        {
-          "name": "aphrody-bevy-sprite-render",
-          "path": "crates/bevy/bevy_sprite_render",
-          "description": "Provides sprite rendering functionality for Bevy Engine",
-          "bins": [],
-          "features": [
-            "bevy_text",
-            "webgl",
-            "webgpu"
-          ]
-        },
-        {
-          "name": "aphrody-bevy-state",
-          "path": "crates/bevy/bevy_state",
-          "description": "Finite state machines for Bevy",
-          "bins": [],
-          "features": [
-            "bevy_app",
-            "bevy_reflect",
-            "critical-section",
-            "default",
-            "std"
-          ]
-        },
-        {
-          "name": "aphrody-bevy-state-macros",
-          "path": "crates/bevy/bevy_state/macros",
-          "description": "Macros for bevy_state",
-          "bins": [],
-          "features": []
-        },
-        {
-          "name": "aphrody-bevy-tasks",
-          "path": "crates/bevy/bevy_tasks",
-          "description": "A task executor for Bevy Engine",
-          "bins": [],
-          "features": [
-            "async-io",
-            "async_executor",
-            "default",
-            "futures-lite",
-            "multi_threaded"
-          ]
-        },
-        {
-          "name": "aphrody-bevy-text",
-          "path": "crates/bevy/bevy_text",
-          "description": "Provides text functionality for Bevy Engine",
-          "bins": [],
-          "features": [
-            "complex_script_segmentation",
-            "default_font",
-            "system_clipboard",
-            "system_font_discovery"
-          ]
-        },
-        {
-          "name": "aphrody-bevy-time",
-          "path": "crates/bevy/bevy_time",
-          "description": "Provides time functionality for Bevy Engine",
-          "bins": [],
-          "features": [
-            "bevy_reflect",
-            "critical-section",
-            "default",
-            "serialize",
-            "std"
-          ]
-        },
-        {
-          "name": "aphrody-bevy-transform",
-          "path": "crates/bevy/bevy_transform",
-          "description": "Provides transform functionality for Bevy Engine",
-          "bins": [],
-          "features": [
-            "alloc",
-            "async_executor",
-            "bevy-support",
-            "bevy_reflect",
-            "bevy_utils",
-            "critical-section",
-            "default",
-            "libm",
-            "multi_threaded",
-            "serialize",
-            "std",
-            "trace"
-          ]
-        },
-        {
-          "name": "aphrody-bevy-ui",
-          "path": "crates/bevy/bevy_ui",
-          "description": "A custom ECS-driven UI framework built specifically for Bevy Engine",
-          "bins": [],
-          "features": [
-            "bevy_picking",
-            "default",
-            "ghost_nodes",
-            "serde",
-            "serialize"
-          ]
-        },
-        {
-          "name": "aphrody-bevy-ui-render",
-          "path": "crates/bevy/bevy_ui_render",
-          "description": "Provides rendering functionality for Bevy UI",
-          "bins": [],
-          "features": [
-            "bevy_ui_debug",
-            "default",
-            "serialize"
-          ]
-        },
-        {
-          "name": "aphrody-bevy-ui-widgets",
-          "path": "crates/bevy/bevy_ui_widgets",
-          "description": "Unstyled common widgets for Bevy Engine",
-          "bins": [],
-          "features": [
-            "default"
-          ]
-        },
-        {
-          "name": "aphrody-bevy-utils",
-          "path": "crates/bevy/bevy_utils",
-          "description": "A collection of utils for Bevy Engine",
-          "bins": [],
-          "features": [
-            "buffered_channel",
-            "debug",
-            "default",
-            "parallel",
-            "serialize",
-            "std"
-          ]
-        },
-        {
-          "name": "aphrody-bevy-window",
-          "path": "crates/bevy/bevy_window",
-          "description": "Provides windowing functionality for Bevy Engine",
-          "bins": [],
-          "features": [
-            "bevy_asset",
-            "bevy_image",
-            "bevy_reflect",
-            "custom_cursor",
-            "default",
-            "libm",
-            "serde",
-            "serialize",
-            "std"
-          ]
-        },
-        {
-          "name": "aphrody-bevy-winit",
-          "path": "crates/bevy/bevy_winit",
-          "description": "A winit window and input backend for Bevy Engine",
-          "bins": [],
-          "features": [
-            "accesskit_unix",
-            "android-game-activity",
-            "android-native-activity",
-            "bevy_asset",
-            "bevy_image",
-            "bytemuck",
-            "custom_cursor",
-            "default",
-            "linux_game_mode",
-            "serialize",
-            "trace",
-            "wayland",
-            "wgpu-types",
-            "x11"
-          ]
-        },
-        {
-          "name": "aphrody-bevy-world-serialization",
-          "path": "crates/bevy/bevy_world_serialization",
-          "description": "Provides ECS World serialization functionality for Bevy Engine",
-          "bins": [],
-          "features": [
-            "default",
-            "serialize"
-          ]
-        },
-        {
-          "name": "aphrody-bevy-zero-day",
-          "path": "examples/large_scenes/zero_day",
-          "description": "",
-          "bins": [
-            "zero_day"
-          ],
-          "features": [
-            "dlss",
-            "force_disable_dlss"
-          ]
         },
         {
           "name": "aphrody-ctr",
@@ -3746,44 +2453,6 @@
           ]
         },
         {
-          "name": "aphrody-egui-wgpu",
-          "path": "crates/aphrody-egui-wgpu",
-          "description": "",
-          "bins": [],
-          "features": [
-            "capture",
-            "default",
-            "fragile-send-sync-non-atomic-wasm",
-            "macos-window-resize-jitter-fix",
-            "wayland",
-            "winit",
-            "x11"
-          ]
-        },
-        {
-          "name": "aphrody-egui-winit",
-          "path": "crates/aphrody-egui-winit",
-          "description": "Bindings for using egui with winit",
-          "bins": [],
-          "features": [
-            "accesskit",
-            "android-game-activity",
-            "android-native-activity",
-            "arboard",
-            "bytemuck",
-            "clipboard",
-            "default",
-            "document-features",
-            "links",
-            "serde",
-            "smithay-clipboard",
-            "wayland",
-            "wayland-cursor",
-            "webbrowser",
-            "x11"
-          ]
-        },
-        {
           "name": "aphrody-emu-utils",
           "path": "crates/emu/utils",
           "description": "",
@@ -3810,15 +2479,6 @@
           "features": []
         },
         {
-          "name": "aphrody-gen-tests",
-          "path": "crates/bevy/bevy_color/crates/gen_tests",
-          "description": "",
-          "bins": [
-            "gen_tests"
-          ],
-          "features": []
-        },
-        {
           "name": "aphrody-gpu-backend",
           "path": "crates/aphrody-gpu-backend",
           "description": "",
@@ -3835,79 +2495,6 @@
           "description": "Rust build orchestration and stable ABI types for IECODE Nintendo homebrew",
           "bins": [
             "aphrody-homebrew"
-          ],
-          "features": []
-        },
-        {
-          "name": "aphrody-naga",
-          "path": "crates/wgpu/naga",
-          "description": "Shader translator and validator. Part of the wgpu project",
-          "bins": [],
-          "features": [
-            "arbitrary",
-            "default",
-            "deserialize",
-            "dot-out",
-            "fs",
-            "glsl-in",
-            "glsl-out",
-            "hlsl-out",
-            "hlsl-out-if-target-windows",
-            "msl-out",
-            "msl-out-if-target-apple",
-            "serialize",
-            "spv-in",
-            "spv-out",
-            "stderr",
-            "termcolor",
-            "wgsl-in",
-            "wgsl-out"
-          ]
-        },
-        {
-          "name": "aphrody-naga-fuzz",
-          "path": "crates/wgpu/naga/fuzz",
-          "description": "",
-          "bins": [
-            "glsl_parser",
-            "ir",
-            "spv_parser",
-            "wgsl_parser"
-          ],
-          "features": []
-        },
-        {
-          "name": "aphrody-naga-hlsl-snapshots",
-          "path": "crates/wgpu/naga/hlsl-snapshots",
-          "description": "",
-          "bins": [],
-          "features": []
-        },
-        {
-          "name": "aphrody-naga-test",
-          "path": "crates/wgpu/naga-test",
-          "description": "common code for naga tests",
-          "bins": [],
-          "features": []
-        },
-        {
-          "name": "aphrody-naga-types",
-          "path": "crates/wgpu/naga-types",
-          "description": "Common types for naga and wgpu",
-          "bins": [],
-          "features": [
-            "arbitrary",
-            "deserialize",
-            "serialize",
-            "std"
-          ]
-        },
-        {
-          "name": "aphrody-naga-xtask",
-          "path": "crates/wgpu/naga/xtask",
-          "description": "",
-          "bins": [
-            "naga-xtask"
           ],
           "features": []
         },
@@ -3989,6 +2576,7 @@
           "features": [
             "data",
             "default",
+            "real-azalee",
             "serde"
           ]
         },
@@ -4337,8 +2925,7 @@
           "path": "crates/nie/aphrody-nie-steam",
           "description": "Acquisition Steam native (download/dump des depots IEVR) en Rust pur, sur steamroom — port du Steam/ C# d'iecode (remplace SteamKit2)",
           "bins": [
-            "aphrody-nie-steam",
-            "nie_steam"
+            "aphrody-nie-steam"
           ],
           "features": [
             "default",
@@ -4420,8 +3007,7 @@
           "path": "crates/nie/aphrody-nie-zukan",
           "description": "Level-5 Inagle encyclopedia ingestion, parsing, and matching",
           "bins": [
-            "aphrody-nie-zukan",
-            "nie_zukan"
+            "aphrody-nie-zukan"
           ],
           "features": [
             "default",
@@ -4433,339 +3019,6 @@
           "path": "crates/aphrody-switch",
           "description": "Portable Switch CPU and Tegra texture primitives",
           "bins": [],
-          "features": []
-        },
-        {
-          "name": "aphrody-wgpu",
-          "path": "crates/wgpu/wgpu",
-          "description": "Cross-platform, safe, pure-rust graphics API",
-          "bins": [],
-          "features": [
-            "angle",
-            "counters",
-            "custom",
-            "default",
-            "drm",
-            "dx12",
-            "exhaust",
-            "fragile-send-sync-non-atomic-wasm",
-            "gles",
-            "glsl",
-            "metal",
-            "naga-ir",
-            "noop",
-            "serde",
-            "spirv",
-            "static-dxc",
-            "std",
-            "strict_asserts",
-            "trace",
-            "vulkan",
-            "vulkan-portability",
-            "web",
-            "webgl",
-            "webgpu",
-            "wgpu-core",
-            "wgsl"
-          ]
-        },
-        {
-          "name": "aphrody-wgpu-benchmark",
-          "path": "benches/wgpu",
-          "description": "wgpu benchmarking suite",
-          "bins": [],
-          "features": [
-            "tracy"
-          ]
-        },
-        {
-          "name": "aphrody-wgpu-bug-repro-01-texture-atomic-bug",
-          "path": "examples/wgpu/bug-repro/01_texture_atomic_bug",
-          "description": "",
-          "bins": [
-            "wgpu-bug-repro-01-texture-atomic-bug"
-          ],
-          "features": []
-        },
-        {
-          "name": "aphrody-wgpu-bug-repro-02-present-bugs",
-          "path": "examples/wgpu/bug-repro/02_present_bugs",
-          "description": "",
-          "bins": [
-            "wgpu-bug-repro-02-present-bugs"
-          ],
-          "features": []
-        },
-        {
-          "name": "aphrody-wgpu-core",
-          "path": "crates/wgpu/wgpu-core",
-          "description": "Core implementation logic of wgpu, the cross-platform, safe, pure-rust graphics API",
-          "bins": [],
-          "features": [
-            "angle",
-            "api_log_info",
-            "counters",
-            "default",
-            "drm",
-            "dx12",
-            "fragile-send-sync-non-atomic-wasm",
-            "gles",
-            "glsl",
-            "macro_rules_attribute",
-            "metal",
-            "noop",
-            "observe_locks",
-            "portable-atomic",
-            "renderdoc",
-            "replay",
-            "resource_log_info",
-            "serde",
-            "spirv",
-            "static-dxc",
-            "std",
-            "strict_asserts",
-            "trace",
-            "vulkan",
-            "vulkan-portability",
-            "webgl",
-            "wgpu-core-deps-apple",
-            "wgpu-core-deps-emscripten",
-            "wgpu-core-deps-linux-android-bsd",
-            "wgpu-core-deps-wasm",
-            "wgpu-core-deps-windows",
-            "wgsl"
-          ]
-        },
-        {
-          "name": "aphrody-wgpu-core-deps-apple",
-          "path": "crates/wgpu/wgpu-core/platform-deps/apple",
-          "description": "Feature unification helper crate for Apple platforms",
-          "bins": [],
-          "features": [
-            "angle",
-            "metal",
-            "vulkan-portability"
-          ]
-        },
-        {
-          "name": "aphrody-wgpu-core-deps-emscripten",
-          "path": "crates/wgpu/wgpu-core/platform-deps/emscripten",
-          "description": "Feature unification helper crate for the Emscripten platform",
-          "bins": [],
-          "features": [
-            "gles"
-          ]
-        },
-        {
-          "name": "aphrody-wgpu-core-deps-linux-android-bsd",
-          "path": "crates/wgpu/wgpu-core/platform-deps/linux-android-bsd",
-          "description": "Feature unification helper crate for the Linux/Android/BSD platforms",
-          "bins": [],
-          "features": [
-            "drm",
-            "gles",
-            "renderdoc",
-            "vulkan"
-          ]
-        },
-        {
-          "name": "aphrody-wgpu-core-deps-wasm",
-          "path": "crates/wgpu/wgpu-core/platform-deps/wasm",
-          "description": "Feature unification helper crate for the WebAssembly platform",
-          "bins": [],
-          "features": [
-            "webgl"
-          ]
-        },
-        {
-          "name": "aphrody-wgpu-core-deps-windows",
-          "path": "crates/wgpu/wgpu-core/platform-deps/windows",
-          "description": "Feature unification helper crate for the Windows/Linux/Android platforms",
-          "bins": [],
-          "features": [
-            "drm",
-            "dx12",
-            "gles",
-            "renderdoc",
-            "vulkan"
-          ]
-        },
-        {
-          "name": "aphrody-wgpu-core-remote",
-          "path": "crates/wgpu/wgpu-core-remote",
-          "description": "Remoting version of wgpu-core for browser implementing WebGPU",
-          "bins": [],
-          "features": [
-            "serde"
-          ]
-        },
-        {
-          "name": "aphrody-wgpu-core-remote-types",
-          "path": "crates/wgpu/wgpu-core-remote-types",
-          "description": "Types for remoting version of wgpu-core for browser implementing WebGPU",
-          "bins": [],
-          "features": []
-        },
-        {
-          "name": "aphrody-wgpu-cts-runner",
-          "path": "crates/wgpu/cts_runner",
-          "description": "CTS runner for wgpu",
-          "bins": [
-            "cts_runner"
-          ],
-          "features": []
-        },
-        {
-          "name": "aphrody-wgpu-deno-webgpu",
-          "path": "crates/wgpu/deno_webgpu",
-          "description": "WebGPU implementation for Deno",
-          "bins": [],
-          "features": []
-        },
-        {
-          "name": "aphrody-wgpu-example-01-hello-compute",
-          "path": "examples/wgpu/standalone/01_hello_compute",
-          "description": "",
-          "bins": [
-            "wgpu-example-01-hello-compute"
-          ],
-          "features": []
-        },
-        {
-          "name": "aphrody-wgpu-example-02-hello-window",
-          "path": "examples/wgpu/standalone/02_hello_window",
-          "description": "",
-          "bins": [
-            "wgpu-example-02-hello-window"
-          ],
-          "features": []
-        },
-        {
-          "name": "aphrody-wgpu-example-03-hdr-surface",
-          "path": "examples/wgpu/standalone/03_hdr_surface",
-          "description": "",
-          "bins": [
-            "wgpu-example-03-hdr-surface"
-          ],
-          "features": []
-        },
-        {
-          "name": "aphrody-wgpu-example-custom-backend",
-          "path": "examples/wgpu/standalone/custom_backend",
-          "description": "",
-          "bins": [
-            "wgpu-example-custom-backend"
-          ],
-          "features": [
-            "default",
-            "web"
-          ]
-        },
-        {
-          "name": "aphrody-wgpu-examples",
-          "path": "examples/wgpu/features",
-          "description": "Common example code",
-          "bins": [
-            "wgpu-examples"
-          ],
-          "features": [
-            "default",
-            "exhaust",
-            "webgl",
-            "webgpu"
-          ]
-        },
-        {
-          "name": "aphrody-wgpu-hal",
-          "path": "crates/wgpu/wgpu-hal",
-          "description": "Hardware abstraction layer for wgpu, the cross-platform, safe, pure-rust graphics API",
-          "bins": [],
-          "features": [
-            "device_lost_panic",
-            "drm",
-            "dx12",
-            "fragile-send-sync-non-atomic-wasm",
-            "gles",
-            "internal_error_panic",
-            "metal",
-            "portable-atomic",
-            "renderdoc",
-            "static-dxc",
-            "validation_canary",
-            "vulkan"
-          ]
-        },
-        {
-          "name": "aphrody-wgpu-info",
-          "path": "crates/wgpu/wgpu-info",
-          "description": "A tool to print and process information about available wgpu adapters.",
-          "bins": [
-            "wgpu-info"
-          ],
-          "features": []
-        },
-        {
-          "name": "aphrody-wgpu-lock-analyzer",
-          "path": "crates/wgpu/lock-analyzer",
-          "description": "",
-          "bins": [
-            "lock-analyzer"
-          ],
-          "features": []
-        },
-        {
-          "name": "aphrody-wgpu-naga-bridge",
-          "path": "crates/wgpu/wgpu-naga-bridge",
-          "description": "Conversions between naga and wgpu-types. Part of the wgpu project",
-          "bins": [],
-          "features": []
-        },
-        {
-          "name": "aphrody-wgpu-sync",
-          "path": "crates/wgpu/wgpu-sync",
-          "description": "Synchronization primitives for wgpu. Not meant for general use.",
-          "bins": [],
-          "features": [
-            "default",
-            "portable-atomic",
-            "std"
-          ]
-        },
-        {
-          "name": "aphrody-wgpu-test",
-          "path": "tests/wgpu",
-          "description": "common code for wgpu tests",
-          "bins": [],
-          "features": [
-            "exhaust",
-            "test-build-with-profiling",
-            "webgl"
-          ]
-        },
-        {
-          "name": "aphrody-wgpu-types",
-          "path": "crates/wgpu/wgpu-types",
-          "description": "Common types and utilities for wgpu, the cross-platform, safe, pure-rust graphics API",
-          "bins": [],
-          "features": [
-            "counters",
-            "default",
-            "exhaust",
-            "fragile-send-sync-non-atomic-wasm",
-            "serde",
-            "std",
-            "strict_asserts",
-            "trace",
-            "web"
-          ]
-        },
-        {
-          "name": "aphrody-wgpu-xtask",
-          "path": "crates/wgpu/xtask",
-          "description": "",
-          "bins": [
-            "wgpu-xtask"
-          ],
           "features": []
         },
         {
@@ -4892,49 +3145,13 @@
           "path": "packages/ieverse",
           "description": "Canonical Inazuma Eleven media catalogue, source URLs, navigation and player contracts.",
           "bins": []
-        },
-        {
-          "name": "start-mobile-example",
-          "path": ".github/upstream/bevy/start-mobile-example",
-          "description": "",
-          "bins": []
-        },
-        {
-          "name": "start-wasm-example",
-          "path": ".github/upstream/bevy/start-wasm-example",
-          "description": "",
-          "bins": []
         }
       ],
       "pythonPackages": [
         {
-          "name": "buscador-inazuma",
-          "path": "src/Buscador-Inazuma",
-          "description": "Tk desktop search tool for Inazuma Eleven Nintendo DS ROM assets",
-          "scripts": []
-        },
-        {
           "name": "iecode-python-workspace",
           "path": ".",
           "description": "Shared UV workspace for the repository's Python tools",
-          "scripts": []
-        },
-        {
-          "name": "iestrikers-tools",
-          "path": "src/IEStrikers",
-          "description": "Python tooling for the Inazuma Eleven Go Strikers 2013 decompilation",
-          "scripts": []
-        },
-        {
-          "name": "inazuma-eleven-go-mapenv",
-          "path": "src/InazumaElevenGoMapenv",
-          "description": "Compiler and decompiler for Inazuma Eleven Go mapenv files",
-          "scripts": []
-        },
-        {
-          "name": "inz-cond",
-          "path": "src/inz_cond",
-          "description": "Level-5 condition data encoder, decoder, and code generator",
           "scripts": []
         },
         {
@@ -5369,6 +3586,84 @@
               "aliases": [],
               "cfg": [],
               "children": []
+            },
+            {
+              "name": "mediawiki",
+              "about": "Enumerate and extract pages through a MediaWiki Action API",
+              "aliases": [],
+              "cfg": [],
+              "children": []
+            },
+            {
+              "name": "mirror",
+              "about": "Mirror HTML pages and their linked CSS/assets through Obscura",
+              "aliases": [],
+              "cfg": [],
+              "children": []
+            },
+            {
+              "name": "wiki-search",
+              "about": "Search a MediaWiki installation through its Action API",
+              "aliases": [],
+              "cfg": [],
+              "children": []
+            },
+            {
+              "name": "wiki-page",
+              "about": "Read a complete MediaWiki page dossier or Markdown through the Action API",
+              "aliases": [],
+              "cfg": [],
+              "children": []
+            },
+            {
+              "name": "frames",
+              "about": "MPEG-7 frame vectors, SQLite indexing and local/trace.moe search",
+              "aliases": [],
+              "cfg": [],
+              "children": [
+                {
+                  "name": "vector",
+                  "about": "",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "search",
+                  "about": "",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "stats",
+                  "about": "",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "list",
+                  "about": "",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "quota",
+                  "about": "",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "index",
+                  "about": "",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                }
+              ]
             }
           ]
         },
@@ -5617,6 +3912,13 @@
               "children": []
             },
             {
+              "name": "registry-migrate",
+              "about": "Apply the training registry migrations (schema `training`) over the direct `APHRODY_TRAINING_DATABASE_URL`.",
+              "aliases": [],
+              "cfg": [],
+              "children": []
+            },
+            {
               "name": "promote",
               "about": "Reserved for measured shadow-index A/B promotion; currently refuses installation.",
               "aliases": [],
@@ -5757,7 +4059,7 @@
         },
         {
           "name": "translate",
-          "about": "Traduction souveraine unifiée — combine Bxc Google Translate et Shenron JP->FR",
+          "about": "Traduction unifiée via aphrody-translate, avec protection Shenron JP->FR",
           "aliases": [],
           "cfg": [
             "not(target_arch = \"wasm32\")"
@@ -5789,7 +4091,7 @@
         },
         {
           "name": "agy-loop",
-          "about": "Boucle de codage autonome pour le CLI Antigravity (`agy`) via son hook `AfterAgent`. Câblé par le plugin aphrody-agy ; `start`/`stop`/`status` pilotent la boucle, `hook` est le driver invoqué par agy.",
+          "about": "Boucle de codage autonome pour le CLI Antigravity (`agy`) via ses hooks `Stop` (pilote) et `PostInvocation` (comptage par tour). Câblé par le plugin aphrody-agy ; `start`/`stop`/`status` pilotent la boucle, `hook` est le driver invoqué par…",
           "aliases": [],
           "cfg": [
             "not(target_arch = \"wasm32\")"
@@ -5818,7 +4120,14 @@
             },
             {
               "name": "hook",
-              "about": "Driver du hook `AfterAgent` : lit le JSON du hook sur stdin, émet une décision sur stdout. Câblé par le plugin agy — pas pour usage manuel.",
+              "about": "Driver des hooks `Stop` et `PostInvocation` : lit le JSON du hook sur stdin, émet une décision sur stdout. Câblé par le plugin agy — pas pour usage manuel.",
+              "aliases": [],
+              "cfg": [],
+              "children": []
+            },
+            {
+              "name": "hooks-json",
+              "about": "Affiche le fragment `hooks.json` (format natif agy) qui câble la boucle sur `Stop` et `PostInvocation`.",
               "aliases": [],
               "cfg": [],
               "children": []
@@ -5975,6 +4284,34 @@
             {
               "name": "search",
               "about": "Search GitHub repositories for documentation, llms.txt, and code digests.",
+              "aliases": [],
+              "cfg": [],
+              "children": []
+            },
+            {
+              "name": "source",
+              "about": "Upstream source checkouts outside the repository (config/upstream-sources.json).",
+              "aliases": [],
+              "cfg": [],
+              "children": []
+            },
+            {
+              "name": "upstream",
+              "about": "Live read-only access to the upstream catalogue (config/upstream-sources.json), no clone needed.",
+              "aliases": [],
+              "cfg": [],
+              "children": []
+            },
+            {
+              "name": "attribution",
+              "about": "Audit and strip AI attributions, co-authors, and trailers from Git commits.",
+              "aliases": [],
+              "cfg": [],
+              "children": []
+            },
+            {
+              "name": "clean-public",
+              "about": "Audit public web surfaces, products and repositories for private AI leaks.",
               "aliases": [],
               "cfg": [],
               "children": []
@@ -6259,7 +4596,9 @@
             {
               "name": "list",
               "about": "List locally installed models.",
-              "aliases": [],
+              "aliases": [
+                "ls"
+              ],
               "cfg": [],
               "children": []
             },
@@ -6294,7 +4633,9 @@
             {
               "name": "info",
               "about": "Show what an installed artefact actually is: size, digest, and the decoded GGUF / GGML / safetensors / ONNX header.",
-              "aliases": [],
+              "aliases": [
+                "show"
+              ],
               "cfg": [],
               "children": []
             },
@@ -6308,7 +4649,9 @@
             {
               "name": "rm",
               "about": "Delete an installed model and drop it from the registry.",
-              "aliases": [],
+              "aliases": [
+                "remove"
+              ],
               "cfg": [],
               "children": []
             },
@@ -6329,6 +4672,13 @@
             {
               "name": "adopt",
               "about": "Track a model file that already exists elsewhere on disk, without copying it.",
+              "aliases": [],
+              "cfg": [],
+              "children": []
+            },
+            {
+              "name": "ps",
+              "about": "List model servers currently loaded in-process-managed daemons (Ollama `ps`): role, alias, port, readiness. Read-only; reads the state published by `aphrody-llama-server`, spawns nothing.",
               "aliases": [],
               "cfg": [],
               "children": []
@@ -7348,6 +5698,63 @@
       ]
     },
     {
+      "binary": "aphrody-host-service",
+      "crate": "aphrody-kernel",
+      "repo": "aphrody",
+      "source": "crates/os/kernel/src/main.rs#Cli",
+      "commands": [
+        {
+          "name": "serve",
+          "about": "Serve the kernel with the built-in subsystems on the local endpoint.",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "mcp",
+          "about": "MCP over stdio: relay to the running kernel, or run one in-process.",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "tools",
+          "about": "List tools as JSON.",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "skills",
+          "about": "List skills as JSON.",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "call",
+          "about": "Call one tool.",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "run-skill",
+          "about": "Run one skill.",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "a2a",
+          "about": "Send an A2A envelope through the same kernel tool dispatcher.",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        }
+      ]
+    },
+    {
       "binary": "aphrody-infra",
       "crate": "aphrody-infra",
       "repo": "aphrody",
@@ -7858,6 +6265,84 @@
                   "aliases": [],
                   "cfg": [],
                   "children": []
+                },
+                {
+                  "name": "mediawiki",
+                  "about": "Enumerate and extract pages through a MediaWiki Action API",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "mirror",
+                  "about": "Mirror HTML pages and their linked CSS/assets through Obscura",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "wiki-search",
+                  "about": "Search a MediaWiki installation through its Action API",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "wiki-page",
+                  "about": "Read a complete MediaWiki page dossier or Markdown through the Action API",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "frames",
+                  "about": "MPEG-7 frame vectors, SQLite indexing and local/trace.moe search",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": [
+                    {
+                      "name": "vector",
+                      "about": "",
+                      "aliases": [],
+                      "cfg": [],
+                      "children": []
+                    },
+                    {
+                      "name": "search",
+                      "about": "",
+                      "aliases": [],
+                      "cfg": [],
+                      "children": []
+                    },
+                    {
+                      "name": "stats",
+                      "about": "",
+                      "aliases": [],
+                      "cfg": [],
+                      "children": []
+                    },
+                    {
+                      "name": "list",
+                      "about": "",
+                      "aliases": [],
+                      "cfg": [],
+                      "children": []
+                    },
+                    {
+                      "name": "quota",
+                      "about": "",
+                      "aliases": [],
+                      "cfg": [],
+                      "children": []
+                    },
+                    {
+                      "name": "index",
+                      "about": "",
+                      "aliases": [],
+                      "cfg": [],
+                      "children": []
+                    }
+                  ]
                 }
               ]
             },
@@ -8106,6 +6591,13 @@
                   "children": []
                 },
                 {
+                  "name": "registry-migrate",
+                  "about": "Apply the training registry migrations (schema `training`) over the direct `APHRODY_TRAINING_DATABASE_URL`.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
                   "name": "promote",
                   "about": "Reserved for measured shadow-index A/B promotion; currently refuses installation.",
                   "aliases": [],
@@ -8246,7 +6738,7 @@
             },
             {
               "name": "translate",
-              "about": "Traduction souveraine unifiée — combine Bxc Google Translate et Shenron JP->FR",
+              "about": "Traduction unifiée via aphrody-translate, avec protection Shenron JP->FR",
               "aliases": [],
               "cfg": [
                 "not(target_arch = \"wasm32\")"
@@ -8278,7 +6770,7 @@
             },
             {
               "name": "agy-loop",
-              "about": "Boucle de codage autonome pour le CLI Antigravity (`agy`) via son hook `AfterAgent`. Câblé par le plugin aphrody-agy ; `start`/`stop`/`status` pilotent la boucle, `hook` est le driver invoqué par agy.",
+              "about": "Boucle de codage autonome pour le CLI Antigravity (`agy`) via ses hooks `Stop` (pilote) et `PostInvocation` (comptage par tour). Câblé par le plugin aphrody-agy ; `start`/`stop`/`status` pilotent la boucle, `hook` est le driver invoqué par…",
               "aliases": [],
               "cfg": [
                 "not(target_arch = \"wasm32\")"
@@ -8307,7 +6799,14 @@
                 },
                 {
                   "name": "hook",
-                  "about": "Driver du hook `AfterAgent` : lit le JSON du hook sur stdin, émet une décision sur stdout. Câblé par le plugin agy — pas pour usage manuel.",
+                  "about": "Driver des hooks `Stop` et `PostInvocation` : lit le JSON du hook sur stdin, émet une décision sur stdout. Câblé par le plugin agy — pas pour usage manuel.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "hooks-json",
+                  "about": "Affiche le fragment `hooks.json` (format natif agy) qui câble la boucle sur `Stop` et `PostInvocation`.",
                   "aliases": [],
                   "cfg": [],
                   "children": []
@@ -8464,6 +6963,34 @@
                 {
                   "name": "search",
                   "about": "Search GitHub repositories for documentation, llms.txt, and code digests.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "source",
+                  "about": "Upstream source checkouts outside the repository (config/upstream-sources.json).",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "upstream",
+                  "about": "Live read-only access to the upstream catalogue (config/upstream-sources.json), no clone needed.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "attribution",
+                  "about": "Audit and strip AI attributions, co-authors, and trailers from Git commits.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "clean-public",
+                  "about": "Audit public web surfaces, products and repositories for private AI leaks.",
                   "aliases": [],
                   "cfg": [],
                   "children": []
@@ -8748,7 +7275,9 @@
                 {
                   "name": "list",
                   "about": "List locally installed models.",
-                  "aliases": [],
+                  "aliases": [
+                    "ls"
+                  ],
                   "cfg": [],
                   "children": []
                 },
@@ -8783,7 +7312,9 @@
                 {
                   "name": "info",
                   "about": "Show what an installed artefact actually is: size, digest, and the decoded GGUF / GGML / safetensors / ONNX header.",
-                  "aliases": [],
+                  "aliases": [
+                    "show"
+                  ],
                   "cfg": [],
                   "children": []
                 },
@@ -8797,7 +7328,9 @@
                 {
                   "name": "rm",
                   "about": "Delete an installed model and drop it from the registry.",
-                  "aliases": [],
+                  "aliases": [
+                    "remove"
+                  ],
                   "cfg": [],
                   "children": []
                 },
@@ -8818,6 +7351,13 @@
                 {
                   "name": "adopt",
                   "about": "Track a model file that already exists elsewhere on disk, without copying it.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "ps",
+                  "about": "List model servers currently loaded in-process-managed daemons (Ollama `ps`): role, alias, port, readiness. Read-only; reads the state published by `aphrody-llama-server`, spawns nothing.",
                   "aliases": [],
                   "cfg": [],
                   "children": []
@@ -10472,6 +9012,13 @@
           "children": []
         },
         {
+          "name": "response",
+          "about": "Bounded original text response and metadata, through the shared native network owner.",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
           "name": "fetch",
           "about": "",
           "aliases": [],
@@ -10517,6 +9064,13 @@
           "children": []
         },
         {
+          "name": "response",
+          "about": "Bounded original text response and metadata, through the shared native network owner.",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
           "name": "fetch",
           "about": "",
           "aliases": [],
@@ -10540,6 +9094,77 @@
         {
           "name": "chrome-path",
           "about": "",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        }
+      ]
+    },
+    {
+      "binary": "aphrody-wsl",
+      "crate": "aphrody-wsl",
+      "repo": "aphrody",
+      "source": "crates/os/aphrody-wsl/src/main.rs#Args",
+      "commands": [
+        {
+          "name": "doctor",
+          "about": "Verify source pins and installed build tools.",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "sources",
+          "about": "Inspect source revisions and dirtiness.",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "plan",
+          "about": "Show exact build commands without executing them.",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "dependencies",
+          "about": "Install host Linux dependencies (Windows prerequisites use native setup).",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "build",
+          "about": "Compile an upstream component or assemble the guest root filesystem.",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "all",
+          "about": "Build kernel, WSLg, Windows WSL and the Aphrody OS guest in sequence.",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "status",
+          "about": "Read build evidence; missing and failed reports remain visible.",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "verify",
+          "about": "Hash and validate expected nonempty artifacts.",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "import",
+          "about": "Import a new distro, preserving every existing distribution.",
           "aliases": [],
           "cfg": [],
           "children": []
@@ -12192,13 +10817,6 @@
       ]
     },
     {
-      "binary": "build-wasm-example",
-      "crate": "aphrody-bevy-build-wasm-example",
-      "repo": "iecode",
-      "source": "tools/build/wasm-example/src/main.rs#Args",
-      "commands": []
-    },
-    {
       "binary": "dust",
       "crate": "aphrody-dust-cli",
       "repo": "iecode",
@@ -12793,35 +11411,6 @@
       ]
     },
     {
-      "binary": "example-showcase",
-      "crate": "aphrody-bevy-example-showcase",
-      "repo": "iecode",
-      "source": "tools/example-showcase/src/main.rs#Args",
-      "commands": [
-        {
-          "name": "run",
-          "about": "Run all the examples",
-          "aliases": [],
-          "cfg": [],
-          "children": []
-        },
-        {
-          "name": "build-website-list",
-          "about": "Build the markdown files for the website",
-          "aliases": [],
-          "cfg": [],
-          "children": []
-        },
-        {
-          "name": "build-wasm-examples",
-          "about": "Build the examples in wasm",
-          "aliases": [],
-          "cfg": [],
-          "children": []
-        }
-      ]
-    },
-    {
       "binary": "ievr-tools",
       "crate": "aphrody-nie-inventory",
       "repo": "iecode",
@@ -12849,13 +11438,6 @@
           "children": []
         }
       ]
-    },
-    {
-      "binary": "naga-xtask",
-      "crate": "aphrody-naga-xtask",
-      "repo": "iecode",
-      "source": "crates/emu/ruzu/dedicated_room/src/main.rs#Args",
-      "commands": []
     },
     {
       "binary": "nie",
@@ -14352,78 +12934,6 @@
       ]
     },
     {
-      "binary": "nie_steam",
-      "crate": "aphrody-nie-steam",
-      "repo": "iecode",
-      "source": "crates/nie/aphrody-nie-steam/src/bin/nie_steam.rs#Cli",
-      "commands": [
-        {
-          "name": "list",
-          "about": "Inspecte les depots (tailles, fichiers) sans télécharger.",
-          "aliases": [],
-          "cfg": [],
-          "children": []
-        },
-        {
-          "name": "download",
-          "about": "Télécharge une app Steam vers le répertoire cible.",
-          "aliases": [],
-          "cfg": [],
-          "children": []
-        },
-        {
-          "name": "sync",
-          "about": "Télécharge l'app IEVR (2799860) — raccourci pour `download 2799860`.",
-          "aliases": [],
-          "cfg": [],
-          "children": []
-        },
-        {
-          "name": "audit",
-          "about": "Confronte le manifest à une install existante sans rien écrire.",
-          "aliases": [],
-          "cfg": [],
-          "children": []
-        }
-      ]
-    },
-    {
-      "binary": "nie_zukan",
-      "crate": "aphrody-nie-zukan",
-      "repo": "iecode",
-      "source": "crates/nie/aphrody-nie-zukan/src/bin/nie_zukan.rs#Cli",
-      "commands": [
-        {
-          "name": "pull",
-          "about": "Pull les données du Zukan (chara_list, chara_param, skills, items)",
-          "aliases": [],
-          "cfg": [],
-          "children": []
-        },
-        {
-          "name": "cross",
-          "about": "Croise les données zukan avec le miroir inagle",
-          "aliases": [],
-          "cfg": [],
-          "children": []
-        },
-        {
-          "name": "forge-test",
-          "about": "Teste le forge/décodage q (round-trip + ancre Endou)",
-          "aliases": [],
-          "cfg": [],
-          "children": []
-        },
-        {
-          "name": "status",
-          "about": "Affiche des infos sur le cache existant",
-          "aliases": [],
-          "cfg": [],
-          "children": []
-        }
-      ]
-    },
-    {
       "binary": "nie-cam",
       "crate": "aphrody-nie-camera",
       "repo": "iecode",
@@ -14576,13 +13086,8 @@
       "repo": "aphrody"
     },
     {
-      "binary": "aphrody-model-view",
-      "crate": "aphrody-model-view",
-      "repo": "aphrody"
-    },
-    {
-      "binary": "aphrody-render3d-mcp",
-      "crate": "aphrody-render3d",
+      "binary": "aphrody-shell-tauri-e2e",
+      "crate": "aphrody-shell-tauri-e2e",
       "repo": "aphrody"
     },
     {
@@ -14626,41 +13131,6 @@
       "repo": "iecode"
     },
     {
-      "binary": "bevy_city",
-      "crate": "aphrody-bevy-city",
-      "repo": "iecode"
-    },
-    {
-      "binary": "bistro",
-      "crate": "aphrody-bevy-bistro",
-      "repo": "iecode"
-    },
-    {
-      "binary": "build-easefunction-graphs",
-      "crate": "aphrody-bevy-build-easefunction-graphs",
-      "repo": "iecode"
-    },
-    {
-      "binary": "build-templated-pages",
-      "crate": "aphrody-bevy-build-templated-pages",
-      "repo": "iecode"
-    },
-    {
-      "binary": "caldera_hotel",
-      "crate": "aphrody-bevy-caldera-hotel",
-      "repo": "iecode"
-    },
-    {
-      "binary": "ci",
-      "crate": "aphrody-bevy-ci",
-      "repo": "iecode"
-    },
-    {
-      "binary": "cts_runner",
-      "crate": "aphrody-wgpu-cts-runner",
-      "repo": "iecode"
-    },
-    {
       "binary": "export_aphrody",
       "crate": "aphrody-nie-identity-source",
       "repo": "iecode"
@@ -14681,38 +13151,8 @@
       "repo": "iecode"
     },
     {
-      "binary": "export-content",
-      "crate": "aphrody-bevy-export-content",
-      "repo": "iecode"
-    },
-    {
       "binary": "game_screens_css",
       "crate": "aphrody-nie-ui",
-      "repo": "iecode"
-    },
-    {
-      "binary": "gen_tests",
-      "crate": "aphrody-gen-tests",
-      "repo": "iecode"
-    },
-    {
-      "binary": "glsl_parser",
-      "crate": "aphrody-naga-fuzz",
-      "repo": "iecode"
-    },
-    {
-      "binary": "ir",
-      "crate": "aphrody-naga-fuzz",
-      "repo": "iecode"
-    },
-    {
-      "binary": "lock-analyzer",
-      "crate": "aphrody-wgpu-lock-analyzer",
-      "repo": "iecode"
-    },
-    {
-      "binary": "main",
-      "crate": "aphrody-bevy-auto-register-static",
       "repo": "iecode"
     },
     {
@@ -14724,263 +13164,9 @@
       "binary": "nie-mem",
       "crate": "aphrody-nie-trace",
       "repo": "iecode"
-    },
-    {
-      "binary": "spv_parser",
-      "crate": "aphrody-naga-fuzz",
-      "repo": "iecode"
-    },
-    {
-      "binary": "wgpu-bug-repro-01-texture-atomic-bug",
-      "crate": "aphrody-wgpu-bug-repro-01-texture-atomic-bug",
-      "repo": "iecode"
-    },
-    {
-      "binary": "wgpu-bug-repro-02-present-bugs",
-      "crate": "aphrody-wgpu-bug-repro-02-present-bugs",
-      "repo": "iecode"
-    },
-    {
-      "binary": "wgpu-example-01-hello-compute",
-      "crate": "aphrody-wgpu-example-01-hello-compute",
-      "repo": "iecode"
-    },
-    {
-      "binary": "wgpu-example-02-hello-window",
-      "crate": "aphrody-wgpu-example-02-hello-window",
-      "repo": "iecode"
-    },
-    {
-      "binary": "wgpu-example-03-hdr-surface",
-      "crate": "aphrody-wgpu-example-03-hdr-surface",
-      "repo": "iecode"
-    },
-    {
-      "binary": "wgpu-example-custom-backend",
-      "crate": "aphrody-wgpu-example-custom-backend",
-      "repo": "iecode"
-    },
-    {
-      "binary": "wgpu-examples",
-      "crate": "aphrody-wgpu-examples",
-      "repo": "iecode"
-    },
-    {
-      "binary": "wgpu-info",
-      "crate": "aphrody-wgpu-info",
-      "repo": "iecode"
-    },
-    {
-      "binary": "wgpu-xtask",
-      "crate": "aphrody-wgpu-xtask",
-      "repo": "iecode"
-    },
-    {
-      "binary": "wgsl_parser",
-      "crate": "aphrody-naga-fuzz",
-      "repo": "iecode"
-    },
-    {
-      "binary": "zero_day",
-      "crate": "aphrody-bevy-zero-day",
-      "repo": "iecode"
     }
   ],
   "mcp": [
-    {
-      "server": "aphrody",
-      "repo": "aphrody",
-      "kind": "kernel-subsystem",
-      "tools": [
-        {
-          "name": "update_plan",
-          "description": "Update or record the agent's multi-step execution plan and current progress.",
-          "file": "docs/plans/ai/crates/aphrody-mcp-client/src/builtins/plan.rs"
-        }
-      ]
-    },
-    {
-      "server": "aphrody (VictauriMcpHandler)",
-      "repo": "aphrody",
-      "kind": "rmcp",
-      "tools": [
-        {
-          "name": "animation",
-          "description": "Animation introspection (no CDP). Reads the Web Animations API to reveal what the webview's animation engine is actually running — duration, delay, easing, iterations, keyframes, current progress, and the animating element. Standard DOM, so it works identically on WebView2/WKWebView/WebKitGTK. Actions: - `list`: return all running CSS animations/transitions (optionally scoped by `selector`), each with declared `timing`, `computed` progress, `keyframes`, and `target`. - `scrub`: deterministically pause the target's animation and seek it to `points` evenly-spaced steps (default 20), returning the exact geometry curve (rect + transform + opacity per step). With `capture=true`, also returns a single contact-sheet filmstrip PNG (one image of the whole arc) plus a `manifest` mapping each cell to its progress/time. Frozen frames are jank-free, so this beats real-time capture for fast sweeps. CSS-driven animations only (JS/rAF animations are not seekable — use `list`/`sample`). - `sample`: real-time motion recorder. `record=true` arms a requestAnimationFrame watcher on `selector` (or the first animating element); then trigger the animation; then call with `record=false` to read the measured per-frame curve plus jank stats (dropped frames, max frame gap) and declared-vs-measured duration. Works for ANY animation including JS/rAF-driven ones. `clear=true` resets recorded sessions. NOTE: an animation only appears while it is running or pending — trigger it (e.g. show the notification) just before calling `list`/`scrub`, or arm `sample` before triggering.",
-          "file": "upstream/victauri/crates/victauri-plugin/src/mcp/mod.rs"
-        },
-        {
-          "name": "app_info",
-          "description": "Get comprehensive app info: Tauri config (identifier, product name, version), app directory paths (data, config, log, local_data), process environment variables, and database files found in app directories. Provides direct backend context without going through the webview.",
-          "file": "upstream/victauri/crates/victauri-plugin/src/mcp/mod.rs"
-        },
-        {
-          "name": "app_state",
-          "description": "Read application-defined backend state via a registered probe. With no `probe`, lists available probe names. With a `probe` name, runs it and returns its JSON snapshot. Probes give first-class, discoverable access to domain state (e.g. a scoring pipeline's version + stale-item count, a queue's depth, cache stats) that would otherwise need query_db + log-grepping. Probes run in the Rust process with no IPC round-trip. Apps register them via VictauriBuilder::probe(name, closure).",
-          "file": "upstream/victauri/crates/victauri-plugin/src/mcp/mod.rs"
-        },
-        {
-          "name": "assert_semantic",
-          "description": "Run a semantic assertion: evaluate a JS expression and check the result against an expected condition. Conditions: equals, not_equals, contains, greater_than, less_than, truthy, falsy, exists, type_is. A result of `undefined` is treated as `null` (JSON has no undefined; like JS `x == null`): `exists` is false, `falsy` is true, `equals null` and `type_is \"null\"` pass.",
-          "file": "upstream/victauri/crates/victauri-plugin/src/mcp/mod.rs"
-        },
-        {
-          "name": "check_ipc_integrity",
-          "description": "Check IPC round-trip integrity: find stale (stuck) pending calls and errored calls. Returns health status and lists of problematic IPC calls.",
-          "file": "upstream/victauri/crates/victauri-plugin/src/mcp/mod.rs"
-        },
-        {
-          "name": "css",
-          "description": "CSS injection. Actions: inject (add custom CSS to page), remove (remove previously injected CSS). Subject to privacy controls.",
-          "file": "upstream/victauri/crates/victauri-plugin/src/mcp/mod.rs"
-        },
-        {
-          "name": "detect_ghost_commands",
-          "description": "Detect ghost commands (frontend calls with no backend handler) by IPC OUTCOME, not by guessing from Victauri's registry. Returns: `confirmed_ghosts` = commands invoked that NEVER returned success and errored 'not found' — real missing-handler bugs, HIGH confidence and independent of whether the app uses #[inspectable]; `verified_handlers` = count of commands that returned success at least once (they provably HAVE a handler, so they are never flagged — this is why a real command like `set_language` is no longer a false positive); `frontend_only` = the WEAKER candidate tier (invoked, never observed succeeding, NOT a Tauri/plugin framework builtin, and absent from the introspection registry) — confirm against the app's `tauri::generate_handler!` before filing; `excluded_builtins` = framework `plugin:*` commands (never app ghosts); `registry_only` = registered commands never invoked (informational). The `reliability` field describes only `frontend_only`; `confirmed_ghosts` is high-confidence regardless. Reads the JS-side IPC interception log (ACCUMULATES all session traffic). For a clean signal scope with `since_ms` (e.g. 5000) — invoke the suspect action, then call this with `since_ms` — or `logs {action:'clear'}` then exercise the app.",
-          "file": "upstream/victauri/crates/victauri-plugin/src/mcp/mod.rs"
-        },
-        {
-          "name": "dom_snapshot",
-          "description": "Get the DOM snapshot with stable ref handles. Default: compact accessible text (70-80%% fewer tokens). Set format=\"json\" for full tree. Returns tree + stale_refs (refs invalidated since last snapshot).",
-          "file": "upstream/victauri/crates/victauri-plugin/src/mcp/mod.rs"
-        },
-        {
-          "name": "eval_js",
-          "description": "Evaluate JavaScript in the Tauri webview and return the result. Async expressions are wrapped automatically.",
-          "file": "upstream/victauri/crates/victauri-plugin/src/mcp/mod.rs"
-        },
-        {
-          "name": "explain",
-          "description": "Correlate recent activity across all layers into a coherent narrative. CDP shows raw events per layer; Victauri correlates IPC + DOM + console + network + window events across the Rust backend and webview simultaneously. Actions: - `summary`: High-level activity summary for the last N seconds (default 30). Counts IPC calls, DOM mutations, console entries, state changes (incl. network requests), errors. With no recording active it reads the window's live event stream (`webview_label`, default main). - `last_action`: Correlate the most recent burst of events into a causal timeline (e.g. 'IPC call → DOM update → console.log'). - `diff`: What changed in the last N seconds — event counts, errors, new IPC commands.",
-          "file": "upstream/victauri/crates/victauri-plugin/src/mcp/mod.rs"
-        },
-        {
-          "name": "fault",
-          "description": "Probe a backend command handler under failure by faulting it for chaos engineering. Simulate slow commands, backend errors, dropped responses, and corrupted data. SCOPE: faults apply ONLY to commands you run via this server's `invoke_command` tool — they do NOT intercept the app's real user-driven IPC (window.__TAURI_INTERNALS__.invoke), which runs below the layer Victauri can reach. Use this to test a handler's error path when YOU drive it; it does not reproduce a failure a user clicking the UI would see. Actions: - `inject`: Add a fault rule (requires `command`, `fault_type`). Optional: `delay_ms` (max 120000), `error_message`, `max_triggers`. `delay` sleeps then runs the command; `error` returns the error without running it; `drop` returns `{}` without running it; `corrupt` runs it and replaces the response with a fixed `{\"__corrupted\":true,…}` marker. Rules expire after 15 minutes. - `list`: List all active fault injection rules. - `clear`: Remove a specific fault rule (requires `command`). - `clear_all`: Remove all fault rules.",
-          "file": "upstream/victauri/crates/victauri-plugin/src/mcp/mod.rs"
-        },
-        {
-          "name": "find_elements",
-          "description": "Search for elements by text, role, test_id, CSS selector (via `css` or `selector` param), or accessible name without a full snapshot. Returns lightweight matches with ref handles.",
-          "file": "upstream/victauri/crates/victauri-plugin/src/mcp/mod.rs"
-        },
-        {
-          "name": "get_diagnostics",
-          "description": "Run environment diagnostics: detect service workers (break IPC interception), closed shadow DOM (invisible to snapshots), iframes (bridge absent), large DOM warnings, and CSP status. Call this first when connecting to an unfamiliar app.",
-          "file": "upstream/victauri/crates/victauri-plugin/src/mcp/mod.rs"
-        },
-        {
-          "name": "get_memory_stats",
-          "description": "Get real-time process memory statistics from the OS (working set, page file usage). On Windows returns detailed metrics; on Linux returns virtual/resident size.",
-          "file": "upstream/victauri/crates/victauri-plugin/src/mcp/mod.rs"
-        },
-        {
-          "name": "get_plugin_info",
-          "description": "Inspect the Victauri plugin's own configuration: port, enabled/disabled tools, command filters, privacy settings, capacities, and version. Useful for agents to understand their capabilities before acting.",
-          "file": "upstream/victauri/crates/victauri-plugin/src/mcp/mod.rs"
-        },
-        {
-          "name": "get_registry",
-          "description": "List or search all registered Tauri commands with their argument schemas. Pass query to filter by name/description substring. Commands are registered via the #[inspectable] macro — apps that don't use it return names with null schemas; for those, use `introspect command_catalog` to recover real argument/result shapes from the live IPC log.",
-          "file": "upstream/victauri/crates/victauri-plugin/src/mcp/mod.rs"
-        },
-        {
-          "name": "input",
-          "description": "Text and keyboard input. Actions: fill (set input value), type_text (character-by-character typing), press_key (trigger a keyboard key). Subject to privacy controls. An input the page refuses (element not fillable, covered, disabled, or ref not found) returns an error with the reason and a [hint: RETRY_LATER|CHECK_INPUT].",
-          "file": "upstream/victauri/crates/victauri-plugin/src/mcp/mod.rs"
-        },
-        {
-          "name": "inspect",
-          "description": "CSS and visual inspection. Actions: get_styles (computed CSS for element), get_bounding_boxes (layout rects), highlight (debug overlay), clear_highlights, audit_accessibility (a11y audit), get_performance (timing/heap/DOM metrics).",
-          "file": "upstream/victauri/crates/victauri-plugin/src/mcp/mod.rs"
-        },
-        {
-          "name": "interact",
-          "description": "DOM element interactions. Actions: click, double_click, hover, focus, scroll_into_view, select_option. Requires ref_id from a dom_snapshot for most actions. An action the page refuses (element covered, disabled, hidden, detached, or ref not found) returns an error with the reason and a [hint: RETRY_LATER|CHECK_INPUT].",
-          "file": "upstream/victauri/crates/victauri-plugin/src/mcp/mod.rs"
-        },
-        {
-          "name": "introspect",
-          "description": "Deep backend introspection — command profiling, IPC contract testing, coverage, startup timing, capability auditing, database diagnostics, process enumeration, and event bus monitoring. These features exploit Victauri's position inside the Rust process. Actions: - `command_timings`: Per-command execution timing stats (min/max/avg/p95). Set `slow_threshold_ms` to filter. - `coverage`: Which registered commands have been called during this session. - `command_catalog`: Per-command argument + result SHAPES mined from the live IPC log, merged with the registry — real call/return schemas even for apps that don't use #[inspectable] (where get_registry is names-only). The highest-signal way to learn how to drive an app's commands. - `contract_record`: Record a command's response shape as a baseline (requires `command`). - `contract_check`: Check all recorded contracts for schema drift. - `contract_list`: List all recorded contract baselines. - `contract_clear`: Clear all recorded contract baselines. - `startup_timing`: Victauri plugin initialization phase-by-phase timing breakdown. - `capabilities`: Enumerate Tauri v2 capabilities, security config (CSP, freeze_prototype), configured plugins, and window definitions. - `db_health`: Read-only SQLite diagnostics: journal mode, page stats, freelist, per-table row counts, and SQLite `quick_check` — each phase budgeted; a phase that runs out is reported (`row_counts_complete`, `integrity_check: \"not completed…\"`) instead of failing. - `plugin_state`: Snapshot of the Victauri plugin's internal state (event log, registry, faults, recording, timings, etc.). - `processes`: Enumerate the host process and all child processes (sidecars, background workers) with PID, name, and memory usage. - `plugin_tasks`: List Victauri's own spawned async tasks (MCP server, event drain) with status. - `event_bus`: List captured Tauri events + app events (auto-intercepted via listen_any — no app opt-in needed). Returns the newest events per category (default 100) so the full buffers (up to ~11k events / megabytes) never overflow the result; `count` is the true total and `truncated` flags a capped slice. Scope via the `args` object: `{\"action\":\"event_bus\",\"args\":{\"limit\":500,\"since_ms\":5000}}`. - `event_bus_clear`: Clear the event bus capture buffer.",
-          "file": "upstream/victauri/crates/victauri-plugin/src/mcp/mod.rs"
-        },
-        {
-          "name": "invoke_command",
-          "description": "Invoke a registered Tauri command via IPC, just like the frontend would. Goes through the real IPC pipeline so calls are logged and verifiable. Returns the command's result. Waits up to the eval timeout (30s) — pass `timeout_ms` (max 300000) for a legitimately slow command. Subject to privacy command filtering.",
-          "file": "upstream/victauri/crates/victauri-plugin/src/mcp/mod.rs"
-        },
-        {
-          "name": "list_app_dir",
-          "description": "List files in the app's data, config, log, or local_data directories. Useful for discovering databases, config files, logs, and cached data on the backend — without going through the webview.",
-          "file": "upstream/victauri/crates/victauri-plugin/src/mcp/mod.rs"
-        },
-        {
-          "name": "logs",
-          "description": "Application logs and monitoring. Actions: console (captured console.log/warn/error), network (intercepted fetch/XHR), ipc (IPC call log — set wait_for_capture=true to await response capture up to 500ms), navigation (URL change history), dialogs (alert/confirm/prompt events), events (combined event stream), slow_ipc (find slow IPC calls), clear (DELETES the captured IPC + network logs — use for per-test isolation).",
-          "file": "upstream/victauri/crates/victauri-plugin/src/mcp/mod.rs"
-        },
-        {
-          "name": "navigate",
-          "description": "Navigation and dialog control. Actions: go_to (navigate to URL), go_back (browser back), get_history (navigation log), set_dialog_response (auto-respond to alert/confirm/prompt), get_dialog_log (captured dialog events). Subject to privacy controls for go_to and set_dialog_response.",
-          "file": "upstream/victauri/crates/victauri-plugin/src/mcp/mod.rs"
-        },
-        {
-          "name": "query_db",
-          "description": "Execute a bounded, read-only SQL query against a SQLite database in the app's data directory. The SQL goes in the `query` field (alias: `sql`). Auto-discovers database files if no path is specified. Only SELECT/PRAGMA/EXPLAIN/WITH queries are allowed. CPU time, cell size, row count, and returned bytes are capped. Returns rows as JSON objects with column names as keys. This provides direct backend database access without going through the webview or IPC.",
-          "file": "upstream/victauri/crates/victauri-plugin/src/mcp/mod.rs"
-        },
-        {
-          "name": "read_app_file",
-          "description": "Read a file from the app's data, config, log, or local_data directory. Returns UTF-8 text by default, or base64 for binary files. Directly reads backend files without going through the webview.",
-          "file": "upstream/victauri/crates/victauri-plugin/src/mcp/mod.rs"
-        },
-        {
-          "name": "recording",
-          "description": "Time-travel recording. Actions: start (begin recording), stop (end and return session), checkpoint (save state snapshot), list_checkpoints, get_events (since index), events_between (two checkpoints), get_replay (IPC replay sequence), export (session as JSON), import (load a session from JSON as the active recording; refused while one is in progress), replay (re-invoke the recorded IPC commands that succeeded with no arguments, each in the window that made it — their side effects happen again; calls that had arguments, failed, never completed, or were answered by a route rule are skipped, and webview_label limits replay to that window's calls), flush (immediately drain pending events into recording without waiting for the 1-second poll).",
-          "file": "upstream/victauri/crates/victauri-plugin/src/mcp/mod.rs"
-        },
-        {
-          "name": "resolve_command",
-          "description": "Resolve a natural language query to matching Tauri commands. Returns scored results ranked by relevance, using command names, descriptions, intents, categories, and examples.",
-          "file": "upstream/victauri/crates/victauri-plugin/src/mcp/mod.rs"
-        },
-        {
-          "name": "route",
-          "description": "Network request interception (Playwright route() equivalent, no CDP). Matches webview fetch/XHR by URL and blocks, mocks, or delays them. Actions: - `add`: add a rule. `pattern` (+ optional `match_type`: substring/glob/regex/exact, and `method`) selects requests; `behavior` is `block` (abort), `fulfill` (return a mock `status`/`headers`/`body`/`content_type`), or `delay` (proceed after `delay_ms`). `times` limits how often it fires. Rules are page-scoped (cleared on reload). - `list`: list active rules. - `clear` (by `id`) / `clear_all`: remove rules. - `matches`: log of intercepted requests. Note: fetch supports all behaviors; XHR supports block/delay (fulfill is fetch-only). Top-level navigation, sub-resource (img/css), and WebSocket traffic are not intercepted. Tauri IPC (ipc.localhost) is OBSERVE-ONLY: such calls appear in `matches`, but block/fulfill/delay do NOT take effect on them — Tauri serves IPC below the JS fetch layer, so it cannot be controlled cross-platform without CDP. There is no IPC-control tool; the `fault` tool only affects commands you drive via `invoke_command`, not real user IPC.",
-          "file": "upstream/victauri/crates/victauri-plugin/src/mcp/mod.rs"
-        },
-        {
-          "name": "screenshot",
-          "description": "Capture a screenshot of a Tauri window as a base64-encoded PNG image. Works on Windows (PrintWindow), macOS (CGWindowListCreateImage), and Linux X11/XWayland. Pure Wayland fails safely because its available fallback would capture the full desktop rather than the requested window. A hidden (non-visible) window has no on-screen surface to capture, so requesting one returns a clear error (show it first via `window` manage_action=show) rather than a stale or wrong-window image.",
-          "file": "upstream/victauri/crates/victauri-plugin/src/mcp/mod.rs"
-        },
-        {
-          "name": "storage",
-          "description": "Browser storage operations. Actions: get (read localStorage/sessionStorage), set (write), delete (remove key), get_cookies. Subject to privacy controls for set and delete.",
-          "file": "upstream/victauri/crates/victauri-plugin/src/mcp/mod.rs"
-        },
-        {
-          "name": "trace",
-          "description": "Screencast / visual trace (no CDP). Captures the window at a fixed interval into a ring buffer, forming a visual timeline that pairs with `recording` (events) and `logs` (network/console). Actions: - `start`: begin capturing (`interval_ms` default 500, `max_frames` default 60). Set `with_events=true` to also start the event recorder. Hidden windows are skipped (no frame), the buffer is capped at 256 MB, and an abandoned trace auto-stops after 30 minutes. - `stop`: stop and return a summary (frame count, duration, timestamps); also stops the recording that `with_events` started (never one started separately). - `status`: active flag + buffered frame count. - `frames`: return captured frames as base64 PNGs, newest first up to a 25 MB response (`limit` caps how many).",
-          "file": "upstream/victauri/crates/victauri-plugin/src/mcp/mod.rs"
-        },
-        {
-          "name": "verify_state",
-          "description": "Compare frontend state (evaluated via JS expression) against backend state to detect divergences. Returns a VerificationResult with any mismatches.",
-          "file": "upstream/victauri/crates/victauri-plugin/src/mcp/mod.rs"
-        },
-        {
-          "name": "wait_for",
-          "description": "Wait for a condition to be met. Polls at regular intervals until satisfied or timeout. Conditions: text (text appears), text_gone (text disappears), selector (CSS selector matches), selector_gone, url (URL contains value), ipc_idle (no pending IPC calls), network_idle (no pending network requests), expression (poll a JS expression in `value` until truthy or until it equals `expected` — may `await`, e.g. await a fire-and-forget command's status), event (block until the Tauri event named in `value` fires, with `since_ms` look-back). Use expression/event to await async backend work to true completion instead of guessing with a fixed sleep.",
-          "file": "upstream/victauri/crates/victauri-plugin/src/mcp/mod.rs"
-        },
-        {
-          "name": "window",
-          "description": "Window management. Actions: get_state (window positions/sizes/visibility), list (all window labels), manage (minimize/maximize/close/focus/show/hide/fullscreen/always_on_top), resize, move_to, set_title, introspectability (probe every window and report which Victauri can actually see — a visible window that comes back introspectable:false is almost always missing the \"victauri:default\" capability; run this FIRST when eval_js/dom_snapshot/animation return nothing for a multi-window app).",
-          "file": "upstream/victauri/crates/victauri-plugin/src/mcp/mod.rs"
-        }
-      ]
-    },
     {
       "server": "aphrody-agent-tools",
       "repo": "aphrody",
@@ -15250,23 +13436,6 @@
           "name": "uutils_run",
           "description": "Run a pinned uutils companion utility (find, grep, sed, diff, or tar) without a shell",
           "file": "crates/os/coreutils/src/subsystem.rs"
-        }
-      ]
-    },
-    {
-      "server": "aphrody-gemini-runtime",
-      "repo": "aphrody",
-      "kind": "json-catalog",
-      "tools": [
-        {
-          "name": "read_file",
-          "description": "Read a file from disk",
-          "file": "crates/ai/gemini-runtime/src/mcp_client.rs"
-        },
-        {
-          "name": "write_file",
-          "description": "Write content to a file",
-          "file": "crates/ai/gemini-runtime/src/mcp_client.rs"
         }
       ]
     },
@@ -15944,6 +14113,31 @@
           "file": "crates/ai/mcp/src/main.rs"
         },
         {
+          "name": "upstream_info",
+          "description": "Live facts about one catalogue upstream from the GitHub API: head of the followed ref, latest release, licence, pushed date, archived flag, and whether it moved since the commit recorded in the manifest.",
+          "file": "crates/ai/mcp/src/main.rs"
+        },
+        {
+          "name": "upstream_list",
+          "description": "List the upstream catalogue (config/upstream-sources.json): the few vital checkouts and the reference upstreams that are never cloned (codex, ollama, mistral.rs, vllm, WSL, ...), with tier, purpose and consumers.",
+          "file": "crates/ai/mcp/src/main.rs"
+        },
+        {
+          "name": "upstream_read",
+          "description": "Read one file of a catalogue upstream at its live ref (no clone). Text over 256 KiB is cut and flagged `truncated`.",
+          "file": "crates/ai/mcp/src/main.rs"
+        },
+        {
+          "name": "upstream_search",
+          "description": "Code search inside one catalogue upstream (GitHub code search, needs a GH_TOKEN or GITHUB_TOKEN).",
+          "file": "crates/ai/mcp/src/main.rs"
+        },
+        {
+          "name": "upstream_tree",
+          "description": "List a directory of one catalogue upstream at its live ref (no clone). `path` defaults to the repository root.",
+          "file": "crates/ai/mcp/src/main.rs"
+        },
+        {
           "name": "voice_synthesize",
           "description": "Synthesise speech from text via the aphrody-voice ElevenLabs adapter. Returns { audio_base64, mime_type, duration_ms, bytes, voice }. Requires ELEVENLABS_API_KEY in env.",
           "file": "crates/ai/mcp/src/main.rs"
@@ -16018,33 +14212,6 @@
           "name": "web_ingest",
           "description": "Retrieve a web page through Aphrody OS and index it into the local RAG store so later rag_search/rag_context calls can retrieve it.",
           "file": "crates/ai/rag/src/tools.rs"
-        }
-      ]
-    },
-    {
-      "server": "aphrody-render3d subsystem `render3d`",
-      "repo": "aphrody",
-      "kind": "kernel-subsystem",
-      "tools": [
-        {
-          "name": "render3d_model_inspect",
-          "description": "Read a .glb/.gltf/.obj model: mesh, vertex and triangle counts, world bounds (min, max, centre, radius) and its PBR materials.",
-          "file": "crates/ui/render-tools/src/lib.rs"
-        },
-        {
-          "name": "render3d_model_render",
-          "description": "Render a .glb/.gltf/.obj model from a yaw/pitch/zoom view to a PNG file in one call (M3 studio lighting, shadows, 4x MSAA).",
-          "file": "crates/ui/render-tools/src/lib.rs"
-        },
-        {
-          "name": "render3d_model_scene",
-          "description": "Stage a model in an M3 studio (hemisphere + key + fill lights, framed orbit camera) and return the complete, editable Scene3d JSON (for render3d_render, render3d_export_glb or render3d_view).",
-          "file": "crates/ui/render-tools/src/lib.rs"
-        },
-        {
-          "name": "render3d_view",
-          "description": "Open a live native desktop view (frameless, transparent, only the 3D) of a .glb/.gltf/.obj model or a Scene3d .json file; the view reloads whenever the file changes, so rewriting the file controls it.",
-          "file": "crates/ui/render-tools/src/lib.rs"
         }
       ]
     },
@@ -17312,6 +15479,33 @@
           "file": "crates/nie/aphrody-nie-cli/src/mcp.rs"
         }
       ]
+    },
+    {
+      "server": "iecode subsystem `render3d`",
+      "repo": "iecode",
+      "kind": "kernel-subsystem",
+      "tools": [
+        {
+          "name": "render3d_model_inspect",
+          "description": "Read a .glb/.gltf/.obj model: mesh, vertex and triangle counts, world bounds (min, max, centre, radius) and its PBR materials.",
+          "file": "crates/aphrody-render3d/src/lib.rs"
+        },
+        {
+          "name": "render3d_model_render",
+          "description": "Render a .glb/.gltf/.obj model from a yaw/pitch/zoom view to a PNG file in one call (M3 studio lighting, shadows, 4x MSAA).",
+          "file": "crates/aphrody-render3d/src/lib.rs"
+        },
+        {
+          "name": "render3d_model_scene",
+          "description": "Stage a model in an M3 studio (hemisphere + key + fill lights, framed orbit camera) and return the complete, editable Scene3d JSON (for render3d_render, render3d_export_glb or render3d_view).",
+          "file": "crates/aphrody-render3d/src/lib.rs"
+        },
+        {
+          "name": "render3d_view",
+          "description": "Open a live native desktop view (frameless, transparent, only the 3D) of a .glb/.gltf/.obj model or a Scene3d .json file; the view reloads whenever the file changes, so rewriting the file controls it.",
+          "file": "crates/aphrody-render3d/src/lib.rs"
+        }
+      ]
     }
   ],
   "counts": {
@@ -17319,14 +15513,14 @@
     "aphrodyRepos": 3,
     "experimentRepos": 0,
     "sharedRepos": 0,
-    "crates": 385,
-    "binaries": 118,
-    "bunPackages": 108,
-    "pythonPackages": 20,
-    "cliBinaries": 66,
-    "cliCommands": 1237,
-    "mcpServers": 23,
-    "mcpTools": 473,
-    "mcpUniqueToolNames": 452
+    "crates": 265,
+    "binaries": 89,
+    "bunPackages": 99,
+    "pythonPackages": 9,
+    "cliBinaries": 63,
+    "cliCommands": 1280,
+    "mcpServers": 20,
+    "mcpTools": 440,
+    "mcpUniqueToolNames": 423
   }
 }

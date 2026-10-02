@@ -30,9 +30,9 @@ use criterion::{Criterion, criterion_group, criterion_main};
 // `Crypto::decrypt_aes_gcm` parses exactly this layout.
 // ---------------------------------------------------------------------------
 fn build_aes_gcm_wire(key: &[u8; 32], nonce: &[u8; 12], plaintext: &[u8]) -> Vec<u8> {
-    let cipher = Aes256Gcm::new(Key::<Aes256Gcm>::from_slice(key));
+    let cipher = Aes256Gcm::new(&Key::<Aes256Gcm>::from(*key));
     let ct = cipher
-        .encrypt(Nonce::from_slice(nonce), plaintext)
+        .encrypt(&Nonce::from(*nonce), plaintext)
         .expect("AES-GCM encrypt must succeed in bench setup");
 
     let mut wire = Vec::with_capacity(3 + 12 + ct.len());

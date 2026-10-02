@@ -2125,7 +2125,7 @@ impl Page {
                         let Some(name) = node.as_element() else {
                             continue;
                         };
-                        if name.local.as_ref() == "base" && !found_base {
+                        if (&*name.local) == "base" && !found_base {
                             if let Some(href) = node.get_attribute("href") {
                                 found_base = true;
                                 if let Some(resolved) =
@@ -2134,7 +2134,7 @@ impl Page {
                                     active_base = Some(resolved);
                                 }
                             }
-                        } else if name.local.as_ref() == "script" {
+                        } else if (&*name.local) == "script" {
                             bases_at_script.insert(
                                 nid.raw(),
                                 active_base
@@ -3532,13 +3532,13 @@ impl Page {
                     let Some(node) = dom.get_node(id) else {
                         continue;
                     };
-                    if node.as_element().is_some_and(|element| element.local.as_ref() == "style") {
+                    if node.as_element().is_some_and(|element| (&*element.local) == "style") {
                         sources.push(dom.text_content(id));
                     }
                     if let Some(style) = node.get_attribute("style") {
                         sources.push(style.to_string());
                     }
-                    if node.as_element().is_some_and(|element| element.local.as_ref() == "use") {
+                    if node.as_element().is_some_and(|element| (&*element.local) == "use") {
                         if let Some(href) =
                             node.get_attribute("href").or_else(|| node.get_attribute("xlink:href"))
                         {
@@ -8727,7 +8727,7 @@ mod tests {
                             .unwrap_or_default();
                         if dom.get_node(nid).is_some_and(|node| {
                             node.as_element()
-                                .is_some_and(|element| element.local.as_ref() == "style")
+                                .is_some_and(|element| (&*element.local) == "style")
                         }) {
                             sources.push(dom.text_content(nid));
                         }

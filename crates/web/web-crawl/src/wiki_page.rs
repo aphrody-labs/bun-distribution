@@ -533,7 +533,7 @@ pub fn parse_tables(html: &str, page_url: Option<&str>) -> Vec<WikiTable> {
                 .into_iter()
                 .filter_map(|cell| {
                     tree.get_node(cell)
-                        .and_then(|node| node.as_element().map(|tag| tag.local.as_ref().to_owned()))
+                        .and_then(|node| node.as_element().map(|tag| (&*tag.local).to_owned()))
                         .filter(|tag| matches!(tag.as_str(), "th" | "td"))
                 })
                 .collect::<Vec<_>>();
@@ -546,7 +546,7 @@ pub fn parse_tables(html: &str, page_url: Option<&str>) -> Vec<WikiTable> {
             .into_iter()
             .find(|child| {
                 tree.get_node(*child)
-                    .and_then(|node| node.as_element().map(|tag| tag.local.as_ref().to_owned()))
+                    .and_then(|node| node.as_element().map(|tag| (&*tag.local).to_owned()))
                     .as_deref()
                     == Some("caption")
             })
@@ -575,7 +575,7 @@ fn closest_table(tree: &DomTree, node: NodeId) -> Option<NodeId> {
     let mut current = tree.get_node(node)?.parent;
     while let Some(id) = current {
         let parent = tree.get_node(id)?;
-        if parent.as_element().is_some_and(|name| name.local.as_ref() == "table") {
+        if parent.as_element().is_some_and(|name| (&*name.local) == "table") {
             return Some(id);
         }
         current = parent.parent;
@@ -614,7 +614,7 @@ fn in_ignored_cell_subtree(tree: &DomTree, node: NodeId) -> bool {
             if matches!(name.local.as_ref(), "script" | "style") {
                 return true;
             }
-            name.local.as_ref() == "sup"
+            (&*name.local) == "sup"
                 && element.get_attribute("class").is_some_and(|class| {
                     class.split_ascii_whitespace().any(|token| token == "reference")
                 })
@@ -643,7 +643,7 @@ fn heading_text(tree: &DomTree, node: NodeId) -> Option<String> {
     let element = tree.get_node(node)?;
     let tag = element.as_element()?;
     let heading = matches!(tag.local.as_ref(), "h1" | "h2" | "h3" | "h4" | "h5" | "h6");
-    let wrapper = tag.local.as_ref() == "div"
+    let wrapper = (&*tag.local) == "div"
         && element.get_attribute("class").is_some_and(|classes| {
             classes.split_ascii_whitespace().any(|class| class == "mw-heading")
         });

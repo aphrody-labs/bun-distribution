@@ -22,8 +22,8 @@
   },
   "dependencies": {
     "@aphrody/paths": "workspace:*",
-    "@better-auth/passkey": "1.6.28",
-    "@colyseus/sdk": "^0.17.43",
+    "@better-auth/passkey": "1.7.6",
+    "@colyseus/sdk": "^0.18.4",
     "@dnd-kit/core": "catalog:",
     "@dnd-kit/sortable": "catalog:",
     "@dnd-kit/utilities": "catalog:",

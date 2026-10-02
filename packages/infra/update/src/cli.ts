@@ -10,6 +10,7 @@
  *   aphrody-update deps <sub> [...]          dependency pipeline: plan|apply|facts|fix|changelog|memory|inventory|baseline|run
  *   aphrody-update systemd [check|install|restart]
  *   aphrody-update sources [status|sync|verify|drift|forks|repo|bump]   ~/source checkouts, upstream pins, forks, git state
+ *   aphrody-update rust|bun|uv <status|plan|apply|verify>   per-ecosystem structured bump (docs/operations/infra/update/{RUST,BUN,UV}.md)
  *   aphrody-update upstream [list|drift|refresh|fetch|prune|docs]   reference upstreams: catalogue, live drift, disposable fetch
  *   aphrody-update run [--apply]             tools, cargo, deps, systemd restart, then the gates (report only without --apply)
  * Global flags: --root <repo>, --json
@@ -23,6 +24,9 @@ import { runSystemd, check as checkSystemd, restart } from "./systemd.ts";
 import { runDepsSync } from "./deps/sync.ts";
 import { runSources, repoState } from "./sources/drift.ts";
 import { runUpstream } from "./sources/upstream.ts";
+import { runRust } from "./ecosystems/rust.ts";
+import { runBun } from "./ecosystems/bun.ts";
+import { runUv } from "./ecosystems/uv.ts";
 
 export async function runUpdate(argv: string[]): Promise<number> {
   const ri = argv.indexOf("--root");
@@ -46,6 +50,9 @@ export async function runUpdate(argv: string[]): Promise<number> {
     case "systemd": return runSystemd(c, rest);
     case "sources": return runSources(c, rest);
     case "upstream": return runUpstream(c, rest);
+    case "rust": return runRust([...rest, "--root", root]);
+    case "bun": return runBun([...rest, "--root", root]);
+    case "uv": return runUv([...rest, "--root", root]);
     case "run": {
       await runTools(c, ["tools"]);
       await runSources(c, c.apply ? ["sync"] : ["drift"]);

@@ -290,7 +290,7 @@ impl TreeSink for DomTree {
         attrs: &[HtmlAttribute],
     ) -> bool {
         let mode = attrs.iter().find_map(|attr| {
-            if attr.name.local.as_ref() != "shadowrootmode" {
+            if &*attr.name.local != "shadowrootmode" {
                 return None;
             }
             match attr.value.as_ref() {

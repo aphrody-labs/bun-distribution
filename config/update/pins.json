@@ -25,7 +25,10 @@
         { "file": "config/system-packages.json", "re": "\"uv\": \\{\\s*\"version\": \"(\\d+\\.\\d+\\.\\d+)\"" },
         { "file": "docs/reference/workspace/CLI.md", "re": "uv `(\\d+\\.\\d+\\.\\d+)`" },
         { "file": "docs/reference/workspace/CLI.md", "re": "uvx? (\\d+\\.\\d+\\.\\d+) \\(x86_64" },
-        { "file": "docs/reference/workspace/TOOLS.md", "re": "uvx? (\\d+\\.\\d+\\.\\d+) \\(x86_64" }
+        { "file": "docs/reference/workspace/TOOLS.md", "re": "uvx? (\\d+\\.\\d+\\.\\d+) \\(x86_64" },
+        { "file": "../aphrody-py/pyproject.toml", "re": "required-version = \"==(\\d+\\.\\d+\\.\\d+)\"" },
+        { "file": "../aphrody-py/README.md", "re": "Requires uv `(\\d+\\.\\d+\\.\\d+)`" },
+        { "file": "../aphrody-py/.github/workflows/python-sdk.yml", "re": "setup-uv@[^\\n]*\\n\\s+with:\\n\\s+version: \"(\\d+\\.\\d+\\.\\d+)\"" }
       ]
     },
     "rust": {

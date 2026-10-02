@@ -112,7 +112,7 @@
     "@types/react-dom": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:",
-    "postcss": "8.5.26",
+    "postcss": "8.5.28",
     "@tailwindcss/postcss": "catalog:",
     "tailwindcss": "catalog:",
     "@shenron/config": "workspace:*"

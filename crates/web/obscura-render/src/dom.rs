@@ -381,7 +381,7 @@ pub fn retained_attribute_mutation_kind(
         return Subtree;
     }
     let Some(local) = tree.get_node(node).and_then(|node| {
-        node.as_element().map(|element| element.local.as_ref().to_ascii_lowercase())
+        node.as_element().map(|element| (&*element.local).to_ascii_lowercase())
     }) else {
         return Full;
     };
@@ -1669,7 +1669,7 @@ fn mark_viewport_overflow_source(
     styles: &mut HashMap<NodeId, crate::LayoutStyle>,
 ) {
     let root_is_html = tree.get_node(root).is_some_and(|node| {
-        node.as_element().is_some_and(|element| element.local.as_ref() == "html")
+        node.as_element().is_some_and(|element| (&*element.local) == "html")
     });
     if !root_is_html {
         return;
@@ -1683,7 +1683,7 @@ fn mark_viewport_overflow_source(
     }
     if let Some(body) = tree.children(root).into_iter().find(|child| {
         tree.get_node(*child).is_some_and(|node| {
-            node.as_element().is_some_and(|element| element.local.as_ref() == "body")
+            node.as_element().is_some_and(|element| (&*element.local) == "body")
         })
     }) {
         if let Some(style) = styles.get_mut(&body) {
@@ -2275,7 +2275,7 @@ fn apply_presentational_hints(node: &obscura_dom::tree::Node, style: &mut crate:
     // only a responsive utility width (`w-24 lg:w-28`) and rely on this rule;
     // without it the SVG border box had zero height and paint skipped it.
     if style.aspect_ratio.is_none()
-        && node.as_element().map_or(false, |element| element.local.as_ref() == "svg")
+        && node.as_element().map_or(false, |element| (&*element.local) == "svg")
     {
         if let Some(view_box) =
             node.get_attribute("viewBox").or_else(|| node.get_attribute("viewbox"))
@@ -2307,12 +2307,12 @@ fn apply_picture_source_hints(
     let Some(img) = tree.get_node(img_id) else {
         return;
     };
-    if img.as_element().map_or(true, |element| element.local.as_ref() != "img") {
+    if img.as_element().map_or(true, |element| (&*element.local) != "img") {
         return;
     }
     let Some(parent_id) = img.parent else { return };
     let is_picture = tree.get_node(parent_id).is_some_and(|parent| {
-        parent.as_element().is_some_and(|element| element.local.as_ref() == "picture")
+        parent.as_element().is_some_and(|element| (&*element.local) == "picture")
     });
     if !is_picture {
         return;
@@ -2326,7 +2326,7 @@ fn apply_picture_source_hints(
         let Some(source) = tree.get_node(child_id) else {
             continue;
         };
-        if source.as_element().map_or(true, |element| element.local.as_ref() != "source") {
+        if source.as_element().map_or(true, |element| (&*element.local) != "source") {
             continue;
         }
         if source.get_attribute("srcset").is_none_or(|srcset| srcset.trim().is_empty()) {
@@ -2417,14 +2417,14 @@ fn cascade_node_style(
     if reuse_style {
         this_props = custom_properties.get(&id).cloned().unwrap_or_else(|| parent_props.clone());
         descendant_color_scheme_dark = styles.get(&id).is_some_and(|style| style.color_scheme_dark);
-        if node.as_element().is_some_and(|elem| elem.local.as_ref() == "table") {
+        if node.as_element().is_some_and(|elem| (&*elem.local) == "table") {
             descendant_cell_padding = node
                 .get_attribute("cellpadding")
                 .and_then(|value| value.trim().parse::<f32>().ok())
                 .filter(|value| value.is_finite() && *value >= 0.0);
         }
     } else if let Some(elem) = node.as_element() {
-        if elem.local.as_ref() == "table" {
+        if (&*elem.local) == "table" {
             // `cellpadding` is a table-scoped presentational hint applied to
             // its cells, below author CSS. Entering any nested table resets
             // the outer table's value before reading the nested attribute.
@@ -2436,7 +2436,7 @@ fn cascade_node_style(
         let mut style = crate::style::ua_style(elem.local.as_ref());
         style.is_replaced_box = crate::inline::is_replaced(elem.local.as_ref());
         style.has_replaced_sizing = crate::inline::has_replaced_sizing(elem.local.as_ref())
-            || (elem.local.as_ref() == "input"
+            || ((&*elem.local) == "input"
                 && node
                     .get_attribute("type")
                     .is_some_and(|value| value.eq_ignore_ascii_case("image")));
@@ -2480,13 +2480,13 @@ fn cascade_node_style(
                     crate::Edges { top: padding, right: padding, bottom: padding, left: padding };
             }
         }
-        if quirks_mode && elem.local.as_ref() == "form" {
+        if quirks_mode && (&*elem.local) == "form" {
             // Legacy HTML/quirks rendering keeps one em after forms. Standards
             // mode does not; Hacker News and many old document templates omit
             // a doctype and rely on this spacing.
             style.margin_relative[2] = Some(crate::Dimension::Em(1.0));
         }
-        if elem.local.as_ref() == "input" {
+        if (&*elem.local) == "input" {
             let input_type =
                 node.get_attribute("type").unwrap_or("text").trim().to_ascii_lowercase();
             if quirks_mode {
@@ -3129,7 +3129,7 @@ fn add_following_sibling_subtrees(tree: &DomTree, node: NodeId, dirty: &mut Hash
 fn subtree_contains_style_element(tree: &DomTree, root: NodeId) -> bool {
     std::iter::once(root).chain(tree.descendants(root)).any(|id| {
         tree.get_node(id).is_some_and(|node| {
-            node.as_element().is_some_and(|element| element.local.as_ref() == "style")
+            node.as_element().is_some_and(|element| (&*element.local) == "style")
         })
     })
 }
@@ -3137,10 +3137,10 @@ fn subtree_contains_style_element(tree: &DomTree, root: NodeId) -> bool {
 fn node_is_style_text(tree: &DomTree, node: NodeId, parent: Option<NodeId>) -> bool {
     parent.is_some_and(|parent| {
         tree.get_node(parent).is_some_and(|node| {
-            node.as_element().is_some_and(|element| element.local.as_ref() == "style")
+            node.as_element().is_some_and(|element| (&*element.local) == "style")
         })
     }) || tree.get_node(node).is_some_and(|node| {
-        node.as_element().is_some_and(|element| element.local.as_ref() == "style")
+        node.as_element().is_some_and(|element| (&*element.local) == "style")
     })
 }
 
@@ -3286,7 +3286,7 @@ fn add_style_context_chain(tree: &DomTree, node: NodeId, dirty: &mut HashSet<Nod
 
 fn add_table_row_child_scope(tree: &DomTree, parent: NodeId, dirty: &mut HashSet<NodeId>) {
     let is_table_row = tree.get_node(parent).is_some_and(|node| {
-        node.as_element().is_some_and(|element| element.local.as_ref() == "tr")
+        node.as_element().is_some_and(|element| (&*element.local) == "tr")
     });
     if !is_table_row {
         return;
@@ -3818,7 +3818,7 @@ pub(crate) fn can_retain_layout_for_metadata(
         .filter_map(|id| {
             let node = tree.get_node(id)?;
             let element = node.as_element()?;
-            (element.local.as_ref() == "style"
+            ((&*element.local) == "style"
                 && node.get_attribute("media").is_none_or(|media| {
                     media.trim().is_empty()
                         || crate::css::media_query_applies_for_viewport_and_type(
@@ -4093,18 +4093,18 @@ fn collect_shadow_stylesheets(
                             media, viewport, media_type,
                         )
                 });
-                let linked = element.local.as_ref() == "link"
+                let linked = (&*element.local) == "link"
                     && node.get_attribute("disabled").is_none()
                     && node.get_attribute("rel").is_some_and(|rel| {
                         rel.split_ascii_whitespace()
                             .any(|part| part.eq_ignore_ascii_case("stylesheet"))
                     });
-                if media_applies && (linked || element.local.as_ref() == "style") {
+                if media_applies && (linked || (&*element.local) == "style") {
                     if let Some(sheet) = external.get(&node_id) {
                         sources.extend(sheet.sources.iter().map(ToString::to_string));
                     }
                 }
-                if media_applies && element.local.as_ref() == "style" {
+                if media_applies && (&*element.local) == "style" {
                     sources.push(tree.text_content(node_id));
                 }
             }
@@ -4144,18 +4144,18 @@ fn layout_dom_with_web_fonts_pass_limit_at_animation_time(
                             media, viewport, media_type,
                         )
                 });
-                let linked = elem.local.as_ref() == "link"
+                let linked = (&*elem.local) == "link"
                     && node.get_attribute("disabled").is_none()
                     && node.get_attribute("rel").is_some_and(|rel| {
                         rel.split_ascii_whitespace()
                             .any(|part| part.eq_ignore_ascii_case("stylesheet"))
                     });
-                if media_applies && (linked || elem.local.as_ref() == "style") {
+                if media_applies && (linked || (&*elem.local) == "style") {
                     if let Some(sheet) = external.get(&nid) {
                         css_sources.extend(sheet.sources.iter().map(ToString::to_string));
                     }
                 }
-                if media_applies && elem.local.as_ref() == "style" {
+                if media_applies && (&*elem.local) == "style" {
                     css_sources.push(tree.text_content(nid));
                 }
             }
@@ -5201,7 +5201,7 @@ fn layout_dom_once(
                     },
                 }
                 let is_table = tree.get_node(id).map_or(false, |node| {
-                    node.as_element().map_or(false, |name| name.local.as_ref() == "table")
+                    node.as_element().map_or(false, |name| (&*name.local) == "table")
                 });
                 if is_table && inh.legacy_center && style.text_align.is_none() {
                     // The vendor alignment used by <center> centers the table
@@ -5683,7 +5683,7 @@ fn layout_dom_once(
             .filter_map(|(&id, style)| {
                 let node = tree.get_node(id)?;
                 let element = node.as_element()?;
-                (element.local.as_ref() == "button"
+                ((&*element.local) == "button"
                     && style.width == crate::Dimension::Auto
                     && container_auto_inline_size(tree, id, style, &styles)
                         != ContainerAutoInlineSize::StretchedGridItem)
@@ -5718,7 +5718,7 @@ fn layout_dom_once(
             let Some(element) = node.as_element() else {
                 continue;
             };
-            if element.local.as_ref() == "button"
+            if (&*element.local) == "button"
                 && style.width == crate::Dimension::Auto
                 && native_button_contents.contains_key(&id)
             {
@@ -5788,7 +5788,7 @@ fn layout_dom_once(
                         content_width + horizontal_edges
                     });
             }
-            if element.local.as_ref() == "select" {
+            if (&*element.local) == "select" {
                 let option_labels: Vec<String> = tree
                     .descendants(id)
                     .into_iter()
@@ -5796,7 +5796,7 @@ fn layout_dom_once(
                         tree.get_node(*option_id).map_or(false, |option| {
                             option
                                 .as_element()
-                                .map_or(false, |name| name.local.as_ref() == "option")
+                                .map_or(false, |name| (&*name.local) == "option")
                         })
                     })
                     .map(|option_id| tree.text_content(option_id).trim().to_string())
@@ -5841,7 +5841,7 @@ fn layout_dom_once(
                 );
                 continue;
             }
-            if element.local.as_ref() == "textarea" {
+            if (&*element.local) == "textarea" {
                 // A native textarea's intrinsic border box comes from the
                 // rows/cols content attributes (HTML defaults 2 and 20), not
                 // from its text content: an empty textarea is still a
@@ -5881,7 +5881,7 @@ fn layout_dom_once(
                 );
                 continue;
             }
-            if element.local.as_ref() != "input" {
+            if (&*element.local) != "input" {
                 continue;
             }
             let input_type =
@@ -8914,8 +8914,8 @@ pub(crate) fn rendered_children(tree: &DomTree, id: NodeId) -> Vec<NodeId> {
         return Vec::new();
     };
     let is_closed_html_details = node.as_element().is_some_and(|name| {
-        name.ns.as_ref() == "http://www.w3.org/1999/xhtml"
-            && name.local.as_ref() == "details"
+        (&*name.ns) == "http://www.w3.org/1999/xhtml"
+            && (&*name.local) == "details"
             && node.get_attribute("open").is_none()
     });
     if !is_closed_html_details {
@@ -8934,8 +8934,8 @@ pub(crate) fn rendered_children(tree: &DomTree, id: NodeId) -> Vec<NodeId> {
         .find(|child| {
             tree.get_node(*child).is_some_and(|child| {
                 child.as_element().is_some_and(|name| {
-                    name.ns.as_ref() == "http://www.w3.org/1999/xhtml"
-                        && name.local.as_ref() == "summary"
+                    (&*name.ns) == "http://www.w3.org/1999/xhtml"
+                        && (&*name.local) == "summary"
                 })
             })
         })
@@ -9347,7 +9347,7 @@ fn is_flattenable_inline(
     };
     // BR is boxless-looking but semantically contributes a mandatory break.
     // Flattening it as an empty wrapper deletes the break entirely.
-    if element.local.as_ref() == "br" {
+    if (&*element.local) == "br" {
         return false;
     }
     let Some(style) = styles.get(&id) else {
@@ -9738,7 +9738,7 @@ fn synthesize_row_rects(tree: &DomTree, rects: &mut HashMap<NodeId, Rect>) {
                 let mut ancestor = rendered_parent(tree, id);
                 while let Some(parent) = ancestor {
                     let is_table = tree.get_node(parent).map_or(false, |node| {
-                        node.as_element().map_or(false, |element| element.local.as_ref() == "table")
+                        node.as_element().map_or(false, |element| (&*element.local) == "table")
                     });
                     if is_table {
                         if let Some(rect) = rects.get(&id) {
@@ -9816,7 +9816,7 @@ fn synthesize_row_rects(tree: &DomTree, rects: &mut HashMap<NodeId, Rect>) {
         let mut section: Option<Rect> = None;
         for row in tree.children(id) {
             let is_row = tree.get_node(row).map_or(false, |node| {
-                node.as_element().map_or(false, |element| element.local.as_ref() == "tr")
+                node.as_element().map_or(false, |element| (&*element.local) == "tr")
             });
             if !is_row {
                 continue;
@@ -10271,7 +10271,7 @@ fn collect_table_rows(tree: &DomTree, id: NodeId, rows: &mut Vec<(NodeId, usize)
                 let start = rows.len();
                 for row in tree.children(cid) {
                     if tree.get_node(row).is_some_and(|node| {
-                        node.as_element().is_some_and(|element| element.local.as_ref() == "tr")
+                        node.as_element().is_some_and(|element| (&*element.local) == "tr")
                     }) {
                         rows.push((row, 0));
                     }
@@ -10588,7 +10588,7 @@ fn build_table(
 ) -> Option<taffy::NodeId> {
     let style = styles.get(&id)?;
     let native_html_table = tree.get_node(id).is_some_and(|node| {
-        node.as_element().is_some_and(|element| element.local.as_ref() == "table")
+        node.as_element().is_some_and(|element| (&*element.local) == "table")
     });
     let authored_row_children = if native_html_table {
         None
@@ -10798,7 +10798,7 @@ fn build_table(
                 for gc in tree.children(cid) {
                     if tree
                         .get_node(gc)
-                        .and_then(|n| n.as_element().map(|e| e.local.as_ref() == "col"))
+                        .and_then(|n| n.as_element().map(|e| (&*e.local) == "col"))
                         .unwrap_or(false)
                     {
                         col_elems.push(gc);
@@ -11841,7 +11841,7 @@ fn build(
     // participant. The mixed-inline fallback adds a separate anonymous
     // full-width breaker after this mapped marker; keeping that control box
     // anonymous prevents its layout surrogate from leaking into CSSOM/paint.
-    if _name.local.as_ref() == "br" {
+    if (&*_name.local) == "br" {
         let height = crate::inline::used_line_height(style).max(0.0);
         taffy_style.size.width = taffy::style::Dimension::length(0.0);
         taffy_style.size.height = taffy::style::Dimension::length(height);
@@ -11900,7 +11900,7 @@ fn build(
     // definite axis during the grid's final pass. Treating the SVG as a normal
     // empty container makes its intrinsic contribution zero during grid track
     // sizing, collapsing responsive logo walls to zero-height rows.
-    if _name.local.as_ref() == "svg" {
+    if (&*_name.local) == "svg" {
         if let Some(ratio) = style.aspect_ratio.filter(|ratio| ratio.is_finite() && *ratio > 0.0) {
             // A 100% inline size inside an auto grid track is cyclic
             // during intrinsic sizing: it behaves as auto for the contribution
@@ -11935,12 +11935,12 @@ fn build(
     // A loaded poster supplies `<video>`'s replaced-content dimensions before
     // decoded video metadata exists. Only use HTML's 300x150 fallback when no
     // poster intrinsic is available.
-    if !(_name.local.as_ref() == "video" && style.replaced_intrinsic.is_some()) {
+    if !((&*_name.local) == "video" && style.replaced_intrinsic.is_some()) {
         if let Some((width, height)) = crate::inline::default_replaced_intrinsic_size(
             _name.local.as_ref(),
             style.font_size.unwrap_or(16.0),
             node.get_attribute("controls").is_some(),
-            _name.local.as_ref() != "embed"
+            (&*_name.local) != "embed"
                 || node.get_attribute("src").is_some_and(|value| !value.trim().is_empty()),
         ) {
             let context = engine.register_replaced(width, height, style);
@@ -12071,8 +12071,8 @@ fn build(
     // correct path for paragraphs/headings/labels/cells of text; the flex-wrap
     // approximation below only handles the leftovers (mixed inline + atomic
     // boxes, and layout-only builds where `try_build` always declines).
-    let is_closed_html_details = _name.ns.as_ref() == "http://www.w3.org/1999/xhtml"
-        && _name.local.as_ref() == "details"
+    let is_closed_html_details = (&*_name.ns) == "http://www.w3.org/1999/xhtml"
+        && (&*_name.local) == "details"
         && node.get_attribute("open").is_none();
     if !is_closed_html_details && !ifc_items.float_aware_blocks.contains(&id) {
         if let Some(item) = engine.try_build(tree, id, styles) {
@@ -12556,7 +12556,7 @@ fn build_mixed_block(
                 continue;
             }
             let is_forced_break =
-                node.as_element().map_or(false, |element| element.local.as_ref() == "br");
+                node.as_element().map_or(false, |element| (&*element.local) == "br");
             is_forced_break || crate::is_inline_level_box(s)
         } else {
             false
@@ -12670,7 +12670,7 @@ fn build_mixed_block(
                 }
                 for &rc in run {
                     let is_forced_break = tree.get_node(rc).is_some_and(|node| {
-                        node.as_element().is_some_and(|element| element.local.as_ref() == "br")
+                        node.as_element().is_some_and(|element| (&*element.local) == "br")
                     });
                     if is_forced_break {
                         // A BR participates in the current line with zero
@@ -13119,7 +13119,7 @@ fn estimate_flow_sibling_height(
         .into_iter()
         .filter(|&descendant| {
             tree.get_node(descendant)
-                .and_then(|node| node.as_element().map(|element| element.local.as_ref() == "img"))
+                .and_then(|node| node.as_element().map(|element| (&*element.local) == "img"))
                 .unwrap_or(false)
         })
         .filter_map(|descendant| match styles.get(&descendant).map(|style| style.height) {
@@ -13129,7 +13129,7 @@ fn estimate_flow_sibling_height(
         .sum();
     let own_image_height = if tree
         .get_node(id)
-        .and_then(|node| node.as_element().map(|element| element.local.as_ref() == "img"))
+        .and_then(|node| node.as_element().map(|element| (&*element.local) == "img"))
         .unwrap_or(false)
     {
         explicit_height
@@ -15289,7 +15289,7 @@ mod tests {
                 .into_iter()
                 .find(|id| {
                     tree.get_node(*id).is_some_and(|node| {
-                        node.as_element().is_some_and(|element| element.local.as_ref() == "body")
+                        node.as_element().is_some_and(|element| (&*element.local) == "body")
                     })
                 })
                 .unwrap();
@@ -15311,7 +15311,7 @@ mod tests {
                 .into_iter()
                 .find(|id| {
                     tree.get_node(*id).is_some_and(|node| {
-                        node.as_element().is_some_and(|element| element.local.as_ref() == "html")
+                        node.as_element().is_some_and(|element| (&*element.local) == "html")
                     })
                 })
                 .unwrap();
@@ -15353,7 +15353,7 @@ mod tests {
             .into_iter()
             .find(|id| {
                 tree.get_node(*id).is_some_and(|node| {
-                    node.as_element().is_some_and(|element| element.local.as_ref() == "body")
+                    node.as_element().is_some_and(|element| (&*element.local) == "body")
                 })
             })
             .unwrap();

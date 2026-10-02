@@ -66,7 +66,7 @@ sous-commande `audit` ou `backends` sans la vérifier sur le binaire courant.
 
 ## Toolchains et validation
 
-Bun `1.4.2`, uv `0.12.21`, Rust/Cargo `1.98.1`, Oxc `oxlint 1.86.0` /
+Bun `1.4.2`, uv `0.12.22`, Rust/Cargo `1.98.1`, Oxc `oxlint 1.86.0` /
 `oxfmt 0.71.0`, TypeScript `7.0.2`. Le wrapper Cargo global est `sccache`.
 Les cibles Rust installées incluent Linux, Windows MSVC/GNU, macOS Intel/ARM,
 WASM navigateur, WASI et Emscripten ; cela ne prouve pas leurs SDK externes.
@@ -159,8 +159,8 @@ Sources : [manifest développeur](../../../config/developer-cli-tools.json),
 | `tldr` | tealdeer 1.9.0 | `/home/aphro/.cargo/bin/tldr` |
 | `tsc` | Version 7.0.2 | `/home/aphro/.bun/bin/tsc` |
 | `tsgo` | Version 7.0.0-dev.20260707.2 | `/home/aphro/.bun/bin/tsgo` |
-| `uv` | uv 0.12.21 (x86_64-unknown-linux-gnu) | `/home/aphro/.local/bin/uv` |
-| `uvx` | uvx 0.12.21 (x86_64-unknown-linux-gnu) | `/home/aphro/.local/bin/uvx` |
+| `uv` | uv 0.12.22 (x86_64-unknown-linux-gnu) | `/home/aphro/.local/bin/uv` |
+| `uvx` | uvx 0.12.22 (x86_64-unknown-linux-gnu) | `/home/aphro/.local/bin/uvx` |
 | `xh` | xh 0.26.2 | `/home/aphro/.cargo/bin/xh` |
 | `ya` | Ya 26.5.6 (aa52643 2026-05-05) | `/home/aphro/.cargo/bin/ya` |
 | `yazi` | Yazi 26.5.6 (aa52643 2026-05-05) | `/home/aphro/.cargo/bin/yazi` |

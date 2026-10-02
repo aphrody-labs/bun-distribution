@@ -87,11 +87,11 @@ impl Attribute {
         match &self.name.prefix {
             Some(prefix) => {
                 name.len() == prefix.len() + self.name.local.len() + 1
-                    && name.starts_with(prefix.as_ref())
+                    && name.starts_with(&**prefix)
                     && name.as_bytes().get(prefix.len()) == Some(&b':')
-                    && &name[prefix.len() + 1..] == self.name.local.as_ref()
+                    && &name[prefix.len() + 1..] == &*self.name.local
             },
-            None => self.name.local.as_ref() == name,
+            None => &*self.name.local == name,
         }
     }
 }
@@ -196,7 +196,7 @@ impl Node {
     // Read a namespaced attribute by (namespace, localName).
     pub fn get_attribute_ns(&self, ns: &str, local: &str) -> Option<&str> {
         self.attrs()?.iter().find_map(|a| {
-            if a.name.ns.as_ref() == ns && a.name.local.as_ref() == local {
+            if &*a.name.ns == ns && &*a.name.local == local {
                 Some(a.value.as_str())
             } else {
                 None
@@ -215,7 +215,7 @@ impl Node {
             };
             if let Some(attr) = attrs
                 .iter_mut()
-                .find(|a| a.name.ns.as_ref() == ns && a.name.local.as_ref() == local)
+                .find(|a| &*a.name.ns == ns && &*a.name.local == local)
             {
                 attr.name.prefix = prefix;
                 attr.value = value;
@@ -230,7 +230,7 @@ impl Node {
 
     pub fn remove_attribute_ns(&mut self, ns: &str, local: &str) {
         if let NodeData::Element { attrs, .. } = &mut self.data {
-            attrs.retain(|a| !(a.name.ns.as_ref() == ns && a.name.local.as_ref() == local));
+            attrs.retain(|a| !(&*a.name.ns == ns && &*a.name.local == local));
         }
     }
 
@@ -664,7 +664,7 @@ impl DomTree {
         };
 
         if let NodeData::Element { ref attrs, .. } = data {
-            if let Some(id_attr) = attrs.iter().find(|a| a.name.local.as_ref() == "id") {
+            if let Some(id_attr) = attrs.iter().find(|a| &*a.name.local == "id") {
                 // Keep the FIRST element created with a given id. Parse order is
                 // document order, so getElementById / querySelector('#id') return
                 // the first-in-tree-order element on duplicate ids, per spec.
@@ -1156,7 +1156,7 @@ impl DomTree {
     pub fn is_html_slot_element(&self, node: NodeId) -> bool {
         self.get_node(node).is_some_and(|node| {
             node.as_element().is_some_and(|name| {
-                name.ns.as_ref() == "http://www.w3.org/1999/xhtml" && name.local.as_ref() == "slot"
+                &*name.ns == "http://www.w3.org/1999/xhtml" && &*name.local == "slot"
             })
         })
     }
@@ -1478,7 +1478,7 @@ impl DomTree {
         let doc = self.document();
         for child in self.children(doc) {
             if let Some(n) = self.get_node(child) {
-                if n.as_element().map(|name| name.local.as_ref() == "html").unwrap_or(false) {
+                if n.as_element().map(|name| &*name.local == "html").unwrap_or(false) {
                     return child;
                 }
             }

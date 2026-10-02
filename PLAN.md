@@ -157,6 +157,19 @@ actifs, aucun import vers une ancienne implantation déplacée.
   trois corrections présentes et `git diff --check` réussi. Pas de changement
   de code ; les tests Infra ne sont pas réexécutés pour ce lot documentaire.
 
+### Amont, forks et bumps structurés — 2026-10-02
+
+- FAIT : `~/source` ne garde que les quatre checkouts nécessaires au build (`mcp-server-tauri`, `simdutf-rio`,
+  `tauri-plugin-dialog`, `serde-saphyr`) : 23 Go avant, 11 Mo après. Les 17 autres amonts sont des entrées `reference`
+  de `config/upstream-sources.json`, lues en direct : `aphrody git upstream list|info|tree|read|search`, outils MCP
+  `upstream_*`, skill `upstreams`, `aphrody-update upstream`. Vue générée : `docs/reference/infra/UPSTREAMS.md`.
+- FAIT : sorties de build WSL déplacées vers `~/.local/share/aphrody/wsl-artifacts` (empreinte du `bzImage` vérifiée) ;
+  audits WSL vers `docs/research/os/wsl-audits`.
+- FAIT : bumps structurés par écosystème avec docs, holds et rollback : `aphrody-update rust|bun|uv`
+  (`docs/operations/infra/update/{RUST,BUN,UV}.md`). Fork Bun fusionné avec l'amont `faac63e6` (8/8 `bun:aphrody`).
+- OUVERT (décision du propriétaire) : 28 dépôts `aphrody-code` non référencés (`docs/research/infra/github-mirrors-audit-2026-10-02.md`) ;
+  archivage ou suppression non effectués. Fork Oxc : l'amont a avancé, fusion couplée au bump Cargo.
+
 ## 1. Contrats, cœur et compatibilité
 
 Propriétaires : `crates/contracts`, `crates/native`, `crates/compat`,

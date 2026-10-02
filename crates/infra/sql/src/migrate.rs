@@ -136,7 +136,7 @@ pub fn checksum(sql: &str) -> String {
         rest = &rest[index + 2..];
     }
     hasher.update(rest.as_bytes());
-    format!("{:x}", hasher.finalize())
+    hasher.finalize().iter().map(|b| format!("{b:02x}")).collect::<String>()
 }
 
 /// Split `NNNN_name.sql` (after stripping any directory) into version and name.

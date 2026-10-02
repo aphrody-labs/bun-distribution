@@ -8,14 +8,18 @@ integrating agent). Track plans stay canonical for their own detail:
 - [rag-native-integration.md](rag-native-integration.md)
 - [../ui/local-ai-gui-native-integration.md](../ui/local-ai-gui-native-integration.md)
 
-Goal (user, 2026-10-01): wire Aphrody to what is cloned under `~/source`
+Goal (user, 2026-10-01): wire Aphrody to the upstreams listed in `config/upstream-sources.json`
 natively, with no vendoring, no bottleneck, no subprocess and no duplicate,
 starting from what Aphrody already has; execute end to end, fix and integrate
 everything, with a complete plan and documented execution.
 
 ## 1. Upstream references (read-only, never copied into the repo)
 
-| Checkout under `~/source` | Rev | Licence | How Aphrody uses it |
+Since 2026-10-02 none of these is cloned under `~/source` (it keeps only the four build-required checkouts). Read them live:
+`aphrody git upstream info|tree|read|search <id>`, MCP `upstream_*`, or `aphrody-update upstream fetch <id>` for a disposable full clone.
+Overview: [../../reference/infra/UPSTREAMS.md](../../reference/infra/UPSTREAMS.md). The revisions below are the ones read on 2026-10-01.
+
+| Upstream (catalogue id) | Rev | Licence | How Aphrody uses it |
 |---|---|---|---|
 | `mistral.rs` | `3f2515e9` (v0.9.4-3) | MIT | Optional in-process engine through a git dependency pinned to this rev (crates.io only has 0.8.1). |
 | `codex` | `d6c3b448a4` | Apache-2.0 | Protocol and schema reference; conformance tests. No crate dependency (see D3). |

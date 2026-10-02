@@ -577,7 +577,7 @@ async fn handle_conn_limited(
                         u64::try_from(start.elapsed().as_millis()).unwrap_or(u64::MAX),
                         Ordering::Relaxed,
                     );
-                    if ws_sink.send(Message::Binary(data)).await.is_err() {
+                    if ws_sink.send(Message::Binary(data.into())).await.is_err() {
                         break;
                     }
                 },
@@ -632,7 +632,7 @@ async fn handle_conn_limited(
                 warn!("dropped oversize text frame ({} bytes)", text.len());
             },
             Message::Binary(bytes) => {
-                if session.write(bytes).await.is_err() {
+                if session.write(bytes.to_vec()).await.is_err() {
                     break;
                 }
             },
@@ -647,7 +647,7 @@ async fn handle_conn_limited(
                     warn!("dropped oversize data message ({} bytes)", bytes.len());
                 },
                 Ok(ControlMsg::Data { bytes }) => {
-                    if session.write(bytes).await.is_err() {
+                    if session.write(bytes.to_vec()).await.is_err() {
                         break;
                     }
                 },
@@ -949,7 +949,7 @@ mod tests {
         let _guard = SESSION_TEST_LOCK.lock().await;
         let (mut client, server) = start_session().await;
         let resize = r#"{"type":"resize","cols":137,"rows":43}"#;
-        client.send(Message::Text(resize.to_owned())).await.expect("send resize");
+        client.send(Message::Text(resize.into())).await.expect("send resize");
 
         // Ask the shell for the terminal size it sees now, while the session is live.
         #[cfg(target_os = "windows")]
@@ -962,7 +962,7 @@ mod tests {
         }
         #[cfg(not(target_os = "windows"))]
         {
-            client.send(Message::Binary(b"stty size\r".to_vec())).await.expect("send command");
+            client.send(Message::Binary(b"stty size\r".to_vec().into())).await.expect("send command");
             read_until(&mut client, |out| out.contains("43 137")).await;
         }
 
@@ -990,7 +990,7 @@ mod tests {
 
         // Sent as a JSON `data` control message to cover that path as well.
         let exit = serde_json::json!({ "type": "data", "bytes": b"exit\r" }).to_string();
-        client.send(Message::Text(exit)).await.expect("send exit");
+        client.send(Message::Text(exit.into())).await.expect("send exit");
 
         read_until_closed(&mut client).await;
         assert_session_ended(server).await;

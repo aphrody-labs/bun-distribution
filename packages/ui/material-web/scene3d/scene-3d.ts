@@ -69,7 +69,7 @@ export class M3Scene3D extends M3Canvas3D {
     await super.initThree();
     const THREE = this.THREE;
     this.renderer.shadowMap.enabled = true;
-    this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    this.renderer.shadowMap.type = THREE.PCFShadowMap;
     this.initialised = true;
     await this.rebuild();
   }

@@ -620,7 +620,7 @@ fn parse_google_results(html: &str, limit: usize) -> Vec<Hit> {
         }
         let Some(anchor) = tree.ancestors(heading).into_iter().find(|ancestor| {
             tree.get_node(*ancestor)
-                .and_then(|node| node.as_element().map(|name| name.local.as_ref() == "a"))
+                .and_then(|node| node.as_element().map(|name| (&*name.local) == "a"))
                 .unwrap_or(false)
         }) else {
             continue;

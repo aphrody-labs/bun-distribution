@@ -6,7 +6,7 @@ Exact subcommand trees of every shipped binary, read from its clap derive defini
 commands omitted; `cfg:` marks commands compiled only under a feature or target). Flags are not
 listed: run `<command> --help` for them. See [ECOSYSTEM.md](ECOSYSTEM.md) for the crates behind them.
 
-Totals: 66 binaries with a clap surface, 1237 commands.
+Totals: 63 binaries with a clap surface, 1280 commands.
 
 ## aphrody
 
@@ -24,7 +24,7 @@ _No subcommands (flags only)._
 
 ### `aphrody`
 
-Crate `aphrody`, parser `apps/cli/src/lib.rs#Cli`, 305 commands.
+Crate `aphrody`, parser `apps/cli/src/lib.rs#Cli`, 323 commands.
 
 - `aphrody rag` — Index and retrieve local code and documentation. _(cfg: all(not(target_arch = "wasm32"), feature = "rag"))_
   - `aphrody rag index` — Index a directory incrementally, including vectors when configured.
@@ -79,6 +79,17 @@ Crate `aphrody`, parser `apps/cli/src/lib.rs#Cli`, 305 commands.
   - `aphrody web browser` — Inspect a page through the shared native browser session
     - `aphrody web browser snapshot` — Navigate and capture a readable snapshot in the same browser session
   - `aphrody web crawl` — Crawl a bounded set of pages through the shared Rust frontier
+  - `aphrody web mediawiki` — Enumerate and extract pages through a MediaWiki Action API
+  - `aphrody web mirror` — Mirror HTML pages and their linked CSS/assets through Obscura
+  - `aphrody web wiki-search` — Search a MediaWiki installation through its Action API
+  - `aphrody web wiki-page` — Read a complete MediaWiki page dossier or Markdown through the Action API
+  - `aphrody web frames` — MPEG-7 frame vectors, SQLite indexing and local/trace.moe search
+    - `aphrody web frames vector`
+    - `aphrody web frames search`
+    - `aphrody web frames stats`
+    - `aphrody web frames list`
+    - `aphrody web frames quota`
+    - `aphrody web frames index`
 - `aphrody infra` — Canonical Infrastructure control: host matrix, SSH, VPN, deployment catalog. _(cfg: not(target_arch = "wasm32"))_
   - `aphrody infra status` — Inspect configured infrastructure targets and host matrix
   - `aphrody infra check` — Verify SSH connectivity and topology for configured hosts
@@ -111,6 +122,7 @@ Crate `aphrody`, parser `apps/cli/src/lib.rs#Cli`, 305 commands.
   - `aphrody train status` — Show training status, GPU lock availability, and active jobs.
   - `aphrody train lease` — Test acquiring the exclusive GPU training lease (preempts llama-server).
   - `aphrody train run` — Run a training or fine-tuning job.
+  - `aphrody train registry-migrate` — Apply the training registry migrations (schema `training`) over the direct `APHRODY_TRAINING_DATABASE_URL`.
   - `aphrody train promote` — Reserved for measured shadow-index A/B promotion; currently refuses installation.
 - `aphrody auth` — Authentification Google (God Mode / OAuth2)
 - `aphrody mirror` — Gère le mirroring des assets MD3 (start, stop, status).
@@ -130,15 +142,16 @@ Crate `aphrody`, parser `apps/cli/src/lib.rs#Cli`, 305 commands.
 - `aphrody agy` — Forward vers le binaire natif Antigravity CLI (`agy`).
 - `aphrody bxc` — Forward vers le binaire natif Bxc (`bxc`).
 - `aphrody google` — Écosystème Google branché via Bxc (Search, Translate, DNS, Books, Gemini Web, TTS) _(cfg: not(target_arch = "wasm32"))_
-- `aphrody translate` — Traduction souveraine unifiée — combine Bxc Google Translate et Shenron JP->FR _(cfg: not(target_arch = "wasm32"))_
+- `aphrody translate` — Traduction unifiée via aphrody-translate, avec protection Shenron JP->FR _(cfg: not(target_arch = "wasm32"))_
 - `aphrody n2b` — Execute the integrated N2B engine in-process.
 - `aphrody nie` — Forward vers le CLI natif Niers (`niers`).
 - `aphrody ssh` — Safe cross-platform operator CLI for configured SSH hosts. _(cfg: not(target_arch = "wasm32"))_
-- `aphrody agy-loop` — Boucle de codage autonome pour le CLI Antigravity (`agy`) via son hook `AfterAgent`. Câblé par le plugin aphrody-agy ; `start`/`stop`/`status` pilotent la boucle, `hook` est le driver invoqué par agy. _(cfg: not(target_arch = "wasm32"))_
+- `aphrody agy-loop` — Boucle de codage autonome pour le CLI Antigravity (`agy`) via ses hooks `Stop` (pilote) et `PostInvocation` (comptage par tour). Câblé par le plugin aphrody-agy ; `start`/`stop`/`status` pilotent la… _(cfg: not(target_arch = "wasm32"))_
   - `aphrody agy-loop start` — Arme la boucle pour le workspace courant avec un objectif.
   - `aphrody agy-loop stop` — Désarme la boucle (efface l'état) pour le workspace courant.
   - `aphrody agy-loop status` — Affiche l'état courant de la boucle en JSON.
-  - `aphrody agy-loop hook` — Driver du hook `AfterAgent` : lit le JSON du hook sur stdin, émet une décision sur stdout. Câblé par le plugin agy — pas pour usage manuel.
+  - `aphrody agy-loop hook` — Driver des hooks `Stop` et `PostInvocation` : lit le JSON du hook sur stdin, émet une décision sur stdout. Câblé par le plugin agy — pas pour usage manuel.
+  - `aphrody agy-loop hooks-json` — Affiche le fragment `hooks.json` (format natif agy) qui câble la boucle sur `Stop` et `PostInvocation`.
 - `aphrody term` — Pont WebSocket-PTY pour le frontend WASM (localhost uniquement)
 - `aphrody mcp` — Model Context Protocol — manage TOML servers, read legacy JSON, call tools. _(cfg: not(target_arch = "wasm32"))_
   - `aphrody mcp add` — Add a server to ~/.aphrody/config.toml.
@@ -160,6 +173,10 @@ Crate `aphrody`, parser `apps/cli/src/lib.rs#Cli`, 305 commands.
   - `aphrody git rollout` — Roll out managed CI to active GitHub repositories owned by an account.
   - `aphrody git ingest` — Ingest a Git repository or local directory into a prompt-ready LLM digest (GitIngest standard).
   - `aphrody git search` — Search GitHub repositories for documentation, llms.txt, and code digests.
+  - `aphrody git source` — Upstream source checkouts outside the repository (config/upstream-sources.json).
+  - `aphrody git upstream` — Live read-only access to the upstream catalogue (config/upstream-sources.json), no clone needed.
+  - `aphrody git attribution` — Audit and strip AI attributions, co-authors, and trailers from Git commits.
+  - `aphrody git clean-public` — Audit public web surfaces, products and repositories for private AI leaks.
 - `aphrody ingest` — Ingest a Git repository or directory into a prompt-ready LLM digest (GitIngest standard). _(aliases: gitingest, y; cfg: not(target_arch = "wasm32"))_
 - `aphrody docs` — Intelligent documentation and open-source library search (Context7, MS Learn, GitHub, llms.txt). _(cfg: not(target_arch = "wasm32"))_
   - `aphrody docs search` — Search documentation across Context7, Microsoft Learn, and GitHub repositories with llms.txt.
@@ -195,17 +212,18 @@ Crate `aphrody`, parser `apps/cli/src/lib.rs#Cli`, 305 commands.
 - `aphrody memory` — Tier-1 memory provider operations — migrate, audit, list backends. _(cfg: not(target_arch = "wasm32"))_
   - `aphrody memory migrate` — Copy all records for `--agent-id` from one provider to another.
 - `aphrody model` — Local model lifecycle — catalog, pull, inspect, verify, evict. _(cfg: not(target_arch = "wasm32"))_
-  - `aphrody model list` — List locally installed models.
+  - `aphrody model list` — List locally installed models. _(aliases: ls)_
   - `aphrody model catalog` — Show the curated catalog of models aphrody knows how to run.
   - `aphrody model accel` — Report the accelerators, GPUs and CUDA toolkit found on this machine.
   - `aphrody model recommend` — Rank the catalog for this machine and a given task.
   - `aphrody model pull` — Download a model into `~/.aphrody/models`, resuming if interrupted.
-  - `aphrody model info` — Show what an installed artefact actually is: size, digest, and the decoded GGUF / GGML / safetensors / ONNX header.
+  - `aphrody model info` — Show what an installed artefact actually is: size, digest, and the decoded GGUF / GGML / safetensors / ONNX header. _(aliases: show)_
   - `aphrody model verify` — Re-hash installed bytes and compare against what was recorded.
-  - `aphrody model rm` — Delete an installed model and drop it from the registry.
+  - `aphrody model rm` — Delete an installed model and drop it from the registry. _(aliases: remove)_
   - `aphrody model gc` — Evict least-recently-used models until the store fits a size budget, and sweep interrupted `.part` downloads.
   - `aphrody model doctor` — Report drift between the registry and the files on disk.
   - `aphrody model adopt` — Track a model file that already exists elsewhere on disk, without copying it.
+  - `aphrody model ps` — List model servers currently loaded in-process-managed daemons (Ollama `ps`): role, alias, port, readiness. Read-only; reads the state published by `aphrody-llama-server`, spawns nothing.
   - `aphrody model path` — Print the store root, or the resolved path of one artefact.
 - `aphrody infer` — Local ONNX inference backend — runtime discovery and provider probing. _(cfg: all(not(target_arch = "wasm32"), feature = "infer"))_
   - `aphrody infer runtime` — Report which ONNX Runtime will be loaded and from where.
@@ -346,9 +364,21 @@ Crate `aphrody-google`, parser `crates/ai/google/src/main.rs#Cli`, 9 commands.
 - `aphrody-google generate` — Generate one Gemini response with the authenticated Antigravity account.
 - `aphrody-google generate-stream` — Stream one Gemini response from stdin as plain text chunks.
 
+### `aphrody-host-service`
+
+Crate `aphrody-kernel`, parser `crates/os/kernel/src/main.rs#Cli`, 7 commands.
+
+- `aphrody-host-service serve` — Serve the kernel with the built-in subsystems on the local endpoint.
+- `aphrody-host-service mcp` — MCP over stdio: relay to the running kernel, or run one in-process.
+- `aphrody-host-service tools` — List tools as JSON.
+- `aphrody-host-service skills` — List skills as JSON.
+- `aphrody-host-service call` — Call one tool.
+- `aphrody-host-service run-skill` — Run one skill.
+- `aphrody-host-service a2a` — Send an A2A envelope through the same kernel tool dispatcher.
+
 ### `aphrody-infra`
 
-Crate `aphrody-infra`, parser `crates/infra/infra/src/main.rs#Cli`, 365 commands.
+Crate `aphrody-infra`, parser `crates/infra/infra/src/main.rs#Cli`, 383 commands.
 
 - `aphrody-infra status` — Show target, repository and runtime state without mutation.
 - `aphrody-infra inventory` — Run the existing deep resource inventory through the canonical Bun adapter.
@@ -418,6 +448,17 @@ Crate `aphrody-infra`, parser `crates/infra/infra/src/main.rs#Cli`, 365 commands
     - `aphrody-infra ssh web browser` — Inspect a page through the shared native browser session
       - `aphrody-infra ssh web browser snapshot` — Navigate and capture a readable snapshot in the same browser session
     - `aphrody-infra ssh web crawl` — Crawl a bounded set of pages through the shared Rust frontier
+    - `aphrody-infra ssh web mediawiki` — Enumerate and extract pages through a MediaWiki Action API
+    - `aphrody-infra ssh web mirror` — Mirror HTML pages and their linked CSS/assets through Obscura
+    - `aphrody-infra ssh web wiki-search` — Search a MediaWiki installation through its Action API
+    - `aphrody-infra ssh web wiki-page` — Read a complete MediaWiki page dossier or Markdown through the Action API
+    - `aphrody-infra ssh web frames` — MPEG-7 frame vectors, SQLite indexing and local/trace.moe search
+      - `aphrody-infra ssh web frames vector`
+      - `aphrody-infra ssh web frames search`
+      - `aphrody-infra ssh web frames stats`
+      - `aphrody-infra ssh web frames list`
+      - `aphrody-infra ssh web frames quota`
+      - `aphrody-infra ssh web frames index`
   - `aphrody-infra ssh infra` — Canonical Infrastructure control: host matrix, SSH, VPN, deployment catalog. _(cfg: not(target_arch = "wasm32"))_
     - `aphrody-infra ssh infra status` — Inspect configured infrastructure targets and host matrix
     - `aphrody-infra ssh infra check` — Verify SSH connectivity and topology for configured hosts
@@ -450,6 +491,7 @@ Crate `aphrody-infra`, parser `crates/infra/infra/src/main.rs#Cli`, 365 commands
     - `aphrody-infra ssh train status` — Show training status, GPU lock availability, and active jobs.
     - `aphrody-infra ssh train lease` — Test acquiring the exclusive GPU training lease (preempts llama-server).
     - `aphrody-infra ssh train run` — Run a training or fine-tuning job.
+    - `aphrody-infra ssh train registry-migrate` — Apply the training registry migrations (schema `training`) over the direct `APHRODY_TRAINING_DATABASE_URL`.
     - `aphrody-infra ssh train promote` — Reserved for measured shadow-index A/B promotion; currently refuses installation.
   - `aphrody-infra ssh auth` — Authentification Google (God Mode / OAuth2)
   - `aphrody-infra ssh mirror` — Gère le mirroring des assets MD3 (start, stop, status).
@@ -469,15 +511,16 @@ Crate `aphrody-infra`, parser `crates/infra/infra/src/main.rs#Cli`, 365 commands
   - `aphrody-infra ssh agy` — Forward vers le binaire natif Antigravity CLI (`agy`).
   - `aphrody-infra ssh bxc` — Forward vers le binaire natif Bxc (`bxc`).
   - `aphrody-infra ssh google` — Écosystème Google branché via Bxc (Search, Translate, DNS, Books, Gemini Web, TTS) _(cfg: not(target_arch = "wasm32"))_
-  - `aphrody-infra ssh translate` — Traduction souveraine unifiée — combine Bxc Google Translate et Shenron JP->FR _(cfg: not(target_arch = "wasm32"))_
+  - `aphrody-infra ssh translate` — Traduction unifiée via aphrody-translate, avec protection Shenron JP->FR _(cfg: not(target_arch = "wasm32"))_
   - `aphrody-infra ssh n2b` — Execute the integrated N2B engine in-process.
   - `aphrody-infra ssh nie` — Forward vers le CLI natif Niers (`niers`).
   - `aphrody-infra ssh ssh` — Safe cross-platform operator CLI for configured SSH hosts. _(cfg: not(target_arch = "wasm32"))_
-  - `aphrody-infra ssh agy-loop` — Boucle de codage autonome pour le CLI Antigravity (`agy`) via son hook `AfterAgent`. Câblé par le plugin aphrody-agy ; `start`/`stop`/`status` pilotent la boucle, `hook` est le driver invoqué par agy. _(cfg: not(target_arch = "wasm32"))_
+  - `aphrody-infra ssh agy-loop` — Boucle de codage autonome pour le CLI Antigravity (`agy`) via ses hooks `Stop` (pilote) et `PostInvocation` (comptage par tour). Câblé par le plugin aphrody-agy ; `start`/`stop`/`status` pilotent la… _(cfg: not(target_arch = "wasm32"))_
     - `aphrody-infra ssh agy-loop start` — Arme la boucle pour le workspace courant avec un objectif.
     - `aphrody-infra ssh agy-loop stop` — Désarme la boucle (efface l'état) pour le workspace courant.
     - `aphrody-infra ssh agy-loop status` — Affiche l'état courant de la boucle en JSON.
-    - `aphrody-infra ssh agy-loop hook` — Driver du hook `AfterAgent` : lit le JSON du hook sur stdin, émet une décision sur stdout. Câblé par le plugin agy — pas pour usage manuel.
+    - `aphrody-infra ssh agy-loop hook` — Driver des hooks `Stop` et `PostInvocation` : lit le JSON du hook sur stdin, émet une décision sur stdout. Câblé par le plugin agy — pas pour usage manuel.
+    - `aphrody-infra ssh agy-loop hooks-json` — Affiche le fragment `hooks.json` (format natif agy) qui câble la boucle sur `Stop` et `PostInvocation`.
   - `aphrody-infra ssh term` — Pont WebSocket-PTY pour le frontend WASM (localhost uniquement)
   - `aphrody-infra ssh mcp` — Model Context Protocol — manage TOML servers, read legacy JSON, call tools. _(cfg: not(target_arch = "wasm32"))_
     - `aphrody-infra ssh mcp add` — Add a server to ~/.aphrody/config.toml.
@@ -499,6 +542,10 @@ Crate `aphrody-infra`, parser `crates/infra/infra/src/main.rs#Cli`, 365 commands
     - `aphrody-infra ssh git rollout` — Roll out managed CI to active GitHub repositories owned by an account.
     - `aphrody-infra ssh git ingest` — Ingest a Git repository or local directory into a prompt-ready LLM digest (GitIngest standard).
     - `aphrody-infra ssh git search` — Search GitHub repositories for documentation, llms.txt, and code digests.
+    - `aphrody-infra ssh git source` — Upstream source checkouts outside the repository (config/upstream-sources.json).
+    - `aphrody-infra ssh git upstream` — Live read-only access to the upstream catalogue (config/upstream-sources.json), no clone needed.
+    - `aphrody-infra ssh git attribution` — Audit and strip AI attributions, co-authors, and trailers from Git commits.
+    - `aphrody-infra ssh git clean-public` — Audit public web surfaces, products and repositories for private AI leaks.
   - `aphrody-infra ssh ingest` — Ingest a Git repository or directory into a prompt-ready LLM digest (GitIngest standard). _(aliases: gitingest, y; cfg: not(target_arch = "wasm32"))_
   - `aphrody-infra ssh docs` — Intelligent documentation and open-source library search (Context7, MS Learn, GitHub, llms.txt). _(cfg: not(target_arch = "wasm32"))_
     - `aphrody-infra ssh docs search` — Search documentation across Context7, Microsoft Learn, and GitHub repositories with llms.txt.
@@ -534,17 +581,18 @@ Crate `aphrody-infra`, parser `crates/infra/infra/src/main.rs#Cli`, 365 commands
   - `aphrody-infra ssh memory` — Tier-1 memory provider operations — migrate, audit, list backends. _(cfg: not(target_arch = "wasm32"))_
     - `aphrody-infra ssh memory migrate` — Copy all records for `--agent-id` from one provider to another.
   - `aphrody-infra ssh model` — Local model lifecycle — catalog, pull, inspect, verify, evict. _(cfg: not(target_arch = "wasm32"))_
-    - `aphrody-infra ssh model list` — List locally installed models.
+    - `aphrody-infra ssh model list` — List locally installed models. _(aliases: ls)_
     - `aphrody-infra ssh model catalog` — Show the curated catalog of models aphrody knows how to run.
     - `aphrody-infra ssh model accel` — Report the accelerators, GPUs and CUDA toolkit found on this machine.
     - `aphrody-infra ssh model recommend` — Rank the catalog for this machine and a given task.
     - `aphrody-infra ssh model pull` — Download a model into `~/.aphrody/models`, resuming if interrupted.
-    - `aphrody-infra ssh model info` — Show what an installed artefact actually is: size, digest, and the decoded GGUF / GGML / safetensors / ONNX header.
+    - `aphrody-infra ssh model info` — Show what an installed artefact actually is: size, digest, and the decoded GGUF / GGML / safetensors / ONNX header. _(aliases: show)_
     - `aphrody-infra ssh model verify` — Re-hash installed bytes and compare against what was recorded.
-    - `aphrody-infra ssh model rm` — Delete an installed model and drop it from the registry.
+    - `aphrody-infra ssh model rm` — Delete an installed model and drop it from the registry. _(aliases: remove)_
     - `aphrody-infra ssh model gc` — Evict least-recently-used models until the store fits a size budget, and sweep interrupted `.part` downloads.
     - `aphrody-infra ssh model doctor` — Report drift between the registry and the files on disk.
     - `aphrody-infra ssh model adopt` — Track a model file that already exists elsewhere on disk, without copying it.
+    - `aphrody-infra ssh model ps` — List model servers currently loaded in-process-managed daemons (Ollama `ps`): role, alias, port, readiness. Read-only; reads the state published by `aphrody-llama-server`, spawns nothing.
     - `aphrody-infra ssh model path` — Print the store root, or the resolved path of one artefact.
   - `aphrody-infra ssh infer` — Local ONNX inference backend — runtime discovery and provider probing. _(cfg: all(not(target_arch = "wasm32"), feature = "infer"))_
     - `aphrody-infra ssh infer runtime` — Report which ONNX Runtime will be loaded and from where.
@@ -809,9 +857,10 @@ _No subcommands (flags only)._
 
 ### `aphrody-web`
 
-Crate `aphrody-web-engine`, parser `crates/web/web-engine/src/main.rs#Args`, 5 commands.
+Crate `aphrody-web-engine`, parser `crates/web/web-engine/src/main.rs#Args`, 6 commands.
 
 - `aphrody-web launch` _(aliases: serve)_
+- `aphrody-web response` — Bounded original text response and metadata, through the shared native network owner.
 - `aphrody-web fetch`
 - `aphrody-web scrape`
 - `aphrody-web crawl` — Bounded, robots-aware crawl of one or more seeds with the static Obscura HTTP stack. Reports what a native crawler or an LLM agent can extract from the initial HTML.
@@ -819,13 +868,28 @@ Crate `aphrody-web-engine`, parser `crates/web/web-engine/src/main.rs#Args`, 5 c
 
 ### `aphrody-web-worker`
 
-Crate `aphrody-web-engine`, parser `crates/web/web-engine/src/main.rs#Args`, 5 commands.
+Crate `aphrody-web-engine`, parser `crates/web/web-engine/src/main.rs#Args`, 6 commands.
 
 - `aphrody-web-worker launch` _(aliases: serve)_
+- `aphrody-web-worker response` — Bounded original text response and metadata, through the shared native network owner.
 - `aphrody-web-worker fetch`
 - `aphrody-web-worker scrape`
 - `aphrody-web-worker crawl` — Bounded, robots-aware crawl of one or more seeds with the static Obscura HTTP stack. Reports what a native crawler or an LLM agent can extract from the initial HTML.
 - `aphrody-web-worker chrome-path`
+
+### `aphrody-wsl`
+
+Crate `aphrody-wsl`, parser `crates/os/aphrody-wsl/src/main.rs#Args`, 9 commands.
+
+- `aphrody-wsl doctor` — Verify source pins and installed build tools.
+- `aphrody-wsl sources` — Inspect source revisions and dirtiness.
+- `aphrody-wsl plan` — Show exact build commands without executing them.
+- `aphrody-wsl dependencies` — Install host Linux dependencies (Windows prerequisites use native setup).
+- `aphrody-wsl build` — Compile an upstream component or assemble the guest root filesystem.
+- `aphrody-wsl all` — Build kernel, WSLg, Windows WSL and the Aphrody OS guest in sequence.
+- `aphrody-wsl status` — Read build evidence; missing and failed reports remain visible.
+- `aphrody-wsl verify` — Hash and validate expected nonempty artifacts.
+- `aphrody-wsl import` — Import a new distro, preserving every existing distribution.
 
 ### `aphrody-yolo`
 
@@ -1247,12 +1311,6 @@ Crate `aphrody-nie-zukan`, parser `crates/nie/aphrody-nie-zukan/src/bin/nie_zuka
 - `aphrody-nie-zukan forge-test` — Teste le forge/décodage q (round-trip + ancre Endou)
 - `aphrody-nie-zukan status` — Affiche des infos sur le cache existant
 
-### `build-wasm-example`
-
-Crate `aphrody-bevy-build-wasm-example`, parser `tools/build/wasm-example/src/main.rs#Args`, 0 commands.
-
-_No subcommands (flags only)._
-
 ### `dust`
 
 Crate `aphrody-dust-cli`, parser `crates/emu/cli/src/main.rs#Cli`, 82 commands.
@@ -1340,14 +1398,6 @@ Crate `aphrody-dust-cli`, parser `crates/emu/cli/src/main.rs#Cli`, 82 commands.
     - `dust decomp diff apply`
 - `dust debug` — Dust emulator debug commands from the dust-cli skill.
 
-### `example-showcase`
-
-Crate `aphrody-bevy-example-showcase`, parser `tools/example-showcase/src/main.rs#Args`, 3 commands.
-
-- `example-showcase run` — Run all the examples
-- `example-showcase build-website-list` — Build the markdown files for the website
-- `example-showcase build-wasm-examples` — Build the examples in wasm
-
 ### `ievr-tools`
 
 Crate `aphrody-nie-inventory`, parser `crates/nie/aphrody-nie-inventory/src/main.rs#Cli`, 3 commands.
@@ -1355,12 +1405,6 @@ Crate `aphrody-nie-inventory`, parser `crates/nie/aphrody-nie-inventory/src/main
 - `ievr-tools summary` — Print summary statistics (total binaries, total size).
 - `ievr-tools by-ext` — Group binaries by file extension, sorted by total byte footprint.
 - `ievr-tools top` — Print the top N largest binaries (default: 10).
-
-### `naga-xtask`
-
-Crate `aphrody-naga-xtask`, parser `crates/emu/ruzu/dedicated_room/src/main.rs#Args`, 0 commands.
-
-_No subcommands (flags only)._
 
 ### `nie`
 
@@ -1575,24 +1619,6 @@ Crate `aphrody-nie-cli`, parser `crates/nie/aphrody-nie-cli/src/main.rs#Cli`, 20
   - `nie live attach` — Décrit le `nie.exe` déjà vivant : PID, base du module, permission ptrace.
   - `nie live probe` — Lance le jeu ET lit sa mémoire **dans le même processus**.
 
-### `nie_steam`
-
-Crate `aphrody-nie-steam`, parser `crates/nie/aphrody-nie-steam/src/bin/nie_steam.rs#Cli`, 4 commands.
-
-- `nie_steam list` — Inspecte les depots (tailles, fichiers) sans télécharger.
-- `nie_steam download` — Télécharge une app Steam vers le répertoire cible.
-- `nie_steam sync` — Télécharge l'app IEVR (2799860) — raccourci pour `download 2799860`.
-- `nie_steam audit` — Confronte le manifest à une install existante sans rien écrire.
-
-### `nie_zukan`
-
-Crate `aphrody-nie-zukan`, parser `crates/nie/aphrody-nie-zukan/src/bin/nie_zukan.rs#Cli`, 4 commands.
-
-- `nie_zukan pull` — Pull les données du Zukan (chara_list, chara_param, skills, items)
-- `nie_zukan cross` — Croise les données zukan avec le miroir inagle
-- `nie_zukan forge-test` — Teste le forge/décodage q (round-trip + ancre Endou)
-- `nie_zukan status` — Affiche des infos sur le cache existant
-
 ### `nie-cam`
 
 Crate `aphrody-nie-camera`, parser `crates/nie/aphrody-nie-camera/src/bin/nie-cam.rs#Cli`, 12 commands.
@@ -1628,8 +1654,7 @@ _No subcommands (flags only)._
 - `aphrody-gemini-web` (aphrody / `aphrody-gemini-web`)
 - `aphrody-jev` (aphrody / `aphrody-jev`)
 - `aphrody-llama-daemon` (aphrody / `aphrody-llama-server`)
-- `aphrody-model-view` (aphrody / `aphrody-model-view`)
-- `aphrody-render3d-mcp` (aphrody / `aphrody-render3d`)
+- `aphrody-shell-tauri-e2e` (aphrody / `aphrody-shell-tauri-e2e`)
 - `aphrody-summary` (aphrody / `aphrody-summary`)
 - `design` (aphrody / `aphrody-identity`)
 - `export_assets` (aphrody / `aphrody-identity`)
@@ -1638,35 +1663,10 @@ _No subcommands (flags only)._
 - `pixel` (aphrody / `aphrody-identity`)
 - `aphrody-homebrew` (iecode / `aphrody-homebrew`)
 - `aphrody-nie-mcp` (iecode / `aphrody-nie-mcp`)
-- `bevy_city` (iecode / `aphrody-bevy-city`)
-- `bistro` (iecode / `aphrody-bevy-bistro`)
-- `build-easefunction-graphs` (iecode / `aphrody-bevy-build-easefunction-graphs`)
-- `build-templated-pages` (iecode / `aphrody-bevy-build-templated-pages`)
-- `caldera_hotel` (iecode / `aphrody-bevy-caldera-hotel`)
-- `ci` (iecode / `aphrody-bevy-ci`)
-- `cts_runner` (iecode / `aphrody-wgpu-cts-runner`)
 - `export_aphrody` (iecode / `aphrody-nie-identity-source`)
 - `export_formations` (iecode / `aphrody-nie-data`)
 - `export_passives` (iecode / `aphrody-nie-data`)
 - `export_skills` (iecode / `aphrody-nie-data`)
-- `export-content` (iecode / `aphrody-bevy-export-content`)
 - `game_screens_css` (iecode / `aphrody-nie-ui`)
-- `gen_tests` (iecode / `aphrody-gen-tests`)
-- `glsl_parser` (iecode / `aphrody-naga-fuzz`)
-- `ir` (iecode / `aphrody-naga-fuzz`)
-- `lock-analyzer` (iecode / `aphrody-wgpu-lock-analyzer`)
-- `main` (iecode / `aphrody-bevy-auto-register-static`)
 - `nie-edit` (iecode / `aphrody-nie-trace`)
 - `nie-mem` (iecode / `aphrody-nie-trace`)
-- `spv_parser` (iecode / `aphrody-naga-fuzz`)
-- `wgpu-bug-repro-01-texture-atomic-bug` (iecode / `aphrody-wgpu-bug-repro-01-texture-atomic-bug`)
-- `wgpu-bug-repro-02-present-bugs` (iecode / `aphrody-wgpu-bug-repro-02-present-bugs`)
-- `wgpu-example-01-hello-compute` (iecode / `aphrody-wgpu-example-01-hello-compute`)
-- `wgpu-example-02-hello-window` (iecode / `aphrody-wgpu-example-02-hello-window`)
-- `wgpu-example-03-hdr-surface` (iecode / `aphrody-wgpu-example-03-hdr-surface`)
-- `wgpu-example-custom-backend` (iecode / `aphrody-wgpu-example-custom-backend`)
-- `wgpu-examples` (iecode / `aphrody-wgpu-examples`)
-- `wgpu-info` (iecode / `aphrody-wgpu-info`)
-- `wgpu-xtask` (iecode / `aphrody-wgpu-xtask`)
-- `wgsl_parser` (iecode / `aphrody-naga-fuzz`)
-- `zero_day` (iecode / `aphrody-bevy-zero-day`)

@@ -18,7 +18,7 @@ obscura-dom = { workspace = true }
 obscura-browser = { workspace = true }
 obscura-js = { workspace = true }
 tokio = { workspace = true }
-tokio-tungstenite = "0.26"
+tokio-tungstenite = "0.30"
 serde = { workspace = true }
 serde_json = { workspace = true }
 url = { workspace = true }
@@ -35,7 +35,7 @@ png = { version = "0.18", optional = true }
 libc = "0.2"
 
 [dev-dependencies]
-tokio-tungstenite = "0.26"
+tokio-tungstenite = "0.30"
 futures-util = "0.3"
 
 # Vendored upstream code (h4ckf0r0day/obscura): not held to the aphrody lint

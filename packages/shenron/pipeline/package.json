@@ -71,7 +71,7 @@
   "dependencies": {
     "@aphrody/paths": "workspace:*",
     "@ai-sdk/openai-compatible": "^3.0.59",
-    "@ai-sdk/provider": "4.0.18",
+    "@ai-sdk/provider": "4.0.19",
     "@aphrody/bun": "workspace:*",
     "@shenron/config": "workspace:*",
     "@shenron/db": "workspace:*",

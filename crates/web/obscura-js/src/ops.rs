@@ -470,7 +470,7 @@ pub enum RuntimeEvent {
 pub(crate) fn node_is_script(dom: &DomTree, node_id: NodeId) -> bool {
     dom.with_node(node_id, |node| {
         node.as_element()
-            .map(|name| name.local.as_ref().eq_ignore_ascii_case("script"))
+            .map(|name| (&*name.local).eq_ignore_ascii_case("script"))
             .unwrap_or(false)
     })
     .unwrap_or(false)
@@ -1648,7 +1648,7 @@ fn op_dom_inner(shared: SharedState, cmd: String, arg1: String, arg2: String) ->
         "document_element" => {
             for cid in dom.children(dom.document()) {
                 if let Some(n) = dom.get_node(cid) {
-                    if n.as_element().map(|name| name.local.as_ref() == "html").unwrap_or(false) {
+                    if n.as_element().map(|name| (&*name.local) == "html").unwrap_or(false) {
                         return cid.index().to_string();
                     }
                 }
@@ -1745,7 +1745,7 @@ fn op_dom_inner(shared: SharedState, cmd: String, arg1: String, arg2: String) ->
             let name: String = dom
                 .with_node(NodeId::new(nid), |n| match &n.data {
                     NodeData::Document => "#document".to_string(),
-                    NodeData::Element { name, .. } => name.local.as_ref().to_ascii_uppercase(),
+                    NodeData::Element { name, .. } => (&*name.local).to_ascii_uppercase(),
                     NodeData::Text { .. } => "#text".to_string(),
                     NodeData::Comment { .. } => "#comment".to_string(),
                     NodeData::Doctype { name, .. } => name.clone(),
@@ -1823,7 +1823,7 @@ fn op_dom_inner(shared: SharedState, cmd: String, arg1: String, arg2: String) ->
                 .with_node(NodeId::new(nid), |n| {
                     n.as_element().map(|name| {
                         if name.ns == html5ever::ns!(html) {
-                            name.local.as_ref().to_ascii_uppercase()
+                            (&*name.local).to_ascii_uppercase()
                         } else {
                             match &name.prefix {
                                 Some(prefix) => format!("{}:{}", prefix, name.local),
@@ -1851,7 +1851,7 @@ fn op_dom_inner(shared: SharedState, cmd: String, arg1: String, arg2: String) ->
             let nid = arg1.parse::<u32>().unwrap_or(0);
             let ns = dom
                 .with_node(NodeId::new(nid), |n| {
-                    n.as_element().map(|name| name.ns.as_ref().to_string())
+                    n.as_element().map(|name| (&*name.ns).to_string())
                 })
                 .flatten()
                 .unwrap_or_default();
@@ -5684,7 +5684,7 @@ fn op_canvas_register_surface(
     let node = NodeId::new(nid);
     let is_canvas =
         state.dom.as_ref().and_then(|dom| dom.get_node(node)).is_some_and(|node| {
-            node.as_element().is_some_and(|name| name.local.as_ref() == "canvas")
+            node.as_element().is_some_and(|name| (&*name.local) == "canvas")
         });
     if !is_canvas {
         return false;
@@ -6313,7 +6313,7 @@ fn op_image_metadata(state: &OpState, nid: u32, _cached_only: bool) -> String {
     let node_id = NodeId::new(nid);
     let is_image = gs.dom.as_ref().is_some_and(|dom| {
         dom.get_node(node_id).is_some_and(|node| {
-            node.as_element().is_some_and(|element| element.local.as_ref() == "img")
+            node.as_element().is_some_and(|element| (&*element.local) == "img")
         })
     });
     if !is_image {
@@ -6412,7 +6412,7 @@ async fn op_load_image_metadata(state: Rc<RefCell<OpState>>, nid: u32) -> String
             return serde_json::json!({ "state": "stale", "currentSrc": "" }).to_string();
         };
         let is_image = dom.get_node(node_id).is_some_and(|node| {
-            node.as_element().is_some_and(|element| element.local.as_ref() == "img")
+            node.as_element().is_some_and(|element| (&*element.local) == "img")
         });
         if !is_image {
             return serde_json::json!({ "state": "stale", "currentSrc": "" }).to_string();

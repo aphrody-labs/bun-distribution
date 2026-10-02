@@ -107,7 +107,7 @@ pub fn artifact(path:&Path) -> Result<Artifact> {
     let mut hasher=Sha256::new();
     let mut buffer=vec![0;1024*1024];
     loop { let read=file.read(&mut buffer)?;if read==0{break;} hasher.update(&buffer[..read]); }
-    Ok(Artifact{path:path.into(),bytes,sha256:format!("{:x}",hasher.finalize())})
+    Ok(Artifact{path:path.into(),bytes,sha256:hasher.finalize().iter().map(|b| format!("{b:02x}")).collect::<String>()})
 }
 
 pub fn expected_artifacts(config:&Config,target:Target)->Vec<PathBuf> {

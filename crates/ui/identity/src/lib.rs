@@ -635,7 +635,7 @@ pub fn crop_rgba(src: &[u8], width: u32, height: u32, rect: Rect) -> Option<Vec<
 pub fn sha256_hex(bytes: &[u8]) -> String {
     let mut h = Sha256::new();
     h.update(bytes);
-    format!("{:x}", h.finalize())
+    h.finalize().iter().map(|b| format!("{b:02x}")).collect::<String>()
 }
 fn validate_identity(pet: &PetManifest, manifest: &AnimationsManifest) -> Result<(), Error> {
     if pet.id != manifest.pet.id

@@ -1034,7 +1034,7 @@ pub fn call_rust(tool: &str, arguments: Value) -> Result<Value, SubsystemError> 
             use sha2::{Digest, Sha256};
             let hash = Sha256::digest(&data);
             Ok(
-                serde_json::json!({"path":path.to_string_lossy(),"bytes":data.len(),"sha256":format!("{hash:x}")}),
+                serde_json::json!({"path":path.to_string_lossy(),"bytes":data.len(),"sha256":hash.iter().map(|b| format!("{b:02x}")).collect::<String>()}),
             )
         },
         "mem_enable_debug_privilege" => memory::enable_debug_privilege().map_err(failed),

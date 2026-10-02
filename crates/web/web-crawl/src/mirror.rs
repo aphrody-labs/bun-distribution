@@ -521,7 +521,7 @@ fn rewrite_html(
                 let in_style = parent
                     .and_then(|parent| {
                         tree.with_node(parent, |node| {
-                            node.as_element().is_some_and(|name| name.local.as_ref() == "style")
+                            node.as_element().is_some_and(|name| (&*name.local) == "style")
                         })
                     })
                     .unwrap_or(false);

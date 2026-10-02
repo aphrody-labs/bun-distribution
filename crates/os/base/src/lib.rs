@@ -148,12 +148,13 @@ impl Crypto {
         let nonce_bytes = &ciphertext[3..15];
         let encrypted_data = &ciphertext[15..];
 
-        let key = Key::<Aes256Gcm>::from_slice(key);
-        let cipher = Aes256Gcm::new(key);
-        let nonce = Nonce::from_slice(nonce_bytes);
+        let key = Key::<Aes256Gcm>::try_from(key)
+            .map_err(|_| anyhow!("Clé AES-256-GCM invalide (32 octets attendus)"))?;
+        let cipher = Aes256Gcm::new(&key);
+        let nonce = Nonce::try_from(nonce_bytes).map_err(|_| anyhow!("Nonce AES-GCM invalide"))?;
 
         cipher
-            .decrypt(nonce, encrypted_data)
+            .decrypt(&nonce, encrypted_data)
             .map_err(|e| anyhow!("Échec du décryptage AES-GCM : {}", e))
     }
 }

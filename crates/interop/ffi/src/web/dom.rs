@@ -263,7 +263,7 @@ pub unsafe extern "C" fn web_internal_node_tag_name(
 ) -> *mut c_char {
     unsafe {
         with_live_node(tree_ptr, node, |tree, id| {
-            tree.with_node(id, |n| n.as_element().map(|q| q.local.as_ref().to_ascii_lowercase()))
+            tree.with_node(id, |n| n.as_element().map(|q| (&*q.local).to_ascii_lowercase()))
                 .flatten()
         })
     }
@@ -309,7 +309,7 @@ pub unsafe extern "C" fn web_internal_node_attributes_json(
                                 .iter()
                                 .map(|a| {
                                     (
-                                        a.name.local.as_ref().to_string(),
+                                        (&*a.name.local).to_string(),
                                         serde_json::Value::String(a.value.clone()),
                                     )
                                 })

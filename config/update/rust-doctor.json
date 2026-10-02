@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "note": "Data for `aphrody-update rust doctor|fix` (packages/infra/update/src/ecosystems/rust-doctor.ts). Every entry carries its reason; a skip is reported as a note on each run, never as a pass. `*` is a wildcard. docs/operations/infra/update/RUST.md has the long form.",
+  "vendored": [
+    { "crates": "koharu*", "reason": "vendored upstream (koharu-rs/koharu): not rewritten, keeps its upstream style" },
+    { "crates": "obscura*", "reason": "vendored upstream (h4ckf0r0day/obscura): not rewritten, keeps its upstream style" },
+    { "crates": "taffy", "reason": "vendored upstream (DioxusLabs/taffy) with local patches: not rewritten" }
+  ],
+  "features": {
+    "skip": [
+      { "feature": "taffy/*", "reason": "vendored manifest: the workspace consumes the default feature set only" },
+      { "feature": "aphrody-engine-mistralrs/cuda", "reason": "needs the CUDA toolkit at build time" },
+      { "feature": "aphrody-engine-mistralrs/cudnn", "reason": "needs the CUDA toolkit at build time" },
+      { "feature": "aphrody-engine-mistralrs/cutile", "reason": "needs the CUDA toolkit at build time" },
+      { "feature": "aphrody-engine-mistralrs/flash-attn", "reason": "needs the CUDA toolkit at build time" },
+      { "feature": "aphrody-engine-mistralrs/nccl", "reason": "needs the CUDA toolkit at build time" },
+      { "feature": "aphrody-engine-mistralrs/metal", "reason": "Apple Metal: macOS hosts only" },
+      { "feature": "aphrody-engine-mistralrs/accelerate", "reason": "Apple Accelerate: macOS hosts only" },
+      { "feature": "aphrody-engine-mistralrs/mkl", "reason": "needs Intel MKL at build time" }
+    ]
+  },
+  "targets": [
+    { "triple": "wasm32-unknown-unknown", "packages": "auto", "match": "wasm32" },
+    { "triple": "x86_64-pc-windows-msvc", "runner": "xwin", "packages": "auto", "match": "windows" }
+  ],
+  "tests": {
+    "doc": true,
+    "exclude": []
+  }
+}

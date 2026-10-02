@@ -490,8 +490,8 @@ fn node_value(dom: &DomTree, node_id: NodeId) -> Option<(Value, Vec<NodeId>)> {
         },
         NodeData::Element { name, attrs, .. } => {
             result["nodeType"] = json!(1);
-            result["nodeName"] = json!(name.local.as_ref().to_ascii_uppercase());
-            result["localName"] = json!(name.local.as_ref());
+            result["nodeName"] = json!((&*name.local).to_ascii_uppercase());
+            result["localName"] = json!(&*name.local);
             result["nodeValue"] = json!("");
             let cdp_attrs: Vec<String> = attrs
                 .iter()

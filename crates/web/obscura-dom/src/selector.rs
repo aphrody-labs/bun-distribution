@@ -1285,7 +1285,7 @@ mod tests {
             }),
             SelectorKey::Attribute(attribute) => node.get_attribute(attribute).is_some(),
             SelectorKey::Local(local) => {
-                node.as_element().is_some_and(|element| element.local.as_ref() == local)
+                node.as_element().is_some_and(|element| (&*element.local) == local)
             },
         }
     }
@@ -1429,7 +1429,7 @@ mod tests {
         let result = tree.query_selector("h1").unwrap();
         assert!(result.is_some());
         let node = tree.get_node(result.unwrap()).unwrap();
-        assert_eq!(node.as_element().unwrap().local.as_ref(), "h1");
+        assert_eq!(&*node.as_element().unwrap().local, "h1");
     }
 
     #[test]
@@ -1510,7 +1510,7 @@ mod tests {
         let result = tree.query_selector("#outer span").unwrap();
         assert!(result.is_some());
         let node = tree.get_node(result.unwrap()).unwrap();
-        assert_eq!(node.as_element().unwrap().local.as_ref(), "span");
+        assert_eq!(&*node.as_element().unwrap().local, "span");
     }
 
     #[test]

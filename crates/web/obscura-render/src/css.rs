@@ -138,7 +138,7 @@ fn relational_key_may_match(
         },
         Some(RelationalSelectorKey::LocalName(expected)) => dom_node
             .as_element()
-            .is_some_and(|element| element.local.as_ref().eq_ignore_ascii_case(expected)),
+            .is_some_and(|element| (&*element.local).eq_ignore_ascii_case(expected)),
     }
 }
 
@@ -171,10 +171,10 @@ impl RelationalInvalidation {
             RelationalSelectorKey::Attribute(expected) => dom_node.attrs().is_some_and(|attrs| {
                 attrs
                     .iter()
-                    .any(|attribute| attribute.name.local.as_ref().eq_ignore_ascii_case(expected))
+                    .any(|attribute| (&*attribute.name.local).eq_ignore_ascii_case(expected))
             }),
             RelationalSelectorKey::LocalName(expected) => {
-                element.local.as_ref().eq_ignore_ascii_case(expected)
+                (&*element.local).eq_ignore_ascii_case(expected)
             },
         })
     }
@@ -1626,7 +1626,7 @@ impl PseudoRuleMap {
         };
         node.as_element().is_some_and(|element| {
             self.bucket_matches_container_query_rule(
-                self.by_local.get(element.local.as_ref()),
+                self.by_local.get((&*element.local)),
                 tree,
                 matcher,
                 nid,
@@ -1653,7 +1653,7 @@ impl PseudoRuleMap {
                 || node.attrs().is_some_and(|attributes| {
                     attributes.iter().any(|attribute| {
                         self.bucket_matches_container_query_rule(
-                            self.by_attribute.get(attribute.name.local.as_ref()),
+                            self.by_attribute.get((&*attribute.name.local)),
                             tree,
                             matcher,
                             nid,
@@ -2385,7 +2385,7 @@ impl Stylesheet {
         };
         let normal_match = node.as_element().is_some_and(|element| {
             self.bucket_matches_container_query_rule(
-                self.by_local.get(element.local.as_ref()),
+                self.by_local.get((&*element.local)),
                 tree,
                 matcher,
                 nid,
@@ -2412,7 +2412,7 @@ impl Stylesheet {
                 || node.attrs().is_some_and(|attributes| {
                     attributes.iter().any(|attribute| {
                         self.bucket_matches_container_query_rule(
-                            self.by_attribute.get(attribute.name.local.as_ref()),
+                            self.by_attribute.get((&*attribute.name.local)),
                             tree,
                             matcher,
                             nid,
@@ -2819,7 +2819,7 @@ impl Stylesheet {
             if let Some(node) = tree.get_node(nid) {
                 if let Some(element) = node.as_element() {
                     consider(
-                        rules.by_local.get(element.local.as_ref()),
+                        rules.by_local.get((&*element.local)),
                         &mut normal_matched,
                         &mut important_matched,
                     );
@@ -2840,7 +2840,7 @@ impl Stylesheet {
                     if let Some(attributes) = node.attrs() {
                         for attribute in attributes {
                             consider(
-                                rules.by_attribute.get(attribute.name.local.as_ref()),
+                                rules.by_attribute.get((&*attribute.name.local)),
                                 &mut normal_matched,
                                 &mut important_matched,
                             );
@@ -3418,7 +3418,7 @@ impl Stylesheet {
                 if let Some(attributes) = node.attrs() {
                     for attribute in attributes {
                         consider(
-                            self.by_attribute.get(attribute.name.local.as_ref()),
+                            self.by_attribute.get((&*attribute.name.local)),
                             &mut normal_matched,
                             &mut important_matched,
                         );

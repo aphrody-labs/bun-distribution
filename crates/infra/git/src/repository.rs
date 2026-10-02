@@ -195,7 +195,7 @@ pub fn inspect_repository(path: impl AsRef<Path>) -> Result<LocalRepository, Err
     let mut remotes = Vec::new();
     let github_host = configured_github_host();
     for name in repository.remote_names() {
-        let remote = repository.find_remote(name.as_ref()).map_err(git_error)?;
+        let remote = repository.find_remote(AsRef::<gix::bstr::BStr>::as_ref(&name)).map_err(git_error)?;
         let fetch_url =
             remote.url(gix::remote::Direction::Fetch).map(|url| url.to_bstring().to_string());
         let push_url =

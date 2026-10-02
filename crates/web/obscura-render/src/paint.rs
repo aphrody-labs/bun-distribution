@@ -446,7 +446,7 @@ impl RenderResourceCache {
         base_url: Option<&str>,
     ) -> Option<(String, ImageRequestProfile, bool, Option<(f32, f32)>)> {
         let node = tree.get_node(id)?;
-        if node.as_element().is_none_or(|element| element.local.as_ref() != "video") {
+        if node.as_element().is_none_or(|element| (&*element.local) != "video") {
             return None;
         }
         let poster = node.get_attribute("poster")?.trim();
@@ -588,7 +588,7 @@ impl RenderResourceCache {
         let mut seeded = HashSet::with_capacity(remembered.len());
         for (nid, value) in remembered {
             let is_live_image = tree.get_node(nid).is_some_and(|node| {
-                node.as_element().is_some_and(|element| element.local.as_ref() == "img")
+                node.as_element().is_some_and(|element| (&*element.local) == "img")
             });
             if !is_live_image {
                 self.forget_content_image_intrinsic(nid);
@@ -1849,7 +1849,7 @@ impl PreparedRender {
                 return false;
             }
             if !tree.get_node(*id).is_some_and(|node| {
-                node.as_element().is_some_and(|name| name.local.as_ref() == "img")
+                node.as_element().is_some_and(|name| (&*name.local) == "img")
             }) {
                 return true;
             }
@@ -4237,7 +4237,7 @@ fn paint_laid_dom_scrolled(
             }
         }
 
-        if box_on_surface && name.local.as_ref() == "canvas" {
+        if box_on_surface && (&*name.local) == "canvas" {
             if let Some(surface) = canvas_surfaces.surface(nid) {
                 // A canvas bitmap is replaced content: CSS sizing and
                 // object-fit operate on the content box, never the padding or
@@ -4302,7 +4302,7 @@ fn paint_laid_dom_scrolled(
                 // grey placeholder. box_rect/visible_rect are already
                 // clip-intersected, so none of this paints outside an
                 // overflow:hidden clip.
-                if !painted && name.local.as_ref() == "img" {
+                if !painted && (&*name.local) == "img" {
                     match node.get_attribute("alt") {
                         Some(alt) if !alt.trim().is_empty() => {
                             draw_text(
@@ -4345,7 +4345,7 @@ fn paint_laid_dom_scrolled(
         // painted individually (they are added to `svg_subtree_skip`). The svg
         // is drawn at its full border-box size (undistorted) and clipped to the
         // overflow-visible region.
-        if name.local.as_ref() == "svg" {
+        if (&*name.local) == "svg" {
             if box_on_surface {
                 let mut markup = serialize_svg_styled(
                     tree,
@@ -4431,7 +4431,7 @@ fn paint_laid_dom_scrolled(
         // List-item marker (bullet or number), drawn in the indent to the left
         // of the item's content box. `list_style` is inherited and resolved,
         // so `None` (e.g. a nav `<ul style="list-style:none">`) suppresses it.
-        if name.local.as_ref() == "li" {
+        if (&*name.local) == "li" {
             if let Some(marker) = list_marker_text(tree, nid, style.list_style) {
                 let fsize = style.font_size.unwrap_or(16.0);
                 let color = style.color.unwrap_or([0, 0, 0, 255]);
@@ -4497,7 +4497,7 @@ fn paint_laid_dom_scrolled(
         // A closed native `<select>` paints only its selected option. Options
         // themselves are popup content (`display:none` in the layout tree),
         // so the label and disclosure arrow belong to the atomic control.
-        if name.local.as_ref() == "select" {
+        if (&*name.local) == "select" {
             if let Some(label) = selected_option_label(tree, nid) {
                 let fsize = style.font_size.unwrap_or(13.333_333);
                 let line_height = crate::inline::used_line_height(style);
@@ -4543,7 +4543,7 @@ fn paint_laid_dom_scrolled(
         }
 
         let input_type =
-            (name.local.as_ref() == "input").then(|| node.get_attribute("type").unwrap_or("text"));
+            ((&*name.local) == "input").then(|| node.get_attribute("type").unwrap_or("text"));
         let checkable = input_type.is_some_and(|kind| {
             kind.eq_ignore_ascii_case("checkbox") || kind.eq_ignore_ascii_case("radio")
         });
@@ -4647,11 +4647,11 @@ fn paint_laid_dom_scrolled(
         // attribute as muted text; there is no DOM text node for it (it is
         // not real content), so paint it directly from the attribute instead
         // of going through `paint_text_node`.
-        if !checkable && (name.local.as_ref() == "input" || name.local.as_ref() == "textarea") {
+        if !checkable && ((&*name.local) == "input" || (&*name.local) == "textarea") {
             let live_value = tree.form_control_state(nid).and_then(|control| control.value);
             let value = live_value.as_deref().or_else(|| node.get_attribute("value"));
             let has_value = value.is_some_and(|v| !v.is_empty())
-                || (name.local.as_ref() == "textarea" && !tree.text_content(nid).is_empty());
+                || ((&*name.local) == "textarea" && !tree.text_content(nid).is_empty());
             // A text `<input>`'s value is not a DOM text node either, so it
             // needs painting from its live state, falling back to the attribute.
             // Without this the
@@ -4659,7 +4659,7 @@ fn paint_laid_dom_scrolled(
             // from script, or by typing — while its `value` reads back
             // correctly, so only a screenshot or PDF shows anything wrong.
             // `<textarea>` is unaffected: its value *is* a text node.
-            if has_value && name.local.as_ref() == "input" {
+            if has_value && (&*name.local) == "input" {
                 if let Some(value) = value {
                     if !value.is_empty() {
                         let fsize = style.font_size.unwrap_or(16.0);
@@ -6101,7 +6101,7 @@ fn selected_option_label(tree: &DomTree, select: obscura_dom::tree::NodeId) -> O
         let Some(option) = tree.get_node(option_id) else {
             continue;
         };
-        if option.as_element().map_or(true, |name| name.local.as_ref() != "option") {
+        if option.as_element().map_or(true, |name| (&*name.local) != "option") {
             continue;
         }
         let label = option
@@ -6837,7 +6837,7 @@ fn collect_web_fonts(
         let Some(node) = tree.get_node(nid) else {
             continue;
         };
-        if node.as_element().map(|element| element.local.as_ref() != "style").unwrap_or(true) {
+        if node.as_element().map(|element| (&*element.local) != "style").unwrap_or(true) {
             continue;
         }
         let css = tree.text_content(nid);
@@ -6893,7 +6893,7 @@ fn collect_web_fonts(
         let Some(node) = tree.get_node(nid) else {
             continue;
         };
-        if node.as_element().map(|element| element.local.as_ref() != "link").unwrap_or(true) {
+        if node.as_element().map(|element| (&*element.local) != "link").unwrap_or(true) {
             continue;
         }
         let rel = node.get_attribute("rel").unwrap_or("");
@@ -8807,7 +8807,7 @@ fn collect_content_image_intrinsics(
         let Some(node) = tree.get_node(nid) else {
             continue;
         };
-        if node.as_element().map_or(true, |name| name.local.as_ref() != "img") {
+        if node.as_element().map_or(true, |name| (&*name.local) != "img") {
             continue;
         }
         let Some(url) = style.content_image.as_deref() else {
@@ -8922,7 +8922,7 @@ fn picture_source_url(
     let parent = img.parent?;
     let is_picture = tree
         .get_node(parent)
-        .and_then(|p| p.as_element().map(|e| e.local.as_ref() == "picture"))
+        .and_then(|p| p.as_element().map(|e| (&*e.local) == "picture"))
         .unwrap_or(false);
     if !is_picture {
         return None;
@@ -8935,7 +8935,7 @@ fn picture_source_url(
         let Some(child) = tree.get_node(cid) else {
             continue;
         };
-        if child.as_element().map(|e| e.local.as_ref() != "source").unwrap_or(true) {
+        if child.as_element().map(|e| (&*e.local) != "source").unwrap_or(true) {
             continue;
         }
         let Some(srcset) = child.get_attribute("srcset") else {
@@ -10075,7 +10075,7 @@ fn serialize_svg_node(
             // Emit the local name only, dropping any prefix (`xlink:href` ->
             // `href`): resvg reads both, and a bare local avoids needing an
             // `xmlns:xlink` declaration in the standalone document.
-            let aname = attr.name.local.as_ref();
+            let aname = (&*attr.name.local);
             // HTML frameworks commonly stamp hydration attributes such as
             // `q:id` onto inline SVG. In an HTML document that name is fine,
             // but our standalone XML serialization has no matching `xmlns:q`,
@@ -10428,7 +10428,7 @@ fn inject_external_sprites(
         let Some(el) = node.as_element() else {
             continue;
         };
-        if el.local.as_ref() != "use" {
+        if (&*el.local) != "use" {
             continue;
         }
         // `get_attribute` matches by local name, so a single "href" lookup

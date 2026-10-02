@@ -1,0 +1,7 @@
+# SPDX-License-Identifier: Apache-2.0
+# Resolve to the newest release regardless of a dependency's declared rust-version. The workspace pins one modern
+# toolchain (rust-toolchain.toml) and the vendored crates/web/taffy manifest still says rust-version = "1.71"; with the
+# default `fallback` that single member makes `cargo update` downgrade openssl, quinn-proto and others to releases that
+# build on Rust 1.71. Cargo.lock stays the only record of resolved versions.
+[resolver]
+incompatible-rust-versions = "allow"

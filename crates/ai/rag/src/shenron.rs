@@ -335,7 +335,8 @@ pub async fn ingest_shenron_docs(
         let hash = blake3::hash(text.as_bytes()).to_hex().to_string();
         // The former Bun consumer stored SHA-256; accept that digest to avoid
         // rewriting unchanged rows while new Rust writes retain BLAKE3.
-        let legacy_hash = format!("{:x}", Sha256::digest(text.as_bytes()));
+        let legacy_hash =
+            Sha256::digest(text.as_bytes()).iter().map(|b| format!("{b:02x}")).collect::<String>();
         if !opts.force
             && store
                 .get_doc_by_path(&unique_path)

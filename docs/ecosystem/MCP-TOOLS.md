@@ -7,57 +7,7 @@ Every MCP tool registered in source, grouped by server: rmcp `#[tool]` routers, 
 full text is in [ecosystem.json](ecosystem.json). The kernel re-exports its subsystems' tools through
 `aphrody-kernel`, so one tool name can appear under several servers.
 
-Totals: 23 servers, 473 tool registrations, 452 unique tool names.
-
-## aphrody — aphrody
-
-Kind: kernel-subsystem. 1 tools.
-
-| Tool | Description |
-| --- | --- |
-| `update_plan` | Update or record the agent's multi-step execution plan and current progress. |
-
-## aphrody — aphrody (VictauriMcpHandler)
-
-Kind: rmcp. 35 tools.
-
-| Tool | Description |
-| --- | --- |
-| `animation` | Animation introspection (no CDP). Reads the Web Animations API to reveal what the webview's animation engine is actually running — duration, delay, easing, iterations, keyframes, current progress, an… |
-| `app_info` | Get comprehensive app info: Tauri config (identifier, product name, version), app directory paths (data, config, log, local_data), process environment variables, and database files found in app direc… |
-| `app_state` | Read application-defined backend state via a registered probe. With no `probe`, lists available probe names. With a `probe` name, runs it and returns its JSON snapshot. Probes give first-class, disco… |
-| `assert_semantic` | Run a semantic assertion: evaluate a JS expression and check the result against an expected condition. Conditions: equals, not_equals, contains, greater_than, less_than, truthy, falsy, exists, type_i… |
-| `check_ipc_integrity` | Check IPC round-trip integrity: find stale (stuck) pending calls and errored calls. Returns health status and lists of problematic IPC calls. |
-| `css` | CSS injection. Actions: inject (add custom CSS to page), remove (remove previously injected CSS). Subject to privacy controls. |
-| `detect_ghost_commands` | Detect ghost commands (frontend calls with no backend handler) by IPC OUTCOME, not by guessing from Victauri's registry. Returns: `confirmed_ghosts` = commands invoked that NEVER returned success and… |
-| `dom_snapshot` | Get the DOM snapshot with stable ref handles. Default: compact accessible text (70-80%% fewer tokens). Set format="json" for full tree. Returns tree + stale_refs (refs invalidated since last snapshot… |
-| `eval_js` | Evaluate JavaScript in the Tauri webview and return the result. Async expressions are wrapped automatically. |
-| `explain` | Correlate recent activity across all layers into a coherent narrative. CDP shows raw events per layer; Victauri correlates IPC + DOM + console + network + window events across the Rust backend and we… |
-| `fault` | Probe a backend command handler under failure by faulting it for chaos engineering. Simulate slow commands, backend errors, dropped responses, and corrupted data. SCOPE: faults apply ONLY to commands… |
-| `find_elements` | Search for elements by text, role, test_id, CSS selector (via `css` or `selector` param), or accessible name without a full snapshot. Returns lightweight matches with ref handles. |
-| `get_diagnostics` | Run environment diagnostics: detect service workers (break IPC interception), closed shadow DOM (invisible to snapshots), iframes (bridge absent), large DOM warnings, and CSP status. Call this first… |
-| `get_memory_stats` | Get real-time process memory statistics from the OS (working set, page file usage). On Windows returns detailed metrics; on Linux returns virtual/resident size. |
-| `get_plugin_info` | Inspect the Victauri plugin's own configuration: port, enabled/disabled tools, command filters, privacy settings, capacities, and version. Useful for agents to understand their capabilities before ac… |
-| `get_registry` | List or search all registered Tauri commands with their argument schemas. Pass query to filter by name/description substring. Commands are registered via the #[inspectable] macro — apps that don't us… |
-| `input` | Text and keyboard input. Actions: fill (set input value), type_text (character-by-character typing), press_key (trigger a keyboard key). Subject to privacy controls. An input the page refuses (elemen… |
-| `inspect` | CSS and visual inspection. Actions: get_styles (computed CSS for element), get_bounding_boxes (layout rects), highlight (debug overlay), clear_highlights, audit_accessibility (a11y audit), get_perfor… |
-| `interact` | DOM element interactions. Actions: click, double_click, hover, focus, scroll_into_view, select_option. Requires ref_id from a dom_snapshot for most actions. An action the page refuses (element covere… |
-| `introspect` | Deep backend introspection — command profiling, IPC contract testing, coverage, startup timing, capability auditing, database diagnostics, process enumeration, and event bus monitoring. These feature… |
-| `invoke_command` | Invoke a registered Tauri command via IPC, just like the frontend would. Goes through the real IPC pipeline so calls are logged and verifiable. Returns the command's result. Waits up to the eval time… |
-| `list_app_dir` | List files in the app's data, config, log, or local_data directories. Useful for discovering databases, config files, logs, and cached data on the backend — without going through the webview. |
-| `logs` | Application logs and monitoring. Actions: console (captured console.log/warn/error), network (intercepted fetch/XHR), ipc (IPC call log — set wait_for_capture=true to await response capture up to 500… |
-| `navigate` | Navigation and dialog control. Actions: go_to (navigate to URL), go_back (browser back), get_history (navigation log), set_dialog_response (auto-respond to alert/confirm/prompt), get_dialog_log (capt… |
-| `query_db` | Execute a bounded, read-only SQL query against a SQLite database in the app's data directory. The SQL goes in the `query` field (alias: `sql`). Auto-discovers database files if no path is specified.… |
-| `read_app_file` | Read a file from the app's data, config, log, or local_data directory. Returns UTF-8 text by default, or base64 for binary files. Directly reads backend files without going through the webview. |
-| `recording` | Time-travel recording. Actions: start (begin recording), stop (end and return session), checkpoint (save state snapshot), list_checkpoints, get_events (since index), events_between (two checkpoints),… |
-| `resolve_command` | Resolve a natural language query to matching Tauri commands. Returns scored results ranked by relevance, using command names, descriptions, intents, categories, and examples. |
-| `route` | Network request interception (Playwright route() equivalent, no CDP). Matches webview fetch/XHR by URL and blocks, mocks, or delays them. Actions: - `add`: add a rule. `pattern` (+ optional `match_ty… |
-| `screenshot` | Capture a screenshot of a Tauri window as a base64-encoded PNG image. Works on Windows (PrintWindow), macOS (CGWindowListCreateImage), and Linux X11/XWayland. Pure Wayland fails safely because its av… |
-| `storage` | Browser storage operations. Actions: get (read localStorage/sessionStorage), set (write), delete (remove key), get_cookies. Subject to privacy controls for set and delete. |
-| `trace` | Screencast / visual trace (no CDP). Captures the window at a fixed interval into a ring buffer, forming a visual timeline that pairs with `recording` (events) and `logs` (network/console). Actions: -… |
-| `verify_state` | Compare frontend state (evaluated via JS expression) against backend state to detect divergences. Returns a VerificationResult with any mismatches. |
-| `wait_for` | Wait for a condition to be met. Polls at regular intervals until satisfied or timeout. Conditions: text (text appears), text_gone (text disappears), selector (CSS selector matches), selector_gone, ur… |
-| `window` | Window management. Actions: get_state (window positions/sizes/visibility), list (all window labels), manage (minimize/maximize/close/focus/show/hide/fullscreen/always_on_top), resize, move_to, set_ti… |
+Totals: 20 servers, 440 tool registrations, 423 unique tool names.
 
 ## aphrody — aphrody-agent-tools
 
@@ -147,15 +97,6 @@ Kind: kernel-subsystem. 5 tools.
 | `uutils_catalog` | List supported pinned uutils companion utilities and their availability |
 | `uutils_run` | Run a pinned uutils companion utility (find, grep, sed, diff, or tar) without a shell |
 
-## aphrody — aphrody-gemini-runtime
-
-Kind: json-catalog. 2 tools.
-
-| Tool | Description |
-| --- | --- |
-| `read_file` | Read a file from disk |
-| `write_file` | Write content to a file |
-
 ## aphrody — aphrody-kernel subsystem `cloud`
 
 Kind: kernel-subsystem. 6 tools.
@@ -216,7 +157,7 @@ Kind: json-catalog. 18 tools.
 
 ## aphrody — aphrody-mcp (GoogleMcpServer)
 
-Kind: rmcp. 100 tools.
+Kind: rmcp. 105 tools.
 
 | Tool | Description |
 | --- | --- |
@@ -318,6 +259,11 @@ Kind: rmcp. 100 tools.
 | `start_dashboard` | Start a loopback HTTP server exposing live telemetry about THIS MCP process: GET /health (liveness) and GET /info (PID, uptime, memory, and a counter of /info hits). Binds 127.0.0.1 only - set APHROD… |
 | `sync_external_agents` | Mirror the sessions of the other coding agents on this machine (Antigravity CLI `agy`, Codex, Claude Code) into ~/.aphrody/sessions/<agent>/<session_id>.jsonl, incrementally: per-file byte offsets me… |
 | `universal_web_fetch` | Fetch any webpage from the internet and convert it to clean Markdown. Fetched directly by aphrody and converted in-process (no third-party reader). Highly recommended for reading online developer doc… |
+| `upstream_info` | Live facts about one catalogue upstream from the GitHub API: head of the followed ref, latest release, licence, pushed date, archived flag, and whether it moved since the commit recorded in the manif… |
+| `upstream_list` | List the upstream catalogue (config/upstream-sources.json): the few vital checkouts and the reference upstreams that are never cloned (codex, ollama, mistral.rs, vllm, WSL, ...), with tier, purpose a… |
+| `upstream_read` | Read one file of a catalogue upstream at its live ref (no clone). Text over 256 KiB is cut and flagged `truncated`. |
+| `upstream_search` | Code search inside one catalogue upstream (GitHub code search, needs a GH_TOKEN or GITHUB_TOKEN). |
+| `upstream_tree` | List a directory of one catalogue upstream at its live ref (no clone). `path` defaults to the repository root. |
 | `voice_synthesize` | Synthesise speech from text via the aphrody-voice ElevenLabs adapter. Returns { audio_base64, mime_type, duration_ms, bytes, voice }. Requires ELEVENLABS_API_KEY in env. |
 | `voice_transcribe` | Transcribe base64-encoded audio via aphrody-voice-stt. Prefers offline whisper.cpp (set APHRODY_WHISPER_MODEL to a GGML model path); falls back to the OpenAI Whisper REST API (OPENAI_API_KEY) — so th… |
 
@@ -350,17 +296,6 @@ Kind: kernel-subsystem. 3 tools.
 | `rag_context` | Assemble a prompt-ready <retrieved_context> block bounded by token budget for direct model ingestion. |
 | `rag_search` | Search indexed codebase files and documentation using hybrid retrieval (FTS5 BM25 + dense vector scan + RRF fusion). |
 | `web_ingest` | Retrieve a web page through Aphrody OS and index it into the local RAG store so later rag_search/rag_context calls can retrieve it. |
-
-## aphrody — aphrody-render3d subsystem `render3d`
-
-Kind: kernel-subsystem. 4 tools.
-
-| Tool | Description |
-| --- | --- |
-| `render3d_model_inspect` | Read a .glb/.gltf/.obj model: mesh, vertex and triangle counts, world bounds (min, max, centre, radius) and its PBR materials. |
-| `render3d_model_render` | Render a .glb/.gltf/.obj model from a yaw/pitch/zoom view to a PNG file in one call (M3 studio lighting, shadows, 4x MSAA). |
-| `render3d_model_scene` | Stage a model in an M3 studio (hemisphere + key + fill lights, framed orbit camera) and return the complete, editable Scene3d JSON (for render3d_render, render3d_export_glb or render3d_view). |
-| `render3d_view` | Open a live native desktop view (frameless, transparent, only the 3D) of a .glb/.gltf/.obj model or a Scene3d .json file; the view reloads whenever the file changes, so rewriting the file controls it. |
 
 ## aphrody — aphrody-systemd subsystem `systemd`
 
@@ -642,3 +577,14 @@ Kind: rmcp. 19 tools.
 | `wiki_character_card` | Read an exact character card with native stat anchors, learned skills and auras from the configured wiki mirror. No network access or writes. |
 | `wiki_search` | Search characters, techniques and items using the shared read-only wiki query owner. |
 | `zukan_rank` | Rank supplied official-encyclopedia entries against supplied candidates with the shared bounded native matcher. Suggestions only; no identity assignment, network request or write. |
+
+## iecode — iecode subsystem `render3d`
+
+Kind: kernel-subsystem. 4 tools.
+
+| Tool | Description |
+| --- | --- |
+| `render3d_model_inspect` | Read a .glb/.gltf/.obj model: mesh, vertex and triangle counts, world bounds (min, max, centre, radius) and its PBR materials. |
+| `render3d_model_render` | Render a .glb/.gltf/.obj model from a yaw/pitch/zoom view to a PNG file in one call (M3 studio lighting, shadows, 4x MSAA). |
+| `render3d_model_scene` | Stage a model in an M3 studio (hemisphere + key + fill lights, framed orbit camera) and return the complete, editable Scene3d JSON (for render3d_render, render3d_export_glb or render3d_view). |
+| `render3d_view` | Open a live native desktop view (frameless, transparent, only the 3D) of a .glb/.gltf/.obj model or a Scene3d .json file; the view reloads whenever the file changes, so rewriting the file controls it. |

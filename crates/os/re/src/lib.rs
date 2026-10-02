@@ -808,7 +808,7 @@ pub fn aes_ctr_file(
 
     use aes::{
         Aes128, Aes256, Block,
-        cipher::{BlockEncrypt, KeyInit},
+        cipher::{BlockCipherEncrypt, KeyInit},
     };
     use sha2::{Digest, Sha256};
 
@@ -860,7 +860,7 @@ pub fn aes_ctr_file(
             break;
         }
         for chunk in buffer[..count].chunks_mut(16) {
-            let mut block = Block::clone_from_slice(&counter);
+            let mut block = Block::from(counter);
             if key.len() == 16 {
                 Aes128::new_from_slice(&key)
                     .expect("validated AES-128 key")

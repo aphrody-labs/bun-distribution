@@ -316,7 +316,7 @@ impl Project {
             .asset(page, &AssetRole::new("source")?)?
             .context("page has no source image")?;
         let bytes = snapshot.read_blob(source.blob).await?;
-        Ok(format!("{:x}", Sha256::digest(&bytes)))
+        Ok(Sha256::digest(&bytes).iter().map(|b| format!("{b:02x}")).collect::<String>())
     }
 
     /// Imports decoded pages in one undoable project revision.

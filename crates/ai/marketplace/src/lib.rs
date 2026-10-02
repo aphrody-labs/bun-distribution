@@ -520,7 +520,7 @@ pub fn embedded_index() -> MarketplaceIndex {
 pub fn verify_sha256(bytes: &[u8], expected: &str) -> MarketplaceResult<()> {
     let mut hasher = Sha256::new();
     hasher.update(bytes);
-    let got = format!("{:x}", hasher.finalize());
+    let got = hasher.finalize().iter().map(|b| format!("{b:02x}")).collect::<String>();
     if got.eq_ignore_ascii_case(expected) {
         Ok(())
     } else {

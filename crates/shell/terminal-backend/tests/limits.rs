@@ -129,8 +129,8 @@ async fn oversize_frame_is_dropped_session_survives() {
         start(PtyConfig { max_input_frame_bytes: Some(64), ..PtyConfig::default() }).await;
     let (mut ws, _) = connect_async(request(addr, Some(TOKEN), None)).await.expect("connect");
     let big = format!("{}\n", "X".repeat(512));
-    ws.send(Message::Binary(big.into_bytes())).await.expect("send big");
-    ws.send(Message::Binary(b"small-ok\n".to_vec())).await.expect("send small");
+    ws.send(Message::Binary(big.into_bytes().into())).await.expect("send big");
+    ws.send(Message::Binary(b"small-ok\n".to_vec().into())).await.expect("send small");
     let (seen, found) = read_until(&mut ws, |s| s.contains("small-ok")).await;
     assert!(found, "session died after oversize frame: {seen:?}");
     assert!(!seen.contains("XXXX"), "oversize frame reached the pty: {seen:?}");
@@ -141,7 +141,7 @@ async fn output_cap_closes_session() {
     let addr = start(PtyConfig { max_output_bytes: Some(32), ..PtyConfig::default() }).await;
     let (mut ws, _) = connect_async(request(addr, Some(TOKEN), None)).await.expect("connect");
     for _ in 0..8 {
-        let _ = ws.send(Message::Binary(format!("{}\n", "Y".repeat(40)).into_bytes())).await;
+        let _ = ws.send(Message::Binary(format!("{}\n", "Y".repeat(40)).into_bytes().into())).await;
     }
     let (_, found) = read_until(&mut ws, |_| false).await;
     assert!(!found, "stream must end once the output cap is exceeded");

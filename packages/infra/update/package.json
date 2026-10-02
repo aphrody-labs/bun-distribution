@@ -15,7 +15,8 @@
     "./tools": "./src/tools.ts",
     "./systemd": "./src/systemd.ts",
     "./deps": "./src/deps/sync.ts",
-    "./inventory": "./src/deps/inventory.ts"
+    "./inventory": "./src/deps/inventory.ts",
+    "./bun": "./src/ecosystems/bun.ts"
   },
   "scripts": {
     "check": "bun src/cli.ts check",

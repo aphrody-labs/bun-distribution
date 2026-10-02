@@ -60,7 +60,7 @@ use std::{
 
 use aes_gcm::{
     Aes256Gcm, Key, KeyInit, Nonce,
-    aead::{Aead, OsRng as AeadOsRng},
+    aead::Aead,
 };
 use argon2::{Algorithm, Argon2, Params, Version};
 use async_trait::async_trait;
@@ -578,10 +578,14 @@ impl EncryptedFileSecretStore {
             )));
         }
         let key = Self::derive_key(self.passphrase.expose_bytes(), &salt, &env.kdf)?;
-        let cipher = Aes256Gcm::new(Key::<Aes256Gcm>::from_slice(key.as_ref()));
-        let nonce = Nonce::from_slice(&nonce_bytes);
-        let plaintext =
-            cipher.decrypt(nonce, ciphertext.as_ref()).map_err(|_| SecretsError::BadPassphrase)?;
+        let key = Key::<Aes256Gcm>::try_from(key.as_ref())
+            .map_err(|_| SecretsError::Crypto("derived key is not 32 bytes".into()))?;
+        let cipher = Aes256Gcm::new(&key);
+        let nonce = Nonce::try_from(nonce_bytes.as_slice())
+            .map_err(|_| SecretsError::InvalidFormat("nonce must be 12 bytes".into()))?;
+        let plaintext = cipher
+            .decrypt(&nonce, ciphertext.as_ref())
+            .map_err(|_| SecretsError::BadPassphrase)?;
         let map: BTreeMap<String, String> = serde_json::from_slice(&plaintext)?;
         Ok(map)
     }
@@ -596,9 +600,7 @@ impl EncryptedFileSecretStore {
         let mut salt = [0u8; 16];
         rand::rng().fill(&mut salt);
         let mut nonce_bytes = [0u8; 12];
-        // AeadOsRng from aes-gcm internally uses the OS — re-route through
-        // `rand::OsRng` for consistency and explicit auditing.
-        let _ = AeadOsRng; // keep the import meaningful for cargo-machete
+        // The nonce comes from the thread RNG (OS-seeded), not from an aes-gcm helper, so it is auditable here.
         rand::rng().fill(&mut nonce_bytes);
 
         let kdf = KdfParams {
@@ -607,11 +609,13 @@ impl EncryptedFileSecretStore {
             ..KdfParams::default()
         };
         let key = Self::derive_key(self.passphrase.expose_bytes(), &salt, &kdf)?;
-        let cipher = Aes256Gcm::new(Key::<Aes256Gcm>::from_slice(key.as_ref()));
-        let nonce = Nonce::from_slice(&nonce_bytes);
+        let key = Key::<Aes256Gcm>::try_from(key.as_ref())
+            .map_err(|_| SecretsError::Crypto("derived key is not 32 bytes".into()))?;
+        let cipher = Aes256Gcm::new(&key);
+        let nonce = Nonce::from(nonce_bytes);
         let plaintext = serde_json::to_vec(map)?;
         let ciphertext = cipher
-            .encrypt(nonce, plaintext.as_ref())
+            .encrypt(&nonce, plaintext.as_ref())
             .map_err(|e| SecretsError::Crypto(format!("aes-gcm encrypt: {e}")))?;
         let envelope = EncryptedEnvelope {
             version: 1,

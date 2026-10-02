@@ -91,7 +91,7 @@ export function gitSources(pkgs: { name: string; source?: string }[]): Map<strin
 
 // ---------------------------------------------------------------- cached fetch
 
-class Cache {
+export class Cache {
   constructor(private dir: string) { mkdirSync(dir, { recursive: true }); }
   private file(key: string) { return join(this.dir, key.replace(/[^A-Za-z0-9._-]/g, "_").slice(0, 180)); }
   get(key: string): string | undefined {
@@ -102,7 +102,7 @@ class Cache {
   set(key: string, v: string) { writeFileSync(this.file(key), v); }
 }
 
-async function cachedText(cache: Cache, url: string, init?: RequestInit): Promise<string | undefined> {
+export async function cachedText(cache: Cache, url: string, init?: RequestInit): Promise<string | undefined> {
   const hit = cache.get(url);
   if (hit !== undefined) return hit === "\u0000404" ? undefined : hit;
   let res: Response | undefined;
@@ -149,7 +149,7 @@ async function pypiInfo(cache: Cache, name: string, version: string): Promise<{ 
   return { latest: d.info.version, yanked: !!d.releases?.[version]?.some((f) => f.yanked) };
 }
 
-async function osv(deps: Dep[]): Promise<Map<string, string[]>> {
+export async function osv(deps: Dep[]): Promise<Map<string, string[]>> {
   const out = new Map<string, string[]>();
   for (let i = 0; i < deps.length; i += 1000) {
     const chunk = deps.slice(i, i + 1000);

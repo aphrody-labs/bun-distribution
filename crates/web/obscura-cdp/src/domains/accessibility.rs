@@ -177,7 +177,7 @@ fn map_role(data: &NodeData) -> &'static str {
             let tag = name.local.as_ref();
 
             // Check explicit role attribute first
-            if let Some(role_attr) = attrs.iter().find(|a| a.name.local.as_ref() == "role") {
+            if let Some(role_attr) = attrs.iter().find(|a| (&*a.name.local) == "role") {
                 return match role_attr.value.as_str() {
                     "button" => "button",
                     "link" => "link",
@@ -218,7 +218,7 @@ fn map_role(data: &NodeData) -> &'static str {
 
             match tag {
                 "a" => {
-                    if attrs.iter().any(|a| a.name.local.as_ref() == "href") {
+                    if attrs.iter().any(|a| (&*a.name.local) == "href") {
                         "link"
                     } else {
                         "generic"
@@ -228,7 +228,7 @@ fn map_role(data: &NodeData) -> &'static str {
                 "input" => {
                     let type_attr = attrs
                         .iter()
-                        .find(|a| a.name.local.as_ref() == "type")
+                        .find(|a| (&*a.name.local) == "type")
                         .map(|a| a.value.as_str())
                         .unwrap_or("text");
                     match type_attr {
@@ -244,7 +244,7 @@ fn map_role(data: &NodeData) -> &'static str {
                 "textarea" => "textbox",
                 "select" => {
                     if attrs.iter().any(|a| {
-                        a.name.local.as_ref() == "multiple" || a.name.local.as_ref() == "size"
+                        (&*a.name.local) == "multiple" || (&*a.name.local) == "size"
                     }) {
                         "listbox"
                     } else {
@@ -558,12 +558,12 @@ fn compute_name(dom: &DomTree, node: &obscura_dom::Node, context: &NameContext) 
 /// Compute the accessible value for a node (e.g., current input value).
 fn compute_value(dom: &DomTree, node: &obscura_dom::Node) -> Option<String> {
     if let NodeData::Element { name, attrs, .. } = &node.data {
-        let tag = name.local.as_ref();
+        let tag = (&*name.local);
         // For native form controls, return the value attribute.
         if tag == "input" || tag == "textarea" || tag == "select" {
             return attrs
                 .iter()
-                .find(|a| a.name.local.as_ref() == "value")
+                .find(|a| (&*a.name.local) == "value")
                 .map(|a| a.value.clone());
         }
 
@@ -578,7 +578,7 @@ fn contenteditable_keyword(node: &obscura_dom::Node) -> Option<bool> {
     let NodeData::Element { attrs, .. } = &node.data else {
         return None;
     };
-    let value = &attrs.iter().find(|attr| attr.name.local.as_ref() == "contenteditable")?.value;
+    let value = &attrs.iter().find(|attr| (&*attr.name.local) == "contenteditable")?.value;
 
     if value.is_empty()
         || value.eq_ignore_ascii_case("true")
@@ -621,7 +621,7 @@ fn compute_properties(_dom: &DomTree, node: &obscura_dom::Node) -> Vec<Value> {
         let focusable =
             matches!(tag, "a" | "button" | "input" | "select" | "textarea" | "details" | "summary")
                 || attrs.iter().any(|a| {
-                    let an = a.name.local.as_ref();
+                    let an = (&*a.name.local);
                     an == "tabindex" || an == "contenteditable"
                 });
         if focusable {
@@ -633,18 +633,18 @@ fn compute_properties(_dom: &DomTree, node: &obscura_dom::Node) -> Vec<Value> {
             || tag == "textarea"
             || attrs
                 .iter()
-                .any(|a| a.name.local.as_ref() == "contenteditable" && a.value != "false")
+                .any(|a| (&*a.name.local) == "contenteditable" && a.value != "false")
         {
             props.push(json!({"name": "editable", "value": ax_value_boolean(true)}));
         }
 
         // checked for checkboxes/radios
-        if attrs.iter().any(|a| a.name.local.as_ref() == "checked") {
+        if attrs.iter().any(|a| (&*a.name.local) == "checked") {
             props.push(json!({"name": "checked", "value": ax_value_boolean(true)}));
         }
 
         // disabled
-        if attrs.iter().any(|a| a.name.local.as_ref() == "disabled") {
+        if attrs.iter().any(|a| (&*a.name.local) == "disabled") {
             props.push(json!({"name": "disabled", "value": ax_value_boolean(true)}));
         }
 
@@ -657,7 +657,7 @@ fn compute_properties(_dom: &DomTree, node: &obscura_dom::Node) -> Vec<Value> {
 
         // required
         if attrs.iter().any(|a| {
-            a.name.local.as_ref() == "required" || a.name.local.as_ref() == "aria-required"
+            (&*a.name.local) == "required" || (&*a.name.local) == "aria-required"
         }) {
             props.push(json!({"name": "required", "value": ax_value_boolean(true)}));
         }

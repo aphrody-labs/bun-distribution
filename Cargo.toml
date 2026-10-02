@@ -53,7 +53,7 @@ webpki-roots = "1"
 aphrody-sql = { path = "crates/infra/sql", version = "0.1.0", default-features = false }
 pyo3 = { version = "0.29", features = [] }
 anyhow = "1.0.104"
-aes-gcm = { version = "0.10", features = [] }
+aes-gcm = { version = "0.11", features = [] }
 aphrody = { path = "apps/cli", version = "1.0.0", features = [] }
 aphrody-a2a = { path = "crates/contracts/a2a", version = "0.3", features = [] }
 aphrody-a2a-client = { path = "crates/os/a2a-client", version = "0.1", default-features = false, features = [] }
@@ -193,18 +193,18 @@ fastembed = { version = "5.13.4", default-features = false, features = [] }
 futures = "0.3.34"
 futures-util = { version = "0.3", features = [] }
 gemm = { version = "0.19", default-features = false, features = ["std", "rayon", "x86-v4"] }
-gix = { version = "0.83", default-features = false, features = ["sha1", "basic", "extras", "comfort", "max-performance-safe", "revision", "index", "worktree-mutation"] }
+gix = { version = "0.88", default-features = false, features = ["sha1", "basic", "extras", "comfort", "max-performance-safe", "revision", "index", "worktree-mutation"] }
 glob = { version = "0.3", features = [] }
 globset = { version = "0.4", features = [] }
 hex = { version = "0.4", features = [] }
-html5ever = { version = "0.39", features = [] }
+html5ever = { version = "0.40", features = [] }
 hyper = { version = "1", features = [] }
 ignore = { version = "0.4", features = [] }
 image = "0.25.10"
 indicatif = { version = "0.18", features = [] }
 js-sys = "0.3.105"
-json5 = { version = "0.4.1", features = [] }
-jsonschema = { version = "0.35", default-features = false, features = [] }
+json5 = { version = "1.3.1", features = [] }
+jsonschema = { version = "0.58", default-features = false, features = [] }
 koharu-library = { path = "crates/koharu/koharu-library", version = "0.83.5", features = [] }
 lancedb = { version = "0.29", default-features = false, features = [] }
 libc = "0.2.189"
@@ -214,7 +214,7 @@ mimalloc = { version = "0.1", default-features = false, features = [] }
 minijinja = "2.24.0"
 mistralrs = { version = "0.9.4", git = "https://github.com/EricLBuehler/mistral.rs.git", rev = "3f2515e9b5adc2ac44949c128c50a13b15721294", default-features = false }
 notify = { version = "8", features = [] }
-notify-debouncer-full = "0.6"
+notify-debouncer-full = "0.7"
 obscura-mcp = { path = "crates/web/obscura-mcp", version = "0.1.0", features = [] }
 obscura-browser = { path = "crates/web/obscura-browser", version = "0.1.0", features = [] }
 obscura = { path = "crates/web/obscura", version = "0.1.0" }
@@ -223,7 +223,7 @@ obscura-dom = { path = "crates/web/obscura-dom", version = "0.1.1", features = [
 obscura-js = { path = "crates/web/obscura-js", version = "0.1.0", features = [] }
 obscura-net = { path = "crates/web/obscura-net", version = "0.1.1", features = [] }
 obscura-render = { path = "crates/web/obscura-render", version = "0.1.0", features = [] }
-octocrab = { version = "0.50", features = [] }
+octocrab = { version = "0.54", features = [] }
 once_cell = { version = "1", features = [] }
 opendal = { version = "0.59", default-features = false, features = ["executors-tokio", "services-fs"] }
 ort = { version = "=2.0.0-rc.12", default-features = false, features = ["std", "api-24", "ndarray", "tracing"] }
@@ -243,7 +243,7 @@ rayon = "1.12.0"
 regex = { version = "1.11", features = [] }
 reqwest = { version = "0.13.5", features = ["rustls-no-provider", "json", "stream", "form", "query", "charset", "http2", "system-proxy", "blocking", "cookies", "gzip", "brotli", "deflate", "socks", "multipart"], default-features = false }
 ring = "0.17"
-rmcp = { version = "=3.4.1", features = ["server", "transport-io", "transport-streamable-http-server", "macros", "schemars"] }
+rmcp = { version = "=3.5.0", features = ["server", "transport-io", "transport-streamable-http-server", "macros", "schemars"] }
 rusqlite = { version = "0.40", features = ["bundled"] }
 rookie-cookies = "=0.6.0"
 russh = { version = "0.63", default-features = false, features = ["ring", "flate2"] }
@@ -256,7 +256,7 @@ semver = { version = "1", features = [] }
 serde = { version = "1.0.229", features = ["derive", "std"], default-features = false }
 serde_json = "1.0.151"
 serde_yaml = { package = "yaml_serde", version = "0.10", features = [] }
-sha2 = "0.10.9"
+sha2 = "0.11.0"
 similar = { version = "3", features = [] }
 syn = { version = "3.0.5", features = ["full", "extra-traits"] }
 sysinfo = { version = "0.39.6", features = ["system", "disk"], default-features = false }
@@ -268,9 +268,9 @@ tokio = { version = "1.53.1", features = ["process", "rt-multi-thread", "macros"
 tokio-postgres = { version = "0.7.18", features = ["with-serde_json-1"] }
 tokio-rustls = { version = "0.26", features = [] }
 tokio-stream = { version = "0.1", features = [] }
-tokio-tungstenite = { version = "0.26", features = [] }
+tokio-tungstenite = { version = "0.30", features = [] }
 toml = "1.1.5"
-toml_edit = { version = "0.22.27", features = [] }
+toml_edit = { version = "0.25.15", features = [] }
 tonic = { version = "0.14", features = [] }
 tonic-prost = { version = "0.14", features = [] }
 tonic-prost-build = { version = "0.14", features = [] }
@@ -294,7 +294,7 @@ rcgen              = { version = "0.14", default-features = false, features = ["
 getrandom          = { version = "0.2" }
 http               = { version = "1" }
 axum-server        = { version = "0.8", default-features = false, features = ["tls-rustls-no-provider"] }
-tower-http         = { version = "0.6", features = ["cors"] }
+tower-http         = { version = "0.7", features = ["cors"] }
 tonic-tls          = { version = "0.7", default-features = false, features = ["rustls"] }
 prost-types        = { version = "0.14" }
 pbjson             = { version = "0.9" }
@@ -312,17 +312,17 @@ aphrody-task-runner = { path = "crates/os/task-runner", version = "1.0.0-canary"
 aphrody-telemetry = { path = "crates/os/telemetry", version = "1.0.0-canary", features = [] }
 aphrody-bun-docs = { path = "crates/compat/bun-docs", version = "1.0.0-canary", features = [] }
 aphrody-shell = { path = "crates/shell/shell", version = "1.0.0-canary", features = [] }
-aes                = { version = "0.8.4" }
-argon2             = { version = "0.5" }
+aes                = { version = "0.9.3" }
+argon2             = { version = "0.6" }
 byteorder          = { version = "1.5" }
 goblin             = { version = "0.10", default-features = false, features = ["std", "endian_fd", "pe32", "pe64", "elf32", "elf64"] }
 googletest         = { version = "0.14" }
 iced-x86           = { version = "1.21" }
 log = "0.4.34"
-md-5               = { version = "0.10.6" }
+md-5               = { version = "0.11.0" }
 memchr             = { version = "2" }
 rustix             = { version = "1.0", default-features = false, features = ["std", "fs", "event", "process", "net"] }
-sha1               = { version = "0.10.7" }
+sha1               = { version = "0.11.0" }
 uiautomation       = { version = "0.25.1", default-features = false }
 uu_cp              = { version = "0.10.0" }
 uu_mkdir           = { version = "0.10.0" }
@@ -340,13 +340,13 @@ ratatui = { version = "0.30" }
 crossterm = { version = "0.29" }
 portable-pty = { version = "0.8" }
 rio-vt = { version = "=0.5.28", default-features = false }
-nu-cmd-extra = { version = "0.115.1", default-features = false }
-nu-cmd-lang = { version = "0.115.1", default-features = false, features = ["os"] }
-nu-command = { version = "0.115.1", default-features = false, features = ["network", "os", "rustls-tls", "sqlite"] }
-nu-engine = { version = "0.115.1", default-features = false, features = ["os"] }
-nu-parser = { version = "0.115.1", default-features = false }
-nu-protocol = { version = "0.115.1", default-features = false, features = ["brotli", "os", "rmp-serde", "sqlite"] }
-nu-std = { version = "0.115.1", default-features = false, features = ["sqlite"] }
+nu-cmd-extra = { version = "0.116.0", default-features = false }
+nu-cmd-lang = { version = "0.116.0", default-features = false, features = ["os"] }
+nu-command = { version = "0.116.0", default-features = false, features = ["network", "os", "rustls-tls", "sqlite"] }
+nu-engine = { version = "0.116.0", default-features = false, features = ["os"] }
+nu-parser = { version = "0.116.0", default-features = false }
+nu-protocol = { version = "0.116.0", default-features = false, features = ["brotli", "os", "rmp-serde", "sqlite"] }
+nu-std = { version = "0.116.0", default-features = false, features = ["sqlite"] }
 crossbeam-channel  = { version = "0.5" }
 oxc_ast_visit      = { version = "0.152.0", git = "https://github.com/aphrody-code/oxc.git", rev = "31d5266e150ff17af52f0c2fc798cc27dc9a5a59" }
 aphrody-n2b-ai = { path = "crates/compat/n2b-ai", version = "0.6.2", features = [] }
@@ -421,7 +421,7 @@ hypher = "0.1.7"
 icu_normalizer = { version = "2.3.0", default-features = false, features = ["compiled_data"] }
 icu_properties = "2.3.0"
 icu_segmenter = "2.3.0"
-jieba-rs = "0.10.3"
+jieba-rs = "0.11.0"
 fontique = "0.11.1"
 pollster = "1.0.1"
 vello = "0.10.0"
@@ -483,8 +483,8 @@ wgpu = {"version" = "30.0.1", "default-features" = false}
 bytemuck = {"version" = "1", "features" = ["derive"]}
 roxmltree = {"version" = "0.21"}
 svgtypes = {"version" = "0.16"}
-resvg = {"version" = "0.47", "default-features" = false}
-usvg = {"version" = "0.47"}
+resvg = {"version" = "0.48", "default-features" = false}
+usvg = {"version" = "0.48"}
 tiny-skia = {"version" = "0.12"}
 grass = "0.13"
 aphrody-drive = { path = "crates/ui/drive", version = "1.0.0-canary" }
