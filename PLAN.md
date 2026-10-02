@@ -902,8 +902,12 @@ Propriétaires : `packages/rg`, `apps/rg`, domaines Discord/Koharu/FUT.
 - [ ] Extraire les handlers Storage/Realtime/CDN vers leurs packages ; l’API
   importe les bibliothèques, les apps conservent configuration et démarrage.
 - [ ] Sortir le daemon Cron de son package partagé.
-- [ ] Donner catalogue boutique et registres communs à un package de domaine ;
-  retirer l’import du site depuis le bot.
+- [x] Donner catalogue boutique et registres communs à un package de domaine ;
+  retirer l’import du site depuis le bot. Fait 2026-10-03 : catalogue déplacé
+  vers `@rosegriffon/types/shop` (`packages/rg/types/src/shop.ts`, sans import) ;
+  le site le réexporte depuis `src/lib/shop/products.ts`, le bot l’importe du
+  paquet ; plus aucun import bot → site. Tests bot boutique 57, types 69 ;
+  typecheck bot, site et types verts.
 - [ ] Reprendre les gates historiques de chaque produit effectivement importé.
 
 Critères : imports des packages sans serveur, tests handlers/contrats puis

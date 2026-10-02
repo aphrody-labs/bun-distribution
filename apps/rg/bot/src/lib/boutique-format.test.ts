@@ -15,7 +15,7 @@
  */
 import { describe, expect, test } from "bun:test";
 
-import { formatEuros, PRODUCTS } from "../../../website/src/lib/shop/products";
+import { formatEuros, PRODUCTS } from "@rosegriffon/types/shop";
 import {
 	accorderSoutiens,
 	agregerPaliers,

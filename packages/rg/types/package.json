@@ -21,7 +21,8 @@
     "./stream": "./src/stream.ts",
     "./team": "./src/team.ts",
     "./instagram": "./src/instagram.ts",
-    "./schemas": "./src/schemas.ts"
+    "./schemas": "./src/schemas.ts",
+    "./shop": "./src/shop.ts"
   },
   "publishConfig": {
     "access": "public",

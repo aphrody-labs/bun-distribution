@@ -38,7 +38,7 @@ import {
 	PRODUCTS,
 	type Product,
 	type ProductCategory,
-} from "../../../website/src/lib/shop/products";
+} from "@rosegriffon/types/shop";
 
 /** Base publique du site, où vivent les fiches produit et les images. */
 export const BASE_BOUTIQUE = "https://rosegriffon.fr";
