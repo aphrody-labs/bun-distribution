@@ -121,6 +121,24 @@ async fn session_quota_rejects_then_frees_slot() {
 }
 
 #[tokio::test]
+async fn named_session_reconnect_reuses_its_quota_slot() {
+    let addr = start(PtyConfig { max_sessions: Some(1), ..PtyConfig::default() }).await;
+    let named = format!("ws://{addr}/?session=resume-one&token={TOKEN}");
+    let (mut first, _) = connect_async(&named).await.expect("first named connection");
+    first.send(Message::Binary(b"before\n".to_vec().into())).await.unwrap();
+    assert!(read_until(&mut first, |text| text.contains("before")).await.1);
+    first.close(None).await.unwrap();
+    drop(first);
+    let (mut resumed, _) = connect_async(&named).await.expect("reattach named connection");
+    resumed.send(Message::Binary(b"after\n".to_vec().into())).await.unwrap();
+    assert!(read_until(&mut resumed, |text| text.contains("after")).await.1);
+    let other = format!("ws://{addr}/?session=other&token={TOKEN}");
+    let err = connect_async(other).await.expect_err("different named session exceeds quota");
+    assert_eq!(status_of(&err), Some(503));
+    resumed.close(None).await.unwrap();
+}
+
+#[tokio::test]
 async fn oversize_frame_is_dropped_session_survives() {
     let addr = start(PtyConfig { max_input_frame_bytes: Some(64), ..PtyConfig::default() }).await;
     let (mut ws, _) = connect_async(request(addr, Some(TOKEN), None)).await.expect("connect");

@@ -19,11 +19,13 @@
 //! - **Binary frame** — raw bytes read from the pty master (shell output).
 //!
 //! The server closes the WebSocket once the shell has exited and its output is flushed; a
-//! client that disconnects ends the session and stops its shell.
+//! client that disconnects ends an unnamed session. A client supplying a stable
+//! `?session=<id>` can reconnect to the same PTY within a bounded grace period.
 
 #![deny(unsafe_code)]
 
 pub mod coord;
+mod resume;
 mod session;
 use std::{
     net::SocketAddr,
@@ -425,6 +427,7 @@ pub async fn serve(addr: SocketAddr, mut cfg: PtyConfig) -> Result<()> {
         cfg = cfg.with_exposed_defaults();
     }
     let active = Arc::new(AtomicUsize::new(0));
+    let resumable = resume::Registry::default();
 
     let listener = TcpListener::bind(addr).await.with_context(|| format!("bind {addr}"))?;
     info!("aphrody-terminal-backend listening on {addr}");
@@ -439,8 +442,9 @@ pub async fn serve(addr: SocketAddr, mut cfg: PtyConfig) -> Result<()> {
         info!("new connection from {peer}");
         let cfg = cfg.clone();
         let active = Arc::clone(&active);
+        let resumable = resumable.clone();
         tokio::spawn(async move {
-            if let Err(e) = handle_conn_limited(stream, cfg, active).await {
+            if let Err(e) = handle_conn_limited(stream, cfg, active, resumable).await {
                 warn!("session error: {e:#}");
             }
         });
@@ -451,12 +455,13 @@ pub async fn serve(addr: SocketAddr, mut cfg: PtyConfig) -> Result<()> {
 
 /// Upgrade a raw TCP stream to WebSocket, open a [`PtySession`], and bridge them.
 ///
-/// The session lasts until the client leaves or the shell exits. When the client leaves, the
-/// shell is stopped (`TerminateProcess` on Windows, `SIGHUP` on Unix) and the pty is closed;
-/// when the shell exits, the remaining output is flushed and the WebSocket is closed.
+/// An unnamed session lasts until the client leaves or the shell exits. Named sessions
+/// retain the PTY briefly after a disconnect and allow an authenticated reattachment.
+/// When the shell exits, the remaining output is flushed and the WebSocket is closed.
 #[cfg(test)]
 async fn handle_conn(stream: TcpStream, cfg: PtyConfig) -> Result<()> {
-    handle_conn_limited(stream, cfg, Arc::new(AtomicUsize::new(0))).await
+    handle_conn_limited(stream, cfg, Arc::new(AtomicUsize::new(0)), resume::Registry::default())
+        .await
 }
 
 /// RAII slot in the concurrent-session counter.
@@ -494,12 +499,16 @@ async fn handle_conn_limited(
     stream: TcpStream,
     cfg: PtyConfig,
     active: Arc<AtomicUsize>,
+    resumable: resume::Registry,
 ) -> Result<()> {
     let slot: Arc<Mutex<Option<SessionSlot>>> = Arc::new(Mutex::new(None));
     let slot_cb = Arc::clone(&slot);
     let max_sessions = cfg.max_sessions;
     let bound_addr = stream.local_addr().ok();
     let auth_token = cfg.effective_auth_token();
+    let requested_id: Arc<Mutex<Option<String>>> = Arc::new(Mutex::new(None));
+    let requested_id_cb = Arc::clone(&requested_id);
+    let resumable_cb = resumable.clone();
 
     let callback = move |req: &Request, resp: Response| -> Result<Response, ErrorResponse> {
         // 1. Check Origin: if Origin header is present and is not null / local allowed origin, reject.
@@ -531,6 +540,16 @@ async fn handle_conn_limited(
             return Err(unauthorized_response("authentication required"));
         }
 
+        let resume_id = match resume::session_id(req) {
+            Ok(id) => id,
+            Err(()) => return Err(resume::invalid_id_response()),
+        };
+        *requested_id_cb.lock().unwrap_or_else(std::sync::PoisonError::into_inner) =
+            resume_id.clone();
+        if resume_id.as_ref().is_some_and(|id| resumable_cb.contains(id)) {
+            return Ok(resp);
+        }
+
         // 4. Session quota (after auth so unauthenticated peers cannot consume slots).
         match SessionSlot::try_acquire(&active, max_sessions) {
             Some(s) => {
@@ -548,10 +567,16 @@ async fn handle_conn_limited(
     let ws_stream = tokio_tungstenite::accept_hdr_async(stream, callback)
         .await
         .context("WebSocket handshake")?;
-    let (mut ws_sink, mut ws_source) = ws_stream.split();
 
     // Held for the whole session; released on return.
     let _slot = slot.lock().unwrap_or_else(std::sync::PoisonError::into_inner).take();
+
+    let resume_id =
+        { requested_id.lock().unwrap_or_else(std::sync::PoisonError::into_inner).take() };
+    if let Some(id) = resume_id {
+        return resume::accept(ws_stream, id, cfg, _slot, resumable).await;
+    }
+    let (mut ws_sink, mut ws_source) = ws_stream.split();
 
     let start = Instant::now();
     let last_activity = Arc::new(AtomicU64::new(0));

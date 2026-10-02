@@ -16,8 +16,8 @@ WASM release build, six Bun tests, TypeScript typecheck and real Tauri LOCAL/REM
 | OPFS VFS | `aphrody-shell-vfs-opfs` (`OpfsVfs`, shared image binding) + dedicated browser worker | two checksummed image slots; shared conformance and persistence across a reload pass in real Chromium | native tests, wasm32 release, Chromium |
 | Web bindings | `aphrody-shell-web` (`WebTerminal`, `WebShell`, `LocalShell`) | T3: session/VFS engine, quoting, env expansion, history recall, cwd, globbing, pipes, redirects, conditionals and command registry; native tests and generated WASM smoke pass | wasm32 (built) |
 | WASM utilities | `aphrody-shell-wasm-utils` | T7: 16 VFS-backed commands with declared `own` source; pinned uutils 0.12.0 golden fixtures pass; native and wasm32 checks pass | native, wasm32 |
-| TS client | `@aphrody/shell-web` (WebSocket, Tauri Channel, OPFS worker, sandbox, local transports) | worker and sandbox paths pass Bun tests; OPFS worker passes real Chromium; sandbox passes a live authenticated PTY round trip. Reconnect sends a stable session ID, but the native PTY server ends sessions on disconnect, so live resume is still open. | web |
-| PTY + WebSocket server | `aphrody-terminal-backend` (auth, Origin/Host, session/idle/frame/output limits) | real, tested | native only |
+| TS client | `@aphrody/shell-web` (WebSocket, Tauri Channel, OPFS worker, sandbox, local transports) | worker and sandbox paths pass Bun tests; OPFS worker passes real Chromium; authenticated reconnect retains the native PTY working directory in a live round trip | web |
+| PTY + WebSocket server | `aphrody-terminal-backend` (auth, Origin/Host, session/idle/frame/output limits) | named sessions survive a disconnect for 30 seconds with bounded buffered output; live reconnect and native tests pass | native only |
 | Sandbox host | `aphrody-shell-sandbox-host` (`MockHost`, `LocalPtyHost`) | T11 contract and shared conformance pass; native PTY and live WebSocket round trips pass | Linux tested, wasm32 and Windows GNU checked |
 | Cloud sandbox | `aphrody-shell-sandbox-host-e2b` | T12 adapter compiles and protocol framing tests pass; live E2B conformance is gated and has not run because credentials are unavailable | native |
 | Tauri plugin | `aphrody-shell-tauri` (`open`, `open_channel`, `write`, `resize`, `close`) | real, tested, wired in `crates/ui/app` | native (Tauri 3 alpha.3) |
@@ -28,8 +28,8 @@ WASM release build, six Bun tests, TypeScript typecheck and real Tauri LOCAL/REM
 
 ## Not built yet (wave B-D of the plan)
 
-Live cloud adapter qualification (T12), native/server sandbox session resume (T8) and UI
-transport selection (T13). The [T9 Nushell wasm spike](../../research/shell/nushell-wasm.md)
+Live cloud adapter qualification (T12) and UI transport selection (T13). The
+[T9 Nushell wasm spike](../../research/shell/nushell-wasm.md)
 passed compile checks but deferred browser integration.
 Staying native on purpose: Nushell, TUI, PTY.
 

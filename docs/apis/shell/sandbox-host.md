@@ -19,6 +19,9 @@ state and the existing `data_frame` / `resize_frame` wire format in
   is an existing host directory; uploads and downloads are restricted to paths
   below that root. A Tokio runtime is required to spawn the PTY. Its control
   channel is bounded and `ShellSession` methods remain nonblocking.
+- `E2bHost` in `aphrody-shell-sandbox-host-e2b` maps provider file and PTY APIs
+  to this contract. `spawn_with_id` returns a provider PID; `reattach` reconnects
+  to that PTY. Dropping its host requests sandbox deletion.
 
 `LocalPtyHost` is a native PTY adapter, not a process isolation boundary. A
 remote provider must confine the process separately, for example through its
@@ -40,6 +43,7 @@ through the shell, and kills the session. It runs on both `MockHost` and
 
 ## Current qualification
 
-The mock and native PTY tests pass on Linux, and the existing TS WebSocket
-transport passed a live PTY round trip. A real cloud provider conformance run
-remains a separate T12 gate.
+The mock and native PTY tests pass on Linux. The TS WebSocket transport passed
+a live PTY round trip and a working-directory-preserving reconnect. The E2B
+adapter passes local HTTP/Connect framing checks; real cloud conformance remains
+a separate T12 gate requiring provider credentials.

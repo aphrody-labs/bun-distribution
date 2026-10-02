@@ -10,7 +10,7 @@ work.
 | VT state | `crates/shell/terminal-core` | Ingest raw output bytes, produce a terminal snapshot and replies. The client owns VT state for every transport. |
 | Engines and sessions | `crates/shell/web`, `crates/shell/session`, `crates/shell/terminal-backend` | Browser commands use `LocalShell` and `ShellSession`; native and Tauri shells use `PtySession`. All exchange input and output bytes. |
 | Filesystem | `crates/shell/vfs`, `crates/shell/aphrody-shell-vfs-opfs` | The synchronous `Vfs` trait serves shell commands. `MemVfs` is the reference; `OpfsVfs` encodes bounded, checksummed snapshots. |
-| Hosts | `crates/shell/aphrody-shell-sandbox-host` | `SandboxHost` handles session, limits and file transfer. Its mock and local PTY adapters are qualified; a cloud provider remains open. |
+| Hosts | `crates/shell/aphrody-shell-sandbox-host`, `crates/shell/aphrody-shell-sandbox-host-e2b` | `SandboxHost` handles session, limits and file transfer. Mock and local PTY adapters are qualified; the E2B adapter awaits live provider conformance. |
 | Transports | `packages/shell/web`, `crates/shell/tauri` | The TypeScript `Transport` interface carries bytes over a dedicated OPFS worker, Tauri Channel, or authenticated WebSocket. |
 | Renderer | `crates/ui/app` | The existing DOM terminal renderer consumes output; it does not parse shell commands. |
 
@@ -25,8 +25,8 @@ survives an interrupted write. Main-thread code keeps terminal rendering and VT 
 
 The Tauri plugin sends PTY output through a bounded Channel. The event transport remains a
 compatibility fallback. The WebSocket backend authenticates requests, checks Origin/Host, and
-limits sessions, frame size, output and idle time. Its current PTY session ends on disconnect;
-reconnect does not yet resume that process. Remote provider confinement belongs behind
+limits sessions, frame size, output and idle time. Named PTY sessions retain bounded output
+for a 30-second reconnect window; unnamed sessions close on disconnect. Remote provider confinement belongs behind
 `SandboxHost`; `crates/os/sandbox` is the separate native command policy owner.
 
 ## Qualification

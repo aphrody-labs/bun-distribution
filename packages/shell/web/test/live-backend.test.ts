@@ -46,6 +46,39 @@ test.skipIf(!ready)(
       }
       expect(sandboxText).toContain("sandbox-42");
       sandboxTerm.close();
+
+      const sessionId = `resume-${port}`;
+      const first = sandboxTransport(mod as WasmApi, `ws://127.0.0.1:${port}/`, "t0k3n", {
+        sessionId,
+        maxReconnects: 0,
+      });
+      const firstTerm = attach(mod as WasmApi, first, 100, 20);
+      await Bun.sleep(300);
+      firstTerm.type("cd /tmp\r");
+      await Bun.sleep(300);
+      firstTerm.type("sleep 0.3; echo queued-42\r");
+      await Bun.sleep(100);
+      firstTerm.close();
+      await Bun.sleep(500);
+      const resumed = sandboxTransport(mod as WasmApi, `ws://127.0.0.1:${port}/`, "t0k3n", {
+        sessionId,
+        maxReconnects: 0,
+      });
+      const resumedTerm = attach(mod as WasmApi, resumed, 100, 20);
+      await Bun.sleep(300);
+      resumedTerm.type("pwd\r");
+      let resumedText = "";
+      for (
+        let i = 0;
+        i < 40 && !(resumedText.includes("/tmp") && resumedText.includes("queued-42"));
+        i++
+      ) {
+        await Bun.sleep(100);
+        resumedText = resumedTerm.snapshot().lines.join("\n");
+      }
+      expect(resumedText).toContain("/tmp");
+      expect(resumedText).toContain("queued-42");
+      resumedTerm.close();
     } finally {
       server.kill();
     }
