@@ -1,8 +1,8 @@
 diff --git a/dist/index.js b/dist/index.js
-index be7e13ee8b7297d0fbaa335342fabeff0d3a737e..68792540398a749c37022390201882f304067901 100644
+index 72c80c2..e1528dc 100644
 --- a/dist/index.js
 +++ b/dist/index.js
-@@ -699,21 +699,24 @@ __name(incrementInvalidCount, "incrementInvalidCount");
+@@ -742,21 +742,24 @@ __name(incrementInvalidCount, "incrementInvalidCount");
  async function makeNetworkRequest(manager, routeId, url, options, requestData, retries) {
    const controller = new AbortController();
    const timeout = setTimeout(() => controller.abort(), manager.options.timeout);
@@ -32,10 +32,10 @@ index be7e13ee8b7297d0fbaa335342fabeff0d3a737e..68792540398a749c37022390201882f3
    if (manager.listenerCount("response" /* Response */)) {
      manager.emit(
 diff --git a/dist/index.mjs b/dist/index.mjs
-index 1ee3688f8b8969fbe3f0bbaa90c0fddeb7ca7c05..08cbbfd1142a41604bb8da7a1ae87c5263004da3 100644
+index 79acf59..3e03b4f 100644
 --- a/dist/index.mjs
 +++ b/dist/index.mjs
-@@ -658,21 +658,24 @@ __name(incrementInvalidCount, "incrementInvalidCount");
+@@ -701,21 +701,24 @@ __name(incrementInvalidCount, "incrementInvalidCount");
  async function makeNetworkRequest(manager, routeId, url, options, requestData, retries) {
    const controller = new AbortController();
    const timeout = setTimeout(() => controller.abort(), manager.options.timeout);
@@ -65,10 +65,10 @@ index 1ee3688f8b8969fbe3f0bbaa90c0fddeb7ca7c05..08cbbfd1142a41604bb8da7a1ae87c52
    if (manager.listenerCount("response" /* Response */)) {
      manager.emit(
 diff --git a/dist/web.js b/dist/web.js
-index ad59bd94a916692e8116e196d78f11833652d5b2..04754b1c259d73e48746a30f1de66e8c7dcbca8b 100644
+index ea7a99f..8ec1207 100644
 --- a/dist/web.js
 +++ b/dist/web.js
-@@ -633,21 +633,24 @@ __name(incrementInvalidCount, "incrementInvalidCount");
+@@ -676,21 +676,24 @@ __name(incrementInvalidCount, "incrementInvalidCount");
  async function makeNetworkRequest(manager, routeId, url, options, requestData, retries) {
    const controller = new AbortController();
    const timeout = setTimeout(() => controller.abort(), manager.options.timeout);
@@ -98,10 +98,10 @@ index ad59bd94a916692e8116e196d78f11833652d5b2..04754b1c259d73e48746a30f1de66e8c
    if (manager.listenerCount("response" /* Response */)) {
      manager.emit(
 diff --git a/dist/web.mjs b/dist/web.mjs
-index 269bd6971fab04620d07b2602a64390da3bdf923..23dbaf9703c3b655e9924a08aad6bade428aa070 100644
+index 41eee50..bbd0eb0 100644
 --- a/dist/web.mjs
 +++ b/dist/web.mjs
-@@ -590,21 +590,24 @@ __name(incrementInvalidCount, "incrementInvalidCount");
+@@ -633,21 +633,24 @@ __name(incrementInvalidCount, "incrementInvalidCount");
  async function makeNetworkRequest(manager, routeId, url, options, requestData, retries) {
    const controller = new AbortController();
    const timeout = setTimeout(() => controller.abort(), manager.options.timeout);

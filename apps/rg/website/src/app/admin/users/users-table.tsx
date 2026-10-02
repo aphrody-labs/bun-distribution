@@ -14,10 +14,12 @@ import {
 } from "@rosegriffon/ui";
 import type { ColumnDef, SortingState } from "@tanstack/react-table";
 import {
-	flexRender,
-	getCoreRowModel,
-	getSortedRowModel,
-	useReactTable,
+	columnVisibilityFeature,
+	createSortedRowModel,
+	rowSortingFeature,
+	sortFns,
+	tableFeatures,
+	useTable,
 } from "@tanstack/react-table";
 import { useRouter, useSearchParams } from "next/navigation";
 import * as React from "react";
@@ -29,7 +31,16 @@ import { UserEditDialog } from "./user-edit-dialog";
 
 type User = Database["public"]["Tables"]["profiles"]["Row"];
 
-const columns: ColumnDef<User>[] = [
+// v9: explicit feature set, kept at module scope for a stable reference.
+const features = tableFeatures({
+	columnVisibilityFeature,
+	rowSortingFeature,
+	sortedRowModel: createSortedRowModel(),
+	sortFns,
+});
+type UsersFeatures = typeof features;
+
+const columns: ColumnDef<UsersFeatures, User>[] = [
 	{
 		accessorKey: "email",
 		cell: ({ row }) =>
@@ -110,11 +121,10 @@ export function UsersTable({ users: initialUsers }: UsersTableProps) {
 		table: "profiles",
 	});
 
-	const table = useReactTable({
+	const table = useTable({
 		columns,
 		data: initialUsers,
-		getCoreRowModel: getCoreRowModel(),
-		getSortedRowModel: getSortedRowModel(),
+		features,
 		onSortingChange: setSorting,
 		state: {
 			sorting,
@@ -163,12 +173,9 @@ export function UsersTable({ users: initialUsers }: UsersTableProps) {
 							<TableRow key={headerGroup.id}>
 								{headerGroup.headers.map((header) => (
 									<TableHead key={header.id}>
-										{header.isPlaceholder
-											? null
-											: flexRender(
-													header.column.columnDef.header,
-													header.getContext(),
-												)}
+										{header.isPlaceholder ? null : (
+											<table.FlexRender header={header} />
+										)}
 									</TableHead>
 								))}
 							</TableRow>
@@ -180,10 +187,7 @@ export function UsersTable({ users: initialUsers }: UsersTableProps) {
 								<TableRow key={row.id}>
 									{row.getVisibleCells().map((cell) => (
 										<TableCell key={cell.id}>
-											{flexRender(
-												cell.column.columnDef.cell,
-												cell.getContext(),
-											)}
+											<table.FlexRender cell={cell} />
 										</TableCell>
 									))}
 								</TableRow>

@@ -260,7 +260,7 @@ export function ImagesPlugin({
 				(event) => $onDrop(event, editor),
 				COMMAND_PRIORITY_HIGH
 			),
-			editor.registerCommand<ClipboardEvent>(
+			editor.registerCommand(
 				PASTE_COMMAND,
 				(event) => $onPaste(event, editor),
 				COMMAND_PRIORITY_HIGH
@@ -373,7 +373,13 @@ function $onDrop(event: DragEvent, editor: LexicalEditor): boolean {
 	return false;
 }
 
-function $onPaste(event: ClipboardEvent, editor: LexicalEditor): boolean {
+function $onPaste(
+	event: ClipboardEvent | InputEvent | KeyboardEvent,
+	editor: LexicalEditor
+): boolean {
+	if (!("clipboardData" in event)) {
+		return false;
+	}
 	const files = event.clipboardData?.files;
 	if (files && files.length > 0) {
 		const file = files[0];
