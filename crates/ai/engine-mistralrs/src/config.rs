@@ -93,6 +93,24 @@ impl ModelSource {
         }
     }
 
+    /// Whether the source loads through a vision pipeline, from the configuration alone.
+    ///
+    /// `None` for [`Auto`](Self::Auto): mistral.rs reads the model's `config.json` and picks the
+    /// pipeline while loading, so only a loaded client knows. A GGUF source is vision when it
+    /// names a multimodal projector.
+    #[must_use]
+    pub fn declares_vision(&self) -> Option<bool> {
+        match self {
+            Self::Auto { .. } => None,
+            Self::Text { .. } => Some(false),
+            Self::Vision { .. } => Some(true),
+            Self::Gguf { mmproj_files, .. } => {
+                Some(mmproj_files.iter().any(|file| !file.trim().is_empty()))
+            },
+            Self::Uqff { vision, .. } => Some(*vision),
+        }
+    }
+
     /// Check what can be checked without loading anything.
     ///
     /// # Errors
@@ -152,11 +170,7 @@ pub struct PagedAttentionSpec {
 impl Default for PagedAttentionSpec {
     /// Upstream's own default: room for 4096 tokens, automatic cache type.
     fn default() -> Self {
-        Self {
-            block_size: None,
-            memory: PagedMemory::ContextTokens(4096),
-            cache: PagedCache::Auto,
-        }
+        Self { block_size: None, memory: PagedMemory::ContextTokens(4096), cache: PagedCache::Auto }
     }
 }
 
@@ -199,8 +213,9 @@ pub struct RuntimeOptions {
     pub max_num_seqs: Option<usize>,
     /// Cap on the context length, in tokens.
     pub max_model_len: Option<usize>,
-    /// Prompts kept in the prefix cache. `None` keeps upstream's default (16),
-    /// `Some(0)` disables the cache.
+    /// Prompts kept in the prefix cache. `None` keeps upstream's default (16 for the text, auto
+    /// and GGUF builders; the multimodal builder keeps the cache off), `Some(0)` disables the
+    /// cache.
     pub prefix_cache_seqs: Option<usize>,
     /// A Jinja chat template, or a path to a `.json` / `.jinja` one.
     pub chat_template: Option<String>,
@@ -285,7 +300,11 @@ impl EngineConfig {
     /// The id the client reports.
     #[must_use]
     pub fn served_name(&self) -> &str {
-        self.name.as_deref().map(str::trim).filter(|name| !name.is_empty()).unwrap_or_else(|| self.model.id())
+        self.name
+            .as_deref()
+            .map(str::trim)
+            .filter(|name| !name.is_empty())
+            .unwrap_or_else(|| self.model.id())
     }
 
     /// Check what can be checked without loading anything.
@@ -358,10 +377,34 @@ mod tests {
     #[test]
     fn source_ids_and_constructors() {
         assert_eq!(ModelSource::auto("Qwen/Qwen3-4B").id(), "Qwen/Qwen3-4B");
-        assert_eq!(ModelSource::gguf("unsloth/m-GGUF", vec!["m.gguf".into()]).id(), "unsloth/m-GGUF");
+        assert_eq!(
+            ModelSource::gguf("unsloth/m-GGUF", vec!["m.gguf".into()]).id(),
+            "unsloth/m-GGUF"
+        );
         let uqff = ModelSource::uqff("EricB/x-UQFF", vec!["x-q8_0.uqff".into()]);
         assert_eq!(uqff.id(), "EricB/x-UQFF");
         assert!(matches!(uqff, ModelSource::Uqff { vision: false, .. }));
+    }
+
+    #[test]
+    fn vision_is_declared_by_the_source_except_for_auto() {
+        assert_eq!(ModelSource::auto("a/b").declares_vision(), None);
+        assert_eq!(ModelSource::Text { id: "a/b".into() }.declares_vision(), Some(false));
+        assert_eq!(ModelSource::Vision { id: "a/b".into() }.declares_vision(), Some(true));
+        assert_eq!(ModelSource::uqff("a/b", vec!["x.uqff".into()]).declares_vision(), Some(false));
+        let uqff_vision =
+            ModelSource::Uqff { id: "a/b".into(), files: vec!["x.uqff".into()], vision: true };
+        assert_eq!(uqff_vision.declares_vision(), Some(true));
+
+        assert_eq!(ModelSource::gguf("a/b", vec!["m.gguf".into()]).declares_vision(), Some(false));
+        let gguf = |mmproj_files: Vec<String>| ModelSource::Gguf {
+            id: "a/b".into(),
+            files: vec!["m.gguf".into()],
+            tokenizer_from: None,
+            mmproj_files,
+        };
+        assert_eq!(gguf(vec![" ".into(), "mmproj.gguf".into()]).declares_vision(), Some(true));
+        assert_eq!(gguf(vec![" ".into()]).declares_vision(), Some(false));
     }
 
     #[test]
@@ -424,7 +467,9 @@ mod tests {
             ..Default::default()
         });
         assert!(bad_util.unwrap_err().to_string().contains("utilization"));
-        assert!(runtime(RuntimeOptions { dtype: Some("BF16".into()), ..Default::default() }).is_ok());
+        assert!(
+            runtime(RuntimeOptions { dtype: Some("BF16".into()), ..Default::default() }).is_ok()
+        );
     }
 
     #[test]

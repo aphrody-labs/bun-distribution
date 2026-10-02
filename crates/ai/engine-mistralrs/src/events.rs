@@ -98,15 +98,18 @@ impl StreamState {
             .or_else(|| (self.tool_calls > 0).then(|| "tool_calls".to_owned()));
         vec![ModelStreamEvent::Completed { usage: self.usage.take(), finish_reason }]
     }
+
+    /// Whether the engine has said how the turn ended: it reported a finish reason, or it
+    /// completed at least one tool call. An upstream channel that closes before that was cut
+    /// short, and the driver reports it as an error rather than as a clean [`Self::finish`].
+    pub(crate) fn is_terminal(&self) -> bool {
+        self.completed || self.finish_reason.is_some() || self.tool_calls > 0
+    }
 }
 
 fn tool_call_event(call: RawToolCall) -> ModelStreamEvent {
     let id = if call.id.is_empty() { generated_call_id(&call.name) } else { call.id };
-    ModelStreamEvent::ToolCall {
-        id,
-        arguments: parse_arguments(&call.arguments),
-        name: call.name,
-    }
+    ModelStreamEvent::ToolCall { id, arguments: parse_arguments(&call.arguments), name: call.name }
 }
 
 /// An id for an engine that sent none, unique within the process so two calls
@@ -202,6 +205,33 @@ mod tests {
     }
 
     #[test]
+    fn a_turn_is_terminal_once_the_engine_gave_a_reason_or_a_tool_call() {
+        let mut state = StreamState::default();
+        assert!(!state.is_terminal());
+        state.push(text("partial"));
+        assert!(!state.is_terminal(), "text alone does not end a turn");
+        state.push(RawChunk { finish_reason: Some("stop".into()), ..RawChunk::default() });
+        assert!(state.is_terminal());
+        state.finish();
+        assert!(state.is_terminal(), "a finished stream stays terminal");
+
+        let mut with_call = StreamState::default();
+        with_call.push(RawChunk {
+            tool_calls: vec![RawToolCall {
+                id: "c".into(),
+                name: "f".into(),
+                arguments: "{}".into(),
+            }],
+            ..RawChunk::default()
+        });
+        assert!(with_call.is_terminal(), "a completed tool call ends the turn");
+
+        let mut blank_reason = StreamState::default();
+        blank_reason.push(RawChunk { finish_reason: Some(String::new()), ..RawChunk::default() });
+        assert!(!blank_reason.is_terminal(), "an empty finish reason is no reason");
+    }
+
+    #[test]
     fn a_stream_with_no_finish_chunk_still_completes() {
         let mut state = StreamState::default();
         state.push(text("partial"));
@@ -244,7 +274,11 @@ mod tests {
     fn an_explicit_finish_reason_wins_over_the_tool_call_default() {
         let mut state = StreamState::default();
         state.push(RawChunk {
-            tool_calls: vec![RawToolCall { id: "c".into(), name: "f".into(), arguments: "{}".into() }],
+            tool_calls: vec![RawToolCall {
+                id: "c".into(),
+                name: "f".into(),
+                arguments: "{}".into(),
+            }],
             finish_reason: Some("length".into()),
             ..RawChunk::default()
         });
@@ -257,9 +291,14 @@ mod tests {
 
     #[test]
     fn missing_call_ids_are_generated_unique_and_named() {
-        let call = |name: &str| RawToolCall { id: String::new(), name: name.into(), arguments: String::new() };
+        let call = |name: &str| RawToolCall {
+            id: String::new(),
+            name: name.into(),
+            arguments: String::new(),
+        };
         let mut state = StreamState::default();
-        let events = state.push(RawChunk { tool_calls: vec![call("ls"), call("ls")], ..RawChunk::default() });
+        let events = state
+            .push(RawChunk { tool_calls: vec![call("ls"), call("ls")], ..RawChunk::default() });
         let ids: Vec<&str> = events
             .iter()
             .map(|event| match event {

@@ -124,9 +124,9 @@ pub(crate) fn plan_turn(turn: &ChatTurn, images_supported: bool) -> Result<Plann
     if !messages.iter().any(|message| !matches!(message, PlannedMessage::System { .. })) {
         return Err(PlanError("a turn needs at least one non-system message".into()));
     }
-    let has_images = messages
-        .iter()
-        .any(|message| matches!(message, PlannedMessage::User { images, .. } if !images.is_empty()));
+    let has_images = messages.iter().any(
+        |message| matches!(message, PlannedMessage::User { images, .. } if !images.is_empty()),
+    );
     if has_images && !images_supported {
         return Err(PlanError(
             "this model does not accept images: it was not loaded through a vision pipeline".into(),
@@ -345,7 +345,10 @@ fn plan_enable_thinking(options: &TurnOptions) -> Option<bool> {
         .extra
         .get("enable_thinking")
         .or_else(|| {
-            options.extra.get("chat_template_kwargs").and_then(|kwargs| kwargs.get("enable_thinking"))
+            options
+                .extra
+                .get("chat_template_kwargs")
+                .and_then(|kwargs| kwargs.get("enable_thinking"))
         })
         .and_then(Value::as_bool)
 }
