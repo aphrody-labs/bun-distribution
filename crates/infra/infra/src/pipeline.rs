@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
-//! Multi-repository pipeline execution engine for Aphrody infrastructure.
+//! Pipeline execution engine for the active Aphrody monorepo.
 //!
-//! Orchestrates lint, typecheck, test, build and release validation across
-//! sibling workspaces without shell fragmentation.
+//! Orchestrates declared Rust and Bun validation stages from config/pipeline.json.
 
 use anyhow::{Context, Result, bail};
 use serde::{Deserialize, Serialize};
@@ -37,7 +36,7 @@ pub enum Runner {
     /// `bun <command>`: `package.json` scripts (default).
     #[default]
     Bun,
-    /// `just <command>`: Justfile recipes of the Rust category repositories.
+    /// `just <command>`: root Justfile recipes, including serialized Cargo gates.
     Just,
 }
 
@@ -117,7 +116,7 @@ pub fn check_pipeline(config: &PipelineConfig) -> Vec<String> {
     errors
 }
 
-/// Sibling repository directory name: lowercase ASCII, digits and `-`.
+/// Workspace directory name: lowercase ASCII, digits and `-`.
 fn is_repo_name(repo: &str) -> bool {
     repo.chars().next().is_some_and(|c| c.is_ascii_alphanumeric())
         && repo.chars().all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '-')
@@ -253,14 +252,14 @@ mod tests {
         let json_data = r#"{
             "schemaVersion": 1,
             "name": "test-pipeline",
-            "authority": "aphrody-infra",
+            "authority": "@aphrody/workspace",
             "workspaceRoot": "../",
             "stages": [
                 {
                     "id": "format",
                     "parallel": true,
                     "steps": [
-                        { "repo": "rg", "command": ["run", "format:check"] }
+                        { "repo": "aphrody", "command": ["run", "monorepo:layout"] }
                     ]
                 }
             ]
@@ -272,16 +271,16 @@ mod tests {
         assert_eq!(config.name, "test-pipeline");
         assert_eq!(config.stages.len(), 1);
         assert_eq!(config.stages[0].id, "format");
-        assert_eq!(config.stages[0].steps[0].repo, "rg");
+        assert_eq!(config.stages[0].steps[0].repo, "aphrody");
         assert_eq!(config.stages[0].steps[0].runner, Runner::Bun);
-        assert_eq!(config.stages[0].steps[0].display(), "bun run format:check");
+        assert_eq!(config.stages[0].steps[0].display(), "bun run monorepo:layout");
         assert!(check_pipeline(&config).is_empty());
     }
 
     #[test]
     fn parses_just_runner_and_rejects_unknown_runner() {
         let step: PipelineStep = serde_json::from_str(
-            r#"{ "repo": "aphrody-shell", "runner": "just", "command": ["clippy"] }"#,
+            r#"{ "repo": "aphrody", "runner": "just", "command": ["clippy"] }"#,
         )
         .expect("just step");
         assert_eq!(step.runner, Runner::Just);
@@ -343,7 +342,10 @@ mod tests {
                 .iter()
                 .flat_map(|stage| &stage.steps)
                 .any(|step| step.runner == Runner::Just),
-            "the Rust-only category repositories run through just"
+            "the root Cargo gates run through the serial Just recipes"
+        );
+        assert!(
+            config.stages.iter().flat_map(|stage| &stage.steps).all(|step| step.repo == "aphrody")
         );
     }
 }

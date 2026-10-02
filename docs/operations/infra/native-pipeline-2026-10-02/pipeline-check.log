@@ -1,0 +1,5 @@
+$ target/debug/aphrody-infra --root . pipeline --stage check --json
+{
+  "errors": [],
+  "steps": 245
+}

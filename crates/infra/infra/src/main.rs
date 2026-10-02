@@ -139,9 +139,9 @@ enum CommandKind {
         #[arg(long)]
         json: bool,
     },
-    /// Execute multi-repository pipeline stages (format, lint, types, unit-and-ui, build, release).
+    /// Execute declared monorepo validation stages.
     Pipeline {
-        /// Target stage (e.g. format, lint, types, unit-and-ui, build, release, or plan).
+        /// Target stage from config/pipeline.json, or plan/check.
         #[arg(long, default_value = "plan")]
         stage: String,
         #[arg(long)]
@@ -1638,6 +1638,7 @@ fn check_pipeline_workspace(
     workspace: &Path,
 ) -> Vec<String> {
     let mut errors = Vec::new();
+    let mut package_catalogs = std::collections::BTreeMap::new();
     for stage in &config.stages {
         for step in &stage.steps {
             let repo = workspace.join(&step.repo);
@@ -1655,18 +1656,35 @@ fn check_pipeline_workspace(
             if step.runner == aphrody_infra::pipeline::Runner::Bun
                 && step.command.first().is_some_and(|command| command == "run")
             {
-                let script = step.command.get(1).map(String::as_str).unwrap_or("");
-                let scripts = fs::read(&manifest)
-                    .ok()
-                    .and_then(|bytes| serde_json::from_slice::<Value>(&bytes).ok())
-                    .and_then(|value| value["scripts"].as_object().cloned())
-                    .unwrap_or_default();
-                if script.is_empty() || !scripts.contains_key(script) {
-                    errors.push(format!(
-                        "{}: script Bun {} absent",
-                        step.repo,
-                        if script.is_empty() { "<vide>" } else { script }
-                    ));
+                match step.command.as_slice() {
+                    [_, script] => {
+                        let scripts = fs::read(&manifest)
+                            .ok()
+                            .and_then(|bytes| serde_json::from_slice::<Value>(&bytes).ok())
+                            .and_then(|value| value["scripts"].as_object().cloned())
+                            .unwrap_or_default();
+                        if !scripts.contains_key(script) {
+                            errors.push(format!("{}: script Bun {} absent", step.repo, script));
+                        }
+                    },
+                    [_, filter, package, script] if filter == "--filter" => {
+                        let catalog = package_catalogs
+                            .entry(repo.clone())
+                            .or_insert_with(|| workspace_package_scripts(&repo));
+                        match catalog.get(package) {
+                            Some(scripts) if scripts.contains(script) => {},
+                            Some(_) => errors.push(format!(
+                                "{}: package {} sans script Bun {}",
+                                step.repo, package, script
+                            )),
+                            None => errors
+                                .push(format!("{}: package Bun {} absent", step.repo, package)),
+                        }
+                    },
+                    _ => errors.push(format!(
+                        "{}: commande Bun run non prise en charge: {:?}",
+                        step.repo, step.command
+                    )),
                 }
             }
             if step.runner == aphrody_infra::pipeline::Runner::Just {
@@ -1691,6 +1709,49 @@ fn check_pipeline_workspace(
     errors
 }
 
+fn workspace_package_scripts(
+    root: &Path,
+) -> std::collections::BTreeMap<String, std::collections::BTreeSet<String>> {
+    let mut packages = std::collections::BTreeMap::new();
+    for domain in ["apps", "packages"] {
+        let path = root.join(domain);
+        if !path.is_dir() {
+            continue;
+        }
+        let walker = ignore::WalkBuilder::new(path)
+            .hidden(false)
+            .git_ignore(false)
+            .max_depth(Some(7))
+            .filter_entry(|entry| {
+                !matches!(
+                    entry.file_name().to_str(),
+                    Some(".git" | "node_modules" | "target" | "dist" | ".next")
+                )
+            })
+            .build();
+        for entry in walker.flatten() {
+            if entry.file_name() != "package.json" {
+                continue;
+            }
+            let Ok(bytes) = fs::read(entry.path()) else {
+                continue;
+            };
+            let Ok(value) = serde_json::from_slice::<Value>(&bytes) else {
+                continue;
+            };
+            let Some(name) = value["name"].as_str() else {
+                continue;
+            };
+            let scripts = value["scripts"]
+                .as_object()
+                .map(|scripts| scripts.keys().cloned().collect())
+                .unwrap_or_default();
+            packages.insert(name.to_owned(), scripts);
+        }
+    }
+    packages
+}
+
 fn run_pipeline_stage(root: &Path, stage_name: &str, as_json: bool, run: &mut Run) -> Result<()> {
     let config = aphrody_infra::pipeline::load_pipeline_config(root)?;
     let workspace_root = match &config.workspace_root {
@@ -1699,7 +1760,8 @@ fn run_pipeline_stage(root: &Path, stage_name: &str, as_json: bool, run: &mut Ru
     };
 
     if stage_name == "check" {
-        let errors = check_pipeline_workspace(&config, &workspace_root);
+        let mut errors = aphrody_infra::pipeline::check_pipeline(&config);
+        errors.extend(check_pipeline_workspace(&config, &workspace_root));
         let output = json!({ "steps": config.stages.iter().map(|stage| stage.steps.len()).sum::<usize>(), "errors": errors });
         if as_json {
             println!("{}", serde_json::to_string_pretty(&output)?);
@@ -2135,6 +2197,45 @@ async fn execute_ovh(command: &aphrody_ovh::OvhCommand, run: &mut Run) -> Result
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn pipeline_check_resolves_filtered_monorepo_scripts() {
+        let fixture = tempfile::tempdir().unwrap();
+        let workspace = fixture.path();
+        let root = workspace.join("aphrody");
+        fs::create_dir_all(root.join("packages/infra/workspace")).unwrap();
+        fs::write(
+            root.join("package.json"),
+            r#"{"name":"aphrody","scripts":{"monorepo:layout":"true"}}"#,
+        )
+        .unwrap();
+        fs::write(
+            root.join("packages/infra/workspace/package.json"),
+            r#"{"name":"@aphrody/workspace","scripts":{"lint":"oxlint"}}"#,
+        )
+        .unwrap();
+        let mut config: aphrody_infra::pipeline::PipelineConfig = serde_json::from_value(json!({
+            "schemaVersion": 1,
+            "name": "test",
+            "authority": "@aphrody/workspace",
+            "stages": [{"id":"bun-infra","parallel":false,"steps":[
+                {"repo":"aphrody","command":["run","monorepo:layout"]},
+                {"repo":"aphrody","command":["run","--filter","@aphrody/workspace","lint"]}
+            ]}]
+        }))
+        .unwrap();
+        assert!(check_pipeline_workspace(&config, workspace).is_empty());
+
+        config.stages[0].steps[1].command[3] = "missing".into();
+        assert!(
+            check_pipeline_workspace(&config, workspace)[0].contains("sans script Bun missing")
+        );
+        config.stages[0].steps[1].command[2] = "@aphrody/unknown".into();
+        assert!(
+            check_pipeline_workspace(&config, workspace)[0]
+                .contains("package Bun @aphrody/unknown absent")
+        );
+    }
 
     #[test]
     fn consolidated_quality_and_maintenance_select_the_actual_root() {
