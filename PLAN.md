@@ -955,8 +955,12 @@ Propriétaires : `packages/shenron`, `apps/shenron`.
 - [x] Examiner puis intégrer les trois fichiers laissés non suivis par Gemini :
   `databooks-defauts.ts`, `slug.ts`, `wiki-slugs.ts`. Ils restent préservés ;
   une copie présente ne prouve pas que les consommateurs ont migré.
-- [ ] Donner règles wiki/databooks et registres au package config ; retirer les
-  imports de règles depuis le site dans le pipeline.
+- [x] Donner règles wiki/databooks et registres au package config ; retirer les
+  imports de règles depuis le site dans le pipeline. Vérifié 2026-10-03 sur HEAD :
+  `@shenron/config` possède `databooks-defauts`, `slug`, `wiki-slugs` et le
+  registre du corpus ; les fichiers du site ne sont que des réexports ; aucun
+  import du pipeline vers `apps/shenron/site` (11 fichiers importent
+  `@shenron/config`) ; seul `workflows.ts` lance un script du site par processus.
 - [ ] Consommer le chargeur interop unique et les calculs RAG qualifiés.
 - [ ] Reproduire les tests/configuration historiques ; corriger les erreurs
   actuelles avant les tests bout en bout de site, bot et pipeline.
