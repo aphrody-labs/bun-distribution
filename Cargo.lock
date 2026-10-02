@@ -1612,7 +1612,6 @@ dependencies = [
  "regex",
  "reqwest 0.13.5",
  "ring",
- "rustix 1.1.5",
  "rustls",
  "serde",
  "serde_json",
@@ -3227,7 +3226,6 @@ dependencies = [
 name = "aphrody-wsl"
 version = "1.0.0"
 dependencies = [
- "aphrody-proc",
  "clap",
  "serde",
  "serde_json",
