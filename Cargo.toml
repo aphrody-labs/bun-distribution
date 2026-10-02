@@ -60,7 +60,7 @@ aphrody-a2a-coord = { path = "crates/os/a2a-coord", version = "1.0.0-canary", fe
 aphrody-a2a-server = { path = "crates/os/a2a-server", version = "0.3", default-features = false, features = [] }
 aphrody-a2a-pb = { path = "crates/contracts/a2a-pb", version = "0.1" }
 aphrody-kernel-client = { path = "crates/os/kernel-client", version = "1.0.0-canary" }
-aphrody-subsystem = { path = "crates/contracts/subsystem", version = "1.0.0-canary" }
+aphrody-subsystem = { path = "crates/os/subsystem", version = "1.0.0-canary" }
 aphrody-agent-home = { path = "crates/ai/agent-home", version = "1.0.0", features = [] }
 aphrody-agent-proto = { path = "crates/contracts/agent-proto", version = "1.0.0-canary", features = [] }
 aphrody-agent-runtime = { path = "crates/ai/agent-runtime", version = "1.0.0", features = [] }

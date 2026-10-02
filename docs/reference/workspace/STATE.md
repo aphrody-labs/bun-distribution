@@ -16,7 +16,7 @@ Totals: **191 crates**, **82 packages**, **6 apps** (192 Rust, 87 Bun).
 | [bun](#bun) | 0 | 1 | 0 | 0 |
 | [cli](#cli) | 0 | 0 | 1 | 0 |
 | [compat](#compat) | 8 | 4 | 0 | 0 |
-| [contracts](#contracts) | 5 | 0 | 0 | 0 |
+| [contracts](#contracts) | 4 | 0 | 0 | 0 |
 | [discord](#discord) | 1 | 2 | 0 | 0 |
 | [fut](#fut) | 0 | 1 | 0 | 0 |
 | [google](#google) | 8 | 1 | 0 | 0 |
@@ -24,7 +24,7 @@ Totals: **191 crates**, **82 packages**, **6 apps** (192 Rust, 87 Bun).
 | [interop](#interop) | 1 | 1 | 0 | 0 |
 | [koharu](#koharu) | 25 | 4 | 1 | 1 |
 | [native](#native) | 1 | 0 | 0 | 0 |
-| [os](#os) | 30 | 3 | 0 | 0 |
+| [os](#os) | 31 | 3 | 0 | 0 |
 | [rg](#rg) | 0 | 23 | 2 | 0 |
 | [shell](#shell) | 14 | 1 | 0 | 0 |
 | [shenron](#shenron) | 0 | 7 | 2 | 0 |
@@ -165,7 +165,6 @@ Tracked Cargo manifests outside the root workspace (excluded, nested workspaces 
 | `aphrody-a2a-pb` | [crates/contracts/a2a-pb](../../../crates/contracts/a2a-pb) | rust crate | 0.1.8 | lib | yes | 0 | 2026-10-01 |
 | `aphrody-agent-proto` | [crates/contracts/agent-proto](../../../crates/contracts/agent-proto) | rust crate | 1.0.0-canary | lib | yes | 0 | 2026-10-01 |
 | `aphrody-app-protocol` | [crates/contracts/app-protocol](../../../crates/contracts/app-protocol) | rust crate | 1.0.0-canary | lib | yes | 0 | 2026-10-01 |
-| `aphrody-subsystem` | [crates/contracts/subsystem](../../../crates/contracts/subsystem) | rust crate | 1.0.0-canary | lib | yes | 0 | 2026-10-01 |
 
 ## discord
 
@@ -290,6 +289,7 @@ Tracked Cargo manifests outside the root workspace (excluded, nested workspaces 
 | `aphrody-secrets` | [crates/os/secrets](../../../crates/os/secrets) | rust crate | 1.0.0-canary | lib | yes | 0 | 2026-10-02 |
 | `aphrody-settings` | [crates/os/settings](../../../crates/os/settings) | rust crate | 1.0.0-canary | lib | yes | 0 | 2026-10-02 |
 | `aphrody-stdio-capture` | [crates/os/stdio-capture](../../../crates/os/stdio-capture) | rust crate | 1.0.0-canary | lib | yes | 0 | 2026-10-02 |
+| `aphrody-subsystem` | [crates/os/subsystem](../../../crates/os/subsystem) | rust crate | 1.0.0-canary | lib | yes | 0 | uncommitted |
 | `aphrody-systemd` | [crates/os/systemd](../../../crates/os/systemd) | rust crate | 1.0.0-canary | lib | yes | 0 | 2026-10-02 |
 | `aphrody-task-runner` | [crates/os/task-runner](../../../crates/os/task-runner) | rust crate | 1.0.0-canary | lib | yes | 0 | 2026-10-02 |
 | `aphrody-telemetry` | [crates/os/telemetry](../../../crates/os/telemetry) | rust crate | 1.0.0-canary | lib | yes | 0 | 2026-10-02 |
@@ -353,13 +353,13 @@ Tracked Cargo manifests outside the root workspace (excluded, nested workspaces 
 | Name | Path | Kind | Version | Targets | Tests | `todo!` | Last commit |
 | --- | --- | --- | --- | --- | --- | ---: | --- |
 | `@shenron/bot` | [apps/shenron/bot](../../../apps/shenron/bot) | bun app | 1.0.0 | lib | yes | 0 | 2026-10-02 |
-| `@shenron/site` | [apps/shenron/site](../../../apps/shenron/site) | bun app | 1.0.0 | lib | yes | 0 | 2026-10-02 |
+| `@shenron/site` | [apps/shenron/site](../../../apps/shenron/site) | bun app | 1.0.0 | lib | yes | 0 | 2026-10-03 |
 | `@shenron/api` | [packages/shenron/api](../../../packages/shenron/api) | bun package | 0.1.0 | lib | yes | 0 | 2026-10-02 |
 | `@shenron/auth` | [packages/shenron/auth](../../../packages/shenron/auth) | bun package | 0.1.0 | lib | yes | 0 | 2026-10-02 |
-| `@shenron/config` | [packages/shenron/config](../../../packages/shenron/config) | bun package | 0.1.0 | lib | yes | 0 | 2026-10-01 |
+| `@shenron/config` | [packages/shenron/config](../../../packages/shenron/config) | bun package | 0.1.0 | lib | yes | 0 | 2026-10-03 |
 | `@shenron/db` | [packages/shenron/db](../../../packages/shenron/db) | bun package | 0.1.0 | lib | yes | 0 | 2026-10-01 |
 | `@shenron/images` | [packages/shenron/images](../../../packages/shenron/images) | bun package | 0.1.0 | lib | yes | 0 | 2026-09-29 |
-| `@shenron/pipeline` | [packages/shenron/pipeline](../../../packages/shenron/pipeline) | bun package | 0.1.0 | bin, lib | yes | 0 | 2026-10-02 |
+| `@shenron/pipeline` | [packages/shenron/pipeline](../../../packages/shenron/pipeline) | bun package | 0.1.0 | bin, lib | yes | 0 | 2026-10-03 |
 | `@shenron/ui` | [packages/shenron/ui](../../../packages/shenron/ui) | bun package | 0.1.0 | lib | yes | 0 | 2026-10-02 |
 
 ## ui

@@ -29,8 +29,9 @@ la poignée de main d'intégration ou un service installé.
 ## Exigences restant ouvertes
 
 - Section 1 : `AgentBus` conserve un canal Tokio dans
-  `crates/contracts/subsystem/src/lib.rs`. Ses consommateurs kernel et
-  systemd nécessitent une extraction opérationnelle préservant leurs APIs.
+  `crates/os/subsystem/src/lib.rs` (propriétaire déplacé sous OS après ces gates).
+  Ses consommateurs kernel et systemd gardent la même API ; leur qualification
+  après déplacement est consignée séparément.
   La recherche d'imports seule ne prouve pas la pureté des contrats.
 - Section 2 : `crates/interop/ffi` dépend encore de l'application `aphrody`
   pour `run_async` ; le dispatch et ses features doivent être conservés lors

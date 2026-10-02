@@ -1,14 +1,15 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 # Aphrody Contracts
 
-Neutral wire contracts: A2A, agent submissions/events, app-server, subsystem and
-kernel client types, plus N2B schemas. No sibling repository dependency.
+Neutral wire contracts: A2A, agent submissions/events and app-server,
+plus N2B schemas. Operational clients and OS subsystem routines live under OS.
 
 ## Layout
 
-- `crates/aphrody-a2a*`: types, protobuf, clients, server, gRPC and coordination.
+- `crates/contracts/a2a`, `crates/contracts/a2a-pb`: types and protobuf.
+- `crates/os/a2a-*`: operational clients, server, gRPC and coordination.
 - `crates/contracts/agent-proto`, `aphrody-app-protocol`: agent and desktop wire formats.
-- `crates/contracts/subsystem`, `aphrody-kernel-client`: kernel contract and client.
+- `crates/os/subsystem`, `crates/os/kernel-client`: OS subsystem API and kernel client.
 - `schema/`: N2B project/report schemas; `ai.json`: reference agent manifest.
 - `aphrody-a2a-slimrpc` is excluded until its upstream binding blocker is resolved.
   The A2A UI belongs to `aphrody-ui`.

@@ -2,6 +2,9 @@
 
 Generated 2026-10-02 by static inspection only (no cargo run). Method and limits are at the end. Counts are the output of the scripts described in "Method"; "unverified" marks what was not checked.
 
+Path maintenance, 2026-10-03: the subsystem row follows its move into OS;
+the historical counts and static inspection claims are unchanged.
+
 ## Summary
 
 - Cargo manifests under `crates/` and `apps/`: 211 found; 187 are workspace members (directory matches a `members` glob of the root `Cargo.toml`); 23 are excluded by the root `exclude` list or live under the excluded `crates/os/drive` tree (`crates/os/drive`, `crates/contracts/schema` and `crates/web/drive-server` (not in repo) are excluded explicitly; `crates/contracts/schema` has no `Cargo.toml`); 1 manifest without `[package]` (`crates/os/drive`).
@@ -88,7 +91,7 @@ Columns: Kind = lib/bin/cdylib targets; FFI = how the crate reaches the single `
 | `crates/contracts/a2a-pb` | `aphrody-a2a-pb` | lib | linked transitively, no C symbols | - | 67 | 0/0 | 0/0 | member(glob) |
 | `crates/contracts/agent-proto` | `aphrody-agent-proto` | lib | linked transitively, no C symbols | - | 10 | 0/0 | 4/0 | member(glob) |
 | `crates/contracts/app-protocol` | `aphrody-app-protocol` | lib | linked transitively, no C symbols | - | 17 | 0/0 | 1/0 | member(glob) |
-| `crates/contracts/subsystem` | `aphrody-subsystem` | lib | linked transitively, no C symbols | - | 4 | 0/0 | 0/0 | member(glob) |
+| `crates/os/subsystem` | `aphrody-subsystem` | lib | linked transitively, no C symbols | - | 4 | 0/0 | 0/0 | member(glob) |
 | `crates/discord/aphrody-discord-compiler` | `aphrody-discord-compiler` | lib | linked transitively, no C symbols | - | 7 | 0/0 | 0/0 | member(glob) |
 | `crates/google/antigravity` | `aphrody-antigravity` | lib | linked transitively, no C symbols | - | 65 | 0/0 | 17/17 | member(glob) |
 | `crates/google/gcs` | `aphrody-gcs` | lib | linked transitively, no C symbols | - | 8 | 0/0 | 0/0 | member(glob) |
