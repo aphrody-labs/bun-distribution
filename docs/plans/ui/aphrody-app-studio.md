@@ -54,5 +54,15 @@ uniquement via `scripts/build/rust/cargo-serial.sh`, une commande à la fois.
     géré) ; le cockpit IA affiche un panneau « IA locale » sourcé par le RAG.
   - **Manga & traduction** : projets Koharu, import, pipeline détection → OCR →
     traduction → nettoyage, export PNG/PSD (`koharu_rpc`).
-  - Restent : Entraînement (lancement de jobs), Databooks, Drive dbfr, éditeur
-    `@koharu/ui`, fusion OCR/LLM, `ui-dist` à régénérer au build.
+  - **Entraînement** (629b6fc7d) : candidats embeddings/reranker lancés par
+    `aphrody-command::shenron_cmd::train_candidate` (API extraite), un job à la
+    fois, état en direct sur l'événement `studio://train`.
+  - **Databooks & corpus** (5f801fdb2) : recherche hors ligne dans
+    `aphrody-rag::dragonball::LocalCorpus` (filtre databook/manga/wiki) et
+    question sourcée sur le modèle de chat local (`ask_json`, `llama-server` géré).
+  - **Drive dbfr** (37048cb9c) : consentement Google OAuth loopback avec le client
+    Aphrody existant (jetons en 0600 dans `~/.aphrody/private/google`), volume
+    cloud `gdrive` racine `/dbfr` et emplacement indexé via `volumes.add_cloud` /
+    `locations.add`.
+  - Restent : éditeur `@koharu/ui` (lot délégué à agy en A2A), fusion OCR/LLM,
+    `ui-dist` à régénérer au build, exécution de l'app à observer.
