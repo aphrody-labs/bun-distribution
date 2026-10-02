@@ -266,7 +266,7 @@ Tracked Cargo manifests outside the root workspace (excluded, nested workspaces 
 | `aphrody-a2a-client` | [crates/os/a2a-client](../../../crates/os/a2a-client) | rust crate | 0.1.16 | bin, lib | yes | 0 | 2026-10-02 |
 | `aphrody-a2a-coord` | [crates/os/a2a-coord](../../../crates/os/a2a-coord) | rust crate | 1.0.0-canary | lib | yes | 0 | 2026-10-02 |
 | `aphrody-a2a-grpc` | [crates/os/a2a-grpc](../../../crates/os/a2a-grpc) | rust crate | 0.2.2 | lib | yes | 0 | 2026-10-01 |
-| `aphrody-a2a-pb` | [crates/os/a2a-pb](../../../crates/os/a2a-pb) | rust crate | 0.1.8 | lib | yes | 0 | uncommitted |
+| `aphrody-a2a-pb` | [crates/os/a2a-pb](../../../crates/os/a2a-pb) | rust crate | 0.1.8 | lib | yes | 0 | 2026-10-03 |
 | `aphrody-a2a-server` | [crates/os/a2a-server](../../../crates/os/a2a-server) | rust crate | 0.3.0 | lib | yes | 0 | 2026-10-01 |
 | `aphrody-wsl` | [crates/os/aphrody-wsl](../../../crates/os/aphrody-wsl) | rust crate | 1.0.0 | bin, lib | yes | 0 | 2026-10-02 |
 | `aphrody-backend` | [crates/os/backend](../../../crates/os/backend) | rust crate | 1.0.0-canary | bin, lib | no | 0 | 2026-10-02 |

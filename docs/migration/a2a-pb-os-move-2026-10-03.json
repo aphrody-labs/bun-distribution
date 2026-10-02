@@ -91,10 +91,18 @@
     "wasmAllTargetsCheck": "passed for aphrody-a2a-pb",
     "docsGenerated": "passed",
     "docsLinks": "passed",
-    "contractOperationalScan": "Only match is a comment describing a monotonically increasing process counter; no runtime network/process dependency detected."
+    "contractOperationalScan": "Only match is a comment describing a monotonically increasing process counter; no runtime network/process dependency detected.",
+    "cleanCloneTests": {
+      "sourceHead": "8f98632e2",
+      "passed": 334,
+      "failed": 0,
+      "ignored": 0,
+      "sourceDirtyBefore": false,
+      "sourceDirtyAfter": false,
+      "log": "/tmp/aphrody-a2a-pb-clean-tests.log"
+    }
   },
   "limitations": [
-    "Gates use the shared working tree; clean-clone qualification of this move remains separate.",
     "This move does not complete all historical contracts/native/compat gates."
   ]
 }
