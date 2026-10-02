@@ -1,6 +1,6 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'bun:test'
 
 import { ColorSamplingProvider, useColorSampling } from '@aphrody/koharu-ui/components/controls/ColorSampling'
 import { ColorWell } from '@aphrody/koharu-ui/components/controls/ColorWell'

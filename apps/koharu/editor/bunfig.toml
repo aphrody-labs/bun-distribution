@@ -1,0 +1,2 @@
+[test]
+preload = ["@aphrody/bun-test-dom", "./tests/setup.ts"]

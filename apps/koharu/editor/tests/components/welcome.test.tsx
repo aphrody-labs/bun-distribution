@@ -1,6 +1,6 @@
 import { QueryClientProvider } from '@tanstack/react-query'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'bun:test'
 
 import { StartView } from '@aphrody/koharu-ui/components/start/StartView'
 import { queryClient, useProject } from '@aphrody/koharu-ui/lib/queries'

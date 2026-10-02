@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'bun:test'
 
 const values = new Map<string, string>()
 const storage: Storage = {
@@ -12,6 +12,13 @@ const storage: Storage = {
   setItem: (key, value) => values.set(key, value),
 }
 
+// bun:test has no vi.resetModules: load a fresh copy of the module through a query-busted URL.
+let load = 0
+const freshI18n = () =>
+  import(`${Bun.resolveSync('@aphrody/koharu-ui/lib/i18n', import.meta.dir)}?load=${++load}`) as Promise<
+    typeof import('@aphrody/koharu-ui/lib/i18n')
+  >
+
 describe('interface language persistence', () => {
   beforeEach(() => {
     Object.defineProperty(window, 'localStorage', { configurable: true, value: storage })
@@ -19,12 +26,10 @@ describe('interface language persistence', () => {
 
   afterEach(() => {
     window.localStorage.clear()
-    vi.resetModules()
   })
 
   it('stores an explicitly selected language', async () => {
-    vi.resetModules()
-    const { default: i18n } = await import('@aphrody/koharu-ui/lib/i18n')
+    const { default: i18n } = await freshI18n()
 
     await i18n.changeLanguage('ja-JP')
 
@@ -33,9 +38,8 @@ describe('interface language persistence', () => {
 
   it('restores the saved language when i18n initializes', async () => {
     window.localStorage.setItem('i18nextLng', 'ja-JP')
-    vi.resetModules()
 
-    const { default: i18n } = await import('@aphrody/koharu-ui/lib/i18n')
+    const { default: i18n } = await freshI18n()
 
     expect(i18n.resolvedLanguage).toBe('ja-JP')
     expect(window.localStorage.getItem('i18nextLng')).toBe('ja-JP')

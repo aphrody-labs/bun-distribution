@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'bun:test'
 
 import { resources } from '@aphrody/koharu-ui/lib/i18n'
 import { orderedLanguageChoices } from '@aphrody/koharu-ui/lib/translation'

@@ -1,6 +1,7 @@
 import { QueryClientProvider } from '@tanstack/react-query'
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi, mock } from 'bun:test'
+import { hoisted, stubGlobal, unstubAllGlobals } from '@/tests/hoisted'
 
 import { CanvasWorkspace } from '@aphrody/koharu-ui/components/editor/CanvasWorkspace'
 import { pageKey, pagesKey, projectKey, queryClient } from '@aphrody/koharu-ui/lib/queries'
@@ -8,7 +9,7 @@ import { useKoharuStore } from '@aphrody/koharu-ui/lib/store'
 import { commands, type Layer } from '@koharu/bridge/protocol'
 import { TooltipProvider } from '@aphrody/m3-primitives'
 
-const canvas = vi.hoisted(() => ({
+const canvas = hoisted(() => ({
   resize: vi.fn(),
   setView: vi.fn(),
   stageManifest: vi.fn(),
@@ -29,7 +30,7 @@ const canvas = vi.hoisted(() => ({
   dispose: vi.fn(),
 }))
 
-const canvasState = vi.hoisted(() => ({
+const canvasState = hoisted(() => ({
   canvas,
   error: null as Error | null,
   generation: 1 as number | null,
@@ -37,12 +38,12 @@ const canvasState = vi.hoisted(() => ({
   retry: vi.fn(),
   status: 'ready' as 'loading' | 'switching' | 'ready' | 'recovering' | 'error',
 }))
-const prefetchCanvasPages = vi.hoisted(() => vi.fn(async () => []))
+const prefetchCanvasPages = hoisted(() => vi.fn(async () => []))
 
-vi.mock('@aphrody/koharu-ui/components/editor/useCanvas', () => ({
+mock.module('@aphrody/koharu-ui/components/editor/useCanvas', () => ({
   useCanvas: () => canvasState,
 }))
-vi.mock('@koharu/bridge/canvas', () => ({
+mock.module('@koharu/bridge/canvas', () => ({
   prefetchCanvasPages,
   workspaceColor: () => [245, 245, 245],
 }))
@@ -79,12 +80,12 @@ let animationFrames = new Map<number, FrameRequestCallback>()
 beforeEach(() => {
   nextAnimationFrame = 1
   animationFrames = new Map()
-  vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) => {
+  stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) => {
     const frame = nextAnimationFrame++
     animationFrames.set(frame, callback)
     return frame
   })
-  vi.stubGlobal('cancelAnimationFrame', (frame: number) => animationFrames.delete(frame))
+  stubGlobal('cancelAnimationFrame', (frame: number) => animationFrames.delete(frame))
   canvasState.error = null
   canvasState.generation = 1
   canvasState.hasFrame = true
@@ -92,7 +93,7 @@ beforeEach(() => {
   prefetchCanvasPages.mockClear()
 })
 
-afterEach(() => vi.unstubAllGlobals())
+afterEach(() => unstubAllGlobals())
 
 function installProject() {
   const page = {
@@ -216,7 +217,7 @@ describe('canvas interaction adapter', () => {
     expect(screen.getByRole('alert')).toHaveTextContent('WebGPU canvas unavailable')
     expect(screen.getByRole('alert')).toHaveTextContent('No compatible WebGPU adapter was found.')
     fireEvent.click(screen.getByRole('button', { name: 'Try again' }))
-    expect(canvasState.retry).toHaveBeenCalledOnce()
+    expect(canvasState.retry).toHaveBeenCalledTimes(1)
   })
 
   it('previews brush input locally and sends only the durable paint commit to Rust', async () => {
@@ -232,7 +233,7 @@ describe('canvas interaction adapter', () => {
     fireEvent.pointerMove(surface, { pointerId: 7, clientX: 55, clientY: 65 })
     fireEvent.pointerUp(surface, { pointerId: 7, clientX: 58, clientY: 70 })
 
-    await waitFor(() => expect(commit).toHaveBeenCalledOnce())
+    await waitFor(() => expect(commit).toHaveBeenCalledTimes(1))
     expect(canvas.beginStroke).toHaveBeenCalledWith({
       kind: 'paint',
       layer: null,
@@ -241,7 +242,7 @@ describe('canvas interaction adapter', () => {
       color: [255, 255, 255, 255],
     })
     expect(canvas.extendStroke).toHaveBeenCalledWith(expect.arrayContaining([{ x: 45, y: 45 }]))
-    expect(canvas.finishStroke).toHaveBeenCalledOnce()
+    expect(canvas.finishStroke).toHaveBeenCalledTimes(1)
     expect(commit).toHaveBeenCalledWith(1, null, expect.arrayContaining([{ x: 45, y: 45 }]), {
       diameter: 48,
       color: [255, 255, 255, 255],
@@ -260,13 +261,13 @@ describe('canvas interaction adapter', () => {
     const surface = renderWorkspace()
 
     fireEvent.pointerDown(surface, { button: 0, pointerId: 8, clientX: 30, clientY: 40 })
-    expect(canvas.beginStroke).toHaveBeenCalledOnce()
+    expect(canvas.beginStroke).toHaveBeenCalledTimes(1)
 
     act(() => {
       useKoharuStore.setState(update)
     })
 
-    await waitFor(() => expect(canvas.cancelStroke).toHaveBeenCalledOnce())
+    await waitFor(() => expect(canvas.cancelStroke).toHaveBeenCalledTimes(1))
     fireEvent.pointerUp(surface, { pointerId: 8, clientX: 30, clientY: 40 })
     expect(canvas.finishStroke).not.toHaveBeenCalled()
     expect(commit).not.toHaveBeenCalled()
@@ -309,7 +310,7 @@ describe('canvas interaction adapter', () => {
     fireEvent.pointerMove(surface, { pointerId: 9, clientX: 70, clientY: 80 })
     fireEvent.pointerUp(surface, { pointerId: 9, clientX: 70, clientY: 80 })
 
-    await waitFor(() => expect(commit).toHaveBeenCalledOnce())
+    await waitFor(() => expect(commit).toHaveBeenCalledTimes(1))
     expect(useKoharuStore.getState().selectedLayers).toEqual(['element'])
     expect(canvas.beginTransform).toHaveBeenCalledWith([
       {
@@ -325,7 +326,7 @@ describe('canvas interaction adapter', () => {
         }),
       ]),
     )
-    expect(canvas.finishTransform).toHaveBeenCalledOnce()
+    expect(canvas.finishTransform).toHaveBeenCalledTimes(1)
     expect(commit).toHaveBeenCalledWith(
       1,
       expect.arrayContaining([
@@ -351,7 +352,7 @@ describe('canvas interaction adapter', () => {
     fireEvent.pointerMove(handle, { pointerId: 10, clientX: 140, clientY: 65 })
     fireEvent.pointerUp(handle, { pointerId: 10, clientX: 140, clientY: 65 })
 
-    await waitFor(() => expect(commit).toHaveBeenCalledOnce())
+    await waitFor(() => expect(commit).toHaveBeenCalledTimes(1))
     expect(canvas.beginTransform).toHaveBeenCalledWith([
       { element: 'element', frame: { x: 10, y: 20, width: 100, height: 50, angle_degrees: 0 } },
     ])
@@ -445,7 +446,7 @@ describe('canvas interaction adapter', () => {
     fireEvent.pointerDown(surface, { button: 0, pointerId: 11, clientX: 30, clientY: 40 })
     fireEvent.pointerUp(surface, { pointerId: 11, clientX: 30, clientY: 40 })
 
-    await waitFor(() => expect(commit).toHaveBeenCalledOnce())
+    await waitFor(() => expect(commit).toHaveBeenCalledTimes(1))
     expect(canvas.beginStroke).toHaveBeenCalledWith({
       kind: 'erase',
       layer: 'paint',
@@ -464,7 +465,7 @@ describe('canvas interaction adapter', () => {
     fireEvent.pointerDown(surface, { button: 0, pointerId: 12, clientX: 30, clientY: 40 })
     fireEvent.pointerUp(surface, { pointerId: 12, clientX: 30, clientY: 40 })
 
-    await waitFor(() => expect(commit).toHaveBeenCalledOnce())
+    await waitFor(() => expect(commit).toHaveBeenCalledTimes(1))
     expect(canvas.beginStroke).toHaveBeenCalledWith({
       kind: 'inpaint',
       layer: null,
@@ -492,7 +493,7 @@ describe('canvas interaction adapter', () => {
     fireEvent.pointerDown(surface, { button: 0, pointerId: 14, clientX: 40, clientY: 50 })
     fireEvent.pointerMove(surface, { pointerId: 14, clientX: 140, clientY: 110 })
     fireEvent.pointerUp(surface, { pointerId: 14, clientX: 140, clientY: 110 })
-    await waitFor(() => expect(box).toHaveBeenCalledOnce())
+    await waitFor(() => expect(box).toHaveBeenCalledTimes(1))
     expect(box).toHaveBeenCalledWith({
       x: 30,
       y: 30,

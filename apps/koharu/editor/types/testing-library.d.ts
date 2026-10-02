@@ -1,9 +1,7 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
-import 'vitest'
 import type { TestingLibraryMatchers } from '@testing-library/jest-dom/matchers'
 
-declare module 'vitest' {
-  interface Assertion<T = any> extends TestingLibraryMatchers<any, T> {}
-  interface AsymmetricMatchersContaining extends TestingLibraryMatchers<any, any> {}
+declare module 'bun:test' {
+  interface Matchers<T> extends TestingLibraryMatchers<any, T> {}
+  interface AsymmetricMatchers extends TestingLibraryMatchers<any, any> {}
 }
-

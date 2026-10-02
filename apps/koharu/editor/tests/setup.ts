@@ -1,5 +1,5 @@
 import * as matchers from '@testing-library/jest-dom/matchers'
-import { afterEach, beforeEach, expect, vi } from 'vitest'
+import { afterEach, beforeEach, expect, mock, vi } from 'bun:test'
 
 expect.extend(matchers)
 
@@ -7,27 +7,25 @@ expect.extend(matchers)
 import { queryClient } from '@aphrody/koharu-ui/lib/queries'
 import { defaultShortcuts, useKoharuStore } from '@aphrody/koharu-ui/lib/store'
 
-vi.mock('react-i18next', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('react-i18next')>()
-  const { createInstance } = await import('i18next')
-  const { default: translations } = await import('@aphrody/koharu-ui/locales/en-US/translation.json')
-  const i18n = createInstance()
-  await i18n.init({
-    resources: { 'en-US': { translation: translations } },
-    lng: 'en-US',
-    fallbackLng: 'en-US',
-    interpolation: { escapeValue: false },
-  })
-
-  return {
-    ...actual,
-    useTranslation: () => ({ t: i18n.t.bind(i18n), i18n }),
-    initReactI18next: { type: '3rdParty', init: () => undefined },
-    I18nextProvider: ({ children }: { children: React.ReactNode }) => children,
-  }
+const actual = await import('react-i18next')
+const { createInstance } = await import('i18next')
+const { default: translations } = await import('@aphrody/koharu-ui/locales/en-US/translation.json')
+const i18n = createInstance()
+await i18n.init({
+  resources: { 'en-US': { translation: translations } },
+  lng: 'en-US',
+  fallbackLng: 'en-US',
+  interpolation: { escapeValue: false },
 })
 
-vi.mock('@tauri-apps/api/window', () => {
+mock.module('react-i18next', () => ({
+  ...actual,
+  useTranslation: () => ({ t: i18n.t.bind(i18n), i18n }),
+  initReactI18next: { type: '3rdParty', init: () => undefined },
+  I18nextProvider: ({ children }: { children: React.ReactNode }) => children,
+}))
+
+mock.module('@tauri-apps/api/window', () => {
   const window = {
     close: vi.fn(async () => undefined),
     isMaximized: vi.fn(async () => false),
@@ -89,6 +87,7 @@ Object.defineProperty(window, '__TAURI_INTERNALS__', {
 
 const initial = useKoharuStore.getState()
 beforeEach(() => {
+  mock.clearAllMocks() // vitest `clearMocks: true` equivalent
   queryClient.clear()
   useKoharuStore.setState({
     ...initial,

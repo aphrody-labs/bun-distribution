@@ -1,4 +1,5 @@
-import { describe, expect, it, vi } from 'vitest'
+import { describe, expect, it, vi, mock } from 'bun:test'
+import { hoisted } from '@/tests/hoisted'
 
 import {
   activateCanvas,
@@ -8,13 +9,13 @@ import {
   type Canvas,
 } from '@koharu/bridge/canvas'
 
-const commands = vi.hoisted(() => ({
+const commands = hoisted(() => ({
   prepareCanvasPage: vi.fn(),
   getCanvasPageManifest: vi.fn(),
   getCanvasPageResource: vi.fn(),
 }))
 
-vi.mock('@koharu/bridge/protocol', () => ({ commands }))
+mock.module('@koharu/bridge/protocol', () => ({ commands }))
 
 describe('canvas runtime', () => {
   it('routes inspector previews only to the active canvas', () => {
@@ -26,7 +27,7 @@ describe('canvas runtime', () => {
     deactivate()
     previewCanvasOpacity('layer', null)
 
-    expect(previewOpacity).toHaveBeenCalledOnce()
+    expect(previewOpacity).toHaveBeenCalledTimes(1)
     expect(previewOpacity).toHaveBeenCalledWith('layer', 0.5)
   })
 
@@ -68,7 +69,7 @@ describe('canvas runtime', () => {
     expect(commands.getCanvasPageResource).toHaveBeenCalledWith('page', 4, 'resource')
     expect(canvas.cacheFrame).toHaveBeenCalledWith(7, 'page')
     expect(order).toEqual(['resource', 'frame'])
-    expect(result).toEqual([prepared])
+    expect(result).toEqual([prepared] as never)
   })
 
   it('does not expose page data when the frame was rejected by the cache', async () => {

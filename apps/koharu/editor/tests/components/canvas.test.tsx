@@ -1,9 +1,10 @@
 import { act, renderHook, waitFor } from '@testing-library/react'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi, mock } from 'bun:test'
+import { hoisted } from '@/tests/hoisted'
 
 import { useCanvas } from '@aphrody/koharu-ui/components/editor/useCanvas'
 
-const renderer = vi.hoisted(() => ({
+const renderer = hoisted(() => ({
   resize: vi.fn(),
   setView: vi.fn(),
   stageManifest: vi.fn((manifest: Uint8Array) => ({ token: manifest[0], missing: [] as string[] })),
@@ -25,7 +26,7 @@ const renderer = vi.hoisted(() => ({
   dispose: vi.fn(),
 }))
 
-const adapter = vi.hoisted(() => ({
+const adapter = hoisted(() => ({
   create: vi.fn(async () => renderer),
   fetchManifest: vi.fn(async (generation: number) => new Uint8Array([generation])),
   fetchResource: vi.fn(
@@ -35,7 +36,7 @@ const adapter = vi.hoisted(() => ({
   lost: null as ((reason: string) => void) | null,
 }))
 
-vi.mock('@koharu/bridge/canvas', () => ({
+mock.module('@koharu/bridge/canvas', () => ({
   createCanvas: vi.fn(
     async (_element: HTMLCanvasElement, onDeviceLost: (reason: string) => void) => {
       adapter.lost = onDeviceLost
@@ -79,11 +80,11 @@ describe('canvas lifecycle', () => {
     expect(renderer.activateFrame).toHaveBeenCalledWith(7)
 
     rerender({ revision: 5, generation: 7 })
-    expect(adapter.fetchManifest).toHaveBeenCalledOnce()
+    expect(adapter.fetchManifest).toHaveBeenCalledTimes(1)
 
     rerender({ revision: null, generation: 8 })
-    await waitFor(() => expect(renderer.clear).toHaveBeenCalledOnce())
-    expect(adapter.fetchManifest).toHaveBeenCalledOnce()
+    await waitFor(() => expect(renderer.clear).toHaveBeenCalledTimes(1))
+    expect(adapter.fetchManifest).toHaveBeenCalledTimes(1)
     expect(result.current.hasFrame).toBe(false)
   })
 
@@ -125,8 +126,8 @@ describe('canvas lifecycle', () => {
 
     await waitFor(() => expect(result.current.generation).toBe(8))
     expect(adapter.fetchManifest).toHaveBeenLastCalledWith(8)
-    expect(renderer.stageManifest).toHaveBeenCalledOnce()
-    expect(renderer.activateFrame).toHaveBeenCalledOnce()
+    expect(renderer.stageManifest).toHaveBeenCalledTimes(1)
+    expect(renderer.activateFrame).toHaveBeenCalledTimes(1)
   })
 
   it('lets only the latest requested generation stage and activate', async () => {
@@ -197,7 +198,7 @@ describe('canvas lifecycle', () => {
 
     act(() => result.current.retry())
     await waitFor(() => expect(result.current.status).toBe('ready'))
-    expect(adapter.create).toHaveBeenCalledOnce()
+    expect(adapter.create).toHaveBeenCalledTimes(1)
     expect(
       adapter.fetchManifest.mock.calls.filter(([generation]) => generation === 8),
     ).toHaveLength(2)
@@ -208,7 +209,7 @@ describe('canvas lifecycle', () => {
     const { result } = renderHook(() => useCanvas(element, null, 0))
 
     await waitFor(() => expect(result.current.status).toBe('ready'))
-    expect(renderer.clear).toHaveBeenCalledOnce()
+    expect(renderer.clear).toHaveBeenCalledTimes(1)
     expect(adapter.fetchManifest).not.toHaveBeenCalled()
   })
 
@@ -243,7 +244,7 @@ describe('canvas lifecycle', () => {
 
     await waitFor(() => expect(adapter.create).toHaveBeenCalledTimes(2))
     await waitFor(() => expect(result.current.status).toBe('ready'))
-    expect(renderer.dispose).toHaveBeenCalledOnce()
+    expect(renderer.dispose).toHaveBeenCalledTimes(1)
     expect(adapter.fetchManifest).toHaveBeenCalledTimes(2)
   })
 })

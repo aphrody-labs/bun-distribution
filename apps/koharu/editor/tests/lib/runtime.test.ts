@@ -1,6 +1,6 @@
 import { act, render, screen, waitFor } from '@testing-library/react'
 import { createElement, StrictMode } from 'react'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi, mock } from 'bun:test'
 
 import Providers from '@aphrody/koharu-ui/providers'
 import { call } from '@aphrody/koharu-ui/lib/backend'
@@ -13,7 +13,7 @@ import {
   type StartupState,
 } from '@koharu/bridge/protocol'
 
-vi.mock('@tauri-apps/api/core', () => ({
+mock.module('@tauri-apps/api/core', () => ({
   Channel: class<T> {
     onmessage: (payload: T) => void
 

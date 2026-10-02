@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'bun:test'
 
 import { resizeFrame, rotateFrame } from '@aphrody/koharu-ui/lib/geometry'
 import type { Frame } from '@koharu/bridge/protocol'

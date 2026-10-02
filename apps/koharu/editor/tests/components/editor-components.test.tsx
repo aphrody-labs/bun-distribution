@@ -10,7 +10,8 @@ import {
 import userEvent from '@testing-library/user-event'
 import { ThemeProvider } from 'next-themes'
 import { StrictMode, type ReactNode } from 'react'
-import { describe, expect, it, vi } from 'vitest'
+import { describe, expect, it, vi, mock } from 'bun:test'
+import { hoisted } from '@/tests/hoisted'
 
 import { TitleBar } from '@aphrody/koharu-ui/components/app/TitleBar'
 import { WindowControls } from '@aphrody/koharu-ui/components/app/WindowChrome'
@@ -43,7 +44,7 @@ import {
 } from '@koharu/bridge/protocol'
 import { TooltipProvider } from '@aphrody/m3-primitives'
 
-const nativeWindow = vi.hoisted(() => ({
+const nativeWindow = hoisted(() => ({
   close: vi.fn(async () => undefined),
   isMaximized: vi.fn(async () => false),
   minimize: vi.fn(async () => undefined),
@@ -51,12 +52,12 @@ const nativeWindow = vi.hoisted(() => ({
   startResizeDragging: vi.fn(async () => undefined),
   toggleMaximize: vi.fn(async () => undefined),
 }))
-const nativeOpenUrl = vi.hoisted(() => vi.fn(async () => undefined))
-const nativeGetVersion = vi.hoisted(() => vi.fn(async () => '0.62.0'))
+const nativeOpenUrl = hoisted(() => vi.fn(async () => undefined))
+const nativeGetVersion = hoisted(() => vi.fn(async () => '0.62.0'))
 
-vi.mock('@tauri-apps/api/window', () => ({ getCurrentWindow: () => nativeWindow }))
-vi.mock('@tauri-apps/api/app', () => ({ getVersion: nativeGetVersion }))
-vi.mock('@tauri-apps/plugin-opener', () => ({ openUrl: nativeOpenUrl }))
+mock.module('@tauri-apps/api/window', () => ({ getCurrentWindow: () => nativeWindow }))
+mock.module('@tauri-apps/api/app', () => ({ getVersion: nativeGetVersion }))
+mock.module('@tauri-apps/plugin-opener', () => ({ openUrl: nativeOpenUrl }))
 
 const emptyCredential = () => ({ configured: false, value: null, clear: false })
 
@@ -287,7 +288,7 @@ describe('greenfield editor', () => {
     }
 
     expect(nativeWindow.startResizeDragging.mock.calls).toEqual(
-      directions.map((direction) => [direction]),
+      directions.map((direction) => [direction]) as never,
     )
   })
 
@@ -296,7 +297,7 @@ describe('greenfield editor', () => {
     const view = render(<WindowControls />)
 
     await waitFor(() =>
-      expect(view.container.querySelector('[data-window-resize-handle]')).not.toBeInTheDocument(),
+      expect(view.container.querySelector('[data-window-resize-handle]') === null).toBe(true),
     )
   })
 
@@ -335,7 +336,7 @@ describe('greenfield editor', () => {
     )
 
     finishImport?.()
-    await waitFor(() => expect(screen.queryByRole('status')).not.toBeInTheDocument())
+    await waitFor(() => expect(screen.queryByRole('status') === null).toBe(true))
   })
 
   it.each(['png', 'psd', 'cbz'] as const)(
@@ -363,7 +364,8 @@ describe('greenfield editor', () => {
       fireEvent.click(await screen.findByRole('menuitem', { name: `${format.toUpperCase()}…` }))
 
       expect(await screen.findByRole('status')).toHaveTextContent('Export Project')
-      expect(exportProject).toHaveBeenCalledExactlyOnceWith(format)
+      expect(exportProject).toHaveBeenCalledTimes(1)
+      expect(exportProject).toHaveBeenCalledWith(format)
       await user.click(screen.getByRole('menuitem', { name: 'File' }))
       expect(await screen.findByRole('menuitem', { name: 'Export Project' })).toHaveAttribute(
         'aria-disabled',
@@ -372,7 +374,7 @@ describe('greenfield editor', () => {
 
       await act(async () => finishExport?.())
       await waitFor(() =>
-        expect(screen.queryByRole('complementary', { name: 'Activity' })).not.toBeInTheDocument(),
+        expect(screen.queryByRole('complementary', { name: 'Activity' }) === null).toBe(true),
       )
       expect(await screen.findByRole('menuitem', { name: 'Export Project' })).not.toHaveAttribute(
         'aria-disabled',
@@ -411,7 +413,7 @@ describe('greenfield editor', () => {
       await user.click(screen.getByRole('menuitem', { name: 'File' }))
       await act(async () => fail?.(new Error('File operation failed')))
       await waitFor(() =>
-        expect(screen.queryByRole('complementary', { name: 'Activity' })).not.toBeInTheDocument(),
+        expect(screen.queryByRole('complementary', { name: 'Activity' }) === null).toBe(true),
       )
       expect(await screen.findByRole('menuitem', { name: menu })).not.toHaveAttribute(
         'aria-disabled',
@@ -619,7 +621,7 @@ describe('greenfield editor', () => {
 
     await waitFor(() => expect(prefetch).toHaveBeenCalledWith(['page-2']))
     await waitFor(() =>
-      expect(queryClient.getQueryData(preparedPageKey('page-2'))).toEqual(prepared),
+      expect(queryClient.getQueryData(preparedPageKey('page-2'))).toEqual(prepared as never),
     )
     expect(selectPage).not.toHaveBeenCalled()
   })
@@ -1788,7 +1790,7 @@ describe('greenfield editor', () => {
     expect(result.current.busy).toBe(true)
 
     await act(async () => second.reject(new Error('Index failed')))
-    await waitFor(() => expect(screen.queryByRole('status')).not.toBeInTheDocument())
+    await waitFor(() => expect(screen.queryByRole('status') === null).toBe(true))
     expect(result.current.busy).toBe(false)
     expect(screen.queryByRole('complementary', { name: 'Activity' })).not.toBeInTheDocument()
   })
