@@ -276,13 +276,18 @@ impl NginxConfig {
                 .parse()
                 .map_err(|e| format!("invalid PID format in {}: {e}", path.display()))?;
 
-            // Send SIGHUP (signal 1) to trigger graceful reload
-            let res = unsafe { libc::kill(pid, libc::SIGHUP) };
-            if res == 0 {
+            // Send SIGHUP (signal 1) to trigger graceful reload using standard kill command
+            let output = std::process::Command::new("kill")
+                .arg("-HUP")
+                .arg(pid.to_string())
+                .output()
+                .map_err(|e| format!("failed to invoke kill -HUP {pid}: {e}"))?;
+
+            if output.status.success() {
                 Ok(())
             } else {
-                let err = std::io::Error::last_os_error();
-                Err(format!("failed to send SIGHUP to Nginx master PID {pid}: {err}"))
+                let stderr = String::from_utf8_lossy(&output.stderr).trim().to_string();
+                Err(format!("failed to send SIGHUP to Nginx master PID {pid}: {stderr}"))
             }
         }
         #[cfg(not(unix))]

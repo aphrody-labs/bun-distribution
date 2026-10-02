@@ -54,7 +54,10 @@ pub fn build(config:&Config,target:Target)->Result<BuildReport> {
             loop {
                 if let Some(status)=child.try_wait()? {if !status.success(){return Err(Error::Invalid(format!("{} failed with {status}; see {}",step.name,report.log.display())));}break;}
                 if started.elapsed()>=Duration::from_secs(config.timeout_seconds) {
-                    #[cfg(unix)] unsafe {libc::kill(-(child.id() as i32),libc::SIGKILL);}
+                    #[cfg(unix)] {
+                        let pgid = -(child.id() as i32);
+                        let _ = Command::new("kill").arg("-9").arg(pgid.to_string()).status();
+                    }
                     let _=child.kill();let _=child.wait();return Err(Error::Invalid("build timeout; child group terminated".into()));
                 }
                 std::thread::sleep(Duration::from_millis(100));
