@@ -58,19 +58,9 @@ impl RedisRagCache {
 
         let host = parsed.host_str().unwrap_or("127.0.0.1").to_string();
         let port = parsed.port().unwrap_or(6379);
-        let db = parsed
-            .path()
-            .trim_start_matches('/')
-            .parse::<u8>()
-            .unwrap_or(0);
+        let db = parsed.path().trim_start_matches('/').parse::<u8>().unwrap_or(0);
 
-        Self {
-            host,
-            port,
-            db,
-            prefix,
-            enabled: true,
-        }
+        Self { host, port, db, prefix, enabled: true }
     }
 
     /// Check if the Redis cache is enabled and responding.
@@ -89,7 +79,8 @@ impl RedisRagCache {
         if !self.enabled {
             return None;
         }
-        let key = format!("{}cache:{}:{}", self.prefix, mode, blake3::hash(query.as_bytes()).to_hex());
+        let key =
+            format!("{}cache:{}:{}", self.prefix, mode, blake3::hash(query.as_bytes()).to_hex());
         self.get(&key).await
     }
 
@@ -98,7 +89,8 @@ impl RedisRagCache {
         if !self.enabled {
             return false;
         }
-        let key = format!("{}cache:{}:{}", self.prefix, mode, blake3::hash(query.as_bytes()).to_hex());
+        let key =
+            format!("{}cache:{}:{}", self.prefix, mode, blake3::hash(query.as_bytes()).to_hex());
         self.set_ex(&key, result_json, DEFAULT_TTL_SECS).await
     }
 

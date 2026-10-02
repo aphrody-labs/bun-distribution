@@ -44,11 +44,7 @@ pub fn encode_engine_data(spec: &TextEngineSpec) -> Vec<u8> {
     let paragraph_properties = paragraph_properties(spec.justification);
     let base_style_sheet = base_style_sheet(font_index);
     let style_run_sheet = style_run_sheet(spec, font_index);
-    let font_set = spec
-        .font_set
-        .iter()
-        .map(|name| font_descriptor(name))
-        .collect::<Vec<_>>();
+    let font_set = spec.font_set.iter().map(|name| font_descriptor(name)).collect::<Vec<_>>();
 
     let root = EngineValue::Dict(vec![
         (
@@ -74,31 +70,64 @@ pub fn encode_engine_data(spec: &TextEngineSpec) -> Vec<u8> {
                                 (
                                     "Adjustments".to_string(),
                                     EngineValue::Dict(vec![
-                                        ("Axis".to_string(), EngineValue::Array(vec![EngineValue::Float(1.0), EngineValue::Float(0.0), EngineValue::Float(1.0)])),
-                                        ("XY".to_string(), EngineValue::Array(vec![EngineValue::Float(0.0), EngineValue::Float(0.0)])),
+                                        (
+                                            "Axis".to_string(),
+                                            EngineValue::Array(vec![
+                                                EngineValue::Float(1.0),
+                                                EngineValue::Float(0.0),
+                                                EngineValue::Float(1.0),
+                                            ]),
+                                        ),
+                                        (
+                                            "XY".to_string(),
+                                            EngineValue::Array(vec![
+                                                EngineValue::Float(0.0),
+                                                EngineValue::Float(0.0),
+                                            ]),
+                                        ),
                                     ]),
                                 ),
                             ]),
                         ),
-                        ("RunArray".to_string(), EngineValue::Array(vec![
-                            EngineValue::Dict(vec![
+                        (
+                            "RunArray".to_string(),
+                            EngineValue::Array(vec![EngineValue::Dict(vec![
                                 (
                                     "ParagraphSheet".to_string(),
                                     EngineValue::Dict(vec![
                                         ("DefaultStyleSheet".to_string(), EngineValue::Int(0)),
-                                        ("Properties".to_string(), EngineValue::Dict(paragraph_properties)),
+                                        (
+                                            "Properties".to_string(),
+                                            EngineValue::Dict(paragraph_properties),
+                                        ),
                                     ]),
                                 ),
                                 (
                                     "Adjustments".to_string(),
                                     EngineValue::Dict(vec![
-                                        ("Axis".to_string(), EngineValue::Array(vec![EngineValue::Float(1.0), EngineValue::Float(0.0), EngineValue::Float(1.0)])),
-                                        ("XY".to_string(), EngineValue::Array(vec![EngineValue::Float(0.0), EngineValue::Float(0.0)])),
+                                        (
+                                            "Axis".to_string(),
+                                            EngineValue::Array(vec![
+                                                EngineValue::Float(1.0),
+                                                EngineValue::Float(0.0),
+                                                EngineValue::Float(1.0),
+                                            ]),
+                                        ),
+                                        (
+                                            "XY".to_string(),
+                                            EngineValue::Array(vec![
+                                                EngineValue::Float(0.0),
+                                                EngineValue::Float(0.0),
+                                            ]),
+                                        ),
                                     ]),
                                 ),
-                            ])
-                        ])),
-                        ("RunLengthArray".to_string(), EngineValue::Array(vec![EngineValue::Int(total_length)])),
+                            ])]),
+                        ),
+                        (
+                            "RunLengthArray".to_string(),
+                            EngineValue::Array(vec![EngineValue::Int(total_length)]),
+                        ),
                     ]),
                 ),
                 (
@@ -106,26 +135,28 @@ pub fn encode_engine_data(spec: &TextEngineSpec) -> Vec<u8> {
                     EngineValue::Dict(vec![
                         (
                             "DefaultRunData".to_string(),
-                            EngineValue::Dict(vec![
-                                (
-                                    "StyleSheet".to_string(),
-                                    EngineValue::Dict(vec![
-                                        ("StyleSheetData".to_string(), EngineValue::Dict(base_style_sheet)),
-                                    ]),
-                                ),
-                            ]),
+                            EngineValue::Dict(vec![(
+                                "StyleSheet".to_string(),
+                                EngineValue::Dict(vec![(
+                                    "StyleSheetData".to_string(),
+                                    EngineValue::Dict(base_style_sheet),
+                                )]),
+                            )]),
                         ),
-                        ("RunArray".to_string(), EngineValue::Array(vec![
-                            EngineValue::Dict(vec![
-                                (
-                                    "StyleSheet".to_string(),
-                                    EngineValue::Dict(vec![
-                                        ("StyleSheetData".to_string(), EngineValue::Dict(style_run_sheet)),
-                                    ]),
-                                ),
-                            ])
-                        ])),
-                        ("RunLengthArray".to_string(), EngineValue::Array(vec![EngineValue::Int(total_length)])),
+                        (
+                            "RunArray".to_string(),
+                            EngineValue::Array(vec![EngineValue::Dict(vec![(
+                                "StyleSheet".to_string(),
+                                EngineValue::Dict(vec![(
+                                    "StyleSheetData".to_string(),
+                                    EngineValue::Dict(style_run_sheet),
+                                )]),
+                            )])]),
+                        ),
+                        (
+                            "RunLengthArray".to_string(),
+                            EngineValue::Array(vec![EngineValue::Int(total_length)]),
+                        ),
                     ]),
                 ),
                 (
@@ -135,28 +166,47 @@ pub fn encode_engine_data(spec: &TextEngineSpec) -> Vec<u8> {
                         (
                             "Shapes".to_string(),
                             EngineValue::Dict(vec![
-                                ("WritingDirection".to_string(), EngineValue::Int(writing_direction)),
+                                (
+                                    "WritingDirection".to_string(),
+                                    EngineValue::Int(writing_direction),
+                                ),
                                 (
                                     "Children".to_string(),
-                                    EngineValue::Array(vec![
-                                        EngineValue::Dict(vec![
-                                            ("ShapeType".to_string(), EngineValue::Int(0)),
-                                            ("Procession".to_string(), EngineValue::Int(if spec.writing_mode == WritingMode::VerticalRl { 1 } else { 0 })),
-                                            ("Lines".to_string(), EngineValue::Dict(vec![
-                                                ("WritingDirection".to_string(), EngineValue::Int(writing_direction)),
-                                                ("Children".to_string(), EngineValue::Array(Vec::new())),
-                                            ])),
-                                            (
-                                                "BoxBounds".to_string(),
-                                                EngineValue::Array(vec![
-                                                    EngineValue::Float(0.0),
-                                                    EngineValue::Float(0.0),
-                                                    EngineValue::Float(spec.box_width),
-                                                    EngineValue::Float(spec.box_height),
-                                                ]),
+                                    EngineValue::Array(vec![EngineValue::Dict(vec![
+                                        ("ShapeType".to_string(), EngineValue::Int(0)),
+                                        (
+                                            "Procession".to_string(),
+                                            EngineValue::Int(
+                                                if spec.writing_mode == WritingMode::VerticalRl {
+                                                    1
+                                                } else {
+                                                    0
+                                                },
                                             ),
-                                        ])
-                                    ]),
+                                        ),
+                                        (
+                                            "Lines".to_string(),
+                                            EngineValue::Dict(vec![
+                                                (
+                                                    "WritingDirection".to_string(),
+                                                    EngineValue::Int(writing_direction),
+                                                ),
+                                                (
+                                                    "Children".to_string(),
+                                                    EngineValue::Array(Vec::new()),
+                                                ),
+                                            ]),
+                                        ),
+                                        (
+                                            "BoxBounds".to_string(),
+                                            EngineValue::Array(vec![
+                                                EngineValue::Float(0.0),
+                                                EngineValue::Float(0.0),
+                                                EngineValue::Float(spec.box_width),
+                                                EngineValue::Float(spec.box_height),
+                                            ]),
+                                        ),
+                                    ])]),
                                 ),
                             ]),
                         ),
@@ -170,15 +220,13 @@ pub fn encode_engine_data(spec: &TextEngineSpec) -> Vec<u8> {
                 ("FontSet".to_string(), EngineValue::Array(font_set)),
                 (
                     "StyleSheetSet".to_string(),
-                    EngineValue::Array(vec![
-                        EngineValue::Dict(vec![
-                            ("Name".to_string(), EngineValue::String("Normal".to_string())),
-                            (
-                                "StyleSheetData".to_string(),
-                                EngineValue::Dict(default_style_sheet(font_index)),
-                            ),
-                        ])
-                    ]),
+                    EngineValue::Array(vec![EngineValue::Dict(vec![
+                        ("Name".to_string(), EngineValue::String("Normal".to_string())),
+                        (
+                            "StyleSheetData".to_string(),
+                            EngineValue::Dict(default_style_sheet(font_index)),
+                        ),
+                    ])]),
                 ),
             ]),
         ),
@@ -234,10 +282,7 @@ fn style_run_sheet(spec: &TextEngineSpec, font_index: i32) -> Vec<(String, Engin
     sheet.push(("FontSize".to_string(), EngineValue::Float(spec.font_size)));
     sheet.push(("FauxBold".to_string(), EngineValue::Bool(spec.faux_bold)));
     sheet.push(("FauxItalic".to_string(), EngineValue::Bool(spec.faux_italic)));
-    sheet.push((
-        "FillColor".to_string(),
-        EngineValue::Dict(color_type_values(spec.color)),
-    ));
+    sheet.push(("FillColor".to_string(), EngineValue::Dict(color_type_values(spec.color))));
     sheet
 }
 
@@ -280,15 +325,15 @@ fn write_value(
         EngineValue::Int(number) => {
             write_prefix(out, indent, in_property);
             out.extend_from_slice(number.to_string().as_bytes());
-        }
+        },
         EngineValue::Float(number) => {
             write_prefix(out, indent, in_property);
             out.extend_from_slice(format!("{number:.4}").as_bytes());
-        }
+        },
         EngineValue::Bool(flag) => {
             write_prefix(out, indent, in_property);
             out.extend_from_slice(if *flag { b"true" } else { b"false" });
-        }
+        },
         EngineValue::String(text) => {
             write_prefix(out, indent, in_property);
             out.push(b'(');
@@ -299,7 +344,7 @@ fn write_value(
                 write_escaped_byte(out, unit as u8);
             }
             out.push(b')');
-        }
+        },
         EngineValue::Array(items) => {
             write_prefix(out, indent, in_property);
             out.extend_from_slice(b"[ ");
@@ -308,7 +353,7 @@ fn write_value(
                 out.push(b' ');
             }
             out.extend_from_slice(b"]");
-        }
+        },
         EngineValue::Dict(entries) => {
             if in_property {
                 out.push(b'\n');
@@ -325,7 +370,7 @@ fn write_value(
             }
             write_indent(out, indent);
             out.extend_from_slice(b">>");
-        }
+        },
     }
 }
 

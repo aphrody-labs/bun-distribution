@@ -103,6 +103,9 @@ pub struct OAuthToken {
 // ---------------------------------------------------------------------------
 
 /// Outer envelope: `{"token": <InnerToken>, "auth_method": "consumer"}`.
+///
+/// Read by the platform credential stores, which a browser does not have.
+#[cfg(any(unix, target_os = "windows", test))]
 #[derive(Deserialize)]
 struct TokenEnvelope {
     token: InnerToken,
@@ -135,6 +138,7 @@ impl From<InnerToken> for OAuthToken {
     }
 }
 
+#[cfg(any(unix, target_os = "windows", test))]
 impl TokenEnvelope {
     /// Fold the envelope into an [`OAuthToken`], carrying the top-level
     /// `auth_method` alongside the inner token fields.

@@ -3,8 +3,8 @@
 #![allow(dead_code)]
 
 use aphrody_embed::native::{
-    ensure_model, find_model, find_reranker, is_offline, EmbedOptions, Embedder, ModelFiles,
-    ModelSpec,
+    EmbedOptions, Embedder, ModelFiles, ModelSpec, ensure_model, find_model, find_reranker,
+    is_offline,
 };
 
 /// Resolve a model, downloading it when needed. Returns `None` (after printing why) only

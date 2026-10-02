@@ -10,7 +10,8 @@
 //! `docs/research/bxc-google-module-chrome-mcp.md`).
 
 use std::sync::LazyLock;
-#[cfg(not(target_arch = "wasm32"))] use std::time::Duration;
+#[cfg(not(target_arch = "wasm32"))]
+use std::time::Duration;
 
 use regex::Regex;
 

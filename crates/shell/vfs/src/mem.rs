@@ -137,16 +137,15 @@ impl Vfs for MemVfs {
         if new_len > self.limits.max_file_size {
             return Err(VfsError::FileTooLarge);
         }
-        self.require_parent_dir(&n).map_err(|e| {
-            if e == VfsError::AlreadyExists { VfsError::IsADirectory } else { e }
-        })?;
+        self.require_parent_dir(&n)
+            .map_err(|e| if e == VfsError::AlreadyExists { VfsError::IsADirectory } else { e })?;
         let old_len = match self.nodes.get(&n) {
             Some(Node::Dir) => return Err(VfsError::IsADirectory),
             Some(Node::File(d)) => len64(d.len()),
             None => {
                 self.check_new_inode()?;
                 0
-            }
+            },
         };
         if self.total_bytes - old_len + new_len > self.limits.max_total_bytes {
             return Err(VfsError::QuotaExceeded);
@@ -168,13 +167,14 @@ impl Vfs for MemVfs {
     fn read_dir(&mut self, p: &[u8]) -> VfsResult<Vec<DirEntry>> {
         let n = path::normalize(p)?;
         match self.nodes.get(&n) {
-            Some(Node::Dir) => {}
+            Some(Node::Dir) => {},
             Some(Node::File(_)) => return Err(VfsError::NotADirectory),
             None => return Err(VfsError::NotFound),
         }
         let prefix = sub_prefix(&n);
         let mut out = Vec::new();
-        for (k, v) in self.nodes.range(prefix.clone()..).take_while(|(k, _)| k.starts_with(&prefix)) {
+        for (k, v) in self.nodes.range(prefix.clone()..).take_while(|(k, _)| k.starts_with(&prefix))
+        {
             let rest = &k[prefix.len()..];
             if rest.is_empty() || rest.contains(&b'/') {
                 continue;
@@ -205,8 +205,8 @@ impl Vfs for MemVfs {
             None => return Err(VfsError::NotFound),
             Some(Node::Dir) if !self.descendants(&n).is_empty() => {
                 return Err(VfsError::DirectoryNotEmpty);
-            }
-            Some(_) => {}
+            },
+            Some(_) => {},
         }
         self.drop_node(&n);
         Ok(())
@@ -231,13 +231,13 @@ impl Vfs for MemVfs {
         }
         self.require_parent_dir(&t)?;
         match (self.nodes.get(&t), src_is_dir) {
-            (None, _) => {}
-            (Some(Node::File(_)), false) => {}
+            (None, _) => {},
+            (Some(Node::File(_)), false) => {},
             (Some(Node::Dir), true) => {
                 if !self.descendants(&t).is_empty() {
                     return Err(VfsError::DirectoryNotEmpty);
                 }
-            }
+            },
             (Some(Node::Dir), false) => return Err(VfsError::IsADirectory),
             (Some(Node::File(_)), true) => return Err(VfsError::NotADirectory),
         }

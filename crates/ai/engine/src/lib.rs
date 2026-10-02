@@ -70,4 +70,5 @@ pub use turn::{
     TurnOutcome, restore_history, run_turn, run_turn_with_controls, run_turn_with_interrupt,
 };
 
-#[cfg(test)] mod lib_tests;
+#[cfg(test)]
+mod lib_tests;

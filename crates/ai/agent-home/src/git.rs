@@ -111,22 +111,20 @@ fn write_dir_tree(
             if is_empty_tree(repo, sub_id) {
                 continue;
             }
-            entries.insert(name_bytes.clone(), Entry {
-                mode: EntryKind::Tree.into(),
-                filename: name_bytes.into(),
-                oid: sub_id,
-            });
+            entries.insert(
+                name_bytes.clone(),
+                Entry { mode: EntryKind::Tree.into(), filename: name_bytes.into(), oid: sub_id },
+            );
         } else if file_type.is_file() {
             let bytes = std::fs::read(&path).map_err(|e| HomeError::io(&path, e))?;
             let blob_id = repo.write_blob(&bytes).map_err(git_err)?.into();
             *file_count += 1;
             // Preserve the executable bit on Unix; default to a regular blob.
             let mode = file_mode(&path);
-            entries.insert(name_bytes.clone(), Entry {
-                mode,
-                filename: name_bytes.into(),
-                oid: blob_id,
-            });
+            entries.insert(
+                name_bytes.clone(),
+                Entry { mode, filename: name_bytes.into(), oid: blob_id },
+            );
         }
         // Symlinks and other types are skipped from the backup snapshot.
     }

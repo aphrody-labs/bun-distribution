@@ -1026,9 +1026,7 @@ fn resolve_yolo_root(root: &Path, override_path: Option<&Path>) -> Result<PathBu
             anyhow::ensure!(!path.as_os_str().is_empty(), "APHRODY_YOLO_ROOT cannot be empty");
             vec![if path.is_absolute() { path.to_path_buf() } else { root.join(path) }]
         },
-        None => vec![
-            root.join("plugins/aphrody"),
-        ],
+        None => vec![root.join("plugins/aphrody")],
     };
     let path = candidates
         .iter()

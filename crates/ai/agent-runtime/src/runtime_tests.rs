@@ -286,10 +286,13 @@ async fn run_once_drives_a_tool_then_a_final_message() {
     // Turn 1: the model asks to run a shell command.
     // Turn 2: after seeing the tool output, the model produces its answer.
     let marker = "RUNTIME_OK";
-    let stub = StubModelClient::new("stub-model", vec![
-        ScriptedTurn::tool_call("call-1", "shell", json!({ "command": echo_command(marker) })),
-        ScriptedTurn::text("all done"),
-    ]);
+    let stub = StubModelClient::new(
+        "stub-model",
+        vec![
+            ScriptedTurn::tool_call("call-1", "shell", json!({ "command": echo_command(marker) })),
+            ScriptedTurn::text("all done"),
+        ],
+    );
 
     let runtime = AgentRuntime::builder()
         .config(RuntimeConfig::new("stub-model"))
@@ -322,10 +325,8 @@ async fn run_once_drives_a_tool_then_a_final_message() {
                     end_ok = true;
                 }
             },
-            EventMsg::AgentMessage { text } => {
-                if text == "all done" {
-                    final_message_ok = true;
-                }
+            EventMsg::AgentMessage { text } if text == "all done" => {
+                final_message_ok = true;
             },
             _ => {},
         }
@@ -344,14 +345,17 @@ async fn run_once_reinjects_tool_output_into_history() {
     // tool actually ran and its output ended up in a ToolCallEnd(ok=true),
     // proving the engine re-injected the result and looped to a second model
     // call that produced the final message.
-    let stub = StubModelClient::new("stub-model", vec![
-        ScriptedTurn::tool_call(
-            "c-echo",
-            "shell",
-            json!({ "command": echo_command("HELLO_FROM_TOOL") }),
-        ),
-        ScriptedTurn::text("acknowledged"),
-    ]);
+    let stub = StubModelClient::new(
+        "stub-model",
+        vec![
+            ScriptedTurn::tool_call(
+                "c-echo",
+                "shell",
+                json!({ "command": echo_command("HELLO_FROM_TOOL") }),
+            ),
+            ScriptedTurn::text("acknowledged"),
+        ],
+    );
 
     let runtime = AgentRuntime::builder()
         .config(RuntimeConfig::new("stub-model"))
@@ -375,10 +379,13 @@ async fn run_once_apply_patch_creates_a_file_on_disk() {
         "*** Begin Patch\n*** Add File: {target_str}\n+hello patched world\n*** End Patch\n"
     );
 
-    let stub = StubModelClient::new("stub-model", vec![
-        ScriptedTurn::tool_call("patch-1", "apply_patch", json!({ "patch": patch })),
-        ScriptedTurn::text("file written"),
-    ]);
+    let stub = StubModelClient::new(
+        "stub-model",
+        vec![
+            ScriptedTurn::tool_call("patch-1", "apply_patch", json!({ "patch": patch })),
+            ScriptedTurn::text("file written"),
+        ],
+    );
 
     let runtime = AgentRuntime::builder()
         .config(RuntimeConfig::new("stub-model"))
@@ -404,12 +411,15 @@ async fn run_once_apply_patch_creates_a_file_on_disk() {
 
 #[tokio::test]
 async fn run_once_text_only_turn_finishes_in_one_iteration() {
-    let stub = StubModelClient::new("stub-model", vec![ScriptedTurn {
-        events: vec![
-            ModelStreamEvent::ReasoningDelta("thinking...".to_string()),
-            ModelStreamEvent::TextDelta("just text".to_string()),
-        ],
-    }]);
+    let stub = StubModelClient::new(
+        "stub-model",
+        vec![ScriptedTurn {
+            events: vec![
+                ModelStreamEvent::ReasoningDelta("thinking...".to_string()),
+                ModelStreamEvent::TextDelta("just text".to_string()),
+            ],
+        }],
+    );
 
     let runtime = AgentRuntime::builder()
         .config(RuntimeConfig::new("stub-model"))
@@ -431,9 +441,12 @@ async fn run_once_writes_dated_rollout_with_session_meta_first_line() {
     let tmp = tempfile::tempdir().expect("tempdir");
     let sessions_root = tmp.path().join("sessions");
 
-    let stub = StubModelClient::new("stub-model", vec![ScriptedTurn {
-        events: vec![ModelStreamEvent::TextDelta("rollout test complete".to_string())],
-    }]);
+    let stub = StubModelClient::new(
+        "stub-model",
+        vec![ScriptedTurn {
+            events: vec![ModelStreamEvent::TextDelta("rollout test complete".to_string())],
+        }],
+    );
 
     let runtime = AgentRuntime::builder()
         .config(

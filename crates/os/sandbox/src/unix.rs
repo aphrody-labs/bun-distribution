@@ -55,7 +55,7 @@ pub fn run_helper_if_requested() -> io::Result<bool> {
         }
 
         // If execvp returns, it failed
-        return Err(io::Error::last_os_error());
+        Err(io::Error::last_os_error())
     }
 
     #[cfg(not(all(unix, not(target_arch = "wasm32"))))]

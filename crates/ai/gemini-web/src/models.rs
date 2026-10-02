@@ -19,7 +19,7 @@
 //! The trailing UUID is a *stable* client/session id (identical across sends in
 //! the captured traffic) — generate once per client and reuse it.
 
-use serde_json::{json, Value};
+use serde_json::{Value, json};
 
 /// A stable default client UUID. Callers may override per session via
 /// [`GeminiModel::header_with_uuid`]; the web app reuses one UUID across a

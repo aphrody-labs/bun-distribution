@@ -266,10 +266,10 @@ impl MessagingChannel for SlackChannel {
 
         let file_id = url_payload.file_id;
         let complete_payload: FileUploadPayload = self
-            .post_json("files.completeUploadExternal", &CompleteBody {
-                files: &[FileEntry { id: &file_id }],
-                channel_id: room,
-            })
+            .post_json(
+                "files.completeUploadExternal",
+                &CompleteBody { files: &[FileEntry { id: &file_id }], channel_id: room },
+            )
             .await?;
 
         let returned_id =
@@ -396,11 +396,14 @@ impl MessagingChannel for SlackChannel {
     }
 
     async fn rooms(&self) -> Result<Vec<RoomInfo>, ChannelError> {
-        let url = Url::parse_with_params(&format!("{SLACK_API_BASE}conversations.list"), &[
-            ("types", "public_channel,private_channel,im,mpim"),
-            ("limit", "1000"),
-            ("exclude_archived", "true"),
-        ])?;
+        let url = Url::parse_with_params(
+            &format!("{SLACK_API_BASE}conversations.list"),
+            &[
+                ("types", "public_channel,private_channel,im,mpim"),
+                ("limit", "1000"),
+                ("exclude_archived", "true"),
+            ],
+        )?;
 
         let resp = self.client.get(url).bearer_auth(&self.bot_token).send().await?;
 

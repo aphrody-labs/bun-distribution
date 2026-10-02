@@ -77,7 +77,8 @@ use thiserror::Error;
 pub mod error;
 pub mod permissions;
 
-#[cfg(not(target_arch = "wasm32"))] pub mod builtin;
+#[cfg(not(target_arch = "wasm32"))]
+pub mod builtin;
 
 pub use crate::{
     error::ToolError,
@@ -424,9 +425,7 @@ impl ToolRegistry {
             schema.get("additionalProperties").and_then(Value::as_bool).unwrap_or(true);
         let properties: Option<&Map<String, Value>> =
             schema.get("properties").and_then(Value::as_object);
-        if !additional_allowed
-            && let Some(props) = properties
-        {
+        if !additional_allowed && let Some(props) = properties {
             for key in args_obj.keys() {
                 if !props.contains_key(key) {
                     return Err(ToolsError::AdditionalProperty(key.clone()));

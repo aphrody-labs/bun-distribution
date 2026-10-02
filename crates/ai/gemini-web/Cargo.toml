@@ -28,12 +28,15 @@ sha2        = { workspace = true }
 tokio       = { workspace = true, features = ["fs", "io-util", "macros", "rt", "time"] }
 reqwest     = { workspace = true }
 
+# Browser and WASI: Cargo cannot switch off the features of a workspace dependency, and the workspace
+# tokio is "full" (net -> mio, which no wasm target has), so the minimal set is declared here, on the
+# workspace versions. reqwest uses the browser fetch API on wasm32-unknown-unknown.
 [target.'cfg(all(target_arch = "wasm32", target_os = "unknown"))'.dependencies]
-tokio.workspace = true
-reqwest.workspace = true
+tokio   = { version = "1.53", default-features = false, features = ["sync", "macros", "rt", "time"] }
+reqwest = { version = "0.13", default-features = false, features = ["json", "stream", "query", "form"] }
 
 [target.'cfg(target_os = "wasi")'.dependencies]
-tokio.workspace = true
+tokio   = { version = "1.53", default-features = false, features = ["sync", "macros", "rt", "time"] }
 
 [dev-dependencies]
 tokio        = { workspace = true, features = ["macros", "rt", "rt-multi-thread"] }

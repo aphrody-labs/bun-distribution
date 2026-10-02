@@ -4,16 +4,20 @@
 //! Text embedding abstraction and concrete backends.
 
 pub mod llama;
+#[cfg(feature = "native")]
+pub mod native;
 pub mod openai;
-#[cfg(feature = "native")] pub mod native;
-#[cfg(feature = "ort")] pub mod ort;
+#[cfg(feature = "ort")]
+pub mod ort;
 pub mod stub;
 
 use async_trait::async_trait;
 pub use llama::LlamaServerEmbedder;
+#[cfg(feature = "native")]
+pub use native::NativeEmbedder;
 pub use openai::OpenAiCompatEmbedder;
-#[cfg(feature = "native")] pub use native::NativeEmbedder;
-#[cfg(feature = "ort")] pub use ort::OrtEmbedder;
+#[cfg(feature = "ort")]
+pub use ort::OrtEmbedder;
 pub use stub::StubEmbedder;
 
 use crate::error::{RagError, Result};
@@ -33,11 +37,7 @@ pub const MATRYOSHKA_512_DIM: usize = 512;
 pub fn format_query_or_passage(model_id: &str, text: &str, is_query: bool) -> String {
     let lower = model_id.to_ascii_lowercase();
     if lower.contains("qwen3") && lower.contains("embed") {
-        if is_query {
-            format!("{QWEN3_QUERY_INSTRUCTION}{text}")
-        } else {
-            text.to_string()
-        }
+        if is_query { format!("{QWEN3_QUERY_INSTRUCTION}{text}") } else { text.to_string() }
     } else if lower.contains("e5") {
         let prefix = if is_query { "query: " } else { "passage: " };
         format!("{prefix}{text}")
@@ -108,9 +108,15 @@ mod tests {
     #[test]
     fn test_format_query_or_passage_e5() {
         let q = "search query";
-        assert_eq!(format_query_or_passage("multilingual-e5-small", q, true), "query: search query");
+        assert_eq!(
+            format_query_or_passage("multilingual-e5-small", q, true),
+            "query: search query"
+        );
         let doc = "doc body";
-        assert_eq!(format_query_or_passage("multilingual-e5-small", doc, false), "passage: doc body");
+        assert_eq!(
+            format_query_or_passage("multilingual-e5-small", doc, false),
+            "passage: doc body"
+        );
     }
 
     #[test]

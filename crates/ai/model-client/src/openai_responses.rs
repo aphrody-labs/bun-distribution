@@ -559,20 +559,26 @@ mod tests {
         let added = parser
             .feed_event(r#"{"type":"response.output_item.added","item":{"type":"function_call","id":"fc_1","call_id":"call_9","name":"shell","arguments":""}}"#)
             .unwrap();
-        assert_eq!(added, vec![ModelStreamEvent::ToolCallDelta {
-            id: Some("call_9".into()),
-            name: Some("shell".into()),
-            arguments_fragment: String::new(),
-        }]);
+        assert_eq!(
+            added,
+            vec![ModelStreamEvent::ToolCallDelta {
+                id: Some("call_9".into()),
+                name: Some("shell".into()),
+                arguments_fragment: String::new(),
+            }]
+        );
 
         let delta = parser
             .feed_event(r#"{"type":"response.function_call_arguments.delta","item_id":"fc_1","delta":"{\"cmd\":"}"#)
             .unwrap();
-        assert_eq!(delta, vec![ModelStreamEvent::ToolCallDelta {
-            id: Some("call_9".into()),
-            name: Some("shell".into()),
-            arguments_fragment: "{\"cmd\":".into(),
-        }]);
+        assert_eq!(
+            delta,
+            vec![ModelStreamEvent::ToolCallDelta {
+                id: Some("call_9".into()),
+                name: Some("shell".into()),
+                arguments_fragment: "{\"cmd\":".into(),
+            }]
+        );
 
         let args_done = parser
             .feed_event(r#"{"type":"response.function_call_arguments.done","item_id":"fc_1","arguments":"{\"cmd\":\"ls\"}"}"#)
@@ -582,25 +588,31 @@ mod tests {
         let item_done = parser
             .feed_event(r#"{"type":"response.output_item.done","item":{"type":"function_call","id":"fc_1","call_id":"call_9","name":"shell","arguments":"{\"cmd\":\"ls\"}"}}"#)
             .unwrap();
-        assert_eq!(item_done, vec![ModelStreamEvent::ToolCall {
-            id: "call_9".into(),
-            name: "shell".into(),
-            arguments: json!({ "cmd": "ls" }),
-        }]);
+        assert_eq!(
+            item_done,
+            vec![ModelStreamEvent::ToolCall {
+                id: "call_9".into(),
+                name: "shell".into(),
+                arguments: json!({ "cmd": "ls" }),
+            }]
+        );
 
         let completed = parser
             .feed_event(r#"{"type":"response.completed","response":{"status":"completed","usage":{"input_tokens":10,"output_tokens":4,"total_tokens":14,"input_tokens_details":{"cached_tokens":6},"output_tokens_details":{"reasoning_tokens":2}}}}"#)
             .unwrap();
-        assert_eq!(completed, vec![ModelStreamEvent::Completed {
-            usage: Some(TokenUsage {
-                input_tokens: 10,
-                output_tokens: 4,
-                total_tokens: 14,
-                cached_input_tokens: 6,
-                reasoning_output_tokens: 2,
-            }),
-            finish_reason: Some("completed".into()),
-        }]);
+        assert_eq!(
+            completed,
+            vec![ModelStreamEvent::Completed {
+                usage: Some(TokenUsage {
+                    input_tokens: 10,
+                    output_tokens: 4,
+                    total_tokens: 14,
+                    cached_input_tokens: 6,
+                    reasoning_output_tokens: 2,
+                }),
+                finish_reason: Some("completed".into()),
+            }]
+        );
     }
 
     /// A server that never sends `output_item.done` still gets its call out
@@ -617,24 +629,33 @@ mod tests {
         let events = parser
             .feed_event(r#"{"type":"response.completed","response":{"status":"completed"}}"#)
             .unwrap();
-        assert_eq!(events, vec![
-            ModelStreamEvent::ToolCall {
-                id: "call_2".into(),
-                name: "read_file".into(),
-                arguments: json!({ "path": "a" }),
-            },
-            ModelStreamEvent::Completed { usage: None, finish_reason: Some("completed".into()) },
-        ]);
+        assert_eq!(
+            events,
+            vec![
+                ModelStreamEvent::ToolCall {
+                    id: "call_2".into(),
+                    name: "read_file".into(),
+                    arguments: json!({ "path": "a" }),
+                },
+                ModelStreamEvent::Completed {
+                    usage: None,
+                    finish_reason: Some("completed".into())
+                },
+            ]
+        );
     }
 
     #[test]
     fn malformed_arguments_surface_as_raw_string() {
         let events = parse_responses_event(r#"{"type":"response.function_call_arguments.done","call_id":"c","name":"shell","arguments":"{cmd: ls"}"#).unwrap();
-        assert_eq!(events, vec![ModelStreamEvent::ToolCall {
-            id: "c".into(),
-            name: "shell".into(),
-            arguments: Value::String("{cmd: ls".into()),
-        }]);
+        assert_eq!(
+            events,
+            vec![ModelStreamEvent::ToolCall {
+                id: "c".into(),
+                name: "shell".into(),
+                arguments: Value::String("{cmd: ls".into()),
+            }]
+        );
     }
 
     #[test]
@@ -647,10 +668,10 @@ mod tests {
         });
         let payload = json!({ "type": "response.output_item.done", "item": item }).to_string();
         let events = parse_responses_event(&payload).unwrap();
-        assert_eq!(events, vec![ModelStreamEvent::ReasoningItem {
-            text: "plan".into(),
-            opaque: item.clone(),
-        }]);
+        assert_eq!(
+            events,
+            vec![ModelStreamEvent::ReasoningItem { text: "plan".into(), opaque: item.clone() }]
+        );
 
         let turn = ChatTurn {
             messages: vec![ChatMessage {
@@ -755,12 +776,18 @@ mod tests {
         )]);
         let events: Vec<ModelStreamEvent> =
             responses_sse_stream(bytes).map(Result::unwrap).collect().await;
-        assert_eq!(events, vec![
-            ModelStreamEvent::Created,
-            ModelStreamEvent::TextDelta("a".into()),
-            ModelStreamEvent::TextDelta("b".into()),
-            ModelStreamEvent::Completed { usage: None, finish_reason: Some("completed".into()) },
-        ]);
+        assert_eq!(
+            events,
+            vec![
+                ModelStreamEvent::Created,
+                ModelStreamEvent::TextDelta("a".into()),
+                ModelStreamEvent::TextDelta("b".into()),
+                ModelStreamEvent::Completed {
+                    usage: None,
+                    finish_reason: Some("completed".into())
+                },
+            ]
+        );
     }
 
     #[tokio::test]
@@ -771,10 +798,13 @@ mod tests {
         )]);
         let events: Vec<ModelStreamEvent> =
             responses_sse_stream(bytes).map(Result::unwrap).collect().await;
-        assert_eq!(events, vec![
-            ModelStreamEvent::Created,
-            ModelStreamEvent::TextDelta("a".into()),
-            ModelStreamEvent::Completed { usage: None, finish_reason: Some("stop".into()) },
-        ]);
+        assert_eq!(
+            events,
+            vec![
+                ModelStreamEvent::Created,
+                ModelStreamEvent::TextDelta("a".into()),
+                ModelStreamEvent::Completed { usage: None, finish_reason: Some("stop".into()) },
+            ]
+        );
     }
 }

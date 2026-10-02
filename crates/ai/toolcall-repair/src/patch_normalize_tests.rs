@@ -82,10 +82,13 @@ fn unified_diff_new_file() {
     let diff = "--- /dev/null\n+++ b/new.txt\n@@ -0,0 +1,2 @@\n+line one\n+line two\n";
     let codex = normalize_to_codex_patch(diff, &no_files).unwrap();
     let parsed = parse_patch(&codex).unwrap();
-    assert_eq!(parsed.hunks, vec![Hunk::AddFile {
-        path: "new.txt".into(),
-        contents: "line one\nline two\n".to_string(),
-    }]);
+    assert_eq!(
+        parsed.hunks,
+        vec![Hunk::AddFile {
+            path: "new.txt".into(),
+            contents: "line one\nline two\n".to_string(),
+        }]
+    );
 }
 
 #[test]
@@ -130,10 +133,13 @@ fn search_replace_new_file() {
         "```\nnotes/todo.md\n<<<<<<< SEARCH\n=======\n- [ ] write tests\n>>>>>>> REPLACE\n```";
     let codex = normalize_to_codex_patch(text, &no_files).unwrap();
     let parsed = parse_patch(&codex).unwrap();
-    assert_eq!(parsed.hunks, vec![Hunk::AddFile {
-        path: "notes/todo.md".into(),
-        contents: "- [ ] write tests\n".to_string(),
-    }]);
+    assert_eq!(
+        parsed.hunks,
+        vec![Hunk::AddFile {
+            path: "notes/todo.md".into(),
+            contents: "- [ ] write tests\n".to_string(),
+        }]
+    );
 }
 
 #[test]
@@ -173,10 +179,13 @@ fn whole_file_new_file() {
     let text = "src/main.rs\n```rust\nfn main() {\n    println!(\"hi\");\n}\n```\n";
     let codex = normalize_to_codex_patch(text, &no_files).unwrap();
     let parsed = parse_patch(&codex).unwrap();
-    assert_eq!(parsed.hunks, vec![Hunk::AddFile {
-        path: "src/main.rs".into(),
-        contents: "fn main() {\n    println!(\"hi\");\n}\n".to_string(),
-    }]);
+    assert_eq!(
+        parsed.hunks,
+        vec![Hunk::AddFile {
+            path: "src/main.rs".into(),
+            contents: "fn main() {\n    println!(\"hi\");\n}\n".to_string(),
+        }]
+    );
 }
 
 #[test]

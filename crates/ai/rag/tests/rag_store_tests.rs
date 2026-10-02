@@ -448,10 +448,8 @@ async fn test_qwen3_hybrid_rag_with_mrl_and_reranker() {
 
     // 3. Initialize RAG store with 512-dim stub representing Qwen3-Embedding-0.6B truncated MRL
     let store = Arc::new(RagStore::open_in_memory().expect("open store"));
-    let embedder = Arc::new(StubEmbedder::with_model_and_dim(
-        "qwen3-embedding-0.6b",
-        MATRYOSHKA_512_DIM,
-    ));
+    let embedder =
+        Arc::new(StubEmbedder::with_model_and_dim("qwen3-embedding-0.6b", MATRYOSHKA_512_DIM));
 
     // Index 6 documents
     let doc_id = store
@@ -512,9 +510,8 @@ async fn test_qwen3_hybrid_rag_with_mrl_and_reranker() {
     }
 
     let reranker = Arc::new(MockQwen3Reranker);
-    let searcher = RagSearcher::new(store.clone())
-        .with_embedder(embedder.clone())
-        .with_reranker(reranker);
+    let searcher =
+        RagSearcher::new(store.clone()).with_embedder(embedder.clone()).with_reranker(reranker);
 
     // Search query asking for Qwen3 reranker and Matryoshka
     let opts = SearchOptions {
@@ -546,7 +543,8 @@ async fn index_document_failure_preserves_previous_corpus_and_retries() {
     let dir = tempdir().unwrap();
     let db = dir.path().join("rag.sqlite");
     let store = Arc::new(RagStore::open(&db).unwrap());
-    let indexer = RagIndexer::new(store.clone()).with_embedder(Arc::new(StubEmbedder::with_model_and_dim("stub-8", 8)));
+    let indexer = RagIndexer::new(store.clone())
+        .with_embedder(Arc::new(StubEmbedder::with_model_and_dim("stub-8", 8)));
     let opts = IndexOptions::default();
     let original = "# Original\n\nneedle original corpus.";
     let replacement = "# Replacement\n\nreplacement corpus.";
@@ -583,7 +581,8 @@ async fn index_document_failure_preserves_previous_corpus_and_retries() {
 #[tokio::test]
 async fn index_document_empty_replacement_clears_chunks_and_vectors() {
     let store = Arc::new(RagStore::open_in_memory().unwrap());
-    let indexer = RagIndexer::new(store.clone()).with_embedder(Arc::new(StubEmbedder::with_model_and_dim("stub-8", 8)));
+    let indexer = RagIndexer::new(store.clone())
+        .with_embedder(Arc::new(StubEmbedder::with_model_and_dim("stub-8", 8)));
     let opts = IndexOptions::default();
     indexer.index_document("source.md", "original needle", 15, 1, &opts).await.unwrap();
     assert!(store.stats().await.unwrap().vector_count > 0);

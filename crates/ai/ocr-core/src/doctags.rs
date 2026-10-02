@@ -409,14 +409,12 @@ fn strip_markers(payload: &str) -> String {
 mod tests {
     use super::*;
 
-    const PAGE_WITH_TEXT: &str =
-        "<doctag><section_header_level_1><loc_17><loc_68><loc_308><loc_126>APHRODY LOCAL \
+    const PAGE_WITH_TEXT: &str = "<doctag><section_header_level_1><loc_17><loc_68><loc_308><loc_126>APHRODY LOCAL \
          INFERENCE</section_header_level_1>\n<text><loc_18><loc_185><loc_209><loc_252>Invoice \
          2026-08-21</text>\n<text><loc_18><loc_302><loc_213><loc_366>Total: 1337.42 \
          EUR</text>\n</doctag>";
 
-    const PICTURE_ONLY: &str =
-        "<doctag><page_header><loc_42><loc_17><loc_213><loc_26>ORIGINAL COLOR WORKS \
+    const PICTURE_ONLY: &str = "<doctag><page_header><loc_42><loc_17><loc_213><loc_26>ORIGINAL COLOR WORKS \
          part1</page_header>\n<picture><loc_51><loc_68><loc_228><loc_154><other></picture>\\
          n<picture><loc_52><loc_159><loc_170><loc_261><other></picture>\\
          n<page_footer><loc_40><loc_480><loc_52><loc_485>103</page_footer>\\

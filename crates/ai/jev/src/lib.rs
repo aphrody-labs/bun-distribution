@@ -24,7 +24,8 @@
 
 mod native;
 mod rag;
-#[cfg(feature = "server")] pub mod server;
+#[cfg(feature = "server")]
+pub mod server;
 mod types;
 mod validate;
 

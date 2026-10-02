@@ -119,15 +119,13 @@ fn parse_qwen_boxes(raw: &str) -> Vec<Region> {
         if let Some(bbox) = extract_bracket_coords(trimmed) {
             let label = trimmed
                 .replace(&format!("[{}]", extract_bracket_inner(trimmed).unwrap_or("")), "")
-                .trim_matches(|c: char| c.is_whitespace() || c == ':' || c == '-' || c == '*' || c == '.')
+                .trim_matches(|c: char| {
+                    c.is_whitespace() || c == ':' || c == '-' || c == '*' || c == '.'
+                })
                 .trim()
                 .to_string();
             let name = if label.is_empty() { "object".to_string() } else { label.clone() };
-            regions.push(Region {
-                label: name,
-                text: label,
-                bbox: Some(bbox),
-            });
+            regions.push(Region { label: name, text: label, bbox: Some(bbox) });
         }
     }
 
@@ -174,15 +172,10 @@ fn extract_box_label(before: &str, after: &str) -> Option<String> {
 /// `[y0, x0, y1, x1]`
 /// Qwen-VL standard coordinate order is (ymin, xmin, ymax, xmax).
 fn parse_1000_coords(s: &str) -> Option<BBox> {
-    let cleaned: String = s
-        .chars()
-        .map(|c| if c.is_ascii_digit() || c == '.' { c } else { ' ' })
-        .collect();
+    let cleaned: String =
+        s.chars().map(|c| if c.is_ascii_digit() || c == '.' { c } else { ' ' }).collect();
 
-    let nums: Vec<f32> = cleaned
-        .split_whitespace()
-        .filter_map(|w| w.parse::<f32>().ok())
-        .collect();
+    let nums: Vec<f32> = cleaned.split_whitespace().filter_map(|w| w.parse::<f32>().ok()).collect();
 
     if nums.len() != 4 {
         return None;
@@ -194,12 +187,7 @@ fn parse_1000_coords(s: &str) -> Option<BBox> {
     let y1 = (nums[2] / QWEN_SCALE).clamp(0.0, 1.0);
     let x1 = (nums[3] / QWEN_SCALE).clamp(0.0, 1.0);
 
-    Some(BBox {
-        x0: x0.min(x1),
-        y0: y0.min(y1),
-        x1: x0.max(x1),
-        y1: y0.max(y1),
-    })
+    Some(BBox { x0: x0.min(x1), y0: y0.min(y1), x1: x0.max(x1), y1: y0.max(y1) })
 }
 
 /// Parse `<tag><loc_..>…</tag>` blocks.
@@ -298,8 +286,7 @@ fn strip_ordinal(line: &str) -> &str {
 mod tests {
     use super::*;
 
-    const DOCLING: &str =
-        "<doctag><section_header_level_1><loc_17><loc_68><loc_308><loc_126>APHRODY LOCAL \
+    const DOCLING: &str = "<doctag><section_header_level_1><loc_17><loc_68><loc_308><loc_126>APHRODY LOCAL \
          INFERENCE</section_header_level_1>\n<text><loc_18><loc_185><loc_209><loc_252>Invoice \
          2026-08-21</text>\n</doctag>";
 

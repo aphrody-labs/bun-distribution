@@ -43,4 +43,5 @@ pub use profile::{GrammarMode, PromptProfile, builtin_profiles, glob_match, sele
 pub use repair::{RepairError, RepairKind, RepairReport, repair_json, repair_json_with_report};
 pub use validate::{Coercion, Violation, coerce_arguments, corrective_message, validate_arguments};
 
-#[cfg(test)] mod lib_tests;
+#[cfg(test)]
+mod lib_tests;

@@ -41,11 +41,7 @@ use read_fonts::{
     tables::gsub::SubstitutionLookup,
     types::{GlyphId, Tag},
 };
-use skrifa::{
-    FontRef, MetadataProvider,
-    instance::Size,
-    outline::DrawSettings,
-};
+use skrifa::{FontRef, MetadataProvider, instance::Size, outline::DrawSettings};
 
 /// The three Material Symbols variable-font styles this module can render.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]

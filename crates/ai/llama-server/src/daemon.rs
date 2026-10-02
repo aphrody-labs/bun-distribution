@@ -152,7 +152,10 @@ fn spawn_server(
         .stdin(Stdio::null())
         .stdout(Stdio::from(log.try_clone()?))
         .stderr(Stdio::from(log));
-    spawn_group(&mut command, SpawnOptions { die_with_parent_thread: true, ..SpawnOptions::default() })
+    spawn_group(
+        &mut command,
+        SpawnOptions { die_with_parent_thread: true, ..SpawnOptions::default() },
+    )
 }
 
 /// Wait for `/health` to answer 200, watching for an early exit.

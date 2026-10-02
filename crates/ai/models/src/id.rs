@@ -260,12 +260,15 @@ mod tests {
     #[test]
     fn parses_hf_with_nested_file_path() {
         let r = ModelRef::parse("hf:BAAI/bge-small-en-v1.5/onnx/model.onnx").unwrap();
-        assert_eq!(r, ModelRef::Hf {
-            owner: "BAAI".into(),
-            repo: "bge-small-en-v1.5".into(),
-            file: "onnx/model.onnx".into(),
-            revision: "main".into(),
-        });
+        assert_eq!(
+            r,
+            ModelRef::Hf {
+                owner: "BAAI".into(),
+                repo: "bge-small-en-v1.5".into(),
+                file: "onnx/model.onnx".into(),
+                revision: "main".into(),
+            }
+        );
         assert_eq!(r.basename(), "model.onnx");
     }
 

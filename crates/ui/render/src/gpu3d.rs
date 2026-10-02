@@ -385,9 +385,8 @@ impl Renderer3d {
         let row_bytes = width as usize * 4;
         let mut rgba = vec![0_u8; row_bytes * height as usize];
         {
-            let data = slice
-                .get_mapped_range()
-                .map_err(|err| Gpu3dError::Readback(err.to_string()))?;
+            let data =
+                slice.get_mapped_range().map_err(|err| Gpu3dError::Readback(err.to_string()))?;
             for (dst, src) in
                 rgba.chunks_exact_mut(row_bytes).zip(data.chunks_exact(bytes_per_row as usize))
             {
@@ -584,12 +583,15 @@ impl Renderer3d {
                 contents: bytemuck::cast_slice(&mesh.indices),
                 usage: wgpu::BufferUsages::INDEX,
             });
-            self.meshes.insert(*key, GpuMesh {
-                vertices,
-                indices,
-                index_count: mesh.indices.len() as u32,
-                last_used: frame,
-            });
+            self.meshes.insert(
+                *key,
+                GpuMesh {
+                    vertices,
+                    indices,
+                    index_count: mesh.indices.len() as u32,
+                    last_used: frame,
+                },
+            );
         }
         let frame = self.frame;
         self.meshes.retain(|_, m| frame.saturating_sub(m.last_used) <= MESH_TTL_FRAMES);
@@ -606,9 +608,11 @@ impl Renderer3d {
                 InstanceGpu {
                     model: inst.model.cols,
                     // WGSL mat3x3 columns from the row-major normal matrix.
-                    normal: [[n[0][0], n[1][0], n[2][0], 0.0], [n[0][1], n[1][1], n[2][1], 0.0], [
-                        n[0][2], n[1][2], n[2][2], 0.0,
-                    ]],
+                    normal: [
+                        [n[0][0], n[1][0], n[2][0], 0.0],
+                        [n[0][1], n[1][1], n[2][1], 0.0],
+                        [n[0][2], n[1][2], n[2][2], 0.0],
+                    ],
                     base: [inst.base[0], inst.base[1], inst.base[2], inst.alpha],
                     emissive: [
                         inst.emissive[0],

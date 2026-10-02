@@ -137,7 +137,8 @@ pub fn parse_catalogue(text: &str) -> Result<Vec<Upstream>, Error> {
 /// Reads the catalogue of the repository rooted at `repository`.
 pub fn catalogue(repository: impl AsRef<Path>) -> Result<Vec<Upstream>, Error> {
     let path = repository.as_ref().join(MANIFEST_PATH);
-    let text = std::fs::read_to_string(&path).map_err(|error| io_error("read manifest", &path, error))?;
+    let text =
+        std::fs::read_to_string(&path).map_err(|error| io_error("read manifest", &path, error))?;
     parse_catalogue(&text)
 }
 

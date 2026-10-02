@@ -76,7 +76,10 @@ impl CanonicalEnv {
 
     /// [`Self::resolve_source`] with the environment lookup injected.
     #[must_use]
-    pub fn resolve_source_with(&self, env: &dyn Fn(&str) -> Option<String>) -> Option<&'static str> {
+    pub fn resolve_source_with(
+        &self,
+        env: &dyn Fn(&str) -> Option<String>,
+    ) -> Option<&'static str> {
         let set = |name: &str| env(name).is_some_and(|value| !value.trim().is_empty());
         if set(self.canonical) {
             return Some(self.canonical);
@@ -117,14 +120,16 @@ pub const CHAT_MODEL: CanonicalEnv = CanonicalEnv {
 };
 
 /// `capabilities.code` — model id; base URL is [`CHAT_BASE_URL`].
-pub const CODE_MODEL: CanonicalEnv = CanonicalEnv { canonical: "APHRODY_AI_CODE_MODEL", aliases: &[] };
+pub const CODE_MODEL: CanonicalEnv =
+    CanonicalEnv { canonical: "APHRODY_AI_CODE_MODEL", aliases: &[] };
 
 /// `capabilities.reasoning` — model id; base URL is [`CHAT_BASE_URL`].
 pub const REASONING_MODEL: CanonicalEnv =
     CanonicalEnv { canonical: "APHRODY_AI_REASONING_MODEL", aliases: &[] };
 
 /// `capabilities.small` — model id; base URL is [`CHAT_BASE_URL`].
-pub const SMALL_MODEL: CanonicalEnv = CanonicalEnv { canonical: "APHRODY_AI_SMALL_MODEL", aliases: &[] };
+pub const SMALL_MODEL: CanonicalEnv =
+    CanonicalEnv { canonical: "APHRODY_AI_SMALL_MODEL", aliases: &[] };
 
 /// `capabilities.vision` — base URL of the visual-transcription endpoint.
 pub const VISION_BASE_URL: CanonicalEnv = CanonicalEnv {
@@ -139,10 +144,12 @@ pub const VISION_MODEL: CanonicalEnv = CanonicalEnv {
 };
 
 /// `capabilities.ocr` — the model id `aphrody ocr` runs by default.
-pub const OCR_MODEL: CanonicalEnv = CanonicalEnv { canonical: "APHRODY_AI_OCR_MODEL", aliases: &[] };
+pub const OCR_MODEL: CanonicalEnv =
+    CanonicalEnv { canonical: "APHRODY_AI_OCR_MODEL", aliases: &[] };
 
 /// `capabilities.stt` — the model id `aphrody_transcribe` runs by default.
-pub const STT_MODEL: CanonicalEnv = CanonicalEnv { canonical: "APHRODY_AI_STT_MODEL", aliases: &[] };
+pub const STT_MODEL: CanonicalEnv =
+    CanonicalEnv { canonical: "APHRODY_AI_STT_MODEL", aliases: &[] };
 
 /// `capabilities.embed` — base URL of the `/v1/embeddings` endpoint. The
 /// default model is for *new* local indexes only: querying an existing index
@@ -172,10 +179,8 @@ pub const RERANK_BASE_URL: CanonicalEnv = CanonicalEnv {
 };
 
 /// `capabilities.rerank` — the model id served at [`RERANK_BASE_URL`].
-pub const RERANK_MODEL: CanonicalEnv = CanonicalEnv {
-    canonical: "APHRODY_AI_RERANK_MODEL",
-    aliases: &["APHRODY_RAG_RERANK_MODEL"],
-};
+pub const RERANK_MODEL: CanonicalEnv =
+    CanonicalEnv { canonical: "APHRODY_AI_RERANK_MODEL", aliases: &["APHRODY_RAG_RERANK_MODEL"] };
 
 /// Every canonical variable, in the order `../aphrody-infra/config/local-ai.json`
 /// lists its `binaries` / `gateways` / `capabilities` sections. `aphrody ai

@@ -37,7 +37,6 @@ mod native_impl {
 
     use chrono::{SecondsFormat, Utc};
     use clap::{Parser, ValueEnum};
-    use getrandom::getrandom;
     use serde::{Deserialize, Serialize};
 
     #[derive(Debug, Clone, Copy, PartialEq, Eq, ValueEnum)]
@@ -184,7 +183,7 @@ mod native_impl {
 
     fn rand8_hex() -> String {
         let mut buf = [0_u8; 4];
-        if getrandom(&mut buf).is_err() {
+        if getrandom::fill(&mut buf).is_err() {
             // Fallback to timestamp-derived bytes if the OS RNG is unavailable.
             let nanos = Utc::now().timestamp_nanos_opt().unwrap_or(0) as u64;
             buf.copy_from_slice(&nanos.to_le_bytes()[..4]);

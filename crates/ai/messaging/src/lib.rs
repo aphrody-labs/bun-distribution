@@ -21,13 +21,15 @@
 
 #![deny(unsafe_code)]
 
-#[cfg(not(target_arch = "wasm32"))] pub mod config;
+#[cfg(not(target_arch = "wasm32"))]
+pub mod config;
 pub mod connector;
 pub mod resend;
 pub mod slack;
 pub mod telegram;
 
-#[cfg(not(target_arch = "wasm32"))] pub mod email;
+#[cfg(not(target_arch = "wasm32"))]
+pub mod email;
 
 // Bidirectional messaging channels — merged from the former `aphrody-channels` crate.
 pub mod channels;
@@ -46,7 +48,8 @@ pub(crate) fn http_client() -> reqwest::ClientBuilder {
 #[cfg(not(target_arch = "wasm32"))]
 pub use config::{MailConnector, MailProvider};
 pub use connector::{Connector, Message, MessageError, MessageId, MessageResult, ParseMode};
-#[cfg(not(target_arch = "wasm32"))] pub use email::{SmtpConnector, TlsMode};
+#[cfg(not(target_arch = "wasm32"))]
+pub use email::{SmtpConnector, TlsMode};
 pub use resend::ResendConnector;
 pub use slack::SlackConnector;
 pub use telegram::TelegramConnector;

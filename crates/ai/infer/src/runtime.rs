@@ -80,7 +80,15 @@ pub fn runtimes_dir() -> Result<PathBuf> {
     // resolution chain; `aphrody-voice` carried a third one that consulted
     // `HOME` before `USERPROFILE`, so under Git Bash on Windows the two
     // crates looked for runtimes in different trees.
-    aphrody_models::paths::runtimes_dir().map_err(|_| InferError::NoStateDir)
+    #[cfg(not(target_arch = "wasm32"))]
+    {
+        aphrody_models::paths::runtimes_dir().map_err(|_| InferError::NoStateDir)
+    }
+    // A browser has no state directory: `aphrody_models::paths` is host-only.
+    #[cfg(target_arch = "wasm32")]
+    {
+        Err(InferError::NoStateDir)
+    }
 }
 
 /// Locate the ONNX Runtime shared library.
@@ -94,10 +102,10 @@ pub fn discover() -> RuntimeSource {
         ("APHRODY_ORT_DYLIB", RuntimeSource::Override as fn(PathBuf) -> RuntimeSource),
         ("ORT_DYLIB_PATH", RuntimeSource::OrtEnv as fn(PathBuf) -> RuntimeSource),
     ] {
-        if let Ok(raw) = std::env::var(var) {
-            if !raw.is_empty() {
-                return wrap(PathBuf::from(raw));
-            }
+        if let Ok(raw) = std::env::var(var)
+            && !raw.is_empty()
+        {
+            return wrap(PathBuf::from(raw));
         }
     }
 

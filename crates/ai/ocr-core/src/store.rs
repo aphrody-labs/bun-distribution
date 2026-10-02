@@ -357,10 +357,10 @@ impl OcrStore {
             )?;
             // Blocks are rewritten wholesale: a second read of the same bytes
             // must not leave regions from the previous attempt behind.
-            tx.execute("DELETE FROM ocr_blocks WHERE page_id = ?1 AND content_key = ?2", params![
-                result.page_id,
-                content_key
-            ])?;
+            tx.execute(
+                "DELETE FROM ocr_blocks WHERE page_id = ?1 AND content_key = ?2",
+                params![result.page_id, content_key],
+            )?;
             for (idx, block) in result.blocks.iter().enumerate() {
                 let polygon =
                     block.polygon.map(|polygon| serde_json::to_string(&polygon)).transpose()?;

@@ -11,7 +11,8 @@
 //! by default); they are never written into the aphrody workspace.
 
 use std::collections::BTreeMap;
-#[cfg(not(target_arch = "wasm32"))] use std::path::Path;
+#[cfg(not(target_arch = "wasm32"))]
+use std::path::Path;
 
 use serde::{Deserialize, Serialize};
 
@@ -336,7 +337,10 @@ mod tests {
         let path = std::env::var_os("APHRODY_GOOGLE_COOKIES_JSON")
             .filter(|value| !value.is_empty())
             .expect("configured Google cookie path");
-        assert_eq!(crate::client::GeminiWebClient::default_cookie_path(), Some(path.clone().into()));
+        assert_eq!(
+            crate::client::GeminiWebClient::default_cookie_path(),
+            Some(path.clone().into())
+        );
         let auth = Auth::from_cookie_file(path).await.expect("valid local Google session");
         assert!(auth.jar().get("__Secure-1PSID").is_some());
     }

@@ -22,7 +22,9 @@ use std::{
     sync::Arc,
 };
 
-use anyhow::{Context as _, Result};
+#[cfg(not(target_arch = "wasm32"))]
+use anyhow::Context as _;
+use anyhow::Result;
 use dashmap::DashMap;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};

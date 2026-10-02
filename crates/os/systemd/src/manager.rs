@@ -417,7 +417,11 @@ impl SystemdSupervisor for HostSystemdBackend {
             };
             Some(UnitStatus {
                 name: name.to_string(),
-                unit_type: if name.ends_with(".target") { UnitType::Target } else { UnitType::Service },
+                unit_type: if name.ends_with(".target") {
+                    UnitType::Target
+                } else {
+                    UnitType::Service
+                },
                 description: desc,
                 state,
                 sub_state: sub,
@@ -464,7 +468,11 @@ impl SystemdSupervisor for HostSystemdBackend {
                     };
                     units.push(UnitStatus {
                         name: name.to_string(),
-                        unit_type: if name.ends_with(".target") { UnitType::Target } else { UnitType::Service },
+                        unit_type: if name.ends_with(".target") {
+                            UnitType::Target
+                        } else {
+                            UnitType::Service
+                        },
                         description: parts[4..].join(" "),
                         state,
                         sub_state: sub.to_string(),

@@ -91,7 +91,8 @@ fn write_node(
         if let Some(text) = node.text().and_then(|t| rules.text(parent, t)) {
             escape_into(out, &text, false);
         }
-    } else if node.is_comment() && rules.keep_comments()
+    } else if node.is_comment()
+        && rules.keep_comments()
         && let Some(text) = node.text()
     {
         out.push_str("<!--");

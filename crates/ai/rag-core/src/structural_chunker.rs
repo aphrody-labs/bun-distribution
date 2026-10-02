@@ -64,10 +64,12 @@ fn leading_ws(line: &str) -> usize {
 fn indent_based(lines: &[&str], re: &Regex) -> Vec<(Option<String>, u32, u32)> {
     let mut starts: Vec<(Option<String>, u32)> = Vec::new();
     for (i, line) in lines.iter().enumerate() {
-        if !line.trim().is_empty() && leading_ws(line) == 0
-            && let Some(name) = first_capture(re, line) {
-                starts.push((name, u32::try_from(i + 1).unwrap_or(u32::MAX)));
-            }
+        if !line.trim().is_empty()
+            && leading_ws(line) == 0
+            && let Some(name) = first_capture(re, line)
+        {
+            starts.push((name, u32::try_from(i + 1).unwrap_or(u32::MAX)));
+        }
     }
     finish_boundaries(starts, lines.len())
 }
@@ -101,16 +103,17 @@ fn brace_based(
     let mut i = 0usize;
     while i < lines.len() {
         if depth_before[i] == target_depth
-            && let Some(name) = first_capture(re, lines[i]) {
-                let start = u32::try_from(i + 1).unwrap_or(u32::MAX);
-                starts.push((name, start));
-                let mut j = i;
-                while j < lines.len() - 1 && depth_after[j] != target_depth {
-                    j += 1;
-                }
-                i = j + 1;
-                continue;
+            && let Some(name) = first_capture(re, lines[i])
+        {
+            let start = u32::try_from(i + 1).unwrap_or(u32::MAX);
+            starts.push((name, start));
+            let mut j = i;
+            while j < lines.len() - 1 && depth_after[j] != target_depth {
+                j += 1;
             }
+            i = j + 1;
+            continue;
+        }
         i += 1;
     }
     finish_boundaries(starts, lines.len())

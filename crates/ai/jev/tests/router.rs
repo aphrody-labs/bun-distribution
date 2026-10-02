@@ -89,19 +89,21 @@ fn request(state: impl Into<Value>) -> Request {
         .question("is_urgent", Question::noul("Does this convey urgency?"))
         .question(
             "department",
-            Question::choice("Which team should handle this?", [
-                ("billing", "Payments, invoicing, refunds"),
-                ("technical", "Bugs, outages, integrations"),
-                ("sales", "Pricing, upgrades, new accounts"),
-            ]),
+            Question::choice(
+                "Which team should handle this?",
+                [
+                    ("billing", "Payments, invoicing, refunds"),
+                    ("technical", "Bugs, outages, integrations"),
+                    ("sales", "Pricing, upgrades, new accounts"),
+                ],
+            ),
         )
         .question(
             "frustration",
-            Question::score("How frustrated is the customer?", [
-                "Calm",
-                "Frustrated",
-                "Very angry",
-            ]),
+            Question::score(
+                "How frustrated is the customer?",
+                ["Calm", "Frustrated", "Very angry"],
+            ),
         )
 }
 

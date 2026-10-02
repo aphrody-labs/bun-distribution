@@ -33,42 +33,31 @@ fn main() -> ExitCode {
         Err(e) => {
             eprintln!("paquet Aphrody illisible : {e}");
             return ExitCode::FAILURE;
-        }
+        },
     };
 
     let Some(anim) = pet.animation(&animation) else {
         eprintln!(
             "animation « {animation} » inconnue. Disponibles : {}",
-            pet.manifest
-                .animations
-                .keys()
-                .cloned()
-                .collect::<Vec<_>>()
-                .join(", ")
+            pet.manifest.animations.keys().cloned().collect::<Vec<_>>().join(", ")
         );
         return ExitCode::FAILURE;
     };
     let Some(frame) = anim.frames.get(index) else {
-        eprintln!(
-            "frame {index} hors de « {animation} » ({} frames)",
-            anim.frames.len()
-        );
+        eprintln!("frame {index} hors de « {animation} » ({} frames)", anim.frames.len());
         return ExitCode::FAILURE;
     };
 
     // `--tauri`: the application bundle icon set instead of the web favicons.
     let tauri = args.iter().any(|a| a == "--tauri");
-    let produits = if tauri {
-        pet.tauri_icons(frame)
-    } else {
-        pet.brand_assets(frame, TAILLES_FAVICON)
-    };
+    let produits =
+        if tauri { pet.tauri_icons(frame) } else { pet.brand_assets(frame, TAILLES_FAVICON) };
     let fichiers = match produits {
         Ok(f) => f,
         Err(e) => {
             eprintln!("production des assets : {e}");
             return ExitCode::FAILURE;
-        }
+        },
     };
 
     if let Err(e) = fs::create_dir_all(&sortie) {
@@ -85,9 +74,6 @@ fn main() -> ExitCode {
         total += f.octets.len();
         println!("{:>9} o  {}", f.octets.len(), chemin.display());
     }
-    println!(
-        "\n{} fichiers, {total} o, depuis {animation}[{index}]",
-        fichiers.len()
-    );
+    println!("\n{} fichiers, {total} o, depuis {animation}[{index}]", fichiers.len());
     ExitCode::SUCCESS
 }

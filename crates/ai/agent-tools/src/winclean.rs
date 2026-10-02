@@ -152,13 +152,18 @@ impl WincleanGatewayTool {
                     .into(),
             )),
         );
-        properties.insert("arguments".into(), JsonSchema {
-            schema_type: Some(aphrody_toolcall::JsonSchemaType::Single(
-                aphrody_toolcall::JsonSchemaPrimitiveType::Object,
-            )),
-            description: Some("Arguments object for `tool` (see its schema via `filter`).".into()),
-            ..Default::default()
-        });
+        properties.insert(
+            "arguments".into(),
+            JsonSchema {
+                schema_type: Some(aphrody_toolcall::JsonSchemaType::Single(
+                    aphrody_toolcall::JsonSchemaPrimitiveType::Object,
+                )),
+                description: Some(
+                    "Arguments object for `tool` (see its schema via `filter`).".into(),
+                ),
+                ..Default::default()
+            },
+        );
         properties.insert(
             "filter".into(),
             JsonSchema::string(Some(

@@ -50,7 +50,8 @@ pub mod config;
 pub mod endpoints;
 pub mod error;
 pub mod models;
-#[cfg(not(target_arch = "wasm32"))] pub mod oauth;
+#[cfg(not(target_arch = "wasm32"))]
+pub mod oauth;
 pub mod state_sync;
 
 /// Local `language_server` gRPC bridge (opt-in `local-ls` feature, host-only).

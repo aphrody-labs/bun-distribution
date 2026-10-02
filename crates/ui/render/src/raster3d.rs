@@ -703,12 +703,13 @@ pub fn render_prepared(prepared: &Prepared3d) -> Canvas {
 
     let work = |(i, (color, depth)): (usize, (&mut [u8], &mut [f32]))| {
         let rows = (depth.len() / (width * samples)) as u32;
-        raster_band(prepared, shadow, &tris, &bins[i], BandTarget {
-            y0: i as u32 * BAND_ROWS,
-            rows,
-            color,
-            depth,
-        });
+        raster_band(
+            prepared,
+            shadow,
+            &tris,
+            &bins[i],
+            BandTarget { y0: i as u32 * BAND_ROWS, rows, color, depth },
+        );
     };
     #[cfg(feature = "parallel")]
     {

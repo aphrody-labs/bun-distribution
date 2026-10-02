@@ -3,8 +3,8 @@
 
 //! PSD channel extraction and PackBits row encoding.
 
-use image::RgbaImage;
 use crate::psd::PsdExportError;
+use image::RgbaImage;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ChannelId {
@@ -77,10 +77,7 @@ pub fn encode_image_rle(
             out.extend_from_slice(&length.to_be_bytes());
         }
         out.extend_from_slice(&data);
-        encoded.push(EncodedChannel {
-            channel_id: channel.psd_id(),
-            data: out,
-        });
+        encoded.push(EncodedChannel { channel_id: channel.psd_id(), data: out });
     }
 
     Ok(encoded)
@@ -106,10 +103,7 @@ fn encode_row(row: &[u8], out: &mut Vec<u8>) {
 
 fn repeated_run_len(bytes: &[u8], start: usize) -> usize {
     let val = bytes[start];
-    bytes[start..]
-        .iter()
-        .take_while(|&&b| b == val)
-        .count()
+    bytes[start..].iter().take_while(|&&b| b == val).count()
 }
 
 fn literal_run_len(bytes: &[u8], start: usize) -> usize {

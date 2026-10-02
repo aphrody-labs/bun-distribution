@@ -7,8 +7,8 @@
 //! Japanese *kinsoku shori* line-breaking rules, dynamic binary-search font sizing,
 //! and stroke/drop-shadow rendering styles.
 
-use serde::{Deserialize, Serialize};
 use crate::bubble::{BoundingBox, Point, SpeechBubble};
+use serde::{Deserialize, Serialize};
 
 /// Writing orientation mode.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
@@ -109,7 +109,11 @@ pub struct TypesetEngine;
 impl TypesetEngine {
     /// Automatically fits text into a speech bubble by binary-searching the optimal font size.
     #[must_use]
-    pub fn fit_text_to_bubble(text: &str, bubble: &SpeechBubble, style: &TextStyle) -> TypesetLayout {
+    pub fn fit_text_to_bubble(
+        text: &str,
+        bubble: &SpeechBubble,
+        style: &TextStyle,
+    ) -> TypesetLayout {
         let clean_text = text.trim();
         if clean_text.is_empty() {
             return TypesetLayout {
@@ -141,7 +145,8 @@ impl TypesetEngine {
             }
         }
 
-        best_layout.unwrap_or_else(|| Self::layout_text(clean_text, bubble, style, style.min_font_size))
+        best_layout
+            .unwrap_or_else(|| Self::layout_text(clean_text, bubble, style, style.min_font_size))
     }
 
     /// Computes layout for a specific font size.
@@ -225,7 +230,12 @@ impl TypesetEngine {
         TypesetLayout {
             font_size,
             lines: typeset_lines,
-            bounds: BoundingBox::new(bubble.bounds.x, bubble.bounds.y, bubble.bounds.width, bubble.bounds.height),
+            bounds: BoundingBox::new(
+                bubble.bounds.x,
+                bubble.bounds.y,
+                bubble.bounds.width,
+                bubble.bounds.height,
+            ),
             fits,
         }
     }
@@ -283,7 +293,12 @@ impl TypesetEngine {
         TypesetLayout {
             font_size,
             lines: typeset_lines,
-            bounds: BoundingBox::new(bubble.bounds.x, bubble.bounds.y, bubble.bounds.width, bubble.bounds.height),
+            bounds: BoundingBox::new(
+                bubble.bounds.x,
+                bubble.bounds.y,
+                bubble.bounds.width,
+                bubble.bounds.height,
+            ),
             fits,
         }
     }

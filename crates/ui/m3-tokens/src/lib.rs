@@ -28,33 +28,41 @@
 #![forbid(unsafe_code)]
 #![deny(missing_docs)]
 
-#[cfg(feature = "std")] extern crate std;
+#[cfg(feature = "std")]
+extern crate std;
 
 /// Adaptive layout — M3 breakpoints (window size classes), pane counts, and
 /// recommended navigation/action/dialog component swaps.
 pub mod adaptive;
-#[cfg(feature = "std")] pub mod blend;
-#[cfg(feature = "std")] pub mod cam16;
+#[cfg(feature = "std")]
+pub mod blend;
+#[cfg(feature = "std")]
+pub mod cam16;
 pub mod color;
-#[cfg(feature = "std")] pub mod color_math;
-#[cfg(feature = "std")] pub mod contrast;
+#[cfg(feature = "std")]
+pub mod color_math;
+#[cfg(feature = "std")]
+pub mod contrast;
 /// Dynamic color — HCT seed → 13-tone tonal palette generation (the M3
 /// `material-color-utilities` algorithm). Derive a tonal palette from an
 /// arbitrary brand seed at runtime via [`dynamic::seed_to_palette`].
 #[cfg(feature = "std")]
 pub mod dynamic;
 pub mod elevation;
-#[cfg(feature = "std")] pub mod facade;
+#[cfg(feature = "std")]
+pub mod facade;
 pub mod gemini_brand;
 pub mod google_sans_code;
 pub mod google_sans_flex;
-#[cfg(feature = "std")] pub mod hct;
+#[cfg(feature = "std")]
+pub mod hct;
 /// `sourceColorFromImage`/`sourceColorFromImageBytes`: the color most suitable for a UI theme
 /// from a decoded image's pixels. `image` feature adds PNG/JPEG decode.
 #[cfg(feature = "std")]
 pub mod image;
 pub mod motion;
-#[cfg(feature = "std")] pub mod palette;
+#[cfg(feature = "std")]
+pub mod palette;
 /// Image color quantization (`QuantizerCelebi`): [`quantize_wu`] seeds [`quantize_wsmeans`].
 #[cfg(feature = "std")]
 pub mod quantize;
@@ -67,12 +75,14 @@ pub mod quantize_wsmeans;
 /// `QuantizerWu`: the Wu color quantizer.
 #[cfg(feature = "std")]
 pub mod quantize_wu;
-#[cfg(feature = "std")] pub mod scheme;
+#[cfg(feature = "std")]
+pub mod scheme;
 /// `Score.score`: ranks quantized colors by suitability for a UI theme.
 #[cfg(feature = "std")]
 pub mod score;
 pub mod shape;
-#[cfg(feature = "std")] pub mod sheets;
+#[cfg(feature = "std")]
+pub mod sheets;
 /// SpaceUI → M3 fusion: the SpaceUI semantic vocabulary mapped onto M3 roles and state layers,
 /// and its seven themes as M3 dynamic-scheme seeds.
 pub mod spaceui;
@@ -81,9 +91,11 @@ pub mod tonal;
 pub mod typography;
 
 // Re-export the CSS exporter at crate root when std is available.
-#[cfg(feature = "std")] pub use color::export_css;
+#[cfg(feature = "std")]
+pub use color::export_css;
 // Re-export the Aphrody brand CSS exporter for product and component hosts.
-#[cfg(feature = "std")] pub use gemini_brand::export_aphrody_brand_css;
+#[cfg(feature = "std")]
+pub use gemini_brand::export_aphrody_brand_css;
 
 // ── Top-level integration tests ──────────────────────────────────────────────
 

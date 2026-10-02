@@ -216,9 +216,11 @@ pub enum SpanKind {
 /// Final status assigned to a span before it is closed.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(tag = "status", rename_all = "lowercase")]
+#[derive(Default)]
 pub enum SpanStatus {
     /// Status has not been set — typically the value carried by an in-flight
     /// span before the caller signals success or failure.
+    #[default]
     Unset,
     /// Operation completed successfully.
     Ok,
@@ -227,12 +229,6 @@ pub enum SpanStatus {
         /// Human-readable cause of the failure.
         message: String,
     },
-}
-
-impl Default for SpanStatus {
-    fn default() -> Self {
-        Self::Unset
-    }
 }
 
 /// A point-in-time event attached to a span.
@@ -770,10 +766,10 @@ impl NdjsonSpanExporter {
             payload.push_str(&line);
             payload.push('\n');
         }
-        if let Some(parent) = self.path.parent() {
-            if !parent.as_os_str().is_empty() {
-                afs::create_dir_all(parent).await?;
-            }
+        if let Some(parent) = self.path.parent()
+            && !parent.as_os_str().is_empty()
+        {
+            afs::create_dir_all(parent).await?;
         }
         // Read the existing file (if any) and concatenate. Atomic rewrite via
         // tmp + flush + sync + rename so concurrent readers never see a torn

@@ -21,11 +21,13 @@ pub mod shenron;
 pub mod store;
 pub mod tools;
 
-#[cfg(feature = "native")] pub use embedder::NativeEmbedder;
-#[cfg(feature = "ort")] pub use embedder::OrtEmbedder;
 pub use config_resolve::{
     ResolvedEmbedConfig, ResolvedRerankConfig, rerank_available, resolve_embed, resolve_rerank,
 };
+#[cfg(feature = "native")]
+pub use embedder::NativeEmbedder;
+#[cfg(feature = "ort")]
+pub use embedder::OrtEmbedder;
 pub use embedder::{
     Embedder, LlamaServerEmbedder, MATRYOSHKA_512_DIM, OpenAiCompatEmbedder,
     QWEN3_QUERY_INSTRUCTION, StubEmbedder, format_query_or_passage, truncate_and_normalize_mrl,
@@ -37,7 +39,8 @@ pub use postgres::{
     search_shenron_documents, stats as pg_stats,
 };
 pub use redis_cache::RedisRagCache;
-#[cfg(feature = "native")] pub use reranker::NativeReranker;
+#[cfg(feature = "native")]
+pub use reranker::NativeReranker;
 pub use reranker::{LlamaServerReranker, NoopReranker, Reranker};
 pub use search::{RagSearcher, SearchMode, SearchOptions, SearchResult};
 pub use shenron::{

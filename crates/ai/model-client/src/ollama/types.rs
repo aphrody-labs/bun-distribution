@@ -439,7 +439,10 @@ impl OllamaShow {
     /// `<general.architecture>.context_length`.
     #[must_use]
     pub fn context_length(&self) -> Option<u64> {
-        self.details.context_length.filter(|n| *n > 0).or_else(|| self.arch_metadata("context_length"))
+        self.details
+            .context_length
+            .filter(|n| *n > 0)
+            .or_else(|| self.arch_metadata("context_length"))
     }
 
     /// Embedding vector size: `details.embedding_length`, else the GGUF key

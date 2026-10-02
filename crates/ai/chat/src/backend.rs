@@ -267,7 +267,8 @@ impl ModelBackend for GeminiBackend {
             }
         }
 
-        if content.is_empty() && tool_calls.is_empty()
+        if content.is_empty()
+            && tool_calls.is_empty()
             && let Some(msg) = latest_error
         {
             return Err(ChatError::BackendFailure(msg));
@@ -590,9 +591,8 @@ impl LocalBackend {
     /// Override the model slug used for completions.
     #[must_use]
     pub fn with_model(mut self, model: Option<String>) -> Self {
-        self.model = model
-            .filter(|s| !s.is_empty())
-            .unwrap_or_else(|| LOCAL_DEFAULT_MODEL.to_string());
+        self.model =
+            model.filter(|s| !s.is_empty()).unwrap_or_else(|| LOCAL_DEFAULT_MODEL.to_string());
         self
     }
 
@@ -663,7 +663,9 @@ impl ModelBackend for LocalBackend {
             .json(&body)
             .send()
             .await
-            .map_err(|e| ChatError::BackendFailure(format!("local inference connection error: {e}")))?;
+            .map_err(|e| {
+                ChatError::BackendFailure(format!("local inference connection error: {e}"))
+            })?;
 
         if !resp.status().is_success() {
             let status = resp.status();
@@ -673,10 +675,9 @@ impl ModelBackend for LocalBackend {
             )));
         }
 
-        let json_val: serde_json::Value = resp
-            .json()
-            .await
-            .map_err(|e| ChatError::BackendFailure(format!("failed to parse response JSON: {e}")))?;
+        let json_val: serde_json::Value = resp.json().await.map_err(|e| {
+            ChatError::BackendFailure(format!("failed to parse response JSON: {e}"))
+        })?;
 
         let content = json_val
             .pointer("/choices/0/message/content")
@@ -684,15 +685,12 @@ impl ModelBackend for LocalBackend {
             .unwrap_or("")
             .to_string();
 
-        let prompt_tokens = json_val
-            .pointer("/usage/prompt_tokens")
-            .and_then(|v| v.as_u64())
-            .unwrap_or(0) as u32;
+        let prompt_tokens =
+            json_val.pointer("/usage/prompt_tokens").and_then(|v| v.as_u64()).unwrap_or(0) as u32;
 
-        let completion_tokens = json_val
-            .pointer("/usage/completion_tokens")
-            .and_then(|v| v.as_u64())
-            .unwrap_or(0) as u32;
+        let completion_tokens =
+            json_val.pointer("/usage/completion_tokens").and_then(|v| v.as_u64()).unwrap_or(0)
+                as u32;
 
         let resolved_model = json_val
             .pointer("/model")
@@ -873,7 +871,8 @@ mod tests {
         assert_eq!(b.base_url(), "http://localhost:8080/v1");
         assert_eq!(b.model(), "custom-model");
 
-        let b2 = b.with_model(Some("qwen3-30b-a3b-instruct-2507-q4km".to_string()))
+        let b2 = b
+            .with_model(Some("qwen3-30b-a3b-instruct-2507-q4km".to_string()))
             .with_temperature(Some(0.7));
         assert_eq!(b2.model(), "qwen3-30b-a3b-instruct-2507-q4km");
     }
@@ -887,4 +886,3 @@ mod tests {
         assert!(!b.model().is_empty());
     }
 }
-

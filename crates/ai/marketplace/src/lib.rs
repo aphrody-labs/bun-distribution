@@ -384,9 +384,8 @@ pub fn embedded_index() -> MarketplaceIndex {
             description: "Programmatic SKILL.md scaffolding, registry loader, and lint engine."
                 .to_string(),
             kind: ExtensionKind::Skill,
-            source_url:
-                "https://github.com/aphrody-labs/aphrody/tree/main/crates/ai/skills-forge"
-                    .to_string(),
+            source_url: "https://github.com/aphrody-labs/aphrody/tree/main/crates/ai/skills-forge"
+                .to_string(),
             sha256: "0000000000000000000000000000000000000000000000000000000000000002".to_string(),
             author: "aphrody-code".to_string(),
             tags: vec!["skill".to_string(), "scaffold".to_string(), "lint".to_string()],
@@ -492,8 +491,7 @@ pub fn embedded_index() -> MarketplaceIndex {
             description: "Pre-commit hook running oxclint over staged JS/TS migration candidates."
                 .to_string(),
             kind: ExtensionKind::Hook,
-            source_url: "https://github.com/aphrody-labs/aphrody"
-                .to_string(),
+            source_url: "https://github.com/aphrody-labs/aphrody".to_string(),
             sha256: "0000000000000000000000000000000000000000000000000000000000000009".to_string(),
             author: "aphrody-code".to_string(),
             tags: vec!["hook".to_string(), "lint".to_string(), "pre-commit".to_string()],

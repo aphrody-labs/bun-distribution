@@ -208,12 +208,14 @@ mod tests {
     #[test]
     fn renders_scene_specific_pngs() {
         assert_eq!(render_untrusted(b"invalid JSON"), Err(CanvasError::InvalidJson));
-        let red =
-            render_untrusted(&serde_json::to_vec(&scene(Rgba8 { r: 255, g: 0, b: 0, a: 255 })).unwrap())
-                .unwrap();
-        let blue =
-            render_untrusted(&serde_json::to_vec(&scene(Rgba8 { r: 0, g: 0, b: 255, a: 255 })).unwrap())
-                .unwrap();
+        let red = render_untrusted(
+            &serde_json::to_vec(&scene(Rgba8 { r: 255, g: 0, b: 0, a: 255 })).unwrap(),
+        )
+        .unwrap();
+        let blue = render_untrusted(
+            &serde_json::to_vec(&scene(Rgba8 { r: 0, g: 0, b: 255, a: 255 })).unwrap(),
+        )
+        .unwrap();
         assert_eq!(&red[..8], b"\x89PNG\r\n\x1a\n");
         assert_eq!(u32::from_be_bytes(red[16..20].try_into().unwrap()), 64);
         assert_eq!(u32::from_be_bytes(red[20..24].try_into().unwrap()), 48);

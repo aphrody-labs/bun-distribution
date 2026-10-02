@@ -2,7 +2,7 @@
 
 mod common;
 
-use aphrody_embed::native::{EmbedOptions, Reranker, DEFAULT_RERANKER_ID};
+use aphrody_embed::native::{DEFAULT_RERANKER_ID, EmbedOptions, Reranker};
 use serde_json::Value;
 
 fn reference() -> Value {
@@ -76,7 +76,9 @@ fn optional_rerankers_match_sentence_transformers() {
             continue;
         }
         if !all && !common::reranker_installed(model) {
-            eprintln!("SKIPPED: {model} not installed (set APHRODY_EMBED_TEST_ALL_MODELS=1 to fetch)");
+            eprintln!(
+                "SKIPPED: {model} not installed (set APHRODY_EMBED_TEST_ALL_MODELS=1 to fetch)"
+            );
             continue;
         }
         check_parity(case, &pairs);

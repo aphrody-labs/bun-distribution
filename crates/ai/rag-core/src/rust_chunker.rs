@@ -217,8 +217,9 @@ fn collect_items(items: &[syn::Item], prefix: &mut Vec<String>, out: &mut Vec<Ra
 
 fn type_name(ty: &syn::Type) -> String {
     if let syn::Type::Path(p) = ty
-        && let Some(seg) = p.path.segments.last() {
-            return seg.ident.to_string();
-        }
+        && let Some(seg) = p.path.segments.last()
+    {
+        return seg.ident.to_string();
+    }
     "impl".to_string()
 }

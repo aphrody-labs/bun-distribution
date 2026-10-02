@@ -50,10 +50,7 @@ fn l_entree_d_installation_decrit_les_octets_reellement_embarques() {
         "spritesheetWidth",
         "spritesheetHeight",
     ] {
-        assert!(
-            j.get(champ).is_some(),
-            "champ absent du manifeste : {champ}"
-        );
+        assert!(j.get(champ).is_some(), "champ absent du manifeste : {champ}");
     }
 }
 
@@ -67,9 +64,7 @@ fn un_atlas_hors_specification_est_refuse_avec_sa_raison() {
     assert!(!c.ok());
     assert_eq!(c.version, None);
     assert!(
-        c.ecarts
-            .iter()
-            .any(|e| e.contains("ni v1") && e.contains("ni v2")),
+        c.ecarts.iter().any(|e| e.contains("ni v1") && e.contains("ni v2")),
         "l'écart doit nommer les deux versions attendues : {:?}",
         c.ecarts
     );

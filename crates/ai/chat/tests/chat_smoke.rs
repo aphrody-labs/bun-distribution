@@ -249,8 +249,7 @@ async fn unknown_tool_call_returns_tool_not_registered() {
 #[tokio::test]
 async fn session_persistence_writes_jsonl_to_disk() {
     let tmp = tempfile::tempdir().expect("tempdir");
-    let mut cfg = ChatConfig::default();
-    cfg.session_dir = Some(tmp.path().to_path_buf());
+    let cfg = ChatConfig { session_dir: Some(tmp.path().to_path_buf()), ..ChatConfig::default() };
 
     let mut chat = ChatLoop::builder(cfg)
         .with_backend(StubBackend::with_reply("persisted"))
@@ -275,8 +274,7 @@ async fn session_persistence_writes_jsonl_to_disk() {
 
 #[tokio::test]
 async fn max_turns_zero_means_unbounded() {
-    let mut cfg = ChatConfig::default();
-    cfg.max_turns = 0;
+    let cfg = ChatConfig { max_turns: 0, ..ChatConfig::default() };
     let mut chat =
         ChatLoop::builder(cfg).with_backend(StubBackend::with_reply("ok")).build().unwrap();
     for _ in 0..5 {
@@ -287,8 +285,7 @@ async fn max_turns_zero_means_unbounded() {
 
 #[tokio::test]
 async fn max_turns_enforced_when_set() {
-    let mut cfg = ChatConfig::default();
-    cfg.max_turns = 2;
+    let cfg = ChatConfig { max_turns: 2, ..ChatConfig::default() };
     let mut chat =
         ChatLoop::builder(cfg).with_backend(StubBackend::with_reply("ok")).build().unwrap();
     chat.single_turn("turn 1").await.unwrap();

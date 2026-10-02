@@ -50,7 +50,8 @@ pub mod text;
 pub mod vectors_f32;
 pub mod vectors_f64;
 
-#[cfg(feature = "oxc")] mod jsts_chunker;
+#[cfg(feature = "oxc")]
+mod jsts_chunker;
 
 pub mod eval;
 pub mod fusion;
@@ -59,7 +60,8 @@ pub use chunk::{
     Chunk, ChunkKind, ChunkOptions, Chunker, Language, LengthUnit, chunker_for_path,
     detect_language,
 };
-#[cfg(feature = "oxc")] pub use jsts_chunker::JsTsChunker;
+#[cfg(feature = "oxc")]
+pub use jsts_chunker::JsTsChunker;
 pub use markdown_chunker::MarkdownChunker;
 pub use prose_chunker::ProseChunker;
 pub use rust_chunker::RustChunker;

@@ -65,12 +65,10 @@ impl<'de> Deserialize<'de> for WireApi {
             "responses" => Ok(Self::Responses),
             "antigravity" => Ok(Self::Antigravity),
             "anthropic" => Ok(Self::Anthropic),
-            other => Err(serde::de::Error::unknown_variant(other, &[
-                "chat",
-                "responses",
-                "antigravity",
-                "anthropic",
-            ])),
+            other => Err(serde::de::Error::unknown_variant(
+                other,
+                &["chat", "responses", "antigravity", "anthropic"],
+            )),
         }
     }
 }

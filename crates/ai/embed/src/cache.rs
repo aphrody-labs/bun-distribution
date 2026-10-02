@@ -19,13 +19,22 @@ use crate::error::{EmbedError, Result};
 /// aphrody's on-disk layout. The copy that lived here was one of eight, and
 /// the eight did not agree on what `$APHRODY_HOME` meant.
 fn aphrody_state_dir() -> Result<PathBuf> {
-    aphrody_models::paths::state_dir().map_err(|_| EmbedError::CacheDir {
+    let unresolved = || EmbedError::CacheDir {
         path: PathBuf::from("~/.aphrody"),
         source: std::io::Error::new(
             std::io::ErrorKind::NotFound,
             "cannot resolve the aphrody state directory (set APHRODY_HOME)",
         ),
-    })
+    };
+    #[cfg(not(target_arch = "wasm32"))]
+    {
+        aphrody_models::paths::state_dir().map_err(|_| unresolved())
+    }
+    // A browser has no state directory: `aphrody_models::paths` is host-only.
+    #[cfg(target_arch = "wasm32")]
+    {
+        Err(unresolved())
+    }
 }
 
 /// Compose the embeddings cache path under a given aphrody state root.
@@ -84,11 +93,11 @@ mod tests {
         // Read-only: does not mutate env. On any normal dev/CI machine a home
         // is resolvable; assert the happy path produces a `.aphrody` leaf.
         if let Ok(dir) = aphrody_state_dir() {
-            if let Ok(explicit) = std::env::var("APHRODY_HOME") {
-                if !explicit.is_empty() {
-                    assert_eq!(dir, PathBuf::from(explicit));
-                    return;
-                }
+            if let Ok(explicit) = std::env::var("APHRODY_HOME")
+                && !explicit.is_empty()
+            {
+                assert_eq!(dir, PathBuf::from(explicit));
+                return;
             }
             assert_eq!(dir.file_name().unwrap(), ".aphrody");
         }

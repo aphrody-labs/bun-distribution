@@ -41,10 +41,9 @@ impl SystemSubsystem for WebSubsystem {
     }
 
     async fn call(&self, tool: &str, arguments: Value) -> Result<Value, SubsystemError> {
-        let provider = self
-            .provider
-            .as_ref()
-            .ok_or_else(|| SubsystemError::Unavailable("Aphrody Web MCP provider is not configured".into()))?;
+        let provider = self.provider.as_ref().ok_or_else(|| {
+            SubsystemError::Unavailable("Aphrody Web MCP provider is not configured".into())
+        })?;
         provider.call(tool, arguments).await
     }
 

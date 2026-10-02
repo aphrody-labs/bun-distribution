@@ -40,7 +40,11 @@ pub struct Output {
 type Owner = (String, u64);
 
 #[derive(Default)]
-struct Sessions(Arc<Mutex<HashMap<String, PtySession>>>, Arc<StdMutex<HashMap<String, Owner>>>, AtomicU64);
+struct Sessions(
+    Arc<Mutex<HashMap<String, PtySession>>>,
+    Arc<StdMutex<HashMap<String, Owner>>>,
+    AtomicU64,
+);
 
 impl Sessions {
     fn owners(&self) -> std::sync::MutexGuard<'_, HashMap<String, Owner>> {
@@ -103,7 +107,7 @@ async fn aphrody_shell_open<R: Runtime>(
                 PtyEvent::Output(bytes) => Output { session: id.clone(), bytes, exit: None },
                 PtyEvent::Exit { code } => {
                     Output { session: id.clone(), bytes: Vec::new(), exit: Some(code) }
-                }
+                },
             };
             if app.emit(OUTPUT_EVENT, payload).is_err() {
                 break;
@@ -124,15 +128,9 @@ async fn aphrody_shell_open_channel<R: Runtime>(
     shell: Option<String>,
     on_output: Channel<Output>,
 ) -> Result<(), String> {
-    open_channel(
-        webview.label().to_owned(),
-        &sessions,
-        session,
-        cols,
-        rows,
-        shell,
-        move |o| on_output.send(o).is_ok(),
-    )
+    open_channel(webview.label().to_owned(), &sessions, session, cols, rows, shell, move |o| {
+        on_output.send(o).is_ok()
+    })
     .await
 }
 
@@ -168,7 +166,7 @@ async fn open_channel(
                     PtyEvent::Exit { code } => {
                         exit = Some(code);
                         break;
-                    }
+                    },
                 }
                 if bytes.len() < MAX_FRAME {
                     event = rx.try_recv().ok();
@@ -321,15 +319,25 @@ mod tests {
         let seen = Arc::new(Mutex::new(Vec::<u8>::new()));
         let alive = Arc::new(std::sync::atomic::AtomicBool::new(true));
         let (sink, flag) = (Arc::clone(&seen), Arc::clone(&alive));
-        open_channel("main".into(), &sessions(), "c".into(), 80, 24, Some("/bin/sh".into()), move |o| {
-            assert_eq!(o.session, "c");
-            assert!(o.bytes.len() <= MAX_FRAME || o.exit.is_some());
-            sink.lock().unwrap().extend(o.bytes);
-            flag.load(Ordering::Relaxed)
-        })
+        open_channel(
+            "main".into(),
+            &sessions(),
+            "c".into(),
+            80,
+            24,
+            Some("/bin/sh".into()),
+            move |o| {
+                assert_eq!(o.session, "c");
+                assert!(o.bytes.len() <= MAX_FRAME || o.exit.is_some());
+                sink.lock().unwrap().extend(o.bytes);
+                flag.load(Ordering::Relaxed)
+            },
+        )
         .await
         .unwrap();
-        aphrody_shell_write(sessions(), "c".into(), b"echo chan-$((40+2))\n".to_vec()).await.unwrap();
+        aphrody_shell_write(sessions(), "c".into(), b"echo chan-$((40+2))\n".to_vec())
+            .await
+            .unwrap();
         let mut ok = false;
         for _ in 0..50 {
             tokio::time::sleep(Duration::from_millis(100)).await;

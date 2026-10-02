@@ -126,11 +126,11 @@ fn chat_form(contract: Option<&Value>, name: &str) -> &'static str {
     let url_env = contract
         .and_then(|c| c.pointer("/capabilities/chat/env"))
         .and_then(Value::as_array)
-        .and_then(|list| list.iter().find(|e| e.get("kind").and_then(Value::as_str) == Some("url")));
+        .and_then(|list| {
+            list.iter().find(|e| e.get("kind").and_then(Value::as_str) == Some("url"))
+        });
     let declared = url_env.and_then(|e| {
-        e.pointer(&format!("/aliasForms/{name}"))
-            .or_else(|| e.get("form"))
-            .and_then(Value::as_str)
+        e.pointer(&format!("/aliasForms/{name}")).or_else(|| e.get("form")).and_then(Value::as_str)
     });
     match declared {
         Some("origin") => "origin",
@@ -374,8 +374,26 @@ impl LocalCorpus {
     #[must_use]
     pub fn load_with(env: EnvLookup<'_>) -> Self {
         let mut docs = vec![
-            (embedded("embedded-lore", "Référence Canon Dragon Ball (Lore)", "/wiki/lore", LORE, "canon"), "shenron-corpus".to_owned()),
-            (embedded("embedded-guide", "Guide d'exploration Dragon Ball", "/wiki/guide", GUIDE, "guide"), "shenron-corpus".to_owned()),
+            (
+                embedded(
+                    "embedded-lore",
+                    "Référence Canon Dragon Ball (Lore)",
+                    "/wiki/lore",
+                    LORE,
+                    "canon",
+                ),
+                "shenron-corpus".to_owned(),
+            ),
+            (
+                embedded(
+                    "embedded-guide",
+                    "Guide d'exploration Dragon Ball",
+                    "/wiki/guide",
+                    GUIDE,
+                    "guide",
+                ),
+                "shenron-corpus".to_owned(),
+            ),
         ];
         let corpus = corpus_path_with(env);
         if corpus.exists()
@@ -383,7 +401,11 @@ impl LocalCorpus {
         {
             docs.extend(loaded.into_iter().map(|d| (d, "shenron-corpus".to_owned())));
         }
-        docs.extend(load_store(&rag_store_with(env)).into_iter().map(|d| (d, "aphrody-rag-dragonball".to_owned())));
+        docs.extend(
+            load_store(&rag_store_with(env))
+                .into_iter()
+                .map(|d| (d, "aphrody-rag-dragonball".to_owned())),
+        );
         Self::from_docs(docs)
     }
 
@@ -445,7 +467,8 @@ impl LocalCorpus {
                         if d.entity_lc.contains(term.as_str()) {
                             s += 4;
                         }
-                        s + u32::try_from(d.content_lc.matches(term.as_str()).count().min(10)).unwrap_or(10)
+                        s + u32::try_from(d.content_lc.matches(term.as_str()).count().min(10))
+                            .unwrap_or(10)
                     })
                     .sum();
                 (score > 0).then_some((d, score))
@@ -469,7 +492,12 @@ impl LocalCorpus {
 
     /// Numbered `[n]` context blocks within a character budget (default 6000).
     #[must_use]
-    pub fn context_json(&self, query: &str, opts: &LocalSearchOptions, max_chars: Option<usize>) -> Value {
+    pub fn context_json(
+        &self,
+        query: &str,
+        opts: &LocalSearchOptions,
+        max_chars: Option<usize>,
+    ) -> Value {
         let max_chars = max_chars.unwrap_or(6_000);
         let hits = self.search(query, opts);
         let mut assembled = String::new();
@@ -484,7 +512,9 @@ impl LocalCorpus {
                 h.lang,
                 h.snippet
             );
-            if !assembled.is_empty() && assembled.chars().count() + block.chars().count() > max_chars {
+            if !assembled.is_empty()
+                && assembled.chars().count() + block.chars().count() > max_chars
+            {
                 break;
             }
             assembled.push_str(&block);
@@ -500,7 +530,8 @@ impl LocalCorpus {
     /// in the active persona's voice. Without a reachable model the answer is a
     /// direct synthesis of the passages and `mode` says so.
     pub async fn ask_json(&self, question: &str, env: EnvLookup<'_>) -> Value {
-        let hits = self.search(question, &LocalSearchOptions { limit: Some(5), ..Default::default() });
+        let hits =
+            self.search(question, &LocalSearchOptions { limit: Some(5), ..Default::default() });
         let persona = active_persona_with(env);
         let passages = hits
             .iter()
@@ -553,11 +584,20 @@ fn hit(d: &IndexedDoc, idx: usize, score: u32) -> LocalHit {
     } else {
         text.to_owned()
     };
-    let url = if d.doc.url.is_empty() { format!("/wiki/databooks/{}", d.doc.id) } else { d.doc.url.clone() };
+    let url = if d.doc.url.is_empty() {
+        format!("/wiki/databooks/{}", d.doc.id)
+    } else {
+        d.doc.url.clone()
+    };
     LocalHit {
         rowid: if d.doc.id.is_empty() { (idx + 1).to_string() } else { d.doc.id.clone() },
         kind: d.doc.kind.clone().unwrap_or_else(|| "databook".into()),
-        title: d.doc.name.clone().filter(|n| !n.is_empty()).unwrap_or_else(|| format!("Passage #{}", idx + 1)),
+        title: d
+            .doc
+            .name
+            .clone()
+            .filter(|n| !n.is_empty())
+            .unwrap_or_else(|| format!("Passage #{}", idx + 1)),
         url: absolutize(&url),
         snippet,
         score: (f64::from(score) / 20.0).min(1.0),
@@ -584,7 +624,9 @@ fn load_store(path: &Path) -> Vec<ShenronCorpusDoc> {
     if !path.is_file() {
         return Vec::new();
     }
-    let Ok(conn) = rusqlite::Connection::open_with_flags(path, rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY) else {
+    let Ok(conn) =
+        rusqlite::Connection::open_with_flags(path, rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY)
+    else {
         return Vec::new();
     };
     let Ok(mut stmt) = conn.prepare(
@@ -665,7 +707,10 @@ mod tests {
 
     #[test]
     fn chat_resolves_canonical_and_origin_alias() {
-        let env = env_of(&[("APHRODY_AI_CHAT_BASE_URL", "http://h:1/v1/"), ("APHRODY_AI_CHAT_MODEL", "m")]);
+        let env = env_of(&[
+            ("APHRODY_AI_CHAT_BASE_URL", "http://h:1/v1/"),
+            ("APHRODY_AI_CHAT_MODEL", "m"),
+        ]);
         let chat = resolve_chat_with(&env).expect("chat");
         assert_eq!(chat.url, "http://h:1/v1/chat/completions");
         assert_eq!(chat.model.as_deref(), Some("m"));
@@ -698,12 +743,16 @@ mod tests {
 
     #[test]
     fn persona_defaults_to_toriyama_in_yolo_and_env_override_otherwise() {
-        let p = active_persona_with(&env_of(&[("APHRODY_YOLO", "1"), ("SHENRON_BOT_PERSONA", "Whis")]));
+        let p =
+            active_persona_with(&env_of(&[("APHRODY_YOLO", "1"), ("SHENRON_BOT_PERSONA", "Whis")]));
         assert_eq!(p.id, "akira-toriyama");
         assert!(p.system_prompt.contains("Tori-bot"));
         let dir = tempfile::tempdir().expect("tempdir");
         let home = dir.path().to_string_lossy().into_owned();
-        let p = active_persona_with(&env_of(&[("APHRODY_HOME", home.as_str()), ("SHENRON_BOT_PERSONA", "Son Gohan")]));
+        let p = active_persona_with(&env_of(&[
+            ("APHRODY_HOME", home.as_str()),
+            ("SHENRON_BOT_PERSONA", "Son Gohan"),
+        ]));
         assert_eq!(p.name, "Son Gohan");
         assert_eq!(p.id, "son-gohan");
     }
@@ -723,7 +772,10 @@ mod tests {
     fn embedded_corpus_answers_and_context_respects_budget() {
         let dir = tempfile::tempdir().expect("tempdir");
         let empty = dir.path().to_string_lossy().into_owned();
-        let env = env_of(&[("APHRODY_HOME", empty.as_str()), ("APHRODY_DRAGONBALL_DATASET_DIR", empty.as_str())]);
+        let env = env_of(&[
+            ("APHRODY_HOME", empty.as_str()),
+            ("APHRODY_DRAGONBALL_DATASET_DIR", empty.as_str()),
+        ]);
         let corpus = LocalCorpus::load_with(&env);
         assert_eq!(corpus.len(), 2);
         let hits = corpus.search("Goku", &LocalSearchOptions::default());
@@ -751,9 +803,15 @@ mod tests {
         }
         let db_path = db.to_string_lossy().into_owned();
         let empty = dir.path().join("none").to_string_lossy().into_owned();
-        let env = env_of(&[("APHRODY_DRAGONBALL_RAG_DB", db_path.as_str()), ("APHRODY_DRAGONBALL_DATASET_DIR", empty.as_str())]);
+        let env = env_of(&[
+            ("APHRODY_DRAGONBALL_RAG_DB", db_path.as_str()),
+            ("APHRODY_DRAGONBALL_DATASET_DIR", empty.as_str()),
+        ]);
         let corpus = LocalCorpus::load_with(&env);
-        let hits = corpus.search("vegeta prince", &LocalSearchOptions { lang: Some("en".into()), ..Default::default() });
+        let hits = corpus.search(
+            "vegeta prince",
+            &LocalSearchOptions { lang: Some("en".into()), ..Default::default() },
+        );
         assert_eq!(hits.len(), 1);
         assert_eq!(hits[0].origin_source_id, "aphrody-rag-dragonball");
         assert_eq!(hits[0].url, "https://example.org/vegeta");
@@ -763,7 +821,10 @@ mod tests {
     async fn ask_falls_back_to_direct_synthesis_without_model() {
         let dir = tempfile::tempdir().expect("tempdir");
         let empty = dir.path().to_string_lossy().into_owned();
-        let env = env_of(&[("APHRODY_HOME", empty.as_str()), ("APHRODY_DRAGONBALL_DATASET_DIR", empty.as_str())]);
+        let env = env_of(&[
+            ("APHRODY_HOME", empty.as_str()),
+            ("APHRODY_DRAGONBALL_DATASET_DIR", empty.as_str()),
+        ]);
         let corpus = LocalCorpus::load_with(&env);
         let out = corpus.ask_json("Qui est Son Goku ?", &env).await;
         assert_eq!(out["mode"], "aphrody_local_naive");

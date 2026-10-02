@@ -11,10 +11,10 @@
 #![forbid(unsafe_code)]
 #![deny(missing_docs)]
 
-use std::sync::Arc;
 use async_trait::async_trait;
 use raw_window_handle::{HasDisplayHandle, HasWindowHandle};
 use serde::{Deserialize, Serialize};
+use std::sync::Arc;
 
 // ── Window Types ─────────────────────────────────────────────────────────────
 
@@ -75,34 +75,19 @@ impl WindowBounds {
     /// Construct empty bounds where no properties are specified.
     #[must_use]
     pub const fn empty() -> Self {
-        Self {
-            x: None,
-            y: None,
-            width: None,
-            height: None,
-        }
+        Self { x: None, y: None, width: None, height: None }
     }
 
     /// Construct bounds with explicit size.
     #[must_use]
     pub const fn from_size(width: u32, height: u32) -> Self {
-        Self {
-            x: None,
-            y: None,
-            width: Some(width),
-            height: Some(height),
-        }
+        Self { x: None, y: None, width: Some(width), height: Some(height) }
     }
 
     /// Construct bounds with explicit position and size.
     #[must_use]
     pub const fn new(x: i32, y: i32, width: u32, height: u32) -> Self {
-        Self {
-            x: Some(x),
-            y: Some(y),
-            width: Some(width),
-            height: Some(height),
-        }
+        Self { x: Some(x), y: Some(y), width: Some(width), height: Some(height) }
     }
 }
 
@@ -131,10 +116,7 @@ pub struct WindowSpec {
 impl WindowSpec {
     /// Create a new window specification with a unique label.
     pub fn new(label: impl Into<String>) -> Self {
-        Self {
-            label: label.into(),
-            ..Default::default()
-        }
+        Self { label: label.into(), ..Default::default() }
     }
 
     /// Set window URL.
@@ -199,12 +181,7 @@ impl WindowInfo {
     /// Retrieve the current bounds from the window info snapshot.
     #[must_use]
     pub const fn bounds(&self) -> WindowBounds {
-        WindowBounds {
-            x: self.x,
-            y: self.y,
-            width: self.width,
-            height: self.height,
-        }
+        WindowBounds { x: self.x, y: self.y, width: self.width, height: self.height }
     }
 }
 
@@ -267,10 +244,7 @@ pub trait WindowHost: Send + Sync {
 // ── Surface Provisioning ─────────────────────────────────────────────────────
 
 /// Supertrait combining raw window and display handles in a thread-safe handle provider.
-pub trait HasWindowAndDisplayHandle:
-    HasWindowHandle + HasDisplayHandle + Send + Sync
-{
-}
+pub trait HasWindowAndDisplayHandle: HasWindowHandle + HasDisplayHandle + Send + Sync {}
 
 impl<T> HasWindowAndDisplayHandle for T where
     T: HasWindowHandle + HasDisplayHandle + Send + Sync + ?Sized
@@ -329,21 +303,13 @@ impl SurfaceTarget {
 
     /// Construct a host GPU texture surface target.
     pub fn host_gpu(width: u32, height: u32, format: impl Into<String>) -> Self {
-        Self::HostGpu {
-            width,
-            height,
-            format: format.into(),
-        }
+        Self::HostGpu { width, height, format: format.into() }
     }
 
     /// Construct a CPU image surface target.
     #[must_use]
     pub fn cpu_image(width: u32, height: u32, rgba: Vec<u8>) -> Self {
-        Self::CpuImage {
-            width,
-            height,
-            rgba,
-        }
+        Self::CpuImage { width, height, rgba }
     }
 }
 
@@ -744,12 +710,8 @@ mod tests {
         let back: aphrody_m3_tokens::color::ColorRoles = dto.into();
         assert_eq!(back, baseline);
 
-        let snapshot = ThemeSnapshot {
-            roles: dto,
-            mode: ThemeMode::Dark,
-            is_dark: true,
-            contrast: 0.5,
-        };
+        let snapshot =
+            ThemeSnapshot { roles: dto, mode: ThemeMode::Dark, is_dark: true, contrast: 0.5 };
         let json_val = serde_json::to_value(&snapshot).unwrap();
         assert_eq!(json_val["mode"], "dark");
         assert_eq!(json_val["is_dark"], true);
@@ -799,7 +761,11 @@ mod tests {
         async fn close(&self, _label: &str) -> Result<(), String> {
             Ok(())
         }
-        async fn set_bounds(&self, _label: &str, _bounds: WindowBounds) -> Result<WindowInfo, String> {
+        async fn set_bounds(
+            &self,
+            _label: &str,
+            _bounds: WindowBounds,
+        ) -> Result<WindowInfo, String> {
             Err("unimplemented".into())
         }
         async fn set_state(&self, _label: &str, _state: WindowState) -> Result<WindowInfo, String> {
@@ -835,11 +801,7 @@ mod tests {
     struct MockThemeProvider;
     impl ThemeProvider for MockThemeProvider {
         fn snapshot(&self) -> ThemeSnapshot {
-            ThemeSnapshot {
-                mode: ThemeMode::Dark,
-                is_dark: true,
-                ..Default::default()
-            }
+            ThemeSnapshot { mode: ThemeMode::Dark, is_dark: true, ..Default::default() }
         }
     }
 
@@ -861,7 +823,11 @@ mod tests {
         ) -> Result<serde_json::Value, String> {
             Ok(json!({ "called": tool }))
         }
-        async fn emit_event(&self, _topic: &str, _payload: serde_json::Value) -> Result<(), String> {
+        async fn emit_event(
+            &self,
+            _topic: &str,
+            _payload: serde_json::Value,
+        ) -> Result<(), String> {
             Ok(())
         }
     }

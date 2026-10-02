@@ -21,10 +21,7 @@ pub struct KoharuBroker {
 
 impl KoharuBroker {
     pub fn new(app: AppHandle) -> Self {
-        Self {
-            app,
-            service: Arc::new(Mutex::new(None)),
-        }
+        Self { app, service: Arc::new(Mutex::new(None)) }
     }
 
     async fn ensure_service(&self) -> Result<(), String> {
@@ -55,10 +52,7 @@ impl KoharuBroker {
         self.ensure_service().await?;
         let mut guard = self.service.lock().await;
         let service = guard.as_mut().expect("service was initialized");
-        service
-            .call(&method, params)
-            .await
-            .map_err(|error| format!("{error:#}"))
+        service.call(&method, params).await.map_err(|error| format!("{error:#}"))
     }
 }
 

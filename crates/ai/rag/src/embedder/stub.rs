@@ -21,10 +21,7 @@ pub struct StubEmbedder {
 
 impl Default for StubEmbedder {
     fn default() -> Self {
-        Self {
-            model_name: "stub-384".to_string(),
-            dimension: 384,
-        }
+        Self { model_name: "stub-384".to_string(), dimension: 384 }
     }
 }
 

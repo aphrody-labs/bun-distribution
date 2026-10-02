@@ -40,7 +40,8 @@ use aphrody_app_protocol::{
 };
 #[cfg(feature = "rag")]
 use aphrody_rag::{RagContextTool, RagSearcher, RagStore};
-#[cfg(feature = "rag")] use aphrody_toolcall::ToolExecutor;
+#[cfg(feature = "rag")]
+use aphrody_toolcall::ToolExecutor;
 use axum::{
     Json, Router,
     extract::State,
@@ -56,10 +57,7 @@ use serde_json::{Value, json};
 use thiserror::Error;
 use tokio::{
     io::{AsyncBufRead, AsyncBufReadExt, AsyncWrite, AsyncWriteExt},
-    sync::{
-        Mutex,
-        mpsc::UnboundedReceiver,
-    },
+    sync::{Mutex, mpsc::UnboundedReceiver},
 };
 
 #[derive(Debug, Error)]
@@ -169,9 +167,8 @@ fn lenient_client_request(id: RequestId, method: &str) -> Option<ClientRequest> 
         "thread/archive" => {
             ClientRequest::ThreadArchive { id, params: ThreadArchiveParams::default() }
         },
-        "thread/compact/start" => ClientRequest::ThreadCompactStart {
-            id,
-            params: ThreadCompactStartParams::default(),
+        "thread/compact/start" => {
+            ClientRequest::ThreadCompactStart { id, params: ThreadCompactStartParams::default() }
         },
         "turn/start" => ClientRequest::TurnStart { id, params: TurnStartParams::default() },
         "turn/steer" => ClientRequest::TurnSteer {
@@ -191,9 +188,8 @@ fn lenient_client_request(id: RequestId, method: &str) -> Option<ClientRequest> 
         "account/login/start" => {
             ClientRequest::AccountLoginStart { id, params: LoginAccountParams::default() }
         },
-        "mcpServerStatus/list" => ClientRequest::McpServerStatusList {
-            id,
-            params: ListMcpServerStatusParams::default(),
+        "mcpServerStatus/list" => {
+            ClientRequest::McpServerStatusList { id, params: ListMcpServerStatusParams::default() }
         },
         "tools/list" => ClientRequest::ToolsList { id, params: ToolsListParams::default() },
         _ => return None,
@@ -581,16 +577,19 @@ impl AppServer {
             .events()
             .ok_or_else(|| AppServerError::Runtime("session event stream unavailable".into()))?;
         self.notifications.push(notification("thread/started", json!({"thread": info})));
-        self.threads.insert(id, ThreadState {
-            info: info.clone(),
-            events,
-            handle,
-            _provider_lease: provider_lease,
-            active_turn: None,
-            interrupt_requested: false,
-            message_started: false,
-            open_tool_calls: HashMap::new(),
-        });
+        self.threads.insert(
+            id,
+            ThreadState {
+                info: info.clone(),
+                events,
+                handle,
+                _provider_lease: provider_lease,
+                active_turn: None,
+                interrupt_requested: false,
+                message_started: false,
+                open_tool_calls: HashMap::new(),
+            },
+        );
         Ok(thread_response(&info))
     }
 
@@ -838,7 +837,9 @@ impl AppServer {
                     .push(notification("thread/archived", json!({"threadId": thread_id})));
                 Ok(json!({"archived": true}))
             },
-            ClientRequest::ThreadUnarchive { params: ThreadUnarchiveParams { thread_id }, .. } => {
+            ClientRequest::ThreadUnarchive {
+                params: ThreadUnarchiveParams { thread_id }, ..
+            } => {
                 let marker = self.archive_marker(&thread_id);
                 tokio::fs::remove_file(&marker).await.map_err(|error| {
                     AppServerError::InvalidRequest(format!("thread is not archived: {error}"))
@@ -2147,8 +2148,7 @@ wire_api = "chat"
     async fn initialize_returns_the_sanitized_profile_home() {
         let mut server = test_server();
         let expected = std::path::absolute(server.base_home.join("workspace-team")).unwrap();
-        let initialized =
-            request(&mut server, "initialize", json!({"profile": "../.."})).await;
+        let initialized = request(&mut server, "initialize", json!({"profile": "../.."})).await;
         assert_eq!(initialized["result"]["codexHome"], expected.to_string_lossy().as_ref());
         assert_eq!(server.home, expected);
     }
@@ -2482,9 +2482,10 @@ model_provider = "fixture"
         thread.handle.join().await.unwrap();
         let runtime = AgentRuntime::builder()
             .config(RuntimeConfig::new("fixture"))
-            .model(ModelChoice::stub(StubModelClient::new("fixture", vec![ScriptedTurn::text(
-                "fixture result",
-            )])))
+            .model(ModelChoice::stub(StubModelClient::new(
+                "fixture",
+                vec![ScriptedTurn::text("fixture result")],
+            )))
             .build()
             .unwrap();
         let mut handle = runtime.spawn().await.unwrap();

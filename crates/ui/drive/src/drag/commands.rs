@@ -8,7 +8,8 @@
 use tauri::{AppHandle, Manager};
 
 use super::{DragConfig, DragCoordinator, DragResult, DragSession};
-#[cfg(target_os = "macos")] use crate::window::DriveWindow;
+#[cfg(target_os = "macos")]
+use crate::window::DriveWindow;
 
 /// Start a drag session from `source_window_label`; returns the session ID.
 #[tauri::command]
@@ -110,7 +111,9 @@ pub async fn end_drag(
 
 /// The active drag session, if any.
 #[tauri::command]
-pub async fn get_drag_session(app: AppHandle<tauri::DynRuntime>) -> Result<Option<DragSession>, String> {
+pub async fn get_drag_session(
+    app: AppHandle<tauri::DynRuntime>,
+) -> Result<Option<DragSession>, String> {
     Ok(app.state::<DragCoordinator>().current_session())
 }
 

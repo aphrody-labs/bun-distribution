@@ -293,35 +293,38 @@ mod tests {
     #[test]
     fn modern_chat_command_line() {
         let args = chat_spec().to_args(&modern(), "127.0.0.1", 9001);
-        assert_eq!(args, vec![
-            "--model",
-            "m.gguf",
-            "--host",
-            "127.0.0.1",
-            "--port",
-            "9001",
-            "--ctx-size",
-            "32768",
-            "--parallel",
-            "1",
-            "--alias",
-            "qwen2.5-coder",
-            "--fit",
-            "on",
-            "--fit-target",
-            "1024",
-            "--cache-type-k",
-            "q8_0",
-            "--cache-type-v",
-            "q8_0",
-            "--jinja",
-            "--lora",
-            "a.gguf",
-            "--lora-init-without-apply",
-            "--no-webui",
-            "--threads",
-            "8",
-        ]);
+        assert_eq!(
+            args,
+            vec![
+                "--model",
+                "m.gguf",
+                "--host",
+                "127.0.0.1",
+                "--port",
+                "9001",
+                "--ctx-size",
+                "32768",
+                "--parallel",
+                "1",
+                "--alias",
+                "qwen2.5-coder",
+                "--fit",
+                "on",
+                "--fit-target",
+                "1024",
+                "--cache-type-k",
+                "q8_0",
+                "--cache-type-v",
+                "q8_0",
+                "--jinja",
+                "--lora",
+                "a.gguf",
+                "--lora-init-without-apply",
+                "--no-webui",
+                "--threads",
+                "8",
+            ]
+        );
     }
 
     /// A legacy build only ever receives flags it documents.
@@ -330,29 +333,32 @@ mod tests {
         let mut spec = chat_spec();
         spec.placement = Placement::Planned { n_gpu_layers: 20, n_cpu_moe: Some(4) };
         let args = spec.to_args(&legacy(), "127.0.0.1", 9001);
-        assert_eq!(args, vec![
-            "--model",
-            "m.gguf",
-            "--host",
-            "127.0.0.1",
-            "--port",
-            "9001",
-            "--ctx-size",
-            "32768",
-            "--parallel",
-            "1",
-            "--n-gpu-layers",
-            "20",
-            "--flash-attn",
-            "--cache-type-k",
-            "q8_0",
-            "--cache-type-v",
-            "q8_0",
-            "--lora-scaled",
-            "a.gguf:1",
-            "--threads",
-            "8",
-        ]);
+        assert_eq!(
+            args,
+            vec![
+                "--model",
+                "m.gguf",
+                "--host",
+                "127.0.0.1",
+                "--port",
+                "9001",
+                "--ctx-size",
+                "32768",
+                "--parallel",
+                "1",
+                "--n-gpu-layers",
+                "20",
+                "--flash-attn",
+                "--cache-type-k",
+                "q8_0",
+                "--cache-type-v",
+                "q8_0",
+                "--lora-scaled",
+                "a.gguf:1",
+                "--threads",
+                "8",
+            ]
+        );
     }
 
     #[test]

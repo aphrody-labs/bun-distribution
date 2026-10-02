@@ -234,12 +234,11 @@ impl UserDefinedEmbedder {
         };
         let definition =
             UserDefinedEmbeddingModel::new(read(onnx)?, files).with_pooling(Pooling::Mean);
-        let mut model =
-            TextEmbedding::try_new_from_user_defined(
-                definition,
-                InitOptionsUserDefined::default().with_execution_providers(execution_providers()),
-            )
-                .map_err(|error| EmbedError::ModelInit(error.to_string()))?;
+        let mut model = TextEmbedding::try_new_from_user_defined(
+            definition,
+            InitOptionsUserDefined::default().with_execution_providers(execution_providers()),
+        )
+        .map_err(|error| EmbedError::ModelInit(error.to_string()))?;
         let probe = model
             .embed(&["embedding dimension probe"], None)
             .map_err(|error| EmbedError::Inference(error.to_string()))?;

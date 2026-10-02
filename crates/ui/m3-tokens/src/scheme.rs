@@ -285,15 +285,19 @@ impl Palettes {
                 (
                     palette(hue, 200.0),
                     palette(
-                        rotated_hue(hue, &BREAKPOINTS, &[
-                            18.0, 15.0, 10.0, 12.0, 15.0, 18.0, 15.0, 12.0, 12.0,
-                        ]),
+                        rotated_hue(
+                            hue,
+                            &BREAKPOINTS,
+                            &[18.0, 15.0, 10.0, 12.0, 15.0, 18.0, 15.0, 12.0, 12.0],
+                        ),
                         24.0,
                     ),
                     palette(
-                        rotated_hue(hue, &BREAKPOINTS, &[
-                            35.0, 30.0, 20.0, 25.0, 30.0, 35.0, 30.0, 25.0, 25.0,
-                        ]),
+                        rotated_hue(
+                            hue,
+                            &BREAKPOINTS,
+                            &[35.0, 30.0, 20.0, 25.0, 30.0, 35.0, 30.0, 25.0, 25.0],
+                        ),
                         32.0,
                     ),
                     palette(hue, 10.0),
@@ -306,15 +310,19 @@ impl Palettes {
                 (
                     palette(sanitize_degrees(hue + 240.0), 40.0),
                     palette(
-                        rotated_hue(hue, &BREAKPOINTS, &[
-                            45.0, 95.0, 45.0, 20.0, 45.0, 90.0, 45.0, 45.0, 45.0,
-                        ]),
+                        rotated_hue(
+                            hue,
+                            &BREAKPOINTS,
+                            &[45.0, 95.0, 45.0, 20.0, 45.0, 90.0, 45.0, 45.0, 45.0],
+                        ),
                         24.0,
                     ),
                     palette(
-                        rotated_hue(hue, &BREAKPOINTS, &[
-                            120.0, 120.0, 20.0, 45.0, 20.0, 15.0, 20.0, 120.0, 120.0,
-                        ]),
+                        rotated_hue(
+                            hue,
+                            &BREAKPOINTS,
+                            &[120.0, 120.0, 20.0, 45.0, 20.0, 15.0, 20.0, 120.0, 120.0],
+                        ),
                         32.0,
                     ),
                     palette(sanitize_degrees(hue + 15.0), 8.0),

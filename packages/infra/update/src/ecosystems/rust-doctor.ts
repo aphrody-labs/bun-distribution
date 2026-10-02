@@ -24,7 +24,7 @@
  * target/update/rust-doctor/report.json with the raw output of every stage next to it. Skips, vendored crates, target
  * triples and test exclusions are data in config/update/rust-doctor.json, each with its reason.
  */
-import { closeSync, existsSync, mkdirSync, openSync, readFileSync, rmSync } from "node:fs";
+import { closeSync, existsSync, mkdirSync, openSync, readdirSync, readFileSync, rmSync } from "node:fs";
 import { spawnSync } from "node:child_process";
 import { dirname, join, relative } from "node:path";
 import { Ctx } from "../context.ts";
@@ -58,7 +58,14 @@ export type TargetSpec = {
   packages: "auto" | "workspace" | string[];
   /** Regular expression tested against dependency `cfg(...)` strings for `auto` (default derived from the triple). */
   match?: string;
+  /** Members added to an `auto` selection: artifacts of the target that carry no target-gated dependency. */
+  include?: string[];
   exclude?: { crates: string; reason: string }[];
+  /**
+   * One `cargo check -p` per package instead of one for the set. A set unifies features (one member asking for
+   * tokio's `net` breaks every other one on wasm32), so crates that ship as separate artifacts are proven alone.
+   */
+  isolate?: boolean;
   env?: Record<string, string>;
 };
 export type DoctorConfig = {
@@ -158,7 +165,7 @@ export function targetPackages(packages: MetaPackage[], spec: TargetSpec): { pac
   if (spec.packages === "workspace") names = packages.map((p) => p.name);
   else if (spec.packages === "auto") {
     const re = new RegExp(spec.match ?? defaultMatch(spec.triple));
-    names = packages.filter((p) => p.dependencies.some((d) => d.target && re.test(d.target))).map((p) => p.name);
+    names = [...packages.filter((p) => p.dependencies.some((d) => d.target && re.test(d.target))).map((p) => p.name), ...(spec.include ?? [])];
   } else names = spec.packages;
   const excluded: { crate: string; reason: string }[] = [];
   const kept = names.filter((n) => {
@@ -173,6 +180,12 @@ export type TestFailure = { suite: string; name: string; kind: "fail" | "flaky";
 
 const xmlAttr = (tag: string, name: string) => new RegExp(`\\b${name}="([^"]*)"`).exec(tag)?.[1];
 const xmlText = (s: string) => s.replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, "$1").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&apos;/g, "'").replace(/&amp;/g, "&");
+
+/** The `/usr/lib/llvm-<N>/bin` directory with the highest N among `dirs` (the entries of `/usr/lib`). */
+export function newestLlvm(dirs: string[]): string | undefined {
+  const versions = dirs.map((d) => /^llvm-(\d+)$/.exec(d)?.[1]).filter((v): v is string => !!v).map(Number).sort((a, b) => b - a);
+  return versions.length ? `llvm-${versions[0]}` : undefined;
+}
 
 /** Failing and flaky test cases of a nextest JUnit report. */
 export function parseJunit(xml: string): { tests: number; failures: TestFailure[]; flaky: TestFailure[] } {
@@ -453,6 +466,19 @@ class Doctor {
 
   // -------------------------------------------------------------- targets
 
+  /**
+   * Environment of a target check. cargo-xwin drives `clang-cl` through the first `clang` on PATH, and the MSVC STL it
+   * downloads refuses a Clang older than its own floor (STL1000), so the newest installed LLVM goes first.
+   */
+  private targetEnv(spec: TargetSpec): Record<string, string> {
+    const env: Record<string, string> = { ...(spec.env ?? {}) };
+    if (spec.runner === "xwin" && !env.PATH && existsSync("/usr/lib")) {
+      const llvm = newestLlvm(readdirSync("/usr/lib").filter((d) => existsSync(`/usr/lib/${d}/bin/clang`)));
+      if (llvm) env.PATH = `/usr/lib/${llvm}/bin:${process.env.PATH ?? ""}`;
+    }
+    return env;
+  }
+
   targets(): StageResult {
     const t = Date.now();
     const problems: Problem[] = [];
@@ -466,13 +492,38 @@ class Doctor {
       const { packages, excluded } = targetPackages(this.packages, spec);
       for (const x of excluded) problems.push({ stage: "targets", severity: "info", crate: x.crate, message: `${x.crate} is not checked for ${spec.triple}`, note: x.reason });
       if (!packages.length) continue;
-      const scope = spec.packages === "workspace" && !excluded.length ? ["--workspace"] : packages.flatMap((n) => ["-p", n]);
-      const args = [...(spec.runner === "xwin" ? ["xwin"] : []), "check", "--target", spec.triple, "--keep-going", "--message-format=json", ...scope];
-      const run = this.cargo(`target-${spec.triple}`, args, spec.env);
-      commands.push(`cargo ${args.slice(0, spec.runner === "xwin" ? 4 : 3).join(" ")} <${packages.length} package(s)>`);
-      const found = this.problemsOf("targets", run, `cargo check --target ${spec.triple}`).problems.map((p) => ({ ...p, message: `[${spec.triple}] ${p.message}` }));
-      problems.push(...found);
-      parts.push(`${spec.triple} ${packages.length} package(s) ${found.filter((p) => p.severity === "error").length} error(s)`);
+      const base = [...(spec.runner === "xwin" ? ["xwin"] : []), "check", "--target", spec.triple, "--keep-going", "--message-format=json"];
+      const env = this.targetEnv(spec);
+      const tag = (p: Problem): Problem => ({ ...p, message: `[${spec.triple}] ${p.message}` });
+      let failed = 0;
+      if (spec.isolate) {
+        for (const name of packages) {
+          const run = this.cargo(`target-${spec.triple}-${name}`, [...base, "-p", name], env);
+          if (run.status === 0) { problems.push(...this.problemsOf("targets", run, name).problems.map(tag)); continue; }
+          failed++;
+          // The member's own errors are listed; an error inside a dependency is the reason, reported once per member.
+          const diags = parseDiagnostics(run.out, this.crateOf).filter((d) => d.level === "error");
+          const own = diags.filter((d) => this.isMember(d));
+          for (const d of own) {
+            const key = diagnosticKey(d);
+            if (this.reported.has(key)) continue;
+            this.reported.add(key);
+            problems.push(tag({ stage: "targets", severity: "error", crate: d.crate, code: d.code, file: d.file, line: d.line, message: d.message }));
+          }
+          const dep = diags.find((d) => !this.isMember(d));
+          const why = dep ? `dependency ${dep.crate} does not build: ${dep.message.split("\n")[0]!.slice(0, 200)}` : own.length ? `${own.length} error(s) in workspace code` : errorLines(run.log, 3).join(" | ").slice(0, 300);
+          problems.push(tag({ stage: "targets", severity: "error", crate: name, message: `${name} does not build: ${why}` }));
+        }
+        commands.push(`cargo ${base.slice(0, spec.runner === "xwin" ? 4 : 3).join(" ")} -p <each of ${packages.length} package(s)>`);
+      } else {
+        const scope = spec.packages === "workspace" && !excluded.length ? ["--workspace"] : packages.flatMap((n) => ["-p", n]);
+        const run = this.cargo(`target-${spec.triple}`, [...base, ...scope], env);
+        commands.push(`cargo ${base.slice(0, spec.runner === "xwin" ? 4 : 3).join(" ")} <${packages.length} package(s)>`);
+        const found = this.problemsOf("targets", run, `cargo check --target ${spec.triple}`).problems.map(tag);
+        problems.push(...found);
+        failed = found.filter((p) => p.severity === "error").length;
+      }
+      parts.push(`${spec.triple} ${packages.length} package(s)${spec.isolate ? " one by one" : ""}, ${failed} ${spec.isolate ? "failing" : "error(s)"}`);
     }
     return { stage: "targets", status: stageStatus(problems), seconds: secs(t), summary: parts.join("; ") || "no target configured", problems, fixed: 0, commands };
   }

@@ -595,15 +595,17 @@ mod tests {
             buffer.extend_from_slice(&chunk[..read]);
 
             if expected_len.is_none()
-                && let Some(header_end) = find_header_end(&buffer) {
-                    let headers = String::from_utf8_lossy(&buffer[..header_end]);
-                    expected_len = Some(header_end + parse_content_length(&headers));
-                }
+                && let Some(header_end) = find_header_end(&buffer)
+            {
+                let headers = String::from_utf8_lossy(&buffer[..header_end]);
+                expected_len = Some(header_end + parse_content_length(&headers));
+            }
 
             if let Some(total_len) = expected_len
-                && buffer.len() >= total_len {
-                    break;
-                }
+                && buffer.len() >= total_len
+            {
+                break;
+            }
         }
 
         String::from_utf8(buffer).unwrap()

@@ -11,7 +11,7 @@ use tokenizers::{
 
 use super::{
     bert::{NativeBert, Sequence},
-    embedder::{build_pool, plan_groups, resolve_threads, Backend, EmbedOptions},
+    embedder::{Backend, EmbedOptions, build_pool, plan_groups, resolve_threads},
     error::{Error, Result},
     manifest::{ModelPaths, RerankerSpec, ScoreActivation},
 };

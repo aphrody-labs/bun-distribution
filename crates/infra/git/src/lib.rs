@@ -41,8 +41,8 @@ pub use project::{
     GitBranch, GitCommitGraph, GitCommitNode, GitDiffItem, GitTreeNode, GitWorktreeInfo,
     commit_graph, commit_log, list_branches, list_tree_at, list_worktrees,
 };
-pub use source::{SourceReport, SourceRow, SourceState, source_report};
 pub use repository::{Change, GitHubRepository, LocalRepository, Remote, inspect_repository};
+pub use source::{SourceReport, SourceRow, SourceState, source_report};
 
 /// Errors emitted by the unified Git/GitHub surface.
 #[derive(Debug, thiserror::Error)]

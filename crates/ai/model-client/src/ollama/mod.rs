@@ -31,6 +31,7 @@ use futures::{Stream, StreamExt};
 use serde::Deserialize;
 use serde_json::{Value, json};
 
+use self::{chat::chat_ndjson_stream, types::null_default};
 pub use self::{
     chat::{OllamaChatDefaults, build_ollama_chat_request},
     types::{
@@ -39,10 +40,6 @@ pub use self::{
         OllamaModelSummary, OllamaProgress, OllamaRunningModel, OllamaShow, OllamaThinking,
         OllamaToolCall, OllamaToolCallFunction, Think,
     },
-};
-use self::{
-    chat::chat_ndjson_stream,
-    types::null_default,
 };
 use crate::{
     ChatTurn, EmbedClient, ModelCapabilities, ModelClient, ModelError, ModelStream,
@@ -125,11 +122,9 @@ pub fn ollama_host_to_url(host: &str) -> String {
 pub fn canonical_model_name(name: &str) -> String {
     let lowered = name.trim().to_ascii_lowercase();
     let without_scheme = lowered.split_once("://").map_or(lowered.as_str(), |(_, rest)| rest);
-    let without_host =
-        without_scheme.strip_prefix("registry.ollama.ai/").unwrap_or(without_scheme);
+    let without_host = without_scheme.strip_prefix("registry.ollama.ai/").unwrap_or(without_scheme);
     let without_namespace = without_host.strip_prefix("library/").unwrap_or(without_host);
-    let has_tag =
-        without_namespace.rsplit('/').next().is_some_and(|segment| segment.contains(':'));
+    let has_tag = without_namespace.rsplit('/').next().is_some_and(|segment| segment.contains(':'));
     if has_tag { without_namespace.to_string() } else { format!("{without_namespace}:latest") }
 }
 
@@ -766,16 +761,23 @@ mod tests {
         let router = Router::new().route(
             "/api/chat",
             post(|| async {
-                (StatusCode::NOT_FOUND, [("content-type", "application/json")], r#"{"error":"model 'nope' not found"}"#)
+                (
+                    StatusCode::NOT_FOUND,
+                    [("content-type", "application/json")],
+                    r#"{"error":"model 'nope' not found"}"#,
+                )
             }),
         );
         let base = serve(router).await;
         let client = OllamaClient::local(base, "nope");
         let error = client.stream(user("hi")).await.err().expect("error");
-        assert!(matches!(
-            error,
-            ModelError::Api { status: 404, ref message } if message == "model 'nope' not found"
-        ), "{error}");
+        assert!(
+            matches!(
+                error,
+                ModelError::Api { status: 404, ref message } if message == "model 'nope' not found"
+            ),
+            "{error}"
+        );
     }
 
     #[tokio::test]
@@ -865,16 +867,17 @@ mod tests {
         assert_eq!(show.context_length(), Some(8192));
         assert!(show.model_capabilities().tools);
 
-        let embeddings = api
-            .embed(&OllamaEmbedRequest::new("all-minilm", ["a", "b"]))
-            .await
-            .expect("embed");
+        let embeddings =
+            api.embed(&OllamaEmbedRequest::new("all-minilm", ["a", "b"])).await.expect("embed");
         assert_eq!(embeddings.embeddings.len(), 2);
 
         api.delete("llama3.2").await.expect("delete");
 
         let seen = seen.lock().expect("lock");
-        assert_eq!(seen[0], ("/api/show".to_string(), json!({"model": "llama3.2", "verbose": false})));
+        assert_eq!(
+            seen[0],
+            ("/api/show".to_string(), json!({"model": "llama3.2", "verbose": false}))
+        );
         assert_eq!(seen[1], ("/api/delete".to_string(), json!({"model": "llama3.2"})));
     }
 
@@ -946,39 +949,38 @@ mod tests {
         assert_eq!(steps[1].1, Some(0.25));
         assert_eq!(steps[2].1, Some(1.0));
         assert_eq!(steps.last().expect("last").0, "success");
-        assert_eq!(
-            seen.lock().expect("lock")[0].1,
-            json!({"model": "llama3.2", "stream": true})
-        );
+        assert_eq!(seen.lock().expect("lock")[0].1, json!({"model": "llama3.2", "stream": true}));
     }
 
     #[tokio::test]
     async fn a_failed_pull_is_an_error_and_a_cut_pull_is_not_a_success() {
         install_rustls_provider();
-        let router = Router::new()
-            .route(
-                "/api/pull",
-                post(|body: String| async move {
-                    let request: Value = serde_json::from_str(&body).expect("json");
-                    let lines = if request["model"] == "missing" {
-                        vec![
-                            json!({"status": "pulling manifest"}),
-                            json!({"error": "pull model manifest: file does not exist"}),
-                        ]
-                    } else {
-                        vec![json!({"status": "pulling manifest"})]
-                    };
-                    ([("content-type", "application/x-ndjson")], ndjson(&lines))
-                }),
-            );
+        let router = Router::new().route(
+            "/api/pull",
+            post(|body: String| async move {
+                let request: Value = serde_json::from_str(&body).expect("json");
+                let lines = if request["model"] == "missing" {
+                    vec![
+                        json!({"status": "pulling manifest"}),
+                        json!({"error": "pull model manifest: file does not exist"}),
+                    ]
+                } else {
+                    vec![json!({"status": "pulling manifest"})]
+                };
+                ([("content-type", "application/x-ndjson")], ndjson(&lines))
+            }),
+        );
         let base = serve(router).await;
         let api = OllamaApi::local(base);
 
         let failure = api.pull_with("missing", |_| {}).await.expect_err("failure");
-        assert!(matches!(
-            failure,
-            ModelError::Api { ref message, .. } if message.contains("file does not exist")
-        ), "{failure}");
+        assert!(
+            matches!(
+                failure,
+                ModelError::Api { ref message, .. } if message.contains("file does not exist")
+            ),
+            "{failure}"
+        );
 
         let cut = api.pull_with("cut", |_| {}).await.expect_err("cut");
         assert!(matches!(cut, ModelError::Stream(_)), "{cut}");

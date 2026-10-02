@@ -12,16 +12,19 @@ fn builtin_ids_are_exactly_the_documented_set() {
     let providers = builtin_providers(&no_env);
     let mut ids: Vec<&str> = providers.keys().map(String::as_str).collect();
     ids.sort_unstable();
-    assert_eq!(ids, vec![
-        "anthropic",
-        "antigravity",
-        "chatgpt",
-        "llama",
-        "lmstudio",
-        "ollama",
-        "openai",
-        "vllm",
-    ]);
+    assert_eq!(
+        ids,
+        vec![
+            "anthropic",
+            "antigravity",
+            "chatgpt",
+            "llama",
+            "lmstudio",
+            "ollama",
+            "openai",
+            "vllm",
+        ]
+    );
 }
 
 #[test]

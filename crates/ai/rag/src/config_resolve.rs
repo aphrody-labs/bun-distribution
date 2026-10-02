@@ -112,7 +112,11 @@ fn default_ort_model() -> &'static str {
     "bge-small-en-v1.5"
 }
 
-fn resolve_embed_model(backend: EmbedBackend, configured: Option<&str>, env: &EnvReader<'_>) -> String {
+fn resolve_embed_model(
+    backend: EmbedBackend,
+    configured: Option<&str>,
+    env: &EnvReader<'_>,
+) -> String {
     ai_env::EMBED_MODEL
         .resolve_with(env)
         .or_else(|| configured.filter(|value| !value.trim().is_empty()).map(str::to_owned))
@@ -139,18 +143,17 @@ fn resolve_rerank_model(configured: Option<&str>, env: &EnvReader<'_>) -> String
 /// with the catalog, and [`RagError::UnknownEmbedDimension`] when neither the
 /// catalog, the override, nor `configured` supplies one.
 fn resolve_dimension(model: &str, configured: Option<usize>, env: &EnvReader<'_>) -> Result<usize> {
-    let env_dim = match ai_env::EMBED_DIMENSIONS.resolve_source_with(env) {
-        Some(env_var) => {
-            let raw = ai_env::EMBED_DIMENSIONS.resolve_with(env).unwrap_or_default();
-            let value = raw.parse::<usize>().map_err(|source| RagError::InvalidEmbedDimension {
-                env_var,
-                raw: raw.clone(),
-                source,
-            })?;
-            Some((env_var, value))
-        },
-        None => None,
-    };
+    let env_dim =
+        match ai_env::EMBED_DIMENSIONS.resolve_source_with(env) {
+            Some(env_var) => {
+                let raw = ai_env::EMBED_DIMENSIONS.resolve_with(env).unwrap_or_default();
+                let value = raw.parse::<usize>().map_err(|source| {
+                    RagError::InvalidEmbedDimension { env_var, raw: raw.clone(), source }
+                })?;
+                Some((env_var, value))
+            },
+            None => None,
+        };
     let catalog_dim = Catalog::builtin().dimensions(model).ok().flatten().map(|dim| dim as usize);
 
     match (env_dim, catalog_dim) {
@@ -170,10 +173,14 @@ fn resolve_dimension(model: &str, configured: Option<usize>, env: &EnvReader<'_>
     }
 }
 
-fn resolve_embed_with(config: &RagConfig, env: &EnvReader<'_>) -> Result<Option<ResolvedEmbedConfig>> {
+fn resolve_embed_with(
+    config: &RagConfig,
+    env: &EnvReader<'_>,
+) -> Result<Option<ResolvedEmbedConfig>> {
     let env_endpoint = ai_env::EMBED_BASE_URL.resolve_with(env);
-    let Some(backend) =
-        config.embed_backend.or_else(|| env_endpoint.is_some().then_some(EmbedBackend::LlamaServer))
+    let Some(backend) = config
+        .embed_backend
+        .or_else(|| env_endpoint.is_some().then_some(EmbedBackend::LlamaServer))
     else {
         return Ok(None);
     };
@@ -197,7 +204,13 @@ fn resolve_embed_with(config: &RagConfig, env: &EnvReader<'_>) -> Result<Option<
         },
     };
 
-    Ok(Some(ResolvedEmbedConfig { backend, model, dimension, endpoint, api_key: api_key_from(env) }))
+    Ok(Some(ResolvedEmbedConfig {
+        backend,
+        model,
+        dimension,
+        endpoint,
+        api_key: api_key_from(env),
+    }))
 }
 
 fn resolve_rerank_with(

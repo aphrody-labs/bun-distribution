@@ -76,4 +76,5 @@ pub use tools::{
     build_profiled_tool_registry, build_tool_registry,
 };
 
-#[cfg(test)] mod runtime_tests;
+#[cfg(test)]
+mod runtime_tests;

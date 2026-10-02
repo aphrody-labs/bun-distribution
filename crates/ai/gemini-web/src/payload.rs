@@ -16,7 +16,7 @@
 //! The live web UI appends further sparse context slots (indices 3+); they are
 //! optional for a text-only send and omitted here.
 
-use serde_json::{json, Value};
+use serde_json::{Value, json};
 
 use crate::{
     boq::parse_envelopes,
@@ -333,21 +333,14 @@ mod tests {
         // candidate[1]=text; candidate[12][7] holds the generated-media subtree
         // (image url + video url). collect_image_urls excludes .mp4; the video
         // collector scans all of candidate[12].
-        let inner = json!([null, ["c", "r"], null, null, [[
-            "rc",
-            ["here"],
+        let inner = json!([
+            null,
+            ["c", "r"],
             null,
             null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            // candidate[12]:
-            [
+            [[
+                "rc",
+                ["here"],
                 null,
                 null,
                 null,
@@ -355,12 +348,26 @@ mod tests {
                 null,
                 null,
                 null,
-                // candidate[12][7] = media list:
-                [["https://lh3.googleusercontent.com/img1"], [
-                    "https://video.googleusercontent.com/clip.mp4"
-                ]]
-            ]
-        ]]]);
+                null,
+                null,
+                null,
+                // candidate[12]:
+                [
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    // candidate[12][7] = media list:
+                    [
+                        ["https://lh3.googleusercontent.com/img1"],
+                        ["https://video.googleusercontent.com/clip.mp4"]
+                    ]
+                ]
+            ]]
+        ]);
         let raw = format!(
             "{}{}\n[[\"wrb.fr\",\"x\",{:?},null,null,null,\"generic\"]]",
             ")]}'\n",

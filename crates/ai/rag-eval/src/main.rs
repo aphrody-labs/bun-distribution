@@ -155,13 +155,15 @@ async fn main() -> ExitCode {
     let target: Box<dyn EvalTarget> = match args.target.as_str() {
         "mcp" => {
             if !valid_mcp_tool(&args.mcp_tool) {
-                eprintln!("Error: --mcp-tool must be rag_search, shenron_rag_search, or aphrody_shenron_rag_search.");
+                eprintln!(
+                    "Error: --mcp-tool must be rag_search, shenron_rag_search, or aphrody_shenron_rag_search."
+                );
                 return ExitCode::from(2);
             }
             Box::new(
                 McpTarget::new(mcp_endpoint_url(args.url.as_deref()))
-                .with_tool_name(args.mcp_tool.clone())
-                .with_rate_limit(interval),
+                    .with_tool_name(args.mcp_tool.clone())
+                    .with_rate_limit(interval),
             )
         },
         "local" => match build_local_target(&args) {

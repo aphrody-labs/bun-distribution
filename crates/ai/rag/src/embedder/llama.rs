@@ -38,7 +38,6 @@ impl LlamaServerEmbedder {
             client: reqwest::Client::new(),
         }
     }
-
 }
 
 #[async_trait]

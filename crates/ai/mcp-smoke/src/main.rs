@@ -545,10 +545,10 @@ fn home_dir() -> Option<PathBuf> {
 }
 
 async fn write_report(path: &Path, lines: &[Value]) -> Result<()> {
-    if let Some(parent) = path.parent() {
-        if !parent.as_os_str().is_empty() {
-            tokio::fs::create_dir_all(parent).await.ok();
-        }
+    if let Some(parent) = path.parent()
+        && !parent.as_os_str().is_empty()
+    {
+        tokio::fs::create_dir_all(parent).await.ok();
     }
     let mut buf = String::with_capacity(lines.len() * 128);
     for v in lines {

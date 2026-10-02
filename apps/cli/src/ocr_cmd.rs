@@ -489,7 +489,7 @@ fn image_identity(path: &Path) -> miette::Result<aphrody_ocr::ocr_core::ImageIde
     }
     Ok(aphrody_ocr::ocr_core::ImageIdentity {
         path: path.to_path_buf(),
-        sha256: Some(format!("{:x}", digest.finalize())),
+        sha256: Some(digest.finalize().iter().map(|b| format!("{b:02x}")).collect::<String>()),
         media_type: None,
     })
 }

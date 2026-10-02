@@ -8,7 +8,9 @@ use thiserror::Error;
 #[cfg(not(target_arch = "wasm32"))]
 use tokio::process::Command;
 
-use crate::policy::{NetworkPolicy, SandboxMode, SandboxPolicy};
+use crate::policy::SandboxPolicy;
+#[cfg(not(target_arch = "wasm32"))]
+use crate::policy::{NetworkPolicy, SandboxMode};
 
 /// Error returned when running a sandboxed command.
 #[derive(Debug, Error)]

@@ -53,7 +53,8 @@ use async_trait::async_trait;
 use bytes::Bytes;
 use futures::Stream;
 
-#[cfg(feature = "local-whisper")] use crate::stt::TranscriptSegment;
+#[cfg(feature = "local-whisper")]
+use crate::stt::TranscriptSegment;
 use crate::stt::{SttError, SttOptions, SttProvider, Transcript, TranscriptDelta};
 
 // ── LocalWhisperBackend ───────────────────────────────────────────────────────

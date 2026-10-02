@@ -14,9 +14,11 @@ use serde_json::json;
 #[test]
 fn register_and_render_template() {
     let mut reg = PromptRegistry::new();
-    reg.register(PromptTemplate::new("greet", "Hello, {{ name }}! You are {{ role }}.", [
-        "name", "role",
-    ]))
+    reg.register(PromptTemplate::new(
+        "greet",
+        "Hello, {{ name }}! You are {{ role }}.",
+        ["name", "role"],
+    ))
     .expect("register");
 
     let out = reg.render("greet", &json!({"name": "Aphrody", "role": "engineer"})).expect("render");
@@ -26,9 +28,11 @@ fn register_and_render_template() {
 #[test]
 fn missing_var_returns_error_listing_missing() {
     let mut reg = PromptRegistry::new();
-    reg.register(PromptTemplate::new("ask", "{{ question }} ({{ context }})", [
-        "question", "context", "user",
-    ]))
+    reg.register(PromptTemplate::new(
+        "ask",
+        "{{ question }} ({{ context }})",
+        ["question", "context", "user"],
+    ))
     .unwrap();
 
     let err = reg.render("ask", &json!({"question": "why?"})).expect_err("must reject");
@@ -100,9 +104,11 @@ fn validate_rejects_unbalanced_jinja() {
 #[test]
 fn template_with_loop_renders_list() {
     let mut reg = PromptRegistry::new();
-    reg.register(PromptTemplate::new("bulleted", "{% for x in items %}- {{ x }}\n{% endfor %}", [
-        "items",
-    ]))
+    reg.register(PromptTemplate::new(
+        "bulleted",
+        "{% for x in items %}- {{ x }}\n{% endfor %}",
+        ["items"],
+    ))
     .unwrap();
 
     let out = reg.render("bulleted", &json!({"items": ["one", "two", "three"]})).unwrap();

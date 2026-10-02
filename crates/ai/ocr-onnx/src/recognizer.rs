@@ -119,9 +119,9 @@ impl PpOcrRecognizer {
 fn preprocess(crop: &DynamicImage) -> (Array4<f32>, u32) {
     let width = crop.width().max(1);
     let height = crop.height().max(1);
-    let scaled = ((u64::from(width) * u64::from(REC_HEIGHT) + u64::from(height) - 1)
-        / u64::from(height))
-    .clamp(1, u64::from(REC_WIDTH));
+    let scaled = (u64::from(width) * u64::from(REC_HEIGHT))
+        .div_ceil(u64::from(height))
+        .clamp(1, u64::from(REC_WIDTH));
     let content_width = u32::try_from(scaled).expect("PP-OCR configured width fits u32");
     let pixels = crop.resize_exact(content_width, REC_HEIGHT, FilterType::Lanczos3).to_rgb8();
     let mut tensor = Array4::zeros((1, 3, REC_HEIGHT as usize, REC_WIDTH as usize));

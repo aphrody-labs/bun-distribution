@@ -48,10 +48,10 @@ fn write_test_gguf(path: &Path) {
 }
 
 fn managed(root: &Path) -> ManagedLlamaServer {
-    let supervisor = Supervisor::new(StateDirs::new(root), DaemonCommand {
-        program: PathBuf::from(DAEMON),
-        args: Vec::new(),
-    });
+    let supervisor = Supervisor::new(
+        StateDirs::new(root),
+        DaemonCommand { program: PathBuf::from(DAEMON), args: Vec::new() },
+    );
     ManagedLlamaServer::new(FAKE_SERVER, supervisor)
 }
 

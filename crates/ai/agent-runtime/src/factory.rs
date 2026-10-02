@@ -17,7 +17,8 @@ use aphrody_model_client::{
     ProviderRuntime, TurnOptions,
 };
 
-#[path = "repair.rs"] mod repair;
+#[path = "repair.rs"]
+mod repair;
 use repair::RepairingModelClient;
 
 use crate::error::RuntimeError;

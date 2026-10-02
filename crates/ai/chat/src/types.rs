@@ -260,8 +260,7 @@ pub struct Turn {
 ///
 /// Deliberately short (one tight paragraph) so it costs almost no context
 /// budget; callers override it via `--system` or [`ChatConfig::system_prompt`].
-pub const DEFAULT_SYSTEM_PROMPT: &str =
-    "You are aphrody, a goal-driven CLI agent. Treat every request as an objective: infer the \
+pub const DEFAULT_SYSTEM_PROMPT: &str = "You are aphrody, a goal-driven CLI agent. Treat every request as an objective: infer the \
      goal, pursue it end-to-end, and keep working until it is fully met — never stop half-done. \
      Decide and act autonomously instead of asking; make reasonable assumptions and state them. \
      Verify your own work before claiming success, and report honestly what is done versus \
@@ -338,24 +337,33 @@ mod tests {
         {
             // Pure conversion sanity — the projections must match the
             // `as_str()` token from each downstream crate.
-            assert_eq!(r.to_router(), match r {
-                MessageRole::System => aphrody_router::Role::System,
-                MessageRole::User => aphrody_router::Role::User,
-                MessageRole::Assistant => aphrody_router::Role::Assistant,
-                MessageRole::Tool => aphrody_router::Role::Tool,
-            });
-            assert_eq!(r.to_session(), match r {
-                MessageRole::System => aphrody_session::TurnRole::System,
-                MessageRole::User => aphrody_session::TurnRole::User,
-                MessageRole::Assistant => aphrody_session::TurnRole::Assistant,
-                MessageRole::Tool => aphrody_session::TurnRole::Tool,
-            });
-            assert_eq!(r.to_context(), match r {
-                MessageRole::System => aphrody_context::MessageRole::System,
-                MessageRole::User => aphrody_context::MessageRole::User,
-                MessageRole::Assistant => aphrody_context::MessageRole::Assistant,
-                MessageRole::Tool => aphrody_context::MessageRole::Tool,
-            });
+            assert_eq!(
+                r.to_router(),
+                match r {
+                    MessageRole::System => aphrody_router::Role::System,
+                    MessageRole::User => aphrody_router::Role::User,
+                    MessageRole::Assistant => aphrody_router::Role::Assistant,
+                    MessageRole::Tool => aphrody_router::Role::Tool,
+                }
+            );
+            assert_eq!(
+                r.to_session(),
+                match r {
+                    MessageRole::System => aphrody_session::TurnRole::System,
+                    MessageRole::User => aphrody_session::TurnRole::User,
+                    MessageRole::Assistant => aphrody_session::TurnRole::Assistant,
+                    MessageRole::Tool => aphrody_session::TurnRole::Tool,
+                }
+            );
+            assert_eq!(
+                r.to_context(),
+                match r {
+                    MessageRole::System => aphrody_context::MessageRole::System,
+                    MessageRole::User => aphrody_context::MessageRole::User,
+                    MessageRole::Assistant => aphrody_context::MessageRole::Assistant,
+                    MessageRole::Tool => aphrody_context::MessageRole::Tool,
+                }
+            );
         }
     }
 

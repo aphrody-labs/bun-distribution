@@ -207,7 +207,8 @@ impl RagStore {
 
         // On conflict, last_insert_rowid still refers to an unrelated previous
         // insert. Resolve the document by its unique path in both cases.
-        let doc_id = conn.query_row("SELECT id FROM docs WHERE path = ?1", [path], |row| row.get(0))?;
+        let doc_id =
+            conn.query_row("SELECT id FROM docs WHERE path = ?1", [path], |row| row.get(0))?;
         Ok(doc_id)
     }
 
@@ -388,11 +389,7 @@ impl RagStore {
     ///
     /// Same semantics and on-disk format as [`Self::insert_vector`]; a model
     /// mismatch aborts the whole batch before any row is written.
-    pub async fn insert_vectors(
-        &self,
-        model_id: &str,
-        items: &[(i64, Vec<f32>)],
-    ) -> Result<usize> {
+    pub async fn insert_vectors(&self, model_id: &str, items: &[(i64, Vec<f32>)]) -> Result<usize> {
         if items.is_empty() {
             return Ok(0);
         }
@@ -439,7 +436,6 @@ impl RagStore {
         tx.commit()?;
         Ok(written)
     }
-
 
     /// Lock this index to one embedding space before vectors are written.
     ///
@@ -560,8 +556,7 @@ impl RagStore {
             .await
         } else {
             let conn = Arc::clone(&self.conn).lock_owned().await;
-            tokio::task::spawn_blocking(move || scan_vectors(&conn, &query, &model_id, limit))
-                .await
+            tokio::task::spawn_blocking(move || scan_vectors(&conn, &query, &model_id, limit)).await
         };
         joined.map_err(|error| RagError::Other(format!("vector scan task failed: {error}")))?
     }
@@ -625,14 +620,17 @@ fn scan_vectors(
         while let Some(row) = rows.next()? {
             let row_dim = row.get::<_, i64>(1)? as usize;
             let blob = row.get_ref(2)?.as_blob().map_err(|e| {
-                rusqlite::Error::FromSqlConversionFailure(2, rusqlite::types::Type::Blob, Box::new(e))
+                rusqlite::Error::FromSqlConversionFailure(
+                    2,
+                    rusqlite::types::Type::Blob,
+                    Box::new(e),
+                )
             })?;
             if row_dim != dim || blob.len() != dim * 4 {
                 continue;
             }
             ids.push(row.get(0)?);
-            matrix
-                .extend(blob.as_chunks::<4>().0.iter().map(|bytes| f32::from_le_bytes(*bytes)));
+            matrix.extend(blob.as_chunks::<4>().0.iter().map(|bytes| f32::from_le_bytes(*bytes)));
         }
     }
 

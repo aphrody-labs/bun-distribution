@@ -237,10 +237,10 @@ impl JobStore for JsonFileJobStore {
         Ok(serde_json::from_slice(&raw)?)
     }
     fn save_jobs(&self, jobs: &[Job]) -> Result<(), SchedulerError> {
-        if let Some(parent) = self.path.parent() {
-            if !parent.as_os_str().is_empty() {
-                std::fs::create_dir_all(parent)?;
-            }
+        if let Some(parent) = self.path.parent()
+            && !parent.as_os_str().is_empty()
+        {
+            std::fs::create_dir_all(parent)?;
         }
         let json = serde_json::to_vec_pretty(jobs)?;
         let tmp = self.path.with_extension("json.tmp");
@@ -329,11 +329,11 @@ impl Scheduler {
                 .last_fired
                 .or(job.registered_at)
                 .unwrap_or_else(|| now - chrono::Duration::seconds(1));
-            if let Some(next) = job.schedule.next_after(reference) {
-                if next <= now {
-                    job.last_fired = Some(next);
-                    fired.push(job.id.clone());
-                }
+            if let Some(next) = job.schedule.next_after(reference)
+                && next <= now
+            {
+                job.last_fired = Some(next);
+                fired.push(job.id.clone());
             }
         }
         fired

@@ -88,7 +88,8 @@ pub const fn is_available() -> bool {
 // `#![forbid(unsafe_code)]` above is relaxed for the engine's test module on
 // the host (env mutation) via a localised allow there, not crate-wide.
 // ---------------------------------------------------------------------------
-#[cfg(all(feature = "embeddings", not(target_arch = "wasm32")))] mod engine;
+#[cfg(all(feature = "embeddings", not(target_arch = "wasm32")))]
+mod engine;
 
 #[cfg(all(feature = "embeddings", not(target_arch = "wasm32")))]
 pub use engine::Embedder;

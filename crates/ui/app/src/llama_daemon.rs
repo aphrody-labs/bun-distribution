@@ -115,7 +115,8 @@ mod tests {
 
     #[test]
     fn the_supervisor_arguments_are_parsed() {
-        let parsed = parse(os(&["--state-root", "/tmp/aphrody-state", "--role", "chat"]).into_iter());
+        let parsed =
+            parse(os(&["--state-root", "/tmp/aphrody-state", "--role", "chat"]).into_iter());
         assert_eq!(
             parsed,
             Ok(DaemonArgs { state_root: PathBuf::from("/tmp/aphrody-state"), role: Role::Chat })
@@ -133,9 +134,11 @@ mod tests {
         assert!(parse(os(&["--role", "chat"]).into_iter()).unwrap_err().contains("--state-root"));
         assert!(parse(os(&["--state-root", "x"]).into_iter()).unwrap_err().contains("--role"));
         assert!(parse(os(&["--state-root"]).into_iter()).unwrap_err().contains("needs a value"));
-        assert!(parse(os(&["--role", "tts", "--state-root", "x"]).into_iter())
-            .unwrap_err()
-            .contains("unknown role"));
+        assert!(
+            parse(os(&["--role", "tts", "--state-root", "x"]).into_iter())
+                .unwrap_err()
+                .contains("unknown role")
+        );
         assert!(parse(os(&["--bogus"]).into_iter()).unwrap_err().contains("unknown argument"));
     }
 }

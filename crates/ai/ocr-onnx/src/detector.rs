@@ -233,7 +233,7 @@ impl OrientedRect {
 /// Put an arbitrary rectangle's corners in clockwise, top-left-first order.
 fn normalise_quad(points: &mut [[f32; 2]; 4]) {
     let center = points
-        .into_iter()
+        .iter_mut()
         .fold([0.0; 2], |total, point| [total[0] + point[0] / 4.0, total[1] + point[1] / 4.0]);
     points.sort_unstable_by(|left, right| {
         (left[1] - center[1])

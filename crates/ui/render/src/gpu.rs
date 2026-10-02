@@ -231,12 +231,14 @@ async fn render_scene_gpu_async(scene: &Scene) -> Result<GpuFrame, GpuError> {
     });
 
     let globals = GlobalsUniform { canvas_size: [width as f32, height as f32], _pad: [0.0; 2] };
-    let globals_buf =
-        wgpu::util::DeviceExt::create_buffer_init(&device, &wgpu::util::BufferInitDescriptor {
+    let globals_buf = wgpu::util::DeviceExt::create_buffer_init(
+        &device,
+        &wgpu::util::BufferInitDescriptor {
             label: Some("globals"),
             contents: bytemuck::bytes_of(&globals),
             usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
-        });
+        },
+    );
 
     let shape_bgl = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
         label: Some("shape-bgl"),
@@ -603,9 +605,7 @@ async fn render_scene_gpu_async(scene: &Scene) -> Result<GpuFrame, GpuError> {
         .map_err(|err| GpuError::Readback(err.to_string()))?
         .map_err(|err| GpuError::Readback(err.to_string()))?;
 
-    let data = slice
-        .get_mapped_range()
-        .map_err(|err| GpuError::Readback(err.to_string()))?;
+    let data = slice.get_mapped_range().map_err(|err| GpuError::Readback(err.to_string()))?;
     let mut rgba = vec![0_u8; (width as usize) * (height as usize) * 4];
     for row in 0..height as usize {
         let src = &data
@@ -678,12 +678,14 @@ fn draw_fill<'pass>(
         color: rgba_to_color4(color),
         params: [kind, param, 0.0, 0.0],
     };
-    let buf =
-        wgpu::util::DeviceExt::create_buffer_init(device, &wgpu::util::BufferInitDescriptor {
+    let buf = wgpu::util::DeviceExt::create_buffer_init(
+        device,
+        &wgpu::util::BufferInitDescriptor {
             label: Some("shape-instance"),
             contents: bytemuck::bytes_of(&uniform),
             usage: wgpu::BufferUsages::UNIFORM,
-        });
+        },
+    );
     let bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
         label: Some("shape-bind-group"),
         layout: bgl,
@@ -733,12 +735,14 @@ fn draw_shadow<'pass>(
         params: [1.0, sigma, offset_y, 0.0],
     };
     let _ = uniform_rect;
-    let buf =
-        wgpu::util::DeviceExt::create_buffer_init(device, &wgpu::util::BufferInitDescriptor {
+    let buf = wgpu::util::DeviceExt::create_buffer_init(
+        device,
+        &wgpu::util::BufferInitDescriptor {
             label: Some("shadow-instance"),
             contents: bytemuck::bytes_of(&uniform),
             usage: wgpu::BufferUsages::UNIFORM,
-        });
+        },
+    );
     let bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
         label: Some("shadow-bind-group"),
         layout: bgl,
@@ -851,12 +855,14 @@ fn draw_textured<'pass>(
         tint: rgba_to_color4(tint),
         mode: [if coverage_mode { 1.0 } else { 0.0 }, 0.0, 0.0, 0.0],
     };
-    let buf =
-        wgpu::util::DeviceExt::create_buffer_init(device, &wgpu::util::BufferInitDescriptor {
+    let buf = wgpu::util::DeviceExt::create_buffer_init(
+        device,
+        &wgpu::util::BufferInitDescriptor {
             label: Some("tex-instance"),
             contents: bytemuck::bytes_of(&uniform),
             usage: wgpu::BufferUsages::UNIFORM,
-        });
+        },
+    );
     let view = texture.create_view(&wgpu::TextureViewDescriptor::default());
     let bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
         label: Some("tex-bind-group"),

@@ -535,10 +535,10 @@ mod profile_tests {
             ..ToolProfileSpec::default()
         };
         let servers = profiled_mcp_servers(&profile).unwrap();
-        assert_eq!(servers.keys().map(String::as_str).collect::<Vec<_>>(), vec![
-            "plugin__docs__search",
-            "root"
-        ]);
+        assert_eq!(
+            servers.keys().map(String::as_str).collect::<Vec<_>>(),
+            vec!["plugin__docs__search", "root"]
+        );
     }
 
     #[test]

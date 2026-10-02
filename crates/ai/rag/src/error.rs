@@ -119,7 +119,9 @@ pub enum RagError {
     /// `embed_backend` needs an HTTP endpoint (`LlamaServer` / `OpenaiCompat`)
     /// but none was resolved from `rag.embed_endpoint`,
     /// `APHRODY_AI_EMBED_BASE_URL`, or its aliases.
-    #[error("rag.embed_endpoint (or APHRODY_AI_EMBED_BASE_URL / its aliases) is required for embed_backend={backend:?}")]
+    #[error(
+        "rag.embed_endpoint (or APHRODY_AI_EMBED_BASE_URL / its aliases) is required for embed_backend={backend:?}"
+    )]
     MissingEmbedEndpoint {
         /// The backend that required an endpoint.
         backend: aphrody_config::EmbedBackend,

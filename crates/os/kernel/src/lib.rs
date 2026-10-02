@@ -22,16 +22,16 @@
 //! | `system/subscribe`, `system/publish` | Receive bus events as `system/event` notifications; publish one. |
 
 pub mod admin;
-pub mod hvsock;
-pub mod paths;
 mod audit;
 mod auth;
 pub mod client;
 pub mod cloud;
 mod cloud_gcs;
 mod cloud_git;
+pub mod hvsock;
 pub mod infra;
 pub mod mcp_proxy;
+pub mod paths;
 mod policy;
 mod remote;
 mod rpc;
@@ -456,11 +456,14 @@ impl Kernel {
         }
         let subsystem = {
             let registry = self.registry.read().await;
-            let subsystem = registry.dispatch.get(tool)
+            let subsystem = registry
+                .dispatch
+                .get(tool)
                 .ok_or_else(|| SubsystemError::UnknownTool(tool.to_owned()))?;
             if subsystem.name() != target {
                 return Err(SubsystemError::InvalidArguments(format!(
-                    "target {target:?} does not own tool {tool:?}; owner is {:?}", subsystem.name()
+                    "target {target:?} does not own tool {tool:?}; owner is {:?}",
+                    subsystem.name()
                 )));
             }
             Arc::clone(subsystem)

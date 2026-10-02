@@ -26,11 +26,11 @@ aes-gcm     = { workspace = true }
 [package.metadata.cargo-machete]
 ignored = ["getrandom"]
 
-# Browser-WASM: getrandom must opt into the "js" backend so transitively
-# pulled randomness (via aes-gcm → aead → rand_core → getrandom) resolves
+# Browser-WASM: getrandom must opt into the "wasm_js" backend so transitively
+# pulled randomness (aes-gcm 0.11 → crypto-common → getrandom 0.4) resolves
 # to the Web Crypto API instead of erroring out at compile-time.
 [target.'cfg(all(target_arch = "wasm32", target_os = "unknown"))'.dependencies]
-getrandom = { version = "0.2", features = ["js"] }
+getrandom = { workspace = true, features = ["wasm_js"] }
 
 [target.'cfg(windows)'.dependencies]
 windows = { workspace = true, features = [

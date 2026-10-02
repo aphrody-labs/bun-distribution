@@ -718,11 +718,11 @@ impl TaskRunner {
                     continue;
                 }
                 for dep in &node.spec.dependencies {
-                    if let Some(dep_node) = nodes.get(dep) {
-                        if dep_node.status.is_terminal_failure() {
-                            to_skip.push((id.clone(), format!("upstream failed: {dep}")));
-                            break;
-                        }
+                    if let Some(dep_node) = nodes.get(dep)
+                        && dep_node.status.is_terminal_failure()
+                    {
+                        to_skip.push((id.clone(), format!("upstream failed: {dep}")));
+                        break;
                     }
                 }
             }

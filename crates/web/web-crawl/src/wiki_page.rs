@@ -533,7 +533,7 @@ pub fn parse_tables(html: &str, page_url: Option<&str>) -> Vec<WikiTable> {
                 .into_iter()
                 .filter_map(|cell| {
                     tree.get_node(cell)
-                        .and_then(|node| node.as_element().map(|tag| (&*tag.local).to_owned()))
+                        .and_then(|node| node.as_element().map(|tag| (*tag.local).to_owned()))
                         .filter(|tag| matches!(tag.as_str(), "th" | "td"))
                 })
                 .collect::<Vec<_>>();
@@ -546,7 +546,7 @@ pub fn parse_tables(html: &str, page_url: Option<&str>) -> Vec<WikiTable> {
             .into_iter()
             .find(|child| {
                 tree.get_node(*child)
-                    .and_then(|node| node.as_element().map(|tag| (&*tag.local).to_owned()))
+                    .and_then(|node| node.as_element().map(|tag| (*tag.local).to_owned()))
                     .as_deref()
                     == Some("caption")
             })

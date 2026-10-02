@@ -77,10 +77,11 @@ impl CtcDecoder {
             else {
                 continue;
             };
-            if index != 0 && last != Some(index) {
-                if let Some(glyph) = self.classes.get(index) {
-                    emitted.push((glyph.as_str(), score));
-                }
+            if index != 0
+                && last != Some(index)
+                && let Some(glyph) = self.classes.get(index)
+            {
+                emitted.push((glyph.as_str(), score));
             }
             last = Some(index);
         }

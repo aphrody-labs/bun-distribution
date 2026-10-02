@@ -291,7 +291,7 @@ windows = { version = "0.62.2", features = ["Foundation", "Globalization", "Grap
 
 auto_impl          = { version = "1" }
 rcgen              = { version = "0.14", default-features = false, features = ["crypto", "pem", "ring"] }
-getrandom          = { version = "0.2" }
+getrandom          = { version = "0.4" }
 http               = { version = "1" }
 axum-server        = { version = "0.8", default-features = false, features = ["tls-rustls-no-provider"] }
 tower-http         = { version = "0.7", features = ["cors"] }
@@ -511,3 +511,15 @@ taffy = { path = "crates/web/taffy" }
 simdutf = { path = "../source/simdutf-rio" }
 # tauri-plugin-dialog 3.0.0-alpha.2 predates tauri 3.0.0-alpha.3 (Manager::run_on_main_thread); see config/tauri-upstream.json
 tauri-plugin-dialog = { path = "../source/tauri-plugin-dialog" }
+
+# Build footprint (2026-10-02): full DWARF for 191 members and ~2,300 dependencies made target/debug ~250 GiB and
+# kept the WSL disk saturated during links. Line tables keep file:line backtraces and profiler symbols for workspace
+# code; dependencies carry no debuginfo. Opt back in per crate with [profile.dev.package.<name>] debug = true.
+[profile.dev]
+debug = "line-tables-only"
+
+[profile.dev.package."*"]
+debug = false
+
+[profile.test]
+debug = "line-tables-only"

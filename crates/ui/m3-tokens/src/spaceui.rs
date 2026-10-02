@@ -63,16 +63,14 @@ const fn pressed(base: &'static str) -> Source {
 pub const ALIAS_MAP: &[(&str, Source)] = &[
     // Accent
     ("accent", role("primary")),
-    ("accent-faint", Source::Layer {
-        content: "on-primary",
-        opacity: state::HOVER.opacity,
-        base: "primary",
-    }),
-    ("accent-deep", Source::Layer {
-        content: "on-primary",
-        opacity: state::PRESSED.opacity,
-        base: "primary",
-    }),
+    (
+        "accent-faint",
+        Source::Layer { content: "on-primary", opacity: state::HOVER.opacity, base: "primary" },
+    ),
+    (
+        "accent-deep",
+        Source::Layer { content: "on-primary", opacity: state::PRESSED.opacity, base: "primary" },
+    ),
     // Text
     ("ink", role("on-surface")),
     ("ink-dull", role("on-surface-variant")),

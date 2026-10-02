@@ -3,15 +3,14 @@
 mod common;
 
 use aphrody_embed::native::{
-    cosine, dequantize_i8, quantize_i8, EmbedOptions, ModelFiles, TextKind, DEFAULT_MODEL_ID,
+    DEFAULT_MODEL_ID, EmbedOptions, ModelFiles, TextKind, cosine, dequantize_i8, quantize_i8,
 };
 
 fn default_embedder(threads: usize, batch_size: usize) -> Option<aphrody_embed::native::Embedder> {
-    common::embedder(DEFAULT_MODEL_ID, EmbedOptions {
-        threads,
-        batch_size,
-        ..EmbedOptions::default()
-    })
+    common::embedder(
+        DEFAULT_MODEL_ID,
+        EmbedOptions { threads, batch_size, ..EmbedOptions::default() },
+    )
 }
 
 #[test]

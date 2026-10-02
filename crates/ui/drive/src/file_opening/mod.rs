@@ -5,9 +5,12 @@
 //! One implementation per platform: Shell association handlers on Windows, freedesktop desktop
 //! entries on Linux, Launch Services (Swift bridge) on macOS.
 
-#[cfg(target_os = "linux")] mod linux;
-#[cfg(target_os = "macos")] mod macos;
-#[cfg(windows)] mod win;
+#[cfg(target_os = "linux")]
+mod linux;
+#[cfg(target_os = "macos")]
+mod macos;
+#[cfg(windows)]
+mod win;
 
 use std::{
     collections::{HashMap, HashSet},

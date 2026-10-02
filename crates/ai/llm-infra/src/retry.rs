@@ -238,7 +238,13 @@ impl RetryClassifier<HttpError> for HttpStatusClassifier {
 /// which makes it deterministic under `tokio::time::pause`.
 #[must_use]
 pub fn next_delay(policy: &RetryPolicy, attempt: u32, classifier_hint: Option<u64>) -> Duration {
-    next_delay_with_rng(policy, attempt, classifier_hint, &mut StdRng::from_rng(&mut rand::rng()), None)
+    next_delay_with_rng(
+        policy,
+        attempt,
+        classifier_hint,
+        &mut StdRng::from_rng(&mut rand::rng()),
+        None,
+    )
 }
 
 /// `next_delay` variant that lets the caller inject the RNG (for
@@ -397,22 +403,28 @@ where
         match f().await {
             Ok(value) => {
                 debug!(attempt, "retry: success");
-                return (Ok(value), RetryStats {
-                    total_attempts: attempt,
-                    total_sleep_ms,
-                    final_outcome: RetryOutcome::Ok,
-                });
+                return (
+                    Ok(value),
+                    RetryStats {
+                        total_attempts: attempt,
+                        total_sleep_ms,
+                        final_outcome: RetryOutcome::Ok,
+                    },
+                );
             },
             Err(err) => {
                 let decision = classifier.classify(&err);
                 match decision {
                     RetryDecision::Stop => {
                         warn!(attempt, error = %err, "retry: classifier stopped");
-                        return (Err(RetryError::Stopped { error: err }), RetryStats {
-                            total_attempts: attempt,
-                            total_sleep_ms,
-                            final_outcome: RetryOutcome::Stopped,
-                        });
+                        return (
+                            Err(RetryError::Stopped { error: err }),
+                            RetryStats {
+                                total_attempts: attempt,
+                                total_sleep_ms,
+                                final_outcome: RetryOutcome::Stopped,
+                            },
+                        );
                     },
                     RetryDecision::Retry { suggested_delay_ms } => {
                         if attempt >= max {
@@ -455,11 +467,10 @@ where
     // Unreachable in practice (loop returns on success/stop/exhaustion),
     // but keeps the type-checker happy without an `unreachable!()` panic.
     let err = last_err.expect("loop must produce an error before falling through");
-    (Err(RetryError::Exhausted { attempts: max, last_error: err }), RetryStats {
-        total_attempts: max,
-        total_sleep_ms,
-        final_outcome: RetryOutcome::Exhausted,
-    })
+    (
+        Err(RetryError::Exhausted { attempts: max, last_error: err }),
+        RetryStats { total_attempts: max, total_sleep_ms, final_outcome: RetryOutcome::Exhausted },
+    )
 }
 
 // ---------------------------------------------------------------------------

@@ -339,11 +339,14 @@ impl MessagesStreamParser {
                             name: Some(name.to_owned()),
                             arguments_fragment: String::new(),
                         });
-                        self.blocks.insert(index, OpenBlock::ToolUse {
-                            id: id.to_owned(),
-                            name: name.to_owned(),
-                            input_json: String::new(),
-                        });
+                        self.blocks.insert(
+                            index,
+                            OpenBlock::ToolUse {
+                                id: id.to_owned(),
+                                name: name.to_owned(),
+                                input_json: String::new(),
+                            },
+                        );
                     },
                     "thinking" | "redacted_thinking" => {
                         let text =
@@ -351,10 +354,10 @@ impl MessagesStreamParser {
                         if !text.is_empty() {
                             events.push(ModelStreamEvent::ReasoningDelta(text.to_owned()));
                         }
-                        self.blocks.insert(index, OpenBlock::Thinking {
-                            text: text.to_owned(),
-                            signature: None,
-                        });
+                        self.blocks.insert(
+                            index,
+                            OpenBlock::Thinking { text: text.to_owned(), signature: None },
+                        );
                     },
                     _ => {
                         let text = block.get("text").and_then(Value::as_str).unwrap_or_default();
@@ -743,44 +746,47 @@ mod tests {
         for frame in STREAM {
             events.extend(parser.feed_event(frame).unwrap());
         }
-        assert_eq!(events, vec![
-            ModelStreamEvent::ReasoningDelta("let me".into()),
-            ModelStreamEvent::ReasoningItem {
-                text: "let me".into(),
-                opaque: json!({ "signature": "sig-9" }),
-            },
-            ModelStreamEvent::TextDelta("Checking".into()),
-            ModelStreamEvent::ToolCallDelta {
-                id: Some("toolu_1".into()),
-                name: Some("get_weather".into()),
-                arguments_fragment: String::new(),
-            },
-            ModelStreamEvent::ToolCallDelta {
-                id: Some("toolu_1".into()),
-                name: None,
-                arguments_fragment: "{\"city\":".into(),
-            },
-            ModelStreamEvent::ToolCallDelta {
-                id: Some("toolu_1".into()),
-                name: None,
-                arguments_fragment: "\"Paris\"}".into(),
-            },
-            ModelStreamEvent::ToolCall {
-                id: "toolu_1".into(),
-                name: "get_weather".into(),
-                arguments: json!({ "city": "Paris" }),
-            },
-            ModelStreamEvent::Completed {
-                usage: Some(TokenUsage {
-                    input_tokens: 25,
-                    output_tokens: 12,
-                    total_tokens: 37,
-                    cached_input_tokens: 5,
-                    reasoning_output_tokens: 0,
-                }),
-                finish_reason: Some("tool_use".into()),
-            },
-        ]);
+        assert_eq!(
+            events,
+            vec![
+                ModelStreamEvent::ReasoningDelta("let me".into()),
+                ModelStreamEvent::ReasoningItem {
+                    text: "let me".into(),
+                    opaque: json!({ "signature": "sig-9" }),
+                },
+                ModelStreamEvent::TextDelta("Checking".into()),
+                ModelStreamEvent::ToolCallDelta {
+                    id: Some("toolu_1".into()),
+                    name: Some("get_weather".into()),
+                    arguments_fragment: String::new(),
+                },
+                ModelStreamEvent::ToolCallDelta {
+                    id: Some("toolu_1".into()),
+                    name: None,
+                    arguments_fragment: "{\"city\":".into(),
+                },
+                ModelStreamEvent::ToolCallDelta {
+                    id: Some("toolu_1".into()),
+                    name: None,
+                    arguments_fragment: "\"Paris\"}".into(),
+                },
+                ModelStreamEvent::ToolCall {
+                    id: "toolu_1".into(),
+                    name: "get_weather".into(),
+                    arguments: json!({ "city": "Paris" }),
+                },
+                ModelStreamEvent::Completed {
+                    usage: Some(TokenUsage {
+                        input_tokens: 25,
+                        output_tokens: 12,
+                        total_tokens: 37,
+                        cached_input_tokens: 5,
+                        reasoning_output_tokens: 0,
+                    }),
+                    finish_reason: Some("tool_use".into()),
+                },
+            ]
+        );
         // `message_stop` already completed the turn; a flush adds nothing.
         assert_eq!(parser.finish(), None);
     }

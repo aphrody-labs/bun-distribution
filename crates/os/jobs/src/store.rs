@@ -128,10 +128,10 @@ impl JobStore {
     /// cannot be applied.
     pub fn open(path: impl AsRef<Path>) -> Result<Self> {
         let path = path.as_ref();
-        if let Some(parent) = path.parent() {
-            if !parent.as_os_str().is_empty() {
-                std::fs::create_dir_all(parent)?;
-            }
+        if let Some(parent) = path.parent()
+            && !parent.as_os_str().is_empty()
+        {
+            std::fs::create_dir_all(parent)?;
         }
         let conn = Connection::open(path)?;
         let store = Self { conn, path: Some(path.to_path_buf()) };

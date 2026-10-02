@@ -60,7 +60,7 @@ enum Entry {
 
 fn titleize(name: &str) -> String {
     let base = name.strip_suffix(".md").unwrap_or(name);
-    let parts: Vec<&str> = base.split(|c| c == '-' || c == '_').collect();
+    let parts: Vec<&str> = base.split(['-', '_']).collect();
     let mut title = Vec::new();
     for part in parts {
         if part.is_empty() {

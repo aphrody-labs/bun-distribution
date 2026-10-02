@@ -36,6 +36,9 @@ use std::{
 };
 
 use anyhow::{Context as _, Result};
+pub use aphrody_terminal_core::{
+    DEFAULT_SCROLLBACK_LINES, StyledTerminalSnapshot, TerminalCell, TerminalSnapshot, TerminalState,
+};
 pub use coord::{
     CoordError, CoordProxy, CoordResponseKind, HttpResponse as CoordHttpResponse,
     NDJSON_CONTENT_TYPE, SSE_CONTENT_TYPE,
@@ -43,9 +46,6 @@ pub use coord::{
 use futures_util::{SinkExt, stream::StreamExt};
 use serde::Deserialize;
 pub use session::{PtyEvent, PtySession, TEARDOWN_TIMEOUT};
-pub use aphrody_terminal_core::{
-    DEFAULT_SCROLLBACK_LINES, StyledTerminalSnapshot, TerminalCell, TerminalSnapshot, TerminalState,
-};
 use tokio::{
     net::{TcpListener, TcpStream},
     sync::mpsc,
@@ -166,18 +166,16 @@ impl PtyConfig {
 
     /// Return the explicit auth token if configured, or fall back to `APHRODY_OS_AUTH_TOKEN` from env.
     pub fn effective_auth_token(&self) -> Option<String> {
-        self.auth_token.clone().or_else(|| {
-            std::env::var("APHRODY_OS_AUTH_TOKEN")
-                .ok()
-                .filter(|s| !s.is_empty())
-        })
+        self.auth_token
+            .clone()
+            .or_else(|| std::env::var("APHRODY_OS_AUTH_TOKEN").ok().filter(|s| !s.is_empty()))
     }
 }
 
 /// Generate a cryptographically random 32-character hexadecimal token.
 pub fn generate_token() -> String {
     let mut bytes = [0u8; 16];
-    if getrandom::getrandom(&mut bytes).is_err() {
+    if getrandom::fill(&mut bytes).is_err() {
         let nanos = std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
             .map(|d| d.as_nanos())
@@ -197,10 +195,7 @@ fn constant_time_eq(left: &str, right: &str) -> bool {
     if left.len() != right.len() {
         return false;
     }
-    left.bytes()
-        .zip(right.bytes())
-        .fold(0u8, |diff, (l, r)| diff | (l ^ r))
-        == 0
+    left.bytes().zip(right.bytes()).fold(0u8, |diff, (l, r)| diff | (l ^ r)) == 0
 }
 
 /// Validate whether an `Origin` header is allowed to connect.
@@ -229,9 +224,11 @@ pub fn is_origin_allowed(origin: &str, bound_addr: Option<SocketAddr>) -> bool {
             }
             if let Some(bound) = bound_addr
                 && let std::net::IpAddr::V4(bip) = bound.ip()
-                    && !bip.is_unspecified() && ip == bip {
-                        return true;
-                    }
+                && !bip.is_unspecified()
+                && ip == bip
+            {
+                return true;
+            }
             false
         },
         Some(url::Host::Ipv6(ip)) => {
@@ -240,9 +237,11 @@ pub fn is_origin_allowed(origin: &str, bound_addr: Option<SocketAddr>) -> bool {
             }
             if let Some(bound) = bound_addr
                 && let std::net::IpAddr::V6(bip) = bound.ip()
-                    && !bip.is_unspecified() && ip == bip {
-                        return true;
-                    }
+                && !bip.is_unspecified()
+                && ip == bip
+            {
+                return true;
+            }
             false
         },
         None => false,
@@ -263,9 +262,11 @@ pub fn is_host_allowed(host_header: &str, bound_addr: Option<SocketAddr>) -> boo
 
     // If port is specified in Host header and bound_addr has a known port, check port match.
     if let (Some(bound), Some(header_port)) = (bound_addr, url.port())
-        && bound.port() != 0 && header_port != bound.port() {
-            return false;
-        }
+        && bound.port() != 0
+        && header_port != bound.port()
+    {
+        return false;
+    }
 
     match url.host() {
         Some(url::Host::Domain(domain)) => {
@@ -309,9 +310,10 @@ fn is_authenticated(req: &Request, expected_token: &str) -> bool {
     if let Some(auth_val) = req.headers().get("authorization").and_then(|v| v.to_str().ok()) {
         let auth_val = auth_val.trim();
         if let Some(token) = auth_val.strip_prefix("Bearer ")
-            && constant_time_eq(token.trim(), expected_token) {
-                return true;
-            }
+            && constant_time_eq(token.trim(), expected_token)
+        {
+            return true;
+        }
     }
 
     // 2. Query parameter: ?token=<token>
@@ -502,10 +504,11 @@ async fn handle_conn_limited(
     let callback = move |req: &Request, resp: Response| -> Result<Response, ErrorResponse> {
         // 1. Check Origin: if Origin header is present and is not null / local allowed origin, reject.
         if let Some(origin) = req.headers().get("origin").and_then(|v| v.to_str().ok())
-            && !is_origin_allowed(origin, bound_addr) {
-                warn!("rejected websocket connection with forbidden origin: {origin}");
-                return Err(forbidden_response("forbidden origin"));
-            }
+            && !is_origin_allowed(origin, bound_addr)
+        {
+            warn!("rejected websocket connection with forbidden origin: {origin}");
+            return Err(forbidden_response("forbidden origin"));
+        }
 
         // 2. Check Host: ensure host matches loopback/localhost or the bound host.
         match req.headers().get("host").and_then(|v| v.to_str().ok()) {
@@ -522,10 +525,11 @@ async fn handle_conn_limited(
 
         // 3. Check Authentication Token (if configured or present in environment)
         if let Some(ref expected) = auth_token
-            && !is_authenticated(req, expected) {
-                warn!("rejected unauthenticated websocket connection");
-                return Err(unauthorized_response("authentication required"));
-            }
+            && !is_authenticated(req, expected)
+        {
+            warn!("rejected unauthenticated websocket connection");
+            return Err(unauthorized_response("authentication required"));
+        }
 
         // 4. Session quota (after auth so unauthenticated peers cannot consume slots).
         match SessionSlot::try_acquire(&active, max_sessions) {
@@ -962,7 +966,10 @@ mod tests {
         }
         #[cfg(not(target_os = "windows"))]
         {
-            client.send(Message::Binary(b"stty size\r".to_vec().into())).await.expect("send command");
+            client
+                .send(Message::Binary(b"stty size\r".to_vec().into()))
+                .await
+                .expect("send command");
             read_until(&mut client, |out| out.contains("43 137")).await;
         }
 
@@ -1076,13 +1083,12 @@ mod tests {
     #[allow(clippy::await_holding_lock)] // the guard serializes process-wide env access across the await
     async fn serve_rejects_non_loopback_without_auth() {
         let addr: SocketAddr = "0.0.0.0:8788".parse().unwrap();
-        let cfg = PtyConfig {
-            auth_token: None,
-            ..PtyConfig::default()
-        };
+        let cfg = PtyConfig { auth_token: None, ..PtyConfig::default() };
         // Unset env var if set
         let _env = lock_notify_env();
-        unsafe { std::env::remove_var("APHRODY_OS_AUTH_TOKEN"); }
+        unsafe {
+            std::env::remove_var("APHRODY_OS_AUTH_TOKEN");
+        }
         let res = serve(addr, cfg).await;
         assert!(res.is_err());
         let err_msg = res.unwrap_err().to_string();
@@ -1128,7 +1134,9 @@ mod tests {
             let (stream, _) = listener2.accept().await.expect("accept");
             handle_conn(stream, cfg2).await
         });
-        let (mut client2, _) = connect_async(format!("ws://{addr2}/?token={token}")).await.expect("connect with query token");
+        let (mut client2, _) = connect_async(format!("ws://{addr2}/?token={token}"))
+            .await
+            .expect("connect with query token");
         client2.close(None).await.expect("close");
         drop(client2);
         let _ = server2.await;
@@ -1159,10 +1167,7 @@ mod tests {
 
         let listener = TcpListener::bind("127.0.0.1:0").await.expect("bind");
         let addr = listener.local_addr().expect("local addr");
-        let cfg = PtyConfig {
-            shell: Some(test_shell()),
-            ..PtyConfig::default()
-        };
+        let cfg = PtyConfig { shell: Some(test_shell()), ..PtyConfig::default() };
 
         let server = tokio::spawn(async move {
             let (stream, _) = listener.accept().await.expect("accept");
@@ -1180,17 +1185,15 @@ mod tests {
         // Connect with allowed origin
         let listener2 = TcpListener::bind("127.0.0.1:0").await.expect("bind");
         let addr2 = listener2.local_addr().expect("local addr");
-        let cfg2 = PtyConfig {
-            shell: Some(test_shell()),
-            ..PtyConfig::default()
-        };
+        let cfg2 = PtyConfig { shell: Some(test_shell()), ..PtyConfig::default() };
         let server2 = tokio::spawn(async move {
             let (stream, _) = listener2.accept().await.expect("accept");
             handle_conn(stream, cfg2).await
         });
         let mut req2 = format!("ws://{addr2}").into_client_request().expect("request");
         req2.headers_mut().insert("Origin", "http://localhost:8788".parse().unwrap());
-        let (mut client2, _) = connect_async(req2).await.expect("localhost Origin must be accepted");
+        let (mut client2, _) =
+            connect_async(req2).await.expect("localhost Origin must be accepted");
         client2.close(None).await.expect("close");
         let _ = server2.await;
     }

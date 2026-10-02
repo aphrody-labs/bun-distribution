@@ -183,11 +183,10 @@ mod tests {
             "{\"name\":\"unknown_tool\",\"arguments\":{}}",
             "```python\n{\"name\":\"read_file\",\"arguments\":{\"path\":\"a.txt\"}}\n```",
         ] {
-            let events =
-                vec![ModelStreamEvent::TextDelta(text.into()), ModelStreamEvent::Completed {
-                    usage: None,
-                    finish_reason: Some("stop".into()),
-                }];
+            let events = vec![
+                ModelStreamEvent::TextDelta(text.into()),
+                ModelStreamEvent::Completed { usage: None, finish_reason: Some("stop".into()) },
+            ];
             assert_eq!(adapter.recover(events.clone(), &[tool()]), events);
         }
     }

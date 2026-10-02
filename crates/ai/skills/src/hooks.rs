@@ -523,14 +523,17 @@ mod tests {
     #[test]
     fn dispatcher_rejects_invalid_glob() {
         let mut hooks = HashMap::new();
-        hooks.insert("PreToolUse".to_string(), vec![HookSpec {
-            matcher: HookMatcher { event: None, matcher: Some("[invalid".into()) },
-            hooks: vec![HookCommand {
-                r#type: "command".into(),
-                command: "true".into(),
-                timeout_ms: None,
+        hooks.insert(
+            "PreToolUse".to_string(),
+            vec![HookSpec {
+                matcher: HookMatcher { event: None, matcher: Some("[invalid".into()) },
+                hooks: vec![HookCommand {
+                    r#type: "command".into(),
+                    command: "true".into(),
+                    timeout_ms: None,
+                }],
             }],
-        }]);
+        );
         let err = HookDispatcher::new(HookConfig { hooks }).unwrap_err();
         assert!(matches!(err, HookError::GlobInvalid { .. }));
     }

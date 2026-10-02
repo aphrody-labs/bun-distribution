@@ -153,10 +153,11 @@ fn collect_statement(
                         d.init,
                         Some(Expression::ArrowFunctionExpression(_))
                             | Some(Expression::FunctionExpression(_))
-                    ) {
-                        out.push((Some(id.name.to_string()), start, end));
-                        named = true;
-                    }
+                    )
+                {
+                    out.push((Some(id.name.to_string()), start, end));
+                    named = true;
+                }
             }
             if !named {
                 out.push((None, start, end));

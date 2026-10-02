@@ -199,11 +199,14 @@ mod tests {
     #[test]
     fn directories_follow_xdg_precedence() {
         let dirs = application_dirs(Some(PathBuf::from("/home/u/.local/share")), Some("/a:/b"));
-        assert_eq!(dirs, vec![
-            PathBuf::from("/home/u/.local/share/applications"),
-            PathBuf::from("/a/applications"),
-            PathBuf::from("/b/applications")
-        ]);
+        assert_eq!(
+            dirs,
+            vec![
+                PathBuf::from("/home/u/.local/share/applications"),
+                PathBuf::from("/a/applications"),
+                PathBuf::from("/b/applications")
+            ]
+        );
         assert_eq!(application_dirs(None, None).len(), 2);
     }
 
@@ -229,10 +232,13 @@ mod tests {
         )
         .unwrap();
         let apps = apps_for_mime(&[user, system], "image/png");
-        assert_eq!(apps, vec![OpenWithApp {
-            id: "kde-viewer.desktop".into(),
-            name: "Viewer".into(),
-            icon: None
-        }]);
+        assert_eq!(
+            apps,
+            vec![OpenWithApp {
+                id: "kde-viewer.desktop".into(),
+                name: "Viewer".into(),
+                icon: None
+            }]
+        );
     }
 }

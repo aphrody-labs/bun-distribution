@@ -3,8 +3,8 @@
 
 //! PSD Document model with layer hierarchies and text metadata.
 
-use image::RgbaImage;
 use crate::typeset::{TextJustification, WritingMode};
+use image::RgbaImage;
 
 /// Options controlling multi-layer PSD file export.
 #[derive(Debug, Clone)]
@@ -63,15 +63,7 @@ impl PsdLayer {
     /// Create a standard image layer.
     #[must_use]
     pub fn new(id: i32, name: impl Into<String>, left: i32, top: i32, pixels: RgbaImage) -> Self {
-        Self {
-            id,
-            name: name.into(),
-            left,
-            top,
-            pixels,
-            hidden: false,
-            text: None,
-        }
+        Self { id, name: name.into(), left, top, pixels, hidden: false, text: None }
     }
 
     /// Create an editable text layer with raster fallback.
@@ -84,15 +76,7 @@ impl PsdLayer {
         pixels: RgbaImage,
         text: TextMetadata,
     ) -> Self {
-        Self {
-            id,
-            name: name.into(),
-            left,
-            top,
-            pixels,
-            hidden: false,
-            text: Some(text),
-        }
+        Self { id, name: name.into(), left, top, pixels, hidden: false, text: Some(text) }
     }
 }
 
@@ -109,12 +93,7 @@ impl PsdDocument {
     /// Create a new document.
     #[must_use]
     pub fn new(width: u32, height: u32, merged: RgbaImage) -> Self {
-        Self {
-            width,
-            height,
-            merged,
-            layers: Vec::new(),
-        }
+        Self { width, height, merged, layers: Vec::new() }
     }
 
     /// Add a layer to the document.

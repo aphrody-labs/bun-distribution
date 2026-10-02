@@ -5,7 +5,8 @@ use std::{path::Path, str::FromStr};
 use rayon::prelude::*;
 use tokenizers::{Encoding, Tokenizer, TruncationDirection, TruncationParams, TruncationStrategy};
 
-#[cfg(feature = "candle")] use super::candle_backend::CandleBert;
+#[cfg(feature = "candle")]
+use super::candle_backend::CandleBert;
 use super::{
     bert::{NativeBert, Sequence},
     error::{Error, Result},
@@ -114,7 +115,7 @@ impl Embedder {
             Backend::Candle => {
                 return Err(Error::InvalidInput(
                     "aphrody-embed was built without the `candle` feature".into(),
-                ))
+                ));
             },
         };
         let (max_positions, hidden) = match &engine {
@@ -321,11 +322,7 @@ pub fn cosine(a: &[f32], b: &[f32]) -> f32 {
     let dot: f32 = a.iter().zip(b).map(|(x, y)| x * y).sum();
     let na = a.iter().map(|x| x * x).sum::<f32>().sqrt();
     let nb = b.iter().map(|x| x * x).sum::<f32>().sqrt();
-    if na <= f32::EPSILON || nb <= f32::EPSILON {
-        0.0
-    } else {
-        dot / (na * nb)
-    }
+    if na <= f32::EPSILON || nb <= f32::EPSILON { 0.0 } else { dot / (na * nb) }
 }
 
 #[cfg(test)]

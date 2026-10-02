@@ -104,9 +104,8 @@ pub fn watchdog_usec() -> Option<u64> {
 /// If `custom_interval` is `None`, the interval defaults to half of `WATCHDOG_USEC`.
 /// Returns `None` if `WATCHDOG_USEC` is not set and no custom interval was provided.
 pub fn spawn_watchdog_loop(custom_interval: Option<Duration>) -> Option<JoinHandle<()>> {
-    let interval_duration = custom_interval.or_else(|| {
-        watchdog_usec().map(|usec| Duration::from_micros(usec / 2))
-    })?;
+    let interval_duration =
+        custom_interval.or_else(|| watchdog_usec().map(|usec| Duration::from_micros(usec / 2)))?;
 
     Some(tokio::spawn(async move {
         let mut ticker = tokio::time::interval(interval_duration);

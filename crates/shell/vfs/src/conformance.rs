@@ -81,7 +81,11 @@ fn directories<V: Vfs>(v: &mut V) {
     assert_eq!(v.read_dir(b"/f"), Err(VfsError::NotADirectory));
     assert_eq!(v.read_dir(b"/zzz"), Err(VfsError::NotFound));
     v.mkdir(b"/d2").unwrap();
-    assert_eq!(names(&v.read_dir(b"/d").unwrap()).len(), 3, "sibling with shared prefix not listed");
+    assert_eq!(
+        names(&v.read_dir(b"/d").unwrap()).len(),
+        3,
+        "sibling with shared prefix not listed"
+    );
 }
 
 fn remove<V: Vfs>(v: &mut V) {

@@ -58,10 +58,7 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use aes_gcm::{
-    Aes256Gcm, Key, KeyInit, Nonce,
-    aead::Aead,
-};
+use aes_gcm::{Aes256Gcm, Key, KeyInit, Nonce, aead::Aead};
 use argon2::{Algorithm, Argon2, Params, Version};
 use async_trait::async_trait;
 use base64::{Engine as _, engine::general_purpose::STANDARD as B64};
@@ -583,9 +580,8 @@ impl EncryptedFileSecretStore {
         let cipher = Aes256Gcm::new(&key);
         let nonce = Nonce::try_from(nonce_bytes.as_slice())
             .map_err(|_| SecretsError::InvalidFormat("nonce must be 12 bytes".into()))?;
-        let plaintext = cipher
-            .decrypt(&nonce, ciphertext.as_ref())
-            .map_err(|_| SecretsError::BadPassphrase)?;
+        let plaintext =
+            cipher.decrypt(&nonce, ciphertext.as_ref()).map_err(|_| SecretsError::BadPassphrase)?;
         let map: BTreeMap<String, String> = serde_json::from_slice(&plaintext)?;
         Ok(map)
     }

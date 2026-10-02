@@ -47,11 +47,10 @@ fn model_without_quotes_is_a_convenient_string() {
 fn quoted_path_segment_preserves_embedded_dot() {
     let (path, _) =
         parse_override(r#"model_providers."my.id".base_url="http://x""#).expect("parse");
-    assert_eq!(path, vec![
-        "model_providers".to_string(),
-        "my.id".to_string(),
-        "base_url".to_string(),
-    ]);
+    assert_eq!(
+        path,
+        vec!["model_providers".to_string(), "my.id".to_string(), "base_url".to_string(),]
+    );
 }
 
 #[test]

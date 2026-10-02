@@ -1120,7 +1120,8 @@ mod tests {
             for status in [200, 404] {
                 let (mut socket, _) = listener.accept().await.unwrap();
                 let mut request = [0; 1024];
-                socket.read(&mut request).await.unwrap();
+                let read = socket.read(&mut request).await.unwrap();
+                assert!(read > 0, "the client sent a request");
                 socket.write_all(format!("HTTP/1.1 {status} Fixture\r\nContent-Type: image/png\r\nContent-Length: {}\r\nConnection: close\r\n\r\n", served_payload.len()).as_bytes()).await.unwrap();
                 socket.write_all(&served_payload).await.unwrap();
             }

@@ -34,8 +34,7 @@ pub const URL_BATCH_EXECUTE: &str = "https://gemini.google.com/_/BardChatUi/data
 /// The streaming generate endpoint — where a user message is actually sent.
 /// Body: `f.req=[null,"<inner_list_json>"]&at=<token>`; query: `bl`, `f.sid`,
 /// `hl`, `_reqid`, `rt=c`. Captured live 2026-05-21.
-pub const URL_STREAM_GENERATE: &str =
-    "https://gemini.google.com/_/BardChatUi/data/assistant.lamda.BardFrontendService/StreamGenerate";
+pub const URL_STREAM_GENERATE: &str = "https://gemini.google.com/_/BardChatUi/data/assistant.lamda.BardFrontendService/StreamGenerate";
 
 // ── Model routing header ─────────────────────────────────────────────────────
 /// HTTP header that selects the model (NOT the `f.req` body). Values are

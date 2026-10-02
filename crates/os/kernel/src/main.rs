@@ -129,29 +129,29 @@ async fn builtin_kernel(
     // repository never links them (aphrody-infra/docs/REPO-LAYERING.md).
     let mut occupied: HashSet<String> =
         kernel.tools().await.into_iter().map(|(_, tool)| tool.name).collect();
-    let mut plugins: Vec<(&str, &str, &str, &str, Vec<(String, String)>)> = Vec::new();
+    let mut plugins: Vec<PluginEntry> = Vec::new();
     if browser {
         // The plugin resolves the Aphrody Web provider itself; an explicit one is handed down.
         let child_env: Vec<(String, String)> = web_mcp
             .map(|command| ("APHRODY_WEB_MCP_BIN".to_owned(), command))
             .into_iter()
             .collect();
-        plugins.push((
-            "browser",
-            "Obscura headless browser (aphrody-web plugin process).",
-            "APHRODY_BROWSER_MCP_BIN",
-            "aphrody-browser-mcp",
+        plugins.push(PluginEntry {
+            name: "browser",
+            description: "Obscura headless browser (aphrody-web plugin process).",
+            env: "APHRODY_BROWSER_MCP_BIN",
+            binary: "aphrody-browser-mcp",
             child_env,
-        ));
+        });
     }
-    for (name, description, env, binary, child_env) in plugins {
+    for entry in plugins {
         if let Some(plugin) = aphrody_kernel::mcp_proxy::McpProxySubsystem::configured_plugin(
             aphrody_kernel::mcp_proxy::PluginSpec {
-                name,
-                description,
-                env,
-                binary,
-                child_env: &child_env,
+                name: entry.name,
+                description: entry.description,
+                env: entry.env,
+                binary: entry.binary,
+                child_env: &entry.child_env,
             },
             &occupied,
         )
@@ -170,6 +170,16 @@ async fn builtin_kernel(
         kernel.register(provider).await?;
     }
     Ok(kernel)
+}
+
+/// A plugin subsystem to attach when its binary resolves: the fields of
+/// [`aphrody_kernel::mcp_proxy::PluginSpec`], with the child environment owned here.
+struct PluginEntry {
+    name: &'static str,
+    description: &'static str,
+    env: &'static str,
+    binary: &'static str,
+    child_env: Vec<(String, String)>,
 }
 
 fn parse_object(text: &str) -> anyhow::Result<Value> {

@@ -322,12 +322,9 @@ pub async fn aphrody_check_update(app: AppHandle) -> Result<UpdateCheckResult, S
             version: Some(update.version.clone()),
             body: update.body.clone(),
         }),
-        Ok(None) => Ok(UpdateCheckResult {
-            available: false,
-            current_version,
-            version: None,
-            body: None,
-        }),
+        Ok(None) => {
+            Ok(UpdateCheckResult { available: false, current_version, version: None, body: None })
+        },
         Err(error) => Err(error.to_string()),
     }
 }
@@ -425,7 +422,13 @@ pub fn build_app_menu(app: &AppHandle) -> tauri::Result<()> {
         &[
             &MenuItem::with_id(app, "menu_new_session", "New Session", true, Some("CmdOrCtrl+N"))?,
             &MenuItem::with_id(app, "menu_open_file", "Open File...", true, Some("CmdOrCtrl+O"))?,
-            &MenuItem::with_id(app, "menu_open_folder", "Open Folder...", true, Some("CmdOrCtrl+Shift+O"))?,
+            &MenuItem::with_id(
+                app,
+                "menu_open_folder",
+                "Open Folder...",
+                true,
+                Some("CmdOrCtrl+Shift+O"),
+            )?,
             &PredefinedMenuItem::separator(app)?,
             &PredefinedMenuItem::close_window(app, None)?,
             &PredefinedMenuItem::quit(app, None)?,
@@ -464,7 +467,13 @@ pub fn build_app_menu(app: &AppHandle) -> tauri::Result<()> {
         &[
             &PredefinedMenuItem::minimize(app, None)?,
             &MenuItem::with_id(app, "menu_toggle_pet", "Toggle Desktop Pet", true, None::<&str>)?,
-            &MenuItem::with_id(app, "menu_toggle_widget", "Toggle Desktop Widget", true, None::<&str>)?,
+            &MenuItem::with_id(
+                app,
+                "menu_toggle_widget",
+                "Toggle Desktop Widget",
+                true,
+                None::<&str>,
+            )?,
         ],
     )?;
 
@@ -480,10 +489,8 @@ pub fn build_app_menu(app: &AppHandle) -> tauri::Result<()> {
         ],
     )?;
 
-    let menu = Menu::with_items(
-        app,
-        &[&file_menu, &edit_menu, &view_menu, &window_menu, &help_menu],
-    )?;
+    let menu =
+        Menu::with_items(app, &[&file_menu, &edit_menu, &view_menu, &window_menu, &help_menu])?;
     let _ = app.set_menu(menu);
     Ok(())
 }

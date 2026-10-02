@@ -108,7 +108,10 @@ pub fn build_ollama_chat_request(
     body.insert("stream".to_string(), json!(true));
 
     if !turn.tools.is_empty() {
-        body.insert("tools".to_string(), Value::Array(turn.tools.iter().map(tool_to_ollama).collect()));
+        body.insert(
+            "tools".to_string(),
+            Value::Array(turn.tools.iter().map(tool_to_ollama).collect()),
+        );
     }
 
     let mut options = defaults.options.clone();
@@ -423,13 +426,14 @@ impl ChatStreamParser {
         if chunk.done {
             self.done = true;
             let metrics = chunk.metrics;
-            let usage = (metrics.prompt_eval_count > 0 || metrics.eval_count > 0).then(|| TokenUsage {
-                input_tokens: metrics.prompt_eval_count,
-                output_tokens: metrics.eval_count,
-                total_tokens: metrics.prompt_eval_count + metrics.eval_count,
-                cached_input_tokens: metrics.prompt_eval_cached_count.unwrap_or(0),
-                reasoning_output_tokens: 0,
-            });
+            let usage =
+                (metrics.prompt_eval_count > 0 || metrics.eval_count > 0).then(|| TokenUsage {
+                    input_tokens: metrics.prompt_eval_count,
+                    output_tokens: metrics.eval_count,
+                    total_tokens: metrics.prompt_eval_count + metrics.eval_count,
+                    cached_input_tokens: metrics.prompt_eval_cached_count.unwrap_or(0),
+                    reasoning_output_tokens: 0,
+                });
             events.push(Ok(ModelStreamEvent::Completed {
                 usage,
                 finish_reason: Some(chunk.done_reason.unwrap_or_else(|| "stop".to_string())),
@@ -499,7 +503,7 @@ mod tests {
     use pretty_assertions::assert_eq;
 
     use super::*;
-    use crate::{TurnOptions, ToolDecl};
+    use crate::{ToolDecl, TurnOptions};
 
     fn user(text: &str) -> ChatMessage {
         ChatMessage { role: Role::User, parts: vec![Part::Text(text.to_string())] }
@@ -666,10 +670,7 @@ mod tests {
         assert_eq!(request["messages"][0]["content"], "{\"ok\":true}");
         assert_eq!(request["messages"][1]["role"], "user");
         assert_eq!(request["messages"][1]["images"], json!(["BBBB"]));
-        assert_eq!(
-            request["messages"][1]["content"],
-            "Image output of tool call(s): screenshot"
-        );
+        assert_eq!(request["messages"][1]["content"], "Image output of tool call(s): screenshot");
     }
 
     #[test]

@@ -46,21 +46,22 @@ impl Chunker for MarkdownChunker {
 
         // Front-matter: a `---` delimited block at the very top of the file.
         if lines.first().is_some_and(|l| l.trim() == "---")
-            && let Some(close) = lines.iter().skip(1).position(|l| l.trim() == "---") {
-                let end = close + 1; // index of the closing `---`
-                let text = lines[..=end].join("\n");
-                out.push(Chunk::new(
-                    ord,
-                    ChunkKind::Config,
-                    None,
-                    1,
-                    u32::try_from(end + 1).unwrap_or(1),
-                    text,
-                ));
-                ord += 1;
-                line_no = u32::try_from(end + 2).unwrap_or(line_no);
-                lines = lines.split_off(end + 1);
-            }
+            && let Some(close) = lines.iter().skip(1).position(|l| l.trim() == "---")
+        {
+            let end = close + 1; // index of the closing `---`
+            let text = lines[..=end].join("\n");
+            out.push(Chunk::new(
+                ord,
+                ChunkKind::Config,
+                None,
+                1,
+                u32::try_from(end + 1).unwrap_or(1),
+                text,
+            ));
+            ord += 1;
+            line_no = u32::try_from(end + 2).unwrap_or(line_no);
+            lines = lines.split_off(end + 1);
+        }
 
         let mut sections: Vec<Section> = Vec::new();
         let mut hierarchy: Vec<String> = Vec::new();
@@ -132,32 +133,33 @@ impl Chunker for MarkdownChunker {
                 continue;
             }
             if let (Some(prev), true) = (prev_line, SETEXT.is_match(line))
-                && !prev.trim().is_empty() {
-                    // The previous line was a heading title, not content:
-                    // pull it back out of the accumulated section lines.
-                    current_lines.pop();
-                    flush(
-                        &mut sections,
-                        &current_trail,
-                        current_base,
-                        current_heading_start,
-                        &current_lines,
-                    );
-                    current_lines.clear();
-                    let level = if line.trim_start().starts_with('=') { 1 } else { 2 };
-                    set_heading(&mut hierarchy, level, prev.trim().to_string());
-                    current_trail = hierarchy
-                        .iter()
-                        .filter(|s| !s.is_empty())
-                        .cloned()
-                        .collect::<Vec<_>>()
-                        .join(" > ");
-                    current_base = this_line_no + 1;
-                    current_heading_start = Some(this_line_no.saturating_sub(1));
-                    prev_line = None;
-                    i += 1;
-                    continue;
-                }
+                && !prev.trim().is_empty()
+            {
+                // The previous line was a heading title, not content:
+                // pull it back out of the accumulated section lines.
+                current_lines.pop();
+                flush(
+                    &mut sections,
+                    &current_trail,
+                    current_base,
+                    current_heading_start,
+                    &current_lines,
+                );
+                current_lines.clear();
+                let level = if line.trim_start().starts_with('=') { 1 } else { 2 };
+                set_heading(&mut hierarchy, level, prev.trim().to_string());
+                current_trail = hierarchy
+                    .iter()
+                    .filter(|s| !s.is_empty())
+                    .cloned()
+                    .collect::<Vec<_>>()
+                    .join(" > ");
+                current_base = this_line_no + 1;
+                current_heading_start = Some(this_line_no.saturating_sub(1));
+                prev_line = None;
+                i += 1;
+                continue;
+            }
             current_lines.push(line.to_string());
             prev_line = Some(line);
             i += 1;

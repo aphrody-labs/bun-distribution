@@ -20,6 +20,27 @@ use crate::{
     },
 };
 
+/// `Send` on host targets and no bound in a browser, where a `fetch` body stream
+/// is tied to its JavaScript thread and cannot cross to another one.
+#[cfg(not(target_arch = "wasm32"))]
+pub trait MaybeSend: Send {}
+#[cfg(not(target_arch = "wasm32"))]
+impl<T: Send + ?Sized> MaybeSend for T {}
+/// `Send` on host targets and no bound in a browser, where a `fetch` body stream
+/// is tied to its JavaScript thread and cannot cross to another one.
+#[cfg(target_arch = "wasm32")]
+pub trait MaybeSend {}
+#[cfg(target_arch = "wasm32")]
+impl<T: ?Sized> MaybeSend for T {}
+
+/// The boxed stream of generation chunks: `Send` on host targets (see [`MaybeSend`]).
+#[cfg(not(target_arch = "wasm32"))]
+pub type ResponseStream =
+    Pin<Box<dyn Stream<Item = Result<GenerateContentResponse, SdkError>> + Send>>;
+/// The boxed stream of generation chunks: `Send` on host targets (see [`MaybeSend`]).
+#[cfg(target_arch = "wasm32")]
+pub type ResponseStream = Pin<Box<dyn Stream<Item = Result<GenerateContentResponse, SdkError>>>>;
+
 /// Authenticated HTTP client for the Antigravity (Google AI Ultra / Gemini)
 /// API surface.
 ///
@@ -453,10 +474,7 @@ impl AntigravityClient {
         model: &str,
         project: &str,
         req: &GenerateContentRequest,
-    ) -> Result<
-        Pin<Box<dyn Stream<Item = Result<GenerateContentResponse, SdkError>> + Send>>,
-        SdkError,
-    > {
+    ) -> Result<ResponseStream, SdkError> {
         let body = serde_json::json!({
             "model": model,
             "project": project,
@@ -620,9 +638,9 @@ pub fn parse_sse_event(raw: &str) -> Option<Result<GenerateContentResponse, SdkE
 /// Transform a byte stream of SSE frames into a stream of [`GenerateContentResponse`] items.
 pub fn parse_sse_response_stream<S>(
     byte_stream: S,
-) -> impl Stream<Item = Result<GenerateContentResponse, SdkError>> + Send
+) -> impl Stream<Item = Result<GenerateContentResponse, SdkError>> + MaybeSend
 where
-    S: Stream<Item = reqwest::Result<bytes::Bytes>> + Send + 'static,
+    S: Stream<Item = reqwest::Result<bytes::Bytes>> + MaybeSend + 'static,
 {
     futures::stream::unfold(
         (Box::pin(byte_stream), String::new()),

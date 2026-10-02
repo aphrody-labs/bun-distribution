@@ -186,7 +186,11 @@ pub struct Supervisor {
 
 impl Supervisor {
     #[must_use]
-    pub fn new(app: AppHandle<tauri::DynRuntime>, socket_addr: String, data_dir: PathBuf) -> Arc<Self> {
+    pub fn new(
+        app: AppHandle<tauri::DynRuntime>,
+        socket_addr: String,
+        data_dir: PathBuf,
+    ) -> Arc<Self> {
         Arc::new(Self {
             app,
             socket_addr,
@@ -387,10 +391,10 @@ mod tests {
     #[test]
     fn file_names_include_the_external_bin_triple() {
         assert_eq!(daemon_file_names("", None), vec!["sd-daemon"]);
-        assert_eq!(daemon_file_names(".exe", Some("x86_64-pc-windows-msvc")), vec![
-            "sd-daemon.exe",
-            "sd-daemon-x86_64-pc-windows-msvc.exe"
-        ]);
+        assert_eq!(
+            daemon_file_names(".exe", Some("x86_64-pc-windows-msvc")),
+            vec!["sd-daemon.exe", "sd-daemon-x86_64-pc-windows-msvc.exe"]
+        );
     }
 
     #[test]

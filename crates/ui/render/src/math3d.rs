@@ -127,9 +127,12 @@ impl Default for Mat4 {
 impl Mat4 {
     /// The identity matrix.
     pub const IDENTITY: Self = Self {
-        cols: [[1.0, 0.0, 0.0, 0.0], [0.0, 1.0, 0.0, 0.0], [0.0, 0.0, 1.0, 0.0], [
-            0.0, 0.0, 0.0, 1.0,
-        ]],
+        cols: [
+            [1.0, 0.0, 0.0, 0.0],
+            [0.0, 1.0, 0.0, 0.0],
+            [0.0, 0.0, 1.0, 0.0],
+            [0.0, 0.0, 0.0, 1.0],
+        ],
     };
 
     /// Matrix product `self * o`.
@@ -237,12 +240,12 @@ impl Mat4 {
         let s = s.normalize_or(Vec3::new(1.0, 0.0, 0.0));
         let u = s.cross(f);
         Self {
-            cols: [[s.x, u.x, -f.x, 0.0], [s.y, u.y, -f.y, 0.0], [s.z, u.z, -f.z, 0.0], [
-                -s.dot(eye),
-                -u.dot(eye),
-                f.dot(eye),
-                1.0,
-            ]],
+            cols: [
+                [s.x, u.x, -f.x, 0.0],
+                [s.y, u.y, -f.y, 0.0],
+                [s.z, u.z, -f.z, 0.0],
+                [-s.dot(eye), -u.dot(eye), f.dot(eye), 1.0],
+            ],
         }
     }
 
@@ -252,12 +255,12 @@ impl Mat4 {
         let f = 1.0 / (fov_y_rad * 0.5).tan();
         let range = far / (near - far);
         Self {
-            cols: [[f / aspect, 0.0, 0.0, 0.0], [0.0, f, 0.0, 0.0], [0.0, 0.0, range, -1.0], [
-                0.0,
-                0.0,
-                range * near,
-                0.0,
-            ]],
+            cols: [
+                [f / aspect, 0.0, 0.0, 0.0],
+                [0.0, f, 0.0, 0.0],
+                [0.0, 0.0, range, -1.0],
+                [0.0, 0.0, range * near, 0.0],
+            ],
         }
     }
 
@@ -291,12 +294,12 @@ impl Mat4 {
         let (rl, tb) = (1.0 / (right - left), 1.0 / (top - bottom));
         let range = 1.0 / (near - far);
         Self {
-            cols: [[2.0 * rl, 0.0, 0.0, 0.0], [0.0, 2.0 * tb, 0.0, 0.0], [0.0, 0.0, range, 0.0], [
-                -(right + left) * rl,
-                -(top + bottom) * tb,
-                range * near,
-                1.0,
-            ]],
+            cols: [
+                [2.0 * rl, 0.0, 0.0, 0.0],
+                [0.0, 2.0 * tb, 0.0, 0.0],
+                [0.0, 0.0, range, 0.0],
+                [-(right + left) * rl, -(top + bottom) * tb, range * near, 1.0],
+            ],
         }
     }
 
@@ -324,11 +327,11 @@ impl Mat4 {
         let co20 = b * f - c * e;
         let co21 = -(a * f - c * d);
         let co22 = a * e - b * d;
-        [[co00 * inv, co01 * inv, co02 * inv], [co10 * inv, co11 * inv, co12 * inv], [
-            co20 * inv,
-            co21 * inv,
-            co22 * inv,
-        ]]
+        [
+            [co00 * inv, co01 * inv, co02 * inv],
+            [co10 * inv, co11 * inv, co12 * inv],
+            [co20 * inv, co21 * inv, co22 * inv],
+        ]
     }
 
     /// Whether every element is finite.

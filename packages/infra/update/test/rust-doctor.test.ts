@@ -2,7 +2,7 @@
 import { describe, expect, test } from "bun:test";
 import {
   crateFromPackageId, crateOfFile, errorLines, exitCode, featurePlan, glob, parseDiagnostics, parseFmtList, parseJunit, parseLibtest,
-  parsePorcelain, stageStatus, targetPackages, totals, vendoredReason, type MetaPackage, type Problem, type StageResult,
+  newestLlvm, parsePorcelain, stageStatus, targetPackages, totals, vendoredReason, type MetaPackage, type Problem, type StageResult,
 } from "../src/ecosystems/rust-doctor.ts";
 
 const message = (o: Record<string, unknown>) => JSON.stringify({ reason: "compiler-message", package_id: "path+file:///repo/crates/ai/foo#aphrody-foo@1.0.0", manifest_path: "/repo/crates/ai/foo/Cargo.toml", ...o });
@@ -83,6 +83,9 @@ describe("targetPackages", () => {
     expect(targetPackages(packages, { triple: "wasm32-unknown-unknown", packages: "auto" }).packages).toEqual(["host", "web"]);
     expect(targetPackages(packages, { triple: "x86_64-pc-windows-msvc", packages: "auto" }).packages).toEqual(["win"]);
   });
+  test("include adds members that carry no target-gated dependency", () => {
+    expect(targetPackages(packages, { triple: "wasm32-unknown-unknown", packages: "auto", include: ["plain", "web"] }).packages).toEqual(["host", "plain", "web"]);
+  });
   test("workspace and explicit lists, with exclusions kept as data", () => {
     const all = targetPackages(packages, { triple: "wasm32-unknown-unknown", packages: "workspace", exclude: [{ crates: "h*", reason: "host only" }] });
     expect(all.packages).toEqual(["plain", "web", "win"]);
@@ -155,6 +158,13 @@ describe("format and git helpers", () => {
   test("errorLines starts at the first error, or falls back to the tail", () => {
     expect(errorLines("Compiling x\nerror[E0432]: unresolved import\n --> src/lib.rs:1:5\nmore", 2)).toEqual(["error[E0432]: unresolved import", " --> src/lib.rs:1:5"]);
     expect(errorLines("a\nb\nc", 2)).toEqual(["b", "c"]);
+  });
+});
+
+describe("newestLlvm", () => {
+  test("picks the highest installed LLVM, numerically", () => {
+    expect(newestLlvm(["llvm-18", "llvm-9", "llvm-23", "gcc", "llvm-toolchain"])).toBe("llvm-23");
+    expect(newestLlvm(["gcc"])).toBeUndefined();
   });
 });
 

@@ -2,7 +2,6 @@
 use aphrody_a2a::coord::CoordEnvelope;
 pub use aphrody_a2a::coord::EnvelopeKind;
 use chrono::Utc;
-use getrandom::getrandom;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::BTreeMap;
@@ -74,7 +73,7 @@ impl From<CoordEnvelope> for Envelope {
 #[must_use]
 pub fn new_id(prefix: &str) -> String {
     let mut buf = [0_u8; 4];
-    if getrandom(&mut buf).is_err() {
+    if getrandom::fill(&mut buf).is_err() {
         let nanos = Utc::now().timestamp_nanos_opt().unwrap_or(0) as u64;
         buf.copy_from_slice(&nanos.to_le_bytes()[..4]);
     }

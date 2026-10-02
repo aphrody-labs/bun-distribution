@@ -15,12 +15,14 @@ pub mod writer;
 use image::RgbaImage;
 use thiserror::Error;
 
+use crate::typeset::WritingMode;
+use descriptor::{
+    DescriptorObject, DescriptorValue, bounds_descriptor, write_versioned_descriptor,
+};
 pub use document::{PsdDocument, PsdExportOptions, PsdLayer, TextMetadata};
-use descriptor::{DescriptorObject, DescriptorValue, bounds_descriptor, write_versioned_descriptor};
 use engine_data::{TextEngineSpec, encode_engine_data};
 use packbits::{ChannelId, encode_image_rle};
 use writer::PsdWriter;
-use crate::typeset::WritingMode;
 
 #[derive(Debug, Error)]
 pub enum PsdExportError {
@@ -29,24 +31,20 @@ pub enum PsdExportError {
     #[error("PSD layer count exceeds limit: {0}")]
     TooManyLayers(usize),
     #[error("invalid layer bounds for {layer}: {width}x{height}")]
-    InvalidLayerBounds {
-        layer: String,
-        width: i32,
-        height: i32,
-    },
+    InvalidLayerBounds { layer: String, width: i32, height: i32 },
     #[error("RLE row {row} for {layer} exceeded PSD limits ({length} bytes)")]
-    InvalidChannelEncoding {
-        layer: String,
-        row: usize,
-        length: usize,
-    },
+    InvalidChannelEncoding { layer: String, row: usize, length: usize },
     #[error("invalid descriptor data: {0}")]
     InvalidDescriptor(String),
 }
 
 /// Serializes a `PsdDocument` into raw PSD file bytes.
 pub fn export_psd(document: &PsdDocument) -> Result<Vec<u8>, PsdExportError> {
-    if document.width == 0 || document.height == 0 || document.width > 30_000 || document.height > 30_000 {
+    if document.width == 0
+        || document.height == 0
+        || document.width > 30_000
+        || document.height > 30_000
+    {
         return Err(PsdExportError::UnsupportedDimensions {
             width: document.width,
             height: document.height,
@@ -96,7 +94,8 @@ fn build_layer_and_mask_info(
     merged_has_alpha: bool,
 ) -> Result<Vec<u8>, PsdExportError> {
     let mut layer_info = PsdWriter::new();
-    let count = i16::try_from(layers.len()).map_err(|_| PsdExportError::TooManyLayers(layers.len()))?;
+    let count =
+        i16::try_from(layers.len()).map_err(|_| PsdExportError::TooManyLayers(layers.len()))?;
     layer_info.write_i16(if merged_has_alpha { -count } else { count });
 
     let mut encoded_layers = Vec::with_capacity(layers.len());
@@ -106,12 +105,7 @@ fn build_layer_and_mask_info(
         // GIMP/Photoshop: Alpha first for layer channel data, followed by RGB
         let channels = encode_image_rle(
             &layer.pixels,
-            &[
-                ChannelId::Alpha,
-                ChannelId::Red,
-                ChannelId::Green,
-                ChannelId::Blue,
-            ],
+            &[ChannelId::Alpha, ChannelId::Red, ChannelId::Green, ChannelId::Blue],
             &layer.name,
         )?;
         encoded_layers.push(channels);
@@ -138,9 +132,9 @@ fn build_layer_and_mask_info(
         layer_info.write_signature("8BIM");
         layer_info.write_signature("norm"); // Blend mode normal
         layer_info.write_u8(255); // Opacity 100%
-        layer_info.write_u8(0);   // Clipping
+        layer_info.write_u8(0); // Clipping
         layer_info.write_u8(if layer.hidden { 2 } else { 0 }); // Flags: 2 = hidden, 0 = visible
-        layer_info.write_u8(0);   // Filler
+        layer_info.write_u8(0); // Filler
 
         layer_info.write_u32(extra.len() as u32);
         layer_info.write_bytes(extra);
@@ -212,10 +206,7 @@ fn build_tysh_body(text: &TextMetadata) -> Result<Vec<u8>, PsdExportError> {
     let warp_descriptor = DescriptorObject::new("", "warp")
         .with_item(
             "warpStyle",
-            DescriptorValue::Enum {
-                type_id: "warpStyle".to_owned(),
-                value: "warpNone".to_owned(),
-            },
+            DescriptorValue::Enum { type_id: "warpStyle".to_owned(), value: "warpNone".to_owned() },
         )
         .with_item("warpValue", DescriptorValue::Double(0.0))
         .with_item("warpPerspective", DescriptorValue::Double(0.0))
@@ -309,8 +300,8 @@ fn apply_photoshop_white_matte(image: &mut RgbaImage) {
 
 #[cfg(test)]
 mod tests {
-    use image::{Rgba, RgbaImage};
     use super::*;
+    use image::{Rgba, RgbaImage};
 
     #[test]
     fn test_export_basic_psd_produces_valid_header_and_signature() {

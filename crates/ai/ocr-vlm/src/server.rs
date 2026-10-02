@@ -221,10 +221,10 @@ fn wait_healthy(
             });
         }
 
-        if let Ok(response) = client.get(&health).timeout(Duration::from_secs(2)).send() {
-            if response.status().is_success() {
-                return Ok(());
-            }
+        if let Ok(response) = client.get(&health).timeout(Duration::from_secs(2)).send()
+            && response.status().is_success()
+        {
+            return Ok(());
         }
         std::thread::sleep(Duration::from_millis(500));
     }

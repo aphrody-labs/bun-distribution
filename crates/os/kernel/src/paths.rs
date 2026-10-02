@@ -79,15 +79,17 @@ pub(crate) fn binary_search_directories(
     directories
 }
 
+/// An environment lookup that owns its table (see [`table`]).
+#[cfg(test)]
+pub(crate) type OwnedLookup = Box<dyn Fn(&str) -> Option<OsString>>;
+
 /// A fixed environment table for tests: nothing reads the process environment.
 ///
 /// The result owns its data and borrows nothing from `pairs`, so a test can build it from
 /// temporaries (a boxed trait object, because an `impl Fn` return would capture the lifetimes of
 /// `K` and `V` and keep those temporaries borrowed).
 #[cfg(test)]
-pub(crate) fn table<K, V>(
-    pairs: impl IntoIterator<Item = (K, V)>,
-) -> Box<dyn Fn(&str) -> Option<OsString>>
+pub(crate) fn table<K, V>(pairs: impl IntoIterator<Item = (K, V)>) -> OwnedLookup
 where
     K: AsRef<str>,
     V: AsRef<std::ffi::OsStr>,

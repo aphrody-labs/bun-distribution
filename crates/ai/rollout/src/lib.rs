@@ -740,14 +740,17 @@ mod tests {
     #[tokio::test]
     async fn create_writes_dated_file_with_session_meta_first() {
         let root = tempdir().unwrap();
-        let rec = RolloutRecorder::create(root.path(), SessionMeta {
-            cwd: Some(PathBuf::from("/repo")),
-            originator: "aphrody".to_string(),
-            cli_version: "1.0.0".to_string(),
-            model: Some("qwen2.5-coder".to_string()),
-            model_provider: Some("llama".to_string()),
-            ..SessionMeta::default()
-        })
+        let rec = RolloutRecorder::create(
+            root.path(),
+            SessionMeta {
+                cwd: Some(PathBuf::from("/repo")),
+                originator: "aphrody".to_string(),
+                cli_version: "1.0.0".to_string(),
+                model: Some("qwen2.5-coder".to_string()),
+                model_provider: Some("llama".to_string()),
+                ..SessionMeta::default()
+            },
+        )
         .await
         .unwrap();
         rec.record(json!({ "type": "event", "n": 1 }));
@@ -777,11 +780,14 @@ mod tests {
         for (index, stamp) in
             ["2026-01-01T00:00:00.000Z", "2026-03-01T00:00:00.000Z"].iter().enumerate()
         {
-            let rec = RolloutRecorder::create(root.path(), SessionMeta {
-                id: format!("{index}aaa-session"),
-                timestamp: (*stamp).to_string(),
-                ..SessionMeta::default()
-            })
+            let rec = RolloutRecorder::create(
+                root.path(),
+                SessionMeta {
+                    id: format!("{index}aaa-session"),
+                    timestamp: (*stamp).to_string(),
+                    ..SessionMeta::default()
+                },
+            )
             .await
             .unwrap();
             rec.shutdown().await.unwrap();
@@ -812,10 +818,10 @@ mod tests {
     async fn ambiguous_prefix_resolves_to_nothing() {
         let root = tempdir().unwrap();
         for id in ["abc-1", "abc-2"] {
-            let rec = RolloutRecorder::create(root.path(), SessionMeta {
-                id: id.to_string(),
-                ..SessionMeta::default()
-            })
+            let rec = RolloutRecorder::create(
+                root.path(),
+                SessionMeta { id: id.to_string(), ..SessionMeta::default() },
+            )
             .await
             .unwrap();
             rec.shutdown().await.unwrap();

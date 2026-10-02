@@ -284,10 +284,13 @@ pub async fn prepare_managed_provider_in(
             let plan = aphrody_llama_server::plan(&facts, &caps, budget, &request);
             let state =
                 aphrody_models::paths::state_dir().map_err(ManagedProviderError::message)?;
-            let supervisor = Supervisor::new(StateDirs::new(state), DaemonCommand {
-                program: std::env::current_exe().map_err(ManagedProviderError::message)?,
-                args: vec!["__llama-daemon".into()],
-            });
+            let supervisor = Supervisor::new(
+                StateDirs::new(state),
+                DaemonCommand {
+                    program: std::env::current_exe().map_err(ManagedProviderError::message)?,
+                    args: vec!["__llama-daemon".into()],
+                },
+            );
             let endpoint = supervisor
                 .ensure(&binary, &plan, options)
                 .await

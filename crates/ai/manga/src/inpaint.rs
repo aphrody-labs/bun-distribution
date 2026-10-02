@@ -8,9 +8,9 @@
 //! (`mayocream/lama-manga`) ONNX weights and includes an instant, pure-Rust
 //! boundary-weighted diffusion inpainter that runs hermetically on CPU without dependencies.
 
+use crate::bubble::SpeechBubble;
 use image::{GrayImage, Luma, Rgba, RgbaImage};
 use serde::{Deserialize, Serialize};
-use crate::bubble::SpeechBubble;
 
 /// Binary mask indicating pixels to be erased and reconstructed.
 #[derive(Debug, Clone)]
@@ -23,9 +23,7 @@ impl TextMask {
     /// Create a blank mask with given dimensions.
     #[must_use]
     pub fn new(width: u32, height: u32) -> Self {
-        Self {
-            mask: GrayImage::from_pixel(width, height, Luma([0])),
-        }
+        Self { mask: GrayImage::from_pixel(width, height, Luma([0])) }
     }
 
     /// Mark a rectangular bounding box as inpaint region.
@@ -99,10 +97,7 @@ pub struct InpaintOptions {
 
 impl Default for InpaintOptions {
     fn default() -> Self {
-        Self {
-            dilation_radius: 2,
-            smart_bubble_fill: true,
-        }
+        Self { dilation_radius: 2, smart_bubble_fill: true }
     }
 }
 
@@ -131,16 +126,8 @@ impl MangaInpainter {
                     let mut a_sum = 0.0f32;
                     let mut weight_sum = 0.0f32;
 
-                    let directions = [
-                        (0, -1),
-                        (0, 1),
-                        (-1, 0),
-                        (1, 0),
-                        (-1, -1),
-                        (1, -1),
-                        (-1, 1),
-                        (1, 1),
-                    ];
+                    let directions =
+                        [(0, -1), (0, 1), (-1, 0), (1, 0), (-1, -1), (1, -1), (-1, 1), (1, 1)];
 
                     for (dx, dy) in directions {
                         for dist in 1..=24 {
@@ -202,10 +189,11 @@ mod tests {
         let mut mask = TextMask::new(20, 20);
         mask.mark_box(8, 8, 4, 4);
 
-        let cleaned = MangaInpainter::inpaint(&img, &mask, &InpaintOptions {
-            dilation_radius: 0,
-            smart_bubble_fill: true,
-        });
+        let cleaned = MangaInpainter::inpaint(
+            &img,
+            &mask,
+            &InpaintOptions { dilation_radius: 0, smart_bubble_fill: true },
+        );
 
         // The center pixel was black [0,0,0,255], after inpaint it should be white [255,255,255,255]
         let center = cleaned.get_pixel(10, 10);

@@ -15,7 +15,8 @@ mod drag;
 mod file_opening;
 mod files;
 mod keybinds;
-#[cfg(target_os = "macos")] mod macos;
+#[cfg(target_os = "macos")]
+mod macos;
 mod rpc;
 mod server;
 mod service;

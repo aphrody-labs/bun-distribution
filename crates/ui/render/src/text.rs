@@ -222,6 +222,9 @@ mod tests {
         let single = rasterize_line("Aphrody", TypeStyleName::BodyMedium, 1.0);
         let multi = rasterize_multiline("Aphrody\nOS", TypeStyleName::BodyMedium, 1.0);
         assert!(multi.height > single.height, "multiline height must exceed single line");
-        assert!(multi.coverage.iter().any(|&b| b > 0), "multiline coverage must contain painted pixels");
+        assert!(
+            multi.coverage.iter().any(|&b| b > 0),
+            "multiline coverage must contain painted pixels"
+        );
     }
 }

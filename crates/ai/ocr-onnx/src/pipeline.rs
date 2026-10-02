@@ -81,7 +81,7 @@ impl PpOcr {
     pub fn recognise(&mut self, image: &DynamicImage) -> Result<Vec<RecognisedRegion>> {
         let map = self.detector.detect(image)?;
         let mut regions = map.regions();
-        regions.sort_unstable_by(|left, right| reading_order(left, right));
+        regions.sort_unstable_by(reading_order);
         regions
             .into_iter()
             .map(|region| {

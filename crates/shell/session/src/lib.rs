@@ -39,7 +39,7 @@ impl fmt::Display for SessionError {
             Self::Exited => f.write_str("session already exited"),
             Self::InvalidSize { columns, rows } => {
                 write!(f, "invalid terminal size {columns}x{rows}")
-            }
+            },
             Self::Engine(message) => write!(f, "engine error: {message}"),
         }
     }

@@ -28,9 +28,18 @@ pub struct MangaPipelineOptions {
 
 impl Default for MangaPipelineOptions {
     fn default() -> Self {
+        Self::new("fr", true)
+    }
+}
+
+impl MangaPipelineOptions {
+    /// Options for one target language and device, with Koharu's own pipeline and provider
+    /// configuration. Callers build through this so a `koharu` build adds no field to them.
+    #[must_use]
+    pub fn new(target_language: impl Into<String>, cpu: bool) -> Self {
         Self {
-            target_language: "fr".to_owned(),
-            cpu: true,
+            target_language: target_language.into(),
+            cpu,
             #[cfg(feature = "koharu")]
             pipeline_config: None,
             #[cfg(feature = "koharu")]
@@ -246,25 +255,32 @@ impl MangaPipeline {
         } else {
             PipelineConfig::load()
                 .and_then(|handle| handle.read().map(|value| value.clone()))
-                .map_err(|_| MangaPipelineError::Koharu("pipeline configuration is unavailable".to_owned()))?
+                .map_err(|_| {
+                    MangaPipelineError::Koharu("pipeline configuration is unavailable".to_owned())
+                })?
         };
-        config.translation.target_language = options.target_language.parse().map_err(|_| {
-            MangaPipelineError::Language(options.target_language.clone())
-        })?;
+        config.translation.target_language = options
+            .target_language
+            .parse()
+            .map_err(|_| MangaPipelineError::Language(options.target_language.clone()))?;
         let providers = if let Some(providers) = options.providers_config.clone() {
             providers
         } else {
             ProvidersConfig::load()
                 .and_then(|handle| handle.read().map(|value| value.clone()))
-                .map_err(|_| MangaPipelineError::Koharu("provider configuration is unavailable".to_owned()))?
+                .map_err(|_| {
+                    MangaPipelineError::Koharu("provider configuration is unavailable".to_owned())
+                })?
         };
         let ocr_model_id = serde_json::to_value(&config.ocr)
             .ok()
             .and_then(|value| value.get("model")?.as_str().map(str::to_owned))
-            .ok_or_else(|| MangaPipelineError::Koharu("OCR model identifier is unavailable".to_owned()))?;
-        let library = Library::initialize(config, providers, options.cpu)
-            .await
-            .map_err(|_| MangaPipelineError::Koharu("native runtime initialization failed".to_owned()))?;
+            .ok_or_else(|| {
+                MangaPipelineError::Koharu("OCR model identifier is unavailable".to_owned())
+            })?;
+        let library = Library::initialize(config, providers, options.cpu).await.map_err(|_| {
+            MangaPipelineError::Koharu("native runtime initialization failed".to_owned())
+        })?;
         let mut document = Document::memory()
             .await
             .map_err(|_| MangaPipelineError::Koharu("scene creation failed".to_owned()))?;
@@ -281,30 +297,43 @@ impl MangaPipeline {
             ..Request::default()
         };
         let started = std::time::Instant::now();
-        library.process(&mut document, request)
-            .await
-            .map_err(|error| MangaPipelineError::Koharu(
-                format!("stage {:?} failed ({:?})", error.stage, error.kind)
-            ))?;
+        library.process(&mut document, request).await.map_err(|error| {
+            MangaPipelineError::Koharu(format!("stage {:?} failed ({:?})", error.stage, error.kind))
+        })?;
         let pipeline_elapsed_ms = started.elapsed().as_millis();
-        let page_data = document.page_result(page)
+        let page_data = document
+            .page_result(page)
             .await
             .map_err(|_| MangaPipelineError::Koharu("page result extraction failed".to_owned()))?;
         let cleanup_overlay_png = page_data.cleanup_layer_png.clone();
         let result = map_page(page_data, bytes, mime, options);
         let psd_bytes = if full {
-            Some(library.export_psd(&document, page, &koharu_library::PsdExportOptions::default())
-                .await
-                .map_err(|_| MangaPipelineError::Koharu("PSD export failed".to_owned()))?)
-        } else { None };
+            Some(
+                library
+                    .export_psd(&document, page, &koharu_library::PsdExportOptions::default())
+                    .await
+                    .map_err(|_| MangaPipelineError::Koharu("PSD export failed".to_owned()))?,
+            )
+        } else {
+            None
+        };
         let png_bytes = if full {
-            Some(library.export_png(&document, page)
-                .await
-                .map_err(|_| MangaPipelineError::Koharu("PNG export failed".to_owned()))?)
-        } else { None };
+            Some(
+                library
+                    .export_png(&document, page)
+                    .await
+                    .map_err(|_| MangaPipelineError::Koharu("PNG export failed".to_owned()))?,
+            )
+        } else {
+            None
+        };
         Ok(MangaPageOutput {
-            result, psd_bytes, png_bytes, cleanup_overlay_png,
-            ocr_model_id, pipeline_elapsed_ms,
+            result,
+            psd_bytes,
+            png_bytes,
+            cleanup_overlay_png,
+            ocr_model_id,
+            pipeline_elapsed_ms,
         })
     }
 }
@@ -316,11 +345,7 @@ pub fn sha256_hex(bytes: &[u8]) -> String {
 
 #[cfg(feature = "koharu")]
 fn map_generation(value: koharu_library::GenerationInfo) -> MangaGeneration {
-    MangaGeneration {
-        producer: value.producer,
-        model: value.model,
-        confidence: value.confidence,
-    }
+    MangaGeneration { producer: value.producer, model: value.model, confidence: value.confidence }
 }
 
 #[cfg(feature = "koharu")]
@@ -336,7 +361,8 @@ fn map_page(
     let mut bubbles = Vec::new();
     let mut source_regions = page.regions;
     source_regions.sort_by(|left, right| {
-        left.bounds[1].total_cmp(&right.bounds[1])
+        left.bounds[1]
+            .total_cmp(&right.bounds[1])
             .then_with(|| right.bounds[2].total_cmp(&left.bounds[2]))
             .then_with(|| left.kind.cmp(&right.kind))
             .then_with(|| left.label.cmp(&right.label))
@@ -345,26 +371,32 @@ fn map_page(
     for (index, region) in source_regions.into_iter().enumerate() {
         let id = format!("r{:04}", index + 1);
         let bounds = region.bounds;
-        let polygon = region.polygon.iter().map(|point| MangaPoint {
-            x: point.x, y: point.y,
-        }).collect();
+        let polygon =
+            region.polygon.iter().map(|point| MangaPoint { x: point.x, y: point.y }).collect();
         if region.kind == "dev.koharu.region.bubble" {
             let mut bubble = SpeechBubble::new(
                 index + 1,
                 BoundingBox::new(
-                    bounds[0] as f32, bounds[1] as f32,
-                    (bounds[2] - bounds[0]) as f32, (bounds[3] - bounds[1]) as f32,
+                    bounds[0] as f32,
+                    bounds[1] as f32,
+                    (bounds[2] - bounds[0]) as f32,
+                    (bounds[3] - bounds[1]) as f32,
                 ),
                 BubbleKind::Unclassified,
                 region.confidence.unwrap_or(0.0),
             );
-            bubble.contour = region.polygon.iter().map(|point| {
-                Point::new(point.x as f32, point.y as f32)
-            }).collect();
+            bubble.contour = region
+                .polygon
+                .iter()
+                .map(|point| Point::new(point.x as f32, point.y as f32))
+                .collect();
             bubbles.push(bubble);
         }
-        let texts: Vec<MangaText> = region.texts.into_iter().enumerate().map(|(text_index, text)| {
-            MangaText {
+        let texts: Vec<MangaText> = region
+            .texts
+            .into_iter()
+            .enumerate()
+            .map(|(text_index, text)| MangaText {
                 id: format!("{id}-t{:04}", text_index + 1),
                 reading_order: text.reading_order.map(|order| order + 1),
                 source_text: text.source,
@@ -374,25 +406,29 @@ fn map_page(
                 translated_text: text.translation,
                 target_language: text.target_language,
                 translation_provenance: text.translation_provenance.map(map_generation),
-            }
-        }).collect();
+            })
+            .collect();
         let first = texts.first();
         regions.push(MangaRegion {
             id: id.clone(),
             kind: region.kind,
             label: region.label,
             bounds: MangaBounds {
-                x: bounds[0], y: bounds[1],
-                width: bounds[2] - bounds[0], height: bounds[3] - bounds[1],
+                x: bounds[0],
+                y: bounds[1],
+                width: bounds[2] - bounds[0],
+                height: bounds[3] - bounds[1],
             },
             polygon,
             reading_order: first.and_then(|text| text.reading_order),
-            detection_labels: region.detection_labels.into_iter().map(|label| {
-                MangaDetectionLabel {
+            detection_labels: region
+                .detection_labels
+                .into_iter()
+                .map(|label| MangaDetectionLabel {
                     kind: label.kind.as_str().to_owned(),
                     confidence: label.confidence,
-                }
-            }).collect(),
+                })
+                .collect(),
             detection_confidence: region.confidence,
             source_text: first.and_then(|text| text.source_text.clone()),
             source_language: first.and_then(|text| text.source_language.clone()),
@@ -415,7 +451,9 @@ fn map_page(
             page_id: None,
             source_sha256: digest.clone(),
             image_sha256: digest,
-            mime: mime.to_owned(), width: page.width as u32, height: page.height as u32,
+            mime: mime.to_owned(),
+            width: page.width as u32,
+            height: page.height as u32,
             entity_id: None,
             plate_number: None,
             url: None,

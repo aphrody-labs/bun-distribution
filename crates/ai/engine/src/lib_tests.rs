@@ -213,10 +213,10 @@ async fn yolo_exceeds_default_iteration_limit_and_finishes() {
             ]
         })
         .collect::<Vec<_>>();
-    turns.push(vec![ModelStreamEvent::TextDelta("finished".into()), ModelStreamEvent::Completed {
-        usage: None,
-        finish_reason: None,
-    }]);
+    turns.push(vec![
+        ModelStreamEvent::TextDelta("finished".into()),
+        ModelStreamEvent::Completed { usage: None, finish_reason: None },
+    ]);
     let client = MockModelClient::scripted(turns);
     let mut session = Session::new(EngineConfig::new("mock-model").with_yolo());
     let (sink, _rx) = EventSink::unbounded();
@@ -293,10 +293,10 @@ async fn tool_call_turn_reinjects_and_completes() {
             ModelStreamEvent::Completed { usage: None, finish_reason: Some("TOOL".to_string()) },
         ],
         // Turn 1: with the tool result re-injected, model answers in text.
-        vec![ModelStreamEvent::TextDelta("done".to_string()), ModelStreamEvent::Completed {
-            usage: None,
-            finish_reason: Some("STOP".to_string()),
-        }],
+        vec![
+            ModelStreamEvent::TextDelta("done".to_string()),
+            ModelStreamEvent::Completed { usage: None, finish_reason: Some("STOP".to_string()) },
+        ],
     ]);
     let mut session = Session::new(EngineConfig::new("mock-model"));
     let (sink, mut rx) = EventSink::unbounded();
@@ -343,10 +343,10 @@ async fn unknown_tool_feeds_error_response() {
             },
             ModelStreamEvent::Completed { usage: None, finish_reason: None },
         ],
-        vec![ModelStreamEvent::TextDelta("recovered".to_string()), ModelStreamEvent::Completed {
-            usage: None,
-            finish_reason: Some("STOP".to_string()),
-        }],
+        vec![
+            ModelStreamEvent::TextDelta("recovered".to_string()),
+            ModelStreamEvent::Completed { usage: None, finish_reason: Some("STOP".to_string()) },
+        ],
     ]);
     let mut session = Session::new(EngineConfig::new("mock-model"));
     let (sink, mut rx) = EventSink::unbounded();
@@ -382,10 +382,10 @@ async fn gated_mode_approved_executes_tool() {
             },
             ModelStreamEvent::Completed { usage: None, finish_reason: None },
         ],
-        vec![ModelStreamEvent::TextDelta("ok".to_string()), ModelStreamEvent::Completed {
-            usage: None,
-            finish_reason: Some("STOP".to_string()),
-        }],
+        vec![
+            ModelStreamEvent::TextDelta("ok".to_string()),
+            ModelStreamEvent::Completed { usage: None, finish_reason: Some("STOP".to_string()) },
+        ],
     ]);
     let mut session =
         Session::new(EngineConfig::new("mock-model").with_autonomy(AutonomyMode::Gated));
@@ -490,10 +490,10 @@ async fn parallel_calls_share_one_model_and_one_tool_message() {
             },
             ModelStreamEvent::Completed { usage: None, finish_reason: None },
         ],
-        vec![ModelStreamEvent::TextDelta("done".to_string()), ModelStreamEvent::Completed {
-            usage: None,
-            finish_reason: None,
-        }],
+        vec![
+            ModelStreamEvent::TextDelta("done".to_string()),
+            ModelStreamEvent::Completed { usage: None, finish_reason: None },
+        ],
     ]);
     let mut session = Session::new(EngineConfig::new("mock-model"));
     let (sink, _rx) = EventSink::unbounded();
@@ -540,10 +540,10 @@ async fn gated_mode_denied_skips_and_continues() {
             },
             ModelStreamEvent::Completed { usage: None, finish_reason: None },
         ],
-        vec![ModelStreamEvent::TextDelta("after deny".to_string()), ModelStreamEvent::Completed {
-            usage: None,
-            finish_reason: Some("STOP".to_string()),
-        }],
+        vec![
+            ModelStreamEvent::TextDelta("after deny".to_string()),
+            ModelStreamEvent::Completed { usage: None, finish_reason: Some("STOP".to_string()) },
+        ],
     ]);
     let mut session =
         Session::new(EngineConfig::new("mock-model").with_autonomy(AutonomyMode::Gated));
@@ -688,14 +688,14 @@ async fn rollout_restores_history_and_records_context_once() {
             },
             ModelStreamEvent::Completed { usage: None, finish_reason: None },
         ],
-        vec![ModelStreamEvent::TextDelta("first".to_string()), ModelStreamEvent::Completed {
-            usage: None,
-            finish_reason: None,
-        }],
-        vec![ModelStreamEvent::TextDelta("second".to_string()), ModelStreamEvent::Completed {
-            usage: None,
-            finish_reason: None,
-        }],
+        vec![
+            ModelStreamEvent::TextDelta("first".to_string()),
+            ModelStreamEvent::Completed { usage: None, finish_reason: None },
+        ],
+        vec![
+            ModelStreamEvent::TextDelta("second".to_string()),
+            ModelStreamEvent::Completed { usage: None, finish_reason: None },
+        ],
     ]);
     let mut session = Session::new(EngineConfig::new("mock-model").with_system_prompt("be terse"));
     let (sink, _rx) = EventSink::unbounded();
@@ -929,10 +929,13 @@ async fn steer_mid_turn_injects_between_iterations() {
                     ModelStreamEvent::Completed { usage: None, finish_reason: None },
                 ]
             } else {
-                vec![ModelStreamEvent::TextDelta("done".to_string()), ModelStreamEvent::Completed {
-                    usage: None,
-                    finish_reason: Some("STOP".to_string()),
-                }]
+                vec![
+                    ModelStreamEvent::TextDelta("done".to_string()),
+                    ModelStreamEvent::Completed {
+                        usage: None,
+                        finish_reason: Some("STOP".to_string()),
+                    },
+                ]
             };
             Ok(Box::pin(futures::stream::iter(events.into_iter().map(Ok))))
         }

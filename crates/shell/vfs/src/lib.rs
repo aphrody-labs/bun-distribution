@@ -82,7 +82,7 @@ pub trait Vfs {
             cur.push(b'/');
             cur.extend_from_slice(comp);
             match self.stat(&cur) {
-                Ok(Stat { kind: FileKind::Dir, .. }) => {}
+                Ok(Stat { kind: FileKind::Dir, .. }) => {},
                 Ok(_) => return Err(VfsError::NotADirectory),
                 Err(VfsError::NotFound) => self.mkdir(&cur)?,
                 Err(e) => return Err(e),

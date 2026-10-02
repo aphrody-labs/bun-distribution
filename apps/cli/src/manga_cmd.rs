@@ -374,10 +374,7 @@ pub(crate) async fn run(action: MangaAction) -> Result<()> {
             }
             let bytes = std::fs::read(&image).into_diagnostic()?;
             assert_image_sha256(&aphrody_manga::sha256_hex(&bytes), image_sha256)?;
-            let options = MangaPipelineOptions {
-                target_language: to.clone(),
-                cpu: device == MangaDevice::Cpu,
-            };
+            let options = MangaPipelineOptions::new(to.clone(), device == MangaDevice::Cpu);
 
             let run = MangaPipeline::process_image_bytes(&bytes, &options).await
                 .map_err(|e| miette::miette!("Pipeline execution failed: {e}"))?;
@@ -464,10 +461,7 @@ pub(crate) async fn run(action: MangaAction) -> Result<()> {
                 let _ = validate_sha256(digest.clone())?;
             }
             let client = MangaCdnClient::new();
-            let options = MangaPipelineOptions {
-                target_language: to.clone(),
-                cpu: device == MangaDevice::Cpu,
-            };
+            let options = MangaPipelineOptions::new(to.clone(), device == MangaDevice::Cpu);
 
             if !json {
                 println!("Streaming databook #{id} plate #{page} from catalog...");
@@ -496,10 +490,7 @@ pub(crate) async fn run(action: MangaAction) -> Result<()> {
                 let _ = validate_sha256(digest.clone())?;
             }
             let client = MangaCdnClient::new();
-            let options = MangaPipelineOptions {
-                target_language: to.clone(),
-                cpu: device == MangaDevice::Cpu,
-            };
+            let options = MangaPipelineOptions::new(to.clone(), device == MangaDevice::Cpu);
 
             if !json {
                 println!("Streaming manga chapter #{id} plate #{page} from catalog...");

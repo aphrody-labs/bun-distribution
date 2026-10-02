@@ -443,20 +443,23 @@ mod tests {
              def f():\n-    pass\n+    return 123\n*** End Patch",
         )
         .unwrap();
-        assert_eq!(parsed.hunks, vec![
-            AddFile { path: PathBuf::from("path/add.py"), contents: "abc\ndef\n".to_string() },
-            DeleteFile { path: PathBuf::from("path/delete.py") },
-            UpdateFile {
-                path: PathBuf::from("path/update.py"),
-                move_to: Some(PathBuf::from("path/update2.py")),
-                chunks: vec![UpdateChunk {
-                    context_marker: Some("def f():".to_string()),
-                    old_lines: vec!["    pass".to_string()],
-                    new_lines: vec!["    return 123".to_string()],
-                    is_eof: false,
-                }],
-            },
-        ]);
+        assert_eq!(
+            parsed.hunks,
+            vec![
+                AddFile { path: PathBuf::from("path/add.py"), contents: "abc\ndef\n".to_string() },
+                DeleteFile { path: PathBuf::from("path/delete.py") },
+                UpdateFile {
+                    path: PathBuf::from("path/update.py"),
+                    move_to: Some(PathBuf::from("path/update2.py")),
+                    chunks: vec![UpdateChunk {
+                        context_marker: Some("def f():".to_string()),
+                        old_lines: vec!["    pass".to_string()],
+                        new_lines: vec!["    return 123".to_string()],
+                        is_eof: false,
+                    }],
+                },
+            ]
+        );
     }
 
     #[test]
@@ -492,16 +495,19 @@ mod tests {
             "*** Begin Patch\n*** Update File: file2.py\n import foo\n+bar\n*** End Patch",
         )
         .unwrap();
-        assert_eq!(parsed.hunks, vec![UpdateFile {
-            path: PathBuf::from("file2.py"),
-            move_to: None,
-            chunks: vec![UpdateChunk {
-                context_marker: None,
-                old_lines: vec!["import foo".to_string()],
-                new_lines: vec!["import foo".to_string(), "bar".to_string()],
-                is_eof: false,
-            }],
-        }]);
+        assert_eq!(
+            parsed.hunks,
+            vec![UpdateFile {
+                path: PathBuf::from("file2.py"),
+                move_to: None,
+                chunks: vec![UpdateChunk {
+                    context_marker: None,
+                    old_lines: vec!["import foo".to_string()],
+                    new_lines: vec!["import foo".to_string(), "bar".to_string()],
+                    is_eof: false,
+                }],
+            }]
+        );
     }
 
     #[test]
@@ -510,10 +516,10 @@ mod tests {
         for wrapper in ["<<EOF", "<<'EOF'", "<<\"EOF\""] {
             let wrapped = format!("{wrapper}\n{inner}\nEOF\n");
             let parsed = parse_patch(&wrapped).unwrap();
-            assert_eq!(parsed.hunks, vec![AddFile {
-                path: PathBuf::from("foo"),
-                contents: "hi\n".to_string(),
-            }]);
+            assert_eq!(
+                parsed.hunks,
+                vec![AddFile { path: PathBuf::from("foo"), contents: "hi\n".to_string() }]
+            );
         }
     }
 
@@ -524,10 +530,10 @@ mod tests {
              End Patch",
         )
         .unwrap();
-        assert_eq!(parsed.hunks, vec![AddFile {
-            path: PathBuf::from("hello.txt"),
-            contents: "hello\n".to_string(),
-        }]);
+        assert_eq!(
+            parsed.hunks,
+            vec![AddFile { path: PathBuf::from("hello.txt"), contents: "hello\n".to_string() }]
+        );
     }
 
     #[test]

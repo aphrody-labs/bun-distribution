@@ -22,7 +22,10 @@ impl LocalShell {
     /// Creates a shell and returns it with its greeting and first prompt.
     #[must_use]
     pub fn new() -> (Self, Vec<u8>) {
-        let greeting = format!("Aphrody shell (wasm {})\r\ntype `help`\r\n{PROMPT}", env!("CARGO_PKG_VERSION"));
+        let greeting = format!(
+            "Aphrody shell (wasm {})\r\ntype `help`\r\n{PROMPT}",
+            env!("CARGO_PKG_VERSION")
+        );
         (Self::default(), greeting.into_bytes())
     }
 
@@ -44,22 +47,22 @@ impl LocalShell {
                     if !self.exited {
                         out.push_str(PROMPT);
                     }
-                }
+                },
                 '\u{7f}' | '\u{8}' => {
                     if self.line.pop().is_some() {
                         out.push_str("\u{8} \u{8}");
                     }
-                }
+                },
                 '\u{3}' => {
                     self.line.clear();
                     out.push_str("^C\r\n");
                     out.push_str(PROMPT);
-                }
+                },
                 c if !c.is_control() => {
                     self.line.push(c);
                     out.push(c);
-                }
-                _ => {}
+                },
+                _ => {},
             }
         }
         out.into_bytes()
@@ -78,33 +81,35 @@ impl LocalShell {
             "echo" => {
                 out.push_str(&args.join(" "));
                 out.push_str("\r\n");
-            }
+            },
             "clear" => out.push_str("\x1b[2J\x1b[H"),
             "version" => {
                 out.push_str(env!("CARGO_PKG_VERSION"));
                 out.push_str("\r\n");
-            }
+            },
             "history" => {
                 for (i, entry) in self.history.iter().enumerate() {
                     out.push_str(&format!("{:>4}  {entry}\r\n", i + 1));
                 }
-            }
+            },
             "set" => match args.as_slice() {
                 [name, value @ ..] => {
                     self.env.insert((*name).to_owned(), value.join(" "));
-                }
+                },
                 [] => out.push_str("usage: set NAME [VALUE...]\r\n"),
             },
             "env" => {
                 for (k, v) in &self.env {
                     out.push_str(&format!("{k}={v}\r\n"));
                 }
-            }
+            },
             "exit" => {
                 self.exited = true;
                 out.push_str("bye\r\n");
-            }
-            other => out.push_str(&format!("{other}: command not found (local wasm shell; connect a backend for more)\r\n")),
+            },
+            other => out.push_str(&format!(
+                "{other}: command not found (local wasm shell; connect a backend for more)\r\n"
+            )),
         }
     }
 }

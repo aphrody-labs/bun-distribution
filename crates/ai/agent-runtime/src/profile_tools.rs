@@ -159,7 +159,8 @@ pub fn resolve_tool_profile(
             return Err(config_error(format!("duplicate exposed skill id `{exposed}`")));
         }
         let direct = profile_root.join("skills").join(name).join("SKILL.md");
-        let mut matches = direct.is_file().then_some((None, direct)).into_iter().collect::<Vec<_>>();
+        let mut matches =
+            direct.is_file().then_some((None, direct)).into_iter().collect::<Vec<_>>();
         for plugin in &plugin_sources {
             let path = plugin.skills_root.join(name).join("SKILL.md");
             if path.is_file() {

@@ -9,10 +9,11 @@
 //! can replace the inner `reqwest::Client` without touching this surface.
 
 use std::sync::{
-    atomic::{AtomicU64, Ordering},
     Arc,
+    atomic::{AtomicU64, Ordering},
 };
-#[cfg(not(target_arch = "wasm32"))] use std::time::Duration;
+#[cfg(not(target_arch = "wasm32"))]
+use std::time::Duration;
 
 use reqwest::header::{HeaderMap, HeaderName, HeaderValue};
 use serde::{Deserialize, Serialize};

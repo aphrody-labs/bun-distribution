@@ -329,19 +329,29 @@ pub struct GitIngestRequest {
 
 #[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
 pub struct UpstreamListRequest {
-    #[schemars(description = "Repository root holding config/upstream-sources.json (default: APHRODY_ROOT, else the current directory).")]
+    #[schemars(
+        description = "Repository root holding config/upstream-sources.json (default: APHRODY_ROOT, else the current directory)."
+    )]
     pub repo_path: Option<String>,
 }
 
 #[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
 pub struct UpstreamRequest {
-    #[schemars(description = "Upstream id from `upstream_list` (for example 'codex', 'mistral.rs', 'WSL2-Linux-Kernel').")]
+    #[schemars(
+        description = "Upstream id from `upstream_list` (for example 'codex', 'mistral.rs', 'WSL2-Linux-Kernel')."
+    )]
     pub id: String,
-    #[schemars(description = "Repository path: directory for `upstream_tree` (default: the root), file for `upstream_read`.")]
+    #[schemars(
+        description = "Repository path: directory for `upstream_tree` (default: the root), file for `upstream_read`."
+    )]
     pub path: Option<String>,
-    #[schemars(description = "Search query for `upstream_search` (GitHub code search, restricted to this upstream).")]
+    #[schemars(
+        description = "Search query for `upstream_search` (GitHub code search, restricted to this upstream)."
+    )]
     pub query: Option<String>,
-    #[schemars(description = "Repository root holding config/upstream-sources.json (default: APHRODY_ROOT, else the current directory).")]
+    #[schemars(
+        description = "Repository root holding config/upstream-sources.json (default: APHRODY_ROOT, else the current directory)."
+    )]
     pub repo_path: Option<String>,
 }
 
@@ -2322,9 +2332,11 @@ impl GoogleMcpServer {
         }
     }
 
-    #[tool(description = "Live facts about one catalogue upstream from the GitHub API: head of the \
+    #[tool(
+        description = "Live facts about one catalogue upstream from the GitHub API: head of the \
                           followed ref, latest release, licence, pushed date, archived flag, and \
-                          whether it moved since the commit recorded in the manifest.")]
+                          whether it moved since the commit recorded in the manifest."
+    )]
     async fn upstream_info(&self, Parameters(request): Parameters<UpstreamRequest>) -> String {
         upstream_query("info", request).await
     }

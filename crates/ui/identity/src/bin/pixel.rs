@@ -36,7 +36,7 @@ fn main() -> ExitCode {
         Err(e) => {
             eprintln!("pixel: {e}");
             ExitCode::FAILURE
-        }
+        },
     }
 }
 
@@ -60,8 +60,7 @@ fn drapeau(args: &mut Vec<String>, nom: &str) -> bool {
 }
 
 fn nombre<T: std::str::FromStr>(s: &str, quoi: &str) -> Result<T, String> {
-    s.parse()
-        .map_err(|_| format!("{quoi} : « {s} » n'est pas un nombre"))
+    s.parse().map_err(|_| format!("{quoi} : « {s} » n'est pas un nombre"))
 }
 
 fn lire_masque(args: &mut Vec<String>) -> Result<Option<Masque>, String> {
@@ -97,7 +96,7 @@ fn executer(args: &[String]) -> Result<(), String> {
         "-h" | "--help" | "aide" => {
             print!("{AIDE}");
             Ok(())
-        }
+        },
         autre => Err(format!("commande inconnue « {autre} »\n\n{AIDE}")),
     }
 }
@@ -121,9 +120,7 @@ fn cmd_mesurer(args: &mut Vec<String>) -> Result<(), String> {
         .map(|v| v[0].clone())
         .or_else(|| drapeau(args, "--css").then(|| "nie".to_string()));
     let masque = lire_masque(args)?;
-    let k = option(args, "--k", 1)?
-        .map(|v| nombre::<usize>(&v[0], "--k"))
-        .transpose()?;
+    let k = option(args, "--k", 1)?.map(|v| nombre::<usize>(&v[0], "--k")).transpose()?;
     let mut boite = option(args, "--boite", 4)?
         .map(|v| -> Result<Boite, String> {
             Ok(Boite {
@@ -140,10 +137,7 @@ fn cmd_mesurer(args: &mut Vec<String>) -> Result<(), String> {
     }
     let chemin = positionnel(args, "<IMG>")?;
 
-    let mut reglages = Reglages {
-        boite,
-        ..Reglages::default()
-    };
+    let mut reglages = Reglages { boite, ..Reglages::default() };
     if let Some(m) = masque {
         reglages.masque = m;
     }
@@ -157,10 +151,7 @@ fn cmd_mesurer(args: &mut Vec<String>) -> Result<(), String> {
         return Ok(());
     }
     if json {
-        println!(
-            "{}",
-            serde_json::to_string_pretty(&m).map_err(|e| e.to_string())?
-        );
+        println!("{}", serde_json::to_string_pretty(&m).map_err(|e| e.to_string())?);
     } else {
         imprimer_mesure(&m);
     }
@@ -172,10 +163,8 @@ fn cmd_mesurer(args: &mut Vec<String>) -> Result<(), String> {
 /// de `nie-ui::surfaces` : la rejouer doit rendre la même classe dominante.
 fn cmd_capture(args: &mut Vec<String>) -> Result<(), String> {
     let json = drapeau(args, "--json");
-    let k = option(args, "--k", 1)?
-        .map(|v| nombre::<usize>(&v[0], "--k"))
-        .transpose()?
-        .unwrap_or(4);
+    let k =
+        option(args, "--k", 1)?.map(|v| nombre::<usize>(&v[0], "--k")).transpose()?.unwrap_or(4);
     let crop = option(args, "--crop", 1)?
         .map(|v| Crop::parse(&v[0]).map_err(|e| e.to_string()))
         .transpose()?
@@ -189,20 +178,10 @@ fn cmd_capture(args: &mut Vec<String>) -> Result<(), String> {
     let chemin = positionnel(args, "<PNG>")?;
     let palette = palette_crop(&charger(&chemin)?, crop, k).map_err(|e| e.to_string())?;
     if json {
-        println!(
-            "{}",
-            serde_json::to_string_pretty(&palette).map_err(|e| e.to_string())?
-        );
+        println!("{}", serde_json::to_string_pretty(&palette).map_err(|e| e.to_string())?);
         return Ok(());
     }
-    println!(
-        "{}  crop {},{},{},{}  k={k}",
-        chemin.display(),
-        crop.x,
-        crop.y,
-        crop.w,
-        crop.h
-    );
+    println!("{}  crop {},{},{},{}  k={k}", chemin.display(), crop.x, crop.y, crop.w, crop.h);
     for c in &palette {
         println!(
             "  {:>6.2} %  {}  oklch({:.4} {:.4} {:.2})",
@@ -224,10 +203,7 @@ fn imprimer_mesure(m: &Mesure) {
         m.boite.hauteur()
     );
     println!("ratio            {:.3}", m.ratio);
-    println!(
-        "remplissage      {:.2} %   (disque plein = 78,54 %)",
-        m.remplissage_pct
-    );
+    println!("remplissage      {:.2} %   (disque plein = 78,54 %)", m.remplissage_pct);
     println!("part de l'image  {:.2} %", m.part_image_pct);
     println!(
         "trait            {:.2} %  de la largeur{}",
@@ -281,10 +257,7 @@ fn cmd_comparer(args: &mut Vec<String>) -> Result<(), String> {
     let b = positionnel(args, "<B>")?;
     let c = comparer(&charger(&a)?, &charger(&b)?, tol).map_err(|e| e.to_string())?;
     if json {
-        println!(
-            "{}",
-            serde_json::to_string_pretty(&c).map_err(|e| e.to_string())?
-        );
+        println!("{}", serde_json::to_string_pretty(&c).map_err(|e| e.to_string())?);
     } else {
         imprimer_comparaison(&c);
     }
@@ -293,14 +266,8 @@ fn cmd_comparer(args: &mut Vec<String>) -> Result<(), String> {
 
 fn imprimer_comparaison(c: &Comparaison) {
     println!("ssim                     {:.4}", c.ssim);
-    println!(
-        "pixels dans ±{:<3}          {:.3} %",
-        c.tolerance, c.pixels_dans_tolerance_pct
-    );
-    println!(
-        "identique au bit près    {}",
-        if c.identique { "oui" } else { "non" }
-    );
+    println!("pixels dans ±{:<3}          {:.3} %", c.tolerance, c.pixels_dans_tolerance_pct);
+    println!("identique au bit près    {}", if c.identique { "oui" } else { "non" });
     println!(
         "\nLe SSIM juge une reproduction d'interface ; la part dans la tolérance juge un rendu\nqui doit être identique (le gate du dépôt échoue sous 99 %). Ce ne sont pas le même\ncritère : dire lequel a servi."
     );
@@ -308,15 +275,11 @@ fn imprimer_comparaison(c: &Comparaison) {
 
 fn cmd_vectoriser(args: &mut Vec<String>) -> Result<(), String> {
     let masque = lire_masque(args)?;
-    let k = option(args, "--k", 1)?
-        .map(|v| nombre::<usize>(&v[0], "--k"))
-        .transpose()?;
-    let tol = option(args, "--tolerance", 1)?
-        .map(|v| nombre::<f64>(&v[0], "--tolerance"))
-        .transpose()?;
-    let aire = option(args, "--aire-min", 1)?
-        .map(|v| nombre::<usize>(&v[0], "--aire-min"))
-        .transpose()?;
+    let k = option(args, "--k", 1)?.map(|v| nombre::<usize>(&v[0], "--k")).transpose()?;
+    let tol =
+        option(args, "--tolerance", 1)?.map(|v| nombre::<f64>(&v[0], "--tolerance")).transpose()?;
+    let aire =
+        option(args, "--aire-min", 1)?.map(|v| nombre::<usize>(&v[0], "--aire-min")).transpose()?;
     let sortie = option(args, "-o", 1)?.map(|v| PathBuf::from(&v[0]));
     let chemin = positionnel(args, "<IMG>")?;
 
@@ -346,7 +309,7 @@ fn cmd_vectoriser(args: &mut Vec<String>) -> Result<(), String> {
                 p.display(),
                 svg.len()
             );
-        }
+        },
         None => print!("{svg}"),
     }
     Ok(())
@@ -367,20 +330,14 @@ fn cmd_rasteriser(args: &mut Vec<String>) -> Result<(), String> {
     let png = aphrody_identity::assets::encoder_png(&img.rgba, img.largeur, img.hauteur)
         .map_err(|e| e.to_string())?;
     std::fs::write(&sortie, png).map_err(|e| format!("{} : {e}", sortie.display()))?;
-    eprintln!(
-        "{} écrit — {}x{}",
-        sortie.display(),
-        img.largeur,
-        img.hauteur
-    );
+    eprintln!("{} écrit — {}x{}", sortie.display(), img.largeur, img.hauteur);
     Ok(())
 }
 
 /// Assemble des images en planche, et écrit les quatre fichiers que le web attend.
 fn cmd_planche(args: &mut Vec<String>) -> Result<(), String> {
-    let colonnes = option(args, "--colonnes", 1)?
-        .map(|v| nombre::<usize>(&v[0], "--colonnes"))
-        .transpose()?;
+    let colonnes =
+        option(args, "--colonnes", 1)?.map(|v| nombre::<usize>(&v[0], "--colonnes")).transpose()?;
     let nom = option(args, "--nom", 1)?.map_or_else(|| "planche".to_string(), |v| v[0].clone());
     let base = option(args, "-o", 1)?
         .map(|v| PathBuf::from(&v[0]))
@@ -391,10 +348,9 @@ fn cmd_planche(args: &mut Vec<String>) -> Result<(), String> {
         let chemin = PathBuf::from(args.remove(i));
         // Le nom du sprite vient du FICHIER, jamais de son rang : un rang se décale au premier
         // ajout et tous les sélecteurs CSS déjà écrits pointent alors ailleurs.
-        let nom_sprite = chemin.file_stem().map_or_else(
-            || chemin.display().to_string(),
-            |s| s.to_string_lossy().into_owned(),
-        );
+        let nom_sprite = chemin
+            .file_stem()
+            .map_or_else(|| chemin.display().to_string(), |s| s.to_string_lossy().into_owned());
         images.push((nom_sprite, charger(&chemin)?));
     }
     if images.is_empty() {
@@ -409,8 +365,7 @@ fn cmd_planche(args: &mut Vec<String>) -> Result<(), String> {
         let mut p = base.clone();
         let nom_fichier = format!(
             "{}{suffixe}",
-            base.file_name()
-                .map_or_else(String::new, |n| n.to_string_lossy().into_owned())
+            base.file_name().map_or_else(String::new, |n| n.to_string_lossy().into_owned())
         );
         p.set_file_name(nom_fichier);
         std::fs::write(&p, contenu).map_err(|e| format!("{} : {e}", p.display()))?;
@@ -418,16 +373,13 @@ fn cmd_planche(args: &mut Vec<String>) -> Result<(), String> {
     };
 
     let chemin_png = ecrire(".png", &png)?;
-    let url = chemin_png.file_name().map_or_else(
-        || "planche.png".to_string(),
-        |n| n.to_string_lossy().into_owned(),
-    );
+    let url = chemin_png
+        .file_name()
+        .map_or_else(|| "planche.png".to_string(), |n| n.to_string_lossy().into_owned());
     ecrire(".css", feuille.vers_css(&url).as_bytes())?;
     ecrire(
         ".svg",
-        feuille
-            .vers_svg(&aphrody_sprite_sheet::data_uri(&png, "image/png"))
-            .as_bytes(),
+        feuille.vers_svg(&aphrody_sprite_sheet::data_uri(&png, "image/png")).as_bytes(),
     )?;
     ecrire(".json", feuille.vers_json().as_bytes())?;
 

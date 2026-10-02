@@ -88,12 +88,8 @@ pub struct EntreeInstallation {
 /// Vérifie qu'un paquet respecte la spécification Codex Pet.
 #[must_use]
 pub fn conformite(pet: &PetManifest, manifest: &AnimationsManifest) -> Conformite {
-    let (l, h, c, r) = (
-        manifest.atlas.width,
-        manifest.atlas.height,
-        manifest.atlas.columns,
-        manifest.atlas.rows,
-    );
+    let (l, h, c, r) =
+        (manifest.atlas.width, manifest.atlas.height, manifest.atlas.columns, manifest.atlas.rows);
     let mut ecarts = Vec::new();
 
     let version = if (l, h, c, r) == V2 {
@@ -111,16 +107,12 @@ pub fn conformite(pet: &PetManifest, manifest: &AnimationsManifest) -> Conformit
     // lit avant de décoder l'atlas : si elle ment, il découpe la grille au mauvais pas.
     match (version, pet.sprite_version_number) {
         (Some(Version::V2), n) if n != 2 => {
-            ecarts.push(format!(
-                "atlas v2 mais spriteVersionNumber = {n} (attendu 2)"
-            ));
-        }
+            ecarts.push(format!("atlas v2 mais spriteVersionNumber = {n} (attendu 2)"));
+        },
         (Some(Version::V1), n) if n != 1 => {
-            ecarts.push(format!(
-                "atlas v1 mais spriteVersionNumber = {n} (attendu 1)"
-            ));
-        }
-        _ => {}
+            ecarts.push(format!("atlas v1 mais spriteVersionNumber = {n} (attendu 1)"));
+        },
+        _ => {},
     }
 
     if version == Some(Version::V2) {
@@ -130,7 +122,7 @@ pub fn conformite(pet: &PetManifest, manifest: &AnimationsManifest) -> Conformit
                 a.frames.len()
             )),
             None => ecarts.push("un pet v2 doit porter l'animation look-directions".into()),
-            Some(_) => {}
+            Some(_) => {},
         }
     }
 

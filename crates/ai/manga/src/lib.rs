@@ -18,8 +18,8 @@
 pub mod bubble;
 pub mod catalog;
 pub mod inpaint;
-pub mod onomatopoeia;
 pub mod ocr_projection;
+pub mod onomatopoeia;
 pub mod pipeline;
 pub mod psd;
 pub mod typeset;
@@ -27,21 +27,17 @@ pub mod typeset;
 #[cfg(feature = "koharu")]
 pub use koharu_library as koharu;
 
-pub use bubble::{
-    BoundingBox, BubbleKind, Point, SpeechBubble, sort_manga_reading_order,
-};
+pub use bubble::{BoundingBox, BubbleKind, Point, SpeechBubble, sort_manga_reading_order};
 pub use catalog::{CdnError, MangaCdnClient, PlateRecord};
 pub use image;
 pub use inpaint::{InpaintOptions, MangaInpainter, TextMask};
-pub use onomatopoeia::{Onomatopoeia, SfxCategory, lookup_common_sfx};
 pub use ocr_projection::OcrProjectionError;
+pub use onomatopoeia::{Onomatopoeia, SfxCategory, lookup_common_sfx};
 pub use pipeline::{
     MangaPageOutput, MangaPageResult, MangaPipeline, MangaPipelineError, MangaPipelineOptions,
     MangaSource, PAGE_RESULT_SCHEMA, sha256_hex,
 };
-pub use psd::{
-    PsdDocument, PsdExportError, PsdExportOptions, PsdLayer, TextMetadata, export_psd,
-};
+pub use psd::{PsdDocument, PsdExportError, PsdExportOptions, PsdLayer, TextMetadata, export_psd};
 pub use typeset::{
     TextJustification, TextStyle, TypesetEngine, TypesetLayout, TypesetLine, WritingMode,
 };

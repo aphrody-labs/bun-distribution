@@ -43,10 +43,6 @@
       "reason": "stays 58 with lancedb (see lancedb)."
     },
     {
-      "crate": "getrandom",
-      "reason": "stays 0.2: aphrody-base and aphrody-antigravity enable its `js` feature for browser-WASM randomness (aes-gcm, aead). 0.3+ replaces it with the `wasm_js` feature plus a RUSTFLAGS cfg, which needs a wasm32 check before the move; a2a-coord, a2a-client and terminal-backend would also switch to getrandom::fill."
-    },
-    {
       "crate": "yara-x-proto",
       "lockVersion": "1.7.0",
       "reason": "companion of yara-x =1.7.0: yara-x's build script needs the matching 1.7.0 generation. A plain `cargo update` moves it to 1.21.0 (in range ^1.7.0), which breaks `cargo check -p aphrody-re --features yara` (ModuleOptions has no field rust_module). apply restores the lock pin."

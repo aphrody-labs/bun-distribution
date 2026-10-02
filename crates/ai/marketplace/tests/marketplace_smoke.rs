@@ -13,7 +13,7 @@ use tempfile::TempDir;
 
 #[tokio::test]
 async fn embedded_index_loads_non_empty() {
-    let loader = EmbeddedIndexLoader::default();
+    let loader = EmbeddedIndexLoader;
     let idx = loader.load_index().await.expect("embedded load");
     assert!(!idx.entries.is_empty(), "embedded catalog must seed entries");
     assert!(idx.entries.len() >= 3, "spec mandates >=3 baseline rows");
@@ -27,7 +27,7 @@ async fn embedded_index_loads_non_empty() {
 
 #[tokio::test]
 async fn find_by_id_returns_expected_entry() {
-    let idx = EmbeddedIndexLoader::default().load_index().await.unwrap();
+    let idx = EmbeddedIndexLoader.load_index().await.unwrap();
     let hits = idx.find_by_id("aphrody-terminal-vt");
     assert_eq!(hits.len(), 1);
     assert_eq!(hits[0].kind, ExtensionKind::Skill);
@@ -36,7 +36,7 @@ async fn find_by_id_returns_expected_entry() {
 
 #[tokio::test]
 async fn find_by_kind_filters() {
-    let idx = EmbeddedIndexLoader::default().load_index().await.unwrap();
+    let idx = EmbeddedIndexLoader.load_index().await.unwrap();
     let mcps = idx.find_by_kind(ExtensionKind::Mcp);
     assert!(mcps.iter().all(|e| e.kind == ExtensionKind::Mcp), "kind filter must be pure");
     assert!(mcps.iter().any(|e| e.id == "anthropic-mcp"), "anthropic mcp expected in baseline");
@@ -46,7 +46,7 @@ async fn find_by_kind_filters() {
 
 #[tokio::test]
 async fn latest_version_picks_highest_semver() {
-    let idx = EmbeddedIndexLoader::default().load_index().await.unwrap();
+    let idx = EmbeddedIndexLoader.load_index().await.unwrap();
     // aphrody-cron seeds two versions (0.1.0 + 0.2.0) — the helper must
     // return the higher one.
     let latest = idx.latest_version("aphrody-cron").expect("present");
@@ -61,7 +61,7 @@ async fn latest_version_picks_highest_semver() {
 
 #[tokio::test]
 async fn find_by_tag_matches_exact_tag() {
-    let idx = EmbeddedIndexLoader::default().load_index().await.unwrap();
+    let idx = EmbeddedIndexLoader.load_index().await.unwrap();
     let cron_rows = idx.find_by_tag("cron");
     assert!(!cron_rows.is_empty(), "cron tag should resolve");
     assert!(idx.find_by_tag("Cron").is_empty(), "tag match must be case-sensitive");

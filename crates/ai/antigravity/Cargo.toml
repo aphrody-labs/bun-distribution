@@ -52,12 +52,13 @@ base64        = { workspace = true }
 sha2          = { workspace = true }
 rand          = { workspace = true }
 data-encoding = { workspace = true }
+# Always-on: the SSE response parser (client.rs) is compiled on every target.
+futures       = { workspace = true }
+bytes         = { workspace = true }
 
 [target.'cfg(not(target_family = "wasm"))'.dependencies]
 tokio         = { workspace = true, features = ["macros", "rt", "net", "io-util", "time"] }
 reqwest       = { workspace = true, features = ["stream"] }
-futures       = { workspace = true }
-bytes         = { workspace = true }
 # `state_sync::read_state_db` — reads ItemTable from state.vscdb read-only.
 # Shares the workspace-pinned rusqlite (bundled libsqlite3) with aphrody-memory;
 # same `links = "sqlite3"` instance so cargo-deny sees no duplicate.
@@ -75,7 +76,7 @@ x509-parser  = { version = "0.18", optional = true }
 [target.'cfg(all(target_arch = "wasm32", target_os = "unknown"))'.dependencies]
 tokio         = { version = "1.52", default-features = false, features = ["sync", "macros", "rt", "time"] }
 reqwest       = { version = "0.13", default-features = false, features = ["json", "stream", "query", "form"] }
-getrandom     = { version = "0.2", features = ["js"] }
+getrandom     = { workspace = true, features = ["wasm_js"] }
 
 [target.'cfg(target_os = "wasi")'.dependencies]
 tokio         = { version = "1.52", default-features = false, features = ["sync", "macros", "rt", "time"] }

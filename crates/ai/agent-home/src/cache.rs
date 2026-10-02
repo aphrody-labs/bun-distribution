@@ -365,7 +365,10 @@ mod tests {
     fn state_round_trips_through_disk() {
         let td = tempdir().unwrap();
         let root = td.path();
-        let mut state = WorkspaceState { setup_completed_at: Some("2026-05-23T00:00:00Z".to_string()), ..WorkspaceState::default() };
+        let mut state = WorkspaceState {
+            setup_completed_at: Some("2026-05-23T00:00:00Z".to_string()),
+            ..WorkspaceState::default()
+        };
         state.cache.push(CacheRecord {
             rel_path: "SOUL.md".to_string(),
             identity: FileIdentity { dev: 1, ino: 2, size: 3, mtime_ns: 4 },

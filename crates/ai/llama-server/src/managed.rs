@@ -338,9 +338,14 @@ impl ManagedLlamaServer {
         plan_request.margin_mib = options.margin_mib;
         plan_request.parallel = options.parallel.max(1);
         plan_request.extra_args.clone_from(&options.extra_args);
-        plan_request.mmproj = model.all_paths.iter().skip(1).find(|path| {
-            path.file_name().is_some_and(|name| name.to_string_lossy().contains("mmproj"))
-        }).cloned();
+        plan_request.mmproj = model
+            .all_paths
+            .iter()
+            .skip(1)
+            .find(|path| {
+                path.file_name().is_some_and(|name| name.to_string_lossy().contains("mmproj"))
+            })
+            .cloned();
         let plan = crate::plan(&facts, &capabilities, budget, &plan_request);
         let endpoint = self.supervisor.ensure(&self.binary, &plan, options.ensure).await?;
         Ok(ManagedEndpoint { model, plan, endpoint })

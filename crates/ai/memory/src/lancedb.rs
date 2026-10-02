@@ -236,15 +236,18 @@ fn record_to_batch(
 
     let vector_array = build_vector_array(rec.embedding.as_ref(), ndims)?;
 
-    RecordBatch::try_new(Arc::clone(schema), vec![
-        Arc::new(id),
-        Arc::new(ns),
-        Arc::new(content),
-        Arc::new(vector_array),
-        Arc::new(metadata),
-        Arc::new(created_at),
-        Arc::new(updated_at),
-    ])
+    RecordBatch::try_new(
+        Arc::clone(schema),
+        vec![
+            Arc::new(id),
+            Arc::new(ns),
+            Arc::new(content),
+            Arc::new(vector_array),
+            Arc::new(metadata),
+            Arc::new(created_at),
+            Arc::new(updated_at),
+        ],
+    )
     .map_err(|e| MemoryError::Internal { message: format!("RecordBatch::try_new: {e}") })
 }
 

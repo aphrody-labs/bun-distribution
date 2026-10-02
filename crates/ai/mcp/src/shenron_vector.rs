@@ -71,7 +71,8 @@ pub(crate) async fn index_document(
     content: &str,
 ) -> bool {
     let passage = format!("{title}. {content}").chars().take(1200).collect::<String>();
-    let Some(embedding) = embed(&passage, "passage").await.and_then(|values| vector::from_f64(&values))
+    let Some(embedding) =
+        embed(&passage, "passage").await.and_then(|values| vector::from_f64(&values))
     else {
         return false;
     };

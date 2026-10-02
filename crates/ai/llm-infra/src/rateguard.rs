@@ -211,27 +211,36 @@ pub fn default_provider_quotas() -> HashMap<Provider, ProviderQuota> {
     anthropic_overrides.insert("claude-opus-4-7".to_string(), Quota::new(4_000, 800_000));
     anthropic_overrides.insert("claude-sonnet-4-6".to_string(), Quota::new(5_000, 2_000_000));
     anthropic_overrides.insert("claude-haiku-4-5".to_string(), Quota::new(5_000, 4_000_000));
-    out.insert(Provider::Anthropic, ProviderQuota::Anthropic {
-        default: Quota::new(5_000, 2_000_000),
-        per_model: anthropic_overrides,
-    });
+    out.insert(
+        Provider::Anthropic,
+        ProviderQuota::Anthropic {
+            default: Quota::new(5_000, 2_000_000),
+            per_model: anthropic_overrides,
+        },
+    );
 
     // ---- Gemini — paid tier baseline = 1_000 RPM / 4_000_000 TPM. ---------
     let mut gemini_overrides = HashMap::new();
     gemini_overrides.insert("gemini-2.5-pro".to_string(), Quota::new(1_000, 2_000_000));
     gemini_overrides.insert("gemini-3.5-flash".to_string(), Quota::new(2_000, 4_000_000));
-    out.insert(Provider::Gemini, ProviderQuota::Gemini {
-        default: Quota::new(1_000, 4_000_000),
-        per_model: gemini_overrides,
-    });
+    out.insert(
+        Provider::Gemini,
+        ProviderQuota::Gemini {
+            default: Quota::new(1_000, 4_000_000),
+            per_model: gemini_overrides,
+        },
+    );
 
     // ---- Antigravity — Vertex preview baseline = 600 RPM / 1_000_000 TPM. -
     let mut antigravity_overrides = HashMap::new();
     antigravity_overrides.insert("antigravity-prime".to_string(), Quota::new(600, 1_000_000));
-    out.insert(Provider::Antigravity, ProviderQuota::Antigravity {
-        default: Quota::new(600, 1_000_000),
-        per_model: antigravity_overrides,
-    });
+    out.insert(
+        Provider::Antigravity,
+        ProviderQuota::Antigravity {
+            default: Quota::new(600, 1_000_000),
+            per_model: antigravity_overrides,
+        },
+    );
 
     out
 }

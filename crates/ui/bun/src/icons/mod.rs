@@ -30,7 +30,8 @@ pub const WOFF2_OUTLINED: &[u8] =
     include_bytes!("../../icons/material-symbols/material-symbols-outlined.woff2");
 
 /// Raw WOFF2 bytes for the `Material Symbols Sharp` variable font.
-pub const WOFF2_SHARP: &[u8] = include_bytes!("../../icons/material-symbols/material-symbols-sharp.woff2");
+pub const WOFF2_SHARP: &[u8] =
+    include_bytes!("../../icons/material-symbols/material-symbols-sharp.woff2");
 
 /// Raw bytes for `Material Icons Regular` font.
 pub const WOFF2_ICONS_REGULAR: &[u8] =
@@ -41,10 +42,12 @@ pub const WOFF2_ICONS_OUTLINED: &[u8] =
     include_bytes!("../../icons/material-icons/material-icons-outlined.woff2");
 
 /// Raw bytes for `Material Icons Round` font.
-pub const WOFF2_ICONS_ROUND: &[u8] = include_bytes!("../../icons/material-icons/material-icons-round.woff2");
+pub const WOFF2_ICONS_ROUND: &[u8] =
+    include_bytes!("../../icons/material-icons/material-icons-round.woff2");
 
 /// Raw bytes for `Material Icons Sharp` font.
-pub const WOFF2_ICONS_SHARP: &[u8] = include_bytes!("../../icons/material-icons/material-icons-sharp.woff2");
+pub const WOFF2_ICONS_SHARP: &[u8] =
+    include_bytes!("../../icons/material-icons/material-icons-sharp.woff2");
 
 /// Raw bytes for `Material Icons Two Tone` font.
 pub const WOFF2_ICONS_TWO_TONE: &[u8] =

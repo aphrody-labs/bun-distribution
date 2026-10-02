@@ -84,11 +84,8 @@ impl PkcePair {
     /// Generate a fresh PKCE pair using the operating-system RNG.
     #[must_use]
     pub fn generate() -> Self {
-        let verifier: String = rand::rng()
-            .sample_iter(Alphanumeric)
-            .take(VERIFIER_LEN)
-            .map(char::from)
-            .collect();
+        let verifier: String =
+            rand::rng().sample_iter(Alphanumeric).take(VERIFIER_LEN).map(char::from).collect();
         let challenge = Self::challenge_for(&verifier);
         Self { verifier, challenge }
     }
@@ -192,8 +189,7 @@ pub async fn login_with_timeout(timeout_secs: u64) -> Result<OAuthToken, SdkErro
     use tokio::time::{Duration, timeout};
 
     let pkce = PkcePair::generate();
-    let state: String =
-        rand::rng().sample_iter(Alphanumeric).take(32).map(char::from).collect();
+    let state: String = rand::rng().sample_iter(Alphanumeric).take(32).map(char::from).collect();
 
     let url = authorize_url(&pkce, &state);
 

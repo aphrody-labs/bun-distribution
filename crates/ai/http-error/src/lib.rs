@@ -74,7 +74,8 @@ mod tests {
 
     #[test]
     fn data_is_serialized_when_present() {
-        let value = serde_json::to_value(ErrorEnvelope::new("x", "y", Some(json!({"a": 1})))).unwrap();
+        let value =
+            serde_json::to_value(ErrorEnvelope::new("x", "y", Some(json!({"a": 1})))).unwrap();
         assert_eq!(value, json!({"error": {"code": "x", "message": "y", "data": {"a": 1}}}));
     }
 }

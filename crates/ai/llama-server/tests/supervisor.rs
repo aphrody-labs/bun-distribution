@@ -20,10 +20,10 @@ const FAKE_SERVER: &str = env!("CARGO_BIN_EXE_aphrody-fake-llama-server");
 const DAEMON: &str = env!("CARGO_BIN_EXE_aphrody-llama-daemon");
 
 fn supervisor(root: &Path) -> Supervisor {
-    Supervisor::new(StateDirs::new(root), DaemonCommand {
-        program: PathBuf::from(DAEMON),
-        args: Vec::new(),
-    })
+    Supervisor::new(
+        StateDirs::new(root),
+        DaemonCommand { program: PathBuf::from(DAEMON), args: Vec::new() },
+    )
 }
 
 fn plan(role: Role, ctx: u32, extra_args: &[&str]) -> Plan {
@@ -225,11 +225,10 @@ async fn lora_adapters_are_loaded_inactive_then_scaled_and_hot_swapped() {
     let root = tempfile::tempdir().expect("tempdir");
     let supervisor = supervisor(root.path());
     let mut plan = plan(Role::Chat, 4_096, &[]);
-    plan.spec.lora =
-        vec![LoraAdapter { path: PathBuf::from("agent.gguf"), scale: 0.5 }, LoraAdapter {
-            path: PathBuf::from("style.gguf"),
-            scale: 0.0,
-        }];
+    plan.spec.lora = vec![
+        LoraAdapter { path: PathBuf::from("agent.gguf"), scale: 0.5 },
+        LoraAdapter { path: PathBuf::from("style.gguf"), scale: 0.0 },
+    ];
 
     let endpoint = supervisor.ensure(Path::new(FAKE_SERVER), &plan, quick()).await.expect("spawn");
     let client = endpoint.client();

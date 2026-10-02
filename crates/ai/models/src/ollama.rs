@@ -169,11 +169,11 @@ impl OllamaStore {
                     "{}/{}/{}:{}",
                     name.host, name.namespace, name.model, name.tag
                 )));
-            }
+            },
             Err(source) => return Err(ModelError::Io { path, source }),
         };
-        let manifest: Manifest =
-            serde_json::from_slice(&bytes).map_err(|source| ModelError::Registry { path, source })?;
+        let manifest: Manifest = serde_json::from_slice(&bytes)
+            .map_err(|source| ModelError::Registry { path, source })?;
         Ok(OllamaModel { name, layers: manifest.layers, root: self.root.clone() })
     }
 
@@ -191,14 +191,16 @@ impl OllamaStore {
         // host / namespace / model / tag: exactly four levels.
         let mut stack = vec![(base.clone(), 0_usize)];
         while let Some((dir, depth)) = stack.pop() {
-            let entries =
-                std::fs::read_dir(&dir).map_err(|source| ModelError::Io { path: dir.clone(), source })?;
+            let entries = std::fs::read_dir(&dir)
+                .map_err(|source| ModelError::Io { path: dir.clone(), source })?;
             for entry in entries.flatten() {
                 let path = entry.path();
                 if depth < 3 && path.is_dir() {
                     stack.push((path, depth + 1));
-                } else if depth == 3 && path.is_file()
-                    && let Ok(rel) = path.strip_prefix(&base) {
+                } else if depth == 3
+                    && path.is_file()
+                    && let Ok(rel) = path.strip_prefix(&base)
+                {
                     let parts: Vec<_> = rel.iter().map(|p| p.to_string_lossy()).collect();
                     if let [host, ns, model, tag] = parts.as_slice() {
                         out.push(format!("{host}/{ns}/{model}:{tag}"));

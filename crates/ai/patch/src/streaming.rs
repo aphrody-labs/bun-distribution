@@ -394,16 +394,19 @@ mod tests {
                  Patch\r\n",
             )
             .unwrap();
-        assert_eq!(parser.finish().unwrap().hunks, vec![UpdateFile {
-            path: PathBuf::from("file.txt"),
-            move_to: None,
-            chunks: vec![UpdateChunk {
-                context_marker: None,
-                old_lines: vec!["old".to_string()],
-                new_lines: vec!["new".to_string()],
-                is_eof: false,
-            }],
-        }]);
+        assert_eq!(
+            parser.finish().unwrap().hunks,
+            vec![UpdateFile {
+                path: PathBuf::from("file.txt"),
+                move_to: None,
+                chunks: vec![UpdateChunk {
+                    context_marker: None,
+                    old_lines: vec!["old".to_string()],
+                    new_lines: vec!["new".to_string()],
+                    is_eof: false,
+                }],
+            }]
+        );
     }
 
     #[test]
@@ -420,10 +423,10 @@ mod tests {
     fn finish_processes_final_line_without_newline() {
         let mut parser = StreamingPatchParser::new();
         parser.push("*** Begin Patch\n*** Add File: file.txt\n+hello\n*** End Patch").unwrap();
-        assert_eq!(parser.finish().unwrap().hunks, vec![AddFile {
-            path: PathBuf::from("file.txt"),
-            contents: "hello\n".to_string(),
-        }]);
+        assert_eq!(
+            parser.finish().unwrap().hunks,
+            vec![AddFile { path: PathBuf::from("file.txt"), contents: "hello\n".to_string() }]
+        );
     }
 
     #[test]

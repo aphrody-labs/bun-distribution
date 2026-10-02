@@ -42,10 +42,10 @@ fn normalize_from(mut stack: Vec<Vec<u8>>, path: &[u8]) -> VfsResult<Vec<u8>> {
     }
     for comp in path.split(|b| *b == b'/') {
         match comp {
-            b"" | b"." => {}
+            b"" | b"." => {},
             b".." => {
                 stack.pop();
-            }
+            },
             c if c.len() > MAX_NAME_LEN => return Err(VfsError::InvalidPath),
             c => stack.push(c.to_vec()),
         }
@@ -103,7 +103,10 @@ mod tests {
         assert_eq!(normalize(b"a"), Err(VfsError::InvalidPath));
         assert_eq!(normalize(b""), Err(VfsError::InvalidPath));
         assert_eq!(normalize(b"/a\0b"), Err(VfsError::InvalidPath));
-        assert_eq!(normalize(&[b"/".as_slice(), &[b'x'; 256]].concat()), Err(VfsError::InvalidPath));
+        assert_eq!(
+            normalize(&[b"/".as_slice(), &[b'x'; 256]].concat()),
+            Err(VfsError::InvalidPath)
+        );
         assert_eq!(normalize(&[b"/".as_slice(), &[b'x'; 255]].concat()).unwrap().len(), 256);
     }
 

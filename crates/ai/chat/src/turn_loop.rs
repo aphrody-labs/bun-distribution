@@ -283,9 +283,11 @@ impl ChatLoopBuilder {
         }
 
         let session_store = self.session_store.or_else(|| {
-            let dir = self.config.session_dir.clone().or_else(|| {
-                aphrody_models::paths::sessions_dir().ok()
-            });
+            let dir = self
+                .config
+                .session_dir
+                .clone()
+                .or_else(|| aphrody_models::paths::sessions_dir().ok());
             dir.map(JsonlFileStore::new)
         });
 
@@ -737,8 +739,7 @@ mod tests {
 
     #[tokio::test]
     async fn builder_with_zero_context_budget_fails() {
-        let mut cfg = ChatConfig::default();
-        cfg.max_context_tokens = 0;
+        let cfg = ChatConfig { max_context_tokens: 0, ..ChatConfig::default() };
         let err = ChatLoop::builder(cfg).build().unwrap_err();
         match err {
             ChatError::InvalidConfig(msg) => assert!(msg.contains("max_context_tokens")),
@@ -748,8 +749,8 @@ mod tests {
 
     #[tokio::test]
     async fn builder_with_invalid_utilisation_fails() {
-        let mut cfg = ChatConfig::default();
-        cfg.context_max_utilisation = 1.5; // > 1.0
+        // > 1.0
+        let cfg = ChatConfig { context_max_utilisation: 1.5, ..ChatConfig::default() };
         let err = ChatLoop::builder(cfg).build().unwrap_err();
         match err {
             ChatError::InvalidConfig(msg) => {

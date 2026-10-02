@@ -283,9 +283,8 @@ const fn outcome_label(outcome: &PullOutcome) -> &'static str {
 }
 
 fn resolve_refs(spec: &str) -> Result<Vec<ModelRef>, HubError> {
-    let resolved = Catalog::builtin()
-        .resolve(spec)
-        .map_err(HubError::model(format!("resolve `{spec}`")))?;
+    let resolved =
+        Catalog::builtin().resolve(spec).map_err(HubError::model(format!("resolve `{spec}`")))?;
     Ok(resolved.artifacts().into_iter().map(|(reference, _)| reference).collect())
 }
 

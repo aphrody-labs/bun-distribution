@@ -557,10 +557,10 @@ impl InvertedIndex {
     /// Persist the full index to `path` as pretty-printed JSON.
     /// Writes to `<path>.tmp` first, then renames atomically.
     pub async fn save(&self, path: &Path) -> Result<(), SearchError> {
-        if let Some(parent) = path.parent() {
-            if !parent.as_os_str().is_empty() {
-                fs::create_dir_all(parent).await?;
-            }
+        if let Some(parent) = path.parent()
+            && !parent.as_os_str().is_empty()
+        {
+            fs::create_dir_all(parent).await?;
         }
         let json = serde_json::to_vec_pretty(self)?;
         let tmp: PathBuf = path.with_extension("json.tmp");

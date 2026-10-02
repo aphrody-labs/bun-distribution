@@ -434,12 +434,8 @@ mod tests {
     fn qwen3_moe_with_speculative_decoding() {
         let mut request = PlanRequest::new(Role::Chat, "qwen3-30b-a3b-instruct");
         request.draft_model = Some(PathBuf::from("qwen3-4b-instruct.gguf"));
-        let plan = plan(
-            &facts("qwen3moe", 17.3, 48, 262_144, 128),
-            &caps(true),
-            rtx_4070(),
-            &request,
-        );
+        let plan =
+            plan(&facts("qwen3moe", 17.3, 48, 262_144, 128), &caps(true), rtx_4070(), &request);
         let Placement::Planned { n_gpu_layers, n_cpu_moe } = plan.spec.placement else {
             panic!("expected a planned MoE split, got {:?}", plan.spec.placement);
         };

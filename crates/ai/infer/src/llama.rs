@@ -133,17 +133,17 @@ pub fn resolve(tool: LlamaTool) -> Option<LlamaSource> {
         }
         // Treat its directory as a search root — a user who set the variable
         // meant "my llama.cpp lives here".
-        if let Some(dir) = path.parent() {
-            if let Some(found) = in_dir(dir, tool) {
-                return Some(LlamaSource::EnvDir(found));
-            }
+        if let Some(dir) = path.parent()
+            && let Some(found) = in_dir(dir, tool)
+        {
+            return Some(LlamaSource::EnvDir(found));
         }
     }
 
-    if let Some(dir) = non_empty_env("APHRODY_LLAMA_DIR") {
-        if let Some(found) = in_dir(Path::new(&dir), tool) {
-            return Some(LlamaSource::EnvDir(found));
-        }
+    if let Some(dir) = non_empty_env("APHRODY_LLAMA_DIR")
+        && let Some(found) = in_dir(Path::new(&dir), tool)
+    {
+        return Some(LlamaSource::EnvDir(found));
     }
 
     if let Some(found) = find_managed(tool) {

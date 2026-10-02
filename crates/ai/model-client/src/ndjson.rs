@@ -160,7 +160,8 @@ mod tests {
 
     #[tokio::test]
     async fn crlf_terminators_and_blank_lines_are_tolerated() {
-        let values = collect(ndjson_values(chunks(&[b"\r\n{\"a\":1}\r\n  \r\n{\"a\":2}\r\n"]))).await;
+        let values =
+            collect(ndjson_values(chunks(&[b"\r\n{\"a\":1}\r\n  \r\n{\"a\":2}\r\n"]))).await;
         assert_eq!(values.len(), 2);
         assert_eq!(values[1].as_ref().expect("value")["a"], 2);
     }

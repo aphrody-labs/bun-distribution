@@ -136,10 +136,10 @@ impl JobLogs {
         let raw = std::fs::read_to_string(&path)?;
         let mut lines: Vec<LogLine> =
             raw.lines().filter_map(|l| serde_json::from_str(l).ok()).collect();
-        if let Some(n) = tail {
-            if lines.len() > n {
-                lines.drain(..lines.len() - n);
-            }
+        if let Some(n) = tail
+            && lines.len() > n
+        {
+            lines.drain(..lines.len() - n);
         }
         Ok(lines)
     }

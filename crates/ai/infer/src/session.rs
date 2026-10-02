@@ -256,11 +256,10 @@ mod tests {
             Accelerator::DirectMl,
             Accelerator::Cpu,
         ]));
-        assert_eq!(config.providers, vec![
-            Accelerator::Cuda,
-            Accelerator::DirectMl,
-            Accelerator::Cpu
-        ]);
+        assert_eq!(
+            config.providers,
+            vec![Accelerator::Cuda, Accelerator::DirectMl, Accelerator::Cpu]
+        );
     }
 
     #[test]

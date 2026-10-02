@@ -17,7 +17,10 @@ impl DriveWindow {
     }
 
     /// Focus an existing overlay or create a transparent, initially hidden one.
-    pub async fn show(&self, app: &AppHandle<tauri::DynRuntime>) -> Result<WebviewWindow<tauri::DynRuntime>, String> {
+    pub async fn show(
+        &self,
+        app: &AppHandle<tauri::DynRuntime>,
+    ) -> Result<WebviewWindow<tauri::DynRuntime>, String> {
         let label = self.label();
         if let Some(window) = app.get_webview_window(&label) {
             window.set_focus().map_err(|error| error.to_string())?;

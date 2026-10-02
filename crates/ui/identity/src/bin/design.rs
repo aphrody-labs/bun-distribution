@@ -33,15 +33,15 @@ fn main() -> ExitCode {
             "--m3-seed" => {
                 println!("{}", design::m3_seed_hex());
                 return ExitCode::SUCCESS;
-            }
+            },
             "-h" | "--help" => {
                 println!("{}", aide());
                 return ExitCode::SUCCESS;
-            }
+            },
             autre if autre.starts_with('-') => {
                 eprintln!("option inconnue : {autre}\n\n{}", aide());
                 return ExitCode::FAILURE;
-            }
+            },
             autre => chemin = Some(PathBuf::from(autre)),
         }
     }
@@ -76,11 +76,7 @@ fn main() -> ExitCode {
         return ExitCode::FAILURE;
     }
     if identique {
-        println!(
-            "\n{} : inchange ({} proprietes).",
-            chemin.display(),
-            proprietes(&attendu)
-        );
+        println!("\n{} : inchange ({} proprietes).", chemin.display(), proprietes(&attendu));
         return ExitCode::SUCCESS;
     }
     if let Some(parent) = chemin.parent()
@@ -119,18 +115,13 @@ fn aide() -> String {
 
 /// Compte les déclarations de propriété personnalisée d'une feuille.
 fn proprietes(css: &str) -> usize {
-    css.lines()
-        .filter(|l| l.trim_start().starts_with("--"))
-        .count()
+    css.lines().filter(|l| l.trim_start().starts_with("--")).count()
 }
 
 /// Les dix teintes de départ : ce que la mesure a trouvé sur l'atlas.
 fn afficher_palette() {
     println!("PALETTE MESUREE — 10 teintes, k-means Oklab sur les 74 frames de l'atlas\n");
-    println!(
-        "  {:<8} {:<9} {:>6}   {:<28}",
-        "teinte", "hex", "part", "oklch"
-    );
+    println!("  {:<8} {:<9} {:>6}   {:<28}", "teinte", "hex", "part", "oklch");
     println!("  {}", "-".repeat(58));
     for t in &PALETTE {
         println!(
@@ -143,10 +134,7 @@ fn afficher_palette() {
 /// Les vingt-neuf rôles dérivés, avec leur marge au gamut et, au premier passage, l'ancienne
 /// valeur écrite à la main qu'ils remplacent.
 fn afficher_roles(ancien: Option<&str>) {
-    println!(
-        "\n\nROLES DERIVES — {} couleurs\n",
-        ROLES.len() + ROLES_INACORD.len()
-    );
+    println!("\n\nROLES DERIVES — {} couleurs\n", ROLES.len() + ROLES_INACORD.len());
     println!(
         "  {:<24} {:<7} {:<28} {:<9} {:<9} marge gamut",
         "role", "source", "oklch", "avant", "apres"
@@ -196,14 +184,8 @@ fn hex_ecrit(css: &str, nom: &str) -> Option<String> {
 
 /// Le contraste WCAG des paires que l'interface superpose réellement.
 fn afficher_contrastes() {
-    println!(
-        "\n\nCONTRASTES WCAG — les {} paires que l'interface affiche\n",
-        PAIRES.len()
-    );
-    println!(
-        "  {:<22} {:<22} {:>8} {:>8}   verdict",
-        "texte", "sur fond", "mesure", "minimum"
-    );
+    println!("\n\nCONTRASTES WCAG — les {} paires que l'interface affiche\n", PAIRES.len());
+    println!("  {:<22} {:<22} {:>8} {:>8}   verdict", "texte", "sur fond", "mesure", "minimum");
     println!("  {}", "-".repeat(78));
     for (a, b, mesure, min) in contrastes() {
         // AAA est le seuil WCAG du texte courant (7:1) ; il n'est pas exige ici, seulement

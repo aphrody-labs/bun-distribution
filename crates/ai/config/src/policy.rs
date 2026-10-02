@@ -67,12 +67,10 @@ impl<'de> Deserialize<'de> for AskForApproval {
             "on-failure" => Ok(Self::OnFailure),
             "on-request" => Ok(Self::OnRequest),
             "never" => Ok(Self::Never),
-            other => Err(serde::de::Error::unknown_variant(other, &[
-                "untrusted",
-                "on-failure",
-                "on-request",
-                "never",
-            ])),
+            other => Err(serde::de::Error::unknown_variant(
+                other,
+                &["untrusted", "on-failure", "on-request", "never"],
+            )),
         }
     }
 }
@@ -133,11 +131,10 @@ impl<'de> Deserialize<'de> for SandboxMode {
             "read-only" => Ok(Self::ReadOnly),
             "workspace-write" => Ok(Self::WorkspaceWrite),
             "danger-full-access" => Ok(Self::DangerFullAccess),
-            other => Err(serde::de::Error::unknown_variant(other, &[
-                "read-only",
-                "workspace-write",
-                "danger-full-access",
-            ])),
+            other => Err(serde::de::Error::unknown_variant(
+                other,
+                &["read-only", "workspace-write", "danger-full-access"],
+            )),
         }
     }
 }

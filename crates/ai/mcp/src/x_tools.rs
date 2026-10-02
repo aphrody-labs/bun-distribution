@@ -3,8 +3,8 @@
 
 use std::sync::LazyLock;
 
-use aphrody_x::{NewsOptions, XClient, XSession};
 use aphrody_x::algorithm::{PostCandidate, RankingContext, rank_posts};
+use aphrody_x::{NewsOptions, XClient, XSession};
 use rmcp::model::{CallToolRequestParams, CallToolResult, ContentBlock, Tool};
 use serde_json::{Value, json};
 

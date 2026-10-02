@@ -244,7 +244,7 @@ impl LayeredSettings {
     pub fn merged(&self) -> Value {
         let mut acc = Value::Object(Map::new());
         // BTreeMap iteration order is by key, which is precedence-ordered.
-        for (_layer, value) in &self.layers {
+        for value in self.layers.values() {
             deep_merge(&mut acc, value.clone());
         }
         acc
@@ -440,27 +440,27 @@ impl SettingsLoader {
     /// or root-must-be-object validation.
     pub async fn load(&self) -> Result<LayeredSettings> {
         let mut settings = LayeredSettings::new();
-        if let Some(path) = &self.user_path {
-            if let Some(value) = read_json_if_exists(path).await? {
-                settings.set_layer(SettingsLayer::User, value)?;
-            }
+        if let Some(path) = &self.user_path
+            && let Some(value) = read_json_if_exists(path).await?
+        {
+            settings.set_layer(SettingsLayer::User, value)?;
         }
-        if let Some(path) = &self.project_path {
-            if let Some(value) = read_json_if_exists(path).await? {
-                settings.set_layer(SettingsLayer::Project, value)?;
-            }
+        if let Some(path) = &self.project_path
+            && let Some(value) = read_json_if_exists(path).await?
+        {
+            settings.set_layer(SettingsLayer::Project, value)?;
         }
-        if let Some(path) = &self.local_path {
-            if let Some(value) = read_json_if_exists(path).await? {
-                settings.set_layer(SettingsLayer::Local, value)?;
-            }
+        if let Some(path) = &self.local_path
+            && let Some(value) = read_json_if_exists(path).await?
+        {
+            settings.set_layer(SettingsLayer::Local, value)?;
         }
         if let Some(prefix) = &self.env_prefix {
             let env_value = env_to_json(std::env::vars(), prefix);
-            if let Value::Object(map) = &env_value {
-                if !map.is_empty() {
-                    settings.set_layer(SettingsLayer::Env, env_value)?;
-                }
+            if let Value::Object(map) = &env_value
+                && !map.is_empty()
+            {
+                settings.set_layer(SettingsLayer::Env, env_value)?;
             }
         }
         Ok(settings)
@@ -525,15 +525,15 @@ fn validate_at(path: &str, value: &Value, schema: &Value) -> Result<()> {
                 }
             }
         }
-        if schema.get("additionalProperties") == Some(&Value::Bool(false)) {
-            if let Some(props) = schema.get("properties").and_then(|v| v.as_object()) {
-                for key in obj.keys() {
-                    if !props.contains_key(key) {
-                        return Err(SettingsError::SchemaViolation {
-                            path: join_path(path, key),
-                            message: format!("additional property `{key}` not allowed"),
-                        });
-                    }
+        if schema.get("additionalProperties") == Some(&Value::Bool(false))
+            && let Some(props) = schema.get("properties").and_then(|v| v.as_object())
+        {
+            for key in obj.keys() {
+                if !props.contains_key(key) {
+                    return Err(SettingsError::SchemaViolation {
+                        path: join_path(path, key),
+                        message: format!("additional property `{key}` not allowed"),
+                    });
                 }
             }
         }
@@ -546,11 +546,11 @@ fn validate_at(path: &str, value: &Value, schema: &Value) -> Result<()> {
         }
     }
     // array-specific
-    if value.is_array() {
-        if let Some(items_schema) = schema.get("items") {
-            for (idx, item) in value.as_array().expect("checked").iter().enumerate() {
-                validate_at(&join_path(path, &idx.to_string()), item, items_schema)?;
-            }
+    if value.is_array()
+        && let Some(items_schema) = schema.get("items")
+    {
+        for (idx, item) in value.as_array().expect("checked").iter().enumerate() {
+            validate_at(&join_path(path, &idx.to_string()), item, items_schema)?;
         }
     }
     Ok(())

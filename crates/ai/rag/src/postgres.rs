@@ -37,8 +37,7 @@ fn document_title(markdown: &str, url: &str) -> String {
 /// Checks a connection out of the process-wide `aphrody-sql` pool for `database_url`
 /// (TLS for non-loopback hosts, recycled connections verified before reuse).
 async fn connect(database_url: &str) -> Result<Client, &'static str> {
-    let pool =
-        aphrody_sql::shared_pool(database_url).map_err(|_| "RAG PostgreSQL unavailable")?;
+    let pool = aphrody_sql::shared_pool(database_url).map_err(|_| "RAG PostgreSQL unavailable")?;
     tokio::time::timeout(DB_TIMEOUT, pool.get())
         .await
         .map_err(|_| "RAG PostgreSQL unavailable")?

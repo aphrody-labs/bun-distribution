@@ -9,8 +9,9 @@ use super::*;
 fn resolve_prefers_canonical_then_each_alias_in_order() {
     assert_eq!(EMBED_MODEL.resolve_with(&|_| None), None);
     assert_eq!(
-        EMBED_MODEL.resolve_with(&|name| (name == "APHRODY_RAG_EMBED_MODEL")
-            .then(|| "second-alias".to_owned())),
+        EMBED_MODEL.resolve_with(
+            &|name| (name == "APHRODY_RAG_EMBED_MODEL").then(|| "second-alias".to_owned())
+        ),
         Some("second-alias".to_owned())
     );
     assert_eq!(
@@ -47,8 +48,9 @@ fn resolve_source_reports_which_name_supplied_the_value() {
         Some("APHRODY_AI_EMBED_MODEL")
     );
     assert_eq!(
-        EMBED_MODEL.resolve_source_with(&|name| (name == "APHRODY_RAG_EMBED_MODEL")
-            .then(|| "v".to_owned())),
+        EMBED_MODEL.resolve_source_with(
+            &|name| (name == "APHRODY_RAG_EMBED_MODEL").then(|| "v".to_owned())
+        ),
         Some("APHRODY_RAG_EMBED_MODEL")
     );
 }
@@ -83,9 +85,13 @@ fn no_alias_shadows_another_variable_s_canonical_name() {
 /// existing on every machine that runs `cargo test`.
 #[test]
 fn matches_the_aphrody_infra_contract_when_present() {
-    let candidate = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../../aphrody-infra/config/local-ai.json");
+    let candidate =
+        Path::new(env!("CARGO_MANIFEST_DIR")).join("../../../aphrody-infra/config/local-ai.json");
     let Ok(raw) = std::fs::read_to_string(&candidate) else {
-        eprintln!("skipping: {} not found (aphrody-infra is a sibling checkout)", candidate.display());
+        eprintln!(
+            "skipping: {} not found (aphrody-infra is a sibling checkout)",
+            candidate.display()
+        );
         return;
     };
     let contract: serde_json::Value = serde_json::from_str(&raw).expect("valid JSON");

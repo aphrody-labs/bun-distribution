@@ -89,10 +89,11 @@ pub(crate) fn a2a_error_from_details(
             errordetails::ERROR_INFO_TYPE => {
                 if let Some(Value::String(domain)) = detail.value.get("domain")
                     && domain == errordetails::PROTOCOL_DOMAIN
-                        && let Some(Value::String(reason)) = detail.value.get("reason")
-                            && let Some(c) = reason_to_error_code(reason) {
-                                code = c;
-                            }
+                    && let Some(Value::String(reason)) = detail.value.get("reason")
+                    && let Some(c) = reason_to_error_code(reason)
+                {
+                    code = c;
+                }
             },
             _ => {},
         }

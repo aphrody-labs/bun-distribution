@@ -252,8 +252,10 @@ fn bm25_scores_short_docs_higher_for_rare_terms() {
 
 #[test]
 fn custom_stopwords_excluded_from_index() {
-    let mut cfg = TokenizerConfig::default();
-    cfg.custom_stopwords = vec!["banana".into(), "kiwi".into()];
+    let cfg = TokenizerConfig {
+        custom_stopwords: vec!["banana".into(), "kiwi".into()],
+        ..TokenizerConfig::default()
+    };
 
     let mut idx = InvertedIndex::new(cfg.clone());
     idx.index_document(doc("d", "fruit", "banana kiwi apple cherry", &[])).unwrap();
@@ -276,9 +278,7 @@ fn custom_stopwords_excluded_from_index() {
 
 #[test]
 fn tokenizer_respects_length_bounds() {
-    let mut cfg = TokenizerConfig::default();
-    cfg.min_token_len = 4;
-    cfg.max_token_len = 8;
+    let cfg = TokenizerConfig { min_token_len: 4, max_token_len: 8, ..TokenizerConfig::default() };
 
     let toks = tokenize("hi rust verylongtokenname rust", &cfg);
     let strs: Vec<&str> = toks.iter().map(|t| t.as_str()).collect();

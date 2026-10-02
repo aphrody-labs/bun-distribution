@@ -48,10 +48,10 @@ async fn real_server_plans_launches_answers_and_stops() {
     }
 
     let root = tempfile::tempdir().expect("tempdir");
-    let supervisor = Supervisor::new(StateDirs::new(root.path()), DaemonCommand {
-        program: PathBuf::from(DAEMON),
-        args: Vec::new(),
-    });
+    let supervisor = Supervisor::new(
+        StateDirs::new(root.path()),
+        DaemonCommand { program: PathBuf::from(DAEMON), args: Vec::new() },
+    );
     let options =
         EnsureOptions { ready_timeout: Duration::from_secs(300), ..EnsureOptions::default() };
     let endpoint = match supervisor.ensure(&binary, &plan, options).await {

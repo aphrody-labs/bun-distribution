@@ -95,7 +95,6 @@ pub enum LengthUnit {
     Bytes,
 }
 
-
 /// Tunable knobs shared by every chunker.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct ChunkOptions {

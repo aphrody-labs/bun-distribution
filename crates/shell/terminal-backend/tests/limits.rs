@@ -20,11 +20,8 @@ async fn start(cfg: PtyConfig) -> SocketAddr {
     let probe = TcpListener::bind("127.0.0.1:0").await.expect("bind");
     let addr = probe.local_addr().expect("addr");
     drop(probe);
-    let cfg = PtyConfig {
-        shell: Some("/bin/cat".to_owned()),
-        auth_token: Some(TOKEN.to_owned()),
-        ..cfg
-    };
+    let cfg =
+        PtyConfig { shell: Some("/bin/cat".to_owned()), auth_token: Some(TOKEN.to_owned()), ..cfg };
     tokio::spawn(async move {
         let _ = serve(addr, cfg).await;
     });
@@ -125,8 +122,7 @@ async fn session_quota_rejects_then_frees_slot() {
 
 #[tokio::test]
 async fn oversize_frame_is_dropped_session_survives() {
-    let addr =
-        start(PtyConfig { max_input_frame_bytes: Some(64), ..PtyConfig::default() }).await;
+    let addr = start(PtyConfig { max_input_frame_bytes: Some(64), ..PtyConfig::default() }).await;
     let (mut ws, _) = connect_async(request(addr, Some(TOKEN), None)).await.expect("connect");
     let big = format!("{}\n", "X".repeat(512));
     ws.send(Message::Binary(big.into_bytes().into())).await.expect("send big");

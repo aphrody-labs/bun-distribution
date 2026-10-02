@@ -10,7 +10,9 @@ use bun_rs::icons::{Axes, Style};
 
 fn assert_pixel_perfect(name: &str, fixture_file: &str, axes: Axes) {
     let fixture_svg = std::fs::read_to_string(
-        std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/icons").join(fixture_file),
+        std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("tests/fixtures/icons")
+            .join(fixture_file),
     )
     .unwrap_or_else(|e| panic!("reading fixture {fixture_file}: {e}"));
 

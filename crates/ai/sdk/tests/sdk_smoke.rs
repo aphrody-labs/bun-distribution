@@ -186,8 +186,7 @@ fn skill_reference_sugar_round_trips() {
 
 #[tokio::test]
 async fn invalid_config_returns_invalid_config_error() {
-    let mut cfg = SdkConfig::default();
-    cfg.model = String::new();
+    let cfg = SdkConfig { model: String::new(), ..SdkConfig::default() };
     let r = AphrodySdk::new(cfg).await;
     assert!(matches!(r, Err(SdkError::InvalidConfig(_))));
 }

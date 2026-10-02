@@ -309,8 +309,7 @@ mod tests {
 
     #[test]
     fn validate_rejects_empty_model() {
-        let mut cfg = SdkConfig::default();
-        cfg.model = String::new();
+        let cfg = SdkConfig { model: String::new(), ..SdkConfig::default() };
         assert!(cfg.validate().is_err());
     }
 

@@ -25,7 +25,10 @@ fn canonical_embed_base_url_alone_infers_the_llama_server_backend_and_local_role
     assert_eq!(resolved.backend, EmbedBackend::LlamaServer);
     assert_eq!(resolved.model, LocalRole::Embed.default_model());
     assert_eq!(resolved.endpoint.as_deref(), Some("http://127.0.0.1:9200/v1"));
-    assert_eq!(resolved.dimension, Catalog::builtin().dimensions(LocalRole::Embed.default_model()).unwrap().unwrap() as usize);
+    assert_eq!(
+        resolved.dimension,
+        Catalog::builtin().dimensions(LocalRole::Embed.default_model()).unwrap().unwrap() as usize
+    );
 }
 
 #[test]
@@ -71,10 +74,7 @@ fn ort_backend_defaults_to_its_own_whitelist_not_local_role_embed() {
     // llama-server) is not a model `aphrody-embed`'s in-process ONNX Runtime
     // whitelist accepts. An unconfigured Ort backend must default to that
     // whitelist's own default instead of silently picking an incompatible one.
-    let config = RagConfig {
-        embed_backend: Some(EmbedBackend::Ort),
-        ..Default::default()
-    };
+    let config = RagConfig { embed_backend: Some(EmbedBackend::Ort), ..Default::default() };
     let resolved = resolve_embed_with(&config, &no_env).unwrap().expect("ort backend");
     assert_ne!(resolved.model, LocalRole::Embed.default_model());
     assert_eq!(resolved.model, "bge-small-en-v1.5");
@@ -83,10 +83,7 @@ fn ort_backend_defaults_to_its_own_whitelist_not_local_role_embed() {
 
 #[test]
 fn http_backend_without_any_endpoint_is_a_clear_error() {
-    let config = RagConfig {
-        embed_backend: Some(EmbedBackend::LlamaServer),
-        ..Default::default()
-    };
+    let config = RagConfig { embed_backend: Some(EmbedBackend::LlamaServer), ..Default::default() };
     let error = resolve_embed_with(&config, &no_env).unwrap_err();
     assert!(matches!(error, RagError::MissingEmbedEndpoint { backend: EmbedBackend::LlamaServer }));
 }
@@ -217,10 +214,8 @@ fn rerank_enabled_resolves_canonical_endpoint_and_local_role_default_model() {
 
 #[test]
 fn rerank_legacy_alias_and_api_key_are_honoured() {
-    let config = RagConfig {
-        rerank_model: Some("configured-reranker".to_owned()),
-        ..Default::default()
-    };
+    let config =
+        RagConfig { rerank_model: Some("configured-reranker".to_owned()), ..Default::default() };
     let env = env_map(&[
         ("RERANK_URL", "http://127.0.0.1:9300/v1/rerank"),
         ("APHRODY_RAG_API_KEY", "secret-token"),

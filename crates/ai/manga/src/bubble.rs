@@ -202,16 +202,10 @@ pub fn sort_manga_reading_order(bubbles: &mut [SpeechBubble]) {
 
         if y_diff < avg_h * 0.45 {
             // Same band: right-to-left (descending X)
-            b_center
-                .x
-                .partial_cmp(&a_center.x)
-                .unwrap_or(std::cmp::Ordering::Equal)
+            b_center.x.partial_cmp(&a_center.x).unwrap_or(std::cmp::Ordering::Equal)
         } else {
             // Different band: top-to-bottom (ascending Y)
-            a_center
-                .y
-                .partial_cmp(&b_center.y)
-                .unwrap_or(std::cmp::Ordering::Equal)
+            a_center.y.partial_cmp(&b_center.y).unwrap_or(std::cmp::Ordering::Equal)
         }
     });
 
@@ -227,9 +221,24 @@ mod tests {
     #[test]
     fn test_manga_reading_order_sorts_rtl() {
         let mut bubbles = vec![
-            SpeechBubble::new(1, BoundingBox::new(50.0, 100.0, 80.0, 80.0), BubbleKind::Dialogue, 0.95),
-            SpeechBubble::new(2, BoundingBox::new(300.0, 90.0, 80.0, 80.0), BubbleKind::Dialogue, 0.95),
-            SpeechBubble::new(3, BoundingBox::new(180.0, 400.0, 90.0, 90.0), BubbleKind::Dialogue, 0.90),
+            SpeechBubble::new(
+                1,
+                BoundingBox::new(50.0, 100.0, 80.0, 80.0),
+                BubbleKind::Dialogue,
+                0.95,
+            ),
+            SpeechBubble::new(
+                2,
+                BoundingBox::new(300.0, 90.0, 80.0, 80.0),
+                BubbleKind::Dialogue,
+                0.95,
+            ),
+            SpeechBubble::new(
+                3,
+                BoundingBox::new(180.0, 400.0, 90.0, 90.0),
+                BubbleKind::Dialogue,
+                0.90,
+            ),
         ];
 
         sort_manga_reading_order(&mut bubbles);
@@ -249,7 +258,7 @@ mod tests {
         let bubble = SpeechBubble::new(
             1,
             BoundingBox::new(10.0, 10.0, 100.0, 100.0),
-                BubbleKind::Dialogue,
+            BubbleKind::Dialogue,
             0.9,
         );
 

@@ -140,10 +140,7 @@ pub type Result<T> = std::result::Result<T, XError>;
 /// format). This converter attempts a best-effort parse using the `time` crate
 /// (already a dependency); if it fails the unix timestamp will be 0 (the ranker
 /// will still work but age-based filters will be less accurate).
-pub fn tweet_to_algo_candidate(
-    tweet: &Tweet,
-    in_network: bool,
-) -> algorithm::PostCandidate {
+pub fn tweet_to_algo_candidate(tweet: &Tweet, in_network: bool) -> algorithm::PostCandidate {
     let created_at = tweet
         .created_at
         .as_ref()

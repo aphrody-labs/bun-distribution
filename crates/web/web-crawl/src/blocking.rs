@@ -109,7 +109,8 @@ mod tests {
             for (status, body) in [(500, "retry"), (200, "first"), (200, "fresh")] {
                 let (mut stream, _) = listener.accept().unwrap();
                 let mut request = [0; 4096];
-                stream.read(&mut request).unwrap();
+                let read = stream.read(&mut request).unwrap();
+                assert!(read > 0, "the client sent a request");
                 write!(stream, "HTTP/1.1 {status} Fixture\r\nContent-Type: text/plain\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}", body.len()).unwrap();
             }
         });

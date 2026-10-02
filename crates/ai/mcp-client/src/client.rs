@@ -10,7 +10,8 @@ use serde_json::Value as JsonValue;
 use tokio::sync::Mutex;
 use tracing::{info, warn};
 
-#[cfg(not(target_arch = "wasm32"))] use crate::transport::stdio::StdioTransport;
+#[cfg(not(target_arch = "wasm32"))]
+use crate::transport::stdio::StdioTransport;
 use crate::{
     error::{McpClientError, Result},
     protocol::{

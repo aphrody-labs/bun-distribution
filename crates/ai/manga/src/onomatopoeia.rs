@@ -7,8 +7,8 @@
 //! from dialogue bubbles: they are hand-drawn directly on top of artwork, dynamic,
 //! and often non-enclosed.
 
-use serde::{Deserialize, Serialize};
 use crate::bubble::{BoundingBox, Point};
+use serde::{Deserialize, Serialize};
 
 /// Functional category of a comic onomatopoeia.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
@@ -50,7 +50,12 @@ pub struct Onomatopoeia {
 impl Onomatopoeia {
     /// Create a new onomatopoeia detection with automatic transliteration/translation lookup.
     #[must_use]
-    pub fn new(id: usize, bounds: BoundingBox, raw_japanese: impl Into<String>, confidence: f32) -> Self {
+    pub fn new(
+        id: usize,
+        bounds: BoundingBox,
+        raw_japanese: impl Into<String>,
+        confidence: f32,
+    ) -> Self {
         let raw = raw_japanese.into();
         let (romaji, translation, category) = lookup_common_sfx(&raw);
         let contour = vec![

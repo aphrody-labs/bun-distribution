@@ -7,12 +7,7 @@
 //! lot JSONL files, or raw Markdown passages) and indexes them into Aphrody's SQLite
 //! [`RagStore`] with FTS5 lexical indexing and optional dense vector embeddings.
 
-use std::{
-    collections::HashSet,
-    path::Path,
-    sync::Arc,
-    time::Instant,
-};
+use std::{collections::HashSet, path::Path, sync::Arc, time::Instant};
 
 use aphrody_rag_core::{ChunkOptions, chunker_for_path};
 use serde::{Deserialize, Serialize};
@@ -53,8 +48,12 @@ pub struct ShenronCorpusDoc {
 impl ShenronCorpusDoc {
     /// Return the most descriptive title available.
     pub fn display_title(&self) -> String {
-        self.name.as_deref().map(str::trim).filter(|name| !name.is_empty())
-            .map(str::to_owned).unwrap_or_else(|| self.id.clone())
+        self.name
+            .as_deref()
+            .map(str::trim)
+            .filter(|name| !name.is_empty())
+            .map(str::to_owned)
+            .unwrap_or_else(|| self.id.clone())
     }
 
     /// Return the textual content, defaulting to empty string.
@@ -239,11 +238,7 @@ pub fn load_shenron_corpus(path: impl AsRef<Path>) -> Result<Vec<ShenronCorpusDo
 
 fn load_corpus_file(path: &Path, docs: &mut Vec<ShenronCorpusDoc>) -> Result<()> {
     let content = std::fs::read_to_string(path)?;
-    let ext = path
-        .extension()
-        .and_then(|e| e.to_str())
-        .unwrap_or("")
-        .to_ascii_lowercase();
+    let ext = path.extension().and_then(|e| e.to_str()).unwrap_or("").to_ascii_lowercase();
 
     if ext == "jsonl" {
         for (line_idx, line) in content.lines().enumerate() {
@@ -253,9 +248,13 @@ fn load_corpus_file(path: &Path, docs: &mut Vec<ShenronCorpusDoc>) -> Result<()>
             }
             match serde_json::from_str::<ShenronCorpusDoc>(trimmed) {
                 Ok(doc) => docs.push(doc),
-                Err(err) => return Err(RagError::Other(format!(
-                    "invalid corpus JSON at {}:{}: {err}", path.display(), line_idx + 1
-                ))),
+                Err(err) => {
+                    return Err(RagError::Other(format!(
+                        "invalid corpus JSON at {}:{}: {err}",
+                        path.display(),
+                        line_idx + 1
+                    )));
+                },
             }
         }
     } else {
@@ -271,7 +270,10 @@ fn load_corpus_file(path: &Path, docs: &mut Vec<ShenronCorpusDoc>) -> Result<()>
             docs.extend(array);
             return Ok(());
         }
-        return Err(RagError::Other(format!("unrecognized corpus JSON structure in {}", path.display())));
+        return Err(RagError::Other(format!(
+            "unrecognized corpus JSON structure in {}",
+            path.display()
+        )));
     }
 
     Ok(())
@@ -285,10 +287,7 @@ pub async fn ingest_shenron_docs(
     opts: &ShenronIngestOptions,
 ) -> Result<ShenronIngestStats> {
     let start = Instant::now();
-    let mut stats = ShenronIngestStats {
-        total_docs_read: docs.len(),
-        ..Default::default()
-    };
+    let mut stats = ShenronIngestStats { total_docs_read: docs.len(), ..Default::default() };
 
     if let Some(emb) = embedder {
         store.ensure_embedding_model(emb.model_id()).await?;
@@ -306,8 +305,11 @@ pub async fn ingest_shenron_docs(
 
         // Determine canonical document path / URL
         let raw_url = if doc.url.trim().is_empty() {
-            if opts.preserve_urls { format!("/corpus/{}", doc.id) }
-            else { format!("/wiki/databooks/{}", doc.id) }
+            if opts.preserve_urls {
+                format!("/corpus/{}", doc.id)
+            } else {
+                format!("/wiki/databooks/{}", doc.id)
+            }
         } else {
             doc.url.trim().to_string()
         };
@@ -405,10 +407,8 @@ pub async fn ingest_shenron_docs(
         };
         stats.docs_ingested += 1;
         stats.chunks_created += chunk_ids.len();
-        let chunks_to_embed: Vec<(i64, String)> = chunk_ids
-            .into_iter()
-            .zip(chunks.into_iter().map(|chunk| chunk.content))
-            .collect();
+        let chunks_to_embed: Vec<(i64, String)> =
+            chunk_ids.into_iter().zip(chunks.into_iter().map(|chunk| chunk.content)).collect();
 
         // Compute dense embeddings if embedder is attached
         if let Some(emb) = embedder {
@@ -417,7 +417,9 @@ pub async fn ingest_shenron_docs(
                 match emb.embed_batch(&texts).await {
                     Ok(vectors) => {
                         for ((chunk_id, _), vec) in chunk_slice.iter().zip(vectors) {
-                            if let Ok(()) = store.insert_vector(*chunk_id, emb.model_id(), &vec).await {
+                            if let Ok(()) =
+                                store.insert_vector(*chunk_id, emb.model_id(), &vec).await
+                            {
                                 stats.vectors_created += 1;
                             }
                         }
@@ -477,7 +479,9 @@ mod tests {
             },
         ];
 
-        let stats = ingest_shenron_docs(&store, &docs, None, &ShenronIngestOptions::default()).await.unwrap();
+        let stats = ingest_shenron_docs(&store, &docs, None, &ShenronIngestOptions::default())
+            .await
+            .unwrap();
         assert_eq!(stats.docs_ingested, 2);
         assert_eq!(stats.chunks_created, 2);
         assert_eq!(stats.skipped, 0);

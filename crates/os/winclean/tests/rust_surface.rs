@@ -39,7 +39,10 @@ fn migration_ledger_is_complete_and_has_unambiguous_owners() {
     let normalized_catalog = aphrody_winclean::CATALOG_JSON.replace("\r\n", "\n");
     assert_eq!(
         ledger.catalog_sha256,
-        Sha256::digest(normalized_catalog.as_bytes()).iter().map(|b| format!("{b:02x}")).collect::<String>(),
+        Sha256::digest(normalized_catalog.as_bytes())
+            .iter()
+            .map(|b| format!("{b:02x}"))
+            .collect::<String>(),
         "catalog schema changed; update the reviewed ledger hash",
     );
     assert_eq!(ledger.state, "complete");

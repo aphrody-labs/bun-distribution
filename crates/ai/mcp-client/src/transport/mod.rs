@@ -12,7 +12,8 @@ use crate::error::Result;
 
 pub mod http;
 
-#[cfg(not(target_arch = "wasm32"))] pub mod stdio;
+#[cfg(not(target_arch = "wasm32"))]
+pub mod stdio;
 
 /// An active transport layer communicating with an MCP server.
 #[async_trait]

@@ -117,7 +117,10 @@ pub fn source_report(
         .map_err(|error| io_error("read manifest", &manifest_path, error))?;
     let manifest: Manifest = serde_json::from_str(&text)?;
     if manifest.schema_version != 1 {
-        return Err(git_error(format!("unsupported manifest schemaVersion {}", manifest.schema_version)));
+        return Err(git_error(format!(
+            "unsupported manifest schemaVersion {}",
+            manifest.schema_version
+        )));
     }
     let root = match source_root {
         Some(path) => repository.join(path),
@@ -159,9 +162,14 @@ fn inspect(root: &Path, source: &Source) -> SourceRow {
         }
         if source.pinned && head != source.commit {
             let short = |value: &Option<String>| {
-                value.as_deref().map_or_else(|| "none".to_owned(), |sha| sha.chars().take(8).collect())
+                value
+                    .as_deref()
+                    .map_or_else(|| "none".to_owned(), |sha| sha.chars().take(8).collect())
             };
-            return row(SourceState::Drift, format!("HEAD {} != pin {}", short(&head), short(&source.commit)));
+            return row(
+                SourceState::Drift,
+                format!("HEAD {} != pin {}", short(&head), short(&source.commit)),
+            );
         }
     }
     let unapplied: Vec<&str> = source

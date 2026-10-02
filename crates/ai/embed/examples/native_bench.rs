@@ -17,7 +17,7 @@
 use std::time::{Duration, Instant};
 
 use aphrody_embed::native::{
-    ensure_model, find_model, Backend, EmbedOptions, Embedder, ModelFiles, TextKind,
+    Backend, EmbedOptions, Embedder, ModelFiles, TextKind, ensure_model, find_model,
 };
 
 const WORDS: &[&str] = &[
@@ -389,7 +389,8 @@ fn main() -> AnyResult<()> {
 
     match task.as_str() {
         "embed" => {
-            let model_id = list(&args, "--model", aphrody_embed::native::DEFAULT_MODEL_ID).remove(0);
+            let model_id =
+                list(&args, "--model", aphrody_embed::native::DEFAULT_MODEL_ID).remove(0);
             let spec = find_model(&model_id).ok_or_else(|| format!("unknown model {model_id}"))?;
             let dir = ensure_model(&spec, &spec.default_dir())?;
             for &t in &threads {
@@ -444,7 +445,8 @@ fn main() -> AnyResult<()> {
             );
         },
         "rerank" => {
-            let model_id = list(&args, "--model", aphrody_embed::native::DEFAULT_RERANKER_ID).remove(0);
+            let model_id =
+                list(&args, "--model", aphrody_embed::native::DEFAULT_RERANKER_ID).remove(0);
             let spec = aphrody_embed::native::find_reranker(&model_id)
                 .ok_or_else(|| format!("unknown reranker {model_id}"))?;
             let dir = ensure_model(&spec, &spec.default_dir())?;

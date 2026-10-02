@@ -7,7 +7,7 @@
 
 mod common;
 
-use aphrody_embed::native::{cosine, Backend, EmbedOptions, TextKind, DEFAULT_MODEL_ID};
+use aphrody_embed::native::{Backend, DEFAULT_MODEL_ID, EmbedOptions, TextKind, cosine};
 use serde_json::Value;
 
 const MIN_COSINE: f32 = 0.999;
@@ -70,7 +70,9 @@ fn optional_models_match_sentence_transformers() {
             continue;
         }
         if !all && !common::installed(model) {
-            eprintln!("SKIPPED: {model} not installed (set APHRODY_EMBED_TEST_ALL_MODELS=1 to fetch)");
+            eprintln!(
+                "SKIPPED: {model} not installed (set APHRODY_EMBED_TEST_ALL_MODELS=1 to fetch)"
+            );
             continue;
         }
         check_case(case, &sentences, Backend::Native);

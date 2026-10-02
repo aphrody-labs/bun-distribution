@@ -110,13 +110,13 @@ impl AgentFilesystem for SandboxFs {
 
     async fn write_file(&self, path: &Path, contents: &str) -> SdkResult<()> {
         let abs = self.resolve(path)?;
-        if let Some(parent) = abs.parent() {
-            if !parent.exists() {
-                return Err(SdkError::AccessDenied(format!(
-                    "parent directory does not exist: {}",
-                    parent.display()
-                )));
-            }
+        if let Some(parent) = abs.parent()
+            && !parent.exists()
+        {
+            return Err(SdkError::AccessDenied(format!(
+                "parent directory does not exist: {}",
+                parent.display()
+            )));
         }
         tokio::fs::write(&abs, contents).await?;
         Ok(())

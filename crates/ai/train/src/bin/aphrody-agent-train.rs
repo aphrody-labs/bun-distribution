@@ -107,10 +107,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         && previous.config_hash == config_hash
         && previous.input_hash == input_hash
     {
-        println!(
-            "{}",
-            serde_json::json!({"training":"unchanged","job_id":previous.job_id})
-        );
+        println!("{}", serde_json::json!({"training":"unchanged","job_id":previous.job_id}));
         return Ok(());
     }
     let job_id =

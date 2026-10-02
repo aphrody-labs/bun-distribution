@@ -23,9 +23,11 @@ pub mod plan;
 pub mod scaffold;
 pub mod theme;
 
-#[cfg(feature = "crawl")] pub mod crawl;
+#[cfg(feature = "crawl")]
+pub mod crawl;
 // `reqwest` has no blocking client on wasm32, so the fetcher exists on native targets only.
-#[cfg(all(feature = "network", not(target_arch = "wasm32")))] pub mod fetch;
+#[cfg(all(feature = "network", not(target_arch = "wasm32")))]
+pub mod fetch;
 
 pub use plan::{AssetRef, ComponentNode, ReproductionPlan, ReproductionSource};
 pub use theme::ThemePlan;

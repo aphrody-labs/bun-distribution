@@ -23,12 +23,14 @@
 
 #![forbid(unsafe_code)]
 
+pub mod agent_home;
 pub mod hnsw;
 pub mod jsonl;
-#[cfg(feature = "lancedb")] pub mod lancedb;
-#[cfg(feature = "lancedb")] pub mod lancedb_adapter;
+#[cfg(feature = "lancedb")]
+pub mod lancedb;
+#[cfg(feature = "lancedb")]
+pub mod lancedb_adapter;
 pub mod sqlite;
-pub mod agent_home;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Tier-1 provider surface (Mem0, Honcho, SqliteLocal).
@@ -55,8 +57,10 @@ use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-#[cfg(feature = "lancedb")] pub use crate::lancedb::LanceDbBackend;
-#[cfg(feature = "lancedb")] pub use crate::lancedb_adapter::LanceDbAdapter;
+#[cfg(feature = "lancedb")]
+pub use crate::lancedb::LanceDbBackend;
+#[cfg(feature = "lancedb")]
+pub use crate::lancedb_adapter::LanceDbAdapter;
 // Tier-1 provider DTOs: re-exported under disambiguated names so they don't
 // collide with the legacy `MemoryBackend` types defined further down in this
 // file. Tests and downstream consumers can either use these aliases or the

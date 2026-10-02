@@ -20,7 +20,7 @@ use super::{
     download::require_installed,
     embedder::{EmbedOptions, Embedder, TextKind},
     error::{Error, Result},
-    manifest::{find_model, find_reranker, ModelFiles, DEFAULT_MODEL_ID, DEFAULT_RERANKER_ID},
+    manifest::{DEFAULT_MODEL_ID, DEFAULT_RERANKER_ID, ModelFiles, find_model, find_reranker},
     reranker::Reranker,
 };
 

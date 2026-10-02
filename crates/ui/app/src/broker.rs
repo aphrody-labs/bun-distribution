@@ -419,9 +419,15 @@ impl AppServerBroker {
         let reader_pending = Arc::clone(&pending);
         let reader_channels = Arc::clone(&self.channels);
         tokio::spawn(async move {
-            pump(BufReader::new(output), &reader_pending, &*reader_channels, generation, |message| {
-                let _ = app.emit(NOTIFICATION_EVENT, message);
-            })
+            pump(
+                BufReader::new(output),
+                &reader_pending,
+                &*reader_channels,
+                generation,
+                |message| {
+                    let _ = app.emit(NOTIFICATION_EVENT, message);
+                },
+            )
             .await;
             let reason = exit.await.unwrap_or_else(|_| "unknown".to_owned());
             if reason != "closed" {

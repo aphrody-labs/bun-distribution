@@ -148,69 +148,93 @@ pub fn builtin_providers(
 ) -> BTreeMap<String, ModelProviderInfo> {
     let mut providers = BTreeMap::new();
 
-    providers.insert("llama".to_string(), ModelProviderInfo {
-        name: "Managed llama-server".to_string(),
-        // Resolved at runtime by the `aphrody-llama-server` supervisor
-        // once it has picked a free port; left unset here.
-        base_url: None,
-        wire_api: WireApi::Chat,
-        managed: Some(ManagedRuntime::LlamaServer),
-        ..ModelProviderInfo::default()
-    });
+    providers.insert(
+        "llama".to_string(),
+        ModelProviderInfo {
+            name: "Managed llama-server".to_string(),
+            // Resolved at runtime by the `aphrody-llama-server` supervisor
+            // once it has picked a free port; left unset here.
+            base_url: None,
+            wire_api: WireApi::Chat,
+            managed: Some(ManagedRuntime::LlamaServer),
+            ..ModelProviderInfo::default()
+        },
+    );
 
-    providers.insert("ollama".to_string(), ModelProviderInfo {
-        name: "Ollama".to_string(),
-        base_url: Some(oss_base_url(env, 11434)),
-        wire_api: WireApi::Chat,
-        ..ModelProviderInfo::default()
-    });
+    providers.insert(
+        "ollama".to_string(),
+        ModelProviderInfo {
+            name: "Ollama".to_string(),
+            base_url: Some(oss_base_url(env, 11434)),
+            wire_api: WireApi::Chat,
+            ..ModelProviderInfo::default()
+        },
+    );
 
-    providers.insert("lmstudio".to_string(), ModelProviderInfo {
-        name: "LM Studio".to_string(),
-        base_url: Some("http://localhost:1234/v1".to_string()),
-        wire_api: WireApi::Chat,
-        ..ModelProviderInfo::default()
-    });
+    providers.insert(
+        "lmstudio".to_string(),
+        ModelProviderInfo {
+            name: "LM Studio".to_string(),
+            base_url: Some("http://localhost:1234/v1".to_string()),
+            wire_api: WireApi::Chat,
+            ..ModelProviderInfo::default()
+        },
+    );
 
-    providers.insert("vllm".to_string(), ModelProviderInfo {
-        name: "vLLM".to_string(),
-        base_url: Some("http://localhost:8000/v1".to_string()),
-        wire_api: WireApi::Chat,
-        ..ModelProviderInfo::default()
-    });
+    providers.insert(
+        "vllm".to_string(),
+        ModelProviderInfo {
+            name: "vLLM".to_string(),
+            base_url: Some("http://localhost:8000/v1".to_string()),
+            wire_api: WireApi::Chat,
+            ..ModelProviderInfo::default()
+        },
+    );
 
-    providers.insert("antigravity".to_string(), ModelProviderInfo {
-        name: "Google Antigravity".to_string(),
-        base_url: None,
-        wire_api: WireApi::Antigravity,
-        // Keyless: identity comes from the Antigravity desktop app's
-        // credential store, never a `config.toml` secret.
-        ..ModelProviderInfo::default()
-    });
+    providers.insert(
+        "antigravity".to_string(),
+        ModelProviderInfo {
+            name: "Google Antigravity".to_string(),
+            base_url: None,
+            wire_api: WireApi::Antigravity,
+            // Keyless: identity comes from the Antigravity desktop app's
+            // credential store, never a `config.toml` secret.
+            ..ModelProviderInfo::default()
+        },
+    );
 
-    providers.insert("chatgpt".to_string(), ModelProviderInfo {
-        name: "ChatGPT".to_string(),
-        base_url: Some("https://chatgpt.com/backend-api/codex".to_string()),
-        wire_api: WireApi::Responses,
-        requires_openai_auth: true,
-        ..ModelProviderInfo::default()
-    });
+    providers.insert(
+        "chatgpt".to_string(),
+        ModelProviderInfo {
+            name: "ChatGPT".to_string(),
+            base_url: Some("https://chatgpt.com/backend-api/codex".to_string()),
+            wire_api: WireApi::Responses,
+            requires_openai_auth: true,
+            ..ModelProviderInfo::default()
+        },
+    );
 
-    providers.insert("openai".to_string(), ModelProviderInfo {
-        name: "OpenAI".to_string(),
-        base_url: Some("https://api.openai.com/v1".to_string()),
-        wire_api: WireApi::Responses,
-        env_key: Some("OPENAI_API_KEY".to_string()),
-        ..ModelProviderInfo::default()
-    });
+    providers.insert(
+        "openai".to_string(),
+        ModelProviderInfo {
+            name: "OpenAI".to_string(),
+            base_url: Some("https://api.openai.com/v1".to_string()),
+            wire_api: WireApi::Responses,
+            env_key: Some("OPENAI_API_KEY".to_string()),
+            ..ModelProviderInfo::default()
+        },
+    );
 
-    providers.insert("anthropic".to_string(), ModelProviderInfo {
-        name: "Anthropic".to_string(),
-        base_url: Some("https://api.anthropic.com/v1".to_string()),
-        wire_api: WireApi::Anthropic,
-        env_key: Some("ANTHROPIC_API_KEY".to_string()),
-        ..ModelProviderInfo::default()
-    });
+    providers.insert(
+        "anthropic".to_string(),
+        ModelProviderInfo {
+            name: "Anthropic".to_string(),
+            base_url: Some("https://api.anthropic.com/v1".to_string()),
+            wire_api: WireApi::Anthropic,
+            env_key: Some("ANTHROPIC_API_KEY".to_string()),
+            ..ModelProviderInfo::default()
+        },
+    );
 
     providers
 }

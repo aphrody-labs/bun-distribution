@@ -508,22 +508,30 @@ pub async fn run_turn_with_controls(
     loop {
         if interrupt.is_tripped() {
             outcome.interrupted = true;
-            emit(events, rollout, EventMsg::TurnComplete {
-                last_agent_message: outcome.last_agent_message.clone(),
-            })
+            emit(
+                events,
+                rollout,
+                EventMsg::TurnComplete { last_agent_message: outcome.last_agent_message.clone() },
+            )
             .await?;
             return Ok(outcome);
         }
 
         if max_iterations != 0 && outcome.tool_iterations >= max_iterations {
             outcome.hit_iteration_cap = true;
-            emit(events, rollout, EventMsg::Error {
-                message: format!("max tool iterations reached ({max_iterations})"),
-            })
+            emit(
+                events,
+                rollout,
+                EventMsg::Error {
+                    message: format!("max tool iterations reached ({max_iterations})"),
+                },
+            )
             .await?;
-            emit(events, rollout, EventMsg::TurnComplete {
-                last_agent_message: outcome.last_agent_message.clone(),
-            })
+            emit(
+                events,
+                rollout,
+                EventMsg::TurnComplete { last_agent_message: outcome.last_agent_message.clone() },
+            )
             .await?;
             return Ok(outcome);
         }
@@ -632,11 +640,15 @@ pub async fn run_turn_with_controls(
                 },
                 Ok(ModelStreamEvent::Completed { usage, finish_reason: _ }) => {
                     if let Some(usage) = usage {
-                        emit(events, rollout, EventMsg::TokenCount {
-                            input: usage.input_tokens,
-                            output: usage.output_tokens,
-                            total: usage.total_tokens,
-                        })
+                        emit(
+                            events,
+                            rollout,
+                            EventMsg::TokenCount {
+                                input: usage.input_tokens,
+                                output: usage.output_tokens,
+                                total: usage.total_tokens,
+                            },
+                        )
                         .await?;
                     }
                     break;
@@ -660,9 +672,11 @@ pub async fn run_turn_with_controls(
 
         // 3d. No tool calls => the turn is complete.
         if pending_calls.is_empty() {
-            emit(events, rollout, EventMsg::TurnComplete {
-                last_agent_message: outcome.last_agent_message.clone(),
-            })
+            emit(
+                events,
+                rollout,
+                EventMsg::TurnComplete { last_agent_message: outcome.last_agent_message.clone() },
+            )
             .await?;
             return Ok(outcome);
         }
@@ -677,17 +691,22 @@ pub async fn run_turn_with_controls(
                 abandon_calls(&mut responses, call, calls, "turn interrupted before this call ran");
                 session.push_tool_responses(responses);
                 record_history(session, rollout, &mut recorded).await?;
-                emit(events, rollout, EventMsg::TurnComplete {
-                    last_agent_message: outcome.last_agent_message.clone(),
-                })
+                emit(
+                    events,
+                    rollout,
+                    EventMsg::TurnComplete {
+                        last_agent_message: outcome.last_agent_message.clone(),
+                    },
+                )
                 .await?;
                 return Ok(outcome);
             }
 
-            emit(events, rollout, EventMsg::ToolCallBegin {
-                call_id: call.id.clone(),
-                name: call.name.clone(),
-            })
+            emit(
+                events,
+                rollout,
+                EventMsg::ToolCallBegin { call_id: call.id.clone(), name: call.name.clone() },
+            )
             .await?;
 
             let executor = tools.get(&call.name);
@@ -725,9 +744,13 @@ pub async fn run_turn_with_controls(
                         abandon_calls(&mut responses, call, calls, "turn aborted by approval");
                         session.push_tool_responses(responses);
                         record_history(session, rollout, &mut recorded).await?;
-                        emit(events, rollout, EventMsg::TurnComplete {
-                            last_agent_message: outcome.last_agent_message.clone(),
-                        })
+                        emit(
+                            events,
+                            rollout,
+                            EventMsg::TurnComplete {
+                                last_agent_message: outcome.last_agent_message.clone(),
+                            },
+                        )
                         .await?;
                         return Ok(outcome);
                     },
@@ -794,11 +817,15 @@ async fn approve(
     rollout: Option<&RolloutRecorder>,
     approvals: Option<&mut ApprovalGate>,
 ) -> Result<Gate, EngineError> {
-    emit(events, rollout, EventMsg::ExecApprovalRequest {
-        id: call.id.clone(),
-        command: vec![call.name.clone()],
-        reason: Some(format!("tool call `{}`", call.name)),
-    })
+    emit(
+        events,
+        rollout,
+        EventMsg::ExecApprovalRequest {
+            id: call.id.clone(),
+            command: vec![call.name.clone()],
+            reason: Some(format!("tool call `{}`", call.name)),
+        },
+    )
     .await?;
 
     let Some(gate) = approvals else {

@@ -6,12 +6,12 @@
 use std::io::{self, Read, Write};
 
 use aphrody_embed::native::{
-    embed_flat, ensure_model, find_model, find_reranker, global_embedder, is_installed,
-    model_manifest, models_root, rerank_json, reranker_manifest, ModelFiles, DEFAULT_MODEL_ID,
-    DEFAULT_RERANKER_ID,
+    DEFAULT_MODEL_ID, DEFAULT_RERANKER_ID, ModelFiles, embed_flat, ensure_model, find_model,
+    find_reranker, global_embedder, is_installed, model_manifest, models_root, rerank_json,
+    reranker_manifest,
 };
 use base64::Engine as _;
-use serde_json::{json, Value};
+use serde_json::{Value, json};
 
 const MAX_REQUEST_BYTES: usize = 8 * 1024 * 1024;
 const MAX_RESPONSE_BYTES: usize = 64 * 1024 * 1024;

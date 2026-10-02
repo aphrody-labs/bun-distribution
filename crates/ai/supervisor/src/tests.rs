@@ -205,9 +205,10 @@ async fn steer_routes_to_live_agent() {
     // covered deterministically by the aphrody-engine tests; here we only assert
     // the control-plane routing.)
     sup.steer_text("worker", "be concise").expect("steer_text routes");
-    sup.steer("worker", vec![aphrody_agent_proto::InputItem::Text {
-        text: "and fast".to_string(),
-    }])
+    sup.steer(
+        "worker",
+        vec![aphrody_agent_proto::InputItem::Text { text: "and fast".to_string() }],
+    )
     .expect("steer routes");
 
     sup.shutdown_all();

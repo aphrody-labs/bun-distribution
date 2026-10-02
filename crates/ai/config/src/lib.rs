@@ -73,7 +73,8 @@ pub mod resolve;
 pub mod shenron;
 pub mod wire_api;
 
-#[cfg(not(target_arch = "wasm32"))] pub mod load;
+#[cfg(not(target_arch = "wasm32"))]
+pub mod load;
 
 pub use config_toml::{
     ConfigToml, ConfigWarning, DEFAULT_PROJECT_DOC_MAX_BYTES, HistoryConfig, SandboxWorkspaceWrite,
