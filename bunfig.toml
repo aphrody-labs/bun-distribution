@@ -3,6 +3,8 @@ linker = "isolated"
 hoist = false
 saveTextLockfile = true
 minimumReleaseAge = 259200
+# Tauri v3 alphas must track the Rust crates in real time (config/update, tauri sync).
+minimumReleaseAgeExcludes = ["@tauri-apps/cli", "@tauri-apps/api", "@tauri-apps/cli-linux-x64-gnu"]
 
 [jsx]
 runtime = "automatic"

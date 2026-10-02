@@ -80,7 +80,7 @@
       "kind": "git",
       "url": "https://github.com/tauri-apps/tauri",
       "ref": "v3",
-      "commit": "70541fe283b980712b1b3d1c75147cd5ad155310",
+      "commit": "a8703ee487c659efbebb27c799752d523a6d09a1",
       "pinned": true,
       "sparse": ["crates/tauri-driver"],
       "role": "reference",
@@ -247,6 +247,7 @@
       "role": "dependency",
       "license": "MIT OR Apache-2.0",
       "cargoPathDep": "",
+      "hold": "mistral.rs requires serde-saphyr = \"0.0.16\" (0.0.x caret is exact); a 0.0.29 or 1.x bump needs a mistral.rs API port first",
       "patches": [
         {
           "id": "serde-saphyr-regex-semver",

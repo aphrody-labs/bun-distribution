@@ -7,6 +7,8 @@
  *                        plus the Cargo git remotes of Cargo.lock
  *   forks                fork vs parent ahead/behind (GitHub API) for config/update/forks.json
  *   prune [--apply]      remove the <id>.pre-bump-<ts> checkouts kept by bump
+ *   pull [--apply] [--deps]
+ *                        fast-forward tracked, clean git checkouts (Cargo path dependencies only with --deps)
  *   repo                 local repository state: branch, upstream ahead/behind, dirty paths, stashes
  *   bump [--only <id>] [--apply]
  *                        move a pin to the newest remote head (git) or version (crate). A temporary clone first proves
@@ -25,7 +27,9 @@ import { inspect, parseManifest, resolveSourceRoot, runUpstreamSources, syncSour
 const git = (args: string[], cwd?: string) => spawnSync("git", args, { cwd, encoding: "utf8", timeout: 120_000, env: { ...process.env, GIT_TERMINAL_PROMPT: "0" } });
 
 export function refHead(url: string, ref: string): string | undefined {
-  const r = git(["ls-remote", url, ref, `refs/tags/${ref}^{}`]);
+  // Full ref names only: a bare "main" pattern also matches refs/heads/<user>/main.
+  const names = ref === "HEAD" ? ["HEAD"] : ref.startsWith("refs/") ? [ref] : [`refs/heads/${ref}`, `refs/tags/${ref}`, `refs/tags/${ref}^{}`];
+  const r = git(["ls-remote", url, ...names]);
   if (r.status !== 0) return undefined;
   const lines = r.stdout.trim().split("\n").filter(Boolean).map((l) => l.split("\t"));
   const peeled = lines.find(([, name]) => name?.endsWith("^{}"));
@@ -40,7 +44,7 @@ export async function driftRows(c: Ctx): Promise<DriftRow[]> {
   for (const s of manifest.sources) {
     if (s.kind === "crate") {
       const latest = await registries.crate(s.crate!, s.version!.split(".")[0]).catch(() => undefined);
-      rows.push({ id: s.id, kind: "crate", role: s.role, pinned: s.pinned, current: s.version!, latest, behind: !!latest && cmpVersion(s.version!, latest) < 0, patches: s.patches?.length ?? 0 });
+      rows.push({ id: s.id, kind: "crate", role: s.role, pinned: s.pinned, current: s.version!, latest, behind: !s.hold && !!latest && cmpVersion(s.version!, latest) < 0, patches: s.patches?.length ?? 0, note: s.hold ? `held: ${s.hold}` : undefined });
       continue;
     }
     const ref = s.ref ?? "HEAD";
@@ -131,8 +135,8 @@ export async function bump(c: Ctx, only: string | undefined): Promise<number> {
   const original = c.read(file);
   const manifest = parseManifest(original);
   const root = resolveSourceRoot(c.root, manifest, undefined);
-  const targets = manifest.sources.filter((s) => s.pinned && (!only || s.id === only));
-  if (only && !targets.length) { console.error(`bump: ${only} is not a pinned source`); return 2; }
+  const targets = manifest.sources.filter((s) => s.pinned && !s.hold && (!only || s.id === only));
+  if (only && !targets.length) { console.error(`bump: ${only} is not a bumpable pinned source (unpinned or held)`); return 2; }
   let failures = 0;
   for (const s of targets) {
     const target = s.kind === "crate"
@@ -206,7 +210,10 @@ export async function runSources(c: Ctx, args: string[]): Promise<number> {
         if (f.pinKeys?.upstreamCommit && f.parent && i.branch) {
           const live = refHead(`https://github.com/${f.parent}`, i.branch);
           const recorded = String(c.jsonFile<Record<string, string>>(f.pinFile ?? "", {})[f.pinKeys.upstreamCommit] ?? "");
-          if (live && recorded) console.log(`       recorded upstream ${recorded.slice(0, 10)} vs ${f.parent} head ${live.slice(0, 10)}${live === recorded ? "" : "  <- upstream moved"}`);
+          if (live && recorded) {
+            const gap = live === recorded ? undefined : await ghJson(`/repos/${f.parent}/compare/${recorded}...${live}`).then((x) => x.ahead_by as number, () => undefined);
+            console.log(`       recorded upstream ${recorded.slice(0, 10)} vs ${f.parent} head ${live.slice(0, 10)}${live === recorded ? "" : `  <- upstream moved${gap === undefined ? "" : ` by ${gap} commit(s)`}; merge with the fork checkout, rebuild, then update ${f.pinFile}`}`);
+          }
         }
         if (f.pinFile && c.exists(f.pinFile)) {
           const pin = c.jsonFile<Record<string, string>>(f.pinFile, {});
@@ -222,12 +229,30 @@ export async function runSources(c: Ctx, args: string[]): Promise<number> {
       if (!old.length) console.log("prune  nothing to remove");
       return 0;
     }
+    case "pull": {
+      // Fast-forward tracked git checkouts. Cargo path dependencies are skipped unless --deps (a pull can break the build).
+      const manifest = parseManifest(c.read("config/upstream-sources.json"));
+      const root = resolveSourceRoot(c.root, manifest, undefined);
+      const withDeps = rest.includes("--deps");
+      let failed = 0;
+      for (const s of manifest.sources.filter((x) => x.kind === "git" && !x.pinned)) {
+        const dir = join(root, s.id);
+        if (!existsSync(join(dir, ".git"))) { console.log(`skip   ${s.id} (no checkout)`); continue; }
+        if (s.cargoPathDep && !withDeps) { console.log(`skip   ${s.id} (cargo path dependency; use --deps)`); continue; }
+        if (git(["status", "--porcelain"], dir).stdout.trim()) { console.log(`skip   ${s.id} (dirty)`); continue; }
+        if (!c.apply) { console.log(`would  pull ${s.id}`); continue; }
+        const r = git(["pull", "--ff-only", "--quiet"], dir);
+        if (r.status !== 0) { failed++; console.log(`fail   ${s.id}: ${r.stderr.trim().split("\n")[0]}`); continue; }
+        console.log(`pulled ${s.id} ${git(["rev-parse", "--short=10", "HEAD"], dir).stdout.trim()}`);
+      }
+      return failed ? 1 : 0;
+    }
     case "repo": for (const l of repoState(c.root)) console.log(`repo   ${l}`); return 0;
     case "bump": {
       const oi = rest.indexOf("--only");
       return bump(c, oi >= 0 ? rest[oi + 1] : undefined);
     }
-    default: console.error("usage: sources [status|sync|verify|drift|forks|repo|prune|bump [--only <id>]]"); return 2;
+    default: console.error("usage: sources [status|sync|verify|drift|forks|repo|prune|pull|bump [--only <id>]]"); return 2;
   }
 }
 

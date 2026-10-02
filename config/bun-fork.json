@@ -3,9 +3,9 @@
   "repository": "aphrody-labs/bun",
   "parent": "oven-sh/bun",
   "branch": "main",
-  "commit": "a2671046afbfc818fba21a4925f384b75dc8e109",
+  "commit": "6407fc3911be6cd9c2d132147ccd4f60e77c8a82",
   "upstreamBranch": "main",
-  "upstreamCommit": "a4f1429148114ddc3bccc13764781be27a7a9523",
+  "upstreamCommit": "f4d755a9cf5fc732511bdab354a103b4a7833356",
   "module": "bun:aphrody",
   "moduleVersion": 1,
   "nativeAbi": {

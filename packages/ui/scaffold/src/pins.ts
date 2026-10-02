@@ -11,7 +11,7 @@ export const TAURI_3 = {
   pluginOpener: "3.0.0-alpha.2",
   jsApi: "3.0.0-alpha.2",
   jsPluginOpener: "3.0.0-alpha.1",
-  jsCli: "3.0.0-alpha.3",
+  jsCli: "3.0.0-alpha.4",
 } as const;
 
 /** `tauri-runtime-cef` is pinned by Koharu only; generated CEF projects use the same line. */

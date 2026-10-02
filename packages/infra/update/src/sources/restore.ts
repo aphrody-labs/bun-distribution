@@ -34,6 +34,8 @@ export type Source = {
   crate?: string;
   version?: string;
   cargoPathDep?: string;
+  /** Why this pin must not move (e.g. a consumer requires this exact version); drift and bump skip it. */
+  hold?: string;
   patches?: Patch[];
 };
 

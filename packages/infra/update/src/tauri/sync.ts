@@ -564,6 +564,11 @@ export async function buildReport(
     ),
     [config.js.cli.package, "cli", config.js.cli.version],
   ];
+  // Packages listed in bunfig `minimumReleaseAgeExcludes` skip the age gate in bun install, so skip it here too.
+  const bunfig = existsSync(join(root, "bunfig.toml")) ? await readFile(join(root, "bunfig.toml"), "utf8") : "";
+  const ageExcluded = new Set(
+    [...(bunfig.match(/^minimumReleaseAgeExcludes\s*=\s*\[([^\]]*)\]/m)?.[1] ?? "").matchAll(/"([^"]+)"/g)].map((m) => m[1]!),
+  );
   for (const [name, kind, current] of npmTargets) {
     const clean = current?.replace(/^[=^~]/, "") ?? null;
     if (offline) {
@@ -583,7 +588,7 @@ export async function buildReport(
         await npmTimes(name),
         config.line,
         now,
-        config.policy.npmMinimumReleaseAgeSeconds,
+        ageExcluded.has(name) ? 0 : config.policy.npmMinimumReleaseAgeSeconds,
       );
       rows.push({
         kind,
