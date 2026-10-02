@@ -7,7 +7,7 @@ from the checkout. Companion files: [CLI.md](CLI.md) (exact command trees), [MCP
 (every MCP tool), [ecosystem.json](ecosystem.json) (machine-readable). Check here before writing new
 code: reuse an existing crate, command or tool instead of duplicating it.
 
-Totals: 3 repositories (3 aphrody, 0 shared, 0 experiments), 264 crates, 89 binaries, 102 Bun packages, 9 uv packages, 1280 CLI commands, 440 MCP tools.
+Totals: 3 repositories (3 aphrody, 0 shared, 0 experiments), 265 crates, 89 binaries, 102 Bun packages, 9 uv packages, 1280 CLI commands, 440 MCP tools.
 
 | Repository | Kind | Role |
 | --- | --- | --- |
@@ -19,7 +19,7 @@ Totals: 3 repositories (3 aphrody, 0 shared, 0 experiments), 264 crates, 89 bina
 
 Canonical Rust/Bun monorepo
 
-### Crates (190)
+### Crates (191)
 
 | Crate | Path | Description | Binaries | Features |
 | --- | --- | --- | --- | --- |
@@ -137,6 +137,7 @@ Canonical Rust/Bun monorepo
 | `aphrody-shell-tauri-e2e` | crates/shell/tauri-e2e | Minimal real Tauri app (wry webview) that runs the WASM shell through the aphrody-shell-tauri plugin. | `aphrody-shell-tauri-e2e` |  |
 | `aphrody-shell-vfs` | crates/shell/vfs | Byte-path virtual filesystem trait, in-memory backend and shared conformance suite for the WASM shell. |  |  |
 | `aphrody-shell-vfs-opfs` | crates/shell/aphrody-shell-vfs-opfs | Snapshot-backed VFS bridge for the browser OPFS shell worker. |  |  |
+| `aphrody-shell-wasm-utils` | crates/shell/aphrody-shell-wasm-utils | VFS-backed byte utilities for the local WebAssembly shell. |  |  |
 | `aphrody-shell-web` | crates/shell/web | Aphrody shell for WebAssembly: browser and Tauri webview terminal, local shell and wire protocol. |  |  |
 | `aphrody-skills` | crates/ai/skills | Unified skills infrastructure: SKILL.md runtime + lifecycle hooks + tool-level permissions. | `aphrody-skills` |  |
 | `aphrody-skills-forge` | crates/ai/skills-forge | Programmatic SKILL.md scaffolding + registry loader + lint engine for the aphrody skill catalog. |  |  |

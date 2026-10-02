@@ -2606,12 +2606,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "aphrody-shell-wasm-utils"
+version = "1.0.0-canary"
+dependencies = [
+ "aphrody-shell-vfs",
+]
+
+[[package]]
 name = "aphrody-shell-web"
 version = "1.0.0-canary"
 dependencies = [
  "aphrody-shell-session",
  "aphrody-shell-vfs",
  "aphrody-shell-vfs-opfs",
+ "aphrody-shell-wasm-utils",
  "aphrody-terminal-core",
  "serde_json",
  "wasm-bindgen",

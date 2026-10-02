@@ -45,12 +45,12 @@ Decisions:
    Before writing a parser, T6 checks `best-stack-2026` and the ecosystem catalog for an existing wasm-clean crate
    (candidates to evaluate: `brush-parser` for POSIX/bash parsing only, `shlex`, `nu-parser` with default-features off,
    `uucore`). Choose by wasm32 build and licence; record the choice in an ADR under `docs/decisions/shell/`.
-3. **Coreutils in wasm = link uutils per-utility crates (`uu_ls`, `uu_cat`, ...) as libraries behind a `ShellCommand`
-   trait, over the VFS trait, not via the subprocess adapter.** `crates/os/coreutils` stays the native subprocess owner
-   (no change, no duplicate). A new thin crate holds only the wasm-registry glue. Many `uu_*` crates assume `std::fs`/
-   `libc` and will not build for `wasm32-unknown-unknown`; T7 starts with a measured allow-list (cat, echo, head, tail,
-   wc, sort, uniq, tr, cut, basename, dirname, printf, true/false, seq, tee) and records failures. Fallback for any
-   failing utility: a small in-crate reimplementation, listed as such.
+3. **Coreutils in wasm = a `ShellCommand` registry over VFS and pipeline bytes.** `crates/os/coreutils` stays the native
+   subprocess owner. T6 measured that `uu_echo` compiles for wasm but writes to process stdout, while `uu_wc` fails
+   on `errno` for the unknown OS target. Link a uutils utility only when its API can consume VFS and return byte output;
+   the measured allow-list (cat, echo, head, tail, wc, sort, uniq, tr, cut, basename, dirname, printf, true/false,
+   seq, tee) uses small `own` implementations where that contract is unavailable. Each entry declares its source in
+   the registry and generated [utility table](../../reference/shell/WASM-UTILITIES.md).
 4. **VFS trait first, OPFS second.** One `Vfs` trait (read/write/stat/readdir/mkdir/remove/rename, async-free core,
    byte-based paths) with `MemVfs` (tests, serverless), `OpfsVfs` (browser snapshot mirror), and a Tauri-fs host
    adapter. The browser shell runs in a dedicated Web Worker, which opens OPFS files asynchronously at startup and
@@ -146,10 +146,11 @@ serially.
 - Test: ADR lists the exact commands and results; no claim without a recorded build.
 
 ### T7. Coreutils-in-wasm registry
-- Owner: `crates/shell/wasm-utils/` (not in repo) (new crate `aphrody-shell-wasm-utils`); consumed by T3 via the `ShellCommand` trait.
+- Owner: `crates/shell/aphrody-shell-wasm-utils/` (`aphrody-shell-wasm-utils`); consumed by T3 via the `ShellCommand` trait.
 - Deps: T1 (trait), T2 (Vfs), T6 (allow-list).
-- Content: per-utility registration over `Vfs`, uutils crates as libraries where they build for wasm32, small
-  reimplementations otherwise, each tagged `source = uutils|own` in a generated table. Does not touch `crates/os/coreutils`.
+- Content: per-utility registration over `Vfs`. Link uutils crates only where the measured library API can use that
+  VFS and return pipeline bytes; the current measured set needs small implementations instead. Each utility is tagged
+  `source = own` in the [generated table](../../reference/shell/WASM-UTILITIES.md). Does not touch `crates/os/coreutils`.
 - Test: golden tests comparing output with the native pinned uutils binary (`coreutils_run` MCP tool / `APHRODY_COREUTILS_BIN`)
   on the same fixtures (native, lead); wasm32 check; Bun test in T8 that runs `ls | wc -l` end to end.
 

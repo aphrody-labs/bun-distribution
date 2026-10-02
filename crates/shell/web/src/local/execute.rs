@@ -209,11 +209,25 @@ fn command(shell: &mut LocalShell, args: &[String], stdin: &[u8]) -> Result<Vec<
     }
     let rest: Vec<&str> = args[1..].iter().map(String::as_str).collect();
     let text = match name {
-        "help" => "builtins: help echo clear env set history version exit cd pwd ls cat mkdir rm cp mv touch wc true false\n".to_owned(),
+        "help" => {
+            let mut names = vec![
+                "help", "clear", "env", "set", "history", "version", "exit", "cd", "pwd", "ls",
+                "mkdir", "rm", "cp", "mv", "touch",
+            ];
+            names.extend(shell.commands.keys().map(String::as_str));
+            names.sort_unstable();
+            names.dedup();
+            format!("commands: {}\n", names.join(" "))
+        },
         "echo" => format!("{}\n", rest.join(" ")),
         "clear" => return Ok(b"\x1b[2J\x1b[H".to_vec()),
         "version" => format!("{}\n", env!("CARGO_PKG_VERSION")),
-        "history" => shell.history.iter().enumerate().map(|(i, entry)| format!("{:>4}  {entry}\n", i + 1)).collect(),
+        "history" => shell
+            .history
+            .iter()
+            .enumerate()
+            .map(|(i, entry)| format!("{:>4}  {entry}\n", i + 1))
+            .collect(),
         "set" => {
             let (&key, values) = rest.split_first().ok_or("usage: set NAME [VALUE...]")?;
             shell.env.insert(key.to_owned(), values.join(" "));
@@ -225,7 +239,9 @@ fn command(shell: &mut LocalShell, args: &[String], stdin: &[u8]) -> Result<Vec<
             let target = rest.first().copied().unwrap_or("/");
             let path = shell.resolve(target)?;
             let stat = shell.vfs.stat(&path).map_err(|e| format!("cd: {target}: {e}"))?;
-            if stat.kind != FileKind::Dir { return Err(format!("cd: {target}: not a directory")); }
+            if stat.kind != FileKind::Dir {
+                return Err(format!("cd: {target}: not a directory"));
+            }
             shell.cwd = path;
             String::new()
         },
@@ -234,28 +250,48 @@ fn command(shell: &mut LocalShell, args: &[String], stdin: &[u8]) -> Result<Vec<
             let path = shell.resolve(target)?;
             match shell.vfs.stat(&path).map_err(|e| format!("ls: {target}: {e}"))?.kind {
                 FileKind::File => format!("{target}\n"),
-                FileKind::Dir => shell.vfs.read_dir(&path).map_err(|e| format!("ls: {target}: {e}"))?
-                    .iter().map(|entry| format!("{}\n", String::from_utf8_lossy(&entry.name))).collect(),
+                FileKind::Dir => shell
+                    .vfs
+                    .read_dir(&path)
+                    .map_err(|e| format!("ls: {target}: {e}"))?
+                    .iter()
+                    .map(|entry| format!("{}\n", String::from_utf8_lossy(&entry.name)))
+                    .collect(),
             }
         },
         "cat" if rest.is_empty() => return Ok(stdin.to_vec()),
-        "cat" | "mkdir" | "rm" | "touch" | "cp" | "mv" => return shell.file_command(name, &rest).map_err(|e| format!("{name}: {e}")),
+        "cat" | "mkdir" | "rm" | "touch" | "cp" | "mv" => {
+            return shell.file_command(name, &rest).map_err(|e| format!("{name}: {e}"));
+        },
         "wc" => {
             let file = rest.iter().find(|arg| !arg.starts_with('-'));
             let contents = if let Some(file) = file {
                 shell.vfs.read(&shell.resolve(file)?).map_err(|e| format!("wc: {file}: {e}"))?
-            } else { stdin.to_vec() };
+            } else {
+                stdin.to_vec()
+            };
             let lines = contents.iter().filter(|&&b| b == b'\n').count();
-            if rest.contains(&"-l") { format!("{lines}\n") }
-            else {
-                let words = contents.split(|b| b.is_ascii_whitespace()).filter(|part| !part.is_empty()).count();
+            if rest.contains(&"-l") {
+                format!("{lines}\n")
+            } else {
+                let words = contents
+                    .split(|b| b.is_ascii_whitespace())
+                    .filter(|part| !part.is_empty())
+                    .count();
                 format!("{lines} {words} {}\n", contents.len())
             }
         },
         "true" => String::new(),
         "false" => return Err("false".into()),
-        "exit" => { shell.exited = true; "bye\n".to_owned() },
-        other => return Err(format!("{other}: command not found (local wasm shell; connect a backend for more)")),
+        "exit" => {
+            shell.exited = true;
+            "bye\n".to_owned()
+        },
+        other => {
+            return Err(format!(
+                "{other}: command not found (local wasm shell; connect a backend for more)"
+            ));
+        },
     };
     Ok(text.into_bytes())
 }

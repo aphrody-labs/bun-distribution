@@ -23,6 +23,20 @@ pub trait ShellCommand {
     -> Result<Vec<u8>, String>;
 }
 
+struct UtilityCommand(&'static str);
+
+impl ShellCommand for UtilityCommand {
+    fn run(
+        &self,
+        shell: &mut LocalShell,
+        args: &[String],
+        stdin: &[u8],
+    ) -> Result<Vec<u8>, String> {
+        let cwd = shell.cwd().to_vec();
+        aphrody_shell_wasm_utils::run(self.0, shell.vfs(), &cwd, args, stdin)
+    }
+}
+
 /// Factory for isolated local sessions backed by `MemVfs`.
 #[derive(Default)]
 pub struct LocalEngine;
@@ -68,22 +82,23 @@ impl LocalShell {
             "Aphrody shell (wasm {})\r\ntype `help`\r\n{PROMPT}",
             env!("CARGO_PKG_VERSION")
         );
-        (
-            Self {
-                line: String::new(),
-                history: Vec::new(),
-                history_index: None,
-                escape: String::new(),
-                env: BTreeMap::new(),
-                commands: BTreeMap::new(),
-                cwd: b"/".to_vec(),
-                vfs,
-                output: Vec::new(),
-                size: (80, 24),
-                exited: false,
-            },
-            greeting.into_bytes(),
-        )
+        let mut shell = Self {
+            line: String::new(),
+            history: Vec::new(),
+            history_index: None,
+            escape: String::new(),
+            env: BTreeMap::new(),
+            commands: BTreeMap::new(),
+            cwd: b"/".to_vec(),
+            vfs,
+            output: Vec::new(),
+            size: (80, 24),
+            exited: false,
+        };
+        for utility in aphrody_shell_wasm_utils::catalog() {
+            shell.register_command(utility.name, Rc::new(UtilityCommand(utility.name)));
+        }
+        (shell, greeting.into_bytes())
     }
 
     /// Create a session with a shared or persistent filesystem and the requested settings.

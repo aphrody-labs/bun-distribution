@@ -15,6 +15,7 @@ WASM release build, six Bun tests, TypeScript typecheck and real Tauri LOCAL/REM
 | Virtual FS | `aphrody-shell-vfs` (`MemVfs`, conformance) | real, tested; `LocalShell` uses it for cwd and file commands | native, wasm32 (checked) |
 | OPFS VFS | `aphrody-shell-vfs-opfs` (`OpfsVfs`, shared image binding) + dedicated browser worker | two checksummed image slots; shared conformance and persistence across a reload pass in real Chromium | native tests, wasm32 release, Chromium |
 | Web bindings | `aphrody-shell-web` (`WebTerminal`, `WebShell`, `LocalShell`) | T3: session/VFS engine, quoting, env expansion, history recall, cwd, globbing, pipes, redirects, conditionals and command registry; native tests and generated WASM smoke pass | wasm32 (built) |
+| WASM utilities | `aphrody-shell-wasm-utils` | T7: 16 VFS-backed commands with declared `own` source; pinned uutils 0.12.0 golden fixtures pass; native and wasm32 checks pass | native, wasm32 |
 | TS client | `@aphrody/shell-web` (WebSocket, Tauri Channel, OPFS worker, sandbox, local transports) | worker and sandbox paths pass Bun tests; OPFS worker passes real Chromium; sandbox passes a live authenticated PTY round trip. Reconnect sends a stable session ID, but the native PTY server ends sessions on disconnect, so live resume is still open. | web |
 | PTY + WebSocket server | `aphrody-terminal-backend` (auth, Origin/Host, session/idle/frame/output limits) | real, tested | native only |
 | Sandbox host | `aphrody-shell-sandbox-host` (`MockHost`, `LocalPtyHost`) | T11 contract and shared conformance pass; native PTY and live WebSocket round trips pass; no cloud provider yet | Linux tested, wasm32 and Windows GNU checked |
@@ -26,8 +27,8 @@ WASM release build, six Bun tests, TypeScript typecheck and real Tauri LOCAL/REM
 
 ## Not built yet (wave B-D of the plan)
 
-Wasm coreutils (T7), Nushell wasm spike (T9),
-Cloud adapter (T12), native/server sandbox session resume (T8), UI transport selection (T13), gates (T14).
+Nushell wasm spike (T9), cloud adapter (T12), native/server sandbox session resume (T8)
+and UI transport selection (T13).
 Staying native on purpose: Nushell, TUI, PTY.
 
 ## Fact-check against upstreams
@@ -35,7 +36,7 @@ Staying native on purpose: Nushell, TUI, PTY.
 | Item | Finding | Consequence |
 | --- | --- | --- |
 | brush-core 0.5.0 / brush-parser 0.4.0 | compile for wasm32-unknown-unknown (scratch check); upstream only smoke-tests wasip2 | candidate engine behind `ShellEngine`; unproven in a browser |
-| uutils | 0.12.0 ships wasip1/wasip2 tarballs; our `uu_*` pins are 0.10.0 | best wasm coreutils base; bump is an os-owner task |
+| uutils | `uucore` and `uu_echo` 0.12.0 compile for wasm32; `uu_wc` 0.12.0 fails on `errno`. Their process stdout/filesystem entry points do not accept this shell's VFS/pipeline contract. | T7 uses small `own` implementations and records the source per command; no os-owner bump required. |
 | Nushell | no wasm32 target upstream | keep native; stream output to the web terminal |
 | xterm.js | 6.0.0, canvas renderer removed, write callback gives flow control | default renderer |
 | ghostty-web | 0.4.0, no release since 2025-12 | optional renderer behind the same transport |

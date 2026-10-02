@@ -1024,6 +1024,13 @@
           "features": []
         },
         {
+          "name": "aphrody-shell-wasm-utils",
+          "path": "crates/shell/aphrody-shell-wasm-utils",
+          "description": "VFS-backed byte utilities for the local WebAssembly shell.",
+          "bins": [],
+          "features": []
+        },
+        {
           "name": "aphrody-shell-web",
           "path": "crates/shell/web",
           "description": "Aphrody shell for WebAssembly: browser and Tauri webview terminal, local shell and wire protocol.",
@@ -15537,7 +15544,7 @@
     "aphrodyRepos": 3,
     "experimentRepos": 0,
     "sharedRepos": 0,
-    "crates": 264,
+    "crates": 265,
     "binaries": 89,
     "bunPackages": 102,
     "pythonPackages": 9,

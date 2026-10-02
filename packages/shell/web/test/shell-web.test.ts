@@ -36,6 +36,15 @@ test.skipIf(!built)("wire frames match the backend protocol", () => {
   expect(JSON.parse(wasm.resize_frame(80, 24))).toEqual({ type: "resize", cols: 80, rows: 24 });
 });
 
+test.skipIf(!built)("WASM registry counts VFS entries through a pipeline", () => {
+  const shell = new wasm.WebShell(80, 20);
+  const encoder = new TextEncoder();
+  shell.input(encoder.encode("touch alpha\r"));
+  shell.input(encoder.encode("touch beta\r"));
+  const output = new TextDecoder().decode(shell.input(encoder.encode("ls | wc -l\r")));
+  expect(output).toContain("2\r\n");
+});
+
 test("tauri transport targets the plugin commands and filters by session", async () => {
   const calls: string[] = [];
   let emit: (e: { payload: { session: string; bytes: number[]; exit: null } }) => void = () => {};
