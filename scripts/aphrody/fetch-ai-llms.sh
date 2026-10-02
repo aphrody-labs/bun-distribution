@@ -1,12 +1,11 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: Apache-2.0
 # Fetch llms.txt mirrors and refresh CLI --help snapshots for the unified agent stack.
-# Moved from the retired aphrody monolith (host ops belong to aphrody-infra).
-# APHRODY_ROOT defaults to the sibling ../aphrody-ai checkout (the AI layer).
+# APHRODY_ROOT defaults to the active monorepo; snapshots stay outside target/.
 set -euo pipefail
 
 INFRA_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-APHRODY_ROOT="${APHRODY_ROOT:-$INFRA_ROOT/../aphrody-ai}"
+APHRODY_ROOT="${APHRODY_ROOT:-$INFRA_ROOT}"
 OUT="${APHRODY_AGENT_DOCS_DIR:-$APHRODY_ROOT/var/agent-stack}"
 mkdir -p "$OUT"
 
