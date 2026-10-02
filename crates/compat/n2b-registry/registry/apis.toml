@@ -1,7 +1,7 @@
 # registry/apis.toml — patterns d'appel API/méthode Node → réécriture Bun.
 #
 # Phase 1 : transcription mécanique des entrées de
-#   crates/aphrody-n2b-rules/src/bun_apis.rs::RULES
+#   crates/compat/n2b-core/src/rules/bun_apis.rs::RULES
 # Une entrée = un appel `rule(...)` ou `info_rule(...)`. La sévérité Info
 # vient de `info_rule`, sinon c'est `Warn`. Ordre identique à la source.
 

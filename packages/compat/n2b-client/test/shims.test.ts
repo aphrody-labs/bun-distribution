@@ -13,8 +13,8 @@
 // limitations under the License.
 
 import { describe, expect, test } from "bun:test";
-import { env, fs, path, shell } from "@aphrody/n2b-shims";
-import { EnvError } from "@aphrody/n2b-shims/env";
+import { env, fs, path, shell } from "@aphrody/n2b-core/shims";
+import { EnvError } from "@aphrody/n2b-core/shims/env";
 import { join, sep } from "node:path";
 
 describe("shims/env", () => {

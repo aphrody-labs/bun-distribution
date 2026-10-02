@@ -120,6 +120,98 @@ export function webStripTags(html: string): string {
   return readOwnedString(loadLib().symbols.aphrody_web_strip_tags(cstr(html)));
 }
 
+/** Extract distinct hyperlinks through the shared native text owner. */
+export function webExtractLinks(html: string, baseUrl?: string): string[] {
+  const value: unknown = JSON.parse(
+    readOwnedString(
+      loadLib().symbols.aphrody_web_extract_links(
+        cstr(html),
+        baseUrl === undefined ? null : cstr(baseUrl),
+      ),
+    ),
+  );
+  if (!Array.isArray(value) || value.some((link) => typeof link !== "string"))
+    throw new Error("native link extraction returned an invalid result");
+  return value;
+}
+
+export function webExtractText(html: string): string {
+  return readOwnedString(loadLib().symbols.aphrody_web_extract_text(cstr(html)));
+}
+
+export function webNormalizeUrl(url: string): string {
+  return readOwnedString(loadLib().symbols.aphrody_web_normalize_url(cstr(url)));
+}
+
+export interface WebHttpRequestOptions {
+  method?: "GET" | "HEAD" | "POST" | "PUT" | "DELETE" | "PATCH" | "OPTIONS";
+  headers?: HeadersInit;
+  body?: string;
+  cookies?: string;
+  timeoutMs?: number;
+  /** Requests return redirect status/Location without following another origin. */
+  redirect?: "manual";
+}
+
+/** Authenticated API transport owned by Aphrody Web, with an isolated explicit cookie header. */
+export class WebHttpClient {
+  constructor(private readonly options: { stealth?: boolean; timeoutMs?: number } = {}) {}
+
+  async fetch(url: string, options: WebHttpRequestOptions = {}): Promise<Response> {
+    const headers = new Headers(options.headers);
+    if (options.cookies !== undefined) {
+      if (headers.has("cookie"))
+        throw new TypeError("supply cookies through either headers or cookies");
+      headers.set("cookie", options.cookies);
+    }
+    const timeoutMs = options.timeoutMs ?? this.options.timeoutMs ?? 30_000;
+    if (!Number.isInteger(timeoutMs) || timeoutMs < 1 || timeoutMs > 0xffffffff)
+      throw new RangeError("timeoutMs must be a positive u32 integer");
+    const request = {
+      url,
+      method: options.method ?? "GET",
+      headers: Object.fromEntries(headers.entries()),
+      body: options.body ?? "",
+      stealth: this.options.stealth ?? false,
+      timeoutMs,
+    };
+    const id = trackJob(
+      Number(loadLib().symbols.aphrody_web_http_request_submit(cstr(JSON.stringify(request)))),
+    );
+    const value: unknown = JSON.parse(await webJobWait(id, timeoutMs + 1000));
+    if (!value || typeof value !== "object" || !("ok" in value) || value.ok !== true) {
+      const message =
+        value && typeof value === "object" && "error" in value && typeof value.error === "string"
+          ? value.error
+          : "native HTTP request failed";
+      throw new Error(message);
+    }
+    if (
+      !("status" in value) ||
+      typeof value.status !== "number" ||
+      !("body" in value) ||
+      typeof value.body !== "string" ||
+      !("headers" in value) ||
+      !value.headers ||
+      typeof value.headers !== "object"
+    )
+      throw new Error("native HTTP response is invalid");
+    const responseHeaders = new Headers();
+    for (const [key, field] of Object.entries(value.headers)) {
+      if (typeof field !== "string") throw new Error("native HTTP header is invalid");
+      responseHeaders.set(key, field);
+    }
+    const response = new Response(
+      [204, 205, 304].includes(value.status) || request.method === "HEAD" ? null : value.body,
+      { status: value.status, headers: responseHeaders },
+    );
+    Object.defineProperty(response, "url", {
+      value: "url" in value && typeof value.url === "string" ? value.url : url,
+    });
+    return response;
+  }
+}
+
 /** Owned DOM handle. Always call `close()` when finished; `Symbol.dispose` is also supported. */
 export class WebDomTree {
   #tree: Pointer | bigint | null;
@@ -718,7 +810,8 @@ export function shenronRagChunk(
   maxChars = 1400,
   overlapPct = 0.15,
 ): Array<{ content: string; section: string }> {
-  if (!Number.isInteger(maxChars) || maxChars < 1) throw new RangeError("maxChars must be positive");
+  if (!Number.isInteger(maxChars) || maxChars < 1)
+    throw new RangeError("maxChars must be positive");
   if (!Number.isFinite(overlapPct) || overlapPct < 0 || overlapPct > 1)
     throw new RangeError("overlapPct must be between zero and one");
   const pointer = loadLib().symbols.shenron_rag_chunk(cstr(markdown), maxChars, overlapPct);

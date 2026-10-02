@@ -18,7 +18,7 @@ fn session_error(error: GeminiError) -> &'static str {
     }
 }
 
-pub(super) fn selected_model(raw: Option<&str>) -> Option<GeminiModel> {
+pub fn selected_model(raw: Option<&str>) -> Option<GeminiModel> {
     let raw = raw.unwrap_or("flash").trim();
     let id = raw.strip_prefix("gemini-web/").unwrap_or(raw);
     if id == "gemini-web" {
@@ -27,7 +27,7 @@ pub(super) fn selected_model(raw: Option<&str>) -> Option<GeminiModel> {
     GeminiModel::from_id(id)
 }
 
-pub(super) fn is_selected(raw: Option<&str>) -> bool {
+pub fn is_selected(raw: Option<&str>) -> bool {
     raw.is_some_and(|value| value == "gemini-web" || value.starts_with("gemini-web/"))
 }
 
@@ -49,13 +49,13 @@ async fn client(language: &str) -> Result<GeminiWebClient, &'static str> {
     }
 }
 
-pub(super) async fn available() -> bool {
+pub async fn available() -> bool {
     tokio::time::timeout(Duration::from_secs(3), client("fr"))
         .await
         .is_ok_and(|result| result.is_ok())
 }
 
-pub(super) async fn chat(prompt: &str, model: GeminiModel) -> Result<String, &'static str> {
+pub async fn chat(prompt: &str, model: GeminiModel) -> Result<String, &'static str> {
     let client = tokio::time::timeout(Duration::from_secs(30), client("fr"))
         .await
         .map_err(|_| "Gemini Web session timed out")??;
@@ -83,7 +83,7 @@ fn image_name(bytes: &[u8]) -> Option<&'static str> {
     }
 }
 
-pub(super) async fn read_image(
+pub async fn read_image(
     encoded: &str,
     prompt: &str,
     language: &str,

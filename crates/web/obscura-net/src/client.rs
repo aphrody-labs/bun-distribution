@@ -1213,7 +1213,7 @@ impl ObscuraHttpClient {
             .map_err(|_| ObscuraNetError::Network("invalid HTTP method".into()))?;
         let mut request = self.request_client().await.request(method, url.as_str());
         for (name, value) in headers {
-            request = request.header(name, value);
+            request = request.header(name.as_str(), value.as_str());
         }
         if !body.is_empty() {
             request = request.body(body.to_vec());
@@ -2826,6 +2826,8 @@ pub(crate) mod ssrf_tests {
     /// canned HTTPS response with the leaf on an ephemeral port. Returns the
     /// port and the CA certificate as PEM.
     async fn https_fixture_with_private_ca() -> (u16, String) {
+        // Feature unification can enable both ring and aws-lc-rs; pick ring explicitly.
+        let _ = tokio_rustls::rustls::crypto::ring::default_provider().install_default();
         use tokio::io::{AsyncReadExt, AsyncWriteExt};
 
         let ca_key = rcgen::KeyPair::generate().unwrap();

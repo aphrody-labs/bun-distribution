@@ -8,6 +8,7 @@
     "scripts",
     "src",
     "src/**/*.ts",
+    "test",
     "test-ffi.ts",
     "test-library.test.ts",
     "test-native-artifact.test.ts"

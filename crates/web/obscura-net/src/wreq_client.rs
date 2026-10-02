@@ -474,6 +474,7 @@ impl StealthHttpClient {
         cookie_context: Option<SameSiteContext>,
         store_cookies: bool,
     ) -> Result<Response, ObscuraNetError> {
+        validate_url(url, self.allow_private_network)?;
         if is_tracker_blocked(url, self.block_trackers) {
             tracing::debug!("Blocked tracker: {}", url);
             return Ok(Response {
@@ -572,6 +573,11 @@ mod tests {
     // Mirrors client::ssrf_tests::resolver_blocks_hostname_that_resolves_to_loopback.
     // Both transports must agree: a host-string check alone cannot see that a
     // public name points inward, so the stealth client needs the same resolver.
+    #[tokio::test]
+    async fn authenticated_single_requests_preserve_method_headers_body_and_redirect() {
+        crate::client::ssrf_tests::assert_explicit_api_transport(true).await;
+    }
+
     #[tokio::test]
     async fn stealth_resolver_blocks_hostname_that_resolves_to_loopback() {
         let resolver = SsrfGuardResolver::new(false);

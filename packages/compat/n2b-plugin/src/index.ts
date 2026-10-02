@@ -48,7 +48,7 @@ export interface N2BPluginOptions extends Pick<ScanOptions, "ignore" | "bin" | "
  *     import { n2bPlugin } from "@aphrody/n2b-plugin";
  *     Bun.plugin(n2bPlugin({ onFindings: "warn" }));
  *
- * The plugin scans once per build through the Aphrody Bun native module when
+ * The plugin scans once per build through the `@aphrody/bun/n2b` bun:ffi binding when
  * available, then falls back to the Rust CLI. All scanning and rules stay in Rust.
  */
 export function n2bPlugin(opts: N2BPluginOptions = {}): BunPlugin {
@@ -76,7 +76,7 @@ export function n2bPlugin(opts: N2BPluginOptions = {}): BunPlugin {
           scanNodeProject(root: string, options: { mode: "check"; ignore?: string[]; dry_run: true }): N2BReport;
         } | undefined;
         try {
-          const specifier: string = "bun:aphrody";
+          const specifier: string = "@aphrody/bun/n2b";
           builtin = await import(specifier) as typeof builtin;
         } catch (error) {
           if (native === "required") throw error;

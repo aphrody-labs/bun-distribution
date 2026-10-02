@@ -9,6 +9,7 @@ mod commands;
 mod linux_cmd;
 mod patch;
 mod rust_cmd;
+mod scaffold_fs;
 #[cfg(test)]
 mod schema_test;
 mod subprocess;

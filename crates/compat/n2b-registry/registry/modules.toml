@@ -1,7 +1,7 @@
 # registry/modules.toml — modules `node:*` reconnus par n2b.
 #
 # Phase 1 : transcription des 47 entrées de
-#   crates/aphrody-n2b-rules/src/node_imports.rs::BUILTINS
+#   crates/compat/n2b-core/src/rules/node_imports.rs::BUILTINS
 # Aucun champ `compat`/`severity` saisi à ce stade — la dérivation arrive
 # en Phase 3 ; ici on liste juste les modules pour préserver la sortie
 # octet-identique de `imports/node-prefix`.

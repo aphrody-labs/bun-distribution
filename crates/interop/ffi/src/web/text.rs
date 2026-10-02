@@ -6,7 +6,6 @@ use std::{ffi::CStr, os::raw::c_char};
 
 use super::ffi_util::{guard, into_c_string};
 
-#[unsafe(no_mangle)]
 /// Extract the title from a UTF-8 HTML document.
 ///
 /// # Safety
@@ -48,7 +47,6 @@ pub unsafe extern "C" fn web_internal_extract_title(html_ptr: *const c_char) -> 
     })
 }
 
-#[unsafe(no_mangle)]
 /// Strip tags from a UTF-8 HTML document.
 ///
 /// # Safety
@@ -86,7 +84,6 @@ pub unsafe extern "C" fn web_internal_strip_tags(html_ptr: *const c_char) -> *mu
     })
 }
 
-#[unsafe(no_mangle)]
 /// Convert a UTF-8 HTML document to Markdown.
 ///
 /// # Safety
@@ -112,7 +109,6 @@ pub unsafe extern "C" fn web_internal_html_to_markdown(html_ptr: *const c_char) 
     })
 }
 
-#[unsafe(no_mangle)]
 /// Extract all hyperlink URLs from a UTF-8 HTML document.
 ///
 /// If `base_url_ptr` is provided, relative URLs are resolved against it.
@@ -222,7 +218,6 @@ pub unsafe extern "C" fn web_internal_extract_links(
     })
 }
 
-#[unsafe(no_mangle)]
 /// Extract clean plain text from a UTF-8 HTML document.
 ///
 /// Removes `<script>`, `<style>`, `<noscript>`, `<svg>` elements and all HTML tags.
@@ -366,7 +361,6 @@ pub unsafe extern "C" fn web_internal_extract_text(html_ptr: *const c_char) -> *
     })
 }
 
-#[unsafe(no_mangle)]
 /// Normalize a URL: lowercase scheme/host, drop default ports, remove tracking query params,
 /// sort queries, and strip trailing slash/fragments.
 ///

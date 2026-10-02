@@ -36,7 +36,7 @@
 
 use std::path::{Path, PathBuf};
 
-use anyhow::{Context, Result};
+use anyhow::Result;
 
 #[path = "win32_cmd_com.rs"]
 mod win32_cmd_com;
@@ -215,12 +215,5 @@ fn scaffold_pwsh(dir: &Path, name: &str, quiet: bool) -> Result<()> {
 }
 
 fn write(path: PathBuf, content: &str, quiet: bool) -> Result<()> {
-    if let Some(parent) = path.parent() {
-        std::fs::create_dir_all(parent).with_context(|| format!("mkdir {}", parent.display()))?;
-    }
-    std::fs::write(&path, content).with_context(|| format!("write {}", path.display()))?;
-    if !quiet {
-        eprintln!("[win32]   + {}", path.display());
-    }
-    Ok(())
+    crate::scaffold_fs::write_tagged("win32", path, content, quiet)
 }

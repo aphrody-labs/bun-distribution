@@ -15,8 +15,11 @@ The engine of [n2b](https://crates.io/crates/aphrody-n2b), the Node.js to Bun mi
   `siteone-crawler`; the optional page summaries call the Anthropic API with
   `ANTHROPIC_API_KEY`).
 
-It re-exports the other n2b crates as `ai`, `github`, `report`, `rules`, `scanners`, `schema`,
-`types` and `util`.
+It also owns the modules `ai`, `github`, `report`, `rules` (Oxc-based import graph and the
+Node-to-Bun rule application), `scanners` and `util`, which were the separate crates
+`aphrody-n2b-{ai,github,report,rules,scanners,util}` until 2026-10-02, and re-exports
+`aphrody-n2b-types` as `schema` and `types`. The rule tables themselves live in
+`aphrody-n2b-registry`.
 
 ## Install
 

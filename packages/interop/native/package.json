@@ -19,7 +19,8 @@
     "./shenron": "./src/shenron.ts",
     "./web": "./src/web.ts",
     "./n2b": "./src/n2b.ts",
-    "./oxc": "./src/oxc.ts"
+    "./oxc": "./src/oxc.ts",
+    "./zerocopy": "./src/zerocopy.ts"
   },
   "scripts": {
     "build": "cargo build --release --locked -p aphrody-ffi --features gpu",

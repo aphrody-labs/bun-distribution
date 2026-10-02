@@ -13,19 +13,20 @@
 // limitations under the License.
 
 // n2b-core — moteur métier : scanners, règles, report, run, ai, github, audit.
-// Re-export n2b-types (types + schema) pour préserver l'API publique consommée
-// par n2b-cli et n2b-native (compat).
+// Since 2026-10-02 the former crates aphrody-n2b-{ai,github,util,report,rules,
+// scanners} live here as modules (same public paths `aphrody_n2b_core::<name>`).
+// n2b-types (types + schema) stays a crate and is re-exported unchanged.
 
+pub mod ai;
 pub mod audit;
+pub mod github;
 pub mod llmstxt;
 pub mod manifest;
+pub mod report;
 pub mod report_card;
+pub mod rules;
 pub mod run;
+pub mod scanners;
+pub mod util;
 
-pub use aphrody_n2b_ai as ai;
-pub use aphrody_n2b_github as github;
-pub use aphrody_n2b_report as report;
-pub use aphrody_n2b_rules as rules;
-pub use aphrody_n2b_scanners as scanners;
 pub use aphrody_n2b_types::{schema, types};
-pub use aphrody_n2b_util as util;

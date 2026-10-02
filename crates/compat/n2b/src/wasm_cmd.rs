@@ -25,8 +25,10 @@ use std::{
     process::Command,
 };
 
-use anyhow::{Context, Result, anyhow};
+use anyhow::{Context, Result};
 use clap::ValueEnum;
+
+use crate::scaffold_fs::which;
 
 /// Cibles de sortie wasm-pack (`--target`).
 ///
@@ -544,25 +546,7 @@ console.log(await greet("World"));
 }
 
 fn write(path: PathBuf, content: &str, quiet: bool) -> Result<()> {
-    if let Some(parent) = path.parent() {
-        std::fs::create_dir_all(parent).with_context(|| format!("mkdir {}", parent.display()))?;
-    }
-    std::fs::write(&path, content).with_context(|| format!("write {}", path.display()))?;
-    if !quiet {
-        eprintln!("[wasm]   + {}", path.display());
-    }
-    Ok(())
-}
-
-fn which(name: &str) -> Result<PathBuf> {
-    let path = std::env::var_os("PATH").ok_or_else(|| anyhow!("PATH non défini"))?;
-    for dir in std::env::split_paths(&path) {
-        let p = dir.join(name);
-        if p.is_file() {
-            return Ok(p);
-        }
-    }
-    Err(anyhow!("binaire `{name}` introuvable dans PATH"))
+    crate::scaffold_fs::write_tagged("wasm", path, content, quiet)
 }
 
 // --- Template contents ---

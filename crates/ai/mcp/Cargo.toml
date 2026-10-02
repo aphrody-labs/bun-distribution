@@ -144,7 +144,6 @@ which              = { workspace = true }
 # answers with a typed error naming the fix.
 aphrody-web-bridge         = { workspace = true }
 aphrody-n2b-core           = { workspace = true }
-aphrody-n2b-report         = { workspace = true }
 aphrody-n2b-types          = { workspace = true }
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 # Voice MCP tool wiring (voice_synthesize + voice_transcribe). The voice_tools
@@ -157,6 +156,7 @@ base64             = { workspace = true }
 aphrody-re         = { workspace = true }
 dirs               = { workspace = true }
 aphrody-gemini-web         = { workspace = true }
+aphrody-google-mcp         = { workspace = true }
 aphrody-web-service = { workspace = true, optional = true }
 regex              = { workspace = true }
 # `sync_external_agents` — external agent session mirror (agy, Codex, Claude

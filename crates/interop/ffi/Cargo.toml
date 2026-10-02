@@ -55,6 +55,8 @@ aphrody-oxc-bridge = { workspace = true }
 # World/VFS/formats are qualified independently of absent authentic Wiki data.
 aphrody-manga = { workspace = true }
 aphrody-rag-core = { workspace = true }
+aphrody-softraster = { workspace = true }
+aphrody-toolcall-repair = { workspace = true }
 aphrody-web-extract = { workspace = true }
 async-trait = { workspace = true }
 aphrody-web-index = { workspace = true }

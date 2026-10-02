@@ -54,6 +54,12 @@ mod web;
 #[cfg(not(target_arch = "wasm32"))]
 pub use web::*;
 
+// Zero-copy exports (caller-owned buffers): CPU rasterizer and tool-call repair.
+#[cfg(not(target_arch = "wasm32"))]
+mod zerocopy;
+#[cfg(not(target_arch = "wasm32"))]
+pub use zerocopy::*;
+
 // The historical bun_rs ABI remains available in the same native library.
 // Its implementation is an internal rlib; it no longer ships a second cdylib.
 #[cfg(not(target_arch = "wasm32"))]

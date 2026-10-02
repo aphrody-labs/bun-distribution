@@ -23,7 +23,9 @@
 
 use std::path::{Path, PathBuf};
 
-use anyhow::{Context, Result, anyhow};
+use anyhow::{Context, Result};
+
+use crate::scaffold_fs::which;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum AppFlavor {
@@ -269,25 +271,7 @@ fn scaffold_executable(dir: &Path, name: &str, quiet: bool) -> Result<()> {
 }
 
 fn write(path: PathBuf, content: &str, quiet: bool) -> Result<()> {
-    if let Some(parent) = path.parent() {
-        std::fs::create_dir_all(parent).with_context(|| format!("mkdir {}", parent.display()))?;
-    }
-    std::fs::write(&path, content).with_context(|| format!("write {}", path.display()))?;
-    if !quiet {
-        eprintln!("[app]   + {}", path.display());
-    }
-    Ok(())
-}
-
-fn which(name: &str) -> Result<PathBuf> {
-    let path = std::env::var_os("PATH").ok_or_else(|| anyhow!("PATH non défini"))?;
-    for dir in std::env::split_paths(&path) {
-        let p = dir.join(name);
-        if p.is_file() {
-            return Ok(p);
-        }
-    }
-    Err(anyhow!("binaire `{name}` introuvable dans PATH"))
+    crate::scaffold_fs::write_tagged("app", path, content, quiet)
 }
 
 // --- Renderers ---

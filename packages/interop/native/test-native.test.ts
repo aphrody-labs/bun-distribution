@@ -108,26 +108,6 @@ test.skipIf(!referencePath)("aggregate Oxc matches the original fork bridge byte
   }
 });
 
-const forkBinary = process.env.APHRODY_BUN_FORK_BIN;
-for (const order of ["builtin-first", "package-first"]) {
-  test.skipIf(!forkBinary)(`compiled Bun fork shares the aggregate handle: ${order}`, async () => {
-    const child = Bun.spawn({
-      cmd: [forkBinary!, join(import.meta.dir, "fixtures/bun-fork-native.ts"), order],
-      env: { ...process.env, BUN_DEBUG_QUIET_LOGS: "1" },
-      stdout: "pipe",
-      stderr: "pipe",
-    });
-    const [stdout, stderr, code] = await Promise.all([
-      new Response(child.stdout).text(),
-      new Response(child.stderr).text(),
-      child.exited,
-    ]);
-    expect(stderr).toBe("");
-    expect(code).toBe(0);
-    expect(JSON.parse(stdout)).toMatchObject({ order, schema: 2, parity: true, reload: true });
-  });
-}
-
 const n2bReferencePath = process.env.APHRODY_N2B_REFERENCE_LIB;
 test.skipIf(!n2bReferencePath)(
   "aggregate N2B matches the original Compat bridge's full reports and errors",

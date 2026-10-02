@@ -34,12 +34,6 @@
       ],
       "@aphrody/n2b-plugin/*": [
         "./n2b-plugin/src/*"
-      ],
-      "@aphrody/n2b-shims": [
-        "./n2b-shims/src/index.ts"
-      ],
-      "@aphrody/n2b-shims/*": [
-        "./n2b-shims/src/*"
       ]
     }
   }

@@ -19,6 +19,12 @@ export const EXPECTED_BUN_RS_ABI_VERSION = NATIVE_ABI_VERSIONS.bun_rs_abi_versio
 export const EXPECTED_N2B_ABI_VERSION = NATIVE_ABI_VERSIONS.node2bun_abi_version;
 export const EXPECTED_OXC_ABI_VERSION = NATIVE_ABI_VERSIONS.aphrody_oxc_abi_version;
 
+/**
+ * Zero-copy exports (crates/interop/ffi/src/zerocopy.rs). Kept out of
+ * NATIVE_ABI_VERSIONS so existing artifact manifests stay valid.
+ */
+export const EXPECTED_ZEROCOPY_ABI_VERSION = 1;
+
 const SYMBOLS = {
   aphrody_abi_version: { args: [], returns: FFIType.u32 },
   aphrody_web_bridge_abi_version: { args: [], returns: FFIType.u32 },
@@ -44,13 +50,13 @@ const SYMBOLS = {
   shenron_persona_prompt: { args: [], returns: FFIType.cstring },
   shenron_persona_ask: { args: [FFIType.cstring], returns: FFIType.ptr },
   manga_abi_version: { args: [], returns: FFIType.u32 },
-  manga_detect_bubbles: { args: [FFIType.ptr, FFIType.u64_fast], returns: FFIType.ptr },
+  manga_detect_bubbles: { args: [FFIType.ptr, "usize"], returns: FFIType.ptr },
   manga_typeset_fit: {
     args: [FFIType.cstring, FFIType.f32, FFIType.f32, FFIType.f32, FFIType.f32, FFIType.i32],
     returns: FFIType.ptr,
   },
   manga_pipeline_run: {
-    args: [FFIType.ptr, FFIType.u64_fast, FFIType.cstring],
+    args: [FFIType.ptr, "usize", FFIType.cstring],
     returns: FFIType.ptr,
   },
   manga_scanlate_cdn: { args: [FFIType.cstring, FFIType.cstring], returns: FFIType.ptr },
@@ -66,6 +72,10 @@ const SYMBOLS = {
   aphrody_web_extract_main: { args: [FFIType.ptr, FFIType.ptr, FFIType.ptr], returns: FFIType.ptr },
   aphrody_web_free_string: { args: [FFIType.ptr], returns: FFIType.void },
   aphrody_web_extract_title: { args: [FFIType.ptr], returns: FFIType.ptr },
+  aphrody_web_extract_links: { args: [FFIType.ptr, FFIType.ptr], returns: FFIType.ptr },
+  aphrody_web_extract_text: { args: [FFIType.ptr], returns: FFIType.ptr },
+  aphrody_web_normalize_url: { args: [FFIType.ptr], returns: FFIType.ptr },
+  aphrody_web_http_request_submit: { args: [FFIType.ptr], returns: FFIType.u64_fast },
   aphrody_web_strip_tags: { args: [FFIType.ptr], returns: FFIType.ptr },
   aphrody_web_parse_html: { args: [FFIType.ptr], returns: FFIType.ptr },
   aphrody_web_tree_destroy: { args: [FFIType.ptr], returns: FFIType.void },
@@ -278,6 +288,31 @@ const SYMBOLS = {
   aphrody_oxc_minify: { args: [FFIType.cstring, FFIType.cstring], returns: FFIType.ptr },
   aphrody_oxc_lint: { args: [FFIType.cstring, FFIType.cstring], returns: FFIType.ptr },
   aphrody_oxc_free: { args: [FFIType.ptr], returns: FFIType.void },
+  aphrody_zerocopy_abi_version: { args: [], returns: FFIType.u32 },
+  aphrody_toolcall_repair_json: {
+    args: [FFIType.ptr, "usize", FFIType.ptr, "usize"],
+    returns: FFIType.i64,
+  },
+  aphrody_toolcall_validate_json: {
+    args: [FFIType.ptr, "usize", FFIType.ptr, "usize", FFIType.ptr, "usize"],
+    returns: FFIType.i64,
+  },
+  aphrody_raster_fill_triangle: {
+    args: [
+      FFIType.ptr,
+      FFIType.ptr,
+      FFIType.u32,
+      FFIType.u32,
+      FFIType.ptr,
+      FFIType.ptr,
+      FFIType.ptr,
+      FFIType.u32,
+      FFIType.u32,
+      FFIType.f32,
+      FFIType.ptr,
+    ],
+    returns: FFIType.i32,
+  },
 } as const;
 
 type NativeLibrary = ReturnType<typeof dlopen<typeof SYMBOLS>>;
@@ -286,7 +321,7 @@ const LIBRARY_KEY = Symbol.for("aphrody.ffi.library.v1");
 interface SharedNativeLibrary {
   path: string;
   library: NativeLibrary;
-  owner: "@aphrody/bun" | "bun:aphrody";
+  owner: "@aphrody/bun";
 }
 const sharedState = globalThis as typeof globalThis & { [LIBRARY_KEY]?: SharedNativeLibrary };
 
@@ -341,8 +376,8 @@ export function loadNativeLibrary(): NativeLibrary {
       `aphrody_ffi is already loaded from ${shared.path}; native override selects ${resolve(override)}.`,
     );
   }
-  if (shared?.owner === "@aphrody/bun") return shared.library;
-  const path = shared?.path ?? resolveNativeLibraryPath();
+  if (shared) return shared.library;
+  const path = resolveNativeLibraryPath();
   if (!path)
     throw new Error(
       "aphrody-ffi native library not found; install its native package or set APHRODY_FFI_DEV=1 for a local build",
@@ -363,6 +398,7 @@ export function loadNativeLibrary(): NativeLibrary {
       ["M3", loaded.symbols.bun_rs_abi_version(), EXPECTED_BUN_RS_ABI_VERSION],
       ["N2B", loaded.symbols.node2bun_abi_version(), EXPECTED_N2B_ABI_VERSION],
       ["Oxc", loaded.symbols.aphrody_oxc_abi_version(), EXPECTED_OXC_ABI_VERSION],
+      ["Zero-copy", loaded.symbols.aphrody_zerocopy_abi_version(), EXPECTED_ZEROCOPY_ABI_VERSION],
     ] as const) {
       if (actual !== expected)
         throw new Error(`${name} ABI mismatch at ${path}: expected ${expected}, found ${actual}`);
@@ -371,9 +407,6 @@ export function loadNativeLibrary(): NativeLibrary {
     loaded.close();
     throw error;
   }
-  // A builtin-first handle only has its subset of bindings. Open and validate
-  // this superset before releasing that handle so the library never unloads.
-  shared?.library.close();
   sharedState[LIBRARY_KEY] = { path, library: loaded, owner: "@aphrody/bun" };
   return loaded;
 }

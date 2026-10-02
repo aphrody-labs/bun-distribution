@@ -16,17 +16,13 @@ use serde_json::{Value, json};
 #[derive(Debug, Default)]
 pub struct RuntimeSubsystem;
 
-/// A successful import proves that this Bun binary contains the Aphrody module.
-/// No native sidecar library is loaded by reading its static contract version.
-fn aphrody_module_version(runtime: &Runtime) -> Option<u32> {
-    let output = runtime
-        .command(["-e", "console.log(require('bun:aphrody').moduleVersion)"])
+/// Stock Bun ships `bun:ffi`; a successful probe proves the runtime can
+/// `dlopen` the `aphrody-ffi` cdylib. No native library is loaded by the probe.
+fn bun_ffi_available(runtime: &Runtime) -> bool {
+    runtime
+        .command(["-e", "if (typeof require('bun:ffi').dlopen !== 'function') process.exit(1)"])
         .output()
-        .ok()?;
-    if !output.status.success() {
-        return None;
-    }
-    std::str::from_utf8(&output.stdout).ok()?.trim().parse().ok()
+        .is_ok_and(|output| output.status.success())
 }
 
 impl RuntimeSubsystem {
@@ -55,7 +51,7 @@ pub fn report(tool: Toolchain, dir: &std::path::Path) -> Value {
             "version": rt.version(),
             "pin": pin_json,
             "satisfies_pin": rt.satisfies_pin(),
-            "aphrody_module_version": (tool == Toolchain::Bun).then(|| aphrody_module_version(&rt)).flatten(),
+            "ffi_available": (tool == Toolchain::Bun).then(|| bun_ffi_available(&rt)),
         }),
         Err(e) => json!({
             "toolchain": tool.executable_name(),
@@ -63,7 +59,7 @@ pub fn report(tool: Toolchain, dir: &std::path::Path) -> Value {
             "error": e.to_string(),
             "pin": pin_json,
             "satisfies_pin": false,
-            "aphrody_module_version": null,
+            "ffi_available": null,
         }),
     }
 }

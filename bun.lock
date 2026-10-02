@@ -456,7 +456,6 @@
       "name": "@aphrody/n2b-core",
       "version": "0.6.2",
       "dependencies": {
-        "@aphrody/n2b-shims": "workspace:*",
         "@aphrody/n2b-types": "workspace:*",
       },
       "devDependencies": {
@@ -479,6 +478,9 @@
     "packages/compat/n2b-shims": {
       "name": "@aphrody/n2b-shims",
       "version": "0.6.2",
+      "dependencies": {
+        "@aphrody/n2b-core": "workspace:*",
+      },
       "devDependencies": {
         "@types/bun": "catalog:",
         "typescript": "catalog:",

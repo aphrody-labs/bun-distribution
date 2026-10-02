@@ -1,7 +1,7 @@
 # registry/cli.toml — commandes npm/pnpm/yarn → bun.
 #
 # Phase 1 : transcription mécanique des 47 mappings de
-#   crates/aphrody-n2b-rules/src/cli_commands.rs::MAPPINGS
+#   crates/compat/n2b-core/src/rules/cli_commands.rs::MAPPINGS
 # Ordre identique à la source — cli_commands.rs applique les règles en
 # séquence et l'ordre influence le résultat (ex. `npm install --save-dev`
 # avant `npm install`).

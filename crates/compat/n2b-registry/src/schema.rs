@@ -13,7 +13,7 @@
 // limitations under the License.
 
 //! Deserialisation structs of the `registry/*.toml` files and the shared import-graph types
-//! (`ImportGraph`, `ImportBinding`) consumed by the `aphrody-n2b-rules` API rules.
+//! (`ImportGraph`, `ImportBinding`) consumed by the `aphrody_n2b_core::rules` API rules.
 //!
 //! Cf. plan/03-registre-spec.md pour la spec exhaustive de chaque champ.
 
@@ -260,7 +260,7 @@ pub(crate) struct GlobalsFile {
 }
 
 // ---------------------------------------------------------------------------
-// Import graph (built from the oxc AST by `aphrody-n2b-rules`)
+// Import graph (built from the oxc AST by `aphrody_n2b_core::rules`)
 // ---------------------------------------------------------------------------
 
 /// A local binding resolved from the oxc AST.

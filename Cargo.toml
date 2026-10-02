@@ -91,6 +91,8 @@ aphrody-gemini-runtime = { path = "crates/google/gemini-runtime", version = "1.0
 aphrody-gemini-web = { path = "crates/google/gemini-web", version = "0.2.1", features = [] }
 aphrody-git = { path = "crates/infra/git", version = "0.1.0", features = [] }
 aphrody-google = { path = "crates/google/google", version = "1.0.0", features = [] }
+aphrody-google-mcp = { path = "crates/google/mcp", version = "1.0.0", features = [] }
+aphrody-gcs = { path = "crates/google/gcs", version = "1.0.0", features = [] }
 aphrody-guard = { path = "crates/os/guard", version = "1.0.0-canary", features = [] }
 aphrody-http-error = { path = "crates/ai/http-error", version = "1.0.0", features = [] }
 aphrody-infer = { path = "crates/ai/infer", version = "1.0.0", features = ["onnx"] }
@@ -111,7 +113,6 @@ aphrody-model-client = { path = "crates/ai/model-client", version = "1.0.0", fea
 aphrody-models = { path = "crates/ai/models", version = "1.0.0", features = [] }
 aphrody-n2b = { path = "crates/compat/n2b", version = "0.6.2", features = [] }
 aphrody-n2b-core = { path = "crates/compat/n2b-core", version = "0.6.2", features = [] }
-aphrody-n2b-report = { path = "crates/compat/n2b-report", version = "0.6.2", features = [] }
 aphrody-n2b-types = { path = "crates/compat/n2b-types", version = "0.6.2", features = [] }
 aphrody-native = { path = "crates/native/native", version = "1.0.0-canary", features = [] }
 aphrody-notebooklm = { path = "crates/google/notebooklm", version = "1.0.0", features = [] }
@@ -349,11 +350,6 @@ nu-protocol = { version = "0.116.0", default-features = false, features = ["brot
 nu-std = { version = "0.116.0", default-features = false, features = ["sqlite"] }
 crossbeam-channel  = { version = "0.5" }
 oxc_ast_visit      = { version = "0.152.0", git = "https://github.com/oxc-project/oxc.git", rev = "8c5a04ea0d5ca56e0d2d925f51f6b45669aa5e2a" }
-aphrody-n2b-ai = { path = "crates/compat/n2b-ai", version = "0.6.2", features = [] }
-aphrody-n2b-github = { path = "crates/compat/n2b-github", version = "0.6.2", features = [] }
-aphrody-n2b-util = { path = "crates/compat/n2b-util", version = "0.6.2", features = [] }
-aphrody-n2b-rules = { path = "crates/compat/n2b-rules", version = "0.6.2", features = [] }
-aphrody-n2b-scanners = { path = "crates/compat/n2b-scanners", version = "0.6.2", features = [] }
 aphrody-n2b-native = { path = "crates/compat/n2b-native", version = "0.2.0", features = [] }
 libloading = "0.9.0"
 windows-sys = { version = "0.61", features = ["Win32_System_SystemInformation"] }

@@ -11,8 +11,8 @@
  *   bun scripts/n2b/coverage-check.ts --strict     # exit 1 si coverage < threshold
  *
  * Env vars :
- *   CLAUDE_PLUGIN_ROOT    plugin root scanned for agents/skills/commands (default: docs/n2b/plugin)
- *   N2B_COVERAGE_DIR      report output directory (default: docs/n2b/plugin/coverage)
+ *   CLAUDE_PLUGIN_ROOT    plugin root scanned for agents/skills/commands (default: plugins/aphrody)
+ *   N2B_COVERAGE_DIR      report output directory (default: var/audit/n2b-coverage)
  *   COVERAGE_THRESHOLD    % minimum pour --strict (default: 80)
  */
 
@@ -21,12 +21,13 @@ import { copyFile, mkdir } from "node:fs/promises";
 import { join, dirname, relative, resolve } from "node:path";
 
 const SCRIPT_DIR = dirname(import.meta.path);
-// Layout of aphrody-compat: scripts/n2b/ -> repository root is two levels up.
-const REPO_ROOT = resolve(SCRIPT_DIR, "..", "..");
-const PLUGIN_ROOT = process.env.CLAUDE_PLUGIN_ROOT ?? join(REPO_ROOT, "docs/n2b/plugin");
-const DOCS_BUN = join(REPO_ROOT, "docs/n2b/bun");
-const DOCS_N2B = join(REPO_ROOT, "docs/n2b/plugin/n2b");
-const COVERAGE_DIR = process.env.N2B_COVERAGE_DIR ?? join(REPO_ROOT, "docs/n2b/plugin/coverage");
+// scripts/audit/compat/scripts/n2b -> repository root is five levels up.
+const REPO_ROOT = resolve(SCRIPT_DIR, "..", "..", "..", "..", "..");
+const PLUGIN_ROOT = process.env.CLAUDE_PLUGIN_ROOT ?? join(REPO_ROOT, "plugins/aphrody");
+// Canonical Bun docs mirror (the n2b copy was deduplicated on 2026-10-02).
+const DOCS_BUN = process.env.N2B_DOCS_BUN ?? join(REPO_ROOT, "docs/reference/upstream-bun");
+const DOCS_N2B = join(REPO_ROOT, "docs/reference/compat/n2b/plugin/n2b");
+const COVERAGE_DIR = process.env.N2B_COVERAGE_DIR ?? join(REPO_ROOT, "var/audit/n2b-coverage");
 const THRESHOLD = Number(process.env.COVERAGE_THRESHOLD ?? "80");
 
 const args = new Set(process.argv.slice(2));

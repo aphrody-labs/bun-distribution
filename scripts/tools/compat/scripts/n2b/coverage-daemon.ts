@@ -17,10 +17,11 @@
 import { dirname, join, resolve } from "node:path";
 
 const SCRIPT_DIR = dirname(import.meta.path);
-const REPO_ROOT = resolve(SCRIPT_DIR, "..", "..");
-const PLUGIN_ROOT = process.env.CLAUDE_PLUGIN_ROOT ?? join(REPO_ROOT, "docs/n2b/plugin");
-const COVERAGE_DIR = process.env.N2B_COVERAGE_DIR ?? join(REPO_ROOT, "docs/n2b/plugin/coverage");
-const CHECK_SCRIPT = join(SCRIPT_DIR, "coverage-check.ts");
+// scripts/tools/compat/scripts/n2b -> repository root is five levels up.
+const REPO_ROOT = resolve(SCRIPT_DIR, "..", "..", "..", "..", "..");
+const PLUGIN_ROOT = process.env.CLAUDE_PLUGIN_ROOT ?? join(REPO_ROOT, "plugins/aphrody");
+const COVERAGE_DIR = process.env.N2B_COVERAGE_DIR ?? join(REPO_ROOT, "var/audit/n2b-coverage");
+const CHECK_SCRIPT = join(REPO_ROOT, "scripts/audit/compat/scripts/n2b/coverage-check.ts");
 const SCHEDULE = process.env.N2B_COVERAGE_SCHEDULE ?? "0 4 * * 1"; // Mon 04:00
 const STATE_FILE = join(COVERAGE_DIR, ".daemon-state.json");
 

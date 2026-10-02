@@ -16,7 +16,19 @@ use std::path::{Path, PathBuf};
 use aphrody_subsystem::SubsystemError;
 use serde_json::{Value, json};
 
-use crate::paths::{EnvLookup, process_env, var};
+use std::ffi::OsString;
+
+/// Environment lookup injected by tests; production reads the process environment.
+type EnvLookup<'a> = &'a dyn Fn(&str) -> Option<OsString>;
+
+fn process_env(key: &str) -> Option<OsString> {
+    std::env::var_os(key)
+}
+
+/// A variable that is set and not empty.
+fn var(env: EnvLookup<'_>, key: &str) -> Option<OsString> {
+    env(key).filter(|value| !value.is_empty())
+}
 
 const GCS_ENDPOINT: &str = "https://storage.googleapis.com";
 const TOKEN_ENDPOINT: &str = "https://oauth2.googleapis.com/token";
@@ -30,13 +42,17 @@ fn failed(context: &str, error: impl std::fmt::Display) -> SubsystemError {
 
 /// Where requests go and how they authenticate.
 #[derive(Debug, Clone)]
-pub(crate) struct GcsConfig {
+pub struct GcsConfig {
     pub endpoint: String,
     pub token: Option<String>,
 }
 
 impl GcsConfig {
-    pub(crate) async fn from_env(client: &reqwest::Client) -> Result<Self, SubsystemError> {
+    /// `home` is the user's home directory, where gcloud keeps Application Default Credentials.
+    pub async fn from_env(
+        client: &reqwest::Client,
+        home: Option<&Path>,
+    ) -> Result<Self, SubsystemError> {
         let emulator = std::env::var("STORAGE_EMULATOR_HOST").ok().filter(|v| !v.is_empty());
         let endpoint = emulator.clone().unwrap_or_else(|| GCS_ENDPOINT.to_owned());
         if let Some(token) =
@@ -44,7 +60,7 @@ impl GcsConfig {
         {
             return Ok(Self { endpoint, token: Some(token) });
         }
-        let adc = adc_path();
+        let adc = adc_path(home);
         match adc.as_deref() {
             Some(path) if path.is_file() => {
                 let token = refresh_adc(client, path).await?;
@@ -68,8 +84,8 @@ fn no_credentials_message(searched: Option<&Path>) -> String {
     }
 }
 
-fn adc_path() -> Option<PathBuf> {
-    adc_path_from(&process_env, cfg!(windows), crate::paths::home_dir().as_deref())
+fn adc_path(home: Option<&Path>) -> Option<PathBuf> {
+    adc_path_from(&process_env, cfg!(windows), home)
 }
 
 /// Where Application Default Credentials are looked for, first match wins:
@@ -145,7 +161,7 @@ async fn refresh_adc(
 /// Lists objects and `/`-delimited prefixes under `gs://bucket/prefix`, following pagination.
 /// HTTP client for the GCS and OAuth endpoints. The workspace builds reqwest with
 /// `rustls-no-provider`, so the ring provider is installed process-wide first (idempotent).
-pub(crate) fn http_client() -> Result<reqwest::Client, SubsystemError> {
+pub fn http_client() -> Result<reqwest::Client, SubsystemError> {
     let _ = rustls::crypto::ring::default_provider().install_default();
     reqwest::Client::builder()
         .timeout(std::time::Duration::from_secs(30))
@@ -153,7 +169,7 @@ pub(crate) fn http_client() -> Result<reqwest::Client, SubsystemError> {
         .map_err(|e| failed("failed to build HTTP client", e))
 }
 
-pub(crate) async fn list(
+pub async fn list(
     client: &reqwest::Client,
     config: &GcsConfig,
     bucket: &str,
@@ -228,7 +244,19 @@ mod tests {
     };
 
     use super::*;
-    use crate::paths::table;
+
+    type OwnedLookup = Box<dyn Fn(&str) -> Option<OsString>>;
+
+    /// A fixed environment table: nothing reads the process environment.
+    fn table<K: AsRef<str>, V: AsRef<std::ffi::OsStr>>(
+        pairs: impl IntoIterator<Item = (K, V)>,
+    ) -> OwnedLookup {
+        let map: std::collections::HashMap<String, OsString> = pairs
+            .into_iter()
+            .map(|(key, value)| (key.as_ref().to_owned(), value.as_ref().to_owned()))
+            .collect();
+        Box::new(move |key| map.get(key).cloned())
+    }
 
     /// Minimal HTTP/1.1 server answering each connection with the next canned body and
     /// returning the request lines it received.
@@ -313,7 +341,8 @@ mod tests {
     async fn live_listing() {
         let bucket = std::env::var("GCS_TEST_BUCKET").expect("GCS_TEST_BUCKET");
         let client = http_client().unwrap();
-        let config = GcsConfig::from_env(&client).await.expect("credentials");
+        let home = std::env::var_os("HOME").map(PathBuf::from);
+        let config = GcsConfig::from_env(&client, home.as_deref()).await.expect("credentials");
         let out = list(&client, &config, &bucket, "").await.expect("list");
         assert!(out["items"].is_array());
     }

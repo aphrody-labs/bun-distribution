@@ -1,6 +1,6 @@
 [package]
 name = "aphrody-n2b-core"
-description = "N2B engine: audit, run orchestration, manifest handling, report card and llms.txt generation."
+description = "N2B engine: rules, scanners, reports, audit, run orchestration, manifest handling, report card and llms.txt generation."
 version = "0.6.2"
 edition.workspace = true
 rust-version.workspace = true
@@ -19,12 +19,7 @@ path = "src/lib.rs"
 
 [dependencies]
 aphrody-n2b-types.workspace = true
-aphrody-n2b-util.workspace = true
-aphrody-n2b-ai.workspace = true
-aphrody-n2b-github.workspace = true
-aphrody-n2b-report.workspace = true
-aphrody-n2b-rules.workspace = true
-aphrody-n2b-scanners.workspace = true
+aphrody-n2b-registry.workspace = true
 serde = { workspace = true }
 serde_json = { workspace = true }
 serde_yaml.workspace = true
@@ -42,6 +37,11 @@ which.workspace = true
 reqwest.workspace = true
 octocrab.workspace = true
 tokio.workspace = true
+oxc_allocator.workspace = true
+oxc_parser.workspace = true
+oxc_ast.workspace = true
+oxc_ast_visit.workspace = true
+oxc_span.workspace = true
 
 [dev-dependencies]
 proptest.workspace = true

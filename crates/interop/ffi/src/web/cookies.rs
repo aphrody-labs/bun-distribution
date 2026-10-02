@@ -4,7 +4,6 @@ use std::{ffi::CStr, os::raw::c_char};
 
 use super::ffi_util::{guard, into_c_string};
 
-#[unsafe(no_mangle)]
 /// Read Chromium cookies and return them as JSON.
 ///
 /// # Safety

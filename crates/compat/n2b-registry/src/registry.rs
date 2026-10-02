@@ -130,7 +130,7 @@ mod tests {
     #[test]
     fn apis_count_matches_baseline() {
         // Garde-fou Phase 1 : la transcription préserve le nombre d'entrées.
-        // Source : crates/n2b-rules/src/bun_apis.rs RULES — 73 entrées
+        // Source : crates/compat/n2b-core/src/rules/bun_apis.rs RULES — 73 entrées
         // (incluant 2 next/* + 71 api/*).
         assert_eq!(APIS.len(), 73, "apis.toml a divergé de bun_apis.rs RULES");
     }
@@ -200,14 +200,36 @@ mod tests {
     fn docs_field_citations_resolve() {
         use std::path::PathBuf;
 
-        // $CARGO_MANIFEST_DIR pointe sur crates/n2b-registry/. Deux parents
-        // au-dessus → racine du repo (même convention que contract.rs).
+        // $CARGO_MANIFEST_DIR pointe sur crates/compat/n2b-registry/. Trois
+        // parents au-dessus → racine du repo.
         let repo_root = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-            .parent()
-            .expect("CARGO_MANIFEST_DIR parent")
-            .parent()
+            .ancestors()
+            .nth(3)
             .expect("repo root")
             .to_path_buf();
+        // Citations `docs/bun/<x>` resolve to the canonical Bun docs mirror
+        // `docs/<category>/upstream-bun/<x>`; `docs/node/<x>` to the Node API
+        // snapshot `docs/<category>/compat/n2b/node/<x>`.
+        const CATEGORIES: [&str; 9] = [
+            "apis",
+            "architecture",
+            "decisions",
+            "guides",
+            "operations",
+            "plans",
+            "products",
+            "reference",
+            "research",
+        ];
+        let resolves = |rel: &str| -> bool {
+            let Some((kind, sub)) = rel.trim_start_matches("docs/").split_once('/') else {
+                return false;
+            };
+            let owner = if kind == "bun" { "upstream-bun" } else { "compat/n2b/node" };
+            CATEGORIES
+                .iter()
+                .any(|c| repo_root.join("docs").join(c).join(owner).join(sub).is_file())
+        };
 
         let path_re = Regex::new(r"docs/(?:bun|node)/[A-Za-z0-9_./-]+\.mdx?").unwrap();
 
@@ -226,11 +248,9 @@ mod tests {
                 checked += 1;
                 let rel = m.as_str();
                 assert!(
-                    // The Bun and Node references live under docs/n2b/ (docs/n2b/bun,
-                    // docs/n2b/node).
-                    repo_root.join("docs/n2b").join(rel.trim_start_matches("docs/")).is_file(),
-                    "{id}: docs = \"{docs}\" cite {rel}, introuvable sous docs/n2b/ (doc upstream \
-                     renommée/déplacée — régénérer via docs/README.md)"
+                    resolves(rel),
+                    "{id}: docs = \"{docs}\" cite {rel}, introuvable sous docs/<category>/upstream-bun \
+                     ou docs/<category>/compat/n2b/node (doc upstream renommée/déplacée)"
                 );
             }
         }

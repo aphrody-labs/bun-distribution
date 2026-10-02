@@ -1329,7 +1329,9 @@ dependencies = [
  "aphrody-n2b-native",
  "aphrody-oxc-bridge",
  "aphrody-rag-core",
+ "aphrody-softraster",
  "aphrody-stdio-capture",
+ "aphrody-toolcall-repair",
  "aphrody-web-chromium",
  "aphrody-web-extract",
  "aphrody-web-index",
@@ -1391,6 +1393,17 @@ dependencies = [
  "tokio",
  "url",
  "which 8.0.6",
+]
+
+[[package]]
+name = "aphrody-gcs"
+version = "1.0.0"
+dependencies = [
+ "aphrody-subsystem",
+ "reqwest 0.13.5",
+ "rustls",
+ "serde_json",
+ "tokio",
 ]
 
 [[package]]
@@ -1468,6 +1481,19 @@ dependencies = [
  "serde_json",
  "tokio",
  "url",
+]
+
+[[package]]
+name = "aphrody-google-mcp"
+version = "1.0.0"
+dependencies = [
+ "aphrody-gemini-web",
+ "base64 0.23.1",
+ "dirs 7.0.0",
+ "rmcp",
+ "serde_json",
+ "tempfile",
+ "tokio",
 ]
 
 [[package]]
@@ -1601,6 +1627,7 @@ dependencies = [
  "aphrody-coreutils",
  "aphrody-events",
  "aphrody-execpolicy",
+ "aphrody-gcs",
  "aphrody-kernel-client",
  "aphrody-shell",
  "aphrody-subsystem",
@@ -1770,6 +1797,7 @@ dependencies = [
  "aphrody-gemini-web",
  "aphrody-git",
  "aphrody-google",
+ "aphrody-google-mcp",
  "aphrody-http-error",
  "aphrody-infer",
  "aphrody-jev",
@@ -1779,7 +1807,6 @@ dependencies = [
  "aphrody-memory",
  "aphrody-models",
  "aphrody-n2b-core",
- "aphrody-n2b-report",
  "aphrody-n2b-types",
  "aphrody-ocr",
  "aphrody-ocr-core",
@@ -2007,24 +2034,12 @@ dependencies = [
 ]
 
 [[package]]
-name = "aphrody-n2b-ai"
-version = "0.6.2"
-dependencies = [
- "serde",
-]
-
-[[package]]
 name = "aphrody-n2b-core"
 version = "0.6.2"
 dependencies = [
  "anyhow",
- "aphrody-n2b-ai",
- "aphrody-n2b-github",
- "aphrody-n2b-report",
- "aphrody-n2b-rules",
- "aphrody-n2b-scanners",
+ "aphrody-n2b-registry",
  "aphrody-n2b-types",
- "aphrody-n2b-util",
  "colored",
  "crossbeam-channel",
  "globset",
@@ -2032,6 +2047,11 @@ dependencies = [
  "memchr",
  "octocrab",
  "once_cell",
+ "oxc_allocator",
+ "oxc_ast",
+ "oxc_ast_visit",
+ "oxc_parser",
+ "oxc_span",
  "proptest",
  "regex",
  "reqwest 0.13.5",
@@ -2042,14 +2062,6 @@ dependencies = [
  "walkdir",
  "which 8.0.6",
  "yaml_serde",
-]
-
-[[package]]
-name = "aphrody-n2b-github"
-version = "0.6.2"
-dependencies = [
- "anyhow",
- "octocrab",
 ]
 
 [[package]]
@@ -2075,61 +2087,10 @@ dependencies = [
 ]
 
 [[package]]
-name = "aphrody-n2b-report"
-version = "0.6.2"
-dependencies = [
- "aphrody-n2b-ai",
- "aphrody-n2b-types",
- "aphrody-n2b-util",
- "colored",
- "serde",
- "serde_json",
-]
-
-[[package]]
-name = "aphrody-n2b-rules"
-version = "0.6.2"
-dependencies = [
- "aphrody-n2b-registry",
- "aphrody-n2b-types",
- "aphrody-n2b-util",
- "once_cell",
- "oxc_allocator",
- "oxc_ast",
- "oxc_ast_visit",
- "oxc_parser",
- "oxc_span",
- "regex",
- "serde",
- "serde_json",
-]
-
-[[package]]
-name = "aphrody-n2b-scanners"
-version = "0.6.2"
-dependencies = [
- "aphrody-n2b-rules",
- "aphrody-n2b-types",
- "aphrody-n2b-util",
- "once_cell",
- "regex",
- "serde_json",
- "yaml_serde",
-]
-
-[[package]]
 name = "aphrody-n2b-types"
 version = "0.6.2"
 dependencies = [
  "serde",
-]
-
-[[package]]
-name = "aphrody-n2b-util"
-version = "0.6.2"
-dependencies = [
- "aphrody-n2b-types",
- "memchr",
 ]
 
 [[package]]

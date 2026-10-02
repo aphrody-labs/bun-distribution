@@ -18,7 +18,8 @@
 //   - @n2b/core    : wrapper CLI (scan, rules, promptMarkdown).
 //   - @n2b/types   : types TS auto-générés depuis schema/v2.json.
 //   - @n2b/plugin  : Bun.plugin() + bindings FFI — importe @n2b/core et @n2b/types.
-//   - @n2b/shims   : polyfills Bun-natifs des APIs Node détectées par n2b.
+//   - @aphrody/n2b-core/shims : polyfills Bun-natifs des APIs Node détectées par n2b
+//     (source unique depuis le 2026-10-02 ; @aphrody/n2b-shims ne fait plus que ré-exporter).
 
 export { scan, rules, promptMarkdown, binaryVersion } from "./cli";
 export type { ScanOptions, N2BError } from "./cli";

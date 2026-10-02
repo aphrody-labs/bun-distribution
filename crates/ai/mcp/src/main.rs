@@ -2181,7 +2181,7 @@ impl GoogleMcpServer {
         };
         let n2b = || {
             serde_json::from_str::<serde_json::Value>(include_str!(
-                "../../../../docs/apis/contracts/v2.json"
+                "../../../contracts/schema/v2.json"
             ))
             .unwrap_or_else(|error| json!({ "error": "N2B_SCHEMA", "reason": error.to_string() }))
         };
@@ -2236,7 +2236,7 @@ impl GoogleMcpServer {
             dry_run: false,
         };
         match aphrody_n2b_core::run::run(&opts) {
-            Ok(fixes) => aphrody_n2b_report::render_json(&fixes, &opts),
+            Ok(fixes) => aphrody_n2b_core::report::render_json(&fixes, &opts),
             Err(e) => serde_json::to_string_pretty(&json!({
                 "error": "N2B_EXECUTION",
                 "reason": e.to_string(),
@@ -4258,7 +4258,7 @@ mod aphrody_mcp_call_tests {
     #[test]
     fn bundled_n2b_schema_is_canonical_v2() {
         let schema: serde_json::Value =
-            serde_json::from_str(include_str!("../../../../docs/apis/contracts/v2.json"))
+            serde_json::from_str(include_str!("../../../contracts/schema/v2.json"))
                 .expect("valid schema");
         assert_eq!(schema["$schema"], "http://json-schema.org/draft-07/schema#");
         assert_eq!(schema["properties"]["schema_version"]["enum"][0], 2);

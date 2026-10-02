@@ -37,6 +37,7 @@ path = "src/host_service.rs"
 
 [dependencies]
 aphrody-subsystem = { workspace = true }
+aphrody-gcs = { workspace = true }
 aphrody-events = { workspace = true }
 aphrody-execpolicy = { workspace = true }
 aphrody-kernel-client = { workspace = true }

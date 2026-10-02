@@ -94,15 +94,15 @@ struct ChatSession {
 static CHAT_SESSIONS: LazyLock<Mutex<HashMap<String, Arc<Mutex<ChatSession>>>>> =
     LazyLock::new(|| Mutex::new(HashMap::new()));
 
-pub(crate) fn list(taken: impl Fn(&str) -> bool) -> Vec<Tool> {
+pub fn list(taken: impl Fn(&str) -> bool) -> Vec<Tool> {
     TOOLS.iter().filter(|tool| !taken(tool.name.as_ref())).cloned().collect()
 }
 
-pub(crate) fn get(name: &str) -> Option<Tool> {
+pub fn get(name: &str) -> Option<Tool> {
     TOOLS.iter().find(|tool| tool.name == name).cloned()
 }
 
-pub(crate) fn owns(name: &str) -> bool {
+pub fn owns(name: &str) -> bool {
     get(name).is_some()
 }
 
@@ -259,7 +259,7 @@ async fn run_chat(args: &Value) -> Result<Value, String> {
     }))
 }
 
-pub(crate) async fn call(request: &CallToolRequestParams) -> CallToolResult {
+pub async fn call(request: &CallToolRequestParams) -> CallToolResult {
     let name = request.name.as_ref();
     let args =
         request.arguments.as_ref().map_or_else(|| json!({}), |map| Value::Object(map.clone()));

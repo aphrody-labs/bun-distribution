@@ -2,27 +2,29 @@
 // Copyright 2026 aphrody-code
 // SPDX-License-Identifier: Apache-2.0
 //
-// Codegen schéma — source de vérité unique : ../aphrody-contracts/schema/v2.json
-// (the N2B report schema is owned by the sibling repository aphrody-contracts).
+// Codegen schéma — source de vérité unique : crates/contracts/schema/v2.json
+// (the N2B report schema is owned by the Contracts domain of this monorepo).
 // Produit :
-//   - crates/aphrody-n2b-types/src/schema.rs       via `cargo typify`
-//   - packages/n2b-types/src/index.ts      via `json-schema-to-typescript --unreachableDefinitions`
+//   - crates/compat/n2b-types/src/schema.rs       via `cargo typify`
+//   - packages/compat/n2b-types/src/index.ts      via `json-schema-to-typescript --unreachableDefinitions`
 //
 // Les deux fichiers sont commités. La CI échoue si drift (mode --check).
 //
 // Usage :
-//   bun run n2b:codegen          # régénère
-//   bun run n2b:codegen:check    # exit 1 si drift
+//   bun scripts/tools/compat/scripts/n2b/generate-schema-types.ts           # régénère
+//   bun scripts/tools/compat/scripts/n2b/generate-schema-types.ts --check   # exit 1 si drift
+// (`cargo typify` is a Cargo subcommand: only the integrating agent runs it.)
 
 import { $ } from "bun";
 import { existsSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 
-const REPO_ROOT = resolve(import.meta.dir, "..", "..");
-const SCHEMA = resolve(REPO_ROOT, "..", "aphrody-contracts", "schema", "v2.json");
-const RUST_OUT = `${REPO_ROOT}/crates/aphrody-n2b-types/src/schema.rs`;
-const TS_OUT = `${REPO_ROOT}/packages/n2b-types/src/index.ts`;
+// scripts/tools/compat/scripts/n2b -> repository root is five levels up.
+const REPO_ROOT = resolve(import.meta.dir, "..", "..", "..", "..", "..");
+const SCHEMA = resolve(REPO_ROOT, "crates", "contracts", "schema", "v2.json");
+const RUST_OUT = `${REPO_ROOT}/crates/compat/n2b-types/src/schema.rs`;
+const TS_OUT = `${REPO_ROOT}/packages/compat/n2b-types/src/index.ts`;
 
 const BANNER_RS = `// @generated — DO NOT EDIT MANUALLY.
 // Regenerate with: bun run n2b:codegen
