@@ -43,7 +43,7 @@
     "db:push": "bunx drizzle-kit push",
     "db:seed-xv2-char-meta": "bun src/db/seed-xv2-char-meta.ts",
     "db:seed-xv2-all": "bun src/db/seed-xv2-techniques.ts && bun src/db/seed-xv2-characters.ts && bun src/db/seed-xv2-char-meta.ts && bun src/db/seed-xv2-portraits.ts && bun src/db/seed-xv2-transformations.ts && bun src/db/seed-xv2-char-techniques.ts",
-    "typecheck": "tsgo -p tsconfig.json --noEmit"
+    "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
     "@aphrody/paths": "workspace:*",

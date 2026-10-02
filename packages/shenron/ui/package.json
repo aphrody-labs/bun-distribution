@@ -87,7 +87,7 @@
     "assets:sync": "bun scripts/sync-assets.ts",
     "build:check": "bun scripts/production-check.ts",
     "portability:check": "bun scripts/check-portability.ts",
-    "typecheck": "tsgo -p tsconfig.json --noEmit"
+    "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
     "@base-ui/react": "catalog:",

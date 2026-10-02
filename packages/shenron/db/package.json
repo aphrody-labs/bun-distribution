@@ -30,7 +30,7 @@
     "lint": "oxlint -c ../.oxlintrc.json",
     "test": "bun test",
     "audit:migrations": "bun scripts/migration-audit.ts --check",
-    "typecheck": "tsgo -p tsconfig.json --noEmit"
+    "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
     "@aphrody/sql": "workspace:*",

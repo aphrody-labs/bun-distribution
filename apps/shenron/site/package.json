@@ -23,7 +23,7 @@
     "db:push": "echo \"db:push est interdit : migrations via le runbook aphrody-infra (docs/STACK.md D5)\" >&2 && exit 1",
     "db:studio": "bunx drizzle-kit studio",
     "db:generate": "bunx drizzle-kit generate",
-    "typecheck": "tsgo -p tsconfig.json --noEmit"
+    "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
     "@aphrody/paths": "workspace:*",

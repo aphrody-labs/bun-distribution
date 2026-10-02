@@ -960,6 +960,12 @@ Propriétaires : `packages/shenron`, `apps/shenron`.
 - [ ] Consommer le chargeur interop unique et les calculs RAG qualifiés.
 - [ ] Reproduire les tests/configuration historiques ; corriger les erreurs
   actuelles avant les tests bout en bout de site, bot et pipeline.
+  Gates 2026-10-03 (`APHRODY_FFI_DEV=1`) : tests bot 426, site 1278 (+1 échec
+  sur la page non suivie `wiki/manga/revue` du lot Koharu non commité, conteneur
+  écrit à la main au lieu de `<PageShell>`), api 97, auth 94, config 47, db 78,
+  images 18, pipeline 286, ui 47. Typecheck : les 9 scripts appelaient `tsgo`,
+  absent ; passés à `tsc` (TypeScript 7 natif épinglé) : 9/9 verts. Reste : bout
+  en bout site/bot/pipeline.
 - [ ] Valider le produit assemblé après passage des gates de ses dépendances.
 
 Critères : corpus/règles partagés, tests pipeline/config, build site/bot,
