@@ -1,7 +1,8 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 # Shell / terminal stack: wasm, web, Tauri, serverless (definitive plan)
 
-Date: 2026-10-02. Status: plan only; nothing in this file is implemented unless listed under "Real today".
+Date: 2026-10-02. Status: active implementation plan. Section 1 is the baseline read from before implementation;
+the task status and [current shell status](../../products/shell/STATUS.md) record subsequent changes.
 Rules: root `CLAUDE.md`. Workers never run Cargo; the lead runs one check at a time through
 `scripts/build/rust/cargo-serial.sh`. Claim each owner path in `.coord/claims/shell-wasm-stack.json` (not in repo) before editing.
 
@@ -89,7 +90,7 @@ confirmed by the lead against that file).
 
 ## 4. Tasks
 
-Status 2026-10-02: T1-T5, T10 and T11 implemented; T6 partial (compile spike, ADR written); T8 client transports implemented with server-side resume open; T7, T9, T12-T14 open. T3 passed 15 native unit tests, strict Clippy, wasm32 check and release build, the owning Bun tests (3 pass, 2 environment-gated skips), and a generated-WASM `WebShell` pipeline smoke. T5 passed four native VFS tests, 15 web-engine tests, strict Clippy, wasm32 and Windows GNU checks, a generated-WASM release build, and a real Chromium test running the shared VFS conformance suite and proving OPFS persistence across reload. Windows MSVC check is environment-blocked by the `simdutf` build script (no authentic MSVC toolchain under `/mnt/c/BuildTools`). T11 passed shared host conformance on the mock and native PTY adapters, six native tests, strict Clippy, wasm32 and Windows GNU checks, plus the live Bun WebSocket PTY test. T8's worker client passed that Chromium OPFS test, its sandbox transport passed an authenticated live PTY round trip, and its Channel path passed mock bridge tests. See [STATUS](../../products/shell/STATUS.md).
+Status 2026-10-02: T1-T5, T10, T11 and T14 implemented; T6 partial (compile spike, ADR written); T8 client transports implemented with server-side resume open; T7, T9, T12 and T13 open. T3 passed 15 native unit tests, strict Clippy, wasm32 check and release build, the owning Bun tests (3 pass, 2 environment-gated skips), and a generated-WASM `WebShell` pipeline smoke. T5 passed four native VFS tests, 15 web-engine tests, strict Clippy, wasm32 and Windows GNU checks, a generated-WASM release build, and a real Chromium test running the shared VFS conformance suite and proving OPFS persistence across reload. Windows MSVC check is environment-blocked by the `simdutf` build script (no authentic MSVC toolchain under `/mnt/c/BuildTools`). T11 passed shared host conformance on the mock and native PTY adapters, six native tests, strict Clippy, wasm32 and Windows GNU checks, plus the live Bun WebSocket PTY test. T8's worker client passed that Chromium OPFS test, its sandbox transport passed an authenticated live PTY round trip, and its Channel path passed mock bridge tests. T14's `check-all.sh` passed the WASM build, six Bun tests, typecheck and real Tauri LOCAL/REMOTE markers; both touched documentation trees passed link checks. See [STATUS](../../products/shell/STATUS.md).
 
 Owner paths are exclusive per task; two tasks never edit the same file. Tasks that add a workspace member or
 dependency also need a one-line root `Cargo.toml` edit: the lead (integrating agent) does root `Cargo.toml`/`bun.lock`

@@ -23,20 +23,20 @@ upstream notices and root Cargo patches in consuming workspaces.
 
 ## WASM, web and Tauri
 
-Current state and fact-check: [STATUS](./STATUS.md). Plan: [wasm-stack-definitive](../../plans/shell/wasm-stack-definitive.md).
+The [layer architecture](../../architecture/shell/README.md) names each owner and byte contract.
+The [status](./STATUS.md) records tested paths; the
+[plan](../../plans/shell/wasm-stack-definitive.md) tracks remaining work.
 
-- `aphrody-terminal-core`: portable Rio VT state (extracted from the backend, re-exported there).
-- `aphrody-shell-web` (`wasm32-unknown-unknown`): `WebTerminal`, backend-less `WebShell`, wire frames.
-  `scripts/build/shell/build-wasm.sh` emits `packages/shell/web/pkg` (gitignored).
-- `@aphrody/shell-web`: WebSocket (to `serve`), Tauri and local transports.
-- `aphrody-shell-session`, `aphrody-shell-vfs`: engine/session seam and in-memory VFS (staged, not yet consumed).
-- `aphrody-shell-tauri`: Tauri 3 plugin over native PTY sessions. Registered via
-  `aphrody_shell_tauri::init()`; wired in `crates/ui/app` (plugin + `aphrody-shell-tauri:default` capability).
-- Verification: `bun test` in `packages/shell/web` (WASM in Bun; real headless Chrome + live PTY backend with
-  `APHRODY_CHROME` and `APHRODY_SHELL_LIVE_BIN`); `scripts/build/shell/tauri-e2e.sh` runs a real Tauri 3 app
-  (WebKitGTK on GTK Broadway) through permission-checked IPC.
-- Nushell (`aphrody-nu`) and the Ratatui TUI stay native; the browser shell is the local builtin shell
-  or a remote backend.
+`aphrody-terminal-core` owns client VT state. `aphrody-shell-web` exposes the WASM terminal and
+local command engine; `aphrody-shell-session` and `aphrody-shell-vfs` provide its session and
+filesystem contracts. The dedicated browser worker runs that engine over `OpfsVfs` and persists
+versioned, checksummed images in OPFS. `@aphrody/shell-web` supplies the worker, WebSocket,
+Tauri Channel and local transports behind one interface. `aphrody-shell-tauri` opens native PTY
+sessions for the Tauri path. Nushell and the Ratatui TUI remain native.
+
+[`check-all.sh`](../../../scripts/build/shell/check-all.sh) chains the existing WASM build,
+package tests and real Tauri webview gate. Set `APHRODY_CHROME` and `APHRODY_SHELL_LIVE_BIN`
+to include the real Chromium and PTY browser tests.
 
 ## Build and docs
 

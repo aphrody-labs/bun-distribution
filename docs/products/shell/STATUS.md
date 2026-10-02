@@ -3,6 +3,8 @@
 
 Source of truth for what exists. Older plans and audits are kept as history and link here.
 Evidence: repo read, native tests, wasm32 checks, a real Chrome run and a real Tauri webview run.
+The combined [`check-all.sh`](../../../scripts/build/shell/check-all.sh) gate passed on 2026-10-02:
+WASM release build, six Bun tests, TypeScript typecheck and real Tauri LOCAL/REMOTE markers.
 
 ## Layers
 
