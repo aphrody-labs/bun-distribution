@@ -392,7 +392,7 @@ Crate `aphrody-infra`, parser `crates/infra/infra/src/main.rs#Cli`, 383 commands
 - `aphrody-infra dev-env` — Validate or provision the declared development environment.
 - `aphrody-infra service` — Manage cataloged services lifecycle (catalog, status, start, stop, restart, journal).
 - `aphrody-infra probe` — Probe an HTTP or TCP endpoint health.
-- `aphrody-infra pipeline` — Execute multi-repository pipeline stages (format, lint, types, unit-and-ui, build, release).
+- `aphrody-infra pipeline` — Execute declared monorepo validation stages.
 - `aphrody-infra serve` — Launch the embedded HTTP API daemon.
 - `aphrody-infra ssh` — Remote SSH operator: execute commands, audit host health, sysctl kernel tuning, port inspection.
   - `aphrody-infra ssh rag` — Index and retrieve local code and documentation. _(cfg: all(not(target_arch = "wasm32"), feature = "rag"))_

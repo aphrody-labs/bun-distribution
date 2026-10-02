@@ -5877,7 +5877,7 @@
         },
         {
           "name": "pipeline",
-          "about": "Execute multi-repository pipeline stages (format, lint, types, unit-and-ui, build, release).",
+          "about": "Execute declared monorepo validation stages.",
           "aliases": [],
           "cfg": [],
           "children": []

@@ -9,7 +9,7 @@ full logs; every hash was verified after capture. Lint completed with warnings.
 
 The Bun unit test configuration uses `src` as its test root. The run passed one
 test and skipped three event replay tests because their Rust-generated fixture
-was absent. The daemon integration tests in `tests/integration` require the
+was absent. The daemon integration tests in `packages/os/drive-client/tests/integration` require the
 Rust bridge harness and `BRIDGE_CONFIG_PATH`; they were not run in this package
 gate. The build bundles the main client, Bun, and hook entry points as a build
 check; package exports continue to point to TypeScript source.
