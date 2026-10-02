@@ -1,0 +1,173 @@
+// SPDX-License-Identifier: Apache-2.0
+import { create } from "zustand";
+
+export interface ThreadItem {
+  id: string;
+  name?: string;
+  preview?: string;
+  createdAt: number;
+  updatedAt?: number;
+  cwd?: string;
+}
+
+export interface ChatStoreState {
+  threads: ThreadItem[];
+  activeThreadId: string | null;
+  unreadThreadIds: Record<string, boolean>;
+  expandedProjects: Record<string, boolean>;
+  newSessionRequested: boolean;
+  sessionTitle: string | undefined;
+  model: string;
+  effort: string;
+  accessMode: "full" | "ask" | "readonly";
+  cwd: string;
+
+  setThreads: (threads: ThreadItem[]) => void;
+  setActiveThreadId: (id: string | null) => void;
+  setSessionTitle: (title: string | undefined) => void;
+  setModel: (model: string) => void;
+  setEffort: (effort: string) => void;
+  setAccessMode: (mode: "full" | "ask" | "readonly") => void;
+  setCwd: (cwd: string) => void;
+  markThreadRead: (id: string) => void;
+  markThreadUnread: (id: string) => void;
+  toggleProjectExpanded: (projectName: string) => void;
+  requestNewSession: () => void;
+  clearNewSessionRequest: () => void;
+}
+
+export const useChatStore = create<ChatStoreState>((set) => ({
+  threads: [
+    {
+      id: "thread-default-1",
+      name: "Nettoyer le code mort",
+      preview: "Nettoyer le code mort",
+      createdAt: Date.now() - 3600000,
+      updatedAt: Date.now() - 3600000,
+      cwd: "workspace/aphrody-ui",
+    },
+    {
+      id: "thread-default-2",
+      name: "Corriger le dépôt",
+      preview: "Corriger le dépôt",
+      createdAt: Date.now() - 7200000,
+      updatedAt: Date.now() - 7200000,
+      cwd: "workspace/aphrody-ui",
+    },
+    {
+      id: "thread-default-3",
+      name: "Inspect google.rs",
+      preview: "Inspect google.rs",
+      createdAt: Date.now() - 14400000,
+      updatedAt: Date.now() - 14400000,
+      cwd: "workspace/aphrody-os",
+    },
+    {
+      id: "thread-default-4",
+      name: "Installer agy",
+      preview: "Installer agy",
+      createdAt: Date.now() - 28800000,
+      updatedAt: Date.now() - 28800000,
+      cwd: "workspace/aphrody-os",
+    },
+  ],
+  activeThreadId: "thread-default-1",
+  unreadThreadIds: {
+    "thread-default-4": true,
+  },
+  expandedProjects: {
+    "aphrody-ui": true,
+    "aphrody-os": false,
+  },
+  newSessionRequested: false,
+  sessionTitle: undefined,
+  model: "GPT-6 Luna",
+  effort: "Minimal",
+  accessMode: "full",
+  cwd: "",
+
+  setThreads: (threads) =>
+    set(() => ({ threads })),
+
+  setActiveThreadId: (id) =>
+    set((state) => ({
+      activeThreadId: id,
+      unreadThreadIds: id
+        ? { ...state.unreadThreadIds, [id]: false }
+        : state.unreadThreadIds,
+    })),
+
+  setSessionTitle: (title) =>
+    set(() => ({ sessionTitle: title })),
+
+  setModel: (model) =>
+    set(() => ({ model })),
+
+  setEffort: (effort) =>
+    set(() => ({ effort })),
+
+  setAccessMode: (accessMode) =>
+    set(() => ({ accessMode })),
+
+  setCwd: (cwd) =>
+    set(() => ({ cwd })),
+
+  markThreadRead: (id) =>
+    set((state) => ({
+      unreadThreadIds: { ...state.unreadThreadIds, [id]: false },
+    })),
+
+  markThreadUnread: (id) =>
+    set((state) => ({
+      unreadThreadIds: { ...state.unreadThreadIds, [id]: true },
+    })),
+
+  toggleProjectExpanded: (projectName) =>
+    set((state) => ({
+      expandedProjects: {
+        ...state.expandedProjects,
+        [projectName]: !state.expandedProjects[projectName],
+      },
+    })),
+
+  requestNewSession: () =>
+    set({
+      newSessionRequested: true,
+      activeThreadId: null,
+      sessionTitle: undefined,
+    }),
+
+  clearNewSessionRequest: () =>
+    set({
+      newSessionRequested: false,
+    }),
+}));
+
+export function getProjectGroups(
+  threads: ThreadItem[],
+  expandedProjects: Record<string, boolean>
+) {
+  const groups: Record<string, ThreadItem[]> = {};
+
+  for (const t of threads) {
+    let projName = "aphrody-ui";
+    if (t.cwd) {
+      const parts = t.cwd.split(/[/\\]/).filter(Boolean);
+      projName = parts[parts.length - 1] || "aphrody-ui";
+    }
+    if (!groups[projName]) {
+      groups[projName] = [];
+    }
+    groups[projName].push(t);
+  }
+
+  // Ensure default canonical projects
+  if (!groups["aphrody-ui"]) groups["aphrody-ui"] = [];
+  if (!groups["aphrody-os"]) groups["aphrody-os"] = [];
+
+  return Object.keys(groups).map((name) => ({
+    name,
+    threads: groups[name],
+    expanded: expandedProjects[name] ?? true,
+  }));
+}
