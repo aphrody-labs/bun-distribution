@@ -28,6 +28,7 @@ import {TopBar, TopBarProvider} from './TopBar';
 import {CommandPalette} from './CommandPalette';
 import {useMenuCommands} from './menu-commands';
 import {NARROW_QUERY, Rail, RailDrawer, useMediaQuery} from './rail-drawer';
+import {ShellTerminalPanel} from './ShellTerminalPanel';
 
 /** M3 pane transitions: enter on emphasized-decelerate, exit on emphasized-accelerate. */
 const paneEnter: Transition = {
@@ -148,6 +149,7 @@ function ShellLayoutContent() {
 
 	const narrow = useMediaQuery(NARROW_QUERY);
 	const [drawerOpen, setDrawerOpen] = useState(false);
+	const [terminalOpen, setTerminalOpen] = useState(false);
 	useEffect(() => {
 		if (!narrow) setDrawerOpen(false);
 	}, [narrow]);
@@ -263,7 +265,18 @@ function ShellLayoutContent() {
 							isActive={tagModeActive}
 							onExit={() => setTagModeActive(false)}
 						/>
+						{!terminalOpen && (
+							<button
+								type="button"
+								aria-label="Open terminal"
+								onClick={() => setTerminalOpen(true)}
+								className="absolute bottom-4 right-4 z-50 rounded-full bg-primary px-4 py-2 text-on-primary shadow-md"
+							>
+								Terminal
+							</button>
+						)}
 					</div>
+					{terminalOpen && <ShellTerminalPanel onClose={() => setTerminalOpen(false)} />}
 				</div>
 
 				{/* Keyboard handler (invisible, doesn't cause parent rerenders) */}

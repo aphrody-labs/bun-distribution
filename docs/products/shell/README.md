@@ -6,7 +6,7 @@ agent surface. The facade is `aphrody-shell`; implementations are `aphrody-nu`,
 `aphrody-terminal-backend` and `aphrody-tui`.
 
 Contracts owns `aphrody-subsystem`, `aphrody-agent-proto` and
-`aphrody-kernel-client`, consumed through sibling paths. The agent stays across a
+`aphrody-kernel-client`, consumed through the monorepo workspace. The agent stays across a
 process boundary; there is no AI dependency here. The only Bun package is `@aphrody/shell-web`.
 
 ## Runtime
@@ -34,15 +34,23 @@ versioned, checksummed images in OPFS. `@aphrody/shell-web` supplies the worker,
 Tauri Channel and local transports behind one interface. `aphrody-shell-tauri` opens native PTY
 sessions for the Tauri path. Nushell and the Ratatui TUI remain native.
 
+The desktop app mounts its terminal panel from `packages/ui/app-ui`. It uses Tauri Channel
+for native sessions, the OPFS worker in a browser, and `sandboxTransport` when a hosted page
+provides `window.__APHRODY_SHELL_HOST__ = { websocketUrl, token, sessionId? }` before the app
+bundle loads. Hosted pages must supply their own authenticated endpoint. xterm renders the raw
+PTY bytes; the WASM VT parser is not attached to that renderer. The app UI build emits the
+worker and WASM files alongside the page.
+
 [`check-all.sh`](../../../scripts/build/shell/check-all.sh) chains the existing WASM build,
 package tests and real Tauri webview gate. Set `APHRODY_CHROME` and `APHRODY_SHELL_LIVE_BIN`
 to include the real Chromium and PTY browser tests.
 
 ## Build and docs
 
-Use the pinned Rust toolchain and `RUSTC_WRAPPER=`. `just ci` runs the owner gates
-in [AGENTS.md](../../reference/shell/AGENTS.md), including the pinned nightly formatter. Cold Nushell
-builds take time; PTY tests execute real commands.
+Use the pinned Rust toolchain and shared `sccache` wrapper. Run build-producing Cargo gates
+through `scripts/build/rust/cargo-serial.sh` as described in
+[AGENTS.md](../../reference/shell/AGENTS.md). Cold Nushell builds take time; PTY tests execute
+real commands.
 
 - [Terminal design](./terminal/README.md), [engine selection](../../reference/shell/terminal/ENGINE-SELECTION.md)
 - [Nushell embarqué et scripts du dépôt](../../reference/shell/NUSHELL.md)

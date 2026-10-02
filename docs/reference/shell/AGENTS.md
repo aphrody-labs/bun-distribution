@@ -23,14 +23,14 @@ add repository constraints, not a separate approval workflow.
 
 Documentation-only changes need links/anchors and `git diff --check`; use the
 repository documentation generator where required. For implementation/release
-work, run focused checks first, then the applicable owner gates below with
-`RUSTC_WRAPPER=` and the pinned toolchain. Record unrun or failing checks.
+work, run focused checks first, then the applicable owner gates below through
+the serialized Cargo wrapper and pinned toolchain. Keep the global `sccache`
+wrapper. Record unrun or failing checks.
 
 ```sh
-export RUSTC_WRAPPER= CARGO_BUILD_JOBS=6
-cargo check  --workspace --all-targets
-cargo clippy --workspace --all-targets -- -D warnings
-cargo test   --workspace
+scripts/build/rust/cargo-serial.sh check  --workspace --all-targets
+scripts/build/rust/cargo-serial.sh clippy --workspace --all-targets -- -D warnings
+scripts/build/rust/cargo-serial.sh test   --workspace
 cargo deny check
 cargo +nightly-2026-05-17 fmt --check
 git diff --check

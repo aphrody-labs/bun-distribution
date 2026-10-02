@@ -71,7 +71,7 @@ export interface SandboxTransportOptions {
 
 /** Authenticated sandbox WebSocket with bounded reconnect and queued input. */
 export function sandboxTransport(
-  wasm: WasmApi,
+  wasm: Pick<WasmApi, "resize_frame">,
   url: string,
   token: string,
   options: SandboxTransportOptions = {},
