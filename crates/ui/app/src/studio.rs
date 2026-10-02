@@ -226,3 +226,103 @@ pub async fn studio_corpus_ask(question: String) -> Value {
     };
     corpus().ask_json(&question, &env).await
 }
+
+/// Google OAuth "installed app" loopback flow with the existing Aphrody OAuth client
+/// (`~/.aphrody/private/google/aphrody-oauth-client.json`). The browser asks for consent once; the
+/// tokens are kept in the private store (`drive-oauth-token.json`, mode 0600) and returned so the
+/// Drive daemon can mount the folder (`volumes.add_cloud`, OpenDAL `gdrive`).
+#[tauri::command]
+pub async fn studio_google_drive_authorize(app: tauri::AppHandle, window: tauri::WebviewWindow) -> Result<Value, String> {
+    use tauri_plugin_opener::OpenerExt;
+    use tokio::io::{AsyncReadExt, AsyncWriteExt};
+    main_window_only(&window)?;
+    let home = std::env::var_os("HOME").map(std::path::PathBuf::from).ok_or("HOME absent")?;
+    let private = home.join(".aphrody/private/google");
+    let client: Value = serde_json::from_str(
+        &std::fs::read_to_string(private.join("aphrody-oauth-client.json"))
+            .map_err(|error| format!("client OAuth Google introuvable : {error}"))?,
+    )
+    .map_err(|error| format!("client OAuth illisible : {error}"))?;
+    let installed = &client["installed"];
+    let field = |name: &str| {
+        installed[name].as_str().map(str::to_owned).ok_or_else(|| format!("client OAuth : `{name}` absent"))
+    };
+    let (client_id, client_secret) = (field("client_id")?, field("client_secret")?);
+    let (auth_uri, token_uri) = (field("auth_uri")?, field("token_uri")?);
+
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.map_err(|error| error.to_string())?;
+    let redirect = format!("http://localhost:{}", listener.local_addr().map_err(|e| e.to_string())?.port());
+    let state = format!("{:x}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map_err(|e| e.to_string())?.as_nanos());
+    let mut consent = reqwest::Url::parse(&auth_uri).map_err(|error| error.to_string())?;
+    consent
+        .query_pairs_mut()
+        .append_pair("client_id", &client_id)
+        .append_pair("redirect_uri", &redirect)
+        .append_pair("response_type", "code")
+        .append_pair("scope", "https://www.googleapis.com/auth/drive")
+        .append_pair("access_type", "offline")
+        .append_pair("prompt", "consent")
+        .append_pair("state", &state);
+    app.opener().open_url(consent.as_str(), None::<&str>).map_err(|error| error.to_string())?;
+
+    let accept = async {
+        let (mut stream, _) = listener.accept().await.map_err(|error| error.to_string())?;
+        let mut buffer = vec![0_u8; 8192];
+        let read = stream.read(&mut buffer).await.map_err(|error| error.to_string())?;
+        let request = String::from_utf8_lossy(&buffer[..read]).into_owned();
+        let target = request.split_whitespace().nth(1).unwrap_or("/").to_owned();
+        let page = "<!doctype html><meta charset=utf-8><title>Aphrody</title><p>Autorisation reçue, vous pouvez revenir dans Aphrody.</p>";
+        let _ = stream
+            .write_all(format!("HTTP/1.1 200 OK\r\ncontent-type: text/html; charset=utf-8\r\ncontent-length: {}\r\nconnection: close\r\n\r\n{page}", page.len()).as_bytes())
+            .await;
+        Ok::<String, String>(target)
+    };
+    let target = tokio::time::timeout(std::time::Duration::from_secs(300), accept)
+        .await
+        .map_err(|_| "délai d'autorisation Google dépassé (5 min)".to_string())??;
+    let url = reqwest::Url::parse(&format!("{redirect}{target}")).map_err(|error| error.to_string())?;
+    let query: std::collections::HashMap<String, String> = url.query_pairs().into_owned().collect();
+    if query.get("state") != Some(&state) {
+        return Err("réponse OAuth refusée : état inattendu".into());
+    }
+    if let Some(error) = query.get("error") {
+        return Err(format!("autorisation Google refusée : {error}"));
+    }
+    let code = query.get("code").ok_or("réponse OAuth sans code")?;
+    let tokens: Value = reqwest::Client::new()
+        .post(&token_uri)
+        .form(&[
+            ("code", code.as_str()),
+            ("client_id", client_id.as_str()),
+            ("client_secret", client_secret.as_str()),
+            ("redirect_uri", redirect.as_str()),
+            ("grant_type", "authorization_code"),
+        ])
+        .send()
+        .await
+        .map_err(|error| format!("échange du code : {error}"))?
+        .json()
+        .await
+        .map_err(|error| format!("réponse de jeton invalide : {error}"))?;
+    let access_token = tokens["access_token"].as_str().ok_or_else(|| format!("jeton absent : {tokens}"))?;
+    let refresh_token = tokens["refresh_token"].as_str().ok_or("refresh_token absent (consentement hors ligne refusé)")?;
+    let stored = serde_json::json!({
+        "access_token": access_token,
+        "refresh_token": refresh_token,
+        "scope": tokens["scope"],
+        "obtained_at": std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map_err(|e| e.to_string())?.as_secs(),
+    });
+    let path = private.join("drive-oauth-token.json");
+    std::fs::write(&path, serde_json::to_vec_pretty(&stored).map_err(|e| e.to_string())?).map_err(|error| error.to_string())?;
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o600)).map_err(|error| error.to_string())?;
+    }
+    Ok(serde_json::json!({
+        "access_token": access_token,
+        "refresh_token": refresh_token,
+        "client_id": client_id,
+        "client_secret": client_secret,
+    }))
+}

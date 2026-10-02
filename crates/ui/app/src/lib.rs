@@ -838,6 +838,7 @@ pub fn run() {
             studio::studio_corpus_info,
             studio::studio_corpus_search,
             studio::studio_corpus_ask,
+            studio::studio_google_drive_authorize,
             koharu::koharu_rpc,
             shenron::aphrody_shenron_chat,
             aphrody_meta,

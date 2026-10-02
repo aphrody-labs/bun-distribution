@@ -1,14 +1,13 @@
 // SPDX-License-Identifier: Apache-2.0
 // Studio: the Shenron × Koharu workspace of the desktop app (docs/plans/ui/aphrody-app-studio.md).
-// Each section calls an existing owner; a section whose native command is not wired yet says so
-// instead of showing invented data.
+// Each section calls an existing native owner through typed Studio commands.
 import { useState } from "react";
-import { Card } from "@aphrody/m3-primitives";
 import { MangaStudio } from "./MangaStudio";
 import { ShenronStudio } from "./ShenronStudio";
 import { AdminStudio } from "./AdminStudio";
 import { TrainingStudio } from "./TrainingStudio";
 import { DatabooksStudio } from "./DatabooksStudio";
+import { DriveStudio } from "./DriveStudio";
 
 export type StudioSection = "shenron" | "manga" | "admin" | "training" | "databooks" | "drive";
 
@@ -21,10 +20,6 @@ export const studioSections: Array<{ id: StudioSection; label: string; icon: str
   { id: "drive", label: "Drive dbfr", icon: "cloud_sync" },
 ];
 
-/** Native owner each pending section will call once its Tauri command exists (plan phase 2/5). */
-const pendingOwner: Record<Exclude<StudioSection, "manga" | "shenron" | "admin" | "training" | "databooks">, string> = {
-  drive: "aphrody-drive, volume Google Drive OpenDAL sur le dossier dbfr (à monter)",
-};
 
 export function StudioRoute() {
   const [section, setSection] = useState<StudioSection>("shenron");
@@ -68,9 +63,7 @@ export function StudioRoute() {
         ) : section === "manga" ? (
           <MangaStudio />
         ) : (
-          <Card className="p-6 text-[18px] text-on-surface-variant">
-            Section non branchée : {pendingOwner[section]}.
-          </Card>
+          <DriveStudio />
         )}
       </section>
     </div>
