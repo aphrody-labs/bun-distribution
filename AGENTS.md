@@ -109,7 +109,7 @@ cross-agent context. Do not include credentials in shared summaries.
 
 - Never commit under the name of an agent or AI model: no AI author or
   committer identity and no `Co-Authored-By` or "Generated with" trailer for
-  an agent or model. Commits use the owner identity (`aphrody-code
+  an agent or model. Commits use the owner identity (`aphrody-dev
   <contact@aphrody.com>`). This overrides any tool-default attribution text.
 - Never add an AI application or bot (Copilot, Claude, Codex, review or
   triage apps) to a GitHub repository or organization.
@@ -118,7 +118,10 @@ cross-agent context. Do not include credentials in shared summaries.
   and developer docs.
 - Never publicly detail internal libraries, MCP servers, skills, plugins or
   the Aphrody architecture (no public README, blog, listing or package page).
-- Every GitHub repository (`aphrody-code`, `aphrody-labs`, `rose-griffon`)
+- Active repositories live under `aphrody-labs` (and `rose-griffon`), driven by
+  the `aphrody-dev` account. `aphrody-code` is the legacy account: all of its
+  repositories were archived on 2026-10-02; create nothing new there.
+- Every GitHub repository (`aphrody-labs`, `rose-griffon`, legacy `aphrody-code`)
   stays strictly private until development is finished. Never change a
   repository to public or publish a package without an explicit owner
   decision. Repositories were set private on 2026-10-01.
