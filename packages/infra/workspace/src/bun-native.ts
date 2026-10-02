@@ -254,10 +254,14 @@ export async function runBunNative(
       ...(profile === "release" ? ["--release"] : []),
       ...(features.length ? ["--features", features.join(",")] : []),
     ];
+    const serialScript = join(repo, "scripts/build/rust/cargo-serial.sh");
+    if (!existingArtifact && !existsSync(serialScript))
+      throw new Error(`Cargo serialization wrapper missing: ${serialScript}`);
+    const serializedCommand = ["bash", serialScript, ...command.slice(1)];
     if (!existingArtifact) console.log(`[bun-native] ${command.join(" ")}`);
     const { stdout: messages, code } = existingArtifact
       ? { stdout: "", code: 0 }
-      : await execute(command, repo, signal, process.env, true);
+      : await execute(serializedCommand, repo, signal, process.env, true);
     if (code !== 0) return code;
     const filename = `${process.platform === "win32" ? "" : "lib"}aphrody_ffi.${suffix}`;
     const artifact = existingArtifact

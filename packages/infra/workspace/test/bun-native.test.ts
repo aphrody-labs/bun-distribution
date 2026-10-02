@@ -28,6 +28,9 @@ async function fixture() {
   const consumer = join(root, "packages/interop/native");
   await mkdir(join(ffi, "src"), { recursive: true });
   await mkdir(join(consumer, "src"), { recursive: true });
+  const serialScript = join(root, "scripts/build/rust/cargo-serial.sh");
+  await mkdir(dirname(serialScript), { recursive: true });
+  await cp(join(import.meta.dir, "../../../../scripts/build/rust/cargo-serial.sh"), serialScript);
   await writeFile(
     join(root, "Cargo.toml"),
     '[workspace]\nresolver="3"\nmembers=["crates/interop/ffi"]\n',
@@ -80,6 +83,20 @@ test("native builder rejects legacy/unknown options without touching a source", 
       "bun-native: unknown argument --root\nusage: bun-native [--root=<monorepo>] [--package-root=<consumer>] [--debug] [--gpu] [--offline] [--unlocked] [--stage-existing=<debug-artifact>] [--artifact-sha256=<hex>]\n",
     code: 2,
   });
+});
+
+test("native builder fails before build when the serialization wrapper is absent", async () => {
+  const { root } = await fixture();
+  try {
+    await rm(join(root, "scripts/build/rust/cargo-serial.sh"));
+    const result = await run([`--root=${root}`, "--debug", "--offline", "--unlocked"]);
+    expect(result.code).toBe(1);
+    expect(result.stderr).toContain("Cargo serialization wrapper missing");
+    expect(result.stdout).not.toContain("[bun-native]");
+    expect(await Bun.file(join(root, "target/debug/libaphrody_ffi.so")).exists()).toBe(false);
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
 });
 
 test("native builder requires the aggregate monorepo owner", async () => {
@@ -141,7 +158,7 @@ test.skipIf(process.platform !== "linux")(
     if (process.argv[2] === "metadata") { console.log(${JSON.stringify(JSON.stringify(metadata))}); }
     else {
       const child = Bun.spawn([process.execPath, "-e", "setInterval(() => {}, 1000)"], { stdout: "ignore", stderr: "ignore" });
-      await Bun.write(${JSON.stringify(marker)}, JSON.stringify({ cargo: process.pid, descendant: child.pid, wrapper: process.env.RUSTC_WRAPPER }));
+      await Bun.write(${JSON.stringify(marker)}, JSON.stringify({ cargo: process.pid, descendant: child.pid, wrapper: process.env.RUSTC_WRAPPER, jobs: process.env.CARGO_BUILD_JOBS, incremental: process.env.CARGO_INCREMENTAL }));
       setInterval(() => {}, 1000);
     }
   `,
@@ -159,9 +176,13 @@ test.skipIf(process.platform !== "linux")(
         stderr: "pipe",
       },
     );
-    let descendants: { cargo: number; descendant: number; wrapper: string } | undefined;
+    let descendants:
+      | { cargo: number; descendant: number; wrapper: string; jobs: string; incremental: string }
+      | undefined;
     try {
       descendants = JSON.parse(await waitForMarker(marker, Date.now() + 10_000));
+      expect(descendants?.jobs).toBe(process.env.APHRODY_CARGO_JOBS ?? "6");
+      expect(descendants?.incremental).toBe("0");
       child.kill("SIGTERM");
       const [stdout, stderr, code] = await Promise.all([
         new Response(child.stdout).text(),
