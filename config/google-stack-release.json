@@ -9,7 +9,18 @@
   },
   "artifacts": {
     "rust": "aphrody-google",
+    "rustCrates": [
+      "aphrody-google",
+      "aphrody-gemini-runtime",
+      "aphrody-gemini-web",
+      "aphrody-antigravity",
+      "aphrody-model-antigravity",
+      "aphrody-notebooklm",
+      "aphrody-google-mcp",
+      "aphrody-gcs"
+    ],
     "bun": "@aphrody/google",
+    "pythonSdk": "google-antigravity",
     "python": "aphrody.google",
     "kernel": "aphrody-kernel mcp"
   },
@@ -29,5 +40,10 @@
     "source": "origin/main",
     "strategy": "fetch-verify-build-install",
     "rollback": "previous-version"
+  },
+  "domain": {
+    "rust": "crates/google",
+    "bun": "packages/google",
+    "python": "packages/google/antigravity-sdk-python"
   }
 }

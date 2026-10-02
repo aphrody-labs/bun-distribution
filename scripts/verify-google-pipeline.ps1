@@ -131,10 +131,22 @@ if ($uvVersionOutput -notmatch "\b$([regex]::Escape($pythonUvVersion))\b") {
 }
 
 $pwsh = (Get-Command pwsh -ErrorAction Stop).Source
-Invoke-OwnerCommand 'Rust aphrody-google tests (serialized)' $pwsh @(
-    '-NoLogo', '-NoProfile', '-NonInteractive', '-File', $cargoWrapper,
-    'test', '--locked', '-p', 'aphrody-google'
-) $AphrodyRoot
+# Every crate of the Google domain (crates/google/*) builds and tests on its own: one `-p` per crate,
+# so a crate that silently relies on a sibling's features fails here.
+$googleCrates = $cargoMetadata.packages |
+    Where-Object { [IO.Path]::GetFullPath($_.manifest_path).StartsWith([IO.Path]::GetFullPath((Join-Path $AphrodyRoot 'crates/google'))) } |
+    ForEach-Object { $_.name } | Sort-Object
+if ($googleCrates.Count -lt 8) { throw "expected the 8 crates of crates/google, found: $($googleCrates -join ', ')" }
+foreach ($crate in $googleCrates) {
+    Invoke-OwnerCommand "Rust $crate clippy (serialized, standalone)" $pwsh @(
+        '-NoLogo', '-NoProfile', '-NonInteractive', '-File', $cargoWrapper,
+        'clippy', '--locked', '-p', $crate, '--all-targets', '--', '-D', 'warnings'
+    ) $AphrodyRoot
+    Invoke-OwnerCommand "Rust $crate tests (serialized, standalone)" $pwsh @(
+        '-NoLogo', '-NoProfile', '-NonInteractive', '-File', $cargoWrapper,
+        'test', '--locked', '-p', $crate
+    ) $AphrodyRoot
+}
 Invoke-OwnerCommand '@aphrody/google verify (tests + Bun build)' 'bun' @(
     'run', '--filter', '@aphrody/google', 'verify'
 ) $AphrodyRoot
@@ -144,6 +156,13 @@ Invoke-OwnerCommand '@aphrody/doc-ai tests' 'bun' @(
 Invoke-OwnerCommand '@aphrody/doc-ai typecheck' 'bun' @(
     'run', '--filter', '@aphrody/doc-ai', 'typecheck'
 ) $AphrodyRoot
+Invoke-OwnerCommand 'Python google-antigravity SDK builds as a standalone wheel' 'uv' @(
+    'build', '--wheel', '--out-dir', (Join-Path ([IO.Path]::GetTempPath()) 'aphrody-google-wheels'),
+    (Join-Path $AphrodyRoot 'packages/google/antigravity-sdk-python')
+) $PythonRoot
+Invoke-OwnerCommand 'Python google-antigravity SDK imports' 'uv' @(
+    'run', '--locked', 'python', '-c', 'import google.antigravity'
+) $PythonRoot
 Invoke-OwnerCommand 'Python aphrody tests' 'uv' @(
     'run', '--locked', '--package', 'aphrody', 'pytest'
 ) $PythonRoot

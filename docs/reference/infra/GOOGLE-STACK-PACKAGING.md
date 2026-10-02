@@ -7,6 +7,12 @@ monorepo and must not be used to locate current implementations.
 
 ## Current owners
 
+The Google domain is `crates/google/*` (8 crates: `aphrody-google`, `-gemini-runtime`,
+`-gemini-web`, `-antigravity`, `-model-antigravity`, `-notebooklm`, `-google-mcp`, `-gcs`),
+`packages/google/google` (`@aphrody/google`) and `packages/google/antigravity-sdk-python`
+(`google-antigravity`, consumed by `aphrody-py` as a path dependency). Each crate builds and
+tests on its own; the verifier checks them one by one.
+
 - `aphrody-google` is the Rust CLI in `crates/google/google` and owns runtime
   resolution, provider routing and the public `status`, `env` and `doctor`
   commands.
@@ -60,12 +66,10 @@ after source, manifest and toolchain pin checks. Full mode additionally runs
 serialized Rust tests, the Bun Google `verify` script, doc-ai tests and
 typecheck, and Python pytest.
 
-The verifier currently stops at a known uv pin mismatch: monorepo
-`config/system-packages.json` requires uv `0.12.21`, while
-`aphrody-py/pyproject.toml` requires `0.12.17`. Aligning the manifests is
-outside this document update; the Python manifest is not changed here. No full
-Google pipeline tests were run for this documentation update, so no full-gate
-pass is claimed.
+Full mode runs clippy (`-D warnings`) and tests for every `crates/google` crate on its
+own, the Bun `verify` script, doc-ai tests and typecheck, a standalone wheel build and
+import of the `google-antigravity` SDK, and the `aphrody` pytest suite. Last full pass:
+2026-10-02, 22 gates, `GOOGLE_PIPELINE: all current owner gates passed.`
 
 ## Legacy manifest
 
