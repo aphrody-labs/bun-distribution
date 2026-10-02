@@ -183,3 +183,46 @@ pub async fn studio_shenron_train_start(
     });
     Ok(())
 }
+
+/// The offline Shenron corpus (wiki, databooks, manga, lore) owned by `aphrody-rag::dragonball`,
+/// loaded once per process.
+fn corpus() -> &'static aphrody_rag::dragonball::LocalCorpus {
+    static CORPUS: std::sync::OnceLock<aphrody_rag::dragonball::LocalCorpus> = std::sync::OnceLock::new();
+    CORPUS.get_or_init(|| aphrody_rag::dragonball::LocalCorpus::load_with(&aphrody_rag::dragonball::process_env))
+}
+
+/// Size of the local Shenron corpus.
+#[tauri::command]
+pub fn studio_corpus_info() -> Value {
+    serde_json::json!({ "documents": corpus().len() })
+}
+
+/// Search the local Shenron corpus (kind filter e.g. `databook`, `manga`, `wiki`).
+#[tauri::command]
+pub fn studio_corpus_search(
+    query: String,
+    limit: Option<usize>,
+    kind: Option<String>,
+    lang: Option<String>,
+) -> Value {
+    let options = aphrody_rag::dragonball::LocalSearchOptions { limit, lang, entity: None, kind };
+    corpus().search_json(&query, &options)
+}
+
+/// Grounded answer from the local corpus; uses the desktop's local chat model when one is ready.
+#[tauri::command]
+pub async fn studio_corpus_ask(question: String) -> Value {
+    use aphrody_llama_server::{Role, discover_running};
+    let local = discover_running(Role::Chat).filter(|state| state.ready);
+    let env = move |name: &str| -> Option<String> {
+        if let Some(state) = &local {
+            match name {
+                "APHRODY_AI_CHAT_BASE_URL" => return Some(state.base_url()),
+                "APHRODY_AI_CHAT_MODEL" => return Some(state.alias.clone()),
+                _ => {},
+            }
+        }
+        aphrody_rag::dragonball::process_env(name)
+    };
+    corpus().ask_json(&question, &env).await
+}

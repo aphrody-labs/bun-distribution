@@ -852,6 +852,7 @@ dependencies = [
  "aphrody-llama-server",
  "aphrody-local-ai",
  "aphrody-native",
+ "aphrody-rag",
  "aphrody-shell-tauri",
  "aphrody-sprite-sheet",
  "aphrody-subsystem",

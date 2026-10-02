@@ -149,3 +149,28 @@ export const training = {
     return window.__TAURI__.event.listen("studio://train", (event) => handler(event.payload as TrainEvent));
   },
 };
+
+export interface CorpusHit {
+  rowid: string;
+  kind: string;
+  title: string;
+  url: string;
+  snippet: string;
+  score: number;
+  lang: string;
+  originSourceId: string;
+  entity?: string;
+}
+
+/** Offline Shenron corpus (aphrody-rag::dragonball::LocalCorpus) through the Studio commands. */
+export const corpus = {
+  info: () => studio<{ documents: number }>("studio_corpus_info"),
+  search: (query: string, options: { limit?: number; kind?: string; lang?: string } = {}) =>
+    studio<{ results?: CorpusHit[]; hits?: CorpusHit[]; [key: string]: unknown }>("studio_corpus_search", {
+      query,
+      limit: options.limit ?? 20,
+      kind: options.kind ?? null,
+      lang: options.lang ?? null,
+    }),
+  ask: (question: string) => studio<Record<string, unknown>>("studio_corpus_ask", { question }),
+};
