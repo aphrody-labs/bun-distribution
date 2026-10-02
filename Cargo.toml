@@ -138,7 +138,9 @@ aphrody-ssh = { path = "crates/infra/ssh", version = "0.1.0", features = [] }
 aphrody-stdio-capture = { path = "crates/os/stdio-capture", version = "1.0.0-canary", features = [] }
 aphrody-supervisor = { path = "crates/ai/supervisor", version = "1.0.0", features = [] }
 aphrody-shell-web = { path = "crates/shell/web", version = "1.0.0-canary", features = [] }
+aphrody-shell-sandbox-host = { path = "crates/shell/aphrody-shell-sandbox-host", version = "1.0.0-canary", features = [] }
 aphrody-shell-tauri = { path = "crates/shell/tauri", version = "1.0.0-canary", features = [] }
+aphrody-shell-sandbox-host-e2b = { path = "crates/shell/aphrody-shell-sandbox-host-e2b", version = "1.0.0-canary", features = [] }
 aphrody-shell-session = { path = "crates/shell/session", version = "1.0.0-canary", features = [] }
 aphrody-shell-vfs = { path = "crates/shell/vfs", version = "1.0.0-canary", features = [] }
 aphrody-shell-vfs-opfs = { path = "crates/shell/aphrody-shell-vfs-opfs", version = "1.0.0-canary", features = [] }

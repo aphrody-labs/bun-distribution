@@ -2568,6 +2568,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "aphrody-shell-sandbox-host-e2b"
+version = "1.0.0-canary"
+dependencies = [
+ "aphrody-shell-sandbox-host",
+ "aphrody-shell-session",
+ "base64 0.23.1",
+ "reqwest 0.13.5",
+ "rustls",
+ "serde_json",
+ "tokio",
+]
+
+[[package]]
 name = "aphrody-shell-session"
 version = "1.0.0-canary"
 

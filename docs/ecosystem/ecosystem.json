@@ -987,6 +987,13 @@
           "features": []
         },
         {
+          "name": "aphrody-shell-sandbox-host-e2b",
+          "path": "crates/shell/aphrody-shell-sandbox-host-e2b",
+          "description": "E2B remote sandbox adapter for Aphrody shell sessions",
+          "bins": [],
+          "features": []
+        },
+        {
           "name": "aphrody-shell-session",
           "path": "crates/shell/session",
           "description": "Transport-neutral shell session and engine traits (input bytes in, output bytes out) with a scripted fake engine.",
@@ -15544,7 +15551,7 @@
     "aphrodyRepos": 3,
     "experimentRepos": 0,
     "sharedRepos": 0,
-    "crates": 265,
+    "crates": 266,
     "binaries": 89,
     "bunPackages": 102,
     "pythonPackages": 9,

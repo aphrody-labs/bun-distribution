@@ -18,7 +18,8 @@ WASM release build, six Bun tests, TypeScript typecheck and real Tauri LOCAL/REM
 | WASM utilities | `aphrody-shell-wasm-utils` | T7: 16 VFS-backed commands with declared `own` source; pinned uutils 0.12.0 golden fixtures pass; native and wasm32 checks pass | native, wasm32 |
 | TS client | `@aphrody/shell-web` (WebSocket, Tauri Channel, OPFS worker, sandbox, local transports) | worker and sandbox paths pass Bun tests; OPFS worker passes real Chromium; sandbox passes a live authenticated PTY round trip. Reconnect sends a stable session ID, but the native PTY server ends sessions on disconnect, so live resume is still open. | web |
 | PTY + WebSocket server | `aphrody-terminal-backend` (auth, Origin/Host, session/idle/frame/output limits) | real, tested | native only |
-| Sandbox host | `aphrody-shell-sandbox-host` (`MockHost`, `LocalPtyHost`) | T11 contract and shared conformance pass; native PTY and live WebSocket round trips pass; no cloud provider yet | Linux tested, wasm32 and Windows GNU checked |
+| Sandbox host | `aphrody-shell-sandbox-host` (`MockHost`, `LocalPtyHost`) | T11 contract and shared conformance pass; native PTY and live WebSocket round trips pass | Linux tested, wasm32 and Windows GNU checked |
+| Cloud sandbox | `aphrody-shell-sandbox-host-e2b` | T12 adapter compiles and protocol framing tests pass; live E2B conformance is gated and has not run because credentials are unavailable | native |
 | Tauri plugin | `aphrody-shell-tauri` (`open`, `open_channel`, `write`, `resize`, `close`) | real, tested, wired in `crates/ui/app` | native (Tauri 3 alpha.3) |
 | Webview e2e | `aphrody-shell-tauri-e2e` + `scripts/build/shell/tauri-e2e.sh` | passes on WebKitGTK/Broadway | Linux |
 | Nushell | `aphrody-nu` (nu 0.115.1) | real | native only; no upstream wasm32 target |
@@ -27,8 +28,8 @@ WASM release build, six Bun tests, TypeScript typecheck and real Tauri LOCAL/REM
 
 ## Not built yet (wave B-D of the plan)
 
-Cloud adapter (T12), native/server sandbox session resume (T8) and UI transport
-selection (T13). The [T9 Nushell wasm spike](../../research/shell/nushell-wasm.md)
+Live cloud adapter qualification (T12), native/server sandbox session resume (T8) and UI
+transport selection (T13). The [T9 Nushell wasm spike](../../research/shell/nushell-wasm.md)
 passed compile checks but deferred browser integration.
 Staying native on purpose: Nushell, TUI, PTY.
 

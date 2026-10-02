@@ -7,7 +7,7 @@ from the checkout. Companion files: [CLI.md](CLI.md) (exact command trees), [MCP
 (every MCP tool), [ecosystem.json](ecosystem.json) (machine-readable). Check here before writing new
 code: reuse an existing crate, command or tool instead of duplicating it.
 
-Totals: 3 repositories (3 aphrody, 0 shared, 0 experiments), 265 crates, 89 binaries, 102 Bun packages, 9 uv packages, 1280 CLI commands, 440 MCP tools.
+Totals: 3 repositories (3 aphrody, 0 shared, 0 experiments), 266 crates, 89 binaries, 102 Bun packages, 9 uv packages, 1280 CLI commands, 440 MCP tools.
 
 | Repository | Kind | Role |
 | --- | --- | --- |
@@ -19,7 +19,7 @@ Totals: 3 repositories (3 aphrody, 0 shared, 0 experiments), 265 crates, 89 bina
 
 Canonical Rust/Bun monorepo
 
-### Crates (191)
+### Crates (192)
 
 | Crate | Path | Description | Binaries | Features |
 | --- | --- | --- | --- | --- |
@@ -132,6 +132,7 @@ Canonical Rust/Bun monorepo
 | `aphrody-settings` | crates/os/settings | Hierarchical settings loader (user / project / local / env) with deep JSON merge, dotted-path access, and minimum JSON-Schema validation. |  |  |
 | `aphrody-shell` | crates/shell/shell | Canonical Aphrody shell surface: Nushell, native PTY/WebSocket transport and Ratatui UI. |  |  |
 | `aphrody-shell-sandbox-host` | crates/shell/aphrody-shell-sandbox-host | Transport-neutral sandbox host contract and local shell host adapters. |  |  |
+| `aphrody-shell-sandbox-host-e2b` | crates/shell/aphrody-shell-sandbox-host-e2b | E2B remote sandbox adapter for Aphrody shell sessions |  |  |
 | `aphrody-shell-session` | crates/shell/session | Transport-neutral shell session and engine traits (input bytes in, output bytes out) with a scripted fake engine. |  |  |
 | `aphrody-shell-tauri` | crates/shell/tauri | Tauri 3 plugin exposing native PTY shell sessions to the aphrody-shell-web webview client. |  |  |
 | `aphrody-shell-tauri-e2e` | crates/shell/tauri-e2e | Minimal real Tauri app (wry webview) that runs the WASM shell through the aphrody-shell-tauri plugin. | `aphrody-shell-tauri-e2e` |  |

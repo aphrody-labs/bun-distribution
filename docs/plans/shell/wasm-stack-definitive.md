@@ -188,11 +188,11 @@ serially.
   live test with `APHRODY_SHELL_LIVE_BIN`.
 
 ### T12. Cloud provider adapter (first one only)
-- Owner: `crates/shell/sandbox-host-<provider>/` (name fixed when chosen), `docs/decisions/shell/sandbox-provider.md` (not in repo).
+- Owner: `crates/shell/aphrody-shell-sandbox-host-e2b/`, `docs/decisions/shell/sandbox-provider.md`.
 - Deps: T10, T11. Decision first: pick one provider from {Cloudflare Containers/Sandbox, E2B, Fly Machines, Firecracker on
   owned hosts}; use `aphrody:deploy` and `docs` skills for current APIs; record cost, cold start and licence. Secrets stay
   in the existing protected stores; never in the repo.
-- Test: the T11 conformance suite against the real provider, gated by an env flag so default CI skips it and records the skip.
+- Test: the T11 conformance suite against the real provider, gated by `APHRODY_E2B_LIVE=1` and credentials so default CI skips it and records the skip. The real-provider gate is still outstanding.
 
 ### T13. UI wiring (renderer consumers)
 - Owner: `crates/ui/app` shell panel files only (claim the exact files; the UI owner's other paths untouched).
