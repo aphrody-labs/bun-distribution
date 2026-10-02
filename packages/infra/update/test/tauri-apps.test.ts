@@ -18,7 +18,7 @@ import {
   schemaUrl,
   tauriCargoDeps,
   workspaceState,
-} from "../src/tauri-apps.ts";
+} from "../src/tauri/apps.ts";
 
 const rootCargo = `[workspace]
 members = ["crates/ui/*", "crates/koharu/*"]

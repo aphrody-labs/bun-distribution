@@ -19,7 +19,7 @@ import {
   gateFromRegistry,
   parseRegistry,
   type Registry,
-} from "./tauri-apps.ts";
+} from "./apps.ts";
 
 const USER_AGENT = "aphrody-tauri-sync (https://github.com/aphrody-labs/aphrody)";
 
@@ -763,7 +763,7 @@ export async function applyReport(
     const gate = registry ? gateFromRegistry(registry) : { cargoPackages: [], generatedPaths: [] };
     const gates: string[][] = [
       ...(gate.cargoPackages.length > 0
-        ? [["cargo", "check", ...gate.cargoPackages.flatMap((pkg) => ["-p", pkg])]]
+        ? [["bash", "scripts/build/rust/cargo-serial.sh", "check", ...gate.cargoPackages.flatMap((pkg) => ["-p", pkg])]] // repo rule: Cargo only through the serialized wrapper
         : []),
       ...config.gate.bun.map((command) => command.split(" ")),
     ];

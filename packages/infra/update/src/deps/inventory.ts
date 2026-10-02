@@ -162,7 +162,7 @@ async function osv(deps: Dep[]): Promise<Map<string, string[]>> {
   return out;
 }
 
-function lsRemote(url: string): { head?: string; latestTag?: string } {
+export function lsRemote(url: string): { head?: string; latestTag?: string } {
   const r = spawnSync("git", ["ls-remote", "--tags", "--refs", url, "HEAD"], { encoding: "utf8", timeout: 60_000, env: { ...process.env, GIT_TERMINAL_PROMPT: "0" } });
   if (r.status !== 0) return {};
   let head: string | undefined;

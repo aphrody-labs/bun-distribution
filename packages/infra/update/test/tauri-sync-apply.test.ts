@@ -2,8 +2,8 @@ import { afterAll, expect, test } from "bun:test";
 import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
-import { schemaTag, schemaUrl } from "../src/tauri-apps.ts";
-import { applyReport, parseConfig, summarize, type Row } from "../src/tauri-sync.ts";
+import { schemaTag, schemaUrl } from "../src/tauri/apps.ts";
+import { applyReport, parseConfig, summarize, type Row } from "../src/tauri/sync.ts";
 
 const dirs: string[] = [];
 afterAll(async () => {

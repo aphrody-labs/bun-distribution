@@ -5,7 +5,7 @@ import {
   parseArgs,
   parseManifest,
   type Manifest,
-} from "../src/upstream-sources.ts";
+} from "../src/sources/restore.ts";
 
 const base = {
   schemaVersion: 1,

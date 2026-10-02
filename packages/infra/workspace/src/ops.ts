@@ -221,13 +221,13 @@ if (operation === "tauri") {
   process.exit(await (await import("./tauri.ts")).runTauri(rest));
 }
 if (operation === "tauri-apps") {
-  process.exit(await (await import("./tauri-apps.ts")).runTauriApps(rest));
+  process.exit(await (await import("../../update/src/tauri/apps.ts")).runTauriApps(rest));
 }
 if (operation === "tauri-sync") {
-  process.exit(await (await import("./tauri-sync.ts")).runTauriSync(rest));
+  process.exit(await (await import("../../update/src/tauri/sync.ts")).runTauriSync(rest));
 }
 if (operation === "upstream-sources") {
-  process.exit(await (await import("./upstream-sources.ts")).runUpstreamSources(rest));
+  process.exit(await (await import("../../update/src/sources/restore.ts")).runUpstreamSources(rest));
 }
 if (operation === "deps-sync") {
   process.exit(await (await import("../../update/src/deps/sync.ts")).runDepsSync(rest));

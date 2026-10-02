@@ -147,7 +147,6 @@ export type Change = { ecosystem: string; name: string; from: string; to: string
 export type Journal = { seen: Record<string, string>; runs: { date: string; changes: Change[] }[] };
 
 const today = () => new Date().toISOString().slice(0, 10);
-const FAMILY = /^(tauri(-[a-z-]+)?|wry|tao)$/;
 
 // ---------------------------------------------------------------- plan / apply
 
@@ -172,29 +171,19 @@ async function currentVersions(c: Ctx): Promise<Record<string, string>> {
 }
 
 async function plan(c: Ctx): Promise<Change[]> {
-  const changes: Change[] = [];
-  // Tools (bun, uv, rust, nu, oxlint, oxfmt, typescript) are handled by ../tools.ts and ../pins.ts.
-  const toml = c.read("Cargo.toml");
-  const re = /^((?:tauri(?:-[a-z-]+)?|wry|tao))\s*=\s*(?:\{[^}]*version\s*=\s*)?"=?([^"]+)"/gm;
-  for (const m of toml.matchAll(re)) {
-    if (!FAMILY.test(m[1]!) || /path\s*=|git\s*=/.test(m[0])) continue;
-    const latest = await registries.crate(m[1]!, m[2]!.split(".")[0]).catch(() => undefined);
-    if (latest && cmpVersion(m[2]!, latest) < 0) changes.push({ ecosystem: "cargo", name: m[1]!, from: m[2]!, to: latest });
-  }
+  // Tools: ../tools.ts + ../pins.ts. Tauri crates/npm/mirrors/schemas: ../tauri/sync.ts (single owner, honours minimumReleaseAge).
+  const { runTauriSync } = await import("../tauri/sync.ts");
+  const tauri = await runTauriSync(["--check", "--root", c.root]);
   const outdated = c.run("bun", ["outdated", "-r"]).stdout.split("\n").filter((l) => /^\| [^-P]/.test(l)).length;
   if (!c.json) console.log(`info   bun outdated: ${outdated} rows (majors need a migration; \`bun update -r\` applies in-range only)`);
-  for (const ch of changes) console.log(`${c.apply ? "apply " : "plan  "} ${ch.ecosystem} ${ch.name} ${ch.from} -> ${ch.to}`);
-  if (!changes.length && !c.json) console.log("tools and Tauri family are current");
-  return changes;
+  return tauri === 0 ? [] : [{ ecosystem: "cargo", name: "tauri-family", from: "drift", to: "see tauri-sync report" }];
 }
 
 async function applyChanges(c: Ctx, changes: Change[]): Promise<void> {
-  let toml = c.read("Cargo.toml");
-  for (const ch of changes.filter((x) => x.ecosystem === "cargo")) {
-    const esc = ch.from.replace(/[.+]/g, "\\$&");
-    toml = toml.replace(new RegExp(`^(${ch.name}\\s*=\\s*(?:\\{[^}]*version\\s*=\\s*)?")=?${esc}"`, "m"), `$1=${ch.to}"`);
+  if (changes.length) {
+    const { runTauriSync } = await import("../tauri/sync.ts");
+    await runTauriSync(["--apply", "--root", c.root]);
   }
-  c.write("Cargo.toml", toml);
   c.run("bun", ["update", "-r"], { inherit: true });
   const j = c.journal();
   const real = changes.filter((x) => x.from !== x.to);
@@ -265,7 +254,7 @@ async function fix(c: Ctx, applyFixes: boolean, record = false): Promise<number>
   const j = c.journal();
   const lastChanged = (j.runs.at(-1)?.changes ?? []).map((x) => x.name);
   const watch = c.watch();
-  const ids = watch.libs.filter((l) => lastChanged.includes(l.name) || lastChanged.some((n) => l.ecosystem === "cargo" && FAMILY.test(n) && l.id === "tauri")).map((l) => l.id);
+  const ids = watch.libs.filter((l) => lastChanged.includes(l.name) || lastChanged.some((n) => l.ecosystem === "cargo" && /^(tauri|wry|tao)/.test(n) && l.id === "tauri")).map((l) => l.id);
   const targets = consumerTargets(c, ids);
   let output = "";
   for (const d of targets.bun) {

@@ -13,6 +13,8 @@ dev-env checks. Bun, uv and the Tauri family follow the latest published release
 | cargo | `bun run update:cargo` (`--apply`) | `cargo update --dry-run`, or the lock refresh inside manifest ranges through `cargo-serial.sh`; snapshot in `target/update/` |
 | deps | `bun run update:deps`, `aphrody-update deps <sub>` | `plan`, `apply` (Tauri family + `bun update -r`), `facts`, `fix`, `baseline`, `changelog`, `memory`, `inventory`, `run` |
 | systemd | `bun run update:systemd`, `aphrody-update systemd install\|restart` | link `config/systemd/user/*` into `~/.config/systemd/user` (differing copies are kept as `*.pre-update-<ts>`), `daemon-reload`, `try-restart` units that run bun or aphrody binaries |
+| sources | `bun run sources` (status), `sources:verify`, `sources:sync`, `bun run update:sources` (drift), `aphrody-update sources <sub>` | the one owner of `~/source` checkouts, upstream pins, forks and git state, see below |
+| tauri | `aphrody-ops tauri-sync [--check\|--apply]` (also run by `deps plan\|apply`) | the one owner of the Tauri crates, npm packages, mirrors (`packages/ui/scaffold/src/pins.ts`) and `$schema` URLs; honours `minimumReleaseAge`; its Cargo gate goes through `cargo-serial.sh` |
 | all | `bun run update:run` | tools, cargo, deps, systemd restart, then the gate |
 
 Everything except `check`, `pins` and `systemd check` is report-only until `--apply`.
@@ -49,3 +51,21 @@ repository; add a collector in `src/deps/inventory.ts` when one appears.
 - `portable-pty` stays on 0.8 (0.9.0 breaks headless Windows clients, see the desktop PTY note).
 - Verification stays with the lead through `scripts/build/rust/cargo-serial.sh`; workers never run Cargo.
 - `docs/ecosystem/CLI.md` is generated from code; do not edit it by hand.
+
+## Sources, upstreams, forks and git
+
+Manifest: `config/upstream-sources.json` (21 entries: `git` or `crate`, `pinned` or tracked, local patches with a marker
+file). The native `aphrody git source` command reads the same manifest, read only. `config/update/forks.json` lists
+the forks the repository depends on.
+
+| Command | What it does |
+| --- | --- |
+| `sources status\|verify\|sync [--apply] [--only <id>]` | restore and inspect checkouts (clone or extract, apply missing patches; never touches an existing checkout's history) |
+| `sources drift` | every pin against its remote head, newest tag or crates.io version, plus the Cargo git remotes of `Cargo.lock` (any host through `git ls-remote`) |
+| `sources forks` | each fork against its parent (GitHub compare API, or head comparison for detached forks); recorded `upstreamCommit` in `config/bun-fork.json` vs the parent head |
+| `sources repo` | local repository: branch, ahead/behind, changed paths, stashes, remotes (also printed by `check`) |
+| `sources bump [--only <id>] [--apply]` | move a pinned source to the newest head or version. A scratch clone first proves the patches still apply; a failure writes `.coord/shared/sources-bump-<id>.md` and changes nothing. `--apply` rewrites the manifest, keeps the old checkout as `<id>.pre-bump-<ts>`, restores the new one, and rolls everything back if the result is not `ok`. Then check the Cargo consumers it prints. |
+| `sources prune [--apply]` | remove the `*.pre-bump-*` checkouts |
+
+`update run` reports `sources drift` and `forks` (or restores missing checkouts with `--apply`). Bun fork procedure:
+[BUN-FORK-OPERATIONS.md](./BUN-FORK-OPERATIONS.md).

@@ -21,4 +21,6 @@ The GitHub forks API sorted by stars listed `gimnathperera/bun` first (24 stars,
 4. Use N2B findings to add Bun runtime parity cases and improve builder/test/minifier workflows with measurable changes. The current plugin only participates in `Bun.build`; Oxc format/minify/lint are separate `bun:aphrody` calls. Do not call them integrated into Bun internals until source and tests prove it.
 5. Keep BXC optional while Web is unstable. Revisit it when the Rust `aphrody-web` port has a stable owner API.
 
+`aphrody-update sources forks` prints the fork head, the parent head and whether `config/bun-fork.json`'s recorded `upstreamCommit` is stale (see [UPDATE.md](./UPDATE.md)).
+
 For each pin update, compare `git rev-parse main`, `git rev-parse upstream/main`, and the GitHub `main` head; run `bun bd test test/js/bun/resolve/aphrody.test.ts` in the fork, check the three native ABI revisions, update `config/bun-fork.json`, and validate its JSON and links. CI and release evidence must be recorded separately from local debug results.

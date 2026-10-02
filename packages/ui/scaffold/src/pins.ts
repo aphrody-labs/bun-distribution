@@ -5,9 +5,9 @@
  * `--apply`. This is the only copy; m3-next-migrate and web-to-tauri re-export it.
  */
 export const TAURI_3 = {
-  tauri: "3.0.0-alpha.3",
-  runtimeWry: "3.0.0-alpha.3",
-  build: "3.0.0-alpha.2",
+  tauri: "3.0.0-alpha.4",
+  runtimeWry: "3.0.0-alpha.4",
+  build: "3.0.0-alpha.3",
   pluginOpener: "3.0.0-alpha.2",
   jsApi: "3.0.0-alpha.2",
   jsPluginOpener: "3.0.0-alpha.1",

@@ -18,7 +18,7 @@ import {
   rewriteWorkspaceDep,
   summarize,
   type PatchSpec,
-} from "../src/tauri-sync.ts";
+} from "../src/tauri/sync.ts";
 
 const cargo = `[workspace]
 members = []
