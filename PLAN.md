@@ -72,7 +72,7 @@ routes de sites, exemples et snapshots historiques demandent une classification.
 - [x] Découplage complet de `patreon-bun` : repo autonome GitHub `rose-griffon/patreon-bun`
   désarchivé, mis à jour et poussé sur `main` (174 tests passants, build Bun natif).
   Audit NPM complété (version 1.0.3 publiée).
-- [ ] Qualifier chaque groupe de doublons restant : propriétaire, consommateurs,
+- [x] Qualifier chaque groupe de doublons restant : propriétaire, consommateurs,
   licence, nécessité de copie au packaging. Supprimer uniquement après mise à
   jour des consommateurs et vérification du packaging.
   Recensement 2026-10-03 (blobs git identiques) : 429 groupes — 271 assets
@@ -84,8 +84,11 @@ routes de sites, exemples et snapshots historiques demandent une classification.
   canoniques (`packages/ui/assets`, `packages/ui/m3-fonts`, `crates/ui/bun`),
   déjà ignorées par `.gitignore` et recopiées par `build.rs` depuis
   `ui-dist.manifest` avant l’embarquement Tauri : retirées de l’index (≈ 20 Mo),
-  fichiers conservés sur disque. Restent licences (copies par paquet, voulues),
-  assets RG/Koharu et code inter-apps à qualifier par propriétaire.
+  fichiers conservés sur disque. Chaque groupe restant est qualifié dans
+  [DUPLICATES-QUALIFICATION.md](docs/reference/workspace/DUPLICATES-QUALIFICATION.md) :
+  conservés par rôle (URL publiques, bundles, licences, gabarits, sorties de
+  build), ou copies documentaires UI/OS/Web à consolider par `docs-consolidate`
+  après régénération de l’index d’import (essai annulé, liens restaurés).
 - [x] Classer les documents historiques et corriger les liens réellement cassés
   dans la documentation active. Ne pas réécrire les preuves de migration.
   Clos 2026-10-03 : 4542 documents = 888 actifs vérifiés (liens et chemins) +
