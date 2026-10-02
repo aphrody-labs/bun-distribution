@@ -10,17 +10,29 @@ fn aphrody() -> Command {
     Command::cargo_bin("aphrody").expect("aphrody binary must be present in cargo target dir")
 }
 
+/// `aphrody` with every Shenron endpoint on a closed loopback port and no Aphrody AI profile,
+/// so the bridge probes are hermetic and always report `degraded`.
+fn offline_shenron() -> Command {
+    let mut command = aphrody();
+    command
+        .env("SHENRON_SITE_URL", "http://127.0.0.1:9")
+        .env("SHENRON_API_URL", "http://127.0.0.1:9")
+        .env("APHRODY_AI_HTTP_URL", "")
+        .env("APHRODY_SHENRON_API_URL", "")
+        .env("SHENRON_ROOT", "/nonexistent-shenron-root");
+    command
+}
+
 #[test]
 fn shenron_doctor_text_output() {
-    aphrody()
+    offline_shenron()
         .args(["shenron", "doctor"])
         .assert()
         .success()
-        .stdout(predicate::str::contains("Diagnostic du Pont Souverain Shenron"))
-        .stdout(predicate::str::contains("Dépôt Shenron"))
-        .stdout(predicate::str::contains(
-            "Conclusion : Le pont Aphrody <-> Shenron est opérationnel.",
-        ));
+        .stdout(predicate::str::contains("Shenron: degraded"))
+        .stdout(predicate::str::contains("Site /wiki/personnages:"))
+        .stdout(predicate::str::contains("Bot /api/health/check:"))
+        .stdout(predicate::str::contains("Agent Home dbfr:"));
 }
 
 #[test]
@@ -31,7 +43,7 @@ fn shenron_doctor_json_output() {
         r#"{"betterAuth":{"email":"private@example.test"},"agentKey":{"displayPrefix":"private-prefix","scopes":["private-scope"]}}"#,
     )
     .expect("write credential presence fixture");
-    let assert = aphrody()
+    let assert = offline_shenron()
         .env("APHRODY_SHENRON_HOME", home.path())
         .args(["shenron", "doctor", "--json"])
         .assert()
@@ -42,8 +54,9 @@ fn shenron_doctor_json_output() {
         .expect("shenron doctor --json should output valid JSON");
 
     assert_eq!(parsed["pillar"], "shenron_sovereign_bridge");
-    assert_eq!(parsed["status"], "operational");
-    assert!(parsed["filesystem"]["shenron_root"].is_string());
+    assert_eq!(parsed["status"], "degraded");
+    assert_eq!(parsed["site"]["reachable"], false);
+    assert_eq!(parsed["bot"]["reachable"], false);
     assert!(parsed["auth"]["configured"].as_bool().unwrap_or(false));
     assert!(parsed["auth"]["admin_credentials_present"].as_bool().unwrap_or(false));
     assert_eq!(parsed["auth"].as_object().unwrap().len(), 2);
@@ -65,22 +78,22 @@ fn shenron_persona_prompt_output() {
 
 #[test]
 fn shenron_web_status_output() {
-    aphrody()
+    offline_shenron()
         .args(["shenron", "web", "status"])
         .assert()
         .success()
-        .stdout(predicate::str::contains("Pont Web Shenron / Aphrody Web"))
-        .stdout(predicate::str::contains("BXC Engine"));
+        .stdout(predicate::str::contains("Site Shenron: {\"reachable\":false}"))
+        .stdout(predicate::str::contains("API wiki:"));
 }
 
 #[test]
 fn shenron_infra_status_output() {
-    aphrody()
+    offline_shenron()
         .args(["shenron", "infra", "status"])
         .assert()
         .success()
-        .stdout(predicate::str::contains("Infrastructure Shenron / Dragon Ball FR"))
-        .stdout(predicate::str::contains("vps.dragonballfr.com"));
+        .stdout(predicate::str::contains("Shenron: degraded"))
+        .stdout(predicate::str::contains("Site /wiki/personnages:"));
 }
 
 #[test]
