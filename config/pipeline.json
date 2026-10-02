@@ -156,6 +156,15 @@
             "run",
             "--filter",
             "@aphrody/drive-client",
+            "lint"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@aphrody/drive-client",
             "typecheck"
           ]
         },
@@ -166,6 +175,15 @@
             "--filter",
             "@aphrody/drive-client",
             "test"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@aphrody/drive-client",
+            "build"
           ]
         },
         {

@@ -121,8 +121,10 @@ This client uses the same architecture as the Swift client:
 # Install dependencies (from the repository root)
 bun install
 
-# Typecheck (the package ships TypeScript sources, no build step)
+# Check the package and bundle its main entry points (published exports remain TypeScript sources)
 bun run typecheck
+bun run lint
+bun run build
 
 # Unit tests (src/**/__tests__)
 bun test
