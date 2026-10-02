@@ -345,8 +345,12 @@ ABI, erreurs et annulation vérifiés par des cas qui traversent les frontières
 
 Propriétaires : `crates/interop/ffi`, `packages/interop/native`, `apps/cli`.
 
-- [ ] Extraire les capacités partagées encore prises dans le CLI ; la FFI ne
+- [x] Extraire les capacités partagées encore prises dans le CLI ; la FFI ne
   doit pas dépendre de l’application pour obtenir la logique de bibliothèque.
+  Fait par Codex (498ef3b3d, docs e89e094fa) : bibliothèque `aphrody-command`
+  (52 sources déplacées, façade `apps/cli` conservée) ; la FFI n’en dépend plus
+  de l’application. 247 tests Rust, 15 Bun natifs ; check/clippy Linux
+  all-targets et WASM verts ; catalogue 63 CLI / 1280 commandes conservé.
 - [ ] Unifier découverte, chargement et durée de vie de la bibliothèque native.
 - [ ] Faire consommer ce chargeur par Shenron ; retirer les chemins legacy du
   pipeline après vérification Linux/Windows et mode développement.
