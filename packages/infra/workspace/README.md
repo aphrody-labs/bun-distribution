@@ -1,8 +1,8 @@
 # @aphrody/workspace
 
-Bun automation boundary for Aphrody Infra. From this checkout it executes the
-current Rust source through incremental Cargo; set `APHRODY_INFRA_BIN` or
-`APHRODY_INFRA_USE_INSTALLED=1` to use a verified installed binary. It does not
+Bun automation boundary for Aphrody Infra. It uses a verified installed Infra
+binary by default; `APHRODY_INFRA_BIN` selects one explicitly, and
+`APHRODY_INFRA_BUILD_FROM_SOURCE=1` opts into a source build for development. It does not
 reimplement infrastructure mutations: Rust owns services,
 Git, SSH, deployment, VPN, OVH and secrets.
 
@@ -55,7 +55,7 @@ second registry. `n2b` forwards full Node-to-Bun migrations to the Aphrody N2B
 CLI; it does not substitute the smaller read-only native scanner.
 
 `binaries` discovers every present `aphrody*` and `n2b` executable in the
-trusted local-bin and sibling workspace build outputs. `binary` dispatches only
+trusted local-bin and current workspace build outputs. `binary` dispatches only
 to one of those discovered paths; it never executes an arbitrary `PATH` entry.
 
 `packages` discovers catalogued first-party roots that declare or evidence Bun usage and carry a `bun.lock`. It uses Bun’s package manager for frozen installs, outdated dependency reporting and JSON audits. The default registry is the official npm registry; a workspace’s existing `.npmrc` or `bunfig.toml` registry remains authoritative.

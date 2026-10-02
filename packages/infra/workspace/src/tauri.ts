@@ -29,35 +29,41 @@ function parseArgs(args: string[]): { action: Action; bundles: string; repo: str
     else if (!arg.startsWith("--") && VALID_ACTIONS.includes(arg as Action)) action = arg as Action;
     else if (arg === "--help" || arg === "-h") {
       console.log(
-        "Usage: aphrody-ops tauri [check|build|run|dev|bundle] [--root <aphrody-ui>] [--bundles <bundles>]",
+        "Usage: aphrody-ops tauri [check|build|run|dev|bundle] [--root <aphrody>] [--bundles <bundles>]",
       );
       process.exit(0);
     } else throw new Error(`Unknown argument: ${arg}`);
   }
-  if (!repo) throw new Error("--root requires an aphrody-ui repository path");
+  if (!repo) throw new Error("--root requires an Aphrody monorepo path");
   return { action, bundles, repo: resolve(repo) };
+}
+
+/** Resolve only the active monorepo's desktop owners. */
+export function resolveTauriLayout(repo: string) {
+  const appDir = join(repo, "crates", "ui", "app");
+  const uiDir = join(repo, "packages", "ui", "app-ui");
+  const cargoSerial = join(repo, "scripts", "build", "rust", "cargo-serial.sh");
+  if (!existsSync(join(repo, "Cargo.toml")) || !existsSync(join(appDir, "Cargo.toml"))) {
+    throw new Error("--root must be the active Aphrody monorepo with crates/ui/app");
+  }
+  if (!existsSync(cargoSerial)) throw new Error(`serialized Cargo wrapper missing: ${cargoSerial}`);
+  return { appDir, uiDir, cargoSerial };
 }
 
 export async function runTauri(args: string[]): Promise<number> {
   const { action, bundles, repo } = parseArgs(args);
-  // Monorepo layout first (`crates/ui/app`); the legacy aphrody-ui checkout keeps `crates/aphrody-app`.
-  const appDir =
-    ["crates/ui/app", "crates/aphrody-app"]
-      .map((path) => join(repo, path))
-      .find((path) => existsSync(join(path, "Cargo.toml"))) ?? join(repo, "crates", "ui", "app");
-  // The app UI source (`@aphrody/app-ui`, restored 2026-10-02) builds into `<appDir>/ui-dist`;
-  // a checkout without it falls back to the prebuilt `ui-dist` bundle committed beside the app.
-  const uiDir = join(repo, "packages", "app-ui");
+  const { appDir, uiDir, cargoSerial } = resolveTauriLayout(repo);
   const isWindows = process.platform === "win32";
   const isLinux = process.platform === "linux";
   if (!isWindows && !isLinux) throw new Error("Aphrody desktop targets Windows and Linux");
-  const cleanEnv = { ...Bun.env, RUSTC_WRAPPER: "" };
+  // Tauri's CLI starts Cargo internally; route that child through the shared lock too.
+  const commandEnv = { ...Bun.env, CARGO: cargoSerial };
 
   function runSync(command: string[], cwd: string, errorMessage: string) {
     console.log(`[tauri] Running: ${command.join(" ")} in ${cwd}`);
     const result = Bun.spawnSync(command, {
       cwd,
-      env: cleanEnv,
+      env: commandEnv,
       stdin: "inherit",
       stdout: "inherit",
       stderr: "inherit",
@@ -75,30 +81,12 @@ export async function runTauri(args: string[]): Promise<number> {
     return host;
   }
 
-  /**
-   * Workspace that builds a sidecar: the sibling checkout when present (legacy multi-repo layout),
-   * otherwise this monorepo when its root manifest is a workspace carrying the package.
-   */
-  function sidecarWorkspace(
-    sibling: string,
-    pkg: string,
-  ): { dir: string; manifest: string } | undefined {
-    const legacy = join(repo, "..", sibling);
-    if (existsSync(join(legacy, "Cargo.toml")))
-      return { dir: legacy, manifest: join(legacy, "Cargo.toml") };
+  /** Resolve one sidecar from its current monorepo owner. */
+  function sidecarWorkspace(pkg: string, member: string): { dir: string; manifest: string } {
     const root = join(repo, "Cargo.toml");
-    if (
-      existsSync(root) &&
-      Bun.spawnSync(["cargo", "pkgid", "-p", pkg, "--manifest-path", root], {
-        cwd: repo,
-        env: cleanEnv,
-        stdout: "ignore",
-        stderr: "ignore",
-      }).exitCode === 0
-    ) {
-      return { dir: repo, manifest: root };
-    }
-    return undefined;
+    if (!existsSync(join(repo, member, "Cargo.toml")))
+      throw new Error(`sidecar package ${pkg} is missing from ${member}`);
+    return { dir: repo, manifest: root };
   }
 
   async function isFile(path: string): Promise<boolean> {
@@ -113,8 +101,8 @@ export async function runTauri(args: string[]): Promise<number> {
    * to externalBin names, as for the Drive daemon in drive/xtask) and beside the unbundled
    * desktop binary, where broker.rs resolves it before `PATH`.
    *
-   * Source: `$APHRODY_SIDECAR_SOURCE` when set (a prebuilt binary), otherwise this workspace (or the
-   * legacy sibling `../aphrody-ai`) is built with `--locked` and its target directory is read from
+   * Source: `$APHRODY_SIDECAR_SOURCE` when set (a prebuilt binary), otherwise this workspace is
+   * built with `--locked` and its target directory is read from
    * `cargo metadata`, so no checkout or target path is hard-coded.
    */
   async function stageAphrodySidecar(profile: "debug" | "release") {
@@ -122,16 +110,11 @@ export async function runTauri(args: string[]): Promise<number> {
     const suffix = host.includes("windows") ? ".exe" : "";
     let source = Bun.env.APHRODY_SIDECAR_SOURCE ?? "";
     if (!source) {
-      const workspace = sidecarWorkspace("aphrody-ai", "aphrody");
-      if (!workspace) {
-        throw new Error(
-          `the aphrody package is not in this workspace and aphrody-ai is not checked out beside it (${join(repo, "..", "aphrody-ai")}); set APHRODY_SIDECAR_SOURCE`,
-        );
-      }
+      const workspace = sidecarWorkspace("aphrody", "apps/cli");
       const { manifest } = workspace;
       const metadata = Bun.spawnSync(
         ["cargo", "metadata", "--format-version", "1", "--no-deps", "--manifest-path", manifest],
-        { cwd: workspace.dir, env: cleanEnv, stdout: "pipe", stderr: "inherit" },
+        { cwd: workspace.dir, env: commandEnv, stdout: "pipe", stderr: "inherit" },
       );
       if (metadata.exitCode !== 0)
         throw new Error("cargo metadata failed for the aphrody workspace");
@@ -140,7 +123,7 @@ export async function runTauri(args: string[]): Promise<number> {
       ).target_directory;
       runSync(
         [
-          "cargo",
+          cargoSerial,
           "build",
           "--manifest-path",
           manifest,
@@ -176,16 +159,11 @@ export async function runTauri(args: string[]): Promise<number> {
     const suffix = host.includes("windows") ? ".exe" : "";
     let source = Bun.env.KOHARU_SDK_SIDECAR_SOURCE ?? "";
     if (!source) {
-      const workspace = sidecarWorkspace("aphrody-koharu", "koharu-library");
-      if (!workspace) {
-        throw new Error(
-          `the koharu-library package is not in this workspace and aphrody-koharu is not checked out beside it (${join(repo, "..", "aphrody-koharu")}); set KOHARU_SDK_SIDECAR_SOURCE`,
-        );
-      }
+      const workspace = sidecarWorkspace("koharu-library", "crates/koharu/koharu-library");
       const { dir: koharuDir, manifest } = workspace;
       const metadata = Bun.spawnSync(
         ["cargo", "metadata", "--format-version", "1", "--no-deps", "--manifest-path", manifest],
-        { cwd: koharuDir, env: cleanEnv, stdout: "pipe", stderr: "inherit" },
+        { cwd: koharuDir, env: commandEnv, stdout: "pipe", stderr: "inherit" },
       );
       if (metadata.exitCode !== 0)
         throw new Error("cargo metadata failed for the koharu workspace");
@@ -194,7 +172,7 @@ export async function runTauri(args: string[]): Promise<number> {
       ).target_directory;
       runSync(
         [
-          "cargo",
+          cargoSerial,
           "build",
           "--manifest-path",
           manifest,
@@ -282,24 +260,24 @@ export async function runTauri(args: string[]): Promise<number> {
     console.log(`[tauri] Executing action: ${action}...`);
     switch (action) {
       case "check":
-        runSync(["cargo", "check", "--locked"], appDir, "cargo check failed");
+        runSync([cargoSerial, "check", "--locked"], appDir, "cargo check failed");
         break;
       case "build":
         runSync(
-          ["cargo", "build", "--release", "--locked", "--features", "custom-protocol"],
+          [cargoSerial, "build", "--release", "--locked", "--features", "custom-protocol"],
           appDir,
           "cargo build failed",
         );
         break;
       case "run":
         runSync(
-          ["cargo", "run", "--release", "--locked", "--features", "custom-protocol"],
+          [cargoSerial, "run", "--release", "--locked", "--features", "custom-protocol"],
           appDir,
           "cargo run failed",
         );
         break;
       case "dev":
-        runSync(["cargo", "run", "--locked"], appDir, "cargo dev failed");
+        runSync([cargoSerial, "run", "--locked"], appDir, "cargo dev failed");
         break;
       case "bundle": {
         const selectedBundles = bundles || (isWindows ? "nsis" : "deb,appimage");
