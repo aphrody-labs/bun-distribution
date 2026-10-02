@@ -915,6 +915,12 @@ Propriétaires : `packages/rg`, `apps/rg`, domaines Discord/Koharu/FUT.
   paquet ; plus aucun import bot → site. Tests bot boutique 57, types 69 ;
   typecheck bot, site et types verts.
 - [ ] Reprendre les gates historiques de chaque produit effectivement importé.
+  Gates déclarés 2026-10-03 (`bun run test` / `typecheck`), tous verts :
+  apps RG bot 1237, website 402 ; 20 paquets `packages/rg` (dont achillea-core
+  212, cron 173, patreon-bun 174) ; discord aphrody-messaging 9, kit 20
+  (typecheck réparé : `skipLibCheck`, `@sapphire/shapeshift@4` incompatible avec
+  `@types/node` 26) ; koharu bridge/sdk/ui typecheck, editor ; fut 148. Reste :
+  smoke de chaque application (base Postgres et services requis).
 
 Critères : imports des packages sans serveur, tests handlers/contrats puis
 smoke de chaque application, packaging autonome des assets partagés.
