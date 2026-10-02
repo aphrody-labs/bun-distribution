@@ -24,7 +24,7 @@ pub use revisit::{
 pub use robots::RobotsFile;
 pub use runner::{
     CrawlOptions, CrawlPage, CrawlReport, CrawlTransport, FetchResult, ObscuraTransport,
-    crawl_bounded,
+    crawl_bounded, extract_links_opts,
 };
 pub use scoring::{anchor_relevance, frontier_score};
 pub use sitemap::{ParsedSitemap, SitemapEntry, SitemapKind, parse_sitemap, seed_boost};

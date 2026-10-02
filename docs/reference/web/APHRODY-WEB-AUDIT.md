@@ -108,3 +108,20 @@ Dead code:
 5. Update `docs/reference/web/VENDOR.md` paths; record a decision on drive-server (move out or delete).
 6. Gates after dedup: `scripts/build/rust/cargo-serial.sh check -p obscura-mcp -p obscura-net -p aphrody-web-service`, `... test -p obscura-cdp`, and `... check -p aphrody-ffi` (package name unverified; check `crates/interop/ffi/Cargo.toml`). FFI is under active edit by others, so wait.
 7. Add wasm/windows gates (only web-chromium has any), document that wreq pre-release pins need a bump plan.
+
+## 7. Dedup pass applied (2026-10-02)
+
+- Links: canonical `aphrody_web_crawl::extract_links_opts(html, base, skip_nofollow)` (`web-crawl/src/runner.rs`);
+  the crawler uses it with nofollow skipped, `web-engine/src/crawl.rs::page_links` now calls it (nofollow kept, same cap).
+- Markdown: canonical `aphrody_web_extract::html_to_markdown`; `obscura-mcp` `browser_markdown` now calls it over the live DOM
+  instead of the JS converter (`obscura-mcp` gained an `aphrody-web-extract` dependency). `web-engine` already used it.
+- Cookies: no further code to merge. `obscura_net::CookieJar` is already the single jar (obscura, obscura-cdp, obscura-browser,
+  obscura-mcp, web-engine use it). `web-chromium` reads browser profile cookies via rookie (different purpose) and `x::XSession`
+  only formats two header values; neither is a jar. The FFI and the `cookie_jars` sqlite table are out of this file family.
+- TS CDP: already a single client, `@aphrody/agent-browser/cdp`; `aphrody-web-test/src/cdp.ts` is a 1-line re-export.
+- obscura-mcp `browser_*`: not a duplicate catalogue. `web-service` and `crates/ai/mcp` consume `obscura_mcp::aphrody::tools()/call()`,
+  so the 40 tools are declared once. Nothing removed, no aliases needed.
+- drive-server: kept. Already excluded from the workspace (no member/dep lines), zero tests, but it is a recorded import target
+  (`docs/migration/drive-rust-extraction.json`, classifiers in `packages/infra/workspace/src/docs-consolidation.ts`); deleting it
+  needs those updated outside this file family. Decision pending owner/lead.
+- `VENDOR.md` paths fixed to `crates/web/taffy` and `crates/web/obscura-render`.

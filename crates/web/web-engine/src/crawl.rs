@@ -267,27 +267,11 @@ pub fn seed_hosts(seeds: &[String]) -> Result<Vec<String>, String> {
 
 /// Resolved, de-duplicated anchor targets of `html`, in document order.
 pub fn page_links(html: &str, page_url: &Url) -> Vec<String> {
-    let dom = obscura_dom::parse_html(html);
-    let mut seen = std::collections::HashSet::new();
-    let mut links = Vec::new();
-    for id in dom.query_selector_all("a[href]").unwrap_or_default() {
-        let Some(href) =
-            dom.with_node(id, |node| node.get_attribute("href").map(str::to_owned)).flatten()
-        else {
-            continue;
-        };
-        let Ok(url) = normalize_page_url(&href, Some(page_url), UrlNormalizationOptions::default())
-        else {
-            continue;
-        };
-        if seen.insert(url.to_string()) {
-            links.push(url.to_string());
-            if links.len() >= MAX_REPORTED_LINKS {
-                break;
-            }
-        }
-    }
-    links
+    aphrody_web_crawl::extract_links_opts(html, page_url, false)
+        .into_iter()
+        .take(MAX_REPORTED_LINKS)
+        .map(|(url, _)| url.to_string())
+        .collect()
 }
 
 fn page_out(page: &CrawlPage, args: &CrawlArgs, captured: Option<&Captured>) -> PageOut {

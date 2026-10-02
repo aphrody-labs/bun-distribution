@@ -1281,9 +1281,11 @@ fn tool_markdown(args: &Value, state: &mut BrowserState) -> Result<String, Strin
         .map(|n| n as usize)
         .unwrap_or(DEFAULT_TEXT_LIMIT);
     let page = state.page_mut();
-    let result = page.evaluate(obscura_browser::HTML_TO_MARKDOWN_JS);
-    let md = result.as_str().unwrap_or_default();
-    Ok(truncate(md, max_chars))
+    // Canonical converter (aphrody-web-extract) over the live, script-mutated DOM.
+    let html = page.with_dom(|tree| tree.inner_html(tree.document())).unwrap_or_default();
+    let url = page.url_string();
+    let md = aphrody_web_extract::html_to_markdown(&html, Some(url.as_str()));
+    Ok(truncate(&md, max_chars))
 }
 
 /// Enumerate every `<a href>` on the page. One JSON object per line so

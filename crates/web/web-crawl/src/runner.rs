@@ -398,7 +398,14 @@ async fn ingest_seed_sitemaps<T: CrawlTransport>(
     Ok(())
 }
 
-fn extract_links(html: &str, page_url: &Url) -> Vec<(Url, String)> {
+/// Canonical anchor extraction: resolved, fragment-normalised, de-duplicated
+/// `(url, anchor text)` pairs in document order. `skip_nofollow` drops
+/// `rel=nofollow` anchors. Shared by the crawler and the `aphrody-web` crawl.
+pub fn extract_links_opts(
+    html: &str,
+    page_url: &Url,
+    skip_nofollow: bool,
+) -> Vec<(Url, String)> {
     let dom = parse_html(html);
     let mut seen = HashSet::new();
     let mut links = Vec::new();
@@ -413,7 +420,7 @@ fn extract_links(html: &str, page_url: &Url) -> Vec<(Url, String)> {
         }) else {
             continue;
         };
-        if nofollow {
+        if nofollow && skip_nofollow {
             continue;
         }
         let Some(href) = href else { continue };
@@ -426,6 +433,10 @@ fn extract_links(html: &str, page_url: &Url) -> Vec<(Url, String)> {
         }
     }
     links
+}
+
+fn extract_links(html: &str, page_url: &Url) -> Vec<(Url, String)> {
+    extract_links_opts(html, page_url, true)
 }
 
 #[cfg(test)]
