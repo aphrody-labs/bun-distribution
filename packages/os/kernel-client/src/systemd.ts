@@ -4,7 +4,7 @@
  * - Zero-dependency sd_notify and watchdog heartbeats via `bun:ffi` libc sockets.
  * - Standard syslog priority formatting for high-performance direct journald indexing.
  */
-import { dlopen, FFIType, CString } from "bun:ffi";
+import { dlopen, FFIType } from "bun:ffi";
 
 /** Standard syslog priority prefixes for stdout/stderr journald indexing. */
 export const SyslogPriority = {
@@ -93,14 +93,7 @@ export function sdNotify(state: string): boolean {
     const stateBuf = Buffer.from(state, "utf-8");
     const addrLen = isAbstract ? 2 + pathBuffer.length : 2 + pathBuffer.length + 1;
 
-    const sent = lib.symbols.sendto(
-      fd,
-      stateBuf,
-      BigInt(stateBuf.length),
-      0,
-      sockaddr,
-      addrLen,
-    );
+    const sent = lib.symbols.sendto(fd, stateBuf, BigInt(stateBuf.length), 0, sockaddr, addrLen);
 
     return Number(sent) >= 0;
   } finally {

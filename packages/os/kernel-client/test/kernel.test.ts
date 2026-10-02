@@ -6,18 +6,22 @@ import { join } from "node:path";
 import { KernelClient, registerSubsystem } from "../src/index.ts";
 
 const exe = process.platform === "win32" ? "aphrody-kernel.exe" : "aphrody-kernel";
-// The kernel builds into this repository's `target/` or, with the workspace `.cargo/config.toml`, the shared `../target`.
+// The Rust workspace root owns target/; an explicit binary override is available for installed builds.
 const binary =
-  process.env.APHRODY_KERNEL_BIN ??
-  ["../../../target/debug", "../../../../target/debug"].map((dir) => join(import.meta.dir, dir, exe)).find(existsSync) ??
-  join(import.meta.dir, "../../../target/debug", exe);
+  process.env.APHRODY_KERNEL_BIN ?? join(import.meta.dir, "../../../../target/debug", exe);
 const endpoint =
-  process.platform === "win32" ? `\\\\.\\pipe\\aphrody-os-bun-test-${process.pid}` : `/tmp/aphrody-os-bun-test-${process.pid}.sock`;
+  process.platform === "win32"
+    ? `\\\\.\\pipe\\aphrody-os-bun-test-${process.pid}`
+    : `/tmp/aphrody-os-bun-test-${process.pid}.sock`;
 let server: ReturnType<typeof Bun.spawn> | undefined;
 
 beforeAll(async () => {
-  if (!existsSync(binary)) throw new Error(`build it first: cargo build -p aphrody-kernel (looked for ${binary})`);
-  server = Bun.spawn([binary, "--socket", endpoint, "serve", "--no-browser"], { stderr: "pipe", stdout: "pipe" });
+  if (!existsSync(binary))
+    throw new Error(`build it first through scripts/build/rust/cargo-serial.sh: ${binary}`);
+  server = Bun.spawn([binary, "--socket", endpoint, "serve", "--no-browser"], {
+    stderr: "pipe",
+    stdout: "pipe",
+  });
   for (let i = 0; i < 200; i++) {
     try {
       (await KernelClient.connect(endpoint)).close();
@@ -39,8 +43,15 @@ test("a Bun subsystem is served to other clients and leaves on close", async () 
         {
           name: "bun_reverse",
           description: "Reverse a string.",
-          inputSchema: { type: "object", properties: { text: { type: "string" } }, required: ["text"] },
-          handler: ({ text }) => ({ reversed: String(text).split("").reverse().join(""), runtime: `bun ${Bun.version}` }),
+          inputSchema: {
+            type: "object",
+            properties: { text: { type: "string" } },
+            required: ["text"],
+          },
+          handler: ({ text }) => ({
+            reversed: String(text).split("").reverse().join(""),
+            runtime: `bun ${Bun.version}`,
+          }),
         },
       ],
     },

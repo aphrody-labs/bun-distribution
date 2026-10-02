@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 /** Compatibility facade for the unified Aphrody OS kernel. */
-import { KernelClient, KernelError } from "@aphrody/os";
+import { KernelClient } from "@aphrody/os";
 import { GeneratedTools, type ToolArgsMap, type ToolName } from "./generated";
 import { TOOL_CATALOG } from "./catalog";
 import { ToolResult } from "./result";
@@ -34,7 +34,11 @@ export class Winclean extends GeneratedTools implements Disposable {
   }
 
   listTools(): ToolInfo[] {
-    return TOOL_CATALOG.map(({ name, description, inputSchema }) => ({ name, description, inputSchema }));
+    return TOOL_CATALOG.map(({ name, description, inputSchema }) => ({
+      name,
+      description,
+      inputSchema,
+    }));
   }
 
   async call<N extends ToolName>(name: N, args?: ToolArgsMap[N]): Promise<ToolResult>;
@@ -44,7 +48,10 @@ export class Winclean extends GeneratedTools implements Disposable {
     const client = await this.#client();
     try {
       const value = await client.call(name, args as Record<string, any>);
-      return new ToolResult(name, { structuredContent: value, content: [{ type: "text", text: JSON.stringify(value) }] });
+      return new ToolResult(name, {
+        structuredContent: value,
+        content: [{ type: "text", text: JSON.stringify(value) }],
+      });
     } catch (error) {
       const text = error instanceof Error ? error.message : String(error);
       return new ToolResult(name, { isError: true, content: [{ type: "text", text }] });
@@ -53,7 +60,9 @@ export class Winclean extends GeneratedTools implements Disposable {
 
   /** Synchronous calls are routed through the kernel RPC client. */
   callSync(_name: string, _args?: Record<string, unknown>): ToolResult {
-    throw new Error("callSync is unavailable: use await Winclean.open().call(...) through the Aphrody OS kernel");
+    throw new Error(
+      "callSync is unavailable: use await Winclean.open().call(...) through the Aphrody OS kernel",
+    );
   }
 
   close(): void {
