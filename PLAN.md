@@ -1008,6 +1008,23 @@ Propriétaires : `packages/shenron`, `apps/shenron`.
 Critères : corpus/règles partagés, tests pipeline/config, build site/bot,
 smoke documenté. Une mise en production est une opération distincte.
 
+### Studio desktop Shenron × Koharu — 2026-10-03
+
+- Décision du propriétaire : l'app Aphrody (`crates/ui/app`) devient l'outil unique
+  d'administration Shenron, de manga/traduction Koharu, de databooks,
+  d'entraînement et du Drive dbfr ; plan détaillé
+  [aphrody-app-studio.md](docs/plans/ui/aphrody-app-studio.md). Lève la réserve
+  de `GEMINI.md` ; la mise en production site/bot reste distincte.
+- FAIT (124fe0570) : destination `/studio` ; onglet Shenron natif (`@shenron/ui`)
+  sur l'API publique extraite de `aphrody-command::shenron_cmd` ; dashboard admin
+  complet en fenêtre native avec pont `window.aphrodyNative` vers l'IA locale
+  (`llama-server` géré) et panneau « IA locale » sourcé RAG dans le cockpit IA ;
+  onglet Manga sur `koharu_rpc`. `cargo-serial check -p aphrody-app` vert,
+  typecheck site vert, test de navigation 11/11.
+- Restent : onglets Entraînement (jobs), Databooks, Drive dbfr (OpenDAL gdrive) ;
+  éditeur `@koharu/ui` ; fusion OCR/LLM Koharu ↔ `aphrody-ocr*`/`llama-server` ;
+  régénération de `ui-dist` ; exécution de l'app non encore observée.
+
 ### Migration du calcul du pipeline vers ses propriétaires Rust — en cours
 
 - Frontière demandée : Shenron ne conserve que les types/contrats, la
