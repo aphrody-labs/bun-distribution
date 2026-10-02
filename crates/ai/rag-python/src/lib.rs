@@ -75,6 +75,51 @@ fn pack_embeddings_f32(py: Python<'_>, values: &[Vec<f32>]) -> PyResult<Py<PyByt
 }
 
 #[pyfunction]
+fn normalize_embeddings_f32(
+    py: Python<'_>,
+    data: &[u8],
+    rows: usize,
+    width: usize,
+) -> PyResult<Py<PyByteArray>> {
+    let batch = unpack_embeddings_f32(data, rows, width)?;
+    let result =
+        py.detach(|| aphrody_rag_core::vectors_f32::normalize(&batch)).map_err(vector_error)?;
+    pack_embeddings_f32(py, &result)
+}
+
+#[pyfunction]
+fn embedding_similarities_f32(
+    py: Python<'_>,
+    left: &[u8],
+    right: &[u8],
+    left_rows: usize,
+    right_rows: usize,
+    width: usize,
+) -> PyResult<Py<PyByteArray>> {
+    if left_rows.checked_mul(width).and_then(|size| size.checked_mul(4)) != Some(left.len())
+        || right_rows.checked_mul(width).and_then(|size| size.checked_mul(4)) != Some(right.len())
+    {
+        return Err(vector_error("packed embedding dimensions do not match buffer length"));
+    }
+    let left_batch: Vec<f32> =
+        left.as_chunks::<4>().0.iter().map(|bytes| f32::from_le_bytes(*bytes)).collect();
+    let right_batch: Vec<f32> =
+        right.as_chunks::<4>().0.iter().map(|bytes| f32::from_le_bytes(*bytes)).collect();
+    let result = py
+        .detach(|| {
+            aphrody_rag_core::vectors_f32::similarities_flat(
+                &left_batch,
+                &right_batch,
+                left_rows,
+                right_rows,
+                width,
+            )
+        })
+        .map_err(vector_error)?;
+    pack_values_f32(py, result.iter())
+}
+
+#[pyfunction]
 fn normalize_embeddings_f64(
     py: Python<'_>,
     data: &[u8],
@@ -242,6 +287,8 @@ fn reciprocal_rank_fusion(
 
 #[pymodule]
 fn aphrody_rust(m: &Bound<'_, PyModule>) -> PyResult<()> {
+    m.add_function(wrap_pyfunction!(normalize_embeddings_f32, m)?)?;
+    m.add_function(wrap_pyfunction!(embedding_similarities_f32, m)?)?;
     m.add_function(wrap_pyfunction!(normalize_embeddings_f64, m)?)?;
     m.add_function(wrap_pyfunction!(embedding_similarities_f64, m)?)?;
     m.add_function(wrap_pyfunction!(mean_embeddings_f64, m)?)?;

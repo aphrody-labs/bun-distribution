@@ -1,7 +1,43 @@
 // SPDX-License-Identifier: Apache-2.0
-//! Float32 RAPTOR arithmetic for UMAP output; no implicit float64 promotion.
+//! Float32 RAG arithmetic; no implicit float64 promotion.
 
 use crate::vectors_f64::{dimensions, sum_f32};
+
+/// Normalize forensic embeddings, replacing only an exactly zero norm with one.
+/// Keep the float32 fast-axis reduction used by NumPy; NaNs propagate.
+pub fn normalize(rows: &[Vec<f32>]) -> Result<Vec<Vec<f32>>, &'static str> {
+    dimensions(rows)?;
+    Ok(rows
+        .iter()
+        .map(|row| {
+            let norm = sum_f32(row.len(), &|index| row[index] * row[index]).sqrt();
+            let denominator = if norm == 0.0 { 1.0 } else { norm };
+            row.iter().map(|value| value / denominator).collect()
+        })
+        .collect())
+}
+
+/// Contiguous float32 product left * right^T for forensic retrieval scores.
+pub fn similarities_flat(
+    left: &[f32],
+    right: &[f32],
+    left_rows: usize,
+    right_rows: usize,
+    width: usize,
+) -> Result<Vec<f32>, &'static str> {
+    let left_matrix = ndarray::ArrayView2::from_shape((left_rows, width), left)
+        .map_err(|_| "left batch shape mismatch")?;
+    let right_matrix = ndarray::ArrayView2::from_shape((right_rows, width), right)
+        .map_err(|_| "right batch shape mismatch")?;
+    let output_size = left_rows
+        .checked_mul(right_rows)
+        .filter(|size| *size <= isize::MAX as usize / 4)
+        .ok_or("similarity result shape overflow")?;
+    if left_rows == 0 || right_rows == 0 || width == 0 {
+        return Ok(vec![0.0; output_size]);
+    }
+    Ok(left_matrix.dot(&right_matrix.t()).into_raw_vec_and_offset().0)
+}
 
 /// Mean embedding in input order. An empty batch has no prototype.
 pub fn mean(rows: &[Vec<f32>]) -> Result<Vec<f32>, &'static str> {
@@ -56,6 +92,30 @@ pub fn squared_distances(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn forensic_normalization_retains_zero_rows_and_float32_scores() {
+        let rows = normalize(&[vec![3.0, 4.0], vec![0.0, 0.0], vec![-3.0, 4.0]]).unwrap();
+        assert_eq!(rows[0], vec![0.6, 0.8]);
+        assert_eq!(rows[1], vec![0.0, 0.0]);
+        let flat: Vec<f32> = rows.into_iter().flatten().collect();
+        let scores = similarities_flat(&flat, &[0.6, 0.8], 3, 1, 2).unwrap();
+        assert!((scores[0] - 1.0).abs() < 1e-6);
+        assert_eq!(scores[1], 0.0);
+        assert!((scores[2] - 0.28).abs() < 1e-6);
+        assert!(normalize(&[vec![f32::NAN]]).unwrap()[0][0].is_nan());
+    }
+
+    #[test]
+    fn forensic_shapes_preserve_empty_axes_and_reject_invalid_buffers() {
+        assert_eq!(normalize(&[]).unwrap(), Vec::<Vec<f32>>::new());
+        assert_eq!(normalize(&[vec![]]).unwrap(), vec![Vec::<f32>::new()]);
+        assert!(normalize(&[vec![1.0], vec![]]).is_err());
+        assert_eq!(similarities_flat(&[], &[], 0, 3, 0).unwrap(), Vec::<f32>::new());
+        assert_eq!(similarities_flat(&[], &[], 2, 3, 0).unwrap(), vec![0.0; 6]);
+        assert!(similarities_flat(&[1.0], &[1.0], 2, 1, 1).is_err());
+        assert!(similarities_flat(&[], &[], usize::MAX, 2, 0).is_err());
+    }
 
     #[test]
     fn float32_rounding_preserves_centroid_and_nearest_center_tie() {
