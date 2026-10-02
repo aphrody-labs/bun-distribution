@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-"use client";
+// Server component: renders through the Bun FFI. Client components use `@aphrody/m3-icons/browser`.
 
 import { useMemo } from "react";
 import { m3Icon, type M3IconStyle } from "@aphrody/bun";

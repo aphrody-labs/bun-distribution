@@ -470,8 +470,15 @@ Propriétaire : `packages/ui`, `crates/ui`.
 
 - [x] Retirer du point d’entrée de M3 Design tout serveur ou `process.exit()` à
   l’import ; placer démarrage/configuration dans une application.
-- [ ] Séparer la génération SVG native et les composants React navigateur ;
+- [x] Séparer la génération SVG native et les composants React navigateur ;
   aucun binding Bun natif dans le chemin d’un composant `use client`.
+  Vérifié 2026-10-03 : 828 fichiers `"use client"` du dépôt (hors `upstream/`)
+  bundlés (809 en cible bun) ; seul `m3-icons/src/react.tsx` atteignait
+  `bun:ffi` : directive retirée (composant serveur, export `.` server-only ;
+  client = `./browser`), tests 13/13, typecheck vert. Constat hors UI : en
+  cible navigateur, 77 composants client RG et 17 Shenron tirent des builtins
+  Node (`util/types`, `child_process`, `tls`, `node:crypto`) : à qualifier par
+  leurs propriétaires (sections 6 et 7).
 - [ ] Clarifier `render-tools` face au moteur `render`, avec identités publiques
   maintenues puis migration explicite si un renommage API est nécessaire.
 - [x] Requalifier tokens, composants, SSR/hydratation et exports navigateur.
