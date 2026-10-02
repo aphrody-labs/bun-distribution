@@ -5,7 +5,7 @@
  * Registries: crates.io, npm, GitHub (releases), PyPI/GitHub (uv), Context7 (docs).
  * Cargo is never bulk-updated (repo rule): only the Tauri family is rewritten, the rest is reported.
  *
- * Usage: aphrody-ops deps-sync [plan|apply|facts|fix|changelog|memory|baseline|run]
+ * Usage: aphrody-ops deps-sync [plan|apply|facts|fix|changelog|memory|inventory|baseline|run]
  *        [--apply] [--apply-fixes] [--all] [--json] [--root <repo>]
  *   plan       report outdated tools, Tauri family crates and Bun workspace (default)
  *   apply      rewrite pins, `uv self update`, `bun upgrade`, `bun update -r`, record the journal
@@ -13,6 +13,7 @@
  *   fix        pre-fix: run consumer gates, match failures to config/deps/fix-rules.json, write a brief
  *   changelog  regenerate CHANGELOG.md from conventional commits + the dependency journal
  *   memory     write the managed deps block into every agent workspace (BOOT.md, memory/deps-state.md)
+ *   inventory  whole-repo scan: crates.io, npm, PyPI, git remotes, OSV advisories, first-party crates
  *   baseline   record current consumer gate failures so `fix` only reports regressions
  *   run        plan, facts, fix, changelog (+ apply and memory with --apply)
  */
@@ -417,6 +418,13 @@ export async function runDepsSync(argv: string[]): Promise<number> {
     case "baseline": return fix(c, false, true);
     case "changelog": changelog(c); return 0;
     case "memory": await memory(c); return 0;
+    case "inventory": {
+      const inv = await import("./deps-inventory.ts");
+      const roots = c.jsonFile<{ inventory?: { pythonRoots?: string[] } }>("config/deps/watch.json", {}).inventory?.pythonRoots ?? [];
+      const data = await inv.inventory(c.root, { pythonRoots: roots.map((r) => r.replace(/^~/, homedir())), log: (m) => console.log(`inv    ${m}`) });
+      console.log(`inv    wrote ${inv.writeInventory(c.root, data)}`);
+      return 0;
+    }
     case "run": {
       const changes = await plan(c);
       if (c.apply) await applyChanges(c, changes);

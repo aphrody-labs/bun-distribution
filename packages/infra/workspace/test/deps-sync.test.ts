@@ -46,3 +46,28 @@ describe("normaliseErrors", () => {
     expect(normaliseErrors(out)).toEqual(["src/a.ts: error TS2307: no"]);
   });
 });
+
+import { gitSources, parseBunLock, parseCargoLock, parseRequirements, sparsePath } from "../src/deps-inventory.ts";
+
+describe("inventory parsers", () => {
+  test("sparse index paths", () => {
+    expect(sparsePath("a")).toBe("1/a");
+    expect(sparsePath("io")).toBe("2/io");
+    expect(sparsePath("syn")).toBe("3/s/syn");
+    expect(sparsePath("tokio")).toBe("to/ki/tokio");
+  });
+  test("Cargo.lock packages and git sources", () => {
+    const lock = `[[package]]\nname = "tokio"\nversion = "1.53.1"\nsource = "registry+https://github.com/rust-lang/crates.io-index"\n\n[[package]]\nname = "candle-core"\nversion = "0.9.1"\nsource = "git+https://github.com/huggingface/candle.git?rev=66a8cf1#66a8cf184a5a"\n\n[[package]]\nname = "aphrody-x"\nversion = "1.0.0-canary"\n`;
+    const pkgs = parseCargoLock(lock);
+    expect(pkgs).toHaveLength(3);
+    const repos = gitSources(pkgs);
+    expect([...repos.keys()]).toEqual(["https://github.com/huggingface/candle"]);
+  });
+  test("bun.lock entries", () => {
+    const lock = `    "@scope/pkg": ["@scope/pkg@1.2.3", "", {}, "sha"],\n    "left-pad": ["left-pad@1.3.0", "", {}, "sha"],\n`;
+    expect(parseBunLock(lock).map((d) => `${d.name}@${d.version}`).sort()).toEqual(["@scope/pkg@1.2.3", "left-pad@1.3.0"]);
+  });
+  test("requirements pins", () => {
+    expect(parseRequirements("Foo_Bar[extra]==1.0.2 \\\n  --hash=sha256:x\nplain>=1\n")).toEqual([{ name: "foo-bar", version: "1.0.2" }]);
+  });
+});
