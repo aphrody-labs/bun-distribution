@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import { afterAll, describe, expect, it } from "bun:test";
-import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import {
@@ -38,21 +38,21 @@ function cargoVersion(manifest: string, name: string): string | undefined {
 
 describe("pins", () => {
   it("stay on the Tauri line pinned by the root workspace", async () => {
-    const manifest = await readFile(join(root, "Cargo.toml"), "utf8");
+    const manifest = await Bun.file(join(root, "Cargo.toml")).text();
     expect(cargoVersion(manifest, "tauri")).toBe(TAURI_3.tauri);
     expect(cargoVersion(manifest, "tauri-runtime-wry")).toBe(TAURI_3.runtimeWry);
     expect(cargoVersion(manifest, "tauri-build")).toBe(TAURI_3.build);
     expect(cargoVersion(manifest, "tauri-plugin-opener")).toBe(TAURI_3.pluginOpener);
-    const config = JSON.parse(await readFile(join(root, "config/tauri-upstream.json"), "utf8"));
+    const config = JSON.parse(await Bun.file(join(root, "config/tauri-upstream.json")).text());
     expect(config.js.cli.version).toBe(TAURI_3.jsCli);
-    const catalog = JSON.parse(await readFile(join(root, "package.json"), "utf8")).workspaces
+    const catalog = JSON.parse(await Bun.file(join(root, "package.json")).text()).workspaces
       .catalog;
     expect(catalog["@tauri-apps/api"]).toBe(TAURI_3.jsApi);
     expect(catalog["@tauri-apps/plugin-opener"]).toBe(TAURI_3.jsPluginOpener);
   });
 
   it("are mirrored once: tauri-sync tracks this file and no other scaffolder", async () => {
-    const config = JSON.parse(await readFile(join(root, "config/tauri-upstream.json"), "utf8"));
+    const config = JSON.parse(await Bun.file(join(root, "config/tauri-upstream.json")).text());
     expect(config.mirrors.map((mirror: { file: string }) => mirror.file)).toEqual([
       "packages/ui/scaffold/src/pins.ts",
     ]);
@@ -256,7 +256,7 @@ describe("writeFiles", () => {
     await writeFiles(dir, { "a.txt": "a" }, "empty");
     await expect(writeFiles(dir, { "b.txt": "b" }, "empty")).rejects.toThrow("not empty");
     await writeFiles(join(dir, "child"), { "deep/x.txt": "x" }, "new");
-    expect(await readFile(join(dir, "child/deep/x.txt"), "utf8")).toBe("x");
+    expect(await Bun.file(join(dir, "child/deep/x.txt")).text()).toBe("x");
   });
 
   it("`merge` never overwrites and writes nothing when one file clashes", async () => {
@@ -265,7 +265,7 @@ describe("writeFiles", () => {
     await expect(
       writeFiles(dir, { "other.txt": "o", "keep.txt": "theirs" }, "merge"),
     ).rejects.toThrow("refusing to overwrite");
-    expect(await readFile(join(dir, "keep.txt"), "utf8")).toBe("mine");
+    expect(await Bun.file(join(dir, "keep.txt")).text()).toBe("mine");
     expect(await Bun.file(join(dir, "other.txt")).exists()).toBe(false);
   });
 
@@ -273,7 +273,7 @@ describe("writeFiles", () => {
     const dir = await fresh();
     await writeFiles(dir, { "a.txt": "1" }, "overwrite");
     await writeFiles(dir, { "a.txt": "2" }, "overwrite");
-    expect(await readFile(join(dir, "a.txt"), "utf8")).toBe("2");
+    expect(await Bun.file(join(dir, "a.txt")).text()).toBe("2");
   });
 
   it("rejects paths that leave the directory", async () => {

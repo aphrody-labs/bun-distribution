@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 import { describe, expect, test } from "bun:test";
 import { existsSync } from "node:fs";
-import { readdir, readFile } from "node:fs/promises";
+import { readdir } from "node:fs/promises";
 import { join } from "node:path";
 import { buildM3, rewriteHtmlReference, TAURI_LAYOUT } from "../src/build.ts";
 import { FIXTURE, fakeCss, REPO_ROOT, tempDir } from "./helpers.ts";
@@ -23,12 +23,12 @@ describe("buildM3", () => {
       "logo.svg",
       "material-symbols-outlined.woff2",
     ]);
-    const html = await readFile(join(uiDist, "index.html"), "utf8");
+    const html = await Bun.file(join(uiDist, "index.html")).text();
     // The fixture script is main.ts: renamed to app.js and the reference rewritten.
     expect(html).toContain('src="./app.js"');
     expect(html).toContain('href="./app.css"');
     expect(html).not.toContain("main");
-    const css = await readFile(join(uiDist, "app.css"), "utf8");
+    const css = await Bun.file(join(uiDist, "app.css")).text();
     expect(css).toMatch(/url\("?\.\/fonts\/material-symbols-outlined\.woff2"?\)/);
     expect(css).toContain("--fixture-primary");
     expect(result.outputs.map((o) => o.path).toSorted()).toEqual(
@@ -93,7 +93,7 @@ describe("buildM3", () => {
         cwd,
         plugin: { css: fakeCss().css, theme: {}, root: REPO_ROOT, tailwind: false },
       });
-      const js = await readFile(join(uiDist, TAURI_LAYOUT.script), "utf8");
+      const js = await Bun.file(join(uiDist, TAURI_LAYOUT.script)).text();
       runs.push({ files: result.outputs.map((o) => o.path).toSorted(), js: new Bun.CryptoHasher("sha256").update(js).digest("hex") });
       // The chosen forms: every svg is a fonts/ file, every png an inline data URL.
       expect(js).not.toContain("data:image/svg+xml");

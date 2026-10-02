@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import { afterAll, describe, expect, it } from "bun:test";
-import { mkdtemp, readFile, rm } from "node:fs/promises";
+import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { TAURI_3 as scaffoldPins } from "@aphrody/scaffold";
@@ -22,7 +22,7 @@ describe("scaffoldTargetProject", () => {
     dirs.push(outDir);
     await scaffoldTargetProject({ outDir, projectName: "demo", target: "tauri" });
     await scaffoldTargetProject({ outDir, projectName: "demo", target: "tauri" });
-    expect(JSON.parse(await readFile(join(outDir, "package.json"), "utf8")).name).toBe("demo");
+    expect(JSON.parse(await Bun.file(join(outDir, "package.json")).text()).name).toBe("demo");
     expect(await Bun.file(join(outDir, "src-tauri/Cargo.toml")).exists()).toBe(true);
   });
 });

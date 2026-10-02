@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 import { describe, expect, test } from "bun:test";
 import { existsSync } from "node:fs";
-import { readdir, readFile } from "node:fs/promises";
+import { readdir } from "node:fs/promises";
 import { join } from "node:path";
 import { buildM3 } from "../src/build.ts";
 import { bunfigHasPlugin, findWorkspaceRoot, parseArgs, runCli, sheetFlag, version } from "../src/cli.ts";
@@ -72,7 +72,7 @@ describe("runCli", () => {
     expect(await runCli(["build", "--tauri", uiDist, "--config", "m3.plain.config.ts"], FIXTURE)).toBe(0);
     expect((await readdir(uiDist)).toSorted()).toEqual(["app.css", "app.js", "fonts", "index.html"]);
     // plain.html became index.html.
-    expect(await readFile(join(uiDist, "index.html"), "utf8")).toContain('src="./app.js"');
+    expect(await Bun.file(join(uiDist, "index.html")).text()).toContain('src="./app.js"');
   });
 
   test("m3 build --tauri without a directory needs tauri.uiDist", async () => {
@@ -105,10 +105,10 @@ describe("runCli", () => {
       scripts: { dev: "m3 dev", build: "m3 build" },
       dependencies: { "@aphrody/m3": `^${await version()}` },
     });
-    expect(await readFile(join(project, "bunfig.toml"), "utf8")).toContain('"@aphrody/m3/plugin"');
-    expect(await readFile(join(project, "m3.config.ts"), "utf8")).toContain('entry: "index.html"');
-    expect(await readFile(join(project, "index.html"), "utf8")).toContain('./src/main.ts');
-    expect(await readFile(join(project, "src/main.ts"), "utf8")).toContain('m3:theme.css');
+    expect(await Bun.file(join(project, "bunfig.toml")).text()).toContain('"@aphrody/m3/plugin"');
+    expect(await Bun.file(join(project, "m3.config.ts")).text()).toContain('entry: "index.html"');
+    expect(await Bun.file(join(project, "index.html")).text()).toContain('./src/main.ts');
+    expect(await Bun.file(join(project, "src/main.ts")).text()).toContain('m3:theme.css');
     const built = await buildM3({ entry: join(project, "index.html"), outdir: join(tmp.dir, "built"), cwd: project });
     expect(built.outputs.some((output) => output.path === "index.html")).toBe(true);
     await expect(runCli(["new", "my-app"], tmp.dir)).rejects.toThrow();
@@ -152,7 +152,7 @@ describe("token bundle", () => {
       { sheet: "scheme", seed: "#00ff00", dark: false },
       { sheet: "scheme", seed: "#00ff00", dark: true },
     ]);
-    const fonts = await readFile(join(tmp.dir, "fonts.css"), "utf8");
+    const fonts = await Bun.file(join(tmp.dir, "fonts.css")).text();
     expect(fonts).toContain('url("./fonts/material-symbols-rounded.woff2")');
     expect(fonts).toContain('url("./fonts/GoogleSansFlex-Variable.ttf")');
     const manifest = await Bun.file(join(tmp.dir, "manifest.json")).json();

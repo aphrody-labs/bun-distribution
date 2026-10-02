@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import { afterAll, beforeAll, describe, expect, it } from "bun:test";
-import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
+import { mkdir, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { isUsableAppIcon, pngInfo, TAURI_3 } from "@aphrody/scaffold";
 import { generateProject, GenerateError } from "../src/generate.ts";
@@ -9,7 +9,7 @@ import { probeDirectory, probeUrl } from "../src/probe.ts";
 import type { WrapConfig } from "../src/types.ts";
 import { startSite, tempDir, writeTree, type Site } from "./fixtures.ts";
 
-const read = (dir: string, path: string) => readFile(join(dir, path), "utf8");
+const read = (dir: string, path: string) => Bun.file(join(dir, path)).text();
 
 describe("generateProject: remote", () => {
   let site: Site;
@@ -86,7 +86,7 @@ describe("generateProject: remote", () => {
 
   it("uses the icon of the site when it is a usable PNG", async () => {
     const { out, result } = await generate();
-    const icon = new Uint8Array(await readFile(join(out, "src-tauri/icons/icon.png")));
+    const icon = new Uint8Array(await Bun.file(join(out, "src-tauri/icons/icon.png")).arrayBuffer());
     expect(pngInfo(icon)).toMatchObject({ width: 512, colorType: 6 });
     expect(isUsableAppIcon(icon)).toBe(true);
     expect(result.notes.join(" ")).not.toContain("placeholder");
@@ -97,7 +97,7 @@ describe("generateProject: remote", () => {
     dirs.push(join(out, ".."));
     const probe = { ...(await probeUrl(`${site.a}/home`)), icons: [], manifest: null };
     const result = await generateProject(planConversion(probe), out, { copyLock: false });
-    const icon = new Uint8Array(await readFile(join(out, "src-tauri/icons/icon.png")));
+    const icon = new Uint8Array(await Bun.file(join(out, "src-tauri/icons/icon.png")).arrayBuffer());
     expect(isUsableAppIcon(icon)).toBe(true);
     expect(Array.from(icon.subarray(0, 8))).toEqual([
       0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a,
@@ -215,7 +215,7 @@ describe("generateProject: directories", () => {
     await mkdir(join(src, "public"), { recursive: true });
     await writeFile(join(src, "public/icon.png"), solidIconPng(256, [1, 2, 3, 255]));
     await generateProject(planConversion(await probeDirectory(src)), out, { copyLock: false });
-    const icon = new Uint8Array(await readFile(join(out, "src-tauri/icons/icon.png")));
+    const icon = new Uint8Array(await Bun.file(join(out, "src-tauri/icons/icon.png")).arrayBuffer());
     expect(Array.from(icon)).toEqual(Array.from(solidIconPng(256, [1, 2, 3, 255])));
   });
 });

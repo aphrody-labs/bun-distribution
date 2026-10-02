@@ -10,6 +10,8 @@ pub mod local;
 mod syntax;
 pub mod wire;
 
+use aphrody_shell_session::{ShellSession, SpawnSpec};
+use aphrody_shell_vfs_opfs::SharedOpfsVfs;
 use aphrody_terminal_core::TerminalState;
 use wasm_bindgen::prelude::*;
 
@@ -106,6 +108,71 @@ impl WebShell {
     }
 }
 
+/// Raw local shell engine for a dedicated OPFS worker. The main thread owns VT state.
+#[wasm_bindgen]
+pub struct WebLocalEngine {
+    shell: local::LocalShell,
+    fs: SharedOpfsVfs,
+    greeting: Vec<u8>,
+}
+
+#[wasm_bindgen]
+impl WebLocalEngine {
+    /// Restore a persisted filesystem image and start a local shell.
+    ///
+    /// # Errors
+    /// Returns an error if the image is invalid or the terminal dimensions are zero.
+    #[wasm_bindgen(constructor)]
+    pub fn new(image: &[u8], cols: u16, rows: u16) -> Result<Self, JsValue> {
+        let fs = SharedOpfsVfs::from_image(image).map_err(|e| JsValue::from_str(&e.to_string()))?;
+        let spec = SpawnSpec { columns: cols, rows, ..SpawnSpec::default() };
+        let (shell, greeting) = local::LocalShell::with_spec_and_vfs(&spec, Box::new(fs.clone()))
+            .map_err(|e| JsValue::from_str(&e.to_string()))?;
+        Ok(Self { shell, fs, greeting })
+    }
+
+    /// Initial greeting and prompt; called once by the worker.
+    pub fn take_greeting(&mut self) -> Vec<u8> {
+        std::mem::take(&mut self.greeting)
+    }
+
+    /// Feed input bytes without parsing VT state in this worker.
+    pub fn input(&mut self, bytes: &[u8]) -> Vec<u8> {
+        self.shell.input(bytes)
+    }
+
+    /// Resize the session.
+    ///
+    /// # Errors
+    /// Returns an error for zero dimensions or an exited shell.
+    pub fn resize(&mut self, cols: u16, rows: u16) -> Result<(), JsValue> {
+        self.shell.resize(cols, rows).map_err(|e| JsValue::from_str(&e.to_string()))
+    }
+
+    /// Return an image only after a mutating shell command.
+    /// Empty bytes mean no persistence work is needed.
+    ///
+    /// # Errors
+    /// Returns an error if the image exceeds its size limit.
+    pub fn image_if_dirty(&self) -> Result<Vec<u8>, JsValue> {
+        Ok(self
+            .fs
+            .image_if_dirty()
+            .map_err(|e| JsValue::from_str(&e.to_string()))?
+            .unwrap_or_default())
+    }
+
+    /// Acknowledge a successful OPFS flush.
+    pub fn mark_persisted(&self) {
+        self.fs.mark_persisted();
+    }
+
+    #[must_use]
+    pub fn exited(&self) -> bool {
+        self.shell.exited()
+    }
+}
+
 /// JSON text frame asking a remote PTY to resize.
 #[wasm_bindgen]
 #[must_use]
@@ -118,4 +185,10 @@ pub fn resize_frame(cols: u16, rows: u16) -> String {
 #[must_use]
 pub fn data_frame(bytes: &[u8]) -> String {
     wire::data_frame(bytes)
+}
+
+/// Run the shared VFS conformance suite in a browser WASM instance.
+#[wasm_bindgen]
+pub fn opfs_vfs_conformance() {
+    aphrody_shell_vfs::conformance::run(aphrody_shell_vfs_opfs::OpfsVfs::new);
 }

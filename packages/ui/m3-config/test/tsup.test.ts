@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
-import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { M3_EXTERNAL, m3Tsup, prependUseClient } from "../tsup.ts";
@@ -20,7 +20,7 @@ beforeEach(async () => {
 });
 afterEach(() => rm(dir, { recursive: true, force: true }));
 
-const read = (...parts: string[]) => readFile(join(dir, ...parts), "utf8");
+const read = (...parts: string[]) => Bun.file(join(dir, ...parts)).text();
 
 describe("m3 tsup preset", () => {
   test("marks every emitted .js file once, recursively", async () => {

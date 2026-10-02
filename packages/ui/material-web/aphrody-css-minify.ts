@@ -18,7 +18,7 @@
 // `${}` interpolation are skipped (minifying them is unsafe).
 
 import type { BunPlugin } from "bun";
-import { mkdir, mkdtemp, readFile, rm } from "node:fs/promises";
+import { mkdir, mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -84,7 +84,7 @@ export const cssMinifyPlugin: BunPlugin = {
         }
         for (const [hash, css] of byHash) {
           try {
-            const min = (await readFile(join(dir, "out", `${hash}.css`), "utf8")).trim();
+            const min = (await Bun.file(join(dir, "out", `${hash}.css`)).text()).trim();
             if (min) {
               cache.set(css, min);
             }

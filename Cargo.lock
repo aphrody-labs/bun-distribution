@@ -2598,11 +2598,20 @@ name = "aphrody-shell-vfs"
 version = "1.0.0-canary"
 
 [[package]]
+name = "aphrody-shell-vfs-opfs"
+version = "1.0.0-canary"
+dependencies = [
+ "aphrody-shell-vfs",
+ "crc32fast",
+]
+
+[[package]]
 name = "aphrody-shell-web"
 version = "1.0.0-canary"
 dependencies = [
  "aphrody-shell-session",
  "aphrody-shell-vfs",
+ "aphrody-shell-vfs-opfs",
  "aphrody-terminal-core",
  "serde_json",
  "wasm-bindgen",

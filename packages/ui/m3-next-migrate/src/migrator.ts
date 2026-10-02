@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-import { copyFile, mkdir, readFile, readdir, writeFile } from "node:fs/promises";
+import { copyFile, mkdir, readdir } from "node:fs/promises";
 import { dirname, join, relative } from "node:path";
 import { buildRouteHierarchy, type RouteHierarchy } from "./layout";
 import { scanNextDirectory, type ScanStats } from "./scanner";
@@ -88,7 +88,7 @@ export async function migrateProject(options: MigrateProjectOptions): Promise<Mi
         const destFile = scaffold ? join(targetDir, "src", "components", rel) : join(targetDir, rel);
 
         if (isComponent) {
-          const content = await readFile(srcFile, "utf-8");
+          const content = await Bun.file(srcFile).text();
           const result: TransformResult = transformComponent(content, options);
 
           if (result.modified) {
@@ -104,7 +104,7 @@ export async function migrateProject(options: MigrateProjectOptions): Promise<Mi
 
           if (!dryRun) {
             await mkdir(dirname(destFile), { recursive: true });
-            await writeFile(destFile, result.code);
+            await Bun.write(destFile, result.code);
           }
         } else {
           // Asset, CSS, JSON, or config file

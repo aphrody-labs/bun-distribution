@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-import { readdir, readFile, stat } from "node:fs/promises";
+import { readdir, stat } from "node:fs/promises";
 import { join, relative } from "node:path";
 
 export interface ScanStats {
@@ -82,7 +82,7 @@ export async function scanNextDirectory(targetPath: string): Promise<ScanStats> 
 
   async function analyzeFile(filePath: string) {
     stats.totalFiles++;
-    const content = await readFile(filePath, "utf-8");
+    const content = await Bun.file(filePath).text();
     const features: string[] = [];
     const rel = relative(targetPath, filePath).replace(/\\/g, "/");
 

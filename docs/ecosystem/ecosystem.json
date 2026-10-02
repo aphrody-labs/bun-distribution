@@ -620,6 +620,7 @@
             "dragonball",
             "jobs",
             "koharu",
+            "managed-llama",
             "native",
             "native-browser",
             "ocr",
@@ -1012,6 +1013,13 @@
           "name": "aphrody-shell-vfs",
           "path": "crates/shell/vfs",
           "description": "Byte-path virtual filesystem trait, in-memory backend and shared conformance suite for the WASM shell.",
+          "bins": [],
+          "features": []
+        },
+        {
+          "name": "aphrody-shell-vfs-opfs",
+          "path": "crates/shell/aphrody-shell-vfs-opfs",
+          "description": "Snapshot-backed VFS bridge for the browser OPFS shell worker.",
           "bins": [],
           "features": []
         },
@@ -15529,7 +15537,7 @@
     "aphrodyRepos": 3,
     "experimentRepos": 0,
     "sharedRepos": 0,
-    "crates": 263,
+    "crates": 264,
     "binaries": 89,
     "bunPackages": 102,
     "pythonPackages": 9,

@@ -4,7 +4,7 @@
  * (`probeDirectory`). The result feeds `planConversion`; nothing here writes outside `os.tmpdir`.
  */
 import { existsSync } from "node:fs";
-import { readdir, readFile, stat } from "node:fs/promises";
+import { readdir, stat } from "node:fs/promises";
 import { basename, join, relative } from "node:path";
 import { originOf } from "./policy.ts";
 import {
@@ -566,7 +566,7 @@ export async function probeDirectory(dir: string): Promise<DirectoryProbe> {
   const pkgPath = join(dir, "package.json");
   if (existsSync(pkgPath)) {
     try {
-      pkg = JSON.parse(await readFile(pkgPath, "utf8")) as Record<string, unknown>;
+      pkg = JSON.parse(await Bun.file(pkgPath).text()) as Record<string, unknown>;
     } catch {
       warnings.push("package.json is not valid JSON");
     }
@@ -581,7 +581,7 @@ export async function probeDirectory(dir: string): Promise<DirectoryProbe> {
   for (const name of ["next.config.ts", "next.config.js", "next.config.mjs"]) {
     const path = join(dir, name);
     if (!existsSync(path)) continue;
-    const text = await readFile(path, "utf8");
+    const text = await Bun.file(path).text();
     if (/output\s*:\s*["']export["']/.test(text)) nextOutput = "export";
     else if (/output\s*:\s*["']standalone["']/.test(text)) nextOutput = "standalone";
   }
@@ -628,7 +628,7 @@ export async function probeDirectory(dir: string): Promise<DirectoryProbe> {
   for (const name of [".env", ".env.production", ".env.local", ".env.example"]) {
     const path = join(dir, name);
     if (!existsSync(path)) continue;
-    for (const line of (await readFile(path, "utf8")).split("\n")) {
+    for (const line of (await Bun.file(path).text()).split("\n")) {
       const match =
         /^(?:export\s+)?[A-Z0-9_]*(?:API|BACKEND|SERVER|ENDPOINT|URL)[A-Z0-9_]*\s*=\s*["']?(https?:\/\/[^\s"'#]+)/.exec(
           line.trim(),
@@ -656,7 +656,7 @@ export async function probeDirectory(dir: string): Promise<DirectoryProbe> {
     for (const file of files) {
       const size = (await stat(file)).size;
       if (size > 3_000_000) continue;
-      const text = await readFile(file, "utf8");
+      const text = await Bun.file(file).text();
       for (const id of detectApis(text)) {
         if (!signals.some((signal) => signal.id === id))
           signals.push({ id, where: relative(dir, file) });

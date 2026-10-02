@@ -2,7 +2,7 @@
 // Token sheets and the self-contained token bundle (`m3 tokens`). Every sheet comes from
 // `crates/ui/m3-tokens` through `m3Css` (docs/design/M3-PLAN.md, decision D1); the bundle
 // replaces the former static `assets/design-system/m3` tree.
-import { copyFile, mkdir, readFile, writeFile } from "node:fs/promises";
+import { copyFile, mkdir } from "node:fs/promises";
 import { join } from "node:path";
 import { cssRequest, defaultM3Css, type M3CssConfig, type M3CssFn, type M3Sheet } from "./native.js";
 import { fontPaths, resolveRepoRoot, SYMBOL_STYLES } from "./paths.js";
@@ -48,7 +48,7 @@ export const BUNDLE_FILES = [
 /** `@font-face` rules and icon classes for the bundle, with `./fonts` URLs. */
 export async function bundleFontsCss(root: string): Promise<string> {
   const fonts = fontPaths(root);
-  const symbols = await readFile(join(fonts.symbolsDir, "index.css"), "utf8");
+  const symbols = await Bun.file(join(fonts.symbolsDir, "index.css")).text();
   return [
     symbols.replaceAll('url("./material-symbols-', 'url("./fonts/material-symbols-'),
     fontsCss().replace('url("./GoogleSansFlex', 'url("./fonts/GoogleSansFlex'),
@@ -75,7 +75,7 @@ export async function writeTokenBundle(dir: string, options: TokenBundleOptions 
     "fonts.css": await bundleFontsCss(root),
     "index.css": '@import "./fonts.css";\n@import "./tokens.css";\n',
   };
-  await Promise.all(Object.entries(sheets).map(([name, text]) => writeFile(join(dir, name), text)));
+  await Promise.all(Object.entries(sheets).map(([name, text]) => Bun.write(join(dir, name), text)));
   await Promise.all([
     ...SYMBOL_STYLES.map((style) =>
       copyFile(fonts.symbols[style], join(dir, "fonts", `material-symbols-${style}.woff2`)),
@@ -85,6 +85,6 @@ export async function writeTokenBundle(dir: string, options: TokenBundleOptions 
     copyFile(join(fonts.symbolsDir, "LICENSE"), join(dir, "fonts", "LICENSE-material-symbols.txt")),
   ]);
   const manifest = { generator: "@aphrody/m3", theme, files: BUNDLE_FILES.filter((f) => f !== "manifest.json") };
-  await writeFile(join(dir, "manifest.json"), `${JSON.stringify(manifest, null, 2)}\n`);
+  await Bun.write(join(dir, "manifest.json"), `${JSON.stringify(manifest, null, 2)}\n`);
   return [...BUNDLE_FILES];
 }

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import { describe, expect, test } from "bun:test";
-import { readdir, readFile } from "node:fs/promises";
+import { readdir } from "node:fs/promises";
 import { join } from "node:path";
 import { m3Plugin, M3_MODULES, fontsCss } from "../src/plugin.ts";
 import { dataUrlFor, mimeFor, urlImportForm } from "../src/url-imports.ts";
@@ -13,7 +13,7 @@ async function bundle(outdir: string, plugin: ReturnType<typeof m3Plugin>, entry
   const read = async (ext: string) => {
     const name = files.find((file) => file.endsWith(ext));
     if (!name) throw new Error(`no ${ext} output in ${files.join(", ")}`);
-    return readFile(join(outdir, name), "utf8");
+    return Bun.file(join(outdir, name)).text();
   };
   return { files: files.map((f) => f.replaceAll("\\", "/")), css: await read(".css"), js: await read(".js") };
 }

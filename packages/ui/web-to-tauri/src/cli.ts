@@ -1,7 +1,6 @@
 #!/usr/bin/env bun
 // SPDX-License-Identifier: Apache-2.0
 import { existsSync, statSync } from "node:fs";
-import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { bridgeDriver, cdpDriver, runParity } from "./drivers.ts";
 import { generateProject } from "./generate.ts";
@@ -172,7 +171,7 @@ async function main(): Promise<number> {
     const project = args.positional[0];
     if (!project) throw new Error("parity needs the generated project directory");
     const plan = JSON.parse(
-      await readFile(resolve(project, "wrap-plan.json"), "utf8"),
+      await Bun.file(resolve(project, "wrap-plan.json")).text(),
     ) as ConversionPlan;
     const referenceEndpoint = one(args, "reference-cdp") ?? process.env.APHRODY_BROWSER_CDP_URL;
     const reference = referenceEndpoint ? await cdpDriver(referenceEndpoint, "reference") : null;

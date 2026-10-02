@@ -8,7 +8,7 @@
 // Names carry no hash: the Tauri asset protocol serves the directory as is, and the CSP allows
 // only `'self'` scripts, so every script stays an external module file.
 import type { BuildArtifact, BunPlugin } from "bun";
-import { mkdir, readFile, rename, rm, stat, writeFile } from "node:fs/promises";
+import { mkdir, rename, rm, stat } from "node:fs/promises";
 import { basename, dirname, join, relative, resolve } from "node:path";
 import { m3Plugin, type M3PluginOptions } from "./plugin.js";
 
@@ -182,7 +182,7 @@ export async function buildM3(options: BuildM3Options): Promise<BuildM3Result> {
 async function normalizeTauriLayout(outdir: string, entry: string, outputs: BuildM3Output[]): Promise<BuildM3Output[]> {
   const htmlName = basename(entry);
   const htmlPath = join(outdir, htmlName);
-  let html = await readFile(htmlPath, "utf8");
+  let html = await Bun.file(htmlPath).text();
 
   const scripts = outputs.filter((o) => o.kind === "entry-point" && o.path.endsWith(".js"));
   if (scripts.length > 1) throw new Error(`buildM3: the Tauri entry produced ${scripts.length} scripts; keep one module script`);
@@ -193,7 +193,7 @@ async function normalizeTauriLayout(outdir: string, entry: string, outputs: Buil
     script.path = TAURI_LAYOUT.script;
   }
 
-  await writeFile(join(outdir, TAURI_LAYOUT.html), html);
+  await Bun.write(join(outdir, TAURI_LAYOUT.html), html);
   if (htmlName !== TAURI_LAYOUT.html) await rm(htmlPath, { force: true });
 
   return Promise.all(

@@ -7,7 +7,7 @@ from the checkout. Companion files: [CLI.md](CLI.md) (exact command trees), [MCP
 (every MCP tool), [ecosystem.json](ecosystem.json) (machine-readable). Check here before writing new
 code: reuse an existing crate, command or tool instead of duplicating it.
 
-Totals: 3 repositories (3 aphrody, 0 shared, 0 experiments), 263 crates, 89 binaries, 102 Bun packages, 9 uv packages, 1280 CLI commands, 440 MCP tools.
+Totals: 3 repositories (3 aphrody, 0 shared, 0 experiments), 264 crates, 89 binaries, 102 Bun packages, 9 uv packages, 1280 CLI commands, 440 MCP tools.
 
 | Repository | Kind | Role |
 | --- | --- | --- |
@@ -19,7 +19,7 @@ Totals: 3 repositories (3 aphrody, 0 shared, 0 experiments), 263 crates, 89 bina
 
 Canonical Rust/Bun monorepo
 
-### Crates (189)
+### Crates (190)
 
 | Crate | Path | Description | Binaries | Features |
 | --- | --- | --- | --- | --- |
@@ -88,7 +88,7 @@ Canonical Rust/Bun monorepo
 | `aphrody-m3-tokens` | crates/ui/m3-tokens | Material Design 3 baseline design tokens: color roles, type scale, elevation, motion. |  | default, embedded-fonts, image, std |
 | `aphrody-manga` | crates/ai/manga | Koharu-backed manga page analysis, translation, cleanup and PSD export for Aphrody. |  | default, koharu |
 | `aphrody-marketplace` | crates/ai/marketplace | Skill / MCP / hook / theme extension marketplace index — loaders (file, HTTP, embedded), semver queries, SHA-256 integrity verification. |  | default, github |
-| `aphrody-mcp` | crates/ai/mcp | aphrody-mcp — unified Rust MCP stdio server. Pure Rust, sub-millisecond cold-start. | `aphrody-mcp` | browser-stealth, dbfr, default, dragonball, jobs, koharu, native, native-browser, ocr, rag, rag-native, rag-ort, stt-local, toolbox, vision, winclean |
+| `aphrody-mcp` | crates/ai/mcp | aphrody-mcp — unified Rust MCP stdio server. Pure Rust, sub-millisecond cold-start. | `aphrody-mcp` | browser-stealth, dbfr, default, dragonball, jobs, koharu, managed-llama, native, native-browser, ocr, rag, rag-native, rag-ort, stt-local, toolbox, vision, winclean |
 | `aphrody-mcp-client` | crates/ai/mcp-client | Model Context Protocol client for Aphrody: the single MCP client of the workspace. Stdio and streamable HTTP transports, ToolExecutor adapter, fail-closed credential expansion, built-in tools, and shared Rust web tools. |  |  |
 | `aphrody-mcp-oauth` | crates/ai/mcp-oauth | Native Rust OAuth 2.1 client for HTTP/SSE MCP servers (RFC 9728 + 8414 + 7591 + 7636). |  | default, rustls-no-provider |
 | `aphrody-mcp-smoke` | crates/ai/mcp-smoke | End-to-end smoke test runner for the unified aphrody-mcp stdio server: handshake + tools/list + tools/call sweep over all 17 tools, p50/p95 latency, NDJSON report. | `aphrody-mcp-smoke` |  |
@@ -136,6 +136,7 @@ Canonical Rust/Bun monorepo
 | `aphrody-shell-tauri` | crates/shell/tauri | Tauri 3 plugin exposing native PTY shell sessions to the aphrody-shell-web webview client. |  |  |
 | `aphrody-shell-tauri-e2e` | crates/shell/tauri-e2e | Minimal real Tauri app (wry webview) that runs the WASM shell through the aphrody-shell-tauri plugin. | `aphrody-shell-tauri-e2e` |  |
 | `aphrody-shell-vfs` | crates/shell/vfs | Byte-path virtual filesystem trait, in-memory backend and shared conformance suite for the WASM shell. |  |  |
+| `aphrody-shell-vfs-opfs` | crates/shell/aphrody-shell-vfs-opfs | Snapshot-backed VFS bridge for the browser OPFS shell worker. |  |  |
 | `aphrody-shell-web` | crates/shell/web | Aphrody shell for WebAssembly: browser and Tauri webview terminal, local shell and wire protocol. |  |  |
 | `aphrody-skills` | crates/ai/skills | Unified skills infrastructure: SKILL.md runtime + lifecycle hooks + tool-level permissions. | `aphrody-skills` |  |
 | `aphrody-skills-forge` | crates/ai/skills-forge | Programmatic SKILL.md scaffolding + registry loader + lint engine for the aphrody skill catalog. |  |  |

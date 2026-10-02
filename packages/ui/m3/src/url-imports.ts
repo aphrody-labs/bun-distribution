@@ -11,7 +11,6 @@
 // raced, and whichever loaded first won for both (the app-ui build flipped between 247 and 640
 // files).
 import type { PluginBuilder } from "bun";
-import { readFile } from "node:fs/promises";
 import { dirname, extname, isAbsolute, resolve } from "node:path";
 
 export const URL_NAMESPACE = "m3-url";
@@ -42,7 +41,7 @@ export function mimeFor(path: string): string {
 
 /** The `data:` URL a `?url` import of `path` evaluates to. */
 export async function dataUrlFor(path: string): Promise<string> {
-  let bytes = new Uint8Array(await readFile(path));
+  let bytes = new Uint8Array(await Bun.file(path).arrayBuffer());
   if (extname(path).toLowerCase() === ".scss") {
     const css = new TextDecoder().decode(bytes).replace(/^\s*\/\/.*$/gm, "");
     bytes = new TextEncoder().encode(css);
@@ -71,7 +70,7 @@ export function setupUrlImports(build: PluginBuilder): void {
     return { contents: `export default ${JSON.stringify(await dataUrlFor(path))};`, loader: "js" };
   });
   build.onLoad({ filter: /\.svg$/i, namespace: "file" }, async (args) => ({
-    contents: new Uint8Array(await readFile(args.path)),
+    contents: await Bun.file(args.path).bytes(),
     loader: "file",
   }));
 }

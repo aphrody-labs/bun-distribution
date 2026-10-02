@@ -10,7 +10,7 @@
 //
 // `dev` and `build` read `m3.config.ts` from the working directory (see `./config.ts`).
 import { existsSync, readFileSync } from "node:fs";
-import { chmod, mkdir, readFile, writeFile } from "node:fs/promises";
+import { chmod, mkdir } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
 import { buildM3 } from "./build.js";
 import { loadM3Config } from "./config.js";
@@ -126,7 +126,7 @@ export function sheetFlag(flags: Record<string, FlagValue>): M3Sheet {
 
 /** The package version. */
 export async function version(): Promise<string> {
-  const manifest = JSON.parse(await readFile(join(import.meta.dir, "..", "package.json"), "utf8")) as { version: string };
+  const manifest = JSON.parse(await Bun.file(join(import.meta.dir, "..", "package.json")).text()) as { version: string };
   return manifest.version;
 }
 
@@ -134,7 +134,7 @@ export async function version(): Promise<string> {
 export async function bunfigHasPlugin(dir: string): Promise<boolean> {
   const file = join(dir, "bunfig.toml");
   if (!existsSync(file)) return false;
-  return (await readFile(file, "utf8")).includes("@aphrody/m3/plugin");
+  return (await Bun.file(file).text()).includes("@aphrody/m3/plugin");
 }
 
 /** Nearest directory at or above `start` whose package.json declares a `bun:check` script. */
@@ -232,7 +232,7 @@ export async function runCli(argv: readonly string[], cwd: string = process.cwd(
       if (out) {
         const file = resolve(cwd, out);
         await mkdir(dirname(file), { recursive: true });
-        await writeFile(file, css);
+        await Bun.write(file, css);
         console.log(`m3 tokens: ${css.length} B into ${file}`);
       } else {
         process.stdout.write(css);
@@ -276,7 +276,7 @@ export async function runCli(argv: readonly string[], cwd: string = process.cwd(
           await chmod(outfile, 0o755).catch(() => {});
         }
       }
-      const bytes = output ? output.size : (existsSync(outfile) ? (await readFile(outfile)).byteLength : 0);
+      const bytes = output ? output.size : (existsSync(outfile) ? Bun.file(outfile).size : 0);
       console.log(`m3 compile: ${outfile} (${bytes} B) in ${Math.round(performance.now() - started)} ms`);
       return 0;
     }

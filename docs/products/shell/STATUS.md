@@ -11,6 +11,7 @@ Evidence: repo read, native tests, wasm32 checks, a real Chrome run and a real T
 | VT state | `aphrody-terminal-core` (rio-vt 0.5.28) | real, tested | native, wasm32 |
 | Session seam | `aphrody-shell-session` | real, tested; `LocalShell` implements it and `LocalEngine` creates sessions | native, wasm32 (checked) |
 | Virtual FS | `aphrody-shell-vfs` (`MemVfs`, conformance) | real, tested; `LocalShell` uses it for cwd and file commands | native, wasm32 (checked) |
+| OPFS VFS | `aphrody-shell-vfs-opfs` (`OpfsVfs`, shared image binding) + dedicated browser worker | two checksummed image slots; shared conformance and persistence across a reload pass in real Chromium | native tests, wasm32 release, Chromium |
 | Web bindings | `aphrody-shell-web` (`WebTerminal`, `WebShell`, `LocalShell`) | T3: session/VFS engine, quoting, env expansion, history recall, cwd, globbing, pipes, redirects, conditionals and command registry; native tests and generated WASM smoke pass | wasm32 (built) |
 | TS client | `@aphrody/shell-web` (WebSocket, Tauri, local transports) | real, tested in Bun and headless Chrome | web |
 | PTY + WebSocket server | `aphrody-terminal-backend` (auth, Origin/Host, session/idle/frame/output limits) | real, tested | native only |
@@ -23,7 +24,7 @@ Evidence: repo read, native tests, wasm32 checks, a real Chrome run and a real T
 
 ## Not built yet (wave B-D of the plan)
 
-OPFS `Vfs` + worker (T5), wasm coreutils (T7), Nushell wasm spike (T9),
+Wasm coreutils (T7), Nushell wasm spike (T9),
 Cloud adapter (T12), worker/sandbox TS transports (T8), UI transport selection (T13), gates (T14).
 Staying native on purpose: Nushell, TUI, PTY.
 

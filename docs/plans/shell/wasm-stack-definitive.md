@@ -51,9 +51,10 @@ Decisions:
    wc, sort, uniq, tr, cut, basename, dirname, printf, true/false, seq, tee) and records failures. Fallback for any
    failing utility: a small in-crate reimplementation, listed as such.
 4. **VFS trait first, OPFS second.** One `Vfs` trait (read/write/stat/readdir/mkdir/remove/rename, async-free core,
-   byte-based paths) with `MemVfs` (tests, serverless), `OpfsVfs` (browser, `FileSystemSyncAccessHandle` in a dedicated
-   worker), and a Tauri-fs host adapter. OPFS sync handles require a worker: the shell engine runs in a Web Worker in the
-   browser; the main thread keeps renderer + VT.
+   byte-based paths) with `MemVfs` (tests, serverless), `OpfsVfs` (browser snapshot mirror), and a Tauri-fs host
+   adapter. The browser shell runs in a dedicated Web Worker, which opens OPFS files asynchronously at startup and
+   then persists versioned, checksummed VFS images through `FileSystemSyncAccessHandle`. The main thread keeps
+   renderer + VT. Directory APIs remain asynchronous even inside the worker.
 5. **Serverless/cloud = a `SandboxHost` trait, with providers behind it.** Not `aphrody-sandbox` (that is local
    confinement). Define `SandboxHost { spawn(spec) -> Session, upload/download via Vfs-like calls, kill, ttl }` and make
    the Session speak the same wire frames as the PTY WebSocket (`resize_frame`/`data_frame`), so L3's WebSocket
@@ -88,7 +89,7 @@ confirmed by the lead against that file).
 
 ## 4. Tasks
 
-Status 2026-10-02: T1-T4, T10 and T11 done and tested; T6 partial (compile spike, ADR written); T5, T7-T9, T12-T14 open. T3 passed 15 native unit tests, strict Clippy, wasm32 check and release build, the owning Bun tests (3 pass, 2 environment-gated skips), and a generated-WASM `WebShell` pipeline smoke. T11 passed shared host conformance on the mock and native PTY adapters, six native tests, strict Clippy, wasm32 and Windows GNU checks, plus the live Bun WebSocket PTY test. See [STATUS](../../products/shell/STATUS.md).
+Status 2026-10-02: T1-T5, T10 and T11 implemented; T6 partial (compile spike, ADR written); T7-T9, T12-T14 open. T3 passed 15 native unit tests, strict Clippy, wasm32 check and release build, the owning Bun tests (3 pass, 2 environment-gated skips), and a generated-WASM `WebShell` pipeline smoke. T5 passed four native VFS tests, 15 web-engine tests, strict Clippy, wasm32 and Windows GNU checks, a generated-WASM release build, and a real Chromium test running the shared VFS conformance suite and proving OPFS persistence across reload. Windows MSVC check is environment-blocked by the `simdutf` build script (no authentic MSVC toolchain under `/mnt/c/BuildTools`). T11 passed shared host conformance on the mock and native PTY adapters, six native tests, strict Clippy, wasm32 and Windows GNU checks, plus the live Bun WebSocket PTY test. See [STATUS](../../products/shell/STATUS.md).
 
 Owner paths are exclusive per task; two tasks never edit the same file. Tasks that add a workspace member or
 dependency also need a one-line root `Cargo.toml` edit: the lead (integrating agent) does root `Cargo.toml`/`bun.lock`
@@ -126,12 +127,13 @@ serially.
   `tauriTransport` update is T8's.
 
 ### T5. OPFS Vfs backend + worker host
-- Owner: `crates/shell/vfs-opfs/` (not in repo) (new crate, wasm32 only, `web-sys` features for `FileSystem*`), and
-  `packages/shell/web/src/worker.ts` (not in repo) (new file only).
+- Owner: `crates/shell/aphrody-shell-vfs-opfs/` (portable snapshot mirror), `crates/shell/web/` (WASM binding), and
+  `packages/shell/web/src/worker.ts`.
 - Deps: T2 (trait + conformance suite), T3 (engine to host).
-- Content: `OpfsVfs` using `FileSystemSyncAccessHandle` (worker only); worker entry that owns `WebShell` engine +
-  `OpfsVfs`, exchanging bytes with the main thread via `postMessage` (transferable `ArrayBuffer`). `index.ts` is not
-  touched (T8).
+- Content: `OpfsVfs` mirrors `MemVfs` synchronously and encodes bounded, checksummed images. The worker owns the
+  WASM shell and two OPFS image slots, writing through `FileSystemSyncAccessHandle` and retaining the previous
+  generation for recovery. It exchanges bytes with the main thread via transferable `ArrayBuffer` messages.
+  `index.ts` is not touched (T8).
 - Test: conformance suite run in headless Chrome via the existing `APHRODY_CHROME` path used by `browser.test.ts`
   (new test file `packages/shell/web/test/opfs.test.ts` (not in repo) owned by T5); persistence across reload asserted.
 

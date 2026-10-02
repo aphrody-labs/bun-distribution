@@ -1,7 +1,6 @@
 #!/usr/bin/env bun
 // SPDX-License-Identifier: Apache-2.0
 
-import { readFile, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { buildRouteHierarchy } from "./layout";
 import { migrateProject } from "./migrator";
@@ -110,7 +109,7 @@ async function main() {
   const isSingleFile = /\.(tsx|jsx|ts|js)$/.test(resolvedSource);
 
   if (isSingleFile) {
-    const content = await readFile(resolvedSource, "utf-8");
+    const content = await Bun.file(resolvedSource).text();
     const result = transformComponent(content, { target, modernizeM3, n2b });
 
     if (jsonOutput) {
@@ -123,7 +122,7 @@ async function main() {
       console.log(result.code);
     } else if (targetPath) {
       const resolvedTarget = resolve(process.cwd(), targetPath);
-      await writeFile(resolvedTarget, result.code);
+      await Bun.write(resolvedTarget, result.code);
       console.log(`Migrated single component to ${resolvedTarget}`);
     } else {
       console.log(result.code);
