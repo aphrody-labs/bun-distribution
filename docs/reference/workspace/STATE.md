@@ -138,7 +138,7 @@ Tracked Cargo manifests outside the root workspace (excluded, nested workspaces 
 
 | Name | Path | Kind | Version | Targets | Tests | `todo!` | Last commit |
 | --- | --- | --- | --- | --- | --- | ---: | --- |
-| `aphrody` | [apps/cli](../../../apps/cli) | rust app | 1.0.0 | bin, lib | yes | 0 | 2026-10-02 |
+| `aphrody` | [apps/cli](../../../apps/cli) | rust app | 1.0.0 | bin, lib | yes | 0 | 2026-10-03 |
 
 ## compat
 
@@ -172,7 +172,7 @@ Tracked Cargo manifests outside the root workspace (excluded, nested workspaces 
 | --- | --- | --- | --- | --- | --- | ---: | --- |
 | `aphrody-discord-compiler` | [crates/discord/aphrody-discord-compiler](../../../crates/discord/aphrody-discord-compiler) | rust crate | 1.0.0 | lib | yes | 0 | 2026-10-01 |
 | `@aphrody/messaging` | [packages/discord/aphrody-messaging](../../../packages/discord/aphrody-messaging) | bun package | 0.1.0 | lib | yes | 0 | 2026-10-02 |
-| `@aphrody/discord-kit` | [packages/discord/kit](../../../packages/discord/kit) | bun package | 0.1.0 | lib | yes | 0 | 2026-10-02 |
+| `@aphrody/discord-kit` | [packages/discord/kit](../../../packages/discord/kit) | bun package | 0.1.0 | lib | yes | 0 | 2026-10-03 |
 
 ## fut
 
@@ -198,7 +198,7 @@ Tracked Cargo manifests outside the root workspace (excluded, nested workspaces 
 
 | Name | Path | Kind | Version | Targets | Tests | `todo!` | Last commit |
 | --- | --- | --- | --- | --- | --- | ---: | --- |
-| `aphrody-command` | [crates/infra/aphrody-command](../../../crates/infra/aphrody-command) | rust crate | 1.0.0 | lib | yes | 0 | uncommitted |
+| `aphrody-command` | [crates/infra/aphrody-command](../../../crates/infra/aphrody-command) | rust crate | 1.0.0 | lib | yes | 0 | 2026-10-03 |
 | `aphrody-git` | [crates/infra/git](../../../crates/infra/git) | rust crate | 0.1.0 | lib | yes | 0 | 2026-10-02 |
 | `aphrody-infra` | [crates/infra/infra](../../../crates/infra/infra) | rust crate | 0.1.0 | bin, lib | yes | 0 | 2026-10-02 |
 | `aphrody-ovh` | [crates/infra/ovh](../../../crates/infra/ovh) | rust crate | 0.1.0 | lib | yes | 0 | 2026-10-01 |
@@ -216,8 +216,8 @@ Tracked Cargo manifests outside the root workspace (excluded, nested workspaces 
 
 | Name | Path | Kind | Version | Targets | Tests | `todo!` | Last commit |
 | --- | --- | --- | --- | --- | --- | ---: | --- |
-| `aphrody-ffi` | [crates/interop/ffi](../../../crates/interop/ffi) | rust crate | 1.0.0 | cdylib, rlib | yes | 0 | 2026-10-02 |
-| `@aphrody/bun` | [packages/interop/native](../../../packages/interop/native) | bun package | 3.3.3 | lib | yes | 0 | 2026-10-02 |
+| `aphrody-ffi` | [crates/interop/ffi](../../../crates/interop/ffi) | rust crate | 1.0.0 | cdylib, rlib | yes | 0 | 2026-10-03 |
+| `@aphrody/bun` | [packages/interop/native](../../../packages/interop/native) | bun package | 3.3.3 | lib | yes | 0 | 2026-10-03 |
 
 ## koharu
 
@@ -356,22 +356,22 @@ Tracked Cargo manifests outside the root workspace (excluded, nested workspaces 
 
 | Name | Path | Kind | Version | Targets | Tests | `todo!` | Last commit |
 | --- | --- | --- | --- | --- | --- | ---: | --- |
-| `@shenron/bot` | [apps/shenron/bot](../../../apps/shenron/bot) | bun app | 1.0.0 | lib | yes | 0 | 2026-10-02 |
+| `@shenron/bot` | [apps/shenron/bot](../../../apps/shenron/bot) | bun app | 1.0.0 | lib | yes | 0 | 2026-10-03 |
 | `@shenron/site` | [apps/shenron/site](../../../apps/shenron/site) | bun app | 1.0.0 | lib | yes | 0 | 2026-10-03 |
-| `@shenron/api` | [packages/shenron/api](../../../packages/shenron/api) | bun package | 0.1.0 | lib | yes | 0 | 2026-10-02 |
-| `@shenron/auth` | [packages/shenron/auth](../../../packages/shenron/auth) | bun package | 0.1.0 | lib | yes | 0 | 2026-10-02 |
+| `@shenron/api` | [packages/shenron/api](../../../packages/shenron/api) | bun package | 0.1.0 | lib | yes | 0 | 2026-10-03 |
+| `@shenron/auth` | [packages/shenron/auth](../../../packages/shenron/auth) | bun package | 0.1.0 | lib | yes | 0 | 2026-10-03 |
 | `@shenron/config` | [packages/shenron/config](../../../packages/shenron/config) | bun package | 0.1.0 | lib | yes | 0 | 2026-10-03 |
-| `@shenron/db` | [packages/shenron/db](../../../packages/shenron/db) | bun package | 0.1.0 | lib | yes | 0 | 2026-10-01 |
-| `@shenron/images` | [packages/shenron/images](../../../packages/shenron/images) | bun package | 0.1.0 | lib | yes | 0 | 2026-09-29 |
+| `@shenron/db` | [packages/shenron/db](../../../packages/shenron/db) | bun package | 0.1.0 | lib | yes | 0 | 2026-10-03 |
+| `@shenron/images` | [packages/shenron/images](../../../packages/shenron/images) | bun package | 0.1.0 | lib | yes | 0 | 2026-10-03 |
 | `@shenron/pipeline` | [packages/shenron/pipeline](../../../packages/shenron/pipeline) | bun package | 0.1.0 | bin, lib | yes | 0 | 2026-10-03 |
-| `@shenron/ui` | [packages/shenron/ui](../../../packages/shenron/ui) | bun package | 0.1.0 | lib | yes | 0 | 2026-10-02 |
+| `@shenron/ui` | [packages/shenron/ui](../../../packages/shenron/ui) | bun package | 0.1.0 | lib | yes | 0 | 2026-10-03 |
 
 ## ui
 
 | Name | Path | Kind | Version | Targets | Tests | `todo!` | Last commit |
 | --- | --- | --- | --- | --- | --- | ---: | --- |
 | `aphrody-a2a-ui` | [crates/ui/a2a-ui](../../../crates/ui/a2a-ui) | rust crate | 1.0.0-canary | cdylib, rlib | yes | 0 | 2026-10-01 |
-| `aphrody-app` | [crates/ui/app](../../../crates/ui/app) | rust crate | 1.0.0-canary | bin, rlib | yes | 0 | 2026-10-02 |
+| `aphrody-app` | [crates/ui/app](../../../crates/ui/app) | rust crate | 1.0.0-canary | bin, rlib | yes | 0 | 2026-10-03 |
 | `aphrody-bun` | [crates/ui/bun](../../../crates/ui/bun) | rust crate | 1.0.0-canary | rlib | yes | 0 | 2026-10-02 |
 | `aphrody-drive` | [crates/ui/drive](../../../crates/ui/drive) | rust crate | 1.0.0 | lib | yes | 0 | 2026-10-02 |
 | `aphrody-gui-core` | [crates/ui/gui-core](../../../crates/ui/gui-core) | rust crate | 1.0.0-canary | lib | yes | 0 | 2026-10-02 |
