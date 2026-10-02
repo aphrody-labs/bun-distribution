@@ -8,8 +8,8 @@
  * belongs to its caller (bxc's `grok-x-research` actor, `@aphrody/xai` in aphrody-ai).
  */
 
-import { XClient } from "../core/client";
-import { XSession } from "../core/session";
+import { XClient } from "../../../../../../../packages/web/x/src/core/client";
+import { XSession } from "../../../../../../../packages/web/x/src/core/session";
 
 export interface XSearchToolArgs {
   query: string;

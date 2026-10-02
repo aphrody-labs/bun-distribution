@@ -81,9 +81,10 @@ routes de sites, exemples et snapshots historiques demandent une classification.
   références entrantes ; supprimer ceux devenus inutilisés après preuve.
   Inventaire 2026-10-03 : [SCRIPTS-INVENTORY.md](docs/reference/workspace/SCRIPTS-INVENTORY.md),
   456 scripts, 175 sans référence entrante (dont 21 tests), dont 31 aux imports
-  relatifs cassés : 26 réparés (imports résolus par `bun build`), 5 visent des
-  modules absents/générés ; 5 tests Shenron exigent un workspace (`@shenron/*`,
-  `postgres`) : décision propriétaire.
+  relatifs cassés ; sur tous les `.ts`, 55 scripts réparés (imports résolus par
+  `bun build`), 17 restent cassés (sources bxc absentes, wasm généré, kit discord
+  amont) ; 5 tests Shenron exigent un workspace (`@shenron/*`, `postgres`) :
+  décision propriétaire.
 - [ ] Réduire les préfixes de fichiers qui ne décrivent aucun rôle, en conservant
   les conventions imposées (`Cargo.toml`, `package.json`, `index.ts`).
 

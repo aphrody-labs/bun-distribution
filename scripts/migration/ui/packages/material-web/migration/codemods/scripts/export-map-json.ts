@@ -20,7 +20,7 @@ import {
   SIMPLE_COMPONENTS,
   SLOTTED_CHILDREN,
   VARIANT_COMPONENTS,
-} from "../lib/mapping";
+} from "../../../../../../../../packages/ui/material-web/migration/codemods/lib/mapping";
 
 const ROOT = join(__dirname, "..");
 const MIGRATION = join(ROOT, "..");

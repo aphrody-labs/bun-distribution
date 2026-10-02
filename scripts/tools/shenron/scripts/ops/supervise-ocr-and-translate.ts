@@ -17,7 +17,7 @@ import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import postgres from "postgres";
 import { ShenronA2AHub } from "@shenron/pipeline/aphrody/a2a";
-import { sendAdminLabMessage } from "../../apps/bot/src/lib/admin-lab";
+import { sendAdminLabMessage } from "../../../../../apps/shenron/bot/src/lib/admin-lab";
 
 async function getDatabaseUrl(): Promise<string> {
 	if (process.env.DATABASE_URL) return process.env.DATABASE_URL;

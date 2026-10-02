@@ -1,5 +1,5 @@
 import { basename, join } from "node:path";
-import { classerDefaut } from "../apps/site/src/lib/databooks-defauts.ts";
+import { classerDefaut } from "../../../../apps/shenron/site/src/lib/databooks-defauts.ts";
 
 const [input, sourceDir, destinationDir] = Bun.argv.slice(2);
 if (!input || !sourceDir || !destinationDir) throw new Error("usage: bun scripts/prepare-ocr-rejected.ts <resultats.jsonl> <images> <destination>");

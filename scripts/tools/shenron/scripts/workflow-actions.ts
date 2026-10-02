@@ -7,7 +7,7 @@
 import { existsSync } from "node:fs";
 import { copyFile, mkdir, readFile, readdir, writeFile } from "node:fs/promises";
 import { basename, join, resolve } from "node:path";
-import { classerDefaut } from "../apps/site/src/lib/databooks-defauts";
+import { classerDefaut } from "../../../../apps/shenron/site/src/lib/databooks-defauts";
 
 const ROOT = resolve(import.meta.dir, "..");
 const args = Bun.argv.slice(2);

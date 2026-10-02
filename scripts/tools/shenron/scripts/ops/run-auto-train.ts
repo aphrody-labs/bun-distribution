@@ -26,7 +26,7 @@ function getArg(flag: string): string | undefined {
 const hasFlag = (flag: string) => args.includes(flag);
 
 async function main() {
-	Bun.env.DATABASE_PATH ??= join(import.meta.dir, "../../apps/bot/data/bot.db");
+	Bun.env.DATABASE_PATH ??= join(import.meta.dir, "../../../../../apps/shenron/bot/data/bot.db");
 	if (Bun.env.RAG_DB) Bun.env.DATABASE_PATH = resolve(Bun.env.RAG_DB);
 	const botEnvPath = join(import.meta.dir, "../../apps/bot/.env");
 	if (Bun.env.NODE_ENV !== "test" && (await Bun.file(botEnvPath).exists())) {
@@ -50,14 +50,14 @@ async function main() {
 		Bun.env.DISCORD_TOKEN = "rag-evaluation-local";
 	if (!Bun.env.NODE_ENV) Bun.env.NODE_ENV = "test";
 	if (!Bun.env.LOG_LEVEL) Bun.env.LOG_LEVEL = "error";
-	const runtimeEnvPromise = import("../../apps/bot/src/lib/env");
+	const runtimeEnvPromise = import("../../../../../apps/shenron/bot/src/lib/env");
 	const { env: runtimeEnv } = await runtimeEnvPromise;
 	const [{ TrainingService }, { DatabaseService }, { CanonService }, { sendAdminLabMessage }] =
 		await Promise.all([
-			import("../../apps/bot/src/services/TrainingService"),
-			import("../../apps/bot/src/db/index"),
-			import("../../apps/bot/src/services/CanonService"),
-			import("../../apps/bot/src/lib/admin-lab"),
+			import("../../../../../apps/shenron/bot/src/services/TrainingService"),
+			import("../../../../../apps/shenron/bot/src/db/index"),
+			import("../../../../../apps/shenron/bot/src/services/CanonService"),
+			import("../../../../../apps/shenron/bot/src/lib/admin-lab"),
 		]);
 	const samplesArg = getArg("--samples");
 	const samples = samplesArg ? parseInt(samplesArg, 10) : undefined;

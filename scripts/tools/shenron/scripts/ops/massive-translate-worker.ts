@@ -33,13 +33,13 @@ import {
 	jugerTraduction,
 	texteDePlanche,
 	traductionDePlanche,
-} from "../../apps/site/scripts/_databooks-base";
-import { classerDefaut } from "../../apps/site/src/lib/databooks-defauts";
+} from "../../../../../apps/shenron/site/scripts/_databooks-base";
+import { classerDefaut } from "../../../../../apps/shenron/site/src/lib/databooks-defauts";
 import {
 	demasquerVocabulaireStrict,
 	masquerVocabulaire,
 	verifierTexteSource,
-} from "../../apps/site/src/lib/ja/lexique-canonique";
+} from "../../../../../apps/shenron/site/src/lib/ja/lexique-canonique";
 
 // Gel des écrivains : sortie 3 avant toute connexion si .coord/FREEZE-databooks.json existe.
 if (import.meta.main) arretSiGel("massive-translate-worker");

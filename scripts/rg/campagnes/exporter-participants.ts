@@ -52,7 +52,7 @@
 import { checkoutRoot } from "@aphrody/paths";
 import { createBunSql } from "@rosegriffon/db/bun-sql";
 
-import { SQL_CREATIONS } from "../../apps/website/src/lib/x-campagnes/sql-creations";
+import { SQL_CREATIONS } from "../../../apps/rg/website/src/lib/x-campagnes/sql-creations";
 
 import {
 	clePublique,
@@ -62,7 +62,7 @@ import {
 	type ParticipantTirage,
 	type PoidsMode,
 	type SourceTirage,
-} from "../../apps/website/src/lib/x-campagnes/tirage";
+} from "../../../apps/rg/website/src/lib/x-campagnes/tirage";
 
 // ───────────────────────── Réglages ─────────────────────────
 

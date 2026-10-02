@@ -11,7 +11,7 @@ import {
 } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
-import { verifyAudioErrorRecovery } from "./wasm-audio-smoke";
+import { verifyAudioErrorRecovery } from "../../../../../tools/ui/apps/nie-web/scripts/wasm-audio-smoke";
 
 const REPOSITORY_ROOT = fileURLToPath(new URL("../../../", import.meta.url));
 const INPUT_WASM = fileURLToPath(

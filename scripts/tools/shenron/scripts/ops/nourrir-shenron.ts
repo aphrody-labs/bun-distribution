@@ -12,8 +12,8 @@ import {
 	deposerTranscription,
 	texteDePlanche,
 	type PlancheBrute,
-} from "../../apps/site/scripts/_databooks-base";
-import { classerDefaut } from "../../apps/site/src/lib/databooks-defauts";
+} from "../../../../../apps/shenron/site/scripts/_databooks-base";
+import { classerDefaut } from "../../../../../apps/shenron/site/src/lib/databooks-defauts";
 import { Database } from "bun:sqlite";
 import type postgres from "postgres";
 import { existsSync, readdirSync, readFileSync } from "node:fs";

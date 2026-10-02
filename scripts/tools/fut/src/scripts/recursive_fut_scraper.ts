@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-import { scrapeFutGgPlayer } from "../futgg.ts";
-import { scrapeFutBinPrice } from "../futbin.ts";
+import { scrapeFutGgPlayer } from "../../../../../packages/fut/fut/src/futgg.ts";
+import { scrapeFutBinPrice } from "../../../../../packages/fut/fut/src/futbin.ts";
 import { Browser } from "@aphrody/bxc/browser";
 async function launchGhostBrowser(): Promise<{ page: any; close: () => Promise<void> }> {
 	const page = await Browser.newPage({ profile: "http" });
@@ -28,7 +28,7 @@ import Bottleneck from "bottleneck";
 import PQueue from "p-queue";
 import pRetry, { AbortError } from "p-retry";
 import { LRUCache } from "lru-cache";
-import { FutPlayerSchema, FutPriceSchema } from "../types.ts";
+import { FutPlayerSchema, FutPriceSchema } from "../../../../../packages/fut/fut/src/types.ts";
 
 const dnsCache = new LRUCache<string, string>({
 	max: 100,
@@ -168,7 +168,7 @@ async function runRecursiveScraper() {
 		return;
 	}
 
-	const mappingPath = join(import.meta.dir, "../data/fut_domains_mapping.json");
+	const mappingPath = join(import.meta.dir, "../../../../../packages/fut/fut/src/data/fut_domains_mapping.json");
 	const mappingFile = Bun.file(mappingPath);
 	if (!(await mappingFile.exists())) {
 		console.error("Mapping file fut_domains_mapping.json not found!");

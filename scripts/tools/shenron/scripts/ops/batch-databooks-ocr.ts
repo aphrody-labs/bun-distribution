@@ -17,7 +17,7 @@ import {
 	chargeOuvrages,
 	connecte,
 	texteDePlanche,
-} from "../../apps/site/scripts/_databooks-base";
+} from "../../../../../apps/shenron/site/scripts/_databooks-base";
 
 const args = process.argv.slice(2);
 const opt = (nom: string, defaut?: string) => {

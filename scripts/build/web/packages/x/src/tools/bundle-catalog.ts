@@ -4,7 +4,7 @@
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { X_DISCOVERY_PAGES, X_DISCOVERY_UA } from "../config/x-surface";
+import { X_DISCOVERY_PAGES, X_DISCOVERY_UA } from "../../../../../../../packages/web/x/src/config/x-surface";
 
 export interface BundleOperation {
   queryId: string;

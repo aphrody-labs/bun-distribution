@@ -312,3 +312,9 @@ Preuve : import relatif sans fichier cible (`.ts`, `.tsx`, `/index.ts`, `.js`→
 - 12 tests/scripts de `scripts/audit` et `scripts/release` pointent maintenant vers leur module déplacé dans `scripts/{tools,build,release}` ; 2 modules Shenron (crawl-dragon-ball-official-aphrody, wiki-corpus-enricher) suivent le layout actuel.
 - `bun test` : tests nie-web 13 pass. Tests Shenron (crawl-doc-links-rag, crawl-dragon-ball-official-aphrody, eval-aphrody-rag, wiki-corpus-enricher, wiki-page-builder) : 5 échecs de résolution de packages (`@shenron/pipeline/*`, `postgres`) car `scripts/` n'est pas un membre de workspace avec ces dépendances. Décision propriétaire Shenron : déplacer sous `packages/shenron/pipeline/scripts` ou déclarer les dépendances.
 - Restent non résolus : wasm-audio-smoke et verify-audio-cross-host (artefact généré nie_wasm.js), build-fingerprint (vite.config absent), bxc build-demo-index et capture_squad_builders (sources bxc absentes).
+
+### Troisième passe 2026-10-03 (tous les scripts `.ts`)
+
+- Scripts non référencés restants (105) : 98 résolvent leurs imports avec `bun build --target bun --packages external` ; 2 imports Shenron réparés ; 5 bxc visent des sources absentes du dépôt (backfill-empty-markdown, consolidate-dragonball-crawls, enrich-shenron, export-dragonball-jsonl, train-dragonballfr-links).
+- Scripts référencés (171) : 34 aux imports cassés, 27 réparés (layouts Shenron/RG actuels, modules déplacés dans `scripts/`, scripts extraits de `packages/<domaine>/<paquet>` qui pointent à nouveau vers ce paquet).
+- Restent cassés : 4 bxc (grok-scan-with-cookies, publish-workspaces.test, x-premium-recon, x-pro-recon : sources bxc absentes) et 3 du kit de build discord (generateSplitDocumentation, deux tsup.config : `package.json`/`tsup.config.js` amont absents).

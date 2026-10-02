@@ -47,7 +47,7 @@
 
 import { createBunSql } from "@rosegriffon/db/bun-sql";
 
-import { SQL_CREATIONS } from "../../apps/website/src/lib/x-campagnes/sql-creations";
+import { SQL_CREATIONS } from "../../../apps/rg/website/src/lib/x-campagnes/sql-creations";
 
 /*
  * ⚠ `${valeur}::jsonb` avec la valeur JS BRUTE, tableau compris — JAMAIS

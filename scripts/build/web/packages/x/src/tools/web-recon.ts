@@ -3,7 +3,7 @@
  * Aphrody Web integration — renders the X SPA through the canonical V8 CLI.
  */
 
-import { X_RECON_URLS } from "../config/x-surface";
+import { X_RECON_URLS } from "../../../../../../../packages/web/x/src/config/x-surface";
 
 export type WebReconProfile = "static" | "fast" | "http" | "stealth" | "max";
 

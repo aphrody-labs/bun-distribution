@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import { readFileSync } from "node:fs";
-import { demasquerVocabulaire, verifierConformiteTraduction } from "../../apps/site/src/lib/ja/lexique-canonique";
+import { demasquerVocabulaire, verifierConformiteTraduction } from "../../../../../apps/shenron/site/src/lib/ja/lexique-canonique";
 
 const raw = readFileSync("data/databooks-translation/lot-pure-ja-20.json", "utf-8");
 const items = JSON.parse(raw);

@@ -9,7 +9,7 @@
 import { createHash } from "node:crypto";
 import postgres from "postgres";
 import { Database } from "bun:sqlite";
-import { decodeHtmlEntities, decodeHtmlEntitiesInMarkdown } from "../../apps/site/src/lib/text/html-entities";
+import { decodeHtmlEntities, decodeHtmlEntitiesInMarkdown } from "../../../../../apps/shenron/site/src/lib/text/html-entities";
 
 type BxcRow = {
 	url: string;

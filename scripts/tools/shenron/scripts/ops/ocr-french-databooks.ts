@@ -34,7 +34,7 @@ import {
 	deposerTranscription,
 	texteDePlanche,
 	traductionDePlanche,
-} from "../../apps/site/scripts/_databooks-base";
+} from "../../../../../apps/shenron/site/scripts/_databooks-base";
 
 // Gel des écrivains : sortie 3 avant toute connexion si .coord/FREEZE-databooks.json existe.
 if (import.meta.main) arretSiGel("ocr-french-databooks");

@@ -18,7 +18,7 @@
 import { existsSync } from "node:fs";
 import { mkdir, readFile, readdir, writeFile } from "node:fs/promises";
 import { basename, join, relative, resolve } from "node:path";
-import { classerDefaut } from "../apps/site/src/lib/databooks-defauts";
+import { classerDefaut } from "../../../../apps/shenron/site/src/lib/databooks-defauts";
 
 const ROOT = resolve(import.meta.dir, "..");
 const MODEL = "gpt-5.6-luna";

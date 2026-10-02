@@ -11,7 +11,7 @@
  *   bun scripts/ops/notify-admin-lab.ts --title "🎯 Évaluation RAG" --text "Recall@1: 97%, Recall@5: 100%" --kind success
  *   bun scripts/ops/notify-admin-lab.ts --read 5
  */
-import { sendAdminLabMessage, getAdminLabRecentMessages, ADMIN_LAB_CHANNEL_ID } from "../../apps/bot/src/lib/admin-lab";
+import { sendAdminLabMessage, getAdminLabRecentMessages, ADMIN_LAB_CHANNEL_ID } from "../../../../../apps/shenron/bot/src/lib/admin-lab";
 
 const args = process.argv.slice(2);
 
