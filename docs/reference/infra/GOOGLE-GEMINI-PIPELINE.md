@@ -9,8 +9,8 @@
 The current implementation is organized in the monorepo and the sibling
 `aphrody-py` workspace:
 
-- Rust CLI: `crates/ai/google` (`aphrody-google`), the runtime authority.
-- Bun facade: `packages/ai/google` (`@aphrody/google`).
+- Rust CLI: `crates/google/google` (`aphrody-google`), the runtime authority.
+- Bun facade: `packages/google/google` (`@aphrody/google`).
 - Vertex document AI adapter: `packages/ai/doc-ai` (`@aphrody/doc-ai`).
 - Python facade: `../aphrody-py/packages/ai/py/aphrody` (`aphrody.google`).
 - Kernel/MCP integrations: `crates/os` and the kernel package owners.

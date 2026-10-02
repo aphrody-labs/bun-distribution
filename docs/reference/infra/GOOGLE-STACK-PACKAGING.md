@@ -7,10 +7,10 @@ monorepo and must not be used to locate current implementations.
 
 ## Current owners
 
-- `aphrody-google` is the Rust CLI in `crates/ai/google` and owns runtime
+- `aphrody-google` is the Rust CLI in `crates/google/google` and owns runtime
   resolution, provider routing and the public `status`, `env` and `doctor`
   commands.
-- `@aphrody/google` in `packages/ai/google` is a Bun facade over that binary.
+- `@aphrody/google` in `packages/google/google` is a Bun facade over that binary.
 - `@aphrody/doc-ai` in `packages/ai/doc-ai` is a separate Vertex ADC adapter.
 - `aphrody.google` is the Python facade in the sibling `aphrody-py` workspace,
   under `packages/ai/py/aphrody`.

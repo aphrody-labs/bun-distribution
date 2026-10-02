@@ -429,7 +429,7 @@
         "typescript": "catalog:",
       },
     },
-    "packages/ai/google": {
+    "packages/google/google": {
       "name": "@aphrody/google",
       "version": "1.0.0-canary",
       "bin": {
@@ -1999,7 +1999,7 @@
 
     "@aphrody/fut": ["@aphrody/fut@workspace:packages/fut/fut"],
 
-    "@aphrody/google": ["@aphrody/google@workspace:packages/ai/google"],
+    "@aphrody/google": ["@aphrody/google@workspace:packages/google/google"],
 
     "@aphrody/koharu-editor-example": ["@aphrody/koharu-editor-example@workspace:apps/koharu/editor"],
 

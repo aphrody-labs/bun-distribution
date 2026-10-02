@@ -14,7 +14,7 @@ Set-StrictMode -Version Latest
 
 $AphrodyRoot = (Resolve-Path -LiteralPath $AphrodyRoot).Path
 $HomeDirectory = [IO.Path]::GetFullPath($HomeDirectory)
-$cargoManifest = Join-Path $AphrodyRoot 'crates/ai/google/Cargo.toml'
+$cargoManifest = Join-Path $AphrodyRoot 'crates/google/google/Cargo.toml'
 $cargoWrapper = Join-Path $AphrodyRoot 'scripts/build/rust/cargo-serial.ps1'
 if (-not (Test-Path -LiteralPath $cargoManifest -PathType Leaf)) {
     throw "Google Rust owner manifest is missing: $cargoManifest"
@@ -28,7 +28,7 @@ if ($LASTEXITCODE -ne 0) { throw 'cargo metadata failed for the monorepo workspa
 $metadata = ($metadataOutput -join "`n") | ConvertFrom-Json
 $package = $metadata.packages | Where-Object { $_.name -eq 'aphrody-google' } | Select-Object -First 1
 if (-not $package -or -not ($package.targets | Where-Object { $_.name -eq 'aphrody-google' -and $_.kind -contains 'bin' })) {
-    throw 'Cargo workspace does not expose the aphrody-google binary from crates/ai/google.'
+    throw 'Cargo workspace does not expose the aphrody-google binary from crates/google/google.'
 }
 
 $artifact = $null

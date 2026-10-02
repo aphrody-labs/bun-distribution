@@ -36,10 +36,10 @@ function Invoke-OwnerCommand {
     }
 }
 
-$cargoManifest = Join-Path $AphrodyRoot 'crates/ai/google/Cargo.toml'
-$rustMain = Join-Path $AphrodyRoot 'crates/ai/google/src/main.rs'
-$bunManifestPath = Join-Path $AphrodyRoot 'packages/ai/google/package.json'
-$bunEntrypoint = Join-Path $AphrodyRoot 'packages/ai/google/bin/aphrody-google.ts'
+$cargoManifest = Join-Path $AphrodyRoot 'crates/google/google/Cargo.toml'
+$rustMain = Join-Path $AphrodyRoot 'crates/google/google/src/main.rs'
+$bunManifestPath = Join-Path $AphrodyRoot 'packages/google/google/package.json'
+$bunEntrypoint = Join-Path $AphrodyRoot 'packages/google/google/bin/aphrody-google.ts'
 $docAiManifestPath = Join-Path $AphrodyRoot 'packages/ai/doc-ai/package.json'
 $docAiEntrypoint = Join-Path $AphrodyRoot 'packages/ai/doc-ai/src/llm.ts'
 $pythonManifest = Join-Path $PythonRoot 'packages/ai/py/aphrody/pyproject.toml'
@@ -104,7 +104,7 @@ if ($pythonUvVersion -ne $monorepoUvVersion) {
 # These source checks reject literal key assignments without reading local env
 # files or printing match contents.
 $scanRoots = @(
-    (Join-Path $AphrodyRoot 'packages/ai/google'),
+    (Join-Path $AphrodyRoot 'packages/google/google'),
     (Join-Path $AphrodyRoot 'packages/ai/doc-ai'),
     (Join-Path $PythonRoot 'packages/ai/py/aphrody/aphrody')
 )

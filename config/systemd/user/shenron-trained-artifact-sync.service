@@ -12,7 +12,7 @@ StartLimitBurst=5
 Type=oneshot
 WorkingDirectory=/home/aphro/aphrody
 Environment=PATH=/home/aphro/.local/bin:/home/aphro/.bun/bin:/home/aphro/.cargo/bin:/usr/local/bin:/usr/bin:/bin
-ExecStart=/home/aphro/.bun/bin/bun --env-file=/home/aphro/aphrody/.env packages/ai/google/src/drive-model-sync.ts
+ExecStart=/home/aphro/.bun/bin/bun --env-file=/home/aphro/aphrody/.env packages/google/google/src/drive-model-sync.ts
 TimeoutStartSec=12h
 Restart=on-failure
 RestartSec=60s

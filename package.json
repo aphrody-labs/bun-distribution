@@ -4,6 +4,7 @@
   "workspaces": {
     "packages": [
       "packages/ai/*",
+      "packages/google/*",
       "packages/bun/*",
       "packages/discord/*",
       "packages/shenron/*",
@@ -286,7 +287,7 @@
     "web:crawl": "bun scripts/tools/web/web-crawl.ts",
     "web:crawlability": "bun scripts/audit/web-crawlability.ts",
     "shenron:verify": "bun scripts/audit/shenron-layout.ts && bun run --filter '@shenron/*' type-check",
-    "n2b:google": "aphrody n2b packages/ai/google",
+    "n2b:google": "aphrody n2b packages/google/google",
     "scan": "bash scripts/audit/ai/scripts/scan-repo.sh",
     "bench": "bun scripts/tools/ai/scripts/bench-all.ts",
     "bench:all": "bun scripts/tools/ai/scripts/bench-all.ts",

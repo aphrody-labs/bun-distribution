@@ -138,7 +138,7 @@
         },
         {
           "name": "aphrody-antigravity",
-          "path": "crates/ai/antigravity",
+          "path": "crates/google/antigravity",
           "description": "Native Rust SDK for Antigravity (Google AI Ultra / Gemini) — token extraction from Windows Credential Manager, OAuth refresh, typed HTTP client.",
           "bins": [],
           "features": [
@@ -384,14 +384,14 @@
         },
         {
           "name": "aphrody-gemini-runtime",
-          "path": "crates/ai/gemini-runtime",
+          "path": "crates/google/gemini-runtime",
           "description": "Cross-platform Gemini CLI runtime adapter: detect, version, turn streaming, plus the mcp.json loader and the legacy MCP client facade over aphrody-mcp-client.",
           "bins": [],
           "features": []
         },
         {
           "name": "aphrody-gemini-web",
-          "path": "crates/ai/gemini-web",
+          "path": "crates/google/gemini-web",
           "description": "Gemini web app (gemini.google.com) Boq RPC client — cookie auth, page-bootstrap token scrape, batchexecute envelope codec. Mirrors the notebooklm crate transport.",
           "bins": [
             "aphrody-gemini-web"
@@ -407,7 +407,7 @@
         },
         {
           "name": "aphrody-google",
-          "path": "crates/ai/google",
+          "path": "crates/google/google",
           "description": "Canonical Rust facade for Aphrody Google Cloud, Gemini, Web and Antigravity integrations.",
           "bins": [
             "aphrody-google"
@@ -654,7 +654,7 @@
         },
         {
           "name": "aphrody-model-antigravity",
-          "path": "crates/ai/model-antigravity",
+          "path": "crates/google/model-antigravity",
           "description": "Antigravity (Google AI Ultra / Cloud Code) ModelClient implementation for aphrody agent engine — keyless token re-read on 401, function calling, reasoning stream.",
           "bins": [],
           "features": []
@@ -766,7 +766,7 @@
         },
         {
           "name": "aphrody-notebooklm",
-          "path": "crates/ai/notebooklm",
+          "path": "crates/google/notebooklm",
           "description": "NotebookLM Boq RPC client — pure-HTTP, cookie/OAuth auth, batchexecute envelope codec, artifacts/sources/chat/research surface.",
           "bins": [],
           "features": []
@@ -1770,7 +1770,7 @@
         },
         {
           "name": "@aphrody/google",
-          "path": "packages/ai/google",
+          "path": "packages/google/google",
           "description": "Canonical Bun facade for Aphrody Google Cloud and Gemini.",
           "bins": [
             "aphrody-google"
@@ -5630,7 +5630,7 @@
       "binary": "aphrody-google",
       "crate": "aphrody-google",
       "repo": "aphrody",
-      "source": "crates/ai/google/src/main.rs#Cli",
+      "source": "crates/google/google/src/main.rs#Cli",
       "commands": [
         {
           "name": "status",

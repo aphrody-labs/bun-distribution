@@ -36,7 +36,7 @@ Canonical Rust/Bun monorepo
 | `aphrody-agent-runtime` | crates/ai/agent-runtime | Wiring/factory layer that assembles a ready-to-run aphrody agent: builds a ModelClient (Gemini or stub), a ToolRegistry preloaded with the shell-exec + apply-patch tools, an optional rollout recorder, and spawns an aphrody-engine session. The ergonomic entry point every surface (CLI / TUI / desktop) uses to start an autonomous agent. |  | default, rag |
 | `aphrody-agent-tools` | crates/ai/agent-tools | Concrete ToolExecutor implementations for the aphrody agent engine: a streaming sandboxed shell-exec tool and an apply_patch tool that wraps aphrody-patch. These are the real capabilities the engine's ToolRegistry exposes to the model. |  |  |
 | `aphrody-ai` | crates/ai/ai | Canonical Aphrody pure AI logic: models, inference, providers, RAG, agents, MCP client and sessions. |  |  |
-| `aphrody-antigravity` | crates/ai/antigravity | Native Rust SDK for Antigravity (Google AI Ultra / Gemini) — token extraction from Windows Credential Manager, OAuth refresh, typed HTTP client. |  | default, grpc, local-ls |
+| `aphrody-antigravity` | crates/google/antigravity | Native Rust SDK for Antigravity (Google AI Ultra / Gemini) — token extraction from Windows Credential Manager, OAuth refresh, typed HTTP client. |  | default, grpc, local-ls |
 | `aphrody-app` | crates/ui/app | Aphrody OS desktop (Tauri 3): the GUI and window manager; drives the aphrody agent over its app-server protocol. | `aphrody-app` | custom-protocol |
 | `aphrody-app-protocol` | crates/contracts/app-protocol | Pure, wasm32-safe Codex app-server v2 protocol types: JSON-RPC wire types, Tier-1 request/response pairs, server notifications, approvals, and aphrody/* protocol extensions. |  |  |
 | `aphrody-app-server` | crates/ai/app-server | Local Codex-shaped app server for Aphrody threads and turns. |  | default, rag |
@@ -64,10 +64,10 @@ Canonical Rust/Bun monorepo
 | `aphrody-firefly` | crates/ai/firefly | Pure-Rust Adobe Firefly Services client for aphrody — IMS OAuth server-to-server token core, v3 async image generation (Image model), job polling and output download. Cross-platform (rustls), headless, in-policy. Backs the `aphrody firefly` CLI and the firefly_generate MCP tool, and is the auth core shared with the cloud Photoshop API. |  |  |
 | `aphrody-fsindex` | crates/os/fsindex | Persistent local-filesystem search index (SQLite FTS5), mirroring the Google desktop app's local_files.db. Metadata-only, privacy-bounded. |  |  |
 | `aphrody-gateway` | crates/ai/gateway | Provider-agnostic OpenAI-compatible AI gateway: Cloudflare AI Gateway, Vercel AI Gateway, and BYOK OpenAI proxy. |  |  |
-| `aphrody-gemini-runtime` | crates/ai/gemini-runtime | Cross-platform Gemini CLI runtime adapter: detect, version, turn streaming, plus the mcp.json loader and the legacy MCP client facade over aphrody-mcp-client. |  |  |
-| `aphrody-gemini-web` | crates/ai/gemini-web | Gemini web app (gemini.google.com) Boq RPC client — cookie auth, page-bootstrap token scrape, batchexecute envelope codec. Mirrors the notebooklm crate transport. | `aphrody-gemini-web` |  |
+| `aphrody-gemini-runtime` | crates/google/gemini-runtime | Cross-platform Gemini CLI runtime adapter: detect, version, turn streaming, plus the mcp.json loader and the legacy MCP client facade over aphrody-mcp-client. |  |  |
+| `aphrody-gemini-web` | crates/google/gemini-web | Gemini web app (gemini.google.com) Boq RPC client — cookie auth, page-bootstrap token scrape, batchexecute envelope codec. Mirrors the notebooklm crate transport. | `aphrody-gemini-web` |  |
 | `aphrody-git` | crates/infra/git | Native Git and GitHub integration for the Aphrody ecosystem. |  |  |
-| `aphrody-google` | crates/ai/google | Canonical Rust facade for Aphrody Google Cloud, Gemini, Web and Antigravity integrations. | `aphrody-google` |  |
+| `aphrody-google` | crates/google/google | Canonical Rust facade for Aphrody Google Cloud, Gemini, Web and Antigravity integrations. | `aphrody-google` |  |
 | `aphrody-guard` | crates/os/guard | Autonomous-agent safety guardrails: pre-main process hardening (disable core dumps, block ptrace attach, strip LD_*/DYLD_* loader env) and a cross-platform shell command-safety classifier (Allow / Prompt / Forbidden) for gating agent-issued commands. Inspired by OpenAI Codex (Apache-2.0). |  |  |
 | `aphrody-gui-core` | crates/ui/gui-core | Neutral GUI abstractions for Aphrody OS: WindowHost, SurfaceProvider, ThemeProvider, KernelBridge |  |  |
 | `aphrody-http-error` | crates/ai/http-error | One JSON error envelope ({"error":{"code","message","data"}}) shared by Aphrody's own HTTP surfaces. |  |  |
@@ -91,7 +91,7 @@ Canonical Rust/Bun monorepo
 | `aphrody-mcp-smoke` | crates/ai/mcp-smoke | End-to-end smoke test runner for the unified aphrody-mcp stdio server: handshake + tools/list + tools/call sweep over all 17 tools, p50/p95 latency, NDJSON report. | `aphrody-mcp-smoke` |  |
 | `aphrody-memory` | crates/ai/memory | aphrody memory SDK — async MemoryBackend (JSONL/HNSW/SQLite/LanceDB) + MemoryProvider (Mem0/Honcho/SqliteLocal Tier-1). | `aphrody-agent-home-memory` | default, lancedb |
 | `aphrody-messaging` | crates/ai/messaging | Tier-1 messaging connectors (Telegram, Slack, Resend Email API, and native SMTP). |  |  |
-| `aphrody-model-antigravity` | crates/ai/model-antigravity | Antigravity (Google AI Ultra / Cloud Code) ModelClient implementation for aphrody agent engine — keyless token re-read on 401, function calling, reasoning stream. |  |  |
+| `aphrody-model-antigravity` | crates/google/model-antigravity | Antigravity (Google AI Ultra / Cloud Code) ModelClient implementation for aphrody agent engine — keyless token re-read on 401, function calling, reasoning stream. |  |  |
 | `aphrody-model-client` | crates/ai/model-client | Provider abstraction for the aphrody agent engine: the async `ModelClient` trait, a unified `ModelStreamEvent` (text delta / tool call / reasoning / completed+usage), and a Gemini generateContent streaming client that maps Google's SSE wire onto the unified events. Lets the turn loop stay provider-agnostic (Gemini REST / gemini-web / agy). |  |  |
 | `aphrody-models` | crates/ai/models | Local model lifecycle for aphrody: pinned HuggingFace/URL references, a curated catalog of OCR / visual-transcription / speech-to-text / embedding models, a digest-checked resumable downloader, hand-rolled GGUF / GGML / safetensors / ONNX header inspection, and an LRU-evicting on-disk store under ~/.aphrody/models. |  |  |
 | `aphrody-n2b` | crates/compat/n2b | Node.js to Bun migration analyzer and codemod | `n2b` | ai, default |
@@ -106,7 +106,7 @@ Canonical Rust/Bun monorepo
 | `aphrody-n2b-types` | crates/compat/n2b-types | N2B shared types and the versioned JSON report schema. |  |  |
 | `aphrody-n2b-util` | crates/compat/n2b-util | N2B utilities: line offsets, positions, findings and non-overlapping text edits. |  |  |
 | `aphrody-native` | crates/native/native | Host hardware topology and monotonic clock probes for Aphrody. |  |  |
-| `aphrody-notebooklm` | crates/ai/notebooklm | NotebookLM Boq RPC client — pure-HTTP, cookie/OAuth auth, batchexecute envelope codec, artifacts/sources/chat/research surface. |  |  |
+| `aphrody-notebooklm` | crates/google/notebooklm | NotebookLM Boq RPC client — pure-HTTP, cookie/OAuth auth, batchexecute envelope codec, artifacts/sources/chat/research surface. |  |  |
 | `aphrody-nu` | crates/shell/nu | Nushell embedded in Aphrody OS: structured evaluation for agents (the shell subsystem). |  |  |
 | `aphrody-ocr` | crates/ai/ocr | Image-to-text pipeline for aphrody: drives a local vision-language model over one image or a whole directory, parses its DocTags output into markdown, and reports which pages carry no text at all. |  | default, sqlite |
 | `aphrody-ocr-core` | crates/ai/ocr-core | Portable versioned OCR result contract, provenance and quality states for aphrody. |  | default, sqlite |
@@ -228,7 +228,7 @@ Canonical Rust/Bun monorepo
 | `@aphrody/doc-ai` | packages/ai/doc-ai | AI-first documentation and automatic translation system | `doc-ai` |
 | `@aphrody/eslint-plugin-m3` | packages/ui/eslint-plugin-m3 | Lint rules for sites consuming material-web (@aphrody/m3-react + Material Symbols) — runs under oxlint (jsPlugins) and ESLint. |  |
 | `@aphrody/fut` | packages/fut/fut | High-Performance EA SPORTS FC & FIFA Ultimate Team Intelligence Suite: Scraping, Crawling, Market Valuation, AI Squad Builder, Mathematical SBC Solver, Early Leaks Radar, Live Chrome MV3 Extension, and Remote MCP Bridge. |  |
-| `@aphrody/google` | packages/ai/google | Canonical Bun facade for Aphrody Google Cloud and Gemini. | `aphrody-google` |
+| `@aphrody/google` | packages/google/google | Canonical Bun facade for Aphrody Google Cloud and Gemini. | `aphrody-google` |
 | `@aphrody/koharu-editor-example` | apps/koharu/editor |  |  |
 | `@aphrody/koharu-ui` | packages/koharu/ui | Koharu editor, controls, preferences, resources and canvas UI for Aphrody hosts |  |
 | `@aphrody/m3` | packages/ui/m3 | The @aphrody Material Design 3 framework for Bun: one plugin (Tailwind v4, Sass through Rust, m3:* virtual theme/font modules, ?url imports), serveM3 (Bun.serve + HMR + proxy), buildM3 (Bun.build, Tauri webview layout), M3App and the m3 CLI. | `m3` |

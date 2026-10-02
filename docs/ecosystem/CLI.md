@@ -352,7 +352,7 @@ Crate `aphrody`, parser `apps/cli/src/lib.rs#Cli`, 323 commands.
 
 ### `aphrody-google`
 
-Crate `aphrody-google`, parser `crates/ai/google/src/main.rs#Cli`, 9 commands.
+Crate `aphrody-google`, parser `crates/google/google/src/main.rs#Cli`, 9 commands.
 
 - `aphrody-google status` — Print the resolved public runtime contract as JSON.
 - `aphrody-google env` — Print shell exports for the shared non-secret runtime contract.

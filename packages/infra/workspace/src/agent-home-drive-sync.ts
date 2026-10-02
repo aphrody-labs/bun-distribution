@@ -8,7 +8,7 @@ import { infraRoot } from "./runtime.ts";
 
 const ROOT = process.env.APHRODY_ROOT ?? infraRoot();
 const ENV = `${ROOT}/.env`;
-const GOOGLE_CLI = `${ROOT}/packages/ai/google/bin/aphrody-google.ts`;
+const GOOGLE_CLI = `${ROOT}/packages/google/google/bin/aphrody-google.ts`;
 const WORKSPACE = statePath("workspaces", "dbfr");
 const MEMORY_DB = process.env.APHRODY_AGENT_HOME_MEMORY_DB ?? `${WORKSPACE}/db/agent.db`;
 const MEMORY_BIN =
