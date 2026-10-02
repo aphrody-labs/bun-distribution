@@ -7,8 +7,9 @@
  * lui, ne les avait jamais vues : `rag_ask` pouvait citer un databook ou une
  * fiche wiki, jamais l'auteur lui-même. Ce script comble ce trou.
  *
- * La liste des documents admis n'est pas redéfinie ici : elle est importée du
- * site (`DOCUMENTS`, `REFUSÉ`). Une source ajoutée là-bas entre dans le RAG au
+ * La liste des documents admis n'est pas redéfinie ici : elle est importée de
+ * `@shenron/config/aphrody-corpus` (`DOCUMENTS`, `REFUSÉ`), partagée avec le
+ * site. Une source ajoutée là-bas entre dans le RAG au
  * prochain passage, et un miroir de wiki de fans reste refusé aux deux endroits
  * — la règle est écrite une fois.
  *
@@ -33,7 +34,7 @@ import { writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
 import { chunkDocument } from "./_rag-chunk";
-import { DOCUMENTS, REFUSÉ } from "../../../../apps/shenron/site/scripts/_aphrody-corpus";
+import { DOCUMENTS, REFUSÉ } from "@shenron/config/aphrody-corpus";
 import {
 	ragMetaOf,
 	repoRootFromScript,
