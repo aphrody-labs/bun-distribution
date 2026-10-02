@@ -425,10 +425,10 @@ jieba-rs = "0.10.3"
 fontique = "0.11.1"
 pollster = "1.0.1"
 vello = "0.10.0"
-tauri = { version = "=3.0.0-alpha.3", default-features = false, features = ["compression", "macos-private-api"] }
-tauri-build = "=3.0.0-alpha.2"
-tauri-runtime-wry = { version = "=3.0.0-alpha.3", default-features = false, features = ["x11", "macos-private-api"] }
-tauri-runtime-cef = { version = "=3.0.0-alpha.4", features = ["macos-private-api"] }
+tauri = { version = "=3.0.0-alpha.4", default-features = false, features = ["compression"] }
+tauri-build = "=3.0.0-alpha.3"
+tauri-runtime-wry = { version = "=3.0.0-alpha.4", default-features = false, features = ["x11"] }
+tauri-runtime-cef = { version = "=3.0.0-alpha.5" }
 tauri-plugin-log = "=3.0.0-alpha.2"
 tauri-plugin-opener = "=3.0.0-alpha.2"
 tauri-plugin-process = "=3.0.0-alpha.2"
@@ -490,7 +490,7 @@ grass = "0.13"
 aphrody-drive = { path = "crates/ui/drive", version = "1.0.0-canary" }
 tokio-util = { version = "0.7", features = ["io"] }
 swift-rs = { version = "1.0" }
-tauri-plugin = { version = "=3.0.0-alpha.2" }
+tauri-plugin = { version = "=3.0.0-alpha.3" }
 [workspace.lints.rust]
 unsafe_op_in_unsafe_fn = "deny"
 unused_must_use = "deny"

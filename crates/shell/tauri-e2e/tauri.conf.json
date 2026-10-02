@@ -5,7 +5,6 @@
   "build": { "frontendDist": "frontend" },
   "bundle": { "icon": ["../../ui/app/icons/icon.png"] },
   "app": {
-    "macOSPrivateApi": true,
     "withGlobalTauri": true,
     "windows": [{ "label": "main", "title": "shell e2e", "url": "index.html", "width": 900, "height": 600 }],
     "security": { "csp": null }

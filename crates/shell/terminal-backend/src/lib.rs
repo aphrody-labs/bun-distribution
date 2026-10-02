@@ -1073,6 +1073,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[allow(clippy::await_holding_lock)] // the guard serializes process-wide env access across the await
     async fn serve_rejects_non_loopback_without_auth() {
         let addr: SocketAddr = "0.0.0.0:8788".parse().unwrap();
         let cfg = PtyConfig {

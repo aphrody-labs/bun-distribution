@@ -7,7 +7,6 @@
     "frontendDist": "ui-dist"
   },
   "app": {
-    "macOSPrivateApi": true,
     "withGlobalTauri": true,
     "windows": [
       {

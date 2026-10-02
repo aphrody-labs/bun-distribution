@@ -6,7 +6,7 @@ function version(binary: string): string {
 
 export function runRuntimeVersions(args: string[]): number {
   let bunExpected = "1.4.2";
-  let uvExpected = "0.12.17";
+  let uvExpected = "0.12.21";
   for (let index = 0; index < args.length; index++) {
     const arg = args[index];
     if (arg === "--bun") bunExpected = args[++index] ?? "";

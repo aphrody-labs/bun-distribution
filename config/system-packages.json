@@ -10,7 +10,7 @@
       "rootEnv": "BUN_INSTALL"
     },
     "uv": {
-      "version": "0.12.17",
+      "version": "0.12.21",
       "owner": "aphrody-os",
       "install": "official-installer",
       "rootEnv": "UV_INSTALL_DIR"
