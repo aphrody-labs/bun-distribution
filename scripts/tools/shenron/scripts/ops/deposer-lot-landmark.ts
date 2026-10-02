@@ -6,7 +6,7 @@ import {
 	jugerTraduction,
 	texteDePlanche,
 	type PlancheBrute,
-} from "../../apps/site/scripts/_databooks-base";
+} from "../../../../../apps/shenron/site/scripts/_databooks-base";
 
 // Gel des écrivains : sortie 3 avant toute connexion si .coord/FREEZE-databooks.json existe.
 arretSiGel("deposer-lot-landmark");

@@ -2,8 +2,8 @@
 /**
  * Provision sovereign admin and agent credentials for Aphrody AI in Shenron & PostgreSQL.
  */
-import { generateAgentToken } from "../../packages/auth/src/agent-keys";
-import { createAdminCookieCodec, ADMIN_COOKIE } from "../../packages/auth/src/tokens";
+import { generateAgentToken } from "../../../../../packages/shenron/auth/src/agent-keys";
+import { createAdminCookieCodec, ADMIN_COOKIE } from "../../../../../packages/shenron/auth/src/tokens";
 import postgres from "postgres";
 import { writeFileSync, mkdirSync } from "node:fs";
 import { join } from "node:path";

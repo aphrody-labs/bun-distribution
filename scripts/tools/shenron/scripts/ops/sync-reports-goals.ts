@@ -9,9 +9,9 @@
  */
 
 import "reflect-metadata";
-import "../../apps/bot/tests/setup-training";
-import { AdminReportGoalService } from "../../apps/bot/src/services/AdminReportGoalService";
-import { DatabaseService } from "../../apps/bot/src/db/index";
+import "../../../../../apps/shenron/bot/tests/setup-training";
+import { AdminReportGoalService } from "../../../../../apps/shenron/bot/src/services/AdminReportGoalService";
+import { DatabaseService } from "../../../../../apps/shenron/bot/src/db/index";
 
 const args = process.argv.slice(2);
 

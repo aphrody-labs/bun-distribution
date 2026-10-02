@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-import { scrapeFutGgPlayer } from "../futgg.ts";
-import { scrapeFutBinPrice } from "../futbin.ts";
+import { scrapeFutGgPlayer } from "../../../../../packages/fut/fut/src/futgg.ts";
+import { scrapeFutBinPrice } from "../../../../../packages/fut/fut/src/futbin.ts";
 
 const RUN_LIVE = !process.env.SKIP_NETWORK_TESTS;
 

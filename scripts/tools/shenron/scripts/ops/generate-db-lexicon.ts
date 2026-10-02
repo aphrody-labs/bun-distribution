@@ -10,9 +10,9 @@
  */
 
 import { join } from "node:path";
-import { connecte } from "../../apps/site/scripts/_databooks-base";
-import { TECHNIQUES } from "../../apps/site/scripts/_technique-lexicon";
-import { contientJaponais, normaliserJa } from "../../apps/site/src/lib/ja/normalisation";
+import { connecte } from "../../../../../apps/shenron/site/scripts/_databooks-base";
+import { TECHNIQUES } from "../../../../../apps/shenron/site/scripts/_technique-lexicon";
+import { contientJaponais, normaliserJa } from "../../../../../apps/shenron/site/src/lib/ja/normalisation";
 
 export interface LexiqueEntry {
 	ja: string;

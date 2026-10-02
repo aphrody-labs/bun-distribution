@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-import { createDb } from "../../packages/db/src/index.ts";
+import { createDb } from "../../../../../packages/shenron/db/src/index.ts";
 
 async function main() {
   const { client } = createDb({});

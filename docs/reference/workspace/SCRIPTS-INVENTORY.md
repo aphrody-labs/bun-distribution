@@ -302,3 +302,7 @@ Preuve : import relatif sans fichier cible (`.ts`, `.tsx`, `/index.ts`, `.js`→
 - `scripts/tools/shenron/scripts/ops/provision-aphrody-admin.ts` → ../../packages/auth/src/agent-keys
 - `scripts/tools/shenron/scripts/ops/provision-aphrody-admin.ts` → ../../packages/auth/src/tokens
 - `scripts/tools/shenron/scripts/ops/sync-reports-goals.ts` → ../../apps/bot/src/services/AdminReportGoalService
+
+## Réparés 2026-10-03
+
+15 scripts ci-dessus ont été réparés par réécriture d'imports relatifs vers le layout actuel (apps/site → apps/shenron/site, apps/bot → apps/shenron/bot, packages/{auth,db} → packages/shenron/{auth,db}, fut → packages/fut/fut/src) ; `bun build --target bun --packages external` résout les 15. Les 16 restants visent des modules absents du dépôt (nie-web, bxc, tests Shenron orphelins) : décision réparer/supprimer par propriétaire.

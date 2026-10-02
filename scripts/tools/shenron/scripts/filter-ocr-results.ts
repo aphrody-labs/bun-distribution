@@ -1,5 +1,5 @@
 import { readFileSync } from "node:fs";
-import { classerDefaut } from "../apps/site/src/lib/databooks-defauts.ts";
+import { classerDefaut } from "../../../../apps/shenron/site/src/lib/databooks-defauts.ts";
 
 const [input, output] = Bun.argv.slice(2);
 if (!input || !output) throw new Error("usage: bun scripts/filter-ocr-results.ts <input.jsonl> <output.jsonl>");

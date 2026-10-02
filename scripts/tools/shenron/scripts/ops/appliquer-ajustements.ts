@@ -21,8 +21,8 @@ import {
 	texteDePlanche,
 	traductionDePlanche,
 	type PlancheBrute,
-} from "../../apps/site/scripts/_databooks-base";
-import { demasquerVocabulaireStrict } from "../../apps/site/src/lib/ja/lexique-canonique";
+} from "../../../../../apps/shenron/site/scripts/_databooks-base";
+import { demasquerVocabulaireStrict } from "../../../../../apps/shenron/site/src/lib/ja/lexique-canonique";
 
 // Gel des écrivains : sortie 3 avant toute connexion si .coord/FREEZE-databooks.json existe.
 arretSiGel("appliquer-ajustements");

@@ -18,8 +18,8 @@
  */
 
 import postgres from "postgres";
-import { urlBase } from "../../apps/site/scripts/_databooks-base";
-import { TECHNIQUES as LEXICON_TECHNIQUES } from "../../apps/site/scripts/_technique-lexicon";
+import { urlBase } from "../../../../../apps/shenron/site/scripts/_databooks-base";
+import { TECHNIQUES as LEXICON_TECHNIQUES } from "../../../../../apps/shenron/site/scripts/_technique-lexicon";
 
 const APPLY = process.argv.includes("--apply");
 

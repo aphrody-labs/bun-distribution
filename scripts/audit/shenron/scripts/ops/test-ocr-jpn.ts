@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-import { chargeOuvrages, cheminPlanche, connecte } from "../../apps/site/scripts/_databooks-base";
+import { chargeOuvrages, cheminPlanche, connecte } from "../../../../../apps/shenron/site/scripts/_databooks-base";
 import { recogniseRemotePage } from "@shenron/pipeline/aphrody/remote-ocr";
 
 async function main() {

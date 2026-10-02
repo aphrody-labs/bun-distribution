@@ -5,7 +5,7 @@ import {
 	cheminPlanche,
 	connecte,
 	texteDePlanche,
-} from "../../apps/site/scripts/_databooks-base";
+} from "../../../../../apps/shenron/site/scripts/_databooks-base";
 
 async function main() {
 	const sql = await connecte();

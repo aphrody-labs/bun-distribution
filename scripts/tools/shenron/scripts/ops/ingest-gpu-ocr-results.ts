@@ -16,8 +16,8 @@ import {
 	ecrirePlanche,
 	texteDePlanche,
 	type PlancheBrute,
-} from "../../apps/site/scripts/_databooks-base";
-import { classerDefaut } from "../../apps/site/src/lib/databooks-defauts";
+} from "../../../../../apps/shenron/site/scripts/_databooks-base";
+import { classerDefaut } from "../../../../../apps/shenron/site/src/lib/databooks-defauts";
 
 // Gel des écrivains : sortie 3 avant toute connexion si .coord/FREEZE-databooks.json existe.
 arretSiGel("ingest-gpu-ocr-results");
