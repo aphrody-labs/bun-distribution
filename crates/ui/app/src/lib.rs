@@ -19,6 +19,7 @@ pub mod broker;
 pub mod desktop;
 pub mod identity;
 pub mod integration;
+pub mod studio;
 pub mod koharu;
 pub mod llama_daemon;
 pub mod models;
@@ -826,6 +827,13 @@ pub fn run() {
             }
         })
         .invoke_handler(tauri::generate_handler![
+            studio::studio_shenron_health,
+            studio::studio_shenron_rag_stats,
+            studio::studio_shenron_rag_search,
+            studio::studio_shenron_training,
+            studio::studio_native_ai_status,
+            studio::studio_native_chat,
+            studio::studio_open_shenron_admin,
             koharu::koharu_rpc,
             shenron::aphrody_shenron_chat,
             aphrody_meta,

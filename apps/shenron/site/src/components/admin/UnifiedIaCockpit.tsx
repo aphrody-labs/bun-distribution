@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
+import { NativeAiPanel } from "./NativeAiPanel";
 import {
 	Brain,
 	Shield,
@@ -558,6 +559,8 @@ export function UnifiedIaCockpit({ initialTab = "overview" }: Props) {
 					</button>
 				</nav>
 			</header>
+
+			<NativeAiPanel />
 
 			{loadError && (
 				<div className={`rounded-xl border px-4 py-3 text-xs ${STATUS_CLASS.unavailable}`}>

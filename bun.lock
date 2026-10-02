@@ -1265,6 +1265,7 @@
         "@phosphor-icons/react": "^2.1.0",
         "@react-three/drei": "^9.122.0",
         "@react-three/fiber": "^9.4.2",
+        "@shenron/ui": "workspace:*",
         "@tanstack/react-query": "catalog:",
         "@tanstack/react-table": "catalog:",
         "@tanstack/react-virtual": "^3.13.12",

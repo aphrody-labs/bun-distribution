@@ -34,6 +34,7 @@ describe("Single Navigation & Shell Architecture (UI-DESIGN.md §3, §4.6, §10)
       "/chat",
       "/explorer",
       "/models",
+      "/studio",
       "/settings",
     ]);
     expect(legacyRouteRedirects.jobs).toBe(desktopRoutes.files);

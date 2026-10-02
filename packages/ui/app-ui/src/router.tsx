@@ -7,6 +7,7 @@ import { legacyRouteRedirects } from "./desktop-navigation";
 import { JobsScreen } from "./components/JobManager";
 import { CodexChatRoute } from "./codex-chat";
 import { ModelsHub } from "./models-hub";
+import { StudioRoute } from "./routes/studio";
 import { ExplorerView } from "./routes/explorer";
 import { RecentsView } from "./routes/explorer/views/RecentsView";
 import { FileKindsView, FileKindResultsView } from "./routes/file-kinds";
@@ -49,6 +50,10 @@ export const explorerRoutes = [
       {
         path: "models",
         element: <ModelsHub />,
+      },
+      {
+        path: "studio",
+        element: <StudioRoute />,
       },
       {
         path: "favorites",

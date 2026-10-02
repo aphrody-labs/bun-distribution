@@ -545,7 +545,9 @@ async fn probe(url: reqwest::Url, token: Option<String>) -> serde_json::Value {
     }
 }
 
-async fn handle_doctor(json_output: bool) -> miette::Result<()> {
+/// Structured Shenron health report (site, bot, Aphrody AI, serving RAG, Agent Home dbfr).
+/// Shared by `aphrody shenron doctor` and the desktop app.
+pub async fn doctor_report() -> miette::Result<serde_json::Value> {
     let site = probe(site_base()?.join("/wiki/personnages").into_diagnostic()?, None).await;
     let bot = probe(bot_base()?.join("/api/health/check").into_diagnostic()?, None).await;
     let ai = match (ai_base(), ai_token()) {
@@ -588,6 +590,10 @@ async fn handle_doctor(json_output: bool) -> miette::Result<()> {
         "aphrody_ai_http": ai,
         "agent_home": agent_home
     });
+    Ok(doc)
+}
+async fn handle_doctor(json_output: bool) -> miette::Result<()> {
+    let doc = doctor_report().await?;
     if json_output {
         println!("{}", serde_json::to_string_pretty(&doc).into_diagnostic()?);
     } else {
@@ -605,16 +611,28 @@ async fn handle_status(json_output: bool) -> miette::Result<()> {
     handle_doctor(json_output).await
 }
 
+/// Bounded Shenron RAG search (2..=512 characters, backend-specific limit), as JSON.
+pub async fn rag_search_checked(
+    query: &str,
+    limit: usize,
+    kind: Option<&str>,
+) -> miette::Result<serde_json::Value> {
+    let max_limit = if rag_backend() == "aphrody" { 100 } else { 25 };
+    if query.trim().len() < 2 || query.len() > 512 || limit == 0 || limit > max_limit {
+        return Err(miette::miette!(
+            "Requête RAG hors limites (2..=512 caractères, limite 1..={max_limit})"
+        ));
+    }
+    rag_search(query, limit, kind).await
+}
+/// Shenron RAG corpus statistics (chunks, vectors, sources), as JSON.
+pub async fn rag_stats_report() -> miette::Result<serde_json::Value> {
+    rag_stats().await
+}
 async fn handle_rag(action: ShenronRagAction) -> miette::Result<()> {
     match action {
         ShenronRagAction::Search { query, limit, kind, json } => {
-            let max_limit = if rag_backend() == "aphrody" { 100 } else { 25 };
-            if query.trim().len() < 2 || query.len() > 512 || limit == 0 || limit > max_limit {
-                return Err(miette::miette!(
-                    "Requête RAG hors limites (2..=512 caractères, limite 1..={max_limit})"
-                ));
-            }
-            let response = rag_search(&query, limit, kind.as_deref()).await?;
+            let response = rag_search_checked(&query, limit, kind.as_deref()).await?;
             let hits = response["results"]
                 .as_array()
                 .ok_or_else(|| miette::miette!("Réponse RAG invalide : results absent"))?;
@@ -681,16 +699,20 @@ async fn handle_rag(action: ShenronRagAction) -> miette::Result<()> {
     Ok(())
 }
 
+/// Shenron training environment (Python project, GPU count, candidate root), as JSON.
+pub fn train_status_report() -> miette::Result<serde_json::Value> {
+    let hw = aphrody_models::accel::probe();
+    Ok(json!({
+        "python_project": training_root().ok().map(|root| root.join("packages/ai/py/aphrody-train").display().to_string()),
+        "gpu_count": hw.gpus.len(),
+        "candidate_root": shenron_training_dir()?.display().to_string(),
+        "rag_promotion": "requires a measured shadow index; no automatic model replacement"
+    }))
+}
 async fn handle_train(action: ShenronTrainAction) -> miette::Result<()> {
     match action {
         ShenronTrainAction::Status => {
-            let hw = aphrody_models::accel::probe();
-            let doc = json!({
-                "python_project": training_root().ok().map(|root| root.join("packages/ai/py/aphrody-train").display().to_string()),
-                "gpu_count": hw.gpus.len(),
-                "candidate_root": shenron_training_dir()?.display().to_string(),
-                "rag_promotion": "requires a measured shadow index; no automatic model replacement"
-            });
+            let doc = train_status_report()?;
             println!("{}", serde_json::to_string_pretty(&doc).into_diagnostic()?);
         },
         ShenronTrainAction::Triples { input, gold, out } => {

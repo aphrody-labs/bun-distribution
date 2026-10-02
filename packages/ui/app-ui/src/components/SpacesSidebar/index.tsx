@@ -489,6 +489,7 @@ export function SpacesSidebar({ isPreviewActive = false }: SpacesSidebarProps) {
 		location.pathname.startsWith('/recents') ||
 		location.pathname.startsWith('/location');
 	const isModelsActive = location.pathname.startsWith('/models');
+	const isStudioActive = location.pathname.startsWith('/studio');
 	const isSettingsActive = location.pathname.startsWith('/settings');
 
 	// Active setting section
@@ -589,6 +590,21 @@ export function SpacesSidebar({ isPreviewActive = false }: SpacesSidebarProps) {
 								model_training
 							</span>
 							<span className="truncate">{language === 'fr' ? 'Modèles' : 'Models'}</span>
+						</button>
+						<button
+							type="button"
+							onClick={() => navigate(desktopRoutes.studio)}
+							className={clsx(
+								"flex h-12 w-full items-center gap-3 rounded-full px-3 text-label-large font-medium transition-colors cursor-pointer text-left select-none",
+								isStudioActive && !isSettingsActive
+									? "bg-secondary-container text-on-secondary-container font-semibold"
+									: "text-on-surface-variant hover:text-on-surface hover:bg-secondary-container/20"
+							)}
+						>
+							<span className={clsx("material-symbol text-title-medium", isStudioActive && !isSettingsActive && "font-bold")}>
+								auto_stories
+							</span>
+							<span className="truncate">Studio</span>
 						</button>
 					</div>
 

@@ -5,6 +5,7 @@ export const desktopRoutes = {
   chat: "/chat",
   files: "/explorer",
   models: "/models",
+  studio: "/studio",
   settings: "/settings",
 } as const;
 

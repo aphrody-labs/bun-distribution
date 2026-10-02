@@ -46,6 +46,8 @@ tauri-build = { workspace = true }
 [dependencies]
 reqwest = { workspace = true }
 aphrody-app-server = { workspace = true }
+# Shenron logic (health, RAG, training) used by the Studio commands, see src/studio.rs.
+aphrody-command = { workspace = true }
 aphrody-capture = { workspace = true }
 aphrody-compat = { workspace = true }
 aphrody-diagnostics = { workspace = true }

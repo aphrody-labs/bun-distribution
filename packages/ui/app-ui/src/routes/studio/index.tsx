@@ -1,0 +1,74 @@
+// SPDX-License-Identifier: Apache-2.0
+// Studio: the Shenron × Koharu workspace of the desktop app (docs/plans/ui/aphrody-app-studio.md).
+// Each section calls an existing owner; a section whose native command is not wired yet says so
+// instead of showing invented data.
+import { useState } from "react";
+import { Card } from "@aphrody/m3-primitives";
+import { MangaStudio } from "./MangaStudio";
+import { ShenronStudio } from "./ShenronStudio";
+import { AdminStudio } from "./AdminStudio";
+
+export type StudioSection = "shenron" | "manga" | "admin" | "training" | "databooks" | "drive";
+
+export const studioSections: Array<{ id: StudioSection; label: string; icon: string }> = [
+  { id: "shenron", label: "Shenron", icon: "monitoring" },
+  { id: "manga", label: "Manga & traduction", icon: "translate" },
+  { id: "admin", label: "Administration Shenron", icon: "admin_panel_settings" },
+  { id: "training", label: "Entraînement", icon: "model_training" },
+  { id: "databooks", label: "Databooks", icon: "menu_book" },
+  { id: "drive", label: "Drive dbfr", icon: "cloud_sync" },
+];
+
+/** Native owner each pending section will call once its Tauri command exists (plan phase 2/5). */
+const pendingOwner: Record<Exclude<StudioSection, "manga" | "shenron" | "admin">, string> = {
+  training: "aphrody-train / `aphrody train run` (commandes aphrody_train_* à brancher)",
+  databooks: "corpus @shenron/config et API databooks (commandes aphrody_databooks_* à brancher)",
+  drive: "aphrody-drive, volume Google Drive OpenDAL sur le dossier dbfr (à monter)",
+};
+
+export function StudioRoute() {
+  const [section, setSection] = useState<StudioSection>("shenron");
+
+  return (
+    <div className="flex h-full flex-col gap-6 overflow-auto p-6">
+      <header className="flex flex-col gap-4">
+        <h1 className="text-headline-medium">Studio</h1>
+        <div role="tablist" aria-label="Sections du studio" className="flex flex-wrap gap-2">
+          {studioSections.map((entry) => (
+            <button
+              key={entry.id}
+              type="button"
+              role="tab"
+              aria-selected={section === entry.id}
+              onClick={() => setSection(entry.id)}
+              className={
+                section === entry.id
+                  ? "flex min-h-12 items-center gap-2 rounded-full bg-secondary-container px-4 text-[18px] font-semibold text-on-secondary-container"
+                  : "flex min-h-12 items-center gap-2 rounded-full px-4 text-[18px] text-on-surface-variant hover:bg-secondary-container/20"
+              }
+            >
+              <span className="material-symbol text-title-medium" aria-hidden="true">
+                {entry.icon}
+              </span>
+              {entry.label}
+            </button>
+          ))}
+        </div>
+      </header>
+
+      <section role="tabpanel" aria-label={studioSections.find((entry) => entry.id === section)?.label}>
+        {section === "shenron" ? (
+          <ShenronStudio />
+        ) : section === "admin" ? (
+          <AdminStudio />
+        ) : section === "manga" ? (
+          <MangaStudio />
+        ) : (
+          <Card className="p-6 text-[18px] text-on-surface-variant">
+            Section non branchée : {pendingOwner[section]}.
+          </Card>
+        )}
+      </section>
+    </div>
+  );
+}
