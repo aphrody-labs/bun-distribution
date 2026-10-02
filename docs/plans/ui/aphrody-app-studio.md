@@ -64,5 +64,12 @@ uniquement via `scripts/build/rust/cargo-serial.sh`, une commande à la fois.
     Aphrody existant (jetons en 0600 dans `~/.aphrody/private/google`), volume
     cloud `gdrive` racine `/dbfr` et emplacement indexé via `volumes.add_cloud` /
     `locations.add`.
-  - Restent : éditeur `@koharu/ui` (lot délégué à agy en A2A), fusion OCR/LLM,
-    `ui-dist` à régénérer au build, exécution de l'app à observer.
+  - **Manga** (bf81e3c64) : éditeur Koharu complet (`@aphrody/koharu-ui`
+    `KoharuApp embedded`) monté dans l'onglet ; `koharu-app` rendu générique sur le
+    runtime Tauri (commandes, `AgentState`, `KoharuHost`), `setup`/`on_window_event`
+    extraits, `bindings()` (runtime dynamique, hôte Aphrody) et `cef_bindings()`
+    (app Koharu autonome) depuis une liste unique (`COMMAND_NAMES`) ; l'app route
+    ces commandes vers Koharu. Bindings TS régénérés identiques. Le lot délégué à
+    agy avait expiré (10 min) sans résultat.
+  - Restent : fusion OCR/LLM, `ui-dist` à régénérer au build, exécution de l'app
+    à observer, doublon `KoharuBroker` (koharu-library) ↔ état `koharu-app`.

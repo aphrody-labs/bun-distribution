@@ -1024,7 +1024,9 @@ smoke documenté. Une mise en production est une opération distincte.
 - FAIT ensuite : Entraînement (629b6fc7d), Databooks & corpus hors ligne
   (5f801fdb2), Drive dbfr OAuth + volume `gdrive` `/dbfr` (37048cb9c) ; plus
   aucun onglet en attente. `cargo-serial check -p aphrody-app` vert à chaque lot.
-- Restent : éditeur `@koharu/ui` (délégué à agy en A2A) ; fusion OCR/LLM Koharu ↔
+- FAIT : éditeur Koharu complet dans l'onglet Manga (bf81e3c64), `koharu-app`
+  générique sur le runtime ; `cargo-serial check -p aphrody-app -p koharu` vert.
+- Restent : doublon `KoharuBroker` ↔ état `koharu-app` ; fusion OCR/LLM Koharu ↔
   `aphrody-ocr*`/`llama-server` ; régénération de `ui-dist` ; exécution de l'app
   non encore observée.
 
