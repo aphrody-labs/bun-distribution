@@ -64,21 +64,21 @@ const indexModes: Array<{
 const jobOptions: JobOption[] = [
   {
     id: "thumbnail",
-    label: "Generate Thumbnails",
+    label: "Generate thumbnails",
     description: "Create preview thumbnails for images and videos",
     presets: ["Content", "Deep"],
     order: 1,
   },
   {
     id: "thumbstrip",
-    label: "Generate Thumbstrips",
+    label: "Generate thumbstrips",
     description: "Create video storyboard grids (5×5 grid of frames)",
     presets: ["Deep"],
     order: 2,
   },
   {
     id: "proxy",
-    label: "Generate Proxies",
+    label: "Generate proxies",
     description: "Create scrubbing proxies for videos (~8s per video)",
     presets: [], // Disabled by default
     order: 3,
@@ -92,7 +92,7 @@ const jobOptions: JobOption[] = [
   },
   {
     id: "speech_to_text",
-    label: "Speech to Text",
+    label: "Speech to text",
     description: "Transcribe audio and video files",
     presets: [],
     order: 5,
@@ -244,7 +244,7 @@ function AddLocationDialog(props: {
       <Dialog
         dialog={dialog}
         form={form}
-        title="Add Location"
+        title="Add location"
         icon={<img src={NewLocation} alt="" className="size-5" />}
         description="Choose a folder to index and manage"
         className="w-[520px]"
@@ -274,7 +274,7 @@ function AddLocationDialog(props: {
           {/* Suggested Locations */}
           {suggestedLocations && suggestedLocations.locations.length > 0 && (
             <div className="space-y-2">
-              <Label>Suggested Locations</Label>
+              <Label>Suggested locations</Label>
               <div className="grid grid-cols-2 gap-2 max-h-[280px] overflow-y-auto pr-1">
                 {suggestedLocations.locations.map((loc) => (
                   <button
@@ -310,10 +310,10 @@ function AddLocationDialog(props: {
       dialog={dialog}
       form={form}
       onSubmit={onSubmit}
-      title="Add Location"
+      title="Add location"
       icon={<img src={NewLocation} alt="" className="size-5" />}
       description={form.watch("path")}
-      ctaLabel="Add Location"
+      ctaLabel="Add location"
       onCancelled={true}
       loading={addLocation.isPending}
       className="w-[520px]"
@@ -326,11 +326,11 @@ function AddLocationDialog(props: {
       <div className="space-y-4">
         {/* Name Input */}
         <div className="space-y-2">
-          <Label slug="name">Display Name</Label>
+          <Label slug="name">Display name</Label>
           <Input
             {...form.register("name")}
             size="md"
-            placeholder="My Documents"
+            placeholder="My documents"
             className="bg-surface-container-highest"
           />
         </div>
@@ -346,7 +346,7 @@ function AddLocationDialog(props: {
 
           <TabsContent value="preset" className="pt-3">
             <div className="space-y-2 max-h-[280px] overflow-y-auto pr-1">
-              <Label>Indexing Mode</Label>
+              <Label>Indexing mode</Label>
               <div className="grid grid-cols-3 gap-2">
                 {indexModes.map((mode) => {
                   const isSelected = currentMode === mode.value;

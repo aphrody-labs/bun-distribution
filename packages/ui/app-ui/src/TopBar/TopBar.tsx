@@ -109,7 +109,7 @@ export const TopBar = memo(function TopBar({ sidebarWidth = 0, inspectorWidth = 
 					title="Ouvrir la palette de commandes (Ctrl+K)"
 				>
 					<span className="material-symbol text-[20px]">search</span>
-					<span className="truncate">Recherche & Commandes</span>
+					<span className="truncate">Recherche & commandes</span>
 					<kbd className="ml-1 rounded bg-surface-container-highest px-2 py-0.5 text-label-medium font-mono text-on-surface">
 						{isMacOS ? "⌘K" : "Ctrl+K"}
 					</kbd>

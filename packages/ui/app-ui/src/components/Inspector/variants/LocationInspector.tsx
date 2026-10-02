@@ -98,7 +98,7 @@ function OverviewTab({ location }: { location: Location }) {
 		items: [
 			{
 				icon: MagnifyingGlass,
-				label: "Quick Reindex",
+				label: "Quick reindex",
 				onClick: () => {
 					rescanLocation.mutate({
 						location_id: location.id,
@@ -108,7 +108,7 @@ function OverviewTab({ location }: { location: Location }) {
 			},
 			{
 				icon: Sparkle,
-				label: "Full Reindex",
+				label: "Full reindex",
 				onClick: () => {
 					rescanLocation.mutate({
 						location_id: location.id,
@@ -160,7 +160,7 @@ function OverviewTab({ location }: { location: Location }) {
 					{location.name || "Unnamed Location"}
 				</h4>
 				<p className="text-body-small text-on-surface-variant mt-0.5">
-					Local Storage
+					Local storage
 				</p>
 			</div>
 
@@ -177,7 +177,7 @@ function OverviewTab({ location }: { location: Location }) {
 						}}
 						className="flex-1"
 					>
-						Open Location
+						Open location
 					</CircleButton>
 				)}
 
@@ -193,25 +193,25 @@ function OverviewTab({ location }: { location: Location }) {
 				<InfoRow label="Path" value={'Physical' in location.sd_path ? location.sd_path.Physical.path : 'Cloud' in location.sd_path ? location.sd_path.Cloud.path : location.name} mono />
 			{location.file_count != null && (
 				<InfoRow
-					label="Total Files"
+					label="Total files"
 					value={location.file_count?.toLocaleString() ?? "0"}
 				/>
 			)}
 				<InfoRow
-					label="Total Size"
+					label="Total size"
 					value={formatBytes(location.total_size)}
 				/>
-				<InfoRow label="Scan State" value={formatScanState(location.scan_state)} />
+				<InfoRow label="Scan state" value={formatScanState(location.scan_state)} />
 				{location.last_scan_at && (
 					<InfoRow
-						label="Last Scan"
+						label="Last scan"
 						value={formatDate(location.last_scan_at)}
 					/>
 				)}
 			</Section>
 
 			{/* Index Mode */}
-			<Section title="Index Mode" icon={Gear}>
+			<Section title="Index mode" icon={Gear}>
 				<InfoRow
 					label="Mode"
 					value={
@@ -237,7 +237,7 @@ function IndexingTab({ location }: { location: Location }) {
 
 	return (
 		<div className="no-scrollbar mask-fade-out flex flex-col space-y-5 overflow-x-hidden overflow-y-scroll pb-10 px-2 pt-2">
-			<Section title="Index Mode" icon={Gear}>
+			<Section title="Index mode" icon={Gear}>
 				<p className="text-body-small text-on-surface-variant mb-3">
 					Controls how deeply this location is indexed
 				</p>
@@ -267,7 +267,7 @@ function IndexingTab({ location }: { location: Location }) {
 				</div>
 			</Section>
 
-			<Section title="Ignore Rules" icon={FunnelX}>
+			<Section title="Ignore rules" icon={FunnelX}>
 				<p className="text-body-small text-on-surface-variant mb-3">
 					Files and folders matching these patterns will be ignored
 				</p>
@@ -324,10 +324,10 @@ function JobsTab({ location }: { location: Location }) {
 				location
 			</p>
 
-			<Section title="Media Processing" icon={Image}>
+			<Section title="Media processing" icon={Image}>
 				<div className="space-y-2.5">
 					<JobConfigRow
-						label="Generate Thumbnails"
+						label="Generate thumbnails"
 						description="Create preview thumbnails for images and videos"
 						enabled={thumbnails}
 						onToggle={(enabled) =>
@@ -351,7 +351,7 @@ function JobsTab({ location }: { location: Location }) {
 						isTriggering={triggerJob.isPending}
 					/>
 					<JobConfigRow
-						label="Generate Thumbstrips"
+						label="Generate thumbstrips"
 						description="Create video storyboard grids (5×5 grid of frames)"
 						enabled={thumbstrips}
 						onToggle={(enabled) =>
@@ -374,7 +374,7 @@ function JobsTab({ location }: { location: Location }) {
 						icon={FilmStrip}
 					/>
 					<JobConfigRow
-						label="Generate Proxies"
+						label="Generate proxies"
 						description="Create scrubbing proxies for videos (180p @ 15fps)"
 						enabled={proxies}
 						onToggle={(enabled) =>
@@ -399,7 +399,7 @@ function JobsTab({ location }: { location: Location }) {
 				</div>
 			</Section>
 
-			<Section title="AI Processing" icon={Sparkle}>
+			<Section title="AI processing" icon={Sparkle}>
 				<div className="space-y-2.5">
 					<JobConfigRow
 						label="Extract Text (OCR)"
@@ -426,7 +426,7 @@ function JobsTab({ location }: { location: Location }) {
 						isTriggering={triggerJob.isPending}
 					/>
 					<JobConfigRow
-						label="Speech to Text"
+						label="Speech to text"
 						description="Transcribe audio and video files"
 						enabled={speech}
 						onToggle={(enabled) =>
@@ -608,10 +608,10 @@ function DeleteLocationDialog({ locationId, locationName, ...props }: DeleteLoca
 		<Dialog
 			dialog={dialog}
 			form={form}
-			title="Remove Location"
+			title="Remove location"
 			description={`Are you sure you want to remove "${locationName}"? Your files will not be deleted from disk.`}
 			icon={<Trash className="text-error" weight="bold" />}
-			ctaLabel="Remove Location"
+			ctaLabel="Remove location"
 			ctaDanger
 			cancelLabel="Cancel"
 			cancelBtn
@@ -651,13 +651,13 @@ function MoreTab({ location }: { location: Location }) {
 				)}
 				{location.last_scan_at && (
 					<InfoRow
-						label="Last Scan"
+						label="Last scan"
 						value={formatDate(location.last_scan_at)}
 					/>
 				)}
 			</Section>
 
-			<Section title="Danger Zone" icon={Trash}>
+			<Section title="Danger zone" icon={Trash}>
 				<p className="text-body-small text-on-surface-variant mb-3">
 					Removing this location will not delete your files
 				</p>
@@ -667,7 +667,7 @@ function MoreTab({ location }: { location: Location }) {
 				>
 					<div className="flex items-center justify-center gap-2">
 						<Trash className="size-4" weight="bold" />
-						<span>Remove Location</span>
+						<span>Remove location</span>
 					</div>
 				</button>
 			</Section>
@@ -817,7 +817,7 @@ function JobConfigRow({
 				title={enabled ? "Run job now" : "Enable job first"}
 			>
 				<Play className="size-3" weight="fill" />
-				{isTriggering ? "Running..." : "Run Now"}
+				{isTriggering ? "Running..." : "Run now"}
 			</Button>
 		</div>
 	);

@@ -8,23 +8,23 @@ export interface SystemPreset {
 
 export const SYSTEM_PRESETS: Record<string, SystemPreset> = {
   default: {
-    label: "Default Assistant",
+    label: "Default assistant",
     prompt: "You are Aphrody, an advanced AI software engineering assistant running on local hardware.",
   },
   engineer: {
-    label: "Autonomous Engineer",
+    label: "Autonomous engineer",
     prompt: "You are an autonomous senior staff engineer. Analyze problems deeply, formulate verified solutions, follow clean code principles, and prioritize robust error handling.",
   },
   code_reviewer: {
-    label: "Rigorous Code Reviewer",
+    label: "Rigorous code reviewer",
     prompt: "You are a rigorous code reviewer. Check for edge cases, performance pitfalls, security vulnerabilities, and adherence to system invariants.",
   },
   shenron: {
-    label: "Shenron DB Sage",
+    label: "Shenron DB sage",
     prompt: "You are Shenron, the eternal dragon and sage of canonical Dragon Ball knowledge. Ground every response in official Toriyama works and databooks.",
   },
   custom: {
-    label: "Custom Prompt...",
+    label: "Custom prompt...",
     prompt: "",
   },
 };

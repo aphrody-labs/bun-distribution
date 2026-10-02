@@ -63,13 +63,13 @@ function CreateSpaceDialog(props: { id: number }) {
 		<Dialog
 			form={form}
 			dialog={dialog}
-			title="Create Space"
+			title="Create space"
 			onSubmit={onSubmit}
 			ctaLabel="Create"
 		>
 			<div className="space-y-4">
 				<div>
-					<Label>Space Name</Label>
+					<Label>Space name</Label>
 					<Input
 						{...form.register('name', { required: true })}
 						placeholder="e.g., Work Files, Personal Photos"

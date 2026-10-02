@@ -61,7 +61,7 @@ export function useSpaceItemContextMenu({
 		},
 		{
 			icon: Database,
-			label: "Index Volume",
+			label: "Index volume",
 			onClick: async () => {
 				if (isVolumeItem(item.item_type)) {
 					const fingerprint =
@@ -116,7 +116,7 @@ export function useSpaceItemContextMenu({
 		{ type: "separator" },
 		{
 			icon: Trash,
-			label: "Remove from Space",
+			label: "Remove from space",
 			onClick: async () => {
 				try {
 					await deleteItem.mutateAsync({ item_id: item.id });

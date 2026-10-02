@@ -45,11 +45,11 @@ export function SourcesHome() {
 								className="w-64"
 							/>
 						</TopBarItem>
-						<TopBarItem id="add-source" label="Add Source" priority="high">
+						<TopBarItem id="add-source" label="Add source" priority="high">
 							<CircleButton
 								icon="add"
 								onClick={() => createTab("Adapters", "/sources/adapters")}
-								title="Add Source"
+								title="Add source"
 							/>
 						</TopBarItem>
 					</>
@@ -72,7 +72,7 @@ export function SourcesHome() {
 
 			{sources && sources.length === 0 && (
 				<div className="flex flex-col items-center justify-center py-20">
-					<p className="text-on-surface-variant text-body-medium">No sources yet</p>
+					<p className="text-on-surface-variant text-body-medium">No sources: add one to start syncing</p>
 					<p className="text-outline mt-1 text-body-small">
 						Add a data source to get started
 					</p>
@@ -83,7 +83,7 @@ export function SourcesHome() {
 						className="mt-4"
 					>
 						<Icon name="add" size={18} />
-						Add Source
+						Add source
 					</Button>
 				</div>
 			)}

@@ -18,7 +18,7 @@ export function useOpenWith(paths: string[]) {
 
 	const openWithDefault = async (path: string) => {
 		if (!platform.openPathDefault) {
-			toast.error("Opening files is not supported on this platform");
+			toast.error("Cannot open files here: this platform has no open handler");
 			return;
 		}
 
@@ -26,13 +26,13 @@ export function useOpenWith(paths: string[]) {
 			const result = await platform.openPathDefault(path);
 			handleOpenResult(result);
 		} catch (e) {
-			toast.error(`Failed to open file: ${e}`);
+			toast.error(`Could not open file: ${e}`);
 		}
 	};
 
 	const openWithApp = async (path: string, appId: string) => {
 		if (!platform.openPathWithApp) {
-			toast.error("Opening files is not supported on this platform");
+			toast.error("Cannot open files here: this platform has no open handler");
 			return;
 		}
 
@@ -40,13 +40,13 @@ export function useOpenWith(paths: string[]) {
 			const result = await platform.openPathWithApp(path, appId);
 			handleOpenResult(result);
 		} catch (e) {
-			toast.error(`Failed to open file: ${e}`);
+			toast.error(`Could not open file: ${e}`);
 		}
 	};
 
 	const openMultipleWithApp = async (paths: string[], appId: string) => {
 		if (!platform.openPathsWithApp) {
-			toast.error("Opening files is not supported on this platform");
+			toast.error("Cannot open files here: this platform has no open handler");
 			return;
 		}
 
@@ -54,7 +54,7 @@ export function useOpenWith(paths: string[]) {
 			const results = await platform.openPathsWithApp(paths, appId);
 			results.forEach(handleOpenResult);
 		} catch (e) {
-			toast.error(`Failed to open files: ${e}`);
+			toast.error(`Could not open files: ${e}`);
 		}
 	};
 
@@ -73,16 +73,16 @@ function handleOpenResult(result: OpenResult) {
 			// Silent success
 			break;
 		case "file_not_found":
-			toast.error(`File not found: ${result.path}`);
+			toast.error(`File not found: ${result.path}. Check that it was not moved or deleted.`);
 			break;
 		case "app_not_found":
-			toast.error(`Application not found: ${result.app_id}`);
+			toast.error(`Application not found: ${result.app_id}. Pick another app.`);
 			break;
 		case "permission_denied":
-			toast.error(`Permission denied: ${result.path}`);
+			toast.error(`Permission denied: ${result.path}. Check file permissions.`);
 			break;
 		case "platform_error":
-			toast.error(`Error: ${result.message}`);
+			toast.error(`Could not open: ${result.message}`);
 			break;
 	}
 }

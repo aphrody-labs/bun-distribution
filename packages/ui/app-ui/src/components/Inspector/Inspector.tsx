@@ -129,8 +129,8 @@ function InspectorView({
 								'text-on-surface-variant hover:bg-on-surface/8 hover:text-on-surface flex size-10 items-center justify-center rounded-full transition-colors duration-200 ease-standard',
 								m3FocusRing
 							)}
-							title="Pop out Inspector"
-							aria-label="Pop out Inspector"
+							title="Pop out inspector"
+							aria-label="Pop out inspector"
 						>
 							<Icon name="open_in_new" size={20} />
 						</button>

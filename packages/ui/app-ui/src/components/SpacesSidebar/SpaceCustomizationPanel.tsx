@@ -25,7 +25,7 @@ const PALETTE_ITEMS: PaletteItem[] = [
 	},
 	{
 		type: "FileKinds",
-		label: "File Kinds",
+		label: "File kinds",
 	},
 	{
 		type: "Sources",
@@ -214,7 +214,7 @@ export function SpaceCustomizationPanel({
 											className="flex w-full items-center gap-2 rounded-small px-2 py-1.5 text-label-large font-medium text-sidebar-inkDull hover:text-on-surface hover:bg-secondary-container/30 transition-colors"
 										>
 											<Plus size={16} weight="bold" />
-											<span>Add Group</span>
+											<span>Add group</span>
 										</button>
 									) : (
 										<div className="space-y-2 px-2">
@@ -232,14 +232,14 @@ export function SpaceCustomizationPanel({
 												className="w-full rounded-small border border-outline-variant bg-surface-container px-2 py-1.5 text-body-small text-on-surface focus:outline-none focus:ring-1 focus:ring-primary"
 											>
 												<option value="Devices">
-													All Devices
+													All devices
 												</option>
 												<option value="Locations">
-													All Locations
+													All locations
 												</option>
 												<option value="Tags">Tags</option>
 												<option value="Cloud">
-													Cloud Storage
+													Cloud storage
 												</option>
 												<option value="Custom">Custom</option>
 											</select>

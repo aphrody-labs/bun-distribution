@@ -121,7 +121,7 @@ export function DaemonDisconnectedOverlay({
 
 							<div className="flex flex-col items-center gap-2 text-center">
 								<h1 className="text-headline-small font-bold text-on-surface">
-									Daemon Disconnected
+									Daemon disconnected
 								</h1>
 								<p className="max-w-xs text-body-medium leading-relaxed text-on-surface-variant">
 									The Spacedrive daemon is required for the
@@ -181,7 +181,7 @@ export function DaemonDisconnectedOverlay({
 
 						<div className="flex w-80 flex-col gap-3 rounded-small border border-outline-variant p-4">
 							<span className="text-label-medium font-medium text-on-surface-variant">
-								CLI Commands
+								CLI commands
 							</span>
 
 							<div className="space-y-2">

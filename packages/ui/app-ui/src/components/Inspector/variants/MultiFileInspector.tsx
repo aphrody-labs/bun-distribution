@@ -216,7 +216,7 @@ export function MultiFileInspector({ files }: MultiFileInspectorProps) {
 
 			{/* Summary section */}
 			<Section title="Summary" icon="file_copy">
-				<InfoRow label="Total Size" value={formatBytes(aggregatedData.totalSize)} />
+				<InfoRow label="Total size" value={formatBytes(aggregatedData.totalSize)} />
 				<InfoRow label="Items" value={files.length} />
 			</Section>
 

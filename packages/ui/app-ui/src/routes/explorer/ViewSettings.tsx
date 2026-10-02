@@ -207,7 +207,7 @@ export function ViewSettings({ className, totalFileCount }: ViewSettingsProps) {
           icon="tune"
           onClick={() => setIsOpen(!isOpen)}
           active={isOpen}
-          title="View Settings"
+          title="View settings"
         />
       </div>
 

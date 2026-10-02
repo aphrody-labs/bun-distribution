@@ -181,7 +181,7 @@ function FileOperationDialog(props: FileOperationDialogProps) {
 			<Dialog
 				dialog={dialog}
 				form={form}
-				title={operation === "copy" ? "Copying Files" : "Moving Files"}
+				title={operation === "copy" ? "Copying files" : "Moving Files"}
 				icon={<Files size={20} weight="bold" />}
 				hideButtons
 			>
@@ -203,7 +203,7 @@ function FileOperationDialog(props: FileOperationDialogProps) {
 			<Dialog
 				dialog={dialog}
 				form={form}
-				title="Operation Failed"
+				title="Operation failed"
 				icon={<Warning size={20} weight="fill" className="text-error" />}
 				ctaLabel="Close"
 				onSubmit={form.handleSubmit(handleCancel)}
@@ -229,7 +229,7 @@ function FileOperationDialog(props: FileOperationDialogProps) {
 		<Dialog
 			dialog={dialog}
 			form={form}
-			title="File Operation"
+			title="File operation"
 			icon={<Files size={20} weight="bold" />}
 			ctaLabel={operation === "copy" ? "Copy" : "Move"}
 			onSubmit={form.handleSubmit(handleSubmit)}

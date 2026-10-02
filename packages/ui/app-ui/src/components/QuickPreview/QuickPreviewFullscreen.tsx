@@ -219,7 +219,7 @@ export function QuickPreviewFullscreen({
 								center={
 									<TopBarItem
 										id="preview-filename"
-										label="File Name"
+										label="File name"
 										priority="high"
 									>
 										{filenameDisplay}

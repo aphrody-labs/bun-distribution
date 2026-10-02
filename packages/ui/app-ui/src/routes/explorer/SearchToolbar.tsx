@@ -62,7 +62,7 @@ export function SearchToolbar() {
 
 			<Button variant="text" size="xs" onClick={explorer.exitSearchMode}>
 				<Icon name="close" size={16} />
-				Clear Search
+				Clear search
 			</Button>
 		</div>
 	);

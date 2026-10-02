@@ -77,7 +77,7 @@ export function LibrarySettings() {
 
           <label className="flex items-center justify-between">
             <div>
-              <span className="text-body-medium text-on-surface">Generate Thumbnails</span>
+              <span className="text-body-medium text-on-surface">Generate thumbnails</span>
               <p className="text-body-small text-on-surface-variant">Create preview images for media files</p>
             </div>
             <input
@@ -88,7 +88,7 @@ export function LibrarySettings() {
           </label>
 
           <label className="block">
-            <span className="text-body-medium text-on-surface mb-1 block">Thumbnail Quality</span>
+            <span className="text-body-medium text-on-surface mb-1 block">Thumbnail quality</span>
             <p className="text-body-small text-on-surface-variant mb-2">Quality setting for generated thumbnails (1-100)</p>
             <div className="flex items-center gap-3">
               <input
@@ -107,7 +107,7 @@ export function LibrarySettings() {
 
           <label className="flex items-center justify-between">
             <div>
-              <span className="text-body-medium text-on-surface">AI Tagging</span>
+              <span className="text-body-medium text-on-surface">AI tagging</span>
               <p className="text-body-small text-on-surface-variant">Enable AI-powered automatic tagging</p>
             </div>
             <input
@@ -120,11 +120,11 @@ export function LibrarySettings() {
 
         {/* Sync & Security Section */}
         <div className="p-4 bg-surface-container rounded-small border border-outline-variant space-y-4">
-          <h3 className="text-label-large font-medium text-on-surface">Sync & Security</h3>
+          <h3 className="text-label-large font-medium text-on-surface">Sync & security</h3>
 
           <label className="flex items-center justify-between">
             <div>
-              <span className="text-body-medium text-on-surface">Sync Enabled</span>
+              <span className="text-body-medium text-on-surface">Sync enabled</span>
               <p className="text-body-small text-on-surface-variant">Sync this library across devices</p>
             </div>
             <input
@@ -153,7 +153,7 @@ export function LibrarySettings() {
 
           <label className="flex items-center justify-between">
             <div>
-              <span className="text-body-medium text-on-surface">System Volumes</span>
+              <span className="text-body-medium text-on-surface">System volumes</span>
               <p className="text-body-small text-on-surface-variant">Automatically track system drives</p>
             </div>
             <input
@@ -165,7 +165,7 @@ export function LibrarySettings() {
 
           <label className="flex items-center justify-between">
             <div>
-              <span className="text-body-medium text-on-surface">External Volumes</span>
+              <span className="text-body-medium text-on-surface">External volumes</span>
               <p className="text-body-small text-on-surface-variant">Automatically track external drives when connected</p>
             </div>
             <input
@@ -182,7 +182,7 @@ export function LibrarySettings() {
             disabled={updateConfig.isPending}
             className="px-4 py-2 bg-primary hover:bg-primary text-white rounded-small text-label-large font-medium transition-colors disabled:opacity-50"
           >
-            {updateConfig.isPending ? "Saving..." : "Save Changes"}
+            {updateConfig.isPending ? "Saving…" : "Save changes"}
           </button>
         )}
       </form>

@@ -121,7 +121,7 @@ export function PairingModal({ isOpen, onClose, mode: initialMode = "generate" }
             <div className="flex items-center gap-3">
               <DeviceMobile className="size-6 text-primary" weight="bold" />
               <div>
-                <h2 className="text-title-medium font-semibold text-on-surface">Device Pairing</h2>
+                <h2 className="text-title-medium font-semibold text-on-surface">Device pairing</h2>
                 <p className="text-body-small text-on-surface-variant">Connect another device to share files</p>
               </div>
             </div>
@@ -144,7 +144,7 @@ export function PairingModal({ isOpen, onClose, mode: initialMode = "generate" }
                   : "text-on-surface-variant hover:text-on-surface"
               )}
             >
-              Generate Code
+              Generate code
             </button>
             <button
               onClick={() => setMode("join")}
@@ -155,7 +155,7 @@ export function PairingModal({ isOpen, onClose, mode: initialMode = "generate" }
                   : "text-on-surface-variant hover:text-on-surface"
               )}
             >
-              Join with Code
+              Join with code
             </button>
           </div>
 
@@ -254,7 +254,7 @@ function GenerateMode({
             )}
           >
             {isLoading && <ArrowsClockwise className="size-5 animate-spin" weight="bold" />}
-            {isLoading ? "Generating..." : "Generate Pairing Code"}
+            {isLoading ? "Generating..." : "Generate pairing code"}
           </button>
         </>
       ) : (
@@ -301,7 +301,7 @@ function GenerateMode({
                   <button
                     onClick={() => navigator.clipboard.writeText(generatePairing.data.node_id)}
                     className="absolute top-1.5 right-1.5 p-1.5 bg-surface-container hover:bg-on-surface/8 border border-outline-variant rounded-small transition-colors"
-                    title="Copy Node ID"
+                    title="Copy node ID"
                   >
                     <Copy className="size-3 text-on-surface-variant" weight="bold" />
                   </button>
@@ -447,7 +447,7 @@ function JoinMode({
         {/* Code Input */}
         <div>
           <label className="text-label-medium font-medium text-on-surface-variant uppercase tracking-wider mb-2 block">
-            Pairing Code
+            Pairing code
           </label>
           <textarea
             value={joinCode}

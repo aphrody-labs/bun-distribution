@@ -207,7 +207,7 @@ function SyncSetupDialog(props: SyncSetupDialogProps) {
     <Dialog
       dialog={dialog}
       form={form}
-      title="Setup Library Sync"
+      title="Set up library sync"
       description="Sync your library with another device"
       icon={<ArrowsClockwise />}
       cancelBtn
@@ -435,7 +435,7 @@ function ConfirmStep({
   return (
     <div className="space-y-6">
       <div className="rounded-small bg-app-darkBox p-4">
-        <h3 className="mb-3 font-medium text-on-surface">Sync Configuration</h3>
+        <h3 className="mb-3 font-medium text-on-surface">Sync configuration</h3>
         <div className="space-y-2 text-body-medium">
           <div className="flex justify-between">
             <span className="text-on-surface-variant">Remote Device:</span>
@@ -444,7 +444,7 @@ function ConfirmStep({
           <div className="flex justify-between">
             <span className="text-on-surface-variant">Action:</span>
             <span className="font-medium text-on-surface">
-              {action === "share" ? "Share My Library" : "Join Remote Library"}
+              {action === "share" ? "Share my library" : "Join Remote Library"}
             </span>
           </div>
           {action === "join" && remoteLibrary && (
@@ -469,7 +469,7 @@ function ConfirmStep({
           Back
         </Button>
         <Button variant="accent" onClick={onConfirm} className="flex-1">
-          Confirm & Setup Sync
+          Confirm and set up sync
         </Button>
       </div>
     </div>

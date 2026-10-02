@@ -83,13 +83,13 @@ interface CloudFormData {
 const categories: CategoryOption[] = [
 	{
 		id: "local",
-		label: "Local Folder",
+		label: "Local folder",
 		description: "Index a folder on your computer",
 		icon: FolderIcon,
 	},
 	{
 		id: "cloud",
-		label: "Cloud Storage",
+		label: "Cloud storage",
 		description: "Connect S3 or an S3-compatible endpoint",
 		icon: DriveIcon,
 	},
@@ -208,21 +208,21 @@ function StorageDialog({
 const jobOptions: JobOption[] = [
 	{
 		id: "thumbnail",
-		label: "Generate Thumbnails",
+		label: "Generate thumbnails",
 		description: "Create preview thumbnails for images and videos",
 		presets: ["Content", "Deep"],
 		order: 1,
 	},
 	{
 		id: "thumbstrip",
-		label: "Generate Thumbstrips",
+		label: "Generate thumbstrips",
 		description: "Create video storyboard grids (5×5 grid of frames)",
 		presets: ["Deep"],
 		order: 2,
 	},
 	{
 		id: "proxy",
-		label: "Generate Proxies",
+		label: "Generate proxies",
 		description: "Create scrubbing proxies for videos (~8s per video)",
 		presets: [],
 		order: 3,
@@ -236,7 +236,7 @@ const jobOptions: JobOption[] = [
 	},
 	{
 		id: "speech_to_text",
-		label: "Speech to Text",
+		label: "Speech to text",
 		description: "Transcribe audio and video files",
 		presets: [],
 		order: 5,
@@ -608,7 +608,7 @@ function AddStorageDialog(props: {
 			<StorageDialog
 				dialog={dialog}
 				form={dummyForm}
-				title="Add Storage"
+				title="Add storage"
 				icon={<CloudArrowUp size={20} weight="fill" />}
 				description="Choose the type of storage you want to connect"
 				hideButtons={true}
@@ -651,7 +651,7 @@ function AddStorageDialog(props: {
 			<StorageDialog
 				dialog={dialog}
 				form={dummyForm}
-				title="Select Cloud Provider"
+				title="Select cloud provider"
 				icon={<CloudArrowUp size={20} weight="fill" />}
 				description="Choose your cloud storage service"
 				hideButtons={true}
@@ -691,7 +691,7 @@ function AddStorageDialog(props: {
 			<StorageDialog
 				dialog={dialog}
 				form={dummyForm}
-				title="Track External Drive"
+				title="Track external drive"
 				icon={<HardDrive size={20} weight="fill" />}
 				description="Select a connected drive to track"
 				hideButtons={true}
@@ -757,7 +757,7 @@ function AddStorageDialog(props: {
 				dialog={dialog}
 				form={localForm}
 				onSubmit={onSubmitManualPath}
-				title="Add Local Folder"
+				title="Add local folder"
 				icon={<Folder size={20} weight="fill" />}
 				description="Choose a folder to index and manage"
 				ctaLabel="Continue"
@@ -792,7 +792,7 @@ function AddStorageDialog(props: {
 					{suggestedLocations &&
 						suggestedLocations.locations.length > 0 && (
 							<div className="space-y-2">
-								<Label>Suggested Locations</Label>
+								<Label>Suggested locations</Label>
 								<div className="grid grid-cols-2 gap-2 max-h-[280px] overflow-y-auto pr-1">
 									{suggestedLocations.locations.map((loc) => (
 										<button
@@ -835,10 +835,10 @@ function AddStorageDialog(props: {
 				dialog={dialog}
 				form={localForm}
 				onSubmit={onSubmitLocal}
-				title="Configure Location"
+				title="Configure location"
 				icon={<Folder size={20} weight="fill" />}
 				description={localForm.watch("path")}
-				ctaLabel={validationResult ? "Proceed Anyway" : "Add Location"}
+				ctaLabel={validationResult ? "Proceed anyway" : "Add Location"}
 				ctaDanger={!!validationResult}
 				loading={addLocation.isPending}
 				showBackButton={true}
@@ -860,7 +860,7 @@ function AddStorageDialog(props: {
 								<div className="flex-1 space-y-2">
 									<p className="text-sm font-medium text-ink">
 										{validationResult.riskLevel === "high"
-											? "High Risk Path Detected"
+											? "High risk path detected"
 											: "Warning"}
 									</p>
 									{validationResult.warnings.map((warning, i) => (
@@ -877,7 +877,7 @@ function AddStorageDialog(props: {
 									{validationResult.suggestion && (
 										<div className="mt-3 pt-3 border-t border-app-line/50">
 											<p className="text-xs font-medium text-ink mb-2">
-												Alternative Suggestion
+												Alternative suggestion
 											</p>
 											<p className="text-xs text-ink-dull mb-2">
 												{validationResult.suggestion.message}
@@ -898,11 +898,11 @@ function AddStorageDialog(props: {
 					)}
 
 					<div className="space-y-2">
-						<Label slug="name">Display Name</Label>
+						<Label slug="name">Display name</Label>
 						<Input
 							{...localForm.register("name")}
 							size="md"
-							placeholder="My Documents"
+							placeholder="My documents"
 							className="bg-app-input"
 						/>
 					</div>
@@ -922,7 +922,7 @@ function AddStorageDialog(props: {
 
 						<TabsContent value="preset" className="pt-3">
 							<div className="space-y-2 max-h-[280px] overflow-y-auto pr-1">
-								<Label>Indexing Mode</Label>
+								<Label>Indexing mode</Label>
 								<div className="grid grid-cols-3 gap-2">
 									{indexModes.map((mode) => {
 										const isSelected =
@@ -1017,14 +1017,14 @@ function AddStorageDialog(props: {
 				title={`Add ${provider.name}`}
 				icon={<img src={provider.icon} className="size-5" alt="" />}
 				description="Configure your cloud storage connection"
-				ctaLabel="Add Storage"
+				ctaLabel="Add storage"
 				loading={addCloudVolume.isPending}
 				showBackButton={true}
 				onBack={handleBack}
 			>
 				<div className="space-y-4 h-full overflow-y-auto pr-1">
 					<div className="space-y-2">
-						<Label>Display Name</Label>
+						<Label>Display name</Label>
 						<Input
 							{...cloudForm.register("display_name")}
 							size="md"
@@ -1053,7 +1053,7 @@ function AddStorageDialog(props: {
 								/>
 							</div>
 							<div className="space-y-2">
-								<Label>Access Key ID</Label>
+								<Label>Access key ID</Label>
 								<Input
 									{...cloudForm.register("access_key_id")}
 									size="md"
@@ -1062,7 +1062,7 @@ function AddStorageDialog(props: {
 								/>
 							</div>
 							<div className="space-y-2">
-								<Label>Secret Access Key</Label>
+								<Label>Secret access key</Label>
 								<Input
 									{...cloudForm.register("secret_access_key")}
 									type="password"

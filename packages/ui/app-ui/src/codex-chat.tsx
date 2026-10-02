@@ -235,7 +235,7 @@ export function ThreadDrawer({
         <div className="flex-1 overflow-y-auto p-3 space-y-2.5">
           {filteredThreads.length === 0 ? (
             <div className="py-12 text-center text-body-medium text-on-surface-variant">
-              {threads.length === 0 ? "Aucune session enregistrée" : "Aucun résultat trouvé"}
+              {threads.length === 0 ? "Aucune session : envoyez un message pour en créer une" : "Aucune session ne correspond : modifiez la recherche"}
             </div>
           ) : (
             filteredThreads.map((t) => {
@@ -686,7 +686,7 @@ export function CodexChat({
       })
       .join("\n\n");
     await copyToNativeClipboard(formatted);
-    toast.success("Échange copié dans le presse-papier");
+    toast.success("Échange copié");
   };
 
   const handlePickAddFile = async () => {
@@ -772,7 +772,7 @@ export function CodexChat({
     plusPopover.setOpen(false);
     const picked = await pickFile("Sélectionner une image ou un PDF pour OCR", cwd);
     if (picked) {
-      toast.info("Extraction de texte (OCR) en cours...");
+      toast.info("Extraction du texte (OCR)…");
       try {
         const res = await runOcr({ path: picked });
         const outText = (res && typeof res.output === "string" ? res.output : "").trim();
@@ -783,12 +783,12 @@ export function CodexChat({
               ? `${draft}\n\n[Texte extrait de ${filename}] :\n${outText}`
               : `[Texte extrait de ${filename}] :\n${outText}`
           );
-          toast.success("Texte extrait avec succès");
+          toast.success("Texte extrait");
         } else {
-          toast.info("Aucun texte détecté dans ce document");
+          toast.info("Aucun texte détecté : essayez une image plus nette ou un PDF non scanné");
         }
       } catch (e) {
-        toast.error(`Erreur OCR : ${e instanceof Error ? e.message : String(e)}`);
+        toast.error(`Échec de l'OCR : ${e instanceof Error ? e.message : String(e)}`);
       }
     }
   };
@@ -797,7 +797,7 @@ export function CodexChat({
     plusPopover.setOpen(false);
     const picked = await pickFile("Sélectionner un fichier audio ou vidéo", cwd);
     if (picked) {
-      toast.info("Transcription audio Whisper en cours...");
+      toast.info("Transcription Whisper…");
       try {
         const res = await runTranscribe({ path: picked });
         const outText = (res && typeof res.output === "string" ? res.output : "").trim();
@@ -808,12 +808,12 @@ export function CodexChat({
               ? `${draft}\n\n[Transcription Whisper de ${filename}] :\n${outText}`
               : `[Transcription Whisper de ${filename}] :\n${outText}`
           );
-          toast.success("Transcription générée avec succès");
+          toast.success("Transcription ajoutée au message");
         } else {
-          toast.info("Transcription terminée sans résultat");
+          toast.info("Aucune parole détectée : vérifiez la piste audio du fichier");
         }
       } catch (e) {
-        toast.error(`Erreur transcription : ${e instanceof Error ? e.message : String(e)}`);
+        toast.error(`Échec de la transcription : ${e instanceof Error ? e.message : String(e)}`);
       }
     }
   };
@@ -823,7 +823,7 @@ export function CodexChat({
       (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
 
     if (!SpeechRecognition) {
-      toast.info("Dictée vocale prête : microphone prêt");
+      toast.info("Dictée indisponible : ce webview ne prend pas en charge SpeechRecognition");
       return;
     }
 
@@ -832,7 +832,7 @@ export function CodexChat({
         recognitionRef.current?.stop();
       } catch {}
       setIsListening(false);
-      toast.info("Dictée vocale terminée");
+      toast.info("Dictée arrêtée");
       return;
     }
 
@@ -844,7 +844,7 @@ export function CodexChat({
 
       recognition.onstart = () => {
         setIsListening(true);
-        toast.success("Dictée vocale active : parlez naturellement");
+        toast.success("Dictée démarrée");
       };
 
       recognition.onresult = (event: any) => {
@@ -869,7 +869,7 @@ export function CodexChat({
       recognition.start();
     } catch {
       setIsListening(false);
-      toast.error("Impossible d'activer le microphone");
+      toast.error("Micro inaccessible : autorisez le microphone pour l'application puis réessayez");
     }
   };
 
@@ -954,14 +954,16 @@ export function CodexChat({
             title="Nouveau chat"
             aria-label="Nouveau chat"
           />
-          <CircleButton
-            icon="content_copy"
-            variant="standard"
-            size="md"
-            onClick={() => void handleCopyTranscript()}
-            title="Copier l'échange"
-            aria-label="Copier l'échange"
-          />
+          {turns.length > 0 && (
+            <CircleButton
+              icon="content_copy"
+              variant="standard"
+              size="md"
+              onClick={() => void handleCopyTranscript()}
+              title="Copier l'échange"
+              aria-label="Copier l'échange"
+            />
+          )}
           {turns.length > 0 && (
             <CircleButton
               icon="delete_sweep"
@@ -1078,7 +1080,7 @@ export function CodexChat({
                       icon="thumb_down"
                       variant="standard"
                       size="sm"
-                      onClick={() => toast.info("Avis enregistré")}
+                      onClick={() => toast.info("Avis négatif enregistré")}
                       title="Je n'aime pas"
                       aria-label="Je n'aime pas"
                     />
@@ -1228,7 +1230,7 @@ export function CodexChat({
                   >
                     {/* Section Ajouter */}
                     <div className="px-3 py-1.5 text-label-medium font-bold text-on-surface-variant">
-                      Outils & Fichiers
+                      Outils & fichiers
                     </div>
                     <div className="space-y-0.5 mb-2">
                       <button
@@ -1468,7 +1470,7 @@ export function CodexChat({
                       <div className="pt-1 border-t border-outline-variant/15">
                         <div className="px-3 py-1 text-label-small font-semibold text-on-surface-variant uppercase tracking-wider flex items-center gap-1.5">
                           <span className="material-symbol text-title-small">smart_toy</span>
-                          <span>Recommandés & Cloud</span>
+                          <span>Recommandés & cloud</span>
                         </div>
                         {allModels
                           .filter((mName) => !modelOptions.some((opt) => opt.badge === "Local" && (opt.id === mName || opt.name === mName)))
@@ -2061,7 +2063,7 @@ export function CodexChatRoute() {
       setBusy(false);
       setTurnId(undefined);
       if (params?.turn?.status === "failed") {
-        toast.error(params.turn.error?.message ?? "Le tour a échoué");
+        toast.error(params.turn.error?.message ?? "Le tour a échoué : relancez le message ou consultez les logs app-server");
       }
       void loadThreads();
     }
@@ -2199,7 +2201,7 @@ export function CodexChatRoute() {
       );
     } catch (e) {
       toast.error(
-        `Erreur lors de l'envoi de la décision : ${
+        `Décision non envoyée : ${
           e instanceof Error ? e.message : String(e)
         }`
       );
@@ -2367,7 +2369,7 @@ export function CodexChatRoute() {
       if (id === threadIdRef.current) {
         setSessionTitle(trimmed);
       }
-      toast.success("Fil renommé avec succès");
+      toast.success("Fil renommé");
     } catch (e) {
       try {
         await chatRpc("thread/name/set", { threadId: id, name: trimmed });
@@ -2377,9 +2379,9 @@ export function CodexChatRoute() {
         if (id === threadIdRef.current) {
           setSessionTitle(trimmed);
         }
-        toast.success("Fil renommé avec succès");
+        toast.success("Fil renommé");
       } catch {
-        toast.error(`Erreur lors du renommage : ${e instanceof Error ? e.message : String(e)}`);
+        toast.error(`Renommage impossible : ${e instanceof Error ? e.message : String(e)}`);
       }
     }
   };
@@ -2398,12 +2400,12 @@ export function CodexChatRoute() {
       await loadThreads();
       if (forkedId) {
         await switchThread(forkedId);
-        toast.success("Fil bifurqué avec succès");
+        toast.success("Fil bifurqué");
       } else {
         toast.success("Fil bifurqué");
       }
     } catch (e) {
-      toast.error(`Erreur lors de la bifurcation : ${e instanceof Error ? e.message : String(e)}`);
+      toast.error(`Bifurcation impossible : ${e instanceof Error ? e.message : String(e)}`);
     } finally {
       setBusy(false);
     }
@@ -2412,13 +2414,13 @@ export function CodexChatRoute() {
   const handleCompactThread = async (id: string) => {
     try {
       await chatRpc("thread/compact/start", { threadId: id });
-      toast.success("Compactage du fil initié");
+      toast.success("Compactage du fil lancé");
       if (id === threadIdRef.current) {
         await switchThread(id);
       }
       await loadThreads();
     } catch (e) {
-      toast.error(`Erreur lors du compactage : ${e instanceof Error ? e.message : String(e)}`);
+      toast.error(`Compactage impossible : ${e instanceof Error ? e.message : String(e)}`);
     }
   };
 

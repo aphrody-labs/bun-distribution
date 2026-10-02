@@ -103,8 +103,8 @@ export function KnowledgeInspector() {
             <Icon name="auto_awesome" size={20} filled />
           </div>
           <div>
-            <div className="text-title-medium font-semibold text-on-surface">Shenron Assistant</div>
-            <div className="text-body-small text-on-surface-variant">RAG & Connaissances souveraines</div>
+            <div className="text-title-medium font-semibold text-on-surface">Shenron assistant</div>
+            <div className="text-body-small text-on-surface-variant">RAG & connaissances souveraines</div>
           </div>
         </div>
       </div>

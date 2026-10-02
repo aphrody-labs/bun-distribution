@@ -256,7 +256,7 @@ describe("Codex Chat - ThreadDrawer Component", () => {
       })
     );
 
-    expect(html).toContain("Aucune session enregistrée");
+    expect(html).toContain("Aucune session : envoyez un message pour en créer une");
   });
 });
 

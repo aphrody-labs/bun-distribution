@@ -41,7 +41,7 @@ export function AdvancedSettings() {
 
       <form onSubmit={onSubmit} className="space-y-4">
         <div className="p-4 bg-surface-container rounded-small border border-outline-variant">
-          <h3 className="text-label-large font-medium text-on-surface mb-3">Daemon Log Level</h3>
+          <h3 className="text-label-large font-medium text-on-surface mb-3">Daemon log level</h3>
           <label className="block">
             <p className="text-body-small text-on-surface-variant mb-2">Set the verbosity of daemon logs</p>
             <select
@@ -58,11 +58,11 @@ export function AdvancedSettings() {
         </div>
 
         <div className="p-4 bg-surface-container rounded-small border border-outline-variant space-y-4">
-          <h3 className="text-label-large font-medium text-on-surface">Job Logging</h3>
+          <h3 className="text-label-large font-medium text-on-surface">Job logging</h3>
 
           <label className="flex items-center justify-between">
             <div>
-              <span className="text-body-medium text-on-surface">Enable Job Logging</span>
+              <span className="text-body-medium text-on-surface">Enable job logging</span>
               <p className="text-body-small text-on-surface-variant">Write detailed logs for background jobs</p>
             </div>
             <input
@@ -74,7 +74,7 @@ export function AdvancedSettings() {
 
           <label className="flex items-center justify-between">
             <div>
-              <span className="text-body-medium text-on-surface">Include Debug Logs</span>
+              <span className="text-body-medium text-on-surface">Include debug logs</span>
               <p className="text-body-small text-on-surface-variant">Include verbose debug information in job logs</p>
             </div>
             <input
@@ -98,7 +98,7 @@ export function AdvancedSettings() {
             disabled={updateConfig.isPending}
             className="px-4 py-2 bg-primary hover:bg-primary text-white rounded-small text-label-large font-medium transition-colors disabled:opacity-50"
           >
-            {updateConfig.isPending ? "Saving..." : "Save Changes"}
+            {updateConfig.isPending ? "Saving…" : "Save changes"}
           </button>
         )}
       </form>

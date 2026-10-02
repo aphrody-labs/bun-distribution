@@ -93,14 +93,14 @@ function GenericCardContent({
 								"bg-primary text-on-primary hover:bg-primary/90 transition-all active:scale-95 shadow-sm",
 								m3FocusRing
 							)}
-							title={resultAction?.label || (targetPath ? "Afficher dans Fichiers" : "Ouvrir")}
+							title={resultAction?.label || (targetPath ? "Afficher dans fichiers" : "Ouvrir")}
 						>
 							<Icon
 								name={resultAction?.label === "Ouvrir" ? "open_in_new" : "folder_open"}
 								size={16}
 								filled
 							/>
-							<span>{resultAction?.label || (targetPath ? "Afficher dans Fichiers" : "Ouvrir")}</span>
+							<span>{resultAction?.label || (targetPath ? "Afficher dans fichiers" : "Ouvrir")}</span>
 						</button>
 					)}
 

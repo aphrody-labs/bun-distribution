@@ -75,7 +75,7 @@ export function IndexerSettings() {
 
           <label className="flex items-center justify-between">
             <div>
-              <span className="text-body-medium text-on-surface">Skip System Files</span>
+              <span className="text-body-medium text-on-surface">Skip system files</span>
               <p className="text-body-small text-on-surface-variant">Ignore OS system files and directories</p>
             </div>
             <input
@@ -87,7 +87,7 @@ export function IndexerSettings() {
 
           <label className="flex items-center justify-between">
             <div>
-              <span className="text-body-medium text-on-surface">Skip Git Repositories</span>
+              <span className="text-body-medium text-on-surface">Skip Git repositories</span>
               <p className="text-body-small text-on-surface-variant">Ignore .git directories</p>
             </div>
             <input
@@ -99,7 +99,7 @@ export function IndexerSettings() {
 
           <label className="flex items-center justify-between">
             <div>
-              <span className="text-body-medium text-on-surface">Skip Dev Directories</span>
+              <span className="text-body-medium text-on-surface">Skip dev directories</span>
               <p className="text-body-small text-on-surface-variant">Ignore node_modules, vendor, target, etc.</p>
             </div>
             <input
@@ -111,7 +111,7 @@ export function IndexerSettings() {
 
           <label className="flex items-center justify-between">
             <div>
-              <span className="text-body-medium text-on-surface">Skip Hidden Files</span>
+              <span className="text-body-medium text-on-surface">Skip hidden files</span>
               <p className="text-body-small text-on-surface-variant">Ignore files starting with a dot</p>
             </div>
             <input
@@ -140,7 +140,7 @@ export function IndexerSettings() {
 
           <label className="flex items-center justify-between">
             <div>
-              <span className="text-body-medium text-on-surface">Only Index Images</span>
+              <span className="text-body-medium text-on-surface">Only index images</span>
               <p className="text-body-small text-on-surface-variant">Only index image files (photos, graphics)</p>
             </div>
             <input
@@ -157,7 +157,7 @@ export function IndexerSettings() {
             disabled={updateConfig.isPending}
             className="px-4 py-2 bg-primary hover:bg-primary text-white rounded-small text-label-large font-medium transition-colors disabled:opacity-50"
           >
-            {updateConfig.isPending ? "Saving..." : "Save Changes"}
+            {updateConfig.isPending ? "Saving…" : "Save changes"}
           </button>
         )}
       </form>

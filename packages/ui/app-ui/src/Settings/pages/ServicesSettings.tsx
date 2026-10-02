@@ -61,7 +61,7 @@ export function ServicesSettings() {
 
           <label className="flex items-center justify-between">
             <div>
-              <span className="text-body-medium text-on-surface">Volume Monitoring</span>
+              <span className="text-body-medium text-on-surface">Volume monitoring</span>
               <p className="text-body-small text-on-surface-variant">Monitor for connected and disconnected volumes</p>
             </div>
             <input
@@ -73,7 +73,7 @@ export function ServicesSettings() {
 
           <label className="flex items-center justify-between">
             <div>
-              <span className="text-body-medium text-on-surface">Filesystem Watcher</span>
+              <span className="text-body-medium text-on-surface">Filesystem watcher</span>
               <p className="text-body-small text-on-surface-variant">Watch for file changes in tracked locations</p>
             </div>
             <input
@@ -85,7 +85,7 @@ export function ServicesSettings() {
 
           <label className="flex items-center justify-between">
             <div>
-              <span className="text-body-medium text-on-surface">Statistics Listener</span>
+              <span className="text-body-medium text-on-surface">Statistics listener</span>
               <p className="text-body-small text-on-surface-variant">Listen for and update library statistics</p>
             </div>
             <input
@@ -102,7 +102,7 @@ export function ServicesSettings() {
             disabled={updateConfig.isPending}
             className="px-4 py-2 bg-primary hover:bg-primary text-white rounded-small text-label-large font-medium transition-colors disabled:opacity-50"
           >
-            {updateConfig.isPending ? "Saving..." : "Save Changes"}
+            {updateConfig.isPending ? "Saving…" : "Save changes"}
           </button>
         )}
       </form>

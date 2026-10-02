@@ -60,7 +60,7 @@ export function AdaptersScreen() {
 							priority="high"
 						>
 							<span className="text-on-surface whitespace-nowrap text-title-small">
-								Data Adapters
+								Data adapters
 							</span>
 						</TopBarItem>
 					</>
@@ -297,7 +297,7 @@ function ConfigureForm({
 		<div className="flex flex-col gap-3">
 			<div>
 				<label className="text-on-surface-variant mb-1 block text-label-medium">
-					Source Name
+					Source name
 				</label>
 				<input
 					value={name}
@@ -352,7 +352,7 @@ function ConfigureForm({
 						onClick={handleSubmit}
 						disabled={createSource.isPending}
 					>
-					Add & Sync
+					Add & sync
 					</Button>
 			</div>
 		</div>

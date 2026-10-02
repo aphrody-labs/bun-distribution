@@ -109,7 +109,7 @@ export function HistoryPanel({
         {loading ? (
           <p className="m-0 p-2 text-body-medium text-on-surface-variant">Loading threads...</p>
         ) : groups.length === 0 ? (
-          <p className="m-0 p-2 text-body-medium text-on-surface-variant">{query ? "No thread matches this search." : "No threads yet."}</p>
+          <p className="m-0 p-2 text-body-medium text-on-surface-variant">{query ? "No thread matches: edit the search." : "No threads: send a message to start one."}</p>
         ) : (
           groups.map((group) => (
             <div key={group.key} className="mb-2">

@@ -47,7 +47,7 @@ export function useJobDispatch() {
 			return result;
 		} catch (err) {
 			console.error(`Failed to dispatch ${jobType} job:`, err);
-			toast.error(`Failed to start ${jobType} job`);
+			toast.error(`Could not start ${jobType} job: check that the core is running`);
 			throw err;
 		}
 	};

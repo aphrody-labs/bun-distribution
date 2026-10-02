@@ -368,7 +368,7 @@ function FileQuickActions({file}: {file: File}) {
 					type="button"
 					onClick={() => explorer.openQuickPreview(file.id)}
 					className="border-outline-variant/30 bg-surface-container/20 text-on-surface-variant hover:bg-surface-container/30 hover:text-on-surface flex size-7 items-center justify-center rounded-full border transition-all active:scale-95"
-					title="Quick Preview"
+					title="Quick preview"
 				>
 					<Eye size={14} weight="bold" />
 				</button>
@@ -392,7 +392,7 @@ function FileQuickActions({file}: {file: File}) {
 					type="button"
 					onClick={(e) => jobsMenu.show(e)}
 					className="border-outline-variant/30 bg-surface-container/20 text-on-surface-variant hover:bg-surface-container/30 hover:text-on-surface flex size-7 items-center justify-center rounded-full border transition-all active:scale-95"
-					title="Processing Jobs"
+					title="Processing jobs"
 				>
 					<Sparkle size={14} weight="bold" />
 				</button>
@@ -945,7 +945,7 @@ function OverviewTab({file}: {file: File}) {
 
 			{/* Image Metadata */}
 			{file.image_media_data && (
-				<Section title="Image Info" icon={Image}>
+				<Section title="Image info" icon={Image}>
 					<InfoRow
 						label="Dimensions"
 						value={`${file.image_media_data.width} × ${file.image_media_data.height}`}
@@ -970,7 +970,7 @@ function OverviewTab({file}: {file: File}) {
 					)}
 					{file.image_media_data.focal_length && (
 						<InfoRow
-							label="Focal Length"
+							label="Focal length"
 							value={file.image_media_data.focal_length}
 						/>
 					)}
@@ -982,7 +982,7 @@ function OverviewTab({file}: {file: File}) {
 					)}
 					{file.image_media_data.shutter_speed && (
 						<InfoRow
-							label="Shutter Speed"
+							label="Shutter speed"
 							value={file.image_media_data.shutter_speed}
 						/>
 					)}
@@ -991,7 +991,7 @@ function OverviewTab({file}: {file: File}) {
 
 			{/* Video Metadata */}
 			{file.video_media_data && (
-				<Section title="Video Info" icon={Image}>
+				<Section title="Video info" icon={Image}>
 					<InfoRow
 						label="Resolution"
 						value={`${file.video_media_data.width} × ${file.video_media_data.height}`}
@@ -1018,7 +1018,7 @@ function OverviewTab({file}: {file: File}) {
 						file.video_media_data.fps_den &&
 						file.video_media_data.fps_den !== 0 && (
 							<InfoRow
-								label="Frame Rate"
+								label="Frame rate"
 								value={`${Math.round((file.video_media_data.fps_num / file.video_media_data.fps_den) * 100) / 100} fps`}
 							/>
 						)}
@@ -1033,7 +1033,7 @@ function OverviewTab({file}: {file: File}) {
 
 			{/* Audio Metadata */}
 			{file.audio_media_data && (
-				<Section title="Audio Info" icon={Image}>
+				<Section title="Audio info" icon={Image}>
 					{file.audio_media_data.artist && (
 						<InfoRow
 							label="Artist"
@@ -1166,7 +1166,7 @@ function OverviewTab({file}: {file: File}) {
 
 			{/* AI Processing */}
 			{(isImage || isVideo || isAudio) && (
-				<Section title="AI Processing" icon={Sparkle}>
+				<Section title="AI processing" icon={Sparkle}>
 					<div className="flex flex-col gap-2">
 						{/* OCR for images */}
 						{isImage && (
@@ -1543,7 +1543,7 @@ function OverviewTab({file}: {file: File}) {
 										<TextAa size={16} weight="bold" />
 									</span>
 									<span className="text-on-surface text-label-medium font-medium">
-										Extracted Text
+										Extracted text
 									</span>
 								</div>
 								<pre className="text-on-surface-variant no-scrollbar max-h-40 overflow-y-auto whitespace-pre-wrap text-body-small">
@@ -2192,9 +2192,9 @@ function DetailsTab({file}: {file: File}) {
 		<div className="no-scrollbar mask-fade-out flex flex-col space-y-5 overflow-x-hidden overflow-y-scroll pb-10">
 			{/* Content Identity */}
 			{file.content_identity && (
-				<Section title="Content Identity" icon={Fingerprint}>
+				<Section title="Content identity" icon={Fingerprint}>
 					<InfoRow
-						label="Content Hash"
+						label="Content hash"
 						value={
 							String(file.content_identity.content_hash).slice(
 								0,
@@ -2205,7 +2205,7 @@ function DetailsTab({file}: {file: File}) {
 					/>
 					{file.content_identity.integrity_hash && (
 						<InfoRow
-							label="Integrity Hash"
+							label="Integrity hash"
 							value={
 								String(
 									file.content_identity.integrity_hash
@@ -2216,7 +2216,7 @@ function DetailsTab({file}: {file: File}) {
 					)}
 					{file.content_identity.mime_type_id !== null && (
 						<InfoRow
-							label="MIME Type ID"
+							label="MIME type ID"
 							value={String(file.content_identity.mime_type_id)}
 						/>
 					)}
@@ -2231,7 +2231,7 @@ function DetailsTab({file}: {file: File}) {
 					mono
 				/>
 				<InfoRow
-					label="Content Kind"
+					label="Content kind"
 					value={String(file.content_kind || 'Unknown')}
 				/>
 				{file.extension && (
@@ -2241,7 +2241,7 @@ function DetailsTab({file}: {file: File}) {
 
 			{/* System */}
 			<Section title="System" icon={DotsThree}>
-				<InfoRow label="Entry Kind" value={file.kind} />
+				<InfoRow label="Entry kind" value={file.kind} />
 				<InfoRow label="Local" value={file.is_local ? 'Yes' : 'No'} />
 				<InfoRow
 					label="Instances"

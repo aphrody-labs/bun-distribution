@@ -49,7 +49,7 @@ export function DevicesGroup({
 		const items = [
 			{
 				icon: Trash,
-				label: "Unpair Device",
+				label: "Unpair device",
 				onClick: async () => {
 					await revokeDevice.mutateAsync({
 						device_id: device.id,
@@ -60,7 +60,7 @@ export function DevicesGroup({
 			},
 			{
 				icon: Trash,
-				label: "Remove Device Completely",
+				label: "Remove device completely",
 				onClick: async () => {
 					await revokeDevice.mutateAsync({
 						device_id: device.id,

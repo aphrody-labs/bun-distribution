@@ -257,7 +257,7 @@ function ImageRenderer({ file, onZoomChange }: ContentRendererProps) {
 								setShowSplat(false);
 								setSplatLoaded(false);
 							}}
-							title="Show Image"
+							title="Show image"
 							active={true}
 							activeAccent={true}
 						/>

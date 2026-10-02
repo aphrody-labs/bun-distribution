@@ -333,7 +333,7 @@ export async function executeRagIndex(targets: File[]): Promise<number> {
 			progress: 0.1,
 			status_message: "Vectorisation des fragments...",
 			resultAction: {
-				label: "Afficher dans Fichiers",
+				label: "Afficher dans fichiers",
 				action: () => {
 					// Reveal file
 				},
@@ -352,7 +352,7 @@ export async function executeRagIndex(targets: File[]): Promise<number> {
 			successCount++;
 
 			useAphrodyJobStore.getState().completeJob(jobId, {
-				label: "Afficher dans Fichiers",
+				label: "Afficher dans fichiers",
 				action: () => {
 					// Reveal file
 				},

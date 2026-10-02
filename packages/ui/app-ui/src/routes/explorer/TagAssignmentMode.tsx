@@ -111,7 +111,7 @@ export function TagAssignmentMode({ isActive, onExit }: TagAssignmentModeProps) 
 						{/* Mode Label */}
 						<div className="flex items-center gap-2">
 							<Icon name="label" size={20} filled className="text-primary" />
-							<span className="text-title-small text-on-surface">Tag Mode</span>
+							<span className="text-title-small text-on-surface">Tag mode</span>
 							{selectedFiles.length > 0 && (
 								<span className="text-body-small text-on-surface-variant">
 									{selectedFiles.length} {selectedFiles.length === 1 ? 'item' : 'items'}

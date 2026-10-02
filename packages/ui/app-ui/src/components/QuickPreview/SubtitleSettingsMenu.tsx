@@ -33,13 +33,13 @@ export function SubtitleSettingsMenu({
 						className="absolute bottom-20 right-6 z-20 w-72 rounded-small border border-outline-variant bg-surface-container/95 p-4 backdrop-blur-xl shadow-md3-5"
 						onClick={(e) => e.stopPropagation()}
 					>
-						<h3 className="mb-4 text-label-large font-semibold text-on-surface">Subtitle Settings</h3>
+						<h3 className="mb-4 text-label-large font-semibold text-on-surface">Subtitle settings</h3>
 
 						<div className="space-y-4">
 							{/* Font Size */}
 							<div>
 								<label className="mb-2 flex items-center justify-between text-body-small text-on-surface-variant">
-									<span>Font Size</span>
+									<span>Font size</span>
 									<span className="text-on-surface">{Math.round(settings.fontSize * 100)}%</span>
 								</label>
 								<input
@@ -61,7 +61,7 @@ export function SubtitleSettingsMenu({
 							{/* Background Opacity */}
 							<div>
 								<label className="mb-2 flex items-center justify-between text-body-small text-on-surface-variant">
-									<span>Background Opacity</span>
+									<span>Background opacity</span>
 									<span className="text-on-surface">{Math.round(settings.backgroundOpacity * 100)}%</span>
 								</label>
 								<input

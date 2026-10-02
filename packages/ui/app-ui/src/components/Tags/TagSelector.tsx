@@ -222,7 +222,7 @@ export function TagSelector({
 
 				{filteredTags.length === 0 && !query.trim() ? (
 					<div className="text-on-surface-variant px-3 py-4 text-center text-body-medium">
-						No tags yet
+						No tags: type a name to create one
 					</div>
 				) : filteredTags.length === 0 && query.trim() ? null : (
 					filteredTags.map((tag, index) => (

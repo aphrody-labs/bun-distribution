@@ -694,7 +694,7 @@ export function SpacesSidebar({ isPreviewActive = false }: SpacesSidebarProps) {
 														<div className="ml-6 space-y-0.5 border-l border-outline-variant/30 pl-2">
 															{project.threads.length === 0 ? (
 																<div className="px-3 py-1 text-body-large text-on-surface-variant/50 italic">
-																	Aucun chat
+																	Aucun chat : ouvrez-en un dans ce projet
 																</div>
 															) : (
 																project.threads.map((thread) => {

@@ -62,7 +62,7 @@ export function SyncMonitorPopover({ className }: SyncMonitorPopoverProps) {
 			</Popover.Trigger>
 			<Popover.Content side="top" align="start" sideOffset={8} className="w-[380px] max-h-[520px] z-50 !p-0 !bg-surface !rounded-medium">
 				<div className="flex items-center justify-between px-4 py-3 border-b border-outline-variant">
-					<h3 className="text-label-large font-semibold text-on-surface">Sync Monitor</h3>
+					<h3 className="text-label-large font-semibold text-on-surface">Sync monitor</h3>
 
 					<div className="flex items-center gap-2">
 						{onlinePeerCount > 0 && (

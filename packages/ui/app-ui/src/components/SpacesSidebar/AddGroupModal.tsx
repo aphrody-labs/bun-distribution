@@ -34,26 +34,26 @@ function AddGroupDialog(props: { id: number; spaceId: string }) {
 	});
 
 	return (
-		<Dialog form={form} dialog={dialog} title="Add Group" onSubmit={onSubmit} ctaLabel="Create">
+		<Dialog form={form} dialog={dialog} title="Add group" onSubmit={onSubmit} ctaLabel="Create">
 			<div className="space-y-4">
 				<div>
-					<Label>Group Type</Label>
+					<Label>Group type</Label>
 					<select
 						value={typeof groupType === 'string' ? groupType : 'Custom'}
 						onChange={(e) => setGroupType(e.target.value as GroupType)}
 						className="w-full rounded-small border border-outline-variant bg-surface-container-highest px-3 py-2 text-body-medium text-on-surface"
 					>
-						<option value="Devices">All Devices</option>
-						<option value="Locations">All Locations</option>
+						<option value="Devices">All devices</option>
+						<option value="Locations">All locations</option>
 						<option value="Tags">Tags</option>
-						<option value="Cloud">Cloud Storage</option>
+						<option value="Cloud">Cloud storage</option>
 						<option value="Custom">Custom</option>
 					</select>
 				</div>
 
 				{groupType === 'Custom' && (
 					<div>
-						<Label>Group Name</Label>
+						<Label>Group name</Label>
 						<Input
 							{...form.register('groupName')}
 							placeholder="Enter group name"

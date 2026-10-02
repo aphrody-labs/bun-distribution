@@ -8,19 +8,19 @@ import { SIDEBAR_COLLAPSED_KEY, STORE_SIDEBAR_COLLAPSED } from "./preferences";
 describe("Jan Parity - System Presets & Inference Tuning", () => {
   test("SYSTEM_PRESETS includes default, engineer, code_reviewer, shenron, and custom presets", () => {
     expect(SYSTEM_PRESETS.default).toBeDefined();
-    expect(SYSTEM_PRESETS.default.label).toBe("Default Assistant");
+    expect(SYSTEM_PRESETS.default.label).toBe("Default assistant");
     expect(SYSTEM_PRESETS.default.prompt.length).toBeGreaterThan(10);
 
     expect(SYSTEM_PRESETS.engineer).toBeDefined();
-    expect(SYSTEM_PRESETS.engineer.label).toBe("Autonomous Engineer");
+    expect(SYSTEM_PRESETS.engineer.label).toBe("Autonomous engineer");
     expect(SYSTEM_PRESETS.engineer.prompt).toContain("autonomous senior staff engineer");
 
     expect(SYSTEM_PRESETS.code_reviewer).toBeDefined();
-    expect(SYSTEM_PRESETS.code_reviewer.label).toBe("Rigorous Code Reviewer");
+    expect(SYSTEM_PRESETS.code_reviewer.label).toBe("Rigorous code reviewer");
     expect(SYSTEM_PRESETS.code_reviewer.prompt).toContain("code reviewer");
 
     expect(SYSTEM_PRESETS.shenron).toBeDefined();
-    expect(SYSTEM_PRESETS.shenron.label).toBe("Shenron DB Sage");
+    expect(SYSTEM_PRESETS.shenron.label).toBe("Shenron DB sage");
     expect(SYSTEM_PRESETS.shenron.prompt).toContain("Shenron");
 
     expect(SYSTEM_PRESETS.custom).toBeDefined();

@@ -73,7 +73,7 @@ function LibrariesView() {
 								Spacedrive V2
 							</h1>
 							<p className="text-body-medium text-outline">
-								Multi-window Architecture Demo
+								Multi-window architecture demo
 							</p>
 						</div>
 						<div className="flex items-center gap-2">
@@ -163,7 +163,7 @@ function LibrariesView() {
 					<div>
 						<div className="flex items-center justify-between mb-4">
 							<h2 className="text-title-medium font-semibold">
-								Live Events
+								Live events
 							</h2>
 							<span className="text-body-small bg-outline px-2 py-1 rounded-full">
 								{eventCount} received
@@ -185,7 +185,7 @@ function LibrariesView() {
 					{/* Window Controls */}
 					<div>
 						<h2 className="text-title-medium font-semibold mb-4">
-							Window Management
+							Window management
 						</h2>
 						<div className="grid grid-cols-2 md:grid-cols-4 gap-3">
 							<ShinyButton
@@ -213,7 +213,7 @@ function LibrariesView() {
 							<ShinyButton
 								onClick={() => openWindow("FloatingControls")}
 							>
-								Floating Controls
+								Floating controls
 							</ShinyButton>
 						</div>
 						{windowError && (

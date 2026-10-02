@@ -14,7 +14,7 @@ export function useEmptySpaceContextMenu() {
 		items: [
 			{
 				icon: "create_new_folder",
-				label: "New Folder",
+				label: "New folder",
 				onClick: async () => {
 					if (!currentPath) return;
 					try {

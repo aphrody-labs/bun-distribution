@@ -28,7 +28,7 @@ export function SpeedGraph({ jobId, speedHistory }: SpeedGraphProps) {
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between">
-        <span className="text-title-small text-on-surface">Transfer Speed</span>
+        <span className="text-title-small text-on-surface">Transfer speed</span>
         <div className="flex gap-3 text-label-small">
           <span className="text-on-surface-variant">
             Avg: <span className="text-on-surface font-medium">{formatSpeed(avgRate)}</span>

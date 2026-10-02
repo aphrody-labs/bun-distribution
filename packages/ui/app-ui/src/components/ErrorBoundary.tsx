@@ -37,7 +37,7 @@ function ErrorFallback({
 					onClick={onReset}
 					className="rounded-extra-small bg-primary px-4 py-2 text-white hover:bg-primary"
 				>
-					Reload Application
+					Reload application
 				</button>
 			</div>
 		</div>

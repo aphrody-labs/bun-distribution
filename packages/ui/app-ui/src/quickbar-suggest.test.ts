@@ -76,20 +76,20 @@ describe("quickbar & command palette suggestions (Magpie unified spotlight)", ()
   });
 
   describe("navigation source (4 canonical zones & sub-surfaces)", () => {
-    test("suggests 'Aller au Chat' on 'chat' or 'codex'", () => {
+    test("suggests 'Aller au chat' on 'chat' or 'codex'", () => {
       const resultsChat = suggest("chat", sampleThreads, allSources);
-      const navChat = resultsChat.find((r): r is NavigationSuggestion => r.kind === "navigation" && r.label === "Aller au Chat");
+      const navChat = resultsChat.find((r): r is NavigationSuggestion => r.kind === "navigation" && r.label === "Aller au chat");
       expect(navChat).toBeDefined();
       expect(navChat?.route).toBe("/chat");
 
       const resultsCodex = suggest("codex", sampleThreads, allSources);
-      const navCodex = resultsCodex.find((r): r is NavigationSuggestion => r.kind === "navigation" && r.label === "Aller au Chat");
+      const navCodex = resultsCodex.find((r): r is NavigationSuggestion => r.kind === "navigation" && r.label === "Aller au chat");
       expect(navCodex).toBeDefined();
     });
 
-    test("suggests 'Aller aux Fichiers' on 'fichiers' or 'explorer'", () => {
+    test("suggests 'Aller aux fichiers' on 'fichiers' or 'explorer'", () => {
       const results = suggest("fichiers", sampleThreads, allSources);
-      const navFiles = results.find((r): r is NavigationSuggestion => r.kind === "navigation" && r.label === "Aller aux Fichiers");
+      const navFiles = results.find((r): r is NavigationSuggestion => r.kind === "navigation" && r.label === "Aller aux fichiers");
       expect(navFiles).toBeDefined();
       expect(navFiles?.route).toBe("/explorer");
     });
@@ -192,8 +192,8 @@ describe("quickbar & command palette suggestions (Magpie unified spotlight)", ()
       const defaults = getDefaultSuggestions(allSources, 8);
       expect(defaults.length).toBe(8);
       expect(defaults[0].kind).toBe("navigation");
-      expect(defaults.some((d) => d.kind === "navigation" && d.label === "Aller au Chat")).toBe(true);
-      expect(defaults.some((d) => d.kind === "navigation" && d.label === "Aller aux Fichiers")).toBe(true);
+      expect(defaults.some((d) => d.kind === "navigation" && d.label === "Aller au chat")).toBe(true);
+      expect(defaults.some((d) => d.kind === "navigation" && d.label === "Aller aux fichiers")).toBe(true);
     });
 
     test("respects limit parameter across all sources", () => {

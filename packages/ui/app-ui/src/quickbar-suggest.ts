@@ -66,7 +66,7 @@ export const CANONICAL_NAVIGATION_TARGETS: NavigationSuggestion[] = [
   {
     kind: "navigation",
     id: "nav-chat",
-    label: "Aller au Chat",
+    label: "Aller au chat",
     description: "Conversation Codex et agent autonome",
     route: desktopRoutes.chat,
     icon: "chat",
@@ -75,7 +75,7 @@ export const CANONICAL_NAVIGATION_TARGETS: NavigationSuggestion[] = [
   {
     kind: "navigation",
     id: "nav-files",
-    label: "Aller aux Fichiers",
+    label: "Aller aux fichiers",
     description: "Explorateur de fichiers Spacedrive VDFS",
     route: desktopRoutes.files,
     icon: "folder_open",
@@ -111,7 +111,7 @@ export const CANONICAL_NAVIGATION_TARGETS: NavigationSuggestion[] = [
   {
     kind: "navigation",
     id: "nav-sources",
-    label: "Aller aux Sources",
+    label: "Aller aux sources",
     description: "Emplacements et adaptateurs de stockage",
     route: "/sources",
     icon: "device_hub",

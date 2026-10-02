@@ -264,7 +264,7 @@ export function ExplorerView() {
 							</TopBarItem>
 							<TopBarItem
 								id="view-settings"
-								label="View Settings"
+								label="View settings"
 								priority="low"
 								submenuContent={viewSettingsSubmenu}
 							>

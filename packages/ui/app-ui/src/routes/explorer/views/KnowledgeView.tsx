@@ -144,7 +144,7 @@ export function KnowledgeView() {
 						<Icon name="auto_awesome" size={32} filled className="text-primary" />
 						<div>
 							<h1 className="text-headline-small text-on-surface">
-								Knowledge View
+								Knowledge view
 							</h1>
 							<p className="text-body-medium text-on-surface-variant">
 								AI-powered insights for {files.length} items

@@ -835,7 +835,7 @@ export function MeshViewerUI({
 					<div className="flex flex-col gap-1">
 						<div className="flex items-center justify-between">
 							<label className="text-label-medium text-on-surface-variant">
-								Sway Amount
+								Sway amount
 							</label>
 							<span className="text-label-medium text-on-surface-variant font-mono tabular-nums">
 								{swayAmount.toFixed(2)}
@@ -849,7 +849,7 @@ export function MeshViewerUI({
 							onValueChange={([v]) => {
 								if (v !== undefined) setSwayAmount(v);
 							}}
-							aria-label="Sway Amount"
+							aria-label="Sway amount"
 						/>
 					</div>
 

@@ -214,7 +214,7 @@ export function TagsGroup({
 						</div>
 					) : tags.length === 0 ? (
 						<div className="text-outline px-2 py-1 text-body-small">
-							No tags yet
+							No tags: create one to group files
 						</div>
 					) : (
 						tags.map((tag: Tag) => (
@@ -252,7 +252,7 @@ export function TagsGroup({
 							className="text-on-surface-variant hover:bg-surface-container hover:text-on-surface flex w-full cursor-pointer items-center gap-2 rounded-small px-2 py-1.5 text-label-medium font-medium transition-colors"
 						>
 							<Plus size={12} weight="bold" />
-							<span>New Tag</span>
+							<span>New tag</span>
 						</button>
 					)}
 				</div>

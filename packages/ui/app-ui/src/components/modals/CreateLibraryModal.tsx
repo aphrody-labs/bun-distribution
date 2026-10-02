@@ -209,7 +209,7 @@ function CreateLibraryDialog(props: CreateLibraryDialogProps) {
 			<Dialog
 				dialog={dialog}
 				form={form}
-				title="Creating Library"
+				title="Creating library"
 				icon={<Books size={20} weight="fill" />}
 				hideButtons
 			>
@@ -237,7 +237,7 @@ function CreateLibraryDialog(props: CreateLibraryDialogProps) {
 			<Dialog
 				dialog={dialog}
 				form={form}
-				title="Library Created"
+				title="Library created"
 				icon={<Books size={20} weight="fill" />}
 				hideButtons
 			>
@@ -267,7 +267,7 @@ function CreateLibraryDialog(props: CreateLibraryDialogProps) {
 				form={form}
 				title="Error"
 				icon={<Warning size={20} weight="fill" className="text-error" />}
-				ctaLabel="Try Again"
+				ctaLabel="Try again"
 				onSubmit={async () => {
 					setStep("form");
 					setErrorMessage(null);
@@ -298,20 +298,20 @@ function CreateLibraryDialog(props: CreateLibraryDialogProps) {
 			dialog={dialog}
 			form={form}
 			onSubmit={onSubmit}
-			title="Create New Library"
+			title="Create new library"
 			icon={<Books size={20} weight="fill" />}
 			description="A library is a container for your files, tags, and organization"
-			ctaLabel="Create Library"
+			ctaLabel="Create library"
 			onCancelled={true}
 			loading={createLibrary.isPending}
 		>
 			<div className="space-y-4">
 				<div className="space-y-2">
-					<Label slug="name">Library Name</Label>
+					<Label slug="name">Library name</Label>
 					<Input
 						{...form.register("name", { required: "Name is required" })}
 						size="md"
-						placeholder="My Library"
+						placeholder="My library"
 						autoFocus
 						className="bg-surface-container-highest"
 					/>

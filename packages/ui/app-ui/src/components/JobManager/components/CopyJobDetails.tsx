@@ -104,7 +104,7 @@ export function CopyJobDetails({ job, speedHistory }: CopyJobDetailsProps) {
       {/* File queue */}
       {files.length > 0 && (
         <div>
-          <div className="text-title-small text-on-surface mb-2">Transfer Queue</div>
+          <div className="text-title-small text-on-surface mb-2">Transfer queue</div>
           <div
             ref={scrollContainerRef}
             className="space-y-0 max-h-[200px] overflow-y-auto border border-outline-variant rounded-medium"

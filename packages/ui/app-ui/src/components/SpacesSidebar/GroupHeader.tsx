@@ -80,7 +80,7 @@ export function GroupHeader({
     items: [
       {
         icon: PencilSimple,
-        label: "Rename Group",
+        label: "Rename group",
         onClick: () => {
           setNewName(label);
           setIsRenaming(true);
@@ -90,7 +90,7 @@ export function GroupHeader({
       { type: "separator" },
       {
         icon: Trash,
-        label: "Delete Group",
+        label: "Delete group",
         onClick: handleDelete,
         variant: "danger" as const,
         condition: () => allowCustomization,

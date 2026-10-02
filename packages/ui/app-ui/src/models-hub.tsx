@@ -292,7 +292,7 @@ export function ModelsHub() {
               <Icon name="download_for_offline" size={48} className="mb-3 text-on-surface-variant" />
               <h2 className="m-0 text-[20px] font-semibold text-on-surface">Aucun modèle installé</h2>
               <p className="m-0 mt-2 text-[18px] text-on-surface-variant">
-                Parcourez le Catalogue pour télécharger des modèles optimisés pour cette machine.
+                Parcourez le catalogue pour télécharger des modèles optimisés pour cette machine.
               </p>
               <Button
                 variant="filled"
@@ -300,7 +300,7 @@ export function ModelsHub() {
                 onClick={() => setActiveTab("catalog")}
               >
                 <Icon name="travel_explore" size={20} />
-                <span>Ouvrir le Catalogue</span>
+                <span>Ouvrir le catalogue</span>
               </Button>
             </Card>
           ) : (

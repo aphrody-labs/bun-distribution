@@ -1109,25 +1109,25 @@ export function SizeView() {
 						<CircleButton
 							icon="remove"
 							onClick={handleZoomOut}
-							title="Zoom Out"
+							title="Zoom out"
 							disabled={sizeViewTransform.k <= 0.1}
 						/>
 						<CircleButton
 							icon="add"
 							onClick={handleZoomIn}
-							title="Zoom In"
+							title="Zoom in"
 							disabled={sizeViewTransform.k >= 100}
 						/>
 					</CircleButtonGroup>
 					<CircleButton
 						icon="fit_screen"
 						onClick={handleFitToView}
-						title="Fit to View"
+						title="Fit to view"
 					/>
 					<CircleButton
 						icon="restart_alt"
 						onClick={handleResetZoom}
-						title="Reset Zoom"
+						title="Reset zoom"
 					/>
 					<div className="text-on-surface-variant px-2 text-label-large tabular-nums">
 						{sizeViewTransform.k.toFixed(1)}x
