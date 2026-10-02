@@ -1,0 +1,24 @@
+[build]
+rustc-wrapper = "sccache"
+# Bound rustc fan-out so WSL builds leave CPU and memory for Windows.
+jobs = 6
+incremental = false
+
+[net]
+# Use Git's configured credentials and keep transient fetch failures inexpensive.
+git-fetch-with-cli = true
+retry = 2
+
+[env]
+# 20 GiB evicted the workspace between two full builds (28 % hits); the disk has room for 60.
+SCCACHE_CACHE_SIZE = "60G"
+# Hash C/C++ sources directly instead of preprocessing them first (cc-rs build scripts).
+SCCACHE_DIRECT = "true"
+
+# Authentic Windows MSVC tools through the WSL filesystem bridge.
+CC_x86_64_pc_windows_msvc = "cl.exe"
+AR_x86_64_pc_windows_msvc = "lib.exe"
+
+[cache]
+# Let Cargo garbage-collect ~/.cargo/registry and git checkouts it has not used for a while.
+auto-clean-frequency = "1 day"
