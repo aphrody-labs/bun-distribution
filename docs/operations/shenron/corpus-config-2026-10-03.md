@@ -19,7 +19,7 @@ dans le script d'ingestion restent hors du commit.
   `bun run type-check` réussi (sources et scripts).
 - Site : `bun test tests/canon-corpus.test.ts` — neuf réussis.
 - Site : `bun run type-check` échoue sur
-  `scripts/bxc-asset-harvest.ts:640`, nom `aphrodyWebMirror` introuvable,
+  `apps/shenron/site/scripts/bxc-asset-harvest.ts:640`, nom `aphrodyWebMirror` introuvable,
   hors des fichiers de ce lot.
 - `git diff --check` réussi pour les fichiers du lot.
 
