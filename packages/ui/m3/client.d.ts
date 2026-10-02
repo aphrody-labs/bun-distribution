@@ -6,7 +6,7 @@
 /** Sheets and fonts served by the m3 plugin (`m3:theme.css`, `m3:symbols.css`, `m3:fonts.css`, ...). */
 declare module "m3:*" {}
 
-/** `?url` imports: the asset inlined as a `data:` URL. */
+/** `?url` imports: the URL of an emitted `.svg` asset, or any other asset inlined as a `data:` URL. */
 declare module "*?url" {
   const url: string;
   export default url;

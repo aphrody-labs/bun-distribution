@@ -3,7 +3,7 @@ import { describe, expect, test } from "bun:test";
 import { readdir, readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { m3Plugin, M3_MODULES, fontsCss } from "../src/plugin.ts";
-import { dataUrlFor, mimeFor } from "../src/url-imports.ts";
+import { dataUrlFor, mimeFor, urlImportForm } from "../src/url-imports.ts";
 import { FIXTURE, fakeCss, REPO_ROOT, tempDir } from "./helpers.ts";
 
 async function bundle(outdir: string, plugin: ReturnType<typeof m3Plugin>, entry = join(FIXTURE, "index.html")) {
@@ -89,11 +89,13 @@ describe("m3Plugin virtual modules", () => {
 });
 
 describe("?url imports", () => {
-  test("assets are inlined as data URLs; .scss line comments are stripped", async () => {
+  test(".svg is emitted as a file; other assets are inlined; .scss line comments are stripped", async () => {
     await using tmp = await tempDir();
     const out = await bundle(tmp.dir, m3Plugin({ css: fakeCss().css, theme: {}, root: REPO_ROOT }));
-    const svg = await dataUrlFor(join(FIXTURE, "logo.svg"));
-    expect(out.js).toContain(svg);
+    expect(out.files.some((file) => /^logo(-[a-z0-9]+)?\.svg$/.test(file))).toBe(true);
+    expect(out.js).not.toContain("data:image/svg+xml");
+    expect(urlImportForm("a.SVG")).toBe("file");
+    expect(urlImportForm("a.png")).toBe("inline");
     const scss = await dataUrlFor(join(FIXTURE, "prism.scss"));
     const decoded = Buffer.from(scss.split(",")[1]!, "base64").toString("utf8");
     expect(decoded).not.toContain("line comment");

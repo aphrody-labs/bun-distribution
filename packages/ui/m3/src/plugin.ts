@@ -65,7 +65,7 @@ export interface M3PluginOptions {
   tailwind?: boolean;
   /** Compile `.scss` through `@aphrody/bun` (default true), or pass its options. */
   sass?: boolean | { loadPaths?: string[]; style?: "expanded" | "compressed"; quiet?: boolean };
-  /** `?url` imports (default true). */
+  /** `?url` imports (default true): `.svg` as file assets, other assets inlined as data URLs. */
   urlImports?: boolean;
 }
 
