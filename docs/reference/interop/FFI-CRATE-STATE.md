@@ -88,7 +88,7 @@ Columns: Kind = lib/bin/cdylib targets; FFI = how the crate reaches the single `
 | `crates/compat/oxc-bridge` | `aphrody-oxc-bridge` | lib | aphrody_oxc_* (5; re-exported by aphrody-ffi) | @aphrody/bun/oxc (oxc.ts) | 2 | 0/0 | 0/0 | member(glob) |
 | `crates/compat/toolchains` | `aphrody-toolchains` | lib | linked transitively, no C symbols | - | 7 | 0/0 | 0/0 | member(glob) |
 | `crates/contracts/a2a` | `aphrody-a2a` | lib | linked transitively, no C symbols | - | 90 | 0/0 | 0/0 | member(glob) |
-| `crates/contracts/a2a-pb` | `aphrody-a2a-pb` | lib | linked transitively, no C symbols | - | 67 | 0/0 | 0/0 | member(glob) |
+| `crates/os/a2a-pb` | `aphrody-a2a-pb` | lib | linked transitively, no C symbols | - | 67 | 0/0 | 0/0 | member(glob) |
 | `crates/contracts/agent-proto` | `aphrody-agent-proto` | lib | linked transitively, no C symbols | - | 10 | 0/0 | 4/0 | member(glob) |
 | `crates/contracts/app-protocol` | `aphrody-app-protocol` | lib | linked transitively, no C symbols | - | 17 | 0/0 | 1/0 | member(glob) |
 | `crates/os/subsystem` | `aphrody-subsystem` | lib | linked transitively, no C symbols | - | 4 | 0/0 | 0/0 | member(glob) |

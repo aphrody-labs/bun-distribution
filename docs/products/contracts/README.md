@@ -6,7 +6,8 @@ plus N2B schemas. Operational clients and OS subsystem routines live under OS.
 
 ## Layout
 
-- `crates/contracts/a2a`, `crates/contracts/a2a-pb`: types and protobuf.
+- `crates/contracts/a2a`: pure protocol types. The tonic/protobuf adapter
+  lives under `crates/os/a2a-pb` with the other operational A2A owners.
 - `crates/os/a2a-*`: operational clients, server, gRPC and coordination.
 - `crates/contracts/agent-proto`, `aphrody-app-protocol`: agent and desktop wire formats.
 - `crates/os/subsystem`, `crates/os/kernel-client`: OS subsystem API and kernel client.

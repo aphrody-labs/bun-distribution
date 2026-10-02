@@ -71,7 +71,7 @@
         },
         {
           "name": "aphrody-a2a-pb",
-          "path": "crates/contracts/a2a-pb",
+          "path": "crates/os/a2a-pb",
           "description": "A2A v1 protobuf-generated types and conversion layer",
           "bins": [],
           "features": []

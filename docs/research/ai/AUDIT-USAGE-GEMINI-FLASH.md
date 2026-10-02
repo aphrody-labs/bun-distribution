@@ -39,7 +39,7 @@
 - **`crates/os/a2a-server`** : 21 fichiers, 6 081 lignes (210 Ko)
 - **`packages/bun-rs` (not in repo)** : 4 fichiers, 5 359 lignes (115 Ko)
 - **`crates/ai/agent-home`** : 21 fichiers, 5 147 lignes (183 Ko)
-- **`crates/contracts/a2a-pb`** : 7 fichiers, 5 054 lignes (211 Ko)
+- **`crates/os/a2a-pb`** : 7 fichiers, 5 054 lignes (211 Ko)
 - **`crates/ai/models`** : 10 fichiers, 4 942 lignes (177 Ko)
 - **`crates/ui/m3-tokens`** : 15 fichiers, 4 903 lignes (184 Ko)
 

@@ -28,7 +28,7 @@ Canonical Rust/Bun monorepo
 | `aphrody-a2a-client` | crates/os/a2a-client | A2A v1 async client with protocol binding factory | `a2a-duel-loop` | default, native-tls, rustls-tls |
 | `aphrody-a2a-coord` | crates/os/a2a-coord | Aphrody A2A coordination: ai.json manifest, JSONL mailboxes and their NDJSON/SSE proxy, native Claude/Grok/agy peers, HTTP listener. |  |  |
 | `aphrody-a2a-grpc` | crates/os/a2a-grpc | A2A v1 gRPC protocol binding for client and server |  | default, native-tls, rustls, rustls-tls |
-| `aphrody-a2a-pb` | crates/contracts/a2a-pb | A2A v1 protobuf-generated types and conversion layer |  |  |
+| `aphrody-a2a-pb` | crates/os/a2a-pb | A2A v1 protobuf-generated types and conversion layer |  |  |
 | `aphrody-a2a-server` | crates/os/a2a-server | A2A v1 async server framework |  | default, native-tls, rustls, rustls-tls |
 | `aphrody-a2a-ui` | crates/ui/a2a-ui | A2A protocol UI: WASM channel viewer for ai.json + .coord JSONL mailbox. |  |  |
 | `aphrody-agent-home` | crates/ai/agent-home | aphrody-agent-home — the agent's persistent home: Soul / Identity / User / Tools, mmap zero-copy file cache, content-addressed cache, bootstrap budget, system-prompt assembler, hot-reload, git backup. |  | default, git |
