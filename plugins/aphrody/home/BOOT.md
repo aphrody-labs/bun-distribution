@@ -4,9 +4,10 @@ title: Checklist de démarrage
 
 # Checklist de démarrage
 
-Étapes à exécuter une fois au début d'une session interactive.
+À exécuter au début de chaque session interactive. Garde cette liste courte.
 
-- Lire AGENTS.md et TOOLS.md pour avoir les règles et les outils en tête.
-- Vérifier le répertoire de travail courant et les changements récents.
-- Cerner le but immédiat de l'utilisateur, puis foncer.
-6. **Dépendances :** exécuter `bun run update:deps` (plan) et `bun run update` (gate) ; lire `memory/deps-state.md` et `.coord/shared/deps-fix-*.md` avant de toucher aux versions.
+1. Lire `AGENTS.md` et `TOOLS.md`, puis les instructions du dépôt courant.
+2. Vérifier le profil actif, le cwd, la branche et l'état Git avant d'éditer.
+3. Relire les changements existants dans les fichiers qui seront touchés.
+4. Reformuler le résultat attendu et commencer le travail autorisé.
+5. Consulter une mémoire thématique uniquement si elle s'applique à la tâche.
