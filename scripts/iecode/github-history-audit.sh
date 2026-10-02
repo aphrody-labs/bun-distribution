@@ -12,7 +12,7 @@ export IECODE_ROOT="$iecode_root"
 repos=(
   aphrody-code/nie aphrody-code/iecode-cpp aphrody-code/iecode
   aphrody-code/node-api-dotnet aphrody-code/winclean aphrody-code/winDS
-  aphrody-code/ghidra-suite-plugin aphrody-code/rs-bun aphrody-code/bun-agent
+  aphrody-code/ghidra-suite-plugin
   aphrody-code/dbxv2 rose-griffon/rg aphrody-code/vps
 )
 

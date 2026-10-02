@@ -654,7 +654,7 @@ export function renderPlan(s: Status, majors: string[]): string[] {
   for (const r of s.plan.majors) out.push(`            ${want.includes(r.name) ? "*" : " "} ${fmtRow(r)}`);
   if (s.plan.held.length) out.push(`5 held      ${s.plan.held.map((r) => `${r.name} (${r.hold!.reason})`).join("; ")}`);
   out.push("6 verify    bun:check, monorepo:layout, workspace tests, typecheck of every package whose resolved deps changed");
-  out.push("7 fork      `aphrody-update sources forks` reports the Bun fork gap; merge it by hand (docs/operations/infra/BUN-FORK-OPERATIONS.md)");
+  out.push("7 fork      none: the Bun fork was retired on 2026-10-02; the runtime is upstream Bun");
   return out;
 }
 

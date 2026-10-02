@@ -69,7 +69,7 @@ Overview, generated: [UPSTREAMS.md](../../reference/infra/UPSTREAMS.md). The nat
 | --- | --- |
 | `sources status\|verify\|sync [--apply] [--only <id>]` | restore and inspect the vital checkouts (clone or extract, apply missing patches; never touches an existing checkout's history). `sync --only <id>` also restores a `build`-tier reference (WSL build inputs) |
 | `sources drift` | every pin against its remote head, newest tag or crates.io version (a `hold` is reported, not proposed), plus the Cargo git remotes of `Cargo.lock` classified as `rev`, `tag`, `branch` or `transitive` (only `rev` and `branch` can be "moved") |
-| `sources forks` | each fork against its parent (GitHub compare API, or head comparison for detached forks); recorded `upstreamCommit` in `config/bun-fork.json` vs the parent head |
+| `sources forks` | each fork against its parent (GitHub compare API, or head comparison for detached forks) |
 | `sources repo` | local repository: branch, ahead/behind, changed paths, stashes, remotes (also printed by `check`) |
 | `sources bump [--only <id>] [--apply]` | move a pinned source to the newest head or version; held and unpinned entries are skipped. A scratch clone first proves the patches still apply; a failure writes `.coord/shared/sources-bump-<id>.md` and changes nothing. `--apply` rewrites the manifest, keeps the old checkout as `<id>.pre-bump-<ts>`, restores the new one, and rolls everything back if the result is not `ok`. Then check the Cargo consumers it prints |
 | `sources pull [--apply] [--deps]` | fast-forward tracked, clean checkouts and record the new head as the manifest `commit`; Cargo path dependencies only with `--deps` |
@@ -90,7 +90,7 @@ regenerates UPSTREAMS.md. The WSL build inputs (tier `build`) are restored only 
 (`config/os/wsl-build.json`), not in `~/source`.
 
 `update run` reports `sources drift`, `upstream drift` and `forks` (or restores missing vital checkouts with `--apply`).
-Bun fork procedure: [BUN-FORK-OPERATIONS.md](./BUN-FORK-OPERATIONS.md).
+Bun fork: the Aphrody Bun fork (`aphrody-labs/bun`) was deleted on 2026-10-02: `bun:aphrody` is optional and upstream Bun with `@aphrody/bun` is the runtime.
 
 ## Advisories, holds and release age
 

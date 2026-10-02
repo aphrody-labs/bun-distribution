@@ -134,7 +134,7 @@ ${forks.map((f) => `| \`${f.repo}\` | ${f.parent ?? "-"} | ${f.role ?? "-"} | ${
 | Agent entry point | skill \`upstreams\` (\`plugins/aphrody/skills/upstreams\`) |
 
 The Cargo git dependencies (Oxc fork, hf-hub, mistral.rs, tauri-specta fork) are tracked by \`aphrody-update sources drift\`;
-forks by \`aphrody-update sources forks\`. Procedure for the Bun fork: [BUN-FORK-OPERATIONS.md](../../operations/infra/BUN-FORK-OPERATIONS.md).
+forks by \`aphrody-update sources forks\`. The Bun fork was retired on 2026-10-02.
 `;
 }
 

@@ -4,7 +4,7 @@
 Owner: Infra (`packages/infra/update/src/ecosystems/bun.ts`, exported as `runBun`). It bumps everything that is Bun or
 npm: the Bun runtime pin, the Tauri JS packages, the root `workspaces.catalog` and the literal ranges of every
 first-party manifest (84 manifests plus the root). The pipeline overview is [UPDATE.md](../UPDATE.md); the Bun fork is
-covered in [BUN-FORK-OPERATIONS.md](../BUN-FORK-OPERATIONS.md).
+retired: the Aphrody Bun fork (`aphrody-labs/bun`) was deleted on 2026-10-02: `bun:aphrody` is optional and upstream Bun with `@aphrody/bun` is the runtime.
 
 ## Policy
 
@@ -99,12 +99,7 @@ committed is reverted with `git revert` of that commit. After either, run `bun i
 
 ## Bun fork
 
-The Aphrody Bun fork (`aphrody-labs/bun`, pin in `config/bun-fork.json`) is not part of `apply`: merging upstream means
-a local build and the `bun:aphrody` module tests. `aphrody-update bun status` (and `sources forks`) prints the fork head,
-the parent head and whether the recorded `upstreamCommit` is stale. Merge, rebuild, run
-`bun bd test test/js/bun/resolve/aphrody.test.ts`, then update the pin as described in
-[BUN-FORK-OPERATIONS.md](../BUN-FORK-OPERATIONS.md). The runtime that applications use stays the upstream release pinned
-by `config/update/pins.json` until a verified fork artifact exists.
+Bun fork: the Aphrody Bun fork (`aphrody-labs/bun`) was deleted on 2026-10-02: `bun:aphrody` is optional and upstream Bun with `@aphrody/bun` is the runtime.
 
 ## Held packages
 

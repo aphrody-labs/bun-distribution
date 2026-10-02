@@ -4,7 +4,7 @@
 
 > **Document d'Architecture Canonique**  
 > Périmètre : Interface Utilisateur (UI/GUI), Web, Desktop (Tauri v3), Scripts, Infra, Packages et Crates de tout Aphrody.  
-> Source de référence upstream : the Bun fork checkout (`~/work/bun-fork`, see [BUN-FORK-OPERATIONS.md](../../operations/infra/BUN-FORK-OPERATIONS.md)) and `aphrody git upstream` for oven-sh/bun (Bun v1.4+).
+> Source de référence upstream : upstream `oven-sh/bun` (the Aphrody fork was deleted on 2026-10-02) through `aphrody git upstream` for oven-sh/bun (Bun v1.4+).
 
 ---
 

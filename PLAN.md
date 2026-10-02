@@ -139,7 +139,7 @@ actifs, aucun import vers une ancienne implantation déplacée.
 ### Inventaire de revue documentaire — 2026-10-01
 
 - FAIT : trois destinations de runbooks Infra corrigées vers les fichiers
-  existants `config/bun-fork.json`, `config/shell-runtime.json` et
+  existants `config/shell-runtime.json` et
   `inventory/aphrody-discord-dev-2026-09-29.md`. Le contrôle ne relève plus
   de destination manquante dans `docs/operations/infra/`.
 - [Rapport de revue](docs/migration/document-links-review-2026-10-01.json) :
