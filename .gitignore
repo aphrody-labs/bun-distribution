@@ -61,9 +61,9 @@ compile_commands.json
 /apps/rg/**/.npmrc
 /packages/rg/**/.env
 /packages/rg/**/.env.*
-/docs/rg/root/.env
-/docs/rg/root/.env.*
-/docs/rg/root/.npmrc
+/docs/reference/rg/root/.env
+/docs/reference/rg/root/.env.*
+/docs/reference/rg/root/.npmrc
 *.pem
 *.key
 *.p12

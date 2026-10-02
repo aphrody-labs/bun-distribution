@@ -22,7 +22,7 @@ Tout le nécessaire pour migrer une codebase **React + MUI** (`@mui/material@9`)
 | [`08-coverage-mui-x.md`](../../../../../../packages/ui/material-web/migration/08-coverage-mui-x.md)               | Couverture **MUI X v9 Community** (Data Grid, charts, pickers, tree, scheduler) + verdict              |
 | [`09-coverage-tailwind.md`](../../../../../../packages/ui/material-web/migration/09-coverage-tailwind.md)         | Quelles familles de tokens sont mappables en `@theme` Tailwind v4 (et lesquelles non)                  |
 | [`11-material-symbols.md`](../../../../../../packages/ui/material-web/migration/11-material-symbols.md)           | Material Symbols : axes variables `md-icon`, chargement de police, optimisation, codemod icônes (96 %) |
-| [`mui-m3-map.json`](./mui-m3-map.json)                         | **Mapping consolidé machine-readable** (composants + props + events + icônes) — généré                 |
+| [`mui-m3-map.json`](../../../../../../packages/ui/material-web/migration/mui-m3-map.json)                         | **Mapping consolidé machine-readable** (composants + props + events + icônes) — généré                 |
 
 ## Outillage
 
@@ -30,7 +30,7 @@ Tout le nécessaire pour migrer une codebase **React + MUI** (`@mui/material@9`)
 | ---------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
 | [`codemods/`](./codemods/)                                       | Transforms jscodeshift (imports, JSX variant-aware, props/events) + règles ast-grep                                                                         | fixtures **4/4 PASS**, `tsc --strict` 0 erreur, validé sur app réelle (cf. `10`) |
 | [`examples/`](./examples/)                                       | Écran « Paramètres de compte » migré avant/après + notes point par point                                                                                    | complet                                                                          |
-| [`scripts/`](./scripts/)                                         | `md-elements.txt` (**120 tags** de référence, synchro `packages/ui/m3-react`), `theme-to-tokens.ts` (copie canonique dans le package `@aphrody/m3-tokens`)   | —                                                                                |
+| [`scripts/`](../../../../../../packages/ui/material-web/migration/scripts/)                                         | `md-elements.txt` (**120 tags** de référence, synchro `packages/ui/m3-react`), `theme-to-tokens.ts` (copie canonique dans le package `@aphrody/m3-tokens`)   | —                                                                                |
 | [`../../eslint-plugin-m3/`](../../../../../../packages/ui/eslint-plugin-m3/) | Plugin lint `@aphrody/eslint-plugin-m3` (oxlint `jsPlugins` + ESLint) — 6 règles M3 pour les sites consommant la lib ; complément continu des codemods | testé sur oxlint réel (6/6)                                                      |
 
 ## Les pièges à retenir

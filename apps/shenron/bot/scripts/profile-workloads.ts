@@ -7,7 +7,7 @@
  * 2. Latence de l'API (p50, p95, p99)
  * 3. Délai de la boucle d'événements (event loop delay p50, p95, p99)
  * 4. Mémoire RSS (baseline, sous indexation simulée, sous appels compute RAG)
- * 5. Consigne les mesures dans `docs/shenron/measurements/bot-profile-report.json`.
+ * 5. Consigne les mesures dans `docs/operations/shenron/measurements/bot-profile-report.json`.
  */
 
 import os from "node:os";
@@ -217,7 +217,7 @@ async function runProfiling() {
 		},
 	};
 
-	const outDir = join(import.meta.dir, "../../../../docs/shenron/measurements");
+	const outDir = join(import.meta.dir, "../../../../docs/operations/shenron/measurements");
 	await mkdir(outDir, { recursive: true });
 	const outPath = join(outDir, "bot-profile-report.json");
 	await Bun.write(outPath, JSON.stringify(report, null, 2));

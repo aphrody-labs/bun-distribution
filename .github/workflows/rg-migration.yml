@@ -5,7 +5,7 @@ on:
     paths:
       - "apps/rg/**"
       - "packages/rg/**"
-      - "docs/rg/**"
+      - "docs/*/rg/**"
       - "config/rg/**"
       - "config/sibling-checkouts.json"
       - ".github/actions/setup-iecode/**"
@@ -21,7 +21,7 @@ on:
     paths:
       - "apps/rg/**"
       - "packages/rg/**"
-      - "docs/rg/**"
+      - "docs/*/rg/**"
       - "config/rg/**"
       - "config/sibling-checkouts.json"
       - ".github/actions/setup-iecode/**"

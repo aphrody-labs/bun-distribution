@@ -1,8 +1,21 @@
+import { existsSync } from "node:fs";
 import { join, resolve, relative } from "node:path";
 import { infraRoot } from "./runtime.ts";
 import { runRustBridge } from "./bridges.ts";
 import { scanImportsExports } from "./imports-exports.ts";
 import { runDocsLinks } from "./docs-links.ts";
+
+const RG_DOC_CATEGORIES = [
+  "apis",
+  "architecture",
+  "decisions",
+  "guides",
+  "operations",
+  "plans",
+  "products",
+  "reference",
+  "research",
+] as const;
 import { buildDependencies, dependencyBuildPlan } from "./bun-dependency-builds.ts";
 
 // This module is a CLI surface; console output is its documented interface.
@@ -375,7 +388,16 @@ async function pipeline(root: string, dryRun: boolean): Promise<number> {
     ...CHECKS.map((check) => ({ name: check, run: () => runCheck(check, packages, root, true) })),
     {
       name: "RG documentation links",
-      run: () => runDocsLinks(["--root", root, "--docs", "docs/rg", "--scope", "docs"]),
+      run: async () => {
+        // RG documentation lives under docs/<category>/rg (CLAUDE.md layout).
+        let status = 0;
+        for (const category of RG_DOC_CATEGORIES) {
+          const docs = join("docs", category, "rg");
+          if (!existsSync(join(root, docs))) continue;
+          status ||= await runDocsLinks(["--root", root, "--docs", docs, "--scope", "docs"]);
+        }
+        return status;
+      },
     },
   ];
   if (dryRun) {

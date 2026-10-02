@@ -268,7 +268,7 @@ Canonical Rust/Bun monorepo
 | `@koharu/sdk` | packages/koharu/sdk |  |  |
 | `@material-symbols/metadata` | crates/ui/bun/icons/metadata | Metadata for Material Symbols. |  |
 | `@rose-griffon/monorepo` | config/rg | Rose Griffon monorepo — site communautaire (wiki IEVR + association + e-sport) sous Bun 1.4.2, Next.js 16.3.7 et React 19.3. |  |
-| `@rose-griffon/monorepo` | docs/rg/root | Rose Griffon monorepo — site communautaire (azalee wiki IEVR + website rosegriffon + bot Discord). Stack Next 16.2 / React 19.2 / Bun 1.3 / Supabase / Turborepo. |  |
+| `@rose-griffon/monorepo` | docs/reference/rg/root | Rose Griffon monorepo — site communautaire (azalee wiki IEVR + website rosegriffon + bot Discord). Stack Next 16.2 / React 19.2 / Bun 1.3 / Supabase / Turborepo. |  |
 | `@rosegriffon/achillea-client` | packages/rg/achillea-client | Versioned HTTP client and runtime contracts for the Achillea guild API |  |
 | `@rosegriffon/achillea-contract` | packages/rg/achillea-contract | Contrat Achilléa exporté en JSON Schema et en types natifs (Rust, Swift, Kotlin) — la brique qui rend le domaine portable hors TypeScript |  |
 | `@rosegriffon/achillea-core` | packages/rg/achillea-core | Logique métier portable (multi-runtime : navigateur, edge Deno/Web, Node, Bun) — Elo, classement, sanctions, licences, votes, validation. Aucune dépendance Discord / ORM / DI. |  |

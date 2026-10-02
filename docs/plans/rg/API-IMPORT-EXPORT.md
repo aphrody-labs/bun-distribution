@@ -31,7 +31,7 @@ contrôles configurés et packages retenus.
   champ `exports`; cette ligne a été retirée. Le README décrit maintenant les
   chemins actuels `apps/rg/website` et `packages/rg/azalee`.
 - Les documents RG importés pointent maintenant vers le plan racine, les
-  chemins `apps/rg`, `packages/rg`, `scripts/rg`, et les notes sous `docs/rg`.
+  chemins `apps/rg`, `packages/rg`, `scripts/rg`, et les notes sous `docs/<catégorie>/rg` (anciennement `docs/rg`, rangé par catégorie le 2026-10-02).
   Le guide d'index n'invente plus de lien local vers le checkout frère Infra.
 
 ## Compatibilité à résoudre
@@ -63,7 +63,7 @@ contrôles configurés et packages retenus.
 - Scanner statique des exports déclarés et des imports `@rosegriffon/*` dans
   les sources actives RG: aucun sous-chemin absent.
 - `bun packages/infra/aphrody-workspace/src/ops.ts docs-links --root
-  /home/aphro/aphrody --docs docs/rg --scope docs`: 90 liens locaux vérifiés,
+  /home/aphro/aphrody --docs docs/rg --scope docs` (historique; `docs/rg` est désormais réparti sous `docs/<catégorie>/rg`): 90 liens locaux vérifiés,
   zéro lien cassé.
 - Les tests browser ont été portés vers Aphrody Web CDP; les tests navigateur
   sont sautés explicitement si le serveur local est absent. Un test du helper

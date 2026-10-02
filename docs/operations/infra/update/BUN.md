@@ -166,4 +166,4 @@ failures already present before the bump).
 Not part of this pass: the Bun runtime (1.4.2 is latest), TypeScript 7.0.2, oxlint 1.86.0 and oxfmt 0.71.0 (all
 current), and the Tauri family (`tauri-sync --check` reports no drift; `@tauri-apps/plugin-opener` alpha.2 waits for the
 age window). The non-workspace mirrors `config/rg/package.json`, `config/shenron/package.json` and
-`docs/rg/root/package.json` keep their own ranges and are out of scope of the first-party manifest scan.
+`docs/reference/rg/root/package.json` keep their own ranges and are out of scope of the first-party manifest scan.

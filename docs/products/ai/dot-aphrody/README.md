@@ -33,7 +33,7 @@ Optional stores (may exist on VPS):
 
 ## Workspaces (`workspace*`)
 
-Resolution order ([`aphrody-agent-home`](../../../reference/ai/crates/aphrody-agent-home)):
+Resolution order ([`aphrody-agent-home`](../../../../crates/ai/agent-home/templates)):
 
 1. `$APHRODY_WORKSPACE` — explicit override
 2. `$APHRODY_PROFILE` → `~/.aphrody/workspace-<profile>`

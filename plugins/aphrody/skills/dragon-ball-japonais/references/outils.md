@@ -4,7 +4,7 @@
 
 Pour qui travaille sur le code de dragonballfr.com. L'utilisation courante de la
 skill ne demande que l'API publique — cf. `SKILL.md`. Documentation de la chaîne :
-`docs/shenron/japonais.md` (ses chemins `apps/site/…` datent d'avant le
+`docs/guides/shenron/japonais.md` (ses chemins `apps/site/…` datent d'avant le
 déplacement sous `apps/shenron/site/…`).
 
 ## Installation

@@ -177,14 +177,14 @@ Regenerate with `bun run docs:gen`; `bun run docs:check` gates drift; the `aphro
 | migration (outside the category layout) | [n2b-qualification-2026-10-01](migration/n2b-qualification-2026-10-01/) | 6 | - |
 | migration (outside the category layout) | [source-licenses](migration/source-licenses/) | 10 | - |
 | migration (outside the category layout) | [stack-dedup](migration/stack-dedup/) | 8 | - |
-| rg (outside the category layout) | [(files)](rg/) | 47 | [Documentation — monorepo Rose Griffon](rg/README.md) |
+| rg (outside the category layout) | [(files)](rg/) | 47 | [Documentation — monorepo Rose Griffon](products/rg/README.md) |
 | rg (outside the category layout) | [infra](rg/infra/) | 1 | - |
-| rg (outside the category layout) | [qa](rg/qa/) | 1 | - |
-| rg (outside the category layout) | [root](rg/root/) | 14 | [Rose Griffon](rg/root/README.md) |
-| rg (outside the category layout) | [tools](rg/tools/) | 45 | [Archive — outils Azalée autonomes](rg/tools/README.md) |
+| rg (outside the category layout) | [qa](operations/rg/qa/) | 1 | - |
+| rg (outside the category layout) | [root](reference/rg/root/) | 14 | [Rose Griffon](reference/rg/root/README.md) |
+| rg (outside the category layout) | [tools](products/rg/tools/) | 45 | [Archive — outils Azalée autonomes](products/rg/tools/README.md) |
 | shenron (outside the category layout) | [(files)](shenron/) | 48 | - |
-| shenron (outside the category layout) | [measurements](shenron/measurements/) | 1 | - |
+| shenron (outside the category layout) | [measurements](operations/shenron/measurements/) | 1 | - |
 | shenron (outside the category layout) | [operations](shenron/operations/) | 1 | - |
-| shenron (outside the category layout) | [root](shenron/root/) | 11 | [Shenron — dragonballfr.com](shenron/root/README.md) |
+| shenron (outside the category layout) | [root](reference/shenron/root/) | 11 | [Shenron — dragonballfr.com](reference/shenron/root/README.md) |
 
 Total: 5100 files.

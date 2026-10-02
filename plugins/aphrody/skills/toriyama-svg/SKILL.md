@@ -94,9 +94,9 @@ dire dans le document au lieu de le peindre.
 
 ### 3. Consigner
 
-Écrire un document de mesures dans `docs/shenron/<sujet>-analyse-visuelle.md`
-(exemples existants : `docs/shenron/kinto-un-analyse-visuelle.md`,
-`docs/shenron/couverture-analyse-visuelle.md`) : les
+Écrire un document de mesures dans `docs/reference/shenron/<sujet>-analyse-visuelle.md`
+(exemples existants : `docs/reference/shenron/kinto-un-analyse-visuelle.md`,
+`docs/reference/shenron/couverture-analyse-visuelle.md`) : les
 sources et **ce que chacune vaut** (y compris celles qu'on écarte, avec la
 raison), les nombres, et un tableau « décision → mesure d'origine ». Ce tableau
 est le cœur du document : il permet à la revue suivante de contester une

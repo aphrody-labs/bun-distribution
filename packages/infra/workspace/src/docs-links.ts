@@ -1,5 +1,73 @@
 import { readdir, readFile, stat } from "node:fs/promises";
+import { existsSync, readFileSync, statSync } from "node:fs";
 import { join, dirname, resolve, relative } from "node:path";
+
+/** Default location of the declared third-party documentation trees. */
+export const IMPORTED_UPSTREAM_DOCS_CONFIG = "config/docs/imported-upstream-docs.json";
+
+interface ImportedTree {
+  id: string;
+  include: string[];
+  except?: string[];
+}
+
+/** Load the declared imported upstream trees and return a matcher for root-relative paths. */
+export function importedUpstreamMatcher(
+  root: string,
+  configPath = IMPORTED_UPSTREAM_DOCS_CONFIG,
+): (relativePath: string) => string | undefined {
+  const file = resolve(root, configPath);
+  if (!existsSync(file)) return () => undefined;
+  const config = JSON.parse(readFileSync(file, "utf8")) as { trees?: ImportedTree[] };
+  const trees = (config.trees ?? []).map((tree) => ({
+    id: tree.id,
+    include: tree.include.map((pattern) => new Bun.Glob(pattern)),
+    except: (tree.except ?? []).map((pattern) => new Bun.Glob(pattern)),
+  }));
+  return (relativePath) => {
+    for (const tree of trees)
+      if (
+        tree.include.some((glob) => glob.match(relativePath)) &&
+        !tree.except.some((glob) => glob.match(relativePath))
+      )
+        return tree.id;
+    return undefined;
+  };
+}
+
+/** Evidence trees whose backtick paths deliberately record historical or source-repository paths. */
+const HISTORICAL_PATH_TREES = [new Bun.Glob("docs/migration/**"), new Bun.Glob("docs/plans/**/archive/**")];
+
+const BACKTICK_PATH = /^[A-Za-z0-9_.@-][A-Za-z0-9_.@+\/-]*$/;
+
+/**
+ * Extract inline-code spans that name a repository path: no whitespace, no glob or
+ * placeholder syntax, at least one `/`, and a first segment that exists at the root.
+ */
+export function backtickRepositoryPaths(content: string, rootEntries: Set<string>): string[] {
+  const paths: string[] = [];
+  const prose = content.replace(/^(```|~~~)[\s\S]*?^\1/gm, "");
+  for (const match of prose.matchAll(/(?<!`)`([^`\n]+)`(?!`)/g)) {
+    let value = match[1]!.trim();
+    value = value.replace(/:\d+(?:[-:]\d+)?$/, "").replace(/#.*$/, "");
+    if (value.startsWith("./")) value = value.slice(2);
+    if (!BACKTICK_PATH.test(value) || !value.includes("/") || value.includes("//")) continue;
+    if (value.includes("...")) continue;
+    const first = value.split("/", 1)[0]!;
+    if (!rootEntries.has(first)) continue;
+    paths.push(value.replace(/\/+$/, ""));
+  }
+  return paths;
+}
+
+function pathExists(path: string): boolean {
+  try {
+    statSync(path);
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 async function getFiles(dir: string): Promise<string[]> {
   const entries = await readdir(dir, { withFileTypes: true });
@@ -80,6 +148,8 @@ export async function runDocsLinks(args: string[]): Promise<number> {
   let webRoutes = false;
   let json = false;
   const excludedFiles: string[] = [];
+  let importedConfig = IMPORTED_UPSTREAM_DOCS_CONFIG;
+  let backtickPaths = true;
   for (let index = 0; index < args.length; index++) {
     const arg = args[index];
     if (arg === "--root") root = args[++index] ?? "";
@@ -88,7 +158,12 @@ export async function runDocsLinks(args: string[]): Promise<number> {
       const value = args[++index];
       if (!value || value.startsWith("--")) throw new Error("--exclude-file requires a path");
       excludedFiles.push(value);
-    } else if (arg === "--scope") {
+    } else if (arg === "--imported-config") {
+      const value = args[++index];
+      if (!value || value.startsWith("--")) throw new Error("--imported-config requires a path");
+      importedConfig = value;
+    } else if (arg === "--no-backtick-paths") backtickPaths = false;
+    else if (arg === "--scope") {
       const value = args[++index];
       if (value !== "docs" && value !== "repository")
         throw new Error("--scope must be docs or repository");
@@ -97,7 +172,7 @@ export async function runDocsLinks(args: string[]): Promise<number> {
     else if (arg === "--json") json = true;
     else if (arg === "--help" || arg === "-h") {
       console.log(
-        "Usage: aphrody-ops docs-links [--root <repository>] [--docs <directory>] [--scope docs|repository] [--exclude-file <root-relative path>] [--web-routes] [--json]",
+        "Usage: aphrody-ops docs-links [--root <repository>] [--docs <directory>] [--scope docs|repository] [--exclude-file <root-relative path>] [--imported-config <json>] [--no-backtick-paths] [--web-routes] [--json]",
       );
       return 0;
     } else throw new Error(`Unknown argument: ${arg}`);
@@ -120,19 +195,39 @@ export async function runDocsLinks(args: string[]): Promise<number> {
       throw new Error(`Excluded file is not an inventoried Markdown document: ${requested}`);
     excluded.add(file);
   }
+  const isImported = importedUpstreamMatcher(ROOT_DIR, importedConfig);
+  const rootEntries = new Set(await readdir(ROOT_DIR));
   const checkedFiles: string[] = [];
+  const importedSkipped = new Map<string, number>();
   let totalLinks = 0;
   let brokenLinks = 0;
+  let totalBacktickPaths = 0;
   const findings: Array<{ file: string; link: string; target: string }> = [];
+  const deadPaths: Array<{ file: string; path: string }> = [];
 
   for (const file of files) {
     if (excluded.has(file)) continue;
+    const rootRelative = relative(ROOT_DIR, file).replaceAll("\\", "/");
+    const importedTree = isImported(rootRelative);
+    if (importedTree) {
+      importedSkipped.set(importedTree, (importedSkipped.get(importedTree) ?? 0) + 1);
+      continue;
+    }
     checkedFiles.push(relative(ROOT_DIR, file).replaceAll("\\", "/"));
 
     // oxlint-disable-next-line no-await-in-loop -- Bound memory while scanning imported documentation.
     const content = await readFile(file, "utf-8");
     const relativeFile = file.replace(ROOT_DIR, "").replace(/^\//, "");
     const fileDir = dirname(file);
+
+    if (backtickPaths && !HISTORICAL_PATH_TREES.some((glob) => glob.match(rootRelative))) {
+      for (const path of backtickRepositoryPaths(content, rootEntries)) {
+        totalBacktickPaths++;
+        if (pathExists(join(ROOT_DIR, path)) || pathExists(join(fileDir, path))) continue;
+        deadPaths.push({ file: rootRelative, path });
+        if (!json) console.error(`❌ Chemin mort dans [${rootRelative}] : \`${path}\``);
+      }
+    }
 
     // Retirer les blocs de code (fenced et inline) pour éviter de valider de faux liens dans des exemples de code
     const cleanContent = content.replace(/```[\s\S]*?```/g, "").replace(/`[^`\n]+`/g, "");
@@ -193,9 +288,13 @@ export async function runDocsLinks(args: string[]): Promise<number> {
           checked: checkedFiles.length,
           checkedFiles,
           excluded: [...excluded].map((file) => relative(ROOT_DIR, file).replaceAll("\\", "/")),
+          importedSkipped: Object.fromEntries(importedSkipped),
           links: totalLinks,
           broken: brokenLinks,
           findings,
+          backtickPaths: totalBacktickPaths,
+          deadBacktickPaths: deadPaths.length,
+          deadPaths,
         },
         null,
         2,
@@ -207,11 +306,15 @@ export async function runDocsLinks(args: string[]): Promise<number> {
     console.log(`   - Documents vérifiés : ${checkedFiles.length}`);
     console.log(`   - Liens locaux vérifiés : ${totalLinks}`);
     console.log(`   - Liens cassés trouvés  : ${brokenLinks}`);
+    console.log(`   - Chemins \`code\` vérifiés : ${totalBacktickPaths}`);
+    console.log(`   - Chemins \`code\` morts    : ${deadPaths.length}`);
+    for (const [tree, count] of importedSkipped)
+      console.log(`   - Arbre amont importé ignoré (${tree}) : ${count} documents`);
     for (const file of excluded)
       console.log(`   - Fichier exclu explicitement : ${relative(ROOT_DIR, file)}`);
   }
 
-  if (brokenLinks > 0) {
+  if (brokenLinks > 0 || deadPaths.length > 0) {
     return 1;
   } else {
     if (!json) console.log("💚 Tous les liens internes sont valides !");

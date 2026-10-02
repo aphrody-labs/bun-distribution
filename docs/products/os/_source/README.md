@@ -2,7 +2,7 @@
 # aphrody-os documentation
 
 Documentation of the system layer. Repository layout, crates, sibling repositories, build and
-CI: [`../README.md`](./README.md.712b5622bf2b). Agent rules: [`../AGENTS.md`](../../../reference/os/_source/AGENTS.md).
+CI: [`../README.md`](./README.md.712b5622bf2b). Agent rules: [`../AGENTS.md`](../../../reference/os/AGENTS.md).
 
 Topics owned by sibling category repositories are documented there: agents, models, RAG and the
 CLI in `aphrody-ai`; Nushell, terminal and TUI in `aphrody-shell`; the web engine, Obscura and
@@ -14,9 +14,9 @@ BXC in `aphrody-web`; Material 3, GUI, Tauri and rendering in `aphrody-ui`; Bun 
 
 | Document | Subject |
 |---|---|
-| [ARCHITECTURE.md](../../../architecture/os/_source/ARCHITECTURE.md) | Privileged control plane: subsystem contract, O(1) kernel dispatch, protocol, transports, subsystems (system, cloud, infra), agent connection. |
-| [ARCHITECTURE-GAPS-STATUS.md](../../../architecture/os/_source/ARCHITECTURE-GAPS-STATUS.md) | Architecture gap audit status, verified local gates, and production exit conditions. |
-| [ARCHITECTURE-GAPS.md](../../../architecture/os/_source/ARCHITECTURE-GAPS.md) | Original architectural gap register and remediation checklist. |
+| [ARCHITECTURE.md](../../../architecture/os/ARCHITECTURE.md) | Privileged control plane: subsystem contract, O(1) kernel dispatch, protocol, transports, subsystems (system, cloud, infra), agent connection. |
+| [ARCHITECTURE-GAPS-STATUS.md](../../../architecture/os/ARCHITECTURE-GAPS-STATUS.md) | Architecture gap audit status, verified local gates, and production exit conditions. |
+| [ARCHITECTURE-GAPS.md](../../../architecture/os/ARCHITECTURE-GAPS.md) | Original architectural gap register and remediation checklist. |
 | [COORDINATION-COMPATIBILITY.md](../../../reference/os/COORDINATION-COMPATIBILITY.md) | Coordination tool storage and atomic file contract for compatibility. |
 | [YOLO-AUTHORITY.md](../../../reference/os/YOLO-AUTHORITY.md) | Authenticated YOLO / NHITL authority of the kernel. |
 | [UV-RUST-INTEGRATION.md](../../../reference/os/UV-RUST-INTEGRATION.md) | `aphrody-toolchains` route to the pinned uv source tree and runtime. |
@@ -25,7 +25,7 @@ BXC in `aphrody-web`; Material 3, GUI, Tauri and rendering in `aphrody-ui`; Bun 
 
 | Document | Subject |
 |---|---|
-| [integrations/KOHARU.md](../../../reference/os/_source/integrations/KOHARU.md) | Source-backed mapping of Koharu runtime, jobs, credentials, settings and Tauri boundaries to existing OS owners; not an integration claim. |
+| [integrations/KOHARU.md](../../../reference/os/integrations/KOHARU.md) | Source-backed mapping of Koharu runtime, jobs, credentials, settings and Tauri boundaries to existing OS owners; not an integration claim. |
 
 ## WinClean
 
@@ -39,6 +39,6 @@ BXC in `aphrody-web`; Material 3, GUI, Tauri and rendering in `aphrody-ui`; Bun 
 
 ## Records
 
-- [research/](research/): Rust OS architecture, systemd integration, reverse engineering
+- [research/](../../../research/os/research/): Rust OS architecture, systemd integration, reverse engineering
   (Ghidra, Electron, VS Code forks, tooling landscape).
-- [CODEX-REMAINING-WORK.md](../../../reference/os/_source/CODEX-REMAINING-WORK.md): Codex session handoff and remediation tracking.
+- [CODEX-REMAINING-WORK.md](../../../reference/os/CODEX-REMAINING-WORK.md): Codex session handoff and remediation tracking.

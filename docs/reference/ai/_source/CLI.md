@@ -86,4 +86,4 @@ the offline stub turn and shell completion generation. Default `rag` help is
 absent without the opt-in `rag` feature.
 
 Deployment is owned by `aphrody-infra`; the VPS no longer runs Aphrody. For MCP use [MCP.md](../MCP.md).
-For agent operation use [AGENTS.md](./AGENTS.md).
+For agent operation use [AGENTS.md](../AGENTS.md).

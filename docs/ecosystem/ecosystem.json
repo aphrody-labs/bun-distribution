@@ -2024,7 +2024,7 @@
         },
         {
           "name": "@rose-griffon/monorepo",
-          "path": "docs/rg/root",
+          "path": "docs/reference/rg/root",
           "description": "Rose Griffon monorepo — site communautaire (azalee wiki IEVR + website rosegriffon + bot Discord). Stack Next 16.2 / React 19.2 / Bun 1.3 / Supabase / Turborepo.",
           "bins": []
         },

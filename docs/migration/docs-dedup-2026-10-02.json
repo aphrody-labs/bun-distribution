@@ -34,9 +34,10 @@
   },
   "counts": {
     "verified-upstream-copy": 3892,
-    "exact-duplicate": 3,
+    "exact-duplicate": 6,
     "stale-generated-copy": 4,
-    "empty-stub": 15
+    "empty-stub": 15,
+    "stale-partial-copy": 3
   },
   "aliases": [
     {
@@ -23521,6 +23522,42 @@
       "path": "docs/reference/upstream-antigravity-sdk-python/skills/google-antigravity-sdk/examples/getting_started/persistence.md",
       "canonical": "docs/reference/ai/py/antigravity-sdk-python/skills/google-antigravity-sdk/examples/getting_started/persistence.md",
       "sha256": "3a1fb94c8eff994f0155f0854f2189dfc69cb3135f4970ac6c6c7633526c4393",
+      "kind": "exact-duplicate"
+    },
+    {
+      "path": "docs/reference/ai/crates/aphrody-agent-home/templates/AGENTS.md",
+      "canonical": "crates/ai/agent-home/templates/AGENTS.md",
+      "sha256": "70ced43f4017966060f44a0151e978277000038cf7ab7a6ff4dd25aaf9d508dd",
+      "kind": "stale-partial-copy (older revision of the crate template; crates/ai/agent-home is canonical)"
+    },
+    {
+      "path": "docs/reference/ai/crates/aphrody-agent-home/templates/BOOT.md",
+      "canonical": "crates/ai/agent-home/templates/BOOT.md",
+      "sha256": "edbbf34e374fcdf6f39bd9cc1706f51ad0cb8230ad1f74e55014efadb601fed2",
+      "kind": "stale-partial-copy (older revision of the crate template; crates/ai/agent-home is canonical)"
+    },
+    {
+      "path": "docs/reference/ai/crates/aphrody-agent-home/templates/HEARTBEAT.md",
+      "canonical": "crates/ai/agent-home/templates/HEARTBEAT.md",
+      "sha256": "b909320a264e9fcf8c444ac632df69306410876475f39e85f37e73b355af5a00",
+      "kind": "stale-partial-copy (older revision of the crate template; crates/ai/agent-home is canonical)"
+    },
+    {
+      "path": "docs/reference/ai/crates/aphrody-agent-home/templates/IDENTITY.md",
+      "canonical": "crates/ai/agent-home/templates/IDENTITY.md",
+      "sha256": "a46e46fcf5b05a3cf052933b0926c3454854f5e78b9d8b369a5d983e37d07755",
+      "kind": "exact-duplicate"
+    },
+    {
+      "path": "docs/reference/ai/crates/aphrody-agent-home/templates/SOUL.md",
+      "canonical": "crates/ai/agent-home/templates/SOUL.md",
+      "sha256": "0aed9d0489f4f7fcd85385f9a4f2c771db2be179f45d39f04412608b01699264",
+      "kind": "exact-duplicate"
+    },
+    {
+      "path": "docs/reference/ai/crates/aphrody-agent-home/templates/USER.md",
+      "canonical": "crates/ai/agent-home/templates/USER.md",
+      "sha256": "275f2e392c72f8df881ef7e1cbb39d6e7082114b480886150eaa4a74c3f93399",
       "kind": "exact-duplicate"
     }
   ]

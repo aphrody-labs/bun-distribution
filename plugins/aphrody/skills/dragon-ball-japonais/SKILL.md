@@ -158,4 +158,4 @@ personnage : compare en les retirant.
   de translittération
 - `references/outils.md` — chaîne de traitement du dépôt (kuromoji, JMdict,
   scripts d'analyse) pour qui travaille sur le code
-- `docs/shenron/japonais.md` — documentation de la chaîne dans le dépôt
+- `docs/guides/shenron/japonais.md` — documentation de la chaîne dans le dépôt

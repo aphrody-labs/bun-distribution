@@ -15,6 +15,8 @@ is a legacy source archive. This repository retains historical extraction
 records for code that was staged and later removed; those records do not imply
 that the code is still present here.
 
-Read [AGENTS.md](AGENTS.md) before editing. Use the root Cargo and Bun
-manifests for current workspace members and the owning package's checks for
-validation. The open migration work is tracked in [PLAN.md](PLAN.md).
+Read [AGENTS.md](AGENTS.md) before editing. Current crates, packages and apps
+per domain are generated in [STATE.md](docs/reference/workspace/STATE.md); the
+documentation index is [docs/README.md](docs/README.md). Both are refreshed by
+`bun run docs:gen` and gated by `bun run docs:check`. Use the owning package's
+checks for validation. The open migration work is tracked in [PLAN.md](PLAN.md).
