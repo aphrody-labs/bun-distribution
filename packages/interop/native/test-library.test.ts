@@ -45,7 +45,16 @@ test("all public subpaths can be imported without a native artifact", async () =
   expect(code).toBe(0);
 });
 
-test("M3, SVG, CLI and Web share one handle and respect close/reload", () => {
+let available = false;
+try {
+  loadNativeLibrary();
+  available = true;
+} catch (error) {
+  if (process.env.APHRODY_FFI_REQUIRE_NATIVE === "1") throw error;
+}
+const native = test.skipIf(!available);
+
+native("M3, SVG, CLI and Web share one handle and respect close/reload", () => {
   close();
   expect(nativeLibraryLoaded()).toBe(false);
   expect(add(10, 20)).toBe(30);
@@ -114,7 +123,7 @@ test("compatibility alias uses the shared override policy and rejects contradict
   expect(stdout).toBe("alias policy verified\n");
 });
 
-test("Shenron adapter retries failed loading and shares close/reload with the library owner", async () => {
+native("Shenron adapter retries failed loading and shares close/reload with the library owner", async () => {
   const artifact = resolveNativeLibraryPath();
   if (!artifact) throw new Error("Lifecycle test requires a real native artifact");
   const adapter = join(import.meta.dir, "../../shenron/pipeline/src/aphrody/native.ts");

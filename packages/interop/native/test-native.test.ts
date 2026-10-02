@@ -27,7 +27,16 @@ test("typed native subpaths reject invalid inputs before loading", () => {
   expect(nativeLibraryLoaded()).toBe(false);
 });
 
-test("N2B reports findings, respects ignores and previews then applies fixes", () => {
+let available = false;
+try {
+  loadNativeLibrary();
+  available = true;
+} catch (error) {
+  if (process.env.APHRODY_FFI_REQUIRE_NATIVE === "1") throw error;
+}
+const native = test.skipIf(!available);
+
+native("N2B reports findings, respects ignores and previews then applies fixes", () => {
   writeFileSync(script, original);
   const report = scanNodeProject(root);
   expect(report.schema_version).toBe(2);
@@ -46,7 +55,7 @@ test("N2B reports findings, respects ignores and previews then applies fixes", (
   expect(() => scanNodeProject(join(root, "missing"))).toThrow("not a directory");
 });
 
-test("UTF16 helper preserves astral, lone-surrogate and high-byte newline offsets", () => {
+native("UTF16 helper preserves astral, lone-surrogate and high-byte newline offsets", () => {
   const source = "😀\n\u0A00\u000A\uD800x\n";
   const expected = Array.from({ length: source.length }, (_, index) => index).filter(
     (index) => source.charCodeAt(index) === 10,
@@ -55,7 +64,7 @@ test("UTF16 helper preserves astral, lone-surrogate and high-byte newline offset
   expect([...findNewlinesUtf16("")]).toEqual([]);
 });
 
-test("Oxc formats, minifies and returns parse diagnostics through one handle", () => {
+native("Oxc formats, minifies and returns parse diagnostics through one handle", () => {
   const handle = loadNativeLibrary();
   const source = "const greeting='hello';console.log(greeting)";
   expect(formatSource(source)).toContain('const greeting = "hello";');

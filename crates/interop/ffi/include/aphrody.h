@@ -34,6 +34,7 @@
 
 #include <stddef.h> /* size_t */
 #include <stdint.h> /* uint32_t, int32_t */
+#include <stdbool.h> /* bool (bun_rs_* exports) */
 
 /**
  * @def APHRODY_ABI_VERSION
@@ -375,6 +376,63 @@ APHRODY_NODISCARD APHRODY_API uint64_t aphrody_web_x_community_tweets_submit(con
 APHRODY_NODISCARD APHRODY_MALLOC APHRODY_API char *aphrody_web_x_community_info_and_tweets(const char *auth_token_ptr, const char *ct0_ptr, const char *community_id_ptr, uint32_t count);
 APHRODY_NODISCARD APHRODY_API uint64_t aphrody_web_x_community_info_and_tweets_submit(const char *auth_token_ptr, const char *ct0_ptr, const char *community_id_ptr, uint32_t count, uint32_t timeout_ms);
 APHRODY_NODISCARD APHRODY_MALLOC APHRODY_API char *aphrody_web_x_algorithm_rank(const char *candidates_json_ptr, const char *context_json_ptr, uint32_t top_k);
+
+/* Web extraction and request helpers. Strings are NUL-terminated UTF-8; the
+ * returned string is owned and released with aphrody_web_free_string. */
+APHRODY_NODISCARD APHRODY_MALLOC APHRODY_API char *aphrody_web_extract_links(const char *html, const char *base_url);
+APHRODY_NODISCARD APHRODY_MALLOC APHRODY_API char *aphrody_web_extract_text(const char *html);
+APHRODY_NODISCARD APHRODY_MALLOC APHRODY_API char *aphrody_web_normalize_url(const char *url);
+APHRODY_NODISCARD APHRODY_API uint64_t aphrody_web_http_request_submit(const char *request_ptr);
+
+/* Shenron RAG chunking and Manga scanlation. Owned results are released with
+ * shenron_string_free / manga_string_free respectively. */
+APHRODY_NODISCARD APHRODY_MALLOC APHRODY_API char *shenron_rag_chunk(const char *markdown, int max_chars, float overlap_pct);
+APHRODY_NODISCARD APHRODY_MALLOC APHRODY_API char *manga_scanlate_cdn(const char *url_or_path, const char *target_lang);
+APHRODY_NODISCARD APHRODY_MALLOC APHRODY_API char *manga_scanlate_databook(uint64_t databook_id, uint32_t plate_number, const char *target_lang);
+APHRODY_NODISCARD APHRODY_MALLOC APHRODY_API char *manga_scanlate_chapter(uint64_t chapter_id, uint32_t plate_number, const char *target_lang);
+
+/* Zero-copy ABI (see src/zerocopy.rs). All memory is owned by the caller: the
+ * library never allocates or frees. Document writers copy into `out` only when
+ * it fits and always return the full document length (negative on error:
+ * -1 invalid arguments, -3 caught panic), so a too-small `out`/`out_cap` (or
+ * out == NULL) is a size query. Input and output ranges must not overlap. */
+#define APHRODY_ZEROCOPY_OK 0
+#define APHRODY_ZEROCOPY_INVALID (-1)
+#define APHRODY_ZEROCOPY_PANIC (-3)
+APHRODY_NODISCARD APHRODY_API uint32_t aphrody_zerocopy_abi_version(void);
+APHRODY_NODISCARD APHRODY_API int64_t aphrody_toolcall_repair_json(const uint8_t *input, size_t input_len, uint8_t *out, size_t out_cap);
+APHRODY_NODISCARD APHRODY_API int64_t aphrody_toolcall_validate_json(const uint8_t *args, size_t args_len, const uint8_t *schema, size_t schema_len, uint8_t *out, size_t out_cap);
+/* Rasterize one triangle in place. px: width*height*4 RGBA bytes; zbuf:
+ * width*height floats (4-byte aligned); verts: 9 floats (3 x xyz); uv: 6 floats
+ * or NULL; tex: tex_w*tex_h*4 bytes or NULL (flat shading with base_rgb, 3
+ * floats in 0..255, NULL = white). Returns 0, -1 or -3. */
+APHRODY_NODISCARD APHRODY_API int32_t aphrody_raster_fill_triangle(uint8_t *px, float *zbuf, uint32_t width, uint32_t height, const float *verts, const float *uv, const uint8_t *tex, uint32_t tex_w, uint32_t tex_h, float shade, const float *base_rgb);
+
+/* bun-rs exports (crates/ui/bun), re-exported by the same cdylib. Owned
+ * strings are released with bun_rs_free_string; PNG buffers with
+ * bun_rs_render_free(ptr, len). */
+APHRODY_NODISCARD APHRODY_API const char *bun_rs_version(void);
+APHRODY_NODISCARD APHRODY_API uint32_t bun_rs_abi_version(void);
+APHRODY_NODISCARD APHRODY_API int32_t bun_rs_add(int32_t a, int32_t b);
+APHRODY_NODISCARD APHRODY_API size_t bun_rs_count_char(const uint8_t *data, size_t len, uint8_t needle);
+APHRODY_NODISCARD APHRODY_API ptrdiff_t bun_rs_find_bytes(const uint8_t *haystack, size_t haystack_len, const uint8_t *needle, size_t needle_len);
+APHRODY_NODISCARD APHRODY_API uint32_t bun_rs_hct_to_argb(float hue, float chroma, float tone);
+APHRODY_API void bun_rs_argb_to_hct(uint32_t argb, float *hue, float *chroma, float *tone);
+APHRODY_API void bun_rs_hct_tones(float hue, float chroma, float tone, uint32_t *out_palette);
+APHRODY_API void bun_rs_derive_scheme(float hue, float chroma, bool is_dark, uint32_t *out_colors);
+APHRODY_NODISCARD APHRODY_MALLOC APHRODY_API char *bun_rs_m3_css(const uint8_t *request, size_t len);
+APHRODY_NODISCARD APHRODY_MALLOC APHRODY_API char *bun_rs_compile_sass(const uint8_t *source, size_t len, const uint8_t *load_paths, size_t load_paths_len, int32_t style_val, bool quiet, bool *error_occurred);
+APHRODY_NODISCARD APHRODY_MALLOC APHRODY_API char *bun_rs_compile_sass_file(const uint8_t *path, size_t len, const uint8_t *load_paths, size_t load_paths_len, int32_t style_val, bool quiet, bool *error_occurred);
+APHRODY_NODISCARD APHRODY_MALLOC APHRODY_API char *bun_rs_validate_spec(const uint8_t *source, size_t len);
+APHRODY_API void bun_rs_free_string(char *ptr);
+APHRODY_NODISCARD APHRODY_API uint8_t *bun_rs_render_png(const uint8_t *scene_json, size_t len, size_t *out_len);
+APHRODY_NODISCARD APHRODY_API uint8_t *bun_rs_render3d_png(const uint8_t *scene_json, size_t len, uint32_t policy, size_t *out_len);
+APHRODY_API void bun_rs_render_free(uint8_t *ptr, size_t len);
+APHRODY_NODISCARD APHRODY_MALLOC APHRODY_API char *bun_rs_m3_reproduce(uint8_t kind, const uint8_t *input, size_t len);
+APHRODY_NODISCARD APHRODY_API uint32_t bun_rs_m3_seed_from_image(const uint8_t *image, size_t len);
+APHRODY_NODISCARD APHRODY_MALLOC APHRODY_API char *bun_rs_svg(const uint8_t *request, size_t len);
+APHRODY_NODISCARD APHRODY_MALLOC APHRODY_API char *bun_rs_icon_svg(const uint8_t *request, size_t len);
+APHRODY_NODISCARD APHRODY_MALLOC APHRODY_API char *bun_rs_icon_names(const uint8_t *style, size_t len);
 
 #ifdef __cplusplus
 } /* extern "C" */
