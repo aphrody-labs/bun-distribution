@@ -121,7 +121,16 @@ Dead code:
 - TS CDP: already a single client, `@aphrody/agent-browser/cdp`; `aphrody-web-test/src/cdp.ts` is a 1-line re-export.
 - obscura-mcp `browser_*`: not a duplicate catalogue. `web-service` and `crates/ai/mcp` consume `obscura_mcp::aphrody::tools()/call()`,
   so the 40 tools are declared once. Nothing removed, no aliases needed.
-- drive-server: kept. Already excluded from the workspace (no member/dep lines), zero tests, but it is a recorded import target
-  (`docs/migration/drive-rust-extraction.json`, classifiers in `packages/infra/workspace/src/docs-consolidation.ts`); deleting it
-  needs those updated outside this file family. Decision pending owner/lead.
+- drive-server: retired 2026-10-02. Zero consumers (excluded crate, no member/dep lines, no tests); the 9 tracked files were
+  removed from `crates/web/drive-server`, dropped from root `Cargo.toml` `exclude` and from the owner-duplicate roots in
+  `docs-consolidation.ts`; `docs/migration/drive-rust-extraction.json` keeps the record marked `retired` (recoverable from git).
+- `web-engine` `dump_links` now calls `aphrody_web_crawl::extract_links_opts` (same `url\ttext` lines; now de-duplicated,
+  http(s)-only and fragment-normalised like every other extractor; a page with no URL yields no links).
+- FFI `web/cookies.rs` is not a jar: it reads Chromium profile cookies through `aphrody-web-chromium` (like `web-chromium`), so
+  there is no parsing to merge; the C ABI is untouched.
+- `cookie_jars`: no such table exists in any Rust or TS source (only this audit and DATABASES.md mention it; the live DB has 0 rows
+  and a different schema), so there is no persistence code to route through `CookieJar`.
+- obscura-cdp `child_frame_tree` flake: `build_document_frames` gives the event loop a fixed 8x50 ms wall-clock budget and stops
+  at the first round with no frame work, so under heavy parallel load the child documents may not have landed when the test read
+  the tree. The tests now pump the page until the nested frames (and the detach events) are observed, with a 30 s deadline.
 - `VENDOR.md` paths fixed to `crates/web/taffy` and `crates/web/obscura-render`.

@@ -998,36 +998,16 @@ async fn run_parallel_scrape(
 }
 
 fn dump_links(page: &Page) -> String {
-    let base_url = page.url.clone();
-    page.with_dom(|dom| {
-        let mut rendered = Vec::new();
-        let links = dom.query_selector_all("a").unwrap_or_default();
-        for link_id in links {
-            if let Some(node) = dom.get_node(link_id) {
-                let href = node.get_attribute("href").unwrap_or_default().to_string();
-                let text = dom.text_content(link_id);
-                let text = text.trim();
-
-                let full_url = if href.starts_with("http://") || href.starts_with("https://") {
-                    href.clone()
-                } else if let Some(ref base) = base_url {
-                    base.join(&href).map(|u| u.to_string()).unwrap_or(href.clone())
-                } else {
-                    href.clone()
-                };
-
-                if !full_url.is_empty() {
-                    if text.is_empty() {
-                        rendered.push(full_url);
-                    } else {
-                        rendered.push(format!("{}\t{}", full_url, text));
-                    }
-                }
-            }
-        }
-        rendered.join("\n")
-    })
-    .unwrap_or_default()
+    let Some(base_url) = page.url.clone() else { return String::new() };
+    let html = page.with_dom(|dom| dom.inner_html(dom.document())).unwrap_or_default();
+    aphrody_web_crawl::extract_links_opts(&html, &base_url, false)
+        .into_iter()
+        .map(|(url, text)| {
+            let text = text.trim();
+            if text.is_empty() { url.to_string() } else { format!("{url}\t{text}") }
+        })
+        .collect::<Vec<_>>()
+        .join("\n")
 }
 
 #[cfg(test)]

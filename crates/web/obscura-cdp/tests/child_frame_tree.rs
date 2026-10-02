@@ -92,6 +92,29 @@ async fn attached_session(ctx: &mut CdpContext) -> String {
     attached["sessionId"].as_str().expect("no sessionId").to_string()
 }
 
+/// Frame documents arrive from the page event loop, and navigation only gives
+/// that loop a bounded wall-clock budget, so on a loaded machine the tree can
+/// legitimately be incomplete right after `Page.navigate`. Pump the page until
+/// the grandchild is attached (generous deadline) instead of assuming a timing.
+async fn wait_for_nested_frames(ctx: &mut CdpContext, session: &str) {
+    let deadline = std::time::Instant::now() + std::time::Duration::from_secs(30);
+    let mut id = 5000;
+    loop {
+        id += 1;
+        cdp(ctx, id, "Runtime.evaluate", json!({"expression": "1"}), session).await;
+        id += 1;
+        let tree = cdp(ctx, id, "Page.getFrameTree", json!({}), session).await;
+        if tree["frameTree"]["childFrames"][0]["childFrames"][0]["frame"]["id"].is_string() {
+            return;
+        }
+        assert!(std::time::Instant::now() < deadline, "frames never attached: {tree}");
+        if let Some(page) = ctx.get_session_page_mut(&Some(session.to_string())) {
+            let _ = page.run_autonomous_event_loop_turn().await;
+        }
+        tokio::time::sleep(std::time::Duration::from_millis(20)).await;
+    }
+}
+
 #[tokio::test(flavor = "current_thread")]
 async fn get_frame_tree_reports_nested_child_frames() {
     std::env::set_var("OBSCURA_ALLOW_PRIVATE_NETWORK", "1");
@@ -107,6 +130,7 @@ async fn get_frame_tree_reports_nested_child_frames() {
     // Frames are built when the page settles, which is not part of the
     // navigation itself.
     cdp(&mut ctx, 2, "Runtime.evaluate", json!({"expression": "1"}), session).await;
+    wait_for_nested_frames(&mut ctx, session).await;
 
     let tree = cdp(&mut ctx, 3, "Page.getFrameTree", json!({}), session).await;
     let root = &tree["frameTree"];
@@ -184,6 +208,7 @@ async fn isolated_worlds_are_owned_by_their_exact_frame() {
 
     cdp(&mut ctx, 1, "Page.navigate", json!({"url": url}), &session).await;
     cdp(&mut ctx, 2, "Runtime.evaluate", json!({"expression": "1"}), &session).await;
+    wait_for_nested_frames(&mut ctx, &session).await;
     let target = ctx.sessions[&session].clone();
     let attached = dispatch(
         &CdpRequest {
@@ -263,14 +288,24 @@ async fn isolated_worlds_are_owned_by_their_exact_frame() {
         &session,
     )
     .await;
-    for _ in 0..3 {
+    let deadline = std::time::Instant::now() + std::time::Duration::from_secs(30);
+    loop {
         ctx.get_session_page_mut(&Some(session.clone()))
             .unwrap()
             .run_autonomous_event_loop_turn()
             .await
             .unwrap();
+        cdp(&mut ctx, 10, "Runtime.evaluate", json!({"expression": "1"}), &session).await;
+        let detached = ctx
+            .pending_events
+            .iter()
+            .filter(|e| e.method == "Page.frameDetached" && e.params["frameId"] == grandchild_id)
+            .count();
+        if detached >= 2 || std::time::Instant::now() >= deadline {
+            break;
+        }
+        tokio::time::sleep(std::time::Duration::from_millis(20)).await;
     }
-    cdp(&mut ctx, 10, "Runtime.evaluate", json!({"expression": "1"}), &session).await;
 
     for (frame_id, context_id) in [(&child_id, child_world), (&grandchild_id, grandchild_world)] {
         for runtime_session in [&session, &second_session] {

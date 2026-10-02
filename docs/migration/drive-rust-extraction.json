@@ -21,8 +21,11 @@
       "target_path": "crates/web/drive-server",
       "license": "FSL-1.1-ALv2",
       "file_count": 9,
+      "status": "retired",
+      "retired_on": "2026-10-02",
+      "retired_reason": "zero consumers; excluded crate with no tests; recoverable from git history",
       "checks": [
-        "SD_SKIP_WEB_BUILD=1 cargo check --manifest-path crates/web/drive-server/Cargo.toml --bin sd-server"
+        "(retired, not runnable) SD_SKIP_WEB_BUILD=1 cargo check --manifest-path crates/web/drive-server/Cargo.toml --bin sd-server"
       ]
     },
     {

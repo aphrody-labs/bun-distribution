@@ -94,7 +94,7 @@ export const UI_SCOPE: ScopeConfig = {
 
 /** Owner trees whose copies outrank a docs/ copy (the AI plugin tree is excluded while it relocates). */
 export const OWNER_DUPLICATE_ROOTS: RegExp[] = [
-  /^(packages\/ui|crates\/ui|packages\/koharu|crates\/koharu|apps\/koharu|crates\/web\/drive-server)\//,
+  /^(packages\/ui|crates\/ui|packages\/koharu|crates\/koharu|apps\/koharu)\//,
 ];
 
 export interface DocEntry {

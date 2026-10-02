@@ -5,7 +5,6 @@ members = ["crates/ui/*", "crates/infra/*", "crates/contracts/*", "crates/os/*",
 exclude = [
   "crates/contracts/schema",
   "crates/os/drive",
-  "crates/web/drive-server",
 ]
 
 [workspace.package]
