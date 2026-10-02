@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
+import { existsSync } from "node:fs";
 import { readdir, readFile, stat } from "node:fs/promises";
 import { join, relative, resolve } from "node:path";
 import { createHash } from "node:crypto";
@@ -64,7 +65,7 @@ export async function runUiDedupManifest(args: string[]): Promise<number> {
   if (head.exitCode !== 0) throw new Error("Cannot identify the Git baseline commit");
 
   // Cluster 1
-  const appUiFiles = await collectFiles(at("packages/app-ui/src"));
+  const appUiFiles = await collectFiles(at("packages/ui/app-ui/src"));
   const driveFiles = await collectFiles(at("drive/packages/interface/src"));
   let cluster1Identical = 0;
   const cluster1Divergent: string[] = [];
@@ -96,7 +97,11 @@ export async function runUiDedupManifest(args: string[]): Promise<number> {
   }
 
   // Cluster 3
-  const uiDistFiles = await collectFiles(at("crates/aphrody-app/ui-dist"));
+  // Monorepo layout first (`crates/ui/app`); the legacy aphrody-ui checkout keeps `crates/aphrody-app`.
+  const uiDistDir = ["crates/ui/app/ui-dist", "crates/aphrody-app/ui-dist"]
+    .map((path) => at(path))
+    .find((path) => existsSync(path)) ?? at("crates/ui/app/ui-dist");
+  const uiDistFiles = await collectFiles(uiDistDir);
 
   // Cluster 10: the upstream SpaceUI showcase is now a pointer to its M3/Bun port.
   const spaceUiShowcasePointer = await collectFiles(
@@ -113,7 +118,7 @@ export async function runUiDedupManifest(args: string[]): Promise<number> {
       cluster1_app_ui_vs_drive_interface: {
         status: "overlap-measured",
         decision:
-          "Both active hosts import packages/app-ui. The old @aphrody/drive package metadata is retired; retain its excluded FSL source archive until unique code and provenance are reviewed.",
+          "Both active hosts import packages/ui/app-ui. The old @aphrody/drive package metadata is retired; retain its excluded FSL source archive until unique code and provenance are reviewed.",
         identicalCount: cluster1Identical,
         divergentCount: cluster1Divergent.length,
         divergentPaths: cluster1Divergent.sort(),
@@ -148,7 +153,7 @@ export async function runUiDedupManifest(args: string[]): Promise<number> {
       cluster5_m3_explorer_vs_app_ui: {
         status: "partial-integration",
         decision:
-          "packages/app-ui consumes TagPill, RenameInput, and FileThumb; GridItem and live Files behavior proof remain.",
+          "packages/ui/app-ui consumes TagPill, RenameInput, and FileThumb; GridItem and live Files behavior proof remain.",
         integratedComponents: ["TagPill", "RenameInput", "FileThumb"],
       },
       cluster6_forms_primitives_vs_m3_forms: {

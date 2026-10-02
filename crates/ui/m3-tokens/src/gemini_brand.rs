@@ -46,24 +46,50 @@ pub struct LinearGradient {
 // Canonical Gemini brand colors
 // ---------------------------------------------------------------------------
 
-/// Gemini brand blue (canonical: matches `#4285F4`, Google blue 500).
-pub const GEMINI_BLUE: u32 = 0xFF42_85F4;
+/// Gemini web-app brand blue, served by `gemini.google.com/app` (`--gem-sys-color--brand-blue`).
+pub const GEMINI_BLUE: u32 = 0xFF31_86FF;
 
-/// Gemini brand purple (canonical: matches `#9168C0`, the violet midpoint
-/// in the spectrum-shift gradient documented in the design.google article).
-pub const GEMINI_PURPLE: u32 = 0xFF91_68C0;
+/// Gemini web-app brand green (`#0ebc5f`, served).
+pub const GEMINI_GREEN: u32 = 0xFF0E_BC5F;
 
-/// Gemini brand pink (canonical: matches `#EC4899`, the warm endpoint of
-/// the spectrum-shift gradient).
-pub const GEMINI_PINK: u32 = 0xFFEC_4899;
+/// Gemini web-app brand yellow (`#fc0` = `#ffcc00`, served).
+pub const GEMINI_YELLOW: u32 = 0xFFFF_CC00;
 
-/// Gemini accent yellow (the warm-tone counterpart documented in the
-/// design.google article color sampling).
-pub const GEMINI_YELLOW: u32 = 0xFFFA_E366;
+/// Gemini web-app brand red (`#ff4641`, served).
+pub const GEMINI_RED: u32 = 0xFFFF_4641;
 
-/// Gemini accent green (rounded, optimistic counterpart per Anna Sera
-/// Garcia's "warm, spatial, rounded quality" description).
-pub const GEMINI_GREEN: u32 = 0xFFBF_F28D;
+/// Gemini web-app title gradient start (`#4285f4`, served `bard` title gradient).
+pub const GEMINI_TITLE_BLUE: u32 = 0xFF42_85F4;
+
+/// Gemini web-app title gradient middle (`#9b72cb`, served).
+pub const GEMINI_TITLE_PURPLE: u32 = 0xFF9B_72CB;
+
+/// Gemini web-app title gradient end (`#d96570`, served).
+pub const GEMINI_TITLE_PINK: u32 = 0xFFD9_6570;
+
+/// Violet of the Gemini web-app palette (alias of [`GEMINI_TITLE_PURPLE`]).
+pub const GEMINI_PURPLE: u32 = GEMINI_TITLE_PURPLE;
+
+/// Pink of the Gemini web-app palette (alias of [`GEMINI_TITLE_PINK`]).
+pub const GEMINI_PINK: u32 = GEMINI_TITLE_PINK;
+
+// Gemini web-app palette: values observed in the CSS served by `https://gemini.google.com/app` on
+// 2026-10-02 (docs/research/ui/m3-expressive-gemini-2026.md section 5, source key GEM).
+
+// design.google brand palette: colours read from the editorial article
+// <https://design.google/library/gemini-ai-visual-design>, NOT from served CSS. Kept as a
+// separate palette; the Aphrody brand cascade (`export_aphrody_brand_css`) still uses it.
+
+/// design.google article blue (Google blue 500).
+pub const DESIGN_GOOGLE_BLUE: u32 = 0xFF42_85F4;
+/// design.google article violet (midpoint of the spectrum-shift gradient).
+pub const DESIGN_GOOGLE_PURPLE: u32 = 0xFF91_68C0;
+/// design.google article pink (warm endpoint of the spectrum-shift gradient).
+pub const DESIGN_GOOGLE_PINK: u32 = 0xFFEC_4899;
+/// design.google article accent yellow.
+pub const DESIGN_GOOGLE_YELLOW: u32 = 0xFFFA_E366;
+/// design.google article accent green.
+pub const DESIGN_GOOGLE_GREEN: u32 = 0xFFBF_F28D;
 
 /// Aphrody-extension cyan tone for information and secondary status affordances.
 pub const APHRODY_CYAN: u32 = 0xFF00_BCD4;
@@ -96,14 +122,14 @@ pub const FOUR_COLOR_DOTS: [u32; 4] = [
 
 const NAN_STOP: GradientStop = GradientStop { position: f32::NAN, argb: 0 };
 
-/// The signature 3-stop blue-to-purple-to-pink gradient used on the
+/// The Gemini web-app title gradient (`#4285f4`, `#9b72cb`, `#d96570`, served), used on the
 /// prompt-send affordance, sparkle, and "thinking" streaming indicator.
 pub const SPECTRUM_SHIFT_GRADIENT: LinearGradient = LinearGradient {
     angle_deg: 90.0,
     stops: [
-        GradientStop { position: 0.00, argb: GEMINI_BLUE },
-        GradientStop { position: 0.50, argb: GEMINI_PURPLE },
-        GradientStop { position: 1.00, argb: GEMINI_PINK },
+        GradientStop { position: 0.00, argb: GEMINI_TITLE_BLUE },
+        GradientStop { position: 0.50, argb: GEMINI_TITLE_PURPLE },
+        GradientStop { position: 1.00, argb: GEMINI_TITLE_PINK },
         NAN_STOP,
         NAN_STOP,
         NAN_STOP,
@@ -126,13 +152,12 @@ pub const SPARKLE_GRADIENT: LinearGradient = LinearGradient {
     count: 4,
 };
 
-/// The warm-tone gradient documented in the article as the rounded
-/// optimistic counterpart (yellow → soft pink for empty-state warmth).
+/// The warm-tone gradient documented in the design.google article (article palette).
 pub const WARM_TONE_GRADIENT: LinearGradient = LinearGradient {
     angle_deg: 45.0,
     stops: [
-        GradientStop { position: 0.00, argb: GEMINI_YELLOW },
-        GradientStop { position: 1.00, argb: GEMINI_PINK },
+        GradientStop { position: 0.00, argb: DESIGN_GOOGLE_YELLOW },
+        GradientStop { position: 1.00, argb: DESIGN_GOOGLE_PINK },
         NAN_STOP,
         NAN_STOP,
         NAN_STOP,
@@ -141,17 +166,23 @@ pub const WARM_TONE_GRADIENT: LinearGradient = LinearGradient {
     count: 2,
 };
 
-/// Rounded brand-shape corner radius (px) — the article's "rounded
-/// foundational shapes" guideline. Larger than M3 [`crate::shape::FULL`]
-/// pill use cases would suggest, because Gemini uses generous radii on
-/// containers (prompt bar, message bubbles) for a softer feel.
-pub const BRAND_CORNER_PROMPT_BAR_PX: u16 = 28;
+/// Gemini web prompt bar corner radius (px): `corner-extra-large-increased`, 32 px (GEM
+/// `input-area-container`).
+pub const BRAND_CORNER_PROMPT_BAR_PX: u16 = 32;
 
-/// Rounded brand-shape corner radius for chat message bubbles.
+/// Prompt bar corner radius in the initial (SSR) state, 40 px (GEM, `corner-extra-large-max`).
+pub const BRAND_CORNER_PROMPT_BAR_INITIAL_PX: u16 = 40;
+
+/// Prompt bar corners when docked to the bottom edge: `24px 24px 0 0` (top-left, top-right,
+/// bottom-right, bottom-left).
+pub const BRAND_CORNER_PROMPT_BAR_DOCKED_PX: [u16; 4] = [24, 24, 0, 0];
+
+/// Corner radius for chat message bubbles. UNVERIFIED in GEM (no message-bubble selector was
+/// sampled); 24 px equals `corner-large-max`.
 pub const BRAND_CORNER_MESSAGE_PX: u16 = 24;
 
-/// Rounded brand-shape corner radius for suggestion chips.
-pub const BRAND_CORNER_CHIP_PX: u16 = 18;
+/// Corner radius for suggestion chips: `corner-large`, 16 px (no 18 px token exists in GEM or M3).
+pub const BRAND_CORNER_CHIP_PX: u16 = 16;
 
 /// Convert a `0xFFRRGGBB` ARGB value to a CSS `#RRGGBB` string slice
 /// (allocates only when the `std` feature is on).
@@ -192,6 +223,7 @@ pub fn export_css() -> String {
     s.push_str(&format!("  --gemini-brand-purple: {};\n", argb_to_css(GEMINI_PURPLE)));
     s.push_str(&format!("  --gemini-brand-pink: {};\n", argb_to_css(GEMINI_PINK)));
     s.push_str(&format!("  --gemini-brand-yellow: {};\n", argb_to_css(GEMINI_YELLOW)));
+    s.push_str(&format!("  --gemini-brand-red: {};\n", argb_to_css(GEMINI_RED)));
     s.push_str(&format!("  --gemini-brand-green: {};\n", argb_to_css(GEMINI_GREEN)));
     s.push_str(&format!(
         "  --gemini-spectrum-shift: {};\n",
@@ -200,6 +232,12 @@ pub fn export_css() -> String {
     s.push_str(&format!("  --gemini-sparkle: {};\n", gradient_to_css(&SPARKLE_GRADIENT)));
     s.push_str(&format!("  --gemini-warm-tone: {};\n", gradient_to_css(&WARM_TONE_GRADIENT)));
     s.push_str(&format!("  --gemini-corner-prompt-bar: {}px;\n", BRAND_CORNER_PROMPT_BAR_PX));
+    s.push_str(&format!(
+        "  --gemini-corner-prompt-bar-initial: {}px;\n",
+        BRAND_CORNER_PROMPT_BAR_INITIAL_PX
+    ));
+    let [tl, tr, br, bl] = BRAND_CORNER_PROMPT_BAR_DOCKED_PX;
+    s.push_str(&format!("  --gemini-corner-prompt-bar-docked: {tl}px {tr}px {br}px {bl}px;\n"));
     s.push_str(&format!("  --gemini-corner-message: {}px;\n", BRAND_CORNER_MESSAGE_PX));
     s.push_str(&format!("  --gemini-corner-chip: {}px;\n", BRAND_CORNER_CHIP_PX));
     s.push_str("}\n");
@@ -300,14 +338,14 @@ pub fn export_aphrody_brand_css() -> String {
         s.push_str(&format!("  --m3-typescale-{name}-weight: {};\n", style.weight));
     }
 
-    // ── Aphrody brand colors (extends gemini_brand canonical 5) ────────────
+    // ── Aphrody brand colors (design.google article palette) ────────────
     s.push_str("\n  /* Aphrody brand palette (crates/m3-tokens/src/gemini_brand.rs) */\n");
     let brand_colors: [(&str, u32); 8] = [
-        ("blue", GEMINI_BLUE),
-        ("purple", GEMINI_PURPLE),
-        ("pink", GEMINI_PINK),
-        ("yellow", GEMINI_YELLOW),
-        ("green", GEMINI_GREEN),
+        ("blue", DESIGN_GOOGLE_BLUE),
+        ("purple", DESIGN_GOOGLE_PURPLE),
+        ("pink", DESIGN_GOOGLE_PINK),
+        ("yellow", DESIGN_GOOGLE_YELLOW),
+        ("green", DESIGN_GOOGLE_GREEN),
         ("cyan", APHRODY_CYAN),
         ("orange", APHRODY_ORANGE),
         ("red", APHRODY_RED),
@@ -352,7 +390,19 @@ mod tests {
 
     #[test]
     fn brand_colors_are_opaque() {
-        for argb in [GEMINI_BLUE, GEMINI_PURPLE, GEMINI_PINK, GEMINI_YELLOW, GEMINI_GREEN] {
+        for argb in [
+            GEMINI_BLUE,
+            GEMINI_PURPLE,
+            GEMINI_PINK,
+            GEMINI_YELLOW,
+            GEMINI_GREEN,
+            GEMINI_RED,
+            DESIGN_GOOGLE_BLUE,
+            DESIGN_GOOGLE_PURPLE,
+            DESIGN_GOOGLE_PINK,
+            DESIGN_GOOGLE_YELLOW,
+            DESIGN_GOOGLE_GREEN,
+        ] {
             assert_eq!(argb >> 24, 0xFF, "expected opaque ARGB: 0x{argb:08X}");
         }
     }
@@ -363,11 +413,27 @@ mod tests {
     }
 
     #[test]
-    fn spectrum_shift_gradient_has_3_stops() {
+    fn web_app_palette_matches_served_css() {
+        assert_eq!(GEMINI_BLUE, 0xFF3186FF);
+        assert_eq!(GEMINI_GREEN, 0xFF0EBC5F);
+        assert_eq!(GEMINI_YELLOW, 0xFFFFCC00);
+        assert_eq!(GEMINI_RED, 0xFFFF4641);
+    }
+
+    #[test]
+    fn design_google_palette_is_separate() {
+        assert_eq!(DESIGN_GOOGLE_BLUE, 0xFF4285F4);
+        assert_eq!(DESIGN_GOOGLE_PURPLE, 0xFF9168C0);
+        assert_eq!(DESIGN_GOOGLE_PINK, 0xFFEC4899);
+        assert_ne!(DESIGN_GOOGLE_BLUE, GEMINI_BLUE);
+    }
+
+    #[test]
+    fn spectrum_shift_gradient_is_the_served_title_gradient() {
         assert_eq!(SPECTRUM_SHIFT_GRADIENT.count, 3);
-        assert_eq!(SPECTRUM_SHIFT_GRADIENT.stops[0].argb, GEMINI_BLUE);
-        assert_eq!(SPECTRUM_SHIFT_GRADIENT.stops[1].argb, GEMINI_PURPLE);
-        assert_eq!(SPECTRUM_SHIFT_GRADIENT.stops[2].argb, GEMINI_PINK);
+        assert_eq!(SPECTRUM_SHIFT_GRADIENT.stops[0].argb, 0xFF4285F4);
+        assert_eq!(SPECTRUM_SHIFT_GRADIENT.stops[1].argb, 0xFF9B72CB);
+        assert_eq!(SPECTRUM_SHIFT_GRADIENT.stops[2].argb, 0xFFD96570);
     }
 
     #[test]
@@ -380,11 +446,11 @@ mod tests {
 
     #[test]
     fn brand_corners_are_rounded() {
-        const {
-            assert!(BRAND_CORNER_PROMPT_BAR_PX >= 24);
-            assert!(BRAND_CORNER_MESSAGE_PX >= 16);
-            assert!(BRAND_CORNER_CHIP_PX >= 12);
-        }
+        assert_eq!(BRAND_CORNER_PROMPT_BAR_PX, 32);
+        assert_eq!(BRAND_CORNER_PROMPT_BAR_INITIAL_PX, 40);
+        assert_eq!(BRAND_CORNER_PROMPT_BAR_DOCKED_PX, [24, 24, 0, 0]);
+        assert_eq!(BRAND_CORNER_CHIP_PX, 16);
+        assert_eq!(BRAND_CORNER_MESSAGE_PX, 24);
     }
 
     #[cfg(feature = "std")]
@@ -401,8 +467,8 @@ mod tests {
         let css = gradient_to_css(&SPECTRUM_SHIFT_GRADIENT);
         assert!(css.contains("90deg"), "expected 90deg axis: {css}");
         assert!(css.contains("#4285f4"), "expected blue stop: {css}");
-        assert!(css.contains("#9168c0"), "expected purple stop: {css}");
-        assert!(css.contains("#ec4899"), "expected pink stop: {css}");
+        assert!(css.contains("#9b72cb"), "expected purple stop: {css}");
+        assert!(css.contains("#d96570"), "expected pink stop: {css}");
     }
 
     #[cfg(feature = "std")]
@@ -415,7 +481,9 @@ mod tests {
             "--gemini-brand-pink",
             "--gemini-spectrum-shift",
             "--gemini-sparkle",
-            "--gemini-corner-prompt-bar",
+            "--gemini-corner-prompt-bar: 32px;",
+            "--gemini-corner-prompt-bar-docked: 24px 24px 0px 0px;",
+            "--gemini-brand-blue: #3186ff;",
         ] {
             assert!(css.contains(token), "expected `{token}` in export_css output");
         }

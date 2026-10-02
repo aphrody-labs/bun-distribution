@@ -213,6 +213,110 @@ pub const NAMES: [&str; 15] = [
     "label-small",
 ];
 
+// ── Emphasized (M3 Expressive) ──────────────────────────────────────────────
+//
+// Compose `TypeScaleTokens` emphasized styles: same size, line height and font as the base style,
+// heavier weight. Display, headline and title-large go to 500; title-medium, title-small and all
+// label sizes to 700; body styles to 500. Tracking is unchanged except body-large (0.15) and
+// body-medium (0.25). Source: docs/research/ui/m3-expressive-gemini-2026.md section 3.
+
+const fn emphasized(base: TypeStyle, weight: u16) -> TypeStyle {
+    TypeStyle { weight, ..base }
+}
+
+/// display-large emphasized (weight 500).
+pub const DISPLAY_LARGE_EMPHASIZED: TypeStyle = emphasized(DISPLAY_LARGE, 500);
+
+/// display-medium emphasized (weight 500).
+pub const DISPLAY_MEDIUM_EMPHASIZED: TypeStyle = emphasized(DISPLAY_MEDIUM, 500);
+
+/// display-small emphasized (weight 500).
+pub const DISPLAY_SMALL_EMPHASIZED: TypeStyle = emphasized(DISPLAY_SMALL, 500);
+
+/// headline-large emphasized (weight 500).
+pub const HEADLINE_LARGE_EMPHASIZED: TypeStyle = emphasized(HEADLINE_LARGE, 500);
+
+/// headline-medium emphasized (weight 500).
+pub const HEADLINE_MEDIUM_EMPHASIZED: TypeStyle = emphasized(HEADLINE_MEDIUM, 500);
+
+/// headline-small emphasized (weight 500).
+pub const HEADLINE_SMALL_EMPHASIZED: TypeStyle = emphasized(HEADLINE_SMALL, 500);
+
+/// title-large emphasized (weight 500).
+pub const TITLE_LARGE_EMPHASIZED: TypeStyle = emphasized(TITLE_LARGE, 500);
+
+/// title-medium emphasized (weight 700).
+pub const TITLE_MEDIUM_EMPHASIZED: TypeStyle = emphasized(TITLE_MEDIUM, 700);
+
+/// title-small emphasized (weight 700).
+pub const TITLE_SMALL_EMPHASIZED: TypeStyle = emphasized(TITLE_SMALL, 700);
+
+/// body-large emphasized (weight 500).
+pub const BODY_LARGE_EMPHASIZED: TypeStyle =
+    TypeStyle { letter_spacing_dp: 0.15, ..emphasized(BODY_LARGE, 500) };
+
+/// body-medium emphasized (weight 500).
+pub const BODY_MEDIUM_EMPHASIZED: TypeStyle = emphasized(BODY_MEDIUM, 500);
+
+/// body-small emphasized (weight 500).
+pub const BODY_SMALL_EMPHASIZED: TypeStyle = emphasized(BODY_SMALL, 500);
+
+/// label-large emphasized (weight 700).
+pub const LABEL_LARGE_EMPHASIZED: TypeStyle = emphasized(LABEL_LARGE, 700);
+
+/// label-medium emphasized (weight 700).
+pub const LABEL_MEDIUM_EMPHASIZED: TypeStyle = emphasized(LABEL_MEDIUM, 700);
+
+/// label-small emphasized (weight 700).
+pub const LABEL_SMALL_EMPHASIZED: TypeStyle = emphasized(LABEL_SMALL, 700);
+
+/// All 15 emphasized styles, in the order of [`ALL`].
+pub const ALL_EMPHASIZED: [TypeStyle; 15] = [
+    DISPLAY_LARGE_EMPHASIZED,
+    DISPLAY_MEDIUM_EMPHASIZED,
+    DISPLAY_SMALL_EMPHASIZED,
+    HEADLINE_LARGE_EMPHASIZED,
+    HEADLINE_MEDIUM_EMPHASIZED,
+    HEADLINE_SMALL_EMPHASIZED,
+    TITLE_LARGE_EMPHASIZED,
+    TITLE_MEDIUM_EMPHASIZED,
+    TITLE_SMALL_EMPHASIZED,
+    BODY_LARGE_EMPHASIZED,
+    BODY_MEDIUM_EMPHASIZED,
+    BODY_SMALL_EMPHASIZED,
+    LABEL_LARGE_EMPHASIZED,
+    LABEL_MEDIUM_EMPHASIZED,
+    LABEL_SMALL_EMPHASIZED,
+];
+
+/// Gemini web variable weights (GEM, observed 2026-10-02): display-large is served at 280 or 400.
+pub const GEMINI_DISPLAY_LARGE_WEIGHT: u16 = 280;
+
+/// Gemini web variable weight of headline-large (350 or 400 served).
+pub const GEMINI_HEADLINE_LARGE_WEIGHT: u16 = 350;
+
+impl TypeStyle {
+    /// This style with an arbitrary variable-font weight (Google Sans Flex `wght` axis, 1..=1000).
+    #[must_use]
+    pub const fn with_weight(self, weight: u16) -> Self {
+        Self { weight, ..self }
+    }
+
+    /// The `wght` and `ROND` axis settings for this style at roundness `rond` (0..=100).
+    ///
+    /// The optical size follows the style size, as Gemini web does.
+    #[must_use]
+    pub fn axis_settings(&self, rond: f32) -> crate::google_sans_flex::AxisSettings {
+        crate::google_sans_flex::AxisSettings {
+            wght: f32::from(self.weight),
+            opsz: self.size_dp,
+            rond,
+            ..crate::google_sans_flex::AxisSettings::DEFAULT
+        }
+        .clamped()
+    }
+}
+
 /// Emits a CSS `:root` block declaring all M3 typography custom properties.
 #[cfg(feature = "std")]
 #[must_use]
@@ -265,6 +369,33 @@ mod tests {
         for style in &ALL {
             assert_eq!(style.font, "Google Sans Flex");
         }
+    }
+
+    #[test]
+    fn emphasized_styles_follow_compose_weights() {
+        assert_eq!(ALL_EMPHASIZED.len(), 15);
+        for (base, emph) in ALL.iter().zip(&ALL_EMPHASIZED) {
+            assert_eq!(base.size_dp, emph.size_dp);
+            assert_eq!(base.line_height_dp, emph.line_height_dp);
+            assert!(emph.weight > base.weight);
+        }
+        assert_eq!(DISPLAY_LARGE_EMPHASIZED.weight, 500);
+        assert_eq!(TITLE_LARGE_EMPHASIZED.weight, 500);
+        assert_eq!(TITLE_MEDIUM_EMPHASIZED.weight, 700);
+        assert_eq!(LABEL_SMALL_EMPHASIZED.weight, 700);
+        assert_eq!(BODY_SMALL_EMPHASIZED.weight, 500);
+        assert_eq!(BODY_LARGE_EMPHASIZED.letter_spacing_dp, 0.15);
+        assert_eq!(BODY_MEDIUM_EMPHASIZED.letter_spacing_dp, 0.25);
+    }
+
+    #[test]
+    fn variable_weight_and_rond_axes() {
+        let style = DISPLAY_LARGE.with_weight(GEMINI_DISPLAY_LARGE_WEIGHT);
+        let axes = style.axis_settings(60.0);
+        assert_eq!(axes.wght, 280.0);
+        assert_eq!(axes.rond, 60.0);
+        assert_eq!(axes.opsz, 57.0);
+        assert_eq!(style.axis_settings(500.0).rond, 100.0);
     }
 
     #[test]

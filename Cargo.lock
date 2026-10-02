@@ -551,6 +551,7 @@ dependencies = [
  "aphrody-base",
  "aphrody-chat",
  "aphrody-config",
+ "aphrody-diagnostics",
  "aphrody-discord-compiler",
  "aphrody-ecosystem",
  "aphrody-engine",
@@ -935,6 +936,7 @@ dependencies = [
  "aphrody-capture",
  "aphrody-compat",
  "aphrody-coreutils",
+ "aphrody-diagnostics",
  "aphrody-drive",
  "aphrody-identity",
  "aphrody-kernel",
@@ -1169,6 +1171,25 @@ dependencies = [
  "thiserror 2.0.21",
  "tokio",
  "tracing",
+]
+
+[[package]]
+name = "aphrody-diagnostics"
+version = "1.0.0"
+dependencies = [
+ "aphrody-agent-home",
+ "aphrody-antigravity",
+ "aphrody-config",
+ "aphrody-kernel",
+ "aphrody-llama-server",
+ "aphrody-models",
+ "chrono",
+ "miette 7.6.0",
+ "reqwest 0.13.5",
+ "rustls",
+ "serde_json",
+ "tokio",
+ "which 8.0.6",
 ]
 
 [[package]]

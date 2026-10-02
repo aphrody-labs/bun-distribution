@@ -5,7 +5,7 @@
 //   export default defineM3Config({
 //     entry: "src/index.html",
 //     proxy: { "/rpc": "http://localhost:8080" },
-//     tauri: { uiDist: "../../crates/aphrody-app/ui-dist" },
+//     tauri: { uiDist: "../../crates/ui/app/ui-dist" },
 //     theme: { seed: "#6750a4", variant: "tonalSpot" },
 //   });
 //

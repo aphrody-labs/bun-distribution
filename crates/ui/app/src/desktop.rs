@@ -6,7 +6,6 @@ use std::{path::PathBuf, time::Duration};
 use aphrody_subsystem::SystemSubsystem;
 use serde_json::{Value, json};
 
-use crate::broker::aphrody_command;
 
 const KERNEL_TIMEOUT: Duration = Duration::from_secs(30);
 
@@ -257,40 +256,19 @@ pub async fn gcp_storage_list(bucket: String, prefix: Option<String>) -> Result<
         .map_err(|e| format!("kernel gcp_storage_list error: {e}"))
 }
 
-/// Query comprehensive system health and supply-chain diagnostics via `aphrody doctor`.
+/// Query comprehensive system health and supply-chain diagnostics.
 pub async fn doctor() -> Result<Value, String> {
-    let output = aphrody_command()
-        .args(["doctor", "--json"])
-        .output()
-        .await
-        .map_err(|e| format!("cannot run aphrody doctor: {e}"))?;
-
-    serde_json::from_slice::<Value>(&output.stdout)
-        .map_err(|e| format!("invalid doctor JSON from aphrody: {e}"))
+    Ok(aphrody_diagnostics::diagnostics(format!("{} (desktop)", env!("CARGO_PKG_VERSION"))).await)
 }
 
-/// Query OS subsystem status and WinClean tool coverage via `aphrody os status`.
+/// Query OS subsystem status and WinClean tool coverage.
 pub async fn os_status() -> Result<Value, String> {
-    let output = aphrody_command()
-        .args(["os", "status", "--json"])
-        .output()
-        .await
-        .map_err(|e| format!("cannot run aphrody os status: {e}"))?;
-
-    serde_json::from_slice::<Value>(&output.stdout)
-        .map_err(|e| format!("invalid os status JSON from aphrody: {e}"))
+    Ok(aphrody_diagnostics::os_status().await)
 }
 
-/// Query infrastructure targets and service matrix via `aphrody infra status`.
+/// Query infrastructure targets and service matrix.
 pub async fn infra_status() -> Result<Value, String> {
-    let output = aphrody_command()
-        .args(["infra", "status", "--json"])
-        .output()
-        .await
-        .map_err(|e| format!("cannot run aphrody infra status: {e}"))?;
-
-    serde_json::from_slice::<Value>(&output.stdout)
-        .map_err(|e| format!("invalid infra status JSON from aphrody: {e}"))
+    Ok(aphrody_diagnostics::infra_status())
 }
 
 fn aphrody_home_dir() -> PathBuf {
@@ -301,46 +279,18 @@ fn aphrody_home_dir() -> PathBuf {
         .join(".aphrody")
 }
 
-/// Check connectivity to all configured infrastructure targets via `aphrody infra check`.
+/// Check connectivity to all configured infrastructure targets.
 pub async fn infra_check() -> Result<Value, String> {
-    let output = aphrody_command()
-        .args(["infra", "check"])
-        .output()
-        .await
-        .map_err(|e| format!("cannot run aphrody infra check: {e}"))?;
-
-    let stdout = String::from_utf8_lossy(&output.stdout);
-    let mut targets = Vec::new();
-    for line in stdout.lines() {
-        let trimmed = line.trim();
-        if let Some(rest) = trimmed.strip_prefix('*') {
-            let rest = rest.trim();
-            if let Some((name, status)) = rest.split_once(':') {
-                let status_trimmed = status.trim();
-                targets.push(json!({
-                    "target": name.trim(),
-                    "status": status_trimmed,
-                    "ok": status_trimmed.eq_ignore_ascii_case("OK")
-                }));
-            }
-        }
-    }
-    Ok(json!({
-        "targets": targets,
-        "raw": stdout,
-        "success": output.status.success()
-    }))
+    Ok(aphrody_diagnostics::infra_check())
 }
 
 /// Query active CLI/agent configuration and raw config.toml.
 pub async fn config_get() -> Result<Value, String> {
-    let output = aphrody_command()
-        .args(["config", "show", "--json"])
-        .output()
-        .await
-        .map_err(|e| format!("cannot run aphrody config show: {e}"))?;
-
-    let resolved: Value = serde_json::from_slice(&output.stdout).unwrap_or_else(|_| json!({}));
+    let resolved = tokio::task::spawn_blocking(|| {
+        aphrody_diagnostics::config_resolved(None, false, None, &[]).unwrap_or_else(|_| json!({}))
+    })
+    .await
+    .unwrap_or_else(|_| json!({}));
 
     let config_path = aphrody_home_dir().join("config.toml");
     let raw = tokio::fs::read_to_string(&config_path).await.unwrap_or_default();
@@ -364,7 +314,7 @@ pub async fn config_save(content: String) -> Result<Value, String> {
 
 /// Inspect active environment variables and local AI parameters.
 pub async fn env_get() -> Result<Value, String> {
-    let _ = aphrody_command().args(["ai", "env"]).output().await;
+    let _ = tokio::task::spawn_blocking(aphrody_diagnostics::ai_env).await;
 
     let local_ai_path = aphrody_home_dir().join("ai").join("local-ai.json");
     let local_ai: Value = if let Ok(data) = tokio::fs::read_to_string(&local_ai_path).await {

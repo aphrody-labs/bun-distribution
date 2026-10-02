@@ -28,19 +28,19 @@ pub struct Easing {
 /// no single `cubic-bezier` form; M3 recommends the standard curve as the CSS
 /// fallback, so this value intentionally equals [`EASING_STANDARD`].
 pub const EASING_EMPHASIZED: Easing =
-    Easing { name: "emphasized", cubic_bezier: "cubic-bezier(0.2, 0.0, 0, 1.0)" };
+    Easing { name: "emphasized", cubic_bezier: "cubic-bezier(0.2, 0, 0, 1)" };
 
 /// Emphasized decelerate — for elements entering the screen.
 pub const EASING_EMPHASIZED_DECELERATE: Easing =
-    Easing { name: "emphasized-decelerate", cubic_bezier: "cubic-bezier(0.05, 0.7, 0.1, 1.0)" };
+    Easing { name: "emphasized-decelerate", cubic_bezier: "cubic-bezier(0.05, 0.7, 0.1, 1)" };
 
 /// Emphasized accelerate — for elements leaving the screen.
 pub const EASING_EMPHASIZED_ACCELERATE: Easing =
-    Easing { name: "emphasized-accelerate", cubic_bezier: "cubic-bezier(0.3, 0.0, 0.8, 0.15)" };
+    Easing { name: "emphasized-accelerate", cubic_bezier: "cubic-bezier(0.3, 0, 0.8, 0.15)" };
 
 /// Standard — general-purpose easing for components that stay on screen.
 pub const EASING_STANDARD: Easing =
-    Easing { name: "standard", cubic_bezier: "cubic-bezier(0.2, 0.0, 0, 1.0)" };
+    Easing { name: "standard", cubic_bezier: "cubic-bezier(0.2, 0, 0, 1)" };
 
 /// Standard decelerate — entering or expanding element with standard curve.
 pub const EASING_STANDARD_DECELERATE: Easing =
@@ -53,6 +53,18 @@ pub const EASING_STANDARD_ACCELERATE: Easing =
 /// Linear — constant rate; for continuous indicators (progress, scrubbing).
 pub const EASING_LINEAR: Easing =
     Easing { name: "linear", cubic_bezier: "cubic-bezier(0, 0, 1, 1)" };
+
+/// Legacy (M2) easing, still served by material-web v2.5.0 and Gemini web.
+pub const EASING_LEGACY: Easing =
+    Easing { name: "legacy", cubic_bezier: "cubic-bezier(0.4, 0, 0.2, 1)" };
+
+/// Legacy accelerate.
+pub const EASING_LEGACY_ACCELERATE: Easing =
+    Easing { name: "legacy-accelerate", cubic_bezier: "cubic-bezier(0.4, 0, 1, 1)" };
+
+/// Legacy decelerate.
+pub const EASING_LEGACY_DECELERATE: Easing =
+    Easing { name: "legacy-decelerate", cubic_bezier: "cubic-bezier(0, 0, 0.2, 1)" };
 
 /// All seven M3 easing curves in spec order.
 pub const ALL_EASINGS: [Easing; 7] = [
@@ -173,18 +185,40 @@ pub enum SpringSpeed {
 }
 
 /// M3 motion scheme.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
+///
+/// Spring values come from Compose `ExpressiveMotionTokens` / `StandardMotionTokens`
+/// (androidx `compose/material3`, `MotionScheme.expressive()` / `standard()`). The
+/// `material-web` v2.5.0 token set (`_md-sys-motion.scss`, design system 34.0.21) ships a single
+/// spring set that equals the Compose *Standard* scheme, so web targets default to
+/// [`MotionScheme::Standard`] and native targets to [`MotionScheme::Expressive`].
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum MotionScheme {
-    /// Hero motion with visible bounce on spatial springs (M3 default).
-    #[default]
+    /// Hero motion with visible bounce on spatial springs (Compose expressive tokens).
     Expressive,
-    /// Utilitarian motion with minimal bounce.
+    /// Utilitarian motion with minimal bounce (Compose standard tokens, material-web v2.5.0).
     Standard,
+}
+
+impl MotionScheme {
+    /// Default on web targets: material-web v2.5.0 only carries the Standard set.
+    pub const WEB_DEFAULT: Self = Self::Standard;
+    /// Default on native targets (Compose, Aphrody GUI hosts): Expressive.
+    pub const NATIVE_DEFAULT: Self = Self::Expressive;
+    /// Default for the compilation target: [`Self::WEB_DEFAULT`] on `wasm32`, otherwise
+    /// [`Self::NATIVE_DEFAULT`].
+    pub const TARGET_DEFAULT: Self =
+        if cfg!(target_arch = "wasm32") { Self::WEB_DEFAULT } else { Self::NATIVE_DEFAULT };
+}
+
+impl Default for MotionScheme {
+    fn default() -> Self {
+        Self::TARGET_DEFAULT
+    }
 }
 
 /// A physical spring (unit mass) described by an M3 damping ratio and stiffness.
 ///
-/// Values come from the MDC-Android `motionSpring*` attributes.
+/// Values come from the Compose motion tokens (see [`MotionScheme`]).
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct M3Spring {
     /// Damping ratio. `1.0` is critically damped (no overshoot).
@@ -193,21 +227,25 @@ pub struct M3Spring {
     pub stiffness: f32,
 }
 
-/// `md.sys.motion.spring.fast.spatial` (expressive).
-pub const FAST_SPATIAL: M3Spring = M3Spring { damping: 0.9, stiffness: 1400.0 };
-/// `md.sys.motion.spring.fast.effects`.
+/// `md.sys.motion.spring.fast.spatial`, Expressive (CMP `ExpressiveMotionTokens`): 0.6 / 800.
+pub const EXPRESSIVE_FAST_SPATIAL: M3Spring = M3Spring { damping: 0.6, stiffness: 800.0 };
+/// `md.sys.motion.spring.default.spatial`, Expressive: 0.8 / 380.
+pub const EXPRESSIVE_DEFAULT_SPATIAL: M3Spring = M3Spring { damping: 0.8, stiffness: 380.0 };
+/// `md.sys.motion.spring.slow.spatial`, Expressive: 0.8 / 200.
+pub const EXPRESSIVE_SLOW_SPATIAL: M3Spring = M3Spring { damping: 0.8, stiffness: 200.0 };
+/// `md.sys.motion.spring.fast.spatial`, Standard (CMP `StandardMotionTokens`, material-web
+/// v2.5.0): 0.9 / 1400.
+pub const STANDARD_FAST_SPATIAL: M3Spring = M3Spring { damping: 0.9, stiffness: 1400.0 };
+/// `md.sys.motion.spring.default.spatial`, Standard: 0.9 / 700.
+pub const STANDARD_DEFAULT_SPATIAL: M3Spring = M3Spring { damping: 0.9, stiffness: 700.0 };
+/// `md.sys.motion.spring.slow.spatial`, Standard: 0.9 / 300.
+pub const STANDARD_SLOW_SPATIAL: M3Spring = M3Spring { damping: 0.9, stiffness: 300.0 };
+/// `md.sys.motion.spring.fast.effects` (both schemes): 1.0 / 3800.
 pub const FAST_EFFECTS: M3Spring = M3Spring { damping: 1.0, stiffness: 3800.0 };
-/// `md.sys.motion.spring.default.spatial` (expressive).
-pub const DEFAULT_SPATIAL: M3Spring = M3Spring { damping: 0.9, stiffness: 700.0 };
-/// `md.sys.motion.spring.default.effects`.
+/// `md.sys.motion.spring.default.effects` (both schemes): 1.0 / 1600.
 pub const DEFAULT_EFFECTS: M3Spring = M3Spring { damping: 1.0, stiffness: 1600.0 };
-/// `md.sys.motion.spring.slow.spatial` (expressive).
-pub const SLOW_SPATIAL: M3Spring = M3Spring { damping: 0.9, stiffness: 300.0 };
-/// `md.sys.motion.spring.slow.effects`.
+/// `md.sys.motion.spring.slow.effects` (both schemes): 1.0 / 800.
 pub const SLOW_EFFECTS: M3Spring = M3Spring { damping: 1.0, stiffness: 800.0 };
-
-/// Damping ratio of spatial springs in the standard scheme (no bounce).
-pub const STANDARD_SPATIAL_DAMPING: f32 = 1.0;
 
 /// Square root through Newton iterations; keeps the module `no_std` without `libm`.
 fn sqrt_f32(value: f32) -> f32 {
@@ -229,19 +267,28 @@ impl M3Spring {
     /// Resolves the spring token for `scheme`, `speed` and `family`.
     #[must_use]
     pub const fn token(scheme: MotionScheme, speed: SpringSpeed, family: SpringFamily) -> Self {
-        let base = match (speed, family) {
-            (SpringSpeed::Fast, SpringFamily::Spatial) => FAST_SPATIAL,
-            (SpringSpeed::Fast, SpringFamily::Effects) => FAST_EFFECTS,
-            (SpringSpeed::Default, SpringFamily::Spatial) => DEFAULT_SPATIAL,
-            (SpringSpeed::Default, SpringFamily::Effects) => DEFAULT_EFFECTS,
-            (SpringSpeed::Slow, SpringFamily::Spatial) => SLOW_SPATIAL,
-            (SpringSpeed::Slow, SpringFamily::Effects) => SLOW_EFFECTS,
-        };
-        match (scheme, family) {
-            (MotionScheme::Standard, SpringFamily::Spatial) => {
-                Self { damping: STANDARD_SPATIAL_DAMPING, stiffness: base.stiffness }
+        match (family, scheme, speed) {
+            (SpringFamily::Effects, _, SpringSpeed::Fast) => FAST_EFFECTS,
+            (SpringFamily::Effects, _, SpringSpeed::Default) => DEFAULT_EFFECTS,
+            (SpringFamily::Effects, _, SpringSpeed::Slow) => SLOW_EFFECTS,
+            (SpringFamily::Spatial, MotionScheme::Expressive, SpringSpeed::Fast) => {
+                EXPRESSIVE_FAST_SPATIAL
             },
-            _ => base,
+            (SpringFamily::Spatial, MotionScheme::Expressive, SpringSpeed::Default) => {
+                EXPRESSIVE_DEFAULT_SPATIAL
+            },
+            (SpringFamily::Spatial, MotionScheme::Expressive, SpringSpeed::Slow) => {
+                EXPRESSIVE_SLOW_SPATIAL
+            },
+            (SpringFamily::Spatial, MotionScheme::Standard, SpringSpeed::Fast) => {
+                STANDARD_FAST_SPATIAL
+            },
+            (SpringFamily::Spatial, MotionScheme::Standard, SpringSpeed::Default) => {
+                STANDARD_DEFAULT_SPATIAL
+            },
+            (SpringFamily::Spatial, MotionScheme::Standard, SpringSpeed::Slow) => {
+                STANDARD_SLOW_SPATIAL
+            },
         }
     }
 
@@ -359,24 +406,127 @@ const fn web(name: &'static str, x1: f32, y1: f32, x2: f32, y2: f32, ms: u16) ->
     WebSpring { name, curve: CubicBezier { x1, y1, x2, y2 }, ms }
 }
 
-/// Spring to web conversions from <https://m3.material.io/styles/motion/overview/specs>.
+/// Spring to web conversions: least-squares cubic-bezier fits of the step response of each
+/// spring token, over its settling time (see [`fit_cubic_bezier`] and [`settling_time_ms`]).
 ///
-/// Ordered expressive then standard; within a scheme, spatial fast/default/slow
-/// then effects fast/default/slow.
+/// The numbers are produced by the same coordinate-descent fit as [`fit_cubic_bezier`] (four
+/// starts, 64 samples) and are checked against it by the `web_springs_match_fit` test. They
+/// replace the earlier values that were derived from the wrong (0.9/700) expressive base.
+/// Ordered expressive then standard; within a scheme, spatial fast/default/slow then effects
+/// fast/default/slow. Effects springs are identical in both schemes.
+#[allow(clippy::approx_constant, reason = "fitted bezier coefficient, not 1/pi")]
 pub const WEB_SPRINGS: [WebSpring; 12] = [
-    web("expressive-fast-spatial", 0.42, 1.67, 0.21, 0.90, 350),
-    web("expressive-default-spatial", 0.38, 1.21, 0.22, 1.00, 500),
-    web("expressive-slow-spatial", 0.39, 1.29, 0.35, 0.98, 650),
-    web("expressive-fast-effects", 0.31, 0.94, 0.34, 1.00, 150),
-    web("expressive-default-effects", 0.34, 0.80, 0.34, 1.00, 200),
-    web("expressive-slow-effects", 0.34, 0.88, 0.34, 1.00, 300),
-    web("standard-fast-spatial", 0.27, 1.06, 0.18, 1.00, 350),
-    web("standard-default-spatial", 0.27, 1.06, 0.18, 1.00, 500),
-    web("standard-slow-spatial", 0.27, 1.06, 0.18, 1.00, 750),
-    web("standard-fast-effects", 0.31, 0.94, 0.34, 1.00, 150),
-    web("standard-default-effects", 0.34, 0.80, 0.34, 1.00, 200),
-    web("standard-slow-effects", 0.34, 0.88, 0.34, 1.00, 300),
+    web("expressive-fast-spatial", 0.475, 1.498, 0.084, 1.000, 320),
+    web("expressive-default-spatial", 0.318, 0.475, 0.143, 1.149, 370),
+    web("expressive-slow-spatial", 0.312, 0.461, 0.146, 1.154, 510),
+    web("expressive-fast-effects", 0.317, 0.573, 0.151, 0.990, 130),
+    web("expressive-default-effects", 0.213, 0.224, 0.114, 1.059, 200),
+    web("expressive-slow-effects", 0.194, 0.135, 0.124, 1.057, 270),
+    web("standard-fast-spatial", 0.236, 0.172, 0.217, 1.031, 160),
+    web("standard-default-spatial", 0.236, 0.158, 0.231, 1.019, 220),
+    web("standard-slow-spatial", 0.231, 0.132, 0.237, 1.013, 330),
+    web("standard-fast-effects", 0.317, 0.573, 0.151, 0.990, 130),
+    web("standard-default-effects", 0.213, 0.224, 0.114, 1.059, 200),
+    web("standard-slow-effects", 0.194, 0.135, 0.124, 1.057, 270),
 ];
+
+/// Settling time of `spring` in whole milliseconds, rounded up to 10 ms: the first instant after
+/// which the step response stays within 0.5 % of the target (capped at 6 s).
+#[must_use]
+pub fn settling_time_ms(spring: M3Spring) -> u16 {
+    let mut state = SpringState::default();
+    let mut last_outside = 0_u16;
+    for ms in 1..=6000_u16 {
+        spring.step(&mut state, 1.0, 1.0 / 1000.0);
+        if (state.value - 1.0).abs() > 0.005 {
+            last_outside = ms;
+        }
+    }
+    last_outside.div_ceil(10) * 10
+}
+
+/// Number of samples (intervals) used by [`fit_cubic_bezier`].
+const FIT_INTERVALS: usize = 64;
+
+/// Root-mean-square error of `curve` against the step response of `spring` over `ms`.
+#[must_use]
+#[allow(clippy::cast_precision_loss)]
+pub fn curve_rms_error(curve: CubicBezier, spring: M3Spring, ms: u16) -> f32 {
+    let samples = response_samples(spring, ms);
+    (squared_error(curve, &samples) / (FIT_INTERVALS + 1) as f32).sqrt()
+}
+
+#[allow(clippy::cast_possible_truncation)]
+fn response_samples(spring: M3Spring, ms: u16) -> [f32; FIT_INTERVALS + 1] {
+    let mut out = [0.0_f32; FIT_INTERVALS + 1];
+    let mut state = SpringState::default();
+    let mut elapsed_ms = 0_u32;
+    for (i, slot) in out.iter_mut().enumerate() {
+        let n = FIT_INTERVALS as u32;
+        let target_ms = (i as u32 * u32::from(ms) + n / 2) / n;
+        while elapsed_ms < target_ms {
+            spring.step(&mut state, 1.0, 1.0 / 1000.0);
+            elapsed_ms += 1;
+        }
+        *slot = state.value;
+    }
+    out
+}
+
+#[allow(clippy::cast_precision_loss)]
+fn squared_error(curve: CubicBezier, samples: &[f32; FIT_INTERVALS + 1]) -> f32 {
+    samples
+        .iter()
+        .enumerate()
+        .map(|(i, target)| {
+            let d = curve.eval(i as f32 / FIT_INTERVALS as f32) - target;
+            d * d
+        })
+        .sum()
+}
+
+/// Least-squares cubic-bezier fit of the unit step response of `spring` over `ms` milliseconds.
+///
+/// Coordinate descent on the four control coordinates (`x1`, `x2` kept in `[0, 1]`, as CSS
+/// requires) from four fixed starting curves, keeping the best result. Deterministic.
+#[must_use]
+pub fn fit_cubic_bezier(spring: M3Spring, ms: u16) -> CubicBezier {
+    const STARTS: [[f32; 4]; 4] =
+        [[0.3, 0.9, 0.3, 1.0], [0.5, 0.0, 0.2, 1.0], [0.2, 1.2, 0.2, 1.0], [0.4, 0.5, 0.1, 1.1]];
+    let samples = response_samples(spring, ms);
+    let mut best = (CubicBezier { x1: 0.0, y1: 0.0, x2: 1.0, y2: 1.0 }, f32::INFINITY);
+    for start in STARTS {
+        let mut p = start;
+        let build = |p: [f32; 4]| CubicBezier { x1: p[0], y1: p[1], x2: p[2], y2: p[3] };
+        let mut err = squared_error(build(p), &samples);
+        let mut step = 0.25_f32;
+        for _ in 0..60 {
+            let mut improved = false;
+            for j in 0..4 {
+                for delta in [step, -step] {
+                    let mut q = p;
+                    q[j] += delta;
+                    if j == 0 || j == 2 {
+                        q[j] = q[j].clamp(0.0, 1.0);
+                    }
+                    let e = squared_error(build(q), &samples);
+                    if e < err - 1e-9 {
+                        p = q;
+                        err = e;
+                        improved = true;
+                    }
+                }
+            }
+            if !improved {
+                step *= 0.5;
+            }
+        }
+        if err < best.1 {
+            best = (build(p), err);
+        }
+    }
+    best.0
+}
 
 impl WebSpring {
     /// Returns the web conversion of a spring token.
@@ -455,7 +605,8 @@ mod tests {
 
     #[test]
     fn expressive_spatial_springs_overshoot() {
-        for spring in [FAST_SPATIAL, DEFAULT_SPATIAL, SLOW_SPATIAL] {
+        for spring in [EXPRESSIVE_FAST_SPATIAL, EXPRESSIVE_DEFAULT_SPATIAL, EXPRESSIVE_SLOW_SPATIAL]
+        {
             assert!(peak(spring) > 1.0, "{spring:?} must overshoot");
         }
     }
@@ -471,11 +622,79 @@ mod tests {
     }
 
     #[test]
-    fn standard_scheme_removes_spatial_bounce() {
+    fn standard_scheme_is_nearly_bounce_free() {
+        // Damping 0.9 overshoots by ~0.2 %, far below the expressive 1.4 % to 9.5 %.
         for speed in SPEEDS {
             let spring = M3Spring::token(MotionScheme::Standard, speed, SpringFamily::Spatial);
-            assert!(peak(spring) <= 1.0 + 1e-4, "{spring:?} overshoots");
+            assert!(peak(spring) < 1.005, "{spring:?} bounces");
         }
+    }
+
+    #[test]
+    fn spring_tokens_match_compose() {
+        use SpringFamily::{Effects, Spatial};
+        use SpringSpeed::{Default as Def, Fast, Slow};
+        let t = M3Spring::token;
+        let e = MotionScheme::Expressive;
+        let s = MotionScheme::Standard;
+        assert_eq!((t(e, Fast, Spatial).damping, t(e, Fast, Spatial).stiffness), (0.6, 800.0));
+        assert_eq!((t(e, Def, Spatial).damping, t(e, Def, Spatial).stiffness), (0.8, 380.0));
+        assert_eq!((t(e, Slow, Spatial).damping, t(e, Slow, Spatial).stiffness), (0.8, 200.0));
+        assert_eq!((t(s, Fast, Spatial).damping, t(s, Fast, Spatial).stiffness), (0.9, 1400.0));
+        assert_eq!((t(s, Def, Spatial).damping, t(s, Def, Spatial).stiffness), (0.9, 700.0));
+        assert_eq!((t(s, Slow, Spatial).damping, t(s, Slow, Spatial).stiffness), (0.9, 300.0));
+        for scheme in [e, s] {
+            assert_eq!(t(scheme, Fast, Effects), M3Spring { damping: 1.0, stiffness: 3800.0 });
+            assert_eq!(t(scheme, Def, Effects), M3Spring { damping: 1.0, stiffness: 1600.0 });
+            assert_eq!(t(scheme, Slow, Effects), M3Spring { damping: 1.0, stiffness: 800.0 });
+        }
+    }
+
+    #[test]
+    fn scheme_defaults_per_target() {
+        assert_eq!(MotionScheme::WEB_DEFAULT, MotionScheme::Standard);
+        assert_eq!(MotionScheme::NATIVE_DEFAULT, MotionScheme::Expressive);
+        assert_eq!(MotionScheme::default(), MotionScheme::TARGET_DEFAULT);
+    }
+
+    #[test]
+    fn web_springs_match_fit() {
+        for token in &WEB_SPRINGS {
+            let (scheme, rest) = token.name.split_once('-').unwrap();
+            let (speed, family) = rest.split_once('-').unwrap();
+            let scheme = if scheme == "expressive" {
+                MotionScheme::Expressive
+            } else {
+                MotionScheme::Standard
+            };
+            let speed = match speed {
+                "fast" => SpringSpeed::Fast,
+                "default" => SpringSpeed::Default,
+                _ => SpringSpeed::Slow,
+            };
+            let family =
+                if family == "spatial" { SpringFamily::Spatial } else { SpringFamily::Effects };
+            let spring = M3Spring::token(scheme, speed, family);
+            let settle = settling_time_ms(spring);
+            assert!(token.ms.abs_diff(settle) <= 10, "{} settling {settle} ms", token.name);
+            let shipped = curve_rms_error(token.curve, spring, token.ms);
+            let fitted = fit_cubic_bezier(spring, token.ms);
+            let best = curve_rms_error(fitted, spring, token.ms);
+            assert!(shipped < 0.03, "{} rms {shipped}", token.name);
+            assert!(shipped <= best + 0.003, "{} shipped {shipped} vs fit {best}", token.name);
+        }
+    }
+
+    #[test]
+    fn fit_recovers_a_bezier_response() {
+        // A critically damped spring is fitted far better than a linear ramp.
+        let spring = DEFAULT_EFFECTS;
+        let ms = settling_time_ms(spring);
+        let fit = fit_cubic_bezier(spring, ms);
+        let linear = CubicBezier { x1: 0.0, y1: 0.0, x2: 1.0, y2: 1.0 };
+        assert!(curve_rms_error(fit, spring, ms) < 0.02);
+        assert!(curve_rms_error(linear, spring, ms) > 0.1);
+        assert!((0.0..=1.0).contains(&fit.x1) && (0.0..=1.0).contains(&fit.x2));
     }
 
     #[test]
@@ -495,7 +714,7 @@ mod tests {
         let t =
             WebSpring::token(MotionScheme::Standard, SpringSpeed::Default, SpringFamily::Spatial);
         assert_eq!(t.name, "standard-default-spatial");
-        assert_eq!(t.ms, 500);
+        assert_eq!(t.ms, 220);
     }
 
     #[test]

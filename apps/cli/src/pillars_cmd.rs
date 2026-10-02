@@ -11,7 +11,6 @@
 use clap::Subcommand;
 use miette::{IntoDiagnostic, miette};
 
-use aphrody_kernel::{client::Client, transport::default_endpoint};
 use std::time::Duration;
 
 // --- 1. NATIVE PILLAR ---
@@ -93,76 +92,10 @@ pub(crate) enum OsAction {
     Doctor,
 }
 
-async fn os_client() -> miette::Result<Client> {
-    let endpoint = default_endpoint();
-    let client = tokio::time::timeout(Duration::from_secs(5), Client::connect(&endpoint))
-        .await
-        .into_diagnostic()?
-        .into_diagnostic()?;
-    tokio::time::timeout(Duration::from_secs(5), client.initialize("aphrody-cli"))
-        .await
-        .into_diagnostic()?
-        .into_diagnostic()?;
-    Ok(client)
-}
-
-async fn os_snapshot(client: &Client) -> miette::Result<serde_json::Value> {
-    let subsystems = client
-        .request("system/subsystems", serde_json::json!({}), Duration::from_secs(5))
-        .await
-        .into_diagnostic()?;
-    let names: Vec<_> = subsystems["subsystems"]
-        .as_array()
-        .ok_or_else(|| miette!("kernel returned no subsystem list"))?
-        .iter()
-        .filter_map(|entry| entry["name"].as_str().map(str::to_owned))
-        .collect();
-    let winclean_tools = if names.iter().any(|name| name == "admin") {
-        client
-            .request(
-                "system/subsystem_tools",
-                serde_json::json!({"name":"admin"}),
-                Duration::from_secs(5),
-            )
-            .await
-            .into_diagnostic()?["tools"]
-            .as_array()
-            .ok_or_else(|| miette!("kernel returned no admin tool list"))?
-            .len()
-    } else {
-        0
-    };
-    Ok(serde_json::json!({
-        "layer": "os",
-        "status": "online",
-        "subsystems": names,
-        "winclean_tools": winclean_tools,
-        "process_isolation": "not_enforced_by_kernel",
-        "policy_enforcement": "not_enforced_by_kernel"
-    }))
-}
-
-fn unavailable_os_snapshot(state: &str, reason: &str) -> serde_json::Value {
-    serde_json::json!({
-        "layer": "os",
-        "status": state,
-        "reason": reason,
-        "subsystems": [],
-        "winclean_tools": 0,
-        "process_isolation": "not_enforced_by_kernel",
-        "policy_enforcement": "not_enforced_by_kernel"
-    })
-}
-
 pub(crate) async fn handle_os(action: OsAction) -> miette::Result<()> {
     match action {
         OsAction::Status { json } => {
-            let status = match os_client().await {
-                Ok(client) => os_snapshot(&client).await.unwrap_or_else(|error| {
-                    unavailable_os_snapshot("unavailable", &error.to_string())
-                }),
-                Err(error) => unavailable_os_snapshot("offline", &error.to_string()),
-            };
+            let status = aphrody_diagnostics::os_status().await;
             if json {
                 println!("{}", serde_json::to_string_pretty(&status).into_diagnostic()?);
             } else {
@@ -183,8 +116,8 @@ pub(crate) async fn handle_os(action: OsAction) -> miette::Result<()> {
             }
         },
         OsAction::Doctor => {
-            let client = os_client().await?;
-            let snapshot = os_snapshot(&client).await?;
+            let client = aphrody_diagnostics::os::os_client().await?;
+            let snapshot = aphrody_diagnostics::os::os_snapshot(&client).await?;
             if snapshot["winclean_tools"].as_u64().unwrap_or(0) == 0 {
                 return Err(miette!("kernel admin subsystem is unavailable"));
             }
@@ -227,23 +160,7 @@ pub(crate) enum InfraAction {
 pub(crate) fn handle_infra(action: InfraAction) -> miette::Result<()> {
     match action {
         InfraAction::Status { json } => {
-            let status = serde_json::json!({
-                "layer": "infra",
-                "targets": [
-                    "windows-local",
-                    "wsl-ubuntu-24.04",
-                    "vps-ubuntu-26.04",
-                    "dbfr-database"
-                ],
-                "services": [
-                    "aphrody-gateway",
-                    "nie-site",
-                    "nie-model-serve",
-                    "rosegriffon",
-                    "shenron-bot"
-                ],
-                "status": "nominal"
-            });
+            let status = aphrody_diagnostics::infra_status();
             if json {
                 println!("{}", serde_json::to_string_pretty(&status).into_diagnostic()?);
             } else {
@@ -254,11 +171,7 @@ pub(crate) fn handle_infra(action: InfraAction) -> miette::Result<()> {
             }
         },
         InfraAction::Check => {
-            println!("Checking infrastructure targets connectivity...");
-            println!("  * windows-local:    OK");
-            println!("  * wsl-ubuntu-24.04: OK");
-            println!("  * vps-ubuntu-26.04: OK");
-            println!("  * dbfr-database:    OK");
+            print!("{}", aphrody_diagnostics::infra_check()["raw"].as_str().unwrap_or_default());
         },
     }
     Ok(())

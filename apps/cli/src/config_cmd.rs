@@ -1,12 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
 //! CLI implementation for `aphrody config {show, path, import-codex}`.
 
-use std::{collections::BTreeMap, path::PathBuf};
+use std::path::PathBuf;
 
-use aphrody_config::{
-    CliOverrides, ConfigLayer, LayerSource, builtin_providers_layer_value, load_codex_compat_layer,
-    load_project_layer, load_user_layer, merge_toml_values, resolve, restrict_codex_layer,
-};
+use aphrody_config::{load_codex_compat_layer, merge_toml_values, restrict_codex_layer};
 use clap::Subcommand;
 use miette::{IntoDiagnostic, Result};
 
@@ -58,13 +55,6 @@ fn dirs_home() -> Option<PathBuf> {
     }
 }
 
-/// Whether an Antigravity token is readable on this host: the Windows
-/// Credential Manager entry, or the `agy` / `aphrody antigravity login`
-/// token files on Unix. Decides the default provider on every platform.
-fn is_antigravity_available() -> bool {
-    aphrody_antigravity::client::AntigravityClient::from_credential_manager().is_ok()
-}
-
 pub(crate) async fn run(
     action: ConfigAction,
     profile: Option<String>,
@@ -79,34 +69,12 @@ pub(crate) async fn run(
             Ok(())
         },
         ConfigAction::Show { json } => {
-            let env = |k: &str| std::env::var(k).ok();
-            let builtins =
-                ConfigLayer::new(LayerSource::Builtin, builtin_providers_layer_value(&env));
-            let mut layers = vec![builtins];
-
-            let config_path = aphrody_config_path()?;
-            if let Ok(Some(user_layer)) = load_user_layer(&config_path) {
-                layers.push(user_layer);
-            }
-
-            let cwd = std::env::current_dir().unwrap_or_else(|_| PathBuf::from("."));
-            if let Ok(Some(proj_layer)) = load_project_layer(&cwd) {
-                layers.push(proj_layer);
-            }
-
-            let overrides = CliOverrides {
+            let (config, warnings) = aphrody_diagnostics::config::resolve_config(
                 profile,
-                oss: force_oss,
+                force_oss,
                 local_provider,
-                config_overrides: cli_overrides_raw.to_vec(),
-                ..CliOverrides::default()
-            };
-
-            let default_provider = if is_antigravity_available() { "antigravity" } else { "llama" };
-
-            let (config, warnings) =
-                resolve(layers, &overrides, default_provider, &BTreeMap::new())
-                    .map_err(|e| miette::miette!("Failed to resolve configuration: {e}"))?;
+                cli_overrides_raw,
+            )?;
 
             for w in warnings {
                 eprintln!("warning: {w}");

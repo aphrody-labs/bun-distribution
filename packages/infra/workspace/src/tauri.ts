@@ -45,8 +45,8 @@ export async function runTauri(args: string[]): Promise<number> {
     ["crates/ui/app", "crates/aphrody-app"]
       .map((path) => join(repo, path))
       .find((path) => existsSync(join(path, "Cargo.toml"))) ?? join(repo, "crates", "ui", "app");
-  // The app UI source (`@aphrody/app-ui`) is not part of this workspace yet: without it the prebuilt
-  // `ui-dist` bundle committed beside the app is what Tauri embeds.
+  // The app UI source (`@aphrody/app-ui`, restored 2026-10-02) builds into `<appDir>/ui-dist`;
+  // a checkout without it falls back to the prebuilt `ui-dist` bundle committed beside the app.
   const uiDir = join(repo, "packages", "app-ui");
   const isWindows = process.platform === "win32";
   const isLinux = process.platform === "linux";
@@ -278,7 +278,7 @@ export async function runTauri(args: string[]): Promise<number> {
       await stageKoharuSidecar(action === "dev" ? "debug" : "release");
     }
 
-    // Step 3: Run target action in aphrody-app
+    // Step 3: Run target action in the desktop app crate
     console.log(`[tauri] Executing action: ${action}...`);
     switch (action) {
       case "check":

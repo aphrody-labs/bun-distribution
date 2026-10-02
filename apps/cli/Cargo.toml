@@ -248,6 +248,7 @@ aphrody-stdio-capture     = { workspace = true }
 # (reqwest / rustls / ring / crossterm) and never link on wasm32.
 aphrody-agent-runtime     = { workspace = true }
 aphrody-config            = { workspace = true }
+aphrody-diagnostics       = { workspace = true }
 aphrody-engine            = { workspace = true }
 aphrody-toolcall          = { workspace = true }
 tracing                  = { workspace = true }

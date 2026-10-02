@@ -7,6 +7,10 @@
 //! | Every M3 token as a Tailwind v4 utility, baseline extended roles | [`tailwind_css`] | `@aphrody/m3-theme/tailwind.css` |
 //! | The SpaceUI themes as M3 schemes, SpaceUI aliases | [`spaceui_css`] | `@aphrody/m3-theme/spaceui.css` |
 //! | One scheme's roles and extended roles | [`scheme_css`] | `m3:theme.css` (`@aphrody/m3` plugin) |
+//! | Shape, typescale, motion, elevation, state (no colour) | [`static_css`] | `@aphrody/m3-tokens/m3-tokens.css` |
+//!
+//! `tests/sheets_golden.rs` checks (or, with `APHRODY_UPDATE_TOKENS=1`, rewrites) the two committed
+//! files `packages/ui/m3-theme/tokens.css` and `packages/ui/m3-tokens/src/m3-tokens.css`.
 //!
 //! Colours come from [`crate::scheme`], an exact port of material-color-utilities, so the sheets
 //! match Material Theme Builder. `@aphrody/bun` exposes [`render`] through `m3Css()`.
@@ -16,13 +20,14 @@ use crate::{
     blend::custom_color,
     color::FUSION_ALIAS_MAP,
     color_math::hex_from_argb,
+    elevation,
     hct::Hct,
     motion,
     palette::TonalPalette,
     scheme::{DynamicScheme, Palettes, Role, Variant},
     shape,
     spaceui::{self, Theme},
-    typography,
+    state, typography,
 };
 
 /// Default scheme source: the M3 baseline seed `#6750A4`.
@@ -101,10 +106,12 @@ pub enum Sheet {
     Spaceui,
     /// [`scheme_css`].
     Scheme,
+    /// [`static_css`].
+    Static,
 }
 
 impl Sheet {
-    /// Parse `tokens`, `tailwind`, `spaceui` or `scheme`.
+    /// Parse `tokens`, `tailwind`, `spaceui`, `scheme` or `static`.
     #[must_use]
     pub fn from_name(name: &str) -> Option<Self> {
         Some(match name {
@@ -112,6 +119,7 @@ impl Sheet {
             "tailwind" => Self::Tailwind,
             "spaceui" => Self::Spaceui,
             "scheme" => Self::Scheme,
+            "static" | "m3-tokens" => Self::Static,
             _ => return None,
         })
     }
@@ -125,6 +133,7 @@ pub fn render(request: &SheetRequest) -> String {
         Sheet::Tailwind => tailwind_css(),
         Sheet::Spaceui => spaceui_css(),
         Sheet::Scheme => scheme_css(request.seed, request.variant, request.dark, request.contrast),
+        Sheet::Static => static_css(),
     }
 }
 
@@ -342,6 +351,141 @@ pub fn tailwind_css() -> String {
     )
 }
 
+/// `--md-ref-typeface-brand` / `-plain` stack.
+const TYPEFACE_SANS: &str = "\"Google Sans Flex\", \"Google Sans\", Roboto, system-ui, sans-serif";
+/// `--md-ref-typeface-code` stack.
+const TYPEFACE_CODE: &str = "\"Google Sans Code\", \"JetBrains Mono\", ui-monospace, monospace";
+
+/// Number of leading type styles (display, headline, title-large) set in the brand typeface.
+const BRAND_TYPE_STYLES: usize = 7;
+
+const LEGACY_EASINGS: [motion::Easing; 3] =
+    [motion::EASING_LEGACY, motion::EASING_LEGACY_ACCELERATE, motion::EASING_LEGACY_DECELERATE];
+
+/// A length in rem from dp (base 16 px), printed without float noise (`4`, `0.009375`).
+fn rem(dp: f32) -> String {
+    format!("{}rem", dp / 16.0)
+}
+
+/// The non-colour M3 token families as runtime custom properties (`m3-tokens.css`): shape,
+/// typescale, motion (durations, easings, springs of the web-default scheme), elevation and state.
+///
+/// Spring tokens use [`motion::MotionScheme::WEB_DEFAULT`] (material-web v2.5.0 equals the Compose
+/// Standard scheme). Elevation shadows keep a black fallback for engines without relative colour
+/// syntax, then re-declare from `--md-sys-elevation-shadow-color` under `@supports`.
+#[must_use]
+pub fn static_css() -> String {
+    let mut root: Vec<String> = vec!["  /* Shape: corner scale. */".into()];
+    root.extend(
+        shape::NAMES
+            .iter()
+            .zip(shape::ALL)
+            .map(|(name, c)| format!("  --md-sys-shape-corner-{name}: {}px;", c.dp)),
+    );
+    root.push(String::new());
+    root.push("  /* Typescale: tracking. */".into());
+    root.extend(typography::NAMES.iter().zip(typography::ALL).map(|(name, t)| {
+        format!("  --md-sys-typescale-{name}-tracking: {};", rem(t.letter_spacing_dp))
+    }));
+    root.push(String::new());
+    root.push("  /* Typescale: typefaces, weight, size, line height. */".into());
+    root.push(format!("  --md-ref-typeface-brand: {TYPEFACE_SANS};"));
+    root.push(format!("  --md-ref-typeface-plain: {TYPEFACE_SANS};"));
+    root.push(format!("  --md-ref-typeface-code: {TYPEFACE_CODE};"));
+    root.push(String::new());
+    for (i, (name, t)) in typography::NAMES.iter().zip(typography::ALL).enumerate() {
+        let face = if i < BRAND_TYPE_STYLES { "brand" } else { "plain" };
+        root.push(format!("  --md-sys-typescale-{name}-font: var(--md-ref-typeface-{face});"));
+        root.push(format!("  --md-sys-typescale-{name}-weight: {};", t.weight));
+        root.push(format!("  --md-sys-typescale-{name}-size: {};", rem(t.size_dp)));
+        root.push(format!("  --md-sys-typescale-{name}-line-height: {};", rem(t.line_height_dp)));
+    }
+    root.push(String::new());
+    root.push("  /* Motion: durations. */".into());
+    root.extend(
+        motion::ALL_DURATIONS
+            .iter()
+            .map(|d| format!("  --md-sys-motion-duration-{}: {}ms;", d.name, d.ms)),
+    );
+    root.push(String::new());
+    root.push("  /* Motion: easings. */".into());
+    root.extend(
+        EASINGS
+            .iter()
+            .chain(&LEGACY_EASINGS)
+            .map(|e| format!("  --md-sys-motion-easing-{}: {};", e.name, e.cubic_bezier)),
+    );
+    root.push(String::new());
+    root.push("  /* Motion: springs (web default scheme, damping ratio and stiffness). */".into());
+    for family in [motion::SpringFamily::Spatial, motion::SpringFamily::Effects] {
+        for (speed, speed_name) in [
+            (motion::SpringSpeed::Fast, "fast"),
+            (motion::SpringSpeed::Default, "default"),
+            (motion::SpringSpeed::Slow, "slow"),
+        ] {
+            let spring = motion::M3Spring::token(motion::MotionScheme::WEB_DEFAULT, speed, family);
+            let family_name =
+                if family == motion::SpringFamily::Spatial { "spatial" } else { "effects" };
+            root.push(format!(
+                "  --md-sys-motion-spring-{speed_name}-{family_name}-damping: {};",
+                spring.damping
+            ));
+            root.push(format!(
+                "  --md-sys-motion-spring-{speed_name}-{family_name}-stiffness: {};",
+                spring.stiffness
+            ));
+        }
+    }
+    root.push(String::new());
+    root.push("  /* Elevation: shadow colour and levels 0 to 5 (black fallback). */".into());
+    root.push("  --md-sys-elevation-shadow-color: var(--md-sys-color-shadow, #000);".into());
+    root.push(String::new());
+    root.push("  --md-sys-elevation-level0: none;".into());
+    let shadow = |level: usize, color: &dyn Fn(f32) -> String| {
+        let [key, ambient] = elevation::SHADOWS[level - 1];
+        format!(
+            "    {},\n    {}",
+            key.css(&color(elevation::KEY_ALPHA)),
+            ambient.css(&color(elevation::AMBIENT_ALPHA))
+        )
+    };
+    for level in 1..=5 {
+        root.push(format!(
+            "  --md-sys-elevation-level{level}:\n{};",
+            shadow(level, &|a| format!("rgb(0 0 0 / {a})"))
+        ));
+    }
+    let relative: Vec<String> = (1..=5)
+        .map(|level| {
+            let body = shadow(level, &|a| {
+                format!("rgb(from var(--md-sys-elevation-shadow-color) r g b / {a})")
+            });
+            format!("  --md-sys-elevation-level{level}:\n{body};")
+        })
+        .collect();
+    let state: Vec<String> = state::NAMES
+        .iter()
+        .zip(state::ALL)
+        .take(4)
+        .map(|(name, layer)| {
+            format!("  --md-sys-state-{name}-state-layer-opacity: {};", layer.opacity)
+        })
+        .collect();
+    format!(
+        "{header}\n:root {{\n{root}\n}}\n\n@supports (color: rgb(from black r g b / 0.3)) \
+         {{\n  :root {{\n{relative}\n  }}\n}}\n\n:root {{\n  /* State layers: opacity of the \
+         overlay on the content role. */\n{state}\n}}\n",
+        header = header(
+            "Material 3 static tokens: shape, typescale, motion, elevation, state layers.",
+            "APHRODY_UPDATE_TOKENS=1 scripts/build/rust/cargo-serial.sh test -p aphrody-m3-tokens \
+             --test sheets_golden"
+        ),
+        root = root.join("\n"),
+        relative = indent(&relative.join("\n")),
+        state = state.join("\n"),
+    )
+}
+
 /// A SpaceUI theme as an M3 scheme: tonal-spot relationships, the accent as a high-fidelity
 /// primary palette, neutrals keyed on the theme's own surface hue and chroma.
 #[must_use]
@@ -449,6 +593,25 @@ mod tests {
         let surface = noir.split("--md-sys-color-surface: #").nth(1).unwrap();
         assert_eq!(&surface[0..2], &surface[2..4], "noir neutrals are achromatic");
         assert_eq!(&surface[2..4], &surface[4..6]);
+    }
+
+    #[test]
+    fn static_sheet_declares_every_family() {
+        let css = static_css();
+        assert_eq!(css.matches("--md-sys-shape-corner-").count(), 10);
+        assert_eq!(css.matches("-tracking:").count(), 15);
+        assert_eq!(css.matches("--md-sys-motion-duration-").count(), 16);
+        assert_eq!(css.matches("--md-sys-motion-easing-").count(), 10);
+        assert_eq!(css.matches("--md-sys-motion-spring-").count(), 12);
+        for level in 1..=5 {
+            assert_eq!(css.matches(&format!("--md-sys-elevation-level{level}:")).count(), 2);
+        }
+        assert!(css.contains("--md-sys-typescale-display-large-tracking: -0.015625rem;"));
+        assert!(css.contains("--md-sys-typescale-label-small-size: 0.6875rem;"));
+        assert!(css.contains("--md-sys-motion-spring-default-spatial-damping: 0.9;"));
+        assert!(css.contains("rgb(0 0 0 / 0.3)"));
+        assert!(css.contains("--md-sys-state-hover-state-layer-opacity: 0.08;"));
+        assert_eq!(render(&SheetRequest { sheet: Sheet::Static, ..SheetRequest::default() }), css);
     }
 
     #[test]

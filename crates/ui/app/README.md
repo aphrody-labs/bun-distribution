@@ -69,7 +69,7 @@ Plugin rationale: `docs/tauri/plugins.md`. Integration design:
 
 ## Build, run and package on Windows
 
-`../../packages/app-ui/` is the sole frontend source package. Bun builds it to ignored
+`../../packages/ui/app-ui/` is the sole frontend source package. Bun builds it to ignored
 `ui-dist/` before Tauri packages the Wry shell. It reuses the canonical
 `@aphrody/m3-theme/spaceui.css`, `@aphrody/m3-ai` and
 `@aphrody/m3-primitives` surfaces. Material Symbols are copied from the one
@@ -94,7 +94,7 @@ file actions through `aphrody-drive`; React Native/iOS/Android are outside this 
 
 ```pwsh
 bun install --frozen-lockfile
-bun run --cwd packages/app-ui build
+bun run --cwd packages/ui/app-ui build
 pwsh scripts/tauri.ps1 -Action check
 pwsh scripts/tauri.ps1 -Action run
 pwsh scripts/tauri.ps1 -Action bundle         # Windows: NSIS setup executable

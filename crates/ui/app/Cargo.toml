@@ -43,6 +43,7 @@ reqwest = { workspace = true }
 aphrody-app-server = { workspace = true }
 aphrody-capture = { workspace = true }
 aphrody-compat = { workspace = true }
+aphrody-diagnostics = { workspace = true }
 aphrody-coreutils = { workspace = true }
 aphrody-drive = { workspace = true }
 aphrody-shell-tauri = { workspace = true }

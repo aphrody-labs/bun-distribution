@@ -76,6 +76,7 @@ aphrody-base = { path = "crates/os/base", version = "1.0.0-canary", features = [
 aphrody-capture = { path = "crates/os/capture", version = "1.0.0-canary", features = [] }
 aphrody-chat = { path = "crates/ai/chat", version = "1.0.0", features = [] }
 aphrody-config = { path = "crates/ai/config", version = "1.0.0", features = [] }
+aphrody-diagnostics = { path = "crates/os/diagnostics", version = "1.0.0" }
 aphrody-context = { path = "crates/ai/context", version = "1.0.0", features = [] }
 aphrody-ecosystem = { path = "crates/ai/ecosystem", version = "1.0.0", features = [] }
 aphrody-embed = { path = "crates/ai/embed", version = "1.0.0", default-features = false, features = [] }

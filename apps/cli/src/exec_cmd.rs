@@ -15,12 +15,15 @@ use aphrody_agent_proto::{EventMsg, InputItem, Op, ReviewDecision};
 use aphrody_agent_runtime::{
     AgentRuntime, ModelChoice, ModelFactory, RuntimeConfig, ScriptedTurn, StubModelClient,
 };
-use aphrody_config::{CliOverrides, Config, ConfigLayer, LayerSource};
+use aphrody_config::{CliOverrides, Config};
+#[cfg(test)]
+use aphrody_config::{ConfigLayer, LayerSource};
 use aphrody_exec_events::*;
 use clap::{Args, Subcommand};
 use miette::IntoDiagnostic as _;
 
 use crate::session_cmd::SessionArgs;
+pub(crate) use aphrody_diagnostics::config::{apply_environment_profile, load_config, profile_workspace};
 
 #[derive(Debug, Clone, Default, Args)]
 pub(crate) struct ExecArgs {
@@ -65,19 +68,6 @@ pub(crate) enum ExecCommand {
     Fork(SessionArgs),
 }
 
-fn apply_environment_profile(mut overrides: CliOverrides) -> CliOverrides {
-    overrides.profile = aphrody_config::profile::select_profile(
-        overrides.profile.as_deref(),
-        std::env::var(aphrody_config::profile::ENV_APHRODY_PROFILE).ok().as_deref(),
-    );
-    overrides
-}
-
-pub(crate) fn profile_workspace(config: &Config) -> miette::Result<PathBuf> {
-    aphrody_agent_home::paths::resolve_workspace(config.active_profile.as_deref(), None)
-        .map_err(|error| miette::miette!("exec: {error}"))
-}
-
 pub(crate) fn profile_state_root(config: &Config) -> miette::Result<PathBuf> {
     let base =
         aphrody_models::paths::state_dir().map_err(|error| miette::miette!("exec: {error}"))?;
@@ -108,42 +98,6 @@ fn auto_compact_token_limit(configured: Option<i64>) -> miette::Result<Option<u6
             })
         })
         .transpose()
-}
-
-pub(crate) fn load_config(overrides: &CliOverrides) -> miette::Result<Config> {
-    let overrides = apply_environment_profile(overrides.clone());
-    let env = |name: &str| std::env::var(name).ok();
-    let mut layers = vec![ConfigLayer::new(
-        LayerSource::Builtin,
-        aphrody_config::builtin_providers_layer_value(&env),
-    )];
-    let home = aphrody_models::paths::state_dir().map_err(|error| miette::miette!("{error}"))?;
-    if let Some(layer) = aphrody_config::load_user_layer(&home.join("config.toml"))
-        .map_err(|error| miette::miette!("exec: {error}"))?
-    {
-        layers.push(layer);
-    }
-    let (initial, _) =
-        aphrody_config::resolve(layers.clone(), &overrides, "llama", &BTreeMap::new())
-            .map_err(|error| miette::miette!("exec: {error}"))?;
-    if initial.compat.read_codex_home {
-        let codex_home = std::env::var_os("CODEX_HOME").map(PathBuf::from).or_else(|| {
-            std::env::var_os(if cfg!(windows) { "USERPROFILE" } else { "HOME" })
-                .map(|path| PathBuf::from(path).join(".codex"))
-        });
-        if let Some(path) = codex_home
-            && let Some(layer) = aphrody_config::load_codex_compat_layer(&path.join("config.toml"))
-                .map_err(|error| miette::miette!("exec: {error}"))?
-            {
-                layers.insert(1, layer);
-            }
-    }
-    let (config, warnings) = aphrody_config::resolve(layers, &overrides, "llama", &BTreeMap::new())
-        .map_err(|error| miette::miette!("exec: {error}"))?;
-    for warning in warnings {
-        eprintln!("warning: {warning}");
-    }
-    Ok(config)
 }
 
 /// Only the selected profile's filtered projection enters a local model prompt.

@@ -102,6 +102,36 @@ pub const NAMES: [&str; 10] = [
     "full",
 ];
 
+// -- Gemini web-only corner tokens (GEM `--gem-sys-shape--corner-*`, observed 2026-10-02) --------
+// Not part of the Material scale: kept out of [`ALL`] / [`NAMES`] so the generated Tailwind
+// sheet and the M3 CSS stay identical to the Material token set.
+// Source: docs/research/ui/m3-expressive-gemini-2026.md section 2.
+
+/// Gemini `corner-large-max` (24 dp).
+pub const LARGE_MAX: CornerRadius = CornerRadius { dp: 24 };
+
+/// Gemini `corner-extra-large-max` (40 dp).
+pub const EXTRA_LARGE_MAX: CornerRadius = CornerRadius { dp: 40 };
+
+/// Gemini `corner-extra-extra-large-increased` (48 dp in the primary theme).
+pub const EXTRA_EXTRA_LARGE_INCREASED: CornerRadius = CornerRadius { dp: 48 };
+
+/// Gemini `corner-extra-extra-large-increased` as served in the second theme (56 dp). The same CSS
+/// serves both values, so both are kept.
+pub const EXTRA_EXTRA_LARGE_INCREASED_ALT: CornerRadius = CornerRadius { dp: 56 };
+
+/// Gemini-only corner tokens, ascending by dp.
+pub const GEMINI_ONLY: [CornerRadius; 4] =
+    [LARGE_MAX, EXTRA_LARGE_MAX, EXTRA_EXTRA_LARGE_INCREASED, EXTRA_EXTRA_LARGE_INCREASED_ALT];
+
+/// Kebab-case names for [`GEMINI_ONLY`].
+pub const GEMINI_ONLY_NAMES: [&str; 4] = [
+    "large-max",
+    "extra-large-max",
+    "extra-extra-large-increased",
+    "extra-extra-large-increased-alt",
+];
+
 /// Emits a CSS `:root` block declaring all ten M3 shape corner-radius
 /// custom properties.
 ///
@@ -186,6 +216,17 @@ mod tests {
         assert_eq!(EXTRA_LARGE_INCREASED.dp, 32);
         assert_eq!(EXTRA_EXTRA_LARGE.dp, 48);
         assert_eq!(FULL.dp, 9999);
+    }
+
+    #[test]
+    fn gemini_only_tokens_match_reference() {
+        assert_eq!(LARGE_MAX.dp, 24);
+        assert_eq!(EXTRA_LARGE_MAX.dp, 40);
+        assert_eq!(EXTRA_EXTRA_LARGE_INCREASED.dp, 48);
+        assert_eq!(EXTRA_EXTRA_LARGE_INCREASED_ALT.dp, 56);
+        assert_eq!(GEMINI_ONLY.len(), GEMINI_ONLY_NAMES.len());
+        assert!(GEMINI_ONLY.windows(2).all(|w| w[0].dp < w[1].dp));
+        assert_eq!(ALL.len(), 10, "the Material scale is unchanged");
     }
 
     #[cfg(feature = "std")]

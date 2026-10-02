@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // `buildM3`: the one production build of an @aphrody/m3 application, a single `Bun.build` with
 // `m3Plugin`. The Tauri mode writes the fixed layout the desktop webview loads
-// (`crates/aphrody-app/ui-dist`, `tauri.conf.json` `frontendDist`):
+// (`crates/ui/app/ui-dist`, `tauri.conf.json` `frontendDist`):
 //
 //   index.html   app.js   app.css   fonts/<name>.<ext>
 //

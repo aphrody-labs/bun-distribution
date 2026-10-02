@@ -23,7 +23,7 @@ const gates: Gate[] = [
   {
     name: "Desktop UI tests",
     command: ["bun", "run", "test"],
-    cwd: "packages/app-ui",
+    cwd: "packages/ui/app-ui",
     quick: true,
   },
   {
