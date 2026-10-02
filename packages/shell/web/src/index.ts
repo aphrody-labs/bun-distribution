@@ -2,13 +2,19 @@
 /** Host-agnostic shell session: browser WebSocket, Tauri IPC, or the in-WASM local shell. */
 
 export interface WasmApi {
-  WebTerminal: new (cols: number, rows: number) => {
+  WebTerminal: new (
+    cols: number,
+    rows: number,
+  ) => {
     ingest(bytes: Uint8Array): void;
     resize(cols: number, rows: number): void;
     take_replies(): string[];
     snapshot_json(): string;
   };
-  WebShell: new (cols: number, rows: number) => {
+  WebShell: new (
+    cols: number,
+    rows: number,
+  ) => {
     input(bytes: Uint8Array): Uint8Array;
     resize(cols: number, rows: number): void;
     exited(): boolean;
@@ -25,7 +31,7 @@ export interface Snapshot {
   cursor: { row: number; col: number; visible: boolean };
 }
 
-/** Bytes in/out of a shell. Implementations: WebSocket, Tauri, local. */
+/** Bytes in/out of a shell. Implementations: WebSocket, Tauri, worker, local. */
 export interface Transport {
   send(bytes: Uint8Array): void;
   resize(cols: number, rows: number): void;
@@ -33,7 +39,11 @@ export interface Transport {
   close(): void;
 }
 
-export function webSocketTransport(wasm: WasmApi, url: string, WS: typeof WebSocket = WebSocket): Transport {
+export function webSocketTransport(
+  wasm: WasmApi,
+  url: string,
+  WS: typeof WebSocket = WebSocket,
+): Transport {
   const ws = new WS(url);
   ws.binaryType = "arraybuffer";
   let out: (b: Uint8Array) => void = () => {};
@@ -51,43 +61,200 @@ export function webSocketTransport(wasm: WasmApi, url: string, WS: typeof WebSoc
   };
 }
 
+export interface SandboxTransportOptions {
+  /** Stable provider session ID; sent again on reconnect so a provider can resume it. */
+  sessionId?: string;
+  reconnectDelayMs?: number;
+  maxReconnects?: number;
+  WS?: typeof WebSocket;
+}
+
+/** Authenticated sandbox WebSocket with bounded reconnect and queued input. */
+export function sandboxTransport(
+  wasm: WasmApi,
+  url: string,
+  token: string,
+  options: SandboxTransportOptions = {},
+): Transport {
+  const WS = options.WS ?? WebSocket;
+  const endpoint = new URL(url);
+  if (!token || !["ws:", "wss:"].includes(endpoint.protocol)) {
+    throw new Error("sandbox transport requires a token and a WebSocket URL");
+  }
+  endpoint.searchParams.set("token", token);
+  if (options.sessionId) endpoint.searchParams.set("session", options.sessionId);
+  const delay = options.reconnectDelayMs ?? 500;
+  const maxReconnects = options.maxReconnects ?? 5;
+  let out: (bytes: Uint8Array) => void = () => {};
+  let closed = false;
+  let reconnects = 0;
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  let size: [number, number] | undefined;
+  const pending: Uint8Array[] = [];
+  let pendingBytes = 0;
+  let ws: WebSocket;
+  const connect = () => {
+    const socket = new WS(endpoint.href);
+    ws = socket;
+    socket.binaryType = "arraybuffer";
+    socket.onopen = () => {
+      if (socket !== ws || closed) return;
+      reconnects = 0;
+      if (size) socket.send(wasm.resize_frame(...size));
+      for (const bytes of pending) socket.send(bytes as Uint8Array<ArrayBuffer>);
+      pending.length = 0;
+      pendingBytes = 0;
+    };
+    socket.onmessage = (event: MessageEvent) => {
+      if (socket === ws && !closed && event.data instanceof ArrayBuffer)
+        out(new Uint8Array(event.data));
+    };
+    socket.onclose = () => {
+      if (socket === ws && !closed && reconnects < maxReconnects) {
+        reconnects += 1;
+        timer = setTimeout(connect, delay * Math.min(reconnects, 8));
+      }
+    };
+  };
+  connect();
+  return {
+    send: (bytes) => {
+      const owned = Uint8Array.from(bytes);
+      if (closed) return;
+      if (ws.readyState === WS.OPEN) ws.send(owned as Uint8Array<ArrayBuffer>);
+      else if (pendingBytes + owned.byteLength <= 1024 * 1024) {
+        pending.push(owned);
+        pendingBytes += owned.byteLength;
+      } else throw new Error("sandbox input queue exceeds 1 MiB");
+    },
+    resize: (cols, rows) => {
+      size = [cols, rows];
+      if (ws.readyState === WS.OPEN) ws.send(wasm.resize_frame(cols, rows));
+    },
+    onOutput: (cb) => (out = cb),
+    close: () => {
+      closed = true;
+      if (timer) clearTimeout(timer);
+      ws.close();
+    },
+  };
+}
+
 /** Tauri bridge; `invoke`/`listen` come from `@tauri-apps/api` so this package stays dependency-free. */
 export interface TauriBridge {
   invoke(cmd: string, args?: Record<string, unknown>): Promise<unknown>;
-  listen(
-    event: string,
-    cb: (e: { payload: { session: string; bytes: number[]; exit: number | null | undefined } }) => void,
-  ): Promise<() => void>;
+  /** Supply a `Channel` from `@tauri-apps/api/core` for streaming output. */
+  createChannel?(): { onmessage: (payload: TauriOutput) => void };
+  listen(event: string, cb: (e: { payload: TauriOutput }) => void): Promise<() => void>;
+}
+
+export interface TauriOutput {
+  session: string;
+  bytes: number[];
+  exit: number | null | undefined;
 }
 
 /** Talks to the `aphrody-shell-tauri` plugin (plugin commands are namespaced `plugin:aphrody-shell-tauri|`). */
-export function tauriTransport(bridge: TauriBridge, session = "default", cols = 80, rows = 24): Transport {
+export function tauriTransport(
+  bridge: TauriBridge,
+  session = "default",
+  cols = 80,
+  rows = 24,
+): Transport {
   const cmd = (name: string) => `plugin:aphrody-shell-tauri|${name}`;
   let out: (b: Uint8Array) => void = () => {};
   let unlisten: (() => void) | undefined;
-  const ready = bridge
-    .listen("aphrody-shell-output", ({ payload }) => {
-      if (payload.session === session && payload.bytes.length) out(Uint8Array.from(payload.bytes));
-    })
-    .then((u) => {
-      unlisten = u;
-      return bridge.invoke(cmd("aphrody_shell_open"), { session, cols, rows });
-    });
+  let closed = false;
+  const receive = (payload: TauriOutput) => {
+    if (!closed && payload.session === session && payload.bytes.length)
+      out(Uint8Array.from(payload.bytes));
+  };
+  const ready = bridge.createChannel
+    ? (() => {
+        const onOutput = bridge.createChannel!();
+        onOutput.onmessage = receive;
+        return bridge.invoke(cmd("aphrody_shell_open_channel"), { session, cols, rows, onOutput });
+      })()
+    : bridge
+        .listen("aphrody-shell-output", ({ payload }) => receive(payload))
+        .then((u) => {
+          unlisten = u;
+          if (!closed) return bridge.invoke(cmd("aphrody_shell_open"), { session, cols, rows });
+        });
   const after = (name: string, args: Record<string, unknown>) =>
-    void ready.then(() => bridge.invoke(cmd(name), { session, ...args }));
+    void ready.then(() => {
+      if (!closed || name === "aphrody_shell_close")
+        return bridge.invoke(cmd(name), { session, ...args });
+    });
   return {
     send: (b) => after("aphrody_shell_write", { bytes: Array.from(b) }),
     resize: (c, r) => after("aphrody_shell_resize", { cols: c, rows: r }),
     onOutput: (cb) => (out = cb),
     close: () => {
+      closed = true;
       unlisten?.();
       after("aphrody_shell_close", {});
     },
   };
 }
 
+export interface WorkerMessage {
+  type: "ready" | "output" | "exited" | "closed" | "error";
+  bytes?: ArrayBuffer;
+  message?: string;
+}
+
+export interface ShellWorker {
+  postMessage(message: unknown, transfer?: Transferable[]): void;
+  addEventListener(type: "message", listener: (event: MessageEvent<WorkerMessage>) => void): void;
+  terminate(): void;
+}
+
+/** OPFS-backed local shell. Its dedicated worker owns persistence and the shell engine. */
+export function workerTransport(
+  cols = 80,
+  rows = 24,
+  worker: ShellWorker = new Worker(new URL("./worker.ts", import.meta.url), {
+    type: "module",
+  }) as ShellWorker,
+): Transport {
+  let out: (bytes: Uint8Array) => void = () => {};
+  let closed = false;
+  worker.addEventListener("message", ({ data }) => {
+    if (closed && data.type !== "closed") return;
+    if ((data.type === "ready" || data.type === "output") && data.bytes)
+      out(new Uint8Array(data.bytes));
+    else if (data.type === "error") {
+      out(new TextEncoder().encode(`\r\n${data.message ?? "worker error"}\r\n`));
+      closed = true;
+      worker.terminate();
+    } else if (data.type === "closed") worker.terminate();
+  });
+  worker.postMessage({ type: "init", cols, rows });
+  return {
+    send: (bytes) => {
+      if (closed) return;
+      const owned = Uint8Array.from(bytes);
+      worker.postMessage({ type: "input", bytes: owned.buffer }, [owned.buffer]);
+    },
+    resize: (c, r) => {
+      if (!closed) worker.postMessage({ type: "resize", cols: c, rows: r });
+    },
+    onOutput: (cb) => (out = cb),
+    close: () => {
+      if (closed) return;
+      closed = true;
+      worker.postMessage({ type: "close" });
+    },
+  };
+}
+
 /** Backend-less transport running the shell inside WASM. */
-export function localTransport(wasm: WasmApi, cols = 80, rows = 24): Transport & { snapshot(): Snapshot } {
+export function localTransport(
+  wasm: WasmApi,
+  cols = 80,
+  rows = 24,
+): Transport & { snapshot(): Snapshot } {
   const shell = new wasm.WebShell(cols, rows);
   let out: (b: Uint8Array) => void = () => {};
   return {

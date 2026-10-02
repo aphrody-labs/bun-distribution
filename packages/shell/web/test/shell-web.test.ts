@@ -1,7 +1,17 @@
 // SPDX-License-Identifier: Apache-2.0
 import { beforeAll, expect, test } from "bun:test";
 import { existsSync, readFileSync } from "node:fs";
-import { attach, localTransport, tauriTransport, type WasmApi } from "../src/index";
+import {
+  attach,
+  localTransport,
+  sandboxTransport,
+  tauriTransport,
+  workerTransport,
+  type ShellWorker,
+  type TauriOutput,
+  type WasmApi,
+  type WorkerMessage,
+} from "../src/index";
 
 const pkg = new URL("../pkg/", import.meta.url);
 const built = existsSync(new URL("aphrody_shell_web_bg.wasm", pkg));
@@ -47,4 +57,115 @@ test("tauri transport targets the plugin commands and filters by session", async
     "plugin:aphrody-shell-tauri|aphrody_shell_write",
     "plugin:aphrody-shell-tauri|aphrody_shell_resize",
   ]);
+});
+
+test("tauri channel transport passes a channel to the plugin", async () => {
+  const calls: { command: string; args?: Record<string, unknown> }[] = [];
+  const channel = { onmessage: (_payload: TauriOutput) => {} };
+  const t = tauriTransport({
+    invoke: async (command, args) => {
+      calls.push({ command, args });
+    },
+    createChannel: () => channel,
+    listen: async () => {
+      throw new Error("event fallback should not be used");
+    },
+  });
+  const got: number[][] = [];
+  t.onOutput((bytes) => got.push([...bytes]));
+  channel.onmessage({ session: "default", bytes: [65], exit: null });
+  channel.onmessage({ session: "other", bytes: [66], exit: null });
+  await Promise.resolve();
+  expect(got).toEqual([[65]]);
+  expect(calls[0]?.command).toBe("plugin:aphrody-shell-tauri|aphrody_shell_open_channel");
+  expect(calls[0]?.args?.onOutput).toBe(channel);
+  t.close();
+});
+
+test("worker transport transfers input and closes after worker flush", () => {
+  const messages: { type: string; bytes?: ArrayBuffer }[] = [];
+  let listener: (event: MessageEvent<WorkerMessage>) => void = () => {};
+  let terminated = false;
+  const worker: ShellWorker = {
+    addEventListener: (_type, cb) => {
+      listener = cb;
+    },
+    postMessage: (message) => {
+      messages.push(message as { type: string; bytes?: ArrayBuffer });
+    },
+    terminate: () => {
+      terminated = true;
+    },
+  };
+  const t = workerTransport(80, 20, worker);
+  const got: number[][] = [];
+  t.onOutput((bytes) => got.push([...bytes]));
+  listener({
+    data: { type: "ready", bytes: new Uint8Array([62]).buffer },
+  } as MessageEvent<WorkerMessage>);
+  t.send(new Uint8Array([65, 66]));
+  expect([...new Uint8Array(messages[1]!.bytes!)]).toEqual([65, 66]);
+  listener({
+    data: { type: "output", bytes: new Uint8Array([67]).buffer },
+  } as MessageEvent<WorkerMessage>);
+  t.close();
+  expect(terminated).toBe(false);
+  listener({ data: { type: "closed" } } as MessageEvent<WorkerMessage>);
+  expect(terminated).toBe(true);
+  expect(got).toEqual([[62], [67]]);
+  expect(messages.map((message) => message.type)).toEqual(["init", "input", "close"]);
+});
+
+test("sandbox transport authenticates, reconnects, and replays queued input", async () => {
+  class FakeSocket {
+    static OPEN = 1;
+    static sockets: FakeSocket[] = [];
+    readonly url: string;
+    readyState = 0;
+    binaryType = "";
+    sent: unknown[] = [];
+    onopen: (() => void) | null = null;
+    onmessage: ((event: { data: ArrayBuffer }) => void) | null = null;
+    onclose: (() => void) | null = null;
+    constructor(url: string) {
+      this.url = url;
+      FakeSocket.sockets.push(this);
+    }
+    send(value: unknown) {
+      this.sent.push(value);
+    }
+    close() {
+      this.readyState = 3;
+      this.onclose?.();
+    }
+    open() {
+      this.readyState = 1;
+      this.onopen?.();
+    }
+    drop() {
+      this.close();
+    }
+  }
+  const wasm = { resize_frame: (cols: number, rows: number) => `${cols}x${rows}` } as WasmApi;
+  const t = sandboxTransport(wasm, "wss://shell.example/ws", "token with space", {
+    sessionId: "session-1",
+    reconnectDelayMs: 1,
+    WS: FakeSocket as unknown as typeof WebSocket,
+  });
+  const first = FakeSocket.sockets[0]!;
+  expect(new URL(first.url).searchParams.get("token")).toBe("token with space");
+  expect(new URL(first.url).searchParams.get("session")).toBe("session-1");
+  t.resize(90, 25);
+  t.send(new Uint8Array([65]));
+  first.open();
+  expect(first.sent[0]).toBe("90x25");
+  expect([...(first.sent[1] as Uint8Array)]).toEqual([65]);
+  first.drop();
+  t.send(new Uint8Array([66]));
+  await Bun.sleep(10);
+  const second = FakeSocket.sockets[1]!;
+  expect(second.url).toBe(first.url);
+  second.open();
+  expect([...(second.sent[1] as Uint8Array)]).toEqual([66]);
+  t.close();
 });

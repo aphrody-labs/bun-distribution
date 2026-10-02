@@ -11,32 +11,35 @@ const ready =
 
 const page = `<!doctype html><title>pending</title><pre id="result">pending</pre><script type="module">
 import init, { opfs_vfs_conformance } from "/pkg/aphrody_shell_web.js";
+import { workerTransport } from "/src/index.js";
 try { await init(); opfs_vfs_conformance(); }
 catch (error) { document.title = "error"; document.getElementById("result").textContent = String(error); throw error; }
 const phase = sessionStorage.getItem("opfs-phase") ?? "write";
 const worker = new Worker("/src/worker.js", { type: "module" });
 const encoder = new TextEncoder();
 const decoder = new TextDecoder();
-worker.onmessage = ({ data }) => {
+let greeted = false;
+worker.addEventListener("message", ({ data }) => {
   if (data.type === "error") {
     document.title = "error";
     document.getElementById("result").textContent = data.message;
-  } else if (data.type === "ready") {
-    const bytes = encoder.encode(phase === "write" ? "echo persisted > testfile\\r" : "cat testfile\\r");
-    worker.postMessage({ type: "input", bytes: bytes.buffer }, [bytes.buffer]);
-  } else if (data.type === "output") {
-    if (phase === "write") worker.postMessage({ type: "close" });
-    else {
-      const text = decoder.decode(data.bytes);
-      document.title = text.includes("persisted\\r\\n") ? "done" : "error";
-      document.getElementById("result").textContent = text;
-    }
   } else if (data.type === "closed") {
     sessionStorage.setItem("opfs-phase", "read");
     location.reload();
   }
-};
-worker.postMessage({ type: "init", cols: 80, rows: 20 });
+});
+const transport = workerTransport(80, 20, worker);
+transport.onOutput((bytes) => {
+  if (!greeted) {
+    greeted = true;
+    transport.send(encoder.encode(phase === "write" ? "echo persisted > testfile\\r" : "cat testfile\\r"));
+  } else if (phase === "write") transport.close();
+  else {
+    const text = decoder.decode(bytes);
+    document.title = text.includes("persisted\\r\\n") ? "done" : "error";
+    document.getElementById("result").textContent = text;
+  }
+});
 </script>`;
 
 test.skipIf(!ready)(
@@ -51,6 +54,12 @@ test.skipIf(!ready)(
           return new Response(page, { headers: { "content-type": "text/html" } });
         if (pathname === "/src/worker.js") {
           const source = await Bun.file(new URL("../src/worker.ts", import.meta.url)).text();
+          return new Response(transpiler.transformSync(source), {
+            headers: { "content-type": "text/javascript" },
+          });
+        }
+        if (pathname === "/src/index.js") {
+          const source = await Bun.file(new URL("../src/index.ts", import.meta.url)).text();
           return new Response(transpiler.transformSync(source), {
             headers: { "content-type": "text/javascript" },
           });
@@ -71,7 +80,9 @@ test.skipIf(!ready)(
         ? "/mnt/c/Windows/System32/cmd.exe"
         : "cmd.exe";
       const tempOutput = Bun.spawnSync([command, "/c", "echo", "%TEMP%"]).stdout.toString();
-      const windowsTemp = tempOutput.split(/\r?\n/).map((line) => line.trim())
+      const windowsTemp = tempOutput
+        .split(/\r?\n/)
+        .map((line) => line.trim())
         .findLast((line) => /^[A-Za-z]:\\/.test(line));
       if (!windowsTemp) throw new Error("Could not find a Windows temporary directory");
       profile = `${windowsTemp}\\aphrody-opfs-chrome-${cdpPort}`;
