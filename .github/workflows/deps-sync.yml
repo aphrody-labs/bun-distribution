@@ -1,0 +1,27 @@
+# SPDX-License-Identifier: Apache-2.0
+name: deps-sync
+on:
+  schedule:
+    - cron: "17 5 * * 1"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
+      - name: Plan and fact sheet (report only, never applies)
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CONTEXT7_API_KEY: ${{ secrets.CONTEXT7_API_KEY }}
+        run: |
+          bun packages/infra/workspace/src/ops.ts deps-sync plan --root .
+          bun packages/infra/workspace/src/ops.ts deps-sync facts --root .
+      - uses: actions/upload-artifact@v4
+        with:
+          name: deps-facts
+          path: docs/research/workspace/deps/
+          if-no-files-found: ignore

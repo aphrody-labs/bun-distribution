@@ -1,0 +1,94 @@
+{
+  "seen": {
+    "tauri": "3.0.0-alpha.4",
+    "wasm-bindgen": "0.2.128",
+    "rio-vt": "0.5.28",
+    "portable-pty": "0.8",
+    "lexical": "0.52.0",
+    "react-table": "9.2.4",
+    "sentry-nextjs": "11.0.0",
+    "next": "16.3.5",
+    "discord.js": "14.27.0",
+    "bun": "1.4.2",
+    "uv": "0.12.21"
+  },
+  "runs": [
+    {
+      "date": "2026-10-02",
+      "changes": [
+        {
+          "ecosystem": "cargo",
+          "name": "tauri",
+          "from": "3.0.0-alpha.3",
+          "to": "3.0.0-alpha.4"
+        },
+        {
+          "ecosystem": "cargo",
+          "name": "tauri-runtime-wry",
+          "from": "3.0.0-alpha.3",
+          "to": "3.0.0-alpha.4"
+        },
+        {
+          "ecosystem": "cargo",
+          "name": "tauri-build",
+          "from": "3.0.0-alpha.2",
+          "to": "3.0.0-alpha.3"
+        },
+        {
+          "ecosystem": "cargo",
+          "name": "tauri-plugin",
+          "from": "3.0.0-alpha.2",
+          "to": "3.0.0-alpha.3"
+        },
+        {
+          "ecosystem": "cargo",
+          "name": "tauri-runtime-cef",
+          "from": "3.0.0-alpha.4",
+          "to": "3.0.0-alpha.5"
+        },
+        {
+          "ecosystem": "tool",
+          "name": "uv",
+          "from": "0.12.17",
+          "to": "0.12.21"
+        },
+        {
+          "ecosystem": "npm",
+          "name": "lexical",
+          "from": "0.45.0",
+          "to": "0.52.0"
+        },
+        {
+          "ecosystem": "npm",
+          "name": "@sentry/nextjs",
+          "from": "10.75.3",
+          "to": "11.0.0"
+        },
+        {
+          "ecosystem": "npm",
+          "name": "@tanstack/react-table",
+          "from": "8.21.3",
+          "to": "9.2.4"
+        },
+        {
+          "ecosystem": "npm",
+          "name": "@colyseus/core",
+          "from": "0.17.51",
+          "to": "0.18.17"
+        },
+        {
+          "ecosystem": "npm",
+          "name": "@types/node",
+          "from": "25.9.8",
+          "to": "26.6.3"
+        },
+        {
+          "ecosystem": "npm",
+          "name": "@cloudflare/workers-types",
+          "from": "4.20260702.1",
+          "to": "5.20260928.1"
+        }
+      ]
+    }
+  ]
+}

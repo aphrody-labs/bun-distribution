@@ -229,6 +229,9 @@ if (operation === "tauri-sync") {
 if (operation === "upstream-sources") {
   process.exit(await (await import("./upstream-sources.ts")).runUpstreamSources(rest));
 }
+if (operation === "deps-sync") {
+  process.exit(await (await import("./deps-sync.ts")).runDepsSync(rest));
+}
 if (operation === "stack-dedup") {
   process.exit(await (await import("./stack-dedup.ts")).runStackDedup(rest));
 }
