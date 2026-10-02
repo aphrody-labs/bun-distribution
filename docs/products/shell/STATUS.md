@@ -27,8 +27,9 @@ WASM release build, six Bun tests, TypeScript typecheck and real Tauri LOCAL/REM
 
 ## Not built yet (wave B-D of the plan)
 
-Nushell wasm spike (T9), cloud adapter (T12), native/server sandbox session resume (T8)
-and UI transport selection (T13).
+Cloud adapter (T12), native/server sandbox session resume (T8) and UI transport
+selection (T13). The [T9 Nushell wasm spike](../../research/shell/nushell-wasm.md)
+passed compile checks but deferred browser integration.
 Staying native on purpose: Nushell, TUI, PTY.
 
 ## Fact-check against upstreams
@@ -37,7 +38,7 @@ Staying native on purpose: Nushell, TUI, PTY.
 | --- | --- | --- |
 | brush-core 0.5.0 / brush-parser 0.4.0 | compile for wasm32-unknown-unknown (scratch check); upstream only smoke-tests wasip2 | candidate engine behind `ShellEngine`; unproven in a browser |
 | uutils | `uucore` and `uu_echo` 0.12.0 compile for wasm32; `uu_wc` 0.12.0 fails on `errno`. Their process stdout/filesystem entry points do not accept this shell's VFS/pipeline contract. | T7 uses small `own` implementations and records the source per command; no os-owner bump required. |
-| Nushell | no wasm32 target upstream | keep native; stream output to the web terminal |
+| Nushell | 0.116.0 parser, engine and command crates pass scratch wasm32 compile checks with default features off; browser execution and VFS integration remain unproven | keep native; stream output to the web terminal |
 | xterm.js | 6.0.0, canvas renderer removed, write callback gives flow control | default renderer |
 | ghostty-web | 0.4.0, no release since 2025-12 | optional renderer behind the same transport |
 | Tauri | v2.12.1 stable; v3 alpha.4 (2026-10-01) drops `macos-private-api`; workspace mixes alpha.2/3/4 | align the Tauri family in one owner-led bump, then drop `macOSPrivateApi` in the e2e config |
