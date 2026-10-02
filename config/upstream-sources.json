@@ -114,7 +114,7 @@
       "kind": "git",
       "url": "https://github.com/microsoft/WSL.git",
       "ref": "master",
-      "commit": "c34e75aea8dcc50c0c2f9e76b2de9b26a58e8b67",
+      "commit": "11c74d836cc76e45cbb8259cd4efcdb474920395",
       "pinned": false,
       "role": "reference"
     },
@@ -141,7 +141,7 @@
       "kind": "git",
       "url": "https://github.com/openai/codex.git",
       "ref": "main",
-      "commit": "d6c3b448a41311ece3255c52ec3dbfd9ff36f154",
+      "commit": "cb6da58876afed3ede0ab11084f67dd5394ecb48",
       "pinned": false,
       "role": "reference"
     },
@@ -159,7 +159,7 @@
       "kind": "git",
       "url": "https://github.com/run-llama/llama_index.git",
       "ref": "main",
-      "commit": "7e2c60a78ec27e8d146dfdd596778aea83c041d5",
+      "commit": "962940ddc079cc21701d28d1237c84c82a7c5164",
       "pinned": false,
       "role": "reference"
     },
@@ -168,7 +168,7 @@
       "kind": "git",
       "url": "https://github.com/BerriAI/litellm.git",
       "ref": "main",
-      "commit": "b4bb2a77a20231860d91220376a1ec2691481b8b",
+      "commit": "2b51f2f941248f65b7d696c7a7044345b859bb0d",
       "pinned": false,
       "role": "reference",
       "license": "MIT outside enterprise/; enterprise/ has separate terms",
@@ -188,7 +188,7 @@
       "kind": "git",
       "url": "https://github.com/ollama/ollama.git",
       "ref": "main",
-      "commit": "1abe35e6e6e777e858bbfbba283667ee8d516801",
+      "commit": "b0c1ca4f7549d7acdfa52a7dcffc934bc63a43ce",
       "pinned": false,
       "role": "reference"
     },
@@ -197,7 +197,7 @@
       "kind": "git",
       "url": "https://github.com/anomalyco/opencode.git",
       "ref": "dev",
-      "commit": "0112a92c416f5ad833d96e7a8308441f0a875d94",
+      "commit": "a79ecfe109294909a239c98fb89f02979d5aa10b",
       "pinned": false,
       "role": "reference"
     },
@@ -224,7 +224,7 @@
       "kind": "git",
       "url": "https://github.com/vllm-project/vllm.git",
       "ref": "main",
-      "commit": "ab5266769e702434a0968d47319d0731d8ccac35",
+      "commit": "89772ddb1f0d9a5858e55b1efefdac5912231b05",
       "pinned": false,
       "role": "reference"
     },

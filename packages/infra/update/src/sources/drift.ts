@@ -60,12 +60,20 @@ export async function driftRows(c: Ctx): Promise<DriftRow[]> {
   return rows;
 }
 
-export function cargoGitRemotes(c: Ctx): { url: string; pinned: string[]; head?: string; moved: boolean }[] {
+export type GitRemote = { url: string; pinned: string[]; head?: string; moved: boolean; how: "rev" | "tag" | "branch" | "transitive" };
+
+/** Cargo git dependencies of Cargo.lock. Only `rev`/`branch` pins declared in the root Cargo.toml can be "moved"; tag pins
+ *  are exact by definition and transitive ones belong to the ~/source consumer that declares them. */
+export function cargoGitRemotes(c: Ctx): GitRemote[] {
+  const root = c.read("Cargo.toml");
   const repos = gitSources(parseCargoLock(c.read("Cargo.lock")));
   return [...repos].map(([url, pins]) => {
     const head = lsRemote(url).head;
     const pinned = [...pins].filter(Boolean);
-    return { url, pinned: pinned.map((p) => p.slice(0, 10)), head: head?.slice(0, 10), moved: !!head && !pinned.some((p) => head.startsWith(p.slice(0, 10))) };
+    const line = root.split("\n").find((l) => l.includes(url) && /git\s*=/.test(l)) ?? "";
+    const how: GitRemote["how"] = !line ? "transitive" : /\btag\s*=/.test(line) ? "tag" : /\brev\s*=/.test(line) ? "rev" : "branch";
+    const behind = !!head && !pinned.some((p) => head.startsWith(p.slice(0, 10)));
+    return { url, pinned: pinned.map((p) => p.slice(0, 10)), head: head?.slice(0, 10), moved: behind && (how === "rev" || how === "branch"), how };
   });
 }
 
@@ -198,7 +206,7 @@ export async function runSources(c: Ctx, args: string[]): Promise<number> {
         behind += r.behind ? 1 : 0;
         console.log(`${r.behind ? "behind" : "ok    "} ${r.id.padEnd(26)} ${r.kind.padEnd(5)} ${r.pinned ? "pinned " : "tracked"} ${r.current.padEnd(12)} -> ${(r.latest ?? "?").padEnd(12)}${r.newerTag ? ` tag ${r.newerTag}` : ""}${r.patches ? ` patches:${r.patches}` : ""}${r.note ? ` (${r.note})` : ""}`);
       }
-      for (const g of cargoGitRemotes(c)) console.log(`${g.moved ? "moved " : "ok    "} cargo-git ${g.url.replace("https://github.com/", "")} pinned ${g.pinned.join(",") || "(tag)"} head ${g.head ?? "?"}`);
+      for (const g of cargoGitRemotes(c)) console.log(`${g.moved ? "moved " : "ok    "} cargo-git ${g.url.replace("https://github.com/", "")} ${g.how} ${g.pinned.join(",") || "(tag)"} head ${g.head ?? "?"}`);
       console.log(`drift  ${behind} source(s) behind their remote`);
       return 0;
     }
@@ -235,6 +243,7 @@ export async function runSources(c: Ctx, args: string[]): Promise<number> {
       const root = resolveSourceRoot(c.root, manifest, undefined);
       const withDeps = rest.includes("--deps");
       let failed = 0;
+      let text = c.read("config/upstream-sources.json");
       for (const s of manifest.sources.filter((x) => x.kind === "git" && !x.pinned)) {
         const dir = join(root, s.id);
         if (!existsSync(join(dir, ".git"))) { console.log(`skip   ${s.id} (no checkout)`); continue; }
@@ -243,8 +252,11 @@ export async function runSources(c: Ctx, args: string[]): Promise<number> {
         if (!c.apply) { console.log(`would  pull ${s.id}`); continue; }
         const r = git(["pull", "--ff-only", "--quiet"], dir);
         if (r.status !== 0) { failed++; console.log(`fail   ${s.id}: ${r.stderr.trim().split("\n")[0]}`); continue; }
-        console.log(`pulled ${s.id} ${git(["rev-parse", "--short=10", "HEAD"], dir).stdout.trim()}`);
+        const head = git(["rev-parse", "HEAD"], dir).stdout.trim();
+        console.log(`pulled ${s.id} ${head.slice(0, 10)}`);
+        if (s.commit && s.commit !== head) text = replaceInBlock(text, s.id, "commit", s.commit, head); // keep the recorded observation current
       }
+      if (c.apply) c.write("config/upstream-sources.json", text);
       return failed ? 1 : 0;
     }
     case "repo": for (const l of repoState(c.root)) console.log(`repo   ${l}`); return 0;

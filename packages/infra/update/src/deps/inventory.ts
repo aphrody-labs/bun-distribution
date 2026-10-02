@@ -105,7 +105,13 @@ class Cache {
 async function cachedText(cache: Cache, url: string, init?: RequestInit): Promise<string | undefined> {
   const hit = cache.get(url);
   if (hit !== undefined) return hit === "\u0000404" ? undefined : hit;
-  const res = await fetch(url, { ...init, headers: { ...UA, ...(init?.headers as object) }, signal: AbortSignal.timeout(30_000) }).catch(() => undefined);
+  let res: Response | undefined;
+  for (let attempt = 0; attempt < 5; attempt++) {
+    res = await fetch(url, { ...init, headers: { ...UA, ...(init?.headers as object) }, signal: AbortSignal.timeout(30_000) }).catch(() => undefined);
+    if (res && res.status !== 429 && res.status < 500) break;
+    const wait = Math.min(60, Number(res?.headers.get("retry-after")) || 2 ** attempt * 2); // honour Retry-After, else exponential backoff
+    await new Promise((r) => setTimeout(r, wait * 1000));
+  }
   if (!res) return undefined;
   if (res.status === 404) { cache.set(url, "\u0000404"); return undefined; }
   if (!res.ok) return undefined;
@@ -246,7 +252,7 @@ export async function inventory(root: string, opts: { pythonRoots?: string[]; lo
   const bunNames = [...new Set(bunDeps.map((d) => d.name))];
   log(`bun: ${bunDeps.length} resolved packages (${bunNames.length} names), querying npm`);
   const npm = new Map<string, Awaited<ReturnType<typeof npmInfo>>>();
-  await pool(bunNames, 24, async (n) => { npm.set(n, await npmInfo(cache, n)); });
+  await pool(bunNames, 8, async (n) => { npm.set(n, await npmInfo(cache, n)); });
   const declared = new Set<string>();
   for (const f of walk(root, (p) => p.endsWith("package.json"))) {
     try {
@@ -263,7 +269,7 @@ export async function inventory(root: string, opts: { pythonRoots?: string[]; lo
   const pyRoots = [root, ...(opts.pythonRoots ?? [])].filter((r) => existsSync(r));
   const py = new Map<string, Dep>();
   for (const r of pyRoots) {
-    for (const f of walk(r, (p) => /(^|\/)(requirements[^/]*\.txt|uv\.lock)$/.test(p))) {
+    for (const f of walk(r, (p) => /(^|\/)(requirements[^/]*\.txt|uv\.lock)$/.test(p) && !p.startsWith(join(r, "docs") + "/")) /* docs/ holds vendored reference copies, never installed */) {
       const text = readFileSync(f, "utf8");
       for (const d of f.endsWith("uv.lock") ? parseUvLock(text) : parseRequirements(text)) py.set(`${d.name}@${d.version}`, { ecosystem: "PyPI", ...d });
     }
@@ -283,13 +289,23 @@ export async function inventory(root: string, opts: { pythonRoots?: string[]; lo
 }
 
 export function summarise(inv: Inventory, root: string): string {
+  const holdFile = join(root, "config/deps/advisory-holds.json");
+  const holds: { ecosystem: string; name: string; reason: string }[] = existsSync(holdFile) ? JSON.parse(readFileSync(holdFile, "utf8")).holds ?? [] : [];
   const sect = (title: string, rows: Row[]) => {
     const behind = rows.filter((r) => r.behind);
     const direct = behind.filter((r) => r.direct);
     const vuln = rows.filter((r) => r.vulns?.length);
     const bad = rows.filter((r) => r.yanked || r.deprecated);
     const lines = [`## ${title}`, "", `- resolved: ${rows.length}, behind latest: ${behind.length} (direct: ${direct.length}), with advisories: ${vuln.length}, yanked/deprecated: ${bad.length}`, ""];
-    if (vuln.length) lines.push("Advisories:", ...vuln.slice(0, 25).map((r) => `- ${r.name} ${r.version}: ${r.vulns!.slice(0, 3).join(", ")}${r.latest ? ` (latest ${r.latest})` : ""}`), "");
+    const held = (r: Row) => holds.find((h) => h.ecosystem === r.ecosystem && h.name === r.name);
+    const open = vuln.filter((r) => !held(r));
+    const fixable = open.filter((r) => r.latest && cmpVersion(r.version, r.latest) < 0);
+    const unfixed = open.filter((r) => !fixable.includes(r));
+    const fmt = (r: Row) => `- ${r.name} ${r.version}: ${r.vulns!.slice(0, 3).join(", ")}${r.latest ? ` (latest ${r.latest})` : ""}`;
+    if (fixable.length) lines.push("Open advisories with a newer release (bump or replace the consumer):", ...fixable.slice(0, 40).map(fmt), "");
+    if (unfixed.length) lines.push("Open advisories with no newer release:", ...unfixed.slice(0, 40).map(fmt), "");
+    const heldRows = vuln.filter((r) => held(r));
+    if (heldRows.length) lines.push("Held advisories (reason in `config/deps/advisory-holds.json`):", ...heldRows.slice(0, 60).map((r) => `${fmt(r)} - ${held(r)!.reason}`), "");
     if (bad.length) lines.push("Yanked or deprecated:", ...bad.slice(0, 25).map((r) => `- ${r.name} ${r.version}${r.deprecated ? `: ${r.deprecated.slice(0, 100)}` : " (yanked)"}`), "");
     if (direct.length) lines.push("Direct dependencies behind latest:", ...direct.slice(0, 60).map((r) => `- ${r.name} ${r.version} -> ${r.latest}`), "");
     return lines;

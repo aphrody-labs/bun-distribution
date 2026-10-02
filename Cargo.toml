@@ -398,7 +398,7 @@ sys-locale = "0.3.2"
 rars = "0.9.4"
 zip = { version = "8.6.0", features = ["deflate"] }
 futures-channel = "0.3.34"
-hf-hub = { version = "1.1.0", git = "https://github.com/huggingface/hf-hub", rev = "e88c9efe6d38bb370008ba0f5281249210c52176" }
+hf-hub = { version = "1.1.0", git = "https://github.com/huggingface/hf-hub", rev = "473de9430b0fbc544fb1d91102180eb713f8dc87" }
 eventsource-stream = "0.2.3"
 encoding_rs = "0.8.41"
 enumflags2 = "0.7.12"
