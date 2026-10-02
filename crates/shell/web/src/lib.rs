@@ -7,6 +7,7 @@
 //! all, in which case [`WebShell`] runs the in-process [`local::LocalShell`].
 
 pub mod local;
+mod syntax;
 pub mod wire;
 
 use aphrody_terminal_core::TerminalState;

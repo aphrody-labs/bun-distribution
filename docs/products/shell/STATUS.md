@@ -11,7 +11,7 @@ Evidence: repo read, native tests, wasm32 checks, a real Chrome run and a real T
 | VT state | `aphrody-terminal-core` (rio-vt 0.5.28) | real, tested | native, wasm32 |
 | Session seam | `aphrody-shell-session` | real, tested; `LocalShell` implements it and `LocalEngine` creates sessions | native, wasm32 (checked) |
 | Virtual FS | `aphrody-shell-vfs` (`MemVfs`, conformance) | real, tested; `LocalShell` uses it for cwd and file commands | native, wasm32 (checked) |
-| Web bindings | `aphrody-shell-web` (`WebTerminal`, `WebShell`, `LocalShell`) | partial T3: quoting, env expansion, cwd and file commands; pipes, redirects, conditionals and globbing open | wasm32 (checked) |
+| Web bindings | `aphrody-shell-web` (`WebTerminal`, `WebShell`, `LocalShell`) | T3: session/VFS engine, quoting, env expansion, history recall, cwd, globbing, pipes, redirects, conditionals and command registry; native tests and generated WASM smoke pass | wasm32 (built) |
 | TS client | `@aphrody/shell-web` (WebSocket, Tauri, local transports) | real, tested in Bun and headless Chrome | web |
 | PTY + WebSocket server | `aphrody-terminal-backend` (auth, Origin/Host, session/idle/frame/output limits) | real, tested | native only |
 | Tauri plugin | `aphrody-shell-tauri` (`open`, `open_channel`, `write`, `resize`, `close`) | real, tested, wired in `crates/ui/app` | native (Tauri 3 alpha.3) |
@@ -22,7 +22,7 @@ Evidence: repo read, native tests, wasm32 checks, a real Chrome run and a real T
 
 ## Not built yet (wave B-D of the plan)
 
-Remaining `LocalShell` grammar and command registry (T3), OPFS `Vfs` + worker (T5), wasm coreutils (T7), Nushell wasm spike (T9),
+OPFS `Vfs` + worker (T5), wasm coreutils (T7), Nushell wasm spike (T9),
 `SandboxHost` + cloud adapter (T11-T12), worker/sandbox TS transports (T8), UI transport selection (T13), gates (T14).
 Staying native on purpose: Nushell, TUI, PTY.
 

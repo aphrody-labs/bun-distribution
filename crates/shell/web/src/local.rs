@@ -7,9 +7,21 @@
 
 use aphrody_shell_session::{SessionError, ShellEngine, ShellSession, SpawnSpec, check_size};
 use aphrody_shell_vfs::{FileKind, MemVfs, Vfs, path};
-use std::collections::BTreeMap;
+use std::{collections::BTreeMap, rc::Rc};
+
+mod execute;
 
 const PROMPT: &str = "aphrody> ";
+
+/// A command that can be registered in the local WASM shell.
+pub trait ShellCommand {
+    /// Execute with expanded arguments and pipeline input; return raw output bytes.
+    ///
+    /// # Errors
+    /// Returns a displayable command failure, used by `&&` and `||`.
+    fn run(&self, shell: &mut LocalShell, args: &[String], stdin: &[u8])
+    -> Result<Vec<u8>, String>;
+}
 
 /// Factory for isolated local sessions backed by `MemVfs`.
 #[derive(Default)]
@@ -39,7 +51,10 @@ impl ShellEngine for LocalEngine {
 pub struct LocalShell {
     line: String,
     history: Vec<String>,
+    history_index: Option<usize>,
+    escape: String,
     env: BTreeMap<String, String>,
+    commands: BTreeMap<String, Rc<dyn ShellCommand>>,
     cwd: Vec<u8>,
     vfs: Box<dyn Vfs>,
     output: Vec<u8>,
@@ -65,7 +80,10 @@ impl LocalShell {
             Self {
                 line: String::new(),
                 history: Vec::new(),
+                history_index: None,
+                escape: String::new(),
                 env: BTreeMap::new(),
+                commands: BTreeMap::new(),
                 cwd: b"/".to_vec(),
                 vfs,
                 output: Vec::new(),
@@ -82,6 +100,28 @@ impl LocalShell {
         self.exited
     }
 
+    /// Register or replace a command by name.
+    pub fn register_command(&mut self, name: impl Into<String>, command: Rc<dyn ShellCommand>) {
+        self.commands.insert(name.into(), command);
+    }
+
+    /// Mutable filesystem access for a registered command.
+    pub fn vfs(&mut self) -> &mut dyn Vfs {
+        self.vfs.as_mut()
+    }
+
+    /// Current absolute directory for a registered command.
+    #[must_use]
+    pub fn cwd(&self) -> &[u8] {
+        &self.cwd
+    }
+
+    /// Environment for a registered command.
+    #[must_use]
+    pub fn environment(&self) -> &BTreeMap<String, String> {
+        &self.env
+    }
+
     /// Feeds typed input and returns the bytes to render.
     pub fn input(&mut self, bytes: &[u8]) -> Vec<u8> {
         if self.exited {
@@ -89,10 +129,23 @@ impl LocalShell {
         }
         let mut out = String::new();
         for ch in String::from_utf8_lossy(bytes).chars() {
+            if ch == '\u{1b}' || !self.escape.is_empty() {
+                self.escape.push(ch);
+                if self.escape.len() == 3 {
+                    match self.escape.as_str() {
+                        "\u{1b}[A" => self.recall(true, &mut out),
+                        "\u{1b}[B" => self.recall(false, &mut out),
+                        _ => {},
+                    }
+                    self.escape.clear();
+                }
+                continue;
+            }
             match ch {
                 '\r' | '\n' => {
                     out.push_str("\r\n");
                     let line = std::mem::take(&mut self.line);
+                    self.history_index = None;
                     self.run(line.trim(), &mut out);
                     if !self.exited {
                         out.push_str(PROMPT);
@@ -100,16 +153,19 @@ impl LocalShell {
                 },
                 '\u{7f}' | '\u{8}' => {
                     if self.line.pop().is_some() {
+                        self.history_index = None;
                         out.push_str("\u{8} \u{8}");
                     }
                 },
                 '\u{3}' => {
                     self.line.clear();
+                    self.history_index = None;
                     out.push_str("^C\r\n");
                     out.push_str(PROMPT);
                 },
                 c if !c.is_control() => {
                     self.line.push(c);
+                    self.history_index = None;
                     out.push(c);
                 },
                 _ => {},
@@ -118,82 +174,31 @@ impl LocalShell {
         out.into_bytes()
     }
 
+    fn recall(&mut self, previous: bool, out: &mut String) {
+        if self.history.is_empty() {
+            return;
+        }
+        let next = if previous {
+            self.history_index.map_or(self.history.len() - 1, |i| i.saturating_sub(1))
+        } else {
+            self.history_index.map_or(self.history.len(), |i| i + 1)
+        };
+        self.history_index = (next < self.history.len()).then_some(next);
+        let replacement = self.history_index.map_or("", |i| self.history[i].as_str());
+        out.push_str("\r\x1b[2K");
+        out.push_str(PROMPT);
+        out.push_str(replacement);
+        self.line = replacement.to_owned();
+    }
+
     fn run(&mut self, line: &str, out: &mut String) {
         if line.is_empty() {
             return;
         }
         self.history.push(line.to_owned());
-        let words = match tokenize(line, &self.env) {
-            Ok(words) => words,
-            Err(error) => {
-                out.push_str(&format!("{error}\r\n"));
-                return;
-            },
-        };
-        let cmd = words.first().map_or("", String::as_str);
-        let args: Vec<&str> = words.iter().skip(1).map(String::as_str).collect();
-        match cmd {
-            "help" => out.push_str("builtins: help echo clear env set history version exit cd pwd ls cat mkdir rm cp mv touch\r\n"),
-            "echo" => {
-                out.push_str(&args.join(" "));
-                out.push_str("\r\n");
-            },
-            "clear" => out.push_str("\x1b[2J\x1b[H"),
-            "version" => {
-                out.push_str(env!("CARGO_PKG_VERSION"));
-                out.push_str("\r\n");
-            },
-            "history" => {
-                for (i, entry) in self.history.iter().enumerate() {
-                    out.push_str(&format!("{:>4}  {entry}\r\n", i + 1));
-                }
-            },
-            "set" => match args.as_slice() {
-                [name, value @ ..] => {
-                    self.env.insert((*name).to_owned(), value.join(" "));
-                },
-                [] => out.push_str("usage: set NAME [VALUE...]\r\n"),
-            },
-            "env" => {
-                for (k, v) in &self.env {
-                    out.push_str(&format!("{k}={v}\r\n"));
-                }
-            },
-            "pwd" => out.push_str(&format!("{}\r\n", String::from_utf8_lossy(&self.cwd))),
-            "cd" => {
-                let target = args.first().copied().unwrap_or("/");
-                match self.resolve(target).and_then(|p| {
-                    self.vfs.stat(&p).map_err(|e| e.to_string()).and_then(|stat| {
-                        if stat.kind == FileKind::Dir { Ok(p) } else { Err("not a directory".into()) }
-                    })
-                }) {
-                    Ok(p) => self.cwd = p,
-                    Err(e) => out.push_str(&format!("cd: {target}: {e}\r\n")),
-                }
-            },
-            "ls" => {
-                let target = args.first().copied().unwrap_or(".");
-                let result = self.resolve(target).and_then(|p| {
-                    let stat = self.vfs.stat(&p).map_err(|e| e.to_string())?;
-                    if stat.kind == FileKind::File { return Ok(format!("{target}\r\n")); }
-                    let entries = self.vfs.read_dir(&p).map_err(|e| e.to_string())?;
-                    Ok(entries.iter().map(|e| format!("{}\r\n", String::from_utf8_lossy(&e.name))).collect())
-                });
-                match result { Ok(s) => out.push_str(&s), Err(e) => out.push_str(&format!("ls: {target}: {e}\r\n")) }
-            },
-            "cat" | "mkdir" | "rm" | "touch" | "cp" | "mv" => {
-                match self.file_command(cmd, &args) {
-                    Ok(bytes) => out.push_str(&String::from_utf8_lossy(&bytes).replace('\n', "\r\n")),
-                    Err(e) => out.push_str(&format!("{cmd}: {e}\r\n")),
-                }
-            },
-            "exit" => {
-                self.exited = true;
-                out.push_str("bye\r\n");
-            },
-            other => out.push_str(&format!(
-                "{other}: command not found (local wasm shell; connect a backend for more)\r\n"
-            )),
+        match execute::run(self, line) {
+            Ok(bytes) => out.push_str(&String::from_utf8_lossy(&bytes).replace('\n', "\r\n")),
+            Err(error) => out.push_str(&format!("{error}\r\n")),
         }
     }
 
@@ -269,66 +274,12 @@ impl ShellSession for LocalShell {
     }
 }
 
-fn tokenize(line: &str, env: &BTreeMap<String, String>) -> Result<Vec<String>, String> {
-    let mut words = Vec::new();
-    let mut word = String::new();
-    let mut quote = None;
-    let mut started = false;
-    let mut chars = line.chars().peekable();
-    while let Some(ch) = chars.next() {
-        match ch {
-            '\\' if quote != Some('\'') => {
-                word.push(chars.next().ok_or("trailing escape")?);
-                started = true;
-            },
-            '\'' | '"' if quote == Some(ch) => quote = None,
-            '\'' | '"' if quote.is_none() => {
-                quote = Some(ch);
-                started = true;
-            },
-            '$' if quote != Some('\'') => {
-                let mut name = String::new();
-                while let Some(&c) = chars.peek() {
-                    if !(c.is_ascii_alphanumeric() || c == '_') {
-                        break;
-                    }
-                    name.push(c);
-                    chars.next();
-                }
-                if name.is_empty() {
-                    word.push('$');
-                } else {
-                    word.push_str(env.get(&name).map_or("", String::as_str));
-                }
-                started = true;
-            },
-            c if c.is_whitespace() && quote.is_none() => {
-                if started {
-                    words.push(std::mem::take(&mut word));
-                    started = false;
-                }
-            },
-            _ => {
-                word.push(ch);
-                started = true;
-            },
-        }
-    }
-    if quote.is_some() {
-        return Err("unterminated quote".into());
-    }
-    if started {
-        words.push(word);
-    }
-    Ok(words)
-}
-
 #[cfg(test)]
 mod tests {
     use aphrody_shell_session::{ShellEngine, ShellSession, SpawnSpec};
     use aphrody_terminal_core::TerminalState;
 
-    use super::{LocalEngine, LocalShell};
+    use super::{LocalEngine, LocalShell, ShellCommand};
 
     #[test]
     fn echo_set_env_and_exit_render_through_the_vt_core() {
@@ -394,5 +345,88 @@ mod tests {
         let output = String::from_utf8(shell.take_output()).unwrap();
         assert!(output.contains("/work\r\n"), "{output}");
         assert!(output.contains("hello\r\n"), "{output}");
+    }
+
+    #[test]
+    fn pipelines_redirects_and_conditionals_use_vfs_bytes() {
+        let (mut shell, _) = LocalShell::new();
+        let output = String::from_utf8(shell.input(
+            b"mkdir work\rcd work\recho 'a b' > file\recho second >> file\rcat < file | wc -l\rnope || echo recovered\rtrue && echo yes\rnope && echo skipped\rcat file\r",
+        )).unwrap();
+        assert!(output.contains("2\r\n"), "{output}");
+        assert!(output.contains("recovered\r\n"), "{output}");
+        assert!(output.contains("yes\r\n"), "{output}");
+        assert!(!output.contains("skipped\r\naphrody>"), "{output}");
+        assert!(output.contains("a b\r\nsecond\r\n"), "{output}");
+    }
+
+    #[test]
+    fn variable_expansion_occurs_after_prior_command_in_same_line() {
+        let (mut shell, _) = LocalShell::new();
+        let output = String::from_utf8(shell.input(b"set A ready && echo \"$A\"\r")).unwrap();
+        assert!(output.contains("ready\r\n"), "{output}");
+    }
+
+    #[test]
+    fn globbing_obeys_quotes_and_matches_vfs_entries() {
+        let (mut shell, _) = LocalShell::new();
+        shell.input(b"touch alpha.txt beta.txt gamma.md .hidden.txt\r");
+        let output =
+            String::from_utf8(shell.input(b"echo *.txt\recho '*.txt'\recho a?pha.txt\r")).unwrap();
+        assert!(output.contains("alpha.txt beta.txt\r\n"), "{output}");
+        assert!(output.contains("*.txt\r\n"), "{output}");
+        assert!(output.contains("alpha.txt\r\n"), "{output}");
+        assert!(!output.contains(".hidden.txt\r\n"), "{output}");
+    }
+
+    #[test]
+    fn arrow_keys_recall_history_across_input_chunks() {
+        let (mut shell, _) = LocalShell::new();
+        shell.input(b"echo first\recho second\r");
+        shell.input(b"\x1b[");
+        let recalled = String::from_utf8(shell.input(b"A")).unwrap();
+        assert!(recalled.ends_with("echo second"), "{recalled}");
+        let output = String::from_utf8(shell.input(b"\r")).unwrap();
+        assert!(output.contains("second\r\n"), "{output}");
+    }
+
+    #[test]
+    fn registered_command_receives_pipeline_bytes() {
+        struct Upper;
+        impl ShellCommand for Upper {
+            fn run(
+                &self,
+                _: &mut LocalShell,
+                _: &[String],
+                stdin: &[u8],
+            ) -> Result<Vec<u8>, String> {
+                Ok(stdin.to_ascii_uppercase())
+            }
+        }
+        let (mut shell, _) = LocalShell::new();
+        shell.register_command("upper", std::rc::Rc::new(Upper));
+        let output = String::from_utf8(shell.input(b"echo hello | upper\r")).unwrap();
+        assert!(output.contains("HELLO\r\n"), "{output}");
+    }
+
+    #[test]
+    fn composed_commands_render_through_terminal_state() {
+        let (mut shell, greeting) = LocalShell::new();
+        let mut terminal = TerminalState::new(80, 14);
+        terminal.ingest(&greeting);
+        terminal.ingest(&shell.input(b"echo alpha > file\rcat file | wc -l\r"));
+        let screen = terminal.snapshot().lines.join("\n");
+        assert!(screen.contains("1"), "{screen}");
+        assert!(!screen.contains("command not found"), "{screen}");
+    }
+
+    #[test]
+    fn malformed_composition_reports_error_without_panicking() {
+        let (mut shell, _) = LocalShell::new();
+        let output =
+            String::from_utf8(shell.input(b"echo ok |\recho >\recho 'unterminated\r")).unwrap();
+        assert!(output.contains("empty pipeline segment"), "{output}");
+        assert!(output.contains("missing redirect path"), "{output}");
+        assert!(output.contains("unterminated quote"), "{output}");
     }
 }
