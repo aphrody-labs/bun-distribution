@@ -2,7 +2,7 @@
 //! Resolve this machine's local AI environment and publish it under the
 //! canonical `APHRODY_AI_*` names ([`aphrody_config::ai_env`]).
 //!
-//! Writer side of the `../aphrody-infra/config/local-ai.json` contract: never
+//! Writer side of the root `config/local-ai.json` contract: never
 //! an alias and never a secret value.
 
 use std::path::PathBuf;
@@ -29,7 +29,7 @@ fn plain(canonical: CanonicalEnv, value: Option<String>) -> ResolvedVar {
 /// The binary reachable from this running process: an explicit env override,
 /// else the executable currently running (for [`ai_env::BIN`]) or a same-named
 /// sibling of it (for [`ai_env::MCP_BIN`]), else `PATH` — the lookup order
-/// `../aphrody-infra/config/local-ai.json`'s `binaries.*.lookup` documents.
+/// `config/local-ai.json`'s `binaries.*.lookup` documents.
 fn resolve_binary(
     canonical: CanonicalEnv,
     sibling_name: &str,
@@ -321,20 +321,13 @@ mod tests {
         assert_eq!(json["schemaVersion"], 1);
     }
 
-    /// Cross-checks the emitted names against
-    /// `../aphrody-infra/config/local-ai.json` when that sibling checkout is
-    /// present. Skips cleanly otherwise.
+    /// Cross-checks the emitted names against the repository's canonical
+    /// `config/local-ai.json` contract.
     #[test]
-    fn matches_the_aphrody_infra_contract_when_present() {
+    fn matches_the_root_local_ai_contract() {
         let candidate = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
-            .join("../../../../aphrody-infra/config/local-ai.json");
-        let Ok(raw) = std::fs::read_to_string(&candidate) else {
-            eprintln!(
-                "skipping: {} not found (aphrody-infra is a sibling checkout)",
-                candidate.display()
-            );
-            return;
-        };
+            .join("../../../config/local-ai.json");
+        let raw = std::fs::read_to_string(&candidate).expect("root local AI contract exists");
         let contract: serde_json::Value = serde_json::from_str(&raw).expect("valid JSON");
         let mut expected = BTreeSet::new();
         for section in ["binaries", "gateways", "capabilities"] {
@@ -357,4 +350,3 @@ mod tests {
         assert_eq!(actual, expected);
     }
 }
-
