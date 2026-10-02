@@ -98,9 +98,10 @@ export async function runUiDedupManifest(args: string[]): Promise<number> {
 
   // Cluster 3
   // Monorepo layout first (`crates/ui/app`); the legacy aphrody-ui checkout keeps `crates/aphrody-app`.
-  const uiDistDir = ["crates/ui/app/ui-dist", "crates/aphrody-app/ui-dist"]
-    .map((path) => at(path))
-    .find((path) => existsSync(path)) ?? at("crates/ui/app/ui-dist");
+  const uiDistDir =
+    ["crates/ui/app/ui-dist", "crates/aphrody-app/ui-dist"]
+      .map((path) => at(path))
+      .find((path) => existsSync(path)) ?? at("crates/ui/app/ui-dist");
   const uiDistFiles = await collectFiles(uiDistDir);
 
   // Cluster 10: the upstream SpaceUI showcase is now a pointer to its M3/Bun port.

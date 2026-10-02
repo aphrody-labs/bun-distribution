@@ -324,9 +324,9 @@ async function rootSnapshot(
                 ? { targetReason: "documentation-asset-over-10-mib-import-limit" }
                 : policyExcludedUpstreamDocumentation
                   ? { targetReason: "excluded-by-upstream-docs-import-policy" }
-                : spec.key === "upstream-openfox" && info.kind === "documentation"
-                  ? { targetReason: "source-license-unverified-no-copy" }
-                  : {}),
+                  : spec.key === "upstream-openfox" && info.kind === "documentation"
+                    ? { targetReason: "source-license-unverified-no-copy" }
+                    : {}),
     });
   }
   const summary = {

@@ -6,10 +6,12 @@ const DOMAIN_ORDER = [
   "bun",
   "compat",
   "os",
+  "shell",
   "interop",
   "infra",
   "ui",
   "web",
+  "google",
   "ai",
   "discord",
   "koharu",
@@ -78,8 +80,9 @@ export async function pipelineCatalog(root: string) {
     groups.set(domain, steps);
   }
   for (const domain of [
-    ...DOMAIN_ORDER,
-    ...[...groups.keys()].filter((d) => !DOMAIN_ORDER.includes(d)).toSorted(),
+    ...DOMAIN_ORDER.filter((domain) => domain !== "shenron"),
+    ...[...groups.keys()].filter((domain) => !DOMAIN_ORDER.includes(domain)).toSorted(),
+    "shenron",
   ]) {
     const steps = groups.get(domain);
     if (steps?.length)

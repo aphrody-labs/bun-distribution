@@ -114,13 +114,16 @@ function rustFacts(dir: string): { tests: boolean; todos: number } {
 
 function bunFacts(dir: string, manifest: Record<string, unknown>): { tests: boolean } {
   const scripts = (manifest.scripts ?? {}) as Record<string, string>;
-  if (typeof scripts.test === "string" && !/no test|exit 0/.test(scripts.test)) return { tests: true };
+  if (typeof scripts.test === "string" && !/no test|exit 0/.test(scripts.test))
+    return { tests: true };
   const found = walkFiles(dir, (name) => /\.(test|spec)\.[cm]?[jt]sx?$/.test(name));
   return { tests: found.length > 0 };
 }
 
 function cargoMetadata(root: string): CargoMetadata {
-  return JSON.parse(run("cargo", ["metadata", "--format-version", "1", "--no-deps"], root)) as CargoMetadata;
+  return JSON.parse(
+    run("cargo", ["metadata", "--format-version", "1", "--no-deps"], root),
+  ) as CargoMetadata;
 }
 
 function workspaceExcludes(root: string): string[] {
@@ -133,10 +136,15 @@ function bunWorkspaceDirs(root: string): string[] {
   const manifest = JSON.parse(readFileSync(join(root, "package.json"), "utf8")) as {
     workspaces?: string[] | { packages?: string[] };
   };
-  const patterns = Array.isArray(manifest.workspaces) ? manifest.workspaces : (manifest.workspaces?.packages ?? []);
+  const patterns = Array.isArray(manifest.workspaces)
+    ? manifest.workspaces
+    : (manifest.workspaces?.packages ?? []);
   const dirs = new Set<string>();
   for (const pattern of patterns) {
-    for (const hit of new Bun.Glob(`${pattern}/package.json`).scanSync({ cwd: root, onlyFiles: true })) {
+    for (const hit of new Bun.Glob(`${pattern}/package.json`).scanSync({
+      cwd: root,
+      onlyFiles: true,
+    })) {
       const dir = posix(dirname(hit));
       if (!dir.split("/").some((part) => SKIP_DIRS.has(part))) dirs.add(dir);
     }
@@ -144,13 +152,23 @@ function bunWorkspaceDirs(root: string): string[] {
   return [...dirs].sort();
 }
 
-export function collectUnits(root: string): { units: Unit[]; excludes: string[]; outside: string[] } {
+export function collectUnits(root: string): {
+  units: Unit[];
+  excludes: string[];
+  outside: string[];
+} {
   const meta = cargoMetadata(root);
   const units: Unit[] = [];
   for (const pkg of meta.packages) {
     const dir = dirname(pkg.manifest_path);
     const path = posix(relative(root, dir));
-    const kinds = [...new Set(pkg.targets.flatMap((t) => t.kind).filter((k) => !["test", "bench", "example", "custom-build"].includes(k)))].sort();
+    const kinds = [
+      ...new Set(
+        pkg.targets
+          .flatMap((t) => t.kind)
+          .filter((k) => !["test", "bench", "example", "custom-build"].includes(k)),
+      ),
+    ].sort();
     const facts = rustFacts(dir);
     units.push({
       ecosystem: "rust",
@@ -166,9 +184,15 @@ export function collectUnits(root: string): { units: Unit[]; excludes: string[];
     });
   }
   for (const path of bunWorkspaceDirs(root)) {
-    const manifest = JSON.parse(readFileSync(join(root, path, "package.json"), "utf8")) as Record<string, unknown>;
+    const manifest = JSON.parse(readFileSync(join(root, path, "package.json"), "utf8")) as Record<
+      string,
+      unknown
+    >;
     const bin = manifest.bin;
-    const kinds = [bin ? "bin" : "", manifest.exports || manifest.main || manifest.module ? "lib" : ""].filter(Boolean);
+    const kinds = [
+      bin ? "bin" : "",
+      manifest.exports || manifest.main || manifest.module ? "lib" : "",
+    ].filter(Boolean);
     units.push({
       ecosystem: "bun",
       name: String(manifest.name ?? path),
@@ -182,7 +206,10 @@ export function collectUnits(root: string): { units: Unit[]; excludes: string[];
       lastCommit: "",
     });
   }
-  const dates = lastCommitDates(root, units.map((u) => u.path));
+  const dates = lastCommitDates(
+    root,
+    units.map((u) => u.path),
+  );
   for (const unit of units) unit.lastCommit = dates.get(unit.path) ?? "uncommitted";
   units.sort((a, b) => a.domain.localeCompare(b.domain) || a.path.localeCompare(b.path));
 
@@ -200,7 +227,8 @@ const cell = (s: string): string => s.replaceAll("|", "\\|");
 
 export function renderState(units: Unit[], excludes: string[], outside: string[]): string {
   const domains = [...new Set(units.map((u) => u.domain))].sort();
-  const count = (d: string, role: Unit["role"]) => units.filter((u) => u.domain === d && u.role === role).length;
+  const count = (d: string, role: Unit["role"]) =>
+    units.filter((u) => u.domain === d && u.role === role).length;
   const total = (role: Unit["role"]) => units.filter((u) => u.role === role).length;
   const out: string[] = [
     "<!-- SPDX-License-Identifier: Apache-2.0 -->",
@@ -234,7 +262,12 @@ export function renderState(units: Unit[], excludes: string[], outside: string[]
     "",
   ];
   for (const d of domains) {
-    out.push(`## ${d}`, "", "| Name | Path | Kind | Version | Targets | Tests | `todo!` | Last commit |", "| --- | --- | --- | --- | --- | --- | ---: | --- |");
+    out.push(
+      `## ${d}`,
+      "",
+      "| Name | Path | Kind | Version | Targets | Tests | `todo!` | Last commit |",
+      "| --- | --- | --- | --- | --- | --- | ---: | --- |",
+    );
     for (const u of units.filter((x) => x.domain === d)) {
       out.push(
         `| \`${cell(u.name)}\` | [${u.path}](../../../${u.path}) | ${u.ecosystem} ${u.role} | ${cell(u.version)} | ${u.kinds.join(", ")} | ${u.tests ? "yes" : "no"} | ${u.todos} | ${u.lastCommit} |`,
@@ -245,7 +278,17 @@ export function renderState(units: Unit[], excludes: string[], outside: string[]
   return `${out.join("\n").trimEnd()}\n`;
 }
 
-const CATEGORIES = ["architecture", "apis", "decisions", "guides", "operations", "plans", "products", "reference", "research"];
+const CATEGORIES = [
+  "architecture",
+  "apis",
+  "decisions",
+  "guides",
+  "operations",
+  "plans",
+  "products",
+  "reference",
+  "research",
+];
 
 function titleOf(file: string): string {
   try {
@@ -310,7 +353,9 @@ export function renderDocsIndex(root: string): string {
     }
     for (const [domain, dl] of [...domains].sort((a, b) => a[0].localeCompare(b[0]))) {
       const dir = domain === "(files)" ? `${top}` : `${top}/${domain}`;
-      const entry = ["README.md", "INDEX.md", "PLAN.md"].map((n) => `docs/${dir}/${n}`).find((p) => dl.includes(p));
+      const entry = ["README.md", "INDEX.md", "PLAN.md"]
+        .map((n) => `docs/${dir}/${n}`)
+        .find((p) => dl.includes(p));
       const label = CATEGORIES.includes(top) ? top : `${top} (outside the category layout)`;
       const vendored = domain.startsWith("upstream-") ? " vendored upstream copy" : "";
       out.push(
@@ -324,7 +369,8 @@ export function renderDocsIndex(root: string): string {
 
 export function renderLlms(root: string): string {
   const files = docsFiles(root).filter(
-    (f) => /\/(README|PLAN|INDEX)\.md$/.test(f) && !f.includes("/upstream-") && f.split("/").length <= 4,
+    (f) =>
+      /\/(README|PLAN|INDEX)\.md$/.test(f) && !f.includes("/upstream-") && f.split("/").length <= 4,
   );
   const lines = [
     "# Aphrody",
@@ -344,7 +390,9 @@ export function renderLlms(root: string): string {
     "",
     "## Docs",
     "",
-    ...files.sort().map((f) => `- [${titleOf(join(root, f)) || f}](${relative("docs/reference/ai", f)})`),
+    ...files
+      .sort()
+      .map((f) => `- [${titleOf(join(root, f)) || f}](${relative("docs/reference/ai", f)})`),
     "",
   ];
   return lines.join("\n");
@@ -369,7 +417,9 @@ export async function runDocsGen(args: string[]): Promise<number> {
     else if (arg === "--deps") deps = true;
     else if (arg === "--skip-ecosystem") ecosystem = false;
     else if (arg === "--help" || arg === "-h") {
-      console.log("Usage: aphrody-ops docs-gen [--root <repository>] [--check] [--deps] [--skip-ecosystem]");
+      console.log(
+        "Usage: aphrody-ops docs-gen [--root <repository>] [--check] [--deps] [--skip-ecosystem]",
+      );
       return 0;
     } else throw new Error(`Unknown argument: ${arg}`);
   }
@@ -383,7 +433,9 @@ export async function runDocsGen(args: string[]): Promise<number> {
   let failures = 0;
   const apply = (path: string, text: string): void => {
     const file = join(root, path);
-    const current = existsSync(file) ? readFileSync(file, "utf8").replace(/\r\n/g, "\n") : undefined;
+    const current = existsSync(file)
+      ? readFileSync(file, "utf8").replace(/\r\n/g, "\n")
+      : undefined;
     if (current === text) {
       console.log(`current ${path}`);
       return;
@@ -401,18 +453,31 @@ export async function runDocsGen(args: string[]): Promise<number> {
 
   const bun = process.execPath;
   const upstreamArgs = ["packages/infra/update/src/cli.ts", "upstream", "docs", "--root", root];
-  if (delegate(root, "UPSTREAMS.md", [bun, ...upstreamArgs, ...(check ? [] : ["--apply"])]) !== 0) failures++;
+  if (delegate(root, "UPSTREAMS.md", [bun, ...upstreamArgs, ...(check ? [] : ["--apply"])]) !== 0)
+    failures++;
   if (ecosystem) {
     const ecoArgs = ["scripts/ecosystem.ts", ...(check ? ["--check"] : [])];
     if (delegate(root, "docs/ecosystem", [bun, ...ecoArgs]) !== 0) failures++;
   }
   if (deps && !check) {
-    if (delegate(root, "DEPS-INVENTORY.md", [bun, "packages/infra/update/src/cli.ts", "deps", "inventory", "--root", root]) !== 0) failures++;
+    if (
+      delegate(root, "DEPS-INVENTORY.md", [
+        bun,
+        "packages/infra/update/src/cli.ts",
+        "deps",
+        "inventory",
+        "--root",
+        root,
+      ]) !== 0
+    )
+      failures++;
   }
   const crates = units.filter((u) => u.role === "crate").length;
   const packages = units.filter((u) => u.role === "package").length;
   const apps = units.filter((u) => u.role === "app").length;
-  console.log(`docs-gen: ${crates} crates, ${packages} packages, ${apps} apps; ${failures} failure(s)`);
+  console.log(
+    `docs-gen: ${crates} crates, ${packages} packages, ${apps} apps; ${failures} failure(s)`,
+  );
   return failures === 0 ? 0 : 1;
 }
 

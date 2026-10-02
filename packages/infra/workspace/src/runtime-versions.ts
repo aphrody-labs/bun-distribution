@@ -8,7 +8,9 @@ function version(binary: string): string {
 
 export function runRuntimeVersions(args: string[]): number {
   // The pins live in config/system-packages.json (kept in step by `aphrody-update pins`).
-  const pins = JSON.parse(readFileSync(new URL("../../../../config/system-packages.json", import.meta.url), "utf8")) as {
+  const pins = JSON.parse(
+    readFileSync(new URL("../../../../config/system-packages.json", import.meta.url), "utf8"),
+  ) as {
     toolchains: { bun: { version: string }; uv: { version: string } };
   };
   let bunExpected = pins.toolchains.bun.version;

@@ -1,0 +1,2 @@
+$ bun run typecheck
+$ bunx --bun tsc --project tsconfig.json

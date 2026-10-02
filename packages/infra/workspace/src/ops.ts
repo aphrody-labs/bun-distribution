@@ -230,7 +230,9 @@ if (operation === "tauri-sync") {
   process.exit(await (await import("../../update/src/tauri/sync.ts")).runTauriSync(rest));
 }
 if (operation === "upstream-sources") {
-  process.exit(await (await import("../../update/src/sources/restore.ts")).runUpstreamSources(rest));
+  process.exit(
+    await (await import("../../update/src/sources/restore.ts")).runUpstreamSources(rest),
+  );
 }
 if (operation === "deps-sync") {
   process.exit(await (await import("../../update/src/deps/sync.ts")).runDepsSync(rest));

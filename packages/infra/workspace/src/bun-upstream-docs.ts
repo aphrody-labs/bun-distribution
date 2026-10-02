@@ -129,7 +129,8 @@ export async function runBunUpstreamDocs(args: string[]): Promise<number> {
     for (const entry of await readdir(dir, { withFileTypes: true })) {
       const full = join(dir, entry.name);
       if (entry.isDirectory()) {
-        if (!["icons", "images", "logo"].includes(entry.name.toLowerCase())) await copyDocs(full, base);
+        if (!["icons", "images", "logo"].includes(entry.name.toLowerCase()))
+          await copyDocs(full, base);
         continue;
       }
       if (!entry.isFile()) continue;

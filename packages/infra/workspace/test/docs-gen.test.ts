@@ -38,6 +38,8 @@ describe("docs-gen", () => {
     expect(text).toContain("Totals: **2 crates**, **1 packages**, **1 apps**");
     expect(text).toContain("| [ai](#ai) | 2 | 1 | 0 | 2 |");
     expect(text).toContain("- `crates/os/drive`");
-    expect(text).toContain("| `y` | [crates/ai/y](../../../crates/ai/y) | rust crate | 0.1.0 | lib | no | 2 | 2026-10-02 |");
+    expect(text).toContain(
+      "| `y` | [crates/ai/y](../../../crates/ai/y) | rust crate | 0.1.0 | lib | no | 2 | 2026-10-02 |",
+    );
   });
 });
