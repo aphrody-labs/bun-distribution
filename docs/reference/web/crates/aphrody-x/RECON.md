@@ -23,7 +23,7 @@ authenticated `x.com` client-web build on 2026-05-22.
 | Payments | `pay.x.com`, `money.x.com`, `payments-*.x.com` (Plaid/Stripe/Adyen per CSP) |
 | SKUs | `BlueVerified`, `BlueVerifiedPlus`, `PremiumBasic`, … (client enum) |
 | CLI | `x-cli premium` / `x-cli premium --raw` |
-| TS twin | `@aphrody/x` → `packages/x/docs/PREMIUM.md` (not in repo), `scripts/tools/web/apps/bxc/scripts/x-premium-recon.ts` |
+| TS twin | `@aphrody/x` → `packages/x/docs/PREMIUM.md` (not in repo), x-premium-recon.ts (script bxc retiré du dépôt le 2026-10-03) |
 
 Full aphrody-web recon artifacts: `~/aphrody-web/storage/premium-recon/PREMIUM_RECON.json`.
 

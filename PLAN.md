@@ -88,7 +88,7 @@ routes de sites, exemples et snapshots historiques demandent une classification.
   assets RG/Koharu et code inter-apps à qualifier par propriétaire.
 - [ ] Classer les documents historiques et corriger les liens réellement cassés
   dans la documentation active. Ne pas réécrire les preuves de migration.
-- [ ] Classer les scripts importés par commande utilisée, propriétaire et
+- [x] Classer les scripts importés par commande utilisée, propriétaire et
   références entrantes ; supprimer ceux devenus inutilisés après preuve.
   Inventaire 2026-10-03 : [SCRIPTS-INVENTORY.md](docs/reference/workspace/SCRIPTS-INVENTORY.md),
   456 scripts, 175 sans référence entrante (dont 21 tests), dont 31 aux imports
@@ -96,6 +96,10 @@ routes de sites, exemples et snapshots historiques demandent une classification.
   `bun build`), 17 restent cassés (sources bxc absentes, wasm généré, kit discord
   amont) dont 10 orphelins sans référence supprimés ; 5 tests Shenron exigent
   un workspace (`@shenron/*`, `postgres`) : décision propriétaire.
+  Clos 2026-10-03 : tous les scripts `.ts` résolvent leurs imports ou ont été
+  supprimés (10 orphelins, puis 7 cassés cités seulement par la doc) ; 13
+  doublons de paquets supprimés ; les ~98 non référencés qui résolvent restent
+  des outils manuels classés par catégorie dans SCRIPTS-INVENTORY.md.
 - [ ] Réduire les préfixes de fichiers qui ne décrivent aucun rôle, en conservant
   les conventions imposées (`Cargo.toml`, `package.json`, `index.ts`).
 

@@ -1,6 +1,6 @@
 # X Pro (Gryphon / Decks) — API surface
 
-Recon: `aphrody web detect/recon`, `scripts/tools/web/apps/bxc/scripts/x-pro-recon.ts`, live Gryphon bundle `main.a4ab919a.js` (2026-06-03).
+Recon: `aphrody web detect/recon`, x-pro-recon.ts (script bxc retiré du dépôt le 2026-10-03), live Gryphon bundle `main.a4ab919a.js` (2026-06-03).
 
 ## Primary URLs
 

@@ -353,3 +353,15 @@ Conservé : scripts/tools/shenron/scripts/ops/wiki-databooks-indexer.ts (import�
 - scripts/tools/web/apps/bxc/scripts/enrich-shenron.ts
 - scripts/tools/web/apps/bxc/scripts/export-dragonball-jsonl.ts
 - scripts/tools/web/apps/bxc/scripts/train-dragonballfr-links.ts
+
+## Scripts cassés référencés seulement par la doc, supprimés 2026-10-03
+
+4 scripts bxc (sources bxc retirées du dépôt, cités par des docs de référence ou un autre script bxc) et 3 fichiers du kit de build discord amont (sans leur `package.json`) ; aucun ne résolvait ses imports :
+
+- scripts/audit/web/apps/bxc/scripts/grok-scan-with-cookies.ts
+- scripts/audit/web/apps/bxc/test/scripts/publish-workspaces.test.ts
+- scripts/tools/web/apps/bxc/scripts/x-premium-recon.ts
+- scripts/tools/web/apps/bxc/scripts/x-pro-recon.ts
+- scripts/build/discord/packages/scripts/bin/generateSplitDocumentation.ts
+- scripts/build/discord/packages/scripts/tsup.config.ts
+- scripts/build/discord/packages/scripts/turbo/generators/templates/default/tsup.config.ts
