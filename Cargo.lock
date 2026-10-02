@@ -2590,6 +2590,8 @@ version = "1.0.0-canary"
 name = "aphrody-shell-web"
 version = "1.0.0-canary"
 dependencies = [
+ "aphrody-shell-session",
+ "aphrody-shell-vfs",
  "aphrody-terminal-core",
  "serde_json",
  "wasm-bindgen",
