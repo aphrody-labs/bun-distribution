@@ -24,7 +24,7 @@ _No subcommands (flags only)._
 
 ### `aphrody`
 
-Crate `aphrody`, parser `apps/cli/src/lib.rs#Cli`, 323 commands.
+Crate `aphrody`, parser `crates/infra/aphrody-command/src/lib.rs#Cli`, 323 commands.
 
 - `aphrody rag` — Index and retrieve local code and documentation. _(cfg: all(not(target_arch = "wasm32"), feature = "rag"))_
   - `aphrody rag index` — Index a directory incrementally, including vectors when configured.

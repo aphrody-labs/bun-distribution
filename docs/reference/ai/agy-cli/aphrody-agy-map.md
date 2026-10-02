@@ -35,14 +35,14 @@ Trois surfaces aphrody coexistent : `agy` (forward binaire) · `antigravity`
 
 ### 1.1 Déclaration de la commande
 
-- Variante CLI : `apps/cli/src/lib.rs:166` — `Commands::Agy { args: Vec<String> }`,
+- Variante CLI : `crates/infra/aphrody-command/src/lib.rs:166` — `Commands::Agy { args: Vec<String> }`,
   doc-comment lib.rs:162-164.
-- Dispatch : `apps/cli/src/lib.rs:1026-1028` → `commands::AgyCommand { args }.execute(ctx)`.
-- Nom de télémétrie : `apps/cli/src/lib.rs:1584` (`Commands::Agy { .. } => "agy"`).
+- Dispatch : `crates/infra/aphrody-command/src/lib.rs:1026-1028` → `commands::AgyCommand { args }.execute(ctx)`.
+- Nom de télémétrie : `crates/infra/aphrody-command/src/lib.rs:1584` (`Commands::Agy { .. } => "agy"`).
 
 ### 1.2 Résolution du binaire `agy`
 
-Fonction `resolve_agy_bin()` — `apps/cli/src/commands.rs:627-657`. Premier match
+Fonction `resolve_agy_bin()` — `crates/infra/aphrody-command/src/commands.rs:627-657`. Premier match
 gagne :
 
 | Priorité | Source | Détail (code) |
@@ -64,7 +64,7 @@ Sur cette machine, `agy` est résolu via PATH : `~/.local/bin/agy`
 
 ### 1.3 Passthrough / exécution
 
-`AgyCommand::execute` — `apps/cli/src/commands.rs:666-690` :
+`AgyCommand::execute` — `crates/infra/aphrody-command/src/commands.rs:666-690` :
 
 ```
 std::process::Command::new(&bin_path).args(&self.args).status()
@@ -186,8 +186,8 @@ Flags top-level :
 
 ## 3. `aphrody agy-loop` — boucle autonome [VÉRIFIÉ CODE]
 
-Source unique : `apps/cli/src/agy_loop.rs` (dispatch `Commands::AgyLoop` dans
-`apps/cli/src/lib.rs`). **Pas de feature-gate** (hors wasm32).
+Source unique : `crates/infra/aphrody-command/src/agy_loop.rs` (dispatch `Commands::AgyLoop` dans
+`crates/infra/aphrody-command/src/lib.rs`). **Pas de feature-gate** (hors wasm32).
 
 > **Correction de contrat (2026-10-01).** Une version antérieure de ce document
 > et du driver décrivait la boucle comme pilotée par un hook `AfterAgent` et
@@ -249,7 +249,7 @@ importé `source: claude-code`) suivait le format Gemini CLI
 `{"hooks":{"AfterAgent":[…]}}` : agy ne connaît pas cet évènement, il ne
 pouvait pas relancer la boucle.
 
-### 3.3 Sous-commandes [VÉRIFIÉ CODE — `AgyLoopAction`, `apps/cli/src/agy_loop.rs`]
+### 3.3 Sous-commandes [VÉRIFIÉ CODE — `AgyLoopAction`, `crates/infra/aphrody-command/src/agy_loop.rs`]
 
 | Cmd | Effet (code) |
 |-----|--------------|
@@ -508,13 +508,13 @@ HTTP nativement.
 
 | Élément | Chemin |
 |---------|--------|
-| Forwarder `agy` (résolution + spawn) | `apps/cli/src/commands.rs:614-690` |
+| Forwarder `agy` (résolution + spawn) | `crates/infra/aphrody-command/src/commands.rs:614-690` |
 | Variante CLI + dispatch | `crates/aphrody/src/lib.rs:162-166, 1026-1028` |
-| Backend chat agy (RPC Cloud Code, sans binaire) | `apps/cli/src/agy_backend.rs` |
-| Boucle autonome `agy-loop` | `apps/cli/src/agy_loop.rs` (anciennement `apps/cli/src/agy_loop.rs`) |
-| Sélection backend de `chat/hermes` | `apps/cli/src/agent_cmd.rs:475-487` |
+| Backend chat agy (RPC Cloud Code, sans binaire) | `crates/infra/aphrody-command/src/agy_backend.rs` |
+| Boucle autonome `agy-loop` | `crates/infra/aphrody-command/src/agy_loop.rs` (anciennement `crates/infra/aphrody-command/src/agy_loop.rs`) |
+| Sélection backend de `chat/hermes` | `crates/infra/aphrody-command/src/agent_cmd.rs:475-487` |
 | SDK Antigravity (token, RPC, config) | `crates/aphrody-antigravity/src/{auth,client,config,endpoints,models}.rs` |
-| Surface `aphrody antigravity` | `apps/cli/src/antigravity_cmd.rs` |
-| Surface `aphrody agent` | `apps/cli/src/agent_cmd.rs`, `agent_run.rs`, `crates/ai/agent-runtime/` |
+| Surface `aphrody antigravity` | `crates/infra/aphrody-command/src/antigravity_cmd.rs` |
+| Surface `aphrody agent` | `crates/infra/aphrody-command/src/agent_cmd.rs`, `agent_run.rs`, `crates/ai/agent-runtime/` |
 | Skill commandes IA | `~/.gemini/config/plugins/aphrody/skills/aphrody-cmd-ai-creative/SKILL.md` |
 | Hook wiring agy-loop | fragment : `aphrody agy-loop hooks-json` ; à installer dans `<workspace>/.agents/hooks.json`, `~/.gemini/config/hooks.json` ou `plugins/<nom>/hooks.json` |

@@ -61,7 +61,7 @@ flowchart TD
 
 ### CLI Integration (`apps/cli`)
 
-The Aphrody CLI exposes the compiler through dedicated subcommands in `apps/cli/src/discord_cmd.rs`:
+The Aphrody CLI exposes the compiler through dedicated subcommands in `crates/infra/aphrody-command/src/discord_cmd.rs`:
 
 ```bash
 # Compile both Shenron and RG bots with smoke testing

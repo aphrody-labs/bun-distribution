@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 //! # aphrody-ffi — aphrody as a native library.
 //!
-//! A thin, stable **C ABI** over the `aphrody` library crate so the *entire*
+//! A thin, stable **C ABI** over the `aphrody-command` library crate so the *entire*
 //! command surface is reachable in-process from Bun (`bun:ffi`) and any other
 //! C-ABI host (C / C++ / Zig / Python `ctypes` / .NET P/Invoke), not only by
 //! spawning the `aphrody` binary.
@@ -34,7 +34,7 @@
 //!   code, so a panic never unwinds across the C boundary and tears the host process down.
 //! * The wrapped command surface is exit-free (commands return an error rather than calling
 //!   `process::exit`), so a command never kills the host.
-//! * `mimalloc` is the global allocator (the `aphrody` library is allocator-agnostic, so the cdylib
+//! * `mimalloc` is the global allocator (the `aphrody-command` library is allocator-agnostic, so the cdylib
 //!   matches the binary's choice here).
 //!
 //! On wasm32 this crate compiles to an empty module — the native command
@@ -991,7 +991,7 @@ mod native {
         let mut argv: Vec<OsString> = Vec::with_capacity(args.len() + 1);
         argv.push(OsString::from("aphrody"));
         argv.extend(args.into_iter().map(OsString::from));
-        runtime().block_on(aphrody::run_async(argv))
+        runtime().block_on(aphrody_command::run_async(argv))
     }
 
     /// Collect `argc` C strings into owned `String`s (lossy UTF-8).

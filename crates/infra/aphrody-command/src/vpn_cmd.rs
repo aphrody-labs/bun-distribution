@@ -460,7 +460,7 @@ fn setup_app_proxies_script() -> miette::Result<std::path::PathBuf> {
         roots.push(std::path::PathBuf::from(root));
     }
     let manifest = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
-    if let Some(ws) = manifest.ancestors().nth(2) {
+    if let Some(ws) = manifest.ancestors().nth(3) {
         roots.push(ws.join("..").join("aphrody-infra"));
     }
     if let Ok(cwd) = std::env::current_dir() {

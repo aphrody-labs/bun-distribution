@@ -9,8 +9,8 @@ requis pour une reprise depuis un poste distant.
 Deux commandes natives du monorepo Aphrody remplacent désormais les scripts ad-hoc :
 `aphrody ocr dbfr` (HTTP direct vers l'API) et `aphrody ocr shenron` (spawn
 `bun apps/shenron/site/scripts/databooks.ts`, réutilise le judge `classerDefaut`).
-Voir `apps/cli/src/ocr_dbfr.rs`,
-`apps/cli/src/ocr_shenron.rs` et le contrat
+Voir `crates/infra/aphrody-command/src/ocr_dbfr.rs`,
+`crates/infra/aphrody-command/src/ocr_shenron.rs` et le contrat
 `docs/reference/ai/databooks-transcription-bridge.md`.
 
 ```text
@@ -129,9 +129,9 @@ mise à jour RAG selon [`databooks-doctrine.md`](../../reference/shenron/databoo
   format JSONL.
 - [`prompt-aphrody-ocr-databooks.md`](../../guides/shenron/prompt-aphrody-ocr-databooks.md) — contrat
   de sortie OCR.
-- `apps/cli/src/ocr_dbfr.rs` — pont HTTP natif
+- `crates/infra/aphrody-command/src/ocr_dbfr.rs` — pont HTTP natif
   (`aphrody ocr dbfr`).
-- `apps/cli/src/ocr_shenron.rs` — pont natif vers ce dépôt
+- `crates/infra/aphrody-command/src/ocr_shenron.rs` — pont natif vers ce dépôt
   (`aphrody ocr shenron`).
 - `docs/reference/ai/databooks-transcription-bridge.md` — contrat du pont côté
   Aphrody.

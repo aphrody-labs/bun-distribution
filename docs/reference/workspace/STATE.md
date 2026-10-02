@@ -6,7 +6,7 @@ Facts read from `cargo metadata --no-deps`, the root `package.json` Bun workspac
 Crates are Rust workspace members outside `apps/`; packages are Bun workspaces outside `apps/`;
 apps are Rust or Bun members under `apps/`. `todo!` counts `todo!(` and `unimplemented!(` in `.rs` files.
 
-Totals: **191 crates**, **82 packages**, **6 apps** (192 Rust, 87 Bun).
+Totals: **192 crates**, **85 packages**, **6 apps** (193 Rust, 90 Bun).
 
 ## Per domain
 
@@ -20,12 +20,12 @@ Totals: **191 crates**, **82 packages**, **6 apps** (192 Rust, 87 Bun).
 | [discord](#discord) | 1 | 2 | 0 | 0 |
 | [fut](#fut) | 0 | 1 | 0 | 0 |
 | [google](#google) | 8 | 1 | 0 | 0 |
-| [infra](#infra) | 7 | 5 | 0 | 0 |
+| [infra](#infra) | 8 | 5 | 0 | 0 |
 | [interop](#interop) | 1 | 1 | 0 | 0 |
 | [koharu](#koharu) | 25 | 4 | 1 | 1 |
 | [native](#native) | 1 | 0 | 0 | 0 |
 | [os](#os) | 31 | 3 | 0 | 0 |
-| [rg](#rg) | 0 | 23 | 2 | 0 |
+| [rg](#rg) | 0 | 26 | 2 | 0 |
 | [shell](#shell) | 14 | 1 | 0 | 0 |
 | [shenron](#shenron) | 0 | 7 | 2 | 0 |
 | [ui](#ui) | 15 | 24 | 0 | 0 |
@@ -198,6 +198,7 @@ Tracked Cargo manifests outside the root workspace (excluded, nested workspaces 
 
 | Name | Path | Kind | Version | Targets | Tests | `todo!` | Last commit |
 | --- | --- | --- | --- | --- | --- | ---: | --- |
+| `aphrody-command` | [crates/infra/aphrody-command](../../../crates/infra/aphrody-command) | rust crate | 1.0.0 | lib | yes | 0 | uncommitted |
 | `aphrody-git` | [crates/infra/git](../../../crates/infra/git) | rust crate | 0.1.0 | lib | yes | 0 | 2026-10-02 |
 | `aphrody-infra` | [crates/infra/infra](../../../crates/infra/infra) | rust crate | 0.1.0 | bin, lib | yes | 0 | 2026-10-02 |
 | `aphrody-ovh` | [crates/infra/ovh](../../../crates/infra/ovh) | rust crate | 0.1.0 | lib | yes | 0 | 2026-10-01 |
@@ -302,8 +303,8 @@ Tracked Cargo manifests outside the root workspace (excluded, nested workspaces 
 
 | Name | Path | Kind | Version | Targets | Tests | `todo!` | Last commit |
 | --- | --- | --- | --- | --- | --- | ---: | --- |
-| `@rosegriffon/bot` | [apps/rg/bot](../../../apps/rg/bot) | bun app | 1.0.1 | private | yes | 0 | 2026-10-02 |
-| `@rosegriffon/website` | [apps/rg/website](../../../apps/rg/website) | bun app | 1.0.1 | private | yes | 0 | 2026-10-02 |
+| `@rosegriffon/bot` | [apps/rg/bot](../../../apps/rg/bot) | bun app | 1.0.1 | private | yes | 0 | 2026-10-03 |
+| `@rosegriffon/website` | [apps/rg/website](../../../apps/rg/website) | bun app | 1.0.1 | private | yes | 0 | 2026-10-03 |
 | `@rosegriffon/achillea-client` | [packages/rg/achillea-client](../../../packages/rg/achillea-client) | bun package | 1.0.1 | lib | yes | 0 | 2026-09-30 |
 | `@rosegriffon/achillea-contract` | [packages/rg/achillea-contract](../../../packages/rg/achillea-contract) | bun package | 1.0.1 | lib | yes | 0 | 2026-10-01 |
 | `@rosegriffon/achillea-core` | [packages/rg/achillea-core](../../../packages/rg/achillea-core) | bun package | 1.0.1 | lib | yes | 0 | 2026-10-01 |
@@ -311,6 +312,7 @@ Tracked Cargo manifests outside the root workspace (excluded, nested workspaces 
 | `@rosegriffon/app-shell` | [packages/rg/app-shell](../../../packages/rg/app-shell) | bun package | 1.0.1 | lib | yes | 0 | 2026-10-01 |
 | `@rosegriffon/assets` | [packages/rg/assets](../../../packages/rg/assets) | bun package | 1.0.3 | lib | no | 0 | 2026-10-01 |
 | `@rosegriffon/auth` | [packages/rg/auth](../../../packages/rg/auth) | bun package | 1.0.3 | lib | yes | 0 | 2026-10-01 |
+| `@rosegriffon/cdn` | [packages/rg/cdn](../../../packages/rg/cdn) | bun package | 1.0.1 | lib | yes | 0 | 2026-10-03 |
 | `@rosegriffon/config` | [packages/rg/config](../../../packages/rg/config) | bun package | 1.0.3 | lib | no | 0 | 2026-10-02 |
 | `@rosegriffon/cron` | [packages/rg/cron](../../../packages/rg/cron) | bun package | 1.0.1 | lib | yes | 0 | 2026-10-02 |
 | `@rosegriffon/db` | [packages/rg/db](../../../packages/rg/db) | bun package | 1.0.3 | lib | yes | 0 | 2026-10-01 |
@@ -324,8 +326,10 @@ Tracked Cargo manifests outside the root workspace (excluded, nested workspaces 
 | `@rosegriffon/patreon-bun-bun-webhook` | [packages/rg/patreon-bun/examples/bun-webhook](../../../packages/rg/patreon-bun/examples/bun-webhook) | bun package | 1.0.0 | private | no | 0 | 2026-09-30 |
 | `@rosegriffon/patreon-bun-cloudflare-webhook` | [packages/rg/patreon-bun/examples/cloudflare-webhook](../../../packages/rg/patreon-bun/examples/cloudflare-webhook) | bun package | 1.0.0 | lib | no | 0 | 2026-09-30 |
 | `@rosegriffon/preferences` | [packages/rg/preferences](../../../packages/rg/preferences) | bun package | 1.0.3 | lib | yes | 0 | 2026-10-01 |
+| `@rosegriffon/realtime` | [packages/rg/realtime](../../../packages/rg/realtime) | bun package | 1.0.1 | lib | yes | 0 | 2026-10-03 |
 | `@rosegriffon/search` | [packages/rg/search](../../../packages/rg/search) | bun package | 1.0.1 | lib | yes | 0 | 2026-09-30 |
-| `@rosegriffon/types` | [packages/rg/types](../../../packages/rg/types) | bun package | 1.0.3 | lib | yes | 0 | 2026-10-01 |
+| `@rosegriffon/storage` | [packages/rg/storage](../../../packages/rg/storage) | bun package | 1.0.1 | lib | yes | 0 | 2026-10-03 |
+| `@rosegriffon/types` | [packages/rg/types](../../../packages/rg/types) | bun package | 1.0.3 | lib | yes | 0 | 2026-10-03 |
 | `@rosegriffon/ui` | [packages/rg/ui](../../../packages/rg/ui) | bun package | 1.0.3 | lib | yes | 0 | 2026-10-02 |
 
 ## shell
@@ -375,8 +379,8 @@ Tracked Cargo manifests outside the root workspace (excluded, nested workspaces 
 | `aphrody-local-ai` | [crates/ui/local-ai](../../../crates/ui/local-ai) | rust crate | 1.0.0-canary | lib | yes | 0 | 2026-10-02 |
 | `aphrody-m3-reproduce` | [crates/ui/m3-reproduce](../../../crates/ui/m3-reproduce) | rust crate | 1.0.0-canary | bin, lib | yes | 0 | 2026-10-02 |
 | `aphrody-m3-tokens` | [crates/ui/m3-tokens](../../../crates/ui/m3-tokens) | rust crate | 1.0.0-canary | lib | yes | 0 | 2026-10-02 |
-| `aphrody-render` | [crates/ui/render](../../../crates/ui/render) | rust crate | 1.0.0-canary | bin, lib | yes | 0 | 2026-10-02 |
-| `aphrody-softraster` | [crates/ui/softraster](../../../crates/ui/softraster) | rust crate | 1.0.0-canary | lib | yes | 0 | 2026-10-01 |
+| `aphrody-render` | [crates/ui/render](../../../crates/ui/render) | rust crate | 1.0.0-canary | bin, lib | yes | 0 | 2026-10-03 |
+| `aphrody-softraster` | [crates/ui/softraster](../../../crates/ui/softraster) | rust crate | 1.0.0-canary | lib | yes | 0 | 2026-10-03 |
 | `aphrody-sprite-sheet` | [crates/ui/sprite-sheet](../../../crates/ui/sprite-sheet) | rust crate | 1.0.0-canary | lib | yes | 0 | 2026-10-01 |
 | `aphrody-svg` | [crates/ui/svg](../../../crates/ui/svg) | rust crate | 1.0.0-canary | lib | yes | 0 | 2026-10-02 |
 | `aphrody-tauri-mcp` | [crates/ui/tauri-mcp](../../../crates/ui/tauri-mcp) | rust crate | 1.0.0-canary | bin | no | 0 | 2026-10-01 |
@@ -393,7 +397,7 @@ Tracked Cargo manifests outside the root workspace (excluded, nested workspaces 
 | `@aphrody/m3-explorer` | [packages/ui/m3-explorer](../../../packages/ui/m3-explorer) | bun package | 3.3.3 | lib | yes | 0 | 2026-10-01 |
 | `@aphrody/m3-fonts` | [packages/ui/m3-fonts](../../../packages/ui/m3-fonts) | bun package | 3.3.3 | lib | yes | 0 | 2026-10-01 |
 | `@aphrody/m3-forms` | [packages/ui/m3-forms](../../../packages/ui/m3-forms) | bun package | 3.3.3 | lib | yes | 0 | 2026-10-01 |
-| `@aphrody/m3-icons` | [packages/ui/m3-icons](../../../packages/ui/m3-icons) | bun package | 3.3.3 | lib | yes | 0 | 2026-10-01 |
+| `@aphrody/m3-icons` | [packages/ui/m3-icons](../../../packages/ui/m3-icons) | bun package | 3.3.3 | lib | yes | 0 | 2026-10-03 |
 | `@aphrody/m3-motion` | [packages/ui/m3-motion](../../../packages/ui/m3-motion) | bun package | 3.3.3 | lib | yes | 0 | 2026-10-01 |
 | `@aphrody/m3-next` | [packages/ui/m3-next](../../../packages/ui/m3-next) | bun package | 3.3.3 | lib | yes | 0 | 2026-10-02 |
 | `@aphrody/m3-next-migrate` | [packages/ui/m3-next-migrate](../../../packages/ui/m3-next-migrate) | bun package | 3.3.3 | bin, lib | yes | 0 | 2026-10-02 |

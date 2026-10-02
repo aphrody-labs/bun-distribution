@@ -15,7 +15,7 @@ reading the source; nothing here was compiled or run (lead builds once).
 
 ## 1. Forwarder and subprocess inventory
 
-Forwarders in `apps/cli/src/commands.rs`, dispatched from `apps/cli/src/lib.rs`:
+Forwarders in `crates/infra/aphrody-command/src/commands.rs`, dispatched from `crates/infra/aphrody-command/src/lib.rs`:
 
 | Command | Spawns | Decision | Reason |
 |---|---|---|---|
@@ -40,8 +40,8 @@ audited): `agent-tools/shell.rs` (the agent shell tool), `agent-tools/search_tex
 | Capability | Copies found | Canonical owner | Action |
 |---|---|---|---|
 | MCP client | `mcp-client` (registry, transports, executor); `mcp/src/client_cmd.rs`; `gemini-runtime/src/mcp_client.rs` | `aphrody-mcp-client` | Make `client_cmd` and gemini-runtime thin callers. |
-| MCP server config | `crates/ai/config/src/mcp.rs` `McpServerConfig`; `gemini-runtime/src/mcp_config.rs`; hand-rolled TOML/JSON upserts in `apps/cli/src/codex_provision.rs` and `agy_provision.rs` | `aphrody-config` | One typed model, serialized by per-tool adapters (section 3). |
-| Config loader | `aphrody-config` (layers, profiles, policy) and `apps/cli/src/config_cmd.rs` | `aphrody-config` | CLI only renders. |
+| MCP server config | `crates/ai/config/src/mcp.rs` `McpServerConfig`; `gemini-runtime/src/mcp_config.rs`; hand-rolled TOML/JSON upserts in `crates/infra/aphrody-command/src/codex_provision.rs` and `agy_provision.rs` | `aphrody-config` | One typed model, serialized by per-tool adapters (section 3). |
+| Config loader | `aphrody-config` (layers, profiles, policy) and `crates/infra/aphrody-command/src/config_cmd.rs` | `aphrody-config` | CLI only renders. |
 | Skills discovery | `skills/src/runtime/discover.rs`; `skills-forge/src/registry.rs`; `sdk/src/skills.rs` | `aphrody-skills` (discovery), `skills-forge` (authoring) | `sdk/skills.rs` re-exports discovery. |
 | Plugin / marketplace | `marketplace` (index, semver, sha256); `skills/runtime/lockfile.rs`; manifests hand-maintained under `plugins/aphrody` | `aphrody-marketplace` | Add a single `PluginManifest` source (section 3). |
 | Hooks | `skills/src/hooks.rs`; hook entries in `plugins/aphrody/hooks.json` | `aphrody-skills::hooks` | Event names normalized per tool by adapter. |
@@ -134,7 +134,7 @@ parity test; the forward stays behind the env override for one release.
 
 ## 8. Ordered work items
 
-1. Done: Ollama aliases and `model ps` (`apps/cli/src/model_cmd.rs`).
+1. Done: Ollama aliases and `model ps` (`crates/infra/aphrody-command/src/model_cmd.rs`).
 2. Single MCP server model: `aphrody-config` `McpServerConfig` serialized to
    Codex TOML, agy JSON, OpenCode JSON, Claude `.mcp.json`; replace the editors
    in `codex_provision.rs` / `agy_provision.rs`.

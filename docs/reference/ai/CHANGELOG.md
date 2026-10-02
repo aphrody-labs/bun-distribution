@@ -326,7 +326,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `supply-chain/audits.toml` + `supply-chain/config.toml` cargo-vet
   formatting drift cleared, 5 attestations + 7 import URLs preserved
   (commit b228509).
-- `apps/cli/src/commands.rs` `DoctorCommand` body shipped — 493 lines
+- `crates/infra/aphrody-command/src/commands.rs` `DoctorCommand` body shipped — 493 lines
   of helpers + variant + match-arm dispatch (commit 588cd25).
 - `crates/cli/src/main.rs` Commands enum gains `Doctor { json }` arm
   wired into Pre + Post dispatch tables (commit 2a721d2).
@@ -515,7 +515,7 @@ port, pipeline optimization.
   port of Next.js gemini.google.com/app, link:next resolved to fork
   next@16.3.0-canary.2, M3 tokens + WebGPU gradient + voice hooks
   (commit 2c1602cb).
-- `apps/cli/src/auto_command.rs` NEW (uncommitted) — autonomous CLI agent
+- `crates/infra/aphrody-command/src/auto_command.rs` NEW (uncommitted) — autonomous CLI agent
   NL → A2A streaming via JsonRpcTransport.
 - `crates/os/base/benches/base_bench.rs` NEW (uncommitted) — criterion suite,
   6 benches across vfs and aes-gcm.

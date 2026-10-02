@@ -25,7 +25,7 @@ is not under `packages/ui` in this checkout (unverified owner, see section 8).
 
 ### Duplicates found
 
-1. Model management logic existed twice: the CLI (`apps/cli/src/model_cmd.rs`, which builds the JSON
+1. Model management logic existed twice: the CLI (`crates/infra/aphrody-command/src/model_cmd.rs`, which builds the JSON
    documents) and the desktop, which re-ran the CLI as a child process and re-parsed its output
    (`crates/ui/app/src/models.rs`). The desktop copy of the process plumbing is removed (section 4).
    Remaining duplication: the CLI still shapes the same JSON by itself; it should call

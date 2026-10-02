@@ -6,6 +6,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { closeNativeLibrary, loadNativeLibrary, nativeLibraryLoaded } from "./src/library";
 import { findNewlinesUtf16, scanNodeProject } from "./src/n2b";
+import { runAphrodyCaptured } from "./src/cli";
 import { formatSource, lintSource, minifySource } from "./src/oxc";
 
 const root = mkdtempSync(join(tmpdir(), "aphrody-native-consumer-"));
@@ -35,6 +36,19 @@ try {
   if (process.env.APHRODY_FFI_REQUIRE_NATIVE === "1") throw error;
 }
 const native = test.skipIf(!available);
+
+native(
+  "command library preserves version output and parser errors without exiting the host",
+  () => {
+    const version = runAphrodyCaptured(["version", "--json"]);
+    expect(version.code).toBe(0);
+    expect(JSON.parse(version.stdout).version).toMatch(/^\d+\.\d+\.\d+/);
+    const invalid = runAphrodyCaptured(["version", "--unknown-validation-flag"]);
+    expect(invalid.code).toBe(2);
+    expect(invalid.stderr).toContain("--unknown-validation-flag");
+    expect(runAphrodyCaptured(["version", "--json"]).code).toBe(0);
+  },
+);
 
 native("N2B reports findings, respects ignores and previews then applies fixes", () => {
   writeFileSync(script, original);

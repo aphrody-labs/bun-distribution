@@ -54,6 +54,7 @@ pyo3 = { version = "0.29", features = [] }
 anyhow = "1.0.104"
 aes-gcm = { version = "0.11", features = [] }
 aphrody = { path = "apps/cli", version = "1.0.0", features = [] }
+aphrody-command = { path = "crates/infra/aphrody-command", version = "1.0.0", features = [] }
 aphrody-a2a = { path = "crates/contracts/a2a", version = "0.3", features = [] }
 aphrody-a2a-client = { path = "crates/os/a2a-client", version = "0.1", default-features = false, features = [] }
 aphrody-a2a-coord = { path = "crates/os/a2a-coord", version = "1.0.0-canary", features = [] }

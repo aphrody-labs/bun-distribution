@@ -22,7 +22,7 @@
 | **`cargo-deny`** | Mozilla supply-chain | `deny.toml` 4 axes (CVE/licence/bans/sources) | ✅ |
 | **`cargo-auditable` SBOM** | 2026 industry standard | Alias `dist-auditable`, profil `reproducible` | ✅ |
 | **Lockfile-only (no vendor)** | Modern Go module proxy style | `Cargo.lock` SHA-256 + sparse registry | ✅ |
-| **Cross-platform binary** | Chromium release engineering | 14 targets + `apps/cli/src/platform.rs` | ✅ |
+| **Cross-platform binary** | Chromium release engineering | 14 targets + `crates/infra/aphrody-command/src/platform.rs` | ✅ |
 | **Android NDK targets** | AOSP | 4 archis Android dans toolchain + doc | ✅ |
 | **MUSL static** | Distroless Docker | `Dockerfile` MUSL static + 2 targets | ✅ |
 | **Fuzz at attacker boundary** | Fuchsia 2026 best practice | `crates/bun_ffi/fuzz/` (not in repo) libfuzzer-sys | ✅ |

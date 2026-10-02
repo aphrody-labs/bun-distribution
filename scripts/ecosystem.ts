@@ -533,6 +533,29 @@ export function kebab(name: string): string {
     .toLowerCase();
 }
 
+export function reexportedParser(
+  index: ClapIndex,
+  source: string,
+  binary: string,
+  repo: string,
+): ClapItem | undefined {
+  const owners = new Set(
+    [...source.matchAll(/pub\s+use\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*::\s*\*\s*;/g)].map(
+      (match) => match[1],
+    ),
+  );
+  const candidates = index
+    .parsers()
+    .filter(
+      (parser) =>
+        parser.repo === repo &&
+        owners.has(parser.crate.replaceAll("-", "_")) &&
+        !TEST_PATH.test(parser.file) &&
+        clapAttr(parser.attrs).values.get("name")?.[0] === binary,
+    );
+  return candidates.length === 1 ? candidates[0] : undefined;
+}
+
 export class ClapIndex {
   private readonly byName = new Map<string, ClapItem[]>();
 
@@ -977,6 +1000,9 @@ export function collect(root: string): Ecosystem {
           break;
         }
       }
+    }
+    if (parser === undefined && bin.libSrc !== undefined && existsSync(bin.libSrc)) {
+      parser = reexportedParser(index, read(bin.libSrc), bin.binary, bin.repo);
     }
     if (parser === undefined && bin.usesClap) {
       const own = index

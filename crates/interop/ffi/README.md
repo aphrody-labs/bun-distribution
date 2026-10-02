@@ -1,20 +1,19 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 # aphrody-ffi
 
-**aphrody, as a native library.** A thin, stable **C ABI** over the `aphrody`
+**aphrody, as a native library.** A thin, stable **C ABI** over the `aphrody-command`
 library crate so the *entire* command surface is reachable in-process from Bun
 (`bun:ffi`) and any other C-ABI host (C / C++ / Zig / Python `ctypes` / .NET
 P/Invoke) — not only by spawning the `aphrody` binary.
 
 ## How it works
 
-The `aphrody` package (`crates/aphrody/`) is split into a **library** (`src/lib.rs`,
-all command logic) and a **thin binary** (`src/main.rs`, ~25 lines). This crate
-depends on that library and wraps its async entry point — `aphrody::run_async`,
-driven on a persistent `tokio` runtime — behind a handful of `extern "C"`
-symbols. Because cargo builds only the library target of a dependency, the
-binary's `#[global_allocator]` is absent here and `aphrody-ffi` installs its own
-`mimalloc`.
+All command logic lives in the `aphrody-command` library
+(`crates/infra/aphrody-command`); the `aphrody` package (`apps/cli`) is a thin
+binary facade over it. This crate depends on `aphrody-command` and wraps its
+async entry point — `aphrody_command::run_async`, driven on a persistent `tokio`
+runtime — behind a handful of `extern "C"` symbols. The library defines no
+`#[global_allocator]`, so `aphrody-ffi` installs its own `mimalloc`.
 
 The wrapped command surface is **exit-free** (commands return a `SubprocessExit`
 error rather than calling `process::exit`) and every FFI entry **catches
@@ -88,7 +87,7 @@ version are unchanged (still `1`).
 # Dynamic library for Bun / dlopen (target/release/{lib,}aphrody_ffi.{so,dll,dylib})
 cargo build --release -p aphrody-ffi
 
-# With aphrody's opt-in command features forwarded into the cdylib:
+# With aphrody-command's opt-in command features forwarded into the cdylib:
 cargo build --release -p aphrody-ffi --features forensics,index
 ```
 

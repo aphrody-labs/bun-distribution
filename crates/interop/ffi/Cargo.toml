@@ -26,28 +26,28 @@ workspace = true
 default = []
 gpu = ["aphrody-bun/gpu"]
 native-stealth = ["obscura-net/stealth"]
-koharu    = ["aphrody/koharu", "aphrody-manga/koharu"]
-# Forward aphrody's opt-in command features so a feature-rich cdylib can be
+koharu    = ["aphrody-command/koharu", "aphrody-manga/koharu"]
+# Forward aphrody-command's opt-in command features so a feature-rich cdylib can be
 # built (e.g. `cargo build -p aphrody-ffi --features forensics`). Inactive by
 # default, so the wasm `cargo check` never tries to pull these host-only deps.
-magika    = ["aphrody/magika"]
-forensics = ["aphrody/forensics"]
-index     = ["aphrody/index"]
-firefly   = ["aphrody/firefly"]
-yara      = ["aphrody/yara"]
-ocr       = ["aphrody/ocr"]
-infer     = ["aphrody/infer"]
-jobs      = ["aphrody/jobs"]
+magika    = ["aphrody-command/magika"]
+forensics = ["aphrody-command/forensics"]
+index     = ["aphrody-command/index"]
+firefly   = ["aphrody-command/firefly"]
+yara      = ["aphrody-command/yara"]
+ocr       = ["aphrody-command/ocr"]
+infer     = ["aphrody-command/infer"]
+jobs      = ["aphrody-command/jobs"]
 
-# The crate wraps the native `aphrody` command surface (tokio + reqwest +
+# The crate wraps the native `aphrody-command` surface (tokio + reqwest +
 # rustls), which does not link on wasm32. On wasm the crate compiles to an
 # empty module so `cargo check --target wasm32-unknown-unknown` stays green.
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
-# `aphrody` is the package in apps/cli. Depending
-# on its *library* target pulls the full command dispatch in-process; cargo does
-# NOT build the binary target, so the binary's `#[global_allocator]` is absent
-# here and this crate installs its own mimalloc below without a conflict.
-aphrody    = { workspace = true }
+# `aphrody-command` (crates/infra/aphrody-command) is the library that owns the
+# full command dispatch; apps/cli is only its binary facade. It defines no
+# `#[global_allocator]`, so this crate installs its own mimalloc below without
+# a conflict.
+aphrody-command = { workspace = true }
 aphrody-agent-home = { workspace = true }
 aphrody-bun = { workspace = true }
 aphrody-n2b-native = { workspace = true }
@@ -75,7 +75,7 @@ serde      = { workspace = true }
 # Shared cross-platform stdout/stderr capture (dup2 on unix / SetStdHandle on
 # Windows); pulls tempfile/libc/windows-sys transitively, host-only.
 aphrody-stdio-capture = { workspace = true }
-# Persistent multi-thread runtime that drives `aphrody::run_async`, so repeated
+# Persistent multi-thread runtime that drives `aphrody_command::run_async`, so repeated
 # FFI calls amortise the worker-thread spawn cost instead of paying it per call.
 tokio      = { workspace = true }
 url        = { workspace = true }

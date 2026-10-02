@@ -15,6 +15,7 @@ import {
   kebab,
   kernelTools,
   readPyproject,
+  reexportedParser,
   render,
   rmcpTools,
   staleFiles,
@@ -23,6 +24,23 @@ import {
 } from "./ecosystem.ts";
 
 describe("clap extraction", () => {
+  test("a thin facade resolves its named parser from the reexported library", () => {
+    const index = new ClapIndex();
+    for (const item of clapItems(
+      `#[derive(Parser)] #[command(name = "demo")] struct Cli {}`,
+      "src/lib.rs",
+      "shared-command",
+      "test",
+    ))
+      index.add(item);
+    expect(reexportedParser(index, "pub use shared_command::*;", "demo", "test")?.crate).toBe(
+      "shared-command",
+    );
+    expect(reexportedParser(index, "pub use other_command::*;", "demo", "test")).toBeUndefined();
+    expect(
+      reexportedParser(index, "pub use shared_command::*;", "demo", "other-repo"),
+    ).toBeUndefined();
+  });
   const src = `
     /// Top-level CLI.
     #[derive(Parser)]

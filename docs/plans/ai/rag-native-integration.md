@@ -124,7 +124,7 @@ Done in this change:
 Next (safe, ordered):
 
 1. W1. Config: add `EmbedBackend::Native` (and a native rerank option) in `aphrody-config`, resolve in
-   `config_resolve.rs`, construct in `apps/cli/src/rag_cmd.rs` and the MCP tools. Needs those owners.
+   `config_resolve.rs`, construct in `crates/infra/aphrody-command/src/rag_cmd.rs` and the MCP tools. Needs those owners.
    Note: an index is locked to one `embed_model_id`; native ids are `native:<repo>@<rev>`, so switching
    backend means a new index (or an explicit re-embed), never mixing spaces.
 2. W2. Make embedding failures visible in `IndexStats`; do not mark a doc indexed without vectors.

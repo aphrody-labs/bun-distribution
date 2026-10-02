@@ -42,7 +42,7 @@ Installed binaries (`~/.local/bin`):
 
 ## 2. Surfaces
 
-CLI: `apps/cli/src/pillars_cmd/web.rs` `WebAction` (enum at line 8) with Status, Capabilities, Fetch, Search, Recon, Scrape, Extract, Detect, Gemini, X, Media, Browser, Crawl, Mediawiki, Mirror, WikiSearch, WikiPage, Frames (lines 11-299); sub-enums for index/X/frames/resolve (305-420); dispatcher `handle_web` at 426. CLI uses `obscura_net::ObscuraHttpClient` directly (852, 886, 927, 1066) and `obscura::Browser` (1121).
+CLI: `crates/infra/aphrody-command/src/pillars_cmd/web.rs` `WebAction` (enum at line 8) with Status, Capabilities, Fetch, Search, Recon, Scrape, Extract, Detect, Gemini, X, Media, Browser, Crawl, Mediawiki, Mirror, WikiSearch, WikiPage, Frames (lines 11-299); sub-enums for index/X/frames/resolve (305-420); dispatcher `handle_web` at 426. CLI uses `obscura_net::ObscuraHttpClient` directly (852, 886, 927, 1066) and `obscura::Browser` (1121).
 
 MCP (`crates/ai/mcp`):
 - `universal_web_fetch`: `src/main.rs:885` (shared fetch helper ~770-815 via `aphrody_web_bridge::fetch`). Listed in a gating list at `src/protocol.rs:132`.

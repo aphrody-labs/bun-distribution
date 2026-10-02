@@ -35,7 +35,7 @@ aphrody), pensé pour l'automatisation à l'échelle, pas le desktop browsing.
 ## 2. Le manque qu'il comble
 
 Depuis la suppression de `crates/bxc-engine` (not in repo) (2026-05-21), aphrody n'a **plus
-aucun rendu JavaScript** : `aphrody scrape` (`apps/cli/src/commands.rs`)
+aucun rendu JavaScript** : `aphrody scrape` (`crates/infra/aphrody-command/src/commands.rs`)
 parse du HTML statique via `reqwest` + `scraper::Html`. Tout le pilier **R4**
 de `docs/PLAN.md` (not in repo) est donc orphelin de moteur :
 
@@ -84,7 +84,7 @@ git (build V8, edition mismatch, lock bloat).
 - [ ] Crate `obscura-runtime` (≈ `gemini-runtime`) : `resolve_bin()` + wrapper
       typé autour de `obscura fetch`/`scrape` (JSON out), erreurs structurées.
 - [ ] Wire `aphrody scrape --engine {static|obscura}` dans
-      `apps/cli/src/commands.rs` (défaut auto-détecté).
+      `crates/infra/aphrody-command/src/commands.rs` (défaut auto-détecté).
 - [ ] Flip R4.2/R4.5/R4.7 de `docs/PLAN.md` (not in repo) une fois le wrapper + smoke verts
       (`obscura fetch https://tls.peet.ws --format json`).
 - [ ] Garder R4.1 (curl-impersonate, spoofing JA4 TLS) distinct : Obscura

@@ -226,6 +226,28 @@
           "features": []
         },
         {
+          "name": "aphrody-command",
+          "path": "crates/infra/aphrody-command",
+          "description": "Reusable in-process Aphrody command parser and dispatch for CLI and FFI hosts.",
+          "bins": [],
+          "features": [
+            "default",
+            "firefly",
+            "forensics",
+            "index",
+            "infer",
+            "jobs",
+            "koharu",
+            "magika",
+            "memory-lancedb",
+            "native",
+            "ocr",
+            "rag",
+            "train",
+            "yara"
+          ]
+        },
+        {
           "name": "aphrody-compat",
           "path": "crates/os/compat",
           "description": "Cross-platform runtime compatibility layer for Aphrody OS: Wine, Proton, .NET and PowerShell Core (pwsh).",
@@ -1063,7 +1085,7 @@
         {
           "name": "aphrody-softraster",
           "path": "crates/ui/softraster",
-          "description": "Dependency-free deterministic CPU triangle rasterizer (z-buffer, perspective-correct nearest texturing, alpha cutout): the GPU-less fallback shared by aphrody-render3d and nie.",
+          "description": "Dependency-free deterministic CPU triangle rasterizer (z-buffer, perspective-correct nearest texturing, alpha cutout): the GPU-less fallback shared by aphrody-render and nie.",
           "bins": [],
           "features": []
         },
@@ -2136,7 +2158,7 @@
         },
         {
           "name": "@rosegriffon/cdn",
-          "path": "apps/rg/bot/src/api/services/cdn",
+          "path": "packages/rg/cdn",
           "description": "",
           "bins": []
         },
@@ -2208,7 +2230,7 @@
         },
         {
           "name": "@rosegriffon/realtime",
-          "path": "apps/rg/bot/src/api/services/realtime",
+          "path": "packages/rg/realtime",
           "description": "",
           "bins": []
         },
@@ -2220,7 +2242,7 @@
         },
         {
           "name": "@rosegriffon/storage",
-          "path": "apps/rg/bot/src/api/services/storage",
+          "path": "packages/rg/storage",
           "description": "",
           "bins": []
         },
@@ -3214,7 +3236,7 @@
       "binary": "aphrody",
       "crate": "aphrody",
       "repo": "aphrody",
-      "source": "apps/cli/src/lib.rs#Cli",
+      "source": "crates/infra/aphrody-command/src/lib.rs#Cli",
       "commands": [
         {
           "name": "rag",
@@ -15551,7 +15573,7 @@
     "aphrodyRepos": 3,
     "experimentRepos": 0,
     "sharedRepos": 0,
-    "crates": 266,
+    "crates": 267,
     "binaries": 89,
     "bunPackages": 102,
     "pythonPackages": 9,

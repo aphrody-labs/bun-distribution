@@ -72,7 +72,7 @@ Rules enforced on critical Bun packages:
 The n2b scan of `aphrody-ai/packages/google` reports no error; the only remaining warning is
 `Bun.spawn`, already used natively by its CLI launcher. Known issue: `aphrody n2b audit` panics
 with `Cannot start a runtime from within a runtime` because `aphrody-ai`
-(`apps/cli/src/commands.rs`, `N2bCommand`) calls the synchronous `aphrody_n2b::run_from`
+(`crates/infra/aphrody-command/src/commands.rs`, `N2bCommand`) calls the synchronous `aphrody_n2b::run_from`
 from its async executor; it needs a `spawn_blocking` wrapper there. Rule and package scans are
 unaffected. Drop this note once that fix lands.
 
