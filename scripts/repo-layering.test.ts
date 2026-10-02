@@ -1,31 +1,75 @@
 // SPDX-License-Identifier: Apache-2.0
-/**
- * Guard against the sibling `aphrody-*` category repositories drifting back into a cycle
- * (docs/REPO-LAYERING.md). Runs the real graph against the checkout next to this repository, so
- * it only asserts something meaningful when the sibling repositories are present (CI and local
- * dev both check them out side by side; a lone checkout of `aphrody-infra` skips it).
- */
-import { existsSync } from "node:fs";
-import { join, resolve } from "node:path";
+import { resolve } from "node:path";
 import { describe, expect, test } from "bun:test";
-import { collectEdges, cycles, LAYERS, violations } from "./repo-layering.ts";
+import { collectEdges, cycles, graphFromMetadata, inside } from "./repo-layering.ts";
 
-const root = resolve(import.meta.dir, "..", "..");
-const siblingsPresent = Object.keys(LAYERS).filter((repo) => repo !== "aphrody-infra")
-  .some((repo) => existsSync(join(root, repo, "Cargo.toml")));
+const root = resolve(import.meta.dir, "..");
 
-describe.skipIf(!siblingsPresent)("repository layering", () => {
-  test("the sibling category repositories form a DAG with no layer violations", async () => {
-    const { edges, errors } = collectEdges(root);
-    // `aphrody-ai` may be mid-edit by another agent and briefly fail `cargo metadata`; that is
-    // not a layering regression, so only fail on errors from a repository this check can reach.
-    const hardErrors = errors.filter((error) => !error.startsWith("aphrody-ai:"));
-    expect(hardErrors).toEqual([]);
-    const loops = cycles(
-      Object.keys(LAYERS),
-      edges.filter((edge) => edge.kind !== "declared-only"),
-    );
-    expect(loops).toEqual([]);
-    expect(violations(edges)).toEqual([]);
+const fixture = {
+  packages: [
+    {
+      id: "app",
+      name: "app",
+      manifest_path: `${root}/apps/cli/app/Cargo.toml`,
+      dependencies: [
+        { name: "core", path: `${root}/crates/os/core` },
+        { name: "upstream", path: `${root}/../source/upstream` },
+      ],
+    },
+    {
+      id: "core",
+      name: "core",
+      manifest_path: `${root}/crates/os/core/Cargo.toml`,
+      dependencies: [],
+    },
+  ],
+  workspace_members: ["app", "core"],
+};
+
+describe("monorepo Cargo graph", () => {
+  test("resolves workspace crate edges and records upstream paths separately", () => {
+    const graph = graphFromMetadata(root, fixture);
+    expect(graph.nodes).toEqual(["apps/cli/app", "crates/os/core"]);
+    expect(graph.edges).toEqual([
+      { from: "apps/cli/app", to: "crates/os/core", kind: "dependency", evidence: "app -> core" },
+    ]);
+    expect(graph.externalPaths).toEqual(["../source/upstream"]);
+    expect(graph.errors).toEqual([]);
+    expect(cycles(graph.nodes, graph.edges)).toEqual([]);
+  });
+
+  test("detects missing workspace nodes and crate cycles", () => {
+    const missing = graphFromMetadata(root, {
+      ...fixture,
+      packages: [
+        {
+          ...fixture.packages[0]!,
+          dependencies: [{ name: "missing", path: `${root}/crates/os/missing` }],
+        },
+      ],
+      workspace_members: ["app"],
+    });
+    expect(missing.errors).toHaveLength(1);
+    const cycle = graphFromMetadata(root, {
+      ...fixture,
+      packages: [
+        fixture.packages[0]!,
+        { ...fixture.packages[1]!, dependencies: [{ name: "app", path: `${root}/apps/cli/app` }] },
+      ],
+    });
+    expect(cycles(cycle.nodes, cycle.edges)).toEqual([["apps/cli/app", "crates/os/core"]]);
+  });
+
+  test("does not confuse a sibling prefix with a path inside the repository", () => {
+    expect(inside(root, `${root}/crates/os/core`)).toBe(true);
+    expect(inside(root, `${root}-archive/crates/os/core`)).toBe(false);
+  });
+
+  test("the active Cargo workspace graph is complete and acyclic", () => {
+    const graph = collectEdges(root);
+    expect(graph.errors).toEqual([]);
+    expect(graph.nodes.length).toBeGreaterThan(100);
+    expect(graph.edges.length).toBeGreaterThan(0);
+    expect(cycles(graph.nodes, graph.edges)).toEqual([]);
   }, 120_000);
 });

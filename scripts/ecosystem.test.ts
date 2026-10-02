@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 /**
  * Unit tests for the ecosystem catalog extractors, plus the staleness gate: the committed
- * `docs/ecosystem/` output must match a fresh generation from the sibling checkouts.
+ * `docs/ecosystem/` output must match a fresh generation from the active roots.
  */
 import { existsSync } from "node:fs";
 import { join, resolve } from "node:path";
@@ -21,7 +21,6 @@ import {
   subsystemName,
   tsTools,
 } from "./ecosystem.ts";
-import { LAYERS } from "./repo-layering.ts";
 
 describe("clap extraction", () => {
   const src = `
@@ -76,7 +75,10 @@ describe("clap extraction", () => {
     const tree = index.commandsOf(cli!);
     expect(tree.map((n) => n.name)).toEqual(["index", "serve-http", "extra"]);
     expect(tree[0]?.about).toBe("Index things.");
-    expect(tree[0]?.children.map((n) => [n.name, n.about])).toEqual([["build", "Build it."], ["show-stats", 'Show "stats".']]);
+    expect(tree[0]?.children.map((n) => [n.name, n.about])).toEqual([
+      ["build", "Build it."],
+      ["show-stats", 'Show "stats".'],
+    ]);
     expect(tree[1]?.aliases).toEqual(["s"]);
     expect(tree[2]?.cfg).toEqual(['feature = "extra"']);
     expect(tree[2]?.children.map((n) => n.name)).toEqual(["one"]);
@@ -131,16 +133,18 @@ describe("MCP extraction", () => {
 });
 
 test("pyproject name, description and scripts", () => {
-  const py = readPyproject(`[project]\nname = "aphrody-ocr"\ndescription = "OCR"\n\n[project.scripts]\nb = "m:b"\na = "m:a"\n`);
+  const py = readPyproject(
+    `[project]\nname = "aphrody-ocr"\ndescription = "OCR"\n\n[project.scripts]\nb = "m:b"\na = "m:a"\n`,
+  );
   expect(py).toEqual({ name: "aphrody-ocr", description: "OCR", scripts: ["a", "b"] });
 });
 
 const root = resolve(import.meta.dir, "..", "..");
-const siblingsPresent = Object.keys(LAYERS)
-  .filter((repo) => repo !== "aphrody-infra")
-  .every((repo) => existsSync(join(root, repo, "Cargo.toml")));
+const activeRootsPresent = ["aphrody", "aphrody-py", "iecode"].every((repo) =>
+  existsSync(join(root, repo)),
+);
 
-describe.skipIf(!siblingsPresent)("ecosystem catalog", () => {
+describe.skipIf(!activeRootsPresent)("ecosystem catalog", () => {
   test("committed docs/ecosystem output is up to date (run: bun scripts/ecosystem.ts)", () => {
     const eco = collect(root);
     expect(eco.repos.flatMap((r) => r.errors)).toEqual([]);

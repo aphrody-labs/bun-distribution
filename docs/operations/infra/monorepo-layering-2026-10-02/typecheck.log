@@ -1,0 +1,1 @@
+$ bunx tsc --noEmit --skipLibCheck --target esnext --module esnext --moduleResolution bundler --allowImportingTsExtensions --types bun scripts/repo-layering.ts scripts/repo-layering.test.ts scripts/ecosystem.ts scripts/ecosystem.test.ts

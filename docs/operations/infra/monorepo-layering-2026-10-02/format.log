@@ -1,0 +1,5 @@
+$ bunx oxfmt --check package.json scripts/repo-layering.ts scripts/repo-layering.test.ts scripts/ecosystem.ts scripts/ecosystem.test.ts
+Checking formatting...
+
+All matched files use the correct format.
+Finished in 5ms on 5 files using 20 threads.

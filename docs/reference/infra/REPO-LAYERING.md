@@ -1,11 +1,22 @@
-# Repository layering
+# Cargo workspace dependency graph
 
-> **Historical category-repository DAG.** The repository boundaries and
-> `../aphrody-<category>` paths below predate the current monorepo and are not
-> current Cargo dependency rules. Resolve dependencies from the root workspace
-> `Cargo.toml`, package manifests and source imports; use root `AGENTS.md` and
-> `PLAN.md` for active ownership and workspaces. Preserve this page as a dated
-> rationale for the former split.
+The active Rust graph is the root `Cargo.toml` workspace. Run
+`bun run layering:check` to read `cargo metadata --no-deps --offline` and
+validate its workspace crate graph. Each node is a crate directory such as
+`crates/os/kernel`; each path dependency between workspace crates is an edge.
+The command fails on a missing workspace target, metadata error, or crate
+cycle. `--json` prints all nodes, edges, external path sources, and errors.
+The [test](../../../scripts/repo-layering.test.ts) exercises both a fixture
+graph and the current workspace. The ecosystem catalog reads the same Cargo
+metadata, and `bun scripts/ecosystem.ts --check` validates its generated view.
+
+Cross-domain dependencies are allowed when the crate graph is acyclic. The
+historical category repository layer numbers below do not govern the monorepo.
+
+## Historical category repository layering
+
+The following describes the former sibling checkouts and is retained as
+migration history.
 
 The `aphrody-*` category repositories (`aphrody-contracts`, `aphrody-native`, `aphrody-shell`,
 `aphrody-compat`, `aphrody-os`, `aphrody-web`, `aphrody-koharu`, `aphrody-ui`, `aphrody-infra`, `aphrody-ai`) must
@@ -34,16 +45,11 @@ Bun/uv/Nushell discovery crate) but nothing above `aphrody-os` links `aphrody-we
 (`aphrody_kernel::mcp_proxy`), never as linked crates. `aphrody-ai` consumes every other
 category repository by relative path and is never consumed by any of them (workspace invariant).
 
-## Enforcing it
+## Former enforcement
 
-`scripts/repo-layering.ts` builds the real graph from `cargo metadata --no-deps` in every
-sibling repository (a path dependency into a sibling checkout is an edge; a `[patch]` path entry
-is an edge too; a `[workspace.dependencies]` path entry no member actually uses is reported and
-treated as a violation, since it still forces the sibling checkout while hiding the real
-dependency). `scripts/repo-layering.test.ts` runs it in CI (`bun run test`, `bun run
-test:scripts`) and fails on any cycle or any edge that does not point to a strictly lower layer.
-Run it by hand with `bun run layering:check` (or `bun scripts/repo-layering.ts --json` for the
-full edge list).
+The former scanner read `cargo metadata --no-deps` in each sibling repository,
+then rejected edges against the fixed category layer numbers. The current
+scanner uses the root workspace's crate paths instead.
 
 ## 2026-09-25: breaking the `aphrody-compat` ↔ `aphrody-os` cycle
 

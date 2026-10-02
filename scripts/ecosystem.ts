@@ -13,12 +13,10 @@
 import { spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
-import { LAYERS, loadCargoMetadata } from "./repo-layering.ts";
+import { loadCargoMetadata } from "./repo-layering.ts";
 
-/** Repositories that are finished experiments converging into aphrody (listed, marked). */
-export const EXPERIMENTS = ["iecode", "nie", "rg", "shenron"] as const;
-export const SHARED_REPOS = ["aphrody-discord"] as const;
-export const APHRODY_REPOS = Object.keys(LAYERS).sort();
+/** The three active roots; retired category repositories remain migration history. */
+export const APHRODY_REPOS = ["aphrody", "aphrody-py", "iecode"] as const;
 
 // ---------------------------------------------------------------------------------------------
 // Types
@@ -99,17 +97,24 @@ export interface Ecosystem {
 // ---------------------------------------------------------------------------------------------
 
 const EXCLUDED = /(^|\/)(node_modules|vendor|third_party|third-party|target|dist|\.git)\//;
-const TEST_PATH = /(^|\/)(tests?|__tests__|fixtures|examples|benches|testdata)\/|\.test\.[jt]sx?$|\.spec\.[jt]sx?$|(^|\/)tests\.rs$|_tests?\.rs$/;
+const TEST_PATH =
+  /(^|\/)(tests?|__tests__|fixtures|examples|benches|testdata)\/|\.test\.[jt]sx?$|\.spec\.[jt]sx?$|(^|\/)tests\.rs$|_tests?\.rs$/;
 
 /** Tracked plus untracked-but-not-ignored files of a repository matching `patterns`. */
 export function gitFiles(repoDir: string, patterns: string[]): string[] {
-  const result = spawnSync("git", ["ls-files", "-z", "--cached", "--others", "--exclude-standard", "--", ...patterns], {
-    cwd: repoDir,
-    encoding: "utf8",
-    maxBuffer: 256 * 1024 * 1024,
-  });
+  const result = spawnSync(
+    "git",
+    ["ls-files", "-z", "--cached", "--others", "--exclude-standard", "--", ...patterns],
+    {
+      cwd: repoDir,
+      encoding: "utf8",
+      maxBuffer: 256 * 1024 * 1024,
+    },
+  );
   if (result.status !== 0) return [];
-  return [...new Set(result.stdout.split("\0").filter((file) => file !== "" && !EXCLUDED.test(file)))]
+  return [
+    ...new Set(result.stdout.split("\0").filter((file) => file !== "" && !EXCLUDED.test(file))),
+  ]
     .filter((file) => existsSync(join(repoDir, file)))
     .sort();
 }
@@ -122,7 +127,11 @@ function ownerOf(file: string, owners: [string, string][]): string | undefined {
   let best: [string, string] | undefined;
   for (const owner of owners) {
     const dir = owner[0];
-    if ((dir === "" || file.startsWith(`${dir}/`)) && (best === undefined || dir.length > best[0].length)) best = owner;
+    if (
+      (dir === "" || file.startsWith(`${dir}/`)) &&
+      (best === undefined || dir.length > best[0].length)
+    )
+      best = owner;
   }
   return best?.[1];
 }
@@ -140,12 +149,15 @@ export type Tok =
 
 /** Decode a Rust (non-raw) string literal body. */
 export function decodeRustString(body: string): string {
-  return body.replace(/\\(\r?\n\s*|u\{([0-9a-fA-F]+)\}|x([0-9a-fA-F]{2})|.)/g, (_m, esc: string, uni?: string, hex?: string) => {
-    if (uni !== undefined) return String.fromCodePoint(Number.parseInt(uni, 16));
-    if (hex !== undefined) return String.fromCharCode(Number.parseInt(hex, 16));
-    if (esc.startsWith("\n") || esc.startsWith("\r")) return "";
-    return ({ n: "\n", t: "\t", r: "\r", "0": "\0" } as Record<string, string>)[esc] ?? esc;
-  });
+  return body.replace(
+    /\\(\r?\n\s*|u\{([0-9a-fA-F]+)\}|x([0-9a-fA-F]{2})|.)/g,
+    (_m, esc: string, uni?: string, hex?: string) => {
+      if (uni !== undefined) return String.fromCodePoint(Number.parseInt(uni, 16));
+      if (hex !== undefined) return String.fromCharCode(Number.parseInt(hex, 16));
+      if (esc.startsWith("\n") || esc.startsWith("\r")) return "";
+      return ({ n: "\n", t: "\t", r: "\r", "0": "\0" } as Record<string, string>)[esc] ?? esc;
+    },
+  );
 }
 
 export function tokenize(src: string): Tok[] {
@@ -187,7 +199,8 @@ export function tokenize(src: string): Tok[] {
     if (c === "/" && src[i + 1] === "/") {
       const end = src.indexOf("\n", i);
       const line = src.slice(i, end < 0 ? n : end);
-      if (line.startsWith("///") && !line.startsWith("////")) out.push({ k: "doc", v: line.slice(3).replace(/^ /, "").trimEnd() });
+      if (line.startsWith("///") && !line.startsWith("////"))
+        out.push({ k: "doc", v: line.slice(3).replace(/^ /, "").trimEnd() });
       i = end < 0 ? n : end + 1;
       continue;
     }
@@ -212,7 +225,12 @@ export function tokenize(src: string): Tok[] {
       let depth = 1;
       while (j < n && depth > 0) {
         const d = src[j];
-        if (d === '"' || ((d === "r" || d === "b") && !isIdent(src[j - 1]) && /^(b?r#*"|b")/.test(src.slice(j, j + 4)))) {
+        if (
+          d === '"' ||
+          ((d === "r" || d === "b") &&
+            !isIdent(src[j - 1]) &&
+            /^(b?r#*"|b")/.test(src.slice(j, j + 4)))
+        ) {
           j = readString(j)[1];
           continue;
         }
@@ -370,10 +388,22 @@ function parseVariants(toks: Tok[]): Variant[] {
     const next = part[start + 1];
     if (next?.v === "(") {
       const end = skipGroup(part, start + 1);
-      variants.push({ ...meta, name: name.v, shape: "tuple", type: typeName(part.slice(start + 2, end - 1)), fields: [] });
+      variants.push({
+        ...meta,
+        name: name.v,
+        shape: "tuple",
+        type: typeName(part.slice(start + 2, end - 1)),
+        fields: [],
+      });
     } else if (next?.v === "{") {
       const end = skipGroup(part, start + 1);
-      variants.push({ ...meta, name: name.v, shape: "named", type: undefined, fields: parseFields(part.slice(start + 2, end - 1)) });
+      variants.push({
+        ...meta,
+        name: name.v,
+        shape: "named",
+        type: undefined,
+        fields: parseFields(part.slice(start + 2, end - 1)),
+      });
     } else {
       variants.push({ ...meta, name: name.v, shape: "unit", type: undefined, fields: [] });
     }
@@ -417,7 +447,12 @@ export function clapItems(src: string, file: string, crate: string, repo: string
       const end = opener === "{" || opener === "(" ? skipGroup(toks, j) : j + 1;
       const derives = pending.attrs
         .filter((a) => a.startsWith("derive("))
-        .flatMap((a) => a.slice(7, -1).split(",").map((d) => d.trim().split("::").at(-1) ?? ""));
+        .flatMap((a) =>
+          a
+            .slice(7, -1)
+            .split(",")
+            .map((d) => d.trim().split("::").at(-1) ?? ""),
+        );
       if (opener === "{" && derives.some((d) => CLAP_DERIVES.includes(d))) {
         const body = toks.slice(j + 1, end - 1);
         items.push({
@@ -455,10 +490,14 @@ function clapAttr(attrs: string[]): { flags: Set<string>; values: Map<string, st
     }
     for (const list of body.matchAll(/([A-Za-z_]+)\s*=\s*\[([^\]]*)\]/g)) {
       const key = list[1] as string;
-      const items = [...(list[2] as string).matchAll(/"((?:[^"\\]|\\[\s\S])*)"/g)].map((s) => s[1] as string);
+      const items = [...(list[2] as string).matchAll(/"((?:[^"\\]|\\[\s\S])*)"/g)].map(
+        (s) => s[1] as string,
+      );
       values.set(key, [...(values.get(key) ?? []), ...items]);
     }
-    for (const bare of body.replace(/"(?:[^"\\]|\\[\s\S])*"/g, '""').matchAll(/(?:^|[(,])\s*([A-Za-z_]+)\s*(?=,|\)|$)/g)) {
+    for (const bare of body
+      .replace(/"(?:[^"\\]|\\[\s\S])*"/g, '""')
+      .matchAll(/(?:^|[(,])\s*([A-Za-z_]+)\s*(?=,|\)|$)/g)) {
       flags.add(bare[1] as string);
     }
     if (/\bhide\s*=\s*true\b/.test(body)) flags.add("hide");
@@ -467,7 +506,9 @@ function clapAttr(attrs: string[]): { flags: Set<string>; values: Map<string, st
 }
 
 function cfgOf(attrs: string[]): string[] {
-  return attrs.filter((a) => /^cfg\s*\(/.test(a)).map((a) => a.replace(/^cfg\s*\(([\s\S]*)\)$/, "$1").replace(/\s+/g, " "));
+  return attrs
+    .filter((a) => /^cfg\s*\(/.test(a))
+    .map((a) => a.replace(/^cfg\s*\(([\s\S]*)\)$/, "$1").replace(/\s+/g, " "));
 }
 
 /** First paragraph of a doc comment, collapsed to one line. */
@@ -499,7 +540,10 @@ export class ClapIndex {
     this.byName.set(item.name, [...(this.byName.get(item.name) ?? []), item]);
   }
 
-  resolve(name: string | undefined, from: { file: string; crate: string; repo: string }): ClapItem | undefined {
+  resolve(
+    name: string | undefined,
+    from: { file: string; crate: string; repo: string },
+  ): ClapItem | undefined {
     if (name === undefined) return undefined;
     const candidates = this.byName.get(name) ?? [];
     return (
@@ -542,7 +586,12 @@ export class ClapIndex {
       let children: CommandNode[] = [];
       if (target !== undefined && !next.has(target)) children = this.commandsOf(target, next);
       else if (variant.shape === "named") children = this.fieldCommands(variant.fields, item, next);
-      const aliases = [...(values.get("visible_alias") ?? []), ...(values.get("visible_aliases") ?? []), ...(values.get("alias") ?? []), ...(values.get("aliases") ?? [])];
+      const aliases = [
+        ...(values.get("visible_alias") ?? []),
+        ...(values.get("visible_aliases") ?? []),
+        ...(values.get("alias") ?? []),
+        ...(values.get("aliases") ?? []),
+      ];
       const docs = values.get("about")?.[0] ?? summary(variant.docs);
       out.push({
         name: values.get("name")?.[0] ?? kebab(variant.name),
@@ -576,7 +625,8 @@ export function rmcpTools(src: string): { server: string; name: string; descript
     if (t.k === "ident" && t.v === "impl") {
       let j = i + 1;
       const head: Tok[] = [];
-      while (j < toks.length && toks[j]?.v !== "{" && toks[j]?.v !== ";") head.push(toks[j++] as Tok);
+      while (j < toks.length && toks[j]?.v !== "{" && toks[j]?.v !== ";")
+        head.push(toks[j++] as Tok);
       const forAt = head.findIndex((h) => h.k === "ident" && h.v === "for");
       impl = typeName(forAt >= 0 ? head.slice(forAt + 1) : head) ?? impl;
       continue;
@@ -587,7 +637,11 @@ export function rmcpTools(src: string): { server: string; name: string; descript
     const named = /\bname\s*=\s*"((?:[^"\\]|\\[\s\S])*)"/.exec(body);
     let j = i + 1;
     while (j < toks.length && (toks[j]?.k === "attr" || toks[j]?.k === "doc")) j += 1;
-    while (j < toks.length && toks[j]?.k === "ident" && ["pub", "async", "const", "unsafe"].includes(toks[j]?.v ?? "")) {
+    while (
+      j < toks.length &&
+      toks[j]?.k === "ident" &&
+      ["pub", "async", "const", "unsafe"].includes(toks[j]?.v ?? "")
+    ) {
       j += 1;
       if (toks[j]?.v === "(") j = skipGroup(toks, j);
     }
@@ -607,18 +661,30 @@ export function kernelTools(src: string): { name: string; description: string }[
   const toks = tokenize(src);
   const out: { name: string; description: string }[] = [];
   for (let i = 0; i + 6 < toks.length; i += 1) {
-    if (toks[i]?.v !== "ToolDefinition" || toks[i + 1]?.v !== ":" || toks[i + 2]?.v !== ":" || toks[i + 3]?.v !== "new" || toks[i + 4]?.v !== "(") continue;
+    if (
+      toks[i]?.v !== "ToolDefinition" ||
+      toks[i + 1]?.v !== ":" ||
+      toks[i + 2]?.v !== ":" ||
+      toks[i + 3]?.v !== "new" ||
+      toks[i + 4]?.v !== "("
+    )
+      continue;
     const name = toks[i + 5];
     const comma = toks[i + 6];
     const desc = toks[i + 7];
-    if (name?.k === "str" && comma?.v === "," && desc?.k === "str") out.push({ name: name.v, description: oneLine(desc.v) });
+    if (name?.k === "str" && comma?.v === "," && desc?.k === "str")
+      out.push({ name: name.v, description: oneLine(desc.v) });
   }
   return out;
 }
 
 /** Subsystem name declared by `fn name(&self) -> &str { "..." }` in a file, if unique. */
 export function subsystemName(src: string): string | undefined {
-  const names = [...src.matchAll(/fn\s+name\s*\(\s*&self\s*\)\s*->\s*&(?:'static\s+)?str\s*\{\s*"([^"]+)"\s*\}/g)].map((m) => m[1] as string);
+  const names = [
+    ...src.matchAll(
+      /fn\s+name\s*\(\s*&self\s*\)\s*->\s*&(?:'static\s+)?str\s*\{\s*"([^"]+)"\s*\}/g,
+    ),
+  ].map((m) => m[1] as string);
   return new Set(names).size === 1 ? names[0] : undefined;
 }
 
@@ -678,7 +744,10 @@ export function tsTools(src: string): { name: string; description: string }[] {
     const window = src.slice((m.index ?? 0) + m[0].length, (m.index ?? 0) + m[0].length + 3000);
     const d = /\bdescription\s*:\s*/.exec(window);
     const next = window.search(/\bregisterTool\s*\(/);
-    const description = d !== null && (next < 0 || d.index < next) ? jsString(window, d.index + d[0].length) : undefined;
+    const description =
+      d !== null && (next < 0 || d.index < next)
+        ? jsString(window, d.index + d[0].length)
+        : undefined;
     out.push({ name: m[2] as string, description: oneLine(description ?? "") });
   }
   for (const m of src.matchAll(/\.tool\s*\(\s*(["'`])([A-Za-z0-9_.:-]+)\1\s*,\s*/g)) {
@@ -692,17 +761,12 @@ export function tsTools(src: string): { name: string; description: string }[] {
 // Manifests
 // ---------------------------------------------------------------------------------------------
 
-/** Roles from the workspace `CLAUDE.md` "Repository roles" table. */
-export function readRoles(root: string): Map<string, string> {
-  const roles = new Map<string, string>();
-  const path = join(root, "CLAUDE.md");
-  if (!existsSync(path)) return roles;
-  for (const m of read(path).matchAll(/^\|\s*`([^`]+)`\s*\|\s*(.+?)\s*\|\s*$/gm)) roles.set(m[1] as string, m[2] as string);
-  return roles;
-}
-
 /** `[project]` name/description and `[project.scripts]` keys of a pyproject.toml. */
-export function readPyproject(text: string): { name?: string; description?: string; scripts: string[] } {
+export function readPyproject(text: string): {
+  name?: string;
+  description?: string;
+  scripts: string[];
+} {
   let section = "";
   const out: { name?: string; description?: string; scripts: string[] } = { scripts: [] };
   for (const raw of text.split(/\r?\n/)) {
@@ -738,14 +802,18 @@ interface MetaPackage {
 // ---------------------------------------------------------------------------------------------
 
 export function collect(root: string): Ecosystem {
-  const roles = readRoles(root);
-  const candidates = existsSync(join(root, "aphrody", "Cargo.toml"))
-    ? ["aphrody", "aphrody-py", "iecode"]
-    : [...APHRODY_REPOS, ...EXPERIMENTS, ...SHARED_REPOS];
+  const candidates = APHRODY_REPOS;
   const repoNames = candidates.filter((repo) => existsSync(join(root, repo)));
   const repos: RepoInfo[] = [];
   const index = new ClapIndex();
-  const binTargets: { binary: string; crate: string; repo: string; src: string; libSrc?: string; usesClap: boolean }[] = [];
+  const binTargets: {
+    binary: string;
+    crate: string;
+    repo: string;
+    src: string;
+    libSrc?: string;
+    usesClap: boolean;
+  }[] = [];
   const mcp = new Map<string, McpServer>();
   const addTool = (repo: string, server: string, kind: McpServer["kind"], tool: McpTool): void => {
     const key = `${repo}\0${server}`;
@@ -758,8 +826,12 @@ export function collect(root: string): Ecosystem {
     const dir = join(root, repo);
     const info: RepoInfo = {
       name: repo,
-      kind: ["aphrody", "aphrody-py", "iecode"].includes(repo) || APHRODY_REPOS.includes(repo) ? "aphrody" : SHARED_REPOS.includes(repo) ? "shared" : "experiment",
-      role: ({ aphrody: "Canonical Rust/Bun monorepo", "aphrody-py": "Active Python workspace", iecode: "Active game-domain workspace" } as Record<string, string>)[repo] ?? roles.get(repo) ?? (repo === "aphrody-discord" ? "Shared Discord transport, protocol contracts and framework adapters for Aphrody applications" : ""),
+      kind: "aphrody",
+      role: {
+        aphrody: "Canonical Rust/Bun monorepo",
+        "aphrody-py": "Active Python workspace",
+        iecode: "Active game-domain workspace",
+      }[repo],
       crates: [],
       bunPackages: [],
       pythonPackages: [],
@@ -773,18 +845,29 @@ export function collect(root: string): Ecosystem {
         for (const pkg of metadata.packages) {
           const crateDir = posix(dirname(pkg.manifest_path)).slice(posix(dir).length + 1);
           const bins = pkg.targets.filter((t) => t.kind.includes("bin"));
-          const lib = pkg.targets.find((t) => t.kind.some((k) => k === "lib" || k === "rlib" || k === "cdylib"));
+          const lib = pkg.targets.find((t) =>
+            t.kind.some((k) => k === "lib" || k === "rlib" || k === "cdylib"),
+          );
           crateDirs.push([crateDir, pkg.name]);
           info.crates.push({
             name: pkg.name,
             path: crateDir,
             description: oneLine(pkg.description ?? ""),
             bins: bins.map((b) => b.name).sort(),
-            features: Object.keys(pkg.features).filter((f) => !f.startsWith("dep:")).sort(),
+            features: Object.keys(pkg.features)
+              .filter((f) => !f.startsWith("dep:"))
+              .sort(),
           });
           const usesClap = pkg.dependencies.some((d) => d.name === "clap");
           for (const bin of bins) {
-            binTargets.push({ binary: bin.name, crate: pkg.name, repo, src: bin.src_path, libSrc: lib?.src_path, usesClap });
+            binTargets.push({
+              binary: bin.name,
+              crate: pkg.name,
+              repo,
+              src: bin.src_path,
+              libSrc: lib?.src_path,
+              usesClap,
+            });
           }
         }
       }
@@ -803,8 +886,16 @@ export function collect(root: string): Ecosystem {
       if (typeof json.name !== "string") continue;
       const pkgDir = file === "package.json" ? "" : file.slice(0, -"/package.json".length);
       pkgDirs.push([pkgDir, json.name]);
-      const bins = typeof json.bin === "string" ? [json.name.replace(/^@[^/]+\//, "")] : Object.keys(json.bin ?? {});
-      info.bunPackages.push({ name: json.name, path: pkgDir || ".", description: oneLine(json.description ?? ""), bins: bins.sort() });
+      const bins =
+        typeof json.bin === "string"
+          ? [json.name.replace(/^@[^/]+\//, "")]
+          : Object.keys(json.bin ?? {});
+      info.bunPackages.push({
+        name: json.name,
+        path: pkgDir || ".",
+        description: oneLine(json.description ?? ""),
+        bins: bins.sort(),
+      });
     }
     info.bunPackages.sort((a, b) => a.name.localeCompare(b.name) || a.path.localeCompare(b.path));
 
@@ -812,7 +903,12 @@ export function collect(root: string): Ecosystem {
       if (TEST_PATH.test(file)) continue;
       const py = readPyproject(read(join(dir, file)));
       if (py.name === undefined) continue;
-      info.pythonPackages.push({ name: py.name, path: dirname(file), description: oneLine(py.description ?? ""), scripts: py.scripts });
+      info.pythonPackages.push({
+        name: py.name,
+        path: dirname(file),
+        description: oneLine(py.description ?? ""),
+        scripts: py.scripts,
+      });
     }
     info.pythonPackages.sort((a, b) => a.name.localeCompare(b.name));
 
@@ -824,20 +920,33 @@ export function collect(root: string): Ecosystem {
       }
       if (TEST_PATH.test(file)) continue;
       if (src.includes("#[tool(")) {
-        for (const tool of rmcpTools(src)) addTool(repo, `${crate}${tool.server ? ` (${tool.server})` : ""}`, "rmcp", { name: tool.name, description: tool.description, file });
+        for (const tool of rmcpTools(src))
+          addTool(repo, `${crate}${tool.server ? ` (${tool.server})` : ""}`, "rmcp", {
+            name: tool.name,
+            description: tool.description,
+            file,
+          });
       }
       if (src.includes("ToolDefinition::new(")) {
         const subsystem = subsystemName(src);
-        for (const tool of kernelTools(src)) addTool(repo, subsystem !== undefined ? `${crate} subsystem \`${subsystem}\`` : crate, "kernel-subsystem", { ...tool, file });
+        for (const tool of kernelTools(src))
+          addTool(
+            repo,
+            subsystem !== undefined ? `${crate} subsystem \`${subsystem}\`` : crate,
+            "kernel-subsystem",
+            { ...tool, file },
+          );
       }
       if (src.includes('"inputSchema"')) {
-        for (const tool of jsonCatalogTools(src)) addTool(repo, crate, "json-catalog", { ...tool, file });
+        for (const tool of jsonCatalogTools(src))
+          addTool(repo, crate, "json-catalog", { ...tool, file });
       }
     }
     for (const file of gitFiles(dir, ["**/tools.json"])) {
       if (TEST_PATH.test(file)) continue;
       const crate = ownerOf(file, crateDirs) ?? repo;
-      for (const tool of jsonCatalogTools(read(join(dir, file)))) addTool(repo, crate, "json-catalog", { ...tool, file });
+      for (const tool of jsonCatalogTools(read(join(dir, file))))
+        addTool(repo, crate, "json-catalog", { ...tool, file });
     }
     for (const file of gitFiles(dir, ["*.ts", "*.mts", "*.tsx"])) {
       if (TEST_PATH.test(file)) continue;
@@ -861,23 +970,43 @@ export function collect(root: string): Ecosystem {
       const text = read(path);
       for (const m of text.matchAll(/\b([A-Z][A-Za-z0-9_]*)\s*::\s*(?:try_)?parse(?:_from)?\b/g)) {
         if (parserNames.has(m[1] as string)) {
-          parser = index.resolve(m[1], { ...from, file: posix(path).slice(posix(join(root, bin.repo)).length + 1) });
+          parser = index.resolve(m[1], {
+            ...from,
+            file: posix(path).slice(posix(join(root, bin.repo)).length + 1),
+          });
           break;
         }
       }
     }
     if (parser === undefined && bin.usesClap) {
-      const own = index.parsers().filter((p) => p.crate === bin.crate && p.repo === bin.repo && !TEST_PATH.test(p.file));
-      parser = own.find((p) => clapAttr(p.attrs).values.get("name")?.[0] === bin.binary) ?? (own.length === 1 ? own[0] : undefined);
+      const own = index
+        .parsers()
+        .filter((p) => p.crate === bin.crate && p.repo === bin.repo && !TEST_PATH.test(p.file));
+      parser =
+        own.find((p) => clapAttr(p.attrs).values.get("name")?.[0] === bin.binary) ??
+        (own.length === 1 ? own[0] : undefined);
     }
     if (parser === undefined) {
       binariesWithoutClap.push({ binary: bin.binary, crate: bin.crate, repo: bin.repo });
       continue;
     }
-    cli.push({ binary: bin.binary, crate: bin.crate, repo: bin.repo, source: `${parser.file}#${parser.name}`, commands: index.commandsOf(parser) });
+    cli.push({
+      binary: bin.binary,
+      crate: bin.crate,
+      repo: bin.repo,
+      source: `${parser.file}#${parser.name}`,
+      commands: index.commandsOf(parser),
+    });
   }
-  cli.sort((a, b) => a.repo.localeCompare(b.repo) || a.binary.localeCompare(b.binary) || a.crate.localeCompare(b.crate));
-  binariesWithoutClap.sort((a, b) => a.repo.localeCompare(b.repo) || a.binary.localeCompare(b.binary));
+  cli.sort(
+    (a, b) =>
+      a.repo.localeCompare(b.repo) ||
+      a.binary.localeCompare(b.binary) ||
+      a.crate.localeCompare(b.crate),
+  );
+  binariesWithoutClap.sort(
+    (a, b) => a.repo.localeCompare(b.repo) || a.binary.localeCompare(b.binary),
+  );
 
   const servers = [...mcp.values()].filter((s) => s.tools.length > 0);
   for (const server of servers) server.tools.sort((a, b) => a.name.localeCompare(b.name));
@@ -898,7 +1027,14 @@ export function collect(root: string): Ecosystem {
     mcpTools: servers.reduce((n, s) => n + s.tools.length, 0),
     mcpUniqueToolNames: new Set(servers.flatMap((s) => s.tools.map((t) => t.name))).size,
   };
-  return { generator: "aphrody-infra/scripts/ecosystem.ts", repos, cli, binariesWithoutClap, mcp: servers, counts };
+  return {
+    generator: "aphrody-infra/scripts/ecosystem.ts",
+    repos,
+    cli,
+    binariesWithoutClap,
+    mcp: servers,
+    counts,
+  };
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -906,8 +1042,10 @@ export function collect(root: string): Ecosystem {
 // ---------------------------------------------------------------------------------------------
 
 const cell = (text: string): string => text.replace(/\|/g, "\\|").replace(/\s+/g, " ").trim();
-const clip = (text: string, limit = 200): string => (text.length > limit ? `${text.slice(0, limit - 1).trimEnd()}…` : text);
-const HEADER = "<!-- @generated by aphrody-infra/scripts/ecosystem.ts — do not edit; run `bun scripts/ecosystem.ts` -->\n";
+const clip = (text: string, limit = 200): string =>
+  text.length > limit ? `${text.slice(0, limit - 1).trimEnd()}…` : text;
+const HEADER =
+  "<!-- @generated by aphrody-infra/scripts/ecosystem.ts — do not edit; run `bun scripts/ecosystem.ts` -->\n";
 
 export function renderEcosystem(eco: Ecosystem): string {
   const c = eco.counts;
@@ -929,25 +1067,50 @@ export function renderEcosystem(eco: Ecosystem): string {
   ];
   for (const repo of eco.repos) {
     out.push(`## ${repo.name}`, "");
-    if (repo.kind === "experiment") out.push("_Experiment converging into aphrody: reuse or port from it, do not grow it._", "");
-    if (repo.kind === "shared") out.push("_Shared integration repository: applications retain domain logic and data._", "");
+    if (repo.kind === "experiment")
+      out.push("_Experiment converging into aphrody: reuse or port from it, do not grow it._", "");
+    if (repo.kind === "shared")
+      out.push("_Shared integration repository: applications retain domain logic and data._", "");
     if (repo.role !== "") out.push(repo.role, "");
     for (const error of repo.errors) out.push(`> extraction error: ${error}`, "");
     if (repo.crates.length > 0) {
-      out.push(`### Crates (${repo.crates.length})`, "", "| Crate | Path | Description | Binaries | Features |", "| --- | --- | --- | --- | --- |");
+      out.push(
+        `### Crates (${repo.crates.length})`,
+        "",
+        "| Crate | Path | Description | Binaries | Features |",
+        "| --- | --- | --- | --- | --- |",
+      );
       for (const k of repo.crates) {
-        out.push(`| \`${k.name}\` | ${k.path} | ${cell(k.description)} | ${k.bins.map((b) => `\`${b}\``).join(", ")} | ${cell(k.features.join(", "))} |`);
+        out.push(
+          `| \`${k.name}\` | ${k.path} | ${cell(k.description)} | ${k.bins.map((b) => `\`${b}\``).join(", ")} | ${cell(k.features.join(", "))} |`,
+        );
       }
       out.push("");
     }
     if (repo.bunPackages.length > 0) {
-      out.push(`### Bun packages (${repo.bunPackages.length})`, "", "| Package | Path | Description | Bin |", "| --- | --- | --- | --- |");
-      for (const p of repo.bunPackages) out.push(`| \`${p.name}\` | ${p.path} | ${cell(p.description)} | ${p.bins.map((b) => `\`${b}\``).join(", ")} |`);
+      out.push(
+        `### Bun packages (${repo.bunPackages.length})`,
+        "",
+        "| Package | Path | Description | Bin |",
+        "| --- | --- | --- | --- |",
+      );
+      for (const p of repo.bunPackages)
+        out.push(
+          `| \`${p.name}\` | ${p.path} | ${cell(p.description)} | ${p.bins.map((b) => `\`${b}\``).join(", ")} |`,
+        );
       out.push("");
     }
     if (repo.pythonPackages.length > 0) {
-      out.push(`### uv packages (${repo.pythonPackages.length})`, "", "| Package | Path | Description | Scripts |", "| --- | --- | --- | --- |");
-      for (const p of repo.pythonPackages) out.push(`| \`${p.name}\` | ${p.path} | ${cell(p.description)} | ${p.scripts.map((s) => `\`${s}\``).join(", ")} |`);
+      out.push(
+        `### uv packages (${repo.pythonPackages.length})`,
+        "",
+        "| Package | Path | Description | Scripts |",
+        "| --- | --- | --- | --- |",
+      );
+      for (const p of repo.pythonPackages)
+        out.push(
+          `| \`${p.name}\` | ${p.path} | ${cell(p.description)} | ${p.scripts.map((s) => `\`${s}\``).join(", ")} |`,
+        );
       out.push("");
     }
   }
@@ -962,7 +1125,9 @@ function renderTree(prefix: string, nodes: CommandNode[], depth: number, out: st
       node.cfg.length > 0 ? `cfg: ${node.cfg.join("; ")}` : "",
     ].filter((e) => e !== "");
     const about = node.about !== "" ? ` — ${clip(node.about)}` : "";
-    out.push(`${"  ".repeat(depth)}- \`${path}\`${about}${extras.length > 0 ? ` _(${extras.join("; ")})_` : ""}`);
+    out.push(
+      `${"  ".repeat(depth)}- \`${path}\`${about}${extras.length > 0 ? ` _(${extras.join("; ")})_` : ""}`,
+    );
     renderTree(path, node.children, depth + 1, out);
   }
 }
@@ -997,10 +1162,16 @@ function renderInfraRustCliInventory(eco: Ecosystem, out: string[]): void {
   for (const krate of binaries) {
     for (const binary of krate.bins) {
       const cli = commandByCrate.get(krate.name);
-      out.push(`| \`${krate.name}\` | \`${binary}\` | ${cli === undefined ? "not detected" : `\`${cli.source}\``} | ${cli === undefined ? "—" : countCommands(cli.commands)} |`);
+      out.push(
+        `| \`${krate.name}\` | \`${binary}\` | ${cli === undefined ? "not detected" : `\`${cli.source}\``} | ${cli === undefined ? "—" : countCommands(cli.commands)} |`,
+      );
     }
   }
-  out.push("", `Library-only crates: ${libraries.map((krate) => `\`${krate.name}\``).join(", ")}.`, "");
+  out.push(
+    "",
+    `Library-only crates: ${libraries.map((krate) => `\`${krate.name}\``).join(", ")}.`,
+    "",
+  );
 }
 
 export function renderCli(eco: Ecosystem): string {
@@ -1022,14 +1193,20 @@ export function renderCli(eco: Ecosystem): string {
       repo = bin.repo;
       out.push(`## ${repo}`, "");
     }
-    out.push(`### \`${bin.binary}\``, "", `Crate \`${bin.crate}\`, parser \`${bin.source}\`, ${countCommands(bin.commands)} commands.`, "");
+    out.push(
+      `### \`${bin.binary}\``,
+      "",
+      `Crate \`${bin.crate}\`, parser \`${bin.source}\`, ${countCommands(bin.commands)} commands.`,
+      "",
+    );
     if (bin.commands.length === 0) out.push("_No subcommands (flags only)._");
     renderTree(bin.binary, bin.commands, 0, out);
     out.push("");
   }
   if (eco.binariesWithoutClap.length > 0) {
     out.push("## Binaries without a detected clap surface", "");
-    for (const b of eco.binariesWithoutClap) out.push(`- \`${b.binary}\` (${b.repo} / \`${b.crate}\`)`);
+    for (const b of eco.binariesWithoutClap)
+      out.push(`- \`${b.binary}\` (${b.repo} / \`${b.crate}\`)`);
     out.push("");
   }
   return `${out.join("\n").trimEnd()}\n`;
@@ -1049,8 +1226,16 @@ export function renderMcp(eco: Ecosystem): string {
     "",
   ];
   for (const server of eco.mcp) {
-    out.push(`## ${server.repo} — ${server.server}`, "", `Kind: ${server.kind}. ${server.tools.length} tools.`, "", "| Tool | Description |", "| --- | --- |");
-    for (const tool of server.tools) out.push(`| \`${tool.name}\` | ${cell(clip(tool.description))} |`);
+    out.push(
+      `## ${server.repo} — ${server.server}`,
+      "",
+      `Kind: ${server.kind}. ${server.tools.length} tools.`,
+      "",
+      "| Tool | Description |",
+      "| --- | --- |",
+    );
+    for (const tool of server.tools)
+      out.push(`| \`${tool.name}\` | ${cell(clip(tool.description))} |`);
     out.push("");
   }
   return `${out.join("\n").trimEnd()}\n`;
@@ -1068,7 +1253,11 @@ export function render(eco: Ecosystem): Record<string, string> {
 /** Files whose committed content differs from a fresh generation. */
 export function staleFiles(outDir: string, files: Record<string, string>): string[] {
   return Object.entries(files)
-    .filter(([name, content]) => !existsSync(join(outDir, name)) || read(join(outDir, name)).replace(/\r\n/g, "\n") !== content)
+    .filter(
+      ([name, content]) =>
+        !existsSync(join(outDir, name)) ||
+        read(join(outDir, name)).replace(/\r\n/g, "\n") !== content,
+    )
     .map(([name]) => name);
 }
 
@@ -1084,10 +1273,13 @@ if (import.meta.main) {
   const files = render(eco);
   const errors = eco.repos.flatMap((r) => r.errors.map((e) => `${r.name}: ${e}`));
   for (const error of errors) console.error(`error: ${error}`);
-  const summaryLine = Object.entries(eco.counts).map(([k, v]) => `${k}=${v}`).join(" ");
+  const summaryLine = Object.entries(eco.counts)
+    .map(([k, v]) => `${k}=${v}`)
+    .join(" ");
   if (args.includes("--check")) {
     const stale = staleFiles(outDir, files);
-    for (const name of stale) console.error(`stale: ${join(outDir, name)} (run: bun scripts/ecosystem.ts)`);
+    for (const name of stale)
+      console.error(`stale: ${join(outDir, name)} (run: bun scripts/ecosystem.ts)`);
     console.log(summaryLine);
     process.exit(stale.length === 0 && errors.length === 0 ? 0 : 1);
   }

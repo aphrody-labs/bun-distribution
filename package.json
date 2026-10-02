@@ -333,6 +333,7 @@
     "monorepo:layout": "bun packages/infra/workspace/src/ops.ts workspace-layout --root . && bun packages/infra/workspace/src/ops.ts docs-gen --root . --check --skip-ecosystem",
     "monorepo:state": "bun packages/infra/workspace/src/ops.ts repository-state --root .",
     "monorepo:clean": "bun packages/infra/workspace/src/ops.ts workspace-clean --root .",
+    "layering:check": "bun scripts/repo-layering.ts",
     "paths:audit": "bun packages/infra/paths/src/cli.ts",
     "paths:fix": "bun packages/infra/paths/src/cli.ts --apply",
     "env:example:sync": "bun scripts/audit/workspace/env-inventory.ts",
@@ -361,12 +362,12 @@
     "undici-types": "catalog:"
   },
   "overrides": {
-    "axios": "^1.20.0",
-    "qs": "^6.16.0",
-    "undici": "^7.30.0",
     "@rosegriffon/azalee": "file:.cache/iecode-packages/azalee-92e027f647744ba20be55a18b992400131ad2eca.tgz",
     "@rosegriffon/inagle": "file:.cache/iecode-packages/inagle-92e027f647744ba20be55a18b992400131ad2eca.tgz",
-    "@rosegriffon/inagle-cross": "file:.cache/iecode-packages/inagle-cross-92e027f647744ba20be55a18b992400131ad2eca.tgz"
+    "@rosegriffon/inagle-cross": "file:.cache/iecode-packages/inagle-cross-92e027f647744ba20be55a18b992400131ad2eca.tgz",
+    "axios": "^1.20.0",
+    "qs": "^6.16.0",
+    "undici": "^7.30.0"
   },
   "engines": {
     "bun": ">=1.4.2"
