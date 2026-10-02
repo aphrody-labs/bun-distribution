@@ -345,6 +345,15 @@
             "run",
             "--filter",
             "@aphrody/ovh",
+            "lint"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@aphrody/ovh",
             "typecheck"
           ]
         },
@@ -362,8 +371,44 @@
           "command": [
             "run",
             "--filter",
+            "@aphrody/ovh",
+            "build"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@aphrody/paths",
+            "lint"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
             "@aphrody/paths",
             "typecheck"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@aphrody/paths",
+            "test"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@aphrody/paths",
+            "build"
           ]
         },
         {
@@ -398,6 +443,24 @@
           "command": [
             "run",
             "--filter",
+            "@aphrody/sql",
+            "build"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@aphrody/update",
+            "lint"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
             "@aphrody/update",
             "typecheck"
           ]
@@ -409,6 +472,15 @@
             "--filter",
             "@aphrody/update",
             "test"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@aphrody/update",
+            "build"
           ]
         },
         {

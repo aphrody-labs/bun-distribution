@@ -1,0 +1,2 @@
+$ bun run lint
+$ oxlint -c ../../../.oxlintrc.json src test

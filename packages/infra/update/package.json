@@ -19,9 +19,14 @@
     "./bun": "./src/ecosystems/bun.ts"
   },
   "scripts": {
+    "build": "bun build src/cli.ts --target bun --packages external --outdir dist",
+    "lint": "oxlint src test",
     "check": "bun src/cli.ts check",
     "test": "bun test test",
     "typecheck": "bunx --bun tsc --noEmit -p ."
+  },
+  "dependencies": {
+    "@aphrody/bun": "workspace:*"
   },
   "devDependencies": {
     "@types/bun": "catalog:",
@@ -29,8 +34,5 @@
   },
   "engines": {
     "bun": ">=1.4.2"
-  },
-  "dependencies": {
-    "@aphrody/bun": "workspace:*"
   }
 }

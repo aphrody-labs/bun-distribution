@@ -32,7 +32,16 @@ export type Manifest = Record<string, any>;
 
 /** One direct dependency: a catalog entry or a literal range in a manifest, deduplicated by name and spec. */
 export type Direct = { name: string; spec: string; where: string[] };
-export type SpecKind = "workspace" | "file" | "link" | "git" | "url" | "alias" | "catalog" | "tag" | "version";
+export type SpecKind =
+  | "workspace"
+  | "file"
+  | "link"
+  | "git"
+  | "url"
+  | "alias"
+  | "catalog"
+  | "tag"
+  | "version";
 export type BumpKind = "none" | "ahead" | "patch" | "minor" | "major" | "pre";
 
 export type Row = Direct & {
@@ -50,7 +59,13 @@ export type Row = Direct & {
 };
 
 /** A bump that policy refuses: stay at `maxMajor` (or at `maxVersion`) until the blocker moves. */
-export type Hold = { name: string; maxMajor?: number; maxVersion?: string; reason: string; since?: string };
+export type Hold = {
+  name: string;
+  maxMajor?: number;
+  maxVersion?: string;
+  reason: string;
+  since?: string;
+};
 export type Holds = { schemaVersion: number; holds: Hold[] };
 export type AdvisoryHold = { ecosystem: string; name: string; reason: string };
 
@@ -77,7 +92,11 @@ export function specKind(spec: string): SpecKind {
   if (spec.startsWith("file:")) return "file";
   if (spec.startsWith("link:")) return "link";
   if (spec.startsWith("npm:")) return "alias";
-  if (/^(git|github|git\+\w+|gitlab|bitbucket):/.test(spec) || /^[\w.-]+\/[\w.-]+(#.*)?$/.test(spec)) return "git";
+  if (
+    /^(git|github|git\+\w+|gitlab|bitbucket):/.test(spec) ||
+    /^[\w.-]+\/[\w.-]+(#.*)?$/.test(spec)
+  )
+    return "git";
   if (/^https?:/.test(spec)) return "url";
   if (/^[\^~>=<v\d*xX\s|.-]/.test(spec) && /\d|[*xX]/.test(spec)) return "version";
   return "tag"; // latest, next, canary, ...
@@ -85,7 +104,12 @@ export function specKind(spec: string): SpecKind {
 
 /** Lowest bound of the highest alternative of a range (`^1.2.3`, `~1.2`, `>=1 <2 || ^3.1.0`); undefined when open. */
 export function specBase(spec: string): string | undefined {
-  const alt = spec.split("||").map((a) => a.trim()).filter(Boolean).at(-1) ?? "";
+  const alt =
+    spec
+      .split("||")
+      .map((a) => a.trim())
+      .filter(Boolean)
+      .at(-1) ?? "";
   const m = /(\d+)(?:\.(\d+|[xX*]))?(?:\.(\d+|[xX*]))?(-[0-9A-Za-z.-]+)?/.exec(alt);
   if (!m) return undefined;
   const n = (s: string | undefined) => (s && /^\d+$/.test(s) ? s : "0");
@@ -129,8 +153,10 @@ export function satisfies(version: string, spec: string): boolean {
 
 /** Root `workspaces.catalog` plus every named catalog, flattened name -> spec (named ones keep the first spec seen). */
 export function catalogEntries(root: Manifest): Record<string, string> {
-  const out: Record<string, string> = { ...(root.workspaces?.catalog ?? root.catalog ?? {}) };
-  for (const named of Object.values<Record<string, string>>(root.workspaces?.catalogs ?? root.catalogs ?? {})) {
+  const out: Record<string, string> = { ...(root.workspaces?.catalog ?? root.catalog) };
+  for (const named of Object.values<Record<string, string>>(
+    root.workspaces?.catalogs ?? root.catalogs ?? {},
+  )) {
     for (const [n, s] of Object.entries(named)) out[n] ??= s;
   }
   return out;
@@ -139,7 +165,9 @@ export function catalogEntries(root: Manifest): Record<string, string> {
 /** name -> declared spec of one manifest with `catalog:` references resolved through the root catalog. */
 export function resolvedDeps(manifest: Manifest, root: Manifest): Map<string, string> {
   const catalog = root.workspaces?.catalog ?? root.catalog ?? {};
-  const catalogs: Record<string, Record<string, string>> = root.workspaces?.catalogs ?? root.catalogs ?? {};
+  const catalogs: Record<string, Record<string, string>> = root.workspaces?.catalogs ??
+  root.catalogs ??
+  {};
   const out = new Map<string, string>();
   for (const section of DEP_SECTIONS) {
     for (const [name, spec] of Object.entries<string>(manifest[section] ?? {})) {
@@ -169,7 +197,9 @@ export function collectDirect(root: Manifest, manifests: Record<string, Manifest
       }
     }
   }
-  return [...map.values()].sort((a, b) => a.name.localeCompare(b.name) || a.spec.localeCompare(b.spec));
+  return [...map.values()].sort(
+    (a, b) => a.name.localeCompare(b.name) || a.spec.localeCompare(b.spec),
+  );
 }
 
 /** Manifests whose resolved dependency specs differ between two states (catalog edits propagate to their users). */
@@ -180,7 +210,9 @@ export function touchedManifests(
   const out: string[] = [];
   for (const [path, m] of Object.entries(after.manifests)) {
     const a = resolvedDeps(m, after.root);
-    const b = before.manifests[path] ? resolvedDeps(before.manifests[path]!, before.root) : new Map<string, string>();
+    const b = before.manifests[path]
+      ? resolvedDeps(before.manifests[path]!, before.root)
+      : new Map<string, string>();
     const changed = a.size !== b.size || [...a].some(([n, s]) => b.get(n) !== s);
     if (changed) out.push(path);
   }
@@ -190,8 +222,13 @@ export function touchedManifests(
 // ---------------------------------------------------------------- config
 
 export function parseReleaseAge(bunfigText: string): ReleaseAge {
-  const t = Bun.TOML.parse(bunfigText) as { install?: { minimumReleaseAge?: number; minimumReleaseAgeExcludes?: string[] } };
-  return { seconds: t.install?.minimumReleaseAge ?? 0, excludes: t.install?.minimumReleaseAgeExcludes ?? [] };
+  const t = Bun.TOML.parse(bunfigText) as {
+    install?: { minimumReleaseAge?: number; minimumReleaseAgeExcludes?: string[] };
+  };
+  return {
+    seconds: t.install?.minimumReleaseAge ?? 0,
+    excludes: t.install?.minimumReleaseAgeExcludes ?? [],
+  };
 }
 
 export function isExcluded(name: string, age: ReleaseAge): boolean {
@@ -207,7 +244,12 @@ export function parseHolds(text: string): Holds {
 export function holdFor(holds: Hold[], name: string, latest: string | undefined): Hold | undefined {
   const major = latest ? parseSemver(latest)?.major : undefined;
   if (!latest || major === undefined) return undefined;
-  return holds.find((h) => h.name === name && ((h.maxMajor !== undefined && major > h.maxMajor) || (h.maxVersion !== undefined && cmpVersion(latest, h.maxVersion) > 0)));
+  return holds.find(
+    (h) =>
+      h.name === name &&
+      ((h.maxMajor !== undefined && major > h.maxMajor) ||
+        (h.maxVersion !== undefined && cmpVersion(latest, h.maxVersion) > 0)),
+  );
 }
 
 export function advisoryHeld(holds: AdvisoryHold[], name: string): AdvisoryHold | undefined {
@@ -242,7 +284,8 @@ export function expandMajors(requested: string[], rows: Row[]): string[] {
   for (const name of requested) {
     const fam = familyOf(name);
     if (!fam) continue;
-    for (const r of rows) if (r.kind === "major" && !r.inRange && fam.some((re) => re.test(r.name))) out.add(r.name);
+    for (const r of rows)
+      if (r.kind === "major" && !r.inRange && fam.some((re) => re.test(r.name))) out.add(r.name);
   }
   return [...out].sort();
 }
@@ -263,11 +306,22 @@ export type RowInput = {
  * Newest release inside the major of `latest` that is older than `minimumReleaseAge`. Prereleases are ignored
  * unless the latest itself is one (a canary can never be the answer for a stable latest).
  */
-export function eligibleVersion(times: Record<string, string> | undefined, latest: string, age: ReleaseAge, name: string, now: number): { eligible?: string; ageGated: boolean } {
-  if (!times || isExcluded(name, age) || age.seconds <= 0) return { eligible: latest, ageGated: false };
+export function eligibleVersion(
+  times: Record<string, string> | undefined,
+  latest: string,
+  age: ReleaseAge,
+  name: string,
+  now: number,
+): { eligible?: string; ageGated: boolean } {
+  if (!times || isExcluded(name, age) || age.seconds <= 0)
+    return { eligible: latest, ageGated: false };
   const line = parseSemver(latest);
   if (!line) return { eligible: latest, ageGated: false };
-  const pool = line.pre.length ? times : Object.fromEntries(Object.entries(times).filter(([v]) => (parseSemver(v)?.pre.length ?? 1) === 0));
+  const pool = line.pre.length
+    ? times
+    : Object.fromEntries(
+        Object.entries(times).filter(([v]) => (parseSemver(v)?.pre.length ?? 1) === 0),
+      );
   const { eligible } = pickEligible(pool, line.major, now, age.seconds);
   return { eligible: eligible ?? undefined, ageGated: eligible !== latest };
 }
@@ -282,7 +336,14 @@ export function buildRows(input: RowInput): Row[] {
     const base = specBase(d.spec);
     const latest = info.version;
     const kind = bumpKind(base, latest);
-    const row: Row = { ...d, base, latest, deprecated: info.deprecated, kind, inRange: !!latest && satisfies(latest, d.spec) };
+    const row: Row = {
+      ...d,
+      base,
+      latest,
+      deprecated: info.deprecated,
+      kind,
+      inRange: !!latest && satisfies(latest, d.spec),
+    };
     if (TAURI_OWNED.test(d.name)) row.owner = "tauri";
     else if (PIN_OWNED.has(d.name)) row.owner = "pins";
     row.hold = holdFor(input.holds, d.name, latest);
@@ -297,7 +358,8 @@ export function buildRows(input: RowInput): Row[] {
 }
 
 /** Rows that still need a decision: behind latest, not owned by tauri sync or the pin manifest. */
-export const behind = (rows: Row[]) => rows.filter((r) => r.kind !== "none" && r.kind !== "ahead" && !r.owner);
+export const behind = (rows: Row[]) =>
+  rows.filter((r) => r.kind !== "none" && r.kind !== "ahead" && !r.owner);
 
 /** Version `apply` would install: the release-age-eligible one, else the latest. */
 export const targetOf = (r: Row): string | undefined => (r.ageGated ? r.eligible : r.latest);
@@ -334,30 +396,52 @@ export function planRows(rows: Row[]): Plan {
 export type Edit = { file: string; name: string; from: string; to: string };
 
 /** Edits that move the named packages (majors or pinned): the catalog entry when the name is catalogued, else each literal range. */
-export function specEdits(rows: Row[], names: string[], target: (r: Row) => string | undefined): { edits: Edit[]; errors: string[] } {
+export function specEdits(
+  rows: Row[],
+  names: string[],
+  target: (r: Row) => string | undefined,
+): { edits: Edit[]; errors: string[] } {
   const edits: Edit[] = [];
   const errors: string[] = [];
   for (const name of names) {
     const mine = rows.filter((r) => r.name === name && !r.owner);
-    if (!mine.length) { errors.push(`${name}: not a direct dependency`); continue; }
+    if (!mine.length) {
+      errors.push(`${name}: not a direct dependency`);
+      continue;
+    }
     for (const r of mine) {
-      if (r.hold) { errors.push(`${name}: held (${r.hold.reason})`); continue; }
+      if (r.hold) {
+        errors.push(`${name}: held (${r.hold.reason})`);
+        continue;
+      }
       const v = target(r);
-      if (!v) { errors.push(`${name}: no release old enough for minimumReleaseAge`); continue; }
+      if (!v) {
+        errors.push(`${name}: no release old enough for minimumReleaseAge`);
+        continue;
+      }
       if (cmpVersion(v, r.base ?? "0.0.0") <= 0) continue;
       const to = rewriteSpec(r.spec, v);
-      for (const file of r.where) edits.push({ file: file === "catalog" ? "package.json" : file, name, from: r.spec, to });
+      for (const file of r.where)
+        edits.push({ file: file === "catalog" ? "package.json" : file, name, from: r.spec, to });
     }
   }
   return { edits, errors };
 }
 
 /** Replace `"name": "from"` by `"name": "to"` in JSON text, keeping the formatting; returns the new text and the count. */
-export function applyEdit(text: string, name: string, from: string, to: string): { text: string; count: number } {
+export function applyEdit(
+  text: string,
+  name: string,
+  from: string,
+  to: string,
+): { text: string; count: number } {
   const esc = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   const re = new RegExp(`("${esc(name)}"\\s*:\\s*")${esc(from)}(")`, "g");
   let count = 0;
-  const out = text.replace(re, (_m, a: string, b: string) => { count++; return `${a}${to}${b}`; });
+  const out = text.replace(re, (_m, a: string, b: string) => {
+    count++;
+    return `${a}${to}${b}`;
+  });
   return { text: out, count };
 }
 
@@ -367,7 +451,15 @@ const UA = { "user-agent": "aphrody-bun-update (contact@aphrody.com)", accept: "
 const noSleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 
 /** GET with exponential backoff on 429, 5xx and network errors; honours Retry-After. 404 is returned as is. */
-export async function fetchWithBackoff(url: string, opts: { fetcher?: Fetcher; attempts?: number; baseMs?: number; sleep?: (ms: number) => Promise<void> } = {}): Promise<Response | undefined> {
+export async function fetchWithBackoff(
+  url: string,
+  opts: {
+    fetcher?: Fetcher;
+    attempts?: number;
+    baseMs?: number;
+    sleep?: (ms: number) => Promise<void>;
+  } = {},
+): Promise<Response | undefined> {
   const f = opts.fetcher ?? ((u, i) => fetch(u, i));
   const sleep = opts.sleep ?? noSleep;
   const attempts = opts.attempts ?? 5;
@@ -378,21 +470,30 @@ export async function fetchWithBackoff(url: string, opts: { fetcher?: Fetcher; a
     if (res && res.status !== 429 && res.status < 500) return res;
     if (i === attempts - 1) break;
     const retry = Number(res?.headers.get("retry-after"));
-    await sleep(Math.min(60_000, Number.isFinite(retry) && retry > 0 ? retry * 1000 : base * 2 ** i));
+    await sleep(
+      Math.min(60_000, Number.isFinite(retry) && retry > 0 ? retry * 1000 : base * 2 ** i),
+    );
   }
   return res && res.ok ? res : undefined;
 }
 
-export const npmUrl = (name: string, suffix = "") => `https://registry.npmjs.org/${name.replace("/", "%2f")}${suffix}`;
+export const npmUrl = (name: string, suffix = "") =>
+  `https://registry.npmjs.org/${name.replace("/", "%2f")}${suffix}`;
 
-export async function npmLatest(name: string, opts: Parameters<typeof fetchWithBackoff>[1] = {}): Promise<Latest> {
+export async function npmLatest(
+  name: string,
+  opts: Parameters<typeof fetchWithBackoff>[1] = {},
+): Promise<Latest> {
   const res = await fetchWithBackoff(npmUrl(name, "/latest"), opts);
   if (!res?.ok) return {};
   const d = (await res.json()) as { version?: string; deprecated?: string };
   return { version: d.version, deprecated: d.deprecated };
 }
 
-export async function npmTimes(name: string, opts: Parameters<typeof fetchWithBackoff>[1] = {}): Promise<Record<string, string> | undefined> {
+export async function npmTimes(
+  name: string,
+  opts: Parameters<typeof fetchWithBackoff>[1] = {},
+): Promise<Record<string, string> | undefined> {
   const res = await fetchWithBackoff(npmUrl(name), opts);
   if (!res?.ok) return undefined;
   const t = { ...((await res.json()) as { time?: Record<string, string> }).time };
@@ -408,7 +509,8 @@ export type Repo = { root: Manifest; manifests: Record<string, Manifest> };
 export async function loadRepo(c: Ctx): Promise<Repo> {
   const root = JSON.parse(c.read("package.json")) as Manifest;
   const manifests: Record<string, Manifest> = {};
-  for (const p of await firstPartyManifests(c.root)) if (p !== "package.json") manifests[p] = JSON.parse(c.read(p)) as Manifest;
+  for (const p of await firstPartyManifests(c.root))
+    if (p !== "package.json") manifests[p] = JSON.parse(c.read(p)) as Manifest;
   return { root, manifests };
 }
 
@@ -421,29 +523,57 @@ export function loadAdvisoryHolds(c: Ctx): AdvisoryHold[] {
 }
 
 export function loadReleaseAge(c: Ctx): ReleaseAge {
-  return c.exists("bunfig.toml") ? parseReleaseAge(c.read("bunfig.toml")) : { seconds: 0, excludes: [] };
+  return c.exists("bunfig.toml")
+    ? parseReleaseAge(c.read("bunfig.toml"))
+    : { seconds: 0, excludes: [] };
 }
 
-export type Override = { name: string; spec: string; resolved: string[]; latest?: string; local: boolean; missing?: boolean };
+export type Override = {
+  name: string;
+  spec: string;
+  resolved: string[];
+  latest?: string;
+  local: boolean;
+  missing?: boolean;
+};
 
 /** Root `overrides` (and `resolutions`), with what bun.lock resolves and whether a local tarball exists. */
-export function describeOverrides(c: Ctx, root: Manifest, lock: Dep[], latest: Map<string, Latest>): Override[] {
-  const o: Record<string, string> = { ...(root.resolutions ?? {}), ...(root.overrides ?? {}) };
+export function describeOverrides(
+  c: Ctx,
+  root: Manifest,
+  lock: Dep[],
+  latest: Map<string, Latest>,
+): Override[] {
+  const o: Record<string, string> = { ...root.resolutions, ...root.overrides };
   return Object.entries(o).map(([name, spec]) => {
     const local = specKind(spec) === "file";
     return {
-      name, spec, local,
-      resolved: [...new Set(lock.filter((d) => d.name === name).map((d) => d.version))].sort(cmpVersion),
+      name,
+      spec,
+      local,
+      resolved: [...new Set(lock.filter((d) => d.name === name).map((d) => d.version))].sort(
+        cmpVersion,
+      ),
       latest: latest.get(name)?.version,
       missing: local ? !c.exists(spec.replace(/^file:/, "")) : undefined,
     };
   });
 }
 
-export type Advisory = { name: string; version: string; ids: string[]; latest?: string; fixable: boolean };
+export type Advisory = {
+  name: string;
+  version: string;
+  ids: string[];
+  latest?: string;
+  fixable: boolean;
+};
 
 /** OSV advisories on resolved npm packages that no hold in advisory-holds.json covers. */
-export async function openAdvisories(lock: Dep[], holds: AdvisoryHold[], opts: { fetchLatest?: (n: string) => Promise<Latest>; query?: typeof osv } = {}): Promise<{ open: Advisory[]; held: Advisory[] }> {
+export async function openAdvisories(
+  lock: Dep[],
+  holds: AdvisoryHold[],
+  opts: { fetchLatest?: (n: string) => Promise<Latest>; query?: typeof osv } = {},
+): Promise<{ open: Advisory[]; held: Advisory[] }> {
   const hits = await (opts.query ?? osv)(lock);
   const fetchLatest = opts.fetchLatest ?? ((n: string) => npmLatest(n));
   const rows = [...hits.entries()].map(([k, ids]) => {
@@ -452,12 +582,17 @@ export async function openAdvisories(lock: Dep[], holds: AdvisoryHold[], opts: {
   });
   const names = [...new Set(rows.map((r) => r.name))];
   const latest = new Map<string, Latest>();
-  await pool(names, 6, async (n) => { latest.set(n, await fetchLatest(n)); });
+  await pool(names, 6, async (n) => {
+    latest.set(n, await fetchLatest(n));
+  });
   const all: Advisory[] = rows.map((r) => {
     const l = latest.get(r.name)?.version;
     return { ...r, latest: l, fixable: !!l && cmpVersion(r.version, l) < 0 };
   });
-  return { open: all.filter((a) => !advisoryHeld(holds, a.name)), held: all.filter((a) => advisoryHeld(holds, a.name)) };
+  return {
+    open: all.filter((a) => !advisoryHeld(holds, a.name)),
+    held: all.filter((a) => advisoryHeld(holds, a.name)),
+  };
 }
 
 // ---------------------------------------------------------------- status
@@ -473,7 +608,10 @@ export type Status = {
   manifests: number;
 };
 
-export async function collectStatus(c: Ctx, o: { offline?: boolean; advisories?: boolean } = {}): Promise<Status> {
+export async function collectStatus(
+  c: Ctx,
+  o: { offline?: boolean; advisories?: boolean } = {},
+): Promise<Status> {
   const repo = await loadRepo(c);
   const directs = collectDirect(repo.root, repo.manifests);
   const age = loadReleaseAge(c);
@@ -483,48 +621,81 @@ export async function collectStatus(c: Ctx, o: { offline?: boolean; advisories?:
   const times = new Map<string, Record<string, string>>();
   let runtime: ToolRow[] = [];
   if (!o.offline) {
-    const names = [...new Set(directs.filter((d) => specKind(d.spec) === "version").map((d) => d.name))];
-    await pool(names, 8, async (n) => { latest.set(n, await npmLatest(n)); });
-    for (const o2 of Object.keys({ ...(repo.root.overrides ?? {}) })) if (!latest.has(o2) && !o2.startsWith("@rosegriffon/")) latest.set(o2, await npmLatest(o2));
-    const probe = buildRows({ directs, latest, holds, age });
-    await pool(behind(probe).filter((r) => !isExcluded(r.name, age)), 6, async (r) => {
-      const t = await npmTimes(r.name);
-      if (t) times.set(r.name, t);
+    const names = [
+      ...new Set(directs.filter((d) => specKind(d.spec) === "version").map((d) => d.name)),
+    ];
+    await pool(names, 8, async (n) => {
+      latest.set(n, await npmLatest(n));
     });
+    for (const o2 of Object.keys({ ...repo.root.overrides }))
+      if (!latest.has(o2) && !o2.startsWith("@rosegriffon/")) latest.set(o2, await npmLatest(o2));
+    const probe = buildRows({ directs, latest, holds, age });
+    await pool(
+      behind(probe).filter((r) => !isExcluded(r.name, age)),
+      6,
+      async (r) => {
+        const t = await npmTimes(r.name);
+        if (t) times.set(r.name, t);
+      },
+    );
     runtime = (await toolsPlan(c)).filter((r) => RUNTIME_TOOLS.includes(r.tool));
   }
   const rows = buildRows({ directs, latest, holds, age, times });
   const status: Status = {
-    runtime, rows, plan: planRows(rows), releaseAge: age, holds, manifests: Object.keys(repo.manifests).length + 1,
+    runtime,
+    rows,
+    plan: planRows(rows),
+    releaseAge: age,
+    holds,
+    manifests: Object.keys(repo.manifests).length + 1,
     overrides: describeOverrides(c, repo.root, lock, latest),
   };
-  if (!o.offline && o.advisories !== false) status.advisories = await openAdvisories(lock, loadAdvisoryHolds(c));
+  if (!o.offline && o.advisories !== false)
+    status.advisories = await openAdvisories(lock, loadAdvisoryHolds(c));
   return status;
 }
 
-const fmtRow = (r: Row) => `${r.name} ${r.spec} -> ${r.latest}${r.kind === "major" ? " (major)" : ""}${r.eligible && r.ageGated ? ` [age gate: ${r.eligible} installable]` : ""}${r.deprecated ? " [deprecated]" : ""}  <- ${r.where.slice(0, 3).join(", ")}${r.where.length > 3 ? `, +${r.where.length - 3}` : ""}`;
+const fmtRow = (r: Row) =>
+  `${r.name} ${r.spec} -> ${r.latest}${r.kind === "major" ? " (major)" : ""}${r.eligible && r.ageGated ? ` [age gate: ${r.eligible} installable]` : ""}${r.deprecated ? " [deprecated]" : ""}  <- ${r.where.slice(0, 3).join(", ")}${r.where.length > 3 ? `, +${r.where.length - 3}` : ""}`;
 
 export function renderStatus(s: Status): string[] {
   const out: string[] = [];
   for (const r of s.runtime) {
     const lag = r.latest && r.pinned && cmpVersion(r.pinned, r.latest) < 0;
-    out.push(`runtime ${r.tool.padEnd(10)} pinned ${r.pinned ?? "?"}  installed ${r.installed ?? "-"}  latest ${r.latest ?? "?"}${lag ? "  <- behind" : ""}${r.installed && r.pinned && r.installed !== r.pinned ? "  <- installed differs from pin" : ""}`);
+    out.push(
+      `runtime ${r.tool.padEnd(10)} pinned ${r.pinned ?? "?"}  installed ${r.installed ?? "-"}  latest ${r.latest ?? "?"}${lag ? "  <- behind" : ""}${r.installed && r.pinned && r.installed !== r.pinned ? "  <- installed differs from pin" : ""}`,
+    );
   }
   out.push(`manifests ${s.manifests} first-party, ${s.rows.length} direct registry ranges`);
-  out.push(`release-age ${s.releaseAge.seconds}s (${Math.round(s.releaseAge.seconds / 86400)} d), ${s.releaseAge.excludes.length} exclude(s): ${s.releaseAge.excludes.join(", ") || "none"}`);
-  for (const o of s.overrides) out.push(`override ${o.name} ${o.spec.length > 60 ? `${o.spec.slice(0, 57)}...` : o.spec}${o.local ? (o.missing ? "  <- tarball missing" : "  (local tarball)") : `  resolved ${o.resolved.join(", ") || "-"}  latest ${o.latest ?? "?"}`}`);
+  out.push(
+    `release-age ${s.releaseAge.seconds}s (${Math.round(s.releaseAge.seconds / 86400)} d), ${s.releaseAge.excludes.length} exclude(s): ${s.releaseAge.excludes.join(", ") || "none"}`,
+  );
+  for (const o of s.overrides)
+    out.push(
+      `override ${o.name} ${o.spec.length > 60 ? `${o.spec.slice(0, 57)}...` : o.spec}${o.local ? (o.missing ? "  <- tarball missing" : "  (local tarball)") : `  resolved ${o.resolved.join(", ") || "-"}  latest ${o.latest ?? "?"}`}`,
+    );
   const b = behind(s.rows);
   const owned = s.rows.filter((r) => r.owner && r.kind !== "none" && r.kind !== "ahead");
-  out.push(`behind ${b.length} direct (in-range ${s.plan.inRange.length}, pinned ${s.plan.pinned.length}, majors ${s.plan.majors.length}, held ${s.plan.held.length}, waiting for release age ${s.plan.waiting.length})`);
+  out.push(
+    `behind ${b.length} direct (in-range ${s.plan.inRange.length}, pinned ${s.plan.pinned.length}, majors ${s.plan.majors.length}, held ${s.plan.held.length}, waiting for release age ${s.plan.waiting.length})`,
+  );
   for (const r of s.plan.inRange) out.push(`  in-range ${fmtRow(r)}`);
   for (const r of s.plan.pinned) out.push(`  pinned   ${fmtRow(r)}`);
   for (const r of s.plan.majors) out.push(`  major    ${fmtRow(r)}`);
   for (const r of s.plan.held) out.push(`  held     ${fmtRow(r)}  - ${r.hold!.reason}`);
   for (const r of s.plan.waiting) out.push(`  waiting  ${fmtRow(r)}`);
-  for (const r of owned) out.push(`  ${r.owner}${" ".repeat(9 - r.owner!.length)}${fmtRow(r)}  (owned by ${r.owner === "tauri" ? "tauri sync" : "config/update/pins.json, tools --apply"})`);
+  for (const r of owned)
+    out.push(
+      `  ${r.owner}${" ".repeat(9 - r.owner!.length)}${fmtRow(r)}  (owned by ${r.owner === "tauri" ? "tauri sync" : "config/update/pins.json, tools --apply"})`,
+    );
   if (s.advisories) {
-    out.push(`advisories ${s.advisories.open.length} open, ${s.advisories.held.length} held (config/deps/advisory-holds.json)`);
-    for (const a of s.advisories.open) out.push(`  open ${a.name} ${a.version}: ${a.ids.slice(0, 3).join(", ")}${a.latest ? ` (latest ${a.latest}${a.fixable ? ", bump" : ", no newer release"})` : ""}`);
+    out.push(
+      `advisories ${s.advisories.open.length} open, ${s.advisories.held.length} held (config/deps/advisory-holds.json)`,
+    );
+    for (const a of s.advisories.open)
+      out.push(
+        `  open ${a.name} ${a.version}: ${a.ids.slice(0, 3).join(", ")}${a.latest ? ` (latest ${a.latest}${a.fixable ? ", bump" : ", no newer release"})` : ""}`,
+      );
   }
   return out;
 }
@@ -536,7 +707,11 @@ export async function bumpFiles(c: Ctx): Promise<string[]> {
   return [...new Set(["package.json", "bun.lock", ...(await firstPartyManifests(c.root))])].sort();
 }
 
-export function snapshot(c: Ctx, files: string[], stamp = new Date().toISOString().replace(/[:.]/g, "-")): string {
+export function snapshot(
+  c: Ctx,
+  files: string[],
+  stamp = new Date().toISOString().replace(/[:.]/g, "-"),
+): string {
   const dir = join(SNAPSHOT_DIR, stamp);
   for (const f of files) {
     if (!c.exists(f)) continue;
@@ -550,7 +725,11 @@ export function snapshot(c: Ctx, files: string[], stamp = new Date().toISOString
 export function latestSnapshot(c: Ctx): string | undefined {
   const base = join(c.root, SNAPSHOT_DIR);
   if (!existsSync(base)) return undefined;
-  const d = readdirSync(base, { withFileTypes: true }).filter((e) => e.isDirectory()).map((e) => e.name).sort().at(-1);
+  const d = readdirSync(base, { withFileTypes: true })
+    .filter((e) => e.isDirectory())
+    .map((e) => e.name)
+    .sort()
+    .at(-1);
   return d ? join(SNAPSHOT_DIR, d) : undefined;
 }
 
@@ -562,7 +741,10 @@ export function restoreSnapshot(c: Ctx, dir: string): string[] {
       if (e.isDirectory()) walk(r);
       else {
         const dst = join(c.root, r);
-        if (readFileSync(join(c.root, dir, r), "utf8") !== (existsSync(dst) ? readFileSync(dst, "utf8") : undefined)) {
+        if (
+          readFileSync(join(c.root, dir, r), "utf8") !==
+          (existsSync(dst) ? readFileSync(dst, "utf8") : undefined)
+        ) {
           mkdirSync(dirname(dst), { recursive: true });
           copyFileSync(join(c.root, dir, r), dst);
           restored.push(r);
@@ -593,25 +775,43 @@ export async function touchedSince(c: Ctx, ref = "HEAD"): Promise<string[]> {
   };
   const rootBefore = show("package.json") ?? now.root;
   const before: Repo = { root: rootBefore, manifests: {} };
-  for (const p of Object.keys(now.manifests)) { const m = show(p); if (m) before.manifests[p] = m; }
+  for (const p of Object.keys(now.manifests)) {
+    const m = show(p);
+    if (m) before.manifests[p] = m;
+  }
   return touchedManifests(before, now);
 }
 
-export async function verify(c: Ctx, touched: string[], o: { skipTests?: boolean } = {}): Promise<Step[]> {
+export async function verify(
+  c: Ctx,
+  touched: string[],
+  o: { skipTests?: boolean } = {},
+): Promise<Step[]> {
   const steps: Step[] = [];
   const run = (name: string, cmd: string, args: string[]) => {
     const r = sh(c, cmd, args);
     steps.push({ name, ok: r.ok, detail: r.ok ? undefined : r.tail });
     console.log(`verify ${r.ok ? "ok  " : "FAIL"} ${name}`);
-    if (!r.ok) console.log(r.tail.split("\n").map((l) => `         ${l}`).join("\n"));
+    if (!r.ok)
+      console.log(
+        r.tail
+          .split("\n")
+          .map((l) => `         ${l}`)
+          .join("\n"),
+      );
   };
   run("bun run bun:check", "bun", ["run", "bun:check"]);
   run("bun run monorepo:layout", "bun", ["run", "monorepo:layout"]);
   if (!o.skipTests) run("bun run test (workspace)", "bun", ["run", "test"]);
-  const dirs = [...new Set([...touched.map((p) => dirname(p)), "packages/infra/update"])].filter((d) => d !== ".").sort();
+  const dirs = [...new Set([...touched.map((p) => dirname(p)), "packages/infra/update"])]
+    .filter((d) => d !== ".")
+    .sort();
   for (const d of dirs) {
     const m = JSON.parse(c.read(join(d, "package.json"))) as Manifest;
-    if (!m.scripts?.typecheck) { console.log(`verify skip ${d} (no typecheck script)`); continue; }
+    if (!m.scripts?.typecheck) {
+      console.log(`verify skip ${d} (no typecheck script)`);
+      continue;
+    }
     run(`typecheck ${d}`, "bun", ["run", "--cwd", d, "typecheck"]);
   }
   return steps;
@@ -619,10 +819,26 @@ export async function verify(c: Ctx, touched: string[], o: { skipTests?: boolean
 
 // ---------------------------------------------------------------- apply
 
-export type Args = { sub: string; root: string; json: boolean; offline: boolean; majors: string[]; skipTests: boolean; noAdvisories: boolean };
+export type Args = {
+  sub: string;
+  root: string;
+  json: boolean;
+  offline: boolean;
+  majors: string[];
+  skipTests: boolean;
+  noAdvisories: boolean;
+};
 
 export function parseArgs(argv: string[], cwd = process.cwd()): Args {
-  const a: Args = { sub: "status", root: cwd, json: false, offline: false, majors: [], skipTests: false, noAdvisories: false };
+  const a: Args = {
+    sub: "status",
+    root: cwd,
+    json: false,
+    offline: false,
+    majors: [],
+    skipTests: false,
+    noAdvisories: false,
+  };
   let subSet = false;
   for (let i = 0; i < argv.length; i++) {
     const x = argv[i]!;
@@ -633,9 +849,16 @@ export function parseArgs(argv: string[], cwd = process.cwd()): Args {
     else if (x === "--no-advisories") a.noAdvisories = true;
     else if (x === "--majors" || x.startsWith("--majors=")) {
       const v = x === "--majors" ? argv[++i] : x.slice(9);
-      a.majors.push(...(v ?? "").split(",").map((s) => s.trim()).filter(Boolean));
-    } else if (!x.startsWith("-") && !subSet) { a.sub = x; subSet = true; }
-    else if (x !== "--apply") throw new Error(`unknown argument ${x}`);
+      a.majors.push(
+        ...(v ?? "")
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean),
+      );
+    } else if (!x.startsWith("-") && !subSet) {
+      a.sub = x;
+      subSet = true;
+    } else if (x !== "--apply") throw new Error(`unknown argument ${x}`);
   }
   if (!a.root) throw new Error("--root requires a path");
   a.root = resolve(a.root);
@@ -645,15 +868,31 @@ export function parseArgs(argv: string[], cwd = process.cwd()): Args {
 export function renderPlan(s: Status, majors: string[]): string[] {
   const out: string[] = [];
   const rt = s.runtime.find((r) => r.tool === "bun");
-  out.push(rt && rt.latest && rt.pinned && cmpVersion(rt.pinned, rt.latest) < 0 ? `1 runtime   bun ${rt.pinned} -> ${rt.latest} (tools --apply, re-pins 12 targets)` : "1 runtime   bun pin is current");
-  out.push("2 tauri     `tauri-sync --apply` runs when its check reports drift (own gate and release age)");
-  out.push(`3 in-range  \`bun update -r\`: ${s.plan.inRange.length} direct range(s) have a newer release inside their range`);
+  out.push(
+    rt && rt.latest && rt.pinned && cmpVersion(rt.pinned, rt.latest) < 0
+      ? `1 runtime   bun ${rt.pinned} -> ${rt.latest} (tools --apply, re-pins 12 targets)`
+      : "1 runtime   bun pin is current",
+  );
+  out.push(
+    "2 tauri     `tauri-sync --apply` runs when its check reports drift (own gate and release age)",
+  );
+  out.push(
+    `3 in-range  \`bun update -r\`: ${s.plan.inRange.length} direct range(s) have a newer release inside their range`,
+  );
   const want = expandMajors(majors, s.rows);
-  out.push(`3b pinned   ${s.plan.pinned.length} exact pin(s) behind inside their major: apply rewrites the spec to the newest release old enough for minimumReleaseAge`);
-  out.push(`4 majors    ${s.plan.majors.length} candidate(s); requested ${want.length ? want.join(", ") : "none (pass --majors a,b after reading the release notes)"}`);
-  for (const r of s.plan.majors) out.push(`            ${want.includes(r.name) ? "*" : " "} ${fmtRow(r)}`);
-  if (s.plan.held.length) out.push(`5 held      ${s.plan.held.map((r) => `${r.name} (${r.hold!.reason})`).join("; ")}`);
-  out.push("6 verify    bun:check, monorepo:layout, workspace tests, typecheck of every package whose resolved deps changed");
+  out.push(
+    `3b pinned   ${s.plan.pinned.length} exact pin(s) behind inside their major: apply rewrites the spec to the newest release old enough for minimumReleaseAge`,
+  );
+  out.push(
+    `4 majors    ${s.plan.majors.length} candidate(s); requested ${want.length ? want.join(", ") : "none (pass --majors a,b after reading the release notes)"}`,
+  );
+  for (const r of s.plan.majors)
+    out.push(`            ${want.includes(r.name) ? "*" : " "} ${fmtRow(r)}`);
+  if (s.plan.held.length)
+    out.push(`5 held      ${s.plan.held.map((r) => `${r.name} (${r.hold!.reason})`).join("; ")}`);
+  out.push(
+    "6 verify    bun:check, monorepo:layout, workspace tests, typecheck of every package whose resolved deps changed",
+  );
   out.push("7 fork      none: the Bun fork was retired on 2026-10-02; the runtime is upstream Bun");
   return out;
 }
@@ -664,23 +903,47 @@ async function applyBumps(c: Ctx, args: Args): Promise<number> {
   console.log(`snapshot ${snap} (restore with: aphrody-update bun rollback)`);
   const s = await collectStatus(c, { advisories: false });
   const rt = s.runtime.find((r) => r.tool === "bun");
-  if (rt?.latest && rt.pinned && cmpVersion(rt.pinned, rt.latest) < 0) await runTools(c, ["tools", "bun"]);
+  if (rt?.latest && rt.pinned && cmpVersion(rt.pinned, rt.latest) < 0)
+    await runTools(c, ["tools", "bun"]);
   const tauri = await runTauriSync(["--check", "--root", c.root]);
-  if (tauri !== 0) { console.log("tauri  drift reported, applying through tauri sync"); const code = await runTauriSync(["--apply", "--root", c.root]); if (code !== 0) { console.error("tauri sync failed; nothing else was changed after the snapshot step"); return code; } }
+  if (tauri !== 0) {
+    console.log("tauri  drift reported, applying through tauri sync");
+    const code = await runTauriSync(["--apply", "--root", c.root]);
+    if (code !== 0) {
+      console.error("tauri sync failed; nothing else was changed after the snapshot step");
+      return code;
+    }
+  }
   const upd = c.run("bun", ["update", "-r"], { inherit: true });
-  if (upd.status !== 0) { console.error("bun update -r failed; restore with `aphrody-update bun rollback`"); return 1; }
+  if (upd.status !== 0) {
+    console.error("bun update -r failed; restore with `aphrody-update bun rollback`");
+    return 1;
+  }
   {
     const s2 = await collectStatus(c, { advisories: false });
     // Floors follow the lock: pinned and in-range specs are raised to the installable release, majors only when named.
-    const names = [...new Set([...s2.plan.pinned, ...s2.plan.inRange].map((r) => r.name).concat(expandMajors(args.majors, s2.rows)))].sort();
+    const names = [
+      ...new Set(
+        [...s2.plan.pinned, ...s2.plan.inRange]
+          .map((r) => r.name)
+          .concat(expandMajors(args.majors, s2.rows)),
+      ),
+    ].sort();
     const { edits, errors } = specEdits(s2.rows, names, targetOf);
     for (const e of errors) console.error(`bump   skip ${e}`);
     for (const e of edits) {
       const r = applyEdit(c.read(e.file), e.name, e.from, e.to);
-      if (r.count) { c.write(e.file, r.text); console.log(`bump   ${e.name} ${e.from} -> ${e.to} (${e.file})`); }
-      else console.error(`bump   ${e.name}: "${e.from}" not found in ${e.file}`);
+      if (r.count) {
+        c.write(e.file, r.text);
+        console.log(`bump   ${e.name} ${e.from} -> ${e.to} (${e.file})`);
+      } else console.error(`bump   ${e.name}: "${e.from}" not found in ${e.file}`);
     }
-    if (edits.length && c.run("bun", ["install"], { inherit: true }).status !== 0) { console.error("bun install failed after the spec edits; restore with `aphrody-update bun rollback`"); return 1; }
+    if (edits.length && c.run("bun", ["install"], { inherit: true }).status !== 0) {
+      console.error(
+        "bun install failed after the spec edits; restore with `aphrody-update bun rollback`",
+      );
+      return 1;
+    }
   }
   const touched = await touchedSince(c);
   console.log(`touched ${touched.length} manifest(s) against HEAD`);
@@ -690,7 +953,15 @@ async function applyBumps(c: Ctx, args: Args): Promise<number> {
 
 export async function runBun(argv: string[]): Promise<number> {
   let args: Args;
-  try { args = parseArgs(argv); } catch (e) { console.error((e as Error).message); console.error("usage: bun <status|plan|apply|verify|rollback> [--majors a,b] [--offline] [--json] [--skip-tests] [--root <repo>]"); return 2; }
+  try {
+    args = parseArgs(argv);
+  } catch (e) {
+    console.error((e as Error).message);
+    console.error(
+      "usage: bun <status|plan|apply|verify|rollback> [--majors a,b] [--offline] [--json] [--skip-tests] [--root <repo>]",
+    );
+    return 2;
+  }
   const c = new Ctx(args.root, args.sub === "apply", args.json);
   switch (args.sub) {
     case "status": {
@@ -701,22 +972,34 @@ export async function runBun(argv: string[]): Promise<number> {
     }
     case "plan": {
       const s = await collectStatus(c, { offline: args.offline, advisories: false });
-      console.log(args.json ? JSON.stringify({ plan: s.plan, majors: expandMajors(args.majors, s.rows) }, null, 2) : renderPlan(s, args.majors).join("\n"));
+      console.log(
+        args.json
+          ? JSON.stringify({ plan: s.plan, majors: expandMajors(args.majors, s.rows) }, null, 2)
+          : renderPlan(s, args.majors).join("\n"),
+      );
       return 0;
     }
-    case "apply": return applyBumps(c, args);
+    case "apply":
+      return applyBumps(c, args);
     case "verify": {
       const steps = await verify(c, await touchedSince(c), { skipTests: args.skipTests });
       return steps.every((x) => x.ok) ? 0 : 1;
     }
     case "rollback": {
       const dir = latestSnapshot(c);
-      if (!dir) { console.error("no snapshot under target/update/bun"); return 1; }
+      if (!dir) {
+        console.error("no snapshot under target/update/bun");
+        return 1;
+      }
       const files = restoreSnapshot(c, dir);
-      console.log(`rollback ${dir}: ${files.length} file(s) restored${files.length ? `\n${files.map((f) => `  ${f}`).join("\n")}\nrun bun install to realign node_modules` : ""}`);
+      console.log(
+        `rollback ${dir}: ${files.length} file(s) restored${files.length ? `\n${files.map((f) => `  ${f}`).join("\n")}\nrun bun install to realign node_modules` : ""}`,
+      );
       return 0;
     }
-    default: console.error(`unknown subcommand ${args.sub}`); return 2;
+    default:
+      console.error(`unknown subcommand ${args.sub}`);
+      return 2;
   }
 }
 

@@ -14,8 +14,9 @@
     "./sqlite": "./src/sqlite.ts"
   },
   "scripts": {
+    "build": "bun build src/index.ts --target bun --packages external --outdir dist",
     "test": "bun test",
-    "typecheck": "tsgo -p tsconfig.json --noEmit",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
     "lint": "oxlint -c ../../../.oxlintrc.json src test"
   },
   "dependencies": {

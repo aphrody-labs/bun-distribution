@@ -2,10 +2,36 @@
 import { describe, expect, test } from "bun:test";
 import { Ctx } from "../src/context.ts";
 import {
-  advisoryHeld, applyEdit, behind, buildRows, bumpKind, catalogEntries, collectDirect, describeOverrides, eligibleVersion,
-  expandMajors, fetchWithBackoff, holdFor, isExcluded, npmLatest, openAdvisories, parseArgs, parseHolds, parseReleaseAge,
-  planRows, renderPlan, resolvedDeps, rewriteSpec, satisfies, specBase, specEdits, specKind, targetOf, touchedManifests,
-  type Direct, type Row,
+  advisoryHeld,
+  applyEdit,
+  behind,
+  buildRows,
+  bumpKind,
+  catalogEntries,
+  collectDirect,
+  describeOverrides,
+  eligibleVersion,
+  expandMajors,
+  fetchWithBackoff,
+  holdFor,
+  isExcluded,
+  npmLatest,
+  openAdvisories,
+  parseArgs,
+  parseHolds,
+  parseReleaseAge,
+  planRows,
+  renderPlan,
+  resolvedDeps,
+  rewriteSpec,
+  satisfies,
+  specBase,
+  specEdits,
+  specKind,
+  targetOf,
+  touchedManifests,
+  type Direct,
+  type Row,
 } from "../src/ecosystems/bun.ts";
 
 const DAY = 86_400;
@@ -73,11 +99,21 @@ describe("specs", () => {
 
 describe("manifests", () => {
   const root = {
-    workspaces: { packages: ["packages/*"], catalog: { react: "^19.3.0", next: "16.3.8" }, catalogs: { legacy: { react: "^18.0.0", left: "^1.0.0" } } },
+    workspaces: {
+      packages: ["packages/*"],
+      catalog: { react: "^19.3.0", next: "16.3.8" },
+      catalogs: { legacy: { react: "^18.0.0", left: "^1.0.0" } },
+    },
   };
   const manifests = {
-    "packages/a/package.json": { dependencies: { react: "catalog:", zod: "^4.6.5", "@aphrody/x": "workspace:*" }, devDependencies: { left: "catalog:legacy" } },
-    "packages/b/package.json": { dependencies: { zod: "^4.6.5", next: "catalog:", tgz: "file:x.tgz" }, optionalDependencies: { sharp: "~0.35.0" } },
+    "packages/a/package.json": {
+      dependencies: { react: "catalog:", zod: "^4.6.5", "@aphrody/x": "workspace:*" },
+      devDependencies: { left: "catalog:legacy" },
+    },
+    "packages/b/package.json": {
+      dependencies: { zod: "^4.6.5", next: "catalog:", tgz: "file:x.tgz" },
+      optionalDependencies: { sharp: "~0.35.0" },
+    },
   };
 
   test("catalogEntries flattens default and named catalogs, default first", () => {
@@ -99,13 +135,30 @@ describe("manifests", () => {
     expect(zod[0]!.where).toEqual(["packages/a/package.json", "packages/b/package.json"]);
     expect(d.find((x) => x.name === "react")!.where).toEqual(["catalog"]);
     expect(d.find((x) => x.name === "sharp")!.spec).toBe("~0.35.0");
-    expect(d.map((x) => x.name)).toEqual([...d.map((x) => x.name)].sort());
+    expect(d.map((x) => x.name)).toEqual(d.map((x) => x.name).toSorted());
   });
 
   test("touchedManifests propagates a catalog edit to its users", () => {
-    const after = { root: { workspaces: { catalog: { react: "^20.0.0", next: "16.3.8" }, catalogs: root.workspaces.catalogs } }, manifests };
+    const after = {
+      root: {
+        workspaces: {
+          catalog: { react: "^20.0.0", next: "16.3.8" },
+          catalogs: root.workspaces.catalogs,
+        },
+      },
+      manifests,
+    };
     expect(touchedManifests({ root, manifests }, after)).toEqual(["packages/a/package.json"]);
-    const literal = { root, manifests: { ...manifests, "packages/b/package.json": { ...manifests["packages/b/package.json"], dependencies: { zod: "^5.0.0", next: "catalog:", tgz: "file:x.tgz" } } } };
+    const literal = {
+      root,
+      manifests: {
+        ...manifests,
+        "packages/b/package.json": {
+          ...manifests["packages/b/package.json"],
+          dependencies: { zod: "^5.0.0", next: "catalog:", tgz: "file:x.tgz" },
+        },
+      },
+    };
     expect(touchedManifests({ root, manifests }, literal)).toEqual(["packages/b/package.json"]);
     expect(touchedManifests({ root, manifests }, { root, manifests })).toEqual([]);
   });
@@ -113,7 +166,9 @@ describe("manifests", () => {
 
 describe("config", () => {
   test("parseReleaseAge reads bunfig.toml and isExcluded matches names exactly", () => {
-    const a = parseReleaseAge('[install]\nminimumReleaseAge = 259200\nminimumReleaseAgeExcludes = ["next", "undici"]\n');
+    const a = parseReleaseAge(
+      '[install]\nminimumReleaseAge = 259200\nminimumReleaseAgeExcludes = ["next", "undici"]\n',
+    );
     expect(a).toEqual({ seconds: 259200, excludes: ["next", "undici"] });
     expect(isExcluded("next", a)).toBe(true);
     expect(isExcluded("next-intl", a)).toBe(false);
@@ -132,28 +187,50 @@ describe("config", () => {
   });
 
   test("advisoryHeld looks at npm entries only", () => {
-    const holds = [{ ecosystem: "npm", name: "vite", reason: "r" }, { ecosystem: "crates.io", name: "rand", reason: "r" }];
+    const holds = [
+      { ecosystem: "npm", name: "vite", reason: "r" },
+      { ecosystem: "crates.io", name: "rand", reason: "r" },
+    ];
     expect(advisoryHeld(holds, "vite")?.reason).toBe("r");
     expect(advisoryHeld(holds, "rand")).toBeUndefined();
   });
 });
 
 describe("release age", () => {
-  const times = { "1.0.0": iso(30), "1.1.0": iso(10), "1.2.0": iso(1), "2.0.0-rc.1": iso(0.5), "2.0.0": iso(0.2) };
+  const times = {
+    "1.0.0": iso(30),
+    "1.1.0": iso(10),
+    "1.2.0": iso(1),
+    "2.0.0-rc.1": iso(0.5),
+    "2.0.0": iso(0.2),
+  };
 
   test("eligible is the newest release old enough, inside the latest's major", () => {
-    expect(eligibleVersion(times, "1.2.0", { seconds: 3 * DAY, excludes: [] }, "x", NOW)).toEqual({ eligible: "1.1.0", ageGated: true });
-    expect(eligibleVersion(times, "1.2.0", { seconds: 0, excludes: [] }, "x", NOW)).toEqual({ eligible: "1.2.0", ageGated: false });
+    expect(eligibleVersion(times, "1.2.0", { seconds: 3 * DAY, excludes: [] }, "x", NOW)).toEqual({
+      eligible: "1.1.0",
+      ageGated: true,
+    });
+    expect(eligibleVersion(times, "1.2.0", { seconds: 0, excludes: [] }, "x", NOW)).toEqual({
+      eligible: "1.2.0",
+      ageGated: false,
+    });
   });
 
   test("excluded packages and missing timestamps take the latest", () => {
-    expect(eligibleVersion(times, "1.2.0", age, "next", NOW)).toEqual({ eligible: "1.2.0", ageGated: false });
-    expect(eligibleVersion(undefined, "1.2.0", { seconds: 3 * DAY, excludes: [] }, "x", NOW)).toEqual({ eligible: "1.2.0", ageGated: false });
+    expect(eligibleVersion(times, "1.2.0", age, "next", NOW)).toEqual({
+      eligible: "1.2.0",
+      ageGated: false,
+    });
+    expect(
+      eligibleVersion(undefined, "1.2.0", { seconds: 3 * DAY, excludes: [] }, "x", NOW),
+    ).toEqual({ eligible: "1.2.0", ageGated: false });
   });
 
   test("a prerelease is never the answer for a stable latest", () => {
     const t = { "9.0.0": iso(40), "10.0.0-rc.3": iso(20), "10.0.0": iso(1) };
-    expect(eligibleVersion(t, "10.0.0", { seconds: 3 * DAY, excludes: [] }, "x", NOW).eligible).toBeUndefined();
+    expect(
+      eligibleVersion(t, "10.0.0", { seconds: 3 * DAY, excludes: [] }, "x", NOW).eligible,
+    ).toBeUndefined();
   });
 });
 
@@ -170,8 +247,14 @@ describe("rows and plan", () => {
     { name: "tarball", spec: "file:x.tgz", where: ["catalog"] },
   ];
   const latest = new Map([
-    ["inrange", { version: "1.9.0" }], ["pinned", { version: "1.7.1" }], ["major", { version: "9.1.0" }], ["held", { version: "17.0.2" }],
-    ["waiting", { version: "1.1.0" }], ["current", { version: "2.0.0" }], ["@tauri-apps/api", { version: "3.0.0-alpha.4" }], ["typescript", { version: "7.0.2" }],
+    ["inrange", { version: "1.9.0" }],
+    ["pinned", { version: "1.7.1" }],
+    ["major", { version: "9.1.0" }],
+    ["held", { version: "17.0.2" }],
+    ["waiting", { version: "1.1.0" }],
+    ["current", { version: "2.0.0" }],
+    ["@tauri-apps/api", { version: "3.0.0-alpha.4" }],
+    ["typescript", { version: "7.0.2" }],
   ]);
   const old = { "1.0.0": iso(30), "1.1.0": iso(1) };
   const times = new Map([["waiting", old]]);
@@ -183,7 +266,11 @@ describe("rows and plan", () => {
     expect(rows.map((r) => r.name)).not.toContain("tarball");
     expect(by("@tauri-apps/api").owner).toBe("tauri");
     expect(by("typescript").owner).toBe("pins");
-    expect(behind(rows).map((r) => r.name).sort()).toEqual(["held", "inrange", "major", "pinned", "waiting"]);
+    expect(
+      behind(rows)
+        .map((r) => r.name)
+        .sort(),
+    ).toEqual(["held", "inrange", "major", "pinned", "waiting"]);
   });
 
   test("planRows buckets: in-range, pinned, major, held, waiting", () => {
@@ -203,14 +290,18 @@ describe("rows and plan", () => {
   test("targetOf is the installable release, and nothing while a whole major is too young", () => {
     expect(targetOf({ ...by("waiting"), eligible: "1.0.5", ageGated: true } as Row)).toBe("1.0.5");
     expect(targetOf(by("major"))).toBe("9.1.0");
-    expect(targetOf({ ...by("major"), eligible: undefined, ageGated: true } as Row)).toBeUndefined();
+    expect(
+      targetOf({ ...by("major"), eligible: undefined, ageGated: true } as Row),
+    ).toBeUndefined();
   });
 
   test("a major whose every release is younger than the window waits instead of being offered", () => {
     const fresh = buildRows({
       directs: [{ name: "stripe", spec: "^22.6.2", where: ["catalog"] }],
       latest: new Map([["stripe", { version: "23.0.0" }]]),
-      holds: [], age, now: NOW,
+      holds: [],
+      age,
+      now: NOW,
       times: new Map([["stripe", { "22.6.2": iso(30), "23.0.0": iso(1) }]]),
     });
     expect(fresh[0]!.ageGated).toBe(true);
@@ -221,7 +312,15 @@ describe("rows and plan", () => {
   });
 
   test("renderPlan lists the requested majors with their family siblings", () => {
-    const status = { runtime: [], rows, plan: planRows(rows), overrides: [], releaseAge: age, holds: [], manifests: 2 };
+    const status = {
+      runtime: [],
+      rows,
+      plan: planRows(rows),
+      overrides: [],
+      releaseAge: age,
+      holds: [],
+      manifests: 2,
+    };
     const text = renderPlan(status, ["major"]).join("\n");
     expect(text).toContain("* major ^8.5.0 -> 9.1.0 (major)");
     expect(text).toContain("held");
@@ -229,9 +328,21 @@ describe("rows and plan", () => {
 });
 
 describe("families", () => {
-  const row = (name: string, kind: Row["kind"] = "major"): Row => ({ name, spec: "^1.0.0", where: ["catalog"], kind, inRange: false });
+  const row = (name: string, kind: Row["kind"] = "major"): Row => ({
+    name,
+    spec: "^1.0.0",
+    where: ["catalog"],
+    kind,
+    inRange: false,
+  });
   test("a react major pulls its behind siblings only", () => {
-    const rows = [row("react"), row("react-dom"), row("@types/react"), row("@types/react-dom", "patch"), row("zod")];
+    const rows = [
+      row("react"),
+      row("react-dom"),
+      row("@types/react"),
+      row("@types/react-dom", "patch"),
+      row("zod"),
+    ];
     expect(expandMajors(["react"], rows)).toEqual(["@types/react", "react", "react-dom"]);
     expect(expandMajors(["zod"], rows)).toEqual(["zod"]);
   });
@@ -239,87 +350,197 @@ describe("families", () => {
 
 describe("spec edits", () => {
   test("applyEdit rewrites exact name and spec pairs and keeps the formatting", () => {
-    const text = '{\n  "catalog": {\n    "three": "^0.184.0",\n    "@types/three": "^0.186.0",\n    "three-x": "^0.184.0"\n  }\n}\n';
+    const text =
+      '{\n  "catalog": {\n    "three": "^0.184.0",\n    "@types/three": "^0.186.0",\n    "three-x": "^0.184.0"\n  }\n}\n';
     const r = applyEdit(text, "three", "^0.184.0", "^0.186.1");
     expect(r.count).toBe(1);
-    expect(r.text).toBe('{\n  "catalog": {\n    "three": "^0.186.1",\n    "@types/three": "^0.186.0",\n    "three-x": "^0.184.0"\n  }\n}\n');
+    expect(r.text).toBe(
+      '{\n  "catalog": {\n    "three": "^0.186.1",\n    "@types/three": "^0.186.0",\n    "three-x": "^0.184.0"\n  }\n}\n',
+    );
     expect(applyEdit(text, "three", "^9.9.9", "^1.0.0").count).toBe(0);
   });
 
   test("specEdits targets the catalog file for catalogued names and every literal manifest otherwise", () => {
     const rows: Row[] = [
-      { name: "a", spec: "^1.0.0", where: ["catalog"], kind: "major", inRange: false, latest: "2.1.0", base: "1.0.0" },
-      { name: "b", spec: "^1.0.0", where: ["packages/x/package.json", "packages/y/package.json"], kind: "major", inRange: false, latest: "2.0.0", eligible: "2.0.0", base: "1.0.0" },
-      { name: "h", spec: "^1.0.0", where: ["catalog"], kind: "major", inRange: false, latest: "2.0.0", base: "1.0.0", hold: { name: "h", maxMajor: 1, reason: "peer" } },
-      { name: "w", spec: "^1.0.0", where: ["catalog"], kind: "major", inRange: false, latest: "2.0.0", base: "1.0.0" },
+      {
+        name: "a",
+        spec: "^1.0.0",
+        where: ["catalog"],
+        kind: "major",
+        inRange: false,
+        latest: "2.1.0",
+        base: "1.0.0",
+      },
+      {
+        name: "b",
+        spec: "^1.0.0",
+        where: ["packages/x/package.json", "packages/y/package.json"],
+        kind: "major",
+        inRange: false,
+        latest: "2.0.0",
+        eligible: "2.0.0",
+        base: "1.0.0",
+      },
+      {
+        name: "h",
+        spec: "^1.0.0",
+        where: ["catalog"],
+        kind: "major",
+        inRange: false,
+        latest: "2.0.0",
+        base: "1.0.0",
+        hold: { name: "h", maxMajor: 1, reason: "peer" },
+      },
+      {
+        name: "w",
+        spec: "^1.0.0",
+        where: ["catalog"],
+        kind: "major",
+        inRange: false,
+        latest: "2.0.0",
+        base: "1.0.0",
+      },
     ];
-    const { edits, errors } = specEdits(rows, ["a", "b", "h", "w", "ghost"], (r) => (r.name === "w" ? undefined : (r.eligible ?? r.latest)));
+    const { edits, errors } = specEdits(rows, ["a", "b", "h", "w", "ghost"], (r) =>
+      r.name === "w" ? undefined : (r.eligible ?? r.latest),
+    );
     expect(edits).toEqual([
       { file: "package.json", name: "a", from: "^1.0.0", to: "^2.1.0" },
       { file: "packages/x/package.json", name: "b", from: "^1.0.0", to: "^2.0.0" },
       { file: "packages/y/package.json", name: "b", from: "^1.0.0", to: "^2.0.0" },
     ]);
-    expect(errors).toEqual(["h: held (peer)", "w: no release old enough for minimumReleaseAge", "ghost: not a direct dependency"]);
+    expect(errors).toEqual([
+      "h: held (peer)",
+      "w: no release old enough for minimumReleaseAge",
+      "ghost: not a direct dependency",
+    ]);
   });
 });
 
 describe("registry access", () => {
-  const res = (status: number, body: unknown = {}, headers: Record<string, string> = {}) => new Response(JSON.stringify(body), { status, headers });
+  const res = (status: number, body: unknown = {}, headers: Record<string, string> = {}) =>
+    new Response(JSON.stringify(body), { status, headers });
   const sleeps: number[] = [];
-  const sleep = async (ms: number) => { sleeps.push(ms); };
+  const sleep = async (ms: number) => {
+    sleeps.push(ms);
+  };
 
   test("fetchWithBackoff retries 429 and 5xx with exponential delays and honours Retry-After", async () => {
     sleeps.length = 0;
     const seq = [res(429, {}, { "retry-after": "7" }), res(503), res(200, { ok: true })];
     let i = 0;
-    const r = await fetchWithBackoff("https://x", { fetcher: async () => seq[i++]!, sleep, baseMs: 100 });
+    const r = await fetchWithBackoff("https://x", {
+      fetcher: async () => seq[i++]!,
+      sleep,
+      baseMs: 100,
+    });
     expect(r?.status).toBe(200);
     expect(sleeps).toEqual([7000, 200]);
   });
 
   test("fetchWithBackoff gives up after the attempts and returns undefined; 404 is returned immediately", async () => {
     sleeps.length = 0;
-    expect(await fetchWithBackoff("https://x", { fetcher: async () => res(500), sleep, attempts: 3, baseMs: 10 })).toBeUndefined();
+    expect(
+      await fetchWithBackoff("https://x", {
+        fetcher: async () => res(500),
+        sleep,
+        attempts: 3,
+        baseMs: 10,
+      }),
+    ).toBeUndefined();
     expect(sleeps).toEqual([10, 20]);
     const notFound = await fetchWithBackoff("https://x", { fetcher: async () => res(404), sleep });
     expect(notFound?.status).toBe(404);
-    expect(await fetchWithBackoff("https://x", { fetcher: async () => { throw new Error("net"); }, sleep, attempts: 2, baseMs: 1 })).toBeUndefined();
+    expect(
+      await fetchWithBackoff("https://x", {
+        fetcher: async () => {
+          throw new Error("net");
+        },
+        sleep,
+        attempts: 2,
+        baseMs: 1,
+      }),
+    ).toBeUndefined();
   });
 
   test("npmLatest reads version and deprecation, and survives a 404", async () => {
     const urls: string[] = [];
-    const ok = await npmLatest("@scope/pkg", { fetcher: async (u) => { urls.push(u); return res(200, { version: "2.0.0", deprecated: "use y" }); }, sleep });
+    const ok = await npmLatest("@scope/pkg", {
+      fetcher: async (u) => {
+        urls.push(u);
+        return res(200, { version: "2.0.0", deprecated: "use y" });
+      },
+      sleep,
+    });
     expect(ok).toEqual({ version: "2.0.0", deprecated: "use y" });
     expect(urls).toEqual(["https://registry.npmjs.org/@scope%2fpkg/latest"]);
     expect(await npmLatest("gone", { fetcher: async () => res(404), sleep })).toEqual({});
   });
 
   test("openAdvisories splits held from open and marks fixable ones", async () => {
-    const lock = [{ ecosystem: "npm" as const, name: "vite", version: "5.4.0" }, { ecosystem: "npm" as const, name: "left-pad", version: "1.0.0" }, { ecosystem: "npm" as const, name: "dead", version: "1.0.0" }];
-    const query = async () => new Map([["npm:vite@5.4.0", ["GHSA-1"]], ["npm:left-pad@1.0.0", ["GHSA-2", "GHSA-3"]], ["npm:dead@1.0.0", ["GHSA-4"]]]);
+    const lock = [
+      { ecosystem: "npm" as const, name: "vite", version: "5.4.0" },
+      { ecosystem: "npm" as const, name: "left-pad", version: "1.0.0" },
+      { ecosystem: "npm" as const, name: "dead", version: "1.0.0" },
+    ];
+    const query = async () =>
+      new Map([
+        ["npm:vite@5.4.0", ["GHSA-1"]],
+        ["npm:left-pad@1.0.0", ["GHSA-2", "GHSA-3"]],
+        ["npm:dead@1.0.0", ["GHSA-4"]],
+      ]);
     const latest = async (n: string) => ({ version: n === "dead" ? "1.0.0" : "2.0.0" });
-    const r = await openAdvisories(lock, [{ ecosystem: "npm", name: "vite", reason: "dev server only" }], { query, fetchLatest: latest });
+    const r = await openAdvisories(
+      lock,
+      [{ ecosystem: "npm", name: "vite", reason: "dev server only" }],
+      { query, fetchLatest: latest },
+    );
     expect(r.held.map((a) => a.name)).toEqual(["vite"]);
-    expect(r.open.map((a) => [a.name, a.fixable])).toEqual([["left-pad", true], ["dead", false]]);
+    expect(r.open.map((a) => [a.name, a.fixable])).toEqual([
+      ["left-pad", true],
+      ["dead", false],
+    ]);
   });
 });
 
 describe("overrides", () => {
   test("describeOverrides lists resolved versions and flags a missing local tarball", () => {
     const c = new Ctx("/nonexistent-root", false, false);
-    const o = describeOverrides(c, { overrides: { qs: "^6.16.0", "@x/y": "file:.cache/y.tgz" } }, [
-      { ecosystem: "npm", name: "qs", version: "6.16.1" }, { ecosystem: "npm", name: "qs", version: "6.9.0" },
-    ], new Map([["qs", { version: "6.16.1" }]]));
-    expect(o[0]).toMatchObject({ name: "qs", resolved: ["6.9.0", "6.16.1"], latest: "6.16.1", local: false });
+    const o = describeOverrides(
+      c,
+      { overrides: { qs: "^6.16.0", "@x/y": "file:.cache/y.tgz" } },
+      [
+        { ecosystem: "npm", name: "qs", version: "6.16.1" },
+        { ecosystem: "npm", name: "qs", version: "6.9.0" },
+      ],
+      new Map([["qs", { version: "6.16.1" }]]),
+    );
+    expect(o[0]).toMatchObject({
+      name: "qs",
+      resolved: ["6.9.0", "6.16.1"],
+      latest: "6.16.1",
+      local: false,
+    });
     expect(o[1]).toMatchObject({ name: "@x/y", local: true, missing: true });
   });
 });
 
 describe("arguments", () => {
   test("parseArgs", () => {
-    expect(parseArgs(["apply", "--majors", "react,react-dom", "--majors=vite", "--offline"], "/r")).toMatchObject({ sub: "apply", majors: ["react", "react-dom", "vite"], offline: true, root: "/r" });
+    expect(
+      parseArgs(["apply", "--majors", "react,react-dom", "--majors=vite", "--offline"], "/r"),
+    ).toMatchObject({
+      sub: "apply",
+      majors: ["react", "react-dom", "vite"],
+      offline: true,
+      root: "/r",
+    });
     expect(parseArgs([], "/r").sub).toBe("status");
-    expect(parseArgs(["verify", "--skip-tests", "--root", "/x/y"], "/r")).toMatchObject({ sub: "verify", skipTests: true, root: "/x/y" });
+    expect(parseArgs(["verify", "--skip-tests", "--root", "/x/y"], "/r")).toMatchObject({
+      sub: "verify",
+      skipTests: true,
+      root: "/x/y",
+    });
     expect(() => parseArgs(["--bogus"], "/r")).toThrow("unknown argument");
   });
 });
