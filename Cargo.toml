@@ -37,11 +37,11 @@ image-compare = { version = "0.5" }
 palette = { version = "0.7", default-features = false }
 aphrody-oxc-bridge = { path = "crates/compat/oxc-bridge", version = "0.1.0" }
 rustc-hash = "2"
-oxc_codegen = { version = "0.152.0", git = "https://github.com/aphrody-code/oxc.git", rev = "31d5266e150ff17af52f0c2fc798cc27dc9a5a59", default-features = false }
-oxc_formatter = { version = "0.71.0", git = "https://github.com/aphrody-code/oxc.git", rev = "31d5266e150ff17af52f0c2fc798cc27dc9a5a59" }
-oxc_linter = { version = "1.86.0", git = "https://github.com/aphrody-code/oxc.git", rev = "31d5266e150ff17af52f0c2fc798cc27dc9a5a59" }
-oxc_minifier = { version = "0.152.0", git = "https://github.com/aphrody-code/oxc.git", rev = "31d5266e150ff17af52f0c2fc798cc27dc9a5a59" }
-oxc_semantic = { version = "0.152.0", git = "https://github.com/aphrody-code/oxc.git", rev = "31d5266e150ff17af52f0c2fc798cc27dc9a5a59" }
+oxc_codegen = { version = "0.152.0", git = "https://github.com/oxc-project/oxc.git", rev = "8c5a04ea0d5ca56e0d2d925f51f6b45669aa5e2a", default-features = false }
+oxc_formatter = { version = "0.71.0", git = "https://github.com/oxc-project/oxc.git", rev = "8c5a04ea0d5ca56e0d2d925f51f6b45669aa5e2a" }
+oxc_linter = { version = "1.86.0", git = "https://github.com/oxc-project/oxc.git", rev = "8c5a04ea0d5ca56e0d2d925f51f6b45669aa5e2a" }
+oxc_minifier = { version = "0.152.0", git = "https://github.com/oxc-project/oxc.git", rev = "8c5a04ea0d5ca56e0d2d925f51f6b45669aa5e2a" }
+oxc_semantic = { version = "0.152.0", git = "https://github.com/oxc-project/oxc.git", rev = "8c5a04ea0d5ca56e0d2d925f51f6b45669aa5e2a" }
 aphrody-bun = { path = "crates/ui/bun", version = "1.0.0-canary" }
 aphrody-discord-compiler = { path = "crates/discord/aphrody-discord-compiler", version = "1.0.0" }
 tokio-postgres-rustls = { version = "0.14", default-features = false, features = ["ring", "native-certs"] }
@@ -227,10 +227,10 @@ octocrab = { version = "0.54", features = [] }
 once_cell = { version = "1", features = [] }
 opendal = { version = "0.59", default-features = false, features = ["executors-tokio", "services-fs"] }
 ort = { version = "=2.0.0-rc.12", default-features = false, features = ["std", "api-24", "ndarray", "tracing"] }
-oxc_allocator = { version = "0.152.0", git = "https://github.com/aphrody-code/oxc.git", rev = "31d5266e150ff17af52f0c2fc798cc27dc9a5a59" }
-oxc_ast = { version = "0.152.0", git = "https://github.com/aphrody-code/oxc.git", rev = "31d5266e150ff17af52f0c2fc798cc27dc9a5a59" }
-oxc_parser = { version = "0.152.0", git = "https://github.com/aphrody-code/oxc.git", rev = "31d5266e150ff17af52f0c2fc798cc27dc9a5a59" }
-oxc_span = { version = "0.152.0", git = "https://github.com/aphrody-code/oxc.git", rev = "31d5266e150ff17af52f0c2fc798cc27dc9a5a59" }
+oxc_allocator = { version = "0.152.0", git = "https://github.com/oxc-project/oxc.git", rev = "8c5a04ea0d5ca56e0d2d925f51f6b45669aa5e2a" }
+oxc_ast = { version = "0.152.0", git = "https://github.com/oxc-project/oxc.git", rev = "8c5a04ea0d5ca56e0d2d925f51f6b45669aa5e2a" }
+oxc_parser = { version = "0.152.0", git = "https://github.com/oxc-project/oxc.git", rev = "8c5a04ea0d5ca56e0d2d925f51f6b45669aa5e2a" }
+oxc_span = { version = "0.152.0", git = "https://github.com/oxc-project/oxc.git", rev = "8c5a04ea0d5ca56e0d2d925f51f6b45669aa5e2a" }
 parking_lot = "0.12.5"
 predicates = { version = "3", features = [] }
 pretty_assertions = { version = "1", features = [] }
@@ -348,7 +348,7 @@ nu-parser = { version = "0.116.0", default-features = false }
 nu-protocol = { version = "0.116.0", default-features = false, features = ["brotli", "os", "rmp-serde", "sqlite"] }
 nu-std = { version = "0.116.0", default-features = false, features = ["sqlite"] }
 crossbeam-channel  = { version = "0.5" }
-oxc_ast_visit      = { version = "0.152.0", git = "https://github.com/aphrody-code/oxc.git", rev = "31d5266e150ff17af52f0c2fc798cc27dc9a5a59" }
+oxc_ast_visit      = { version = "0.152.0", git = "https://github.com/oxc-project/oxc.git", rev = "8c5a04ea0d5ca56e0d2d925f51f6b45669aa5e2a" }
 aphrody-n2b-ai = { path = "crates/compat/n2b-ai", version = "0.6.2", features = [] }
 aphrody-n2b-github = { path = "crates/compat/n2b-github", version = "0.6.2", features = [] }
 aphrody-n2b-util = { path = "crates/compat/n2b-util", version = "0.6.2", features = [] }
