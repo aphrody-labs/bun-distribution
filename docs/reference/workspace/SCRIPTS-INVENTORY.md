@@ -257,3 +257,48 @@ Méthode : pour chaque fichier `.ts/.sh/.nu/.py/.ps1` sous `scripts/`, nombre de
 ### winclean-pipeline.ps1
 
 - `scripts/winclean-pipeline.ps1`
+
+## Sans référence et imports relatifs cassés (non exécutables en l'état)
+
+Preuve : import relatif sans fichier cible (`.ts`, `.tsx`, `/index.ts`, `.js`→`.ts`). Beaucoup visent l'ancien layout Shenron (apps/site → apps/shenron/site) : à réparer ou supprimer par le propriétaire.
+
+- `scripts/audit/shenron/scripts/ops/audit-wiki-databooks-coverage.ts` → ./wiki-databooks-indexer
+- `scripts/audit/shenron/scripts/ops/check-wiki-status.ts` → ../../packages/db/src/index.ts
+- `scripts/audit/shenron/scripts/ops/crawl-doc-links-rag.test.ts` → ./crawl-doc-links-rag
+- `scripts/audit/shenron/scripts/ops/crawl-dragon-ball-official-aphrody.test.ts` → ./crawl-dragon-ball-official-aphrody.ts
+- `scripts/audit/shenron/scripts/ops/eval-aphrody-rag.test.ts` → ./eval-aphrody-rag
+- `scripts/audit/shenron/scripts/ops/test-ocr-jpn.ts` → ../../apps/site/scripts/_databooks-base
+- `scripts/audit/shenron/scripts/ops/wiki-corpus-enricher.test.ts` → ./wiki-corpus-enricher
+- `scripts/audit/shenron/scripts/ops/wiki-page-builder.test.ts` → ./wiki-page-builder
+- `scripts/audit/ui/apps/nie-web/scripts/build-fingerprint.test.ts` → ../vite.config
+- `scripts/audit/ui/apps/nie-web/scripts/out-dir.test.ts` → ./out-dir
+- `scripts/audit/ui/apps/nie-web/scripts/precompression-targets.test.ts` → ./precompression-targets
+- `scripts/audit/ui/apps/nie-web/scripts/public-entry-bundle.test.ts` → ./public-entry-bundle
+- `scripts/audit/ui/apps/nie-web/scripts/stage-vfs.test.ts` → ./stage-vfs
+- `scripts/audit/ui/apps/nie-web/scripts/verify-audio-cross-host.ts` → ../src/wasm/nie_wasm.js
+- `scripts/audit/ui/apps/nie-web/scripts/wasm-audio-smoke.test.ts` → ../src/wasm/nie_wasm.js
+- `scripts/audit/ui/apps/nie-web/scripts/wasm-audio-smoke.test.ts` → ./wasm-audio-smoke
+- `scripts/build/web/apps/bxc/scripts/build-demo-index.ts` → ../src/crawler/MassiveCrawler.ts
+- `scripts/build/web/apps/bxc/scripts/capture_squad_builders.ts` → ../src/api/browser.ts
+- `scripts/release/ui/apps/nie-web/scripts/stage-vfs.ts` → ./out-dir
+- `scripts/tools/fut/src/scripts/map_fut.ts` → ../futgg.ts
+- `scripts/tools/fut/src/scripts/map_fut.ts` → ../futbin.ts
+- `scripts/tools/shenron/scripts/filter-ocr-results.ts` → ../apps/site/src/lib/databooks-defauts.ts
+- `scripts/tools/shenron/scripts/ops/appliquer-ajustements.ts` → ../../apps/site/scripts/_databooks-base
+- `scripts/tools/shenron/scripts/ops/appliquer-ajustements.ts` → ../../apps/site/src/lib/ja/lexique-canonique
+- `scripts/tools/shenron/scripts/ops/auto-translate-worker.ts` → ../../apps/site/scripts/_databooks-base
+- `scripts/tools/shenron/scripts/ops/auto-translate-worker.ts` → ../../apps/site/src/lib/ja/lexique-canonique
+- `scripts/tools/shenron/scripts/ops/batch-manga-ocr.ts` → ../../apps/site/scripts/_databooks-base
+- `scripts/tools/shenron/scripts/ops/clean-noncanon-wiki.ts` → ../../apps/site/scripts/_databooks-base
+- `scripts/tools/shenron/scripts/ops/clean-noncanon-wiki.ts` → ../../apps/site/scripts/_technique-lexicon
+- `scripts/tools/shenron/scripts/ops/complete-db-from-dragonballcn.ts` → ../../apps/site/scripts/_databooks-base
+- `scripts/tools/shenron/scripts/ops/deposer-lot-landmark.ts` → ../../apps/site/scripts/_databooks-base
+- `scripts/tools/shenron/scripts/ops/generate-db-lexicon.ts` → ../../apps/site/scripts/_databooks-base
+- `scripts/tools/shenron/scripts/ops/generate-db-lexicon.ts` → ../../apps/site/scripts/_technique-lexicon
+- `scripts/tools/shenron/scripts/ops/generate-db-lexicon.ts` → ../../apps/site/src/lib/ja/normalisation
+- `scripts/tools/shenron/scripts/ops/ingest-gpu-ocr-results.ts` → ../../apps/site/scripts/_databooks-base
+- `scripts/tools/shenron/scripts/ops/ingest-gpu-ocr-results.ts` → ../../apps/site/src/lib/databooks-defauts
+- `scripts/tools/shenron/scripts/ops/inspect-missing-images.ts` → ../../apps/site/scripts/_databooks-base
+- `scripts/tools/shenron/scripts/ops/provision-aphrody-admin.ts` → ../../packages/auth/src/agent-keys
+- `scripts/tools/shenron/scripts/ops/provision-aphrody-admin.ts` → ../../packages/auth/src/tokens
+- `scripts/tools/shenron/scripts/ops/sync-reports-goals.ts` → ../../apps/bot/src/services/AdminReportGoalService
