@@ -24,10 +24,10 @@ The machine-readable contract is [`config/shell-runtime.json`](../../../config/s
 ## Verification
 
 ```text
-cargo test --manifest-path ../aphrody-shell/Cargo.toml -p aphrody-shell --locked
-cargo run --manifest-path ../aphrody-os/Cargo.toml -p aphrody-kernel -- serve
-bun run infra:check
-cargo run -p aphrody-infra -- doctor --json
+scripts/build/rust/cargo-serial.sh test -p aphrody-shell --locked
+scripts/build/rust/cargo-serial.sh run -p aphrody-kernel -- serve
+aphrody-infra validate --json
+scripts/build/rust/cargo-serial.sh run -p aphrody-infra -- doctor --json
 ```
 
 The last command is the infra CLI from this repository. Remote service actions

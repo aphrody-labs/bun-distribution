@@ -67,7 +67,7 @@ Aphrody adopte une approche souveraine en 4 piliers intégrés directement dans 
                ▼
 ┌─────────────────────────────┐
 │      Moteur In-Process      │
-│   (crates/aphrody-infra)    │
+│   (crates/infra/infra)     │
 │ - SecretString (Zeroize)    │
 │ - Rendu sécurisé (chmod 400)│
 │ - systemd LoadCredential    │
@@ -102,17 +102,17 @@ Ce format permet à Git de générer des diffs lisibles sur les clés ajoutées,
 
 ```bash
 # Vérification de l'intégrité et scan anti-fuites
-cargo run -p aphrody-infra -- secrets audit
+scripts/build/rust/cargo-serial.sh run -p aphrody-infra -- secrets audit
 
 # Validation de présence des secrets déclarés dans le contrat
-cargo run -p aphrody-infra -- secrets check --service rg-api
+scripts/build/rust/cargo-serial.sh run -p aphrody-infra -- secrets check --service rg-api
 
 # Chiffrement d'un fichier de configuration
-cargo run -p aphrody-infra -- secrets encrypt --in .env.production --out config/secrets/rg-api.enc.json
+scripts/build/rust/cargo-serial.sh run -p aphrody-infra -- secrets encrypt --in .env.production --out config/secrets/rg-api.enc.json
 
 # Déchiffrement contrôlé
-cargo run -p aphrody-infra -- secrets decrypt --in config/secrets/rg-api.enc.json
+scripts/build/rust/cargo-serial.sh run -p aphrody-infra -- secrets decrypt --in config/secrets/rg-api.enc.json
 
 # Rendu sécurisé pour systemd avec permissions 0400
-cargo run -p aphrody-infra -- secrets render --service rg-api --out /etc/rose-griffon/rg-api.env --apply
+scripts/build/rust/cargo-serial.sh run -p aphrody-infra -- secrets render --service rg-api --out /etc/rose-griffon/rg-api.env --apply
 ```

@@ -1,7 +1,13 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 # Automatisations partagées
 
-`packages/aphrody-workspace` est l’autorité pour les automatisations qui ne
+> **Carte de migration historique.** Les catégories et wrappers hérités ne
+> constituent pas l’inventaire courant. L’implémentation Infra partagée du
+> monorepo appartient à `packages/infra/workspace`; vérifie les commandes dans
+> son `package.json`, `src/ops.ts` et les manifests racine avant d’utiliser un
+> wrapper mentionné ci-dessous.
+
+`packages/infra/workspace` est l’autorité pour les automatisations qui ne
 portent ni données produit, ni contrat d’application, ni dépendance upstream.
 Chaque dépôt conserve une entrée `bun run`, `just` ou wrapper compatible qui
 appelle `aphrody-ops`.
@@ -46,4 +52,4 @@ est relu après chaque migration. Les surfaces restantes ont la frontière suiva
 | `aphrody-os` | WinClean, WSLg, noyau et intégration Windows propres au système. |
 
 Les wrappers locaux d’automatismes partagés sont conservés pour les commandes
-existantes; leur implémentation vit sous `packages/aphrody-workspace`.
+existantes; leur implémentation vit sous `packages/infra/workspace`.

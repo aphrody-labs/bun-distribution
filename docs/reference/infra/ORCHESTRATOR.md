@@ -1,9 +1,17 @@
 # `aphrody-infra` orchestrator
 
-`aphrody-infra` is the single operator surface for Aphrody, Aphrody OS, YOLO,
-RG, Niers, SSH/Git, Web and the Windows/WSL/VPS environments. It owns the
-workflow contract, target matrix and the single `config/service-catalog.json`
-workload registry; it does not duplicate application, kernel or web code.
+The ownership tables below describe the former split-repository deployment
+design. On 2026-10-02, the root production topology marked Aphrody Web and AI
+planes retired; the active host observation found RG and Shenron releases on
+VPS. Consult the dated [VPS status](../../operations/infra/VPS-STATUS-2026-10-02.md),
+[topology observation](../../operations/infra/TOPOLOGY-OBSERVATION-2026-10-02.md),
+and root `config/` catalogs before operational use. This page remains a
+historical description of control-plane capabilities.
+
+The current CLI is the `aphrody-infra` Rust binary in this monorepo. It owns
+host/workflow operations and reads root `config/` catalogues; the Bun
+`@aphrody/workspace` package exposes its `infra` bridge and an `orchestrate`
+shortcut. It does not duplicate application code.
 
 The catalog is the authority for one unit per workload. It covers Rust HTTP,
 Bun/Next HTTP, Discord bots, workers and PostgREST. Nginx is the single public
@@ -14,17 +22,24 @@ native lifecycle surface; deployment remains atomic and release-based through th
 ## Commands
 
 ```bash
-cargo run -- status --json
-cargo run -- doctor --json
-cargo run -- inventory --json
-cargo run -- dev-env --target wsl-ubuntu-24.04
-cargo run -- sync --target windows-local
-cargo run -- deploy --target vps --stack bundle --release /srv/aphrody-infra/bundles/<id>
-cargo run -- deploy --target vps --stack bundle --release /srv/aphrody-infra/bundles/<id> --apply
-cargo run -- deploy --target vps --stack aphrody|shenron|rg --release /srv/<stack>/releases/<id>
+aphrody-infra status --json
+aphrody-infra doctor --json
+aphrody-infra inventory --json
+aphrody-infra dev-env --target wsl-ubuntu-24.04
+aphrody-infra sync --target windows-local
+aphrody-infra deploy --target vps --stack bundle --release /srv/aphrody-infra/bundles/<id>
+aphrody-infra deploy --target vps --stack bundle --release /srv/aphrody-infra/bundles/<id> --apply
+aphrody-infra deploy --target vps --stack shenron|rg --release /srv/<stack>/releases/<id>
 aphrody-infra service catalog
 aphrody-infra service status --target local
 ```
+
+Run the CLI from the monorepo root through
+`scripts/build/rust/cargo-serial.sh run -p aphrody-infra -- <args>` when a
+Cargo build is required; direct `cargo run` bypasses the repository's shared
+Cargo lock. Bun bridge/shortcut forms are
+`bun packages/infra/workspace/src/ops.ts infra <args>` and
+`bun packages/infra/workspace/src/ops.ts orchestrate <action> ...`.
 
 Every invocation creates `var/runs/<timestamp>-<pid>/manifest.json` with the
 scope, actions, outputs and final status. Status output keeps the catalog's
@@ -42,13 +57,13 @@ accepts only a release below its own root, verifies checksums and preconditions,
 probes loopback and HTTPS routes and restores the previous `current` on failure
 (`docs/IMMUTABLE-RELEASES.md`).
 
-## Ownership
+## Former split-repository ownership model
 
 - `aphrody-ai`: AI agents, A2A, RAG, MCP (`dragonball.*` included) and E5; its listeners stay on loopback.
 - `aphrody-web`: public site, Web API, BXC browser engine and render FFI.
 - `aphrody-ui`: M3 design system, the agent console (`ui-dist`) and `@aphrody/bun`.
 - `aphrody-os`: kernel, sandbox, services and WinClean (not deployed on the VPS).
-- Stack observability keeps `aphrody-infra/scripts/infra-status.ts` for detailed host telemetry; lifecycle status is native Rust.
+- The separate `scripts/infra-status.ts` Bun monitor reports its implemented host checks and probes; lifecycle/status commands are native Rust. Neither is a full discovery of arbitrary host units.
 - RG: RG services and the imported resource monitor.
 - Niers: data/build checkout and service-specific assets.
 - `aphrody-infra`: target matrix, run evidence, environment checks, SSH/Git

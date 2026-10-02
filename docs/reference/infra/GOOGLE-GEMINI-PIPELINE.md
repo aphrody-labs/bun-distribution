@@ -1,35 +1,38 @@
 # Pipeline Google/Gemini Aphrody
 
-Ce manifeste est l'autorité d'intégration :
-`config/google-gemini-pipeline.json`.
+> **Historical pipeline manifest.** `config/google-gemini-pipeline.json` still
+> describes the former split repositories and contains retired owner paths.
+> For current source roots, release artifacts and host-local install policy,
+> use [`google-stack-release.json`](../../../config/google-stack-release.json)
+> and [`GOOGLE-STACK-PACKAGING.md`](GOOGLE-STACK-PACKAGING.md).
 
-Le flux de production est :
+The current implementation is organized in the monorepo and the sibling
+`aphrody-py` workspace:
 
-`home-agent/agy -> aphrody-kernel MCP -> provider runtime -> BXC/Web ou OAuth`
+- Rust CLI: `crates/ai/google` (`aphrody-google`), the runtime authority.
+- Bun facade: `packages/ai/google` (`@aphrody/google`).
+- Vertex document AI adapter: `packages/ai/doc-ai` (`@aphrody/doc-ai`).
+- Python facade: `../aphrody-py/packages/ai/py/aphrody` (`aphrody.google`).
+- Kernel/MCP integrations: `crates/os` and the kernel package owners.
 
-Les implémentations restent propriétaires de leur domaine :
+The Rust installer deploys only the native `aphrody-google` CLI under
+`$APHRODY_HOME/bin`; Bun and Python remain workspace packages. Credentials
+remain local to each host and are not packaged or synchronized.
 
-- Python expose le client Web et la normalisation des sessions.
-- Rust expose le runtime provider, le kernel et le transport MCP.
-- `@aphrody/google` expose la façade Bun canonique (Vertex ADC + Gemini Web); BXC reste le transport Web spécialisé
-- `aphrody.google` expose la façade Python canonique (runtime, Vertex, Gemini Web et Spark)
-- `aphrody-google` expose le contrat Rust consommé par MCP et le backend agy
-- `aphrody/packages/doc-ai` est un adaptateur Vertex ADC enregistré dans le manifeste, sans gestion de secret ni projet concurrent
-  Google Search, Gemini Web, CDP et outils Web.
-- Aphrody OS fournit l'orchestration kernel, les permissions et le home-agent.
-- `aphrody-infra` fournit uniquement le contrat, le routage d'environnement et
-  les contrôles de déploiement.
+## Current verification command
 
-Chaque hôte résout `APHRODY_HOME` vers sa racine privée locale. Les cookies ne
-sont ni synchronisés ni transmis par le pipeline. OAuth utilise le magasin
-de credentials natif de la plateforme. Toute absence ou expiration de session
-échoue fermement et déclenche le chemin de réauthentification local.
+```powershell
+pwsh -NoProfile -File scripts/verify-google-pipeline.ps1 [-StaticOnly]
+```
 
-## Portes de production
+The verifier checks current Rust, Bun, doc-ai and Python owner paths, package
+metadata, source key literals and the shared uv pin. Full mode also runs the
+Rust, Bun, doc-ai and Python gates. The current blocker is a toolchain pin
+mismatch: `config/system-packages.json` requires uv `0.12.21`, while
+`aphrody-py/pyproject.toml` pins `0.12.17`. No full pipeline test run is
+claimed until these manifests are aligned and the verifier completes.
 
-1. `APHRODY_HOME` et les sous-répertoires `cookies`, `vendor`, `bin` existent.
-2. Les permissions sont propriétaire seul.
-3. Le kernel MCP est joignable localement.
-4. BXC annonce ses capacités sans exposer de secret.
-5. Les adaptateurs Python/Rust/Bun utilisent le manifeste et la même racine.
-- Le binaire unique `aphrody-google` est l’autorité runtime. `status`, `env` et `doctor` exposent uniquement le contrat non secret; Bun et uv/Python restent des façades clientes.
+The old manifest's BXC cookie routing, split-repository ownership and
+`aphrody-ai/crates/aphrody-antigravity` references are retained only as
+historical design context. They are not evidence that those providers or
+paths are current runtime capabilities.

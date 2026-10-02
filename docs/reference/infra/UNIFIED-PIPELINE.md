@@ -1,11 +1,11 @@
 # Pipeline Aphrody unifiée
 
-`aphrody-infra` est la façade unique des gates de production pour les dépôts
-catégorie Aphrody (`aphrody-ai`, `aphrody-os`, `aphrody-ui`, `aphrody-web`,
-`aphrody-compat`, `aphrody-contracts`, `aphrody-shell`, `aphrody-native`),
-`aphrody-infra` lui-même, RG, Shenron, NIE et IECode. Les dépôts gardent leur
-code et leurs scripts, mais le graphe d’exécution est déclaré une seule fois
-dans `config/pipeline.json`.
+Cette page décrit l’ancien pipeline à dépôts séparés. Les owners et commandes
+ont depuis migré vers les workspaces de ce monorepo ; le catalogue root
+`config/pipeline.json` n’est pas une preuve que les anciens workspaces ou leurs
+scripts existent encore. Vérifier chaque package dans le checkout courant et
+consulter `docs/plans/infra/PLAN.md` pour l’état actuel. L’historique est gardé
+comme contexte, pas comme procédure de release active.
 
 ## Runners
 
@@ -17,9 +17,8 @@ Chaque étape s’exécute dans `<workspaceRoot>/<repo>` :
   `package.json` ; les dépôts Bun + Rust exposent leurs gates Cargo
   (`check`, `clippy`, `test`, `fmt-check`) par la même voie.
 
-`aphrody-infra validate` refuse une étape dont le dépôt n’est pas un dépôt
-vivant de `config/stack-training.json` (un dépôt retiré comme le monolithe
-`aphrody` est rejeté).
+Les commandes listées plus bas appartiennent au plan historique et doivent être
+requalifiées contre les manifests actuels avant de les exécuter.
 
 ## Commandes
 
@@ -42,7 +41,7 @@ ordonnés. Le build suit le graphe des dépendances Bun : `aphrody-compat`, puis
 les applications qui le déclarent dans leur catalogue Bun, avec une seule
 compilation du site par release.
 
-Le stage `release` exécute `verify:release` d'`aphrody-ai` puis
+L’ancien stage `release` exécutait `verify:release` d'`aphrody-ai` puis
 `release:bundle` d'`aphrody-infra`, c'est-à-dire
 `scripts/build-aphrody-stack-release.sh` : depuis un clone propre du
 superprojet `aphrody-src` sur ext4 dans WSL Ubuntu-24.04 (préparé par
@@ -51,16 +50,19 @@ construit le bundle unique de la VPS — la release Aphrody (cinq services, smok
 local attesté par `SMOKE.json`), l'artefact Shenron (`bun run site:artifact` et
 `git archive`) et l'épinglage du commit RG — et enregistre les 13 SHA des
 sous-modules dans `BUNDLE.json` et `RELEASE_SHA`
-([`IMMUTABLE-RELEASES.md`](../../operations/infra/IMMUTABLE-RELEASES.md)). La release RG reste
+([`IMMUTABLE-RELEASES.md`](../../operations/infra/IMMUTABLE-RELEASES.md)). La release RG restait
 assemblée sur la VPS par `scripts/rg/assemble-vps-release.sh`. NIE et IECode ne
-publient plus de release VPS. Les adaptateurs sont testés sous Linux/WSL en
-root par `bun run test:adapters` (`test-atomic-deploy-{rg,shenron,bundle}.sh`,
-systemd/Nginx/curl remplacés par des stubs).
+publient plus de release VPS selon cet état historique. Les tests Shell des
+adaptateurs sont appelés directement (`bash scripts/test-atomic-deploy-<stack>.sh`)
+quand le fixture correspondant est disponible ; aucun script racine
+`test:adapters` n’est déclaré.
 
 ## Production
 
-Le pipeline ne déploie que si tous les stages sont verts. L’adaptateur final
-reste le CLI Rust `aphrody-infra deploy --target vps --stack bundle --release
+Ce pipeline historique ne constitue pas une autorisation de déployer. Pour un
+déploiement actuel, revalider l’état et les prérequis dans le plan Infra et le
+runbook immuable avant toute activation. La commande CLI Rust, quand elle est
+explicitement choisie, est `aphrody-infra deploy --target vps --stack bundle --release
 /srv/aphrody-infra/bundles/ID --apply`, qui active Aphrody, puis Shenron, puis
 RG, chacun par son adaptateur atomique (Nginx validé, sondes loopback et HTTPS,
 rollback), enregistre `BUNDLE.previous.json` et restaure les étapes déjà

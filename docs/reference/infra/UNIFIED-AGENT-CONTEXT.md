@@ -1,6 +1,14 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 # Unified agent context
 
+> **Historical split-repository guide.** Its ownership examples below predate
+> consolidation into the active `/home/aphro/aphrody` monorepo and must not be
+> used to choose current source paths. Start from root [`AGENTS.md`](../../../AGENTS.md),
+> [`PLAN.md`](../../../PLAN.md), the package owner in this checkout, and the
+> sibling `aphrody-py` / `iecode` rules where relevant. The root `config/`
+> catalogues and current generated `docs/ecosystem/` describe this monorepo;
+> historical category names are context only.
+
 This page is the Infra entry point for cross-repository work. The workspace
 superproject is the canonical source for repository ownership and dependency
 boundaries: [`../../docs/ARCHITECTURE.md`](../../architecture/workspace/ARCHITECTURE.md). Follow its
@@ -21,9 +29,9 @@ schemas and domain workflows; do not copy their registries or plans here.
 Use the generated ecosystem index for discovery, then confirm capabilities in
 the current source and command help:
 
-- [`ECOSYSTEM.md`](./ecosystem/ECOSYSTEM.md) — repositories, packages and crates.
-- [`CLI.md`](./ecosystem/CLI.md) — generated CLI tree.
-- [`MCP-TOOLS.md`](./ecosystem/MCP-TOOLS.md) — generated MCP catalog.
+- [`ECOSYSTEM.md`](../../ecosystem/ECOSYSTEM.md) — repositories, packages and crates.
+- [`CLI.md`](../../ecosystem/CLI.md) — generated CLI tree.
+- [`MCP-TOOLS.md`](../../ecosystem/MCP-TOOLS.md) — generated MCP catalog.
 
 Regenerate these files with the Infra-owned generator; never edit generated
 catalogs by hand. A catalog, checkout or passing local gate does not prove a

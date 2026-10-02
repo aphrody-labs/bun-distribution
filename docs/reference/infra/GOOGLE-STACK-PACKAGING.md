@@ -1,51 +1,80 @@
 # Google stack packaging contract
 
-`aphrody-infra/config/google-stack-release.json` is the single release
-manifest for Google/Gemini integration across the repositories that own it
-(`aphrody-ai`, `aphrody-web` and this repository).
+`config/google-stack-release.json` is the current release manifest for the
+Google integration. `config/google-gemini-pipeline.json` is a legacy pipeline
+manifest: its split-repository owner and source paths no longer match this
+monorepo and must not be used to locate current implementations.
 
-Ownership is deliberately one-way:
+## Current owners
 
-- `aphrody-google` (Rust, in `aphrody-ai`) owns runtime resolution, provider
-  routing and the public CLI contract (`status`, `env`, `doctor`).
-- `@aphrody/google` (Bun, `aphrody-ai/packages/google`) delegates to that
-  binary and owns no second Google runtime or credential store.
-- `aphrody.google` (uv/Python, `aphrody-ai/py`) exposes typed Python clients
-  and delegates provider auth to ADC/Secret Manager; it owns no project or key
-  material.
-- `aphrody-web` owns the BXC Google/Gemini web implementation
-  (`apps/bxc/src/google`), reached through the kernel and never linked into the
-  AI layer.
-- `aphrody-os` owns kernel/MCP and desktop integration, not Google business
-  logic.
-- `aphrody-infra` owns manifests, installation, update, rollback and probes,
-  not provider implementation.
+- `aphrody-google` is the Rust CLI in `crates/ai/google` and owns runtime
+  resolution, provider routing and the public `status`, `env` and `doctor`
+  commands.
+- `@aphrody/google` in `packages/ai/google` is a Bun facade over that binary.
+- `@aphrody/doc-ai` in `packages/ai/doc-ai` is a separate Vertex ADC adapter.
+- `aphrody.google` is the Python facade in the sibling `aphrody-py` workspace,
+  under `packages/ai/py/aphrody`.
+- Kernel/MCP and desktop integration belong to `crates/os`; provider business
+  logic remains with the Google owners.
 
-## Install/update
+The installer owns only the native Rust CLI. It does not install Bun or Python
+packages. Credentials remain host-local and are not included in releases.
 
-```powershell
-pwsh -File scripts/install-google-stack.ps1
-pwsh -File scripts/update-google-stack.ps1
-```
+## Install and update
 
-Both default to the sibling checkouts `../aphrody-ai` and `../aphrody-web`
-(`-AphrodyRoot`, `-AphrodyWebRoot`; the former `-AphrodyOsRoot` name is kept as
-an alias). The installer builds the canonical Rust facade in `aphrody-ai`,
-installs it atomically under `$APHRODY_HOME/bin`, creates the compatibility
-`google` alias, sets only non-secret runtime variables and runs
-`aphrody-google doctor`.
-
-Updates fetch `origin/main`, refuse tracked changes, rebuild and replace the
-binary only after the build succeeds. Credentials, cookies, `.env` files and
-API keys are never packaged or synchronized.
-
-## Production gates
+Run these from the monorepo root. Both scripts default `AphrodyRoot` to the
+parent of their own `scripts/` directory, so an explicit root argument is not
+needed for the normal checkout.
 
 ```powershell
-bun run google:verify
-# equivalent to
-pwsh -File scripts/verify-google-pipeline.ps1 -AphrodyRoot ..\aphrody-ai -WebRoot ..\aphrody-web
+pwsh -NoProfile -File scripts/install-google-stack.ps1 [-Target <triple>] [-SkipBuild]
+pwsh -NoProfile -File scripts/update-google-stack.ps1 [-Target <triple>] [-SkipFetch] [-SkipBuild]
 ```
 
-The VPS deploy remains the immutable-release workflow in `docs/IMMUTABLE-RELEASES.md`;
-the current release is not mutated in place.
+Install builds `aphrody-google` through `scripts/build/rust/cargo-serial.ps1`
+unless `-SkipBuild` is supplied, then atomically replaces the binary under
+`$APHRODY_HOME/bin` and writes the `google` compatibility alias. It runs
+`aphrody-google doctor` after installation.
+
+Update fetches `main` from the selected remote unless `-SkipFetch` is
+supplied. Pass `-Remote <name>` to select it explicitly; otherwise the script
+uses `origin` when configured and falls back to `workspace`. It requires the
+checkout to be on `main`, at the same commit as `refs/remotes/<remote>/main`,
+and clean, including untracked files. In this checkout, the selected remote is
+`workspace`. It then invokes the installer. These checks make this an update
+from the verified monorepo checkout, not a release builder for arbitrary
+branches.
+
+## Verification
+
+The current verifier checks owner paths and manifests for Rust, Bun, doc-ai
+and the sibling Python workspace. It also checks that no literal provider key
+assignments are present in their source trees.
+
+```powershell
+pwsh -NoProfile -File scripts/verify-google-pipeline.ps1 [-StaticOnly]
+```
+
+The script defaults to the monorepo and `../aphrody-py`. `-StaticOnly` stops
+after source, manifest and toolchain pin checks. Full mode additionally runs
+serialized Rust tests, the Bun Google `verify` script, doc-ai tests and
+typecheck, and Python pytest.
+
+The verifier currently stops at a known uv pin mismatch: monorepo
+`config/system-packages.json` requires uv `0.12.21`, while
+`aphrody-py/pyproject.toml` requires `0.12.17`. Aligning the manifests is
+outside this document update; the Python manifest is not changed here. No full
+Google pipeline tests were run for this documentation update, so no full-gate
+pass is claimed.
+
+## Legacy manifest
+
+`config/google-gemini-pipeline.json` still names retired split repositories
+and paths such as `aphrody-ai/crates/aphrody-antigravity`,
+`packages/google`, and `aphrody-web/apps/bxc`. Treat it as historical until it
+is migrated or removed by its owner. Use
+[`google-stack-release.json`](../../../config/google-stack-release.json) for
+the current source roots and release artifacts.
+
+The VPS deployment remains governed by the immutable release workflow in
+[`IMMUTABLE-RELEASES.md`](../../operations/infra/IMMUTABLE-RELEASES.md).

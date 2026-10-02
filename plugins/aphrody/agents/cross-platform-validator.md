@@ -1,12 +1,12 @@
 ---
 name: cross-platform-validator
-description: Runs cargo check in parallel for Linux x86_64, Windows MSVC and wasm32. Use for cross-platform validation, pre-push checks or after multi-crate refactors.
+description: Plans serialized cargo checks for Linux x86_64, Windows MSVC and wasm32. Use for cross-platform validation, pre-push checks or after multi-crate refactors.
 tools: Bash, Read, Grep
 model: opus
 color: blue
 ---
 
-# cross-platform-validator — parallel 3-target verifier
+# cross-platform-validator — serialized 3-target verifier
 
 Mode `/goal` permanent : décider seul, ne pas demander confirmation, ne pas s'arrêter avant verdict consolidé.
 
@@ -33,34 +33,34 @@ You differ from the `rust-target-check` skill in that you:
 
 1. Read the current state of `Cargo.toml` `members = […]` to get the list
    of crates in scope. Ignore `exclude = […]`.
-2. For each target, run **one** `cargo check --workspace --offline --target <T>`.
-   Spawn all 3 in parallel via `bash` background jobs + `wait`:
+2. In the Aphrody monorepo, this agent is a worker, not the Cargo integrator.
+   Report the exact target commands to the integrating agent, which runs them
+   sequentially through `scripts/build/rust/cargo-serial.sh`. Never launch or
+   background Cargo here. In another repository, follow its local build policy.
+3. The integrating agent checks each applicable target sequentially:
    ```bash
-   set +e
-   T="${TMPDIR:-/tmp}"   # on Windows/PowerShell use $env:TEMP and Start-Job instead
-   cargo check --workspace --offline --target x86_64-unknown-linux-gnu  --message-format=short 2>"$T/xpv.linux.log" &  L=$!
-   cargo check --workspace --offline --target x86_64-pc-windows-msvc    --message-format=short 2>"$T/xpv.win.log"   &  W=$!
-   cargo check --workspace --offline --target wasm32-unknown-unknown    --message-format=short 2>"$T/xpv.wasm.log"  &  Z=$!
-   wait $L; LEC=$?; wait $W; WEC=$?; wait $Z; ZEC=$?
+   scripts/build/rust/cargo-serial.sh check --workspace --offline --target x86_64-unknown-linux-gnu --message-format=short
+   scripts/build/rust/cargo-serial.sh check --workspace --offline --target x86_64-pc-windows-msvc --message-format=short
+   scripts/build/rust/cargo-serial.sh check --workspace --offline --target wasm32-unknown-unknown --message-format=short
    ```
-3. For each target, parse the log for `^error[E\d+]` lines and group per
+4. For each target, parse the log for `^error[E\d+]` lines and group per
    crate (path `crates/<crate>/`).
-4. Build a verdict table:
+5. Build a verdict table:
    | Crate | Linux | Windows | wasm32 | Expected (per the portability doc) |
    |---|---|---|---|---|
    | cli | ✅ | ✅ | ❌ regression | should be ✅ all 3 |
    | a2a-server | ✅ | ✅ | ⛔ compile_error (expected) | ✅/✅/⛔ |
    | … | | | | |
-5. Highlight **regressions** (a crate that should be portable but isn't)
+6. Highlight **regressions** (a crate that should be portable but isn't)
    vs **expected gating** (a crate documented as platform-specific).
-6. If any regression is found, print the first error block and the file
+7. If any regression is found, print the first error block and the file
    it points to, then autonomously dispatch a `rust-engineer` to fix it
    (this agent stays read-only; delegate the edit). Document the dispatch.
 
 ## Hard rules
 
-- **Never** mark a target as passing if cargo exited non-zero. Read the
-  real exit code.
+- **Never** mark a target as passing if cargo exited non-zero. The integrating
+  agent must report the real exit code for each serialized invocation.
 - **Never** invent expected-gating that isn't in the repo's portability doc or
   in the crate's own `compile_error!` documentation comment.
 - If the cross-compile toolchain is missing on the current host

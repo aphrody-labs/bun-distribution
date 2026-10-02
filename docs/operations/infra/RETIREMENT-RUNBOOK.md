@@ -7,7 +7,9 @@ This is a controlled runbook, not an executable purge script. It must be applied
 1. Confirm the exact host alias and current commit.
 2. Export databases with native tools to encrypted operator-controlled storage; never copy secrets into Git.
 3. Record checksums without printing contents.
-4. Verify the replacement `aphrody-site` health, public routes, MCP and A2A probes.
+4. Verify health and public routes for the replacement workloads authorized by
+   the current root catalogs. The historical `aphrody-site` replacement plane
+   is marked retired; it is not a current cutover target.
 5. Confirm disk capacity; the source VPS was observed at 89% root usage.
 
 ## Cutover

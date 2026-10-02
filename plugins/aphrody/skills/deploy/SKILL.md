@@ -8,11 +8,21 @@ description: "Deploy, restart, provision or clean Aphrody hosts (vps, dbfr, WSL)
 `crates/infra` owns hosts, services, routes, toolchains and inventories; the kernel tools below
 only execute through it and never keep a second host registry.
 
-Host management is available through two synchronized control layers:
-1. **The kernel `infra` subsystem** (`crates/os/kernel/src/infra.rs`): In-process SSH, native SFTP, differential sync and remote Git tools directly callable over MCP.
-2. **`aphrody-infra` CLI** (`crates/infra/infra`): Declarative catalogs (`config/infra/service-catalog.json`, `config/infra/nginx-routes.json`), host inventories, and release playbooks.
+Host management is owned by the `aphrody-infra` control plane in this monorepo:
+`crates/infra/infra` is the package directory, and `config/` plus `inventory/`
+at the repository root hold its catalogs and target observations. The kernel
+`infra` subsystem (`crates/os/kernel/src/infra.rs`) is an MCP adapter over that
+owner; it does not maintain a second host registry. Confirm callable MCP tools
+in the generated [MCP catalog](../../../../docs/ecosystem/MCP-TOOLS.md)
+and verify their live availability in the connected MCP server before use.
 
-Read `crates/infra/infra/README.md` and `docs/plans/` before mutations.
+Read the [Infra product README](../../../../docs/products/infra/README.md),
+[Infra plan](../../../../docs/plans/infra/PLAN.md), and the relevant runbook before
+mutations. `aphrody-infra status` reports the target and host summary;
+`aphrody-infra service status` reports catalog workload units. They are
+different views. Confirm the CLI source or installed `--help` before acting.
+If a local Cargo invocation is needed, only the integrating agent runs it,
+through `scripts/build/rust/cargo-serial.sh`.
 
 ## Kernel `infra` subsystem tools
 
@@ -37,14 +47,30 @@ The kernel resolves the infrastructure runner dynamically through a five-stage f
 
 | Goal | Command (from monorepo root) |
 | --- | --- |
-| Observe hosts | `cargo run -p aphrody-infra -- status [--target id]` |
-| Catalog consistency | `cargo run -p aphrody-infra -- validate` |
-| Toolchain / APT on a host | `cargo run -p aphrody-infra -- dev-env --target vps\|dbfr\|wsl-ubuntu-24.04 [--apply]` (on the host: `nu scripts/setup.nu`) |
-| Free disk safely | `cargo run -p aphrody-infra -- reclaim --target vps [--apply]` (allowlist `config/disk-reclaim.json`) |
-| Release | `cargo run -p aphrody-infra -- deploy --target id --release <path> --apply` |
+| Observe hosts | `aphrody-infra status [--target id]`; catalog units: `aphrody-infra service status [--target id]` |
+| Catalog consistency | `aphrody-infra validate` |
+| Toolchain / APT on a host | `aphrody-infra dev-env --target vps|dbfr|wsl-ubuntu-24.04 [--apply]` (host setup details: [Infra README](../../../../docs/products/infra/README.md)) |
+| Free disk safely | `aphrody-infra reclaim --target vps [--apply]` (allowlist `config/disk-reclaim.json`) |
+| Release | `aphrody-infra deploy --target id --release <path> --apply` (select `--stack` when needed; see `--help`) |
 
-Rules: plan (`apply: false` / no `--apply`) first; services and nginx routes are added to
-`config/service-catalog.json` / `config/nginx-routes.json`, never hand-written
-on a host; data (PostgreSQL, SQLite, assets) is backed up and checksum-verified
-before any move; refresh `inventory/` and `PLAN.md` after every mutation.
-Host playbook and pitfalls: `yolo` skill §5.
+When building/running a workspace CLI from source, use
+`scripts/build/rust/cargo-serial.sh run --bin aphrody-infra -- <args>`.
+Workers must leave Cargo gates to the integrating agent; never start parallel
+Cargo processes.
+
+The workspace facade is invoked directly as
+`bun packages/infra/workspace/src/ops.ts <rg|shenron> ...`; it is not a Bun package
+script named `ops`, so `bun run --filter @aphrody/workspace ops ...` is not a
+valid invocation in this checkout. Shenron deploy requires a release path:
+`bun packages/infra/workspace/src/ops.ts shenron deploy --target vps
+--release <path> [--apply]`. RG deploy accepts `--target` and delegates to the
+Rust Infra adapter. Confirm exact flags with the package source and CLI help
+before running a deployment.
+
+Plan with no `--apply` first. Services and Nginx routes are declared in the
+repository-root `config/service-catalog.json` and `config/nginx-routes.json`,
+never hand-written on a host. Back up and checksum-verify PostgreSQL, SQLite,
+assets and other protected data before any move. Refresh the relevant
+`inventory/` evidence and `docs/plans/infra/PLAN.md` after mutations. Historical
+deployment reports do not prove current host health. Follow the current
+immutable-release runbook linked from the [Infra README](../../../../docs/products/infra/README.md).

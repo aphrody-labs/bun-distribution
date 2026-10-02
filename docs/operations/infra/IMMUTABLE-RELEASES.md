@@ -1,15 +1,64 @@
 # Immutable release workflow
 
-The VPS runs three release planes, each an immutable `releases/<id>` tree
-behind an atomically switched `current` link, with durable data under
-`shared/` and secrets in root-owned `0600` env files under `/etc`:
+This is a historical release design. At the 2026-10-02 catalog state, the
+Aphrody Web/AI plane is retired; RG and Shenron are the active application
+planes, with a separate Aphrody Discord development service. Do not run the
+Aphrody all-in-one bundle procedure below unless the catalogs, data source,
+release assembly and activation authorization have all been updated together.
+The historical design has three production planes, each an immutable
+`releases/<id>` tree behind an atomically switched `current` link, with durable
+data under `shared/` and secrets in root-owned `0600` env files under `/etc`.
+The separate Aphrody Discord development service is a fourth, non-production
+release. The design describes intended layout; it does not prove that every
+plane is currently installed or healthy. Secret-file ownership and mode are
+per-service contracts; for example, the Discord development env is
+`root:ubuntu`, mode `0640`:
 
-| Plane | Root | Contents | Adapter (installed name) |
+| Plane | Root | Contents | Adapter (installed name) | 2026-10-02 declared status |
 | --- | --- | --- | --- |
-| Aphrody | `/srv/aphrody` | five services built from `aphrody-web` and `aphrody-ai` | `scripts/atomic-deploy-aphrody-stack.sh` (`aphrody-infra-deploy-aphrody`) |
-| Shenron | `/srv/shenron` | `shenron-site` and `shenron-bot` (source archive + sealed Next artifact) | `scripts/atomic-deploy-shenron.sh` (`aphrody-infra-deploy-shenron`) |
-| RG | `/srv/rg` | RG apps, assembled on the VPS | `scripts/atomic-deploy-rg.sh` (`aphrody-infra-deploy-rg`, [`RG-IMMUTABLE-RELEASES.md`](./RG-IMMUTABLE-RELEASES.md)) |
-| Aphrody Discord dev | `/srv/aphrody-discord` | Bun bundle from pinned `aphrody-discord` commit | `scripts/build-aphrody-discord-release.sh` + `scripts/atomic-deploy-aphrody-discord.sh` |
+| Aphrody | `/srv/aphrody` | historical five services from `aphrody-web` and `aphrody-ai` | historical adapter (`aphrody-infra-deploy-aphrody`) | retired |
+| Shenron | `/srv/shenron` | `shenron-site` and `shenron-bot` | `scripts/atomic-deploy-shenron.sh` (`aphrody-infra-deploy-shenron`) | active in catalog |
+| RG | `/srv/rg` | RG applications assembled on VPS | `scripts/atomic-deploy-rg.sh` (`aphrody-infra-deploy-rg`) | active in catalog |
+| Aphrody Discord dev | `/srv/aphrody-discord` | Bun bundle from pinned `aphrody-discord` commit | `scripts/build-aphrody-discord-release.sh` + `scripts/atomic-deploy-aphrody-discord.sh` | active in catalog; development service |
+
+### VPS observation (2026-10-02, read-only)
+
+This snapshot supersedes the older live-status notes below for current host
+state. `systemctl list-units --type=service --state=running --no-legend --plain`
+reported 28 running services, and `systemctl --failed --no-legend --plain`
+reported no failed services; disk use was 57%. A separate
+`aphrody-ssh audit --host vps --json` reported `Healthy`. The running-unit
+listing included Aphrody Discord development; RG (`rg-achillea-bot`, API, bot,
+cron and website); Shenron (bot, site and PostgreSQL tunnel); PostgreSQL 18;
+and nginx, SSH, Docker and Redis.
+
+The release links observed were `/srv/rg/current` →
+`/srv/rg/releases/5691ba4be97b94279878e00d264793c1b28f8cf1` and
+`/srv/shenron/current` → `/srv/shenron/releases/4cac743f`. The paths
+`/srv/aphrody/current` and `/srv/aphrody-infra/current` were absent. These
+observations establish systemd/SSH and filesystem state only. No application
+health, database integrity, public endpoint, release checksum or rollback
+validation is claimed here. Do not infer from the design table or the
+2026-09-29 Discord checks below that the current application release passed
+those checks.
+
+`aphrody-infra status --target vps --json` uses the Rust CLI's target/matrix
+adapter, including host service counts and selected host details; it is not
+the service-catalog query. `aphrody-infra service status --target vps --json`
+queries entries selected from `config/service-catalog.json`; it does not
+discover arbitrary units. Installed binary/catalog and current source views
+can differ, so reconcile their revisions before relying on results. The root
+monorepo CLI is defined in
+[`crates/infra/infra/src/main.rs`](../../../crates/infra/infra/src/main.rs);
+the separate Bun host monitor is `bun scripts/infra-status.ts status`. These
+commands have different scope and output. Invoke Cargo builds/runs through
+`scripts/build/rust/cargo-serial.sh` as required by repository rules.
+
+Current operating references: the repository
+[`README.md`](../../../README.md),
+[`PLAN.md`](../../plans/infra/PLAN.md), and
+[`INFRA-MONITORING.md`](./INFRA-MONITORING.md). Historical status notes below
+retain their original dates and evidence scope.
 
 ### Aphrody Discord development endpoint
 
@@ -46,17 +95,17 @@ After HTTPS validation, the app's interaction endpoint is set through Discord's
 `https://bot.aphrody.com/oauth/callback` separately in Developer Portal → OAuth2
 → Redirects before enabling OAuth login; the bot token API does not manage this
 redirect registration, and the app reports a setup response until it exists.
-Live status (2026-09-28): the callback is registered; Discord API readback
+Historical status (2026-09-28): the callback was registered; Discord API readback
 confirmed it and `/oauth/login` returned the authorization redirect (`302`).
 
-Live status (2026-09-29 08:50 UTC): release
+Historical status (2026-09-29 08:50 UTC): release
 `084964f4a95c1d4231a75d282b61c371b4852120` is active. The release
 checksums, public health/Gateway, `ping` command, minimal login and separate
 install redirects, denied callback replay, and logout origin checks passed.
 The authorized callback and rollback drill remain open; see
 [`inventory/aphrody-discord-dev-2026-09-29.md`](../../../inventory/aphrody-discord-dev-2026-09-29.md).
 
-Live status (2026-09-29 08:56 UTC): release
+Historical status (2026-09-29 08:56 UTC): release
 `4cf6332cdc66b3ec9c0f2b0c288f0a3024acf808` superseded the prior
 release. Checksums, service, public health/Gateway, login/install redirects and
 unauthenticated session response passed. Its login rate limit was tested
@@ -65,17 +114,23 @@ The rollback drill reactivated `084964f4a95c1d4231a75d282b61c371b4852120`,
 verified health/Gateway, then reactivated `4cf6332cdc66b3ec9c0f2b0c288f0a3024acf808`
 with the same checks passing. A fresh authorized OAuth callback remains open.
 
-The **all-in-one bundle** pins all three to one superproject commit and
+The historical **all-in-one bundle** pins all three to one superproject commit and
 activates them in order Aphrody → Shenron → RG through
 `scripts/atomic-deploy-bundle.sh` (`aphrody-infra-deploy-bundle`). Every
 adapter checks checksums and preconditions before touching anything, keeps the
 previous release, and restores the previous `current`, units, vhost and service
 states on any failure. `aphrody-infra deploy --target vps --stack
-aphrody|shenron|rg|bundle --release PATH [--apply]` is the only entry point
+shenron|rg|bundle --release PATH [--apply]` is the deployment entry point
 (`ssh vps sudo -n <adapter> PATH`); without `--apply` it prints the plan.
 Nothing is ever deleted: old releases stay until pruned explicitly.
 
-## Aphrody stack
+## Aphrody stack — historical, retired
+
+Everything in this section describes the retired deployment contract. Listener,
+secret-file and database details below are not evidence of current files or
+services. Root catalog entries for this stack carry `status: retired`; use the
+runbook only as implementation history until its explicit reactivation gates
+are met.
 
 | Unit | Binary (release `bin/`) | Listener | Source |
 | --- | --- | --- | --- |
@@ -140,7 +195,11 @@ empty public ranking list. The activation backup (default
 `--restore BACKUP` re-applies it (units, vhost, active env files, `current`,
 service states).
 
-## Build (WSL Ubuntu-24.04, ext4)
+## Build (historical Aphrody bundle procedure)
+
+The commands here build the retired Aphrody bundle and are not a current
+production release recipe. Do not execute them while the catalog marks its
+services retired.
 
 Releases are built on Linux x86_64 from a clean clone of the superproject
 `aphrody-src` on the native filesystem — never on `/mnt/c` (9p/drvfs) nor in
@@ -187,30 +246,37 @@ NIE and IECode ship no VPS release. The bundle contains no secret.
 
 ### Prerequisites
 
-1. **PostgreSQL.** Cluster `postgresql@18-main` has been failed since the
-   2026-09-25 disk-full (the host now has ~149 GiB free). Restart it and check
-   integrity before any Aphrody step (it also serves RG's backup source):
+1. **PostgreSQL.** The 2026-10-02 host observation lists PostgreSQL 18 as
+   running, superseding the 2026-09-25 failure note. That is service-manager
+   state only; database integrity and the current databases were not checked
+   in that observation. Before any release that depends on PostgreSQL, inspect
+   the cluster and logs, then run the integrity/readability checks below. Do
+   not reset or restart a cluster that is already running without a diagnosed
+   need. The 2026-10-01 database deduplication retired the Aphrody databases;
+   do not treat `aphrody` or `aphrody_web` as present production databases.
 
    ```bash
    df -h /var/lib/postgresql
    sudo tail -n 80 /var/log/postgresql/postgresql-18-main.log   # cause, last checkpoint
-   sudo systemctl reset-failed postgresql@18-main
-   sudo systemctl start postgresql@18-main && pg_lsclusters      # 18 main online
+   systemctl is-active postgresql@18-main && pg_lsclusters      # verify current state
    sudo -u postgres psql -Atc 'SHOW data_checksums' -c 'SELECT datname FROM pg_database'
-   sudo -u postgres /usr/lib/postgresql/18/bin/pg_amcheck --all --heapallindexed --install-missing --progress
-   for db in aphrody aphrody_web; do sudo -u postgres pg_dump -Fc -d "$db" -f /dev/null && echo "$db readable"; done
+   sudo -u postgres /usr/lib/postgresql/18/bin/pg_amcheck --all --heapallindexed --progress
    ```
 
-   If `aphrody` or `aphrody_web` exist and pass, they are kept. If one fails,
-   rename it (`ALTER DATABASE … RENAME TO …_corrupt_20260925`) so the fresh-host
-   restore recreates it from the dumps; never drop it.
-2. **Database dumps.** From `%USERPROFILE%\vps-offload\aphrody-retired-20260925`
-   (manifest `aphrody-data-local-20260925.SHA256SUMS`), take
-   `var/backups/postgres/aphrody-2026-09-25T03-15.dump` and
-   `aphrody_web-2026-09-25T03-15.dump` (latest before the failure), verify them
-   against the manifest, write `<dump>.sha256` next to each and copy both to a
-   private directory on the VPS (e.g. `/srv/aphrody/shared/db-backups/restore`,
-   `ubuntu`, `0700`).
+   Do not rename, drop or recreate databases as part of these checks. Check
+   readability against the intended database only after its approved restore
+   source and target have been established (prerequisite 2).
+2. **Database source.** The old restore dumps and
+   `/srv/aphrody/shared/db-backups/restore` referenced by earlier revisions of
+   this runbook were removed during the 2026-10-01 database deduplication; the
+   Aphrody databases were retired. See
+   [`db-dedup-2026-10-01.md`](./db-dedup-2026-10-01.md). The 2026-10-02 VPS
+   observation confirms PostgreSQL 18 is running but does not inspect its
+   databases. Before restoring or activating the Aphrody production plane,
+   identify and verify an authorized current data source, checksum its backup,
+   and stage it in a newly approved private location. Do not reuse the removed
+   paths or assume the 2026-09-25 dumps remain available. If no valid data
+   source is available, the Aphrody production plane is not ready to activate.
 3. **Secrets.** `provision-aphrody-stack-env.sh --fresh-host` generates every
    Aphrody credential (table above) and the Shenron compute client env; nothing
    is copied from the old host. Shenron and RG keep their existing
@@ -253,7 +319,7 @@ NIE and IECode ship no VPS release. The bundle contains no secret.
    `bash /home/ubuntu/aphrody-infra/scripts/rg/assemble-vps-release.sh RG_SHA`
    (builds `/srv/rg/releases/RG_SHA`; retired catalog services are skipped).
 
-### Ordered commands
+### Ordered commands (historical; do not execute without reactivation gates)
 
 ```bash
 # WSL: build (see Build), then transfer only the archive and its checksum.
@@ -265,13 +331,15 @@ sudo tar -C /srv/aphrody-infra/bundles -xzf ID.tar.gz
 (cd /srv/aphrody-infra/bundles/ID && sha256sum --quiet -c SHA256SUMS)
 B=/srv/aphrody-infra/bundles/ID/aphrody/ops
 sudo env PGOPTIONS=-cdefault_transaction_read_only=off $B/provision-aphrody-stack-env.sh --fresh-host
+# Set these to the checksummed, approved restore files from prerequisite 2.
+VERIFIED_APHRODY_DUMP=/approved/private/path/aphrody.dump
+VERIFIED_APHRODY_WEB_DUMP=/approved/private/path/aphrody_web.dump
 PGOPTIONS=-cdefault_transaction_read_only=off $B/copy-aphrody-web-tables.sh --fresh-host \
-  /srv/aphrody/shared/db-backups/restore/aphrody-2026-09-25T03-15.dump \
-  /srv/aphrody/shared/db-backups/restore/aphrody_web-2026-09-25T03-15.dump
+  "$VERIFIED_APHRODY_DUMP" "$VERIFIED_APHRODY_WEB_DUMP"
 # prerequisites 4-8 (TLS, E5, cookie, adapters, RG release)
 # Windows or WSL, from the pinned aphrody-infra checkout:
-cargo run -p aphrody-infra -- deploy --target vps --stack bundle --release /srv/aphrody-infra/bundles/ID
-cargo run -p aphrody-infra -- deploy --target vps --stack bundle --release /srv/aphrody-infra/bundles/ID --apply
+scripts/build/rust/cargo-serial.sh run -p aphrody-infra -- deploy --target vps --stack bundle --release /srv/aphrody-infra/bundles/ID
+scripts/build/rust/cargo-serial.sh run -p aphrody-infra -- deploy --target vps --stack bundle --release /srv/aphrody-infra/bundles/ID --apply
 ```
 
 The bundle adapter verifies the bundle, compares `ADAPTER.json` with the

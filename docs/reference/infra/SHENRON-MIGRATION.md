@@ -1,5 +1,18 @@
 # Migration Shenron vers Aphrody Infra
 
+> **Migration record, not a current service inventory.** Shenron site, bot,
+> tunnel and backup entries remain declared in the root catalogues, but the
+> Aphrody AI HTTP and embedding units discussed below are marked retired in
+> `config/service-catalog.json` and the Aphrody plane is retired in
+> `config/production-topology.json`. Do not infer active RAG/OCR/A2A capability
+> from this migration narrative; use the dated VPS/topology reports and current
+> catalogues before operational actions.
+
+> **Historical compute section:** “Calcul Shenron hébergé par Aphrody” below
+> describes a retired Aphrody AI integration. Its service names are not a
+> current Shenron deployment contract; do not use the section's environment
+> variables, ports or probes as current runtime instructions.
+
 Shenron devient une application orchestrée par le même plan d’infrastructure
 que RG et Aphrody. RG fournit la plateforme canonique (UI, auth, API, Postgres,
 proxy et observabilité) ; Shenron conserve son domaine métier (wiki, média,

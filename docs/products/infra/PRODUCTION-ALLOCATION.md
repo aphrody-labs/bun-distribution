@@ -2,12 +2,20 @@
 
 ## Décision
 
-Le gros VPS est le seul runtime public. Il porte RG, Shenron, Nginx, les
-releases actives et, après le redéploiement par le bundle tout-en-un, la pile
-Aphrody à cinq services (retirée le 2026-09-25). NIE n'y tourne plus depuis le
-2026-09-25 et ne publie pas de release VPS. DBFR est un nœud de données secondaire :
-PostgreSQL, Redis, CDN d’assets, backups et un seul slot de rollback. Il ne
-sert ni site, ni bot, ni Next, ni crawler.
+La topologie déclarée est portée par
+[`config/production-topology.json`](../../../config/production-topology.json),
+les unités par [`config/service-catalog.json`](../../../config/service-catalog.json)
+et les routes par [`config/nginx-routes.json`](../../../config/nginx-routes.json).
+Le VPS héberge les allocations actives RG, Shenron et Nginx ; les allocations
+Aphrody Web/AI et NIE sont marquées retired dans le catalogue. La pile Aphrody
+ne doit donc pas être décrite comme redéployée par le bundle sans nouvelle
+observation et activation vérifiables. Le point-in-time du 2026-10-02 se trouve
+dans le [rapport VPS](../../operations/infra/VPS-STATUS-2026-10-02.md).
+
+DBFR est déclaré nœud de données et sauvegardes secondaire : PostgreSQL, Redis,
+CDN d’assets, sauvegardes et un slot de rollback. La politique lui interdit les
+sites, bots, serveurs Next, crawlers et Nginx public. L’état runtime observé est
+séparé de cette déclaration dans le [rapport de topologie](../../operations/infra/TOPOLOGY-OBSERVATION-2026-10-02.md).
 
 IECode quitte les VPS : le checkout, les assets lourds et les outils desktop
 restent dans Windows et WSL. Le VPS ne reçoit que les artefacts explicitement
@@ -15,16 +23,15 @@ nécessaires au runtime.
 
 ## Ports et sous-domaines
 
-Seuls `80/443` sont publics via Nginx. Les ports applicatifs restent en loopback
-ou réseau privé : site Aphrody `8083`, Web API `3007`, A2A `8788`, IA HTTP et
-MCP (`dragonball.*`) `8789`, embeddings E5 `8794`, RG web `3004`, RG API `8800`
-(CDN, Storage et Realtime y sont montés en processus ; `8801`/`8810`/`8812`
-sont retirés), Shenron site `5011`, Shenron bot/API `5006`, tunnel PostgreSQL
-Shenron `15433`. `5010` (`shenron-mcp`) et NIE `8085`/`8790` sont retirés.
-PostgreSQL `5432` et Redis `6379` écoutent uniquement en loopback sur le VPS
-(bases `aphrody` et `aphrody_web`) ; DBFR reste un nœud de données secondaire
-avec ses propres services internes. La référence est
-`config/service-catalog.json` et `docs/PORTS-AND-DOMAINS.md`.
+La topologie déclare les ports publics VPS `80/443` et les ports applicatifs
+comme internes. Les routes actives du catalogue pointent RG vers `3004`, `8800`,
+`4000` et `4002`, et Shenron vers `5011` et `5006`; le tunnel Shenron utilise
+`15433` vers DBFR `5432`. Le service catalogue déclare PostgreSQL `5432` et
+Redis `6379` sur VPS comme actifs ; DBFR déclare aussi ses propres services
+internes. Les ports `3007`, `8083`, `8788`, `8789`, `8794`, `5010`, `8085` et
+`8790` correspondent à des entrées retirées, et `8801`, `8810`, `8812` à des
+services RG retirés/supplantés. Cela décrit le catalogue, pas des sockets
+observés en direct. Voir le [référentiel routes et ports](../../reference/infra/PORTS-AND-DOMAINS.md).
 
 ## Priorités
 
@@ -34,13 +41,13 @@ avec ses propres services internes. La référence est
 4. IA (A2A, MCP, E5), indexations et tâches différées.
 5. Crawlers, mirrors complets et jobs exploratoires : désactivés par défaut.
 
-Les limites CPU/RAM sont appliquées par unités systemd à partir de cette
-priorité ; aucune application ne peut créer son propre superviseur, timer,
-proxy ou mirror.
+Les priorités de placement sont déclarées par hôte dans le catalogue ; leur
+application effective dépend des unités installées et doit être observée sur
+l’hôte. Les applications n’administrent pas l’instance Nginx publique.
 
 ## Timers unifiés
 
-La politique `config/scheduler-policy.json` remplace les familles de timers
-RG/Shenron redondantes. Un seul timer backup vit sur DBFR, un timer sync est
-différé, et un cleanup quotidien vit sur le VPS principal. Il n’existe aucun
-crawler 24/24 ni double sens de réplication actif par défaut.
+La politique `config/scheduler-policy.json` déclare la stratégie des tâches
+périodiques. Les unités/timers effectivement actifs doivent être lus dans le
+catalogue puis vérifiés par une observation hôte datée ; la seule présence
+d’un timer n’établit pas le succès de ses sauvegardes ni leur restauration.

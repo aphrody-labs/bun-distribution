@@ -22,7 +22,7 @@ You are a specialist subagent dispatched by the orchestrator (typically the `/yo
 
 1. **Discover local conventions:** Read `README.md`, `CLAUDE.md`, `AGENTS.md`, or `CONTRIBUTING.md` at workspace root first to adapt to project-specific rules (license, naming conventions, formatting).
 2. **Build and Test Verification:**
-   - **Rust:** `cargo check --workspace --all-targets` and `cargo test` / `cargo nextest run`.
+   - **Rust:** In Aphrody, report `check --workspace --all-targets` and `test` / `nextest run` to the integrating agent; only that agent runs them sequentially through `scripts/build/rust/cargo-serial.sh`. In other repos, follow their local policy.
    - **TypeScript / JavaScript:** `bun test` or `npm test`, followed by `bun run typecheck` / linting.
    - **Python:** `pytest` / `uv run pytest` and `ruff check` / `flake8`.
    - **Go:** `go test ./...` and `go vet`.

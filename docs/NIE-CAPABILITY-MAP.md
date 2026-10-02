@@ -5,18 +5,24 @@ Evidence and proposed ownership for the [workspace convergence plan](../PLAN.md#
 This is a source audit, not proof of installed parity or a replacement for each
 repository's implementation plan. Baseline: root NIE gitlink
 `34c55fa1da54f715bb78ac336167fe18b13f9cca`, checked on 2026-09-29.
-This matrix records that historical source shape. A later 686-file source
-transfer is inventoried in [`nie/docs/SOURCE-TRANSFER-MANIFEST.json`](../nie/docs/SOURCE-TRANSFER-MANIFEST.json).
-The staged UI/Web copies are not yet feature parity; the active owner and
-correction plan is [`nie/PLAN.md`](../nie/PLAN.md).
+This matrix records that historical source shape. The 2026-10-01 source
+transfer is recorded in the IECODE
+[migration map](../../iecode/docs/migrations/ievr-to-iecode-2026-10-01.json).
+The old NIE checkout paths below are historical. The active owner is the
+`/home/aphro/iecode` workspace ([rules](../../iecode/AGENTS.md),
+[plan](../../iecode/PLAN.md)); source presence or a historical UI/Web copy
+does not establish current parity.
 
 ## Current ownership correction — 2026-09-30
 
 This map is a historical inventory of the prior split, not a live consolidation
-plan. All IEVR/NIE code is now owned only by `/home/aphro/iecode`. The active
+plan. Current ownership is defined by the IECODE
+[rules](../../iecode/AGENTS.md) and [plan](../../iecode/PLAN.md). The active
 source copies and integrations formerly present under `/home/aphro/src`,
-`/home/aphro/aphrody`, and `/home/aphro/aphrody-py` have been removed where
-the IECODE owner already exists. See the top-level decision in `PLAN.md`.
+`/home/aphro/aphrody`, and `/home/aphro/aphrody-py` were removed where the
+IECODE owner already exists, as recorded in the
+[transfer report](../../iecode/docs/migrations/IEVR-TO-IECODE-2026-10-01.md).
+Do not use the remaining split-repository paths in this snapshot as live links.
 
 ## Inventory and dependency boundary
 
@@ -24,22 +30,23 @@ The WSL `nie/` checkout had zero files and a Git directory without `HEAD`,
 `config` or index. The pinned revision was restored from its remote; the
 incomplete directory is retained outside the workspace under
 `~/.local/share/aphrody-workspace-recovery/nie-corrupt-20260929`. Infra's
-[`@aphrody/workspace packages status`](../aphrody-infra/packages/aphrody-workspace/README.md)
+[`@aphrody/workspace packages status`](../packages/infra/workspace/README.md)
 now discovers NIE's Bun lockfile. The regenerated
-[ecosystem inventory](../aphrody-infra/docs/ecosystem/ECOSYSTEM.md#nie)
+[ecosystem inventory](ecosystem/ECOSYSTEM.md#nie)
 records 46 live NIE crates, 9 Bun entries and 2 uv projects; the preceding
 catalogue recorded none because the checkout was empty. Across the source root
 it records 242 crates and 158 Bun packages. Infra's
-[repository layering scanner](../aphrody-infra/scripts/repo-layering.ts)
+[repository layering scanner](../scripts/repo-layering.ts)
 reports 10 Aphrody category repositories, 92 Rust dependency edges, no cycles
 and no layer violations before migration.
 
-NIE [Cargo](../nie/Cargo.toml) specifies `publish = false` and a commercial
-`license-file`; [`@aphrody/nie`](../../iecode/packages/nie/package.json) declares
-MIT. Resolve this metadata conflict, provenance and distribution scope before
-moving code into Apache/MIT workspaces. The two archived NIE crates are outside
-the active workspace. Untracked game assets and working databases are not
-covered by source migration.
+The old NIE checkout metadata (historical path: `../nie/Cargo.toml`) specified
+`publish = false` and a commercial `license-file`; a former
+`@aphrody/nie` package manifest declared MIT. That package path does not exist
+in the active IECODE tree, so these values are historical evidence, not a
+current metadata conflict. Recheck provenance and distribution scope against
+the active IECODE manifests before redistribution. Untracked game assets and
+working databases are not covered by source migration.
 
 The ownership rule is **IECODE for every IEVR-specific rule, format, dataset,
 workflow and adapter; existing Aphrody repositories for reusable capability,
@@ -59,9 +66,9 @@ grafting: OS → UI and other reverse category dependencies remain forbidden.
 | Public surface | Current collision | Target owner and cutover |
 | --- | --- | --- |
 | Agent plugin | `aphrody-ai/plugins/aphrody` exists; NIE contains a Bun preload, a Blender add-on and `.agents/skills/yolo`. | AI publishes one agent plugin. Bun loaders and Blender remain format adapters; compare YOLO scripts with Infra's `aphrody-yolo` before removing the duplicate package. |
-| MCP | The [plugin manifest](../aphrody-ai/plugins/aphrody/.mcp.json) declares `aphrody-kernel mcp` and `aphrody-mcp server`; the [NIE relay](../aphrody-ai/crates/aphrody-mcp/src/nie_tools.rs) starts `nie-mcp`. UI/Web also have specialist MCP binaries. | `aphrody-mcp` is the sole published stdio endpoint. OS kernel, UI, Web and IEVR remain capability owners through libraries or internal IPC. Migrate tool schemas and clients before removing child servers. |
-| UI library | [`@aphrody/m3`](../aphrody-ui/packages/m3/package.json) and its modules coexist with the Vite alias `@nie/inacord-ui`; NIE web still depends on Radix and Rosegriffon UI. | One M3 public framework API. Generic primitives and Explorer components move to UI; IEVR tokens, layouts and game rules move to IECODE as a client of that API. Migrate consumers before dropping aliases. Radix stays outside the active Aphrody UI graph. |
-| Desktop | [`aphrody-app`](../aphrody-ui/crates/aphrody-app/Cargo.toml) is the Tauri host; [`aphrody-model-view`](../aphrody-ui/crates/aphrody-model-view/Cargo.toml) is another Tauri binary. `nie-game` is winit/wgpu; `nie-editor` is eframe. | One Tauri app and one qualified native wgpu 3D app under UI. Move reusable host/viewer code there; IECODE provides IEVR scenes and editing actions. Qualify accessibility, installed workflows and the UI wgpu 26 versus NIE wgpu 29 dependency gap. |
+| MCP | The plugin manifest (historical path: `../aphrody-ai/plugins/aphrody/.mcp.json`) declares `aphrody-kernel mcp` and `aphrody-mcp server`; the NIE relay (historical path: `../aphrody-ai/crates/aphrody-mcp/src/nie_tools.rs`) starts `nie-mcp`. UI/Web also have specialist MCP binaries. | `aphrody-mcp` is the sole published stdio endpoint. OS kernel, UI, Web and IEVR remain capability owners through libraries or internal IPC. Migrate tool schemas and clients before removing child servers. |
+| UI library | `@aphrody/m3` (historical path: `../aphrody-ui/packages/m3/package.json`) and its modules coexist with the Vite alias `@nie/inacord-ui`; NIE web still depends on Radix and Rosegriffon UI. | One M3 public framework API. Generic primitives and Explorer components move to UI; IEVR tokens, layouts and game rules move to IECODE as a client of that API. Migrate consumers before dropping aliases. Radix stays outside the active Aphrody UI graph. |
+| Desktop | `aphrody-app` (historical path: `../aphrody-ui/crates/aphrody-app/Cargo.toml`) is the Tauri host; `aphrody-model-view` (historical path: `../aphrody-ui/crates/aphrody-model-view/Cargo.toml`) is another Tauri binary. `nie-game` is winit/wgpu; `nie-editor` is eframe. | One Tauri app and one qualified native wgpu 3D app under UI. Move reusable host/viewer code there; IECODE provides IEVR scenes and editing actions. Qualify accessibility, installed workflows and the UI wgpu 26 versus NIE wgpu 29 dependency gap. |
 | CLI and shell | AI owns `aphrody`; NIE scripts use `nie`, `nie-mcp` and specialist binaries. Shell already owns PTY/VT/Nushell/TUI. | One public `aphrody` CLI, with compatibility shims while scripts migrate. No second Shell or browser view in the public webview. |
 | RAG and databases | AI `aphrody-rag` provides FTS/vector search; `nie-wiki` serves structured SQLite and `nie-index` holds RE knowledge. | One RAG engine in AI, ingesting verified IEVR documents through an IECODE adapter. Structured wiki queries and RE provenance belong to IECODE. |
 | RE, jobs and VFS | OS has `aphrody-re`, jobs, Drive, fsindex and kernel; Infra still exposes `VirtualDriveEngine`; NIE has forge, queue, CPK VFS and index. | One generic OS RE API/executor, one Files API and Explorer, one kernel. IECODE owns the game forge, CPK source/preview adapter and RE corpus. Its bounded RE frontier is not a second system job queue; its RE index is not file search. Follow the [Files audit](FILE-SURFACE-AUDIT.md). |
@@ -73,7 +80,7 @@ Every active crate appears exactly once below. The IECODE column captures its
 game-specific contribution; the Aphrody column identifies reusable code or
 host bindings to extract. A crate may be split, but its implementation is not
 copied into two competing authorities. The
-[generated list](../aphrody-infra/docs/ecosystem/ECOSYSTEM.md#nie)
+[generated list](ecosystem/ECOSYSTEM.md#nie)
 contains each manifest, binary and feature.
 
 | NIE crates | IECODE receives | Aphrody receives / migration condition |
@@ -115,7 +122,7 @@ terminal; Discord receives no NIE bot package in the current checkout.
 
 For every migrated feature, record old command/route/tool and output, new
 owner/API, consumer migration, data format/version, host, fixture, result and
-rollback. Reuse the [NIE plan](../nie/PLAN.md) and its byte exact forge G4–G6,
+rollback. Reuse the NIE plan (historical path: `../nie/PLAN.md`) and its byte exact forge G4–G6,
 golden data, cross-host, screenshots, WASM and Inacord persistence gates.
 Include the real Tauri and native wgpu apps, website auth/legacy URLs, CPK and
 save files, wiki/RE database migration, scripts and all 19 `nie.*` MCP tools.

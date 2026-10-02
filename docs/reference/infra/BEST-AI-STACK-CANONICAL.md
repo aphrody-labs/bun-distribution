@@ -1,8 +1,13 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 # Canonical AI stack
 
+> The source paths below include historical category-repository locations.
+> Resolve current ownership using the monorepo root workspace and current
+> manifests before adding or changing a dependency; package/crate names may
+> remain stable while their paths have moved.
+
 Single source of truth for AI/agent technology choices across the Aphrody repositories. The
-`best-stack-2026` skill (`aphrody-os/plugins/aphrody/skills/best-stack-2026`) points here for
+`best-stack-2026` skill (`plugins/aphrody/skills/best-stack-2026`) points here for
 every AI row; general Rust crate choices stay in that skill.
 
 Audited 2026-09-26 against live release pages (links per row). Versions drift: re-check the

@@ -1,6 +1,15 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 # VPS databases and storage
 
+> **Historical application detail.** This imported page predates the 2026-10-01
+> database retirement and 2026-10-02 host observation. In the latest observation,
+> PostgreSQL 18 and Redis were active on VPS; PostgreSQL 18 and Redis were also
+> active on DBFR, the declared data/backup host. The root topology describes
+> host-role policy; it does not catalog database names or prove their integrity.
+> The old Aphrody databases and paths below must not be assumed to exist. For
+> dated evidence, see [`TOPOLOGY-OBSERVATION-2026-10-02.md`](../../../operations/infra/TOPOLOGY-OBSERVATION-2026-10-02.md)
+> and [`db-dedup-2026-10-01.md`](../../../operations/infra/db-dedup-2026-10-01.md).
+
 The VPS combines PostgreSQL (primary relational store), Redis (in-memory cache) and embedded
 SQLite files (bounded local caches and crawl indexes). Policy: PostgreSQL is primary, SQLite is a
 bounded local cache (`deduplication.database` in

@@ -14,13 +14,47 @@ One declared control plane and reproducible releases from pinned owner repositor
 Use [immutable releases](../../operations/infra/IMMUTABLE-RELEASES.md), [Shenron migration](../../reference/infra/SHENRON-MIGRATION.md)
 and [authority map](../../reference/infra/UNIFIED-AGENT-CONTEXT.md); avoid duplicate registries or supervisors.
 
-## 2. Current state (observed 2026-09-26, read-only ssh)
+## 2. Current state (observed 2026-10-02, read-only)
 
-Historical observation, to revalidate before operations: VPS ran RG/Shenron;
-Aphrody/NIE/IECode services were retired. VPS PostgreSQL and monitoring had failures.
-DBFR held data/backups; WSL was the reference build host; Windows received off-host
-backups. Bundle tooling was prepared but not activated. Exact identities, paths,
-retirement markers and backup records belong to `inventory/` and the runbooks.
+The latest read-only VPS observations supersede the 2026-09-26 host snapshot
+and older inventory snapshots. `systemctl list-units --type=service
+--state=running --no-legend --plain` reported 28 running services and
+`systemctl --failed --no-legend --plain` reported no failed services. Disk use
+was 57%; `aphrody-ssh audit --host vps --json` reported `Healthy`.
+The unit listing included the Aphrody Discord development service; RG
+(`rg-achillea-bot`, API, bot, cron and website); Shenron (bot, site and
+PostgreSQL tunnel); PostgreSQL 18; and nginx, SSH, Docker and Redis. These are
+host/service-manager observations only, not application-level health checks.
+
+Observed release links: `/srv/rg/current` pointed to release
+`5691ba4be97b94279878e00d264793c1b28f8cf1` and `/srv/shenron/current` pointed
+to `4cac743f`. `/srv/aphrody/current` and `/srv/aphrody-infra/current` were
+absent. Do not infer that missing links are healthy, deployed, or safe to
+recreate. The old `inventory/vps-source.json` and
+`inventory/vps-unit-catalog.json` remain historical records; use the dated
+read-only observations above for this snapshot, and refresh inventory only
+after an authorized inventory capture or host mutation.
+
+`aphrody-infra status --target vps --json` uses the target/matrix live adapter
+and reports selected host totals/state; it is distinct from
+`aphrody-infra service status --target vps --json`, which calls
+`get_service_statuses` for catalog entries only and does not discover arbitrary
+units or report full enabled state. An installed binary/catalog snapshot
+returned 23 catalog services inactive even though an independent host
+observation found some active; reconcile binary and catalog revisions before
+relying on that snapshot. Source review found timer entries were mapped to
+their associated `.service`; the current service-status path checks the
+catalogued timer itself. The CLI syntax is defined in
+[`crates/infra/infra/src/main.rs`](../../../crates/infra/infra/src/main.rs)
+and its behavior in
+[`crates/infra/infra/src/lifecycle.rs`](../../../crates/infra/infra/src/lifecycle.rs).
+
+For the current operational references, start with the root
+[`README.md`](../../../README.md), the
+[immutable-release runbook](../../operations/infra/IMMUTABLE-RELEASES.md),
+the [2026-10-02 WSL/DBFR topology observation](../../operations/infra/TOPOLOGY-OBSERVATION-2026-10-02.md),
+and [monitoring runbook](../../operations/infra/INFRA-MONITORING.md). Older
+observations in the append-only ledger retain their original dates and scope.
 
 ## 3. Open work, ordered
 
@@ -33,15 +67,9 @@ retirement markers and backup records belong to `inventory/` and the runbooks.
 
 ### P0 — correctness of the working tree
 
-
-
 Port migration, single service registry and the recorded local gate were completed
-
 in the prior ledger. Revalidate catalogue consistency against the intended revision;
-
 do not treat old counts or Git state as current evidence.
-
-
 
 ### P1 — data safety
 
@@ -61,33 +89,37 @@ do not treat old counts or Git state as current evidence.
 
 
 
-Build/activate the all-in-one bundle only after these runbook prerequisites pass:
+Do not activate the legacy all-in-one bundle while its Aphrody plane is marked
+retired in the current catalog. Re-evaluate whether bundle deployment remains
+the desired production model, then update catalog, pinned release assembly and
+runbooks together before activation. Any newly authorized activation requires
+these data and runtime gates:
 
-
-
-1. Recover VPS PostgreSQL and verify integrity.
+1. Inspect PostgreSQL state and verify integrity; do not restart an active
+   cluster without a diagnosed need.
 
 2. Pin a clean source closure; build on WSL with the required Shenron database tunnel.
 
-3. Provision the fresh-host environment; restore the retained 2026-09-25 dumps without
+3. Establish an approved, checksum-verified database source. The old
+   2026-09-25 Aphrody dumps were removed during the 2026-10-01 database
+   deduplication; do not assume they remain available or restore them. Provision
+   certificates, E5 weights and private credentials only when their current
+   prerequisites and destinations are verified.
 
-   dropping existing data. Provision certificates, E5 weights and private credentials.
+4. Install adapters matching the Infra pin, assemble only the explicitly
+   selected active planes, and validate bundle/smoke attestations for each.
 
-4. Install adapters matching the Infra pin, assemble RG and validate bundle/smoke attestations.
-
-5. Deploy through the bundle adapter with rollback; prove MCP tools, real RAG/LLM/OCR
-
-   and indexed crawl. Only then update retired markers and live inventory.
-
+5. Deploy only after the catalog and release plan authorize the selected stack;
+   prove application probes and rollback. Only then update retirement markers
+   and live inventory.
 
 
-Existing RG deployment and prepared Shenron adapter do not prove this activation.
+
+Existing RG/Shenron deployments and adapters do not prove bundle activation.
 
 
 
 ### P2 — host hygiene
-
-
 
 - Decide required PostgreSQL/Redis/Docker boot behavior from live workloads.
 
@@ -109,22 +141,20 @@ Existing RG deployment and prepared Shenron adapter do not prove this activation
   Complete package visibility requires the `read:packages` GitHub scope.
 - Continue adopting Compat's `aphrody-toolchains`, remove redundant subprocesses where
   an owner API exists, and triage fork/vendor/documentation duplication.
-- Run `nu scripts/scan-ui-crates.nu` from Infra to identify first-party crate/source duplicates,
-  local dependency candidates for crates.io publication, vendor/third-party footprint across
-
-  Aphrody owners and generated output sizes; migrate only after owner/API/license review and
-
-  consumer validation.
+- Run `nu scripts/scan-ui-crates.nu --skip-ui` from Infra to identify first-party
+  crate/source duplicates, local dependency candidates for crates.io publication,
+  vendor/third-party footprint across Aphrody owners and generated output sizes;
+  migrate only after owner/API/license review and consumer validation. The
+  `--skip-ui` option avoids reading the separately owned UI checkout.
 - Continue the [Aphrody Bun platform](../../reference/infra/APHRODY-BUN-PLATFORM.md) plan from the P0
   fork track above. `bun:aphrody` is now on Aphrody `main`; native libraries
   remain dynamic, and cross-platform releases and consumer selection are open.
-- Keep the consolidation controller in Infra: `@aphrody/workspace` owns the
-  source inventory and guarded docs import for `/home/aphro/aphrody` and
-  `/home/aphro/aphrody-py`; domain implementation moves to those monorepos.
-  The first 2026-09-29 scan/import is recorded in Aphrody's generated migration
-  maps. Link/attachment closure, nested submodule discovery, source conflicts,
-  scripts, crates, apps/packages and Python extraction remain open; never infer
-  completion from the copied document count.
+- Keep the consolidation controller in `packages/infra/workspace`; it owns
+  cross-workspace inventory and guarded documentation import. Domain
+  implementation belongs to its Rust, Bun or Python owner package. Re-run the
+  current source inventory before reporting residual migration work; the
+  2026-09-29 scan/import counts below are historical evidence, not current
+  completion criteria.
 
 
 ### Post-split follow-ups (step-back review 2026-09-25, `src/docs/governance/STEP-BACK-REVIEW-2026-09-25.md`)
@@ -262,11 +292,10 @@ sections current and store operational detail in its existing runbook.
   state at that point in time.
 - **2026-09-28:** activated Aphrody Discord release
   `30f49b8913c01ef5cbc92e7ff557e757e20b776e`. Live `/oauth/login` returned 302
-  with `identify`, profile/guild, bot-install, command, entitlement, webhook,
-  and role-connection scopes; permission bitfield `8`; guild install type `0`;
-  the fixed test-guild ID; consent prompt; and matching state cookie setup.
-  `/healthz` continued to report Gateway readiness. The requested scope set is
-  limited to Discord's published standard scopes; partner-only/local-RPC,
+  with the then-configured standard login/install scopes, permission bitfield
+  `8`, test-guild install type and state-cookie setup. `/healthz` reported
+  Gateway readiness at that observation. The requested scope set was limited
+  to Discord's published standard scopes; partner-only/local-RPC,
   deprecated, or flow-incompatible scopes remain excluded as cataloged by the
   application owner.
 - **2026-09-28:** first-party Rust audit found 190 crates across Aphrody repos, no duplicate

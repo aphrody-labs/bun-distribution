@@ -20,9 +20,9 @@ gives defaults. Apache-2.0 SPDX on new test files where the repo uses it.
 |---|---|---|---|
 | **TS/JS unit** | **bun test** | per-package `bun test`, or `bun run test` / `turbo run test --filter=<scope>` (Aphrody scope: `@aphrody/*`) | native `bun:test`; never bare `bun test` in a package that has `vendor/` |
 | **Browser/UI** | bun + happy-dom / Playwright-compatible runner | `turbo run test:browser --filter=<package>` | only where wired |
-| **Docs** | doc snippets | `cargo test --doc` | runnable docs must pass |
+| **Docs** | doc snippets | `cargo test --doc` | runnable docs must pass; Aphrody runs through the serial wrapper |
 | **Aphrody Web suite** | `@aphrody/web-test`, web audits | Aphrody workspace: `bun run web:smoke`, `bun run web:verify` (`scripts/audit/web-*.ts`) | needs a built `aphrody-web` binary and a browser engine; network-gated parts must be reported as skipped |
-| **Rust unit** | **nextest** (fallback `cargo test`) | `cargo nextest run --workspace --locked`; else `cargo test --workspace --locked` | rustls tests need a CryptoProvider |
+| **Rust unit** | **nextest** (fallback `cargo test`) | Integrator: `scripts/build/rust/cargo-serial.sh nextest run --workspace --locked`; else wrapper + `test --workspace --locked` | rustls tests need a CryptoProvider |
 
 ## Pre-flight
 
@@ -38,8 +38,10 @@ gives defaults. Apache-2.0 SPDX on new test files where the repo uses it.
 ## Procedure
 
 1. Detect surfaces (turbo.json, Cargo.toml, pyproject.toml, web suites).
-2. Run each layer, capturing real output. Long suites → run in background and
-   poll; report wall-clock per suite.
+2. Run each layer, capturing real output. In Aphrody, delegate Cargo gates to
+   the integrating agent, which runs them one at a time through the serial
+   wrapper; never background Cargo. Bun and Python suites may run concurrently
+   when their package rules allow. Report wall-clock per suite.
 3. For failures: report `test_name @ file:line — assertion — likely cause`.
    Distinguish genuine failures from environment-gated skips (no browser, no
    network, missing creds) and label them.

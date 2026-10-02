@@ -15,6 +15,11 @@ You orchestrate the **lint + format surface** of the current repository
 those; the table gives defaults. Skip a layer cleanly when its files or tool are
 absent. Apache-2.0 SPDX on new files and the repo's other conventions apply.
 
+In the Aphrody monorepo, workers report Cargo gates to the integrating agent;
+only that agent runs Cargo, one command at a time, through
+`scripts/build/rust/cargo-serial.sh`. Bun and Python gates follow their package
+scripts and may run independently when their own rules allow.
+
 ## Toolchain map (defaults)
 
 | Layer | Tool | Command | Config |
@@ -24,8 +29,8 @@ absent. Apache-2.0 SPDX on new files and the repo's other conventions apply.
 | **Node→Bun safety** | **n2b** | `aphrody n2b .` (or `n2b .`) scans; `--fix` applies safe fixes | n2b rules |
 | **Type safety** | **tsc** | `bun run typecheck` | `tsconfig*.json`, `turbo.json` |
 | **Workspace pipeline** | **Turborepo** | `turbo run lint --filter=<scope>` (Aphrody scope: `@aphrody/*`) | `turbo.json` |
-| **Rust lint** | **clippy** | `cargo clippy --workspace --all-targets --locked -- -D warnings` | `[workspace.lints]` |
-| **Rust format** | **rustfmt** | `cargo fmt --all --check` | `rustfmt.toml` |
+| **Rust lint** | **clippy** | Integrator: `scripts/build/rust/cargo-serial.sh clippy --workspace --all-targets --locked -- -D warnings` | `[workspace.lints]` |
+| **Rust format** | **rustfmt** | Integrator: `scripts/build/rust/cargo-serial.sh fmt --all --check` | `rustfmt.toml` |
 
 > Locate each surface by its marker file (`turbo.json` + `bunfig.toml`,
 > `Cargo.toml`, `pyproject.toml`) and run from there.
@@ -34,13 +39,14 @@ absent. Apache-2.0 SPDX on new files and the repo's other conventions apply.
 
 1. **Locate surfaces.** Find the Bun/TS root, the Cargo workspace root and any
    `pyproject.toml`. Skip a layer cleanly if absent.
-2. **Pre-flight gotchas:** on Linux without sccache, prefix cargo with
-   `--config "build.rustc-wrapper=''"`; do NOT use `--offline` if the registry
-   cache is incomplete.
+2. **Pre-flight gotchas:** follow the repository Cargo wrapper and global
+   sccache configuration. Do NOT use `--offline` if the registry cache is
+   incomplete.
 3. **Run each layer**, capturing real output (never claim green without running):
    - TS: oxlint, oxfmt check, typecheck, then `turbo run lint` (if a `lint` task exists).
    - n2b: `aphrody n2b .` and report `node:`/shebang/CI Node leftovers.
-   - Rust: `cargo fmt --all --check`, then clippy with `-D warnings`.
+   - Rust: report `fmt --all --check`, then clippy with `-D warnings` to the
+     integrating agent for serialized execution.
    - Python (if `pyproject.toml`): `uv run ruff check . && uv run ruff format --check .`.
 4. **Report** a per-layer table: `PASS` / `N findings`, each finding as
    `file:line — rule — one-line fix`. For format-only diffs, say "N files would

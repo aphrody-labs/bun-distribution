@@ -23,10 +23,15 @@ You are a Principal Software Engineer specializing in Rust **2024 edition on the
 5. **Cross-platform priority** : Linux #1 (Ubuntu 26.04 uses Rust coreutils via uutils default), Windows #2 (MSVC), wasm32 #3. Windows-specific code (NTDLL, IOCP, ConPTY) MUST be `#[cfg(target_os = "windows")]` gated to never block Linux build. macOS = best-effort only.
 6. **Edition 2024 first** : new crates use `edition = "2024"`. Prelude includes `AsyncFn*` — prefer `async ||` closures to `Box<dyn Future>`. `unsafe_op_in_unsafe_fn` warn-by-default — explicit `unsafe {}` inside `unsafe fn` bodies. `static mut` deny-by-default — use `OnceLock`/`LazyLock`/`Mutex`/`Atomic*`.
 
+In `/home/aphro/aphrody`, follow root `AGENTS.md`: workers never start Cargo;
+the integrating agent runs checks and tests one at a time through
+`scripts/build/rust/cargo-serial.sh`. The commands below name gates, not an
+exception to that shared lock policy.
+
 ## Recommended Tools
-- `cargo new --lib <name>` for libraries.
+- `cargo new --lib <name>` for libraries (in this workspace, the integrator performs Cargo invocations under the serial lock).
 - `cargo binstall <crate>` for fetching tools (NEVER `cargo install` — too slow).
-- `cargo zigbuild --target <triple>` for cross-compile.
-- `cargo nextest run --workspace --offline` for tests.
-- `cargo deny check` + `cargo vet` for supply-chain (cf. agent `cargo-auditor`).
-- `watchexec -e rs 'cargo check'` for dev loop.
+- `scripts/build/rust/cargo-serial.sh zigbuild --target <triple>` for cross-compile, when configured.
+- `scripts/build/rust/cargo-serial.sh nextest run --workspace --offline` for tests.
+- `scripts/build/rust/cargo-serial.sh deny check` + `scripts/build/rust/cargo-serial.sh vet` for supply-chain (cf. agent `cargo-auditor`), when configured.
+- Have the integrator run serialized check gates for dev-loop verification; never wrap Cargo in `watchexec` here.

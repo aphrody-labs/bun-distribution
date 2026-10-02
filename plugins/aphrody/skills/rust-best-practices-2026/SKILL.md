@@ -26,6 +26,14 @@ written. Release cadence is six weeks, so check the newest posts at
   `RUSTC_WRAPPER`/`build.rustc-wrapper`; check with `sccache --show-stats`.
 - Mark internal crates `publish = false` unless they are meant for crates.io.
 
+### Aphrody workspace build policy
+
+In `/home/aphro/aphrody`, the root `AGENTS.md` is authoritative: workers do not
+start Cargo build/check/test/clippy/rustdoc commands. The integrating agent runs
+one Cargo command at a time through `scripts/build/rust/cargo-serial.sh`, which
+holds the shared lock. Treat the command names below as gate descriptions; do
+not run raw Cargo or background/parallel Cargo processes in that workspace.
+
 ## 2. Recent stable features to prefer
 
 | Since | Feature | Replaces |

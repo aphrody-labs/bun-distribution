@@ -1,12 +1,12 @@
 ---
 name: rust-target-check
-description: "Run cargo check for several targets at once (default Linux x86_64, Windows MSVC, wasm32) and report per-target verdicts with the first real error. Use after Rust, Cargo.toml or cfg changes, before pushing, or for cross-platform checks."
+description: "Plan serialized cargo checks across targets (Linux x86_64, Windows MSVC, wasm32) and report per-target verdicts. Use after Rust, Cargo.toml or cfg changes, before pushing, or for cross-platform checks."
 version: "2.0.0"
 argument-hint: "[crate-name | --workspace] [--targets triple,triple,...]"
 allowed-tools: Bash, Read
 ---
 
-# rust-target-check: multi-target cargo check
+# rust-target-check: serialized multi-target cargo check
 
 Verifies that a change type-checks on every target the project ships, without building
 binaries. `cargo check` is enough to catch `cfg` mistakes, missing platform imports and
@@ -39,44 +39,28 @@ Confirm the toolchain has them: `rustup target list --installed`; add missing on
 
 Add `--locked` when `Cargo.lock` is committed; add `--offline` only when dependencies are
 already fetched or vendored (otherwise it fails for reasons unrelated to the change).
-If the project forbids agents from running cargo, or reserves builds for a lead/CI, report
-the exact commands instead of running them.
+If the project forbids workers from running cargo or reserves builds for a lead/CI, report
+the exact commands to the integrator instead of running them. In the Aphrody monorepo,
+workers never launch Cargo; the integrating agent runs one command at a time through
+`scripts/build/rust/cargo-serial.sh`.
 
 ## 3. Run
 
-Concurrent `cargo` processes sharing one `target/` directory wait on its lock, so true
-parallelism needs one target dir per triple. Use parallel runs when disk allows; otherwise
-run the same commands sequentially in the default `target/` (incremental reuse makes this
-cheap).
+Run one target at a time in the Aphrody workspace. The repository-wide file lock serializes
+Cargo across terminals and agents; separate target directories do not authorize parallel
+Cargo processes. Ask the integrating agent to run each applicable command sequentially.
 
 Bash (Linux, macOS, WSL):
 
 ```bash
-SCOPE="-p my-crate"            # or --workspace
-FLAGS="--locked --message-format=short"
-LOG="${TMPDIR:-/tmp}/xcheck"; mkdir -p "$LOG"
-declare -A PID
-for T in x86_64-unknown-linux-gnu x86_64-pc-windows-msvc wasm32-unknown-unknown; do
-  CARGO_TARGET_DIR="target/xcheck-$T" cargo check $SCOPE $FLAGS --target "$T" >"$LOG/$T.log" 2>&1 &
-  PID[$T]=$!
-done
-for T in "${!PID[@]}"; do wait "${PID[$T]}"; echo "$T exit=$?"; done
+scripts/build/rust/cargo-serial.sh check -p my-crate --locked --message-format=short --target x86_64-unknown-linux-gnu
+scripts/build/rust/cargo-serial.sh check -p my-crate --locked --message-format=short --target x86_64-pc-windows-msvc
+scripts/build/rust/cargo-serial.sh check -p my-crate --locked --message-format=short --target wasm32-unknown-unknown
 ```
 
-PowerShell (Windows):
-
-```powershell
-$scope = @('-p','my-crate'); $log = Join-Path $env:TEMP 'xcheck'; New-Item -Force -ItemType Directory $log | Out-Null
-$jobs = foreach ($t in 'x86_64-pc-windows-msvc','x86_64-unknown-linux-gnu','wasm32-unknown-unknown') {
-  Start-Job -ArgumentList $t,$scope,$log,$PWD -ScriptBlock {
-    param($t,$scope,$log,$cwd) Set-Location $cwd
-    $env:CARGO_TARGET_DIR = "target/xcheck-$t"
-    cargo check @scope --locked --message-format=short --target $t *> (Join-Path $log "$t.log")
-    [pscustomobject]@{ Target = $t; Exit = $LASTEXITCODE }
-  }
-}
-$jobs | Wait-Job | Receive-Job
-```
+On Windows, send the target list to the integrating agent. The Aphrody wrapper is
+a Bash script and is run from the Linux/WSL workspace; do not invoke it from
+PowerShell or start parallel jobs.
 
 ## 4. Report
 

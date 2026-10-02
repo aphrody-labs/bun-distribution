@@ -1,5 +1,12 @@
 # Repository layering
 
+> **Historical category-repository DAG.** The repository boundaries and
+> `../aphrody-<category>` paths below predate the current monorepo and are not
+> current Cargo dependency rules. Resolve dependencies from the root workspace
+> `Cargo.toml`, package manifests and source imports; use root `AGENTS.md` and
+> `PLAN.md` for active ownership and workspaces. Preserve this page as a dated
+> rationale for the former split.
+
 The `aphrody-*` category repositories (`aphrody-contracts`, `aphrody-native`, `aphrody-shell`,
 `aphrody-compat`, `aphrody-os`, `aphrody-web`, `aphrody-koharu`, `aphrody-ui`, `aphrody-infra`, `aphrody-ai`) must
 form a DAG: a repository may only depend on a sibling in a strictly lower layer, by relative

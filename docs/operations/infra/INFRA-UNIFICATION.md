@@ -1,5 +1,14 @@
 # Unification & Centralisation de l'Infrastructure Aphrody
 
+> **Inventaire historique, pas une déclaration d’état courant.** Les chemins
+> et unités ci-dessous proviennent de la consolidation des anciens dépôts.
+> Depuis, les owners, manifests et catalogues du monorepo ont évolué. Pour les
+> workloads et routes déclarés, consulter `config/service-catalog.json`,
+> `config/nginx-routes.json` et `config/production-topology.json`. Pour
+> l’implémentation, consulter les fichiers actuels `crates/infra/infra/`,
+> `packages/infra/workspace/` et `scripts/`. L’observation hôte datée est
+> séparée dans `VPS-STATUS-2026-10-02.md`.
+
 Ce document établit la source de vérité unifiée et le bilan de consolidation de l'ensemble des scripts, configurations et documentations d'infrastructure pour l'écosystème Aphrody (`aphrody-infra`, `aphrody`, `aphrody-os`, `rg`, `shenron`, `nie`, `iecode`).
 
 ---

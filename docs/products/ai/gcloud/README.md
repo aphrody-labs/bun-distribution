@@ -1,6 +1,18 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 # Google Cloud — référence aphrody
 
+> **Archive de provisionnement, dernière capture déclarée : 2026-05-23.** Les
+> comptes, identifiants de projet, nombres d'API et affirmations de déploiement
+> ci-dessous ne sont pas un état live. Les scripts de provisionnement décrits
+> plus bas sont des archives de leur capture initiale, pas des procédures
+> actuelles garanties. Les scripts PowerShell pour le CLI Google ont été
+> réalignés sur le monorepo; leur gate complète reste bloquée par le conflit de
+> versions uv entre `config/system-packages.json` et le workspace `aphrody-py`.
+> Voir le [contrat d'installation actuel](../../../reference/infra/GOOGLE-STACK-PACKAGING.md).
+> La propriété applicative courante est décrite dans le
+> [catalogue écosystème](../../../ecosystem/ECOSYSTEM.md) et les contrats Infra
+> dans les fichiers `config/google-*.json`.
+
 Configuration GCP complète du projet **aphrody** : identités, credentials,
 APIs activées, automatisation, sécurité et usage. Tout est **non-interactif**
 et reproductible (CLAUDE.md §0.1).
@@ -10,8 +22,8 @@ et reproductible (CLAUDE.md §0.1).
 * **[Optimisation des Coûts & Quotas Always Free](../../../reference/ai/gcloud/COST_OPTIMIZATION.md)** — Runbook détaillé pour exploiter le catalogue GCP à $0.00/mois.
 
 > **Provisionné le 2026-05-23.** Source de vérité opérationnelle : les scripts
-> [`scripts/gcp-sa-setup.{ps1,sh}`](../../../aphrody-infra/scripts/aphrody) et
-> [`scripts/gcp-enable-all.sh`](../../../aphrody-infra/scripts/aphrody/gcp-enable-all.sh). Cette doc
+> [`scripts/gcp-sa-setup.{ps1,sh}`](../../../../scripts/aphrody) et
+> [`scripts/gcp-enable-all.sh`](../../../../scripts/aphrody/gcp-enable-all.sh). Cette doc
 > décrit l'état cible ; relancer un script suffit à le reconstituer.
 
 ---
@@ -105,7 +117,7 @@ gcloud services list --enabled --project aphrody --format='value(config.name)' |
 gcloud services list --enabled --project aphrody
 
 # (Re)activer TOUTES les APIs Google first-party — idempotent
-bash ../aphrody-infra/scripts/aphrody/gcp-enable-all.sh
+bash scripts/aphrody/gcp-enable-all.sh
 ```
 
 APIs clés pour aphrody : `aiplatform` (Vertex AI), `generativelanguage`
@@ -119,23 +131,23 @@ APIs clés pour aphrody : `aiplatform` (Vertex AI), `generativelanguage`
 
 | Script | Plateforme | Rôle |
 |--------|------------|------|
-| [`scripts/gcp-sa-setup.ps1`](../../../aphrody-infra/scripts/aphrody/gcp-sa-setup.ps1) | Windows (hôte) | SA + owner + 37 APIs cœur + clé JSON + clé API + `.env` + vérif |
-| [`scripts/gcp-sa-setup.sh`](../../../aphrody-infra/scripts/aphrody/gcp-sa-setup.sh) | Linux (cible #1) | idem, miroir bash |
-| [`scripts/gcp-enable-all.sh`](../../../aphrody-infra/scripts/aphrody/gcp-enable-all.sh) | Linux/bash | active **toutes** les 525 APIs first-party (lots de 20, repli individuel) |
+| [`scripts/gcp-sa-setup.ps1`](../../../../scripts/aphrody/gcp-sa-setup.ps1) | Windows (hôte) | SA + owner + 37 APIs cœur + clé JSON + clé API + `.env` + vérif |
+| [`scripts/gcp-sa-setup.sh`](../../../../scripts/aphrody/gcp-sa-setup.sh) | Linux (cible #1) | idem, miroir bash |
+| [`scripts/gcp-enable-all.sh`](../../../../scripts/aphrody/gcp-enable-all.sh) | Linux/bash | active **toutes** les 525 APIs first-party (lots de 20, repli individuel) |
 
 Tous **idempotents** et **non-interactifs**.
 
 ```bash
 # Provisionnement complet (SA + clé + clé API + .env + vérif)
-pwsh ../aphrody-infra/scripts/aphrody/gcp-sa-setup.ps1            # Windows
-../aphrody-infra/scripts/aphrody/gcp-sa-setup.sh                  # Linux
+pwsh scripts/aphrody/gcp-sa-setup.ps1                             # Windows
+bash scripts/aphrody/gcp-sa-setup.sh                              # Linux
 
 # Forcer la rotation de la clé SA
-pwsh ../aphrody-infra/scripts/aphrody/gcp-sa-setup.ps1 -Rotate
-ROTATE=1 ../aphrody-infra/scripts/aphrody/gcp-sa-setup.sh
+pwsh scripts/aphrody/gcp-sa-setup.ps1 -Rotate
+ROTATE=1 bash scripts/aphrody/gcp-sa-setup.sh
 
 # Activer tout le catalogue Google
-bash ../aphrody-infra/scripts/aphrody/gcp-enable-all.sh           # log -> /tmp/gcp-enable-all.log
+bash scripts/aphrody/gcp-enable-all.sh                            # log -> /tmp/gcp-enable-all.log
 ```
 
 Chaque exécution de `gcp-sa-setup` vérifie l'accès en mintant un access token
@@ -179,7 +191,7 @@ gcloud iam service-accounts keys delete <KEY_ID> \
   --iam-account=aphrody-bot@aphrody.iam.gserviceaccount.com
 
 # Régénérer une clé SA propre
-pwsh ../aphrody-infra/scripts/aphrody/gcp-sa-setup.ps1 -Rotate
+pwsh scripts/aphrody/gcp-sa-setup.ps1 -Rotate
 
 # Supprimer / recréer la clé API
 gcloud services api-keys delete projects/468000409790/locations/global/keys/6fcb027a-…
@@ -235,7 +247,7 @@ claude mcp get gcloud
 |----------|----------------|-----|
 | `PERMISSION_DENIED` malgré owner | API non activée | `gcloud services enable <api>` |
 | `API key not valid` | clé restreinte / mauvaise API | vérifier `api-keys describe`, ou recréer non restreinte |
-| `invalid_grant` ADC | clé SA expirée/supprimée | `pwsh ../aphrody-infra/scripts/aphrody/gcp-sa-setup.ps1 -Rotate` |
+| `invalid_grant` ADC | clé SA expirée/supprimée | `pwsh scripts/aphrody/gcp-sa-setup.ps1 -Rotate` |
 | `SU_MAX_BATCH_SIZE_EXCEEDED` | > 20 services par `enable` | lots de 20 (déjà géré par les scripts) |
 | compte gcloud changé après script | activation SA | `gcloud config set account owner@example.com` (le script restaure auto) |
 

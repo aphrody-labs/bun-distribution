@@ -3,7 +3,7 @@ name: aphrody-rag
 description: "aphrody RAG engine: index, hybrid search, context, status, eval, serve over a codebase or corpus."
 version: "1.0.0"
 metadata:
-  source: aphrody native — crates/aphrody-rag
+  source: aphrody native — crates/ai/rag
   since: "2026-09-19"
 ---
 

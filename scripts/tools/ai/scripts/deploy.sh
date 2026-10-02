@@ -7,6 +7,7 @@
 #
 #  Usage :
 #    ./scripts/deploy.sh                        # build + install (aphrody,aphrody-google,mrx,notebooklm)
+#    ./scripts/deploy.sh --remote workspace     # choose the clean source remote explicitly
 #    ./scripts/deploy.sh --no-build             # copie seulement (build déjà fait)
 #    ./scripts/deploy.sh --prefixes aphrody     # restreindre aux bins aphrody*
 #    ./scripts/deploy.sh --target x86_64-unknown-linux-gnu
@@ -22,7 +23,8 @@
 #  Construire la GUI en PRODUCTION d'abord (charge les assets bundlés, sinon le
 #  binaire cherche le serveur dev http://localhost:1420) :
 #    cd apps/desktop && bun install && bun run tauri build
-#  (ou, binaire seul sans Node : cargo build --release --features custom-protocol)
+#  (ou, binaire seul sans Node : scripts/build/rust/cargo-serial.sh build
+#   --manifest-path apps/desktop/src-tauri/Cargo.toml --release --features custom-protocol)
 # ============================================================================
 set -euo pipefail
 
@@ -32,6 +34,7 @@ DEST=""
 TARGET=""
 DRY_RUN=0
 INCLUDE_GUI=0
+REMOTE=""
 
 while [ $# -gt 0 ]; do
     case "$1" in
@@ -39,9 +42,11 @@ while [ $# -gt 0 ]; do
         --prefixes)    PREFIXES="$2"; shift 2 ;;
         --dest)        DEST="$2"; shift 2 ;;
         --target)      TARGET="$2"; shift 2 ;;
+        --remote)      REMOTE="$2"; shift 2 ;;
+        --remote=*)    REMOTE="${1#*=}"; shift ;;
         --include-gui) INCLUDE_GUI=1; shift ;;
         --dry-run)     DRY_RUN=1; shift ;;
-        -h|--help)     sed -n '2,26p' "$0"; exit 0 ;;
+        -h|--help)     sed -n '2,27p' "$0"; exit 0 ;;
         *) echo "Argument inconnu : $1" >&2; exit 2 ;;
     esac
 done
@@ -61,20 +66,49 @@ if [ -z "$TARGET_DIR" ] || [ "$TARGET_DIR" = "null" ]; then
     exit 1
 fi
 
-# Deployment provenance gate: installed binaries must come from the exact,
-# clean commit currently published as origin/main.
-git fetch origin main --quiet
+# Deployment provenance gate: install only from a clean main checkout whose
+# HEAD equals the selected remote's main. Prefer origin when configured,
+# otherwise workspace; never select legacy remotes implicitly.
+if [[ -z "$REMOTE" ]]; then
+  if git remote get-url origin >/dev/null 2>&1; then
+    REMOTE=origin
+  elif git remote get-url workspace >/dev/null 2>&1; then
+    REMOTE=workspace
+  else
+    echo 'ERROR: no origin or workspace remote is configured; pass --remote <name>' >&2
+    exit 2
+  fi
+fi
+[[ "$REMOTE" =~ ^[A-Za-z0-9][A-Za-z0-9._-]*$ ]] || {
+  echo "ERROR: invalid remote name: $REMOTE" >&2; exit 2;
+}
+git remote get-url "$REMOTE" >/dev/null 2>&1 || {
+  echo "ERROR: remote '$REMOTE' is not configured" >&2; exit 2;
+}
+if ! git fetch "$REMOTE" main --quiet; then
+  echo "ERROR: unable to fetch main from remote '$REMOTE'" >&2
+  exit 1
+fi
+branch="$(git branch --show-current)"
+if [[ "$branch" != main ]]; then
+  echo "ERROR: deployment refused: branch is '$branch', expected main" >&2
+  exit 1
+fi
 head_sha="$(git rev-parse HEAD)"
-origin_main_sha="$(git rev-parse origin/main)"
-if [[ "$head_sha" != "$origin_main_sha" ]]; then
-  echo "ERROR: deployment refused: HEAD $head_sha does not match origin/main $origin_main_sha" >&2
+remote_ref="refs/remotes/$REMOTE/main"
+if ! remote_main_sha="$(git rev-parse --verify "$remote_ref^{commit}" 2>/dev/null)"; then
+  echo "ERROR: $REMOTE/main is unavailable after fetch" >&2
   exit 1
 fi
-if [[ -n "$(git status --porcelain --untracked-files=no)" ]]; then
-  echo "ERROR: deployment refused: tracked files differ from origin/main" >&2
+if [[ "$head_sha" != "$remote_main_sha" ]]; then
+  echo "ERROR: deployment refused: HEAD $head_sha does not match $REMOTE/main $remote_main_sha" >&2
   exit 1
 fi
-echo "[deploy] provenance origin/main=$origin_main_sha"
+if [[ -n "$(git status --porcelain --untracked-files=all)" ]]; then
+  echo "ERROR: deployment refused: tracked or untracked files are dirty" >&2
+  exit 1
+fi
+echo "[deploy] provenance $REMOTE/main=$remote_main_sha"
 
 # --- Préfixes ---------------------------------------------------------------
 IFS=',' read -r -a PREFIX_ARR <<< "$PREFIXES"
@@ -91,7 +125,7 @@ if [ "$NO_BUILD" -eq 0 ]; then
     [ -n "$TARGET" ] && BUILD_ARGS+=(--target "$TARGET")
     echo "[deploy] cargo ${BUILD_ARGS[*]}"
     if [ "$DRY_RUN" -eq 0 ]; then
-        cargo "${BUILD_ARGS[@]}"
+        "$REPO_ROOT/scripts/build/rust/cargo-serial.sh" "${BUILD_ARGS[@]}"
     fi
 fi
 

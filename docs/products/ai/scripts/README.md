@@ -2,19 +2,29 @@
 
 # `scripts/` — repo automation inventory
 
-Quick reference for the scripts shipped with `aphrody`. Cross-platform parity
-follows the project priority order (Linux #1, Windows #2, WASM #3, macOS
-best-effort, cf. `CLAUDE.md` §0). Host operations and VPS deployment have been
-handed to `aphrody-infra` (`../aphrody-infra/scripts/aphrody/`); system-layer
-kernel and desktop automation live in `../aphrody-os/scripts`.
+Quick reference for scripts in this monorepo. This file began as an inventory
+of the former split `aphrody-ai` checkout; each entry below should be treated
+as current only when its path exists in this checkout. Cross-platform parity
+follows root `AGENTS.md` and the workspace plans.
+
+`scripts/deploy.sh` is the current compatibility entry point for installing
+Rust workspace binaries. It delegates to
+[`scripts/tools/ai/scripts/deploy.sh`](../../../../scripts/tools/ai/scripts/deploy.sh),
+which builds with `scripts/build/rust/cargo-serial.sh`, requires `HEAD` to
+match a clean `main` on the selected Git remote, then copies selected binaries
+to `~/.local/bin`. Pass `--remote <name>` to choose explicitly; otherwise the
+script uses `origin` when configured and falls back to `workspace` (the remote
+in this checkout). Review `--help` and `--dry-run` before use; provenance is
+fetched even in dry-run mode. This is local binary installation, not host/VPS
+deploy.
+Host deployment belongs to `crates/infra` and `packages/infra/workspace`.
 
 ## Build & deployment helpers
 
 | Script | Platform | Purpose |
 |---|---|---|
-| `deploy.sh` | Linux bash | Build release binaries and install to `~/.local/bin`. |
+| [`scripts/deploy.sh`](../../../../scripts/deploy.sh) | Linux bash | Stable entry point for clean selected-remote `main` local binary installation; delegates to `scripts/tools/ai/scripts/deploy.sh`. |
 | `run-qwen3-moe.sh` | Linux bash | Run local Qwen3 MoE inference with optional speculative decoding. |
-| `verify-release.ts` | Bun / Cross-platform | Pre-release verification gate (`apps/shenron-*`, `aphrody-mcp`, `aphrody-a2a-coord`). |
 
 ## Benchmarks & Diagnostics
 
@@ -60,14 +70,10 @@ kernel and desktop automation live in `../aphrody-os/scripts`.
 | `sync-agent-plugins.ts` | Sync plugin definitions and tool manifests across agent runtimes. |
 | `build-grok-cookie-jar.py` | Convert exported session cookies to `~/.aphrody/cookies/grok.json`. |
 | `test-xai-grok-bxc.sh` | Validation suite for xAI Grok and BXC web extraction. |
-| *(host infra / VPS)* | VPS scrapers, network proxies and systemd templates live in `../aphrody-infra/scripts/aphrody/`. |
+| *(host infra / VPS)* | VPS scrapers and network proxies live in `scripts/aphrody/`; systemd templates live in the root `systemd/` tree. |
 
-`bun run ecosystem:check` validates local Cargo paths across Aphrody AI, OS and
-infra, plus the `@aphrody/xai` dependency on aphrody-web's `@aphrody/x` (the AI
-layer consumes the web layer; aphrody-web never depends on this repository).
-`bun run ecosystem:sync` rewrites those generated paths after relocating
-checkouts. Set `APHRODY_AI_ROOT`, `APHRODY_OS_ROOT`, `APHRODY_INFRA_ROOT` and
-`APHRODY_WEB_ROOT` to absolute checkout paths when they are not siblings.
-`aphrody-ops ecosystem-deps --ai-root . --write --registry` switches `@aphrody/xai`
-to the `@aphrody/x` version declared in aphrody-web for a registry build; it does
-not publish either package or Rust crates.
+The canonical ecosystem discovery is generated in [`docs/ecosystem/`](../../../ecosystem/)
+from the active roots; check it with `bun scripts/ecosystem.ts --check` and
+regenerate it with `bun scripts/ecosystem.ts`. The former `ecosystem:check`,
+`ecosystem:sync`, `APHRODY_*_ROOT` and sibling-package instructions described a
+split checkout layout and are not current monorepo commands.

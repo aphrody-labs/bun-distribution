@@ -1,8 +1,9 @@
-# Ports, domains and routes — canonical view
+# Ports, domains and routes — explanatory view
 
-Human-readable projection of the machine-readable single sources of truth. This file is
-descriptive, not authoritative: if it ever disagrees with the catalogs below, the catalogs win
-and this file is stale and should be regenerated/rewritten.
+This page is a historical ledger of prior route/port decisions, not a generated
+current inventory. Use it to understand retired entries only. The machine
+catalogues below define current declared policy; dated runtime observations are
+separate evidence.
 
 Authoritative sources (never a second registry):
 
@@ -14,7 +15,7 @@ Authoritative sources (never a second registry):
 - `config/a2a-peers.json` — the A2A registry (JSON-RPC endpoints and agent cards).
 - `config/asset-catalog.json` — the static CDN (`cdn.aphrody.com`), which has no backend process
   and therefore no `service-catalog.json` entry.
-- `crates/aphrody-infra/src/validate.rs` (`cargo run -- validate`) enforces cross-catalog
+- `crates/infra/infra/src/validate.rs` (`aphrody-infra validate`) enforces cross-catalog
   consistency: no two services share a port or unit, every `port`/`health` is loopback/private and
   declared `internalOnly` in the topology, every retired entry carries `status`+`retiredAt`, and
   the A2A/local-AI/pipeline/repository registries agree with the catalog.
@@ -34,7 +35,7 @@ arbitrary number.
 | `5000`–`5099` | Shenron stack | `shenron-bot` 5006, `shenron-mcp` 5010 (retired), `shenron-site` 5011. |
 | `5432`, `6379` | Shared runtime data plane | PostgreSQL 5432 (loopback only, both `vps` and `dbfr`), Redis 6379 (loopback only, `vps`). |
 | `8000`–`8099` | Specialized engines (nie) | `nie-site` 8085, `nie-model-serve` 8790 (both retired). |
-| `8700`–`8799` | Aphrody AI stack | `aphrody-a2a` 8788, `aphrody-ai-http` 8789 (MCP `/mcp` incl. `dragonball.*`), `aphrody-shenron-embed` 8794 (all retired 2026-09-25; redeployed by the all-in-one bundle, `docs/IMMUTABLE-RELEASES.md`). `aphrody-site` 8083 is the one legacy exception left outside this range (predates the scheme; do not move a live-shaped unit just to fit a range). |
+| `8700`–`8799` | Historical Aphrody AI allocation | `aphrody-a2a` 8788, `aphrody-ai-http` 8789 (MCP `/mcp` incl. `dragonball.*`), `aphrody-shenron-embed` 8794 (retired 2026-09-25). `aphrody-site` 8083 is also retired. |
 | `8800`–`8899` | RG backend services | `rg-api` 8800 (serves CDN, Storage and Realtime in-process). Retired 2026-09-26, reserved: `rg-cdn` 8801, `rg-storage` 8810, `rg-realtime` 8812; `supabase-internal` 8811 (superseded template, unused). Dead/legacy in this band, not live: `rg-postgrest` 8809 (retired, no consumer), `achillea-postgrest`/`-storage`/`-realtime` 8820–8822 (superseded `achillea.rosegriffon.conf` plan, never promoted to the catalog), `n2b-server`/`shai-http` 8802/8803 ("futur" placeholders in the superseded `api.rosegriffon.conf`, never implemented). |
 | `15000`–`15999` | Private cross-host tunnels | `shenron-pg-tunnel` 15433 (loopback `vps` → SSH tunnel → `dbfr:5432`; 5432 itself is never exposed on `vps`). |
 | *(unscoped, intentionally off-catalog)* | Internal ops tooling, no public domain | `stack-ip.conf` (3080 public-loopback listener, upstream `stack_api` 3010) and `staging-nds.conf` (127.0.0.1:8889, explicitly never public by design) — orphaned, no owning code found in any sibling repo, banners added in place; see §4 item 10. |
@@ -60,7 +61,7 @@ arbitrary number.
 | **rg-realtime** *(added 2026-09-26)* | 8812 | `rg-realtime.service` | rg | retired 2026-09-26; public path `/realtime/v1/` is served by rg-api:8800 — see §4 |
 | rg-sauvegarde, rg-infra-monitor | — (timers) | `*.timer` | rg / aphrody-infra | live |
 | shenron-site | 5011 | `shenron-site.service` | shenron | live |
-| shenron-mcp | 5010 | `shenron-mcp.service` | aphrody-ai (built) | retired 2026-09-25, superseded by `aphrody-mcp dragonball.*` tools |
+| shenron-mcp | 5010 | `shenron-mcp.service` | aphrody-ai (historical) | retired 2026-09-25 |
 | shenron-bot | 5006 | `shenron-bot.service` | shenron | live |
 | shenron-pg-tunnel | 15433 (→ dbfr 5432) | `shenron-pg-tunnel.service` | shenron | live |
 | shenron-backup | — (timer) | `shenron-backup.timer` | shenron | live |
@@ -138,7 +139,7 @@ Fixed in this pass (see `config/service-catalog.json`, `config/production-topolo
    `nginx/rg/generated/website_preview.conf`) — split into `internalOnly` (real, declared) and a
    new `reservedNoCurrentOwner` array (3000, 3005 — occupied by something outside this catalog per
    the 2026-09-23 ledger entry, do not reassign — and 3006) so the two categories are no longer
-   silently merged. `cargo run -- validate` stays green either way since no catalog service
+   silently merged. `aphrody-infra validate` stays green either way since no catalog service
    references 3000/3005/3006.
 
 Resolved by the `rg` sibling audit (§5) the same day — no longer open:

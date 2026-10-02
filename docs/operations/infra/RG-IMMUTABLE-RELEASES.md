@@ -51,20 +51,21 @@ files; successful activation removes them.
 Plan from the infra checkout:
 
 ```bash
-cargo run -p aphrody-infra -- deploy --target vps --stack rg --release /srv/rg/releases/RELEASE_ID
+scripts/build/rust/cargo-serial.sh run -p aphrody-infra -- deploy --target vps --stack rg --release /srv/rg/releases/RELEASE_ID
 ```
 
 Apply only after the artifact, `/etc` environment files, TLS certificates and
 local smoke are ready:
 
 ```bash
-cargo run -p aphrody-infra -- deploy --target vps --stack rg --release /srv/rg/releases/RELEASE_ID --apply
+scripts/build/rust/cargo-serial.sh run -p aphrody-infra -- deploy --target vps --stack rg --release /srv/rg/releases/RELEASE_ID --apply
 ```
 
 Inside the all-in-one bundle RG is the last step (`--stack bundle`, see
 [`IMMUTABLE-RELEASES.md`](./IMMUTABLE-RELEASES.md)); the bundle adapter refuses
-to start unless `/srv/rg/releases/<pinned sha>` exists. `--stack aphrody` (the
-five-service Aphrody adapter) stays the CLI default. RG local adapter checks
+to start unless `/srv/rg/releases/<pinned sha>` exists. Consult the current
+CLI help for supported stack defaults. RG local adapter checks
 run with `bash scripts/test-atomic-deploy-rg.sh` on Linux or WSL as root (all
-three adapters: `bun run test:adapters`); the test replaces systemd, Nginx and
+three adapter fixtures can be invoked with `bash scripts/test-atomic-deploy-<stack>.sh`);
+the test replaces systemd, Nginx and
 curl with temporary stubs.

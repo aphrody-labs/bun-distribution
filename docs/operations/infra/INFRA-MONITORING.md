@@ -1,31 +1,60 @@
-# Monitoring infrastructure
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+# Infrastructure monitoring
 
-Le contrôle RG importé depuis le commit `ebe47f58` est piloté par le script
-unique `aphrody-infra/scripts/infra-status.ts`. Aucun autre dépôt ne duplique cette
-implémentation : ses scripts Bun transmettent les commandes au dépôt Aphrody.
+Two distinct tools report on Infra state. The root Bun monitor
+[`scripts/infra-status.ts`](../../../scripts/infra-status.ts) reports checks,
+selected host resources and probes. The native `aphrody-infra` CLI reports
+catalogued host services and lifecycle state. Neither replaces a complete live
+host inventory or application-level readiness checks.
+
+## Bun monitor
+
+Run it from the monorepo root:
 
 ```bash
-bun run infra:status
-bun run infra:status:json
-bun run infra:inventory
-aphrody-infra validate
+bun scripts/infra-status.ts status
+bun scripts/infra-status.ts status --json
+bun scripts/infra-status.ts status --deep
 ```
 
-`infra:inventory` active l'inventaire profond borné par le script. Le timer
-`rg-infra-monitor.timer` reste une unité déclarative dans `systemd/` ; il a été
-retiré du VPS lors de la remise à zéro du 2026-09-22 et n'y revient que via le
-catalogue et `aphrody-infra deploy`. Pour l'état des hôtes sans dépendre du
-monitor : `aphrody-infra status` et `aphrody-infra dev-env --target <id>`.
+`--deep` enables the bounded deeper checks implemented by the script. There
+are no root `infra:status`, `infra:status:json`, or `infra:inventory` package
+scripts in the current manifest.
 
-## Règles de déduplication du catalogue
+## Rust service and host status
 
-Reprises de l'ancien `rg/docs/infra/orchestration.md` (le manifeste `rg/infra/stack.json`
-a été absorbé par `config/service-catalog.json` et `inventory/`) :
+Use the installed CLI or run the checkout binary through the serialized Cargo
+wrapper:
 
-- un composant possède un `id` unique et un propriétaire explicite ;
-- un port ne peut pas être partagé par deux composants actifs ;
-- les slots standby et services retired sont déclarés mais exclus du contrôle de
-  collision et ne doivent pas être démarrés ;
-- les fichiers effectifs systemd/Nginx/sysctl/logrotate sont comparés à leurs
-  sources versionnées dans ce dépôt ;
-- les sauvegardes Nginx `.bak*` ne sont pas chargées et ne comptent pas comme vhosts actifs.
+```bash
+aphrody-infra status --target vps --json
+aphrody-infra service status --target vps --json
+aphrody-infra service catalog --json
+aphrody-infra validate --json
+```
+
+The Rust `status` command reports target/matrix state using its live target
+adapter (service counts/failures and selected host details); it is distinct
+from the catalog service query. The `service` commands query workloads declared in root
+[`config/service-catalog.json`](../../../config/service-catalog.json); they do
+not discover arbitrary systemd units. Use a dated host observation when
+reporting complete unit inventory. `validate` checks the current service,
+route and port-policy catalogues; it is not a runtime health probe.
+
+The `rg-infra-monitor.timer` was observed active on the VPS on 2026-10-02; see
+the [dated observation](./VPS-STATUS-2026-10-02.md). The 2026-09-22 note about
+its removal is historical and is superseded for that observation only.
+
+## Catalog rules
+
+The root JSON catalogues are authoritative for declared policy:
+
+- `config/service-catalog.json` owns service IDs, units, health paths and
+  declared ports;
+- `config/nginx-routes.json` owns public hosts and upstream routes;
+- `config/production-topology.json` owns host roles and public/internal port
+  policy.
+
+Retired services remain recorded as evidence and must not be treated as
+deployable workloads. A declared route or unit does not establish that the
+corresponding runtime object is installed or active.

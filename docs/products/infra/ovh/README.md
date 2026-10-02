@@ -3,10 +3,9 @@
 # OVHcloud operations
 
 This directory is the repository-side runbook for the OVHcloud services used
-by Aphrody. It complements the reusable global OVH skill (`~/.codex/skills/ovh/SKILL.md`),
-the native OVH engine ([`crates/aphrody-ovh`](../../crates/aphrody-ovh/) and
-[`packages/aphrody-ovh`](../../packages/aphrody-ovh/)), the SSH operator
-([`crates/aphrody-ssh`](../../crates/aphrody-ssh/)) and the account and zone reference
+by Aphrody. It complements the reusable global OVH skill (if installed),
+the native OVH engine (`crates/infra/ovh`), the SSH operator
+(`crates/infra/ssh`) and the account and zone reference
 [`docs/ops/OVH.md`](../../../reference/infra/ops/OVH.md). Restored from the retired `aphrody` monolith
 (`docs/aphrody-os/ovh/README.md`).
 
@@ -28,11 +27,11 @@ hardening. Do not silently re-enable that scope.
 
 ## Current service map
 
-The Manager inventory observed during the September 2026 audit contains:
+Historical Manager inventory observed during the September 2026 audit:
 
 - one active VPS service, named `rg`, in Strasbourg SBG6, on the VPS-4 2026
   plan. Its service name and address are not recorded here: the target is the
-  `vps` entry of [`inventory/targets.json`](../../inventory/targets.json) and
+  `vps` entry of [`inventory/targets.json`](../../../../inventory/targets.json) and
   `aphrody-infra ovh vps list` prints the live inventory;
 - the `aphrody.com` domain and DNS zone;
 - DNS and mail services associated with `aphrody.com` (`rpbey.fr` was sold — operator decision,
@@ -40,21 +39,26 @@ The Manager inventory observed during the September 2026 audit contains:
 - one active Zimbra organisation and an active MX Plan surface;
 - no active Web Cloud database service and no pending domain operations.
 
-The service list is the authority for current ownership and status. Do not
-assume that a domain listed as an associated service is manageable from the
-current account.
+This inventory is historical evidence, not live state. Re-query the Manager
+for current ownership and status. Do not assume that a domain listed as an
+associated service is manageable from the current account.
 
 ## Local commands
 
 From the `aphrody-infra` repository root:
 
 ```powershell
-cargo run -p aphrody-infra -- ovh profiles
-cargo run -p aphrody-infra -- ovh vps list
-bun run ovh:status
-cargo run -p aphrody-ssh -- --json status --host ovh-vps
-cargo run -p aphrody-ssh -- --json exec --host ovh-vps "free -h && df -h / && systemctl --failed --no-pager"
+aphrody-infra ovh profiles
+aphrody-infra ovh vps list
+aphrody-infra ssh --json status --host vps
+aphrody-infra ssh --json exec --host vps --cmd "free -h && df -h / && systemctl --failed --no-pager"
 ```
+
+When running the checkout version that is not installed, use
+`scripts/build/rust/cargo-serial.sh run -p aphrody-infra -- <arguments>`.
+There is no root `ovh:status` Bun script, and the Rust crate package names are
+`aphrody-infra` (which includes the SSH and OVH subcommands), not standalone
+`aphrody-ssh`/`aphrody-ovh` packages.
 
 The OVH package reads only its fixed profile credential sources and allowlisted
 keys. Never print those files or place credentials in this documentation.
@@ -66,7 +70,7 @@ Before a remote mutation, verify the live route and connectivity:
 ```powershell
 ssh -G ovh-vps
 ssh -G dbfr
-cargo run -p aphrody-ssh -- --json status --host ovh-vps
+aphrody-infra ssh --json status --host vps
 ```
 
 The `ovh-vps` CLI selector maps to the local OpenSSH alias `vps`. Do not use

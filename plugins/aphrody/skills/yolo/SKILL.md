@@ -17,15 +17,19 @@ gates pass with real output.
 ## 1. Discover before touching anything
 
 1. **Owners and rules**: the repository's `CLAUDE.md` / `AGENTS.md` / `README.md`
-   override generic habits. In a multi-repo workspace, respect the stated
-   ownership (e.g. infra registries live only in `aphrody-infra`).
+   override generic habits. In the Aphrody monorepo, Rust and Bun owners live
+   in `crates/` and `packages/`; `packages/infra/workspace` orchestrates this
+   checkout and the other active roots.
 2. **Plan**: `PLAN.md`, `docs/plans/`, `UNIFIED-PLAN.md`, `ROADMAP.md`,
    `TODO.md`; open items are `- [ ]`, `⏳`, `TODO:`. No plan and no open item →
    the job is running the gates and fixing what is red.
 3. **Gates**: take them from the repo (`justfile`, `package.json` scripts,
-   `.github/workflows/`, docs "Validation" section). Typical Rust set:
-   `cargo check --workspace --all-targets`, `cargo clippy … -D warnings`,
-   `cargo test`/`nextest`, `cargo deny check`, `git diff --check`.
+   `.github/workflows/`, docs "Validation" section). In this Aphrody workspace,
+   workers do not run Cargo; the integrating agent executes one Cargo gate at a
+   time with `scripts/build/rust/cargo-serial.sh <cargo args...>`. Do not
+   background or parallelize Cargo. Typical gates are `check --workspace
+   --all-targets`, `clippy … -D warnings`, `test`/`nextest`, `deny check`, and
+   `git diff --check`.
    A missing gate config (e.g. no `deny.toml`, so every license is rejected)
    is a defect to fix, not a gate to skip.
 4. **Working tree**: `git status --short`. Files you did not change belong to

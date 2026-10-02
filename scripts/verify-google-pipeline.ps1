@@ -1,50 +1,151 @@
+#Requires -Version 7.4
+#Requires -PSEdition Core
+# SPDX-License-Identifier: Apache-2.0
 [CmdletBinding()]
 param(
-    # aphrody-ai: aphrody-google crate, @aphrody/google, the Python facade and doc-ai.
-    [string]$AphrodyRoot = (Join-Path $PSScriptRoot '..\..\aphrody-ai'),
-    # aphrody-web: the BXC Google/Gemini web implementation (adapters.bun.webImplementation).
-    [Alias('OsRoot')]
-    [string]$WebRoot = (Join-Path $PSScriptRoot '..\..\aphrody-web')
+    [string]$AphrodyRoot = (Join-Path $PSScriptRoot '..'),
+    [string]$PythonRoot = (Join-Path $PSScriptRoot '..\..\aphrody-py'),
+    [switch]$StaticOnly
 )
 
 $ErrorActionPreference = 'Stop'
-$configPath = Join-Path $PSScriptRoot '..\config\google-gemini-pipeline.json'
-$config = Get-Content -LiteralPath $configPath -Raw | ConvertFrom-Json
+Set-StrictMode -Version Latest
+$AphrodyRoot = (Resolve-Path -LiteralPath $AphrodyRoot).Path
+$PythonRoot = (Resolve-Path -LiteralPath $PythonRoot).Path
 
-if ($config.repositories.nie.project -ne 'aphrody' -or $config.repositories.dbfr.project -ne 'aphrody') {
-    throw 'DBFR/NIE doivent cibler aphrody.'
-}
-if ($config.repositories.rg.project -ne 'rgfr') {
-    throw 'RG doit cibler rgfr.'
-}
-if ($config.binary -ne 'aphrody-google') { throw 'Le binaire canonique doit être aphrody-google.' }
-
-$required = @(
-    (Join-Path $AphrodyRoot 'crates\aphrody-google\src\lib.rs'),
-    (Join-Path $AphrodyRoot 'packages\google\src\index.ts'),
-    (Join-Path $AphrodyRoot 'packages\google\src\vertex.ts'),
-    (Join-Path $AphrodyRoot 'py\aphrody\aphrody\google.py'),
-    (Join-Path $AphrodyRoot 'packages\doc-ai\src\llm.ts'),
-    # Web implementation declared by adapters.bun.webImplementation.
-    (Join-Path $WebRoot 'apps\bxc\src\google\index.ts')
-)
-foreach ($path in $required) {
-    if (-not (Test-Path -LiteralPath $path -PathType Leaf)) { throw "Point d'entrée manquant: $path" }
+function Require-File {
+    param([Parameter(Mandatory)][string]$Path)
+    if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) { throw "Owner file missing: $Path" }
 }
 
-$forbidden = @('GEMINI_API_KEY=', 'GOOGLE_API_KEY=')
-$scanRoots = @(
-    (Join-Path $AphrodyRoot 'packages\google'),
-    (Join-Path $AphrodyRoot 'py\aphrody\aphrody'),
-    (Join-Path $AphrodyRoot 'packages\doc-ai')
-)
-foreach ($root in $scanRoots) {
-    foreach ($needle in $forbidden) {
-        $hits = rg --fixed-strings --line-number --glob '*.ts' --glob '*.py' $needle $root 2>$null
-        if ($LASTEXITCODE -eq 0 -and $hits) { throw "Référence API-key interdite dans $root" }
+function Invoke-OwnerCommand {
+    param(
+        [Parameter(Mandatory)][string]$Name,
+        [Parameter(Mandatory)][string]$Executable,
+        [Parameter(Mandatory)][string[]]$Arguments,
+        [Parameter(Mandatory)][string]$WorkingDirectory
+    )
+    Write-Output "==> $Name"
+    Push-Location $WorkingDirectory
+    try {
+        & $Executable @Arguments
+        $exitCode = $LASTEXITCODE
+        if ($exitCode -ne 0) { throw "$Name failed (exit $exitCode)." }
+    } finally {
+        Pop-Location
     }
 }
 
-Write-Output 'GOOGLE_PIPELINE: PASS'
-Write-Output "projects: aphrody-ai=$($config.repositories.'aphrody-ai'.project), nie=$($config.repositories.nie.project), dbfr=$($config.repositories.dbfr.project), rg=$($config.repositories.rg.project)"
-Write-Output 'facades: rust,bun,python,web=present'
+$cargoManifest = Join-Path $AphrodyRoot 'crates/ai/google/Cargo.toml'
+$rustMain = Join-Path $AphrodyRoot 'crates/ai/google/src/main.rs'
+$bunManifestPath = Join-Path $AphrodyRoot 'packages/ai/google/package.json'
+$bunEntrypoint = Join-Path $AphrodyRoot 'packages/ai/google/bin/aphrody-google.ts'
+$docAiManifestPath = Join-Path $AphrodyRoot 'packages/ai/doc-ai/package.json'
+$docAiEntrypoint = Join-Path $AphrodyRoot 'packages/ai/doc-ai/src/llm.ts'
+$pythonManifest = Join-Path $PythonRoot 'packages/ai/py/aphrody/pyproject.toml'
+$pythonWorkspaceManifest = Join-Path $PythonRoot 'pyproject.toml'
+$pythonFacade = Join-Path $PythonRoot 'packages/ai/py/aphrody/aphrody/google.py'
+$cargoWrapper = Join-Path $AphrodyRoot 'scripts/build/rust/cargo-serial.ps1'
+$pythonLock = Join-Path $PythonRoot 'uv.lock'
+$toolchainManifest = Join-Path $AphrodyRoot 'config/system-packages.json'
+
+foreach ($path in @(
+    (Join-Path $AphrodyRoot 'Cargo.toml'), $cargoManifest, $rustMain,
+    $bunManifestPath, $bunEntrypoint, $docAiManifestPath, $docAiEntrypoint,
+    $cargoWrapper, $pythonManifest, $pythonWorkspaceManifest, $pythonFacade, $pythonLock, $toolchainManifest
+)) { Require-File $path }
+
+$cargoMetadataOutput = & cargo metadata --format-version 1 --no-deps --manifest-path (Join-Path $AphrodyRoot 'Cargo.toml')
+if ($LASTEXITCODE -ne 0) { throw 'cargo metadata failed for the monorepo workspace.' }
+$cargoMetadata = ($cargoMetadataOutput -join "`n") | ConvertFrom-Json
+$rustPackage = $cargoMetadata.packages | Where-Object {
+    $_.name -eq 'aphrody-google'
+} | Select-Object -First 1
+if (-not $rustPackage -or -not ($rustPackage.targets | Where-Object {
+    $_.name -eq 'aphrody-google' -and $_.kind -contains 'bin'
+})) { throw 'Current Cargo metadata does not expose the aphrody-google binary.' }
+if ([IO.Path]::GetFullPath($rustPackage.manifest_path) -ne [IO.Path]::GetFullPath($cargoManifest)) {
+    throw "Cargo package aphrody-google is not owned by $cargoManifest."
+}
+
+$bunManifest = Get-Content -LiteralPath $bunManifestPath -Raw | ConvertFrom-Json
+if ($bunManifest.name -ne '@aphrody/google') { throw "Unexpected Bun package owner: $($bunManifest.name)" }
+foreach ($scriptName in @('test', 'build', 'verify')) {
+    if (-not $bunManifest.scripts.PSObject.Properties.Name.Contains($scriptName)) {
+        throw "@aphrody/google has no '$scriptName' script."
+    }
+}
+
+$docAiManifest = Get-Content -LiteralPath $docAiManifestPath -Raw | ConvertFrom-Json
+if ($docAiManifest.name -ne '@aphrody/doc-ai') { throw "Unexpected doc-ai owner: $($docAiManifest.name)" }
+foreach ($scriptName in @('test', 'typecheck')) {
+    if (-not $docAiManifest.scripts.PSObject.Properties.Name.Contains($scriptName)) {
+        throw "@aphrody/doc-ai has no '$scriptName' script."
+    }
+}
+
+$pythonText = Get-Content -LiteralPath $pythonManifest -Raw
+if ($pythonText -notmatch '(?m)^name\s*=\s*["'']aphrody["'']\s*$') {
+    throw "Python package manifest does not declare project 'aphrody': $pythonManifest"
+}
+if ($pythonText -notmatch '(?ms)^\[project\.scripts\]\s*.*?^aphrody-google\s*=\s*["'']aphrody\.google_cli:main["'']') {
+    throw "Python package does not expose the aphrody-google entry point: $pythonManifest"
+}
+$pythonWorkspaceText = Get-Content -LiteralPath $pythonWorkspaceManifest -Raw
+$pythonUvMatch = [regex]::Match($pythonWorkspaceText, '(?m)^required-version\s*=\s*["'']==([^"'']+)["'']\s*$')
+if (-not $pythonUvMatch.Success) { throw "Python workspace does not pin uv in $PythonRoot/pyproject.toml." }
+$pythonUvVersion = $pythonUvMatch.Groups[1].Value
+$toolchainManifestValue = Get-Content -LiteralPath $toolchainManifest -Raw | ConvertFrom-Json
+$monorepoUvVersion = [string]$toolchainManifestValue.toolchains.uv.version
+if ($pythonUvVersion -ne $monorepoUvVersion) {
+    throw "uv pin mismatch: monorepo config/system-packages.json requires $monorepoUvVersion, but aphrody-py requires $pythonUvVersion. Align the workspace manifests before running the Python gate."
+}
+
+# These source checks reject literal key assignments without reading local env
+# files or printing match contents.
+$scanRoots = @(
+    (Join-Path $AphrodyRoot 'packages/ai/google'),
+    (Join-Path $AphrodyRoot 'packages/ai/doc-ai'),
+    (Join-Path $PythonRoot 'packages/ai/py/aphrody/aphrody')
+)
+foreach ($scanRoot in $scanRoots) {
+    foreach ($needle in @('GEMINI_API_KEY=', 'GOOGLE_API_KEY=')) {
+        $null = & rg --fixed-strings --quiet --glob '*.ts' --glob '*.py' $needle $scanRoot 2>$null
+        $scanExitCode = $LASTEXITCODE
+        if ($scanExitCode -eq 0) { throw "Literal API key assignment found under $scanRoot." }
+        if ($scanExitCode -gt 1) { throw "Source scan failed under $scanRoot (rg exit $scanExitCode)." }
+    }
+}
+
+Write-Output 'GOOGLE_PIPELINE: manifests and Rust/Bun/Python owner paths verified.'
+Write-Output "Rust: $($rustPackage.manifest_path) -> aphrody-google"
+Write-Output "Bun: $bunManifestPath -> @aphrody/google"
+Write-Output "Doc AI: $docAiManifestPath -> @aphrody/doc-ai"
+Write-Output "Python: $pythonManifest -> aphrody.google / aphrody-google"
+if ($StaticOnly) { return }
+
+$uvVersionOutput = & uv --version
+if ($LASTEXITCODE -ne 0) { throw 'Could not query the uv version for the Python gate.' }
+if ($uvVersionOutput -notmatch "\b$([regex]::Escape($pythonUvVersion))\b") {
+    throw "Python gate requires uv $pythonUvVersion from aphrody-py/pyproject.toml; found $uvVersionOutput."
+}
+
+$pwsh = (Get-Command pwsh -ErrorAction Stop).Source
+Invoke-OwnerCommand 'Rust aphrody-google tests (serialized)' $pwsh @(
+    '-NoLogo', '-NoProfile', '-NonInteractive', '-File', $cargoWrapper,
+    'test', '--locked', '-p', 'aphrody-google'
+) $AphrodyRoot
+Invoke-OwnerCommand '@aphrody/google verify (tests + Bun build)' 'bun' @(
+    'run', '--filter', '@aphrody/google', 'verify'
+) $AphrodyRoot
+Invoke-OwnerCommand '@aphrody/doc-ai tests' 'bun' @(
+    'run', '--filter', '@aphrody/doc-ai', 'test'
+) $AphrodyRoot
+Invoke-OwnerCommand '@aphrody/doc-ai typecheck' 'bun' @(
+    'run', '--filter', '@aphrody/doc-ai', 'typecheck'
+) $AphrodyRoot
+Invoke-OwnerCommand 'Python aphrody tests' 'uv' @(
+    'run', '--locked', '--package', 'aphrody', 'pytest'
+) $PythonRoot
+
+Write-Output 'GOOGLE_PIPELINE: all current owner gates passed.'

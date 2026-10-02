@@ -1,6 +1,15 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 # VPS RAG and inference engines
 
+> **Historical capability description.** The deployment described here uses
+> the Aphrody AI services (`aphrody-ai-http`, `aphrody-shenron-embed`) which are
+> marked retired in the root production/service catalogues. Their config/model
+> entries describe a prior or proposed contract; they do not establish an
+> active VPS capability. For current placement and dated runtime evidence, see
+> [`production-topology.json`](../../../../config/production-topology.json),
+> [`service-catalog.json`](../../../../config/service-catalog.json), and the
+> [2026-10-02 topology observation](../../../operations/infra/TOPOLOGY-OBSERVATION-2026-10-02.md).
+
 Retrieval, embedding and synthesis engines that run on or are reached from the production VPS.
 Model names, dimensions, services and environment names are owned by
 [`config/local-ai.json`](../../../../config/local-ai.json) (validated by `aphrody-infra validate`) and

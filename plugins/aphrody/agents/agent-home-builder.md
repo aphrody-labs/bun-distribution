@@ -25,7 +25,7 @@ the crate, you do not rebuild it.
 
 1. `crates/ai/agent-home/` — sources, `templates/`, `tests/`, `benches/`,
    `sync-contract.json`.
-2. `docs/reference/ai/crates/aphrody-agent-home` — reference docs; the archived
+2. `docs/reference/ai/crates/aphrody-agent-home/` — reference docs; the archived
    plan stub is `docs/plans/ai/plans/agent-home.md` (full text in Git history).
 3. The repository rules: `CLAUDE.md` / `AGENTS.md` at the repo root, and
    `PLAN.md` for current acceptance items.
@@ -45,18 +45,21 @@ the crate, you do not rebuild it.
   Land the vertical slice (AH-0 + AH-1 + AH-4 + AH-5 + AH-14) so
   `aphrody oc-onboard` seeds a real SOUL.md that `aphrody chat` injects, THEN
   finish the rest. Each item is observable.
-- **Verify continuously, not just at the end.** After each phase:
-  `cargo clippy -p aphrody-agent-home --all-targets --locked -- -D warnings`
-  and `cargo nextest run -p aphrody-agent-home --locked` must pass before moving on.
+- **Verify continuously, not just at the end.** The integrating agent runs each
+  Cargo gate through `scripts/build/rust/cargo-serial.sh`, one at a time:
+  `clippy -p aphrody-agent-home --all-targets --locked -- -D warnings` and
+  `nextest run -p aphrody-agent-home --locked`. A worker records these exact
+  gates for the integrator and never starts Cargo itself.
 - **Verify strictly** (repository rules): `cargo check` is not enough — exercise real
   behavior. After touching onboarding: run the built `aphrody oc-onboard` against a temp
   state directory (`$APHRODY_HOME`) and inspect the seeded file-map on disk. Capture exit codes.
+  The built CLI is produced only through the serialized Cargo runner.
 - **Validate API/versions before pinning** (dependency policy): use
   the `docs` skill to confirm exact stable versions and the API
   surface of `memmap2`, `arc-swap`, `notify`, `gix`, `blake3`,
   `unicode-segmentation` before writing `Cargo.toml`. Do not hallucinate APIs.
-- **DO NOT commit, DO NOT push, DO NOT switch branch.** Leave all changes
-  staged. The orchestrating skill commits in logical batches. Never run
+- **DO NOT commit, DO NOT push, DO NOT switch branch or stage files.** Leave
+  changes unstaged for the integrating agent, which commits logical batches. Never run
   `git checkout -b` / branch switch (tears the shared HEAD with the peer agy).
 - **Record progress** in `PLAN.md` only if the repository rules ask for it.
 
@@ -91,16 +94,20 @@ the crate, you do not rebuild it.
    `#[cfg(not(target_arch = "wasm32"))]` and ship a real in-memory read fallback.
 4. macOS — best-effort, never block.
 
-Run all three `cargo check -p aphrody-agent-home --target … --locked` before
-declaring AH-17 done. Capture each exit code.
+Run all three target checks sequentially through
+`scripts/build/rust/cargo-serial.sh check -p aphrody-agent-home --target … --locked`
+before declaring AH-17 done. Capture each exit code; never background Cargo
+or run target checks concurrently in this shared workspace.
 
 ## Execution rhythm
 
-Land one reviewable slice at a time (module + tests), then run:
-`cargo clippy -p aphrody-agent-home --all-targets --locked -- -D warnings` and
-`cargo nextest run -p aphrody-agent-home --locked`. Never leave a phase red and
-move on. Before declaring done, run the three `cargo check -p aphrody-agent-home
---target … --locked` and capture each exit code.
+Land one reviewable slice at a time (module + tests), then have the integrating
+agent run `scripts/build/rust/cargo-serial.sh clippy -p aphrody-agent-home
+--all-targets --locked -- -D warnings` and
+`scripts/build/rust/cargo-serial.sh nextest run -p aphrody-agent-home --locked`.
+Never leave a phase red and move on. Before declaring done, the integrating
+agent runs three sequential `scripts/build/rust/cargo-serial.sh check -p
+aphrody-agent-home --target … --locked` commands and captures each exit code.
 
 ## Honest-delivery report (final message, under 400 words)
 
@@ -108,7 +115,7 @@ move on. Before declaring done, run the three `cargo check -p aphrody-agent-home
 2. **Items** — each requested change -> FAIT / INCOMPLET / NON_FAIT, one-line proof each.
 3. **Verify matrix** — clippy / nextest / 3-target check -> exit code + time.
 4. **Real-behavior proof** — the `oc-onboard` smoke run output (seeded files listed).
-5. **Staged files** — `git status --short` summary (NOT committed).
+5. **Changed files** — `git status --short` summary (unstaged; not committed by this worker).
 6. **Blockers / adjacent issues** — bullets; no out-of-scope work attempted.
 
 ## When to report NON_FAIT (do not silently skip)

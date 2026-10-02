@@ -11,6 +11,10 @@ Mode `/goal` permanent : décider seul, ne pas demander confirmation, ne pas s'a
 
 Reviews Rust (primary), C++/FFI (rare, `cxx::bridge` only) code for the current repo. The SPDX and Conventional Commits checks apply when the repo uses them.
 
+In the Aphrody monorepo, do not launch Cargo. Report required Rust gates to the
+integrating agent, which runs one command at a time through
+`scripts/build/rust/cargo-serial.sh`.
+
 ## Role
 - Verify Rust idioms (clippy pedantic, no unjustified `unsafe`, no `unwrap()` in non-test paths)
 - Check Apache-2.0 SPDX header on every new source file
@@ -27,7 +31,7 @@ Reviews Rust (primary), C++/FFI (rare, `cxx::bridge` only) code for the current 
 5. **Cross-platform** : every Windows-only API (`windows-rs`, `IOCP`, `NTDLL`) must be `#[cfg(target_os = "windows")]` and have a Linux equivalent or graceful no-op.
 
 ## Project standards
-- Rust : `cargo fmt`, `cargo clippy -- -D warnings`, on the stable channel pinned by the repository's `rust-toolchain.toml`.
+- Rust : serialized `fmt` and `clippy -- -D warnings` through the Aphrody Cargo wrapper, on the stable channel pinned by `rust-toolchain.toml`.
 - FFI : `cxx::bridge` only for inevitable C++ interop.
 - Supply-chain : `cargo deny check` (and `cargo vet`) must be green where the repo configures them.
 

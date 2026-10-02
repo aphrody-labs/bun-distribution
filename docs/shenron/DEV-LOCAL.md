@@ -1,9 +1,21 @@
 # Développement local — Windows et WSL
 
+> **État au 2026-10-02 : procédure historique, à ne pas suivre telle quelle.**
+> Les commandes `bun run env:dev`, `bun run env:prod` et `bun scripts/dev/local-env.ts`
+> ne correspondent à aucun script d'environnement à la racine de ce monorepo.
+> Une copie résiduelle se trouve sous `scripts/dev/shenron/scripts/dev/local-env.ts`,
+> mais son chemin et sa résolution de racine ne constituent pas une procédure validée.
+> La préparation des `.env.local`, des tunnels distants et des secrets doit suivre
+> les consignes d'exploitation actuelles; ne pas lancer ces commandes de cette page.
+
+Les scripts Bun actuellement déclarés pour lancer les applications sont
+`bun --filter @shenron/site dev` et `bun --filter @shenron/bot dev`, depuis la
+racine. Ils ne génèrent pas la configuration d'environnement.
+
 Environnement de travail Shenron sur poste : accès aux services distants par tunnels SSH,
 fichiers d'environnement par app, et Next.js exécuté dans WSL.
 
-## En bref
+## Ancienne procédure (historique)
 
 ```bash
 bun run env:dev                         # profil local : PostgreSQL/Redis locaux, aucun token Discord prod
@@ -18,7 +30,7 @@ propres clés `~/.ssh` et les alias `vps` et `dbfr`.
 ## Ports et services
 
 Les ports distants ne sont pas écrits ici : `local-env.ts` les lit dans le catalogue
-`aphrody-infra/config/service-catalog.json`, champs `health` et `target`. Le catalogue est
+`config/service-catalog.json`, champs `health` et `target`. Le catalogue est
 cherché dans cet ordre :
 
 1. `APHRODY_INFRA_DIR` ;
@@ -60,7 +72,7 @@ avec des clés en double. Le script écrit un `.env.local` par app, ignoré par 
   prérendu (`useContext` sur `null`).
 - **URL de service** (`DATABASE_URL`, `REDIS_URL`, `APHRODY_AI_HTTP_URL`,
   `APHRODY_AI_EMBED_BASE_URL`, `SHENRON_API_URL`; noms IA canoniques du contrat
-  `aphrody-infra`, alias hérités retirés, voir [`ENV.md`](ENV.md)) réécrites vers `127.0.0.1` et le port
+  l'Infra du monorepo, alias hérités retirés, voir [`ENV.md`](ENV.md)) réécrites vers `127.0.0.1` et le port
   du tunnel.
 - **`SHENRON_API_URL`** pointe vers le tunnel de `shenron-bot` pour les deux apps, et
   **`SITE_INTERNAL_URL`** vers le `next dev` local (`http://127.0.0.1:3000`) au lieu de
@@ -135,4 +147,4 @@ Le typecheck, les tests et oxlint restent utilisables sous Windows (`bun run typ
 ## Tunnels natifs
 
 `tunnels` et `status` utilisent directement `ssh -L` et les ports du catalogue
-`aphrody-infra`. Aucun CLI Aphrody n'est requis dans le checkout Shenron.
+l'Infra du monorepo. Aucun CLI Aphrody n'est requis dans le checkout Shenron.
