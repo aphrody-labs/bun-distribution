@@ -1,7 +1,9 @@
 import { useMemo } from "react";
 import {
-  getCoreRowModel,
-  useReactTable,
+  columnResizingFeature,
+  columnSizingFeature,
+  tableFeatures,
+  useTable as useReactTableV9,
   type ColumnDef,
   type ColumnSizingState,
 } from "@tanstack/react-table";
@@ -14,12 +16,14 @@ export const TABLE_PADDING_X = 16;
 export const TABLE_PADDING_Y = 12;
 export const TABLE_HEADER_HEIGHT = 32;
 
+export const listTableFeatures = tableFeatures({ columnSizingFeature, columnResizingFeature });
+
 // Column definitions for the list view
 export function useTable(files: File[]) {
   // Memoize files array reference to prevent unnecessary table updates
   const stableFiles = useMemo(() => files, [JSON.stringify(files.map(f => f.id))]);
 
-  const columns = useMemo<ColumnDef<File>[]>(
+  const columns = useMemo<ColumnDef<typeof listTableFeatures, File>[]>(
     () => [
       {
         id: "name",
@@ -58,16 +62,14 @@ export function useTable(files: File[]) {
     []
   );
 
-  const coreRowModel = useMemo(() => getCoreRowModel<File>(), []);
-
-  const table = useReactTable({
+  const table = useReactTableV9({
+    features: listTableFeatures,
     data: stableFiles,
     columns,
     defaultColumn: {
       minSize: 60,
       maxSize: 500,
     },
-    getCoreRowModel: coreRowModel,
     columnResizeMode: "onChange",
     getRowId: (row) => row.id,
   });

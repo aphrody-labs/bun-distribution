@@ -8,14 +8,14 @@ import { File as FileComponent } from "../../File";
 import { useExplorer } from "../../context";
 import { useSelection } from "../../SelectionContext";
 import { TagPill } from "../../../../components/Tags";
-import { ROW_HEIGHT, TABLE_PADDING_X } from "./useTable";
+import { ROW_HEIGHT, TABLE_PADDING_X, type listTableFeatures } from "./useTable";
 import { useFileContextMenu } from "../../hooks/useFileContextMenu";
 import { isVirtualFile } from '@aphrody/drive-client';
 import { InlineNameEdit } from "../../components/InlineNameEdit";
 import { useOpenWith } from "../../../../hooks/useOpenWith";
 
 interface TableRowProps {
-	row: Row<File>;
+	row: Row<typeof listTableFeatures, File>;
 	file: File;
 	files: File[];
 	index: number;
@@ -104,7 +104,7 @@ export const TableRow = memo(
 			[file, files, isSelected, selectFile, contextMenu],
 		);
 
-		const cells = row.getVisibleCells();
+		const cells = row.getAllCells();
 
 		return (
 			<div
