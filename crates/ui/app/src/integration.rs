@@ -491,7 +491,12 @@ pub fn build_app_menu(app: &AppHandle) -> tauri::Result<()> {
 
     let menu =
         Menu::with_items(app, &[&file_menu, &edit_menu, &view_menu, &window_menu, &help_menu])?;
-    let _ = app.set_menu(menu);
+    // macOS shows the app menu in the system menu bar. Windows and Linux would attach it inside
+    // every frameless window (main, splash, pet) above the custom title bar; there the shell's
+    // own controls and the global Alt+Space shortcut cover these actions instead.
+    if cfg!(target_os = "macos") {
+        let _ = app.set_menu(menu);
+    }
     Ok(())
 }
 
