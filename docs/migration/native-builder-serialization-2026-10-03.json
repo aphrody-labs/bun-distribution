@@ -1,0 +1,47 @@
+{
+  "date": "2026-10-03",
+  "status": "partial",
+  "changes": [
+    {
+      "commit": "54c91b3c6",
+      "description": "Native source builds and package build/test scripts use cargo-serial.sh; missing wrapper fails before build; inherited sccache retained."
+    },
+    {
+      "commit": "d04b3c07c",
+      "description": "Cargo-generated clean snapshot lock drops obsolete Infra rustix and WSL aphrody-proc edges; shared working tree retains edges needed by uncommitted manifests."
+    }
+  ],
+  "validation": {
+    "native_builder_source_tests": {
+      "passed": 10,
+      "failed": 0,
+      "log": "/tmp/aphrody-native-builder-source-tests.log"
+    },
+    "ui_dist_assets": {
+      "passed": 3,
+      "log": "/tmp/aphrody-ui-dist-assets-tests.log"
+    },
+    "infra_typecheck": "passed",
+    "native_binding_typecheck": "passed",
+    "scoped_lint": "passed with existing warnings",
+    "dirty_source_release": {
+      "compilation": "passed",
+      "production_loading": "correctly rejected dirty provenance",
+      "log": "/tmp/aphrody-native-release-build.log"
+    },
+    "clean_source_release": {
+      "status": "waiting for shared Cargo lock",
+      "log": "/tmp/aphrody-native-clean-release.log"
+    },
+    "clean_source_check": {
+      "status": "passed",
+      "seconds": 395,
+      "log": "/tmp/aphrody-native-clean-lock-check.log"
+    }
+  },
+  "limitations": [
+    "Linux only; Windows and macOS release packaging not qualified.",
+    "No production installation changed.",
+    "Shared working tree changes are not attributed to Codex merely by presence."
+  ]
+}
