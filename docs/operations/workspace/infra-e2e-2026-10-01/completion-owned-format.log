@@ -1,6 +1,0 @@
-Checking formatting...
-
-packages/infra/workspace/src/workspace-layout.ts (0ms)
-
-Format issues found in above 1 files. Run without `--check` to fix.
-Finished in 10ms on 112 files using 20 threads.

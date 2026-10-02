@@ -14,7 +14,7 @@ and is the wrong tool for a few. Each section below states which.
 ## 1. From `just` (justfile)
 
 **DO NOT migrate.** The `aphrody-ai` repository explicitly ships and maintains a
-[`Justfile`](../Justfile) (`just ci`, `just check`, `just test`) that wraps Cargo, Bun,
+`Justfile` (`just ci`, `just check`, `just test`) that wraps Cargo, Bun,
 and uv gates in canonical order. Keep `just` for command recipe ergonomics, and use
 `aphrody` for the AI layer, agent engine, and local inference runtime.
 

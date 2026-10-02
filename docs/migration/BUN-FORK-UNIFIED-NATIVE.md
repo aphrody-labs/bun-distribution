@@ -20,7 +20,7 @@ Each family keeps its existing string-free owner. The old independent
 `N2B_NATIVE_LIB` and `APHRODY_OXC_LIB` selectors do not select separate
 libraries in the builtin.
 
-The builtin and [`@aphrody/bun`](../../packages/bun/aphrody/src/library.ts)
+The builtin and [`@aphrody/bun`](../../packages/interop/native/src/library.ts)
 share `globalThis[Symbol.for("aphrody.ffi.library.v1")]` with an absolute
 `path`, the `bun:ffi` `library` binding and its `owner`. The package expands
 builtin-first bindings by opening its full symbol set before closing the
@@ -67,9 +67,9 @@ Each run asserted exact N2B report equality with the package scanner, source
 immutability in check mode, exact Oxc format/minify/lint equality with the
 package calls, successful captured `--version`, the expected shared handle
 upgrade/reuse, and close/reload without stale bindings. Native contract tests
-are retained at [`test-native.test.ts`](../../packages/bun/aphrody/test-native.test.ts),
+are retained at `test-native.test.ts`,
 with the actual fork lifecycle fixture at
-[`bun-fork-native.ts`](../../packages/bun/aphrody/fixtures/bun-fork-native.ts).
+`bun-fork-native.ts`.
 The fixture also rejects conflicting overrides from both consumers. Running
 the retained tests with the compiled fork and both original reference libraries
 passed all 8 tests with 58 assertions and no skips. The

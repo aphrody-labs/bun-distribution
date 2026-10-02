@@ -184,6 +184,9 @@ if (operation === "automation-inventory") {
 if (operation === "cargo-boundaries") {
   process.exit(await (await import("./cargo-boundaries.ts")).runCargoBoundaries(rest));
 }
+if (operation === "docs-gen") {
+  process.exit(await (await import("./docs-gen.ts")).runDocsGen(rest));
+}
 if (operation === "workspace-layout") {
   process.exit(await (await import("./workspace-layout.ts")).runWorkspaceLayout(rest));
 }

@@ -9,9 +9,9 @@ shell profiles.
 
 | Surface | Authority | Current contract |
 | --- | --- | --- |
-| Rust | [`rust-toolchain.toml`](../../rust-toolchain.toml) | Pinned stable release and components (rustfmt, clippy), managed by rustup |
-| Bun | [`mise.toml`](../../mise.toml), [`package.json`](../../package.json) | The two Bun versions must match |
-| Python | [`mise.toml`](../../mise.toml), [`py/.python-version`](../../py/.python-version) | Interpreter managed by mise or uv; dependencies locked by `py/uv.lock` |
+| Rust | `rust-toolchain.toml` | Pinned stable release and components (rustfmt, clippy), managed by rustup |
+| Bun | `mise.toml`, `package.json` | The two Bun versions must match |
+| Python | `mise.toml`, `py/.python-version` | Interpreter managed by mise or uv; dependencies locked by `py/uv.lock` |
 
 Run `mise install` at the repository root to provision Bun, Python and uv.
 Rust remains owned by rustup because pinning it in both mise and
@@ -55,7 +55,7 @@ selects the standard user locations above. If one is set, its directory must
 exist and its `bin` directory must agree with `PATH`.
 
 Python commands do not require a repository-wide `PYTHONPATH`. The Python
-workspace configures pytest in [`py/pyproject.toml`](../../py/pyproject.toml),
+workspace configures pytest in `py/pyproject.toml`,
 including the package path needed by the `aphrody` member.
 
 Credentials, cookies and tokens belong in the operating-system credential

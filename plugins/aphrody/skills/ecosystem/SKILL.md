@@ -5,7 +5,7 @@ description: "Find what already exists across all aphrody repos before writing c
 
 # ecosystem — check the generated catalog first
 
-The catalog lives in `docs/ecosystem/` (or `docs/reference/infra/ecosystem/`). It is generated from the checkout, never hand-written:
+The canonical catalog lives in `docs/ecosystem/`. It is generated from the checkout by `scripts/ecosystem.ts` (run through `bun run docs:gen`), never hand-written. Crate, package and app counts per domain are in the generated `docs/reference/workspace/STATE.md`:
 
 | File | Content |
 | --- | --- |

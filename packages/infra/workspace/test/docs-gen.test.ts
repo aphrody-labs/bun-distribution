@@ -1,0 +1,43 @@
+// SPDX-License-Identifier: Apache-2.0
+import { describe, expect, test } from "bun:test";
+import { domainOf, renderState, type Unit } from "../src/docs-gen.ts";
+
+const unit = (over: Partial<Unit>): Unit => ({
+  ecosystem: "rust",
+  name: "x",
+  path: "crates/ai/x",
+  domain: "ai",
+  role: "crate",
+  version: "0.1.0",
+  kinds: ["lib"],
+  tests: true,
+  todos: 0,
+  lastCommit: "2026-10-02",
+  ...over,
+});
+
+describe("docs-gen", () => {
+  test("domainOf reads the domain segment", () => {
+    expect(domainOf("crates/ai/mcp")).toBe("ai");
+    expect(domainOf("packages/infra/workspace")).toBe("infra");
+    expect(domainOf("apps/rg/website")).toBe("rg");
+    expect(domainOf("apps/cli")).toBe("cli");
+  });
+
+  test("renderState counts crates, packages and apps per domain", () => {
+    const text = renderState(
+      [
+        unit({}),
+        unit({ name: "y", path: "crates/ai/y", todos: 2, tests: false }),
+        unit({ ecosystem: "bun", name: "@aphrody/z", path: "packages/ai/z", role: "package" }),
+        unit({ name: "cli", path: "apps/cli", domain: "cli", role: "app", kinds: ["bin"] }),
+      ],
+      ["crates/os/drive"],
+      [],
+    );
+    expect(text).toContain("Totals: **2 crates**, **1 packages**, **1 apps**");
+    expect(text).toContain("| [ai](#ai) | 2 | 1 | 0 | 2 |");
+    expect(text).toContain("- `crates/os/drive`");
+    expect(text).toContain("| `y` | [crates/ai/y](../../../crates/ai/y) | rust crate | 0.1.0 | lib | no | 2 | 2026-10-02 |");
+  });
+});

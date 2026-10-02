@@ -4,13 +4,13 @@
 Current source ownership, checked on 2026-10-02. The root
 [Cargo workspace](../../../Cargo.toml) and [Bun workspace](../../../package.json)
 own first-party dependencies. Retired split repositories are not build inputs.
-The [ecosystem catalogue](./ecosystem/ECOSYSTEM.md) is the generated inventory.
+The [ecosystem catalogue](../../ecosystem/ECOSYSTEM.md) is the generated inventory.
 
 ## Owners
 
 | Capability | Source owner | Boundary |
 | --- | --- | --- |
-| Bun runtime fork | [Fork pin](../../../config/bun-fork.json), private `aphrody-labs/bun` | JavaScriptCore runtime, bundler, package manager and tests. The fork is distinct from the installed upstream Bun executable. |
+| Bun runtime fork | Fork pin, private `aphrody-labs/bun` | JavaScriptCore runtime, bundler, package manager and tests. The fork is distinct from the installed upstream Bun executable. |
 | Toolchain discovery | [aphrody-toolchains](../../../crates/compat/toolchains/) | Installed executable discovery and version pins. |
 | Node-to-Bun analysis | [N2B crates](../../../crates/compat/) and [surface inventory](../compat/n2b/BUN-SURFACE.md) | Static analysis, migration rules and reports; source analysis does not execute remote JavaScript. |
 | Bun N2B consumers | [client](../../../packages/compat/n2b-client/), [plugin](../../../packages/compat/n2b-plugin/) | Thin bindings to the owned scanner and build-time analysis. |

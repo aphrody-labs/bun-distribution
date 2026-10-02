@@ -53,13 +53,13 @@ et un critère de retrait ; elle ne vaut pas clôture.
 L'[architecture actuelle](../../architecture/workspace/ARCHITECTURE.md) décrit les frontières encore
 actives. Avant chaque bascule, mettre à jour ses chemins et les plans locaux
 avec la même preuve. Les obligations produit de l'ancien plan sont conservées
-intégralement dans son [archive](./plans/2026-09-29-convergence-previous.md),
+intégralement dans son [archive](../../operations/workspace/HISTORY.md),
 y compris les ajouts non commités présents avant cette rédaction. Elles
 restent à livrer selon les parcours maintenus en section 10.
 
 ## 2. Sources actuelles et limites de l'audit
 
-[Snapshot de cette passe](./plans/2026-09-29-consolidation-snapshot.json) :
+[Snapshot de cette passe](../../operations/workspace/HISTORY.md) :
 heads, branches, modifications locales et résultat de
 `aphrody-ops bridge status`. Il observe **13 racines Bun et 10 binaires** dans
 le catalogue du package central, pas l'ensemble des crates ni leurs exports.
@@ -613,7 +613,7 @@ leurs preuves dans le dépôt propriétaire :
 - [ ] Migrer les données, sauvegardes et schémas avec hashes et reprise
   vérifiable. Une copie de code ou un build ne suffit pas pour retirer NIE.
 
-L'[archive du plan racine précédent](./plans/2026-09-29-convergence-previous.md)
+L'[archive du plan racine précédent](../../operations/workspace/HISTORY.md)
 conserve les autres engagements produit déjà détaillés. Les scénarios et
 gates propriétaires y restent maintenus jusqu'à leur import complet dans les
 deux dépôts cibles.

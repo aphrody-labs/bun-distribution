@@ -38,8 +38,8 @@ successful result. NHITL does not change the task scope or a product's runtime p
 | Cross-repository delivery | [AI plan](../../plans/ai/PLAN.md) |
 | Desktop behavior and appearance | [GUI](../ui/GUI.md), [UI](../../architecture/ui/UI-DESIGN.md), [UX](../../architecture/ui/UX-DESIGN.md) |
 | Native desktop/framework migration | [M3 host plan](../../plans/ui/design/M3-MULTI-HOST-PLAN.md) |
-| Hosts, services, routes and releases | `aphrody-infra/config/`, `aphrody-infra/inventory/` |
-| Existing crates, commands and tools | [Generated ecosystem](../infra/ecosystem/ECOSYSTEM.md) |
+| Hosts, services, routes and releases | Root `config/`, `inventory/` and `crates/infra/` in this monorepo; see [Infra authority](../infra/UNIFIED-AGENT-CONTEXT.md) |
+| Existing crates, commands and tools | [Generated ecosystem](../../ecosystem/ECOSYSTEM.md) |
 
 `AGENTS.md` owns execution rules, README owns entry points, PLAN owns remaining
 work and acceptance. Link to these authorities instead of copying their content.

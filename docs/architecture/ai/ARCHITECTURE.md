@@ -61,7 +61,7 @@ External MCP and A2A integrations remain valid protocol boundaries.
 | `aphrody-native`, `aphrody-compat` | Existing native and compatibility facilities consumed by their declared owners |
 
 The actual dependency graph and feature names are in Cargo manifests and the
-[generated ecosystem catalogue](../../reference/infra/ecosystem/ECOSYSTEM.md).
+[generated ecosystem catalogue](../../ecosystem/ECOSYSTEM.md).
 Repository/crate counts are snapshots, not design constraints. No copied sibling
 implementation, reverse AI dependency, duplicate infrastructure registry or second
 job queue is introduced by this architecture.

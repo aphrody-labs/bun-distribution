@@ -125,9 +125,9 @@ Published results will appear here once YOLO #41 lands.
 
 ## License
 
-Apache-2.0. See [LICENSE](../../LICENSE).
+Apache-2.0. See LICENSE.
 
 ## Related crates
 
-- [`base`](../aphrody-base) — no-std primitives, `Vfs`, and `Crypto` used by `backend`.
+- `base` — no-std primitives, `Vfs`, and `Crypto` used by `backend`.
 - `aphrody` — the Aphrody CLI binary in the sibling `aphrody-ai` repository.

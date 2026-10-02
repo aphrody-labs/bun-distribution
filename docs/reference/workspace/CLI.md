@@ -173,7 +173,7 @@ Sources : [manifest développeur](../../../config/developer-cli-tools.json),
 Agent Home collecte les exécutables présents et le catalogue kernel depuis le
 poste. Relancer son générateur après une installation et consulter les profils
 produits. Le catalogue historique
-[CLI de l’ancien écosystème](../infra/ecosystem/CLI.md) est une preuve importée,
+[CLI de l’ancien écosystème](../../ecosystem/CLI.md) est une preuve importée,
 avec des chemins antérieurs à la migration ; utiliser les manifests actuels et
 `<commande> --help` pour les commandes effectivement installées.
 

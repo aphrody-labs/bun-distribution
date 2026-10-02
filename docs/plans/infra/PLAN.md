@@ -60,9 +60,9 @@ observations in the append-only ledger retain their original dates and scope.
 
 ### P0 — Aphrody Bun fork
 
-- Treat the [Aphrody Bun fork](../../operations/infra/BUN-FORK-OPERATIONS.md) as the primary platform
+- Treat the Aphrody Bun fork as the primary platform
   development track. Pin its `main` and upstream revisions in
-  [`config/bun-fork.json`](../../../config/bun-fork.json), qualify native ABI and
+  `config/bun-fork.json`, qualify native ABI and
   cross-platform artifacts, then connect verified consumers.
 
 ### P0 — correctness of the working tree

@@ -22,7 +22,7 @@ raster and sprite-sheet owners were imported exclusively from the published
 Cargo checkout `dfdf720eb9116064bd7229582d36490964e30415`; the original UI
 working tree was not accessed.
 
-IECODE owners retain the original [commercial NIE license](../reference/iecode/NIE-LICENSE)
+IECODE owners retain the original commercial NIE license
 and `publish = false`. The four reused owners' previously missing license fields
 and public geom/video/emu flags were corrected without implementation changes.
 Both UI owners retain their Apache-2.0 notices and copied
@@ -121,7 +121,7 @@ the optional GPU renderer and the aggregate.
 
 The installed Python engine qualification passes the unchanged 16 tests with
 zero skips and validates all 30 consumer symbols and ctypes layouts. Its
-[retained proof](../../../aphrody-py/docs/migration/nie-python-native-qualification.json)
+retained proof
 links the copied binary hash to this extraction manifest. The aggregate build,
 symbol audit and artifact digest are recorded in the JSON manifest; an imported
 source file alone does not prove them. The artifact was built from a concurrent

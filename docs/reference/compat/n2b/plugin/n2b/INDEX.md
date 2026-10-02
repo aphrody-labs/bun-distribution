@@ -16,6 +16,6 @@ Edit these files in place only to fix facts; there is no upstream to re-sync fro
 | [`README.md`](../../../../../products/compat/n2b/plugin/n2b/README.md) | Index of the research notes, Bun notes and reports below. |
 | [`CHANGELOG.md`](./CHANGELOG.md) | n2b version history up to the move into this repository. |
 | [`build-your-own-x.md`](./build-your-own-x.md) | "Build your own X" reading list (Rust and TypeScript). |
-| [`bun/`](bun/) | Bun roadmap (issue #159) and its mapping to n2b rules. |
-| [`research/`](research/) | Rust library, web stack, monorepo architecture, wasm-bindgen and Discord stack studies. |
+| `bun/` | Bun roadmap (issue #159) and its mapping to n2b rules. |
+| `research/` | Rust library, web stack, monorepo architecture, wasm-bindgen and Discord stack studies. |
 | [`wasm/`](wasm/) | wasm-bindgen / wasm-pack Bun patches and n2b audit reports of binaryen, wabt, wasm-bindgen, wasm-pack. |

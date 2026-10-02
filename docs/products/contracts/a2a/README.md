@@ -35,7 +35,7 @@ Dry-run for the server executor: `APHRODY_A2A_DRY_RUN=1 aphrody a2a serve`
 
 ## `ai.json`
 
-The repository root [`ai.json`](../../ai.json) is the reference manifest of the
+The repository root `ai.json` is the reference manifest of the
 `aphrody` agent (parsed by the `aphrody-a2a-coord` tests). It declares:
 
 - A2A **1.0** (`a2a_protocol_version`, `spec: a2a/v1.0`) and the public

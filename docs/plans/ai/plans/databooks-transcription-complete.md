@@ -5,4 +5,4 @@ This historical Databooks transcription plan is complete and no longer drives im
 
 The full plan, including its original evidence and decisions, is kept in the Git history of the former `aphrody` monorepo (`docs/archive/plans/databooks-transcription-complete.md`).
 
-Current work and acceptance evidence are tracked only in [PLAN.md](../_source/PLAN.md).
+Current work and acceptance evidence are tracked only in PLAN.md.

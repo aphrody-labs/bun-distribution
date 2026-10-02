@@ -364,7 +364,7 @@ que leurs tags existent. Cette publication les livre toutes d'un coup, avec les 
   rejetés → `RestartPreventExitStatus`, **130** = arrêt propre →
   `SuccessExitStatus`) et watchdog commun `bxc-x-purge-doctor.timer`
   (`scripts/x-purge-doctor.sh`, 10 min). Opt-in — non installés par
-  `bxc-control deploy`. Procédure dans [`DEPLOY.md`](DEPLOY.md).
+  `bxc-control deploy`. Procédure dans `DEPLOY.md`.
 - `EXIT.NOPERM` (77, sysexits `EX_NOPERM`) dans `src/cli/shared.ts` : credentials
   rejetés, réessayer ne sert à rien.
 
@@ -471,38 +471,38 @@ que leurs tags existent. Cette publication les livre toutes d'un coup, avec les 
 
 ### Added
 
-- Script unifié [bxc-control.sh](file://~/bxc/scripts/bxc-control.sh) pour l'automatisation des tâches de déploiement et d'administration sur le VPS (build, backup, déploiement, logs, et SSH tunnel).
-- Configuration [biome.json](file://~/bxc/biome.json) pour formater l'intégralité du projet en ignorant les répertoires tiers (`vendor/`, `tmp/`, `dist/`).
+- Script unifié bxc-control.sh pour l'automatisation des tâches de déploiement et d'administration sur le VPS (build, backup, déploiement, logs, et SSH tunnel).
+- Configuration biome.json pour formater l'intégralité du projet en ignorant les répertoires tiers (`vendor/`, `tmp/`, `dist/`).
 
 ### Fixed
 
-- Résolution d'un bug de double démarrage du serveur CDP sur le port 9222 dans [serve.ts](file://~/bxc/src/cli/serve.ts#L969-L975) lors de l'import du module par le routeur principal, via l'ajout d'une garde `import.meta.main`.
+- Résolution d'un bug de double démarrage du serveur CDP sur le port 9222 dans [serve.ts](../../../../../packages/ui/material-web/tests-web/serve.ts#L969-L975) lors de l'import du module par le routeur principal, via l'ajout d'une garde `import.meta.main`.
 - Correction des permissions du dossier `/var/log/bxc/` pour permettre à l'utilisateur `ubuntu` d'écrire dans les logs du service systemd.
 - Vérification complète de la compilation cross-platform sur Linux, Windows MSVC, et WebAssembly (`wasm32-unknown-unknown` sur `bxc-rust-bridge` et `obscura-dom`).
 
 ### Documentation
 
-- Fusion complète des notes techniques de Lightpanda Windows dans le guide centralisé [BUILD-WINDOWS.md](file://~/bxc/docs/BUILD-WINDOWS.md) et suppression du fichier doublon `docs/LIGHTPANDA-WINDOWS.md`.
-- Mise à jour de [CLAUDE.md](file://~/bxc/CLAUDE.md) pour y documenter la procédure de mise à jour automatisée de version.
+- Fusion complète des notes techniques de Lightpanda Windows dans le guide centralisé [BUILD-WINDOWS.md](../../web/BUILD-WINDOWS.md) et suppression du fichier doublon `docs/LIGHTPANDA-WINDOWS.md`.
+- Mise à jour de [CLAUDE.md](CLAUDE.md) pour y documenter la procédure de mise à jour automatisée de version.
 
 ## [0.5.3] - 2026-05-29
 
 ### Refactored
 
-- Restructuration, unification et modularisation complète du scraper et de l'analyseur métagame de **WorldBeyblade** sous le module unifié [worldbeyblade](file://~/bxc/packages/worldbeyblade/src/).
+- Restructuration, unification et modularisation complète du scraper et de l'analyseur métagame de **WorldBeyblade** sous le module unifié worldbeyblade.
 - Décomposition de la logique monolithique en sous-modules spécialisés :
-  - [types.ts](file://~/bxc/packages/worldbeyblade/src/types.ts) : interfaces et typages stricts (sans `any`).
-  - [scraper.ts](file://~/bxc/packages/worldbeyblade/src/scraper.ts) : client d'automatisation de forum MyBB (profiles, threads, MPs).
-  - [rankings.ts](file://~/bxc/packages/worldbeyblade/src/rankings.ts) : synchronisation et parsing hors-ligne des classements via Wayback CDX.
-  - [analytics.ts](file://~/bxc/packages/worldbeyblade/src/analytics.ts) : normalisation des pièces (Blades, Bits) et calculs mathématiques (Podium Score, Combo Synergy).
-  - [index.ts](file://~/bxc/packages/worldbeyblade/src/index.ts) : export "barrel" propre.
-- Simplification du script d'analyse [bbx_metagame_analyst.ts](file://~/bxc/scripts/bbx_metagame_analyst.ts) (-500 lignes de code dupliqué) en important les fonctions analytiques partagées du module principal.
+  - types.ts : interfaces et typages stricts (sans `any`).
+  - scraper.ts : client d'automatisation de forum MyBB (profiles, threads, MPs).
+  - rankings.ts : synchronisation et parsing hors-ligne des classements via Wayback CDX.
+  - [analytics.ts](../../../../../apps/shenron/site/src/lib/analytics.ts) : normalisation des pièces (Blades, Bits) et calculs mathématiques (Podium Score, Combo Synergy).
+  - index.ts : export "barrel" propre.
+- Simplification du script d'analyse bbx_metagame_analyst.ts (-500 lignes de code dupliqué) en important les fonctions analytiques partagées du module principal.
 - Mise en conformité stricte `oxlint` et formatage `biome` de tous les fichiers modifiés.
-- Ajout de tests unitaires hors-ligne complets pour l'analyse métagame dans [worldbeyblade.test.ts](file://~/bxc/test/scrapers/worldbeyblade.test.ts).
+- Ajout de tests unitaires hors-ligne complets pour l'analyse métagame dans worldbeyblade.test.ts.
 
 ### Documentation
 
-- Alignement du [README.md](file://~/bxc/README.md) et de la landing page GitHub Pages [index.html](file://~/bxc/docs/index.html) avec les meilleures pratiques (Table des matières, balises meta de SEO, liens vers les guides développeurs de Google Atlas et Playwright Killer Plan, versioning).
+- Alignement du [README.md](../../../../products/web/apps/bxc/README.md) et de la landing page GitHub Pages index.html avec les meilleures pratiques (Table des matières, balises meta de SEO, liens vers les guides développeurs de Google Atlas et Playwright Killer Plan, versioning).
 
 ## [0.5.2] - 2026-05-29
 

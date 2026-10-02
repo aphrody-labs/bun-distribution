@@ -544,6 +544,7 @@ export async function runInfraAudit(args: string[]): Promise<number> {
       );
     for (const commandArgs of [
       ["workspace-layout"],
+      ["docs-gen", "--root", root, "--check", "--skip-ecosystem"],
       ["bun-workspace", "--json"],
       ["automation-inventory", "--root", root, "--json"],
       ["repository-state", "--root", root, "--json"],

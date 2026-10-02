@@ -6,7 +6,7 @@ Basic authentication, SSE bridge, sidecar delivery and SPA fallback. The
 original `aphrody-ui/drive/apps/server` remains in place until runtime parity
 and migration are proven.
 
-The imported source is licensed under [FSL-1.1-ALv2](LICENSE), separate from
+The imported source is licensed under FSL-1.1-ALv2, separate from
 the Apache-2.0 `aphrody-web` workspace. See [PROVENANCE.md](../../../reference/web/drive-server/PROVENANCE.md).
 The FSL terms restrict managed cloud and hosted services to third parties;
 rights must be reviewed before any such deployment.
@@ -35,5 +35,5 @@ that still needs direct `/`, `/health`, `/rpc`, `/events` or `/sidecar/*` routes
 Bearer-authenticated gateway under `/api/v1/drive/*`. That gateway is a
 separate surface with documented limits; it does not replace this server's
 full HTTP and SPA contract. Infra deployment and data cutover remain to be
-qualified. The recipes in [`upstream/`](upstream/) are archived source
+qualified. The recipes in `upstream/` are archived source
 references only and must not be run as Aphrody production deployment steps.

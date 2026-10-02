@@ -3,27 +3,24 @@
 Snapshot of 2026-10-02, read from the working tree (uncommitted changes of
 other agents included). Evidence is `file:line`. "Unverified" means the fact
 was not checked against a build or a run; nothing here was compiled.
+Sections 1, 2 and 3 reflect the n2b deduplication of 2026-10-02 (section 6).
 
 ## 1. N2B, Rust side
 
 All crates live in `crates/compat/`, inherit versions from the root
 `[workspace.dependencies]` and are path members.
 
-| Crate (package name) | Path | Kind | Internal deps | Notable external deps | Features | `#[test]` count* | Integration tests |
-|---|---|---|---|---|---|---|---|
-| `aphrody-n2b` | `crates/compat/n2b` | lib + bin `n2b` (`src/main.rs`, Cargo.toml:16) | n2b-core, `aphrody-toolchains` | clap, tokio, octocrab, which, similar, colored; dev: assert_cmd, jsonschema | `default = []`, `ai = ["dep:fastembed"]` | 21 | `tests/contract.rs`, `tests/baselines/`, `tests/fixtures/` |
-| `aphrody-n2b-core` | `crates/compat/n2b-core` | lib | n2b-types, -util, -ai, -github, -report, -rules, -scanners | serde_yaml, regex, memchr, crossbeam-channel, ignore, globset, url, walkdir, which, reqwest, octocrab, tokio; dev: proptest | `default = []` | 19 | `tests/proptest_package_json.rs`, `tests/proptest_source.rs` |
-| `aphrody-n2b-rules` | `crates/compat/n2b-rules` | lib | n2b-types, -util, -registry | **oxc_allocator, oxc_parser, oxc_ast, oxc_ast_visit, oxc_span** (Cargo.toml:27-31; used in `src/imports_ast.rs`) | none | 12 | `tests/cli_commands.rs` |
-| `aphrody-n2b-scanners` | `crates/compat/n2b-scanners` | lib | n2b-types, -util, -rules | serde_yaml, regex | none | 17 | none |
-| `aphrody-n2b-registry` | `crates/compat/n2b-registry` | lib | n2b-types | toml, regex | none | 8 | none |
-| `aphrody-n2b-report` | `crates/compat/n2b-report` | lib | n2b-types, -ai, -util | colored | none | 0 | none |
-| `aphrody-n2b-util` | `crates/compat/n2b-util` | lib | n2b-types | memchr | none | 7 | `tests/edits.rs` |
-| `aphrody-n2b-native` | `crates/compat/n2b-native` | rlib (C ABI exported via `aphrody-ffi`) | n2b-core | memchr; dev: tempfile | none | 3 | none |
-| `aphrody-n2b-github` | `crates/compat/n2b-github` | lib | none | octocrab | none | 0 | none |
-| `aphrody-n2b-ai` | `crates/compat/n2b-ai` | lib | none | serde | none | 0 | none |
-| `aphrody-n2b-types` | `crates/compat/n2b-types` | lib | none | serde | none | 0 | none |
+| Crate (package name) | Path | Kind | Internal deps | Notable external deps | Features |
+|---|---|---|---|---|---|
+| `aphrody-n2b` | `crates/compat/n2b` | lib + bin `n2b` (`src/main.rs`) | n2b-core, `aphrody-toolchains` | clap, tokio, octocrab, which, similar, colored; dev: assert_cmd, jsonschema | `default = []`, `ai = ["dep:fastembed"]` |
+| `aphrody-n2b-core` | `crates/compat/n2b-core` | lib; modules `ai`, `audit`, `github`, `llmstxt`, `manifest`, `report`, `report_card`, `rules`, `run`, `scanners`, `util` | n2b-types, n2b-registry | **oxc_allocator, oxc_parser, oxc_ast, oxc_ast_visit, oxc_span** (`rules/imports_ast.rs`), serde_yaml, regex, memchr, crossbeam-channel, ignore, globset, url, walkdir, which, reqwest, octocrab, tokio, colored; dev: proptest | `default = []` |
+| `aphrody-n2b-registry` | `crates/compat/n2b-registry` | lib; rule tables `registry/{apis,modules,packages,cli,globals}.toml` | n2b-types | toml, regex | none |
+| `aphrody-n2b-native` | `crates/compat/n2b-native` | rlib (C ABI exported via `aphrody-ffi`) | n2b-core | memchr; dev: tempfile | none |
+| `aphrody-n2b-types` | `crates/compat/n2b-types` | lib (generated `schema.rs` + `types.rs`) | none | serde | none |
 
-\* `grep -c '#[test]'` over `src/` and `tests/`; proptest and async tests may be undercounted.
+Integration tests of n2b-core: `tests/proptest_package_json.rs`, `tests/proptest_source.rs`,
+`tests/rules_cli_commands.rs` (was `n2b-rules/tests/cli_commands.rs`), `tests/util_edits.rs`
+(was `n2b-util/tests/edits.rs`). n2b keeps `tests/contract.rs`, `tests/baselines/`, `tests/fixtures/`.
 
 Resolved external versions (Cargo.lock): `fastembed 5.17.3`, `octocrab 0.54.2` (crates.io).
 
@@ -33,7 +30,7 @@ Resolved external versions (Cargo.lock): `fastembed 5.17.3`, `octocrab 0.54.2` (
 |---|---|---|
 | `apps/cli` (`aphrody` binary) | `apps/cli/Cargo.toml:130` | `aphrody-n2b`; subcommand `aphrody n2b` = `Commands::N2b` (`apps/cli/src/lib.rs:521`, dispatch `:1742` -> `commands::N2bCommand`) |
 | `apps/cli` package manager | `apps/cli/src/package_cmd.rs:18,104,107` | `PackageName::N2b`, `cargo_package: Some("n2b")` (the Cargo package is `aphrody-n2b`; whether this resolves is unverified) |
-| `crates/ai/mcp` (MCP server) | `crates/ai/mcp/Cargo.toml:146-148` | n2b-core, n2b-report, n2b-types; MCP tool `n2b` (`crates/ai/mcp/src/main.rs:2216-2227`, modes check/fix/migrate), contract `n2b` in `aphrody_schema` (`main.rs:2182-2207`) |
+| `crates/ai/mcp` (MCP server) | `crates/ai/mcp/Cargo.toml:146-147` | n2b-core, n2b-types; MCP tool `n2b` (`crates/ai/mcp/src/main.rs:2216-2240`, modes check/fix/migrate, renders with `aphrody_n2b_core::report::render_json`), contract `n2b` in `aphrody_schema` (`main.rs:2182-2187`, `include_str!` of `crates/contracts/schema/v2.json`) |
 | `crates/compat/bun-docs` | `crates/compat/bun-docs/Cargo.toml:16` | n2b-registry (Node->Bun equivalents; listed as MCP tool `bun_node_equivalent` in `docs/reference/workspace/TOOLS.md:157`) |
 | `crates/interop/ffi` (`aphrody-ffi`) | `crates/interop/ffi/Cargo.toml:53`, `src/lib.rs:65` | re-exports `aphrody_n2b_native::*` |
 
@@ -41,9 +38,9 @@ Resolved external versions (Cargo.lock): `fastembed 5.17.3`, `octocrab 0.54.2` (
 
 | Package | Path | Version | Workspace deps | Scripts | Tests |
 |---|---|---|---|---|---|
-| `@aphrody/n2b-core` (dir name `n2b-client`) | `packages/compat/n2b-client` | 0.6.2 | n2b-types, n2b-shims | build, start, dev, typecheck, test | `test/binary-resolution.test.ts`, `test/cli.test.ts`, `test/shims.test.ts` |
+| `@aphrody/n2b-core` (dir name `n2b-client`) | `packages/compat/n2b-client` | 0.6.2 | n2b-types | build, start, dev, typecheck, test | `test/binary-resolution.test.ts`, `test/cli.test.ts`, `test/shims.test.ts` |
 | `@aphrody/n2b-plugin` | `packages/compat/n2b-plugin` | 0.6.2 | n2b-types, n2b-core | typecheck, test | `test-resolution.test.ts` |
-| `@aphrody/n2b-shims` | `packages/compat/n2b-shims` | 0.6.2 | none | build, typecheck | none |
+| `@aphrody/n2b-shims` | `packages/compat/n2b-shims` | 0.6.2 | n2b-core | build, typecheck | none (compatibility alias: every entry re-exports `@aphrody/n2b-core/shims*`) |
 | `@aphrody/n2b-types` | `packages/compat/n2b-types` | 0.6.2 | none | build, typecheck | none |
 
 No package outside `packages/compat` declares a dependency on `@aphrody/n2b-*`
@@ -56,7 +53,8 @@ Other surfaces:
 | Root script | `package.json:290` `"n2b:google": "aphrody n2b packages/google/google"` |
 | Skill | `plugins/aphrody/skills/n2b/SKILL.md` |
 | Agent | `plugins/aphrody/agents/node2bun.md` |
-| Scripts | `scripts/tools/compat/scripts/n2b/{n2b-env.sh,n2b-env.ps1,refactor-start.sh,refactor-start.ps1,autofix-toolchain.ps1,coverage-daemon.ts,generate-schema-types.ts}`, `scripts/audit/compat/scripts/n2b/coverage-check.ts` |
+| Scripts | `scripts/tools/compat/scripts/n2b/{autofix-toolchain.ps1,coverage-daemon.ts,generate-schema-types.ts}`, `scripts/audit/compat/scripts/n2b/coverage-check.ts` |
+| Docs | `docs/<category>/compat/n2b/{node,plugin,bun}` (bun: 26 residual files; canonical Bun docs are `docs/<category>/upstream-bun`) |
 
 ## 3. Oxc, Rust side
 
@@ -68,23 +66,23 @@ Cargo.lock, including transitive ones).
 
 | Crate | Root Cargo.toml line | Lock version | Direct workspace users |
 |---|---|---|---|
-| `oxc_allocator` | 232 | 0.152.0 | oxc-bridge, n2b-rules, rag-core (opt) |
-| `oxc_ast` | 233 | 0.152.0 | n2b-rules, rag-core (opt) |
-| `oxc_ast_visit` | 353 | 0.152.0 | n2b-rules |
+| `oxc_allocator` | 232 | 0.152.0 | oxc-bridge, n2b-core, rag-core (opt) |
+| `oxc_ast` | 233 | 0.152.0 | n2b-core, rag-core (opt) |
+| `oxc_ast_visit` | 353 | 0.152.0 | n2b-core |
 | `oxc_codegen` (`default-features = false`) | 40 | 0.152.0 | oxc-bridge |
 | `oxc_formatter` | 41 | 0.71.0 | oxc-bridge |
 | `oxc_linter` | 42 | 1.86.0 | oxc-bridge |
 | `oxc_minifier` | 43 | 0.152.0 | oxc-bridge |
-| `oxc_parser` | 234 | 0.152.0 | oxc-bridge, n2b-rules, rag-core (opt) |
+| `oxc_parser` | 234 | 0.152.0 | oxc-bridge, n2b-core, rag-core (opt) |
 | `oxc_semantic` | 44 | 0.152.0 | oxc-bridge |
-| `oxc_span` | 235 | 0.152.0 | oxc-bridge, n2b-rules, rag-core (opt) |
+| `oxc_span` | 235 | 0.152.0 | oxc-bridge, n2b-core, rag-core (opt) |
 
 Workspace crates using Oxc:
 
 | Crate | Evidence | Notes |
 |---|---|---|
 | `aphrody-oxc-bridge` (`crates/compat/oxc-bridge`, rlib, root `Cargo.toml:38`) | `crates/compat/oxc-bridge/Cargo.toml:12-19` | C ABI (`aphrody_oxc_lint`, `aphrody_oxc_free`, ...); 2 `#[test]` |
-| `aphrody-n2b-rules` | `crates/compat/n2b-rules/Cargo.toml:27-31` | AST import scan |
+| `aphrody-n2b-core` | `crates/compat/n2b-core/Cargo.toml:40-44` | AST import scan (`src/rules/imports_ast.rs`) |
 | `aphrody-rag-core` | `crates/ai/rag-core/Cargo.toml:15,20,32-35` | feature `oxc` (**default-on**) -> JS/TS chunker `src/jsts_chunker.rs`; off for wasm32 |
 
 Consumers of `aphrody-oxc-bridge`: `crates/interop/ffi/Cargo.toml:54`
@@ -174,3 +172,39 @@ Historical evidence (dated logs/JSON, keep as record): `inventory/2026-09-30-{bu
 `docs/plans/2026-09-29-consolidation-initial-archive.md`,
 `docs/research/os/low-level-audit-2026-10-01/{bun-chaine,abi}.md`,
 `apps/shenron/bot/dist/shenron.map` (build output).
+
+## 6. N2B deduplication (2026-10-02)
+
+Nothing below was compiled: Cargo is run only by the integrating agent. Bun gates were run.
+
+### Before / after
+
+| Measure | Before (HEAD `c7d6863aa`) | After (working tree) |
+|---|---|---|
+| Rust crates `crates/compat/n2b*` | 11 | 5 (`n2b`, `n2b-core`, `n2b-native`, `n2b-registry`, `n2b-types`) |
+| Files in `crates/compat/n2b*` | 122 | 111 |
+| Lines, all files in `crates/compat/n2b*` | 30,111 | 29,738 |
+| Lines, `*.rs` in `crates/compat/n2b*` | 21,723 | 21,724 (code moved, not rewritten; see below) |
+| Bun packages `packages/compat/n2b-*` | 4 | 4 (`n2b-shims` is now a 5-file re-export alias) |
+| Lines, `*.ts` in `packages/compat` | 1,081 | 1,102 |
+| Files under `docs/*/compat/n2b/` | 423 | 114 |
+| Lines under `docs/*/compat/n2b/` | 195,911 | 151,861 |
+| n2b scripts (`scripts/{tools,audit}/compat/scripts/n2b`) | 12 files, 1,059 lines | 4 files, 612 lines |
+| `[workspace.dependencies]` n2b entries | 11 | 5 |
+
+### What moved where
+
+| Before | After | Alias / contract kept |
+|---|---|---|
+| crates `aphrody-n2b-{ai,github,util,report,rules,scanners}` (no consumer outside n2b except mcp -> report) | modules `aphrody_n2b_core::{ai,github,util,report,rules,scanners}` (`crates/compat/n2b-core/src/<name>/`) | same public paths `aphrody_n2b_core::<name>` that n2b-core already re-exported; none of the six crates is on crates.io (API 404) |
+| `aphrody_n2b_report::render_json` in `crates/ai/mcp/src/main.rs` | `aphrody_n2b_core::report::render_json` | MCP tool `n2b` unchanged |
+| private `write` + `which` copies in `n2b/src/{app,linux,wasm,win32}_cmd.rs` | `crates/compat/n2b/src/scaffold_fs.rs` (`write_tagged`, `which`) | output and log tags unchanged |
+| `@aphrody/n2b-shims` sources | `@aphrody/n2b-core/shims{,/env,/fs,/path,/shell}` (`packages/compat/n2b-client/src/shims/`) | `@aphrody/n2b-shims` 0.6.2 is published on npm: the package stays as a re-export alias |
+| 309 Bun doc files in `docs/*/compat/n2b/bun/` | `docs/*/upstream-bun/` | per-file aliases + SHA-256 in `docs/migration/n2b-dedup-2026-10-02.json` |
+| `docs/apis/contracts/v2.json` | `crates/contracts/schema/v2.json` | `include_str!` in mcp repointed; alias recorded in the same JSON |
+| Node-to-Bun mapping list in `plugins/aphrody/skills/n2b/SKILL.md` | pointer to `crates/compat/n2b-registry/registry/*.toml`, `aphrody n2b rules`, MCP `bun_node_equivalent` | skill name and triggers unchanged |
+| `update-bun-docs.{sh,ps1}`, `n2b-env.{sh,ps1}`, `refactor-{start,state}.{sh,ps1}` | deleted | `aphrody-ops bun-upstream-docs` remains the Bun-docs entry point |
+
+Kept on purpose: `n2b-types` (consumed by mcp and imported by `@aphrody/n2b-plugin`, and
+`n2b-registry` depends on it), `n2b-registry` (consumed by `bun-docs`, which must not pull n2b-core's
+Oxc, reqwest and octocrab tree), `n2b-native` (re-exported by `aphrody-ffi`).

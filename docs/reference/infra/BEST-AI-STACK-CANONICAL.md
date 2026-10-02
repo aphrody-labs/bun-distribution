@@ -16,8 +16,8 @@ linked page before pinning, and never copy a number from this file without re-ve
 ## Rules
 
 1. **Aphrody first.** Every need is covered by an existing Aphrody crate or command (see the
-   generated catalog [`ecosystem/ECOSYSTEM.md`](./ecosystem/ECOSYSTEM.md) and
-   [`ecosystem/CLI.md`](./ecosystem/CLI.md)). Extend that owner; never add a parallel component.
+   generated catalog [`ecosystem/ECOSYSTEM.md`](../../ecosystem/ECOSYSTEM.md) and
+   [`ecosystem/CLI.md`](../../ecosystem/CLI.md)). Extend that owner; never add a parallel component.
 2. **Third-party projects are upstream dependencies or references**, not replacements. A
    third-party web UI, agent framework or cloud sandbox is never the recommended answer.
 3. **Bleeding edge by operator preference.** Track the newest pre-release/nightly channel

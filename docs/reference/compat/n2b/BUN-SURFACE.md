@@ -27,9 +27,9 @@ in their manifests. The native crate is independently versioned.
 
 | Package | Exports |
 | --- | --- |
-| `@aphrody/n2b-core` | `scan`, `rules`, `promptMarkdown`, `binaryVersion`; `./cli` |
+| `@aphrody/n2b-core` | `scan`, `rules`, `promptMarkdown`, `binaryVersion`; `./cli`; shims `./shims`, `./shims/env`, `./shims/fs`, `./shims/path`, `./shims/shell` (formerly `@aphrody/n2b-shims`, merged 2026-10-02) |
 | `@aphrody/n2b-plugin` | `n2bPlugin()` for `Bun.plugin()`/build findings; native fork scan with CLI fallback |
-| `@aphrody/n2b-shims` | root, `./env`, `./fs`, `./path`, `./shell` |
+| `@aphrody/n2b-shims` | compatibility alias (published 0.6.2 on npm): root, `./env`, `./fs`, `./path`, `./shell` re-export `@aphrody/n2b-core/shims*` |
 | `@aphrody/n2b-types` | generated report types from Contracts JSON schema v2 |
 
 All four package manifests currently declare version 0.6.2. The plugin scans
@@ -41,12 +41,12 @@ the CLI. The default `"auto"` falls back and reports a native scan failure.
 
 ## Contracts and command surface
 
-- `../aphrody-contracts/schema/v2.json` is the report contract. Its generated
+- `crates/contracts/schema/v2.json` is the report contract. Its generated
   TypeScript `N2BReport` contains schema version 2, tool, version, mode, root,
   file count, finding count and files. Findings carry rule IDs, severity,
   confidence, byte ranges, replacement, autofix flags, context and optional
   compatibility metadata.
-- `../aphrody-contracts/schema/n2b.schema.json` describes the `n2b` manifest.
+- `crates/contracts/schema/n2b.schema.json` describes the `n2b` manifest.
   Rust manifest loading and rule overrides live in `aphrody-n2b-core/manifest.rs`.
 - `aphrody-n2b/src/cli/args.rs` owns the complete CLI. Root scan accepts
   `--fix`, `--aggressive`, `--migrate`, `--scaffold-polyfills`, `--report`,

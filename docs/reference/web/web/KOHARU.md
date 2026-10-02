@@ -11,7 +11,7 @@ Aphrody Web integration, data transfer, or deployment.
 Koharu's new headless [`koharu-library`](../../../../crates/koharu/koharu-library/README.md)
 is consumed by the optional `aphrody-manga` feature in Aphrody AI; its focused
 Cargo check passed. The image, ZIP/CBZ, RAR, and PDF importer moved from the
-Tauri command module into [`koharu-library/src/import/`](../../../aphrody-koharu/crates/koharu-library/src/import/),
+Tauri command module into [`koharu-library/src/import/`](../../../../crates/koharu/koharu-library/src/import),
 which Koharu's desktop now also uses. Aphrody Web has no direct Koharu
 dependency, provider adapter, crawler, or import service. The comparison and
 commit-pinned source links below describe the 2026-09-27 snapshot.
@@ -26,7 +26,7 @@ commit-pinned source links below describe the 2026-09-27 snapshot.
 
 ## Koharu responsibilities that remain Koharu-owned
 
-- Manga page ingestion in the current [`koharu-library/src/import/`](../../../aphrody-koharu/crates/koharu-library/src/import/)
+- Manga page ingestion in the current [`koharu-library/src/import/`](../../../../crates/koharu/koharu-library/src/import)
   handles raster files, ZIP/CBZ, RAR, and PDF. The 2026-09-27 snapshot placed
   this parser in `crates/koharu-app/src/commands/import/`. It reads local paths
   and decodes image pages; it is not an Aphrody Web crawl/import API.
@@ -49,5 +49,5 @@ currently calls the other.
 
 ## Sources
 
-- Koharu historical snapshot at `c697b31e`: [`crates/koharu-translator/src/provider.rs`](https://github.com/koharu-rs/koharu/blob/c697b31eb1de016d9272743a2973f0e6a67eae6c/crates/koharu-translator/src/provider.rs), [`crates/koharu-translator/src/remote/`](https://github.com/koharu-rs/koharu/tree/c697b31eb1de016d9272743a2973f0e6a67eae6c/crates/koharu-translator/src/remote), [`crates/koharu-app/src/commands/import/`](https://github.com/koharu-rs/koharu/tree/c697b31eb1de016d9272743a2973f0e6a67eae6c/crates/koharu-app/src/commands/import), [`crates/koharu-canvas/src/web.rs`](https://github.com/koharu-rs/koharu/blob/c697b31eb1de016d9272743a2973f0e6a67eae6c/crates/koharu-canvas/src/web.rs). Current importer: [`crates/koharu-library/src/import/`](../../../aphrody-koharu/crates/koharu-library/src/import/).
-- Aphrody Web, [`GOOGLE-TRANSLATE.md`](./GOOGLE-TRANSLATE.md), [`native_http.rs`](../../crates/aphrody-web-ffi/src/native_http.rs), [`browser.ts`](../../apps/bxc/src/api/browser.ts), [`@aphrody/bxc-test`](../../../products/web/packages/bxc-test/README.md).
+- Koharu historical snapshot at `c697b31e`: [`crates/koharu-translator/src/provider.rs`](https://github.com/koharu-rs/koharu/blob/c697b31eb1de016d9272743a2973f0e6a67eae6c/crates/koharu-translator/src/provider.rs), [`crates/koharu-translator/src/remote/`](https://github.com/koharu-rs/koharu/tree/c697b31eb1de016d9272743a2973f0e6a67eae6c/crates/koharu-translator/src/remote), [`crates/koharu-app/src/commands/import/`](https://github.com/koharu-rs/koharu/tree/c697b31eb1de016d9272743a2973f0e6a67eae6c/crates/koharu-app/src/commands/import), [`crates/koharu-canvas/src/web.rs`](https://github.com/koharu-rs/koharu/blob/c697b31eb1de016d9272743a2973f0e6a67eae6c/crates/koharu-canvas/src/web.rs). Current importer: [`crates/koharu-library/src/import/`](../../../../crates/koharu/koharu-library/src/import).
+- Aphrody Web, [`GOOGLE-TRANSLATE.md`](./GOOGLE-TRANSLATE.md), `native_http.rs`, `browser.ts`, [`@aphrody/bxc-test`](../../../products/web/packages/bxc-test/README.md).

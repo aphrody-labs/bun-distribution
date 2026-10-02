@@ -18,7 +18,7 @@ through local MCP/IPC; desktop, AI and Bun callers are clients.
 - Bun clients: `@aphrody/os`, `@aphrody-code/winclean`; the unified agent plugin in the sibling `../aphrody-ai/plugins/aphrody/` repository path.
 
 Contracts owns `aphrody-subsystem`. Shell and Compat supply the lower-level
-capabilities declared in [Cargo.toml](Cargo.toml). Higher-layer Web/UI providers
+capabilities declared in Cargo.toml. Higher-layer Web/UI providers
 run as supervised MCP processes. The unified Aphrody plugin is maintained in
 `../aphrody-ai/plugins/aphrody`; the OS kernel remains independent of AI at the
 Cargo layer; Infra owns deployments.
@@ -37,7 +37,7 @@ not universal process confinement or production rollout evidence.
 - [Documentation index](./_source/README.md)
 - [Architecture and open gates](../../architecture/os/ARCHITECTURE-GAPS-STATUS.md)
 - [WinClean plan](../../reference/os/WINCLEAN-RUST-CONVERGENCE.md)
-- [Third-party sources](third_party/README.md)
+- Third-party sources
 
 Apache-2.0. Keep upstream pins and data outside source inventories distinct.
 

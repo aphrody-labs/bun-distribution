@@ -1,8 +1,12 @@
 # RUNTIME — un seul runtime applicatif pour Shenron
 
-Statut : proposition, rédigée le 2026-09-24. Rien n'est appliqué côté production.
-Les unités systemd, les routes nginx, le catalogue et la politique de planification
-restent la propriété d'`aphrody-infra` (voir [`INFRA-DELEGATION.md`](INFRA-DELEGATION.md)).
+Statut : proposition rédigée le 2026-09-24 ; elle ne décrit pas l'état actuel de
+la production. L'observation VPS/DBFR du 2026-10-02 est dans
+[`TOPOLOGY-OBSERVATION-2026-10-02.md`](../operations/infra/TOPOLOGY-OBSERVATION-2026-10-02.md)
+et [`VPS-STATUS-2026-10-02.md`](../operations/infra/VPS-STATUS-2026-10-02.md).
+Les unités systemd, les routes nginx, le catalogue et la politique de
+planification relèvent de l'Infra du monorepo (voir
+[`INFRA-DELEGATION.md`](INFRA-DELEGATION.md)).
 Aucun hôte, IP ou port littéral n'apparaît ici. On utilise les noms de service du catalogue
 (`shenron-site`, `shenron-bot` → `shenron-runtime`, `shenron-pg-tunnel`,
 `aphrody-ai-http`, `aphrody-shenron-embed`) et des variables d'environnement (`API_PORT`, `PORT`,
@@ -25,35 +29,35 @@ Ce n'est **pas** un seul PID. Ce point est dit franchement au propriétaire : le
 de la consolidation des pools, du planificateur, du déploiement et du plafonnement mémoire,
 pas de la fusion des processus (voir §3 et §6).
 
-## 2. État actuel
+## 2. État documenté au 2026-09-24 (historique)
 
 | Élément | Nature | Propriétaire (unité / code) | Remarques |
 | --- | --- | --- | --- |
-| `shenron-site` | service long, Bun + `next start` | aphrody-infra / `apps/site` | MemoryHigh 2560M, Max 4G, Low 256M, OOMScoreAdjust -300 (`aphrody-infra/systemd/shenron-site.service`, `aphrody-infra/config/service-catalog.json:153-163`). Standalone refusé (`apps/site/next.config.ts:56-59`). |
-| `shenron-bot` | service long, un processus Bun : discordx + `Bun.serve` API | aphrody-infra / `apps/bot` | `BUN_JSC_forceRAMSize=1GiB`, MemoryLow 384M, **aucun plafond**, OOMScoreAdjust -500 (`aphrody-infra/systemd/shenron-bot.service`, `service-catalog.json:180-190`). |
-| API bot | dans `shenron-bot` | `apps/bot/src/api/server.ts:1132` | Démarre seulement dans `clientReady` (`apps/bot/src/index.ts:97-116`). Un échec de login termine le processus (`index.ts:155-158`). |
-| CronRegistry (~10 jobs) | `setInterval` en mémoire | `apps/bot/src/api/cron-registry.ts:39-99` | Les échéances sont perdues à chaque redémarrage (risque pour `ursaf-cycle`, 24 h). |
-| Tick Giveaway | `setInterval` hors registre | `apps/bot/src/commands/giveaway/Giveaway.ts:173` | Invisible dans `/cron`. |
-| Worker d'indexation Redis | thread Bun Worker | `apps/bot/src/lib/redis-indexer.ts:65`, `apps/bot/src/workers/indexer.ts:33-43` | Seul précédent de Worker dans le dépôt. |
-| Pools PG du bot | `BxcBridgeService` `new SQL(url)` (défaut 10) et `EpisodesService` max 2 | `apps/bot/src/services/BxcBridgeService.ts:37`, `EpisodesService.ts:121` | Environ 12 connexions. `EpisodesService.ts:83-94` scanne des fichiers `.env`. |
-| Pool PG du site | `@shenron/db`, `DATABASE_POOL_MAX` 4 par défaut, plafond 20 | `packages/db/src/config.ts:2-4,35-39` | Total Shenron d'environ 16 connexions. |
-| Redis du site | 2 clients paresseux | `apps/site/src/lib/databooks-redis.ts:62-69`, `apps/site/src/lib/memory-rate-limit.ts:30` | |
-| `shenron-pg-tunnel` | ssh `-L` vers dbfr | aphrody-infra | MemoryMax 64M. |
-| `aphrody-ai-http`, `aphrody-shenron-embed` | services Aphrody | aphrody | Dérive du port de l'embedder : 8794 dans l'unité, 8790 dans `aphrody-infra/docs/PLAN.md:37`. |
-| `shenron-backup.timer` (VPS) | oneshot + timer | aphrody-infra | Préparé mais **jamais installé**. Dépend d'un checkout `aphrody-infra` absent (`SHENRON-MIGRATION.md:127-128`). Seule exception déclarée (`scheduler-policy.json:22`). |
-| `shenron-pg-backup`, `shenron-sqlite-replica-backup` (dbfr) | timers | aphrody-infra | Inchangés : dbfr ne fait pas tourner d'application. |
+| `shenron-site` | service long, Bun + `next start` | Infra du monorepo / `apps/shenron/site` | MemoryHigh 2560M, Max 4G, Low 256M, OOMScoreAdjust -300 (`systemd/shenron-site.service`, `config/service-catalog.json:153-163`). Standalone refusé (`apps/shenron/site/next.config.ts:56-59`). |
+| `shenron-bot` | service long, un processus Bun : discordx + `Bun.serve` API | Infra du monorepo / `apps/shenron/bot` | `BUN_JSC_forceRAMSize=1GiB`, MemoryLow 384M, **aucun plafond**, OOMScoreAdjust -500 (`systemd/shenron-bot.service`, `service-catalog.json:180-190`). |
+| API bot | dans `shenron-bot` | `apps/shenron/bot/src/api/server.ts:1132` | Démarre seulement dans `clientReady` (`apps/shenron/bot/src/index.ts:97-116`). Un échec de login termine le processus (`index.ts:155-158`). |
+| CronRegistry (~10 jobs) | `setInterval` en mémoire | `apps/shenron/bot/src/api/cron-registry.ts:39-99` | Les échéances sont perdues à chaque redémarrage (risque pour `ursaf-cycle`, 24 h). |
+| Tick Giveaway | `setInterval` hors registre | `apps/shenron/bot/src/commands/giveaway/Giveaway.ts:173` | Invisible dans `/cron`. |
+| Worker d'indexation Redis | thread Bun Worker | `apps/shenron/bot/src/lib/redis-indexer.ts:65`, `apps/shenron/bot/src/workers/indexer.ts:33-43` | Seul précédent de Worker dans le dépôt. |
+| Pools PG du bot | `BxcBridgeService` `new SQL(url)` (défaut 10) et `EpisodesService` max 2 | `apps/shenron/bot/src/services/BxcBridgeService.ts:37`, `EpisodesService.ts:121` | Environ 12 connexions. `EpisodesService.ts:83-94` scanne des fichiers `.env`. |
+| Pool PG du site | `@shenron/db`, `DATABASE_POOL_MAX` 4 par défaut, plafond 20 | `packages/shenron/db/src/config.ts:2-4,35-39` | Total Shenron d'environ 16 connexions. |
+| Redis du site | 2 clients paresseux | `apps/shenron/site/src/lib/databooks-redis.ts:62-69`, `apps/shenron/site/src/lib/memory-rate-limit.ts:30` | |
+| `shenron-pg-tunnel` | ssh `-L` vers dbfr | Infra du monorepo | MemoryMax 64M. |
+| `aphrody-ai-http`, `aphrody-shenron-embed` | services Aphrody | aphrody | Dérive du port de l'embedder : 8794 dans l'unité, 8790 dans `docs/plans/infra/PLAN.md:37`. |
+| `shenron-backup.timer` (VPS) | oneshot + timer | Infra du monorepo | Le rapport historique le disait non installé ; il a été vu actif le 2026-10-02. Le succès des sauvegardes n'a pas été vérifié. |
+| `shenron-pg-backup`, `shenron-sqlite-replica-backup` (dbfr) | timers | Infra du monorepo | Vus actifs le 2026-10-02 ; validité et restaurabilité des sauvegardes non vérifiées. |
 | `relecture-ocr` | démon Python dans le workspace partagé | `/home/aphro/aphrody-py/packages/shenron/relecture-ocr` | **Non supervisé**, aucune unité. Lancer avec `uv run --project /home/aphro/aphrody-py --package shenron-relecture-ocr relecture-ocr`. |
 | Boucles `scripts/ops/*`, `packages/pipeline/scripts/*` | lots lancés à la main | shenron | Hors runtime. La règle 9 interdit `rag:build` en prod. |
-| `shenron-zswap.service` | fichier resté en place | aphrody-infra | Déjà retiré (`service-catalog.json:224`). C'est `rg-zram-swap` qui gère le swap. |
-| Plan de release | `/srv/shenron/releases/<sha>` + `current` | aphrody-infra | Appliqué à la main. Aucun adaptateur atomique, aucune rétention. |
+| `shenron-zswap.service` | fichier resté en place | Infra du monorepo | Déjà retiré (`service-catalog.json:224`). C'est `rg-zram-swap` qui gère le swap. |
+| Plan de release | `/srv/shenron/releases/<sha>` + `current` | Infra du monorepo | Le lien courant a été observé le 2026-10-02 ; consulter le rapport VPS daté avant opération. |
 
 Politiques applicables :
 
-- `oneUnitPerWorkload` : `aphrody-infra/config/service-catalog.json:213`.
+- `oneUnitPerWorkload` : `config/service-catalog.json:213`.
 - `onePublicProxy` : `service-catalog.json:214`.
 - `sharedReleasePointer` : `service-catalog.json:215`.
-- Règle 3, « pas de superviseur propre » : `aphrody-infra/docs/SHENRON-MIGRATION.md:147`.
-- `per-app-cron` et `crawler` désactivés par défaut : `aphrody-infra/config/scheduler-policy.json:15`.
+- Règle 3, « pas de superviseur propre » : `docs/reference/infra/SHENRON-MIGRATION.md:147`.
+- `per-app-cron` et `crawler` désactivés par défaut : `config/scheduler-policy.json:15`.
 
 ## 3. Décision
 
@@ -115,7 +119,7 @@ relecture-ocr (unité propre ou OCR Aphrody) ; lots ops/pipeline (manuels).
 
 Les routes nginx ne changent pas. Seul le nom d'unité derrière `bot.` change.
 
-### Diff proposé pour aphrody-infra (non appliqué)
+### Diff proposé pour Infra du monorepo (non appliqué)
 
 `systemd/shenron.target` (nouveau) :
 
@@ -134,7 +138,7 @@ WantedBy=multi-user.target
 -Description=Shenron bot (discordx + Bun.serve API)
 +Description=Shenron runtime (gateway + @shenron/api + scheduler)
 +PartOf=shenron.target
--WorkingDirectory=/srv/shenron/current/apps/bot
+-WorkingDirectory=/srv/shenron/current/apps/shenron/bot
 -ExecStart=/home/ubuntu/.bun/bin/bun src/index.ts
 +WorkingDirectory=/srv/shenron/current
 +ExecStart=/home/ubuntu/.bun/bin/bun packages/runtime/src/main.ts
@@ -184,10 +188,10 @@ packages/runtime/            NOUVEAU @shenron/runtime (source-first, catalog:)
   src/jobs/sqlite-backup.ts  VACUUM INTO + gzip + rétention 14 j (portage du script infra)
   src/env.ts                 chargement de l'env par charge de travail + masquage des secrets dans les logs
   test/*.test.ts
-apps/bot/src/index.ts        wrapper de 3 lignes -> runtime (compat. avec l'unité actuelle)
-apps/bot/src/gateway.ts      startGateway(ctx) extrait de index.ts (sans Bun.serve ni handlers process)
-apps/bot/src/api/cron-registry.ts  shim de ré-export vers packages/runtime
-apps/site                    processus inchangé ; un seul client Redis partagé
+apps/shenron/bot/src/index.ts        wrapper de 3 lignes -> runtime (compat. avec l'unité actuelle)
+apps/shenron/bot/src/gateway.ts      startGateway(ctx) extrait de index.ts (sans Bun.serve ni handlers process)
+apps/shenron/bot/src/api/cron-registry.ts  shim de ré-export vers packages/runtime
+apps/shenron/site                    processus inchangé ; un seul client Redis partagé
 ```
 
 Intégration avec `docs/STACK.md` :
@@ -258,7 +262,7 @@ Arrêt sur SIGTERM, en moins de `TimeoutStopSec=30` :
 - Il n'y a pas de bleu/vert. La passerelle est un singleton, et `shenron-site-b` est retiré.
   Le basculement se fait sur un slot unique avec `proxy_cache_use_stale error timeout updating
   http_502 http_503` sur `dragonballfr.com`, pour que le cache nginx serve pendant le redémarrage.
-- Nouvel adaptateur `aphrody-infra/scripts/atomic-deploy-shenron.sh`, sur le modèle de
+- Nouvel adaptateur `scripts/atomic-deploy-shenron.sh`, sur le modèle de
   `atomic-deploy-aphrody-stack.sh:10,47-109`. Étapes :
   1. Vérifier le sha256.
   2. Déposer la release dans `releases/<sha>` et lancer `bun install --frozen-lockfile`.
@@ -293,7 +297,7 @@ Arrêt sur SIGTERM, en moins de `TimeoutStopSec=30` :
 
 - Créer `packages/runtime` avec config, pools, http, health, lifecycle, scheduler v2 persistant,
   enfant borné et job sqlite-backup.
-- Découper `apps/bot/src/index.ts`. Le wrapper de compatibilité maintient l'unité actuelle
+- Découper `apps/shenron/bot/src/index.ts`. Le wrapper de compatibilité maintient l'unité actuelle
   fonctionnelle.
 - Mettre en place l'API avant le login.
 - Déplacer Giveaway dans le registre.
@@ -302,7 +306,7 @@ Arrêt sur SIGTERM, en moins de `TimeoutStopSec=30` :
 - Mettre à jour la doc : `pieges.md:21`, le chemin `/srv/rg/releases/shenron` dans `CLAUDE.md`, et
   la dérive du port de l'embedder.
 
-**Phase 2 : tickets aphrody-infra.**
+**Phase 2 : tickets Infra du monorepo.**
 
 - T1 : `shenron.target`, renommage en `shenron-runtime` avec alias de transition.
 - T2 : amender la règle 3 (le runtime peut lancer des jobs bornés qu'il planifie, mais ne supervise
@@ -333,7 +337,7 @@ bun run lint
 bun run type-check
 bun run test:all
 bun test packages/runtime
-bun run gen:entries && git diff --exit-code apps/bot/src/_entries.ts
+bun run gen:entries && git diff --exit-code apps/shenron/bot/src/_entries.ts
 git diff --check
 ```
 

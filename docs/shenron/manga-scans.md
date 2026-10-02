@@ -39,7 +39,7 @@ leur couverture hébergée sur le CDN, les 135 databooks/hors-séries étant rel
 assets HD de `bot.db_databooks`), **362 ISBN** (contre 87 initialement) et leurs dates
 de parution officielles. Les 341 couvertures originales du site sont hébergées sous
 `apps/bot/assets/covers/dragonballcn/`. Rangé sous `apps/bot/assets/dragonballcn/`
-(cf. son [README](../apps/bot/assets/dragonballcn/README.md)) ; les 12 pages de
+(cf. son [README](../../apps/shenron/bot/assets/dragonballcn/README.md)) ; les 12 pages de
 catalogue sont archivées sous `apps/bot/data/catalogues/pages/`.
 
 **464 ouvrages sur 476 ont leur pagination relevée**, soit **60 563 planches

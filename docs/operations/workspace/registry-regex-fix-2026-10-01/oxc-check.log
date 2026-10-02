@@ -1,4 +1,0 @@
-    Checking oxc_resolver v11.24.3
-    Checking oxc_linter v1.86.0 (https://github.com/aphrody-code/oxc.git?rev=31d5266e150ff17af52f0c2fc798cc27dc9a5a59#31d5266e)
-    Checking aphrody-oxc-bridge v0.1.0 (/home/aphro/aphrody/crates/compat/oxc-bridge)
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 21.27s

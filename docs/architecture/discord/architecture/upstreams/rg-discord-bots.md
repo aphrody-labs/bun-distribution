@@ -1,6 +1,6 @@
 # Rose Griffon upstream Discord bots
 
-Inventory checked against the `rg` workspace source and its companion `aphrody-infra` service catalog on 2026-09-28. Environment variable names are listed for integration work; secret values were not inspected or copied.
+Inventory checked against the `rg` workspace source and the Infra service catalog on 2026-09-28. Treat its production details as historical; the [2026-10-02 VPS observation](../../../../operations/infra/VPS-STATUS-2026-10-02.md) records current running units but does not verify application endpoints. Environment variable names are listed for integration work; secret values were not inspected or copied.
 
 ## System view
 
@@ -16,7 +16,7 @@ The standalone `rg-achillea-bot.service` and the legacy ports (4000, 4002, 4005)
 
 ### Architecture and startup
 
-- Main: [`apps/bot/src/index.ts`](../../../../rg/apps/bot/src/index.ts). Bun executes TypeScript directly (`bun run src/index.ts`); `dev` uses `bun --watch`. Build script emits a Bun-targeted bundle to `dist`, though the production systemd template runs the source entrypoint.
+- Main: `apps/bot/src/index.ts`. Bun executes TypeScript directly (`bun run src/index.ts`); `dev` uses `bun --watch`. Build script emits a Bun-targeted bundle to `dist`, though the production systemd template runs the source entrypoint.
 - Discord client: `discordx` over `discord.js`. `src/lib/profil.ts` is the profile registry (`rg` default, `azalee` optional); `src/lib/config.ts` resolves token, guild scope, branding, URLs, and announcement behavior. Command modules are dynamically imported sequentially before login, so only the active profile's command tree is registered.
 - RG profile loads the community command modules and member/community events; guild-scoped slash commands. The `azalee` profile uses the same executable and shared code with its own command modules and global command scope, but its dedicated systemd service is retired according to the app README.
 - On `clientReady`, slash commands are registered, tweet-post notification handling and an optional local admin HTTP surface start. Interaction failures receive an ephemeral fallback. SIGTERM/SIGINT stop timers/services, destroy the Discord client, close cache and PostgreSQL.
@@ -56,18 +56,18 @@ The sample also mentions `SUPABASE_INTERNAL_URL`, `SUPABASE_SERVICE_ROLE_KEY`, a
 
 ### Deployment
 
-`aphrody-infra/systemd/rg-bot.service` is a simple Bun service with `WorkingDirectory=/srv/rg/current/apps/bot`, external `EnvironmentFile`, `ExecStart` of `bun run src/index.ts`, restart-on-exit, and journal logs. It is deployed from immutable RG releases. `rg-bot` is private/internal as a service; it has no declared public listener. Cron owns broader community synchronization and HTTP announcement duties.
+`systemd/rg-bot.service` is a simple Bun service with `WorkingDirectory=/srv/rg/current/apps/bot`, external `EnvironmentFile`, `ExecStart` of `bun run src/index.ts`, restart-on-exit, and journal logs. It is deployed from immutable RG releases. `rg-bot` is private/internal as a service; it has no declared public listener. Cron owns broader community synchronization and HTTP announcement duties. These deployment details are the 2026-09-28 snapshot described above.
 
 ## 2. Achilléa bot/backend (`apps/achillea-bot`)
 
 ### Architecture and startup
 
-- Main: [`apps/achillea-bot/src/main.ts`](../../../../rg/apps/achillea-bot/src/main.ts). Development executes `bun --watch src/main.ts`; production compiles TypeScript/aliases to `build/` and starts `bun build/main.js`. The build separately emits ranked ESM under `build/ranked/`.
+- Main: `apps/achillea-bot/src/main.ts`. Development executes `bun --watch src/main.ts`; production compiles TypeScript/aliases to `build/` and starts `bun build/main.js`. The build separately emits ranked ESM under `build/ranked/`.
 - Discord: `@aphrody/discordx`/discordx decorators, `discord.js`, profile selected by `BOT_PROFILE` (`current` in the production unit; `legacy` is supported). `src/client.ts` validates the token against its selected application ID using Discord REST and resolves granted privileged intents before creating the client. Commands and events are loaded from `src/commands` and `src/events`, plus plugins.
 - Main process initializes plugin services, MikroORM, Socket.IO and a child Bun process for Colyseus ranked, then starts the Ts.ED REST server. The Discord gateway is initialized afterward; REST/Socket.IO/ranked are designed to remain running even if Discord login fails. Graceful shutdown stops API, Socket.IO, watchers, scheduler/workers, Discord, ranked child and database.
 - REST server: Ts.ED + Express compatibility at `API_HOST:API_PORT` (production unit binds loopback port 4000), health endpoint `/health/check`, Swagger `/docs`.
 - Ranked child: `src/ranked/main.ts`; Colyseus rooms and HTTP routes on loopback port 4002. Socket.IO is a separate listener on loopback port 4005. The parent supervises the child; `RANKED_DISABLED` and `RANKED_ENTRY` can change this behavior.
-- Production systemd unit is `rg-achillea-bot.service` (formerly `achillea-bot.service`); the source-of-truth deployment configuration is in `aphrody-infra`. Its service catalog says REST `:4000` and ranked `:4002` are upstreams; Socket.IO `:4005` is reserved but not currently proxied by the live Nginx route.
+- The 2026-09-28 snapshot recorded `rg-achillea-bot.service` (formerly `achillea-bot.service`), with REST `:4000` and ranked `:4002` listed as upstreams and Socket.IO `:4005` reserved. The current [VPS observation](../../../../operations/infra/VPS-STATUS-2026-10-02.md) confirms unit presence only, not listener or Nginx state.
 
 ### Internal dependencies
 
@@ -115,4 +115,4 @@ The infra unit runs `bun build/main.js` from `/srv/rg/current/apps/achillea-bot`
 - `rg/apps/bot/README.md`, `rg/apps/bot/package.json`, `rg/apps/bot/src/index.ts`, `rg/apps/bot/src/lib/{profil,config,db}.ts`
 - `rg/apps/achillea-bot/README.md`, `rg/apps/achillea-bot/package.json`, `rg/apps/achillea-bot/src/{main.ts,client.ts,api/server.ts}`, `rg/apps/achillea-bot/src/configs/`, `rg/apps/achillea-bot/src/utils/types/environment.ts`, `rg/apps/achillea-bot/src/ranked/`
 - `rg/docs/achillea-services.md`, `rg/docs/PROD-STATUS.md`
-- `aphrody-infra/config/service-catalog.json`, `aphrody-infra/systemd/rg-bot.service`, `aphrody-infra/systemd/rg-achillea-bot.service`
+- [`config/service-catalog.json`](../../../../../config/service-catalog.json), [`systemd/rg-bot.service`](../../../../../systemd/rg-bot.service), [`systemd/rg-achillea-bot.service`](../../../../../systemd/rg-achillea-bot.service)

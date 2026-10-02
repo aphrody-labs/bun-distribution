@@ -4,10 +4,10 @@ Relevé des couleurs et des proportions du nuage magique sur les cels Toei puis 
 manga (tome 1 ch. 4, édition couleur), et dessin d'un Kinto-Un original — illustration,
 icône carrée, favicons de toutes tailles — à partir de ces seules mesures.
 
-- Géométrie (source unique) : [`apps/site/src/lib/kinto-un.ts`](../apps/site/src/lib/kinto-un.ts)
-- Illustration : [`apps/site/public/dbz/kinto-un.svg`](../apps/site/public/dbz/kinto-un.svg) · icône : [`kinto-un-icone.svg`](../apps/site/public/dbz/kinto-un-icone.svg)
-- Composant : [`apps/site/src/components/KintoUn.tsx`](../apps/site/src/components/KintoUn.tsx) (`<KintoUn>`, `<KintoUnLoader>`)
-- Générateurs : [`genere-kinto-un.ts`](../apps/site/scripts/genere-kinto-un.ts) (SVG) et [`genere-icones.ts`](../apps/site/scripts/genere-icones.ts) (favicons site + bot)
+- Géométrie (source unique) : [`apps/site/src/lib/kinto-un.ts`](../../apps/shenron/site/src/lib/kinto-un.ts)
+- Illustration : [`apps/site/public/dbz/kinto-un.svg`](../../packages/shenron/ui/assets/dbz/kinto-un.svg) · icône : [`kinto-un-icone.svg`](../../packages/shenron/ui/assets/dbz/kinto-un-icone.svg)
+- Composant : [`apps/site/src/components/KintoUn.tsx`](../../apps/shenron/site/src/components/KintoUn.tsx) (`<KintoUn>`, `<KintoUnLoader>`)
+- Générateurs : [`genere-kinto-un.ts`](../../apps/shenron/site/scripts/genere-kinto-un.ts) (SVG) et [`genere-icones.ts`](../../apps/shenron/site/scripts/genere-icones.ts) (favicons site + bot)
 - Mesures faites le 2026-09-04.
 
 ## Nom et graphie

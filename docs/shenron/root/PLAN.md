@@ -146,11 +146,11 @@
 - Les fiches courtes/génériques restent masquées jusqu’à enrichissement sourcé ; aucune donnée supprimée.
 - Mise à jour DM envoyée à Omar (message Discord `1550546695417233471`) sur la séparation future en page Xeno à onglets.
 
-## Exploitation transverse migrée vers `aphrody-infra` — 2026-09-23
+## Exploitation transverse migrée vers Infra du monorepo — 2026-09-23
 
-- `deploy/systemd/shenron-zswap.service` → `aphrody-infra/systemd/` (réglage hôte) ;
-  `deploy/setup-swap.sh` l'installe depuis `../../aphrody-infra/systemd/`.
-- `scripts/ovh-dns.ts` → `aphrody-infra/scripts/ops/ovh-dns.ts` (doublon du client OVH de nie).
+- `deploy/systemd/shenron-zswap.service` → `systemd/` (réglage hôte) ;
+  `deploy/setup-swap.sh` l'installe depuis `../../systemd/`.
+- `scripts/ovh-dns.ts` → `scripts/ops/ovh-dns.ts` (doublon du client OVH de nie).
 - Restent ici, car liés aux releases Shenron : sauvegardes, `clean-vps`, `watchdog.sh`,
   `healthcheck.sh`, `install.sh`.
 - Gate : `bun test apps/site/tests/deploy-site-invariants.test.ts` → 11 pass, 0 fail.

@@ -6,7 +6,7 @@ description: "Navigate the NIE (IEVR) Rust crates and Bun packages inside the IE
 # nie monorepo
 
 > **Applies when:** the IECODE checkout (its root has a `iecode:crates/nie` directory and `AGENTS.md`) is the working directory; paths prefixed `iecode:` are relative to it.
-> **Otherwise:** NIE sources are not available here; use `docs/architecture/nie/` and `docs/NIE-CAPABILITY-MAP.md` of the Aphrody monorepo for orientation and do not invent crate or path names.
+> **Otherwise:** NIE sources are not available here; use `docs/architecture/nie/` and `docs/reference/workspace/NIE-CAPABILITY-MAP.md` of the Aphrody monorepo for orientation and do not invent crate or path names.
 
 Read `iecode:PLAN.md` (execution ledger) and `iecode:AGENTS.md` (the only agent contract) first, then the
 nearest `AGENTS.md` before editing. Use `nie-architecture` for ownership boundaries. Historical

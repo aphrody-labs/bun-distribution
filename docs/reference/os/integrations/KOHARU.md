@@ -41,26 +41,26 @@ source snapshot from 2026-09-27.
 ## Evidence in Koharu source
 
 - Crates and ownership: [`koharu-app`](../../../../crates/koharu/koharu-app/README.md),
-  [`koharu-runtime`](../../../aphrody-koharu/crates/koharu-runtime/Cargo.toml),
+  [`koharu-runtime`](../../../../crates/koharu/koharu-runtime/Cargo.toml),
   [`koharu-pipeline`](../../../../crates/koharu/koharu-pipeline/README.md), and the root
-  [`Cargo.toml`](../../../aphrody-koharu/Cargo.toml).
-- Runtime package planning and activation: [`runtime/mod.rs`](../../../aphrody-koharu/crates/koharu-runtime/src/runtime/mod.rs),
-  [`store.rs`](../../../aphrody-koharu/crates/koharu-runtime/src/store.rs),
-  [`download.rs`](../../../aphrody-koharu/crates/koharu-runtime/src/download.rs).
-- Tauri command surface and app state: [`commands/mod.rs`](../../../aphrody-koharu/crates/koharu-app/src/commands/mod.rs),
-  [`commands/processing.rs`](../../../aphrody-koharu/crates/koharu-app/src/commands/processing.rs),
-  [`commands/lifecycle.rs`](../../../aphrody-koharu/crates/koharu-app/src/commands/lifecycle.rs),
-  [`app.rs`](../../../aphrody-koharu/crates/koharu-app/src/app.rs).
-- Koharu credential/config implementations: [`koharu-secrets`](../../../aphrody-koharu/crates/koharu-secrets/src/lib.rs),
-  [`koharu-config`](../../../aphrody-koharu/crates/koharu-config/src/lib.rs),
-  and provider preference commands in [`preferences.rs`](../../../aphrody-koharu/crates/koharu-app/src/commands/preferences.rs).
+  `Cargo.toml`.
+- Runtime package planning and activation: [`runtime/mod.rs`](../../../../crates/koharu/koharu-runtime/src/runtime/mod.rs),
+  [`store.rs`](../../../../crates/koharu/koharu-runtime/src/store.rs),
+  [`download.rs`](../../../../crates/koharu/koharu-runtime/src/download.rs).
+- Tauri command surface and app state: [`commands/mod.rs`](../../../../crates/koharu/koharu-app/src/commands/mod.rs),
+  [`commands/processing.rs`](../../../../crates/koharu/koharu-app/src/commands/processing.rs),
+  [`commands/lifecycle.rs`](../../../../crates/koharu/koharu-app/src/commands/lifecycle.rs),
+  [`app.rs`](../../../../crates/koharu/koharu-app/src/app.rs).
+- Koharu credential/config implementations: [`koharu-secrets`](../../../../crates/koharu/koharu-secrets/src/lib.rs),
+  [`koharu-config`](../../../../crates/koharu/koharu-config/src/lib.rs),
+  and provider preference commands in [`preferences.rs`](../../../../crates/koharu/koharu-app/src/commands/preferences.rs).
 
 ## Aphrody OS owners to reuse when a real integration is specified
 
-- Durable OS work and recovery: [`aphrody-jobs`](../../crates/aphrody-jobs/Cargo.toml).
-- Process lifetime, locks and shared GPU leases: [`aphrody-proc`](../../crates/aphrody-proc/Cargo.toml).
-- OS-managed secrets and settings: [`aphrody-secrets`](../../crates/aphrody-secrets/Cargo.toml),
-  [`aphrody-settings`](../../crates/aphrody-settings/Cargo.toml).
+- Durable OS work and recovery: `aphrody-jobs`.
+- Process lifetime, locks and shared GPU leases: `aphrody-proc`.
+- OS-managed secrets and settings: `aphrody-secrets`,
+  `aphrody-settings`.
 - Kernel boundary and client ownership: [repository README](../../../products/os/README.md) and
   [OS architecture](../../../architecture/os/ARCHITECTURE.md).
 

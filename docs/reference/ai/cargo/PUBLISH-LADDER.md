@@ -21,7 +21,7 @@ maintenance alone is not a publication task.
 
 ## 1. Release set
 
-Twenty-one library and CLI crates from three repositories. Versions are the declared ones: the
+Fifteen library and CLI crates from three repositories. Versions are the declared ones: the
 A2A stack is `0.x`, the n2b crates move together at `0.6.x`, the others follow their workspace
 version `1.0.0-canary`. Every crate has `publish = true`, a README inside the crate, `license`,
 `description`, `repository` (the repository's `origin`), `homepage`, `keywords`, `categories`
@@ -35,20 +35,14 @@ and an inherited `rust-version`; every internal path dependency also carries a `
 | 0 | `aphrody-subsystem` | 1.0.0-canary | `aphrody-contracts` | none |
 | 0 | `aphrody-native` | 1.0.0-canary | `aphrody-native` | none |
 | 0 | `aphrody-n2b-types` | 0.6.2 | `aphrody-compat` | none |
-| 0 | `aphrody-n2b-ai` | 0.6.2 | `aphrody-compat` | none |
-| 0 | `aphrody-n2b-github` | 0.6.2 | `aphrody-compat` | none |
 | 0 | `aphrody-toolchains` | 1.0.0-canary | `aphrody-compat` | none |
 | 1 | `aphrody-a2a-pb` | 0.1.8 | `aphrody-contracts` | `aphrody-a2a` |
-| 1 | `aphrody-n2b-util` | 0.6.2 | `aphrody-compat` | `aphrody-n2b-types` |
 | 1 | `aphrody-n2b-registry` | 0.6.2 | `aphrody-compat` | `aphrody-n2b-types` |
 | 2 | `aphrody-a2a-client` | 0.1.16 | `aphrody-contracts` | `aphrody-a2a`, `aphrody-a2a-pb` |
 | 2 | `aphrody-a2a-server` | 0.3.0 | `aphrody-contracts` | `aphrody-a2a`, `aphrody-a2a-pb` |
-| 2 | `aphrody-n2b-report` | 0.6.2 | `aphrody-compat` | `-types`, `-ai`, `-util` |
-| 2 | `aphrody-n2b-rules` | 0.6.2 | `aphrody-compat` | `-types`, `-util`, `-registry` |
 | 3 | `aphrody-a2a-grpc` | 0.2.2 | `aphrody-contracts` | `aphrody-a2a`, `-pb`, `-client`, `-server` |
 | 3 | `aphrody-a2a-coord` | 1.0.0-canary | `aphrody-contracts` | `aphrody-a2a`, `aphrody-a2a-server` |
-| 3 | `aphrody-n2b-scanners` | 0.6.2 | `aphrody-compat` | `-types`, `-util`, `-rules` |
-| 4 | `aphrody-n2b-core` | 0.6.2 | `aphrody-compat` | `-types`, `-util`, `-ai`, `-github`, `-report`, `-rules`, `-scanners` |
+| 4 | `aphrody-n2b-core` | 0.6.2 | `aphrody-compat` | `-types`, `-registry` (owns the former `-ai`, `-github`, `-report`, `-rules`, `-scanners`, `-util` crates as modules since 2026-10-02) |
 | 5 | `aphrody-n2b` (binary `n2b`) | 0.6.2 | `aphrody-compat` | `aphrody-n2b-core`, `aphrody-toolchains` |
 
 The three repositories do not depend on each other inside the set (the n2b closure uses no
@@ -105,9 +99,8 @@ cargo publish --dry-run --locked -p aphrody-a2a -p aphrody-agent-proto -p aphrod
 # aphrody-native
 cargo publish --dry-run --locked -p aphrody-native
 # aphrody-compat
-cargo publish --dry-run --locked -p aphrody-n2b-types -p aphrody-n2b-ai -p aphrody-n2b-github \
-  -p aphrody-toolchains -p aphrody-n2b-util -p aphrody-n2b-registry -p aphrody-n2b-report \
-  -p aphrody-n2b-rules -p aphrody-n2b-scanners -p aphrody-n2b-core -p aphrody-n2b
+cargo publish --dry-run --locked -p aphrody-n2b-types -p aphrody-toolchains \
+  -p aphrody-n2b-registry -p aphrody-n2b-core -p aphrody-n2b
 ```
 
 Inspect a package with `cargo package --locked --list -p <crate>`: only files of the crate, a
@@ -153,8 +146,6 @@ publish aphrody-contracts aphrody-app-protocol
 publish aphrody-contracts aphrody-subsystem
 publish aphrody-native    aphrody-native
 publish aphrody-compat    aphrody-n2b-types
-publish aphrody-compat    aphrody-n2b-ai
-publish aphrody-compat    aphrody-n2b-github
 publish aphrody-compat    aphrody-toolchains
 sleep 30
 check aphrody-a2a 0.3.0
@@ -163,38 +154,28 @@ check aphrody-app-protocol 1.0.0-canary
 check aphrody-subsystem 1.0.0-canary
 check aphrody-native 1.0.0-canary
 check aphrody-n2b-types 0.6.2
-check aphrody-n2b-ai 0.6.2
-check aphrody-n2b-github 0.6.2
 check aphrody-toolchains 1.0.0-canary
 
 # Rung 1
 publish aphrody-contracts aphrody-a2a-pb
-publish aphrody-compat    aphrody-n2b-util
 publish aphrody-compat    aphrody-n2b-registry
 sleep 30
 check aphrody-a2a-pb 0.1.8
-check aphrody-n2b-util 0.6.2
 check aphrody-n2b-registry 0.6.2
 
 # Rung 2
 publish aphrody-contracts aphrody-a2a-client
 publish aphrody-contracts aphrody-a2a-server
-publish aphrody-compat    aphrody-n2b-report
-publish aphrody-compat    aphrody-n2b-rules
 sleep 30
 check aphrody-a2a-client 0.1.16
 check aphrody-a2a-server 0.3.0
-check aphrody-n2b-report 0.6.2
-check aphrody-n2b-rules 0.6.2
 
 # Rung 3
 publish aphrody-contracts aphrody-a2a-grpc
 publish aphrody-contracts aphrody-a2a-coord
-publish aphrody-compat    aphrody-n2b-scanners
 sleep 30
 check aphrody-a2a-grpc 0.2.2
 check aphrody-a2a-coord 1.0.0-canary
-check aphrody-n2b-scanners 0.6.2
 
 # Rung 4
 publish aphrody-compat aphrody-n2b-core

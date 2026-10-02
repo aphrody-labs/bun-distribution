@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 # Dependency inventory
 
-Generated 2026-10-02T04:09:04.555Z by `aphrody-update deps inventory` (crates.io sparse index, npm, PyPI, git ls-remote, OSV). Full data: `target/deps-inventory/inventory.json` (not committed).
+Generated 2026-10-02T08:18:26.412Z by `aphrody-update deps inventory` (crates.io sparse index, npm, PyPI, git ls-remote, OSV). Full data: `target/deps-inventory/inventory.json` (not committed).
 
 ## Rust (Cargo.lock)
 
@@ -181,45 +181,45 @@ Direct dependencies behind latest:
 
 ## Python (requirements, uv.lock)
 
-- resolved: 264, behind latest: 45 (direct: 0), with advisories: 3, yanked/deprecated: 0
+- resolved: 264, behind latest: 46 (direct: 0), with advisories: 3, yanked/deprecated: 0
 
 Held advisories (reason in `config/deps/advisory-holds.json`):
+- torch 2.8.0: GHSA-qfhq-4f3w-5fph, GHSA-rrmf-rvhw-rf47, GHSA-vgrw-7cvw-pwgx (latest 2.14.1) - pinned ==2.8.0 in aphrody-train: the 2.14.0 Windows wheel failed to import torch.amp in the CPU smoke test.
 - torch 2.8.0+cu129: GHSA-qfhq-4f3w-5fph, GHSA-rrmf-rvhw-rf47, GHSA-vgrw-7cvw-pwgx (latest 2.14.1) - pinned ==2.8.0 in aphrody-train: the 2.14.0 Windows wheel failed to import torch.amp in the CPU smoke test.
 - transformers 4.57.6: GHSA-29pf-2h5f-8g72, GHSA-69w3-r845-3855, GHSA-fgcw-684q-jj6r (latest 5.18.0) - kept below 4.58 by aphrody-train (sentence-transformers 5.x line); 5.x needs sentence-transformers 6.
-- torch 2.8.0: GHSA-qfhq-4f3w-5fph, GHSA-rrmf-rvhw-rf47, GHSA-vgrw-7cvw-pwgx (latest 2.14.1) - pinned ==2.8.0 in aphrody-train: the 2.14.0 Windows wheel failed to import torch.amp in the CPU smoke test.
 
 ## Git sources
 
 - https://github.com/huggingface/candle: pinned 66a8cf184a5a; remote HEAD 5ba5d5b468b5 - **HEAD moved**
 - https://github.com/huggingface/hf-hub: pinned 473de9430b0f; remote HEAD 473de9430b0f
 - https://github.com/EricLBuehler/mistral.rs: pinned 3f2515e9b5ad; remote HEAD 3f2515e9b5ad
-- https://github.com/aphrody-code/oxc: pinned 31d5266e150f; remote HEAD 31d5266e150f
+- https://github.com/oxc-project/oxc: pinned 8c5a04ea0d5c; remote HEAD 656b81cce409 - **HEAD moved**
 - https://github.com/koharu-rs/tauri-specta: pinned 77e14e0a342b; remote HEAD ebe38d6e0343 - **HEAD moved**
 
 ## First-party crates
 
-- 213 crates (17 AI/MCP/model related by name)
-- version drift from the workspace version (prerelease suffixes ignored; imported crates keep their upstream versions): 87
+- 209 crates (17 AI/MCP/model related by name)
+- version drift from the workspace version (prerelease suffixes ignored; imported crates keep their upstream versions): 81
   - aphrody-a2a-pb 0.1.8 (workspace 1.0.0)
   - aphrody-a2a 0.3.0 (workspace 1.0.0)
-  - aphrody-n2b-scanners 0.6.2 (workspace 1.0.0)
-  - aphrody-n2b-github 0.6.2 (workspace 1.0.0)
-  - aphrody-n2b-report 0.6.2 (workspace 1.0.0)
   - aphrody-n2b-types 0.6.2 (workspace 1.0.0)
-  - aphrody-n2b-rules 0.6.2 (workspace 1.0.0)
   - aphrody-n2b-registry 0.6.2 (workspace 1.0.0)
   - aphrody-n2b 0.6.2 (workspace 1.0.0)
   - aphrody-oxc-bridge 0.1.0 (workspace 1.0.0)
-  - aphrody-n2b-util 0.6.2 (workspace 1.0.0)
   - aphrody-n2b-core 0.6.2 (workspace 1.0.0)
   - aphrody-n2b-native 0.2.0 (workspace 1.0.0)
-  - aphrody-n2b-ai 0.6.2 (workspace 1.0.0)
   - aphrody-a2a-grpc 0.2.2 (workspace 1.0.0)
   - aphrody-a2a-server 0.3.0 (workspace 1.0.0)
   - aphrody-a2a-client 0.1.16 (workspace 1.0.0)
   - whisper-rs-sys 0.14.1 (workspace 1.0.0)
   - ffmpeg-sys-next 7.1.3 (workspace 1.0.0)
   - xtask 0.1.0 (workspace 1.0.0)
+  - sd-core 2.0.0-alpha.2 (workspace 1.0.0)
+  - sd-bench 0.1.0 (workspace 1.0.0)
+  - log-analyzer 0.1.0 (workspace 1.0.0)
+  - sd-ffmpeg 0.1.0 (workspace 1.0.0)
+  - sd-archive 0.1.0 (workspace 1.0.0)
+  - sd-fda 0.1.0 (workspace 1.0.0)
 - names already on crates.io (vendored upstream crates such as taffy or whisper-rs-sys are expected; first-party names there are a publish-time collision): 16
   - ffmpeg-sys-next
   - koharu

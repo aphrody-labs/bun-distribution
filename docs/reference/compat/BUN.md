@@ -29,7 +29,7 @@ The exact crate, package, schema and CLI inventory is in [N2B's Bun surface](./n
 5. Scripts use `bun`, `bunx`, `cargo` or direct binaries. They never use `npm`, `npx`, `pnpm`,
    `yarn` or `node`.
 6. A package with a `tsconfig.json` exposes `typecheck` and extends `tsconfig.base.json`. A
-   package referenced through TypeScript project references (`n2b-types`, `n2b-shims`, `n2b`)
+   package referenced through TypeScript project references (`n2b-types`, `n2b-client`, `n2b-shims`)
    also exposes `build` (`tsc -b`), so turbo emits its declarations before dependents typecheck.
 7. A `test` script that needs a native artifact builds it first:
    `@aphrody/n2b-core` builds the debug `n2b` binary. Test builds do not pass

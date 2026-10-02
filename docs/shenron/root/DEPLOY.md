@@ -4,9 +4,9 @@
 > `aphrody-infra/docs/SHENRON-MIGRATION.md` et
 > `aphrody-infra/docs/PRODUCTION-ALLOCATION.md`, la production (VPS, systemd,
 > Nginx, blue/green, backups, rollback) n'est plus pilotée depuis ce dépôt
-> mais depuis `aphrody-infra` (`config/service-catalog.json`,
+> mais depuis Infra du monorepo (`config/service-catalog.json`,
 > `config/nginx-routes.json`, `config/application-contracts.json`). Voir
-> [`docs/INFRA-DELEGATION.md`](docs/INFRA-DELEGATION.md) pour le détail de la
+> [`docs/INFRA-DELEGATION.md`](../INFRA-DELEGATION.md) pour le détail de la
 > frontière et la liste des fichiers d'ops en cours de retrait. Ce document ne
 > garde que ce qui reste local au repo : build, tests et compilation.
 
@@ -81,7 +81,7 @@ jamais de secret dans un arg visible (`ps aux`).
 | `update-deps.yml` | hebdo | `bun update` → PR automatique si `bun.lock` change |
 
 Ces workflows valident et publient le code ; ils ne déploient pas en
-production (le déploiement est porté par le pipeline `aphrody-infra`).
+production (le déploiement est porté par le pipeline Infra du monorepo).
 
 ### Conventional Commits
 
@@ -113,7 +113,7 @@ Shenron est codé single-shard. Pour sharder il faudra :
 
 1. Passer à `ShardingManager` de discord.js
 2. Extraire la DB en service partagé (déjà PostgreSQL, cf. contrats
-   `aphrody-infra`)
+   Infra du monorepo)
 3. Coordination cache (Redis)
 
 **Pour l'instant (< 100 guilds) : n'y touche pas.**
@@ -135,7 +135,7 @@ rollback, blue/green), se référer à :
 
 - `aphrody-infra/docs/SHENRON-MIGRATION.md`
 - `aphrody-infra/docs/PRODUCTION-ALLOCATION.md`
-- `aphrody-infra/config/service-catalog.json`
-- `aphrody-infra/config/nginx-routes.json`
-- [`docs/INFRA-DELEGATION.md`](docs/INFRA-DELEGATION.md) (frontière et liste
+- `config/service-catalog.json`
+- `config/nginx-routes.json`
+- [`docs/INFRA-DELEGATION.md`](../INFRA-DELEGATION.md) (frontière et liste
   de suppression gated des fichiers d'ops encore présents dans ce repo)

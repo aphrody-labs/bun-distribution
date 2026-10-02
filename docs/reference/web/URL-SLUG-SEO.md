@@ -10,7 +10,7 @@ URL is retired without breaking. It does not cover deployment (owned by
 
 ## 0. Where each site actually stands (2026-09-26)
 
-Read live status from `aphrody-infra/config/nginx-routes.json` and
+Read live status from `config/nginx-routes.json` and
 `config/service-catalog.json` before assuming a host is reachable — do not
 hard-code it here, it drifts. As of this audit:
 
@@ -81,7 +81,7 @@ literal (see §6 — `aphrody-site` currently hard-codes `https://aphrody.com` i
   **No cross-repo shared npm/crate package was created for this**: `rg` is a
   Bun/Next monorepo with its own `@rosegriffon/*` namespace, `shenron` its own
   `@shenron/*`, and `nie-site`/`aphrody-site` are separate Rust crates with no
-  existing shared web-SEO crate in `aphrody-infra/docs/ecosystem/ECOSYSTEM.md`.
+  existing shared web-SEO crate in `docs/ecosystem/ECOSYSTEM.md`.
   Inventing one cross-repo package for two independent product stacks (one
   Bun, one Rust; different domains, different registries) would be new
   infrastructure, not reuse — out of scope here. The convention above is the
@@ -144,7 +144,7 @@ literal (see §6 — `aphrody-site` currently hard-codes `https://aphrody.com` i
   within the same day advertising a dead subdomain and vanished paths; the
   dynamic route replaces it for that reason. Any `llms.txt`, admin API docs
   page, or public API response that lists a "live" endpoint must be verified
-  against `aphrody-infra/config/nginx-routes.json` — see §5.
+  against `config/nginx-routes.json` — see §5.
 
 ## 4. hreflang
 
@@ -159,7 +159,7 @@ that is worse than omitting it.
 ## 5. Links to retired things
 
 Before shipping a page that names a specific host or a specific product,
-check `aphrody-infra/config/nginx-routes.json` and `service-catalog.json` for
+check `config/nginx-routes.json` and `service-catalog.json` for
 `"status": "retired"`. Found and fixed by this audit:
 
 - `shenron` `apps/site` advertised `https://mcp.dragonballfr.com/mcp` as a

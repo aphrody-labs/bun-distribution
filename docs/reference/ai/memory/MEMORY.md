@@ -1,4 +1,13 @@
-# Memory index — aphrody monorepo (Claude Code)
+# Memory archive — aphrody monorepo (Claude Code)
+
+> **Archive, not active runtime context.** The dated closeout and service notes
+> below describe historical states only. Current authorities are the
+> [workspace rules](../../workspace/AGENTS.md), [Infra authority
+> map](../../infra/UNIFIED-AGENT-CONTEXT.md), [Infra README](../../../products/infra/README.md),
+> [Infra plan](../../../plans/infra/PLAN.md), [generated MCP catalog](../../../ecosystem/MCP-TOOLS.md),
+> and source in `crates/infra/`, root `config/` and `inventory/`. Check the
+> current CLI help and live probes; this file does not describe active runtime
+> state or configured services.
 
 Snapshot: **2026-09-05**, taken in the retired `aphrody` monolith (archived); this
 repository is now `aphrody-ai`. Treat the closeout notes below as history.
@@ -17,9 +26,9 @@ repository is now `aphrody-ai`. Treat the closeout notes below as history.
   `sandbox_mode = "danger-full-access"`; Aphrody remains local-model-first
   and does not require an API key by default.
 
-## Deploy & VPS (canonical)
+## Historical deployment notes (not live status)
 
-- Deployment is owned by `../../aphrody-infra`. The VPS no longer runs Aphrody, NIE or IECode; only RG and Shenron are live.
+- At snapshot time, deployment was recorded as owned by the separate `aphrody-infra` repository and the VPS service mix was recorded as RG/Shenron. The repo boundary and production state must be checked against current Infra sources and live probes.
 
 ## Agent home (`~/.aphrody`)
 
@@ -55,7 +64,7 @@ repository is now `aphrody-ai`. Treat the closeout notes below as history.
 - `aphrody a2a serve|tick|invoke` — commit **b105cbd**+ ; tests `cargo test -p aphrody-a2a-coord --test http_e2e`
 - Manifest: `~/aphrody/ai.json` · coord: `.coord/*.jsonl`
 
-## Services — all **active + enabled** (verified 2026-06-04; may be stopped to save RAM)
+## Archived service snapshot (2026-06-04; not current health evidence)
 
 | Unit | Port | Note |
 | --- | --- | --- |

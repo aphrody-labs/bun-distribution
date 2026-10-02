@@ -86,7 +86,7 @@ xAI env: `XAI_API_KEY` (metered fallback). See [`../grok/env-and-auth.md`](../..
 
 ## Documentation mirrors (`llms.txt`)
 
-Refresh: `bash ../aphrody-infra/scripts/aphrody/fetch-ai-llms.sh`
+Refresh: `bash scripts/aphrody/fetch-ai-llms.sh` (from the Aphrody monorepo root).
 
 | File | Source |
 | --- | --- |
@@ -104,7 +104,7 @@ Curated memory: `~/.aphrody/workspace/MEMORY.md`.
 
 | Doc | Contents |
 | --- | --- |
-| `aphrody-infra` | Deploy authority (the VPS no longer runs Aphrody) |
+| `aphrody-infra` | Deploy authority; see the [2026-10-02 VPS observation](../../../operations/infra/VPS-STATUS-2026-10-02.md) for the limited current host and unit evidence. |
 
 ## Related trees
 

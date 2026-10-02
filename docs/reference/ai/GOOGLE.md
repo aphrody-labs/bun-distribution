@@ -15,7 +15,7 @@ Le projet suit officiellement les branches **Canary** des Ã©cosystÃ¨mes Goog
 - **Cloud SDK** (`gcloud`, `gsutil`, `bq`) â€” dÃ©ploiement.
 - **Rust nightly** (mirror du canal Chromium `tools/rust/`) â€” toolchain unique.
 
-Catalogue Google complet : voir [`google.json`](../google.json).
+Catalogue Google complet : voir `google.json`.
 
 ## 2. Trinity Architecture (HISTORIQUE — abandonnée)
 

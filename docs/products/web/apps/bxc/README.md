@@ -1,6 +1,6 @@
 # Aphrody Web Browser
 
-[aphrody-web repository](https://github.com/aphrody-labs/aphrody) · [License](LICENSE)
+[aphrody-web repository](https://github.com/aphrody-labs/aphrody) · License
 
 Aphrody Web Browser is a Bun-native browser automation, crawling, search, and extraction
 toolkit backed by a Rust FFI bridge. One CLI provides static HTML processing,
@@ -256,4 +256,4 @@ The only public gateway is `aphrody-site`. It serves allowed Web routes under
 
 ## License
 
-Apache-2.0. See [LICENSE](LICENSE).
+Apache-2.0. See LICENSE.

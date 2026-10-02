@@ -1,15 +1,20 @@
-# Memory index — aphrody AI layer (Claude Code)
+# Memory archive — aphrody AI layer (Claude Code)
 
-> Current routing (2026-09-23): this repository owns the AI layer. The system
-> layer is `../aphrody-os`; plans, host setup and deployment are owned by
-> `../aphrody-infra/docs/UNIFIED-AGENT-CONTEXT.md`. Entries below are historical
-> evidence and may be stale; verify against source and live probes before acting.
+> **Archive, not active runtime context.** Snapshot notes below are retained as
+> historical evidence; paths, commands, versions and service states may be stale.
+> Current authorities: [workspace rules](../workspace/AGENTS.md), [Infra
+> authority map](../infra/UNIFIED-AGENT-CONTEXT.md), [Infra CLI and operations
+> README](../../products/infra/README.md), [Infra plan](../../plans/infra/PLAN.md),
+> [generated MCP catalog](../../ecosystem/MCP-TOOLS.md), and the current
+> source under `crates/infra/`, root `config/` and `inventory/`. Confirm current
+> command help and live host state before acting. Nothing below asserts a live
+> runtime or currently configured agent environment.
 
-Snapshot: **2026-09-25**. Project path: `~/src/aphrody-ai` (Linux) / `%USERPROFILE%\src\aphrody-ai` (Windows).
+Archived snapshot: **2026-09-25**. Historical project path: `~/src/aphrody-ai` (Linux) / `%USERPROFILE%\src\aphrody-ai` (Windows).
 
-## Deploy & VPS (canonical)
+## Historical deployment notes (not live status)
 
-- Deployment is owned by `../aphrody-infra`. The VPS no longer runs Aphrody, NIE or IECode; only RG and Shenron are live.
+- At snapshot time, deployment was recorded as owned by the separate `aphrody-infra` repository and the VPS service mix was recorded as RG/Shenron. The repo boundary and production state must be checked against current Infra sources and live probes.
 
 ## Agent home (`~/.aphrody`)
 
@@ -47,7 +52,7 @@ Snapshot: **2026-09-25**. Project path: `~/src/aphrody-ai` (Linux) / `%USERPROFI
 - `aphrody a2a serve|tick|invoke`
 - Manifest: `ai.json` · coord: `.coord/*.jsonl`
 
-## Services — all **active + enabled** (verified 2026-06-04; may be stopped to save RAM)
+## Archived service snapshot (2026-06-04; not current health evidence)
 
 | Unit | Port | Note |
 | --- | --- | --- |

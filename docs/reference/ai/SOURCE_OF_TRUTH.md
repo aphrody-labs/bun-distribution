@@ -10,7 +10,7 @@ build, configuration, target and workload. None substitutes for the others.
 
 | Concern | Owner and authority |
 | --- | --- |
-| Agent loop, model clients, tools, sessions, RAG, OCR, voice, training and unified Aphrody/Dragon Ball plugin | `aphrody-ai`; [architecture](../../architecture/ai/ARCHITECTURE.md), [unified plugin](../../products/ai/plugins/aphrody/README.md) and implementation crates |
+| Agent loop, model clients, tools, sessions, RAG, OCR, voice, training and unified Aphrody/Dragon Ball plugin | `aphrody-ai`; [architecture](../../architecture/ai/ARCHITECTURE.md), [unified plugin](../../../plugins/aphrody/README.md) and implementation crates |
 | Thread, turn and item wire types; extension negotiation | [aphrody-contracts](../../products/contracts/README.md) |
 | Desktop presentation, M3, accessibility, broker and Drive integration | [aphrody-ui GUI contract](../ui/GUI.md), [UI design](../../architecture/ui/UI-DESIGN.md), [UI rules](../ui/UI-RULES.md) |
 | Process supervision, sandbox, execution policy, secrets and system tools | [aphrody-os](../../products/os/README.md) |
@@ -25,9 +25,9 @@ Siblings never add a reverse Cargo dependency on `aphrody-ai`. UI packages
 consume the process contract, not AI implementation packages. The desktop's
 persistent broker drives `aphrody app-server` over stdio JSON-RPC.
 
-The generated [ecosystem catalog](../infra/ecosystem/ECOSYSTEM.md),
-[command catalog](../infra/ecosystem/CLI.md) and
-[MCP catalog](../infra/ecosystem/MCP-TOOLS.md) discover existing
+The generated [ecosystem catalog](../../ecosystem/ECOSYSTEM.md),
+[command catalog](../../ecosystem/CLI.md) and
+[MCP catalog](../../ecosystem/MCP-TOOLS.md) discover existing
 owners. Their descriptions and counts are inventory evidence; runtime
 availability comes from the running binary and its negotiated capabilities.
 

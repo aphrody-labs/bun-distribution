@@ -48,7 +48,7 @@ preserves dated evidence; none of its test counts is a current guarantee.
 Contracts owns wire types; AI owns runtime/adapters; OS owns jobs/process policy;
 Shell owns PTY; Web owns browser/extraction; UI owns presentation; Koharu owns
 manga processing/scenes; Infra owns hosts/releases; Shenron owns editorial state.
-Use the [ecosystem catalogue](../../reference/infra/ecosystem/ECOSYSTEM.md)
+Use the [ecosystem catalogue](../../ecosystem/ECOSYSTEM.md)
 for discovery, then inspect the implementation. No reverse Cargo dependency on AI.
 This domain map is independent of the planned source layout: AI Rust crates and Bun/TS
 packages will share the `aphrody` monorepo; its Python projects join `aphrody-py`, as set by

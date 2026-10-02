@@ -19,7 +19,7 @@ plan; its old repository paths and status claims require current evidence.
 | What ships next, and what proves it works? | [Root plan](../../../../PLAN.md), imported [AI requirements](../../../plans/ai/PLAN.md#delivery-sequence), [release acceptance](../../../plans/ai/PLAN.md#release-acceptance) |
 | What exists, and what is still unverified? | [Current baseline](../../../plans/ai/PLAN.md#current-baseline), [SOURCE_OF_TRUTH.md](../../../reference/ai/SOURCE_OF_TRUTH.md) |
 | How do the native UI, agent and workers connect? | [ARCHITECTURE.md](../../../architecture/ai/ARCHITECTURE.md) |
-| Which repository owns a capability? | [Organization and ownership](../../../plans/ai/PLAN.md#organization-and-ownership), [generated ecosystem inventory](../../../reference/infra/ecosystem/ECOSYSTEM.md) |
+| Which repository owns a capability? | [Organization and ownership](../../../plans/ai/PLAN.md#organization-and-ownership), [generated ecosystem inventory](../../../ecosystem/ECOSYSTEM.md) |
 | What does each capability contribute to the product? | [Capability integration](../../../plans/ai/PLAN.md#capability-integration) |
 | What remains for Koharu, Aphrody and Shenron? | [Koharu convergence work packages](../../../plans/ai/PLAN.md#koharu-aphrody-and-shenron-convergence) |
 | What is the dated cross-repository Shenron pillar snapshot? | [ROADMAP-AGENT-PILLARS.md](../../../plans/ai/ROADMAP-AGENT-PILLARS.md) (historical metrics; verify against owners) |

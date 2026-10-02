@@ -46,15 +46,15 @@ Its mandate, in order:
 
 | Role | Module | Function | Whitelisted tools |
 | :--- | :--- | :--- | :--- |
-| **SoulCreator** | [`aphrody/aphrody/soul_creator.py`](aphrody/aphrody/soul_creator.py) | Scrapes and traverses wikis, fandoms and media catalogues. | `httpx`, `html.parser`, `urllib` |
-| **BackgroundReview** | [`aphrody/aphrody/background_review.py`](aphrody/aphrody/background_review.py) | Runs post-session self-improvement loops. | `BxcGeminiWebClient`, local files |
-| **CommandGuard** | [`aphrody/aphrody/command_guard.py`](aphrody/aphrody/command_guard.py) | Enforces headless execution safety, blocks unsafe shell commands. | `re`, `unicodedata` |
-| **TimeoutMonitor** | [`aphrody/aphrody/timeout_monitor.py`](aphrody/aphrody/timeout_monitor.py) | Aborts hanging processes, intercepts runaway loops. | `subprocess`, `concurrent.futures` |
+| **SoulCreator** | `aphrody/aphrody/soul_creator.py` | Scrapes and traverses wikis, fandoms and media catalogues. | `httpx`, `html.parser`, `urllib` |
+| **BackgroundReview** | `aphrody/aphrody/background_review.py` | Runs post-session self-improvement loops. | `BxcGeminiWebClient`, local files |
+| **CommandGuard** | `aphrody/aphrody/command_guard.py` | Enforces headless execution safety, blocks unsafe shell commands. | `re`, `unicodedata` |
+| **TimeoutMonitor** | `aphrody/aphrody/timeout_monitor.py` | Aborts hanging processes, intercepts runaway loops. | `subprocess`, `concurrent.futures` |
 
 ## 4. Concurrency and lock protocols
 
 1. **Local state.** Message logs and session details are committed to
-   [`aphrody/aphrody/session_db.py`](aphrody/aphrody/session_db.py) inside
+   `aphrody/aphrody/session_db.py` inside
    transaction blocks.
 2. **File modifications.** Background threads doing memory or skill reviews
    write to a temporary file and replace, so a crash cannot corrupt the target.

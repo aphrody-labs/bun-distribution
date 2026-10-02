@@ -18,7 +18,7 @@ to `aphrody-ui`.
 
 Contracts owns the subsystem types and `schema/v2.json`. The N2B CLI release
 closure has no sibling dependency; the documentation subsystem uses Contracts.
-No AI dependency. Exact membership and dependencies come from [Cargo.toml](Cargo.toml).
+No AI dependency. Exact membership and dependencies come from Cargo.toml.
 
 ## Start and references
 

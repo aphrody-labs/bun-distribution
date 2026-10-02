@@ -29,5 +29,5 @@ its commands. Snapshot synchronization must preserve active child worktrees.
 Update child commits first, then intentionally record their gitlinks and manifest.
 
 Contracts owns wire schemas; Infra owns infrastructure and the generated
-[ecosystem catalogue](../../reference/infra/ecosystem/ECOSYSTEM.md).
+[ecosystem catalogue](../../ecosystem/ECOSYSTEM.md).
 [Historical root documentation](../../reference/workspace/INDEX.md#historical-material) stays in Git.

@@ -5,7 +5,7 @@
 ### État réel vérifié le 2026-09-27
 
 Les états ci-dessous proviennent de sondes exécutées depuis `shenron` et
-`aphrody-infra`; ils remplacent les chiffres historiques qui ne sont pas
+Infra du monorepo; ils remplacent les chiffres historiques qui ne sont pas
 explicitement marqués comme live.
 
 | Surface | État observé | Preuve |
@@ -15,13 +15,13 @@ explicitement marqués comme live.
 | Shenron doctor | PARTIEL | SQLite, index, corpus, CUDA/RTX 4070 et modèles locaux détectés ; la source PostgreSQL du binaire Aphrody reste non configurée et le diagnostic retombe sur SQLite. |
 | RAG local | FAIT lexical, INCOMPLET vectoriel | 28 583 passages : 24 805 databooks, 3 771 wiki, 7 canon. L'évaluation sans sidecar E5 reste en BM25 : Recall@5 9,3 %, 156 misses sur 172. |
 | Embedder distant | INCOMPLET | Le tunnel peut être UP, mais `/health` du sidecar E5 n'a pas répondu pendant le contrôle ; aucun gain hybride ne doit être déclaré. |
-| Services VPS | INCOMPLET | Le catalogue `aphrody-infra` indique `shenron-site` et `shenron-bot` actifs ; les services Aphrody HTTP/embed/A2A restent inactifs, car le bundle Aphrody est encore marqué retiré. |
+| Services VPS | INCOMPLET | Le catalogue Infra du monorepo indique `shenron-site` et `shenron-bot` actifs ; les services Aphrody HTTP/embed/A2A restent inactifs, car le bundle Aphrody est encore marqué retiré. |
 | Build site | INCOMPLET | Turbopack compile et collecte la PostgreSQL distante ; la génération de 1 861 pages n'a pas produit de preuve finale stable après perte d'un run de tunnels. |
 | Traduction databooks | INCOMPLET | Le registre admin du 2026-09-25 reste la source éditoriale : reprise OCR/source et 2 556 pages éligibles à superviser ; aucun dépôt de masse automatique n'est considéré comme fait. |
 | Authentification souveraine | FAIT | `aphrody shenron auth test --site https://dragonballfr.com` : 3 canaux validés HTTP 200 (AgentKey Bearer, cookie HMAC dbfr_admin 30j, session Better Auth Bearer). Formulaire sécurisé sans secret dans l'URL. |
 | Cadre 7 Piliers | DÉPLACÉ | Document cross-repo désormais détenu par `../aphrody-ai/docs/ROADMAP-AGENT-PILLARS.md`; ses métriques historiques doivent être rafraîchies par les propriétaires avant usage opérationnel. |
 
-Conséquence : le pont couvre les surfaces documentées; ce tableau du 2026-09-27 ne constitue pas une vérification live renouvelée. La publication Aphrody complète, le RAG vectoriel et la reprise éditoriale des databooks restent à contrôler via les dépôts propriétaires et `aphrody-infra`. La feuille de route partagée est dans `../aphrody-ai/docs/ROADMAP-AGENT-PILLARS.md`. Aucune valeur de secret, identifiant de compte ou jeton n'est documenté ici.
+Conséquence : le pont couvre les surfaces documentées; ce tableau du 2026-09-27 ne constitue pas une vérification live renouvelée. La publication Aphrody complète, le RAG vectoriel et la reprise éditoriale des databooks restent à contrôler via les dépôts propriétaires et Infra du monorepo. La feuille de route partagée est dans `../aphrody-ai/docs/ROADMAP-AGENT-PILLARS.md`. Aucune valeur de secret, identifiant de compte ou jeton n'est documenté ici.
 
 - [x] Les changements locaux du pont ont été livrés dans Shenron
   (`71158a45`) et Aphrody AI (`8f19bc2`). La façade FFI native expose la
@@ -36,11 +36,11 @@ Conséquence : le pont couvre les surfaces documentées; ce tableau du 2026-09-2
   texte de l'article n'a pas été réécrit.
 - [ ] La release active, les services live, le contrat MCP en production et
   la fraîcheur/couverture globale du RAG restent à vérifier via
-  `aphrody-infra`. Le succès de l'écriture PostgreSQL ne prouve pas la
+  Infra du monorepo. Le succès de l'écriture PostgreSQL ne prouve pas la
   publication de code ou la mise à jour de l'index RAG.
 
 Établi le 2026-09-27 à partir des sondes et de la lecture des documents et du code de
-`shenron`, `aphrody-ai` et `aphrody-infra`. Ce plan distingue les changements
+`shenron`, `aphrody-ai` et Infra du monorepo. Ce plan distingue les changements
 locaux déjà réalisés des contrôles qui exigent une release ou un runtime live.
 Les chiffres issus des rapports datés sont des repères historiques à
 recomptabiliser avant toute reprise.
@@ -74,11 +74,11 @@ recomptabiliser avant toute reprise.
 ### 2. Établir la vérité de la release et des services
 
 - [ ] Lire le catalogue courant et les contrats d'application dans
-  `aphrody-infra`; déterminer quelles versions de Shenron et Aphrody sont
+  Infra du monorepo; déterminer quelles versions de Shenron et Aphrody sont
   réellement déployées.
 - [ ] Vérifier par sondes en lecture seule les services Shenron site/bot,
   l'API `aphrody-ai-http`, l'embed et les routes utiles. Les unités, hôtes,
-  routes et releases sont la responsabilité d'`aphrody-infra`.
+  routes et releases sont la responsabilité d'Infra du monorepo.
 - [ ] Comparer les versions live au code modifié. Ne pas reconstruire une
   ancienne unité MCP publique retirée.
 - **Preuve de sortie :** version/release active, résultats des sondes et
@@ -88,7 +88,7 @@ recomptabiliser avant toute reprise.
 
 - [ ] Construire ou localiser le binaire `aphrody-mcp` avec les outils
   Dragon Ball, puis vérifier `tools/list` contre le catalogue généré
-  `aphrody-infra/docs/ecosystem/MCP-TOOLS.md`.
+  `docs/ecosystem/MCP-TOOLS.md`.
 - [ ] Ouvrir une session stdio depuis chaque client déclaré par le plugin et
   effectuer des appels publics en lecture seule : recherche RAG, sources,
   couverture et lecture wiki.
@@ -161,6 +161,6 @@ recomptabiliser avant toute reprise.
 - Toute écriture éditoriale doit passer par les juges, la révision et les
   règles Shenron ; pas de suppression physique.
 - Toute modification d'unités, routes, déploiement ou rétention relève
-  d'`aphrody-infra`.
+  d'Infra du monorepo.
 - Fermer chaque point avec une preuve datée et un statut `FAIT`, `INCOMPLET`
   ou `NON_FAIT`.

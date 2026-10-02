@@ -40,7 +40,7 @@ The legacy `chat` path does not qualify the desktop runtime.
 | Processes and capability owners | [Architecture](../../architecture/ai/ARCHITECTURE.md), [source of truth](../../reference/ai/SOURCE_OF_TRUTH.md) |
 | Wire subset and handshake | [App-server](./crates/aphrody-app-server/README.md) |
 | Setup, models and configuration | [Install](../../guides/ai/INSTALL.md), [local models](../../reference/ai/LOCAL-AI-MODELS.md), [config](../../reference/ai/config.md) |
-| AI/LLM agent skills | [Unified Aphrody plugin](./plugins/aphrody/README.md) |
+| AI/LLM agent skills | [Unified Aphrody plugin](../../../plugins/aphrody/README.md) |
 | All guides | [Index](./_source/README.md) |
 | NHITL workflow and checks | [AGENTS.md](../../reference/ai/AGENTS.md) |
 

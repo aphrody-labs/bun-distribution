@@ -3,7 +3,7 @@
 
 This nested Cargo workspace contains the additive OS-owned copy of the
 Spacedrive Drive backend. Its imported source is licensed under
-[FSL-1.1-ALv2](LICENSE), separate from the Apache-2.0 Aphrody OS workspace.
+FSL-1.1-ALv2, separate from the Apache-2.0 Aphrody OS workspace.
 The source snapshot comes from `../aphrody-ui/drive` at Aphrody UI commit
 `0511c85ae556b888d349fcf9af275ed926d141d1`. The original project is
 [`spacedriveapp/spacedrive`](https://github.com/spacedriveapp/spacedrive).
@@ -33,7 +33,7 @@ wire clients until those checks and runtime migration are completed.
 
 ## Known safety gap
 
-[`crates/archive/src/safety.rs`](crates/archive/src/safety.rs) is a stub whose
+[`crates/archive/src/safety.rs`](../../../../crates/os/drive/crates/archive/src/safety.rs) is a stub whose
 batch screening returns score 0 and safe for every record. The archive engine
 currently logs “safety screening model loaded (Prompt Guard 2 22M)” after
 constructing that stub. The fallback in `engine.rs` can also mark unscreened

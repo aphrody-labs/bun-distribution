@@ -19,10 +19,10 @@ own repositories.
 | What must the workstation deliver next? | [AI delivery plan](../../plans/ai/PLAN.md) |
 | How does Bun model training cross repositories? | [Workspace Bun handoffs](../../plans/workspace/PLAN.md#bun-adapter-handoffs), then the [AI training runbook](../ai/training.md#bun-qwen3-coder-30b-adapter-delivery) |
 | How do the UI and native capabilities connect? | [GUI contract](../ui/GUI.md), [UI design](../../architecture/ui/UI-DESIGN.md), [UX design](../../architecture/ui/UX-DESIGN.md) |
-| Which crates, packages, commands and tools exist? | Infra [ecosystem](../infra/ecosystem/ECOSYSTEM.md), [CLI](../infra/ecosystem/CLI.md), [MCP](../infra/ecosystem/MCP-TOOLS.md) |
+| Which crates, packages, commands and tools exist? | Infra [ecosystem](../../ecosystem/ECOSYSTEM.md), [CLI](../../ecosystem/CLI.md), [MCP](../../ecosystem/MCP-TOOLS.md) |
 | What is the protocol/data ownership? | [Architecture contracts](../../architecture/workspace/ARCHITECTURE.md#contracts-and-data-ownership), then the implementation owner |
 | Where are service topology and release decisions? | [Infra documentation](../../products/infra/README.md) and its `config/` / `inventory/` |
-| Which child revisions are recorded? | Root gitlinks, [.gitmodules](../.gitmodules), [manifest](../manifest.json) and current child Git state |
+| Which child revisions are recorded? | Root gitlinks, .gitmodules, manifest and current child Git state |
 
 ## Repository entry points
 
@@ -32,18 +32,18 @@ own repositories.
 | System | [README](../../products/os/_source/README.md.712b5622bf2b) |
 | UI | [README](../../products/ui/_source/README.md.8c1fe132fe5c), [index](../../products/ui/_source/README.md) |
 | Koharu libraries | [README](../../products/koharu/README.md), [UI integration](../ui/integrations/KOHARU.md) |
-| Manga, OCR and databook review | [Aphrody manga adapter](../../../crates/ai/manga/README.md), [Shenron review boundary](../shenron/docs/KOHARU-CAPABILITY-MAP.md) |
+| Manga, OCR and databook review | [Aphrody manga adapter](../../../crates/ai/manga/README.md), Shenron review boundary |
 | Web | [README](../../products/web/README.md) |
 | Contracts | [README](../../products/contracts/README.md), [A2A](../../products/contracts/a2a/README.md) |
 | Native | [README](../../products/native/README.md) |
 | Shell | [README](../../products/shell/README.md) |
 | Compatibility | [README](../../products/compat/_source/README.md.038abe5c2ce0) |
 | Infrastructure | [README](../../products/infra/README.md), [shared integration context](../infra/UNIFIED-AGENT-CONTEXT.md) |
-| Discord integration | [aphrody-discord](../../products/discord/README.md), [Shenron boundary](../shenron/docs/APHRODY-DISCORD-INTEGRATION.md) |
-| RG | [README](../rg/README.md) |
-| Shenron | [README](../shenron/README.md) |
-| NIE | [README](../../products/nie/_source/README.md.1420254c5733) |
-| IECODE | [README](../../products/iecode/README.md) |
+| Discord integration | [aphrody-discord](../../products/discord/README.md), Shenron boundary |
+| RG | README |
+| Shenron | README |
+| NIE | README |
+| IECODE | README |
 
 ## Historical material
 

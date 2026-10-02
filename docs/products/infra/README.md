@@ -61,7 +61,7 @@ aphrody-infra quality lint --repo <catalogued-repo> --run --json
 
 - [Open work](../../plans/infra/PLAN.md), [agent rules](../../reference/infra/AGENTS.md)
 - [Aphrody Bun platform map and integration plan](../../reference/infra/APHRODY-BUN-PLATFORM.md)
-- [Aphrody Bun fork operations and pin](../../operations/infra/BUN-FORK-OPERATIONS.md)
+- Aphrody Bun fork operations and pin
 - [GitHub organization ownership and repository transfer](../../reference/infra/GITHUB-OWNERSHIP.md)
 - [GitHub identity, CI, release and upstream automation plan](../../plans/infra/GITHUB-AUTONOMY-PLAN.md)
 - `nu scripts/scan-ui-crates.nu --skip-ui` (from any working directory; optional

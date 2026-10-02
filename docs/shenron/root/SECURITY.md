@@ -37,7 +37,7 @@ Ce dépôt contient un bot Discord (`apps/bot`) et un site compagnon
 
 - Aucun secret dans le dépôt : `.env` est ignoré, la production utilise des
   variables d'environnement gérées côté `aphrody-infra` (systemd
-  `EnvironmentFile`, plus de Vercel — cf. [`docs/INFRA-DELEGATION.md`](docs/INFRA-DELEGATION.md)).
+  `EnvironmentFile`, plus de Vercel — cf. `docs/INFRA-DELEGATION.md`).
   Voir `apps/bot/.env.example` pour la liste des variables attendues (valeurs
   factices uniquement).
 - Ne jamais committer `apps/bot/data/*.db`, `guild-scan.json`, ni aucun export

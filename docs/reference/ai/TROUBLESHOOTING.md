@@ -6,7 +6,7 @@ Common pitfalls hit by engineers working on `aphrody`. Each entry follows a
 **Cause** / **Fix** structure. Most of these have already been wired with
 mitigations; this page exists to short-circuit the rediscovery loop.
 
-If your issue is not here, see [`FAQ.md`](./_source/FAQ.md) or open a GitHub issue
+If your issue is not here, see `FAQ.md` or open a GitHub issue
 using `.github/ISSUE_TEMPLATE/bug_report.yml`.
 
 ## 1. `aphrody --version` panics with "No provider set"
@@ -51,7 +51,7 @@ using `.github/ISSUE_TEMPLATE/bug_report.yml`.
 - **Cause**: The requested GGUF or ONNX model exceeds available GPU VRAM.
 - **Fix**: Offload fewer layers (`--n-gpu-layers`), quantize the KV cache
   (`--ctk q8_0 --ctv q8_0`), or enable hybrid CPU offloading for MoE weights
-  (`--n-cpu-moe 48` for Qwen3-MoE). See [`LOCAL-AI-MODELS.md`](./_source/LOCAL-AI-MODELS.md).
+  (`--n-cpu-moe 48` for Qwen3-MoE). See `LOCAL-AI-MODELS.md`.
 
 ## 6. `wasm-pack build` fails with "Cannot find module run.js"
 
@@ -121,6 +121,6 @@ using `.github/ISSUE_TEMPLATE/bug_report.yml`.
 
 ## 14. Got more?
 
-Skim [`FAQ.md`](./_source/FAQ.md) first. If still stuck, open a GitHub issue using
+Skim `FAQ.md` first. If still stuck, open a GitHub issue using
 `.github/ISSUE_TEMPLATE/bug_report.yml` and attach the output of
 `aphrody doctor`.

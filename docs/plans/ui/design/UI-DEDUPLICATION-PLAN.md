@@ -25,7 +25,7 @@ its product owner; generic presentation and interaction belong to the M3 package
 target. Base UI and Tailwind CSS remain maintained M3-adapted forks in the Bun workspace.
 The [`asset catalog`](../../../../assets/ui/manifest.json) supplies visual references, not
 functional requirements or reusable user data. The generated
-[`ecosystem catalog`](../../../reference/infra/ecosystem/ECOSYSTEM.md) is the cross-repository
+[`ecosystem catalog`](../../../ecosystem/ECOSYSTEM.md) is the cross-repository
 package inventory; do not hand-edit it.
 
 The [`Drive migration document`](../../../architecture/ui/design/SPACEUI-SPACEDRIVE-MIGRATION.md) records

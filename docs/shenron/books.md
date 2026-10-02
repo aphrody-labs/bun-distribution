@@ -6,12 +6,12 @@ requis pour une reprise depuis un poste distant.
 
 ## Chaîne active
 
-Deux ponts natifs côté `aphrody-ai` remplacent désormais les scripts ad-hoc :
+Deux commandes natives du monorepo Aphrody remplacent désormais les scripts ad-hoc :
 `aphrody ocr dbfr` (HTTP direct vers l'API) et `aphrody ocr shenron` (spawn
-`bun apps/site/scripts/databooks.ts`, réutilise le judge `classerDefaut`).
-Voir `aphrody-ai/crates/aphrody/src/ocr_dbfr.rs`,
-`aphrody-ai/crates/aphrody/src/ocr_shenron.rs` et le contrat
-`aphrody-ai/docs/databooks-transcription-bridge.md`.
+`bun apps/shenron/site/scripts/databooks.ts`, réutilise le judge `classerDefaut`).
+Voir `apps/cli/src/ocr_dbfr.rs`,
+`apps/cli/src/ocr_shenron.rs` et le contrat
+`docs/reference/ai/databooks-transcription-bridge.md`.
 
 ```text
 aphrody ocr dbfr fetch-all
@@ -78,7 +78,7 @@ jamais eu que 15).
 - Un lot mixte n'est pas publié partiellement par défaut : séparer les pages
   saines des pages fautives, puis auditer le sous-lot avant dépôt.
 - Le dépôt utilise `merge` : seules les pages transcrites du lot sont ciblées.
-- Le jeton vient de `apps/site/.env` (bridge `shenron`) ou de `$DBFR_TOKEN`
+- Le jeton vient de `apps/shenron/site/.env` (bridge `shenron`) ou de `$DBFR_TOKEN`
   côté `aphrody` (bridge `dbfr`) ; il n'est jamais affiché dans les journaux ni
   dans ce document.
 - Le serveur résident `llama-server` n'est pas utilisé : il est expérimental
@@ -112,8 +112,8 @@ relecture et aucun dépôt n'est tenté.
 
 ```bash
 aphrody ocr shenron emit <id> --out <dir>
-bun apps/site/scripts/databooks.ts verifie <dir>/resultats.jsonl
-bun apps/site/scripts/databooks.ts depose <dir>/resultats.jsonl
+bun apps/shenron/site/scripts/databooks.ts verifie <dir>/resultats.jsonl
+bun apps/shenron/site/scripts/databooks.ts depose <dir>/resultats.jsonl
 ```
 
 Ne pas utiliser `--force` pour contourner l'audit : une page `vide`, en boucle
@@ -129,9 +129,9 @@ mise à jour RAG selon [`databooks-doctrine.md`](databooks-doctrine.md).
   format JSONL.
 - [`prompt-aphrody-ocr-databooks.md`](prompt-aphrody-ocr-databooks.md) — contrat
   de sortie OCR.
-- `aphrody-ai/crates/aphrody/src/ocr_dbfr.rs` — pont HTTP natif
+- `apps/cli/src/ocr_dbfr.rs` — pont HTTP natif
   (`aphrody ocr dbfr`).
-- `aphrody-ai/crates/aphrody/src/ocr_shenron.rs` — pont natif vers ce dépôt
+- `apps/cli/src/ocr_shenron.rs` — pont natif vers ce dépôt
   (`aphrody ocr shenron`).
-- `aphrody-ai/docs/databooks-transcription-bridge.md` — contrat du pont côté
+- `docs/reference/ai/databooks-transcription-bridge.md` — contrat du pont côté
   Aphrody.

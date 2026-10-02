@@ -3,7 +3,7 @@
 
 This repository does not link a Rust crate into the Bun executable. Bun is
 discovered and launched as an installed program through the shared
-[`aphrody-toolchains`](../crates/aphrody-toolchains/) crate. The
+`aphrody-toolchains` crate. The
 optional `third_party/bun` submodule provides Bun source and documentation; it
 is not a member of this Cargo workspace.
 

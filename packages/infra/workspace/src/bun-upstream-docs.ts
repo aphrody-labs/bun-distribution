@@ -6,8 +6,9 @@
  * Usage:
  *   bun scripts/n2b/update-bun-docs.ts [ref]
  */
-import { resolve, join } from "node:path";
-import { rm, mkdir, cp, readFile, writeFile, readdir, stat } from "node:fs/promises";
+import { dirname, join, relative, resolve } from "node:path";
+import { homedir } from "node:os";
+import { rm, mkdir, copyFile, readdir, stat } from "node:fs/promises";
 
 export async function runBunUpstreamDocs(args: string[]): Promise<number> {
   let ref = "main";
@@ -25,8 +26,12 @@ export async function runBunUpstreamDocs(args: string[]): Promise<number> {
   }
   if (!repoRoot || !ref) throw new Error("--root and --ref require a value");
   repoRoot = resolve(repoRoot);
-  const upstream = join(repoRoot, "upstream", "bun");
-  const docsOut = join(repoRoot, "docs", "n2b", "bun");
+  // The in-repo upstream/bun fork is gone: mirror outside the repository and write each page to
+  // its canonical docs/<category>/upstream-bun location so the import never recreates duplicates.
+  const upstream =
+    process.env.APHRODY_BUN_MIRROR ?? join(homedir(), ".cache", "aphrody", "upstream", "bun");
+  const docsRoot = join(repoRoot, "docs");
+  const fallbackOut = join(docsRoot, "reference", "upstream-bun");
 
   const ASSET_EXTENSIONS = new Set([
     ".png",
@@ -92,48 +97,53 @@ export async function runBunUpstreamDocs(args: string[]): Promise<number> {
 
   console.log(`New upstream ref: ${ref} \`${newSha}\` (${newDate})`);
 
-  // 2. Extract docs/n2b/bun/
-  await rm(docsOut, { recursive: true, force: true });
-  await mkdir(docsOut, { recursive: true });
-  await cp(join(upstream, "docs"), docsOut, { recursive: true });
-
-  // 3. Strip binary/asset files recursively
-  async function cleanAssets(dir: string) {
-    const entries = await readdir(dir, { withFileTypes: true });
+  // 2. Index the canonical location of every page already imported under docs/*/upstream-bun.
+  const canonical = new Map<string, string>();
+  async function walk(dir: string, base: string): Promise<void> {
+    let entries;
+    try {
+      entries = await readdir(dir, { withFileTypes: true });
+    } catch {
+      return;
+    }
     for (const entry of entries) {
-      const fullPath = join(dir, entry.name);
-      if (entry.isDirectory()) {
-        if (["icons", "images", "logo"].includes(entry.name.toLowerCase())) {
-          await rm(fullPath, { recursive: true, force: true });
-        } else {
-          await cleanAssets(fullPath);
-        }
-      } else if (entry.isFile()) {
-        const ext = entry.name.slice(entry.name.lastIndexOf(".")).toLowerCase();
-        if (ASSET_EXTENSIONS.has(ext)) {
-          await rm(fullPath, { force: true });
-        }
+      const full = join(dir, entry.name);
+      if (entry.isDirectory()) await walk(full, base);
+      else if (entry.isFile()) {
+        const rel = relative(base, full);
+        if (!canonical.has(rel)) canonical.set(rel, full);
       }
     }
   }
-  await cleanAssets(docsOut);
-
-  // 4. Update the pin row in docs/n2b/README.md
-  const readmePath = join(repoRoot, "docs", "n2b", "README.md");
-  try {
-    let readme = await readFile(readmePath, "utf8");
-    const pattern = /^(\| `bun\/` \| `oven-sh\/bun` · `docs\/` \| ).*?(\|)$/m;
-    const newLine = `$1${ref} \`${newSha}\` (${newDate}) $2`;
-    if (pattern.test(readme)) {
-      readme = readme.replace(pattern, newLine);
-      await writeFile(readmePath, readme, "utf8");
-      console.log("Updated docs/n2b/README.md pin table.");
-    } else {
-      console.warn("docs/n2b/README.md has no `bun/` pin row; update it by hand.");
+  for (const category of await readdir(docsRoot, { withFileTypes: true })) {
+    if (category.isDirectory()) {
+      const base = join(docsRoot, category.name, "upstream-bun");
+      await walk(base, base);
     }
-  } catch (e) {
-    console.warn("Could not update docs/n2b/README.md:", e);
   }
+
+  // 3. Copy upstream docs/ pages (assets stripped) onto their canonical path; new pages go to
+  //    docs/reference/upstream-bun. Nothing is deleted, so no second copy is ever created.
+  let written = 0;
+  async function copyDocs(dir: string, base: string): Promise<void> {
+    for (const entry of await readdir(dir, { withFileTypes: true })) {
+      const full = join(dir, entry.name);
+      if (entry.isDirectory()) {
+        if (!["icons", "images", "logo"].includes(entry.name.toLowerCase())) await copyDocs(full, base);
+        continue;
+      }
+      if (!entry.isFile()) continue;
+      const ext = entry.name.slice(entry.name.lastIndexOf(".")).toLowerCase();
+      if (ASSET_EXTENSIONS.has(ext)) continue;
+      const rel = relative(base, full);
+      const target = canonical.get(rel) ?? join(fallbackOut, rel);
+      await mkdir(dirname(target), { recursive: true });
+      await copyFile(full, target);
+      written++;
+    }
+  }
+  await copyDocs(join(upstream, "docs"), join(upstream, "docs"));
+  console.log(`Wrote ${written} pages for oven-sh/bun ${ref} \`${newSha}\` (${newDate}).`);
 
   console.log("Bun documentation successfully updated.");
   return 0;

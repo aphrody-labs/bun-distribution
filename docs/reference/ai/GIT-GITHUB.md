@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 # Git and GitHub integration
 
-[`aphrody-git`](../../aphrody-infra/crates/aphrody-git/src/lib.rs) is the native Git/GitHub
+[`aphrody-git`](../../../crates/infra/git/src/lib.rs) is the native Git/GitHub
 layer used by the `aphrody git` CLI. Local inspection uses pure-Rust `gix`;
 GitHub REST and GraphQL use `octocrab`. The crate is currently
 `publish = false`, so consumers must pin the Git repository itself.

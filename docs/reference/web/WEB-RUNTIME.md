@@ -182,6 +182,6 @@ Validation ciblée :
 
 ```powershell
 $env:RUSTC_WRAPPER=''
-cargo test -p aphrody-web-service -p aphrody-browser -p aphrody-web-engine -p aphrody-n2b-rules --locked
+cargo test -p aphrody-web-service -p aphrody-browser -p aphrody-web-engine -p aphrody-n2b-core --locked
 bun run runtime:check
 ```

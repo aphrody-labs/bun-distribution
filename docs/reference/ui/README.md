@@ -68,7 +68,7 @@ historical.
 <!-- docs-hub:begin include="INTEGRATION-2026-09-27.md;MODERN-AGENT-APP-SPEC-2026.md;SESSION-INSPECTION-ERRORS-AND-INCONSISTENCIES.md" -->
 | Document | Contenu | Statut | Mis à jour |
 | --- | --- | --- | --- |
-| [Archived integration journal](INTEGRATION-2026-09-27.md) | This journal records a 2026 desktop integration pass. | historical | 2026-09-29 |
+| [Archived integration journal](../../operations/workspace/HISTORY.md) | This journal records a 2026 desktop integration pass. | historical | 2026-09-29 |
 | [Archived agent app proposal](MODERN-AGENT-APP-SPEC-2026.md) | This 2026 concept included terminal/PTy, embedded browser/crawler and host administration panes. | historical | 2026-09-29 |
 | [Archived UI inspection notes](SESSION-INSPECTION-ERRORS-AND-INCONSISTENCIES.md) | These notes describe an earlier app-ui architecture, including crawler, remote-host, terminal and host-diagnostics routes. | historical | 2026-09-29 |
 <!-- docs-hub:end -->

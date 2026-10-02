@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 # Note de recherche — audit Files/VFS
 
-**2026-10-02 — référence canonique :** [audit Files, VFS et recherche](../../FILE-SURFACE-AUDIT.md).
+**2026-10-02 — référence canonique :** [audit Files, VFS et recherche](../../operations/workspace/HISTORY.md).
 Ce fichier remplace le miroir complet conservé ici jusque-là. Le relevé du
 2026-09-28 reste historique; ses chemins de checkouts ne sont pas un inventaire
 actuel des consommateurs.

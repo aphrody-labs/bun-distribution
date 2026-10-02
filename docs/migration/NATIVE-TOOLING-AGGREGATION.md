@@ -33,7 +33,7 @@ The original source files have these SHA-256 values:
 
 Aphrody ABI remains 1, N2B ABI remains 2 with JSON report schema 2, and Oxc ABI
 remains 1. Every owned result is freed with its original destructor. The
-[tooling C header](../../crates/ai/aphrody-ffi/include/aphrody-tooling.h)
+[tooling C header](../../crates/interop/ffi/include/aphrody-tooling.h)
 declares these contracts and compiles as C17 and C++17 with strict warnings.
 
 The native symbol audit of the rebuilt debug aggregate resolves all ten:
@@ -55,8 +55,8 @@ loaded is rejected. The Web binding still rejects close while native resources
 are live. The aggregate retains mimalloc's `local_dynamic_tls` option for
 Linux loading from Bun.
 
-The retained [native tests](../../packages/bun/aphrody/test-native.test.ts)
-and [fork fixture](../../packages/bun/aphrody/fixtures/bun-fork-native.ts)
+The retained native tests
+and fork fixture
 verify raw error ownership, report parity against rebuilt Compat, Oxc output
 parity against its rebuilt original bridge, source immutability, preview and
 actual safe fixes, ignores, UTF-16 astral/lone-surrogate offsets, and both

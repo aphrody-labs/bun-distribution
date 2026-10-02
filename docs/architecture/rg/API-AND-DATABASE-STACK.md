@@ -7,7 +7,7 @@ Ce document constitue la référence d'architecture canonique décrivant la pile
 
 ## 1. Vue d'Ensemble & Environnement Runtime
 
-L'ensemble de la couche API et persistance de Rose Griffon vit sous **Bun (>=1.4.2)** et **TypeScript (7.0.2)** au sein du monorepo Aphrody. Elle est hébergée par le démon unifié [`apps/rg/bot`](file:///home/aphro/aphrody/apps/rg/bot) (`rg-bot.service` sur port :8800) et consommée par le frontend Next.js 16 [`apps/rg/website`](file:///home/aphro/aphrody/apps/rg/website) (:3004).
+L'ensemble de la couche API et persistance de Rose Griffon vit sous **Bun (>=1.4.2)** et **TypeScript (7.0.2)** au sein du monorepo Aphrody. Elle est hébergée par le démon unifié [`apps/rg/bot`](../../../apps/rg/bot) (`rg-bot.service` sur port :8800) et consommée par le frontend Next.js 16 [`apps/rg/website`](../../../apps/rg/website) (:3004).
 
 ```mermaid
 flowchart TD
@@ -56,7 +56,7 @@ flowchart TD
 - **Rôle** : Constructeur de requêtes SQL entièrement typesafe sans surcoût d'ORM ni magie de runtime.
 - **Mutualisation des Schémas** : Configuration d'un `PostgresDialect` avec `searchPath: "achillea,public"`. Toutes les tables du domaine esport (`achillea.*`) et de la communauté Rose Griffon (`public.*`) sont interrogées sur la base PostgreSQL unique `rg`.
 - **Gestion des Pools & Cycle de Vie** :
-  - `createPgPool()` dans [`packages/rg/db/src/pg.ts`](file:///home/aphro/aphrody/packages/rg/db/src/pg.ts) borne les connexions (défaut : 4-8 connexions actives), applique un timeout de connexion de 5 000 ms et un keep-alive TCP.
+  - `createPgPool()` dans [`packages/rg/db/src/pg.ts`](../../../packages/rg/db/src/pg.ts) borne les connexions (défaut : 4-8 connexions actives), applique un timeout de connexion de 5 000 ms et un keep-alive TCP.
   - Décoration automatique de l'instance Kysely dans le contexte de requête Elysia via `dbPlugin` :
     ```typescript
     export const db = createAchilleaSql<Database>() as Kysely<Database>;

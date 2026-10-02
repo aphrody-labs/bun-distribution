@@ -109,7 +109,7 @@ Pour exécuter Gemini Embedding 2 dans votre environnement de développement loc
 Assurez-vous que les APIs Google Cloud nécessaires sont activées sur votre projet GCP. Vous pouvez exécuter le script idempotent de provisionnement fourni dans le repo :
 ```bash
 # Provisionne le projet GCP, active les APIs de l'IA Générative et configure les credentials
-../aphrody-infra/scripts/aphrody/gcp-sa-setup.sh
+scripts/aphrody/gcp-sa-setup.sh (from the Aphrody monorepo root)
 ```
 Ce script active notamment :
 - L'API Vertex AI (`aiplatform.googleapis.com`)
@@ -140,7 +140,7 @@ pip install google-genai numpy
 ```
 
 ### 4. Validation avec le script de test
-Le dépôt inclut un script de test automatisé [test-gemini-embedding-2.py](../scripts/test-gemini-embedding-2.py) pour valider l'ensemble du pipeline. Pour le lancer avec le venv du projet :
+Le dépôt inclut un script de test automatisé test-gemini-embedding-2.py pour valider l'ensemble du pipeline. Pour le lancer avec le venv du projet :
 ```bash
 GOOGLE_CLOUD_LOCATION=us py/.venv/bin/python scripts/test-gemini-embedding-2.py
 ```

@@ -26,7 +26,7 @@ otherwise add a new rule or flag instead of altering an existing one.
 | CLI flags and subcommands | `crates/aphrody-n2b/src/cli/args.rs` |
 | Exit codes (`0` clean, `1` findings, `2` error) | `crates/aphrody-n2b/src/commands/scan.rs`, `crates/aphrody-n2b/src/main.rs` |
 | JSON report v2 (bump to v3 on a breaking change) | `../aphrody-contracts/schema/v2.json` |
-| Rule IDs (`cli/*`, `imports/node-prefix`, `shebang/node`, ...) | `crates/aphrody-n2b-registry/registry/*.toml`, `crates/aphrody-n2b-rules/src/` |
+| Rule IDs (`cli/*`, `imports/node-prefix`, `shebang/node`, ...) | `crates/compat/n2b-registry/registry/*.toml`, `crates/compat/n2b-core/src/rules/` |
 | cdylib ABI v2 (`find_newlines_u16`, `node2bun_abi_version`, `node2bun_scan_json`, `node2bun_scan_with_options_json`, `node2bun_string_free`) | `crates/aphrody-n2b-native/src/lib.rs` |
 
 - Safety net: `crates/aphrody-n2b/tests/contract.rs` (`assert_cmd` + `jsonschema` against the

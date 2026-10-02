@@ -6,7 +6,7 @@ description: "Settled NIE (Inazuma Eleven Victory Road) architecture: one librar
 # nie architecture
 
 > **Applies when:** the IECODE checkout (its root has a `iecode:crates/nie` directory) is the working directory; paths prefixed `iecode:` are relative to that root, unprefixed paths to the Aphrody monorepo.
-> **Otherwise:** read `docs/architecture/nie/` and `docs/NIE-CAPABILITY-MAP.md` in the Aphrody monorepo, and say that the NIE sources are unavailable rather than guessing crate or file names.
+> **Otherwise:** read `docs/architecture/nie/` and `docs/reference/workspace/NIE-CAPABILITY-MAP.md` in the Aphrody monorepo, and say that the NIE sources are unavailable rather than guessing crate or file names.
 
 `iecode:PLAN.md` is the execution ledger and `iecode:AGENTS.md` the only agent contract. This skill
 fixes architectural choices; it does not certify that their implementation or reverse engineering is

@@ -8,7 +8,7 @@ Il couvre l'ensemble des 153 points d'accès HTTP et WebSocket consolidés sur l
 
 ## 1. Principes Directeurs & Protocole Réseau
 
-1. **Serveur Unique & Runtime** : Développé avec [ElysiaJS](https://elysiajs.com) sous [Bun](https://bun.sh) (>=1.4.2), intégré dans le même processus démon que le bot Discord Rose Griffon ([`apps/rg/bot`](file:///home/aphro/aphrody/apps/rg/bot)).
+1. **Serveur Unique & Runtime** : Développé avec [ElysiaJS](https://elysiajs.com) sous [Bun](https://bun.sh) (>=1.4.2), intégré dans le même processus démon que le bot Discord Rose Griffon ([`apps/rg/bot`](../../../apps/rg/bot)).
 2. **Typage Contrat Zéro-Coût** : L'API expose le type TypeScript `App` (`typeof app`), exploité côté client web et CLI par Eden Treaty (`@elysia/eden`). Tout changement d'endpoint ou de schéma TypeBox est répercuté statiquement au build.
 3. **Sérialisation & Validation** : Validation à l'entrée par schémas stricts TypeBox (`t.Object`, `t.String`, `t.Numeric`, `t.Boolean`, `t.Optional`).
 4. **Documentation Interactive** : Spécification OpenAPI / Swagger UI accessible directement sur `/docs`.
@@ -196,7 +196,7 @@ Remplace le démon legacy `rg-realtime:8812` et le WebSocket legacy `:4005`.
 
 ## 4. Exemple d'Intégration Client (Eden Treaty)
 
-L'intégration dans l'application frontend Next.js 16 ([`apps/rg/website`](file:///home/aphro/aphrody/apps/rg/website)) est entièrement typesafe :
+L'intégration dans l'application frontend Next.js 16 ([`apps/rg/website`](../../../apps/rg/website)) est entièrement typesafe :
 
 ```typescript
 import { treaty } from "@elysia/eden";

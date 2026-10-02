@@ -11,7 +11,7 @@ revision `78245b47af2a7aafcabe025828ceecca69db4df1`:
 - `codex-rs/app-server-protocol/src/protocol/v2/turn.rs`
 
 That revision remains the provenance for the original contract comparison and
-fixtures. The current audit checkout is [`thirdparty/codex`](../../thirdparty/codex),
+fixtures. The current audit checkout is `thirdparty/codex`,
 pinned at `a6bd19261c30ce0a0225fe90e646822d29916f11`; it does not change the
 provenance of existing ports or establish conformance to the newer revision.
 See [third-party provenance](../../../../reference/ai/THIRD_PARTY_CODEX.md).

@@ -5,7 +5,7 @@
 Les paquets Shenron sont en amont des clients Aphrody : les dépôts Aphrody
 peuvent consommer `@shenron/*` et les contrats HTTP Shenron. Le workspace
 Shenron n'importe aucun paquet de code `@aphrody/*` ni checkout frère
-`../aphrody-*`. Le catalogue `aphrody-infra` reste la source opérationnelle
+`../aphrody-*`. Le catalogue de l'Infra du monorepo reste la source opérationnelle
 des ports et services pour les tunnels locaux.
 Le code Aphrody Discord appartient au monorepo `/home/aphro/aphrody/`, pas
 au workspace Shenron ; le bot consomme les paquets Discordx publiés.
@@ -24,7 +24,7 @@ Il complète :
   l'écosystème Rust d'Aphrody et par quelles frontières ;
 - [`APHRODY-OFFLOAD.md`](APHRODY-OFFLOAD.md) : état et preuves du déport RAG ;
 - [`INFRA-DELEGATION.md`](INFRA-DELEGATION.md) : frontière d'exploitation avec
-  `aphrody-infra` ;
+  l'Infra du monorepo ;
 - `PLAN.md` : registre des décisions, invariants et journal de validation.
 
 État relevé le 2026-09-24 (HEAD `1be3116a`) sur le poste Windows de développement : Bun 1.4.2,
@@ -40,15 +40,15 @@ daté du 24 septembre ; ses mentions de `shenron-mcp` sont historiques. Le
 serveur Bun et l'unité séparée ont été retirés : les outils Dragon Ball sont
 dans `aphrody-ai/crates/aphrody-mcp` (`dragonball.*`). La carte actuelle est
 [`APHRODY-ECOSYSTEM.md`](APHRODY-ECOSYSTEM.md), les outils exacts sont dans le
-catalogue `aphrody-infra/docs/ecosystem/MCP-TOOLS.md`.
+catalogue `docs/ecosystem/MCP-TOOLS.md`.
 
 **Convention.** Ce document ne contient ni hôte, ni IP, ni port, ni chemin
 absolu d'hôte. Un service est désigné par son identifiant dans
-`aphrody-infra/config/service-catalog.json` (`shenron-bot`, `shenron-site`,
+`config/service-catalog.json` (`shenron-bot`, `shenron-site`,
 `aphrody-ai-http`, `aphrody-shenron-embed`, `aphrody-web-api`,
 `shenron-pg-tunnel`…), et un client le trouve par une variable
-d'environnement provisionnée par `aphrody-infra`. Les hôtes publics sont
-déclarés dans `aphrody-infra/config/nginx-routes.json`.
+d'environnement provisionnée par l'Infra du monorepo. Les hôtes publics sont
+déclarés dans `config/nginx-routes.json`.
 
 ---
 
@@ -172,13 +172,13 @@ Drizzle et le SQL brut. La racine
 vague ultérieure verte. Les relations restent sur l'API v1 `relations()`.
 
 **D5. Aucune migration déplacée ni rejournalisée en Phase 1.** Le déploiement
-`aphrody-infra` exécute `bun run site:migrate` (`drizzle-kit migrate`) : journaliser
+l'Infra du monorepo exécute `bun run site:migrate` (`drizzle-kit migrate`) : journaliser
 les 8 fichiers non journalisés (0007–0011, 0015, 0018, 0019) ou scinder le DDL
 `bot.*` appliquerait du DDL en production à la release suivante. La Phase 1
 livre un audit hors ligne (`packages/db/scripts/migration-audit.ts`) et un
 garde-fou : `drizzle.config.bot.ts` refuse `push`/`migrate`, `db:push` du site
 refuse de s'exécuter. La réparation de l'historique est le ticket DB-P3,
-coordonné avec le runbook d'`aphrody-infra`.
+coordonné avec le runbook de l'Infra du monorepo.
 
 **D6. Auth : primitives synchrones, politique staff par périmètre, silos
 séparés.** Les primitives crypto utilisent `node:crypto` de façon synchrone
@@ -194,7 +194,7 @@ est corrigée dès la vague 1 (S1). `@shenron/auth` ne dépend pas de
 `@shenron/db` à l'exécution : les dépôts vivent dans `@shenron/db/repos/*` et
 satisfont les ports de l'auth.
 
-**D7. API Hono montée, jamais en unité séparée.** `aphrody-infra` a retiré
+**D7. API Hono montée, jamais en unité séparée.** l'Infra du monorepo a retiré
 `shenron-api.service`. `createShenronApi(ports)` est montée :
 - dans le bot, par le repli `fetch` de `Bun.serve`, juste avant le 404 JSON :
   `if (shenronApi.handles(pathname)) return shenronApi.fetch(req)`. Les clés
@@ -293,7 +293,7 @@ avant INFRA-1. Seul le gel databooks devient fermé par défaut en production
 
 **D16. Contrat d'environnement par noms.** Aucune URL, hôte ni port par défaut,
 façades `@shenron/pipeline/aphrody/{compute,embeddings}` comprises depuis le contrat IA v1
-d'`aphrody-infra` (`config/local-ai.json`, 2026-09-25) : le résolveur unique
+de l'Infra du monorepo (`config/local-ai.json`, 2026-09-25) : le résolveur unique
 `@shenron/pipeline/ai/config` lit d'abord les noms canoniques `APHRODY_AI_*`, puis les alias
 hérités dans l'ordre du contrat (voir [`ENV.md`](ENV.md)). Les paires de noms
 historiques (`SHENRON_ADMIN_TOKEN`/`API_ADMIN_TOKEN`,
@@ -354,7 +354,7 @@ retour arrière par `git revert`.
 | L1 | tsc 7, oxlint, compilation CSS (postcss + `@tailwindcss/postcss`), `bun build --target=browser`, harnais `Bun.serve` loopback, build Next « compile » optionnel | Oui |
 | L2 | Services locaux jetables : les tests lisent seulement `SHENRON_TEST_DATABASE_URL` / `SHENRON_TEST_REDIS_URL`, refusent tout hôte non loopback et toute base dont le nom ne finit pas par `_test`, ne lisent jamais `DATABASE_URL` (le `.env` local contient une URL vivante) | Seulement si l'opérateur les fournit ; sinon ignorés avec raison |
 | L3 | CI Linux : `next build`, binaire canvas linux, `aphrody-ci` | Bloqué (`startup_failure` de GitHub Actions, PLAN SH-P0-013) |
-| L4 | Production et runbooks opérateur via `aphrody-infra` | Phase 2+ |
+| L4 | Production et runbooks opérateur via l'Infra du monorepo | Phase 2+ |
 
 ---
 
@@ -1327,7 +1327,7 @@ est tenu dans [`PLAN.md`](../../PLAN.md); le fichier de recherche
 | Ticket | Contenu | Débloque ou dépend de |
 | --- | --- | --- |
 | CI-2 | Job Linux : `next typegen` + tsc (types de routes), `next build`, `canvas-render.test.ts` sur ubuntu | retrait du shim canvas ; preuve du build ; dépend de CI-1 |
-| DB-P3 | Réparation de l'historique : `tablesFilter` complet (33 tables), DDL `bot.*` dans `migrations/bot`, instantané de référence, migrateur Bun sur un client dédié amorcé avec les empreintes appliquées, déplacement vers `packages/db`, mise à jour dans le même commit d'`audit-refonte-architecture.ts`, des tests qui lisent le SQL et des motifs d'ignorance oxlint/oxfmt ; essai à blanc puis première migration réelle via le runbook d'`aphrody-infra` | toute nouvelle table ; dépend d'OPS-1 |
+| DB-P3 | Réparation de l'historique : `tablesFilter` complet (33 tables), DDL `bot.*` dans `migrations/bot`, instantané de référence, migrateur Bun sur un client dédié amorcé avec les empreintes appliquées, déplacement vers `packages/db`, mise à jour dans le même commit d'`audit-refonte-architecture.ts`, des tests qui lisent le SQL et des motifs d'ignorance oxlint/oxfmt ; essai à blanc puis première migration réelle via le runbook de l'Infra du monorepo | toute nouvelle table ; dépend d'OPS-1 |
 | SH-DB-3 | Migration mécanique des ≈ 200 scripts feuilles vers `createSql`/`createBunSql` + `loadDatabaseUrl`, cliquet des copies de résolveurs | — |
 | SH-API-2 | Portage de `/health`, `/api/health`, `/api/public/stats` et des routes RAG vers Hono avec instantanés de parité d'en-têtes ; fusion du document généré dans `/api/openapi.json` ; retrait de `buildOpenApiSpec` et de `_bot-routes.ts` ; premier groupe admin (`./hono`) | — |
 | SH-API-3 | Bascule des routes SQLite `/api/public/wiki/*` vers PostgreSQL après diff de forme ; décision GraphQL avec mise à jour des documents du plugin | dépend d'OPS-3 |
@@ -1372,7 +1372,7 @@ d'`aphrody-ui`, OS-4 d'`aphrody-web` (`apps/bxc`), OS-5 d'`aphrody-ai`)
 | OS-4 | `aphrody-web-api` : état des jobs persisté, correctif `chunks=0` publié, exposition publique réconciliée, surface frames |
 | OS-5 | Glossaire injecté dans `aphrody-translate` (avec APH-9) |
 
-**`aphrody-infra`**
+**l'Infra du monorepo**
 
 | Ticket | Contenu |
 | --- | --- |
@@ -1531,7 +1531,7 @@ Toutes réversibles et consignées dans `PLAN.md` :
 8. Les wrappers inutilisés restent dans le site en Phase 1.
 9. `@shenron/pipeline/ai` lit `APHRODY_AI_EMBED_BASE_URL` (base en `/v1`), puis ses alias
    hérités ; `EMBED_URL` y est traité comme une origine (`/v1` ajouté). Aucune
-   adresse par défaut ne subsiste (contrat `aphrody-infra` v1, 2026-09-25).
+   adresse par défaut ne subsiste (contrat l'Infra du monorepo v1, 2026-09-25).
 10. Le chat reste sur l'adaptateur `LanguageModelV4` jusqu'à APH-3.
 11. `application-contracts.json` (« reuse-rg-* ») se réconcilie par INFRA-5,
     sans rouvrir les décisions sur l'auth et l'interface.

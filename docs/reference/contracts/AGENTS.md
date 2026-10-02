@@ -39,7 +39,7 @@ git diff --check
 ```
 
 Layout and entry points: [README](../../products/contracts/README.md). Reuse the
-[ecosystem inventory](../infra/ecosystem/ECOSYSTEM.md) before adding code.
+[ecosystem inventory](../../ecosystem/ECOSYSTEM.md) before adding code.
 
 ## Automatisation transversale
 

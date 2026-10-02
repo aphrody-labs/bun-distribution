@@ -1,20 +1,20 @@
-> **Structure courante (2026-09-28).** Le code auparavant réparti entre `packages/ai`, `packages/aphrody`, `packages/pipeline` et `packages/bxc-bridge` est consolidé dans `packages/pipeline`, workspace `@shenron/pipeline`. Ses surfaces publiques sont `@shenron/pipeline/ai/*`, `@shenron/pipeline/aphrody/*` et `@shenron/pipeline/bxc`. Les références antérieures à ces répertoires doivent se lire comme historique.
+> **Snapshot de code du 2026-09-28, pas un état runtime courant.** Les noms de paquets et chemins de dépôts frères décrivent la structure de l'époque. Le code actuel est dans `apps/shenron/` et `packages/shenron/` pour Shenron, `crates/ai/` pour les capacités Aphrody, et les catalogues Infra vivent sous `config/`. Pour l'état de production, voir les observations datées dans `docs/operations/infra/`.
 
 # Écosystème Aphrody pour Shenron
 
 ## Frontière Discord partagée
 
 Le transport Discord partagé est maintenu dans `aphrody-discord` et son
-déploiement dans `aphrody-infra`. Shenron ne conserve que ses commandes, son
+déploiement dans Infra du monorepo. Shenron ne conserve que ses commandes, son
 domaine, son autorisation et ses données. La migration détaillée est dans
 [`APHRODY-DISCORD-INTEGRATION.md`](APHRODY-DISCORD-INTEGRATION.md).
 
-État du code de raccordement vérifié le 2026-09-26 dans les dépôts frères
-`aphrody-ai` et `aphrody-infra`. La carte ci-dessous remplace les tableaux
-historiques plus bas lorsqu'ils mentionnent encore `apps/shenron-mcp` : cette
-application Bun est supprimée et ses outils Dragon Ball sont portés par
-`aphrody-ai/crates/aphrody-mcp` (`dragonball.*`). L'état d'une release en
-production reste à vérifier dans le catalogue et par sondes infra.
+État du code de raccordement vérifié le 2026-09-26 dans des dépôts séparés à
+l'époque. Les chemins `aphrody-ai/crates/aphrody-mcp` ci-dessous sont désormais
+historiques : le code MCP actuel est sous `crates/ai/mcp/` (`dragonball.*`).
+Cette carte décrit les limites de l'intégration, pas un inventaire courant des
+paquets ni un état de release. L'état production est documenté séparément dans
+les observations datées d'Infra.
 
 Le plan d'exécution des vérifications et travaux restants est dans
 [`APHRODY-REMAINING-WORK.md`](APHRODY-REMAINING-WORK.md).
@@ -35,7 +35,7 @@ Le plan d'exécution des vérifications et travaux restants est dans
 Le plugin Dragon Ball configure désormais `aphrody-mcp` local en stdio. Le
 serveur public séparé `mcp.dragonballfr.com`, son OAuth et l'application
 `apps/shenron-mcp` ont été retirés ; ne pas créer une seconde unité ni rétablir
-leurs URLs. L'inventaire généré `../aphrody-infra/docs/ecosystem/MCP-TOOLS.md`
+leurs URLs. L'inventaire généré `../ecosystem/MCP-TOOLS.md`
 et `tools/list` du binaire construit sont les sources des noms et schémas.
 
 Configuration requise par les appels runtime : Shenron lit le contrat IA
@@ -78,7 +78,7 @@ preuves, et [`INFRA-DELEGATION.md`](INFRA-DELEGATION.md), qui fixe la frontière
 d'exploitation.
 
 État relevé le 2026-09-24 : `aphrody` HEAD `e0bcd639` (trois commits après
-`2109d678` : évaluation RAG HTTP/MCP, entraînement, app-server), `aphrody-infra`
+`2109d678` : évaluation RAG HTTP/MCP, entraînement, app-server), Infra du monorepo
 HEAD `33d0f9d`, `aphrody-os` HEAD `d9499887` (arbre de travail local). L'état de production cité ici
 vient du contrôle du 2026-09-23 consigné dans `APHRODY-OFFLOAD.md`. Seule la
 release active sur l'hôte fait foi pour ce qui est réellement servi ; un
@@ -100,10 +100,10 @@ commit de ces dépôts ne le prouve pas.
 > restent dans `aphrody-os`.
 
 **Convention.** Ce document ne contient ni hôte, ni IP, ni port. Un service
-est désigné par son identifiant dans `aphrody-infra/config/service-catalog.json`
+est désigné par son identifiant dans `config/service-catalog.json`
 (par exemple `aphrody-ai-http`). Un client le trouve par une variable
-d'environnement que provisionne `aphrody-infra`. Les hôtes publics sont
-déclarés dans `aphrody-infra/config/nginx-routes.json`.
+d'environnement que provisionne Infra du monorepo. Les hôtes publics sont
+déclarés dans `config/nginx-routes.json`.
 
 **Échelle de maturité.**
 - *production* : déployé et vérifié par une sonde.
@@ -124,7 +124,7 @@ déclarés dans `aphrody-infra/config/nginx-routes.json`.
 - **Les données et l'identité** : accès PostgreSQL (`@shenron/db`, Drizzle),
   authentification (`@shenron/auth`), API publique REST/GraphQL/OpenAPI
   (`@shenron/api`), interface (`@shenron/ui`, `components/kit`). À réconcilier
-  avec le contrat d'infra : `aphrody-infra/config/application-contracts.json:12-14`
+  avec le contrat d'infra : `config/application-contracts.json:12-14`
   déclare Shenron `application-namespace-on-rg-plane`, avec
   `"ui": "reuse-rg-ui-contract"` et `"auth": "reuse-rg-better-auth-boundary"`, et
   `:31-32` pose `rg-ui-is-canonical; shenron-consumes-the-contract` et
@@ -192,7 +192,7 @@ préconstruit :
   absente doit bloquer le démarrage. Les défauts actuels à supprimer sont
   listés en §6.2.
 - **Pas de second registre de services.** Tout service consommé par Shenron
-  est déclaré dans `aphrody-infra/config/service-catalog.json`.
+  est déclaré dans `config/service-catalog.json`.
 - **Pas de Rust dans ce dépôt.** Le code Rust vit dans `aphrody` ou `aphrody-os`.
 
 ---
@@ -209,14 +209,14 @@ supprimée. Le serveur MCP est le binaire unifié `crates/aphrody-mcp`; l'ancien
 
 | Capacité | Implémentation | Interface pour Bun | Configuration | Maturité |
 | --- | --- | --- | --- | --- |
-| API de calcul Shenron | `aphrody/crates/aphrody-mcp/src/http_rest.rs:110-132` (routeur), binaire `aphrody-mcp http`. Build de release : `cargo build -p aphrody -p aphrody-mcp --features aphrody-mcp/ocr` (`aphrody-infra/scripts/build-aphrody-stack-release.sh:50`) | REST propriétaire `/api/v1/shenron/{health, rag/search, rag/document, rag/stats, rag/ingest, rag/sync/finish, llm/chat, embed, ocr, vision/structured}`, Bearer, loopback seulement. Erreurs JSON typées, `no-store`. Corps limité à 24 Mio pour `ocr` et `vision`. Client : `AphrodyComputeClient` (`shenron/packages/pipeline/src/aphrody/compute.ts:59-209`) | Service `aphrody-ai-http`. Client : `APHRODY_SHENRON_API_URL`, `APHRODY_SHENRON_API_TOKEN`. Serveur : `APHRODY_MCP_DATABASE_URL`, `APHRODY_SHENRON_*` (§5.4) | Déployé. En production le 2026-09-23 : `rag=true`, `llm=false`, `ocr=false` ; la release active renvoie 404 sur `rag/stats` |
+| API de calcul Shenron | `aphrody/crates/aphrody-mcp/src/http_rest.rs:110-132` (routeur), binaire `aphrody-mcp http`. Build de release : `cargo build -p aphrody -p aphrody-mcp --features aphrody-mcp/ocr` (`scripts/build-aphrody-stack-release.sh:50`) | REST propriétaire `/api/v1/shenron/{health, rag/search, rag/document, rag/stats, rag/ingest, rag/sync/finish, llm/chat, embed, ocr, vision/structured}`, Bearer, loopback seulement. Erreurs JSON typées, `no-store`. Corps limité à 24 Mio pour `ocr` et `vision`. Client : `AphrodyComputeClient` (`shenron/packages/pipeline/src/aphrody/compute.ts:59-209`) | Service `aphrody-ai-http`. Client : `APHRODY_SHENRON_API_URL`, `APHRODY_SHENRON_API_TOKEN`. Serveur : `APHRODY_MCP_DATABASE_URL`, `APHRODY_SHENRON_*` (§5.4) | Déployé. En production le 2026-09-23 : `rag=true`, `llm=false`, `ocr=false` ; la release active renvoie 404 sur `rag/stats` |
 | Recherche RAG hybride (PostgreSQL + pgvector) | Lexical : `http_rest.rs:351-534`, avec classement titre/URL/contenu, intention (`:747`), indices de source (`:823`) et expansions FR/EN/JA (`:623`). Dense : `shenron_vector.rs:20-60` (cosinus pgvector, garde de dimension 384, garde anti-vecteur périmé). Fusion RRF k=60 et dédoublonnage par URL : `http_rest.rs:490-531` | `GET /api/v1/shenron/rag/search?q&limit(1..20)&lang&kind&sourceId&entity` renvoie `{results, mode: 'lexical'|'hybrid'}`, avec `content` limité à 8192 caractères. Outil MCP `aphrody_shenron_rag_search` | Mode `hybrid` : `APHRODY_SHENRON_EMBED_MODEL=Xenova/multilingual-e5-small` et `APHRODY_SHENRON_EMBED_BASE_URL` vers `aphrody-shenron-embed` | Utilisable. Hors ligne sur 172 questions : Recall@5 0,8663 en lexical, 0,9186 en hybride. Production lexicale. **Pas de rerank.** `aphrody-mcp/README.md` (≈ l. 98-110) dit encore « lexical, pas de vecteurs », en retard sur le code |
 | Ingestion RAG par générations | `http_rest.rs:843-936` (ingest), `:966-1023` (sync/finish) | `POST rag/ingest`, upsert idempotent par `sourceId` sous `pg_advisory_xact_lock`, nouvel embedding si le texte change. `POST rag/sync/finish {originSourceId, syncGeneration, expectedCount}` : retrait logique `metadata.visible=false`, 409 si le compte diffère | Mêmes variables. Si l'embed est configuré mais injoignable, renvoie 503 (rejouable) | Utilisable ; respecte la règle 8 (aucun `DELETE`) |
-| Chat LLM | `http_rest.rs:1025-1213`, `shenron_gemini_web.rs:21-72` | `POST llm/chat {messages (≤ 32), model?}` renvoie `{answer, model}`. Ni streaming, ni outils, ni comptage de jetons. Outil MCP `aphrody_shenron_llm_chat` | `APHRODY_SHENRON_LLM_PROVIDER` (le gate de déploiement impose `gemini-web`), `APHRODY_SHENRON_LLM_BASE_URL` (défaut en dur à `http_rest.rs:1208-1213`), `APHRODY_SHENRON_LLM_MODEL`, `APHRODY_SHENRON_GEMINI_MODEL`, `APHRODY_SHENRON_GEMINI_COOKIE_FILE`. Cadre infra : `aphrody-infra/config/google-gemini-pipeline.json` (binaire `aphrody-google`, fournisseurs `gemini-web` et `gemini-oauth` via `aphrody-antigravity`, voie Vertex `APHRODY_VERTEX_PROJECT`, `fallback: fail-closed`, et `forbidden: cookie-forwarding-between-hosts` à `:48`, qui interdit de copier le fichier de cookies Gemini d'un poste vers le VPS) | Expérimental : `llm=false`, session Gemini Web rejetée (502 « page bootstrap failed ») |
+| Chat LLM | `http_rest.rs:1025-1213`, `shenron_gemini_web.rs:21-72` | `POST llm/chat {messages (≤ 32), model?}` renvoie `{answer, model}`. Ni streaming, ni outils, ni comptage de jetons. Outil MCP `aphrody_shenron_llm_chat` | `APHRODY_SHENRON_LLM_PROVIDER` (le gate de déploiement impose `gemini-web`), `APHRODY_SHENRON_LLM_BASE_URL` (défaut en dur à `http_rest.rs:1208-1213`), `APHRODY_SHENRON_LLM_MODEL`, `APHRODY_SHENRON_GEMINI_MODEL`, `APHRODY_SHENRON_GEMINI_COOKIE_FILE`. Cadre infra : `config/google-gemini-pipeline.json` (binaire `aphrody-google`, fournisseurs `gemini-web` et `gemini-oauth` via `aphrody-antigravity`, voie Vertex `APHRODY_VERTEX_PROJECT`, `fallback: fail-closed`, et `forbidden: cookie-forwarding-between-hosts` à `:48`, qui interdit de copier le fichier de cookies Gemini d'un poste vers le VPS) | Expérimental : `llm=false`, session Gemini Web rejetée (502 « page bootstrap failed ») |
 | Proxy d'embeddings | `http_rest.rs:1032-1129` | `POST embed {texts (≤ 16 × 8 Kio), kind: 'query'|'passage'}` renvoie `{vectors, model}`. Préfixe E5 ajouté par le serveur ; contrôle du nombre, de l'index et de la finitude des vecteurs | `APHRODY_SHENRON_EMBED_MODEL`, `APHRODY_SHENRON_EMBED_BASE_URL` (repli sur `APHRODY_SHENRON_LLM_BASE_URL`, puis sur un défaut littéral en dur à `http_rest.rs:1055-1057`) | Utilisable ; dépend de l'embedder |
 | Service E5 | `aphrody/apps/shenron-embed/src/index.ts`. **Bun + `@huggingface/transformers` 4.2.0 (onnxruntime-node, sharp), pas Rust** | OpenAI-compatible : `GET /health` (503 tant que le modèle charge), `POST /v1/embeddings {model:'Xenova/multilingual-e5-small', input}`. Préfixe E5 fourni par l'appelant. Client : `ShenronEmbeddingsClient` (`shenron/packages/pipeline/src/aphrody/shenron-embeddings.ts:24-90`) | Service `aphrody-shenron-embed` (`staged: true`). `APHRODY_SHENRON_EMBED_{HOST,PORT,CACHE_DIR}`, et `APHRODY_SHENRON_EMBED_ALLOW_REMOTE=1` pour `--warm-cache` seulement. Les SHA256 du modèle et du tokenizer sont **consignés** (`README.md:19-23`) mais **non vérifiés** : `index.ts:5-16` appelle `pipeline("feature-extraction", MODEL, { dtype: "q8" })` sans révision épinglée ni contrôle d'empreinte | Expérimental : cache modèle vide sur le VPS le 2026-09-23 |
 | API publique modèles et RAG générique | `http_rest.rs:1511-1690` | `GET /api/v1/models`, `GET /api/v1/rag/query` (en GET ; `aphrody/docs/RAG.md:26` dit POST à tort), `GET /api/v1/rag/stats`, `GET /healthz`. Sans jeton | `APHRODY_MCP_DATABASE_URL`, `APHRODY_HOME` | Utilisable ; seules routes publiées par Nginx (`nginx-routes.json:21`) |
-| Serveur MCP unifié et outils Dragon Ball | `aphrody-ai/crates/aphrody-mcp/src/main.rs`, `dragonball_tools.rs`, `http_rest.rs` | Stdio par `aphrody-mcp` ou Streamable HTTP sur le listener MCP configuré. Outils Shenron `dragonball.*` (30 publics, 5 admin) plus les catalogues Aphrody conditionnés par les features du build. Les outils Dragon Ball proxifient les API du bot/site ; RAG local/persona relèvent de `aphrody-rag::dragonball`. `tools/list` du binaire installé fait foi. | `SHENRON_API_URL`, `SHENRON_SITE_API_URL`, `SHENRON_SITE_URL`, jetons admin côté processus pour les outils d'écriture. Le plugin Shenron déclare la connexion locale stdio. | Code présent ; état live du binaire et des backends à vérifier dans `aphrody-infra`. Pas de service MCP Dragon Ball/OAuth public séparé. |
+| Serveur MCP unifié et outils Dragon Ball | `aphrody-ai/crates/aphrody-mcp/src/main.rs`, `dragonball_tools.rs`, `http_rest.rs` | Stdio par `aphrody-mcp` ou Streamable HTTP sur le listener MCP configuré. Outils Shenron `dragonball.*` (30 publics, 5 admin) plus les catalogues Aphrody conditionnés par les features du build. Les outils Dragon Ball proxifient les API du bot/site ; RAG local/persona relèvent de `aphrody-rag::dragonball`. `tools/list` du binaire installé fait foi. | `SHENRON_API_URL`, `SHENRON_SITE_API_URL`, `SHENRON_SITE_URL`, jetons admin côté processus pour les outils d'écriture. Le plugin Shenron déclare la connexion locale stdio. | Code présent ; état live du binaire et des backends à vérifier dans Infra du monorepo. Pas de service MCP Dragon Ball/OAuth public séparé. |
 | RAG local et CLI | `aphrody/crates/aphrody-rag` (FTS5, vecteurs BLOB, RRF, MMR, rerank `reranker/llama.rs`, embedders `ort`/`llama`/`openai`), `aphrody-rag-core`, `crates/aphrody/src/rag_cmd.rs:36-68`. Ingestion Web PostgreSQL déjà écrite : `aphrody-rag/src/postgres.rs:54` (`ingest_web_document`, table `aphrody_rag_documents`, corpus `bxc_crawl`, lexical seulement), branchée sur `aphrody rag web-ingest` quand `APHRODY_MCP_DATABASE_URL` est défini (`rag_cmd.rs:225-242`) | CLI `aphrody rag index|web-ingest|search|context|stats` (modes `lexical|vector|hybrid|hybrid-rerank`). JSON-RPC `aphrody/rag/{search,context,status}` | Table `[rag]` du `config.toml`. `APHRODY_WEB_API_URL`, `APHRODY_WEB_API_TOKEN` pour `web-ingest` ; `APHRODY_MCP_DATABASE_URL` pour la cible PostgreSQL | Utilisable ; feature `rag` absente du binaire de production |
 | Évaluation RAG | `aphrody/crates/aphrody-rag-eval`, `aphrody-rag-core/src/eval.rs` | CLI `aphrody-rag-eval --target http|mcp|local …`, seuils par `--gates`. Métriques identiques bit à bit à `rag-eval.ts` (Recall@k, MRR, p50/p95). La cible `http` n'envoie **aucun** en-tête d'authentification (`target/http.rs:92-116`) et vise par défaut `/api/public/rag/search` de `shenron-bot` (`main.rs:176-178`), donc le backend courant du bot. La cible `mcp` accepte `aphrody_shenron_rag_search` (`main.rs:156-160`) | `APHRODY_SHENRON_GOLD_PATH` (test protégé) | Utilisable |
 | Inférence locale | `aphrody/crates/aphrody-llama-server` pilote `llama-server` sans le lier (`managed.rs:20-22`) ; `aphrody-models/catalog.json` (18 modèles : E5, qwen3-embedding, bge-reranker base et v2-m3, PP-OCRv5, dots-ocr, qwen2.5-vl, whisper, gpt-oss…) ; `aphrody-infer` (ORT CUDA/DirectML/CPU) | CLI `aphrody model list|pull|verify|… --json`, `aphrody infer runtime|probe`. Le `llama-server` lancé expose `/v1/chat/completions`, `/v1/embeddings` et `/v1/rerank` | `APHRODY_HOME`. **Aucun service au catalogue** | Utilisable sur poste GPU (`aphrody/docs/PLAN.md:81`) ; absent de la production |
@@ -224,7 +224,7 @@ supprimée. Le serveur MCP est le binaire unifié `crates/aphrody-mcp`; l'ancien
 | Voix et STT | `aphrody-voice` (whisper.cpp), `aphrody-mcp/src/{voice_tools,stt_local_tools}.rs` | MCP `voice_*` (STT/TTS cloud), `aphrody_transcribe` (local) ; CLI `aphrody job transcribe` | `ELEVENLABS_API_KEY`, `OPENAI_API_KEY` ; poids `whisper-*` | Expérimental. `voice_*` est compilé dans le binaire de production (non gardé par feature) mais dépend de clés d'API ; `aphrody_transcribe` (feature `stt-local`) et `aphrody job` (feature `jobs`) en sont absents |
 | Génération d'image Adobe | crate `aphrody-firefly` ; `aphrody-mcp/src/{firefly_tools,photoshop_tools}.rs` | MCP `firefly_generate`, `firefly_generative_fill`, `firefly_generative_expand`, `firefly_to_photoshop` (`main.rs:1057-1215`) ; CLI `aphrody firefly` (feature `firefly`, `crates/aphrody/Cargo.toml:71`) | Identifiants Adobe Firefly Services | Outils MCP compilés en production (non gardés par feature), inutilisables sans identifiants ; CLI absente de la production |
 | App-server JSON-RPC | `aphrody/crates/aphrody-app-server/src/lib.rs:531-991` (`dispatch`), routes HTTP `:1467-1470` | NDJSON sur stdio (`aphrody app-server`), ou HTTP loopback `/rpc`, `/events` (SSE), `/health` | `config.toml`, avec `[rag]` pour les méthodes RAG | Utilisable |
-| A2A 1.0 | `aphrody-a2a-server`, `aphrody-a2a-coord`, `aphrody-a2a-client` | JSON-RPC A2A (`SendMessage`, tâches, carte d'agent) ; `aphrody a2a serve|tick|invoke` ; outil MCP `aphrody_a2a_call` | Service `aphrody-a2a`. `APHRODY_A2A_ENDPOINT`, `APHRODY_A2A_PEERS_FILE` ; registre `aphrody-infra/config/a2a-peers.json` | Utilisable ; état en production non établi (à vérifier) |
+| A2A 1.0 | `aphrody-a2a-server`, `aphrody-a2a-coord`, `aphrody-a2a-client` | JSON-RPC A2A (`SendMessage`, tâches, carte d'agent) ; `aphrody a2a serve|tick|invoke` ; outil MCP `aphrody_a2a_call` | Service `aphrody-a2a`. `APHRODY_A2A_ENDPOINT`, `APHRODY_A2A_PEERS_FILE` ; registre `config/a2a-peers.json` | Utilisable ; état en production non établi (à vérifier) |
 | Entraînement | `aphrody-train` (bail GPU, runner) et `aphrody-py/packages/ai/py/aphrody-train` (uv) | CLI `aphrody train status|lease|run --kind embed|rerank|lora` ; événements NDJSON | uv, `APHRODY_PY_ROOT`, GPU CUDA, jeu d'or | Expérimental : `promote` refuse d'installer (`train_cmd.rs:55`, P10 ouvert) |
 | CLI et C ABI | `crates/aphrody/src/lib.rs:258-872` ; `aphrody-ffi` (cdylib) | `Bun.spawn([APHRODY_BIN, …])` avec JSON sur stdout (`doctor --json`, `git inspect`, `mcp call` ; `ocr …` sur un binaire compilé avec `ocr`). `translate` imprime du texte humain coloré (`commands.rs:969-983`) et `notify` une ligne texte `canal id salon` (`commands.rs:2080`) : pas de JSON. **Le C ABI par `bun:ffi` est interdit dans Shenron** | `APHRODY_BIN` | Utilisable (CLI) |
 | Passerelle OpenAI (legacy) | `aphrody/crates/aphrody-gateway/src/server.rs:47-53` | `/v1/chat/completions` (SSE), `/v1/models` | Non cataloguée ; son port par défaut appartient à un autre service | Legacy, suppression prévue en P5 (`aphrody/CLAUDE.md` §4) |
@@ -254,11 +254,11 @@ conformes sont les services HTTP du catalogue (`aphrody-site`,
 | OCR d'écran | `crates/aphrody-winclean/src/ocr.rs` (Windows.Media.Ocr) | MCP `computer_ocr` | Windows seulement | Sans objet pour le VPS |
 | Primitives de processus | `aphrody-sandbox`, `aphrody-proc` (bail GPU), `aphrody-jobs`, `aphrody-task-runner`, `aphrody-cron` | Crates Rust seulement, atteintes indirectement par les CLI | — | Indirect |
 
-### 2.3 `aphrody-infra` : services et exploitation
+### 2.3 Infra du monorepo : services et exploitation
 
 | Service (id catalogue) | Type | Rôle pour Shenron | Configuration côté consommateur | État |
 | --- | --- | --- | --- | --- |
-| `shenron-site` | `next-bun-http` | Site Next (sert aussi le CDN des assets partagés) | Fichiers `EnvironmentFile` de l'unité (`aphrody-infra/systemd/shenron-site.service:32-33` : `shenron-site.env` et `shenron-compute-client.env`) | Utilisable ; release rapportée active le 2026-09-23 (`SHENRON-MIGRATION.md:117-121`) |
+| `shenron-site` | `next-bun-http` | Site Next (sert aussi le CDN des assets partagés) | Fichiers `EnvironmentFile` de l'unité (`systemd/shenron-site.service:32-33` : `shenron-site.env` et `shenron-compute-client.env`) | Utilisable ; release rapportée active le 2026-09-23 (`SHENRON-MIGRATION.md:117-121`) |
 | `shenron-bot` | `discord-bot-and-api` | Bot Discord et API REST/GraphQL/OpenAPI dans un seul processus ; `/api/canvas/`, proxy HLS | `API_HOST`, `API_PORT` fixés par l'unité ; `shenron-bot.env` et `shenron-compute-client.env` (`systemd/shenron-bot.service:24-25`) | Utilisable. Pas de plafond mémoire, **volontairement** : `systemd/shenron-bot.service:47-54` documente le gel de la boucle d'événements (Discord, HTTP, SQLite, canvas) par le reclaim cgroup, et pose `MemoryLow=384M`, `CPUWeight=200`, `IOWeight=200`, `OOMScoreAdjust=-500` |
 | `shenron-pg-tunnel` | `ssh-tunnel` | PostgreSQL `shenron_site` sur dbfr | `DATABASE_URL` | Utilisable |
 | `shenron-backup` | `backup` | Cache SQLite borné | — | Staged ; timer non installé sur le VPS |
@@ -407,7 +407,7 @@ const AphrodyComputeEnv = z.object({
 
 | Variable | Service du catalogue | Provisionnée par l'infra | Statut |
 | --- | --- | --- | --- |
-| `APHRODY_SHENRON_API_URL` | `aphrody-ai-http` | Oui, `shenron-compute-client.env` écrit par `aphrody-infra/scripts/ops/provision-shenron-ai-access.sh:45` | Obligatoire |
+| `APHRODY_SHENRON_API_URL` | `aphrody-ai-http` | Oui, `shenron-compute-client.env` écrit par `scripts/ops/provision-shenron-ai-access.sh:45` | Obligatoire |
 | `APHRODY_SHENRON_API_TOKEN` | `aphrody-ai-http` | Oui, même fichier ; secret identique à celui du serveur | Obligatoire |
 | `RAG_BACKEND` | — (aiguillage) | Non : fichiers opérateur seulement | Obligatoire tant que le chemin local existe ; `aphrody` est la cible |
 | `APHRODY_LLM_MODEL` | `aphrody-ai-http` (`llm/chat`) | Non | Optionnelle |
@@ -470,7 +470,7 @@ Service `aphrody-site` : `APHRODY_SITE_WEB_UPSTREAM`,
 
 ## 6. Manques et prochaines étapes
 
-### 6.1 Côté Aphrody (`aphrody`, `aphrody-os`, `aphrody-infra`)
+### 6.1 Côté Aphrody (`aphrody`, `aphrody-os`, Infra du monorepo)
 
 **P0 : débloquer la bascule `RAG_BACKEND=aphrody`**
 
@@ -508,7 +508,7 @@ Service `aphrody-site` : `APHRODY_SITE_WEB_UPSTREAM`,
 
 6. Brancher le reranker (`bge-reranker-v2-m3` ou `bge-reranker-base`) dans
    `shenron_rag_search_core` et renvoyer `mode='hybrid+rerank'`.
-7. Compléter le **contrat d'environnement dans `aphrody-infra`** : ajouter au
+7. Compléter le **contrat d'environnement dans Infra du monorepo** : ajouter au
    schéma `CatalogService` un champ d'environnement, et provisionner
    `APHRODY_WEB_API_URL`, `APHRODY_BXC_API_TOKEN` et `RAG_BACKEND` pour
    `shenron-site` et `shenron-bot`.
@@ -566,7 +566,7 @@ Service `aphrody-site` : `APHRODY_SITE_WEB_UPSTREAM`,
 
 **P2 : cohérence**
 
-16. Créer l'adaptateur de déploiement Shenron dans `aphrody-infra`
+16. Créer l'adaptateur de déploiement Shenron dans Infra du monorepo
     (`DeployStack`, PLAN P1 #9).
 17. Réconcilier les états contradictoires :
     - `SHENRON-MIGRATION.md:117-121`, `docs/PLAN.md:39` et `inventory/vps-unit-catalog.json:4` ne décrivent pas le même état ;
@@ -671,6 +671,6 @@ Sinon, la bascule reste `NON_FAIT`.
 - `aphrody/apps/shenron-embed/{src/index.ts,README.md,package.json}`, `aphrody/apps/shenron-mcp/{README.md,src/*.ts}`
 - `aphrody/crates/{aphrody-rag, aphrody-rag-core, aphrody-rag-eval, aphrody-llama-server, aphrody-models/catalog.json, aphrody-ocr*, aphrody-vision, aphrody-voice, aphrody-app-server, aphrody-a2a-*, aphrody-train, aphrody-gateway, aphrody-providers, aphrody-memory, aphrody-jev, aphrody-ffi}`, `aphrody/crates/{aphrody-firefly, aphrody-google}`, `aphrody/crates/aphrody-rag/src/postgres.rs`, `aphrody/crates/aphrody/{Cargo.toml, src/lib.rs, src/commands.rs, src/rag_cmd.rs, src/ocr_cmd.rs, src/ocr_shenron.rs, src/train_cmd.rs}`, `aphrody/docs/{PLAN.md, RAG.md, training.md, CLI.md}`
 - `aphrody-os/crates/{aphrody-render, aphrody-site (canvas_api.rs, web_api.rs, web_auth.rs, gateway.rs, assets_api.rs, main.rs), aphrody-bun, aphrody-obscura, aphrody-web-engine, aphrody-web-embed, aphrody-web-ffi, aphrody-web-render, aphrody-translate (shenron.rs), aphrody-winclean}`, `aphrody-os/packages/{canvas, bun, m3-next, m3, os}`, `aphrody-os/apps/bxc` (`server/app.ts`, `mcp/server.ts`, `cli/{index,dragonball,frames}.ts`, `sources/`, `archive/`), `aphrody-os/docs/{PUBLISHING.md, CANVAS-UPSTREAM.md, WEB-RUNTIME.md}`, `aphrody-os/.gitmodules`
-- `aphrody-infra/config/{service-catalog.json, nginx-routes.json, production-topology.json, scheduler-policy.json, a2a-peers.json, pipeline.json, live-audit.json, application-contracts.json, google-gemini-pipeline.json}`, `aphrody-infra/nginx/aphrody/aphrody-apex.conf`, `aphrody-infra/systemd/{aphrody-ai-http, aphrody-shenron-embed, aphrody-web-api}.service.example`, `shenron-{site,bot,mcp,pg-tunnel,backup}.service`, `aphrody-infra/scripts/{build-aphrody-stack-release.sh, atomic-deploy-aphrody-stack.sh, atomic-deploy-rg.sh, ops/provision-shenron-ai-access.sh}`, `aphrody-infra/crates/aphrody-infra/src/{catalog.rs, validate.rs}`, `aphrody-infra/docs/{PLAN.md, SHENRON-MIGRATION.md, PRODUCTION-ALLOCATION.md}`
+- `config/{service-catalog.json, nginx-routes.json, production-topology.json, scheduler-policy.json, a2a-peers.json, pipeline.json, live-audit.json, application-contracts.json, google-gemini-pipeline.json}`, `aphrody-infra/nginx/aphrody/aphrody-apex.conf`, `systemd/{aphrody-ai-http, aphrody-shenron-embed, aphrody-web-api}.service.example`, `shenron-{site,bot,mcp,pg-tunnel,backup}.service`, `scripts/{build-aphrody-stack-release.sh, atomic-deploy-aphrody-stack.sh, atomic-deploy-rg.sh, ops/provision-shenron-ai-access.sh}`, `crates/infra/infra/src/{catalog.rs, validate.rs}`, `aphrody-infra/docs/{PLAN.md, SHENRON-MIGRATION.md, PRODUCTION-ALLOCATION.md}`
 - `shenron/packages/pipeline/src/aphrody/{compute.ts, shenron-embeddings.ts, web.ts, index.ts, a2a.ts}`, `shenron/packages/{ai, api, ui, images, pipeline, bxc-bridge}`, `shenron/apps/bot/src/lib/{rag.ts, llm.ts, preload.ts, canvas-kit.ts}`, `shenron/apps/bot/src/api/server.ts`, `shenron/apps/site/src/lib/site-rag.ts`, `shenron/apps/site/scripts/_aphrody-translate-remote.ts`, `shenron/apps/bot/scripts/harvest-kanzenshuu-aphrody.ts`, `shenron/scripts/ops/eval-aphrody-rag.ts`, `shenron/packages/pipeline/scripts/{rag-eval.ts, _aphrody-remote-ocr.ts}`, `shenron/package.json`, `shenron/docs/{APHRODY-OFFLOAD.md, INFRA-DELEGATION.md}`
 - Registre npm (manifestes `@aphrody/*`, `@napi-rs/canvas` 1.0.9) et essais `bun install` sous Bun 1.4.2 / win32, 2026-09-24

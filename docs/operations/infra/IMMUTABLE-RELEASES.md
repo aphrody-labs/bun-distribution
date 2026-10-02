@@ -270,7 +270,7 @@ NIE and IECode ship no VPS release. The bundle contains no secret.
    `/srv/aphrody/shared/db-backups/restore` referenced by earlier revisions of
    this runbook were removed during the 2026-10-01 database deduplication; the
    Aphrody databases were retired. See
-   [`db-dedup-2026-10-01.md`](./db-dedup-2026-10-01.md). The 2026-10-02 VPS
+   [`db-dedup-2026-10-01.md`](../workspace/HISTORY.md). The 2026-10-02 VPS
    observation confirms PostgreSQL 18 is running but does not inspect its
    databases. Before restoring or activating the Aphrody production plane,
    identify and verify an authorized current data source, checksum its backup,

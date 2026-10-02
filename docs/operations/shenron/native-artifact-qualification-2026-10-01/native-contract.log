@@ -1,9 +1,0 @@
-bun test v1.4.2 (744846f84)
-
-packages/shenron/pipeline/test/aphrody/native-contract.test.ts:
-(pass) native adapters preserve Shenron doctor routing and sanitized auth presence [12.21ms]
-
- 1 pass
- 0 fail
- 1 expect() calls
-Ran 1 test across 1 file. [715.00ms]

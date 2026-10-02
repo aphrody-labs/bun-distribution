@@ -1,12 +1,12 @@
 # Orchestration infrastructure RG
 
 `rg` ne possède aucun registre de services. Le catalogue unique (services, ports,
-routes Nginx, units systemd, topologie, monitoring) vit dans le dépôt frère
-`aphrody-infra` :
+routes Nginx, unités systemd, topologie, monitoring) appartient à Infra dans ce
+monorepo :
 
-- `../aphrody-infra/config/service-catalog.json`, `nginx-routes.json`, `production-topology.json` ;
-- `../aphrody-infra/inventory/` ;
-- `../aphrody-infra/docs/INFRA-MONITORING.md` (commandes, timer, règles de déduplication).
+- `config/service-catalog.json`, `config/nginx-routes.json`, `config/production-topology.json` ;
+- `inventory/` ;
+- `docs/operations/infra/INFRA-MONITORING.md` (commandes, timer, règles de déduplication).
 
 Les scripts `infra:*`, `deploy:*`, `ops:*` et `cdn:*` de `package.json` délèguent
-directement aux scripts de `aphrody-infra` ; ne pas réintroduire de manifeste local.
+directement aux adaptateurs Workspace/Rust de ce monorepo ; ne pas réintroduire de manifeste local.

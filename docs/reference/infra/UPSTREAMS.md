@@ -47,14 +47,12 @@ Inputs of the WSL build (`config/os/wsl-build.json`, `crates/os/aphrody-wsl`). R
 | `terminal` | [microsoft/terminal](https://github.com/microsoft/terminal) | `main` | 2b5336c1fc | Windows Terminal; WSL build recipe input. | config/os/wsl-build.json |
 | `wslg` | [microsoft/wslg](https://github.com/microsoft/wslg) | `main` | 6942bb534b | WSLg; system distro build recipe input. | config/os/wsl-build.json; scripts/build/os/build-wslg.py |
 
-## Forks (3)
+## Forks (1)
 
 Every fork needs a reason to exist; `aphrody-update sources forks` compares each with its parent.
 
 | Fork | Parent | Role | Why it stays |
 | --- | --- | --- | --- |
-| `aphrody-labs/bun` | oven-sh/bun | runtime fork (bun:aphrody) | Runtime fork (bun:aphrody): carries the Aphrody native bridges; cannot be replaced by upstream Bun. Procedure: docs/operations/infra/BUN-FORK-OPERATIONS.md. |
-| `aphrody-code/oxc` | oxc-project/oxc | Oxc fork (Cargo git dependency) | Carries the native Oxc lint and minifier bridges for Bun (commits not in oxc-project/oxc); the Cargo workspace and the Bun fork both build from it. |
 | `koharu-rs/tauri-specta` | - | tauri-specta fork (Cargo git dependency) | Third-party fork, not ours: upstream tauri-specta 2.0.0-rc.25 on crates.io requires tauri ^2 while the workspace is on Tauri 3. |
 
 ## Access
@@ -70,5 +68,5 @@ Every fork needs a reason to exist; `aphrody-update sources forks` compares each
 | Drift of the observed heads | `aphrody-update upstream drift`; record them with `upstream refresh --apply` |
 | Agent entry point | skill `upstreams` (`plugins/aphrody/skills/upstreams`) |
 
-The Cargo git dependencies (Oxc fork, hf-hub, mistral.rs, tauri-specta fork) are tracked by `aphrody-update sources drift`;
-forks by `aphrody-update sources forks`. Procedure for the Bun fork: [BUN-FORK-OPERATIONS.md](../../operations/infra/BUN-FORK-OPERATIONS.md).
+The Cargo git dependencies (oxc-project/oxc, hf-hub, mistral.rs, tauri-specta fork) are tracked by `aphrody-update sources drift`;
+forks by `aphrody-update sources forks`. The Bun and Oxc forks were retired on 2026-10-02.

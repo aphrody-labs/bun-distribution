@@ -30,7 +30,7 @@ active Cargo workspace metadata currently lists 186 packages: 152 `aphrody*`
 packages, 25 Koharu packages, 8 Obscura packages, and Taffy.
 
 Status: scaffold initialized 2026-09-29. The cross-repository authority is
-[`src/PLAN.md`](../src/PLAN.md) is the legacy migration decision record;
+`src/PLAN.md` is the legacy migration decision record;
 this file is the active extraction authority and tracks this repository's extraction
 and acceptance. Infra's `@aphrody/workspace` is the source of truth for generated
 inventories and orchestration commands.
@@ -85,12 +85,12 @@ explicitly requested; they do not close these gates or authorize cutover.
       `packages/discord/source/repository`: all 2,232 tracked files, including
       apps, packages, docs, tools, root configuration, CI and lockfile, match
       source worktree SHA-256 values. See
-      [`discord-complete-source-extraction.json`](docs/migration/discord-complete-source-extraction.json).
+      [`discord-complete-source-extraction.json`](discord-complete-source-extraction.json).
       The original workspace remains nested; root workspace integration and
       consumer cutover are still open.
 - [x] Imported `@aphrody/messaging` from clean `aphrody-discord` HEAD
       `959abfab` into `packages/discord/aphrody-messaging` with file hashes in
-      [`discord-messaging-extraction.json`](docs/migration/discord-messaging-extraction.json).
+      [`discord-messaging-extraction.json`](discord-messaging-extraction.json).
       Frozen Bun install, package typecheck, nine tests and build pass. A root
       Bun patch preserves REST cancellation behavior; standalone consumer
       qualification remains open because that patch is scoped to this root.
@@ -118,12 +118,12 @@ explicitly requested; they do not close these gates or authorize cutover.
       `utils/cache`. Dependency closure remains open. The scan records the
       IECODE revision at that time; its current HEAD is rechecked in the focused
       extraction records. See
-      [`source-map.json`](docs/migration/source-map.json) and
-      [`submodule-inventory.json`](docs/migration/submodule-inventory.json) and
-      [`nested-source-map.json`](docs/migration/nested-source-map.json).
+      [`source-map.json`](source-map.json) and
+      [`submodule-inventory.json`](submodule-inventory.json) and
+      [`nested-source-map.json`](nested-source-map.json).
 - [x] Began docs extraction into categorized `docs/`; exact source duplicates
       share one target, source provenance remains in the map, and the generated
-      index is [`IMPORTED-DOCS-INDEX.md`](docs/migration/IMPORTED-DOCS-INDEX.md).
+      index is [`IMPORTED-DOCS-INDEX.md`](IMPORTED-DOCS-INDEX.md).
       Existing target files and distinct path collisions are preserved and routed
       through explicit alternate paths.
 - [ ] Close documentation import: the latest 2026-09-29 guarded import maps 2,130
@@ -132,7 +132,7 @@ explicitly requested; they do not close these gates or authorize cutover.
       package manifest; five more links resolve than in the prior report. The remaining
       sample includes code, assets, configuration, external worktrees and unimported
       references. Import and qualify those destinations before closing this gate.
-      See [`IMPORTED-DOCS-LINK-REAUDIT.md`](docs/migration/IMPORTED-DOCS-LINK-REAUDIT.md).
+      See [`IMPORTED-DOCS-LINK-REAUDIT.md`](IMPORTED-DOCS-LINK-REAUDIT.md).
       The extraction source snapshot was clean at HEAD
       `550066b66181c4aeffb90b4067e8af742b0c112b`; IECODE later advanced
       to `8fdab4b96014f70972c2855878cab49510ffe876`. The current inventory
@@ -143,12 +143,12 @@ explicitly requested; they do not close these gates or authorize cutover.
       outside that crate. See the refreshed extraction record.
 - [x] Copy 454 hash-qualified scripts into categorized `scripts/` paths; exact
       source aliases and copy results are in
-      [`script-import.json`](docs/migration/script-import.json). This is not yet a
+      [`script-import.json`](script-import.json). This is not yet a
       runnable unified command surface: relative paths, dependencies, ownership
       and source-local package scripts still need qualification.
 - [x] Start the Rust workspace and copy the first IEVR slice, 254 files from
       IECODE's `crates/ievr-data`, to `crates/iecode/ievr-data` byte-for-byte.
-      [`ievr-iecode-extraction.json`](docs/migration/ievr-iecode-extraction.json)
+      [`ievr-iecode-extraction.json`](ievr-iecode-extraction.json)
       records source/origin heads, SHA comparison, license boundary and the
       successful target `cargo check --all-targets --locked --offline`.
 - [x] Import the vital AI home crate and its two direct first-party dependencies
@@ -157,25 +157,25 @@ explicitly requested; they do not close these gates or authorize cutover.
       source files match SHA-256; package names and Apache-2.0 licensing are
       preserved. The root workspace and shared dependency features now resolve
       the imported closure; `cargo check --offline -p aphrody-agent-home` passes.
-      See [`ai-agent-home-extraction.json`](docs/migration/ai-agent-home-extraction.json).
+      See [`ai-agent-home-extraction.json`](ai-agent-home-extraction.json).
 - [x] Import five dependency-light AI foundation crates (`aphrody-toolcall`,
       `aphrody-patch`, `aphrody-context`, `aphrody-prompts` and
       `aphrody-providers`) from the same clean source HEAD. All 19 tracked files
       match source SHA-256 and modes. Their manifests join the root workspace;
       one offline Cargo check covering all five passes. See
-      [`ai-core-crates-extraction.json`](docs/migration/ai-core-crates-extraction.json).
+      [`ai-core-crates-extraction.json`](ai-core-crates-extraction.json).
 - [x] Add the AI ownership catalog crate and Gemini CLI runtime adapter,
       `aphrody-ecosystem` and `aphrody-gemini-runtime`, from that same clean
       source HEAD. All 10 files match their source hashes and modes; an offline
       check of both workspace members passes. See
-      [`ai-runtime-crates-extraction.json`](docs/migration/ai-runtime-crates-extraction.json).
+      [`ai-runtime-crates-extraction.json`](ai-runtime-crates-extraction.json).
 - [x] Import the model and routing foundation (`aphrody-antigravity`,
       `aphrody-model-client`, `aphrody-model-antigravity`, `aphrody-llm-infra`,
       `aphrody-router`, `aphrody-mcp-oauth` and `aphrody-toolcall-repair`). All
       138 tracked files match source SHA-256 and file modes at the same clean
       `aphrody-ai` HEAD. The seven new workspace members pass one offline Cargo
       check. See
-      [`ai-model-stack-extraction.json`](docs/migration/ai-model-stack-extraction.json).
+      [`ai-model-stack-extraction.json`](ai-model-stack-extraction.json).
 - [x] Prioritize the rest of `aphrody-ai`: import all 62 Rust workspace crates
       plus the non-member `aphrody-sdk` crate into `crates/ai/`; 797 source
       files match the recorded hashes and modes. Offline Cargo metadata resolves
@@ -184,11 +184,11 @@ explicitly requested; they do not close these gates or authorize cutover.
       the CLI and FFI crates remain excluded under the UI ownership rule. The
       extraction record lists 32 remaining workspace dependencies that still
       resolve to sibling checkouts, so clean-clone closure is not complete.
-      See [`ai-rust-workspace-extraction.json`](docs/migration/ai-rust-workspace-extraction.json).
+      See [`ai-rust-workspace-extraction.json`](ai-rust-workspace-extraction.json).
 - [x] Import AI Bun packages `@aphrody/doc-ai`, `@aphrody/google` and
       `@aphrody/xai`, plus their direct first-party dependency `@aphrody/x`;
       keep package provenance and source hashes in
-      [`ai-bun-workspace-extraction.json`](docs/migration/ai-bun-workspace-extraction.json).
+      [`ai-bun-workspace-extraction.json`](ai-bun-workspace-extraction.json).
       Frozen Bun install, Turbo typecheck (8/8), and the Google package build
       passed. Tests were not run. Resolve remaining dependency/workspace closure
       before marking unified clean-clone integration complete.
@@ -204,7 +204,7 @@ explicitly requested; they do not close these gates or authorize cutover.
       provider, while game-loader/data/license parity remained open. Remove
       `packages/iecode/`, its workspace glob and lock entries; keep the generic
       `@aphrody/bun-test-dom` host independently. Preserve the historical source
-      hashes in [`iecode-bun-extraction.json`](docs/migration/iecode-bun-extraction.json).
+      hashes in [`iecode-bun-extraction.json`](iecode-bun-extraction.json).
       The optional Ghidra string import now uses `GHIDRA_STRINGS_PATH`, and the
       happy-dom docs no longer claim a plugin re-export. Bun's JSONC parser sees
       no IECODE workspace or resolution records. Full lock regeneration remains
@@ -216,13 +216,13 @@ explicitly requested; they do not close these gates or authorize cutover.
       `8fdab4b96014f70972c2855878cab49510ffe876` (including its 10 recorded dirty
       source paths). `cargo check -p iecode-ffi --locked --offline` passes.
       Package adjustments, file hashes and checks are in
-      [`iecode-ffi-rust-extraction.json`](docs/migration/iecode-ffi-rust-extraction.json).
+      [`iecode-ffi-rust-extraction.json`](iecode-ffi-rust-extraction.json).
 - [ ] Qualify the native ABI with Bun and .NET consumers. No IECODE Bun wrapper
       is currently staged in Aphrody. Reintroduce one only after it matches the
       Rust `iecode_*` contract and passes schema, data, license and consumer
       parity checks. Keep game-data loaders inactive until then.
 - [x] Inventory current NIE MCP and Bun plugin contracts in
-      [`NIE-MCP-API-INVENTORY.md`](docs/migration/NIE-MCP-API-INVENTORY.md): NIE's
+      [`NIE-MCP-API-INVENTORY.md`](NIE-MCP-API-INVENTORY.md): NIE's
       source router has 67 tools (48 `cli_*` adapters and 19 compatibility tools),
       MCP stdio transport, and a separate optional loopback explorer WebSocket.
       Its exact schema, bounds, side effects, and the FFI incompatibility are
@@ -246,7 +246,7 @@ explicitly requested; they do not close these gates or authorize cutover.
       lifecycle against the full Shenron catalog, while a unit test covers
       modern/legacy request routing. Real NIE child-runtime and explorer UI
       qualification remain open. See
-      [`APHRODY-MCP-EXTRACTION-READINESS.md`](docs/migration/APHRODY-MCP-EXTRACTION-READINESS.md).
+      [`APHRODY-MCP-EXTRACTION-READINESS.md`](APHRODY-MCP-EXTRACTION-READINESS.md).
       On 2026-09-30, `cargo test --locked -p aphrody-mcp -p
       aphrody-mcp-nie-bridge` passed before modern protocol qualification (97
       MCP unit tests, 4 client tests, and 5 bridge tests; 1 network-dependent
@@ -270,7 +270,7 @@ explicitly requested; they do not close these gates or authorize cutover.
       package versions are retained under target workspace metadata. The six
       Contracts paths into `src` are gone. File-level hashes, target manifest
       adjustments, and consumer/clean-clone limits are in
-      [`contracts-rust-extraction.json`](docs/migration/contracts-rust-extraction.json).
+      [`contracts-rust-extraction.json`](contracts-rust-extraction.json).
 - [x] Integrate the complete OS Rust workspace (24 crates), Shell workspace
       (4 crates), and Compat workspace (13 crates) from clean source revisions.
       Excluded OS `drive` and `third_party` trees remain outside these copies.
@@ -280,19 +280,19 @@ explicitly requested; they do not close these gates or authorize cutover.
       and 1,521 packages; all 51 packages across those five domains pass locked
       offline `cargo check` individually and scoped formatting. Hashes, source revisions,
       explicit manifest/formatter adjustments and remaining gates are recorded in
-      [`native-rust-extraction.json`](docs/migration/native-rust-extraction.json).
+      [`native-rust-extraction.json`](native-rust-extraction.json).
 - [x] Integrate the 25-crate Koharu Rust workspace from clean source HEAD
       `83ab7fde8d4d73c84f4e1746fc79ce3fa0a4486b`. Original `0.83.5` package
       metadata and MIT/Apache notices are preserved; Cargo metadata resolves 169
       workspace members. The focused library check is blocked by the host's
       missing `fontconfig.pc`; tests are not run. Provenance and remaining gates:
-      [`koharu-rust-extraction.json`](docs/migration/koharu-rust-extraction.json).
+      [`koharu-rust-extraction.json`](koharu-rust-extraction.json).
       Two source Cargo paths remain (UI x2); clean-clone and consumer parity are open.
 - [ ] Import all remaining first-party crates, apps and packages into valid
       Cargo/Bun root workspaces; resolve package/catalog versions, path dependencies,
       license and upstream-submodule boundaries before claiming a unified build.
 - [x] Audit IECODE Rust import boundaries and dependency/license evidence in
-      [`IECODE-RUST-READINESS.md`](docs/migration/IECODE-RUST-READINESS.md). The
+      [`IECODE-RUST-READINESS.md`](IECODE-RUST-READINESS.md). The
       smallest compile-qualified candidate is `iecode-geom`, but its source has no
       explicit crate SPDX/license metadata, so no new Rust source was copied from
       that report. `iecode-core`/`iecode-ffi` pull a broad crate graph; the native
@@ -318,7 +318,7 @@ explicitly requested; they do not close these gates or authorize cutover.
       beside compiler TypeScript 7.0.2; frozen install, typecheck, oxlint, oxfmt
       and a real scanner invocation passed on 2026-09-29. Provenance and the
       dirty-source caveat are in
-      [`INFRA-WORKSPACE-IMPORT.md`](docs/migration/INFRA-WORKSPACE-IMPORT.md).
+      [`INFRA-WORKSPACE-IMPORT.md`](INFRA-WORKSPACE-IMPORT.md).
 - [x] Add the Shenron facade to `@aphrody/workspace`; route its package checks,
       script audit, service catalog, dev environment and plan-only deployment
       through Aphrody and Infra. Import 483 source-hashed Shenron scripts under
@@ -326,7 +326,7 @@ explicitly requested; they do not close these gates or authorize cutover.
       dependency catalog. Package typechecks, migration audit and Infra service
       catalog pass. The UI/runtime/dependency convergence roadmap and remaining
       script portability checks are in
-      [`APHRODY-ROADMAP.md`](docs/plans/shenron/APHRODY-ROADMAP.md). This does
+      [`APHRODY-ROADMAP.md`](../plans/shenron/APHRODY-ROADMAP.md). This does
       not close the clean-clone or release gates.
 - [ ] Qualify the copied Infra package from a clean clone and migrate its
       remaining callers before removing the transitional `src/aphrody-infra`
@@ -335,10 +335,10 @@ explicitly requested; they do not close these gates or authorize cutover.
       `crates/infra/` and `crates/contracts/`. The new CLI bridge invokes their
       binary, and locked offline check, Clippy and formatting pass. Provenance,
       current Rust test result, and remaining cutover gates are in
-      [`INFRA-RUST-IMPORT.md`](docs/migration/INFRA-RUST-IMPORT.md).
+      [`INFRA-RUST-IMPORT.md`](INFRA-RUST-IMPORT.md).
 - [x] Stage Infra's 32 tracked configuration/inventory files, 39 systemd files,
       and Rust toolchain pin at the target root. The
-      [`infra-config-import.json`](docs/migration/infra-config-import.json)
+      [`infra-config-import.json`](infra-config-import.json)
       records source and target hashes, two explicit path remaps, endpoint
       classes, and nine files still referring to source checkouts. The importer
       rejects dirty sources and conflicting targets; an identical rerun copied
@@ -347,14 +347,14 @@ explicitly requested; they do not close these gates or authorize cutover.
       run successfully.
 - [x] Stage the six clean tracked Infra scripts referenced by copied systemd
       units under categorized `scripts/` paths. The
-      [`infra-scripts-import.json`](docs/migration/infra-scripts-import.json)
+      [`infra-scripts-import.json`](infra-scripts-import.json)
       records source HEAD and per-file SHA-256; an identical rerun copied no
       files. The configuration report now lists 18 checkout-path references by
       file and line: ten map to staged targets, while eight refer to the old
       checkout root. These scripts and unit paths remain unqualified for runtime
       cutover.
 - [x] Preserve root license and notice blobs for the non-UI source roots.
-      The [license import report](docs/migration/source-licenses-import.json)
+      The [license import report](source-licenses-import.json)
       maps 16 pinned Git files to ten canonical copies and six exact-byte
       aliases, with blob IDs, source heads, worktree hashes and target hashes.
       Six worktree files differ in raw bytes only through verified Git checkout
@@ -364,13 +364,13 @@ explicitly requested; they do not close these gates or authorize cutover.
       roots whose pinned root license or notice is recorded. A target-side audit
       matched all 1,894 mapped document targets to their imported SHA-256 values;
       one target was already tracked as source license evidence. The
-      [commit audit](docs/migration/DOCS-FIRST-PARTY-COMMIT.md) records the
+      [commit audit](DOCS-FIRST-PARTY-COMMIT.md) records the
       scope. The remaining owners and 1,030 unresolved local Markdown links keep
       the full documentation gate open.
 - [x] Commit 2,275 hash-verified Bun documentation targets from pinned upstream
       HEAD `a2671046afbfc818fba21a4925f384b75dc8e109`. The imported Bun
       `LICENSE.md` is included. The
-      [Bun docs audit](docs/migration/UPSTREAM-BUN-DOCS-COMMIT.md) records the
+      [Bun docs audit](UPSTREAM-BUN-DOCS-COMMIT.md) records the
       zero-missing, zero-mismatch result; Bun's upstream fork remains a separate
       workspace and is not represented as imported code.
 - [x] Verify the committed licensed-root and Bun documentation from a fresh
@@ -380,7 +380,7 @@ explicitly requested; they do not close these gates or authorize cutover.
 - [x] Commit 597 hash-verified Oxc documentation targets from pinned upstream
       HEAD `31d5266e150ff17af52f0c2fc798cc27dc9a5a59`, with its root LICENSE
       blob recorded in the source-license report. The
-      [Oxc docs audit](docs/migration/UPSTREAM-OXC-DOCS-COMMIT.md) records zero
+      [Oxc docs audit](UPSTREAM-OXC-DOCS-COMMIT.md) records zero
       missing files and zero hash mismatches. Oxc source remains an independent
       upstream workspace.
 - [x] Verify the expanded documentation set from a fresh clone of `bb5fb65`:
@@ -405,8 +405,8 @@ explicitly requested; they do not close these gates or authorize cutover.
       refreshed 0 targets, verified 6,012 identical documents, preserved 163
       exact-duplicate aliases, and reported 0 conflicts or import failures. It
       mapped 2,130 local Markdown links and leaves 1,030 unresolved. The latest
-      reports are [`source-map.json`](docs/migration/source-map.json) and
-      [`document-import.json`](docs/migration/document-import.json).
+      reports are [`source-map.json`](source-map.json) and
+      [`document-import.json`](document-import.json).
 - [x] Marked 24 structured NIE game-data files as protected data in the Infra
       inventory module. They remain in their local protected paths, are excluded
       from document import/index generation, and are ignored by Git. Explanatory
@@ -435,21 +435,21 @@ explicitly requested; they do not close these gates or authorize cutover.
 - [x] Import the four `@aphrody/n2b-*` Bun packages into `packages/compat/`
       and add their workspace records to the root manifest and lock. Their four
       scoped typechecks pass. Source hashes and target config adjustments are
-      recorded in [`compat-bun-extraction.json`](docs/migration/compat-bun-extraction.json).
+      recorded in [`compat-bun-extraction.json`](compat-bun-extraction.json).
 - [x] Import OS Bun clients `@aphrody/os` and `@aphrody-code/winclean` under
       `packages/os/` and register both in the root workspace and lock. Scoped
       typechecks are currently blocked by absent/broken package tool links in
       `node_modules`; source provenance and adaptations are in
-      [`os-bun-extraction.json`](docs/migration/os-bun-extraction.json).
+      [`os-bun-extraction.json`](os-bun-extraction.json).
 - [x] Import Koharu's SDK, bridge and documentation workspaces under
       `packages/koharu/`, with root workspace/catalog entries and source lock
       records. The bridge typecheck passes; SDK typecheck passes with temporary
       local links to its workspace and Tauri API dependencies. Hashes and path
-      adaptations are in [`koharu-bun-extraction.json`](docs/migration/koharu-bun-extraction.json).
+      adaptations are in [`koharu-bun-extraction.json`](koharu-bun-extraction.json).
 - [x] Import Fut's `@aphrody/fut` package under `packages/fut/fut/`. Its tracked
       session credential was excluded and ignored. Typecheck is blocked by the
       absent BXC peer and existing missing source modules; see
-      [`fut-bun-extraction.json`](docs/migration/fut-bun-extraction.json).
+      [`fut-bun-extraction.json`](fut-bun-extraction.json).
 - [x] Recount the live workspace against the attached migration audit:
       `cargo metadata --no-deps --format-version 1` reports 178 workspace
       members, and a path-dependency scan finds only two paths outside this
@@ -501,7 +501,7 @@ explicitly requested; they do not close these gates or authorize cutover.
       are dependency closure for the Bun FFI crate. The existing `@aphrody/bun`
       package was merged while keeping its `./web` entry point. Source HEAD,
       per-file source/target hashes, explicit adaptations, license and exclusions
-      are recorded in [`ui-m3-extraction.json`](docs/migration/ui-m3-extraction.json).
+      are recorded in [`ui-m3-extraction.json`](ui-m3-extraction.json).
       The source checkout remains intact.
 - [x] Register `crates/ui/*`, move the root `aphrody-m3-tokens` dependency off
       `/home/aphro/src`, and link M3 Bun packages to the local token/config
@@ -519,13 +519,13 @@ explicitly requested; they do not close these gates or authorize cutover.
 
 - [x] Restore N2B's original report baselines, Node input fixture and Contracts
       schemas with source revisions and byte hashes in
-      [`n2b-test-resource-extraction.json`](docs/migration/n2b-test-resource-extraction.json).
+      [`n2b-test-resource-extraction.json`](n2b-test-resource-extraction.json).
       The CLI contract suite now runs entirely from this checkout: 20 tests
       pass, including JSON/JSONL/SARIF/Markdown and schema validation.
 - [x] Import the repository A2A manifest and correct its migrated test path.
       All 27 `aphrody-a2a-coord` tests and scoped strict Clippy pass after
       correcting inherited lint errors. Provenance is recorded in
-      [`contracts-agent-manifest-extraction.json`](docs/migration/contracts-agent-manifest-extraction.json).
+      [`contracts-agent-manifest-extraction.json`](contracts-agent-manifest-extraction.json).
 - [x] Remove the Koharu protocol generator's dependency on the nonstandard
       compile-time `CARGO_WORKSPACE_DIR`; its default resolves the imported
       bridge package, with `KOHARU_PROTOCOL_OUT` as an explicit output override.
@@ -553,7 +553,7 @@ explicitly requested; they do not close these gates or authorize cutover.
       and check pass. The rebuilt release passed native CLI and isolated stdio
       MCP smokes; the configured live Codex tool now returns Bun documentation
       after reloading only its kernel child. Evidence is recorded in
-      [`native-mcp-cli-qualification.json`](docs/migration/native-mcp-cli-qualification.json).
+      [`native-mcp-cli-qualification.json`](native-mcp-cli-qualification.json).
 - [x] Qualify and activate the Linux native kernel/provider release on this host.
       Source corrections cover MCP pagination/annotations/reply IDs, Infra
       path resolution and runtime TOML parsing; kernel tests and release build
@@ -581,7 +581,7 @@ explicitly requested; they do not close these gates or authorize cutover.
       check and builds pass. Actual native commands now resolve this workspace
       and the imported plugin without overrides. Owner commit `88faaf76` is
       pushed; 112 required plugin resources retain hashes and licenses in
-      [`yolo-resources-extraction.json`](docs/migration/yolo-resources-extraction.json).
+      [`yolo-resources-extraction.json`](yolo-resources-extraction.json).
 - [x] Remove attempts to launch the retired BXC executable from native Web
       tool discovery and calls. The MCP catalog uses six existing Rust owners,
       the CLI resolves `aphrody-web`, and prompts refer to available tools.
@@ -600,14 +600,14 @@ explicitly requested; they do not close these gates or authorize cutover.
       without a native artifact. Dynamic allocator TLS fixes the Bun dlopen
       failure after combining these surfaces. Scoped Rust tests pass 61/61,
       Bun handle/import tests 2/2, and UI/CLI contract smokes, typecheck and
-      strict Clippy pass. See [evidence](docs/migration/unified-ui-ffi.json).
+      strict Clippy pass. See [evidence](unified-ui-ffi.json).
       N2B/Oxc/fork consumers, portable package/release manifests, runtime
       unload lifecycle and cross-platform/product gates remain open.
-- [x] Migrate Spacedrive non-UI backend, server, and UI bridge. `crates/os/drive` (1,899 files) and `crates/web/drive-server` (9 files) are FSL-1.1-ALv2 and excluded from the root `Cargo.toml`. `crates/ui/drive` (28 files) is an FSL-1.1-ALv2 Tauri plugin. Apache-2.0 root crates are not relicensed. See [`drive-rust-extraction.json`](docs/migration/drive-rust-extraction.json) for source commit 0511c85 and file counts. Repository manifests remain valid.
+- [x] Migrate Spacedrive non-UI backend, server, and UI bridge. `crates/os/drive` (1,899 files) and `crates/web/drive-server` (9 files) are FSL-1.1-ALv2 and excluded from the root `Cargo.toml`. `crates/ui/drive` (28 files) is an FSL-1.1-ALv2 Tauri plugin. Apache-2.0 root crates are not relicensed. See [`drive-rust-extraction.json`](drive-rust-extraction.json) for source commit 0511c85 and file counts. Repository manifests remain valid.
 
 ## Rust crate, GPU and window ownership — 2026-09-30
 
-- [x] Compare active Rust workspace ownership with imported upstream references. The workspace has one direct `wgpu` version (30.0.1) and one shared initialization/policy crate; `aphrody-render` still has its own context path, so backend convergence is incomplete. No active Cargo member owns a Bevy/winit/SDL window; Bevy remains the documented NIE host choice while the emulator core stays headless. Recorded current boundaries and remaining actions in [`rust-crate-gpu-window-ownership.md`](docs/architecture/rust-crate-gpu-window-ownership.md).
+- [x] Compare active Rust workspace ownership with imported upstream references. The workspace has one direct `wgpu` version (30.0.1) and one shared initialization/policy crate; `aphrody-render` still has its own context path, so backend convergence is incomplete. No active Cargo member owns a Bevy/winit/SDL window; Bevy remains the documented NIE host choice while the emulator core stays headless. Recorded current boundaries and remaining actions in [`rust-crate-gpu-window-ownership.md`](../architecture/rust-crate-gpu-window-ownership.md).
 - [ ] Route `aphrody-render` GPU context creation through the shared backend while preserving its injected-device API; relocate the backend out of the IECODE namespace after consumer mapping.
 - [ ] Decide package renames only after preserving upstream-compatible identities and enumerating Cargo selectors/downstream use. The workspace currently contains IECODE/NIE/Koharu/Obscura package names without `aphrody-` prefixes.
 - [x] Move `aphrody-logo` and `aphrody-identity` into `crates/ui/`, recable their former AI/UI workspace consumers, and remove them from the former UI workspace. The NIE UI token crate belongs to IECODE: transferred it to `iecode/crates/nie/aphrody-nie-ui` with the `aphrody-nie-*` package prefix and local `aphrody-nie-formats` owner. Recabled the IECODE workspace's Aphrody RE/UI dependencies to the canonical monorepo and routed its removed Bevy root-facade paths through the prefixed internal facade alias. Aphrody locked metadata, `aphrody-web` check, Aphrody CLI check, logo tests, and no-deps metadata for IECODE and the former AI/UI workspaces pass. The focused NIE compile remains blocked by the existing `rand/small_rng` feature conflict in `aphrody-nie-wiki`.

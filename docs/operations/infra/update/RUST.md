@@ -74,6 +74,20 @@ derived from `dep:crate` entries), not blindly.
 | `deny` | `cargo deny check advisories`; crates in `advisory-holds.json` are notes, any other one is an error | |
 | `bumps` | `rust status`: toolchain pin against stable, yanked or in-range releases left behind, open OSV advisories, held crates | |
 
+Targets are data (`targets[]` in `config/update/rust-doctor.json`):
+
+- `packages: "auto"` selects the members with a dependency gated on the target family (`match`), plus `include[]`
+  (artifacts with no gated dependency, such as `aphrody-shell-web`), minus `exclude[]` (host-only crates, each with its
+  reason, printed as a note).
+- `isolate: true` checks one package at a time. wasm32 needs it: a set unifies features, and one member asking for
+  tokio's `net` (mio) fails every other member of the set. A browser crate must therefore declare its own minimal
+  `tokio` and `reqwest` in its wasm table; the workspace entries are host-sized and Cargo cannot switch their
+  features off.
+- `runner: "xwin"` runs `cargo xwin check`. The MSVC STL that cargo-xwin downloads refuses a Clang older than its own
+  floor (error `STL1000`), and cargo-xwin drives `clang-cl` through the first `clang` on `PATH`, so the doctor puts
+  the newest `/usr/lib/llvm-<N>/bin` first. `env.CL_FLAGS` adds target-only C flags (`-msse4.1` for the SIMD sources
+  of `libwebp-sys`, which `cl.exe` compiles without a flag and `clang-cl` does not).
+
 Rules of the repair:
 
 - A vendored crate (`vendored[]`: `koharu*`, `obscura*`, `taffy`) is never rewritten; its warnings and formatting are notes.
@@ -115,7 +129,6 @@ Every entry is in `config/deps/rust-holds.json`. Advisory-driven ones are also i
 | `fastembed` | `5.17.3` | 5.17.4 and 7.x require `ort =2.0.0-rc.13` (see `ort`). |
 | `cssparser`, `selectors` | `0.37`, `0.38` | cssparser 0.38 drops `ParserInput` and the `Parser<'i,'t>` second lifetime; selectors 0.41 removes `Impl` from `NonTSPseudoClass`/`PseudoElement` and needs cssparser 0.38. Porting `obscura-render` (`css.rs`, `style.rs`), `obscura-dom` (`selector.rs`) and the vendored `taffy` parse feature is its own task. |
 | `lancedb`, `arrow-array`, `arrow-schema` | `0.29`, `58` | lancedb 0.39.0 does not compile with `default-features = false` (`job.rs` uses `Error::Http`, which exists only with the `remote` feature); arrow 60 follows lancedb. Retry when a fixed release exists. |
-| `getrandom` | `0.2` | `aphrody-base` and `aphrody-antigravity` enable its `js` feature for browser-WASM randomness. 0.3+ replaces it with the `wasm_js` feature plus a RUSTFLAGS cfg, which needs a wasm32 check first; `a2a-coord`, `a2a-client` and `terminal-backend` would also move to `getrandom::fill`. |
 | Rust toolchain | `1.98.1` | Latest stable is 1.99.0; the pin moves with `tools rust --apply` and the category repositories, followed by a full rebuild. Not part of a crate bump. |
 
 Unused `[workspace.dependencies]` entries (`uu_cp`, `uu_mkdir`, `uu_mv`, `uu_touch`, `uu_uname`, `uu_whoami`, `redis`,
@@ -149,10 +162,15 @@ whole workspace (`cargo check --workspace --all-targets`) and tested on the touc
 | `rmcp` | `=3.4.1` | `=3.5.0` | none |
 | `swash` | `=0.2.0` | `=0.2.10` | none |
 | `wreq`, `wreq-util` | `=6.0.0-rc.29`, `=3.0.0-rc.12` | `=6.0.0-rc.31`, `=3.0.0-rc.14` | none (checked with `--features stealth`) |
-| `pollster` | 0.4 | 1.0 | none; `cfg(windows)` only, not compiled on Linux (`block_on` is the only use) |
+| `pollster` | 0.4 | 1.0 | none; `cfg(windows)` only: proven by the doctor's Windows MSVC target check |
+| `getrandom` | 0.2 | 0.4 | `getrandom::getrandom` is `getrandom::fill` (`a2a-coord`, `a2a-client`, `terminal-backend`); the browser backend is the `wasm_js` feature (`aphrody-base`, `aphrody-antigravity`), proven by the wasm32 target check |
 
 Not moved, with the reason in the table above: `fastembed`, `ort`, `cssparser`, `selectors`, `lancedb`, `arrow-*`,
-`getrandom`, `yara-x`, `portable-pty`.
+`yara-x`, `portable-pty`.
+
+Found by the first doctor run after the bump and repaired with it: `sha2` 0.11 digest formatting in `aphrody ocr`
+(behind the `ocr` feature), `MangaPipelineOptions` literals behind the `koharu` feature, and the browser randomness
+backend of `aes-gcm` 0.11 (`getrandom` 0.4 without `wasm_js`), which broke the wasm32 release gate of the CLI.
 
 ## Rollback
 
@@ -175,9 +193,9 @@ Not moved, with the reason in the table above: `fastembed`, `ort`, `cssparser`, 
 
 ## Known limits
 
-- Optional dependencies are compiled only with their feature. Majors check the declaring consumer with the enabling
-  feature, but code behind other features and `cfg(windows)` dependencies is not compiled on Linux (the Windows MSVC
-  cross check needs `/mnt/c/BuildTools`). Run `rust-target-check` on a Windows-capable host when such a crate moves.
+- Optional dependencies are compiled only with their feature, and `cfg(windows)` or wasm32 code only for its target.
+  `apply` and `verify` check the declaring consumer with the enabling feature on the host; finish every bump with
+  `rust doctor`, whose `features` and `targets` stages compile the rest.
 - A `-p` subset unifies features differently from the workspace and can fail on `bindgen` or `syn`; the refresh therefore
   always verifies the whole workspace.
 - Cargo may re-resolve unrelated edges when a `--precise` move unlocks a crate (see the `bindgen` relock above). Always

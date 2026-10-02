@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 # Référence Canonique de la Base de Données & de Kysely
 
-Ce document constitue le guide de référence pour l'utilisation, le typage, la configuration des pools et les opérations sur la base de données PostgreSQL unique `rg` via le query builder **Kysely** au sein du monorepo Aphrody ([`packages/rg/db`](file:///home/aphro/aphrody/packages/rg/db)).
+Ce document constitue le guide de référence pour l'utilisation, le typage, la configuration des pools et les opérations sur la base de données PostgreSQL unique `rg` via le query builder **Kysely** au sein du monorepo Aphrody ([`packages/rg/db`](../../../packages/rg/db)).
 
 ---
 
@@ -53,7 +53,7 @@ Dédié à l'identité, au CMS et aux projections de données Inazuma Eleven :
 ## 2. Configuration Réseau & Pool de Connexions
 
 ### 2.1. Variables d'Environnement
-La connexion est résolue de manière déterministe par `getAchilleaDatabaseUrl()` dans [`packages/rg/db/src/achillea.ts`](file:///home/aphro/aphrody/packages/rg/db/src/achillea.ts) :
+La connexion est résolue de manière déterministe par `getAchilleaDatabaseUrl()` dans [`packages/rg/db/src/achillea.ts`](../../../packages/rg/db/src/achillea.ts) :
 
 ```typescript
 export function getAchilleaDatabaseUrl(): string {
@@ -81,7 +81,7 @@ L'usine de connexion `createPgPool()` applique des garde-fous stricts adaptés a
 ## 3. Typage Kysely & Schémas TypeScript
 
 ### 3.1. Composition du Schéma Global
-Le type `Database` exporté par [`packages/rg/db/src/schema/index.ts`](file:///home/aphro/aphrody/packages/rg/db/src/schema/index.ts) agrège l'ensemble des définitions de tables :
+Le type `Database` exporté par [`packages/rg/db/src/schema/index.ts`](../../../packages/rg/db/src/schema/index.ts) agrège l'ensemble des définitions de tables :
 
 ```typescript
 import type { AchilleaTables } from "./achillea";

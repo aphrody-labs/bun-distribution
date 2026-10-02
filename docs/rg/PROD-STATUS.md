@@ -35,7 +35,7 @@ Last verified: **2026-09-20 UTC** on the Rose Griffon VPS.
 
 - The standalone Azalée Next application and its `azalee-web` A/B units are
   retired. Do not build, deploy, restart, monitor, or recreate them. The wiki is
-  released exclusively with [`apps/rg/website`](file:///home/aphro/aphrody/apps/rg/website).
+  released exclusively with [`apps/rg/website`](../../apps/rg/website).
 
 - The BXC public site is a future project, not a production service. Its systemd
   units, crawlers, scheduler, and public origin are disabled. The public vhost

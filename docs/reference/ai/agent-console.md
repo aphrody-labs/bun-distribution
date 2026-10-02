@@ -123,7 +123,7 @@ Client examples and executable integration tests:
 
 - [Python client](./py/aphrody/docs/agent.md)
 - [Bun client](../../products/ai/crates/aphrody-ffi/bun/README-agent.md)
-- [Real binary tests](../py/aphrody/tests/test_agent_live.py)
+- Real binary tests
 
 The implementation status and outstanding parity work remain tracked in the
 [Codex integration plan](../../plans/ai/plans/codex-oss.md).

@@ -383,6 +383,13 @@
           "features": []
         },
         {
+          "name": "aphrody-gcs",
+          "path": "crates/google/gcs",
+          "description": "Google Cloud Storage listing over the GCS JSON API with Application Default Credentials refresh (no gcloud subprocess).",
+          "bins": [],
+          "features": []
+        },
+        {
           "name": "aphrody-gemini-runtime",
           "path": "crates/google/gemini-runtime",
           "description": "Cross-platform Gemini CLI runtime adapter: detect, version, turn streaming, plus the mcp.json loader and the legacy MCP client facade over aphrody-mcp-client.",
@@ -412,6 +419,13 @@
           "bins": [
             "aphrody-google"
           ],
+          "features": []
+        },
+        {
+          "name": "aphrody-google-mcp",
+          "path": "crates/google/mcp",
+          "description": "Gemini tools of the Aphrody MCP server (Gemini Web chat and image tools) and the Shenron Gemini Web chat backend.",
+          "bins": [],
           "features": []
         },
         {
@@ -686,27 +700,13 @@
           ]
         },
         {
-          "name": "aphrody-n2b-ai",
-          "path": "crates/compat/n2b-ai",
-          "description": "N2B finding metadata for agents: rule categories, confidence, docs links and source context.",
-          "bins": [],
-          "features": []
-        },
-        {
           "name": "aphrody-n2b-core",
           "path": "crates/compat/n2b-core",
-          "description": "N2B engine: audit, run orchestration, manifest handling, report card and llms.txt generation.",
+          "description": "N2B engine: rules, scanners, reports, audit, run orchestration, manifest handling, report card and llms.txt generation.",
           "bins": [],
           "features": [
             "default"
           ]
-        },
-        {
-          "name": "aphrody-n2b-github",
-          "path": "crates/compat/n2b-github",
-          "description": "N2B GitHub client (octocrab, GH_TOKEN/GITHUB_TOKEN or .env) used by `n2b audit` to scan issues and pull requests.",
-          "bins": [],
-          "features": []
         },
         {
           "name": "aphrody-n2b-native",
@@ -723,37 +723,9 @@
           "features": []
         },
         {
-          "name": "aphrody-n2b-report",
-          "path": "crates/compat/n2b-report",
-          "description": "N2B report renderers: text, JSON, JSONL, SARIF, Markdown, LLM prompt and report card.",
-          "bins": [],
-          "features": []
-        },
-        {
-          "name": "aphrody-n2b-rules",
-          "path": "crates/compat/n2b-rules",
-          "description": "N2B source rules: Node imports, Bun APIs, CLI commands and AST-based import rewrites.",
-          "bins": [],
-          "features": []
-        },
-        {
-          "name": "aphrody-n2b-scanners",
-          "path": "crates/compat/n2b-scanners",
-          "description": "N2B project scanners: bunfig, Cargo.toml, Dockerfile, compose, env, lockfiles, npmrc, JS configs.",
-          "bins": [],
-          "features": []
-        },
-        {
           "name": "aphrody-n2b-types",
           "path": "crates/compat/n2b-types",
           "description": "N2B shared types and the versioned JSON report schema.",
-          "bins": [],
-          "features": []
-        },
-        {
-          "name": "aphrody-n2b-util",
-          "path": "crates/compat/n2b-util",
-          "description": "N2B utilities: line offsets, positions, findings and non-overlapping text edits.",
           "bins": [],
           "features": []
         },
@@ -1910,7 +1882,7 @@
         {
           "name": "@aphrody/n2b-core",
           "path": "packages/compat/n2b-client",
-          "description": "TypeScript façade thin pour le binaire Rust n2b — wrapper CLI (scan, rules, promptMarkdown).",
+          "description": "TypeScript façade thin pour le binaire Rust n2b — wrapper CLI (scan, rules, promptMarkdown) et shims Bun-natifs (./shims: env, fs, path, shell).",
           "bins": []
         },
         {
@@ -1922,7 +1894,7 @@
         {
           "name": "@aphrody/n2b-shims",
           "path": "packages/compat/n2b-shims",
-          "description": "Polyfills Bun-natifs pour les APIs Node détectées par n2b (env, fs, path, shell).",
+          "description": "Alias de compatibilité : ré-exporte @aphrody/n2b-core/shims (polyfills Bun-natifs env, fs, path, shell).",
           "bins": []
         },
         {
@@ -2287,7 +2259,14 @@
           "bins": []
         }
       ],
-      "pythonPackages": [],
+      "pythonPackages": [
+        {
+          "name": "google-antigravity",
+          "path": "packages/google/antigravity-sdk-python",
+          "description": "Google Antigravity SDK for building AI agents",
+          "scripts": []
+        }
+      ],
       "errors": []
     },
     {
@@ -2325,12 +2304,6 @@
           "name": "aphrody-train",
           "path": "packages/ai/py/aphrody-train",
           "description": "Training surface for aphrody: dataset generation, embedding/reranker fine-tuning, LoRA",
-          "scripts": []
-        },
-        {
-          "name": "google-antigravity",
-          "path": "packages/ai/py/antigravity-sdk-python",
-          "description": "Google Antigravity SDK for building AI agents",
           "scripts": []
         },
         {
@@ -13440,6 +13413,28 @@
       ]
     },
     {
+      "server": "aphrody-google-mcp",
+      "repo": "aphrody",
+      "kind": "json-catalog",
+      "tools": [
+        {
+          "name": "aphrody_gemini_ask",
+          "description": "Query Google Gemini directly with automatic engine selection (Rust Bridge -> Web) using signed-in cookies.",
+          "file": "crates/google/mcp/src/gemini_tools.rs"
+        },
+        {
+          "name": "aphrody_gemini_chat",
+          "description": "Chat with Gemini keeping continuous conversation context across multi-turn exchanges.",
+          "file": "crates/google/mcp/src/gemini_tools.rs"
+        },
+        {
+          "name": "aphrody_gemini_rust",
+          "description": "Execute a one-shot Gemini Web query directly in the shared Rust runtime.",
+          "file": "crates/google/mcp/src/gemini_tools.rs"
+        }
+      ]
+    },
+    {
       "server": "aphrody-kernel subsystem `cloud`",
       "repo": "aphrody",
       "kind": "kernel-subsystem",
@@ -13549,21 +13544,6 @@
           "name": "aphrody_detect_frameworks",
           "description": "Detect web technologies, CDN and challenge evidence from a bounded HTTP response and DNS lookup.",
           "file": "crates/ai/mcp/src/public_web_tools.rs"
-        },
-        {
-          "name": "aphrody_gemini_ask",
-          "description": "Query Google Gemini directly with automatic engine selection (Rust Bridge -> Web) using signed-in cookies.",
-          "file": "crates/ai/mcp/src/gemini_tools.rs"
-        },
-        {
-          "name": "aphrody_gemini_chat",
-          "description": "Chat with Gemini keeping continuous conversation context across multi-turn exchanges.",
-          "file": "crates/ai/mcp/src/gemini_tools.rs"
-        },
-        {
-          "name": "aphrody_gemini_rust",
-          "description": "Execute a one-shot Gemini Web query directly in the shared Rust runtime.",
-          "file": "crates/ai/mcp/src/gemini_tools.rs"
         },
         {
           "name": "aphrody_google_calendar_public",
@@ -15513,13 +15493,13 @@
     "aphrodyRepos": 3,
     "experimentRepos": 0,
     "sharedRepos": 0,
-    "crates": 265,
+    "crates": 261,
     "binaries": 89,
     "bunPackages": 99,
     "pythonPackages": 9,
     "cliBinaries": 63,
     "cliCommands": 1280,
-    "mcpServers": 20,
+    "mcpServers": 21,
     "mcpTools": 440,
     "mcpUniqueToolNames": 423
   }

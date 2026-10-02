@@ -8,26 +8,27 @@ Bun supports, what Node exposes, what n2b must detect and rewrite.
 
 | Folder | Source | Pinned version |
 |---|---|---|
-| `bun/` | `oven-sh/bun` · `docs/` | main `d316760e` (2026-09-06) |
-| `node/` | `nodejs/node` · `doc/api/` | LTS v24.15.1 (`9fe7634c`) |
-| `plugin/n2b/` | n2b plugin documentation (changelog, structure, research, WASM reports) | — |
+| `docs/<category>/upstream-bun/` (canonical) | `oven-sh/bun` · `docs/` | HEAD `a2671046` (2026-09-29), see `docs/migration/UPSTREAM-BUN-DOCS-COMMIT.md` |
+| `docs/<category>/compat/n2b/bun/` (residual) | `oven-sh/bun` · `docs/` | main `d316760e` (2026-09-06): only the 26 files that differ from the canonical copy remain |
+| `docs/<category>/compat/n2b/node/` | `nodejs/node` · `doc/api/` | LTS v24.15.1 (`9fe7634c`) |
+| `docs/<category>/compat/n2b/plugin/n2b/` | n2b plugin documentation (changelog, structure, research, WASM reports) | — |
 
-Full upstream clones live in `upstream/` at the repository root (gitignored). Only markdown is
-kept here; binary assets (images, icons, logos) are stripped.
+On 2026-10-02 the 309 files of the older n2b Bun mirror that were identical to
+`docs/<category>/upstream-bun/` after CRLF to LF normalisation were removed; the
+removed-to-canonical aliases and both SHA-256 values are recorded in
+`docs/migration/n2b-dedup-2026-10-02.json`. Read the Bun docs from `upstream-bun`
+(also served offline by the `bun_docs_*` MCP tools of `crates/compat/bun-docs`).
+
+Only markdown is kept here; binary assets (images, icons, logos) are stripped.
 
 ## Regenerate
 
-### `bun/` — automated
+### Bun docs
 
-```bash
-bun run docs:bun:update -- --ref <branch-or-tag>   # default ref: main
-```
-
-`scripts/n2b/update-bun-docs.sh` and `scripts/n2b/update-bun-docs.ps1` are compatible thin wrappers around
-the same Bun script. It clones or refreshes `upstream/bun` (shallow), re-extracts `docs/n2b/bun/`,
-strips assets by extension (no fixed folder list, so it survives an upstream reshuffle) and
-re-pins the `bun/` row above. Review the `docs/n2b/bun/` diff before committing: the script
-judges freshness, not relevance.
+`aphrody-ops bun-upstream-docs [--root <repo>] [--ref <branch-or-tag>]`
+(`packages/infra/workspace/src/bun-upstream-docs.ts`) still writes the legacy
+`docs/n2b/bun/` path; it must be pointed at `docs/<category>/upstream-bun/`
+before it is used again (owner: Infra).
 
 ### `node/` — manual
 
@@ -79,19 +80,19 @@ unaffected. Drop this note once that fix lands.
 
 | File | Use |
 |---|---|
-| `bun/runtime/nodejs-compat.mdx` | Node→Bun compatibility matrix: which Node modules work, partially or not at all |
-| `bun/runtime/bun-apis.mdx` | Native `Bun.*` API surface: rewrite targets |
-| `bun/runtime/*.mdx` | Per-API detail (ffi, sqlite, shell, sql, redis, s3, glob, …) |
-| `bun/project/roadmap.mdx` | Bun roadmap, to anticipate future rules |
-| `node/*.md` | Full Node API surface (one file per module): what n2b must detect |
-| `node/CHANGELOG_V24.md` | Node v24 LTS changes |
+| `docs/reference/upstream-bun/runtime/nodejs-compat.mdx` | Node→Bun compatibility matrix: which Node modules work, partially or not at all |
+| `docs/apis/upstream-bun/runtime/bun-apis.mdx` | Native `Bun.*` API surface: rewrite targets |
+| `docs/reference/upstream-bun/runtime/*.mdx` | Per-API detail (ffi, sqlite, shell, sql, redis, s3, glob, …) |
+| `docs/plans/upstream-bun/project/roadmap.mdx` | Bun roadmap, to anticipate future rules |
+| `docs/reference/compat/n2b/node/*.md` | Full Node API surface (one file per module): what n2b must detect |
+| `docs/reference/compat/n2b/node/CHANGELOG_V24.md` | Node v24 LTS changes |
 
 ## Integration with the rule registry
 
-The five registry entry schemas (`crates/aphrody-n2b-registry/src/schema.rs`: `ApiEntry`,
+The five registry entry schemas (`crates/compat/n2b-registry/src/schema.rs`: `ApiEntry`,
 `PackageEntry`, `ModuleEntry`, `CliEntry`, `GlobalEntry`) all carry an optional `docs: String`
-field, a free-form citation into this folder (for example
+field, a free-form citation (for example
 `docs = "absent from docs/bun/runtime/nodejs-compat.mdx (…)"`). The test
-`crates/aphrody-n2b-registry/src/registry.rs::tests::docs_field_citations_resolve` extracts every
-`docs/(bun|node)/*.md(x)` substring from those fields and fails if the cited file no longer exists
-under `docs/n2b/`: the guard against a `docs/n2b/bun/` refresh that silently moves a cited file.
+`crates/compat/n2b-registry/src/registry.rs::tests::docs_field_citations_resolve` extracts every
+`docs/(bun|node)/*.md(x)` substring from those fields and fails unless the cited file exists
+under `docs/<category>/upstream-bun/` (Bun) or `docs/<category>/compat/n2b/node/` (Node).

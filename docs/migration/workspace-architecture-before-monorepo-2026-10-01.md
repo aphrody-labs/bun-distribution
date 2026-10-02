@@ -1,27 +1,27 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 # Workspace architecture
 
-**Host decision, 2026-09-28:** the [native M3 plan](../../plans/ui/design/M3-MULTI-HOST-PLAN.md) owns migration
+**Host decision, 2026-09-28:** the [native M3 plan](../plans/ui/design/M3-MULTI-HOST-PLAN.md) owns migration
 to Rust/winit/wgpu. Tauri references below describe the existing integration host;
 the target preserves one shell and the out-of-process AI contract. Native delivery
 requires its own platform, accessibility and installed-workflow evidence.
 
 This page defines the boundaries between the source superproject, Aphrody's
 category repositories and the domain applications that consume them. The
-[cross-repository Spacedrive plan](../../plans/workspace/PLAN.md) coordinates its absorption;
+[cross-repository Spacedrive plan](../plans/workspace/PLAN.md) coordinates its absorption;
 the active AI workstation delivery plan is
-[aphrody-ai/docs/PLAN.md](../../plans/ai/PLAN.md).
-The desktop specification is [aphrody-ui/docs/GUI.md](../../reference/ui/GUI.md).
+[aphrody-ai/docs/PLAN.md](../plans/ai/PLAN.md).
+The desktop specification is [aphrody-ui/docs/GUI.md](../reference/ui/GUI.md).
 Priorities and acceptance criteria remain in those owning documents.
 
 ## Source root and repository ownership
 
 `src` is a Git superproject. Its gitlinks pin child repository commits;
-[.gitmodules](../.gitmodules) declares their paths and remotes. Each child keeps
+.gitmodules declares their paths and remotes. Each child keeps
 its own history, instructions, manifests, toolchains, gates and releases.
 
 The root owns checkout orchestration, the generated
-[manifest](../manifest.json), [Just recipes](../Justfile) and workspace
+manifest, Just recipes and workspace
 documentation. It is neither an application
 runtime nor a Cargo, Bun or uv workspace. Build and verification commands run in
 the relevant child repository. A generated manifest describes a checkout; it
@@ -29,22 +29,22 @@ does not prove that a service or desktop artifact is deployed.
 
 | Owner | Responsibility |
 | --- | --- |
-| [aphrody-contracts](../../products/contracts/README.md) | Neutral wire types, JSON schemas, agent submission/events, app-server compatibility and A2A contracts |
-| [aphrody-native](../../products/native/README.md) | Native C/C++ and compute foundations, bridge ABIs and their Rust facade |
-| [aphrody-os](../../products/os/_source/README.md.712b5622bf2b) | Kernel/system capabilities, process supervision, jobs, secrets, sandbox/policy, WinClean, reverse engineering, plugin distribution and the FSL Drive engine/daemon |
-| [aphrody-shell](../../products/shell/README.md) | Nushell, terminal/PTY and TUI implementations |
-| [aphrody-web](../../products/web/README.md) | Obscura, BXC, browsing/extraction, web clients, aphrody-site as public HTTP origin and the transitory FSL Drive server |
-| [aphrody-ui](../../products/ui/_source/README.md.8c1fe132fe5c) | The Aphrody Tauri desktop, app-ui shell, Material 3, Drive presentation and renderers; a retained Drive source copy remains during migration |
-| [aphrody-koharu](../../products/koharu/README.md) | Reusable Koharu project, page, scene, manga pipeline and model configuration libraries; Rust and Bun SDKs |
-| [aphrody-compat](../../products/compat/_source/README.md.038abe5c2ce0) | Bun/N2B compatibility facilities and documentation |
-| [aphrody-ai](../../products/ai/_source/README.md.a7d252bc425b) | Agent/runtime/tools, model clients and lifecycle, inference, RAG/memory, OCR/vision/voice, training, AI MCP/A2A, app-server and the `aphrody` CLI |
-| [aphrody-infra](../../products/infra/README.md) | Targets, topology, service/routes catalogues, release/deployment control, Git/SSH/VPN and remote operations |
-| [aphrody-discord](../../products/discord/README.md) | Shared Discord transport, protocol contracts and framework adapters; consuming applications retain commands, data, auth policy and secrets |
-| [rg](../rg/README.md), [shenron](../shenron/README.md), [nie](../../products/nie/_source/README.md.1420254c5733), [iecode](../../products/iecode/README.md) | Domain products, data and workflows consuming shared capabilities through their declared packages, libraries or service contracts |
+| [aphrody-contracts](../products/contracts/README.md) | Neutral wire types, JSON schemas, agent submission/events, app-server compatibility and A2A contracts |
+| [aphrody-native](../products/native/README.md) | Native C/C++ and compute foundations, bridge ABIs and their Rust facade |
+| [aphrody-os](../products/os/_source/README.md.712b5622bf2b) | Kernel/system capabilities, process supervision, jobs, secrets, sandbox/policy, WinClean, reverse engineering, plugin distribution and the FSL Drive engine/daemon |
+| [aphrody-shell](../products/shell/README.md) | Nushell, terminal/PTY and TUI implementations |
+| [aphrody-web](../products/web/README.md) | Obscura, BXC, browsing/extraction, web clients, aphrody-site as public HTTP origin and the transitory FSL Drive server |
+| [aphrody-ui](../products/ui/_source/README.md.8c1fe132fe5c) | The Aphrody Tauri desktop, app-ui shell, Material 3, Drive presentation and renderers; a retained Drive source copy remains during migration |
+| [aphrody-koharu](../products/koharu/README.md) | Reusable Koharu project, page, scene, manga pipeline and model configuration libraries; Rust and Bun SDKs |
+| [aphrody-compat](../products/compat/_source/README.md.038abe5c2ce0) | Bun/N2B compatibility facilities and documentation |
+| [aphrody-ai](../products/ai/_source/README.md.a7d252bc425b) | Agent/runtime/tools, model clients and lifecycle, inference, RAG/memory, OCR/vision/voice, training, AI MCP/A2A, app-server and the `aphrody` CLI |
+| [aphrody-infra](../products/infra/README.md) | Targets, topology, service/routes catalogues, release/deployment control, Git/SSH/VPN and remote operations |
+| [aphrody-discord](../products/discord/README.md) | Shared Discord transport, protocol contracts and framework adapters; consuming applications retain commands, data, auth policy and secrets |
+| [rg](../rg/README.md), shenron, nie, iecode | Domain products, data and workflows consuming shared capabilities through their declared packages, libraries or service contracts |
 
-The generated [ecosystem catalogue](../../reference/infra/ecosystem/ECOSYSTEM.md),
-[CLI tree](../../reference/infra/ecosystem/CLI.md) and
-[MCP tools](../../reference/infra/ecosystem/MCP-TOOLS.md) are discovery indexes.
+The generated [ecosystem catalogue](../ecosystem/ECOSYSTEM.md),
+[CLI tree](../ecosystem/CLI.md) and
+[MCP tools](../ecosystem/MCP-TOOLS.md) are discovery indexes.
 Actual manifests, dispatch code and enabled features determine a checkout's
 capabilities. Do not duplicate their changing counts or dependency inventories here.
 
@@ -95,7 +95,7 @@ flowchart TD
 
 This is the integration boundary, not a claim that every adapter is delivered.
 Existing and pending paths are distinguished in the
-[AI architecture](../ai/ARCHITECTURE.md) and its plan.
+[AI architecture](../architecture/ai/ARCHITECTURE.md) and its plan.
 
 The desktop reaches the AI engine through `aphrody app-server`; it does not link
 AI crates into the host. System, UI, Web, Shell, Native, Contracts and Compat must
@@ -131,7 +131,7 @@ authoritative terminal state. Streams need bounded consumers, ordered item
 identity, cancellation and reconnect recovery. Preserve durable session completion
 barriers. Large model/audio/image artifacts travel through authorized references,
 not repeated token-event payloads. Performance targets and measurements live in
-the [product plan](../../plans/ai/PLAN.md#latency-budgets).
+the [product plan](../plans/ai/PLAN.md#latency-budgets).
 
 The first trusted local coding slice may select full access explicitly. Restricted
 modes must remain unavailable until every actual execution/file path enforces
@@ -141,7 +141,7 @@ establish confinement. This distinction must remain visible in capability contra
 ## Domain products and data
 
 RG and Shenron retain their application responsibilities. NIE remains the
-source reference during the [convergence plan](../../plans/workspace/PLAN.md#nie-convergence):
+source reference during the [convergence plan](../plans/workspace/PLAN.md#nie-convergence):
 IECODE becomes the owner of IEVR-specific rules, data, formats and forge;
 reusable technology moves to the relevant Aphrody category owner. This is a
 target boundary, not a claim that its consumers have migrated.
@@ -169,9 +169,9 @@ credentials and proprietary assets are not superproject source artifacts.
 
 | Boundary | Canonical source |
 | --- | --- |
-| Desktop requests, events and approval replies | [App protocol](../aphrody-contracts/crates/aphrody-app-protocol); handlers in AI and broker in UI |
-| Agent submissions/events and A2A | [Contracts repository](../../products/contracts/README.md) and [A2A documentation](../../products/contracts/a2a/README.md) |
-| Services, health, routes and placement | Infra [service catalogue](../aphrody-infra/config/service-catalog.json), [topology](../aphrody-infra/config/production-topology.json), [routes](../aphrody-infra/config/nginx-routes.json), [local AI](../aphrody-infra/config/local-ai.json) |
+| Desktop requests, events and approval replies | App protocol; handlers in AI and broker in UI |
+| Agent submissions/events and A2A | [Contracts repository](../products/contracts/README.md) and [A2A documentation](../products/contracts/a2a/README.md) |
+| Services, health, routes and placement | Infra [service catalogue](../../config/service-catalog.json), [topology](../../config/production-topology.json), [routes](../../config/nginx-routes.json), [local AI](../../config/local-ai.json) |
 | Jobs, process resources and native secrets | OS implementation and its actual APIs; AI adapters add feature-specific input/results |
 | RAG, sessions, models and memory | AI owner crates; do not add root schema snapshots |
 | Application databases | RG/Shenron and other application schema owners; Infra owns deployment/backup, not their business schema |
@@ -209,7 +209,7 @@ Preserve the product direction without mistaking migration intent for current st
 Each owner records upstream URLs/revisions, local patches and the applicable
 licenses next to imported code. Use its `.gitmodules`, `UPSTREAM`/notice files and
 package locks rather than a second root SHA registry. The current reference for
-AI extraction is [THIRD_PARTY_CODEX.md](../../reference/ai/THIRD_PARTY_CODEX.md).
+AI extraction is [THIRD_PARTY_CODEX.md](../reference/ai/THIRD_PARTY_CODEX.md).
 
 Preserve copyright/license notices when moving or adapting source. Application
 code, model weights, fonts, brands, game assets and Drive-derived sources have
@@ -220,7 +220,7 @@ Upstream bumps and patch retirement need owner-scoped evidence before release.
 ## Infrastructure and delivery authority
 
 All hosts, addresses, ports, service identities, proxy routes and placement come
-from [aphrody-infra](../../products/infra/README.md), principally its `config/` and
+from [aphrody-infra](../products/infra/README.md), principally its `config/` and
 `inventory/` sources. App repositories consume that authority; the root keeps no
 parallel host map. BXC's canonical implementation is `aphrody-web/apps/bxc`.
 
@@ -241,9 +241,9 @@ complete distributed dependency/source closure and model terms to support it.
 | Question | Authority |
 | --- | --- |
 | Where does a change belong? | This architecture, then the child repository's instructions and manifests |
-| What is the workstation implementing next? | [AI delivery plan](../../plans/ai/PLAN.md) |
-| How does the desktop behave? | [GUI specification](../../reference/ui/GUI.md) and its UI/UX design documents |
-| Which capability or command already exists? | [Generated ecosystem discovery](../../reference/infra/ecosystem/ECOSYSTEM.md), then current source/help |
+| What is the workstation implementing next? | [AI delivery plan](../plans/ai/PLAN.md) |
+| How does the desktop behave? | [GUI specification](../reference/ui/GUI.md) and its UI/UX design documents |
+| Which capability or command already exists? | [Generated ecosystem discovery](../ecosystem/ECOSYSTEM.md), then current source/help |
 | What runs on a host? | Infra catalogues, release records and live evidence |
 | What is pinned locally? | Gitlinks, child Git state and generated root manifest |
 

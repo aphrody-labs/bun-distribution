@@ -3,12 +3,21 @@
 
 Audit + coverage automation pour le plugin `n2b`.
 
-> Scope. `aphrody-ops bun-upstream-docs` (and its `.sh`/`.ps1` wrappers) and `generate-schema-types.ts`
-> operate on this repository (`docs/n2b/bun/`, `../aphrody-contracts/schema/v2.json`).
-> `coverage-check.ts` and `coverage-daemon.ts` audit an **installed n2b plugin tree**
-> (`agents/`, `commands/`, `skills/`, `docs/bun/`, `docs/plugin/`): set `CLAUDE_PLUGIN_ROOT` to
-> that install; this repository does not hold the plugin agents or skills. Paths below of the
-> form `docs/bun/` or `docs/plugin/` are relative to `CLAUDE_PLUGIN_ROOT`.
+> Scope. Scripts live in `scripts/tools/compat/scripts/n2b/` (`autofix-toolchain.ps1`,
+> `coverage-daemon.ts`, `generate-schema-types.ts`) and `scripts/audit/compat/scripts/n2b/`
+> (`coverage-check.ts`). `generate-schema-types.ts` regenerates
+> `crates/compat/n2b-types/src/schema.rs` and `packages/compat/n2b-types/src/index.ts` from
+> `crates/contracts/schema/v2.json`. `coverage-check.ts` reads the canonical Bun docs
+> (`docs/reference/upstream-bun/`, override `N2B_DOCS_BUN`), the n2b notes
+> (`docs/reference/compat/n2b/plugin/n2b/`) and the plugin tree (`plugins/aphrody/`, override
+> `CLAUDE_PLUGIN_ROOT`); it writes its report to `var/audit/n2b-coverage/` (override
+> `N2B_COVERAGE_DIR`). Run the commands below from the repository root with the full script path
+> (`bun scripts/audit/compat/scripts/n2b/coverage-check.ts`, `bun scripts/tools/compat/scripts/n2b/coverage-daemon.ts`).
+>
+> Removed on 2026-10-02: `update-bun-docs.{sh,ps1}` (thin wrappers of
+> `aphrody-ops bun-upstream-docs`, whose root resolution pointed at `scripts/tools/compat`), and
+> `n2b-env.{sh,ps1}`, `refactor-start.{sh,ps1}`, `refactor-state.{sh,ps1}` (tmux launchers of the
+> former standalone n2b plugin; they required `plan/MISSION.md`, which does not exist here).
 
 ## `coverage-check.ts` — audit one-shot
 

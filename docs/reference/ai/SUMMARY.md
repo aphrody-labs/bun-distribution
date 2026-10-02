@@ -72,10 +72,10 @@
 - [Training](./training.md)
 
 - [Project-Wide]()
-  - [CHANGELOG](_root/CHANGELOG.md)
-  - [CODE-OF-CONDUCT](_root/CODE_OF_CONDUCT.md)
-  - [CONTRIBUTING](_root/CONTRIBUTING.md)
-  - [SECURITY](_root/SECURITY.md)
+  - CHANGELOG
+  - CODE-OF-CONDUCT
+  - CONTRIBUTING
+  - SECURITY
 - [Agent-Stack](../../products/ai/agent-stack/README.md)
   - [PLUGIN-SYNC](./agent-stack/PLUGIN-SYNC.md)
   - [X-Pro-Integration](./agent-stack/x-pro-integration.md)

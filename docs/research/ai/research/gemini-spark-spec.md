@@ -607,6 +607,6 @@ La convergence de ces trois composants établit une passerelle bidirectionnelle 
 - **Audit Web Scrape Gemini Spark :** [historical snapshot](https://github.com/aphrody-code/aphrody-ai/blob/51c8502949c420b9c8d4945fef0a63dcf2aaea33/docs/audits/gemini-web-scrape.md)
 - **Serveur MCP Dragon Ball FR :** `~/shenron/apps/mcp/src/index.ts`
 - **Crates Cœur Aphrody :**
-  - [crates/aphrody-mcp](../../crates/aphrody-mcp)
-  - [crates/aphrody-gemini-runtime](../../crates/aphrody-gemini-runtime)
-  - [crates/aphrody-antigravity](../../crates/aphrody-antigravity)
+  - [crates/aphrody-mcp](../../../products/ai/crates/aphrody-mcp)
+  - crates/aphrody-gemini-runtime
+  - crates/aphrody-antigravity

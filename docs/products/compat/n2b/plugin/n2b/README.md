@@ -23,8 +23,9 @@
 
 ## Upstream Bun docs
 
-The offline mirror of the upstream Bun docs lives in [`../../bun/`](../../bun/) (`docs/n2b/bun/`),
-refreshed by `bun run docs:bun:update` (see [`../../README.md`](../../README.md)).
+The canonical offline mirror of the upstream Bun docs is `docs/<category>/upstream-bun/`
+(for example [`runtime/nodejs-compat.mdx`](../../../../../reference/upstream-bun/runtime/nodejs-compat.mdx));
+see [`../../README.md`](../../README.md).
 
 ## Autres
 
@@ -54,4 +55,4 @@ refreshed by `bun run docs:bun:update` (see [`../../README.md`](../../README.md)
 
 **Je travaille sur WASM** → `research/wasm-bindgen-study.md` + `../wasm/WASM_BINDGEN_BUN_PATCH.md`
 
-**Je bench Bun** → [`../bun/project/benchmarking.mdx`](../../../../../research/compat/n2b/bun/project/benchmarking.mdx)
+**Je bench Bun** → [`../bun/project/benchmarking.mdx`](../../../../../research/upstream-bun/project/benchmarking.mdx)

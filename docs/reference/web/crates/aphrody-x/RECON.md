@@ -41,7 +41,7 @@ See `packages/x/docs/COVERAGE.md`.
 ## Operation catalog
 
 - **158 operations** total: **94 queries**, **64 mutations**. Full machine-readable
-  map in [`data/x-graphql-catalog.json`](data/x-graphql-catalog.json):
+  map in [`data/x-graphql-catalog.json`](../../../../../crates/web/x/data/x-graphql-catalog.json):
   `{ operationName: { queryId, operationType, featureSwitches[] } }`.
 - Embedded into the binary via `src/catalog.rs` (`include_str!`), looked up at
   runtime so a queryId rotation only needs a catalog refresh, not a recompile.
