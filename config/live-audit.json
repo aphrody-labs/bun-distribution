@@ -3,9 +3,9 @@
   "owner": "aphrody-infra",
   "purpose": "Post-deploy live audit: every public route, page, asset and server-side Next error must be clean before a release is considered done.",
   "engine": {
-    "crawler": "aphrody-web/apps/bxc (Aphrody Web, profile http, never a desktop browser)",
-    "pageTests": "aphrody-web/packages/bxc-test (TestPage, profile http)",
-    "bxcDatabaseEnv": "BXC_DB_PATH"
+    "crawler": "aphrody-web crawl (native Rust Web engine, bounded HTTP frontier)",
+    "pageTests": "packages/web/aphrody-web-test (TestPage through Obscura CDP)",
+    "crawlReportState": "$XDG_STATE_HOME/aphrody/live-audit/<host>.json"
   },
   "sites": [
     {
