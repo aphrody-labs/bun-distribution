@@ -42,13 +42,13 @@ Méthode : pour chaque fichier `.ts/.sh/.nu/.py/.ps1` sous `scripts/`, nombre de
 - `scripts/audit/shenron/scripts/ops/wiki-page-builder.test.ts`
 - `scripts/audit/shenron/scripts/process-ocr-lots-aphrody.test.ts`
 - `scripts/audit/ui-browser-bundles.test.ts`
-- `scripts/audit/ui/apps/nie-web/scripts/build-fingerprint.test.ts`
+- scripts/audit/ui/apps/nie-web/scripts/build-fingerprint.test.ts (supprimé)
 - `scripts/audit/ui/apps/nie-web/scripts/out-dir.test.ts`
 - `scripts/audit/ui/apps/nie-web/scripts/precompression-targets.test.ts`
 - `scripts/audit/ui/apps/nie-web/scripts/public-entry-bundle.test.ts`
 - `scripts/audit/ui/apps/nie-web/scripts/stage-vfs.test.ts`
-- `scripts/audit/ui/apps/nie-web/scripts/verify-audio-cross-host.ts`
-- `scripts/audit/ui/apps/nie-web/scripts/wasm-audio-smoke.test.ts`
+- scripts/audit/ui/apps/nie-web/scripts/verify-audio-cross-host.ts (supprimé)
+- scripts/audit/ui/apps/nie-web/scripts/wasm-audio-smoke.test.ts (supprimé)
 - `scripts/audit/ui/drive/scripts/test-data.sh`
 - `scripts/audit/web/apps/bxc/scripts/run-tests.ts`
 
@@ -63,9 +63,9 @@ Méthode : pour chaque fichier `.ts/.sh/.nu/.py/.ps1` sous `scripts/`, nombre de
 - `scripts/build/ui/drive/scripts/bundle-libheif.sh`
 - `scripts/build/ui/packages/bun/scripts/generate-symbols.ts`
 - scripts/build/ui/packages/material-web/scripts/component-custom-elements.ts (supprimé : doublon exact de `packages/ui/material-web/scripts/component-custom-elements.ts`)
-- `scripts/build/web/apps/bxc/scripts/build-demo-index.ts`
+- scripts/build/web/apps/bxc/scripts/build-demo-index.ts (supprimé)
 - `scripts/build/web/apps/bxc/scripts/build-serverless.ts`
-- `scripts/build/web/apps/bxc/scripts/capture_squad_builders.ts`
+- scripts/build/web/apps/bxc/scripts/capture_squad_builders.ts (supprimé)
 
 ### check-aphrody-apex-nginx.ps1
 
@@ -244,15 +244,15 @@ Méthode : pour chaque fichier `.ts/.sh/.nu/.py/.ps1` sous `scripts/`, nombre de
 - `scripts/tools/ui/drive/scripts/fix-deb.sh`
 - `scripts/tools/ui/scripts/launch_app.ps1`
 - `scripts/tools/ui/scripts/purge-tauri-mobile.nu`
-- `scripts/tools/web/apps/bxc/scripts/backfill-empty-markdown.ts`
+- scripts/tools/web/apps/bxc/scripts/backfill-empty-markdown.ts (supprimé)
 - `scripts/tools/web/apps/bxc/scripts/cleanup.ts`
-- `scripts/tools/web/apps/bxc/scripts/consolidate-dragonball-crawls.ts`
-- `scripts/tools/web/apps/bxc/scripts/enrich-shenron.ts`
-- `scripts/tools/web/apps/bxc/scripts/export-dragonball-jsonl.ts`
+- scripts/tools/web/apps/bxc/scripts/consolidate-dragonball-crawls.ts (supprimé)
+- scripts/tools/web/apps/bxc/scripts/enrich-shenron.ts (supprimé)
+- scripts/tools/web/apps/bxc/scripts/export-dragonball-jsonl.ts (supprimé)
 - `scripts/tools/web/apps/bxc/scripts/fetch_bun_docs.ts`
 - `scripts/tools/web/apps/bxc/scripts/ingest-inazuma.ts`
 - `scripts/tools/web/apps/bxc/scripts/install-deps-windows.ps1`
-- `scripts/tools/web/apps/bxc/scripts/train-dragonballfr-links.ts`
+- scripts/tools/web/apps/bxc/scripts/train-dragonballfr-links.ts (supprimé)
 
 ### winclean-pipeline.ps1
 
@@ -270,16 +270,16 @@ Preuve : import relatif sans fichier cible (`.ts`, `.tsx`, `/index.ts`, `.js`→
 - `scripts/audit/shenron/scripts/ops/test-ocr-jpn.ts` → ../../apps/site/scripts/_databooks-base
 - `scripts/audit/shenron/scripts/ops/wiki-corpus-enricher.test.ts` → ./wiki-corpus-enricher
 - `scripts/audit/shenron/scripts/ops/wiki-page-builder.test.ts` → ./wiki-page-builder
-- `scripts/audit/ui/apps/nie-web/scripts/build-fingerprint.test.ts` → ../vite.config
+- scripts/audit/ui/apps/nie-web/scripts/build-fingerprint.test.ts (supprimé) → ../vite.config
 - `scripts/audit/ui/apps/nie-web/scripts/out-dir.test.ts` → ./out-dir
 - `scripts/audit/ui/apps/nie-web/scripts/precompression-targets.test.ts` → ./precompression-targets
 - `scripts/audit/ui/apps/nie-web/scripts/public-entry-bundle.test.ts` → ./public-entry-bundle
 - `scripts/audit/ui/apps/nie-web/scripts/stage-vfs.test.ts` → ./stage-vfs
-- `scripts/audit/ui/apps/nie-web/scripts/verify-audio-cross-host.ts` → ../src/wasm/nie_wasm.js
-- `scripts/audit/ui/apps/nie-web/scripts/wasm-audio-smoke.test.ts` → ../src/wasm/nie_wasm.js
-- `scripts/audit/ui/apps/nie-web/scripts/wasm-audio-smoke.test.ts` → ./wasm-audio-smoke
-- `scripts/build/web/apps/bxc/scripts/build-demo-index.ts` → ../src/crawler/MassiveCrawler.ts
-- `scripts/build/web/apps/bxc/scripts/capture_squad_builders.ts` → ../src/api/browser.ts
+- scripts/audit/ui/apps/nie-web/scripts/verify-audio-cross-host.ts (supprimé) → ../src/wasm/nie_wasm.js
+- scripts/audit/ui/apps/nie-web/scripts/wasm-audio-smoke.test.ts (supprimé) → ../src/wasm/nie_wasm.js
+- scripts/audit/ui/apps/nie-web/scripts/wasm-audio-smoke.test.ts (supprimé) → ./wasm-audio-smoke
+- scripts/build/web/apps/bxc/scripts/build-demo-index.ts (supprimé) → ../src/crawler/MassiveCrawler.ts
+- scripts/build/web/apps/bxc/scripts/capture_squad_builders.ts (supprimé) → ../src/api/browser.ts
 - `scripts/release/ui/apps/nie-web/scripts/stage-vfs.ts` → ./out-dir
 - `scripts/tools/fut/src/scripts/map_fut.ts` → ../futgg.ts
 - `scripts/tools/fut/src/scripts/map_fut.ts` → ../futbin.ts
@@ -338,3 +338,18 @@ Preuve : import relatif sans fichier cible (`.ts`, `.tsx`, `/index.ts`, `.js`→
 - scripts/tools/os/drive/core/scripts/update_spacedrive.sh → `crates/os/drive/core/scripts/update_spacedrive.sh`
 
 Conservé : scripts/tools/shenron/scripts/ops/wiki-databooks-indexer.ts (importé par 6 scripts `enrich-category-*` et l'audit de couverture), doublon de `apps/shenron/site/scripts/_wiki-databooks-indexer.ts` à unifier par Shenron.
+
+## Scripts orphelins supprimés 2026-10-03
+
+10 scripts sans référence entrante dont les imports visent des sources absentes du dépôt (aucune app bxc ni source nie-web suivie ; `bun build` échoue) : non exécutables et sans consommateur, supprimés (récupérables par l'historique git) :
+
+- scripts/audit/ui/apps/nie-web/scripts/build-fingerprint.test.ts
+- scripts/audit/ui/apps/nie-web/scripts/verify-audio-cross-host.ts
+- scripts/audit/ui/apps/nie-web/scripts/wasm-audio-smoke.test.ts
+- scripts/build/web/apps/bxc/scripts/build-demo-index.ts
+- scripts/build/web/apps/bxc/scripts/capture_squad_builders.ts
+- scripts/tools/web/apps/bxc/scripts/backfill-empty-markdown.ts
+- scripts/tools/web/apps/bxc/scripts/consolidate-dragonball-crawls.ts
+- scripts/tools/web/apps/bxc/scripts/enrich-shenron.ts
+- scripts/tools/web/apps/bxc/scripts/export-dragonball-jsonl.ts
+- scripts/tools/web/apps/bxc/scripts/train-dragonballfr-links.ts
