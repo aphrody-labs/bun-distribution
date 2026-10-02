@@ -2,7 +2,7 @@
 import { createHash } from "node:crypto";
 import { copyFileSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { basename, join } from "node:path";
-import { assertNePubliePas } from "./out-dir";
+import { assertNePubliePas } from "../../../../../tools/ui/apps/nie-web/scripts/out-dir";
 
 export function stageVfs(sourceDirectory: string, outputDirectory: string): number {
 	assertNePubliePas(outputDirectory);

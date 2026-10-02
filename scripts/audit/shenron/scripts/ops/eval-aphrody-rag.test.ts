@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import { describe, expect, it } from "bun:test";
-import { evaluateGate, gateThresholdsFromEnv, percentile } from "./eval-aphrody-rag";
+import { evaluateGate, gateThresholdsFromEnv, percentile } from "../../../../tools/shenron/scripts/ops/eval-aphrody-rag";
 
 const thresholds = { recall5Min: 0.8, p95MaxMs: 8000 };
 

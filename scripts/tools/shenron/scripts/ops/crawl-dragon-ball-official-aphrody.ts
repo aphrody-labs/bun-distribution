@@ -4,7 +4,7 @@
 import { mkdir } from "node:fs/promises";
 import { join } from "node:path";
 import { AphrodyWebClient } from "@shenron/pipeline/aphrody";
-import { scrapeWithAphrody } from "../../packages/pipeline/scripts/lib/aphrody-web-scrape.ts";
+import { scrapeWithAphrody } from "../../../../../packages/shenron/pipeline/scripts/lib/aphrody-web-scrape.ts";
 
 const ORIGIN = "https://dragon-ball-official.com";
 const SITEMAP = `${ORIGIN}/sitemap.xml`;

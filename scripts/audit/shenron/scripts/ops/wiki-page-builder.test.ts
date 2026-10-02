@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { buildWikiPageCandidate, categoryForSource, parseOptions, wikiSlug } from "./wiki-page-builder";
+import { buildWikiPageCandidate, categoryForSource, parseOptions, wikiSlug } from "../../../../build/shenron/scripts/ops/wiki-page-builder";
 
 const record = {
 	url: "https://www.dragon-ball-official.com/news/01_1234.html",

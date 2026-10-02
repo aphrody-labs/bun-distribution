@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 import init, * as wasm from "../src/wasm/nie_wasm.js";
-import { verifyAudioErrorRecovery } from "./wasm-audio-smoke";
+import { verifyAudioErrorRecovery } from "../../../../../tools/ui/apps/nie-web/scripts/wasm-audio-smoke";
 
 test("the canonical WASM survives HCA constructor errors and stays reusable", async () => {
 	await init({ module_or_path: await Bun.file(new URL("../public/static/game/nie_wasm_bg.wasm", import.meta.url)).arrayBuffer() });

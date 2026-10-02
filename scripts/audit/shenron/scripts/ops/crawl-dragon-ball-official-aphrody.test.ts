@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it } from "bun:test";
 import { mkdtemp, realpath, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, sep } from "node:path";
-import { discoverOfficialPages, runOfficialCrawl } from "./crawl-dragon-ball-official-aphrody.ts";
+import { discoverOfficialPages, runOfficialCrawl } from "../../../../tools/shenron/scripts/ops/crawl-dragon-ball-official-aphrody.ts";
 
 const sitemap = '<sitemapindex><sitemap><loc>https://dragon-ball-official.com/news.xml</loc></sitemap></sitemapindex>';
 const pages = '<urlset><url><loc>https://dragon-ball-official.com/news/2/</loc></url><url><loc>https://dragon-ball-official.com/news/1/</loc></url><url><loc>https://other.example/news/</loc></url></urlset>';

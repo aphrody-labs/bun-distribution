@@ -2,7 +2,7 @@ import { existsSync, lstatSync, mkdirSync, mkdtempSync, realpathSync, rmSync, sy
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, expect, test } from "bun:test";
-import { assertNePubliePas, publishedLink, resolveBuildOutDir } from "./out-dir";
+import { assertNePubliePas, publishedLink, resolveBuildOutDir } from "../../../../../tools/ui/apps/nie-web/scripts/out-dir";
 
 /**
  * Ces tests visent la VRAIE disposition de la machine, pas une maquette.

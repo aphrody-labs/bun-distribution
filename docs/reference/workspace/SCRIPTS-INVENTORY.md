@@ -306,3 +306,9 @@ Preuve : import relatif sans fichier cible (`.ts`, `.tsx`, `/index.ts`, `.js`→
 ## Réparés 2026-10-03
 
 15 scripts ci-dessus ont été réparés par réécriture d'imports relatifs vers le layout actuel (apps/site → apps/shenron/site, apps/bot → apps/shenron/bot, packages/{auth,db} → packages/shenron/{auth,db}, fut → packages/fut/fut/src) ; `bun build --target bun --packages external` résout les 15. Les 16 restants visent des modules absents du dépôt (nie-web, bxc, tests Shenron orphelins) : décision réparer/supprimer par propriétaire.
+
+### Deuxième passe 2026-10-03
+
+- 12 tests/scripts de `scripts/audit` et `scripts/release` pointent maintenant vers leur module déplacé dans `scripts/{tools,build,release}` ; 2 modules Shenron (crawl-dragon-ball-official-aphrody, wiki-corpus-enricher) suivent le layout actuel.
+- `bun test` : tests nie-web 13 pass. Tests Shenron (crawl-doc-links-rag, crawl-dragon-ball-official-aphrody, eval-aphrody-rag, wiki-corpus-enricher, wiki-page-builder) : 5 échecs de résolution de packages (`@shenron/pipeline/*`, `postgres`) car `scripts/` n'est pas un membre de workspace avec ces dépendances. Décision propriétaire Shenron : déplacer sous `packages/shenron/pipeline/scripts` ou déclarer les dépendances.
+- Restent non résolus : wasm-audio-smoke et verify-audio-cross-host (artefact généré nie_wasm.js), build-fingerprint (vite.config absent), bxc build-demo-index et capture_squad_builders (sources bxc absentes).

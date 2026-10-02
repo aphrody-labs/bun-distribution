@@ -20,7 +20,7 @@ import { existsSync } from "node:fs";
 import { rename } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import postgres from "postgres";
-import { defautDePlanche } from "../../apps/site/src/lib/databooks-defauts";
+import { defautDePlanche } from "../../../../../apps/shenron/site/src/lib/databooks-defauts";
 
 export type WikiPageCandidate = {
 	id: string;

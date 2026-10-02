@@ -3,7 +3,7 @@ import { createHash } from "node:crypto";
 import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
-import { stageVfs } from "./stage-vfs";
+import { stageVfs } from "../../../../../release/ui/apps/nie-web/scripts/stage-vfs";
 
 test("canonical build stages only integrity-checked archives and publishes manifest last", () => {
 	const directory = mkdtempSync(join(tmpdir(), "nie-vfs-stage-"));

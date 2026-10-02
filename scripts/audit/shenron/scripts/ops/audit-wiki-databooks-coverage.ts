@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import postgres from "postgres";
-import { getDbUrl } from "./wiki-databooks-indexer";
+import { getDbUrl } from "../../../../tools/shenron/scripts/ops/wiki-databooks-indexer";
 
 const sql = postgres(getDbUrl());
 

@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { isUsableMarkdown, parseOptions } from "./crawl-doc-links-rag";
+import { isUsableMarkdown, parseOptions } from "../../../../tools/shenron/scripts/ops/crawl-doc-links-rag";
 
 describe("crawl-doc-links-rag options", () => {
 	test("defaults to crawl-only mode", () => {
