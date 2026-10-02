@@ -86,8 +86,14 @@ routes de sites, exemples et snapshots historiques demandent une classification.
   `ui-dist.manifest` avant l’embarquement Tauri : retirées de l’index (≈ 20 Mo),
   fichiers conservés sur disque. Restent licences (copies par paquet, voulues),
   assets RG/Koharu et code inter-apps à qualifier par propriétaire.
-- [ ] Classer les documents historiques et corriger les liens réellement cassés
+- [x] Classer les documents historiques et corriger les liens réellement cassés
   dans la documentation active. Ne pas réécrire les preuves de migration.
+  Clos 2026-10-03 : 4542 documents = 888 actifs vérifiés (liens et chemins) +
+  3654 copies amont ignorées par règle ; historiques = preuves `docs/migration`
+  et entrées datées de ce plan, seul document encore exempté du contrôle des
+  chemins (raison consignée dans `config/docs/doc-path-check-deferred.json`) ;
+  `docs/apis/infra/vps/APIS.md` réaligné sur les chemins du monorepo.
+  `docs:check-links` : 0 lien cassé, 0 chemin mort.
 - [x] Classer les scripts importés par commande utilisée, propriétaire et
   références entrantes ; supprimer ceux devenus inutilisés après preuve.
   Inventaire 2026-10-03 : [SCRIPTS-INVENTORY.md](docs/reference/workspace/SCRIPTS-INVENTORY.md),

@@ -6,18 +6,18 @@ repository owns its code, how it is authenticated and how Nginx exposes it. List
 public hosts are not repeated here: read them from
 [`config/service-catalog.json`](../../../../config/service-catalog.json) (`health`, `port`) and
 [`config/nginx-routes.json`](../../../../config/nginx-routes.json) (`routes`, `internal`). Restored from
-the retired `aphrody` monolith (`docs/vps/APIS.md`) and updated to the category repositories.
+the retired `aphrody` monolith (docs/vps/APIS.md) and updated to the category repositories.
 
 ## 1. API servers
 
 | Catalog service | Server | Code owner | Exposure |
 |---|---|---|---|
-| `aphrody-web-api` | BXC REST + GraphQL (Elysia, GraphQL Yoga), compiled to one Bun binary | `aphrody-web` `apps/bxc/src/server/` | Loopback; Nginx forwards only the `internal` paths of `aphrody.com` |
-| `aphrody-site` | Public `aphrody.com` origin (Rust) | `aphrody-web` `crates/aphrody-site` | Public host route |
-| `aphrody-a2a` | A2A JSON-RPC listener (`aphrody a2a serve`) | `aphrody-ai` `crates/aphrody` over the `aphrody-contracts` A2A stack | Loopback; RPC path and agent card routed on `aphrody.com` |
-| `aphrody-ai-http` | AI REST gateway (`aphrody-mcp http`) | `aphrody-ai` `crates/aphrody-mcp` | Loopback; model and RAG read paths routed on `aphrody.com` |
-| `aphrody-shenron-embed` | E5 embeddings (Rust, `aphrody-embed serve`) | `aphrody-ai` `crates/aphrody-embed` | Loopback only |
-| `shenron-mcp` | Retired 2026-09-25; its tools are `dragonball.*` in `aphrody-mcp` | `aphrody-ai` `crates/aphrody-mcp` (feature `dragonball`) | None (route retired) |
+| `aphrody-web-api` | BXC REST + GraphQL (Elysia, GraphQL Yoga), compiled to one Bun binary | `aphrody-web` apps/bxc/src/server/ (bxc retiré du monorepo) | Loopback; Nginx forwards only the `internal` paths of `aphrody.com` |
+| `aphrody-site` | Public `aphrody.com` origin (Rust) | `aphrody-web` crates/aphrody-site (hors du monorepo) | Public host route |
+| `aphrody-a2a` | A2A JSON-RPC listener (`aphrody a2a serve`) | `aphrody-ai` `apps/cli` over the `aphrody-contracts` A2A stack | Loopback; RPC path and agent card routed on `aphrody.com` |
+| `aphrody-ai-http` | AI REST gateway (`aphrody-mcp http`) | `aphrody-ai` `crates/ai/mcp` | Loopback; model and RAG read paths routed on `aphrody.com` |
+| `aphrody-shenron-embed` | E5 embeddings (Rust, `aphrody-embed serve`) | `aphrody-ai` `crates/ai/embed` | Loopback only |
+| `shenron-mcp` | Retired 2026-09-25; its tools are `dragonball.*` in `aphrody-mcp` | `aphrody-ai` `crates/ai/mcp` (feature `dragonball`) | None (route retired) |
 | `rg-api`, `rg-website`, `rg-achillea-bot` | RG platform APIs and sites | `rg` | Public host routes |
 | `shenron-bot`, `shenron-site` | Shenron REST/GraphQL/OpenAPI bot process and site | `shenron` | Public host routes |
 
@@ -61,7 +61,7 @@ consumed privately through the contract in [`config/local-ai.json`](../../../../
   loopback service without a route entry.
 - The BXC API requires `Authorization: Bearer <BXC_API_TOKEN>` on every route except `/health`
   when a token is configured; the site authenticates public Web clients separately (token
-  relationships are described in [`docs/TOPOLOGY.md`](../../../reference/infra/TOPOLOGY.md)).
+  relationships are described in [`docs/reference/infra/TOPOLOGY.md`](../../../reference/infra/TOPOLOGY.md)).
 - Public routes authenticate at their application boundary and accept no secret in the URL.
 - Inter-service tokens live in root-owned environment files under `/etc/<plane>/` with mode
   `0600`, provisioned by `scripts/ops/provision-aphrody-stack-env.sh`; they are rotated
