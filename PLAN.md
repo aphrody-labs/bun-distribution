@@ -100,8 +100,14 @@ routes de sites, exemples et snapshots historiques demandent une classification.
   supprimés (10 orphelins, puis 7 cassés cités seulement par la doc) ; 13
   doublons de paquets supprimés ; les ~98 non référencés qui résolvent restent
   des outils manuels classés par catégorie dans SCRIPTS-INVENTORY.md.
-- [ ] Réduire les préfixes de fichiers qui ne décrivent aucun rôle, en conservant
+- [x] Réduire les préfixes de fichiers qui ne décrivent aucun rôle, en conservant
   les conventions imposées (`Cargo.toml`, `package.json`, `index.ts`).
+  Revue 2026-10-03 : les dossiers sont déjà sans `aphrody-` ; restent 19 fichiers
+  `aphrody-*`/`aphrody_*` : binaires `src/bin` et `bin/` (noms de CLI publics, à
+  préserver), pont Shenron → Aphrody (`aphrody-corpus`, `aphrody-web-scrape`,
+  `aphrody-ocr-candidate`) et ajouts du fork material-web distingués de l’amont —
+  préfixes porteurs de rôle. Les `_` marquent les helpers partagés des
+  `scripts/` et les fichiers privés Next.js (`app/`). Aucun renommage requis.
 
 Critères : installation Bun figée, métadonnées Cargo, layout, liens documentaires
 actifs, aucun import vers une ancienne implantation déplacée.
