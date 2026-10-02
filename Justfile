@@ -1,9 +1,9 @@
 # Cargo owns the dependency order; @aphrody/workspace owns orchestration.
 check:
-    cargo check --workspace --all-targets --locked
+    scripts/build/rust/cargo-serial.sh check --workspace --all-targets --locked
 
 clippy:
-    cargo clippy --workspace --all-targets --locked -- -D warnings
+    scripts/build/rust/cargo-serial.sh clippy --workspace --all-targets --locked -- -D warnings
 
 test:
-    cargo test --workspace --locked
+    scripts/build/rust/cargo-serial.sh test --workspace --locked
