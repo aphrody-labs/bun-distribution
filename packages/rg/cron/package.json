@@ -2,7 +2,7 @@
   "name": "@rosegriffon/cron",
   "version": "1.0.1",
   "private": true,
-  "description": "Daemon de t\u00e2ches planifi\u00e9es (cron) pour la maintenance DB, CDN et API",
+  "description": "Daemon de tâches planifiées (cron) pour la maintenance DB, CDN et API",
   "type": "module",
   "main": "./src/index.ts",
   "exports": {

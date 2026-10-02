@@ -10,7 +10,8 @@
   ],
   "type": "module",
   "scripts": {
-    "lint": "bunx oxlint -c ./oxlintrc.json ."
+    "lint": "bunx oxlint -c ./oxlintrc.json .",
+    "typecheck": "tsc --noEmit"
   },
   "exports": {
     "./tsconfig-base.json": "./tsconfig-base.json",

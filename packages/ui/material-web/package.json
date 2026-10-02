@@ -2,7 +2,7 @@
   "name": "@aphrody/material-web",
   "private": true,
   "version": "3.3.3",
-  "description": "Material Design 3 web components (Lit) \u2014 MUI + MUI X migration target",
+  "description": "Material Design 3 web components (Lit) — MUI + MUI X migration target",
   "keywords": [
     "components",
     "design system",
@@ -69,7 +69,7 @@
     "@types/three": "catalog:",
     "@typescript/native-preview": "catalog:",
     "bun-types": "catalog:",
-    "sass-embedded": "^1.100.0",
+    "sass-embedded": "^1.105.0",
     "sass-true": "catalog:",
     "typescript": "catalog:"
   },

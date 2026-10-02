@@ -70,7 +70,7 @@
   },
   "dependencies": {
     "@aphrody/paths": "workspace:*",
-    "@ai-sdk/openai-compatible": "^3.0.0",
+    "@ai-sdk/openai-compatible": "^3.0.59",
     "@ai-sdk/provider": "4.0.18",
     "@aphrody/bun": "workspace:*",
     "@shenron/config": "workspace:*",

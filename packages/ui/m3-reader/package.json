@@ -38,9 +38,9 @@
     "typecheck:fast": "tsgo --noEmit"
   },
   "dependencies": {
-    "@tanstack/react-virtual": "^3.14.10",
-    "lucide-react": "^1.41.0",
-    "swiper": "^14.2.0"
+    "@tanstack/react-virtual": "^3.14.13",
+    "lucide-react": "^1.48.0",
+    "swiper": "^14.3.0"
   },
   "devDependencies": {
     "@aphrody/m3-config": "workspace:*",

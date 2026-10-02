@@ -21,7 +21,7 @@
     "typecheck": "tsgo -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "@hono/zod-openapi": "^1.6.0",
+    "@hono/zod-openapi": "^1.6.3",
     "@shenron/config": "workspace:*",
     "@shenron/db": "workspace:*",
     "hono": "catalog:",

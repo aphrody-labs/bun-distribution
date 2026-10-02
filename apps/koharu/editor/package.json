@@ -25,7 +25,7 @@
     "next-themes": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:",
-    "react-i18next": "^17.0.13"
+    "react-i18next": "^17.0.15"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "catalog:",
@@ -36,7 +36,7 @@
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",
     "@vitejs/plugin-react": "catalog:",
-    "@vitest/ui": "^5.0.0",
+    "@vitest/ui": "^5.0.2",
     "@tauri-apps/api": "catalog:",
     "@tauri-apps/plugin-opener": "catalog:",
     "jsdom": "catalog:",

@@ -48,7 +48,7 @@
   "dependencies": {
     "@aphrody/paths": "workspace:*",
     "@napi-rs/canvas": "1.0.9",
-    "@pothos/core": "^4.13.1",
+    "@pothos/core": "^4.15.1",
     "@aphrody/discord-kit": "workspace:*",
     "discordx": "catalog:",
     "@discordx/di": "catalog:",
