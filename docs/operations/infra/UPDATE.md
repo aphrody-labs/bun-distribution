@@ -54,18 +54,45 @@ repository; add a collector in `src/deps/inventory.ts` when one appears.
 
 ## Sources, upstreams, forks and git
 
-Manifest: `config/upstream-sources.json` (21 entries: `git` or `crate`, `pinned` or tracked, local patches with a marker
-file). The native `aphrody git source` command reads the same manifest, read only. `config/update/forks.json` lists
-the forks the repository depends on.
+Manifest: `config/upstream-sources.json`, two parts. `sources` (4 entries) are the only checkouts kept under `~/source`:
+Cargo path dependencies with local patches (`git` or `crate`, `pinned`, optional `hold`, patches with a marker file).
+`reference` (17 entries, tier `reference` or `build`) are upstreams that are never cloned by default; they are read live.
+Overview, generated: [UPSTREAMS.md](../../reference/infra/UPSTREAMS.md). The native `aphrody git source` command reads
+`sources`, read only. `config/update/forks.json` lists the forks the repository depends on, each with the reason it stays.
 
 | Command | What it does |
 | --- | --- |
-| `sources status\|verify\|sync [--apply] [--only <id>]` | restore and inspect checkouts (clone or extract, apply missing patches; never touches an existing checkout's history) |
-| `sources drift` | every pin against its remote head, newest tag or crates.io version, plus the Cargo git remotes of `Cargo.lock` (any host through `git ls-remote`) |
+| `sources status\|verify\|sync [--apply] [--only <id>]` | restore and inspect the vital checkouts (clone or extract, apply missing patches; never touches an existing checkout's history). `sync --only <id>` also restores a `build`-tier reference (WSL build inputs) |
+| `sources drift` | every pin against its remote head, newest tag or crates.io version (a `hold` is reported, not proposed), plus the Cargo git remotes of `Cargo.lock` classified as `rev`, `tag`, `branch` or `transitive` (only `rev` and `branch` can be "moved") |
 | `sources forks` | each fork against its parent (GitHub compare API, or head comparison for detached forks); recorded `upstreamCommit` in `config/bun-fork.json` vs the parent head |
 | `sources repo` | local repository: branch, ahead/behind, changed paths, stashes, remotes (also printed by `check`) |
-| `sources bump [--only <id>] [--apply]` | move a pinned source to the newest head or version. A scratch clone first proves the patches still apply; a failure writes `.coord/shared/sources-bump-<id>.md` and changes nothing. `--apply` rewrites the manifest, keeps the old checkout as `<id>.pre-bump-<ts>`, restores the new one, and rolls everything back if the result is not `ok`. Then check the Cargo consumers it prints. |
+| `sources bump [--only <id>] [--apply]` | move a pinned source to the newest head or version; held and unpinned entries are skipped. A scratch clone first proves the patches still apply; a failure writes `.coord/shared/sources-bump-<id>.md` and changes nothing. `--apply` rewrites the manifest, keeps the old checkout as `<id>.pre-bump-<ts>`, restores the new one, and rolls everything back if the result is not `ok`. Then check the Cargo consumers it prints |
+| `sources pull [--apply] [--deps]` | fast-forward tracked, clean checkouts and record the new head as the manifest `commit`; Cargo path dependencies only with `--deps` |
 | `sources prune [--apply]` | remove the `*.pre-bump-*` checkouts |
+| `upstream list\|drift\|refresh\|fetch <id>\|prune\|docs` | the reference catalogue, see below |
 
-`update run` reports `sources drift` and `forks` (or restores missing checkouts with `--apply`). Bun fork procedure:
-[BUN-FORK-OPERATIONS.md](./BUN-FORK-OPERATIONS.md).
+Reference upstreams (codex, ollama, mistral.rs, vllm, WSL, ...) are accessed three ways, none of which clones:
+
+- CLI: `aphrody git upstream list|info|tree|read|search <id> [path|query]` (native, `crates/infra/git/src/upstream.rs`).
+- MCP: `upstream_list`, `upstream_info`, `upstream_tree`, `upstream_read`, `upstream_search` (`crates/ai/mcp`).
+- Skill: `plugins/aphrody/skills/upstreams`.
+
+`aphrody-update upstream drift` compares the observed commit of each entry with the remote head; `refresh --apply` records
+the heads; `fetch <id> [--path <dir>]` makes a disposable shallow clone in `~/.cache/aphrody/upstream/<id>`;
+`prune --apply [--cache]` removes every non-vital directory of `~/source` (clean ones only) and the cache; `docs --apply`
+regenerates UPSTREAMS.md. The WSL build inputs (tier `build`) are restored only for a build
+(`sources sync --only <id> --apply`) and pruned afterwards; build outputs live in `~/.local/share/aphrody/wsl-artifacts`
+(`config/os/wsl-build.json`), not in `~/source`.
+
+`update run` reports `sources drift`, `upstream drift` and `forks` (or restores missing vital checkouts with `--apply`).
+Bun fork procedure: [BUN-FORK-OPERATIONS.md](./BUN-FORK-OPERATIONS.md).
+
+## Advisories, holds and release age
+
+- `config/deps/advisory-holds.json`: advisories that cannot be fixed yet (`ecosystem`, `name`, `reason`). `inventory` splits
+  OSV findings into Open (a newer release exists), Open (no newer release) and Held, so only the first two need work.
+  Current holds: yara-x pinned `=1.7.0` (1.19-1.21 need wasmtime 43-45 whose advisories are fixed only in 46.0.3+).
+- `bunfig.toml` `minimumReleaseAge` delays new npm releases; `minimumReleaseAgeExcludes` lists the packages that follow
+  the latest immediately (Tauri JS, Next and its `@next/*` binaries, nodemailer, undici). `tauri-sync` honours the list.
+- `config/upstream-sources.json` `hold`: a pin that must not move and why (serde-saphyr: mistral.rs needs exactly 0.0.16).
+- The npm collector of `inventory` retries on HTTP 429 with the `Retry-After` delay and runs 8 requests at a time.

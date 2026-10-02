@@ -145,7 +145,7 @@
     "owner": "packages/web / crates/web",
     "survey": "docs/research/web/tauri-debugging-survey-2026-10-01.md",
     "surveyedAt": "2026-10-01",
-    "policy": "Checkouts under ../source, listed in config/upstream-sources.json (git clones at the pinned commit, no longer plain trees under upstream/). Forks under aphrody-code are placeholders for upstreamable patches; nothing has been pushed to them. Only mcp-server-tauri is wired in (path dependency of aphrody-tauri-wrap); the others are reading/patch bases.",
+    "policy": "Only mcp-server-tauri keeps a checkout under ../source (Cargo path dependency, config/upstream-sources.json `sources`). The other debuggers are `reference` entries of that manifest: not cloned, read live with `aphrody git upstream read|tree|search <id>` or fetched with `aphrody-update upstream fetch <id>` (2026-10-02). Forks under aphrody-code are placeholders for upstreamable patches; nothing has been pushed to them. Only mcp-server-tauri is wired in (path dependency of aphrody-tauri-wrap); the others are reading/patch bases.",
     "forks": [
       {
         "name": "mcp-server-tauri",
@@ -192,9 +192,9 @@
         "forkStatus": "pre-existing fork (not created or modified by this task; branch aphrody/native-3d-composition belongs to another workstream)",
         "license": "Apache-2.0 OR MIT",
         "licenseFiles": [
-          "../source/tauri/crates/tauri-driver/LICENSE-APACHE-2.0",
-          "../source/tauri/crates/tauri-driver/LICENSE-MIT",
-          "../source/tauri/crates/tauri-driver/LICENSE.spdx"
+          "crates/tauri-driver/LICENSE-APACHE-2.0",
+          "crates/tauri-driver/LICENSE-MIT",
+          "crates/tauri-driver/LICENSE.spdx"
         ],
         "licenseSha256": {
           "LICENSE-APACHE-2.0": "0d542e0c8804e39aa7f37eb00da5a762149dc682d7829451287e11b938e94594",
@@ -205,10 +205,10 @@
         "pinnedAt": "2026-10-01",
         "commitDate": "2026-09-30",
         "treeSha256": "46d05ef44d21e0fe0995eb84c5679c32e83c15b9a5a094ca52b6b5e0c8f6ed44",
-        "localPath": "../source/tauri/crates/tauri-driver",
         "role": "primary-debugger",
         "tauriSupport": "Tauri 3: yes, crate tauri-driver 3.0.0-alpha.1 (README still says pre-alpha). It only proxies the native WebDriver (WebKitWebDriver on Linux, msedgedriver on Windows, no macOS) and sets TAURI_WEBVIEW_AUTOMATION=true, which only tauri-runtime-wry reads: it does not drive the CEF runtime.",
-        "notes": "Sparse checkout of crates/tauri-driver only (same commit as observedCommit of upstream.tauri in this file). The three LICENSE files in the crate are relative symlinks to the repository root in upstream; they were replaced by real copies of the root files so the notices survive without the rest of the repository. Commit is the tip of tauri-apps/tauri branch v3 on 2026-09-30."
+        "notes": "Sparse checkout of crates/tauri-driver only (same commit as observedCommit of upstream.tauri in this file). The three LICENSE files in the crate are relative symlinks to the repository root in upstream; they were replaced by real copies of the root files so the notices survive without the rest of the repository. Commit is the tip of tauri-apps/tauri branch v3 on 2026-09-30.",
+        "access": "reference upstream `tauri`: aphrody git upstream read tauri <path> (no local checkout since 2026-10-02)"
       },
       {
         "name": "tauri-plugin-webdriver",
@@ -218,17 +218,17 @@
         "forkStatus": "created 2026-10-01 with gh repo fork --clone=false; nothing pushed",
         "license": "MIT",
         "licenseFiles": [
-          "../source/tauri-plugin-webdriver/LICENSE"
+          "LICENSE"
         ],
         "licenseSha256": "921c963e883bc01b409f85955cf7977a1e41d01d4f5ddd890a78684696d93591",
         "pinnedCommit": "007d18ece8fe5d27ec1ad4df483db3ebb5f55aca",
         "pinnedAt": "2026-10-01",
         "commitDate": "2026-09-23",
         "treeSha256": "05691b682def45ef5c644393eb79c788701ad2dc93073143cdd6549e53de617a",
-        "localPath": "../source/tauri-plugin-webdriver",
         "role": "secondary",
         "tauriSupport": "Tauri 2 only (tauri = 2.10.0, tauri-plugin 2.5.3 in Cargo.toml 0.2.3). No Tauri 3 branch.",
-        "notes": "In-process W3C WebDriver server (axum, 127.0.0.1:4445) on WKWebView/WebView2/WebKitGTK/Android/iOS using with_webview native APIs; needs no external driver and no CDP port, so it is the macOS option and is not affected by the WebView2 Runtime 150 elevated-host hardening. 13 with_webview call sites need the Tauri 3 downcast_ref patch."
+        "notes": "In-process W3C WebDriver server (axum, 127.0.0.1:4445) on WKWebView/WebView2/WebKitGTK/Android/iOS using with_webview native APIs; needs no external driver and no CDP port, so it is the macOS option and is not affected by the WebView2 Runtime 150 elevated-host hardening. 13 with_webview call sites need the Tauri 3 downcast_ref patch.",
+        "access": "reference upstream `tauri-plugin-webdriver`: aphrody git upstream read tauri-plugin-webdriver <path> (no local checkout since 2026-10-02)"
       },
       {
         "name": "victauri",
@@ -238,18 +238,18 @@
         "forkStatus": "created 2026-10-01 with gh repo fork --clone=false; nothing pushed",
         "license": "Apache-2.0",
         "licenseFiles": [
-          "../source/victauri/LICENSE",
-          "../source/victauri/crates/*/LICENSE"
+          "LICENSE",
+          "crates/*/LICENSE"
         ],
         "licenseSha256": "5930de3579573b4af6c55bc706ecb4c8f026ad25f93b47a503cb3e6695b49a9d",
         "pinnedCommit": "bb17a652963a58e99df661e7d50e67517b6136ae",
         "pinnedAt": "2026-10-01",
         "commitDate": "2026-09-30",
         "treeSha256": "e14977a353d1505ccacc1a013f050414a9518b596ea07e72e64744621b0b76c5",
-        "localPath": "../source/victauri",
         "role": "secondary",
         "tauriSupport": "Tauri 2 only (workspace tauri = \"2\", victauri-plugin enables the wry feature that Tauri 3 removed; uses plugin Builder::js_init_script renamed in Tauri 3 alpha.2). No Tauri 3 branch.",
-        "notes": "Rust-native design closest to aphrody-tauri-mcp (rmcp, axum, embedded streamable-HTTP MCP on 127.0.0.1:7373, Bearer token on by default, DNS-rebinding Host check, 403 on browser-initiated Sec-Fetch-Site: cross-site requests, rate limits, whole server behind cfg(debug_assertions)). Young project (created 2026-04-25, 5 stars, AI-assisted authorship per its branch names): read for its hardening and tool surface, do not depend on it for release gates."
+        "notes": "Rust-native design closest to aphrody-tauri-mcp (rmcp, axum, embedded streamable-HTTP MCP on 127.0.0.1:7373, Bearer token on by default, DNS-rebinding Host check, 403 on browser-initiated Sec-Fetch-Site: cross-site requests, rate limits, whole server behind cfg(debug_assertions)). Young project (created 2026-04-25, 5 stars, AI-assisted authorship per its branch names): read for its hardening and tool surface, do not depend on it for release gates.",
+        "access": "reference upstream `victauri`: aphrody git upstream read victauri <path> (no local checkout since 2026-10-02)"
       }
     ],
     "notForked": [

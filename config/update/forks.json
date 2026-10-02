@@ -10,16 +10,19 @@
         "commit": "commit",
         "upstreamCommit": "upstreamCommit"
       },
-      "parent": "oven-sh/bun"
+      "parent": "oven-sh/bun",
+      "keep": "Runtime fork (bun:aphrody): carries the Aphrody native bridges; cannot be replaced by upstream Bun. Procedure: docs/operations/infra/BUN-FORK-OPERATIONS.md."
     },
     {
       "repo": "aphrody-code/oxc",
       "role": "Oxc fork (Cargo git dependency)",
-      "parent": "oxc-project/oxc"
+      "parent": "oxc-project/oxc",
+      "keep": "Carries the native Oxc lint and minifier bridges for Bun (commits not in oxc-project/oxc); the Cargo workspace and the Bun fork both build from it."
     },
     {
       "repo": "koharu-rs/tauri-specta",
-      "role": "tauri-specta fork (Cargo git dependency)"
+      "role": "tauri-specta fork (Cargo git dependency)",
+      "keep": "Third-party fork, not ours: upstream tauri-specta 2.0.0-rc.25 on crates.io requires tauri ^2 while the workspace is on Tauri 3."
     }
   ]
 }

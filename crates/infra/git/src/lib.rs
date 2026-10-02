@@ -13,6 +13,7 @@ pub mod project;
 mod repository;
 pub mod search;
 pub mod source;
+pub mod upstream;
 
 pub use awesome::{
     AwesomeCategory, AwesomeIndex, AwesomeItem, PRESETS, fetch_awesome_list,

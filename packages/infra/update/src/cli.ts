@@ -10,6 +10,7 @@
  *   aphrody-update deps <sub> [...]          dependency pipeline: plan|apply|facts|fix|changelog|memory|inventory|baseline|run
  *   aphrody-update systemd [check|install|restart]
  *   aphrody-update sources [status|sync|verify|drift|forks|repo|bump]   ~/source checkouts, upstream pins, forks, git state
+ *   aphrody-update upstream [list|drift|refresh|fetch|prune|docs]   reference upstreams: catalogue, live drift, disposable fetch
  *   aphrody-update run [--apply]             tools, cargo, deps, systemd restart, then the gates (report only without --apply)
  * Global flags: --root <repo>, --json
  */
@@ -21,6 +22,7 @@ import { runCargo } from "./cargo.ts";
 import { runSystemd, check as checkSystemd, restart } from "./systemd.ts";
 import { runDepsSync } from "./deps/sync.ts";
 import { runSources, repoState } from "./sources/drift.ts";
+import { runUpstream } from "./sources/upstream.ts";
 
 export async function runUpdate(argv: string[]): Promise<number> {
   const ri = argv.indexOf("--root");
@@ -34,7 +36,8 @@ export async function runUpdate(argv: string[]): Promise<number> {
       let bad = 0;
       for (const r of pins) { console.log(`pin    ${r.tool.padEnd(10)} ${r.pin ?? "?"} ${r.drift.length ? `DRIFT ${r.drift.length}` : "ok"}`); bad += r.drift.length; }
       for (const l of repoState(c.root)) console.log(`repo   ${l}`);
-      return (bad ? 1 : 0) | checkSystemd(c);
+      const docs = await runUpstream(c, ["docs"]);
+      return (bad ? 1 : 0) | docs | checkSystemd(c);
     }
     case "pins": return runPins(c, rest);
     case "tools": return runTools(c, [mod, ...rest]);
@@ -42,10 +45,14 @@ export async function runUpdate(argv: string[]): Promise<number> {
     case "deps": return runDepsSync(rest.length ? [...rest, "--root", root] : ["plan", "--root", root]);
     case "systemd": return runSystemd(c, rest);
     case "sources": return runSources(c, rest);
+    case "upstream": return runUpstream(c, rest);
     case "run": {
       await runTools(c, ["tools"]);
       await runSources(c, c.apply ? ["sync"] : ["drift"]);
-      if (!c.apply) await runSources(c, ["forks"]);
+      if (!c.apply) {
+        await runUpstream(c, ["drift"]);
+        await runSources(c, ["forks"]);
+      }
       const code = runCargo(c, []);
       await runDepsSync([...(c.apply ? ["run", "--apply"] : ["run"]), "--root", root]);
       if (c.apply) restart(c, [".bun/bin/bun", "aphrody"]);

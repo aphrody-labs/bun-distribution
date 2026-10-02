@@ -1,6 +1,6 @@
 {
   "sourceRoot": "/home/aphro/source",
-  "outputRoot": "/home/aphro/source/build/aphrody",
+  "outputRoot": "/home/aphro/.local/share/aphrody/wsl-artifacts",
   "workspace": "/home/aphro/aphrody",
   "jobs": 4,
   "timeoutSeconds": 21600,

@@ -39,13 +39,41 @@ export type Source = {
   patches?: Patch[];
 };
 
-export type Manifest = { schemaVersion: 1; root: string; sources: Source[] };
+/** An upstream that is never cloned by default: read live (`aphrody git upstream`, MCP `upstream_*`) or fetched into the cache. */
+export type Reference = {
+  id: string;
+  kind: "git";
+  /** `build`: restored under the source root only for the WSL build; `reference`: read live, cached on demand. */
+  tier: "build" | "reference";
+  url: string;
+  ref?: string;
+  /** Last head seen when the entry was written (provenance, not a pin). */
+  observedCommit?: string;
+  sparse?: string[];
+  license?: string;
+  purpose: string;
+  consumers: string;
+  note?: string;
+};
+
+export type Manifest = { schemaVersion: 1; root: string; sources: Source[]; reference?: Reference[] };
 
 export function parseManifest(text: string): Manifest {
   const raw = JSON.parse(text) as Manifest;
   if (raw.schemaVersion !== 1) throw new Error("upstream-sources: schemaVersion must be 1");
   if (typeof raw.root !== "string" || raw.root === "") throw new Error("upstream-sources: root");
   const seen = new Set<string>();
+  for (const ref of raw.reference ?? []) {
+    if (!/^[A-Za-z0-9][A-Za-z0-9._-]*$/.test(ref.id)) throw new Error(`upstream-sources: invalid reference id ${ref.id}`);
+    if (seen.has(ref.id)) throw new Error(`upstream-sources: duplicate id ${ref.id}`);
+    seen.add(ref.id);
+    if (ref.kind !== "git" || !ref.url) throw new Error(`${ref.id}: reference needs kind git and url`);
+    if (ref.tier !== "build" && ref.tier !== "reference") throw new Error(`${ref.id}: tier must be build or reference`);
+    if (ref.observedCommit !== undefined && !/^[0-9a-f]{40}$/.test(ref.observedCommit)) {
+      throw new Error(`${ref.id}: observedCommit must be a 40-hex SHA`);
+    }
+    if (!ref.purpose || !ref.consumers) throw new Error(`${ref.id}: purpose and consumers are required`);
+  }
   for (const source of raw.sources) {
     if (!/^[A-Za-z0-9][A-Za-z0-9._-]*$/.test(source.id)) {
       throw new Error(`upstream-sources: invalid id ${source.id}`);
@@ -305,7 +333,11 @@ export async function runUpstreamSources(argv: string[]): Promise<number> {
     await readFile(join(args.repo, "config/upstream-sources.json"), "utf8"),
   );
   const root = resolveSourceRoot(args.repo, manifest, args.sourceRoot);
-  const sources = manifest.sources.filter((source) => !args.only || source.id === args.only);
+  // A build-tier reference (WSL build inputs) is restored only when named explicitly.
+  const onDemand: Source[] = (manifest.reference ?? [])
+    .filter((ref) => ref.tier === "build" && ref.id === args.only)
+    .map((ref) => ({ id: ref.id, kind: "git", role: "reference", pinned: false, url: ref.url, ref: ref.ref, commit: ref.observedCommit, sparse: ref.sparse }));
+  const sources = [...manifest.sources, ...onDemand].filter((source) => !args.only || source.id === args.only);
   if (args.only && sources.length === 0) return (console.error(`unknown source ${args.only}`), 2);
 
   const actions: Record<string, string> = {};
@@ -349,7 +381,10 @@ export async function runUpstreamSources(argv: string[]): Promise<number> {
       console.log(
         `${row.state.padEnd(13)} ${row.id.padEnd(24)} ${row.detail}${actions[row.id] ? `  [${actions[row.id]}]` : ""}`,
       );
-    if (unmanaged.length) console.log(`unmanaged (not in manifest): ${unmanaged.join(", ")}`);
+    if (unmanaged.length)
+      console.log(
+        `not vital (remove with \`aphrody-update upstream prune --apply\`): ${unmanaged.join(", ")}`,
+      );
     for (const problem of problems) console.log(`problem: ${problem}`);
     if (args.action === "sync" && !args.apply)
       console.log("plan only; pass --apply to clone, extract and patch");

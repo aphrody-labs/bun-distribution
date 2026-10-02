@@ -176,6 +176,22 @@ pub(crate) enum GitAction {
         #[arg(long)]
         pretty: bool,
     },
+    /// Live read-only access to the upstream catalogue (config/upstream-sources.json), no clone needed.
+    Upstream {
+        /// `list` the catalogue, or `info`, `tree`, `read`, `search` one upstream through the GitHub API.
+        #[arg(value_enum, default_value = "list")]
+        action: UpstreamAction,
+        /// Upstream id (see `list`).
+        id: Option<String>,
+        /// Directory or file path (`tree`, `read`) or the query (`search`).
+        arg: Option<String>,
+        /// Repository root holding the manifest.
+        #[arg(long, default_value = ".")]
+        path: PathBuf,
+        /// Pretty-print JSON.
+        #[arg(long)]
+        pretty: bool,
+    },
     /// Audit and strip AI attributions, co-authors, and trailers from Git commits.
     Attribution {
         /// Repository path (ops.ts is resolved from `APHRODY_ROOT`, else the current directory).
@@ -206,6 +222,21 @@ pub(crate) enum GitAction {
         #[arg(long, default_value = ".")]
         root: PathBuf,
     },
+}
+
+/// Operation on the upstream catalogue.
+#[derive(clap::ValueEnum, Debug, Clone, Copy)]
+pub(crate) enum UpstreamAction {
+    /// Every catalogue entry with its tier and purpose.
+    List,
+    /// Repository facts, head of the followed ref, latest release, gap to the observed commit.
+    Info,
+    /// Directory listing at the followed ref.
+    Tree,
+    /// One file at the followed ref.
+    Read,
+    /// Code search inside the upstream.
+    Search,
 }
 
 /// Operation on the upstream source manifest.
@@ -385,6 +416,33 @@ pub(crate) async fn run(action: GitAction) -> miette::Result<()> {
             if matches!(action, SourceAction::Verify) && !report.is_healthy() {
                 return Err(miette::miette!("upstream sources are not all healthy"));
             }
+        },
+        GitAction::Upstream { action, id, arg, path, pretty } => {
+            let entries = aphrody_git::upstream::catalogue(&path).map_err(to_report)?;
+            if matches!(action, UpstreamAction::List) {
+                emit(&serde_json::to_value(&entries).map_err(to_report)?, pretty)?;
+                return Ok(());
+            }
+            let id = id.ok_or_else(|| miette::miette!("an upstream id is required (see `list`)"))?;
+            let entry = aphrody_git::upstream::find(&entries, &id).map_err(to_report)?;
+            let client = GitHubClient::from_env().map_err(to_report)?;
+            let value = match action {
+                UpstreamAction::List => unreachable!("handled above"),
+                UpstreamAction::Info => aphrody_git::upstream::info(&client, entry).await,
+                UpstreamAction::Tree => {
+                    aphrody_git::upstream::tree(&client, entry, arg.as_deref().unwrap_or("")).await
+                },
+                UpstreamAction::Read => {
+                    let file = arg.ok_or_else(|| miette::miette!("`read` needs a file path"))?;
+                    aphrody_git::upstream::read(&client, entry, &file).await
+                },
+                UpstreamAction::Search => {
+                    let query = arg.ok_or_else(|| miette::miette!("`search` needs a query"))?;
+                    aphrody_git::upstream::search(&client, entry, &query).await
+                },
+            }
+            .map_err(to_report)?;
+            emit(&value, pretty)?;
         },
         GitAction::Attribution {
             repo,

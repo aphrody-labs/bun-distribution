@@ -28,8 +28,9 @@ def logged(args, log, cwd=None, env=None):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--source', type=pathlib.Path, default=pathlib.Path('/home/aphro/source/wslg'))
-    parser.add_argument('--output', type=pathlib.Path, default=pathlib.Path('/home/aphro/source/build/aphrody/wslg'))
+    parser.add_argument('--source', type=pathlib.Path, default=pathlib.Path('/home/aphro/source/wslg'),
+                        help='restore first: aphrody-update sources sync --only wslg --apply')
+    parser.add_argument('--output', type=pathlib.Path, default=pathlib.Path('/home/aphro/.local/share/aphrody/wsl-artifacts/wslg'))
     parser.add_argument('--engine', default='podman', choices=('podman', 'docker'))
     parser.add_argument('--version', default='dev')
     args = parser.parse_args()

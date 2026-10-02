@@ -328,6 +328,69 @@ pub struct GitIngestRequest {
 }
 
 #[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+pub struct UpstreamListRequest {
+    #[schemars(description = "Repository root holding config/upstream-sources.json (default: APHRODY_ROOT, else the current directory).")]
+    pub repo_path: Option<String>,
+}
+
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+pub struct UpstreamRequest {
+    #[schemars(description = "Upstream id from `upstream_list` (for example 'codex', 'mistral.rs', 'WSL2-Linux-Kernel').")]
+    pub id: String,
+    #[schemars(description = "Repository path: directory for `upstream_tree` (default: the root), file for `upstream_read`.")]
+    pub path: Option<String>,
+    #[schemars(description = "Search query for `upstream_search` (GitHub code search, restricted to this upstream).")]
+    pub query: Option<String>,
+    #[schemars(description = "Repository root holding config/upstream-sources.json (default: APHRODY_ROOT, else the current directory).")]
+    pub repo_path: Option<String>,
+}
+
+/// Runs one live upstream query; the answer is pretty JSON, or a `UPSTREAM_*_FAILED` error object.
+async fn upstream_query(action: &'static str, request: UpstreamRequest) -> String {
+    let failed = |reason: String| {
+        serde_json::to_string_pretty(&json!({
+            "error": format!("UPSTREAM_{}_FAILED", action.to_ascii_uppercase()),
+            "reason": reason,
+        }))
+        .unwrap_or_default()
+    };
+    let root = upstream_root(request.repo_path.as_deref());
+    let entries = match aphrody_git::upstream::catalogue(&root) {
+        Ok(entries) => entries,
+        Err(e) => return failed(e.to_string()),
+    };
+    let entry = match aphrody_git::upstream::find(&entries, &request.id) {
+        Ok(entry) => entry,
+        Err(e) => return failed(e.to_string()),
+    };
+    let client = match aphrody_git::GitHubClient::from_env() {
+        Ok(client) => client,
+        Err(e) => return failed(e.to_string()),
+    };
+    let path = request.path.as_deref().unwrap_or("");
+    let result = match action {
+        "info" => aphrody_git::upstream::info(&client, entry).await,
+        "tree" => aphrody_git::upstream::tree(&client, entry, path).await,
+        "read" => aphrody_git::upstream::read(&client, entry, path).await,
+        _ => {
+            aphrody_git::upstream::search(&client, entry, request.query.as_deref().unwrap_or(""))
+                .await
+        },
+    };
+    match result {
+        Ok(value) => serde_json::to_string_pretty(&value).unwrap_or_default(),
+        Err(e) => failed(e.to_string()),
+    }
+}
+
+fn upstream_root(given: Option<&str>) -> std::path::PathBuf {
+    given
+        .map(std::path::PathBuf::from)
+        .or_else(|| std::env::var_os("APHRODY_ROOT").map(std::path::PathBuf::from))
+        .unwrap_or_else(|| std::path::PathBuf::from("."))
+}
+
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
 pub struct AwesomeFetchRequest {
     #[schemars(
         description = "Preset name (e.g. 'bun', 'rust', 'tauri', 'awesome') or GitHub 'owner/repo' (e.g. 'sindresorhus/awesome')."
@@ -2240,6 +2303,51 @@ impl GoogleMcpServer {
     }
 
     // -----------------------------------------------------------------------
+    // upstream_* — live, read-only access to the upstream catalogue (no clone).
+    // -----------------------------------------------------------------------
+    #[tool(description = "List the upstream catalogue (config/upstream-sources.json): the few \
+                          vital checkouts and the reference upstreams that are never cloned \
+                          (codex, ollama, mistral.rs, vllm, WSL, ...), with tier, purpose and consumers.")]
+    async fn upstream_list(
+        &self,
+        Parameters(UpstreamListRequest { repo_path }): Parameters<UpstreamListRequest>,
+    ) -> String {
+        match aphrody_git::upstream::catalogue(upstream_root(repo_path.as_deref())) {
+            Ok(entries) => serde_json::to_string_pretty(&entries).unwrap_or_default(),
+            Err(e) => serde_json::to_string_pretty(&json!({
+                "error": "UPSTREAM_LIST_FAILED",
+                "reason": e.to_string(),
+            }))
+            .unwrap_or_default(),
+        }
+    }
+
+    #[tool(description = "Live facts about one catalogue upstream from the GitHub API: head of the \
+                          followed ref, latest release, licence, pushed date, archived flag, and \
+                          whether it moved since the commit recorded in the manifest.")]
+    async fn upstream_info(&self, Parameters(request): Parameters<UpstreamRequest>) -> String {
+        upstream_query("info", request).await
+    }
+
+    #[tool(description = "List a directory of one catalogue upstream at its live ref (no clone). \
+                          `path` defaults to the repository root.")]
+    async fn upstream_tree(&self, Parameters(request): Parameters<UpstreamRequest>) -> String {
+        upstream_query("tree", request).await
+    }
+
+    #[tool(description = "Read one file of a catalogue upstream at its live ref (no clone). \
+                          Text over 256 KiB is cut and flagged `truncated`.")]
+    async fn upstream_read(&self, Parameters(request): Parameters<UpstreamRequest>) -> String {
+        upstream_query("read", request).await
+    }
+
+    #[tool(description = "Code search inside one catalogue upstream (GitHub code search, needs a \
+                          GH_TOKEN or GITHUB_TOKEN).")]
+    async fn upstream_search(&self, Parameters(request): Parameters<UpstreamRequest>) -> String {
+        upstream_query("search", request).await
+    }
+
+    // -----------------------------------------------------------------------
     // awesome_fetch — fetch and structure a canonical curated Awesome list.
     // -----------------------------------------------------------------------
     #[tool(description = "Fetch, parse, and structure a canonical curated Awesome list from \
@@ -4027,6 +4135,11 @@ mod aphrody_mcp_call_tests {
             "n2b",
             "github_docs_search",
             "git_ingest",
+            "upstream_list",
+            "upstream_info",
+            "upstream_tree",
+            "upstream_read",
+            "upstream_search",
             "awesome_fetch",
             "awesome_search",
             "aphrody_shenron_rag_search",
