@@ -1,3 +1,4 @@
+import { clientFromTcpSocket } from "../../src/bun";
 import { describe, test, expect, beforeAll } from 'bun:test';
 import { readFile } from 'fs/promises';
 import { SpacedriveClient } from '../../src/client';
@@ -34,7 +35,7 @@ beforeAll(async () => {
 	});
 
 	// Connect to daemon via TCP socket
-	client = SpacedriveClient.fromTcpSocket(bridgeConfig.socket_addr);
+	client = clientFromTcpSocket(bridgeConfig.socket_addr);
 	client.setCurrentLibrary(bridgeConfig.library_id);
 
 	console.log('[TS] Connected to daemon');

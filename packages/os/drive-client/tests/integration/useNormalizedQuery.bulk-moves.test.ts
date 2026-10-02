@@ -1,3 +1,4 @@
+import { clientFromTcpSocket } from "../../src/bun";
 import "./setup"; // Ensure DOM environment is loaded first
 import {
 	describe,
@@ -45,7 +46,7 @@ describe("useNormalizedQuery - Bulk Moves Integration", () => {
 		console.log(`[TS] Bridge config:`, bridgeConfig);
 
 		// Connect to daemon via TCP socket
-		client = SpacedriveClient.fromTcpSocket(bridgeConfig.socket_addr);
+		client = clientFromTcpSocket(bridgeConfig.socket_addr);
 
 		console.log(`[TS] Connected to daemon`);
 

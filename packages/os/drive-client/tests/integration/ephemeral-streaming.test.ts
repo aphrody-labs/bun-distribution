@@ -11,13 +11,14 @@
  * subscription due to timing, buffer overflow, or filter mismatches.
  */
 
+import { clientFromTcpSocket } from "../../src/bun";
 import "./setup";
 
 import { describe, test, expect, beforeAll, afterAll } from "bun:test";
 import { readFile } from "fs/promises";
 import { hostname } from "os";
 import { SpacedriveClient } from "../../src/client";
-import { TcpSocketTransport } from "../../src/transport";
+import { TcpSocketTransport } from "../../src/socket-transport";
 
 interface BridgeConfig {
 	socket_addr: string;
@@ -42,7 +43,7 @@ beforeAll(async () => {
 
 	console.log(`[TS] Bridge config:`, bridgeConfig);
 
-	client = SpacedriveClient.fromTcpSocket(bridgeConfig.socket_addr);
+	client = clientFromTcpSocket(bridgeConfig.socket_addr);
 	client.setCurrentLibrary(bridgeConfig.library_id);
 
 	// Use the device slug from the daemon, not hostname() which may differ

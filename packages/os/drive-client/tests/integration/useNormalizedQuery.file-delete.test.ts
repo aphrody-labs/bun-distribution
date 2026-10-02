@@ -14,6 +14,7 @@
  */
 
 // Setup DOM environment before any other imports
+import { clientFromTcpSocket } from "../../src/bun";
 import "./setup";
 
 import {
@@ -60,7 +61,7 @@ beforeAll(async () => {
 	console.log(`[TS] Bridge config:`, bridgeConfig);
 
 	// Connect to daemon via TCP socket
-	client = SpacedriveClient.fromTcpSocket(bridgeConfig.socket_addr);
+	client = clientFromTcpSocket(bridgeConfig.socket_addr);
 
 	console.log(`[TS] Connected to daemon`);
 

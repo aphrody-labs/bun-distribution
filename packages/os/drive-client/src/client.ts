@@ -1,5 +1,5 @@
 import type { Transport } from "./transport";
-import { UnixSocketTransport, TcpSocketTransport, TauriTransport } from "./transport";
+import { TauriTransport } from "./transport";
 import type { Event } from "./generated/types";
 
 import { SubscriptionManager } from "./subscriptionManager";
@@ -60,20 +60,6 @@ export class SpacedriveClient extends SimpleEventEmitter {
 		this.subscriptionManager = new SubscriptionManager(transport);
 	}
 
-	/**
-	 * Create client for Bun/Node.js using Unix socket
-	 */
-	static fromSocket(socketPath: string): SpacedriveClient {
-		return new SpacedriveClient(new UnixSocketTransport(socketPath));
-	}
-
-	/**
-	 * Create client for Bun/Node.js using TCP socket
-	 * @param socketAddr - TCP address (e.g., "127.0.0.1:6969")
-	 */
-	static fromTcpSocket(socketAddr: string): SpacedriveClient {
-		return new SpacedriveClient(new TcpSocketTransport(socketAddr));
-	}
 
 	/**
 	 * Create client for Tauri using IPC

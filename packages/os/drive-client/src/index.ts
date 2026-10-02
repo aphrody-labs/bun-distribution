@@ -44,7 +44,6 @@
 export { SpacedriveClient } from "./client";
 export type { Transport } from "./transport";
 export {
-	UnixSocketTransport,
 	TauriTransport,
 	HttpTransport,
 } from "./transport";

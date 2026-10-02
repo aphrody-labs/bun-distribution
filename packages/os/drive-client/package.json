@@ -36,6 +36,11 @@
     "./src/hooks/useNormalizedQuery": {
       "types": "./src/hooks/useNormalizedQuery.ts",
       "default": "./src/hooks/useNormalizedQuery.ts"
+    },
+    "./bun": {
+      "types": "./src/bun.ts",
+      "bun": "./src/bun.ts",
+      "default": "./src/bun.ts"
     }
   },
   "scripts": {

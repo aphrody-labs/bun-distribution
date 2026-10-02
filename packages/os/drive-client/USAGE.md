@@ -203,7 +203,8 @@ let files = try await client.files.directoryListing(input)
 
 ### TypeScript (React Query + Auto-Generated Types)
 ```typescript
-const client = SpacedriveClient.fromSocket('/tmp/sd.sock');
+import { clientFromSocket } from '@aphrody/drive-client/bun';
+const client = clientFromSocket('/tmp/sd.sock');
 
 // React Query hooks with auto-generated types
 const { data: libraries } = useCoreQuery({ type: 'libraries.list', input: {} });
