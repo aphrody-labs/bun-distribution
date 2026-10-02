@@ -5,7 +5,7 @@
 //!   bun scripts/audit/ui-browser-bundles.ts [--json]
 
 import { existsSync, readdirSync, readFileSync } from "node:fs";
-import { join, resolve } from "node:path";
+import { dirname, join, resolve } from "node:path";
 
 /** Entries that are server, build or native by design, with the reason they may not bundle for the browser. */
 export const SERVER_ONLY: Readonly<Record<string, string>> = {
@@ -80,6 +80,22 @@ export function discoverEntries(uiRoot: string): string[] {
   return [...entries].sort();
 }
 
+/** Resolve Vite-style `?url` asset imports to the file itself, as the consuming app bundlers do. */
+const assetUrlPlugin: import("bun").BunPlugin = {
+  name: "asset-url",
+  setup(build) {
+    build.onResolve({ filter: /\?url$/ }, (args) => {
+      const path = resolve(dirname(args.importer), args.path.replace(/\?url$/, ""));
+      if (!existsSync(path)) throw new Error(`missing asset: ${args.path}`);
+      return { path, namespace: "asset-url" };
+    });
+    build.onLoad({ filter: /.*/, namespace: "asset-url" }, (args) => ({
+      contents: `export default ${JSON.stringify(args.path)};`,
+      loader: "js",
+    }));
+  },
+};
+
 if (import.meta.main) {
   const uiRoot = resolve(import.meta.dir, "../../packages/ui");
   const json = process.argv.includes("--json");
@@ -100,6 +116,7 @@ if (import.meta.main) {
         "next/*",
         "@tauri-apps/*",
       ],
+      plugins: [assetUrlPlugin],
     }).catch((error: AggregateError) => ({
       success: false as const,
       logs: error.errors ?? [error],

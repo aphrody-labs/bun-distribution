@@ -475,6 +475,15 @@ Propriétaire : `packages/ui`, `crates/ui`.
 - [ ] Clarifier `render-tools` face au moteur `render`, avec identités publiques
   maintenues puis migration explicite si un renommage API est nécessaire.
 - [ ] Requalifier tokens, composants, SSR/hydratation et exports navigateur.
+  Requalification 2026-10-03 : `bun test` des 24 paquets `packages/ui` avec
+  tests — tous verts (m3-icons, m3-theme, m3, material-web exigent
+  `APHRODY_FFI_DEV=1` ou le paquet natif installé, sinon « native library not
+  found ») ; `bun run typecheck` vert sur 23 paquets. Gate navigateur
+  `scripts/audit/ui-browser-bundles.ts` (imports `?url` désormais résolus comme
+  chez Vite/Next, asset absent = échec) : 70 ok, 13 server-only, 1 échec réel —
+  `app-ui` via `react-selecto@1.26.3`, qui importe `@daybrush/utils` et
+  `framework-utils` sans les déclarer (dépendances fantômes refusées par le
+  linker isolé). Reste : correctif amont/patch ou hoist ciblé, SSR/hydratation.
 
 Critères : import sans effets, build navigateur sans Bun FFI, typecheck,
 tests de composants et rendu. Les échecs historiques Gemini sont à reproduire.
