@@ -1,0 +1,32 @@
+{
+  "name": "@aphrody/update",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Unified update pipeline: tool pins, dependency sync, Cargo lock refresh, user systemd units and dev-env checks",
+  "license": "Apache-2.0",
+  "author": "Aphrody",
+  "bin": {
+    "aphrody-update": "./src/cli.ts"
+  },
+  "type": "module",
+  "exports": {
+    ".": "./src/cli.ts",
+    "./pins": "./src/pins.ts",
+    "./tools": "./src/tools.ts",
+    "./systemd": "./src/systemd.ts",
+    "./deps": "./src/deps/sync.ts",
+    "./inventory": "./src/deps/inventory.ts"
+  },
+  "scripts": {
+    "check": "bun src/cli.ts check",
+    "test": "bun test test",
+    "typecheck": "bunx --bun tsc --noEmit -p ."
+  },
+  "devDependencies": {
+    "@types/bun": "catalog:",
+    "@types/node": "catalog:"
+  },
+  "engines": {
+    "bun": ">=1.4.2"
+  }
+}

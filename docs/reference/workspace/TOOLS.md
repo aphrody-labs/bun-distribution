@@ -18,8 +18,8 @@ Une version inconnue signifie que la sonde --version a échoué, pas que le bina
 | `agy` | ok | 1.2.14 | `/home/aphro/.local/bin/agy` |
 | `bun` | ok | 1.4.2 | `/home/aphro/.bun/bin/bun` |
 | `bunx` | ok | 1.4.2 | `/home/aphro/.bun/bin/bunx` |
-| `uv` | ok | uv 0.12.17 (x86_64-unknown-linux-gnu) | `/home/aphro/.local/bin/uv` |
-| `uvx` | ok | uvx 0.12.17 (x86_64-unknown-linux-gnu) | `/home/aphro/.local/bin/uvx` |
+| `uv` | ok | uv 0.12.21 (x86_64-unknown-linux-gnu) | `/home/aphro/.local/bin/uv` |
+| `uvx` | ok | uvx 0.12.21 (x86_64-unknown-linux-gnu) | `/home/aphro/.local/bin/uvx` |
 | `cargo` | ok | cargo 1.98.1 (797e8a9bc 2026-08-05) | `/home/aphro/.cargo/bin/cargo` |
 | `rustc` | ok | rustc 1.98.1 (48a229cea 2026-09-01) | `/home/aphro/.cargo/bin/rustc` |
 | `rustup` | ok | rustup 1.29.1 (d95a37b6a 2026-08-13) | `/home/aphro/.cargo/bin/rustup` |

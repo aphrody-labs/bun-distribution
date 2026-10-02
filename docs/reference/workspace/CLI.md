@@ -66,8 +66,8 @@ sous-commande `audit` ou `backends` sans la vérifier sur le binaire courant.
 
 ## Toolchains et validation
 
-Bun `1.4.2`, uv `0.12.21`, Rust/Cargo `1.98.1`, Oxc `oxlint 1.85.0` /
-`oxfmt 0.70.0`, TypeScript `7.0.2`. Le wrapper Cargo global est `sccache`.
+Bun `1.4.2`, uv `0.12.21`, Rust/Cargo `1.98.1`, Oxc `oxlint 1.86.0` /
+`oxfmt 0.71.0`, TypeScript `7.0.2`. Le wrapper Cargo global est `sccache`.
 Les cibles Rust installées incluent Linux, Windows MSVC/GNU, macOS Intel/ARM,
 WASM navigateur, WASI et Emscripten ; cela ne prouve pas leurs SDK externes.
 La qualification des outils MSVC est enregistrée séparément dans le rapport

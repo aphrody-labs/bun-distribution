@@ -14,7 +14,7 @@
 import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from "node:fs";
 import { dirname, join, relative } from "node:path";
 import { spawnSync } from "node:child_process";
-import { cmpVersion } from "./deps-sync.ts";
+import { cmpVersion } from "./sync.ts";
 
 export type Dep = { ecosystem: "crates.io" | "npm" | "PyPI"; name: string; version: string };
 export type Row = Dep & { latest?: string; behind?: boolean; yanked?: boolean; deprecated?: string; vulns?: string[]; direct?: boolean };
@@ -298,7 +298,7 @@ export function summarise(inv: Inventory, root: string): string {
     "<!-- SPDX-License-Identifier: Apache-2.0 -->",
     "# Dependency inventory",
     "",
-    `Generated ${inv.generated} by \`aphrody-ops deps-sync inventory\` (crates.io sparse index, npm, PyPI, git ls-remote, OSV). Full data: \`${relative(root, join(root, "target/deps-inventory/inventory.json"))}\` (not committed).`,
+    `Generated ${inv.generated} by \`aphrody-update deps inventory\` (crates.io sparse index, npm, PyPI, git ls-remote, OSV). Full data: \`${relative(root, join(root, "target/deps-inventory/inventory.json"))}\` (not committed).`,
     "",
     ...sect("Rust (Cargo.lock)", inv.rust),
     ...sect("Bun (bun.lock)", inv.bun),

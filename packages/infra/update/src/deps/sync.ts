@@ -5,7 +5,7 @@
  * Registries: crates.io, npm, GitHub (releases), PyPI/GitHub (uv), Context7 (docs).
  * Cargo is never bulk-updated (repo rule): only the Tauri family is rewritten, the rest is reported.
  *
- * Usage: aphrody-ops deps-sync [plan|apply|facts|fix|changelog|memory|inventory|baseline|run]
+ * Usage: aphrody-update deps  (or: aphrody-update deps) [plan|apply|facts|fix|changelog|memory|inventory|baseline|run]
  *        [--apply] [--apply-fixes] [--all] [--json] [--root <repo>]
  *   plan       report outdated tools, Tauri family crates and Bun workspace (default)
  *   apply      rewrite pins, `uv self update`, `bun upgrade`, `bun update -r`, record the journal
@@ -21,6 +21,7 @@ import { existsSync, readFileSync, writeFileSync, mkdirSync, readdirSync } from 
 import { homedir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { spawnSync } from "node:child_process";
+import { Ctx } from "../context.ts";
 
 // ---------------------------------------------------------------- pure helpers (unit-tested)
 
@@ -141,28 +142,9 @@ export const registries = {
 
 // ---------------------------------------------------------------- context
 
-type Lib = { id: string; ecosystem: "cargo" | "npm" | "tool"; name: string; github?: string; pypi?: string; context7?: string; topics?: string[] };
-type Change = { ecosystem: string; name: string; from: string; to: string };
-type Journal = { seen: Record<string, string>; runs: { date: string; changes: Change[] }[] };
-
-class Ctx {
-  constructor(readonly root: string, readonly apply: boolean, readonly json: boolean) {}
-  read = (p: string) => readFileSync(join(this.root, p), "utf8");
-  write(p: string, s: string) {
-    mkdirSync(dirname(join(this.root, p)), { recursive: true });
-    writeFileSync(join(this.root, p), s);
-  }
-  exists = (p: string) => existsSync(join(this.root, p));
-  run(cmd: string, args: string[], opts: { inherit?: boolean } = {}) {
-    return spawnSync(cmd, args, { cwd: this.root, encoding: "utf8", stdio: opts.inherit ? "inherit" : "pipe", maxBuffer: 64 * 1024 * 1024 });
-  }
-  jsonFile<T>(p: string, fallback: T): T {
-    return this.exists(p) ? (JSON.parse(this.read(p)) as T) : fallback;
-  }
-  watch = () => this.jsonFile<{ libs: Lib[]; consumers: Record<string, { cargo?: string[]; bun?: string[] }> }>("config/deps/watch.json", { libs: [], consumers: {} });
-  journal = () => this.jsonFile<Journal>("config/deps/journal.json", { seen: {}, runs: [] });
-  saveJournal = (j: Journal) => this.write("config/deps/journal.json", `${JSON.stringify(j, null, 2)}\n`);
-}
+export type Lib = { id: string; ecosystem: "cargo" | "npm" | "tool"; name: string; github?: string; pypi?: string; context7?: string; topics?: string[] };
+export type Change = { ecosystem: string; name: string; from: string; to: string };
+export type Journal = { seen: Record<string, string>; runs: { date: string; changes: Change[] }[] };
 
 const today = () => new Date().toISOString().slice(0, 10);
 const FAMILY = /^(tauri(-[a-z-]+)?|wry|tao)$/;
@@ -191,12 +173,7 @@ async function currentVersions(c: Ctx): Promise<Record<string, string>> {
 
 async function plan(c: Ctx): Promise<Change[]> {
   const changes: Change[] = [];
-  for (const lib of c.watch().libs.filter((l) => l.ecosystem === "tool")) {
-    const cur = (await currentVersions(c))[lib.id];
-    const rel = lib.github ? (await registries.github(lib.github).catch(() => []))[0] : undefined;
-    const latest = (lib.pypi ? await registries.pypi(lib.pypi).catch(() => undefined) : undefined) ?? rel?.tag.replace(/^bun-v|^v/, "");
-    if (cur && latest && cmpVersion(cur, latest) < 0) changes.push({ ecosystem: "tool", name: lib.name, from: cur, to: latest });
-  }
+  // Tools (bun, uv, rust, nu, oxlint, oxfmt, typescript) are handled by ../tools.ts and ../pins.ts.
   const toml = c.read("Cargo.toml");
   const re = /^((?:tauri(?:-[a-z-]+)?|wry|tao))\s*=\s*(?:\{[^}]*version\s*=\s*)?"=?([^"]+)"/gm;
   for (const m of toml.matchAll(re)) {
@@ -218,16 +195,6 @@ async function applyChanges(c: Ctx, changes: Change[]): Promise<void> {
     toml = toml.replace(new RegExp(`^(${ch.name}\\s*=\\s*(?:\\{[^}]*version\\s*=\\s*)?")=?${esc}"`, "m"), `$1=${ch.to}"`);
   }
   c.write("Cargo.toml", toml);
-  for (const ch of changes.filter((x) => x.ecosystem === "tool")) {
-    c.run(ch.name, ch.name === "uv" ? ["self", "update"] : ["upgrade"], { inherit: true });
-    // The release tag can precede the installer channel: pin what is actually installed.
-    const installed = /\d+\.\d+\.\d+/.exec(c.run(ch.name, ["--version"]).stdout)?.[0] ?? ch.from;
-    if (installed !== ch.to) console.warn(`warn   ${ch.name} ${ch.to} is tagged but the installer serves ${installed}; pinning ${installed}`);
-    ch.to = installed;
-    for (const f of ["config/system-packages.json", "packages/infra/workspace/src/runtime-versions.ts", "docs/reference/workspace/CLI.md"]) {
-      if (c.exists(f)) c.write(f, c.read(f).split(ch.from).join(installed));
-    }
-  }
   c.run("bun", ["update", "-r"], { inherit: true });
   const j = c.journal();
   const real = changes.filter((x) => x.from !== x.to);
@@ -243,7 +210,7 @@ async function facts(c: Ctx, all: boolean): Promise<string | undefined> {
   const watch = c.watch();
   const now = await currentVersions(c);
   const j = c.journal();
-  const lines: string[] = [`# Dependency fact sheet ${today()}`, "", "Generated by `aphrody-ops deps-sync facts` from GitHub releases and Context7. Verify before acting.", ""];
+  const lines: string[] = [`# Dependency fact sheet ${today()}`, "", "Generated by `aphrody-update deps facts` from GitHub releases and Context7. Verify before acting.", ""];
   let count = 0;
   for (const lib of watch.libs) {
     const cur = now[lib.id];
@@ -353,7 +320,7 @@ function changelog(c: Ctx): void {
     const parsed = h && d ? parseCommit(h, d, m.join("\x1f")) : undefined;
     return parsed ? [parsed] : [];
   });
-  const lines = ["<!-- SPDX-License-Identifier: Apache-2.0 -->", "# Changelog", "", "Generated by `aphrody-ops deps-sync changelog` from conventional commits and the dependency journal. Do not edit by hand.", ""];
+  const lines = ["<!-- SPDX-License-Identifier: Apache-2.0 -->", "# Changelog", "", "Generated by `aphrody-update deps changelog` from conventional commits and the dependency journal. Do not edit by hand.", ""];
   const days = [...new Set(commits.map((x) => x.date))].sort().reverse();
   for (const day of days) {
     lines.push(`## ${day}`, "");
@@ -378,12 +345,12 @@ async function memory(c: Ctx): Promise<void> {
   const j = c.journal();
   const last = j.runs.at(-1);
   const body = [
-    `## Dependencies (managed by \`aphrody-ops deps-sync memory\`, ${today()})`,
+    `## Dependencies (managed by \`aphrody-update deps memory\`, ${today()})`,
     "",
     ...Object.entries(now).map(([k, v]) => `- ${k}: ${v}`),
     last ? `- last bump ${last.date}: ${last.changes.map((x) => `${x.name} ${x.from}->${x.to}`).join(", ")}` : "- no bump recorded yet",
     "",
-    "Rules: run `bun run deps:sync` (plan) before touching pins; after a bump read `docs/research/workspace/deps/` and",
+    "Rules: run `bun run update:deps` (plan) before touching pins; after a bump read `docs/research/workspace/deps/` and",
     "`.coord/shared/deps-fix-*.md`; fix consumers with the briefs, never bulk-update Cargo; never edit CHANGELOG.md by hand.",
   ].join("\n");
   const base = process.env.APHRODY_WORKSPACES ?? join(homedir(), ".aphrody", "workspaces");
@@ -397,8 +364,8 @@ async function memory(c: Ctx): Promise<void> {
   }
   // Repo-side boot template: static pointer, no volatile versions.
   const tpl = "plugins/aphrody/home/BOOT.md";
-  if (c.exists(tpl) && !c.read(tpl).includes("deps-sync")) {
-    c.write(tpl, `${c.read(tpl).replace(/\s+$/, "")}\n6. **Dépendances :** exécuter \`bun run deps:sync\` (plan) ; lire \`memory/deps-state.md\` et \`.coord/shared/deps-fix-*.md\` avant de toucher aux versions.\n`);
+  if (c.exists(tpl) && !c.read(tpl).includes("update:deps")) {
+    c.write(tpl, `${c.read(tpl).replace(/\s+$/, "")}\n6. **Dépendances :** exécuter \`bun run update:deps\` (plan) ; lire \`memory/deps-state.md\` et \`.coord/shared/deps-fix-*.md\` avant de toucher aux versions.\n`);
   }
 }
 
@@ -419,7 +386,7 @@ export async function runDepsSync(argv: string[]): Promise<number> {
     case "changelog": changelog(c); return 0;
     case "memory": await memory(c); return 0;
     case "inventory": {
-      const inv = await import("./deps-inventory.ts");
+      const inv = await import("./inventory.ts");
       const roots = c.jsonFile<{ inventory?: { pythonRoots?: string[] } }>("config/deps/watch.json", {}).inventory?.pythonRoots ?? [];
       const data = await inv.inventory(c.root, { pythonRoots: roots.map((r) => r.replace(/^~/, homedir())), log: (m) => console.log(`inv    ${m}`) });
       console.log(`inv    wrote ${inv.writeInventory(c.root, data)}`);

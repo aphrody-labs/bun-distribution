@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import { describe, expect, test } from "bun:test";
-import { BLOCK_BEGIN, BLOCK_END, cmpVersion, matchRules, normaliseErrors, parseCommit, replaceManagedBlock } from "../src/deps-sync.ts";
+import { BLOCK_BEGIN, BLOCK_END, cmpVersion, matchRules, normaliseErrors, parseCommit, replaceManagedBlock } from "../src/deps/sync.ts";
 
 describe("cmpVersion", () => {
   test("orders releases and prereleases", () => {
@@ -47,7 +47,7 @@ describe("normaliseErrors", () => {
   });
 });
 
-import { gitSources, parseBunLock, parseCargoLock, parseRequirements, sparsePath } from "../src/deps-inventory.ts";
+import { gitSources, parseBunLock, parseCargoLock, parseRequirements, sparsePath } from "../src/deps/inventory.ts";
 
 describe("inventory parsers", () => {
   test("sparse index paths", () => {

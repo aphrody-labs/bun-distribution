@@ -1,0 +1,114 @@
+// SPDX-License-Identifier: Apache-2.0
+/**
+ * Dev-env module: user systemd units (config/systemd/user -> ~/.config/systemd/user) and /etc/wsl.conf.
+ *   check    drift between repo units and installed units, live-only units, wsl.conf keys
+ *   install  link every repo unit (differing copies are kept as *.pre-update), daemon-reload   [--apply]
+ *   restart  try-restart units that run a given binary (default: units mentioning bun or aphrody)  [--apply]
+ */
+import { existsSync, lstatSync, mkdirSync, readFileSync, readdirSync, readlinkSync, renameSync, symlinkSync, unlinkSync } from "node:fs";
+import { homedir } from "node:os";
+import { join } from "node:path";
+import { Ctx } from "./context.ts";
+
+export type UnitState = "missing" | "linked" | "identical-copy" | "stale-copy" | "foreign-link";
+
+const unitDir = () => process.env.APHRODY_SYSTEMD_USER_DIR ?? join(homedir(), ".config", "systemd", "user");
+const isUnit = (f: string) => /\.(service|timer|socket|path|target)$/.test(f);
+
+export function repoUnits(c: Ctx): string[] {
+  const dir = join(c.root, "config/systemd/user");
+  return existsSync(dir) ? readdirSync(dir).filter(isUnit).sort() : [];
+}
+
+export function stateOf(c: Ctx, name: string, dir = unitDir()): UnitState {
+  const src = join(c.root, "config/systemd/user", name);
+  const dst = join(dir, name);
+  if (!existsSync(dst) && !isLink(dst)) return "missing";
+  if (isLink(dst)) return readlinkSync(dst) === src ? "linked" : "foreign-link";
+  return readFileSync(dst, "utf8") === readFileSync(src, "utf8") ? "identical-copy" : "stale-copy";
+}
+
+function isLink(p: string): boolean {
+  try { return lstatSync(p).isSymbolicLink(); } catch { return false; }
+}
+
+/** Keys required by the repo template that /etc/wsl.conf does not set the same way. */
+export function wslDrift(template: string, live: string): string[] {
+  const parse = (t: string) => {
+    const out = new Map<string, string>();
+    let section = "";
+    for (const raw of t.split("\n")) {
+      const l = raw.trim();
+      if (!l || l.startsWith("#")) continue;
+      const s = /^\[(.+)\]$/.exec(l);
+      if (s) { section = s[1]!; continue; }
+      const kv = /^([^=]+)=(.*)$/.exec(l);
+      if (kv) out.set(`${section}.${kv[1]!.trim()}`, kv[2]!.trim());
+    }
+    return out;
+  };
+  const want = parse(template);
+  const have = parse(live);
+  return [...want].filter(([k, v]) => have.get(k) !== v).map(([k, v]) => `${k}: want ${v}, have ${have.get(k) ?? "(unset)"}`);
+}
+
+export function check(c: Ctx): number {
+  let bad = 0;
+  for (const u of repoUnits(c)) {
+    const st = stateOf(c, u);
+    if (st !== "linked") { bad++; }
+    console.log(`unit   ${u.padEnd(46)} ${st}`);
+  }
+  const live = existsSync(unitDir()) ? readdirSync(unitDir()).filter(isUnit) : [];
+  const own = new Set(repoUnits(c));
+  const orphan = live.filter((u) => !own.has(u) && /^(aphrody|shenron|rg)-/.test(u));
+  for (const u of orphan) console.log(`unit   ${u.padEnd(46)} live-only (no source under config/systemd/user)`);
+  const tpl = "config/wsl/wsl.conf";
+  if (c.exists(tpl) && existsSync("/etc/wsl.conf")) {
+    const drift = wslDrift(c.read(tpl), readFileSync("/etc/wsl.conf", "utf8"));
+    for (const d of drift) { console.log(`wsl    ${d}`); bad++; }
+    if (!drift.length) console.log("wsl    /etc/wsl.conf matches config/wsl/wsl.conf");
+  }
+  return bad ? 1 : 0;
+}
+
+export function install(c: Ctx): number {
+  const dir = unitDir();
+  mkdirSync(dir, { recursive: true });
+  const stamp = new Date().toISOString().replace(/[-:T]/g, "").slice(0, 14);
+  for (const u of repoUnits(c)) {
+    const st = stateOf(c, u);
+    if (st === "linked") continue;
+    console.log(`${c.apply ? "link  " : "would "} ${u} (${st})`);
+    if (!c.apply) continue;
+    const dst = join(dir, u);
+    if (st !== "missing") {
+      if (isLink(dst)) unlinkSync(dst);
+      else renameSync(dst, `${dst}.pre-update-${stamp}`); // never overwrite a copy without keeping it
+    }
+    symlinkSync(join(c.root, "config/systemd/user", u), dst);
+  }
+  if (c.apply) c.run("systemctl", ["--user", "daemon-reload"], { inherit: true });
+  return 0;
+}
+
+export function restart(c: Ctx, needles: string[]): number {
+  const active = c.run("systemctl", ["--user", "list-units", "--type=service", "--state=active", "--no-legend", "--plain"]).stdout
+    .split("\n").map((l) => l.split(/\s+/)[0]!).filter((u) => /^(aphrody|shenron|rg)-/.test(u));
+  for (const u of active) {
+    const text = c.run("systemctl", ["--user", "cat", u]).stdout;
+    if (!needles.some((n) => text.includes(n))) continue;
+    console.log(`${c.apply ? "restart" : "would restart"} ${u}`);
+    if (c.apply) c.run("systemctl", ["--user", "try-restart", u], { inherit: true });
+  }
+  return 0;
+}
+
+export function runSystemd(c: Ctx, args: string[]): number {
+  switch (args[0] ?? "check") {
+    case "check": return check(c);
+    case "install": return install(c);
+    case "restart": return restart(c, args.slice(1).filter((a) => !a.startsWith("-")).length ? args.slice(1).filter((a) => !a.startsWith("-")) : [".bun/bin/bun", "aphrody-kernel", "aphrody"]);
+    default: console.error("usage: systemd [check|install|restart [needle...]]"); return 2;
+  }
+}

@@ -582,6 +582,17 @@
         "typescript": "catalog:",
       },
     },
+    "packages/infra/update": {
+      "name": "@aphrody/update",
+      "version": "0.1.0",
+      "bin": {
+        "aphrody-update": "./src/cli.ts",
+      },
+      "devDependencies": {
+        "@types/bun": "catalog:",
+        "@types/node": "catalog:",
+      },
+    },
     "packages/infra/workspace": {
       "name": "@aphrody/workspace",
       "version": "0.1.0",
@@ -2046,6 +2057,8 @@
     "@aphrody/shell-web": ["@aphrody/shell-web@workspace:packages/shell/web"],
 
     "@aphrody/sql": ["@aphrody/sql@workspace:packages/infra/sql"],
+
+    "@aphrody/update": ["@aphrody/update@workspace:packages/infra/update"],
 
     "@aphrody/web-test": ["@aphrody/web-test@workspace:packages/web/aphrody-web-test"],
 

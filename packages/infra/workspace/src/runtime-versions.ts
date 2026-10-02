@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+
 function version(binary: string): string {
   const result = Bun.spawnSync([binary, "--version"], { stdout: "pipe", stderr: "pipe" });
   if (result.exitCode !== 0) throw new Error(`${binary} --version failed`);
@@ -5,8 +7,12 @@ function version(binary: string): string {
 }
 
 export function runRuntimeVersions(args: string[]): number {
-  let bunExpected = "1.4.2";
-  let uvExpected = "0.12.21";
+  // The pins live in config/system-packages.json (kept in step by `aphrody-update pins`).
+  const pins = JSON.parse(readFileSync(new URL("../../../../config/system-packages.json", import.meta.url), "utf8")) as {
+    toolchains: { bun: { version: string }; uv: { version: string } };
+  };
+  let bunExpected = pins.toolchains.bun.version;
+  let uvExpected = pins.toolchains.uv.version;
   for (let index = 0; index < args.length; index++) {
     const arg = args[index];
     if (arg === "--bun") bunExpected = args[++index] ?? "";

@@ -58,10 +58,13 @@ sources, Python ou ajouter Rust nightly et ses cibles. PowerShell utilise
 `-Canary`. Le script peut être relancé; les synchroniseurs et gestionnaires de
 paquets évitent les installations redondantes.
 
-Sous Linux avec systemd utilisateur, installe le rafraîchissement hebdomadaire
-des toolchains `stable`/`nightly` et sous-commandes Cargo avec
-`scripts/build/rust/install-update-timer.sh`. Il ne met pas à niveau Bun/uv ou
-les fichiers lock des workspaces. Voir le [guide toolchains et compilation
+Sous Linux avec systemd utilisateur, `bun run update:systemd` vérifie les unités et
+`aphrody-update systemd install --apply` les relie depuis `config/systemd/user`
+(dont `aphrody-update.timer`, rapport hebdomadaire sans écriture, et
+`aphrody-rust-update.timer`, rafraîchissement des toolchains `stable`/`nightly` et des
+sous-commandes Cargo). Le bootstrap installe les versions épinglées; les montées de
+version passent par `aphrody-update` (voir [Mise à jour](../../operations/infra/UPDATE.md)).
+Voir aussi le [guide toolchains et compilation
 croisée](../../operations/workspace/rust-toolchains-and-cross-builds.md).
 
 ## Vérification

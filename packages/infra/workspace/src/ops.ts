@@ -230,7 +230,10 @@ if (operation === "upstream-sources") {
   process.exit(await (await import("./upstream-sources.ts")).runUpstreamSources(rest));
 }
 if (operation === "deps-sync") {
-  process.exit(await (await import("./deps-sync.ts")).runDepsSync(rest));
+  process.exit(await (await import("../../update/src/deps/sync.ts")).runDepsSync(rest));
+}
+if (operation === "update") {
+  process.exit(await (await import("../../update/src/cli.ts")).runUpdate(rest));
 }
 if (operation === "stack-dedup") {
   process.exit(await (await import("./stack-dedup.ts")).runStackDedup(rest));
