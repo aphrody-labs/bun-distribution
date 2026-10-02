@@ -75,6 +75,12 @@ routes de sites, exemples et snapshots historiques demandent une classification.
 - [ ] Qualifier chaque groupe de doublons restant : propriétaire, consommateurs,
   licence, nécessité de copie au packaging. Supprimer uniquement après mise à
   jour des consommateurs et vérification du packaging.
+  Recensement 2026-10-03 (blobs git identiques) : 429 groupes — 271 assets
+  (22,5 Mo), 51 fixtures, 38 code, 22 docs, 13 licences, 23 autres, 9 configs
+  conventionnelles, 2 vides. 13 copies `scripts/` sans consommateur, doublons
+  de leur paquet propriétaire, supprimées (liste dans
+  [SCRIPTS-INVENTORY.md](docs/reference/workspace/SCRIPTS-INVENTORY.md)) ;
+  restent assets, licences et code inter-apps à qualifier par propriétaire.
 - [ ] Classer les documents historiques et corriger les liens réellement cassés
   dans la documentation active. Ne pas réécrire les preuves de migration.
 - [ ] Classer les scripts importés par commande utilisée, propriétaire et

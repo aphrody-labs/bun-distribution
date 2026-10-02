@@ -22,7 +22,7 @@ Méthode : pour chaque fichier `.ts/.sh/.nu/.py/.ps1` sous `scripts/`, nombre de
 
 ### audit
 
-- `scripts/audit/os/drive/core/scripts/test_daemon.sh`
+- scripts/audit/os/drive/core/scripts/test_daemon.sh (supprimé : doublon exact de `crates/os/drive/core/scripts/test_daemon.sh`)
 - `scripts/audit/shenron/scripts/ops/audit-and-materialize-ocr.ts`
 - `scripts/audit/shenron/scripts/ops/audit-databook-corpus.ts`
 - `scripts/audit/shenron/scripts/ops/audit-databooks-manga.ts`
@@ -62,7 +62,7 @@ Méthode : pour chaque fichier `.ts/.sh/.nu/.py/.ps1` sous `scripts/`, nombre de
 - `scripts/build/ui/apps/nie-web/scripts/public-entry-bundle.ts`
 - `scripts/build/ui/drive/scripts/bundle-libheif.sh`
 - `scripts/build/ui/packages/bun/scripts/generate-symbols.ts`
-- `scripts/build/ui/packages/material-web/scripts/component-custom-elements.ts`
+- scripts/build/ui/packages/material-web/scripts/component-custom-elements.ts (supprimé : doublon exact de `packages/ui/material-web/scripts/component-custom-elements.ts`)
 - `scripts/build/web/apps/bxc/scripts/build-demo-index.ts`
 - `scripts/build/web/apps/bxc/scripts/build-serverless.ts`
 - `scripts/build/web/apps/bxc/scripts/capture_squad_builders.ts`
@@ -160,8 +160,8 @@ Méthode : pour chaque fichier `.ts/.sh/.nu/.py/.ps1` sous `scripts/`, nombre de
 - `scripts/tools/infra/wsl-reclaim.ps1`
 - `scripts/tools/koharu/scripts/download_bluearchive_comics.ts`
 - `scripts/tools/msvc-wsl.py`
-- `scripts/tools/os/drive/core/scripts/combine.sh`
-- `scripts/tools/os/drive/core/scripts/update_spacedrive.sh`
+- scripts/tools/os/drive/core/scripts/combine.sh (supprimé : doublon exact de `crates/os/drive/core/scripts/combine.sh`)
+- scripts/tools/os/drive/core/scripts/update_spacedrive.sh (supprimé : doublon exact de `crates/os/drive/core/scripts/update_spacedrive.sh`)
 - `scripts/tools/os/scripts/absorb-upstream.ts`
 - `scripts/tools/os/scripts/data/make-renames.nu`
 - `scripts/tools/os/scripts/forensics/Invoke-GoogleReversePipeline.ps1`
@@ -318,3 +318,23 @@ Preuve : import relatif sans fichier cible (`.ts`, `.tsx`, `/index.ts`, `.js`→
 - Scripts non référencés restants (105) : 98 résolvent leurs imports avec `bun build --target bun --packages external` ; 2 imports Shenron réparés ; 5 bxc visent des sources absentes du dépôt (backfill-empty-markdown, consolidate-dragonball-crawls, enrich-shenron, export-dragonball-jsonl, train-dragonballfr-links).
 - Scripts référencés (171) : 34 aux imports cassés, 27 réparés (layouts Shenron/RG actuels, modules déplacés dans `scripts/`, scripts extraits de `packages/<domaine>/<paquet>` qui pointent à nouveau vers ce paquet).
 - Restent cassés : 4 bxc (grok-scan-with-cookies, publish-workspaces.test, x-premium-recon, x-pro-recon : sources bxc absentes) et 3 du kit de build discord (generateSplitDocumentation, deux tsup.config : `package.json`/`tsup.config.js` amont absents).
+
+## Doublons exacts supprimés 2026-10-03
+
+13 copies sous `scripts/` identiques octet pour octet (même blob git) à un fichier de leur paquet propriétaire, sans consommateur (aucun import ni chemin cité hors cet inventaire) :
+
+- scripts/audit/compat/test/fixture/scripts/install.sh → `crates/compat/n2b/tests/fixtures/node-project/scripts/install.sh`
+- scripts/audit/os/drive/core/scripts/test_daemon.sh → `crates/os/drive/core/scripts/test_daemon.sh`
+- scripts/audit/ui/packages/eslint-plugin-m3/scripts/sync-symbol-names.ts → `packages/ui/eslint-plugin-m3/scripts/sync-symbol-names.ts`
+- scripts/build/koharu/packages/bridge/scripts/prepare-wasm.ts → `packages/koharu/bridge/scripts/prepare-wasm.ts`
+- scripts/build/ui/packages/material-web/scripts/build.ts → `packages/ui/material-web/scripts/build.ts`
+- scripts/build/ui/packages/material-web/scripts/compile-sass.ts → `packages/ui/material-web/scripts/compile-sass.ts`
+- scripts/build/ui/packages/material-web/scripts/component-custom-elements.ts → `packages/ui/material-web/scripts/component-custom-elements.ts`
+- scripts/build/ui/packages/material-web/scripts/css-to-ts.ts → `packages/ui/material-web/scripts/css-to-ts.ts`
+- scripts/build/ui/packages/material-web/scripts/generate-sass-token-meta.ts → `packages/ui/material-web/scripts/generate-sass-token-meta.ts`
+- scripts/migration/ui/packages/material-web/migration/codemods/scripts/run-fixtures.ts → `packages/ui/material-web/migration/codemods/scripts/run-fixtures.ts`
+- scripts/migration/ui/packages/material-web/migration/scripts/theme-to-tokens.ts → `packages/ui/material-web/migration/scripts/theme-to-tokens.ts`
+- scripts/tools/os/drive/core/scripts/combine.sh → `crates/os/drive/core/scripts/combine.sh`
+- scripts/tools/os/drive/core/scripts/update_spacedrive.sh → `crates/os/drive/core/scripts/update_spacedrive.sh`
+
+Conservé : scripts/tools/shenron/scripts/ops/wiki-databooks-indexer.ts (importé par 6 scripts `enrich-category-*` et l'audit de couverture), doublon de `apps/shenron/site/scripts/_wiki-databooks-indexer.ts` à unifier par Shenron.
