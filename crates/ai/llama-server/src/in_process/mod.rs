@@ -19,20 +19,25 @@ use std::{
 };
 
 use aphrody_model_client::{
-    ChatMessage, ChatTurn, ModelCapabilities, ModelClient, ModelError, ModelStream,
+    ChatMessage, ChatTurn, ImageSource, ModelCapabilities, ModelClient, ModelError, ModelStream,
     ModelStreamEvent, Part, Role, ToolDecl,
 };
 use async_trait::async_trait;
 use koharu_llama::{
     llama_backend::LlamaBackend,
     llama_batch::LlamaBatch,
-    model::{AddBos, LlamaChatMessage, LlamaModel, params::LlamaModelParams},
-    context::params::LlamaContextParams,
+    mtmd::{
+        MtmdBitmap, MtmdContext, MtmdContextParams, MtmdInputChunks, MtmdInputText,
+        mtmd_default_marker,
+    },
+    model::{AddBos, LlamaChatMessage, LlamaLoraAdapter, LlamaModel, params::LlamaModelParams},
+    context::params::{LlamaAttentionType, LlamaContextParams},
     sampling::LlamaSampler,
 };
 use router::{Finish, Router, RouterConfig};
 use serde_json::json;
 use tokio::sync::{OnceCell, Semaphore, mpsc};
+use base64::Engine as _;
 
 pub use server::InProcessServer;
 
@@ -57,6 +62,31 @@ pub enum LlamaLoadError {
         /// The loader's message.
         message: String,
     },
+    /// The multimodal projector (`mmproj`) could not be loaded.
+    #[error("cannot load projector {path}: {message}")]
+    Projector {
+        /// The file.
+        path: String,
+        /// The loader's message.
+        message: String,
+    },
+    /// The LoRA adapter could not be loaded.
+    #[error("cannot load LoRA adapter {path}: {message}")]
+    Lora {
+        /// The file.
+        path: String,
+        /// The loader's message.
+        message: String,
+    },
+}
+
+/// A LoRA adapter to apply to every turn.
+#[derive(Debug, Clone, PartialEq)]
+pub struct LoraSpec {
+    /// The GGUF adapter file.
+    pub path: PathBuf,
+    /// Scale (`0.0` = loaded but inactive).
+    pub scale: f32,
 }
 
 /// What to load and how.
@@ -66,11 +96,16 @@ pub struct LoadOptions {
     pub ctx: Option<u32>,
     /// Layers offloaded to the GPU (`u32::MAX` = all the runtime supports).
     pub gpu_layers: u32,
+    /// Multimodal projector GGUF; enables `Part::Image` and `capabilities().images`.
+    pub mmproj: Option<PathBuf>,
+    /// LoRA adapters. The llama.cpp wrapper applies one adapter per context, so at most one is
+    /// accepted for now (more is a [`LlamaLoadError::Lora`]).
+    pub lora: Vec<LoraSpec>,
 }
 
 impl Default for LoadOptions {
     fn default() -> Self {
-        Self { ctx: None, gpu_layers: u32::MAX }
+        Self { ctx: None, gpu_layers: u32::MAX, mmproj: None, lora: Vec::new() }
     }
 }
 
@@ -98,7 +133,21 @@ async fn backend() -> Result<&'static LlamaBackend, LlamaLoadError> {
         .copied()
 }
 
+/// A loaded adapter plus its scale. The adapter is owned by the model (freed with it) and only
+/// read once initialised; the mutex serialises the `&mut` the wrapper wants.
+struct LoraHandle {
+    adapter: std::sync::Mutex<SendAdapter>,
+    scale: f32,
+}
+
+struct SendAdapter(LlamaLoraAdapter);
+// SAFETY: a `llama_adapter_lora` is immutable after init and tied to the (Send + Sync) model.
+unsafe impl Send for SendAdapter {}
+
 struct Inner {
+    /// Declared before `model`: dropped first.
+    mtmd: Option<MtmdContext>,
+    lora: Option<LoraHandle>,
     model: LlamaModel,
     backend: &'static LlamaBackend,
     path: PathBuf,
@@ -153,9 +202,53 @@ impl InProcessLlama {
             message: error.to_string(),
         })??;
         let (model, ctx) = model;
+        if options.lora.len() > 1 {
+            return Err(LlamaLoadError::Lora {
+                path: options.lora[1].path.display().to_string(),
+                message: "only one LoRA adapter can be applied in-process".to_owned(),
+            });
+        }
+        let lora = match options.lora.first() {
+            Some(spec) => {
+                let adapter = model.lora_adapter_init(&spec.path).map_err(|error| {
+                    LlamaLoadError::Lora {
+                        path: spec.path.display().to_string(),
+                        message: error.to_string(),
+                    }
+                })?;
+                Some(LoraHandle {
+                    adapter: std::sync::Mutex::new(SendAdapter(adapter)),
+                    scale: spec.scale,
+                })
+            },
+            None => None,
+        };
+        let mtmd = match &options.mmproj {
+            Some(path) => {
+                let text = path.to_str().ok_or_else(|| LlamaLoadError::Projector {
+                    path: path.display().to_string(),
+                    message: "path is not valid UTF-8".to_owned(),
+                })?;
+                let context = MtmdContext::init_from_file(text, &model, &MtmdContextParams::default())
+                    .map_err(|error| LlamaLoadError::Projector {
+                        path: path.display().to_string(),
+                        message: error.to_string(),
+                    })?;
+                Some(context)
+            },
+            None => None,
+        };
         let n_ctx = ctx.unwrap_or_else(|| model.n_ctx_train().min(DEFAULT_MAX_CTX)).max(512);
         Ok(Self {
-            inner: Arc::new(Inner { model, backend, path, n_ctx, gate: Arc::new(Semaphore::new(1)) }),
+            inner: Arc::new(Inner {
+                mtmd,
+                lora,
+                model,
+                backend,
+                path,
+                n_ctx,
+                gate: Arc::new(Semaphore::new(1)),
+            }),
             model_name: model_name.into(),
         })
     }
@@ -164,6 +257,12 @@ impl InProcessLlama {
     #[must_use]
     pub fn model_path(&self) -> &Path {
         &self.inner.path
+    }
+
+    /// Whether a projector with vision support is loaded.
+    #[must_use]
+    pub fn supports_images(&self) -> bool {
+        self.inner.mtmd.as_ref().is_some_and(MtmdContext::support_vision)
     }
 
     /// The context size every turn runs with.
@@ -183,7 +282,7 @@ impl ModelClient for InProcessLlama {
         ModelCapabilities {
             tools: true,
             parallel_tool_calls: true,
-            images: false,
+            images: self.supports_images(),
             reasoning: true,
             json_schema: false,
             context_window: Some(u64::from(self.inner.n_ctx)),
@@ -241,7 +340,7 @@ fn tools_prompt(tools: &[ToolDecl]) -> String {
 ///
 /// Tool results travel as `user` messages wrapped in `<tool_response>`: that is the one shape
 /// every template accepts.
-fn render_messages(turn: &ChatTurn) -> Vec<(&'static str, String)> {
+fn render_messages(turn: &ChatTurn, marker: Option<&str>) -> Vec<(&'static str, String)> {
     let mut out = Vec::new();
     let mut system = turn.system.clone().unwrap_or_default();
     if !turn.tools.is_empty() {
@@ -264,7 +363,9 @@ fn render_messages(turn: &ChatTurn) -> Vec<(&'static str, String)> {
         for part in parts {
             match part {
                 Part::Text(value) => push(value),
-                Part::Image(_) => push("[image omitted: this local engine is text-only]"),
+                Part::Image(_) => push(
+                    marker.unwrap_or("[image omitted: no multimodal projector is loaded]"),
+                ),
                 Part::Reasoning { .. } => {},
                 Part::FunctionCall { name, args, .. } => push(&format!(
                     "<tool_call>\n{}\n</tool_call>",
@@ -286,6 +387,32 @@ fn render_messages(turn: &ChatTurn) -> Vec<(&'static str, String)> {
     out
 }
 
+/// The bytes behind an image: inline base64, a `file://` URL or a plain path. Remote `http(s)`
+/// URLs are not fetched (the engine does no network I/O).
+fn image_bytes(source: &ImageSource) -> Result<Vec<u8>, String> {
+    match source {
+        ImageSource::Base64 { data, .. } => base64::engine::general_purpose::STANDARD
+            .decode(data.trim())
+            .map_err(|error| format!("invalid base64 image: {error}")),
+        ImageSource::Url(url) => {
+            if url.starts_with("http://") || url.starts_with("https://") {
+                return Err(format!("remote image URLs are not fetched in-process: {url}"));
+            }
+            let path = url.strip_prefix("file://").unwrap_or(url);
+            std::fs::read(path).map_err(|error| format!("cannot read image {path}: {error}"))
+        },
+    }
+}
+
+/// Every image of the turn, in prompt order.
+fn turn_images(turn: &ChatTurn) -> Vec<&ImageSource> {
+    turn.messages
+        .iter()
+        .flat_map(|message| message.parts.iter())
+        .filter_map(|part| if let Part::Image(image) = part { Some(image) } else { None })
+        .collect()
+}
+
 fn seed() -> u32 {
     std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
@@ -299,12 +426,20 @@ fn generate(
     tx: &mpsc::UnboundedSender<Result<ModelStreamEvent, ModelError>>,
 ) -> Result<(), String> {
     let model = &inner.model;
-    let messages = render_messages(turn)
+    let mtmd = inner.mtmd.as_ref().filter(|context| context.support_vision());
+    let images = turn_images(turn);
+    let marker = mtmd.map(|_| mtmd_default_marker());
+    let messages = render_messages(turn, marker)
         .into_iter()
         .map(|(role, content)| LlamaChatMessage::new(role.to_owned(), content))
         .collect::<Result<Vec<_>, _>>()
         .map_err(|error| error.to_string())?;
-    let template = model.chat_template(None).map_err(|error| error.to_string())?;
+    // Base and instruction-less models ship no template; fall back to ChatML, as llama.cpp does.
+    let template = match model.chat_template(None) {
+        Ok(template) => template,
+        Err(_) => koharu_llama::model::LlamaChatTemplate::new("chatml")
+            .map_err(|error| error.to_string())?,
+    };
     let prompt = model
         .apply_chat_template(&template, &messages, true)
         .map_err(|error| error.to_string())?;
@@ -312,37 +447,96 @@ fn generate(
     // Most templates write the BOS token themselves; add it only when they did not.
     let mut decoder = encoding_rs::UTF_8.new_decoder();
     let bos = model.token_to_piece(model.token_bos(), &mut decoder, true, None).unwrap_or_default();
-    let add_bos = if !bos.is_empty() && prompt.starts_with(&bos) { AddBos::Never } else { AddBos::Always };
-    let tokens = model.str_to_token(&prompt, add_bos).map_err(|error| error.to_string())?;
+    let templated_bos = !bos.is_empty() && prompt.starts_with(&bos);
+    let add_bos = if templated_bos { AddBos::Never } else { AddBos::Always };
+
+    // Text: one token list. Images: projector chunks (text + encoded image embeddings).
+    let mut tokens = Vec::new();
+    let mut chunks: Option<(MtmdInputChunks, Vec<MtmdBitmap>)> = None;
+    let (prompt_len, positions, max_chunk, non_causal) = if let (Some(context), false) =
+        (mtmd, images.is_empty())
+    {
+        let mut bitmaps = Vec::with_capacity(images.len());
+        for image in &images {
+            let bytes = image_bytes(image)?;
+            bitmaps.push(
+                MtmdBitmap::from_buffer(context, &bytes, false)
+                    .map_err(|error| format!("cannot decode image: {error}"))?,
+            );
+        }
+        let refs = bitmaps.iter().collect::<Vec<_>>();
+        let parsed = context
+            .tokenize(
+                MtmdInputText {
+                    text: prompt.clone(),
+                    add_special: !templated_bos,
+                    parse_special: true,
+                },
+                &refs,
+            )
+            .map_err(|error| format!("cannot tokenize the multimodal prompt: {error}"))?;
+        let positions = usize::try_from(parsed.total_positions()).unwrap_or(usize::MAX);
+        let max_chunk =
+            (0..parsed.len()).filter_map(|index| parsed.get(index)).map(|chunk| chunk.n_tokens()).max();
+        let result = (parsed.total_tokens(), positions, max_chunk.unwrap_or(1), context.decode_use_non_causal());
+        chunks = Some((parsed, bitmaps));
+        result
+    } else {
+        tokens = model.str_to_token(&prompt, add_bos).map_err(|error| error.to_string())?;
+        (tokens.len(), tokens.len(), 1, false)
+    };
 
     let n_ctx = inner.n_ctx;
-    let prompt_len = tokens.len();
-    if prompt_len + 1 >= n_ctx as usize {
-        return Err(format!("the prompt ({prompt_len} tokens) does not fit the {n_ctx}-token context"));
+    if positions + 1 >= n_ctx as usize {
+        return Err(format!("the prompt ({positions} positions) does not fit the {n_ctx}-token context"));
     }
-    let room = n_ctx as usize - prompt_len - 1;
+    let room = n_ctx as usize - positions - 1;
     let budget = turn
         .options
         .max_output_tokens
         .map_or(room, |max| (max as usize).min(room));
 
-    let params = LlamaContextParams::default().with_n_ctx(NonZeroU32::new(n_ctx));
+    let mut params = LlamaContextParams::default().with_n_ctx(NonZeroU32::new(n_ctx));
+    if chunks.is_some() {
+        // A whole image must fit one batch (and, non-causal, one micro-batch).
+        let n_batch = 2048_u32.max(u32::try_from(max_chunk).unwrap_or(u32::MAX));
+        params = params.with_n_batch(n_batch);
+        if non_causal {
+            params = params.with_n_ubatch(n_batch).with_attention_type(LlamaAttentionType::NonCausal);
+        }
+    }
     let mut ctx =
         model.new_context(inner.backend, params).map_err(|error| error.to_string())?;
+    if let Some(lora) = &inner.lora
+        && lora.scale != 0.0
+    {
+        let mut adapter = lora.adapter.lock().map_err(|error| error.to_string())?;
+        ctx.lora_adapter_set(&mut adapter.0, lora.scale).map_err(|error| error.to_string())?;
+    }
     let n_batch = (ctx.n_batch() as usize).max(1);
     let mut batch = LlamaBatch::new(n_batch, 1);
 
     let mut position = 0_i32;
-    let chunk_count = tokens.len().div_ceil(n_batch);
-    for (chunk_index, chunk) in tokens.chunks(n_batch).enumerate() {
-        batch.clear();
-        let last_chunk = chunk_index + 1 == chunk_count;
-        for (index, token) in chunk.iter().enumerate() {
-            let wants_logits = last_chunk && index + 1 == chunk.len();
-            batch.add(*token, position, &[0], wants_logits).map_err(|error| error.to_string())?;
-            position += 1;
+    // Index of the logits row to sample from after the prompt.
+    let mut logits_row;
+    if let (Some((parsed, _bitmaps)), Some(context)) = (&chunks, mtmd) {
+        position = parsed
+            .eval_chunks(context, &ctx, 0, 0, i32::try_from(n_batch).unwrap_or(i32::MAX), true)
+            .map_err(|error| format!("cannot evaluate the multimodal prompt: {error}"))?;
+        logits_row = -1;
+    } else {
+        let chunk_count = tokens.len().div_ceil(n_batch);
+        for (chunk_index, chunk) in tokens.chunks(n_batch).enumerate() {
+            batch.clear();
+            let last_chunk = chunk_index + 1 == chunk_count;
+            for (index, token) in chunk.iter().enumerate() {
+                let wants_logits = last_chunk && index + 1 == chunk.len();
+                batch.add(*token, position, &[0], wants_logits).map_err(|error| error.to_string())?;
+                position += 1;
+            }
+            ctx.decode(&mut batch).map_err(|error| error.to_string())?;
         }
-        ctx.decode(&mut batch).map_err(|error| error.to_string())?;
+        logits_row = batch.n_tokens() - 1;
     }
 
     let temperature = turn.options.temperature.unwrap_or(0.7);
@@ -368,7 +562,7 @@ fn generate(
     let mut listener_gone = false;
 
     while produced < budget {
-        let token = sampler.sample(&ctx, batch.n_tokens() - 1);
+        let token = sampler.sample(&ctx, logits_row);
         if model.is_eog_token(token) {
             finish = Finish::Stop;
             break;
@@ -393,6 +587,7 @@ fn generate(
         batch.add(token, position, &[0], true).map_err(|error| error.to_string())?;
         position += 1;
         ctx.decode(&mut batch).map_err(|error| error.to_string())?;
+        logits_row = batch.n_tokens() - 1;
     }
 
     for event in router.finish(finish, prompt_len, produced) {
@@ -425,7 +620,7 @@ mod tests {
             tools: vec![tool()],
             ..ChatTurn::default()
         };
-        let rendered = render_messages(&turn);
+        let rendered = render_messages(&turn, None);
         assert_eq!(rendered[0].0, "system");
         assert!(rendered[0].1.starts_with("Be brief."));
         assert!(rendered[0].1.contains("<tools>"));
@@ -448,11 +643,44 @@ mod tests {
             ],
             ..ChatTurn::default()
         };
-        let rendered = render_messages(&turn);
+        let rendered = render_messages(&turn, None);
         assert_eq!(rendered[0].0, "assistant");
         assert!(rendered[0].1.starts_with("<tool_call>"));
         assert_eq!(rendered[1].0, "user");
         assert!(rendered[1].1.contains("<tool_response>"));
+    }
+
+    #[test]
+    fn images_become_the_projector_marker_or_an_omission_note() {
+        let turn = ChatTurn {
+            messages: vec![ChatMessage {
+                role: Role::User,
+                parts: vec![
+                    Part::Text("look".into()),
+                    Part::Image(ImageSource::base64("image/png", "AAAA")),
+                ],
+            }],
+            ..ChatTurn::default()
+        };
+        assert_eq!(render_messages(&turn, Some("<__media__>"))[0].1, "look\n<__media__>");
+        assert!(render_messages(&turn, None)[0].1.contains("no multimodal projector"));
+        assert_eq!(turn_images(&turn).len(), 1);
+    }
+
+    #[test]
+    fn image_bytes_reads_base64_and_files_but_never_the_network() {
+        let png = base64::engine::general_purpose::STANDARD.encode(b"abc");
+        assert_eq!(image_bytes(&ImageSource::base64("image/png", png)).unwrap(), b"abc");
+        assert!(image_bytes(&ImageSource::base64("image/png", "!!!")).is_err());
+        assert!(image_bytes(&ImageSource::Url("https://example.test/a.png".into())).is_err());
+        let dir = std::env::temp_dir().join(format!("aphrody-img-{}", std::process::id()));
+        std::fs::write(&dir, b"xyz").unwrap();
+        assert_eq!(image_bytes(&ImageSource::Url(dir.display().to_string())).unwrap(), b"xyz");
+        assert_eq!(
+            image_bytes(&ImageSource::Url(format!("file://{}", dir.display()))).unwrap(),
+            b"xyz"
+        );
+        let _ = std::fs::remove_file(dir);
     }
 
     #[test]
@@ -464,6 +692,6 @@ mod tests {
             }],
             ..ChatTurn::default()
         };
-        assert!(render_messages(&turn).is_empty());
+        assert!(render_messages(&turn, None).is_empty());
     }
 }

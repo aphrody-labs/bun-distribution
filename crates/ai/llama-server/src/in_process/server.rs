@@ -9,7 +9,7 @@
 use std::{collections::HashMap, net::SocketAddr, sync::Arc};
 
 use aphrody_model_client::{
-    ChatMessage, ChatTurn, ModelClient, ModelStreamEvent, Part, Role, ToolDecl,
+    ChatMessage, ChatTurn, ImageSource, ModelClient, ModelStreamEvent, Part, Role, ToolDecl,
 };
 use axum::{
     Json, Router,
@@ -245,6 +245,43 @@ fn content_text(content: &Value) -> String {
     }
 }
 
+/// An OpenAI `image_url` (a string or `{"url": ...}`) as an image source: `data:` URLs become
+/// inline base64, everything else (`file://`, a path, `http(s)`) is kept as a reference.
+fn image_source(value: &Value) -> Result<ImageSource, String> {
+    let url = value
+        .as_str()
+        .or_else(|| value.get("url").and_then(Value::as_str))
+        .ok_or_else(|| "`image_url` needs a `url`".to_owned())?;
+    let Some(rest) = url.strip_prefix("data:") else {
+        return Ok(ImageSource::Url(url.to_owned()));
+    };
+    let (meta, data) = rest.split_once(',').ok_or_else(|| "malformed data URL".to_owned())?;
+    let mime = meta
+        .strip_suffix(";base64")
+        .ok_or_else(|| "only base64 data URLs are supported".to_owned())?;
+    let mime = if mime.is_empty() { "application/octet-stream" } else { mime };
+    Ok(ImageSource::base64(mime, data))
+}
+
+/// A message's content as parts: its text (joined, one part) then its images, in order.
+fn content_parts(content: Option<&Value>) -> Result<Vec<Part>, String> {
+    let Some(content) = content else { return Ok(Vec::new()) };
+    let mut parts = Vec::new();
+    if let Value::Array(items) = content {
+        for item in items {
+            if item.get("type").and_then(Value::as_str) == Some("image_url") {
+                let source = item.get("image_url").ok_or_else(|| "`image_url` part without `image_url`".to_owned())?;
+                parts.push(Part::Image(image_source(source)?));
+            }
+        }
+    }
+    let text = content_text(content);
+    if !text.is_empty() || parts.is_empty() {
+        parts.insert(0, Part::Text(text));
+    }
+    Ok(parts)
+}
+
 fn json_or_string(text: &str) -> Value {
     serde_json::from_str(text).unwrap_or_else(|_| Value::String(text.to_owned()))
 }
@@ -295,9 +332,11 @@ fn request_to_turn(body: &Value) -> Result<ChatTurn, String> {
                     parts: vec![Part::function_response(id, name, json_or_string(&text))],
                 });
             },
-            _ => turn
-                .messages
-                .push(ChatMessage { role: Role::User, parts: vec![Part::Text(text)] }),
+            _ => {
+                let parts = content_parts(message.get("content"))?;
+                let parts = if parts.is_empty() { vec![Part::Text(text)] } else { parts };
+                turn.messages.push(ChatMessage { role: Role::User, parts });
+            },
         }
     }
     if !system.is_empty() {
@@ -368,6 +407,36 @@ mod tests {
             Part::FunctionResponse { name, response, .. }
                 if name == "get_weather" && response == &json!({"t": 21})
         ));
+    }
+
+    #[test]
+    fn image_parts_accept_data_urls_and_paths() {
+        let turn = request_to_turn(&json!({"messages": [{"role": "user", "content": [
+            {"type": "text", "text": "what is this?"},
+            {"type": "image_url", "image_url": {"url": "data:image/png;base64,AAAA"}},
+            {"type": "image_url", "image_url": "/tmp/a.png"},
+            {"type": "image_url", "image_url": {"url": "file:///tmp/b.jpg"}},
+        ]}]}))
+        .unwrap();
+        let parts = &turn.messages[0].parts;
+        assert_eq!(parts.len(), 4);
+        assert!(matches!(&parts[0], Part::Text(text) if text == "what is this?"));
+        assert!(matches!(
+            &parts[1],
+            Part::Image(ImageSource::Base64 { mime, data }) if mime == "image/png" && data == "AAAA"
+        ));
+        assert!(matches!(&parts[2], Part::Image(ImageSource::Url(url)) if url == "/tmp/a.png"));
+        assert!(matches!(&parts[3], Part::Image(ImageSource::Url(url)) if url == "file:///tmp/b.jpg"));
+    }
+
+    #[test]
+    fn a_non_base64_data_url_is_rejected() {
+        let body = json!({"messages": [{"role": "user", "content": [
+            {"type": "image_url", "image_url": {"url": "data:image/png,abc"}}]}]});
+        assert!(request_to_turn(&body).is_err());
+        let body = json!({"messages": [{"role": "user", "content": [
+            {"type": "image_url", "image_url": {}}]}]});
+        assert!(request_to_turn(&body).is_err());
     }
 
     #[test]

@@ -249,15 +249,13 @@ pub async fn prepare_managed_provider_in(
         InferenceBackend::Spawn
     };
     let spawned = managed && backend == InferenceBackend::Spawn;
-    if managed && backend == InferenceBackend::InProcess {
-        if adapter.is_some() {
-            return Err(ManagedProviderError::message(
-                "`llama.lora` needs the spawned engine: set APHRODY_LLAMA_BACKEND=spawn",
-            ));
-        }
-        if config.llama.extra_args.as_ref().is_some_and(|args| !args.is_empty()) {
-            tracing::warn!("`llama.extra_args` apply to llama-server only; the in-process engine ignores them");
-        }
+    if managed
+        && backend == InferenceBackend::InProcess
+        && config.llama.extra_args.as_ref().is_some_and(|args| !args.is_empty())
+    {
+        tracing::warn!(
+            "`llama.extra_args` apply to llama-server only; the in-process engine ignores them"
+        );
     }
 
     let binary = if spawned { Some(resolve_binary(config, cwd)?) } else { None };
@@ -293,7 +291,17 @@ pub async fn prepare_managed_provider_in(
     match ready {
         OssReadyOutcome::LlamaReady { model_id, primary_path, all_paths, .. } => {
             if backend == InferenceBackend::InProcess {
-                return start_in_process(config, model_id, primary_path).await;
+                let mmproj = all_paths.iter().skip(1).find(|path| {
+                    path.file_name().is_some_and(|name| name.to_string_lossy().contains("mmproj"))
+                });
+                return start_in_process(
+                    config,
+                    model_id,
+                    primary_path,
+                    mmproj.cloned(),
+                    adapter.map(|path| (path, 1.0)),
+                )
+                .await;
             }
             let caps =
                 caps.ok_or_else(|| ManagedProviderError::message("missing runtime capabilities"))?;
@@ -381,21 +389,32 @@ async fn start_in_process(
     config: &mut Config,
     model_id: String,
     primary_path: PathBuf,
+    mmproj: Option<PathBuf>,
+    lora: Option<(PathBuf, f32)>,
 ) -> Result<ProviderLease, ManagedProviderError> {
     use std::sync::{Arc, Mutex, OnceLock, Weak};
 
-    use aphrody_llama_server::{InProcessLlama, InProcessServer, in_process::LoadOptions};
+    use aphrody_llama_server::{
+        InProcessLlama, InProcessServer,
+        in_process::{LoadOptions, LoraSpec},
+    };
 
-    // One loaded copy per file and context size while any session still holds it.
-    type LoadedServers = Vec<(PathBuf, Option<u32>, Weak<InProcessServer>)>;
+    // One loaded copy per file, projector, adapter and context size while any session still
+    // holds it.
+    type Key = (PathBuf, Option<u32>, Option<PathBuf>, Option<(PathBuf, u32)>);
+    type LoadedServers = Vec<(Key, Weak<InProcessServer>)>;
     static LOADED: OnceLock<Mutex<LoadedServers>> = OnceLock::new();
     let loaded = LOADED.get_or_init(Mutex::default);
     let ctx = config.llama.ctx;
+    let key: Key = (
+        primary_path.clone(),
+        ctx,
+        mmproj.clone(),
+        lora.clone().map(|(path, scale)| (path, scale.to_bits())),
+    );
     let live = loaded.lock().ok().and_then(|mut list| {
-        list.retain(|(_, _, server)| server.strong_count() > 0);
-        list.iter()
-            .find(|(path, size, _)| *path == primary_path && *size == ctx)
-            .and_then(|(_, _, server)| server.upgrade())
+        list.retain(|(_, server)| server.strong_count() > 0);
+        list.iter().find(|(entry, _)| *entry == key).and_then(|(_, server)| server.upgrade())
     });
     let server = if let Some(server) = live {
         server
@@ -403,7 +422,12 @@ async fn start_in_process(
         let engine = InProcessLlama::load(
             &primary_path,
             model_id.clone(),
-            LoadOptions { ctx, ..LoadOptions::default() },
+            LoadOptions {
+                ctx,
+                mmproj,
+                lora: lora.into_iter().map(|(path, scale)| LoraSpec { path, scale }).collect(),
+                ..LoadOptions::default()
+            },
         )
         .await
         .map_err(ManagedProviderError::message)?;
@@ -411,7 +435,7 @@ async fn start_in_process(
             InProcessServer::start(engine).await.map_err(ManagedProviderError::message)?,
         );
         if let Ok(mut list) = loaded.lock() {
-            list.push((primary_path, ctx, Arc::downgrade(&server)));
+            list.push((key, Arc::downgrade(&server)));
         }
         server
     };
@@ -425,6 +449,8 @@ async fn start_in_process(
     _config: &mut Config,
     _model_id: String,
     _primary_path: PathBuf,
+    _mmproj: Option<PathBuf>,
+    _lora: Option<(PathBuf, f32)>,
 ) -> Result<ProviderLease, ManagedProviderError> {
     Err(ManagedProviderError::message("this build has no in-process inference engine"))
 }
