@@ -14,9 +14,9 @@ import { authController } from "./modules/auth";
 import { dbPlugin } from "./plugins/db";
 import { elysiaAuth } from "@rosegriffon/auth/elysia";
 
-import { handleStorage } from "./services/storage/server";
-import { handleRealtime, startRealtimeListener } from "./services/realtime/server";
-import { handleCdn } from "./services/cdn/server";
+import { handleStorage } from "@rosegriffon/storage/server";
+import { handleRealtime, startRealtimeListener } from "@rosegriffon/realtime/server";
+import { handleCdn } from "@rosegriffon/cdn/server";
 
 const allowedOrigins = new Set(
 	[

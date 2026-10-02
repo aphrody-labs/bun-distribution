@@ -133,7 +133,6 @@ async function loadManifestCache(force = false): Promise<ManifestCache | null> {
   return manifestCache;
 }
 
-await loadManifestCache();
 
 // Hôtes autorisés à servir des URLs publiques. nginx reverse-proxy fait
 // croire au backend qu'il est appelé via l'un de ces vhosts (X-Forwarded-Host).
@@ -155,7 +154,15 @@ if (!API_KEY && import.meta.main) {
   process.exit(1);
 }
 
-await Bun.$`mkdir -p ${STORAGE}`.quiet().catch(() => {});
+// Storage directory and manifest are prepared on first request, never at import time.
+let ready: Promise<void> | null = null;
+function ensureReady(): Promise<void> {
+  ready ??= (async () => {
+    await Bun.$`mkdir -p ${STORAGE}`.quiet().catch(() => {});
+    await loadManifestCache();
+  })();
+  return ready;
+}
 
 const MIME_TO_EXT: Record<string, string> = {
   "image/png": "png",
@@ -409,6 +416,7 @@ function preflight(): Response {
 }
 
 export async function handleCdn(req: Request): Promise<Response> {
+  await ensureReady();
   const url = new URL(req.url);
   if (req.method === "OPTIONS") return preflight();
 

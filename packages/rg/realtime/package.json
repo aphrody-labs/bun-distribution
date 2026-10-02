@@ -1,9 +1,13 @@
 {
-  "name": "@rosegriffon/cdn",
+  "name": "@rosegriffon/realtime",
   "version": "1.0.1",
   "private": true,
   "type": "module",
   "main": "server.ts",
+  "exports": {
+    ".": "./server.ts",
+    "./server": "./server.ts"
+  },
   "scripts": {
     "type-check": "bun --bun tsc --noEmit",
     "test": "bun test .",
@@ -12,7 +16,7 @@
     "typecheck": "bun --bun tsc --noEmit"
   },
   "dependencies": {
-    "@rosegriffon/assets": "workspace:*"
+    "@rosegriffon/db": "workspace:*"
   },
   "devDependencies": {
     "@types/bun": "catalog:",

@@ -10,7 +10,7 @@ et l'espace compétitif Achilléa.
 | --- | --- |
 | `apps/rg/website` | Application Next.js unique : portail, `/wiki`, `/achillea`, administration et authentification. |
 | `apps/achillea-bot` (not in repo), `apps/rg/bot` | Automatisation Discord, API et temps réel. |
-| `apps/rg/bot/src/api/services/cdn`, `apps/rg/bot/src/api/services/storage`, `apps/rg/bot/src/api/services/realtime` | Services Bun pour les assets, fichiers et notifications. |
+| `packages/rg/cdn`, `packages/rg/storage`, `packages/rg/realtime` | Services Bun pour les assets, fichiers et notifications. |
 | `packages/rg/azalee` (not in repo), `packages/rg/inagle` (not in repo) | Bibliothèque et pipeline de données Victory Road. |
 | `packages/achillea-*` | Contrats, règles métier et client HTTP Achilléa. |
 | `packages/rg/assets`, `packages/ui`, `packages/rg/app-shell` | Assets, design system et navigation communs. |

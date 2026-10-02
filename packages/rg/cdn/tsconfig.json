@@ -15,8 +15,8 @@
     "verbatimModuleSyntax": true,
     "moduleDetection": "force",
     "paths": {
-      "@rosegriffon/assets": ["../../packages/assets/src/index.ts"],
-      "@rosegriffon/assets/*": ["../../packages/assets/src/*"]
+      "@rosegriffon/assets": ["../assets/src/index.ts"],
+      "@rosegriffon/assets/*": ["../assets/src/*"]
     }
   },
   "include": ["server.ts"]

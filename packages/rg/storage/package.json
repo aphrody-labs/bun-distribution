@@ -4,6 +4,10 @@
   "private": true,
   "type": "module",
   "main": "server.ts",
+  "exports": {
+    ".": "./server.ts",
+    "./server": "./server.ts"
+  },
   "scripts": {
     "type-check": "bun --bun tsc --noEmit",
     "test": "bun test .",

@@ -75,8 +75,11 @@
         "@rosegriffon/assets": "workspace:*",
         "@rosegriffon/auth": "workspace:*",
         "@rosegriffon/azalee": "catalog:",
+        "@rosegriffon/cdn": "workspace:*",
         "@rosegriffon/db": "workspace:*",
         "@rosegriffon/inagle": "catalog:",
+        "@rosegriffon/realtime": "workspace:*",
+        "@rosegriffon/storage": "workspace:*",
         "@rosegriffon/types": "workspace:*",
         "@rosegriffon/ui": "workspace:*",
         "brackets-manager": "^1.11.1",
@@ -843,6 +846,17 @@
         "vitest": "catalog:",
       },
     },
+    "packages/rg/cdn": {
+      "name": "@rosegriffon/cdn",
+      "version": "1.0.1",
+      "dependencies": {
+        "@rosegriffon/assets": "workspace:*",
+      },
+      "devDependencies": {
+        "@types/bun": "catalog:",
+        "typescript": "catalog:",
+      },
+    },
     "packages/rg/config": {
       "name": "@rosegriffon/config",
       "version": "1.0.3",
@@ -972,9 +986,31 @@
       "name": "@rosegriffon/preferences",
       "version": "1.0.3",
     },
+    "packages/rg/realtime": {
+      "name": "@rosegriffon/realtime",
+      "version": "1.0.1",
+      "dependencies": {
+        "@rosegriffon/db": "workspace:*",
+      },
+      "devDependencies": {
+        "@types/bun": "catalog:",
+        "typescript": "catalog:",
+      },
+    },
     "packages/rg/search": {
       "name": "@rosegriffon/search",
       "version": "1.0.1",
+    },
+    "packages/rg/storage": {
+      "name": "@rosegriffon/storage",
+      "version": "1.0.1",
+      "dependencies": {
+        "@rosegriffon/db": "workspace:*",
+      },
+      "devDependencies": {
+        "@types/bun": "catalog:",
+        "typescript": "catalog:",
+      },
     },
     "packages/rg/types": {
       "name": "@rosegriffon/types",
@@ -3525,6 +3561,8 @@
 
     "@rosegriffon/bot": ["@rosegriffon/bot@workspace:apps/rg/bot"],
 
+    "@rosegriffon/cdn": ["@rosegriffon/cdn@workspace:packages/rg/cdn"],
+
     "@rosegriffon/config": ["@rosegriffon/config@workspace:packages/rg/config"],
 
     "@rosegriffon/cron": ["@rosegriffon/cron@workspace:packages/rg/cron"],
@@ -3555,7 +3593,11 @@
 
     "@rosegriffon/preferences": ["@rosegriffon/preferences@workspace:packages/rg/preferences"],
 
+    "@rosegriffon/realtime": ["@rosegriffon/realtime@workspace:packages/rg/realtime"],
+
     "@rosegriffon/search": ["@rosegriffon/search@workspace:packages/rg/search"],
+
+    "@rosegriffon/storage": ["@rosegriffon/storage@workspace:packages/rg/storage"],
 
     "@rosegriffon/types": ["@rosegriffon/types@workspace:packages/rg/types"],
 

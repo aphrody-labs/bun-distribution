@@ -16,8 +16,8 @@ L'ensemble a donc été rapatrié sur le VPS. Aucun appel ne sort plus vers
 | --- | --- | --- | --- |
 | Postgres géré | PostgreSQL 18 local, base `rg` | 5432 | `postgresql.service` |
 | Data API (`/rest/v1`) | PostgREST 12.2.12 (binaire natif) | 8809 | `rg-postgrest.service` |
-| Storage (`/storage/v1`) | `apps/rg/bot/src/api/services/storage/server.ts` (Bun, fichiers sur disque) | 8810 | `rg-storage.service` |
-| Realtime (`postgres_changes`) | `apps/rg/bot/src/api/services/realtime/server.ts` (SSE + `LISTEN/NOTIFY`) | 8812 | `rg-realtime.service` |
+| Storage (`/storage/v1`) | `packages/rg/storage/server.ts` (Bun, fichiers sur disque) | 8810 | `rg-storage.service` |
+| Realtime (`postgres_changes`) | `packages/rg/realtime/server.ts` (SSE + `LISTEN/NOTIFY`) | 8812 | `rg-realtime.service` |
 
 Le code applicatif n'a **pas** été réécrit : `@supabase/supabase-js` continue de
 fonctionner tel quel parce que la version de PostgREST est la même que celle de

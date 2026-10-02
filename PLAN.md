@@ -899,8 +899,14 @@ INCOMPLET (non vérifié) :
 
 Propriétaires : `packages/rg`, `apps/rg`, domaines Discord/Koharu/FUT.
 
-- [ ] Extraire les handlers Storage/Realtime/CDN vers leurs packages ; l’API
+- [x] Extraire les handlers Storage/Realtime/CDN vers leurs packages ; l’API
   importe les bibliothèques, les apps conservent configuration et démarrage.
+  Fait 2026-10-03 : `packages/rg/{cdn,realtime,storage}` (`@rosegriffon/*`,
+  export `./server`), importés par l’API du bot ; démarrage autonome toujours
+  sous `import.meta.main` ; le CDN ne crée plus son dossier ni ne lit son
+  manifeste à l’import (initialisation à la première requête, sonde d’import
+  vérifiée). Tests cdn 20, realtime 4, storage 12 ; typecheck des trois et du
+  bot verts ; bot 1315 pass / 20 échecs dus à l’absence de base Postgres.
 - [ ] Sortir le daemon Cron de son package partagé.
 - [x] Donner catalogue boutique et registres communs à un package de domaine ;
   retirer l’import du site depuis le bot. Fait 2026-10-03 : catalogue déplacé

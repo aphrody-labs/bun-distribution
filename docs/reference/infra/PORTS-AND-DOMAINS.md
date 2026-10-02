@@ -145,8 +145,8 @@ Fixed in this pass (see `config/service-catalog.json`, `config/production-topolo
 Resolved by the `rg` sibling audit (§5) the same day — no longer open:
 
 8. ~~rg-cdn vs rg-api for `cdn.rosegriffon.fr`~~ — **answered.** `apps/api/src/index.ts` (not in repo) (in the
-   `rg` repo) imports `handleCdn`/`handleStorage`/`handleRealtime` from the sibling `apps/rg/bot/src/api/services/cdn`,
-   `apps/rg/bot/src/api/services/storage`, `apps/rg/bot/src/api/services/realtime` packages and mounts them **in-process** on `rg-api:8800`, with
+   `rg` repo) imports `handleCdn`/`handleStorage`/`handleRealtime` from the sibling `packages/rg/cdn`,
+   `packages/rg/storage`, `packages/rg/realtime` packages and mounts them **in-process** on `rg-api:8800`, with
    its own comments confirming the intent: `// remplace rg-cdn:8801`, `// remplace rg-storage:8810`,
    `// remplace rg-realtime:8812`. So `rg-production.conf` proxying everything to `:8800` is correct,
    not a regression; `rg-cdn.service`/`rg-storage.service`/`rg-realtime.service` are an
@@ -187,7 +187,7 @@ of 2026-09-26 — nothing in this section is open any more:
     the live `rg-production.conf` (server_name list and the 503 maintenance server); the `rpbey.fr`
     entry in the `aphrody.com` OVH profile's domain set (`packages/aphrody-ovh/src/profiles.ts` (not in repo),
     `crates/infra/ovh/src/profile.rs`, and their tests); the `cdn.rpbey.fr` entry in `rg`'s
-    `apps/rg/bot/src/api/services/cdn/server.ts` `ALLOWED_PUBLIC_HOSTS` (and its test in `apps/rg/bot/src/api/services/cdn/server.test.ts`); and
+    `packages/rg/cdn/server.ts` `ALLOWED_PUBLIC_HOSTS` (and its test in `packages/rg/cdn/server.test.ts`); and
     the `rpbey.fr`/`*.rpbey.fr` branch of the nginx-stats parser in `rg`'s
     `packages/rg/cron/src/tasks/stats/achillea.ts`. `docs/reference/infra/ops/OVH.md` and `docs/ovh/README.md` (not in repo) now
     record the sale instead of describing a live-but-unserved zone. No route ever existed in
