@@ -26,7 +26,6 @@ mod audit;
 mod auth;
 pub mod client;
 pub mod cloud;
-mod cloud_gcs;
 mod cloud_git;
 pub mod hvsock;
 pub mod infra;

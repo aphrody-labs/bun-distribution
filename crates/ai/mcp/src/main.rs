@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: Apache-2.0
 mod client_cmd;
 #[cfg(not(target_arch = "wasm32"))]
-mod gemini_tools;
+pub(crate) use aphrody_google_mcp::gemini_tools;
 mod http_rest;
 mod native_crawl_tools;
 mod public_web_tools;
 #[cfg(not(target_arch = "wasm32"))]
 mod search_tools;
 #[cfg(not(target_arch = "wasm32"))]
-mod shenron_gemini_web;
+pub(crate) use aphrody_google_mcp::shenron_gemini_web;
 mod shenron_vector;
 mod x_tools;
 // Voice MCP tools (TTS via aphrody-voice + STT via aphrody-voice-stt).
