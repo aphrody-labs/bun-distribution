@@ -26,6 +26,7 @@ import {SelectionProvider} from './routes/explorer/SelectionContext';
 import {TagAssignmentMode} from './routes/explorer/TagAssignmentMode';
 import {TopBar, TopBarProvider} from './TopBar';
 import {CommandPalette} from './CommandPalette';
+import {useMenuCommands} from './menu-commands';
 import {NARROW_QUERY, Rail, RailDrawer, useMediaQuery} from './rail-drawer';
 
 /** M3 pane transitions: enter on emphasized-decelerate, exit on emphasized-accelerate. */
@@ -39,6 +40,7 @@ const paneExit: Transition = {
 };
 
 function ShellLayoutContent() {
+	useMenuCommands();
 	const location = useLocation();
 	const params = useParams();
 	const platform = usePlatform();

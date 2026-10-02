@@ -35,6 +35,8 @@ export type CommandSuggestion = {
   command: string;
   icon: string;
   keywords: string[];
+  /** Menu command run on activation; its accelerator is shown in the palette. */
+  menu?: "new-session" | "open-file" | "open-folder";
 };
 
 export type RecentFileItem = {
@@ -120,6 +122,36 @@ export const CANONICAL_NAVIGATION_TARGETS: NavigationSuggestion[] = [
 ];
 
 export const CANONICAL_COMMANDS: CommandSuggestion[] = [
+  {
+    kind: "command",
+    id: "cmd-new-session",
+    label: "> new",
+    description: "Nouveau chat",
+    command: "new",
+    icon: "edit_square",
+    keywords: ["new", "nouveau", "chat", "session"],
+    menu: "new-session",
+  },
+  {
+    kind: "command",
+    id: "cmd-open-file",
+    label: "> open",
+    description: "Ouvrir un fichier",
+    command: "open",
+    icon: "description",
+    keywords: ["open", "ouvrir", "fichier", "file"],
+    menu: "open-file",
+  },
+  {
+    kind: "command",
+    id: "cmd-open-folder",
+    label: "> open-folder",
+    description: "Ouvrir un dossier",
+    command: "open-folder",
+    icon: "folder_open",
+    keywords: ["open", "ouvrir", "dossier", "folder"],
+    menu: "open-folder",
+  },
   {
     kind: "command",
     id: "cmd-models",

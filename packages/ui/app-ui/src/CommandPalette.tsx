@@ -15,6 +15,7 @@ import {
 } from "./quickbar-suggest";
 import { useChatStore } from "./stores/chat-store";
 import { desktopRoutes } from "./desktop-navigation";
+import { dispatchMenuCommand, isMacPlatform, menuShortcut } from "./menu-commands";
 
 export interface CommandPaletteProps {
   open?: boolean;
@@ -123,6 +124,8 @@ export function CommandPalette({
 
     if (item.kind === "navigation") {
       navigate(item.route);
+    } else if (item.kind === "command" && item.menu) {
+      dispatchMenuCommand(item.menu);
     } else if (item.kind === "command") {
       switch (item.command) {
         case "models":
@@ -340,6 +343,9 @@ export function CommandPalette({
                       <span className="rounded-full bg-surface-container-highest px-3 py-1 text-label-large font-medium text-on-surface-variant">
                         {badgeLabel}
                       </span>
+                      {item.kind === "command" && item.menu
+                        ? menuShortcut(item.menu, isMacPlatform()).map((k) => <Kbd key={k}>{k}</Kbd>)
+                        : null}
                       {isSelected && <Kbd>↵</Kbd>}
                     </div>
                   </li>
