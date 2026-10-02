@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "description": "The shared static asset CDN of the Aphrody category repositories (aphrody-ui design assets, aphrody-ai brand assets), owned and operated by aphrody-infra. One owner repository per file content; the CDN serves every source under one origin. Built and published by scripts/assets/cdn.ts, served by nginx/aphrody/aphrody-cdn-static.inc on the cdn.aphrody.com vhost.",
+  "description": "The shared static asset CDN of the Aphrody monorepo (UI design assets and AI brand assets), owned and operated by Infra. One source owns each file content; the CDN serves every source under one origin. Built and published by scripts/assets/cdn.ts, served by nginx/aphrody/aphrody-cdn-static.inc on the cdn.aphrody.com vhost.",
   "cdn": {
     "service": "aphrody-cdn",
     "host": "cdn.aphrody.com",
@@ -18,17 +18,25 @@
   "sources": [
     {
       "scope": "os",
-      "repo": "aphrody-ui",
-      "path": "assets",
+      "repo": "aphrody",
+      "path": "assets/ui",
       "owns": "Material 3 design system: fonts, Google design references, UI screenshots and art direction, Chrome web app captures. The scope keeps its historical name os so published /s/os/ URLs stay stable.",
       "exclude": [
         "**/*.psd"
       ]
     },
     {
+      "scope": "os",
+      "repo": "aphrody",
+      "path": "assets/fonts",
+      "mount": "fonts",
+      "owns": "UI fonts and their OFL notices, published under the historical /s/os/fonts/ paths.",
+      "exclude": []
+    },
+    {
       "scope": "aphrody",
-      "repo": "aphrody-ai",
-      "path": "assets",
+      "repo": "aphrody",
+      "path": "assets/ai",
       "owns": "Aphrody agent brand (Byron), product captures and renders.",
       "exclude": [
         "**/*.psd"
@@ -36,7 +44,7 @@
     }
   ],
   "policy": {
-    "singleOwner": "A file content (sha256) lives in exactly one source; a copy in another repository is a check error.",
+    "singleOwner": "A file content (sha256) lives in exactly one source; a copy in another source is a check error.",
     "licences": "Fonts ship with their OFL.txt; third-party brand files stay reference material and are served noindex.",
     "exclusions": "PSD sources stay in git, never on the CDN."
   }

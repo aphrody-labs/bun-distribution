@@ -7,8 +7,8 @@
 //                                                  rsync the release, then switch `current` atomically
 //   add --json for machine-readable output
 //
-// Sources are sibling checkouts (`../<repo>`), tracked files only (`git ls-files`), so local
-// scratch never reaches the CDN.
+// Sources are catalogued paths in the active monorepo, tracked files only
+// (`git ls-files`), so local scratch never reaches the CDN.
 
 import { $ } from "bun";
 import { createHash } from "node:crypto";
@@ -19,6 +19,8 @@ export interface Source {
   scope: string;
   repo: string;
   path: string;
+  /** Optional path prefix under the published scope. */
+  mount?: string;
   owns?: string;
   exclude: string[];
 }
@@ -37,6 +39,8 @@ export interface Catalog {
 
 export interface Entry {
   scope: string;
+  /** Catalog source that owns the file content. */
+  source: string;
   /** Path under the source directory, `/`-separated. */
   path: string;
   /** Absolute file on disk. */
@@ -47,19 +51,34 @@ export interface Entry {
 }
 
 export interface Problem {
-  kind: "missing-source" | "cross-source-duplicate" | "invalid-scope";
+  kind: "missing-source" | "cross-source-duplicate" | "invalid-scope" | "duplicate-path";
   message: string;
 }
 
 const INFRA_ROOT = resolve(import.meta.dir, "../..");
 
 const TYPES: Record<string, string> = {
-  ".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".webp": "image/webp",
-  ".avif": "image/avif", ".gif": "image/gif", ".svg": "image/svg+xml", ".ico": "image/x-icon",
-  ".ttf": "font/ttf", ".otf": "font/otf", ".woff": "font/woff", ".woff2": "font/woff2",
-  ".json": "application/json", ".txt": "text/plain; charset=utf-8", ".md": "text/markdown; charset=utf-8",
-  ".html": "text/html; charset=utf-8", ".css": "text/css; charset=utf-8", ".mp4": "video/mp4",
-  ".webm": "video/webm", ".glb": "model/gltf-binary", ".lnk": "application/octet-stream",
+  ".png": "image/png",
+  ".jpg": "image/jpeg",
+  ".jpeg": "image/jpeg",
+  ".webp": "image/webp",
+  ".avif": "image/avif",
+  ".gif": "image/gif",
+  ".svg": "image/svg+xml",
+  ".ico": "image/x-icon",
+  ".ttf": "font/ttf",
+  ".otf": "font/otf",
+  ".woff": "font/woff",
+  ".woff2": "font/woff2",
+  ".json": "application/json",
+  ".txt": "text/plain; charset=utf-8",
+  ".md": "text/markdown; charset=utf-8",
+  ".html": "text/html; charset=utf-8",
+  ".css": "text/css; charset=utf-8",
+  ".mp4": "video/mp4",
+  ".webm": "video/webm",
+  ".glb": "model/gltf-binary",
+  ".lnk": "application/octet-stream",
 };
 
 export function contentType(path: string): string {
@@ -74,15 +93,20 @@ function excluded(path: string, patterns: string[]): boolean {
   return patterns.some((pattern) => new Bun.Glob(pattern).match(path));
 }
 
-/** Tracked files of one source, hashed. `workspace` holds the sibling checkouts. */
+/** Tracked files of one source, hashed. `workspace` contains the active repository. */
 export async function scanSource(source: Source, workspace: string): Promise<Entry[] | null> {
   const repoRoot = join(workspace, source.repo);
   const dir = join(repoRoot, source.path);
-  if ((await $`git -C ${repoRoot} rev-parse --git-dir`.quiet().nothrow()).exitCode !== 0) return null;
+  if ((await $`git -C ${repoRoot} rev-parse --git-dir`.quiet().nothrow()).exitCode !== 0)
+    return null;
   const listed = await $`git -C ${repoRoot} ls-files -z -- ${source.path}`.quiet().nothrow();
   if (listed.exitCode !== 0) return null;
   const prefix = `${source.path.replace(/\/$/, "")}/`;
-  const paths = listed.stdout.toString().split("\0").filter(Boolean).map((p) => p.slice(prefix.length));
+  const paths = listed.stdout
+    .toString()
+    .split("\0")
+    .filter(Boolean)
+    .map((p) => p.slice(prefix.length));
   const entries = await Promise.all(
     paths
       .filter((path) => !excluded(path, source.exclude))
@@ -93,7 +117,8 @@ export async function scanSource(source: Source, workspace: string): Promise<Ent
         const bytes = new Uint8Array(await handle.arrayBuffer());
         return {
           scope: source.scope,
-          path,
+          source: `${source.repo}/${source.path}`,
+          path: source.mount ? `${source.mount}/${path}` : path,
           file,
           sha256: createHash("sha256").update(bytes).digest("hex"),
           size: bytes.byteLength,
@@ -101,33 +126,51 @@ export async function scanSource(source: Source, workspace: string): Promise<Ent
         } satisfies Entry;
       }),
   );
-  return entries.filter((entry): entry is Entry => entry !== null).toSorted((a, b) => a.path.localeCompare(b.path));
+  return entries
+    .filter((entry): entry is Entry => entry !== null)
+    .toSorted((a, b) => a.path.localeCompare(b.path));
 }
 
 /** Every source scanned, plus the contract violations. */
 export async function scan(catalog: Catalog, workspace = resolve(INFRA_ROOT, "..")) {
   const problems: Problem[] = [];
   const entries: Entry[] = [];
-  const scopes = new Set<string>();
   for (const source of catalog.sources) {
-    if (!/^[a-z0-9][a-z0-9-]*$/.test(source.scope) || scopes.has(source.scope)) {
-      problems.push({ kind: "invalid-scope", message: `scope ${JSON.stringify(source.scope)} is invalid or repeated` });
+    if (
+      !/^[a-z0-9][a-z0-9-]*$/.test(source.scope) ||
+      (source.mount && !/^[a-z0-9][a-z0-9/_-]*$/.test(source.mount))
+    ) {
+      problems.push({
+        kind: "invalid-scope",
+        message: `scope ${JSON.stringify(source.scope)} or mount ${JSON.stringify(source.mount)} is invalid`,
+      });
     }
-    scopes.add(source.scope);
     const found = await scanSource(source, workspace);
     if (found === null) {
-      problems.push({ kind: "missing-source", message: `${source.repo}/${source.path}: checkout not found under ${workspace}` });
+      problems.push({
+        kind: "missing-source",
+        message: `${source.repo}/${source.path}: checkout not found under ${workspace}`,
+      });
       continue;
     }
     entries.push(...found);
   }
   const owners = new Map<string, Entry>();
+  const publishedPaths = new Set<string>();
   for (const entry of entries) {
+    const publishedPath = `${entry.scope}/${entry.path}`;
+    if (publishedPaths.has(publishedPath)) {
+      problems.push({
+        kind: "duplicate-path",
+        message: `${publishedPath} is published by more than one source`,
+      });
+    }
+    publishedPaths.add(publishedPath);
     const owner = owners.get(entry.sha256);
-    if (owner && owner.scope !== entry.scope) {
+    if (owner && owner.source !== entry.source) {
       problems.push({
         kind: "cross-source-duplicate",
-        message: `${entry.scope}:${entry.path} duplicates ${owner.scope}:${owner.path} (${entry.sha256.slice(0, 12)}); keep one owner`,
+        message: `${entry.source}:${entry.path} duplicates ${owner.source}:${owner.path} (${entry.sha256.slice(0, 12)}); keep one owner`,
       });
     } else if (!owner) {
       owners.set(entry.sha256, entry);
@@ -180,7 +223,10 @@ export async function build(catalog: Catalog, entries: Entry[], out: string): Pr
     }
   }
   await Bun.write(join(out, "s", "manifest.json"), `${JSON.stringify(manifest, null, 2)}\n`);
-  const sha = createHash("sha256").update(JSON.stringify(manifest.files)).digest("hex").slice(0, 12);
+  const sha = createHash("sha256")
+    .update(JSON.stringify(manifest.files))
+    .digest("hex")
+    .slice(0, 12);
   await Bun.write(join(out, "RELEASE_SHA"), `${sha}\n`);
   return manifest;
 }
@@ -204,8 +250,18 @@ async function publish(catalog: Catalog, out: string, vps: string, dryRun: boole
   const steps = [
     [...ssh, `mkdir -p ${target}`],
     // `--chmod`: a tree built on a Windows/DrvFs checkout reaches the host 0777 otherwise.
-    ["rsync", "-a", "--chmod=D755,F644", "--delete", `${out.replaceAll("\\", "/")}/`, `${vps}:${target}/`],
-    [...ssh, `ln -sfn ${target} ${root}/.current.new && mv -T ${root}/.current.new ${root}/current`],
+    [
+      "rsync",
+      "-a",
+      "--chmod=D755,F644",
+      "--delete",
+      `${out.replaceAll("\\", "/")}/`,
+      `${vps}:${target}/`,
+    ],
+    [
+      ...ssh,
+      `ln -sfn ${target} ${root}/.current.new && mv -T ${root}/.current.new ${root}/current`,
+    ],
   ];
   for (const step of steps) {
     if (dryRun) {
@@ -231,7 +287,9 @@ if (import.meta.main) {
     if (json) console.log(JSON.stringify(summary, null, 2));
     else {
       for (const p of problems) console.log(`[${p.kind}] ${p.message}`);
-      console.log(`${entries.length} files, ${unique} unique contents, ${(bytes / 1e6).toFixed(1)} MB, ${problems.length} problem(s)`);
+      console.log(
+        `${entries.length} files, ${unique} unique contents, ${(bytes / 1e6).toFixed(1)} MB, ${problems.length} problem(s)`,
+      );
     }
     process.exit(problems.length === 0 ? 0 : 1);
   }
@@ -242,13 +300,19 @@ if (import.meta.main) {
   const out = resolve(arg("--out") ?? join(INFRA_ROOT, "var/cdn/release"));
   if (command === "build" || command === "publish") {
     const manifest = await build(catalog, entries, out);
-    const result: Record<string, unknown> = { ...summary, out, manifestFiles: Object.keys(manifest.files).length };
+    const result: Record<string, unknown> = {
+      ...summary,
+      out,
+      manifestFiles: Object.keys(manifest.files).length,
+    };
     if (command === "publish") {
       const vps = arg("--vps") ?? Bun.env.APHRODY_VPS_SSH;
       if (!vps) throw new Error("publish needs --vps <ssh-host> or APHRODY_VPS_SSH");
       Object.assign(result, await publish(catalog, out, vps, Bun.argv.includes("--dry-run")));
     }
-    console.log(json ? JSON.stringify(result, null, 2) : `${command}: ${entries.length} files -> ${out}`);
+    console.log(
+      json ? JSON.stringify(result, null, 2) : `${command}: ${entries.length} files -> ${out}`,
+    );
     process.exit(0);
   }
   console.error(`unknown command ${command}: check | build | publish`);
