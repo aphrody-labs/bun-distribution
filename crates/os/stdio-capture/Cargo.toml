@@ -21,7 +21,7 @@ workspace = true
 tempfile = { workspace = true }
 
 [target.'cfg(all(not(target_arch = "wasm32"), unix))'.dependencies]
-libc = { workspace = true }
+rustix = { workspace = true, features = ["stdio"] }
 
 [target.'cfg(all(not(target_arch = "wasm32"), windows))'.dependencies]
 windows-sys = { version = "0.61", features = [

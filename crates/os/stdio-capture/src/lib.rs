@@ -81,50 +81,42 @@ mod native {
 
     #[cfg(unix)]
     mod unix {
-        use std::{fs::File, io, os::unix::io::AsRawFd};
+        use std::{fs::File, io, os::fd::OwnedFd};
+
+        enum Stream {
+            Stdout,
+            Stderr,
+        }
 
         /// RAII redirect of a standard file descriptor to another file; restores
         /// the original descriptor on drop.
         pub(super) struct Redirect {
-            saved: libc::c_int,
-            target: libc::c_int,
+            saved: OwnedFd,
+            stream: Stream,
         }
 
         impl Redirect {
             pub(super) fn stdout(file: &File) -> io::Result<Self> {
-                Self::install(file, libc::STDOUT_FILENO)
+                let saved = rustix::io::dup(rustix::stdio::stdout()).map_err(io::Error::from)?;
+                rustix::stdio::dup2_stdout(file).map_err(io::Error::from)?;
+                Ok(Self { saved, stream: Stream::Stdout })
             }
 
             pub(super) fn stderr(file: &File) -> io::Result<Self> {
-                Self::install(file, libc::STDERR_FILENO)
-            }
-
-            fn install(file: &File, target: libc::c_int) -> io::Result<Self> {
-                // SAFETY: `dup` duplicates a valid descriptor; it returns -1 on
-                // error, which we surface immediately.
-                let saved = unsafe { libc::dup(target) };
-                if saved < 0 {
-                    return Err(io::Error::last_os_error());
-                }
-                // SAFETY: `dup2` points `target` at the temp file's descriptor.
-                if unsafe { libc::dup2(file.as_raw_fd(), target) } < 0 {
-                    let err = io::Error::last_os_error();
-                    // SAFETY: close the dup we just made on the error path.
-                    unsafe { libc::close(saved) };
-                    return Err(err);
-                }
-                Ok(Self { saved, target })
+                let saved = rustix::io::dup(rustix::stdio::stderr()).map_err(io::Error::from)?;
+                rustix::stdio::dup2_stderr(file).map_err(io::Error::from)?;
+                Ok(Self { saved, stream: Stream::Stderr })
             }
         }
 
         impl Drop for Redirect {
             fn drop(&mut self) {
-                // SAFETY: restore the saved descriptor over `target`, then close
-                // the dup. Errors on teardown are not actionable and are ignored.
-                unsafe {
-                    libc::dup2(self.saved, self.target);
-                    libc::close(self.saved);
-                }
+                let _ = match self.stream {
+                    Stream::Stdout => rustix::stdio::dup2_stdout(&self.saved),
+                    Stream::Stderr => rustix::stdio::dup2_stderr(&self.saved),
+                };
+                // Teardown errors cannot be returned from Drop. Preserve the
+                // best-effort behavior of the former raw-descriptor backend.
             }
         }
     }
