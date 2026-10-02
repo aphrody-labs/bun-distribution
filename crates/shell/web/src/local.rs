@@ -33,16 +33,8 @@ impl ShellEngine for LocalEngine {
     }
 
     fn spawn(&self, spec: &SpawnSpec) -> Result<Box<dyn ShellSession>, SessionError> {
-        check_size(spec.columns, spec.rows)?;
-        let (mut shell, greeting) = LocalShell::new();
-        if let Some(cwd) = &spec.cwd {
-            shell.vfs.mkdir_all(cwd.as_bytes()).map_err(|e| SessionError::Engine(e.to_string()))?;
-            shell.cwd =
-                path::normalize(cwd.as_bytes()).map_err(|e| SessionError::Engine(e.to_string()))?;
-        }
-        shell.env.extend(spec.env.iter().cloned());
+        let (mut shell, greeting) = LocalShell::with_spec_and_vfs(spec, Box::new(MemVfs::new()))?;
         shell.output = greeting;
-        shell.size = (spec.columns, spec.rows);
         Ok(Box::new(shell))
     }
 }
@@ -92,6 +84,26 @@ impl LocalShell {
             },
             greeting.into_bytes(),
         )
+    }
+
+    /// Create a session with a shared or persistent filesystem and the requested settings.
+    ///
+    /// # Errors
+    /// Returns an invalid size or a VFS error for the requested working directory.
+    pub fn with_spec_and_vfs(
+        spec: &SpawnSpec,
+        vfs: Box<dyn Vfs>,
+    ) -> Result<(Self, Vec<u8>), SessionError> {
+        check_size(spec.columns, spec.rows)?;
+        let (mut shell, greeting) = Self::with_vfs(vfs);
+        if let Some(cwd) = &spec.cwd {
+            shell.vfs.mkdir_all(cwd.as_bytes()).map_err(|e| SessionError::Engine(e.to_string()))?;
+            shell.cwd =
+                path::normalize(cwd.as_bytes()).map_err(|e| SessionError::Engine(e.to_string()))?;
+        }
+        shell.env.extend(spec.env.iter().cloned());
+        shell.size = (spec.columns, spec.rows);
+        Ok((shell, greeting))
     }
 
     /// Whether `exit` was run.

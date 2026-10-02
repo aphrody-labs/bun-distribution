@@ -14,6 +14,7 @@ Evidence: repo read, native tests, wasm32 checks, a real Chrome run and a real T
 | Web bindings | `aphrody-shell-web` (`WebTerminal`, `WebShell`, `LocalShell`) | T3: session/VFS engine, quoting, env expansion, history recall, cwd, globbing, pipes, redirects, conditionals and command registry; native tests and generated WASM smoke pass | wasm32 (built) |
 | TS client | `@aphrody/shell-web` (WebSocket, Tauri, local transports) | real, tested in Bun and headless Chrome | web |
 | PTY + WebSocket server | `aphrody-terminal-backend` (auth, Origin/Host, session/idle/frame/output limits) | real, tested | native only |
+| Sandbox host | `aphrody-shell-sandbox-host` (`MockHost`, `LocalPtyHost`) | T11 contract and shared conformance pass; native PTY and live WebSocket round trips pass; no cloud provider yet | Linux tested, wasm32 and Windows GNU checked |
 | Tauri plugin | `aphrody-shell-tauri` (`open`, `open_channel`, `write`, `resize`, `close`) | real, tested, wired in `crates/ui/app` | native (Tauri 3 alpha.3) |
 | Webview e2e | `aphrody-shell-tauri-e2e` + `scripts/build/shell/tauri-e2e.sh` | passes on WebKitGTK/Broadway | Linux |
 | Nushell | `aphrody-nu` (nu 0.115.1) | real | native only; no upstream wasm32 target |
@@ -23,7 +24,7 @@ Evidence: repo read, native tests, wasm32 checks, a real Chrome run and a real T
 ## Not built yet (wave B-D of the plan)
 
 OPFS `Vfs` + worker (T5), wasm coreutils (T7), Nushell wasm spike (T9),
-`SandboxHost` + cloud adapter (T11-T12), worker/sandbox TS transports (T8), UI transport selection (T13), gates (T14).
+Cloud adapter (T12), worker/sandbox TS transports (T8), UI transport selection (T13), gates (T14).
 Staying native on purpose: Nushell, TUI, PTY.
 
 ## Fact-check against upstreams

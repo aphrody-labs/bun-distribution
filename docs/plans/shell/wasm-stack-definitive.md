@@ -88,7 +88,7 @@ confirmed by the lead against that file).
 
 ## 4. Tasks
 
-Status 2026-10-02: T1-T4 and T10 done and tested; T6 partial (compile spike, ADR written); T5, T7-T9, T11-T14 open. T3 passed 15 native unit tests, strict Clippy, wasm32 check and release build, the owning Bun tests (3 pass, 2 environment-gated skips), and a generated-WASM `WebShell` pipeline smoke. See [STATUS](../../products/shell/STATUS.md).
+Status 2026-10-02: T1-T4, T10 and T11 done and tested; T6 partial (compile spike, ADR written); T5, T7-T9, T12-T14 open. T3 passed 15 native unit tests, strict Clippy, wasm32 check and release build, the owning Bun tests (3 pass, 2 environment-gated skips), and a generated-WASM `WebShell` pipeline smoke. T11 passed shared host conformance on the mock and native PTY adapters, six native tests, strict Clippy, wasm32 and Windows GNU checks, plus the live Bun WebSocket PTY test. See [STATUS](../../products/shell/STATUS.md).
 
 Owner paths are exclusive per task; two tasks never edit the same file. Tasks that add a workspace member or
 dependency also need a one-line root `Cargo.toml` edit: the lead (integrating agent) does root `Cargo.toml`/`bun.lock`

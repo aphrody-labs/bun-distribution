@@ -119,6 +119,7 @@
           "bins": [],
           "features": [
             "default",
+            "in-process",
             "rag"
           ]
         },
@@ -155,7 +156,9 @@
             "aphrody-app"
           ],
           "features": [
-            "custom-protocol"
+            "custom-protocol",
+            "default",
+            "in-process"
           ]
         },
         {
@@ -172,6 +175,7 @@
           "bins": [],
           "features": [
             "default",
+            "in-process",
             "rag"
           ]
         },
@@ -256,6 +260,13 @@
           "name": "aphrody-cron",
           "path": "crates/os/cron",
           "description": "Lightweight async cron / interval / daily-time scheduler with pluggable JSON-backed job store for aphrody background tasks.",
+          "bins": [],
+          "features": []
+        },
+        {
+          "name": "aphrody-diagnostics",
+          "path": "crates/os/diagnostics",
+          "description": "Doctor, OS/infra status, resolved config and AI environment shared by the CLI and the desktop app.",
           "bins": [],
           "features": []
         },
@@ -964,6 +975,13 @@
           "name": "aphrody-shell",
           "path": "crates/shell/shell",
           "description": "Canonical Aphrody shell surface: Nushell, native PTY/WebSocket transport and Ratatui UI.",
+          "bins": [],
+          "features": []
+        },
+        {
+          "name": "aphrody-shell-sandbox-host",
+          "path": "crates/shell/aphrody-shell-sandbox-host",
+          "description": "Transport-neutral sandbox host contract and local shell host adapters.",
           "bins": [],
           "features": []
         },
@@ -1691,6 +1709,12 @@
           ]
         },
         {
+          "name": "@aphrody/app-ui",
+          "path": "packages/ui/app-ui",
+          "description": "",
+          "bins": []
+        },
+        {
           "name": "@aphrody/assets",
           "path": "packages/ui/assets",
           "description": "File-kind icons, extension badges, brand logos, images, sounds, videos and lottie animations, with icon resolution (getIcon, getLayeredIcon, getBeardedIcon, getIcon20): the Spacedrive @sd/assets set, merged with SpaceUI's @spacedrive/icons, for the Material Design 3 explorer surfaces.",
@@ -1729,6 +1753,12 @@
           ]
         },
         {
+          "name": "@aphrody/drive-client",
+          "path": "packages/os/drive-client",
+          "description": "Type-safe TypeScript client for Spacedrive daemon",
+          "bins": []
+        },
+        {
           "name": "@aphrody/eslint-plugin-m3",
           "path": "packages/ui/eslint-plugin-m3",
           "description": "Lint rules for sites consuming material-web (@aphrody/m3-react + Material Symbols) — runs under oxlint (jsPlugins) and ESLint.",
@@ -1747,6 +1777,12 @@
           "bins": [
             "aphrody-google"
           ]
+        },
+        {
+          "name": "@aphrody/identity",
+          "path": "packages/ui/identity",
+          "description": "Aphrody product identity for the M3 surfaces: brand emblem and icons, the Aphrody avatar, and the animated pet sprite (atlas, timed tracks, 16-way gaze) drawn from crates/ui/identity.",
+          "bins": []
         },
         {
           "name": "@aphrody/koharu-editor-example",
@@ -15493,9 +15529,9 @@
     "aphrodyRepos": 3,
     "experimentRepos": 0,
     "sharedRepos": 0,
-    "crates": 261,
+    "crates": 263,
     "binaries": 89,
-    "bunPackages": 99,
+    "bunPackages": 102,
     "pythonPackages": 9,
     "cliBinaries": 63,
     "cliCommands": 1280,
