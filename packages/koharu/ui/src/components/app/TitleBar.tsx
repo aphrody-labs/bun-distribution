@@ -37,7 +37,7 @@ import {
 } from '../../internal/components/menubar'
 import { cn } from '../../internal/lib/utils'
 
-export function TitleBar() {
+export function TitleBar({ windowControls = true }: { windowControls?: boolean } = {}) {
   const { t } = useTranslation()
   const [aboutOpen, setAboutOpen] = useState(false)
   const macOS = useMacOS()
@@ -278,7 +278,7 @@ export function TitleBar() {
           )}
         </div>
 
-        {!macOS && <WindowControls />}
+        {windowControls && !macOS && <WindowControls />}
       </header>
       <AboutDialog open={aboutOpen} onOpenChange={setAboutOpen} />
     </>

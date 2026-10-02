@@ -51,27 +51,55 @@ impl<T: IpcResponse> ChannelExt<T> for Mutex<Option<Channel<T>>> {
     }
 }
 
-pub fn bindings() -> tauri_specta::Builder<tauri_runtime_cef::CefRuntime> {
-    use tauri_specta::{Builder, ErrorHandlingMode, collect_commands};
+/// Defines the Koharu command list once: [`COMMAND_NAMES`], the [`bindings`] a host app
+/// (the Aphrody desktop app, dynamic runtime) mounts, and the standalone app's CEF bindings.
+/// Commands generic over the Tauri runtime carry an `<Rt>` marker, resolved to each builder's
+/// local `Rt` alias (specta needs a concrete runtime).
+macro_rules! koharu_commands {
+    ($($module:ident :: $command:ident $(<$runtime:ident>)?),* $(,)?) => {
+        /// Names of every Koharu IPC command, in registration order.
+        pub const COMMAND_NAMES: &[&str] = &[$(stringify!($command)),*];
 
-    Builder::new()
-        .commands(collect_commands![
-            agent::get_agent_status,
-            agent::login_agent,
-            agent::logout_agent,
-            agent::save_agent_config,
-            agent::run_agent,
-            agent::cancel_agent,
-            lifecycle::subscribe,
+        /// tauri-specta builder for every Koharu IPC command on a host app's dynamic runtime.
+        pub fn bindings() -> tauri_specta::Builder<tauri::DynRuntime> {
+            use tauri_specta::{Builder, ErrorHandlingMode, collect_commands};
+            type Rt = tauri::DynRuntime;
+            Builder::new()
+                .commands(collect_commands![$($module::$command $(::<$runtime>)?),*])
+                .disable_serde_phases()
+                .error_handling(ErrorHandlingMode::Throw)
+        }
+
+        /// tauri-specta builder for every Koharu IPC command on the CEF runtime.
+        #[cfg(feature = "cef")]
+        pub fn cef_bindings() -> tauri_specta::Builder<tauri_runtime_cef::CefRuntime> {
+            use tauri_specta::{Builder, ErrorHandlingMode, collect_commands};
+            type Rt = tauri_runtime_cef::CefRuntime;
+            Builder::new()
+                .commands(collect_commands![$($module::$command $(::<$runtime>)?),*])
+                .disable_serde_phases()
+                .error_handling(ErrorHandlingMode::Throw)
+        }
+    };
+}
+
+koharu_commands![
+            agent::get_agent_status<Rt>,
+            agent::login_agent<Rt>,
+            agent::logout_agent<Rt>,
+            agent::save_agent_config<Rt>,
+            agent::run_agent<Rt>,
+            agent::cancel_agent<Rt>,
+            lifecycle::subscribe<Rt>,
             lifecycle::get_project,
             lifecycle::get_pages,
             lifecycle::get_page,
             lifecycle::list_projects,
-            lifecycle::create_project,
-            lifecycle::open_project,
-            lifecycle::delete_project,
-            lifecycle::close_project,
-            lifecycle::import,
+            lifecycle::create_project<Rt>,
+            lifecycle::open_project<Rt>,
+            lifecycle::delete_project<Rt>,
+            lifecycle::close_project<Rt>,
+            lifecycle::import<Rt>,
             lifecycle::select_page,
             editing::rename_page,
             editing::delete_pages,
@@ -85,9 +113,9 @@ pub fn bindings() -> tauri_specta::Builder<tauri_runtime_cef::CefRuntime> {
             editing::move_layer,
             editing::undo,
             editing::redo,
-            processing::process,
+            processing::process<Rt>,
             processing::stop_job,
-            output::export,
+            output::export<Rt>,
             output::get_thumbnail,
             fonts::get_fonts,
             fonts::get_font_preview,
@@ -104,8 +132,5 @@ pub fn bindings() -> tauri_specta::Builder<tauri_runtime_cef::CefRuntime> {
             canvas::commit_paint,
             canvas::commit_erase,
             canvas::commit_transform,
-            canvas::commit_inpaint,
-        ])
-        .disable_serde_phases()
-        .error_handling(ErrorHandlingMode::Throw)
-}
+            canvas::commit_inpaint<Rt>,
+];

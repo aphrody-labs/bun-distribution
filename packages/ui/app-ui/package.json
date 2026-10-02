@@ -21,6 +21,7 @@
     "@aphrody/assets": "workspace:*",
     "@aphrody/drive-client": "workspace:*",
     "@aphrody/identity": "workspace:*",
+    "@aphrody/koharu-ui": "workspace:*",
     "@aphrody/m3-ai": "workspace:*",
     "@aphrody/m3-explorer": "workspace:*",
     "@aphrody/m3-fonts": "workspace:*",

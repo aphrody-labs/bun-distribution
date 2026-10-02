@@ -8,7 +8,6 @@ use parking_lot::Mutex;
 use serde::Serialize;
 use specta::Type;
 use tauri::{AppHandle, Manager as _, State, ipc::Channel};
-use tauri_runtime_cef::CefRuntime;
 use tokio::sync::Notify;
 
 use self::host::KoharuHost;
@@ -22,15 +21,15 @@ pub struct AgentStatus {
     pub running: Option<RunId>,
 }
 
-pub(crate) struct AgentState {
-    agent: Arc<Agent<KoharuHost>>,
+pub(crate) struct AgentState<R: tauri::Runtime> {
+    agent: Arc<Agent<KoharuHost<R>>>,
     runs: Mutex<HashMap<RunId, Control>>,
     login: Mutex<Option<Control>>,
     idle: Notify,
 }
 
-impl AgentState {
-    pub(crate) fn new(handle: AppHandle<CefRuntime>) -> Result<Self> {
+impl<R: tauri::Runtime> AgentState<R> {
+    pub(crate) fn new(handle: AppHandle<R>) -> Result<Self> {
         Ok(Self {
             agent: Arc::new(Agent::new(Codex::new()?, KoharuHost::new(handle))?),
             runs: Mutex::new(HashMap::new()),
@@ -93,8 +92,10 @@ impl AgentState {
 
 #[tauri::command]
 #[specta::specta]
-pub(crate) async fn get_agent_status(
-    state: State<'_, AgentState>,
+pub(crate) async fn get_agent_status<R: tauri::Runtime>(
+    // Injected by Tauri (not a JS argument); fixes the runtime the state belongs to.
+    _handle: tauri::AppHandle<R>,
+    state: State<'_, AgentState<R>>,
 ) -> std::result::Result<AgentStatus, Error> {
     Ok(state.status().await?)
 }
@@ -107,8 +108,10 @@ pub(crate) async fn get_agent_status(
 )]
 #[tauri::command]
 #[specta::specta]
-pub(crate) async fn login_agent(
-    state: State<'_, AgentState>,
+pub(crate) async fn login_agent<R: tauri::Runtime>(
+    // Injected by Tauri (not a JS argument); fixes the runtime the state belongs to.
+    _handle: tauri::AppHandle<R>,
+    state: State<'_, AgentState<R>>,
     on_event: Channel<LoginEvent>,
 ) -> std::result::Result<AgentStatus, Error> {
     let control = Control::default();
@@ -147,8 +150,10 @@ pub(crate) async fn login_agent(
 )]
 #[tauri::command]
 #[specta::specta]
-pub(crate) async fn logout_agent(
-    state: State<'_, AgentState>,
+pub(crate) async fn logout_agent<R: tauri::Runtime>(
+    // Injected by Tauri (not a JS argument); fixes the runtime the state belongs to.
+    _handle: tauri::AppHandle<R>,
+    state: State<'_, AgentState<R>>,
 ) -> std::result::Result<AgentStatus, Error> {
     state.reset().await;
     state.agent.codex().logout()?;
@@ -163,9 +168,11 @@ pub(crate) async fn logout_agent(
 )]
 #[tauri::command]
 #[specta::specta]
-pub(crate) async fn save_agent_config(
+pub(crate) async fn save_agent_config<R: tauri::Runtime>(
+    // Injected by Tauri (not a JS argument); fixes the runtime the state belongs to.
+    _handle: tauri::AppHandle<R>,
     config: Config,
-    state: State<'_, AgentState>,
+    state: State<'_, AgentState<R>>,
 ) -> std::result::Result<Config, Error> {
     let config = state.agent.save_config(config)?;
     tracing::info!(
@@ -178,11 +185,11 @@ pub(crate) async fn save_agent_config(
 
 #[tauri::command]
 #[specta::specta]
-pub(crate) async fn run_agent(
+pub(crate) async fn run_agent<R: tauri::Runtime>(
     prompt: String,
     on_event: Channel<Event>,
-    handle: AppHandle<CefRuntime>,
-    state: State<'_, AgentState>,
+    handle: AppHandle<R>,
+    state: State<'_, AgentState<R>>,
 ) -> std::result::Result<RunId, Error> {
     let prompt = prompt.trim().to_owned();
     if prompt.is_empty() {
@@ -219,7 +226,7 @@ pub(crate) async fn run_agent(
         if let Err(error) = result {
             tracing::error!(%run, error = ?error, "agent request failed");
         }
-        let state = handle.state::<AgentState>();
+        let state = handle.state::<AgentState<R>>();
         state.runs.lock().remove(&run);
         state.idle.notify_waiters();
     }));
@@ -234,9 +241,11 @@ pub(crate) async fn run_agent(
 )]
 #[tauri::command]
 #[specta::specta]
-pub(crate) async fn cancel_agent(
+pub(crate) async fn cancel_agent<R: tauri::Runtime>(
+    // Injected by Tauri (not a JS argument); fixes the runtime the state belongs to.
+    _handle: tauri::AppHandle<R>,
     run: RunId,
-    state: State<'_, AgentState>,
+    state: State<'_, AgentState<R>>,
 ) -> std::result::Result<(), Error> {
     state
         .runs

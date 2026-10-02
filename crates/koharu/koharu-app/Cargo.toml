@@ -9,6 +9,12 @@ repository = "https://github.com/koharu-rs/koharu"
 keywords = ["manga", "ocr", "translation", "deep_learning", "computer_vision"]
 publish = false
 license = "MIT OR Apache-2.0"
+[features]
+# The standalone Koharu desktop app runs on CEF; a host app (Aphrody) disables it and runs the
+# commands on its dynamic runtime.
+default = ["cef"]
+cef = ["dep:tauri-runtime-cef"]
+
 [dependencies]
 alphanumeric-sort = { workspace = true }
 anyhow = { workspace = true }
@@ -43,7 +49,7 @@ specta = { workspace = true }
 specta-typescript = { workspace = true }
 strum = { workspace = true }
 tauri = { workspace = true, features = ["dynamic-acl", "specta"] }
-tauri-runtime-cef = { workspace = true }
+tauri-runtime-cef = { workspace = true, optional = true }
 tauri-plugin-log = { workspace = true }
 tauri-plugin-opener = { workspace = true }
 tauri-plugin-process = { workspace = true }

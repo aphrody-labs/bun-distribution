@@ -13,7 +13,6 @@ use serde::Deserialize;
 use specta::Type;
 use std::{io::Write as _, sync::Arc};
 use tauri::{State, WebviewWindow, ipc::IpcResponse};
-use tauri_runtime_cef::CefRuntime;
 
 use super::{Error, project::CurrentProject};
 use koharu_desktop::Desktop;
@@ -46,8 +45,8 @@ pub enum ExportFormat {
 )]
 #[tauri::command]
 #[specta::specta]
-pub(crate) async fn export(
-    window: WebviewWindow<CefRuntime>,
+pub(crate) async fn export<R: tauri::Runtime>(
+    window: WebviewWindow<R>,
     format: ExportFormat,
     project: State<'_, CurrentProject>,
     desktop: State<'_, Desktop>,

@@ -11,7 +11,8 @@ import { useProject } from '@aphrody/koharu-ui/lib/queries'
 import { useKoharuStore } from '@aphrody/koharu-ui/lib/store'
 import { cn } from '../../internal/lib/utils'
 
-export function KoharuApp() {
+/** `embedded`: hosted inside another app (Aphrody Studio) — fills its container, no window controls. */
+export function KoharuApp({ embedded = false }: { embedded?: boolean } = {}) {
   const { t } = useTranslation()
   const project = useProject().data
   const selectedPages = useKoharuStore((state) => state.selectedPages)
@@ -32,11 +33,12 @@ export function KoharuApp() {
     <div
       data-koharu-ui
       className={cn(
-        'relative flex h-screen w-screen flex-col overflow-hidden text-foreground',
+        'relative flex flex-col overflow-hidden text-foreground',
+        embedded ? 'h-full w-full' : 'h-screen w-screen',
         editorOpen ? 'bg-transparent' : 'bg-[var(--surface-titlebar)]',
       )}
     >
-      <TitleBar />
+      <TitleBar windowControls={!embedded} />
       {settingsOpen ? (
         <SettingsPage />
       ) : project === undefined ? (

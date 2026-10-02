@@ -761,6 +761,8 @@ pub fn run() {
             // Tauri's "state not managed" error instead of a panic.
             app.manage(AppServerBroker::new(app.handle().clone()));
             app.manage(koharu::KoharuBroker::new(app.handle().clone()));
+            // The full Koharu editor (@aphrody/koharu-ui) runs on koharu-app's commands and state.
+            koharu_app::setup(app, false)?;
             tauri::async_runtime::spawn(start_kernel(app.handle().clone()));
             quickbar::register(app.handle());
             integration::setup(app.handle())?;
@@ -797,6 +799,9 @@ pub fn run() {
             }
         })
         .on_window_event(|window, event| {
+            if window.label() == integration::MAIN && matches!(event, tauri::WindowEvent::Destroyed) {
+                koharu_app::on_window_event(window, event);
+            }
             if window.label() == integration::MAIN
                 && let tauri::WindowEvent::CloseRequested { api, .. } = event
             {
@@ -826,61 +831,73 @@ pub fn run() {
                 });
             }
         })
-        .invoke_handler(tauri::generate_handler![
-            studio::studio_shenron_health,
-            studio::studio_shenron_rag_stats,
-            studio::studio_shenron_rag_search,
-            studio::studio_shenron_training,
-            studio::studio_native_ai_status,
-            studio::studio_native_chat,
-            studio::studio_open_shenron_admin,
-            studio::studio_shenron_train_start,
-            studio::studio_corpus_info,
-            studio::studio_corpus_search,
-            studio::studio_corpus_ask,
-            studio::studio_google_drive_authorize,
-            koharu::koharu_rpc,
-            shenron::aphrody_shenron_chat,
-            aphrody_meta,
-            aphrody_rpc,
-            aphrody_reply,
-            aphrody_session_stream,
-            aphrody_session_unstream,
-            aphrody_runtime_layout,
-            aphrody_capture_primary,
-            aphrody_windows_host_status,
-            aphrody_windows_host_windows,
-            aphrody_windows_host_observe,
-            aphrody_system_cwd,
-            aphrody_shell_window,
-            aphrody_quickbar,
-            integration::aphrody_app_ready,
-            integration::aphrody_take_open_requests,
-            integration::aphrody_desktop_integration,
-            integration::aphrody_pet,
-            integration::aphrody_widget,
-            integration::aphrody_check_update,
-            integration::aphrody_install_update,
-            aphrody_fs_read_dir,
-            aphrody_fs_read_text,
-            models::aphrody_hardware_telemetry,
-            models::aphrody_model_catalog,
-            models::aphrody_model_list,
-            models::aphrody_model_recommend,
-            models::aphrody_model_verify,
-            models::aphrody_model_remove,
-            models::aphrody_model_store_root,
-            models::aphrody_model_pull,
-            models::aphrody_model_cancel,
-            models::aphrody_model_scan_external,
-            identity::aphrody_pet_etat,
-            identity::aphrody_pet_frame_png_b64,
-            identity::aphrody_pixel_mesurer,
-            identity::aphrody_pixel_tokens_css,
-            identity::aphrody_pixel_comparer,
-            identity::aphrody_pixel_vectoriser,
-            identity::aphrody_pixel_planche,
-        ])
+        .invoke_handler({
+            let app_commands: Box<dyn Fn(tauri::ipc::Invoke) -> bool + Send + Sync> =
+                Box::new(tauri::generate_handler![
+                studio::studio_shenron_health,
+                studio::studio_shenron_rag_stats,
+                studio::studio_shenron_rag_search,
+                studio::studio_shenron_training,
+                studio::studio_native_ai_status,
+                studio::studio_native_chat,
+                studio::studio_open_shenron_admin,
+                studio::studio_shenron_train_start,
+                studio::studio_corpus_info,
+                studio::studio_corpus_search,
+                studio::studio_corpus_ask,
+                studio::studio_google_drive_authorize,
+                koharu::koharu_rpc,
+                shenron::aphrody_shenron_chat,
+                aphrody_meta,
+                aphrody_rpc,
+                aphrody_reply,
+                aphrody_session_stream,
+                aphrody_session_unstream,
+                aphrody_runtime_layout,
+                aphrody_capture_primary,
+                aphrody_windows_host_status,
+                aphrody_windows_host_windows,
+                aphrody_windows_host_observe,
+                aphrody_system_cwd,
+                aphrody_shell_window,
+                aphrody_quickbar,
+                integration::aphrody_app_ready,
+                integration::aphrody_take_open_requests,
+                integration::aphrody_desktop_integration,
+                integration::aphrody_pet,
+                integration::aphrody_widget,
+                integration::aphrody_check_update,
+                integration::aphrody_install_update,
+                aphrody_fs_read_dir,
+                aphrody_fs_read_text,
+                models::aphrody_hardware_telemetry,
+                models::aphrody_model_catalog,
+                models::aphrody_model_list,
+                models::aphrody_model_recommend,
+                models::aphrody_model_verify,
+                models::aphrody_model_remove,
+                models::aphrody_model_store_root,
+                models::aphrody_model_pull,
+                models::aphrody_model_cancel,
+                models::aphrody_model_scan_external,
+                identity::aphrody_pet_etat,
+                identity::aphrody_pet_frame_png_b64,
+                identity::aphrody_pixel_mesurer,
+                identity::aphrody_pixel_tokens_css,
+                identity::aphrody_pixel_comparer,
+                identity::aphrody_pixel_vectoriser,
+                identity::aphrody_pixel_planche,
+            ]);
+            // Koharu editor commands keep their own names (packages/koharu/bridge/protocol.ts).
+            let koharu_commands = koharu_app::bindings().invoke_handler();
+            move |invoke: tauri::ipc::Invoke| {
+                if koharu_app::COMMAND_NAMES.contains(&invoke.message.command()) {
+                    koharu_commands(invoke)
+                } else {
+                    app_commands(invoke)
+                }
+            }
+        })
         .build(tauri::generate_context!())
         .expect("aphrody desktop: fatal error while building the Tauri application")
         .run(|app, event| {

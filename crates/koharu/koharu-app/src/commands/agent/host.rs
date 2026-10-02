@@ -11,7 +11,6 @@ use koharu_pipeline::{Committer, RunStatus, StageOutput, StopToken};
 use koharu_scene::{Commit, EntityId, Snapshot};
 use serde_json::{Value, json};
 use tauri::{AppHandle, Manager as _};
-use tauri_runtime_cef::CefRuntime;
 
 use crate::commands::{
     ChannelExt as _,
@@ -22,13 +21,19 @@ use crate::commands::{
     project::CurrentProject,
 };
 
-#[derive(Clone)]
-pub(super) struct KoharuHost {
-    handle: AppHandle<CefRuntime>,
+pub(super) struct KoharuHost<R: tauri::Runtime> {
+    handle: AppHandle<R>,
 }
 
-impl KoharuHost {
-    pub(super) fn new(handle: AppHandle<CefRuntime>) -> Self {
+// Manual impl: `#[derive(Clone)]` would wrongly require `R: Clone`.
+impl<R: tauri::Runtime> Clone for KoharuHost<R> {
+    fn clone(&self) -> Self {
+        Self { handle: self.handle.clone() }
+    }
+}
+
+impl<R: tauri::Runtime> KoharuHost<R> {
+    pub(super) fn new(handle: AppHandle<R>) -> Self {
         Self { handle }
     }
 
@@ -176,7 +181,7 @@ impl KoharuHost {
 }
 
 #[async_trait]
-impl Host for KoharuHost {
+impl<R: tauri::Runtime> Host for KoharuHost<R> {
     async fn context(&self) -> Result<Value> {
         self.project_context().await
     }
@@ -411,12 +416,12 @@ impl Host for KoharuHost {
     }
 }
 
-struct AgentCommitter {
-    host: KoharuHost,
+struct AgentCommitter<R: tauri::Runtime> {
+    host: KoharuHost<R>,
 }
 
 #[async_trait]
-impl Committer for AgentCommitter {
+impl<R: tauri::Runtime> Committer for AgentCommitter<R> {
     async fn commit(&mut self, output: StageOutput) -> Result<Snapshot> {
         let (commit, page) = {
             let current = self.host.handle.state::<CurrentProject>();

@@ -50,6 +50,8 @@ aphrody-app-server = { workspace = true }
 aphrody-command = { workspace = true }
 # Offline Shenron corpus (databooks, wiki, manga) for the Studio, see src/studio.rs.
 aphrody-rag = { workspace = true }
+# Full Koharu editor backend (commands + state) hosted on the app's runtime, without CEF.
+koharu-app = { workspace = true }
 aphrody-capture = { workspace = true }
 aphrody-compat = { workspace = true }
 aphrody-diagnostics = { workspace = true }

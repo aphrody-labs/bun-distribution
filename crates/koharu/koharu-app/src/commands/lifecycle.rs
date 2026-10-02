@@ -7,7 +7,6 @@ use serde::{Deserialize, Serialize};
 use specta::Type;
 use strum::{EnumMessage as _, IntoEnumIterator as _};
 use tauri::{AppHandle, Manager as _, State, WebviewWindow, ipc::Channel};
-use tauri_runtime_cef::CefRuntime;
 use walkdir::WalkDir;
 
 use super::{
@@ -147,8 +146,8 @@ impl From<koharu_pipeline::ResourceSnapshot> for ModelResources {
 
 #[tauri::command]
 #[specta::specta]
-pub(crate) async fn subscribe(
-    handle: AppHandle<CefRuntime>,
+pub(crate) async fn subscribe<R: tauri::Runtime>(
+    handle: AppHandle<R>,
     on_canvas: Channel<CanvasState>,
     on_job: Channel<Job>,
     on_download: Channel<Download>,
@@ -178,12 +177,12 @@ pub(crate) async fn subscribe(
     })
 }
 
-async fn replace_project(handle: &AppHandle<CefRuntime>, opened: Project) -> Result<()> {
+async fn replace_project<R: tauri::Runtime>(handle: &AppHandle<R>, opened: Project) -> Result<()> {
     let snapshot = opened.snapshot();
     let page = opened.active_page();
     let info = opened.info();
 
-    handle.state::<AgentState>().reset().await;
+    handle.state::<AgentState<R>>().reset().await;
     let processing = handle.state::<Processing>();
     for stop in processing.stops.lock().values() {
         stop.stop();
@@ -262,9 +261,9 @@ pub(crate) async fn list_projects(
 )]
 #[tauri::command]
 #[specta::specta]
-pub(crate) async fn create_project(
+pub(crate) async fn create_project<R: tauri::Runtime>(
     name: String,
-    handle: AppHandle<CefRuntime>,
+    handle: AppHandle<R>,
 ) -> std::result::Result<(), Error> {
     let library = handle.state::<ProjectLibrary>().inner().clone();
     let opened = library.create(&name).await?;
@@ -280,9 +279,9 @@ pub(crate) async fn create_project(
 )]
 #[tauri::command]
 #[specta::specta]
-pub(crate) async fn open_project(
+pub(crate) async fn open_project<R: tauri::Runtime>(
     name: String,
-    handle: AppHandle<CefRuntime>,
+    handle: AppHandle<R>,
 ) -> std::result::Result<(), Error> {
     let library = handle.state::<ProjectLibrary>().inner().clone();
     let opened = library.open(&name).await?;
@@ -298,7 +297,7 @@ pub(crate) async fn open_project(
 )]
 #[tauri::command]
 #[specta::specta]
-pub(crate) async fn close_project(handle: AppHandle<CefRuntime>) -> std::result::Result<(), Error> {
+pub(crate) async fn close_project<R: tauri::Runtime>(handle: AppHandle<R>) -> std::result::Result<(), Error> {
     close_current_project(&handle).await?;
     Ok(())
 }
@@ -311,9 +310,9 @@ pub(crate) async fn close_project(handle: AppHandle<CefRuntime>) -> std::result:
 )]
 #[tauri::command]
 #[specta::specta]
-pub(crate) async fn delete_project(
+pub(crate) async fn delete_project<R: tauri::Runtime>(
     name: String,
-    handle: AppHandle<CefRuntime>,
+    handle: AppHandle<R>,
 ) -> std::result::Result<(), Error> {
     let active = handle
         .state::<CurrentProject>()
@@ -332,8 +331,8 @@ pub(crate) async fn delete_project(
     Ok(())
 }
 
-async fn close_current_project(handle: &AppHandle<CefRuntime>) -> Result<()> {
-    handle.state::<AgentState>().reset().await;
+async fn close_current_project<R: tauri::Runtime>(handle: &AppHandle<R>) -> Result<()> {
+    handle.state::<AgentState<R>>().reset().await;
     let processing = handle.state::<Processing>();
     for stop in processing.stops.lock().values() {
         stop.stop();
@@ -362,9 +361,9 @@ async fn close_current_project(handle: &AppHandle<CefRuntime>) -> Result<()> {
 )]
 #[tauri::command]
 #[specta::specta]
-pub(crate) async fn import(
+pub(crate) async fn import<R: tauri::Runtime>(
     source: PageImportSource,
-    window: WebviewWindow<CefRuntime>,
+    window: WebviewWindow<R>,
     desktop: State<'_, Desktop>,
     project: State<'_, CurrentProject>,
     processing: State<'_, Processing>,

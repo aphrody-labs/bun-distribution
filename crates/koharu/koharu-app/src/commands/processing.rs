@@ -7,7 +7,6 @@ use parking_lot::Mutex;
 use serde::{Deserialize, Serialize};
 use specta::Type;
 use tauri::{AppHandle, Manager as _, State, ipc::Channel};
-use tauri_runtime_cef::CefRuntime;
 use uuid::Uuid;
 
 use super::{ChannelExt as _, Error, canvas::CanvasChannel, project::CurrentProject};
@@ -74,8 +73,8 @@ pub(crate) struct JobChannel {
 #[tauri::command]
 #[specta::specta]
 #[allow(clippy::too_many_arguments)]
-pub(crate) async fn process(
-    handle: AppHandle<CefRuntime>,
+pub(crate) async fn process<R: tauri::Runtime>(
+    handle: AppHandle<R>,
     scope: koharu_pipeline::Scope,
     operation: koharu_pipeline::Operation,
     project: State<'_, CurrentProject>,
@@ -205,12 +204,12 @@ pub(crate) async fn process(
             }
         }));
 
-        struct PipelineCommitter {
-            handle: AppHandle<CefRuntime>,
+        struct PipelineCommitter<R: tauri::Runtime> {
+            handle: AppHandle<R>,
         }
 
         #[async_trait::async_trait]
-        impl Committer for PipelineCommitter {
+        impl<R: tauri::Runtime> Committer for PipelineCommitter<R> {
             async fn commit(&mut self, output: StageOutput) -> Result<Snapshot> {
                 let (commit, page) = {
                     let projects = self.handle.state::<CurrentProject>();

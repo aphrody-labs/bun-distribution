@@ -14,7 +14,7 @@ license = "MIT OR Apache-2.0"
 [dependencies]
 clap = { workspace = true }
 console = { workspace = true }
-koharu-app = { workspace = true }
+koharu-app = { workspace = true, features = ["cef"] }
 koharu-metrics = { workspace = true }
 log = { workspace = true }
 rfd = { workspace = true }
