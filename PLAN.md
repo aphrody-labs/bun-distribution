@@ -85,6 +85,15 @@ routes de sites, exemples et snapshots historiques demandent une classification.
 Critères : installation Bun figée, métadonnées Cargo, layout, liens documentaires
 actifs, aucun import vers une ancienne implantation déplacée.
 
+### Liens actifs et docs générées — 2026-10-03
+
+- `bun run docs:gen` a régénéré `docs/README.md` et `docs/ecosystem/*` (périmés) ;
+  `bun run docs:check` : 0 échec.
+- `bun run docs:check-links` : 885 documents actifs, 7715 liens locaux et 3258
+  chemins `code` vérifiés, 0 cassé après correction du chemin
+  `packages/os/drive-client/tests/integration` dans la qualification Drive.
+- Reste ouvert : classement des documents historiques (non vérifiés par ce gate).
+
 ### Validation partielle des liens — 2026-10-01
 
 - Contrôle exécuté : `bun packages/infra/workspace/src/docs-links.ts --scope repository --json`.
@@ -331,9 +340,12 @@ compatibilité symboles/types, installation utilisable sans dossier `target`.
 Propriétaires : `crates/os`, `crates/shell`, `crates/infra`,
 `packages/os`, `packages/infra/workspace`.
 
-- [ ] Remplacer les références actives aux checkouts legacy dans les catalogues,
+- [x] Remplacer les références actives aux checkouts legacy dans les catalogues,
   outils kernel et configurations ; distinguer les outils de migration qui
-  doivent encore savoir lire ces archives.
+  doivent encore savoir lire ces archives. Vérifié 2026-10-03 : aucun chemin
+  `~/src` ni checkout séparé dans `config`, `crates/{os,shell,infra}`,
+  `packages/{os,infra}` ; seules racines actives (`aphrody`, `aphrody-py`,
+  `source`) ; mention `~/vps` restante = historique `config/rg/CHANGELOG.md`.
 - [ ] Unifier catalogue, chemins de runtime, commandes et configuration de
   services ; un seul propriétaire par fonction Infra.
 - [ ] Remplacer les anciennes hypothèses de dépôts séparés dans fleet/bridges/
