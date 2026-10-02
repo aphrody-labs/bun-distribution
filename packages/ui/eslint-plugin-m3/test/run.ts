@@ -4,7 +4,7 @@
  *
  * Lancer : bun test/run.ts   (depuis packages/ui/eslint-plugin-m3/)
  */
-import { spawnSync } from "node:child_process";
+import { spawnSync } from "bun";
 import { join } from "node:path";
 
 const ROOT = join(import.meta.dir, "..");
@@ -22,11 +22,10 @@ const RULES = [
 ];
 
 function lint(file: string): string {
-  const r = spawnSync("bunx", ["oxlint", "-c", CONFIG, join(ROOT, "test", "fixtures", file)], {
+  const r = spawnSync(["bunx", "oxlint", "-c", CONFIG, join(ROOT, "test", "fixtures", file)], {
     cwd: ROOT,
-    encoding: "utf8",
   });
-  return (r.stdout || "") + (r.stderr || "");
+  return r.stdout.toString() + r.stderr.toString();
 }
 
 /** Règles m3 déclenchées (par leur slug) dans une sortie oxlint texte. */

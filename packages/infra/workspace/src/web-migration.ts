@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 /** Read-only closure gate for the Aphrody Web consolidation. */
 import { Glob, TOML } from "bun";
-import { spawnSync } from "node:child_process";
+import { spawnSync } from "@aphrody/bun/spawn-sync";
 import { homedir } from "node:os";
 import { join, resolve } from "node:path";
 import { firstPartyManifests } from "./bun-workspace.ts";

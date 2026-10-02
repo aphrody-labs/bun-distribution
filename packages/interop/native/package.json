@@ -20,7 +20,8 @@
     "./web": "./src/web.ts",
     "./n2b": "./src/n2b.ts",
     "./oxc": "./src/oxc.ts",
-    "./zerocopy": "./src/zerocopy.ts"
+    "./zerocopy": "./src/zerocopy.ts",
+    "./spawn-sync": "./src/spawn-sync.ts"
   },
   "scripts": {
     "build": "cargo build --release --locked -p aphrody-ffi --features gpu",

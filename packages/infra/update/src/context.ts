@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
-import { spawnSync } from "node:child_process";
+import { spawnSync } from "@aphrody/bun/spawn-sync";
 import type { Journal, Lib } from "./deps/sync.ts";
 
 /** Repository-rooted file, process and JSON helpers shared by every update module. */

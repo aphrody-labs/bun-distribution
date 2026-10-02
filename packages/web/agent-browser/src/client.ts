@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-import { spawnSync } from "node:child_process";
+import { spawnSync } from "@aphrody/bun/spawn-sync";
 import { existsSync, realpathSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { DEFAULT_OBSCURA_CDP_URL, WebCdpPage } from "./cdp.ts";

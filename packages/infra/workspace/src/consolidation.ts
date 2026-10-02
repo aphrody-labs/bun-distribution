@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 /** Snapshot extraction inputs without changing any source checkout. */
 import { createHash } from "node:crypto";
-import { execFileSync } from "node:child_process";
+import { execFileSync } from "@aphrody/bun/spawn-sync";
 import { existsSync } from "node:fs";
 import { copyFile, mkdir, readFile, stat, unlink, writeFile } from "node:fs/promises";
 import { basename, dirname, join, relative, resolve } from "node:path";

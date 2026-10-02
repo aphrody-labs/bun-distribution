@@ -18,7 +18,7 @@
 import { existsSync, mkdtempSync, readdirSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { spawnSync } from "node:child_process";
+import { spawnSync } from "@aphrody/bun/spawn-sync";
 import { Ctx } from "../context.ts";
 import { cmpVersion, registries } from "../deps/sync.ts";
 import { gitSources, lsRemote, parseCargoLock } from "../deps/inventory.ts";

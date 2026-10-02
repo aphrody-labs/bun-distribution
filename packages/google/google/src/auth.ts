@@ -1,6 +1,3 @@
-import { spawn, type ChildProcess } from "node:child_process";
-import { Readable } from "node:stream";
-
 export interface GoogleProfile {
 	name?: string;
 	email?: string;
@@ -23,25 +20,17 @@ export function resolveGoogleBinary(): string {
 }
 
 async function invoke<T>(...args: string[]): Promise<T> {
-	const child = spawn(resolveGoogleBinary(), args, { stdio: ["ignore", "pipe", "pipe"] });
-	const stdout: Buffer[] = [];
-	const stderr: Buffer[] = [];
-	child.stdout.on("data", (chunk: Buffer) => stdout.push(chunk));
-	child.stderr.on("data", (chunk: Buffer) => stderr.push(chunk));
-	const exitCode = await new Promise<number>((resolve, reject) => {
-		child.once("error", reject);
-		child.once("close", (code) => resolve(code ?? 1));
-	});
+	const child = Bun.spawn([resolveGoogleBinary(), ...args], { stdin: "ignore", stdout: "pipe", stderr: "pipe" });
+	const [stdout, stderr, exitCode] = await Promise.all([
+		new Response(child.stdout).text(),
+		new Response(child.stderr).text(),
+		child.exited,
+	]);
 	if (exitCode !== 0) {
-		const message = Buffer.concat(stderr).toString("utf8").trim();
-		throw new Error(message || `aphrody-google ${args[0]} failed (${exitCode})`);
+		throw new Error(stderr.trim() || `aphrody-google ${args[0]} failed (${exitCode})`);
 	}
-	const output = Buffer.concat(stdout).toString("utf8").trim();
+	const output = stdout.trim();
 	return (output ? JSON.parse(output) : undefined) as T;
-}
-
-function nativeStdio(...args: string[]): ChildProcess {
-	return spawn(resolveGoogleBinary(), args, { stdio: ["ignore", "pipe", "pipe"] });
 }
 
 /** Run Google OAuth PKCE login and persist the result in the OS credential store. */
@@ -77,26 +66,20 @@ export function googleGenerateStream(
 	model = "gemini-2.5-flash",
 	signal?: AbortSignal,
 ): ReadableStream<string> {
-	const child = nativeStdio("generate-stream", "--model", model);
-	const output = child.stdout;
-	const input = child.stdin;
-	if (!output || !input) {
-		child.kill();
-		throw new Error("aphrody-google did not expose its input/output streams");
-	}
-	const source = Readable.toWeb(output) as ReadableStream<Uint8Array>;
-	const reader = source.getReader();
-	const abort = () => child.kill();
-	let processExit: Promise<number> | undefined;
-	const exitCode = () => processExit ??= new Promise<number>((resolve, reject) => {
-		child.once("close", (code) => resolve(code ?? 1));
-		child.once("error", reject);
+	const child = Bun.spawn([resolveGoogleBinary(), "generate-stream", "--model", model], {
+		stdin: "pipe",
+		stdout: "pipe",
+		stderr: "pipe",
 	});
+	const reader = child.stdout.getReader();
+	const abort = () => child.kill();
+	const exitCode = () => child.exited;
 	if (signal?.aborted) abort();
 	signal?.addEventListener("abort", abort, { once: true });
 	return new ReadableStream<string>({
 		start() {
-			input.end(prompt);
+			child.stdin.write(prompt);
+			void child.stdin.end();
 		},
 		async pull(controller) {
 			try {

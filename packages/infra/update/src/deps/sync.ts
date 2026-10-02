@@ -20,7 +20,7 @@
 import { existsSync, readFileSync, writeFileSync, mkdirSync, readdirSync } from "node:fs";
 import { homedir } from "node:os";
 import { dirname, join, resolve } from "node:path";
-import { spawnSync } from "node:child_process";
+import { spawnSync } from "@aphrody/bun/spawn-sync";
 import { Ctx } from "../context.ts";
 
 // ---------------------------------------------------------------- pure helpers (unit-tested)

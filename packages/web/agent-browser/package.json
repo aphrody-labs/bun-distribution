@@ -36,5 +36,8 @@
     "@types/bun": "catalog:",
     "typescript": "catalog:"
   },
-  "license": "Apache-2.0"
+  "license": "Apache-2.0",
+  "dependencies": {
+    "@aphrody/bun": "workspace:*"
+  }
 }

@@ -590,6 +590,9 @@
       "bin": {
         "aphrody-update": "./src/cli.ts",
       },
+      "dependencies": {
+        "@aphrody/bun": "workspace:*",
+      },
       "devDependencies": {
         "@types/bun": "catalog:",
         "@types/node": "catalog:",
@@ -603,6 +606,7 @@
         "aphrody-workspace": "./src/cli.ts",
       },
       "dependencies": {
+        "@aphrody/bun": "workspace:*",
         "@aphrody/paths": "workspace:*",
         "@typescript/typescript6": "^6.0.2",
       },
@@ -1625,6 +1629,9 @@
       "version": "1.0.0-canary",
       "bin": {
         "agent-browser": "./bin/agent-browser.js",
+      },
+      "dependencies": {
+        "@aphrody/bun": "workspace:*",
       },
       "devDependencies": {
         "@types/bun": "catalog:",
