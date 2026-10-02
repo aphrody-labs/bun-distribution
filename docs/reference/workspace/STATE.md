@@ -409,7 +409,7 @@ Tracked Cargo manifests outside the root workspace (excluded, nested workspaces 
 | `obscura-cdp` | [crates/web/obscura-cdp](../../../crates/web/obscura-cdp) | rust crate | 0.1.0 | lib | yes | 0 | 2026-10-02 |
 | `obscura-dom` | [crates/web/obscura-dom](../../../crates/web/obscura-dom) | rust crate | 0.1.1 | lib | yes | 0 | 2026-10-02 |
 | `obscura-js` | [crates/web/obscura-js](../../../crates/web/obscura-js) | rust crate | 0.1.0 | lib | yes | 0 | 2026-10-02 |
-| `obscura-mcp` | [crates/web/obscura-mcp](../../../crates/web/obscura-mcp) | rust crate | 0.1.0 | lib | yes | 0 | 2026-09-29 |
+| `obscura-mcp` | [crates/web/obscura-mcp](../../../crates/web/obscura-mcp) | rust crate | 0.1.0 | lib | yes | 0 | 2026-10-02 |
 | `obscura-net` | [crates/web/obscura-net](../../../crates/web/obscura-net) | rust crate | 0.1.1 | lib | yes | 0 | 2026-10-02 |
 | `obscura-render` | [crates/web/obscura-render](../../../crates/web/obscura-render) | rust crate | 0.1.0 | bin, lib | yes | 0 | 2026-10-02 |
 | `taffy` | [crates/web/taffy](../../../crates/web/taffy) | rust crate | 0.12.1 | lib | yes | 0 | 2026-10-02 |
