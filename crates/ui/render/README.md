@@ -34,9 +34,9 @@ wasm WebGPU, WebGL, CPU); GPU backends are reported only when `gpu` is compiled.
 - Native: `packages/ui/canvas` and `@aphrody/bun` (`m3Render`, `m3Render3d`).
 - Browser: `packages/ui/canvas/site` and `packages/ui/material-web` (`md-3d-scene`,
   `md-native-3d`).
-- Tauri: `crates/aphrody-tauri-3d` (native layer under a transparent webview)
-  and `crates/aphrody-model-view` (frameless desktop model viewer).
-- Agents: `crates/ui/render-tools` (`render3d_*` kernel tools).
+- Tauri hosts and agent tools: the former `aphrody-tauri-3d`, `aphrody-model-view`
+  and `aphrody-render3d` (`render3d_*` kernel tools) crates were removed; this crate
+  is the single render owner and a new host must call it rather than reimplement it.
 
 Hosts never duplicate backend policy; they call this crate.
 

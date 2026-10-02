@@ -479,8 +479,12 @@ Propriétaire : `packages/ui`, `crates/ui`.
   cible navigateur, 77 composants client RG et 17 Shenron tirent des builtins
   Node (`util/types`, `child_process`, `tls`, `node:crypto`) : à qualifier par
   leurs propriétaires (sections 6 et 7).
-- [ ] Clarifier `render-tools` face au moteur `render`, avec identités publiques
+- [x] Clarifier `render-tools` face au moteur `render`, avec identités publiques
   maintenues puis migration explicite si un renommage API est nécessaire.
+  Décision 2026-10-03 : `crates/ui/render-tools` (`aphrody-render3d`) est retiré
+  du dépôt, sans consommateur Cargo ni Bun ; `aphrody-render` (`crates/ui/render`)
+  est le propriétaire unique du rendu. READMEs render, M3-RENDER et description
+  softraster alignés ; le catalogue régénéré ne référence plus de chemin mort.
 - [x] Requalifier tokens, composants, SSR/hydratation et exports navigateur.
   Requalification 2026-10-03 : `bun test` des 24 paquets `packages/ui` avec
   tests — tous verts (m3-icons, m3-theme, m3, material-web exigent

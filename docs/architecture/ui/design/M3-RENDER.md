@@ -56,9 +56,9 @@ Native hosts:
   (`attach`, `set_scene`, `load_model`, `set_viewport`, `orbit`, `info`); `md-native-3d` is the
   element that reports its rect.
 - `crates/aphrody-model-view` (not in repo): frameless transparent viewer with live reload.
-- `crates/aphrody-render3d` (not in repo) (kernel subsystem `render3d`): agent tools `render3d_model_inspect`,
+- Retired 2026-10-03: `aphrody-render3d` (kernel subsystem `render3d`), removed from the repository; `aphrody-render` is the single render owner. Its former agent tools `render3d_model_inspect`,
   `render3d_model_scene`, `render3d_render`, `render3d_model_render`, `render3d_export_glb`,
-  `render3d_view`; outputs under `<temp>/aphrody-render3d`, edges capped at 8192 px.
+  `render3d_view` were removed with it.
 
 ## FFI
 

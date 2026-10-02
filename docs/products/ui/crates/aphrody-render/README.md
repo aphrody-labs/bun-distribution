@@ -36,7 +36,7 @@ wasm WebGPU, WebGL, CPU); GPU backends are reported only when `gpu` is compiled.
   `md-native-3d`).
 - Tauri: `crates/aphrody-tauri-3d` (not in repo) (native layer under a transparent webview)
   and `crates/aphrody-model-view` (not in repo) (frameless desktop model viewer).
-- Agents: `crates/aphrody-render3d` (not in repo) (`render3d_*` kernel tools).
+- Agents: the former `aphrody-render3d` crate (`render3d_*` kernel tools) was retired on 2026-10-03; this crate is the single render owner.
 
 Hosts never duplicate backend policy; they call this crate.
 
