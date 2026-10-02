@@ -1,0 +1,259 @@
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+# Inventaire des scripts par références entrantes — 2026-10-03
+
+Méthode : pour chaque fichier `.ts/.sh/.nu/.py/.ps1` sous `scripts/`, nombre de fichiers suivis (`git grep -F <nom de base>`, hors `docs/migration`, lockfiles et le script lui-même) qui citent son nom. Zéro référence ne prouve pas l'inutilité : les `*.test.ts` sont découverts par `bun test`, et un script peut être lancé à la main. Aucune suppression sans vérification du propriétaire.
+
+- Scripts : 456 ; sans référence : 175 (dont 21 tests `*.test.ts`).
+
+## Sans référence entrante
+
+
+### aphrody
+
+- `scripts/aphrody/vps-google-scrape.sh`
+
+### aphrody-os
+
+- `scripts/aphrody-os/mullvad-switch-relay.sh`
+
+### assets
+
+- `scripts/assets/cdn.test.ts`
+
+### audit
+
+- `scripts/audit/os/drive/core/scripts/test_daemon.sh`
+- `scripts/audit/shenron/scripts/ops/audit-and-materialize-ocr.ts`
+- `scripts/audit/shenron/scripts/ops/audit-databook-corpus.ts`
+- `scripts/audit/shenron/scripts/ops/audit-databooks-manga.ts`
+- `scripts/audit/shenron/scripts/ops/audit-wiki-databooks-coverage.ts`
+- `scripts/audit/shenron/scripts/ops/audit-xv2-portrait-feasibility.ts`
+- `scripts/audit/shenron/scripts/ops/check-recent-revisions.ts`
+- `scripts/audit/shenron/scripts/ops/check-wiki-status.ts`
+- `scripts/audit/shenron/scripts/ops/crawl-doc-links-rag.test.ts`
+- `scripts/audit/shenron/scripts/ops/crawl-dragon-ball-official-aphrody.test.ts`
+- `scripts/audit/shenron/scripts/ops/eval-aphrody-rag.test.ts`
+- `scripts/audit/shenron/scripts/ops/ocr-databooks-aphrody.test.ts`
+- `scripts/audit/shenron/scripts/ops/ocr-french-databooks-aphrody.test.ts`
+- `scripts/audit/shenron/scripts/ops/offload-rag-to-aphrody.test.ts`
+- `scripts/audit/shenron/scripts/ops/revert-soshuhen-fake-scans.ts`
+- `scripts/audit/shenron/scripts/ops/test-ocr-jpn.ts`
+- `scripts/audit/shenron/scripts/ops/wiki-corpus-enricher.test.ts`
+- `scripts/audit/shenron/scripts/ops/wiki-page-builder.test.ts`
+- `scripts/audit/shenron/scripts/process-ocr-lots-aphrody.test.ts`
+- `scripts/audit/ui-browser-bundles.test.ts`
+- `scripts/audit/ui/apps/nie-web/scripts/build-fingerprint.test.ts`
+- `scripts/audit/ui/apps/nie-web/scripts/out-dir.test.ts`
+- `scripts/audit/ui/apps/nie-web/scripts/precompression-targets.test.ts`
+- `scripts/audit/ui/apps/nie-web/scripts/public-entry-bundle.test.ts`
+- `scripts/audit/ui/apps/nie-web/scripts/stage-vfs.test.ts`
+- `scripts/audit/ui/apps/nie-web/scripts/verify-audio-cross-host.ts`
+- `scripts/audit/ui/apps/nie-web/scripts/wasm-audio-smoke.test.ts`
+- `scripts/audit/ui/drive/scripts/test-data.sh`
+- `scripts/audit/web/apps/bxc/scripts/run-tests.ts`
+
+### build
+
+- `scripts/build/discord/packages/scripts/src/builtinDocumentationLinks.ts`
+- `scripts/build/discord/packages/scripts/src/generateIndex.ts`
+- `scripts/build/rust/channel-cargo.sh`
+- `scripts/build/shenron/scripts/ops/wiki-page-builder.ts`
+- `scripts/build/ui/apps/nie-web/scripts/build-viewer-wasm.ts`
+- `scripts/build/ui/apps/nie-web/scripts/public-entry-bundle.ts`
+- `scripts/build/ui/drive/scripts/bundle-libheif.sh`
+- `scripts/build/ui/packages/bun/scripts/generate-symbols.ts`
+- `scripts/build/ui/packages/material-web/scripts/component-custom-elements.ts`
+- `scripts/build/web/apps/bxc/scripts/build-demo-index.ts`
+- `scripts/build/web/apps/bxc/scripts/build-serverless.ts`
+- `scripts/build/web/apps/bxc/scripts/capture_squad_builders.ts`
+
+### check-aphrody-apex-nginx.ps1
+
+- `scripts/check-aphrody-apex-nginx.ps1`
+
+### check-aphrody-apex-nginx.sh
+
+- `scripts/check-aphrody-apex-nginx.sh`
+
+### check-aphrody-stack-units.sh
+
+- `scripts/check-aphrody-stack-units.sh`
+
+### configure-gcp-runtime.ps1
+
+- `scripts/configure-gcp-runtime.ps1`
+
+### configure-gcp-runtime.sh
+
+- `scripts/configure-gcp-runtime.sh`
+
+### dev
+
+- `scripts/dev/shenron/scripts/ops/enrich-wiki-transformations.ts`
+- `scripts/dev/shenron/scripts/ops/merge-transformations.ts`
+- `scripts/dev/ui/drive/scripts/autoformat.sh`
+
+### gen-local-ai-env.test.ts
+
+- `scripts/gen-local-ai-env.test.ts`
+
+### iecode
+
+- `scripts/iecode/publish-rust-crates.sh`
+
+### learn-monorepo.ts
+
+- `scripts/learn-monorepo.ts`
+
+### live-audit-report.test.ts
+
+- `scripts/live-audit-report.test.ts`
+
+### nie
+
+- `scripts/nie/sync-main.test.ts`
+
+### ops
+
+- `scripts/ops/inspect-aphrody-web-db.sh`
+- `scripts/ops/purge-attribution.ts`
+- `scripts/ops/register-shenron-backup-task.ps1`
+
+### release
+
+- `scripts/release/ui/apps/nie-web/scripts/stage-vfs.ts`
+
+### rg
+
+- `scripts/rg/achillea/phase0.ts`
+- `scripts/rg/campagnes/affiche-iergday.ts`
+- `scripts/rg/ops/achillea-medias-locaux.ts`
+- `scripts/rg/qa/generate-achillea-matrix.ts`
+- `scripts/rg/seo-bxc-audit.ts`
+
+### smoke-bxc-ffi.ts
+
+- `scripts/smoke-bxc-ffi.ts`
+
+### smoke-bxc-standalone.sh
+
+- `scripts/smoke-bxc-standalone.sh`
+
+### smoke-bxc-systemd.sh
+
+- `scripts/smoke-bxc-systemd.sh`
+
+### test-atomic-deploy-bundle.sh
+
+- `scripts/test-atomic-deploy-bundle.sh`
+
+### tools
+
+- `scripts/tools/fut/src/scripts/follow-fut-accounts.ts`
+- `scripts/tools/fut/src/scripts/map_fut.ts`
+- `scripts/tools/infra/db-dedup/build_archive.py`
+- `scripts/tools/infra/db-dedup/delete_verified.py`
+- `scripts/tools/infra/db-dedup/find.sh`
+- `scripts/tools/infra/db-dedup/pg_rowdiff.py`
+- `scripts/tools/infra/db-dedup/retire_db.sh`
+- `scripts/tools/infra/db-dedup/sqlite_rowdiff.py`
+- `scripts/tools/infra/wsl-reclaim.ps1`
+- `scripts/tools/koharu/scripts/download_bluearchive_comics.ts`
+- `scripts/tools/msvc-wsl.py`
+- `scripts/tools/os/drive/core/scripts/combine.sh`
+- `scripts/tools/os/drive/core/scripts/update_spacedrive.sh`
+- `scripts/tools/os/scripts/absorb-upstream.ts`
+- `scripts/tools/os/scripts/data/make-renames.nu`
+- `scripts/tools/os/scripts/forensics/Invoke-GoogleReversePipeline.ps1`
+- `scripts/tools/os/scripts/winclean.ts`
+- `scripts/tools/os/scripts/wslg-manager.ps1`
+- `scripts/tools/shenron/scripts/download-manga-couleur-cdn.ts`
+- `scripts/tools/shenron/scripts/enrich-databooks-manifests.ts`
+- `scripts/tools/shenron/scripts/fetch-doc-links.ts`
+- `scripts/tools/shenron/scripts/filter-ocr-results.ts`
+- `scripts/tools/shenron/scripts/fix-canon-duplicates.ts`
+- `scripts/tools/shenron/scripts/monitor-databooks-ocr.ps1`
+- `scripts/tools/shenron/scripts/ops/appliquer-ajustements.ts`
+- `scripts/tools/shenron/scripts/ops/apply-databooks-manga-updates.ts`
+- `scripts/tools/shenron/scripts/ops/auto-translate-worker.ts`
+- `scripts/tools/shenron/scripts/ops/backfill-media-works.ts`
+- `scripts/tools/shenron/scripts/ops/backfill-narrative-graph.ts`
+- `scripts/tools/shenron/scripts/ops/batch-manga-ocr.ts`
+- `scripts/tools/shenron/scripts/ops/cdn-harvest-all.ts`
+- `scripts/tools/shenron/scripts/ops/clean-noncanon-wiki.ts`
+- `scripts/tools/shenron/scripts/ops/complete-db-from-dragonballcn.ts`
+- `scripts/tools/shenron/scripts/ops/complete-mega-seeding.ts`
+- `scripts/tools/shenron/scripts/ops/create-expansion-tables.ts`
+- `scripts/tools/shenron/scripts/ops/deposer-lot-landmark.ts`
+- `scripts/tools/shenron/scripts/ops/dump-dragonballcn.ts`
+- `scripts/tools/shenron/scripts/ops/enrich-106-characters.ts`
+- `scripts/tools/shenron/scripts/ops/enrich-canonical-techniques-ja.ts`
+- `scripts/tools/shenron/scripts/ops/enrich-category-characters.ts`
+- `scripts/tools/shenron/scripts/ops/enrich-category-planets.ts`
+- `scripts/tools/shenron/scripts/ops/enrich-category-races-transfos.ts`
+- `scripts/tools/shenron/scripts/ops/enrich-category-sagas.ts`
+- `scripts/tools/shenron/scripts/ops/enrich-category-techniques.ts`
+- `scripts/tools/shenron/scripts/ops/enrich-characters-batch.ts`
+- `scripts/tools/shenron/scripts/ops/enrich-core-characters.ts`
+- `scripts/tools/shenron/scripts/ops/enrich-soshuhen-collection.ts`
+- `scripts/tools/shenron/scripts/ops/enrich-techniques-batch.ts`
+- `scripts/tools/shenron/scripts/ops/enrich-wiki-characters.ts`
+- `scripts/tools/shenron/scripts/ops/enrich-wiki-techniques.ts`
+- `scripts/tools/shenron/scripts/ops/enrich_events_sagas.ts`
+- `scripts/tools/shenron/scripts/ops/enrich_staff_va.ts`
+- `scripts/tools/shenron/scripts/ops/envoie-ocr-results.test.ts`
+- `scripts/tools/shenron/scripts/ops/expand-all-pillars.ts`
+- `scripts/tools/shenron/scripts/ops/generate-db-lexicon.ts`
+- `scripts/tools/shenron/scripts/ops/ingest-dbs-raw.ts`
+- `scripts/tools/shenron/scripts/ops/ingest-gpu-ocr-results.ts`
+- `scripts/tools/shenron/scripts/ops/inspect-knowledge.ts`
+- `scripts/tools/shenron/scripts/ops/inspect-missing-images.ts`
+- `scripts/tools/shenron/scripts/ops/inspect-wiki-databooks.ts`
+- `scripts/tools/shenron/scripts/ops/materialize-databook-descriptions.ts`
+- `scripts/tools/shenron/scripts/ops/materialize-game-cover-media.ts`
+- `scripts/tools/shenron/scripts/ops/materialize-wiki-article-fallbacks.ts`
+- `scripts/tools/shenron/scripts/ops/populate-wiki-locations.ts`
+- `scripts/tools/shenron/scripts/ops/populate-wiki-soundtracks.ts`
+- `scripts/tools/shenron/scripts/ops/populate-wiki-tournaments.ts`
+- `scripts/tools/shenron/scripts/ops/provision-aphrody-admin.ts`
+- `scripts/tools/shenron/scripts/ops/seed-all-contributors.ts`
+- `scripts/tools/shenron/scripts/ops/seed-expansion-pillars.ts`
+- `scripts/tools/shenron/scripts/ops/seed-mega-dragon-ball-data.ts`
+- `scripts/tools/shenron/scripts/ops/seed-rag-chunks-from-corpus.ts`
+- `scripts/tools/shenron/scripts/ops/shenron-infinite-loop.ts`
+- `scripts/tools/shenron/scripts/ops/source-canonical-characters.ts`
+- `scripts/tools/shenron/scripts/ops/sync-rag-expansion.ts`
+- `scripts/tools/shenron/scripts/ops/sync-reports-goals.ts`
+- `scripts/tools/shenron/scripts/ops/sync-soshuhen-legend1.ts`
+- `scripts/tools/shenron/scripts/ops/update-planets-and-races.ts`
+- `scripts/tools/shenron/scripts/ops/verifier-lot-20.ts`
+- `scripts/tools/shenron/scripts/ops/wiki-corpus-enricher.ts`
+- `scripts/tools/shenron/scripts/optimize-wiki-videos.sh`
+- `scripts/tools/shenron/scripts/prepare-ocr-rejected.ts`
+- `scripts/tools/shenron/scripts/seed-all-pws-sections.ts`
+- `scripts/tools/shenron/scripts/seed-goku-power-scaling-and-variants.ts`
+- `scripts/tools/shenron/scripts/seed-power-scaling-knowledge.ts`
+- `scripts/tools/shenron/scripts/wiki-duplicates-fix.ts`
+- `scripts/tools/shenron/scripts/wiki-grand-nettoyage.ts`
+- `scripts/tools/ui/apps/nie-web/scripts/out-dir.ts`
+- `scripts/tools/ui/apps/nie-web/scripts/precompression-targets.ts`
+- `scripts/tools/ui/apps/nie-web/scripts/wasm-audio-smoke.ts`
+- `scripts/tools/ui/apps/nie-web/src/desktop/components/tools/comparator-state.ts`
+- `scripts/tools/ui/apps/nie-web/src/desktop/components/tools/tool-navigation.ts`
+- `scripts/tools/ui/drive/scripts/combine.sh`
+- `scripts/tools/ui/drive/scripts/fix-deb.sh`
+- `scripts/tools/ui/scripts/launch_app.ps1`
+- `scripts/tools/ui/scripts/purge-tauri-mobile.nu`
+- `scripts/tools/web/apps/bxc/scripts/backfill-empty-markdown.ts`
+- `scripts/tools/web/apps/bxc/scripts/cleanup.ts`
+- `scripts/tools/web/apps/bxc/scripts/consolidate-dragonball-crawls.ts`
+- `scripts/tools/web/apps/bxc/scripts/enrich-shenron.ts`
+- `scripts/tools/web/apps/bxc/scripts/export-dragonball-jsonl.ts`
+- `scripts/tools/web/apps/bxc/scripts/fetch_bun_docs.ts`
+- `scripts/tools/web/apps/bxc/scripts/ingest-inazuma.ts`
+- `scripts/tools/web/apps/bxc/scripts/install-deps-windows.ps1`
+- `scripts/tools/web/apps/bxc/scripts/train-dragonballfr-links.ts`
+
+### winclean-pipeline.ps1
+
+- `scripts/winclean-pipeline.ps1`

@@ -79,6 +79,9 @@ routes de sites, exemples et snapshots historiques demandent une classification.
   dans la documentation active. Ne pas réécrire les preuves de migration.
 - [ ] Classer les scripts importés par commande utilisée, propriétaire et
   références entrantes ; supprimer ceux devenus inutilisés après preuve.
+  Inventaire 2026-10-03 : [SCRIPTS-INVENTORY.md](docs/reference/workspace/SCRIPTS-INVENTORY.md),
+  456 scripts, 175 sans référence entrante (dont 21 tests) ; reste la preuve
+  par propriétaire avant suppression.
 - [ ] Réduire les préfixes de fichiers qui ne décrivent aucun rôle, en conservant
   les conventions imposées (`Cargo.toml`, `package.json`, `index.ts`).
 
