@@ -6,6 +6,7 @@ export interface BuildFactoryConfig {
   schemaVersion: number;
   enabled: boolean;
   target: string;
+  executionOnlyTargets?: string[];
   cacheRoot: string;
   artifactRoot: string;
   lockPath: string;
@@ -32,6 +33,10 @@ export function buildFactoryPlan(
   revision: string,
   command: readonly string[],
 ) {
+  if (config.executionOnlyTargets?.includes(config.target))
+    throw new Error(
+      `Build target ${config.target} is execution-only; designate a new factory host`,
+    );
   if (config.schemaVersion !== 1 || !config.enabled || config.target !== "vps")
     throw new Error("Build factory must be enabled on the canonical vps target");
   if (!Object.hasOwn(config.repositories, repository))
@@ -127,6 +132,15 @@ export function heavyBuildStatus(
   };
   const local = (reason: string) => ({ ...status, route: "local" as const, reason });
   if (!config) return local("config/build-factory.json is absent");
+  if (config.executionOnlyTargets?.includes(config.target)) {
+    if (localCargo && host !== config.target)
+      return local("APHRODY_LOCAL_CARGO=1 selects a scoped local diagnostic");
+    return {
+      ...status,
+      route: "factory" as const,
+      reason: `${config.target} is execution-only; a new factory host is required`,
+    };
+  }
   if (host === "vps") return local("running on the factory host");
   if (!status.enabled) return local("build factory disabled");
   if (localCargo) return local("APHRODY_LOCAL_CARGO=1 selects a scoped local diagnostic");
@@ -166,7 +180,7 @@ export async function routeHeavyBuild(
 }
 
 /** Plan by default; run dispatches exclusively through the installed Infra SSH owner. */
-export async function runBuildFactory(args: string[], root = infraRoot()): Promise<number> {
+async function runBuildFactoryAction(args: string[], root: string): Promise<number> {
   const separator = args.indexOf("--");
   const options = separator === -1 ? args : args.slice(0, separator);
   if (options.includes("--help") || options.includes("-h")) {
@@ -215,6 +229,22 @@ export async function runBuildFactory(args: string[], root = infraRoot()): Promi
       env: { APHRODY_SSH_COMMAND_TIMEOUT_SECS: String(plan.commandTimeoutSeconds) },
     })
   ).exitCode;
+}
+
+export async function runBuildFactory(args: string[], root = infraRoot()): Promise<number> {
+  try {
+    return await runBuildFactoryAction(args, root);
+  } catch (error) {
+    console.log(
+      JSON.stringify({
+        schemaVersion: 1,
+        success: false,
+        executed: false,
+        error: error instanceof Error ? error.message : "Build factory request failed",
+      }),
+    );
+    return 2;
+  }
 }
 
 if (import.meta.main) process.exit(await runBuildFactory(process.argv.slice(2)));

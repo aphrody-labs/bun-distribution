@@ -1,12 +1,21 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
-# VPS build factory and DBFR Shenron runtime
+# Build factory transition and DBFR Shenron runtime
 
 Owner: Infra. Policy: [`config/build-factory.json`](../../../config/build-factory.json).
 Requested placement: [`production-topology.json`](../../../config/production-topology.json).
 
+Current owner decision, 2026-10-03: [Yolo PLAN](../../../../yolo/PLAN.md#build-et-release)
+reserves VPS for execution and retires its build toolchains and factory workspace.
+The previous VPS setup below is historical procedure, not authority to recreate
+that role. `executionOnlyTargets: ["vps"]` in the current factory configuration
+refuses build dispatch there and keeps heavy local execution blocked by default.
+A replacement build host must be designated before executable CLI tests,
+engine builds or releases can resume. Explicit scoped local static diagnostics
+retain the existing owner policy; they do not designate a build host.
+
 ## Authority and execution
 
-VPS (`ssh vps`) owns heavy Rust, Bun and Python builds, tests and releases.
+Before the retirement decision, VPS (`ssh vps`) owned heavy Rust, Bun and Python builds, tests and releases.
 WSL and Windows retain sources, editing, help, plans and scoped static checks.
 Shenron runtime moves to DBFR; RG runtime is requested stopped completely.
 These are desired placements, not a claim that migration is complete.

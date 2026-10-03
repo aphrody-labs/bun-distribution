@@ -22,6 +22,20 @@ const config: BuildFactoryConfig = {
 };
 const revision = "a".repeat(40);
 
+test("execution-only hosts reject plans and never implicitly enable local builds", () => {
+  const runtimeOnly = { ...config, executionOnlyTargets: ["vps"] };
+  expect(() => buildFactoryPlan(runtimeOnly, "aphrody", revision, ["cargo", "test"])).toThrow(
+    "execution-only",
+  );
+  expect(heavyBuildStatus(runtimeOnly, {}).route).toBe("factory");
+  expect(heavyBuildStatus(runtimeOnly, { APHRODY_BUILD_HOST: "vps" }).route).toBe("factory");
+  expect(heavyBuildStatus(runtimeOnly, { APHRODY_LOCAL_CARGO: "1" }).route).toBe("local");
+  expect(
+    heavyBuildStatus(runtimeOnly, { APHRODY_BUILD_HOST: "vps", APHRODY_LOCAL_CARGO: "1" }).route,
+  ).toBe("factory");
+  expect(heavyBuildStatus(runtimeOnly, {}).reason).toContain("new factory host");
+});
+
 test("Infra propagates the factory command timeout per invocation without mutating global environment", async () => {
   const root = await mkdtemp(join(tmpdir(), "aphrody-infra-env-"));
   const original = process.env.APHRODY_SSH_COMMAND_TIMEOUT_SECS;
@@ -171,6 +185,7 @@ test("cargo-serial asks the build-factory owner for the route", async () => {
     [process.execPath, join(import.meta.dir, "../src/build-factory.ts"), "status", "--route"],
     { env: { ...process.env, APHRODY_BUILD_HOST: "vps" }, stdout: "pipe" },
   );
-  expect((await new Response(child.stdout).text()).trim()).toBe("local");
+  // The repository currently reserves VPS for execution, including inside the host.
+  expect((await new Response(child.stdout).text()).trim()).toBe("factory");
   expect(await child.exited).toBe(0);
 });

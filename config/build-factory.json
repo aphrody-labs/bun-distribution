@@ -3,6 +3,7 @@
   "owner": "aphrody-infra",
   "enabled": true,
   "target": "vps",
+  "executionOnlyTargets": ["vps"],
   "workspaceRoot": "/srv/aphrody-build/workspaces/aphrody",
   "cacheRoot": "/srv/aphrody-build/cache",
   "artifactRoot": "/srv/aphrody-build/artifacts",
