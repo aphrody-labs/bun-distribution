@@ -17,6 +17,7 @@ import {
   writeFile,
 } from "node:fs/promises";
 import { dirname, isAbsolute, join, relative, resolve } from "node:path";
+import { canonicalTar, gzipCanonical, readTar } from "./canonical-tar.ts";
 
 const members = ["inagle", "inagle-cross", "azalee"] as const;
 const archiveFormat = "canonical-tar-gzip-v2";
@@ -54,60 +55,16 @@ export function validateArchiveEntries(entries: string[], allowed: string[]): vo
 
 /** tar metadata is inspected without extraction or executing archive content. */
 export async function validateArchiveTypes(archive: string, cwd: string): Promise<void> {
-  await command(
-    [
-      "python3",
-      "-I",
-      "-c",
-      `import sys, tarfile
-with tarfile.open(sys.argv[1], 'r:gz') as archive:
-    for member in archive:
-        if not (member.isfile() or member.isdir()):
-            raise SystemExit('Unsupported archive entry type: ' + member.name)
-`,
-      archive,
-    ],
-    cwd,
-  );
+  for (const member of readTar(Bun.gunzipSync(await readFile(resolve(cwd, archive)))))
+    if (member.type === "other") throw new Error(`Unsupported archive entry type: ${member.name}`);
 }
 
 /** Preserve Bun's package selection/content while removing host-dependent tar/gzip metadata. */
 export async function canonicalizePackageArchive(archive: string, cwd: string): Promise<void> {
-  await command(
-    [
-      "python3",
-      "-I",
-      "-c",
-      `import gzip, io, os, sys, tarfile
-path = sys.argv[1]
-payload = io.BytesIO()
-with tarfile.open(path, 'r:gz') as source:
-    entries = source.getmembers()
-    names = [entry.name for entry in entries]
-    if len(names) != len(set(names)):
-        raise SystemExit('Duplicate archive entry')
-    with tarfile.open(fileobj=payload, mode='w', format=tarfile.PAX_FORMAT) as target:
-        for entry in sorted(entries, key=lambda item: item.name):
-            if not (entry.isfile() or entry.isdir()):
-                raise SystemExit('Unsupported archive entry type: ' + entry.name)
-            canonical = tarfile.TarInfo(entry.name)
-            canonical.type = tarfile.DIRTYPE if entry.isdir() else tarfile.REGTYPE
-            canonical.size = 0 if entry.isdir() else entry.size
-            canonical.mode = 0o755 if entry.isdir() or entry.mode & 0o111 else 0o644
-            canonical.mtime = 0
-            canonical.uid = canonical.gid = 0
-            canonical.uname = canonical.gname = ''
-            canonical.pax_headers = {}
-            target.addfile(canonical, source.extractfile(entry) if entry.isfile() else None)
-with open(path + '.canonical', 'wb') as output:
-    with gzip.GzipFile(filename='', mode='wb', fileobj=output, compresslevel=9, mtime=0) as compressed:
-        compressed.write(payload.getvalue())
-os.replace(path + '.canonical', path)
-`,
-      archive,
-    ],
-    cwd,
-  );
+  const path = resolve(cwd, archive);
+  const entries = readTar(Bun.gunzipSync(await readFile(path)));
+  await writeFile(`${path}.canonical`, gzipCanonical(canonicalTar(entries)));
+  await rename(`${path}.canonical`, path);
 }
 
 async function validatePackSource(directory: string, allowed: string[]): Promise<void> {

@@ -42,11 +42,6 @@
       "scope": "test",
       "reason": "Exercises a host or Python owner exactly as shipped."
     },
-    "packages/infra/workspace/src/iecode-packages.ts": {
-      "count": 2,
-      "scope": "local",
-      "reason": "Byte-reproducible tar/gzip canonicalisation; archive hashes are pinned, a port needs byte-identical output."
-    },
     "packages/infra/workspace/src/infra-audit.ts": {
       "count": 2,
       "scope": "remote",
@@ -61,6 +56,11 @@
       "count": 2,
       "scope": "test",
       "reason": "Fresh-process isolation fixture."
+    },
+    "packages/infra/workspace/test/canonical-tar.test.ts": {
+      "count": 1,
+      "scope": "test",
+      "reason": "CPython tarfile/gzip oracle: proves the TypeScript canonical archives stay byte-identical."
     },
     "packages/infra/workspace/test/infra-audit.test.ts": {
       "count": 1,

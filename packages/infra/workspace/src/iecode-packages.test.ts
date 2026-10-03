@@ -215,10 +215,11 @@ test("release preparation uses the pinned snapshot without switching a dirty pro
       },
     }),
   );
-  await writeFile(
-    join(stage, "packages/infra/workspace/src/iecode-packages.ts"),
-    await readFile(join(import.meta.dir, "iecode-packages.ts"), "utf8"),
-  );
+  for (const module of ["iecode-packages.ts", "canonical-tar.ts"])
+    await writeFile(
+      join(stage, "packages/infra/workspace/src", module),
+      await readFile(join(import.meta.dir, module), "utf8"),
+    );
   await run(
     [
       "bash",
