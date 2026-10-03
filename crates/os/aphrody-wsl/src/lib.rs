@@ -185,7 +185,7 @@ pub fn import(config:&Config,install_dir:&Path)->Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    fn config()->Config {Config::parse(include_bytes!("../../../../config/os/wsl-build.json"), Path::new("/aphrody-workspace")).unwrap()}
+    fn config()->Config {Config::parse(include_bytes!("../../../../config/os/wsl-build.json"), &std::env::temp_dir().join("aphrody-workspace")).unwrap()}
     #[test] fn rejects_unsafe_roots_and_names(){let mut c=config();c.output_root=c.workspace.clone();assert!(c.validate().is_err());c=config();c.distribution="../Ubuntu".into();assert!(c.validate().is_err());c=config();c.sources[0].revision="main".into();assert!(c.validate().is_err());}
     #[test] fn hashes_nonempty_artifacts_and_rejects_empty(){let dir=tempfile::tempdir().unwrap();let p=dir.path().join("artifact");fs::write(&p,b"abc").unwrap();assert_eq!(artifact(&p).unwrap().sha256,"ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad");fs::write(p.clone(),[]).unwrap();assert!(artifact(&p).is_err());}
 }

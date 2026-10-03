@@ -73,7 +73,7 @@ pub fn build(config:&Config,target:Target)->Result<BuildReport> {
 mod tests {
     use super::*;
     #[test] fn invalid_sources_release_build_lock(){
-        let dir=tempfile::tempdir().unwrap();let mut c=Config::parse(include_bytes!("../../../../config/os/wsl-build.json"),std::path::Path::new("/aphrody-workspace")).unwrap();
+        let dir=tempfile::tempdir().unwrap();let mut c=Config::parse(include_bytes!("../../../../config/os/wsl-build.json"),&std::env::temp_dir().join("aphrody-workspace")).unwrap();
         c.source_root=dir.path().join("missing");c.output_root=dir.path().join("out");
         assert!(build(&c,Target::Kernel).is_err());assert!(!c.output_root.join(".kernel.lock").exists());
     }
