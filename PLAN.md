@@ -46,7 +46,12 @@ import { browser } from "runtime:browser";
 import { services } from "runtime:system";
 ```
 
-Ces noms ne désignent pas des modules déjà livrés. Le code produit dépend de
+`runtime:system` et `runtime:process` existent dans le SDK Yolo sous forme de
+modules virtuels chargés par `bun:ffi` et un preload `Bun.plugin` (décision D5).
+Le fork Bun n'est pas modifié pour cette première intégration. `runtime:desktop`
+et `runtime:browser` sont réservés et renvoient une erreur explicite ; l'exemple
+ci-dessus reste conceptuel pour ces capacités et pour `services`.
+Le code produit dépend de
 la façade stable, sans accès nécessaire aux types internes Tauri ou Obscura.
 Les appels fréquents utilisent des buffers et interfaces spécialisées ; le
 contrôle peut employer des données structurées. Éviter la sérialisation JSON
@@ -252,14 +257,17 @@ Aucun pourcentage de gain n'est établi avant comparaison reproductible.
 
 ## 14. Phases et preuves de passage
 
-Une phase est terminée lorsque sa commande d'acceptation (voir le plan Yolo) réussit ; les phases d'implémentation ci-dessous restent la file de travail. L'existence des
-sources ou d'importations Tauri ne valide aucune phase automatiquement.
+Les gates producteur sont ceux du [plan Yolo](../yolo/PLAN.md). Leur réussite
+qualifie la portée effectivement testée ; l'intégration et l'activation dans
+Aphrody restent des gates consommateurs. R7 est suivi ici par Aphrody et ne
+figure pas dans la table producteur. L'existence des sources ou d'importations
+Tauri ne valide aucune phase automatiquement.
 
 | Phase | Livrable | Preuve exigée |
 | --- | --- | --- |
 | R0 | Contrat minimal SDK/ABI et artefact précompilé | Consommateur léger appelle une capacité sans compiler les moteurs |
 | R1 | Hôte Bun avec modules natifs | Appels, erreurs, annulation et libération corrects |
-| R2 | Premier service partagé | Consommateur Aphrody migre et retire ses dépendances lourdes associées |
+| R2 | Supervision de processus partagée | `agent-browser` migre, retire sa supervision locale et passe ses tests avec arrêt vérifié ; Obscura reste requis jusqu'à R4 |
 | R3 | Desktop intégré | Application pilote : fenêtres, événements, permissions et arrêt |
 | R4 | Obscura avec moteur actuel | Navigation, extraction et rendu requis dans la distribution |
 | R5 | Prototype JavaScriptCore pour Obscura | Cas difficiles exécutés et écarts documentés |
@@ -272,10 +280,59 @@ ne bloquent pas les premiers gains de précompilation. Chaque migration a une
 preuve avant/après et un retour arrière ; ne pas laisser les deux chemins dans
 le build courant sans nécessité explicite.
 
-Première tranche : choisir une capacité existante, définir son contrat minimal,
-l'exposer dans l'hôte Bun et la consommer depuis un composant Aphrody léger.
-Le choix concret de capacité et des noms d'API reste ouvert ; ne pas inventer
-une qualification réalisée ni démarrer toutes les phases simultanément.
+La première tranche producteur est choisie : `system.stats`, `bench.compute`,
+puis `process.supervise` et `http.probe`, exposés par l'ABI C 1.3 et le SDK
+`@aphrody/runtime-sdk` 0.1.0 sans dépendances déclarées. Le premier consommateur
+est `packages/web/agent-browser/src/engine.ts` ; le patch producteur a été testé
+puis retiré. Le raccordement durable dans Aphrody reste la prochaine tranche,
+selon [la procédure consommateur Yolo](../yolo/docs/CONSUMERS.md) : archive SDK
+épinglée avec provenance, dépendances et lockfile, patch, tests du package puis
+qualification des consommateurs aval. Ne pas démarrer toutes les phases à la fois.
+
+### État synchronisé au 2026-10-03
+
+Sources relues dans Yolo au commit `07419cffb4beeb0f104b33a75cb23ea4a1c06def`
+(checkout propre lors du relevé). Les preuves ci-dessous distinguent les
+résultats documentés par le producteur de ceux relancés pendant cette synchronisation.
+
+Le dernier commit ajoute aussi le relais CLI vers les propriétaires Aphrody
+(`infra`, `ops`, `workspace`, `workflow`, `git`, `ssh`), `ship` vers la fabrique
+et l'installation d'un hook pre-push. Ces sources existent dans
+`apps/cli/src/aphrody.ts` et `scripts/ship_remote.sh` côté Yolo ; ce relevé ne
+prouve ni build distant réussi ni hook installé.
+
+| Phase | État et portée de la preuve |
+| --- | --- |
+| R0 | Runtime C ABI 1.3, SDK et artefact Linux x64 présents. Gate complet `just runtime-test` déclaré passant par Yolo ; aucune relance Cargo ici. |
+| R1 | Preload et modules system/process opérationnels : tests SDK relancés contre une bibliothèque précompilée, y compris erreurs, annulation, limites et destruction. Aucun hôte Bun forké reconstruit. |
+| R2 | Patch `agent-browser` documenté : 33 tests passent avant/après, TypeScript et oxlint passent, aucun processus résiduel. Patch retiré ; `engine.ts` utilise encore `Bun.spawn` et le package ne déclare pas le SDK. Migration Aphrody non livrée. |
+| D0 | Release locale 0.1.0 Linux x64 présente. Installation isolée, réinstallation, doctor et scaffold documentés dans Yolo ; non relancés ici. |
+| D1 | Workflow cinq cibles et fusion des assets présents ; première release par tag et upgrade à qualifier selon le plan producteur. |
+| D2 | Compilation, archive serveur et exécution extraite sans Bun/Rust documentées sur Linux x64 ; Docker et systemd non exécutés. |
+| R3 / D3 | Scaffold desktop : Cargo check documenté. Module desktop, fenêtre pilote, permissions, arrêt et installation des bundles restent à qualifier. |
+| R4 / R5 / R6 | Intégration headless, port JSC et retrait V8 restent ouverts. Le module browser est réservé ; Obscura demeure externe. |
+| R7 | Aphrody possède le raccordement permanent et les gates produit : `agent-browser`, puis consommateurs aval Shenron, RG, fut et `aphrody-web-test`, non qualifiés par le patch seul. |
+| D4 / R8 | Publication de packages sur demande du propriétaire ; benchmarks, signature et matrice supportée restent à qualifier. Aucun gain mesuré annoncé. |
+
+Vérification relancée : `bun test test/runtime_sdk.test.ts test/runtime_release.test.ts`
+dans Yolo : **28 tests passent, aucun échec ni test ignoré**. Cela couvre aussi
+hashes, refus d'ABI/cible incompatibles, installation et rollback en répertoire
+temporaire ; cela ne valide pas les installeurs de release ni l'intégration produit.
+L'artefact `dist/runtime/x86_64-unknown-linux-gnu` vérifié par ces tests déclare
+ABI 1.3, profil `runtime` avec unwind, SHA-256 bibliothèque
+`7766c4074d77150c7205981818e3d40382aea19d786d7af61d6f8bcc816d9b10`.
+Sa provenance est `ad8d4e148e755b50d00c683c4df83296d68829c8`, `dirty: true` ;
+il n'est donc pas présenté comme un build propre du HEAD observé.
+La release locale déclare séparément le commit `2cecec212ed3540350f0a7dc25a84c4a3d1a0010`.
+macOS, Windows, Linux ARM et `install.ps1` ne sont pas qualifiés par ce relevé.
+
+Références producteur : [ABI](../yolo/docs/RUNTIME-ABI.md),
+[décisions D5/D10/D11](../yolo/docs/DECISIONS.md),
+[consommateurs](../yolo/docs/CONSUMERS.md),
+[distribution et preuves locales](../yolo/docs/DISTRIBUTION.md).
+Les documents ABI et MEMORY Yolo contiennent encore des réserves historiques
+(rollback absent, phases non qualifiées par le lot documentaire initial) ;
+elles ne remplacent pas les tests actuels et les preuves de distribution plus récentes.
 
 ## 15. Définition de réussite
 
@@ -292,10 +349,13 @@ une qualification réalisée ni démarrer toutes les phases simultanément.
 
 ## 16. État documentaire et références
 
-Le lot du 2026-10-03 remplace le plan directeur et les consignes, crée la mémoire
-courante et aligne les documents Yolo. Il ne migre aucun code, ne change aucun
+Le lot documentaire initial du 2026-10-03 remplace le plan directeur et les
+consignes, crée la mémoire courante et aligne les documents Yolo.
+Il ne migre aucun code, ne change aucun
 profil Cargo et ne qualifie aucun runtime. Les preuves historiques restent
 historiques et les modifications concurrentes du checkout restent distinctes.
+La synchronisation suivante, décrite en section 14, relève l'implémentation Yolo
+et ses preuves actuelles sans modifier le runtime ni activer de consommateur.
 
 - [Consignes du dépôt](AGENTS.md)
 - [Mémoire courante](MEMORY.md)

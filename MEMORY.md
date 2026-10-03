@@ -16,14 +16,34 @@ Updated 2026-10-03 by owner-requested direction change.
 - Preserve panic/unwind requirements at actual artifact boundaries. Do not infer
   effective profiles from crate names, lexical scans or per-package overrides.
 - Retire an old dependency only after behavior, consumer build and rollback pass.
-- First proof: one native capability, one lightweight Aphrody consumer, no engine
-  rebuild for application changes. Capability/API naming is not yet selected.
+- First producer slice: ABI 1.3, `system.stats`, `bench.compute`,
+  `process.supervise`, `http.probe`; SDK `@aphrody/runtime-sdk` 0.1.0.
+  First Aphrody consumer is `packages/web/agent-browser/src/engine.ts`.
+  Permanent SDK wiring and product qualification remain pending.
 
 ## Evidence state
 
-The current task changes plans, instructions and memory only. No runtime phase,
-build reduction, JSC port, artifact delivery or production activation is proven
-by these documents. Existing imported code is an input, not completion evidence.
+The initial direction-change batch changed documentation only. Synchronization
+on 2026-10-03 read clean Yolo HEAD `07419cffb4beeb0f104b33a75cb23ea4a1c06def`:
+R0/R1, R2 consumer patch, D0 local installation and D2 server archive are recorded
+as passing on Linux x64 by the producer. Independently rerun here:
+`bun test test/runtime_sdk.test.ts test/runtime_release.test.ts`: 28 pass,
+0 fail, 0 skipped, against precompiled artifacts; no Cargo or engine build run.
+The packaged ABI 1.3 artifact records source `ad8d4e148e755b50d00c683c4df83296d68829c8`
+with `dirty: true`, not a clean build of the observed HEAD. See [PLAN.md](PLAN.md)
+section 14 for provenance, hashes, gate scope and producer links.
+The current Yolo CLI also contains the Aphrody owner-CLI bridge, factory `ship`
+and pre-push hook tooling; remote builds and hook activation were not verified here.
+
+The R1 host is `bun:ffi` + `Bun.plugin` preload; the Bun fork was not modified.
+Desktop/browser modules are reserved. The agent-browser patch was tested then
+reverted; current Aphrody still uses `Bun.spawn` without an SDK dependency.
+R2 removes supervision code, not the Obscura binary (R4). R7 belongs to Aphrody:
+wire the pinned SDK archive and patch, qualify the package and downstream products.
+D1 release/upgrade, R3/R4, D3/D4, JSC/V8 parity and R8 remain open. No build
+reduction, measured gain, cross-platform qualification or product activation
+is established by this synchronization. Existing imported code is an input,
+not completion evidence.
 The earlier Rust usage report is lexical navigation; it is not a complete resolved
 Cargo graph, execution audit or proof of panic profiles. Recheck selected manifests
 before implementation, without restarting a repository-wide audit by default.
