@@ -17,6 +17,9 @@ import * as os from "node:os";
 import * as path from "node:path";
 import { loadDatabaseUrl } from "@shenron/db/env";
 import { createSql } from "@shenron/db/sql";
+import { requireAiHttpUrl } from "../ai/config";
+import { buildSourcesBlock } from "../ai/prompts";
+import { AphrodyComputeClient } from "./compute";
 
 // ============================================================================
 // Repository & configuration resolution
@@ -434,7 +437,7 @@ async function probeOcrHeartbeat(coordDir: string): Promise<HeartbeatState> {
 	};
 }
 
-/** Real RAG search through the bot public API (hybrid index, absolute URLs). */
+/** Real RAG search through the configured shared backend or bot public API. */
 async function probeRagContext(
 	query: string,
 	opts: { limit?: number; maxChars?: number } = {}
@@ -443,6 +446,39 @@ async function probeRagContext(
 	const siteBase = (process.env.SHENRON_SITE_URL ?? "https://dragonballfr.com").replace(/\/$/, "");
 	const limit = Math.min(Math.max(opts.limit ?? 5, 1), 12);
 	const maxChars = Math.min(Math.max(opts.maxChars ?? 4000, 500), 16_000);
+	if (process.env.RAG_BACKEND === "aphrody") {
+		let endpoint = "/api/v1/shenron/rag/search";
+		try {
+			endpoint = new URL(endpoint, requireAiHttpUrl(process.env)).href;
+			const { results, mode } = await new AphrodyComputeClient().ragSearchWithMode(query, limit);
+			const seen = new Set<string>();
+			const passages = results.filter((hit) => {
+				if (seen.has(hit.url)) return false;
+				seen.add(hit.url);
+				return true;
+			});
+			const sources = passages.map((hit, index) => ({
+				n: index + 1,
+				title: hit.title,
+				url: new URL(hit.url, siteBase).href,
+				kind: hit.kind,
+				sourceId: hit.sourceId,
+				score: hit.score,
+			}));
+			const context = buildSourcesBlock(
+				passages.map((hit, index) => ({
+					title: hit.title,
+					url: sources[index]!.url,
+					text: hit.content ?? hit.snippet,
+				})),
+				{ perHit: Math.min(2000, maxChars), total: maxChars },
+			).slice(0, maxChars);
+			return { ok: true, endpoint, mode, context, sources };
+		} catch {
+			// Never project private request configuration or driver errors into A2A.
+			return { ok: false, endpoint, error: "Shenron shared RAG request failed" };
+		}
+	}
 	const endpoint = `${apiBase}/api/public/rag/context?q=${encodeURIComponent(query)}&limit=${limit}&maxChars=${maxChars}`;
 	try {
 		const res = await fetch(endpoint, { signal: AbortSignal.timeout(20_000) });

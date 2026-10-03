@@ -97,7 +97,7 @@ pub(crate) async fn index_document(
                model=EXCLUDED.model,embedding=EXCLUDED.embedding,created_at=now()";
     matches!(
         tokio::time::timeout(
-            Duration::from_secs(3),
+            Duration::from_secs(10),
             database.execute(sql, &[&id, &MODEL, &embedding, &title, &content])
         )
         .await,

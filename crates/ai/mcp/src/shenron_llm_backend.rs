@@ -4,10 +4,7 @@
 //!
 //! The decision functions are pure so they are unit-tested without a network.
 
-use std::{
-    sync::LazyLock,
-    time::Duration,
-};
+use std::{sync::LazyLock, time::Duration};
 
 use axum::http::StatusCode;
 use serde_json::Value;
@@ -129,6 +126,27 @@ pub(crate) const fn select_backend(configured: bool, managed_compiled: bool) -> 
 /// Whether the managed backend is compiled in.
 pub(crate) const MANAGED_COMPILED: bool = cfg!(feature = "managed-llama");
 
+/// The ready chat daemon's endpoint, without starting a model or renewing its lease.
+/// Explicit endpoint configuration is handled by the caller before this fallback.
+pub(crate) fn running_managed_url() -> Option<reqwest::Url> {
+    #[cfg(feature = "managed-llama")]
+    {
+        let state = aphrody_llama_server::discover_running(aphrody_llama_server::Role::Chat)?;
+        if !state.ready
+            || aphrody_config::ai_env::CHAT_MODEL
+                .resolve()
+                .is_some_and(|model| model != state.alias)
+        {
+            return None;
+        }
+        reqwest::Url::parse(&state.base_url()).ok()
+    }
+    #[cfg(not(feature = "managed-llama"))]
+    {
+        None
+    }
+}
+
 /// Pure fallback decision from `APHRODY_SHENRON_LLM_FALLBACK`.
 pub(crate) fn fallback_wanted(value: Option<&str>) -> bool {
     value.is_some_and(|value| value.trim() == "gemini-web")
@@ -243,7 +261,8 @@ mod managed {
         let probe_binary = binary.clone();
         let (facts, caps, budget) = tokio::task::spawn_blocking(move || {
             let facts = ModelFacts::read(&primary_path).map_err(|error| error.to_string())?;
-            let caps = ServerCapabilities::probe(&probe_binary).map_err(|error| error.to_string())?;
+            let caps =
+                ServerCapabilities::probe(&probe_binary).map_err(|error| error.to_string())?;
             let budget = Budget::from_profile(&aphrody_models::accel::probe());
             Ok::<_, String>((facts, caps, budget))
         })

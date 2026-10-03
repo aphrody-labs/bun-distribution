@@ -11,7 +11,7 @@ import {
   shenronPersonaPrompt,
 } from "@aphrody/bun/shenron";
 import type { AphrodyDoctorResult, CliResult } from "./cli";
-import type { AphrodyRagHit, AphrodyRagStats } from "./compute";
+import { AphrodyComputeClient, type AphrodyRagHit, type AphrodyRagStats } from "./compute";
 
 export const EXPECTED_ABI_VERSION = EXPECTED_SHENRON_ABI_VERSION;
 export interface ShenronAuthStatus {
@@ -109,6 +109,12 @@ export class AphrodyNativeClient {
     query: string,
     options: { limit?: number; kind?: string } = {},
   ): Promise<AphrodyRagHit[]> {
+    // The selected PostgreSQL backend must also govern calls through this facade.
+    if (process.env.RAG_BACKEND === "aphrody") {
+      return new AphrodyComputeClient().ragSearch(query, options.limit ?? 5, {
+        kind: options.kind,
+      });
+    }
     const envelope = nativeValue(() =>
       shenronRagSearch(
         query,
@@ -146,6 +152,7 @@ export class AphrodyNativeClient {
 
   /** Fetch RAG index corpus statistics in-process. */
   async ragStats(): Promise<AphrodyRagStats | null> {
+    if (process.env.RAG_BACKEND === "aphrody") return new AphrodyComputeClient().ragStats();
     const envelope = nativeValue(shenronRagStats);
     if (!envelope) return null;
     try {

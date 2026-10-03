@@ -634,7 +634,7 @@ function centeredSnippet(content: string, tokens: string[], width = 220): string
  * remontait 3×.
  */
 function dedupKey(url: string, title: string, rowid: number): string {
-	const u = (url || "").split("?")[0].toLowerCase();
+	const u = (url || "").split("?")[0]!.toLowerCase();
 	if (u) return `u:${u}`;
 	const t = fold(title || "")
 		.replace(/\s+/g, " ")
@@ -1106,7 +1106,7 @@ export async function hybridSearch(
 		const passages = candidates.map((c2) => `${c2.title}. ${c2.content}`.slice(0, 400));
 		const scores = await rerankRemote(query, passages);
 		if (scores && scores.length === candidates.length) {
-			candidates = candidates.map((cand, i) => ({ ...cand, score: scores[i] }));
+			candidates = candidates.map((cand, i) => ({ ...cand, score: scores[i]! }));
 			mode = "hybrid+rerank";
 		}
 	}
@@ -1145,9 +1145,9 @@ export async function hybridSearch(
 			if (mangaCount >= MANGA_QUOTA) break;
 			let worst = -1;
 			for (let i = top.length - 1; i >= 0; i--) {
-				const meta = metaById.get(top[i].rowid);
+				const meta = metaById.get(top[i]!.rowid);
 				const isProtectedEntity = meta && PROTECTED_KINDS.has(meta.kind);
-				if (!isManga(top[i].rowid) && !isProtectedEntity) {
+				if (!isManga(top[i]!.rowid) && !isProtectedEntity) {
 					worst = i;
 					break;
 				}
@@ -1268,8 +1268,8 @@ export async function generateAnswer(db: Database, query: string, hits: RagHit[]
  * Aphrody (le moteur Aphrody l'impose), sinon la ligne `rag_meta` de l'index
  * SQLite local quand elle existe.
  */
-export function ragIndexSpace(db: Database): { space: EmbeddingSpace; label: string } {
-	if (process.env.RAG_BACKEND !== "aphrody") {
+export function ragIndexSpace(db: Database | null): { space: EmbeddingSpace; label: string } {
+	if (process.env.RAG_BACKEND !== "aphrody" && db) {
 		try {
 			const meta = db.query("SELECT model, dim FROM rag_meta LIMIT 1").get() as {
 				model: string | null;
@@ -1292,7 +1292,7 @@ export function ragIndexSpace(db: Database): { space: EmbeddingSpace; label: str
  * doit être celui de l'index. Jette `EmbeddingSpaceMismatchError` sinon :
  * deux espaces vectoriels ne sont jamais mélangés.
  */
-export function assertRagEmbeddingSpace(db: Database): EmbeddingSpace {
+export function assertRagEmbeddingSpace(db: Database | null): EmbeddingSpace {
 	const { space, label } = ragIndexSpace(db);
 	return requireEmbeddingSpace(process.env, space, label);
 }

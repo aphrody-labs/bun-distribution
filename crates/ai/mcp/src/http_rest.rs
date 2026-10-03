@@ -22,6 +22,9 @@ use serde::Deserialize;
 use serde_json::{Value, json};
 
 const DB_TIMEOUT: Duration = Duration::from_millis(1500);
+// Durable commits may wait for WAL fsync and the transactional cache revision.
+// A search deadline must not abort an otherwise valid editorial generation.
+const DB_WRITE_TIMEOUT: Duration = Duration::from_secs(30);
 const MAX_INGEST_BYTES: usize = 512 * 1024;
 const MAX_SEARCH_CONTENT_CHARS: usize = 8192;
 
@@ -208,7 +211,7 @@ async fn shenron_health(headers: HeaderMap) -> Response {
     #[cfg(not(target_arch = "wasm32"))]
     let llm = if gemini_web {
         crate::shenron_gemini_web::available().await
-    } else if let Some(mut url) = llm_url() {
+    } else if let Some(mut url) = llm_health_url() {
         url.set_path(&format!("{}/models", url.path().trim_end_matches('/')));
         reqwest::Client::new()
             .get(url)
@@ -1000,7 +1003,7 @@ async fn shenron_rag_ingest_core(doc: ShenronDocument) -> Response {
         tx.commit().await?;
         Ok::<_, tokio_postgres::Error>((id, created))
     };
-    match tokio::time::timeout(DB_TIMEOUT, operation).await {
+    match tokio::time::timeout(DB_WRITE_TIMEOUT, operation).await {
         Ok(Ok((id, created))) => {
             let vector_indexed =
                 crate::shenron_vector::index_document(&client, &id, &doc.title, &doc.content).await;
@@ -1100,7 +1103,7 @@ async fn shenron_rag_sync_finish(
         tx.commit().await?;
         Ok((active, Some(retired)))
     };
-    match tokio::time::timeout(Duration::from_secs(30), operation).await {
+    match tokio::time::timeout(DB_WRITE_TIMEOUT, operation).await {
         Ok(Ok((active, Some(retired)))) => {
             response(json!({"status":"complete", "active":active, "retired":retired}), "no-store")
         },
@@ -1363,6 +1366,21 @@ fn llm_url() -> Option<reqwest::Url> {
     let base = aphrody_config::ai_env::CHAT_BASE_URL.resolve()?;
     let url = reqwest::Url::parse(&base).ok()?;
     matches!(url.scheme(), "http" | "https").then_some(url)
+}
+
+/// Observe the selected backend without triggering model preparation or downloads.
+fn llm_health_url() -> Option<reqwest::Url> {
+    if aphrody_config::ai_env::CHAT_BASE_URL.resolve().is_some() {
+        return llm_url();
+    }
+    #[cfg(not(target_arch = "wasm32"))]
+    {
+        crate::shenron_llm_backend::running_managed_url()
+    }
+    #[cfg(target_arch = "wasm32")]
+    {
+        None
+    }
 }
 
 async fn shenron_vision_structured(
@@ -1843,7 +1861,8 @@ async fn aphrody_status_handler() -> Response {
     .flatten()
     .unwrap_or(0);
 
-    let llm_online = if let Some(mut url) = llm_url() {
+    let llm_endpoint = llm_health_url();
+    let llm_online = if let Some(mut url) = llm_endpoint.clone() {
         url.set_path(&format!("{}/models", url.path().trim_end_matches('/')));
         reqwest::Client::new()
             .get(url)
@@ -1866,7 +1885,7 @@ async fn aphrody_status_handler() -> Response {
                 "ai_api": {
                     "status": if llm_online { "connected" } else { "standby" },
                     "models_count": models_registered,
-                    "endpoint": llm_url().map(|u| u.to_string()),
+                    "endpoint": llm_endpoint.map(|u| u.to_string()),
                 }
             }
         }),

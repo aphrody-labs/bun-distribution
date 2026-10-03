@@ -78,9 +78,9 @@ function cosineSimilarity(a: Float32Array | number[], b: Float32Array | number[]
 	let normB = 0;
 	const len = a.length;
 	for (let i = 0; i < len; i++) {
-		dot += a[i] * b[i];
-		normA += a[i] * a[i];
-		normB += b[i] * b[i];
+		dot += a[i]! * b[i]!;
+		normA += a[i]! * a[i]!;
+		normB += b[i]! * b[i]!;
 	}
 	if (normA === 0 || normB === 0) return 0;
 	return dot / (Math.sqrt(normA) * Math.sqrt(normB));
@@ -175,7 +175,7 @@ export async function getSemanticCache(
 				const sim = cosineSimilarity(qv, cachedVector);
 				if (sim > bestSimilarity) {
 					bestSimilarity = sim;
-					bestHash = hashes[i];
+					bestHash = hashes[i]!;
 					bestQuery = cachedQuery;
 				}
 			} catch (e) {

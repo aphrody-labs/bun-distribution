@@ -147,7 +147,8 @@ import { DatabooksService } from "~/services/DatabooksService";
 import { LeaderboardService, type LeaderboardEntry } from "~/services/LeaderboardService";
 import { LevelService } from "~/services/LevelService";
 import { getLevelThresholds, levelForXP, nextThresholdFrom, type LevelThreshold } from "~/lib/xp";
-import { buildRagContext, hybridSearch, logRagHealth } from "~/lib/rag";
+import { hybridSearch, logRagHealth } from "~/lib/rag";
+import { contextPublicRag, searchPublicRag } from "./public-rag";
 import { AphrodyComputeClient } from "@shenron/pipeline/aphrody";
 import { generateLlmAnswer, isFallbackAnswer } from "~/lib/llm";
 import { graphqlHandler } from "~/api/graphql";
@@ -2535,64 +2536,18 @@ export class ApiServer {
 						return { q, characters, planets, sagas, movies, games, techniques, transformations, races };
 					}),
 
-				// RAG : recherche HYBRIDE (BM25 lexical + embeddings denses, fusion RRF)
-				// sur rag_chunks + rag_vectors. Construit par rag-build.ts. Le volet
-				// sémantique passe par le sidecar embed-server ; dégrade en BM25 seul
-				// si le sidecar/les vecteurs sont indisponibles. Cf. lib/rag.ts.
-				"/api/public/rag/search": (req) =>
-					publicCachedJson(req, 5 * 60_000, async () => {
-						const url = new URL(req.url);
-						const raw = (url.searchParams.get("q") ?? "").trim();
-						const limit = Math.min(Math.max(Number(url.searchParams.get("limit") ?? 8), 1), 25);
-						const lang = url.searchParams.get("lang") || undefined;
-						const entity = url.searchParams.get("entity") || undefined;
-						const sourceId = url.searchParams.get("sourceId") || undefined;
-						const kind = url.searchParams.get("kind") || undefined;
-						const lexicalOnly = url.searchParams.get("lexicalOnly") === "true";
-						if (raw.length < 2) return { q: raw, results: [], mode: "lexical" };
-						const dbs = container.resolve(DatabaseService);
-						try {
-							const { results, mode } = await hybridSearch(dbs.sqlite, raw, limit, {
-								lang,
-								entity,
-								sourceId,
-								kind,
-								lexicalOnly,
-							});
-							return { q: raw, results, mode };
-						} catch {
-							return { q: raw, results: [], error: "index_unavailable" };
-						}
-					}),
-
-				// RAG : contexte d'ancrage pour LLM/agents — passages en texte intégral,
-				// numérotés [n], URL absolues, dans un budget de caractères (`maxChars`).
-				// Évite l'aller-retour search → lecture de chaque source.
-				"/api/public/rag/context": (req) =>
-					publicCachedJson(req, 5 * 60_000, async () => {
-						const url = new URL(req.url);
-						const q = (url.searchParams.get("q") ?? "").trim();
-						const limit = Math.min(Math.max(Number(url.searchParams.get("limit") ?? 6), 1), 12);
-						const maxChars = Math.min(
-							Math.max(Number(url.searchParams.get("maxChars") ?? 6000), 500),
-							16_000
-						);
-						if (q.length < 2) return { q, mode: "lexical", context: "", sources: [] };
-						const dbs = container.resolve(DatabaseService);
-						try {
-							return await buildRagContext(dbs.sqlite, q, {
-								limit,
-								maxChars,
-								lang: url.searchParams.get("lang") || undefined,
-								entity: url.searchParams.get("entity") || undefined,
-								sourceId: url.searchParams.get("sourceId") || undefined,
-								kind: url.searchParams.get("kind") || undefined,
-								siteBase: resolveSiteUrl(Bun.env),
-							});
-						} catch {
-							return { q, mode: "lexical", context: "", sources: [], error: "index_unavailable" };
-						}
-					}),
+				// Redis in the shared backend invalidates retrieval after editorial writes.
+                // Public responses must not retain an independent stale result cache.
+                "/api/public/rag/search": (req) =>
+                    publicCachedJson(req, 0, () => searchPublicRag(
+                        req,
+                        process.env.RAG_BACKEND === "aphrody" ? null : container.resolve(DatabaseService).sqlite,
+                    )),
+                "/api/public/rag/context": (req) =>
+                    publicCachedJson(req, 0, () => contextPublicRag(
+                        req,
+                        process.env.RAG_BACKEND === "aphrody" ? null : container.resolve(DatabaseService).sqlite,
+                    )),
 
 				// --- Manga « Full Color » : redirection vers le CDN Discord ---
 				//
@@ -6578,7 +6533,7 @@ export async function publicCachedJson(
 
 	const key = publicCacheKey(req);
 	const now = Date.now();
-	let entry = publicCache.get(key);
+	let entry = ttlMs > 0 ? publicCache.get(key) : undefined;
 	if (entry && entry.expiresAt < now) {
 		publicCache.delete(key);
 		entry = undefined;
@@ -6596,11 +6551,11 @@ export async function publicCachedJson(
 			const bytes = new TextEncoder().encode(json);
 			const etag = etagOf(bytes);
 			entry = { body: bytes, etag, expiresAt: now + ttlMs };
-			if (publicCache.size >= PUBLIC_CACHE_MAX) {
+			if (ttlMs > 0 && publicCache.size >= PUBLIC_CACHE_MAX) {
 				const oldest = publicCache.keys().next().value;
 				if (oldest) publicCache.delete(oldest);
 			}
-			publicCache.set(key, entry);
+			if (ttlMs > 0) publicCache.set(key, entry);
 		} catch (err) {
 			if (err instanceof HttpError) {
 				return new Response(JSON.stringify({ error: err.message }), {
@@ -6617,7 +6572,9 @@ export async function publicCachedJson(
 	}
 
 	const seconds = Math.max(1, Math.floor(ttlMs / 1000));
-	const cacheControl = `public, max-age=${seconds}, s-maxage=${seconds * 2}, stale-while-revalidate=${seconds * 4}`;
+	const cacheControl = ttlMs > 0
+		? `public, max-age=${seconds}, s-maxage=${seconds * 2}, stale-while-revalidate=${seconds * 4}`
+		: "no-store";
 	const headers: Record<string, string> = {
 		...cors,
 		"Content-Type": "application/json; charset=utf-8",

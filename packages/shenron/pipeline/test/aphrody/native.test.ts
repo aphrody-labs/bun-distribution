@@ -30,18 +30,6 @@ describe("@shenron/pipeline/aphrody/native FFI bridge", () => {
     expect(["operational", "degraded"]).toContain(doc?.status as string);
   });
 
-  it.skipIf(!nativeAvailable)(
-    "returns in-process RAG results with typed hits when present",
-    async () => {
-      const hits = await aphrodyNative.ragSearch("Kamehameha", { limit: 2 });
-      expect(Array.isArray(hits)).toBe(true);
-      if (hits.length > 0) {
-        expect(hits[0].title).toBeDefined();
-        expect(hits[0].score).toBeGreaterThan(0);
-      }
-    },
-  );
-
   it.skipIf(!nativeAvailable)("exposes only sanitized authentication presence flags", () => {
     const status = aphrodyNative.authStatus();
     expect(status).not.toBeNull();

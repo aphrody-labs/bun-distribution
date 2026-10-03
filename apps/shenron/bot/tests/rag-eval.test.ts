@@ -209,12 +209,14 @@ describe("rag-eval — adaptateur de @shenron/pipeline/ai/eval", () => {
     ] as const) {
       expect(local[name]).toBe(shared[name] as never);
     }
-    const c = { q: "Freezer ?", expectUrl: ["/wiki/personnages/freezer"] };
-    const results = [hit("/wiki/combats/x"), hit("/wiki/personnages/freezer")];
+    await requireLiveRag();
+    const c = { q: "Qui est Freezer ?", expectUrl: ["/wiki/personnages/freezer"] };
+    const { results, mode } = await hybridSearch(null, c.q, 5);
     expect(local.firstHitRank(results, c)).toBe(shared.firstHitRank(results, c));
     expect(local.ndcgAtK(results, c)).toBe(shared.ndcgAtK(results, c));
-    const run = await local.runCase(c, async () => ({ results, mode: "lexical" }));
-    expect(run.rank).toBe(2);
-    expect(run.mode).toBe("lexical");
+    const run = await local.runCase(c, async (query) => hybridSearch(null, query, 5));
+    expect(run.rank).toBe(shared.firstHitRank(results, c));
+    expect(run.rank).not.toBeNull();
+    expect(run.mode).toBe(mode);
   });
 });

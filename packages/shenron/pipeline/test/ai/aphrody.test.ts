@@ -30,11 +30,6 @@ const ROUTES = {
       model: "Xenova/multilingual-e5-small",
     });
   },
-  "GET /api/v1/shenron/rag/search": () => json(fixture("rag-search").response),
-  "GET /api/v1/shenron/rag/document": () => json(fixture("rag-document").response),
-  "GET /api/v1/shenron/rag/stats": () => json(fixture("rag-stats").response),
-  "POST /api/v1/shenron/rag/ingest": () => json(fixture("rag-ingest").response),
-  "POST /api/v1/shenron/rag/sync/finish": () => json(fixture("rag-sync-finish").response),
   "POST /api/v1/shenron/ocr": () => json(fixture("ocr").response),
   "POST /api/v1/shenron/vision/structured": () => json(fixture("vision-structured").response),
 };
@@ -72,17 +67,6 @@ async function both(
 }
 
 describe("createAphrodyCompute: request parity with AphrodyComputeClient", () => {
-  const doc = fixture("rag-ingest").request as {
-    sourceId: string;
-    title: string;
-    url: string;
-    content: string;
-  };
-  const sync = fixture("rag-sync-finish").request as {
-    originSourceId: string;
-    syncGeneration: string;
-    expectedCount: number;
-  };
   const chatReq = fixture("chat").request as {
     messages: { role: "system" | "user"; content: string }[];
     model: string;
@@ -104,23 +88,6 @@ describe("createAphrodyCompute: request parity with AphrodyComputeClient", () =>
       (c) => call(c, "embed", ["Qui est Goku ?", "Kamehameha"], "passage"),
     ],
     [
-      "ragSearch",
-      (c) => c.ragSearch({ q: "goku", limit: 3, lang: "fr", entity: "son-goku" }),
-      (c) => call(c, "ragSearchWithMode", "goku", 3, { lang: "fr", entity: "son-goku" }),
-    ],
-    [
-      "ragDocument",
-      (c) => c.ragDocument("shenron:42"),
-      (c) => call(c, "ragDocument", "shenron:42"),
-    ],
-    ["ragStats", (c) => c.ragStats(), (c) => call(c, "ragStats")],
-    ["ragIngest", (c) => c.ragIngest(doc), (c) => call(c, "ragIngest", doc)],
-    [
-      "ragSyncFinish",
-      (c) => c.ragSyncFinish(sync),
-      (c) => call(c, "ragSyncFinish", sync.originSourceId, sync.syncGeneration, sync.expectedCount),
-    ],
-    [
       "ocr (explicit gemini-web engine)",
       (c) => c.ocr({ imageBase64: "iVBORw0KGgo=", engine: "gemini-web", language: "ja" }),
       (c) => call(c, "ocr", "iVBORw0KGgo=", "ja"),
@@ -136,22 +103,7 @@ describe("createAphrodyCompute: request parity with AphrodyComputeClient", () =>
     });
   }
 
-  test("values match the legacy client on the same fixtures", async () => {
-    const s = await both(
-      (c) => c.ragSearch({ q: "goku" }),
-      (c) => call(c, "ragSearchWithMode", "goku"),
-    );
-    expect((s.nv as { value: unknown }).value).toEqual(s.ov);
-    const stats = await both(
-      (c) => c.ragStats(),
-      (c) => call(c, "ragStats"),
-    );
-    expect((stats.nv as { value: unknown }).value).toEqual(stats.ov);
-    const d = await both(
-      (c) => c.ragDocument("shenron:42"),
-      (c) => call(c, "ragDocument", "shenron:42"),
-    );
-    expect((d.nv as { value: unknown }).value).toEqual(d.ov);
+  test("health values match the legacy client on the same fixtures", async () => {
     const h = await both(
       (c) => c.health(),
       (c) => call(c, "health"),
@@ -195,17 +147,6 @@ describe("createAphrodyCompute: documented differences", () => {
     }
   });
 
-  test("ragDocument: 404 is null, invalid id is rejected without a call", async () => {
-    const rec = createRecordingFetch({
-      "GET /api/v1/shenron/rag/document": () =>
-        json({ error: "RAG document not found" }, { status: 404 }),
-    });
-    const c = createAphrodyCompute({ baseUrl: BASE, token: TOKEN }, { fetch: rec.fetch });
-    expect(await c.ragDocument("shenron:42")).toEqual({ ok: true, value: null });
-    expect((await c.ragDocument("nope")).ok).toBe(false);
-    expect(rec.calls.length).toBe(1);
-  });
-
   test("chat limits: 33 messages rejected before any call", async () => {
     const rec = createRecordingFetch(ROUTES);
     const c = createAphrodyCompute({ baseUrl: BASE, token: TOKEN }, { fetch: rec.fetch });
@@ -237,7 +178,7 @@ describe("createAphrodyCompute: failures", () => {
       { baseUrl: BASE, token: TOKEN },
       { fetch: createRecordingFetch({}).fetch },
     );
-    failures.push(await unreachable.ragStats());
+    failures.push(await unreachable.health());
     const slow = createRecordingFetch({ "*": () => new Promise<Response>(() => undefined) });
     const timed = createAphrodyCompute(
       { baseUrl: BASE, token: TOKEN },
@@ -257,7 +198,7 @@ describe("createAphrodyCompute: failures", () => {
     });
     expect(failures[2]).toMatchObject({ kind: "invalid_json" });
     expect(failures[4]).toMatchObject({ kind: "invalid_response" });
-    expect(failures[6]).toMatchObject({ kind: "unreachable", path: "/api/v1/shenron/rag/stats" });
+    expect(failures[6]).toMatchObject({ kind: "unreachable", path: "/api/v1/shenron/health" });
     expect(failures[7]).toMatchObject({ kind: "timeout", path: "/api/v1/shenron/health" });
   });
 

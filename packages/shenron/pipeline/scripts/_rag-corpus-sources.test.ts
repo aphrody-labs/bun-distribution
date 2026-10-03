@@ -1,26 +1,60 @@
 // SPDX-License-Identifier: Apache-2.0
-import { describe, expect, it } from "bun:test";
-import { corpusSourceId, renderCorpusDocs } from "./_rag-corpus-sources";
+import { beforeAll, describe, expect, test } from "bun:test";
+import { join } from "node:path";
+import { loadLiveRagEnv, requireLiveRag, type LiveRag } from "../src/testing/live-rag";
+import { prepareSource } from "./_rag-aphrody-sync";
 
-describe("shared documentary RAG corpus rendering", () => {
-	it("keeps licensed crawl passages and rejects Fandom and duplicate manga shards", () => {
-		const rendered = renderCorpusDocs([
-			{ id: "kz-42", name: "Kanzenshuu guide", url: "https://www.kanzenshuu.com/guide", markdown: "# Guide\nLe guide explique l'histoire de Dragon Ball." },
-			{ id: "fd-en-42", name: "Fandom", url: "https://dragonball.fandom.com/wiki/Goku", markdown: "This must never enter the corpus." },
-			{ id: "manga-42", name: "Duplicated manga", url: "https://example.org/manga", markdown: "A passage already rendered from PostgreSQL." },
-		]);
-		expect(rendered.refusedFandom).toBe(1);
-		expect(rendered.passages).toHaveLength(1);
-		expect(rendered.passages[0]?.sourceId).toBe("kz");
-		expect(rendered.passages[0]?.kind).toBe("source");
-		expect(corpusSourceId("wiki-son-goku")).toBe("wikipedia");
-	});
+loadLiveRagEnv();
+const { CORPUS_DIR, corpusSourceId, isFandom, loadCorpusDocs, renderCorpusDocs } =
+  await import("./_rag-corpus-sources");
+let live: LiveRag;
+beforeAll(async () => {
+  live = await requireLiveRag();
+}, 120_000);
 
-	it("preserves Japanese and author metadata", () => {
-		const japanese = renderCorpusDocs([{ id: "xv2-ja-1", name: "技", url: "https://example.org/ja/skill", markdown: "界王拳は悟空の技であり、戦闘で使用されます。" }]);
-		expect(japanese.passages[0]?.lang).toBe("ja");
-		const author = renderCorpusDocs([{ id: "aphrody-1", name: "Toriyama", url: "https://example.org/author", markdown: "Une déclaration documentée de l'auteur.", lang: "fr" }], true);
-		expect(author.passages[0]?.sourceId).toBe("aphrody");
-		expect(author.passages[0]?.kind).toBe("author");
-	});
+describe("documentary RAG rendered from the actual private Shenron exports", () => {
+  for (const file of ["corpus.json", "corpus-xv2.json", "corpus-aphrody.json"]) {
+    test(`${file}: real exported passages resolve to the preloaded PostgreSQL corpus`, async () => {
+      const docs = loadCorpusDocs(join(CORPUS_DIR, file));
+      expect(docs?.length).toBeGreaterThan(0);
+      if (!docs) throw new Error("Real Shenron corpus export is missing");
+      const { passages, refusedFandom } = renderCorpusDocs(docs, file.includes("aphrody"));
+      expect(passages.length).toBeGreaterThan(0);
+      expect(refusedFandom).toBe(docs.filter(isFandom).length);
+      expect(passages.every((passage) => !/fandom\.com/i.test(passage.url))).toBe(true);
+      const passage = passages[0]!;
+      const sameSource = passages.filter((item) => item.sourceId === passage.sourceId);
+      const expected = prepareSource(passage.sourceId, sameSource).documents[0]!;
+      const stored = await live.client.ragDocument(expected.sourceId);
+      expect(stored?.title).toBe(expected.title);
+      expect(stored?.url).toBe(expected.url);
+      expect(stored?.kind).toBe(file.includes("aphrody") ? "author" : "source");
+      const retrieval = await live.client.ragSearchWithMode(passage.title, 3, {
+        sourceId: passage.sourceId,
+        lang: passage.lang,
+      });
+      expect(retrieval.mode).toBe("hybrid");
+      expect(retrieval.results.length).toBeGreaterThan(0);
+      expect(
+        retrieval.results.every(
+          (hit) => hit.originSourceId === passage.sourceId && hit.lang === passage.lang,
+        ),
+      ).toBe(true);
+    });
+  }
+
+  test("preserves Japanese metadata from a real exported documentary passage", async () => {
+    const docs = loadCorpusDocs(join(CORPUS_DIR, "corpus.json"))!;
+    const { passages } = renderCorpusDocs(docs);
+    const passage = passages.find((item) => item.lang === "ja");
+    expect(passage).toBeDefined();
+    if (!passage) throw new Error("Real Japanese documentary passage is missing");
+    const search = await live.client.ragSearchWithMode(passage.title, 3, {
+      sourceId: passage.sourceId,
+      lang: "ja",
+    });
+    expect(search.results.length).toBeGreaterThan(0);
+    expect(search.results.every((hit) => hit.lang === "ja")).toBe(true);
+    expect(corpusSourceId("wiki-son-goku")).toBe("wikipedia");
+  });
 });
