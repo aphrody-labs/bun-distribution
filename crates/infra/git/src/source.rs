@@ -24,6 +24,16 @@ struct Manifest {
     schema_version: u32,
     root: String,
     sources: Vec<Source>,
+    #[serde(default)]
+    integrated: Vec<IntegratedSource>,
+}
+
+#[derive(Debug, Deserialize)]
+struct IntegratedSource {
+    #[serde(flatten)]
+    source: Source,
+    #[serde(rename = "integratedPath")]
+    path: PathBuf,
 }
 
 #[derive(Debug, Deserialize)]
@@ -129,7 +139,21 @@ pub fn source_report(
             None => repository.join(&manifest.root),
         },
     };
-    let rows = manifest.sources.iter().map(|source| inspect(&root, source)).collect();
+    let mut rows: Vec<_> = manifest.sources.iter().map(|source| inspect(&root, source)).collect();
+    for integrated in &manifest.integrated {
+        if !integrated.path.starts_with("crates")
+            || integrated
+                .path
+                .components()
+                .any(|part| !matches!(part, std::path::Component::Normal(_)))
+        {
+            return Err(git_error(format!(
+                "{}: integratedPath must stay under crates/",
+                integrated.source.id
+            )));
+        }
+        rows.push(inspect_at(&repository.join(&integrated.path), &integrated.source));
+    }
     let mut unmanaged = Vec::new();
     if let Ok(entries) = std::fs::read_dir(&root) {
         for entry in entries.flatten() {
@@ -145,14 +169,17 @@ pub fn source_report(
 }
 
 fn inspect(root: &Path, source: &Source) -> SourceRow {
-    let dir = root.join(&source.id);
+    inspect_at(&root.join(&source.id), source)
+}
+
+fn inspect_at(dir: &Path, source: &Source) -> SourceRow {
     let row = |state, detail: String| SourceRow { id: source.id.clone(), state, detail };
     if !dir.is_dir() {
         return row(SourceState::Missing, dir.display().to_string());
     }
     let mut head = None;
     if source.kind == "git" {
-        let resolved = gix::open(&dir).ok().and_then(|repo| {
+        let resolved = gix::open(dir).ok().and_then(|repo| {
             let id = repo.head_id().ok()?.to_string();
             Some(id)
         });
@@ -219,5 +246,24 @@ mod tests {
         let report = source_report(repo, Some(Path::new("src-root"))).unwrap();
         assert_eq!(report.rows[1].state, SourceState::Ok);
         assert!(!report.is_healthy());
+    }
+
+    #[test]
+    fn integrated_sources_ignore_external_root_and_reject_escape() {
+        let temp = tempfile::tempdir().unwrap();
+        let repo = temp.path();
+        std::fs::create_dir_all(repo.join("config")).unwrap();
+        std::fs::create_dir_all(repo.join("crates/native/example")).unwrap();
+        let manifest = r#"{"schemaVersion":1,"root":"absent","sources":[],"integrated":[{"id":"example","kind":"crate","version":"1.0.0","pinned":true,"integratedPath":"crates/native/example","patches":[{"id":"p","marker":{"file":"f.rs","contains":"patched"}}]}]}"#;
+        std::fs::write(repo.join(MANIFEST_PATH), manifest).unwrap();
+        assert_eq!(source_report(repo, None).unwrap().rows[0].state, SourceState::PatchMissing);
+        std::fs::write(repo.join("crates/native/example/f.rs"), "patched").unwrap();
+        assert!(source_report(repo, Some(Path::new("also-absent"))).unwrap().is_healthy());
+        std::fs::write(
+            repo.join(MANIFEST_PATH),
+            manifest.replace("crates/native/example", "crates/../../outside"),
+        )
+        .unwrap();
+        assert!(source_report(repo, None).is_err());
     }
 }

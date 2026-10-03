@@ -56,6 +56,8 @@ struct RawManifest {
     #[serde(default)]
     sources: Vec<RawSource>,
     #[serde(default)]
+    integrated: Vec<RawSource>,
+    #[serde(default)]
     reference: Vec<RawReference>,
 }
 
@@ -100,8 +102,9 @@ struct RawReference {
 /// Parses the catalogue out of the manifest text.
 pub fn parse_catalogue(text: &str) -> Result<Vec<Upstream>, Error> {
     let raw: RawManifest = serde_json::from_str(text)?;
-    let mut entries = Vec::with_capacity(raw.sources.len() + raw.reference.len());
-    for source in raw.sources {
+    let mut entries =
+        Vec::with_capacity(raw.sources.len() + raw.integrated.len() + raw.reference.len());
+    for source in raw.sources.into_iter().chain(raw.integrated) {
         let Some(url) = source.url.or(source.upstream_url) else { continue };
         entries.push(Upstream {
             id: source.id,
