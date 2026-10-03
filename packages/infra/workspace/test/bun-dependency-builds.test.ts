@@ -4,6 +4,7 @@ import { mkdtemp, mkdir, rm, writeFile, readFile, rename } from "node:fs/promise
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { runRg } from "../src/rg.ts";
+import { runShenron } from "../src/shenron.ts";
 import { buildDependencies, dependencyBuildPlan } from "../src/bun-dependency-builds.ts";
 
 async function fixture(run: (root: string) => Promise<void>, failure = false) {
@@ -115,6 +116,54 @@ test("a built public entry must have a build script in its active owning workspa
       "Workspace artifact owner has no build script: base",
     );
   });
+});
+
+test("a missing workspace owner fails before any build", async () => {
+  await fixture(async (root) => {
+    await writeFile(
+      join(root, "packages/base/package.json"),
+      JSON.stringify({ name: "base", dependencies: { missing: "workspace:*" } }),
+    );
+    await expect(dependencyBuildPlan(root, ["fixture-app"])).rejects.toThrow(
+      "Workspace dependency has no active owner: missing",
+    );
+    expect(await Bun.file(join(root, "builds.log")).exists()).toBe(false);
+  });
+});
+
+test("duplicate workspace owners fail before any build", async () => {
+  await fixture(async (root) => {
+    await writeFile(join(root, "packages/archive/package.json"), JSON.stringify({ name: "base" }));
+    await expect(dependencyBuildPlan(root, ["fixture-app"])).rejects.toThrow(
+      "Duplicate workspace artifact owner: base",
+    );
+  });
+});
+
+test("Shenron typecheck prepares dependencies and refuses a failed artifact", async () => {
+  await fixture(async (root) => {
+    await mkdir(join(root, "apps/shenron"), { recursive: true });
+    await mkdir(join(root, "packages/shenron"), { recursive: true });
+    await rename(join(root, "packages/app"), join(root, "apps/shenron/app"));
+    await writeFile(
+      join(root, "package.json"),
+      JSON.stringify({ workspaces: ["apps/shenron/*", "packages/*", "!packages/excluded"] }),
+    );
+    await writeFile(
+      join(root, "apps/shenron/app/package.json"),
+      JSON.stringify({
+        name: "fixture-app",
+        dependencies: { bridge: "workspace:*" },
+        scripts: { typecheck: "bun gate.ts" },
+      }),
+    );
+    await writeFile(
+      join(root, "apps/shenron/app/gate.ts"),
+      `await Bun.write(${JSON.stringify(join(root, "gate.log"))}, "ran");`,
+    );
+    expect(await runShenron(["check", "typecheck"], root)).toBe(17);
+    expect(await Bun.file(join(root, "gate.log")).exists()).toBe(false);
+  }, true);
 });
 
 test("RG typecheck stops before consuming stale output from a failed dependency build", async () => {

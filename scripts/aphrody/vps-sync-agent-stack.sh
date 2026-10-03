@@ -1,19 +1,23 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: Apache-2.0
 # Sync the agent tool stack (bxc CLI, aphrody + aphrody-mcp, optional x-cli) and
-# agent MCP configs on a developer or ops host from sibling category checkouts.
-# Moved from the retired aphrody monolith (host ops belong to aphrody-infra).
-# APHRODY_ROOT defaults to ../aphrody-ai and APHRODY_WEB_ROOT to ../aphrody-web;
+# agent MCP configs on an ops host from the current monorepo source owner.
+# Explicit root overrides retain compatibility with existing snapshot callers.
+# APHRODY_ROOT and APHRODY_WEB_ROOT default to the current monorepo;
 # BXC_DATA_DIR defaults to $APHRODY_WEB_ROOT/var/bxc. The bxc MCP tools are
 # served by aphrody-mcp (crates/aphrody-mcp/src/bxc_tools.rs): there is no
 # separate bxc-mcp binary any more. Production runtimes ship through the
-# all-in-one bundle (docs/IMMUTABLE-RELEASES.md), not through this script.
+# all-in-one bundle (docs/operations/infra/IMMUTABLE-RELEASES.md), not through this script.
 set -euo pipefail
 
 INFRA_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-APHRODY_ROOT="${APHRODY_ROOT:-$INFRA_ROOT/../aphrody-ai}"
-APHRODY_WEB_ROOT="${APHRODY_WEB_ROOT:-$INFRA_ROOT/../aphrody-web}"
-BXC_ROOT="$APHRODY_WEB_ROOT/apps/bxc"
+APHRODY_ROOT="${APHRODY_ROOT:-$INFRA_ROOT}"
+APHRODY_WEB_ROOT="${APHRODY_WEB_ROOT:-$APHRODY_ROOT}"
+BXC_ROOT="${BXC_ROOT:-$APHRODY_WEB_ROOT/scripts/tools/web/apps/bxc}"
+if [[ ! -f "$BXC_ROOT/bin/bxc" && -f "$APHRODY_WEB_ROOT/apps/bxc/bin/bxc" ]]; then
+  BXC_ROOT="$APHRODY_WEB_ROOT/apps/bxc"
+fi
+CARGO_WRAPPER="$APHRODY_ROOT/scripts/build/rust/cargo-serial.sh"
 LOCAL_BIN="${HOME}/.local/bin"
 MCP_CONFIG="${HOME}/.config/aphrody/mcp.json"
 BXC_DATA_DIR="${BXC_DATA_DIR:-$APHRODY_WEB_ROOT/var/bxc}"
@@ -26,10 +30,13 @@ if [[ -f "$BXC_ROOT/bin/bxc" ]] && [[ "$(readlink -f "$BXC_ROOT/bin/bxc")" != "$
 fi
 
 echo "==> [2/6] Build Rust x-cli (optional)"
-if [[ "${BUILD_X_CLIENT:-0}" == "1" ]] && command -v cargo &>/dev/null; then
-  x_target="$(cd "$APHRODY_WEB_ROOT" && cargo metadata --format-version 1 --no-deps | python3 -c 'import json,sys; print(json.load(sys.stdin)["target_directory"])')"
-  (cd "$APHRODY_WEB_ROOT" && cargo build --release --locked -p aphrody-x --bin x-cli) || true
-  [[ -f "$x_target/release/x-cli" ]] && install -m 755 "$x_target/release/x-cli" "$LOCAL_BIN/x-cli"
+if [[ "${BUILD_X_CLIENT:-0}" == "1" ]]; then
+  command -v cargo >/dev/null || { echo 'BUILD_X_CLIENT requires Cargo' >&2; exit 1; }
+  [[ -x "$CARGO_WRAPPER" ]] || { echo "missing serialized Cargo owner: $CARGO_WRAPPER" >&2; exit 1; }
+  (cd "$APHRODY_WEB_ROOT" && "$CARGO_WRAPPER" build --release --locked -p aphrody-x --bin x-cli)
+  x_target="${APHRODY_CARGO_TARGET_DIR:-$(cd "$APHRODY_WEB_ROOT" && cargo metadata --format-version 1 --no-deps | python3 -c 'import json,sys; print(json.load(sys.stdin)["target_directory"])')}"
+  [[ -f "$x_target/release/x-cli" ]] || { echo "build produced no x-cli in $x_target/release" >&2; exit 1; }
+  install -m 755 "$x_target/release/x-cli" "$LOCAL_BIN/x-cli"
 fi
 
 echo "==> [3/6] aphrody + aphrody-mcp binaries"
@@ -47,7 +54,7 @@ if [[ -n "$APHRODY_RELEASE" ]]; then
 elif command -v aphrody-mcp &>/dev/null; then
   echo "    aphrody-mcp already in PATH"
 else
-  echo "    skip: build with: cd $APHRODY_ROOT && cargo build --release --locked --target x86_64-unknown-linux-gnu -p aphrody-mcp -p aphrody"
+  echo "    skip: use the VPS factory owner to build aphrody-mcp and aphrody through $CARGO_WRAPPER"
 fi
 
 echo "==> [4/6] Ensure MCP config"

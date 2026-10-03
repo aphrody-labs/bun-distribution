@@ -99,7 +99,14 @@ export function planStages(options: {
       steps: [
         {
           name: "cargo build aphrody-web-engine",
-          command: ["cargo", "build", "-p", "aphrody-web-engine", "--bins", "--locked"],
+          command: [
+            "scripts/build/rust/cargo-serial.sh",
+            "build",
+            "-p",
+            "aphrody-web-engine",
+            "--bins",
+            "--locked",
+          ],
           timeoutMs: 40 * MINUTE,
         },
       ],
@@ -133,13 +140,19 @@ export function planStages(options: {
       steps: [
         {
           name: "cargo check --all-targets",
-          command: ["cargo", "check", "--all-targets", "--locked", ...cargoPackages],
+          command: [
+            "scripts/build/rust/cargo-serial.sh",
+            "check",
+            "--all-targets",
+            "--locked",
+            ...cargoPackages,
+          ],
           timeoutMs: 60 * MINUTE,
         },
         {
           name: "cargo clippy -D warnings",
           command: [
-            "cargo",
+            "scripts/build/rust/cargo-serial.sh",
             "clippy",
             "--all-targets",
             "--locked",
@@ -152,7 +165,13 @@ export function planStages(options: {
         },
         {
           name: "cargo test",
-          command: ["cargo", "test", "--locked", "--no-fail-fast", ...cargoPackages],
+          command: [
+            "scripts/build/rust/cargo-serial.sh",
+            "test",
+            "--locked",
+            "--no-fail-fast",
+            ...cargoPackages,
+          ],
           timeoutMs: 90 * MINUTE,
         },
       ],

@@ -1,43 +1,206 @@
 {
   "schemaVersion": 1,
-  "strategy": "vps-primary-dbfr-secondary-local-desktop",
+  "strategy": "vps-build-test-release-factory-dbfr-shenron-local-source",
   "hosts": {
     "vps": {
-      "role": "production",
-      "capacityObserved": { "memoryGiB": 45, "diskGiB": 290 },
-      "allocations": {
-        "nie": { "priority": 100, "cpu": "reserved", "memory": "reserved", "disk": "active-model-and-runtime", "status": "retired", "retiredAt": "2026-09-25", "note": "runtime/data root and units removed from vps; allocation reserved for redeploy under the Aphrody convergence plan" },
-        "aphrody-web": { "priority": 95, "cpu": "high", "memory": "high", "disk": "versioned-site-releases", "status": "retired", "retiredAt": "2026-09-25", "note": "aphrody-site/aphrody-web-api removed from vps; allocation reserved for redeploy under the Aphrody convergence plan" },
-        "aphrody-ai": { "priority": 85, "cpu": "medium", "memory": "medium", "disk": "ai-agent-and-rag-state", "status": "retired", "retiredAt": "2026-09-25", "note": "aphrody-ai-http/aphrody-shenron-embed/aphrody-a2a/shenron-mcp removed from vps; allocation reserved for redeploy under the Aphrody convergence plan" },
-        "rg": { "priority": 95, "cpu": "high", "memory": "high", "disk": "versioned-releases" },
-        "shenron": { "priority": 90, "cpu": "medium", "memory": "medium", "disk": "shared-media-and-release" },
-        "nginx": { "priority": 100, "cpu": "reserved", "memory": "small", "disk": "small" }
+      "role": "build-test-release-factory",
+      "capacityObserved": {
+        "memoryGiB": 45,
+        "diskGiB": 290
       },
-      "network": { "publicPorts": [80, 443], "internalOnly": [3004, 3007, 3014, 4000, 4002, 4005, 4010, 5006, 5010, 5011, 8083, 8085, 8788, 8789, 8790, 8794, 8800, 8801, 8810, 8812, 15433], "reservedNoCurrentOwner": [3000, 3005, 3006] },
-      "forbidden": ["iecode-build", "24h-crawler", "duplicate-db-mirror", "per-app-nginx", "per-app-supervisor"]
+      "allocations": {
+        "nie": {
+          "priority": 100,
+          "cpu": "reserved",
+          "memory": "reserved",
+          "disk": "active-model-and-runtime",
+          "status": "retired",
+          "retiredAt": "2026-09-25",
+          "note": "runtime/data root and units removed from vps; allocation reserved for redeploy under the Aphrody convergence plan"
+        },
+        "aphrody-web": {
+          "priority": 95,
+          "cpu": "high",
+          "memory": "high",
+          "disk": "versioned-site-releases",
+          "status": "retired",
+          "retiredAt": "2026-09-25",
+          "note": "aphrody-site/aphrody-web-api removed from vps; allocation reserved for redeploy under the Aphrody convergence plan"
+        },
+        "aphrody-ai": {
+          "priority": 85,
+          "cpu": "medium",
+          "memory": "medium",
+          "disk": "ai-agent-and-rag-state",
+          "status": "retired",
+          "retiredAt": "2026-09-25",
+          "note": "aphrody-ai-http/aphrody-shenron-embed/aphrody-a2a/shenron-mcp removed from vps; allocation reserved for redeploy under the Aphrody convergence plan"
+        },
+        "rg": {
+          "priority": 95,
+          "cpu": "high",
+          "memory": "high",
+          "disk": "versioned-releases",
+          "status": "shutdown-requested",
+          "requestedAt": "2026-10-03",
+          "note": "Owner requests complete RG shutdown; preserve releases, data and rollback. Live completion recorded separately."
+        },
+        "shenron": {
+          "priority": 90,
+          "cpu": "medium",
+          "memory": "medium",
+          "disk": "shared-media-and-release",
+          "status": "migration-requested",
+          "target": "dbfr",
+          "note": "Keep current runtime until DBFR qualified; no duplicate bot gateway."
+        },
+        "nginx": {
+          "priority": 100,
+          "cpu": "reserved",
+          "memory": "small",
+          "disk": "small"
+        },
+        "build-factory": {
+          "priority": 90,
+          "cpu": "bounded",
+          "memory": "bounded",
+          "disk": "persistent-caches-and-immutable-artifacts",
+          "policy": "config/build-factory.json"
+        }
+      },
+      "network": {
+        "publicPorts": [
+          80,
+          443
+        ],
+        "internalOnly": [
+          3004,
+          3007,
+          3014,
+          4000,
+          4002,
+          4005,
+          4010,
+          5006,
+          5010,
+          5011,
+          8083,
+          8085,
+          8788,
+          8789,
+          8790,
+          8794,
+          8800,
+          8801,
+          8810,
+          8812,
+          15433
+        ],
+        "reservedNoCurrentOwner": [
+          3000,
+          3005,
+          3006
+        ]
+      },
+      "forbidden": [
+        "24h-crawler",
+        "duplicate-db-mirror",
+        "per-app-nginx",
+        "per-app-supervisor"
+      ]
     },
     "dbfr": {
-      "role": "data-backup-release-secondary",
-      "capacityObserved": { "memoryGiB": 11, "diskGiB": 96 },
-      "allocations": {
-        "postgresql": { "priority": 100, "cpu": "reserved", "memory": "high", "disk": "primary-data" },
-        "redis": { "priority": 90, "cpu": "medium", "memory": "bounded", "disk": "small" },
-        "asset-cdn": { "priority": 90, "cpu": "low", "memory": "low", "disk": "large" },
-        "backups": { "priority": 100, "cpu": "low", "memory": "low", "disk": "retention-bounded" },
-        "release-slot": { "priority": 85, "cpu": "low", "memory": "low", "disk": "one-rollback-slot" }
+      "role": "shenron-runtime-and-primary-data",
+      "capacityObserved": {
+        "memoryGiB": 11,
+        "diskGiB": 96
       },
-      "network": { "publicPorts": [], "internalOnly": [5432, 6379] },
-      "forbidden": ["website", "bot", "next-server", "crawler", "iecode-build", "public-nginx"]
+      "allocations": {
+        "postgresql": {
+          "priority": 100,
+          "cpu": "reserved",
+          "memory": "high",
+          "disk": "primary-data"
+        },
+        "redis": {
+          "priority": 90,
+          "cpu": "medium",
+          "memory": "bounded",
+          "disk": "small"
+        },
+        "asset-cdn": {
+          "priority": 90,
+          "cpu": "low",
+          "memory": "low",
+          "disk": "large"
+        },
+        "backups": {
+          "priority": 100,
+          "cpu": "low",
+          "memory": "low",
+          "disk": "retention-bounded"
+        },
+        "release-slot": {
+          "priority": 85,
+          "cpu": "low",
+          "memory": "low",
+          "disk": "one-rollback-slot"
+        },
+        "shenron": {
+          "priority": 95,
+          "cpu": "bounded",
+          "memory": "bounded",
+          "disk": "versioned-releases-and-shared-state",
+          "status": "migration-requested",
+          "source": "vps"
+        }
+      },
+      "network": {
+        "publicPorts": [
+          80,
+          443
+        ],
+        "internalOnly": [
+          5432,
+          6379,
+          3014,
+          5006,
+          5010,
+          5011,
+          8810,
+          8812
+        ]
+      },
+      "forbidden": [
+        "crawler",
+        "iecode-build"
+      ]
     },
     "windows-local": {
       "role": "desktop-and-source",
-      "allocations": { "iecode": "full-source-assets-tools", "aphrody-ui": "desktop-build", "aphrody-os": "kernel-control-plane", "aphrody-ai": "developer-checkout" },
-      "forbidden": ["production-secrets", "public-runtime"]
+      "allocations": {
+        "iecode": "full-source-assets-tools",
+        "aphrody-ui": "desktop-build",
+        "aphrody-os": "kernel-control-plane",
+        "aphrody-ai": "developer-checkout"
+      },
+      "forbidden": [
+        "production-secrets",
+        "public-runtime"
+      ]
     },
     "wsl-ubuntu-24.04": {
-      "role": "reference-build-and-test",
-      "allocations": { "iecode": "full-source-assets-tools", "rust": "native", "bun": "native", "uv": "native" },
-      "forbidden": ["production-database", "public-runtime"]
+      "role": "source-and-light-validation",
+      "allocations": {
+        "iecode": "source-assets-tools",
+        "rust": "remote-vps-heavy-gates",
+        "bun": "remote-vps-heavy-gates",
+        "uv": "remote-vps-heavy-gates"
+      },
+      "forbidden": [
+        "production-database",
+        "public-runtime"
+      ]
     }
   },
   "portPolicy": "only-nginx-80-443-public; every application port loopback or private-network",

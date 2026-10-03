@@ -4,6 +4,7 @@ import { infraRoot } from "./runtime.ts";
 import { runRustBridge } from "./bridges.ts";
 import { scanImportsExports } from "./imports-exports.ts";
 import { runDocsLinks } from "./docs-links.ts";
+import { routeHeavyBuild } from "./build-factory.ts";
 
 const RG_DOC_CATEGORIES = [
   "apis",
@@ -655,11 +656,23 @@ export async function runRg(args: string[], root = infraRoot()): Promise<number>
       console.log(JSON.stringify(await dependencyBuildPlan(resolve(root), consumers), null, 2));
       return 0;
     }
+    const dispatched = await routeHeavyBuild(
+      ["bun", "packages/infra/workspace/src/ops.ts", "rg", "prepare"],
+      resolve(root),
+    );
+    if (dispatched !== undefined) return dispatched;
     return buildDependencies(resolve(root), consumers);
   }
   if (action === "pipeline") {
     if (rest.some((arg) => arg !== "--dry-run"))
       throw new Error("usage: aphrody-ops rg pipeline [--dry-run]");
+    if (!rest.includes("--dry-run")) {
+      const dispatched = await routeHeavyBuild(
+        ["bun", "packages/infra/workspace/src/ops.ts", "rg", "pipeline"],
+        resolve(root),
+      );
+      if (dispatched !== undefined) return dispatched;
+    }
     return pipeline(resolve(root), rest.includes("--dry-run"));
   }
   if (action === "check") {
@@ -667,6 +680,11 @@ export async function runRg(args: string[], root = infraRoot()): Promise<number>
     const packages = await manifests(root);
     if (check === "all") {
       if (options.length) throw new Error("usage: aphrody-ops rg check all");
+      const dispatched = await routeHeavyBuild(
+        ["bun", "packages/infra/workspace/src/ops.ts", "rg", "check", "all"],
+        resolve(root),
+      );
+      if (dispatched !== undefined) return dispatched;
       const preparationCode = await buildDependencies(
         resolve(root),
         packages.map((item) => item.name),
@@ -693,6 +711,22 @@ export async function runRg(args: string[], root = infraRoot()): Promise<number>
       if (!selected.length) throw new Error(`unknown RG package: ${name}`);
     } else if (options.length)
       throw new Error("usage: aphrody-ops rg check <check> [--package <name>]");
+    if (
+      ["test", "build"].includes(check!) ||
+      (check === "typecheck" &&
+        (
+          await dependencyBuildPlan(
+            resolve(root),
+            selected.map((item) => item.name),
+          )
+        ).length)
+    ) {
+      const dispatched = await routeHeavyBuild(
+        ["bun", "packages/infra/workspace/src/ops.ts", "rg", "check", ...rest],
+        resolve(root),
+      );
+      if (dispatched !== undefined) return dispatched;
+    }
     return runCheck(check as Check, selected, resolve(root));
   }
   if (action === "deploy") {

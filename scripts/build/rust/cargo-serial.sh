@@ -7,6 +7,32 @@ if (($# == 0)); then
     exit 64
 fi
 
+source_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../../.." && pwd)"
+factory_config="$source_root/config/build-factory.json"
+cargo_command="${1#+}"
+if [[ "$1" == +* ]]; then cargo_command="${2:-}"; fi
+help_only=false
+for arg in "$@"; do
+    if [[ "$arg" == --help || "$arg" == -h ]]; then help_only=true; fi
+done
+case "$cargo_command" in
+    build|b|check|c|test|t|clippy|rustdoc|doc|d|bench|run|r|install|rustc|nextest|xwin|zigbuild)
+        if [[ "$help_only" == false && -f "$factory_config" && "${APHRODY_BUILD_HOST:-}" != vps && "${APHRODY_LOCAL_CARGO:-0}" != 1 ]]; then
+            factory_enabled="$(python3 - "$factory_config" <<'PY'
+import json, sys
+config = json.load(open(sys.argv[1]))
+print('true' if config.get('enabled') is True else 'false')
+PY
+)"
+            if [[ "$factory_enabled" == true ]]; then
+                echo "Heavy Cargo execution belongs to the VPS factory; use aphrody-ops build-factory run --repo aphrody --revision <full-sha> -- scripts/build/rust/cargo-serial.sh <arguments>." >&2
+                echo "APHRODY_LOCAL_CARGO=1 is only for an explicitly selected scoped diagnostic." >&2
+                exit 64
+            fi
+        fi
+        ;;
+esac
+
 jobs="${APHRODY_CARGO_JOBS:-6}"
 if [[ ! "$jobs" =~ ^[1-6]$ ]]; then
     echo "APHRODY_CARGO_JOBS must be an integer from 1 through 6" >&2
@@ -22,7 +48,7 @@ for arg in "$@"; do
     esac
 done
 
-lock_dir="$HOME/.cache/aphrody"
+lock_dir="${APHRODY_CARGO_LOCK_DIR:-$HOME/.cache/aphrody}"
 lock_file="$lock_dir/cargo-build.lock"
 wait_seconds="${APHRODY_CARGO_LOCK_TIMEOUT_SECS:-1800}"
 if [[ ! "$wait_seconds" =~ ^[0-9]+$ ]]; then
@@ -31,6 +57,28 @@ if [[ ! "$wait_seconds" =~ ^[0-9]+$ ]]; then
 fi
 
 mkdir -p "$lock_dir"
+# Remote factory jobs should share a stable workspace-owned target directory.
+# Keep this opt-in: native packagers consume the default target/ layout.
+if [[ -n "${APHRODY_CARGO_TARGET_DIR:-}" ]]; then
+    if [[ "$APHRODY_CARGO_TARGET_DIR" != /* ]]; then
+        echo "APHRODY_CARGO_TARGET_DIR must be an absolute path" >&2
+        exit 64
+    fi
+    for arg in "$@"; do
+        case "$arg" in
+            --target-dir|--target-dir=*)
+                echo "Do not mix APHRODY_CARGO_TARGET_DIR with --target-dir" >&2
+                exit 64
+                ;;
+        esac
+    done
+    export CARGO_TARGET_DIR="$APHRODY_CARGO_TARGET_DIR"
+fi
+# Preserve the operator's wrapper, including an explicit deliberate opt-out.
+if [[ ! -v RUSTC_WRAPPER ]] && command -v sccache >/dev/null 2>&1; then
+    export RUSTC_WRAPPER=sccache
+fi
+echo "[cargo-serial] waiting for $lock_file (jobs=$jobs, timeout=${wait_seconds}s)" >&2
 exec flock --exclusive --timeout "$wait_seconds" "$lock_file" \
     nice -n 10 env \
         CARGO_BUILD_JOBS="$jobs" \

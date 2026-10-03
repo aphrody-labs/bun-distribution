@@ -2,6 +2,7 @@
 import { realpath } from "node:fs/promises";
 import { dirname, join, relative, resolve } from "node:path";
 import { firstPartyManifests } from "./bun-workspace.ts";
+import { routeHeavyBuild } from "./build-factory.ts";
 
 export type WorkspacePackage = {
   name: string;
@@ -387,6 +388,17 @@ export async function runMonorepoGate(args: string[]): Promise<number> {
   if (planOnly) {
     console.log(JSON.stringify({ status: "planned", executed: false, ...plan }, null, 2));
     return plan.gaps.length ? 1 : 0;
+  }
+  if (!noBuild) {
+    // The source path is host-specific; the remote factory selects the repository root.
+    const remoteArgs = args.filter(
+      (arg, index) => arg !== "--root" && args[index - 1] !== "--root",
+    );
+    const dispatched = await routeHeavyBuild(
+      ["bun", "packages/infra/workspace/src/ops.ts", "monorepo-gate", ...remoteArgs],
+      plan.root,
+    );
+    if (dispatched !== undefined) return dispatched;
   }
   const report = await executeMonorepoGate(plan, async (check) => {
     console.error(`Checking ${check.name}`);

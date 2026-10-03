@@ -153,4 +153,30 @@ grep -q '"first"' "$seed"
 grep -q '# first' "$fixture/units/shenron-site.service"
 grep -q '# first' "$fixture/shenron.conf"
 [[ -e "$fixture/state/shenron-bot.service.active" ]]
+# Current monorepo layout, DBFR local PostgreSQL and unit dependency mapping.
+third_sha=3333333333333333333333333333333333333333
+make_bundle "$third_sha" third
+mkdir -p "$fixture/src-third/apps/shenron"
+mv "$fixture/src-third/apps/site" "$fixture/src-third/apps/shenron/site"
+mv "$fixture/src-third/apps/bot" "$fixture/src-third/apps/shenron/bot"
+tar -czf "$fixture/bundles/third/source.tar.gz" -C "$fixture/src-third" .
+python3 - "$fixture/bundles/third/release.json" <<'PYMANIFEST'
+import json, pathlib, sys
+p = pathlib.Path(sys.argv[1]); m = json.loads(p.read_text())
+m.update(repository='aphrody-labs/aphrody', sourceLayout='monorepo', target='dbfr')
+p.write_text(json.dumps(m) + '\n')
+PYMANIFEST
+sed -i '/^\[Service\]/i [Unit]\nAfter=network-online.target shenron-pg-tunnel.service\nWants=network-online.target shenron-pg-tunnel.service' "$fixture/bundles/third/systemd/"*.service
+(cd "$fixture/bundles/third" && find . -type f ! -name SHA256SUMS -printf '%P\0' | sort -z | xargs -0 sha256sum > SHA256SUMS)
+if bash "$script" assemble "$fixture/bundles/third" >"$fixture/out" 2>&1; then echo 'accepted DBFR nonlocal PostgreSQL' >&2; exit 1; fi
+grep -q 'host-local PostgreSQL' "$fixture/out"
+printf 'DATABASE_URL=postgresql://fixture:fixture@127.0.0.1:5432/shenron_site\n' > "$fixture/etc/shenron-site.env"
+bash "$script" assemble "$fixture/bundles/third" >"$fixture/out" 2>&1
+third="$fixture/shenron/releases/$third_sha"
+[[ -L "$third/apps/shenron/bot/data" && -f "$third/apps/shenron/site/.next-build/BUILD_ID" ]]
+grep -q 'WorkingDirectory=/srv/shenron/current/apps/shenron/site' "$third/systemd/shenron-site.service"
+if grep -q 'shenron-pg-tunnel.service' "$third/systemd/"*.service; then echo 'DBFR retains tunnel dependency' >&2; exit 1; fi
+bash "$script" activate "$third" >"$fixture/out" 2>&1
+[[ "$(readlink -f "$fixture/shenron/current")" = "$third" ]]
+echo 'Shenron monorepo DBFR mapping and local PostgreSQL preflight: ok'
 echo 'Shenron adapter assemble, preflight, activation, rollback and restore: ok'

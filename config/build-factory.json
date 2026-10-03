@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 1,
+  "owner": "aphrody-infra",
+  "enabled": true,
+  "target": "vps",
+  "workspaceRoot": "/srv/aphrody-build/workspaces/aphrody",
+  "cacheRoot": "/srv/aphrody-build/cache",
+  "artifactRoot": "/srv/aphrody-build/artifacts",
+  "lockPath": "/srv/aphrody-build/locks/heavy.lock",
+  "hostEnvironment": {
+    "name": "APHRODY_BUILD_HOST",
+    "value": "vps"
+  },
+  "rust": {
+    "maxJobs": 6,
+    "serialized": true,
+    "wrapper": "scripts/build/rust/cargo-serial.sh",
+    "incremental": false,
+    "cache": "sccache"
+  },
+  "bun": {
+    "heavyJobs": 1,
+    "frozenLockfile": true
+  },
+  "local": {
+    "allowed": [
+      "help",
+      "plan",
+      "inventory",
+      "source-edit",
+      "scoped-static-check"
+    ],
+    "heavyExecution": "remote"
+  },
+  "transport": {
+    "owner": "aphrody-infra ssh",
+    "sync": "sync",
+    "exec": "exec",
+    "sourcePolicy": "clean-pinned-first-party-source",
+    "secrets": "host-local-private-files-only"
+  },
+  "runtimeTargets": {
+    "shenron": "dbfr",
+    "rg": "stopped"
+  },
+  "retention": {
+    "preserve": [
+      "active-releases",
+      "rollback-releases",
+      "primary-data",
+      "source-patches",
+      "cargo-cache",
+      "sccache",
+      "bun-cache"
+    ],
+    "cleanup": "existing-infra-allowlist-only"
+  },
+  "repositories": {
+    "aphrody": "/srv/aphrody-build/workspaces/aphrody",
+    "iecode": "/srv/aphrody-build/workspaces/iecode",
+    "aphrody-py": "/srv/aphrody-build/workspaces/aphrody-py"
+  }
+}

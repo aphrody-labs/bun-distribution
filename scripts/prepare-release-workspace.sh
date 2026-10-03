@@ -6,6 +6,7 @@ set -Eeuo pipefail
 # Linux filesystem, check out one superproject commit and initialize every
 # submodule at its recorded gitlink so sibling path dependencies resolve.
 #
+# Also supports current first-party monorepos without submodules.
 # SOURCE is the superproject remote (git@github.com:aphrody-labs/aphrody.git),
 # a local superproject checkout (e.g. /mnt/c/Users/aphro/src) or a `git bundle`
 # file. For a local checkout, submodule objects are fetched from its sibling
@@ -17,7 +18,7 @@ source_arg="$1"
 sha="$2"
 dest="${3:-$HOME/aphrody-release/aphrody-src}"
 [[ "$sha" =~ ^[0-9a-f]{40}$ ]] || { echo 'superproject SHA must be 40 hex digits' >&2; exit 2; }
-[[ "$(uname -s)" = Linux ]] || { echo 'Linux build host required (WSL Ubuntu-24.04)' >&2; exit 2; }
+[[ "$(uname -s)" = Linux ]] || { echo 'native Linux build host required' >&2; exit 2; }
 command -v git >/dev/null || { echo 'missing git' >&2; exit 2; }
 dest="$(realpath -m -- "$dest")"
 # /mnt/* is the Windows drive (9p/drvfs) and ~/src holds the retired monolith.
@@ -34,7 +35,7 @@ esac
 local_source=''
 if [[ -d "$source_arg" ]]; then
   local_source="$(realpath -e -- "$source_arg")"
-  [[ -f "$local_source/.gitmodules" ]] || { echo "$local_source is not the superproject (no .gitmodules)" >&2; exit 2; }
+  git -C "$local_source" rev-parse --is-inside-work-tree >/dev/null || { echo "$local_source is not a Git checkout" >&2; exit 2; }
 fi
 
 if [[ -d "$dest/.git" ]]; then
@@ -51,7 +52,7 @@ git -C "$dest" cat-file -e "$sha^{commit}" 2>/dev/null || {
 }
 git -C "$dest" -c advice.detachedHead=false checkout --quiet --detach "$sha"
 git -C "$dest" submodule init --quiet
-if [[ -n "$local_source" ]]; then
+if [[ -n "$local_source" && -f "$local_source/.gitmodules" ]]; then
   while read -r key path; do
     name="${key#submodule.}"
     name="${name%.path}"

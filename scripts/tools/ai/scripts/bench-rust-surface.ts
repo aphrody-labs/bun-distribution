@@ -10,7 +10,8 @@ import * as path from "node:path";
 import * as os from "node:os";
 
 // Repository root, resolved from this script so the benchmark runs from any checkout.
-const REPO_ROOT = path.resolve(import.meta.dir, "..");
+const REPO_ROOT = path.resolve(import.meta.dir, "../../../..");
+const CARGO_WRAPPER = path.join(REPO_ROOT, "scripts/build/rust/cargo-serial.sh");
 // Agent home (benchmark outputs, profile scripts); APHRODY_HOME overrides it.
 const APHRODY_HOME = process.env.APHRODY_HOME ?? path.join(os.homedir(), ".aphrody");
 
@@ -29,7 +30,7 @@ function runCommand(command: string, args: string[], cwd: string = REPO_ROOT): C
   const proc = spawnSync(command, args, {
     cwd,
     encoding: "utf8",
-    shell: true,
+    shell: false,
     env: { ...process.env },
     maxBuffer: 50 * 1024 * 1024,
   });
@@ -38,7 +39,7 @@ function runCommand(command: string, args: string[], cwd: string = REPO_ROOT): C
   return {
     command: fullCommand,
     cwd,
-    exitCode: proc.status ?? (proc.error ? 1 : 0),
+    exitCode: proc.status ?? 1,
     durationMs,
     stdout: proc.stdout || "",
     stderr: proc.stderr || "",
@@ -47,8 +48,12 @@ function runCommand(command: string, args: string[], cwd: string = REPO_ROOT): C
 
 function parseCargoTestOutput(stdout: string, stderr: string) {
   const combined = stdout + "\n" + stderr;
-  const testResults = [...combined.matchAll(/test result: (ok|FAILED)\. (\d+) passed; (\d+) failed; (\d+) ignored; (\d+) measured; (\d+) filtered out/g)];
-  
+  const testResults = [
+    ...combined.matchAll(
+      /test result: (ok|FAILED)\. (\d+) passed; (\d+) failed; (\d+) ignored; (\d+) measured; (\d+) filtered out/g,
+    ),
+  ];
+
   let unitPassed = 0;
   let unitFailed = 0;
   let unitIgnored = 0;
@@ -124,15 +129,20 @@ async function main() {
 
   // 2. Compilation et tests ciblés du workspace Cargo
   console.log("8/10 Exécution de 'cargo check --workspace --all-targets --locked'...");
-  const cmdCargoCheck = runCommand("cargo", ["check", "--workspace", "--all-targets", "--locked"]);
+  const cmdCargoCheck = runCommand(CARGO_WRAPPER, [
+    "check",
+    "--workspace",
+    "--all-targets",
+    "--locked",
+  ]);
   const cargoCheckMetrics = parseCargoCheckOutput(cmdCargoCheck.stdout, cmdCargoCheck.stderr);
 
   console.log("9/10 Exécution de 'cargo test -p aphrody-models'...");
-  const cmdTestModels = runCommand("cargo", ["test", "-p", "aphrody-models"]);
+  const cmdTestModels = runCommand(CARGO_WRAPPER, ["test", "-p", "aphrody-models", "--locked"]);
   const modelsMetrics = parseCargoTestOutput(cmdTestModels.stdout, cmdTestModels.stderr);
 
   console.log("10/10 Exécution de 'cargo test -p aphrody-vpn'...");
-  const cmdTestVpn = runCommand("cargo", ["test", "-p", "aphrody-vpn"]);
+  const cmdTestVpn = runCommand(CARGO_WRAPPER, ["test", "-p", "aphrody-vpn", "--locked"]);
   const vpnMetrics = parseCargoTestOutput(cmdTestVpn.stdout, cmdTestVpn.stderr);
 
   const totalDurationMs = Math.round((performance.now() - totalStart) * 100) / 100;
@@ -149,9 +159,7 @@ async function main() {
 
   const allCliPassed = cliCommands.every((c) => c.result.exitCode === 0);
   const allCargoPassed =
-    cmdCargoCheck.exitCode === 0 &&
-    cmdTestModels.exitCode === 0 &&
-    cmdTestVpn.exitCode === 0;
+    cmdCargoCheck.exitCode === 0 && cmdTestModels.exitCode === 0 && cmdTestVpn.exitCode === 0;
 
   const benchmarkPayload = {
     metadata: {

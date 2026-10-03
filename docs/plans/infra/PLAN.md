@@ -504,3 +504,7 @@ sections current and store operational detail in its existing runbook.
   curated Bun rollout/gold dataset and a QLoRA-capable trainer. The existing RAG/index/model
   stack needs no duplicate Codex plugin; `rag-rat` remains uninstalled because its hooks execute
   outside the sandbox.
+
+## 2026-10-03 — VPS factory and DBFR Shenron owner decision
+
+The current owner decision supersedes the prior WSL build and VPS-only Shenron placement. Heavy build/test/release operations run through `build:factory` on VPS; WSL/Windows retain source editing and scoped static checks. RG application units and timers are stopped and disabled, with protected data and rollback releases retained. Host zram remains infrastructure swap. DBFR runtime activation is pending qualified artifact, private environment, state and route checks; keep a single bot gateway. See [factory runbook](../../operations/infra/BUILD-FACTORY.md) and [dated observations](../../../inventory/build-factory-2026-10-03.json).

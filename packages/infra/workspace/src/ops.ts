@@ -5,6 +5,9 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const [operation, ...rest] = process.argv.slice(2);
+if (operation === "build-factory") {
+  process.exit(await (await import("./build-factory.ts")).runBuildFactory(rest));
+}
 if (operation === "cli-help") {
   process.exit(await (await import("./cli-help.ts")).runCliHelp(rest));
 }

@@ -3,6 +3,8 @@ import { join, resolve } from "node:path";
 import { runScriptAudit } from "./audit-scripts.ts";
 import { runRustBridge } from "./bridges.ts";
 import { runConsolidation } from "./consolidation.ts";
+import { buildDependencies, dependencyBuildPlan } from "./bun-dependency-builds.ts";
+import { routeHeavyBuild } from "./build-factory.ts";
 import { infraRoot } from "./runtime.ts";
 
 const WORKSPACE_ROOTS = ["apps/shenron", "packages/shenron"] as const;
@@ -77,6 +79,28 @@ async function runCheck(args: string[], root: string): Promise<number> {
     selector = options[++index];
   }
   const selected = await selectedWorkspaces(await workspaces(root), selector);
+  const needsArtifacts =
+    name === "typecheck" &&
+    (
+      await dependencyBuildPlan(
+        root,
+        selected.map((workspace) => workspace.name),
+      )
+    ).length > 0;
+  if (name === "test" || name === "build" || needsArtifacts) {
+    const dispatched = await routeHeavyBuild(
+      ["bun", "packages/infra/workspace/src/ops.ts", "shenron", "check", ...args],
+      root,
+    );
+    if (dispatched !== undefined) return dispatched;
+  }
+  if (["typecheck", "test", "build"].includes(name!)) {
+    const code = await buildDependencies(
+      root,
+      selected.map((workspace) => workspace.name),
+    );
+    if (code !== 0) return code;
+  }
   let exitCode = 0;
   for (const workspace of selected) {
     const script = checkScripts(name as Check).find((candidate) => workspace.scripts[candidate]);

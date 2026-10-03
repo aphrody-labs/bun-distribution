@@ -1,0 +1,50 @@
+{
+  "schemaVersion": 1,
+  "observedAt": "2026-10-03",
+  "owner": "aphrody-infra",
+  "factory": {
+    "host": "vps",
+    "cpu": 12,
+    "memoryMiB": 47035,
+    "diskAvailableGiB": 127,
+    "memoryAvailableAfterRgStopMiB": 34133,
+    "qualified": false
+  },
+  "shenron": {
+    "currentRuntime": "vps",
+    "requestedRuntime": "dbfr",
+    "migrationQualified": false,
+    "dbfrCpu": 6,
+    "dbfrMemoryMiB": 11671,
+    "dbfrDiskAvailableGiB": 51
+  },
+  "rg": {
+    "applicationState": "stopped",
+    "unitsStoppedAndDisabled": [
+      "rg-infra-monitor.timer",
+      "rg-sauvegarde.timer",
+      "rg-cron.service",
+      "rg-bot.service",
+      "rg-achillea-bot.service",
+      "rg-api.service",
+      "rg-website.service",
+      "rg-infra-monitor.service",
+      "rg-sauvegarde.service",
+      "rg-cdn.service",
+      "rg-storage.service",
+      "rg-realtime.service"
+    ],
+    "protectedDataPreserved": true,
+    "hostSwapUnitPreserved": "rg-zram-swap.service"
+  },
+  "validation": {
+    "workerCargoBuilds": 0,
+    "localCargoBuilds": 0,
+    "factoryFixtureTests": 23,
+    "factoryFixtureAssertions": 98,
+    "workspaceTypecheck": "passed",
+    "shenronAdapterFixtures": "passed",
+    "realFactoryBuild": "pending",
+    "dbfrActivation": "pending"
+  }
+}

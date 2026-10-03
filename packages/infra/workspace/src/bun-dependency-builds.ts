@@ -50,7 +50,14 @@ export async function dependencyBuildPlan(
       manifest: (await Bun.file(join(root, path)).json()) as PackageManifest,
     })),
   );
-  const owners = new Map(packages.map((item) => [item.manifest.name, item]));
+  const owners = new Map<string, (typeof packages)[number]>();
+  for (const item of packages) {
+    if (!item.manifest.name)
+      throw new Error(`Workspace manifest has no package name: ${item.path}`);
+    if (owners.has(item.manifest.name))
+      throw new Error(`Duplicate workspace artifact owner: ${item.manifest.name}`);
+    owners.set(item.manifest.name, item);
+  }
   const builds: DependencyBuild[] = [];
   const visited = new Set<string>();
   const active: string[] = [];
@@ -69,7 +76,8 @@ export async function dependencyBuildPlan(
   };
   const visit = (name: string) => {
     const item = owners.get(name);
-    if (!item || visited.has(name)) return;
+    if (!item) throw new Error(`Workspace dependency has no active owner: ${name}`);
+    if (visited.has(name)) return;
     const cycle = active.indexOf(name);
     if (cycle !== -1) {
       if (active.slice(cycle).some(needsBuild)) {

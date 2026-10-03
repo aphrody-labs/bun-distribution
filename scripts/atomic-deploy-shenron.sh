@@ -48,9 +48,38 @@ shared_links=(
 [[ $# -ge 1 && $# -le 2 ]] || { echo "$usage" >&2; exit 2; }
 if [[ $# -eq 1 ]]; then mode=activate; target="$1"; else mode="$1"; target="$2"; fi
 
+# Explicit source layout and target are sealed in release.json; legacy artifacts
+# remain valid without these fields. Never infer target from host names.
+configure_layout() {
+  local manifest="$1" layout
+  layout="$(python3 - "$manifest" <<'PYLAYOUT'
+import json, sys
+m = json.load(open(sys.argv[1]))
+layout = m.get('sourceLayout', 'legacy')
+if layout not in ('legacy', 'monorepo') or m.get('target', 'vps') not in ('vps', 'dbfr'):
+    raise SystemExit('invalid Shenron source layout or deployment target')
+print(layout)
+PYLAYOUT
+)" || exit 2
+  site_path=apps/site
+  bot_path=apps/bot
+  if [[ "$layout" = monorepo ]]; then
+    site_path=apps/shenron/site
+    bot_path=apps/shenron/bot
+  fi
+  shared_links=(
+    "$site_path/public/wiki:site/wiki"
+    "$site_path/.next-build/cache:site/next-cache"
+    "$bot_path/assets:bot/assets"
+    "$bot_path/data:bot/data"
+    '.coord:coord'
+  )
+}
+
 assemble() {
   local source="$1" commit dest stage link rel
   source="$(realpath -e -- "$source")"
+  configure_layout "$source/release.json"
   for file in release.json source.tar.gz site-build.tar.gz SHA256SUMS nginx/shenron.conf; do
     [[ -f "$source/$file" ]] || { echo "bundle shenron/ lacks $file" >&2; exit 2; }
   done
@@ -60,7 +89,7 @@ import json
 import re
 import sys
 manifest = json.load(open(sys.argv[1]))
-if manifest.get('schemaVersion') != 1 or manifest.get('repository') != 'shenron':
+if manifest.get('schemaVersion') != 1 or manifest.get('repository') not in ('shenron', 'aphrody-labs/aphrody'):
     raise SystemExit('not a Shenron release manifest')
 if not re.fullmatch(r'[0-9a-f]{40}', manifest.get('commit', '')):
     raise SystemExit('release.json commit must be a full Git SHA')
@@ -103,8 +132,8 @@ if (artifact.get('schema') != 'shenron-site-artifact/v1' or not release['commit'
     raise SystemExit('site artifact does not match the Shenron release manifest')
 PY
   [[ -s "$stage/.artifact/build/BUILD_ID" ]] || { echo 'site artifact has no BUILD_ID' >&2; exit 2; }
-  rm -rf -- "$stage/apps/site/.next-build"
-  mv -T -- "$stage/.artifact/build" "$stage/apps/site/.next-build"
+  rm -rf -- "$stage/$site_path/.next-build"
+  mv -T -- "$stage/.artifact/build" "$stage/$site_path/.next-build"
   mv -- "$stage/.artifact/artifact-manifest.json" "$stage/site-artifact-manifest.json"
   rm -rf -- "$stage/.artifact"
   chown -R "$run_as:$run_as" "$stage"
@@ -123,6 +152,46 @@ PY
   done
   install -d "$stage/systemd" "$stage/nginx"
   cp -- "$source"/systemd/*.service "$stage/systemd/"
+  python3 - "$source/release.json" "$stage/systemd" "$env_root" "$site_path" "$bot_path" <<'PYUNITS'
+import json, pathlib, shlex, sys
+from urllib.parse import urlsplit
+manifest = json.load(open(sys.argv[1]))
+units, env_root = pathlib.Path(sys.argv[2]), pathlib.Path(sys.argv[3])
+site, bot = sys.argv[4:6]
+for unit in units.glob('*.service'):
+    content = unit.read_text()
+    if manifest.get('sourceLayout') == 'monorepo':
+        content = content.replace('/apps/site', '/' + site).replace('/apps/bot', '/' + bot)
+    if manifest.get('target', 'vps') == 'dbfr':
+        values = {}
+        for line in content.splitlines():
+            if not line.startswith('EnvironmentFile='):
+                continue
+            for name in line.split('=', 1)[1].split():
+                path = pathlib.Path(name.lstrip('-'))
+                if not path.resolve().is_relative_to(env_root.resolve()):
+                    raise SystemExit('DBFR environment path outside private env root')
+                if not path.is_file():
+                    continue
+                if path.stat().st_mode & 0o777 != 0o600:
+                    raise SystemExit('DBFR environment must be private 0600')
+                for raw in path.read_text().splitlines():
+                    raw = raw.strip().removeprefix('export ').strip()
+                    if not raw or raw.startswith('#') or '=' not in raw:
+                        continue
+                    key, value = raw.split('=', 1)
+                    words = shlex.split(value, comments=False)
+                    values[key.strip()] = words[0] if len(words) == 1 else value
+        if unit.name == 'shenron-site.service':
+            url = urlsplit(values.get('DATABASE_URL', ''))
+            if url.scheme not in ('postgres', 'postgresql') or url.hostname not in ('localhost', '127.0.0.1', '::1') or url.port not in (None, 5432):
+                raise SystemExit('DBFR site requires qualified host-local PostgreSQL configuration')
+        # Local PostgreSQL replaces the VPS SSH forward. Never start that
+        # self-tunnel implicitly when activating the DBFR release.
+        content = '\n'.join(line.replace(' shenron-pg-tunnel.service', '')
+                            for line in content.splitlines()) + '\n'
+    unit.write_text(content)
+PYUNITS
   cp -- "$source/nginx/shenron.conf" "$stage/nginx/shenron.conf"
   cp -- "$source/release.json" "$stage/release.json"
   printf '%s\n' "$commit" > "$stage/RELEASE_SHA"
@@ -203,9 +272,10 @@ esac
 
 for file in "$catalog" "$routes" "$contract"; do [[ -r "$file" ]] || { echo "installed catalog missing: $file" >&2; exit 2; }; done
 release="$(realpath -e -- "$target")"
+configure_layout "$release/release.json"
 release_root="$(realpath -m -- "$releases")"
 [[ "$release" = "$release_root/"* ]] || { echo 'release must be under the Shenron release root' >&2; exit 2; }
-for file in release.json RELEASE_SHA SHA256SUMS nginx/shenron.conf site-artifact-manifest.json apps/site/.next-build/BUILD_ID node_modules/next/dist/bin/next; do
+for file in release.json RELEASE_SHA SHA256SUMS nginx/shenron.conf site-artifact-manifest.json "$site_path/.next-build/BUILD_ID" node_modules/next/dist/bin/next; do
   [[ -e "$release/$file" ]] || { echo "release lacks $file" >&2; exit 2; }
 done
 
@@ -227,7 +297,7 @@ services = [item for item in catalog['services']
             and item.get('status') != 'retired'
             and item.get('workingDirectory', '').startswith('/srv/shenron/current')]
 ids = [item['id'] for item in services]
-if manifest.get('schemaVersion') != 1 or manifest.get('repository') != 'shenron' or manifest.get('services') != ids:
+if manifest.get('schemaVersion') != 1 or manifest.get('repository') not in ('shenron', 'aphrody-labs/aphrody') or manifest.get('services') != ids:
     raise SystemExit('release.json does not match the installed Shenron service catalog')
 commit = manifest.get('commit', '')
 if not re.fullmatch(r'[0-9a-f]{40}', commit) or release.name != commit:
