@@ -13,12 +13,15 @@ compute_release() {
   pin="${2:-$(git -C "$repo" rev-parse HEAD)}"
   [[ "$(uname -s)" = Linux && "$(uname -m)" = x86_64 ]] || { echo 'Linux x86_64 build host required' >&2; return 2; }
   [[ "$pin" =~ ^[0-9a-f]{40}$ ]] && git -C "$repo" cat-file -e "$pin^{commit}" || { echo 'invalid source commit' >&2; return 2; }
-  for binary in git bun uv tar sha256sum ldd; do command -v "$binary" >/dev/null || { echo "missing $binary" >&2; return 2; }; done
+  for binary in git bun uv tar sha256sum ldd cmp; do command -v "$binary" >/dev/null || { echo "missing $binary" >&2; return 2; }; done
   for binary in Cargo.toml Cargo.lock scripts/build/rust/cargo-serial.sh crates/ai/rag/migrations/0001_shenron_postgres.sql; do
     git -C "$repo" cat-file -e "$pin:$binary" || { echo "source commit lacks $binary" >&2; return 2; }
   done
   # Use the existing source owner; never restore or modify a checkout here.
   source_root="$(realpath -e -- "${APHRODY_SOURCE_ROOT:-$repo/../source}")"
+  [[ "$source_root" = "$(realpath -e -- "$repo/../source")" ]] || {
+    echo 'compute snapshots require the canonical adjacent source directory' >&2; return 2;
+  }
   bun "$repo/packages/infra/update/src/cli.ts" sources verify --root "$repo" --source-root "$source_root"
   printf 'source=%s\nmode=compute\nservices=aphrody-shenron-embed,aphrody-ai-http\n' "$pin"
   printf '%s\n' \
@@ -39,7 +42,16 @@ compute_release() {
   grep -Fq -- '--compute-only' "$work/aphrody/scripts/atomic-deploy-aphrody-stack.sh" || {
     echo "source commit lacks the compute adapter; source=$work" >&2; return 2;
   }
-  bun "$repo/packages/infra/update/src/cli.ts" sources verify --root "$work/aphrody" --source-root "$source_root"
+  # The source owner verifies the real checkout and its Git/patch metadata.
+  # That verification applies to the pin only when its source declarations
+  # match. The frozen copy below keeps ../source and records identical bytes;
+  # running sources verify on the export would instead demand original Git
+  # metadata and rewrite the expected paths to point outside the snapshot.
+  for binary in Cargo.toml config/upstream-sources.json; do
+    cmp -s "$repo/$binary" "$work/aphrody/$binary" || {
+      echo "verified source declarations differ from the pin: $binary; source=$work" >&2; return 2;
+    }
+  done
   # Freeze the external path dependencies too. Their exact bytes, including
   # canonical local patches, are recorded; shared source directories are never
   # modified and cannot change underneath the build.
