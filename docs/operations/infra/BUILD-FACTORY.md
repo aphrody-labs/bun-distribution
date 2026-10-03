@@ -269,3 +269,11 @@ DBFR monorepo assembly installs with `bun install --frozen-lockfile
 native lifecycle compilation stays on VPS. Legacy assembly behavior remains
 compatible. If runtime qualification reveals a required generated native
 artifact, build/seal it on VPS and transfer it rather than compile on DBFR.
+
+### Redis state cutover
+
+Redis is shared infrastructure. Keep source Redis running; stop only Shenron writers before the final snapshot. The existing replica owner preserves the complete RDB, including all logical databases; this migration follows that contract rather than selecting keys.
+
+Run `bash scripts/migration/shenron-redis-transfer.sh` on VPS for the plan, then `bash scripts/migration/shenron-redis-transfer.sh --apply` through Infra SSH after both hosts' site/bot units are inactive. The adapter requires identical Redis versions, target AOF disabled, target `/var/lib/redis/dump.rdb`, and an empty active target. It captures a fresh source snapshot with `redis-cli --rdb`, checks it privately with `redis-check-rdb`, and streams it directly to DBFR. Root-private evidence and the original target RDB/AOF remain under `/srv/aphrody-infra/migrations/shenron-redis-*`; nothing transits WSL.
+
+Only DBFR Redis restarts; its enabled state is unchanged. SHA-256 must match before import. Qualification requires equal nonexpiring counts per database and allows expiring keys to disappear during transport. Changes in source nonexpiring counts refuse import. Failed target qualification restores the previous target RDB and restarts Redis. Keep every target client inactive throughout this operation, including other potential Redis writers. Aggregate count checks prove transport/expiry consistency; they do not prove application behavior. Do not activate a second bot.
