@@ -7,7 +7,7 @@ from the checkout. Companion files: [CLI.md](CLI.md) (exact command trees), [MCP
 (every MCP tool), [ecosystem.json](ecosystem.json) (machine-readable). Check here before writing new
 code: reuse an existing crate, command or tool instead of duplicating it.
 
-Totals: 3 repositories (3 aphrody, 0 shared, 0 experiments), 267 crates, 89 binaries, 98 Bun packages, 8 uv packages, 1280 CLI commands, 440 MCP tools.
+Totals: 3 repositories (3 aphrody, 0 shared, 0 experiments), 266 crates, 89 binaries, 98 Bun packages, 8 uv packages, 1280 CLI commands, 440 MCP tools.
 
 | Repository | Kind | Role |
 | --- | --- | --- |
@@ -19,7 +19,7 @@ Totals: 3 repositories (3 aphrody, 0 shared, 0 experiments), 267 crates, 89 bina
 
 Canonical Rust/Bun monorepo
 
-### Crates (193)
+### Crates (192)
 
 | Crate | Path | Description | Binaries | Features |
 | --- | --- | --- | --- | --- |
@@ -215,7 +215,6 @@ Canonical Rust/Bun monorepo
 | `obscura-mcp` | crates/web/obscura-mcp |  |  | default, render, stealth |
 | `obscura-net` | crates/web/obscura-net |  |  | default, futures-util, stealth, wreq, wreq-util |
 | `obscura-render` | crates/web/obscura-render | Optional scoped render layer for Obscura: layout (taffy) and, with the paint feature, text and raster output for screenshots. | `paint_file` | default, paint |
-| `taffy` | crates/web/taffy | A flexible UI layout library |  | alloc, block_layout, calc, content_size, debug, default, detailed_layout_info, document-features, flexbox, float_layout, grid, parse, parse_faster, profile, serde, std, strict_provenance, taffy_tree |
 
 ### Bun packages (91)
 

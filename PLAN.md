@@ -65,6 +65,12 @@ routes de sites, exemples et snapshots historiques demandent une classification.
   Les limites des suites upstream complètes et du plugin Sass natif sont
   consignées dans le rapport ; elles ne constituent pas une qualification produit.
 
+- [x] Taffy : source modifiée extraite vers `aphrody-labs/taffy` privé, puis
+  consommée via Cargo Git au commit exact. 379 tests du consommateur layout
+  et 109 tests du clone autonome passent ; check/clippy Linux, puis check
+  Windows MSVC et WASM réussis. Version 0.12.1 et features conservées.
+  [Provenance Taffy](docs/migration/taffy-git-registry-2026-10-03.json).
+
 Preuve et hashes : [migration des packages](docs/migration/package-registry-2026-10-03.json).
 
 - [x] IECODE : retirer le sous-module Citro3D inutilisé, conserver son historique

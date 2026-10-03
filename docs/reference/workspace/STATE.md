@@ -6,7 +6,7 @@ Facts read from `cargo metadata --no-deps`, the root `package.json` Bun workspac
 Crates are Rust workspace members outside `apps/`; packages are Bun workspaces outside `apps/`;
 apps are Rust or Bun members under `apps/`. `todo!` counts `todo!(` and `unimplemented!(` in `.rs` files.
 
-Totals: **192 crates**, **80 packages**, **6 apps** (193 Rust, 85 Bun).
+Totals: **191 crates**, **80 packages**, **6 apps** (192 Rust, 85 Bun).
 
 ## Per domain
 
@@ -29,7 +29,7 @@ Totals: **192 crates**, **80 packages**, **6 apps** (193 Rust, 85 Bun).
 | [shell](#shell) | 14 | 1 | 0 | 0 |
 | [shenron](#shenron) | 0 | 7 | 2 | 0 |
 | [ui](#ui) | 15 | 25 | 0 | 0 |
-| [web](#web) | 19 | 3 | 0 | 0 |
+| [web](#web) | 18 | 3 | 0 | 0 |
 
 ## Workspace exclusions
 
@@ -417,7 +417,6 @@ Tracked Cargo manifests outside the root workspace (excluded, nested workspaces 
 | `obscura-mcp` | [crates/web/obscura-mcp](../../../crates/web/obscura-mcp) | rust crate | 0.1.0 | lib | yes | 0 | 2026-10-02 |
 | `obscura-net` | [crates/web/obscura-net](../../../crates/web/obscura-net) | rust crate | 0.1.1 | lib | yes | 0 | 2026-10-02 |
 | `obscura-render` | [crates/web/obscura-render](../../../crates/web/obscura-render) | rust crate | 0.1.0 | bin, lib | yes | 0 | 2026-10-03 |
-| `taffy` | [crates/web/taffy](../../../crates/web/taffy) | rust crate | 0.12.1 | lib | yes | 0 | 2026-10-03 |
 | `aphrody-web-bridge` | [crates/web/web-bridge](../../../crates/web/web-bridge) | rust crate | 1.0.0-canary | rlib | yes | 0 | 2026-10-02 |
 | `aphrody-web-chromium` | [crates/web/web-chromium](../../../crates/web/web-chromium) | rust crate | 1.0.0-canary | lib | yes | 0 | 2026-10-01 |
 | `aphrody-web-crawl` | [crates/web/web-crawl](../../../crates/web/web-crawl) | rust crate | 1.0.0 | lib | yes | 0 | 2026-10-02 |

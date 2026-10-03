@@ -260,8 +260,8 @@
       "@ag-ui/proto": "1.0.1",
       "@ag-ui/a2ui-toolkit": "0.0.4",
       "@rosegriffon/patreon-bun": "1.0.3",
-      "@ag-ui/client": "https://registry.npmjs.org/@aphrody/ag-ui-client/-/ag-ui-client-1.0.1-aphrody.1.tgz",
-      "@aphrody/mcp-ui": "https://registry.npmjs.org/@aphrody/mcp-ui/-/mcp-ui-7.1.1-aphrody.1.tgz",
+      "@ag-ui/client": "npm:@aphrody/ag-ui-client@1.0.1-aphrody.1",
+      "@aphrody/mcp-ui": "7.1.1-aphrody.1",
       "@aphrody/material-web": "3.3.3"
     }
   },

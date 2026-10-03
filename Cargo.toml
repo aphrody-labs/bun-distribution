@@ -507,7 +507,8 @@ perf = { level = "warn", priority = -1 }
 [patch.crates-io]
 # Relax serde-saphyr's regex upper bound; restored and patched by upstream-sources sync.
 serde-saphyr = { path = "../source/serde-saphyr" }
-taffy = { path = "crates/web/taffy" }
+# Modified layout fork; preserve local fixes through a commit-locked Git dependency.
+taffy = { git = "ssh://git@github-dev/aphrody-labs/taffy.git", rev = "ed38f5bb36affbc6bfa35b01f0fc866585f0c37d" }
 # Checked out under ../source (config/upstream-sources.json); restore with `bun run sources:sync`.
 simdutf = { path = "../source/simdutf-rio" }
 # tauri-plugin-dialog 3.0.0-alpha.2 predates tauri 3.0.0-alpha.3 (Manager::run_on_main_thread); see config/tauri-upstream.json

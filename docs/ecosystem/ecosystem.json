@@ -1718,32 +1718,6 @@
             "default",
             "paint"
           ]
-        },
-        {
-          "name": "taffy",
-          "path": "crates/web/taffy",
-          "description": "A flexible UI layout library",
-          "bins": [],
-          "features": [
-            "alloc",
-            "block_layout",
-            "calc",
-            "content_size",
-            "debug",
-            "default",
-            "detailed_layout_info",
-            "document-features",
-            "flexbox",
-            "float_layout",
-            "grid",
-            "parse",
-            "parse_faster",
-            "profile",
-            "serde",
-            "std",
-            "strict_provenance",
-            "taffy_tree"
-          ]
         }
       ],
       "bunPackages": [
@@ -15545,7 +15519,7 @@
     "aphrodyRepos": 3,
     "experimentRepos": 0,
     "sharedRepos": 0,
-    "crates": 267,
+    "crates": 266,
     "binaries": 89,
     "bunPackages": 98,
     "pythonPackages": 8,

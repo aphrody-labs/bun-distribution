@@ -519,6 +519,10 @@
       "frozenUvInstall": "passed",
       "pytestPassed": 134,
       "subtestsPassed": 2
+    },
+    "cleanConsumerClone": {
+      "uvFrozenSync": "passed",
+      "bridgeTestsPassed": 5
     }
   },
   "retainedBackup": "/home/aphro/.local/share/aphrody/source-backups/antigravity-sdk-python-20261003"
