@@ -2357,20 +2357,34 @@
       "pythonPackages": [
         {
           "name": "aphrody",
-          "path": "packages/ai/py/aphrody",
+          "path": "packages/aphrody",
           "description": "Aphrody Python SDK: authenticated AI, web, document and media clients.",
+          "scripts": []
+        },
+        {
+          "name": "aphrody-cli",
+          "path": "packages/cli",
+          "description": "",
           "scripts": [
-            "aphrody",
-            "aphrody-google"
+            "aphrody-python",
+            "aphrody-python-google"
           ]
         },
         {
           "name": "aphrody-embedding-fixtures",
-          "path": "tools/ai/embedding-fixtures",
+          "path": "packages/embedding-fixtures",
           "description": "Regenerate reference fixtures for the native Aphrody embedding crate",
           "scripts": [
             "aphrody-embedding-fixture",
             "aphrody-rerank-fixture"
+          ]
+        },
+        {
+          "name": "aphrody-meetings",
+          "path": "apps/meetings",
+          "description": "",
+          "scripts": [
+            "aphrody-meeting"
           ]
         },
         {
@@ -2381,13 +2395,13 @@
         },
         {
           "name": "aphrody-train",
-          "path": "packages/ai/py/aphrody-train",
+          "path": "packages/aphrody-train",
           "description": "Training surface for aphrody: dataset generation, embedding/reranker fine-tuning, LoRA",
           "scripts": []
         },
         {
           "name": "koharu-model-tools",
-          "path": "tools/koharu/model-tools",
+          "path": "packages/model-tools",
           "description": "Export pretrained vision models for the Koharu Rust implementation",
           "scripts": [
             "koharu-export-dinov2",
@@ -2396,7 +2410,7 @@
         },
         {
           "name": "shenron-relecture-ocr",
-          "path": "packages/shenron/relecture-ocr",
+          "path": "packages/relecture-ocr",
           "description": "Loopback OCR second-reader service for Shenron databook review",
           "scripts": [
             "relecture-ocr"
@@ -2713,6 +2727,7 @@
             "images",
             "lua",
             "real-fixtures",
+            "remote-vfs",
             "serde",
             "std",
             "textures",
@@ -2881,7 +2896,9 @@
           "bins": [
             "aphrody-nie-pg"
           ],
-          "features": []
+          "features": [
+            "real-fixtures"
+          ]
         },
         {
           "name": "aphrody-nie-play",
@@ -3157,14 +3174,6 @@
           "bins": []
         },
         {
-          "name": "@iecode/homebrew",
-          "path": "packages/iecode-homebrew",
-          "description": "Bun commands for the IECODE DS/DSi and 3DS homebrew toolchains",
-          "bins": [
-            "iecode-homebrew"
-          ]
-        },
-        {
           "name": "@rosegriffon/azalee",
           "path": "packages/azalee",
           "description": "Bibliothèque Bun du wiki Azalée (Inazuma Eleven: Victory Road) — accès PostgreSQL, index CPK, recherche et CLI.",
@@ -3187,9 +3196,17 @@
           "bins": []
         },
         {
+          "name": "iecode-homebrew",
+          "path": "packages/iecode-homebrew",
+          "description": "Bun commands for the IECODE DS/DSi and 3DS homebrew toolchains",
+          "bins": [
+            "iecode-homebrew"
+          ]
+        },
+        {
           "name": "iecode-workspace",
           "path": ".",
-          "description": "Unified IECODE workspace for native, Rust, Python and portable media libraries.",
+          "description": "Game-format tooling, Inazuma Eleven data libraries and console-emulation components, with Rust, Bun, Python, .NET and C++ interfaces.",
           "bins": []
         },
         {
@@ -12797,6 +12814,13 @@
           "cfg": [],
           "children": [
             {
+              "name": "locate",
+              "about": "Locate/register a local or remote source without mounting the VFS.",
+              "aliases": [],
+              "cfg": [],
+              "children": []
+            },
+            {
               "name": "bundle",
               "about": "Build the deterministic initial browser VFS from this licensed local installation.",
               "aliases": [],
@@ -12854,14 +12878,14 @@
             },
             {
               "name": "chara",
-              "about": "Cherche un personnage par nom (FR/EN/JA), ID ou code interne (miroir wiki `aphrody-nie-wiki`), puis liste ses fichiers dans le VFS (modèles, textures, animations…).",
+              "about": "Search native VFS characters by localized name, hash or internal code. Explicit --db opts into wiki. puis liste ses fichiers dans le VFS (modèles, textures, animations…).",
               "aliases": [],
               "cfg": [],
               "children": []
             },
             {
               "name": "waza",
-              "about": "Cherche une technique/waza par nom (FR/EN/JA), ID ou code interne (miroir wiki `aphrody-nie-wiki`), puis liste ses fichiers dans le VFS (cut-ins, sons, vidéos…).",
+              "about": "Search native VFS skills by localized name, hash or internal code. Explicit --db opts into wiki.",
               "aliases": [],
               "cfg": [],
               "children": []
@@ -15580,9 +15604,9 @@
     "crates": 270,
     "binaries": 90,
     "bunPackages": 100,
-    "pythonPackages": 8,
+    "pythonPackages": 10,
     "cliBinaries": 63,
-    "cliCommands": 1280,
+    "cliCommands": 1281,
     "mcpServers": 21,
     "mcpTools": 440,
     "mcpUniqueToolNames": 423

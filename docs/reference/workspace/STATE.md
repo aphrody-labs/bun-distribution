@@ -121,7 +121,7 @@ Tracked Cargo manifests outside the root workspace (excluded, nested workspaces 
 | `aphrody-toolcall` | [crates/ai/toolcall](../../../crates/ai/toolcall) | rust crate | 1.0.0 | lib | yes | 0 | 2026-10-01 |
 | `aphrody-toolcall-repair` | [crates/ai/toolcall-repair](../../../crates/ai/toolcall-repair) | rust crate | 1.0.0 | lib | yes | 0 | 2026-10-02 |
 | `aphrody-tools` | [crates/ai/tools](../../../crates/ai/tools) | rust crate | 1.0.0 | lib | yes | 0 | 2026-10-02 |
-| `aphrody-train` | [crates/ai/train](../../../crates/ai/train) | rust crate | 1.0.0 | bin, lib | yes | 0 | 2026-10-02 |
+| `aphrody-train` | [crates/ai/train](../../../crates/ai/train) | rust crate | 1.0.0 | bin, lib | yes | 0 | 2026-10-03 |
 | `aphrody-translate` | [crates/ai/translate](../../../crates/ai/translate) | rust crate | 1.0.0 | bin, lib | yes | 0 | 2026-10-02 |
 | `aphrody-vision` | [crates/ai/vision](../../../crates/ai/vision) | rust crate | 1.0.0 | rlib | yes | 0 | 2026-10-02 |
 | `aphrody-voice` | [crates/ai/voice](../../../crates/ai/voice) | rust crate | 1.0.0 | lib | yes | 0 | 2026-10-02 |
@@ -207,7 +207,7 @@ Tracked Cargo manifests outside the root workspace (excluded, nested workspaces 
 | `aphrody-vpn` | [crates/infra/vpn](../../../crates/infra/vpn) | rust crate | 0.1.0 | lib | yes | 0 | 2026-10-01 |
 | `aphrody-yolo` | [crates/infra/yolo](../../../crates/infra/yolo) | rust crate | 0.1.0 | bin, lib | yes | 0 | 2026-10-02 |
 | `@aphrody/ovh` | [packages/infra/ovh](../../../packages/infra/ovh) | bun package | 0.2.0 | bin, lib | yes | 0 | 2026-10-02 |
-| `@aphrody/paths` | [packages/infra/paths](../../../packages/infra/paths) | bun package | 0.1.0 | lib | yes | 0 | 2026-10-02 |
+| `@aphrody/paths` | [packages/infra/paths](../../../packages/infra/paths) | bun package | 0.1.0 | lib | yes | 0 | 2026-10-03 |
 | `@aphrody/sql` | [packages/infra/sql](../../../packages/infra/sql) | bun package | 0.1.0 | lib | yes | 0 | 2026-10-02 |
 | `@aphrody/update` | [packages/infra/update](../../../packages/infra/update) | bun package | 0.1.0 | bin, lib | yes | 0 | 2026-10-03 |
 | `@aphrody/workspace` | [packages/infra/workspace](../../../packages/infra/workspace) | bun package | 0.1.0 | bin, lib | yes | 0 | 2026-10-03 |

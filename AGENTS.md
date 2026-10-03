@@ -8,7 +8,7 @@ The owner-selected direction is a precompiled native runtime produced in
 `/home/aphro/yolo`, based on the Bun fork with Tauri and Obscura integration.
 Aphrody owns product behavior and consumes a lightweight SDK/runtime contract.
 The root plan is the current architectural authority; its archived predecessor
-preserves historical evidence and unfinished product work, not competing priorities.
+preserves earlier evidence and unfinished product work, without competing priorities.
 This direction is a target, not a claim that runtime migration is complete.
 
 ## Architecture rules

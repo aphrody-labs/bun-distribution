@@ -7,7 +7,7 @@ from the checkout. Companion files: [CLI.md](CLI.md) (exact command trees), [MCP
 (every MCP tool), [ecosystem.json](ecosystem.json) (machine-readable). Check here before writing new
 code: reuse an existing crate, command or tool instead of duplicating it.
 
-Totals: 3 repositories (3 aphrody, 0 shared, 0 experiments), 270 crates, 90 binaries, 100 Bun packages, 8 uv packages, 1280 CLI commands, 440 MCP tools.
+Totals: 3 repositories (3 aphrody, 0 shared, 0 experiments), 270 crates, 90 binaries, 100 Bun packages, 10 uv packages, 1281 CLI commands, 440 MCP tools.
 
 | Repository | Kind | Role |
 | --- | --- | --- |
@@ -322,16 +322,18 @@ Canonical Rust/Bun monorepo
 
 Active Python workspace
 
-### uv packages (6)
+### uv packages (8)
 
 | Package | Path | Description | Scripts |
 | --- | --- | --- | --- |
-| `aphrody` | packages/ai/py/aphrody | Aphrody Python SDK: authenticated AI, web, document and media clients. | `aphrody`, `aphrody-google` |
-| `aphrody-embedding-fixtures` | tools/ai/embedding-fixtures | Regenerate reference fixtures for the native Aphrody embedding crate | `aphrody-embedding-fixture`, `aphrody-rerank-fixture` |
+| `aphrody` | packages/aphrody | Aphrody Python SDK: authenticated AI, web, document and media clients. |  |
+| `aphrody-cli` | packages/cli |  | `aphrody-python`, `aphrody-python-google` |
+| `aphrody-embedding-fixtures` | packages/embedding-fixtures | Regenerate reference fixtures for the native Aphrody embedding crate | `aphrody-embedding-fixture`, `aphrody-rerank-fixture` |
+| `aphrody-meetings` | apps/meetings |  | `aphrody-meeting` |
 | `aphrody-py-workspace` | . | Unified Aphrody Python projects and tools |  |
-| `aphrody-train` | packages/ai/py/aphrody-train | Training surface for aphrody: dataset generation, embedding/reranker fine-tuning, LoRA |  |
-| `koharu-model-tools` | tools/koharu/model-tools | Export pretrained vision models for the Koharu Rust implementation | `koharu-export-dinov2`, `koharu-export-efficientnet` |
-| `shenron-relecture-ocr` | packages/shenron/relecture-ocr | Loopback OCR second-reader service for Shenron databook review | `relecture-ocr` |
+| `aphrody-train` | packages/aphrody-train | Training surface for aphrody: dataset generation, embedding/reranker fine-tuning, LoRA |  |
+| `koharu-model-tools` | packages/model-tools | Export pretrained vision models for the Koharu Rust implementation | `koharu-export-dinov2`, `koharu-export-efficientnet` |
+| `shenron-relecture-ocr` | packages/relecture-ocr | Loopback OCR second-reader service for Shenron databook review | `relecture-ocr` |
 
 ## iecode
 
@@ -370,7 +372,7 @@ Active game-domain workspace
 | `aphrody-nie-explore` | crates/nie/aphrody-nie-explore | Moteur partagé d'aperçu/description des entrées VFS (CPK) par format — utilisé par `nie vfs cat` (aphrody-nie-cli) et l'app desktop `nie-explorer` (Tauri) |  | default, host |
 | `aphrody-nie-ffi` | crates/nie/aphrody-nie-ffi | Frontière FFI C-ABI: expose la logique nie (CRC32 RDBN, PRNG CRand MT19937, décodage formats, VFS) à Bun et autres runtimes |  |  |
 | `aphrody-nie-forge` | crates/nie/aphrody-nie-forge | Forge de nie.exe — découpe, régénère et mesure le binaire produit depuis le workspace Rust | `aphrody-nie-forge` | default, redb |
-| `aphrody-nie-formats` | crates/nie/aphrody-nie-formats | Parsers de formats Level-5 (CPK, cfg.bin, G4*, CriLayla, Criware) portés en Rust no_std-friendly pour nie headless + wasm |  | audio-decode, default, images, lua, real-fixtures, serde, std, textures, textures-encode |
+| `aphrody-nie-formats` | crates/nie/aphrody-nie-formats | Parsers de formats Level-5 (CPK, cfg.bin, G4*, CriLayla, Criware) portés en Rust no_std-friendly pour nie headless + wasm |  | audio-decode, default, images, lua, real-fixtures, remote-vfs, serde, std, textures, textures-encode |
 | `aphrody-nie-game` | crates/nie/aphrody-nie-game | Hôte GUI natif wgpu — rend les vrais assets IEVR (pilier D1/C4 pixel-perfect) | `aphrody-nie-game` |  |
 | `aphrody-nie-geom` | crates/nie/aphrody-nie-geom | Shared POD geometry types (Vec2/Vec3) and scalar math for the IECODE workspace. |  | default, serde, std |
 | `aphrody-nie-headless` | crates/nie/aphrody-nie-headless | Runner CLI headless : détecte un format IEVR et affiche un résumé JSON sans moteur Windows | `aphrody-nie-headless` | default, host |
@@ -386,7 +388,7 @@ Active game-domain workspace
 | `aphrody-nie-ocgen` | crates/nie/aphrody-nie-ocgen | Pipeline de génération 3D d'un personnage original : références mesurées → CHARA_EDIT_PARAM → composition → plan d'assemblage | `aphrody-nie-ocgen` | bc7, cli, default |
 | `aphrody-nie-pe` | crates/nie/aphrody-nie-pe | Lecture/écriture byte-exacte du PE64 nie.exe + découpage du fichier en unités de forge |  | default, serde |
 | `aphrody-nie-pe-inspect` | crates/nie/aphrody-nie-pe-inspect | Reverse-engineering primitives for PE/ELF/Mach-O triage, string extraction, and x86 disassembly. |  | default, integration |
-| `aphrody-nie-pg` | crates/nie/aphrody-nie-pg | Import des cfg.bin du VFS IEVR (RDBN et T2B) dans PostgreSQL, schéma `nie`, sans étape JSON | `aphrody-nie-pg` |  |
+| `aphrody-nie-pg` | crates/nie/aphrody-nie-pg | Import des cfg.bin du VFS IEVR (RDBN et T2B) dans PostgreSQL, schéma `nie`, sans étape JSON | `aphrody-nie-pg` | real-fixtures |
 | `aphrody-nie-play` | crates/nie/aphrody-nie-play | Front-end HEADLESS/GOLDEN du jeu nie : exécute la machine à états de aphrody-nie-app via un flow scripté + un Renderer CPU, et écrit le playthrough en PNG/MP4 déterministes. Le match vient de la vraie FSM aphrody-nie-core. | `aphrody-nie-play` |  |
 | `aphrody-nie-queue` | crates/nie/aphrody-nie-queue | Bounded deduplicated BFS frontiers for the nie reverse-engineering loop |  | default, host |
 | `aphrody-nie-re` | crates/nie/aphrody-nie-re | Moteur RE nie : RTTI MSVC, indexation goblin/iced-x86, propagation de labels sur le call-graph |  | default, host |
@@ -421,11 +423,11 @@ Active game-domain workspace
 | Package | Path | Description | Bin |
 | --- | --- | --- | --- |
 | `@aphrody/iecode-web` | apps/web |  |  |
-| `@iecode/homebrew` | packages/iecode-homebrew | Bun commands for the IECODE DS/DSi and 3DS homebrew toolchains | `iecode-homebrew` |
 | `@rosegriffon/azalee` | packages/azalee | Bibliothèque Bun du wiki Azalée (Inazuma Eleven: Victory Road) — accès PostgreSQL, index CPK, recherche et CLI. | `azalee` |
 | `@rosegriffon/inagle` | packages/inagle | Universal Game Data API for Inazuma Eleven: Victory Road — parsers, types, and tools for IEVR game data | `inagle` |
 | `@rosegriffon/inagle-cross` | packages/inagle-cross | API de données et de rétro-conception pour Inazuma Eleven Cross — types, schémas, et analyseurs d'assets |  |
-| `iecode-workspace` | . | Unified IECODE workspace for native, Rust, Python and portable media libraries. |  |
+| `iecode-homebrew` | packages/iecode-homebrew | Bun commands for the IECODE DS/DSi and 3DS homebrew toolchains | `iecode-homebrew` |
+| `iecode-workspace` | . | Game-format tooling, Inazuma Eleven data libraries and console-emulation components, with Rust, Bun, Python, .NET and C++ interfaces. |  |
 | `ieverse` | packages/ieverse | Canonical Inazuma Eleven media catalogue, source URLs, navigation and player contracts. |  |
 
 ### uv packages (2)

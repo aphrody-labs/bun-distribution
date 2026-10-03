@@ -59,7 +59,7 @@ Regenerate with `bun run docs:gen`; `bun run docs:check` gates drift; the `aphro
 | decisions | [infra](decisions/infra/) | 2 | - |
 | decisions | [rg](decisions/rg/) | 2 | - |
 | decisions | [shell](decisions/shell/) | 2 | - |
-| guides | [ai](guides/ai/) | 7 | - |
+| guides | [ai](guides/ai/) | 9 | - |
 | guides | [compat](guides/compat/) | 5 | - |
 | guides | [discord](guides/discord/) | 67 | - |
 | guides | [koharu](guides/koharu/) | 1 | - |
@@ -98,6 +98,7 @@ Regenerate with `bun run docs:gen`; `bun run docs:check` gates drift; the `aphro
 | plans | [native](plans/native/) | 1 | [PLAN — aphrody-native](plans/native/PLAN.md) |
 | plans | [os](plans/os/) | 1 | - |
 | plans | [rg](plans/rg/) | 5 | - |
+| plans | [runtime](plans/runtime/) | 3 | - |
 | plans | [shell](plans/shell/) | 1 | - |
 | plans | [shenron](plans/shenron/) | 3 | - |
 | plans | [ui](plans/ui/) | 8 | [UI plans](plans/ui/README.md) |
@@ -163,7 +164,7 @@ Regenerate with `bun run docs:gen`; `bun run docs:check` gates drift; the `aphro
 | reference | [upstream-WSL](reference/upstream-WSL/) vendored upstream copy | 18 | - |
 | reference | [web](reference/web/) | 101 | - |
 | reference | [workspace](reference/workspace/) | 13 | [Workspace documentation](reference/workspace/INDEX.md) |
-| research | [ai](research/ai/) | 47 | - |
+| research | [ai](research/ai/) | 50 | - |
 | research | [compat](research/compat/) | 11 | - |
 | research | [discord](research/discord/) | 1 | - |
 | research | [infra](research/infra/) | 2 | - |
@@ -191,4 +192,4 @@ Regenerate with `bun run docs:gen`; `bun run docs:check` gates drift; the `aphro
 | migration (outside the category layout) | [source-licenses](migration/source-licenses/) | 10 | - |
 | migration (outside the category layout) | [stack-dedup](migration/stack-dedup/) | 8 | - |
 
-Total: 5190 files.
+Total: 5198 files.

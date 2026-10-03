@@ -6,7 +6,7 @@ Exact subcommand trees of every shipped binary, read from its clap derive defini
 commands omitted; `cfg:` marks commands compiled only under a feature or target). Flags are not
 listed: run `<command> --help` for them. See [ECOSYSTEM.md](ECOSYSTEM.md) for the crates behind them.
 
-Totals: 63 binaries with a clap surface, 1280 commands.
+Totals: 63 binaries with a clap surface, 1281 commands.
 
 ## aphrody
 
@@ -1408,7 +1408,7 @@ Crate `aphrody-nie-inventory`, parser `crates/nie/aphrody-nie-inventory/src/main
 
 ### `nie`
 
-Crate `aphrody-nie-cli`, parser `crates/nie/aphrody-nie-cli/src/main.rs#Cli`, 208 commands.
+Crate `aphrody-nie-cli`, parser `crates/nie/aphrody-nie-cli/src/main.rs#Cli`, 209 commands.
 
 - `nie play` — Lance l'exécution headless du moteur de jeu nie (simulation, menu, match, rendu).
 - `nie net` — Mode multijoueur en ligne, matchmaking Inacode, simulation déterministe et ladder ranked.
@@ -1592,6 +1592,7 @@ Crate `aphrody-nie-cli`, parser `crates/nie/aphrody-nie-cli/src/main.rs#Cli`, 20
   - `nie mem catalog` — Affiche le catalogue de signatures AOB et offsets dérivés du dump mémoire (aphrody-nie-trace::catalog).
   - `nie mem recette` — Applique une recette de live modding (.txt) sur le process vivant (aphrody-nie-trace::recette).
 - `nie vfs` — Explorateur du VFS (CPK) : liste/cherche/prévisualise/extrait les ~254 800 fichiers du jeu, avec décodage structuré par format (G4MT/G4SK/G4MD/G4TX/…) et recherche de personnage/technique par nom, ID…
+  - `nie vfs locate` — Locate/register a local or remote source without mounting the VFS.
   - `nie vfs bundle` — Build the deterministic initial browser VFS from this licensed local installation.
   - `nie vfs ls` — Vue « dossier » : sous-dossiers et fichiers directement sous `prefix` (racine si omis).
   - `nie vfs find` — Cherche par sous-chaîne dans les chemins internes (remplace l'exemple `vfs_grep`).
@@ -1600,8 +1601,8 @@ Crate `aphrody-nie-cli`, parser `crates/nie/aphrody-nie-cli/src/main.rs#Cli`, 20
   - `nie vfs extract` — Extrait un fichier — ou tous les fichiers sous un préfixe — vers le disque.
   - `nie vfs stats` — Histogramme des extensions du VFS complet (remplace l'exemple `vfs_hist`).
   - `nie vfs formats` — Couverture des formats : quelle part du VFS le dépôt sait réellement lire.
-  - `nie vfs chara` — Cherche un personnage par nom (FR/EN/JA), ID ou code interne (miroir wiki `aphrody-nie-wiki`), puis liste ses fichiers dans le VFS (modèles, textures, animations…).
-  - `nie vfs waza` — Cherche une technique/waza par nom (FR/EN/JA), ID ou code interne (miroir wiki `aphrody-nie-wiki`), puis liste ses fichiers dans le VFS (cut-ins, sons, vidéos…).
+  - `nie vfs chara` — Search native VFS characters by localized name, hash or internal code. Explicit --db opts into wiki. puis liste ses fichiers dans le VFS (modèles, textures, animations…).
+  - `nie vfs waza` — Search native VFS skills by localized name, hash or internal code. Explicit --db opts into wiki.
 - `nie vn` — Alimente le visual novel `nie-vn-engine` avec les assets réels du jeu (voix, textures, musique) : produit un catalogue local, jamais versionné.
   - `nie vn casting` — Liste les personnages doublés, du plus fourni au moins fourni.
   - `nie vn export` — Extrait voix, portraits et musique vers un dossier consommable par le projet Ren'Py.
