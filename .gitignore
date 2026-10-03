@@ -49,6 +49,8 @@ compile_commands.json
 .mypy_cache/
 .hypothesis/
 /var/runs/
+/var/audit/
+/var/json/
 /var/private/
 /var/unification/
 /apps/rg/.env
