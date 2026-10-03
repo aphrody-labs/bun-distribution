@@ -3,10 +3,6 @@
   "$comment": "Host- and machine-specific path ratchet (aphrody-ops path-audit --repository). Counts may only fall.",
   "files": {
     "config/infra/inventory/vps-source.json": 4,
-    "crates/compat/serde-saphyr/.github/workflows/ci.yml": 8,
-    "crates/compat/serde-saphyr/.github/workflows/miri.yml": 6,
-    "crates/compat/serde-saphyr/.github/workflows/rust.yml": 5,
-    "crates/os/drive/patches/ffmpeg-sys-next/.github/workflows/build.yml": 1,
     "scripts/atomic-deploy-rg.sh": 1,
     "scripts/rg/assemble-vps-release.sh": 1
   }
