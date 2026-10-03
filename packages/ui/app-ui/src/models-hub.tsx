@@ -1,7 +1,17 @@
 // SPDX-License-Identifier: Apache-2.0
 // Models hub: discover, download, verify, and use local models.
 // All typography strictly obeys LOW_VISION floor (>= 18px). No hardware dumps or slop.
-import { Badge, Button, Card, CircularProgress, Divider, Icon, toast, Tooltip } from "@aphrody/m3-primitives";
+import {
+  Badge,
+  Button,
+  Card,
+  CircularProgress,
+  Divider,
+  Icon,
+  SearchBar,
+  toast,
+  Tooltip,
+} from "@aphrody/m3-primitives";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -11,6 +21,7 @@ import {
   formatBytes,
   kindLabel,
   normalizeModelKind,
+  searchModelCatalog,
   startDownload,
 } from "./models-hub-state";
 import {
@@ -51,6 +62,7 @@ export function ModelsHub() {
   const [loadError, setLoadError] = useState("");
   const [loading, setLoading] = useState(false);
   const [filterKind, setFilterKind] = useState("all");
+  const [searchQuery, setSearchQuery] = useState("");
   const [downloads, setDownloads] = useState<Record<string, DownloadState>>({});
   const [activeModel, setActiveModel] = useState<string | null>(null);
   const [defaultModel, setDefaultModel] = useState<string | null>(null);
@@ -156,7 +168,9 @@ export function ModelsHub() {
   const handleStopDownload = async (id: string) => {
     setDownloads((current) => {
       const state = current[id];
-      return state ? { ...current, [id]: { ...state, status: "stopped", speedBps: null, etaSeconds: null } } : current;
+      return state
+        ? { ...current, [id]: { ...state, status: "stopped", speedBps: null, etaSeconds: null } }
+        : current;
     });
     try {
       await cancelModelPull(id);
@@ -190,9 +204,12 @@ export function ModelsHub() {
   };
 
   const visibleCatalog = useMemo(() => {
-    if (filterKind === "all") return catalog;
-    return catalog.filter((entry) => normalizeModelKind(entry.task) === filterKind);
-  }, [catalog, filterKind]);
+    const entries =
+      filterKind === "all"
+        ? catalog
+        : catalog.filter((entry) => normalizeModelKind(entry.task) === filterKind);
+    return searchModelCatalog(entries, searchQuery);
+  }, [catalog, filterKind, searchQuery]);
 
   const visibleInstalled = useMemo(() => {
     if (filterKind === "all") return installedModelsList;
@@ -230,7 +247,11 @@ export function ModelsHub() {
         <Card variant="filled" className="border border-error/40 p-4">
           <div className="flex items-center justify-between gap-3">
             <span className="text-[18px] text-error">{loadError}</span>
-            <Button variant="text" className="min-h-[44px] text-[18px]" onClick={() => void refreshStore()}>
+            <Button
+              variant="text"
+              className="min-h-[44px] text-[18px]"
+              onClick={() => void refreshStore()}
+            >
               <span>Réessayer</span>
             </Button>
           </div>
@@ -238,7 +259,10 @@ export function ModelsHub() {
       )}
 
       {/* Navigation tabs */}
-      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-outline-variant/40 pb-3" role="tablist">
+      <div
+        className="flex flex-wrap items-center justify-between gap-4 border-b border-outline-variant/40 pb-3"
+        role="tablist"
+      >
         <div className="flex items-center gap-2">
           <Button
             variant={activeTab === "installed" ? "filled" : "tonal"}
@@ -249,7 +273,10 @@ export function ModelsHub() {
           >
             <Icon name="inventory_2" size={20} />
             <span>Installés</span>
-            <Badge variant={activeTab === "installed" ? "secondary" : "outline"} className="ml-1 text-[16px]">
+            <Badge
+              variant={activeTab === "installed" ? "secondary" : "outline"}
+              className="ml-1 text-[16px]"
+            >
               {installedModelsList.length}
             </Badge>
           </Button>
@@ -263,14 +290,30 @@ export function ModelsHub() {
           >
             <Icon name="travel_explore" size={20} />
             <span>Catalogue</span>
-            <Badge variant={activeTab === "catalog" ? "secondary" : "outline"} className="ml-1 text-[16px]">
+            <Badge
+              variant={activeTab === "catalog" ? "secondary" : "outline"}
+              className="ml-1 text-[16px]"
+            >
               {catalog.length}
             </Badge>
           </Button>
         </div>
 
         {/* Kind Filters */}
-        <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Filtres par type">
+        {activeTab === "catalog" && (
+          <SearchBar
+            value={searchQuery}
+            onChange={setSearchQuery}
+            type="search"
+            aria-label="Rechercher un modèle dans le catalogue"
+            placeholder="Nom, identifiant ou URL Hugging Face"
+          />
+        )}
+        <div
+          className="flex flex-wrap items-center gap-2"
+          role="group"
+          aria-label="Filtres par type"
+        >
           {TASK_FILTERS.map(([key, label]) => (
             <Button
               key={key}
@@ -288,9 +331,18 @@ export function ModelsHub() {
       {activeTab === "installed" && (
         <div className="flex flex-col gap-4">
           {visibleInstalled.length === 0 ? (
-            <Card variant="elevated" className="flex flex-col items-center justify-center p-8 text-center">
-              <Icon name="download_for_offline" size={48} className="mb-3 text-on-surface-variant" />
-              <h2 className="m-0 text-[20px] font-semibold text-on-surface">Aucun modèle installé</h2>
+            <Card
+              variant="elevated"
+              className="flex flex-col items-center justify-center p-8 text-center"
+            >
+              <Icon
+                name="download_for_offline"
+                size={48}
+                className="mb-3 text-on-surface-variant"
+              />
+              <h2 className="m-0 text-[20px] font-semibold text-on-surface">
+                Aucun modèle installé
+              </h2>
               <p className="m-0 mt-2 text-[18px] text-on-surface-variant">
                 Parcourez le catalogue pour télécharger des modèles optimisés pour cette machine.
               </p>
@@ -305,7 +357,9 @@ export function ModelsHub() {
             </Card>
           ) : (
             visibleInstalled.map((model) => {
-              const catalogEntry = catalog.find((c) => c.id === model.catalog_id || c.id === model.ref);
+              const catalogEntry = catalog.find(
+                (c) => c.id === model.catalog_id || c.id === model.ref,
+              );
               const modelId = model.catalog_id || model.ref;
               const title = catalogEntry?.title || model.ref.split("/").pop() || model.ref;
               const kind = normalizeModelKind(catalogEntry?.task ?? model.ref);
@@ -313,7 +367,11 @@ export function ModelsHub() {
               const isActiveChat = activeModel === modelId || activeModel === model.ref;
 
               return (
-                <Card key={model.path || model.ref} variant="elevated" className="flex flex-col gap-4 p-5">
+                <Card
+                  key={model.path || model.ref}
+                  variant="elevated"
+                  className="flex flex-col gap-4 p-5"
+                >
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div className="flex flex-col gap-1">
                       <div className="flex flex-wrap items-center gap-3">
@@ -326,7 +384,10 @@ export function ModelsHub() {
                           Installé
                         </Badge>
                         {isDefault && (
-                          <Badge variant="secondary" className="px-3 py-1 text-[18px] font-semibold text-primary">
+                          <Badge
+                            variant="secondary"
+                            className="px-3 py-1 text-[18px] font-semibold text-primary"
+                          >
                             <Icon name="star" size={18} className="mr-1.5" />
                             Par défaut
                           </Badge>
@@ -351,7 +412,9 @@ export function ModelsHub() {
                   </div>
 
                   {catalogEntry?.summary && (
-                    <p className="m-0 text-[18px] text-on-surface-variant">{catalogEntry.summary}</p>
+                    <p className="m-0 text-[18px] text-on-surface-variant">
+                      {catalogEntry.summary}
+                    </p>
                   )}
 
                   <Divider />
@@ -377,7 +440,6 @@ export function ModelsHub() {
                           <span>Définir par défaut</span>
                         </Button>
                       )}
-
                     </div>
 
                     <div className="flex items-center gap-2">
@@ -412,12 +474,15 @@ export function ModelsHub() {
       {/* TAB 2: CATALOGUE */}
       {activeTab === "catalog" && (
         <div className="grid gap-4 md:grid-cols-2">
+          {visibleCatalog.length === 0 && <p role="status">Aucun modèle dans cette sélection.</p>}
           {visibleCatalog.map((entry) => {
             const size = entryBytes(entry);
             const isInstalled = installedSet.has(entry.id);
             const download = downloads[entry.id];
             const running = download?.status === "downloading";
-            const percent = download?.total ? Math.min(100, Math.round((download.downloaded / download.total) * 100)) : null;
+            const percent = download?.total
+              ? Math.min(100, Math.round((download.downloaded / download.total) * 100))
+              : null;
             const kind = normalizeModelKind(entry.task);
             const isDefault = defaultModel === entry.id;
             const isActiveChat = activeModel === entry.id;
@@ -427,7 +492,9 @@ export function ModelsHub() {
                 <div className="flex flex-col gap-3">
                   <div className="flex items-start justify-between gap-3">
                     <div>
-                      <h2 className="m-0 text-[20px] font-semibold text-on-surface">{entry.title}</h2>
+                      <h2 className="m-0 text-[20px] font-semibold text-on-surface">
+                        {entry.title}
+                      </h2>
                       <span className="text-[18px] text-on-surface-variant">
                         {entry.id} · {entry.backend}
                       </span>
@@ -448,7 +515,10 @@ export function ModelsHub() {
                         </Badge>
                       )}
                       {isDefault && (
-                        <Badge variant="secondary" className="px-3 py-1 text-[18px] font-semibold text-primary">
+                        <Badge
+                          variant="secondary"
+                          className="px-3 py-1 text-[18px] font-semibold text-primary"
+                        >
                           <Icon name="star" size={18} className="mr-1.5" />
                           Par défaut
                         </Badge>
@@ -491,20 +561,26 @@ export function ModelsHub() {
                           {download.status === "stopped"
                             ? "Téléchargement interrompu"
                             : download.status === "error"
-                            ? "Erreur de téléchargement"
-                            : percent === null
-                            ? "Téléchargement en cours…"
-                            : `Téléchargement… ${percent}%`}
+                              ? "Erreur de téléchargement"
+                              : percent === null
+                                ? "Téléchargement en cours…"
+                                : `Téléchargement… ${percent}%`}
                         </span>
                         <span className="text-[18px] text-on-surface-variant">
                           {formatBytes(download.downloaded)}
                           {download.total !== null && ` / ${formatBytes(download.total)}`}
-                          {running && download.speedBps !== null && ` · ${formatBytes(Math.round(download.speedBps))}/s`}
-                          {running && download.etaSeconds !== null && ` · ${download.etaSeconds}s restants`}
+                          {running &&
+                            download.speedBps !== null &&
+                            ` · ${formatBytes(Math.round(download.speedBps))}/s`}
+                          {running &&
+                            download.etaSeconds !== null &&
+                            ` · ${download.etaSeconds}s restants`}
                         </span>
                       </div>
                     </div>
-                    {download.error && <p className="m-0 text-[18px] text-error">{download.error}</p>}
+                    {download.error && (
+                      <p className="m-0 text-[18px] text-error">{download.error}</p>
+                    )}
                   </div>
                 )}
 
@@ -533,8 +609,7 @@ export function ModelsHub() {
                             <span>Par défaut</span>
                           </Button>
                         )}
-
-                        </div>
+                      </div>
 
                       <div className="flex items-center gap-2">
                         <Button
@@ -573,7 +648,11 @@ export function ModelsHub() {
                     >
                       <Icon name={download ? "play_arrow" : "download"} size={20} />
                       <span>
-                        {download ? "Reprendre" : size === null ? "Télécharger" : `Télécharger (${formatBytes(size)})`}
+                        {download
+                          ? "Reprendre"
+                          : size === null
+                            ? "Télécharger"
+                            : `Télécharger (${formatBytes(size)})`}
                       </span>
                     </Button>
                   )}
@@ -583,7 +662,6 @@ export function ModelsHub() {
           })}
         </div>
       )}
-
     </section>
   );
 }

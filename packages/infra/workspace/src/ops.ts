@@ -5,6 +5,9 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const [operation, ...rest] = process.argv.slice(2);
+if (operation === "jan-absorption") {
+  process.exit(await (await import("./jan-absorption.ts")).runJanAbsorption(rest));
+}
 if (operation === "optimize") {
   process.exit(await (await import("./optimize.ts")).runOptimize(rest));
 }

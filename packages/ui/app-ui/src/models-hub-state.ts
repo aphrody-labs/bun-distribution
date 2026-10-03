@@ -1,7 +1,63 @@
 // SPDX-License-Identifier: Apache-2.0
 // Pure state helpers of the Models hub (models-hub.tsx): progress aggregation over the
 // `aphrody://model-pull` events, measured throughput, and catalog/store joins.
-import type { CatalogEntry, HardwareTelemetry, InstalledModels, PullProgress } from "./tauri-bridge";
+import type {
+  CatalogEntry,
+  HardwareTelemetry,
+  InstalledModels,
+  PullProgress,
+} from "./tauri-bridge";
+import Fuse from "fuse.js";
+
+/** Jan hub search contract, adapted to Aphrody's existing catalog/store schema.
+ * Source: janhq/jan@14a720628f9592c8e60f7e081ef733076db8a6a9,
+ * web-app/src/routes/hub/-searchRanking.ts and hub/index.tsx; Apache-2.0,
+ * Copyright 2025 Menlo Research. No Jan catalog, store or UI framework is copied.
+ */
+export function cleanModelSearchQuery(raw: string): string {
+  return raw.trim().replace(/^https?:\/\/[^/]+\//i, "");
+}
+
+export function searchModelCatalog<
+  T extends Pick<CatalogEntry, "id" | "title" | "summary" | "files">,
+>(entries: T[], rawQuery: string): T[] {
+  const query = cleanModelSearchQuery(rawQuery).toLowerCase();
+  if (!query) return entries;
+  const documents = entries.map((entry) => {
+    const variants = entry.files.flatMap((file) => {
+      const ref = file.ref.replace(/^hf:/, "").split("@")[0]!;
+      return [ref, ref.split("/").at(-1)!];
+    });
+    const repos = entry.files.flatMap((file) => {
+      const match = file.ref.match(/^hf:([^/]+\/[^/]+)\//);
+      return match ? [match[1]!] : [];
+    });
+    return {
+      entry,
+      names: [entry.id, entry.title, ...repos].filter(Boolean),
+      variants,
+      summary: entry.summary,
+    };
+  });
+  const fuse = new Fuse(documents, {
+    includeScore: true,
+    threshold: 0.3,
+    ignoreLocation: true,
+    keys: ["names", "variants", "summary"],
+  });
+  const rank = (document: (typeof documents)[number]) => {
+    const names = document.names.map((name) => name.trim().toLowerCase());
+    if (names.includes(query)) return 0;
+    if (document.variants.some((variant) => variant.trim().toLowerCase() === query)) return 1;
+    if (names.some((name) => name.startsWith(query) || query.startsWith(name))) return 2;
+    return 3;
+  };
+  return fuse
+    .search(query)
+    .map(({ item }, index) => ({ item, index, rank: rank(item) }))
+    .sort((a, b) => a.rank - b.rank || a.index - b.index)
+    .map(({ item }) => item.entry);
+}
 
 export type DownloadState = {
   /** Bytes on disk per artefact role, as last reported by the CLI. */
@@ -28,11 +84,23 @@ export function entryBytes(entry: Pick<CatalogEntry, "files">): number | null {
 }
 
 export function startDownload(total: number | null, now: number): DownloadState {
-  return { roles: {}, downloaded: 0, total, speedBps: null, etaSeconds: null, status: "downloading", sampledAt: now };
+  return {
+    roles: {},
+    downloaded: 0,
+    total,
+    speedBps: null,
+    etaSeconds: null,
+    status: "downloading",
+    sampledAt: now,
+  };
 }
 
 /** Fold one progress event into the entry's state; throughput is measured, never assumed. */
-export function applyProgress(state: DownloadState, event: PullProgress, now: number): DownloadState {
+export function applyProgress(
+  state: DownloadState,
+  event: PullProgress,
+  now: number,
+): DownloadState {
   const roles = { ...state.roles, [event.role ?? "file"]: event.downloaded };
   const downloaded = Object.values(roles).reduce((sum, bytes) => sum + bytes, 0);
   const elapsed = (now - state.sampledAt) / 1000;
@@ -48,7 +116,9 @@ export function applyProgress(state: DownloadState, event: PullProgress, now: nu
 }
 
 export function installedIds(installed: InstalledModels | null): Set<string> {
-  return new Set((installed?.models ?? []).flatMap((model) => (model.catalog_id ? [model.catalog_id] : [])));
+  return new Set(
+    (installed?.models ?? []).flatMap((model) => (model.catalog_id ? [model.catalog_id] : [])),
+  );
 }
 
 /** Largest probed GPU memory in bytes; `null` when the GPU probe failed. */
@@ -60,7 +130,10 @@ export function maxVramBytes(hardware: HardwareTelemetry | null): number | null 
 }
 
 /** Whether the entry fits this machine's VRAM: `null` when unknown. CPU entries always fit. */
-export function fitsVram(entry: Pick<CatalogEntry, "vram_min_bytes">, hardware: HardwareTelemetry | null): boolean | null {
+export function fitsVram(
+  entry: Pick<CatalogEntry, "vram_min_bytes">,
+  hardware: HardwareTelemetry | null,
+): boolean | null {
   if (!entry.vram_min_bytes) return true;
   const vram = maxVramBytes(hardware);
   return vram === null ? null : vram >= entry.vram_min_bytes;
@@ -165,7 +238,7 @@ export function inferHomeFromPath(samplePath: string): string | null {
  */
 export function evaluateDetectedStores(
   candidates: ExternalStoreCandidate[],
-  probes: Record<string, { exists: boolean; modelCount?: number } | boolean>
+  probes: Record<string, { exists: boolean; modelCount?: number } | boolean>,
 ): DetectedExternalStore[] {
   return candidates.map((candidate) => {
     const probe = probes[candidate.path] ?? probes[candidate.id];
@@ -188,7 +261,10 @@ export function evaluateDetectedStores(
  */
 export async function scanExternalModelDirectories(
   homeDir: string,
-  probeFn?: (path: string, id: string) => Promise<{ exists: boolean; modelCount?: number } | boolean>
+  probeFn?: (
+    path: string,
+    id: string,
+  ) => Promise<{ exists: boolean; modelCount?: number } | boolean>,
 ): Promise<DetectedExternalStore[]> {
   const candidates = buildStandardExternalCandidates(homeDir);
   if (!probeFn) {

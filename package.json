@@ -27,6 +27,7 @@
       "@types/node": "26.6.3",
       "undici-types": "8.9.0",
       "typescript": "7.0.2",
+      "fuse.js": "7.1.0",
       "oxlint": "1.86.0",
       "oxfmt": "0.71.0",
       "@happy-dom/global-registrator": "^20.14.5",

@@ -12,12 +12,17 @@ import {
   normalizeModelKind,
   resolveExternalModelPath,
   scanExternalModelDirectories,
+  searchModelCatalog,
+  cleanModelSearchQuery,
   STANDARD_EXTERNAL_MODEL_DIRS,
   startDownload,
 } from "./models-hub-state";
 import type { HardwareTelemetry } from "./tauri-bridge";
 
-const hardware = (gpus: HardwareTelemetry["gpus"], cudaVramTotalMb: number | null = null): HardwareTelemetry => ({
+const hardware = (
+  gpus: HardwareTelemetry["gpus"],
+  cudaVramTotalMb: number | null = null,
+): HardwareTelemetry => ({
   cpuThreads: 8,
   memoryTotalMb: 16384,
   memoryAvailableMb: 8192,
@@ -29,8 +34,22 @@ const hardware = (gpus: HardwareTelemetry["gpus"], cudaVramTotalMb: number | nul
 
 describe("models hub state", () => {
   test("entry size is known only when every file declares one", () => {
-    expect(entryBytes({ files: [{ role: "weights", ref: "a", bytes: 10 }, { role: "tokenizer", ref: "b", bytes: 5 }] })).toBe(15);
-    expect(entryBytes({ files: [{ role: "weights", ref: "a", bytes: 10 }, { role: "config", ref: "b" }] })).toBeNull();
+    expect(
+      entryBytes({
+        files: [
+          { role: "weights", ref: "a", bytes: 10 },
+          { role: "tokenizer", ref: "b", bytes: 5 },
+        ],
+      }),
+    ).toBe(15);
+    expect(
+      entryBytes({
+        files: [
+          { role: "weights", ref: "a", bytes: 10 },
+          { role: "config", ref: "b" },
+        ],
+      }),
+    ).toBeNull();
   });
 
   test("progress sums roles and measures throughput from real samples", () => {
@@ -50,8 +69,26 @@ describe("models hub state", () => {
       count: 2,
       total_bytes: 3,
       models: [
-        { ref: "hf:a", path: "/m/a", bytes: 1, sha256: "x", format: "gguf", catalog_id: "whisper-base-en", installed_at: null, last_used_at: null },
-        { ref: "file:/b", path: "/b", bytes: 2, sha256: "y", format: "onnx", catalog_id: null, installed_at: null, last_used_at: null },
+        {
+          ref: "hf:a",
+          path: "/m/a",
+          bytes: 1,
+          sha256: "x",
+          format: "gguf",
+          catalog_id: "whisper-base-en",
+          installed_at: null,
+          last_used_at: null,
+        },
+        {
+          ref: "file:/b",
+          path: "/b",
+          bytes: 2,
+          sha256: "y",
+          format: "onnx",
+          catalog_id: null,
+          installed_at: null,
+          last_used_at: null,
+        },
       ],
     });
     expect([...ids]).toEqual(["whisper-base-en"]);
@@ -170,6 +207,51 @@ describe("models hub state", () => {
     expect(kindLabel("OCR")).toBe("OCR");
     expect(kindLabel("speech")).toBe("Speech");
   });
+});
 
+// Adapted Jan hub cases: exact identifiers, quant variants, URL queries and stable ranking.
+describe("Jan model search absorbed into the existing catalog", () => {
+  const entry = (id: string, ref = `hf:org/${id}/${id}-Q4.gguf@revision`) => ({
+    id,
+    title: id,
+    summary: "Local inference",
+    files: [{ role: "weights", ref }],
+  });
 
+  test("a pasted HF URL resolves its exact repository before nearby names", () => {
+    const models = [entry("gemma-nearby"), entry("gemma-target"), entry("another-gemma")];
+    const result = searchModelCatalog(models, "https://huggingface.co/org/gemma-target");
+    expect(result[0]).toBe(models[1]);
+    expect(models.map((model) => model.id)).toEqual([
+      "gemma-nearby",
+      "gemma-target",
+      "another-gemma",
+    ]);
+  });
+
+  test("exact variant filenames rank before fuzzy neighbors", () => {
+    const models = [
+      entry("neighbor", "hf:org/neighbor/exact-quont-Q4.gguf@revision"),
+      entry("target", "hf:org/target/exact-quant-Q4.gguf@revision"),
+    ];
+    expect(searchModelCatalog(models, "exact-quant-Q4.gguf")[0]).toBe(models[1]);
+  });
+
+  test("matching ignores case, leading URL whitespace and host casing", () => {
+    const model = entry("target");
+    expect(cleanModelSearchQuery(" HTTPS://huggingface.co/ORG/target ")).toBe("ORG/target");
+    expect(searchModelCatalog([model], " HTTPS://huggingface.co/ORG/target ")).toEqual([model]);
+  });
+
+  test("complete Fuse library handles typos and unknown searches", () => {
+    const model = entry("gemma-target");
+    expect(searchModelCatalog([model], "gemma-targte")).toEqual([model]);
+    expect(searchModelCatalog([model], "xxxxxxxxxxxxxx")).toEqual([]);
+  });
+
+  test("blank query preserves input, rows and tie ordering", () => {
+    const models = [entry("gemma-b"), entry("gemma-a")];
+    expect(searchModelCatalog(models, "   ")).toBe(models);
+    expect(searchModelCatalog(models, "gemma")).toEqual(models);
+  });
 });
