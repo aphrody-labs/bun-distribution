@@ -40,9 +40,9 @@ runtime behavior: 31 Rust tests, strict Clippy and 36 SDK/release tests pass.
 Other native targets pass metadata checks only. No heavy engine build or
 cross-platform execution is inferred.
 
-Aphrody pins SDK 0.1.0 archive `5334dbe9` from clean producer
-`0ade1c71ccb52bcc9d255188a252c28c5b789b48`. The Linux x64 runtime is rebuilt
-and installed locally through the release owner with matching embedded revision.
+Aphrody pins SDK 0.1.0 archive `c81812ea` from clean SDK producer
+`27403350547d36ef208068df929bc4e2eeb22218`. The Linux x64 runtime is rebuilt
+and installed locally through the release owner with embedded native revision `0ade1c71ccb5`.
 `engine.ts` and `service.ts` use the SDK-owned shared supervisor; service
 `Bun.spawn`, consumer runtime singleton and manual exit-kill fallback are removed.
 One-shot calls preserve bytes, errors, stderr, timeout and abort with an explicit
@@ -106,3 +106,18 @@ Codex has no native validator in the registry and used manager validation. Codex
 cached skill and project links were verified. docs:check failed on stale generated
 STATE/README/documentation and ecosystem indexes; these were not regenerated in
 this batch. No live model-driven optimization or performance gain is claimed.
+
+## Workflow owner correction — 2026-10-03
+
+Repeated clean clones, working copies, copied owner scripts and redundant gates
+made the previous workflow unnecessarily complex. The owner explicitly requires
+existing checkouts, direct scoped edits and end-to-end delivery. Do not create
+clones or worktree copies for implementation or verification. Reuse verified
+artifacts; call capability owners in place. Missing sources are explicit missing
+prerequisites. Repeat checks only for changed behavior or unresolved failures.
+
+SDK bootstrap automatic bare cloning, fetching and temporary owner-script copies
+are removed. Existing producer script must match the pinned committed script;
+dirty changes are preserved and refused, never reset. Verified cache reuse remains
+offline. This records concrete session corrections, not a claim that future errors
+are impossible or provider/model memory was changed.

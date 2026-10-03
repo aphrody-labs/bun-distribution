@@ -408,3 +408,25 @@ Avant livraison, chaque lot doit laisser un reçu avec les chemins possédés,
 commandes, résultats et limites. L'intégration finale peut regrouper les lots
 terminés dans un commit unique, après avoir comparé le résultat au reçu et sans
 perdre de changements présents dans le checkout.
+
+## Exécution directe — correction du workflow, 2026-10-03
+
+Décision du propriétaire : travailler dans les checkouts existants. Aucun clone
+supplémentaire, checkout propre, copie de travail ou script propriétaire recopié
+pour exécuter ou vérifier ce plan. Réutiliser les caches vérifiés et appeler les
+propriétaires en place. Une source absente est un prérequis manquant explicite.
+
+Exécuter chaque lot de bout en bout : lecture ciblée du contrat et du diff,
+implémentation directe, gates de la surface modifiée, correction des échecs,
+revue du diff et livraison du lot possédé. Ne répéter un gate qu'après une
+modification pertinente ou pour résoudre un échec. Aucun nouvel audit global,
+archive de code remplacé ou orchestrateur concurrent. Préserver les données,
+les caches partagés et les modifications des autres sessions.
+
+Le bootstrap SDK appelle directement le packaging Yolo existant, vérifie son
+script contre le commit épinglé et contrôle SHA-256/provenance du résultat.
+Il ne clone, ne fetch, ne change de branche et ne copie aucun script. Le SDK
+courant est `c81812ea`, produit depuis `27403350547d36ef208068df929bc4e2eeb22218`.
+Le runtime natif installé reste issu de `0ade1c71ccb5` ; ces révisions sont distinctes.
+L'acquisition native sur une nouvelle machine, desktop, headless, distribution,
+parité JSC et qualification produit restent à réaliser avec leurs gates.
