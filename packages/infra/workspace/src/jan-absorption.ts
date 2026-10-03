@@ -54,7 +54,7 @@ export function declarationCandidates(text: string, language: string) {
 export async function inventorySources(root: string, prefixes: string[]) {
   const revision = git(root, ["rev-parse", "HEAD"]).trim();
   const dirty = Boolean(git(root, ["status", "--porcelain", "--untracked-files=no"]).trim());
-  const tracked = git(root, ["ls-files", "-z"]).split("\0").filter(Boolean).sort();
+  const tracked = git(root, ["ls-files", "-z"]).split("\0").filter(Boolean).toSorted();
   const paths = tracked.filter((path) => sourcePath(path, prefixes));
   const files: Array<{
     path: string;
@@ -74,11 +74,14 @@ export async function inventorySources(root: string, prefixes: string[]) {
         const path = paths[next++];
         if (!path) return;
         const absolute = join(root, path);
+        // Each worker processes one file at a time to enforce the eight-reader bound.
+        // eslint-disable-next-line no-await-in-loop
         const stat = await lstat(absolute);
         if (!stat.isFile() || stat.isSymbolicLink() || stat.size > 4 * 1024 * 1024) {
           skipped.push({ path, reason: "not_regular_or_over_4_mib" });
           continue;
         }
+        // eslint-disable-next-line no-await-in-loop -- sequential within each bounded worker
         const bytes = await readFile(absolute);
         const language = languages[extname(path)] ?? "manifest";
         const text = bytes.toString("utf8");
