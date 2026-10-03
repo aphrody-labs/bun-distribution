@@ -9,10 +9,9 @@
 .EXAMPLE
   pwsh -File scripts/dev/windows-cargo.ps1 test -p aphrody-wsl --locked
 #>
-param(
-  [Parameter(Mandatory, ValueFromRemainingArguments)][string[]] $CargoArguments
-)
+# No param block on purpose: an advanced script would bind cargo's -p to a common parameter prefix.
 $ErrorActionPreference = 'Stop'
+if (-not $args.Count) { throw 'Usage: windows-cargo.ps1 <cargo arguments>' }
 $vswhere = Join-Path ${env:ProgramFiles(x86)} 'Microsoft Visual Studio\Installer\vswhere.exe'
 if (-not (Test-Path $vswhere)) { throw 'vswhere.exe not found: install Visual Studio Build Tools (aphrody-ops system-packages --host windows apply).' }
 $install = & $vswhere -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
@@ -31,5 +30,5 @@ $env:GIT_TERMINAL_PROMPT = '0'
 $env:GIT_CONFIG_COUNT = '1'
 $env:GIT_CONFIG_KEY_0 = 'url.https://github.com/.insteadOf'
 $env:GIT_CONFIG_VALUE_0 = 'ssh://git@github-dev/'
-& cargo @CargoArguments
+& cargo @args
 exit $LASTEXITCODE
