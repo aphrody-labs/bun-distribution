@@ -1,0 +1,104 @@
+[Unit]
+# rg-bot — bot Discord du serveur Rose Griffon (Bun + @rpbey/discordx).
+#
+# Ce démon ne sert QUE les interactions : il enregistre les 15 slash commands
+# sur la guilde et y répond. Tout le reste du Discord (synchronisation des
+# membres, des rôles et des avatars du staff, télémétrie présences/vocal,
+# veille des messages, serveur HTTP d'annonces sur :3006) reste la
+# responsabilité de `rg-cron.service`, qui ouvre sa propre passerelle avec le
+# même jeton. Voir `apps/bot/src/lib/config.ts` (BOT_SYNC_MEMBRES) pour le
+# détail du partage.
+#
+# Installation :
+#   Installé depuis la release immuable par scripts/atomic-deploy-rg.sh.
+Description=Rose Griffon Discord Bot (Bun + discordx — slash commands)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=ubuntu
+Group=ubuntu
+
+# ⚠ OBLIGATOIRE : Bun lit le `tsconfig.json` du répertoire courant, et c'est
+# `apps/bot/tsconfig.json` qui porte `experimentalDecorators` +
+# `emitDecoratorMetadata`. Lancé depuis la racine du dépôt, le bot part sur le
+# tsconfig racine (décorateurs TC39) et discordx meurt aussitôt sur
+# « TypeError: undefined is not an object (evaluating 'descriptor.value') ».
+WorkingDirectory=/srv/rg/current/apps/bot
+
+# Un seul fichier de secrets hors dépôt (0600), matérialisé par
+# scripts/rg/provision-vps-env.py : jeton Discord, Postgres, extras du bot.
+EnvironmentFile=/etc/rose-griffon/rg-bot.env
+Environment=NODE_ENV=production
+
+# `PATH` est OBLIGATOIRE : systemd n'en fournit pas qui contienne
+# `/home/ubuntu/.bun/bin`.
+Environment=PATH=/home/ubuntu/.bun/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+
+# Partage explicite avec rg-cron : le bot ne synchronise PAS les membres.
+# Passer à 1 uniquement si le cron cesse de le faire, sinon chaque membre est
+# écrit deux fois dans `discord_members`.
+Environment=BOT_SYNC_MEMBRES=0
+Environment=RG_DISCORD_SYNC_SQLITE_PATH=/srv/rg/shared/discord-sync/discord.db
+Environment=RG_DISCORD_SYNC_REDIS_URL=redis://127.0.0.1:6379
+
+# Cibles publiques (embeds et liens des slash commands).
+Environment=WEBSITE_URL=https://rosegriffon.fr
+Environment=WEBSITE_API_URL=https://rosegriffon.fr
+
+ExecStart=/home/ubuntu/.bun/bin/bun run src/index.ts
+# `always` : une déconnexion Discord qui se solde par une sortie en code 0 n'était
+# jamais relancée — le bot restait silencieux sans qu'aucune unité ne soit en échec.
+Restart=always
+RestartSec=5s
+TimeoutStopSec=15s
+KillMode=mixed
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=rg-bot
+
+# ── Limites de ressources ──
+LimitNOFILE=131072
+TasksMax=512
+MemoryMax=1G
+MemoryHigh=768M
+MemoryLow=256M
+CPUWeight=200
+IOWeight=200
+OOMScoreAdjust=-300
+
+# ── Durcissement (MemoryDenyWriteExecute INTERDIT — casse le JIT de Bun) ──
+ProtectSystem=strict
+ProtectHome=read-only
+# Le bot ne persiste rien : il lit la release, les polices de
+# `apps/website/public/fonts` (lecture seule) et écrit uniquement des PNG
+# temporaires (/tmp) ou son état partagé (/srv/rg/shared/bot). Sans cette ligne, ProtectSystem=strict
+# rendrait la moindre écriture EROFS.
+ReadWritePaths=/srv/rg/shared/bot /srv/rg/shared/discord-sync /tmp
+PrivateTmp=true
+PrivateDevices=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictNamespaces=true
+RestrictRealtime=true
+RestrictSUIDSGID=true
+LockPersonality=true
+NoNewPrivileges=true
+ProcSubset=pid
+ProtectProc=invisible
+RemoveIPC=true
+CapabilityBoundingSet=
+AmbientCapabilities=
+# Deux directives, pas une : systemd n'accepte pas de mélanger liste blanche et
+# liste noire sur la même ligne — il lisait « ~@obsolete » comme un nom d'appel
+# système inconnu (« System call ~@obsolete is not known, ignoring »), ignorait
+# le retrait, et laissait donc @privileged AUTORISÉ. La seconde ligne soustrait
+# bien les deux groupes de l'ensemble accordé par la première.
+SystemCallFilter=@system-service
+SystemCallFilter=~@obsolete @privileged
+SystemCallErrorNumber=EPERM
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,79 @@
+# rg-website.service — rosegriffon.fr (Next 16 standalone, Bun runtime).
+#
+# Formerly `website-web.service` (slot A) + `website-web-b.service` (slot B blue/green).
+# Blue/green is retired: scripts/atomic-deploy-rg.sh switches /srv/rg/current to an
+# immutable release and rolls back on failed readiness. The service reads that frozen
+# release, never a checkout, so a running build cannot pull a route chunk from under it.
+[Unit]
+Description=Rose Griffon website (Next.js 16 standalone, Bun runtime)
+After=network-online.target
+Wants=network-online.target
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+User=ubuntu
+Group=ubuntu
+WorkingDirectory=/srv/rg/current/apps/website
+EnvironmentFile=/etc/rose-griffon/website.env
+Environment=NODE_ENV=production
+Environment=PORT=3004
+# Loopback only: the local nginx is the single proxy.
+Environment=HOSTNAME=127.0.0.1
+Environment=BUN_RUNTIME_TRANSPILER_CACHE_PATH=/srv/rg/shared/website/bun-cache
+ExecStart=/home/ubuntu/.bun/bin/bun /srv/rg/current/apps/website/server.js
+
+TimeoutStopSec=60
+KillMode=mixed
+KillSignal=SIGTERM
+# Bun exits 143 (128+SIGTERM) on a clean stop; without this the unit is marked failed.
+SuccessExitStatus=143
+Restart=always
+RestartSec=3
+
+# Next SSR/ISR, expected RSS ~400-800 MiB.
+MemoryHigh=4G
+MemoryMax=6G
+MemorySwapMax=512M
+MemoryLow=256M
+TasksMax=2048
+OOMScoreAdjust=-200
+# Public pages win CPU/IO contention against bots, imports and batch work.
+CPUWeight=1000
+IOWeight=1000
+
+# Hardening (JIT-compatible: never MemoryDenyWriteExecute, it breaks Bun/V8).
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=read-only
+PrivateTmp=true
+PrivateDevices=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectKernelLogs=true
+ProtectControlGroups=true
+ProtectHostname=true
+ProtectClock=true
+ProtectProc=invisible
+ProcSubset=pid
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+RestrictNamespaces=true
+RestrictSUIDSGID=true
+RestrictRealtime=true
+LockPersonality=true
+CapabilityBoundingSet=
+AmbientCapabilities=
+SystemCallArchitectures=native
+SystemCallFilter=@system-service
+SystemCallFilter=~@obsolete @privileged
+# Mutable state lives outside the release: the Next cache is bind-mounted in.
+ReadWritePaths=/srv/rg/shared/website
+BindPaths=/srv/rg/shared/website/cache:/srv/rg/current/apps/website/.next/cache
+
+LimitNOFILE=131072
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=rg-website
+
+[Install]
+WantedBy=multi-user.target
