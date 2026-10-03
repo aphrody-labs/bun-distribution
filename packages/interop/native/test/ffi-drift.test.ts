@@ -47,6 +47,8 @@ interface RustExport {
   returns: string;
 }
 
+const duplicateRustExports: string[] = [];
+
 function rustExports(): Map<string, RustExport> {
   const found = new Map<string, RustExport>();
   const re =
@@ -60,7 +62,12 @@ function rustExports(): Map<string, RustExport> {
           .map((p) => p.trim().replace(/,$/, ""))
           .filter((p) => p.includes(":"))
           .map((p) => normalizeRust(p.slice(p.indexOf(":") + 1)));
-        found.set(m[1]!, { file: file.slice(repo.length + 1), args: params, returns: normalizeRust(m[3] ?? "") });
+        if (found.has(m[1]!)) duplicateRustExports.push(m[1]!);
+        found.set(m[1]!, {
+          file: file.slice(repo.length + 1),
+          args: params,
+          returns: normalizeRust(m[3] ?? ""),
+        });
       }
     }
   }
@@ -75,14 +82,29 @@ function tsSymbols(): Map<string, { args: string[]; returns: string }> {
   for (const m of body.matchAll(re)) {
     const args = m[2]!
       .split(",")
-      .map((a) => a.trim().replace(/^FFIType\./, "").replace(/"/g, ""))
+      .map((a) =>
+        a
+          .trim()
+          .replace(/^FFIType\./, "")
+          .replace(/"/g, ""),
+      )
       .filter(Boolean)
       .map(normalizeTs);
-    out.set(m[1]!, { args, returns: normalizeTs(m[3]!.trim().replace(/^FFIType\./, "").replace(/"/g, "")) });
+    if (out.has(m[1]!)) duplicateTsSymbols.push(m[1]!);
+    out.set(m[1]!, {
+      args,
+      returns: normalizeTs(
+        m[3]!
+          .trim()
+          .replace(/^FFIType\./, "")
+          .replace(/"/g, ""),
+      ),
+    });
   }
   return out;
 }
 
+const duplicateTsSymbols: string[] = [];
 const rust = rustExports();
 const ts = tsSymbols();
 
@@ -92,11 +114,16 @@ test("scanners find the export surface", () => {
 });
 
 test("every Rust export has a dlopen definition", () => {
-  expect([...rust.keys()].filter((name) => !ts.has(name)).sort()).toEqual([]);
+  expect([...rust.keys()].filter((name) => !ts.has(name)).toSorted()).toEqual([]);
 });
 
 test("every dlopen definition has a Rust export", () => {
-  expect([...ts.keys()].filter((name) => !rust.has(name)).sort()).toEqual([]);
+  expect([...ts.keys()].filter((name) => !rust.has(name)).toSorted()).toEqual([]);
+});
+
+test("Rust exports and dlopen definitions contain no duplicate symbols", () => {
+  expect(duplicateRustExports.toSorted()).toEqual([]);
+  expect(duplicateTsSymbols.toSorted()).toEqual([]);
 });
 
 test("arity, argument and return types agree", () => {
@@ -105,7 +132,9 @@ test("arity, argument and return types agree", () => {
     const t = ts.get(name);
     if (!t) continue;
     if (JSON.stringify(r.args) !== JSON.stringify(t.args) || r.returns !== t.returns) {
-      mismatches.push(`${name}: rust (${r.args}) -> ${r.returns} @ ${r.file}; ts (${t.args}) -> ${t.returns}`);
+      mismatches.push(
+        `${name}: rust (${r.args}) -> ${r.returns} @ ${r.file}; ts (${t.args}) -> ${t.returns}`,
+      );
     }
   }
   expect(mismatches).toEqual([]);
@@ -119,7 +148,8 @@ test("no bun:aphrody fork dependence remains in the Bun sources", () => {
     for (const entry of readdirSync(join(repo, root), { recursive: true })) {
       const rel = String(entry);
       if (!/\.(ts|tsx|js)$/.test(rel)) continue;
-      if (readFileSync(join(repo, root, rel), "utf8").includes(needle)) stale.push(`${root}/${rel}`);
+      if (readFileSync(join(repo, root, rel), "utf8").includes(needle))
+        stale.push(`${root}/${rel}`);
     }
   }
   expect(stale).toEqual([]);
