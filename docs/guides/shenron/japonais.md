@@ -136,7 +136,7 @@ Le compteur `debordement` signale les termes laissés sans protection.
 
 ## Agents et skill
 
-Le plugin unique `../aphrody-ai/plugins/aphrody/` expose ces skills Dragon Ball à Claude Code :
+Le plugin `~/plugins/shenron/` expose ces skills Dragon Ball à Claude Code :
 
 - skill **`dragon-ball-japonais`** — vocabulaire, lexique, graphies vérifiées ;
 - **`dbfr-ocr`** — transcrit les planches, contrôle la qualité ;

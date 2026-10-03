@@ -1,4 +1,5 @@
 #!/usr/bin/env bun
+import { pluginStorePath } from "@aphrody/paths";
 /**
  * n2b coverage audit
  *
@@ -11,7 +12,7 @@
  *   bun scripts/n2b/coverage-check.ts --strict     # exit 1 si coverage < threshold
  *
  * Env vars :
- *   CLAUDE_PLUGIN_ROOT    plugin root scanned for agents/skills/commands (default: plugins/aphrody)
+ *   CLAUDE_PLUGIN_ROOT    plugin root scanned for agents/skills/commands (default: ~/plugins/aphrody)
  *   N2B_COVERAGE_DIR      report output directory (default: var/audit/n2b-coverage)
  *   COVERAGE_THRESHOLD    % minimum pour --strict (default: 80)
  */
@@ -23,7 +24,7 @@ import { join, dirname, relative, resolve } from "node:path";
 const SCRIPT_DIR = dirname(import.meta.path);
 // scripts/audit/compat/scripts/n2b -> repository root is five levels up.
 const REPO_ROOT = resolve(SCRIPT_DIR, "..", "..", "..", "..", "..");
-const PLUGIN_ROOT = process.env.CLAUDE_PLUGIN_ROOT ?? join(REPO_ROOT, "plugins/aphrody");
+const PLUGIN_ROOT = process.env.CLAUDE_PLUGIN_ROOT ?? pluginStorePath("aphrody");
 // Canonical Bun docs mirror (the n2b copy was deduplicated on 2026-10-02).
 const DOCS_BUN = process.env.N2B_DOCS_BUN ?? join(REPO_ROOT, "docs/reference/upstream-bun");
 const DOCS_N2B = join(REPO_ROOT, "docs/reference/compat/n2b/plugin/n2b");
@@ -41,15 +42,15 @@ const log = (msg: string) => (FORMAT_JSON ? console.error(msg) : console.log(msg
 // ──────────────────────────────────────────────────────────────────
 
 const API_PATTERNS = [
-  /\bBun\.([A-Za-z][A-Za-z0-9]*)/g,           // Bun.serve, Bun.file, Bun.spawn, ...
-  /\bbun:([a-z][a-z0-9-]*)/g,                 // bun:sqlite, bun:ffi, bun:test, ...
+  /\bBun\.([A-Za-z][A-Za-z0-9]*)/g, // Bun.serve, Bun.file, Bun.spawn, ...
+  /\bbun:([a-z][a-z0-9-]*)/g, // bun:sqlite, bun:ffi, bun:test, ...
   /\bimport\s*[{\s,\w]*\s*from\s*['"]bun['"]/g, // import { Glob } from "bun"
 ];
 
 type ApiRef = {
-  api: string;              // ex. "Bun.serve" | "bun:sqlite"
+  api: string; // ex. "Bun.serve" | "bun:sqlite"
   category: "Bun.*" | "bun:*" | "import";
-  sources: Set<string>;     // files where found
+  sources: Set<string>; // files where found
 };
 
 const apiMap = new Map<string, ApiRef>();
@@ -109,7 +110,7 @@ async function loadN2bRules(): Promise<N2bRule[]> {
           aggressive: Boolean(r.aggressive ?? r.autofix === "aggressive"),
         }));
       }
-		} catch {
+    } catch {
       // fall through to doc scan
     }
   }
@@ -118,7 +119,9 @@ async function loadN2bRules(): Promise<N2bRule[]> {
   const glob = new Glob("**/*.md");
   for await (const rel of glob.scan({ cwd: DOCS_N2B })) {
     const text = await Bun.file(join(DOCS_N2B, rel)).text();
-    for (const m of text.matchAll(/`(api|cli|imports|pkg|ci|shebang|tsconfig|husky|lock|workspace)\/([a-z-]+)`/g)) {
+    for (const m of text.matchAll(
+      /`(api|cli|imports|pkg|ci|shebang|tsconfig|husky|lock|workspace)\/([a-z-]+)`/g,
+    )) {
       rules.push({ id: `${m[1]}/${m[2]}`, replacement: null, aggressive: false });
     }
   }
@@ -210,7 +213,7 @@ async function main() {
       in_plugin: pluginApis.has(r.api),
       sources_count: r.sources.size,
     }))
-    .sort((a, b) => (b.sources_count - a.sources_count) || a.api.localeCompare(b.api));
+    .sort((a, b) => b.sources_count - a.sources_count || a.api.localeCompare(b.api));
 
   const total = rows.length;
   const pluginCov = rows.filter((r) => r.in_plugin).length;
@@ -285,7 +288,9 @@ function renderMarkdown(summary: any, rows: CoverageRow[], gaps: CoverageRow[]):
   lines.push(`| Plugin coverage | **${summary.plugin_coverage_pct}%** |`);
   lines.push(`| n2b rule coverage | ${summary.n2b_coverage_pct}% |`);
   lines.push(`| Critical gaps (≥3 docs) | ${summary.critical_gaps} |`);
-  lines.push(`| Threshold | ${summary.threshold}% — ${summary.passed ? "✅ passed" : "❌ failed"} |`);
+  lines.push(
+    `| Threshold | ${summary.threshold}% — ${summary.passed ? "✅ passed" : "❌ failed"} |`,
+  );
   lines.push("");
 
   if (gaps.length > 0) {
@@ -304,7 +309,9 @@ function renderMarkdown(summary: any, rows: CoverageRow[], gaps: CoverageRow[]):
   lines.push(`| API | Category | Docs | n2b | Plugin |`);
   lines.push(`|---|---|---|---|---|`);
   for (const r of rows) {
-    lines.push(`| \`${r.api}\` | ${r.category} | ${r.sources_count} | ${r.in_n2b ? "✓" : ""} | ${r.in_plugin ? "✓" : ""} |`);
+    lines.push(
+      `| \`${r.api}\` | ${r.category} | ${r.sources_count} | ${r.in_n2b ? "✓" : ""} | ${r.in_plugin ? "✓" : ""} |`,
+    );
   }
   lines.push("");
   return lines.join("\n");

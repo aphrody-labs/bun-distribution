@@ -21,6 +21,7 @@ import { existsSync, readFileSync, writeFileSync, mkdirSync, readdirSync } from 
 import { homedir } from "node:os";
 import { join, resolve } from "node:path";
 import { spawnSync } from "@aphrody/bun/spawn-sync";
+import { pluginStorePath } from "@aphrody/paths";
 import { Ctx } from "../context.ts";
 
 // ---------------------------------------------------------------- pure helpers (unit-tested)
@@ -579,12 +580,12 @@ async function memory(c: Ctx): Promise<void> {
     writeFileSync(join(dir, "memory", "deps-state.md"), `# Dependency state\n\n${body}\n`);
     console.log(`memory ${dir}`);
   }
-  // Repo-side boot template: static pointer, no volatile versions.
-  const tpl = "plugins/aphrody/home/BOOT.md";
-  if (c.exists(tpl) && !c.read(tpl).includes("update:deps")) {
-    c.write(
+  // Canonical user-store boot template: static pointer, no volatile versions.
+  const tpl = pluginStorePath("aphrody", "home", "BOOT.md");
+  if (existsSync(tpl) && !readFileSync(tpl, "utf8").includes("update:deps")) {
+    writeFileSync(
       tpl,
-      `${c.read(tpl).replace(/\s+$/, "")}\n6. **Dépendances :** exécuter \`bun run update:deps\` (plan) ; lire \`memory/deps-state.md\` et \`.coord/shared/deps-fix-*.md\` avant de toucher aux versions.\n`,
+      `${readFileSync(tpl, "utf8").replace(/\s+$/, "")}\n6. **Dépendances :** exécuter \`bun run update:deps\` (plan) ; lire \`memory/deps-state.md\` et \`.coord/shared/deps-fix-*.md\` avant de toucher aux versions.\n`,
     );
   }
 }

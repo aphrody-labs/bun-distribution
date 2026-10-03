@@ -1883,3 +1883,31 @@ heuristique ; aucun changement Git ne doit être attribué sans preuve.
   Cargo explicitly aborts both uploads in dry-run mode. The local override was
   limited to this small diagnostic; serial locking and sccache remain active.
   No producer code/version changed and output stays outside the clean checkout.
+
+## Gestion centralisée des extensions — 2026-10-03
+
+- [x] Sources uniques des huit plugins sous `~/plugins`; 13 128 357 octets de
+      caches détachés retirés, 274 contenus uniques conservés dans `_recovered`.
+      Rapport de relocation et inventaires SHA-256 historiques conservés.
+- [x] `aphrody-workspace plugins` fournit `status`, `fix-refs`, `clean`,
+      `prepare`, `validate`, `install`, `uninstall`; registre extensible des
+      fournisseurs, scopes de domaine, détection PATH et plans avant mutations.
+- [x] Réutilisation de `@aphrody/paths`, `@aphrody/bun`, Bun YAML/TOML,
+      Oxfmt, `aphrody-skills` et validateurs natifs Claude/agy. Codex n'annonce
+      pas de validateur natif de plugins. Préparation idempotente vérifiée.
+- [x] Références opérationnelles réparées, overlays synchronisés, YAML et
+      hooks corrigés. Recherche déléguée à Codex, Claude et agy via A2A et
+      `aphrody docs search`; [guide central](docs/guides/ai/AGENT_PLUGINS.md).
+- [x] 173 tests Workspace passent, 19 conditionnels ignorés; 18 gates natifs
+      supplémentaires passent (36 installations/retraits plugins/skills/MCP,
+      scopes utilisateur/projet, profils temporaires). TypeScript Workspace et
+      Update passent; lint du gestionnaire et format des fichiers concernés passent.
+- [x] Huit bundles sans erreur structurelle, 42 validations natives passent.
+  Le lanceur BXC 0.9.15 déjà installé dans le store Aphrody est exposé dans
+  `~/.local/bin`; BXC passe sa validation agy. Aucun bundle propriétaire
+  réactivé dans le home réel.
+- [ ] Gate documentaire global encore périmé : catalogues ecosystem
+      (ECOSYSTEM.md, CLI.md, ecosystem.json), documentation.json et llms.txt.
+      Ces artefacts partagés en cours de modification sont laissés hors de ce batch.
+      Index durable des helps installé régénéré : 989 pages, 8 probes en échec,
+      39 exécutables absents et une résolution inconnue signalés par l'outil.

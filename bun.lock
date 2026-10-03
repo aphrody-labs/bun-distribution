@@ -594,6 +594,7 @@
       },
       "dependencies": {
         "@aphrody/bun": "workspace:*",
+        "@aphrody/paths": "workspace:*",
       },
       "devDependencies": {
         "@types/bun": "catalog:",

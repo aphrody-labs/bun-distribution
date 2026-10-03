@@ -5,6 +5,9 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const [operation, ...rest] = process.argv.slice(2);
+if (operation === "plugins" || operation === "agent-plugins") {
+  process.exit(await (await import("./agent-plugins.ts")).runAgentPlugins(rest));
+}
 if (operation === "build-factory") {
   process.exit(await (await import("./build-factory.ts")).runBuildFactory(rest));
 }
@@ -158,7 +161,7 @@ if (operation === "python-quality") {
   process.exit((await import("./python-quality.ts")).runPythonQuality(rest));
 }
 if (operation === "agent-plugin-sync") {
-  process.exit((await import("./agent-plugin-sync.ts")).runAgentPluginSync(rest));
+  process.exit(await (await import("./agent-plugin-sync.ts")).runAgentPluginSync(rest));
 }
 if (operation === "agent-home") {
   process.exit((await import("./agent-home.ts")).runAgentHome(rest));

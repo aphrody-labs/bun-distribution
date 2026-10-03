@@ -80,7 +80,7 @@ Reference upstreams (codex, ollama, mistral.rs, vllm, WSL, ...) are accessed thr
 
 - CLI: `aphrody git upstream list|info|tree|read|search <id> [path|query]` (native, `crates/infra/git/src/upstream.rs`).
 - MCP: `upstream_list`, `upstream_info`, `upstream_tree`, `upstream_read`, `upstream_search` (`crates/ai/mcp`).
-- Skill: `plugins/aphrody/skills/upstreams`.
+- Skill: `~/plugins/aphrody/skills/upstreams`.
 
 `aphrody-update upstream drift` compares the observed commit of each entry with the remote head; `refresh --apply` records
 the heads; `fetch <id> [--path <dir>]` makes a disposable shallow clone in `~/.cache/aphrody/upstream/<id>`;

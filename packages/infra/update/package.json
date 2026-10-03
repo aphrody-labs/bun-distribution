@@ -26,7 +26,8 @@
     "typecheck": "bunx --bun tsc --noEmit -p ."
   },
   "dependencies": {
-    "@aphrody/bun": "workspace:*"
+    "@aphrody/bun": "workspace:*",
+    "@aphrody/paths": "workspace:*"
   },
   "devDependencies": {
     "@types/bun": "catalog:",

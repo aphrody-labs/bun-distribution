@@ -26,7 +26,7 @@ for names, schemas and annotations.
 ## Local stdio
 
 ```sh
-cargo build --release -p aphrody-mcp --locked
+scripts/build/rust/cargo-serial.sh build --release -p aphrody-mcp --locked
 ```
 
 ```json
@@ -34,7 +34,8 @@ cargo build --release -p aphrody-mcp --locked
   "mcpServers": {
     "aphrody": {
       "type": "stdio",
-      "command": "aphrody-mcp"
+      "command": "aphrody-mcp",
+      "args": ["server"]
     }
   }
 }
@@ -49,9 +50,10 @@ endpoint accepts both the legacy `initialize` flow and the 2026-07-28 stateless
 
 ## Plugin boundary
 
-The unified plugin in `plugins/aphrody` registers both the OS kernel MCP
-(`aphrody-kernel mcp`) and the AI/Dragon Ball MCP (`aphrody-mcp server`). They
-are separate processes and permission boundaries.
+The central store `~/plugins` contains the `aphrody` plugin for
+`aphrody-kernel mcp` and the `shenron` plugin for `aphrody-mcp server`.
+Prepare, validate and register them with the [Workspace manager](AGENT_PLUGINS.md).
+Their activation stays restricted to the permitted workspaces.
 
 ## Security
 

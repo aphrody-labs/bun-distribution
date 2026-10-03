@@ -148,7 +148,7 @@ ${forks.map((f) => `| \`${f.repo}\` | ${f.parent ?? "-"} | ${f.role ?? "-"} | ${
 | Code search inside one upstream | \`aphrody git upstream search <id> <query>\`, MCP \`upstream_search\` |
 | Full local read (shallow clone in \`~/.cache/aphrody/upstream\`) | \`aphrody-update upstream fetch <id> [--path <dir>]\` |
 | Drift of the observed heads | \`aphrody-update upstream drift\`; record them with \`upstream refresh --apply\` |
-| Agent entry point | skill \`upstreams\` (\`plugins/aphrody/skills/upstreams\`) |
+| Agent entry point | skill \`upstreams\` (\`~/plugins/aphrody/skills/upstreams\`) |
 
 The Cargo git dependencies (oxc-project/oxc, hf-hub, mistral.rs, tauri-specta fork) are tracked by \`aphrody-update sources drift\`;
 forks by \`aphrody-update sources forks\`. The Bun and Oxc forks were retired on 2026-10-02.

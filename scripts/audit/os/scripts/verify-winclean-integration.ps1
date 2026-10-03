@@ -69,7 +69,7 @@ try {
         rust_dispatched_tools = @($ledger.dispatch_overrides.psobject.Properties | Where-Object { $_.Value -eq 'rust' }).Count
         kernel_tools = $catalogTools
         live_call = 'get_os_info'
-        plugin = '../aphrody-ai/plugins/aphrody'
+        plugin = Join-Path $(if ($env:APHRODY_PLUGINS_ROOT) { $env:APHRODY_PLUGINS_ROOT } else { Join-Path $HOME 'plugins' }) 'aphrody'
     } | ConvertTo-Json -Compress
 } finally {
     if (-not $server.HasExited) { Stop-Process -Id $server.Id -Force }

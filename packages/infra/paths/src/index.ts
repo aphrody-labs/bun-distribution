@@ -112,6 +112,11 @@ export function homePath(...parts: string[]): string {
   return resolve(homedir(), ...parts);
 }
 
+/** Canonical user-owned agent plugin store, independent of any source checkout. */
+export function pluginStorePath(...parts: string[]): string {
+  return resolve(process.env.APHRODY_PLUGINS_ROOT || homePath("plugins"), ...parts);
+}
+
 /** Resolve in the host's temporary directory (TMPDIR/TEMP aware). */
 export function tempPath(...parts: string[]): string {
   return resolve(tmpdir(), ...parts);
