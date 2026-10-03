@@ -7,7 +7,7 @@ from the checkout. Companion files: [CLI.md](CLI.md) (exact command trees), [MCP
 (every MCP tool), [ecosystem.json](ecosystem.json) (machine-readable). Check here before writing new
 code: reuse an existing crate, command or tool instead of duplicating it.
 
-Totals: 3 repositories (3 aphrody, 0 shared, 0 experiments), 267 crates, 89 binaries, 98 Bun packages, 9 uv packages, 1280 CLI commands, 440 MCP tools.
+Totals: 3 repositories (3 aphrody, 0 shared, 0 experiments), 267 crates, 89 binaries, 98 Bun packages, 8 uv packages, 1280 CLI commands, 440 MCP tools.
 
 | Repository | Kind | Role |
 | --- | --- | --- |
@@ -312,12 +312,6 @@ Canonical Rust/Bun monorepo
 | `aphrody` | . |  |  |
 | `material-symbols` | crates/ui/bun/icons/material-symbols | Latest variable icon fonts and CSS for Material Symbols. |  |
 | `shenron-monorepo` | config/shenron |  |  |
-
-### uv packages (1)
-
-| Package | Path | Description | Scripts |
-| --- | --- | --- | --- |
-| `google-antigravity` | packages/google/antigravity-sdk-python | Google Antigravity SDK for building AI agents |  |
 
 ## aphrody-py
 

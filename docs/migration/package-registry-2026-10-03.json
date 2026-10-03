@@ -12984,6 +12984,18 @@
       "materialNativeSassPlugin": "Not qualified from registry-only dependencies: published @aphrody/bun lacks native shared library; portable sass-embedded build passes."
     },
     "lint": "passed scoped oxlint",
-    "format": "passed scoped oxfmt"
+    "format": "passed scoped oxfmt",
+    "cleanMonorepoClone": {
+      "install": "frozen lockfile; passed",
+      "testsPassed": 132,
+      "typechecks": [
+        "@aphrody/ag-ui",
+        "@aphrody/m3-ai",
+        "@aphrody/m3-react",
+        "@rosegriffon/website"
+      ],
+      "forkSourcesPresent": false,
+      "localArchivePrerequisite": "The three pinned IECODE producer archives were restored from their exact source Git objects; sibling HEAD is newer."
+    }
   }
 }

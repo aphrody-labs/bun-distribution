@@ -67,6 +67,14 @@ routes de sites, exemples et snapshots historiques demandent une classification.
 
 Preuve et hashes : [migration des packages](docs/migration/package-registry-2026-10-03.json).
 
+- [x] IECODE : retirer le sous-module Citro3D inutilisé, conserver son historique
+  et vérifier workspace/licences/docs dans son dépôt canonique.
+- [x] Python : extraire le SDK Antigravity modifié vers le dépôt privé
+  `aphrody-labs/antigravity-sdk-python`. uv consomme son commit exact ;
+  supprimer le chemin éditable vers le checkout Aphrody. Wheel validé et
+  cinq tests du bridge consommateurs réussis. LangExtract reste sur PyPI.
+  [Provenance SDK](docs/migration/python-sdk-registry-2026-10-03.json).
+
 ## 0. Structure et hygiène
 
 - [x] Séparer CLI, interop, clients OS et UI par propriétaires.

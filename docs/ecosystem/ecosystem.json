@@ -2318,14 +2318,7 @@
           "bins": []
         }
       ],
-      "pythonPackages": [
-        {
-          "name": "google-antigravity",
-          "path": "packages/google/antigravity-sdk-python",
-          "description": "Google Antigravity SDK for building AI agents",
-          "scripts": []
-        }
-      ],
+      "pythonPackages": [],
       "errors": []
     },
     {
@@ -15555,7 +15548,7 @@
     "crates": 267,
     "binaries": 89,
     "bunPackages": 98,
-    "pythonPackages": 9,
+    "pythonPackages": 8,
     "cliBinaries": 63,
     "cliCommands": 1280,
     "mcpServers": 21,

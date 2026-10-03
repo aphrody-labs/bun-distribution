@@ -313,7 +313,7 @@ Tracked Cargo manifests outside the root workspace (excluded, nested workspaces 
 | `@rosegriffon/assets` | [packages/rg/assets](../../../packages/rg/assets) | bun package | 1.0.3 | lib | no | 0 | 2026-10-01 |
 | `@rosegriffon/auth` | [packages/rg/auth](../../../packages/rg/auth) | bun package | 1.0.3 | lib | yes | 0 | 2026-10-01 |
 | `@rosegriffon/cdn` | [packages/rg/cdn](../../../packages/rg/cdn) | bun package | 1.0.1 | lib | yes | 0 | 2026-10-03 |
-| `@rosegriffon/config` | [packages/rg/config](../../../packages/rg/config) | bun package | 1.0.3 | lib | no | 0 | 2026-10-02 |
+| `@rosegriffon/config` | [packages/rg/config](../../../packages/rg/config) | bun package | 1.0.3 | lib | no | 0 | 2026-10-03 |
 | `@rosegriffon/cron` | [packages/rg/cron](../../../packages/rg/cron) | bun package | 1.0.1 | lib | yes | 0 | 2026-10-02 |
 | `@rosegriffon/db` | [packages/rg/db](../../../packages/rg/db) | bun package | 1.0.3 | lib | yes | 0 | 2026-10-01 |
 | `@rosegriffon/discord-sync` | [packages/rg/discord-sync](../../../packages/rg/discord-sync) | bun package | 0.1.0 | lib | yes | 0 | 2026-10-01 |
@@ -383,22 +383,22 @@ Tracked Cargo manifests outside the root workspace (excluded, nested workspaces 
 | `@aphrody/app-ui` | [packages/ui/app-ui](../../../packages/ui/app-ui) | bun package | 0.1.0 | lib | yes | 0 | 2026-10-03 |
 | `@aphrody/assets` | [packages/ui/assets](../../../packages/ui/assets) | bun package | 0.1.0 | lib | yes | 0 | 2026-10-02 |
 | `@aphrody/canvas` | [packages/ui/canvas](../../../packages/ui/canvas) | bun package | 1.0.9-aphrody.2 | lib | yes | 0 | 2026-10-02 |
-| `@aphrody/eslint-plugin-m3` | [packages/ui/eslint-plugin-m3](../../../packages/ui/eslint-plugin-m3) | bun package | 3.3.3 | lib | yes | 0 | 2026-10-02 |
+| `@aphrody/eslint-plugin-m3` | [packages/ui/eslint-plugin-m3](../../../packages/ui/eslint-plugin-m3) | bun package | 3.3.3 | lib | yes | 0 | 2026-10-03 |
 | `@aphrody/identity` | [packages/ui/identity](../../../packages/ui/identity) | bun package | 0.1.0 | lib | yes | 0 | 2026-10-02 |
 | `@aphrody/m3` | [packages/ui/m3](../../../packages/ui/m3) | bun package | 3.3.3 | bin, lib | yes | 0 | 2026-10-03 |
 | `@aphrody/m3-ai` | [packages/ui/m3-ai](../../../packages/ui/m3-ai) | bun package | 3.3.3 | lib | yes | 0 | 2026-10-03 |
-| `@aphrody/m3-codemods` | [packages/ui/m3-codemods](../../../packages/ui/m3-codemods) | bun package | 0.1.0 | private | yes | 0 | uncommitted |
+| `@aphrody/m3-codemods` | [packages/ui/m3-codemods](../../../packages/ui/m3-codemods) | bun package | 0.1.0 | private | yes | 0 | 2026-10-03 |
 | `@aphrody/m3-config` | [packages/ui/m3-config](../../../packages/ui/m3-config) | bun package | 3.3.3 | lib | yes | 0 | 2026-10-03 |
 | `@aphrody/m3-design` | [packages/ui/m3-design](../../../packages/ui/m3-design) | bun package | 3.3.3 | lib | yes | 0 | 2026-10-01 |
 | `@aphrody/m3-explorer` | [packages/ui/m3-explorer](../../../packages/ui/m3-explorer) | bun package | 3.3.3 | lib | yes | 0 | 2026-10-03 |
 | `@aphrody/m3-fonts` | [packages/ui/m3-fonts](../../../packages/ui/m3-fonts) | bun package | 3.3.3 | lib | yes | 0 | 2026-10-01 |
 | `@aphrody/m3-forms` | [packages/ui/m3-forms](../../../packages/ui/m3-forms) | bun package | 3.3.3 | lib | yes | 0 | 2026-10-01 |
 | `@aphrody/m3-icons` | [packages/ui/m3-icons](../../../packages/ui/m3-icons) | bun package | 3.3.3 | lib | yes | 0 | 2026-10-03 |
-| `@aphrody/m3-motion` | [packages/ui/m3-motion](../../../packages/ui/m3-motion) | bun package | 3.3.3 | lib | yes | 0 | 2026-10-01 |
+| `@aphrody/m3-motion` | [packages/ui/m3-motion](../../../packages/ui/m3-motion) | bun package | 3.3.3 | lib | yes | 0 | 2026-10-03 |
 | `@aphrody/m3-next` | [packages/ui/m3-next](../../../packages/ui/m3-next) | bun package | 3.3.3 | lib | yes | 0 | 2026-10-02 |
 | `@aphrody/m3-next-migrate` | [packages/ui/m3-next-migrate](../../../packages/ui/m3-next-migrate) | bun package | 3.3.3 | bin, lib | yes | 0 | 2026-10-02 |
 | `@aphrody/m3-primitives` | [packages/ui/m3-primitives](../../../packages/ui/m3-primitives) | bun package | 3.3.3 | lib | yes | 0 | 2026-10-01 |
-| `@aphrody/m3-react` | [packages/ui/m3-react](../../../packages/ui/m3-react) | bun package | 3.3.3 | lib | yes | 0 | 2026-10-01 |
+| `@aphrody/m3-react` | [packages/ui/m3-react](../../../packages/ui/m3-react) | bun package | 3.3.3 | lib | yes | 0 | 2026-10-03 |
 | `@aphrody/m3-reader` | [packages/ui/m3-reader](../../../packages/ui/m3-reader) | bun package | 3.3.3 | lib | yes | 0 | 2026-10-02 |
 | `@aphrody/m3-theme` | [packages/ui/m3-theme](../../../packages/ui/m3-theme) | bun package | 3.3.3 | lib | yes | 0 | 2026-10-03 |
 | `@aphrody/m3-tokens` | [packages/ui/m3-tokens](../../../packages/ui/m3-tokens) | bun package | 3.3.3 | lib | yes | 0 | 2026-10-02 |
