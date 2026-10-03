@@ -1625,11 +1625,18 @@ heuristique ; aucun changement Git ne doit être attribué sans preuve.
 - Qualification explicite : `APHRODY_FFI_REQUIRE_NATIVE=1` échoue si la librairie
   manque ; sans ce mode, cinq tests sont déclarés ignorés. Les imports du package
   isolé et l’isolation de l’alias SHENRON_FFI_LIB dans les fixtures sont corrigés.
+- Requalification packaging 2026-10-03 : clone propre du commit
+  `7d927b1fa82213df38d68f2dd9bad4433eb116ef`, métadonnées Cargo `--locked`, puis
+  staging canonique `bun-native --gpu` depuis ce clone. Build release réussi ; le
+  smoke du consommateur isolé passe avec le mode développement activé puis désactivé.
+  Manifeste `@aphrody/bun` : ABI 1/4/1/1/1/2/1, `features: ["gpu"]`,
+  `consumerSmoke: passed`, artefact Linux x86_64 de 264 255 704 octets,
+  SHA-256 `4fdc85087208baf2005130193adcc945734431190837c6ca499e9205b718bd79`,
+  empreinte Cargo.lock `879c5bddc4e34da10f94679769ae3a988b75806f74ec4879b80d7b7428564dd3`.
 - Gates : deux typechecks, Oxc strict, format et diff réussis. Suite pipeline :
   230 pass, quatre ignorés, un échec live MediaWiki (HTTP 403 terraria.wiki.gg).
-- INCOMPLET : bibliothèque release chargée avec APHRODY_FFI_DEV=1, sans manifeste
-  de distribution ; checkout concurrent, packaging propre et autres plateformes
-  non qualifiés. Features GPU compilées sans preuve d’exécution matérielle GPU.
+- INCOMPLET : autres plateformes non qualifiées. Features GPU compilées sans preuve
+  d’exécution matérielle GPU.
   Doctor dégradé et recherche éventuellement vide ne prouvent pas un produit prêt.
   Gate CLI/MCP terminal/Web Frames encore ouvert ; aucun gate global vert annoncé.
 - Preuves : [rapport, hashes binaires et logs](docs/operations/workspace/HISTORY.md).
