@@ -2,7 +2,7 @@
  * Material Design 3 Easing Presets.
  * Represented as cubic-bezier array coordinates [x1, y1, x2, y2].
  *
- * Source of truth: packages/ui/material-web/tokens/versions/v0_192/_md-sys-motion.scss
+ * Source of truth: @aphrody/material-web/tokens/versions/v0_192/_md-sys-motion.scss
  * and docs/01-md3-spec-foundations.md §7.1
  *
  * Note on `emphasized`: the full M3 emphasized path is a 2-segment spline

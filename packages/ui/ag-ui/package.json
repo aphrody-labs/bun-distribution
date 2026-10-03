@@ -1,8 +1,8 @@
 {
   "name": "@aphrody/ag-ui",
   "version": "1.0.1",
-  "description": "Aphrody AG-UI Protocol — Pure Bun & TypeScript 7 suite connecting Agentic UI events, streaming lifecycle, Protobuf codec, A2UI surfaces, and Agent-to-User bridges.",
   "private": true,
+  "description": "Aphrody AG-UI Protocol — Pure Bun & TypeScript 7 suite connecting Agentic UI events, streaming lifecycle, Protobuf codec, A2UI surfaces, and Agent-to-User bridges.",
   "type": "module",
   "main": "./src/index.ts",
   "module": "./src/index.ts",
@@ -21,11 +21,11 @@
     "test": "bun test"
   },
   "dependencies": {
-    "@ag-ui/core": "workspace:*",
-    "@ag-ui/encoder": "workspace:*",
-    "@ag-ui/proto": "workspace:*",
-    "@ag-ui/client": "workspace:*",
-    "@ag-ui/a2ui-toolkit": "workspace:*"
+    "@ag-ui/a2ui-toolkit": "catalog:",
+    "@ag-ui/client": "catalog:",
+    "@ag-ui/core": "catalog:",
+    "@ag-ui/encoder": "catalog:",
+    "@ag-ui/proto": "catalog:"
   },
   "devDependencies": {
     "@types/node": "catalog:",

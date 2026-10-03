@@ -15,15 +15,11 @@
       "apps/koharu/*",
       "apps/rg/*",
       "packages/rg/*",
-      "packages/rg/patreon-bun/apps/worker-docs",
-      "packages/rg/patreon-bun/examples/*",
-      "packages/rg/patreon-bun/docs",
       "packages/compat/*",
       "packages/os/*",
       "packages/koharu/*",
       "packages/fut/*",
       "packages/ui/*",
-      "packages/ui/ag-ui/*",
       "packages/interop/*"
     ],
     "catalog": {
@@ -258,7 +254,15 @@
       "@colyseus/bun-websockets": "^0.18.3",
       "@colyseus/schema": "^5.0.34",
       "http-proxy-middleware": "^4.2.0",
-      "@colyseus/core": "^0.18.17"
+      "@colyseus/core": "^0.18.17",
+      "@ag-ui/core": "1.0.1",
+      "@ag-ui/encoder": "1.0.1",
+      "@ag-ui/proto": "1.0.1",
+      "@ag-ui/a2ui-toolkit": "0.0.4",
+      "@rosegriffon/patreon-bun": "1.0.3",
+      "@ag-ui/client": "https://registry.npmjs.org/@aphrody/ag-ui-client/-/ag-ui-client-1.0.1-aphrody.1.tgz",
+      "@aphrody/mcp-ui": "https://registry.npmjs.org/@aphrody/mcp-ui/-/mcp-ui-7.1.1-aphrody.1.tgz",
+      "@aphrody/material-web": "3.3.3"
     }
   },
   "type": "module",
@@ -378,7 +382,8 @@
     "m3Version": "3.3.3"
   },
   "patchedDependencies": {
-    "@discordjs/rest@2.6.3": "patches/@discordjs%2Frest@2.6.3.patch"
+    "@discordjs/rest@2.6.3": "patches/@discordjs%2Frest@2.6.3.patch",
+    "@ag-ui/core@1.0.1": "patches/ag-ui-core-1.0.1.patch"
   },
   "trustedDependencies": [
     "@parcel/watcher",

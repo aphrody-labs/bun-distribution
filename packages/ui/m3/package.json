@@ -1,7 +1,7 @@
 {
   "name": "@aphrody/m3",
-  "private": true,
   "version": "3.3.3",
+  "private": true,
   "description": "The @aphrody Material Design 3 framework for Bun: one plugin (Tailwind v4, Sass through Rust, m3:* virtual theme/font modules, ?url imports), serveM3 (Bun.serve + HMR + proxy), buildM3 (Bun.build, Tauri webview layout), M3App and the m3 CLI.",
   "keywords": [
     "bun",
@@ -18,6 +18,9 @@
     "url": "git+https://github.com/aphrody-labs/aphrody.git",
     "directory": "packages/ui/m3"
   },
+  "bin": {
+    "m3": "./bin/m3.ts"
+  },
   "files": [
     "dist",
     "src",
@@ -25,12 +28,12 @@
     "client.d.ts"
   ],
   "type": "module",
+  "sideEffects": [
+    "./dist/lit.js"
+  ],
   "main": "./dist/index.js",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
-  "bin": {
-    "m3": "./bin/m3.ts"
-  },
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -76,9 +79,6 @@
     },
     "./package.json": "./package.json"
   },
-  "sideEffects": [
-    "./dist/lit.js"
-  ],
   "publishConfig": {
     "access": "public"
   },
@@ -93,7 +93,7 @@
     "@aphrody/m3-motion": "workspace:*",
     "@aphrody/m3-react": "workspace:*",
     "@aphrody/m3-theme": "workspace:*",
-    "@aphrody/material-web": "workspace:*",
+    "@aphrody/material-web": "catalog:",
     "@tailwindcss/node": "catalog:",
     "@tailwindcss/oxide": "catalog:",
     "motion": "catalog:"

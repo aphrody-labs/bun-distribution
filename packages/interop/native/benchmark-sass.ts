@@ -6,7 +6,10 @@ import { resolve } from "node:path";
 
 console.log("=== Sass Compiler Benchmark (Dart Sass vs Rust FFI Grass) ===\n");
 
-const PKG = resolve(import.meta.dir, "../../ui/material-web");
+const PKG = resolve(
+  import.meta.resolve("@aphrody/material-web/package.json").replace("file://", ""),
+  "..",
+);
 const targetFile = resolve(PKG, "button/internal/elevated-styles.scss");
 const loadPaths = [resolve(PKG, "node_modules"), resolve(PKG, "../../node_modules")];
 

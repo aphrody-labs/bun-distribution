@@ -1,7 +1,7 @@
 {
   "name": "@aphrody/m3-ai",
-  "private": true,
   "version": "3.3.3",
+  "private": true,
   "description": "Material Design 3 agent-interaction components (tool calls, markdown, chat composer, workers, tasks): the SpaceUI (@spacedrive/ai) set rebuilt on @aphrody/m3-primitives.",
   "keywords": [
     "material-3",
@@ -40,9 +40,9 @@
   },
   "dependencies": {
     "@aphrody/ag-ui": "workspace:*",
-    "@aphrody/mcp-ui": "workspace:*",
     "@aphrody/m3-motion": "workspace:*",
     "@aphrody/m3-primitives": "workspace:*",
+    "@aphrody/mcp-ui": "catalog:",
     "clsx": "catalog:",
     "motion": "catalog:",
     "react-markdown": "^10.1.0",

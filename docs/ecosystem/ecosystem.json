@@ -1748,36 +1748,6 @@
       ],
       "bunPackages": [
         {
-          "name": "@ag-ui/a2ui-toolkit",
-          "path": "packages/ui/ag-ui/a2ui",
-          "description": "Framework-agnostic helpers for building A2UI subagent tools — op builders, prompt assembly, history walkers, and request/envelope orchestration shared across framework adapters.",
-          "bins": []
-        },
-        {
-          "name": "@ag-ui/client",
-          "path": "packages/ui/ag-ui/client",
-          "description": "",
-          "bins": []
-        },
-        {
-          "name": "@ag-ui/core",
-          "path": "packages/ui/ag-ui/core",
-          "description": "",
-          "bins": []
-        },
-        {
-          "name": "@ag-ui/encoder",
-          "path": "packages/ui/ag-ui/encoder",
-          "description": "",
-          "bins": []
-        },
-        {
-          "name": "@ag-ui/proto",
-          "path": "packages/ui/ag-ui/proto",
-          "description": "",
-          "bins": []
-        },
-        {
           "name": "@aphrody/ag-ui",
           "path": "packages/ui/ag-ui",
           "description": "Aphrody AG-UI Protocol — Pure Bun & TypeScript 7 suite connecting Agentic UI events, streaming lifecycle, Protobuf codec, A2UI surfaces, and Agent-to-User bridges.",
@@ -1895,7 +1865,7 @@
         },
         {
           "name": "@aphrody/m3-codemods",
-          "path": "packages/ui/material-web/migration/codemods",
+          "path": "packages/ui/m3-codemods",
           "description": "Codemods MUI React -> @aphrody/m3-react (jscodeshift + ast-grep)",
           "bins": []
         },
@@ -1984,18 +1954,6 @@
           "name": "@aphrody/m3-tokens",
           "path": "packages/ui/m3-tokens",
           "description": "Material 3 design tokens (--md-sys-*) for the @aphrody/material-web fork: MUI-theme → M3 token CSS generation and runtime Material You dynamic colour via material-color-utilities.",
-          "bins": []
-        },
-        {
-          "name": "@aphrody/material-web",
-          "path": "packages/ui/material-web",
-          "description": "Material Design 3 web components (Lit) — MUI + MUI X migration target",
-          "bins": []
-        },
-        {
-          "name": "@aphrody/mcp-ui",
-          "path": "packages/ui/mcp-ui",
-          "description": "Aphrody MCP-UI SDK — Pure Bun & TS 7 client for rendering sandboxed generative MCP interactive apps in Material Design 3 surfaces.",
           "bins": []
         },
         {
@@ -2241,30 +2199,6 @@
           "name": "@rosegriffon/identity",
           "path": "packages/rg/identity",
           "description": "Compte unique Rose Griffon : identité native et connexions liées (Discord, Patreon, Twitch, Google, Steam, Achilléa)",
-          "bins": []
-        },
-        {
-          "name": "@rosegriffon/patreon-bun",
-          "path": "packages/rg/patreon-bun",
-          "description": "Bun-only TypeScript library for the V2 Patreon API. Fork of patreon-api.ts (ghostrider-05) for Rose Griffon.",
-          "bins": []
-        },
-        {
-          "name": "@rosegriffon/patreon-bun-discord-bot",
-          "path": "packages/rg/patreon-bun/apps/discord-bot",
-          "description": "",
-          "bins": []
-        },
-        {
-          "name": "@rosegriffon/patreon-bun-docs",
-          "path": "packages/rg/patreon-bun/docs",
-          "description": "The documentation site for the @rosegriffon/patreon-bun",
-          "bins": []
-        },
-        {
-          "name": "@rosegriffon/patreon-bun-worker-docs",
-          "path": "packages/rg/patreon-bun/apps/worker-docs",
-          "description": "",
           "bins": []
         },
         {
@@ -15620,7 +15554,7 @@
     "sharedRepos": 0,
     "crates": 267,
     "binaries": 89,
-    "bunPackages": 109,
+    "bunPackages": 98,
     "pythonPackages": 9,
     "cliBinaries": 63,
     "cliCommands": 1280,

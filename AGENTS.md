@@ -34,6 +34,11 @@ This repository is the Rust + Bun source target. The active migration plan is
   the replacement; do not replace it with a registry version that loses local
   behavior. Bun/Oxc fork source is needed only for native fork development,
   not for consuming published or pinned Git dependencies.
+- Maintain substantially modified package forks in their standalone private GitHub
+  repositories. Publish them to npm when authorized, consume exact registry
+  versions (or a pinned Git revision until available), and remove duplicate
+  fork source from this workspace only after clean consumer checks. Keep
+  first-party integration adapters and migration tooling in this workspace.
 - RG and Shenron sources are imported. Qualify contracts, native/interop, OS,
   Infra, UI and AI/Web before product integration. Shenron is the final product
   gate; imported source alone does not prove deployment readiness.

@@ -46,6 +46,27 @@ Preuves : [scan du dépôt](docs/migration/repository-state-2026-10-01.json),
 Les liens documentaires non résolus du scan restent des candidats à examiner :
 routes de sites, exemples et snapshots historiques demandent une classification.
 
+## Forks et packages — 2026-10-03
+
+- [x] Aucun sous-module Git actif. Quatre packages AG-UI sans correctif runtime
+  requis consomment npm ; la petite rustine Core préserve le contrat de
+  réinitialisation des avertissements.
+- [x] Extraire les forks AG-UI Client, MCP-UI et Material Web vers leurs dépôts
+  privés `aphrody-labs/ag-ui-client`, `mcp-ui`, `material-web`, puis publier
+  `@aphrody/ag-ui-client@1.0.1-aphrody.1`, `@aphrody/mcp-ui@7.1.1-aphrody.1`
+  et `@aphrody/material-web@3.3.3` sur npm avec autorisation du propriétaire.
+- [x] Consommer les forks publiés et Patreon 1.0.3 depuis npm ; retirer les
+  copies du workspace. Sources intégrales conservées dans les sauvegardes
+  privées et les dépôts autonomes. Codemods propres déplacés vers
+  `packages/ui/m3-codemods` ; leurs cinq fixtures passent.
+- [x] Installations des clones autonomes, builds et contrôles de types réussis ;
+  132 tests consommateurs, puis 15/74/19 tests ciblés des clones réussis.
+  API AG-UI : 80 exports conservés ; Patreon : 36 exports conservés.
+  Les limites des suites upstream complètes et du plugin Sass natif sont
+  consignées dans le rapport ; elles ne constituent pas une qualification produit.
+
+Preuve et hashes : [migration des packages](docs/migration/package-registry-2026-10-03.json).
+
 ## 0. Structure et hygiène
 
 - [x] Séparer CLI, interop, clients OS et UI par propriétaires.

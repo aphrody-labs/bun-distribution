@@ -31,9 +31,7 @@
       "@rosegriffon/ui": ["../ui/src/index.ts"],
       "@rosegriffon/ui/*": ["../ui/src/*"],
       "@rosegriffon/assets": ["../assets/src/index.ts"],
-      "@rosegriffon/assets/*": ["../assets/src/*"],
-      "@rosegriffon/patreon-bun": ["../patreon-bun/src/index.ts"],
-      "@rosegriffon/patreon-bun/*": ["../patreon-bun/src/*"]
+      "@rosegriffon/assets/*": ["../assets/src/*"]
     }
   },
   "exclude": ["node_modules", "dist", "build", ".turbo", "coverage"]

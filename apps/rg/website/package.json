@@ -84,7 +84,7 @@
     "@rosegriffon/db": "workspace:*",
     "@rosegriffon/i18n": "workspace:*",
     "@rosegriffon/inagle": "catalog:",
-    "@rosegriffon/patreon-bun": "workspace:*",
+    "@rosegriffon/patreon-bun": "catalog:",
     "@rosegriffon/preferences": "workspace:*",
     "@rosegriffon/search": "workspace:*",
     "@rosegriffon/types": "workspace:*",

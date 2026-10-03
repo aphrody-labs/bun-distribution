@@ -6,7 +6,7 @@ Facts read from `cargo metadata --no-deps`, the root `package.json` Bun workspac
 Crates are Rust workspace members outside `apps/`; packages are Bun workspaces outside `apps/`;
 apps are Rust or Bun members under `apps/`. `todo!` counts `todo!(` and `unimplemented!(` in `.rs` files.
 
-Totals: **192 crates**, **92 packages**, **6 apps** (193 Rust, 97 Bun).
+Totals: **192 crates**, **80 packages**, **6 apps** (193 Rust, 85 Bun).
 
 ## Per domain
 
@@ -25,10 +25,10 @@ Totals: **192 crates**, **92 packages**, **6 apps** (193 Rust, 97 Bun).
 | [koharu](#koharu) | 25 | 4 | 1 | 1 |
 | [native](#native) | 1 | 0 | 0 | 0 |
 | [os](#os) | 32 | 3 | 0 | 0 |
-| [rg](#rg) | 0 | 26 | 2 | 0 |
+| [rg](#rg) | 0 | 20 | 2 | 0 |
 | [shell](#shell) | 14 | 1 | 0 | 0 |
 | [shenron](#shenron) | 0 | 7 | 2 | 0 |
-| [ui](#ui) | 15 | 31 | 0 | 0 |
+| [ui](#ui) | 15 | 25 | 0 | 0 |
 | [web](#web) | 19 | 3 | 0 | 0 |
 
 ## Workspace exclusions
@@ -319,12 +319,6 @@ Tracked Cargo manifests outside the root workspace (excluded, nested workspaces 
 | `@rosegriffon/discord-sync` | [packages/rg/discord-sync](../../../packages/rg/discord-sync) | bun package | 0.1.0 | lib | yes | 0 | 2026-10-01 |
 | `@rosegriffon/i18n` | [packages/rg/i18n](../../../packages/rg/i18n) | bun package | 1.0.1 | lib | yes | 0 | 2026-09-30 |
 | `@rosegriffon/identity` | [packages/rg/identity](../../../packages/rg/identity) | bun package | 1.0.1 | lib | yes | 0 | 2026-09-30 |
-| `@rosegriffon/patreon-bun` | [packages/rg/patreon-bun](../../../packages/rg/patreon-bun) | bun package | 1.0.3 | lib | yes | 0 | 2026-10-01 |
-| `@rosegriffon/patreon-bun-worker-docs` | [packages/rg/patreon-bun/apps/worker-docs](../../../packages/rg/patreon-bun/apps/worker-docs) | bun package | 1.0.0 | private | no | 0 | 2026-09-30 |
-| `@rosegriffon/patreon-bun-docs` | [packages/rg/patreon-bun/docs](../../../packages/rg/patreon-bun/docs) | bun package | - | private | no | 0 | 2026-09-30 |
-| `@rosegriffon/patreon-bun-bun-esm` | [packages/rg/patreon-bun/examples/bun-esm](../../../packages/rg/patreon-bun/examples/bun-esm) | bun package | 1.0.0 | lib | no | 0 | 2026-09-30 |
-| `@rosegriffon/patreon-bun-bun-webhook` | [packages/rg/patreon-bun/examples/bun-webhook](../../../packages/rg/patreon-bun/examples/bun-webhook) | bun package | 1.0.0 | private | no | 0 | 2026-09-30 |
-| `@rosegriffon/patreon-bun-cloudflare-webhook` | [packages/rg/patreon-bun/examples/cloudflare-webhook](../../../packages/rg/patreon-bun/examples/cloudflare-webhook) | bun package | 1.0.0 | lib | no | 0 | 2026-09-30 |
 | `@rosegriffon/preferences` | [packages/rg/preferences](../../../packages/rg/preferences) | bun package | 1.0.3 | lib | yes | 0 | 2026-10-01 |
 | `@rosegriffon/realtime` | [packages/rg/realtime](../../../packages/rg/realtime) | bun package | 1.0.1 | lib | yes | 0 | 2026-10-03 |
 | `@rosegriffon/search` | [packages/rg/search](../../../packages/rg/search) | bun package | 1.0.1 | lib | yes | 0 | 2026-09-30 |
@@ -384,13 +378,8 @@ Tracked Cargo manifests outside the root workspace (excluded, nested workspaces 
 | `aphrody-sprite-sheet` | [crates/ui/sprite-sheet](../../../crates/ui/sprite-sheet) | rust crate | 1.0.0-canary | lib | yes | 0 | 2026-10-01 |
 | `aphrody-svg` | [crates/ui/svg](../../../crates/ui/svg) | rust crate | 1.0.0-canary | lib | yes | 0 | 2026-10-02 |
 | `aphrody-tauri-mcp` | [crates/ui/tauri-mcp](../../../crates/ui/tauri-mcp) | rust crate | 1.0.0-canary | bin | no | 0 | 2026-10-01 |
-| `aphrody-tauri-wrap` | [crates/ui/tauri-wrap](../../../crates/ui/tauri-wrap) | rust crate | 1.0.0-canary | lib | yes | 0 | 2026-10-01 |
+| `aphrody-tauri-wrap` | [crates/ui/tauri-wrap](../../../crates/ui/tauri-wrap) | rust crate | 1.0.0-canary | lib | yes | 0 | 2026-10-03 |
 | `@aphrody/ag-ui` | [packages/ui/ag-ui](../../../packages/ui/ag-ui) | bun package | 1.0.1 | lib | yes | 0 | 2026-10-03 |
-| `@ag-ui/a2ui-toolkit` | [packages/ui/ag-ui/a2ui](../../../packages/ui/ag-ui/a2ui) | bun package | 0.0.4 | lib | yes | 0 | 2026-10-03 |
-| `@ag-ui/client` | [packages/ui/ag-ui/client](../../../packages/ui/ag-ui/client) | bun package | 1.0.1 | lib | yes | 0 | 2026-10-03 |
-| `@ag-ui/core` | [packages/ui/ag-ui/core](../../../packages/ui/ag-ui/core) | bun package | 1.0.1 | lib | yes | 0 | 2026-10-03 |
-| `@ag-ui/encoder` | [packages/ui/ag-ui/encoder](../../../packages/ui/ag-ui/encoder) | bun package | 1.0.1 | lib | yes | 0 | 2026-10-03 |
-| `@ag-ui/proto` | [packages/ui/ag-ui/proto](../../../packages/ui/ag-ui/proto) | bun package | 1.0.1 | lib | yes | 0 | 2026-10-03 |
 | `@aphrody/app-ui` | [packages/ui/app-ui](../../../packages/ui/app-ui) | bun package | 0.1.0 | lib | yes | 0 | 2026-10-03 |
 | `@aphrody/assets` | [packages/ui/assets](../../../packages/ui/assets) | bun package | 0.1.0 | lib | yes | 0 | 2026-10-02 |
 | `@aphrody/canvas` | [packages/ui/canvas](../../../packages/ui/canvas) | bun package | 1.0.9-aphrody.2 | lib | yes | 0 | 2026-10-02 |
@@ -398,6 +387,7 @@ Tracked Cargo manifests outside the root workspace (excluded, nested workspaces 
 | `@aphrody/identity` | [packages/ui/identity](../../../packages/ui/identity) | bun package | 0.1.0 | lib | yes | 0 | 2026-10-02 |
 | `@aphrody/m3` | [packages/ui/m3](../../../packages/ui/m3) | bun package | 3.3.3 | bin, lib | yes | 0 | 2026-10-03 |
 | `@aphrody/m3-ai` | [packages/ui/m3-ai](../../../packages/ui/m3-ai) | bun package | 3.3.3 | lib | yes | 0 | 2026-10-03 |
+| `@aphrody/m3-codemods` | [packages/ui/m3-codemods](../../../packages/ui/m3-codemods) | bun package | 0.1.0 | private | yes | 0 | uncommitted |
 | `@aphrody/m3-config` | [packages/ui/m3-config](../../../packages/ui/m3-config) | bun package | 3.3.3 | lib | yes | 0 | 2026-10-03 |
 | `@aphrody/m3-design` | [packages/ui/m3-design](../../../packages/ui/m3-design) | bun package | 3.3.3 | lib | yes | 0 | 2026-10-01 |
 | `@aphrody/m3-explorer` | [packages/ui/m3-explorer](../../../packages/ui/m3-explorer) | bun package | 3.3.3 | lib | yes | 0 | 2026-10-03 |
@@ -412,8 +402,6 @@ Tracked Cargo manifests outside the root workspace (excluded, nested workspaces 
 | `@aphrody/m3-reader` | [packages/ui/m3-reader](../../../packages/ui/m3-reader) | bun package | 3.3.3 | lib | yes | 0 | 2026-10-02 |
 | `@aphrody/m3-theme` | [packages/ui/m3-theme](../../../packages/ui/m3-theme) | bun package | 3.3.3 | lib | yes | 0 | 2026-10-03 |
 | `@aphrody/m3-tokens` | [packages/ui/m3-tokens](../../../packages/ui/m3-tokens) | bun package | 3.3.3 | lib | yes | 0 | 2026-10-02 |
-| `@aphrody/material-web` | [packages/ui/material-web](../../../packages/ui/material-web) | bun package | 3.3.3 | private | yes | 0 | 2026-10-03 |
-| `@aphrody/mcp-ui` | [packages/ui/mcp-ui](../../../packages/ui/mcp-ui) | bun package | 7.1.1 | lib | yes | 0 | 2026-10-03 |
 | `@aphrody/scaffold` | [packages/ui/scaffold](../../../packages/ui/scaffold) | bun package | 1.0.0-canary | bin, lib | yes | 0 | 2026-10-02 |
 | `@aphrody/web-to-tauri` | [packages/ui/web-to-tauri](../../../packages/ui/web-to-tauri) | bun package | 1.0.0-canary | bin, lib | yes | 0 | 2026-10-02 |
 

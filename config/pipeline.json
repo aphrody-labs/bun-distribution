@@ -530,6 +530,24 @@
           "command": [
             "run",
             "--filter",
+            "@aphrody/ag-ui",
+            "typecheck"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@aphrody/ag-ui",
+            "test"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
             "@aphrody/app-ui",
             "typecheck"
           ]
@@ -656,6 +674,15 @@
           "command": [
             "run",
             "--filter",
+            "@aphrody/m3-codemods",
+            "test"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
             "@aphrody/m3-config",
             "typecheck"
           ]
@@ -1044,33 +1071,6 @@
             "run",
             "--filter",
             "@aphrody/m3",
-            "build"
-          ]
-        },
-        {
-          "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/material-web",
-            "typecheck"
-          ]
-        },
-        {
-          "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/material-web",
-            "test"
-          ]
-        },
-        {
-          "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/material-web",
             "build"
           ]
         },
@@ -1706,6 +1706,24 @@
           "command": [
             "run",
             "--filter",
+            "@rosegriffon/cdn",
+            "typecheck"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@rosegriffon/cdn",
+            "test"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
             "@rosegriffon/config",
             "lint"
           ]
@@ -1850,87 +1868,6 @@
           "command": [
             "run",
             "--filter",
-            "@rosegriffon/patreon-bun-worker-docs",
-            "typecheck"
-          ]
-        },
-        {
-          "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@rosegriffon/patreon-bun-docs",
-            "typecheck"
-          ]
-        },
-        {
-          "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@rosegriffon/patreon-bun-bun-esm",
-            "typecheck"
-          ]
-        },
-        {
-          "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@rosegriffon/patreon-bun-bun-webhook",
-            "typecheck"
-          ]
-        },
-        {
-          "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@rosegriffon/patreon-bun-cloudflare-webhook",
-            "typecheck"
-          ]
-        },
-        {
-          "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@rosegriffon/patreon-bun",
-            "lint"
-          ]
-        },
-        {
-          "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@rosegriffon/patreon-bun",
-            "typecheck"
-          ]
-        },
-        {
-          "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@rosegriffon/patreon-bun",
-            "test"
-          ]
-        },
-        {
-          "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@rosegriffon/patreon-bun",
-            "build"
-          ]
-        },
-        {
-          "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
             "@rosegriffon/preferences",
             "lint"
           ]
@@ -1958,6 +1895,24 @@
           "command": [
             "run",
             "--filter",
+            "@rosegriffon/realtime",
+            "typecheck"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@rosegriffon/realtime",
+            "test"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
             "@rosegriffon/search",
             "lint"
           ]
@@ -1977,6 +1932,24 @@
             "run",
             "--filter",
             "@rosegriffon/search",
+            "test"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@rosegriffon/storage",
+            "typecheck"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@rosegriffon/storage",
             "test"
           ]
         },

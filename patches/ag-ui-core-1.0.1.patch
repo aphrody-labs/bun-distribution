@@ -1,0 +1,52 @@
+diff --git a/dist/index.mjs b/dist/index.mjs
+--- a/dist/index.mjs
++++ b/dist/index.mjs
+@@ -1040,4 +1040,9 @@
+ 
+ //#endregion
+ export { AGUIConnectNotImplementedError, AGUIError, AGUI_METADATA_KEY, EventType, PROTOCOL_VERSION, aggregateTokenUsage, contentHasMedia, contentToText, mergeMetadata, omitOptionalNulls, tokenUsageFromAiSdkUsage, tokenUsageFromLangChainMetadata };
++
++// Preserve the existing Aphrody test hook without copying the SDK source.
++export function _resetWarnedCountKeys() {
++	warnedCountKeys.clear();
++}
+ //# sourceMappingURL=index.mjs.map
+\ No newline at end of file
+diff --git a/dist/index.js b/dist/index.js
+--- a/dist/index.js
++++ b/dist/index.js
+@@ -1051,4 +1051,9 @@
+ exports.omitOptionalNulls = omitOptionalNulls;
+ exports.tokenUsageFromAiSdkUsage = tokenUsageFromAiSdkUsage;
+ exports.tokenUsageFromLangChainMetadata = tokenUsageFromLangChainMetadata;
++
++// Preserve the existing Aphrody test hook without copying the SDK source.
++exports._resetWarnedCountKeys = function _resetWarnedCountKeys() {
++	warnedCountKeys.clear();
++};
+ //# sourceMappingURL=index.js.map
+\ No newline at end of file
+diff --git a/dist/index.d.ts b/dist/index.d.ts
+--- a/dist/index.d.ts
++++ b/dist/index.d.ts
+@@ -248,4 +248,7 @@
+ declare function contentHasMedia(content: string | ContentPart[] | undefined): boolean;
+ //#endregion
+ export { AGUIConnectNotImplementedError, AGUIError, AGUIEvent, AGUIEventByType, AGUIEventOf, AGUI_METADATA_KEY, ActivityDeltaEvent, ActivityDeltaEventProps, ActivityMessage, ActivitySnapshotEvent, ActivitySnapshotEventProps, AddOperation, AgentCapabilities, AssistantMessage, Attributable, AudioInputContent, type AudioPart as AudioInputPart, AudioPart, type BaseEvent, BaseEventFields, BaseEventProps, BaseMessage, ContentPart, Context, CopyOperation, CustomEvent, CustomEventProps, DataSource, DeveloperMessage, DocumentInputContent, type DocumentPart as DocumentInputPart, DocumentPart, Event, EventPayloadOf, EventType, ExecutionCapabilities, FileSource, FunctionCall, HumanInTheLoopCapabilities, IdentityCapabilities, ImageInputContent, type ImagePart as ImageInputPart, ImagePart, InputContent, InputContentDataSource, InputContentPart, InputContentSource, InputContentUrlSource, Interrupt, JsonPatch, JsonPatchOperation, JsonPointer, Message, MessagesSnapshotEvent, MessagesSnapshotEventProps, Metadata, MoveOperation, MultiAgentCapabilities, MultimodalCapabilities, MultimodalInputCapabilities, MultimodalOutputCapabilities, OutputCapabilities, PROTOCOL_VERSION, PartSource, RawEvent, RawEventProps, ReasoningCapabilities, ReasoningEncryptedValueEvent, ReasoningEncryptedValueEventProps, ReasoningEncryptedValueSubtype, ReasoningEndEvent, ReasoningEndEventProps, ReasoningMessage, ReasoningMessageChunkEvent, ReasoningMessageChunkEventProps, ReasoningMessageContentEvent, ReasoningMessageContentEventProps, ReasoningMessageEndEvent, ReasoningMessageEndEventProps, ReasoningMessageStartEvent, ReasoningMessageStartEventProps, ReasoningStartEvent, ReasoningStartEventProps, RemoveOperation, ReplaceOperation, ResumeEntry, ResumeStatus, Role, RunAgentInput, RunErrorEvent, RunErrorEventProps, RunFinishedCancelledOutcome, RunFinishedEvent, RunFinishedEventProps, RunFinishedInterruptOutcome, RunFinishedOutcome, RunFinishedSuccessOutcome, RunStartedEvent, RunStartedEventProps, State, StateCapabilities, StateDeltaEvent, StateDeltaEventProps, StateSnapshotEvent, StateSnapshotEventProps, StepFinishedEvent, StepFinishedEventProps, StepStartedEvent, StepStartedEventProps, SubagentErrorEvent, SubagentErrorEventProps, SubagentFinishedEvent, SubagentFinishedEventProps, SubagentFinishedOutcome, SubagentFinishedSuccessOutcome, SubagentFinishedSuspendedOutcome, SubagentInfo, SubagentRunId, SubagentStartedEvent, SubagentStartedEventProps, SystemMessage, TestOperation, TextInputContent, TextMessageChunkEvent, TextMessageChunkEventProps, TextMessageContentEvent, TextMessageContentEventProps, TextMessageEndEvent, TextMessageEndEventProps, TextMessageRole, TextMessageStartEvent, TextMessageStartEventProps, TextPart, TokenUsage, Tool, ToolCall, ToolCallArgsEvent, ToolCallArgsEventProps, ToolCallChunkEvent, ToolCallChunkEventProps, ToolCallEndEvent, ToolCallEndEventProps, ToolCallResultEvent, ToolCallResultEventProps, ToolCallStartEvent, ToolCallStartEventProps, ToolMessage, ToolsCapabilities, TransportCapabilities, UrlSource, UserMessage, VideoInputContent, type VideoPart as VideoInputPart, VideoPart, aggregateTokenUsage, contentHasMedia, contentToText, mergeMetadata, omitOptionalNulls, tokenUsageFromAiSdkUsage, tokenUsageFromLangChainMetadata };
++
++/** Reset token-usage warning state (existing Aphrody testing API). */
++export declare function _resetWarnedCountKeys(): void;
+ //# sourceMappingURL=index.d.ts.map
+\ No newline at end of file
+diff --git a/dist/index.d.mts b/dist/index.d.mts
+--- a/dist/index.d.mts
++++ b/dist/index.d.mts
+@@ -248,4 +248,7 @@
+ declare function contentHasMedia(content: string | ContentPart[] | undefined): boolean;
+ //#endregion
+ export { AGUIConnectNotImplementedError, AGUIError, AGUIEvent, AGUIEventByType, AGUIEventOf, AGUI_METADATA_KEY, ActivityDeltaEvent, ActivityDeltaEventProps, ActivityMessage, ActivitySnapshotEvent, ActivitySnapshotEventProps, AddOperation, AgentCapabilities, AssistantMessage, Attributable, AudioInputContent, type AudioPart as AudioInputPart, AudioPart, type BaseEvent, BaseEventFields, BaseEventProps, BaseMessage, ContentPart, Context, CopyOperation, CustomEvent, CustomEventProps, DataSource, DeveloperMessage, DocumentInputContent, type DocumentPart as DocumentInputPart, DocumentPart, Event, EventPayloadOf, EventType, ExecutionCapabilities, FileSource, FunctionCall, HumanInTheLoopCapabilities, IdentityCapabilities, ImageInputContent, type ImagePart as ImageInputPart, ImagePart, InputContent, InputContentDataSource, InputContentPart, InputContentSource, InputContentUrlSource, Interrupt, JsonPatch, JsonPatchOperation, JsonPointer, Message, MessagesSnapshotEvent, MessagesSnapshotEventProps, Metadata, MoveOperation, MultiAgentCapabilities, MultimodalCapabilities, MultimodalInputCapabilities, MultimodalOutputCapabilities, OutputCapabilities, PROTOCOL_VERSION, PartSource, RawEvent, RawEventProps, ReasoningCapabilities, ReasoningEncryptedValueEvent, ReasoningEncryptedValueEventProps, ReasoningEncryptedValueSubtype, ReasoningEndEvent, ReasoningEndEventProps, ReasoningMessage, ReasoningMessageChunkEvent, ReasoningMessageChunkEventProps, ReasoningMessageContentEvent, ReasoningMessageContentEventProps, ReasoningMessageEndEvent, ReasoningMessageEndEventProps, ReasoningMessageStartEvent, ReasoningMessageStartEventProps, ReasoningStartEvent, ReasoningStartEventProps, RemoveOperation, ReplaceOperation, ResumeEntry, ResumeStatus, Role, RunAgentInput, RunErrorEvent, RunErrorEventProps, RunFinishedCancelledOutcome, RunFinishedEvent, RunFinishedEventProps, RunFinishedInterruptOutcome, RunFinishedOutcome, RunFinishedSuccessOutcome, RunStartedEvent, RunStartedEventProps, State, StateCapabilities, StateDeltaEvent, StateDeltaEventProps, StateSnapshotEvent, StateSnapshotEventProps, StepFinishedEvent, StepFinishedEventProps, StepStartedEvent, StepStartedEventProps, SubagentErrorEvent, SubagentErrorEventProps, SubagentFinishedEvent, SubagentFinishedEventProps, SubagentFinishedOutcome, SubagentFinishedSuccessOutcome, SubagentFinishedSuspendedOutcome, SubagentInfo, SubagentRunId, SubagentStartedEvent, SubagentStartedEventProps, SystemMessage, TestOperation, TextInputContent, TextMessageChunkEvent, TextMessageChunkEventProps, TextMessageContentEvent, TextMessageContentEventProps, TextMessageEndEvent, TextMessageEndEventProps, TextMessageRole, TextMessageStartEvent, TextMessageStartEventProps, TextPart, TokenUsage, Tool, ToolCall, ToolCallArgsEvent, ToolCallArgsEventProps, ToolCallChunkEvent, ToolCallChunkEventProps, ToolCallEndEvent, ToolCallEndEventProps, ToolCallResultEvent, ToolCallResultEventProps, ToolCallStartEvent, ToolCallStartEventProps, ToolMessage, ToolsCapabilities, TransportCapabilities, UrlSource, UserMessage, VideoInputContent, type VideoPart as VideoInputPart, VideoPart, aggregateTokenUsage, contentHasMedia, contentToText, mergeMetadata, omitOptionalNulls, tokenUsageFromAiSdkUsage, tokenUsageFromLangChainMetadata };
++
++/** Reset token-usage warning state (existing Aphrody testing API). */
++export declare function _resetWarnedCountKeys(): void;
+ //# sourceMappingURL=index.d.mts.map
+\ No newline at end of file

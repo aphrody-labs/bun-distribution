@@ -1,2 +1,0 @@
-[test]
-preload = ["../../../packages/bun/test-dom/src/index.ts"]
