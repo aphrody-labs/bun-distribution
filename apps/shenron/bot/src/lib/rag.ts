@@ -136,6 +136,8 @@ export interface RagHit {
 	score: number;
 	/** Corpus d'origine (`db_characters`, `manga`, `databooks`, `canon_references`…). */
 	sourceId?: string;
+	/** Identifiant canonique unique du document (`shenron:<id>`) quand la frontière Aphrody le fournit. */
+	documentId?: string;
 	/** Langue du passage (`fr`, `en`, `ja`). */
 	lang?: string;
 	/** Full passage returned by the Aphrody search boundary when available. */
@@ -794,10 +796,17 @@ export function truthWeight(
  * Helper pratique pour calculer le poids de vérité d'un hit ou chunk.
  */
 export function hitTruthWeight(
-	hit: { source_id?: string | null; kind: string; title: string; entity?: string | null },
+	hit: {
+		source_id?: string | null;
+		sourceId?: string | null;
+		kind: string;
+		title: string;
+		entity?: string | null;
+	},
 	queryTokens: string[] = []
 ): number {
-	return truthWeight(hit.source_id ?? "", hit.kind, queryTokens, hit.title, hit.entity);
+	// Priorité : ligne SQLite (`source_id`), puis groupe d'origine public (`sourceId`).
+	return truthWeight(hit.source_id ?? hit.sourceId ?? "", hit.kind, queryTokens, hit.title, hit.entity);
 }
 
 export type RagMode = "hybrid+rerank" | "hybrid" | "lexical";
@@ -834,6 +843,7 @@ export async function hybridSearch(
 							snippet: hit.snippet || hit.content || "",
 							score: hit.score,
 							sourceId: hit.sourceId,
+							documentId: hit.sourceId,
 							lang: options?.lang ?? "fr",
 							content: hit.content,
 						})),
@@ -856,6 +866,7 @@ export async function hybridSearch(
 				snippet: hit.snippet,
 				score: hit.score,
 				sourceId: hit.originSourceId,
+				documentId: hit.sourceId,
 				lang: hit.lang,
 				content: hit.content,
 			})),

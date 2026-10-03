@@ -95,12 +95,21 @@ export interface RagHit {
 	score: number;
 	truthMultiplier?: number;
 	metadata?: Record<string, unknown>;
+	/** Stable backend document id when the owner provides it (rowid may be -1, not a unique key). */
+	documentId?: string;
+	/** Canonical corpus id (`db_characters`, `manga`, `databooks`…) from the bot RAG owner. */
+	sourceId?: string;
+	/** Passage language (`fr`, `en`, `ja`). */
+	lang?: string;
+	/** Full passage when the search boundary returns it. */
+	content?: string;
 }
 
 export interface RagSearchResult {
 	query: string;
 	results: RagHit[];
-	mode: "hybrid" | "lexical" | "dense";
+	/** Mode actually served by the owner (`hybrid+rerank` when the cross-encoder ran). */
+	mode: "hybrid" | "hybrid+rerank" | "lexical" | "dense";
 	latencyMs: number;
 	totalFound: number;
 }

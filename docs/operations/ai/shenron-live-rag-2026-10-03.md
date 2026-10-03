@@ -139,3 +139,64 @@ récupération ou d'évaluation dans ces suites. La dernière intégration unita
 passe 89 tests (421 assertions). La suite live reste en échec avant ses tests
 sur le gate « preload incomplete or stale » : aucun résultat live validé ni
 préchargement complet n'est revendiqué.
+
+
+## Home DBFR et qualification Bun étendue
+
+`runIaTask` applique désormais le frontmatter de persona du Home DBFR, avec
+résolution du domaine et priorité du workspace explicite. Seuls `tone`,
+`brevity` et `vibe` atteignent les instructions ; la garde reste en dernière
+position. Les textes privés et les mémoires ne sont pas copiés. Voir
+[agent-home-bun.md](../shenron/agent-home-bun.md).
+
+Le rapport de synchronisation est publié par renommage atomique et contient
+l'heure réelle de lecture de chaque source. Pour les exports chargés avant la
+boucle, cette heure reste celle de leur chargement. Le gate exige que chaque
+lecture soit récente, que les exports présents soient couverts, que tous les
+passages visibles aient un vecteur E5 à jour de 384 dimensions et que les
+comptes rapport/SQL/HTTP concordent. Une ingestion initiale longue est suivie,
+par `rag:prepare`, d'une nouvelle lecture de validation sans réembedding des
+sources inchangées. Le service actuellement en cours a chargé l'ancienne
+version avant ces changements : sa fin devra être suivie d'une validation
+complète avec le nouveau code. Il n'a pas été interrompu.
+
+Les tests manga PostgreSQL, workflow, entraînement et pont HTTP utilisent le
+même gate complet. Les unités d'entraînement ne réalisent plus de récupération
+ni de sonde d'embedding. Une suite distincte vérifie le cache sémantique avec
+le vrai Redis, E5 et deux contextes récupérés ; ses clés propres sont isolées.
+Ces suites live restent non qualifiées pendant le préchargement.
+
+L'audit du pont HTTP a trouvé le mauvais verbe, paramètre et service de repli.
+La recherche appelle désormais l'API bot avec GET et `q`, adapte la réponse
+réelle et propage les erreurs. Les modes exclusifs que ce backend n'honore pas
+sont refusés explicitement. Les hits conservent leur groupe d'origine et
+ajoutent `documentId`, identifiant stable distinct du `rowid` de compatibilité.
+Le diagnostic d'autorité accepte également le champ public `sourceId` ; les
+règles de pondération elles-mêmes restent inchangées.
+
+Une sonde locale réelle a récupéré deux sources et généré une réponse :
+38 196 ms, santé LLM disponible avant et après, 86 caractères. Un premier
+appel froid a dépassé le délai client de 90 secondes ; un autre a échoué avant
+ce succès. Ce sont des observations partielles, pas une qualification de
+latence ni du produit complet. L'observation de dbfr n'a trouvé aucun site ou
+bot actif sur ses ports applicatifs ; aucun service retiré n'a été réactivé.
+
+
+Les anciennes lectures de chunks SQLite fabriqués du test LLM ont également
+été retirées. Le test de prompt ancré reçoit désormais les passages du vrai
+RAG ; la capture porte seulement sur la génération chat. Les unités de
+conversation refusent toute requête hors chat. Le runner live réunit 21
+suites isolées, notamment workflow, entraînement, cache Redis, pont, LLM et
+manga. Sa réussite intégrale reste à établir.
+
+Dernières gates ciblées : 68 tests pipeline/bridge réussis (262 assertions,
+deux ignorés préexistants), six tests purs entraînement/cache et huit tests
+LLM réussis. TypeScript pipeline/scripts, bot et site/tests, ainsi que les
+projets externes des tests pipeline/bot, réussissent. Lint ciblé sans erreur,
+formatage des nouveaux fichiers réussi ; les fichiers existants gardent leur
+format propriétaire. Aucun Cargo n'a été exécuté dans ce lot.
+
+Un ordonnanceur Bun privé observe le PID réel du préchargement. Après sa
+fin réussie, il lancera `rag:prepare`, puis `rag:test` séquentiellement. Un
+échec, un changement de PID ou une échéance d'observation interrompt cette
+chaîne avec un statut explicite ; sa programmation ne vaut pas résultat.

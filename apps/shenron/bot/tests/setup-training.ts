@@ -5,6 +5,7 @@ import { join } from "node:path";
 import { migrate } from "drizzle-orm/bun-sqlite/migrator";
 import { drizzle } from "drizzle-orm/bun-sqlite";
 import { Database } from "bun:sqlite";
+import { getTableName } from "drizzle-orm";
 import { users, levelRewards } from "../src/db/schema";
 
 Bun.env.NODE_ENV = "test";
@@ -32,7 +33,7 @@ for (const [table, column, definition] of [
 	[users, "zeni_frozen", "INTEGER NOT NULL DEFAULT 0"],
 	[levelRewards, "banner_url", "TEXT"],
 ] as const) {
-	const tableName = table[Symbol.for("drizzle:Name") as keyof typeof table] as string;
+	const tableName = getTableName(table);
 	const columns = sqlite.prepare(`PRAGMA table_info("${tableName}")`).all() as { name: string }[];
 	if (!columns.some((columnInfo) => columnInfo.name === column)) {
 		sqlite.exec(`ALTER TABLE "${tableName}" ADD COLUMN "${column}" ${definition}`);

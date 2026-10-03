@@ -1,20 +1,21 @@
-import { loadEnvConfig } from "@next/env";
-import path from "path";
-
-// Chargement des variables d'environnement (DATABASE_URL etc.)
-loadEnvConfig(path.resolve(__dirname, ".."));
-
-import { describe, expect, mock, test } from "bun:test";
+// SPDX-License-Identifier: Apache-2.0
+// Recherche manga sur le vrai PostgreSQL éditorial (transcriptions OCR) : aucune base vide ni test
+// sauté. La frontière requireLiveRag refuse un préchargement RAG absent, partiel ou périmé.
+import { beforeAll, describe, expect, mock, test } from "bun:test";
+import { loadLiveRagEnv, requireLiveRag } from "@shenron/pipeline/testing/live-rag";
 
 // Mock de server-only pour permettre les tests dans l'environnement Bun
 mock.module("server-only", () => ({}));
 
+loadLiveRagEnv();
+beforeAll(async () => {
+	await requireLiveRag();
+}, 120_000);
+
 const { chercherPlanches, totalPlanchesPourRequete } = await import("../src/lib/manga-api");
 const { GET } = await import("../src/app/api/manga/search/route");
 
-const dbUrl = process.env.DATABASE_URL?.trim();
-
-describe.skipIf(!dbUrl)("chercherPlanches & totalPlanchesPourRequete — citations françaises", () => {
+describe("chercherPlanches & totalPlanchesPourRequete — citations françaises", () => {
 	test("recherche du mot célèbre 'Kamehameha'", async () => {
 		const resultats = await chercherPlanches("Kamehameha", 5);
 		expect(resultats.length).toBeGreaterThan(0);
@@ -69,7 +70,7 @@ describe.skipIf(!dbUrl)("chercherPlanches & totalPlanchesPourRequete — citatio
 	});
 });
 
-describe.skipIf(!dbUrl)("recherche en japonais (multisyllabique, kanjis et katakana)", () => {
+describe("recherche en japonais (multisyllabique, kanjis et katakana)", () => {
 	test("terme japonais avec kanji : 'かめはめ波'", async () => {
 		const resultats = await chercherPlanches("かめはめ波", 5);
 		expect(resultats.length).toBeGreaterThan(0);
@@ -103,7 +104,7 @@ describe.skipIf(!dbUrl)("recherche en japonais (multisyllabique, kanjis et katak
 	});
 });
 
-describe.skipIf(!dbUrl)("tolérance à la ponctuation française et japonaise", () => {
+describe("tolérance à la ponctuation française et japonaise", () => {
 	test("guillemets français « » et guillemets droits \" \"", async () => {
 		const brut = await chercherPlanches("Kamehameha", 5);
 		const avecGuillemets = await chercherPlanches("« Kamehameha »", 5);
@@ -134,7 +135,7 @@ describe.skipIf(!dbUrl)("tolérance à la ponctuation française et japonaise", 
 	});
 });
 
-describe.skipIf(!dbUrl)("filtrage par série, par tome et pagination", () => {
+describe("filtrage par série, par tome et pagination", () => {
 	test("filtrage par série : db vs dbs", async () => {
 		const planchesDb = await chercherPlanches("Kamehameha", { limit: 10, series: "db" });
 		expect(planchesDb.length).toBeGreaterThan(0);
@@ -200,7 +201,7 @@ describe.skipIf(!dbUrl)("filtrage par série, par tome et pagination", () => {
 	});
 });
 
-describe.skipIf(!dbUrl)("mise en valeur des extraits (snippets avec <mark>)", () => {
+describe("mise en valeur des extraits (snippets avec <mark>)", () => {
 	test("snippet systématiquement surligné avec <mark>", async () => {
 		const res = await chercherPlanches("Kamehameha", 3);
 		for (const p of res) {
@@ -219,7 +220,7 @@ describe.skipIf(!dbUrl)("mise en valeur des extraits (snippets avec <mark>)", ()
 	});
 });
 
-describe.skipIf(!dbUrl)("Route API HTTP GET /api/manga/search", () => {
+describe("Route API HTTP GET /api/manga/search", () => {
 	test("renvoie un JSON valide avec les champs q, count et resultats", async () => {
 		const req = new Request("http://localhost:3000/api/manga/search?q=kamehameha&limit=2");
 		const res = await GET(req);

@@ -45,6 +45,8 @@ const reportPath =
 const corpusGroups = new Map<string, SourceChunk[]>();
 const crawlGroups = new Map<string, SourceChunk[]>();
 const missingCorpora: string[] = [];
+// Export files are read before the source loop; their freshness cannot start later.
+const corpusValidatedAt = new Date().toISOString();
 for (const [name, author] of [
   ["corpus.json", false],
   ["corpus-xv2.json", false],
@@ -198,12 +200,14 @@ try {
   if (apply) requireScriptEmbeddingSpace(process.env);
   const sql = crawlOnly ? null : postgres(await urlPostgres(), { max: 2, prepare: false });
   const client = apply ? new AphrodyComputeClient() : null;
-  const results: SyncResult[] = [];
+  const results: Array<SyncResult & { validatedAt: string }> = [];
   let failed = false;
   try {
     if (client) await client.ragStats(); // A first preload starts from an empty, available index.
     for (const source of targets) {
       try {
+        // Freshness starts when editorial data is read, not after a long ingestion.
+        const validatedAt = corpusGroups.has(source) ? corpusValidatedAt : new Date().toISOString();
         const chunks = [
           ...(!crawlOnly && PG_SOURCES[source] ? await PG_SOURCES[source]!(sql!) : []),
           ...(crawlOnly ? (crawlGroups.get(source) ?? []) : (corpusGroups.get(source) ?? [])),
@@ -223,7 +227,7 @@ try {
             },
           },
         );
-        results.push(result);
+        results.push({ ...result, validatedAt });
         console.log(
           `${result.unchanged ? "=" : apply ? "✓" : "→"} ${source}: ${result.rendered} rendered, ${result.indexed} indexed, ${result.retired} retired${result.unchanged ? " (unchanged)" : ""}`,
         );
@@ -242,10 +246,13 @@ try {
   if (reportPath) {
     const path = resolve(reportPath);
     await mkdir(dirname(path), { recursive: true });
+    const temp = `${path}.${process.pid}.tmp`;
     await writeFile(
-      path,
+      temp,
       `${JSON.stringify({ schema: "shenron-aphrody-rag-sync/v1", generatedAt: new Date().toISOString(), mode: apply ? "apply" : "simulation", sources: results, missingCorpora, failed }, null, 2)}\n`,
+      { flag: "wx", mode: 0o600 },
     );
+    await rename(temp, path);
   }
   if (missingCorpora.length) console.warn(`⚠ RAG corpora absent: ${missingCorpora.join(", ")}`);
   console.log(

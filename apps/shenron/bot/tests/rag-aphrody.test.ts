@@ -3,7 +3,7 @@ import { beforeAll, expect, it } from "bun:test";
 import { loadLiveRagEnv, requireLiveRag, type LiveRag } from "@shenron/pipeline/testing/live-rag";
 
 loadLiveRagEnv();
-const { buildRagContext, hybridSearch } = await import("../src/lib/rag");
+const { buildRagContext, hitTruthWeight, hybridSearch } = await import("../src/lib/rag");
 let live: LiveRag;
 beforeAll(async () => {
   live = await requireLiveRag();
@@ -33,4 +33,25 @@ it("uses the same real HTTP retrieval for unfiltered bot queries", async () => {
   expect(bot.results.every((hit) => hit.content?.trim() && hit.url.startsWith("https://"))).toBe(
     true,
   );
+});
+
+it("keeps the origin group in sourceId and the unique canonical id in documentId", async () => {
+  const remote = await live.client.ragSearchWithMode("Son Goku", 5, { sourceId: "db_characters" });
+  const bot = await hybridSearch(null, "Son Goku", 5, { sourceId: "db_characters" });
+  expect(bot.results.map((hit) => hit.documentId)).toEqual(
+    remote.results.map((hit) => hit.sourceId),
+  );
+  expect(bot.results.map((hit) => hit.sourceId)).toEqual(
+    remote.results.map((hit) => hit.originSourceId),
+  );
+  const ids = bot.results.map((hit) => hit.documentId);
+  expect(ids.every((id) => typeof id === "string" && id.length > 0)).toBe(true);
+  expect(new Set(ids).size).toBe(ids.length);
+  for (const hit of bot.results) {
+    // sourceId (groupe public) et source_id (ligne SQLite) donnent le même poids ; source_id prime.
+    expect(hitTruthWeight(hit)).toBe(hitTruthWeight({ ...hit, source_id: hit.sourceId }));
+    expect(hitTruthWeight({ ...hit, source_id: "games_override" })).toBe(
+      hitTruthWeight({ ...hit, sourceId: undefined, source_id: "games_override" }),
+    );
+  }
 });

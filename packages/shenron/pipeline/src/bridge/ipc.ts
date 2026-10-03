@@ -25,16 +25,22 @@ import type {
 	IaObjective,
 	AutoEvalMetric,
 } from "./types";
-import { resolveSiteInternalUrl } from "@shenron/config/services";
+import { resolveBotApiInternalUrl, resolveSiteInternalUrl } from "@shenron/config/services";
 
 /** Site origin on the loopback (aphrody-infra service catalog: site = 5011); overridable. */
 const DEFAULT_SITE_URL =
 	resolveSiteInternalUrl(typeof process !== "undefined" ? process.env : {});
 
+const DEFAULT_BOT_API_URL = resolveBotApiInternalUrl(typeof process !== "undefined" ? process.env : {});
+
+const RAG_SERVED_MODES: ReadonlySet<string> = new Set(["hybrid", "hybrid+rerank", "lexical", "dense"]);
+
 export class DbuiBridge {
 	private config: BridgeConfig;
+	private readonly explicitFallbackUrl: boolean;
 
 	constructor(config: BridgeConfig = {}) {
+		this.explicitFallbackUrl = Boolean(config.fallbackApiUrl);
 		this.config = {
 			fallbackApiUrl: config.fallbackApiUrl || DEFAULT_SITE_URL,
 			forcedTransport: config.forcedTransport,
@@ -73,11 +79,11 @@ export class DbuiBridge {
 	}
 
 	private async fallbackHttp<T>(cmd: string, args: Record<string, unknown>): Promise<T> {
+		if (cmd === "aphrody_rag_search") return (await this.fallbackRagSearch(args)) as T;
 		const baseUrl = this.config.fallbackApiUrl?.replace(/\/$/, "") || "";
 		const endpointMap: Record<string, { method: "GET" | "POST"; path: string }> = {
 			aphrody_chat_send: { method: "POST", path: "/api/chat" },
 			aphrody_models: { method: "GET", path: "/api/models" },
-			aphrody_rag_search: { method: "POST", path: "/api/public/rag/search" },
 			aphrody_rag_stats: { method: "GET", path: "/api/admin/ia" },
 			aphrody_canon_evaluate: { method: "GET", path: "/api/canon" },
 			aphrody_canon_doctrine: { method: "GET", path: "/api/canon-config" },
@@ -118,6 +124,50 @@ export class DbuiBridge {
 		} catch (error) {
 			throw new Error(`Échec du bridge HTTP ${cmd}: ${error instanceof Error ? error.message : String(error)}`);
 		}
+	}
+
+	/** The owner of RAG search is the bot API (GET /api/public/rag/search?q=), not the site. */
+	private async fallbackRagSearch(args: Record<string, unknown>): Promise<RagSearchResult> {
+		const mode = args.mode ?? "hybrid";
+		if (mode === "dense" || mode === "lexical") {
+			// The public route always serves hybrid: it ignores lexicalOnly and has no dense-only switch.
+			throw new Error(`Échec du bridge HTTP aphrody_rag_search: mode ${String(mode)} seul non supporté par la route publique`);
+		}
+		const query = String(args.query ?? "");
+		const base = this.explicitFallbackUrl ? this.config.fallbackApiUrl! : DEFAULT_BOT_API_URL;
+		const url = new URL("/api/public/rag/search", base);
+		url.searchParams.set("q", query);
+		url.searchParams.set("limit", String(args.limit ?? 6));
+		const started = performance.now();
+		let body: unknown;
+		try {
+			const res = await fetch(url, {
+				headers: { Accept: "application/json" },
+				signal: AbortSignal.timeout(this.config.timeoutMs ?? 30_000),
+			});
+			if (!res.ok) throw new Error(`HTTP ${res.status} on aphrody_rag_search`);
+			body = await res.json();
+		} catch (error) {
+			throw new Error(`Échec du bridge HTTP aphrody_rag_search: ${error instanceof Error ? error.message : String(error)}`);
+		}
+		const malformed = (why: string) => new Error(`Échec du bridge HTTP aphrody_rag_search: réponse invalide (${why})`);
+		if (typeof body !== "object" || body === null || Array.isArray(body)) throw malformed("corps non objet");
+		const record = body as Record<string, unknown>;
+		if (record.error !== undefined && record.error !== null && record.error !== "") {
+			throw new Error(`Échec du bridge HTTP aphrody_rag_search: ${String(record.error)}`);
+		}
+		if (typeof record.q !== "string") throw malformed("q absent");
+		const servedMode = record.mode;
+		if (typeof servedMode !== "string" || !RAG_SERVED_MODES.has(servedMode)) throw malformed("mode inconnu");
+		if (!Array.isArray(record.results)) throw malformed("results absent");
+		const results = record.results as RagSearchResult["results"];
+		return {
+			query: record.q,
+			results,
+			mode: servedMode as RagSearchResult["mode"],
+			latencyMs: Math.round(performance.now() - started),
+			totalFound: results.length,
+		};
 	}
 
 	// ── Chat API ─────────────────────────────────────────────────────────────

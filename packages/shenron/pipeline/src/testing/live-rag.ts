@@ -2,7 +2,7 @@
 /** Shared qualification boundary: real editorial SQL, E5 vectors and Redis. */
 import { readFileSync, statSync } from "node:fs";
 import { homedir } from "node:os";
-import { join } from "node:path";
+import { join, resolve } from "node:path";
 import { lastAssignment } from "@shenron/db/env";
 import { createSql } from "@shenron/db/sql";
 import { createResilientRedis } from "@shenron/db/redis";
@@ -72,7 +72,7 @@ interface SyncReport {
   mode: string;
   failed: boolean;
   missingCorpora: string[];
-  sources: Array<{ source: string; rendered: number; digest: string }>;
+  sources: Array<{ source: string; rendered: number; digest: string; validatedAt: string }>;
 }
 
 export interface LiveRag {
@@ -106,7 +106,9 @@ export async function requireLiveRag(): Promise<LiveRag> {
     !Number.isFinite(maxAge) ||
     maxAge <= 0 ||
     age > maxAge ||
-    report.missingCorpora.length
+    !Array.isArray(report.missingCorpora) ||
+    report.missingCorpora.length ||
+    !Array.isArray(report.sources)
   ) {
     throw new Error("Shenron RAG preload is incomplete or stale; run rag:prepare");
   }
@@ -114,6 +116,46 @@ export async function requireLiveRag(): Promise<LiveRag> {
     if (!report.sources.some((item) => item.source === source && item.rendered > 0)) {
       throw new Error(`Shenron RAG preload is missing ${source}; run rag:prepare`);
     }
+  }
+  const seen = new Set<string>();
+  for (const source of report.sources) {
+    const validatedAge = Date.now() - Date.parse(source.validatedAt);
+    if (
+      seen.has(source.source) ||
+      !/^[a-z0-9_]{1,64}$/.test(source.source) ||
+      !Number.isSafeInteger(source.rendered) ||
+      source.rendered < 0 ||
+      !/^[a-f0-9]{64}$/.test(source.digest) ||
+      !Number.isFinite(validatedAge) ||
+      validatedAge < 0 ||
+      validatedAge > maxAge
+    ) {
+      throw new Error(
+        `Shenron ${source.source}: editorial validation is missing or stale; run rag:prepare`,
+      );
+    }
+    seen.add(source.source);
+  }
+  // Qualify every currently configured export, including non-editorial sources.
+  const { CORPUS_DIR, loadCorpusDocs, renderCorpusDocs } =
+    await import("../../scripts/_rag-corpus-sources");
+  const corpusDir = process.env.SHENRON_RAG_CORPUS_DIR
+    ? resolve(process.env.SHENRON_RAG_CORPUS_DIR)
+    : CORPUS_DIR;
+  const exported = new Map<string, number>();
+  for (const [name, author] of [
+    ["corpus.json", false],
+    ["corpus-xv2.json", false],
+    ["corpus-aphrody.json", true],
+  ] as const) {
+    const docs = loadCorpusDocs(join(corpusDir, name));
+    if (!docs) throw new Error(`Shenron RAG export ${name} is missing; run rag:prepare`);
+    for (const passage of renderCorpusDocs(docs, author).passages)
+      exported.set(passage.sourceId, (exported.get(passage.sourceId) ?? 0) + 1);
+  }
+  for (const [source, count] of exported) {
+    if (!report.sources.some((item) => item.source === source && item.rendered >= count))
+      throw new Error(`Shenron ${source}: configured export is not fully preloaded`);
   }
   const client = new AphrodyComputeClient();
   const editorial = createSql({ applicationName: "shenron-rag-live-editorial", max: 1 });
@@ -132,7 +174,7 @@ export async function requireLiveRag(): Promise<LiveRag> {
       >`SELECT count(*) FROM db_characters WHERE coalesce(visible::int,1) <> 0`,
       index<{ source: string; count: string; vectors: string }[]>`
 				SELECT d.metadata->>'originSourceId' AS source, count(*) AS count,
-				count(v.document_id) FILTER (WHERE v.model = 'Xenova/multilingual-e5-small' AND v.created_at >= d.updated_at) AS vectors
+				count(v.document_id) FILTER (WHERE v.model = 'Xenova/multilingual-e5-small' AND vector_dims(v.embedding) = 384 AND v.created_at >= d.updated_at) AS vectors
 				FROM aphrody_rag_documents d LEFT JOIN aphrody_shenron_vectors v ON v.document_id=d.id
 				WHERE d.corpus='shenron' AND coalesce(d.metadata->>'visible','true') <> 'false' GROUP BY 1`,
       redis.send("PING", []),
@@ -142,9 +184,23 @@ export async function requireLiveRag(): Promise<LiveRag> {
     }
     for (const source of report.sources) {
       const live = indexed.find((row) => row.source === source.source);
-      if (Number(live?.count) !== source.rendered || Number(live?.vectors) !== source.rendered) {
+      if (
+        Number(live?.count ?? 0) !== source.rendered ||
+        Number(live?.vectors ?? 0) !== source.rendered
+      ) {
         throw new Error(`Shenron ${source.source}: preload or E5 vectors are incomplete`);
       }
+    }
+    const expected = report.sources.reduce((count, source) => count + source.rendered, 0);
+    const visible = indexed.reduce((count, source) => count + Number(source.count), 0);
+    if (
+      !Number.isSafeInteger(expected) ||
+      expected !== visible ||
+      expected !== stats.chunks ||
+      expected !== stats.vectors ||
+      indexed.some((source) => !seen.has(source.source))
+    ) {
+      throw new Error("Shenron RAG report, visible sources and E5 statistics disagree");
     }
     const search = await client.ragSearchWithMode("Son Goku", 5, {
       sourceId: "db_characters",
