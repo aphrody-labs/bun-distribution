@@ -256,6 +256,8 @@ fn candidate_paths() -> Vec<PathBuf> {
     }
     if let Some(home) = dirs::home_dir() {
         out.push(home.join(".config").join("aphrody").join("mcp.json"));
+        out.push(home.join(".gemini").join("config").join("mcp_config.json"));
+        out.push(home.join(".gemini").join("config").join("plugins").join("aphrody").join("mcp_config.json"));
     }
     // Fallback for in-tree development.
     out.push(PathBuf::from(".mcp.json"));
