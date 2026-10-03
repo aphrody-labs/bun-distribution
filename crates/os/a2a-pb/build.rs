@@ -2,8 +2,10 @@
 // Copyright AGNTCY Contributors (https://github.com/agntcy)
 use std::path::{Path, PathBuf};
 
-const PROTO_FILES: &[&str] = &["proto/a2a.proto"];
-const PROTO_INCLUDES: &[&str] = &["proto"];
+// Paths are anchored to the manifest directory so the build never depends on the process working directory
+// (a UNC working directory on Windows is silently replaced by the system directory).
+const PROTO_FILE: &str = "proto/a2a.proto";
+const PROTO_INCLUDE: &str = "proto";
 const PROTOJSON_PACKAGES: &[&str] = &[".lf.a2a.v1"];
 const NULL_REPEATED_FIELD_REPLACEMENTS: &[(&str, &str)] = &[
     (
@@ -89,6 +91,9 @@ const NULL_MAP_REPLACEMENT: (&str, &str) = (
 );
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let manifest = PathBuf::from(std::env::var("CARGO_MANIFEST_DIR")?);
+    let proto_files = [manifest.join(PROTO_FILE)];
+    let proto_includes = [manifest.join(PROTO_INCLUDE)];
     if std::env::var_os("PROTOC").is_none() {
         let protoc_path = protoc_bin_vendored::protoc_bin_path()?;
 
@@ -108,8 +113,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         tonic_prost_build::configure()
             .build_server(true)
             .build_client(true)
-            .out_dir("src/gen")
-            .compile_protos(PROTO_FILES, PROTO_INCLUDES)?;
+            .out_dir(manifest.join("src/gen"))
+            .compile_protos(&proto_files, &proto_includes)?;
     }
 
     let out_dir = PathBuf::from(std::env::var("OUT_DIR")?);
@@ -122,7 +127,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .file_descriptor_set_path(&descriptor_path)
         .compile_well_known_types(true)
         .extern_path(".google.protobuf", "::pbjson_types")
-        .compile_protos(PROTO_FILES, PROTO_INCLUDES)?;
+        .compile_protos(&proto_files, &proto_includes)?;
 
     let descriptor_set = std::fs::read(&descriptor_path)?;
     let mut builder = pbjson_build::Builder::new();
