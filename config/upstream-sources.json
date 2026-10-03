@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "description": "Local patched Rust source is integrated into the Aphrody Cargo workspace. Reference upstreams are read live; build-only checkouts are restored on demand.",
-  "root": "../source",
+  "root": ".cache/upstream",
   "rootNote": "Used only for optional build-on-demand upstream inputs. Cargo no longer requires a sibling source directory.",
   "sources": [],
   "reference": [

@@ -13,7 +13,7 @@ export-env {
   $env.APHRODY_HOME = ($aphrody_home | path expand)
   $env.APHRODY_AGENT_DOMAIN = $domain
   $env.APHRODY_WORKSPACE = ($env.APHRODY_WORKSPACE? | default ($env.APHRODY_HOME | path join "workspaces" $domain))
-  $env.APHRODY_SOURCE_ROOT = ($env.APHRODY_SOURCE_ROOT? | default (($env.APHRODY_ROOT | path dirname) | path join "source"))
+  $env.APHRODY_SOURCE_ROOT = ($env.APHRODY_SOURCE_ROOT? | default ($env.APHRODY_ROOT | path join ".cache" "upstream"))
   $env.APHRODY_PY_ROOT = ($env.APHRODY_PY_ROOT? | default (($env.APHRODY_ROOT | path dirname) | path join "aphrody-py"))
   $env.APHRODY_IECODE_ROOT = ($env.APHRODY_IECODE_ROOT? | default (($env.APHRODY_ROOT | path dirname) | path join "iecode"))
   $env.IECODE_ROOT = ($env.IECODE_ROOT? | default $env.APHRODY_IECODE_ROOT)

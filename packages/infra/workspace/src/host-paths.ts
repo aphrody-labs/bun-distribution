@@ -114,9 +114,15 @@ export function hostPathArea(path: string): HostPathArea {
     )
   )
     return "platform";
-  if (/(^|\/)(examples?|benchmarks\/results)\//.test(path)) return "test";
+  if (/(^|\/)(examples?|benchmarks\/results|adapters)\//.test(path)) return "test";
   if (path === "crates/infra/yolo/src/mapper/audit.rs") return "test";
   if (/^(systemd|nginx|config\/infra)\//.test(path)) return "host";
+  if (
+    /^(config\/(service-catalog\.json|shenron\/deploy\/)|\.github\/)|\/\.github\/workflows\//.test(
+      path,
+    )
+  )
+    return "host";
   if (/^scripts\/(migration|audit\/live-candidates|test-atomic-)/.test(path)) return "host";
   if (/(^|\/)(tests?|__tests__)\/|\.(test|spec)\.[a-z]+$|_tests?\.rs$|\/tests\.rs$/.test(path))
     return "test";

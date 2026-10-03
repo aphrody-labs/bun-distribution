@@ -7,10 +7,6 @@ hoist = true
 saveTextLockfile = true
 exact = false
 
-[install.cache]
-# Chemin absolu — Bun n'expand PAS le ~ dans bunfig
-dir = "/home/ubuntu/.bun/install/cache"
-
 [install.scopes]
 "@rg" = { url = "" }
 

@@ -161,7 +161,7 @@
     }
   },
   "inventory": {
-    "note": "Extra roots scanned for Python pins (requirements*.txt, uv.lock) besides the repository (installed environments only; ~/source reference clones are third-party).",
+    "note": "Extra roots scanned for Python pins (requirements*.txt, uv.lock) besides the repository (installed environments only; upstream reference clones are third-party).",
     "pythonRoots": [
       "~/aphrody-py"
     ]

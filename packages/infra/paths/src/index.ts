@@ -4,7 +4,7 @@ import { homedir, tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-export type ExternalCheckout = "aphrody-py" | "iecode" | "rg" | "source" | "legacy-src" | "bxc";
+export type ExternalCheckout = "aphrody-py" | "iecode" | "rg" | "source" | "bxc";
 
 const rootMarkers = ["rust-toolchain.toml", "Cargo.toml", "package.json"] as const;
 const envNames: Record<ExternalCheckout, readonly string[]> = {
@@ -12,7 +12,6 @@ const envNames: Record<ExternalCheckout, readonly string[]> = {
   iecode: ["APHRODY_IECODE_ROOT", "IECODE_ROOT", "NIE_ROOT"],
   rg: ["APHRODY_RG_ROOT", "RG_REPO_ROOT"],
   source: ["APHRODY_SOURCE_ROOT"],
-  "legacy-src": ["APHRODY_LEGACY_SRC_ROOT"],
   bxc: ["APHRODY_BXC_ROOT", "BXC_ROOT"],
 };
 
@@ -57,9 +56,7 @@ export function checkoutRoot(checkout: ExternalCheckout): string {
     case "rg":
       return root;
     case "source":
-      return resolve(parent, "source");
-    case "legacy-src":
-      return resolve(parent, "src");
+      return resolve(root, ".cache", "upstream");
     case "bxc":
       return join(homedir(), "bxc");
   }

@@ -150,7 +150,7 @@
     "scripts/audit/live-candidates/deploy-web-fix.sh": {
       "count": 1,
       "scope": "host",
-      "reason": "Calls /home/ubuntu/.bun/bin/bun, removed by the 2026-10-03 VPS runtime-only cleanup; broken until moved to a Workspace owner or a yolo single-executable deployable."
+      "reason": "Calls the Bun binary under the VPS home, removed by the 2026-10-03 VPS runtime-only cleanup; broken until moved to a Workspace owner or a yolo single-executable deployable."
     },
     "scripts/audit/rg-build.test.ts": {
       "count": 2,
@@ -200,7 +200,7 @@
     "scripts/ops/provision-shenron-ai-access.sh": {
       "count": 1,
       "scope": "host",
-      "reason": "Calls /home/ubuntu/.bun/bin/bun, removed by the 2026-10-03 VPS runtime-only cleanup; broken until moved to a Workspace owner or a yolo single-executable deployable."
+      "reason": "Calls the Bun binary under the VPS home, removed by the 2026-10-03 VPS runtime-only cleanup; broken until moved to a Workspace owner or a yolo single-executable deployable."
     },
     "scripts/release/install-linux-host-bridge.sh": {
       "count": 2,

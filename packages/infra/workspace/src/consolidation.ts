@@ -466,7 +466,7 @@ export async function runConsolidation(args: string[]): Promise<number> {
     await readFile(join(aphrodyRoot, "config/upstream-sources.json"), "utf8"),
   ) as { root?: string; sources?: Array<{ id: string; kind: string; license?: string }> };
   const upstreamRoot = resolve(
-    options.get("--upstreams-root") ?? resolve(aphrodyRoot, upstreamManifest.root ?? "../source"),
+    options.get("--upstreams-root") ?? resolve(aphrodyRoot, upstreamManifest.root ?? ".cache/upstream"),
   );
   if (action === "infra-config-import") {
     const result = await importInfraConfig(sourceRoot, aphrodyRoot);

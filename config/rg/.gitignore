@@ -195,6 +195,6 @@ tools/llm-agents/workspace/.coord/heartbeat-*.txt
 # désigne chacun que par sa clé pseudonymisée (`<slug>-roster.json`).
 apps/website/src/data/campagnes/*-complet.json
 
-# Manifestes de run du workflow unifié Aphrody/niers (cf. ../aphrody-infra/docs/WORKFLOW-UNIFIE.md) :
+# Manifestes de run du workflow unifié Aphrody/niers (cf. docs/WORKFLOW-UNIFIE.md) :
 # journal local d'agent, pas du code — même famille que .claude/.
 /var/
