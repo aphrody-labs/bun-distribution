@@ -10,6 +10,8 @@
  *
  * The contract is documented in `docs/apis/web/WEB-SERVICE-CONTRACT.md`.
  */
+import { RuntimeError, Status } from "@aphrody/runtime-sdk";
+import { processes } from "@aphrody/runtime-sdk/modules";
 import { WebCdpPage } from "./cdp.ts";
 import { AgentBrowser, AgentPage } from "./client.ts";
 import { loadWebConfig, resolveEngineBinary, type WebConfig } from "./config.ts";
@@ -202,17 +204,28 @@ export interface WebServiceOptions {
   config?: WebConfig;
   /** Absolute path of the `aphrody-web` binary; defaults to the configured resolution. */
   binary?: string;
+  /** Lifetime output budget per CLI stream (1..64 MiB, default 64 MiB). Overflow is an error. */
+  maxOutputBytes?: number;
 }
 
 export class WebService {
   readonly config: WebConfig;
   #binary: string | undefined;
+  readonly #maxOutputBytes: number;
   #engine: Engine | undefined;
   #engineStart: Promise<Engine> | undefined;
 
   constructor(options: WebServiceOptions = {}) {
     this.config = options.config ?? loadWebConfig();
     this.#binary = options.binary;
+    this.#maxOutputBytes = options.maxOutputBytes ?? 64 * 1024 * 1024;
+    if (
+      !Number.isSafeInteger(this.#maxOutputBytes) ||
+      this.#maxOutputBytes < 1 ||
+      this.#maxOutputBytes > 64 * 1024 * 1024
+    ) {
+      throw new RangeError("maxOutputBytes must be an integer between 1 and 64 MiB");
+    }
   }
 
   /** Absolute path of the engine binary in use. */
@@ -228,36 +241,54 @@ export class WebService {
     signal?: AbortSignal,
   ): Promise<Uint8Array> {
     signal?.throwIfAborted();
-    const child = Bun.spawn([this.binary, ...args], {
-      stdin: "ignore",
-      stdout: "pipe",
-      stderr: "pipe",
-      env: { ...process.env, ...env },
-      timeout: timeoutMs,
-      killSignal: "SIGKILL",
-      signal,
+    using child = processes.spawn({
+      program: this.binary,
+      args,
+      env,
+      stdio: "capture-lossless",
+      maxOutputBytes: this.#maxOutputBytes,
     });
-    const [stdout, stderr, code] = await Promise.all([
-      new Response(child.stdout).arrayBuffer(),
-      new Response(child.stderr).text(),
-      child.exited,
-    ]);
-    signal?.throwIfAborted();
-    if (child.signalCode === "SIGKILL") {
-      throw new WebServiceError(
-        `aphrody-web ${args[0] === "--proxy" ? args[2] : args[0]} timed out after ${timeoutMs} ms`,
-        null,
-        stderr.slice(-2000),
-      );
+    const command = args[0] === "--proxy" ? args[2] : args[0];
+    const decoder = new TextDecoder();
+    let diagnostics = "";
+    try {
+      const output = await child.collectOutput({
+        timeoutMs,
+        signal,
+        onStderr(bytes) {
+          diagnostics = (diagnostics + decoder.decode(bytes, { stream: true })).slice(-2000);
+        },
+      });
+      signal?.throwIfAborted();
+      const stderr = new TextDecoder().decode(output.stderr);
+      const code = output.status.signal > 0 ? 128 + output.status.signal : output.status.exitCode;
+      if (code !== 0) {
+        throw new WebServiceError(
+          `aphrody-web exited with ${code}: ${(stderr.trim().split("\n").at(-1) ?? "").slice(0, 300)}`,
+          code,
+          stderr.slice(-2000),
+        );
+      }
+      return output.stdout;
+    } catch (error) {
+      signal?.throwIfAborted();
+      diagnostics = (diagnostics + decoder.decode()).slice(-2000);
+      if (error instanceof RuntimeError && error.status === Status.Timeout) {
+        throw new WebServiceError(
+          `aphrody-web ${command} timed out after ${timeoutMs} ms`,
+          null,
+          diagnostics,
+        );
+      }
+      if (error instanceof RuntimeError && error.status === Status.OutputLimit) {
+        throw new WebServiceError(
+          `aphrody-web ${command} exceeded its ${this.#maxOutputBytes} byte output budget`,
+          null,
+          diagnostics,
+        );
+      }
+      throw error;
     }
-    if (code !== 0) {
-      throw new WebServiceError(
-        `aphrody-web exited with ${code}: ${(stderr.trim().split("\n").at(-1) ?? "").slice(0, 300)}`,
-        code,
-        stderr.slice(-2000),
-      );
-    }
-    return new Uint8Array(stdout);
   }
 
   async #run(

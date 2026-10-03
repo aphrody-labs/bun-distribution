@@ -2,7 +2,7 @@
 
 # Aphrody Web service contract
 
-Status: 2026-10-01. Owner: `crates/web` (engine) and `packages/web/agent-browser`
+Status: 2026-10-03. Owner: `crates/web` (engine) and `packages/web/agent-browser`
 (Bun client). Machine-readable configuration:
 [`config/web.json`](../../../config/web.json). Architecture and consumers:
 [`docs/architecture/web/ARCHITECTURE.md`](../../architecture/web/ARCHITECTURE.md).
@@ -102,7 +102,16 @@ await web.close();                            // stops the private engine, if on
 
 One-shot calls run the CLI with a hard timeout (fetch timeout plus 15 s, crawl
 timeout plus 15 s) and raise `WebServiceError` with the exit code and the tail
-of stderr. Interactive calls start one private engine on an ephemeral port
+of stderr. Engine and one-shot calls share the Yolo SDK supervisor through
+`@aphrody/runtime-sdk/modules`, with a pinned ABI 1.4+ runtime. Output is raw
+bytes, with a lifetime budget of 64 MiB per stream by default. Set
+`new WebService({ maxOutputBytes })` to a smaller budget; overflow raises
+`WebServiceError` with a null exit code and never returns truncated success.
+Timeout and caller abort stop and release the owning child; abort preserves
+the original reason. On Unix the runtime also stops descendants in its owned
+process group. The SDK joins its native workers before unload.
+
+Interactive calls start one private engine on an ephemeral port
 unless `APHRODY_BROWSER_CDP_URL` names a running one.
 
 ## Configuration precedence

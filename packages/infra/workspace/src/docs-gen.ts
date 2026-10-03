@@ -149,7 +149,7 @@ function bunWorkspaceDirs(root: string): string[] {
       if (!dir.split("/").some((part) => SKIP_DIRS.has(part))) dirs.add(dir);
     }
   }
-  return [...dirs].sort();
+  return [...dirs].toSorted();
 }
 
 export function collectUnits(root: string): {
@@ -168,7 +168,7 @@ export function collectUnits(root: string): {
           .flatMap((t) => t.kind)
           .filter((k) => !["test", "bench", "example", "custom-build"].includes(k)),
       ),
-    ].sort();
+    ].toSorted();
     const facts = rustFacts(dir);
     units.push({
       ecosystem: "rust",
@@ -220,13 +220,13 @@ export function collectUnits(root: string): {
     .filter((f) => f && !f.startsWith("docs/") && existsSync(join(root, f)))
     .map((f) => posix(dirname(f)))
     .filter((d) => d !== "." && !members.has(d));
-  return { units, excludes: workspaceExcludes(root), outside: tracked.sort() };
+  return { units, excludes: workspaceExcludes(root), outside: tracked.toSorted() };
 }
 
 const cell = (s: string): string => s.replaceAll("|", "\\|");
 
 export function renderState(units: Unit[], excludes: string[], outside: string[]): string {
-  const domains = [...new Set(units.map((u) => u.domain))].sort();
+  const domains = [...new Set(units.map((u) => u.domain))].toSorted();
   const count = (d: string, role: Unit["role"]) =>
     units.filter((u) => u.domain === d && u.role === role).length;
   const total = (role: Unit["role"]) => units.filter((u) => u.role === role).length;
@@ -338,7 +338,7 @@ export function renderDocsIndex(root: string): string {
     "| Category | Domain | Files | Entry |",
     "| --- | --- | ---: | --- |",
   ];
-  const tops = [...byTop.keys()].sort((a, b) => {
+  const tops = [...byTop.keys()].toSorted((a, b) => {
     const ia = CATEGORIES.indexOf(a);
     const ib = CATEGORIES.indexOf(b);
     return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib) || a.localeCompare(b);
@@ -351,8 +351,8 @@ export function renderDocsIndex(root: string): string {
       const domain = parts.length > 3 ? (parts[2] ?? "") : "(files)";
       domains.set(domain, [...(domains.get(domain) ?? []), f]);
     }
-    for (const [domain, dl] of [...domains].sort((a, b) => a[0].localeCompare(b[0]))) {
-      const dir = domain === "(files)" ? `${top}` : `${top}/${domain}`;
+    for (const [domain, dl] of [...domains].toSorted((a, b) => a[0].localeCompare(b[0]))) {
+      const dir = top === "(root)" ? "." : domain === "(files)" ? top : `${top}/${domain}`;
       const entry = ["README.md", "INDEX.md", "PLAN.md"]
         .map((n) => `docs/${dir}/${n}`)
         .find((p) => dl.includes(p));
@@ -391,7 +391,7 @@ export function renderLlms(root: string): string {
     "## Docs",
     "",
     ...files
-      .sort()
+      .toSorted()
       .map((f) => `- [${titleOf(join(root, f)) || f}](${relative("docs/reference/ai", f)})`),
     "",
   ];

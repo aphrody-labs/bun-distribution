@@ -407,7 +407,7 @@ Kind: json-catalog. 166 tools.
 | `keyboard_scan_code` | Sends a single key by raw hardware SCAN CODE instead of virtual key. Some games (and anti-cheats) ignore Send-Input from virtual keys but accept scan codes because they match real keyboards. action:… |
 | `kill_process` | Kills a process by PID (preferred) or name. Returns the count of terminated processes. Force=true requests an immediate kill (default true). PPL-protected processes return a labelled error. |
 | `launch_app` | Launches a Windows application. Accepts an absolute path to an .exe (e.g. 'C:\\Windows\\System32\\notepad.exe'), an executable name resolvable via PATH (e.g. 'notepad.exe'), or a shell URI (mailto:,… |
-| `list_directory` | Lists directory contents as streamed JSON. Set recursive=true to descend, showHidden=true to include hidden entries, pattern to filter by glob. Hard cap: 10000 entries returned; result is marked trun… |
+| `list_directory` | Lists directory contents as streamed JSON. Set recursive=true to descend, showHidden=true to include hidden entries, pattern to filter by glob, and exclude to omit matching entry names and skip match… |
 | `list_listening_ports` | Lists TCP/IPv4 listening ports (LISTEN state only) as JSON. |
 | `list_power_plans` | Lists installed Windows power plans with their GUID, friendly name, and whether they are currently active. Returns JSON with the active GUID at the top. |
 | `list_processes` | Lists running processes as JSON. Filter by name (substring, case-insensitive). Sort by 'memory' (default), 'private', 'cpu', 'threads', 'handles' or 'name'. Limit caps the result count (default 20, m… |
@@ -461,7 +461,7 @@ Kind: json-catalog. 166 tools.
 | `scrape` | Fetches a URL via HTTP GET and returns extracted plain text (script/style stripped, tags removed). Caps: 4 MiB download, 200k extracted chars, 30s timeout. For richer extraction prefer the docs MCP s… |
 | `screenshot` | Captures the primary monitor to a BMP file on disk. Returns the absolute file path. Width/height default to the full virtual screen. |
 | `scroll` | Scrolls at the given screen coordinates. axis: 'vertical' \| 'horizontal'. direction: up/down for vertical, left/right for horizontal. wheelTimes is the number of wheel notches (each notch ≈ 3 lines). |
-| `search_files` | Searches a directory tree for files matching a glob pattern. Hard cap: 10000 results; result is marked truncated when exceeded. |
+| `search_files` | Searches a directory tree for files matching a glob pattern. Exclude basenames with glob patterns; excluded directories are not traversed. Hard cap: 10000 results; result is marked truncated when exc… |
 | `search_windows` | Effectue une recherche ultra-rapide sur le disque via l'indexeur natif Windows Search. |
 | `send_notification` | Displays a Windows tray balloon notification with title and message. Note: balloon tips replace classic Win32 toasts; modern WinRT toast (requires WindowsAppSDK projection) is not yet wired up. |
 | `set_active_power_plan` | Activates a Windows power plan by GUID. Common GUIDs: 381b4222-f694-41f0-9685-ff5bb260df2e (Balanced), 8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c (High performance), a1841308-3541-4fab-bc81-f71556f20b4a (P… |

@@ -17,9 +17,11 @@
 
 - [Documentation index](../../README.md)
 - [Aphrody Discord Architecture](../../architecture/discord/README.md)
+- [Frontière runtime Yolo / produit Aphrody](../../architecture/runtime-native/README.md)
 - [Shell and terminal layers](../../architecture/shell/README.md)
 - [UI, GUI, wgpu, Tauri, Google design and M3 / M3D: documentation map](../../architecture/ui/README.md)
 - [UI guides](../../guides/ui/README.md)
+- [Parcours Workspace Aphrody](../../guides/workspace/README.md)
 - [Migration records](../../migration/README.md)
 - [Discord Operations Runbooks & Guides](../../operations/discord/README.md)
 - [Delivery plan](../../plans/ai/PLAN.md)

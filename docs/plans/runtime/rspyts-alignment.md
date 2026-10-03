@@ -39,8 +39,8 @@ No source or dependencies were copied from the reference checkout.
 | --- | --- | --- | --- |
 | Reference checkout | Rspyts available in `/tmp`, exact revision retained | Git origin, HEAD, clean status, privacy | Verified above |
 | Workspace organization | Aphrody domain paths and inventories reflect the active owners | Current inventory, consumer imports, preserved identities, owner consistency gates | Open across the complete workspace |
-| Native boundary | Yolo supplies versioned ABI, lightweight SDK, cancellation and explicit ownership | Negotiation/refusal, buffers, worker joins, destruction, isolated extension build | Existing initial slice; broader contract open |
-| Process migration | Aphrody clients use qualified Yolo supervision | Before/after package tests, lossless output, timeout, abort, descendants, shutdown, downstream contracts | Engine correction below; one-shot service migration open |
+| Native boundary | Yolo supplies versioned ABI, lightweight SDK, cancellation and explicit ownership | Negotiation/refusal, buffers, worker joins, destruction, isolated extension build | ABI 1.4 process slice qualified; extension/desktop/browser contract open |
+| Process migration | Aphrody clients use qualified Yolo supervision | Before/after package tests, lossless output, timeout, abort, descendants, shutdown, downstream contracts | Engine and one-shot service migrated; downstream gates qualified |
 | Desktop and UI redesign | Product screens use existing UI owners and selected stack through Tauri capabilities | Rendered pilot and product screens, adaptive behavior, permissions/refusals, events, clean exit, installed bundle | Open |
 | Headless integration | Yolo distributes Obscura with its current engine, then qualifies JSC parity | Navigation, DOM extraction, captures, context isolation, consumer suite, installed artifact | R4/R5/R6 open; preserve V8 until parity |
 | Product rewrite and rollout | Every affected application and integration retains its domain behavior through the SDK | Per-consumer dependency/build evidence and complete product contract suites, including Shenron, RG, Koharu and remaining applications | R7 open; existing engine wiring is only one consumer |
@@ -74,25 +74,41 @@ The [batch receipt](../../migration/rspyts-native-engine-lifecycle-2026-10-03.js
 records commands, results and limitations. Rollback is a normal revert of the
 completed batch; the SDK pin and installed runtime are unchanged.
 
-## Next producer and consumer work
+## Implemented batch: lossless Web supervision
 
-Two concrete SDK prerequisites were identified in current Yolo source:
+Yolo ABI 1.4 joins native capture workers, stops the owned Unix group after
+leader exit, preserves arbitrary stdout/stderr bytes and rejects overflow
+instead of silently truncating. The SDK checks lifetimes before native calls,
+including in-flight HTTP probes. Its shared owner has 32 bounded slots for
+processes and readiness operations. Producer commits are `01300fb2f935` and
+`0ade1c71ccb5`; Linux x64 packaging records clean provenance and matching
+embedded revision.
 
-1. `crates/yolo-runtime/src/process.rs` retains only the last 64 KiB per stream,
-   and the SDK returns decoded strings. `WebService.bytes()` requires exact
-   arbitrary bytes, and responses/crawls can exceed that bound. Qualify a
-   lossless output transport in Yolo before replacing `service.ts`'s current
-   `Bun.spawn` path. Test bursts exceeding 64 KiB, invalid UTF-8, concurrent
-   streams, terminal drain, output limits, timeout and abort.
-2. Capture readers are detached threads. Process release and runtime destruction
-   must join owned workers before a consumer unloads the library. The producer
-   also returns early from process-group stop when the leader already exited;
-   surviving descendants need an explicit test and ownership decision.
-   This consumer therefore keeps its shared library loaded. The engine tests
-   prove direct-child cleanup and handle release, not full native-worker or
-   descendant cleanup.
+Aphrody pins SDK archive `5334dbe9`. WebService uses the shared native
+supervisor for all one-shot calls, retaining command arguments, private-network
+options, binary bodies, diagnostics, exit codes, timeout and caller abort
+reasons. Engine supervision uses the same owner. The service's direct Bun
+spawn path, consumer runtime singleton and manual exit-kill fallback are removed.
 
-Implement these behind Yolo's existing owner, run serialized Rust and SDK gates,
-produce a pinned archive with provenance, then migrate the consumer and qualify
-its downstream applications. Heavy Bun/Tauri/Obscura builds use the configured
-factory. Do not restart or stop existing host builds as part of this worklist.
+Nine native fixtures extend the Web suite to 50 passing tests; native timeout,
+overflow and abort tests verify that the child is gone and its handle released.
+The [consumer receipt](../../migration/runtime-web-consumer-2026-10-03.json)
+records the producer artifact, archive pin and downstream tests. Installation
+is local; no complete product deployment or measured speedup is inferred.
+
+## Next implementation
+
+1. Reproducible SDK/runtime acquisition for clean consumers and factory builds.
+   The current catalog pin refers to an ignored cache file. Replace that
+   prerequisite with a verified producer artifact acquisition workflow; do not
+   copy engine sources or rebuild them inside consumer install.
+2. R3 desktop pilot through the existing Tauri owner: rendered window,
+   permissions/refusals, events, cancellation, clean shutdown and installed bundle.
+3. R4 headless distribution through the existing Obscura owner; retain V8 until
+   the required JSC parity passes. Then proceed across all R7 product owners.
+4. Complete target-specific release/install/upgrade/rollback gates and measured
+   optimization. Windows native execution and process-tree Job Objects remain open.
+
+The whole work queue above stays active. Do not close the user request from
+these two process batches. Heavy Bun/Tauri/Obscura builds use the configured
+factory; preserve other running builds and private domain stores.

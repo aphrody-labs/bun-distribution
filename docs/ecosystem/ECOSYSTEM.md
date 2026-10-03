@@ -7,7 +7,7 @@ from the checkout. Companion files: [CLI.md](CLI.md) (exact command trees), [MCP
 (every MCP tool), [ecosystem.json](ecosystem.json) (machine-readable). Check here before writing new
 code: reuse an existing crate, command or tool instead of duplicating it.
 
-Totals: 3 repositories (3 aphrody, 0 shared, 0 experiments), 270 crates, 90 binaries, 100 Bun packages, 10 uv packages, 1281 CLI commands, 440 MCP tools.
+Totals: 3 repositories (3 aphrody, 0 shared, 0 experiments), 270 crates, 90 binaries, 101 Bun packages, 10 uv packages, 1281 CLI commands, 440 MCP tools.
 
 | Repository | Kind | Role |
 | --- | --- | --- |
@@ -272,7 +272,7 @@ Canonical Rust/Bun monorepo
 | `@aphrody/web-test` | packages/web/aphrody-web-test | Playwright-compatible browser and site test runner for Bun, backed by the shared Rust Obscura CDP server. |  |
 | `@aphrody/web-to-tauri` | packages/ui/web-to-tauri | Converts a website, web app or built web bundle into a native Tauri 3 app: probes the target, plans a regression-free mode (remote, bundle, sidecar), generates the project and checks parity against the original. | `web-to-tauri` |
 | `@aphrody/winclean` | packages/os/winclean | Kernel-backed Bun client for the unified Aphrody OS WinClean catalog (166 tools). |  |
-| `@aphrody/workspace` | packages/infra/workspace | Cross-monorepo workspace orchestrator, gates, audits, migration tools and operations | `aphrody-ops`, `aphrody-workspace` |
+| `@aphrody/workspace` | packages/infra/workspace | Cross-monorepo workspace orchestrator, gates, audits, migration tools and operations | `aphrody-ops`, `aphrody-optimize`, `aphrody-workspace` |
 | `@aphrody/x` | packages/web/x | Headless X (Twitter) client in pure TypeScript for Bun. Cookie-auth GraphQL + REST, no API key. Includes local For You algo (x-algorithm port), full stealth, store, and X function tools (XTools, x_* JSON Schema definitions) for Grok or any tool-calling model. |  |
 | `@aphrody/xai` | packages/ai/xai | Headless xAI Grok API client for Bun — high-level fluent Chat API (createChat/append/sample/stream/executeToolCalls/sampleStructured, reasoning, structured, XTools for native X tool fulfillment) + SUPER_GROK_TOKEN keyless + OIDC. OpenAI-compatible REST, deep native integration with @aphrody/x. |  |
 | `@hypothesi/tauri-plugin-mcp-bridge` | crates/ui/tauri-plugin-mcp-bridge | A Tauri plugin that exposes an MCP server interface via WebSockets. |  |
@@ -321,6 +321,12 @@ Canonical Rust/Bun monorepo
 ## aphrody-py
 
 Active Python workspace
+
+### Bun packages (1)
+
+| Package | Path | Description | Bin |
+| --- | --- | --- | --- |
+| `aphrody-py-workspace` | . |  |  |
 
 ### uv packages (8)
 

@@ -24,7 +24,7 @@ or evidence of provider-memory synchronization. See [AGENTS.md](AGENTS.md).
 - Preserve panic/unwind requirements at actual artifact boundaries. Do not infer
   effective profiles from crate names, lexical scans or per-package overrides.
 - Retire an old dependency only after behavior, consumer build and rollback pass.
-- First producer slice: ABI 1.3, `system.stats`, `bench.compute`,
+- Current producer slice: ABI 1.4, `system.stats`, `bench.compute`,
   `process.supervise`, `http.probe`; SDK `@aphrody/runtime-sdk` 0.1.0.
   First Aphrody consumer is `packages/web/agent-browser/src/engine.ts`.
   Permanent engine wiring is delivered in commit `7b362f10d`: the current engine
@@ -33,32 +33,27 @@ or evidence of provider-memory synchronization. See [AGENTS.md](AGENTS.md).
 
 ## Evidence state
 
-The initial direction-change batch changed documentation only. Historical
-synchronization on 2026-10-03 read clean Yolo HEAD
-`07419cffb4beeb0f104b33a75cb23ea4a1c06def`:
-R0/R1, R2 consumer patch, D0 local installation and D2 server archive are recorded
-as passing on Linux x64 by the producer. Independently rerun here:
-`bun test test/runtime_sdk.test.ts test/runtime_release.test.ts`: 28 pass,
-0 fail, 0 skipped, against precompiled artifacts; no Cargo or engine build run.
-The packaged ABI 1.3 artifact records source `ad8d4e148e755b50d00c683c4df83296d68829c8`
-with `dirty: true`, not a clean build of the observed HEAD. See [PLAN.md](PLAN.md)
-section 14 for provenance, hashes, gate scope and producer links.
-The current Yolo CLI also contains the Aphrody owner-CLI bridge, factory `ship`
-and pre-push hook tooling; remote builds and hook activation were not verified here.
+Yolo commits `01300fb2f935` and `0ade1c71ccb5` ship lossless byte capture,
+joined native workers, Unix process-group teardown after leader exit, SDK
+lifetime guards and 32 slots in the SDK-owned shared supervisor. Linux x64
+runtime behavior: 31 Rust tests, strict Clippy and 36 SDK/release tests pass.
+Other native targets pass metadata checks only. No heavy engine build or
+cross-platform execution is inferred.
 
-The R1 host is `bun:ffi` + `Bun.plugin` preload; the Bun fork was not modified.
-Desktop/browser modules remain reserved in the qualified initial slice. The
-initial agent-browser patch was tested then reverted; a later consumer batch
-permanently integrated the SDK in `engine.ts`. Current `service.ts` still uses
-`Bun.spawn` directly. Do not use the earlier reverted-patch state as current fact.
-R2 removes supervision code, not the Obscura binary (R4). R7 belongs to Aphrody:
-qualify broader application migration. PLAN section 14 records the delivered
-consumer batch: `fut` 148 tests, `rg/cron` 174 and `aphrody-web-test` 41, all
-passing for that change. These are dated results, not tests rerun by this review.
-D1 release/upgrade, R3/R4, D3/D4, JSC/V8 parity and R8 remain open. No build
-reduction, measured gain, cross-platform qualification or product activation
-is established by this synchronization. Existing imported code is an input,
-not completion evidence.
+Aphrody pins SDK 0.1.0 archive `5334dbe9` from clean producer
+`0ade1c71ccb52bcc9d255188a252c28c5b789b48`. The Linux x64 runtime is rebuilt
+and installed locally through the release owner with matching embedded revision.
+`engine.ts` and `service.ts` use the SDK-owned shared supervisor; service
+`Bun.spawn`, consumer runtime singleton and manual exit-kill fallback are removed.
+One-shot calls preserve bytes, errors, stderr, timeout and abort with an explicit
+64 MiB per-stream budget. Agent-browser passes 50 tests. Exact consumer and
+downstream gate scope is in
+[the receipt](docs/migration/runtime-web-consumer-2026-10-03.json).
+
+R3/R4, full R7 product migration, five-target distribution, JSC parity and
+measured gains remain open. The next implementation is reproducible SDK/runtime
+acquisition for a clean consumer checkout; then desktop and headless adapters.
+The production sprint is in PLAN section 16. No product activation is claimed.
 The earlier Rust usage report is lexical navigation; it is not a complete resolved
 Cargo graph, execution audit or proof of panic profiles. Recheck selected manifests
 before implementation, without restarting a repository-wide audit by default.

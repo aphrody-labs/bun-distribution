@@ -4,10 +4,10 @@
 Décision du propriétaire : 2026-10-03. Statut : architecture cible et feuille de
 route autorisées ; implémentation, compatibilité et gains encore à qualifier.
 
-Ce plan remplace le plan racine antérieur, conservé intégralement dans
-[les archives](docs/plans/runtime/history/README.md). Les réalisations, dettes,
-preuves et obligations produit antérieures restent consultables dans l'archive ;
-elles ne deviennent pas des validations du nouveau runtime.
+L'objectif est une distribution exploitable : runtime précompilé, SDK épinglé,
+applications compatibles, installation, upgrade et rollback testés. Les
+obligations produit existantes restent requises. Les chemins remplacés sont
+retirés du build courant dans leur lot de migration qualifié.
 
 ## 1. Objectif et responsabilités
 
@@ -281,7 +281,7 @@ preuve avant/après et un retour arrière ; ne pas laisser les deux chemins dans
 le build courant sans nécessité explicite.
 
 La première tranche producteur est choisie : `system.stats`, `bench.compute`,
-puis `process.supervise` et `http.probe`, exposés par l'ABI C 1.3 et le SDK
+puis `process.supervise` et `http.probe`, exposés par l'ABI C 1.4 et le SDK
 `@aphrody/runtime-sdk` 0.1.0 sans dépendances déclarées. Le premier consommateur
 est `packages/web/agent-browser/src/engine.ts` ; le patch initial a été testé
 puis retiré, avant le raccordement durable livré dans `7b362f10d` (voir R7).
@@ -290,50 +290,39 @@ La migration des autres surfaces reste à qualifier selon
 avec provenance, dépendances et lockfile, tests du package puis qualification
 des consommateurs aval. Ne pas démarrer toutes les phases à la fois.
 
-### État synchronisé au 2026-10-03
+### État livré au 2026-10-03
 
-Sources relues dans Yolo au commit `07419cffb4beeb0f104b33a75cb23ea4a1c06def`
-(checkout propre lors du relevé). Les preuves ci-dessous distinguent les
-résultats documentés par le producteur de ceux relancés pendant cette synchronisation.
+Yolo `dev` : `01300fb2f935f7fb85b135212c718131ae640ff5` livre ABI 1.4,
+`0ade1c71ccb52bcc9d255188a252c28c5b789b48` corrige la capacité du superviseur
+partagé. Le runtime Linux x64 est reconstruit depuis ce dernier commit propre ;
+sa révision embarquée correspond au manifeste. L'installation locale utilise
+le propriétaire release et conserve les versions précédentes.
 
-Le dernier commit ajoute aussi le relais CLI vers les propriétaires Aphrody
-(`infra`, `ops`, `workspace`, `workflow`, `git`, `ssh`), `ship` vers la fabrique
-et l'installation d'un hook pre-push. Ces sources existent dans
-`apps/cli/src/aphrody.ts` et `scripts/ship_remote.sh` côté Yolo ; ce relevé ne
-prouve ni build distant réussi ni hook installé.
+| Surface | Preuve actuelle | Travail restant |
+| --- | --- | --- |
+| R0 / R1, processus et opérations | ABI 1.4 : sorties binaires sans troncature silencieuse, budgets explicites, workers joints, handles invalidés ; 31 tests Rust, Clippy strict et 36 tests SDK/release passent | Extension Rust légère et surfaces natives supplémentaires |
+| R2, consommateur Web | Engine et appels ponctuels utilisent le superviseur SDK commun ; arrêt Unix du groupe même après sortie du leader ; 50 tests agent-browser passent | Qualification Windows du descendant et distribution complète Obscura |
+| SDK et installation | Archive 0.1.0 `5334dbe9`, provenance propre, pin catalog/lockfile ; installation locale ABI 1.4 vérifiée | Acquisition reproductible du SDK/runtime par le bootstrap et les fabriques |
+| Matrice native | Linux x64 exécuté ; Windows x64, macOS x64/ARM64 et Linux ARM64 passent Cargo check | Exécution, packaging, signature et install/rollback sur chaque autre cible |
+| D0 / D2 | Preuves producteur antérieures d'installation Linux x64 et serveur compilé disponibles | Requalifier la distribution complète avec le SDK promu |
+| R3 / D3 | Sources desktop et scaffold existants | Adaptateur stable, pilote rendu, droits, événements, arrêt, bundle installé |
+| R4 / R5 / R6 | V8 et Obscura restent requis ; module browser encore réservé | Intégration distribuée actuelle, puis parité JSC avant retrait V8 |
+| R7 | Consommateur Web et suites aval qualifiés pour ce lot | Migration/build produit de Shenron, RG, Koharu et des autres applications |
+| R8 | Hashes, provenance, installation/rollback d'artefacts testés | Benchmarks reproductibles, release complète, signature et activation |
 
-| Phase | État et portée de la preuve |
-| --- | --- |
-| R0 | Runtime C ABI 1.3, SDK et artefact Linux x64 présents. Gate complet `just runtime-test` déclaré passant par Yolo ; aucune relance Cargo ici. |
-| R1 | Preload et modules system/process opérationnels : tests SDK relancés contre une bibliothèque précompilée, y compris erreurs, annulation, limites et destruction. Aucun hôte Bun forké reconstruit. |
-| R2 | Preuve historique du patch initial `agent-browser` : 33 tests passent avant/après, TypeScript et oxlint passent, aucun processus résiduel. Ce patch avait été retiré lors du relevé producteur. Le raccordement permanent ultérieur est livré et décrit en R7 ; l’ancien état ne décrit plus le consommateur courant. |
-| D0 | Release locale 0.1.0 Linux x64 présente. Installation isolée, réinstallation, doctor et scaffold documentés dans Yolo ; non relancés ici. |
-| D1 | Workflow cinq cibles et fusion des assets présents ; première release par tag et upgrade à qualifier selon le plan producteur. |
-| D2 | Compilation, archive serveur et exécution extraite sans Bun/Rust documentées sur Linux x64 ; Docker et systemd non exécutés. |
-| R3 / D3 | Scaffold desktop : Cargo check documenté. Module desktop, fenêtre pilote, permissions, arrêt et installation des bundles restent à qualifier. |
-| R4 / R5 / R6 | Intégration headless, port JSC et retrait V8 restent ouverts. Le module browser est réservé ; Obscura demeure externe. |
-| R7 | `agent-browser` raccordé durablement (commit `7b362f10d`, pas seulement patch testé puis retiré) : `engine.ts` utilise `@aphrody/runtime-sdk`, surface publique inchangée. Consommateurs directs qualifiés contre ce changement précis : `fut` (148 tests), `rg/cron` (174 tests), `aphrody-web-test` (41 tests), 0 échec ; `web-to-tauri` non affecté (n'importe que `cdp`/`tauri`) ; aucune dépendance Shenron trouvée sur ce paquet. Reste ouvert : `service.ts` garde son `Bun.spawn` direct, et les gates produit plus larges de R7 (migration des applications vers le SDK léger en général) ne sont pas qualifiées par ce seul lot. |
-| D4 / R8 | Publication de packages sur demande du propriétaire ; benchmarks, signature et matrice supportée restent à qualifier. Aucun gain mesuré annoncé. |
-
-Vérification relancée : `bun test test/runtime_sdk.test.ts test/runtime_release.test.ts`
-dans Yolo : **28 tests passent, aucun échec ni test ignoré**. Cela couvre aussi
-hashes, refus d'ABI/cible incompatibles, installation et rollback en répertoire
-temporaire ; cela ne valide pas les installeurs de release ni l'intégration produit.
-L'artefact `dist/runtime/x86_64-unknown-linux-gnu` vérifié par ces tests déclare
-ABI 1.3, profil `runtime` avec unwind, SHA-256 bibliothèque
-`7766c4074d77150c7205981818e3d40382aea19d786d7af61d6f8bcc816d9b10`.
-Sa provenance est `ad8d4e148e755b50d00c683c4df83296d68829c8`, `dirty: true` ;
-il n'est donc pas présenté comme un build propre du HEAD observé.
-La release locale déclare séparément le commit `2cecec212ed3540350f0a7dc25a84c4a3d1a0010`.
-macOS, Windows, Linux ARM et `install.ps1` ne sont pas qualifiés par ce relevé.
+Le [reçu consommateur](docs/migration/runtime-web-consumer-2026-10-03.json)
+porte les hashes, les commandes, les résultats aval et les limites.
+Les 64 MiB par stream des appels ponctuels sont un budget de durée de vie ;
+un dépassement est une erreur explicite. Les descendants qui quittent leur
+groupe Unix restent hors ownership ; un writer échappé ne bloque pas les
+workers indéfiniment et déclenche une erreur de capture incomplète.
+Windows ne qualifie encore que l'arrêt du child direct.
 
 Références producteur : [ABI](../yolo/docs/RUNTIME-ABI.md),
-[décisions D5/D10/D11](../yolo/docs/DECISIONS.md),
 [consommateurs](../yolo/docs/CONSUMERS.md),
-[distribution et preuves locales](../yolo/docs/DISTRIBUTION.md).
-Les documents ABI et MEMORY Yolo contiennent encore des réserves historiques
-(rollback absent, phases non qualifiées par le lot documentaire initial) ;
-elles ne remplacent pas les tests actuels et les preuves de distribution plus récentes.
+[distribution](../yolo/docs/DISTRIBUTION.md).
+Aucune activation produit ni réduction mesurée des coûts n'est déduite de ces
+gates. La refonte complète reste ouverte.
 
 ## 15. Définition de réussite
 
@@ -348,21 +337,38 @@ elles ne remplacent pas les tests actuels et les preuves de distribution plus r�
 - [ ] Les limites de compatibilité sont documentées.
 - [ ] Les anciens chemins inutiles sont retirés après qualification.
 
-## 16. État documentaire et références
+## 16. Sprint de production
 
-Le lot documentaire initial du 2026-10-03 remplace le plan directeur et les
-consignes, crée la mémoire courante et aligne les documents Yolo.
-Il ne migre aucun code, ne change aucun
-profil Cargo et ne qualifie aucun runtime. Les preuves historiques restent
-historiques et les modifications concurrentes du checkout restent distinctes.
-La synchronisation suivante, décrite en section 14, relève l'implémentation Yolo
-et ses preuves actuelles sans modifier le runtime ni activer de consommateur.
+Exécuter les lots dans cet ordre, avec suppression des anciens chemins dans le
+lot qui qualifie leur remplacement. Un ancien moteur ne devient pas du code
+mort tant que ses comportements restent nécessaires.
 
-- [Consignes du dépôt](AGENTS.md)
+- [x] Corriger ABI/ownership/output et livrer le runtime léger avec gates.
+- [x] Épingler le SDK propre, migrer engine et appels ponctuels Web, retirer
+  `Bun.spawn` du service et la supervision/lifetime locale du consommateur.
+- [ ] Rendre l'acquisition SDK/runtime reproductible depuis un checkout propre,
+  sans rebuild moteur ni dépendance à un cache préexistant.
+- [ ] Livrer R3 : pilote desktop réel, permissions refusées, événements,
+  fermeture, package installé ; intégrer les écrans par leurs propriétaires UI.
+- [ ] Livrer R4 : navigateur distribué, navigation, extraction, rendu et
+  isolation des contextes par le SDK ; conserver le moteur actuellement requis.
+- [ ] Migrer les produits R7 par propriétaire et retirer leurs dépendances lourdes
+  remplacées après les suites produit et builds de release.
+- [ ] Produire les variantes serveur/headless/desktop par la fabrique existante ;
+  qualifier install/upgrade/rollback et santé sur les cibles supportées.
+- [ ] Qualifier la parité JSC puis retirer V8 du profil promu.
+- [ ] Mesurer séparément build, taille, mémoire et latence ; fermer les dix
+  critères de réussite avec preuves reproductibles.
+
+Chaque lot nomme propriétaire, chemins, gates, artefact et état d'installation.
+Les limites techniques deviennent le prochain travail d'implémentation ; elles
+ne ferment pas la demande par une simple mise à jour documentaire.
+
+- [Consignes](AGENTS.md)
 - [Mémoire courante](MEMORY.md)
-- [Plan producteur Yolo](../yolo/PLAN.md)
-- [Archive exacte et hashes](docs/plans/runtime/history/README.md)
-- [Documentation et commandes propriétaires](docs/guides/workspace/documentation.md)
+- [Plan producteur](../yolo/PLAN.md)
+- [Worklist complète](docs/plans/runtime/rspyts-alignment.md)
+- [Commandes propriétaires](docs/guides/workspace/documentation.md)
 
 ## Workflow de simplification et optimisation
 

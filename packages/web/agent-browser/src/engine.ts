@@ -5,9 +5,10 @@
  *
  * Every started engine is tracked so that `stopAllEngines()` (test preload, signal handlers)
  * can reap it. `process.on("exit")` is not run by `bun test`, so callers that need a guarantee
- * must use `stop()` or the preload helper rather than rely on process exit.
+ * must use `stop()` or the preload helper. The SDK owner closes its shared runtime on host exit.
  */
-import { ProcessExitedError, Runtime, type ManagedProcess } from "@aphrody/runtime-sdk";
+import { ProcessExitedError, type ManagedProcess } from "@aphrody/runtime-sdk";
+import { processes } from "@aphrody/runtime-sdk/modules";
 import { loadWebConfig, resolveEngineBinary, type WebConfig } from "./config.ts";
 
 export interface EngineOptions {
@@ -52,14 +53,6 @@ const STDERR_TAIL_BYTES = 8192;
  * SIGTERM → SIGKILL stop, teardown with the runtime) is provided by the native YOLO runtime
  * (`runtime:process`); this module only decides what an engine is and how it is started.
  */
-// Keep the library loaded: the current producer detaches its capture readers.
-// Closing it requires a producer artifact that joins those workers before unload.
-let runtime: Runtime | undefined;
-function engineRuntime(): Runtime {
-  runtime ??= Runtime.load({ maxOperations: 32 });
-  return runtime;
-}
-
 async function reservePort(host: string): Promise<number> {
   const listener = Bun.listen({ hostname: host, port: 0, socket: { data() {} } });
   const port = listener.port;
@@ -90,7 +83,7 @@ export async function startEngine(options: EngineOptions = {}): Promise<Engine> 
   const env: Record<string, string | undefined> = { ...options.env };
   if (allowPrivate) env["OBSCURA_ALLOW_PRIVATE_NETWORK"] = "1";
 
-  const child: ManagedProcess = engineRuntime().spawn({
+  const child: ManagedProcess = processes.spawn({
     program: binary,
     args,
     env,
@@ -151,7 +144,9 @@ export async function startEngine(options: EngineOptions = {}): Promise<Engine> 
       if (error instanceof ProcessExitedError) {
         return await fail("engine exited before it started listening");
       }
-      return await fail(`engine did not answer ${url} in time`);
+      return await fail(
+        `engine readiness failed for ${url}: ${error instanceof Error ? error.message : String(error)}`,
+      );
     }
   } catch (error) {
     if (!released) await stopChild(0);
@@ -165,11 +160,7 @@ export async function startEngine(options: EngineOptions = {}): Promise<Engine> 
       if (stopping) return stopping;
       if (released) return exitCode(finalStatus!);
       const status = child.status();
-      if (!status.running) {
-        finalStatus = status;
-        release();
-        return exitCode(status);
-      }
+      if (!status.running) return stopChild(0);
       // Polling is sequential; parallel waits would keep stale handle reads alive.
       // eslint-disable-next-line no-await-in-loop
       await Bun.sleep(25);
@@ -208,15 +199,6 @@ export function installEngineCleanup(): void {
   signalsInstalled = true;
   process.once("SIGINT", () => reap("SIGINT"));
   process.once("SIGTERM", () => reap("SIGTERM"));
-  process.once("exit", () => {
-    for (const engine of running) {
-      try {
-        process.kill(-engine.pid, "SIGKILL"); // the engine runs in its own process group
-      } catch {
-        // already gone
-      }
-    }
-  });
 }
 
 /** Runs `fn` against a fresh engine and always stops it. */

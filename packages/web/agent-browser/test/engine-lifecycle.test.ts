@@ -58,7 +58,7 @@ test("natural exit releases the engine and retains its final code and diagnostic
       expect(await engine.exited).toBe(7);
       expect(alive(engine.pid)).toBe(false);
       expect(released).toHaveBeenCalledTimes(1);
-      expect(() => child.status()).toThrow(/invalid process handle/);
+      expect(() => child.status()).toThrow(/process handle is released/);
       expect(engine.stderrTail()).toContain("fixture diagnostics");
       expect(await engine.stop()).toBe(7);
       expect(await engine.stop()).toBe(7);
