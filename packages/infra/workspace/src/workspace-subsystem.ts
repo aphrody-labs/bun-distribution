@@ -3,6 +3,9 @@
 import { registerSubsystem, type ToolSpec } from "@aphrody/os";
 import { join, resolve } from "node:path";
 import { collectAutomationInventory } from "./automation-inventory.ts";
+import { discoverAphrodyBinaries } from "./binaries.ts";
+import { loadAphrodyBridgeCatalog } from "./bridges.ts";
+import { loadFleet } from "./fleet.ts";
 import { heavyBuildStatus, readFactoryConfig } from "./build-factory.ts";
 import { readIecodeSource } from "./iecode-packages.ts";
 import { collectInlineInterpreters, renderInlineMarkdown } from "./inline-interpreters.ts";
@@ -50,6 +53,30 @@ export const WORKSPACE_TOOLS: ToolSpec[] = [
     inputSchema: { type: "object", properties: { root: ROOT_SCHEMA }, additionalProperties: false },
     readOnly: true,
     handler: (args) => collectAutomationInventory(root(args)),
+  },
+  {
+    name: "workspace_binaries",
+    description:
+      "Installed and workspace-built Aphrody binaries with their source and catalogue status; never arbitrary PATH files (CLI: aphrody-ops binaries).",
+    inputSchema: { type: "object", properties: { root: ROOT_SCHEMA }, additionalProperties: false },
+    readOnly: true,
+    handler: (args) => discoverAphrodyBinaries(root(args)),
+  },
+  {
+    name: "workspace_fleet",
+    description:
+      "Repositories, pipeline stages and binaries declared for the Aphrody fleet (CLI: aphrody-ops fleet).",
+    inputSchema: { type: "object", properties: { root: ROOT_SCHEMA }, additionalProperties: false },
+    readOnly: true,
+    handler: (args) => loadFleet(root(args)),
+  },
+  {
+    name: "workspace_bridges",
+    description:
+      "Rust, Bun, package and API bridge catalogue used by aphrody-ops bridge (CLI: aphrody-ops bridge status).",
+    inputSchema: { type: "object", properties: {}, additionalProperties: false },
+    readOnly: true,
+    handler: () => loadAphrodyBridgeCatalog(),
   },
   {
     name: "workspace_iecode_source",
