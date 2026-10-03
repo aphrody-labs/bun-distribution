@@ -10,12 +10,20 @@ import { existsSync } from "node:fs";
 import { rm } from "node:fs/promises";
 import { connect } from "node:net";
 import { join } from "node:path";
+import { createRequire } from "node:module";
 import { buildDependencies } from "../../../../../packages/infra/workspace/src/bun-dependency-builds.ts";
 
 const repo = join(import.meta.dir, "..", "..", "..", "..", "..");
 const siteDir = join(repo, "apps", "shenron", "site");
 const buildDir = join(siteDir, ".next-build");
-const nextBin = join(repo, "node_modules", "next", "dist", "bin", "next");
+// Bun's isolated linker owns Next at the site dependency boundary, not a hoisted root.
+let nextBin: string;
+try {
+  nextBin = createRequire(join(siteDir, "package.json")).resolve("next/dist/bin/next");
+} catch {
+  console.error("✗ Site-owned Next dependency is missing; run the frozen workspace install.");
+  process.exit(1);
+}
 
 if (!existsSync(nextBin)) {
   console.error(`✗ Binaire Next introuvable : ${nextBin}`);
