@@ -1075,6 +1075,7 @@ dependencies = [
  "aphrody-rag",
  "aphrody-re",
  "aphrody-rollout",
+ "aphrody-secrets",
  "aphrody-session",
  "aphrody-ssh",
  "aphrody-stdio-capture",

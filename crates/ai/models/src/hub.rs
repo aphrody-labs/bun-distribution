@@ -5,9 +5,9 @@
 
 use aphrody_secrets::{SecretStore, SecretValue};
 use futures_util::TryStreamExt as _;
+use hf_hub::HFClient;
 /// Official repository-kind selector, shared with the pinned library.
-pub use hf_hub::RepoTypeAny;
-use hf_hub::{HFClient, repository::RepoInfo};
+pub use hf_hub::{RepoTypeAny, repository::RepoInfo};
 
 /// Errors deliberately exclude remote bodies and secret-store error strings.
 #[derive(Debug, thiserror::Error)]

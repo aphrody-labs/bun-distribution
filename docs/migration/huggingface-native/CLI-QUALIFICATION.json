@@ -1,0 +1,50 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-03",
+  "scope": "canonical aphrody model hub command source",
+  "installed": false,
+  "liveIdentityVerified": false,
+  "checks": [
+    { "command": "check -p aphrody-command --lib", "status": "passed", "seconds": 56.25 },
+    {
+      "command": "clippy -p aphrody-command --lib --tests --locked -- -D warnings",
+      "status": "failed",
+      "reason": "Dependency diagnostics: web-crawl collapsible_if and simdutf errors"
+    },
+    {
+      "command": "clippy -p aphrody-command --lib --tests --no-deps --locked -- -D warnings",
+      "status": "passed",
+      "seconds": 32.93
+    },
+    {
+      "command": "test -p aphrody-command --lib model_cmd::hub_cmd::tests --locked",
+      "status": "interrupted",
+      "reason": "Compilation expanded beyond scoped local diagnostic; executable tests must use the configured factory"
+    },
+    {
+      "command": "Workspace docs-links --docs docs/migration/huggingface-native --json",
+      "status": "passed",
+      "documents": 3,
+      "localLinks": 4,
+      "broken": 0
+    },
+    {
+      "command": "Infra SSH: git -C /srv/aphrody-build/workspaces/aphrody rev-parse HEAD",
+      "status": "failed",
+      "reason": "Configured factory workspace directory does not exist"
+    }
+  ],
+  "testsAdded": 4,
+  "testsExecuted": 0,
+  "sourceContract": {
+    "defaultOutput": "JSON",
+    "credentialSource": "existing EnvSecretStore, explicit credential key; auth defaults to HF_TOKEN",
+    "missingIdentity": "verified false, nonzero exit, no anonymous fallback for selected credentials",
+    "payloadAcquisition": false
+  },
+  "remaining": [
+    "Provision/synchronize the factory through the source and Infra owners with pinned clean first-party source.",
+    "Execute four CLI adapter tests, build/install the canonical binary and verify installed help.",
+    "Qualify protected persistent-store selection, safe credential provisioning and live identity separately."
+  ]
+}

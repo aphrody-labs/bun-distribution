@@ -210,6 +210,7 @@ aphrody-session           = { workspace = true, features = ["memory"] }
 # Native-only: the store needs a filesystem and the downloader a reqwest client
 # (rustls/ring), neither of which links on wasm32.
 aphrody-models            = { workspace = true }
+aphrody-secrets           = { workspace = true }
 # `aphrody infer {...}` — ONNX Runtime session loading with CUDA/DirectML/CPU
 # fallback. Optional: only linked by the `infer` feature.
 aphrody-infer             = { workspace = true, optional = true }

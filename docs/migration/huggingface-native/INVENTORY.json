@@ -28,7 +28,7 @@
           "path": "crates/ai/models/src/hub.rs",
           "line": 163,
           "symbol": "pub async fn search",
-          "sha256": "6f5053baea5bdcd1f38b7876cb94d37441e5c76ae1d137a4be8673c3157e63a5"
+          "sha256": "f380b8ad8f2a0da398cb48b18c2b9643cc247cbfc7f04195e68755a4b02b58c2"
         },
         {
           "path": "/home/aphro/.cargo/git/checkouts/hf-hub-3c7263c594854a05/473de94/hf-hub/src/repository/mod.rs",
@@ -76,7 +76,7 @@
           "path": "crates/ai/models/src/hub.rs",
           "line": 184,
           "symbol": "RepoTypeAny::Dataset =>",
-          "sha256": "6f5053baea5bdcd1f38b7876cb94d37441e5c76ae1d137a4be8673c3157e63a5"
+          "sha256": "f380b8ad8f2a0da398cb48b18c2b9643cc247cbfc7f04195e68755a4b02b58c2"
         },
         {
           "path": "crates/koharu/koharu-runtime/src/source/hugging_face.rs",
@@ -97,7 +97,7 @@
           "path": "crates/ai/models/src/hub.rs",
           "line": 130,
           "symbol": "pub async fn space_runtime",
-          "sha256": "6f5053baea5bdcd1f38b7876cb94d37441e5c76ae1d137a4be8673c3157e63a5"
+          "sha256": "f380b8ad8f2a0da398cb48b18c2b9643cc247cbfc7f04195e68755a4b02b58c2"
         },
         {
           "path": "/home/aphro/.cargo/git/checkouts/hf-hub-3c7263c594854a05/473de94/hf-hub/src/spaces.rs",
@@ -238,7 +238,7 @@
           "path": "crates/ai/models/src/hub.rs",
           "line": 37,
           "symbol": "pub async fn resolve_token",
-          "sha256": "6f5053baea5bdcd1f38b7876cb94d37441e5c76ae1d137a4be8673c3157e63a5"
+          "sha256": "f380b8ad8f2a0da398cb48b18c2b9643cc247cbfc7f04195e68755a4b02b58c2"
         }
       ],
       "remaining": "No real credential read or whoami executed. CLI must inject authorized Aphrody domain store; official client retains a non-zeroizing String internally."

@@ -22,6 +22,9 @@
 
 use std::path::{Path, PathBuf};
 
+#[path = "model_hub_cmd.rs"]
+mod hub_cmd;
+
 use aphrody_models::{
     Catalog, Downloader, Format, HardwareProfile, ModelRef, ModelStore, ModelTask, Progress,
     PullOutcome, ReconcileReport, Report, SpeedTier, WeightsLicense, accel, human_bytes,
@@ -117,6 +120,11 @@ fn write_out(path: &Path, body: &str) -> miette::Result<()> {
 /// Actions for the `model` subcommand.
 #[derive(clap::Subcommand, Debug, Clone)]
 pub(crate) enum ModelAction {
+    /// Discover Hugging Face repositories and verify the selected identity.
+    Hub {
+        #[command(subcommand)]
+        action: hub_cmd::HubAction,
+    },
     /// List locally installed models.
     ///
     /// Ollama-compatible alias: `aphrody model ls`.
@@ -268,6 +276,7 @@ pub(crate) enum ModelAction {
 /// so shell pipelines can branch on it.
 pub(crate) async fn run(action: ModelAction) -> miette::Result<()> {
     match action {
+        ModelAction::Hub { action } => hub_cmd::run(action).await,
         ModelAction::Accel { output } => accel_report(&output),
         ModelAction::Catalog { task, output } => catalog(task.as_deref(), &output),
         ModelAction::Ps { output } => ps(&output),
@@ -291,6 +300,7 @@ pub(crate) async fn run(action: ModelAction) -> miette::Result<()> {
                 ModelAction::Path { spec } => path(&store, spec.as_deref()),
                 // Handled above, before the store is opened.
                 ModelAction::Accel { .. }
+                | ModelAction::Hub { .. }
                 | ModelAction::Ps { .. }
                 | ModelAction::Catalog { .. }
                 | ModelAction::Recommend { .. } => unreachable!(),
@@ -814,10 +824,8 @@ fn verify(store: &ModelStore, spec: &str, output: &OutputOpts) -> miette::Result
 fn ps(output: &OutputOpts) -> miette::Result<()> {
     use aphrody_llama_server::{Role, discover_running};
 
-    let running: Vec<_> = [Role::Chat, Role::Embed, Role::Rerank]
-        .into_iter()
-        .filter_map(discover_running)
-        .collect();
+    let running: Vec<_> =
+        [Role::Chat, Role::Embed, Role::Rerank].into_iter().filter_map(discover_running).collect();
 
     let mut report = Report::new("Running models", &["ROLE", "ALIAS", "PORT", "READY", "MODEL"])
         .with_footer(format!("{} instance(s)", running.len()));
