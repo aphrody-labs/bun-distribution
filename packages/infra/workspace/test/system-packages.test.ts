@@ -50,18 +50,17 @@ test("apt plan reads dpkg state and apply installs only what is missing through 
   }
 });
 
-test("winget plan and apply go through PowerShell, with the Build Tools override quoted", async () => {
+test("Windows plan and apply use one PowerShell 7 process each, through the WinGet module", async () => {
   const root = await fixture();
   try {
-    const seen: string[] = [];
+    const processes: string[][] = [];
     const runner: Runner = async (argv) => {
-      const command = argv.at(-1) ?? "";
-      seen.push(command);
-      if (argv[0] === "sh") return { exitCode: 0, stdout: "/x/powershell.exe" };
-      if (command.startsWith("winget list --id Git.Git"))
-        return { exitCode: 0, stdout: "Git Git.Git 2.50" };
-      if (command.startsWith("winget list")) return { exitCode: 1, stdout: "" };
-      return { exitCode: 0, stdout: "" };
+      if (argv[0] === "sh") return { exitCode: 0, stdout: "/x/pwsh.exe" };
+      processes.push(argv);
+      return {
+        exitCode: 0,
+        stdout: JSON.stringify({ winget: ["Git.Git"], tools: { rustup: false } }),
+      };
     };
     const plan = await planPackages(root, "windows", null, runner);
     expect(plan.entries.map((e) => [e.manager, e.id, e.state])).toEqual([
@@ -69,27 +68,37 @@ test("winget plan and apply go through PowerShell, with the Build Tools override
       ["winget", "Microsoft.VisualStudio.BuildTools", "missing"],
       ["installer", "rustup", "missing"],
     ]);
+    expect(processes).toHaveLength(1);
+    expect(processes[0]![0]).toBe("pwsh.exe");
+    // Native Windows reads the WinGet module; other hosts read `winget export` (no COM session from WSL).
+    expect(processes[0]!.at(-1)).toContain(
+      process.platform === "win32" ? "Get-WinGetPackage" : "winget export",
+    );
     await applyPackages(root, plan, runner);
-    expect(
-      seen.some(
-        (c) =>
-          c.includes("winget install --id Microsoft.VisualStudio.BuildTools") &&
-          c.includes("--override '--add VCTools'"),
-      ),
-    ).toBe(true);
-    expect(seen.some((c) => c.includes("win.rustup.rs/x86_64"))).toBe(true);
+    expect(processes).toHaveLength(2);
+    const script = processes[1]!.at(-1)!;
+    expect(script).toContain(
+      process.platform === "win32"
+        ? "Install-WinGetPackage -Id 'Microsoft.VisualStudio.BuildTools' -Mode Silent -Override '--add VCTools'"
+        : "winget install --id 'Microsoft.VisualStudio.BuildTools' -e --silent --accept-package-agreements --accept-source-agreements --override '--add VCTools'",
+    );
+    expect(script).toContain("https://win.rustup.rs/x86_64");
+    expect(script).not.toContain("Git.Git");
   } finally {
     await rm(root, { recursive: true, force: true });
   }
 });
 
-test("powershell is found through wslpath when Windows is not on PATH", async () => {
+test("pwsh 7 is found through wslpath when Windows is not on PATH", async () => {
   if (process.platform !== "linux") return;
-  const runner: Runner = async (argv) =>
-    argv[0] === "sh"
-      ? { exitCode: 1, stdout: "" }
-      : { exitCode: 0, stdout: "/mnt/c/Windows/System32\n" };
+  const runner: Runner = async (argv) => {
+    if (argv[0] === "sh")
+      return { exitCode: argv[2]?.startsWith("ls") ? 0 : 1, stdout: "someone\nPublic\n" };
+    if (argv[0] === "wslpath")
+      return { exitCode: 0, stdout: `/mnt/c/${argv[2]?.split("\\").slice(1).join("/")}\n` };
+    return { exitCode: argv[0] === "test" && argv[2]?.includes("someone") ? 0 : 1, stdout: "" };
+  };
   expect((await powershell(runner))?.[0]).toBe(
-    "/mnt/c/Windows/System32/WindowsPowerShell/v1.0/powershell.exe",
+    "/mnt/c/Users/someone/AppData/Local/Microsoft/WindowsApps/pwsh.exe",
   );
 });
