@@ -1844,3 +1844,28 @@ heuristique ; aucun changement Git ne doit être attribué sans preuve.
   requires no sibling source directory. Original external copies removed only
   after a complete private archive was verified against every recorded hash.
   Provenance and validation: `docs/migration/native-source-integration-2026-10-03.json`.
+
+- 2026-10-03: repaired only the existing IECODE Rust publication adapter
+  `scripts/iecode/publish-rust-crates.sh`. Its qualified allowlist is
+  `aphrody-wii`, then `aphrody-aarch64`; canonical producer paths replace
+  obsolete directories. Cargo uses its normal credential-provider chain,
+  requires a clean producer checkout and a locked graph, and runs scoped
+  check/test/clippy through the existing serialized owner before sequential
+  publication. `--plan` prints the validation commands without executing them;
+  `--dry-run` verifies packages without uploading. Removed the nonexistent
+  `release:check` prerequisite and `--allow-dirty`. Bash syntax, scoped Git
+  whitespace and an isolated mocked-owner fixture pass: five ordered locked
+  commands, dry-run forwarding, dirty-source rejection before any command,
+  unknown-mode rejection and side-effect-free planning. Real Cargo gates were
+  not rerun by this worker, per the repository resource policy; no publication,
+  credentials modification, installation or commit was performed in this batch.
+
+- 2026-10-03: integrating validation of the repaired IECODE publication adapter:
+  `APHRODY_LOCAL_CARGO=1 APHRODY_CARGO_JOBS=2
+  CARGO_TARGET_DIR=/tmp/iecode-publisher-config-target
+  IECODE_ROOT=/home/aphro/iecode scripts/iecode/publish-rust-crates.sh --dry-run`
+  passes scoped check/test/strict Clippy and both package verification builds.
+  Twenty-two unit tests pass; zero doctests are not additional coverage.
+  Cargo explicitly aborts both uploads in dry-run mode. The local override was
+  limited to this small diagnostic; serial locking and sccache remain active.
+  No producer code/version changed and output stays outside the clean checkout.
