@@ -171,7 +171,12 @@ from urllib.parse import urlsplit
 manifest = json.load(open(sys.argv[1]))
 units, env_root = pathlib.Path(sys.argv[2]), pathlib.Path(sys.argv[3])
 site, bot, next_path = sys.argv[4:7]
-for unit in units.glob('*.service'):
+# The monorepo source archive also contains unrelated Infra templates.
+# Only the two sealed Shenron release units are deployment inputs.
+for name in ('shenron-site.service', 'shenron-bot.service'):
+    unit = units / name
+    if unit.is_symlink() or not unit.is_file():
+        raise SystemExit('sealed Shenron unit missing or symlinked')
     content = unit.read_text()
     if manifest.get('sourceLayout') == 'monorepo':
         content = content.replace('/apps/site', '/' + site).replace('/apps/bot', '/' + bot)
@@ -184,7 +189,7 @@ for unit in units.glob('*.service'):
             for name in line.split('=', 1)[1].split():
                 path = pathlib.Path(name.lstrip('-'))
                 if not path.resolve().is_relative_to(env_root.resolve()):
-                    raise SystemExit('DBFR environment path outside private env root')
+                    raise SystemExit(f'DBFR environment path outside private env root: unit={unit.name}, path={path}, root={env_root}')
                 if not path.is_file():
                     continue
                 if path.stat().st_mode & 0o777 != 0o600:
