@@ -99,7 +99,7 @@ const LOCK = [
   "[[package]]", 'name = "Click"', 'version = "8.3.0"', 'source = { registry = "https://pypi.org/simple" }',
   "[[package]]", 'name = "click"', 'version = "8.2.0"', 'source = { registry = "https://pypi.org/simple" }',
   "[[package]]", 'name = "langextract"', 'version = "1.0.0"', 'source = { git = "https://github.com/google/langextract.git?rev=x#abc" }',
-  "[[package]]", 'name = "aphrody"', 'version = "0.1.0"', 'source = { editable = "packages/ai/py/aphrody" }',
+  "[[package]]", 'name = "aphrody"', 'version = "0.1.0"', 'source = { editable = "packages/aphrody" }',
 ].join("\n");
 
 describe("uv.lock", () => {
@@ -128,11 +128,11 @@ describe("uv.lock", () => {
     expect(bumpKind("1.0.0", "1.0.0")).toBe("none");
   });
   test("owning lock is the nearest ancestor", () => {
-    const locks = [".", "packages/ai/py/aphrody", "packages/ai/py/aphrody-train"];
-    expect(lockFor("packages/ai/py/aphrody/pyproject.toml", locks)).toBe("packages/ai/py/aphrody");
-    expect(lockFor("packages/ai/py/aphrody-train/pyproject.toml", locks)).toBe("packages/ai/py/aphrody-train");
-    expect(lockFor("tools/ai/embedding-fixtures/pyproject.toml", locks)).toBe(".");
-    expect(lockFor("packages/ai/py/pyproject.toml", locks)).toBe(".");
+    const locks = [".", "packages/aphrody", "packages/aphrody-train"];
+    expect(lockFor("packages/aphrody/pyproject.toml", locks)).toBe("packages/aphrody");
+    expect(lockFor("packages/aphrody-train/pyproject.toml", locks)).toBe("packages/aphrody-train");
+    expect(lockFor("packages/embedding-fixtures/pyproject.toml", locks)).toBe(".");
+    expect(lockFor("pyproject.toml", locks)).toBe(".");
     expect(lockFor("x/pyproject.toml", ["a"])).toBeUndefined();
     expect(lockLabel(".")).toBe("uv.lock");
     expect(lockLabel("a/b")).toBe("a/b/uv.lock");

@@ -65,7 +65,7 @@ pub fn find_python_train_project(repo_root: &Path) -> PathBuf {
 
     let is_workspace = |root: &Path| {
         root.join("uv.lock").is_file()
-            && root.join("packages/ai/py/aphrody-train/pyproject.toml").is_file()
+            && root.join("packages/aphrody-train/pyproject.toml").is_file()
     };
     if is_workspace(repo_root) {
         return repo_root.to_path_buf();
@@ -206,7 +206,7 @@ async fn run_training_job_unrecorded(
     }
 
     // Inject python path so in-tree packages resolve
-    let python_path = py_project.join("packages/ai/py/aphrody-train/src");
+    let python_path = py_project.join("packages/aphrody-train/src");
     cmd.env("PYTHONPATH", python_path);
     cmd.stdout(std::process::Stdio::piped());
     cmd.stderr(std::process::Stdio::null());

@@ -29,7 +29,7 @@
       "root": "../aphrody-py",
       "id": "python-google",
       "language": "python",
-      "paths": ["packages/ai/py/aphrody/aphrody/google.py"]
+      "paths": ["packages/aphrody/aphrody/google.py"]
     }
   ],
   "site": {
