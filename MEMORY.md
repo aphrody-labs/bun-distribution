@@ -40,3 +40,20 @@ before implementation, without restarting a repository-wide audit by default.
 
 This is a checked-in project memory. Provider memory databases and other agents'
 private conversation stores are not rewritten or claimed synchronized by it.
+
+## Optimization workflow — 2026-10-03
+
+The private Aphrody plugin owns `optimize-workspace` and its optimize command.
+Workspace provides `optimize` / `aphrody-optimize` as a thin entry to the existing
+`aphrody exec` agent, with a no-agent `--print` mode. It reuses code-edit and owner
+capabilities rather than implementing another refactoring engine. Installed skill
+links and branch delivery must be verified separately; this entry alone proves
+neither runtime migration nor performance gains.
+
+Qualification: Workspace TypeScript, scoped oxlint/oxfmt and three orchestration
+tests passed. Skill validation passed; provider manager installation succeeded
+for Codex, Claude and agy in project scope. Claude/agy native validation passed;
+Codex has no native validator in the registry and used manager validation. Codex
+cached skill and project links were verified. docs:check failed on stale generated
+STATE/README/documentation and ecosystem indexes; these were not regenerated in
+this batch. No live model-driven optimization or performance gain is claimed.

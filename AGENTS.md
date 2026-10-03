@@ -118,3 +118,15 @@ legacy aphrody-code.
   `/home/aphro/yolo` runtime producer repository and from `crates/infra/yolo` CLI.
 - Bun/bun-ts7 tooling: global availability, repository-specific configuration.
 Autonomy does not change task scope, permissions or the evidence required for completion.
+
+## Optimization workflow
+
+Use the private Aphrody plugin's `optimize-workspace` skill for requested
+purification, deduplication, simplification, fusion and Bun/Rust migrations.
+`aphrody-workspace optimize -- <bounded task>` (or `aphrody-optimize`) reuses
+`aphrody exec`; `--print` prepares its instructions without execution. Inside an
+agent, use Workspace/Infra directly rather than recursively launching agents.
+Prefer existing owners, native Bun APIs and qualified complete crates/packages
+before rewrites. Batch transformations and scoped gates; preserve compatibility,
+licenses, provenance and rollback. Commit only completed claimed files, including
+when the user says to commit everything; preserve other sessions' unfinished work.

@@ -302,3 +302,17 @@ historiques et les modifications concurrentes du checkout restent distinctes.
 - [Plan producteur Yolo](../yolo/PLAN.md)
 - [Archive exacte et hashes](docs/plans/runtime/history/README.md)
 - [Documentation et commandes propriétaires](docs/guides/workspace/documentation.md)
+
+## Workflow de simplification et optimisation
+
+Le skill `optimize-workspace` du plugin privé `/home/aphro/plugins/aphrody`
+porte les lots de déduplication, purification, optimisation, Bunisation,
+Rustisation et fusion. Workspace/Infra reste le propriétaire des opérations :
+`aphrody-workspace optimize -- <tâche bornée>` délègue à `aphrody exec` ;
+`--print` prépare les instructions sans démarrer d'agent. Les transformations
+réutilisent `code-edit` et les capacités existantes, sans nouveau moteur.
+Les API natives Bun et les crates/packages complets qualifiés précèdent les
+réécritures. Chaque retrait attend ses preuves de comportement et de rollback.
+La commande ne constitue pas une preuve de migration du runtime ni de gain de
+performance. La livraison sur main et la création de dev préservent les lots
+concurrents et les branches existantes.

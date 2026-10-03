@@ -5,6 +5,9 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const [operation, ...rest] = process.argv.slice(2);
+if (operation === "optimize") {
+  process.exit(await (await import("./optimize.ts")).runOptimize(rest));
+}
 if (operation === "path-audit") {
   process.exit(await (await import("./path-audit.ts")).runPathAudit(rest));
 }
