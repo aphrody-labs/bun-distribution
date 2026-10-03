@@ -92,6 +92,7 @@ booter depuis ce checkout ; leurs stores et conversations sont filtrés par prof
 | Routage des pairs | `aphrody a2a peers` |
 | Import incrémental des sessions | `aphrody ai sync-sessions --json --shared-workspace /home/aphro/aphrody` |
 | Projection sans import mémoire | `aphrody ai sync-sessions --json --no-memory` |
+| Propriétaire natif de l’import par domaine | `bun packages/infra/workspace/src/ops.ts agent-sync --help` |
 | État live PID/session/workspace/Git | `bun packages/infra/workspace/src/ops.ts agent-live --json` |
 | Actualisation continue | `bun packages/infra/workspace/src/ops.ts agent-live --watch --interval-secs 30` |
 | Génération Agent Home | `bun packages/infra/workspace/src/ops.ts agent-home --help` |
@@ -102,10 +103,16 @@ booter depuis ce checkout ; leurs stores et conversations sont filtrés par prof
 | Environnement IA résolu | `aphrody ai env --help` |
 | Inspection mémoire disponible | `aphrody memory --help` |
 
-`agent-live` publie `.coord/shared/LIVE.json` et `LIVE.md`. Le service local
-actualise ces projections ; le miroir global ne nourrit pas la mémoire.
-Chaque instance `aphrody-agent-domain-sync@<domaine>.service` gère la mémoire
-et les conversations de son profil. Voir [preuve et limites live](../../../docs/operations/ai/agent-live.md).
+`agent-live` publie `.coord/shared/LIVE.json` et `LIVE.md` en observateur passif.
+Depuis le lot `bb0cfd33f` du 2026-10-03, `agent-sync` possède l’import natif MCP
+des sessions et de la mémoire pour un domaine sélectionné ; il vérifie le domaine
+du kernel et publie `.coord/shared/AGENT-SYNC.json`. Le service installé
+`aphrody-agent-session-sync.service` est configuré pour Aphrody. Les instances
+historiques `aphrody-agent-domain-sync@<domaine>.service` doivent être vérifiées
+avant usage : un seul propriétaire doit consommer les offsets d’un domaine.
+L’existence d’un service ne prouve ni import complet ni rattrapage historique.
+Voir [preuve et limites live](../../../docs/operations/ai/agent-live.md) et
+[propriétaire de l’import](../../../packages/infra/workspace/src/agent-sync.ts).
 L’aide installée de `aphrody memory` propose `migrate` ; ne supposer aucune
 sous-commande `audit` ou `backends` sans la vérifier sur le binaire courant.
 

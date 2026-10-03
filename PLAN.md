@@ -283,11 +283,12 @@ le build courant sans nécessité explicite.
 La première tranche producteur est choisie : `system.stats`, `bench.compute`,
 puis `process.supervise` et `http.probe`, exposés par l'ABI C 1.3 et le SDK
 `@aphrody/runtime-sdk` 0.1.0 sans dépendances déclarées. Le premier consommateur
-est `packages/web/agent-browser/src/engine.ts` ; le patch producteur a été testé
-puis retiré. Le raccordement durable dans Aphrody reste la prochaine tranche,
-selon [la procédure consommateur Yolo](../yolo/docs/CONSUMERS.md) : archive SDK
-épinglée avec provenance, dépendances et lockfile, patch, tests du package puis
-qualification des consommateurs aval. Ne pas démarrer toutes les phases à la fois.
+est `packages/web/agent-browser/src/engine.ts` ; le patch initial a été testé
+puis retiré, avant le raccordement durable livré dans `7b362f10d` (voir R7).
+La migration des autres surfaces reste à qualifier selon
+[la procédure consommateur Yolo](../yolo/docs/CONSUMERS.md) : archive SDK épinglée
+avec provenance, dépendances et lockfile, tests du package puis qualification
+des consommateurs aval. Ne pas démarrer toutes les phases à la fois.
 
 ### État synchronisé au 2026-10-03
 
@@ -305,7 +306,7 @@ prouve ni build distant réussi ni hook installé.
 | --- | --- |
 | R0 | Runtime C ABI 1.3, SDK et artefact Linux x64 présents. Gate complet `just runtime-test` déclaré passant par Yolo ; aucune relance Cargo ici. |
 | R1 | Preload et modules system/process opérationnels : tests SDK relancés contre une bibliothèque précompilée, y compris erreurs, annulation, limites et destruction. Aucun hôte Bun forké reconstruit. |
-| R2 | Patch `agent-browser` documenté : 33 tests passent avant/après, TypeScript et oxlint passent, aucun processus résiduel. Patch retiré ; `engine.ts` utilise encore `Bun.spawn` et le package ne déclare pas le SDK. Migration Aphrody non livrée. |
+| R2 | Preuve historique du patch initial `agent-browser` : 33 tests passent avant/après, TypeScript et oxlint passent, aucun processus résiduel. Ce patch avait été retiré lors du relevé producteur. Le raccordement permanent ultérieur est livré et décrit en R7 ; l’ancien état ne décrit plus le consommateur courant. |
 | D0 | Release locale 0.1.0 Linux x64 présente. Installation isolée, réinstallation, doctor et scaffold documentés dans Yolo ; non relancés ici. |
 | D1 | Workflow cinq cibles et fusion des assets présents ; première release par tag et upgrade à qualifier selon le plan producteur. |
 | D2 | Compilation, archive serveur et exécution extraite sans Bun/Rust documentées sur Linux x64 ; Docker et systemd non exécutés. |

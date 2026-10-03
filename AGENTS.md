@@ -68,6 +68,20 @@ details requires an explicit owner decision; repositories remain private.
 
 ## Coordination and execution
 
+### Knowledge freshness — owner preference recorded 2026-10-03
+
+Use the session's actual date as the reference, not a training cutoff or a
+permanently frozen date. Verify information that may have changed against
+current primary sources, live owner CLI help, installed versions, manifests,
+and local evidence. Prefer verified evidence over recalled training information;
+mark unverified, historical, inferred, or unavailable claims explicitly. Older
+sources may establish stable facts or required pinned-version behavior; assess
+their relevance. Refresh task-relevant knowledge when needed. Do not claim an
+exhaustive knowledge refresh, erased training data, changed model weights, or
+synchronized provider memory. This preference is stored in local instructions.
+
+### Owner workflows
+
 Consult `~/.codex/CLI.md`, `~/.codex/brain/CLI-HELP.md`, and the installed help
 index. Verify live `--help` before relying on a changed CLI. Prefer Aphrody MCP
 tools directly when they cover the operation; otherwise use the owning CLI.
