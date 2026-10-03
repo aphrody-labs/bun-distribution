@@ -12,6 +12,9 @@ consommateur, sans recopier les décisions ni les jalons producteur.
 | SDK bootstrap | `73609d0f5` : producteur existant ou cache vérifié ; aucun clone/fetch/checkout/copie de script ; script comparé au pin, SHA-256 et provenance contrôlés | Pas acquisition native sur une nouvelle machine |
 | Gates bootstrap | 5 tests, Workspace TypeScript, lint strict scoped, format, cache vérifié et docs consistency pass | Pas nouveau build moteur |
 | Synchronisation native | `bb0cfd33f` : ingestion avec contrôle du domaine, conversations dans leur store protégé, métadonnées seules exposées | Transport livré ; activation et backfill non établis |
+| Interpréteurs inline | `9d4b90565`, `e23c57e57` : `automation-inventory --inline` (JSON/Markdown) et ratchet `config/inline-interpreters.baseline.json` ; 97 → 93 invocations, 51 → 47 fichiers ; `cargo-serial.sh` 18,7 → 7,4 ms (n=20) | Scripts hôte gardés en CPython (Bun absent du VPS) ; deux scripts hôte appellent le Bun VPS supprimé |
+| Sous-système MCP Workspace | `6891c3a3c`, `fb0b4a6b6` : 7 outils en lecture seule ; `aphrody-workspace-subsystem.service` actif ; appels MCP identiques à la CLI, retrait à l'arrêt | Poste WSL uniquement ; pas d'API HTTP |
+| CI ratchet | `421dca18d` : workflow `inline-interpreters.yml`, sans installation de dépendances | 2026-10-03 : aucun job GitHub Actions ne démarre (facturation du compte), RG compris |
 
 Pin SDK : [config/sibling-checkouts.json](config/sibling-checkouts.json) ;
 catalog et [bun.lock](bun.lock). SDK 0.1.0, archive `c81812ea`, producteur
