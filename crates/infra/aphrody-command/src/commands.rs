@@ -937,7 +937,7 @@ impl TerminalCommand for BxcCommand {
     }
 }
 
-/// Forwards `aphrody google <args…>` to the Aphrody Web Google module.
+/// Forwards `aphrody google <args…>` to the native Google/Gemini ecosystem or executes native DoH / Suggest / Languages in-process.
 pub(crate) struct GoogleCommand {
     pub args: Vec<String>,
 }
@@ -945,12 +945,154 @@ pub(crate) struct GoogleCommand {
 #[async_trait]
 impl TerminalCommand for GoogleCommand {
     async fn execute(&self, _ctx: &GoogleContext) -> miette::Result<()> {
-        let mut full_args = vec!["google".to_string()];
-        full_args.extend(self.args.clone());
+        let first = self.args.first().map(|s| s.as_str()).unwrap_or("");
 
-        // Prefer the installed Aphrody Web binary.
-        if let Ok(bin) = aphrody_web_bridge::resolve::binary() {
-            let status = std::process::Command::new(bin.path()).args(&full_args).status();
+        match first {
+            "" | "help" | "--help" | "-h" => {
+                println!("{}", "Écosystème Google branché via Aphrody (DoH, Suggest, Translate, Gemini Web, Runtime)".bold().blue());
+                println!();
+                println!("Usage: aphrody google <COMMAND> [OPTIONS]");
+                println!();
+                println!("Commands:");
+                println!("  dns <NAME> [TYPE]    Query Google Public DNS-over-HTTPS (A, AAAA, MX, TXT...)");
+                println!("  suggest <QUERY>      Get real-time Google Autocomplete query suggestions");
+                println!("  languages [TARGET]   List 195 official supported Google Cloud Translation languages");
+                println!("  status               Print resolved Google/Gemini runtime contract as JSON");
+                println!("  env                  Print shell exports for the Google Cloud / Gemini runtime");
+                println!("  doctor               Validate Google project mapping and local configuration");
+                println!("  login                Sign in to Google with the OAuth PKCE flow");
+                println!("  auth-status          Report Google AI authentication status");
+                println!("  whoami               Print the signed-in Google account profile");
+                println!("  models               List Gemini models available to the authenticated account");
+                println!("  generate             Generate one Gemini response with Antigravity");
+                println!("  generate-stream      Stream one Gemini response from stdin");
+                return Ok(());
+            },
+            "dns" => {
+                let name = self.args.get(1).map(|s| s.as_str()).ok_or_else(|| {
+                    miette::miette!("Usage: aphrody google dns <domain> [record_type] [--json]")
+                })?;
+                let mut record_type = "A";
+                let mut json = false;
+                for arg in &self.args[2..] {
+                    if arg == "--json" {
+                        json = true;
+                    } else if !arg.starts_with('-') {
+                        record_type = arg.as_str();
+                    }
+                }
+
+                let mut url = reqwest::Url::parse("https://dns.google/resolve").unwrap();
+                url.query_pairs_mut().append_pair("name", name).append_pair("type", record_type);
+
+                let client = reqwest::Client::builder()
+                    .timeout(std::time::Duration::from_secs(10))
+                    .build()
+                    .map_err(|e| miette::miette!("HTTP client error: {e}"))?;
+
+                let res = client.get(url).send().await
+                    .map_err(|e| miette::miette!("Erreur lors de la requête DoH Google: {e}"))?;
+
+                let body: serde_json::Value = res.json().await
+                    .map_err(|e| miette::miette!("Réponse DoH JSON invalide: {e}"))?;
+
+                if json {
+                    println!("{}", serde_json::to_string_pretty(&body).unwrap());
+                } else {
+                    let status = body.get("Status").and_then(|s| s.as_i64()).unwrap_or(-1);
+                    if status != 0 {
+                        println!("{} Status: {}", "DNS Query Failed:".bold().red(), status);
+                    } else if let Some(answers) = body.get("Answer").and_then(|a| a.as_array()) {
+                        println!("{} {} ({})", "🔍 Google Public DNS:".bold().green(), name, record_type);
+                        for ans in answers {
+                            let data = ans.get("data").and_then(|d| d.as_str()).unwrap_or("");
+                            let ttl = ans.get("TTL").and_then(|t| t.as_i64()).unwrap_or(0);
+                            let t = ans.get("type").and_then(|t| t.as_i64()).unwrap_or(0);
+                            println!("  {} {} (type {}, TTL {}s)", "->".bold().cyan(), data.bold(), t, ttl);
+                        }
+                    } else {
+                        println!("{} Aucun enregistrement trouvé pour {} ({})", "ℹ".bold().yellow(), name, record_type);
+                    }
+                }
+                return Ok(());
+            },
+            "suggest" => {
+                let query = self.args[1..].iter()
+                    .filter(|a| !a.starts_with('-'))
+                    .cloned()
+                    .collect::<Vec<_>>()
+                    .join(" ");
+                if query.trim().is_empty() {
+                    return Err(miette::miette!("Usage: aphrody google suggest <query> [--json]"));
+                }
+                let json = self.args.iter().any(|a| a == "--json");
+
+                let mut url = reqwest::Url::parse("https://suggestqueries.google.com/complete/search").unwrap();
+                url.query_pairs_mut().append_pair("client", "chrome").append_pair("q", &query);
+
+                let client = reqwest::Client::builder()
+                    .timeout(std::time::Duration::from_secs(10))
+                    .build()
+                    .map_err(|e| miette::miette!("HTTP client error: {e}"))?;
+
+                let res = client.get(url).send().await
+                    .map_err(|e| miette::miette!("Erreur lors de la requête Google Suggest: {e}"))?;
+
+                let body: serde_json::Value = res.json().await
+                    .map_err(|e| miette::miette!("Réponse Suggest JSON invalide: {e}"))?;
+
+                let suggestions = body.as_array()
+                    .and_then(|a| a.get(1))
+                    .and_then(|s| s.as_array())
+                    .map(|arr| {
+                        arr.iter().filter_map(|item| item.as_str().map(String::from)).collect::<Vec<_>>()
+                    })
+                    .unwrap_or_default();
+
+                if json {
+                    println!("{}", serde_json::to_string_pretty(&suggestions).unwrap());
+                } else {
+                    println!("{} {} ({} suggestions)", "💡 Suggestions pour :".bold().blue(), query, suggestions.len());
+                    for (i, s) in suggestions.iter().enumerate() {
+                        println!("  {:2}. {}", i + 1, s.cyan());
+                    }
+                }
+                return Ok(());
+            },
+            "languages" | "langs" => {
+                let target = self.args.get(1).map(|s| s.as_str()).filter(|s| !s.starts_with('-'));
+                let json = self.args.iter().any(|a| a == "--json");
+                let langs = aphrody_google::languages::supported_languages(target);
+                if json {
+                    println!("{}", serde_json::to_string_pretty(&langs).unwrap());
+                } else {
+                    println!("{} {} langues supportées", "🌐 Google Translation:".bold().green(), langs.data.languages.len());
+                    for lang in &langs.data.languages {
+                        if let Some(name) = &lang.name {
+                            println!("  {:8} -> {}", lang.language.cyan().bold(), name);
+                        } else {
+                            println!("  {:8}", lang.language.cyan().bold());
+                        }
+                    }
+                }
+                return Ok(());
+            },
+            _ => {}
+        }
+
+        // For other commands (status, env, doctor, login, whoami, models, generate, etc.), forward to aphrody-google binary.
+        let google_bin = std::env::var_os("APHRODY_GOOGLE_BIN")
+            .map(PathBuf::from)
+            .or_else(|| {
+                let p = PathBuf::from("/home/aphro/.local/bin/aphrody-google");
+                if p.is_file() { Some(p) } else { None }
+            })
+            .or_else(|| which::which("aphrody-google").ok());
+
+        if let Some(bin_path) = google_bin {
+            let status = std::process::Command::new(&bin_path)
+                .args(&self.args)
+                .status();
             if let Ok(st) = status {
                 if st.success() {
                     return Ok(());
@@ -959,22 +1101,22 @@ impl TerminalCommand for GoogleCommand {
             }
         }
 
-        // Fall back to the checked-out Bun entrypoint.
-        let in_tree_candidate = aphrody_diagnostics::doctor::repo_root()
-            .map(|r| r.join("apps").join("bxc").join("src").join("cli").join("index.ts"));
-        let script = in_tree_candidate.filter(|p| p.is_file()).ok_or_else(|| {
-            miette::miette!("Aphrody Web CLI not found under the repository root")
-        })?;
-        let status = aphrody_toolchains::Toolchain::Bun
-            .command([script])
-            .args(&full_args)
-            .status()
-            .map_err(|e| miette::miette!("Échec du démarrage du module Google Aphrody Web: {e}"))?;
-
-        if !status.success() {
-            return Err(miette::Report::new(SubprocessExit(status.code().unwrap_or(1))));
+        // Fallback: If aphrody-google binary is not found, execute directly via aphrody_google library if status/env/doctor
+        if first == "status" {
+            let runtime = aphrody_google::GoogleRuntime::from_env();
+            let report = serde_json::json!({
+                "provider": "aphrody-google",
+                "project": runtime.project.id(),
+                "location": runtime.location,
+                "home": runtime.home,
+                "auth": runtime.auth,
+                "capabilities": ["vertex", "gemini-oauth", "gemini-web", "google-web", "mcp", "bxc"],
+            });
+            println!("{}", serde_json::to_string_pretty(&report).unwrap());
+            return Ok(());
         }
-        Ok(())
+
+        Err(miette::miette!("Commande google non reconnue: `{first}`. Voir `aphrody google --help`"))
     }
 }
 
@@ -1229,10 +1371,27 @@ impl TerminalCommand for SearchCommand {
         println!("{}", format!("🔍 Recherche : {}", q).bold().blue());
 
         let cli = aphrody_web_bridge::BxcCli::discover().map_err(|e| miette::miette!("{e}"))?;
-        let results = cli
+        let results = match cli
             .search(&q, Some(10), aphrody_web_bridge::cli::SEARCH_BUDGET)
             .await
-            .map_err(|e| miette::miette!("{e}"))?;
+        {
+            Ok(res) => res,
+            Err(e) => {
+                let err_str = e.to_string();
+                if err_str.contains("blocked") || err_str.contains("interstitial") || err_str.contains("organic") {
+                    println!(
+                        "\n{} {}",
+                        "⚠️  Google a présenté un interstitiel anti-bot pour cette requête anonyme.".bold().yellow(),
+                        "Utilisez `aphrody web search --cookies <cookies.json>` ou connectez-vous avec `aphrody google login`.".dimmed()
+                    );
+                    println!("\n{}", "Alternatives disponibles sans blocage :".bold());
+                    println!("  • `aphrody docs search \"{}\"` pour la documentation technique", q.cyan());
+                    println!("  • `aphrody google suggest \"{}\"` pour les suggestions de complétion Google", q.cyan());
+                    return Ok(());
+                }
+                return Err(miette::miette!("{e}"));
+            }
+        };
 
         for hit in results.hits.iter().take(10) {
             println!("\n{}", hit.title.bold().green());

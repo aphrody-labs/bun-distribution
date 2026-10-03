@@ -18,6 +18,19 @@ describe("kernel-backed winclean facade", () => {
       required: ["path"],
       properties: { path: { type: "string" } },
     });
+    expect(
+      wc.listTools().find((tool) => tool.name === "list_directory")?.inputSchema,
+    ).toMatchObject({
+      type: "object",
+      required: ["path"],
+      properties: {
+        exclude: {
+          type: "array",
+          items: { type: "string", minLength: 1 },
+          default: [],
+        },
+      },
+    });
   });
 
   test("does not expose a synchronous DLL path", () => {

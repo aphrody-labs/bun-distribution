@@ -1018,6 +1018,11 @@ export interface ListDirectoryArgs {
    * @default false
    */
   showHidden?: boolean;
+  /**
+   * Glob patterns matching entry names to omit. Matching directories are not traversed.
+   * @default []
+   */
+  exclude?: string[];
 }
 
 /** Arguments for `list_listening_ports`. */
@@ -1738,6 +1743,10 @@ export interface SearchFilesArgs {
    * @default true
    */
   recursive?: boolean;
+  /**
+   * Basename glob patterns to omit; matching directories are not traversed.
+   */
+  exclude?: string[];
 }
 
 /** Arguments for `search_windows`. */

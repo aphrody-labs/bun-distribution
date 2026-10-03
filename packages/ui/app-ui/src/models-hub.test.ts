@@ -106,7 +106,7 @@ describe("models hub state", () => {
   });
 
   test("inferHomeFromPath extracts user home from Windows, Linux, and macOS paths", () => {
-    expect(inferHomeFromPath("C:\\Users\\test\\src\\aphrody-ui")).toBe("C:\\Users\\test");
+    expect(inferHomeFromPath("C:\\Users\\test\\src\\aphrody")).toBe("C:\\Users\\test");
     expect(inferHomeFromPath("D:\\Users\\developer\\.cache")).toBe("D:\\Users\\developer");
     expect(inferHomeFromPath("/home/ubuntu/projects/aphrody")).toBe("/home/ubuntu");
     expect(inferHomeFromPath("/Users/alice/Library/Application Support")).toBe("/Users/alice");

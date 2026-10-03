@@ -73,7 +73,7 @@ const BUCKET = "assets";
 const MAX_DEPOTS_PAR_MEMBRE = 10;
 
 /** Formats acceptés et poids maximal — alignés sur l'envoi d'image du staff. */
-const TYPES_ACCEPTES = ["image/png", "image/jpeg", "image/webp", "image/avif", "image/gif"];
+const TYPES_ACCEPTES = new Set(["image/png", "image/jpeg", "image/webp", "image/avif", "image/gif"]);
 const EXTENSIONS: Record<string, string> = {
 	"image/avif": "avif",
 	"image/gif": "gif",
@@ -132,7 +132,7 @@ export async function deposerCreationInstagram(donnees: FormData): Promise<Resul
 			success: false,
 		};
 	}
-	if (!TYPES_ACCEPTES.includes(fichier.type)) {
+	if (!TYPES_ACCEPTES.has(fichier.type)) {
 		return { error: "Format non supporté : PNG, JPEG, WebP, AVIF ou GIF.", success: false };
 	}
 	if (fichier.size > TAILLE_MAX) {

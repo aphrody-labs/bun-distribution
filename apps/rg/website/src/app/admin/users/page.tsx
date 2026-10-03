@@ -1,3 +1,4 @@
+import { getRequestTime } from "../_lib/request-time";
 import { Users } from "lucide-react";
 
 import { AdminPageHeader, PaginationControls } from "@rosegriffon/ui";
@@ -34,7 +35,7 @@ export default async function UsersPage({ searchParams }: UsersPageProps) {
 		usersQuery = usersQuery.ilike("email", `%${query}%`);
 	}
 
-	const thirtyDaysAgo = new Date();
+	const thirtyDaysAgo = await getRequestTime();
 	thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
 	const [

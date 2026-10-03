@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 //! `design` — engendre la feuille `game-tokens.css` (Inacord, dans nie) depuis la palette mesurée,
-//! et la graine M3 (`--m3-seed`) d'aphrody-ui.
+//! et la graine M3 (`--m3-seed`) d'aphrody.
 //!
 //! Le site n'a plus qu'une seule source de couleur : [`aphrody_identity::design`]. Ce binaire est le
 //! seul chemin par lequel elle atteint le CSS, et il est **idempotent** — il ne réécrit le

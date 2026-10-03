@@ -2,16 +2,11 @@
 
 import { ShoppingBag } from "lucide-react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+
+
 
 export function CartIconButton({ initialCount }: { initialCount: number }) {
-	const pathname = usePathname();
-	const [count, setCount] = useState(initialCount);
-
-	useEffect(() => {
-		setCount(initialCount);
-	}, [initialCount, pathname]);
+	const count = initialCount;
 
 	return (
 		<Link

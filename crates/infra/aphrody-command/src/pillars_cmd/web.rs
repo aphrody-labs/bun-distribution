@@ -194,6 +194,9 @@ pub(crate) enum WebAction {
         /// Schedule revisits in a persistent frontier
         #[arg(long)]
         revisit: bool,
+        /// Run continuously as a 24/7 background crawl daemon
+        #[arg(long)]
+        daemon: bool,
         /// Emit a structured report
         #[arg(long)]
         json: bool,
@@ -767,6 +770,7 @@ pub(crate) async fn handle_web(action: WebAction) -> miette::Result<()> {
             max_sitemaps,
             goal,
             revisit,
+            daemon,
             json,
         } => {
             handle_web_crawl(WebCrawlRequest {
@@ -786,6 +790,7 @@ pub(crate) async fn handle_web(action: WebAction) -> miette::Result<()> {
                 max_sitemaps,
                 goal,
                 revisit,
+                daemon,
                 json,
             })
             .await?;
@@ -1303,6 +1308,7 @@ struct WebCrawlRequest {
     max_sitemaps: usize,
     goal: Option<String>,
     revisit: bool,
+    daemon: bool,
     json: bool,
 }
 
@@ -1376,10 +1382,21 @@ async fn handle_web_crawl(request: WebCrawlRequest) -> miette::Result<()> {
         ..CrawlOptions::default()
     };
     obscura_net::ensure_rustls_crypto_provider();
-    let report =
+    let report = if request.daemon {
+        let daemon_opts = aphrody_web_crawl::CrawlDaemonOptions {
+            base: options,
+            idle_poll_ms: 1_000,
+            maintenance_interval_ms: 10_000,
+            max_iterations: None,
+        };
+        aphrody_web_crawl::crawl_daemon(&mut frontier, &ObscuraTransport::default(), &daemon_opts, None)
+            .await
+            .into_diagnostic()?
+    } else {
         aphrody_web_crawl::crawl_bounded(&mut frontier, &ObscuraTransport::default(), &options)
             .await
-            .into_diagnostic()?;
+            .into_diagnostic()?
+    };
     if request.json {
         let pages = report
             .pages

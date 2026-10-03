@@ -4,7 +4,7 @@
 //!
 //! Every repository that reads, writes, cleans, recolours or rasterizes SVG goes through this
 //! crate instead of carrying its own `resvg` call, sanitizer, sprite builder or glyph pen. The
-//! inventory of the implementations it replaces lives in `docs/SVG.md` of `aphrody-ui`.
+//! inventory of the implementations it replaces lives in `docs/reference/ui/SVG.md`.
 //!
 //! | Module | Capability | Backend |
 //! | --- | --- | --- |

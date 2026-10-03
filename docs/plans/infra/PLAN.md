@@ -508,3 +508,12 @@ sections current and store operational detail in its existing runbook.
 ## 2026-10-03 — VPS factory and DBFR Shenron owner decision
 
 The current owner decision supersedes the prior WSL build and VPS-only Shenron placement. Heavy build/test/release operations run through `build:factory` on VPS; WSL/Windows retain source editing and scoped static checks. RG application units and timers are stopped and disabled, with protected data and rollback releases retained. Host zram remains infrastructure swap. DBFR runtime activation is pending qualified artifact, private environment, state and route checks; keep a single bot gateway. See [factory runbook](../../operations/infra/BUILD-FACTORY.md) and [dated observations](../../../config/infra/inventory/build-factory-2026-10-03.json).
+
+### 2026-10-03 — DBFR cache cleanup
+
+Removed only the allowlisted Bun package cache, Cargo registry cache and user
+trash on DBFR. The command measured 4.34 GiB across those paths; free filesystem
+space rose by 531,767,296 bytes (from 89% to 88% use). PostgreSQL, Redis and
+Nginx remain active, with databases, `/srv` releases/data and `/tmp` preserved.
+DBFR still has an 88% disk warning and is not designated as the build factory.
+See the [cleanup observation](../../operations/infra/DBFR-CACHE-RECLAIM-2026-10-03.md).

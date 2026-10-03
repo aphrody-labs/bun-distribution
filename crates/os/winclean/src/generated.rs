@@ -2256,6 +2256,11 @@ pub struct ListDirectoryArgs {
     /// Default: `false`.
     #[serde(rename = "showHidden", skip_serializing_if = "Option::is_none")]
     pub show_hidden: Option<bool>,
+    /// Glob patterns matching entry names to omit. Matching directories are not traversed.
+    ///
+    /// Default: `[]`.
+    #[serde(rename = "exclude", skip_serializing_if = "Option::is_none")]
+    pub exclude: Option<Vec<String>>,
 }
 
 impl ListDirectoryArgs {
@@ -2290,6 +2295,13 @@ impl ListDirectoryArgs {
     #[must_use]
     pub fn show_hidden(mut self, value: bool) -> Self {
         self.show_hidden = Some(value);
+        self
+    }
+
+    /// Sets basename glob patterns to exclude, including matching directories.
+    #[must_use]
+    pub fn exclude(mut self, value: Vec<String>) -> Self {
+        self.exclude = Some(value);
         self
     }
 }
@@ -4144,6 +4156,9 @@ pub struct SearchFilesArgs {
     /// Default: `true`.
     #[serde(rename = "recursive", skip_serializing_if = "Option::is_none")]
     pub recursive: Option<bool>,
+    /// Basename glob patterns to omit; matching directories are not traversed.
+    #[serde(rename = "exclude", skip_serializing_if = "Option::is_none")]
+    pub exclude: Option<Vec<String>>,
 }
 
 impl SearchFilesArgs {
@@ -4171,6 +4186,13 @@ impl SearchFilesArgs {
     #[must_use]
     pub fn recursive(mut self, value: bool) -> Self {
         self.recursive = Some(value);
+        self
+    }
+
+    /// Sets `exclude`.
+    #[must_use]
+    pub fn exclude(mut self, value: Vec<String>) -> Self {
+        self.exclude = Some(value);
         self
     }
 }

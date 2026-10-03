@@ -4,7 +4,7 @@ import { google } from "googleapis";
 
 import { createLogger } from "@/lib/logger";
 import type { StreamSchedule } from "@rosegriffon/types";
-import type { Database, Insert, Tables, Update } from "@rosegriffon/db";
+
 
 const logger = createLogger("google-calendar");
 

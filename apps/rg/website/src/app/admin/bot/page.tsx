@@ -290,7 +290,7 @@ export default async function BotDashboardPage() {
 					<CardDescription>
 						{reglages.parDefaut
 							? "Ce serveur n'a jamais rien réglé : le bot applique ses défauts, et ne publie donc nulle part."
-							: `Dernière modification ${new Date(reglages.majLe ?? Date.now()).toLocaleString("fr-FR")}.`}
+							: reglages.majLe ? `Dernière modification ${new Date(reglages.majLe).toLocaleString("fr-FR")}.` : "Date de modification non renseignée."}
 					</CardDescription>
 				</CardHeader>
 				<CardContent className="space-y-3">

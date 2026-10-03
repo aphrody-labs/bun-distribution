@@ -426,12 +426,22 @@
     {
       "path": "AGENTS.md",
       "title": "Aphrody — repository instructions",
-      "sha256": "f67890a327a63f5562773ab6b0ddaac49d2afeef98ef437481d6df8a95b3759f",
-      "bytes": 7429,
+      "sha256": "1de524b3323afec14fcc2e26d01a378ac390f51f54b123562b23bffa56efb67c",
+      "bytes": 8169,
       "domain": "",
       "status": "canonical",
       "visibility": "private",
       "canonical": "AGENTS.md"
+    },
+    {
+      "path": "BXCTORUST.md",
+      "title": "BXC to Rust : Plan Directeur de Migration & d'Absorption Native",
+      "sha256": "a61220068f7bf1c1b372d0f9246e8fd81d539fc0b363e75d7142847882b42e8a",
+      "bytes": 6373,
+      "domain": "",
+      "status": "canonical",
+      "visibility": "private",
+      "canonical": "BXCTORUST.md"
     },
     {
       "path": "CHANGELOG.md",
@@ -446,8 +456,8 @@
     {
       "path": "PLAN.md",
       "title": "Runtime natif unifié — plan directeur Aphrody",
-      "sha256": "b867d211bd877f05280fb51d79c01ebb854eaf06cd3da14d885d6d7b2d53c263",
-      "bytes": 16433,
+      "sha256": "cde51833a604b111cc272a6a4e88dc46ec291f9475a7dd11afd1497c34c926a0",
+      "bytes": 22676,
       "domain": "",
       "status": "canonical",
       "visibility": "private",
@@ -592,6 +602,16 @@
       "status": "canonical",
       "visibility": "private",
       "canonical": "config/infra/host/aphrody-os/VPS-TUNING.md"
+    },
+    {
+      "path": "config/infra/host/legacy-rg/README.md",
+      "title": "Decommissioned rg host configuration (2026-10-03)",
+      "sha256": "f86eab2ec5ba31f57ca41b2fb3a6e34872484aa0d3988291dda9842dd8918710",
+      "bytes": 513,
+      "domain": "infra",
+      "status": "canonical",
+      "visibility": "private",
+      "canonical": "config/infra/host/legacy-rg/README.md"
     },
     {
       "path": "config/infra/host/privoxy/README.md",
@@ -3892,6 +3912,26 @@
       "status": "canonical",
       "visibility": "private",
       "canonical": "docs/architecture/rg/database.md"
+    },
+    {
+      "path": "docs/architecture/runtime-native/README.md",
+      "title": "Frontière runtime Yolo / produit Aphrody",
+      "sha256": "d93ebc5b73a0c1128ca2ee3ab6e29e4187ac59e401d812f00093060c72fce049",
+      "bytes": 3462,
+      "domain": "runtime-native",
+      "status": "canonical",
+      "visibility": "private",
+      "canonical": "docs/architecture/runtime-native/README.md"
+    },
+    {
+      "path": "docs/architecture/runtime-native/qualification.md",
+      "title": "Qualification d’une frontière native",
+      "sha256": "97c76aed334eec3bd5a7f7d07cab4813ac7bfd5a3b46843a605dbee0933c9d5f",
+      "bytes": 2783,
+      "domain": "runtime-native",
+      "status": "canonical",
+      "visibility": "private",
+      "canonical": "docs/architecture/runtime-native/qualification.md"
     },
     {
       "path": "docs/architecture/rust-crate-gpu-window-ownership.md",
@@ -8234,10 +8274,20 @@
       "canonical": "docs/guides/web/web/NATIVE-INSTALL.md"
     },
     {
+      "path": "docs/guides/workspace/README.md",
+      "title": "Parcours Workspace Aphrody",
+      "sha256": "d167fae66729db34860b4226191646be5d4b7481c14dcb58b93740dd48a6cf70",
+      "bytes": 1823,
+      "domain": "workspace",
+      "status": "canonical",
+      "visibility": "private",
+      "canonical": "docs/guides/workspace/README.md"
+    },
+    {
       "path": "docs/guides/workspace/bootstrap.md",
       "title": "Installation complète d’un poste de développement Aphrody",
-      "sha256": "92d7c5f0d8d001c65d6278d254155ce0659d8cd3f8731c920a028295c752c581",
-      "bytes": 3058,
+      "sha256": "66f488b7c97cc3dfb46293b7ee306794351adfa7a03500afdd56b53a20c1c6cb",
+      "bytes": 4604,
       "domain": "workspace",
       "status": "canonical",
       "visibility": "private",
@@ -8246,12 +8296,22 @@
     {
       "path": "docs/guides/workspace/documentation.md",
       "title": "Gérer la documentation Aphrody",
-      "sha256": "97240dc748efddc1e21ca07e02e3b1c0b7f740a4197bbacdcbddcc431e8df251",
-      "bytes": 5101,
+      "sha256": "93ed066a224483324e9017fab32af64ec84e41ea9c9123ce98baae23893bcc3c",
+      "bytes": 6748,
       "domain": "workspace",
       "status": "canonical",
       "visibility": "private",
       "canonical": "docs/guides/workspace/documentation.md"
+    },
+    {
+      "path": "docs/guides/workspace/runtime-consumer.md",
+      "title": "Qualifier un consommateur du runtime Yolo",
+      "sha256": "6fbc108a89cc8892966f283082183b8ee5f8307eb650af56c9c63edadbc93a66",
+      "bytes": 3750,
+      "domain": "workspace",
+      "status": "canonical",
+      "visibility": "private",
+      "canonical": "docs/guides/workspace/runtime-consumer.md"
     },
     {
       "path": "docs/migration/APHRODY-MCP-EXTRACTION-READINESS.md",
@@ -8622,6 +8682,16 @@
       "status": "canonical",
       "visibility": "private",
       "canonical": "docs/operations/infra/COOKIE-OPERATIONS.md"
+    },
+    {
+      "path": "docs/operations/infra/DBFR-CACHE-RECLAIM-2026-10-03.md",
+      "title": "DBFR cache reclamation — 2026-10-03",
+      "sha256": "85cf82f396d54495ec0f19e44f6b51821e9d253fc3a011953eccddbd48650173",
+      "bytes": 1788,
+      "domain": "infra",
+      "status": "historical",
+      "visibility": "private",
+      "canonical": "docs/operations/infra/DBFR-CACHE-RECLAIM-2026-10-03.md"
     },
     {
       "path": "docs/operations/infra/DRIVE-CLIENT-QUALIFICATION-2026-10-02.md",
@@ -9686,8 +9756,8 @@
     {
       "path": "docs/plans/infra/PLAN.md",
       "title": "Aphrody Infra plan",
-      "sha256": "c75fd98ed22ef19e3eddc36a810eda5021e55568c733f95760a1865b56852237",
-      "bytes": 29516,
+      "sha256": "19fba690afa2f019b8d2f2a492db81368b41cb53a1478ed162879a9b9b3f7f5e",
+      "bytes": 30039,
       "domain": "infra",
       "status": "historical",
       "visibility": "private",
@@ -9962,6 +10032,16 @@
       "status": "canonical",
       "visibility": "private",
       "canonical": "docs/plans/web/apps/bxc/PLAN.md"
+    },
+    {
+      "path": "docs/plans/web/next-fork/PLAN.md",
+      "title": "Plan de gestion du fork aphrody-labs/next.js — Aphrody & Yolo",
+      "sha256": "3a9b71568e38917145d55aaa46218d95bee6e0abf28fc59eb459acdfb6e8ed1a",
+      "bytes": 12285,
+      "domain": "web",
+      "status": "canonical",
+      "visibility": "private",
+      "canonical": "docs/plans/web/next-fork/PLAN.md"
     },
     {
       "path": "docs/plans/web/web/BXC-BRIDGE-PLAN.md",
@@ -44924,6 +45004,16 @@
       "canonical": "docs/reference/web/APHRODY-WEB-AUDIT.md"
     },
     {
+      "path": "docs/reference/web/BENCHMARKS-AND-REPAIR-2026-10-03.md",
+      "title": "Validation en conditions réelles, benchmarks et réparations (2026-10-03)",
+      "sha256": "828c516f9e62bf5de7ceba8251218a08b0c7e84203d152bbb6ccbefc03509360",
+      "bytes": 5993,
+      "domain": "web",
+      "status": "historical",
+      "visibility": "private",
+      "canonical": "docs/reference/web/BENCHMARKS-AND-REPAIR-2026-10-03.md"
+    },
+    {
       "path": "docs/reference/web/CURL-IMPERSONATE-INTEGRATION.md",
       "title": "curl-impersonate et Aphrody OS",
       "sha256": "40f45bec26334dd634e9e1bc9a40bcdf43ad2eb3542a74e1822d583dca4feb93",
@@ -48662,6 +48752,10 @@
     },
     {
       "path": "TOOLS.md",
+      "reason": "symlink alias inventoried without following its content"
+    },
+    {
+      "path": "bxctorust.md",
       "reason": "symlink alias inventoried without following its content"
     }
   ]

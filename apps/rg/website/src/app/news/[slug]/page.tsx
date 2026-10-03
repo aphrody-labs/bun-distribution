@@ -344,7 +344,7 @@ export default async function ArticlePage({ params, searchParams }: ArticlePageP
 		notFound();
 	}
 
-	const publishedDate = news.published_at || news.created_at || new Date().toISOString();
+	const publishedDate = news.published_at || news.created_at || undefined;
 	const readTime = estimateReadTime(news.content || "");
 	const categoryLabel = news.category ? CATEGORY_LABELS[news.category] || news.category : "Article";
 	const authorName = news.author?.full_name || "Azalée";
@@ -615,9 +615,7 @@ export default async function ArticlePage({ params, searchParams }: ArticlePageP
 							<div className="flex items-center gap-1.5">
 								<Calendar className="size-3.5 text-on-surface-variant/50" />
 								<time dateTime={publishedDate}>
-									{format(new Date(publishedDate), "d MMMM yyyy", {
-										locale: fr,
-									})}
+									{publishedDate ? format(new Date(publishedDate), "d MMMM yyyy", { locale: fr }) : "Date non renseignée"}
 								</time>
 							</div>
 
@@ -745,9 +743,7 @@ export default async function ArticlePage({ params, searchParams }: ArticlePageP
 											<Calendar className="size-3.5" /> Date
 										</span>
 										<span className="text-on-surface text-xs font-medium">
-											{format(new Date(publishedDate), "d MMM yyyy", {
-												locale: fr,
-											})}
+											{publishedDate ? format(new Date(publishedDate), "d MMM yyyy", { locale: fr }) : "Date non renseignée"}
 										</span>
 									</div>
 									<div className="flex items-center justify-between">

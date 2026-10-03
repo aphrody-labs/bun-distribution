@@ -74,15 +74,15 @@ function LigneOption({
 			</div>
 			{/* `meter` = mesure figée dans un intervalle connu (et non une progression
 			    en cours) : c'est exactement ce qu'est un résultat de sondage clos. */}
-			<div
-				role="meter"
-				aria-valuemin={0}
-				aria-valuemax={100}
-				aria-valuenow={Number(part.toFixed(1))}
+			<meter
+				min={0}
+				max={100}
+				value={Number(part.toFixed(1))}
 				aria-valuetext={`${formaterPourcentage(part)}, soit ${votes} ${motVotes}`}
 				aria-label={`Part des votes pour « ${resumeQuestion(option.label, 60)} »`}
-				className="h-2.5 w-full overflow-hidden rounded-full bg-surface-container-highest"
-			>
+				className="sr-only"
+			/>
+			<div aria-hidden="true" className="h-2.5 w-full overflow-hidden rounded-full bg-surface-container-highest">
 				{/* Seule valeur dynamique de tout le bloc : une largeur, donc une donnée.
 				    Aucune couleur n'est calculée, elles viennent toutes des tokens. */}
 				<div

@@ -116,7 +116,7 @@ describe("Explorer AI Contextual Actions", () => {
 	});
 
 	it("classifies attachments correctly into images, audio/video, files, and links", () => {
-		expect(classifyAttachment("https://github.com/aphrody/aphrody-os").kind).toBe("link");
+		expect(classifyAttachment("https://github.com/aphrody-labs/aphrody").kind).toBe("link");
 		expect(classifyAttachment("http://localhost:3000/api").isUrl).toBe(true);
 
 		expect(classifyAttachment("C:/images/screenshot.png").kind).toBe("image");

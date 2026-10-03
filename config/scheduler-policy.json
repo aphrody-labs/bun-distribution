@@ -3,23 +3,117 @@
   "scheduler": "systemd-timers-and-windows-task-scheduler",
   "principle": "one-scheduler-per-data-class",
   "timers": [
-    { "id": "shenron-pg-backup", "host": "dbfr", "cadence": "daily", "priority": "critical", "owns": ["shenron_site-postgresql"] },
-    { "id": "shenron-sqlite-replica-backup", "host": "dbfr", "cadence": "daily", "priority": "critical", "owns": ["shenron-bot-sqlite-replica"] },
-    { "id": "shenron-backup-offsite-pull", "host": "windows-local", "cadence": "daily", "priority": "critical", "owns": ["shenron-postgresql-offsite-copy", "shenron-sqlite-offsite-copy"] },
-    { "id": "infra-sync", "host": "dbfr", "cadence": "on-demand-or-hourly", "priority": "deferred", "owns": ["replication-checksums", "asset-manifest"] },
-    { "id": "infra-cleanup", "host": "vps", "cadence": "daily", "priority": "low", "owns": ["journal-retention", "release-retention", "temporary-files"] },
-    { "id": "shenron-backup", "host": "vps", "cadence": "daily", "priority": "low", "owns": ["shenron-sqlite-local-cache"] },
-    { "id": "rg-sauvegarde", "host": "vps", "cadence": "daily", "priority": "critical", "owns": ["rg-postgresql", "rg-storage-objects"] },
-    { "id": "rg-infra-monitor", "host": "vps", "cadence": "every-60-seconds", "priority": "low", "owns": ["stack-observation"] }
+    {
+      "id": "shenron-pg-backup",
+      "host": "dbfr",
+      "cadence": "daily",
+      "priority": "critical",
+      "owns": [
+        "shenron_site-postgresql"
+      ]
+    },
+    {
+      "id": "shenron-sqlite-replica-backup",
+      "host": "dbfr",
+      "cadence": "daily",
+      "priority": "critical",
+      "owns": [
+        "shenron-bot-sqlite-runtime-cache"
+      ],
+      "source": "/srv/shenron/shared/bot/data/bot.db",
+      "capacityPolicy": {
+        "archiveMaxBytes": 2147483648,
+        "minFreeBytes": 4294967296
+      },
+      "migration": "retarget existing enabled timer; retain destination and offsite acknowledgement contract"
+    },
+    {
+      "id": "shenron-backup-offsite-pull",
+      "host": "windows-local",
+      "cadence": "daily",
+      "priority": "critical",
+      "owns": [
+        "shenron-postgresql-offsite-copy",
+        "shenron-sqlite-offsite-copy"
+      ]
+    },
+    {
+      "id": "infra-sync",
+      "host": "dbfr",
+      "cadence": "on-demand-or-hourly",
+      "priority": "deferred",
+      "owns": [
+        "replication-checksums",
+        "asset-manifest"
+      ]
+    },
+    {
+      "id": "infra-cleanup",
+      "host": "vps",
+      "cadence": "daily",
+      "priority": "low",
+      "owns": [
+        "journal-retention",
+        "release-retention",
+        "temporary-files"
+      ]
+    },
+    {
+      "id": "shenron-backup",
+      "host": "vps",
+      "cadence": "daily",
+      "priority": "low",
+      "owns": [
+        "shenron-sqlite-local-cache"
+      ],
+      "desiredState": "stopped-after-dbfr-cutover",
+      "supersededBy": "shenron-sqlite-replica-backup"
+    },
+    {
+      "id": "rg-sauvegarde",
+      "host": "vps",
+      "cadence": "daily",
+      "priority": "critical",
+      "owns": [
+        "rg-postgresql",
+        "rg-storage-objects"
+      ]
+    },
+    {
+      "id": "rg-infra-monitor",
+      "host": "vps",
+      "cadence": "every-60-seconds",
+      "priority": "low",
+      "owns": [
+        "stack-observation"
+      ]
+    }
   ],
-  "disabledByDefault": ["crawler", "full-site-mirror", "duplicate-db-mirror", "per-app-cron", "shenron-watchdog", "rg-watchdog"],
-  "unverifiedBackupDataClasses": ["redis-config", "release-slot", "shenron-sqlite-local-cache-on-runtime-vps", "rg-postgresql", "rg-storage-objects", "nie-sqlite", "nie-postgresql-schema", "aphrody-rag-postgresql", "aphrody-web-postgresql"],
+  "disabledByDefault": [
+    "crawler",
+    "full-site-mirror",
+    "duplicate-db-mirror",
+    "per-app-cron",
+    "shenron-watchdog",
+    "rg-watchdog"
+  ],
+  "unverifiedBackupDataClasses": [
+    "redis-config",
+    "release-slot",
+    "shenron-sqlite-local-cache-on-runtime-vps",
+    "rg-postgresql",
+    "rg-storage-objects",
+    "nie-sqlite",
+    "nie-postgresql-schema",
+    "aphrody-rag-postgresql",
+    "aphrody-web-postgresql"
+  ],
   "rules": [
     "no crawler runs continuously in production",
     "primary-data backup creation is infra-owned; the Windows Shenron task only pulls and verifies PostgreSQL and SQLite archives produced on dbfr",
     "the Shenron offsite pull uses the interactive Windows task scheduler and starts missed runs when the user session returns",
     "DBFR retention never deletes a Shenron PostgreSQL dump until the Windows copy verifies its SHA-256 and acknowledges receipt",
-    "shenron-backup is the sole declared exception: it targets the bounded local SQLite cache, a distinct data class from postgresql, not a duplicate scheduler",
+    "after DBFR cutover, the existing shenron-sqlite-replica-backup timer owns the bounded active runtime SQLite cache and the former VPS shenron-backup timer is disabled",
     "no database has more than one active mirror direction",
     "sync is checksum-based and resumable",
     "cleanup never touches active release, primary data or non-regenerable assets"

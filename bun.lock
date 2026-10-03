@@ -1711,6 +1711,9 @@
       "bin": {
         "agent-browser": "./bin/agent-browser.js",
       },
+      "dependencies": {
+        "@aphrody/runtime-sdk": "catalog:",
+      },
       "devDependencies": {
         "@types/bun": "catalog:",
         "typescript": "catalog:",
@@ -1769,6 +1772,7 @@
     "@aphrody/canvas": "0.1.99",
     "@aphrody/material-web": "3.3.3",
     "@aphrody/mcp-ui": "7.1.1-aphrody.1",
+    "@aphrody/runtime-sdk": "file:.cache/yolo-packages/aphrody-runtime-sdk-0.1.0-a353d251.tgz",
     "@asteasolutions/zod-to-openapi": "^9.1.0",
     "@base-ui/react": "^1.8.0",
     "@better-auth/agent-auth": "^0.6.2",
@@ -2137,6 +2141,8 @@
     "@aphrody/ovh": ["@aphrody/ovh@workspace:packages/infra/ovh"],
 
     "@aphrody/paths": ["@aphrody/paths@workspace:packages/infra/paths"],
+
+    "@aphrody/runtime-sdk": ["@aphrody/runtime-sdk@.cache/yolo-packages/aphrody-runtime-sdk-0.1.0-a353d251.tgz", {}, "sha512-WEeGsyz7uLLIWGGEt3xCHKc0eRmRb2Q7EwITRfeYwoUQqSeApFS1R+C7L2zjwxK61zfFjFm3InwJALToVXClaA=="],
 
     "@aphrody/scaffold": ["@aphrody/scaffold@workspace:packages/ui/scaffold"],
 

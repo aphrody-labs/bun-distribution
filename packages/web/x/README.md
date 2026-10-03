@@ -300,18 +300,16 @@ bun add @aphrody/x
 
 Main entry: `src/index.ts` (re-exports core, services, algo, etc.).
 
-`package.json` lists concrete version ranges instead of `catalog:`: aphrody-ai installs this
-package by path (`file:../../../aphrody-web/packages/x` from its `@aphrody/xai`), and Bun resolves
-neither `catalog:` nor `workspace:` outside the workspace that declares them. Keep the ranges in
-step with the root catalog.
+`package.json` lists concrete version ranges: within the monorepo, `@aphrody/xai`
+consumes `@aphrody/x` via `workspace:*`.
 
-## Relation to aphrody-web and aphrody-ai
+## Relation to web and AI layers
 
-This is the pure-TS headless X client powering aphrody-web's `aphrody-web x` CLI, recon, and MCP. The AI layer consumes it, never the reverse: `@aphrody/xai` (aphrody-ai) depends on this package for `XTools` in its Grok agent loops (keyless SuperGrok OIDC + cookie X = zero external keys).
+This is the pure-TS headless X client powering the `aphrody web x` CLI, recon, and MCP. The AI layer consumes it, never the reverse: `@aphrody/xai` depends on this package for `XTools` in its Grok agent loops (keyless SuperGrok OIDC + cookie X = zero external keys).
 
 See:
-- Root `README.md` and `CLAUDE.md`
-- [aphrody-ai packages/xai/README.md](../../../aphrody-ai/packages/xai/README.md) (high-level Grok Chat SDK)
+- Root `README.md` and `AGENTS.md`
+- [packages/ai/xai/README.md](../../ai/xai/README.md) (high-level Grok Chat SDK)
 - `src/cli/x.ts`, `src/mcp/server.ts`
 - `docs/web/x/` (X_PRO.md, COVERAGE.md, PREMIUM.md)
 - Examples in `examples/`

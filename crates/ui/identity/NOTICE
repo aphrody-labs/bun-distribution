@@ -1,7 +1,7 @@
 aphrody-identity (formerly nie-aphrody)
 Copyright 2026 aphrody-code
 
-Licensed under the Apache License, Version 2.0 (SPDX: Apache-2.0), like the rest of aphrody-ui.
+Licensed under the Apache License, Version 2.0 (SPDX: Apache-2.0), like the rest of the Aphrody monorepo.
 The code and every asset of this crate (emblem, brand icons, favicon, webmanifest, pet
 spritesheet and animations, dossier) were relicensed from the nie commercial agreement
 RG-L5-VR-2026-001 to Apache-2.0 by the operator on 2026-09-26.

@@ -1,6 +1,6 @@
 // @generated — DO NOT EDIT MANUALLY.
 // Regenerate with: bun run n2b:codegen
-// Source of truth: ../aphrody-contracts/schema/v2.json
+// Source of truth: crates/contracts/schema/v2.json
 
 /**
  * This interface was referenced by `N2BReport`'s JSON-Schema

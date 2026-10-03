@@ -3,8 +3,7 @@
  * (Postgres-backed Server Components), not just answer 200.
  */
 
-import { describe, expect } from "bun:test";
-import { test } from "../../../aphrody-web/packages/bxc-test/src/index.ts";
+import { describe, expect, test } from "bun:test";
 import {
 	RG,
 	T_FLOW,

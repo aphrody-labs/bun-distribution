@@ -1,3 +1,4 @@
+import { getRequestTime } from "./_lib/request-time";
 import {
 	Activity,
 	BookOpen,
@@ -32,7 +33,7 @@ export const dynamic = "force-dynamic";
 export default async function AdminDashboardPage() {
 	const db = createPostgresClient();
 
-	const now = new Date();
+	const now = await getRequestTime();
 	const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
 	const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
 	const nowIso = now.toISOString();

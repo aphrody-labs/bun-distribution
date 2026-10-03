@@ -3,16 +3,20 @@ import { beforeAll, describe, expect, it } from "bun:test";
 import { createSql } from "@shenron/db/sql";
 import { loadLiveRagEnv, requireLiveRag, type LiveRag } from "../src/testing/live-rag";
 import { prepareSource, syncSource } from "./_rag-aphrody-sync";
+import { requireAiHttpUrl } from "@shenron/pipeline/ai/config";
+import { AphrodyComputeClient } from "../src/aphrody/compute";
 import { PG_SOURCES, type SourceChunk } from "./_rag-sources-pg";
 
 loadLiveRagEnv();
 let live: LiveRag;
 let chunks: SourceChunk[];
+let techniques: SourceChunk[];
 beforeAll(async () => {
   live = await requireLiveRag();
   const sql = createSql({ applicationName: "shenron-rag-sync-live", max: 1 });
   try {
     chunks = await PG_SOURCES.db_battles!(sql);
+    techniques = await PG_SOURCES.db_techniques!(sql);
   } finally {
     await sql.end();
   }
@@ -66,4 +70,42 @@ describe("editorial RAG sync using real Shenron passages", () => {
       syncSource(live.client, "db_battles", [], undefined, { apply: true }),
     ).rejects.toThrow("empty source");
   });
+
+  it("stops scheduling new real documents after the first fatal unauthorized failure", async () => {
+    const concurrency = 4;
+    expect(techniques.length).toBeGreaterThan(concurrency);
+    const baseUrl = requireAiHttpUrl(process.env);
+    const calls: string[] = [];
+    // Transparent forwarding spy: every request still reaches the real service.
+    const spy = (async (input: RequestInfo | URL, init?: RequestInit) => {
+      calls.push(String(input instanceof Request ? input.url : input));
+      return fetch(input, init);
+    }) as typeof fetch;
+    const unauthorized = new AphrodyComputeClient({
+      baseUrl: baseUrl.href,
+      token: "invalid-dummy-token",
+      fetcher: spy,
+    });
+    const before = await live.client.ragStats();
+    const finish = unauthorized.ragSyncFinish.bind(unauthorized);
+    let finished = 0;
+    unauthorized.ragSyncFinish = async (...args) => {
+      finished++;
+      return finish(...args);
+    };
+    await expect(
+      syncSource(unauthorized, "db_techniques", techniques, undefined, {
+        apply: true,
+        requireVectors: true,
+        concurrency,
+      }),
+    ).rejects.toThrow(/HTTP 40[13]/);
+    expect(calls.length).toBeGreaterThan(0);
+    expect(calls.length).toBeLessThanOrEqual(concurrency);
+    expect(calls.length).toBeLessThan(techniques.length);
+    expect(finished).toBe(0);
+    const after = await live.client.ragStats();
+    expect(after.chunks).toBe(before.chunks);
+    expect(after.vectors).toBe(before.vectors);
+  }, 120_000);
 });

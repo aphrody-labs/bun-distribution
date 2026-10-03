@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# SUPERSEDED — DO NOT EDIT. Canonical copy: ../aphrody-infra/scripts/ops/backup-shenron-sqlite.sh
-# (owned by aphrody-infra, run by its systemd units). This copy only stays
+# SUPERSEDED — DO NOT EDIT. Canonical copy: scripts/ops/backup-shenron-sqlite.sh
+# (owned by ops, run by its systemd units). This copy only stays
 # because the live DBFR timers still execute it from this checkout; delete it
-# once the host units are reinstalled from aphrody-infra.
+# once the host units are reinstalled from ops.
 # Backup VACUUM INTO du SQLite Shenron (chaud, WAL-safe).
 # Destination durable configurable. Conserve 14 jours par défaut.
 set -euo pipefail

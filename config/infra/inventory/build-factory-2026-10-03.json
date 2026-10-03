@@ -31,7 +31,13 @@
     "prepassByteCounts": "rounded rsync human-readable counters",
     "prepassMegabytesPerSecond": 52.02,
     "dbfrDiskObservation": "after runtime cache and payload staging; assembly ongoing",
-    "sealedPayload": "six checksums passed independently on VPS and DBFR"
+    "sealedPayload": "six checksums passed independently on VPS and DBFR",
+    "runtimeRelease": "749cc9dd40317fd5749a891f6d753a880bfe3e7c",
+    "assembly": "passed on DBFR; frozen install --ignore-scripts, no native compiler",
+    "stagedBotConfiguration": "compiled dry-run passed with private production configuration",
+    "stagedCanvas": "native Linux x64 PNG rendering passed",
+    "localRedisProbe": "PING passed for site and bot configurations",
+    "redisTransfer": "required historical analytics/reports; snapshot migration pending"
   },
   "rg": {
     "applicationState": "stopped",
@@ -77,6 +83,8 @@
     "shenronSiteAndBotTypechecks": "passed",
     "shenronHealthTests": "7 tests / 34 assertions passed",
     "shenronBotBootWithoutServicesTests": "1 test / 36 assertions passed",
-    "nieFfi": "initial pinned pair --locked failed; sibling lock reconciliation pending"
+    "nieFfi": "blocked: six generated compile-time metadata JSON missing in clean IECODE clone; local copies empty and unverified",
+    "niePairedAphrodyRevision": "98a728a9fe31c76526e566341d752ec9bcad942c",
+    "niePairedIecodeRevision": "c832e6c553a99ccad92cc64e4ff5b952f7c28c42"
   }
 }

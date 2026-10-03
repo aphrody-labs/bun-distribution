@@ -16,7 +16,7 @@ export async function PatreonDiscountBanner() {
 	if (!userId) {
 		return (
 			<aside
-				role="status"
+				aria-live="polite"
 				className="rounded-2xl border-2 border-[#d4af37]/40 bg-gradient-to-r from-[#0c1730] via-[#0c1730]/95 to-[#a14b3f]/30 p-4 text-white shadow-[0_3px_0_0_rgba(0,0,0,0.4)]"
 			>
 				<p className="flex items-start gap-3 text-sm">
@@ -44,7 +44,7 @@ export async function PatreonDiscountBanner() {
 	if (!discount.active) {
 		return (
 			<aside
-				role="status"
+				aria-live="polite"
 				className="rounded-2xl border-2 border-[#d4af37]/40 bg-[#0c1730] p-4 text-white shadow-[0_3px_0_0_rgba(0,0,0,0.4)]"
 			>
 				<p className="flex items-start gap-3 text-sm">
@@ -72,7 +72,7 @@ export async function PatreonDiscountBanner() {
 	const tier = discount.tierTitles[0] ?? "Patron";
 	return (
 		<aside
-			role="status"
+			aria-live="polite"
 			className="relative overflow-hidden rounded-2xl border-2 border-[#d4af37] bg-gradient-to-r from-[#a14b3f] via-[#0c1730] to-[#0c1730] p-4 text-white shadow-[0_3px_0_0_rgba(0,0,0,0.5)]"
 		>
 			<div

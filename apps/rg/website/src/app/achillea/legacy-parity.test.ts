@@ -69,7 +69,7 @@ describe("parité fonctionnelle Achilléa — Angular vers Next", () => {
 		}
 
 		for (const view of ["clans", "leaderboard", "tournaments", "modes"]) {
-			expect(hub).toContain(`activePreview === \"${view}\"`);
+			expect(hub).toContain(`activePreview === "${view}"`);
 		}
 		expect(hub).toContain('useState<PreviewTab>("clans")');
 	});

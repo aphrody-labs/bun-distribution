@@ -38,6 +38,14 @@
         "olderThanMinutes": 720,
         "keepNamePatterns": ["systemd-private-*", ".X*", ".ICE-unix", ".font-unix", "tmux-*", "snap-private-tmp", "*quarantine*"]
       }
+    },
+    "dbfr": {
+      "sshAlias": "dbfr",
+      "paths": [
+        { "path": ".bun/install/cache", "reason": "4.5 GiB Bun package download cache, unused by the observed services and re-fetched on demand; production release dependencies remain under /srv" },
+        { "path": ".cargo/registry", "reason": "430 MiB Cargo registry index, sources and archives, re-fetched on demand; DBFR is not the build factory" },
+        { "path": ".local/share/Trash", "reason": "60 KiB user trash, already discarded" }
+      ]
     }
   }
 }

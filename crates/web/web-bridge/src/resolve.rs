@@ -229,10 +229,9 @@ fn repo_root() -> Option<PathBuf> {
 }
 
 /// Workspaces whose `apps/bxc` and `target/` are searched: the caller's workspace, then the
-/// aphrody-os checkout this crate was built from.
+/// monorepo workspace this crate was built from.
 ///
-/// The second root lets a sibling repository (`aphrody`, through its
-/// `path = "../aphrody-os/..."` dependency) find the in-tree bxc without carrying its own copy
+/// The second root lets tools find the in-tree bxc without carrying their own copy
 /// of this chain. It is a compile-time path, skipped once it no longer exists.
 fn in_tree_roots() -> Vec<PathBuf> {
     let mut roots: Vec<PathBuf> = repo_root().into_iter().collect();

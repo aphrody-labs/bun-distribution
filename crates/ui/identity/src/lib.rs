@@ -3,7 +3,7 @@
 //!
 //! Venue de `nie/crates/engine/nie-aphrody` (2026-09-26). La lecture des fichiers du jeu
 //! (`gisement`, le contrat 3D `modele3d` et le binaire `export_aphrody`) est restée dans nie,
-//! dans `nie-aphrody-gisement`, qui dépend de cette crate : aphrody-ui ne dépend pas de nie.
+//! dans `nie-aphrody-gisement`, qui dépend de cette crate : aphrody ne dépend pas de nie.
 //!
 //!
 //! Cette crate porte deux choses, et c'est délibéré : le **paquet du pet** (atlas RGBA,

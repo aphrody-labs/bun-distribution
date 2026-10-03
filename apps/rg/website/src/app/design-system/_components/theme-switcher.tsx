@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useId, useEffect, useState } from "react";
 
 const THEMES = [
 	{ id: "theme-roy", label: "Roy", mode: "light", swatch: "#344E8C" },
@@ -23,6 +23,7 @@ const THEMES = [
 type ThemeId = (typeof THEMES)[number]["id"];
 
 export function ThemeSwitcher() {
+	const groupName = useId();
 	const [active, setActive] = useState<ThemeId>("theme-roy");
 
 	useEffect(() => {
@@ -50,23 +51,20 @@ export function ThemeSwitcher() {
 			{THEMES.map((t) => {
 				const isActive = t.id === active;
 				return (
-					<button
+					<label
 						key={t.id}
-						type="button"
-						role="radio"
-						aria-checked={isActive}
-						onClick={() => setActive(t.id)}
-						className={`group flex items-center gap-2 rounded-full px-3 py-1.5 transition-all motion-safe:duration-200 outline-hidden focus-visible:ring-[3px] focus-visible:ring-ring/50 ${
+						className={`group flex items-center gap-2 rounded-full px-3 py-1.5 transition-all motion-safe:duration-200 outline-hidden focus-within:ring-[3px] focus-within:ring-ring/50 ${
 							isActive ? "bg-on-surface text-surface" : "text-on-surface hover:bg-on-surface/10"
 						}`}
 					>
+						<input type="radio" name={groupName} value={t.id} checked={isActive} onChange={() => setActive(t.id)} className="sr-only" />
 						<span
 							className="inline-block size-2.5 rounded-full ring-1 ring-on-surface/40"
 							style={{ background: t.swatch }}
 							aria-hidden
 						/>
 						<span>{t.label}</span>
-					</button>
+					</label>
 				);
 			})}
 		</div>

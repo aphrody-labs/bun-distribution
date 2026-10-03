@@ -1,42 +1,20 @@
-import { describe, expect, mock, test } from "bun:test";
+import { beforeAll, describe, expect, mock, test } from "bun:test";
+import { loadLiveRagEnv, requireLiveRag } from "@shenron/pipeline/testing/live-rag";
 
 // Mock server-only before importing server files
 mock.module("server-only", () => ({}));
 
-import fs from "fs";
-import path from "path";
-
-// Auto-load REMOTE_DATABASE_URL if available from .env.remote-db
-const remoteDbEnvPath = path.resolve(__dirname, "../../../.env.remote-db");
-if (fs.existsSync(remoteDbEnvPath)) {
-	const content = fs.readFileSync(remoteDbEnvPath, "utf-8");
-	const match = content.match(/REMOTE_DATABASE_URL="?([^"\n\r]+)"?/);
-	if (match?.[1]) {
-		process.env.DATABASE_URL = match[1].trim();
-	}
-}
-
-if (process.env.REMOTE_DATABASE_URL) {
-	process.env.DATABASE_URL = process.env.REMOTE_DATABASE_URL;
-}
+// Real preconfigured Shenron PostgreSQL + fully preloaded RAG; never skipped.
+loadLiveRagEnv();
 delete (globalThis as Record<string, unknown>).pgClient;
-
-// Check if DB is reachable
-let dbReachable = false;
-try {
-	const postgres = (await import("postgres")).default;
-	const client = postgres(process.env.DATABASE_URL || "", { max: 1, connect_timeout: 2 });
-	await client`SELECT 1`;
-	await client.end({ timeout: 1 });
-	dbReachable = true;
-} catch {
-	dbReachable = false;
-}
+beforeAll(async () => {
+	await requireLiveRag();
+}, 120_000);
 
 const { dbUniverse } = await import("../src/lib/db-universe");
 const { assetUrl } = await import("../src/lib/assets");
 
-describe.skipIf(!dbReachable)("Intégration du catalogue Manga et du lecteur", () => {
+describe("Intégration du catalogue Manga et du lecteur", () => {
 	test("mangaCatalogVolumes expose chaque série visible sans doublon", async () => {
 		const catalog = await dbUniverse.mangaCatalogVolumes();
 		expect(catalog).not.toBeNull();

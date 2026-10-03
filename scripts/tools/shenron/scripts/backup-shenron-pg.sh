@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# SUPERSEDED — DO NOT EDIT. Canonical copy: ../aphrody-infra/scripts/ops/backup-shenron-pg.sh
-# (owned by aphrody-infra, run by its systemd units). This copy only stays
+# SUPERSEDED — DO NOT EDIT. Canonical copy: scripts/ops/backup-shenron-pg.sh
+# (owned by ops, run by its systemd units). This copy only stays
 # because the live DBFR timers still execute it from this checkout; delete it
-# once the host units are reinstalled from aphrody-infra.
+# once the host units are reinstalled from ops.
 # Backup quotidien du PostgreSQL local du site (base shenron_site : schémas
 # public + bot). pg_dump à chaud (consistent via snapshot MVCC), gzip -9,
 # rétention 14 jours. Timer quotidien 03:00 UTC (piloté par aphrody-infra sur dbfr).

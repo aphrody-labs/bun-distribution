@@ -26,15 +26,12 @@ import type { Emote } from "@/lib/emotes";
 import { Copy, Smile } from "@/lib/icons-config";
 import { absoluteUrl } from "@/lib/site-url";
 
-export default function EmotesPage() {
-	const [activeTab, setActiveTab] = useState("all");
-
 	const copyEmoteName = (name: string) => {
 		navigator.clipboard.writeText(`:${name}:`);
 		toast.success(`Code :${name}: copié !`);
 	};
 
-	const EmoteGrid = ({ filter }: { filter?: (e: Emote) => boolean }) => {
+function EmoteGrid({ filter }: { filter?: (e: Emote) => boolean }) {
 		const emotes = Object.values(EMOTES).filter(filter || (() => true));
 
 		return (
@@ -95,7 +92,14 @@ export default function EmotesPage() {
 				))}
 			</div>
 		);
-	};
+	}
+
+export default function EmotesPage() {
+	const [activeTab, setActiveTab] = useState("all");
+
+
+
+
 
 	return (
 		<div className="min-h-screen bg-background pb-12">

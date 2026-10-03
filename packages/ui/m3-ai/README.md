@@ -3,7 +3,7 @@
 Material Design 3 components for agent interfaces: tool-call cards, markdown, chat bubbles, the
 chat composer, model selector, worker and branch cards, and the task board. They are the SpaceUI
 `@spacedrive/ai` set, rebuilt on `@aphrody/m3-primitives`, the M3 color roles, typescale, shapes
-and motion of aphrody-os, and Material Symbols icons.
+and motion of Aphrody OS, and Material Symbols icons.
 
 ## Install
 

@@ -325,7 +325,7 @@ export function Carousel({
 	}, [onScroll]);
 
 	return (
-		<div className={className} role="group" aria-label={ariaLabel}>
+		<fieldset className={className}  aria-label={ariaLabel}>
 			<div className="relative">
 				<div
 					ref={trackRef}
@@ -369,6 +369,6 @@ export function Carousel({
 					/>
 				))}
 			</div>
-		</div>
+		</fieldset>
 	);
 }

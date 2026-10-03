@@ -7,11 +7,11 @@ def main [--apply] {
     let repo = ($env.FILE_PWD | path dirname | path expand --strict)
     let git_root = (^git -C $repo rev-parse --show-toplevel | str trim | path expand --strict)
     if $git_root != $repo {
-        error make {msg: 'This script must live in the aphrody-ui scripts directory.'}
+        error make {msg: 'This script must live in the UI tools directory.'}
     }
 
     let hosts = [
-        {name: 'aphrody-app', gen: 'crates/aphrody-app/gen'}
+        {name: 'aphrody-app', gen: 'crates/ui/app/gen'}
     ]
     mut candidates = []
 

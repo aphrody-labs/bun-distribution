@@ -204,13 +204,13 @@ Runnable example: [packages/xai/examples/grok-x-agent.ts](examples/grok-x-agent.
 
 The combo `@aphrody/xai` (Chat + XTools) + `@aphrody/x` (XClient) supports Grok tool calls for X search, tweets, news, identity and profiles. XTools uses the published X client; unit tests use mock clients and do not require a live API.
 
-See also the `@aphrody/x` package in the sibling aphrody-web checkout (`../aphrody-web/packages/x`) and the tests in this package.
+See also the `@aphrody/x` package in `packages/web/x` and the tests in this package.
 
 ## Contributing & Notes
 
 - Keep packages light (dynamic zod for structured if present at runtime).
 - Prefer tools + XTools for agentic X access over legacy search_parameters.
-- `@aphrody/x` is installed from the sibling checkout (`file:../../../aphrody-web/packages/x`); `bun run ecosystem:check` validates the path and `aphrody-ops ecosystem-deps --ai-root . --write --registry` pins the published version for a registry build.
+- `@aphrody/x` is integrated directly from `packages/web/x` via Bun workspace (`@aphrody/x: "workspace:*"`).
 - Tests: `bun run test` from `packages/xai` (unit-only by default; live opt-in via env flags). Coverage includes Chat, XTools, native X dispatch and the bounded research helper.
 
 See `index.test.ts` and `agent.test.ts` for details (all mocks, no live service required for core coverage).

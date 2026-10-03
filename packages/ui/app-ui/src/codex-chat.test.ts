@@ -301,7 +301,7 @@ describe("Codex Chat - Pixel-Perfect Parity & Timeline Cards", () => {
         accessMode: "full",
         onAccessModeChange: () => {},
         modelOptions: [],
-        cwd: "C:/workspace/aphrody-ui",
+        cwd: "C:/workspace/aphrody",
         onCwdChange: () => {},
       })
     );

@@ -78,7 +78,7 @@ export async function SearchPageContent({
 						Explorez les articles de l’association, le wiki Azalée et l’E-Sport Achilléa.
 					</p>
 				</div>
-				<form action="/search" method="get" role="search" className="flex max-w-2xl gap-2">
+				<search><form action="/search" method="get" className="flex max-w-2xl gap-2">
 					<Input
 						name="q"
 						aria-label="Recherche unifiée"
@@ -89,7 +89,7 @@ export async function SearchPageContent({
 					<Button type="submit" className="h-12 px-6 text-base font-bold">
 						Rechercher
 					</Button>
-				</form>
+				</form></search>
 			</div>
 
 			{query.length === 1 && <p>Saisissez au moins deux caractères pour lancer la recherche.</p>}
@@ -125,9 +125,9 @@ export async function SearchPageContent({
 					</nav>
 
 					{groupesAffiches.every(({ resultats: items }) => items.length === 0) && (
-						<p role="status" className="rounded-xl border p-6 text-center text-base">
+						<output  className="rounded-xl border p-6 text-center text-base">
 							Aucun résultat trouvé pour « {query} » dans cet onglet.
-						</p>
+						</output>
 					)}
 
 					{groupesAffiches

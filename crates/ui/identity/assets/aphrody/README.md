@@ -32,7 +32,7 @@ the JSON with the native exporter:
 # from the nie checkout: the exporter reads game files, so it stays in nie-aphrody-gisement
 cargo run -p nie-aphrody-gisement --bin export_aphrody -- \
   --data "$NIE_GAME_DIR/data" \
-  --out ../aphrody-ui/crates/aphrody-identity/assets/dossier/aphrody.json
+  --out crates/ui/identity/assets/dossier/aphrody.json
 ```
 
 After regeneration, `cargo test -p aphrody-identity` verifies that the dossier parses, its pet block

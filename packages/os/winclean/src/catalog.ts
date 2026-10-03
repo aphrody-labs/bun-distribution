@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Generated from crates/aphrody-winclean/src/tools.json by scripts/generate-winclean-catalog.ts.
+// Generated from crates/os/winclean/src/tools.json by scripts/tools/os/scripts/generate-winclean-catalog.ts.
 // Do not edit by hand.
 export const TOOL_CATALOG: ReadonlyArray<{ name: string; description: string; inputSchema: Record<string, unknown>; execution?: unknown }> = [
   {
@@ -1318,7 +1318,7 @@ export const TOOL_CATALOG: ReadonlyArray<{ name: string; description: string; in
   },
   {
     "name": "list_directory",
-    "description": "Lists directory contents as streamed JSON. Set recursive=true to descend, showHidden=true to include hidden entries, pattern to filter by glob. Hard cap: 10000 entries returned; result is marked truncated when exceeded.",
+    "description": "Lists directory contents as streamed JSON. Set recursive=true to descend, showHidden=true to include hidden entries, pattern to filter by glob, and exclude to omit matching entry names and skip matching directories. Exclusion matching is ASCII case-insensitive. Hard cap: 10000 entries returned; result is marked truncated when exceeded.",
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -1343,6 +1343,15 @@ export const TOOL_CATALOG: ReadonlyArray<{ name: string; description: string; in
           "description": "Include hidden / system entries.",
           "type": "boolean",
           "default": false
+        },
+        "exclude": {
+          "description": "Optional ASCII case-insensitive glob patterns matching entry names to omit. Matching directories are not returned or traversed.",
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "default": []
         }
       },
       "required": [
@@ -2518,7 +2527,7 @@ export const TOOL_CATALOG: ReadonlyArray<{ name: string; description: string; in
   },
   {
     "name": "search_files",
-    "description": "Searches a directory tree for files matching a glob pattern. Hard cap: 10000 results; result is marked truncated when exceeded.",
+    "description": "Searches a directory tree for files matching a glob pattern. Exclude basenames with glob patterns; excluded directories are not traversed. Hard cap: 10000 results; result is marked truncated when exceeded.",
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -2534,6 +2543,13 @@ export const TOOL_CATALOG: ReadonlyArray<{ name: string; description: string; in
           "description": "Recurse into subdirectories.",
           "type": "boolean",
           "default": true
+        },
+        "exclude": {
+          "description": "Basename glob patterns to omit; matching directories are not traversed.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         }
       },
       "required": [

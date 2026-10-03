@@ -112,9 +112,15 @@ export async function syncSource(
   const workers = Math.max(1, Math.min(16, options.concurrency ?? 4, documents.length));
   let cursor = 0;
   let indexed = 0;
+  let firstFailure: { error: unknown } | undefined;
+  const fail = (error: unknown): never => {
+    firstFailure ??= { error };
+    throw error;
+  };
   const outcomes = await Promise.allSettled(
     Array.from({ length: workers }, async () => {
       for (;;) {
+        if (firstFailure) return;
         const index = cursor++;
         if (index >= documents.length) return;
         let result: Awaited<ReturnType<AphrodyComputeClient["ragIngest"]>> | undefined;
@@ -126,21 +132,26 @@ export async function syncSource(
             const transient =
               error instanceof Error &&
               /HTTP (408|429|500|502|503|504)|timeout|unreachable/i.test(error.message);
-            if (!transient || attempt === 5) throw error;
+            if (!transient || attempt === 5) return fail(error);
             await Bun.sleep(Math.min(4000, 250 * 2 ** attempt));
+            if (firstFailure) return;
           }
         }
-        if (!result) throw new Error(`${source}: document ingestion exhausted its retry budget`);
+        if (!result)
+          return fail(new Error(`${source}: document ingestion exhausted its retry budget`));
         if (options.requireVectors && !result.vectorIndexed) {
-          throw new Error(
-            `${source}: Aphrody did not confirm a compatible E5 vector for ${documents[index]!.sourceId}`,
+          return fail(
+            new Error(
+              `${source}: Aphrody did not confirm a compatible E5 vector for ${documents[index]!.sourceId}`,
+            ),
           );
         }
         indexed++;
         options.onProgress?.(indexed, documents.length);
       }
-    }),
+    }).map((worker) => worker.catch(fail)),
   );
+  if (firstFailure) throw firstFailure.error;
   const failure = outcomes.find((outcome) => outcome.status === "rejected");
   if (failure?.status === "rejected") throw failure.reason;
   if (indexed !== documents.length)

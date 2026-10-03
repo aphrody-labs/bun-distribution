@@ -162,7 +162,7 @@ describe("quickbar & command palette suggestions (Magpie unified spotlight)", ()
   describe("recent files source", () => {
     test("does not seed machine-specific recent files", () => {
       expect(DEFAULT_RECENT_LOCATIONS).toEqual([]);
-      expect(suggest("aphrody-ui", sampleThreads, allSources)).toEqual([]);
+      expect(suggest("unknown-query", sampleThreads, allSources)).toEqual([]);
     });
 
     test("supports custom recent files in options", () => {
@@ -176,7 +176,7 @@ describe("quickbar & command palette suggestions (Magpie unified spotlight)", ()
     });
 
     test("honors files: false", () => {
-      const results = suggest("aphrody-ui", sampleThreads, { ...allSources, files: false });
+      const results = suggest("unknown-query", sampleThreads, { ...allSources, files: false });
       const hasFile = results.some((r) => r.kind === "file");
       expect(hasFile).toBe(false);
     });

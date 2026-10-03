@@ -38,3 +38,7 @@ pub use wreq_client::{
 // aphrody addition: subdomain OSINT (crt.sh + hackertarget) used by the web engine.
 pub mod dns;
 pub use dns::DnsRecon;
+
+// aphrody addition: RFC HAR 1.2 serialization and replay
+pub mod har;
+pub use har::{Har, HarEntry, HarLog, HarRequest, HarResponse};

@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Self-contained build: aphrody-web sits below aphrody-ui in the layering DAG, so this package
-// cannot extend `@aphrody/m3-config` (aphrody-ui). Settings mirror that preset without React.
+// Self-contained build: settings mirror the preset without React.
 import { defineConfig } from "tsup";
 
 export default defineConfig({

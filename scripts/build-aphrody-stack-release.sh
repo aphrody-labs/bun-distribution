@@ -114,6 +114,10 @@ PY
   sed -i 's|bin/aphrody-embed serve$|bin/aphrody-embed serve --threads 4|' "$stage/systemd/aphrody-shenron-embed.service"
   install -m 0644 "$work/aphrody/crates/ai/rag/migrations/0001_shenron_postgres.sql" "$stage/migrations/0001_shenron_postgres.sql"
   install -m 0755 "$work/aphrody/scripts/atomic-deploy-aphrody-stack.sh" "$stage/ops/atomic-deploy-aphrody-stack.sh"
+  # The enclosing private store stays 0700. The release itself must retain
+  # traversable directories when installed for the aphrody service account.
+  chmod 0755 "$stage" "$stage/bin" "$stage/systemd" "$stage/migrations" "$stage/ops"
+  chmod 0700 "$stage/.logs"
   printf '%s\n' "$id" > "$stage/RELEASE_ID"
   printf 'aphrody=%s\n' "$pin" > "$stage/RELEASE_SHA"
   (cd "$stage" && find bin systemd migrations ops -type f -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS && sha256sum RELEASE_ID RELEASE_SHA SOURCE.json >> SHA256SUMS)

@@ -49,6 +49,7 @@ import {
 	type PlayCard,
 } from "@/lib/home-scenes";
 import { PlainField } from "@/components/editor/PlainField";
+import { errorMessageFromBody, seedConfig } from "./home-config-client";
 
 interface LoadResponse {
 	config: HomeConfig;
@@ -70,7 +71,7 @@ async function saveConfig(patch: HomeConfig): Promise<{ ok: boolean; config: Hom
 	});
 	if (!r.ok) {
 		const t = await r.text().catch(() => "");
-		throw new Error(t || `HTTP ${r.status}`);
+		throw new Error(errorMessageFromBody(t, r.status));
 	}
 	return r.json();
 }
@@ -760,12 +761,17 @@ function JourneyEditor({
 }
 
 export default function HomeEditor() {
-	const query = useQuery({ queryKey: ["home-config"], queryFn: loadConfig });
+	const query = useQuery({
+		queryKey: ["home-config"],
+		queryFn: loadConfig,
+		refetchOnWindowFocus: false,
+		refetchOnReconnect: false,
+	});
 	const [config, setConfig] = useState<HomeConfig | null>(null);
 	const [toast, setToast] = useState<{ type: "success" | "error"; msg: string } | null>(null);
 
 	useEffect(() => {
-		if (query.data?.config) setConfig(query.data.config);
+		setConfig((cur) => seedConfig(cur, query.data?.config));
 	}, [query.data]);
 
 	useEffect(() => {
@@ -785,6 +791,9 @@ export default function HomeEditor() {
 		onError: (e: Error) => setToast({ type: "error", msg: `Échec : ${e.message}` }),
 	});
 
+	if (query.isError && !config) {
+		return <div className="text-sm text-red-400">Erreur de chargement : {String(query.error)}</div>;
+	}
 	if (query.isLoading || !config) {
 		return (
 			<div className="flex items-center gap-3 text-sm text-zinc-500">
@@ -792,10 +801,6 @@ export default function HomeEditor() {
 			</div>
 		);
 	}
-	if (query.isError) {
-		return <div className="text-sm text-red-400">Erreur de chargement : {String(query.error)}</div>;
-	}
-
 	const patchHero = (patch: Partial<HomeConfig["hero"]>) =>
 		setConfig((c) => (c ? { ...c, hero: { ...c.hero, ...patch } } : c));
 	const patchSection = (i: number, patch: Partial<HomeSectionConfig>) =>

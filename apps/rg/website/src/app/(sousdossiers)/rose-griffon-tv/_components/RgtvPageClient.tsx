@@ -20,7 +20,7 @@ import { RgtvScheduleClient } from "@/components/RgtvScheduleClient";
 import { useTheme } from "@/contexts/theme-context";
 import { Monitor, Radio, Users, Youtube } from "@/lib/icons-config";
 import type { StreamSchedule } from "@rosegriffon/types";
-import type { Database, Insert, Tables, Update } from "@rosegriffon/db";
+
 
 import { TwitchProvider, useTwitch } from "../_context/twitch-context";
 import type { TwitchChannel } from "../_context/twitch-context";

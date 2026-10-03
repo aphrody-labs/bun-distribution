@@ -55,7 +55,7 @@ before implementation, without restarting a repository-wide audit by default.
 - Preserve existing product obligations and evidence in the archive.
 - Workspace/Infra owns orchestration and the configured build factory.
 - Serialize Cargo, preserve shared caches, work on the current branch and protect
-  concurrent changes. The separately owned aphrody-ui checkout needs a UI assignment.
+  concurrent changes. UI implementation follows the package and crate owners here.
 - Keep private stores and domain memories separate. No secrets in this file.
 
 This is a checked-in project memory. Provider memory databases and other agents'

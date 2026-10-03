@@ -3,6 +3,14 @@
 
 //! Aphrody Web compatibility client with shared Rust extraction and browser engines.
 //!
+//! # DEPRECATED
+//!
+//! This transitional bridge is deprecated in favor of direct, sovereign native Rust crates:
+//! - [`aphrody_web_extract`] for DOM parsing, markdown conversion, metadata, and media extraction.
+//! - [`obscura_net`] for direct and stealth TLS HTTP fetching, DNS, and HAR 1.2 recordings.
+//! - [`aphrody_web_crawl`] for bounded and continuous 24/7 autonomous web crawling (`crawl_daemon`).
+//! - [`aphrody_web_service`] for native in-process browser automation.
+//!
 //! DOM parsing, title extraction, Markdown conversion and DNS run in process.
 //! Fetch profiles use HTTP or the local Obscura browser. The legacy executable
 //! client remains available for callers whose commands are still being migrated.

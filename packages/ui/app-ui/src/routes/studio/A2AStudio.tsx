@@ -20,10 +20,10 @@ import {
   type TimelineStep,
   type CoordEnvelope,
 } from "@aphrody/m3-ai";
-import { Card, Button, Badge } from "@aphrody/m3-primitives";
+import { Card, Button } from "@aphrody/m3-primitives";
 import { PageHeader } from "@shenron/ui/layout/PageHeader";
 import { SectionHeading } from "@shenron/ui/layout/SectionHeading";
-import { fetchA2AFleetStatus, sendA2AEnvelope, fetchMcpToolsList } from "../../tauri-bridge";
+import { fetchA2AFleetStatus, sendA2AEnvelope } from "../../tauri-bridge";
 
 export function A2AStudio() {
   const [activeTab, setActiveTab] = useState<"fleet" | "timeline" | "mcp_apps" | "agui_stream">("fleet");

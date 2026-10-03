@@ -252,6 +252,7 @@
       "@rosegriffon/inagle": "file:.cache/iecode-packages/inagle-c832e6c553a99ccad92cc64e4ff5b952f7c28c42-v2.tgz",
       "@rosegriffon/inagle-cross": "file:.cache/iecode-packages/inagle-cross-c832e6c553a99ccad92cc64e4ff5b952f7c28c42-v2.tgz",
       "@rosegriffon/azalee": "file:.cache/iecode-packages/azalee-c832e6c553a99ccad92cc64e4ff5b952f7c28c42-v2.tgz",
+      "@aphrody/runtime-sdk": "file:.cache/yolo-packages/aphrody-runtime-sdk-0.1.0-a353d251.tgz",
       "@colyseus/bun-websockets": "^0.18.3",
       "@colyseus/schema": "^5.0.34",
       "http-proxy-middleware": "^4.2.0",

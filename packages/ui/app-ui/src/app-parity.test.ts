@@ -39,7 +39,7 @@ describe("Jan Parity - System Presets & Inference Tuning", () => {
 
 describe("Kunkun Parity - Search & Filtering", () => {
   const sampleSessions = [
-    { id: "thread-abc-123", preview: "Rust refactor of aphrody-app", cwd: "/home/user/src/aphrody-ui" },
+    { id: "thread-abc-123", preview: "Rust refactor of aphrody-app", cwd: "/home/user/src/aphrody" },
     { id: "thread-def-456", preview: "Shenron canon analysis of Toriyama manga", cwd: "/home/user/src/shenron" },
     { id: "thread-ghi-789", preview: "Database optimization", cwd: "/home/user/data" },
   ];

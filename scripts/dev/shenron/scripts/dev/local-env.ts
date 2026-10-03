@@ -7,7 +7,7 @@
  *   bun scripts/dev/local-env.ts tunnels   # open one SSH tunnel per remote service (foreground)
  *   bun scripts/dev/local-env.ts status    # probe every local tunnel port
  *
- * Remote ports come from aphrody-infra (`../aphrody-infra/config/service-catalog.json`), never
+ * Remote ports come from service catalog (`config/service-catalog.json`), never
  * from this file. Each remote port P is exposed locally on P + LOCAL_OFFSET so a tunnel never
  * collides with a service running on the workstation itself (local PostgreSQL, WSL Redis…).
  * SSH targets are the `~/.ssh/config` aliases `vps` (shared VPS) and `dbfr` (database host).

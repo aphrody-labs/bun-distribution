@@ -49,7 +49,7 @@ export default async function ReglagesBotPage() {
 				description={
 					reglages.parDefaut
 						? "Ce serveur n'a jamais rien réglé : le bot applique ses défauts et ne publie nulle part."
-						: `Dernière modification ${new Date(reglages.majLe ?? Date.now()).toLocaleString("fr-FR")}.`
+						: reglages.majLe ? `Dernière modification ${new Date(reglages.majLe).toLocaleString("fr-FR")}.` : "Date de modification non renseignée."
 				}
 			/>
 

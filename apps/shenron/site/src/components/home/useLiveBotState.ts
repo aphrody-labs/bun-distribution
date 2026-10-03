@@ -115,35 +115,38 @@ export function useLiveBotState(initial: {
 		let alive = true;
 		const ac = new AbortController();
 
+		// Un sondage plus lent ne doit pas doubler le précédent ni, en arrivant
+		// après, écraser des chiffres plus récents : un seul vol à la fois, et
+		// chaque source échoue seule (une API en erreur ne fige pas les autres).
+		let inFlight = false;
+		const get = (path: string) =>
+			fetch(`${API_BASE}${path}`, {
+				signal: AbortSignal.any([ac.signal, AbortSignal.timeout(10_000)]),
+				cache: "no-store",
+			}).then((r) =>
+				r.ok ? r.json() : null
+			);
 		async function pull() {
 			if (typeof document !== "undefined" && document.hidden) return;
+			if (inFlight) return;
+			inFlight = true;
 			try {
-				const [s, p, lb, pr] = await Promise.all([
-					fetch(`${API_BASE}/api/public/stats`, {
-						signal: ac.signal,
-						cache: "no-store",
-					}).then((r) => (r.ok ? r.json() : null)),
-					fetch(`${API_BASE}/api/public/personas`, {
-						signal: ac.signal,
-						cache: "no-store",
-					}).then((r) => (r.ok ? r.json() : null)),
-					fetch(`${API_BASE}/api/public/leaderboard?enrich=1&limit=12`, {
-						signal: ac.signal,
-						cache: "no-store",
-					}).then((r) => (r.ok ? r.json() : null)),
-					fetch(`${API_BASE}/api/public/presence`, {
-						signal: ac.signal,
-						cache: "no-store",
-					}).then((r) => (r.ok ? r.json() : null)),
-				]);
+				const [s, p, lb, pr] = (
+					await Promise.allSettled([
+						get("/api/public/stats"),
+						get("/api/public/personas"),
+						get("/api/public/leaderboard?enrich=1&limit=12"),
+						get("/api/public/presence"),
+					])
+				).map((r) => (r.status === "fulfilled" ? r.value : null));
 				if (!alive) return;
 				if (s && typeof s.users === "number") setStats((prev) => ({ ...prev, ...s }));
-				const list = p?.personas;
-				if (Array.isArray(list) && list.length) setPersonas(list);
+				// Liste vide valide = plus aucune persona en ligne : on l'applique.
+				if (Array.isArray(p?.personas)) setPersonas(p.personas);
 				if (Array.isArray(lb?.leaderboard)) setTopMembers(lb.leaderboard);
 				if (pr && typeof pr.online === "number") setPresence(pr);
-			} catch {
-				/* réseau capricieux → on garde l'état précédent */
+			} finally {
+				inFlight = false;
 			}
 		}
 

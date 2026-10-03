@@ -24,7 +24,11 @@ const LONGUEUR_MAX = 2048;
  * Un saut de ligne dans une URL de redirection permet d'injecter un en-tête
  * supplémentaire ; un espace la tronque. Les deux sont refusés au même endroit.
  */
-const CARACTERES_INTERDITS = /[\u0000-\u0020\u007f]/;
+const caracteresInterdits = (value: string) =>
+  Array.from(value).some((char) => {
+    const code = char.charCodeAt(0);
+    return code <= 0x20 || code === 0x7f;
+  });
 
 /**
  * Rend `valeur` si c'est un chemin interne sûr, sinon `repli`.
@@ -36,24 +40,24 @@ const CARACTERES_INTERDITS = /[\u0000-\u0020\u007f]/;
  * - les caractères de contrôle : coupent l'URL dans les en-têtes de redirection.
  */
 export function safeReturnUrl(valeur: unknown, repli = "/achillea"): string {
-	if (
-		typeof valeur !== "string" ||
-		valeur.length > LONGUEUR_MAX ||
-		!valeur.startsWith("/") ||
-		valeur.startsWith("//") ||
-		valeur.includes("\\") ||
-		CARACTERES_INTERDITS.test(valeur)
-	) {
-		return repli;
-	}
+  if (
+    typeof valeur !== "string" ||
+    valeur.length > LONGUEUR_MAX ||
+    !valeur.startsWith("/") ||
+    valeur.startsWith("//") ||
+    valeur.includes("\\") ||
+    caracteresInterdits(valeur)
+  ) {
+    return repli;
+  }
 
-	// Dernier filet : sur une base bidon, une URL résolue qui change d'origine
-	// trahit un absolu déguisé.
-	try {
-		return new URL(valeur, "https://achillea.invalid").origin === "https://achillea.invalid"
-			? valeur
-			: repli;
-	} catch {
-		return repli;
-	}
+  // Dernier filet : sur une base bidon, une URL résolue qui change d'origine
+  // trahit un absolu déguisé.
+  try {
+    return new URL(valeur, "https://achillea.invalid").origin === "https://achillea.invalid"
+      ? valeur
+      : repli;
+  } catch {
+    return repli;
+  }
 }

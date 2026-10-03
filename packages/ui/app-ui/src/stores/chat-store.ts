@@ -44,7 +44,7 @@ export const useChatStore = create<ChatStoreState>((set) => ({
       preview: "Nettoyer le code mort",
       createdAt: Date.now() - 3600000,
       updatedAt: Date.now() - 3600000,
-      cwd: "workspace/aphrody-ui",
+      cwd: "workspace/aphrody",
     },
     {
       id: "thread-default-2",
@@ -52,7 +52,7 @@ export const useChatStore = create<ChatStoreState>((set) => ({
       preview: "Corriger le dépôt",
       createdAt: Date.now() - 7200000,
       updatedAt: Date.now() - 7200000,
-      cwd: "workspace/aphrody-ui",
+      cwd: "workspace/aphrody",
     },
     {
       id: "thread-default-3",
@@ -60,7 +60,7 @@ export const useChatStore = create<ChatStoreState>((set) => ({
       preview: "Inspect google.rs",
       createdAt: Date.now() - 14400000,
       updatedAt: Date.now() - 14400000,
-      cwd: "workspace/aphrody-os",
+      cwd: "workspace/shenron",
     },
     {
       id: "thread-default-4",
@@ -68,7 +68,7 @@ export const useChatStore = create<ChatStoreState>((set) => ({
       preview: "Installer agy",
       createdAt: Date.now() - 28800000,
       updatedAt: Date.now() - 28800000,
-      cwd: "workspace/aphrody-os",
+      cwd: "workspace/shenron",
     },
   ],
   activeThreadId: "thread-default-1",
@@ -76,8 +76,8 @@ export const useChatStore = create<ChatStoreState>((set) => ({
     "thread-default-4": true,
   },
   expandedProjects: {
-    "aphrody-ui": true,
-    "aphrody-os": false,
+    aphrody: true,
+    shenron: false,
   },
   newSessionRequested: false,
   sessionTitle: undefined,
@@ -150,10 +150,10 @@ export function getProjectGroups(
   const groups: Record<string, ThreadItem[]> = {};
 
   for (const t of threads) {
-    let projName = "aphrody-ui";
+    let projName = "aphrody";
     if (t.cwd) {
       const parts = t.cwd.split(/[/\\]/).filter(Boolean);
-      projName = parts[parts.length - 1] || "aphrody-ui";
+      projName = parts[parts.length - 1] || "aphrody";
     }
     if (!groups[projName]) {
       groups[projName] = [];
@@ -162,8 +162,8 @@ export function getProjectGroups(
   }
 
   // Ensure default canonical projects
-  if (!groups["aphrody-ui"]) groups["aphrody-ui"] = [];
-  if (!groups["aphrody-os"]) groups["aphrody-os"] = [];
+  if (!groups["aphrody"]) groups["aphrody"] = [];
+  if (!groups["shenron"]) groups["shenron"] = [];
 
   return Object.keys(groups).map((name) => ({
     name,

@@ -7,6 +7,7 @@
  * can reap it. `process.on("exit")` is not run by `bun test`, so callers that need a guarantee
  * must use `stop()` or the preload helper rather than rely on process exit.
  */
+import { ProcessExitedError, Runtime, type ManagedProcess } from "@aphrody/runtime-sdk";
 import { loadWebConfig, resolveEngineBinary, type WebConfig } from "./config.ts";
 
 export interface EngineOptions {
@@ -22,7 +23,7 @@ export interface EngineOptions {
   stealth?: boolean;
   startupTimeoutMs?: number;
   shutdownGraceMs?: number;
-  /** Extra environment for the child. */
+  /** Extra environment for the child; an `undefined` value removes the variable. */
   env?: Record<string, string | undefined>;
   /** Extra `launch` arguments. */
   args?: string[];
@@ -46,6 +47,17 @@ export interface Engine {
 const running = new Set<Engine>();
 const STDERR_TAIL_BYTES = 8192;
 
+/**
+ * Supervision (spawn in its own process group, bounded stdout/stderr capture, HTTP readiness,
+ * SIGTERM → SIGKILL stop, teardown with the runtime) is provided by the native YOLO runtime
+ * (`runtime:process`); this module only decides what an engine is and how it is started.
+ */
+let runtime: Runtime | undefined;
+function engineRuntime(): Runtime {
+  runtime ??= Runtime.load({ maxOperations: 32 });
+  return runtime;
+}
+
 async function reservePort(host: string): Promise<number> {
   const listener = Bun.listen({ hostname: host, port: 0, socket: { data() {} } });
   const port = listener.port;
@@ -53,23 +65,9 @@ async function reservePort(host: string): Promise<number> {
   return port;
 }
 
-async function waitForHttp(url: string, deadline: number, isAlive: () => boolean): Promise<void> {
-  let lastError = "no response";
-  while (Date.now() < deadline) {
-    // Polling is sequential by design: each probe waits for the previous one.
-    /* oxlint-disable no-await-in-loop */
-    if (!isAlive()) throw new Error("engine exited before it started listening");
-    try {
-      const response = await fetch(url, { signal: AbortSignal.timeout(1500) });
-      if (response.ok) return;
-      lastError = `HTTP ${response.status}`;
-    } catch (error) {
-      lastError = error instanceof Error ? error.message : String(error);
-    }
-    await Bun.sleep(50);
-    /* oxlint-enable no-await-in-loop */
-  }
-  throw new Error(`engine did not answer ${url} in time (${lastError})`);
+/** Bun's `exited` convention: the exit code, or 128 + signal when the engine was killed. */
+function exitCode(status: { exitCode: number; signal: number }): number {
+  return status.signal > 0 ? 128 + status.signal : status.exitCode;
 }
 
 /** Starts an engine and resolves once `/json/version` answers. */
@@ -87,71 +85,84 @@ export async function startEngine(options: EngineOptions = {}): Promise<Engine> 
   if (options.allowFileAccess ?? config.engine.allowFileAccess) args.push("--allow-file-access");
   args.push(...(options.args ?? []));
 
-  const env: Record<string, string | undefined> = { ...process.env, ...options.env };
-  if (allowPrivate) env.OBSCURA_ALLOW_PRIVATE_NETWORK = "1";
+  const env: Record<string, string | undefined> = { ...options.env };
+  if (allowPrivate) env["OBSCURA_ALLOW_PRIVATE_NETWORK"] = "1";
 
-  const child = Bun.spawn([binary, ...args], {
-    stdin: "ignore",
-    stdout: "pipe",
-    stderr: "pipe",
+  const child: ManagedProcess = engineRuntime().spawn({
+    program: binary,
+    args,
     env,
+    stdio: "capture",
   });
-
-  let tail = "";
-  const drainStderr = (async () => {
-    const decoder = new TextDecoder();
-    for await (const chunk of child.stderr) {
-      tail = (tail + decoder.decode(chunk, { stream: true })).slice(-STDERR_TAIL_BYTES);
-    }
-  })();
-  drainStderr.catch(() => {});
-
-  const stdoutReader = child.stdout.getReader();
-  let alive = true;
-  void child.exited.then(() => {
-    alive = false;
-    return undefined;
-  });
+  let finalStatus: { exitCode: number; signal: number } | undefined;
+  let tailSnapshot = "";
+  let released = false;
+  const tail = (): string => (released ? tailSnapshot : child.stderrTail(STDERR_TAIL_BYTES));
+  const release = (): void => {
+    if (released) return;
+    tailSnapshot = child.stderrTail(STDERR_TAIL_BYTES);
+    released = true;
+    child.release();
+  };
+  const stopChild = async (graceMs: number): Promise<number> => {
+    const status = await child.stopAsync(graceMs);
+    finalStatus = status;
+    release();
+    return exitCode(status);
+  };
   const fail = async (reason: string): Promise<never> => {
-    child.kill("SIGKILL");
-    await child.exited;
-    throw new Error(`${reason}${tail ? `\n--- engine stderr ---\n${tail}` : ""}`);
+    const diagnostics = tail();
+    await stopChild(0);
+    throw new Error(`${reason}${diagnostics ? `\n--- engine stderr ---\n${diagnostics}` : ""}`);
   };
 
   const deadline = Date.now() + startupTimeoutMs;
   let endpoint = "";
   try {
-    const first = await Promise.race([
-      stdoutReader.read(),
-      Bun.sleep(startupTimeoutMs).then(() => "timeout" as const),
-    ]);
-    if (first === "timeout" || first.done) {
+    try {
+      endpoint = await child.waitForStdoutLine({ timeoutMs: startupTimeoutMs });
+    } catch {
       return await fail("engine did not print its CDP endpoint");
     }
-    endpoint = new TextDecoder().decode(first.value).split("\n")[0]?.trim() ?? "";
     const expected = `ws://${host}:${port}/devtools/browser`;
     if (endpoint !== expected)
       return await fail(
         `unexpected CDP endpoint ${JSON.stringify(endpoint)}, expected ${expected}`,
       );
-    // Keep draining stdout so the pipe can never fill up.
-    void (async () => {
-      try {
-        let done = false;
-        while (!done) {
-          // oxlint-disable-next-line no-await-in-loop
-          done = (await stdoutReader.read()).done;
-        }
-      } catch {
-        // pipe closed with the process
+    const url = `http://${host}:${port}/json/version`;
+    try {
+      await child.waitForHttp({
+        host,
+        port,
+        path: "/json/version",
+        timeoutMs: Math.max(1, deadline - Date.now()),
+        accept: (status) => status >= 200 && status < 300,
+      });
+    } catch (error) {
+      if (error instanceof ProcessExitedError) {
+        return await fail("engine exited before it started listening");
       }
-    })();
-    await waitForHttp(`http://${host}:${port}/json/version`, deadline, () => alive);
+      return await fail(`engine did not answer ${url} in time`);
+    }
   } catch (error) {
-    if (alive) child.kill("SIGKILL");
-    await child.exited;
+    if (!released) await stopChild(0);
     throw error;
   }
+
+  const exited = (async (): Promise<number> => {
+    for (;;) {
+      if (released) return finalStatus ? exitCode(finalStatus) : 143;
+      let status;
+      try {
+        status = child.status();
+      } catch {
+        return finalStatus ? exitCode(finalStatus) : 143;
+      }
+      if (!status.running) return exitCode(status);
+      // eslint-disable-next-line no-await-in-loop
+      await Bun.sleep(25);
+    }
+  })();
 
   let stopping: Promise<number> | undefined;
   const engine: Engine = {
@@ -160,23 +171,12 @@ export async function startEngine(options: EngineOptions = {}): Promise<Engine> 
     host,
     port,
     pid: child.pid,
-    stderrTail: () => tail,
-    exited: child.exited,
+    stderrTail: tail,
+    exited,
     stop() {
       stopping ??= (async () => {
         running.delete(engine);
-        if (child.exitCode === null) {
-          child.kill("SIGTERM");
-          const code = await Promise.race([
-            child.exited,
-            Bun.sleep(shutdownGraceMs).then(() => null),
-          ]);
-          if (code === null) {
-            child.kill("SIGKILL");
-            return await child.exited;
-          }
-        }
-        return await child.exited;
+        return released ? finalStatus ? exitCode(finalStatus) : 143 : await stopChild(shutdownGraceMs);
       })();
       return stopping;
     },
@@ -204,7 +204,7 @@ export function installEngineCleanup(): void {
   process.once("exit", () => {
     for (const engine of running) {
       try {
-        process.kill(engine.pid, "SIGKILL");
+        process.kill(-engine.pid, "SIGKILL"); // the engine runs in its own process group
       } catch {
         // already gone
       }

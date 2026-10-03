@@ -30,6 +30,9 @@
     "test": "bun test test/",
     "lint": "oxlint"
   },
+  "dependencies": {
+    "@aphrody/runtime-sdk": "catalog:"
+  },
   "devDependencies": {
     "@types/bun": "catalog:",
     "typescript": "catalog:"

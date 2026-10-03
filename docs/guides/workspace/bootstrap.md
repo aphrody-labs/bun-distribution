@@ -1,6 +1,12 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 # Installation complète d’un poste de développement Aphrody
 
+Le [parcours Workspace](README.md) distingue la préparation du dépôt de
+l’installation du runtime précompilé produit par Yolo. Ce bootstrap développeur
+peut installer des outils Cargo et synchroniser les sources : il ne constitue
+pas le parcours léger d’une application consommatrice. Voir le
+[contrat runtime](../../architecture/runtime-native/README.md).
+
 Ces scripts préparent un checkout neuf : outils système, versions Rust et Bun
 épinglées par le dépôt, dépendances Bun, sources Git référencées dans
 `config/upstream-sources.json`, dépendances Cargo et workspace Python frère
@@ -21,8 +27,10 @@ Depuis Ubuntu/WSL :
 bash scripts/clone-and-bootstrap.sh "$HOME/aphrody"
 ```
 
-Ces lanceurs clonent `aphrody` et le workspace Python `aphrody-py` côte à côte,
-puis exécutent le bootstrap. Les deux destinations doivent ne pas exister.
+Ces lanceurs clonent `aphrody`, le workspace Python `aphrody-py` et le checkout
+IECODE déclaré dans `config/sibling-checkouts.json` côte à côte, puis exécutent
+le bootstrap. Vérifier que les trois destinations sont libres et que l’accès
+aux dépôts privés est configuré avant de lancer le clone.
 
 ## Windows
 
@@ -36,9 +44,10 @@ Set-ExecutionPolicy -Scope Process Bypass
 
 Le script installe Git, Rustup, Bun, uv, CMake, Ninja, LLVM et les outils C++
 MSVC avec le Windows SDK. Redémarrer le terminal après l’installation des
-Build Tools pour charger l’environnement MSVC. Le clone du dépôt et son dossier
-`source` doivent être frères si les dépendances Cargo relatives standard sont
-utilisées.
+Build Tools pour charger l’environnement MSVC. Les checkouts frères requis
+sont ceux des manifests et de
+`config/sibling-checkouts.json` courants. Un ancien dossier `source` n’est pas
+un prérequis universel : consulter les dépendances de la capacité sélectionnée.
 
 ## Ubuntu ou WSL
 
@@ -55,7 +64,10 @@ frère avec `uv`. APT nécessite `sudo`.
 
 Options `--skip-sources`, `--skip-python` et `--canary` pour omettre les
 sources, Python ou ajouter Rust nightly et ses cibles. PowerShell utilise
-`-Canary`. Le script peut être relancé; les synchroniseurs et gestionnaires de
+`-SkipSources`, `-SkipPython`, `-SkipNativeTools` et `-Canary`. Omettre les
+sources ou les outils natifs ne garantit pas un bootstrap sans compilation :
+les scripts installent aussi des outils via le wrapper Cargo. Le script peut
+être relancé ; les synchroniseurs et gestionnaires de
 paquets évitent les installations redondantes.
 
 Sous Linux avec systemd utilisateur, `bun run update:systemd` vérifie les unités et
@@ -79,3 +91,17 @@ Les builds complets restent des opérations distinctes : tous les packages ne
 sont pas construits automatiquement au bootstrap. Les bibliothèques natives
 propres à une cible doivent être déclarées dans le manifeste système avant de
 qualifier cette cible.
+
+## Travail dans un checkout partagé
+
+Lire [AGENTS.md](../../../AGENTS.md), [PLAN.md](../../../PLAN.md) et
+[MEMORY.md](../../../MEMORY.md), puis vérifier branche et claims avant toute
+écriture. Ne pas relancer ce bootstrap comme validation documentaire ou depuis
+un worker sans autorisation de la fabrique : il modifie le poste et peut lancer
+Cargo. Pour un lot documentaire, suivre les
+[gates de documentation](documentation.md#validation-dun-lot-partagé).
+
+La livraison SDK/runtime, son installation et les gates consommateurs suivent
+le [parcours de qualification](runtime-consumer.md). Les commandes ci-dessus
+préparent des dépendances ; elles ne démontrent ni migration, ni parité moteur,
+ni activation produit.

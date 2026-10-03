@@ -84,7 +84,7 @@ pub fn find_daemon_binary() -> Result<PathBuf, String> {
         .ok_or_else(|| {
             format!(
                 "Daemon binary not found: set ${DAEMON_ENV}, or place one of {names:?} next to {} \
-                 or on PATH (build it with `cargo build --manifest-path ../aphrody-os/drive/Cargo.toml -p \
+                 or on PATH (build it with `cargo build --manifest-path crates/os/drive/Cargo.toml -p \
                  sd-core --bin sd-daemon`)",
                 exe_dir
                     .as_deref()

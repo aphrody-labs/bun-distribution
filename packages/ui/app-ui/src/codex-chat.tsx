@@ -20,8 +20,6 @@ import {
   type ToolCallPair,
   A2APeerInspector,
   A2ATaskTimeline,
-  type AgentPeer,
-  type TimelineStep,
 } from "@aphrody/m3-ai";
 
 export interface ChatModelOption {

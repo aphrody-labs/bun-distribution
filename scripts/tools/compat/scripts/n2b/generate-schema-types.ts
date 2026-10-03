@@ -28,13 +28,13 @@ const TS_OUT = `${REPO_ROOT}/packages/compat/n2b-types/src/index.ts`;
 
 const BANNER_RS = `// @generated — DO NOT EDIT MANUALLY.
 // Regenerate with: bun run n2b:codegen
-// Source of truth: ../aphrody-contracts/schema/v2.json
+// Source of truth: crates/contracts/schema/v2.json
 
 `;
 
 const BANNER_TS = `// @generated — DO NOT EDIT MANUALLY.
 // Regenerate with: bun run n2b:codegen
-// Source of truth: ../aphrody-contracts/schema/v2.json
+// Source of truth: crates/contracts/schema/v2.json
 
 `;
 

@@ -454,7 +454,7 @@ async function runDb(sub: string, extra?: string) {
 			// PostgreSQL sont appliquées par le pipeline de release d'aphrody-infra.
 			console.error(`\n❌ ${c.red}Refus : 'shenron db migrate site' n'exécute plus drizzle-kit push.${c.r}`);
 			console.error(`   Les migrations PostgreSQL du site passent par le runbook aphrody-infra`);
-			console.error(`   (../aphrody-infra/docs/SHENRON-MIGRATION.md, pipeline de release : bun run site:migrate).`);
+			console.error(`   (docs/reference/infra/SHENRON-MIGRATION.md, pipeline de release : bun run site:migrate).`);
 			console.error(`   Voir docs/INFRA-DELEGATION.md.`);
 			process.exit(1);
 		}

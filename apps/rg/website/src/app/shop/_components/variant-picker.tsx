@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useId, useState, useTransition } from "react";
 
 import { addToCart } from "@/lib/shop/cart";
 import { formatEuros } from "@/lib/shop/products";
@@ -9,6 +9,7 @@ import { AddToCart } from "./add-to-cart";
 import { MobileStickyCta } from "./mobile-sticky-cta";
 
 export function VariantPickerWithCta({ product }: { product: Product }) {
+	const groupName = useId();
 	const variants = product.variants ?? [];
 	const [selected, setSelected] = useState<string | undefined>();
 	const [, startTransition] = useTransition();
@@ -49,25 +50,22 @@ export function VariantPickerWithCta({ product }: { product: Product }) {
 						const isActive = v.id === selected;
 						const price = v.priceCentsOverride ?? product.priceCents;
 						return (
-							<button
+							<label
 								key={v.id}
-								type="button"
-								role="radio"
-								aria-checked={isActive}
-								onClick={() => setSelected(v.id)}
-								className={`flex items-center justify-between gap-3 rounded-2xl border-2 px-4 py-3 text-left transition-all motion-safe:duration-200 outline-hidden focus-visible:ring-[3px] focus-visible:ring-[#d4af37]/50 ${
+								className={`flex items-center justify-between gap-3 rounded-2xl border-2 px-4 py-3 text-left transition-all motion-safe:duration-200 outline-hidden focus-within:ring-[3px] focus-within:ring-[#d4af37]/50 ${
 									isActive
 										? "border-[#d4af37] bg-[#d4af37]/15 shadow-[0_2px_0_0_rgba(0,0,0,0.4)]"
 										: "border-[#d4af37]/30 bg-[#0c1730]/40 hover:border-[#d4af37]/60"
 								}`}
 							>
+								<input type="radio" name={groupName} value={v.id} checked={isActive} onChange={() => setSelected(v.id)} className="sr-only" />
 								<span className="text-sm font-semibold text-white">{v.label}</span>
 								<span
 									className={`text-sm font-bold ${isActive ? "text-[#d4af37]" : "text-white/70"}`}
 								>
 									{formatEuros(price)}
 								</span>
-							</button>
+							</label>
 						);
 					})}
 				</div>

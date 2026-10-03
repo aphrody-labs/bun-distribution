@@ -10,7 +10,10 @@ mod extract;
 mod hls;
 mod hosts;
 mod resolver;
+mod streaming;
 mod unpack;
+
+pub use streaming::{AnimeEpisode, AnimeSeries, extract_streaming_players};
 
 pub use extract::{classify_media, extract_media_candidates, extract_poster};
 pub use hls::{

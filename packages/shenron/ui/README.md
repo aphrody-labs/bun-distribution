@@ -95,9 +95,8 @@ The tarball has also been installed in a separate Bun project and checked with
 server rendering, client imports, asset reads, and Tailwind compilation. This is
 a source package for Bun and Tailwind v4 consumers. No registry release
 or deployment is implied by the repository checks. The host supplies fonts,
-content media, Tailwind v4, and any separate reader surface it uses. The Shenron
 The reader source was moved from the Apache-2.0 licensed `@aphrody/m3-reader`
-package so Shenron can build without an `aphrody-ui` checkout.
+package directly into the unified monorepo.
 
 ## Production build check
 

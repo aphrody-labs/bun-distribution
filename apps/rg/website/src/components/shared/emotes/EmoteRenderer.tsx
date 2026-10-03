@@ -9,16 +9,16 @@ import { cn } from "@/lib/utils";
 import RgEmote from "./RgEmote";
 
 interface EmoteRendererProps {
-	/** Texte contenant des marqueurs d'emotes (ex: "Hello :gaelle-salut: !") */
-	text: string;
-	/** Pattern pour détecter les emotes (default: /:(\w+-?\w+):/) */
-	pattern?: RegExp;
-	/** Taille des emotes inline (default: 24) */
-	emoteSize?: number;
-	/** Classes CSS personnalisées */
-	className?: string;
-	/** Animer les emotes au survol */
-	animated?: boolean;
+  /** Texte contenant des marqueurs d'emotes (ex: "Hello :gaelle-salut: !") */
+  text: string;
+  /** Pattern pour détecter les emotes (default: /:(\w+-?\w+):/) */
+  pattern?: RegExp;
+  /** Taille des emotes inline (default: 24) */
+  emoteSize?: number;
+  /** Classes CSS personnalisées */
+  className?: string;
+  /** Animer les emotes au survol */
+  animated?: boolean;
 }
 
 /**
@@ -35,61 +35,64 @@ interface EmoteRendererProps {
  * ```
  */
 export default function EmoteRenderer({
-	text,
-	pattern = /:([a-z]+-?[a-z]+):/g,
-	emoteSize = 24,
-	className,
-	animated = true,
+  text,
+  pattern = /:([a-z]+-?[a-z]+):/g,
+  emoteSize = 24,
+  className,
+  animated = true,
 }: EmoteRendererProps) {
-	const elements = useMemo(() => {
-		const parts: React.ReactNode[] = [];
-		let lastIndex = 0;
-		let match: RegExpExecArray | null;
+  const elements = useMemo(() => {
+    const parts: React.ReactNode[] = [];
+    let lastIndex = 0;
+    let match: RegExpExecArray | null;
 
-		// Reset regex state
-		pattern.lastIndex = 0;
+    // Reset regex state
+    const matcher = new RegExp(
+      pattern.source,
+      pattern.flags.includes("g") ? pattern.flags : `${pattern.flags}g`,
+    );
 
-		while ((match = pattern.exec(text)) !== null) {
-			const emoteName = match[1];
-			if (!emoteName) {
-				lastIndex = match.index + match[0].length;
-				continue;
-			}
-			const emote = EMOTES[emoteName as keyof typeof EMOTES];
+    while ((match = matcher.exec(text)) !== null) {
+      const emoteName = match[1];
+      if (!emoteName) {
+        lastIndex = match.index + match[0].length;
+        continue;
+      }
+      const emote = EMOTES[emoteName as keyof typeof EMOTES];
 
-			// Ajouter le texte avant l'emote
-			if (match.index > lastIndex) {
-				parts.push(text.substring(lastIndex, match.index));
-			}
+      // Ajouter le texte avant l'emote
+      if (match.index > lastIndex) {
+        parts.push(text.substring(lastIndex, match.index));
+      }
 
-			// Ajouter l'emote si elle existe
-			if (emote) {
-				parts.push(
-					<RgEmote
-						key={`emote-${match.index}`}
-						name={emoteName as keyof typeof EMOTES}
-						size={emoteSize}
-						animated={animated}
-						className="inline-block align-middle mx-0.5"
-					/>
-				);
-			} else {
-				// Si l'emote n'existe pas, garder le texte original
-				parts.push(match[0]);
-			}
+      // Ajouter l'emote si elle existe
+      if (emote) {
+        parts.push(
+          <RgEmote
+            key={`emote-${match.index}`}
+            name={emoteName as keyof typeof EMOTES}
+            size={emoteSize}
+            animated={animated}
+            className="inline-block align-middle mx-0.5"
+          />,
+        );
+      } else {
+        // Si l'emote n'existe pas, garder le texte original
+        parts.push(match[0]);
+      }
 
-			lastIndex = match.index + match[0].length;
-		}
+      lastIndex = match.index + match[0].length;
+    }
 
-		// Ajouter le texte restant
-		if (lastIndex < text.length) {
-			parts.push(text.substring(lastIndex));
-		}
+    // Ajouter le texte restant
+    if (lastIndex < text.length) {
+      parts.push(text.substring(lastIndex));
+    }
 
-		return parts;
-	}, [text, pattern, emoteSize, animated]);
+    return parts;
+  }, [text, pattern, emoteSize, animated]);
 
-	return <span className={cn("inline-flex items-center flex-wrap", className)}>{elements}</span>;
+  return <span className={cn("inline-flex items-center flex-wrap", className)}>{elements}</span>;
 }
 
 /**
@@ -102,26 +105,29 @@ export default function EmoteRenderer({
  * ```
  */
 export function useEmotesFromText(text: string, pattern: RegExp = /:([a-z]+-?[a-z]+):/g): Emote[] {
-	return useMemo(() => {
-		const foundEmotes: Emote[] = [];
-		let match: RegExpExecArray | null;
+  return useMemo(() => {
+    const foundEmotes: Emote[] = [];
+    let match: RegExpExecArray | null;
 
-		// Reset regex state
-		pattern.lastIndex = 0;
+    // Reset regex state
+    const matcher = new RegExp(
+      pattern.source,
+      pattern.flags.includes("g") ? pattern.flags : `${pattern.flags}g`,
+    );
 
-		while ((match = pattern.exec(text)) !== null) {
-			const emoteName = match[1];
-			if (!emoteName) {
-				continue;
-			}
-			const emote = EMOTES[emoteName as keyof typeof EMOTES];
-			if (emote && !foundEmotes.find((e) => e.name === emote.name)) {
-				foundEmotes.push(emote);
-			}
-		}
+    while ((match = matcher.exec(text)) !== null) {
+      const emoteName = match[1];
+      if (!emoteName) {
+        continue;
+      }
+      const emote = EMOTES[emoteName as keyof typeof EMOTES];
+      if (emote && !foundEmotes.find((e) => e.name === emote.name)) {
+        foundEmotes.push(emote);
+      }
+    }
 
-		return foundEmotes;
-	}, [text, pattern]);
+    return foundEmotes;
+  }, [text, pattern]);
 }
 
 /**
@@ -135,10 +141,10 @@ export function useEmotesFromText(text: string, pattern: RegExp = /:([a-z]+-?[a-
  * ```
  */
 export function stripEmotes(text: string, pattern: RegExp = /:([a-z]+-?[a-z]+):/g): string {
-	return text.replace(pattern, (match, emoteName) => {
-		const emote = EMOTES[emoteName];
-		return emote ? emote.alt : match;
-	});
+  return text.replace(pattern, (match, emoteName) => {
+    const emote = EMOTES[emoteName];
+    return emote ? emote.alt : match;
+  });
 }
 
 /**
@@ -151,8 +157,8 @@ export function stripEmotes(text: string, pattern: RegExp = /:([a-z]+-?[a-z]+):/
  * ```
  */
 export function getTextWithoutEmotes(
-	text: string,
-	pattern: RegExp = /:([a-z]+-?[a-z]+):/g
+  text: string,
+  pattern: RegExp = /:([a-z]+-?[a-z]+):/g,
 ): string {
-	return text.replace(pattern, "").trim();
+  return text.replace(pattern, "").trim();
 }

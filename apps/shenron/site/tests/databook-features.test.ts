@@ -1,9 +1,10 @@
 /**
  * Tests unitaires + intégration légère des features databooks / jeux médias.
  * - Helpers client-safe (catégories, YouTube, plafond pages)
- * - Si DATABASE_URL présent : vérifie colonnes PG + données seed (prod-ready).
+ * - PostgreSQL Shenron réel (lecture seule, RAG préchargé obligatoire) : colonnes + données seed.
  */
-import { describe, expect, test } from "bun:test";
+import { beforeAll, describe, expect, test } from "bun:test";
+import { loadLiveRagEnv, requireLiveRag } from "@shenron/pipeline/testing/live-rag";
 import {
 	DATABOOK_CATEGORIES,
 	kindFromCategory,
@@ -183,12 +184,17 @@ describe("source features shipped", () => {
 	});
 });
 
-const dbUrl = process.env.DATABASE_URL?.trim();
-
-describe.skipIf(!dbUrl)("intégration Postgres (DATABASE_URL)", () => {
+describe("intégration Postgres (Shenron configuré, RAG préchargé)", () => {
+	let dbUrl = "";
+	beforeAll(async () => {
+		loadLiveRagEnv();
+		await requireLiveRag();
+		dbUrl = process.env.DATABASE_URL?.trim() ?? "";
+		if (!dbUrl) throw new Error("DATABASE_URL absent après loadLiveRagEnv");
+	}, 120_000);
 	async function sql<T = Record<string, unknown>>(q: string): Promise<T[]> {
 		const postgres = (await import("postgres")).default;
-		const client = postgres(dbUrl!, { max: 1 });
+		const client = postgres(dbUrl, { max: 1 });
 		try {
 			return (await client.unsafe(q)) as T[];
 		} finally {

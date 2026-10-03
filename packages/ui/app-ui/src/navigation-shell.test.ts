@@ -151,20 +151,20 @@ describe("Single Navigation & Shell Architecture (UI-DESIGN.md §3, §4.6, §10)
 
   it("chat store handles thread grouping into projects and unread indicators", () => {
     const mockThreads = [
-      { id: "1", name: "Thread UI 1", cwd: "C:/src/aphrody-ui", createdAt: 1000 },
-      { id: "2", name: "Thread UI 2", cwd: "C:/src/aphrody-ui", createdAt: 2000 },
-      { id: "3", name: "Thread OS 1", cwd: "C:/src/aphrody-os", createdAt: 3000 },
+      { id: "1", name: "Thread UI 1", cwd: "C:/src/aphrody", createdAt: 1000 },
+      { id: "2", name: "Thread UI 2", cwd: "C:/src/aphrody", createdAt: 2000 },
+      { id: "3", name: "Thread Shenron 1", cwd: "C:/src/shenron", createdAt: 3000 },
     ];
 
-    const groups = getProjectGroups(mockThreads, { "aphrody-ui": true });
+    const groups = getProjectGroups(mockThreads, { aphrody: true });
     expect(groups.length).toBeGreaterThanOrEqual(2);
 
-    const uiGroup = groups.find((g) => g.name === "aphrody-ui");
-    expect(uiGroup).toBeDefined();
-    expect(uiGroup?.threads).toHaveLength(2);
+    const aphrodyGroup = groups.find((g) => g.name === "aphrody");
+    expect(aphrodyGroup).toBeDefined();
+    expect(aphrodyGroup?.threads).toHaveLength(2);
 
-    const osGroup = groups.find((g) => g.name === "aphrody-os");
-    expect(osGroup).toBeDefined();
-    expect(osGroup?.threads).toHaveLength(1);
+    const shenronGroup = groups.find((g) => g.name === "shenron");
+    expect(shenronGroup).toBeDefined();
+    expect(shenronGroup?.threads).toHaveLength(1);
   });
 });
