@@ -162,11 +162,6 @@
       "scope": "test",
       "reason": "Fresh-process isolation fixture."
     },
-    "scripts/build-aphrody-discord-release.sh": {
-      "count": 1,
-      "scope": "local",
-      "reason": "Release assembly; next candidate to port manifest, hash and catalog steps into the Workspace rg/shenron owners."
-    },
     "scripts/build-aphrody-stack-release.sh": {
       "count": 2,
       "scope": "local",
