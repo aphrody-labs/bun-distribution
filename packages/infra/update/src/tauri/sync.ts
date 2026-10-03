@@ -457,6 +457,21 @@ function lsRemote(repository: string, ref: string): string | null {
   return new TextDecoder().decode(result.stdout).split(/\s+/)[0] || null;
 }
 
+/** Read one regular archive member without extracting files or invoking host tools. */
+export async function readCrateArchiveFile(
+  bytes: ArrayBuffer,
+  path: string,
+): Promise<string | null> {
+  try {
+    const literalPath = path.replace(/[\\*?[\]{}]/g, "\\$&");
+    const entries = await new Bun.Archive(bytes).files(literalPath);
+    return (await entries.get(path)?.text()) ?? null;
+  } catch {
+    // Match the former tar command's nonzero exit result for invalid archives.
+    return null;
+  }
+}
+
 async function crateFile(crate: string, version: string, file: string): Promise<string | null> {
   const response = await fetch(
     `https://static.crates.io/crates/${crate}/${crate}-${version}.crate`,
@@ -465,17 +480,7 @@ async function crateFile(crate: string, version: string, file: string): Promise<
     },
   );
   if (!response.ok) return null;
-  const archive = `${process.env.TMPDIR ?? "/tmp"}/tauri-sync-${crate}-${version}-${process.pid}.crate`;
-  await Bun.write(archive, await response.arrayBuffer());
-  try {
-    const out = Bun.spawnSync(["tar", "-xOzf", archive, `${crate}-${version}/${file}`], {
-      stdout: "pipe",
-      stderr: "pipe",
-    });
-    return out.exitCode === 0 ? new TextDecoder().decode(out.stdout) : null;
-  } finally {
-    Bun.spawnSync(["rm", "-f", archive]);
-  }
+  return readCrateArchiveFile(await response.arrayBuffer(), `${crate}-${version}/${file}`);
 }
 
 function run(command: string[], cwd: string): { ok: boolean; output: string } {
@@ -565,9 +570,15 @@ export async function buildReport(
     [config.js.cli.package, "cli", config.js.cli.version],
   ];
   // Packages listed in bunfig `minimumReleaseAgeExcludes` skip the age gate in bun install, so skip it here too.
-  const bunfig = existsSync(join(root, "bunfig.toml")) ? await readFile(join(root, "bunfig.toml"), "utf8") : "";
+  const bunfig = existsSync(join(root, "bunfig.toml"))
+    ? await readFile(join(root, "bunfig.toml"), "utf8")
+    : "";
   const ageExcluded = new Set(
-    [...(bunfig.match(/^minimumReleaseAgeExcludes\s*=\s*\[([^\]]*)\]/m)?.[1] ?? "").matchAll(/"([^"]+)"/g)].map((m) => m[1]!),
+    [
+      ...(bunfig.match(/^minimumReleaseAgeExcludes\s*=\s*\[([^\]]*)\]/m)?.[1] ?? "").matchAll(
+        /"([^"]+)"/g,
+      ),
+    ].map((m) => m[1]!),
   );
   for (const [name, kind, current] of npmTargets) {
     const clean = current?.replace(/^[=^~]/, "") ?? null;
@@ -768,7 +779,14 @@ export async function applyReport(
     const gate = registry ? gateFromRegistry(registry) : { cargoPackages: [], generatedPaths: [] };
     const gates: string[][] = [
       ...(gate.cargoPackages.length > 0
-        ? [["bash", "scripts/build/rust/cargo-serial.sh", "check", ...gate.cargoPackages.flatMap((pkg) => ["-p", pkg])]] // repo rule: Cargo only through the serialized wrapper
+        ? [
+            [
+              "bash",
+              "scripts/build/rust/cargo-serial.sh",
+              "check",
+              ...gate.cargoPackages.flatMap((pkg) => ["-p", pkg]),
+            ],
+          ] // repo rule: Cargo only through the serialized wrapper
         : []),
       ...config.gate.bun.map((command) => command.split(" ")),
     ];
