@@ -1830,3 +1830,17 @@ heuristique ; aucun changement Git ne doit être attribué sans preuve.
 - 2026-10-03: RG producer pin advanced to IECODE c832e6c553a99ccad92cc64e4ff5b952f7c28c42 after current Inagle/NIE FFI contract review, fail-closed Zukan ordering and CLI version corrections. Workspace now prepares the pinned snapshot before frozen install, resolves named catalogs, and publishes immutable archives through an atomic manifest with confined paths and hashes. Cron imports do not launch the daemon; bot tests include explicit disposable-fixture guards; release catalog bytes and hash are retained. Focused infrastructure tests, bot and Cron owner gates pass (SQL/native/live skips remain explicit). Canonical rg:pipeline is the integrating gate; application-wide website cleanup is unfinished and production activation is not yet qualified.
 
 - 2026-10-03: owner authorized VPS build/test/release factory, Shenron runtime on DBFR and complete RG application shutdown. RG 12 application/service/timer units are stopped and disabled; host zram retained, protected data/releases preserved, about 4.7 GiB RAM recovered. Canonical build-factory config and Workspace Infra SSH facade pin clean sources, serialize heavy jobs and reuse Cargo/sccache/Bun/uv caches. Rust wrappers reject default local heavy execution; retained build bypasses use serialized owner. Current Shenron release adapter supports monorepo source layout and DBFR local PostgreSQL qualification; actual factory build and DBFR migration remain pending, not claimed from fixture checks.
+
+- 2026-10-03: owner-authorized native integration of the four patched Rust
+  implementations into `crates/native/simdutf`, `crates/compat/serde-saphyr`,
+  `crates/ui/tauri-plugin-dialog` and `crates/ui/tauri-plugin-mcp-bridge`.
+  Preserve upstream package identities, features, licenses, tests and code;
+  packages are internal (`publish = false`), with one root Cargo lock.
+  Native Git and Bun source verification inspect the integrated paths.
+  Factory VPS: 773 imported-source tests and six native Git source/catalogue
+  tests pass; Tauri dialogue/bridge/wrapper and terminal all-target checks pass.
+  Native Git clippy passes for all targets with warnings denied.
+  Update owner: 163 tests and typecheck pass. Locked all-features Cargo metadata
+  requires no sibling source directory. Original external copies removed only
+  after a complete private archive was verified against every recorded hash.
+  Provenance and validation: `docs/migration/native-source-integration-2026-10-03.json`.

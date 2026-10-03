@@ -744,7 +744,7 @@ Crate `aphrody-infra`, parser `crates/infra/infra/src/main.rs#Cli`, 383 commands
     - `aphrody-infra ovh dns add` — Add a DNS record (requires --apply).
     - `aphrody-infra ovh dns delete` — Delete a DNS record by ID (requires --apply).
     - `aphrody-infra ovh dns refresh` — Refresh zone to propagate updates to nameservers.
-    - `aphrody-infra ovh dns set-a` — Batch switch apex and www A records to target IP (requires --apply).
+    - `aphrody-infra ovh dns set-a` — Switch selected A records to target IP (requires --apply; default apex + www).
     - `aphrody-infra ovh dns audit` — Audit DNSSEC and production subdomain invariants.
     - `aphrody-infra ovh dns export` — Export zone in standard BIND format.
   - `aphrody-infra ovh vps` — VPS inventory and inspection.
@@ -827,7 +827,7 @@ Crate `aphrody-skills`, parser `crates/ai/skills/src/runtime/bin/agent_skills.rs
 
 Crate `aphrody-ssh`, parser `crates/infra/ssh/src/lib.rs#Cli`, 15 commands.
 
-- `aphrody-ssh exec` — Run an arbitrary remote command through the selected SSH alias.
+- `aphrody-ssh exec` — Run an arbitrary remote command through the selected SSH alias. APHRODY_SSH_COMMAND_TIMEOUT_SECS selects a finite execution deadline (1..86400 seconds; default 30), independently of connection timeou…
 - `aphrody-ssh proxy` — Manage an SSH port-forward tunnel to a remote SOCKS5 proxy (for example a Mullvad netns).
 - `aphrody-ssh status` — Print hostname, uptime, disk, memory and load.
 - `aphrody-ssh ports` — List sockets listening on the remote host.
@@ -1661,6 +1661,7 @@ _No subcommands (flags only)._
 - `generate` (aphrody / `koharu-app`)
 - `paint_file` (aphrody / `obscura-render`)
 - `pixel` (aphrody / `aphrody-identity`)
+- `serde-saphyr` (aphrody / `serde-saphyr`)
 - `aphrody-homebrew` (iecode / `aphrody-homebrew`)
 - `aphrody-nie-mcp` (iecode / `aphrody-nie-mcp`)
 - `export_aphrody` (iecode / `aphrody-nie-identity-source`)

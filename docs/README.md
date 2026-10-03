@@ -63,6 +63,7 @@ Regenerate with `bun run docs:gen`; `bun run docs:check` gates drift; the `aphro
 | guides | [compat](guides/compat/) | 5 | - |
 | guides | [discord](guides/discord/) | 67 | - |
 | guides | [koharu](guides/koharu/) | 1 | - |
+| guides | [rg](guides/rg/) | 1 | - |
 | guides | [shenron](guides/shenron/) | 11 | - |
 | guides | [ui](guides/ui/) | 10 | [UI guides](guides/ui/README.md) |
 | guides | [upstream-bun](guides/upstream-bun/) vendored upstream copy | 203 | - |
@@ -78,7 +79,7 @@ Regenerate with `bun run docs:gen`; `bun run docs:check` gates drift; the `aphro
 | guides | [workspace](guides/workspace/) | 2 | - |
 | operations | [ai](operations/ai/) | 9 | - |
 | operations | [discord](operations/discord/) | 2 | [Discord Operations Runbooks & Guides](operations/discord/README.md) |
-| operations | [infra](operations/infra/) | 99 | - |
+| operations | [infra](operations/infra/) | 101 | - |
 | operations | [os](operations/os/) | 1 | - |
 | operations | [rg](operations/rg/) | 10 | - |
 | operations | [shenron](operations/shenron/) | 13 | - |
@@ -165,7 +166,7 @@ Regenerate with `bun run docs:gen`; `bun run docs:check` gates drift; the `aphro
 | research | [ai](research/ai/) | 47 | - |
 | research | [compat](research/compat/) | 11 | - |
 | research | [discord](research/discord/) | 1 | - |
-| research | [infra](research/infra/) | 1 | - |
+| research | [infra](research/infra/) | 2 | - |
 | research | [os](research/os/) | 15 | - |
 | research | [shell](research/shell/) | 4 | - |
 | research | [ui](research/ui/) | 7 | [UI research and audits](research/ui/README.md) |
@@ -176,9 +177,10 @@ Regenerate with `bun run docs:gen`; `bun run docs:check` gates drift; the `aphro
 | research | [upstream-vllm](research/upstream-vllm/) vendored upstream copy | 5 | - |
 | research | [web](research/web/) | 117 | - |
 | research | [workspace](research/workspace/) | 3 | - |
-| (root) (outside the category layout) | [(files)]((root)/) | 1 | - |
+| _root (outside the category layout) | [(files)](_root/) | 1 | - |
+| (root) (outside the category layout) | [(files)]((root)/) | 2 | - |
 | ecosystem (outside the category layout) | [(files)](ecosystem/) | 4 | - |
-| migration (outside the category layout) | [(files)](migration/) | 120 | [Migration records](migration/README.md) |
+| migration (outside the category layout) | [(files)](migration/) | 121 | [Migration records](migration/README.md) |
 | migration (outside the category layout) | [a2a-os-move-2026-10-01](migration/a2a-os-move-2026-10-01/) | 4 | - |
 | migration (outside the category layout) | [contracts-clean-clone-2026-10-01](migration/contracts-clean-clone-2026-10-01/) | 4 | - |
 | migration (outside the category layout) | [contracts-qualification-2026-10-01](migration/contracts-qualification-2026-10-01/) | 6 | - |
@@ -189,4 +191,4 @@ Regenerate with `bun run docs:gen`; `bun run docs:check` gates drift; the `aphro
 | migration (outside the category layout) | [source-licenses](migration/source-licenses/) | 10 | - |
 | migration (outside the category layout) | [stack-dedup](migration/stack-dedup/) | 8 | - |
 
-Total: 5182 files.
+Total: 5189 files.

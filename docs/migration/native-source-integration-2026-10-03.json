@@ -1,7 +1,7 @@
 {
   "date": "2026-10-03",
   "operation": "Owner-authorized integration of all four patched crates into Aphrody",
-  "policy": "Preserve all source, tests, examples, licences and package identities; one root Cargo workspace lock. Original sources remain until consumer validation succeeds.",
+  "policy": "Owner-authorized integration, preserving original files in a fully verified private archive. Original external folders removed after imported-source tests and Tauri/terminal consumer checks.",
   "crates": [
     {
       "id": "tauri-plugin-mcp-bridge",
@@ -665,13 +665,29 @@
   "intentionalChanges": [
     "Nested Cargo.lock files omitted: the root workspace owns dependency resolution. Original lock hashes are retained.",
     "simdutf package release profile and tauri-plugin-dialog package resolver removed because the workspace root owns these settings.",
-    "Seven upstream IDE metadata files remain ignored by repository policy; no implementation is omitted."
+    "Seven upstream IDE metadata files remain ignored by repository policy; no implementation is omitted.",
+    "All four imported Cargo packages are publish=false; upstream package identities remain internal compatibility contracts."
   ],
   "checks": {
     "sourceVerify": "4 integrated crates pass",
-    "ownerTests": "9 pass, 0 fail",
+    "ownerTests": "163 pass, 0 fail, 543 assertions",
     "typecheck": "pass",
-    "cargoMetadata": "default resolution pass; all-features offline blocked on uncached ashpd 0.11.1",
-    "nativeConsumerChecks": "pending remote factory qualification"
-  }
+    "cargoMetadata": "locked all-features resolution passes: 2596 packages, no external source manifests",
+    "nativeConsumerChecks": "pending remote factory qualification",
+    "nativeRustTests": "Factory VPS at 80357f7c9: 773 tests pass across simdutf and serde-saphyr library, integration and example targets",
+    "externalSourceIndependence": "sources verify passes with a nonexistent external source root",
+    "tauriConsumerCheck": "Factory VPS at d1abaf188: all-target checks pass for tauri-plugin-dialog, tauri-plugin-mcp-bridge and aphrody-tauri-wrap with debug-bridge enabled",
+    "implementationIntegrity": "Every retained implementation, test and license byte matches the original input; only four Cargo manifests intentionally adjusted",
+    "documentation": "docs:gen and docs:check pass; ecosystem and workspace inventories regenerated",
+    "nativeCommandTests": "Factory VPS at 80357f7c9: source::tests 2 pass; upstream::tests 4 pass",
+    "terminalConsumerCheck": "Factory VPS at 80357f7c9: aphrody-terminal-core all-target check passes",
+    "nativeGitClippy": "Factory VPS at 315e0547a264d500fc3d10513cabac5a520e801b: cargo clippy --locked -p aphrody-git --all-targets -- -D warnings passes; both changed native source files match the local SHA-256 hashes",
+    "postRemovalCargoMetadata": "Locked offline Cargo metadata passes after /home/aphro/source is removed"
+  },
+  "originalArchive": {
+    "path": "/home/aphro/.local/share/aphrody/archive/native-source-integration-20261003.tar.gz",
+    "sha256": "20b2978633cd02c04a742e2b2681d6490d30f715d5fa7aa1b0a49c184caf9791",
+    "allInputFileHashesVerified": true
+  },
+  "originalCopiesRemoved": true
 }

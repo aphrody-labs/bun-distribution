@@ -7,7 +7,7 @@ from the checkout. Companion files: [CLI.md](CLI.md) (exact command trees), [MCP
 (every MCP tool), [ecosystem.json](ecosystem.json) (machine-readable). Check here before writing new
 code: reuse an existing crate, command or tool instead of duplicating it.
 
-Totals: 3 repositories (3 aphrody, 0 shared, 0 experiments), 266 crates, 89 binaries, 98 Bun packages, 8 uv packages, 1280 CLI commands, 440 MCP tools.
+Totals: 3 repositories (3 aphrody, 0 shared, 0 experiments), 270 crates, 90 binaries, 100 Bun packages, 8 uv packages, 1280 CLI commands, 440 MCP tools.
 
 | Repository | Kind | Role |
 | --- | --- | --- |
@@ -19,7 +19,7 @@ Totals: 3 repositories (3 aphrody, 0 shared, 0 experiments), 266 crates, 89 bina
 
 Canonical Rust/Bun monorepo
 
-### Crates (192)
+### Crates (196)
 
 | Crate | Path | Description | Binaries | Features |
 | --- | --- | --- | --- | --- |
@@ -215,8 +215,12 @@ Canonical Rust/Bun monorepo
 | `obscura-mcp` | crates/web/obscura-mcp |  |  | default, render, stealth |
 | `obscura-net` | crates/web/obscura-net |  |  | default, futures-util, stealth, wreq, wreq-util |
 | `obscura-render` | crates/web/obscura-render | Optional scoped render layer for Obscura: layout (taffy) and, with the paint feature, text and raster output for screenshots. | `paint_file` | default, paint |
+| `serde-saphyr` | crates/compat/serde-saphyr | YAML (de)serializer for Serde, built on top of Saphyr, emphasizing panic-free parsing. | `serde-saphyr` | default, figment, garde, miette, robotics, validator |
+| `simdutf` | crates/native/simdutf | Unicode validation and transcoding at billions of characters per second |  |  |
+| `tauri-plugin-dialog` | crates/ui/tauri-plugin-dialog | Native system dialogs for opening and saving files along with message dialogs on your Tauri application. |  | default, gtk3, xdg-portal |
+| `tauri-plugin-mcp-bridge` | crates/ui/tauri-plugin-mcp-bridge | MCP Bridge plugin for use with Tauri applications - enables IPC monitoring and backend inspection |  |  |
 
-### Bun packages (91)
+### Bun packages (93)
 
 | Package | Path | Description | Bin |
 | --- | --- | --- | --- |
@@ -271,6 +275,7 @@ Canonical Rust/Bun monorepo
 | `@aphrody/workspace` | packages/infra/workspace | Cross-monorepo workspace orchestrator, gates, audits, migration tools and operations | `aphrody-ops`, `aphrody-workspace` |
 | `@aphrody/x` | packages/web/x | Headless X (Twitter) client in pure TypeScript for Bun. Cookie-auth GraphQL + REST, no API key. Includes local For You algo (x-algorithm port), full stealth, store, and X function tools (XTools, x_* JSON Schema definitions) for Grok or any tool-calling model. |  |
 | `@aphrody/xai` | packages/ai/xai | Headless xAI Grok API client for Bun — high-level fluent Chat API (createChat/append/sample/stream/executeToolCalls/sampleStructured, reasoning, structured, XTools for native X tool fulfillment) + SUPER_GROK_TOKEN keyless + OIDC. OpenAI-compatible REST, deep native integration with @aphrody/x. |  |
+| `@hypothesi/tauri-plugin-mcp-bridge` | crates/ui/tauri-plugin-mcp-bridge | A Tauri plugin that exposes an MCP server interface via WebSockets. |  |
 | `@koharu/bridge` | packages/koharu/bridge |  |  |
 | `@koharu/docs` | packages/koharu/docs |  |  |
 | `@koharu/sdk` | packages/koharu/sdk |  |  |
@@ -286,7 +291,7 @@ Canonical Rust/Bun monorepo
 | `@rosegriffon/auth` | packages/rg/auth | Shared authentication logic and guards for Rose Griffon apps |  |
 | `@rosegriffon/bot` | apps/rg/bot | Bot Discord Rose Griffon — slash commands public + admin, sync members, canvas cards |  |
 | `@rosegriffon/cdn` | packages/rg/cdn |  |  |
-| `@rosegriffon/config` | packages/rg/config | Configs partagées : tsconfig, eslint, oxlint, tailwind preset |  |
+| `@rosegriffon/config` | packages/rg/config | Configs partagées : TypeScript, Oxc et Tailwind preset |  |
 | `@rosegriffon/cron` | packages/rg/cron | Daemon de tâches planifiées (cron) pour la maintenance DB, CDN et API |  |
 | `@rosegriffon/db` | packages/rg/db | Accès PostgreSQL partagé, façades SQL et types Database générés (site + bot) |  |
 | `@rosegriffon/discord-sync` | packages/rg/discord-sync |  |  |
@@ -308,6 +313,7 @@ Canonical Rust/Bun monorepo
 | `@shenron/pipeline` | packages/shenron/pipeline | Shenron compute clients and Dragon Ball data pipeline: AI, Aphrody services, BXC and OCR/RAG workflows | `pipeline` |
 | `@shenron/site` | apps/shenron/site |  |  |
 | `@shenron/ui` | packages/shenron/ui |  |  |
+| `@tauri-plugin/mcp-bridge` | crates/ui/tauri-plugin-mcp-bridge/guest-js | Guest bindings for MCP Bridge Tauri plugin |  |
 | `aphrody` | . |  |  |
 | `material-symbols` | crates/ui/bun/icons/material-symbols | Latest variable icon fonts and CSS for Material Symbols. |  |
 | `shenron-monorepo` | config/shenron |  |  |

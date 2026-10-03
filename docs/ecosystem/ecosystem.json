@@ -1718,6 +1718,47 @@
             "default",
             "paint"
           ]
+        },
+        {
+          "name": "serde-saphyr",
+          "path": "crates/compat/serde-saphyr",
+          "description": "YAML (de)serializer for Serde, built on top of Saphyr, emphasizing panic-free parsing.",
+          "bins": [
+            "serde-saphyr"
+          ],
+          "features": [
+            "default",
+            "figment",
+            "garde",
+            "miette",
+            "robotics",
+            "validator"
+          ]
+        },
+        {
+          "name": "simdutf",
+          "path": "crates/native/simdutf",
+          "description": "Unicode validation and transcoding at billions of characters per second",
+          "bins": [],
+          "features": []
+        },
+        {
+          "name": "tauri-plugin-dialog",
+          "path": "crates/ui/tauri-plugin-dialog",
+          "description": "Native system dialogs for opening and saving files along with message dialogs on your Tauri application.",
+          "bins": [],
+          "features": [
+            "default",
+            "gtk3",
+            "xdg-portal"
+          ]
+        },
+        {
+          "name": "tauri-plugin-mcp-bridge",
+          "path": "crates/ui/tauri-plugin-mcp-bridge",
+          "description": "MCP Bridge plugin for use with Tauri applications - enables IPC monitoring and backend inspection",
+          "bins": [],
+          "features": []
         }
       ],
       "bunPackages": [
@@ -2050,6 +2091,12 @@
           "bins": []
         },
         {
+          "name": "@hypothesi/tauri-plugin-mcp-bridge",
+          "path": "crates/ui/tauri-plugin-mcp-bridge",
+          "description": "A Tauri plugin that exposes an MCP server interface via WebSockets.",
+          "bins": []
+        },
+        {
           "name": "@koharu/bridge",
           "path": "packages/koharu/bridge",
           "description": "",
@@ -2142,7 +2189,7 @@
         {
           "name": "@rosegriffon/config",
           "path": "packages/rg/config",
-          "description": "Configs partagées : tsconfig, eslint, oxlint, tailwind preset",
+          "description": "Configs partagées : TypeScript, Oxc et Tailwind preset",
           "bins": []
         },
         {
@@ -2271,6 +2318,12 @@
           "name": "@shenron/ui",
           "path": "packages/shenron/ui",
           "description": "",
+          "bins": []
+        },
+        {
+          "name": "@tauri-plugin/mcp-bridge",
+          "path": "crates/ui/tauri-plugin-mcp-bridge/guest-js",
+          "description": "Guest bindings for MCP Bridge Tauri plugin",
           "bins": []
         },
         {
@@ -8488,7 +8541,7 @@
                 },
                 {
                   "name": "set-a",
-                  "about": "Batch switch apex and www A records to target IP (requires --apply).",
+                  "about": "Switch selected A records to target IP (requires --apply; default apex + www).",
                   "aliases": [],
                   "cfg": [],
                   "children": []
@@ -8867,7 +8920,7 @@
       "commands": [
         {
           "name": "exec",
-          "about": "Run an arbitrary remote command through the selected SSH alias.",
+          "about": "Run an arbitrary remote command through the selected SSH alias. APHRODY_SSH_COMMAND_TIMEOUT_SECS selects a finite execution deadline (1..86400 seconds; default 30), independently of connection timeout.",
           "aliases": [],
           "cfg": [],
           "children": []
@@ -13120,6 +13173,11 @@
       "repo": "aphrody"
     },
     {
+      "binary": "serde-saphyr",
+      "crate": "serde-saphyr",
+      "repo": "aphrody"
+    },
+    {
       "binary": "aphrody-homebrew",
       "crate": "aphrody-homebrew",
       "repo": "iecode"
@@ -15519,9 +15577,9 @@
     "aphrodyRepos": 3,
     "experimentRepos": 0,
     "sharedRepos": 0,
-    "crates": 266,
-    "binaries": 89,
-    "bunPackages": 98,
+    "crates": 270,
+    "binaries": 90,
+    "bunPackages": 100,
     "pythonPackages": 8,
     "cliBinaries": 63,
     "cliCommands": 1280,
