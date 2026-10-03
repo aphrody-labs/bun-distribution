@@ -23,12 +23,24 @@ export interface AgentPeer {
   activeClaim?: string;
 }
 
+export interface SendEnvelopePayload {
+  from: string;
+  to?: string;
+  kind: EnvelopeKind | string;
+  topic: string;
+  body: string;
+  re?: string;
+  channel_hint?: string[];
+  v?: number;
+  [key: string]: unknown;
+}
+
 export interface A2APeerInspectorProps {
   peers?: AgentPeer[];
   envelopes?: CoordEnvelope[];
   selectedPeerId?: string;
   onSelectPeer?: (peerId: string) => void;
-  onSendEnvelope?: (envelope: Omit<CoordEnvelope, "id" | "ts">) => void;
+  onSendEnvelope?: (envelope: SendEnvelopePayload) => void;
   className?: string;
 }
 

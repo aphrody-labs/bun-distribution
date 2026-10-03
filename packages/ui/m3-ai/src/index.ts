@@ -81,6 +81,7 @@ export { TaskCreateForm } from "./TaskCreateForm";
 export type { TaskCreateFormProps, TaskCreateFormData } from "./TaskCreateForm";
 
 // AG-UI Protocol & Agent-to-User (A2U) Bridge
+export { EventType } from "@aphrody/ag-ui";
 export {
   AgUiEventAccumulator,
   agUiEventsToTranscriptSteps,
@@ -97,7 +98,7 @@ export type {
 
 // Aphrody A2A (Agent-to-Agent) Fleet UI
 export { A2APeerInspector } from "./A2APeerInspector";
-export type { A2APeerInspectorProps, AgentPeer } from "./A2APeerInspector";
+export type { A2APeerInspectorProps, AgentPeer, SendEnvelopePayload } from "./A2APeerInspector";
 export { A2ATaskTimeline } from "./A2ATaskTimeline";
 export type { A2ATaskTimelineProps, TimelineStep } from "./A2ATaskTimeline";
 

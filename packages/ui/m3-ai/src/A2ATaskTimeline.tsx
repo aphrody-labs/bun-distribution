@@ -24,14 +24,35 @@ export interface TimelineStep {
 }
 
 export interface A2ATaskTimelineProps {
-  steps: TimelineStep[];
+  steps?: TimelineStep[];
   currentStepId?: string;
   onSelectStep?: (step: TimelineStep) => void;
   className?: string;
 }
 
+const DEFAULT_TIMELINE_STEPS: TimelineStep[] = [
+  {
+    id: "step-agy-lead",
+    from: "user",
+    to: "agy",
+    title: "Lead Coordination & Monorepo Integration",
+    status: "completed",
+    timestamp: "Live",
+    description: "Coordination active via .coord mailbox and OS resource claims.",
+  },
+  {
+    id: "step-workers",
+    from: "agy",
+    to: "codex",
+    title: "Subagent / Peer Parallel Tasks",
+    status: "running",
+    timestamp: "Ongoing",
+    description: "Workers executing disjoint task families under cooperatively acquired locks.",
+  },
+];
+
 export const A2ATaskTimeline: React.FC<A2ATaskTimelineProps> = ({
-  steps,
+  steps = DEFAULT_TIMELINE_STEPS,
   currentStepId,
   onSelectStep,
   className,

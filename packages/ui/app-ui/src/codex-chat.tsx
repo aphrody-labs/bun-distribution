@@ -18,6 +18,10 @@ import {
   Markdown,
   ToolCall,
   type ToolCallPair,
+  A2APeerInspector,
+  A2ATaskTimeline,
+  type AgentPeer,
+  type TimelineStep,
 } from "@aphrody/m3-ai";
 
 export interface ChatModelOption {
@@ -659,6 +663,7 @@ export function CodexChat({
   const plusPopover = usePopover();
   const modelPopover = usePopover();
   const accessPopover = usePopover();
+  const [showA2APanel, setShowA2APanel] = useState(false);
 
   // Auto-scroll on turns update
   useEffect(() => {
@@ -947,6 +952,14 @@ export function CodexChat({
         {/* Action icons en haut à droite : ... , layout, + */}
         <div className="flex items-center gap-1.5 shrink-0">
           <CircleButton
+            icon="hub"
+            variant={showA2APanel ? "filled" : "standard"}
+            size="md"
+            onClick={() => setShowA2APanel((prev) => !prev)}
+            title="Flotte d'agents pairs (A2A & MCP)"
+            aria-label="Flotte d'agents pairs (A2A & MCP)"
+          />
+          <CircleButton
             icon="add"
             variant="standard"
             size="md"
@@ -976,6 +989,33 @@ export function CodexChat({
           )}
         </div>
       </div>
+
+      {/* Volet latéral de coordination de la flotte d'agents (A2A & AG-UI) */}
+      {showA2APanel && (
+        <div className="border-b border-outline-variant/30 bg-surface-container-low px-6 py-4 transition-all">
+          <div className="flex items-center justify-between pb-3 mb-3 border-b border-outline-variant/20">
+            <div className="flex items-center gap-2">
+              <span className="material-symbol text-primary text-title-medium">hub</span>
+              <h2 className="text-title-small font-semibold text-on-surface">Coordination A2A & Pairs Actifs</h2>
+              <span className="text-label-small text-on-surface-variant font-mono bg-surface-container px-2 py-0.5 rounded-full">
+                .coord
+              </span>
+            </div>
+            <CircleButton
+              icon="close"
+              variant="standard"
+              size="sm"
+              onClick={() => setShowA2APanel(false)}
+              title="Fermer le volet A2A"
+              aria-label="Fermer le volet A2A"
+            />
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <A2APeerInspector />
+            <A2ATaskTimeline />
+          </div>
+        </div>
+      )}
 
       {/* Main conversation feed: centred reading column (--app-reading-column, 760px) */}
       <div

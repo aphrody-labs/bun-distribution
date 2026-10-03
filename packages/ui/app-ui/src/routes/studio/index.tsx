@@ -8,11 +8,13 @@ import { AdminStudio } from "./AdminStudio";
 import { TrainingStudio } from "./TrainingStudio";
 import { DatabooksStudio } from "./DatabooksStudio";
 import { DriveStudio } from "./DriveStudio";
+import { A2AStudio } from "./A2AStudio";
 
-export type StudioSection = "shenron" | "manga" | "admin" | "training" | "databooks" | "drive";
+export type StudioSection = "shenron" | "manga" | "admin" | "training" | "databooks" | "drive" | "a2a";
 
 export const studioSections: Array<{ id: StudioSection; label: string; icon: string }> = [
   { id: "shenron", label: "Shenron", icon: "monitoring" },
+  { id: "a2a", label: "Flotte A2A & Apps MCP", icon: "hub" },
   { id: "manga", label: "Manga & traduction", icon: "translate" },
   { id: "admin", label: "Administration Shenron", icon: "admin_panel_settings" },
   { id: "training", label: "Entraînement", icon: "model_training" },
@@ -54,6 +56,8 @@ export function StudioRoute() {
       <section role="tabpanel" aria-label={studioSections.find((entry) => entry.id === section)?.label}>
         {section === "shenron" ? (
           <ShenronStudio />
+        ) : section === "a2a" ? (
+          <A2AStudio />
         ) : section === "databooks" ? (
           <DatabooksStudio />
         ) : section === "training" ? (

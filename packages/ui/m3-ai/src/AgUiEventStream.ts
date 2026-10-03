@@ -308,6 +308,13 @@ export class AgUiEventAccumulator {
       a2uiSurfaces: new Map(this.a2uiSurfaces),
     };
   }
+
+  /**
+   * Alias for snapshot() for ergonomics.
+   */
+  public getState(): AgUiStreamState {
+    return this.snapshot();
+  }
 }
 
 /**
