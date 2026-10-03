@@ -17,14 +17,12 @@
   },
   "untouched": ["postgresql and redis packages/data (stopped, still package-enabled)", "docker/containerd", "application data under $HOME", "rustup, cargo, uv"],
   "disk": { "root_use_percent": 73, "available_gib_approx": 79 },
-  "application_root": "/home/ubuntu/aphrody",
   "tmpfs_use_percent": 5,
   "active_units": [],
   "sensitive_state": "present-but-not-collected",
   "monitor_status": "removed",
   "deploy_adapter": {
     "observed_at": "2026-09-26T16:44:41Z",
-    "installed_from": "/home/ubuntu/aphrody-infra at 7bc2074 (before the four-adapter layout; reinstall with scripts/install-vps-adapter.sh at the bundle's pinned commit)",
     "adapters": {
       "/usr/local/sbin/aphrody-infra-deploy": { "sha256": "c1834eb1c2b762436f02a5d452947a25d6d3897f3ddc768086cc2d177c33cf45", "source": "scripts/atomic-deploy.sh (site-only, removed from the repository; install-vps-adapter.sh deletes it)" },
       "/usr/local/sbin/aphrody-infra-deploy-rg": { "sha256": "d2fba88e20235096af9d153f102894ebc8d632f107172f22c1761a026f951631", "source": "scripts/atomic-deploy-rg.sh" }
@@ -53,8 +51,7 @@
     "tls_renewal_configs": ["achillea.rosegriffon.fr", "api.rosegriffon.fr", "azalee.rosegriffon.fr", "bot.dragonballfr.com", "cdn.dragonballfr.com", "cdn.rosegriffon.fr", "dragonballfr.com", "mcp.rosegriffon.fr", "ranked.rosegriffon.fr", "rosegriffon.fr", "rpbey.fr"],
     "absent": ["/srv/aphrody", "/etc/aphrody", "/srv/aphrody-infra", "/srv/aphrody-cdn", "aphrody.com certificate"],
     "system_user_aphrody": "present (uid 997)",
-    "runtimes": { "bun": "1.4.2 (/home/ubuntu/.bun/bin/bun)", "python3": "3.14.4", "nginx": "1.28.3", "jq": "1.8.1" },
-    "checkouts": { "/home/ubuntu/aphrody-infra": "7bc2074", "/home/ubuntu/rg": "5691ba4b" },
+    "runtimes": { "python3": "3.14.4", "nginx": "1.28.3", "jq": "1.8.1" },
     "disk": { "size_bytes": 311227166720, "used_bytes": 151560663040, "available_bytes": 159649726464, "usage_percent": 49 },
     "memory_gib": { "total": 45, "available": 30 }
   },
@@ -75,7 +72,7 @@
     "captured_at": "2026-09-25T18:06:18Z",
     "scope": ["aphrody", "nie"],
     "offhost_data_archive": {
-      "directory": "C:\\Users\\aphro\\vps-offload\\aphrody-retired-20260925",
+      "directory": "<windows-user-profile>\\vps-offload\\aphrody-retired-20260925",
       "archive": "aphrody-data-local-20260925.tar.gz",
       "sha256": "29135353fb1b62477b82dcddd3ac018efa165ebb2ac1236fab94099a6d662b43",
       "manifest_verified_files": 274,
