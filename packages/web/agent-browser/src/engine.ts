@@ -52,6 +52,8 @@ const STDERR_TAIL_BYTES = 8192;
  * SIGTERM → SIGKILL stop, teardown with the runtime) is provided by the native YOLO runtime
  * (`runtime:process`); this module only decides what an engine is and how it is started.
  */
+// Keep the library loaded: the current producer detaches its capture readers.
+// Closing it requires a producer artifact that joins those workers before unload.
 let runtime: Runtime | undefined;
 function engineRuntime(): Runtime {
   runtime ??= Runtime.load({ maxOperations: 32 });
@@ -94,6 +96,8 @@ export async function startEngine(options: EngineOptions = {}): Promise<Engine> 
     env,
     stdio: "capture",
   });
+  let engine: Engine | undefined;
+  let stopping: Promise<number> | undefined;
   let finalStatus: { exitCode: number; signal: number } | undefined;
   let tailSnapshot = "";
   let released = false;
@@ -103,12 +107,17 @@ export async function startEngine(options: EngineOptions = {}): Promise<Engine> 
     tailSnapshot = child.stderrTail(STDERR_TAIL_BYTES);
     released = true;
     child.release();
+    if (engine) running.delete(engine);
   };
-  const stopChild = async (graceMs: number): Promise<number> => {
-    const status = await child.stopAsync(graceMs);
-    finalStatus = status;
-    release();
-    return exitCode(status);
+  const stopChild = (graceMs: number): Promise<number> => {
+    stopping ??= (async () => {
+      if (released) return exitCode(finalStatus!);
+      const status = await child.stopAsync(graceMs);
+      finalStatus = status;
+      release();
+      return exitCode(status);
+    })();
+    return stopping;
   };
   const fail = async (reason: string): Promise<never> => {
     const diagnostics = tail();
@@ -150,22 +159,24 @@ export async function startEngine(options: EngineOptions = {}): Promise<Engine> 
   }
 
   const exited = (async (): Promise<number> => {
+    // Yield until the public engine has been registered, even if the child already exited.
+    await Bun.sleep(0);
     for (;;) {
-      if (released) return finalStatus ? exitCode(finalStatus) : 143;
-      let status;
-      try {
-        status = child.status();
-      } catch {
-        return finalStatus ? exitCode(finalStatus) : 143;
+      if (stopping) return stopping;
+      if (released) return exitCode(finalStatus!);
+      const status = child.status();
+      if (!status.running) {
+        finalStatus = status;
+        release();
+        return exitCode(status);
       }
-      if (!status.running) return exitCode(status);
+      // Polling is sequential; parallel waits would keep stale handle reads alive.
       // eslint-disable-next-line no-await-in-loop
       await Bun.sleep(25);
     }
   })();
 
-  let stopping: Promise<number> | undefined;
-  const engine: Engine = {
+  engine = {
     endpoint,
     httpUrl: `http://${host}:${port}`,
     host,
@@ -174,11 +185,7 @@ export async function startEngine(options: EngineOptions = {}): Promise<Engine> 
     stderrTail: tail,
     exited,
     stop() {
-      stopping ??= (async () => {
-        running.delete(engine);
-        return released ? finalStatus ? exitCode(finalStatus) : 143 : await stopChild(shutdownGraceMs);
-      })();
-      return stopping;
+      return stopChild(shutdownGraceMs);
     },
   };
   running.add(engine);
