@@ -140,7 +140,7 @@ export async function importSourceLicenses(
       item.entry.importedSourceSha256 = item.worktreeSha256;
     }
   }
-  await writeFile(mapPath, `${JSON.stringify(sourceMap, null, 2)}\n`);
+  await writeFile(mapPath, `${JSON.stringify(sourceMap)}\n`);
   const report = {
     observedAt: new Date().toISOString(),
     sourceRoot: source,

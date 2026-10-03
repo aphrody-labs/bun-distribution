@@ -273,7 +273,7 @@ export async function importInfraConfig(
     item.entry.importedSourceSha256 = item.sourceHash;
     item.entry.importedSha256 = item.targetHash;
   }
-  await writeFile(mapPath, `${JSON.stringify(sourceMap, null, 2)}\n`);
+  await writeFile(mapPath, `${JSON.stringify(sourceMap)}\n`);
   const report = {
     observedAt: new Date().toISOString(),
     sourceHead,

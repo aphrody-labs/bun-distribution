@@ -639,7 +639,7 @@ export async function runConsolidation(args: string[]): Promise<number> {
       indexContent = [...index.slice(0, 5), ...priorRows.concat(index.slice(5)).sort()];
     }
     await writeFile(indexPath, `${indexContent.join("\n")}\n`);
-    await writeFile(output, `${JSON.stringify(report, null, 2)}\n`);
+    await writeFile(output, `${JSON.stringify(report)}\n`);
     const result = {
       generatedAt: new Date().toISOString(),
       copied,
@@ -996,7 +996,7 @@ export async function runConsolidation(args: string[]): Promise<number> {
         "relative Markdown links to imported documents and verified local files rewritten; anchors preserved; unresolved attachments and reference-style links are not rewritten",
     };
     const importReport = join(aphrodyRoot, "docs/migration/document-import.json");
-    await writeFile(output, `${JSON.stringify(report, null, 2)}\n`, { flag: "w" });
+    await writeFile(output, `${JSON.stringify(report)}\n`, { flag: "w" });
     await writeFile(importReport, `${JSON.stringify(result, null, 2)}\n`, { flag: "w" });
     console.log(
       JSON.stringify({ ...result, report: relative(aphrodyRoot, importReport) }, null, 2),
@@ -1077,7 +1077,7 @@ export async function runConsolidation(args: string[]): Promise<number> {
     const nested = await inventoryNestedFiles(result.submodules, specs);
     const reportPath = join(aphrodyRoot, "docs/migration/submodule-inventory.json");
     await writeFile(reportPath, `${JSON.stringify(result, null, 2)}\n`);
-    await writeFile(nestedOutput, `${JSON.stringify(nested, null, 2)}\n`);
+    await writeFile(nestedOutput, `${JSON.stringify(nested)}\n`);
     if (existsSync(output)) {
       const sourceMap = JSON.parse(await readFile(output, "utf8")) as Record<string, unknown>;
       sourceMap.submoduleInventory = relative(aphrodyRoot, reportPath);
@@ -1087,7 +1087,7 @@ export async function runConsolidation(args: string[]): Promise<number> {
       sourceMap.nestedSourceMap = relative(aphrodyRoot, nestedOutput);
       sourceMap.nestedSourceMapObservedAt = nested.observedAt;
       sourceMap.nestedSourceTotals = nested.totals;
-      await writeFile(output, `${JSON.stringify(sourceMap, null, 2)}\n`);
+      await writeFile(output, `${JSON.stringify(sourceMap)}\n`);
     }
     console.log(
       JSON.stringify(
@@ -1173,8 +1173,7 @@ export async function runConsolidation(args: string[]): Promise<number> {
   const nestedSourceMap = upstreamsOnly
     ? undefined
     : await inventoryNestedFiles(submoduleInventory!.submodules, specs);
-  if (nestedSourceMap)
-    await writeFile(nestedOutput, `${JSON.stringify(nestedSourceMap, null, 2)}\n`);
+  if (nestedSourceMap) await writeFile(nestedOutput, `${JSON.stringify(nestedSourceMap)}\n`);
   const retainedEntries = upstreamsOnly
     ? previousEntries.filter(
         (entry) => ![...replacedRootKeys].some((key) => entry.source.startsWith(`${key}/`)),
@@ -1229,7 +1228,7 @@ export async function runConsolidation(args: string[]): Promise<number> {
   };
   await mkdir(dirname(output), { recursive: true });
   await mkdir(dirname(pythonOutput), { recursive: true });
-  await writeFile(output, `${JSON.stringify(report, null, 2)}\n`, { flag: "w" });
+  await writeFile(output, `${JSON.stringify(report)}\n`, { flag: "w" });
   const pythonEntries = entries.filter(
     (entry) => entry.kind === "python-manifest" || /\.py(i)?$|\.ipynb$/i.test(entry.source),
   );
@@ -1239,7 +1238,7 @@ export async function runConsolidation(args: string[]): Promise<number> {
     totals: { roots: snapshots.length, paths: pythonEntries.length },
   };
   if (!upstreamsOnly)
-    await writeFile(pythonOutput, `${JSON.stringify(pythonReport, null, 2)}\n`, { flag: "w" });
+    await writeFile(pythonOutput, `${JSON.stringify(pythonReport)}\n`, { flag: "w" });
   console.log(
     JSON.stringify(
       {

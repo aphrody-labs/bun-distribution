@@ -4,6 +4,8 @@
     "apps/photoshop-*/**",
     ".claude/**",
     "**/examples/**",
-    "**/*.min.js"
+    "**/*.min.js",
+    "docs/migration/source-map.json",
+    "docs/migration/nested-source-map.json"
   ]
 }

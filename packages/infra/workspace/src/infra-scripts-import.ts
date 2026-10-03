@@ -91,7 +91,7 @@ export async function importInfraScripts(
     item.entry.importedSha256 = item.sourceHash;
     item.entry.importedSourceSha256 = item.sourceHash;
   }
-  await writeFile(mapPath, `${JSON.stringify(sourceMap, null, 2)}\n`);
+  await writeFile(mapPath, `${JSON.stringify(sourceMap)}\n`);
   const report = {
     observedAt: new Date().toISOString(),
     sourceHead,

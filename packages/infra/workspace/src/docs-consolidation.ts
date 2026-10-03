@@ -1472,7 +1472,7 @@ export async function applyPlan(options: ApplyOptions): Promise<ApplyReport> {
       }
     }
     if (sourceMapPath && updatedMap)
-      await writeFile(sourceMapPath, `${JSON.stringify(updatedMap, null, 2)}\n`);
+      await writeFile(sourceMapPath, `${JSON.stringify(updatedMap)}\n`);
   }
 
   const applied: AppliedAction[] = plan.actions.map((action) => {
