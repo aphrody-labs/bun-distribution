@@ -8,10 +8,11 @@
 @import "@shenron/ui/styles.css";
 @source "../../../../../packages/shenron/ui/src";
 
-/* Google Sans Flex — variable (axes opsz+wght), servie par le bot via /assets. */
+/* Google Sans Flex — variable (axes opsz+wght). Une seule copie, celle du site
+   (`public/fonts`) : le bundler la résout et l'embarque, le bot n'en garde pas. */
 @font-face {
 	font-family: "Google Sans Flex";
-	src: url("../../assets/fonts/google-sans-flex.woff2") format("woff2");
+	src: url("../../../site/public/fonts/google-sans-flex.woff2") format("woff2");
 	font-weight: 1 1000;
 	font-style: normal;
 	font-display: swap;

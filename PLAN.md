@@ -1008,6 +1008,46 @@ Propriétaires : `packages/shenron`, `apps/shenron`.
 Critères : corpus/règles partagés, tests pipeline/config, build site/bot,
 smoke documenté. Une mise en production est une opération distincte.
 
+### Gates Shenron reproduits — 2026-10-03
+
+- Tests (`APHRODY_FFI_DEV=1`) : config 47, pipeline 286 (7 ignorés), bot 426, site
+  1279 (66 ignorés), db/auth/api/images/ui verts ; 9 typechecks sur 9 verts.
+- Postgres jetable (PostgreSQL 18, `initdb` sous `/tmp`, port libre ; les ports
+  54321-54329 appartiennent à une pile Supabase locale, non touchée) avec le DDL
+  des schémas site `public` (33 tables) et `bot` (49) exporté hors connexion par
+  `drizzle-kit export`, puis `unaccent`, `pg_trgm` et `vector`. Site : 1297 réussis,
+  2 ignorés, 42 échecs. Les 42 sont des assertions sur le contenu du corpus
+  (Kamehameha, Goku, tome 1 id 1420 à 221 planches…) sans aucune erreur de schéma
+  ni de requête : ils exigent le corpus du store protégé, qui n'est pas fabriqué.
+  Les 41 tests à tables temporaires (`character-consolidation`,
+  `databooks-ecriture-sure`, `community-tops`) passent pour la première fois
+  contre un vrai Postgres.
+- Build site : `next build` lit `DATABASE_URL` à la collecte (`generateStaticParams`,
+  voulu) ; sans elle il échoue sur `/news/[slug]`. Avec la base jetable : 270 routes
+  en 13,5 s. `next start` : `/`, `/wiki`, `/news`, `sitemap.xml`, `robots.txt`,
+  `/api/health`, `/api/wiki/events`, `/api/canon/references` répondent 200 (contenu
+  vide), `/wiki/personnages` 307. Variables exigées : `DATABASE_URL`,
+  `BETTER_AUTH_SECRET`, `DISCORD_CLIENT_ID`, `DISCORD_CLIENT_SECRET` (valeurs
+  locales jetables). Le build inclut deux fichiers non suivis du lot Koharu.
+- Défaut corrigé : `discord compile shenron --smoke` échouait (`Could not resolve
+  ../../assets/fonts/google-sans-flex.woff2`). Le commit 96cd8a74c avait supprimé
+  la copie du bot, identique par SHA-256 à `apps/shenron/site/public/fonts/`, sans
+  migrer le CSS du dashboard, qui retombait aussi sur la police système à
+  l'exécution. `styles.css` référence l'unique copie du site, `styles.compiled.css`
+  est régénéré ; binaire de 151,6 Mo et smoke `--help` réussis, `bun run build`
+  inline la police. Test de garde `tests/dashboard-css-assets.test.ts` : rouge sur
+  l'ancien CSS, vert sur le correctif.
+- Ouvert : `drizzle-kit` ne s'exécute pas sous le linker isolé (`db:generate`,
+  `db:migrate`, export : « Please install latest version of drizzle-orm », le pair
+  optionnel `drizzle-orm` n'étant pas lié à côté de lui) ; contourné pour cette
+  passe par un lien temporaire du magasin `node_modules`, retiré. Correction
+  durable : `publicHoistPattern` ciblé dans `bunfig.toml`, ou lien déclaré.
+- Ouvert : trois tests du bot (`rag-eval`, `rag-aphrody`, `rag-filter`), modifiés
+  par une autre session, échouent « RAG preload incomplete or stale; run
+  rag:prepare » (392 réussis, 3 échecs à cette heure, contre 426/0 plus tôt) ; non
+  attribués à ce lot. Le smoke du binaire ne prouve pas une connexion Discord ;
+  le bout en bout site, bot et pipeline sur corpus réel reste à établir.
+
 ### Studio desktop Shenron × Koharu — 2026-10-03
 
 - Décision du propriétaire : l'app Aphrody (`crates/ui/app`) devient l'outil unique
