@@ -28,11 +28,18 @@
     "tests": "bun test test/: 35 pass, 0 fail, 121 expect() calls (documented evidence before this wiring was 33 pass; package has since grown by 2 tests, unrelated to this change)",
     "processLeftover": "no aphrody-web/obscura process left running after the test run"
   },
+  "downstreamQualification": {
+    "packages/fut/fut": "tsc --noEmit clean; bun test: 148 pass, 27 skip (pre-existing: missing local sqlite fixture, unrelated), 0 fail",
+    "packages/rg/cron": "bun test src: 174 pass, 1 skip (pre-existing: no live CDP server in this environment, unrelated), 0 fail",
+    "packages/web/aphrody-web-test": "tsc --noEmit clean; bun test test/: 41 pass, 0 fail",
+    "packages/ui/web-to-tauri": "not re-run: imports only @aphrody/agent-browser/cdp and /tauri (WebCdpPage, TauriBridge), neither touches engine.ts; unaffected by this change",
+    "Shenron (apps/shenron, packages/shenron)": "no dependency on @aphrody/agent-browser found (package.json/import scan); PLAN.md's R7 mention does not map to a direct consumer of this package"
+  },
   "limits": [
     "service.ts still spawns the aphrody-web binary directly with Bun.spawn for fetch/scrape/crawl; that is a later migration (per CONSUMERS.md scope limit D11), not covered here.",
     "Not run on macOS or Windows; only Linux x64 with the pre-installed runtime artifact exercised.",
-    "Shenron, RG, fut and aphrody-web-test (downstream consumers of this package) were not re-run as part of this scoped change.",
     ".cache/yolo-packages/ is not reproduced by an automated prepare script yet (unlike .cache/iecode-packages/ via `bun run iecode:prepare`); the archive was copied manually from /home/aphro/yolo/dist/sdk and verified by SHA-256. A follow-up should add an equivalent `yolo:prepare` step if more consumers adopt the SDK.",
-    "No Cargo build, no runtime artifact rebuild, no activation of R4 (Obscura/aphrody-web itself) performed or claimed."
+    "No Cargo build, no runtime artifact rebuild, no activation of R4 (Obscura/aphrody-web itself) performed or claimed.",
+    "Downstream qualification above re-runs existing test suites against the new engine.ts; it does not add new test coverage for the runtime-sdk code path itself."
   ]
 }
