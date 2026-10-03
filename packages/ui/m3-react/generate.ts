@@ -6,16 +6,39 @@
  * `@customElement('md-x') export class Foo` pattern, and emits one wrapper file
  * per category directory using @lit/react `createComponent`.
  *
- * Run with bun:  bun run generate.ts
+ * Registry archives contain compiled files only; pass the standalone fork sources.
+ * Run: bun run generate.ts --source /path/to/material-web [--output /tmp/preview]
  */
 import { readFileSync, writeFileSync, mkdirSync, readdirSync, statSync } from "node:fs";
-import { join, relative, dirname } from "node:path";
+import { join, relative, dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
-const MW = join(HERE, "..", "material-web"); // material-web repo root
+const args = process.argv.slice(2);
+let sourceRoot: string | undefined;
+let outputRoot = HERE;
+for (let i = 0; i < args.length; i++) {
+  const flag = args[i];
+  const value = args[++i];
+  if ((flag !== "--source" && flag !== "--output") || !value || value.startsWith("--")) {
+    throw new Error("Usage: bun run generate.ts --source /path/to/material-web [--output /tmp/preview]");
+  }
+  if (flag === "--source") sourceRoot = resolve(value);
+  else outputRoot = resolve(value);
+}
+if (!sourceRoot) {
+  throw new Error(
+    "Material Web npm archives contain compiled files only. Pass --source /home/aphro/aphrody-packages/material-web (the standalone fork checkout).",
+  );
+}
+const MW = sourceRoot;
+for (const bundle of ["all.ts", "aphrody-components.ts", "aphrody-labs.ts"]) {
+  if (!statSync(join(MW, bundle), { throwIfNoEntry: false })?.isFile()) {
+    throw new Error(`Material Web source checkout is missing ${bundle}: ${MW}`);
+  }
+}
 const ELEMENTS_TXT = join(HERE, "md-elements.txt");
-const OUT_DIR = join(HERE, "wrappers");
+const OUT_DIR = join(outputRoot, "wrappers");
 
 // ── 1. Tag → PascalCase wrapper name (CONVENTIONS §2) ──────────────────────
 const pascal = (tag: string): string =>
@@ -333,7 +356,7 @@ for (const [group] of [...groups.entries()].sort()) {
   idx.push(`export * from './wrappers/${group}.js';`);
 }
 idx.push("");
-writeFileSync(join(HERE, "index.ts"), idx.join("\n"));
+writeFileSync(join(outputRoot, "index.ts"), idx.join("\n"));
 
 // ── 7. Report ──────────────────────────────────────────────────────────────
 console.log(`Tags requested: ${tags.length}`);
@@ -344,7 +367,7 @@ if (unresolved.length) {
 }
 // Emit a machine-readable manifest for the README.
 writeFileSync(
-  join(HERE, ".manifest.json"),
+  join(outputRoot, ".manifest.json"),
   JSON.stringify(
     {
       resolved: resolved.map(({ tag, name, file, className, events }) => ({
@@ -363,7 +386,7 @@ writeFileSync(
 
 // Keep the README's component list in sync (it is the last section). This makes
 // the wrapper count + table self-maintaining — never stale after a `generate`.
-const README = join(HERE, "README.md");
+const README = join(outputRoot, "README.md");
 const rows = resolved
   .slice()
   .sort((a, b) => a.name.localeCompare(b.name))

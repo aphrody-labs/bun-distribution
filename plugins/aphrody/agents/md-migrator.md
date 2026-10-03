@@ -9,11 +9,11 @@ You are an autonomous MUI-to-material-web migration agent. Follow the procedure 
 
 ## Source of truth files
 
-Before starting, read these files if they exist in the repo (Aphrody monorepo paths):
+Before starting, read the monorepo codemod mapping and the standalone fork references when present:
 
-- `packages/ui/material-web/migration/mui-m3-map.json` — consolidated machine-readable mapping (components, variants, slots, gaps, props, events, icons). This is the ground truth for every transform decision.
-- `packages/ui/material-web/migration/00-CONVENTIONS.md` — naming contract (props, events, tokens).
-- `packages/ui/material-web/migration/11-material-symbols.md` — icon font integration details.
+- `packages/ui/m3-codemods/mui-m3-map.json` — consolidated machine-readable mapping (components, variants, slots, gaps, props, events, icons). This is the ground truth for every transform decision.
+- `/home/aphro/aphrody-packages/material-web/migration/00-CONVENTIONS.md` — naming contract (props, events, tokens).
+- `/home/aphro/aphrody-packages/material-web/migration/11-material-symbols.md` — icon font integration details.
 
 ## Procedure
 
@@ -28,7 +28,7 @@ rg -oN "@mui/icons-material" -g '*.tsx' . | wc -l       # icon import sites
 rg -l "@mui/x-" -g '*.tsx' . | wc -l                   # MUI X usage (data-grid, charts, pickers, tree)
 ```
 
-Identify MUI X components: Data Grid, charts (x-charts), date/time pickers (x-date-pickers), Tree. These have M3 equivalents (`md-table`, `md-chart-*`, `md-date-picker`/`md-time-picker`/`md-date-range-picker`, `md-tree`) in the monorepo. Note any MUI X Premium features (row grouping, pivot, Excel export, full Scheduler DnD/recurrence) — these are out of scope (no M3 equivalent).
+Identify MUI X components: Data Grid, charts (x-charts), date/time pickers (x-date-pickers), Tree. These have M3 equivalents (`md-table`, `md-chart-*`, `md-date-picker`/`md-time-picker`/`md-date-range-picker`, `md-tree`) in the npm package `@aphrody/material-web`. Note any MUI X Premium features (row grouping, pivot, Excel export, full Scheduler DnD/recurrence) — these are out of scope (no M3 equivalent).
 
 Report the scope breakdown before proceeding unless the user already asked to go ahead.
 
@@ -45,7 +45,7 @@ Work in the sandbox. Diff against the original after each transform. Apply to th
 ### Step 2 — Components (jscodeshift orchestrator)
 
 ```bash
-cd packages/ui/material-web/migration/codemods
+cd packages/ui/m3-codemods
 bunx jscodeshift -t transforms/orchestrator.ts --parser=tsx --extensions=tsx '<sandbox-glob>'
 ```
 
@@ -68,7 +68,7 @@ Renamed props that the orchestrator handles:
 ### Step 3 — Icons (96% automatic)
 
 ```bash
-cd packages/ui/material-web/migration/codemods
+cd packages/ui/m3-codemods
 bunx jscodeshift -t transforms/icons.ts --parser=tsx --extensions=tsx '<sandbox-glob>'
 ```
 
@@ -177,8 +177,8 @@ bunx tsc --noEmit
 Fix all type errors before reporting the migration complete. For the Aphrody monorepo specifically:
 
 ```bash
-bunx turbo run build
-cd packages/ui/material-web && bunx tsc -p tsconfig.json --noEmit
+bun run --filter @aphrody/m3-react typecheck
+# Run the migrated application's own build and typecheck scripts.
 ```
 
 ## Component coverage reference
@@ -230,4 +230,4 @@ MUI X Premium features (row grouping, pivot table, Excel export, full Scheduler 
 
 ## Toolchain
 
-bun only. No npm, no pnpm. Codemods use CommonJS jscodeshift; run via `bunx jscodeshift`. Verify codemods before applying: `cd packages/ui/material-web/migration/codemods && bun run test` (fixtures must stay green).
+bun only. No npm, no pnpm. Codemods use CommonJS jscodeshift; run via `bunx jscodeshift`. Verify codemods before applying: `cd packages/ui/m3-codemods && bun run test` (fixtures must stay green).

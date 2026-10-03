@@ -80,7 +80,7 @@ PascalCase MUI icon names -> snake_case Material Symbols glyph names:
 - `CheckCircle` -> `check_circle`
 - General rule: split on uppercase boundary, lowercase all, join with `_`.
 - Brand logos (GitHub, YouTube, X, LinkedIn) are NOT in Material Symbols — replace with SVG or keep as a branded icon component. Do NOT invent a snake_case variant.
-- Validate against the 4253-glyph list in `packages/ui/material-web/migration/codemods/data/material-symbols-names.json` when uncertain.
+- Validate against the 4253-glyph list in `packages/ui/m3-codemods/data/material-symbols-names.json` when uncertain.
 
 Wrapping:
 
@@ -151,8 +151,9 @@ Iterate until the lint reports 0 errors. Warnings may remain if they cannot be a
 Then verify the build:
 
 ```bash
-bunx turbo run build
-cd packages/ui/material-web && bunx tsc -p tsconfig.json --noEmit
+bun run build
+bunx tsc --noEmit
+# For fork source changes, run these from /home/aphro/aphrody-packages/material-web.
 ```
 
 Do not declare done until:

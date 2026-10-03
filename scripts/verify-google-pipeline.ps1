@@ -156,9 +156,10 @@ Invoke-OwnerCommand '@aphrody/doc-ai tests' 'bun' @(
 Invoke-OwnerCommand '@aphrody/doc-ai typecheck' 'bun' @(
     'run', '--filter', '@aphrody/doc-ai', 'typecheck'
 ) $AphrodyRoot
-Invoke-OwnerCommand 'Python google-antigravity SDK builds as a standalone wheel' 'uv' @(
-    'build', '--wheel', '--out-dir', (Join-Path ([IO.Path]::GetTempPath()) 'aphrody-google-wheels'),
-    (Join-Path $AphrodyRoot 'packages/google/antigravity-sdk-python')
+# The SDK is maintained in its independent pinned Git repository. Locked sync
+# builds its wheel through uv and verifies the actual consumer without a checkout.
+Invoke-OwnerCommand 'Python pinned google-antigravity SDK installs from the lock' 'uv' @(
+    'sync', '--locked', '--package', 'aphrody-py-workspace'
 ) $PythonRoot
 Invoke-OwnerCommand 'Python google-antigravity SDK imports' 'uv' @(
     'run', '--locked', 'python', '-c', 'import google.antigravity'

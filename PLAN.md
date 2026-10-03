@@ -81,6 +81,11 @@ Preuve et hashes : [migration des packages](docs/migration/package-registry-2026
   cinq tests du bridge consommateurs réussis. LangExtract reste sur PyPI.
   [Provenance SDK](docs/migration/python-sdk-registry-2026-10-03.json).
 
+- [x] Audit final délégué : corriger les références opérationnelles Material Web
+  et le manifeste Python imbriqué ; le gate Google installe le SDK depuis le
+  lock uv. Auth npm globale vérifiée sur WSL, Windows et les deux VPS, sans
+  secret dans les dépôts. Clones temporaires de validation retirés.
+
 ## 0. Structure et hygiène
 
 - [x] Séparer CLI, interop, clients OS et UI par propriétaires.
