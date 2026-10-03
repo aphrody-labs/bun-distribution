@@ -15,7 +15,7 @@
     "git log --all (no app-ui history in this repo)",
     "git stash list",
     ".cache/upstream",
-    "/mnt/c/Users/aphro (depth 5)",
+    "<windows user profile> (depth 5)",
     "GitHub aphrody-labs, aphrody-code, rose-griffon repository lists",
     "*.map sourcemaps (none shipped in ui-dist)"
   ],

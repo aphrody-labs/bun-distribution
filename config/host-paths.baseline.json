@@ -9,8 +9,6 @@
     "crates/infra/ssh/README.md": 1,
     "crates/os/drive/patches/ffmpeg-sys-next/.github/workflows/build.yml": 1,
     "docs/architecture/shenron/APHRODY-ECOSYSTEM.md": 4,
-    "docs/migration/app-ui-recovery-2026-10-02.json": 1,
-    "docs/plans/shell/wasm-stack-definitive.md": 1,
     "docs/plans/workspace/PLAN.md": 2,
     "scripts/atomic-deploy-rg.sh": 1,
     "scripts/rg/assemble-vps-release.sh": 1,
