@@ -1,4 +1,6 @@
+import { existsSync } from "node:fs";
 import { join, resolve } from "node:path";
+import { findWorkspaceRoot } from "@aphrody/paths";
 
 export type InfraInvocation = {
   args: string[];
@@ -16,7 +18,13 @@ export type InfraResult = {
 };
 
 export function infraRoot(): string {
-  return resolve(import.meta.dir, "..", "..", "..", "..");
+  // From source the checkout is four levels up; in a compiled executable import.meta.dir is virtual,
+  // so APHRODY_ROOT or the checkout enclosing the working directory decides.
+  const env = process.env.APHRODY_ROOT?.trim();
+  if (env) return resolve(env);
+  const fromSource = resolve(import.meta.dir, "..", "..", "..", "..");
+  if (existsSync(join(fromSource, "config"))) return fromSource;
+  return findWorkspaceRoot();
 }
 
 async function executable(path: string | null | undefined): Promise<string | undefined> {
