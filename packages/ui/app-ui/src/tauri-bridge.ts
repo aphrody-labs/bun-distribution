@@ -6,6 +6,7 @@
  */
 
 import { Channel } from "@tauri-apps/api/core";
+import { browserSessionStream } from "./browser-session-stream";
 
 declare global {
   interface Window {
@@ -595,6 +596,9 @@ export async function aphrodySessionStream(
   threadId: string,
   onMessage: (msg: unknown) => void
 ): Promise<() => void> {
+  if (!isTauri() && typeof EventSource !== "undefined") {
+    return browserSessionStream(threadId, onMessage);
+  }
   if (isTauri()) {
     try {
       const channel = new Channel<unknown>();

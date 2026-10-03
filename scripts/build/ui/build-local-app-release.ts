@@ -1,4 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
+// Keep file IO and lifecycle probes bounded and ordered.
+/* oxlint-disable no-await-in-loop */
 // Run through Workspace build-factory; build an isolated, pinned application release.
 import { cp, mkdir, copyFile, readFile } from "node:fs/promises";
 import { join, resolve, dirname } from "node:path";
@@ -43,12 +45,48 @@ await cp(join(root, ".cache/iecode-packages"), join(source, ".cache/iecode-packa
 });
 await run(["bun", "install", "--frozen-lockfile", "--ignore-scripts"], source);
 const cargo = ["bash", "scripts/build/rust/cargo-serial.sh"];
-await run([...cargo, "build", "--locked", "--release", "-p", "aphrody-ffi"], source);
+const lock = Bun.TOML.parse(await readFile(join(source, "Cargo.lock"), "utf8")) as {
+  package: { name: string; version: string }[];
+};
+const bindgenVersion = lock.package.find((pkg) => pkg.name === "wasm-bindgen")?.version;
+if (!bindgenVersion) throw new Error("wasm-bindgen is missing from Cargo.lock");
+const bindgen = Bun.spawn(["wasm-bindgen", "--version"], { stdout: "pipe", stderr: "pipe" });
+const installedBindgen = (await new Response(bindgen.stdout).text()).trim();
+if ((await bindgen.exited) || installedBindgen !== `wasm-bindgen ${bindgenVersion}`) {
+  await run(
+    [
+      ...cargo,
+      "binstall",
+      "--no-confirm",
+      "--locked",
+      "--version",
+      bindgenVersion,
+      "wasm-bindgen-cli",
+    ],
+    root,
+  );
+}
+// Workspace owns native packaging, ABI checks, provenance and consumer smokes.
+await run(
+  [
+    "bun",
+    "packages/infra/workspace/src/ops.ts",
+    "bun-native",
+    `--root=${root}`,
+    `--package-root=${join(source, "packages/interop/native")}`,
+  ],
+  root,
+);
 const target = Bun.env.CARGO_TARGET_DIR ?? join(source, "target");
-const library = join(target, "release/libaphrody_ffi.so");
+const library = join(
+  source,
+  "packages/interop/native/native/x86_64-unknown-linux-gnu/libaphrody_ffi.so",
+);
 Bun.env.APHRODY_FFI_LIB = library;
 if (await buildDependencies(source, ["@aphrody/app-ui"]))
   throw new Error("UI dependency build failed");
+await run(["bun", "run", "typecheck"], join(source, "packages/ui/app-ui"));
+await run(["bun", "test", "src"], join(source, "packages/ui/app-ui"));
 await run(["bun", "run", "build"], join(source, "packages/ui/app-ui"), {
   APHRODY_FFI_LIB: library,
 });
@@ -66,13 +104,30 @@ for (const line of (await readFile(join(source, "crates/ui/app/ui-dist.manifest"
   await copyFile(join(source, canonical), join(ui, destination));
 }
 await run(
-  [...cargo, "build", "--locked", "--release", "-p", "aphrody", "-p", "aphrody-kernel", "--bins"],
+  [
+    ...cargo,
+    "build",
+    "--locked",
+    "--release",
+    "-p",
+    "aphrody",
+    "-p",
+    "aphrody-kernel",
+    "-p",
+    "aphrody-mcp",
+    "-p",
+    "aphrody-embed",
+    "--features",
+    "aphrody-embed/server",
+    "--bins",
+  ],
   source,
 );
 await cp(ui, join(release, "ui"), { recursive: true });
-for (const name of ["aphrody", "aphrody-kernel"])
+for (const name of ["aphrody", "aphrody-kernel", "aphrody-mcp", "aphrody-embed"])
   await copyFile(join(target, "release", name), join(release, "bin", name));
 await copyFile(library, join(release, "bin/libaphrody_ffi.so"));
+await copyFile(join(dirname(library), "manifest.json"), join(release, "bin/native-manifest.json"));
 const files: Record<string, { bytes: number; sha256: string }> = {};
 for await (const path of new Bun.Glob("**/*").scan({ cwd: release, onlyFiles: true })) {
   const data = await Bun.file(join(release, path)).arrayBuffer();
