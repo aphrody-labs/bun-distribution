@@ -1,18 +1,19 @@
 {
   "name": "@rosegriffon/config",
-  "private": true,
   "version": "1.0.3",
-  "description": "Configs partagées : tsconfig, eslint, oxlint, tailwind preset",
+  "private": true,
+  "description": "Configs partagées : TypeScript, Oxc et Tailwind preset",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rose-griffon/rg.git",
+    "directory": "packages/config"
+  },
   "files": [
     "tsconfig-*.json",
     "oxlintrc.json",
     "tailwind-preset.ts"
   ],
   "type": "module",
-  "scripts": {
-    "lint": "bunx oxlint -c ./oxlintrc.json .",
-    "typecheck": "tsc --noEmit"
-  },
   "exports": {
     "./tsconfig-base.json": "./tsconfig-base.json",
     "./tsconfig-nextjs.json": "./tsconfig-nextjs.json",
@@ -24,10 +25,9 @@
     "access": "public",
     "registry": "https://registry.npmjs.org"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/rose-griffon/rg.git",
-    "directory": "packages/config"
+  "scripts": {
+    "lint": "bunx oxlint -c ./oxlintrc.json .",
+    "typecheck": "tsc --noEmit"
   },
   "engines": {
     "bun": ">=1.4.2"

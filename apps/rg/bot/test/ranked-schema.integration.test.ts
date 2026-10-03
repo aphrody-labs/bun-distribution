@@ -1,3 +1,4 @@
+import "./setup";
 import { afterAll, beforeAll, describe, expect, it } from "bun:test";
 import type { SQL } from "bun";
 

@@ -3,7 +3,7 @@
   "iecode": {
     "repository": "https://github.com/aphrody-labs/iecode.git",
     "path": "../iecode",
-    "rev": "92e027f647744ba20be55a18b992400131ad2eca",
+    "rev": "c832e6c553a99ccad92cc64e4ff5b952f7c28c42",
     "envOverride": "APHRODY_IECODE_ROOT",
     "packages": ["inagle", "inagle-cross", "azalee"]
   }

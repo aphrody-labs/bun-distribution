@@ -52,12 +52,12 @@
  */
 
 import {
-	borner,
-	COULEUR_MARQUE,
-	emotesRoseGriffon,
-	LIMITE_AUTEUR,
-	LIMITE_CONTENU,
-	LIMITE_DESCRIPTION,
+  borner,
+  COULEUR_MARQUE,
+  emotesRoseGriffon,
+  LIMITE_AUTEUR,
+  LIMITE_CONTENU,
+  LIMITE_DESCRIPTION,
 } from "@rosegriffon/types/discord";
 
 import { sql } from "../lib/db.js";
@@ -111,47 +111,47 @@ const { annonce: EMOTE_ANNONCE, fete: EMOTE_FETE } = emotesRoseGriffon(Bun.env);
  * geste à un clic : valider d'un cœur plutôt que d'écrire un message.
  */
 const REACTIONS = [
-	Bun.env.RG_REACTION_ROY ?? "RG_Roy_coeur1:1141460972754702436",
-	Bun.env.RG_REACTION_GAELLE ?? "RG_Gaelle_coeur1:1141461416503693384",
+  Bun.env.RG_REACTION_ROY ?? "RG_Roy_coeur1:1141460972754702436",
+  Bun.env.RG_REACTION_GAELLE ?? "RG_Gaelle_coeur1:1141461416503693384",
 ];
 
 /** Provenance d'une création. Miroir de la contrainte `check` de la table. */
 export type SourceCreation = "x" | "discord" | "instagram";
 
 export interface StatsRelaisCampagne {
-	slug: string;
-	salon: string;
-	/** Créations éligibles trouvées, avant plafond. */
-	candidats: number;
-	relayes: number;
-	sautes: number;
-	echecs: number;
-	/** Créations laissées pour la passe suivante, faute de budget. */
-	reportes: number;
-	/** Décompte par provenance, pour que le journal dise D'OÙ vient la campagne. */
-	parSource: Record<string, number>;
+  slug: string;
+  salon: string;
+  /** Créations éligibles trouvées, avant plafond. */
+  candidats: number;
+  relayes: number;
+  sautes: number;
+  echecs: number;
+  /** Créations laissées pour la passe suivante, faute de budget. */
+  reportes: number;
+  /** Décompte par provenance, pour que le journal dise D'OÙ vient la campagne. */
+  parSource: Record<string, number>;
 }
 
 export interface StatsRelais {
-	success: boolean;
-	campagnes: number;
-	details: StatsRelaisCampagne[];
-	totalRelayes: number;
-	dry: boolean;
-	error?: string;
+  success: boolean;
+  campagnes: number;
+  details: StatsRelaisCampagne[];
+  totalRelayes: number;
+  dry: boolean;
+  error?: string;
 }
 
 export interface OptionsRelais {
-	slug?: string;
-	limite?: number;
-	dry?: boolean;
+  slug?: string;
+  limite?: number;
+  dry?: boolean;
 }
 
 interface LigneCampagne {
-	slug: string;
-	titre: string;
-	relais_salon: string;
-	relais_depuis: Date | null;
+  slug: string;
+  titre: string;
+  relais_salon: string;
+  relais_depuis: Date | null;
 }
 
 /**
@@ -162,56 +162,58 @@ interface LigneCampagne {
  * branche de la mise en forme.
  */
 export interface Creation {
-	source: SourceCreation;
-	/** Identifiant chez la source (id de tweet, id de message Discord…). */
-	reference: string;
-	/** Adresse publique de la création d'origine. */
-	lien: string;
-	auteur: string;
-	texte: string;
-	image: string | null;
-	hashtag: string | null;
-	publieLe: Date;
-	masque: boolean;
+  source: SourceCreation;
+  /** Identifiant chez la source (id de tweet, id de message Discord…). */
+  reference: string;
+  /** Adresse publique de la création d'origine. */
+  lien: string;
+  auteur: string;
+  texte: string;
+  image: string | null;
+  hashtag: string | null;
+  publieLe: Date;
+  masque: boolean;
 }
 
 function dormir(ms: number): Promise<void> {
-	return new Promise((r) => setTimeout(r, ms));
+  return new Promise((r) => setTimeout(r, ms));
 }
 
 function message(err: unknown): string {
-	return err instanceof Error ? err.message : String(err);
+  return err instanceof Error ? err.message : String(err);
 }
 
 /** Appel REST Discord authentifié par le jeton du bot. */
 async function appelDiscord<T>(chemin: string, init: RequestInit = {}): Promise<T> {
-	if (!DISCORD_TOKEN) {
-		throw new Error("DISCORD_BOT_TOKEN absent : impossible de poster.");
-	}
-	const reponse = await fetch(`${API_DISCORD}${chemin}`, {
-		...init,
-		headers: {
-			Authorization: `Bot ${DISCORD_TOKEN}`,
-			"Content-Type": "application/json",
-			...(init.headers ?? {}),
-		},
-	});
+  if (!DISCORD_TOKEN) {
+    throw new Error("DISCORD_BOT_TOKEN absent : impossible de poster.");
+  }
+  const reponse = await fetch(`${API_DISCORD}${chemin}`, {
+    ...init,
+    headers: {
+      Authorization: `Bot ${DISCORD_TOKEN}`,
+      "Content-Type": "application/json",
+      ...init.headers,
+    },
+  });
 
-	// 429 : Discord donne le délai exact à attendre. Le respecter une fois vaut
-	// mieux que réessayer à l'aveugle et se faire fermer la route.
-	if (reponse.status === 429) {
-		const corps = (await reponse.json().catch(() => ({}))) as { retry_after?: number };
-		const attente = Math.ceil((corps.retry_after ?? 1) * 1000);
-		console.warn(`${PREFIXE} Quota Discord atteint, pause de ${attente} ms.`);
-		await dormir(attente);
-		return appelDiscord<T>(chemin, init);
-	}
+  // 429 : Discord donne le délai exact à attendre. Le respecter une fois vaut
+  // mieux que réessayer à l'aveugle et se faire fermer la route.
+  if (reponse.status === 429) {
+    const corps = (await reponse.json().catch(() => ({}))) as { retry_after?: number };
+    const attente = Math.ceil((corps.retry_after ?? 1) * 1000);
+    console.warn(`${PREFIXE} Quota Discord atteint, pause de ${attente} ms.`);
+    await dormir(attente);
+    return appelDiscord<T>(chemin, init);
+  }
 
-	if (!reponse.ok) {
-		throw new Error(`${init.method ?? "GET"} ${chemin} → ${reponse.status} ${await reponse.text()}`);
-	}
-	// 204 sur les réactions : pas de corps à lire.
-	return (reponse.status === 204 ? undefined : await reponse.json()) as T;
+  if (!reponse.ok) {
+    throw new Error(
+      `${init.method ?? "GET"} ${chemin} → ${reponse.status} ${await reponse.text()}`,
+    );
+  }
+  // 204 sur les réactions : pas de corps à lire.
+  return (reponse.status === 204 ? undefined : await reponse.json()) as T;
 }
 
 // ─── Mise en forme (PURE, testée seule) ──────────────────────────────────────
@@ -228,18 +230,18 @@ export { borner };
 
 /** Adresse publique d'une publication X. */
 export function urlPublication(username: string, id: string): string {
-	return `https://x.com/${username}/status/${id}`;
+  return `https://x.com/${username}/status/${id}`;
 }
 
 /** Adresse publique d'un message Discord. */
 export function urlMessageDiscord(guilde: string, salon: string, messageId: string): string {
-	return `https://discord.com/channels/${guilde}/${salon}/${messageId}`;
+  return `https://discord.com/channels/${guilde}/${salon}/${messageId}`;
 }
 
 /** URL absolue d'une image ré-hébergée dans le bucket `assets`. */
 export function urlAsset(chemin: string | null | undefined): string | null {
-	if (typeof chemin !== "string" || chemin.trim() === "") return null;
-	return `${ORIGINE}${CHEMIN_ASSETS}${chemin.trim().replace(/^\/+/, "")}`;
+  if (typeof chemin !== "string" || chemin.trim() === "") return null;
+  return `${ORIGINE}${CHEMIN_ASSETS}${chemin.trim().replace(/^\/+/, "")}`;
 }
 
 /**
@@ -250,20 +252,20 @@ export function urlAsset(chemin: string | null | undefined): string | null {
  * salon.
  */
 export function premiereImageTweet(media: unknown): string | null {
-	if (!Array.isArray(media)) return null;
-	for (const item of media) {
-		if (typeof item !== "object" || item === null) continue;
-		const m = item as {
-			type?: string;
-			storage_url?: string;
-			url?: string;
-			media_url_https?: string;
-		};
-		if (m.type && m.type !== "photo" && m.type !== "image") continue;
-		const url = m.storage_url || m.media_url_https || m.url;
-		if (typeof url === "string" && url.startsWith("http")) return url;
-	}
-	return null;
+  if (!Array.isArray(media)) return null;
+  for (const item of media) {
+    if (typeof item !== "object" || item === null) continue;
+    const m = item as {
+      type?: string;
+      storage_url?: string;
+      url?: string;
+      media_url_https?: string;
+    };
+    if (m.type && m.type !== "photo" && m.type !== "image") continue;
+    const url = m.storage_url || m.media_url_https || m.url;
+    if (typeof url === "string" && url.startsWith("http")) return url;
+  }
+  return null;
 }
 
 /**
@@ -274,20 +276,20 @@ export function premiereImageTweet(media: unknown): string | null {
  * expire.
  */
 export function premiereImageDiscord(images: unknown): string | null {
-	if (!Array.isArray(images)) return null;
-	for (const item of images) {
-		if (typeof item !== "object" || item === null) continue;
-		const url = urlAsset((item as { chemin?: string | null }).chemin);
-		if (url) return url;
-	}
-	return null;
+  if (!Array.isArray(images)) return null;
+  for (const item of images) {
+    if (typeof item !== "object" || item === null) continue;
+    const url = urlAsset((item as { chemin?: string | null }).chemin);
+    if (url) return url;
+  }
+  return null;
 }
 
 /** Ce que le membre lit en notification, par provenance. */
 const LIBELLE_SOURCE: Record<SourceCreation, string> = {
-	x: "sur X",
-	discord: "sur Discord",
-	instagram: "sur Instagram",
+  x: "sur X",
+  discord: "sur Discord",
+  instagram: "sur Instagram",
 };
 
 /**
@@ -299,56 +301,56 @@ const LIBELLE_SOURCE: Record<SourceCreation, string> = {
  * la création est silencieusement perdue.
  */
 export function chargeRelais(
-	creation: Creation,
-	campagne: { titre: string; slug: string }
+  creation: Creation,
+  campagne: { titre: string; slug: string },
 ): Record<string, unknown> {
-	const etiquette = creation.hashtag ? `#${creation.hashtag}` : campagne.titre;
+  const etiquette = creation.hashtag ? `#${creation.hashtag}` : campagne.titre;
 
-	return {
-		// Le contenu hors embed est ce que Discord montre en notification et en
-		// aperçu de réponse : il doit se suffire à lui-même.
-		content: borner(
-			`${EMOTE_ANNONCE} Nouvelle création **${etiquette}** par **${borner(creation.auteur, 60)}** ${LIBELLE_SOURCE[creation.source]} ${EMOTE_FETE}`,
-			LIMITE_CONTENU
-		),
-		embeds: [
-			{
-				author: { name: borner(creation.auteur, LIMITE_AUTEUR) },
-				color: COULEUR_MARQUE,
-				description: borner(creation.texte ?? "", LIMITE_DESCRIPTION),
-				...(creation.image ? { image: { url: creation.image } } : {}),
-				footer: { text: `${campagne.titre} · ${ORIGINE.replace(/^https?:\/\//, "")}/iergday` },
-				timestamp: new Date(creation.publieLe).toISOString(),
-				url: creation.lien,
-			},
-		],
-		// Le bouton-lien : sans lui, aller voir la création d'origine demande de
-		// recopier une URL à la main depuis un embed.
-		components: [
-			{
-				type: 1,
-				components: [
-					{
-						type: 2,
-						style: 5,
-						label: creation.source === "discord" ? "Aller au message" : "Voir la publication",
-						url: creation.lien,
-					},
-				],
-			},
-		],
-		// ⚠ AUCUNE MENTION N'EST AUTORISÉE. Le texte d'une création peut contenir
-		// « @everyone » ; sans cette clause, le relais le transmettrait au serveur
-		// entier avec les permissions du bot.
-		allowed_mentions: { parse: [] },
-	};
+  return {
+    // Le contenu hors embed est ce que Discord montre en notification et en
+    // aperçu de réponse : il doit se suffire à lui-même.
+    content: borner(
+      `${EMOTE_ANNONCE} Nouvelle création **${etiquette}** par **${borner(creation.auteur, 60)}** ${LIBELLE_SOURCE[creation.source]} ${EMOTE_FETE}`,
+      LIMITE_CONTENU,
+    ),
+    embeds: [
+      {
+        author: { name: borner(creation.auteur, LIMITE_AUTEUR) },
+        color: COULEUR_MARQUE,
+        description: borner(creation.texte ?? "", LIMITE_DESCRIPTION),
+        ...(creation.image ? { image: { url: creation.image } } : {}),
+        footer: { text: `${campagne.titre} · ${ORIGINE.replace(/^https?:\/\//, "")}/iergday` },
+        timestamp: new Date(creation.publieLe).toISOString(),
+        url: creation.lien,
+      },
+    ],
+    // Le bouton-lien : sans lui, aller voir la création d'origine demande de
+    // recopier une URL à la main depuis un embed.
+    components: [
+      {
+        type: 1,
+        components: [
+          {
+            type: 2,
+            style: 5,
+            label: creation.source === "discord" ? "Aller au message" : "Voir la publication",
+            url: creation.lien,
+          },
+        ],
+      },
+    ],
+    // ⚠ AUCUNE MENTION N'EST AUTORISÉE. Le texte d'une création peut contenir
+    // « @everyone » ; sans cette clause, le relais le transmettrait au serveur
+    // entier avec les permissions du bot.
+    allowed_mentions: { parse: [] },
+  };
 }
 
 // ─── Lecture des sources ─────────────────────────────────────────────────────
 
 /** Les publications X d'une campagne qui n'ont pas encore été relayées. */
 async function creationsX(campagne: LigneCampagne): Promise<Creation[]> {
-	const lignes = (await sql`
+  const lignes = (await sql`
 		select p.tweet_id,
 		       p.hashtag_trouve,
 		       p.masque,
@@ -367,36 +369,36 @@ async function creationsX(campagne: LigneCampagne): Promise<Creation[]> {
 		          where r.campagne_slug = p.campagne_slug
 		            and r.source = 'x'
 		            and r.reference_id = p.tweet_id)`) as Array<{
-		tweet_id: string;
-		hashtag_trouve: string | null;
-		masque: boolean;
-		publie_le: Date;
-		text: string | null;
-		author_name: string | null;
-		author_username: string | null;
-		media: unknown;
-	}>;
+    tweet_id: string;
+    hashtag_trouve: string | null;
+    masque: boolean;
+    publie_le: Date;
+    text: string | null;
+    author_name: string | null;
+    author_username: string | null;
+    media: unknown;
+  }>;
 
-	return lignes.map((l) => ({
-		source: "x" as const,
-		reference: l.tweet_id,
-		lien: urlPublication(l.author_username ?? "i", l.tweet_id),
-		// Le pseudo compte plus que le nom d'affichage ici : c'est lui qui permet
-		// de retrouver l'auteur, et il est stable.
-		auteur: l.author_username ? `@${l.author_username}` : (l.author_name ?? "auteur inconnu"),
-		texte: l.text ?? "",
-		image: premiereImageTweet(l.media),
-		hashtag: l.hashtag_trouve,
-		publieLe: l.publie_le,
-		// Un post sans pseudo n'a pas d'URL constructible : le relayer produirait
-		// un lien mort. Il est rangé comme un masqué, avec son motif.
-		masque: l.masque || !l.author_username,
-	}));
+  return lignes.map((l) => ({
+    source: "x" as const,
+    reference: l.tweet_id,
+    lien: urlPublication(l.author_username ?? "i", l.tweet_id),
+    // Le pseudo compte plus que le nom d'affichage ici : c'est lui qui permet
+    // de retrouver l'auteur, et il est stable.
+    auteur: l.author_username ? `@${l.author_username}` : (l.author_name ?? "auteur inconnu"),
+    texte: l.text ?? "",
+    image: premiereImageTweet(l.media),
+    hashtag: l.hashtag_trouve,
+    publieLe: l.publie_le,
+    // Un post sans pseudo n'a pas d'URL constructible : le relayer produirait
+    // un lien mort. Il est rangé comme un masqué, avec son motif.
+    masque: l.masque || !l.author_username,
+  }));
 }
 
 /** Les créations déposées sur Discord qui n'ont pas encore été relayées. */
 async function creationsDiscord(campagne: LigneCampagne): Promise<Creation[]> {
-	const lignes = (await sql`
+  const lignes = (await sql`
 		select c.message_id,
 		       c.hashtag_trouve,
 		       c.masque,
@@ -418,29 +420,29 @@ async function creationsDiscord(campagne: LigneCampagne): Promise<Creation[]> {
 		          where r.campagne_slug = c.campagne_slug
 		            and r.source = 'discord'
 		            and r.reference_id = c.message_id)`) as Array<{
-		message_id: string;
-		hashtag_trouve: string | null;
-		masque: boolean;
-		publie_le: Date;
-		images: unknown;
-		content: string | null;
-		channel_id: string;
-		guild_id: string | null;
-		author_username: string | null;
-		author_display_name: string | null;
-	}>;
+    message_id: string;
+    hashtag_trouve: string | null;
+    masque: boolean;
+    publie_le: Date;
+    images: unknown;
+    content: string | null;
+    channel_id: string;
+    guild_id: string | null;
+    author_username: string | null;
+    author_display_name: string | null;
+  }>;
 
-	return lignes.map((l) => ({
-		source: "discord" as const,
-		reference: l.message_id,
-		lien: urlMessageDiscord(l.guild_id ?? GUILD_ID ?? "@me", l.channel_id, l.message_id),
-		auteur: l.author_display_name || l.author_username || "membre inconnu",
-		texte: l.content ?? "",
-		image: premiereImageDiscord(l.images),
-		hashtag: l.hashtag_trouve,
-		publieLe: l.publie_le,
-		masque: l.masque,
-	}));
+  return lignes.map((l) => ({
+    source: "discord" as const,
+    reference: l.message_id,
+    lien: urlMessageDiscord(l.guild_id ?? GUILD_ID ?? "@me", l.channel_id, l.message_id),
+    auteur: l.author_display_name || l.author_username || "membre inconnu",
+    texte: l.content ?? "",
+    image: premiereImageDiscord(l.images),
+    hashtag: l.hashtag_trouve,
+    publieLe: l.publie_le,
+    masque: l.masque,
+  }));
 }
 
 /**
@@ -457,7 +459,7 @@ async function creationsDiscord(campagne: LigneCampagne): Promise<Creation[]> {
  * « auteur inconnu » est alors exact — pas un repli qui masque une lacune.
  */
 async function creationsInstagram(campagne: LigneCampagne): Promise<Creation[]> {
-	const lignes = (await sql`
+  const lignes = (await sql`
 		select i.shortcode,
 		       i.permalink,
 		       i.hashtag_trouve,
@@ -475,38 +477,38 @@ async function creationsInstagram(campagne: LigneCampagne): Promise<Creation[]> 
 		          where r.campagne_slug = i.campagne_slug
 		            and r.source = 'instagram'
 		            and r.reference_id = i.shortcode)`) as Array<{
-		shortcode: string;
-		permalink: string;
-		hashtag_trouve: string | null;
-		masque: boolean;
-		publie_le: Date;
-		legende: string | null;
-		images: unknown;
-		auteur_pseudo: string | null;
-	}>;
+    shortcode: string;
+    permalink: string;
+    hashtag_trouve: string | null;
+    masque: boolean;
+    publie_le: Date;
+    legende: string | null;
+    images: unknown;
+    auteur_pseudo: string | null;
+  }>;
 
-	return lignes.map((l) => ({
-		source: "instagram" as const,
-		reference: l.shortcode,
-		lien: l.permalink,
-		auteur: l.auteur_pseudo ? `@${l.auteur_pseudo}` : "auteur inconnu",
-		texte: l.legende ?? "",
-		image: premiereImageDiscord(l.images),
-		hashtag: l.hashtag_trouve,
-		publieLe: l.publie_le,
-		masque: l.masque,
-	}));
+  return lignes.map((l) => ({
+    source: "instagram" as const,
+    reference: l.shortcode,
+    lien: l.permalink,
+    auteur: l.auteur_pseudo ? `@${l.auteur_pseudo}` : "auteur inconnu",
+    texte: l.legende ?? "",
+    image: premiereImageDiscord(l.images),
+    hashtag: l.hashtag_trouve,
+    publieLe: l.publie_le,
+    masque: l.masque,
+  }));
 }
 
 // ─── Relais ──────────────────────────────────────────────────────────────────
 
 /** Relaie les campagnes actives qui déclarent un salon de relais. */
 export async function relayerCampagnesDiscord(options: OptionsRelais = {}): Promise<StatsRelais> {
-	const { slug, limite = MAX_PAR_PASSE, dry = false } = options;
-	const details: StatsRelaisCampagne[] = [];
+  const { slug, limite = MAX_PAR_PASSE, dry = false } = options;
+  const details: StatsRelaisCampagne[] = [];
 
-	try {
-		const campagnes = (await sql`
+  try {
+    const campagnes = (await sql`
 			select slug, titre, relais_salon, relais_depuis
 			  from public.x_campagnes
 			 where actif
@@ -514,103 +516,103 @@ export async function relayerCampagnesDiscord(options: OptionsRelais = {}): Prom
 			   and (${slug ?? null}::text is null or slug = ${slug ?? null}::text)
 			 order by principale desc, slug`) as LigneCampagne[];
 
-		if (campagnes.length === 0) {
-			const quoi = slug
-				? `la campagne « ${slug} » n'a pas de salon de relais`
-				: "aucune campagne active ne déclare de salon de relais";
-			console.log(`${PREFIXE} Rien à relayer : ${quoi}.`);
-			return { success: true, campagnes: 0, details: [], totalRelayes: 0, dry };
-		}
+    if (campagnes.length === 0) {
+      const quoi = slug
+        ? `la campagne « ${slug} » n'a pas de salon de relais`
+        : "aucune campagne active ne déclare de salon de relais";
+      console.log(`${PREFIXE} Rien à relayer : ${quoi}.`);
+      return { success: true, campagnes: 0, details: [], totalRelayes: 0, dry };
+    }
 
-		for (const campagne of campagnes) {
-			details.push(await relayerCampagne(campagne, limite, dry));
-		}
+    for (const campagne of campagnes) {
+      details.push(await relayerCampagne(campagne, limite, dry));
+    }
 
-		return {
-			success: true,
-			campagnes: campagnes.length,
-			details,
-			totalRelayes: details.reduce((n, d) => n + d.relayes, 0),
-			dry,
-		};
-	} catch (err) {
-		console.error(`${PREFIXE} Échec global :`, message(err));
-		return {
-			success: false,
-			campagnes: details.length,
-			details,
-			totalRelayes: details.reduce((n, d) => n + d.relayes, 0),
-			dry,
-			error: message(err),
-		};
-	}
+    return {
+      success: true,
+      campagnes: campagnes.length,
+      details,
+      totalRelayes: details.reduce((n, d) => n + d.relayes, 0),
+      dry,
+    };
+  } catch (err) {
+    console.error(`${PREFIXE} Échec global :`, message(err));
+    return {
+      success: false,
+      campagnes: details.length,
+      details,
+      totalRelayes: details.reduce((n, d) => n + d.relayes, 0),
+      dry,
+      error: message(err),
+    };
+  }
 }
 
 async function relayerCampagne(
-	campagne: LigneCampagne,
-	limite: number,
-	dry: boolean
+  campagne: LigneCampagne,
+  limite: number,
+  dry: boolean,
 ): Promise<StatsRelaisCampagne> {
-	const stats: StatsRelaisCampagne = {
-		slug: campagne.slug,
-		salon: campagne.relais_salon,
-		candidats: 0,
-		relayes: 0,
-		sautes: 0,
-		echecs: 0,
-		reportes: 0,
-		parSource: {},
-	};
+  const stats: StatsRelaisCampagne = {
+    slug: campagne.slug,
+    salon: campagne.relais_salon,
+    candidats: 0,
+    relayes: 0,
+    sautes: 0,
+    echecs: 0,
+    reportes: 0,
+    parSource: {},
+  };
 
-	// ⚠ TRI CHRONOLOGIQUE CROISSANT, toutes sources confondues. Le salon doit
-	// raconter la campagne dans l'ordre où elle s'est produite ; en ordre
-	// décroissant, un rattrapage de dix créations les afficherait à l'envers. Le
-	// tri est fait ICI et non en SQL : deux requêtes triées séparément se
-	// concaténeraient en deux blocs, pas en une chronologie.
-	const creations = [
-		...(await creationsX(campagne)),
-		...(await creationsDiscord(campagne)),
-		...(await creationsInstagram(campagne)),
-	].sort((a, b) => new Date(a.publieLe).getTime() - new Date(b.publieLe).getTime());
+  // ⚠ TRI CHRONOLOGIQUE CROISSANT, toutes sources confondues. Le salon doit
+  // raconter la campagne dans l'ordre où elle s'est produite ; en ordre
+  // décroissant, un rattrapage de dix créations les afficherait à l'envers. Le
+  // tri est fait ICI et non en SQL : deux requêtes triées séparément se
+  // concaténeraient en deux blocs, pas en une chronologie.
+  const creations = [
+    ...(await creationsX(campagne)),
+    ...(await creationsDiscord(campagne)),
+    ...(await creationsInstagram(campagne)),
+  ].sort((a, b) => new Date(a.publieLe).getTime() - new Date(b.publieLe).getTime());
 
-	stats.candidats = creations.length;
-	if (creations.length === 0) {
-		console.log(`${PREFIXE} ${campagne.slug} : rien de nouveau à relayer.`);
-		return stats;
-	}
+  stats.candidats = creations.length;
+  if (creations.length === 0) {
+    console.log(`${PREFIXE} ${campagne.slug} : rien de nouveau à relayer.`);
+    return stats;
+  }
 
-	for (const creation of creations) {
-		if (stats.relayes >= limite) {
-			stats.reportes = creations.length - stats.relayes - stats.sautes - stats.echecs;
-			break;
-		}
+  for (const creation of creations) {
+    if (stats.relayes >= limite) {
+      stats.reportes = creations.length - stats.relayes - stats.sautes - stats.echecs;
+      break;
+    }
 
-		// Modération : une création retirée du site ne part pas dans le salon. La
-		// ligne est quand même écrite, avec son motif — sans quoi chaque passe la
-		// reconsidérerait indéfiniment.
-		if (creation.masque) {
-			stats.sautes++;
-			if (!dry) await marquerSaute(campagne, creation, "masquée par la modération, ou sans auteur");
-			continue;
-		}
+    // Modération : une création retirée du site ne part pas dans le salon. La
+    // ligne est quand même écrite, avec son motif — sans quoi chaque passe la
+    // reconsidérerait indéfiniment.
+    if (creation.masque) {
+      stats.sautes++;
+      if (!dry) await marquerSaute(campagne, creation, "masquée par la modération, ou sans auteur");
+      continue;
+    }
 
-		if (dry) {
-			stats.relayes++;
-			stats.parSource[creation.source] = (stats.parSource[creation.source] ?? 0) + 1;
-			console.log(
-				`${PREFIXE} ${campagne.slug} : SIMULATION — ${creation.source}/${creation.reference} (${creation.auteur}) serait relayée.`
-			);
-			continue;
-		}
+    if (dry) {
+      stats.relayes++;
+      stats.parSource[creation.source] = (stats.parSource[creation.source] ?? 0) + 1;
+      console.log(
+        `${PREFIXE} ${campagne.slug} : SIMULATION — ${creation.source}/${creation.reference} (${creation.auteur}) serait relayée.`,
+      );
+      continue;
+    }
 
-		try {
-			const envoye = await appelDiscord<{ id: string }>(
-				`/channels/${campagne.relais_salon}/messages`,
-				{ method: "POST", body: JSON.stringify(chargeRelais(creation, campagne)) }
-			);
-			// La ligne est écrite APRÈS l'accusé de réception : l'écrire avant
-			// perdrait définitivement toute création dont l'envoi échoue.
-			await sql`
+    try {
+      const envoye = await appelDiscord<{ id: string }>(
+        `/channels/${campagne.relais_salon}/messages`,
+        { method: "POST", body: JSON.stringify(chargeRelais(creation, campagne)) },
+      );
+      // La ligne est écrite APRÈS l'accusé de réception : l'écrire avant
+      // perdrait définitivement toute création dont l'envoi échoue.
+      await sql`
 				insert into public.x_campagne_relais
 					(campagne_slug, source, reference_id, salon_id, message_id)
 				values (${campagne.slug}, ${creation.source}, ${creation.reference},
@@ -619,36 +621,36 @@ async function relayerCampagne(
 					message_id = excluded.message_id,
 					salon_id   = excluded.salon_id,
 					poste_le   = now()`;
-			stats.relayes++;
-			stats.parSource[creation.source] = (stats.parSource[creation.source] ?? 0) + 1;
+      stats.relayes++;
+      stats.parSource[creation.source] = (stats.parSource[creation.source] ?? 0) + 1;
 
-			await poserReactions(campagne.relais_salon, envoye.id);
-			await dormir(PAUSE_ENVOI_MS);
-		} catch (err) {
-			stats.echecs++;
-			console.error(
-				`${PREFIXE} ${campagne.slug} : échec du relais de ${creation.source}/${creation.reference} —`,
-				message(err)
-			);
-		}
-	}
+      await poserReactions(campagne.relais_salon, envoye.id);
+      await dormir(PAUSE_ENVOI_MS);
+    } catch (err) {
+      stats.echecs++;
+      console.error(
+        `${PREFIXE} ${campagne.slug} : échec du relais de ${creation.source}/${creation.reference} —`,
+        message(err),
+      );
+    }
+  }
 
-	const detailSources = Object.entries(stats.parSource)
-		.map(([source, n]) => `${source}=${n}`)
-		.join(" ");
-	console.log(
-		`${PREFIXE} ${campagne.slug} : ${stats.relayes} relayée(s)${detailSources ? ` (${detailSources})` : ""}, ${stats.sautes} sautée(s), ${stats.echecs} en échec, ${stats.reportes} reportée(s) sur ${stats.candidats} candidate(s).`
-	);
-	return stats;
+  const detailSources = Object.entries(stats.parSource)
+    .map(([source, n]) => `${source}=${n}`)
+    .join(" ");
+  console.log(
+    `${PREFIXE} ${campagne.slug} : ${stats.relayes} relayée(s)${detailSources ? ` (${detailSources})` : ""}, ${stats.sautes} sautée(s), ${stats.echecs} en échec, ${stats.reportes} reportée(s) sur ${stats.candidats} candidate(s).`,
+  );
+  return stats;
 }
 
 /** Range une création volontairement non relayée, avec son motif. */
 async function marquerSaute(
-	campagne: LigneCampagne,
-	creation: Creation,
-	motif: string
+  campagne: LigneCampagne,
+  creation: Creation,
+  motif: string,
 ): Promise<void> {
-	await sql`
+  await sql`
 		insert into public.x_campagne_relais
 			(campagne_slug, source, reference_id, salon_id, saute_motif)
 		values (${campagne.slug}, ${creation.source}, ${creation.reference},
@@ -664,16 +666,16 @@ async function marquerSaute(
  * comme perdue.
  */
 async function poserReactions(salon: string, messageId: string): Promise<void> {
-	for (const emote of REACTIONS) {
-		try {
-			await appelDiscord<void>(
-				`/channels/${salon}/messages/${messageId}/reactions/${encodeURIComponent(emote)}/@me`,
-				{ method: "PUT" }
-			);
-		} catch (err) {
-			console.warn(`${PREFIXE} Réaction « ${emote} » impossible :`, message(err));
-		}
-	}
+  for (const emote of REACTIONS) {
+    try {
+      await appelDiscord<void>(
+        `/channels/${salon}/messages/${messageId}/reactions/${encodeURIComponent(emote)}/@me`,
+        { method: "PUT" },
+      );
+    } catch (err) {
+      console.warn(`${PREFIXE} Réaction « ${emote} » impossible :`, message(err));
+    }
+  }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -681,40 +683,40 @@ async function poserReactions(salon: string, messageId: string): Promise<void> {
 // ─────────────────────────────────────────────────────────────────────────────
 
 if (import.meta.main) {
-	const argv = Bun.argv.slice(2);
-	if (argv.includes("--help") || argv.includes("-h")) {
-		console.log(
-			[
-				"Relaie dans un salon Discord les créations d'une campagne (X + Discord).",
-				"",
-				"  bun packages/cron/src/tasks/campagnes-relais-discord.ts [options]",
-				"",
-				"  --campagne <slug>  ne traite que cette campagne",
-				"  --limite <n>       créations relayées par passe (défaut : 12)",
-				"  --dry              simulation : n'écrit ni dans Discord ni en base",
-			].join("\n")
-		);
-		process.exit(0);
-	}
+  const argv = Bun.argv.slice(2);
+  if (argv.includes("--help") || argv.includes("-h")) {
+    console.log(
+      [
+        "Relaie dans un salon Discord les créations d'une campagne (X + Discord).",
+        "",
+        "  bun packages/cron/src/tasks/campagnes-relais-discord.ts [options]",
+        "",
+        "  --campagne <slug>  ne traite que cette campagne",
+        "  --limite <n>       créations relayées par passe (défaut : 12)",
+        "  --dry              simulation : n'écrit ni dans Discord ni en base",
+      ].join("\n"),
+    );
+    process.exit(0);
+  }
 
-	const valeur = (nom: string): string | undefined => {
-		const i = argv.indexOf(nom);
-		return i === -1 ? undefined : argv[i + 1];
-	};
-	const limiteBrute = Number(valeur("--limite"));
+  const valeur = (nom: string): string | undefined => {
+    const i = argv.indexOf(nom);
+    return i === -1 ? undefined : argv[i + 1];
+  };
+  const limiteBrute = Number(valeur("--limite"));
 
-	const res = await relayerCampagnesDiscord({
-		slug: valeur("--campagne"),
-		limite: Number.isFinite(limiteBrute) && limiteBrute > 0 ? limiteBrute : undefined,
-		dry: argv.includes("--dry"),
-	});
+  const res = await relayerCampagnesDiscord({
+    slug: valeur("--campagne"),
+    limite: Number.isFinite(limiteBrute) && limiteBrute > 0 ? limiteBrute : undefined,
+    dry: argv.includes("--dry"),
+  });
 
-	console.log(`\n${PREFIXE} ── Résumé ──`);
-	for (const d of res.details) {
-		console.log(
-			`  ${d.slug.padEnd(20)} candidats=${d.candidats} relayees=${d.relayes} sautees=${d.sautes} echecs=${d.echecs} reportees=${d.reportes}`
-		);
-	}
-	if (res.error) console.error(`  ERREUR : ${res.error}`);
-	process.exit(res.success ? 0 : 1);
+  console.log(`\n${PREFIXE} ── Résumé ──`);
+  for (const d of res.details) {
+    console.log(
+      `  ${d.slug.padEnd(20)} candidats=${d.candidats} relayees=${d.relayes} sautees=${d.sautes} echecs=${d.echecs} reportees=${d.reportes}`,
+    );
+  }
+  if (res.error) console.error(`  ERREUR : ${res.error}`);
+  process.exit(res.success ? 0 : 1);
 }

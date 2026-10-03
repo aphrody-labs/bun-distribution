@@ -3,9 +3,19 @@
 /* eslint-disable no-await-in-loop */
 /** Producer-owned archives for consumers outside the IECODE Bun workspace. */
 import { createHash } from "node:crypto";
-import { copyFile, mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
-import { tmpdir } from "node:os";
-import { dirname, join, relative, resolve } from "node:path";
+import {
+  link,
+  lstat,
+  mkdir,
+  mkdtemp,
+  readFile,
+  readdir,
+  realpath,
+  rename,
+  rm,
+  writeFile,
+} from "node:fs/promises";
+import { dirname, isAbsolute, join, relative, resolve } from "node:path";
 
 const members = ["inagle", "inagle-cross", "azalee"] as const;
 const forbidden =
@@ -27,6 +37,8 @@ export function validateArchiveEntries(entries: string[], allowed: string[]): vo
     const path = entry.replace(/^package\//, "").replace(/\/$/, "");
     if (!path) continue;
     if (
+      !entry.startsWith("package/") ||
+      entry.includes("\\") ||
       entry.startsWith("/") ||
       path.split("/").includes("..") ||
       forbidden.test(path) ||
@@ -38,6 +50,40 @@ export function validateArchiveEntries(entries: string[], allowed: string[]): vo
   }
 }
 
+/** tar metadata is inspected without extraction or executing archive content. */
+export async function validateArchiveTypes(archive: string, cwd: string): Promise<void> {
+  await command(
+    [
+      "python3",
+      "-I",
+      "-c",
+      `import sys, tarfile
+with tarfile.open(sys.argv[1], 'r:gz') as archive:
+    for member in archive:
+        if not (member.isfile() or member.isdir()):
+            raise SystemExit('Unsupported archive entry type: ' + member.name)
+`,
+      archive,
+    ],
+    cwd,
+  );
+}
+
+async function validatePackSource(directory: string, allowed: string[]): Promise<void> {
+  const inspect = async (path: string): Promise<void> => {
+    const status = await lstat(join(directory, path)).catch((error: NodeJS.ErrnoException) => {
+      if (error.code === "ENOENT") return null;
+      throw error;
+    });
+    if (!status) return;
+    if (status.isSymbolicLink() || forbidden.test(path))
+      throw new Error(`Private or linked package source refused before packing: ${path}`);
+    if (status.isDirectory())
+      for (const child of await readdir(join(directory, path))) await inspect(join(path, child));
+  };
+  for (const path of allowed) await inspect(path);
+}
+
 export async function prepareIecodePackages(options: {
   source: string;
   destination: string;
@@ -45,7 +91,7 @@ export async function prepareIecodePackages(options: {
   allowDirty?: boolean;
   expectedRevision?: string;
 }) {
-  const source = resolve(options.source);
+  const source = await realpath(options.source);
   const destination = resolve(options.destination);
   const revision = await command(["git", "rev-parse", "HEAD"], source);
   if (options.expectedRevision && revision !== options.expectedRevision)
@@ -107,12 +153,28 @@ export async function prepareIecodePackages(options: {
         ({ directory: _directory, allowed: _allowed, entrypoints: _entrypoints, ...item }) => item,
       ),
     };
-  if (destination === source || !relative(source, destination).startsWith(".."))
+  const sourceRelative = relative(source, destination);
+  if (
+    !sourceRelative ||
+    (!isAbsolute(sourceRelative) && sourceRelative !== ".." && !sourceRelative.startsWith("../"))
+  )
     throw new Error("Archive destination must be outside the producer checkout.");
-  const stage = await mkdtemp(join(tmpdir(), "iecode-packages-"));
+  for (let current = destination; current !== dirname(current); current = dirname(current)) {
+    const status = await lstat(current).catch((error: NodeJS.ErrnoException) => {
+      if (error.code === "ENOENT") return null;
+      throw error;
+    });
+    if (status?.isSymbolicLink()) throw new Error("Archive destination contains a symlink.");
+  }
+  await mkdir(dirname(destination), { recursive: true });
+  const lock = `${destination}.lock`;
+  await mkdir(lock);
+  let stage = "";
   try {
+    stage = await mkdtemp(join(dirname(destination), ".iecode-packages-"));
     const archives = [];
     for (const item of packages) {
+      await validatePackSource(item.directory, item.allowed);
       const archive = join(stage, item.archive);
       await command(
         [process.execPath, "pm", "pack", "--ignore-scripts", "--filename", archive],
@@ -120,6 +182,7 @@ export async function prepareIecodePackages(options: {
       );
       const entries = (await command(["tar", "-tzf", archive], source)).split("\n");
       validateArchiveEntries(entries, item.allowed);
+      await validateArchiveTypes(archive, source);
       for (const entrypoint of item.entrypoints) {
         if (!entries.includes(`package/${entrypoint.replace(/^\.\//, "")}`))
           throw new Error(`${item.name} has a missing archive entrypoint: ${entrypoint}`);
@@ -130,13 +193,41 @@ export async function prepareIecodePackages(options: {
       archives.push({ name: item.name, version: item.version, archive: item.archive, sha256 });
     }
     const manifest = { ...provenance, applied: true, packages: archives };
-    await mkdir(destination, { recursive: true });
-    for (const item of archives)
-      await copyFile(join(stage, item.archive), join(destination, item.archive));
-    await writeFile(join(destination, "manifest.json"), `${JSON.stringify(manifest, null, 2)}\n`);
+    await writeFile(join(stage, "manifest.json"), `${JSON.stringify(manifest, null, 2)}\n`);
+    const present = await lstat(destination).catch((error: NodeJS.ErrnoException) => {
+      if (error.code === "ENOENT") return null;
+      throw error;
+    });
+    if (!present) await rename(stage, destination);
+    else {
+      if (!present.isDirectory()) throw new Error("Archive destination must be a directory.");
+      // Revision-qualified immutable files publish first; manifest rename is the commit point.
+      for (const item of archives) {
+        const target = join(destination, item.archive);
+        try {
+          await link(join(stage, item.archive), target);
+        } catch (error) {
+          if ((error as NodeJS.ErrnoException).code !== "EEXIST") throw error;
+          const status = await lstat(target);
+          if (
+            !status.isFile() ||
+            status.isSymbolicLink() ||
+            createHash("sha256")
+              .update(await readFile(target))
+              .digest("hex") !== item.sha256
+          )
+            throw new Error(`Existing archive conflicts with provenance: ${item.archive}`);
+        }
+      }
+      const manifestTarget = join(destination, "manifest.json");
+      if ((await lstat(manifestTarget).catch(() => null))?.isSymbolicLink())
+        throw new Error("Archive manifest must not be a symlink.");
+      await rename(join(stage, "manifest.json"), manifestTarget);
+    }
     return manifest;
   } finally {
-    await rm(stage, { recursive: true, force: true });
+    if (stage) await rm(stage, { recursive: true, force: true });
+    await rm(lock, { recursive: true, force: true });
   }
 }
 
@@ -171,7 +262,15 @@ if (import.meta.main) {
     const configuration = JSON.parse(await readFile(configPath, "utf8")).iecode;
     if (!/^[a-f0-9]{40}$/.test(configuration.rev))
       throw new Error("IECODE requires a pinned revision.");
-    options.source ||= resolve(dirname(resolve(configPath)), "..", configuration.path);
+    if (
+      configuration.repository !== "https://github.com/aphrody-labs/iecode.git" ||
+      JSON.stringify(configuration.packages) !== JSON.stringify(members) ||
+      configuration.envOverride !== "APHRODY_IECODE_ROOT"
+    )
+      throw new Error("Unsupported IECODE producer contract.");
+    options.source ||=
+      process.env[configuration.envOverride] ??
+      resolve(dirname(resolve(configPath)), "..", configuration.path);
     options.expectedRevision = configuration.rev;
   }
   if (!options.source || !options.destination)

@@ -15,6 +15,11 @@ umask 027
 
 [[ "$commit_arg" =~ ^[0-9a-f]{40}$ ]] || { echo 'full Git SHA required' >&2; exit 2; }
 [[ -r "$catalog" ]] || { echo 'installed infra service catalog missing' >&2; exit 2; }
+catalog_source="$catalog"
+catalog_snapshot="$(mktemp "${TMPDIR:-/tmp}/rg-catalog.XXXXXX")"
+trap 'rm -f -- "$catalog_snapshot"' EXIT
+cp -- "$catalog" "$catalog_snapshot"
+catalog="$catalog_snapshot"
 [[ -d "$infra_root/systemd" && -f "$infra_root/nginx/rg/rg-production.conf" ]] || {
   echo 'aphrody-infra checkout with systemd/ and nginx/rg/rg-production.conf required' >&2; exit 2;
 }
@@ -76,6 +81,7 @@ destination="$releases_root/$commit"
 [[ ! -e "$destination" ]] || { echo 'release already exists; refusing to overwrite' >&2; exit 2; }
 stage="$(mktemp -d "$releases_root/.assembling-$commit.XXXXXX")"
 cleanup() {
+  rm -f -- "$catalog_snapshot"
   if [[ -n "${stage:-}" && -d "$stage" && "$stage" = "$releases_root/.assembling-$commit."* ]]; then
     rm -rf -- "$stage"
   fi
@@ -201,7 +207,9 @@ import re
 import sys
 
 root = pathlib.Path(sys.argv[1]).resolve()
-catalog = json.loads(pathlib.Path(sys.argv[2]).read_text())
+catalog_bytes = pathlib.Path(sys.argv[2]).read_bytes()
+catalog = json.loads(catalog_bytes)
+(root / "service-catalog.json").write_bytes(catalog_bytes)
 commit = sys.argv[3]
 infra_units = pathlib.Path(sys.argv[4]) / 'systemd'
 infra_commit = sys.argv[5]
@@ -235,6 +243,7 @@ manifest = {
     'builtAt': datetime.datetime.now(datetime.timezone.utc).isoformat().replace('+00:00', 'Z'),
     'services': [service['id'] for service in services],
     'infraCommit': infra_commit,
+    'catalog': {'path': 'service-catalog.json', 'sha256': hashlib.sha256(catalog_bytes).hexdigest()},
 }
 (root / 'release.json').write_text(json.dumps(manifest, indent=2) + '\n')
 (root / 'RELEASE_SHA').write_text(commit + '\n')

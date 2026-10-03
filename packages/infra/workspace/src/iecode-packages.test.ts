@@ -3,10 +3,14 @@
 /* eslint-disable no-await-in-loop */
 import { afterEach, expect, test } from "bun:test";
 import { createHash } from "node:crypto";
-import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { prepareIecodePackages, validateArchiveEntries } from "./iecode-packages";
+import {
+  prepareIecodePackages,
+  validateArchiveEntries,
+  validateArchiveTypes,
+} from "./iecode-packages";
 
 const temporary: string[] = [];
 afterEach(async () => {
@@ -157,7 +161,15 @@ test("release preparation uses the pinned snapshot without switching a dirty pro
   await mkdir(join(stage, "packages/infra/workspace/src"), { recursive: true });
   await writeFile(
     join(stage, "config/sibling-checkouts.json"),
-    JSON.stringify({ iecode: { path: "../iecode", rev: revision } }),
+    JSON.stringify({
+      iecode: {
+        path: "../iecode",
+        rev: revision,
+        repository: "https://github.com/aphrody-labs/iecode.git",
+        packages: ["inagle", "inagle-cross", "azalee"],
+        envOverride: "APHRODY_IECODE_ROOT",
+      },
+    }),
   );
   await writeFile(
     join(stage, "packages/infra/workspace/src/iecode-packages.ts"),
@@ -181,4 +193,89 @@ test("release preparation uses the pinned snapshot without switching a dirty pro
     "uncommitted developer data",
   );
   expect((await run(["git", "rev-parse", "HEAD"], options.source)).trim()).toBe(revision);
+});
+
+test("publication preserves old manifest on archive conflict and rejects symlink destinations", async () => {
+  const options = await fixture();
+  const first = await prepareIecodePackages({ ...options, apply: true });
+  await prepareIecodePackages({ ...options, apply: true });
+  const manifest = await readFile(join(options.destination, "manifest.json"), "utf8");
+  const archive = first.packages[0]!;
+  await writeFile(join(options.destination, archive.archive), "conflicting bytes");
+  await expect(prepareIecodePackages({ ...options, apply: true })).rejects.toThrow(
+    "conflicts with provenance",
+  );
+  expect(await readFile(join(options.destination, "manifest.json"), "utf8")).toBe(manifest);
+  const alias = options.destination + "-alias";
+  await symlink(options.destination, alias);
+  await expect(
+    prepareIecodePackages({ ...options, destination: join(alias, "new"), apply: true }),
+  ).rejects.toThrow("symlink");
+});
+
+test("archive metadata rejects links without extracting their targets", async () => {
+  const options = await fixture();
+  const archive = join(options.destination + "-link.tgz");
+  await run(
+    [
+      "python3",
+      "-I",
+      "-c",
+      `import sys, tarfile
+with tarfile.open(sys.argv[1], 'w:gz') as archive:
+    item = tarfile.TarInfo('package/src/link.ts')
+    item.type = tarfile.SYMTYPE
+    item.linkname = '/outside'
+    archive.addfile(item)
+`,
+      archive,
+    ],
+    options.source,
+  );
+  await expect(validateArchiveTypes(archive, options.source)).rejects.toThrow(
+    "Unsupported archive entry type",
+  );
+});
+
+test("packing refuses source aliases before any external content is archived", async () => {
+  const options = await fixture();
+  await writeFile(join(options.source, "external.txt"), "synthetic fixture outside package");
+  await symlink(
+    join(options.source, "external.txt"),
+    join(options.source, "packages/inagle/src/alias.ts"),
+  );
+  await expect(
+    prepareIecodePackages({ ...options, apply: true, allowDirty: true }),
+  ).rejects.toThrow("refused before packing");
+  expect(await Bun.file(join(options.destination, "manifest.json")).exists()).toBe(false);
+});
+
+test("failed repacking cannot replace previously committed archive bytes or manifest", async () => {
+  const options = await fixture();
+  await prepareIecodePackages({ ...options, apply: true });
+  const manifestBefore = await readFile(join(options.destination, "manifest.json"), "utf8");
+  await writeFile(
+    join(options.source, "packages/inagle/src/index.ts"),
+    "export const contract = 2;\n",
+  );
+  await expect(
+    prepareIecodePackages({ ...options, apply: true, allowDirty: true }),
+  ).rejects.toThrow("conflicts with provenance");
+  expect(await readFile(join(options.destination, "manifest.json"), "utf8")).toBe(manifestBefore);
+  for (const item of (
+    JSON.parse(manifestBefore) as { packages: Array<{ archive: string; sha256: string }> }
+  ).packages)
+    expect(
+      createHash("sha256")
+        .update(await readFile(join(options.destination, item.archive)))
+        .digest("hex"),
+    ).toBe(item.sha256);
+  await expect(
+    prepareIecodePackages({
+      ...options,
+      destination: join(options.source, "..archives"),
+      apply: true,
+      allowDirty: true,
+    }),
+  ).rejects.toThrow("outside the producer");
 });

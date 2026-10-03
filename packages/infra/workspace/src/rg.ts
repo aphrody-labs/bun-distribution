@@ -72,7 +72,13 @@ export interface RgInventorySummary {
 }
 
 interface RootManifest {
-  workspaces?: string[] | { packages?: string[] };
+  workspaces?:
+    | string[]
+    | {
+        packages?: string[];
+        catalog?: Record<string, string>;
+        catalogs?: Record<string, Record<string, string>>;
+      };
   catalog?: Record<string, string>;
 }
 
@@ -337,6 +343,21 @@ async function pipeline(root: string, dryRun: boolean): Promise<number> {
   const packages = await manifests(root);
   const tasks: Array<{ name: string; run: () => Promise<number> }> = [
     {
+      name: "Pinned IECODE archive preparation",
+      run: async () => {
+        const config = await Bun.file(join(root, "config/sibling-checkouts.json")).json();
+        const producer =
+          process.env[config.iecode.envOverride ?? "APHRODY_IECODE_ROOT"] ??
+          resolve(root, config.iecode.path);
+        return (
+          await Bun.spawn(
+            ["bash", join(root, "scripts/rg/prepare-iecode-release.sh"), root, producer],
+            { cwd: root, stdout: "inherit", stderr: "inherit" },
+          )
+        ).exited;
+      },
+    },
+    {
       name: "Bun frozen workspace install",
       run: async () =>
         (
@@ -428,7 +449,13 @@ async function pipeline(root: string, dryRun: boolean): Promise<number> {
   for (const task of tasks) {
     console.error(`\n=== RG pipeline: ${task.name} ===`);
     if (
-      (task.name !== "Bun frozen workspace install" && results[0]?.status === "failed") ||
+      (task.name !== "Pinned IECODE archive preparation" &&
+        results.some(
+          (result) =>
+            ["Pinned IECODE archive preparation", "Bun frozen workspace install"].includes(
+              result.stage,
+            ) && result.status === "failed",
+        )) ||
       (["typecheck", "test", "build"].includes(task.name) &&
         results.some(
           (result) =>
@@ -471,7 +498,12 @@ export async function exportDetailedInventory(root = infraRoot()): Promise<RgInv
   const workspacePatterns = Array.isArray(rootManifest.workspaces)
     ? rootManifest.workspaces
     : (rootManifest.workspaces?.packages ?? []);
-  const catalog = rootManifest.catalog ?? {};
+  const catalog = Array.isArray(rootManifest.workspaces)
+    ? (rootManifest.catalog ?? {})
+    : (rootManifest.workspaces?.catalog ?? rootManifest.catalog ?? {});
+  const catalogs = Array.isArray(rootManifest.workspaces)
+    ? {}
+    : (rootManifest.workspaces?.catalogs ?? {});
 
   const packages: RgDetailedPackage[] = [];
 
@@ -499,7 +531,10 @@ export async function exportDetailedInventory(root = infraRoot()): Promise<RgInv
           internalDeps[dep] = specStr;
         } else if (specStr.startsWith("catalog:")) {
           const catKey = specStr.slice("catalog:".length);
-          externalDeps[dep] = { spec: specStr, resolved: catalog[catKey] ?? null };
+          externalDeps[dep] = {
+            spec: specStr,
+            resolved: (catKey ? catalogs[catKey]?.[dep] : catalog[dep]) ?? null,
+          };
         } else {
           externalDeps[dep] = { spec: specStr, resolved: specStr };
         }
@@ -511,7 +546,10 @@ export async function exportDetailedInventory(root = infraRoot()): Promise<RgInv
           internalDeps[dep] = specStr;
         } else if (specStr.startsWith("catalog:")) {
           const catKey = specStr.slice("catalog:".length);
-          devDeps[dep] = { spec: specStr, resolved: catalog[catKey] ?? null };
+          devDeps[dep] = {
+            spec: specStr,
+            resolved: (catKey ? catalogs[catKey]?.[dep] : catalog[dep]) ?? null,
+          };
         } else {
           devDeps[dep] = { spec: specStr, resolved: specStr };
         }

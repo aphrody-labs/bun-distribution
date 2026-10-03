@@ -69,3 +69,46 @@ test("RG build rejects a stale standalone server after a partial build", async (
   expect(result.exitCode).toBe(1);
   expect(result.stderr).toContain("standalone");
 });
+
+test("RG release provenance captures the exact service catalogue bytes", async () => {
+  const { readFile, writeFile } = await import("node:fs/promises");
+  const { tmpdir } = await import("node:os");
+  const fixture = await mkdtemp(join(tmpdir(), "rg-catalog-release-"));
+  try {
+    const artifact = join(fixture, "artifact");
+    const infra = join(fixture, "infra");
+    await mkdir(join(artifact, ".cache/iecode-packages"), { recursive: true });
+    await mkdir(join(artifact, "systemd"));
+    await mkdir(join(infra, "systemd"), { recursive: true });
+    await writeFile(join(artifact, ".cache/iecode-packages/manifest.json"), "{}");
+    await writeFile(
+      join(infra, "systemd/rg-fixture.service"),
+      "WorkingDirectory=/srv/rg/current\nEnvironmentFile=/etc/rg-fixture.env\n",
+    );
+    const catalog = join(fixture, "catalog.json");
+    const bytes =
+      JSON.stringify({ services: [{ id: "rg-fixture", unit: "rg-fixture.service" }] }) + "\n";
+    await writeFile(catalog, bytes);
+    const script = await readFile(join(root, "scripts/rg/assemble-vps-release.sh"), "utf8");
+    const marker =
+      'python3 - "$stage" "$catalog" "$commit" "$infra_root" "$infra_commit" <<\'PY\'\n';
+    const python = script.split(marker)[1]?.split("\nPY\n")[0];
+    expect(python).toBeDefined();
+    const child = Bun.spawn(
+      ["python3", "-I", "-c", python!, artifact, catalog, "a".repeat(40), infra, "b".repeat(40)],
+      { stdout: "pipe", stderr: "pipe" },
+    );
+    const [code, error] = await Promise.all([child.exited, new Response(child.stderr).text()]);
+    expect(error).toBe("");
+    expect(code).toBe(0);
+    const manifest = await Bun.file(join(artifact, "release.json")).json();
+    const { createHash } = await import("node:crypto");
+    expect(manifest.catalog).toEqual({
+      path: "service-catalog.json",
+      sha256: createHash("sha256").update(bytes).digest("hex"),
+    });
+    expect(await readFile(join(artifact, "service-catalog.json"), "utf8")).toBe(bytes);
+  } finally {
+    await rm(fixture, { recursive: true, force: true });
+  }
+});

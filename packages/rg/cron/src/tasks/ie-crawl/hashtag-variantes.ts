@@ -75,14 +75,16 @@ const SUFFIXES = ["s", "2026", "26"] as const;
  * hashtag pour un humain, et c'est la seule chose qui compte ici.
  */
 export function normaliserHashtag(brut: string): string {
-	return (brut || "")
-		.replace(/^#+/, "")
-		.normalize("NFD")
-		// Retrait des diacritiques : `#Célébration` et `#Celebration` sont la même
-		// intention. `\p{Diacritic}` couvre les accents combinants après NFD.
-		.replace(/\p{Diacritic}/gu, "")
-		.toLowerCase()
-		.replace(/[^a-z0-9]/g, "");
+  return (
+    (brut || "")
+      .replace(/^#+/, "")
+      .normalize("NFD")
+      // Retrait des diacritiques : `#Célébration` et `#Celebration` sont la même
+      // intention. `\p{Diacritic}` couvre les accents combinants après NFD.
+      .replace(/\p{Diacritic}/gu, "")
+      .toLowerCase()
+      .replace(/[^a-z0-9]/g, "")
+  );
 }
 
 /**
@@ -93,14 +95,14 @@ export function normaliserHashtag(brut: string): string {
  * n'en est pas un chez X non plus — il est écarté.
  */
 export function hashtagsDuTexte(texte: string): string[] {
-	const trouves: string[] = [];
-	for (const appariement of (texte || "").matchAll(/#([\p{L}\p{N}_]+)/gu)) {
-		const brut = appariement[1] ?? "";
-		if (brut && !/^\d+$/.test(brut)) {
-			trouves.push(brut);
-		}
-	}
-	return trouves;
+  const trouves: string[] = [];
+  for (const appariement of (texte || "").matchAll(/#([\p{L}\p{N}_]+)/gu)) {
+    const brut = appariement[1] ?? "";
+    if (brut && !/^\d+$/.test(brut)) {
+      trouves.push(brut);
+    }
+  }
+  return trouves;
 }
 
 /**
@@ -114,49 +116,49 @@ export function hashtagsDuTexte(texte: string): string[] {
  * @returns la distance, ou `plafond + 1` dès qu'elle est certainement dépassée.
  */
 export function distanceFaute(a: string, b: string, plafond: number): number {
-	if (a === b) return 0;
-	// Un écart de longueur supérieur au plafond ne peut pas être rattrapé : ni
-	// insertion ni suppression ne comble plus d'un caractère à la fois.
-	if (Math.abs(a.length - b.length) > plafond) return plafond + 1;
+  if (a === b) return 0;
+  // Un écart de longueur supérieur au plafond ne peut pas être rattrapé : ni
+  // insertion ni suppression ne comble plus d'un caractère à la fois.
+  if (Math.abs(a.length - b.length) > plafond) return plafond + 1;
 
-	const precedente = new Array<number>(b.length + 1);
-	const courante = new Array<number>(b.length + 1);
-	let avantPrecedente = new Array<number>(b.length + 1);
+  const precedente = Array.from({ length: b.length + 1 }, () => 0);
+  const courante = Array.from({ length: b.length + 1 }, () => 0);
+  let avantPrecedente = Array.from({ length: b.length + 1 }, () => 0);
 
-	for (let j = 0; j <= b.length; j++) precedente[j] = j;
+  for (let j = 0; j <= b.length; j++) precedente[j] = j;
 
-	for (let i = 1; i <= a.length; i++) {
-		courante[0] = i;
-		let meilleureDeLaLigne = courante[0]!;
-		for (let j = 1; j <= b.length; j++) {
-			const cout = a[i - 1] === b[j - 1] ? 0 : 1;
-			let valeur = Math.min(
-				courante[j - 1]! + 1, // insertion
-				precedente[j]! + 1, // suppression
-				precedente[j - 1]! + cout // substitution
-			);
-			// Transposition : `ab` ↔ `ba` compte pour UNE faute.
-			if (i > 1 && j > 1 && a[i - 1] === b[j - 2] && a[i - 2] === b[j - 1]) {
-				valeur = Math.min(valeur, avantPrecedente[j - 2]! + 1);
-			}
-			courante[j] = valeur;
-			if (valeur < meilleureDeLaLigne) meilleureDeLaLigne = valeur;
-		}
-		// Toute la ligne dépasse déjà le plafond : le reste ne peut que croître.
-		if (meilleureDeLaLigne > plafond) return plafond + 1;
-		avantPrecedente = precedente.slice();
-		for (let j = 0; j <= b.length; j++) precedente[j] = courante[j]!;
-	}
+  for (let i = 1; i <= a.length; i++) {
+    courante[0] = i;
+    let meilleureDeLaLigne = courante[0]!;
+    for (let j = 1; j <= b.length; j++) {
+      const cout = a[i - 1] === b[j - 1] ? 0 : 1;
+      let valeur = Math.min(
+        courante[j - 1]! + 1, // insertion
+        precedente[j]! + 1, // suppression
+        precedente[j - 1]! + cout, // substitution
+      );
+      // Transposition : `ab` ↔ `ba` compte pour UNE faute.
+      if (i > 1 && j > 1 && a[i - 1] === b[j - 2] && a[i - 2] === b[j - 1]) {
+        valeur = Math.min(valeur, avantPrecedente[j - 2]! + 1);
+      }
+      courante[j] = valeur;
+      if (valeur < meilleureDeLaLigne) meilleureDeLaLigne = valeur;
+    }
+    // Toute la ligne dépasse déjà le plafond : le reste ne peut que croître.
+    if (meilleureDeLaLigne > plafond) return plafond + 1;
+    avantPrecedente = precedente.slice();
+    for (let j = 0; j <= b.length; j++) precedente[j] = courante[j]!;
+  }
 
-	const distance = precedente[b.length]!;
-	return distance > plafond ? plafond + 1 : distance;
+  const distance = precedente[b.length]!;
+  return distance > plafond ? plafond + 1 : distance;
 }
 
 /** Nombre de fautes tolérées pour un hashtag de cette longueur. */
 export function toleranceFautes(longueur: number): number {
-	if (longueur >= LONGUEUR_MIN_DEUX_FAUTES) return 2;
-	if (longueur >= LONGUEUR_MIN_APPROX) return 1;
-	return 0;
+  if (longueur >= LONGUEUR_MIN_DEUX_FAUTES) return 2;
+  if (longueur >= LONGUEUR_MIN_APPROX) return 1;
+  return 0;
 }
 
 /**
@@ -172,43 +174,43 @@ export function toleranceFautes(longueur: number): number {
  * de casse (l'index de X est insensible à la casse).
  */
 export function variantesRecherche(hashtag: string): string[] {
-	const base = normaliserHashtag(hashtag);
-	if (!base) return [];
+  const base = normaliserHashtag(hashtag);
+  if (!base) return [];
 
-	const variantes: string[] = [base];
-	const ajouter = (candidate: string) => {
-		const propre = candidate.replace(/[^\p{L}\p{N}_]/gu, "");
-		if (propre && propre.toLowerCase() !== base && !variantes.includes(propre.toLowerCase())) {
-			variantes.push(propre.toLowerCase());
-		}
-	};
+  const variantes: string[] = [base];
+  const ajouter = (candidate: string) => {
+    const propre = candidate.replace(/[^\p{L}\p{N}_]/gu, "");
+    if (propre && propre.toLowerCase() !== base && !variantes.includes(propre.toLowerCase())) {
+      variantes.push(propre.toLowerCase());
+    }
+  };
 
-	// 1. Séparateurs au point de composition. `#IERGDay` s'écrit très souvent
-	//    `#IERG_Day` : c'est la faute la plus payante, et la seule que X puisse
-	//    retrouver telle quelle (le tiret bas fait partie du hashtag chez lui).
-	for (const position of pointsDeComposition(hashtag, base)) {
-		for (const separateur of SEPARATEURS) {
-			if (separateur === "_") {
-				ajouter(`${base.slice(0, position)}_${base.slice(position)}`);
-			}
-		}
-	}
+  // 1. Séparateurs au point de composition. `#IERGDay` s'écrit très souvent
+  //    `#IERG_Day` : c'est la faute la plus payante, et la seule que X puisse
+  //    retrouver telle quelle (le tiret bas fait partie du hashtag chez lui).
+  for (const position of pointsDeComposition(hashtag, base)) {
+    for (const separateur of SEPARATEURS) {
+      if (separateur === "_") {
+        ajouter(`${base.slice(0, position)}_${base.slice(position)}`);
+      }
+    }
+  }
 
-	// 2. Suffixes ajoutés spontanément (pluriel, millésime).
-	for (const suffixe of SUFFIXES) ajouter(base + suffixe);
+  // 2. Suffixes ajoutés spontanément (pluriel, millésime).
+  for (const suffixe of SUFFIXES) ajouter(base + suffixe);
 
-	// 3. Transpositions de deux lettres adjacentes — la faute de frappe reine.
-	for (let i = 0; i + 1 < base.length; i++) {
-		ajouter(base.slice(0, i) + base[i + 1] + base[i] + base.slice(i + 2));
-	}
+  // 3. Transpositions de deux lettres adjacentes — la faute de frappe reine.
+  for (let i = 0; i + 1 < base.length; i++) {
+    ajouter(base.slice(0, i) + base[i + 1] + base[i] + base.slice(i + 2));
+  }
 
-	// 4. Lettre doublée (touche qui rebondit) et lettre avalée (touche ratée).
-	for (let i = 0; i < base.length; i++) {
-		ajouter(base.slice(0, i) + base[i] + base.slice(i));
-		ajouter(base.slice(0, i) + base.slice(i + 1));
-	}
+  // 4. Lettre doublée (touche qui rebondit) et lettre avalée (touche ratée).
+  for (let i = 0; i < base.length; i++) {
+    ajouter(base.slice(0, i) + base[i] + base.slice(i));
+    ajouter(base.slice(0, i) + base.slice(i + 1));
+  }
 
-	return variantes.slice(0, MAX_VARIANTES_RECHERCHE);
+  return variantes.slice(0, MAX_VARIANTES_RECHERCHE);
 }
 
 /**
@@ -220,37 +222,37 @@ export function variantesRecherche(hashtag: string): string[] {
  * plus où un humain insérerait un tiret bas.
  */
 function pointsDeComposition(origine: string, base: string): number[] {
-	const brut = (origine || "").replace(/^#+/, "");
-	const positions = new Set<number>();
-	let indexNormalise = 0;
-	for (let i = 0; i < brut.length; i++) {
-		const c = brut[i]!;
-		if (!/[a-z0-9]/i.test(c)) continue;
-		const precedent = brut[i - 1];
-		// Majuscule précédée d'une minuscule, ou majuscule suivie d'une minuscule
-		// dans une série de majuscules (`IERGDay` → avant le `D`).
-		if (
-			indexNormalise > 0 &&
-			/[A-Z]/.test(c) &&
-			(/[a-z0-9]/.test(precedent ?? "") || /[a-z]/.test(brut[i + 1] ?? ""))
-		) {
-			positions.add(indexNormalise);
-		}
-		indexNormalise++;
-	}
-	// Repli : un hashtag écrit tout en minuscules ne dit rien de sa composition.
-	if (positions.size === 0 && base.length >= 6) return [];
-	return [...positions].filter((p) => p > 0 && p < base.length);
+  const brut = (origine || "").replace(/^#+/, "");
+  const positions = new Set<number>();
+  let indexNormalise = 0;
+  for (let i = 0; i < brut.length; i++) {
+    const c = brut[i]!;
+    if (!/[a-z0-9]/i.test(c)) continue;
+    const precedent = brut[i - 1];
+    // Majuscule précédée d'une minuscule, ou majuscule suivie d'une minuscule
+    // dans une série de majuscules (`IERGDay` → avant le `D`).
+    if (
+      indexNormalise > 0 &&
+      /[A-Z]/.test(c) &&
+      (/[a-z0-9]/.test(precedent ?? "") || /[a-z]/.test(brut[i + 1] ?? ""))
+    ) {
+      positions.add(indexNormalise);
+    }
+    indexNormalise++;
+  }
+  // Repli : un hashtag écrit tout en minuscules ne dit rien de sa composition.
+  if (positions.size === 0 && base.length >= 6) return [];
+  return [...positions].filter((p) => p > 0 && p < base.length);
 }
 
 /** Ce qu'un post porte réellement, et à quel hashtag de campagne ça correspond. */
 export interface Appariement {
-	/** Le hashtag de la campagne (forme déclarée en base). */
-	hashtag: string;
-	/** Ce que le post écrit, tel quel — sans croisillon. */
-	ecrit: string;
-	/** Nombre de fautes : 0 = graphie exacte. */
-	fautes: number;
+  /** Le hashtag de la campagne (forme déclarée en base). */
+  hashtag: string;
+  /** Ce que le post écrit, tel quel — sans croisillon. */
+  ecrit: string;
+  /** Nombre de fautes : 0 = graphie exacte. */
+  fautes: number;
 }
 
 /**
@@ -263,37 +265,34 @@ export interface Appariement {
  * @param texte   le texte du post
  * @param hashtags les hashtags de la campagne (déclarés + rattrapage)
  */
-export function apparierHashtag(
-	texte: string,
-	hashtags: readonly string[]
-): Appariement | null {
-	const ecrits = hashtagsDuTexte(texte);
-	if (ecrits.length === 0 || hashtags.length === 0) return null;
+export function apparierHashtag(texte: string, hashtags: readonly string[]): Appariement | null {
+  const ecrits = hashtagsDuTexte(texte);
+  if (ecrits.length === 0 || hashtags.length === 0) return null;
 
-	const cibles = hashtags
-		.map((h) => ({ declare: h, normalise: normaliserHashtag(h) }))
-		.filter((c) => c.normalise.length > 0);
+  const cibles = hashtags
+    .map((h) => ({ declare: h, normalise: normaliserHashtag(h) }))
+    .filter((c) => c.normalise.length > 0);
 
-	let meilleur: Appariement | null = null;
+  let meilleur: Appariement | null = null;
 
-	for (const ecrit of ecrits) {
-		const normalise = normaliserHashtag(ecrit);
-		if (!normalise) continue;
-		for (const cible of cibles) {
-			if (normalise === cible.normalise) {
-				// Rien ne battra un appariement exact : on sort tout de suite.
-				return { hashtag: cible.declare, ecrit, fautes: 0 };
-			}
-			const tolerance = toleranceFautes(cible.normalise.length);
-			if (tolerance === 0) continue;
-			const distance = distanceFaute(normalise, cible.normalise, tolerance);
-			if (distance <= tolerance && (meilleur === null || distance < meilleur.fautes)) {
-				meilleur = { hashtag: cible.declare, ecrit, fautes: distance };
-			}
-		}
-	}
+  for (const ecrit of ecrits) {
+    const normalise = normaliserHashtag(ecrit);
+    if (!normalise) continue;
+    for (const cible of cibles) {
+      if (normalise === cible.normalise) {
+        // Rien ne battra un appariement exact : on sort tout de suite.
+        return { hashtag: cible.declare, ecrit, fautes: 0 };
+      }
+      const tolerance = toleranceFautes(cible.normalise.length);
+      if (tolerance === 0) continue;
+      const distance = distanceFaute(normalise, cible.normalise, tolerance);
+      if (distance <= tolerance && (meilleur === null || distance < meilleur.fautes)) {
+        meilleur = { hashtag: cible.declare, ecrit, fautes: distance };
+      }
+    }
+  }
 
-	return meilleur;
+  return meilleur;
 }
 
 /**
@@ -308,31 +307,30 @@ export function apparierHashtag(
  * @param suffixe   filtres à recoller à chaque requête (`-filter:replies since:…`)
  */
 export function requetesVariantes(
-	variantes: readonly string[],
-	suffixe = "",
-	longueurMax = 400
+  variantes: readonly string[],
+  suffixe = "",
+  longueurMax = 400,
 ): string[] {
-	const uniques = [...new Set(variantes.filter(Boolean))];
-	if (uniques.length === 0) return [];
+  const uniques = [...new Set(variantes.filter(Boolean))];
+  if (uniques.length === 0) return [];
 
-	const requetes: string[] = [];
-	let lot: string[] = [];
+  const requetes: string[] = [];
+  let lot: string[] = [];
 
-	const vider = () => {
-		if (lot.length === 0) return;
-		const groupe = lot.length === 1 ? `#${lot[0]}` : `(${lot.map((v) => `#${v}`).join(" OR ")})`;
-		requetes.push(suffixe ? `${groupe} ${suffixe}`.trim() : groupe);
-		lot = [];
-	};
+  const vider = () => {
+    if (lot.length === 0) return;
+    const groupe = lot.length === 1 ? `#${lot[0]}` : `(${lot.map((v) => `#${v}`).join(" OR ")})`;
+    requetes.push(suffixe ? `${groupe} ${suffixe}`.trim() : groupe);
+    lot = [];
+  };
 
-	for (const variante of uniques) {
-		const essai = [...lot, variante];
-		const longueur =
-			essai.reduce((n, v) => n + v.length + 5, 0) + suffixe.length + 2;
-		if (lot.length > 0 && longueur > longueurMax) vider();
-		lot.push(variante);
-	}
-	vider();
+  for (const variante of uniques) {
+    const essai = [...lot, variante];
+    const longueur = essai.reduce((n, v) => n + v.length + 5, 0) + suffixe.length + 2;
+    if (lot.length > 0 && longueur > longueurMax) vider();
+    lot.push(variante);
+  }
+  vider();
 
-	return requetes;
+  return requetes;
 }
