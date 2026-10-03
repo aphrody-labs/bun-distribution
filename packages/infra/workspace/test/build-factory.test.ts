@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0
 import { expect, test } from "bun:test";
-import { mkdtemp, mkdir, rm, writeFile } from "node:fs/promises";
+import { chmod, mkdtemp, mkdir, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { buildFactoryPlan, type BuildFactoryConfig } from "../src/build-factory.ts";
+import { runInfra } from "../src/runtime.ts";
 
 const config: BuildFactoryConfig = {
   schemaVersion: 1,
@@ -16,6 +17,28 @@ const config: BuildFactoryConfig = {
   rust: { maxJobs: 6 },
 };
 const revision = "a".repeat(40);
+
+test("Infra propagates the factory command timeout per invocation without mutating global environment", async () => {
+  const root = await mkdtemp(join(tmpdir(), "aphrody-infra-env-"));
+  const original = process.env.APHRODY_SSH_COMMAND_TIMEOUT_SECS;
+  try {
+    const binary = join(root, "infra-fixture");
+    await writeFile(
+      binary,
+      `#!${process.execPath}\nconsole.log(process.env.APHRODY_SSH_COMMAND_TIMEOUT_SECS);\n`,
+    );
+    await chmod(binary, 0o755);
+    const result = await runInfra({
+      args: ["ssh", "exec", "--host", "vps", "--cmd", "fixture"],
+      env: { APHRODY_INFRA_BIN: binary, APHRODY_SSH_COMMAND_TIMEOUT_SECS: "21600" },
+    });
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout.trim()).toBe("21600");
+    expect(process.env.APHRODY_SSH_COMMAND_TIMEOUT_SECS).toBe(original);
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
 
 test("factory plans use the existing Infra owner and shared serial lock", () => {
   const plan = buildFactoryPlan(config, "aphrody", revision, ["bun", "run", "build"]);
