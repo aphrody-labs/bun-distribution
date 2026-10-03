@@ -1,0 +1,210 @@
+// SPDX-License-Identifier: Apache-2.0
+import { spawnSync } from "@aphrody/bun/spawn-sync";
+import { existsSync, lstatSync, readFileSync, realpathSync } from "node:fs";
+import { isAbsolute, relative, resolve, sep } from "node:path";
+
+const help = `Usage: aphrody-workspace code-edit <search|replace|add-before|add-after|remove> [options]
+  --engine text|regex|ast|codemod  Default: text
+  --root PATH                    Default: current directory
+  --glob PATTERN                  Repeatable file filters (ripgrep syntax)
+  --find PATTERN                  Literal, regex or AST pattern
+  --with TEXT                     Replacement or insertion (empty is allowed)
+  --lang LANG                     AST language, e.g. ts, tsx, rust
+  --transform FILE                Existing jscodeshift codemod
+  --apply                         Write files; default previews only
+  --help                          Show help
+
+Selection respects ripgrep ignore rules. Binary files and symlinks are excluded.
+AST supports search/replace/remove; insertion uses an explicit rewrite template.
+Codemod supports replace with --transform. Globs select its input files too.
+`;
+export type EditOptions = {
+  operation: string;
+  engine: string;
+  root: string;
+  globs: string[];
+  find?: string;
+  replacement?: string;
+  lang?: string;
+  transform?: string;
+  apply: boolean;
+};
+export function parseCodeEdit(argv: string[]): EditOptions {
+  const options: EditOptions = {
+    operation: argv[0] ?? "help",
+    engine: "text",
+    root: process.cwd(),
+    globs: [],
+    apply: false,
+  };
+  if (argv.includes("--help") || argv.includes("-h")) return { ...options, operation: "help" };
+  for (let i = 1; i < argv.length; i++) {
+    const flag = argv[i]!;
+    if (flag === "--apply") {
+      options.apply = true;
+      continue;
+    }
+    const value = argv[++i];
+    if (value === undefined) throw new Error(`Missing value for ${flag}`);
+    switch (flag) {
+      case "--root":
+        options.root = resolve(value);
+        break;
+      case "--engine":
+        options.engine = value;
+        break;
+      case "--glob":
+        options.globs.push(value);
+        break;
+      case "--find":
+        options.find = value;
+        break;
+      case "--with":
+        options.replacement = value;
+        break;
+      case "--lang":
+        options.lang = value;
+        break;
+      case "--transform":
+        options.transform = resolve(value);
+        break;
+      default:
+        throw new Error(`Unknown option: ${flag}`);
+    }
+  }
+  if (!["search", "replace", "add-before", "add-after", "remove"].includes(options.operation))
+    throw new Error("Unknown operation");
+  if (!["text", "regex", "ast", "codemod"].includes(options.engine))
+    throw new Error("Unknown engine");
+  if (options.engine === "codemod") {
+    if (options.operation !== "replace" || !options.transform || !existsSync(options.transform))
+      throw new Error("Codemod requires replace --transform FILE");
+  } else {
+    if (!options.find) throw new Error("A non-empty --find pattern is required");
+    if (
+      options.operation !== "search" &&
+      options.operation !== "remove" &&
+      options.replacement === undefined
+    )
+      throw new Error("--with is required");
+    if (options.engine === "ast" && (!options.lang || options.operation.startsWith("add-")))
+      throw new Error("AST requires --lang; use replace with a rewrite template for insertion");
+  }
+  return options;
+}
+export function editCommand(options: EditOptions, paths: string[]): string[] {
+  if (options.engine === "codemod")
+    return [
+      "bunx",
+      "--bun",
+      "jscodeshift",
+      "--fail-on-error",
+      "-t",
+      options.transform!,
+      ...(options.apply ? [] : ["--dry", "--print"]),
+      ...(options.lang ? ["--parser", options.lang] : []),
+      ...paths,
+    ];
+  if (options.engine === "ast")
+    return [
+      "bunx",
+      "-p",
+      "@ast-grep/cli",
+      "ast-grep",
+      "run",
+      "-p",
+      options.find!,
+      "-l",
+      options.lang!,
+      ...(options.operation === "search"
+        ? ["--json"]
+        : [
+            "-r",
+            options.operation === "remove" ? "" : options.replacement!,
+            ...(options.apply ? ["-U"] : []),
+          ]),
+      ...paths,
+    ];
+  if (options.operation === "search")
+    return [
+      "rg",
+      "--line-number",
+      ...(options.engine === "text" ? ["-F"] : []),
+      "--",
+      options.find!,
+      ...paths,
+    ];
+  let replacement = options.operation === "remove" ? "" : options.replacement!;
+  if (options.operation.startsWith("add-")) {
+    const match = options.engine === "text" ? options.find! : "$0";
+    if (options.engine === "regex") replacement = replacement.replaceAll("$", () => "$$");
+    replacement = options.operation === "add-before" ? replacement + match : match + replacement;
+  }
+  return [
+    "sd",
+    ...(options.apply ? [] : ["--preview"]),
+    ...(options.engine === "text" ? ["-F"] : []),
+    "--",
+    options.find!,
+    replacement,
+    ...paths,
+  ];
+}
+function execute(
+  command: string[],
+  cwd: string,
+): { status: number; stdout: string; stderr: string } {
+  const result = spawnSync(command[0]!, command.slice(1), {
+    cwd,
+    encoding: "utf8",
+    maxBuffer: 64 * 1024 * 1024,
+  });
+  if (result.error) throw result.error;
+  return { status: result.status ?? 1, stdout: result.stdout, stderr: result.stderr };
+}
+export function runCodeEdit(argv: string[]): number {
+  try {
+    const options = parseCodeEdit(argv);
+    if (options.operation === "help") {
+      console.log(help);
+      return 0;
+    }
+    const root = realpathSync(options.root);
+    const selected = execute(
+      ["rg", "--files", "-0", ...options.globs.flatMap((g) => ["-g", g]), "--", root],
+      root,
+    );
+    if (selected.status > 1) throw new Error(selected.stderr);
+    const paths = selected.stdout
+      .split("\0")
+      .filter(Boolean)
+      .filter((path) => {
+        if (!lstatSync(path).isFile()) return false;
+        const local = relative(root, realpathSync(path));
+        return (
+          !isAbsolute(local) &&
+          local !== ".." &&
+          !local.startsWith(`..${sep}`) &&
+          !readFileSync(path).includes(0)
+        );
+      });
+    let failed = false;
+    for (let offset = 0; offset < paths.length; offset += 100) {
+      const result = execute(editCommand(options, paths.slice(offset, offset + 100)), root);
+      process.stdout.write(result.stdout);
+      process.stderr.write(result.stderr);
+      // Search tools use 1 to indicate no matches, not an execution error.
+      if (result.status !== 0 && !(options.operation === "search" && result.status === 1))
+        failed = true;
+      if (failed) break;
+    }
+    console.error(
+      `${options.apply ? "Apply" : "Preview"}: ${paths.length} selected text files; engine=${options.engine}`,
+    );
+    return failed ? 1 : 0;
+  } catch (error) {
+    console.error(error instanceof Error ? error.message : String(error));
+    return 1;
+  }
+}
+if (import.meta.main) process.exit(runCodeEdit(process.argv.slice(2)));
