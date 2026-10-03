@@ -1,7 +1,7 @@
 {
-  "sourceRoot": "/home/aphro/source",
-  "outputRoot": "/home/aphro/.local/share/aphrody/wsl-artifacts",
-  "workspace": "/home/aphro/aphrody",
+  "sourceRoot": "${workspace}/.cache/upstream",
+  "outputRoot": "${data}/aphrody/wsl-artifacts",
+  "workspace": "${workspace}",
   "jobs": 4,
   "timeoutSeconds": 21600,
   "distribution": "AphrodyOS",

@@ -13,6 +13,33 @@ const WINCLEAN_INBOX_PATH: &str = "C:/winclean/.coord/inbox-from-winclean.jsonl"
 /// Absolute path to the peer heartbeat file written by winclean.
 const WINCLEAN_HEARTBEAT_PATH: &str = "C:/winclean/.coord/heartbeat-winclean.txt";
 
+/// Environment variable overriding the winclean root (a Windows path such as `D:/winclean`).
+const WINCLEAN_ROOT_ENV: &str = "APHRODY_WINCLEAN_ROOT";
+
+/// Winclean path for `default` (a `C:/winclean/...` path), honouring the root override.
+fn winclean_path(default: &str) -> String {
+    match std::env::var(WINCLEAN_ROOT_ENV) {
+        Ok(root) if !root.trim().is_empty() => {
+            format!("{}{}", root.trim().trim_end_matches(['/', '\\']), &default["C:/winclean".len()..])
+        }
+        _ => default.to_string(),
+    }
+}
+
+/// Host locations of a Windows path: itself on Windows, else the `/x/` and `/mnt/x/` drive mounts.
+fn host_candidates(windows_path: &str) -> Vec<std::path::PathBuf> {
+    let bytes = windows_path.as_bytes();
+    if cfg!(target_os = "windows") || bytes.len() < 3 || bytes[1] != b':' {
+        return vec![std::path::PathBuf::from(windows_path)];
+    }
+    let drive = (bytes[0] as char).to_ascii_lowercase();
+    let rest = windows_path[2..].replace('\\', "/");
+    vec![
+        std::path::PathBuf::from(format!("/{drive}{rest}")),
+        std::path::PathBuf::from(format!("/mnt/{drive}{rest}")),
+    ]
+}
+
 /// Outcome of a single diagnostic check.
 pub enum CheckResult {
     Ok(String),
@@ -353,15 +380,7 @@ fn check_peer_heartbeat() -> CheckResult {
     // `channels[type=heartbeat_file]`.  We use the hard-coded constants so
     // the check is self-contained and does not require parsing the coord ai.json
     // at runtime.
-    let candidates = if cfg!(target_os = "windows") {
-        vec![std::path::PathBuf::from(WINCLEAN_HEARTBEAT_PATH)]
-    } else {
-        // WSL / Linux: translate C:/ prefix.
-        vec![
-            std::path::PathBuf::from(WINCLEAN_HEARTBEAT_PATH.replace("C:/", "/c/")),
-            std::path::PathBuf::from(WINCLEAN_HEARTBEAT_PATH.replace("C:/", "/mnt/c/")),
-        ]
-    };
+    let candidates = host_candidates(&winclean_path(WINCLEAN_HEARTBEAT_PATH));
 
     let path = match candidates.iter().find(|p| p.exists()) {
         Some(p) => p.clone(),
@@ -405,14 +424,8 @@ fn check_inbox() -> CheckResult {
     // The canonical inbox path is declared in the coord ai.json channels block
     // (channels[type=file_jsonl].outbox).  We resolve the platform-specific
     // equivalent of the C:/ path rather than looking in the aphrody repo root.
-    let path = if cfg!(target_os = "windows") {
-        std::path::PathBuf::from(WINCLEAN_INBOX_PATH)
-    } else {
-        // WSL / Linux: try both mount prefixes.
-        let p1 = std::path::PathBuf::from(WINCLEAN_INBOX_PATH.replace("C:/", "/c/"));
-        let p2 = std::path::PathBuf::from(WINCLEAN_INBOX_PATH.replace("C:/", "/mnt/c/"));
-        if p1.exists() { p1 } else { p2 }
-    };
+    let inbox = host_candidates(&winclean_path(WINCLEAN_INBOX_PATH));
+    let path = inbox.iter().find(|candidate| candidate.exists()).unwrap_or(&inbox[inbox.len() - 1]).clone();
 
     if !path.exists() {
         return CheckResult::Warn(format!("absent at {WINCLEAN_INBOX_PATH}"));

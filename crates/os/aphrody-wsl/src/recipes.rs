@@ -28,7 +28,7 @@ pub fn plan(config:&Config,target:Target)->Result<Vec<Step>> {
     let (program,script)=match target {
         Target::Kernel=>(PathBuf::from("bash"),Some(config.script("build-wsl-kernel.sh"))),
         Target::Wslg=>(PathBuf::from("python3"),Some(config.script("build-wslg.py"))),
-        Target::Wsl=>(PathBuf::from("/mnt/c/Windows/System32/WindowsPowerShell/v1.0/powershell.exe"),None),
+        Target::Wsl=>(PathBuf::from("powershell.exe"),None),
         Target::Distro=>(PathBuf::from("sudo"),Some(config.script("build-wsl-distro.sh"))),
     };
     let mut complete=Vec::new();

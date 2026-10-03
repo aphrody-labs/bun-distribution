@@ -1,6 +1,6 @@
 # WSL boot action audit
 
-Date: 2026-10-01, Europe/Paris. Source checkout: `/home/aphro/source/WSL`, Microsoft WSL commit `c34e75aea8dcc50c0c2f9e76b2de9b26a58e8b67`.
+Date: 2026-10-01, Europe/Paris. Source checkout: `.cache/upstream/WSL`, Microsoft WSL commit `c34e75aea8dcc50c0c2f9e76b2de9b26a58e8b67`.
 
 ## Finding
 

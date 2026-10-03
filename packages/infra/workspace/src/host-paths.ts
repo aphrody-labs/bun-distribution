@@ -126,6 +126,8 @@ export function hostPathArea(path: string): HostPathArea {
   const name = path.split("/").at(-1) ?? "";
   if (path.startsWith("config/systemd/user/")) return "unit";
   if (
+    !path.startsWith("docs/") &&
+    !/\.(md|mdx|txt|rst|html)$/.test(name) &&
     /(^|\/)(aphrody-wsl|msvc-wsl)|\/wsl[-_./]|winclean|diagnostics\/src\/doctor\.rs$|\.ps1$/.test(
       path,
     )

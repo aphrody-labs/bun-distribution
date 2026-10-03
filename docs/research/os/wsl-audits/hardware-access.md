@@ -4,10 +4,10 @@ Audit en lecture seule du 2026-10-01. Le tunnel Aphrody transporte des commandes
 
 ## Révisions consultées
 
-- WSL : `c34e75aea8dcc50c0c2f9e76b2de9b26a58e8b67`, `/home/aphro/source/WSL`.
-- WSLg : `6942bb534b537302a7a22617261d9274db3cfa37`, `/home/aphro/source/wslg`.
-- Windows Terminal : `2b5336c1fca1e53ceeaac09710a13c478938cc8d`, `/home/aphro/source/terminal`.
-- WSL2-Linux-Kernel : `14794180686c2fb6307fbe359c359bec765249f3`, `/home/aphro/source/WSL2-Linux-Kernel`. Checkout terminé et propre pendant cet audit.
+- WSL : `c34e75aea8dcc50c0c2f9e76b2de9b26a58e8b67`, `.cache/upstream/WSL`.
+- WSLg : `6942bb534b537302a7a22617261d9274db3cfa37`, `.cache/upstream/wslg`.
+- Windows Terminal : `2b5336c1fca1e53ceeaac09710a13c478938cc8d`, `.cache/upstream/terminal`.
+- WSL2-Linux-Kernel : `14794180686c2fb6307fbe359c359bec765249f3`, `.cache/upstream/WSL2-Linux-Kernel`. Checkout terminé et propre pendant cet audit.
 
 Les chemins et numéros de ligne ci-dessous sont relatifs à ces clones, donc reproductibles aux révisions indiquées. Le HEAD du clone n'est pas une preuve que le binaire installé a été construit avec ce même HEAD.
 

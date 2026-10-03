@@ -41,7 +41,28 @@ pub struct Config {
 }
 impl Config {
     pub fn read(path: &Path) -> Result<Self> {
-        let config: Self = serde_json::from_slice(&fs::read(path)?)?;
+        // <workspace>/config/os/wsl-build.json: the checkout is three levels above the file.
+        let absolute = path.canonicalize()?;
+        let workspace = absolute.ancestors().nth(3).ok_or_else(|| Error::Invalid("config must live under <workspace>/config/os".into()))?;
+        Self::parse(&fs::read(path)?, workspace)
+    }
+    /// Parses a configuration whose roots may use `${workspace}`, `${home}` and `${data}`.
+    pub fn parse(bytes: &[u8], workspace: &Path) -> Result<Self> {
+        let mut config: Self = serde_json::from_slice(bytes)?;
+        let home = std::env::var_os("HOME").or_else(|| std::env::var_os("USERPROFILE")).map(PathBuf::from);
+        let data = std::env::var_os("XDG_DATA_HOME").map(PathBuf::from)
+            .or_else(|| std::env::var_os("LOCALAPPDATA").map(PathBuf::from))
+            .or_else(|| home.as_ref().map(|home| home.join(".local/share")));
+        for root in [&mut config.source_root, &mut config.output_root, &mut config.workspace] {
+            let mut text = root.to_string_lossy().replace("${workspace}", &workspace.to_string_lossy());
+            for (token, value) in [("${home}", &home), ("${data}", &data)] {
+                if text.contains(token) {
+                    let value = value.as_ref().ok_or_else(|| Error::Invalid(format!("{token} is not available on this host")))?;
+                    text = text.replace(token, &value.to_string_lossy());
+                }
+            }
+            *root = PathBuf::from(text);
+        }
         config.validate()?;
         Ok(config)
     }
@@ -142,7 +163,7 @@ pub fn import(config:&Config,install_dir:&Path)->Result<()> {
         if !out.status.success(){return Err(Error::Invalid("wslpath failed".into()));}
         Ok(String::from_utf8_lossy(&out.stdout).trim().into())
     };
-    let executable=if cfg!(windows){PathBuf::from("wsl.exe")}else{PathBuf::from("/mnt/c/Windows/System32/wsl.exe")};
+    let executable=PathBuf::from("wsl.exe"); // resolved through PATH: WSL interop appends the Windows directories
     let status=Command::new(executable).args(["--import",&config.distribution,&windows_path(install_dir)?,&windows_path(&image)?,"--version","2"]).status()?;
     if !status.success(){return Err(Error::Invalid("WSL import failed; existing distributions are never unregistered".into()));}
     Ok(())
@@ -151,7 +172,7 @@ pub fn import(config:&Config,install_dir:&Path)->Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    fn config()->Config {serde_json::from_str(include_str!("../../../../config/os/wsl-build.json")).unwrap()}
+    fn config()->Config {Config::parse(include_bytes!("../../../../config/os/wsl-build.json"), Path::new("/aphrody-workspace")).unwrap()}
     #[test] fn rejects_unsafe_roots_and_names(){let mut c=config();c.output_root=c.workspace.clone();assert!(c.validate().is_err());c=config();c.distribution="../Ubuntu".into();assert!(c.validate().is_err());c=config();c.sources[0].revision="main".into();assert!(c.validate().is_err());}
     #[test] fn hashes_nonempty_artifacts_and_rejects_empty(){let dir=tempfile::tempdir().unwrap();let p=dir.path().join("artifact");fs::write(&p,b"abc").unwrap();assert_eq!(artifact(&p).unwrap().sha256,"ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad");fs::write(p.clone(),[]).unwrap();assert!(artifact(&p).is_err());}
 }
