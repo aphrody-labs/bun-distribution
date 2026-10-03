@@ -29,8 +29,8 @@ Une réunion des sources ou un build réussi ne constitue pas cette séparation.
 
 Les consommateurs existants, dont Shenron, RG et Koharu, gardent leurs exigences
 fonctionnelles. Ce changement de direction ne qualifie ni leur déploiement ni
-l'abandon de leurs contrats. Le checkout séparé `aphrody-ui` reste hors périmètre
-sans mission UI explicite.
+l'abandon de leurs contrats. Les applications et bibliothèques UI du workspace
+restent des consommateurs produit et suivent leurs propriétaires locaux.
 
 ## 2. Exécution applicative dans le fork Bun
 
@@ -311,7 +311,7 @@ prouve ni build distant réussi ni hook installé.
 | D2 | Compilation, archive serveur et exécution extraite sans Bun/Rust documentées sur Linux x64 ; Docker et systemd non exécutés. |
 | R3 / D3 | Scaffold desktop : Cargo check documenté. Module desktop, fenêtre pilote, permissions, arrêt et installation des bundles restent à qualifier. |
 | R4 / R5 / R6 | Intégration headless, port JSC et retrait V8 restent ouverts. Le module browser est réservé ; Obscura demeure externe. |
-| R7 | Aphrody possède le raccordement permanent et les gates produit : `agent-browser`, puis consommateurs aval Shenron, RG, fut et `aphrody-web-test`, non qualifiés par le patch seul. |
+| R7 | `agent-browser` raccordé durablement (commit `7b362f10d`, pas seulement patch testé puis retiré) : `engine.ts` utilise `@aphrody/runtime-sdk`, surface publique inchangée. Consommateurs directs qualifiés contre ce changement précis : `fut` (148 tests), `rg/cron` (174 tests), `aphrody-web-test` (41 tests), 0 échec ; `web-to-tauri` non affecté (n'importe que `cdp`/`tauri`) ; aucune dépendance Shenron trouvée sur ce paquet. Reste ouvert : `service.ts` garde son `Bun.spawn` direct, et les gates produit plus larges de R7 (migration des applications vers le SDK léger en général) ne sont pas qualifiées par ce seul lot. |
 | D4 / R8 | Publication de packages sur demande du propriétaire ; benchmarks, signature et matrice supportée restent à qualifier. Aucun gain mesuré annoncé. |
 
 Vérification relancée : `bun test test/runtime_sdk.test.ts test/runtime_release.test.ts`
@@ -376,3 +376,28 @@ réécritures. Chaque retrait attend ses preuves de comportement et de rollback.
 La commande ne constitue pas une preuve de migration du runtime ni de gain de
 performance. La livraison sur main et la création de dev préservent les lots
 concurrents et les branches existantes.
+
+## État d'intégration du workspace — 2026-10-03
+
+Le monorepo rassemble les domaines produit dans `apps/` et `packages/`, les
+capacités Rust dans `crates/`, et leurs contrats d'exploitation dans `config/`.
+Les noms de packages et d'API restent compatibles; une ancienne étiquette de
+dépôt ne justifie pas de renommer ou supprimer une capacité active.
+
+| Surface | État vérifié pour le lot partagé | Limite restante |
+| --- | --- | --- |
+| RG website | TypeScript : 0 erreur; 402 tests passés, 0 échec, 2 649 assertions sur 39 fichiers, selon le reçu d'intégration du 2026-10-03 | Build de release et activation non démontrés |
+| Shenron site | Lint/typecheck propres; sondes 11/11, éditeur concurrent 2/2, databooks 19/19 selon le reçu d'intégration du 2026-10-03 | Tests RAG live conditionnés à un rapport récent du corpus |
+| Shenron sur DBFR | Données PostgreSQL et espaces médias persistants observés; le Redis unique conserve plusieurs index logiques | Le paquet candidat attend l'assemblage officiel, les fichiers d'environnement conformes et des preuves de santé/rollback; site, MCP et bot ne sont pas activés |
+| UI et Web | Les packages Bun ne présentaient pas de diff dans l'inspection du 2026-10-03 | Les crates Rust Web restent soumises aux gates Cargo sérialisées |
+
+Cette table rapporte l'état du checkout partagé et de la cible DBFR à la date du
+relevé; elle n'autorise ni fusion destructive des données ni activation implicite.
+Une consolidation Shenron doit conserver les assets servis, comparer les
+identités par chemin et empreinte, dédupliquer sans écraser les divergences, et
+garder PostgreSQL, Redis, RAG et sauvegardes dans leurs stores protégés.
+
+Avant livraison, chaque lot doit laisser un reçu avec les chemins possédés,
+commandes, résultats et limites. L'intégration finale peut regrouper les lots
+terminés dans un commit unique, après avoir comparé le résultat au reçu et sans
+perdre de changements présents dans le checkout.
