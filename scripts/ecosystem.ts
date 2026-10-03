@@ -780,6 +780,23 @@ export function tsTools(src: string): { name: string; description: string }[] {
   return out;
 }
 
+/** Bun kernel subsystem: `registerSubsystem({ name })` and its `{ name, description }` tool specs. */
+export function bunSubsystemTools(
+  src: string,
+): { subsystem: string; tools: { name: string; description: string }[] } | undefined {
+  const call = /\bregisterSubsystem\s*\(\s*\{\s*name\s*:\s*(["'`])([A-Za-z0-9_.-]+)\1/.exec(src);
+  if (call === null) return undefined;
+  const tools: { name: string; description: string }[] = [];
+  const spec = /\bname\s*:\s*(["'`])([A-Za-z0-9_.:-]+)\1\s*,\s*description\s*:\s*/g;
+  for (const m of src.matchAll(spec)) {
+    // The registration's own `name`/`description` describe the subsystem, not a tool.
+    if ((m.index ?? 0) >= call.index && (m.index ?? 0) < call.index + call[0].length) continue;
+    const description = jsString(src, (m.index ?? 0) + m[0].length);
+    tools.push({ name: m[2] as string, description: oneLine(description ?? "") });
+  }
+  return { subsystem: call[2] as string, tools };
+}
+
 // ---------------------------------------------------------------------------------------------
 // Manifests
 // ---------------------------------------------------------------------------------------------
@@ -974,6 +991,15 @@ export function collect(root: string): Ecosystem {
     for (const file of gitFiles(dir, ["*.ts", "*.mts", "*.tsx"])) {
       if (TEST_PATH.test(file)) continue;
       const src = read(join(dir, file));
+      const subsystem = bunSubsystemTools(src);
+      if (subsystem !== undefined) {
+        const pkg = ownerOf(file, pkgDirs) ?? repo;
+        for (const tool of subsystem.tools)
+          addTool(repo, `${pkg} subsystem \`${subsystem.subsystem}\``, "kernel-subsystem", {
+            ...tool,
+            file,
+          });
+      }
       if (!/\bregisterTool\s*\(|\.tool\s*\(\s*["'`]/.test(src)) continue;
       if (!/modelcontextprotocol|McpServer/.test(src) && !/\bregisterTool\s*\(/.test(src)) continue;
       const pkg = ownerOf(file, pkgDirs) ?? repo;

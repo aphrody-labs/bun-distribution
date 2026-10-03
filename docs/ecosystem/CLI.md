@@ -6,7 +6,7 @@ Exact subcommand trees of every shipped binary, read from its clap derive defini
 commands omitted; `cfg:` marks commands compiled only under a feature or target). Flags are not
 listed: run `<command> --help` for them. See [ECOSYSTEM.md](ECOSYSTEM.md) for the crates behind them.
 
-Totals: 63 binaries with a clap surface, 1281 commands.
+Totals: 63 binaries with a clap surface, 1291 commands.
 
 ## aphrody
 
@@ -24,7 +24,7 @@ _No subcommands (flags only)._
 
 ### `aphrody`
 
-Crate `aphrody`, parser `crates/infra/aphrody-command/src/lib.rs#Cli`, 323 commands.
+Crate `aphrody`, parser `crates/infra/aphrody-command/src/lib.rs#Cli`, 328 commands.
 
 - `aphrody rag` — Index and retrieve local code and documentation. _(cfg: all(not(target_arch = "wasm32"), feature = "rag"))_
   - `aphrody rag index` — Index a directory incrementally, including vectors when configured.
@@ -212,6 +212,11 @@ Crate `aphrody`, parser `crates/infra/aphrody-command/src/lib.rs#Cli`, 323 comma
 - `aphrody memory` — Tier-1 memory provider operations — migrate, audit, list backends. _(cfg: not(target_arch = "wasm32"))_
   - `aphrody memory migrate` — Copy all records for `--agent-id` from one provider to another.
 - `aphrody model` — Local model lifecycle — catalog, pull, inspect, verify, evict. _(cfg: not(target_arch = "wasm32"))_
+  - `aphrody model hub` — Discover Hugging Face repositories and verify the selected identity.
+    - `aphrody model hub search` — Search public or selected-identity repository metadata; no payload download.
+    - `aphrody model hub info` — Read repository metadata at a selected revision.
+    - `aphrody model hub runtime` — Read Space runtime status; does not start or provision a Space.
+    - `aphrody model hub auth` — Verify an existing credential with the official Hub, without printing identity data.
   - `aphrody model list` — List locally installed models. _(aliases: ls)_
   - `aphrody model catalog` — Show the curated catalog of models aphrody knows how to run.
   - `aphrody model accel` — Report the accelerators, GPUs and CUDA toolkit found on this machine.
@@ -378,7 +383,7 @@ Crate `aphrody-kernel`, parser `crates/os/kernel/src/main.rs#Cli`, 7 commands.
 
 ### `aphrody-infra`
 
-Crate `aphrody-infra`, parser `crates/infra/infra/src/main.rs#Cli`, 383 commands.
+Crate `aphrody-infra`, parser `crates/infra/infra/src/main.rs#Cli`, 388 commands.
 
 - `aphrody-infra status` — Show target, repository and runtime state without mutation.
 - `aphrody-infra inventory` — Run the existing deep resource inventory through the canonical Bun adapter.
@@ -581,6 +586,11 @@ Crate `aphrody-infra`, parser `crates/infra/infra/src/main.rs#Cli`, 383 commands
   - `aphrody-infra ssh memory` — Tier-1 memory provider operations — migrate, audit, list backends. _(cfg: not(target_arch = "wasm32"))_
     - `aphrody-infra ssh memory migrate` — Copy all records for `--agent-id` from one provider to another.
   - `aphrody-infra ssh model` — Local model lifecycle — catalog, pull, inspect, verify, evict. _(cfg: not(target_arch = "wasm32"))_
+    - `aphrody-infra ssh model hub` — Discover Hugging Face repositories and verify the selected identity.
+      - `aphrody-infra ssh model hub search` — Search public or selected-identity repository metadata; no payload download.
+      - `aphrody-infra ssh model hub info` — Read repository metadata at a selected revision.
+      - `aphrody-infra ssh model hub runtime` — Read Space runtime status; does not start or provision a Space.
+      - `aphrody-infra ssh model hub auth` — Verify an existing credential with the official Hub, without printing identity data.
     - `aphrody-infra ssh model list` — List locally installed models. _(aliases: ls)_
     - `aphrody-infra ssh model catalog` — Show the curated catalog of models aphrody knows how to run.
     - `aphrody-infra ssh model accel` — Report the accelerators, GPUs and CUDA toolkit found on this machine.

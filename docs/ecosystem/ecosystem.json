@@ -4671,6 +4671,42 @@
           ],
           "children": [
             {
+              "name": "hub",
+              "about": "Discover Hugging Face repositories and verify the selected identity.",
+              "aliases": [],
+              "cfg": [],
+              "children": [
+                {
+                  "name": "search",
+                  "about": "Search public or selected-identity repository metadata; no payload download.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "info",
+                  "about": "Read repository metadata at a selected revision.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "runtime",
+                  "about": "Read Space runtime status; does not start or provision a Space.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "auth",
+                  "about": "Verify an existing credential with the official Hub, without printing identity data.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                }
+              ]
+            },
+            {
               "name": "list",
               "about": "List locally installed models.",
               "aliases": [
@@ -7349,6 +7385,42 @@
                 "not(target_arch = \"wasm32\")"
               ],
               "children": [
+                {
+                  "name": "hub",
+                  "about": "Discover Hugging Face repositories and verify the selected identity.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": [
+                    {
+                      "name": "search",
+                      "about": "Search public or selected-identity repository metadata; no payload download.",
+                      "aliases": [],
+                      "cfg": [],
+                      "children": []
+                    },
+                    {
+                      "name": "info",
+                      "about": "Read repository metadata at a selected revision.",
+                      "aliases": [],
+                      "cfg": [],
+                      "children": []
+                    },
+                    {
+                      "name": "runtime",
+                      "about": "Read Space runtime status; does not start or provision a Space.",
+                      "aliases": [],
+                      "cfg": [],
+                      "children": []
+                    },
+                    {
+                      "name": "auth",
+                      "about": "Verify an existing credential with the official Hub, without printing identity data.",
+                      "aliases": [],
+                      "cfg": [],
+                      "children": []
+                    }
+                  ]
+                },
                 {
                   "name": "list",
                   "about": "List locally installed models.",
@@ -13257,6 +13329,48 @@
   ],
   "mcp": [
     {
+      "server": "@aphrody/workspace subsystem `workspace`",
+      "repo": "aphrody",
+      "kind": "kernel-subsystem",
+      "tools": [
+        {
+          "name": "workspace_automation_inventory",
+          "description": "Scripts under scripts/ directories of a repository or of every repository below a source root, classified check/release/sync/deploy/product (CLI: automation-inventory --json).",
+          "file": "packages/infra/workspace/src/workspace-subsystem.ts"
+        },
+        {
+          "name": "workspace_binaries",
+          "description": "Installed and workspace-built Aphrody binaries with their source and catalogue status; never arbitrary PATH files (CLI: aphrody-ops binaries).",
+          "file": "packages/infra/workspace/src/workspace-subsystem.ts"
+        },
+        {
+          "name": "workspace_bridges",
+          "description": "Rust, Bun, package and API bridge catalogue used by aphrody-ops bridge (CLI: aphrody-ops bridge status).",
+          "file": "packages/infra/workspace/src/workspace-subsystem.ts"
+        },
+        {
+          "name": "workspace_build_factory_status",
+          "description": "Where heavy Cargo/Bun work runs (factory or local) and why, from config/build-factory.json and this host's environment (CLI: build-factory status).",
+          "file": "packages/infra/workspace/src/workspace-subsystem.ts"
+        },
+        {
+          "name": "workspace_fleet",
+          "description": "Repositories, pipeline stages and binaries declared for the Aphrody fleet (CLI: aphrody-ops fleet).",
+          "file": "packages/infra/workspace/src/workspace-subsystem.ts"
+        },
+        {
+          "name": "workspace_iecode_source",
+          "description": "Validated pinned IECODE producer contract from config/sibling-checkouts.json (CLI: iecode-packages.ts source).",
+          "file": "packages/infra/workspace/src/workspace-subsystem.ts"
+        },
+        {
+          "name": "workspace_inline_inventory",
+          "description": "Inline Python/Bun/Node invocations with scope, reason and the ratchet against config/inline-interpreters.baseline.json (CLI: automation-inventory --inline).",
+          "file": "packages/infra/workspace/src/workspace-subsystem.ts"
+        }
+      ]
+    },
+    {
       "server": "aphrody-agent-tools",
       "repo": "aphrody",
       "kind": "kernel-subsystem",
@@ -15614,9 +15728,9 @@
     "bunPackages": 101,
     "pythonPackages": 10,
     "cliBinaries": 63,
-    "cliCommands": 1281,
-    "mcpServers": 21,
-    "mcpTools": 440,
-    "mcpUniqueToolNames": 423
+    "cliCommands": 1291,
+    "mcpServers": 22,
+    "mcpTools": 447,
+    "mcpUniqueToolNames": 430
   }
 }

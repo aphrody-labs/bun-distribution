@@ -7,7 +7,21 @@ Every MCP tool registered in source, grouped by server: rmcp `#[tool]` routers, 
 full text is in [ecosystem.json](ecosystem.json). The kernel re-exports its subsystems' tools through
 `aphrody-kernel`, so one tool name can appear under several servers.
 
-Totals: 21 servers, 440 tool registrations, 423 unique tool names.
+Totals: 22 servers, 447 tool registrations, 430 unique tool names.
+
+## aphrody — @aphrody/workspace subsystem `workspace`
+
+Kind: kernel-subsystem. 7 tools.
+
+| Tool | Description |
+| --- | --- |
+| `workspace_automation_inventory` | Scripts under scripts/ directories of a repository or of every repository below a source root, classified check/release/sync/deploy/product (CLI: automation-inventory --json). |
+| `workspace_binaries` | Installed and workspace-built Aphrody binaries with their source and catalogue status; never arbitrary PATH files (CLI: aphrody-ops binaries). |
+| `workspace_bridges` | Rust, Bun, package and API bridge catalogue used by aphrody-ops bridge (CLI: aphrody-ops bridge status). |
+| `workspace_build_factory_status` | Where heavy Cargo/Bun work runs (factory or local) and why, from config/build-factory.json and this host's environment (CLI: build-factory status). |
+| `workspace_fleet` | Repositories, pipeline stages and binaries declared for the Aphrody fleet (CLI: aphrody-ops fleet). |
+| `workspace_iecode_source` | Validated pinned IECODE producer contract from config/sibling-checkouts.json (CLI: iecode-packages.ts source). |
+| `workspace_inline_inventory` | Inline Python/Bun/Node invocations with scope, reason and the ratchet against config/inline-interpreters.baseline.json (CLI: automation-inventory --inline). |
 
 ## aphrody — aphrody-agent-tools
 

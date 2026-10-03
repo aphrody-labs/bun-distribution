@@ -7,6 +7,7 @@ import { existsSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { describe, expect, test } from "bun:test";
 import {
+  bunSubsystemTools,
   ClapIndex,
   clapItems,
   collect,
@@ -138,6 +139,23 @@ describe("MCP extraction", () => {
   test("JSON catalogs require an inputSchema", () => {
     const src = `[{"name": "a_tool", "description": "Does \\"a\\".", "inputSchema": {}}, {"name": "x", "description": "not a tool"}]`;
     expect(jsonCatalogTools(src)).toEqual([{ name: "a_tool", description: 'Does "a".' }]);
+  });
+
+  test("Bun kernel subsystem registrations", () => {
+    const src = `export const TOOLS = [
+      { name: "ws_one", description:
+        "First " + "part.", inputSchema: {}, handler: run },
+      { name: 'ws_two', description: "Second.", handler: run },
+    ];
+    await registerSubsystem({ name: "ws", description: "The subsystem.", tools: TOOLS });`;
+    expect(bunSubsystemTools(src)).toEqual({
+      subsystem: "ws",
+      tools: [
+        { name: "ws_one", description: "First part." },
+        { name: "ws_two", description: "Second." },
+      ],
+    });
+    expect(bunSubsystemTools("export async function registerSubsystem(spec) {}")).toBeUndefined();
   });
 
   test("Bun registerTool and .tool registrations", () => {
