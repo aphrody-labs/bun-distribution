@@ -25,7 +25,9 @@ This repository is the Rust + Bun source target. The active migration plan is
   package cannot supply a required fix, prefer a Git dependency locked to a
   commit over a manual clone. Never create a local upstream clone merely for
   research or to install a dependency.
-- Only sources requiring unpublished local patches stay in `../source`, listed
+- Owner-authorized patched Rust implementations are integrated in `crates/`;
+  their provenance is listed in `config/upstream-sources.json` under `integrated`.
+  Only optional build inputs stay in `../source`, listed
   in `config/upstream-sources.json`; prefer a published crate archive over its
   entire Git repository. Restore them with `bun run sources:sync`, verify with
   `bun run sources:verify`. Reference upstreams are read live with `aphrody git

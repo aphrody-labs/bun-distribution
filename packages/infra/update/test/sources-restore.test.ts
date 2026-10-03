@@ -74,3 +74,20 @@ test("parseArgs", () => {
   });
   expect(() => parseArgs(["nope"])).toThrow();
 });
+
+test("integrated crates cannot escape their owner and must be wired into Cargo", () => {
+  const integrated = [{ ...base.sources[1], id: "owned", integratedPath: "crates/native/owned" }];
+  const manifest = parseManifest(text({ sources: [], integrated }));
+  expect(
+    cargoProblems('owned = { path = "crates/native/owned" }', "/repo", "/source", manifest),
+  ).toEqual([]);
+  expect(cargoProblems("", "/repo", "/source", manifest)).toHaveLength(1);
+  expect(() =>
+    parseManifest(
+      text({
+        sources: [],
+        integrated: [{ ...integrated[0], integratedPath: "crates/../../source/owned" }],
+      }),
+    ),
+  ).toThrow("under crates");
+});

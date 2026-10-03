@@ -78,9 +78,9 @@
       "kind": "vendored-crate",
       "crate": "tauri-plugin-dialog",
       "base": "3.0.0-alpha.2",
-      "path": "../source/tauri-plugin-dialog",
+      "path": "crates/ui/tauri-plugin-dialog",
       "patchFile": "patches/tauri-plugin-dialog-3.0.0-alpha.2.patch",
-      "appliedFile": "../source/tauri-plugin-dialog/src/desktop.rs",
+      "appliedFile": "crates/ui/tauri-plugin-dialog/src/desktop.rs",
       "appliedMarker": "use tauri::{AppHandle, Manager, Runtime, plugin::PluginApi};",
       "cargoPatch": "[patch.crates-io] tauri-plugin-dialog",
       "rationale": "tauri 3.0.0-alpha.3 moved run_on_main_thread to the Manager trait; tauri-plugin-dialog 3.0.0-alpha.2 (and plugins-workspace v3 HEAD d9be6d04) still call AppHandle::run_on_main_thread without importing Manager and fail to compile.",
@@ -145,7 +145,7 @@
     "owner": "packages/web / crates/web",
     "survey": "docs/research/web/tauri-debugging-survey-2026-10-01.md",
     "surveyedAt": "2026-10-01",
-    "policy": "Bridge build input is a patched crates.io archive in ../source/tauri-plugin-mcp-bridge. Debugger repositories are reference entries read live; no debugger Git clone is required. Archived fork metadata records provenance only.",
+    "policy": "Bridge build input is a integrated patched crate in crates/ui/tauri-plugin-mcp-bridge. Debugger repositories are reference entries read live; no debugger Git clone is required. Archived fork metadata records provenance only.",
     "forks": [
       {
         "name": "mcp-server-tauri",
@@ -155,14 +155,14 @@
         "forkStatus": "created 2026-10-01 with gh repo fork --clone=false; nothing pushed",
         "license": "MIT",
         "licenseFiles": [
-          "../source/tauri-plugin-mcp-bridge/LICENSE"
+          "crates/ui/tauri-plugin-mcp-bridge/LICENSE"
         ],
         "licenseSha256": "35bb5aef685437b8aee0199e86a12c6dec2163d173fa153f48ff76267e47fca3",
         "pinnedCommit": "4451b2b1d1eb3a817674f60957e148224c24d3a8",
         "pinnedAt": "2026-10-01",
         "commitDate": "2026-08-28",
         "treeSha256": "a2fecff981973b0c4e6ece61d822cfd3b1c5b2384b2a846a2093ba6082d1c7e8",
-        "localPath": "../source/tauri-plugin-mcp-bridge",
+        "localPath": "crates/ui/tauri-plugin-mcp-bridge",
         "role": "mcp-bridge",
         "tauriSupport": "Tauri 2 only. tauri-plugin-mcp-bridge 0.13.0 depends on tauri = \"2\" and tauri-plugin = \"2\"; no v3 branch, no Tauri 3 issue. Same revision that docs/research/ui/integrations/tauri-mcp-parity.md already uses as the tool-name reference.",
         "notes": "Rust bridge plugin (packages/tauri-plugin-mcp-bridge: WebSocket on 0.0.0.0:9223-9322 by default, no auth, no Origin check - upstream issue #36) plus a Node MCP server (packages/mcp-server, @hypothesi/tauri-mcp-server) whose DOM/a11y scripts are plain JS reusable from a Rust MCP. Harden before use: bind 127.0.0.1, per-process token, Origin check, cfg(debug_assertions) + cargo-feature gate. Patch list for Tauri 3 is in the survey.",
@@ -171,7 +171,7 @@
             "id": "tauri-plugin-mcp-bridge-tauri3",
             "patchFile": "patches/tauri-plugin-mcp-bridge-0.13.0-registry.patch",
             "patchSha256": "2bc296ad729254e01b8eb58c2e24cb0db47c59620abb25ef50a9657ae93d5cfa",
-            "appliesTo": "../source/tauri-plugin-mcp-bridge",
+            "appliesTo": "crates/ui/tauri-plugin-mcp-bridge",
             "appliedMarker": "Aphrody patch",
             "wiredIn": "crates/ui/tauri-wrap (aphrody-tauri-wrap, module debug, feature debug-bridge) via workspace path dependency to the patched registry archive outside the repository.",
             "covers": "Survey patches P1 (Cargo.toml pins), P3 (initialization_script), P4 (downcast_ref to tauri_runtime_wry::Webview; Windows and macOS call sites unverified), P6 (eval_with_callback polling instead of the __script_result IPC round trip), P7 (no committed command permission files needed), P8 (loopback default, Host/Origin checks, per-process token, ephemeral port with an on_listen hook). IPC trace events are kept in a page-side ring buffer, so no capability or permission is needed in the host app.",

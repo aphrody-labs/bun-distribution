@@ -17,7 +17,7 @@
 //!   plugin;
 //! - in a debug build it starts the bridge only when `APHRODY_TAURI_DEBUG` is `1`/`true`.
 //!
-//! The bridge is the hypothesi `tauri-plugin-mcp-bridge` pinned under `upstream/` with the Aphrody
+//! The bridge is the hypothesi `tauri-plugin-mcp-bridge` integrated in `crates/ui/tauri-plugin-mcp-bridge` with the Aphrody
 //! Tauri 3 patch set. It listens on `127.0.0.1` only (ephemeral port unless
 //! `APHRODY_TAURI_DEBUG_PORT` is set), rejects non-loopback `Host`/`Origin` headers and requires a
 //! random per-process token. The URL, token and process id are written to a `0600` discovery file

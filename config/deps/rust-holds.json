@@ -12,7 +12,7 @@
     },
     {
       "crate": "serde-saphyr",
-      "reason": "path-patched to ../source/serde-saphyr (0.0.16); mistral.rs requires =0.0.16 (0.0.x caret is exact), 0.0.29 needs a mistral.rs API port first."
+      "reason": "path-patched to crates/compat/serde-saphyr (0.0.16); mistral.rs requires =0.0.16 (0.0.x caret is exact), 0.0.29 needs a mistral.rs API port first."
     },
     {
       "crate": "ort",

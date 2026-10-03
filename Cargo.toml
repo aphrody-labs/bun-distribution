@@ -445,8 +445,8 @@ tauri-plugin-global-shortcut = "=3.0.0-alpha.2"
 tauri-plugin-autostart = "=3.0.0-alpha.2"
 tauri-plugin-deep-link = "=3.0.0-alpha.2"
 tauri-plugin-fs = "=3.0.0-alpha.2"
-# Debug bridge: patched crates.io archive (Tauri 3/security), restored by sources:sync.
-tauri-plugin-mcp-bridge = { path = "../source/tauri-plugin-mcp-bridge", version = "0.13.0" }
+# Integrated debug bridge implementation, preserving Tauri 3 and security patches.
+tauri-plugin-mcp-bridge = { path = "crates/ui/tauri-plugin-mcp-bridge", version = "0.13.0" }
 tauri-specta = { version = "2.0.0-rc.25", git = "https://github.com/koharu-rs/tauri-specta", tag = "v2.0.0-rc.25-koharu.1", features = ["derive", "typescript"] }
 atomicwrites = "0.4.4"
 fs4 = "1.1.0"
@@ -505,14 +505,14 @@ correctness = { level = "warn", priority = -1 }
 perf = { level = "warn", priority = -1 }
 
 [patch.crates-io]
-# Relax serde-saphyr's regex upper bound; restored and patched by upstream-sources sync.
-serde-saphyr = { path = "../source/serde-saphyr" }
+# Integrated YAML implementation preserves the Mistral.rs 0.0.16 API and regex compatibility.
+serde-saphyr = { path = "crates/compat/serde-saphyr" }
 # Modified layout fork; preserve local fixes through a commit-locked Git dependency.
 taffy = { git = "ssh://git@github-dev/aphrody-labs/taffy.git", rev = "ed38f5bb36affbc6bfa35b01f0fc866585f0c37d" }
-# Checked out under ../source (config/upstream-sources.json); restore with `bun run sources:sync`.
-simdutf = { path = "../source/simdutf-rio" }
+# Integrated Unicode implementation preserves the private C++ namespace alongside V8.
+simdutf = { path = "crates/native/simdutf" }
 # tauri-plugin-dialog 3.0.0-alpha.2 predates tauri 3.0.0-alpha.3 (Manager::run_on_main_thread); see config/tauri-upstream.json
-tauri-plugin-dialog = { path = "../source/tauri-plugin-dialog" }
+tauri-plugin-dialog = { path = "crates/ui/tauri-plugin-dialog" }
 
 # Build footprint (2026-10-02): full DWARF for 191 members and ~2,300 dependencies made target/debug ~250 GiB and
 # kept the WSL disk saturated during links. Line tables keep file:line backtraces and profiler symbols for workspace

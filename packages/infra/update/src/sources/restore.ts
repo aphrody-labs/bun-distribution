@@ -13,7 +13,7 @@
 import { existsSync } from "node:fs";
 import { mkdir, mkdtemp, readdir, readFile, rm } from "node:fs/promises";
 import { homedir, tmpdir } from "node:os";
-import { isAbsolute, join, relative, resolve, sep } from "node:path";
+import { basename, dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 
 export type Patch = {
   id: string;
@@ -56,7 +56,14 @@ export type Reference = {
   note?: string;
 };
 
-export type Manifest = { schemaVersion: 1; root: string; sources: Source[]; reference?: Reference[] };
+export type IntegratedSource = Source & { integratedPath: string };
+export type Manifest = {
+  schemaVersion: 1;
+  root: string;
+  sources: Source[];
+  reference?: Reference[];
+  integrated?: IntegratedSource[];
+};
 
 export function parseManifest(text: string): Manifest {
   const raw = JSON.parse(text) as Manifest;
@@ -64,17 +71,28 @@ export function parseManifest(text: string): Manifest {
   if (typeof raw.root !== "string" || raw.root === "") throw new Error("upstream-sources: root");
   const seen = new Set<string>();
   for (const ref of raw.reference ?? []) {
-    if (!/^[A-Za-z0-9][A-Za-z0-9._-]*$/.test(ref.id)) throw new Error(`upstream-sources: invalid reference id ${ref.id}`);
+    if (!/^[A-Za-z0-9][A-Za-z0-9._-]*$/.test(ref.id))
+      throw new Error(`upstream-sources: invalid reference id ${ref.id}`);
     if (seen.has(ref.id)) throw new Error(`upstream-sources: duplicate id ${ref.id}`);
     seen.add(ref.id);
-    if (ref.kind !== "git" || !ref.url) throw new Error(`${ref.id}: reference needs kind git and url`);
-    if (ref.tier !== "build" && ref.tier !== "reference") throw new Error(`${ref.id}: tier must be build or reference`);
+    if (ref.kind !== "git" || !ref.url)
+      throw new Error(`${ref.id}: reference needs kind git and url`);
+    if (ref.tier !== "build" && ref.tier !== "reference")
+      throw new Error(`${ref.id}: tier must be build or reference`);
     if (ref.observedCommit !== undefined && !/^[0-9a-f]{40}$/.test(ref.observedCommit)) {
       throw new Error(`${ref.id}: observedCommit must be a 40-hex SHA`);
     }
-    if (!ref.purpose || !ref.consumers) throw new Error(`${ref.id}: purpose and consumers are required`);
+    if (!ref.purpose || !ref.consumers)
+      throw new Error(`${ref.id}: purpose and consumers are required`);
   }
-  for (const source of raw.sources) {
+  for (const source of raw.integrated ?? []) {
+    if (
+      !source.integratedPath?.startsWith("crates/") ||
+      source.integratedPath.split("/").includes("..")
+    )
+      throw new Error(`${source.id}: integratedPath must stay under crates/`);
+  }
+  for (const source of [...raw.sources, ...(raw.integrated ?? [])]) {
     if (!/^[A-Za-z0-9][A-Za-z0-9._-]*$/.test(source.id)) {
       throw new Error(`upstream-sources: invalid id ${source.id}`);
     }
@@ -277,6 +295,12 @@ export function cargoProblems(
       problems.push(`Cargo.toml: no path dependency "${expected}" for ${source.id}`);
     }
   }
+  for (const source of manifest.integrated ?? []) {
+    if (!cargoToml.includes(`path = "${source.integratedPath}"`))
+      problems.push(
+        `Cargo.toml: no integrated path dependency "${source.integratedPath}" for ${source.id}`,
+      );
+  }
   if (
     /path\s*=\s*"upstream\/(mcp-server-tauri|simdutf-rio|tauri-plugin-dialog|tauri-driver|tauri-plugin-webdriver|victauri)/.test(
       cargoToml,
@@ -336,9 +360,24 @@ export async function runUpstreamSources(argv: string[]): Promise<number> {
   // A build-tier reference (WSL build inputs) is restored only when named explicitly.
   const onDemand: Source[] = (manifest.reference ?? [])
     .filter((ref) => ref.tier === "build" && ref.id === args.only)
-    .map((ref) => ({ id: ref.id, kind: "git", role: "reference", pinned: false, url: ref.url, ref: ref.ref, commit: ref.observedCommit, sparse: ref.sparse }));
-  const sources = [...manifest.sources, ...onDemand].filter((source) => !args.only || source.id === args.only);
-  if (args.only && sources.length === 0) return (console.error(`unknown source ${args.only}`), 2);
+    .map((ref) => ({
+      id: ref.id,
+      kind: "git",
+      role: "reference",
+      pinned: false,
+      url: ref.url,
+      ref: ref.ref,
+      commit: ref.observedCommit,
+      sparse: ref.sparse,
+    }));
+  const sources = [...manifest.sources, ...onDemand].filter(
+    (source) => !args.only || source.id === args.only,
+  );
+  const integrated = (manifest.integrated ?? []).filter(
+    (source) => !args.only || source.id === args.only,
+  );
+  if (args.only && sources.length === 0 && integrated.length === 0)
+    return (console.error(`unknown source ${args.only}`), 2);
 
   const actions: Record<string, string> = {};
   if (args.action === "sync") {
@@ -355,7 +394,14 @@ export async function runUpstreamSources(argv: string[]): Promise<number> {
         : planned;
     }
   }
-  const rows = await Promise.all(sources.map((source) => inspect(root, source)));
+  const rows = await Promise.all([
+    ...sources.map((source) => inspect(root, source)),
+    ...integrated.map(async (source) => {
+      const dir = join(args.repo, source.integratedPath);
+      const row = await inspect(dirname(dir), { ...source, id: basename(dir) });
+      return { ...row, id: source.id, detail: `${source.integratedPath} ${row.detail}` };
+    }),
+  ]);
   const problems =
     args.action === "status"
       ? []

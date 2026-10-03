@@ -37,6 +37,6 @@ reqwest = { workspace = true, optional = true }
 rustls = { workspace = true, optional = true }
 tokio = { workspace = true, optional = true }
 uuid = { workspace = true, optional = true }
-# Published crates.io package (MIT), restored with the Tauri 3/security patch set.
+# Integrated MIT implementation, preserving the Tauri 3/security patch set.
 # See patches/tauri-plugin-mcp-bridge-0.13.0-registry.patch; no Git clone required.
 tauri-plugin-mcp-bridge = { workspace = true, optional = true }

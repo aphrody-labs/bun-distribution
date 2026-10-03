@@ -1,105 +1,9 @@
 {
   "schemaVersion": 1,
-  "description": "Registry-first dependencies: prefer Cargo/npm/PyPI via uv, then locked Git dependencies. sources contains only published crate archives requiring local patches; reference entries are read live without cloning. Restore build-only clones on demand.",
+  "description": "Local patched Rust source is integrated into the Aphrody Cargo workspace. Reference upstreams are read live; build-only checkouts are restored on demand.",
   "root": "../source",
-  "rootNote": "Resolved from the repository root; APHRODY_SOURCE_ROOT overrides it. Cargo path dependencies are written relative to the repository, so a clone that builds needs <parent>/aphrody next to <parent>/source, or the same override applied to both.",
-  "sources": [
-    {
-      "id": "tauri-plugin-mcp-bridge",
-      "kind": "crate",
-      "crate": "tauri-plugin-mcp-bridge",
-      "version": "0.13.0",
-      "upstreamUrl": "https://github.com/hypothesi/mcp-server-tauri",
-      "pinned": true,
-      "role": "dependency",
-      "license": "MIT",
-      "cargoPathDep": "",
-      "patches": [
-        {
-          "id": "tauri-plugin-mcp-bridge-tauri3",
-          "file": "patches/tauri-plugin-mcp-bridge-0.13.0-registry.patch",
-          "strip": 1,
-          "marker": {
-            "file": "Cargo.toml",
-            "contains": "rust-version = \"1.97\""
-          }
-        }
-      ],
-      "note": "Registry archive, not a Git clone. Preserve Tauri 3/security patches until an equivalent upstream release. Rust/JS/build/license files match the previous pinned Git tree before patching."
-    },
-    {
-      "id": "simdutf-rio",
-      "kind": "crate",
-      "crate": "simdutf",
-      "version": "0.7.0",
-      "upstreamUrl": "https://github.com/Nugine/simdutf-rs",
-      "upstreamTag": "v0.7.0",
-      "pinned": true,
-      "role": "dependency",
-      "license": "MIT",
-      "cargoPathDep": "",
-      "patches": [
-        {
-          "id": "simdutf-private-namespace",
-          "file": "patches/simdutf-rio-0.7.0.patch",
-          "strip": 1,
-          "marker": {
-            "file": "build.rs",
-            "contains": "aphrody_rio_simdutf"
-          }
-        }
-      ],
-      "note": "crates.io 0.7.0 archive, as extracted before the move. The patch gives the bundled C++ a private namespace so it does not collide with V8's own simdutf in the same process."
-    },
-    {
-      "id": "tauri-plugin-dialog",
-      "kind": "crate",
-      "crate": "tauri-plugin-dialog",
-      "version": "3.0.0-alpha.2",
-      "upstreamUrl": "https://github.com/tauri-apps/plugins-workspace",
-      "upstreamTag": "dialog-v3.0.0-alpha.2",
-      "pinned": true,
-      "role": "dependency",
-      "license": "Apache-2.0 OR MIT",
-      "cargoPathDep": "",
-      "patches": [
-        {
-          "id": "tauri-plugin-dialog-manager-import",
-          "file": "patches/tauri-plugin-dialog-3.0.0-alpha.2.patch",
-          "strip": 3,
-          "marker": {
-            "file": "src/desktop.rs",
-            "contains": "use tauri::{AppHandle, Manager, Runtime, plugin::PluginApi};"
-          }
-        }
-      ],
-      "note": "Patched per config/tauri-upstream.json patches; drop once a published release imports Manager."
-    },
-    {
-      "id": "serde-saphyr",
-      "kind": "crate",
-      "crate": "serde-saphyr",
-      "version": "0.0.16",
-      "upstreamUrl": "https://github.com/bourumir-wyngs/serde-saphyr",
-      "pinned": true,
-      "role": "dependency",
-      "license": "MIT OR Apache-2.0",
-      "cargoPathDep": "",
-      "hold": "mistral.rs requires serde-saphyr = \"0.0.16\" (0.0.x caret is exact); a 0.0.29 or 1.x bump needs a mistral.rs API port first",
-      "patches": [
-        {
-          "id": "serde-saphyr-regex-semver",
-          "file": "patches/serde-saphyr-0.0.16-regex.patch",
-          "strip": 1,
-          "marker": {
-            "file": "Cargo.toml",
-            "contains": "version = \">= 1.0, < 2.0\""
-          }
-        }
-      ],
-      "note": "Preserve the Mistral.rs YAML API while allowing SemVer-compatible regex 1.x required by OXC. The upstream test suite must pass against the workspace-selected regex version."
-    }
-  ],
+  "rootNote": "Used only for optional build-on-demand upstream inputs. Cargo no longer requires a sibling source directory.",
+  "sources": [],
   "reference": [
     {
       "id": "mcp-server-tauri",
@@ -288,6 +192,107 @@
       "purpose": "WSLg; system distro build recipe input.",
       "consumers": "config/os/wsl-build.json; scripts/build/os/build-wslg.py",
       "observedCommit": "6942bb534b537302a7a22617261d9274db3cfa37"
+    }
+  ],
+  "integrated": [
+    {
+      "id": "tauri-plugin-mcp-bridge",
+      "kind": "crate",
+      "crate": "tauri-plugin-mcp-bridge",
+      "version": "0.13.0",
+      "upstreamUrl": "https://github.com/hypothesi/mcp-server-tauri",
+      "pinned": true,
+      "role": "dependency",
+      "license": "MIT",
+      "patches": [
+        {
+          "id": "tauri-plugin-mcp-bridge-tauri3",
+          "file": "patches/tauri-plugin-mcp-bridge-0.13.0-registry.patch",
+          "strip": 1,
+          "marker": {
+            "file": "Cargo.toml",
+            "contains": "rust-version = \"1.97\""
+          }
+        }
+      ],
+      "note": "Registry archive, not a Git clone. Preserve Tauri 3/security patches until an equivalent upstream release. Rust/JS/build/license files match the previous pinned Git tree before patching.",
+      "integratedPath": "crates/ui/tauri-plugin-mcp-bridge",
+      "upstreamPackageIdentityPreserved": true
+    },
+    {
+      "id": "simdutf-rio",
+      "kind": "crate",
+      "crate": "simdutf",
+      "version": "0.7.0",
+      "upstreamUrl": "https://github.com/Nugine/simdutf-rs",
+      "upstreamTag": "v0.7.0",
+      "pinned": true,
+      "role": "dependency",
+      "license": "MIT",
+      "patches": [
+        {
+          "id": "simdutf-private-namespace",
+          "file": "patches/simdutf-rio-0.7.0.patch",
+          "strip": 1,
+          "marker": {
+            "file": "build.rs",
+            "contains": "aphrody_rio_simdutf"
+          }
+        }
+      ],
+      "note": "crates.io 0.7.0 archive, as extracted before the move. The patch gives the bundled C++ a private namespace so it does not collide with V8's own simdutf in the same process.",
+      "integratedPath": "crates/native/simdutf",
+      "upstreamPackageIdentityPreserved": true
+    },
+    {
+      "id": "tauri-plugin-dialog",
+      "kind": "crate",
+      "crate": "tauri-plugin-dialog",
+      "version": "3.0.0-alpha.2",
+      "upstreamUrl": "https://github.com/tauri-apps/plugins-workspace",
+      "upstreamTag": "dialog-v3.0.0-alpha.2",
+      "pinned": true,
+      "role": "dependency",
+      "license": "Apache-2.0 OR MIT",
+      "patches": [
+        {
+          "id": "tauri-plugin-dialog-manager-import",
+          "file": "patches/tauri-plugin-dialog-3.0.0-alpha.2.patch",
+          "strip": 3,
+          "marker": {
+            "file": "src/desktop.rs",
+            "contains": "use tauri::{AppHandle, Manager, Runtime, plugin::PluginApi};"
+          }
+        }
+      ],
+      "note": "Patched per config/tauri-upstream.json patches; drop once a published release imports Manager.",
+      "integratedPath": "crates/ui/tauri-plugin-dialog",
+      "upstreamPackageIdentityPreserved": true
+    },
+    {
+      "id": "serde-saphyr",
+      "kind": "crate",
+      "crate": "serde-saphyr",
+      "version": "0.0.16",
+      "upstreamUrl": "https://github.com/bourumir-wyngs/serde-saphyr",
+      "pinned": true,
+      "role": "dependency",
+      "license": "MIT OR Apache-2.0",
+      "hold": "mistral.rs requires serde-saphyr = \"0.0.16\" (0.0.x caret is exact); a 0.0.29 or 1.x bump needs a mistral.rs API port first",
+      "patches": [
+        {
+          "id": "serde-saphyr-regex-semver",
+          "file": "patches/serde-saphyr-0.0.16-regex.patch",
+          "strip": 1,
+          "marker": {
+            "file": "Cargo.toml",
+            "contains": "version = \">= 1.0, < 2.0\""
+          }
+        }
+      ],
+      "note": "Preserve the Mistral.rs YAML API while allowing SemVer-compatible regex 1.x required by OXC. The upstream test suite must pass against the workspace-selected regex version.",
+      "integratedPath": "crates/compat/serde-saphyr",
+      "upstreamPackageIdentityPreserved": true
     }
   ]
 }
