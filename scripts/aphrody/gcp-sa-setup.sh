@@ -96,7 +96,7 @@ touch "$ENV_FILE"
 grep -vE '^(GOOGLE_APPLICATION_CREDENTIALS|GOOGLE_CLOUD_PROJECT|GCLOUD_PROJECT|CLOUDSDK_CORE_PROJECT|GCP_SERVICE_ACCOUNT|GOOGLE_CLOUD_LOCATION|GOOGLE_CLOUD_REGION|GOOGLE_API_KEY|GEMINI_API_KEY)=|^# --- GCP service account' "$ENV_FILE" > "$ENV_FILE.tmp" || true
 {
     sed -e :a -e '/^\n*$/{$d;N;ba' -e '}' "$ENV_FILE.tmp"
-    printf '\n# --- GCP service account (%s) — géré par aphrody-infra/scripts/aphrody/gcp-sa-setup.sh ---\n' "$SA_NAME"
+    printf '\n# --- GCP service account (%s) — géré par scripts/aphrody/gcp-sa-setup.sh ---\n' "$SA_NAME"
     printf 'GOOGLE_APPLICATION_CREDENTIALS=%s\n' "$KEY_FILE"
     printf 'GOOGLE_CLOUD_PROJECT=%s\n' "$PROJECT"
     printf 'GCLOUD_PROJECT=%s\n' "$PROJECT"

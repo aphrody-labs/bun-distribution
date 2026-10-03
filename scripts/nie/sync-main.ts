@@ -54,10 +54,9 @@ const unknown = args.filter((arg) => arg !== "--apply" && arg !== "--local-only"
 if (import.meta.main && unknown.length) throw new Error(`Unknown option(s): ${unknown.join(", ")}`);
 
 const sshAlias = process.env["IECODE_VPS_ALIAS"] ?? process.env["NIE_VPS_ALIAS"] ?? "vps";
-const remoteRepo =
-  process.env["IECODE_VPS_REPO"] ?? process.env["NIE_VPS_REPO"] ?? "/home/ubuntu/iecode";
+const remoteRepo = process.env["IECODE_VPS_REPO"] ?? process.env["NIE_VPS_REPO"] ?? "";
 if (!remoteRepo.startsWith("/") || remoteRepo.includes("\n") || remoteRepo.includes("\0"))
-  throw new Error("NIE_VPS_REPO must be an absolute path.");
+  throw new Error("IECODE_VPS_REPO (or NIE_VPS_REPO) must be the absolute path of the remote checkout.");
 if (!/^[A-Za-z0-9_.@-]+$/u.test(sshAlias))
   throw new Error("NIE_VPS_ALIAS contains unsafe characters.");
 

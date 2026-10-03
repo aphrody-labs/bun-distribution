@@ -416,7 +416,7 @@ function resteDuLot(dossier: string): { faites: number; restantes: string[] } | 
 
 function cmdReste(): void {
 	const racine = positionnels[0];
-	if (!racine) usage("il faut la racine des lots (ex. /home/ubuntu/sj-ocr)");
+	if (!racine) usage("il faut la racine des lots (ex. ~/sj-ocr)");
 	let dossiers: string[];
 	try {
 		dossiers = readdirSync(racine)

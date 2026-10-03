@@ -45,8 +45,10 @@ sudo install -d -m 0755 /etc/systemd/system/privoxy.service.d
 sudo install -m 0644 "$DROPIN" /etc/systemd/system/privoxy.service.d/shenron-media.conf
 
 if [[ -f "$ENV_EXAMPLE" ]]; then
-  echo "→ Installing /home/ubuntu/.shenron-media-proxy.env..."
-  sudo install -m 0600 -o ubuntu -g ubuntu "$ENV_EXAMPLE" /home/ubuntu/.shenron-media-proxy.env
+  target_user="${SHENRON_RUN_AS:-$(id -un)}"
+  target_home="$(getent passwd "$target_user" | cut -d: -f6)"
+  echo "→ Installing $target_home/.shenron-media-proxy.env..."
+  sudo install -m 0600 -o "$target_user" -g "$target_user" "$ENV_EXAMPLE" "$target_home/.shenron-media-proxy.env"
 fi
 
 echo "→ Reloading systemd and restarting privoxy.service..."

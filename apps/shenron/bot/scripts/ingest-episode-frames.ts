@@ -132,7 +132,7 @@ async function main(): Promise<void> {
 				}\n` +
 				`   WHERE series = '${series}' AND number_in_series = ${number};\n\n` +
 				`Pour écrire réellement (DATABASE_URL NON sourçable en shell) :\n` +
-				`  sudo systemd-run --pipe -p EnvironmentFile=/home/ubuntu/.shenron-neon.env \\\n` +
+				`  sudo systemd-run --pipe -p EnvironmentFile=~/.shenron-neon.env \\\n` +
 				`    --working-directory=${ROOT} \\\n` +
 				`    bun scripts/ingest-episode-frames.ts --series ${series} --ep ${number} --apply\n\n` +
 				`Après l'apply, propager vers le SQLite du bot (replica de lecture) :\n` +
@@ -146,7 +146,7 @@ async function main(): Promise<void> {
 		console.error(
 			"✗ DATABASE_URL (Neon) requis pour --apply.\n" +
 				"  Non sourçable en shell — lancer via :\n" +
-				`  sudo systemd-run --pipe -p EnvironmentFile=/home/ubuntu/.shenron-neon.env \\\n` +
+				`  sudo systemd-run --pipe -p EnvironmentFile=~/.shenron-neon.env \\\n` +
 				`    --working-directory=${ROOT} \\\n` +
 				`    bun scripts/ingest-episode-frames.ts --series ${series} --ep ${number} --apply`
 		);

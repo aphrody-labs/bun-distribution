@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 //! One JSON error envelope for Aphrody's own HTTP surfaces (`aphrody-mcp`
-//! REST, `aphrody-embed`), see `aphrody-contracts/docs/API.md` section 6.8.
+//! REST, `aphrody-embed`), see `docs/apis/contracts/API.md` section 6.8.
 //!
 //! Wire shape: `{"error": {"code": "<string>", "message": "<string>", "data": <any, optional>}}`.
 //!

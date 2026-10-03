@@ -1,20 +1,13 @@
 {
   "enabledPlugins": {
     "frontend-design@claude-plugins-official": true,
-    "nextjs@nextjs": true,
-    "dragon-ball@aphrody-os": true
+    "nextjs@nextjs": true
   },
   "extraKnownMarketplaces": {
     "nextjs": {
       "source": {
         "source": "github",
         "repo": "vercel/next.js"
-      }
-    },
-    "aphrody-os": {
-      "source": {
-        "source": "directory",
-        "path": "C:\\Users\\aphro\\src\\aphrody-os"
       }
     }
   }

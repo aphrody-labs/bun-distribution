@@ -1,4 +1,5 @@
 #!/usr/bin/env bun
+import { homedir } from "node:os";
 import { statePath } from "@aphrody/paths";
 import { createHash } from "node:crypto";
 import {
@@ -149,7 +150,7 @@ export function resolveStorageMigrationConfig(
 	const stateDirectory = path.resolve(
 		environment.ACHILLEA_STORAGE_MIGRATION_DIR?.trim() || DEFAULT_STATE_DIRECTORY
 	);
-	const forbiddenStatePaths = ["/", "/home", "/home/ubuntu", "/var", "/var/www"];
+	const forbiddenStatePaths = ["/", "/home", homedir(), "/var", "/var/www"];
 	const forbiddenStateTrees = [
 		repositoryRoot,
 		"/var/www/rg-storage",

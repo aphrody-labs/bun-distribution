@@ -16,8 +16,14 @@ const apply = args.includes("--apply");
 const sourceRoot = resolve(ROOT, option("source") ?? "data/sj-ocr");
 const runDir = resolve(ROOT, option("run-dir") ?? join("var", "dragon-ball-workflow-actions"));
 const actionDir = join(runDir, "actions");
-const REMOTE_PATH =
-	"/home/ubuntu/.bun/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin";
+/** Home directory of the remote account (SHENRON_REMOTE_HOME), the Shenron checkout and the Bun it runs; never hard-coded. */
+function remoteHome(): string {
+	const home = process.env.SHENRON_REMOTE_HOME?.trim();
+	if (!home?.startsWith("/")) throw new Error("SHENRON_REMOTE_HOME must be the absolute home directory of the remote account");
+	return home.replace(/\/+$/, "");
+}
+const remoteBun = () => `${remoteHome()}/.bun/bin/bun`;
+const remotePath = () => `${remoteHome()}/.bun/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin`;
 
 /** SSH host (alias or user@host) of the production VPS; never hard-coded. */
 function sshHost(): string {
@@ -80,7 +86,7 @@ async function backupPostgres(): Promise<void> {
 		}
 	}
 	const result = await run(
-		["ssh", sshHost(), "cd /home/ubuntu/shenron && bash scripts/backup-shenron-pg.sh"],
+		["ssh", sshHost(), `cd ${shellQuote(`${remoteHome()}/shenron`)} && bash scripts/backup-shenron-pg.sh`],
 		{ log: logPath }
 	);
 	if (result.exitCode !== 0) {
@@ -224,10 +230,10 @@ async function ocr(): Promise<void> {
 	const remoteTargets = report.prepared.map((lot) => `${remoteStaging}/${lot.name}`);
 	const remoteCommand = [
 		"sudo systemd-run --wait --collect --pipe",
-		"-p EnvironmentFile=/home/ubuntu/.shenron-neon.env",
-		`-p Environment=PATH=${REMOTE_PATH}`,
-		"--working-directory=/home/ubuntu/shenron",
-		"/home/ubuntu/.bun/bin/bun apps/site/scripts/databooks.ts depose",
+		`-p EnvironmentFile=${remoteHome()}/.shenron-neon.env`,
+		`-p Environment=PATH=${remotePath()}`,
+		`--working-directory=${remoteHome()}/shenron`,
+		`${remoteBun()} apps/site/scripts/databooks.ts depose`,
 		...remoteTargets.map((target) => `'${target}'`),
 	].join(" ");
 	const deposit = await run(["ssh", sshHost(), remoteCommand], {
@@ -243,10 +249,10 @@ async function ocr(): Promise<void> {
 async function manga(): Promise<void> {
 	const remote = [
 		"sudo systemd-run --wait --collect --pipe",
-		"-p EnvironmentFile=/home/ubuntu/.shenron-neon.env",
-		`-p Environment=PATH=${REMOTE_PATH}`,
-		"--working-directory=/home/ubuntu/shenron/apps/bot",
-		"/home/ubuntu/.bun/bin/bun scripts/reconstruct-manga-pages-from-disk.ts",
+		`-p EnvironmentFile=${remoteHome()}/.shenron-neon.env`,
+		`-p Environment=PATH=${remotePath()}`,
+		`--working-directory=${remoteHome()}/shenron/apps/bot`,
+		`${remoteBun()} scripts/reconstruct-manga-pages-from-disk.ts`,
 	];
 	const dry = await run(["ssh", sshHost(), `${remote.join(" ")} --dry-run`], {
 		log: join(actionDir, "manga-reconstruct-simulation.log"),
@@ -479,10 +485,10 @@ async function wiki(): Promise<void> {
 				].join(" ");
 		const command = [
 			"sudo systemd-run --wait --collect --pipe",
-			"-p EnvironmentFile=/home/ubuntu/.shenron-neon.env",
-			`-p Environment=PATH=${REMOTE_PATH}`,
-			"--working-directory=/home/ubuntu/shenron",
-			"/home/ubuntu/.bun/bin/bun apps/site/scripts/depose-wiki.ts",
+			`-p EnvironmentFile=${remoteHome()}/.shenron-neon.env`,
+			`-p Environment=PATH=${remotePath()}`,
+			`--working-directory=${remoteHome()}/shenron`,
+			`${remoteBun()} apps/site/scripts/depose-wiki.ts`,
 			argumentsPart,
 			"--fichier",
 			shellQuote(`${directory}/value.md`),

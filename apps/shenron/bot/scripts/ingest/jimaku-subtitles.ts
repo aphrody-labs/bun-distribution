@@ -1068,7 +1068,7 @@ async function modeFilms(sql: Sql) {
 async function main() {
 	const url = process.env.DATABASE_URL;
 	if (!url) {
-		console.error("✗ DATABASE_URL requis (Neon, via /home/ubuntu/.shenron-neon.env).");
+		console.error("✗ DATABASE_URL requis (Neon, via ~/.shenron-neon.env).");
 		process.exit(1);
 	}
 	const sql = postgres(url, { max: 1 });

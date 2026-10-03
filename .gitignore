@@ -135,3 +135,6 @@ Thumbs.db
 # Generated Shenron corpus and historical live audit: retain in local stores.
 /data/shenron/rag/massive-training-triplets-full.jsonl
 /data/shenron/ops/live-site-assets.json
+
+# Per-machine plugin store written by aphrody-ops plugins (absolute local path)
+/.agents/plugins.json

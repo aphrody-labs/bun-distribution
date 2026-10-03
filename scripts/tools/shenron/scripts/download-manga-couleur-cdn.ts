@@ -11,8 +11,10 @@
 
 import postgres from "postgres";
 import { mkdir, stat } from "node:fs/promises";
-import { join } from "node:path";
+import { join, resolve } from "node:path";
 import { existsSync } from "node:fs";
+
+const ROOT = resolve(import.meta.dir, "..", "..", "..", "..");
 
 const ASSETS_DIR = join(import.meta.dir, "..", "apps", "bot", "assets", "manga", "DBFC");
 const PG_URL = process.env.DATABASE_URL?.trim();
@@ -147,9 +149,15 @@ async function main() {
 	const duration = ((Date.now() - startTime) / 1000).toFixed(1);
 	console.log(`\nDownload run finished in ${duration}s. Total newly downloaded pages: ${totalDownloaded}`);
 
-	// Sync to newvps so both nodes share all assets
-	console.log("Syncing DBFC assets to newvps...");
-	const proc = Bun.spawn(["rsync", "-avz", "/home/ubuntu/shenron/apps/bot/assets/manga/DBFC/", "newvps:/home/ubuntu/shenron/apps/bot/assets/manga/DBFC/"]);
+	// Sync to the peer node (rsync over ssh, path relative to its home) so both nodes share all assets
+	const peer = process.env.SHENRON_SYNC_PEER?.trim();
+	if (!peer) {
+		console.log("SHENRON_SYNC_PEER is not set: skipping the peer asset sync.");
+		return;
+	}
+	console.log(`Syncing DBFC assets to ${peer}...`);
+	const assets = join(ROOT, "apps", "shenron", "bot", "assets", "manga", "DBFC");
+	const proc = Bun.spawn(["rsync", "-avz", `${assets}/`, `${peer}:shenron/apps/bot/assets/manga/DBFC/`]);
 	await proc.exited;
 	console.log("Assets sync complete.");
 

@@ -242,7 +242,7 @@ async fn chat_completions_handler(
                         });
                         Ok::<Event, Infallible>(Event::default().data(data.to_string()))
                     },
-                    // Intentionally NOT unified with aphrody-http-error - mimics OpenAI's own error wire shape for client drop-in compatibility; see aphrody-contracts/docs/API.md section 6.8.
+                    // Intentionally NOT unified with aphrody-http-error - mimics OpenAI's own error wire shape for client drop-in compatibility; see docs/apis/contracts/API.md section 6.8.
                     Err(err) => {
                         let err_data = json!({
                             "error": {
@@ -257,7 +257,7 @@ async fn chat_completions_handler(
                 let sse = Sse::new(sse_stream).keep_alive(KeepAlive::default());
                 sse.into_response()
             },
-            // Intentionally NOT unified with aphrody-http-error - mimics OpenAI's own error wire shape for client drop-in compatibility; see aphrody-contracts/docs/API.md section 6.8.
+            // Intentionally NOT unified with aphrody-http-error - mimics OpenAI's own error wire shape for client drop-in compatibility; see docs/apis/contracts/API.md section 6.8.
             Err(err) => (
                 StatusCode::BAD_GATEWAY,
                 Json(json!({
@@ -293,7 +293,7 @@ async fn chat_completions_handler(
                 });
                 (StatusCode::OK, Json(body)).into_response()
             },
-            // Intentionally NOT unified with aphrody-http-error - mimics OpenAI's own error wire shape for client drop-in compatibility; see aphrody-contracts/docs/API.md section 6.8.
+            // Intentionally NOT unified with aphrody-http-error - mimics OpenAI's own error wire shape for client drop-in compatibility; see docs/apis/contracts/API.md section 6.8.
             Err(err) => (
                 StatusCode::BAD_GATEWAY,
                 Json(json!({

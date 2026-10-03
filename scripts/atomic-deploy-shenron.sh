@@ -32,7 +32,8 @@ env_root="${SHENRON_ENV_ROOT:-/etc}"
 nginx_conf="${SHENRON_NGINX_CONF:-/etc/nginx/conf.d/shenron.conf}"
 probe_attempts="${SHENRON_PROBE_ATTEMPTS:-30}"
 run_as="${SHENRON_RUN_AS:-ubuntu}"
-bun="${SHENRON_BUN:-/home/ubuntu/.bun/bin/bun}"
+bun="${SHENRON_BUN:-$(command -v bun || true)}"
+[[ -x "$bun" ]] || { echo "Bun not found: set SHENRON_BUN to its absolute path" >&2; exit 2; }
 current="$root/current"
 releases="$root/releases"
 # Release path -> directory under $root/shared (the live layout since 2026-09-23).

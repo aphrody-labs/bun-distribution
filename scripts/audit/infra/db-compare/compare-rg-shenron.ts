@@ -23,21 +23,26 @@ const { values } = parseArgs({
   },
 });
 
+const remoteHome = process.env.APHRODY_REMOTE_HOME?.trim().replace(/\/+$/, "");
+/** Paths under the remote account home; empty when APHRODY_REMOTE_HOME is not set. */
+const remote = (relative: string): string[] => (remoteHome ? [relative ? `${remoteHome}/${relative}` : remoteHome] : []);
+
 const HOSTS: Record<string, Omit<ProbeInput, "host">> = {
   local: {
     sqliteRoots: [`${repo}/apps/rg`, `${repo}/apps/shenron`, `${home}/.aphrody/private/backups`],
     packageRoots: [`${repo}/packages/rg`, `${repo}/packages/shenron`],
     vecExtensionDirs: [`${repo}/node_modules/sqlite-vec-linux-x64`],
   },
+  // Remote hosts: the account home comes from APHRODY_REMOTE_HOME, never from a fixed user name.
   vps: {
-    sqliteRoots: ["/srv/rg", "/srv/shenron", "/home/ubuntu/shenron", "/var/backups/aphrody-unique"],
-    packageRoots: ["/srv/rg", "/srv/shenron", "/home/ubuntu"],
-    vecExtensionDirs: ["/srv/shenron/current/node_modules/sqlite-vec-linux-x64", "/home/ubuntu/shenron/node_modules/sqlite-vec-linux-x64"],
+    sqliteRoots: ["/srv/rg", "/srv/shenron", ...remote("shenron"), "/var/backups/aphrody-unique"],
+    packageRoots: ["/srv/rg", "/srv/shenron", ...remote("")],
+    vecExtensionDirs: ["/srv/shenron/current/node_modules/sqlite-vec-linux-x64", ...remote("shenron/node_modules/sqlite-vec-linux-x64")],
   },
   dbfr: {
-    sqliteRoots: ["/home/ubuntu/shenron", "/srv", "/var/backups/aphrody-unique"],
-    packageRoots: ["/home/ubuntu", "/srv"],
-    vecExtensionDirs: ["/home/ubuntu/shenron/node_modules/sqlite-vec-linux-x64"],
+    sqliteRoots: [...remote("shenron"), "/srv", "/var/backups/aphrody-unique"],
+    packageRoots: [...remote(""), "/srv"],
+    vecExtensionDirs: remote("shenron/node_modules/sqlite-vec-linux-x64"),
   },
 };
 

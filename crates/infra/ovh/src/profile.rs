@@ -107,15 +107,12 @@ pub fn load_profile_credentials(profile_or_domain: Option<&str>) -> Result<OvhCr
     // rpbey.fr was sold and dropped from the aphrody.com account (docs/PLAN.md); its
     // credential-path match is gone too.
     if target.contains("aphrody") || target == "vps" {
-        candidate_paths.push(PathBuf::from("/home/ubuntu/.bash_secrets"));
         candidate_paths.push(home_path.join(".bash_secrets"));
         candidate_paths.push(home_path.join(".config/ovh/aphrody.conf"));
     } else if target.contains("rosegriffon") || target == "rg" {
-        candidate_paths.push(PathBuf::from("/home/ubuntu/.ovh.conf"));
         candidate_paths.push(home_path.join(".ovh.conf"));
         candidate_paths.push(home_path.join(".config/ovh/rosegriffon.conf"));
     } else if target.contains("dragonball") || target.contains("dbfr") {
-        candidate_paths.push(PathBuf::from("/home/ubuntu/.config/ovh/dbfr.conf"));
         candidate_paths.push(home_path.join(".config/ovh/dbfr.conf"));
         candidate_paths.push(PathBuf::from("/etc/letsencrypt/ovh-dbfr.ini"));
     }

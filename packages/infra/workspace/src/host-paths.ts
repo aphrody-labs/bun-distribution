@@ -16,8 +16,9 @@ export type HostPathRule =
   | "vps-home"
   | "wsl-mount"
   | "legacy-layout";
-/** `host` is the declared VPS catalog, `unit` a systemd user unit, `test` fixture data. */
+/** `host` is the declared VPS catalog, `platform` a WSL/Windows tool by design, `unit` a systemd user unit, `test` fixture data. */
 export type HostPathArea =
+  | "platform"
   | "code"
   | "config"
   | "unit"
@@ -36,6 +37,13 @@ export interface HostPathFile {
   path: string;
   area: HostPathArea;
   findings: HostPathFinding[];
+}
+
+/** Retired sibling repositories map to their location inside the monorepo. */
+function legacyRewrite(match: string): string {
+  if (match.startsWith("aphrody-infra/")) return match.slice("aphrody-infra/".length);
+  if (match === "aphrody-contracts/docs") return "docs/apis/contracts";
+  return match;
 }
 
 const END = String.raw`(?=$|[/\\\s"'\x60),:;\]}>|])`;
@@ -79,8 +87,7 @@ const RULES: { rule: HostPathRule; pattern: RegExp; rewrite?: (match: string) =>
     rule: "legacy-layout",
     pattern:
       /\baphrody-src\b|\baphrody-(?:infra|ai|web|ui|os|compat|contracts|shell|native)\/(?:scripts|crates|systemd|nginx|packages|apps|config|docs)\b/g,
-    rewrite: (match) =>
-      match.startsWith("aphrody-infra/") ? match.slice("aphrody-infra/".length) : match,
+    rewrite: legacyRewrite,
   },
 ];
 const PREFILTER = String.raw`/home/|/Users/|[A-Za-z]:[\\/]+Users|/mnt/[a-z]/|/source([/"'\x60[:space:])]|$)|aphrody-src|aphrody-(infra|ai|web|ui|os|compat|contracts|shell|native)/`;
@@ -88,6 +95,7 @@ const REWRITABLE: HostPathArea[] = ["docs", "record", "data", "unit", "code"];
 const COMMENT_LINE = /^\s*(\/\/|\/\*|\*|#(?!!)|<!--|--\s)/;
 /** Rules a zone legitimately carries: fixtures and the declared VPS catalog name hosts on purpose. */
 const ALLOWED: Partial<Record<HostPathArea, HostPathRule[]>> = {
+  platform: ["wsl-mount"],
   host: ["vps-home", "legacy-layout", "vps-shenron-checkout"],
 };
 
@@ -100,7 +108,16 @@ const OWN_FILES = new Set([
 export function hostPathArea(path: string): HostPathArea {
   const name = path.split("/").at(-1) ?? "";
   if (path.startsWith("config/systemd/user/")) return "unit";
+  if (
+    /(^|\/)(aphrody-wsl|msvc-wsl)|\/wsl[-_./]|winclean|diagnostics\/src\/doctor\.rs$|\.ps1$/.test(
+      path,
+    )
+  )
+    return "platform";
+  if (/(^|\/)(examples?|benchmarks\/results)\//.test(path)) return "test";
+  if (path === "crates/infra/yolo/src/mapper/audit.rs") return "test";
   if (/^(systemd|nginx|config\/infra)\//.test(path)) return "host";
+  if (/^scripts\/(migration|audit\/live-candidates|test-atomic-)/.test(path)) return "host";
   if (/(^|\/)(tests?|__tests__)\/|\.(test|spec)\.[a-z]+$|_tests?\.rs$|\/tests\.rs$/.test(path))
     return "test";
   if (/(^|\/)data\//.test(path) || name.endsWith(".jsonl") || /\/inventaires\//.test(path))
@@ -130,9 +147,13 @@ function rewriteFor(
 }
 
 /** Findings for one text; rewrites are offered for prose, records and data only. */
-export function scanHostPaths(text: string, area: HostPathArea): HostPathFinding[] {
+export function scanHostPaths(text: string, area: HostPathArea, rust = false): HostPathFinding[] {
   const findings: HostPathFinding[] = [];
+  let inTests = false;
   for (const [index, line] of text.split("\n").entries()) {
+    // Inline unit-test modules hold fixture paths, not runtime behaviour.
+    if (rust && /^\s*#\[cfg\(test\)\]/.test(line)) inTests = true;
+    if (inTests) continue;
     const claimed: [number, number][] = [];
     for (const { rule, pattern, rewrite } of RULES)
       for (const match of line.matchAll(pattern)) {
@@ -200,9 +221,11 @@ export async function collectHostPaths(root: string): Promise<HostPathFile[]> {
       const area = hostPathArea(path);
       // Migration records name original repositories as provenance; only machine prefixes count.
       const provenance = path.startsWith("docs/migration/");
-      const findings = scanHostPaths(await Bun.file(join(root, path)).text(), area).filter(
-        (finding) => !(provenance && finding.rule === "legacy-layout"),
-      );
+      const findings = scanHostPaths(
+        await Bun.file(join(root, path)).text(),
+        area,
+        path.endsWith(".rs"),
+      ).filter((finding) => !(provenance && finding.rule === "legacy-layout"));
       return { path, area, findings };
     }),
   );

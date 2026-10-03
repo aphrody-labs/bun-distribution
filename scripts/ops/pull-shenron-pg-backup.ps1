@@ -7,17 +7,21 @@ $ErrorActionPreference = 'Stop'
 if ([string]::IsNullOrWhiteSpace($Destination)) {
     $Destination = Join-Path $env:USERPROFILE 'vps-offload\db-backups\shenron\dbfr'
 }
+if ([string]::IsNullOrWhiteSpace($env:SHENRON_REMOTE_HOME)) {
+    throw 'Set SHENRON_REMOTE_HOME to the absolute home directory of the remote account.'
+}
+$remoteHome = $env:SHENRON_REMOTE_HOME.TrimEnd('/')
 $datasets = @(
     [pscustomobject]@{
         Name = 'postgresql'
-        RemoteDir = '/home/ubuntu/shenron/data/backups/shenron-pg'
+        RemoteDir = "$remoteHome/shenron/data/backups/shenron-pg"
         ManifestPattern = 'shenron_site-*.sql.gz.sha256'
         ArtifactPattern = '^shenron_site-[0-9]{8}-[0-9]{6}\.sql\.gz$'
         Destination = $Destination
     },
     [pscustomobject]@{
         Name = 'sqlite-replica'
-        RemoteDir = '/home/ubuntu/shenron/data/backups/shenron-sqlite'
+        RemoteDir = "$remoteHome/shenron/data/backups/shenron-sqlite"
         ManifestPattern = 'bot-*.db.gz.sha256'
         ArtifactPattern = '^bot-[0-9]{8}-[0-9]{6}\.db\.gz$'
         Destination = (Join-Path $Destination 'sqlite')

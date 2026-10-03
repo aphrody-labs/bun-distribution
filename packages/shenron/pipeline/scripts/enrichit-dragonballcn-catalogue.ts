@@ -1326,7 +1326,7 @@ try {
 }
 
 // 3. Mise à jour de SQLite (bot.db)
-console.log("\nMise à jour de SQLite (/home/ubuntu/shenron/apps/shenron/bot/data/bot.db)...");
+console.log("\nMise à jour de SQLite (apps/shenron/bot/data/bot.db)...");
 const sqlite = new Database(SQLITE_PATH);
 try {
 	const stmt = sqlite.prepare(`

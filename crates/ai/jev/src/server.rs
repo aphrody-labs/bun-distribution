@@ -52,7 +52,7 @@ pub fn app(state: ServerState) -> Router {
         .with_state(state)
 }
 
-/// Intentionally NOT unified with aphrody-http-error - mimics Anthropic's own error wire shape for client drop-in compatibility; see aphrody-contracts/docs/API.md section 6.8.
+/// Intentionally NOT unified with aphrody-http-error - mimics Anthropic's own error wire shape for client drop-in compatibility; see docs/apis/contracts/API.md section 6.8.
 fn error(status: StatusCode, error_type: &str, message: impl Into<String>) -> HttpResponse {
     (status, Json(json!({ "detail": { "error_type": error_type, "message": message.into() } })))
         .into_response()
