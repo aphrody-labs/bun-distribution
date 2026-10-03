@@ -3,14 +3,8 @@
 set -Eeuo pipefail
 stage_root="$(realpath -- "${1:?usage: prepare-iecode-release.sh STAGE_ROOT [SOURCE_ROOT]}")"
 producer_root="$(realpath -- "${2:-$stage_root/../iecode}")"
-revision="$(python3 - "$stage_root/config/sibling-checkouts.json" <<'PYTHON'
-import json, re, sys
-source = json.load(open(sys.argv[1]))['iecode']
-if not re.fullmatch(r'[0-9a-f]{40}', source['rev']):
-    raise SystemExit('IECODE source requires a full pinned Git revision')
-print(source['rev'])
-PYTHON
-)"
+revision="$(bun "$stage_root/packages/infra/workspace/src/iecode-packages.ts" source \
+  --config "$stage_root/config/sibling-checkouts.json" --field revision)"
 git -C "$producer_root" cat-file -e "$revision^{commit}"
 producer_stage="$(mktemp -d "${TMPDIR:-/tmp}/rg-iecode-source.XXXXXX")"
 trap 'rm -rf -- "$producer_stage"' EXIT

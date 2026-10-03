@@ -3,6 +3,7 @@ import { realpath } from "node:fs/promises";
 import { dirname, join, relative, resolve } from "node:path";
 import { firstPartyManifests } from "./bun-workspace.ts";
 import { routeHeavyBuild } from "./build-factory.ts";
+import { DEFAULT_INLINE_BASELINE } from "./inline-interpreters.ts";
 
 export type WorkspacePackage = {
   name: string;
@@ -51,6 +52,7 @@ export function buildMonorepoGatePlan(input: {
   hasCargoManifest: boolean;
   hasCargoLock: boolean;
   hasBunLock: boolean;
+  hasInlineBaseline?: boolean;
   docsScript?: string;
   gaps?: GateGap[];
   noBuild?: boolean;
@@ -161,6 +163,16 @@ export function buildMonorepoGatePlan(input: {
       cwd: root,
       script: input.rootScripts[docsScript],
     });
+  if (input.hasInlineBaseline)
+    add("Inline interpreter ratchet", [
+      "bun",
+      join(import.meta.dir, "automation-inventory.ts"),
+      "--inline",
+      "--check",
+      "--markdown",
+      "--root",
+      root,
+    ]);
   const plan: MonorepoGatePlan = { root, packages: input.packages, checks, gaps };
   return input.noBuild ? restrictToNoBuild(plan) : plan;
 }
@@ -192,6 +204,11 @@ export function restrictToNoBuild(plan: MonorepoGatePlan): MonorepoGatePlan {
         ...check,
         command: ["bun", "install", "--frozen-lockfile", "--dry-run", "--ignore-scripts"],
       });
+      continue;
+    }
+    // Read-only scan of tracked sources; it never builds or executes them.
+    if (check.name === "Inline interpreter ratchet") {
+      checks.push(check);
       continue;
     }
     if (check.name === "Rust formatting") {
@@ -314,6 +331,7 @@ export async function discoverMonorepoGatePlan(
     hasCargoManifest: await Bun.file(join(root, "Cargo.toml")).exists(),
     hasCargoLock: await Bun.file(join(root, "Cargo.lock")).exists(),
     hasBunLock: await Bun.file(join(root, "bun.lock")).exists(),
+    hasInlineBaseline: await Bun.file(join(root, DEFAULT_INLINE_BASELINE)).exists(),
     noBuild,
   });
 }

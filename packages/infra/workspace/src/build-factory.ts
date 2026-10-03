@@ -95,16 +95,51 @@ export function buildFactoryPlan(
   };
 }
 
+export interface BuildFactoryStatus {
+  configured: boolean;
+  enabled: boolean;
+  target: string | null;
+  host: string | null;
+  localCargo: boolean;
+  route: "factory" | "local";
+  reason: string;
+}
+
+async function readFactoryConfig(root: string): Promise<BuildFactoryConfig | null> {
+  const file = Bun.file(join(root, "config/build-factory.json"));
+  return (await file.exists()) ? ((await file.json()) as BuildFactoryConfig) : null;
+}
+
+/** Heavy-work route; `localCargo` honours the scoped cargo-serial diagnostic override only. */
+export function heavyBuildStatus(
+  config: BuildFactoryConfig | null,
+  env: Record<string, string | undefined>,
+  honourLocalCargo = true,
+): BuildFactoryStatus {
+  const host = env.APHRODY_BUILD_HOST || null;
+  const localCargo = honourLocalCargo && env.APHRODY_LOCAL_CARGO === "1";
+  const status = {
+    configured: config !== null,
+    enabled: config?.enabled === true,
+    target: config?.target ?? null,
+    host,
+    localCargo,
+  };
+  const local = (reason: string) => ({ ...status, route: "local" as const, reason });
+  if (!config) return local("config/build-factory.json is absent");
+  if (host === "vps") return local("running on the factory host");
+  if (!status.enabled) return local("build factory disabled");
+  if (localCargo) return local("APHRODY_LOCAL_CARGO=1 selects a scoped local diagnostic");
+  return { ...status, route: "factory", reason: `heavy work runs on ${config.target}` };
+}
+
 /** Source-owner gates use this before heavy work; static/planning callers never dispatch. */
 export async function routeHeavyBuild(
   command: string[],
   root: string,
 ): Promise<number | undefined> {
-  if (process.env.APHRODY_BUILD_HOST === "vps") return undefined;
-  const file = Bun.file(join(root, "config/build-factory.json"));
-  if (!(await file.exists())) return undefined;
-  const config = (await file.json()) as BuildFactoryConfig;
-  if (!config.enabled) return undefined;
+  const config = await readFactoryConfig(root);
+  if (!config || heavyBuildStatus(config, process.env, false).route === "local") return undefined;
   const git = async (args: string[]): Promise<string> => {
     const child = Bun.spawn(["git", ...args], { cwd: root, stdout: "pipe", stderr: "inherit" });
     const output = await new Response(child.stdout).text();
@@ -136,11 +171,18 @@ export async function runBuildFactory(args: string[], root = infraRoot()): Promi
   const options = separator === -1 ? args : args.slice(0, separator);
   if (options.includes("--help") || options.includes("-h")) {
     console.log(
-      "Usage: aphrody-ops build-factory <plan|run> --repo <aphrody|iecode|aphrody-py> --revision <full-git-sha> -- <owner command> [arguments...]",
+      "Usage: aphrody-ops build-factory <plan|run> --repo <aphrody|iecode|aphrody-py> --revision <full-git-sha> -- <owner command> [arguments...]\n       aphrody-ops build-factory status [--route]",
     );
     return 0;
   }
   const [action = "plan", ...rest] = args;
+  if (action === "status") {
+    if (rest.some((arg) => arg !== "--route"))
+      throw new Error("Usage: build-factory status [--route]");
+    const status = heavyBuildStatus(await readFactoryConfig(root), process.env);
+    console.log(rest.length ? status.route : JSON.stringify(status, null, 2));
+    return 0;
+  }
   if (action !== "plan" && action !== "run") throw new Error("Expected build-factory plan or run");
   let repository = "aphrody";
   let revision = "";
@@ -157,9 +199,8 @@ export async function runBuildFactory(args: string[], root = infraRoot()): Promi
     if (arg === "--repo") repository = value;
     else revision = value;
   }
-  const config = (await Bun.file(
-    join(root, "config/build-factory.json"),
-  ).json()) as BuildFactoryConfig;
+  const config = await readFactoryConfig(root);
+  if (!config) throw new Error("config/build-factory.json is absent");
   const plan = buildFactoryPlan(config, repository, revision, command);
   if (action === "plan") {
     console.log(JSON.stringify({ executed: false, ...plan }, null, 2));

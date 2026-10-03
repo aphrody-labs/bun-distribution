@@ -11,6 +11,7 @@ import {
   validateArchiveEntries,
   validateArchiveTypes,
   canonicalizePackageArchive,
+  readIecodeSource,
 } from "./iecode-packages";
 
 const temporary: string[] = [];
@@ -321,4 +322,43 @@ test("failed repacking cannot replace previously committed archive bytes or mani
       allowDirty: true,
     }),
   ).rejects.toThrow("outside the producer");
+});
+
+test("CI reads the pinned producer contract through the archive owner", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "iecode-source-"));
+  temporary.push(directory);
+  const contract = {
+    repository: "https://github.com/aphrody-labs/iecode.git",
+    path: "../iecode",
+    rev: "c".repeat(40),
+    envOverride: "APHRODY_IECODE_ROOT",
+    packages: ["inagle", "inagle-cross", "azalee"],
+  };
+  const config = join(directory, "sibling-checkouts.json");
+  const output = join(directory, "github-output");
+  await writeFile(config, JSON.stringify({ iecode: contract }));
+  await writeFile(output, "previous=kept\n");
+  const source = (...args: string[]) =>
+    Bun.spawn([process.execPath, join(import.meta.dir, "iecode-packages.ts"), "source", ...args], {
+      env: { ...process.env, GITHUB_OUTPUT: output },
+      stdout: "pipe",
+      stderr: "pipe",
+    });
+  expect(await source().exited).not.toBe(0);
+  const child = source("--config", config, "--github-output");
+  expect(JSON.parse(await new Response(child.stdout).text())).toMatchObject({
+    slug: "aphrody-labs/iecode",
+    revision: contract.rev,
+  });
+  expect(await child.exited).toBe(0);
+  expect(await readFile(output, "utf8")).toBe(
+    `previous=kept\nrepository=aphrody-labs/iecode\nrevision=${contract.rev}\n`,
+  );
+  const field = source("--config", config, "--field", "revision");
+  expect(await new Response(field.stdout).text()).toBe(`${contract.rev}\n`);
+  expect(await source("--config", config, "--field", "unknown").exited).not.toBe(0);
+  for (const invalid of [{ path: "../other" }, { rev: "main" }, { packages: ["inagle"] }]) {
+    await writeFile(config, JSON.stringify({ iecode: { ...contract, ...invalid } }));
+    await expect(readIecodeSource(config)).rejects.toThrow();
+  }
 });

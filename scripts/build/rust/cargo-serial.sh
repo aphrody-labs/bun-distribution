@@ -18,13 +18,9 @@ done
 case "$cargo_command" in
     build|b|check|c|test|t|clippy|rustdoc|doc|d|bench|run|r|install|rustc|nextest|xwin|zigbuild)
         if [[ "$help_only" == false && -f "$factory_config" && "${APHRODY_BUILD_HOST:-}" != vps && "${APHRODY_LOCAL_CARGO:-0}" != 1 ]]; then
-            factory_enabled="$(python3 - "$factory_config" <<'PY'
-import json, sys
-config = json.load(open(sys.argv[1]))
-print('true' if config.get('enabled') is True else 'false')
-PY
-)"
-            if [[ "$factory_enabled" == true ]]; then
+            # The Workspace build-factory owner interprets the factory contract.
+            factory_route="$(bun "$source_root/packages/infra/workspace/src/build-factory.ts" status --route)"
+            if [[ "$factory_route" == factory ]]; then
                 echo "Heavy Cargo execution belongs to the VPS factory; use aphrody-ops build-factory run --repo aphrody --revision <full-sha> -- scripts/build/rust/cargo-serial.sh <arguments>." >&2
                 echo "APHRODY_LOCAL_CARGO=1 is only for an explicitly selected scoped diagnostic." >&2
                 exit 64

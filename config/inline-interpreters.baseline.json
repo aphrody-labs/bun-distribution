@@ -1,0 +1,246 @@
+{
+  "schemaVersion": 1,
+  "$comment": "Ratchet for inline interpreter invocations. Counts may only fall; new files fail the check.",
+  "files": {
+    "apps/rg/bot/src/api/ranked/persistence.test.ts": {
+      "count": 1,
+      "scope": "test",
+      "reason": "Fresh-process isolation fixture."
+    },
+    "apps/shenron/bot/tests/boot-without-services.test.ts": {
+      "count": 1,
+      "scope": "test",
+      "reason": "Fresh-process isolation fixture."
+    },
+    "apps/shenron/site/tests/databooks-freeze.test.ts": {
+      "count": 1,
+      "scope": "test",
+      "reason": "Fresh-process isolation fixture."
+    },
+    "config/infra/docker/rg-vps-replica/supabase-studio.yml": {
+      "count": 2,
+      "scope": "container",
+      "reason": "Healthcheck inside the upstream container image, which ships Node only."
+    },
+    "packages/compat/n2b-client/test/binary-resolution.test.ts": {
+      "count": 1,
+      "scope": "test",
+      "reason": "Fresh-process isolation fixture."
+    },
+    "packages/infra/update/test/tauri-sync-apply.test.ts": {
+      "count": 1,
+      "scope": "test",
+      "reason": "Fresh-process isolation fixture."
+    },
+    "packages/infra/workspace/src/bun-native.ts": {
+      "count": 1,
+      "scope": "local",
+      "reason": "Fresh Bun process isolates the native library consumer under test."
+    },
+    "packages/infra/workspace/src/iecode-packages.test.ts": {
+      "count": 2,
+      "scope": "test",
+      "reason": "Exercises a host or Python owner exactly as shipped."
+    },
+    "packages/infra/workspace/src/iecode-packages.ts": {
+      "count": 2,
+      "scope": "local",
+      "reason": "Byte-reproducible tar/gzip canonicalisation; archive hashes are pinned, a port needs byte-identical output."
+    },
+    "packages/infra/workspace/src/infra-audit.ts": {
+      "count": 2,
+      "scope": "remote",
+      "reason": "Read-only SSH probe of runtime-only hosts; only system CPython is guaranteed there."
+    },
+    "packages/infra/workspace/src/runtime-gate.ts": {
+      "count": 2,
+      "scope": "local",
+      "reason": "uv import probe of a Python package owner (Python via uv by policy)."
+    },
+    "packages/infra/workspace/test/bun-native.test.ts": {
+      "count": 2,
+      "scope": "test",
+      "reason": "Fresh-process isolation fixture."
+    },
+    "packages/infra/workspace/test/infra-audit.test.ts": {
+      "count": 1,
+      "scope": "test",
+      "reason": "Exercises a host or Python owner exactly as shipped."
+    },
+    "packages/infra/workspace/test/native-consumer-imports.test.ts": {
+      "count": 1,
+      "scope": "test",
+      "reason": "Fresh-process isolation fixture."
+    },
+    "packages/interop/native/test-http-request.test.ts": {
+      "count": 1,
+      "scope": "test",
+      "reason": "Fresh-process isolation fixture."
+    },
+    "packages/interop/native/test-library.test.ts": {
+      "count": 2,
+      "scope": "test",
+      "reason": "Fresh-process isolation fixture."
+    },
+    "packages/interop/native/test-native-artifact.test.ts": {
+      "count": 1,
+      "scope": "test",
+      "reason": "Fresh-process isolation fixture."
+    },
+    "packages/rg/cron/src/import.test.ts": {
+      "count": 1,
+      "scope": "test",
+      "reason": "Fresh-process isolation fixture."
+    },
+    "packages/shenron/pipeline/test/aphrody/native-contract.test.ts": {
+      "count": 1,
+      "scope": "test",
+      "reason": "Fresh-process isolation fixture."
+    },
+    "packages/web/agent-browser/test/cdp-wire.test.ts": {
+      "count": 1,
+      "scope": "test",
+      "reason": "Fresh-process isolation fixture."
+    },
+    "packages/web/agent-browser/test/engine-lifecycle.test.ts": {
+      "count": 1,
+      "scope": "test",
+      "reason": "Fresh-process isolation fixture."
+    },
+    "scripts/aphrody-os/mullvad-switch-relay.sh": {
+      "count": 1,
+      "scope": "host",
+      "reason": "Runtime-only host adapter; Bun is absent there, system CPython is the available interpreter."
+    },
+    "scripts/aphrody/vps-sync-agent-stack.sh": {
+      "count": 2,
+      "scope": "host",
+      "reason": "Runtime-only host adapter; Bun is absent there, system CPython is the available interpreter."
+    },
+    "scripts/atomic-deploy-aphrody-discord.sh": {
+      "count": 3,
+      "scope": "host",
+      "reason": "Runtime-only host adapter; Bun is absent there, system CPython is the available interpreter."
+    },
+    "scripts/atomic-deploy-aphrody-stack.sh": {
+      "count": 3,
+      "scope": "host",
+      "reason": "Runtime-only host adapter; Bun is absent there, system CPython is the available interpreter."
+    },
+    "scripts/atomic-deploy-bundle.sh": {
+      "count": 7,
+      "scope": "host",
+      "reason": "Runtime-only host adapter; Bun is absent there, system CPython is the available interpreter."
+    },
+    "scripts/atomic-deploy-rg.sh": {
+      "count": 2,
+      "scope": "host",
+      "reason": "Runtime-only host adapter; Bun is absent there, system CPython is the available interpreter."
+    },
+    "scripts/atomic-deploy-shenron.sh": {
+      "count": 9,
+      "scope": "host",
+      "reason": "Runtime-only host adapter; Bun is absent there, system CPython is the available interpreter."
+    },
+    "scripts/audit/ai/scripts/test-xai-grok-bxc.sh": {
+      "count": 3,
+      "scope": "host",
+      "reason": "Runtime-only host adapter; Bun is absent there, system CPython is the available interpreter."
+    },
+    "scripts/audit/live-candidates/deploy-web-fix.sh": {
+      "count": 1,
+      "scope": "host",
+      "reason": "Live candidate targets the removed VPS Bun install (2026-10-03 runtime-only cleanup); retire or move to a Workspace owner."
+    },
+    "scripts/audit/rg-build.test.ts": {
+      "count": 2,
+      "scope": "test",
+      "reason": "Exercises a host or Python owner exactly as shipped."
+    },
+    "scripts/audit/shenron/scripts/ops/ocr-french-databooks-aphrody.test.ts": {
+      "count": 1,
+      "scope": "test",
+      "reason": "Fresh-process isolation fixture."
+    },
+    "scripts/build-aphrody-discord-release.sh": {
+      "count": 1,
+      "scope": "local",
+      "reason": "Release assembly; next candidate to port manifest, hash and catalog steps into the Workspace rg/shenron owners."
+    },
+    "scripts/build-aphrody-stack-release.sh": {
+      "count": 2,
+      "scope": "local",
+      "reason": "Release assembly; next candidate to port manifest, hash and catalog steps into the Workspace rg/shenron owners."
+    },
+    "scripts/install-vps-adapter.sh": {
+      "count": 4,
+      "scope": "host",
+      "reason": "Runtime-only host adapter; Bun is absent there, system CPython is the available interpreter."
+    },
+    "scripts/migration/shenron-env-transfer.sh": {
+      "count": 2,
+      "scope": "host",
+      "reason": "Host data migration run once through the Infra runbook; system CPython on the host."
+    },
+    "scripts/migration/shenron-nginx-forwarder.sh": {
+      "count": 3,
+      "scope": "host",
+      "reason": "Host data migration run once through the Infra runbook; system CPython on the host."
+    },
+    "scripts/migration/shenron-redis-transfer.sh": {
+      "count": 2,
+      "scope": "host",
+      "reason": "Host data migration run once through the Infra runbook; system CPython on the host."
+    },
+    "scripts/migration/shenron-shared-transfer.sh": {
+      "count": 2,
+      "scope": "host",
+      "reason": "Host data migration run once through the Infra runbook; system CPython on the host."
+    },
+    "scripts/ops/prepare-aphrody-data-contract.sh": {
+      "count": 1,
+      "scope": "host",
+      "reason": "Runtime-only host adapter; Bun is absent there, system CPython is the available interpreter."
+    },
+    "scripts/ops/provision-shenron-ai-access.sh": {
+      "count": 1,
+      "scope": "host",
+      "reason": "Runtime-only host adapter; Bun is absent there, system CPython is the available interpreter."
+    },
+    "scripts/release/install-linux-host-bridge.sh": {
+      "count": 2,
+      "scope": "host",
+      "reason": "Runtime-only host adapter; Bun is absent there, system CPython is the available interpreter."
+    },
+    "scripts/rg/assemble-vps-release.sh": {
+      "count": 4,
+      "scope": "local",
+      "reason": "Release assembly; next candidate to port manifest, hash and catalog steps into the Workspace rg/shenron owners."
+    },
+    "scripts/test-atomic-deploy-bundle.sh": {
+      "count": 2,
+      "scope": "test",
+      "reason": "Exercises a host or Python owner exactly as shipped."
+    },
+    "scripts/test-atomic-deploy-shenron.sh": {
+      "count": 2,
+      "scope": "test",
+      "reason": "Exercises a host or Python owner exactly as shipped."
+    },
+    "scripts/tools/ai/py/aphrody/scripts/autopilot.sh": {
+      "count": 1,
+      "scope": "local",
+      "reason": "Imported autopilot interpolates shell values into Python source; factor or retire."
+    },
+    "scripts/tools/ai/scripts/bench-python-surface.ts": {
+      "count": 2,
+      "scope": "local",
+      "reason": "Benchmark of the Python surface itself."
+    },
+    "scripts/verify-google-pipeline.ps1": {
+      "count": 1,
+      "scope": "local",
+      "reason": "uv import probe of a Python package owner (Python via uv by policy)."
+    }
+  }
+}

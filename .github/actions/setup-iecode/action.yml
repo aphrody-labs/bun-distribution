@@ -15,16 +15,9 @@ runs:
         CHECKOUT_TOKEN: ${{ inputs.token }}
       run: |
         test -n "$CHECKOUT_TOKEN" || { echo "::error::IECODE_CHECKOUT_TOKEN is required."; exit 1; }
-        python3 - <<'PYTHON'
-        import json, os, re
-        source = json.load(open("config/sibling-checkouts.json"))["iecode"]
-        match = re.fullmatch(r"https://github.com/([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+)\.git", source["repository"])
-        assert match and re.fullmatch(r"[0-9a-f]{40}", source["rev"])
-        assert source["path"] == "../iecode"
-        with open(os.environ["GITHUB_OUTPUT"], "a") as output:
-            print("repository=" + match[1], file=output)
-            print("revision=" + source["rev"], file=output)
-        PYTHON
+        command -v bun >/dev/null || { echo "::error::Set up Bun before setup-iecode."; exit 1; }
+        bun packages/infra/workspace/src/iecode-packages.ts source \
+          --config config/sibling-checkouts.json --github-output
     - uses: actions/checkout@v4
       with:
         repository: ${{ steps.source.outputs.repository }}

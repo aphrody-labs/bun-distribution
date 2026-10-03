@@ -3,7 +3,11 @@ import { expect, test } from "bun:test";
 import { chmod, mkdtemp, mkdir, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { buildFactoryPlan, type BuildFactoryConfig } from "../src/build-factory.ts";
+import {
+  buildFactoryPlan,
+  heavyBuildStatus,
+  type BuildFactoryConfig,
+} from "../src/build-factory.ts";
 import { runInfra } from "../src/runtime.ts";
 
 const config: BuildFactoryConfig = {
@@ -133,4 +137,40 @@ test("factory preserves literal shell-sensitive arguments and refuses changed so
   } finally {
     await rm(root, { recursive: true, force: true });
   }
+});
+
+test("heavy build status owns the cargo-serial route decision", () => {
+  const route = (
+    env: Record<string, string>,
+    honour = true,
+    value: BuildFactoryConfig | null = config,
+  ) => heavyBuildStatus(value, env, honour).route;
+  expect(route({})).toBe("factory");
+  expect(route({ APHRODY_BUILD_HOST: "vps" })).toBe("local");
+  expect(route({ APHRODY_LOCAL_CARGO: "1" })).toBe("local");
+  expect(route({ APHRODY_LOCAL_CARGO: "1" }, false)).toBe("factory");
+  expect(route({}, true, { ...config, enabled: false })).toBe("local");
+  expect(route({}, true, null)).toBe("local");
+  expect(heavyBuildStatus(config, {})).toEqual({
+    configured: true,
+    enabled: true,
+    target: "vps",
+    host: null,
+    localCargo: false,
+    route: "factory",
+    reason: "heavy work runs on vps",
+  });
+});
+
+test("cargo-serial asks the build-factory owner for the route", async () => {
+  const script = await Bun.file(
+    join(import.meta.dir, "../../../../scripts/build/rust/cargo-serial.sh"),
+  ).text();
+  expect(script).toContain('build-factory.ts" status --route');
+  const child = Bun.spawn(
+    [process.execPath, join(import.meta.dir, "../src/build-factory.ts"), "status", "--route"],
+    { env: { ...process.env, APHRODY_BUILD_HOST: "vps" }, stdout: "pipe" },
+  );
+  expect((await new Response(child.stdout).text()).trim()).toBe("local");
+  expect(await child.exited).toBe(0);
 });

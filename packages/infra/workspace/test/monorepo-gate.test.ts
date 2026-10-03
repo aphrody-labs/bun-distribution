@@ -227,3 +227,20 @@ test("no-build excludes Cargo compilation, arbitrary adapters, unsafe test hooks
   expect(plan.deferred!.some((check) => check.script === "bun test")).toBe(true);
   expect((await executeMonorepoGate(plan, async () => 0)).passed).toBe(false);
 });
+
+test("an inline interpreter baseline adds a read-only ratchet kept in no-build mode", () => {
+  expect(fixture().checks.some((check) => check.name === "Inline interpreter ratchet")).toBe(false);
+  for (const noBuild of [false, true]) {
+    const check = fixture({ hasInlineBaseline: true, noBuild }).checks.find(
+      (item) => item.name === "Inline interpreter ratchet",
+    )!;
+    expect(check.command[1]!.endsWith("automation-inventory.ts")).toBe(true);
+    expect(check.command.slice(2)).toEqual([
+      "--inline",
+      "--check",
+      "--markdown",
+      "--root",
+      "/workspace/aphrody",
+    ]);
+  }
+});

@@ -86,6 +86,10 @@ export async function collectAutomationInventory(root: string) {
 }
 
 export async function runAutomationInventory(args: string[]): Promise<number> {
+  if (args.includes("--inline"))
+    return (await import("./inline-interpreters.ts")).runInlineInventory(
+      args.filter((arg) => arg !== "--inline"),
+    );
   let root = process.cwd();
   let json = false;
   for (let i = 0; i < args.length; i++) {
@@ -96,7 +100,9 @@ export async function runAutomationInventory(args: string[]): Promise<number> {
       root = value;
     } else if (arg === "--json") json = true;
     else if (arg === "--help" || arg === "-h") {
-      console.log("Usage: aphrody-ops automation-inventory [--json] [--root <src>]");
+      console.log(
+        "Usage: aphrody-ops automation-inventory [--json] [--root <src>]\n       aphrody-ops automation-inventory --inline --help",
+      );
       return 0;
     } else throw new Error(`Unknown argument: ${arg}`);
   }

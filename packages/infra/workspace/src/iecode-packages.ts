@@ -4,6 +4,7 @@
 /** Producer-owned archives for consumers outside the IECODE Bun workspace. */
 import { createHash } from "node:crypto";
 import {
+  appendFile,
   link,
   lstat,
   mkdir,
@@ -273,11 +274,65 @@ export async function prepareIecodePackages(options: {
   }
 }
 
-if (import.meta.main) {
+/** Pinned producer contract shared by archive preparation and the CI checkout. */
+export async function readIecodeSource(configPath: string) {
+  const configuration = JSON.parse(await readFile(configPath, "utf8")).iecode;
+  if (!/^[a-f0-9]{40}$/.test(configuration?.rev))
+    throw new Error("IECODE requires a pinned revision.");
+  const slug = /^https:\/\/github\.com\/([\w.-]+\/[\w.-]+)\.git$/.exec(
+    configuration.repository,
+  )?.[1];
+  if (
+    configuration.repository !== "https://github.com/aphrody-labs/iecode.git" ||
+    !slug ||
+    configuration.path !== "../iecode" ||
+    JSON.stringify(configuration.packages) !== JSON.stringify(members) ||
+    configuration.envOverride !== "APHRODY_IECODE_ROOT"
+  )
+    throw new Error("Unsupported IECODE producer contract.");
+  return {
+    repository: configuration.repository as string,
+    slug,
+    revision: configuration.rev as string,
+    path: configuration.path as string,
+    envOverride: configuration.envOverride as string,
+  };
+}
+
+if (import.meta.main && process.argv[2] === "source") {
+  const args = process.argv.slice(3);
+  let configPath = "";
+  let field = "";
+  let githubOutput = false;
+  while (args.length) {
+    const flag = args.shift();
+    if (flag === "--github-output") githubOutput = true;
+    else if (flag === "--config" || flag === "--field") {
+      const value = args.shift();
+      if (!value || value.startsWith("--")) throw new Error(`Missing value for ${flag}`);
+      if (flag === "--config") configPath = value;
+      else field = value;
+    } else throw new Error(`Unknown option: ${flag}`);
+  }
+  if (!configPath)
+    throw new Error(
+      "Usage: iecode-packages source --config <sibling-checkouts.json> [--field <name>] [--github-output]",
+    );
+  const source = await readIecodeSource(configPath);
+  if (field && !Object.hasOwn(source, field)) throw new Error(`Unknown source field: ${field}`);
+  if (githubOutput) {
+    if (!process.env.GITHUB_OUTPUT) throw new Error("--github-output requires GITHUB_OUTPUT");
+    await appendFile(
+      process.env.GITHUB_OUTPUT,
+      `repository=${source.slug}\nrevision=${source.revision}\n`,
+    );
+  }
+  console.log(field ? source[field as keyof typeof source] : JSON.stringify(source, null, 2));
+} else if (import.meta.main) {
   const args = process.argv.slice(2);
   if (args.shift() !== "prepare")
     throw new Error(
-      "Usage: iecode-packages prepare --source <IECODE> --destination <output> [--apply] [--allow-dirty]",
+      "Usage: iecode-packages <prepare --source <IECODE> --destination <output> [--apply] [--allow-dirty] | source --config <file> [--field <name>] [--github-output]>",
     );
   const options = {
     source: "",
@@ -301,19 +356,11 @@ if (import.meta.main) {
     } else throw new Error(`Unknown option: ${flag}`);
   }
   if (configPath) {
-    const configuration = JSON.parse(await readFile(configPath, "utf8")).iecode;
-    if (!/^[a-f0-9]{40}$/.test(configuration.rev))
-      throw new Error("IECODE requires a pinned revision.");
-    if (
-      configuration.repository !== "https://github.com/aphrody-labs/iecode.git" ||
-      JSON.stringify(configuration.packages) !== JSON.stringify(members) ||
-      configuration.envOverride !== "APHRODY_IECODE_ROOT"
-    )
-      throw new Error("Unsupported IECODE producer contract.");
+    const configuration = await readIecodeSource(configPath);
     options.source ||=
       process.env[configuration.envOverride] ??
       resolve(dirname(resolve(configPath)), "..", configuration.path);
-    options.expectedRevision = configuration.rev;
+    options.expectedRevision = configuration.revision;
   }
   if (!options.source || !options.destination)
     throw new Error("Both --source and --destination are required.");
