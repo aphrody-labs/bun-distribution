@@ -1,0 +1,255 @@
+{
+  "schema": "aphrody.huggingface-native.inventory.v1",
+  "date": "2026-10-03",
+  "repository_head_at_audit": "7f8f891e40755aeac9efed668e5633d26f614a3d",
+  "proof_level": "source-only; Cargo forbidden for worker",
+  "scope": "Rust/Bun source and manifests in shared Aphrody checkout; not exhaustive ecosystem/runtime deployment proof",
+  "official_source": {
+    "crate": "hf-hub",
+    "version": "1.1.0",
+    "revision": "473de9430b0fbc544fb1d91102180eb713f8dc87",
+    "url": "https://github.com/huggingface/hf-hub",
+    "license": "Apache-2.0",
+    "evidence": {
+      "path": "Cargo.toml",
+      "line": 402,
+      "symbol": "hf-hub =",
+      "sha256": "b680e416320cd91ee47817b244a2d89ce5bd40b2661372d4f145393b866990ee"
+    }
+  },
+  "coverage": [
+    {
+      "area": "hub",
+      "owner": "aphrody-models",
+      "status": "implemented-source-uncompiled",
+      "actual": "Read-only bounded search and revision-specific metadata; official client, no new cache.",
+      "evidence": [
+        {
+          "path": "crates/ai/models/src/hub.rs",
+          "line": 163,
+          "symbol": "pub async fn search",
+          "sha256": "6f5053baea5bdcd1f38b7876cb94d37441e5c76ae1d137a4be8673c3157e63a5"
+        },
+        {
+          "path": "/home/aphro/.cargo/git/checkouts/hf-hub-3c7263c594854a05/473de94/hf-hub/src/repository/mod.rs",
+          "line": 1139,
+          "symbol": "pub fn list_models",
+          "sha256": "4e678000ca32db986fcbd6d520a6d19a51db56a6370cae70cc470ade4d1ebdfd"
+        }
+      ],
+      "remaining": "CLI wiring, remote fixture regression matrix and live authorization pending. No Hub writes exposed."
+    },
+    {
+      "area": "models",
+      "owner": "aphrody-models",
+      "status": "existing-plus-auth-source",
+      "actual": "Existing catalog, digest-checked resumable downloads, store and inspection; new protected-store constructor.",
+      "evidence": [
+        {
+          "path": "crates/ai/models/src/catalog.rs",
+          "line": 128,
+          "symbol": "pub struct Catalog",
+          "sha256": "6dc9c651eb328a740a66b9c096a2c69c24765bdb61e401ed154ee367f3e0f76b"
+        },
+        {
+          "path": "crates/ai/models/src/fetch.rs",
+          "line": 135,
+          "symbol": "pub async fn from_secret_store",
+          "sha256": "42ed9677450a881253dbe9826717ed57553806d14f0d3e45005ce03585cb2038"
+        },
+        {
+          "path": "crates/ai/models/src/store.rs",
+          "line": 179,
+          "symbol": "pub struct ModelStore",
+          "sha256": "035cfa838510fa88050c5561bf34d0ce95e00c2d43d6cff64669df9c3a4e307f"
+        }
+      ],
+      "remaining": "Official Xet/snapshot transfer is not replacing the qualified downloader in this batch."
+    },
+    {
+      "area": "datasets",
+      "owner": "aphrody-models / koharu-runtime",
+      "status": "partial-source",
+      "actual": "Hub dataset search/info added. Koharu already streams explicitly selected pinned dataset files through official hf-hub.",
+      "evidence": [
+        {
+          "path": "crates/ai/models/src/hub.rs",
+          "line": 184,
+          "symbol": "RepoTypeAny::Dataset =>",
+          "sha256": "6f5053baea5bdcd1f38b7876cb94d37441e5c76ae1d137a4be8673c3157e63a5"
+        },
+        {
+          "path": "crates/koharu/koharu-runtime/src/source/hugging_face.rs",
+          "line": 50,
+          "symbol": "pub const fn pinned_dataset",
+          "sha256": "5535be91e409497f435dddc4932e482af76568aea46c7c2070cc378d79f25ff9"
+        }
+      ],
+      "remaining": "No general Arrow/Parquet dataset transforms, splits, streaming dataset execution or datasets-server integration established by scoped audit."
+    },
+    {
+      "area": "spaces",
+      "owner": "aphrody-models",
+      "status": "partial-source",
+      "actual": "Space metadata/search/runtime read access added using official API.",
+      "evidence": [
+        {
+          "path": "crates/ai/models/src/hub.rs",
+          "line": 130,
+          "symbol": "pub async fn space_runtime",
+          "sha256": "6f5053baea5bdcd1f38b7876cb94d37441e5c76ae1d137a4be8673c3157e63a5"
+        },
+        {
+          "path": "/home/aphro/.cargo/git/checkouts/hf-hub-3c7263c594854a05/473de94/hf-hub/src/spaces.rs",
+          "line": 126,
+          "symbol": "pub async fn runtime",
+          "sha256": "8d4b2efb059438834a76f2e0b76c0c95a7def6ca3ef5521208fa8df270b38856"
+        }
+      ],
+      "remaining": "No Space provisioning, deployment, restart, secret mutation or Gradio invocation adapter exposed."
+    },
+    {
+      "area": "inference",
+      "owner": "aphrody-model-client / aphrody-embed / aphrody-engine-mistralrs",
+      "status": "existing-engine-partial-provider",
+      "actual": "Existing OpenAI-compatible transport and local Rust engines are owners. hf-hub supplies provider metadata, not inference execution.",
+      "evidence": [
+        {
+          "path": "crates/ai/model-client/src/openai_compat.rs",
+          "line": 233,
+          "symbol": "pub fn from_provider",
+          "sha256": "ea0d7c12bded43172872d488270a80df23cadd0e4b8835d55f38850973e8efc1"
+        },
+        {
+          "path": "crates/ai/engine-mistralrs/src/lib.rs",
+          "line": 2,
+          "symbol": "mistralrs",
+          "sha256": "7dda2320299309c3e83ad3faed132eb90157c40eeea01490598369a099f2bc33"
+        },
+        {
+          "path": "/home/aphro/.cargo/git/checkouts/hf-hub-3c7263c594854a05/473de94/hf-hub/src/repository/mod.rs",
+          "line": 152,
+          "symbol": "pub struct InferenceProviderMapping",
+          "sha256": "4e678000ca32db986fcbd6d520a6d19a51db56a6370cae70cc470ade4d1ebdfd"
+        }
+      ],
+      "remaining": "Dedicated HF Inference Providers task routing/auth/error mapping not found in scanned Rust/Bun source; configuring an endpoint is not proof of provider support."
+    },
+    {
+      "area": "tokenizers",
+      "owner": "aphrody-context / aphrody-embed",
+      "status": "existing-source",
+      "actual": "Official tokenizers is already used for exact context counts and native embedding encoding.",
+      "evidence": [
+        {
+          "path": "crates/ai/context/src/lib.rs",
+          "line": 507,
+          "symbol": "tokenizers::Tokenizer::from_file",
+          "sha256": "36434c50c7ea75e125621080ff6798a13f6c80ec9c3d6bd60a026b7e73f8e406"
+        },
+        {
+          "path": "crates/ai/embed/src/native/embedder.rs",
+          "line": 6,
+          "symbol": "use tokenizers::",
+          "sha256": "44f6ae7025d07c31918ec7afa05c7adc6efb83c7316ec72617d235f47be529a5"
+        },
+        {
+          "path": "Cargo.toml",
+          "line": 272,
+          "symbol": "tokenizers =",
+          "sha256": "b680e416320cd91ee47817b244a2d89ce5bd40b2661372d4f145393b866990ee"
+        }
+      ],
+      "remaining": "Only configured tokenizer/model paths supported; no general Transformers parity implied."
+    },
+    {
+      "area": "safetensors",
+      "owner": "aphrody-models / aphrody-embed",
+      "status": "existing-source",
+      "actual": "Models provides bounded header inspection; embedding engine uses official SafeTensors for tensor access.",
+      "evidence": [
+        {
+          "path": "crates/ai/models/src/inspect.rs",
+          "line": 590,
+          "symbol": "fn try_safetensors",
+          "sha256": "c2025ba4d69e8383012cb90f703bddc0525e38758f46cb4edaf0c5d6ca580a54"
+        },
+        {
+          "path": "crates/ai/embed/src/native/bert.rs",
+          "line": 19,
+          "symbol": "use safetensors::",
+          "sha256": "b095ba83bfecf862fceb7f2c75104efd2cf7b964daf3a8f7d0e2570c74df2c8a"
+        },
+        {
+          "path": "Cargo.toml",
+          "line": 258,
+          "symbol": "safetensors =",
+          "sha256": "b680e416320cd91ee47817b244a2d89ce5bd40b2661372d4f145393b866990ee"
+        }
+      ],
+      "remaining": "Inspection is not full tensor validation. Keep existing engine owner; no new loader here."
+    },
+    {
+      "area": "transformers",
+      "owner": "aphrody-embed / aphrody-engine-mistralrs",
+      "status": "partial-source",
+      "actual": "Candle BERT and mistral.rs are existing native execution paths, rather than a copied Python Transformers engine.",
+      "evidence": [
+        {
+          "path": "crates/ai/embed/src/native/candle_backend.rs",
+          "line": 11,
+          "symbol": "use candle_transformers::",
+          "sha256": "3d5a45a5f3854a4d040eee3a861bef7f83b182847e0655f6c3f2f82c2c3bb8e0"
+        },
+        {
+          "path": "Cargo.toml",
+          "line": 185,
+          "symbol": "candle-transformers =",
+          "sha256": "b680e416320cd91ee47817b244a2d89ce5bd40b2661372d4f145393b866990ee"
+        },
+        {
+          "path": "crates/ai/engine-mistralrs/src/lib.rs",
+          "line": 2,
+          "symbol": "mistralrs",
+          "sha256": "7dda2320299309c3e83ad3faed132eb90157c40eeea01490598369a099f2bc33"
+        }
+      ],
+      "remaining": "Full Python Transformers model/task/trainer compatibility not provided. Python repository was outside this audit."
+    },
+    {
+      "area": "authentication",
+      "owner": "aphrody-secrets / aphrody-models",
+      "status": "implemented-source-unactivated",
+      "actual": "Caller-selected SecretStore/key resolves a redacted zeroizing SecretValue. Missing identity is explicit; no store or identity created.",
+      "evidence": [
+        {
+          "path": "crates/os/secrets/src/lib.rs",
+          "line": 280,
+          "symbol": "pub trait SecretStore",
+          "sha256": "0f37f8cf5cff97684c37064c688bc7f4fd48582e88885d062965293a6a247865"
+        },
+        {
+          "path": "crates/os/secrets/src/lib.rs",
+          "line": 135,
+          "symbol": "pub struct SecretValue",
+          "sha256": "0f37f8cf5cff97684c37064c688bc7f4fd48582e88885d062965293a6a247865"
+        },
+        {
+          "path": "crates/ai/models/src/hub.rs",
+          "line": 37,
+          "symbol": "pub async fn resolve_token",
+          "sha256": "6f5053baea5bdcd1f38b7876cb94d37441e5c76ae1d137a4be8673c3157e63a5"
+        }
+      ],
+      "remaining": "No real credential read or whoami executed. CLI must inject authorized Aphrody domain store; official client retains a non-zeroizing String internally."
+    }
+  ],
+  "checks": {
+    "rustfmt": "passed",
+    "git_diff_check": "passed at source stage; final check recorded in handoff",
+    "cargo": "not run by instruction",
+    "tests": "added, not executed",
+    "live_identity": "not checked; no credential store selected by owner",
+    "artifact_acquisition": "none"
+  }
+}

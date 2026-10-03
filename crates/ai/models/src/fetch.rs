@@ -95,6 +95,7 @@ impl PullOutcome {
 /// A reusable HTTP client for weight downloads.
 pub struct Downloader {
     client: reqwest::Client,
+    hub_token: Option<aphrody_secrets::SecretValue>,
 }
 
 impl Downloader {
@@ -116,13 +117,29 @@ impl Downloader {
                 url: String::from("<client>"),
                 reason: e.to_string(),
             })?;
-        Ok(Self { client })
+        Ok(Self { client, hub_token: None })
     }
 
     /// Wrap an already-configured client (proxy, custom roots, test server).
     #[must_use]
     pub const fn with_client(client: reqwest::Client) -> Self {
-        Self { client }
+        Self { client, hub_token: None }
+    }
+
+    /// Build with the caller's existing protected-store Hub credential.
+    /// The selected store is authoritative: lookup failure never falls back
+    /// to another identity. The token is kept redacted and zeroized on drop.
+    ///
+    /// # Errors
+    /// Returns redacted credential or client-construction errors.
+    pub async fn from_secret_store(
+        store: &dyn aphrody_secrets::SecretStore,
+        key: &str,
+    ) -> core::result::Result<Self, crate::hub::HubError> {
+        let token = crate::hub::resolve_token(store, key).await?;
+        let mut downloader = Self::new().map_err(|_| crate::hub::HubError::Request)?;
+        downloader.hub_token = Some(token);
+        Ok(downloader)
     }
 
     /// Fetch `reference` into `store`, resuming an interrupted transfer when
@@ -210,8 +227,12 @@ impl Downloader {
         let resume_from = std::fs::metadata(part_path).map_or(0, |m| m.len());
 
         let mut request = self.client.get(url);
-        if let Some(token) = hf_token(url) {
-            request = request.bearer_auth(token);
+        if is_hub_url(url) {
+            if let Some(token) = &self.hub_token {
+                request = request.bearer_auth(token.expose_secret());
+            } else if let Some(token) = hf_token(url) {
+                request = request.bearer_auth(token);
+            }
         }
         if resume_from > 0 {
             request = request.header(reqwest::header::RANGE, format!("bytes={resume_from}-"));
@@ -320,7 +341,7 @@ fn hf_token(url: &str) -> Option<String> {
 /// client construction panics with `No provider set` unless a provider was
 /// installed first (CLAUDE.md §7). Installing twice is not an error we care
 /// about — another crate winning the race is a perfectly good outcome.
-fn ensure_crypto_provider() {
+pub(crate) fn ensure_crypto_provider() {
     static ONCE: Once = Once::new();
     ONCE.call_once(|| {
         let _ = rustls::crypto::ring::default_provider().install_default();
@@ -420,5 +441,20 @@ mod tests {
         // ran. Two constructions also prove the install is idempotent.
         assert!(Downloader::new().is_ok());
         assert!(Downloader::new().is_ok());
+    }
+
+    #[tokio::test]
+    async fn protected_store_is_authoritative_for_downloader() {
+        use aphrody_secrets::{SecretStore as _, SecretValue};
+        let dir = tempfile::tempdir().unwrap();
+        let store = aphrody_secrets::FileSecretStore::new(dir.path().join("test-only.json"));
+        assert!(matches!(
+            Downloader::from_secret_store(&store, "selected").await,
+            Err(crate::hub::HubError::MissingIdentity)
+        ));
+        store.set("selected", SecretValue::from("hf_fixture_only")).await.unwrap();
+        let downloader = Downloader::from_secret_store(&store, "selected").await.unwrap();
+        assert!(downloader.hub_token.is_some());
+        assert!(!format!("{:?}", downloader.hub_token).contains("fixture"));
     }
 }

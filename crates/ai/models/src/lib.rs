@@ -116,6 +116,9 @@ pub mod roles;
 /// Resumable, digest-checked weight downloads. Host-only.
 #[cfg(not(target_arch = "wasm32"))]
 pub mod fetch;
+/// Official Hugging Face Hub metadata and protected-store authentication.
+#[cfg(not(target_arch = "wasm32"))]
+pub mod hub;
 /// Read-only, in-process view of an Ollama model store (manifest -> GGUF blob).
 /// Host-only.
 #[cfg(not(target_arch = "wasm32"))]

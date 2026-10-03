@@ -1,0 +1,34 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-03",
+  "scope": "aphrody-models native host integration",
+  "officialRevision": "473de9430b0fbc544fb1d91102180eb713f8dc87",
+  "execution": {
+    "owner": "scripts/build/rust/cargo-serial.sh",
+    "mode": "explicit scoped local diagnostic (APHRODY_LOCAL_CARGO=1); release and heavy engine builds remain factory-owned",
+    "jobs": 2,
+    "sccache": "preserved",
+    "lockfile": "Cargo regenerated only the two added aphrody-models dependency edges; no dependency version upgrades"
+  },
+  "checks": [
+    { "command": "check -p aphrody-models --all-targets", "status": "passed", "seconds": 27.57 },
+    {
+      "command": "test -p aphrody-models --locked",
+      "status": "passed",
+      "tests": 126,
+      "doctests": 1,
+      "failed": 0
+    },
+    {
+      "command": "clippy -p aphrody-models --all-targets --locked -- -D warnings",
+      "status": "passed_after_fix",
+      "fix": "finish_non_exhaustive keeps the official authenticated client out of Debug output"
+    }
+  ],
+  "limits": [
+    "Loopback fixtures and fake test credentials do not establish live provider identity or permissions.",
+    "CLI wiring, protected credential provisioning and installed CLI help are pending.",
+    "Cross-target packaging, provider writes, dataset processing and Python ecosystem integration remain unqualified.",
+    "No model weights or datasets acquired; no token values read or recorded by the integrating agent."
+  ]
+}

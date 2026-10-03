@@ -29,6 +29,8 @@ hex         = { workspace = true }
 
 # Host-only: everything below needs a filesystem, a socket or a clock.
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+hf-hub = { workspace = true }
+aphrody-secrets = { workspace = true }
 # Portable state-dir resolution (~/.aphrody/models), same crate aphrody-embed
 # uses so both land in one namespace.
 dirs        = { workspace = true }
