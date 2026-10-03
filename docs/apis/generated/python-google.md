@@ -3,9 +3,9 @@
 
 Python stdlib AST definitions, signatures and docstrings. Project modules are never imported; runtime exports are not evaluated.
 
-## Source: packages/ai/py/aphrody/aphrody/google.py
+## Source: packages/aphrody/src/aphrody/google.py
 
-SHA-256: `dd5f061d963d38469af6f970cf2f42317337e4aa29a9d85bcfa9b976357dcd01`
+SHA-256: `6f69e79e78f161889219bbcb1a9d1e070477e983a69452b843d72b34d4f30c08`
 
 ```
 Google provider facade, loaded on demand.
@@ -20,7 +20,7 @@ optional providers. Existing public names retain their original implementations.
 def __getattr__(name: str) -> Any
 ```
 
-### __dir__ — source line 77
+### __dir__ — source line 75
 
 ```python
 def __dir__() -> list[str]
