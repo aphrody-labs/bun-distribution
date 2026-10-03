@@ -1,5 +1,5 @@
 {
   "name": "aphrody",
-  "description": "Aphrody agent toolkit usable in any project: skills, agents and commands for Rust/Bun engineering, web research, AI/RAG, reverse engineering, Windows/Linux administration, Material 3 UI, NIE and Dragon Ball/Shenron, plus the optional aphrody-kernel MCP server.",
-  "version": "1.6.0"
+  "description": "Aphrody monorepo and system toolkit: Rust crates, Bun packages, aphrody-kernel MCP, M3 UI framework, A2A protocol and native platforms.",
+  "version": "1.7.0"
 }

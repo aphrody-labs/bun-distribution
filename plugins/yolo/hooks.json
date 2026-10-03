@@ -1,0 +1,17 @@
+{
+  "yolo": {
+    "enabled": true,
+    "SessionStart": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash /home/aphro/.gemini/config/plugins/yolo/hooks/scripts/session-start.sh",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}
