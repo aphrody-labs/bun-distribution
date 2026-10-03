@@ -35,6 +35,15 @@ les textes, les codes de sortie, les chemins des exécutables, leurs dates et la
 révision source. `latest.json` indique le snapshot courant ; `--out` permet de
 choisir un autre store, sans supprimer les anciens relevés.
 
+Le même index recense les **89 binaires Rust déclarés**, dont **28 dans
+NIE/IECODE**, et les **16 CLI Bun** : dépôt, crate/package propriétaire,
+manifeste local, parser Clap lorsqu’il est catalogué et point d’entrée `bin` Bun.
+Les manifests Bun sont relus dans le checkout propriétaire courant, notamment
+`iecode/packages/inagle`, `iecode/packages/azalee` et `iecode/packages/iecode-homebrew`.
+Les helpers Rust sans arbre Clap restent identifiés comme tels. Une entrée source
+sans binaire installé reste consultable ; cette collecte ne lance ni compilation
+Cargo ni CLI source en remplacement d’un exécutable absent.
+
 Le pointeur persistant Codex est `~/.codex/brain/CLI-HELP.md`, chargé par les
 consignes globales. Ces fichiers sont une référence consultable ; ils ne prouvent
 pas une importation dans un fournisseur de mémoire ni la disponibilité d’un outil

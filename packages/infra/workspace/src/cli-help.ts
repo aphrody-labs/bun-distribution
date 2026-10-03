@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import { mkdir, readdir, realpath, stat } from "node:fs/promises";
-import { delimiter, join, resolve } from "node:path";
+import { delimiter, dirname, join, resolve } from "node:path";
 import { homedir } from "node:os";
 
 interface Entry {
@@ -9,6 +9,96 @@ interface Entry {
   exitCode: number;
   timedOut: boolean;
   file: string;
+}
+
+interface SourceCli {
+  runtime: "Rust" | "Bun";
+  repo: string;
+  owner: string;
+  binary: string;
+  manifest: string;
+  entrypoint?: string;
+  sourceExists: boolean;
+  installed: string | null;
+  parser?: string;
+}
+
+async function sourceCliIndex(catalog: any, root: string): Promise<SourceCli[]> {
+  const repositories = catalog.repos.filter((repo: any) =>
+    ["aphrody", "aphrody-py", "iecode"].includes(repo.name),
+  );
+  const groups = await Promise.all(
+    repositories.map(async (repo: any) => {
+      const repoRoot = repo.name === "aphrody" ? root : join(dirname(root), repo.name);
+      const rust: SourceCli[] = repo.crates.flatMap((crate: any) =>
+        crate.bins.map((binary: string): SourceCli => {
+          const cli = catalog.cli.find(
+            (item: any) =>
+              item.repo === repo.name && item.binary === binary && item.crate === crate.name,
+          );
+          return {
+            runtime: "Rust",
+            repo: repo.name,
+            owner: crate.name,
+            binary,
+            manifest: join(repoRoot, crate.path, "Cargo.toml"),
+            sourceExists: false,
+            installed: Bun.which(binary),
+            parser: cli?.source,
+          };
+        }),
+      );
+      await Promise.all(
+        rust.map(async (entry) => {
+          entry.sourceExists = await Bun.file(entry.manifest).exists();
+        }),
+      );
+      const bun = (
+        await Promise.all(
+          repo.bunPackages.map(async (pkg: any): Promise<SourceCli[]> => {
+            const manifest = join(repoRoot, pkg.path, "package.json");
+            if (!(await Bun.file(manifest).exists())) {
+              return pkg.bins.map((binary: string) => ({
+                runtime: "Bun",
+                repo: repo.name,
+                owner: pkg.name,
+                binary,
+                manifest,
+                sourceExists: false,
+                installed: Bun.which(binary),
+              }));
+            }
+            const current = await Bun.file(manifest).json();
+            const bins =
+              typeof current.bin === "string"
+                ? { [current.name.split("/").at(-1)]: current.bin }
+                : (current.bin ?? {});
+            return Promise.all(
+              Object.entries(bins).map(async ([binary, target]): Promise<SourceCli> => {
+                const entrypoint = resolve(dirname(manifest), String(target));
+                return {
+                  runtime: "Bun",
+                  repo: repo.name,
+                  owner: current.name,
+                  binary,
+                  manifest,
+                  entrypoint,
+                  sourceExists: await Bun.file(entrypoint).exists(),
+                  installed: Bun.which(binary),
+                };
+              }),
+            );
+          }),
+        )
+      ).flat();
+      return rust.concat(bun);
+    }),
+  );
+  return groups
+    .flat()
+    .toSorted((a, b) =>
+      `${a.runtime}/${a.repo}/${a.binary}`.localeCompare(`${b.runtime}/${b.repo}/${b.binary}`),
+    );
 }
 
 /** Read only command names advertised in a help section, never usage examples. */
@@ -48,6 +138,7 @@ export async function runCliHelp(
     out = resolve(args[++i]!);
   }
   const catalog = await Bun.file(join(root, "docs/ecosystem/ecosystem.json")).json();
+  const sourceCli = await sourceCliIndex(catalog, root);
   const binaries = new Set<string>(["aphrody", "bxc", "n2b", "nie", "niers", "inagle", "azalee"]);
   for (const cli of catalog.cli) binaries.add(cli.binary);
   for (const repo of catalog.repos) {
@@ -147,6 +238,7 @@ export async function runCliHelp(
     installed: executableInfo,
     missing,
     unresolved,
+    sourceCli,
     entries,
   };
   await Bun.write(join(snapshot, "manifest.json"), `${JSON.stringify(manifest, null, 2)}\n`);
@@ -160,6 +252,32 @@ export async function runCliHelp(
     "Regenerate: `bun run cli:help`. Source trees: `docs/ecosystem/CLI.md`.",
     "",
     "Only advertised subcommands are traversed; every invocation ends with `--help`.",
+    "",
+    "## Rust CLI sources (including NIE / IECODE)",
+    "",
+    "All catalogued Cargo binary declarations are listed, including helpers without a clap command tree. No Cargo builds are started.",
+    "",
+    "| Repository | Crate | Binary | Local manifest | Status | Clap parser |",
+    "| --- | --- | --- | --- | --- | --- |",
+    ...sourceCli
+      .filter((entry) => entry.runtime === "Rust")
+      .map(
+        (entry) =>
+          `| ${entry.repo} | \`${entry.owner}\` | \`${entry.binary}\` | [Cargo.toml](${entry.manifest}) | ${entry.installed ? "installed" : entry.sourceExists ? "source only" : "source absent"} | ${entry.parser ? `\`${entry.parser}\`` : "not catalogued"} |`,
+      ),
+    "",
+    "## Bun CLI sources",
+    "",
+    "Current package.json bin entrypoints are read directly from the owning checkout. Source existence does not prove successful execution; no source CLI is launched as a fallback.",
+    "",
+    "| Repository | Package | CLI | Entrypoint | Status |",
+    "| --- | --- | --- | --- | --- |",
+    ...sourceCli
+      .filter((entry) => entry.runtime === "Bun")
+      .map(
+        (entry) =>
+          `| ${entry.repo} | \`${entry.owner}\` | \`${entry.binary}\` | ${entry.entrypoint ? `[source](${entry.entrypoint})` : `[package.json](${entry.manifest})`} | ${entry.installed ? "installed" : entry.sourceExists ? "source only" : "entrypoint absent"} |`,
+      ),
     "",
     "## Captured commands",
     "",
@@ -182,7 +300,7 @@ export async function runCliHelp(
   await Bun.write(join(out, "INDEX.md"), lines.join("\n"));
   await Bun.write(
     join(out, "latest.json"),
-    `${JSON.stringify({ snapshot, capturedAt, installed: installed.length, pages: entries.length, failures: failed.length, missing: missing.length, unresolved: unresolved.length }, null, 2)}\n`,
+    `${JSON.stringify({ snapshot, capturedAt, installed: installed.length, pages: entries.length, failures: failed.length, missing: missing.length, unresolved: unresolved.length, rustSources: sourceCli.filter((entry) => entry.runtime === "Rust").length, bunSources: sourceCli.filter((entry) => entry.runtime === "Bun").length }, null, 2)}\n`,
   );
   console.log(
     JSON.stringify({
