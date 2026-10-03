@@ -32,8 +32,8 @@ successful result. NHITL does not change the task scope or a product's runtime p
 | Topic | Owner |
 | --- | --- |
 | Architecture and repository boundaries | [Architecture](../../architecture/workspace/ARCHITECTURE.md) |
-| Target consolidation, unified FFI and repository migration | [Root plan](../../plans/workspace/PLAN.md) |
-| Navigation | [Documentation index](./INDEX.md) |
+| Target consolidation, unified FFI and repository migration | [Root plan](../../../PLAN.md) |
+| Navigation | [Documentation index](../../README.md) |
 | Workstation Nushell setup | [Nushell guide](./nu.md) |
 | Cross-repository delivery | [AI plan](../../plans/ai/PLAN.md) |
 | Desktop behavior and appearance | [GUI](../ui/GUI.md), [UI](../../architecture/ui/UI-DESIGN.md), [UX](../../architecture/ui/UX-DESIGN.md) |

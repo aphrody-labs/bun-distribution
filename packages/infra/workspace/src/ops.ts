@@ -5,6 +5,9 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const [operation, ...rest] = process.argv.slice(2);
+if (operation === "docs") {
+  process.exit(await (await import("./documentation.ts")).runDocumentation(rest));
+}
 if (operation === "discord") {
   process.exit(await (await import("./discord.ts")).runDiscord(rest));
 }
@@ -185,7 +188,7 @@ if (operation === "cargo-boundaries") {
   process.exit(await (await import("./cargo-boundaries.ts")).runCargoBoundaries(rest));
 }
 if (operation === "docs-gen") {
-  process.exit(await (await import("./docs-gen.ts")).runDocsGen(rest));
+  process.exit(await (await import("./documentation.ts")).runDocumentation(["generate", ...rest]));
 }
 if (operation === "workspace-layout") {
   process.exit(await (await import("./workspace-layout.ts")).runWorkspaceLayout(rest));

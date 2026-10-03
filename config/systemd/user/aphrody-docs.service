@@ -8,4 +8,4 @@ Nice=15
 IOSchedulingClass=idle
 WorkingDirectory=%h/aphrody
 Environment=PATH=%h/.cargo/bin:%h/.bun/bin:/usr/local/bin:/usr/bin:/bin
-ExecStart=%h/.bun/bin/bun packages/infra/workspace/src/ops.ts docs-gen --root %h/aphrody --deps
+ExecStart=%h/.bun/bin/bun packages/infra/workspace/src/ops.ts docs generate --root %h/aphrody --deps

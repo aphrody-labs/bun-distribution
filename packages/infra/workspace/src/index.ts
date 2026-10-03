@@ -73,3 +73,9 @@ export type { DiscordBotStatus } from "./discord.ts";
 export { pipelineCatalog, runPipelineCatalog } from "./pipeline-catalog.ts";
 export { collectAgentLive, runAgentLive } from "./agent-live.ts";
 export { runStackDedup } from "./stack-dedup.ts";
+
+export {
+  runDocumentation,
+  buildDocumentationManifest,
+  renderDocumentationAgentIndex,
+} from "./documentation.ts";

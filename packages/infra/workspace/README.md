@@ -120,3 +120,22 @@ bun packages/infra/workspace/src/ops.ts consolidation scripts-import --source-ro
 The Infra owner inventories Cargo members/features, Bun packages, Infra modules and scripts; runs reviewed type/lint/format/unit gates serially; and inspects WSL, VPS and dbfr through installed native tools. It does not compile Rust, build Next, launch browsers, crawl sites or mutate live hosts. Arbitrary adapters, application test hooks and builds are recorded as deferred. Raw output remains outside Git; the report carries timestamps and hashes. A partial audit never qualifies deployment. Installed binaries and cached tests do not prove that modified Rust source compiles.
 
 `monorepo-gate --no-build --plan --json` exposes the selected leaf commands and exclusions without executing them. `APHRODY_NO_BUILD=1` forbids source-compilation fallback in the Bun Infra bridge.
+
+## Unified documentation
+
+`aphrody-ops docs` owns documentation generation, source references, provenance,
+duplicate audits, optional assistance and private static export. Its policy is
+`config/docs/documentation.json`. Existing engines and compatibility operations
+remain available; `docs-gen` delegates to the same controller.
+
+```sh
+bun run docs -- status
+bun run docs:gen
+bun run docs:check
+bun run docs:audit
+bun run docs:site
+```
+
+See [documentation management](../../../docs/guides/workspace/documentation.md).
+AI assistance is explicit; deterministic generation does not contact a model.
+The site is an allowlisted private artifact, never a public deployment.

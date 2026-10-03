@@ -122,7 +122,7 @@ function bunFacts(dir: string, manifest: Record<string, unknown>): { tests: bool
 
 function cargoMetadata(root: string): CargoMetadata {
   return JSON.parse(
-    run("cargo", ["metadata", "--format-version", "1", "--no-deps"], root),
+    run("cargo", ["metadata", "--format-version", "1", "--no-deps", "--locked"], root),
   ) as CargoMetadata;
 }
 

@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0
 import { expect, test } from "bun:test";
 import { existsSync } from "node:fs";
-import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import {
+  ALL_SCOPE,
   UI_SCOPE,
   applyPathMap,
   applyPlan,
@@ -25,6 +26,7 @@ import {
   recordInSourceMap,
   refreshHub,
   relativeDestination,
+  retainDocumentationCopy,
   resolveLocalLink,
   rewriteMarkdown,
   scanLinkSites,
@@ -683,6 +685,74 @@ test("fix-paths updates legacy paths in matched files after the other actions", 
   }
 }, 120_000);
 
+test("fix-paths preserves dirty files unless their prefix is allowed", async () => {
+  const root = await fixture();
+  try {
+    const path = "docs/guides/ui/guide.md";
+    const content = "# Guide\n\nLocal edit: `crates/aphrody-app/src/lib.rs`.\n";
+    await writeFile(join(root, path), content);
+    const options = {
+      root,
+      plan: {
+        schemaVersion: 1 as const,
+        scope: "ui",
+        actions: [{ id: "fix", action: "fix-paths" as const, patterns: [path], reason: "legacy" }],
+      },
+      write: true,
+      reportName: "t",
+      legacyPathMap: new Map([["crates/aphrody-app", "crates/ui/app"]]),
+    };
+    const skipped = await applyPlan(options);
+    expect(await readFile(join(root, path), "utf8")).toBe(content);
+    expect(skipped.skippedFiles).toEqual([
+      { file: path, reason: "uncommitted changes outside the allowed prefixes" },
+    ]);
+    expect(skipped.actions[0]?.pathFixes).toEqual([]);
+    const allowed = await applyPlan({ ...options, allowDirtyPrefixes: ["docs/guides/ui/"] });
+    expect(allowed.skippedFiles).toEqual([]);
+    expect(await readFile(join(root, path), "utf8")).toContain("`crates/ui/app/src/lib.rs`");
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+}, 120_000);
+
+test("verify detects stale definitions and literal mentions with exact path boundaries", async () => {
+  const root = await fixture();
+  try {
+    const gone = "docs/architecture/ui/design/removed.md";
+    const canonical = "packages/ui/pkg/README.md";
+    const report = {
+      actions: [
+        {
+          id: "removed",
+          action: "remove-duplicate" as const,
+          path: gone,
+          canonical,
+          reason: "duplicate",
+          inboundRewritten: [],
+          sourceMapEntries: 0,
+          outcome: "applied" as const,
+        },
+      ],
+      sourceMap: null,
+    };
+    const host = "docs/guides/ui/guide.md";
+    await writeFile(join(root, host), "[ref]: ../../architecture/ui/design/removed.md#section\n");
+    expect(await verifyReport(root, report)).toEqual([
+      { action: "links", problem: `${host} still links to ${gone}` },
+    ]);
+    await writeFile(join(root, host), `See \`${gone}\` and ${gone}.\n`);
+    expect(await verifyReport(root, report)).toEqual([
+      { action: "links", problem: `${host} still mentions ${gone}` },
+    ]);
+    await writeFile(join(root, host), `See ${gone}x and prefix/${gone}.\n`);
+    await writeFile(join(root, "docs/migration/old.md"), `Historical ${gone}.\n`);
+    expect(await verifyReport(root, report)).toEqual([]);
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+}, 120_000);
+
 test("the consolidation report merges phases and keeps the measured numbers", () => {
   const phase = (id: string, equivalence: "identical" | "equal-modulo-paths") => ({
     schemaVersion: 1 as const,
@@ -792,6 +862,182 @@ test("apply rejects stale hashes, existing destinations and merges without prove
       }),
     ).rejects.toThrow("Historique/Provenance");
     expect(existsSync(join(root, "docs/architecture/ui/design/M3-X.md"))).toBe(true);
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+}, 120_000);
+
+test("all scope includes Infra and preserves shipped copies while excluding imported history", async () => {
+  const root = await fixture();
+  try {
+    const paths = [
+      "packages/infra/tool/README.md",
+      "docs/reference/infra/tool/README.md",
+      "docs/templates/tool/README.md",
+      "docs/plugins/tool/README.md",
+      "docs/distribution/tool/README.md",
+      "docs/reference/infra/tool/LICENSE.txt",
+      "packages/infra/tool/LICENSE.txt",
+      "docs/reference/imported/README.md",
+      "docs/plans/infra/archive/README.md",
+    ];
+    for (const path of paths) {
+      await mkdir(dirname(join(root, path)), { recursive: true });
+      await writeFile(
+        join(root, path),
+        "# Tool\n\nFirst-party infrastructure documentation with enough text for duplicate comparison.\n",
+      );
+    }
+    await mkdir(join(root, "config/docs"), { recursive: true });
+    await writeFile(
+      join(root, "config/docs/imported-upstream-docs.json"),
+      JSON.stringify({
+        trees: [{ id: "imported", include: ["docs/reference/imported/**"] }],
+      }),
+    );
+    Bun.spawnSync(["git", "-C", root, "add", "-A"]);
+    Bun.spawnSync([
+      "git",
+      "-C",
+      root,
+      "-c",
+      "user.email=t@t",
+      "-c",
+      "user.name=t",
+      "commit",
+      "-qm",
+      "docs",
+    ]);
+    const ui = await scanScope({ root });
+    expect(ui.entries.some((entry) => entry.path === paths[0])).toBe(false);
+    const all = await scanScope({ root, scope: ALL_SCOPE });
+    expect(all.scope).toBe("all");
+    expect(all.entries.map((entry) => entry.path)).toContain(paths[0]!);
+    expect(all.entries.map((entry) => entry.path)).not.toContain(
+      "docs/reference/imported/README.md",
+    );
+    expect(all.entries.map((entry) => entry.path)).not.toContain(
+      "docs/plans/infra/archive/README.md",
+    );
+    const plan = planOwnerDuplicates(all, ALL_SCOPE.ownerRoots, retainDocumentationCopy);
+    expect(
+      plan.actions.find((action) => action.path === "docs/reference/infra/tool/README.md")?.action,
+    ).toBe("remove-duplicate");
+    for (const path of [
+      "docs/templates/tool/README.md",
+      "docs/plugins/tool/README.md",
+      "docs/distribution/tool/README.md",
+      "docs/reference/infra/tool/LICENSE.txt",
+    ])
+      expect(plan.actions.find((action) => action.path === path)?.action).toBe("retain");
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+}, 120_000);
+
+test("all scope ignores file and parent symlinks and rejects aliased plan destinations", async () => {
+  const root = await fixture();
+  const outside = await mkdtemp(join(tmpdir(), "docs-consolidation-outside-"));
+  try {
+    const content = "# Outside\n\nExternal `crates/aphrody-app` must stay untouched.\n";
+    await writeFile(join(outside, "alias.md"), content);
+    await symlink(join(outside, "alias.md"), join(root, "docs/alias.md"));
+    await symlink(outside, join(root, "docs/linked"));
+    const scanned = await scanScope({ root, scope: ALL_SCOPE });
+    expect(scanned.entries.map((entry) => entry.path)).not.toContain("docs/alias.md");
+    expect(scanned.entries.some((entry) => entry.path.startsWith("docs/linked/"))).toBe(false);
+    const plan: Plan = {
+      schemaVersion: 1,
+      scope: "all",
+      actions: [{ id: "fix", action: "fix-paths", patterns: ["docs/**/*.md"], reason: "legacy" }],
+    };
+    const report = await applyPlan({
+      root,
+      plan,
+      write: true,
+      reportName: "t",
+      allowDirtyPrefixes: ["docs/"],
+      legacyPathMap: new Map([["crates/aphrody-app", "crates/ui/app"]]),
+    });
+    expect(await readFile(join(outside, "alias.md"), "utf8")).toBe(content);
+    expect(await verifyReport(root, report)).toEqual([]);
+    const path = "docs/architecture/ui/design/M3-X.md";
+    for (const destination of ["docs/alias.md", "docs/linked/new.md", "../outside.md"]) {
+      const unsafe: Plan = {
+        schemaVersion: 1,
+        scope: "all",
+        actions: [
+          {
+            id: "move",
+            action: "move",
+            path,
+            to: destination,
+            sha256: sha256Of(await readFile(join(root, path))),
+            reason: "move",
+          },
+        ],
+      };
+      await expect(applyPlan({ root, plan: unsafe, write: true, reportName: "t" })).rejects.toThrow(
+        "Unsafe global",
+      );
+    }
+    const findings = await verifyReport(root, {
+      scope: "all",
+      sourceMap: null,
+      actions: [
+        {
+          id: "bad",
+          action: "merge",
+          canonical: path,
+          sources: [{ path: "docs/alias.md", sha256: "x", disposition: "pointer" }],
+          reason: "bad",
+          inboundRewritten: [],
+          sourceMapEntries: 0,
+          outcome: "applied",
+        },
+      ],
+    });
+    expect(findings[0]?.action).toBe("paths");
+    expect(await readFile(join(outside, "alias.md"), "utf8")).toBe(content);
+  } finally {
+    await rm(root, { recursive: true, force: true });
+    await rm(outside, { recursive: true, force: true });
+  }
+}, 120_000);
+
+test("all scope excludes private agent context before inventory and path rewriting", async () => {
+  const root = await fixture();
+  try {
+    const paths = [
+      "docs/privateMarkdown/context.md",
+      "packages/infra/tool/private-markdown/context.md",
+      "docs/.coord/context.md",
+      "docs/MEMORY.md",
+      "docs/CONVERSATIONS.md",
+      "packages/infra/tool/TRANSCRIPTS.md",
+      "docs/LIVE.md",
+    ];
+    const content = "# Synthetic private fixture\n\n`crates/aphrody-app` must remain unchanged.\n";
+    for (const path of paths) {
+      await mkdir(dirname(join(root, path)), { recursive: true });
+      await writeFile(join(root, path), content);
+    }
+    const scanned = await scanScope({ root, scope: ALL_SCOPE });
+    expect(scanned.entries.some((entry) => paths.includes(entry.path))).toBe(false);
+    const report = await applyPlan({
+      root,
+      plan: {
+        schemaVersion: 1,
+        scope: "all",
+        actions: [{ id: "fix", action: "fix-paths", patterns: ["**/*.md"], reason: "legacy" }],
+      },
+      write: true,
+      reportName: "t",
+      allowDirtyPrefixes: ["docs/", "packages/"],
+      legacyPathMap: new Map([["crates/aphrody-app", "crates/ui/app"]]),
+    });
+    expect(report.actions[0]?.pathFixes).toEqual([]);
+    for (const path of paths) expect(await readFile(join(root, path), "utf8")).toBe(content);
   } finally {
     await rm(root, { recursive: true, force: true });
   }

@@ -260,6 +260,8 @@ ${content}`;
 }
 
 export interface TranslateOptions {
+  /** Require a successful online translation; never fall back to offline content. */
+  requireOnline?: boolean;
   /** LLM client; when omitted it is resolved from the environment. */
   client?: LlmClient | null;
   /** Retry policy overrides (mainly for tests). */
@@ -308,12 +310,18 @@ export async function translateMarkdown(
   const client =
     options.client !== undefined ? options.client : resolveClient(options.env ?? process.env);
 
+  if (!client && options.requireOnline) {
+    throw new LlmError("Online translation requires a configured LLM client.");
+  }
+
   if (client) {
     try {
       const text = await translateMarkdownLLM(content, targetLanguage, client, options.retry ?? {});
       if (text && text.trim()) return text;
+      if (options.requireOnline) throw new LlmError("LLM returned empty translation.");
       warn("LLM returned empty translation, falling back to offline pipeline.");
     } catch (err) {
+      if (options.requireOnline) throw err;
       warn(
         "LLM translation failed, falling back to offline markdown translation pipeline.",
         toMessage(err),

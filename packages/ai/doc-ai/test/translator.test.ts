@@ -166,3 +166,59 @@ describe("buildTranslatePrompt", () => {
     expect(buildTranslatePrompt("x", "en")).toContain("English");
   });
 });
+
+describe("requireOnline", () => {
+  test("rejects missing clients rather than copying source content", async () => {
+    await expect(
+      translateMarkdown(DOC, "fr", { client: null, requireOnline: true }),
+    ).rejects.toThrow("requires a configured LLM client");
+    await expect(translateMarkdown(DOC, "fr", { env: {}, requireOnline: true })).rejects.toThrow(
+      "requires a configured LLM client",
+    );
+  });
+
+  test("propagates client errors without invoking offline fallback", async () => {
+    let offlineCalls = 0;
+    const client: LlmClient = {
+      complete: async () => {
+        throw new Error("strict request failure");
+      },
+    };
+    await expect(
+      translateMarkdown(DOC, "fr", {
+        client,
+        requireOnline: true,
+        retry: { retries: 0 },
+        offline: {
+          segmentTranslator: async (text) => {
+            offlineCalls++;
+            return text;
+          },
+        },
+      }),
+    ).rejects.toThrow("strict request failure");
+    expect(offlineCalls).toBe(0);
+  });
+
+  test("rejects empty and whitespace responses", async () => {
+    await Promise.all(
+      ["", "  \n"].map(async (response) => {
+        await expect(
+          translateMarkdown(DOC, "fr", {
+            client: { complete: async () => response },
+            requireOnline: true,
+          }),
+        ).rejects.toThrow("empty translation");
+      }),
+    );
+  });
+
+  test("returns successful online output", async () => {
+    expect(
+      await translateMarkdown(DOC, "fr", {
+        client: { complete: async () => "# Traduit\n" },
+        requireOnline: true,
+      }),
+    ).toBe("# Traduit\n");
+  });
+});

@@ -18,10 +18,10 @@
  * Usage: aphrody-ops docs-consolidate <scan|plan|apply|verify|hubs> [options]
  */
 import { createHash } from "node:crypto";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, lstatSync, readFileSync, realpathSync } from "node:fs";
 import { mkdir, readFile, readdir, rename, rmdir, unlink, writeFile } from "node:fs/promises";
-import { basename, dirname, join, posix, resolve } from "node:path";
-import { markdownLinkDestinations } from "./docs-links.ts";
+import { basename, dirname, isAbsolute, join, posix, relative, resolve } from "node:path";
+import { importedUpstreamMatcher, markdownLinkDestinations } from "./docs-links.ts";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -96,6 +96,54 @@ export const UI_SCOPE: ScopeConfig = {
 export const OWNER_DUPLICATE_ROOTS: RegExp[] = [
   /^(packages\/ui|crates\/ui|packages\/koharu|crates\/koharu|apps\/koharu)\//,
 ];
+
+/** First-party documentation across domains; imported trees are also excluded by their manifest. */
+export const ALL_SCOPE: ScopeConfig = {
+  name: "all",
+  includePaths: [/^docs\//],
+  ownerRoots: [/^(crates|packages|apps)\//],
+  mentionTerms: /$^/g,
+  mentionThreshold: 1,
+  excludePaths: [
+    /(^|\/)(node_modules|target|dist|vendor|third_party|upstream|upstream-bun|upstream-oxc|archive|archives|history)\//,
+    /(^|\/)(privateMarkdown|private-markdown|\.coord)(\/|$)/i,
+    /(^|\/)(MEMORY|CONVERSATIONS|TRANSCRIPTS|LIVE)\.md$/i,
+    /^docs\/migration\//,
+    /(^|\/)HISTORY\.md$/i,
+  ],
+};
+
+/** Copies shipped in templates/plugins/distribution and legal notices are intentional. */
+export function retainDocumentationCopy(path: string): string | null {
+  if (isNoticeFile(path)) return "license or notice file is retained in place";
+  if (/(^|\/)(templates?|plugins?|distribution)\//i.test(path))
+    return "template, plugin or distribution documentation is retained in place";
+  return null;
+}
+
+/** Global consolidation never follows aliases or accesses paths outside its real root. */
+function safeGlobalPath(root: string, path: string): boolean {
+  if (
+    /(^|\/)(privateMarkdown|private-markdown|\.coord)(\/|$)|(^|\/)(MEMORY|CONVERSATIONS|TRANSCRIPTS|LIVE)\.md$/i.test(
+      path,
+    )
+  )
+    return false;
+  if (
+    !path ||
+    isAbsolute(path) ||
+    path.includes("\\") ||
+    path.split("/").some((part) => !part || part === "." || part === "..")
+  )
+    return false;
+  const base = realpathSync(root);
+  const target = resolve(base, path);
+  const local = relative(base, target);
+  if (!local || local === ".." || local.startsWith("../") || isAbsolute(local)) return false;
+  for (let current = target; current !== base; current = dirname(current))
+    if (lstatSync(current, { throwIfNoEntry: false })?.isSymbolicLink()) return false;
+  return true;
+}
 
 export interface DocEntry {
   path: string;
@@ -655,6 +703,7 @@ export function classifyRelation(
 export async function scanScope(options: ScanOptions): Promise<ScanResult> {
   const root = resolve(options.root);
   const scope = options.scope ?? UI_SCOPE;
+  const importedUpstream = scope.name === "all" ? importedUpstreamMatcher(root) : () => undefined;
   const threshold = options.nearThreshold ?? 0.8;
   const { files, untracked } = listRepositoryFiles(root);
   const dirty = dirtyFiles(root);
@@ -670,6 +719,12 @@ export async function scanScope(options: ScanOptions): Promise<ScanResult> {
     [];
   const corpus: Array<{ path: string; text: string }> = [];
   for (const path of files) {
+    if (scope.name === "all" && !safeGlobalPath(root, path)) continue;
+    if (
+      scope.name === "all" &&
+      (scope.excludePaths.some((rule) => rule.test(path)) || importedUpstream(path))
+    )
+      continue;
     const extension = extensionOf(path);
     const isText = TEXT_EXTENSIONS.has(extension);
     const isData = DATA_EXTENSIONS.has(extension) && /^docs\/[^/]+\/ui\//.test(path);
@@ -1153,6 +1208,19 @@ export function committedSha(root: string, path: string): string | null {
 export async function applyPlan(options: ApplyOptions): Promise<ApplyReport> {
   const root = resolve(options.root);
   const { plan } = options;
+  if (plan.scope === "all") {
+    const paths = plan.actions
+      .flatMap((action) => [
+        action.path,
+        action.canonical,
+        action.to,
+        ...(action.sources ?? []).map((source) => source.path),
+      ])
+      .filter((path): path is string => path !== undefined);
+    if (options.sourceMapPath) paths.push(options.sourceMapPath);
+    for (const path of paths)
+      if (!safeGlobalPath(root, path)) throw new Error(`Unsafe global documentation path: ${path}`);
+  }
   const errors: string[] = [];
   const read = async (path: string) => readFile(join(root, path));
   const fileHash = async (path: string) => sha256Of(await read(path));
@@ -1255,6 +1323,7 @@ export async function applyPlan(options: ApplyOptions): Promise<ApplyReport> {
   const { files } = listRepositoryFiles(root);
   const dirty = dirtyFiles(root);
   const allowed = options.allowDirtyPrefixes ?? [];
+  const importedUpstream = plan.scope === "all" ? importedUpstreamMatcher(root) : () => undefined;
   const protectedFiles = new Set(options.protectedFiles ?? []);
   const rewrittenFiles: ApplyReport["rewrittenFiles"] = [];
   const skippedFiles: ApplyReport["skippedFiles"] = [];
@@ -1264,6 +1333,12 @@ export async function applyPlan(options: ApplyOptions): Promise<ApplyReport> {
 
   for (const path of files) {
     if (!/\.(md|mdx)$/.test(path)) continue;
+    if (plan.scope === "all" && !safeGlobalPath(root, path)) continue;
+    if (
+      plan.scope === "all" &&
+      (ALL_SCOPE.excludePaths.some((rule) => rule.test(path)) || importedUpstream(path))
+    )
+      continue;
     if (CORPUS_EXCLUDES.some((rule) => rule.test(path))) continue;
     if (removals.has(path)) continue;
     if (!existsSync(join(root, path))) continue;
@@ -1311,7 +1386,14 @@ export async function applyPlan(options: ApplyOptions): Promise<ApplyReport> {
   for (const action of plan.actions) {
     if (action.action !== "fix-paths") continue;
     const matched = matchHubPatterns("", action.patterns ?? [], files).filter(
-      (path) => !removals.has(path) && !protectedFiles.has(path),
+      (path) =>
+        (plan.scope !== "all" || safeGlobalPath(root, path)) &&
+        !removals.has(path) &&
+        !protectedFiles.has(path) &&
+        !(
+          plan.scope === "all" &&
+          (ALL_SCOPE.excludePaths.some((rule) => rule.test(path)) || importedUpstream(path))
+        ),
     );
     const fixes: Array<{ file: string; replacements: number }> = [];
     for (const path of matched) {
@@ -1319,6 +1401,14 @@ export async function applyPlan(options: ApplyOptions): Promise<ApplyReport> {
       const current = queued?.content ?? (await readFile(join(root, path), "utf8"));
       const fixed = applyPathMap(current, options.legacyPathMap ?? new Map());
       if (!fixed.replacements) continue;
+      if (dirty.has(path) && !isAllowedDirty(path, allowed)) {
+        if (!skippedFiles.some((item) => item.file === path))
+          skippedFiles.push({
+            file: path,
+            reason: "uncommitted changes outside the allowed prefixes",
+          });
+        continue;
+      }
       if (queued) queued.content = fixed.content;
       else pending.push({ from: path, to: path, content: fixed.content });
       fixes.push({ file: path, replacements: fixed.replacements });
@@ -1450,9 +1540,24 @@ export interface VerifyFinding {
 
 export async function verifyReport(
   root: string,
-  report: Pick<ApplyReport, "actions" | "sourceMap">,
+  report: Pick<ApplyReport, "actions" | "sourceMap"> & Partial<Pick<ApplyReport, "scope">>,
 ): Promise<VerifyFinding[]> {
   const findings: VerifyFinding[] = [];
+  if (report.scope === "all") {
+    const paths = report.actions
+      .flatMap((action) => [
+        action.path,
+        action.canonical,
+        action.to,
+        ...(action.sources ?? []).map((source) => source.path),
+      ])
+      .filter((path): path is string => path !== undefined);
+    if (report.sourceMap) paths.push(report.sourceMap.path);
+    for (const path of paths)
+      if (!safeGlobalPath(root, path))
+        findings.push({ action: "paths", problem: `Unsafe global documentation path: ${path}` });
+    if (findings.length) return findings;
+  }
   const absolute = (path: string) => join(resolve(root), path);
   let map: SourceMapFile | null = null;
   if (report.sourceMap && existsSync(absolute(report.sourceMap.path)))
@@ -1504,15 +1609,26 @@ export async function verifyReport(
         if (source.disposition !== "pointer") gone.add(source.path);
   }
   const { files } = listRepositoryFiles(resolve(root));
+  const importedUpstream =
+    report.scope === "all" ? importedUpstreamMatcher(resolve(root)) : () => undefined;
+  const mentionPattern = buildMentionPattern(gone);
   for (const path of files) {
     if (!/\.(md|mdx)$/.test(path) || CORPUS_EXCLUDES.some((rule) => rule.test(path))) continue;
+    if (report.scope === "all" && !safeGlobalPath(root, path)) continue;
+    if (
+      report.scope === "all" &&
+      (ALL_SCOPE.excludePaths.some((rule) => rule.test(path)) || importedUpstream(path))
+    )
+      continue;
     if (!existsSync(absolute(path))) continue;
     const content = await readFile(absolute(path), "utf8");
-    for (const site of scanLinkSites(content)) {
+    for (const site of [...scanLinkSites(content), ...scanDefinitionSites(content)]) {
       const target = resolveLocalLink(path, site.dest);
       if (target && gone.has(target))
         findings.push({ action: "links", problem: `${path} still links to ${target}` });
     }
+    for (const target of new Set(content.match(mentionPattern ?? /$^/g) ?? []))
+      findings.push({ action: "links", problem: `${path} still mentions ${target}` });
   }
   return findings;
 }
@@ -1633,7 +1749,7 @@ function takeValue(args: string[], index: number, flag: string): string {
 }
 
 const USAGE =
-  "Usage: aphrody-ops docs-consolidate <scan|plan|apply|verify|hubs|report> [--root <repository>] [--scope ui] [--near-threshold <0..1>] [--output <file>] [--plan <file>] [--report <file>] [--history <apply report>]... [--write] [--source-map <file>] [--no-source-map] [--allow-dirty-prefix <path>]... [--protect <file>]... [--name <report name>] [--check] | report: --before <scan> --after <scan> --apply <apply report>... [--metrics <json>] --output <file>";
+  "Usage: aphrody-ops docs-consolidate <scan|plan|apply|verify|hubs|report> [--root <repository>] [--scope ui|all] [--near-threshold <0..1>] [--output <file>] [--plan <file>] [--report <file>] [--history <apply report>]... [--write] [--source-map <file>] [--no-source-map] [--allow-dirty-prefix <path>]... [--protect <file>]... [--name <report name>] [--check] | report: --before <scan> --after <scan> --apply <apply report>... [--metrics <json>] --output <file>";
 
 export interface ConsolidationReportInput {
   name: string;
@@ -1664,7 +1780,7 @@ export function buildConsolidationReport(input: ConsolidationReportInput): Recor
     name: input.name,
     generatedAt: new Date().toISOString(),
     tool: "aphrody-ops docs-consolidate",
-    scope: "ui",
+    scope: input.before.summary["scope"] ?? "ui",
     nearDuplicateMethod: `5-word shingle Jaccard on normalized text (links, comments, front matter removed); threshold ${String(input.before.summary["nearThreshold"])}; relation equal-modulo-paths when the text is identical once path-like tokens are neutralized`,
     summary: {
       before: input.before.summary,
@@ -1759,6 +1875,7 @@ export async function runDocsConsolidation(args: string[]): Promise<number> {
   }
   let root = process.cwd();
   let nearThreshold = 0.8;
+  let scope = UI_SCOPE;
   let output: string | undefined;
   let planFile: string | undefined;
   let reportFile: string | undefined;
@@ -1777,7 +1894,9 @@ export async function runDocsConsolidation(args: string[]): Promise<number> {
     const arg = rest[index];
     if (arg === "--root") root = takeValue(rest, ++index, arg);
     else if (arg === "--scope") {
-      if (takeValue(rest, ++index, arg) !== "ui") throw new Error("only --scope ui is defined");
+      const name = takeValue(rest, ++index, arg);
+      if (name !== "ui" && name !== "all") throw new Error("--scope must be ui or all");
+      scope = name === "all" ? ALL_SCOPE : UI_SCOPE;
     } else if (arg === "--near-threshold") nearThreshold = Number(takeValue(rest, ++index, arg));
     else if (arg === "--output") output = takeValue(rest, ++index, arg);
     else if (arg === "--plan") planFile = takeValue(rest, ++index, arg);
@@ -1799,6 +1918,8 @@ export async function runDocsConsolidation(args: string[]): Promise<number> {
   if (!Number.isFinite(nearThreshold) || nearThreshold <= 0 || nearThreshold > 1)
     throw new Error("--near-threshold must be in (0, 1]");
   root = resolve(root);
+  if (scope.name === "all" && sourceMapPath && !safeGlobalPath(root, sourceMapPath))
+    throw new Error(`Unsafe global documentation path: ${sourceMapPath}`);
 
   const pathHistory = new Map<string, string>();
   for (const file of history) {
@@ -1839,7 +1960,7 @@ export async function runDocsConsolidation(args: string[]): Promise<number> {
 
   if (command === "scan" || command === "plan") {
     const sourceMap = sourceMapPath ? await loadSourceMap(root, sourceMapPath) : null;
-    const scan = await scanScope({ root, nearThreshold, sourceMap, pathHistory });
+    const scan = await scanScope({ root, scope, nearThreshold, sourceMap, pathHistory });
     if (command === "scan") {
       if (output)
         await writeFile(
@@ -1849,8 +1970,12 @@ export async function runDocsConsolidation(args: string[]): Promise<number> {
       console.log(JSON.stringify(summarizeScan(scan), null, 2));
       return 0;
     }
-    const plan = planOwnerDuplicates(scan, OWNER_DUPLICATE_ROOTS, (path) =>
-      isNoticeFile(path) ? "license or notice file is retained in place" : null,
+    const plan = planOwnerDuplicates(
+      scan,
+      scope.name === "all" ? ALL_SCOPE.ownerRoots : OWNER_DUPLICATE_ROOTS,
+      scope.name === "all"
+        ? retainDocumentationCopy
+        : (path) => (isNoticeFile(path) ? "license or notice file is retained in place" : null),
     );
     if (output) await writeFile(resolve(output), `${JSON.stringify(plan, null, 2)}\n`);
     console.log(
@@ -1912,36 +2037,41 @@ export async function runDocsConsolidation(args: string[]): Promise<number> {
 
   if (command === "hubs") {
     const sourceMap = sourceMapPath ? await loadSourceMap(root, sourceMapPath) : null;
-    const scan = await scanScope({ root, nearThreshold, sourceMap, pathHistory });
+    const scan = await scanScope({ root, scope, nearThreshold, sourceMap, pathHistory });
     const byPath = new Map(scan.entries.map((entry) => [entry.path, entry]));
     const { files } = listRepositoryFiles(root);
     const hubs = files.filter(
-      (path) => /^docs\/.*README\.md$/.test(path) && existsSync(join(root, path)),
+      (path) =>
+        /^docs\/.*README\.md$/.test(path) &&
+        existsSync(join(root, path)) &&
+        (scope.name !== "all" || safeGlobalPath(root, path)),
     );
     let stale = 0;
     for (const hub of hubs) {
       const content = await readFile(join(root, hub), "utf8");
       if (!HUB_BEGIN.test(content)) continue;
       const refreshed = refreshHub(hub, content, (spec) =>
-        matchHubPatterns(posix.dirname(hub), spec.patterns, files).map((path): HubRow => {
-          const entry = byPath.get(path);
-          const text = existsSync(join(root, path)) ? readFileSync(join(root, path), "utf8") : "";
-          return {
-            path,
-            title: entry?.title ?? titleOf(text, basename(path)),
-            description: describeDocument(text),
-            status:
-              entry?.status ??
-              deriveStatus({
-                path,
-                text,
-                imported: false,
-                generated: isGeneratedDocument(path, text),
-                notice: isNoticeFile(path),
-              }),
-            date: entry?.lastGitDate ?? "",
-          };
-        }),
+        matchHubPatterns(posix.dirname(hub), spec.patterns, files)
+          .filter((path) => scope.name !== "all" || safeGlobalPath(root, path))
+          .map((path): HubRow => {
+            const entry = byPath.get(path);
+            const text = existsSync(join(root, path)) ? readFileSync(join(root, path), "utf8") : "";
+            return {
+              path,
+              title: entry?.title ?? titleOf(text, basename(path)),
+              description: describeDocument(text),
+              status:
+                entry?.status ??
+                deriveStatus({
+                  path,
+                  text,
+                  imported: false,
+                  generated: isGeneratedDocument(path, text),
+                  notice: isNoticeFile(path),
+                }),
+              date: entry?.lastGitDate ?? "",
+            };
+          }),
       );
       if (refreshed === null) continue;
       stale++;

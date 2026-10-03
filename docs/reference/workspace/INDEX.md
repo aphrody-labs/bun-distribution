@@ -1,6 +1,11 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 # Workspace documentation
 
+> Historical source-workspace index. Current navigation is generated in
+> [docs/README.md](../../README.md); use the
+> [documentation controller](../../guides/workspace/documentation.md) and
+> [agent index](../../llms.txt) for the active monorepo.
+
 The root records cross-repository boundaries and routes work to its owner.
 Repository internals, operational runbooks and product acceptance remain in their
 own repositories.

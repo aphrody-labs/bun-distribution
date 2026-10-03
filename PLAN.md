@@ -86,6 +86,27 @@ Preuve et hashes : [migration des packages](docs/migration/package-registry-2026
   lock uv. Auth npm globale vérifiée sur WSL, Windows et les deux VPS, sans
   secret dans les dépôts. Clones temporaires de validation retirés.
 
+## Gestion documentaire unifiée — 2026-10-03
+
+- [x] Auditer les Markdown suivis des trois racines : 5 711 documents,
+  38 groupes identiques ; préserver les copies de distribution et notices.
+- [x] Unifier les commandes documentaires sous `@aphrody/workspace docs`,
+  avec politique privée, inventaire de provenance et index agents communs.
+- [x] Générer les références déclarées depuis AST TypeScript/Python et
+  commentaires Rust ; portée syntaxique annoncée, aucune qualification API
+  complète ou runtime déduite de ces extraits.
+- [x] Corriger la protection des fichiers modifiés et les vérifications de
+  consolidation ; filtrer la traduction assistée et remonter ses échecs.
+- [x] Préparer un export HTML/Markdown privé statique et déterministe, sans
+  publication ; sources inchangées, copies exportées qualifiées par hashes.
+- Contrôle global des liens : 5 757 liens cassés et 71 chemins obsolètes
+  restent dans le corpus ; ce lot ne revendique pas un gate global vert.
+- [ ] Adapter les références complètes TypeDoc/rustdoc/Sphinx si leurs
+  consommateurs les nécessitent ; corriger le reste des liens du corpus.
+
+Guide : [gestion documentaire](docs/guides/workspace/documentation.md).
+Recherche : [pratiques documentaires](docs/research/workspace/documentation-practices.md).
+
 ## 0. Structure et hygiène
 
 - [x] Séparer CLI, interop, clients OS et UI par propriétaires.
