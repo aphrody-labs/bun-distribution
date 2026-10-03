@@ -26,7 +26,7 @@ Source : <https://m3.material.io>.
 
 | Doc                                                      | Contenu                                                                     |
 | -------------------------------------------------------- | --------------------------------------------------------------------------- |
-| [`m3-styles.md`](./m3-styles.md)                         | Color (HCT), typescale, **shape (10 niveaux)**, elevation, motion, spacing  |
+| [`m3-styles.md`](../../../../../../../packages/ui/material-web/docs/design/m3-styles.md)                         | Color (HCT), typescale, **shape (10 niveaux)**, elevation, motion, spacing  |
 | [`m3-motion.md`](../../../../_source/packages/material-web/docs/design/m3-motion.md)                         | Courbes d'easing (7) + durées (16) — confronté à `packages/ui/m3-motion`       |
 | [`m3-layout.md`](../../../../../../../packages/ui/material-web/docs/design/m3-layout.md)                         | Window size classes (600/840/1200/1600), panes, navigation adaptive, marges |
 | [`aphrody-m3-tokens.md`](../../../../../../../packages/ui/material-web/docs/design/aphrody-m3-tokens.md)         | Exemple de thème (rôles dark/light dérivés d'un seed HCT)                   |

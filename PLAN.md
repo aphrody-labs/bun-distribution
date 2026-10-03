@@ -88,8 +88,12 @@ routes de sites, exemples et snapshots historiques demandent une classification.
   fichiers conservés sur disque. Chaque groupe restant est qualifié dans
   [DUPLICATES-QUALIFICATION.md](docs/reference/workspace/DUPLICATES-QUALIFICATION.md) :
   conservés par rôle (URL publiques, bundles, licences, gabarits, sorties de
-  build), ou copies documentaires UI/OS/Web à consolider par `docs-consolidate`
-  après régénération de l’index d’import (essai annulé, liens restaurés).
+  build), ou copies documentaires UI/OS/Web à consolider par `docs-consolidate`.
+  UI : consolidation exacte effectuée le 2026-10-03 (32 copies supprimées avec
+  alias, 7 fichiers de liens réécrits, vérification sans constat) ; 13 copies
+  divergentes restent à fusionner manuellement. Index d'import régénéré ; son
+  gate global échoue encore sur 5 729 destinations absentes de la carte source.
+  Les autres groupes UI résiduels sont conservés selon leur rôle/provenance.
 - [x] Classer les documents historiques et corriger les liens réellement cassés
   dans la documentation active. Ne pas réécrire les preuves de migration.
   Clos 2026-10-03 : 4542 documents = 888 actifs vérifiés (liens et chemins) +

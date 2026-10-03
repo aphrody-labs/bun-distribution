@@ -10,7 +10,7 @@ Contributor and setup guides for the UI packages. Parent map:
 | Document | Contenu | Statut | Mis à jour |
 | --- | --- | --- | --- |
 | [Upstream reference contribution note](packages/aphrody-spaceui/CONTRIBUTING.md) | This snapshot is kept for license and source provenance; it is not a development workspace. | historical | 2026-09-29 |
-| [Tauri project setup](packages/material-web/docs/tauri/02-project-setup.md) | This legacy guide's examples/showcase/src-tauri host does not exist. | imported | 2026-09-29 |
+| [Tauri project setup](../../../packages/ui/material-web/docs/tauri/02-project-setup.md) | This legacy guide's examples/showcase/src-tauri host does not exist. | imported | 2026-09-29 |
 <!-- docs-hub:end -->
 
 First-party guides:

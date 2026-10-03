@@ -16,14 +16,14 @@
 > `labs/` stables (badge, cards, navigation bar/drawer/tab, segmented button)
 > sont promus via `aphrody-labs.ts`. Tout est branché dans `all.ts` (via
 > `aphrody-components.ts`) + wrappers React dans `apps/m3-react`. Détail :
-> [`packages/ui/material-web/APHRODY-M3.md`](../../../../../../reference/ui/packages/material-web/docs/material-web/APHRODY-M3.md).
+> [`packages/ui/material-web/APHRODY-M3.md`](../../../../../../../packages/ui/material-web/docs/material-web/APHRODY-M3.md).
 > Validation : `tsc --noEmit` exit 0 sur les 24 custom elements (flags stricts
 > du projet : noUnusedLocals, noImplicitOverride, noImplicitReturns,
 > noPropertyAccessFromIndexSignature).
 
 Consolide le **scrape récursif** de Material Design 3 — index glossaire +
 toutes les pages composants — en un plan d'update concret pour `packages/ui/material-web`
-(le « M3 web »). Référence : [`m3-glossary.md`](./m3-glossary.md),
+(le « M3 web »). Référence : [`m3-glossary.md`](../../../../../../../packages/ui/material-web/docs/design/m3-glossary.md),
 [`m3-components-spec.md`](../../../../../../../packages/ui/material-web/docs/design/m3-components-spec.md), [`DESIGN-PACKAGE.md`](../../../../docs/design/DESIGN-PACKAGE.md).
 
 ## Méthode (et statut aphrody-web)

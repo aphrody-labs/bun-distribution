@@ -90,7 +90,7 @@ reads the same numbers from `@aphrody/m3-tokens/breakpoints` and `@aphrody/m3-re
 
 ## Component Coverage & Web Components Bridge
 
-- **Glossary & Mapping**: The canonical 32 Material Design 3 components and concepts are indexed in [`m3-glossary.md`](../packages/material-web/docs/design/m3-glossary.md).
+- **Glossary & Mapping**: The canonical 32 Material Design 3 components and concepts are indexed in [`m3-glossary.md`](../../../../packages/ui/material-web/docs/design/m3-glossary.md).
 - **Web Components (`@aphrody/material-web`)**: Provides ~82 `md-*` web components built on Lit, inheriting custom CSS properties (`--md-sys-color-*`).
 - **React Wrappers (`@aphrody/m3-react`)**: Wraps the `md-*` web components via `@lit/react createComponent`, themed by `theme.css` generated from `aphrody design tokens`.
 - **Headless React Primitives (`@aphrody/m3-primitives`)**: Headless accessible components backed by `@base-ui/react` and styled with Tailwind CSS v4 utility classes.

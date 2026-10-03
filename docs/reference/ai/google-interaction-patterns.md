@@ -65,4 +65,4 @@ return generating
 ## Pointeurs
 - Primitives : `apps/m3-react/src/interactions.tsx` (not in repo).
 - Streaming backend : `crates/gemini-web/src/{boq,client}.rs`.
-- Démos statiques : `packages/ui/material-web/demos/` (not in repo). Parité : `docs/architecture/ui/packages/material-web/docs/design/angular-material-parity.md`.
+- Démos statiques : `packages/ui/material-web/demos/` (not in repo). Parité : `packages/ui/material-web/docs/design/angular-material-parity.md`.

@@ -78,6 +78,6 @@ Déposer le fichier obtenu dans ce dossier sous `tokens-full.css`.
 ## Intégration aphrody
 
 Les tokens couleur Gemini (`--gem-sys-color-*`) sont thématiquement proches de
-notre fusion M3 (`--md-sys-color-*`, cf. [`../M3-FRAMEWORK.md`](../M3-FRAMEWORK.md)).
+notre fusion M3 (`--md-sys-color-*`, cf. [`../M3-FRAMEWORK.md`](../../../../../../../../packages/ui/material-web/docs/design/M3-FRAMEWORK.md)).
 `theme.css` peut être importé tel quel par `apps/m3-react` ou aliasé vers les
 rôles shadcn comme la fusion `theme-aphrody`.
