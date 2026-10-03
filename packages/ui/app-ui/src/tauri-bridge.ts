@@ -755,3 +755,43 @@ export async function getRagStats(): Promise<RagStats> {
   } catch {}
   return { documents: 0, chunks: 0 };
 }
+
+// ---------------------------------------------------------------------------
+// Native Rust A2A & MCP Desktop Studio Bridge
+// ---------------------------------------------------------------------------
+
+export interface NativeA2AFleetResponse {
+  peers: Array<{
+    id: string;
+    name: string;
+    role: string;
+    status: "busy" | "idle" | "offline";
+    version?: string;
+    skills?: string[];
+    activeClaim?: string;
+  }>;
+  claims: Array<Record<string, unknown>>;
+  envelopes: Array<Record<string, unknown>>;
+  coordDir: string;
+}
+
+export async function fetchA2AFleetStatus(): Promise<NativeA2AFleetResponse | null> {
+  return tauriInvoke<NativeA2AFleetResponse>("studio_a2a_fleet_status");
+}
+
+export async function sendA2AEnvelope(envelope: Record<string, unknown>): Promise<{ sent: boolean; path: string } | null> {
+  return tauriInvoke<{ sent: boolean; path: string }>("studio_a2a_send_envelope", { envelope });
+}
+
+export interface NativeMcpToolItem {
+  name: string;
+  description: string;
+  ui?: {
+    resourceUri?: string;
+    html?: string;
+  } | null;
+}
+
+export async function fetchMcpToolsList(): Promise<{ tools: NativeMcpToolItem[]; protocol: string; m3Parity: boolean } | null> {
+  return tauriInvoke<{ tools: NativeMcpToolItem[]; protocol: string; m3Parity: boolean }>("studio_mcp_tools_list");
+}

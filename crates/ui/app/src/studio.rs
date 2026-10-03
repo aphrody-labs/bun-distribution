@@ -326,3 +326,156 @@ pub async fn studio_google_drive_authorize(app: tauri::AppHandle, window: tauri:
         "client_secret": client_secret,
     }))
 }
+
+/// Retrieve native A2A fleet status, active claims and mailbox envelopes from `.coord`.
+#[tauri::command]
+pub async fn studio_a2a_fleet_status() -> Result<Value, String> {
+    let repo_root = std::env::current_dir().unwrap_or_else(|_| std::path::PathBuf::from("."));
+    let coord_dir = repo_root.join(".coord");
+
+    // Read active claims
+    let claims_dir = coord_dir.join("claims");
+    let mut claims = Vec::new();
+    if let Ok(mut entries) = tokio::fs::read_dir(&claims_dir).await {
+        while let Ok(Some(entry)) = entries.next_entry().await {
+            let path = entry.path();
+            if path.extension().is_some_and(|ext| ext == "json") {
+                if let Ok(content) = tokio::fs::read_to_string(&path).await {
+                    if let Ok(parsed) = serde_json::from_str::<Value>(&content) {
+                        claims.push(parsed);
+                    }
+                }
+            }
+        }
+    }
+
+    // Read envelopes from mailboxes
+    let mut envelopes = Vec::new();
+    if let Ok(mut entries) = tokio::fs::read_dir(&coord_dir).await {
+        while let Ok(Some(entry)) = entries.next_entry().await {
+            let path = entry.path();
+            let name = path.file_name().unwrap_or_default().to_string_lossy();
+            if name.ends_with(".jsonl") {
+                if let Ok(content) = tokio::fs::read_to_string(&path).await {
+                    for line in content.lines() {
+                        let trimmed = line.trim();
+                        if !trimmed.is_empty() {
+                            if let Ok(env) = serde_json::from_str::<Value>(trimmed) {
+                                envelopes.push(env);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // Peers
+    let peers = serde_json::json!([
+        {
+            "id": "agy",
+            "name": "Antigravity CLI (agy)",
+            "role": "Lead Systems & UI Agent",
+            "status": "busy",
+            "version": "2.0.0",
+            "skills": ["bun", "rust", "m3", "tauri", "ag-ui", "mcp-ui"],
+            "activeClaim": ".coord/claims/native-integration.json"
+        },
+        {
+            "id": "codex",
+            "name": "Codex CLI",
+            "role": "Backend & Systems Integrator",
+            "status": "busy",
+            "version": "1.4.0",
+            "skills": ["rust", "cargo", "torch", "cef", "bindings"],
+            "activeClaim": "crates/koharu/koharu-torch"
+        },
+        {
+            "id": "claude",
+            "name": "Claude Code",
+            "role": "Core Monorepo Architect",
+            "status": "idle",
+            "version": "3.7.0",
+            "skills": ["refactoring", "monorepo", "architecture", "coordination"]
+        },
+        {
+            "id": "shenron",
+            "name": "Shenron AI",
+            "role": "RAG & Knowledge Domain Agent",
+            "status": "idle",
+            "version": "2.1.0",
+            "skills": ["rag", "embeddings", "dragonball", "databooks", "ocr"]
+        }
+    ]);
+
+    Ok(serde_json::json!({
+        "peers": peers,
+        "claims": claims,
+        "envelopes": envelopes,
+        "coordDir": coord_dir.to_string_lossy(),
+    }))
+}
+
+/// Send an A2A envelope directly to a peer mailbox in `.coord`.
+#[tauri::command]
+pub async fn studio_a2a_send_envelope(envelope: Value) -> Result<Value, String> {
+    use tokio::io::AsyncWriteExt;
+    let repo_root = std::env::current_dir().unwrap_or_else(|_| std::path::PathBuf::from("."));
+    let coord_dir = repo_root.join(".coord");
+    tokio::fs::create_dir_all(&coord_dir).await.map_err(|e| e.to_string())?;
+
+    let to = envelope["to"].as_str().unwrap_or("codex");
+    let filename = format!("inbox-to-{to}.jsonl");
+    let target = coord_dir.join(filename);
+
+    let mut line = serde_json::to_string(&envelope).map_err(|e| e.to_string())?;
+    line.push('\n');
+
+    let mut file = tokio::fs::OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open(&target)
+        .await
+        .map_err(|e| e.to_string())?;
+
+    file.write_all(line.as_bytes()).await.map_err(|e| e.to_string())?;
+    Ok(serde_json::json!({ "sent": true, "path": target.to_string_lossy(), "envelope": envelope }))
+}
+
+/// List available MCP tools and their generative UI capabilities.
+#[tauri::command]
+pub async fn studio_mcp_tools_list() -> Result<Value, String> {
+    let tools = serde_json::json!([
+        {
+            "name": "chart_generator",
+            "description": "Visualisation de métriques de streaming d'agent et de tokens/sec.",
+            "ui": {
+                "resourceUri": "ui://mcp.aphrody.local/metrics-chart.html"
+            }
+        },
+        {
+            "name": "color_scheme_explorer",
+            "description": "Générateur dynamique de thèmes et palettes Material Design 3.",
+            "ui": {
+                "resourceUri": "ui://mcp.aphrody.local/m3-palette.html"
+            }
+        },
+        {
+            "name": "a2a_dispatch",
+            "description": "Délégation de tâche à un agent pair via le protocole A2A 1.0.",
+            "ui": null
+        },
+        {
+            "name": "rag_search",
+            "description": "Recherche hybride vectorielle et textuelle dans le corpus documentaire.",
+            "ui": null
+        }
+    ]);
+
+    Ok(serde_json::json!({
+        "tools": tools,
+        "protocol": "MCP-UI / SEP-1724",
+        "m3Parity": true
+    }))
+}
+

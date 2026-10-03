@@ -9,7 +9,7 @@
  * - AG-UI Event Streaming Accumulator & A2UI Declarative Interface synthesis
  */
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import {
   A2APeerInspector,
   A2ATaskTimeline,
@@ -23,6 +23,7 @@ import {
 import { Card, Button, Badge } from "@aphrody/m3-primitives";
 import { PageHeader } from "@shenron/ui/layout/PageHeader";
 import { SectionHeading } from "@shenron/ui/layout/SectionHeading";
+import { fetchA2AFleetStatus, sendA2AEnvelope, fetchMcpToolsList } from "../../tauri-bridge";
 
 export function A2AStudio() {
   const [activeTab, setActiveTab] = useState<"fleet" | "timeline" | "mcp_apps" | "agui_stream">("fleet");
@@ -222,6 +223,33 @@ export function A2AStudio() {
     "RUN_FINISHED: outcome=success",
   ]);
 
+  // Sync with native Rust A2A backend and .coord mailboxes
+  useEffect(() => {
+    let mounted = true;
+    const syncFleet = async () => {
+      try {
+        const res = await fetchA2AFleetStatus();
+        if (res && mounted) {
+          if (res.peers && res.peers.length > 0) {
+            setPeers(res.peers);
+          }
+          if (res.envelopes && res.envelopes.length > 0) {
+            setEnvelopes(res.envelopes as unknown as CoordEnvelope[]);
+          }
+        }
+      } catch (e) {
+        console.warn("Notice: native A2A sync running in fallback mode:", e);
+      }
+    };
+
+    void syncFleet();
+    const interval = setInterval(syncFleet, 5000);
+    return () => {
+      mounted = false;
+      clearInterval(interval);
+    };
+  }, []);
+
   const handleDispatchMessage = (to: string, topic: string, body: string) => {
     const newEnvelope: CoordEnvelope = {
       v: 1,
@@ -237,6 +265,11 @@ export function A2AStudio() {
     setPeers((prev) =>
       prev.map((p) => (p.id === to ? { ...p, status: "busy" } : p)),
     );
+
+    // Write to native Rust .coord mailbox if running on desktop
+    void sendA2AEnvelope(newEnvelope as unknown as Record<string, unknown>).catch((err) => {
+      console.warn("Failed to persist envelope natively:", err);
+    });
   };
 
   const handleSimulateAgUiStream = () => {
