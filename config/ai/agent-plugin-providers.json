@@ -61,9 +61,8 @@
     "iecode": ["{home}/iecode"],
     "shenron": ["{home}/aphrody", "{home}/aphrody-py"],
     "rose-griffon": ["{home}/aphrody"],
-    "google-gemini": ["*"],
     "yolo": ["*"],
-    "bun-ts7": ["*"],
-    "bxc": ["*"]
+    "aphrody-web": ["*"],
+    "aphrody-google": ["*"]
   }
 }
