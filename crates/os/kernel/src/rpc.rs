@@ -252,12 +252,14 @@ impl Kernel {
             "ping" => Ok(json!({})),
             "tools/list" => {
                 let scope = session.scope().expect("authenticated request has a scope");
-                let mut tools = self
-                    .tools()
-                    .await
-                    .into_iter()
-                    .filter(|(_, tool)| scope.allows_tool(&tool.name))
-                    .map(|(_, tool)| tool.to_mcp())
+                let cached = self.mcp_tools().await;
+                let mut tools = cached
+                    .iter()
+                    .filter_map(|tool| {
+                        let name = tool.get("name")?.as_str()?;
+                        (!name.starts_with(SKILL_TOOL_PREFIX) && scope.allows_tool(name))
+                            .then(|| tool.clone())
+                    })
                     .collect::<Vec<_>>();
                 tools.extend(self.skills().await.into_iter().filter_map(|(subsystem, skill)| {
                     skill

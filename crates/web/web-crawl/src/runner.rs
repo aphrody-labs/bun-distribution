@@ -278,6 +278,98 @@ pub async fn crawl_bounded<T: CrawlTransport>(
     Ok(report)
 }
 
+/// Configuration options for the 24/7 continuous crawl daemon.
+#[derive(Debug, Clone)]
+pub struct CrawlDaemonOptions {
+    /// Bounded options applied to each crawl iteration / scheduling batch.
+    pub base: CrawlOptions,
+    /// Delay in milliseconds when no ready URLs or revisits are available.
+    pub idle_poll_ms: u64,
+    /// Interval in milliseconds to run frontier maintenance (stale lock recovery, revisit promotion).
+    pub maintenance_interval_ms: u64,
+    /// Maximum consecutive errors or loop iterations before returning (None = run indefinitely).
+    pub max_iterations: Option<usize>,
+}
+
+impl Default for CrawlDaemonOptions {
+    fn default() -> Self {
+        Self {
+            base: CrawlOptions {
+                wait_for_revisits: true,
+                ..CrawlOptions::default()
+            },
+            idle_poll_ms: 1_000,
+            maintenance_interval_ms: 10_000,
+            max_iterations: None,
+        }
+    }
+}
+
+/// Continuous 24/7 crawl daemon that loops asynchronously over the frontier,
+/// handling stale recovery, revisit promotion, and backoff during idle periods.
+pub async fn crawl_daemon<T: CrawlTransport>(
+    frontier: &mut Frontier,
+    transport: &T,
+    options: &CrawlDaemonOptions,
+    shutdown: Option<tokio::sync::watch::Receiver<bool>>,
+) -> rusqlite::Result<CrawlReport> {
+    let mut accumulated = CrawlReport::default();
+    let mut last_maintenance = now_ms();
+    let mut iterations = 0;
+
+    loop {
+        if let Some(ref rx) = shutdown {
+            if *rx.borrow() {
+                break;
+            }
+        }
+        if let Some(max_iter) = options.max_iterations {
+            if iterations >= max_iter {
+                break;
+            }
+        }
+        iterations += 1;
+
+        let current_time = now_ms();
+        if current_time.saturating_sub(last_maintenance) >= options.maintenance_interval_ms as i64 {
+            let _ = frontier.recover_stale(current_time);
+            let _ = frontier.promote_due_revisits(current_time);
+            last_maintenance = current_time;
+        }
+
+        let step_report = crawl_bounded(frontier, transport, &options.base).await?;
+        let pages_count = step_report.pages.len();
+        accumulated.attempts += step_report.attempts;
+        accumulated.exact_duplicates += step_report.exact_duplicates;
+        accumulated.near_duplicates += step_report.near_duplicates;
+        accumulated.robots_fetched += step_report.robots_fetched;
+        accumulated.robots_blocked += step_report.robots_blocked;
+        accumulated.sitemaps_fetched += step_report.sitemaps_fetched;
+        accumulated.sitemap_urls_enqueued += step_report.sitemap_urls_enqueued;
+        accumulated.errors.extend(step_report.errors);
+        accumulated.pages.extend(step_report.pages);
+        accumulated.frontier = step_report.frontier;
+
+        if pages_count == 0 {
+            let stats = frontier.stats()?;
+            if stats.pending == 0 {
+                let next_revisit = frontier.next_revisit_at()?;
+                let sleep_duration = match next_revisit {
+                    Some(due) if due > current_time => {
+                        let diff = (due - current_time) as u64;
+                        diff.min(options.idle_poll_ms)
+                    },
+                    _ => options.idle_poll_ms,
+                };
+                tokio::time::sleep(std::time::Duration::from_millis(sleep_duration)).await;
+            }
+        }
+    }
+
+    accumulated.frontier = frontier.stats()?;
+    Ok(accumulated)
+}
+
 fn now_ms() -> i64 {
     let millis = SystemTime::now().duration_since(UNIX_EPOCH).unwrap_or_default().as_millis();
     i64::try_from(millis).unwrap_or(i64::MAX)
@@ -508,5 +600,26 @@ mod tests {
             extract_links(html, &base),
             vec![(Url::parse("https://example.test/a").unwrap(), "A".into())]
         );
+    }
+
+    #[tokio::test]
+    async fn daemon_crawl_terminates_at_max_iterations_and_accumulates_results() {
+        let mut frontier = Frontier::memory(FrontierOptions::default()).unwrap();
+        frontier.enqueue(AddRequest::seed("https://daemon.test/"), now_ms()).unwrap();
+        let pages = HashMap::from([
+            ("https://daemon.test/".into(), "<main><h1>Daemon Home</h1><p>Daemon content is long enough to extract.</p></main>".into()),
+        ]);
+        let options = CrawlDaemonOptions {
+            base: CrawlOptions {
+                allowed_domains: vec!["daemon.test".into()],
+                ..CrawlOptions::default()
+            },
+            max_iterations: Some(2),
+            idle_poll_ms: 10,
+            maintenance_interval_ms: 100,
+        };
+        let report = crawl_daemon(&mut frontier, &Fixture(pages), &options, None).await.unwrap();
+        assert_eq!(report.pages.len(), 1);
+        assert_eq!(report.frontier.done, 1);
     }
 }
