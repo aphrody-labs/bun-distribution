@@ -746,7 +746,7 @@ bilan de lien dans [`document-import.json`](../../migration/document-import.json
   openfox (licence non vérifiée), fichiers absents du checkout sparse Tauri,
   assets de plus de 10 MiB et docs `vendor/third_party`. Chaque motif reste
   visible dans la carte source.
-- Les checkouts dans `../source` restent intacts; le snapshot mcp-server-tauri
+- Les checkouts dans `.cache/upstream` restent intacts; le snapshot mcp-server-tauri
   indique des changements de travail préexistants. L'import n'a modifié que
   les documents Aphrody et la carte/report générés.
 

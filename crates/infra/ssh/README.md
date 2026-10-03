@@ -13,9 +13,9 @@ cargo run -p aphrody-ssh -- logs --host dbfr nginx --lines 100
 cargo run -p aphrody-ssh -- service --host ovh-vps --action is-active nginx
 cargo run -p aphrody-ssh -- health --host ovh-vps https://example.com/health
 cargo run -p aphrody-ssh -- exec --host ovh-vps "hostname; uptime"
-cargo run -p aphrody-ssh -- --json compare --host ovh-vps --local C:\work\aphrody --remote /home/ubuntu/aphrody
+cargo run -p aphrody-ssh -- --json compare --host ovh-vps --local C:\work\aphrody --remote .
 cargo run -p aphrody-ssh -- sync --host ovh-vps --source C:\work\aphrody --destination /home/ubuntu/transfer/aphrody
-cargo run -p aphrody-ssh -- sync --host ovh-vps --source C:\work\aphrody --destination /home/ubuntu/aphrody --apply
+cargo run -p aphrody-ssh -- sync --host ovh-vps --source C:\work\aphrody --destination <remote-checkout> --apply
 ```
 
 `stop` and `disable` require `--confirm`. All operations have a 30-second
