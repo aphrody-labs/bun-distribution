@@ -4,6 +4,7 @@
   "upstreamRevision": "14a720628f9592c8e60f7e081ef733076db8a6a9",
   "implementationCommit": "ceed0d4ef8c02a044c5abbb71413746bc098de44",
   "fullyAbsorbed": false,
+  "latestUiTypecheck": "passed after official typed Bun build import and local M3 declaration build; previous failures below are historical observations",
   "checks": [
     {
       "command": "bun test packages/infra/workspace/test/jan-absorption.test.ts packages/ui/app-ui/src/models-hub.test.ts",
@@ -31,11 +32,30 @@
     {
       "command": "bunx oxfmt --check packages/infra/workspace/src/jan-absorption.ts",
       "status": "passed"
-    }
+    },
+    {
+      "command": "bun run build",
+      "cwd": "packages/ui/m3",
+      "status": "passed",
+      "note": "tsup and native TypeScript declaration emission; ignored dist artifacts remain local"
+    },
+    {
+      "command": "bun run typecheck",
+      "cwd": "packages/ui/app-ui",
+      "status": "passed",
+      "phase": "after M3 correction and declaration build"
+    },
+    {
+      "command": "bun test packages/ui/m3/test/build.test.ts",
+      "status": "passed",
+      "tests": 5,
+      "assertions": 187
+    },
+    { "command": "bunx oxlint --deny-warnings packages/ui/m3/src/build.ts", "status": "passed" }
   ],
   "limits": [
     "Source inventories and lexical declarations are not proof of semantic parity.",
-    "Search behavior has unit coverage; rendered UI, desktop packaging and full UI compilation remain unqualified.",
+    "Search behavior has unit coverage and UI typecheck passes; rendered UI and full desktop packaging remain unqualified.",
     "Complete absorption across the twelve mapped capability groups remains pending.",
     "Private Jan repository exists; source push and private submodule registration were still pending when this receipt was recorded."
   ]

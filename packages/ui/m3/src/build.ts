@@ -7,7 +7,7 @@
 //
 // Names carry no hash: the Tauri asset protocol serves the directory as is, and the CSP allows
 // only `'self'` scripts, so every script stays an external module file.
-import type { BuildArtifact, BunPlugin } from "bun";
+import { build, type BuildArtifact, type BunPlugin } from "bun";
 import { mkdir, rename, rm, stat } from "node:fs/promises";
 import { basename, dirname, join, relative, resolve } from "node:path";
 import { m3Plugin, type M3PluginOptions } from "./plugin.js";
@@ -57,7 +57,12 @@ export interface BuildM3Result {
 }
 
 /** Fixed names of the Tauri layout. */
-export const TAURI_LAYOUT = { html: "index.html", script: "app.js", style: "app.css", fonts: "fonts" } as const;
+export const TAURI_LAYOUT = {
+  html: "index.html",
+  script: "app.js",
+  style: "app.css",
+  fonts: "fonts",
+} as const;
 
 function toPosix(path: string): string {
   return path.replaceAll("\\", "/");
@@ -66,40 +71,49 @@ function toPosix(path: string): string {
 /** Replace every `src`/`href` attribute value equal to `from` with `to`. */
 export function rewriteHtmlReference(html: string, from: string, to: string): string {
   const escaped = from.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  return html.replace(new RegExp(`((?:src|href)=["'])(?:\\./)?${escaped}(["'])`, "g"), `$1./${to}$2`);
+  return html.replace(
+    new RegExp(`((?:src|href)=["'])(?:\\./)?${escaped}(["'])`, "g"),
+    `$1./${to}$2`,
+  );
+}
+
+function describeBuildError(error: unknown): string {
+  if (!(error instanceof Error)) return String(error);
+  const detail = error as Error & {
+    referrer?: string;
+    specifier?: string;
+    importKind?: string;
+    position?: { file?: string; line?: number; column?: number };
+  };
+  const location = detail.position;
+  const source = [
+    detail.specifier && `import ${JSON.stringify(detail.specifier)}`,
+    detail.referrer && `from ${detail.referrer}`,
+    location?.file && `at ${location.file}:${location.line ?? 0}:${location.column ?? 0}`,
+    detail.importKind && `(${detail.importKind})`,
+  ]
+    .filter(Boolean)
+    .join(" ");
+  return `${error.stack ?? error.message}${source ? `\n  ${source}` : ""}`;
 }
 
 /** Build the application. */
 export async function buildM3(options: BuildM3Options): Promise<BuildM3Result> {
   const cwd = options.cwd ?? process.cwd();
-  const entries = (Array.isArray(options.entry) ? options.entry : [options.entry]).map((entry) => resolve(cwd, entry));
+  const entries = (Array.isArray(options.entry) ? options.entry : [options.entry]).map((entry) =>
+    resolve(cwd, entry),
+  );
   const production = options.production ?? true;
   const tauri = options.tauri;
-  if (tauri && entries.length !== 1) throw new Error("buildM3: the Tauri layout takes exactly one HTML entry");
-  if (tauri && !entries[0]!.endsWith(".html")) throw new Error("buildM3: the Tauri entry must be an .html file");
+  if (tauri && entries.length !== 1)
+    throw new Error("buildM3: the Tauri layout takes exactly one HTML entry");
+  if (tauri && !entries[0]!.endsWith(".html"))
+    throw new Error("buildM3: the Tauri entry must be an .html file");
   const outdir = resolve(cwd, tauri ? tauri.uiDist : (options.outdir ?? "dist"));
   const clean = options.clean ?? true;
   const buildOutdir = clean ? `${outdir}.stage-${crypto.randomUUID()}` : outdir;
   if (clean) await mkdir(dirname(outdir), { recursive: true });
   await mkdir(buildOutdir, { recursive: true });
-  const describe = (error: unknown): string => {
-    if (!(error instanceof Error)) return String(error);
-    const detail = error as Error & {
-      referrer?: string;
-      specifier?: string;
-      importKind?: string;
-      position?: { file?: string; line?: number; column?: number };
-    };
-    const location = detail.position;
-    const source = [
-      detail.specifier && `import ${JSON.stringify(detail.specifier)}`,
-      detail.referrer && `from ${detail.referrer}`,
-      location?.file && `at ${location.file}:${location.line ?? 0}:${location.column ?? 0}`,
-      detail.importKind && `(${detail.importKind})`,
-    ].filter(Boolean).join(" ");
-    return `${error.stack ?? error.message}${source ? `\n  ${source}` : ""}`;
-  };
-
   const drop = options.drop ?? (production ? ["debugger"] : undefined);
   const minifyConfig =
     options.minify !== undefined
@@ -108,7 +122,7 @@ export async function buildM3(options: BuildM3Options): Promise<BuildM3Result> {
         ? { whitespace: true, syntax: true, identifiers: true }
         : false;
 
-  const result = await Bun.build({
+  const result = await build({
     entrypoints: entries,
     root: cwd,
     outdir: buildOutdir,
@@ -126,17 +140,25 @@ export async function buildM3(options: BuildM3Options): Promise<BuildM3Result> {
       : {}),
     plugins: [m3Plugin(options.plugin), ...(options.plugins ?? [])],
     ...(tauri
-      ? { naming: { entry: "[name].[ext]", chunk: "app.[ext]", asset: `${TAURI_LAYOUT.fonts}/[name].[ext]` } }
+      ? {
+          naming: {
+            entry: "[name].[ext]",
+            chunk: "app.[ext]",
+            asset: `${TAURI_LAYOUT.fonts}/[name].[ext]`,
+          },
+        }
       : {}),
   }).catch(async (error: unknown) => {
     if (clean) await rm(buildOutdir, { recursive: true, force: true });
     const causes = error instanceof AggregateError ? error.errors : [error];
-    const details = causes.map(describe).join("\n");
-    throw new Error(`buildM3: Bun.build rejected${details ? `:\n${details}` : ""}`, { cause: error });
+    const details = causes.map(describeBuildError).join("\n");
+    throw new Error(`buildM3: Bun.build rejected${details ? `:\n${details}` : ""}`, {
+      cause: error,
+    });
   });
   if (!result.success) {
     if (clean) await rm(buildOutdir, { recursive: true, force: true });
-    const details = result.logs.map((log) => describe(log)).join("\n");
+    const details = result.logs.map(describeBuildError).join("\n");
     throw new AggregateError(
       result.logs,
       `buildM3: ${result.logs.length} error(s) building ${entries.join(", ")}${details ? `:\n${details}` : ""}`,
@@ -179,13 +201,20 @@ export async function buildM3(options: BuildM3Options): Promise<BuildM3Result> {
  * Bring a Tauri build to the fixed layout: the HTML entry becomes `index.html` and its script
  * `app.js` (Bun names them after their sources), references rewritten.
  */
-async function normalizeTauriLayout(outdir: string, entry: string, outputs: BuildM3Output[]): Promise<BuildM3Output[]> {
+async function normalizeTauriLayout(
+  outdir: string,
+  entry: string,
+  outputs: BuildM3Output[],
+): Promise<BuildM3Output[]> {
   const htmlName = basename(entry);
   const htmlPath = join(outdir, htmlName);
   let html = await Bun.file(htmlPath).text();
 
   const scripts = outputs.filter((o) => o.kind === "entry-point" && o.path.endsWith(".js"));
-  if (scripts.length > 1) throw new Error(`buildM3: the Tauri entry produced ${scripts.length} scripts; keep one module script`);
+  if (scripts.length > 1)
+    throw new Error(
+      `buildM3: the Tauri entry produced ${scripts.length} scripts; keep one module script`,
+    );
   const script = scripts[0];
   if (script && script.path !== TAURI_LAYOUT.script) {
     await rename(join(outdir, script.path), join(outdir, TAURI_LAYOUT.script));
