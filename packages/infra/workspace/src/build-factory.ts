@@ -51,6 +51,8 @@ export function buildFactoryPlan(
     "APHRODY_BUILD_HOST=vps",
     `APHRODY_CARGO_JOBS=${config.rust.maxJobs}`,
     "CARGO_INCREMENTAL=0",
+    "CARGO_NET_GIT_FETCH_WITH_CLI=true",
+    `APHRODY_CARGO_LOCK_DIR=${posix.dirname(lock)}`,
     `SCCACHE_DIR=${cache}/sccache`,
     `BUN_INSTALL_CACHE_DIR=${cache}/bun`,
     `UV_CACHE_DIR=${cache}/uv`,

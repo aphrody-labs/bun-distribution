@@ -10,9 +10,52 @@ import {
   prepareIecodePackages,
   validateArchiveEntries,
   validateArchiveTypes,
+  canonicalizePackageArchive,
 } from "./iecode-packages";
 
 const temporary: string[] = [];
+
+test("canonical archive bytes are independent of source ordering, ownership, timestamps and gzip headers", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "iecode-canonical-"));
+  temporary.push(directory);
+  const paths = [join(directory, "host-one.tgz"), join(directory, "host-two.tgz")];
+  for (let index = 0; index < paths.length; index++) {
+    await run(
+      [
+        "python3",
+        "-I",
+        "-c",
+        `import io, sys, tarfile
+host = int(sys.argv[2])
+with tarfile.open(sys.argv[1], 'w:gz') as archive:
+    for name in (['package/src/a.ts', 'package/src/b.ts'] if host == 0 else ['package/src/b.ts', 'package/src/a.ts']):
+        entry = tarfile.TarInfo(name)
+        content = ('export const name = ' + repr(name)).encode()
+        entry.size = len(content)
+        entry.uid = host + 1000
+        entry.gid = host + 1001
+        entry.uname = 'host-' + str(host)
+        entry.gname = 'group-' + str(host)
+        entry.mtime = host + 123456789
+        entry.mode = 0o644 if host == 0 else 0o664
+        entry.pax_headers = {'atime': str(host + 999)}
+        archive.addfile(entry, io.BytesIO(content))
+`,
+        paths[index]!,
+        String(index),
+      ],
+      directory,
+    );
+    await canonicalizePackageArchive(paths[index]!, directory);
+  }
+  expect(await readFile(paths[0]!)).toEqual(await readFile(paths[1]!));
+  const once = await readFile(paths[0]!);
+  await canonicalizePackageArchive(paths[0]!, directory);
+  expect(await readFile(paths[0]!)).toEqual(once);
+  expect(await run(["tar", "-xOf", paths[0]!, "package/src/a.ts"], directory)).toContain(
+    "export const name",
+  );
+});
 afterEach(async () => {
   for (const path of temporary.splice(0)) await rm(path, { recursive: true, force: true });
 });

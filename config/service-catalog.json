@@ -342,6 +342,7 @@
     },
     {
       "id": "shenron-redis",
+      "unitSource": "system-package",
       "application": "shenron",
       "kind": "cache",
       "runtime": "redis",

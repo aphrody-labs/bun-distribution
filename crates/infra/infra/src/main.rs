@@ -1344,14 +1344,7 @@ fn deploy(
 fn validate_catalogs(root: &Path, as_json: bool, run: &mut Run) -> Result<()> {
     let mut report = validate::run(root)?;
     let catalog = aphrody_infra::catalog::load_service_catalog(root)?;
-    for service in catalog.services.iter().filter(|service| !service.is_retired()) {
-        let unit = &service.unit;
-        let source = root.join("systemd").join(unit);
-        let example = root.join("systemd").join(format!("{unit}.example"));
-        if !source.is_file() && !example.is_file() {
-            report.errors.push(format!("{}: unité {} absente de systemd/", service.id, unit));
-        }
-    }
+    report.errors.extend(validate::check_unit_templates(root, &catalog));
     run.action(
         "validate",
         if report.errors.is_empty() { "success" } else { "failed" },

@@ -1749,9 +1749,9 @@
     "@ag-ui/core@1.0.1": "patches/ag-ui-core-1.0.1.patch",
   },
   "overrides": {
-    "@rosegriffon/azalee": "file:.cache/iecode-packages/azalee-c832e6c553a99ccad92cc64e4ff5b952f7c28c42.tgz",
-    "@rosegriffon/inagle": "file:.cache/iecode-packages/inagle-c832e6c553a99ccad92cc64e4ff5b952f7c28c42.tgz",
-    "@rosegriffon/inagle-cross": "file:.cache/iecode-packages/inagle-cross-c832e6c553a99ccad92cc64e4ff5b952f7c28c42.tgz",
+    "@rosegriffon/azalee": "file:.cache/iecode-packages/azalee-c832e6c553a99ccad92cc64e4ff5b952f7c28c42-v2.tgz",
+    "@rosegriffon/inagle": "file:.cache/iecode-packages/inagle-c832e6c553a99ccad92cc64e4ff5b952f7c28c42-v2.tgz",
+    "@rosegriffon/inagle-cross": "file:.cache/iecode-packages/inagle-cross-c832e6c553a99ccad92cc64e4ff5b952f7c28c42-v2.tgz",
     "axios": "^1.20.0",
     "qs": "^6.16.0",
     "undici": "^7.30.0",
@@ -1835,10 +1835,10 @@
     "@radix-ui/react-toggle-group": "^1.1.19",
     "@radix-ui/react-tooltip": "^1.2.16",
     "@rosegriffon/assets": "^1.0.3",
-    "@rosegriffon/azalee": "file:.cache/iecode-packages/azalee-c832e6c553a99ccad92cc64e4ff5b952f7c28c42.tgz",
+    "@rosegriffon/azalee": "file:.cache/iecode-packages/azalee-c832e6c553a99ccad92cc64e4ff5b952f7c28c42-v2.tgz",
     "@rosegriffon/db": "^1.0.3",
-    "@rosegriffon/inagle": "file:.cache/iecode-packages/inagle-c832e6c553a99ccad92cc64e4ff5b952f7c28c42.tgz",
-    "@rosegriffon/inagle-cross": "file:.cache/iecode-packages/inagle-cross-c832e6c553a99ccad92cc64e4ff5b952f7c28c42.tgz",
+    "@rosegriffon/inagle": "file:.cache/iecode-packages/inagle-c832e6c553a99ccad92cc64e4ff5b952f7c28c42-v2.tgz",
+    "@rosegriffon/inagle-cross": "file:.cache/iecode-packages/inagle-cross-c832e6c553a99ccad92cc64e4ff5b952f7c28c42-v2.tgz",
     "@rosegriffon/patreon-bun": "1.0.3",
     "@sentry/nextjs": "^11.1.0",
     "@shikijs/vitepress-twoslash": "^4.4.3",
@@ -3455,7 +3455,7 @@
 
     "@rosegriffon/auth": ["@rosegriffon/auth@workspace:packages/rg/auth"],
 
-    "@rosegriffon/azalee": ["@rosegriffon/azalee@.cache/iecode-packages/azalee-c832e6c553a99ccad92cc64e4ff5b952f7c28c42.tgz", { "dependencies": { "@rosegriffon/assets": "^1.0.3", "@rosegriffon/db": "^1.0.3", "@rosegriffon/inagle": "2.0.4", "@rosegriffon/inagle-cross": "1.0.3", "commander": "^14.0.3", "wanakana": "^5.3.1" }, "bin": { "azalee": "./src/cli.ts" } }, "sha512-WUqURiP9hoOJZKbr4619/UsiYfimL4VPyLK5ij5gt+6sMuEjCW3i/5MLfMyDHb8GRNPslWKm1kMh7s+3iH6uJQ=="],
+    "@rosegriffon/azalee": ["@rosegriffon/azalee@.cache/iecode-packages/azalee-c832e6c553a99ccad92cc64e4ff5b952f7c28c42-v2.tgz", { "dependencies": { "@rosegriffon/assets": "^1.0.3", "@rosegriffon/db": "^1.0.3", "@rosegriffon/inagle": "2.0.4", "@rosegriffon/inagle-cross": "1.0.3", "commander": "^14.0.3", "wanakana": "^5.3.1" }, "bin": { "azalee": "./src/cli.ts" } }, "sha512-KgipZcZi8CkOBw4U5CBmUC4GpjbieTObE2Jn36Daa8oof/c1jP21ws32q5OZ4scs+f18YqYrpe5M9Eezipp1rQ=="],
 
     "@rosegriffon/bot": ["@rosegriffon/bot@workspace:apps/rg/bot"],
 
@@ -3473,9 +3473,9 @@
 
     "@rosegriffon/identity": ["@rosegriffon/identity@workspace:packages/rg/identity"],
 
-    "@rosegriffon/inagle": ["@rosegriffon/inagle@.cache/iecode-packages/inagle-c832e6c553a99ccad92cc64e4ff5b952f7c28c42.tgz", { "dependencies": { "@leeoniya/ufuzzy": "^1.0.14", "@rosegriffon/assets": "^1.0.3", "@rosegriffon/db": "^1.0.3", "cheerio": "^1.2.0", "commander": "^14.0.3", "dotenv": "^17.3.1", "drizzle-orm": "^0.45.3", "kuroshiro": "^1.2.0", "kuroshiro-analyzer-kuromoji": "^1.1.0", "picocolors": "^1.1.1", "wanakana": "^5.3.1", "zod": "^3.25.76" }, "peerDependencies": { "@aphrody/agent-browser": "*" }, "optionalPeers": ["@aphrody/agent-browser"], "bin": { "inagle": "./src/cli.ts" } }, "sha512-Myr3fvcCOblNERxve/k+MU6GJQKoAPJ6oa+jPwBiNuVEZu0y2ZJCYmuGmSrA42SkJ52Wi2ORl6duP2Cjce6NwA=="],
+    "@rosegriffon/inagle": ["@rosegriffon/inagle@.cache/iecode-packages/inagle-c832e6c553a99ccad92cc64e4ff5b952f7c28c42-v2.tgz", { "dependencies": { "@leeoniya/ufuzzy": "^1.0.14", "@rosegriffon/assets": "^1.0.3", "@rosegriffon/db": "^1.0.3", "cheerio": "^1.2.0", "commander": "^14.0.3", "dotenv": "^17.3.1", "drizzle-orm": "^0.45.3", "kuroshiro": "^1.2.0", "kuroshiro-analyzer-kuromoji": "^1.1.0", "picocolors": "^1.1.1", "wanakana": "^5.3.1", "zod": "^3.25.76" }, "peerDependencies": { "@aphrody/agent-browser": "*" }, "optionalPeers": ["@aphrody/agent-browser"], "bin": { "inagle": "./src/cli.ts" } }, "sha512-lfV/ueLrqRpbKFUTUu+otZZjYPrkUbj/3AvhjcryYDmX1aP/8gg/IUBi0GqFIbEWN/k78eoVESpCtPurFYtnSw=="],
 
-    "@rosegriffon/inagle-cross": ["@rosegriffon/inagle-cross@.cache/iecode-packages/inagle-cross-c832e6c553a99ccad92cc64e4ff5b952f7c28c42.tgz", { "dependencies": { "zod": "^3.25.76" } }, "sha512-QH2mvrntvMcAockUADHpwToclUNfmfi8cfad4iv/ftIvb8sxzbRmS96LAL/gB/4bhQvHmUDrNlLXJ6IgYeL2hg=="],
+    "@rosegriffon/inagle-cross": ["@rosegriffon/inagle-cross@.cache/iecode-packages/inagle-cross-c832e6c553a99ccad92cc64e4ff5b952f7c28c42-v2.tgz", { "dependencies": { "zod": "^3.25.76" } }, "sha512-y5/Aj6pu0hPAnH0eVplELsz/OudWKrG8rnznDZd7xmqPyIFG5vaRo5LahXDN8/ORxTsrZSFU2Dre00K3pK5LQA=="],
 
     "@rosegriffon/patreon-bun": ["@rosegriffon/patreon-bun@1.0.3", "", {}, "sha512-gJx9eIp2lTG7O8il71TTqVqJGzeAEuqSK7VbxKLwfL3+T+VOqKlwgrwl4bh4he76Lwnjc5NtWYhtMrpMA5WBng=="],
 

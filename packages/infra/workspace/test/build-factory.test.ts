@@ -24,6 +24,8 @@ test("factory plans use the existing Infra owner and shared serial lock", () => 
   expect(plan.transport[5]).toContain("git rev-parse HEAD");
   expect(plan.transport[5]).toContain("git status --porcelain");
   expect(plan.transport[5]).toContain("BUN_INSTALL_CACHE_DIR=");
+  expect(plan.transport[5]).toContain("CARGO_NET_GIT_FETCH_WITH_CLI=true");
+  expect(plan.transport[5]).toContain("APHRODY_CARGO_LOCK_DIR=/srv/aphrody-build/locks");
   expect(plan.command).toEqual(["bun", "run", "build"]);
 });
 

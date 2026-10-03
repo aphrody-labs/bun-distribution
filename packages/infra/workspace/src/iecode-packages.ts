@@ -18,6 +18,7 @@ import {
 import { dirname, isAbsolute, join, relative, resolve } from "node:path";
 
 const members = ["inagle", "inagle-cross", "azalee"] as const;
+const archiveFormat = "canonical-tar-gzip-v2";
 const forbidden =
   /(^|\/)(?:\.env(?:\.[^/]*)?|node_modules|target|build|\.git|[^/]*\.(?:nds|nsp|nca|xci|cia|3ds|cpk|keys|pem|pfx|live_save|exe|dll|iso|rom|sav|sqlite|db|7z|zip))($|\/)/i;
 
@@ -62,6 +63,45 @@ with tarfile.open(sys.argv[1], 'r:gz') as archive:
     for member in archive:
         if not (member.isfile() or member.isdir()):
             raise SystemExit('Unsupported archive entry type: ' + member.name)
+`,
+      archive,
+    ],
+    cwd,
+  );
+}
+
+/** Preserve Bun's package selection/content while removing host-dependent tar/gzip metadata. */
+export async function canonicalizePackageArchive(archive: string, cwd: string): Promise<void> {
+  await command(
+    [
+      "python3",
+      "-I",
+      "-c",
+      `import gzip, io, os, sys, tarfile
+path = sys.argv[1]
+payload = io.BytesIO()
+with tarfile.open(path, 'r:gz') as source:
+    entries = source.getmembers()
+    names = [entry.name for entry in entries]
+    if len(names) != len(set(names)):
+        raise SystemExit('Duplicate archive entry')
+    with tarfile.open(fileobj=payload, mode='w', format=tarfile.PAX_FORMAT) as target:
+        for entry in sorted(entries, key=lambda item: item.name):
+            if not (entry.isfile() or entry.isdir()):
+                raise SystemExit('Unsupported archive entry type: ' + entry.name)
+            canonical = tarfile.TarInfo(entry.name)
+            canonical.type = tarfile.DIRTYPE if entry.isdir() else tarfile.REGTYPE
+            canonical.size = 0 if entry.isdir() else entry.size
+            canonical.mode = 0o755 if entry.isdir() or entry.mode & 0o111 else 0o644
+            canonical.mtime = 0
+            canonical.uid = canonical.gid = 0
+            canonical.uname = canonical.gname = ''
+            canonical.pax_headers = {}
+            target.addfile(canonical, source.extractfile(entry) if entry.isfile() else None)
+with open(path + '.canonical', 'wb') as output:
+    with gzip.GzipFile(filename='', mode='wb', fileobj=output, compresslevel=9, mtime=0) as compressed:
+        compressed.write(payload.getvalue())
+os.replace(path + '.canonical', path)
 `,
       archive,
     ],
@@ -130,7 +170,7 @@ export async function prepareIecodePackages(options: {
     packages.push({
       name: metadata.name as string,
       version: metadata.version as string,
-      archive: `${member}-${revision}.tgz`,
+      archive: `${member}-${revision}-v2.tgz`,
       directory,
       allowed,
       entrypoints: [metadata.main, metadata.types, ...Object.values(metadata.bin ?? {})].filter(
@@ -140,6 +180,7 @@ export async function prepareIecodePackages(options: {
   }
   const provenance = {
     schemaVersion: 1,
+    archiveFormat,
     sourceRevision: revision,
     dirty,
     allowDirty: Boolean(options.allowDirty),
@@ -183,6 +224,7 @@ export async function prepareIecodePackages(options: {
       const entries = (await command(["tar", "-tzf", archive], source)).split("\n");
       validateArchiveEntries(entries, item.allowed);
       await validateArchiveTypes(archive, source);
+      await canonicalizePackageArchive(archive, source);
       for (const entrypoint of item.entrypoints) {
         if (!entries.includes(`package/${entrypoint.replace(/^\.\//, "")}`))
           throw new Error(`${item.name} has a missing archive entrypoint: ${entrypoint}`);

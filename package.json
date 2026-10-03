@@ -248,9 +248,9 @@
       "@tailwindcss/node": "^4.3.3",
       "@base-ui/react": "^1.8.0",
       "@tauri-apps/plugin-opener": "3.0.0-alpha.1",
-      "@rosegriffon/inagle": "file:.cache/iecode-packages/inagle-c832e6c553a99ccad92cc64e4ff5b952f7c28c42.tgz",
-      "@rosegriffon/inagle-cross": "file:.cache/iecode-packages/inagle-cross-c832e6c553a99ccad92cc64e4ff5b952f7c28c42.tgz",
-      "@rosegriffon/azalee": "file:.cache/iecode-packages/azalee-c832e6c553a99ccad92cc64e4ff5b952f7c28c42.tgz",
+      "@rosegriffon/inagle": "file:.cache/iecode-packages/inagle-c832e6c553a99ccad92cc64e4ff5b952f7c28c42-v2.tgz",
+      "@rosegriffon/inagle-cross": "file:.cache/iecode-packages/inagle-cross-c832e6c553a99ccad92cc64e4ff5b952f7c28c42-v2.tgz",
+      "@rosegriffon/azalee": "file:.cache/iecode-packages/azalee-c832e6c553a99ccad92cc64e4ff5b952f7c28c42-v2.tgz",
       "@colyseus/bun-websockets": "^0.18.3",
       "@colyseus/schema": "^5.0.34",
       "http-proxy-middleware": "^4.2.0",
@@ -372,9 +372,9 @@
     "undici-types": "catalog:"
   },
   "overrides": {
-    "@rosegriffon/azalee": "file:.cache/iecode-packages/azalee-c832e6c553a99ccad92cc64e4ff5b952f7c28c42.tgz",
-    "@rosegriffon/inagle": "file:.cache/iecode-packages/inagle-c832e6c553a99ccad92cc64e4ff5b952f7c28c42.tgz",
-    "@rosegriffon/inagle-cross": "file:.cache/iecode-packages/inagle-cross-c832e6c553a99ccad92cc64e4ff5b952f7c28c42.tgz",
+    "@rosegriffon/azalee": "file:.cache/iecode-packages/azalee-c832e6c553a99ccad92cc64e4ff5b952f7c28c42-v2.tgz",
+    "@rosegriffon/inagle": "file:.cache/iecode-packages/inagle-c832e6c553a99ccad92cc64e4ff5b952f7c28c42-v2.tgz",
+    "@rosegriffon/inagle-cross": "file:.cache/iecode-packages/inagle-cross-c832e6c553a99ccad92cc64e4ff5b952f7c28c42-v2.tgz",
     "axios": "^1.20.0",
     "qs": "^6.16.0",
     "undici": "^7.30.0"

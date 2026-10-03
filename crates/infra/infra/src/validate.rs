@@ -3,6 +3,7 @@
 //! the topology port policy of `config/production-topology.json` and the
 //! repository registry of `config/stack-training.json`.
 
+use crate::catalog::ServiceCatalog;
 use crate::local_ai::{LocalAiContract, LocalAiEndpoint, LocalAiEnv, LocalAiTarget, load_local_ai};
 use crate::pipeline::{PipelineConfig, check_pipeline, load_pipeline_config};
 use anyhow::{Context, Result};
@@ -33,6 +34,22 @@ fn load(root: &Path, relative: &str) -> Result<Value> {
     let path = root.join(relative);
     let text = fs::read_to_string(&path).with_context(|| format!("lecture {}", path.display()))?;
     serde_json::from_str(&text).with_context(|| format!("JSON invalide: {}", path.display()))
+}
+
+/// Source validation only. Package-owned units still require independent
+/// target-host systemd and health qualification.
+pub fn check_unit_templates(root: &Path, catalog: &ServiceCatalog) -> Vec<String> {
+    catalog
+        .services
+        .iter()
+        .filter(|service| !service.is_retired() && service.requires_unit_template())
+        .filter_map(|service| {
+            let source = root.join("systemd").join(&service.unit);
+            let example = root.join("systemd").join(format!("{}.example", service.unit));
+            (!source.is_file() && !example.is_file())
+                .then(|| format!("{}: unité {} absente de systemd/", service.id, service.unit))
+        })
+        .collect()
 }
 
 pub fn run(root: &Path) -> Result<Report> {
@@ -365,6 +382,11 @@ pub fn check(catalog: &Value, routes: &Value) -> Report {
         check_service_port(&mut report, &mut ports, id, service);
         check_service_capabilities(&mut report, id, service);
         check_retirement(&mut report, id, service);
+        if let Some(source) = service.get("unitSource")
+            && !matches!(source.as_str(), Some("repository" | "system-package"))
+        {
+            report.errors.push(format!("{id}: unitSource doit être repository ou system-package"));
+        }
         if let Some(additional) = service.get("additionalUpstreams") {
             if let Some(addresses) = additional.as_array() {
                 for address in addresses {
@@ -1000,6 +1022,41 @@ pub fn check_local_ai(catalog: &Value, topology: &Value, contract: &LocalAiContr
 mod tests {
     use super::*;
     use serde_json::json;
+
+    #[test]
+    fn unit_template_source_preserves_repository_checks() {
+        let root = tempfile::tempdir().expect("fixture directory");
+        let mut raw = json!({
+            "schemaVersion": 1, "owner": "infra", "supervisor": "systemd", "proxy": "nginx",
+            "services": [{ "id": "redis", "kind": "cache", "runtime": "redis", "unit": "redis-server.service" }]
+        });
+        let load_catalog = |value: &Value| {
+            serde_json::from_value::<ServiceCatalog>(value.clone()).expect("fixture catalog")
+        };
+        assert_eq!(check_unit_templates(root.path(), &load_catalog(&raw)).len(), 1);
+        raw["services"][0]["unitSource"] = json!("repository");
+        assert_eq!(check_unit_templates(root.path(), &load_catalog(&raw)).len(), 1);
+        raw["services"][0]["unitSource"] = json!("system-package");
+        assert!(check_unit_templates(root.path(), &load_catalog(&raw)).is_empty());
+        raw["services"][0]["unitSource"] = json!("repository");
+        fs::create_dir(root.path().join("systemd")).expect("fixture systemd directory");
+        fs::write(root.path().join("systemd/redis-server.service.example"), "[Service]\n")
+            .expect("fixture unit template");
+        assert!(check_unit_templates(root.path(), &load_catalog(&raw)).is_empty());
+    }
+
+    #[test]
+    fn unknown_unit_source_is_not_a_template_exemption() {
+        let raw = json!({ "services": [{ "id": "redis", "unitSource": "external" }] });
+        assert!(check(&raw, &json!({})).errors.iter().any(|error| error.contains("unitSource")));
+        assert!(
+            serde_json::from_value::<crate::catalog::CatalogService>(json!({
+                "id": "redis", "kind": "cache", "runtime": "redis", "unit": "redis-server.service",
+                "unitSource": "external"
+            }))
+            .is_err()
+        );
+    }
 
     fn catalog() -> Value {
         json!({ "services": [

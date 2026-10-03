@@ -35,6 +35,9 @@ pub struct CatalogService {
     pub kind: String,
     pub runtime: String,
     pub unit: String,
+    /// Omitted means a repository-owned systemd template. OS package units
+    /// are validated on their target host, not fabricated in this repository.
+    pub unit_source: Option<UnitSource>,
     pub application: Option<String>,
     pub source_repo: Option<String>,
     pub health: Option<String>,
@@ -59,6 +62,13 @@ pub struct CatalogService {
     pub retired_at: Option<String>,
 }
 
+#[derive(Debug, Clone, Copy, Deserialize, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "kebab-case")]
+pub enum UnitSource {
+    Repository,
+    SystemPackage,
+}
+
 /// Port of a `scheme://host:port/...` or `host:port` address.
 #[must_use]
 pub fn address_port(address: &str) -> Option<u16> {
@@ -68,6 +78,11 @@ pub fn address_port(address: &str) -> Option<u16> {
 }
 
 impl CatalogService {
+    #[must_use]
+    pub fn requires_unit_template(&self) -> bool {
+        self.unit_source != Some(UnitSource::SystemPackage)
+    }
+
     /// Declared `port`, else the port of the `health` probe.
     #[must_use]
     pub fn effective_port(&self) -> Option<u16> {
