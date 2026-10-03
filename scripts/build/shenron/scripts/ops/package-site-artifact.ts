@@ -85,7 +85,16 @@ if (process.argv[3] === "--release-dir") {
     const sourceArchive = join(payloadStage, ".source.tar");
     for (const cmd of [
       ["git", "archive", "--format=tar", "--output", sourceArchive, commit],
-      ["tar", "-xf", sourceArchive, "-C", sourceStage],
+      [
+        "tar",
+        "-xf",
+        sourceArchive,
+        "--exclude=node_modules",
+        "--exclude=*/node_modules",
+        "--exclude=*/node_modules/*",
+        "-C",
+        sourceStage,
+      ],
     ]) {
       const result = run(cmd);
       if (result.exitCode) throw new Error(result.stderr.toString());

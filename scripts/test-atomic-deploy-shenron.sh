@@ -160,6 +160,8 @@ make_bundle "$third_sha" third
 mkdir -p "$fixture/src-third/apps/shenron"
 mv "$fixture/src-third/apps/site" "$fixture/src-third/apps/shenron/site"
 mv "$fixture/src-third/apps/bot" "$fixture/src-third/apps/shenron/bot"
+mkdir -p "$fixture/src-third/packages/infra/workspace/node_modules"
+ln -s '../../../../node_modules/.bun/typescript@5.9.3/node_modules/typescript' "$fixture/src-third/packages/infra/workspace/node_modules/typescript-compiler-api"
 # Monorepo source contains unrelated Infra units; rendering must leave them
 # untouched and never validate their env files as Shenron deployment input.
 mkdir -p "$fixture/src-third/systemd"
@@ -186,6 +188,7 @@ printf 'DATABASE_URL=postgresql://fixture:fixture@127.0.0.1:5432/shenron_site\n'
 bash "$script" assemble "$fixture/bundles/third" >"$fixture/out" 2>&1
 third="$fixture/shenron/releases/$third_sha"
 [[ -L "$third/apps/shenron/bot/data" && -f "$third/apps/shenron/site/.next-build/BUILD_ID" ]]
+[[ ! -e "$third/packages/infra/workspace/node_modules/typescript-compiler-api" && ! -L "$third/packages/infra/workspace/node_modules/typescript-compiler-api" ]]
 grep -q '^EnvironmentFile=-/home/other/private.env$' "$third/systemd/unrelated-owner.service"
 grep -q 'ExecStart=.*current/apps/shenron/site/node_modules/next/dist/bin/next' "$third/systemd/shenron-site.service"
 grep -q 'WorkingDirectory=/srv/shenron/current/apps/shenron/site' "$third/systemd/shenron-site.service"

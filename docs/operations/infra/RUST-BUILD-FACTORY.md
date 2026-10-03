@@ -99,6 +99,33 @@ permission to resume local builds alongside the VPS queue.
 
 ## Evidence — 2026-10-03
 
+The native Infra factory gates passed. The separate NIE check used the actual
+pair Aphrody `98a728a9fe31c76526e566341d752ec9bcad942c` and IECODE
+`c832e6c553a99ccad92cc64e4ff5b952f7c28c42`. After scoped lock reconciliation,
+compilation reached `aphrody-nie-wiki` and failed on six ignored compile-time
+inputs under IECODE's `data/azalee/`:
+
+- `menu-gallery-manifest.json`
+- `item-enrichment.json`
+- `item-image-manifest.json`
+- `menu-asset-manifest.json`
+- `emblem-crc-map.json`
+- `character-face-manifest.json`
+
+All six local copies contain empty collections and cannot serve as verified
+production metadata. No completed NIE compilation, native artifact or Bun ABI
+qualification follows from this run. These missing inputs are distinct from
+the successful Infra qualification.
+
+The current IECODE authority, `docs/nie/game-data/root-manifests.md`, assigns
+these generated indexes to verified VFS/native exports and Inagle
+materialization. An executable owner pipeline generating these exact six
+files has not been identified. The narrow prerequisite is a genuine generated
+metadata snapshot for these names, with source provenance, hashes and private
+read-only provisioning. Do not replace them with empty JSON to satisfy Cargo.
+ROMs, complete game VFS resources, databases and protected data stores remain
+in their existing stores and are not transferred for this qualification.
+
 This change updates wrapper configuration and documents owner constraints.
 No Cargo command, native build or product test was run by the worker. Bash
 syntax validation, PowerShell parser validation and scoped `git diff --check`

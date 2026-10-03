@@ -118,7 +118,9 @@ PY
   chmod 0755 "$stage"
   # shellcheck disable=SC2064
   trap "rm -rf -- '$stage'" EXIT
-  tar -xzf "$source/source.tar.gz" -C "$stage"
+  # Source Git history contains old tracked dependency aliases. Dependencies
+  # are reconstructed exclusively by the pinned frozen Bun install below.
+  tar -xzf "$source/source.tar.gz" --exclude='node_modules' --exclude='*/node_modules' --exclude='*/node_modules/*' -C "$stage"
   python3 - "$stage" <<'PY'
 import pathlib
 import sys
