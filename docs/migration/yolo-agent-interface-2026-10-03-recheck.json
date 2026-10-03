@@ -1,0 +1,48 @@
+{
+  "schemaVersion": 1,
+  "scope": "synthetic HTTP parse positive control, parent traversal, symlink and origin fixtures; no protected data or live browser used; not full protocol conformance",
+  "success": false,
+  "elapsedMs": 13.670454,
+  "checks": [
+    {
+      "id": "inside_control",
+      "httpStatus": 200,
+      "sentinelReturned": true,
+      "allowOrigin": null
+    },
+    {
+      "id": "parent_traversal",
+      "httpStatus": 500,
+      "sentinelReturned": false,
+      "allowOrigin": null
+    },
+    {
+      "id": "symlink_escape",
+      "httpStatus": 200,
+      "sentinelReturned": true,
+      "allowOrigin": null
+    },
+    {
+      "id": "external_origin",
+      "httpStatus": 200,
+      "sentinelReturned": true,
+      "allowOrigin": null
+    },
+    {
+      "id": "authority_confusion",
+      "httpStatus": 200,
+      "sentinelReturned": true,
+      "allowOrigin": "http://localhost:1234@example.invalid"
+    }
+  ],
+  "findings": [
+    {
+      "code": "OUTSIDE_ROOT_METADATA_ACCESS",
+      "check": "symlink_escape"
+    },
+    {
+      "code": "MALFORMED_ORIGIN_REFLECTED",
+      "check": "authority_confusion"
+    }
+  ]
+}
