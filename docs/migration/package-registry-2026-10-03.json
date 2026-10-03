@@ -2833,7 +2833,7 @@
       "sourceDirty": true,
       "forkRepository": "https://github.com/aphrody-labs/ag-ui-client",
       "forkCommit": "8dfc6fab234a2040abb1c1c0dffb3d95c11ce40d",
-      "standalonePath": "/home/aphro/aphrody-packages/ag-ui-client",
+      "standaloneRepository": "https://github.com/aphrody-labs/ag-ui-client",
       "files": [
         {
           "source": "packages/ui/ag-ui/client/.npmignore",
@@ -3875,7 +3875,7 @@
       "sourceDirty": false,
       "forkRepository": "https://github.com/aphrody-labs/mcp-ui",
       "forkCommit": "aa8bf35aa9adcb6c2d5dbf42562030bb04aeafee",
-      "standalonePath": "/home/aphro/aphrody-packages/mcp-ui",
+      "standaloneRepository": "https://github.com/aphrody-labs/mcp-ui",
       "files": [
         {
           "source": "packages/ui/mcp-ui/CHANGELOG.md",
@@ -4070,7 +4070,7 @@
       "sourceDirty": false,
       "forkRepository": "https://github.com/aphrody-labs/material-web",
       "forkCommit": "a6635073845dea2c982ec533132065889929be26",
-      "standalonePath": "/home/aphro/aphrody-packages/material-web",
+      "standaloneRepository": "https://github.com/aphrody-labs/material-web",
       "files": [
         {
           "source": "packages/ui/material-web/.gitignore",

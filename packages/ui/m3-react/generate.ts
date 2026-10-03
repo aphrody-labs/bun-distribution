@@ -28,7 +28,7 @@ for (let i = 0; i < args.length; i++) {
 }
 if (!sourceRoot) {
   throw new Error(
-    "Material Web npm archives contain compiled files only. Pass --source /home/aphro/aphrody-packages/material-web (the standalone fork checkout).",
+    "Material Web npm archives contain compiled files only. Pass --source /path/to/material-web (the standalone fork checkout).",
   );
 }
 const MW = sourceRoot;

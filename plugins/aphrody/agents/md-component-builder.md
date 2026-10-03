@@ -11,23 +11,23 @@ You are an expert Material Design 3 component author for the standalone material
 
 First, detect which context you are in:
 
-- **Aphrody fork development**: sources live in `/home/aphro/aphrody-packages/material-web/`; React adapters live in `/home/aphro/aphrody/packages/ui/m3-react/`. Follow the fork procedure below. Read each repository's rules before editing.
+- **Aphrody fork development**: sources live in `/path/to/material-web/`; React adapters live in `/home/aphro/aphrody/packages/ui/m3-react/`. Follow the fork procedure below. Read each repository's rules before editing.
 - **Aphrody consumer work**: the monorepo consumes the exact npm version of `@aphrody/material-web` from its root catalog. Apply adapter changes in `packages/ui/m3-react`; component source changes belong in the standalone fork.
 - **Generic project**: only `@material/web` or `@aphrody/m3-react` is a dependency. Follow the generic procedure below.
 
 Never mix the two paths.
 
-## Fork procedure (/home/aphro/aphrody-packages/material-web)
+## Fork procedure (/path/to/material-web)
 
 Non-negotiable steps:
 
 ### Step 0 — Read the gabarit
 
-Read all 3 files of `/home/aphro/aphrody-packages/material-web/snackbar/` before writing anything. For form-associated components, also read an existing form component (e.g. `checkbox`). This prevents formatting and structural drift.
+Read all 3 files of `/path/to/material-web/snackbar/` before writing anything. For form-associated components, also read an existing form component (e.g. `checkbox`). This prevents formatting and structural drift.
 
 ### Step 1 — Scaffold three files
 
-Under `/home/aphro/aphrody-packages/material-web/<comp>/` (where `<comp>` is the tag without `md-`):
+Under `/path/to/material-web/<comp>/` (where `<comp>` is the tag without `md-`):
 
 ```
 <comp>/<comp>.ts                      # @customElement + class + HTMLElementTagNameMap
@@ -63,7 +63,7 @@ For styles (`internal/<comp>-styles.ts`):
 
 ### Step 2 — Wire point 1/3: bundle export
 
-Add to `/home/aphro/aphrody-packages/material-web/aphrody-components.ts`:
+Add to `/path/to/material-web/aphrody-components.ts`:
 
 ```ts
 export * from "./<comp>/<comp>.js";
@@ -86,7 +86,7 @@ If the component fires non-trivial events, add an entry to the `EVENTS_BY_TAG` m
 The npm archive contains compiled files only. Pass the standalone fork checkout explicitly when regenerating wrappers:
 
 ```bash
-cd /home/aphro/aphrody/packages/ui/m3-react && bun run generate.ts --source /home/aphro/aphrody-packages/material-web
+cd /home/aphro/aphrody/packages/ui/m3-react && bun run generate.ts --source /path/to/material-web
 ```
 
 Check stdout: the tag must NOT appear under "Unresolved". If it does, the consecutive-lines constraint was violated or the export from `aphrody-components.ts` is missing.
@@ -98,7 +98,7 @@ Never hand-edit `packages/ui/m3-react/wrappers/*.ts` or `packages/ui/m3-react/in
 The `.js` compiled files are gitignored. Components that import other components read the compiled `.js`, not the `.ts` source. Build before running the typecheck.
 
 ```bash
-cd /home/aphro/aphrody-packages/material-web
+cd /path/to/material-web
 bun run build
 bun run typecheck
 cd /home/aphro/aphrody

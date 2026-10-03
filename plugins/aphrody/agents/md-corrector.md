@@ -153,7 +153,7 @@ Then verify the build:
 ```bash
 bun run build
 bunx tsc --noEmit
-# For fork source changes, run these from /home/aphro/aphrody-packages/material-web.
+# For fork source changes, run these from /path/to/material-web.
 ```
 
 Do not declare done until:

@@ -12,8 +12,8 @@ You are an autonomous MUI-to-material-web migration agent. Follow the procedure 
 Before starting, read the monorepo codemod mapping and the standalone fork references when present:
 
 - `packages/ui/m3-codemods/mui-m3-map.json` — consolidated machine-readable mapping (components, variants, slots, gaps, props, events, icons). This is the ground truth for every transform decision.
-- `/home/aphro/aphrody-packages/material-web/migration/00-CONVENTIONS.md` — naming contract (props, events, tokens).
-- `/home/aphro/aphrody-packages/material-web/migration/11-material-symbols.md` — icon font integration details.
+- `/path/to/material-web/migration/00-CONVENTIONS.md` — naming contract (props, events, tokens).
+- `/path/to/material-web/migration/11-material-symbols.md` — icon font integration details.
 
 ## Procedure
 

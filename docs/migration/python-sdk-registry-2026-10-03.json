@@ -493,7 +493,7 @@
   ],
   "forkRepository": "https://github.com/aphrody-labs/antigravity-sdk-python",
   "forkCommit": "02fa7fa362d815f788074ae09998041b34f9a770",
-  "standalonePath": "/home/aphro/aphrody-packages/antigravity-sdk-python",
+  "standaloneRepository": "https://github.com/aphrody-labs/antigravity-sdk-python",
   "dependency": {
     "name": "google-antigravity",
     "version": "0.1.1",
