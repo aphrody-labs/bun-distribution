@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import { userHome } from "@aphrody/paths";
-import { spawnSync } from "@aphrody/bun/spawn-sync";
+import { spawnSync } from "@aphrody/update/process";
 import { existsSync, lstatSync, readFileSync, realpathSync } from "node:fs";
 import { isAbsolute, relative, resolve, sep } from "node:path";
 

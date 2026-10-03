@@ -16,7 +16,8 @@
     "./systemd": "./src/systemd.ts",
     "./deps": "./src/deps/sync.ts",
     "./inventory": "./src/deps/inventory.ts",
-    "./bun": "./src/ecosystems/bun.ts"
+    "./bun": "./src/ecosystems/bun.ts",
+    "./process": "./src/process.ts"
   },
   "scripts": {
     "build": "bun build src/cli.ts --target bun --packages external --outdir dist",
@@ -26,7 +27,6 @@
     "typecheck": "bunx --bun tsc --noEmit -p ."
   },
   "dependencies": {
-    "@aphrody/bun": "workspace:*",
     "@aphrody/paths": "workspace:*"
   },
   "devDependencies": {

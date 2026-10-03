@@ -27,7 +27,7 @@
 //   aphrody-ops agent-home --source <aphrody-root> --dry-run  # print it, touch nothing
 //   aphrody-ops agent-home --source <aphrody-root> --profile shenron   # workspace-shenron
 
-import { spawnSync } from "@aphrody/bun/spawn-sync";
+import { spawnSync } from "@aphrody/update/process";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join, resolve } from "node:path";

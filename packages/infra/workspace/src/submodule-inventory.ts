@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 /** Read Gitlink and .gitmodules state without initializing or modifying submodules. */
-import { execFileSync } from "@aphrody/bun/spawn-sync";
+import { execFileSync } from "@aphrody/update/process";
 import { createHash } from "node:crypto";
 import { existsSync } from "node:fs";
 import { lstat, readFile, readlink } from "node:fs/promises";

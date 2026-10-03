@@ -81,6 +81,7 @@
   "dependencies": {
     "@aphrody/bun": "workspace:*",
     "@aphrody/paths": "workspace:*",
+    "@aphrody/update": "workspace:*",
     "@typescript/typescript6": "^6.0.2",
     "ts-morph": "catalog:"
   },

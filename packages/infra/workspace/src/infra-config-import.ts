@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 /** Stage Infra catalogs at the new monorepo root with explicit provenance. */
-import { execFileSync } from "@aphrody/bun/spawn-sync";
+import { execFileSync } from "@aphrody/update/process";
 import { createHash } from "node:crypto";
 import { existsSync } from "node:fs";
 import { mkdir, readFile, writeFile } from "node:fs/promises";

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 /** Stage the Infra scripts referenced by copied systemd units. */
-import { execFileSync } from "@aphrody/bun/spawn-sync";
+import { execFileSync } from "@aphrody/update/process";
 import { constants } from "node:fs";
 import { createHash } from "node:crypto";
 import { existsSync } from "node:fs";

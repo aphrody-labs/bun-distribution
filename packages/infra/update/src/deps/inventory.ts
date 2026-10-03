@@ -13,7 +13,7 @@
  */
 import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from "node:fs";
 import { dirname, join, relative } from "node:path";
-import { spawnSync } from "@aphrody/bun/spawn-sync";
+import { spawnSync } from "../process.ts";
 import { cmpVersion } from "./sync.ts";
 
 export type Dep = { ecosystem: "crates.io" | "npm" | "PyPI"; name: string; version: string };

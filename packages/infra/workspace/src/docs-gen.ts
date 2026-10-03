@@ -15,7 +15,7 @@
  *
  * `cargo metadata --no-deps` is read-only: it never builds.
  */
-import { spawnSync } from "@aphrody/bun/spawn-sync";
+import { spawnSync } from "@aphrody/update/process";
 import { existsSync, readFileSync, readdirSync, statSync, writeFileSync } from "node:fs";
 import { dirname, join, relative, resolve } from "node:path";
 

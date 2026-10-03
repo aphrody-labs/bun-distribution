@@ -15,7 +15,7 @@
 import { existsSync, readdirSync, rmSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
-import { spawnSync } from "@aphrody/bun/spawn-sync";
+import { spawnSync } from "../process.ts";
 import { Ctx } from "../context.ts";
 import { refHead } from "./drift.ts";
 import { lsRemote } from "../deps/inventory.ts";

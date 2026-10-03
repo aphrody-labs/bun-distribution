@@ -20,7 +20,7 @@
 import { existsSync, readFileSync, writeFileSync, mkdirSync, readdirSync } from "node:fs";
 import { homedir } from "node:os";
 import { join, resolve } from "node:path";
-import { spawnSync } from "@aphrody/bun/spawn-sync";
+import { spawnSync } from "../process.ts";
 import { pluginStorePath } from "@aphrody/paths";
 import { Ctx } from "../context.ts";
 

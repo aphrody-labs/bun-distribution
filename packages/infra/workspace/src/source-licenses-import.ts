@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 /** Preserve pinned root license and notice files without reading delegated UI. */
-import { execFileSync } from "@aphrody/bun/spawn-sync";
+import { execFileSync } from "@aphrody/update/process";
 import { createHash } from "node:crypto";
 import { existsSync } from "node:fs";
 import { mkdir, readFile, writeFile } from "node:fs/promises";

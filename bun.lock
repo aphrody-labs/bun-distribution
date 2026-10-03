@@ -593,7 +593,6 @@
         "aphrody-update": "./src/cli.ts",
       },
       "dependencies": {
-        "@aphrody/bun": "workspace:*",
         "@aphrody/paths": "workspace:*",
       },
       "devDependencies": {
@@ -611,6 +610,7 @@
       "dependencies": {
         "@aphrody/bun": "workspace:*",
         "@aphrody/paths": "workspace:*",
+        "@aphrody/update": "workspace:*",
         "@typescript/typescript6": "^6.0.2",
         "ts-morph": "catalog:",
       },
@@ -618,6 +618,9 @@
     "packages/interop/native": {
       "name": "@aphrody/bun",
       "version": "3.3.3",
+      "dependencies": {
+        "@aphrody/update": "workspace:*",
+      },
       "devDependencies": {
         "@types/bun": "catalog:",
         "@types/node": "catalog:",
