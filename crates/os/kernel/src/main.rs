@@ -126,7 +126,7 @@ async fn builtin_kernel(
             .await?;
     }
     // Subsystems of higher layers (aphrody-ui, aphrody-web) run as MCP plugin processes: this
-    // repository never links them (aphrody-infra/docs/REPO-LAYERING.md).
+    // repository never links them (docs/REPO-LAYERING.md).
     let mut occupied: HashSet<String> =
         kernel.tools().await.into_iter().map(|(_, tool)| tool.name).collect();
     let mut plugins: Vec<PluginEntry> = Vec::new();

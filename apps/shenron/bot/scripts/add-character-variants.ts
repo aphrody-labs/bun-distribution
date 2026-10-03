@@ -24,8 +24,8 @@
  * inserts viennent du site, cf. « PK wiki en IDENTITY »). Idempotent.
  *
  * Lancer sur le VPS (PG local) :
- *   sudo systemd-run --pipe -p EnvironmentFile=/home/ubuntu/.shenron-neon.env \
- *     --working-directory=/home/ubuntu/shenron/apps/shenron/bot bun scripts/add-character-variants.ts
+ *   sudo systemd-run --pipe -p EnvironmentFile=~/.shenron-neon.env \
+ *     --working-directory=apps/shenron/shenron/bot bun scripts/add-character-variants.ts
  * ou simplement `DATABASE_URL=... bun scripts/add-character-variants.ts`.
  */
 import postgres from "postgres";

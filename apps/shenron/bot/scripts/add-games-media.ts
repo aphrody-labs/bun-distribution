@@ -2,8 +2,8 @@
  * Ajoute la colonne PG-only `media` (jsonb) sur `bot.db_games` : galerie style
  * Steam (images + trailers YouTube) sous la description de la fiche jeu.
  *
- *   sudo systemd-run --pipe -p EnvironmentFile=/home/ubuntu/.shenron-neon.env \
- *     --working-directory=/home/ubuntu/shenron/apps/shenron/bot bun scripts/add-games-media.ts
+ *   sudo systemd-run --pipe -p EnvironmentFile=~/.shenron-neon.env \
+ *     --working-directory=apps/shenron/shenron/bot bun scripts/add-games-media.ts
  */
 import postgres from "postgres";
 

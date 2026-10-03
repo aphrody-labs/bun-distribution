@@ -1,7 +1,7 @@
 -- Les deux participations INSTAGRAM d'IERG Day entrent dans la galerie.
 --
 -- Application :
---   export PGPASSWORD=$(grep -oP 'postgresql://rg:\K[^@]+' /home/ubuntu/rg/.env | head -1)
+--   export PGPASSWORD=$(grep -oP 'postgresql://rg:\K[^@]+' ../rg/.env | head -1)
 --   psql -h 127.0.0.1 -U rg -d rg -f apps/website/sql/migrations/20260822_iergday_participations_instagram.sql
 --
 -- ─────────────────────────────────────────────────────────────────────────────

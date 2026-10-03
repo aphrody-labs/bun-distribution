@@ -320,7 +320,7 @@ ci-dessous sont des points de contact dans cet arbre, pas un workspace déjà in
    Un alias de package ne sera accepté qu'après build et test du workspace concerné.
 7. Mettre à jour `scripts/rg/check-imports.ts`, `turbo.json`, `.oxlintrc`, CODEOWNERS et les
    gates CI pour les nouveaux chemins ; les scripts source qui hardcodent `apps/rg/bot`,
-   `apps/web` (not in repo) ou `/home/ubuntu/achillea` ne sont pas réutilisables sans adaptation.
+   `apps/web` (not in repo) ou `~/achillea` ne sont pas réutilisables sans adaptation.
 
 ### 8.4 Frontière runtime, données et sécurité
 
@@ -354,7 +354,7 @@ et `apps/rg/website/sql`. Avant toute exécution, il faut :
   portage de sources. Ils peuvent contenir des PII ou des fichiers utilisateurs.
 
 Les deux copies de systemd source (`infra/systemd` et `apps/bot/infra` (not in repo)) diffèrent ; la copie
-racine est la candidate canonique, mais ses chemins `/home/ubuntu/achillea` et ses timers
+racine est la candidate canonique, mais ses chemins `~/achillea` et ses timers
 doivent être paramétrés avant toute installation. Même règle pour les vhosts Nginx déjà
 présents dans RG : une seule source versionnée, une seule procédure d'activation.
 
@@ -402,7 +402,7 @@ ce qui existe déjà de ce qui manque :
   assets de marque réellement partagés dans `packages/rg/assets`. Inventorier les doublons
   `apps/rg/website/public/achillea`, `apps/azalee/public/achillea` (not in repo) et le package avant toute
   suppression ; réécrire séparément les anciennes URLs `api.alessf.fr` ;
-- remplacer le script source de publication, qui suppose `/home/ubuntu/achillea` et
+- remplacer le script source de publication, qui suppose `~/achillea` et
   `apps/web/dist/achillea-web/browser` (not in repo), par un adaptateur compatible avec les releases RG.
   Le déploiement bleu/vert RG actuel ne connaît que website/Azalée ; aucune bascule Angular
   ne doit être déduite de son seul succès ;

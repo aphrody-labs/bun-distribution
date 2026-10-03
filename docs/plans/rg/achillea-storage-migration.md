@@ -20,7 +20,7 @@ logs.
 | Bucket public   | `images`                                         | `images`                                             |
 | Bucket privé    | `ranked-proofs`                                  | `ranked-proofs`                                      |
 | Racine d’octets | gérée par Supabase Cloud                         | `/var/www/achillea-storage`                          |
-| État opérateur  | aucun                                            | `/home/ubuntu/achillea-storage-migration` par défaut |
+| État opérateur  | aucun                                            | `~/achillea-storage-migration` par défaut |
 
 Les deux credentials doivent être rotatés, distincts et chargés depuis un
 fichier privé externe au dépôt. La source refuse localhost, les adresses IP,
@@ -75,7 +75,7 @@ phases. Ces commandes ne créent aucun fichier et ne font aucun appel réseau :
 
 ```bash
 set -a
-. /home/ubuntu/.bash_secrets
+. ~/.bash_secrets
 set +a
 
 bun scripts/rg/achillea/migrate-storage-objects.ts --inventory

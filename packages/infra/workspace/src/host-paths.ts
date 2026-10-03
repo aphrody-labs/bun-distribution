@@ -73,16 +73,19 @@ const RULES: { rule: HostPathRule; pattern: RegExp; rewrite?: (match: string) =>
       /\/home\/(?!ubuntu\b)[\w.-]+(?=\/)|\/Users\/[\w.-]+(?=\/)|[A-Za-z]:(?:\\\\|\\|\/)Users(?:\\\\|\\|\/)[\w.-]+/g,
     rewrite: (match) => (match.startsWith("/") ? "~" : "%USERPROFILE%"),
   },
-  { rule: "vps-home", pattern: /\/home\/ubuntu\b/g },
+  { rule: "vps-home", pattern: /\/home\/ubuntu\b/g, rewrite: () => "~" },
   { rule: "wsl-mount", pattern: /(?<![\w.-])\/mnt\/[a-z](?=\/)/g },
   {
     rule: "legacy-layout",
     pattern:
       /\baphrody-src\b|\baphrody-(?:infra|ai|web|ui|os|compat|contracts|shell|native)\/(?:scripts|crates|systemd|nginx|packages|apps|config|docs)\b/g,
+    rewrite: (match) =>
+      match.startsWith("aphrody-infra/") ? match.slice("aphrody-infra/".length) : match,
   },
 ];
 const PREFILTER = String.raw`/home/|/Users/|[A-Za-z]:[\\/]+Users|/mnt/[a-z]/|/source([/"'\x60[:space:])]|$)|aphrody-src|aphrody-(infra|ai|web|ui|os|compat|contracts|shell|native)/`;
-const REWRITABLE: HostPathArea[] = ["docs", "record", "data", "unit"];
+const REWRITABLE: HostPathArea[] = ["docs", "record", "data", "unit", "code"];
+const COMMENT_LINE = /^\s*(\/\/|\/\*|\*|#(?!!)|<!--|--\s)/;
 /** Rules a zone legitimately carries: fixtures and the declared VPS catalog name hosts on purpose. */
 const ALLOWED: Partial<Record<HostPathArea, HostPathRule[]>> = {
   host: ["vps-home", "legacy-layout", "vps-shenron-checkout"],
@@ -119,6 +122,7 @@ function rewriteFor(
   match: string,
   rewrite: (match: string) => string,
 ): string {
+  if (rule === "legacy-layout" && area !== "code") return match;
   if (area !== "unit") return rewrite(match);
   if (rule === "repo-absolute") return match.endsWith("/") ? "%h/aphrody/" : "%h/aphrody";
   if (rule === "user-home") return "%h";
@@ -141,8 +145,8 @@ export function scanHostPaths(text: string, area: HostPathArea): HostPathFinding
           line: index + 1,
           rule,
           match: match[0],
-          ...(rewrite && area !== "code" && area !== "config"
-            ? { rewrite: rewrite(match[0]) }
+          ...(rewrite && REWRITABLE.includes(area) && (area !== "code" || COMMENT_LINE.test(line))
+            ? { rewrite: rewriteFor(area, rule, match[0], rewrite) }
             : {}),
         });
       }
@@ -156,6 +160,7 @@ export function rewriteHostPaths(text: string, area: HostPathArea): string {
   return text
     .split("\n")
     .map((line) => {
+      if (area === "code" && !COMMENT_LINE.test(line)) return line;
       const claimed: [number, number, string][] = [];
       for (const { rule, pattern, rewrite } of RULES)
         for (const match of line.matchAll(pattern)) {

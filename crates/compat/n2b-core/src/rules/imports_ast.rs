@@ -41,7 +41,7 @@ pub struct Specifier {
 
 /// N2B's view of the `PageArtifact` JSON hand-off produced by Aphrody Web
 /// (`aphrody_web_service::page_artifact`). The serialized shape is the contract: N2B sits in a
-/// lower layer than aphrody-web (aphrody-infra/docs/REPO-LAYERING.md) and never links it. Only
+/// lower layer than aphrody-web (docs/REPO-LAYERING.md) and never links it. Only
 /// the fields N2B reads are declared; the producer may add more.
 #[derive(Debug, Clone, Deserialize)]
 pub struct PageArtifact {

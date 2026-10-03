@@ -154,7 +154,7 @@ restaure tout (y compris les fichiers de seed rafraîchis) en cas d'échec ;
 
 État observé le 2026-09-26 (lecture seule) : release `4cac743f` active,
 `shenron-site`, `shenron-bot`, `shenron-pg-tunnel` actifs, `shenron-backup.timer`
-installé et actif (le checkout `/home/ubuntu/aphrody-infra` existe).
+installé et actif (le checkout `~/aphrody-infra` existe).
 
 Écart restant : le bot utilise le Redis local du VPS (clés `dbz:*`,
 `REDIS_URL` non défini) et non celui de dbfr.
@@ -218,7 +218,7 @@ filebrowser, watchdog et superviseurs propres à Shenron sont retirées du plan.
   `systemd/shenron-zswap.service` (not in repo) supprimée (unité retirée, absente des deux hôtes).
 - Écart résolu (2026-09-30) : sur DBFR, `shenron-pg-backup.service` et
   `shenron-sqlite-replica-backup.service` disposent d'un fallback direct et
-  résilient vers `/home/ubuntu/shenron/scripts/backup-shenron-{pg,sqlite}.sh`
+  résilient vers `~/shenron/scripts/backup-shenron-{pg,sqlite}.sh`
   avec création automatique des répertoires de destination (`ExecStartPre`). Les
   sauvegardes ont été déclenchées manuellement et validées avec succès
   (status 0/SUCCESS, dumps compressés vérifiés).
@@ -257,5 +257,5 @@ stricte entre les dépôts (`aphrody` et `aphrody-infra`) et les serveurs réels
 
 5. **Nettoyage et Purge des Résidus** :
    - Monorepo : suppression du répertoire orphelin `packages/shenron/_preview` (not in repo) (457 fichiers) et masquage de `/.coord/` dans `.gitignore`.
-   - VPS & DBFR : suppression de `/home/ubuntu/.shenron-build-tmp` et `.shenron-isr-release-dir`.
+   - VPS & DBFR : suppression de `~/.shenron-build-tmp` et `.shenron-isr-release-dir`.
    - Validation `aphrody-infra validate` : 23 services, 25 routes, 0 violation.

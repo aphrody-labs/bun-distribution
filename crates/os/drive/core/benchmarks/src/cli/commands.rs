@@ -79,7 +79,7 @@ pub enum Commands {
 		/// Skip dataset generation (assume recipes already generated)
 		#[arg(long, default_value_t = false)]
 		skip_generate: bool,
-		/// Dataset locations to benchmark (e.g., "/Volumes/HDD" "/Users/me/benchdata")
+		/// Dataset locations to benchmark (e.g., "/Volumes/HDD" "~/benchdata")
 		/// Hardware type will be automatically detected from the volume
 		#[arg(long, num_args = 1.., value_delimiter = ' ')]
 		locations: Option<Vec<String>>,

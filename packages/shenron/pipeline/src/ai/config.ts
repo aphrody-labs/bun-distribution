@@ -4,7 +4,7 @@
  * (docs/STACK.md §3.4, docs/ENV.md).
  *
  * Runtime class: `pure`. Environment names follow the aphrody-infra local AI
- * contract v1 (`aphrody-infra/config/local-ai.json`): the canonical
+ * contract v1 (`config/local-ai.json`): the canonical
  * `APHRODY_AI_*` name is read first, then each legacy alias in the contract
  * order; an alias written in another URL form (origin, endpoint) is converted
  * to the base form. No URL, host or port default lives here (D16): every

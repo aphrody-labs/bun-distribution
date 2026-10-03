@@ -15,12 +15,12 @@
  * un synopsis est trouvé → resumable, ré-exécutable sans risque.
  *
  * Env requis : DATABASE_URL = connection string Neon (chargée via
- *   /home/ubuntu/.shenron-neon.env, comme les timers de sync).
+ *   ~/.shenron-neon.env, comme les timers de sync).
  * Env optionnels : ONLY_SERIES=DBZ (limiter à une série), LIMIT=10 (n épisodes).
  *
  * Usage :
- *   set -a; . /home/ubuntu/.shenron-neon.env; set +a; \
- *   /home/ubuntu/.bun/bin/bun apps/shenron/bot/scripts/enrich-episode-synopsis.ts
+ *   set -a; . ~/.shenron-neon.env; set +a; \
+ *   ~/.bun/bin/bun apps/shenron/bot/scripts/enrich-episode-synopsis.ts
  */
 import postgres from "postgres";
 

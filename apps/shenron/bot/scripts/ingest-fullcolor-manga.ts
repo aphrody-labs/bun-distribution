@@ -13,8 +13,8 @@
  *
  * Env requis : DATABASE_URL (Neon).
  * Usage :
- *   sudo systemd-run --pipe -p EnvironmentFile=/home/ubuntu/.shenron-neon.env \
- *     --working-directory=/home/ubuntu/shenron/apps/shenron/bot \
+ *   sudo systemd-run --pipe -p EnvironmentFile=~/.shenron-neon.env \
+ *     --working-directory=apps/shenron/shenron/bot \
  *     bun scripts/ingest-fullcolor-manga.ts [--dry-run]
  *   # puis: systemctl restart shenron  (recharge le schéma + relâche le lock)
  */

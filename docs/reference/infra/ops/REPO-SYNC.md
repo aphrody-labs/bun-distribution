@@ -40,7 +40,7 @@ bun scripts/ops/repo-sync.ts --repo all --pull --commit --push
 # même opération sur un VPS accessible par une clé SSH
 REPO_SYNC_VPS=mon-alias \
 REPO_SYNC_REMOTE_RG_ROOT=../rg \
-REPO_SYNC_REMOTE_NIE_ROOT=/home/ubuntu/nie \
+REPO_SYNC_REMOTE_NIE_ROOT=~/nie \
 bun scripts/ops/repo-sync.ts --repo all --pull --commit --push --vps
 ```
 
@@ -141,7 +141,7 @@ automatiquement.
 Le script supporte un poste local et un VPS distincts, mais ne devine pas un
 hôte. Sur la machine où ce registre a été vérifié le 2026-09-05, l'alias
 `vps-tunnel`/`ovh-vps-direct` n'est pas défini ; `newvps` pointe vers un hôte
-qui ne contient ni `../rg` ni `/home/ubuntu/nie`. Il serait donc
+qui ne contient ni `../rg` ni `~/nie`. Il serait donc
 incorrect de déclarer la synchronisation locale comme fonctionnelle. Pour
 l'activer, créer un alias SSH non interactif avec une clé dédiée et les deux
 racines présentes, puis renseigner `REPO_SYNC_VPS`,
@@ -150,7 +150,7 @@ exécuter avant activation est :
 
 ```bash
 ssh -o BatchMode=yes "$REPO_SYNC_VPS" \
-  "test -d '${REPO_SYNC_REMOTE_RG_ROOT:-../rg}' && test -d '${REPO_SYNC_REMOTE_NIE_ROOT:-/home/ubuntu/nie}'"
+  "test -d '${REPO_SYNC_REMOTE_RG_ROOT:-../rg}' && test -d '${REPO_SYNC_REMOTE_NIE_ROOT:-~/nie}'"
 ```
 
 Tant que cette sonde échoue, le timer local reste un checkpoint local et ne
@@ -160,7 +160,7 @@ prétend pas synchroniser une machine absente.
 
 Le cache GLB de `nie-model-serve` est régénérable. Le pruner refuse un service
 actif par défaut, ne suit aucune symlink, ne touche pas `VERSION` et n'accepte
-que `/home/ubuntu/nie/var/model-cache` :
+que `~/nie/var/model-cache` :
 
 ```bash
 # aperçu (conserve les fichiers de moins de 24 h)
@@ -192,7 +192,7 @@ doit être suivie de `/health`, d'une requête GLB réelle et d'une mesure
 ```bash
 bun scripts/ops/repo-sync.ts --repo all --pull --commit --push
 git -C ../rg status --short --branch
-git -C /home/ubuntu/nie status --short --branch
+git -C ~/nie status --short --branch
 systemctl is-active website-web.service nie-model-serve.service rg-cdn.service cdn-variants.service
 curl --fail --silent https://rosegriffon.fr/wiki
 curl --head https://azalee.rosegriffon.fr/

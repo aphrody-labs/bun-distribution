@@ -85,7 +85,7 @@ impl LibraryQuery for ValidateLocationPathQuery {
 		let is_system_dir = system_dirs.iter().any(|d| {
 			// Root paths (Unix "/" or Windows "C:\") must match exactly.
 			// Using starts_with() on a root dir would flag every child path as a
-			// system directory — e.g. "C:\" would match "C:\Users\alice\OneDrive".
+			// system directory — e.g. "C:\" would match "%USERPROFILE%\OneDrive".
 			let d_is_root = d.parent().is_none();
 			let matches = if d_is_root {
 				path == d

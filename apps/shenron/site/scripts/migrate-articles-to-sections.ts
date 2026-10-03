@@ -14,7 +14,7 @@
  *   DATABASE_URL=... bun apps/shenron/site/scripts/migrate-articles-to-sections.ts
  *   DATABASE_URL=... bun apps/shenron/site/scripts/migrate-articles-to-sections.ts --apply
  *   … --table db_planets --entity-type planet --limit 50
- * ou via systemd-run avec EnvironmentFile=/home/ubuntu/.shenron-neon.env.
+ * ou via systemd-run avec EnvironmentFile=~/.shenron-neon.env.
  */
 import postgres from "postgres";
 import { splitArticleSections } from "../src/lib/wiki-article-sections";

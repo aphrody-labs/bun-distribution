@@ -136,7 +136,7 @@ ne peut pas prouver la disponibilité du modèle à l'exécution.
 `scripts/transcribe-manga.py` (not in repo) a été rendu portable + pilotable par env, et **corrigé d'un bug de
 recognizer** (le vrai gain de qualité — cf. ci-dessous) :
 
-- **Chemin dynamique** : `ROOT` est résolu via `__file__` (plus de `/home/ubuntu/...` codé en dur) →
+- **Chemin dynamique** : `ROOT` est résolu via `__file__` (plus de `~/...` codé en dur) →
   tourne sur le VPS comme en local.
 - **Device** : `OCR_DEVICE` (`"cpu"` par défaut, `"gpu"` pour CUDA). PaddleOCR 3.x/PaddleX attend
   `device="gpu"` (et **non** l'ancien `use_gpu=True`). Le fallback CPU est strictement identique à avant

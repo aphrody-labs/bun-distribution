@@ -121,7 +121,7 @@ redis-cli -n 3 HGETALL iev:file:index | grep -i 'common/chr' | head
 # Dimensions d'une texture de face
 redis-cli -n 3 HGETALL 'iev:tex:data/dx11/chr/_face/11_victory/c02026080/c02026080.g4tx'
 # Résoudre un CRC de modèle (uniforme) → cpk/path
-grep '"crc":<CRC>' /home/ubuntu/nie/var/model-crc-manifest.ndjson
+grep '"crc":<CRC>' ~/nie/var/model-crc-manifest.ndjson
 # Assembler un modèle complet (niers)
 cargo run -p nie-formats --example assemble -- <internalCode>   # (selon l'API d'assemble.rs)
 ```

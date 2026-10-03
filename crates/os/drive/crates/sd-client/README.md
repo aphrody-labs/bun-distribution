@@ -30,7 +30,7 @@ async fn main() -> anyhow::Result<()> {
     let files = client.media_listing(
         SdPath::Physical {
             device_id: "local".to_string(),
-            path: "/Users/you/Photos".to_string(),
+            path: "~/Photos".to_string(),
         },
         Some(1000),
     ).await?;

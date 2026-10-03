@@ -87,7 +87,7 @@ closed 2026-09-26.
 | `downloads.aphrody.com` / `admin.aphrody.com` | `/` | none — reserved, explicit 410 | reserved; no backing service |
 | `cdn.aphrody.com` | `/s/`, `/h/`, `/s/manifest.json` | static `aphrody-cdn` release tree (`config/asset-catalog.json`) — no backend process, so no `service-catalog.json` entry | retired 2026-09-25: `/srv/aphrody-cdn` and its vhost were removed with the Aphrody retirement (`config/asset-catalog.json` `status: retired`); not part of the bundle |
 | `nie.aphrody.com` | `/health`, `/api/`, `/f/`, `/b`, `/cdn/` | nie-site :8085, nie-model-serve :8790 | retired 2026-09-25 |
-| `nie.aphrody.com` | **`/downloads/inacord/latest.json`, `/downloads/channels/stable/latest.json`, `/downloads/files/`** | static Inacord updater feed (`/home/ubuntu/nie/var/releases/inacord/public/...`) | **kept live intentionally** (docs/PLAN.md 2026-09-26 ledger entry) even though the rest of the nie backend and the Inacord desktop app itself are retired — installed clients still poll this feed |
+| `nie.aphrody.com` | **`/downloads/inacord/latest.json`, `/downloads/channels/stable/latest.json`, `/downloads/files/`** | static Inacord updater feed (`~/nie/var/releases/inacord/public/...`) | **kept live intentionally** (docs/PLAN.md 2026-09-26 ledger entry) even though the rest of the nie backend and the Inacord desktop app itself are retired — installed clients still poll this feed |
 | `rosegriffon.fr` (+`www.`) | `/` | rg-website :3004 | live |
 | `api.rosegriffon.fr` | `/` | rg-api :8800 | live |
 | `cdn.rosegriffon.fr` | `/static/`, content-addressed images, `/` fallback | rg-api :8800 (not rg-cdn :8801 — see §4) | live |

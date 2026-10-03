@@ -53,7 +53,7 @@ Last verified: **2026-09-20 UTC** on the Rose Griffon VPS.
   `dist` were removed. They are recoverable by reinstalling/building/recrawling;
   they are not Git source data.
 - The retired AI/MCP/RAG configuration and data remain in the private mode-0700
-  archive `/home/ubuntu/archives/retired-rg-ai-20260908T101029Z`.
+  archive `~/archives/retired-rg-ai-20260908T101029Z`.
 
 ## Agent rules
 

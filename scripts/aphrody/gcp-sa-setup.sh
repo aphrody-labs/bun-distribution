@@ -9,9 +9,9 @@
 # 100% non-interactif (CLAUDE.md §0.1).
 #
 # Usage:
-#   aphrody-infra/scripts/aphrody/gcp-sa-setup.sh                # idempotent (clé conservée)
-#   ROTATE=1 aphrody-infra/scripts/aphrody/gcp-sa-setup.sh       # force une nouvelle clé
-#   PROJECT=foo SA_NAME=bar aphrody-infra/scripts/aphrody/gcp-sa-setup.sh
+#   scripts/aphrody/gcp-sa-setup.sh                # idempotent (clé conservée)
+#   ROTATE=1 scripts/aphrody/gcp-sa-setup.sh       # force une nouvelle clé
+#   PROJECT=foo SA_NAME=bar scripts/aphrody/gcp-sa-setup.sh
 #   APHRODY_ROOT=/path/to/aphrody-ai .../gcp-sa-setup.sh   # secrets/ and .env target (default ../aphrody-ai)
 set -euo pipefail
 

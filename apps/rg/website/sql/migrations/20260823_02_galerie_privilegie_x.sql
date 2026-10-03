@@ -1,7 +1,7 @@
 -- La galerie d'une campagne ne montre plus deux fois le même dessin.
 --
 -- Application :
---   export PGPASSWORD=$(grep -oP 'postgresql://rg:\K[^@]+' /home/ubuntu/rg/.env | head -1)
+--   export PGPASSWORD=$(grep -oP 'postgresql://rg:\K[^@]+' ../rg/.env | head -1)
 --   psql -h 127.0.0.1 -U rg -d rg -v ON_ERROR_STOP=1 -f apps/website/sql/migrations/20260823_02_galerie_privilegie_x.sql
 --
 -- REJOUABLE : `create or replace function` seul, aucune donnée touchée.

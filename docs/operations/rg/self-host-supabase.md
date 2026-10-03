@@ -276,9 +276,9 @@ curl -s http://127.0.0.1:8812/health
 Secrets : `/etc/postgrest.conf`, `/etc/rg-storage.env`, `/etc/rg-realtime.env`
 (tous en 0600).
 
-Le miroir SQLite (`nie-miroir.timer`, possédé par `/home/ubuntu/nie`) et les
+Le miroir SQLite (`nie-miroir.timer`, possédé par `~/nie`) et les
 sauvegardes continuent de fonctionner sur la base locale. Le publisher écrit
-`/home/ubuntu/nie/var/mirror.sqlite`; Azalée le consomme via `SQLITE_DB_PATH`.
+`~/nie/var/mirror.sqlite`; Azalée le consomme via `SQLITE_DB_PATH`.
 
 ## Pièges
 
@@ -292,5 +292,5 @@ sauvegardes continuent de fonctionner sur la base locale. Le publisher écrit
 - **Les chemins `/storage/v1/object/public/menu/...`** encore présents dans
   `inagle_skills.image_url` (1 002) et `inagle_teams.emblem_url` (208) ne
   concernent pas ce bucket : `resolveAssetUrl()` les réécrit vers le CDN.
-- **Sauvegardes de la migration** : `/home/ubuntu/rg-migration-backup/`
+- **Sauvegardes de la migration** : `~/rg-migration-backup/`
   (dumps, index `storage.objects`, fichiers d'environnement d'avant bascule).

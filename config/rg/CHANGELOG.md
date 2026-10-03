@@ -96,7 +96,7 @@ Toutes les évolutions notables du monorepo `rg`. Format : [Keep a Changelog](ht
 - **`@rosegriffon/patreon-bun`** (packages/patreon-bun) — vendoré depuis `rose-griffon/patreon-bun` (repo privé inaccessible via `github:` dep). Build OK (`index.js` 118.64 KB).
 - **`@rosegriffon/config`** (packages/config) — tsconfig (base, nextjs, bun) + eslint flat configs + oxlintrc + tailwind preset.
 - **Infra bot** : `infra/systemd/rg-bot.service` (resource limits 1G/256M, hardening systemd, cgroup v2 weights cohérents avec rpb-bot/shenron côté vps).
-- **Script deploy** : `scripts/deploy-bot.sh` (build + rsync vers `/home/ubuntu/rg-bot-prod/` + systemctl restart + smoke logs).
+- **Script deploy** : `scripts/deploy-bot.sh` (build + rsync vers `~/rg-bot-prod/` + systemctl restart + smoke logs).
 - **Docs** : `README.md`, `CLAUDE.md`, `docs/migration-from-vps.md`.
 
 ### Décisions architecture

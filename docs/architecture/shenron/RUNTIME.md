@@ -139,9 +139,9 @@ WantedBy=multi-user.target
 +Description=Shenron runtime (gateway + @shenron/api + scheduler)
 +PartOf=shenron.target
 -WorkingDirectory=/srv/shenron/current/apps/shenron/bot
--ExecStart=/home/ubuntu/.bun/bin/bun src/index.ts
+-ExecStart=~/.bun/bin/bun src/index.ts
 +WorkingDirectory=/srv/shenron/current
-+ExecStart=/home/ubuntu/.bun/bin/bun packages/runtime/src/main.ts
++ExecStart=~/.bun/bin/bun packages/runtime/src/main.ts
 +Environment=RUNTIME_STATE_DB=/srv/shenron/shared/runtime/state.sqlite
  MemoryLow=384M
 +MemoryHigh=1536M

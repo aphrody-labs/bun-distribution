@@ -7,7 +7,7 @@ import { $ } from "bun";
  * Ces tâches échouaient avec le code 127 à chaque exécution nocturne :
  * `bun run --filter <paquet> <script>` exécute le script du paquet **via
  * `/usr/bin/bash`**, et ce shell hérite du `PATH` du service — qui ne
- * contenait pas `/home/ubuntu/.bun/bin`. Le message n'apparaissait que dans la
+ * contenait pas `~/.bun/bin`. Le message n'apparaissait que dans la
  * sortie standard de la commande imbriquée (`bun: command not found`), jamais
  * dans l'erreur remontée, d'où six semaines de sauvegardes muettes.
  *

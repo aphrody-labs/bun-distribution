@@ -3,16 +3,16 @@
 > Objectif : **indexer, mapper, typer, analyser, extraire et peupler en DB proprement** TOUTE la donnée du jeu
 > (items, teams, uniformes, passifs, skills, auras, emblèmes, telop/video waza, textures & modèles chr,
 > drop-rates par élément, shops, tous les cfg.bin, tous les lua, tout le code C).
-> Ancré au réel : `/home/ubuntu/nie/data/common/gamedata/**` (sources), `packages/inagle/src/parsers/**` (66 parseurs),
+> Ancré au réel : `~/nie/data/common/gamedata/**` (sources), `packages/inagle/src/parsers/**` (66 parseurs),
 > `packages/inagle/src/cli-push.ts` (not in repo) (push Supabase), tables `inagle_*` Supabase. **Aucune valeur inventée.**
 
 ## Sources réelles
 
-- **19 371** `*.cfg.bin.json` sous `/home/ubuntu/nie/data` (dont ~16k `ev*`/`Subtitle_ev*` = scripts d'événements/cutscenes).
+- **19 371** `*.cfg.bin.json` sous `~/nie/data` (dont ~16k `ev*`/`Subtitle_ev*` = scripts d'événements/cutscenes).
 - **common/gamedata/** organisé par catégorie : `item shop capsule formation party command soccer skill skill_view
   character chara_bank uniform craft boost_grp quest mission dungeon movie motion live2d banner gallery formation …`
-- **677** scripts Lua (`/home/ubuntu/nie/data/lua_scripts/{decompiled,analysis}`, classés `p0-critical/p1-gameplay/p2-other`).
-- **Code C** : `nie.exe` reversé par **niers** (52 783 fonctions réelles, 92,43 % classifiées — repo séparé `/home/ubuntu/nie`).
+- **677** scripts Lua (`~/nie/data/lua_scripts/{decompiled,analysis}`, classés `p0-critical/p1-gameplay/p2-other`).
+- **Code C** : `nie.exe` reversé par **niers** (52 783 fonctions réelles, 92,43 % classifiées — repo séparé `~/nie`).
 - **Assets binaires** (textures/modèles) : g4tx/g4mg/g4md/g4sk dans les CPK — traités côté **iecode** (embed g4tx→GLB fait).
 
 ## Matrice de couverture (catégorie → source → parseur inagle → table DB → statut)

@@ -1,12 +1,12 @@
 {
 	"generatedAt": "2026-07-28T06:12:44.209Z",
 	"engine": "bxc",
-	"bxcDir": "/home/ubuntu/bxc",
+	"bxcDir": "~/bxc",
 	"profile": "max",
 	"resolution": {
 		"onPath": true,
 		"hasBin": true,
-		"bin": "/home/ubuntu/bxc/bin/bxc"
+		"bin": "~/bxc/bin/bxc"
 	},
 	"summary": {
 		"sources": 91,

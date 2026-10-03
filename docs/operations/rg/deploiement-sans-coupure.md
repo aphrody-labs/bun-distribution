@@ -24,7 +24,7 @@ bun run deploy:status
 
 Le slot inactif reçoit la nouvelle release, est sondé, puis nginx bascule le
 trafic. L'ancien slot reste disponible pendant le drainage avant d'être arrêté.
-Les releases immuables vivent sous `/home/ubuntu/rg-releases/website/`.
+Les releases immuables vivent sous `~/rg-releases/website/`.
 
 ## Séquence
 

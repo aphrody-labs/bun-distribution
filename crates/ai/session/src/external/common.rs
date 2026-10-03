@@ -204,7 +204,7 @@ pub(super) fn normalize_workspace(raw: &str) -> String {
     if cfg!(windows) { path.to_lowercase() } else { path }
 }
 
-/// A `file://` URI as a local path (`file:///c%3A/Users/x` -> `C:\Users\x` on
+/// A `file://` URI as a local path (`file:///c%3A/Users/x` -> `%USERPROFILE%` on
 /// Windows, `file:///home/x` -> `/home/x` elsewhere). `None` for other
 /// schemes.
 pub(super) fn file_uri_to_path(uri: &str) -> Option<String> {

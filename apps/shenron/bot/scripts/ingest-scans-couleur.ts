@@ -43,8 +43,8 @@
  * raison. D'où `(\d{1,3})(?!\d)`.
  *
  * Usage :
- *   sudo systemd-run --pipe -p EnvironmentFile=/home/ubuntu/.shenron-neon.env \
- *     --working-directory=/home/ubuntu/shenron/apps/shenron/bot \
+ *   sudo systemd-run --pipe -p EnvironmentFile=~/.shenron-neon.env \
+ *     --working-directory=apps/shenron/shenron/bot \
  *     bun scripts/ingest-scans-couleur.ts [--appliquer]
  *
  * Simulation par défaut. `--appliquer` écrit.

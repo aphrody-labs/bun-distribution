@@ -11,7 +11,7 @@
  * Environment:
  *   NIE_REPO_ROOT   legacy alias for IECODE_REPO_ROOT; current sibling checkout is ../iecode
  *   NIE_VPS_ALIAS   SSH alias of the production host (default: vps)
- *   NIE_VPS_REPO    absolute nie checkout path on that host (default: /home/ubuntu/nie)
+ *   NIE_VPS_REPO    absolute nie checkout path on that host (default: ~/nie)
  */
 
 import { mkdir, readFile, rename, writeFile } from "node:fs/promises";

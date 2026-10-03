@@ -20,7 +20,7 @@ use crate::domains::index::args::IndexModeArg;
 pub struct LocationAddArgs {
 	/// Path to add (local filesystem path or service-based cloud URI)
 	/// Examples:
-	///   - /Users/james/Documents (local path)
+	///   - ~/Documents (local path)
 	///   - s3://my-bucket/photos (S3 cloud path)
 	///   - gdrive://My Drive/photos (Google Drive path)
 	/// If not provided, enters interactive mode

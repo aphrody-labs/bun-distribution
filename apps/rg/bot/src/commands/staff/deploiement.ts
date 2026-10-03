@@ -3,7 +3,7 @@
  *
  * ── OÙ VIT LA VÉRITÉ ───────────────────────────────────────────────────────
  * `scripts/ops/deploy.ts` ne garde rien en mémoire : il écrit tout sur disque,
- * sous `/home/ubuntu/rg-releases/<app>/`. Trois fichiers, tous lus ici :
+ * sous `~/rg-releases/<app>/`. Trois fichiers, tous lus ici :
  *
  *   `state.json`             — slot vivant (`live`), version servie (`release`),
  *                              version précédente, prévisualisation en cours,
@@ -20,7 +20,7 @@
  * l'extérieur : c'est un processus enfant et deux requêtes réseau, alors que la
  * question posée — « quelle version est servie ? » — a sa réponse dans trois
  * fichiers. Or `rg-bot.service` tourne sous `ProtectSystem=strict` /
- * `ProtectHome=read-only` : lire `/home/ubuntu/rg-releases` lui est permis,
+ * `ProtectHome=read-only` : lire `~/rg-releases` lui est permis,
  * engendrer un processus dans ce bac à sable serait fragile pour rien.
  *
  * Ce que ces fichiers NE disent pas, on ne l'invente pas : la mémoire résidente

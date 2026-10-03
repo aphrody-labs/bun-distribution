@@ -174,7 +174,7 @@ impl McpProxySubsystem {
 
     /// Host a subsystem plugin: the MCP server binary a higher-layer repository ships for a
     /// subsystem this kernel must not link (aphrody-web's `aphrody-browser-mcp`, aphrody-ui's
-    /// `aphrody-render3d-mcp`; see aphrody-infra/docs/REPO-LAYERING.md).
+    /// `aphrody-render3d-mcp`; see docs/REPO-LAYERING.md).
     ///
     /// `env` names an explicit command (empty disables the plugin, a missing binary is an error);
     /// otherwise `binary` is looked up on `PATH`, next to the kernel, then in the user install

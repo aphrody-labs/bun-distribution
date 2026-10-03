@@ -245,7 +245,7 @@
     "iecodeCounterpart": "packages/azalee/scripts/build-standalone.ts",
     "iecodeSha256": "5fd320d58b1bcb98c9a520ab84e62b751d04f7e06f9c4f30e3775c165e8eaaea",
     "iecodeEditedByThisMigration": true,
-    "notes": "Ported: HOME fallback uses os.homedir() instead of /home/ubuntu.",
+    "notes": "Ported: HOME fallback uses os.homedir() instead of ~.",
     "classification": "aphrody-newer (ported)",
     "action": "deleted-from-aphrody"
    },
@@ -306,7 +306,7 @@
     "iecodeCounterpart": "packages/azalee/src/cli/commands/data.ts",
     "iecodeSha256": "23f409489d14fdf05cdb0b92536236e0a825e9548e15f2406fdb40e0f10fa813",
     "iecodeEditedByThisMigration": true,
-    "notes": "Ported: /home/ubuntu roots replaced by @rosegriffon/inagle/core/roots (IECODE root, IECODE data, Aphrody sibling RG website); CLIs called by absolute IECODE path.",
+    "notes": "Ported: ~ roots replaced by @rosegriffon/inagle/core/roots (IECODE root, IECODE data, Aphrody sibling RG website); CLIs called by absolute IECODE path.",
     "classification": "aphrody-newer (ported)",
     "action": "deleted-from-aphrody"
    },

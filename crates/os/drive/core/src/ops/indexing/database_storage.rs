@@ -788,7 +788,7 @@ impl DatabaseStorage {
 				JobError::execution(format!("Failed to update directory path: {}", e))
 			})?;
 
-			// Cascade path updates to all descendant directories. Moving "/home/user/docs" to
+			// Cascade path updates to all descendant directories. Moving "~/docs" to
 			// "/backup/docs" requires rewriting paths for every child, which can be thousands
 			// of directories. This runs in the same transaction to maintain consistency.
 			if let Err(e) = PathResolver::update_descendant_paths(

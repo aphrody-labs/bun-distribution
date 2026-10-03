@@ -11,7 +11,7 @@
 //! use aphrody_fsindex::FsIndex;
 //! # fn run() -> Result<(), aphrody_fsindex::FsIndexError> {
 //! let mut idx = FsIndex::open("index.db")?;
-//! let n = idx.build("/home/user/projects")?;
+//! let n = idx.build("~/projects")?;
 //! println!("indexed {n} entries");
 //! for hit in idx.search("readme", 20)? {
 //!     println!("{}", hit.path);

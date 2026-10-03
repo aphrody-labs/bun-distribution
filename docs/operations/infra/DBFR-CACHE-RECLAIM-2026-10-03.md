@@ -10,9 +10,9 @@ not certify application readiness, database integrity or backup restorability.
 `aphrody-infra reclaim --target dbfr --apply` removed only these allowlisted
 paths:
 
-- `/home/ubuntu/.bun/install/cache`: 3.99 GiB by `du`; Bun package downloads.
-- `/home/ubuntu/.cargo/registry`: 0.35 GiB by `du`; Cargo index, sources and archives.
-- `/home/ubuntu/.local/share/Trash`: 60 KiB by `du`.
+- `~/.bun/install/cache`: 3.99 GiB by `du`; Bun package downloads.
+- `~/.cargo/registry`: 0.35 GiB by `du`; Cargo index, sources and archives.
+- `~/.local/share/Trash`: 60 KiB by `du`.
 
 The reclaim command reported 4.34 GiB across those paths. Filesystem free space
 changed from 12,275,924,992 bytes (89% used) to 12,807,692,288 bytes (88% used),

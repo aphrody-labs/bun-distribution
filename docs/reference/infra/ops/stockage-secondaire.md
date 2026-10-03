@@ -12,9 +12,9 @@
 | Contenu | Volume | Emplacement sur le VPS principal |
 | --- | --- | --- |
 | Médias de tweets + assets (`/srv/rg-storage`) | 5,4 Go | `/var/www/rg-storage/` — servi de nouveau en local |
-| Sauvegardes Postgres (`/srv/rg-backups`) | 609 Mo | `/home/ubuntu/rg-backups/` |
-| Corpus audio niers (`/srv/niers-corpus`) | 156 Mo | `/home/ubuntu/niers/var/corpus/` |
-| Site achillée retiré, espace de travail azalée, journaux `rg-stats` | 15 Mo | `/home/ubuntu/rg-archive-vps2/` |
+| Sauvegardes Postgres (`/srv/rg-backups`) | 609 Mo | `~/rg-backups/` |
+| Corpus audio niers (`/srv/niers-corpus`) | 156 Mo | `~/niers/var/corpus/` |
+| Site achillée retiré, espace de travail azalée, journaux `rg-stats` | 15 Mo | `~/rg-archive-vps2/` |
 
 Deux conséquences de configuration, faites dans le même mouvement :
 

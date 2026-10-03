@@ -199,7 +199,7 @@ d'assemblage de release (`scripts/ops/assemble-vps-release.sh`). Les scripts d'e
 et `ops:sync*` appellent `../aphrody-infra`.
 
 **Reste à faire (opérateur)** : réinstaller ces units depuis `aphrody-infra` sur le VPS
-(`ExecStart` pointe vers `/home/ubuntu/aphrody-infra`), `daemon-reload`, vérifier les timers.
+(`ExecStart` pointe vers `~/aphrody-infra`), `daemon-reload`, vérifier les timers.
 
 ## Assets CDN partagés rétablis — 23/09/2026
 
@@ -212,7 +212,7 @@ publication + `location ^~ /static/` servi depuis `/var/www/cdn`).
 Décision : la release `939fc1a` a été dérivée de la release `5779c9d` (seuls les
 fichiers du commit remplacés, manifeste et `SHA256SUMS` régénérés), puis activée par
 `aphrody-infra deploy --stack rg --apply`. Motif : l'environnement privé d'installation
-Bun (`/home/ubuntu/.rg-deploy-stage/root.env`) n'existe plus sur le VPS, ce qui bloque
+Bun (`~/.rg-deploy-stage/root.env`) n'existe plus sur le VPS, ce qui bloque
 `assemble-vps-release.sh` ; le commit ne touche aucun artefact construit. Tâche `cdn`
 relancée dans le bac à sable de rg-cron : 388 assets publiés, URLs vérifiées en 200.
 
@@ -275,7 +275,7 @@ seules sources de vérité ; ce dépôt ne publie plus de table de ports.
   `achillea-storage`, `achillea-realtime` (8820-8822, la façade publique sert
   `/storage/v1` et `/realtime/v1` depuis `rg-storage`/`rg-realtime`), et le
   contrôle `check:achillea-services` qui validait ces fichiers.
-- Chemin du dépôt de données du jeu : `/home/ubuntu/nie` (et non plus `niers`).
+- Chemin du dépôt de données du jeu : `~/nie` (et non plus `niers`).
 
 ## Correctifs production post-migration — 23/09/2026
 

@@ -3,7 +3,7 @@
 //!
 //! Layout below the root (`$CLAUDE_CONFIG_DIR`, else `~/.claude`):
 //! `projects/<slug>/<session id>.jsonl`, where `<slug>` is the working
-//! directory with separators replaced (`C:\Users\x\src` -> `C--Users-x-src`,
+//! directory with separators replaced (`%USERPROFILE%\src` -> `C--Users-x-src`,
 //! lossy, so the real directory is read from each line's `cwd`). One event per
 //! line: `{type, sessionId, cwd, timestamp, message?, isMeta?, ...}`. `type`
 //! `user` / `assistant` carry an Anthropic Messages `message` whose `content`

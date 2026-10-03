@@ -516,7 +516,7 @@ impl SdPath {
 	/// Parse URI into SdPath with context validation (kept for backwards compatibility)
 	///
 	/// # Examples
-	/// - "local://jamies-macbook/Users/james/file.txt" -> Physical path
+	/// - "local://jamies-macbook~/file.txt" -> Physical path
 	/// - "s3://my-bucket/photos/vacation.jpg" -> Cloud path
 	/// - "content://550e8400-..." -> Content path
 	///

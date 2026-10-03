@@ -104,7 +104,7 @@ async fn run_parallel_discovery(
 	let shutdown = Arc::new(AtomicBool::new(false));
 
 	// Shared across all workers to prevent duplicate processing when symlinks create cycles
-	// or multiple paths (e.g., /home/user/docs and /mnt/docs) lead to the same directory.
+	// or multiple paths (e.g., ~/docs and /mnt/docs) lead to the same directory.
 	let seen_paths = Arc::new(parking_lot::RwLock::new(std::collections::HashSet::new()));
 
 	while let Some(dir) = state.dirs_to_walk.pop_front() {

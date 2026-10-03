@@ -9,7 +9,7 @@ This operational guide details the architecture, configuration, and maintenance 
 ## 1. Zero-Dependency Host Architecture
 
 Historically, Aphrody Discord bots required:
-1. A global or user-installed Bun runtime (`/home/ubuntu/.bun/bin/bun`).
+1. A global or user-installed Bun runtime (`~/.bun/bin/bun`).
 2. A populated `node_modules` directory deployed on the production VPS for each release.
 3. Node/Bun environment variables for module transpilation and decorator handling.
 

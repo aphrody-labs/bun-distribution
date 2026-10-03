@@ -14,9 +14,9 @@ does not exist" and sends you to the registrar instead of to the other key file.
 
 | Account | Credentials file | Format | Nichandle | Zones it can see |
 |---|---|---|---|---|
-| `aphrody` | `/home/ubuntu/.bash_secrets` | `export OVH_APPLICATION_KEY=…` (+ `_SECRET`, `OVH_CONSUMER_KEY`) | *(the `/me` call is not authorised)* | `aphrody.com`; API also currently lists `rpbey.fr`, which remains outside the managed profile |
-| `rosegriffon` | `/home/ubuntu/.ovh.conf` | `[ovh-eu]` ini | `ka1038251-ovh` — `Rosegriffonfr@gmail.com` | `rosegriffon.fr` |
-| `dbfr` | `/home/ubuntu/.config/ovh/dbfr.conf`, and `/etc/letsencrypt/ovh-dbfr.ini` with `dns_ovh_*` keys | `[ovh-eu]` ini | `gl839461-ovh` — `dragonballfrdiscord@gmail.com` | `dragonballfr.com` |
+| `aphrody` | `~/.bash_secrets` | `export OVH_APPLICATION_KEY=…` (+ `_SECRET`, `OVH_CONSUMER_KEY`) | *(the `/me` call is not authorised)* | `aphrody.com`; API also currently lists `rpbey.fr`, which remains outside the managed profile |
+| `rosegriffon` | `~/.ovh.conf` | `[ovh-eu]` ini | `ka1038251-ovh` — `Rosegriffonfr@gmail.com` | `rosegriffon.fr` |
+| `dbfr` | `~/.config/ovh/dbfr.conf`, and `/etc/letsencrypt/ovh-dbfr.ini` with `dns_ovh_*` keys | `[ovh-eu]` ini | `gl839461-ovh` — `dragonballfrdiscord@gmail.com` | `dragonballfr.com` |
 
 The three files are secrets: never print them, never copy a value into a document, a log or a
 commit. `scripts/ops/ovh.py` reads them and prints only the answers.

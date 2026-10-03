@@ -98,8 +98,8 @@ pub async fn run_processing_phase(
 	));
 
 	// SAFETY: Validate indexing path is within location boundaries to prevent catastrophic
-	// cross-location deletion if watcher routing bugs send events for /home/user/photos to a
-	// /home/user/documents location. Without this check, we'd delete all documents entries
+	// cross-location deletion if watcher routing bugs send events for ~/photos to a
+	// ~/documents location. Without this check, we'd delete all documents entries
 	// not present in photos, wiping the database.
 	let location_actual_path = crate::ops::indexing::path_resolver::PathResolver::get_full_path(
 		ctx.library_db(),
@@ -135,7 +135,7 @@ pub async fn run_processing_phase(
 	));
 
 	// Seed entry ID cache with all ancestors between location root and indexing path.
-	// Without this, re-indexing /home/user/docs/photos would fail to find /home/user/docs
+	// Without this, re-indexing ~/docs/photos would fail to find ~/docs
 	// in the cache and create a duplicate "docs" folder with wrong parent_id.
 	let _ = state
 		.seed_ancestor_cache(

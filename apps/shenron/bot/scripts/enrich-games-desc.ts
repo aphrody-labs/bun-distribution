@@ -13,7 +13,7 @@
  * dépasse 80 caractères → pas d'injection de texte hors-sujet. Idempotent :
  * ne traite que les jeux à description vide.
  *
- * Env requis : DATABASE_URL (Neon, via /home/ubuntu/.shenron-neon.env).
+ * Env requis : DATABASE_URL (Neon, via ~/.shenron-neon.env).
  * Env optionnel : LIMIT=5.
  *
  * Usage : via systemd-run avec EnvironmentFile (cf. enrich-episode-synopsis.ts).

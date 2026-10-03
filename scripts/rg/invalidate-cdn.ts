@@ -22,7 +22,7 @@
 import { Glob } from "bun";
 import { resolve } from "node:path";
 
-// Racine du monorepo rg (ce fichier vit dans aphrody-infra/scripts/rg/).
+// Racine du monorepo rg (ce fichier vit dans scripts/rg/).
 // RG checkout: sibling of aphrody-infra unless RG_ROOT says otherwise.
 const REPO_ROOT = resolve(process.env.RG_ROOT ?? resolve(import.meta.dir, "../../../rg"));
 const SW_PATH = resolve(REPO_ROOT, "apps/website/public/sw.js");

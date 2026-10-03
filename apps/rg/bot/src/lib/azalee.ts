@@ -7,7 +7,7 @@
  * confort :
  *
  *  1. `rg-bot.service` tourne sous `ProtectHome=read-only` avec
- *     `ReadWritePaths=/home/ubuntu/rg/apps/bot /tmp`. Le dossier du miroir est
+ *     `ReadWritePaths=../rg/apps/bot /tmp`. Le dossier du miroir est
  *     donc en LECTURE SEULE pour lui.
  *  2. Le miroir est en journal WAL. Ouvrir une base WAL — même en lecture seule —
  *     exige que le fichier `-shm` EXISTE, et donc de pouvoir le créer quand il

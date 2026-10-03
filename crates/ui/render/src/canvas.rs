@@ -2,7 +2,7 @@
 //! Bounded rendering of untrusted M3 canvas scenes (the public `/api/v1/canvas/render` endpoint).
 //!
 //! Hosts in lower layers (the `aphrody-site` server in aphrody-web) must not link this crate
-//! (aphrody-infra/docs/REPO-LAYERING.md); they run the `aphrody-canvas` binary, which reads one
+//! (docs/REPO-LAYERING.md); they run the `aphrody-canvas` binary, which reads one
 //! scene as JSON on stdin and writes the PNG to stdout through [`render_untrusted`].
 
 use crate::{

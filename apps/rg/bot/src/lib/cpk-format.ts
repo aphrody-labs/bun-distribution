@@ -406,7 +406,7 @@ export function tientEnPieceJointe(octets: number | null | undefined): boolean {
  * parfaitement assemblable. `HEAD /model-full/c11010034.glb` → **405** ;
  * `GET` du même → **200 `model/gltf-binary`, 70 936 octets**. nginx ne répond
  * 200 en HEAD que lorsque le GLB est déjà posé sur disque
- * (`try_files $uri @model_live`, `alias /home/ubuntu/nie/var/model-cache/`),
+ * (`try_files $uri @model_live`, `alias ~/nie/var/model-cache/`),
  * ce qui ne couvre que **5 655 des 15 533 codes de modèle de l'index**.
  *
  * Lire un 405 comme « ce contenu n'existe pas » ferait donc annoncer « pas de

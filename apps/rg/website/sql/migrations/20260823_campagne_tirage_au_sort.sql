@@ -1,7 +1,7 @@
 -- Le tirage au sort d'une campagne : roster canonique, œuvres dédoublonnées, tirages vérifiables.
 --
 -- Application :
---   export PGPASSWORD=$(grep -oP 'postgresql://rg:\K[^@]+' /home/ubuntu/rg/.env | head -1)
+--   export PGPASSWORD=$(grep -oP 'postgresql://rg:\K[^@]+' ../rg/.env | head -1)
 --   psql -h 127.0.0.1 -U rg -d rg -v ON_ERROR_STOP=1 -f apps/website/sql/migrations/20260823_campagne_tirage_au_sort.sql
 --
 -- REJOUABLE : `create table if not exists`, `create index if not exists`,

@@ -97,7 +97,7 @@ Write-Host "    clé API prête ($($apiKey.Length) chars)."
 # 6. Mise à jour .env (bloc délimité, idempotent).
 Step "Mise à jour .env"
 $block = @"
-# --- GCP service account ($SaName) — géré par aphrody-infra/scripts/aphrody/gcp-sa-setup.ps1 ---
+# --- GCP service account ($SaName) — géré par scripts/aphrody/gcp-sa-setup.ps1 ---
 GOOGLE_APPLICATION_CREDENTIALS=$keyFile
 GOOGLE_CLOUD_PROJECT=$Project
 GCLOUD_PROJECT=$Project

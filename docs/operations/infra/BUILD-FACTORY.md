@@ -159,7 +159,7 @@ or proxy routing only after DBFR is qualified.
 From a clean committed VPS factory checkout, export the existing installer:
 
 ```sh
-bash scripts/install-vps-adapter.sh --stack shenron --package /home/ubuntu/.cache/aphrody/shenron-adapter-FULL_SHA
+bash scripts/install-vps-adapter.sh --stack shenron --package ~/.cache/aphrody/shenron-adapter-FULL_SHA
 ```
 
 Transfer that small sealed directory directly VPS-to-DBFR into
@@ -183,7 +183,7 @@ installer outside the checkout and set `APHRODY_ADAPTER_SOURCE_ROOT` to its
 existing Git root:
 
 ```sh
-APHRODY_ADAPTER_SOURCE_ROOT=/srv/aphrody-build/workspaces/aphrody bash /home/ubuntu/.cache/aphrody/install-vps-adapter-current.sh --stack shenron --package /home/ubuntu/.cache/aphrody/shenron-adapter-FULL_SHA --revision FULL_SHA
+APHRODY_ADAPTER_SOURCE_ROOT=/srv/aphrody-build/workspaces/aphrody bash ~/.cache/aphrody/install-vps-adapter-current.sh --stack shenron --package ~/.cache/aphrody/shenron-adapter-FULL_SHA --revision FULL_SHA
 ```
 
 This explicit revision mode reads the five regular files directly from Git

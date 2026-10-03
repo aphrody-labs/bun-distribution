@@ -290,14 +290,14 @@ NIE and IECode ship no VPS release. The bundle contains no secret.
    `/srv/aphrody/shared/ai/google-cookies.json`, `chown aphrody:aphrody`,
    `chmod 0600` (the offloaded copy under `srv/aphrody/shared/ai/` may have
    expired: refresh it before use). Never log it.
-7. **Adapters.** On the VPS, `git -C /home/ubuntu/aphrody-infra fetch && git
-   -C /home/ubuntu/aphrody-infra checkout --detach INFRA_SHA` (the bundle's
+7. **Adapters.** On the VPS, `git -C ~/aphrody-infra fetch && git
+   -C ~/aphrody-infra checkout --detach INFRA_SHA` (the bundle's
    `aphrody-infra` pin), then `sudo bash scripts/install-vps-adapter.sh`: it
    installs the four adapters, the catalog snapshots and `ADAPTER.json`, and
    removes the retired site-only `aphrody-infra-deploy`.
 8. **RG release.** `git -C ../rg fetch && git -C ../rg
    checkout --detach RG_SHA`, then as `ubuntu`
-   `bash /home/ubuntu/aphrody-infra/scripts/rg/assemble-vps-release.sh RG_SHA`
+   `bash ~/aphrody-infra/scripts/rg/assemble-vps-release.sh RG_SHA`
    (builds `/srv/rg/releases/RG_SHA`; retired catalog services are skipped).
 
 ### Ordered commands (historical; do not execute without reactivation gates)
