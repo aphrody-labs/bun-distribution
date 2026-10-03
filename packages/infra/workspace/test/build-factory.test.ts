@@ -20,7 +20,8 @@ const revision = "a".repeat(40);
 test("factory plans use the existing Infra owner and shared serial lock", () => {
   const plan = buildFactoryPlan(config, "aphrody", revision, ["bun", "run", "build"]);
   expect(plan.transport.slice(0, 4)).toEqual(["ssh", "exec", "--host", "vps"]);
-  expect(plan.transport[5]).toContain("flock -- '/srv/aphrody-build/locks/heavy.lock'");
+  expect(plan.transport[5]).toContain("flock --close -- '/srv/aphrody-build/locks/heavy.lock'");
+  expect(plan.commandTimeoutSeconds).toBe(21600);
   expect(plan.transport[5]).toContain("git rev-parse HEAD");
   expect(plan.transport[5]).toContain("git status --porcelain");
   expect(plan.transport[5]).toContain("BUN_INSTALL_CACHE_DIR=");
@@ -39,6 +40,9 @@ test("factory requires pinned clean source policy and bounded compiler jobs", ()
     buildFactoryPlan({ ...config, rust: { maxJobs: 7 } }, "aphrody", revision, ["bun"]),
   ).toThrow("between");
   expect(() => buildFactoryPlan(config, "aphrody", revision, [])).toThrow("owner command");
+  expect(() =>
+    buildFactoryPlan({ ...config, commandTimeoutSeconds: 86401 }, "aphrody", revision, ["bun"]),
+  ).toThrow("commandTimeoutSeconds");
 });
 
 test("factory quotes owner arguments without expanding shell expressions", () => {

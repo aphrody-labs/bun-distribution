@@ -79,7 +79,9 @@ if [[ ! -v RUSTC_WRAPPER ]] && command -v sccache >/dev/null 2>&1; then
     export RUSTC_WRAPPER=sccache
 fi
 echo "[cargo-serial] waiting for $lock_file (jobs=$jobs, timeout=${wait_seconds}s)" >&2
-exec flock --exclusive --timeout "$wait_seconds" "$lock_file" \
+# Keep ownership in flock itself. A spawned sccache daemon must not inherit
+# the descriptor and hold the build lock after Cargo has exited.
+exec flock --exclusive --close --timeout "$wait_seconds" "$lock_file" \
     nice -n 10 env \
         CARGO_BUILD_JOBS="$jobs" \
         CARGO_INCREMENTAL=0 \

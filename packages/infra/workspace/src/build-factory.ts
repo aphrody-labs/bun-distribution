@@ -11,6 +11,7 @@ export interface BuildFactoryConfig {
   lockPath: string;
   repositories: Record<string, string>;
   rust: { maxJobs: number };
+  commandTimeoutSeconds?: number;
 }
 
 function shellQuote(value: string): string {
@@ -43,6 +44,13 @@ export function buildFactoryPlan(
     config.rust.maxJobs > 6
   )
     throw new Error("Build factory rust.maxJobs must be between 1 and 6");
+  const commandTimeoutSeconds = config.commandTimeoutSeconds ?? 21600;
+  if (
+    !Number.isSafeInteger(commandTimeoutSeconds) ||
+    commandTimeoutSeconds < 1 ||
+    commandTimeoutSeconds > 86400
+  )
+    throw new Error("Build factory commandTimeoutSeconds must be between 1 and 86400");
   const root = absolutePath(config.repositories[repository]!, "repository");
   const cache = absolutePath(config.cacheRoot, "cacheRoot");
   const artifacts = absolutePath(config.artifactRoot, "artifactRoot");
@@ -73,7 +81,8 @@ export function buildFactoryPlan(
     "test -z \"$(git status --porcelain --untracked-files=normal)\" || { echo 'Build factory source checkout is dirty' >&2; exit 2; }",
     `exec env ${environment.map(shellQuote).join(" ")} ${command.map(shellQuote).join(" ")}`,
   ].join("\n");
-  const remoteCommand = `flock -- ${shellQuote(lock)} bash -c ${shellQuote(body)}`;
+  // The supervisor owns the descriptor; long-lived cache daemons must not inherit it.
+  const remoteCommand = `flock --close -- ${shellQuote(lock)} bash -c ${shellQuote(body)}`;
   return {
     repository,
     revision,
@@ -81,6 +90,7 @@ export function buildFactoryPlan(
     workspace: root,
     command: [...command],
     serialized: true,
+    commandTimeoutSeconds,
     transport: ["ssh", "exec", "--host", config.target, "--cmd", remoteCommand],
   };
 }
@@ -109,8 +119,15 @@ export async function routeHeavyBuild(
     );
   const plan = buildFactoryPlan(config, "aphrody", revision, command);
   console.error(`Build factory: ${plan.repository} ${revision} on ${plan.target}`);
-  return (await runInfra({ args: plan.transport, cwd: root, stdout: "inherit", stderr: "inherit" }))
-    .exitCode;
+  return (
+    await runInfra({
+      args: plan.transport,
+      cwd: root,
+      stdout: "inherit",
+      stderr: "inherit",
+      env: { APHRODY_SSH_COMMAND_TIMEOUT_SECS: String(plan.commandTimeoutSeconds) },
+    })
+  ).exitCode;
 }
 
 /** Plan by default; run dispatches exclusively through the installed Infra SSH owner. */
@@ -148,8 +165,15 @@ export async function runBuildFactory(args: string[], root = infraRoot()): Promi
     console.log(JSON.stringify({ executed: false, ...plan }, null, 2));
     return 0;
   }
-  return (await runInfra({ args: plan.transport, cwd: root, stdout: "inherit", stderr: "inherit" }))
-    .exitCode;
+  return (
+    await runInfra({
+      args: plan.transport,
+      cwd: root,
+      stdout: "inherit",
+      stderr: "inherit",
+      env: { APHRODY_SSH_COMMAND_TIMEOUT_SECS: String(plan.commandTimeoutSeconds) },
+    })
+  ).exitCode;
 }
 
 if (import.meta.main) process.exit(await runBuildFactory(process.argv.slice(2)));

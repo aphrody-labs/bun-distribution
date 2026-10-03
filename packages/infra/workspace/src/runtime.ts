@@ -5,6 +5,7 @@ export type InfraInvocation = {
   cwd?: string;
   stdout?: "inherit" | "pipe";
   stderr?: "inherit" | "pipe";
+  env?: Record<string, string | undefined>;
 };
 
 export type InfraResult = {
@@ -62,13 +63,19 @@ export async function infraExecutable(
 
 export async function runInfra(invocation: InfraInvocation): Promise<InfraResult> {
   const root = infraRoot();
-  const command = [...(await infraExecutable(root)), "--root", root, ...invocation.args];
+  const environment = { ...process.env, ...invocation.env };
+  const command = [
+    ...(await infraExecutable(root, environment)),
+    "--root",
+    root,
+    ...invocation.args,
+  ];
   const child = Bun.spawn(command, {
     cwd: invocation.cwd ?? root,
     stdout: invocation.stdout ?? "pipe",
     stderr: invocation.stderr ?? "pipe",
     stdin: "inherit",
-    env: process.env,
+    env: environment,
   });
   const [stdout, stderr, exitCode] = await Promise.all([
     child.stdout ? new Response(child.stdout).text() : Promise.resolve(""),

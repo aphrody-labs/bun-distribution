@@ -32,7 +32,7 @@ pub enum Error {
     InvalidUrl(String),
     #[error("invalid argument: {0}")]
     InvalidInput(String),
-    #[error("SSH command timed out after 30 seconds")]
+    #[error("SSH command exceeded its configured timeout")]
     Timeout,
     #[error("command error: {0}")]
     Clap(#[from] clap::Error),
@@ -101,6 +101,8 @@ pub struct Cli {
 #[derive(Debug, Clone, Subcommand)]
 pub enum Commands {
     /// Run an arbitrary remote command through the selected SSH alias.
+    /// APHRODY_SSH_COMMAND_TIMEOUT_SECS selects a finite execution deadline
+    /// (1..86400 seconds; default 30), independently of connection timeout.
     Exec {
         #[arg(long, value_enum)]
         host: Host,
@@ -1143,15 +1145,44 @@ pub fn audit_command(services: &[&str]) -> String {
     )
 }
 
+/// Parse the finite native SSH execution timeout without modifying environment.
+pub fn command_timeout_seconds(value: Option<&str>) -> Result<u64, Error> {
+    let Some(value) = value else { return Ok(30) };
+    let seconds = value.parse::<u64>().map_err(|_| {
+        Error::InvalidInput(
+            "APHRODY_SSH_COMMAND_TIMEOUT_SECS must be an integer from 1 through 86400".into(),
+        )
+    })?;
+    if !(1..=86_400).contains(&seconds) {
+        return Err(Error::InvalidInput(
+            "APHRODY_SSH_COMMAND_TIMEOUT_SECS must be an integer from 1 through 86400".into(),
+        ));
+    }
+    Ok(seconds)
+}
+
+/// Factory dispatch selects a longer finite timeout on the calling process
+/// with APHRODY_SSH_COMMAND_TIMEOUT_SECS. Inspections default to thirty seconds.
 pub async fn run_ssh(host: Host, args: &[&str]) -> Result<Output, Error> {
+    let configured_timeout = match std::env::var("APHRODY_SSH_COMMAND_TIMEOUT_SECS") {
+        Ok(value) => Some(value),
+        Err(std::env::VarError::NotPresent) => None,
+        Err(std::env::VarError::NotUnicode(_)) => {
+            return Err(Error::InvalidInput(
+                "APHRODY_SSH_COMMAND_TIMEOUT_SECS must be UTF-8".into(),
+            ));
+        },
+    };
+    let seconds = command_timeout_seconds(configured_timeout.as_deref())?;
     let output = timeout(
-        Duration::from_secs(30),
+        Duration::from_secs(seconds),
         Command::new("ssh")
             .args(["-o", "BatchMode=yes", "-o", "ConnectTimeout=10"])
             .arg(host.alias())
             .args(args)
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
+            .kill_on_drop(true)
             .output(),
     )
     .await
@@ -2011,6 +2042,15 @@ mod tests {
     use clap::CommandFactory;
 
     use super::*;
+
+    #[test]
+    fn command_timeout_is_finite_and_explicit() {
+        assert_eq!(command_timeout_seconds(None).expect("default"), 30);
+        assert_eq!(command_timeout_seconds(Some("14400")).expect("factory duration"), 14_400);
+        for invalid in ["", "0", "86401", "-1", "1.5", "unlimited"] {
+            assert!(command_timeout_seconds(Some(invalid)).is_err(), "{invalid}");
+        }
+    }
 
     #[test]
     fn unit_validation_rejects_shell_chars() {
