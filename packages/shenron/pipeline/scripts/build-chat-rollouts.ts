@@ -245,14 +245,22 @@ export function significantTokens(text: string): Set<string> {
 	return out;
 }
 
+export function mentionsAi(text: string): boolean {
+	return AI_CASED.test(text) || AI_FOLDED.test(text);
+}
+
+export function isRefusal(text: string): boolean {
+	return REFUSAL.test(text);
+}
+
 export type RejectReason = "empty" | "too_long" | "refusal" | "no_overlap" | "ai_mention";
 
 export function rejectReason(answer: string, positive: string): RejectReason | null {
 	const text = answer.trim();
 	if (!text) return "empty";
 	if (text.length > MAX_ANSWER_CHARS) return "too_long";
-	if (AI_CASED.test(text) || AI_FOLDED.test(text)) return "ai_mention";
-	if (REFUSAL.test(text)) return "refusal";
+	if (mentionsAi(text)) return "ai_mention";
+	if (isRefusal(text)) return "refusal";
 	const evidence = significantTokens(positive);
 	let shared = 0;
 	for (const token of significantTokens(text)) if (evidence.has(token)) shared++;
@@ -284,18 +292,80 @@ export function antigravityAnswer(raw: unknown): string {
 		.trim();
 }
 
+export const ANTIGRAVITY_TIMEOUT_MS = 180_000;
+const ERROR_TAIL_CHARS = 300;
+
+/** `APHRODY_ANTIGRAVITY_TIMEOUT_MS` when a positive number, else the default. */
+export function antigravityTimeoutMs(env: Record<string, string | undefined> = Bun.env): number {
+	const value = Number(env.APHRODY_ANTIGRAVITY_TIMEOUT_MS);
+	return Number.isFinite(value) && value > 0 ? value : ANTIGRAVITY_TIMEOUT_MS;
+}
+
+const liveTeachers = new Set<{ kill: (signal?: NodeJS.Signals) => void }>();
+
+/** Stops in-flight teacher processes so an interrupted run leaves no orphan behind. */
+export function killTeachers(): void {
+	for (const proc of liveTeachers) proc.kill("SIGKILL");
+}
+
 /** Teacher through `aphrody antigravity chat` (network model, no local GPU). */
 export async function antigravityChat(
 	messages: Array<{ role: string; content: string }>,
 	model?: string,
+	timeoutMs: number = antigravityTimeoutMs(),
 ): Promise<{ answer: string; model: string }> {
 	const prompt = messages.map((message) => `[${message.role}]\n${message.content}`).join("\n\n");
 	const args = ["antigravity", "chat", "--prompt", prompt, ...(model ? ["--model", model] : [])];
 	const proc = Bun.spawn([Bun.env.APHRODY_BIN ?? "aphrody", ...args], { stdout: "pipe", stderr: "pipe", stdin: "ignore" });
-	const [stdout, code] = await Promise.all([new Response(proc.stdout).text(), proc.exited]);
-	if (code !== 0) throw new Error(`antigravity chat exited ${code}`);
-	const raw = JSON.parse(stdout) as { modelVersion?: string };
+	liveTeachers.add(proc);
+	let timedOut = false;
+	const timer = setTimeout(() => {
+		timedOut = true;
+		proc.kill("SIGKILL");
+	}, timeoutMs);
+	let stdout: string;
+	let stderr: string;
+	let code: number | null;
+	try {
+		[stdout, stderr, code] = await Promise.all([
+			new Response(proc.stdout).text(),
+			new Response(proc.stderr).text(),
+			proc.exited,
+		]);
+	} finally {
+		clearTimeout(timer);
+		liveTeachers.delete(proc);
+	}
+	if (timedOut) throw new Error(`antigravity chat timed out after ${timeoutMs} ms`);
+	if (code !== 0) {
+		const detail = stderr.trim().slice(-ERROR_TAIL_CHARS);
+		throw new Error(`antigravity chat exited ${code ?? proc.signalCode}${detail ? `: ${detail}` : ""}`);
+	}
+	let raw: { modelVersion?: string };
+	try {
+		raw = JSON.parse(stdout) as { modelVersion?: string };
+	} catch {
+		throw new Error("antigravity chat returned non-JSON output");
+	}
 	return { answer: antigravityAnswer(raw), model: `antigravity/${raw.modelVersion ?? model ?? "default"}` };
+}
+
+// --- options ----------------------------------------------------------------
+
+export const TEACHERS = ["aphrody", "antigravity"] as const;
+export type Teacher = (typeof TEACHERS)[number];
+
+/** Strict integer option: NaN, fractions and values below `min` are errors, never silent defaults. */
+export function parseIntOption(name: string, raw: string, min: number): number {
+	const value = Number(raw.trim());
+	if (!/^\d+$/u.test(raw.trim()) || !Number.isSafeInteger(value) || value < min)
+		throw new Error(`--${name} must be an integer >= ${min}, got "${raw}"`);
+	return value;
+}
+
+export function parseTeacher(raw: string): Teacher {
+	if ((TEACHERS as readonly string[]).includes(raw)) return raw as Teacher;
+	throw new Error(`--teacher must be one of ${TEACHERS.join("|")}, got "${raw}"`);
 }
 
 export interface GenerateOptions {
@@ -418,6 +488,10 @@ async function main(): Promise<void> {
 			"split-only": { type: "boolean", default: false },
 		},
 	});
+	// Validate before any file is read or written.
+	const teacher = parseTeacher(values.teacher as string);
+	const limit = values.limit === undefined ? undefined : parseIntOption("limit", values.limit, 0);
+	const concurrency = parseIntOption("concurrency", values.concurrency as string, 1);
 	const inputText = readFileSync(values.input as string, "utf8");
 	const sourceSha256 = sha256(inputText);
 	const split = splitTriples(parseJsonl(inputText));
@@ -437,13 +511,21 @@ async function main(): Promise<void> {
 	let stats: GenerateStats | null = null;
 	if (!values["split-only"]) {
 		const chat: ChatFn =
-			values.teacher === "antigravity"
+			teacher === "antigravity"
 				? (messages) => antigravityChat(messages, values.model)
 				: await (async () => {
 						const { AphrodyComputeClient } = await import("@shenron/pipeline/aphrody");
 						const client = new AphrodyComputeClient();
 						return (messages) => client.chat(messages, values.model);
 					})();
+		// Interrupting a run keeps the rows accepted since the last periodic flush.
+		for (const signal of ["SIGINT", "SIGTERM"] as const)
+			process.once(signal, () => {
+				killTeachers();
+				atomicWrite(rolloutsPath, toJsonl(kept));
+				console.error(`${signal}: flushed ${kept.length} rollouts (manifest not updated)`);
+				process.exit(signal === "SIGINT" ? 130 : 143);
+			});
 		let sinceFlush = 0;
 		stats = await generate({
 			candidates: split.candidates,
@@ -451,8 +533,8 @@ async function main(): Promise<void> {
 			done,
 			tone,
 			chat,
-			limit: values.limit ? Number.parseInt(values.limit, 10) : undefined,
-			concurrency: Number.parseInt(values.concurrency as string, 10) || 2,
+			limit,
+			concurrency,
 			onAccept: (row) => {
 				kept.push(row);
 				if (++sinceFlush >= 25) {
@@ -476,7 +558,7 @@ async function main(): Promise<void> {
 		},
 		rollouts: kept.length,
 		droppedExistingGoldOverlap: rows.length - kept.length,
-		teacher: { requestedModel: values.model ?? null, models: stats?.models ?? {} },
+		teacher: { kind: teacher, requestedModel: values.model ?? null, models: stats?.models ?? {} },
 		run: stats,
 	};
 	atomicWrite(join(out, "manifest.json"), `${JSON.stringify(manifest, null, 2)}\n`);

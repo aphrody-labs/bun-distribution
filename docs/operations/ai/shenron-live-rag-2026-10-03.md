@@ -35,8 +35,8 @@ Contrôles observés :
 - Une recherche HTTP réelle retourne cinq résultats en mode `hybrid`.
 - Le contrôle Bun du corpus complet échoue actuellement avec
   `Shenron RAG preload is incomplete or stale`.
-- Clippy strict doit être relancé après la correction partagée de la
-  documentation dans `crates/google/gemini-web/src/auth.rs`. Les deux contrôles
+- Clippy strict `aphrody-mcp --all-targets -- -D warnings` réussit après la
+  correction partagée de la documentation dans `crates/google/gemini-web/src/auth.rs`. Les deux contrôles
   TypeScript du site passent après ajout de l'import `aphrodyWebMirror` manquant
   dans `scripts/bxc-asset-harvest.ts`.
 - Deux recherches consécutives ont indiqué `x-shenron-rag-cache: miss` : le
@@ -70,3 +70,37 @@ claims disjoints, avec Bun/TypeScript uniquement. Les gates Cargo restent
 sérialisés par l'intégrateur. Le worker Codex entraînement a échoué au
 lancement (modèle incompatible avec son compte) ; le worker agy IA/Home a
 terminé sans artefact. Ces deux lots ont été réattribués à Claude.
+
+
+## Reprise des statistiques et du préchargement
+
+`/rag/stats` agrège désormais documents, vecteurs à jour et sources dans une
+seule requête PostgreSQL, donc un même snapshot. Son délai de 20 secondes
+convient à l'index complet ; un échec reste une indisponibilité explicite,
+sans compte de vecteurs inventé à zéro. La recherche ponctuelle garde son
+délai propre. Construction native sérialisée avec deux jobs réussie,
+installation atomique puis 14 tests HTTP réussis.
+
+La requête SQL a été exercée sur le PostgreSQL réel (47 725 passages,
+47 433 vecteurs à jour, 50 groupes). Après installation, l'appel HTTP réel a
+répondu en 83 ms (47 859 passages, 47 564 vecteurs). Les comptes sont des
+observations pendant les écritures ; ils ne prouvent pas le préchargement
+complet. `shenron-rag-sync.service` a repris, avec un PID Bun observé et une
+progression réelle de la génération des références canoniques.
+
+
+## Préparation et suivi des entraînements Bun
+
+Le générateur de rollouts refuse les options invalides avant toute écriture,
+borne les appels professeur et sauvegarde les lignes acceptées à SIGINT/SIGTERM.
+Le suivi Discord enregistre un échec de lancement et attend le vidage borné
+des sorties avant son statut final. Il autorise un entraînement à la fois.
+L'évaluation chat comptabilise les refus et mentions d'IA indépendamment de la
+longueur, et déclare `retrieval: "none"` ; elle ne qualifie pas le RAG.
+
+Validation d'intégration : 25 tests du générateur/évaluateur et 11 tests de la
+commande train réussis (123 assertions au total), TypeScript scripts et bot
+réussis, lint des propriétaires sans erreur. Le format des fichiers existants
+est préservé ; oxfmt échouait déjà sur ces fichiers avant les changements.
+Aucun dataset privé n'a été modifié, aucun entraînement GPU ni promotion n'a
+été lancé. Les suites RAG restent conditionnées au préchargement complet réel.

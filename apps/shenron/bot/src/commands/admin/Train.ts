@@ -17,7 +17,13 @@ import { CommandsChannelOnly } from "~/guards/CommandsChannelOnly";
 import { TrainingService } from "~/services/TrainingService";
 import { SHENRON_THEME, SHENRON_SEPARATORS, renderProgressBar } from "~/lib/embeds";
 
-export type TrainRunKind = "embed" | "rerank";
+export const TRAIN_RUN_KINDS = ["embed", "rerank"] as const;
+export type TrainRunKind = (typeof TRAIN_RUN_KINDS)[number];
+
+const TAIL_CHARS = 1500;
+/** How long a finished job waits for its pipes to drain before the final status is set. */
+const DRAIN_GRACE_MS = 2000;
+const DISCORD_CONTENT_MAX = 2000;
 
 export interface TrainJob {
 	id: string;
@@ -72,7 +78,17 @@ const bunSpawner: Spawner = (argv, env) => {
 	return { exited: proc.exited, stdout: proc.stdout, stderr: proc.stderr };
 };
 
-/** Non-blocking `aphrody train run` jobs started from Discord, tracked in memory. */
+async function settleWithin(work: Promise<unknown>, ms: number): Promise<void> {
+	let timer: ReturnType<typeof setTimeout> | undefined;
+	await Promise.race([work, new Promise<void>((resolve) => (timer = setTimeout(resolve, ms)))]);
+	clearTimeout(timer);
+}
+
+/**
+ * Non-blocking `aphrody train run` jobs started from Discord, tracked in memory.
+ * One job at a time: embed/rerank take the exclusive GPU lease, which preempts the
+ * production llama-server.
+ */
 export class TrainJobRunner {
 	private readonly jobs = new Map<string, TrainJob>();
 
@@ -81,8 +97,17 @@ export class TrainJobRunner {
 		private readonly env: NodeJS.ProcessEnv = process.env
 	) {}
 
+	running(): TrainJob | undefined {
+		for (const job of this.jobs.values()) if (job.status === "running") return job;
+		return undefined;
+	}
+
 	start(kind: TrainRunKind, input: string | undefined, startedBy: string): TrainJob {
-		const id = `shenron-${kind}-${Date.now().toString(36)}`;
+		if (!TRAIN_RUN_KINDS.includes(kind)) throw new Error(`Type d'entraînement inconnu : ${kind}`);
+		const busy = this.running();
+		if (busy) throw new Error(`Un entraînement est déjà en cours : ${busy.id}`);
+		const base = `shenron-${kind}-${Date.now().toString(36)}`;
+		const id = this.jobs.has(base) ? `${base}-${this.jobs.size}` : base;
 		const job: TrainJob = {
 			id,
 			kind,
@@ -95,26 +120,36 @@ export class TrainJobRunner {
 			tail: "",
 		};
 		this.jobs.set(id, job);
-		const proc = this.spawner(buildTrainRunArgv(job, this.env), {
-			...this.env,
-			APHRODY_AGENT_DOMAIN: "dbfr",
-		});
+		let proc: ReturnType<Spawner>;
+		try {
+			proc = this.spawner(buildTrainRunArgv(job, this.env), {
+				...this.env,
+				APHRODY_AGENT_DOMAIN: "dbfr",
+			});
+		} catch (error) {
+			// A missing binary must not leave a job "running" forever (it would block every later start).
+			job.status = "failed";
+			job.tail = String(error).slice(-TAIL_CHARS);
+			throw error;
+		}
 		const append = async (stream: ReadableStream<Uint8Array> | null) => {
 			if (!stream) return;
 			const decoder = new TextDecoder();
 			for await (const chunk of stream) {
-				job.tail = (job.tail + decoder.decode(chunk, { stream: true })).slice(-1500);
+				job.tail = (job.tail + decoder.decode(chunk, { stream: true })).slice(-TAIL_CHARS);
 			}
 		};
-		void Promise.all([append(proc.stdout), append(proc.stderr)]).catch(() => {});
+		const drained = Promise.allSettled([append(proc.stdout), append(proc.stderr)]);
 		void (async () => {
 			try {
 				const code = await proc.exited;
+				// Final status only once the last output is in the tail (bounded: a grandchild may hold the pipe).
+				await settleWithin(drained, DRAIN_GRACE_MS);
 				job.exitCode = code;
 				job.status = code === 0 ? "succeeded" : "failed";
 			} catch (error) {
 				job.status = "failed";
-				job.tail = `${job.tail}\n${String(error)}`.slice(-1500);
+				job.tail = `${job.tail}\n${String(error)}`.slice(-TAIL_CHARS);
 			}
 		})();
 		return job;
@@ -133,23 +168,41 @@ export class TrainJobRunner {
 
 export const trainJobs = new TrainJobRunner();
 
+/** With `RAG_BACKEND=aphrody` the eval runs on the Aphrody backend: there is no local BM25 fallback to report. */
+export function embeddingsLabel(active: boolean, remoteRag: boolean): string {
+	if (remoteRag) return active ? "🟢 En ligne (Aphrody E5)" : "🔴 Hors-ligne (embeddings Aphrody indisponibles)";
+	return active ? "🟢 En ligne (WASM/ONNX)" : "🟠 Repli Lexical BM25";
+}
+
 function isAdmin(interaction: CommandInteraction): boolean {
 	return interaction.memberPermissions?.has(PermissionsBitField.Flags.Administrator) ?? false;
 }
 
-function describeJob(job: TrainJob): string {
+function clip(value: string, max: number): string {
+	return value.length > max ? `…${value.slice(-(max - 1))}` : value;
+}
+
+/** Bounded for Discord: a free-text `entree` can be thousands of characters, a tail may hold a code fence. */
+export function describeJob(job: TrainJob): string {
 	const icon = job.status === "running" ? "🟠" : job.status === "succeeded" ? "🟢" : "🔴";
-	const tail = job.tail.trim().slice(-900);
+	const tail = job.tail.trim().slice(-900).replaceAll("```", "'''");
 	return [
 		`${icon} **Job \`${job.id}\`** — ${job.status}${job.exitCode === null ? "" : ` (code ${job.exitCode})`}`,
 		`• Type : \`${job.kind}\``,
-		`• Entrée : \`${job.input}\``,
-		`• Sortie : \`${job.outDir}\``,
+		`• Entrée : \`${clip(job.input, 300).replaceAll("`", "'")}\``,
+		`• Sortie : \`${clip(job.outDir, 300).replaceAll("`", "'")}\``,
 		`• Lancé par <@${job.startedBy}> <t:${Math.floor(job.startedAt / 1000)}:R>`,
 		tail ? `\`\`\`\n${tail}\n\`\`\`` : "",
 	]
 		.filter(Boolean)
 		.join("\n");
+}
+
+export function startedMessage(job: TrainJob): string {
+	return `🚀 Entraînement lancé.\n${describeJob(job)}\nSuivi : \`/train job id:${job.id}\``.slice(
+		0,
+		DISCORD_CONTENT_MAX
+	);
 }
 
 @Discord()
@@ -210,7 +263,7 @@ export class TrainCommands {
 						`**nDCG@10 (Qualité de placement) :** \`${ndcgPct}%\``,
 						SHENRON_SEPARATORS.solid,
 						`⏱️ **Durée d'exécution :** \`${metrics.durationMs} ms\` (${Math.round(metrics.durationMs / (metrics.cases || 1))} ms/req)`,
-						`⚡ **Sidecar Embeddings :** ${metrics.sidecarActive ? "🟢 En ligne (WASM/ONNX)" : "🟠 Repli Lexical BM25"}`,
+						`⚡ **Sidecar Embeddings :** ${embeddingsLabel(metrics.sidecarActive, process.env.RAG_BACKEND === "aphrody")}`,
 					].join("\n")
 				);
 
@@ -637,7 +690,7 @@ export class TrainCommands {
 		try {
 			const job = trainJobs.start(kind, input, interaction.user.id);
 			await interaction.reply({
-				content: `🚀 Entraînement lancé.\n${describeJob(job)}\nSuivi : \`/train job id:${job.id}\``,
+				content: startedMessage(job),
 				flags: MessageFlags.Ephemeral,
 			});
 		} catch (e: any) {

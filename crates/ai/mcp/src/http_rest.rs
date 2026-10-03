@@ -22,6 +22,7 @@ use serde::Deserialize;
 use serde_json::{Value, json};
 
 const DB_TIMEOUT: Duration = Duration::from_millis(1500);
+const DB_STATS_TIMEOUT: Duration = Duration::from_secs(20);
 // Durable commits may wait for WAL fsync and the transactional cache revision.
 // A search deadline must not abort an otherwise valid editorial generation.
 const DB_WRITE_TIMEOUT: Duration = Duration::from_secs(30);
@@ -305,78 +306,40 @@ async fn shenron_rag_stats(headers: HeaderMap) -> Response {
     let Some(client) = connect_db().await else {
         return shenron_error(StatusCode::SERVICE_UNAVAILABLE, "RAG database unavailable");
     };
-    let count = tokio::time::timeout(
-        DB_TIMEOUT,
+    // One statement keeps document/vector counts in the same PostgreSQL snapshot.
+    // Full-index aggregates need a separate deadline from point reads.
+    let stats = tokio::time::timeout(
+        DB_STATS_TIMEOUT,
         client.query_one(
-            "SELECT count(*) FROM aphrody_rag_documents WHERE corpus IN ('shenron', \
-             'dragonball_shenron') AND COALESCE(metadata->>'visible', 'true') <> 'false'",
+            "WITH groups AS (SELECT \
+             COALESCE(d.metadata->>'originSourceId', d.metadata->>'sourceId', \
+             d.metadata->>'source_id', 'unknown') AS source_id, \
+             COALESCE(d.metadata->>'kind', 'document') AS kind, count(*) AS chunks, \
+             count(v.document_id) AS vectors FROM aphrody_rag_documents d \
+             LEFT JOIN aphrody_shenron_vectors v ON v.document_id = d.id AND \
+             d.corpus = 'shenron' AND v.model = 'Xenova/multilingual-e5-small' AND \
+             d.updated_at <= v.created_at WHERE d.corpus IN ('shenron', \
+             'dragonball_shenron') AND COALESCE(d.metadata->>'visible', 'true') <> 'false' \
+             GROUP BY 1, 2) SELECT COALESCE(sum(chunks), 0)::bigint, \
+             COALESCE(sum(vectors), 0)::bigint, \
+             (SELECT count(*) FROM aphrody_shenron_vectors), \
+             COALESCE(jsonb_agg(jsonb_build_object('sourceId', source_id, 'kind', kind, \
+             'count', chunks, 'vectors', vectors) ORDER BY chunks DESC, source_id, kind), \
+             '[]'::jsonb) FROM groups",
             &[],
         ),
     )
     .await;
-    let Ok(Ok(count)) = count else {
+    let Ok(Ok(stats)) = stats else {
         return shenron_error(StatusCode::SERVICE_UNAVAILABLE, "RAG statistics unavailable");
     };
-    let groups = tokio::time::timeout(
-        DB_TIMEOUT,
-        client.query(
-            "SELECT COALESCE(metadata->>'originSourceId', metadata->>'sourceId', \
-             metadata->>'source_id', 'unknown'), COALESCE(metadata->>'kind', 'document'), \
-             count(*) FROM aphrody_rag_documents WHERE corpus IN ('shenron', \
-             'dragonball_shenron') AND COALESCE(metadata->>'visible', 'true') <> 'false' GROUP BY \
-             1, 2 ORDER BY 3 DESC LIMIT 100",
-            &[],
-        ),
-    )
-    .await;
-    let Ok(Ok(groups)) = groups else {
-        return shenron_error(StatusCode::SERVICE_UNAVAILABLE, "RAG statistics unavailable");
-    };
-    let vector_groups = tokio::time::timeout(
-        DB_TIMEOUT,
-        client.query(
-            "SELECT COALESCE(d.metadata->>'originSourceId', d.metadata->>'sourceId', \
-             d.metadata->>'source_id', 'unknown'), COALESCE(d.metadata->>'kind', 'document'), \
-             count(*) FROM aphrody_rag_documents d JOIN aphrody_shenron_vectors v ON \
-             v.document_id = d.id WHERE d.corpus = 'shenron' AND v.model = \
-             'Xenova/multilingual-e5-small' AND d.updated_at <= v.created_at AND \
-             COALESCE(d.metadata->>'visible','true') <> 'false' GROUP BY 1, 2",
-            &[],
-        ),
-    )
-    .await
-    .ok()
-    .and_then(Result::ok)
-    .unwrap_or_default();
-    let vectors_by_group = vector_groups
-        .into_iter()
-        .map(|row| ((row.get::<_, String>(0), row.get::<_, String>(1)), row.get::<_, i64>(2)))
-        .collect::<HashMap<_, _>>();
-    let sources = groups
-        .iter()
-        .map(|row| {
-            let source_id = row.get::<_, String>(0);
-            let kind = row.get::<_, String>(1);
-            json!({
-                "sourceId": source_id,
-                "kind": kind,
-                "count": row.get::<_, i64>(2),
-                "vectors": vectors_by_group.get(&(source_id, kind)).copied().unwrap_or(0)
-            })
-        })
-        .collect::<Vec<_>>();
-    let vectors_stored =
-        count_rows(&client, "SELECT count(*) FROM aphrody_shenron_vectors").await.unwrap_or(0);
-    let vectors = count_rows(
-        &client,
-        "SELECT count(*) FROM aphrody_shenron_vectors v JOIN aphrody_rag_documents d ON d.id = \
-         v.document_id WHERE v.model = 'Xenova/multilingual-e5-small' AND d.corpus = 'shenron' \
-         AND COALESCE(d.metadata->>'visible','true') <> 'false' AND d.updated_at <= v.created_at",
-    )
-    .await
-    .unwrap_or(0);
     response(
-        json!({"chunks": count.get::<_, i64>(0), "vectors": vectors, "vectorsStored": vectors_stored, "sources": sources}),
+        json!({
+            "chunks": stats.get::<_, i64>(0),
+            "vectors": stats.get::<_, i64>(1),
+            "vectorsStored": stats.get::<_, i64>(2),
+            "sources": stats.get::<_, Value>(3)
+        }),
         "no-store",
     )
 }
