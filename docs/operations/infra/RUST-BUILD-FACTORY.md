@@ -68,6 +68,16 @@ Clippy, tests and release linking, even when compiled dependencies are reused.
 Do not merge feature-specific release commands when their feature union would
 change a binary's behavior.
 
+IECODE depends on paths in its Aphrody sibling. Its primary repository pin
+alone therefore does not identify the compiled source graph. Check the expected
+full Aphrody revision and clean tracked state inside the acquired factory lock,
+immediately before Cargo; capture both revisions in the job evidence. Repeat
+the sibling revision and cleanliness assertions after the command. If a queued
+job encounters a changed sibling revision, fail that job rather than describing
+its output as qualification of the earlier pair. Source synchronization must
+respect the same factory lock. Reconciliation of an IECODE lock against a newer
+sibling is a separate recorded operation with its lock diff retained.
+
 ## Migration boundary
 
 The service catalog distinguishes repository templates from operating-system
