@@ -166,6 +166,39 @@ test("Shenron typecheck prepares dependencies and refuses a failed artifact", as
   }, true);
 });
 
+test("Shenron compile selects its owner leaf once and prepares workspace artifacts", async () => {
+  await fixture(async (root) => {
+    await mkdir(join(root, "apps/shenron"), { recursive: true });
+    await mkdir(join(root, "packages/shenron"), { recursive: true });
+    await rename(join(root, "packages/app"), join(root, "apps/shenron/app"));
+    await writeFile(
+      join(root, "package.json"),
+      JSON.stringify({ workspaces: ["apps/shenron/*", "packages/*", "!packages/excluded"] }),
+    );
+    await writeFile(
+      join(root, "apps/shenron/app/package.json"),
+      JSON.stringify({
+        name: "fixture-app",
+        dependencies: { bridge: "workspace:*" },
+        scripts: { compile: "bun public.ts", "compile:owner": "bun owner.ts" },
+      }),
+    );
+    await writeFile(
+      join(root, "apps/shenron/app/public.ts"),
+      'throw new Error("public wrapper must not recurse");',
+    );
+    await writeFile(
+      join(root, "apps/shenron/app/owner.ts"),
+      `await Bun.write(${JSON.stringify(join(root, "owner-args.json"))}, JSON.stringify(process.argv.slice(2)));`,
+    );
+    expect(await runShenron(["script", "fixture-app", "compile", "--fixture"], root)).toBe(0);
+    expect(await readFile(join(root, "builds.log"), "utf8")).toBe("base\nmiddle\n");
+    expect(JSON.parse(await readFile(join(root, "owner-args.json"), "utf8"))).toEqual([
+      "--fixture",
+    ]);
+  });
+});
+
 test("RG typecheck stops before consuming stale output from a failed dependency build", async () => {
   await fixture(async (root) => {
     await mkdir(join(root, "packages/base/dist"), { recursive: true });

@@ -103,7 +103,10 @@ async function runCheck(args: string[], root: string): Promise<number> {
   }
   let exitCode = 0;
   for (const workspace of selected) {
-    const script = checkScripts(name as Check).find((candidate) => workspace.scripts[candidate]);
+    const script =
+      name === "build" && workspace.scripts["build:owner"]
+        ? "build:owner"
+        : checkScripts(name as Check).find((candidate) => workspace.scripts[candidate]);
     if (!script) continue;
     console.error(`Shenron ${name}: ${workspace.name} (${script})`);
     const child = Bun.spawn([process.execPath, "run", script], {
@@ -129,7 +132,28 @@ async function runDeclaredScript(args: string[], root: string): Promise<number> 
   const workspace = selected[0]!;
   if (!Object.hasOwn(workspace.scripts, script))
     throw new Error(`${workspace.name} does not declare script ${script}`);
-  const child = Bun.spawn([process.execPath, "run", script, ...scriptArgs], {
+  const ownerScript =
+    ["build", "compile"].includes(script) && workspace.scripts[`${script}:owner`]
+      ? `${script}:owner`
+      : script;
+  if (/^(?:build|compile|test|typecheck|type-check)(?::owner)?$/.test(ownerScript)) {
+    const dispatched = await routeHeavyBuild(
+      [
+        "bun",
+        "packages/infra/workspace/src/ops.ts",
+        "shenron",
+        "script",
+        workspace.name,
+        ownerScript,
+        ...scriptArgs,
+      ],
+      root,
+    );
+    if (dispatched !== undefined) return dispatched;
+    const code = await buildDependencies(root, [workspace.name]);
+    if (code !== 0) return code;
+  }
+  const child = Bun.spawn([process.execPath, "run", ownerScript, ...scriptArgs], {
     cwd: workspace.path,
     stdin: "inherit",
     stdout: "inherit",

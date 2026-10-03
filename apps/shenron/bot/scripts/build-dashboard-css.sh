@@ -6,9 +6,14 @@ set -uo pipefail
 cd "$(dirname "$0")/.."
 IN=src/dashboard/styles.css
 OUT=src/dashboard/styles.compiled.css
+CLI=node_modules/.bin/tailwindcss
 BUN_BIN="${BUN_BIN:-$(command -v bun)}"
 if [ -z "$BUN_BIN" ] || ! [ -x "$BUN_BIN" ]; then
 	echo "✗ bun is required" >&2
+	exit 1
+fi
+if [ ! -r "$CLI" ]; then
+	echo "✗ frozen @tailwindcss/cli dependency is required; run the workspace frozen install" >&2
 	exit 1
 fi
 
@@ -21,4 +26,4 @@ for k in HTTP_PROXY HTTPS_PROXY http_proxy https_proxy ALL_PROXY all_proxy; do
 	fi
 done
 
-exec env "${CLEAN_ENV[@]}" "$BUN_BIN" x @tailwindcss/cli --input "$IN" --output "$OUT" --minify
+exec env "${CLEAN_ENV[@]}" "$BUN_BIN" "$CLI" --input "$IN" --output "$OUT" --minify
