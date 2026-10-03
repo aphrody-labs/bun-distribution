@@ -1708,9 +1708,6 @@
       "bin": {
         "agent-browser": "./bin/agent-browser.js",
       },
-      "dependencies": {
-        "@aphrody/bun": "workspace:*",
-      },
       "devDependencies": {
         "@types/bun": "catalog:",
         "typescript": "catalog:",

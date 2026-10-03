@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: Apache-2.0
-import { spawnSync } from "@aphrody/bun/spawn-sync";
 import { existsSync, realpathSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { DEFAULT_OBSCURA_CDP_URL, WebCdpPage } from "./cdp.ts";
@@ -21,20 +20,24 @@ function hasFlag(args: readonly string[], flag: string): boolean {
 }
 
 function isMetaCommand(args: readonly string[]): boolean {
-  return args.some((arg) => arg === "--help" || arg === "-h" || arg === "--version") ||
-    ["skills", "install", "doctor", "upgrade", "help", "version"].includes(args[0] ?? "");
+  return (
+    args.some((arg) => arg === "--help" || arg === "-h" || arg === "--version") ||
+    ["skills", "install", "doctor", "upgrade", "help", "version"].includes(args[0] ?? "")
+  );
 }
 
 /** Resolve the installed native Rust CLI, never this package's Bun launcher. */
 export function resolveAgentBrowserBinary(): string {
-  const override = process.env.APHRODY_AGENT_BROWSER_BIN ??
+  const override =
+    process.env.APHRODY_AGENT_BROWSER_BIN ??
     process.env.AGENT_BROWSER_BIN ??
     process.env.APHRODY_BROWSER_BIN;
   if (override) {
     const path = existsSync(override) ? override : Bun.which(override);
     if (!path) throw new Error(`agent-browser binary override is unavailable: ${override}`);
     const binary = realpathSync(resolve(path));
-    if (binary === OWN_LAUNCHER) throw new Error("agent-browser binary override points to this Bun launcher");
+    if (binary === OWN_LAUNCHER)
+      throw new Error("agent-browser binary override points to this Bun launcher");
     return binary;
   }
 
@@ -50,7 +53,9 @@ export function resolveAgentBrowserBinary(): string {
 
   const installed = Bun.which(`aphrody-agent-browser${ext}`);
   if (installed) return realpathSync(installed);
-  throw new Error("native agent-browser Rust CLI is unavailable; install it or set APHRODY_AGENT_BROWSER_BIN");
+  throw new Error(
+    "native agent-browser Rust CLI is unavailable; install it or set APHRODY_AGENT_BROWSER_BIN",
+  );
 }
 
 /** Build CLI arguments for the externally owned Obscura CDP server. */
@@ -65,7 +70,8 @@ export function prepareAgentBrowserArgs(
   }
 
   if (!isMetaCommand(finalArgs) && !hasFlag(finalArgs, "--cdp")) {
-    const cdpUrl = options.cdpUrl ??
+    const cdpUrl =
+      options.cdpUrl ??
       (options.port ? `ws://127.0.0.1:${options.port}/devtools/browser` : undefined) ??
       process.env.APHRODY_BROWSER_CDP_URL ??
       process.env.APHRODY_CDP_URL ??
@@ -103,8 +109,12 @@ function parseResponse(stdout: string, stderr: string, status: number): CommandR
         id: typeof parsed.id === "string" ? parsed.id : "",
         success,
         data: parsed.data ?? parsed,
-        error: typeof parsed.error === "string" ? parsed.error :
-          (success ? undefined : stderr.trim() || `agent-browser exited ${status}`),
+        error:
+          typeof parsed.error === "string"
+            ? parsed.error
+            : success
+              ? undefined
+              : stderr.trim() || `agent-browser exited ${status}`,
       };
     } catch {
       // A diagnostic line can look like JSON; inspect the preceding lines.
@@ -122,10 +132,14 @@ function parseResponse(stdout: string, stderr: string, status: number): CommandR
 // oxlint-disable-next-line typescript/no-extraneous-class
 export class AgentBrowser {
   static async open(url?: string, options: LaunchOptions = {}): Promise<AgentPage> {
-    const session = options.session ?? `sess-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
-    const endpoint = options.cdpUrl ??
+    const session =
+      options.session ?? `sess-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+    const endpoint =
+      options.cdpUrl ??
       (options.port ? `ws://127.0.0.1:${options.port}/devtools/browser` : undefined) ??
-      process.env.APHRODY_BROWSER_CDP_URL ?? process.env.APHRODY_CDP_URL ?? DEFAULT_OBSCURA_CDP_URL;
+      process.env.APHRODY_BROWSER_CDP_URL ??
+      process.env.APHRODY_CDP_URL ??
+      DEFAULT_OBSCURA_CDP_URL;
     const native = await WebCdpPage.connect(endpoint);
     const page = new AgentPage(session, options, native);
     try {
@@ -140,26 +154,41 @@ export class AgentBrowser {
   /** Compatibility path for callers requiring a synchronous command result. */
   static exec(args: string[], options: LaunchOptions = {}): CommandResponse {
     try {
-      const result = spawnSync(process.execPath, [OWN_LAUNCHER, ...prepareAgentBrowserArgs(args, options)], {
-        encoding: "utf8",
-        timeout: options.timeoutMs ?? 30_000,
-        windowsHide: true,
-      });
-      if (result.error) return { id: "", success: false, error: result.error.message };
-      return parseResponse(result.stdout ?? "", result.stderr ?? "", result.status ?? 1);
+      const result = Bun.spawnSync(
+        [process.execPath, OWN_LAUNCHER, ...prepareAgentBrowserArgs(args, options)],
+        {
+          stdin: "ignore",
+          stdout: "pipe",
+          stderr: "pipe",
+          timeout: options.timeoutMs ?? 30_000,
+          windowsHide: true,
+        },
+      );
+      return parseResponse(
+        result.stdout.toString("utf8"),
+        result.stderr.toString("utf8"),
+        result.exitCode ?? 1,
+      );
     } catch (error) {
-      return { id: "", success: false, error: error instanceof Error ? error.message : String(error) };
+      return {
+        id: "",
+        success: false,
+        error: error instanceof Error ? error.message : String(error),
+      };
     }
   }
 
   /** Browser actions use this path so a Rust CDP command cannot freeze Bun. */
   static async execAsync(args: string[], options: LaunchOptions = {}): Promise<CommandResponse> {
     try {
-      const proc = Bun.spawn([process.execPath, OWN_LAUNCHER, ...prepareAgentBrowserArgs(args, options)], {
-        stdout: "pipe",
-        stderr: "pipe",
-        windowsHide: true,
-      });
+      const proc = Bun.spawn(
+        [process.execPath, OWN_LAUNCHER, ...prepareAgentBrowserArgs(args, options)],
+        {
+          stdout: "pipe",
+          stderr: "pipe",
+          windowsHide: true,
+        },
+      );
       const timeoutMs = options.timeoutMs ?? 30_000;
       let timedOut = false;
       const timer = setTimeout(() => {
@@ -172,13 +201,18 @@ export class AgentBrowser {
           new Response(proc.stderr).text(),
           proc.exited,
         ]);
-        if (timedOut) return { id: "", success: false, error: `agent-browser timed out after ${timeoutMs} ms` };
+        if (timedOut)
+          return { id: "", success: false, error: `agent-browser timed out after ${timeoutMs} ms` };
         return parseResponse(stdout, stderr, status);
       } finally {
         clearTimeout(timer);
       }
     } catch (error) {
-      return { id: "", success: false, error: error instanceof Error ? error.message : String(error) };
+      return {
+        id: "",
+        success: false,
+        error: error instanceof Error ? error.message : String(error),
+      };
     }
   }
 }
@@ -201,13 +235,18 @@ export class AgentPage {
     return this.#native;
   }
 
-  url(): string { return this.#native?.url() ?? "about:blank"; }
+  url(): string {
+    return this.#native?.url() ?? "about:blank";
+  }
 
   async open(): Promise<void> {
     if (this.#native) return;
-    const endpoint = this.options.cdpUrl ??
+    const endpoint =
+      this.options.cdpUrl ??
       (this.options.port ? `ws://127.0.0.1:${this.options.port}/devtools/browser` : undefined) ??
-      process.env.APHRODY_BROWSER_CDP_URL ?? process.env.APHRODY_CDP_URL ?? DEFAULT_OBSCURA_CDP_URL;
+      process.env.APHRODY_BROWSER_CDP_URL ??
+      process.env.APHRODY_CDP_URL ??
+      DEFAULT_OBSCURA_CDP_URL;
     this.#connecting ??= WebCdpPage.connect(endpoint);
     try {
       this.#native = await this.#connecting;
@@ -254,22 +293,29 @@ export class AgentPage {
     const refs = new Map<string, RefEntry>();
     const lines: string[] = [];
     const nodes = (matches.nodeIds as number[] | undefined) ?? [];
-    const entries = await Promise.all(nodes.map(async (nodeId) => {
-      const [described, html] = await Promise.all([
-        this.#page._send("DOM.describeNode", { nodeId }),
-        this.#outerHtml(nodeId),
-      ]);
-      const node = described.node as { nodeName?: string; attributes?: string[] } | undefined;
-      const attrs = node?.attributes ?? [];
-      const attribute = (name: string): string | undefined => {
-        for (let i = 0; i + 1 < attrs.length; i += 2) if (attrs[i] === name) return attrs[i + 1];
-        return undefined;
-      };
-      const role = attribute("role") ?? node?.nodeName?.toLowerCase() ?? "element";
-      const name = attribute("aria-label") ?? attribute("placeholder") ??
-        html.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
-      return { nodeId, role, name };
-    }));
+    const entries = await Promise.all(
+      nodes.map(async (nodeId) => {
+        const [described, html] = await Promise.all([
+          this.#page._send("DOM.describeNode", { nodeId }),
+          this.#outerHtml(nodeId),
+        ]);
+        const node = described.node as { nodeName?: string; attributes?: string[] } | undefined;
+        const attrs = node?.attributes ?? [];
+        const attribute = (name: string): string | undefined => {
+          for (let i = 0; i + 1 < attrs.length; i += 2) if (attrs[i] === name) return attrs[i + 1];
+          return undefined;
+        };
+        const role = attribute("role") ?? node?.nodeName?.toLowerCase() ?? "element";
+        const name =
+          attribute("aria-label") ??
+          attribute("placeholder") ??
+          html
+            .replace(/<[^>]*>/g, " ")
+            .replace(/\s+/g, " ")
+            .trim();
+        return { nodeId, role, name };
+      }),
+    );
     for (const [index, { nodeId, role, name }] of entries.entries()) {
       const ref = `@e${index + 1}`;
       this.#refs.set(ref, nodeId);
@@ -291,8 +337,20 @@ export class AgentPage {
     const quad = (box.model as { content: number[] }).content;
     const x = ((quad[0] ?? 0) + (quad[2] ?? 0)) / 2;
     const y = ((quad[1] ?? 0) + (quad[5] ?? 0)) / 2;
-    await this.#page._send("Input.dispatchMouseEvent", { type: "mousePressed", x, y, button: opts.button, clickCount: opts.clickCount ?? 1 });
-    await this.#page._send("Input.dispatchMouseEvent", { type: "mouseReleased", x, y, button: opts.button, clickCount: opts.clickCount ?? 1 });
+    await this.#page._send("Input.dispatchMouseEvent", {
+      type: "mousePressed",
+      x,
+      y,
+      button: opts.button,
+      clickCount: opts.clickCount ?? 1,
+    });
+    await this.#page._send("Input.dispatchMouseEvent", {
+      type: "mouseReleased",
+      x,
+      y,
+      button: opts.button,
+      clickCount: opts.clickCount ?? 1,
+    });
   }
 
   async fill(target: string, text: string): Promise<void> {
@@ -328,7 +386,9 @@ export class AgentPage {
   async select(target: string, value: string): Promise<void> {
     await this.open();
     await this.#page._send("DOM.focus", { nodeId: await this.#resolve(target) });
-    await this.#page.evaluate<void>(`document.activeElement.value = ${JSON.stringify(value)}; document.activeElement.dispatchEvent(new Event('change', { bubbles: true }))`);
+    await this.#page.evaluate<void>(
+      `document.activeElement.value = ${JSON.stringify(value)}; document.activeElement.dispatchEvent(new Event('change', { bubbles: true }))`,
+    );
   }
 
   async screenshot(path?: string, opts: ScreenshotOptions = {}): Promise<string> {
@@ -339,7 +399,10 @@ export class AgentPage {
       ...(opts.quality === undefined ? {} : { quality: opts.quality }),
     });
     const data = String(result.data ?? "");
-    if (path) { await Bun.write(path, Buffer.from(data, "base64")); return path; }
+    if (path) {
+      await Bun.write(path, Buffer.from(data, "base64"));
+      return path;
+    }
     return data;
   }
 
@@ -352,38 +415,58 @@ export class AgentPage {
       ...(opts.scale === undefined ? {} : { scale: opts.scale }),
     });
     const data = String(result.data ?? "");
-    if (path) { await Bun.write(path, Buffer.from(data, "base64")); return path; }
+    if (path) {
+      await Bun.write(path, Buffer.from(data, "base64"));
+      return path;
+    }
     return data;
   }
 
   async getText(target: string): Promise<string> {
     await this.open();
     const html = await this.#outerHtml(await this.#resolve(target));
-    return html.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
+    return html
+      .replace(/<[^>]*>/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
   }
 
   async getAttribute(target: string, name: string): Promise<string | null> {
     await this.open();
-    const described = await this.#page._send("DOM.describeNode", { nodeId: await this.#resolve(target) });
+    const described = await this.#page._send("DOM.describeNode", {
+      nodeId: await this.#resolve(target),
+    });
     const attrs = (described.node as { attributes?: string[] } | undefined)?.attributes ?? [];
-    for (let i = 0; i + 1 < attrs.length; i += 2) if (attrs[i] === name) return attrs[i + 1] ?? null;
+    for (let i = 0; i + 1 < attrs.length; i += 2)
+      if (attrs[i] === name) return attrs[i + 1] ?? null;
     return null;
   }
 
-  async evaluate<T = unknown>(script: string): Promise<T> { await this.open(); return this.#page.evaluate<T>(script); }
+  async evaluate<T = unknown>(script: string): Promise<T> {
+    await this.open();
+    return this.#page.evaluate<T>(script);
+  }
 
   async waitFor(selectorOrMs: string | number): Promise<void> {
     await this.open();
-    if (typeof selectorOrMs === "number") { await Bun.sleep(selectorOrMs); return; }
+    if (typeof selectorOrMs === "number") {
+      await Bun.sleep(selectorOrMs);
+      return;
+    }
     const deadline = Date.now() + (this.options.timeoutMs ?? 30_000);
     while (Date.now() < deadline) {
-      try { await this.#resolve(selectorOrMs); return; } catch { await Bun.sleep(50); }
+      try {
+        await this.#resolve(selectorOrMs);
+        return;
+      } catch {
+        await Bun.sleep(50);
+      }
     }
     throw new Error(`Timeout waiting for ${selectorOrMs}`);
   }
 
   async close(): Promise<void> {
-    const native = this.#native ?? await this.#connecting;
+    const native = this.#native ?? (await this.#connecting);
     if (native) await native.close();
   }
 }
