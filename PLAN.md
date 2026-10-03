@@ -1235,7 +1235,7 @@ Gemini et les catalogues historiques ne constituent pas l’état courant.
 
 ## 8. Coordination commune Claude / Codex / agy — demande active
 
-- [ ] Auditer et dédupliquer toutes les surfaces A2A sur le monorepo actuel.
+- [~] Auditer et dédupliquer toutes les surfaces A2A sur le monorepo actuel.
 - [x] Centraliser règles, mémoire et conversations par les propriétaires existants.
 - [x] Configurer les trois agents pour travailler simultanément dans le même
   checkout et la même branche, avec attribution des fichiers et coordination.
@@ -1331,6 +1331,20 @@ oxlint des deux fichiers et clippy du générateur réussis. Les tests A2A cibl�
 (24) et la suite pipeline complète passent ; aucun Cargo requis à l’exécution
 TypeScript. Les endpoints publics et la sémantique de routage kernel restent
 à qualifier ; cette étape ne ferme pas le plan global.
+
+### Transports HTTP A2A du site et du bot dédupliqués — 2026-10-03
+
+Le parseur JSON/NDJSON, la résolution URL, les erreurs 502, les requêtes JSON-RPC
+et le transport SSE sont maintenant propriétaires de
+`@shenron/pipeline/aphrody/a2a-transport`. Les adaptateurs site/bot conservent
+leurs alias legacy distincts, le `no-store` du site et le streaming du bot.
+Tests d'intégration par serveur loopback : bot 8/8 (24 assertions), site 7/7
+(35 assertions). Typechecks pipeline et bot réussis ; Oxc sur les trois modules
+et format des sources réussis. Le typecheck complet du site reste rouge sur deux
+TS2559 dans `src/lib/service-health.ts`, fichier modifié par le travail
+parallèle et hors de ce lot. Le runtime public, la migration des autres surfaces
+et le broker mémoire conservé pour le dashboard ne sont pas clos par ce
+déplacement : l'audit global reste partiel.
 
 ### Routage A2A kernel vers les pairs enregistrés
 

@@ -25,6 +25,7 @@
     "./ai/wire": "./src/ai/wire.ts",
     "./aphrody/remote-ocr": "./src/aphrody/remote-ocr.ts",
     "./aphrody/a2a-probes": "./src/aphrody/a2a-probes.ts",
+    "./aphrody/a2a-transport": "./src/aphrody/a2a-transport.ts",
     "./aphrody/shenron-embeddings": "./src/aphrody/shenron-embeddings.ts",
     "./aphrody/a2a": "./src/aphrody/a2a.ts",
     "./aphrody/cli": "./src/aphrody/cli.ts",
