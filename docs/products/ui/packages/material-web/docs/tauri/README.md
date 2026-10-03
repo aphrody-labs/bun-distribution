@@ -4,7 +4,7 @@
 
 These pages previously described a proposed `examples/showcase/src-tauri` host and mobile
 targets. That showcase is a Bun web fixture; it has no Tauri host. Aphrody's current Tauri host
-is `crates/aphrody-app`, which mounts `packages/app-ui`.
+is `crates/aphrody-app`, which mounts `packages/ui/app-ui`.
 
 Use the current repository guides:
 

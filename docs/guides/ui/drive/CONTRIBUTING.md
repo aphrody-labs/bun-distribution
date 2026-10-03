@@ -8,7 +8,7 @@ for the current ownership and parity gates.
 ## Product targets
 
 Drive is Aphrody's Files feature, not a separate product shell. The active UI lives in
-`../packages/app-ui`; Tauri (`../crates/aphrody-app`) is the current desktop host. Optional HTTP
+`../packages/ui/app-ui`; Tauri (`../crates/aphrody-app`) is the current desktop host. Optional HTTP
 delivery reuses that same UI. The React Native, Expo, iOS and Android app and the old
 `drive/apps/tauri` host were removed. Do not add another desktop bridge or copy daemon types into
 TypeScript by hand.
@@ -38,7 +38,7 @@ part of an interface change.
 
 1. Keep Rust operations and persisted data rules in `drive/core`. Regenerate the Specta client
    after changing public types; avoid handwritten duplicates.
-2. Put shared controls and the Files UI in `../packages/m3-*` and `../packages/app-ui`. Keep
+2. Put shared controls and the Files UI in `../packages/m3-*` and `../packages/ui/app-ui`. Keep
    `SdPath`, daemon operations, generated client types and file actions in `drive/core`,
    `drive/packages/ts-client` and `crates/aphrody-drive`. `drive/packages/interface` is an excluded
    FSL reference mirror, not an active application package.

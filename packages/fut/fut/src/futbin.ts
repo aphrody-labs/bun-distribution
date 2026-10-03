@@ -181,16 +181,16 @@ export async function scrapeFutBinPrice(
 
   // 1. First attempt: Zero-copy high-performance Rust FFI DOM Tree query
   try {
-    const { parseHtml, querySelector, destroyTree } = await import("@aphrody/bxc/ffi/rust-bridge");
+    const { webParseHtml: parseHtml } = await import("@aphrody/bun/web");
     const tree = parseHtml(content);
     if (tree) {
       try {
-        const priceNode = querySelector(tree, ".price-val") || querySelector(tree, "#flat-prices");
+        const priceNode = tree.querySelector(".price-val") || tree.querySelector("#flat-prices");
         if (priceNode) {
           priceVal = priceNode.replace(/<[^>]+>/g, "").trim();
         }
       } finally {
-        destroyTree(tree);
+        tree.close();
       }
     }
   } catch {

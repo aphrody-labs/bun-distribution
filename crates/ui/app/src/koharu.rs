@@ -68,3 +68,34 @@ pub async fn koharu_rpc(
     }
     broker.call(method, params).await
 }
+
+#[derive(serde::Deserialize)]
+pub struct KoharuCall {
+    method: String,
+    #[serde(default = "empty_params")]
+    params: Value,
+}
+
+fn empty_params() -> Value {
+    json!({})
+}
+
+/// Run several Koharu calls in order; each entry is `{ "ok": value }` or `{ "error": message }`.
+#[tauri::command]
+pub async fn koharu_rpc_batch(
+    window: tauri::WebviewWindow,
+    broker: tauri::State<'_, KoharuBroker>,
+    calls: Vec<KoharuCall>,
+) -> Result<Vec<Value>, String> {
+    if window.label() != "main" {
+        return Err("Koharu commands are only available from the main window".into());
+    }
+    let mut results = Vec::with_capacity(calls.len());
+    for KoharuCall { method, params } in calls {
+        results.push(match broker.call(method, params).await {
+            Ok(value) => json!({ "ok": value }),
+            Err(error) => json!({ "error": error }),
+        });
+    }
+    Ok(results)
+}

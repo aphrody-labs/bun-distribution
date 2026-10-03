@@ -241,12 +241,23 @@ pub(crate) async fn dispatch_a2a(
         aphrody_a2a_coord::AiManifest::load_repo_default().map_err(|e| miette::miette!("{e}"))?;
 
     match action {
-        crate::A2aAction::Serve { bind } => {
+        crate::A2aAction::Serve { bind, unix, no_tcp, coord_dir } => {
             let addr: SocketAddr =
                 bind.parse().map_err(|e| miette::miette!("invalid --bind: {e}"))?;
             let cfg = ListenerConfig { bind: addr, manifest, repo_root, dry_run: false };
-            println!("A2A coord on http://{addr} — agent card, /ping, /msg, JSON-RPC, HTTP+REST");
-            listener::serve(cfg).await.map_err(|e| miette::miette!("a2a serve failed: {e}"))?;
+            let env_path = |k: &str| std::env::var_os(k).filter(|v| !v.is_empty()).map(Into::into);
+            let opts = listener::ServeOptions {
+                unix: unix.or_else(|| env_path("A2A_SOCKET")),
+                no_tcp,
+                coord_dir: coord_dir.or_else(|| env_path("COORD_DIR")),
+            };
+            if !opts.no_tcp {
+                println!("A2A coord on http://{addr} — agent card, /ping, /msg, /jsonrpc, /events, JSON-RPC, HTTP+REST");
+            }
+            if let Some(sock) = &opts.unix {
+                println!("A2A coord on unix:{}", sock.display());
+            }
+            listener::serve_with_options(cfg, opts).await.map_err(|e| miette::miette!("a2a serve failed: {e}"))?;
         },
         crate::A2aAction::Tick { iteration, side, peer, subject, body, kind } => {
             let opts =

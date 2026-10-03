@@ -85,7 +85,7 @@ Koharu capability.
 
 | Koharu capability | Koharu evidence | Existing aphrody-ui surface | Coverage |
 | --- | --- | --- | --- |
-| Project lifecycle and page collection | `commands.listProjects`, `createProject`, `openProject`, `deleteProject`, `closeProject`, `getPages`, `import`; UI `StartView`, `PageRail` | `packages/app-ui` (not in repo) explorer browses filesystem locations and collections; Drive is storage-oriented | **Absent**: no Koharu project/page contract, import pipeline, or lifecycle UI. Explorer folders are not manga projects. |
+| Project lifecycle and page collection | `commands.listProjects`, `createProject`, `openProject`, `deleteProject`, `closeProject`, `getPages`, `import`; UI `StartView`, `PageRail` | `packages/ui/app-ui` (not in repo) explorer browses filesystem locations and collections; Drive is storage-oriented | **Absent**: no Koharu project/page contract, import pipeline, or lifecycle UI. Explorer folders are not manga projects. |
 | Structured page/scene document | `koharu-scene` and `koharu-storage`; protocol `Page`, `Layer`, `AnalysisRegion`; layer editing commands | Aphrody has generic file metadata, preview, and inspector surfaces | **Absent**: no Koharu scene schema, layer hierarchy, per-page revisions, or editing commands. |
 | Manga detection, OCR, translation, inpainting pipeline | `commands.process(scope, operation)`; stages `detection`, `ocr`, `translation`, `inpainting`; `koharu-pipeline`, `koharu-ml`, `koharu-translator` | Generic Aphrody OCR action (`runOcr` / `aphrody/ocr/run`) and background job UI; agent chat can invoke tools | **Partial only at generic OCR/job level**. No manga detector, translation-stage orchestration, region association, or Koharu model lifecycle is present in app-ui. |
 | Provider and generation preferences | `koharu-sdk` preferences methods, model/provider preference panels; `koharu-translator` supports local and remote backends | Settings > Koharu reads and saves pipeline, translation, provider and typography configuration through `koharu_rpc` | **Native settings path implemented**. The complete editor settings component still uses the original Tauri command contract. |
@@ -125,13 +125,13 @@ This is a capability routing map, not a claim that every crate is directly expos
 
 ## Aphrody reuse points and limits
 
-- **Application shell and design system:** `packages/app-ui` (not in repo), `@aphrody/m3-*`, and
+- **Application shell and design system:** `packages/ui/app-ui` (not in repo), `@aphrody/m3-*`, and
   `aphrody-app` host the Koharu settings section. The `koharu_rpc` broker exposes
   the library JSONL method surface; a project editor route and scene adapter remain absent.
-- **Agent:** `packages/app-ui/src/codex-chat.tsx` (not in repo) uses the Aphrody app-server path. Koharu's
+- **Agent:** `packages/ui/app-ui/src/codex-chat.tsx` (not in repo) uses the Aphrody app-server path. Koharu's
   AgentPanel currently uses Koharu Tauri commands. Unifying them requires an explicit tool/API
   contract for project and scene operations, including authorization and cancellation.
-- **OCR and tasks:** `packages/app-ui/src/tauri-bridge.ts` (not in repo) contains generic OCR RPC and task
+- **OCR and tasks:** `packages/ui/app-ui/src/tauri-bridge.ts` (not in repo) contains generic OCR RPC and task
   adapters; the Aphrody job store is not a Koharu job feed. Koharu's four-stage pipeline has
   semantics beyond file OCR.
 - **Rendering:** `aphrody-render`/`aphrody-render3d` own Aphrody render contracts. The
@@ -169,7 +169,7 @@ Koharu Rust/bridge source (this monorepo):
 
 aphrody-ui checkout:
 
-- `packages/app-ui/src/tauri-bridge.ts` (not in repo), `codex-chat.tsx`, `routes/explorer/`, `routes/tasks/`,
+- `packages/ui/app-ui/src/tauri-bridge.ts` (not in repo), `codex-chat.tsx`, `routes/explorer/`, `routes/tasks/`,
   `models-hub.tsx`, `stores/aphrodyJobStore.ts`
 - `crates/ui/app/`, `crates/ui/render/`, `crates/aphrody-render3d/` (not in repo),
   `packages/ui/canvas/`

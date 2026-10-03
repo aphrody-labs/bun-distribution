@@ -32,6 +32,8 @@ import {
 	toAphrodyMangaReviewCandidateInput,
 	type OcrReviewImage,
 } from "./aphrody-ocr-candidate";
+import { KoharuSdkClient } from "./koharu-sdk-client";
+import { submitCandidateFile } from "./candidate-submit";
 
 const [command, ...args] = process.argv.slice(2);
 const positional = args.filter((arg) => !arg.startsWith("--"));
@@ -92,6 +94,14 @@ async function main() {
 		console.log(JSON.stringify({ status: "ocr_candidate_artifact_written", kind, count: output.length, output: outputPath }));
 		return;
 	}
+	if (command === "koharu-submit") {
+		const fileFlag = args.indexOf("--file");
+		const file = fileFlag === -1 ? undefined : args[fileFlag + 1];
+		if (!file || args.length !== 2) throw new Error("usage: pipeline koharu-submit --file <unreviewed-candidates.jsonl> (env SHENRON_API_URL, SHENRON_API_TOKEN)");
+		const { count, response } = await submitCandidateFile(file);
+		console.log(JSON.stringify({ status: "candidates_submitted", count, response }));
+		return;
+	}
 	if (command === "koharu-native-candidate") {
 		const [kind, manifestPath, projectRoot, projectName, outputPath] = args;
 		const sdkFlag = args.indexOf("--sdk");
@@ -108,35 +118,8 @@ async function main() {
 			if (byImageHash.has(entry.imageSha256)) throw new Error(`ambiguous manifest image digest: ${entry.imageSha256}`);
 			byImageHash.set(entry.imageSha256, entry);
 		}
-		const child = Bun.spawn([sdkFlag === -1 ? "koharu-sdk" : args[sdkFlag + 1]!, "--root", projectRoot], {
-			stdin: "pipe", stdout: "pipe", stderr: "inherit",
-		});
-		const reader = child.stdout.getReader();
-		const decoder = new TextDecoder();
-		let buffer = "";
-		let requestId = 0;
-		async function call(method: string, params: unknown): Promise<unknown> {
-			const id = ++requestId;
-			child.stdin.write(`${JSON.stringify({ id, method, params })}\n`);
-			await child.stdin.flush();
-			for (;;) {
-				const end = buffer.indexOf("\n");
-				if (end >= 0) {
-					const line = buffer.slice(0, end);
-					buffer = buffer.slice(end + 1);
-					const response = JSON.parse(line) as { id?: number; result?: unknown; error?: unknown; event?: string };
-					if (response.event) continue;
-					if (response.id !== id) throw new Error(`unexpected Koharu SDK response ID for ${method}`);
-					if (response.error !== undefined) throw new Error(`Koharu SDK ${method}: ${String(response.error)}`);
-					if (!("result" in response)) throw new Error(`Koharu SDK ${method} returned no result`);
-					return response.result;
-				}
-				const next = await reader.read();
-				if (next.done) throw new Error(`Koharu SDK closed during ${method}`);
-				buffer += decoder.decode(next.value, { stream: true });
-				if (buffer.length > 150_000_000) throw new Error("Koharu SDK response exceeds 150 MB");
-			}
-		}
+		const sdk = new KoharuSdkClient(projectRoot, sdkFlag === -1 ? "koharu-sdk" : args[sdkFlag + 1]!);
+		const call = (method: string, params: unknown) => sdk.call(method, params);
 		const output: string[] = [];
 		const seen = new Set<string>();
 		try {
@@ -180,9 +163,7 @@ async function main() {
 			await Bun.write(outputPath, `${output.join("\n")}\n`);
 			console.log(JSON.stringify({ status: "native_candidate_artifact_written", kind, count: output.length, output: outputPath }));
 		} finally {
-			child.stdin.end();
-			reader.releaseLock();
-			await child.exited;
+			await sdk.close();
 		}
 		return;
 	}

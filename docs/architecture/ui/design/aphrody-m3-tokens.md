@@ -6,7 +6,7 @@ Brand colour roles are generated, never hand-written. Contract:
 
 ## Desktop app
 
-`packages/app-ui/src/brand-theme.ts` (not in repo) renders `src/brand.css` from `BRAND_SEED = "#17335C"`
+`packages/ui/app-ui/src/brand-theme.ts` (not in repo) renders `src/brand.css` from `BRAND_SEED = "#17335C"`
 (the measured seed of `aphrody-identity`, `design --m3-seed`) with
 `@aphrody/m3-tokens/dynamic-color` `cssFromSeed`. Dark is the default (`:root`, `.dark`);
 light is `.light`. Change the seed at the source, then regenerate; never edit `brand.css`.

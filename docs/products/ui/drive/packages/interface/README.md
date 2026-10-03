@@ -2,7 +2,7 @@
 # Archived Drive interface source
 
 This directory is a non-buildable source archive from Spacedrive's FSL-1.1-ALv2 interface.
-The desktop and optional HTTP hosts both use [`packages/app-ui`](../../../packages/app-ui);
+The desktop and optional HTTP hosts both use [`packages/ui/app-ui`](../../../packages/ui/app-ui);
 shared React components live in `packages/m3-*`, and Drive contracts and behavior live in
 `drive/packages/ts-client`, `drive/core`, and `crates/aphrody-drive`.
 

@@ -469,9 +469,7 @@ pub enum RuntimeEvent {
 
 pub(crate) fn node_is_script(dom: &DomTree, node_id: NodeId) -> bool {
     dom.with_node(node_id, |node| {
-        node.as_element()
-            .map(|name| (&*name.local).eq_ignore_ascii_case("script"))
-            .unwrap_or(false)
+        node.as_element().map(|name| (&*name.local).eq_ignore_ascii_case("script")).unwrap_or(false)
     })
     .unwrap_or(false)
 }
@@ -1850,9 +1848,7 @@ fn op_dom_inner(shared: SharedState, cmd: String, arg1: String, arg2: String) ->
         "namespace_uri" => {
             let nid = arg1.parse::<u32>().unwrap_or(0);
             let ns = dom
-                .with_node(NodeId::new(nid), |n| {
-                    n.as_element().map(|name| (&*name.ns).to_string())
-                })
+                .with_node(NodeId::new(nid), |n| n.as_element().map(|name| (&*name.ns).to_string()))
                 .flatten()
                 .unwrap_or_default();
             serde_json::to_string(&ns).unwrap_or("\"\"".into())
@@ -5093,7 +5089,8 @@ fn op_subtle_aes_cbc(
     #[buffer] data: &[u8],
 ) -> Result<Vec<u8>, deno_error::JsErrorBox> {
     use cbc::{
-        Decryptor, Encryptor,
+        Decryptor,
+        Encryptor,
         // cipher 0.5 renamed `Block{En,De}cryptMut` to `BlockMode{En,De}crypt`.
         cipher::{BlockModeDecrypt, BlockModeEncrypt, KeyIvInit, block_padding::Pkcs7},
     };
@@ -5682,10 +5679,11 @@ fn op_canvas_register_surface(
     let shared = state.borrow::<SharedState>().clone();
     let mut state = shared.borrow_mut();
     let node = NodeId::new(nid);
-    let is_canvas =
-        state.dom.as_ref().and_then(|dom| dom.get_node(node)).is_some_and(|node| {
-            node.as_element().is_some_and(|name| (&*name.local) == "canvas")
-        });
+    let is_canvas = state
+        .dom
+        .as_ref()
+        .and_then(|dom| dom.get_node(node))
+        .is_some_and(|node| node.as_element().is_some_and(|name| (&*name.local) == "canvas"));
     if !is_canvas {
         return false;
     }
@@ -6312,9 +6310,8 @@ fn op_image_metadata(state: &OpState, nid: u32, _cached_only: bool) -> String {
     let gs = shared.borrow();
     let node_id = NodeId::new(nid);
     let is_image = gs.dom.as_ref().is_some_and(|dom| {
-        dom.get_node(node_id).is_some_and(|node| {
-            node.as_element().is_some_and(|element| (&*element.local) == "img")
-        })
+        dom.get_node(node_id)
+            .is_some_and(|node| node.as_element().is_some_and(|element| (&*element.local) == "img"))
     });
     if !is_image {
         return serde_json::json!({ "ok": false, "currentSrc": "" }).to_string();

@@ -9,6 +9,8 @@ mod public_web_tools;
 mod search_tools;
 #[cfg(not(target_arch = "wasm32"))]
 pub(crate) use aphrody_google_mcp::shenron_gemini_web;
+#[cfg(not(target_arch = "wasm32"))]
+mod shenron_llm_backend;
 mod shenron_vector;
 mod x_tools;
 // Voice MCP tools (TTS via aphrody-voice + STT via aphrody-voice-stt).

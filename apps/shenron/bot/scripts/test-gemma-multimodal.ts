@@ -1,21 +1,30 @@
 /**
- * test-gemma-multimodal.ts — Teste la MULTIMODALITÉ de Gemma 4 (vision) via Ollama
+ * test-gemma-multimodal.ts — Teste la MULTIMODALITÉ de Gemma 4 (vision) via Aphrody
  * sur (1) les PLANCHES manga (images .webp ↔ OCR de référence) et (2) les VIDÉOS
  * (frames extraites par ffmpeg). Gemma 4 est encoder-free multimodal (projecteur clip).
  *
  * Manga : prend N planches (avec OCR de référence) du data/manga-visual-map.json,
  *   envoie l'image à Gemma, et compare la lecture/description vision au texte OCR.
  * Vidéo : --video <fichier> → extrait 3 frames réparties (ffmpeg) → Gemma décrit la
- *   scène et identifie les personnages. (Ollama ne prend pas la vidéo brute : on passe
+ *   scène et identifie les personnages. (L'endpoint ne prend pas la vidéo brute : on passe
  *   des frames. Aucune vidéo locale n'existe par défaut → fournir --video.)
  *
+ * Transport : Aphrody `POST /api/v1/shenron/vision/structured` (aphrody-ai-http,
+ *   Bearer token), une image par requête ; aucun appel direct à un serveur de modèle.
+ *
  * Usage : bun apps/shenron/bot/scripts/test-gemma-multimodal.ts [--manga N] [--video chemin]
- * Env   : MM_MODEL (défaut gemma4:12b), OLLAMA_URL
+ * Env   : APHRODY_AI_HTTP_URL, APHRODY_AI_HTTP_TOKEN, MM_MODEL (défaut : modèle vision résolu)
  */
 import { $ } from "bun";
+import {
+	requireAiHttpToken,
+	requireAiHttpUrl,
+	resolveVisionModel,
+} from "@shenron/pipeline/ai/config";
 
-const MODEL = process.env.MM_MODEL ?? "gemma4:12b";
-const OLLAMA = process.env.OLLAMA_URL ?? "http://127.0.0.1:11434/api/chat";
+const MODEL = process.env.MM_MODEL ?? resolveVisionModel(process.env);
+const VISION_URL = new URL("/api/v1/shenron/vision/structured", requireAiHttpUrl(process.env));
+const TOKEN = requireAiHttpToken(process.env);
 const ROOT = new URL("..", import.meta.url).pathname; // apps/shenron/bot/
 const args = process.argv.slice(2);
 const flag = (name: string, def?: string) => {
@@ -23,26 +32,36 @@ const flag = (name: string, def?: string) => {
 	return i >= 0 ? (args[i + 1] ?? "") : def;
 };
 
-async function vision(prompt: string, imagesB64: string[]): Promise<string> {
-	const t0 = Date.now();
-	const res = await fetch(OLLAMA, {
+type VisionImage = { data: string; mime: "image/jpeg" | "image/png" | "image/webp" };
+
+async function visionOne(prompt: string, image: VisionImage): Promise<string> {
+	const res = await fetch(VISION_URL, {
 		method: "POST",
-		headers: { "content-type": "application/json" },
+		headers: { "content-type": "application/json", authorization: `Bearer ${TOKEN}` },
 		body: JSON.stringify({
+			image_base64: image.data,
+			image_mime: image.mime,
+			prompt: `${prompt}\nRéponds en JSON : {"texte": string, "description": string}.`,
 			model: MODEL,
-			think: false,
-			stream: false,
-			messages: [{ role: "user", content: prompt, images: imagesB64 }],
-			options: { temperature: 0.3, num_predict: 320 },
+			reasoning_effort: "low",
 		}),
 	});
 	if (!res.ok) return `(HTTP ${res.status} : ${(await res.text()).slice(0, 200)})`;
-	const j = (await res.json()) as { message?: { content?: string } };
-	return `${(j.message?.content ?? "").trim()}  [${Date.now() - t0}ms]`;
+	const j = (await res.json()) as { result?: unknown };
+	return JSON.stringify(j.result ?? null);
 }
 
-const b64 = async (path: string) =>
-	Buffer.from(await Bun.file(path).arrayBuffer()).toString("base64");
+async function vision(prompt: string, images: VisionImage[]): Promise<string> {
+	const t0 = Date.now();
+	const outs: string[] = [];
+	for (const image of images) outs.push(await visionOne(prompt, image));
+	return `${outs.join(" | ")}  [${Date.now() - t0}ms]`;
+}
+
+const b64 = async (path: string): Promise<VisionImage> => ({
+	data: Buffer.from(await Bun.file(path).arrayBuffer()).toString("base64"),
+	mime: path.endsWith(".png") ? "image/png" : path.endsWith(".webp") ? "image/webp" : "image/jpeg",
+});
 
 // ── 1. MANGA (vision sur planches) ───────────────────────────────────────────
 const nManga = Number(flag("--manga", "3"));
@@ -94,7 +113,7 @@ if (video) {
 		dur = Math.max(6, Math.floor(Number(probe.trim()) || 60));
 	} catch {}
 	const ts = [0.2, 0.5, 0.8].map((f) => Math.floor(dur * f));
-	const frames: string[] = [];
+	const frames: VisionImage[] = [];
 	for (const t of ts) {
 		const out = `/tmp/mm-frame-${t}.png`;
 		try {

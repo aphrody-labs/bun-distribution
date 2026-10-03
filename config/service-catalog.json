@@ -294,6 +294,18 @@
       "public": false
     },
     {
+      "id": "shenron-redis",
+      "application": "shenron",
+      "kind": "cache",
+      "runtime": "redis",
+      "unit": "redis-server.service",
+      "host": "dbfr",
+      "health": "tcp://127.0.0.1:16379",
+      "target": "dbfr:127.0.0.1:6379",
+      "note": "Private Redis for Shenron live RAG qualification; forwarded with shenron-pg-tunnel by the Infra tunnel owner",
+      "public": false
+    },
+    {
       "id": "shenron-backup",
       "application": "shenron",
       "kind": "backup",
@@ -325,4 +337,3 @@
     "authPolicy": "one-better-auth-contract-per-public-origin"
   }
 }
-

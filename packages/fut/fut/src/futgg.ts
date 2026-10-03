@@ -222,24 +222,24 @@ export async function scrapeFutGgPlayer(
   let nativeLeague: string | undefined = undefined;
 
   try {
-    const { parseHtml, querySelector, destroyTree } = await import("@aphrody/bxc/ffi/rust-bridge");
+    const { webParseHtml: parseHtml } = await import("@aphrody/bun/web");
     const tree = parseHtml(content);
     if (tree) {
       try {
-        const clubHtml = querySelector(tree, 'a[href*="/clubs/"]');
+        const clubHtml = tree.querySelector('a[href*="/clubs/"]');
         if (clubHtml) {
           nativeClub = clubHtml.replace(/<[^>]+>/g, "").trim() || undefined;
         }
-        const nationHtml = querySelector(tree, 'a[href*="/nations/"]');
+        const nationHtml = tree.querySelector('a[href*="/nations/"]');
         if (nationHtml) {
           nativeNation = nationHtml.replace(/<[^>]+>/g, "").trim() || undefined;
         }
-        const leagueHtml = querySelector(tree, 'a[href*="/leagues/"]');
+        const leagueHtml = tree.querySelector('a[href*="/leagues/"]');
         if (leagueHtml) {
           nativeLeague = leagueHtml.replace(/<[^>]+>/g, "").trim() || undefined;
         }
       } finally {
-        destroyTree(tree);
+        tree.close();
       }
     }
   } catch {

@@ -380,9 +380,10 @@ pub fn retained_attribute_mutation_kind(
     if name == "style" {
         return Subtree;
     }
-    let Some(local) = tree.get_node(node).and_then(|node| {
-        node.as_element().map(|element| (&*element.local).to_ascii_lowercase())
-    }) else {
+    let Some(local) = tree
+        .get_node(node)
+        .and_then(|node| node.as_element().map(|element| (&*element.local).to_ascii_lowercase()))
+    else {
         return Full;
     };
 
@@ -1668,9 +1669,9 @@ fn mark_viewport_overflow_source(
     root: NodeId,
     styles: &mut HashMap<NodeId, crate::LayoutStyle>,
 ) {
-    let root_is_html = tree.get_node(root).is_some_and(|node| {
-        node.as_element().is_some_and(|element| (&*element.local) == "html")
-    });
+    let root_is_html = tree
+        .get_node(root)
+        .is_some_and(|node| node.as_element().is_some_and(|element| (&*element.local) == "html"));
     if !root_is_html {
         return;
     }
@@ -3139,9 +3140,9 @@ fn node_is_style_text(tree: &DomTree, node: NodeId, parent: Option<NodeId>) -> b
         tree.get_node(parent).is_some_and(|node| {
             node.as_element().is_some_and(|element| (&*element.local) == "style")
         })
-    }) || tree.get_node(node).is_some_and(|node| {
-        node.as_element().is_some_and(|element| (&*element.local) == "style")
-    })
+    }) || tree
+        .get_node(node)
+        .is_some_and(|node| node.as_element().is_some_and(|element| (&*element.local) == "style"))
 }
 
 fn subtree_may_match_relational_path(
@@ -3285,9 +3286,9 @@ fn add_style_context_chain(tree: &DomTree, node: NodeId, dirty: &mut HashSet<Nod
 }
 
 fn add_table_row_child_scope(tree: &DomTree, parent: NodeId, dirty: &mut HashSet<NodeId>) {
-    let is_table_row = tree.get_node(parent).is_some_and(|node| {
-        node.as_element().is_some_and(|element| (&*element.local) == "tr")
-    });
+    let is_table_row = tree
+        .get_node(parent)
+        .is_some_and(|node| node.as_element().is_some_and(|element| (&*element.local) == "tr"));
     if !is_table_row {
         return;
     }
@@ -5794,9 +5795,7 @@ fn layout_dom_once(
                     .into_iter()
                     .filter(|option_id| {
                         tree.get_node(*option_id).map_or(false, |option| {
-                            option
-                                .as_element()
-                                .map_or(false, |name| (&*name.local) == "option")
+                            option.as_element().map_or(false, |name| (&*name.local) == "option")
                         })
                     })
                     .map(|option_id| tree.text_content(option_id).trim().to_string())
@@ -8934,8 +8933,7 @@ pub(crate) fn rendered_children(tree: &DomTree, id: NodeId) -> Vec<NodeId> {
         .find(|child| {
             tree.get_node(*child).is_some_and(|child| {
                 child.as_element().is_some_and(|name| {
-                    (&*name.ns) == "http://www.w3.org/1999/xhtml"
-                        && (&*name.local) == "summary"
+                    (&*name.ns) == "http://www.w3.org/1999/xhtml" && (&*name.local) == "summary"
                 })
             })
         })
@@ -10587,9 +10585,9 @@ fn build_table(
     styles: &HashMap<NodeId, crate::LayoutStyle>,
 ) -> Option<taffy::NodeId> {
     let style = styles.get(&id)?;
-    let native_html_table = tree.get_node(id).is_some_and(|node| {
-        node.as_element().is_some_and(|element| (&*element.local) == "table")
-    });
+    let native_html_table = tree
+        .get_node(id)
+        .is_some_and(|node| node.as_element().is_some_and(|element| (&*element.local) == "table"));
     let authored_row_children = if native_html_table {
         None
     } else {

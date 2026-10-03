@@ -5,11 +5,8 @@
 //! and upstream configurations (supporting both loopback TCP and Unix domain sockets),
 //! with mirror validation (`nginx -t -c <candidate> -q`) and atomic SIGHUP worker reload.
 
-use std::{
-    fmt::Write as _,
-    path::Path,
-};
 use serde::{Deserialize, Serialize};
+use std::{fmt::Write as _, path::Path};
 
 /// Target upstream definition: loopback TCP or zero-copy Unix domain socket.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -54,11 +51,7 @@ pub struct UpstreamBlock {
 impl UpstreamBlock {
     #[must_use]
     pub fn new(name: impl Into<String>) -> Self {
-        Self {
-            name: name.into(),
-            targets: Vec::new(),
-            keepalive: None,
-        }
+        Self { name: name.into(), targets: Vec::new(), keepalive: None }
     }
 
     #[must_use]
@@ -268,27 +261,23 @@ impl NginxConfig {
             let default_pid_path = Path::new("/run/nginx.pid");
             let path = pid_file.unwrap_or(default_pid_path);
 
-            let raw_pid = std::fs::read_to_string(path)
-                .map_err(|e| format!("failed to read Nginx master PID from {}: {e}", path.display()))?;
+            let raw_pid = std::fs::read_to_string(path).map_err(|e| {
+                format!("failed to read Nginx master PID from {}: {e}", path.display())
+            })?;
 
             let pid: i32 = raw_pid
                 .trim()
                 .parse()
                 .map_err(|e| format!("invalid PID format in {}: {e}", path.display()))?;
 
-            // Send SIGHUP (signal 1) to trigger graceful reload using standard kill command
-            let output = std::process::Command::new("kill")
-                .arg("-HUP")
-                .arg(pid.to_string())
-                .output()
-                .map_err(|e| format!("failed to invoke kill -HUP {pid}: {e}"))?;
-
-            if output.status.success() {
-                Ok(())
-            } else {
-                let stderr = String::from_utf8_lossy(&output.stderr).trim().to_string();
-                Err(format!("failed to send SIGHUP to Nginx master PID {pid}: {stderr}"))
+            if pid <= 0 {
+                return Err(format!("Nginx master PID must be positive in {}", path.display()));
             }
+            let pid = rustix::process::Pid::from_raw(pid)
+                .ok_or_else(|| "Nginx master PID must be positive".to_string())?;
+            rustix::process::kill_process(pid, rustix::process::Signal::HUP).map_err(|error| {
+                format!("failed to send SIGHUP to Nginx master PID {pid}: {error}")
+            })
         }
         #[cfg(not(unix))]
         {
@@ -318,6 +307,17 @@ mod tests {
         );
     }
 
+    #[cfg(unix)]
+    #[test]
+    fn reload_hot_rejects_nonpositive_and_invalid_pids_before_signalling() {
+        let directory = tempfile::tempdir().unwrap();
+        let path = directory.path().join("nginx.pid");
+        for pid in ["0", "-1", "-123", "not-a-pid", "2147483648"] {
+            std::fs::write(&path, pid).unwrap();
+            assert!(NginxConfig::reload_hot(Some(&path)).is_err());
+        }
+    }
+
     #[test]
     fn render_virtual_host_with_unix_socket() {
         let config = NginxConfig::new()
@@ -328,7 +328,10 @@ mod tests {
             )
             .with_server(
                 ServerBlock::new("api.rosegriffon.fr")
-                    .with_tls("/etc/letsencrypt/live/api.rosegriffon.fr/fullchain.pem", "/etc/letsencrypt/live/api.rosegriffon.fr/privkey.pem")
+                    .with_tls(
+                        "/etc/letsencrypt/live/api.rosegriffon.fr/fullchain.pem",
+                        "/etc/letsencrypt/live/api.rosegriffon.fr/privkey.pem",
+                    )
                     .with_location(LocationBlock::new("/").with_proxy("rg_api_upstream")),
             );
 

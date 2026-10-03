@@ -5,8 +5,8 @@ use crate::compute::common::alignment::{
 };
 use crate::geometry::{InBothAbsAxis, Line, Point, Rect, Size};
 use crate::style::{
-    AlignContent, AlignItems, AlignItemsKeyword, AlignSelf, AvailableSpace, CoreStyle, GridItemStyle, Overflow,
-    Position,
+    AlignContent, AlignItems, AlignItemsKeyword, AlignSelf, AvailableSpace, CoreStyle,
+    GridItemStyle, Overflow, Position,
 };
 use crate::tree::{Layout, LayoutPartialTreeExt, NodeId, SizingMode};
 use crate::util::sys::{f32_max, f32_min};
@@ -39,7 +39,8 @@ pub(super) fn align_tracks(
     let gap = 0.0;
     let layout_is_reversed = false;
     let track_alignment = apply_alignment_fallback(free_space, num_tracks, track_alignment_style);
-    let track_alignment = if axis_is_reversed { track_alignment.reversed() } else { track_alignment };
+    let track_alignment =
+        if axis_is_reversed { track_alignment.reversed() } else { track_alignment };
 
     // Compute offsets
     let mut total_offset = origin;
@@ -53,7 +54,14 @@ pub(super) fn align_tracks(
         let is_first = is_non_collapsed_track && !seen_non_collapsed_track;
 
         let offset = if is_non_collapsed_track {
-            compute_alignment_offset(free_space, num_tracks, gap, track_alignment, layout_is_reversed, is_first)
+            compute_alignment_offset(
+                free_space,
+                num_tracks,
+                gap,
+                track_alignment,
+                layout_is_reversed,
+                is_first,
+            )
         } else {
             0.0
         };
@@ -76,7 +84,8 @@ pub(super) fn align_and_position_item(
     baseline_shim: f32,
     direction: Direction,
 ) -> (Size<f32>, f32, f32) {
-    let grid_area_size = Size { width: grid_area.right - grid_area.left, height: grid_area.bottom - grid_area.top };
+    let grid_area_size =
+        Size { width: grid_area.right - grid_area.left, height: grid_area.bottom - grid_area.top };
 
     let style = tree.get_grid_child_style(node);
 
@@ -87,24 +96,27 @@ pub(super) fn align_and_position_item(
     let align_self = style.align_self();
 
     let position = style.position();
-    let inset_horizontal = style
-        .inset()
-        .horizontal_components()
-        .map(|size| size.resolve_to_option(grid_area_size.width, |val, basis| tree.calc(val, basis)));
-    let inset_vertical = style
-        .inset()
-        .vertical_components()
-        .map(|size| size.resolve_to_option(grid_area_size.height, |val, basis| tree.calc(val, basis)));
-    let padding =
-        style.padding().map(|p| p.resolve_or_zero(Some(grid_area_size.width), |val, basis| tree.calc(val, basis)));
-    let border =
-        style.border().map(|p| p.resolve_or_zero(Some(grid_area_size.width), |val, basis| tree.calc(val, basis)));
+    let inset_horizontal = style.inset().horizontal_components().map(|size| {
+        size.resolve_to_option(grid_area_size.width, |val, basis| tree.calc(val, basis))
+    });
+    let inset_vertical = style.inset().vertical_components().map(|size| {
+        size.resolve_to_option(grid_area_size.height, |val, basis| tree.calc(val, basis))
+    });
+    let padding = style
+        .padding()
+        .map(|p| p.resolve_or_zero(Some(grid_area_size.width), |val, basis| tree.calc(val, basis)));
+    let border = style
+        .border()
+        .map(|p| p.resolve_or_zero(Some(grid_area_size.width), |val, basis| tree.calc(val, basis)));
     let padding_border_size = (padding + border).sum_axes();
 
     let box_sizing_adjustment =
         if style.box_sizing() == BoxSizing::ContentBox { padding_border_size } else { Size::ZERO };
-    let aspect_ratio_adjustment =
-        if style.aspect_ratio_uses_content_box() { padding_border_size } else { box_sizing_adjustment };
+    let aspect_ratio_adjustment = if style.aspect_ratio_uses_content_box() {
+        padding_border_size
+    } else {
+        box_sizing_adjustment
+    };
 
     let inherent_size = style
         .size()
@@ -135,12 +147,14 @@ pub(super) fn align_and_position_item(
 
     // Note: This is not a bug. It is part of the CSS spec that both horizontal and vertical margins
     // resolve against the WIDTH of the grid area.
-    let margin =
-        style.margin().map(|margin| margin.resolve_to_option(grid_area_size.width, |val, basis| tree.calc(val, basis)));
+    let margin = style.margin().map(|margin| {
+        margin.resolve_to_option(grid_area_size.width, |val, basis| tree.calc(val, basis))
+    });
 
     let grid_area_minus_item_margins_size = Size {
         width: grid_area_size.width.maybe_sub(margin.left).maybe_sub(margin.right),
-        height: grid_area_size.height.maybe_sub(margin.top).maybe_sub(margin.bottom) - baseline_shim,
+        height: grid_area_size.height.maybe_sub(margin.top).maybe_sub(margin.bottom)
+            - baseline_shim,
     };
 
     // If node is absolutely positioned and width is not set explicitly, then deduce it
@@ -194,8 +208,11 @@ pub(super) fn align_and_position_item(
     // stretched (or otherwise definite), the ratio does not overwrite either
     // one. If only one axis is definite, it supplies the other through the
     // ratio. This matches replaced grid sizing in Blink and Gecko.
-    let Size { width, height } =
-        super::apply_preferred_aspect_ratio(Size { width, height }, aspect_ratio, aspect_ratio_adjustment);
+    let Size { width, height } = super::apply_preferred_aspect_ratio(
+        Size { width, height },
+        aspect_ratio,
+        aspect_ratio_adjustment,
+    );
 
     // Clamp size by min and max width/height
     let Size { width, height } = Size { width, height }.maybe_clamp(min_size, max_size);
@@ -262,9 +279,11 @@ pub(super) fn align_and_position_item(
             crate::AbsoluteAxis::Horizontal,
             Line::FALSE,
         );
-        let fit_content_width =
-            f32_max(min_content_width, f32_min(grid_area_minus_item_margins_size.width, resolved_size.width))
-                .maybe_clamp(min_size.width, max_size.width);
+        let fit_content_width = f32_max(
+            min_content_width,
+            f32_min(grid_area_minus_item_margins_size.width, resolved_size.width),
+        )
+        .maybe_clamp(min_size.width, max_size.width);
         let constrained_size = Size { width: Some(fit_content_width), height: size.height };
         layout_output = tree.perform_child_layout(
             node,
@@ -274,7 +293,8 @@ pub(super) fn align_and_position_item(
             SizingMode::InherentSize,
             Line::FALSE,
         );
-        resolved_size = constrained_size.unwrap_or(layout_output.size).maybe_clamp(min_size, max_size);
+        resolved_size =
+            constrained_size.unwrap_or(layout_output.size).maybe_clamp(min_size, max_size);
     }
 
     let Size { width, height } = resolved_size;
@@ -305,7 +325,12 @@ pub(super) fn align_and_position_item(
         height: if overflow.x == Overflow::Scroll { scrollbar_width } else { 0.0 },
     };
 
-    let resolved_margin = Rect { left: x_margin.start, right: x_margin.end, top: y_margin.start, bottom: y_margin.end };
+    let resolved_margin = Rect {
+        left: x_margin.start,
+        right: x_margin.end,
+        top: y_margin.start,
+        bottom: y_margin.end,
+    };
 
     tree.set_unrounded_layout(
         node,
@@ -348,13 +373,15 @@ pub(super) fn align_item_within_area(
     direction: Direction,
 ) -> (f32, Line<f32>) {
     // Calculate grid area dimension in the axis
-    let non_auto_margin = Line { start: margin.start.unwrap_or(0.0) + baseline_shim, end: margin.end.unwrap_or(0.0) };
+    let non_auto_margin =
+        Line { start: margin.start.unwrap_or(0.0) + baseline_shim, end: margin.end.unwrap_or(0.0) };
     let grid_area_size = f32_max(grid_area.end - grid_area.start, 0.0);
     let free_space = f32_max(grid_area_size - resolved_size - non_auto_margin.sum(), 0.0);
 
     // Expand auto margins to fill available space
     let auto_margin_count = margin.start.is_none() as u8 + margin.end.is_none() as u8;
-    let auto_margin_size = if auto_margin_count > 0 { free_space / auto_margin_count as f32 } else { 0.0 };
+    let auto_margin_size =
+        if auto_margin_count > 0 { free_space / auto_margin_count as f32 } else { 0.0 };
     let resolved_margin = Line {
         start: margin.start.unwrap_or(auto_margin_size) + baseline_shim,
         end: margin.end.unwrap_or(auto_margin_size),
@@ -367,9 +394,7 @@ pub(super) fn align_item_within_area(
     // start edge rather than honoring an authored unsafe center/end alignment.
     // Absolutely positioned items use their authored self-alignment here;
     // their auto margins are resolved by the abs-pos constraint equation.
-    let alignment_keyword = if position != Position::Absolute
-        && auto_margin_count > 0
-        && overflows
+    let alignment_keyword = if position != Position::Absolute && auto_margin_count > 0 && overflows
     {
         AlignItemsKeyword::Start
     } else {
@@ -389,17 +414,17 @@ pub(super) fn align_item_within_area(
             } else {
                 resolved_margin.start
             }
-        }
+        },
         AlignItemsKeyword::End | AlignItemsKeyword::FlexEnd => {
             if direction.is_rtl() {
                 resolved_margin.start
             } else {
                 grid_area_size - resolved_size - resolved_margin.end
             }
-        }
+        },
         AlignItemsKeyword::Center => {
             (grid_area_size - resolved_size + resolved_margin.start - resolved_margin.end) / 2.0
-        }
+        },
     };
 
     let offset_within_area = if position == Position::Absolute {
@@ -410,7 +435,7 @@ pub(super) fn align_item_within_area(
                 } else {
                     start + non_auto_margin.start
                 }
-            }
+            },
             (Some(start), None) => start + non_auto_margin.start,
             (None, Some(end)) => grid_area_size - end - resolved_size - non_auto_margin.end,
             (None, None) => alignment_based_offset,
@@ -435,8 +460,8 @@ pub(super) fn align_item_within_area(
 #[cfg(test)]
 mod tests {
     use super::{f32_max, f32_min};
-    use crate::prelude::*;
     use crate::Point;
+    use crate::prelude::*;
 
     #[derive(Clone, Copy)]
     struct IntrinsicInlineSize {
@@ -455,7 +480,9 @@ mod tests {
         let width = known_dimensions.width.unwrap_or_else(|| match available_space.width {
             AvailableSpace::MinContent => intrinsic.min,
             AvailableSpace::MaxContent => intrinsic.max,
-            AvailableSpace::Definite(available) => f32_max(intrinsic.min, f32_min(available, intrinsic.max)),
+            AvailableSpace::Definite(available) => {
+                f32_max(intrinsic.min, f32_min(available, intrinsic.max))
+            },
         });
         Size { width, height: known_dimensions.height.unwrap_or(10.0) }
     }
@@ -473,17 +500,23 @@ mod tests {
         context: Option<&mut ReplacedIntrinsicSize>,
         _style: &Style,
     ) -> Size<f32> {
-        let intrinsic = context.copied().unwrap_or(ReplacedIntrinsicSize { width: 0.0, height: 0.0 });
+        let intrinsic =
+            context.copied().unwrap_or(ReplacedIntrinsicSize { width: 0.0, height: 0.0 });
         let ratio = intrinsic.width / intrinsic.height;
         match known_dimensions {
             Size { width: Some(width), height: Some(height) } => Size { width, height },
             Size { width: Some(width), height: None } => Size { width, height: width / ratio },
             Size { width: None, height: Some(height) } => Size { width: height * ratio, height },
-            Size { width: None, height: None } => Size { width: intrinsic.width, height: intrinsic.height },
+            Size { width: None, height: None } => {
+                Size { width: intrinsic.width, height: intrinsic.height }
+            },
         }
     }
 
-    fn layout_replaced_grid_item(mut item_style: Style, mut root_style: Style) -> (Point<f32>, Size<f32>) {
+    fn layout_replaced_grid_item(
+        mut item_style: Style,
+        mut root_style: Style,
+    ) -> (Point<f32>, Size<f32>) {
         let mut tree = TaffyTree::new();
         tree.disable_rounding();
         item_style.aspect_ratio = Some(2.0);

@@ -57,10 +57,10 @@ describe("createShenronProvider", () => {
 		expect(() => provider.embeddingModel("e5-query")).toThrow();
 	});
 
-	test("e5-direct transport from configuration", () => {
+	test("a direct embedder URL alone enables no embedding model", () => {
 		const cfg = config({ APHRODY_SHENRON_EMBED_BASE_URL: loopbackBase(18794, "/v1").href });
 		const provider = createShenronProvider(cfg, { compute: null });
-		expect(provider.embeddingModel("e5-passage").provider).toContain("shenron-e5");
+		expect(() => provider.embeddingModel("e5-passage")).toThrow();
 		expect(() => provider.languageModel("chat")).toThrow();
 	});
 

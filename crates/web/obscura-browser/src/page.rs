@@ -8726,8 +8726,7 @@ mod tests {
                             .map(|sheet| sheet.sources.iter().map(ToString::to_string).collect())
                             .unwrap_or_default();
                         if dom.get_node(nid).is_some_and(|node| {
-                            node.as_element()
-                                .is_some_and(|element| (&*element.local) == "style")
+                            node.as_element().is_some_and(|element| (&*element.local) == "style")
                         }) {
                             sources.push(dom.text_content(nid));
                         }

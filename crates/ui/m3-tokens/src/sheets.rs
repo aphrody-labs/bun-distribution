@@ -108,10 +108,12 @@ pub enum Sheet {
     Scheme,
     /// [`static_css`].
     Static,
+    /// Gemini / Aphrody brand tokens CSS ([`crate::gemini_brand::export_aphrody_brand_css`]).
+    Brand,
 }
 
 impl Sheet {
-    /// Parse `tokens`, `tailwind`, `spaceui`, `scheme` or `static`.
+    /// Parse `tokens`, `tailwind`, `spaceui`, `scheme`, `static` or `brand`.
     #[must_use]
     pub fn from_name(name: &str) -> Option<Self> {
         Some(match name {
@@ -120,6 +122,7 @@ impl Sheet {
             "spaceui" => Self::Spaceui,
             "scheme" => Self::Scheme,
             "static" | "m3-tokens" => Self::Static,
+            "brand" | "gemini" | "aphrody" => Self::Brand,
             _ => return None,
         })
     }
@@ -134,6 +137,7 @@ pub fn render(request: &SheetRequest) -> String {
         Sheet::Spaceui => spaceui_css(),
         Sheet::Scheme => scheme_css(request.seed, request.variant, request.dark, request.contrast),
         Sheet::Static => static_css(),
+        Sheet::Brand => crate::gemini_brand::export_aphrody_brand_css(),
     }
 }
 
@@ -621,6 +625,11 @@ mod tests {
         assert!(css.contains("color-scheme: dark;"));
         assert_eq!(css.matches("--md-sys-color-").count(), 49);
         assert_eq!(Sheet::from_name("spaceui"), Some(Sheet::Spaceui));
+        assert_eq!(Sheet::from_name("brand"), Some(Sheet::Brand));
+        assert_eq!(Sheet::from_name("gemini"), Some(Sheet::Brand));
+        let brand_css = render(&SheetRequest { sheet: Sheet::Brand, ..SheetRequest::default() });
+        assert!(brand_css.contains("--aphrody-brand-blue:"));
+        assert!(brand_css.contains("--aphrody-spectrum-shift:"));
         assert_eq!(Sheet::from_name("nope"), None);
     }
 }

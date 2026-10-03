@@ -129,7 +129,7 @@ Location: `core/src/ops/registry.rs`
 
 The desktop host is the Aphrody super app, `../crates/aphrody-app`. Its `aphrody-drive` Tauri plugin
 (`../crates/aphrody-drive`) supervises the `sd-daemon` sidecar and bridges it to the Drive pane in
-`../packages/app-ui/src/drive.tsx`. The upstream `apps/tauri` host was removed after that merge.
+`../packages/ui/app-ui/src/drive.tsx`. The upstream `apps/tauri` host was removed after that merge.
 
 ```bash
 # From the aphrody-ui repository root (prepares the sd-daemon sidecar, then runs aphrody-app)

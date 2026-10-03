@@ -196,11 +196,7 @@ impl Node {
     // Read a namespaced attribute by (namespace, localName).
     pub fn get_attribute_ns(&self, ns: &str, local: &str) -> Option<&str> {
         self.attrs()?.iter().find_map(|a| {
-            if &*a.name.ns == ns && &*a.name.local == local {
-                Some(a.value.as_str())
-            } else {
-                None
-            }
+            if &*a.name.ns == ns && &*a.name.local == local { Some(a.value.as_str()) } else { None }
         })
     }
 
@@ -213,9 +209,8 @@ impl Node {
                 Some((prefix, local)) => (Some(Prefix::from(prefix)), local),
                 None => (None, qualified),
             };
-            if let Some(attr) = attrs
-                .iter_mut()
-                .find(|a| &*a.name.ns == ns && &*a.name.local == local)
+            if let Some(attr) =
+                attrs.iter_mut().find(|a| &*a.name.ns == ns && &*a.name.local == local)
             {
                 attr.name.prefix = prefix;
                 attr.value = value;

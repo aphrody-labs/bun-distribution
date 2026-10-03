@@ -1,4 +1,4 @@
-import { Bot, Cpu, KeyRound, Keyboard, Languages, Palette, SlidersHorizontal, Type } from 'lucide-react'
+import { Bot, Cpu, KeyRound, Keyboard, Languages, Palette, SlidersHorizontal, Type, Upload } from 'lucide-react'
 
 export const settingsTabs = [
   ['appearance', Palette],
@@ -14,6 +14,7 @@ export type SettingsTab = (typeof settingsTabs)[number][0]
 export const rightSidebarPanels = [
   { id: 'properties', icon: SlidersHorizontal, label: 'agent.properties' },
   { id: 'agent', icon: Bot, label: 'agent.title' },
+  { id: 'shenron', icon: Upload, label: 'Shenron' },
 ] as const
 
 export type RightSidebarPanel = (typeof rightSidebarPanels)[number]['id']

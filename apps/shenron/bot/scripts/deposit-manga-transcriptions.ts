@@ -20,6 +20,7 @@ import {
 	readMangaManifest,
 	sha256File,
 } from "@shenron/pipeline/manga-ocr";
+import { writeMangaTranscriptions } from "../src/lib/manga-publish";
 
 const args = Bun.argv.slice(2);
 const option = (name: string, fallback?: string): string | undefined => {
@@ -53,50 +54,10 @@ async function databaseUrl(): Promise<string> {
 	return value;
 }
 
-function revisionId(): string {
-	return crypto.randomUUID().replaceAll("-", "").slice(0, 24);
-}
-
+/** Lecture de simulation (la transaction réelle vit dans `writeMangaTranscriptions`). */
 interface ExistingPage {
 	id: string;
-	series: string | null;
-	tome: string | null;
-	planche: string | null;
-	lines: string | null;
 	text: string | null;
-	lang: string | null;
-	has_ja: string | null;
-	line_count: string | null;
-	char_count: string | null;
-}
-
-function snapshot(page: ExistingPage | null): Record<string, unknown> | null {
-	if (!page) return null;
-	return {
-		series: page.series,
-		tome: page.tome,
-		planche: Number(page.planche),
-		lines: page.lines,
-		text: page.text,
-		lang: page.lang,
-		hasJa: Number(page.has_ja) !== 0,
-		lineCount: Number(page.line_count),
-		charCount: Number(page.char_count),
-	};
-}
-
-function afterSnapshot(page: ParsedMangaPage): Record<string, unknown> {
-	return {
-		series: page.entry.series,
-		tome: page.entry.tome,
-		planche: page.entry.planche,
-		lines: JSON.stringify(page.lines),
-		text: page.text,
-		lang: page.lang,
-		hasJa: page.hasJa,
-		lineCount: page.lines.length,
-		charCount: page.text.length,
-	};
 }
 
 async function audit(resultsPath: string, outputPath: string): Promise<void> {
@@ -228,63 +189,13 @@ try {
 		);
 	}
 
-	inserted = 0;
-	updated = 0;
-	unchanged = 0;
-	conflicts = 0;
-	await sql.begin(async (tx) => {
-		await tx`LOCK TABLE bot.db_manga_pages IN SHARE ROW EXCLUSIVE MODE`;
-		const [{ maxId }] = await tx<
-			{ maxId: string }[]
-		>`SELECT coalesce(max(id), 0)::text AS "maxId" FROM bot.db_manga_pages`;
-		let nextId = Number(maxId);
-		for (const page of pages) {
-			const [before] = await tx<ExistingPage[]>`
-				SELECT id::text, series, tome, planche::text, lines, text, lang,
-					has_ja::text, line_count::text, char_count::text
-				FROM bot.db_manga_pages
-				WHERE series = ${page.entry.series} AND tome = ${page.entry.tome} AND planche = ${page.entry.planche}
-				FOR UPDATE`;
-			if (before?.text?.trim() === page.text) {
-				unchanged++;
-				continue;
-			}
-			if (before?.text?.trim() && !REPLACE) {
-				conflicts++;
-				continue;
-			}
-			const rowId = before?.id ?? String(++nextId);
-			if (before) {
-				await tx`
-					UPDATE bot.db_manga_pages SET
-						lines = ${JSON.stringify(page.lines)}, text = ${page.text}, lang = ${page.lang},
-						has_ja = ${page.hasJa ? 1 : 0}, line_count = ${page.lines.length}, char_count = ${page.text.length}
-					WHERE id = ${Number(rowId)}`;
-				updated++;
-			} else {
-				await tx`
-					INSERT INTO bot.db_manga_pages
-						(id, series, tome, planche, lines, text, lang, has_ja, line_count, char_count)
-					VALUES (${Number(rowId)}, ${page.entry.series}, ${page.entry.tome}, ${page.entry.planche},
-						${JSON.stringify(page.lines)}, ${page.text}, ${page.lang}, ${page.hasJa ? 1 : 0},
-						${page.lines.length}, ${page.text.length})`;
-				inserted++;
-			}
-			const beforeValue = snapshot(before ?? null);
-			const afterValue = afterSnapshot(page);
-			await tx`INSERT INTO public.wiki_revisions ${tx({
-				id: revisionId(),
-				tableName: "db_manga_pages",
-				rowId,
-				action: before ? "update" : "create",
-				label: `${page.entry.series} ${page.entry.tome} — planche ${page.entry.planche}`,
-				before: beforeValue === null ? null : tx.json(beforeValue as Parameters<typeof tx.json>[0]),
-				after: tx.json(afterValue as Parameters<typeof tx.json>[0]),
-				editorId: "agent",
-				editorName: `Aphrody OCR manga · ${corpus.runId}`,
-			})}`;
-		}
-	});
+	const written = await sql.begin((tx) =>
+		writeMangaTranscriptions(tx, pages, {
+			replace: REPLACE,
+			editorName: `Aphrody OCR manga · ${corpus.runId}`,
+		})
+	);
+	({ inserted, updated, unchanged, conflicts } = written);
 	console.log(
 		`✓ dépôt versionné: ${inserted} créations, ${updated} mises à jour, ${unchanged} identiques, ${conflicts} conflits protégés`
 	);

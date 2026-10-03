@@ -14,8 +14,8 @@ Contracts, policies and integration references for the Aphrody UI. Parent map:
 | [Aphrody UI accessibility](ACCESSIBILITY.md) | The M3 LOW_VISION profile from aphrody-m3-tokens is the default desktop accessibility contract: | imported | 2026-09-29 |
 | [aphrody-ui: agent rules](AGENTS.md) | M3 framework, desktop hosts, rendering, Drive presentation and editor components. | imported | 2026-09-29 |
 | [AI and desktop UI boundary](AI-UI-INTEGRATION.md) | This page replaces the former feature inventory, which described routes and adapters that no longer exist. | historical | 2026-09-29 |
-| [Desktop GUI contract](GUI.md) | packages/app-ui is the single public-facing desktop webview, hosted by the current Tauri v2 app in crates/aphrody-app. | legacy | 2026-09-29 |
-| [UI rules](UI-RULES.md) | Binding product rules for every view of the desktop app (packages/app-ui, Drive, examples). | imported | 2026-09-29 |
+| [Desktop GUI contract](GUI.md) | packages/ui/app-ui is the single public-facing desktop webview, hosted by the current Tauri v2 app in crates/aphrody-app. | legacy | 2026-09-29 |
+| [UI rules](UI-RULES.md) | Binding product rules for every view of the desktop app (packages/ui/app-ui, Drive, examples). | imported | 2026-09-29 |
 <!-- docs-hub:end -->
 
 ## Desktop host and Tauri

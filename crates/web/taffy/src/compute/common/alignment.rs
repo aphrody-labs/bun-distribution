@@ -1,5 +1,7 @@
 //! Generic CSS alignment code that is shared between both the Flexbox and CSS Grid algorithms.
-use crate::style::{AlignContent, AlignContentKeyword, AlignItems, AlignItemsKeyword, AlignmentSafety};
+use crate::style::{
+    AlignContent, AlignContentKeyword, AlignItems, AlignItemsKeyword, AlignmentSafety,
+};
 
 /// Resolve the `safe`/`unsafe` overflow-position fallback for a self-level alignment value
 /// (used by `align-self` / `justify-self`-style sites and by absolutely-positioned items in
@@ -8,7 +10,10 @@ use crate::style::{AlignContent, AlignContentKeyword, AlignItems, AlignItemsKeyw
 /// <https://www.w3.org/TR/css-align-3/#overflow-values>. Otherwise drop the safety modifier
 /// and return the bare keyword.
 #[inline]
-pub(crate) fn resolve_self_alignment_safety(alignment: AlignItems, overflows: bool) -> AlignItemsKeyword {
+pub(crate) fn resolve_self_alignment_safety(
+    alignment: AlignItems,
+    overflows: bool,
+) -> AlignItemsKeyword {
     if matches!(alignment.safety, AlignmentSafety::Safe) && overflows {
         AlignItemsKeyword::Start
     } else {
@@ -35,8 +40,12 @@ pub(crate) fn apply_alignment_fallback(
     //    https://www.w3.org/TR/css-align-3/#distribution-values
     if num_items <= 1 || free_space <= 0.0 {
         (keyword, is_safe) = match keyword {
-            AlignContentKeyword::Stretch | AlignContentKeyword::SpaceBetween => (AlignContentKeyword::FlexStart, true),
-            AlignContentKeyword::SpaceAround | AlignContentKeyword::SpaceEvenly => (AlignContentKeyword::Center, true),
+            AlignContentKeyword::Stretch | AlignContentKeyword::SpaceBetween => {
+                (AlignContentKeyword::FlexStart, true)
+            },
+            AlignContentKeyword::SpaceAround | AlignContentKeyword::SpaceEvenly => {
+                (AlignContentKeyword::Center, true)
+            },
             other => (other, is_safe),
         };
     }
@@ -73,7 +82,7 @@ pub(crate) fn compute_alignment_offset(
                 } else {
                     0.0
                 }
-            }
+            },
             AlignContentKeyword::End => free_space,
             AlignContentKeyword::FlexEnd => {
                 if layout_is_flex_reversed {
@@ -81,7 +90,7 @@ pub(crate) fn compute_alignment_offset(
                 } else {
                     free_space
                 }
-            }
+            },
             AlignContentKeyword::Center => free_space / 2.0,
             AlignContentKeyword::Stretch => 0.0,
             AlignContentKeyword::SpaceBetween => 0.0,
@@ -91,14 +100,14 @@ pub(crate) fn compute_alignment_offset(
                 } else {
                     free_space / 2.0
                 }
-            }
+            },
             AlignContentKeyword::SpaceEvenly => {
                 if free_space >= 0.0 {
                     free_space / (num_items + 1) as f32
                 } else {
                     free_space / 2.0
                 }
-            }
+            },
         }
     } else {
         let free_space = free_space.max(0.0);

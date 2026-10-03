@@ -2,11 +2,18 @@
 
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { invoke, isTauri } from '@tauri-apps/api/core'
 
 import { AgentPanel } from '@aphrody/koharu-ui/components/editor/AgentPanel'
+import { ShenronExportPanel } from '@aphrody/koharu-ui/components/ShenronExportPanel'
 import { Inspector } from '@aphrody/koharu-ui/components/editor/Inspector'
 import { rightSidebarPanels, type RightSidebarPanel } from '@aphrody/koharu-ui/navigation'
 import { Button } from '../../internal/components/button'
+
+const shenronHost = {
+  isTauri,
+  invoke: <T,>(command: string, args: Record<string, unknown>) => invoke<T>(command, args),
+}
 
 export function RightSidebar() {
   const { t } = useTranslation()
@@ -33,6 +40,11 @@ export function RightSidebar() {
       <div className={panel === 'properties' ? 'min-h-0 flex-1' : 'hidden'}>
         <Inspector />
       </div>
+      {panel === 'shenron' && (
+        <div className='flex min-h-0 flex-1 flex-col'>
+          <ShenronExportPanel host={shenronHost} />
+        </div>
+      )}
     </aside>
   )
 }

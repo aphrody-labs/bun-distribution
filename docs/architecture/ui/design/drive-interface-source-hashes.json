@@ -3,7 +3,7 @@
   "algorithm": "SHA-256",
   "roots": {
     "fslArchive": "drive/packages/interface/src",
-    "maintainedAppUi": "packages/app-ui/src"
+    "maintainedAppUi": "packages/ui/app-ui/src"
   },
   "summary": {
     "fslArchive": {

@@ -18,7 +18,7 @@ mod host {
 
     #[derive(Deserialize)]
     struct Request {
-        cookie_path: String,
+        cookie_path: Option<String>,
         prompt: String,
         model: Option<String>,
     }
@@ -28,7 +28,12 @@ mod host {
     }
 
     async fn answer(request: Request) -> Value {
-        let client = match GeminiWebClient::from_cookie_file(&request.cookie_path, "en").await {
+        let client_res = if let Some(path) = request.cookie_path.as_deref().filter(|p| !p.is_empty()) {
+            GeminiWebClient::from_cookie_file(path, "en").await
+        } else {
+            GeminiWebClient::from_default_cookie_file("en").await
+        };
+        let client = match client_res {
             Ok(client) => client,
             Err(error) => {
                 return json!({"error": format!("Failed to execute Gemini request: {error}")});
@@ -50,9 +55,11 @@ mod host {
     pub(crate) async fn run() {
         let mut input = Vec::new();
         let response = match std::io::stdin().take(1024 * 1024 + 1).read_to_end(&mut input) {
-            Ok(_) if input.len() <= 1024 * 1024 => match serde_json::from_slice::<Request>(&input) {
-                Ok(request) => answer(request).await,
-                Err(_) => json!({"error": "invalid Gemini request JSON"}),
+            Ok(_) if input.len() <= 1024 * 1024 => {
+                match serde_json::from_slice::<Request>(&input) {
+                    Ok(request) => answer(request).await,
+                    Err(_) => json!({"error": "invalid Gemini request JSON"}),
+                }
             },
             _ => json!({"error": "Gemini request exceeds 1 MiB"}),
         };

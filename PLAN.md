@@ -16,8 +16,9 @@ preuves historiques : [ancien plan](docs/migration/PLAN-before-reorganization-20
 
 ## État vérifié
 
-- 84 packages Bun déclarés ; 186 membres Cargo actifs, 210 manifests locaux
-  inventoriés, dont des manifests imbriqués hors du workspace actif.
+- Inventaire des crates, packages et apps par domaine, exclusions du workspace et
+  état du code : [STATE.md](docs/reference/workspace/STATE.md), généré par
+  `bun run docs:gen` (vérifié par `bun run docs:check`). Aucun compte n'est tenu à la main.
 - 27 déplacements de propriétaires puis 155 raccourcissements de chemins.
   Les identités publiques Cargo et les noms `@aphrody/*` sont conservés.
 - CLI : `apps/cli` ; bindings : `crates/interop/ffi`,
@@ -1122,6 +1123,94 @@ smoke documenté. Une mise en production est une opération distincte.
   complet des consommateurs et propriétaires, les gates ABI/FFI depuis artefact
   construit, les vérifications Linux/Windows et les exécutions de bout en bout.
 
+### Migration backend Shenron et fusion Koharu (2026-10-02)
+
+- Embeddings : le transport direct E5 (sidecar `aphrody-shenron-embed`) est
+  retiré ; `ai/embeddings.ts`, `ShenronEmbeddingsClient`, `rag-build`,
+  `ingest-aphrody-rag`, `rag-status`, `rag-eval` et le RAG du bot passent par
+  `POST /api/v1/shenron/embed`. `rag-embed-vectors` et `rag-resync-entites`
+  délèguent l'ingestion à `/rag/ingest` + `/rag/sync/finish`. Le rerank reste
+  sur le sidecar.
+- A2A : la route `site/api/a2a` est un proxy vers `aphrody a2a serve`
+  (`APHRODY_A2A_URL`), alias `tasks/get|list|cancel` → A2A 1.0. Le broker TS
+  reste : il manque côté Rust un bind socket Unix, `.coord/messages.jsonl` /
+  `tasks.json` et un flux SSE continu.
+- Entraînement : `/train run|job` (bot, admin) lance `aphrody train run` sur
+  les triples dbfr ; `aphrody train run` prend par défaut
+  `workspaces/dbfr/training/triples.jsonl` avec `APHRODY_AGENT_DOMAIN=dbfr`.
+  Le binaire installé doit être reconstruit avec `--features train`. Pas de LoRA
+  sans rollouts/gold dbfr.
+- Koharu → Shenron : `koharu-sdk` (koharu-library) piloté par
+  `KoharuSdkClient` ; `pipeline koharu-submit` ; file `manga_candidates` +
+  traductions publiées (SQLite du bot), API staff `/api/manga/candidates*`,
+  publique `/api/manga/planche/:pageId/traduction`, commande `/scanlate` ;
+  site : route `…/planche/[n]/traduction`, page staff `/wiki/manga/revue`,
+  bouton « Traduction FR » du lecteur ; app : onglet Shenron de l'éditeur
+  Koharu et `koharu_rpc_batch`. Clé de page commune `série:tome:planche`.
+- Gates : bot 425/425, pipeline 268 pass / 2 échecs préexistants
+  (`_rag-corpus-sources`), site tsc + tests manga/A2A, cargo check
+  `aphrody --features train`, `aphrody-app`, `koharu-sdk`, test
+  `dbfr_domain_defaults_triple_input`. Non prouvé : exécution réelle bout en
+  bout (Koharu → bot → site), colonne Postgres de traduction absente,
+  `editor-components.test.tsx` bloque.
+
+### Inférence de production et entraînement Shenron (2026-10-02, suite)
+
+- Service `aphrody-ai-http` (unité suivie `config/systemd/user/aphrody-ai-http.service`,
+  secrets dans `~/.aphrody/private/shenron/ai-http.env`) actif sur 127.0.0.1:8789.
+  `/llm/chat` démarre le daemon llama.cpp géré quand aucune URL n'est fixée
+  (feature `managed-llama` d'aphrody-mcp), client poolé, une reprise sur
+  connect/502/503/504, 504 sur timeout, `usage` relayé, repli Gemini Web via
+  `APHRODY_SHENRON_LLM_FALLBACK=gemini-web`. Preuve live : réponse en 7,3 s à froid.
+- Modèle de chat de cet hôte : `qwen3-4b-instruct-2507-q4km`. Le 30B-A3B ne se
+  charge pas (WSL 21 Go RAM, non prêt après 10 min). Sans RAG le 4B hallucine.
+- Bloquant : `llama-server` b11312 installé sans CUDA (aucun device, ~15 tok/s).
+  Build CUDA (`~/.local/lib/aphrody/llama/b11312-cuda`, sm_89) interrompu par
+  pression mémoire ; relancer avec `-j 2`.
+- A2A : `aphrody a2a serve --unix --coord-dir --no-tcp` reprend le broker TS
+  (module `legacy_broker`, 36 tests a2a-coord, preuve live socket 0666) ;
+  `a2a-broker.ts` n'est plus qu'un lanceur.
+- LoRA : base HF `Qwen3-4B-Instruct-2507` téléchargée ; générateur
+  `pipeline/scripts/build-chat-rollouts.ts` (11 tests) ; gold 1091 requêtes ;
+  aucun rollout encore produit (génération CPU arrêtée).
+- Binaires release installés dans `~/.local/lib/aphrody/installed-20261002b`
+  (`aphrody` koharu,rag,train,ocr,jobs ; `aphrody-mcp`), précédent conservé.
+
+### Fine-tuning chat Shenron — premier cycle (2026-10-02)
+
+- Professeur réseau : `build-chat-rollouts.ts --teacher antigravity`
+  (`aphrody antigravity chat`, gemini-3-flash) ; 67 % d'acceptation sur essai,
+  395 rollouts au moment de l'écriture, génération en cours. Gemini Web : session
+  expirée (bootstrap 502).
+- `aphrody train run --kind lora` prouvé de bout en bout sur GPU : chargement
+  bf16 direct GPU (aphrody-py `lora.py`), conversion GGUF via
+  `convert_lora_to_gguf.py` b11312. v1 : 320 exemples, 400 pas, loss 3,79 → 3,02,
+  `runs/shenron-chat-v1/adapter.gguf`.
+- Service : `APHRODY_SHENRON_CHAT_LORA` attache l'adaptateur au daemon géré
+  (vérifié dans le spec). Désactivé en production : qualité non améliorée et
+  4,9 tok/s sur CPU. Reste : build CUDA llama.cpp, dataset complet, rang LoRA
+  plus élevé, évaluation sur le gold (1091 requêtes) avant promotion.
+
+### Adaptateur Shenron v2 promu (2026-10-02)
+
+- v2 : 1495 rollouts antigravity, rang 16 sur q/k/v/o/gate/up/down
+  (`APHRODY_LORA_RANK`, `APHRODY_LORA_TARGETS` dans aphrody-py `lora.py`),
+  1500 pas, loss 3,74 → ~1,6–2,0, `runs/shenron-chat-v2/adapter.gguf`.
+- Évaluation `pipeline/scripts/eval-chat-gold.ts` (30 questions gold
+  non vues, route live) : base 10 ancrées / 6 refus / 20 timeouts / 23,6 s ;
+  v2 28 ancrées / 0 refus / 0 erreur / 7,3 s. Métrique lexicale indulgente :
+  sans contexte RAG v2 hallucine encore (Piccolo). v2 actif en production
+  (`APHRODY_SHENRON_CHAT_LORA`), toujours sur CPU tant que le build CUDA manque.
+
+### A2A du bot vers Rust (2026-10-02)
+
+- `apps/shenron/bot/src/api/a2a-proxy.ts` : carte, `/api/a2a/jsonrpc`,
+  `/api/a2a/events` relayés vers `aphrody a2a serve` (`APHRODY_A2A_URL`),
+  alias legacy → A2A 1.0, `tasks/update` → -32601, 502 si amont absent. Le
+  hub A2A interne de `server.ts` (store `.coord`, SSE, cancel shell) est retiré.
+  Bot : 426/426 (8 tests broker TS remplacés par 1 test lanceur + 8 tests proxy).
+  La carte publiée est désormais celle du serveur Rust.
+
 ## Commandes de contrôle
 
 ```bash
@@ -1280,9 +1369,9 @@ heuristique ; aucun changement Git ne doit être attribué sans preuve.
   1 197 217 839 octets vérifiés à cette observation. Aucun nouvel entraînement
   ou appel d’inférence locale n’est revendiqué. Clippy CLI/MCP avec dépendances
   et intégrations Agent Home restent en correction ; gates produit ouverts.
-- Preuves : [runtime domaines](docs/operations/ai/agent-domain-runtime-qualification-2026-10-01.json),
-  [Docs DBFR](docs/operations/ai/dbfr-drive-markdown-2026-10-01.json),
-  [sauvegarde modèles](docs/operations/ai/agent-home-trained-artifact-sync-2026-10-01.json).
+- Preuves : [runtime domaines](docs/operations/workspace/HISTORY.md),
+  [Docs DBFR](docs/operations/workspace/HISTORY.md),
+  [sauvegarde modèles](docs/operations/workspace/HISTORY.md).
 
 ### RAPTOR euclidien et gates Agent Home — 2026-10-01
 
@@ -1300,8 +1389,8 @@ heuristique ; aucun changement Git ne doit être attribué sans preuve.
   et des consommateurs RAG reste à qualifier ; aucune clôture globale.
 - FAIT : intégrations Agent Home hermétiques, 104 unitaires + trois intégrations
   + un doctest et Clippy ciblé réussis ; ancien gate profils privés corrigé.
-- Preuves : [RAPTOR euclidien](docs/operations/ai/raptor-euclidean-qualification-2026-10-01.json),
-  [Agent Home](docs/operations/ai/agent-home-integration-qualification-2026-10-01.json).
+- Preuves : [RAPTOR euclidien](docs/operations/workspace/HISTORY.md),
+  [Agent Home](docs/operations/workspace/HISTORY.md).
 
 ### Règles Shenron et optimisation euclidienne — 2026-10-01
 
@@ -1321,8 +1410,8 @@ heuristique ; aucun changement Git ne doit être attribué sans preuve.
   0,704→0,317 ms pour 256×32×97 ; résultats identiques bit à bit à NumPy.
 - INCOMPLET : cette mesure ne qualifie pas le budget global, les autres formes
   ni les produits matriciels. Le gate CLI/MCP avec dépendances progresse.
-- Preuves : [règles canoniques](docs/operations/shenron/canonical-rule-exports-2026-10-01.json),
-  [optimisation euclidienne](docs/operations/ai/raptor-euclidean-optimization-2026-10-01.json).
+- Preuves : [règles canoniques](docs/operations/workspace/HISTORY.md),
+  [optimisation euclidienne](docs/operations/workspace/HISTORY.md).
 
 ### Chargeur natif partagé et gates transitifs — 2026-10-01
 
@@ -1340,8 +1429,8 @@ heuristique ; aucun changement Git ne doit être attribué sans preuve.
 - INCOMPLET : gate CLI/MCP all-targets no-default arrêté sur trois lints du
   compilateur Discord ajouté concurremment, propriétaire informé ; ses sources
   sont préservées. Le déplacement persona FFI vers le profil DBFR est en cours.
-- Preuves : [chargeur](docs/operations/shenron/native-loader-consolidation-2026-10-01.json),
-  [gates transitifs](docs/operations/ai/cli-mcp-dependency-qualification-2026-10-01.json).
+- Preuves : [chargeur](docs/operations/workspace/HISTORY.md),
+  [gates transitifs](docs/operations/workspace/HISTORY.md).
 
 ### Ingestion RAG commune et gates AI — 2026-10-01
 
@@ -1357,7 +1446,7 @@ heuristique ; aucun changement Git ne doit être attribué sans preuve.
   Discord et neuf terminal-backend. Features de production, clone propre,
   artefacts installés et gates produit ouverts. Embeddings générés après la
   transaction ; leur génération complète n’est pas atomique avec les chunks.
-- Preuves : [rapport et logs](docs/operations/ai/unified-owner-qualification-2026-10-01/report.json).
+- Preuves : [rapport et logs](docs/operations/workspace/HISTORY.md).
   Checkout concurrent ; aucun remote Git configuré, commits locaux seulement.
 
 ### Gateway / Firefly et gate CLI/MCP — 2026-10-01
@@ -1372,7 +1461,7 @@ heuristique ; aucun changement Git ne doit être attribué sans preuve.
 - Qualification Linux depuis le worktree, dans un target temporaire pour éviter
   le verrou d’une compilation concurrente ; sccache conservé. Clone propre,
   providers live, plateformes et features produit restent ouverts.
-- Preuves : [rapport et logs](docs/operations/ai/gateway-firefly-qualification-2026-10-01/report.json).
+- Preuves : [rapport et logs](docs/operations/workspace/HISTORY.md).
 
 ### NotebookLM et progression du gate CLI/MCP — 2026-10-01
 
@@ -1386,7 +1475,7 @@ heuristique ; aucun changement Git ne doit être attribué sans preuve.
 - INCOMPLET : gate CLI/MCP no-default désormais arrêté sur un diagnostic terminal
   et deux du miroir Web. Famille terminal déléguée et miroir concurrent préservés.
   Features produit, clone propre, plateformes et artefacts installés restent ouverts.
-- Preuves : [rapport et logs](docs/operations/ai/notebooklm-qualification-2026-10-01/report.json).
+- Preuves : [rapport et logs](docs/operations/workspace/HISTORY.md).
 
 ### Navigation documentaire AI et périmètre réel — 2026-10-01
 
@@ -1407,7 +1496,7 @@ heuristique ; aucun changement Git ne doit être attribué sans preuve.
 - Gate CLI/MCP revalidé : mêmes trois diagnostics terminal/Web ; modifications
   concurrentes préservées. Diff documentaire contrôlé ; aucun test propriétaire
   répété pour ce lot sans changement de code.
-- Preuves : [audit direct, hashes et périmètres](docs/operations/ai/documentation-navigation-qualification-2026-10-01.json).
+- Preuves : [audit direct, hashes et périmètres](docs/operations/workspace/HISTORY.md).
 
 ### Audit Cargo par domaine — 2026-10-01
 
@@ -1512,7 +1601,7 @@ heuristique ; aucun changement Git ne doit être attribué sans preuve.
   Les deux pages de navigation AI sont maintenant couvertes, sans défaut de cible.
 - Les ancres et sites externes ne sont pas vérifiés. Documents de packages/apps
   hors `docs` non inventoriés. Aucune preuve historique réécrite.
-- Preuves : [rapport, tests et inventaire exhaustif](docs/operations/infra/document-links-coverage-qualification-2026-10-01/report.json).
+- Preuves : [rapport, tests et inventaire exhaustif](docs/operations/workspace/HISTORY.md).
 
 ### Script `test` de `@rosegriffon/discord-sync` — 2026-10-01
 
@@ -1543,7 +1632,7 @@ heuristique ; aucun changement Git ne doit être attribué sans preuve.
   non qualifiés. Features GPU compilées sans preuve d’exécution matérielle GPU.
   Doctor dégradé et recherche éventuellement vide ne prouvent pas un produit prêt.
   Gate CLI/MCP terminal/Web Frames encore ouvert ; aucun gate global vert annoncé.
-- Preuves : [rapport, hashes binaires et logs](docs/operations/shenron/native-artifact-qualification-2026-10-01/report.json).
+- Preuves : [rapport, hashes binaires et logs](docs/operations/workspace/HISTORY.md).
 
 - 2026-10-01: isolate workspace operation loading through lazy imports and add private IECODE package archive preparation with allowlists, checksums and dirty-source provenance. Five dispatcher/packaging tests pass (26 assertions); staged whitespace check passes. External IECODE workspace memberships and consumer installation migration remain pending.
 

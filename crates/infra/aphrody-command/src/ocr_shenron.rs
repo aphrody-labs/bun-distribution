@@ -2,7 +2,7 @@
 //! `aphrody ocr shenron …` — native bridge to the sibling `shenron` checkout.
 //!
 //! `shenron` already expects exactly this shape: `depose-transcriptions.ts`
-//! (`~/shenron/apps/site/scripts/depose-transcriptions.ts`) opens with "Entrée
+//! (`~/aphrody/apps/shenron/site/scripts/depose-transcriptions.ts`) opens with "Entrée
 //! : le JSONL qu'écrit `aphrody ocr batch`" and reads `<databookId>-<page>.ext`
 //! file names. The two repos were designed to meet here; this module is what
 //! actually walks aphrody across that meeting point instead of leaving it as a
@@ -71,7 +71,7 @@ pub(crate) enum ShenronAction {
     /// Emit, then hand the lot to `shenron`'s own depositor.
     ///
     /// `shenron depose` refuses a lot carrying a defect unless `--force` is
-    /// passed, and resolves its own API token from `apps/site/.env` — no
+    /// passed, and resolves its own API token from `apps/shenron/site/.env` — no
     /// secret crosses from aphrody into this command.
     ///
     /// Example: aphrody ocr shenron deposit 312 --apply
@@ -88,7 +88,7 @@ pub(crate) enum ShenronAction {
         #[arg(long)]
         force: bool,
         /// Directory to stage the bridge lot in. Defaults to
-        /// `<shenron>/apps/site/var/aphrody-bridge/<id>` inside the sibling
+        /// `<root>/apps/shenron/site/var/aphrody-bridge/<id>` inside the monorepo
         /// checkout, so `shenron`'s own tooling can find it without a path
         /// argument crossing back into aphrody's tree.
         #[arg(long)]
@@ -115,16 +115,15 @@ pub(crate) enum ShenronAction {
     },
 }
 
-/// Locate the sibling `shenron` checkout.
+/// Locate the Shenron source root.
 ///
-/// `$SHENRON_ROOT` wins when set. Otherwise this walks up from the current
-/// directory looking for a `shenron` sibling — the layout this bridge exists
-/// for, both repos checked out side by side under the same parent.
+/// `$SHENRON_ROOT` wins when set. Otherwise search current-directory ancestors
+/// for the integrated monorepo layout, then for a legacy sibling checkout.
 ///
 /// # Errors
 ///
-/// A `miette` report naming both the environment variable and the sibling
-/// path that were tried, when neither resolves to a real checkout.
+/// A `miette` report naming the environment variable and supported layouts
+/// when neither resolves to a real source tree.
 pub(crate) fn locate() -> miette::Result<PathBuf> {
     if let Ok(explicit) = std::env::var("SHENRON_ROOT") {
         let path = PathBuf::from(explicit.trim());
@@ -132,53 +131,56 @@ pub(crate) fn locate() -> miette::Result<PathBuf> {
             return Ok(path);
         }
         return Err(miette::miette!(
-            "$SHENRON_ROOT is set to {} but it has no apps/site/scripts/databooks.ts",
+            "$SHENRON_ROOT is set to {} but it has no Shenron databooks script",
             path.display()
         ));
     }
-    let mut dir = std::env::current_dir()
+    let dir = std::env::current_dir()
         .map_err(|e| miette::miette!("locate the current directory: {e}"))?;
-    // Two hops cover both "run from the aphrody repo root" and "run from a
-    // subdirectory of it" — the common cases without walking arbitrarily far.
-    for _ in 0..3 {
-        let candidate = dir.join("shenron");
+    for ancestor in dir.ancestors() {
+        if scripts_dir(ancestor).is_dir() {
+            return Ok(ancestor.to_path_buf());
+        }
+        // Preserve compatibility with the pre-monorepo sibling checkout.
+        let candidate = ancestor.join("shenron");
         if scripts_dir(&candidate).is_dir() {
             return Ok(candidate);
         }
-        if let Some(parent) = dir.parent() {
-            dir = parent.to_path_buf();
-        } else {
-            break;
-        }
     }
     Err(miette::miette!(
-        "no shenron checkout found: set $SHENRON_ROOT, or check out shenron beside aphrody \
-         (…/aphrody and …/shenron under the same parent directory)"
+        "no Shenron source found: set $SHENRON_ROOT or run from within the Aphrody monorepo"
     ))
 }
 
-/// The directory `shenron`'s databooks scripts live in.
+/// The directory containing Shenron's site app.
+fn site_dir(shenron_root: &Path) -> PathBuf {
+    let integrated = shenron_root.join("apps").join("shenron").join("site");
+    if integrated.is_dir() { integrated } else { shenron_root.join("apps").join("site") }
+}
+
+/// The directory Shenron's databooks scripts live in.
 fn scripts_dir(shenron_root: &Path) -> PathBuf {
-    shenron_root.join("apps").join("site").join("scripts")
+    site_dir(shenron_root).join("scripts")
 }
 
 /// Make `path` absolute without requiring it to exist.
 ///
 /// Every path this module hands to `bun` is a bridge artifact aphrody wrote,
 /// and `run_bun` spawns the child with its own working directory
-/// (`<shenron>/apps/site`) — a relative path built against aphrody's cwd would
+/// (`<shenron>/apps/shenron/site`, or the legacy `<shenron>/apps/site`) — a
+/// relative path built against Aphrody's cwd would
 /// silently resolve against the wrong tree once it crosses that boundary.
 fn absolute(path: &Path) -> miette::Result<PathBuf> {
     std::path::absolute(path).map_err(|e| miette::miette!("resolve {}: {e}", path.display()))
 }
 
-/// Run `bun <script> …args` inside `<shenron>/apps/site`, streaming output.
+/// Run `bun <script> …args` inside Shenron's site app, streaming output.
 ///
 /// # Errors
 ///
 /// A `miette` report when `bun` cannot be spawned, or exits non-zero.
 fn run_bun(shenron_root: &Path, script: &str, args: &[&str]) -> miette::Result<()> {
-    let site_dir = shenron_root.join("apps").join("site");
+    let site_dir = site_dir(shenron_root);
     let script_path = scripts_dir(shenron_root).join(script);
     let status = aphrody_toolchains::Toolchain::Bun
         .command_in(&site_dir, [script_path.as_os_str()])

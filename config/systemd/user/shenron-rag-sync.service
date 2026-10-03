@@ -1,0 +1,14 @@
+[Unit]
+Description=Refresh the full Shenron editorial corpus in the Aphrody RAG
+After=shenron-data-tunnel.service aphrody-shenron-embed.service aphrody-ai-http.service
+Requires=shenron-data-tunnel.service aphrody-shenron-embed.service aphrody-ai-http.service
+
+[Service]
+Type=oneshot
+WorkingDirectory=/home/aphro/aphrody
+Environment=PATH=/home/aphro/.local/bin:/home/aphro/.bun/bin:/usr/local/bin:/usr/bin:/bin
+EnvironmentFile=/home/aphro/.aphrody/private/shenron/ai-http.env
+ExecStart=/home/aphro/.bun/bin/bun packages/shenron/pipeline/scripts/rag-sync-aphrody.ts --toutes --appliquer --report=/home/aphro/.aphrody/workspaces/dbfr/indexes/shenron-rag-latest.json
+TimeoutStartSec=infinity
+UMask=0077
+NoNewPrivileges=yes

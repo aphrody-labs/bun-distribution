@@ -13,7 +13,7 @@ system applications over rebuilding them in this workspace.
 
 | Location | Responsibility |
 | --- | --- |
-| `packages/app-ui` | One public webview: Chat, Files, Models and Settings |
+| `packages/ui/app-ui` | One public webview: Chat, Files, Models and Settings |
 | `crates/aphrody-app` | Current Tauri host and resident app-server broker |
 | `crates/aphrody-render*`, `aphrody-m3*` | Rendering and canonical design tokens |
 | `packages/m3-*`, `material-web`, `react` | Shared web components and adapters |

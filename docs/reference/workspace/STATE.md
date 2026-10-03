@@ -385,7 +385,7 @@ Tracked Cargo manifests outside the root workspace (excluded, nested workspaces 
 | `aphrody-svg` | [crates/ui/svg](../../../crates/ui/svg) | rust crate | 1.0.0-canary | lib | yes | 0 | 2026-10-02 |
 | `aphrody-tauri-mcp` | [crates/ui/tauri-mcp](../../../crates/ui/tauri-mcp) | rust crate | 1.0.0-canary | bin | no | 0 | 2026-10-01 |
 | `aphrody-tauri-wrap` | [crates/ui/tauri-wrap](../../../crates/ui/tauri-wrap) | rust crate | 1.0.0-canary | lib | yes | 0 | 2026-10-01 |
-| `@aphrody/app-ui` | [packages/ui/app-ui](../../../packages/ui/app-ui) | bun package | 0.1.0 | lib | yes | 0 | 2026-10-02 |
+| `@aphrody/app-ui` | [packages/ui/app-ui](../../../packages/ui/app-ui) | bun package | 0.1.0 | lib | yes | 0 | 2026-10-03 |
 | `@aphrody/assets` | [packages/ui/assets](../../../packages/ui/assets) | bun package | 0.1.0 | lib | yes | 0 | 2026-10-02 |
 | `@aphrody/canvas` | [packages/ui/canvas](../../../packages/ui/canvas) | bun package | 1.0.9-aphrody.2 | lib | yes | 0 | 2026-10-02 |
 | `@aphrody/eslint-plugin-m3` | [packages/ui/eslint-plugin-m3](../../../packages/ui/eslint-plugin-m3) | bun package | 3.3.3 | lib | yes | 0 | 2026-10-02 |

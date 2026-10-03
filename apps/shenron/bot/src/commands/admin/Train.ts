@@ -8,11 +8,149 @@ import {
 	type CommandInteraction,
 	EmbedBuilder,
 	MessageFlags,
+	PermissionsBitField,
 } from "discord.js";
+import os from "node:os";
+import path from "node:path";
 import { GuildOnly } from "~/guards/GuildOnly";
 import { CommandsChannelOnly } from "~/guards/CommandsChannelOnly";
 import { TrainingService } from "~/services/TrainingService";
 import { SHENRON_THEME, SHENRON_SEPARATORS, renderProgressBar } from "~/lib/embeds";
+
+export type TrainRunKind = "embed" | "rerank";
+
+export interface TrainJob {
+	id: string;
+	kind: TrainRunKind;
+	input: string;
+	outDir: string;
+	startedBy: string;
+	startedAt: number;
+	status: "running" | "succeeded" | "failed";
+	exitCode: number | null;
+	tail: string;
+}
+
+/** `$APHRODY_HOME`, else `~/.aphrody` (same root as the Rust `state_dir`). */
+export function aphrodyStateDir(env: NodeJS.ProcessEnv = process.env): string {
+	return env.APHRODY_HOME?.trim() || path.join(os.homedir(), ".aphrody");
+}
+
+/** Default dbfr triples: `<state>/workspaces/dbfr/training/triples.jsonl`. */
+export function defaultDbfrTriples(env: NodeJS.ProcessEnv = process.env): string {
+	return path.join(aphrodyStateDir(env), "workspaces", "dbfr", "training", "triples.jsonl");
+}
+
+/** argv for `aphrody train run`; the binary comes from `APHRODY_BIN` (default `aphrody`). */
+export function buildTrainRunArgv(
+	job: Pick<TrainJob, "id" | "kind" | "input" | "outDir">,
+	env: NodeJS.ProcessEnv = process.env
+): string[] {
+	return [
+		env.APHRODY_BIN?.trim() || "aphrody",
+		"train",
+		"run",
+		"--kind",
+		job.kind,
+		"--id",
+		job.id,
+		"--input",
+		job.input,
+		"--out-dir",
+		job.outDir,
+	];
+}
+
+type Spawner = (argv: string[], env: Record<string, string | undefined>) => {
+	exited: Promise<number>;
+	stdout: ReadableStream<Uint8Array> | null;
+	stderr: ReadableStream<Uint8Array> | null;
+};
+
+const bunSpawner: Spawner = (argv, env) => {
+	const proc = Bun.spawn(argv, { env, stdin: "ignore", stdout: "pipe", stderr: "pipe" });
+	return { exited: proc.exited, stdout: proc.stdout, stderr: proc.stderr };
+};
+
+/** Non-blocking `aphrody train run` jobs started from Discord, tracked in memory. */
+export class TrainJobRunner {
+	private readonly jobs = new Map<string, TrainJob>();
+
+	constructor(
+		private readonly spawner: Spawner = bunSpawner,
+		private readonly env: NodeJS.ProcessEnv = process.env
+	) {}
+
+	start(kind: TrainRunKind, input: string | undefined, startedBy: string): TrainJob {
+		const id = `shenron-${kind}-${Date.now().toString(36)}`;
+		const job: TrainJob = {
+			id,
+			kind,
+			input: input?.trim() || defaultDbfrTriples(this.env),
+			outDir: path.join(aphrodyStateDir(this.env), "train", id),
+			startedBy,
+			startedAt: Date.now(),
+			status: "running",
+			exitCode: null,
+			tail: "",
+		};
+		this.jobs.set(id, job);
+		const proc = this.spawner(buildTrainRunArgv(job, this.env), {
+			...this.env,
+			APHRODY_AGENT_DOMAIN: "dbfr",
+		});
+		const append = async (stream: ReadableStream<Uint8Array> | null) => {
+			if (!stream) return;
+			const decoder = new TextDecoder();
+			for await (const chunk of stream) {
+				job.tail = (job.tail + decoder.decode(chunk, { stream: true })).slice(-1500);
+			}
+		};
+		void Promise.all([append(proc.stdout), append(proc.stderr)]).catch(() => {});
+		void (async () => {
+			try {
+				const code = await proc.exited;
+				job.exitCode = code;
+				job.status = code === 0 ? "succeeded" : "failed";
+			} catch (error) {
+				job.status = "failed";
+				job.tail = `${job.tail}\n${String(error)}`.slice(-1500);
+			}
+		})();
+		return job;
+	}
+
+	get(id: string): TrainJob | undefined {
+		return this.jobs.get(id);
+	}
+
+	latest(): TrainJob | undefined {
+		let last: TrainJob | undefined;
+		for (const job of this.jobs.values()) if (!last || job.startedAt >= last.startedAt) last = job;
+		return last;
+	}
+}
+
+export const trainJobs = new TrainJobRunner();
+
+function isAdmin(interaction: CommandInteraction): boolean {
+	return interaction.memberPermissions?.has(PermissionsBitField.Flags.Administrator) ?? false;
+}
+
+function describeJob(job: TrainJob): string {
+	const icon = job.status === "running" ? "🟠" : job.status === "succeeded" ? "🟢" : "🔴";
+	const tail = job.tail.trim().slice(-900);
+	return [
+		`${icon} **Job \`${job.id}\`** — ${job.status}${job.exitCode === null ? "" : ` (code ${job.exitCode})`}`,
+		`• Type : \`${job.kind}\``,
+		`• Entrée : \`${job.input}\``,
+		`• Sortie : \`${job.outDir}\``,
+		`• Lancé par <@${job.startedBy}> <t:${Math.floor(job.startedAt / 1000)}:R>`,
+		tail ? `\`\`\`\n${tail}\n\`\`\`` : "",
+	]
+		.filter(Boolean)
+		.join("\n");
+}
 
 @Discord()
 @Bot("shenron")
@@ -464,5 +602,74 @@ export class TrainCommands {
 		} catch (e: any) {
 			await interaction.editReply({ content: `❌ Erreur : ${e.message}` });
 		}
+	}
+
+	@Slash({
+		name: "run",
+		description: "Admin: lance un entraînement embed/rerank (aphrody train run) en arrière-plan",
+	})
+	async run(
+		@SlashChoice({ name: "Embeddings", value: "embed" })
+		@SlashChoice({ name: "Reranker", value: "rerank" })
+		@SlashOption({
+			name: "type",
+			description: "Type d'entraînement",
+			type: ApplicationCommandOptionType.String,
+			required: true,
+		})
+		kind: TrainRunKind,
+		@SlashOption({
+			name: "entree",
+			description: "Fichier de triplets (défaut : workspace dbfr training/triples.jsonl)",
+			type: ApplicationCommandOptionType.String,
+			required: false,
+		})
+		input: string | undefined,
+		interaction: CommandInteraction
+	) {
+		if (!isAdmin(interaction)) {
+			await interaction.reply({
+				content: "❌ Commande réservée aux administrateurs.",
+				flags: MessageFlags.Ephemeral,
+			});
+			return;
+		}
+		try {
+			const job = trainJobs.start(kind, input, interaction.user.id);
+			await interaction.reply({
+				content: `🚀 Entraînement lancé.\n${describeJob(job)}\nSuivi : \`/train job id:${job.id}\``,
+				flags: MessageFlags.Ephemeral,
+			});
+		} catch (e: any) {
+			await interaction.reply({
+				content: `❌ Lancement impossible : ${e?.message ?? e}`,
+				flags: MessageFlags.Ephemeral,
+			});
+		}
+	}
+
+	@Slash({ name: "job", description: "Admin: état d'un entraînement lancé via /train run" })
+	async job(
+		@SlashOption({
+			name: "id",
+			description: "Identifiant du job (défaut : le plus récent)",
+			type: ApplicationCommandOptionType.String,
+			required: false,
+		})
+		id: string | undefined,
+		interaction: CommandInteraction
+	) {
+		if (!isAdmin(interaction)) {
+			await interaction.reply({
+				content: "❌ Commande réservée aux administrateurs.",
+				flags: MessageFlags.Ephemeral,
+			});
+			return;
+		}
+		const job = id ? trainJobs.get(id.trim()) : trainJobs.latest();
+		await interaction.reply({
+			content: job ? describeJob(job) : "Aucun job d'entraînement connu depuis le démarrage du bot.",
+			flags: MessageFlags.Ephemeral,
+		});
 	}
 }

@@ -6,16 +6,17 @@
  * (`expectUrl`) remonte, pas quand un mot de la question réapparaît.
  *
  * Deux passes par cas :
- *   - `lexical` — BM25 seul (baseline reproductible, sans sidecar) ;
+ *   - `lexical` — BM25 seul (baseline reproductible, sans embeddings) ;
  *   - `served`  — le pipeline tel que servi en production (hybride + rerank si le
- *                 sidecar répond). Un cas dégradé en lexical reste compté ici,
+ *                 Aphrody répond). Un cas dégradé en lexical reste compté ici,
  *                 dans la passe servie : le mélanger à la baseline faussait les
  *                 deux lignes (« 82/68 cas servis en lexical »).
  *
  * Métriques : Recall@{1,3,5,10}, MRR, nDCG@10, latence p50/p95, ventilation par tag.
  *
- * Lecture seule sur apps/shenron/bot/data/bot.db (ou RAG_DB). Embedder : EMBED_URL ou
- * APHRODY_SHENRON_EMBED_BASE_URL, obligatoire hors --lexical-only (B13).
+ * Lecture seule sur apps/shenron/bot/data/bot.db (ou RAG_DB). Embeddings via Aphrody
+ * `POST /api/v1/shenron/embed` : APHRODY_AI_HTTP_URL et APHRODY_AI_HTTP_TOKEN
+ * obligatoires hors --lexical-only (B13).
  *
  * Usage : bun scripts/rag-eval.ts [--ci] [--details] [--tag=<tag>] [--lexical-only] [--json=<fichier>]
  *   --ci : exit 1 si Recall@5 de la passe servie < seuil (régression franche).
@@ -34,7 +35,8 @@ import {
 } from "@shenron/pipeline/ai/eval";
 import { resolveDataPath } from "@shenron/config/paths";
 import { hybridSearch } from "../src/lib/rag";
-import { repoRootFromScript, requireEmbedBaseUrl, servedBotDbPath } from "../../../../packages/shenron/pipeline/scripts/lib/script-env";
+import { ShenronEmbeddingsClient } from "@shenron/pipeline/aphrody";
+import { repoRootFromScript, servedBotDbPath } from "../../../../packages/shenron/pipeline/scripts/lib/script-env";
 
 const REPO_ROOT = repoRootFromScript(import.meta.url);
 const DB = process.env.RAG_DB ?? servedBotDbPath(REPO_ROOT);
@@ -55,10 +57,11 @@ const arg = (name: string) =>
 	process.argv.find((a) => a.startsWith(`--${name}=`))?.slice(name.length + 3);
 const flag = (name: string) => process.argv.includes(`--${name}`);
 
-async function sidecarUp(origin: string): Promise<boolean> {
+/** Embeds one probe query through Aphrody (real round trip, token included). */
+async function embeddingsUp(client: ShenronEmbeddingsClient): Promise<boolean> {
 	try {
-		const res = await fetch(`${origin}/health`, { signal: AbortSignal.timeout(1500) });
-		return res.ok;
+		await client.embed(["Son Goku"], "query", { timeoutMs: 3_000 });
+		return true;
 	} catch {
 		return false;
 	}
@@ -135,10 +138,10 @@ async function main(): Promise<void> {
 		console.log(`→ validation : ${gold.length - invalides}/${gold.length} cas ont leur source dans l'index.\n`);
 	}
 
-	// B13 : hors --lexical-only, l'adresse de l'embedder est obligatoire (aucun défaut).
-	const embed = flag("lexical-only") ? null : requireEmbedBaseUrl(process.env);
-	const sidecar = embed !== null && (await sidecarUp(embed.origin));
-	console.log(`→ index : ${chunkCount} chunks · sidecar ${sidecar ? "OK" : "absent"} (${embed ? embed.origin : "--lexical-only"})\n`);
+	// B13 : hors --lexical-only, APHRODY_AI_HTTP_URL / _TOKEN sont obligatoires (aucun défaut).
+	const embeddings = flag("lexical-only") ? null : new ShenronEmbeddingsClient();
+	const sidecar = embeddings !== null && (await embeddingsUp(embeddings));
+	console.log(`→ index : ${chunkCount} chunks · embeddings Aphrody ${sidecar ? "OK" : "absent"} (${embeddings ? embeddings.baseUrl.origin : "--lexical-only"})\n`);
 
 	const lexical: CaseResult[] = [];
 	const served: CaseResult[] = [];

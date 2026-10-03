@@ -243,9 +243,10 @@ fn map_role(data: &NodeData) -> &'static str {
                 },
                 "textarea" => "textbox",
                 "select" => {
-                    if attrs.iter().any(|a| {
-                        (&*a.name.local) == "multiple" || (&*a.name.local) == "size"
-                    }) {
+                    if attrs
+                        .iter()
+                        .any(|a| (&*a.name.local) == "multiple" || (&*a.name.local) == "size")
+                    {
                         "listbox"
                     } else {
                         "combobox"
@@ -561,10 +562,7 @@ fn compute_value(dom: &DomTree, node: &obscura_dom::Node) -> Option<String> {
         let tag = (&*name.local);
         // For native form controls, return the value attribute.
         if tag == "input" || tag == "textarea" || tag == "select" {
-            return attrs
-                .iter()
-                .find(|a| (&*a.name.local) == "value")
-                .map(|a| a.value.clone());
+            return attrs.iter().find(|a| (&*a.name.local) == "value").map(|a| a.value.clone());
         }
 
         if is_content_editing_host(dom, node) {
@@ -631,9 +629,7 @@ fn compute_properties(_dom: &DomTree, node: &obscura_dom::Node) -> Vec<Value> {
         // editable
         if tag == "input"
             || tag == "textarea"
-            || attrs
-                .iter()
-                .any(|a| (&*a.name.local) == "contenteditable" && a.value != "false")
+            || attrs.iter().any(|a| (&*a.name.local) == "contenteditable" && a.value != "false")
         {
             props.push(json!({"name": "editable", "value": ax_value_boolean(true)}));
         }
@@ -656,9 +652,10 @@ fn compute_properties(_dom: &DomTree, node: &obscura_dom::Node) -> Vec<Value> {
         }
 
         // required
-        if attrs.iter().any(|a| {
-            (&*a.name.local) == "required" || (&*a.name.local) == "aria-required"
-        }) {
+        if attrs
+            .iter()
+            .any(|a| (&*a.name.local) == "required" || (&*a.name.local) == "aria-required")
+        {
             props.push(json!({"name": "required", "value": ax_value_boolean(true)}));
         }
 

@@ -28,7 +28,7 @@
 
 use core::ops::Range;
 
-use crate::{debug::debug_log, sys::Vec, AvailableSpace, Clear, FloatDirection, Point, Size};
+use crate::{AvailableSpace, Clear, FloatDirection, Point, Size, debug::debug_log, sys::Vec};
 
 /// An empty "slot" that avoids floats that is suitable for non-floated content
 /// to be laid out into
@@ -73,7 +73,12 @@ struct Segment {
 
 impl Segment {
     /// Whether the segment can fit the passed floated box (in the horizontal axis)
-    fn fits_float_width(&self, floated_box: Size<f32>, direction: FloatDirection, bfc_width: f32) -> bool {
+    fn fits_float_width(
+        &self,
+        floated_box: Size<f32>,
+        direction: FloatDirection,
+        bfc_width: f32,
+    ) -> bool {
         let slot = direction as usize;
         self.insets[slot] == 0.0 || (bfc_width - floated_box.width - self.inset_sum()) >= 0.0
     }
@@ -116,7 +121,6 @@ impl FloatFitter {
     fn fits_horiontally(&self, width: f32) -> bool {
         self.insets == [0.0, 0.0] || self.bfc_width - self.insets[0] - self.insets[1] - width >= 0.0
     }
-
 }
 
 /// A context for placing floated boxes
@@ -219,26 +223,30 @@ impl FloatContext {
     ) -> Point<f32> {
         self.has_floats = true;
 
-        let placed_floated_box =
-            self.place_floated_box_inner(floated_box, min_y, containing_block_insets, direction, clear);
+        let placed_floated_box = self.place_floated_box_inner(
+            floated_box,
+            min_y,
+            containing_block_insets,
+            direction,
+            clear,
+        );
 
         let x_inset = placed_floated_box.x_inset;
         let y = placed_floated_box.y;
         self.last_float_top = Some(self.last_float_top.map_or(y, |previous| previous.max(y)));
         let slot = direction as usize;
         let bottom = y + placed_floated_box.height;
-        self.lowest_float_bottoms[slot] = Some(
-            self.lowest_float_bottoms[slot].map_or(bottom, |previous| previous.max(bottom)),
-        );
+        self.lowest_float_bottoms[slot] =
+            Some(self.lowest_float_bottoms[slot].map_or(bottom, |previous| previous.max(bottom)));
         match direction {
             FloatDirection::Left => {
                 self.left_floats.push(placed_floated_box);
                 Point { x: x_inset, y }
-            }
+            },
             FloatDirection::Right => {
                 self.right_floats.push(placed_floated_box);
                 Point { x: self.available_width - x_inset - floated_box.width, y }
-            }
+            },
         }
     }
 
@@ -263,10 +271,7 @@ impl FloatContext {
 
         // Ensure that float is placed in a segment at or below "min_y"
         // (ensuring that it is placed at or below min_y within it's segment happens below)
-        let start_idx = self
-            .segments
-            .iter()
-            .position(|segment| segment.y.end > min_y);
+        let start_idx = self.segments.iter().position(|segment| segment.y.end > min_y);
 
         let mut start_idx = start_idx.unwrap_or(self.segments.len());
         let mut start_y = min_y;
@@ -393,7 +398,7 @@ impl FloatContext {
                     self.segments.push(Segment { y: last_y_end..min_y, insets: [0.0, 0.0] });
                 }
                 self.segments.len() - 1
-            }
+            },
             Some(end_idx) => {
                 let end_y = start_y + floated_box.height;
                 if end_y != self.segments[end_idx].y.end {
@@ -401,7 +406,7 @@ impl FloatContext {
                 }
 
                 end_idx
-            }
+            },
         };
 
         // Update inset for the range of segments that the float is placed in
@@ -410,7 +415,12 @@ impl FloatContext {
             segment.insets[slot] = placed_inset_plus_width;
         }
 
-        PlacedFloatedBox { width: floated_box.width, height: floated_box.height, y: start_y, x_inset: placed_inset }
+        PlacedFloatedBox {
+            width: floated_box.width,
+            height: floated_box.height,
+            y: start_y,
+            x_inset: placed_inset,
+        }
     }
 
     /// Get the bottom of lowest relevant float for the specific clear property
@@ -440,7 +450,9 @@ impl FloatContext {
                 segment_id: None,
                 x: containing_block_insets[0],
                 y: min_y,
-                width: self.available_width - containing_block_insets[0] - containing_block_insets[1],
+                width: self.available_width
+                    - containing_block_insets[0]
+                    - containing_block_insets[1],
                 height: f32::INFINITY,
             };
         }
@@ -448,12 +460,9 @@ impl FloatContext {
         // The min starting segment index
         let at_least = after.map(|idx| idx + 1).unwrap_or(0);
 
-        let start_idx = self
-            .segments
-            .get(at_least..)
-            .and_then(|segments| {
-                segments.iter().position(|segment| segment.y.end > min_y).map(|idx| idx + at_least)
-            });
+        let start_idx = self.segments.get(at_least..).and_then(|segments| {
+            segments.iter().position(|segment| segment.y.end > min_y).map(|idx| idx + at_least)
+        });
         let start_idx = start_idx.unwrap_or(self.segments.len());
         let segment = self.segments.get(start_idx);
         match segment {
@@ -467,12 +476,14 @@ impl FloatContext {
                     width: self.available_width - inset_left - inset_right,
                     height: f32::INFINITY,
                 }
-            }
+            },
             None => ContentSlot {
                 segment_id: None,
                 x: containing_block_insets[0],
                 y: min_y,
-                width: self.available_width - containing_block_insets[0] - containing_block_insets[1],
+                width: self.available_width
+                    - containing_block_insets[0]
+                    - containing_block_insets[1],
                 height: f32::INFINITY,
             },
         }
@@ -498,7 +509,7 @@ impl FloatIntrinsicWidthCalculator {
         match self.available_width {
             AvailableSpace::Definite(_) => {
                 // We will never hit this code path with definite available space
-            }
+            },
             AvailableSpace::MinContent => self.contribution = self.contribution.max(width),
             AvailableSpace::MaxContent => self.contribution += width,
         };
@@ -521,13 +532,7 @@ mod tests {
         min_y: f32,
         direction: FloatDirection,
     ) -> Point<f32> {
-        context.place_floated_box(
-            Size { width, height },
-            min_y,
-            [0.0, 0.0],
-            direction,
-            Clear::None,
-        )
+        context.place_floated_box(Size { width, height }, min_y, [0.0, 0.0], direction, Clear::None)
     }
 
     fn place(context: &mut FloatContext, width: f32, height: f32, direction: FloatDirection) {

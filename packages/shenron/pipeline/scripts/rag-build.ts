@@ -11,7 +11,8 @@
  *   - corpus d'auteur `.aphrody` (`data/rag/corpus-aphrody.json`).
  *
  * Récupération HYBRIDE : BM25 lexical (`rag_chunks`) + embeddings denses
- * multilingues (`vec_chunks`, multilingual-e5-small via le sidecar). DROP +
+ * multilingues (`vec_chunks`, multilingual-e5-small via Aphrody
+ * `POST /api/v1/shenron/embed`, APHRODY_AI_HTTP_URL / APHRODY_AI_HTTP_TOKEN). DROP +
  * recreate : ne JAMAIS lancer sur la base servie (cf. docs/rag-enrichment.md,
  * procédure copy-swap) — pour une mise à jour à chaud, `rag-resync-entites.ts`.
  *
@@ -27,7 +28,6 @@ import { PG_SOURCES, resolveEntity, urlPostgres } from "./_rag-sources-pg";
 import { CORPUS_DIR, loadCorpusDocs, renderCorpusDocs } from "./_rag-corpus-sources";
 import {
 	repoRootFromScript,
-	requireEmbedBaseUrl,
 	requireOfflineRagDb,
 	requireScriptEmbeddingSpace,
 } from "./lib/script-env";
@@ -40,15 +40,16 @@ if (process.env.RAG_BACKEND === "aphrody") {
 }
 
 // Règle 9 (CLAUDE.md) : DROP + recreate — RAG_DB explicite, jamais la base servie.
-// B13 : l'embedder n'a pas d'adresse par défaut (sauf --no-vectors).
+// B13 : pas d'adresse par défaut ; hors --no-vectors, les embeddings passent par
+// Aphrody (APHRODY_AI_HTTP_URL / APHRODY_AI_HTTP_TOKEN obligatoires).
 // Espace d'embedding : celui du contrat (index shenron-rag), jamais un autre.
 let DBP: string;
-let embed: ReturnType<typeof requireEmbedBaseUrl> | null = null;
+let embeddingsConfigured: ShenronEmbeddingsClient | null = null;
 let space: ReturnType<typeof requireScriptEmbeddingSpace>;
 try {
 	DBP = requireOfflineRagDb(process.env, repoRootFromScript(import.meta.url));
 	space = requireScriptEmbeddingSpace(process.env);
-	if (!process.argv.includes("--no-vectors")) embed = requireEmbedBaseUrl(process.env);
+	if (!process.argv.includes("--no-vectors")) embeddingsConfigured = new ShenronEmbeddingsClient();
 } catch (error) {
 	console.error(`✗ ${error instanceof Error ? error.message : String(error)}`);
 	process.exit(1);
@@ -141,9 +142,11 @@ const chunks = db.query(`SELECT rowid, title, content FROM rag_chunks ORDER BY r
 	title: string;
 	content: string;
 }[];
-if (!embed) throw new Error("embedder non configuré");
-const embeddingsClient = new ShenronEmbeddingsClient({ baseUrl: embed.baseUrl });
-console.log(`→ embeddings via ${embed.baseUrl} (${embed.name}) sur ${chunks.length} chunks…`);
+if (!embeddingsConfigured) throw new Error("embeddings Aphrody non configurés");
+const embeddingsClient = embeddingsConfigured;
+console.log(
+	`→ embeddings via Aphrody ${embeddingsClient.baseUrl.origin}/api/v1/shenron/embed sur ${chunks.length} chunks…`
+);
 const t0 = Date.now();
 const BATCH = 32;
 const CONCURRENCE = 4;

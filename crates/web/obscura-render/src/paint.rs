@@ -1848,9 +1848,10 @@ impl PreparedRender {
             if selected.resolved_url != url || selected.profile != profile {
                 return false;
             }
-            if !tree.get_node(*id).is_some_and(|node| {
-                node.as_element().is_some_and(|name| (&*name.local) == "img")
-            }) {
+            if !tree
+                .get_node(*id)
+                .is_some_and(|node| node.as_element().is_some_and(|name| (&*name.local) == "img"))
+            {
                 return true;
             }
             let Some(style) = self.layout.styles.get(id) else {

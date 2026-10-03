@@ -1,7 +1,7 @@
 # Shared UI Strategy: `spacedriveapp/spaceui`
 
 > Historical migration proposal and upstream comparison. Aphrody's shared controls now live in
-> `packages/m3-*`; desktop and Drive web import `packages/app-ui`. The old Radix/`@sd/ui`
+> `packages/m3-*`; desktop and Drive web import `packages/ui/app-ui`. The old Radix/`@sd/ui`
 > dependency list below is not the active Aphrody UI contract. Keep this FSL source as reference
 > until its remaining product-specific code and provenance are reviewed.
 

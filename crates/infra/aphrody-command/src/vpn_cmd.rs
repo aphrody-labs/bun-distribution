@@ -449,10 +449,10 @@ fn find_agy_path() -> Option<PathBuf> {
     which::which("agy").ok()
 }
 
-/// Resolve `aphrody-infra/scripts/aphrody/setup-app-proxies.ps1`.
+/// Resolve the monorepo's `scripts/aphrody/setup-app-proxies.ps1`.
 ///
-/// `APHRODY_INFRA_ROOT` overrides; otherwise the sibling `../aphrody-infra` of the
-/// aphrody-ai workspace (compile-time manifest dir) or of any ancestor of the cwd is used.
+/// `APHRODY_INFRA_ROOT` overrides; otherwise the repository root containing
+/// this CLI crate or an ancestor of the current directory is searched.
 fn setup_app_proxies_script() -> miette::Result<std::path::PathBuf> {
     let rel = std::path::Path::new("scripts").join("aphrody").join("setup-app-proxies.ps1");
     let mut roots = Vec::new();
@@ -461,11 +461,11 @@ fn setup_app_proxies_script() -> miette::Result<std::path::PathBuf> {
     }
     let manifest = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
     if let Some(ws) = manifest.ancestors().nth(3) {
-        roots.push(ws.join("..").join("aphrody-infra"));
+        roots.push(ws.to_path_buf());
     }
     if let Ok(cwd) = std::env::current_dir() {
         for dir in cwd.ancestors() {
-            roots.push(dir.join("aphrody-infra"));
+            roots.push(dir.to_path_buf());
         }
     }
     let candidates: Vec<std::path::PathBuf> = roots.iter().map(|r| r.join(&rel)).collect();

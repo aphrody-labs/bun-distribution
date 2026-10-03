@@ -77,10 +77,13 @@ impl CellOccupancyMatrix {
         primary_range: Range<i16>,
         secondary_range: Range<i16>,
     ) -> bool {
-        if primary_range.start < 0 || primary_range.end > self.track_counts(primary_axis).len() as i16 {
+        if primary_range.start < 0
+            || primary_range.end > self.track_counts(primary_axis).len() as i16
+        {
             return false;
         }
-        if secondary_range.start < 0 || secondary_range.end > self.track_counts(primary_axis.other_axis()).len() as i16
+        if secondary_range.start < 0
+            || secondary_range.end > self.track_counts(primary_axis.other_axis()).len() as i16
         {
             return false;
         }
@@ -154,7 +157,8 @@ impl CellOccupancyMatrix {
 
         // Check that if the resolved ranges fit within the allocated grid. And if they don't then expand the grid to fit
         // and then re-resolve the ranges once the grid has been expanded as the resolved indexes may have changed
-        let is_in_range = self.is_area_in_range(AbsoluteAxis::Horizontal, col_range.clone(), row_range.clone());
+        let is_in_range =
+            self.is_area_in_range(AbsoluteAxis::Horizontal, col_range.clone(), row_range.clone());
         if !is_in_range {
             self.expand_to_fit_range(row_range.clone(), col_range.clone());
             col_range = self.columns.oz_line_range_to_track_range(column_span);
@@ -176,8 +180,11 @@ impl CellOccupancyMatrix {
         primary_span: Line<OriginZeroLine>,
         secondary_span: Line<OriginZeroLine>,
     ) -> bool {
-        let primary_range = self.track_counts(primary_axis).oz_line_range_to_track_range(primary_span);
-        let secondary_range = self.track_counts(primary_axis.other_axis()).oz_line_range_to_track_range(secondary_span);
+        let primary_range =
+            self.track_counts(primary_axis).oz_line_range_to_track_range(primary_span);
+        let secondary_range = self
+            .track_counts(primary_axis.other_axis())
+            .oz_line_range_to_track_range(secondary_span);
         self.track_area_is_unoccupied(primary_axis, primary_range, secondary_range)
     }
 
@@ -220,7 +227,9 @@ impl CellOccupancyMatrix {
         if column_index >= self.inner.cols() {
             return false;
         }
-        self.inner.iter_col(column_index).any(|cell| !matches!(cell, CellOccupancyState::Unoccupied))
+        self.inner
+            .iter_col(column_index)
+            .any(|cell| !matches!(cell, CellOccupancyState::Unoccupied))
     }
 
     /// Returns the track counts of this CellOccunpancyMatrix in the relevant axis
@@ -249,17 +258,21 @@ impl CellOccupancyMatrix {
                     // Index out of bounds: no tracks to search
                     None
                 } else {
-                    self.inner.iter_row(track_computed_index as usize).rposition(|item| *item == kind)
+                    self.inner
+                        .iter_row(track_computed_index as usize)
+                        .rposition(|item| *item == kind)
                 }
-            }
+            },
             AbsoluteAxis::Vertical => {
                 if track_computed_index < 0 || track_computed_index >= self.inner.cols() as i16 {
                     // Index out of bounds: no tracks to search
                     None
                 } else {
-                    self.inner.iter_col(track_computed_index as usize).rposition(|item| *item == kind)
+                    self.inner
+                        .iter_col(track_computed_index as usize)
+                        .rposition(|item| *item == kind)
                 }
-            }
+            },
         };
 
         maybe_index.map(|idx| track_counts.track_to_prev_oz_line(idx as u16))
@@ -283,17 +296,21 @@ impl CellOccupancyMatrix {
                     // Index out of bounds: no tracks to search
                     None
                 } else {
-                    self.inner.iter_row(track_computed_index as usize).position(|item| *item == kind)
+                    self.inner
+                        .iter_row(track_computed_index as usize)
+                        .position(|item| *item == kind)
                 }
-            }
+            },
             AbsoluteAxis::Vertical => {
                 if track_computed_index < 0 || track_computed_index >= self.inner.cols() as i16 {
                     // Index out of bounds: no tracks to search
                     None
                 } else {
-                    self.inner.iter_col(track_computed_index as usize).position(|item| *item == kind)
+                    self.inner
+                        .iter_col(track_computed_index as usize)
+                        .position(|item| *item == kind)
                 }
-            }
+            },
         };
 
         maybe_index.map(|idx| track_counts.track_to_prev_oz_line(idx as u16))

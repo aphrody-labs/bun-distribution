@@ -6,7 +6,7 @@
   "clusters": {
     "cluster1_app_ui_vs_drive_interface": {
       "status": "overlap-measured",
-      "decision": "Both active hosts import packages/app-ui. The old @aphrody/drive package metadata is retired; retain its excluded FSL source archive until unique code and provenance are reviewed.",
+      "decision": "Both active hosts import packages/ui/app-ui. The old @aphrody/drive package metadata is retired; retain its excluded FSL source archive until unique code and provenance are reviewed.",
       "identicalCount": 203,
       "divergentCount": 40,
       "divergentPaths": [
@@ -6177,7 +6177,7 @@
     },
     "cluster5_m3_explorer_vs_app_ui": {
       "status": "partial-integration",
-      "decision": "packages/app-ui consumes TagPill, RenameInput, and FileThumb; GridItem and live Files behavior proof remain.",
+      "decision": "packages/ui/app-ui consumes TagPill, RenameInput, and FileThumb; GridItem and live Files behavior proof remain.",
       "integratedComponents": [
         "TagPill",
         "RenameInput",

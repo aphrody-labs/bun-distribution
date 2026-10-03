@@ -1,0 +1,26 @@
+#!/usr/bin/env bun
+// SPDX-License-Identifier: Apache-2.0
+import { resolve } from "node:path";
+import { requireLiveRag } from "../src/testing/live-rag";
+
+const { stats } = await requireLiveRag();
+console.log(`Real Shenron RAG: ${stats.chunks} passages, ${stats.vectors} current E5 vectors`);
+const root = resolve(import.meta.dir, "../../../..");
+const tests = [
+  "packages/shenron/pipeline/src/testing/live-rag.test.ts",
+  "apps/shenron/bot/tests/rag-aphrody.test.ts",
+  "apps/shenron/bot/tests/rag-filter.test.ts",
+  "apps/shenron/bot/tests/rag-eval.test.ts",
+  "apps/shenron/site/tests/site-rag-aphrody.test.ts",
+  "packages/shenron/pipeline/scripts/_rag-aphrody-sync.test.ts",
+];
+// Isolation prevents unrelated protocol-failure tests from replacing live transports.
+for (const test of tests) {
+  const child = Bun.spawn([process.execPath, "test", "--timeout", "120000", resolve(root, test)], {
+    cwd: resolve(root, test, "../.."),
+    stdout: "inherit",
+    stderr: "inherit",
+    env: process.env,
+  });
+  if ((await child.exited) !== 0) process.exit(1);
+}

@@ -305,48 +305,61 @@ describe("facade defaults and call-time fetch", () => {
 });
 
 describe("ShenronEmbeddingsClient facade", () => {
-	function e5Server(o: { dims?: number; status?: number } = {}) {
+	function embedServer(o: { dims?: number; status?: number } = {}) {
 		return recorder((req) => {
 			if (o.status) return new Response("{}", { status: o.status });
-			const input = (req.body as { input: string[] }).input;
+			const texts = (req.body as { texts: string[] }).texts;
 			return Response.json({
-				data: input.map((_, index) => ({
-					index,
-					embedding: Array.from({ length: o.dims ?? 384 }, (_, i) => (i + index) / 1000),
-				})),
+				vectors: texts.map((_, index) =>
+					Array.from({ length: o.dims ?? 384 }, (_, i) => (i + index) / 1000)
+				),
 			});
 		});
 	}
 
-	test("same URL, model and prefixed inputs as the legacy client, 16 per request", async () => {
-		const { calls, fetcher } = e5Server();
-		const client = new ShenronEmbeddingsClient({ baseUrl: "http://127.0.0.1:8794/v1", fetcher });
+	test("Aphrody /api/v1/shenron/embed request shape, no client prefix, 16 per request", async () => {
+		const { calls, fetcher } = embedServer();
+		const client = new ShenronEmbeddingsClient({ baseUrl: BASE, token: TOKEN, fetcher });
 		const texts = Array.from({ length: 18 }, (_, i) => ` Texte\n numéro ${i} `);
 		const vectors = await client.embed(texts, "passage");
 		expect(vectors).toHaveLength(18);
 		expect(vectors[17]?.[0]).toBe(1 / 1000);
 		expect(calls.map((c) => `${c.method} ${c.path}`)).toEqual([
-			"POST /v1/embeddings",
-			"POST /v1/embeddings",
+			"POST /api/v1/shenron/embed",
+			"POST /api/v1/shenron/embed",
 		]);
-		const bodies = calls.map((c) => c.body as { model: string; input: string[] });
-		expect(bodies.map((b) => b.input.length)).toEqual([16, 2]);
-		expect(bodies[0]?.model).toBe("Xenova/multilingual-e5-small");
-		expect(bodies[0]?.input[0]).toBe("passage: Texte numéro 0");
-		// Only addition: the AI SDK sends `encoding_format: "float"` (the E5 server default).
-		expect(Object.keys(bodies[0] ?? {}).toSorted()).toEqual(["encoding_format", "input", "model"]);
+		expect(calls[0]?.headers).toEqual(POST_HEADERS);
+		const bodies = calls.map((c) => c.body as { texts: string[]; kind: string });
+		expect(bodies.map((b) => b.texts.length)).toEqual([16, 2]);
+		expect(bodies[0]?.kind).toBe("passage");
+		expect(bodies[0]?.texts[0]).toBe("Texte numéro 0");
+		expect(Object.keys(bodies[0] ?? {}).toSorted()).toEqual(["kind", "texts"]);
+	});
+
+	test("defaults to APHRODY_AI_HTTP_URL / APHRODY_AI_HTTP_TOKEN, no direct embedder needed", async () => {
+		const { calls, fetcher } = embedServer();
+		const client = new ShenronEmbeddingsClient({
+			env: { APHRODY_AI_HTTP_URL: BASE, APHRODY_AI_HTTP_TOKEN: TOKEN },
+			fetcher,
+		});
+		await client.embed(["Goku"], "query");
+		expect(calls[0]?.path).toBe("/api/v1/shenron/embed");
+		expect((calls[0]?.body as { kind: string }).kind).toBe("query");
+		expect(() => new ShenronEmbeddingsClient({ env: {} })).toThrow(/APHRODY_AI_HTTP_URL/);
 	});
 
 	test("legacy error messages", async () => {
 		const client = new ShenronEmbeddingsClient({
-			baseUrl: "http://127.0.0.1:8794/v1",
-			fetcher: e5Server({ status: 503 }).fetcher,
+			baseUrl: BASE,
+			token: TOKEN,
+			fetcher: embedServer({ status: 503 }).fetcher,
 		});
 		await expect(client.embed(["Goku"], "query")).rejects.toThrow("Shenron embeddings HTTP 503");
 		await expect(client.embed(["  "], "query")).rejects.toThrow("Shenron embedding input is empty");
 		const bad = new ShenronEmbeddingsClient({
-			baseUrl: "http://127.0.0.1:8794/v1",
-			fetcher: e5Server({ dims: 12 }).fetcher,
+			baseUrl: BASE,
+			token: TOKEN,
+			fetcher: embedServer({ dims: 12 }).fetcher,
 		});
 		await expect(bad.embed(["Goku"], "query")).rejects.toThrow(
 			"Shenron returned invalid embedding vectors"

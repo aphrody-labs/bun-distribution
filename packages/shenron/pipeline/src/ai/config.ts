@@ -282,7 +282,29 @@ export function hasAiHttpToken(env: EnvSource): boolean {
 	return readAiEnv(env, AI_ENV.httpToken) !== undefined;
 }
 
-// ── Embeddings (`aphrody-shenron-embed`, OpenAI-compatible `/v1/embeddings`) ──
+// ── Embeddings ──
+// Embeddings go only through Aphrody `POST /api/v1/shenron/embed`. The direct
+// embedder variables below are still read for health probes and legacy scripts,
+// but never select an embedding transport.
+
+let warnedIgnoredEmbedBaseUrl = false;
+
+/**
+ * Warns once per process when a direct embedder URL variable is set: the
+ * E5-direct transport is removed and the value is ignored for embeddings.
+ * Returns `true` when a variable was set.
+ */
+export function warnIgnoredEmbedBaseUrl(env: EnvSource): boolean {
+	const hit = readAiEnv(env, AI_ENV.embedBaseUrl);
+	if (!hit) return false;
+	if (!warnedIgnoredEmbedBaseUrl) {
+		warnedIgnoredEmbedBaseUrl = true;
+		console.warn(
+			`${hit.name} is ignored: embeddings use Aphrody POST /api/v1/shenron/embed (${describeNames(AI_ENV.httpUrl)} and ${describeNames(AI_ENV.httpToken)})`
+		);
+	}
+	return true;
+}
 
 /** Direct embedder base (`…/v1`), or `null` when no embed URL variable is set. */
 export function resolveEmbedBaseUrl(env: EnvSource): Resolved<URL | null> {
@@ -453,12 +475,13 @@ export function resolveVisionModel(env: EnvSource): string {
 
 // ── Full configuration ──
 
-export type EmbedTransport = { transport: "aphrody" } | { transport: "e5-direct"; baseUrl: URL };
+/** Embedding transport: Aphrody `/api/v1/shenron/embed` only (E5-direct removed). */
+export type EmbedTransport = { transport: "aphrody" };
 
 export interface AiConfig {
 	compute: AiHttpEndpoint | null;
 	embed: EmbedTransport | null;
-	/** Direct embedder base (`…/v1`) when configured, whatever the transport choice. */
+	/** Direct embedder base (`…/v1`) when configured; informational only, never used to embed. */
 	e5BaseUrl: URL | null;
 	/** Configured embedding space; compared with the index before any vector is read or written. */
 	embedSpace: EmbeddingSpace;
@@ -512,18 +535,13 @@ export function resolveAiConfig(
 		}
 	}
 
-	// ── embed (D10: chosen by configuration, never per request) ──
+	// ── embed: Aphrody only; a direct embedder URL is ignored (one-time warning) ──
 	const e5 = resolveEmbedBaseUrl(env);
-	if (!e5.ok) issues.push(...e5.issues);
 	const e5BaseUrl = e5.ok ? e5.value : null;
+	warnIgnoredEmbedBaseUrl(env);
 	let embed: EmbedTransport | null = null;
 	if (compute) embed = { transport: "aphrody" };
-	else if (e5BaseUrl) embed = { transport: "e5-direct", baseUrl: e5BaseUrl };
-	else
-		disabled.push({
-			capability: "embed",
-			reason: `${httpNames}, or ${describeNames(AI_ENV.embedBaseUrl)}, are not set`,
-		});
+	else disabled.push({ capability: "embed", reason: `requires ${httpNames}` });
 
 	const space = resolveEmbeddingSpace(env);
 	if (!space.ok) issues.push(...space.issues);

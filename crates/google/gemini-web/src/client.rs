@@ -71,26 +71,7 @@ impl GeminiWebClient {
     /// errors as [`Self::from_cookie_file`].
     #[cfg(not(target_arch = "wasm32"))]
     pub async fn from_default_cookie_file(language: &str) -> Result<Self> {
-        if let Some(path) =
-            std::env::var_os("APHRODY_GOOGLE_COOKIES_JSON").filter(|path| !path.is_empty())
-        {
-            return Self::from_cookie_file(PathBuf::from(path), language).await;
-        }
-        let home = std::env::var_os("HOME")
-            .or_else(|| std::env::var_os("USERPROFILE"))
-            .ok_or_else(|| {
-                GeminiError::Auth("cannot resolve HOME/USERPROFILE for default cookie path".into())
-            })?;
-        let dir = PathBuf::from(home).join(".aphrody");
-        let cookies = dir.join("google-cookies.json");
-        let session = dir.join("google-session.json");
-        let path = if cookies.is_file() {
-            cookies
-        } else if session.is_file() {
-            session
-        } else {
-            cookies
-        };
+        let path = Auth::default_cookie_path()?;
         Self::from_cookie_file(path, language).await
     }
 

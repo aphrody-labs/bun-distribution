@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 # Drive route parity: file kinds, jobs, redundancy
 
-The active webview is `packages/app-ui` (not in repo) (`src/router.tsx`). The
+The active webview is `packages/ui/app-ui` (not in repo) (`src/router.tsx`). The
 FSL source in `drive/packages/interface` (`src/router.tsx`)
 is retained for provenance and feature comparison.
 

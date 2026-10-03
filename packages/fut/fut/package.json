@@ -79,19 +79,13 @@
     "p-retry": "catalog:",
     "reflect-metadata": "catalog:",
     "type-graphql": "catalog:",
-    "zod": "catalog:"
+    "zod": "catalog:",
+    "@aphrody/bun": "workspace:*",
+    "@aphrody/sql": "workspace:*"
   },
   "devDependencies": {
     "@types/bun": "catalog:",
     "typescript": "catalog:"
-  },
-  "peerDependencies": {
-    "@aphrody/bxc": ">=0.9.0"
-  },
-  "peerDependenciesMeta": {
-    "@aphrody/bxc": {
-      "optional": true
-    }
   },
   "engines": {
     "bun": ">=1.4.2"

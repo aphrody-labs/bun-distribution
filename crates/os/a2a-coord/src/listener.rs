@@ -156,6 +156,76 @@ pub async fn serve_profile(
     Ok(())
 }
 
+/// Extra bind options for [`serve_with_options`] (legacy `a2a-broker.ts` parity).
+#[derive(Debug, Clone, Default)]
+pub struct ServeOptions {
+    /// Also (or only, with `no_tcp`) listen on this Unix socket (mode 0666, stale file removed).
+    pub unix: Option<std::path::PathBuf>,
+    /// Skip the TCP listener (requires `unix`).
+    pub no_tcp: bool,
+    /// Directory of the legacy `messages.jsonl` / `tasks.json` files for `/jsonrpc` and `/events`;
+    /// defaults to the manifest coord dir.
+    pub coord_dir: Option<std::path::PathBuf>,
+}
+
+/// Router = regular surface + legacy broker (`/jsonrpc`, `/events`).
+pub fn router_with_legacy_broker(cfg: &ListenerConfig, coord_dir: &std::path::Path) -> Router {
+    router(cfg).merge(crate::legacy_broker::legacy_broker_router(
+        crate::legacy_broker::LegacyBroker::new(coord_dir),
+    ))
+}
+
+#[cfg(unix)]
+async fn serve_unix(
+    app: Router,
+    path: &std::path::Path,
+) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    use std::os::unix::fs::PermissionsExt as _;
+    match std::fs::remove_file(path) {
+        Ok(()) => {},
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => {},
+        Err(e) => return Err(e.into()),
+    }
+    let listener = tokio::net::UnixListener::bind(path)?;
+    if let Err(e) = std::fs::set_permissions(path, std::fs::Permissions::from_mode(0o666)) {
+        tracing::warn!("chmod socket failed: {e}");
+    }
+    info!(socket = %path.display(), "aphrody A2A coord listener started (unix)");
+    axum::serve(listener, app).await?;
+    Ok(())
+}
+
+/// Run the listener with the legacy broker routes, on TCP and/or a Unix socket.
+pub async fn serve_with_options(
+    cfg: ListenerConfig,
+    opts: ServeOptions,
+) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    let coord_dir =
+        opts.coord_dir.clone().unwrap_or_else(|| cfg.manifest.coord_dir(&cfg.repo_root));
+    let app = router_with_legacy_broker(&cfg, &coord_dir);
+    let tcp = async {
+        if opts.no_tcp {
+            return std::future::pending::<Result<(), Box<dyn std::error::Error + Send + Sync>>>()
+                .await;
+        }
+        let listener = TcpListener::bind(cfg.bind).await?;
+        info!(%cfg.bind, "aphrody A2A coord listener started");
+        axum::serve(listener, app.clone()).await?;
+        Ok(())
+    };
+    let unix = async {
+        match opts.unix.as_deref() {
+            #[cfg(unix)]
+            Some(path) => serve_unix(app.clone(), path).await,
+            #[cfg(not(unix))]
+            Some(_) => Err("--unix is not supported on this platform".into()),
+            None if opts.no_tcp => Err("--no-tcp requires --unix".into()),
+            None => std::future::pending().await,
+        }
+    };
+    tokio::try_join!(tcp, unix).map(|_| ())
+}
+
 /// Duel-tick helper: compose + append envelope for a side.
 #[derive(Debug, Deserialize)]
 pub struct TickOptions {

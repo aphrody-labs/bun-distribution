@@ -27,7 +27,7 @@ import "server-only";
 import { sql, type SQL } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { assetUrl } from "@/lib/assets";
-import { SITE_URL } from "@/lib/config";
+import { API_URL as BOT_API_URL, SITE_URL } from "@/lib/config";
 import { dbUniverse, type MangaChapterRead, type MangaVolume } from "@/lib/db-universe";
 import { EDITION_PAR_SERIE, SERIE_COULEUR } from "@/lib/manga-editions";
 import { resolveMangaPage } from "@/lib/manga-assets";
@@ -553,4 +553,72 @@ export async function chercherPlanches(
 			rang,
 		};
 	});
+}
+
+/** Une bulle traduite publiée par le bot pour une planche. */
+export type TraductionTexte = {
+	id: number | string;
+	readingOrder: number;
+	sourceText: string;
+	translatedText: string;
+	bounds?: { x: number; y: number; width: number; height: number } | null;
+};
+
+export type TraductionPlanche = { pageId: string; texts: TraductionTexte[] };
+
+/**
+ * Identifiant de page Shenron (`série:tome:planche`) de la planche `(chapitre, rang)`,
+ * la clé que le bot attend pour ses traductions. `null` hors séries couvertes.
+ */
+export async function pageIdDePlanche(chapterId: number, index: number): Promise<string | null> {
+	const ch = await chapitreApi(chapterId);
+	if (!ch) return null;
+	const cle = cleTomeOcr(ch);
+	const p = resolveMangaPage(ch.planches, index);
+	if (!cle || !p) return null;
+	// Même clé que le pipeline Koharu et le bot : `DB:vol1:3`, `DBS:ch12:4`.
+	return `${cle.series}:${cle.tome}:${p.planche}`;
+}
+
+/**
+ * Traductions FR publiées d'une planche, lues sur l'API publique du bot
+ * (`GET /api/manga/planche/:pageId/traduction`). `null` quand rien n'est publié.
+ */
+export async function traductionPlanche(
+	chapterId: number,
+	index: number
+): Promise<TraductionPlanche | null> {
+	const pageId = await pageIdDePlanche(chapterId, index);
+	if (pageId == null) return null;
+	try {
+		const res = await fetch(`${BOT_API_URL}/api/manga/planche/${encodeURIComponent(pageId)}/traduction`, {
+			headers: { accept: "application/json" },
+			next: { revalidate: 300 },
+		});
+		if (!res.ok) return null;
+		// Le bot répond `{data: {pairs: [...]}}` (PublishedMangaTranslation).
+		const body = (await res.json()) as {
+			data?: {
+				pairs?: Array<{
+					regionId: string;
+					textId: string | null;
+					readingOrder: number | null;
+					sourceText: string | null;
+					translatedText: string;
+				}>;
+			};
+		};
+		const pairs = Array.isArray(body.data?.pairs) ? body.data.pairs : [];
+		const texts: TraductionTexte[] = pairs.map((pair, i) => ({
+			id: pair.textId ?? pair.regionId,
+			readingOrder: pair.readingOrder ?? i,
+			sourceText: pair.sourceText ?? "",
+			translatedText: pair.translatedText,
+		}));
+		if (texts.length === 0) return null;
+		return { pageId, texts: texts.toSorted((a, b) => a.readingOrder - b.readingOrder) };
+	} catch (e) {
+		console.error("[manga-api] traduction indisponible:", e);
+		return null;
+	}
 }

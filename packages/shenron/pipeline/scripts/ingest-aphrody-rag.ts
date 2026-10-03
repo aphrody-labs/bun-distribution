@@ -38,7 +38,6 @@ import { DOCUMENTS, REFUSÉ } from "@shenron/config/aphrody-corpus";
 import {
 	ragMetaOf,
 	repoRootFromScript,
-	requireEmbedBaseUrl,
 	requireScriptEmbeddingSpace,
 	servedBotDbPath,
 } from "./lib/script-env";
@@ -170,16 +169,16 @@ if (process.env.RAG_BACKEND === "aphrody") {
 
 // ── Écriture à chaud ────────────────────────────────────────────────────────
 
-// B13 : aucune adresse d'embedder par défaut ; vérifié avant toute écriture.
-let embed: ReturnType<typeof requireEmbedBaseUrl>;
+// B13 : aucune adresse par défaut ; embeddings via Aphrody `POST /api/v1/shenron/embed`
+// (APHRODY_AI_HTTP_URL / APHRODY_AI_HTTP_TOKEN), vérifiés avant toute écriture.
+let embeddingsClient: ShenronEmbeddingsClient;
 try {
-	embed = requireEmbedBaseUrl(process.env);
+	embeddingsClient = new ShenronEmbeddingsClient();
 } catch (error) {
 	console.error(`✗ ${error instanceof Error ? error.message : String(error)}`);
 	process.exit(1);
 }
-const EMBED_URL = embed.baseUrl;
-const embeddingsClient = new ShenronEmbeddingsClient({ baseUrl: embed.baseUrl });
+const EMBED_URL = `${embeddingsClient.baseUrl.origin}/api/v1/shenron/embed`;
 
 const db = new Database(DBP);
 db.run("PRAGMA busy_timeout = 15000");

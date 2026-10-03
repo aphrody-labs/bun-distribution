@@ -6,14 +6,16 @@
  * Fusionne deux signaux :
  *   1. Lexical  — FTS5 BM25 sur `rag_chunks` (exact-match, noms propres, rapide).
  *   2. Sémantique — cosinus exact (brute-force) sur `rag_vectors` (paraphrases,
- *      questions naturelles), via embeddings denses du sidecar `embed-server`.
+ *      questions naturelles), via embeddings denses servis par Aphrody
+ *      (`POST /api/v1/shenron/embed`).
  *
  * Fusion par Reciprocal Rank Fusion (RRF, k=60) — robuste, sans calibration de
- * scores hétérogènes. Dégradation gracieuse : si le sidecar est indisponible ou
- * les vecteurs absents, on retombe sur BM25 seul (l'endpoint reste fonctionnel).
+ * scores hétérogènes. Dégradation gracieuse : si Aphrody est indisponible ou non
+ * configuré, ou les vecteurs absents, on retombe sur BM25 seul (l'endpoint reste
+ * fonctionnel).
  *
  * Ce module n'importe PAS transformers.js — il ne fait qu'un fetch HTTP local
- * vers le sidecar (process isolé du bot). Voir `lib/embeddings.ts`.
+ * vers Aphrody (`APHRODY_AI_HTTP_URL`, jeton `APHRODY_AI_HTTP_TOKEN`).
  */
 import type { Database } from "bun:sqlite";
 import { readFileSync } from "node:fs";
@@ -26,7 +28,6 @@ import {
 	type EmbeddingSpace,
 	type RerankDialect,
 	type RerankEndpoint,
-	requireEmbedBaseUrl,
 	requireEmbeddingSpace,
 	resolveRerank,
 	SHENRON_RAG_INDEX,
@@ -37,7 +38,7 @@ import { e5DirectEmbeddingModel, embedQuery } from "@shenron/pipeline/ai/embeddi
 export type QueryEmbeddingModel = ReturnType<typeof e5DirectEmbeddingModel>;
 
 export interface QueryEmbedding {
-	/** `null` : embeddings indisponibles (adresse invalide) → repli lexical. */
+	/** `null` : embeddings indisponibles (Aphrody non configuré) → repli lexical. */
 	model: QueryEmbeddingModel | null;
 	/** Délai du chemin chaud (`EMBED_TIMEOUT_MS`, 3 s par défaut). */
 	timeoutMs: number;
@@ -48,21 +49,19 @@ let queryEmbeddingState: QueryEmbedding | undefined;
 /**
  * Modèle d'embedding des requêtes, construit paresseusement au premier usage
  * (B3) : une mauvaise URL ne fait plus planter l'import du module, la recherche
- * retombe simplement en lexical. Le transport reste celui d'avant la bascule
- * (D10, choisi par configuration) : E5 direct `/v1/embeddings`, base lue par
- * le résolveur unique `@shenron/pipeline/ai/config` (`APHRODY_AI_EMBED_BASE_URL`, puis
- * les alias hérités du contrat aphrody-infra ; aucune adresse par défaut : sans
- * configuration, la recherche reste lexicale). `maxRetries: 0`, délai
- * `EMBED_TIMEOUT_MS`. Ne jette jamais.
+ * retombe simplement en lexical. Transport unique (D10) : Aphrody
+ * `POST /api/v1/shenron/embed`, adresse et jeton lus par le résolveur unique
+ * `@shenron/pipeline/ai/config` (`APHRODY_AI_HTTP_URL` / `APHRODY_AI_HTTP_TOKEN`
+ * ou leurs alias ; aucune adresse par défaut : sans configuration, la recherche
+ * reste lexicale). `maxRetries: 0`, délai `EMBED_TIMEOUT_MS`. Ne jette jamais.
  */
 export function queryEmbeddingModel(): QueryEmbedding {
 	if (queryEmbeddingState) return queryEmbeddingState;
-	// 3 s : l'embed est rapide (~30 ms) mais peut faire la queue derrière un
-	// rerank (~1,4 s) sur le sidecar WASM mono-thread sous burst.
+	// 3 s : l'embed est rapide (~30 ms) mais peut faire la queue sous burst.
 	const timeoutMs = Number(process.env.EMBED_TIMEOUT_MS ?? DEFAULT_AI_TIMEOUTS.embedHot);
 	let state: QueryEmbedding = { model: null, timeoutMs };
 	try {
-		state = { model: e5DirectEmbeddingModel({ baseUrl: requireEmbedBaseUrl(process.env) }, "query"), timeoutMs };
+		state = { model: e5DirectEmbeddingModel(null, "query"), timeoutMs };
 	} catch (error) {
 		console.warn(
 			"[RAG] Embeddings de requête indisponibles, repli lexical :",
@@ -211,13 +210,13 @@ function nativeVectorSearch(
 
 /**
  * Vecteurs de requête récents. La même question revient souvent (boutons du
- * site, `/ask` rejoué, évaluations) et son embedding coûte un aller-retour au
- * sidecar, qui sérialise ses inférences avec le rerank.
+ * site, `/ask` rejoué, évaluations) et son embedding coûte un aller-retour à
+ * Aphrody.
  */
 const QUERY_VECTOR_CACHE_MAX = 512;
 const queryVectorCache = new Map<string, Float32Array>();
 
-/** Embed la requête via le sidecar. Renvoie null si indisponible (timeout/erreur). */
+/** Embed la requête via Aphrody. Renvoie null si indisponible (timeout/erreur). */
 async function embedRemote(text: string): Promise<Float32Array | null> {
 	const cached = queryVectorCache.get(text);
 	if (cached) {
@@ -810,7 +809,7 @@ export type RagMode = "hybrid+rerank" | "hybrid" | "lexical";
  * le signal sémantique manque. Renvoie au plus `limit` hits.
  */
 export async function hybridSearch(
-	db: Database,
+	db: Database | null,
 	raw: string,
 	limit: number,
 	options?: SearchOptions
@@ -818,7 +817,7 @@ export async function hybridSearch(
 	const query = raw.trim();
 	if (process.env.RAG_BACKEND === "aphrody" || process.env.RAG_BACKEND === "native") {
 		if (!query) return { results: [], mode: "lexical" };
-		if (isNativeAvailable() && !options?.lang && !options?.entity && !options?.sourceId) {
+		if (process.env.RAG_BACKEND === "native" && isNativeAvailable() && !options?.lang && !options?.entity && !options?.sourceId) {
 			try {
 				const hits = await aphrodyNative.ragSearch(query, {
 					limit,
@@ -873,6 +872,7 @@ export async function hybridSearch(
 		.split(/\s+/)
 		.filter((t) => t.length > 1);
 
+	if (!db) throw new Error("Local RAG requires a database; configure RAG_BACKEND=aphrody for remote retrieval");
 	// Récupération des rowids autorisés si des filtres sont présents
 	const filters = filterClause(options);
 	let allowedRowids: Set<number> | null = null;
@@ -1206,7 +1206,7 @@ export function absoluteUrl(url: string, siteBase = "https://dragonballfr.com"):
  * `[n]` et l'URL correspondante, sans second aller-retour pour lire la source.
  */
 export async function buildRagContext(
-	db: Database,
+	db: Database | null,
 	q: string,
 	opts: SearchOptions & { limit?: number; maxChars?: number; siteBase?: string } = {}
 ): Promise<RagContext> {
@@ -1216,6 +1216,7 @@ export async function buildRagContext(
 
 	const contents = new Map<number, string>();
 	if (process.env.RAG_BACKEND !== "aphrody") {
+		if (!db) throw new Error("Local RAG context requires a database");
 		const ph = results.map(() => "?").join(",");
 		for (const row of db.query(`SELECT rowid, content FROM rag_chunks WHERE rowid IN (${ph})`).all(...results.map((r) => r.rowid)) as { rowid: number; content: string }[]) {
 			contents.set(row.rowid, row.content);

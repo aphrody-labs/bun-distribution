@@ -1,4 +1,3 @@
-import { tempPath } from "@aphrody/paths";
 import { resolveApiUrl, resolveSiteUrl } from "@shenron/config/public-urls";
 import os from "node:os";
 import { singleton, inject, container } from "tsyringe";
@@ -10,6 +9,7 @@ import { StatsService } from "~/services/StatsService";
 import {
 	assetUploadScopeDenied,
 	authorizeAssetUpload,
+	authorizeAdmin,
 	checkAdmin,
 	constantTimeEqual,
 } from "./auth";
@@ -39,6 +39,14 @@ import {
 	createLoginThrottle,
 	isDirectLoopback,
 } from "./request-guards";
+import {
+	fetchAgentCard,
+	fetchCoordStream,
+	postJsonRpc,
+	postJsonRpcStream,
+	STREAMING_METHODS,
+	type UpstreamReply,
+} from "./a2a-proxy";
 import { discordFetch, DiscordRESTError } from "~/lib/discord-rest";
 import { userAvatar, defaultAvatar, guildIcon } from "~/lib/discord-cdn";
 import { fetchDiscordUserCached } from "~/lib/discord-profiles";
@@ -156,6 +164,8 @@ import {
 	createRemoteAddressRegistry,
 	hitPublicBucket,
 	buildPublicCorsOrigins,
+	createMangaReviewApi,
+	type StaffDecision,
 } from "./shenron-api";
 
 // Extrait le hash avatar depuis une URL CDN Discord
@@ -1129,6 +1139,22 @@ import { findAction, listServiceActions, SERVICE_ACTIONS } from "./service-regis
  * Bind par défaut sur 127.0.0.1:5006. Auth bearer via `API_ADMIN_TOKEN` env.
  * Compatible avec un dashboard fork de `barthofu/tscord-dashboard`.
  */
+/** Garde staff des routes de revue manga (même politique que `checkAdmin`). */
+async function mangaStaffDecision(req: Request): Promise<StaffDecision> {
+	const decision = await authorizeAdmin(req);
+	if (decision.ok) {
+		const p = decision.principal;
+		const reviewer =
+			p.kind === "user" ? (p.discordId ? `discord:${p.discordId}` : `user:${p.userId}`) : p.kind;
+		return { ok: true, reviewer };
+	}
+	const denied = await checkAdmin(req);
+	return {
+		ok: false,
+		response: denied ?? Response.json({ error: "Authorization requise." }, { status: 401 }),
+	};
+}
+
 @singleton()
 export class ApiServer {
 	private server: ReturnType<typeof Bun.serve> | null = null;
@@ -1157,6 +1183,12 @@ export class ApiServer {
 			buckets: publicRateBuckets,
 			corsOrigins: PUBLIC_CORS_ORIGIN_LIST,
 			graphql: graphqlHandler,
+			// Revue Koharu → Shenron : candidats staff-only, traduction publiée publique.
+			manga: createMangaReviewApi({
+				sqlite: () => container.resolve(DatabaseService).sqlite,
+				authorizeStaff: mangaStaffDecision,
+				corsOrigins: PUBLIC_CORS_ORIGIN_LIST,
+			}),
 		});
 
 		this.server = Bun.serve({
@@ -3162,83 +3194,10 @@ export class ApiServer {
 					),
 
 				// ── A2A — Agent2Agent protocol (Claude ↔ Gemini bridge) ──────
-				// Spec : JSON-RPC 2.0 over HTTP. Endpoint unique + AgentCard
-				// discovery. Backé par les mêmes fichiers que le MCP server
-				// `coord` (.coord/messages.jsonl, .coord/tasks.json) — un
-				// message reçu via A2A apparaît dans read_messages MCP et vice
-				// versa. Voir docs/a2a-protocol.md.
-				"/.well-known/agent-card.json": (req) =>
-					publicCachedJson(req, 60 * 60_000, async () => ({
-						name: "shenron-coord",
-						description:
-							"Bridge A2A pour la coordination des agents DBFR (Claude Code ↔ Gemini CLI). Miroir HTTP du canal MCP `coord` (.coord/messages.jsonl + .coord/tasks.json). Compatible @a2a-js/sdk.",
-						version: "1.1.0",
-						protocolVersion: "0.3.0",
-						url: "https://bot.dragonballfr.com/api/a2a/jsonrpc",
-						provider: {
-							organization: "DBFR / dragonballfr.com",
-							url: "https://dragonballfr.com",
-						},
-						capabilities: {
-							streaming: true,
-							pushNotifications: false,
-							stateTransitionHistory: true,
-						},
-						securitySchemes: {
-							bearerAuth: {
-								type: "http",
-								scheme: "bearer",
-								description:
-									"Optional Bearer token (API_ADMIN_TOKEN). Public coord endpoints sont open par défaut.",
-							},
-						},
-						security: [{ bearerAuth: [] }, {}],
-						defaultInputModes: ["text"],
-						defaultOutputModes: ["text"],
-						supportsAuthenticatedExtendedCard: false,
-						skills: [
-							{
-								id: "coord.messages",
-								name: "Inter-agent messages",
-								description:
-									"Append/read messages between agents on the shared bus (.coord/messages.jsonl, flock-locked). SSE broadcast on /api/a2a/events.",
-								tags: ["coord", "messaging"],
-								examples: [
-									"message/send avec params.to='gemini' params.message.parts=[{kind:'text',text:'...'}]",
-									"message/stream pour subscribe SSE",
-								],
-								inputModes: ["text"],
-								outputModes: ["text"],
-							},
-							{
-								id: "coord.tasks",
-								name: "Sprint tasks",
-								description:
-									"List/get/cancel tasks in the shared backlog (.coord/tasks.json). Atomic claim/complete via MCP server `coord` (flock /tmp/dbfr-tasks.lock).",
-								tags: ["coord", "task-management"],
-								examples: [
-									"tasks/list params={status:'pending',agent:'gemini'}",
-									"tasks/get params.id='shenron-01-fix-jail'",
-									"tasks/cancel params.id='...'",
-								],
-								inputModes: ["text"],
-								outputModes: ["text"],
-							},
-							{
-								id: "coord.memory",
-								name: "Shared markdown memory",
-								description:
-									"Read/write the cross-agent memory under .coord/memory/{shared,claude,gemini}.md and docs under .coord/docs/.",
-								tags: ["coord", "memory"],
-								examples: [
-									"memory/read params.scope='shared'",
-									"memory/append params.scope='claude' params.body='...'",
-								],
-								inputModes: ["text"],
-								outputModes: ["text"],
-							},
-						],
-					})),
+				// Relais vers le serveur Rust `aphrody a2a serve` (./a2a-proxy.ts) :
+				// agent card, JSON-RPC (message/send → /a2a, reste → racine A2A 1.0)
+				// et SSE du mailbox (/coord). Plus d'implémentation locale.
+				"/.well-known/agent-card.json": (req) => a2aAgentCard(req),
 
 				"/api/a2a/jsonrpc": (req) => a2aJsonRpc(req),
 				"/api/a2a/events": (req) => a2aEventsStream(req),
@@ -6734,45 +6693,44 @@ async function mapLimitDeadline<T, R>(
 }
 
 // ── A2A bridge ────────────────────────────────────────────────────────────
-// HTTP miroir du canal MCP `coord` (mcp/coord-server.ts). Backé par les
-// mêmes fichiers `.coord/messages.jsonl` et `.coord/tasks.json` — un
-// message envoyé via A2A est visible immédiatement par read_messages MCP
-// et inversement. SSE permet aux agents distants (CLI ou worker)
-// d'écouter les events en temps réel.
-const COORD_DIR = Bun.env.COORD_DIR ?? `${process.cwd().replace(/\/apps\/bot\/?$/, "")}/.coord`;
-const COORD_MESSAGES = `${COORD_DIR}/messages.jsonl`;
-const COORD_TASKS = `${COORD_DIR}/tasks.json`;
-const COORD_LOCK = tempPath("dbfr-tasks.lock");
-const a2aSubscribers = new Set<(event: unknown) => void>();
+// Le bot n'implémente plus A2A : tout est relayé vers le serveur Rust
+// `aphrody a2a serve` (APHRODY_A2A_URL, défaut http://127.0.0.1:8788), comme
+// le site (`apps/shenron/site/src/lib/a2a-hub.ts`). Voir ./a2a-proxy.ts.
 
-function a2aBroadcast(event: unknown): void {
-	for (const sub of a2aSubscribers) {
-		try {
-			sub(event);
-		} catch {
-			/* sub closed mid-iteration */
-		}
-	}
-}
-
-async function appendMessage(msg: Record<string, unknown>): Promise<void> {
-	const line = JSON.stringify(msg) + "\n";
-	const proc = Bun.spawn(["flock", `${COORD_LOCK}-msg`, "bash", "-c", `cat >> ${COORD_MESSAGES}`], {
-		stdin: "pipe",
-	});
-	proc.stdin.write(line);
-	await proc.stdin.end();
-	await proc.exited;
-}
-
-async function readTasksFile(): Promise<{ tasks: any[] }> {
-	const file = Bun.file(COORD_TASKS);
-	if (!(await file.exists())) return { tasks: [] };
-	return (await file.json()) as { tasks: any[] };
-}
+const A2A_CORS = { "Access-Control-Allow-Origin": "*" } as const;
 
 function a2aRpcError(id: unknown, code: number, message: string): Response {
 	return Response.json({ jsonrpc: "2.0", id, error: { code, message } });
+}
+
+function a2aReply(reply: UpstreamReply, headers: Record<string, string> = A2A_CORS): Response {
+	return Response.json(reply.body, { status: reply.status, headers });
+}
+
+function a2aStreamResponse(res: Response | UpstreamReply): Response {
+	if (!(res instanceof Response)) return a2aReply(res);
+	const contentType = res.headers.get("content-type") ?? "application/json";
+	return new Response(res.body, {
+		status: res.status,
+		headers: {
+			"Content-Type": contentType,
+			"Cache-Control": "no-cache, no-transform",
+			...A2A_CORS,
+		},
+	});
+}
+
+/** Agent card relayée depuis le serveur Rust (CORS public, cache 5 min côté client). */
+export async function a2aAgentCard(req: Request): Promise<Response> {
+	const cors = publicCorsHeaders(req);
+	if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: cors });
+	if (req.method !== "GET" && req.method !== "HEAD") {
+		return new Response("Method Not Allowed", { status: 405, headers: cors });
+	}
+	const reply = await fetchAgentCard();
+	const headers: Record<string, string> = { ...cors };
+	if (reply.status === 200) headers["Cache-Control"] = "public, max-age=300";
+	return a2aReply(reply, headers);
 }
 
 export async function a2aJsonRpc(req: Request): Promise<Response> {
@@ -6797,195 +6755,34 @@ export async function a2aJsonRpc(req: Request): Promise<Response> {
 	const { id = null, method, params } = body ?? {};
 	if (!method) return a2aRpcError(id, -32600, "Invalid Request");
 
-	// S5 (D14) : écritures `.coord` gardées par SHENRON_A2A_ENFORCE ; drapeau
-	// inactif = comportement inchangé + un avertissement par processus.
+	// S5 (D14) : écritures gardées par SHENRON_A2A_ENFORCE ; drapeau inactif =
+	// comportement inchangé + un avertissement par processus.
 	if (A2A_WRITE_METHODS.has(method)) {
 		const denied = a2aWriteGuard(req, Bun.env, (message) => logger.warn(message));
 		if (denied) return denied;
 	}
 
+	if (method === "message/send" && !params?.message?.parts?.length) {
+		return a2aRpcError(id, -32602, "params.message.parts required");
+	}
+	if (method === "tasks/update") {
+		return a2aRpcError(
+			id,
+			-32601,
+			"Method not found: tasks/update has no A2A 1.0 equivalent on the aphrody a2a server"
+		);
+	}
+
 	try {
-		switch (method) {
-			case "message/send": {
-				const incoming = params?.message;
-				if (!incoming?.parts?.length) {
-					return a2aRpcError(id, -32602, "params.message.parts required");
-				}
-				const text = incoming.parts
-					.filter((p: any) => p.kind === "text")
-					.map((p: any) => p.text)
-					.join("\n");
-				const msg = {
-					id: incoming.messageId ?? crypto.randomUUID(),
-					from: incoming.role === "agent" ? "agent" : "user",
-					to: params.to ?? "all",
-					type: "request" as const,
-					contextId: incoming.contextId ?? null,
-					content: text,
-					ts: new Date().toISOString(),
-				};
-				await appendMessage(msg);
-				// Broadcast format Gemini-CoderAgentEvent : text-content (au lieu de "message" brut),
-				// pour que les clients @a2a-js/sdk parsent nativement. On garde aussi "message" pour
-				// rétrocompat avec les vieux subscribers.
-				a2aBroadcast({
-					kind: "text-content",
-					messageId: msg.id,
-					contextId: msg.contextId,
-					role: "agent",
-					parts: [{ kind: "text", text }],
-					ts: msg.ts,
-				});
-				a2aBroadcast({ kind: "message", message: msg });
-				return Response.json({
-					jsonrpc: "2.0",
-					id,
-					result: {
-						kind: "message",
-						messageId: msg.id,
-						role: "agent",
-						parts: [{ kind: "text", text: "ack" }],
-						contextId: msg.contextId,
-					},
-				});
-			}
-			case "message/stream": {
-				// SSE response — émet le state-change initial + les events futurs.
-				// rpcId = JSON-RPC id pour ce stream, propagé dans chaque event SSE.
-				const stream = a2aSseStream(typeof id === "string" ? id : undefined);
-				return new Response(stream, {
-					headers: {
-						"Content-Type": "text/event-stream",
-						"Cache-Control": "no-cache, no-transform",
-						"Access-Control-Allow-Origin": "*",
-					},
-				});
-			}
-			case "tasks/resubscribe": {
-				// Spec A2A : re-attache un client sur un task existant pour recevoir les events
-				// futurs en SSE. On ne distingue pas par taskId côté backend (broadcast global),
-				// donc équivalent à message/stream avec le taskId comme rpc-id.
-				const taskId = typeof params?.id === "string" ? params.id : undefined;
-				const stream = a2aSseStream(taskId);
-				return new Response(stream, {
-					headers: {
-						"Content-Type": "text/event-stream",
-						"Cache-Control": "no-cache, no-transform",
-						"Access-Control-Allow-Origin": "*",
-					},
-				});
-			}
-			case "agent/getAuthenticatedExtendedCard": {
-				// Notre AgentCard public expose déjà tout ; pas d'extension auth-only.
-				return Response.json({
-					jsonrpc: "2.0",
-					id,
-					error: {
-						code: -32601,
-						message: "Extended card not supported (public card is the canonical one)",
-					},
-				});
-			}
-			case "tasks/list": {
-				const { tasks } = await readTasksFile();
-				const filtered = tasks.filter((t: any) => {
-					if (params?.status && t.status !== params.status) return false;
-					if (params?.agent && t.agent !== params.agent) return false;
-					return true;
-				});
-				return Response.json({ jsonrpc: "2.0", id, result: { tasks: filtered } });
-			}
-			case "tasks/get": {
-				const { tasks } = await readTasksFile();
-				const t = tasks.find((x: any) => x.id === params?.id);
-				return Response.json({ jsonrpc: "2.0", id, result: t ?? null });
-			}
-			case "tasks/cancel": {
-				if (typeof params?.id !== "string" || !params.id.trim()) {
-					return a2aRpcError(id, -32602, "params.id (string) required");
-				}
-				const now = new Date().toISOString();
-				// id/now/path passés en ARGUMENTS POSITIONNELS ($1/$2/$3) — bash ne
-				// ré-évalue jamais une expansion de variable (pas de command-substitution
-				// sur "$1"), donc aucune injection shell possible même si params.id
-				// contient `$(...)`, backticks ou `;`. Ne JAMAIS réinterpoler dans la
-				// chaîne `bash -c`.
-				const proc = Bun.spawn(
-					[
-						"flock",
-						COORD_LOCK,
-						"bash",
-						"-c",
-						'jq --arg id "$1" --arg now "$2" \'(.tasks[] | select(.id==$id)) |= (.status="blocked" | .blocker="cancelled via A2A" | .finished_at=$now)\' "$3" > /tmp/.coord-tasks.tmp && mv /tmp/.coord-tasks.tmp "$3"',
-						"a2a-cancel",
-						params.id,
-						now,
-						COORD_TASKS,
-					],
-					{ stdout: "pipe", stderr: "pipe" }
-				);
-				await proc.exited;
-				return Response.json({ jsonrpc: "2.0", id, result: { cancelled: params.id } });
-			}
-			default:
-				return a2aRpcError(id, -32601, `Method not found: ${method}`);
-		}
+		if (STREAMING_METHODS.has(method)) return a2aStreamResponse(await postJsonRpcStream(body));
+		return a2aReply(await postJsonRpc(body));
 	} catch (err) {
-		logger.error({ err }, "a2a/jsonrpc handler failed");
+		logger.error({ err }, "a2a/jsonrpc proxy failed");
 		return a2aRpcError(id, -32000, (err as Error).message ?? "Internal error");
 	}
 }
 
-function a2aSseStream(streamId?: string): ReadableStream {
-	let cleanup: (() => void) | null = null;
-	return new ReadableStream({
-		start(controller) {
-			const encoder = new TextEncoder();
-			const sub = (event: unknown) => {
-				try {
-					// Format SSE officiel @a2a-js/sdk (gemini-cli) : wrap dans JSON-RPC,
-					// id = taskId si évènement lié à une task sinon messageId.
-					const eventObj = event as { taskId?: string; messageId?: string; kind?: string };
-					const rpcId = eventObj.taskId ?? eventObj.messageId ?? streamId ?? null;
-					const wrapped = { jsonrpc: "2.0", id: rpcId, result: event };
-					controller.enqueue(encoder.encode(`data: ${JSON.stringify(wrapped)}\n\n`));
-				} catch {
-					cleanup?.();
-				}
-			};
-			a2aSubscribers.add(sub);
-			// Keep-alive ping toutes les 30 s pour que nginx/Vercel ne timeout pas
-			const ping = setInterval(() => {
-				try {
-					controller.enqueue(encoder.encode(`: ping\n\n`));
-				} catch {
-					cleanup?.();
-				}
-			}, 30_000);
-			cleanup = () => {
-				a2aSubscribers.delete(sub);
-				clearInterval(ping);
-			};
-			// Welcome event — state-change vers "submitted" pour rejoindre la sémantique TaskState A2A
-			const welcome = {
-				kind: "state-change",
-				state: "submitted",
-				ts: new Date().toISOString(),
-			};
-			const rpcId = streamId ?? null;
-			controller.enqueue(
-				encoder.encode(
-					`data: ${JSON.stringify({ jsonrpc: "2.0", id: rpcId, result: welcome })}\n\n`
-				)
-			);
-		},
-		cancel() {
-			cleanup?.();
-		},
-	});
-}
-
-function a2aEventsStream(req: Request): Response {
+export async function a2aEventsStream(req: Request): Promise<Response> {
 	if (req.method === "OPTIONS") {
 		return new Response(null, {
 			status: 204,
@@ -6995,14 +6792,7 @@ function a2aEventsStream(req: Request): Response {
 			},
 		});
 	}
-	return new Response(a2aSseStream(), {
-		headers: {
-			"Content-Type": "text/event-stream",
-			"Cache-Control": "no-cache, no-transform",
-			"Access-Control-Allow-Origin": "*",
-			Connection: "keep-alive",
-		},
-	});
+	return a2aStreamResponse(await fetchCoordStream());
 }
 
 /**

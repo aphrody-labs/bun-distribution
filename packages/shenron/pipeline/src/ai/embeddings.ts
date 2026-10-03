@@ -4,30 +4,36 @@
  *
  * Runtime class: `pure`.
  *
- * - Aphrody transport (`POST /api/v1/shenron/embed`): the server adds the E5
- *   prefix, so the client adds NONE.
- * - E5-direct transport (`aphrody-shenron-embed` `/v1/embeddings`): the
- *   client prefixes exactly once.
- * Both collapse whitespace, send at most 16 inputs per call, sequentially,
- * and check count, index order, 384 dimensions and finite values. The
- * transport is chosen by configuration, never by per-request failover.
+ * Single transport: Aphrody `POST /api/v1/shenron/embed` (Bearer token of
+ * `aphrody-ai-http`). The server adds the E5 prefix, so the client adds NONE.
+ * Whitespace is collapsed, at most 16 inputs go per call, sequentially, and
+ * count, 384 dimensions and finite values are checked. The former E5-direct
+ * sidecar transport (`aphrody-shenron-embed` `/v1/embeddings`) is removed: a
+ * configured direct embedder URL is ignored with a one-time warning.
  */
-import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
 import {
 	APICallError,
 	type EmbeddingModelV4,
 	type EmbeddingModelV4Middleware,
 	type EmbeddingModelV4Result,
 } from "@ai-sdk/provider";
-import { embed, embedMany, wrapEmbeddingModel } from "ai";
+import type { EnvSource } from "@shenron/config/env";
+import { embed, embedMany } from "ai";
 import {
 	type AiFailure,
 	AiFailureError,
 	type AiResult,
 	type AphrodyCompute,
 	collapseWhitespace,
+	createAphrodyCompute,
 } from "./aphrody";
-import { type AiConfig, SHENRON_E5 } from "./config";
+import {
+	type AiConfig,
+	requireAiHttpToken,
+	requireAiHttpUrl,
+	SHENRON_E5,
+	warnIgnoredEmbedBaseUrl,
+} from "./config";
 
 export type EmbedKind = "query" | "passage";
 
@@ -119,21 +125,26 @@ export function e5Middleware(kind: EmbedKind): EmbeddingModelV4Middleware {
 	};
 }
 
-/** Model on the E5 sidecar (`/v1/embeddings`), prefixing once on the client. */
+/**
+ * Embedding model on Aphrody `/api/v1/shenron/embed`, resolved from `env`
+ * (`APHRODY_AI_HTTP_URL` / `APHRODY_AI_HTTP_TOKEN` or their aliases). The name
+ * is kept for existing callers; the former direct sidecar transport is gone,
+ * so `e5.baseUrl` and any direct embedder variable are ignored (one warning).
+ * Throws an `AiConfigError` naming the variables when Aphrody is not configured.
+ */
 export function e5DirectEmbeddingModel(
-	e5: { baseUrl: URL },
+	e5: { baseUrl?: URL | string } | null | undefined,
 	kind: EmbedKind,
-	o: { fetch?: typeof fetch } = {}
+	o: { fetch?: typeof fetch; env?: EnvSource } = {}
 ): EmbeddingModelV4 {
-	const provider = createOpenAICompatible({
-		name: "shenron-e5",
-		baseURL: e5.baseUrl.href.replace(/\/+$/, ""),
-		...(o.fetch ? { fetch: o.fetch } : {}),
-	});
-	return wrapEmbeddingModel({
-		model: provider.embeddingModel(SHENRON_E5.modelId),
-		middleware: e5Middleware(kind),
-	});
+	// Portable lookup: hosts without a process object fall back to an empty env.
+	const env = o.env ?? (globalThis as { process?: { env?: EnvSource } }).process?.env ?? {};
+	warnIgnoredEmbedBaseUrl(e5?.baseUrl !== undefined ? { ...env, APHRODY_AI_EMBED_BASE_URL: String(e5.baseUrl) } : env);
+	const compute = createAphrodyCompute(
+		{ baseUrl: requireAiHttpUrl(env), token: requireAiHttpToken(env) },
+		o.fetch ? { fetch: o.fetch } : {}
+	);
+	return aphrodyEmbeddingModel(compute, kind);
 }
 
 /** Model chosen by configuration (D10); `null` when embeddings are disabled. */
@@ -142,15 +153,8 @@ export function selectEmbeddingModel(
 	kind: EmbedKind,
 	deps: { compute: AphrodyCompute | null; fetch?: typeof fetch }
 ): EmbeddingModelV4 | null {
-	if (!cfg.embed) return null;
-	if (cfg.embed.transport === "aphrody") {
-		return deps.compute ? aphrodyEmbeddingModel(deps.compute, kind) : null;
-	}
-	return e5DirectEmbeddingModel(
-		{ baseUrl: cfg.embed.baseUrl },
-		kind,
-		deps.fetch ? { fetch: deps.fetch } : {}
-	);
+	if (!cfg.embed || !deps.compute) return null;
+	return aphrodyEmbeddingModel(deps.compute, kind);
 }
 
 function findCause<T>(error: unknown, test: (e: unknown) => e is T): T | undefined {
@@ -210,8 +214,8 @@ export function embeddingFailure(error: unknown, path: string, timedOut: boolean
 	return { ok: false, kind: "unreachable", path, detail: `unreachable ${path}` };
 }
 
-function modelPath(model: EmbeddingModelV4): string {
-	return model.provider.startsWith("aphrody") ? "/api/v1/shenron/embed" : "/v1/embeddings";
+function modelPath(_model: EmbeddingModelV4): string {
+	return "/api/v1/shenron/embed";
 }
 
 /** Hot path: one query embedding, `maxRetries: 0`. */

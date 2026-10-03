@@ -31,6 +31,7 @@ import "./commands/wiki/Ask";
 import "./commands/wiki/Canon";
 import "./commands/wiki/Databooks";
 import "./commands/wiki/ForumEpisodes";
+import "./commands/wiki/Scanlate";
 import "./commands/wiki/Wiki";
 import "./events/AdminLabListener";
 import "./events/AuditLog";

@@ -1,4 +1,4 @@
-use koharu_torch_sys::io::{register_callbacks, ReadStream};
+use koharu_torch_sys::io::{ReadStream, register_callbacks};
 use std::{
     ffi::c_void,
     io::{Read, Seek, Write},

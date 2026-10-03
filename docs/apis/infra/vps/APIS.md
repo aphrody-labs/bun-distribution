@@ -1,5 +1,14 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
-# VPS REST and GraphQL APIs
+# VPS REST and GraphQL APIs — historical inventory
+
+> **Historical snapshot:** this document describes the retired Aphrody public
+> API plane and is not a current VPS deployment inventory. The active
+> production allocation marks `aphrody-web` and `aphrody-ai` retired. Use the
+> dated [VPS observation](../../../operations/infra/VPS-STATUS-2026-10-02.md),
+> [`service-catalog.json`](../../../../config/service-catalog.json), and
+> [`nginx-routes.json`](../../../../config/nginx-routes.json) for current
+> deployment and route state. The API details below are retained as migration
+> history and must not be used for operational probes or deployment decisions.
 
 API servers exposed, configured or consumed on the production VPS: what each one serves, which
 repository owns its code, how it is authenticated and how Nginx exposes it. Listener ports and

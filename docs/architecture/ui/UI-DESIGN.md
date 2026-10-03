@@ -51,7 +51,7 @@ recovery. Do not display backend details, raw shell output or simulated data as 
 
 ## 5. Implementation status
 
-The active implementation lives in `packages/app-ui` (not in repo); route and feature status belongs to
+The active implementation lives in `packages/ui/app-ui` (not in repo); route and feature status belongs to
 [GUI.md](../../reference/ui/GUI.md). Historical terminal/browser concepts and obsolete mockups do not override
 this scope. Rust render and M3 crates remain reusable libraries; a standalone native host
 is a packaging decision, not a requirement to rewrite the desktop.

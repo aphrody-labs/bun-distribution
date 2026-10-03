@@ -169,10 +169,31 @@ fn default_cookie_path() -> Option<PathBuf> {
     {
         return Some(PathBuf::from(path));
     }
-    let dir = cookies_dir()?;
-    let json = dir.join("google.json");
-    let text = dir.join("google.txt");
-    Some(if !json.is_file() && text.is_file() { text } else { json })
+    if let Some(dir) = cookies_dir() {
+        let json = dir.join("google.json");
+        let text = dir.join("google.txt");
+        if json.is_file() {
+            return Some(json);
+        } else if text.is_file() {
+            return Some(text);
+        }
+    }
+    let home = std::env::var_os("HOME").or_else(|| std::env::var_os("USERPROFILE"))?;
+    let home_path = PathBuf::from(home);
+    let aphrody_dir = home_path.join(".aphrody");
+    let cookies_json = aphrody_dir.join("google-cookies.json");
+    if cookies_json.is_file() {
+        return Some(cookies_json);
+    }
+    let session_json = aphrody_dir.join("google-session.json");
+    if session_json.is_file() {
+        return Some(session_json);
+    }
+    let gemini_cookies = home_path.join(".gemini/.cookies/google.com.json");
+    if gemini_cookies.is_file() {
+        return Some(gemini_cookies);
+    }
+    Some(cookies_json)
 }
 
 fn parse_cookies(payload: &str) -> Vec<SearchCookie> {

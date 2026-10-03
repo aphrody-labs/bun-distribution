@@ -16,14 +16,14 @@ pub use wrappers::optimizer::COptimizer;
 pub use wrappers::scalar::Scalar;
 pub use wrappers::utils;
 pub use wrappers::{
-    get_num_interop_threads, get_num_threads, manual_seed, set_num_interop_threads,
-    set_num_threads, QEngine,
+    QEngine, get_num_interop_threads, get_num_threads, manual_seed, set_num_interop_threads,
+    set_num_threads,
 };
 
 mod tensor;
 pub use tensor::{
-    autocast, display, index, no_grad, no_grad_guard, with_grad, IndexOp, NewAxis, NoGradGuard,
-    Reduction, Shape, Tensor, TensorIndexer,
+    IndexOp, NewAxis, NoGradGuard, Reduction, Shape, Tensor, TensorIndexer, autocast, display,
+    index, no_grad, no_grad_guard, with_grad,
 };
 
 pub mod nn;

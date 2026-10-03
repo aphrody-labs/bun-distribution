@@ -291,14 +291,11 @@ where
 
 impl Tensor {
     fn f_indexer(&self, index_spec: &[TensorIndexer]) -> Result<Tensor> {
-        use std::ops::Bound::*;
         use TensorIndexer::*;
+        use std::ops::Bound::*;
 
         // Make sure n. non-newaxis does not exceed n. of dimensions
-        let n_newaxis = index_spec
-            .iter()
-            .filter(|spec| *spec == &InsertNewAxis)
-            .count();
+        let n_newaxis = index_spec.iter().filter(|spec| *spec == &InsertNewAxis).count();
 
         if index_spec.len() > self.size().len() + n_newaxis {
             return Err(TchError::Shape(format!(
@@ -317,13 +314,15 @@ impl Tensor {
                     ));
                 }
                 match tensor.f_kind()? {
-                    Int64 => {}
-                    Int16 => {}
-                    Int8 => {}
-                    Int => {}
+                    Int64 => {},
+                    Int16 => {},
+                    Int8 => {},
+                    Int => {},
                     _ => {
-                        return Err(TchError::Kind(format!("the kind of tensors used as indices must be one of {Int64:?}, {Int16:?}, {Int8:?}, {Int:?}")));
-                    }
+                        return Err(TchError::Kind(format!(
+                            "the kind of tensors used as indices must be one of {Int64:?}, {Int16:?}, {Int8:?}, {Int:?}"
+                        )));
+                    },
                 }
             }
         }
@@ -345,11 +344,11 @@ impl Tensor {
                         (Included(start), Unbounded) => {
                             let dim_len = curr_tensor.size()[curr_idx as usize];
                             Some((*start, dim_len - *start))
-                        }
+                        },
                         (Excluded(start), Unbounded) => {
                             let dim_len = curr_tensor.size()[curr_idx as usize];
                             Some((*start + 1, dim_len - *start - 1))
-                        }
+                        },
                         (Unbounded, Included(end)) => Some((0, *end + 1)),
                         (Unbounded, Excluded(end)) => Some((0, *end)),
                         (Included(start), Included(end)) => Some((*start, *end - *start + 1)),
@@ -357,21 +356,15 @@ impl Tensor {
                         (Excluded(start), Included(end)) => Some((*start + 1, *end - *start)),
                         (Excluded(start), Excluded(end)) => Some((*start + 1, *end - *start - 1)),
                     } {
-                        (
-                            curr_tensor.f_narrow(curr_idx, start, length.max(0))?,
-                            curr_idx + 1,
-                        )
+                        (curr_tensor.f_narrow(curr_idx, start, length.max(0))?, curr_idx + 1)
                     } else {
                         (curr_tensor, curr_idx + 1)
                     }
-                }
+                },
                 IndexSelect(index_tensor) => {
                     let index_tensor = index_tensor.to_device(curr_tensor.device());
-                    (
-                        curr_tensor.index_select(curr_idx, &index_tensor),
-                        curr_idx + 1,
-                    )
-                }
+                    (curr_tensor.index_select(curr_idx, &index_tensor), curr_idx + 1)
+                },
             };
             curr_tensor = next_tensor;
             curr_idx = next_idx;

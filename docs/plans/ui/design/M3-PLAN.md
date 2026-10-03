@@ -94,7 +94,7 @@ All Phases 0 through 5 are complete and verified across the monorepo.
 ## Regeneration
 
 - Theme sheets: `bun run --cwd packages/m3-theme generate && bun run --cwd packages/m3-theme generate:fusion`.
-- Tauri webview: `bun run --cwd packages/app-ui build` writes `crates/ui/app/ui-dist/`.
+- Tauri webview: `bun run --cwd packages/ui/app-ui build` writes `crates/ui/app/ui-dist/`.
 - Token bundle: `m3 tokens --bundle <dir>`.
 - Material Web: `bun run --cwd packages/material-web build` (tokens, Sass, CSSResult, both
   TypeScript projects).

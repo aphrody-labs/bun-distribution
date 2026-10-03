@@ -25,14 +25,14 @@ impl FanInOut {
                 } else {
                     dims[1] * receptive_field_size
                 }
-            }
+            },
             FanInOut::FanOut => {
                 if dims.is_empty() {
                     1
                 } else {
                     dims[0] * receptive_field_size
                 }
-            }
+            },
         }
     }
 }
@@ -82,11 +82,7 @@ pub enum Init {
     /// Kaiming uniform initialization.
     /// See "Delving deep into rectifiers: Surpassing human-level performance on ImageNet classification"
     /// He, K. et al. (2015). This uses a uniform distribution.
-    Kaiming {
-        dist: NormalOrUniform,
-        fan: FanInOut,
-        non_linearity: NonLinearity,
-    },
+    Kaiming { dist: NormalOrUniform, fan: FanInOut, non_linearity: NonLinearity },
 
     /// Orthogonal initialization
     Orthogonal { gain: f64 },
@@ -116,7 +112,7 @@ pub fn f_init(i: Init, dims: &[i64], device: Device, kind: Kind) -> Result<Tenso
             } else {
                 Tensor::f_ones(dims, (kind, device)).map(|t| t * cst)
             }
-        }
+        },
         Init::Uniform { lo, up } => Tensor::f_zeros(dims, (kind, device))?.f_uniform_(lo, up),
         Init::Randn { mean, stdev } => {
             if mean == 0. && (stdev - 1.).abs() <= f64::EPSILON {
@@ -124,12 +120,8 @@ pub fn f_init(i: Init, dims: &[i64], device: Device, kind: Kind) -> Result<Tenso
             } else {
                 Tensor::f_randn(dims, (kind, device)).map(|t| t * stdev + mean)
             }
-        }
-        Init::Kaiming {
-            dist,
-            fan,
-            non_linearity,
-        } => {
+        },
+        Init::Kaiming { dist, fan, non_linearity } => {
             let fan = fan.for_weight_dims(dims);
             let gain = non_linearity.gain();
             let std = gain / (fan as f64).sqrt();
@@ -137,13 +129,13 @@ pub fn f_init(i: Init, dims: &[i64], device: Device, kind: Kind) -> Result<Tenso
                 NormalOrUniform::Uniform => {
                     let bound = 3f64.sqrt() * std;
                     Tensor::f_zeros(dims, (kind, device))?.f_uniform_(-bound, bound)
-                }
+                },
                 NormalOrUniform::Normal => {
                     let randn = Tensor::f_randn(dims, (kind, device))?;
                     Ok(randn * std)
-                }
+                },
             }
-        }
+        },
         Init::Orthogonal { gain } => {
             if dims.len() < 2 {
                 return Err(TchError::Shape(
@@ -155,11 +147,7 @@ pub fn f_init(i: Init, dims: &[i64], device: Device, kind: Kind) -> Result<Tenso
 
             let mut flattened =
                 Tensor::f_empty([rows, cols], (kind, device))?.f_normal_(0.0, 1.0)?;
-            let flattened = if rows < cols {
-                flattened.f_t_()?
-            } else {
-                flattened
-            };
+            let flattened = if rows < cols { flattened.f_t_()? } else { flattened };
 
             let (mut q, r) = Tensor::f_linalg_qr(&flattened, "reduced")?;
             let d = r.f_diag(0)?;
@@ -170,7 +158,7 @@ pub fn f_init(i: Init, dims: &[i64], device: Device, kind: Kind) -> Result<Tenso
             crate::no_grad(|| q *= gain);
 
             q.f_contiguous()
-        }
+        },
     }
 }
 
@@ -185,15 +173,11 @@ impl Init {
         match self {
             Init::Const(cst) => {
                 let _ = tensor.fill_(cst);
-            }
+            },
             Init::Uniform { lo, up } => {
                 let _ = tensor.uniform_(lo, up);
-            }
-            Init::Kaiming {
-                dist,
-                fan,
-                non_linearity,
-            } => {
+            },
+            Init::Kaiming { dist, fan, non_linearity } => {
                 let fan = fan.for_weight_dims(&tensor.size());
                 let gain = non_linearity.gain();
                 let std = gain / (fan as f64).sqrt();
@@ -201,25 +185,21 @@ impl Init {
                     NormalOrUniform::Uniform => {
                         let bound = 3f64.sqrt() * std;
                         let _ = tensor.uniform_(-bound, bound);
-                    }
+                    },
                     NormalOrUniform::Normal => {
                         tensor.copy_(&(tensor.randn_like() * std));
-                    }
+                    },
                 }
-            }
+            },
             Init::Randn { mean, stdev } => {
                 tensor.copy_(&(tensor.randn_like() * stdev + mean));
-            }
+            },
             Init::Orthogonal { gain } => {
-                let q = f_init(
-                    Init::Orthogonal { gain },
-                    &tensor.size(),
-                    tensor.device(),
-                    Kind::Float,
-                )
-                .unwrap();
+                let q =
+                    f_init(Init::Orthogonal { gain }, &tensor.size(), tensor.device(), Kind::Float)
+                        .unwrap();
                 crate::no_grad(|| tensor.view_as(&q).copy_(&q));
-            }
+            },
         }
     }
 }

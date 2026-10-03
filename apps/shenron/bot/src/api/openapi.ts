@@ -42,6 +42,31 @@ const ragFilterParams = [
 
 // Schémas réutilisables (composants).
 const schemas = {
+	MangaPlancheTranslation: {
+		type: "object",
+		properties: {
+			pageId: { type: "string" },
+			candidateId: { type: "integer" },
+			targetLanguage: { type: "string", nullable: true },
+			publishedBy: { type: "string" },
+			publishedAt: { type: "integer", description: "Horodatage ms" },
+			pairs: {
+				type: "array",
+				items: {
+					type: "object",
+					properties: {
+						regionId: { type: "string" },
+						textId: { type: "string", nullable: true },
+						readingOrder: { type: "integer", nullable: true },
+						sourceText: { type: "string", nullable: true },
+						sourceLanguage: { type: "string", nullable: true },
+						translatedText: { type: "string" },
+						targetLanguage: { type: "string", nullable: true },
+					},
+				},
+			},
+		},
+	},
 	Character: {
 		type: "object",
 		properties: {
@@ -378,6 +403,101 @@ export const openapiSpec = {
 				responses: itemResp("MangaPage"),
 			},
 		},
+		"/api/manga/planche/{pageId}/traduction": {
+			get: {
+				tags: ["Manga"],
+				summary: "Traduction publiée d'une planche (revue staff Koharu)",
+				parameters: [
+					{
+						name: "pageId",
+						in: "path",
+						required: true,
+						schema: { type: "string", pattern: "^(DB|DBS):(?:vol|t|ch)[0-9]+:[1-9][0-9]*$" },
+						example: "DB:vol1:12",
+					},
+				],
+				responses: {
+					"200": {
+						description: "Paires source/traduction publiées",
+						content: {
+							"application/json": {
+								schema: {
+									type: "object",
+									properties: { data: { $ref: "#/components/schemas/MangaPlancheTranslation" } },
+								},
+							},
+						},
+					},
+					"400": { description: "Identifiant invalide" },
+					"404": { description: "Aucune traduction publiée" },
+				},
+			},
+		},
+		"/api/manga/candidates": {
+			get: {
+				tags: ["Manga"],
+				summary: "File de revue des candidats Koharu (staff)",
+				security: [{ bearerAuth: [] }],
+				parameters: [
+					{
+						name: "status",
+						in: "query",
+						required: false,
+						schema: { type: "string", enum: ["unreviewed", "approved", "rejected", "published"] },
+					},
+					limitParam(50, 200),
+					{ name: "offset", in: "query", required: false, schema: { type: "integer", minimum: 0 } },
+				],
+				responses: {
+					"200": { description: "Candidats" },
+					"401": { description: "Authentification requise" },
+					"403": { description: "Hors politique staff" },
+				},
+			},
+			post: {
+				tags: ["Manga"],
+				summary: "Dépose un candidat shenron.manga.review-candidate/v1 (staff)",
+				security: [{ bearerAuth: [] }],
+				requestBody: {
+					required: true,
+					content: { "application/json": { schema: { type: "object", required: ["schema", "pageId", "image", "source", "regions", "artifacts", "pipeline", "decision"] } } },
+				},
+				responses: {
+					"201": { description: "Candidat créé" },
+					"200": { description: "Candidat déjà présent (même hash)" },
+					"401": { description: "Authentification requise" },
+					"403": { description: "Hors politique staff" },
+					"422": { description: "Candidat invalide" },
+				},
+			},
+		},
+		"/api/manga/candidates/{id}/approve": {
+			post: {
+				tags: ["Manga"],
+				summary: "Approuve et publie la traduction d'un candidat (staff)",
+				security: [{ bearerAuth: [] }],
+				parameters: [{ name: "id", in: "path", required: true, schema: { type: "integer" } }],
+				responses: {
+					"200": { description: "Candidat publié" },
+					"404": { description: "Candidat introuvable" },
+					"409": { description: "Candidat déjà traité" },
+					"422": { description: "Aucun texte traduit" },
+				},
+			},
+		},
+		"/api/manga/candidates/{id}/reject": {
+			post: {
+				tags: ["Manga"],
+				summary: "Rejette un candidat (staff)",
+				security: [{ bearerAuth: [] }],
+				parameters: [{ name: "id", in: "path", required: true, schema: { type: "integer" } }],
+				responses: {
+					"200": { description: "Candidat rejeté" },
+					"404": { description: "Candidat introuvable" },
+					"409": { description: "Candidat déjà traité" },
+				},
+			},
+		},
 		"/api/public/manga/search": {
 			get: {
 				tags: ["Manga"],
@@ -680,7 +800,10 @@ export const openapiSpec = {
 			},
 		},
 	},
-	components: { schemas },
+	components: {
+		schemas,
+		securitySchemes: { bearerAuth: { type: "http", scheme: "bearer" } },
+	},
 } as const;
 
 /** Page HTML de l'UI Scalar (référence d'API interactive), CDN, zéro dépendance. */

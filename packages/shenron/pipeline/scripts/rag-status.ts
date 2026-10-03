@@ -8,7 +8,8 @@ import { tempPath } from "@aphrody/paths";
  * 2. Analyse le contenu de rag_chunks (par type, langue, source).
  * 3. Affiche les métadonnées de la table rag_meta (modèle, dim, date de compilation).
  * 4. Calcule la taille moyenne des chunks.
- * 5. Teste la connectivité avec le serveur d'embeddings sidecar.
+ * 5. Teste les embeddings via Aphrody `POST /api/v1/shenron/embed`
+ *    (APHRODY_AI_HTTP_URL / APHRODY_AI_HTTP_TOKEN obligatoires).
  * 6. Compte les lignes des tables structurées principales (personnages, techniques, planètes).
 
  *
@@ -20,8 +21,8 @@ import { existsSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import * as sqliteVec from "sqlite-vec";
-import { AphrodyComputeClient } from "@shenron/pipeline/aphrody";
-import { requireAphrodyApiUrl, requireEmbedBaseUrl } from "./lib/script-env";
+import { AphrodyComputeClient, ShenronEmbeddingsClient } from "@shenron/pipeline/aphrody";
+import { requireAphrodyApiUrl } from "./lib/script-env";
 
 const ROOT = fileURLToPath(new URL("../../../../", import.meta.url));
 const DB_PROD = process.env.RAG_DB ?? join(ROOT, "apps/shenron/bot/data/bot.db");
@@ -41,17 +42,14 @@ function printHeader(title: string) {
 	console.log(`================================================================================`);
 }
 
-async function checkSidecar(origin: string): Promise<{ status: string; latency?: number; details?: string }> {
+/** Embeds one probe query through Aphrody (real round trip, token included). */
+async function checkEmbeddings(
+	client: ShenronEmbeddingsClient
+): Promise<{ status: string; latency?: number; details?: string }> {
 	const t0 = Date.now();
 	try {
-		const res = await fetch(`${origin}/health`, {
-			method: "GET",
-			signal: AbortSignal.timeout(1500),
-		});
-		if (res.ok) {
-			return { status: "ONLINE", latency: Date.now() - t0, details: `HTTP ${res.status}` };
-		}
-		return { status: "ERROR", details: `HTTP ${res.status}` };
+		const [vector] = await client.embed(["Son Goku"], "query", { timeoutMs: 3_000 });
+		return { status: "ONLINE", latency: Date.now() - t0, details: `${vector?.length ?? 0} dimensions` };
 	} catch (err: any) {
 		return { status: "OFFLINE", details: err.message };
 	}
@@ -174,15 +172,16 @@ async function main() {
 		console.log(JSON.stringify({ backend: "aphrody", ...stats }, null, 2));
 		return;
 	}
-	const embed = requireEmbedBaseUrl(process.env);
-	printHeader("Sidecar d'embeddings");
-	const sidecar = await checkSidecar(embed.origin);
+	// B13 : aucune adresse par défaut ; jette si APHRODY_AI_HTTP_URL / _TOKEN manquent.
+	const embeddings = new ShenronEmbeddingsClient();
+	printHeader("Embeddings Aphrody");
+	const sidecar = await checkEmbeddings(embeddings);
 	console.log(`🔌 Status   : ${sidecar.status}`);
 	if (sidecar.latency !== undefined) {
 		console.log(`⏱️  Latence  : ${sidecar.latency} ms`);
 	}
 	console.log(`💬 Détails  : ${sidecar.details}`);
-	console.log(`🔗 URL      : ${embed.origin} (${embed.name})`);
+	console.log(`🔗 URL      : ${embeddings.baseUrl.origin}/api/v1/shenron/embed`);
 
 	printHeader("Base de données active (bot.db)");
 	analyzeDb(DB_PROD, "active (production)");

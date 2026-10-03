@@ -4,14 +4,14 @@ use crate::style::{AvailableSpace, CoreStyle, LengthPercentageAuto, Overflow, Po
 use crate::style_helpers::TaffyMaxContent;
 use crate::tree::{CollapsibleMarginSet, Layout, LayoutInput, LayoutOutput, RunMode, SizingMode};
 use crate::tree::{LayoutPartialTree, LayoutPartialTreeExt, NodeId};
-use crate::util::debug::debug_log;
-use crate::util::sys::f32_max;
-use crate::util::sys::Vec;
 use crate::util::MaybeMath;
+use crate::util::debug::debug_log;
+use crate::util::sys::Vec;
+use crate::util::sys::f32_max;
 use crate::util::{MaybeResolve, ResolveOrZero};
 use crate::{
-    BlockContainerStyle, BlockItemStyle, BoxGenerationMode, BoxSizing, Direction, LayoutBlockContainer, RequestedAxis,
-    TextAlign,
+    BlockContainerStyle, BlockItemStyle, BoxGenerationMode, BoxSizing, Direction,
+    LayoutBlockContainer, RequestedAxis, TextAlign,
 };
 
 #[cfg(feature = "float_layout")]
@@ -141,15 +141,20 @@ impl BlockContext<'_> {
         pos.y -= self.y_offset;
         pos.x -= self.insets[0];
 
-        self.float_content_contribution = self.float_content_contribution.max(pos.y + floated_box.height);
+        self.float_content_contribution =
+            self.float_content_contribution.max(pos.y + floated_box.height);
 
         pos
     }
 
     /// Search a space suitable for laying out non-floated content into
     pub fn find_content_slot(&self, min_y: f32, clear: Clear, after: Option<usize>) -> ContentSlot {
-        let mut slot =
-            self.bfc.float_context.find_content_slot(min_y + self.y_offset, self.content_box_insets, clear, after);
+        let mut slot = self.bfc.float_context.find_content_slot(
+            min_y + self.y_offset,
+            self.content_box_insets,
+            clear,
+            after,
+        );
         slot.y -= self.y_offset;
         slot.x -= self.insets[0];
         slot
@@ -259,8 +264,10 @@ pub fn compute_block_layout(
     let overflow = style.overflow();
     let is_scroll_container = overflow.x.is_scroll_container() || overflow.y.is_scroll_container();
     let aspect_ratio = style.aspect_ratio();
-    let padding = style.padding().resolve_or_zero(parent_size.width, |val, basis| tree.calc(val, basis));
-    let border = style.border().resolve_or_zero(parent_size.width, |val, basis| tree.calc(val, basis));
+    let padding =
+        style.padding().resolve_or_zero(parent_size.width, |val, basis| tree.calc(val, basis));
+    let border =
+        style.border().resolve_or_zero(parent_size.width, |val, basis| tree.calc(val, basis));
     let padding_border_size = (padding + border).sum_axes();
     let box_sizing_adjustment =
         if style.box_sizing() == BoxSizing::ContentBox { padding_border_size } else { Size::ZERO };
@@ -294,8 +301,10 @@ pub fn compute_block_layout(
         _ => None,
     });
 
-    let styled_based_known_dimensions =
-        known_dimensions.or(min_max_definite_size).or(clamped_style_size).maybe_max(padding_border_size);
+    let styled_based_known_dimensions = known_dimensions
+        .or(min_max_definite_size)
+        .or(clamped_style_size)
+        .maybe_max(padding_border_size);
 
     // Short-circuit layout if the container's size is fully determined by the container's size and the run mode
     // is ComputeSize (and thus the container's size is all that we're interested in)
@@ -330,7 +339,7 @@ pub fn compute_block_layout(
                 LayoutInput { known_dimensions: styled_based_known_dimensions, ..inputs },
                 &mut root_ctx,
             )
-        }
+        },
     }
 }
 
@@ -342,7 +351,12 @@ fn compute_inner(
     #[allow(unused_mut)] mut block_ctx: &mut BlockContext<'_>,
 ) -> LayoutOutput {
     let LayoutInput {
-        known_dimensions, parent_size, available_space, run_mode, vertical_margins_are_collapsible, ..
+        known_dimensions,
+        parent_size,
+        available_space,
+        run_mode,
+        vertical_margins_are_collapsible,
+        ..
     } = inputs;
 
     let style = tree.get_block_container_style(node_id);
@@ -350,7 +364,8 @@ fn compute_inner(
     let raw_border = style.border();
     let raw_margin = style.margin();
     let aspect_ratio = style.aspect_ratio();
-    let padding = raw_padding.resolve_or_zero(parent_size.width, |val, basis| tree.calc(val, basis));
+    let padding =
+        raw_padding.resolve_or_zero(parent_size.width, |val, basis| tree.calc(val, basis));
     let border = raw_border.resolve_or_zero(parent_size.width, |val, basis| tree.calc(val, basis));
     let direction = style.direction();
 
@@ -401,8 +416,12 @@ fn compute_inner(
     // newly-filled axis is adopted (and clamped); an incoming known size is left
     // as the parent resolved it (re-clamping would undo padding/border overrides).
     let known_dimensions = {
-        let derived = known_dimensions.maybe_apply_aspect_ratio(aspect_ratio).maybe_clamp(min_size, max_size);
-        Size { width: known_dimensions.width.or(derived.width), height: known_dimensions.height.or(derived.height) }
+        let derived =
+            known_dimensions.maybe_apply_aspect_ratio(aspect_ratio).maybe_clamp(min_size, max_size);
+        Size {
+            width: known_dimensions.width.or(derived.width),
+            height: known_dimensions.height.or(derived.height),
+        }
     };
     let container_content_box_size = known_dimensions.maybe_sub(content_box_inset.sum_axes());
 
@@ -443,15 +462,24 @@ fn compute_inner(
 
     // 2. Compute container width
     let container_outer_width = known_dimensions.width.unwrap_or_else(|| {
-        let available_width = available_space.width.maybe_sub(content_box_inset.horizontal_axis_sum());
-        let intrinsic_width = determine_content_based_container_width(tree, &items, available_width)
-            + content_box_inset.horizontal_axis_sum();
-        intrinsic_width.maybe_clamp(min_size.width, max_size.width).maybe_max(Some(padding_border_size.width))
+        let available_width =
+            available_space.width.maybe_sub(content_box_inset.horizontal_axis_sum());
+        let intrinsic_width =
+            determine_content_based_container_width(tree, &items, available_width)
+                + content_box_inset.horizontal_axis_sum();
+        intrinsic_width
+            .maybe_clamp(min_size.width, max_size.width)
+            .maybe_max(Some(padding_border_size.width))
     });
 
     // Short-circuit if computing size and both dimensions known
-    if let (RunMode::ComputeSize, Some(container_outer_height)) = (run_mode, known_dimensions.height) {
-        return LayoutOutput::from_outer_size(Size { width: container_outer_width, height: container_outer_height });
+    if let (RunMode::ComputeSize, Some(container_outer_height)) =
+        (run_mode, known_dimensions.height)
+    {
+        return LayoutOutput::from_outer_size(Size {
+            width: container_outer_width,
+            height: container_outer_height,
+        });
     }
 
     // We can also short-circuit if the width is known and only the width has been requested.
@@ -463,29 +491,36 @@ fn compute_inner(
         known_dimensions.height.or(size.height.maybe_max(min_size.height)).or(min_size.height);
 
     // 3. Perform final item layout and return content height
-    let resolved_padding = raw_padding.resolve_or_zero(Some(container_outer_width), |val, basis| tree.calc(val, basis));
-    let resolved_border = raw_border.resolve_or_zero(Some(container_outer_width), |val, basis| tree.calc(val, basis));
+    let resolved_padding = raw_padding
+        .resolve_or_zero(Some(container_outer_width), |val, basis| tree.calc(val, basis));
+    let resolved_border =
+        raw_border.resolve_or_zero(Some(container_outer_width), |val, basis| tree.calc(val, basis));
     let resolved_content_box_inset = resolved_padding + resolved_border + scrollbar_gutter;
     #[cfg_attr(not(feature = "content_size"), allow(unused_mut))]
-    let (mut inflow_content_size, mut intrinsic_outer_height, first_child_top_margin_set, last_child_bottom_margin_set) =
-        perform_final_layout_on_in_flow_children(
-            tree,
-            run_mode,
-            &mut items,
-            container_outer_width,
-            container_percentage_resolution_height,
-            content_box_inset,
-            resolved_content_box_inset,
-            text_align,
-            direction,
-            own_margins_collapse_with_children,
-            block_ctx,
-        );
+    let (
+        mut inflow_content_size,
+        mut intrinsic_outer_height,
+        first_child_top_margin_set,
+        last_child_bottom_margin_set,
+    ) = perform_final_layout_on_in_flow_children(
+        tree,
+        run_mode,
+        &mut items,
+        container_outer_width,
+        container_percentage_resolution_height,
+        content_box_inset,
+        resolved_content_box_inset,
+        text_align,
+        direction,
+        own_margins_collapse_with_children,
+        block_ctx,
+    );
 
     // Root BFCs contain floats
     #[cfg(feature = "float_layout")]
     if block_ctx.is_bfc_root() || is_scroll_container {
-        intrinsic_outer_height = intrinsic_outer_height.max(block_ctx.floated_content_height_contribution());
+        intrinsic_outer_height =
+            intrinsic_outer_height.max(block_ctx.floated_content_height_contribution());
     }
 
     let container_outer_height = known_dimensions
@@ -503,8 +538,10 @@ fn compute_inner(
     // which is what passing `num_items = 1` to `apply_alignment_fallback` does. The whole
     // group then shifts by one offset, with zero inter-item gap.
     if let Some(align_content) = align_content {
-        let container_inner_height = container_outer_height - resolved_content_box_inset.vertical_axis_sum();
-        let inflow_content_height = intrinsic_outer_height - resolved_content_box_inset.vertical_axis_sum();
+        let container_inner_height =
+            container_outer_height - resolved_content_box_inset.vertical_axis_sum();
+        let inflow_content_height =
+            intrinsic_outer_height - resolved_content_box_inset.vertical_axis_sum();
         let free_space = container_inner_height - inflow_content_height;
         let any_in_flow = items.iter().any(|item| item.final_layout.is_some());
         if any_in_flow {
@@ -521,13 +558,17 @@ fn compute_inner(
                 inflow_content_size = Size::ZERO;
                 for item in items.iter() {
                     if let Some(layout) = item.final_layout.as_ref() {
-                        inflow_content_size = inflow_content_size.f32_max(compute_content_size_contribution(
-                            layout.location
-                                + Point { x: -resolved_content_box_inset.left, y: -resolved_content_box_inset.top },
-                            layout.size,
-                            layout.content_size,
-                            item.overflow,
-                        ));
+                        inflow_content_size =
+                            inflow_content_size.f32_max(compute_content_size_contribution(
+                                layout.location
+                                    + Point {
+                                        x: -resolved_content_box_inset.left,
+                                        y: -resolved_content_box_inset.top,
+                                    },
+                                layout.size,
+                                layout.content_size,
+                                item.overflow,
+                            ));
                     }
                 }
             }
@@ -539,20 +580,24 @@ fn compute_inner(
     // block here and use its exposed start/end margin sets to size an ancestor
     // item. Dropping them from ComputeSize makes the ancestor track shorter
     // than the block's eventual descendants.
-    let all_in_flow_children_can_be_collapsed_through =
-        items.iter().all(|item| item.position == Position::Absolute || item.can_be_collapsed_through);
-    let can_be_collapsed_through =
-        !has_styles_preventing_being_collapsed_through && all_in_flow_children_can_be_collapsed_through;
+    let all_in_flow_children_can_be_collapsed_through = items
+        .iter()
+        .all(|item| item.position == Position::Absolute || item.can_be_collapsed_through);
+    let can_be_collapsed_through = !has_styles_preventing_being_collapsed_through
+        && all_in_flow_children_can_be_collapsed_through;
     let top_margin = if own_margins_collapse_with_children.start {
         first_child_top_margin_set
     } else {
-        let margin_top = raw_margin.top.resolve_or_zero(parent_size.width, |val, basis| tree.calc(val, basis));
+        let margin_top =
+            raw_margin.top.resolve_or_zero(parent_size.width, |val, basis| tree.calc(val, basis));
         CollapsibleMarginSet::from_margin(margin_top)
     };
     let bottom_margin = if own_margins_collapse_with_children.end {
         last_child_bottom_margin_set
     } else {
-        let margin_bottom = raw_margin.bottom.resolve_or_zero(parent_size.width, |val, basis| tree.calc(val, basis));
+        let margin_bottom = raw_margin
+            .bottom
+            .resolve_or_zero(parent_size.width, |val, basis| tree.calc(val, basis));
         CollapsibleMarginSet::from_margin(margin_bottom)
     };
 
@@ -575,7 +620,8 @@ fn compute_inner(
     // 4. Layout absolutely positioned children
     let absolute_position_inset = resolved_border + scrollbar_gutter;
     let absolute_position_area = final_outer_size - absolute_position_inset.sum_axes();
-    let absolute_position_offset = Point { x: absolute_position_inset.left, y: absolute_position_inset.top };
+    let absolute_position_offset =
+        Point { x: absolute_position_inset.left, y: absolute_position_inset.top };
     let absolute_content_size = perform_absolute_layout_on_absolute_children(
         tree,
         &items,
@@ -630,8 +676,12 @@ fn generate_item_list(
         .enumerate()
         .map(|(order, (child_node_id, child_style))| {
             let aspect_ratio = child_style.aspect_ratio();
-            let padding = child_style.padding().resolve_or_zero(node_inner_size, |val, basis| tree.calc(val, basis));
-            let border = child_style.border().resolve_or_zero(node_inner_size, |val, basis| tree.calc(val, basis));
+            let padding = child_style
+                .padding()
+                .resolve_or_zero(node_inner_size, |val, basis| tree.calc(val, basis));
+            let border = child_style
+                .border()
+                .resolve_or_zero(node_inner_size, |val, basis| tree.calc(val, basis));
             let pb_sum = (padding + border).sum_axes();
             let box_sizing_adjustment =
                 if child_style.box_sizing() == BoxSizing::ContentBox { pb_sum } else { Size::ZERO };
@@ -649,10 +699,14 @@ fn generate_item_list(
 
             let is_block = child_style.is_block();
             let is_table = child_style.is_table();
-            let is_scroll_container = overflow.x.is_scroll_container() || overflow.y.is_scroll_container();
+            let is_scroll_container =
+                overflow.x.is_scroll_container() || overflow.y.is_scroll_container();
 
-            let is_in_same_bfc: bool =
-                is_block && !is_table && position != Position::Absolute && is_not_floated && !is_scroll_container;
+            let is_in_same_bfc: bool = is_block
+                && !is_table
+                && position != Position::Absolute
+                && is_not_floated
+                && !is_scroll_container;
 
             BlockItem {
                 node_id: child_node_id,
@@ -714,7 +768,9 @@ fn determine_content_based_container_width(
 
         let item_x_margin_sum = item
             .margin
-            .resolve_or_zero(available_space.width.into_option(), |val, basis| tree.calc(val, basis))
+            .resolve_or_zero(available_space.width.into_option(), |val, basis| {
+                tree.calc(val, basis)
+            })
             .horizontal_axis_sum();
         let width = known_dimensions.width.unwrap_or_else(|| {
             tree.measure_child_size(
@@ -764,10 +820,12 @@ fn perform_final_layout_on_in_flow_children(
     block_ctx: &mut BlockContext<'_>,
 ) -> (Size<f32>, f32, CollapsibleMarginSet, CollapsibleMarginSet) {
     // Resolve container_inner_width for sizing child nodes using initial content_box_inset
-    let container_inner_width = container_outer_width - resolved_content_box_inset.horizontal_axis_sum();
-    let container_percentage_resolution_height =
-        container_percentage_resolution_height.maybe_sub(resolved_content_box_inset.vertical_axis_sum());
-    let parent_size = Size { width: Some(container_inner_width), height: container_percentage_resolution_height };
+    let container_inner_width =
+        container_outer_width - resolved_content_box_inset.horizontal_axis_sum();
+    let container_percentage_resolution_height = container_percentage_resolution_height
+        .maybe_sub(resolved_content_box_inset.vertical_axis_sum());
+    let parent_size =
+        Size { width: Some(container_inner_width), height: container_percentage_resolution_height };
     // Vertical available space in block flow is indefinite, NOT a min-content
     // constraint: MaxContent is taffy's representation of "indefinite".
     // Passing MinContent here made every descendant grid believe it was being
@@ -775,14 +833,19 @@ fn perform_final_layout_on_in_flow_children(
     // has zero free space — so auto rows containing only scroll-container
     // items (overflow != visible, automatic minimum size = 0) collapsed to
     // zero height. Browsers size such rows to the item's content.
-    let available_space =
-        Size { width: AvailableSpace::Definite(container_inner_width), height: AvailableSpace::MaxContent };
+    let available_space = Size {
+        width: AvailableSpace::Definite(container_inner_width),
+        height: AvailableSpace::MaxContent,
+    };
 
     // TODO: handle nested blocks with different widths
     #[cfg(feature = "float_layout")]
     if block_ctx.is_bfc_root() {
         block_ctx.set_width(container_outer_width);
-        block_ctx.apply_content_box_inset([resolved_content_box_inset.left, resolved_content_box_inset.right]);
+        block_ctx.apply_content_box_inset([
+            resolved_content_box_inset.left,
+            resolved_content_box_inset.right,
+        ]);
     }
 
     #[cfg_attr(not(feature = "content_size"), allow(unused_mut))]
@@ -808,15 +871,19 @@ fn perform_final_layout_on_in_flow_children(
             };
             item.static_position = Point { x, y: y_offset_for_absolute }
         } else {
-            let item_margin = item
-                .margin
-                .map(|margin| margin.resolve_to_option(container_outer_width, |val, basis| tree.calc(val, basis)));
+            let item_margin = item.margin.map(|margin| {
+                margin.resolve_to_option(container_outer_width, |val, basis| tree.calc(val, basis))
+            });
             let item_non_auto_margin = item_margin.map(|m| m.unwrap_or(0.0));
             let item_non_auto_x_margin_sum = item_non_auto_margin.horizontal_axis_sum();
 
             let scrollbar_size = Size {
                 width: if item.overflow.y == Overflow::Scroll { item.scrollbar_width } else { 0.0 },
-                height: if item.overflow.x == Overflow::Scroll { item.scrollbar_width } else { 0.0 },
+                height: if item.overflow.x == Overflow::Scroll {
+                    item.scrollbar_width
+                } else {
+                    0.0
+                },
             };
 
             // Handle floated boxes
@@ -835,8 +902,12 @@ fn perform_final_layout_on_in_flow_children(
                 );
                 let margin_box = item_layout.size + item_non_auto_margin.sum_axes();
 
-                let mut location =
-                    block_ctx.place_floated_box(margin_box, y_offset_for_float, float_direction, item.clear);
+                let mut location = block_ctx.place_floated_box(
+                    margin_box,
+                    y_offset_for_float,
+                    float_direction,
+                    item.clear,
+                );
 
                 // Ensure that content that appears after a float does not get positioned before/above the float
                 //
@@ -873,12 +944,13 @@ fn perform_final_layout_on_in_flow_children(
                 {
                     // TODO: Should content size of floated boxes count as "inflow_content_size"
                     // or should it be counted separately?
-                    inflow_content_size = inflow_content_size.f32_max(compute_content_size_contribution(
-                        location,
-                        item_layout.size,
-                        item_layout.content_size,
-                        item.overflow,
-                    ));
+                    inflow_content_size =
+                        inflow_content_size.f32_max(compute_content_size_contribution(
+                            location,
+                            item_layout.size,
+                            item_layout.content_size,
+                            item.overflow,
+                        ));
                 }
 
                 continue;
@@ -888,7 +960,9 @@ fn perform_final_layout_on_in_flow_children(
 
             let mut y_margin_offset: f32 = 0.0;
 
-            let (stretch_width, float_avoiding_position, float_avoiding_width) = if item.is_in_same_bfc {
+            let (stretch_width, float_avoiding_position, float_avoiding_width) = if item
+                .is_in_same_bfc
+            {
                 let stretch_width = container_inner_width - item_non_auto_x_margin_sum;
                 let position = Point { x: 0.0, y: 0.0 };
                 let width = 0.0;
@@ -897,9 +971,12 @@ fn perform_final_layout_on_in_flow_children(
             } else {
                 'block: {
                     // Set y_margin_offset (different bfc child)
-                    if !is_collapsing_with_first_margin_set || !own_margins_collapse_with_children.start {
-                        y_margin_offset =
-                            active_collapsible_margin_set.collapse_with_margin(item_non_auto_margin.top).resolve();
+                    if !is_collapsing_with_first_margin_set
+                        || !own_margins_collapse_with_children.start
+                    {
+                        y_margin_offset = active_collapsible_margin_set
+                            .collapse_with_margin(item_non_auto_margin.top)
+                            .resolve();
                     };
                     let min_y = committed_y_offset + y_margin_offset;
 
@@ -931,7 +1008,11 @@ fn perform_final_layout_on_in_flow_children(
                     .map_width(|width| {
                         // TODO: Allow stretch-sizing to be conditional, as there are exceptions.
                         // e.g. Table children of blocks do not stretch fit
-                        Some(width.unwrap_or(stretch_width).maybe_clamp(item.min_size.width, item.max_size.width))
+                        Some(
+                            width
+                                .unwrap_or(stretch_width)
+                                .maybe_clamp(item.min_size.width, item.max_size.width),
+                        )
                     })
                     .maybe_clamp(item.min_size, item.max_size)
             };
@@ -944,8 +1025,13 @@ fn perform_final_layout_on_in_flow_children(
                 axis: RequestedAxis::Both,
                 known_dimensions,
                 parent_size,
-                available_space: available_space.map_width(|_| AvailableSpace::Definite(stretch_width)),
-                vertical_margins_are_collapsible: if item.is_in_same_bfc { Line::TRUE } else { Line::FALSE },
+                available_space: available_space
+                    .map_width(|_| AvailableSpace::Definite(stretch_width)),
+                vertical_margins_are_collapsible: if item.is_in_same_bfc {
+                    Line::TRUE
+                } else {
+                    Line::FALSE
+                },
             };
 
             #[cfg(feature = "float_layout")]
@@ -964,15 +1050,23 @@ fn perform_final_layout_on_in_flow_children(
                 let insets = [inset_left, inset_right];
 
                 // Compute child layout
-                let mut child_block_ctx =
-                    block_ctx.sub_context((y_offset_for_absolute + item_non_auto_margin.top).max(clear_pos), insets);
-                let output = tree.compute_block_child_layout(item.node_id, inputs, Some(&mut child_block_ctx));
+                let mut child_block_ctx = block_ctx.sub_context(
+                    (y_offset_for_absolute + item_non_auto_margin.top).max(clear_pos),
+                    insets,
+                );
+                let output = tree.compute_block_child_layout(
+                    item.node_id,
+                    inputs,
+                    Some(&mut child_block_ctx),
+                );
 
                 // Extract float contribution from child block context
                 #[cfg(feature = "float_layout")]
                 {
                     let child_contribution = child_block_ctx.floated_content_height_contribution();
-                    block_ctx.add_child_floated_content_height_contribution(y_offset_for_absolute + child_contribution);
+                    block_ctx.add_child_floated_content_height_contribution(
+                        y_offset_for_absolute + child_contribution,
+                    );
                 }
 
                 output
@@ -981,20 +1075,19 @@ fn perform_final_layout_on_in_flow_children(
             };
             let final_size = item_layout.size;
 
-            let top_margin_set = item_layout.top_margin.collapse_with_margin(item_margin.top.unwrap_or(0.0));
-            let bottom_margin_set = item_layout.bottom_margin.collapse_with_margin(item_margin.bottom.unwrap_or(0.0));
+            let top_margin_set =
+                item_layout.top_margin.collapse_with_margin(item_margin.top.unwrap_or(0.0));
+            let bottom_margin_set =
+                item_layout.bottom_margin.collapse_with_margin(item_margin.bottom.unwrap_or(0.0));
 
             // Expand auto margins to fill available space
             // Note: Vertical auto-margins for relatively positioned block items simply resolve to 0.
             // See: https://www.w3.org/TR/CSS21/visudet.html#abs-non-replaced-width
             let free_x_space = f32_max(0.0, stretch_width - final_size.width);
             let x_axis_auto_margin_size = {
-                let auto_margin_count = item_margin.left.is_none() as u8 + item_margin.right.is_none() as u8;
-                if auto_margin_count > 0 {
-                    free_x_space / auto_margin_count as f32
-                } else {
-                    0.0
-                }
+                let auto_margin_count =
+                    item_margin.left.is_none() as u8 + item_margin.right.is_none() as u8;
+                if auto_margin_count > 0 { free_x_space / auto_margin_count as f32 } else { 0.0 }
             };
             let resolved_margin = Rect {
                 left: item_margin.left.unwrap_or(x_axis_auto_margin_size),
@@ -1004,9 +1097,10 @@ fn perform_final_layout_on_in_flow_children(
             };
 
             // Resolve item inset
-            let inset = item.inset.zip_size(Size { width: container_inner_width, height: 0.0 }, |p, s| {
-                p.maybe_resolve(s, |val, basis| tree.calc(val, basis))
-            });
+            let inset =
+                item.inset.zip_size(Size { width: container_inner_width, height: 0.0 }, |p, s| {
+                    p.maybe_resolve(s, |val, basis| tree.calc(val, basis))
+                });
             let inset_offset = Point {
                 x: if direction.is_rtl() {
                     inset.right.map(|x| -x).or(inset.left).unwrap_or(0.0)
@@ -1018,9 +1112,12 @@ fn perform_final_layout_on_in_flow_children(
 
             // Set y_margin_offset (same bfc child)
             if item.is_in_same_bfc
-                && (!is_collapsing_with_first_margin_set || !own_margins_collapse_with_children.start)
+                && (!is_collapsing_with_first_margin_set
+                    || !own_margins_collapse_with_children.start)
             {
-                y_margin_offset = active_collapsible_margin_set.collapse_with_margin(resolved_margin.top).resolve()
+                y_margin_offset = active_collapsible_margin_set
+                    .collapse_with_margin(resolved_margin.top)
+                    .resolve()
             };
 
             #[cfg(feature = "float_layout")]
@@ -1029,13 +1126,18 @@ fn perform_final_layout_on_in_flow_children(
             let float_or_not_clear = true;
 
             item.computed_size = item_layout.size;
-            item.can_be_collapsed_through = item_layout.margins_can_collapse_through && float_or_not_clear;
+            item.can_be_collapsed_through =
+                item_layout.margins_can_collapse_through && float_or_not_clear;
             item.static_position = if item.is_in_same_bfc {
                 let uncleared_y = committed_y_offset + active_collapsible_margin_set.resolve();
                 Point {
                     x: match direction {
                         Direction::Ltr => resolved_content_box_inset.left,
-                        Direction::Rtl => container_outer_width - resolved_content_box_inset.right - final_size.width,
+                        Direction::Rtl => {
+                            container_outer_width
+                                - resolved_content_box_inset.right
+                                - final_size.width
+                        },
                     },
                     y: uncleared_y.max(clear_pos),
                 }
@@ -1044,7 +1146,9 @@ fn perform_final_layout_on_in_flow_children(
                 Point {
                     x: match direction {
                         Direction::Ltr => float_avoiding_position.x,
-                        Direction::Rtl => float_avoiding_position.x + float_avoiding_width - final_size.width,
+                        Direction::Rtl => {
+                            float_avoiding_position.x + float_avoiding_width - final_size.width
+                        },
                     },
                     y: float_avoiding_position.y,
                 }
@@ -1052,14 +1156,16 @@ fn perform_final_layout_on_in_flow_children(
             let mut location = if item.is_in_same_bfc {
                 Point {
                     x: match direction {
-                        Direction::Ltr => resolved_content_box_inset.left + inset_offset.x + resolved_margin.left,
+                        Direction::Ltr => {
+                            resolved_content_box_inset.left + inset_offset.x + resolved_margin.left
+                        },
                         Direction::Rtl => {
                             container_outer_width
                                 - resolved_content_box_inset.right
                                 - final_size.width
                                 - resolved_margin.right
                                 + inset_offset.x
-                        }
+                        },
                     },
                     y: committed_y_offset.max(clear_pos) + y_margin_offset + inset_offset.y,
                 }
@@ -1067,11 +1173,15 @@ fn perform_final_layout_on_in_flow_children(
                 // TODO: handle inset and margins
                 Point {
                     x: match direction {
-                        Direction::Ltr => float_avoiding_position.x + resolved_margin.left + inset_offset.x,
+                        Direction::Ltr => {
+                            float_avoiding_position.x + resolved_margin.left + inset_offset.x
+                        },
                         Direction::Rtl => {
-                            float_avoiding_position.x + float_avoiding_width - final_size.width - resolved_margin.right
+                            float_avoiding_position.x + float_avoiding_width
+                                - final_size.width
+                                - resolved_margin.right
                                 + inset_offset.x
-                        }
+                        },
                     },
                     y: float_avoiding_position.y + inset_offset.y,
                 }
@@ -1084,15 +1194,15 @@ fn perform_final_layout_on_in_flow_children(
                 match (text_align, direction) {
                     (TextAlign::Auto, _) => {
                         // Do nothing
-                    }
+                    },
                     (TextAlign::LegacyLeft, Direction::Ltr) => {
                         // Do nothing. Left aligned by default.
-                    }
+                    },
                     (TextAlign::LegacyLeft, Direction::Rtl) => location.x -= free_x_space,
                     (TextAlign::LegacyRight, Direction::Ltr) => location.x += free_x_space,
                     (TextAlign::LegacyRight, Direction::Rtl) => {
                         // Do nothing. Right aligned by default.
-                    }
+                    },
                     (TextAlign::LegacyCenter, Direction::Ltr) => location.x += free_x_space / 2.0,
                     (TextAlign::LegacyCenter, Direction::Rtl) => location.x -= free_x_space / 2.0,
                 }
@@ -1114,12 +1224,17 @@ fn perform_final_layout_on_in_flow_children(
 
             #[cfg(feature = "content_size")]
             {
-                inflow_content_size = inflow_content_size.f32_max(compute_content_size_contribution(
-                    location + Point { x: -resolved_content_box_inset.left, y: -resolved_content_box_inset.top },
-                    final_size,
-                    item_layout.content_size,
-                    item.overflow,
-                ));
+                inflow_content_size =
+                    inflow_content_size.f32_max(compute_content_size_contribution(
+                        location
+                            + Point {
+                                x: -resolved_content_box_inset.left,
+                                y: -resolved_content_box_inset.top,
+                            },
+                        final_size,
+                        item_layout.content_size,
+                        item.overflow,
+                    ));
             }
 
             // Update first_child_top_margin_set
@@ -1129,7 +1244,8 @@ fn perform_final_layout_on_in_flow_children(
                         .collapse_with_set(top_margin_set)
                         .collapse_with_set(bottom_margin_set);
                 } else {
-                    first_child_top_margin_set = first_child_top_margin_set.collapse_with_set(top_margin_set);
+                    first_child_top_margin_set =
+                        first_child_top_margin_set.collapse_with_set(top_margin_set);
                     is_collapsing_with_first_margin_set = false;
                 }
             }
@@ -1139,15 +1255,18 @@ fn perform_final_layout_on_in_flow_children(
                 active_collapsible_margin_set = active_collapsible_margin_set
                     .collapse_with_set(top_margin_set)
                     .collapse_with_set(bottom_margin_set);
-                y_offset_for_absolute = committed_y_offset + item_layout.size.height + y_margin_offset;
+                y_offset_for_absolute =
+                    committed_y_offset + item_layout.size.height + y_margin_offset;
                 #[cfg(feature = "float_layout")]
                 {
-                    y_offset_for_float = committed_y_offset + item_layout.size.height + y_margin_offset;
+                    y_offset_for_float =
+                        committed_y_offset + item_layout.size.height + y_margin_offset;
                 }
             } else {
                 committed_y_offset = location.y - inset_offset.y + item_layout.size.height;
                 active_collapsible_margin_set = bottom_margin_set;
-                y_offset_for_absolute = committed_y_offset + active_collapsible_margin_set.resolve();
+                y_offset_for_absolute =
+                    committed_y_offset + active_collapsible_margin_set.resolve();
                 #[cfg(feature = "float_layout")]
                 {
                     y_offset_for_float = committed_y_offset;
@@ -1157,8 +1276,11 @@ fn perform_final_layout_on_in_flow_children(
     }
 
     let last_child_bottom_margin_set = active_collapsible_margin_set;
-    let bottom_y_margin_offset =
-        if own_margins_collapse_with_children.end { 0.0 } else { last_child_bottom_margin_set.resolve() };
+    let bottom_y_margin_offset = if own_margins_collapse_with_children.end {
+        0.0
+    } else {
+        last_child_bottom_margin_set.resolve()
+    };
 
     committed_y_offset += resolved_content_box_inset.bottom + bottom_y_margin_offset;
     let content_height = f32_max(0.0, committed_y_offset);
@@ -1184,25 +1306,40 @@ fn perform_absolute_layout_on_absolute_children(
         let child_style = tree.get_block_child_style(item.node_id);
 
         // Skip items that are display:none or are not position:absolute
-        if child_style.box_generation_mode() == BoxGenerationMode::None || child_style.position() != Position::Absolute
+        if child_style.box_generation_mode() == BoxGenerationMode::None
+            || child_style.position() != Position::Absolute
         {
             continue;
         }
 
         let aspect_ratio = child_style.aspect_ratio();
-        let margin =
-            child_style.margin().map(|margin| margin.resolve_to_option(area_width, |val, basis| tree.calc(val, basis)));
-        let padding = child_style.padding().resolve_or_zero(Some(area_width), |val, basis| tree.calc(val, basis));
-        let border = child_style.border().resolve_or_zero(Some(area_width), |val, basis| tree.calc(val, basis));
+        let margin = child_style
+            .margin()
+            .map(|margin| margin.resolve_to_option(area_width, |val, basis| tree.calc(val, basis)));
+        let padding = child_style
+            .padding()
+            .resolve_or_zero(Some(area_width), |val, basis| tree.calc(val, basis));
+        let border = child_style
+            .border()
+            .resolve_or_zero(Some(area_width), |val, basis| tree.calc(val, basis));
         let padding_border_sum = (padding + border).sum_axes();
-        let box_sizing_adjustment =
-            if child_style.box_sizing() == BoxSizing::ContentBox { padding_border_sum } else { Size::ZERO };
+        let box_sizing_adjustment = if child_style.box_sizing() == BoxSizing::ContentBox {
+            padding_border_sum
+        } else {
+            Size::ZERO
+        };
 
         // Resolve inset
-        let left = child_style.inset().left.maybe_resolve(area_width, |val, basis| tree.calc(val, basis));
-        let right = child_style.inset().right.maybe_resolve(area_width, |val, basis| tree.calc(val, basis));
-        let top = child_style.inset().top.maybe_resolve(area_height, |val, basis| tree.calc(val, basis));
-        let bottom = child_style.inset().bottom.maybe_resolve(area_height, |val, basis| tree.calc(val, basis));
+        let left =
+            child_style.inset().left.maybe_resolve(area_width, |val, basis| tree.calc(val, basis));
+        let right =
+            child_style.inset().right.maybe_resolve(area_width, |val, basis| tree.calc(val, basis));
+        let top =
+            child_style.inset().top.maybe_resolve(area_height, |val, basis| tree.calc(val, basis));
+        let bottom = child_style
+            .inset()
+            .bottom
+            .maybe_resolve(area_height, |val, basis| tree.calc(val, basis));
 
         // Compute known dimensions from min/max/inherent size styles
         let style_size = child_style
@@ -1230,18 +1367,24 @@ fn perform_absolute_layout_on_absolute_children(
         //   - Width is not already known
         //   - Item has both left and right inset properties set
         if let (None, Some(left), Some(right)) = (known_dimensions.width, left, right) {
-            let new_width_raw = area_width.maybe_sub(margin.left).maybe_sub(margin.right) - left - right;
+            let new_width_raw =
+                area_width.maybe_sub(margin.left).maybe_sub(margin.right) - left - right;
             known_dimensions.width = Some(f32_max(new_width_raw, 0.0));
-            known_dimensions = known_dimensions.maybe_apply_aspect_ratio(aspect_ratio).maybe_clamp(min_size, max_size);
+            known_dimensions = known_dimensions
+                .maybe_apply_aspect_ratio(aspect_ratio)
+                .maybe_clamp(min_size, max_size);
         }
 
         // Fill in height from top/bottom and reapply aspect ratio if:
         //   - Height is not already known
         //   - Item has both top and bottom inset properties set
         if let (None, Some(top), Some(bottom)) = (known_dimensions.height, top, bottom) {
-            let new_height_raw = area_height.maybe_sub(margin.top).maybe_sub(margin.bottom) - top - bottom;
+            let new_height_raw =
+                area_height.maybe_sub(margin.top).maybe_sub(margin.bottom) - top - bottom;
             known_dimensions.height = Some(f32_max(new_height_raw, 0.0));
-            known_dimensions = known_dimensions.maybe_apply_aspect_ratio(aspect_ratio).maybe_clamp(min_size, max_size);
+            known_dimensions = known_dimensions
+                .maybe_apply_aspect_ratio(aspect_ratio)
+                .maybe_clamp(min_size, max_size);
         }
 
         let measured_size = tree.measure_child_size_both(
@@ -1249,8 +1392,12 @@ fn perform_absolute_layout_on_absolute_children(
             known_dimensions,
             area_size.map(Some),
             Size {
-                width: AvailableSpace::Definite(area_width.maybe_clamp(min_size.width, max_size.width)),
-                height: AvailableSpace::Definite(area_height.maybe_clamp(min_size.height, max_size.height)),
+                width: AvailableSpace::Definite(
+                    area_width.maybe_clamp(min_size.width, max_size.width),
+                ),
+                height: AvailableSpace::Definite(
+                    area_height.maybe_clamp(min_size.height, max_size.height),
+                ),
             },
             SizingMode::ContentSize,
             Line::FALSE,
@@ -1263,8 +1410,12 @@ fn perform_absolute_layout_on_absolute_children(
             final_size.map(Some),
             area_size.map(Some),
             Size {
-                width: AvailableSpace::Definite(area_width.maybe_clamp(min_size.width, max_size.width)),
-                height: AvailableSpace::Definite(area_height.maybe_clamp(min_size.height, max_size.height)),
+                width: AvailableSpace::Definite(
+                    area_width.maybe_clamp(min_size.width, max_size.width),
+                ),
+                height: AvailableSpace::Definite(
+                    area_height.maybe_clamp(min_size.height, max_size.height),
+                ),
             },
             SizingMode::ContentSize,
             Line::FALSE,
@@ -1283,12 +1434,20 @@ fn perform_absolute_layout_on_absolute_children(
             // Auto margins for absolutely positioned elements in block containers only resolve
             // if inset is set. Otherwise they resolve to 0.
             let absolute_auto_margin_space = Point {
-                x: right.map(|right| area_size.width - right - left.unwrap_or(0.0)).unwrap_or(final_size.width),
-                y: bottom.map(|bottom| area_size.height - bottom - top.unwrap_or(0.0)).unwrap_or(final_size.height),
+                x: right
+                    .map(|right| area_size.width - right - left.unwrap_or(0.0))
+                    .unwrap_or(final_size.width),
+                y: bottom
+                    .map(|bottom| area_size.height - bottom - top.unwrap_or(0.0))
+                    .unwrap_or(final_size.height),
             };
             let free_space = Size {
-                width: absolute_auto_margin_space.x - final_size.width - non_auto_margin.horizontal_axis_sum(),
-                height: absolute_auto_margin_space.y - final_size.height - non_auto_margin.vertical_axis_sum(),
+                width: absolute_auto_margin_space.x
+                    - final_size.width
+                    - non_auto_margin.horizontal_axis_sum(),
+                height: absolute_auto_margin_space.y
+                    - final_size.height
+                    - non_auto_margin.vertical_axis_sum(),
             };
 
             let auto_margin_size = Size {
@@ -1302,9 +1461,11 @@ fn perform_absolute_layout_on_absolute_children(
                 // 'margin-right' is 'auto', solve the equation for that value. If the values are over-constrained, ignore the value for 'left' (in case
                 // the 'direction' property of the containing block is 'rtl') or 'right' (in case 'direction' is 'ltr') and solve for that value.
                 width: {
-                    let auto_margin_count = margin.left.is_none() as u8 + margin.right.is_none() as u8;
+                    let auto_margin_count =
+                        margin.left.is_none() as u8 + margin.right.is_none() as u8;
                     if auto_margin_count == 2
-                        && (style_size.width.is_none() || style_size.width.unwrap() >= free_space.width)
+                        && (style_size.width.is_none()
+                            || style_size.width.unwrap() >= free_space.width)
                     {
                         0.0
                     } else if auto_margin_count > 0 {
@@ -1314,9 +1475,11 @@ fn perform_absolute_layout_on_absolute_children(
                     }
                 },
                 height: {
-                    let auto_margin_count = margin.top.is_none() as u8 + margin.bottom.is_none() as u8;
+                    let auto_margin_count =
+                        margin.top.is_none() as u8 + margin.bottom.is_none() as u8;
                     if auto_margin_count == 2
-                        && (style_size.height.is_none() || style_size.height.unwrap() >= free_space.height)
+                        && (style_size.height.is_none()
+                            || style_size.height.unwrap() >= free_space.height)
                     {
                         0.0
                     } else if auto_margin_count > 0 {
@@ -1349,22 +1512,29 @@ fn perform_absolute_layout_on_absolute_children(
                 } else {
                     left + resolved_margin.left
                 }
-            }
+            },
             (Some(left), None) => left + resolved_margin.left,
-            (None, Some(right)) => area_size.width - final_size.width - right - resolved_margin.right,
+            (None, Some(right)) => {
+                area_size.width - final_size.width - right - resolved_margin.right
+            },
             (None, None) => {
                 if direction.is_rtl() {
-                    item.static_position.x - final_size.width - resolved_margin.right - area_offset.x
+                    item.static_position.x
+                        - final_size.width
+                        - resolved_margin.right
+                        - area_offset.x
                 } else {
                     item.static_position.x + resolved_margin.left - area_offset.x
                 }
-            }
+            },
         };
         let location = Point {
             x: x_offset + area_offset.x,
             y: top
                 .map(|top| top + resolved_margin.top)
-                .or(bottom.map(|bottom| area_size.height - final_size.height - bottom - resolved_margin.bottom))
+                .or(bottom.map(|bottom| {
+                    area_size.height - final_size.height - bottom - resolved_margin.bottom
+                }))
                 .maybe_add(area_offset.y)
                 .unwrap_or(item.static_position.y + resolved_margin.top),
         };
@@ -1392,13 +1562,15 @@ fn perform_absolute_layout_on_absolute_children(
 
         #[cfg(feature = "content_size")]
         {
-            let relative_location = Point { x: location.x - area_offset.x, y: location.y - area_offset.y };
-            absolute_content_size = absolute_content_size.f32_max(compute_content_size_contribution(
-                relative_location,
-                final_size,
-                layout_output.content_size,
-                item.overflow,
-            ));
+            let relative_location =
+                Point { x: location.x - area_offset.x, y: location.y - area_offset.y };
+            absolute_content_size =
+                absolute_content_size.f32_max(compute_content_size_contribution(
+                    relative_location,
+                    final_size,
+                    layout_output.content_size,
+                    item.overflow,
+                ));
         }
     }
 

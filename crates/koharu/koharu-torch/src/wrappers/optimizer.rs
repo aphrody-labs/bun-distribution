@@ -22,9 +22,8 @@ impl COptimizer {
         eps: f64,
         amsgrad: bool,
     ) -> Result<COptimizer, TchError> {
-        let c_optimizer = unsafe_torch_err!(koharu_torch_sys::ato_adam(
-            lr, beta1, beta2, wd, eps, amsgrad
-        ));
+        let c_optimizer =
+            unsafe_torch_err!(koharu_torch_sys::ato_adam(lr, beta1, beta2, wd, eps, amsgrad));
         Ok(COptimizer { c_optimizer })
     }
 
@@ -36,9 +35,8 @@ impl COptimizer {
         eps: f64,
         amsgrad: bool,
     ) -> Result<COptimizer, TchError> {
-        let c_optimizer = unsafe_torch_err!(koharu_torch_sys::ato_adamw(
-            lr, beta1, beta2, wd, eps, amsgrad
-        ));
+        let c_optimizer =
+            unsafe_torch_err!(koharu_torch_sys::ato_adamw(lr, beta1, beta2, wd, eps, amsgrad));
         Ok(COptimizer { c_optimizer })
     }
 
@@ -66,9 +64,8 @@ impl COptimizer {
         nesterov: bool,
     ) -> Result<COptimizer, TchError> {
         let nesterov = i32::from(nesterov);
-        let c_optimizer = unsafe_torch_err!(koharu_torch_sys::ato_sgd(
-            lr, momentum, dampening, wd, nesterov
-        ));
+        let c_optimizer =
+            unsafe_torch_err!(koharu_torch_sys::ato_sgd(lr, momentum, dampening, wd, nesterov));
         Ok(COptimizer { c_optimizer })
     }
 
@@ -82,10 +79,7 @@ impl COptimizer {
     }
 
     pub fn set_learning_rate(&mut self, lr: f64) -> Result<(), TchError> {
-        unsafe_torch_err!(koharu_torch_sys::ato_set_learning_rate(
-            self.c_optimizer,
-            lr
-        ));
+        unsafe_torch_err!(koharu_torch_sys::ato_set_learning_rate(self.c_optimizer, lr));
         Ok(())
     }
 
@@ -104,19 +98,12 @@ impl COptimizer {
     }
 
     pub fn set_momentum_group(&mut self, group: usize, m: f64) -> Result<(), TchError> {
-        unsafe_torch_err!(koharu_torch_sys::ato_set_momentum_group(
-            self.c_optimizer,
-            group,
-            m
-        ));
+        unsafe_torch_err!(koharu_torch_sys::ato_set_momentum_group(self.c_optimizer, group, m));
         Ok(())
     }
 
     pub fn set_weight_decay(&mut self, weight_decay: f64) -> Result<(), TchError> {
-        unsafe_torch_err!(koharu_torch_sys::ato_set_weight_decay(
-            self.c_optimizer,
-            weight_decay
-        ));
+        unsafe_torch_err!(koharu_torch_sys::ato_set_weight_decay(self.c_optimizer, weight_decay));
         Ok(())
     }
 

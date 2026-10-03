@@ -4,7 +4,7 @@
 //! <https://www.cs.toronto.edu/~kriz/cifar.html>
 //! The binary version of the dataset is used.
 use super::dataset::Dataset;
-use crate::{kind, IndexOp, Kind, Tensor};
+use crate::{IndexOp, Kind, Tensor, kind};
 use std::fs::File;
 use std::io::{BufReader, Read, Result};
 

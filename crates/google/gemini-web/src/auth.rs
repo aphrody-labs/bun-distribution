@@ -189,6 +189,56 @@ impl Auth {
     /// envelope (`~/.aphrody/google-session.json`, from `chromium
     /// export-session`).
     ///
+    /// Resolve the default cookie path on disk, searching in priority order:
+    /// 1. `APHRODY_GOOGLE_COOKIES_JSON` env var
+    /// 2. `~/.aphrody/cookies/gemini.json` / `gemini.txt` / `google.json`
+    /// 3. `~/.aphrody/google-cookies.json`
+    /// 4. `~/.aphrody/google-session.json`
+    /// 5. `~/.gemini/.cookies/google.com.json`
+    ///
+    /// # Errors
+    ///
+    /// [`GeminiError::Auth`] if HOME/USERPROFILE cannot be resolved.
+    #[cfg(not(target_arch = "wasm32"))]
+    pub fn default_cookie_path() -> Result<std::path::PathBuf> {
+        if let Some(path) =
+            std::env::var_os("APHRODY_GOOGLE_COOKIES_JSON").filter(|path| !path.is_empty())
+        {
+            return Ok(std::path::PathBuf::from(path));
+        }
+        let home = std::env::var_os("HOME")
+            .or_else(|| std::env::var_os("USERPROFILE"))
+            .ok_or_else(|| {
+                GeminiError::Auth("cannot resolve HOME/USERPROFILE for default cookie path".into())
+            })?;
+        let home_path = std::path::PathBuf::from(home);
+        let aphrody_dir = home_path.join(".aphrody");
+
+        let candidates = [
+            aphrody_dir.join("cookies").join("gemini.json"),
+            aphrody_dir.join("cookies").join("gemini.txt"),
+            aphrody_dir.join("cookies").join("google.json"),
+            aphrody_dir.join("google-cookies.json"),
+            aphrody_dir.join("google.json"),
+            aphrody_dir.join("google-session.json"),
+            home_path.join(".gemini/.cookies/google.com.json"),
+        ];
+
+        for candidate in &candidates {
+            if candidate.is_file() {
+                return Ok(candidate.clone());
+            }
+        }
+
+        // Fallback default if none exist yet
+        Ok(aphrody_dir.join("google-cookies.json"))
+    }
+
+    /// Load a cookie jar from a file, accepting **either** a Cookie-Editor array
+    /// (default `~/.aphrody/google-cookies.json`) **or** the google-session
+    /// envelope (`~/.aphrody/google-session.json`, from `chromium
+    /// export-session`).
+    ///
     /// # Errors
     ///
     /// Returns [`GeminiError::Network`] on IO failure or [`GeminiError::Auth`]
@@ -197,6 +247,13 @@ impl Auth {
     pub async fn from_cookie_file(path: impl AsRef<Path>) -> Result<Self> {
         let payload = tokio::fs::read_to_string(path.as_ref()).await?;
         Self::from_any_json(&payload)
+    }
+
+    /// Load a cookie jar from the default cookie path.
+    #[cfg(not(target_arch = "wasm32"))]
+    pub async fn from_default_cookie_file() -> Result<Self> {
+        let path = Self::default_cookie_path()?;
+        Self::from_cookie_file(path).await
     }
 
     /// Borrow the underlying jar (for `SAPISIDHASH` minting / diagnostics).

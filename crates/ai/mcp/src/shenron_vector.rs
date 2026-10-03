@@ -70,6 +70,21 @@ pub(crate) async fn index_document(
     title: &str,
     content: &str,
 ) -> bool {
+    // A resumed generation must reuse vectors that still match the committed text.
+    // Metadata-only updates keep updated_at unchanged and cannot mix model spaces.
+    let current = tokio::time::timeout(
+        Duration::from_secs(3),
+        database.query_opt(
+            "SELECT 1 FROM aphrody_shenron_vectors v JOIN aphrody_rag_documents d ON \
+             d.id=v.document_id WHERE d.id=$1::text::uuid AND d.title=$2 AND d.content=$3 \
+             AND v.model=$4 AND v.created_at>=d.updated_at",
+            &[&id, &title, &content, &MODEL],
+        ),
+    )
+    .await;
+    if matches!(current, Ok(Ok(Some(_)))) {
+        return true;
+    }
     let passage = format!("{title}. {content}").chars().take(1200).collect::<String>();
     let Some(embedding) =
         embed(&passage, "passage").await.and_then(|values| vector::from_f64(&values))
@@ -77,7 +92,7 @@ pub(crate) async fn index_document(
         return false;
     };
     let sql = "INSERT INTO aphrody_shenron_vectors (document_id,model,embedding) SELECT \
-               id,$2,$3::vector FROM aphrody_rag_documents WHERE id=$1::uuid AND title=$4 \
+               id,$2,$3::vector FROM aphrody_rag_documents WHERE id=$1::text::uuid AND title=$4 \
                AND content=$5 ON CONFLICT (document_id) DO UPDATE SET \
                model=EXCLUDED.model,embedding=EXCLUDED.embedding,created_at=now()";
     matches!(
@@ -111,7 +126,7 @@ async fn embed(text: &str, kind: &str) -> Option<Vec<f64>> {
     let payload: Value = reqwest::Client::new()
         .post(url)
         .json(&request)
-        .timeout(Duration::from_secs(4))
+        .timeout(Duration::from_secs(if kind == "passage" { 20 } else { 4 }))
         .send()
         .await
         .ok()?

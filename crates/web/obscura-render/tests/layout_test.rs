@@ -791,8 +791,7 @@ fn transforms_establish_absolute_and_fixed_containing_blocks() {
 
 #[test]
 fn modern_effects_establish_containing_blocks_independently() {
-    let tree =
-        parse_html(include_str!("../render-repros/modern-containing-block-triggers.html"));
+    let tree = parse_html(include_str!("../render-repros/modern-containing-block-triggers.html"));
     let layout = layout_dom(&tree, (900.0, 700.0));
     let cases = [
         ("filter-cb", "filter-badge"),

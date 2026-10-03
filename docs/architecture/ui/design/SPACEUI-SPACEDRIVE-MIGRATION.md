@@ -35,7 +35,7 @@ adopted from Spacedrive stay FSL-1.1-ALv2 with their provenance files.
 | Layer | Holds | Does not hold |
 | --- | --- | --- |
 | `@aphrody/m3-*` | Generic components driven by props and callbacks (`TagPill`, `RenameInput`, `FileThumb`, `GridItem`) | `SdPath`, library context, Drive router, Tauri plugins |
-| `packages/app-ui` (not in repo) | Global navigation, public Chat/Files/Models/Settings views, consolidated Drive views | Direct SQLite, arbitrary filesystem bypass, browser and infrastructure administration |
+| `packages/ui/app-ui` (not in repo) | Global navigation, public Chat/Files/Models/Settings views, consolidated Drive views | Direct SQLite, arbitrary filesystem bypass, browser and infrastructure administration |
 | `drive/packages/interface` | Non-buildable FSL source archive; no package manifest, exports, or active imports | Active desktop or web mounting |
 
 The target migration does not change FSL terms or move the public Files UI into the
@@ -50,7 +50,7 @@ it. "Cloud oriented" here means connecting a user's own cloud volumes and synchr
 their devices. A public hosted Drive offering requires separate rights or an independent
 implementation; moving source to `aphrody-site` does not alter the license.
 
-`packages/app-ui` (not in repo) is the sole maintained implementation of Aphrody navigation and its Files
+`packages/ui/app-ui` (not in repo) is the sole maintained implementation of Aphrody navigation and its Files
 surface. Tauri is the current desktop host. Optional HTTP delivery serves the same UI and does
 not create a second Drive product or embed browser navigation in Aphrody.
 
@@ -62,7 +62,7 @@ not supported: the UI offers these actions only when `Platform` provides them.
 - The archived Overview `ContentBreakdown` and `ProjectCards` use simulated data. They are not
   active UI; any restored overview needs real daemon queries.
 - The archived interface stylesheet styled `html` / `body` globally and hid every scrollbar. It
-  is not mounted; keep any active styles scoped to `packages/app-ui` (not in repo)'s Files view.
+  is not mounted; keep any active styles scoped to `packages/ui/app-ui` (not in repo)'s Files view.
 - The `aphrody-drive` HTTP server listens on a random loopback port with
   `Access-Control-Allow-Origin: *` and no token, and path checks are lexical. Restrict it to the
   app origin/session and canonicalize paths before serving previews.

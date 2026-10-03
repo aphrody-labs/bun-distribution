@@ -11,6 +11,7 @@
   "main": "./src/index.ts",
   "exports": {
     ".": "./src/index.ts",
+    "./koharu": "./src/koharu.ts",
     "./ai/config": "./src/ai/config.ts",
     "./ai/prompts": "./src/ai/prompts.ts",
     "./ai/chat": "./src/ai/chat.ts",
@@ -58,7 +59,8 @@
     "./ai": "./src/ai/index.ts",
     "./aphrody": "./src/aphrody/index.ts",
     "./bxc": "./src/bxc/index.ts",
-    "./aphrody/embeddings": "./src/aphrody/shenron-embeddings.ts"
+    "./aphrody/embeddings": "./src/aphrody/shenron-embeddings.ts",
+    "./testing/live-rag": "./src/testing/live-rag.ts"
   },
   "scripts": {
     "pipeline": "bun src/cli.ts",
@@ -66,7 +68,9 @@
     "type-check": "tsc --noEmit && tsc --noEmit -p tsconfig.scripts.json",
     "lint": "oxlint -c ../.oxlintrc.json",
     "test": "bun test",
-    "typecheck": "tsc -p tsconfig.json --noEmit"
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "rag:prepare": "bun scripts/prepare-live-rag.ts",
+    "rag:test": "bun scripts/test-live-rag.ts"
   },
   "dependencies": {
     "@aphrody/paths": "workspace:*",
@@ -93,6 +97,7 @@
   "shenron": {
     "runtime": {
       ".": "bun",
+      "./koharu": "pure",
       "./ai/config": "pure",
       "./ai/prompts": "pure",
       "./ai/chat": "pure",
@@ -140,7 +145,8 @@
       "./ai": "pure",
       "./aphrody": "server",
       "./bxc": "bun",
-      "./aphrody/embeddings": "server"
+      "./aphrody/embeddings": "server",
+      "./testing/live-rag": "bun"
     }
   }
 }

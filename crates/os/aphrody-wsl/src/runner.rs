@@ -49,16 +49,12 @@ pub fn build(config:&Config,target:Target)->Result<BuildReport> {
             let mut command=Command::new(&step.program);
             command.args(&step.args).current_dir(&step.cwd).envs(&step.env)
                 .stdin(Stdio::null()).stdout(log.try_clone()?).stderr(log.try_clone()?);
-            #[cfg(unix)] {use std::os::unix::process::CommandExt;command.process_group(0);}
-            let mut child=command.spawn()?;
+            let mut child=aphrody_proc::spawn_group(&mut command, aphrody_proc::SpawnOptions::default())?;
             loop {
                 if let Some(status)=child.try_wait()? {if !status.success(){return Err(Error::Invalid(format!("{} failed with {status}; see {}",step.name,report.log.display())));}break;}
                 if started.elapsed()>=Duration::from_secs(config.timeout_seconds) {
-                    #[cfg(unix)] {
-                        let pgid = -(child.id() as i32);
-                        let _ = Command::new("kill").arg("-9").arg(pgid.to_string()).status();
-                    }
-                    let _=child.kill();let _=child.wait();return Err(Error::Invalid("build timeout; child group terminated".into()));
+                    child.kill_tree()?;
+                    return Err(Error::Invalid("build timeout; child group terminated".into()));
                 }
                 std::thread::sleep(Duration::from_millis(100));
             }

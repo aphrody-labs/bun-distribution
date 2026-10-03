@@ -1,7 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
 import { describe, expect, test } from "bun:test";
-import { existsSync } from "node:fs";
-import { join } from "node:path";
 import { createRecordingFetch } from "@shenron/config/testing";
 import { createAphrodyCompute } from "../../src/ai/aphrody";
 import type { AiConfig } from "../../src/ai/config";
@@ -17,22 +15,7 @@ import { json, loopbackBase, TOKEN, vector } from "./helpers";
 
 const BASE = loopbackBase();
 const E5_BASE = loopbackBase(18794, "/v1");
-
-/** OpenAI-compatible E5 sidecar answering in index order (or shuffled / short on demand). */
-function e5Server(o: { shuffle?: boolean; dims?: number } = {}) {
-	return createRecordingFetch({
-		"POST /v1/embeddings": async (req) => {
-			const body = (await req.json()) as { input: string[] };
-			const data = body.input.map((_, index) => ({
-				object: "embedding",
-				index,
-				embedding: vector(index, o.dims),
-			}));
-			if (o.shuffle && data.length > 1) data.reverse();
-			return json({ object: "list", data, model: "Xenova/multilingual-e5-small" });
-		},
-	});
-}
+const ENV = { APHRODY_AI_HTTP_URL: BASE.href, APHRODY_AI_HTTP_TOKEN: TOKEN };
 
 function aphrodyServer() {
 	return createRecordingFetch({
@@ -86,90 +69,46 @@ describe("aphrody transport", () => {
 	});
 });
 
-describe("e5-direct transport", () => {
-	test("exactly one prefix, whitespace collapsed", async () => {
-		const rec = e5Server();
-		const model = e5DirectEmbeddingModel({ baseUrl: E5_BASE }, "query", { fetch: rec.fetch });
+describe("e5DirectEmbeddingModel (now routed to Aphrody)", () => {
+	test("posts to /api/v1/shenron/embed with the Bearer token, never /v1/embeddings", async () => {
+		const rec = aphrodyServer();
+		const model = e5DirectEmbeddingModel({ baseUrl: E5_BASE }, "query", {
+			fetch: rec.fetch,
+			env: ENV,
+		});
+		expect(model.provider).toBe("aphrody.shenron");
 		const r = await embedQuery(model, "  Qui   est\tGoku ? ", { timeoutMs: 1000 });
-		expect(r.ok).toBe(true);
-		const [body] = bodies(rec.calls);
-		expect(body.model).toBe("Xenova/multilingual-e5-small");
-		expect(body.input).toEqual(["query: Qui est Goku ?"]);
-		const again = e5Server();
-		await embedQuery(
-			e5DirectEmbeddingModel({ baseUrl: E5_BASE }, "query", { fetch: again.fetch }),
-			"query: Goku",
-			{
-				timeoutMs: 1000,
-			}
-		);
-		expect(bodies(again.calls)[0].input).toEqual(["query: Goku"]);
+		expect(r.ok && r.value.length).toBe(384);
+		expect(rec.calls.map((c) => new URL(c.url).pathname)).toEqual(["/api/v1/shenron/embed"]);
+		expect(bodies(rec.calls)).toEqual([{ texts: ["Qui est Goku ?"], kind: "query" }]);
+	});
+
+	test("direct embedder URL is ignored; missing Aphrody config throws naming the variables", () => {
+		expect(() =>
+			e5DirectEmbeddingModel({ baseUrl: E5_BASE }, "passage", {
+				env: { APHRODY_AI_EMBED_BASE_URL: E5_BASE.href },
+			})
+		).toThrow(/APHRODY_AI_HTTP_URL/);
 	});
 
 	test("40 inputs -> 3 sequential calls 16/16/8", async () => {
-		const rec = e5Server();
-		const model = e5DirectEmbeddingModel({ baseUrl: E5_BASE }, "passage", { fetch: rec.fetch });
+		const rec = aphrodyServer();
+		const model = e5DirectEmbeddingModel(null, "passage", { fetch: rec.fetch, env: ENV });
 		const texts = Array.from({ length: 40 }, (_, i) => `texte ${i}`);
 		const r = await embedPassages(model, texts, { timeoutMs: 5000 });
 		expect(r.ok && r.value.length).toBe(40);
-		expect(bodies(rec.calls).map((b) => b.input.length)).toEqual([16, 16, 8]);
-		expect(bodies(rec.calls)[2].input[7]).toBe("passage: texte 39");
+		expect(bodies(rec.calls).map((b) => b.texts.length)).toEqual([16, 16, 8]);
 	});
 
-	test("a 383-dim or shuffled-index response fails", async () => {
-		for (const server of [e5Server({ dims: 383 }), e5Server({ shuffle: true })]) {
-			const model = e5DirectEmbeddingModel({ baseUrl: E5_BASE }, "passage", {
-				fetch: server.fetch,
-			});
-			const r = await embedPassages(model, ["a", "b"], { timeoutMs: 1000 });
-			expect(r).toMatchObject({ ok: false, kind: "invalid_response" });
-		}
-	});
-
-	test("empty input is rejected without a call", async () => {
-		const rec = e5Server();
-		const model = e5DirectEmbeddingModel({ baseUrl: E5_BASE }, "query", { fetch: rec.fetch });
-		expect((await embedQuery(model, "  \n ", { timeoutMs: 1000 })).ok).toBe(false);
-		expect(rec.calls.length).toBe(0);
-	});
-
-	test("one fetch only on a 503 (no retry)", async () => {
+	test("one fetch only on a 503 (no retry), Aphrody path reported", async () => {
 		const rec = createRecordingFetch({
-			"POST /v1/embeddings": () => json({ error: { message: "down" } }, { status: 503 }),
+			"POST /api/v1/shenron/embed": () => json({ error: "down" }, { status: 503 }),
 		});
-		const model = e5DirectEmbeddingModel({ baseUrl: E5_BASE }, "query", { fetch: rec.fetch });
+		const model = e5DirectEmbeddingModel(null, "query", { fetch: rec.fetch, env: ENV });
 		const r = await embedQuery(model, "Goku", { timeoutMs: 1000 });
-		expect(r).toMatchObject({ ok: false, kind: "http", status: 503, path: "/v1/embeddings" });
+		expect(r).toMatchObject({ ok: false, kind: "http", status: 503, path: "/api/v1/shenron/embed" });
 		expect(rec.calls.length).toBe(1);
 	});
-
-	const legacyPath = join(import.meta.dir, "..", "..", "aphrody", "src", "shenron-embeddings.ts");
-	test.skipIf(!existsSync(legacyPath))(
-		"parity with ShenronEmbeddingsClient request JSON and vectors",
-		async () => {
-			const { ShenronEmbeddingsClient } = (await import(legacyPath)) as {
-				ShenronEmbeddingsClient: new (o: { baseUrl: string; fetcher: typeof fetch }) => {
-					embed(texts: string[], kind: "query" | "passage"): Promise<number[][]>;
-				};
-			};
-			const texts = Array.from({ length: 20 }, (_, i) => ` Texte\n numéro ${i} `);
-			const oldRec = e5Server();
-			const newRec = e5Server();
-			const oldVectors = await new ShenronEmbeddingsClient({
-				baseUrl: E5_BASE.href,
-				fetcher: oldRec.fetch,
-			}).embed(texts, "passage");
-			const model = e5DirectEmbeddingModel({ baseUrl: E5_BASE }, "passage", {
-				fetch: newRec.fetch,
-			});
-			const r = await embedPassages(model, texts, { timeoutMs: 5000 });
-			expect(r.ok && r.value).toEqual(oldVectors);
-			expect(newRec.calls.map((c) => c.url)).toEqual(oldRec.calls.map((c) => c.url));
-			// Same model and inputs; the AI SDK adds `encoding_format: "float"` (the E5 server's default).
-			const pick = (b: { model: string; input: string[] }) => ({ model: b.model, input: b.input });
-			expect(bodies(newRec.calls).map(pick)).toEqual(bodies(oldRec.calls).map(pick));
-		}
-	);
 });
 
 describe("selectEmbeddingModel", () => {
@@ -195,13 +134,5 @@ describe("selectEmbeddingModel", () => {
 		expect(
 			selectEmbeddingModel({ ...base, embed: { transport: "aphrody" } }, "query", { compute: null })
 		).toBeNull();
-		const e5 = selectEmbeddingModel(
-			{ ...base, embed: { transport: "e5-direct", baseUrl: E5_BASE } },
-			"query",
-			{
-				compute,
-			}
-		);
-		expect(e5?.provider).toContain("shenron-e5");
 	});
 });

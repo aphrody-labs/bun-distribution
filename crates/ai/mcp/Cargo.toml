@@ -20,7 +20,9 @@ path = "src/main.rs"
 # The Obscura browser (HTTP + DOM + V8, plus the layout/paint engine for
 # screenshots and PDF) served natively. On by default: V8 ships prebuilt for
 # Linux and Windows MSVC (the only Windows toolchain aphrody uses).
-default = ["native-browser", "dragonball"]
+default = ["native-browser", "dragonball", "managed-llama"]
+# Managed llama.cpp daemon as the Shenron LLM backend when no chat base URL is configured.
+managed-llama = ["dep:aphrody-llama-server"]
 koharu = ["aphrody-manga/koharu"]
 native-browser = ["dep:aphrody-web-service", "aphrody-web-service/render"]
 # Obscura stealth (fingerprint + tracker blocking, wreq TLS impersonation).
@@ -156,6 +158,7 @@ base64             = { workspace = true }
 aphrody-re         = { workspace = true }
 dirs               = { workspace = true }
 aphrody-gemini-web         = { workspace = true }
+aphrody-llama-server = { workspace = true, optional = true }
 aphrody-google-mcp         = { workspace = true }
 aphrody-web-service = { workspace = true, optional = true }
 regex              = { workspace = true }

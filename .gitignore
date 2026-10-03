@@ -126,3 +126,6 @@ Thumbs.db
 /packages/shell/web/pkg/
 /crates/shell/tauri-e2e/frontend/pkg/
 /crates/shell/tauri-e2e/frontend/index.js
+# Python SDK packaging outputs; the source package remains canonical.
+/packages/google/antigravity-sdk-python/build/
+/packages/google/antigravity-sdk-python/*.egg-info/

@@ -209,7 +209,10 @@ fn expand(caps: &Captures, template: &str) -> String {
 const DIR_CONTEXT_WINDOW_BYTES: usize = 600;
 
 fn looks_like_dir_context(source: &str, pos: usize, arg: &str) -> bool {
-    let end = (pos + DIR_CONTEXT_WINDOW_BYTES).min(source.len());
+    let mut end = (pos + DIR_CONTEXT_WINDOW_BYTES).min(source.len());
+    while end > pos && !source.is_char_boundary(end) {
+        end -= 1;
+    }
     let window = &source[pos..end];
     let needle_sync = format!("fs.mkdirSync({arg}");
     let needle_async = format!("fs.mkdir({arg}");

@@ -16,6 +16,7 @@ pub mod claims;
 pub mod envelope;
 pub mod executor;
 pub mod listener;
+pub mod legacy_broker;
 pub mod mailbox;
 pub mod manifest;
 pub mod peer;
@@ -28,7 +29,10 @@ pub use bridge::{SendParams, a2a_router};
 pub use card::agent_card_from_manifest;
 pub use envelope::{Envelope, EnvelopeKind};
 pub use executor::CoordPeerExecutor;
-pub use listener::{ListenerConfig, router_for_profile, serve, serve_profile};
+pub use legacy_broker::{LegacyBroker, legacy_broker_router};
+pub use listener::{
+    ListenerConfig, ServeOptions, router_for_profile, serve, serve_profile, serve_with_options,
+};
 pub use manifest::{AiManifest, CoordConfig, PeerDef, find_repo_root};
 pub use peer::{PeerId, PeerInvokeResult, PeerInvoker};
 pub use proxy::{

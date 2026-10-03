@@ -1,8 +1,8 @@
 /**
- * S5 (docs/STACK.md D14) : garde d'écriture de `/api/a2a`.
- * Le hub `.coord` est simulé : aucun fichier n'est lu ni écrit.
+ * S5 (docs/STACK.md D14) : garde d'écriture de `/api/a2a`, proxy vers `aphrody a2a serve`.
+ * L'amont Rust est simulé par un serveur Bun local (APHRODY_A2A_URL).
  */
-import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
+import { afterAll, afterEach, beforeEach, describe, expect, test } from "bun:test";
 import {
 	A2A_ENFORCE_ENV,
 	A2A_OPEN_WARNING,
@@ -11,24 +11,32 @@ import {
 } from "@shenron/auth/a2a";
 
 const calls: string[] = [];
-mock.module("@shenron/pipeline/aphrody/a2a", () => ({
-	ShenronA2AHub: {
-		configure: () => {},
-		getAgentCard: (origin: string) => ({ name: "Shenron", url: `${origin}/api/a2a` }),
-		listEnvelopes: () => {
-			calls.push("listEnvelopes");
-			return [];
-		},
-		handleJsonRpc: async (body: { id?: unknown }) => {
-			calls.push("handleJsonRpc");
-			return { jsonrpc: "2.0", id: body.id ?? null, result: { ok: true } };
-		},
-		handleMsgEnvelope: async () => {
-			calls.push("handleMsgEnvelope");
-			return { kind: "ack" };
-		},
+const upstream = Bun.serve({
+	port: 0,
+	async fetch(req) {
+		const { pathname } = new URL(req.url);
+		calls.push(`${req.method} ${pathname}`);
+		if (pathname === "/.well-known/agent-card.json") {
+			return Response.json({ name: "aphrody", url: "http://127.0.0.1:8788/" });
+		}
+		if (pathname === "/coord") {
+			return new Response('{"id":"e1","from":"codex"}\nnot-json\n{"id":"e2","from":"agy"}\n');
+		}
+		if (pathname === "/msg") return Response.json({ ok: true, id: "e3" });
+		const body = (await req.json()) as { id?: unknown; method?: string };
+		if (body.method === "Nope") {
+			return Response.json({ jsonrpc: "2.0", id: body.id, error: { code: -32601, message: "x" } });
+		}
+		return Response.json({ jsonrpc: "2.0", id: body.id ?? null, result: { ok: true, path: pathname } });
 	},
-}));
+});
+const savedUrl = process.env.APHRODY_A2A_URL;
+process.env.APHRODY_A2A_URL = `http://127.0.0.1:${upstream.port}/`;
+afterAll(() => {
+	upstream.stop(true);
+	if (savedUrl === undefined) delete process.env.APHRODY_A2A_URL;
+	else process.env.APHRODY_A2A_URL = savedUrl;
+});
 
 const { GET, POST, OPTIONS } = await import("../src/app/api/a2a/route");
 
@@ -43,11 +51,11 @@ function setEnv(enforce: string | undefined, token: string | undefined): void {
 	else process.env[A2A_TOKEN_ENV] = token;
 }
 
-function post(headers: Record<string, string> = {}): Request {
+function post(headers: Record<string, string> = {}, method = "message/send"): Request {
 	return new Request(URL_BASE, {
 		method: "POST",
 		headers: { "content-type": "application/json", ...headers },
-		body: JSON.stringify({ jsonrpc: "2.0", id: 7, method: "message/send", params: {} }),
+		body: JSON.stringify({ jsonrpc: "2.0", id: 7, method, params: {} }),
 	});
 }
 
@@ -71,11 +79,17 @@ describe("S5 — enforce inactif", () => {
 		setEnv(undefined, undefined);
 		const res = await POST(post());
 		expect(res.status).toBe(200);
-		expect(await res.json()).toEqual({ jsonrpc: "2.0", id: 7, result: { ok: true } });
+		expect(await res.json()).toEqual({ jsonrpc: "2.0", id: 7, result: { ok: true, path: "/a2a" } });
 		const mailbox = await GET(new Request(`${URL_BASE}?envelopes=1`));
 		expect(mailbox.status).toBe(200);
-		expect(await mailbox.json()).toEqual({ envelopes: [], total: 0 });
-		expect(calls).toEqual(["handleJsonRpc", "listEnvelopes"]);
+		expect(await mailbox.json()).toEqual({
+			envelopes: [
+				{ id: "e1", from: "codex" },
+				{ id: "e2", from: "agy" },
+			],
+			total: 2,
+		});
+		expect(calls).toEqual(["POST /a2a", "GET /coord"]);
 		expect(warnings).toEqual([A2A_OPEN_WARNING]);
 	});
 });
@@ -112,16 +126,47 @@ describe("S5 — enforce actif", () => {
 		expect((await POST(post(auth))).status).toBe(200);
 		const mailbox = await GET(new Request(`${URL_BASE}?view=mailbox`, { headers: auth }));
 		expect(mailbox.status).toBe(200);
-		expect(calls).toEqual(["handleJsonRpc", "listEnvelopes"]);
+		expect(calls).toEqual(["POST /a2a", "GET /coord"]);
 	});
 
 	test("AgentCard et OPTIONS restent publics", async () => {
 		setEnv("1", TOKEN);
 		const card = await GET(new Request(URL_BASE));
 		expect(card.status).toBe(200);
-		expect(await card.json()).toEqual({ name: "Shenron", url: "https://dragonballfr.com/api/a2a" });
+		expect(await card.json()).toEqual({ name: "aphrody", url: "http://127.0.0.1:8788/" });
 		expect((await OPTIONS()).status).toBe(204);
 		setEnv("1", undefined);
 		expect((await GET(new Request(URL_BASE))).status).toBe(200);
+	});
+});
+
+describe("proxy amont", () => {
+	test("méthodes A2A 1.0 vers /, enveloppe vers /msg, erreur JSON-RPC -> 400", async () => {
+		setEnv(undefined, undefined);
+		const v1 = await POST(post({}, "ListTasks"));
+		expect(await v1.json()).toEqual({ jsonrpc: "2.0", id: 7, result: { ok: true, path: "/" } });
+		const env = await POST(
+			new Request(URL_BASE, { method: "POST", body: JSON.stringify({ kind: "ping", from: "x" }) })
+		);
+		expect(env.status).toBe(200);
+		expect(await env.json()).toEqual({ ok: true, id: "e3" });
+		expect((await POST(post({}, "Nope"))).status).toBe(400);
+		expect(calls).toEqual(["POST /", "POST /msg", "POST /"]);
+	});
+
+	test("corps invalide -> 400 Parse error, amont injoignable -> 502", async () => {
+		setEnv(undefined, undefined);
+		const bad = await POST(new Request(URL_BASE, { method: "POST", body: "{" }));
+		expect(bad.status).toBe(400);
+		expect((await bad.json()).error.code).toBe(-32700);
+		const saved = process.env.APHRODY_A2A_URL;
+		process.env.APHRODY_A2A_URL = "http://127.0.0.1:1";
+		try {
+			const res = await POST(post());
+			expect(res.status).toBe(502);
+			expect((await res.json()).error).toBe("a2a_upstream_unreachable");
+		} finally {
+			process.env.APHRODY_A2A_URL = saved;
+		}
 	});
 });

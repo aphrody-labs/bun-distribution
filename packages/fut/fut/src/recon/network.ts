@@ -15,7 +15,7 @@
  */
 
 import { WebService } from "@aphrody/agent-browser/service";
-import { dnsRecon, getChromiumCookies } from "@aphrody/bxc/ffi/rust-bridge";
+import { webDnsRecon, webGetChromiumCookies } from "@aphrody/bun/web";
 import { homedir } from "node:os";
 import { join } from "node:path";
 import { existsSync } from "node:fs";
@@ -50,7 +50,10 @@ export const KNOWN_EA_UTAS_ENDPOINTS = [
  */
 export function reconFutDns(domain = "ea.com"): string[] {
   try {
-    return dnsRecon(domain);
+    const value: unknown = JSON.parse(webDnsRecon(domain));
+    if (!Array.isArray(value) || value.some((host) => typeof host !== "string"))
+      throw new Error("invalid native DNS response");
+    return value;
   } catch {
     // Fallback when network or FFI fails
     return [domain];
@@ -93,7 +96,7 @@ export function harvestEaChromiumCookies(
   const cookies: Record<string, string> = {};
   for (const hostKey of hostKeys) {
     try {
-      const rawCookies = getChromiumCookies(dir, profile, hostKey) as Array<{
+      const rawCookies = webGetChromiumCookies(dir, profile, hostKey) as Array<{
         name?: string;
         value?: string;
       }>;
