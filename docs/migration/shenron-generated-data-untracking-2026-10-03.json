@@ -1,0 +1,41 @@
+{
+  "date": "2026-10-03",
+  "operation": "Untrack generated data while preserving its existing local location",
+  "files": [
+    {
+      "path": "data/shenron/rag/massive-training-triplets-full.jsonl",
+      "bytes": 39920030,
+      "sha256": "cb6b58cb3215d371c6ae1fcc25ee86e5b38a7b759e0b70846519c8a8bb9e6c8f",
+      "recoveryCommit": "0e9a18852d7eec1c564668d322f90acb5d656f04",
+      "localFilePreserved": true
+    },
+    {
+      "path": "data/shenron/ops/live-site-assets.json",
+      "bytes": 12970114,
+      "sha256": "52b4e9aa00ffe81bbfb64b6d93f07f51af21943492d4a333e144538b6e12daac",
+      "recoveryCommit": "0e9a18852d7eec1c564668d322f90acb5d656f04",
+      "localFilePreserved": true
+    }
+  ],
+  "trackedPayloadRemovedBytes": 52890144,
+  "consumerEvidence": [
+    "Repository-wide literal search finds only historical import/layout records for the corpus; no source reader.",
+    "Live audit writer scripts/audit/shenron/scripts/ops/audit-live-site-assets.ts defaults to @aphrody/paths tempPath and accepts SITE_AUDIT_OUTPUT.",
+    "Historical source maps and import receipts remain unchanged."
+  ],
+  "limitations": [
+    "Fresh clones no longer include these generated files; copy required training data from the protected owner store or recover from the private recoveryCommit.",
+    "External consumers were not inventoried; existing local paths and bytes remain unchanged.",
+    "Git history is retained; no claim of smaller packed history or faster native builds.",
+    "No registry publication or live service change."
+  ],
+  "validation": {
+    "localSha256": "matches both pre-change files",
+    "gitIndex": "both files absent",
+    "gitIgnore": "both exact paths ignored",
+    "scopedOxfmt": "passed",
+    "whitespace": "passed",
+    "docsCheck": "exit 1; unchanged stale docs/README.md and docs/reference/workspace/documentation.json",
+    "buildTests": "not run; no executable source or manifest changed"
+  }
+}

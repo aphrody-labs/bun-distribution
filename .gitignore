@@ -131,3 +131,7 @@ Thumbs.db
 # Python SDK packaging outputs; the source package remains canonical.
 /packages/google/antigravity-sdk-python/build/
 /packages/google/antigravity-sdk-python/*.egg-info/
+
+# Generated Shenron corpus and historical live audit: retain in local stores.
+/data/shenron/rag/massive-training-triplets-full.jsonl
+/data/shenron/ops/live-site-assets.json
