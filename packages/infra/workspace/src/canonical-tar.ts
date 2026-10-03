@@ -31,14 +31,26 @@ function openZlib() {
     },
     crc32: { args: [FFIType.u64, FFIType.ptr, FFIType.u32], returns: FFIType.u64 },
   } as const;
-  const names = process.platform === "darwin" ? ["libz.1.dylib", "libz.dylib"] : ["libz.so.1"];
+  const names =
+    process.platform === "darwin"
+      ? ["libz.1.dylib", "libz.dylib"]
+      : process.platform === "win32"
+        ? [
+            "zlib1.dll",
+            "zlib.dll",
+            // Git for Windows ships the reference zlib next to its mingw64 tools.
+            ...[process.env.ProgramFiles, process.env["ProgramFiles(x86)"]]
+              .filter((dir): dir is string => Boolean(dir))
+              .map((dir) => `${dir}\\Git\\mingw64\\bin\\zlib1.dll`),
+          ]
+        : ["libz.so.1"];
   for (const name of names)
     try {
       return dlopen(name, symbols).symbols;
     } catch {
       // Try the next platform name.
     }
-  throw new Error("Canonical archives require the system zlib (libz.so.1)");
+  throw new Error(`Canonical archives require the reference zlib (tried ${names.join(", ")})`);
 }
 
 /** Raw DEFLATE at `level`, identical to zlib.compressobj(level, DEFLATED, -15, 8, 0). */
