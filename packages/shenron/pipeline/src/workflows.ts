@@ -1,14 +1,19 @@
 // SPDX-License-Identifier: Apache-2.0
 /** Unified operational workflows: OCR, RAG, agent orchestration, crawling and translation. */
-import { existsSync, readFileSync, readdirSync } from "node:fs";
+import { existsSync, readdirSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
+import { wrapLanguageModel } from "ai";
 import { AphrodyComputeClient } from "@shenron/pipeline/aphrody";
 import { aphrodyComputeFromChat } from "@shenron/pipeline/aphrody/compute";
 import { createAphrodyChatModel } from "@shenron/pipeline/ai/chat";
 import { SHENRON_E5 } from "@shenron/pipeline/ai/config";
 import { generateGroundedAnswer, type GroundedAnswerInput, type GroundedHit } from "@shenron/pipeline/ai/generate";
+import { withHomePersona, type HomePersona } from "@shenron/pipeline/ai/prompts";
+import { loadShenronHomePersona, type AgentEnv } from "./agent-home";
 import { executeCommand, type CommandRunner, type PipelineExecution } from "./execution";
+
+export { getToriyamaPersona } from "./agent-home";
 
 /**
  * Pipeline IA — Agent Shenron / Akira Toriyama (Bird Studio x DBFR)
@@ -28,6 +33,8 @@ export interface IaTaskOptions {
 	chat?: (prompt: string, model?: string) => Promise<{ answer: string; model: string }>;
 	/** Modèle AI SDK injecté (tests, autre transport) ; prioritaire sur `chat`. */
 	languageModel?: GroundedAnswerInput["model"];
+	/** Environnement qui désigne l'Agent Home (défaut `process.env`) ; voir `./agent-home`. */
+	env?: AgentEnv;
 }
 export interface ShenronAgentResponse {
 	role: "assistant";
@@ -39,26 +46,36 @@ export interface ShenronAgentResponse {
 	dbState?: { postgresConnected: boolean; sqliteCached: boolean };
 }
 
-/** Charge le profil éditorial sans inventer de contenu absent. */
-export function getToriyamaPersona(): { soul: string; identity: string } {
-	const dbfrHome = process.env.APHRODY_PROFILE_HOME ?? join(homedir(), ".aphrody", "workspace-shenron");
-
-	const soulPath = join(dbfrHome, "SOUL.md");
-	const idPath = join(dbfrHome, "IDENTITY.md");
-
-	if (!existsSync(soulPath) || !existsSync(idPath)) throw new Error(`Profil Shenron incomplet: ${dbfrHome}`);
-	return { soul: readFileSync(soulPath, "utf-8"), identity: readFileSync(idPath, "utf-8") };
+/**
+ * Ajoute le ton et le style du profil Agent Home aux instructions du système. Le garde
+ * anti-injection reste la dernière phrase (`withHomePersona`).
+ */
+function withHomeInstructions(model: GroundedAnswerInput["model"], persona: HomePersona): GroundedAnswerInput["model"] {
+	return wrapLanguageModel({
+		model,
+		middleware: {
+			transformParams: async ({ params }) => ({
+				...params,
+				prompt: params.prompt.map((message) =>
+					message.role === "system" ? { ...message, content: withHomePersona(message.content, persona) } : message,
+				),
+			}),
+		},
+	});
 }
 
 /**
  * Tâche IA ancrée (B5) : les citations récupérées par le RAG sont réellement
  * injectées dans le prompt via `generateGroundedAnswer` (persona Shenron,
- * règles et garde anti-injection de `@shenron/pipeline/ai/prompts`). Aucun repli
- * silencieux : une génération en échec rejette avec l'erreur d'origine, une
- * réponse vide avec « Agent Aphrody terminé sans réponse ».
+ * règles et garde anti-injection de `@shenron/pipeline/ai/prompts`). Le ton et le
+ * style du profil Agent Home du domaine (`./agent-home`) s'y ajoutent quand le
+ * profil existe ; sinon la persona canonique seule. Aucun repli silencieux :
+ * une configuration d'Agent Home invalide, une génération en échec rejettent avec
+ * l'erreur d'origine, une réponse vide avec « Agent Aphrody terminé sans réponse ».
  */
 export async function runIaTask(options: IaTaskOptions): Promise<ShenronAgentResponse> {
 	const prompt = options.prompt ?? options.task;
+	const home = loadShenronHomePersona(options.env);
 
 	// 1. Enrichissement RAG si pertinent
 	const citations: Array<{ title: string; snippet: string; score: number }> = [];
@@ -98,7 +115,7 @@ export async function runIaTask(options: IaTaskOptions): Promise<ShenronAgentRes
 
 	let failure: unknown;
 	const result = await generateGroundedAnswer({
-		model,
+		model: home ? withHomeInstructions(model, home) : model,
 		persona: "shenron",
 		question: prompt,
 		hits: groundedHits,

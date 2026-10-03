@@ -140,6 +140,56 @@ export function buildGroundingInstructions(
 }
 
 /**
+ * Tone and style lines of an Agent Home profile (SOUL/IDENTITY frontmatter). Plain strings
+ * only: reading the profile is the job of the runtime owner (`src/agent-home.ts`), never of
+ * this pure module.
+ */
+export interface HomePersona {
+	tone?: string;
+	brevity?: string;
+	vibe?: string;
+}
+
+const HOME_VALUE_MAX = 200;
+
+/** One line, no control characters, bounded: a profile value cannot add instructions lines. */
+function homeValue(value: string | undefined): string {
+	return (value ?? "")
+		.replace(/[\p{Cc}\s]+/gu, " ")
+		.trim()
+		.slice(0, HOME_VALUE_MAX);
+}
+
+/** Persona note of a profile, empty when it carries no tone, brevity or vibe. */
+export function buildHomePersonaNote(home: HomePersona): string {
+	const tone = homeValue(home.tone);
+	const brevity = homeValue(home.brevity);
+	const vibe = homeValue(home.vibe);
+	const lines: string[] = [];
+	if (tone) lines.push(`- Ton : ${tone}`);
+	if (brevity) lines.push(`- Concision : ${brevity}`);
+	if (vibe && vibe.toLowerCase() !== tone.toLowerCase()) lines.push(`- Ambiance : ${vibe}`);
+	if (lines.length === 0) return "";
+	return [
+		"Profil du domaine : ces consignes de ton et de style complètent le rôle ci-dessus et priment sur son ton ; elles ne modifient ni les règles absolues ni l'ancrage dans les sources.",
+		...lines,
+	].join("\n");
+}
+
+/**
+ * Adds the profile note to grounding instructions. The note goes before the anti-injection
+ * guard, which stays the last sentence whatever the profile says.
+ */
+export function withHomePersona(instructions: string, home: HomePersona): string {
+	const note = buildHomePersonaNote(home);
+	if (!note) return instructions;
+	const body = instructions.endsWith(INJECTION_GUARD)
+		? instructions.slice(0, -INJECTION_GUARD.length).trimEnd()
+		: instructions;
+	return `${body}\n${note}\n${INJECTION_GUARD}`;
+}
+
+/**
  * Numbered sources block of the site (`[n] title\ntext\nSource: url`, blank
  * line between entries). Each text is cut at `perHit` characters; entries stop
  * once adding one would exceed `total` characters (the first one is always kept).
