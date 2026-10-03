@@ -1,0 +1,51 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-03",
+  "producerCommit": "432c5e32f03fea127bbfdf7d6db1c56d5435bcf0",
+  "scope": "Consumer source and synthetic interface qualification; no engine build or deployment",
+  "reportedComplete": "Four doctrine pillars implemented according to AGY handoff",
+  "qualifiedComplete": false,
+  "checks": [
+    {
+      "command": "bun test test/api.test.ts test/mcp.test.ts test/scan.test.ts test/cli_app.test.ts",
+      "cwd": "existing Yolo checkout",
+      "status": "passed",
+      "tests": 33,
+      "assertions": 512,
+      "note": "Subset rerun; reported 225-test full suite and 2.54x speedup not independently remeasured"
+    },
+    {
+      "command": "bun scripts/audit/yolo-agent-interfaces.ts /home/aphro/yolo",
+      "status": "findings",
+      "exitCode": 1,
+      "httpStatus": 200,
+      "elapsedMs": 443.605459
+    }
+  ],
+  "findings": [
+    {
+      "code": "OUTSIDE_ROOT_METADATA_ACCESS",
+      "source": "apps/cli/src/mcp.ts:230",
+      "evidence": "API parse accepts ../outside.ts and returns the exported synthetic sentinel outside selected root",
+      "ownerFix": "Constrain HTTP/MCP filesystem inputs to selected root, including realpath/symlink policy; add rejection fixtures"
+    },
+    {
+      "code": "ARBITRARY_BROWSER_ORIGIN_ALLOWED",
+      "source": "apps/cli/src/api.ts:94",
+      "evidence": "Synthetic request with Origin https://example.invalid receives 200 and Access-Control-Allow-Origin *",
+      "ownerFix": "Reject unapproved browser origins and require explicit authority before privileged HTTP tool execution; qualify preflight and method behavior"
+    },
+    {
+      "code": "STALE_FACTORY_TARGET",
+      "source": "../yolo/PLAN.md",
+      "evidence": "Current owner decision reserves VPS for execution; older Aphrody configuration still named it as factory",
+      "consumerFix": "Rollback only newly created clean source/directories; add execution-only target refusal without implicit local fallback"
+    }
+  ],
+  "limits": [
+    "Probe uses an ephemeral synthetic TypeScript file only; no secrets, protected stores or real tokens read.",
+    "HTTP client probe establishes response behavior; no live browser attack or deployment asserted.",
+    "Yolo PLAN/MEMORY retain open desktop, headless, platform distribution and V8/JSC parity gates.",
+    "MCP full conformance, runtime activation and performance comparisons remain separate qualification work."
+  ]
+}
