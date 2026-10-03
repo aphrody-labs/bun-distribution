@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 //! Native OVH DNS Zone and Record management.
 
-use anyhow::Result;
+use anyhow::{Context, Result, bail};
 use serde::{Deserialize, Serialize};
 
 use crate::client::OvhClient;
@@ -17,6 +17,58 @@ pub struct DnsZoneInfo {
     pub name_servers: Vec<String>,
     #[serde(default)]
     pub last_update: Option<String>,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn record(id: u64, name: &str, kind: &str) -> DnsRecord {
+        DnsRecord {
+            id,
+            zone: "example.com".into(),
+            sub_domain: name.into(),
+            field_type: kind.into(),
+            target: "203.0.113.1".into(),
+            ttl: 300,
+        }
+    }
+
+    #[test]
+    fn a_selection_defaults_and_explicit_names_preserve_ids_and_ttl() {
+        let records = vec![
+            record(1, "", "A"),
+            record(2, "www", "A"),
+            record(3, "bot", "A"),
+            record(4, "cdn", "A"),
+            record(5, "mcp", "A"),
+            record(6, "cdn", "AAAA"),
+        ];
+        let defaults = select_a_records(&records, &[]).expect("default selection");
+        assert_eq!(defaults.iter().map(|r| r.id).collect::<Vec<_>>(), vec![1, 2]);
+        let selected =
+            select_a_records(&records, &["@".into(), "www".into(), "bot".into(), "cdn".into()])
+                .expect("explicit selection");
+        assert_eq!(selected.iter().map(|r| r.id).collect::<Vec<_>>(), vec![1, 2, 3, 4]);
+        assert!(selected.iter().all(|r| r.ttl == 300 && r.target == "203.0.113.1"));
+        assert!(select_a_records(&records, &["missing".into()]).is_err());
+    }
+
+    #[test]
+    fn a_selectors_are_exact_validated_and_deduplicated() {
+        assert_eq!(
+            a_subdomains(&["@".into(), "".into(), "BOT".into(), "bot".into()])
+                .expect("canonical selectors"),
+            vec!["", "bot"]
+        );
+        for invalid in
+            ["*", "bot;id", "bot/child", " www", "www.", ".www", "a..b", "-bot", "bot-", "a_b"]
+        {
+            assert!(a_subdomains(&[invalid.into()]).is_err(), "{invalid}");
+        }
+        assert!(a_subdomains(&["a".repeat(64)]).is_err());
+        assert!(a_subdomains(&["assets.cdn".into()]).is_ok());
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -44,6 +96,58 @@ pub struct DnsAuditReport {
 
 pub struct DnsManager<'a> {
     client: &'a OvhClient,
+}
+
+/// Exact relative DNS selectors. Omitted selectors retain apex + www.
+pub fn a_subdomains(selectors: &[String]) -> Result<Vec<String>> {
+    let defaults = [String::new(), "www".to_owned()];
+    let selectors = if selectors.is_empty() { &defaults[..] } else { selectors };
+    let mut result = Vec::new();
+    for selector in selectors {
+        let normalized =
+            if selector == "@" { String::new() } else { selector.to_ascii_lowercase() };
+        if !normalized.is_empty()
+            && (normalized.len() > 253
+                || normalized.split('.').any(|label| {
+                    label.is_empty()
+                        || label.len() > 63
+                        || label.starts_with('-')
+                        || label.ends_with('-')
+                        || !label.bytes().all(|byte| byte.is_ascii_alphanumeric() || byte == b'-')
+                }))
+        {
+            bail!("invalid exact DNS subdomain selector: {selector}");
+        }
+        if !result.contains(&normalized) {
+            result.push(normalized);
+        }
+    }
+    Ok(result)
+}
+
+/// Select all requested A records before any write; missing names fail closed.
+pub fn select_a_records<'a>(
+    records: &'a [DnsRecord],
+    selectors: &[String],
+) -> Result<Vec<&'a DnsRecord>> {
+    let selectors = a_subdomains(selectors)?;
+    for selector in &selectors {
+        if !records.iter().any(|record| {
+            record.field_type == "A" && record.sub_domain.eq_ignore_ascii_case(selector)
+        }) {
+            bail!(
+                "requested DNS A record is missing: {}",
+                if selector.is_empty() { "@" } else { selector }
+            );
+        }
+    }
+    Ok(records
+        .iter()
+        .filter(|record| {
+            record.field_type == "A"
+                && selectors.iter().any(|selector| record.sub_domain.eq_ignore_ascii_case(selector))
+        })
+        .collect())
 }
 
 impl<'a> DnsManager<'a> {
@@ -84,9 +188,7 @@ impl<'a> DnsManager<'a> {
         let ids = self.list_record_ids(zone, field_type).await?;
         let mut records = Vec::with_capacity(ids.len());
         for id in ids {
-            if let Ok(rec) = self.get_record(zone, id).await {
-                records.push(rec);
-            }
+            records.push(self.get_record(zone, id).await?);
         }
         records.sort_by(|a, b| {
             a.field_type.cmp(&b.field_type).then_with(|| a.sub_domain.cmp(&b.sub_domain))
@@ -114,7 +216,7 @@ impl<'a> DnsManager<'a> {
         });
         let record: DnsRecord =
             self.client.post(&format!("/domain/zone/{zone}/record"), Some(payload)).await?;
-        let _ = self.refresh_zone(zone).await;
+        self.refresh_zone(zone).await?;
         Ok(Some(record))
     }
 
@@ -124,7 +226,7 @@ impl<'a> DnsManager<'a> {
         }
         let _: serde_json::Value =
             self.client.delete(&format!("/domain/zone/{zone}/record/{id}")).await?;
-        let _ = self.refresh_zone(zone).await;
+        self.refresh_zone(zone).await?;
         Ok(true)
     }
 
@@ -137,22 +239,35 @@ impl<'a> DnsManager<'a> {
     }
 
     pub async fn set_a(&self, zone: &str, target_ip: &str, apply: bool) -> Result<Vec<u64>> {
+        self.set_a_subdomains(zone, target_ip, &[], apply).await
+    }
+
+    pub async fn set_a_subdomains(
+        &self,
+        zone: &str,
+        target_ip: &str,
+        selectors: &[String],
+        apply: bool,
+    ) -> Result<Vec<u64>> {
+        target_ip
+            .parse::<std::net::Ipv4Addr>()
+            .context("A record target must be an IPv4 address")?;
+        a_subdomains(selectors)?;
         let records = self.list_records(zone, Some("A")).await?;
+        let selected = select_a_records(&records, selectors)?;
         let mut target_ids = Vec::new();
-        for r in records {
-            if r.sub_domain.is_empty() || r.sub_domain == "www" {
-                target_ids.push(r.id);
-                if apply && r.target != target_ip {
-                    let payload = serde_json::json!({ "target": target_ip });
-                    let _: serde_json::Value = self
-                        .client
-                        .put(&format!("/domain/zone/{zone}/record/{}", r.id), Some(payload))
-                        .await?;
-                }
+        for r in selected {
+            target_ids.push(r.id);
+            if apply && r.target != target_ip {
+                let payload = serde_json::json!({ "target": target_ip });
+                let _: serde_json::Value = self
+                    .client
+                    .put(&format!("/domain/zone/{zone}/record/{}", r.id), Some(payload))
+                    .await?;
             }
         }
         if apply && !target_ids.is_empty() {
-            let _ = self.refresh_zone(zone).await;
+            self.refresh_zone(zone).await?;
         }
         Ok(target_ids)
     }

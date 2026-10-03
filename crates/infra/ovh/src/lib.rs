@@ -13,6 +13,7 @@ pub use email::{EmailDnsAuditReport, EmailDomainInfo, EmailManager, EmailRedirec
 pub use profile::{ProfileInfo, known_profiles, load_profile_credentials, parse_credentials_text};
 pub use vps::{VpsInfo, VpsIp, VpsManager, VpsStatus};
 
+use anyhow::Context;
 use clap::Subcommand;
 
 #[derive(Debug, Subcommand, Clone)]
@@ -92,10 +93,13 @@ pub enum OvhDnsSubcommand {
         #[arg(long)]
         profile: Option<String>,
     },
-    /// Batch switch apex and www A records to target IP (requires --apply).
+    /// Switch selected A records to target IP (requires --apply; default apex + www).
     SetA {
         zone: String,
         target_ip: String,
+        /// Exact relative name; repeat to select several. Use @ for apex.
+        #[arg(long = "subdomain")]
+        subdomains: Vec<String>,
         #[arg(long)]
         apply: bool,
         #[arg(long)]
@@ -293,20 +297,29 @@ impl OvhCommand {
                     println!("Zone '{zone}' rafraîchie avec succès.");
                     Ok(())
                 },
-                OvhDnsSubcommand::SetA { zone, target_ip, apply, profile } => {
+                OvhDnsSubcommand::SetA { zone, target_ip, subdomains, apply, profile } => {
+                    target_ip
+                        .parse::<std::net::Ipv4Addr>()
+                        .context("A record target must be an IPv4 address")?;
+                    let selected = dns::a_subdomains(subdomains)?;
                     let creds = load_profile_credentials(profile.as_deref())?;
                     let client = OvhClient::new(creds)?;
                     let dns = DnsManager::new(&client);
                     if !apply {
                         println!(
-                            "[PLAN] Bascule A records (apex + www) de '{zone}' vers {target_ip}"
+                            "[PLAN] Bascule A records ({}) de '{zone}' vers {target_ip}",
+                            selected
+                                .iter()
+                                .map(|name| if name.is_empty() { "@" } else { name.as_str() })
+                                .collect::<Vec<_>>()
+                                .join(", ")
                         );
                         println!("Passez --apply pour exécuter.");
                         return Ok(());
                     }
-                    let updated = dns.set_a(zone, target_ip, true).await?;
+                    let updated = dns.set_a_subdomains(zone, target_ip, &selected, true).await?;
                     println!(
-                        "Bascule A effectuée avec succès ({} enregistrements mis à jour/créés).",
+                        "Bascule A effectuée avec succès ({} enregistrements sélectionnés ; identifiants et TTL conservés).",
                         updated.len()
                     );
                     Ok(())
