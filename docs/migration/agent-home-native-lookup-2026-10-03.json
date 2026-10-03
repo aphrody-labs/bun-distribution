@@ -1,0 +1,23 @@
+{
+  "date": "2026-10-03",
+  "operation": "Use Bun native executable discovery instead of spawning which/where for every Agent Home tool",
+  "replacement": "Bun.which(bin, { PATH: process.env.PATH ?? \"\" })",
+  "preservedBehavior": [
+    "Current process PATH read explicitly, including changes made by a long-running process.",
+    "Windows persistent PATH and known installation-directory fallbacks retained.",
+    "path/off-path/absent states preserved."
+  ],
+  "validation": {
+    "test": "1 pass, 4 assertions: PATH, persistent PATH, off-path, absent; Linux host",
+    "workspaceTypecheck": "passed",
+    "scopedOxfmt": "passed",
+    "scopedOxlint": "exit 0; pre-existing warnings",
+    "whitespace": "passed"
+  },
+  "limits": [
+    "Removes one discovery subprocess per locate call, including installed tool inventory and kernel lookup; no measured latency claim.",
+    "Windows host behavior not executed.",
+    "Version probes and Windows persistent registry PATH queries remain.",
+    "No npm publication, Rust build or Git history rewrite."
+  ]
+}

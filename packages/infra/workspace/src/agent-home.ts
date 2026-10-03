@@ -276,12 +276,11 @@ function persistentPathDirs(): string[] {
   return [...query("User"), ...query("Machine")];
 }
 
-function locate(bin: string, home: string, persistent: readonly string[]): BinState {
+export function locate(bin: string, home: string, persistent: readonly string[]): BinState {
   const exe = process.platform === "win32" ? `${bin}.exe` : bin;
 
-  const onPath = process.platform === "win32" ? run("where.exe", [bin]) : run("which", [bin]);
-  const first = onPath?.split("\n")[0]?.trim();
-  if (first != null && first.length > 0) return { kind: "path", path: first };
+  const onPath = Bun.which(bin, { PATH: process.env.PATH ?? "" });
+  if (onPath) return { kind: "path", path: onPath };
 
   // Not in *this* process's PATH — but the user's shell may still find it.
   for (const dir of persistent) {
