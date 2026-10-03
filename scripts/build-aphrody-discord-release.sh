@@ -19,12 +19,9 @@ stage="$(mktemp -d "$releases/.building-$commit.XXXXXX")"
 trap 'rm -rf -- "$stage"' EXIT
 cd "$repo"
 bun build apps/carbon-example/src/index.ts --target=bun --outfile "$stage/server.js"
-python3 - "$stage/release.json" "$commit" <<'PY'
-import json, sys
-with open(sys.argv[1], 'w') as f:
-    json.dump({'schemaVersion': 1, 'repository': 'aphrody-discord', 'commit': sys.argv[2], 'entry': 'server.js'}, f, indent=2)
-    f.write('\n')
-PY
+# Constant fields plus the commit validated above as 40 hex digits: no JSON escaping needed.
+printf '{\n  "schemaVersion": 1,\n  "repository": "aphrody-discord",\n  "commit": "%s",\n  "entry": "server.js"\n}\n' \
+  "$commit" > "$stage/release.json"
 (cd "$stage" && sha256sum server.js release.json > SHA256SUMS)
 chmod 0644 "$stage"/*
 mv -- "$stage" "$dest"
