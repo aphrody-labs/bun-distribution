@@ -181,8 +181,11 @@ python3 - "$fixture/bin/bun" <<'PYISOLATED'
 import pathlib,sys
 p=pathlib.Path(sys.argv[1]);s=p.read_text().replace('node_modules/next/dist/bin', 'apps/shenron/site/node_modules/next/dist/bin');p.write_text(s)
 PYISOLATED
-if bash "$script" assemble "$fixture/bundles/third" >"$fixture/out" 2>&1; then echo 'accepted DBFR nonlocal PostgreSQL' >&2; exit 1; fi
+if SHENRON_KEEP_FAILED_STAGE=1 bash "$script" assemble "$fixture/bundles/third" >"$fixture/out" 2>&1; then echo 'accepted DBFR nonlocal PostgreSQL' >&2; exit 1; fi
 grep -q 'host-local PostgreSQL' "$fixture/out"
+retained="$(find "$fixture/shenron/releases" -maxdepth 1 -type d -name ".assembling-$third_sha.*" -print -quit)"
+[[ -n "$retained" && "$(stat -c %a "$retained")" = 700 ]]
+
 printf 'DATABASE_URL=postgresql://fixture:fixture@127.0.0.1:5432/shenron_site\n' > "$fixture/etc/shenron-site.env"
 
 bash "$script" assemble "$fixture/bundles/third" >"$fixture/out" 2>&1

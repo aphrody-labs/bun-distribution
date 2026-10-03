@@ -43,6 +43,7 @@ shared_links=(
   'apps/bot/data:bot/data'
   '.coord:coord'
 )
+[[ "${SHENRON_KEEP_FAILED_STAGE:-0}" = 0 || "${SHENRON_KEEP_FAILED_STAGE:-0}" = 1 ]] || { echo 'SHENRON_KEEP_FAILED_STAGE must be0or1' >&2; exit 2; }
 [[ "$probe_attempts" =~ ^[1-9][0-9]*$ ]] || { echo 'invalid probe attempts' >&2; exit 2; }
 [[ "$(id -u)" = 0 ]] || { echo 'run as root' >&2; exit 2; }
 [[ $# -ge 1 && $# -le 2 ]] || { echo "$usage" >&2; exit 2; }
@@ -116,8 +117,17 @@ PY
   install -d -m 0755 "$releases"
   stage="$(mktemp -d "$releases/.assembling-$commit.XXXXXX")"
   chmod 0755 "$stage"
-  # shellcheck disable=SC2064
-  trap "rm -rf -- '$stage'" EXIT
+  assembling_stage="$stage"
+  cleanup_assembly() {
+    local status="$1"
+    if [[ "$status" != 0 && "${SHENRON_KEEP_FAILED_STAGE:-0}" = 1 ]]; then
+      chmod 0700 "$assembling_stage"
+      printf 'failed assembly retained for private inspection: %s\n' "$assembling_stage" >&2
+    else
+      rm -rf -- "$assembling_stage"
+    fi
+  }
+  trap 'cleanup_assembly "$?"' EXIT
   # Source Git history contains old tracked dependency aliases. Dependencies
   # are reconstructed exclusively by the pinned frozen Bun install below.
   tar -xzf "$source/source.tar.gz" --exclude='node_modules' --exclude='*/node_modules' --exclude='*/node_modules/*' -C "$stage"
