@@ -446,8 +446,8 @@
     {
       "path": "PLAN.md",
       "title": "Plan du monorepo Aphrody — 2026-10-01",
-      "sha256": "55564b16dddf9ea1eb5c3b6da02976fb76148db0ffa998176acde5db6d5c0433",
-      "bytes": 142970,
+      "sha256": "0e68741100a4f8193c824d979909bfb3f6f33d898685f661385db631315cba01",
+      "bytes": 143035,
       "domain": "",
       "status": "canonical",
       "visibility": "private",
@@ -8556,8 +8556,8 @@
     {
       "path": "docs/operations/infra/BUILD-FACTORY.md",
       "title": "VPS build factory and DBFR Shenron runtime",
-      "sha256": "53cc23302ca34e9961576b8980bfc3b412e0ad4fd959864ac61838f2ce75db51",
-      "bytes": 10444,
+      "sha256": "9736f70945a104ab8d6d43c33c79964995ff5e6aa9714d9cfb6df983be036db2",
+      "bytes": 11623,
       "domain": "infra",
       "status": "canonical",
       "visibility": "private",
