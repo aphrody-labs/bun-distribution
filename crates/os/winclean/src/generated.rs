@@ -4156,6 +4156,9 @@ pub struct SearchFilesArgs {
     /// Default: `true`.
     #[serde(rename = "recursive", skip_serializing_if = "Option::is_none")]
     pub recursive: Option<bool>,
+    /// Basename glob patterns to omit; matching directories are not traversed.
+    #[serde(rename = "exclude", skip_serializing_if = "Option::is_none")]
+    pub exclude: Option<Vec<String>>,
 }
 
 impl SearchFilesArgs {
@@ -4183,6 +4186,13 @@ impl SearchFilesArgs {
     #[must_use]
     pub fn recursive(mut self, value: bool) -> Self {
         self.recursive = Some(value);
+        self
+    }
+
+    /// Sets `exclude`.
+    #[must_use]
+    pub fn exclude(mut self, value: Vec<String>) -> Self {
+        self.exclude = Some(value);
         self
     }
 }

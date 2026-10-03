@@ -1743,6 +1743,10 @@ export interface SearchFilesArgs {
    * @default true
    */
   recursive?: boolean;
+  /**
+   * Basename glob patterns to omit; matching directories are not traversed.
+   */
+  exclude?: string[];
 }
 
 /** Arguments for `search_windows`. */

@@ -2525,7 +2525,7 @@
     },
     {
       "name": "search_files",
-      "description": "Searches a directory tree for files matching a glob pattern. Hard cap: 10000 results; result is marked truncated when exceeded.",
+      "description": "Searches a directory tree for files matching a glob pattern. Exclude basenames with glob patterns; excluded directories are not traversed. Hard cap: 10000 results; result is marked truncated when exceeded.",
       "inputSchema": {
         "type": "object",
         "properties": {
@@ -2541,6 +2541,13 @@
             "description": "Recurse into subdirectories.",
             "type": "boolean",
             "default": true
+          },
+          "exclude": {
+            "description": "Basename glob patterns to omit; matching directories are not traversed.",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           }
         },
         "required": [

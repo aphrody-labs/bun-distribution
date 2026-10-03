@@ -135,14 +135,13 @@ pub fn list_directory_excluding(
             if !show_hidden && dto.is_hidden {
                 continue;
             }
-            if pattern.is_some_and(|value| !wildcard_match(value, &dto.name)) {
-                continue;
+            if pattern.is_none_or(|value| wildcard_match(value, &dto.name)) {
+                if entries.len() == MAX_ENTRIES {
+                    truncated = true;
+                    break;
+                }
+                entries.push(dto.clone());
             }
-            if entries.len() == MAX_ENTRIES {
-                truncated = true;
-                break;
-            }
-            entries.push(dto.clone());
             if recursive && dto.is_directory {
                 stack.push(path);
             }
@@ -228,10 +227,71 @@ mod tests {
         assert_eq!(filtered.count, 1);
         assert_eq!(filtered.entries[0].name, "keep.rs");
     }
+
+    #[test]
+    fn search_files_excludes_matching_directories_and_files() {
+        let root = tempfile::tempdir().expect("temporary root");
+        let source = root.path().join("src");
+        let dependencies = source.join("node_modules");
+        fs::create_dir_all(&dependencies).expect("dependencies");
+        fs::write(source.join("main.js"), "kept").expect("source file");
+        fs::write(source.join("ignored.test.js"), "ignored").expect("excluded file");
+        fs::write(dependencies.join("dependency.js"), "ignored").expect("dependency file");
+
+        let value = crate::dispatch::call_rust(
+            "search_files",
+            serde_json::json!({
+                "path": root.path().to_str().expect("UTF-8 test path"),
+                "pattern": "*.js",
+                "recursive": true,
+                "exclude": ["node_modules", "*.test.js"]
+            }),
+        )
+        .expect("MCP tool dispatch");
+        let listing: DirectoryListing = serde_json::from_value(value).expect("listing schema");
+
+        assert_eq!(listing.count, 1);
+        assert_eq!(listing.entries[0].name, "main.js");
+        assert!(!listing.truncated);
+    }
+
+    #[test]
+    fn search_files_rejects_invalid_exclusion_patterns() {
+        let root = tempfile::tempdir().expect("temporary root");
+        let invalid_type = crate::dispatch::call_rust(
+            "search_files",
+            serde_json::json!({
+                "path": root.path().to_str().expect("UTF-8 test path"),
+                "pattern": "*.js",
+                "exclude": [42]
+            }),
+        );
+        assert!(matches!(invalid_type, Err(crate::SubsystemError::InvalidArguments(_))));
+
+        let empty_pattern = crate::dispatch::call_rust(
+            "search_files",
+            serde_json::json!({
+                "path": root.path().to_str().expect("UTF-8 test path"),
+                "pattern": "*.js",
+                "exclude": [""]
+            }),
+        );
+        assert!(matches!(empty_pattern, Err(crate::SubsystemError::InvalidArguments(_))));
+    }
 }
 
 pub fn search_files(path: &str, pattern: &str, recursive: bool) -> io::Result<DirectoryListing> {
-    let mut listing = list_directory(path, Some(pattern), recursive, true)?;
+    search_files_excluding(path, pattern, recursive, &[])
+}
+
+pub fn search_files_excluding(
+    path: &str,
+    pattern: &str,
+    recursive: bool,
+    exclude_patterns: &[String],
+) -> io::Result<DirectoryListing> {
+    let mut listing =
+        list_directory_excluding(path, Some(pattern), recursive, true, exclude_patterns)?;
     listing.entries.retain(|entry| !entry.is_directory);
     listing.count = listing.entries.len();
     Ok(listing)
