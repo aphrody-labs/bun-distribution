@@ -10,7 +10,7 @@ set -euo pipefail
 # ADAPTER.json records the infra commit and every installed hash; the bundle
 # adapter refuses a bundle pinned to another aphrody-infra commit. Reinstall
 # after changing any adapter or config/{service-catalog,nginx-routes,secrets-contract}.json.
-infra="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+infra="${APHRODY_ADAPTER_SOURCE_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
 sbin="${APHRODY_ADAPTER_SBIN:-/usr/local/sbin}"
 share="${APHRODY_ADAPTER_SHARE:-/usr/local/share/aphrody-infra}"
 stack=all
@@ -47,17 +47,24 @@ PYVERIFY
 )" || exit 2
 else
   git_infra() { git -c safe.directory="$infra" -C "$infra" "$@"; }
-  commit="$(git_infra rev-parse --verify 'HEAD^{commit}')"
-  git_infra diff --quiet HEAD -- scripts config &&
-    [[ -z "$(git_infra ls-files --others --exclude-standard -- scripts config)" ]] || {
-    echo 'aphrody-infra scripts/ or config/ has uncommitted changes' >&2; exit 2;
-  }
+  if [[ -n "$package_out" && -n "$expected_revision" ]]; then
+    [[ "$expected_revision" =~ ^[a-f0-9]{40}$ ]] || { echo 'package revision must be a full SHA' >&2; exit 2; }
+    commit="$(git_infra rev-parse --verify "$expected_revision^{commit}")"
+    [[ "$commit" = "$expected_revision" ]] || { echo 'package revision mismatch' >&2; exit 2; }
+  else
+    commit="$(git_infra rev-parse --verify 'HEAD^{commit}')"
+    git_infra diff --quiet HEAD -- scripts config &&
+      [[ -z "$(git_infra ls-files --others --exclude-standard -- scripts config)" ]] || {
+      echo 'aphrody-infra scripts/ or config/ has uncommitted changes' >&2; exit 2;
+    }
+  fi
 fi
 if [[ -n "$package_out" ]]; then
   [[ "$stack" = shenron ]] || { echo 'sealed source export currently supports --stack shenron' >&2; exit 2; }
-  python3 - "$infra" "$package_out" "$commit" <<'PYPACKAGE'
-import hashlib, json, pathlib, shutil, sys, tempfile
+  python3 - "$infra" "$package_out" "$commit" "${expected_revision:+committed}" <<'PYPACKAGE'
+import hashlib, json, pathlib, shutil, subprocess, sys, tempfile
 root, destination, revision = pathlib.Path(sys.argv[1]), pathlib.Path(sys.argv[2]).absolute(), sys.argv[3]
+committed = len(sys.argv) > 4 and sys.argv[4] == 'committed'
 if destination.exists(): raise SystemExit('adapter package destination already exists')
 destination.parent.mkdir(parents=True, exist_ok=True)
 stage = pathlib.Path(tempfile.mkdtemp(prefix='.adapter-package-', dir=destination.parent))
@@ -65,9 +72,18 @@ try:
     files = {}
     for relative in ['scripts/install-vps-adapter.sh', 'scripts/atomic-deploy-shenron.sh', 'config/service-catalog.json', 'config/nginx-routes.json', 'config/secrets-contract.json']:
         source = root / relative
-        if source.is_symlink() or not source.is_file(): raise ValueError('adapter source must be regular files')
         target = stage / relative; target.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(source, target); files[relative] = hashlib.sha256(target.read_bytes()).hexdigest()
+        if committed:
+            prefix = ['git', '-c', f'safe.directory={root}', '-C', str(root)]
+            tree = subprocess.check_output(prefix + ['ls-tree', revision, '--', relative], text=True).strip()
+            if not tree.startswith(('100644 blob ', '100755 blob ')):
+                raise ValueError('committed adapter source must be regular files')
+            target.write_bytes(subprocess.check_output(prefix + ['show', f'{revision}:{relative}']))
+            target.chmod(0o755 if tree.startswith('100755 ') else 0o644)
+        else:
+            if source.is_symlink() or not source.is_file(): raise ValueError('adapter source must be regular files')
+            shutil.copy2(source, target)
+        files[relative] = hashlib.sha256(target.read_bytes()).hexdigest()
     (stage / 'SOURCE-MANIFEST.json').write_text(json.dumps({'schemaVersion': 1, 'repository': 'aphrody-labs/aphrody', 'stack': 'shenron', 'sourceCommit': revision, 'files': files}, indent=2) + '\n')
     stage.rename(destination)
 except BaseException:
