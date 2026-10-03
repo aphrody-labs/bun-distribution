@@ -301,6 +301,15 @@ export async function runDocumentation(argv: string[]): Promise<number> {
     );
     return 0;
   }
+  if (
+    (command === "generate" || command === "check") &&
+    rest.some((arg) => arg === "--help" || arg === "-h")
+  ) {
+    console.log(
+      `Usage: aphrody-ops docs ${command} [--root <repository>] [--check] [--deps] [--skip-ecosystem]`,
+    );
+    return 0;
+  }
   if (command === "links") return runDocsLinks(["--root", root, "--scope", "repository", ...rest]);
   if (command === "overlaps") return runDocsOverlaps(["--root", root, ...rest]);
   if (command === "consolidate")

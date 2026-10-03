@@ -114,4 +114,22 @@ describe("unified documentation", () => {
       rmSync(root, { recursive: true, force: true });
     }
   });
+
+  test("generation help works through the docs-gen alias without scanning the root", () => {
+    for (const args of [
+      ["docs-gen", "--help"],
+      ["docs", "check", "-h"],
+    ]) {
+      const result = Bun.spawnSync([
+        process.execPath,
+        join(import.meta.dir, "../src/ops.ts"),
+        ...args,
+        "--root",
+        join(tmpdir(), "nonexistent-docs-help-root"),
+      ]);
+      expect(result.exitCode).toBe(0);
+      expect(result.stdout.toString()).toContain("--skip-ecosystem");
+      expect(result.stderr.toString()).toBe("");
+    }
+  });
 });
