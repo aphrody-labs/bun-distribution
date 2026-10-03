@@ -8,7 +8,11 @@
     "memoryMiB": 47035,
     "diskAvailableGiB": 127,
     "memoryAvailableAfterRgStopMiB": 34133,
-    "qualified": false
+    "qualified": false,
+    "sourceRevision": "f6a36af0386419506b7fea3f92adbf08707f89d4",
+    "frozenInstall": "passed",
+    "iecodeArchiveFormat": "canonical-tar-gzip-v2",
+    "iecodeArchivesIdenticalAcrossHosts": true
   },
   "shenron": {
     "currentRuntime": "vps",
@@ -16,7 +20,10 @@
     "migrationQualified": false,
     "dbfrCpu": 6,
     "dbfrMemoryMiB": 11671,
-    "dbfrDiskAvailableGiB": 51
+    "dbfrDiskAvailableGiB": 51,
+    "privateEnvironments": "transferred-directly-with-0600-permissions",
+    "privatePostgresqlConnection": "SELECT 1 passed on DBFR",
+    "sharedStateTransfer": "prepass-running"
   },
   "rg": {
     "applicationState": "stopped",
@@ -44,7 +51,7 @@
     "factoryFixtureAssertions": 98,
     "workspaceTypecheck": "passed",
     "shenronAdapterFixtures": "passed",
-    "realFactoryBuild": "pending",
+    "realFactoryBuild": "native qualification running on VPS",
     "dbfrActivation": "pending"
   }
 }

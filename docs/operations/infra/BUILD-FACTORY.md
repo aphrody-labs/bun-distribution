@@ -24,6 +24,12 @@ The factory verifies a full requested Git revision and clean tracked source
 before execution. Do not synchronize credentials, protected data, model weights
 or another repository's generated artifacts into the build source.
 
+Factory dispatch gives native SSH a finite six-hour deadline through
+`APHRODY_SSH_COMMAND_TIMEOUT_SECS`; short inspections keep the thirty-second
+default. The calling Infra binary must include this option. Both factory and
+Cargo locks use `flock --close` so a persistent sccache daemon cannot retain
+build locks after the owner command ends.
+
 A single factory lock bounds heavy jobs across owners. Rust additionally uses
 `scripts/build/rust/cargo-serial.sh`, at most six rustc jobs, incremental disabled
 and sccache enabled. Bun heavy jobs run singly against the frozen lockfile.
@@ -94,3 +100,104 @@ revision plus compiled bot and verified pinned IECODE archives into the existing
 Infra payload shape. Transfer the payload to DBFR, then use the existing adapter
 `assemble` mode and native Infra deployment plan/apply. Packaging fixture gates
 do not establish a successful real site build or runtime deployment.
+
+## Direct shared-state migration
+
+Existing VPS-to-DBFR SSH authentication was verified read-only on 2026-10-03;
+no temporary credentials or WSL data relay are required. Invoke the existing
+Infra-owned migration adapter from the qualified VPS checkout:
+
+```sh
+bash scripts/migration/shenron-shared-transfer.sh prepass
+bash scripts/migration/shenron-shared-transfer.sh prepass --apply
+# Pause source site, bot, backup service/timer through Infra before final pass.
+bash scripts/migration/shenron-shared-transfer.sh final --apply
+```
+
+The destination and `/srv/aphrody-infra/migrations/shenron-transfer-partial`
+must already exist with owner write access. Only `site`, `bot` and `coord` are
+transferred; historical backup stores remain on VPS. Transfer defaults to
+50 MiB/s, bounded by validated `SHENRON_TRANSFER_KIB_PER_SEC`. Partial files
+stay in the Infra migration directory outside protected shared stores. Prepass keeps
+source services running; final pass refuses active source writers and checks
+all source file hashes on DBFR. It never deletes destination stores. Evidence
+manifests remain private host-local files, and all large objects move directly
+between servers. Private runtime environment files require separate scoped
+host-to-host transfer through Infra, retaining 0600 permissions.
+
+## Private runtime configuration and Nginx qualification
+
+`shenron-env-transfer.sh` plans by default. Run `--apply` only on VPS through
+Infra SSH: site/bot and optional compute environment streams directly to DBFR,
+with no private payload stored in the source checkout or on WSL. Source files
+must be regular 0600 files. Runtime PostgreSQL and Redis URLs become DBFR-local;
+explicit remote/build database URLs retain their semantics. Destination files
+are root-owned 0600, installed atomically, with private preexisting-file backups.
+Run the same adapter `--probe` on DBFR to test its configured local PostgreSQL
+connection without putting credentials in argv or logs. This is a connection
+probe, not schema or product qualification.
+
+DBFR Nginx 1.28.3 was observed with SSL and HTTP/3 modules; certificates for
+site, bot and CDN were readable through root. Install the committed Infra
+adapters/catalogs before assembling and activating. The current catalog probes
+are site `http://127.0.0.1:5011/api/health` and bot
+`http://127.0.0.1:5006/health`. The atomic adapter checks public TLS with local
+`--resolve` before completing activation. Keep source runtime/routing for
+rollback; quiesce the VPS bot before starting the DBFR gateway, and change DNS
+or proxy routing only after DBFR is qualified.
+
+## Install only the target adapter without a production source clone
+
+From a clean committed VPS factory checkout, export the existing installer:
+
+```sh
+bash scripts/install-vps-adapter.sh --stack shenron --package /home/ubuntu/.cache/aphrody/shenron-adapter-FULL_SHA
+```
+
+Transfer that small sealed directory directly VPS-to-DBFR into
+`/srv/aphrody-infra/adapters/FULL_SHA`. It contains only the installer,
+Shenron adapter, three catalogs and `SOURCE-MANIFEST.json`; no Git metadata,
+private configuration, dependency trees or source workspace is required.
+Install on DBFR as root:
+
+```sh
+bash /srv/aphrody-infra/adapters/FULL_SHA/scripts/install-vps-adapter.sh --stack shenron --source-manifest /srv/aphrody-infra/adapters/FULL_SHA/SOURCE-MANIFEST.json --revision FULL_SHA
+```
+
+The requested full revision, exact file set, hashes and contained regular file
+paths are checked before installation. Default invocation from a clean checkout
+continues to install all four adapters. Target-only installation leaves unrelated
+adapter executables alone and records its installed hashes in `ADAPTER.json`.
+
+When heavy builds hold the current factory checkout, export a newer fetched
+commit without switching HEAD or requiring another clone. Stage the committed
+installer outside the checkout and set `APHRODY_ADAPTER_SOURCE_ROOT` to its
+existing Git root:
+
+```sh
+APHRODY_ADAPTER_SOURCE_ROOT=/srv/aphrody-build/workspaces/aphrody bash /home/ubuntu/.cache/aphrody/install-vps-adapter-current.sh --stack shenron --package /home/ubuntu/.cache/aphrody/shenron-adapter-FULL_SHA --revision FULL_SHA
+```
+
+This explicit revision mode reads the five regular files directly from Git
+objects and seals their hashes. It verifies the requested commit is present
+and leaves HEAD and working files untouched. Default HEAD export retains its
+clean-source requirement. No fake Git metadata is installed on DBFR.
+
+## Old-IP compatibility during DNS propagation
+
+The observed VPS file `/etc/nginx/conf.d/shenron.conf` owns only apex, www,
+bot and CDN; unrelated hosts have separate files. The bounded existing Infra
+migration adapter `shenron-nginx-forwarder.sh` plans by default. Apply it as
+root on VPS only after DBFR has passed TLS/readiness and source site/bot are
+stopped. It uses the fixed DBFR IPv4 from the Ubuntu SSH alias, forwards over
+verified HTTPS with explicit SNI and original Host, and preserves WebSockets.
+It backs up only the dedicated Shenron file and rolls back on Nginx or local
+TLS probe failure. No Shenron application process remains on VPS.
+
+Keep this compatibility route through the longest published TTL (600 seconds
+at the observation) plus propagation margin. Change only apex/www/bot/CDN DNS;
+`files` already targets DBFR and retired MCP is excluded. After authoritative
+and client DNS checks converge and old-IP traffic has drained, remove only the
+temporary dedicated file through Infra, retain its backups and validate/reload
+Nginx. `restore BACKUP` restores the old configuration for coordinated runtime
+rollback; it does not restart application services.

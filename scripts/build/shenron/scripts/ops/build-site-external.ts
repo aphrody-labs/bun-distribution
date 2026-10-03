@@ -10,6 +10,7 @@ import { existsSync } from "node:fs";
 import { rm } from "node:fs/promises";
 import { connect } from "node:net";
 import { join } from "node:path";
+import { buildDependencies } from "../../../../../packages/infra/workspace/src/bun-dependency-builds.ts";
 
 const repo = join(import.meta.dir, "..", "..", "..", "..", "..");
 const siteDir = join(repo, "apps", "shenron", "site");
@@ -74,6 +75,11 @@ if (shaProc.exitCode !== 0) {
 }
 const sha = shaProc.stdout.toString().trim();
 console.log(`▶ Démarrage du build Next.js Turbopack pour commit ${sha}...`);
+
+// A frozen install links workspace owners but does not produce their dist exports.
+// Use the same serialized dependency graph as the Workspace qualification gates.
+const dependenciesExitCode = await buildDependencies(repo, ["@shenron/site"]);
+if (dependenciesExitCode !== 0) process.exit(dependenciesExitCode);
 
 // Nettoyage à froid
 await rm(buildDir, { recursive: true, force: true });

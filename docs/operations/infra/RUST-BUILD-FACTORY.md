@@ -15,6 +15,11 @@ initially for memory-heavy native inference builds; choose a higher limit only
 after observing memory headroom. Do not start parallel target builds or give
 each pipeline its own lock.
 
+The lock supervisor uses `flock --close`: child Cargo processes and sccache
+daemons do not inherit the lock descriptor. The outer factory lock must use
+the same policy, otherwise a long-lived cache daemon can retain a completed
+job's lock and stall the queue.
+
 The wrapper accepts these host settings:
 
 | Setting | Behavior |
@@ -40,6 +45,14 @@ Do not erase reusable caches as part of normal successful release cleanup.
 
 ## Native consumers and target ordering
 
+Native SSH inspection commands default to thirty seconds. Factory dispatch
+sets `APHRODY_SSH_COMMAND_TIMEOUT_SECS` on its local Infra subprocess to select
+a longer finite execution deadline (1–86400 seconds); setting it only in the
+remote shell does not extend the calling SSH deadline. Connection timeout
+remains separate. On cancellation the native owner kills its local SSH child;
+this does not prove all remote descendants have terminated. Preserve the
+factory job log and result under its artifact owner.
+
 IECODE's current authority is `docs/development/INAGLE-NIE-FFI.md` in its
 own checkout. Its Cargo configuration and native packaging expect root
 `target/`; AppImage packaging explicitly refuses redirected target directories.
@@ -56,6 +69,14 @@ Do not merge feature-specific release commands when their feature union would
 change a binary's behavior.
 
 ## Migration boundary
+
+The service catalog distinguishes repository templates from operating-system
+units with `unitSource`: omitted or `repository` requires a file under
+`systemd/` (including `.example` templates); `system-package` names a unit
+provided by a host package. Unknown values fail validation. This distinction
+does not exempt package units from target-host systemd and health checks.
+For example, DBFR's `redis-server.service` must be verified on DBFR instead
+of adding a fabricated Redis template to this repository.
 
 Stopping RG and moving Shenron to DBFR are operations owned by Infra. A Rust
 wrapper change does not prove either operation happened. DBFR remains the
