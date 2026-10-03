@@ -146,7 +146,11 @@ PY
   mv -- "$stage/.artifact/artifact-manifest.json" "$stage/site-artifact-manifest.json"
   rm -rf -- "$stage/.artifact"
   chown -R "$run_as:$run_as" "$stage"
-  (cd "$stage" && runuser -u "$run_as" -- env HOME="$(getent passwd "$run_as" | cut -d: -f6)" "$bun" install --frozen-lockfile)
+  local install_args=(install --frozen-lockfile)
+  # Runtime targets consume sealed factory output and registry prebuilts;
+  # native lifecycle compilation belongs to VPS, not DBFR assembly.
+  if [[ "$site_path" = apps/shenron/site ]]; then install_args+=(--ignore-scripts); fi
+  (cd "$stage" && runuser -u "$run_as" -- env HOME="$(getent passwd "$run_as" | cut -d: -f6)" "$bun" "${install_args[@]}")
   resolve_next_path "$stage"
   # Mutable directories become links into shared/; their tracked content is
   # kept as the seed refreshed at activation.

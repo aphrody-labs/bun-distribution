@@ -45,7 +45,8 @@ cat > "$fixture/bin/nginx" <<'SH'
 SH
 cat > "$fixture/bin/bun" <<'SH'
 #!/usr/bin/env bash
-[[ "$*" = 'install --frozen-lockfile' ]] || exit 2
+[[ "$1" = install && "$2" = --frozen-lockfile && ( $# = 2 || ( $# = 3 && "$3" = --ignore-scripts ) ) ]] || exit 2
+printf '%s\n' "$*" > .fixture-install-args
 mkdir -p node_modules/next/dist/bin
 printf 'next\n' > node_modules/next/dist/bin/next
 SH
@@ -186,6 +187,7 @@ grep -q 'WorkingDirectory=/srv/shenron/current/apps/shenron/site' "$third/system
 if grep -q 'shenron-pg-tunnel.service' "$third/systemd/"*.service; then echo 'DBFR retains tunnel dependency' >&2; exit 1; fi
 bash "$script" activate "$third" >"$fixture/out" 2>&1
 [[ "$(readlink -f "$fixture/shenron/current")" = "$third" ]]
+grep -q '^install --frozen-lockfile --ignore-scripts$' "$third/.fixture-install-args"
 [[ -f "$third/apps/shenron/site/node_modules/next/dist/bin/next" && ! -e "$third/node_modules/next/dist/bin/next" ]]
 echo 'Shenron monorepo DBFR mapping and local PostgreSQL preflight: ok'
 echo 'Shenron adapter assemble, preflight, activation, rollback and restore: ok'
