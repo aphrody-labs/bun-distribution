@@ -5,6 +5,42 @@ Inventaire WSL/Linux vérifié le 2026-10-01 : 71 exécutables trouvés sur PATH
 10 plugins Nushell chargés. Les versions décrivent ce poste ; un chemin trouvé
 ne prouve ni l’authentification d’un fournisseur ni une compilation produit.
 
+## Aides installées et mémoire persistante
+
+L’aide du binaire installé est la référence avant de choisir une commande.
+Consulter d’abord les orchestrateurs `aphrody infra`, `aphrody-infra` et
+`aphrody-ops`, puis l’aide du propriétaire de la capacité. Ne pas reconstruire
+manuellement un workflow déjà déclaré dans Workspace ou Infra.
+
+Le relevé récursif du 2026-10-03 couvre **53 binaires installés et
+675 pages d’aide** sur WSL/Linux. Il consigne **7 aides en échec** et
+**40 binaires absents**, sans prétendre à leur fonctionnement. Les arbres
+source complets restent dans [CLI.md de l’écosystème](../../ecosystem/CLI.md).
+
+```sh
+bun run cli:help
+# Lire le résultat durable (hors checkout Git)
+bat ~/.local/share/aphrody/cli-help/INDEX.md
+rg -n 'deploy|pipeline|workspace' ~/.local/share/aphrody/cli-help/
+aphrody infra --help
+aphrody-infra pipeline --help
+aphrody-ops --help
+```
+
+Workspace possède le collecteur `cli-help` : chaque invocation termine par
+`--help`, seules les sous-commandes annoncées sont parcourues, avec six lectures
+simultanées au maximum et un délai de quinze secondes par commande. Les valeurs
+sensibles présentes dans l’environnement sont masquées. Chaque snapshot conserve
+les textes, les codes de sortie, les chemins des exécutables, leurs dates et la
+révision source. `latest.json` indique le snapshot courant ; `--out` permet de
+choisir un autre store, sans supprimer les anciens relevés.
+
+Le pointeur persistant Codex est `~/.codex/brain/CLI-HELP.md`, chargé par les
+consignes globales. Ces fichiers sont une référence consultable ; ils ne prouvent
+pas une importation dans un fournisseur de mémoire ni la disponibilité d’un outil
+MCP dans une session donnée. Réactualiser après changement d’un binaire. Le
+relevé décrit WSL/Linux, pas les installations Windows ou distantes.
+
 ## Démarrage des agents et contextes
 
 Démarrer depuis `/home/aphro/aphrody`. Les règles communes sont dans
