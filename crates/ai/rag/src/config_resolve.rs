@@ -15,7 +15,7 @@
 //! wired"). [`resolve_embed`] and [`resolve_rerank`] are the one place every
 //! surface now resolves this from.
 //!
-//! Precedence, matching `../aphrody-infra/config/local-ai.json`'s
+//! Precedence, matching `config/local-ai.json`'s
 //! `resolution.precedence` (`canonical`, `alias`, `target`, `default`):
 //!
 //! 1. The canonical `APHRODY_AI_*` environment variable

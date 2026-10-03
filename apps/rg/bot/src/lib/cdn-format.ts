@@ -14,7 +14,7 @@
  * ── CE QUI A ÉTÉ MESURÉ LE 13/8/2026 (et fonde chaque constante) ────────────
  * Largeurs servies — `GET http://127.0.0.1:8805/health` (service `cdn-variants`,
  * depuis retiré de la pile RG ; la topologie courante est dans
- * `aphrody-infra/config/service-catalog.json`) :
+ * `config/service-catalog.json`) :
  *   {"ok":true,"cacheRoot":"/var/cache/cdn-variants","widths":[200,400,800,1600],"quality":78}
  * Surfaces acceptées par le service de variantes — `apps/cdn-variants/server.ts`
  * refuse tout ce qui ne commence pas par `dx11/` ou `g4tx/` (404), et nginx ne

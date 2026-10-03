@@ -3,7 +3,7 @@
 //! publish it under the eighteen canonical `APHRODY_AI_*` names
 //! ([`aphrody_config::ai_env`]).
 //!
-//! This is the writer side of the `../aphrody-infra/config/local-ai.json`
+//! This is the writer side of the `config/local-ai.json`
 //! contract (`resolver: "aphrody ai env"` for the `windows-local` and
 //! `wsl-ubuntu-24.04` targets): it resolves the llama-server URL/port a
 //! managed instance is actually bound to right now

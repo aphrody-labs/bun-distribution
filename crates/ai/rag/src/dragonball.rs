@@ -9,7 +9,7 @@
 //! (`local-ai.ts`, `local-rag.ts`, `persona.ts`) with the same contracts:
 //!
 //! - Model endpoints follow the `APHRODY_AI_*` contract
-//!   ([`aphrody_config::ai_env`], mirrored by `aphrody-infra/config/local-ai.json`).
+//!   ([`aphrody_config::ai_env`], mirrored by `config/local-ai.json`).
 //!   `APHRODY_LOCAL_AI_CONFIG` names a contract file whose alias forms and
 //!   default model are honoured. No endpoint literal lives here: without a
 //!   variable, the local chat model is simply unavailable.

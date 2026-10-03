@@ -367,7 +367,7 @@ enum Commands {
     /// resolves for the local/open-source AI stack (chat/code/reasoning/small,
     /// vision, OCR, STT, embed, rerank, plus the `aphrody`/`aphrody-mcp`
     /// binaries) — the same contract
-    /// `../aphrody-infra/config/local-ai.json` documents. Add `--print
+    /// `config/local-ai.json` documents. Add `--print
     /// --format env|json|nu|pwsh` to also print them.
     ///
     /// Example: aphrody ai env --print --format nu

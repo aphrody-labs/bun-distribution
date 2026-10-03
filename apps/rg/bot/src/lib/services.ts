@@ -15,7 +15,7 @@
  * réessayer, abandonner et expliquer.
  *
  * ── PORTS : ALIGNÉS SUR LE CATALOGUE D'INFRASTRUCTURE ──────────────────────
- * Les ports et unités reprennent `aphrody-infra/config/service-catalog.json`,
+ * Les ports et unités reprennent `config/service-catalog.json`,
  * seule source de vérité de la topologie du VPS. Ils sont surchargeables par
  * variable d'environnement, parce qu'un poste de développement n'a pas la même
  * topologie que le VPS.
