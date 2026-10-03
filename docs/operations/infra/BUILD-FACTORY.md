@@ -90,14 +90,13 @@ Prepare the pinned IECODE archives before the root frozen install. Run serially:
 
 ```sh
 bun run --filter @shenron/bot compile
-bun scripts/build/shenron/scripts/ops/build-site-external.ts
-bun scripts/build/shenron/scripts/ops/package-site-artifact.ts artifacts/site-build.tar.gz --release-dir artifacts/shenron-release
+bun scripts/build/shenron/scripts/ops/build-site-external.ts --release-dir artifacts/shenron-release
 ```
 
 The first command compiles the bot; the second runs site owner prebuild and
-Next, then seals the site artifact. The third packages the exact clean Git
-revision plus compiled bot and verified pinned IECODE archives into the existing
-Infra payload shape. Transfer the payload to DBFR, then use the existing adapter
+Next, then invokes its packager once to seal the site and release payload.
+The exact clean Git revision, compiled bot, owner-built dependencies and
+verified pinned IECODE archives use the existing Infra payload shape. Transfer the payload to DBFR, then use the existing adapter
 `assemble` mode and native Infra deployment plan/apply. Packaging fixture gates
 do not establish a successful real site build or runtime deployment.
 
@@ -250,3 +249,23 @@ existing immutable Next boundary from the RG assembler: cached Node 22 Docker
 image, inspected full image ID, no pull, six CPU quota, 16 GiB container memory
 and 8 GiB Node heap. Bun retains dependency preparation, packaging and runtime.
 Compiler image identity and resource limits are sealed with successful artifacts.
+
+## External outputs and runtime-only assembly
+
+Future factory jobs write to the declared artifact store, with a default
+`shenron-FULL_SHA` namespace. `APHRODY_ARTIFACT_ROOT` can select an absolute
+subdirectory only inside that declared store on the VPS factory. Absolute or
+traversing output arguments and escaping symlinks are refused. Legacy callers
+retain relative checkout outputs. Factory packaging leaves the checkout clean,
+including untracked files, so the next pinned job passes its source guard.
+
+`build-site-external.ts --release-dir RELATIVE_DIRECTORY` passes the release
+request to its packager once; avoid running a second packaging command after
+that invocation. Existing qualified artifacts retain their original source
+pin; these tooling fixes do not repackage or repin earlier releases.
+
+DBFR monorepo assembly installs with `bun install --frozen-lockfile
+--ignore-scripts`. Registry prebuilts and sealed first-party outputs are consumed;
+native lifecycle compilation stays on VPS. Legacy assembly behavior remains
+compatible. If runtime qualification reveals a required generated native
+artifact, build/seal it on VPS and transfer it rather than compile on DBFR.
