@@ -59,7 +59,13 @@ export async function createAgentKeyAction(input: {
 
 export async function revokeAgentKeyAction(id: string): Promise<{ ok: boolean; error?: string }> {
 	await requireAdmin();
-	const done = await revokeAgentKey(id);
+	let done: boolean;
+	try {
+		done = await revokeAgentKey(id);
+	} catch (err) {
+		console.error("[admin] révocation clé agent", err);
+		return { ok: false, error: "Révocation impossible : base de données indisponible, réessayez." };
+	}
 	revalidatePath("/admin/agents");
 	return done ? { ok: true } : { ok: false, error: "Clé inconnue ou déjà révoquée." };
 }
@@ -73,7 +79,13 @@ export async function updateScopesAction(
 	if (next.length === 0) {
 		return { ok: false, error: "Une clé doit garder au moins une portée (sinon, révoque-la)." };
 	}
-	const done = await updateAgentKeyScopes(id, next);
+	let done: boolean;
+	try {
+		done = await updateAgentKeyScopes(id, next);
+	} catch (err) {
+		console.error("[admin] modification portées clé agent", err);
+		return { ok: false, error: "Modification impossible : base de données indisponible, réessayez." };
+	}
 	revalidatePath("/admin/agents");
 	return done ? { ok: true } : { ok: false, error: "Clé inconnue." };
 }

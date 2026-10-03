@@ -14,6 +14,7 @@ import {
 	type LanguageModelV4Prompt,
 	type LanguageModelV4StreamPart,
 	type LanguageModelV4Usage,
+	type SharedV4Warning,
 	UnsupportedFunctionalityError,
 } from "@ai-sdk/provider";
 import { AiFailureError, type AphrodyChatRole, type AphrodyCompute } from "./aphrody";
@@ -99,6 +100,35 @@ export function toAphrodyMessages(prompt: LanguageModelV4Prompt): AphrodyChatWir
 	return messages;
 }
 
+/** Call settings `llm/chat` has no field for: reported as warnings instead of silently dropped. */
+const IGNORED_SETTINGS = [
+	"maxOutputTokens",
+	"temperature",
+	"stopSequences",
+	"topP",
+	"topK",
+	"presencePenalty",
+	"frequencyPenalty",
+	"seed",
+] as const;
+
+export function ignoredSettingWarnings(options: LanguageModelV4CallOptions): SharedV4Warning[] {
+	const warnings: SharedV4Warning[] = [];
+	for (const feature of IGNORED_SETTINGS) {
+		const value = options[feature];
+		if (value === undefined || (Array.isArray(value) && value.length === 0)) continue;
+		warnings.push({ type: "unsupported", feature, details: "not forwarded to llm/chat" });
+	}
+	if (options.responseFormat?.type === "json") {
+		warnings.push({
+			type: "unsupported",
+			feature: "responseFormat",
+			details: "llm/chat answers plain text only",
+		});
+	}
+	return warnings;
+}
+
 function rejectUnsupported(options: LanguageModelV4CallOptions): void {
 	if (options.tools && options.tools.length > 0) {
 		throw new UnsupportedFunctionalityError({ functionality: "tools" });
@@ -130,6 +160,8 @@ export function createAphrodyChatModel(
 	o: AphrodyChatModelOptions
 ): LanguageModelV4 {
 	const modelId = o.modelId;
+	// A blank id sends no `model`: Aphrody keeps its default (compute rejects `model: ""`).
+	const wireModel = modelId.trim();
 
 	async function doGenerate(
 		options: LanguageModelV4CallOptions
@@ -139,7 +171,7 @@ export function createAphrodyChatModel(
 		// The compute client applies chatTimeoutMs(modelId); an explicit abort signal is combined with it.
 		const result = await compute.chat({
 			messages,
-			model: modelId,
+			...(wireModel ? { model: wireModel } : {}),
 			...(options.abortSignal ? { signal: options.abortSignal } : {}),
 		});
 		if (!result.ok) throw new AiFailureError(result);
@@ -147,9 +179,9 @@ export function createAphrodyChatModel(
 			content: [{ type: "text", text: result.value.answer }],
 			finishReason: { unified: "stop", raw: undefined },
 			usage: emptyUsage(),
-			request: { body: { messages, model: modelId } },
+			request: { body: { messages, ...(wireModel ? { model: wireModel } : {}) } },
 			response: { modelId: result.value.model },
-			warnings: [],
+			warnings: ignoredSettingWarnings(options),
 		};
 	}
 
@@ -164,7 +196,7 @@ export function createAphrodyChatModel(
 			const first = generated.content[0];
 			const text = first && first.type === "text" ? first.text : "";
 			const parts: LanguageModelV4StreamPart[] = [
-				{ type: "stream-start", warnings: [] },
+				{ type: "stream-start", warnings: generated.warnings },
 				{ type: "response-metadata", modelId: generated.response?.modelId ?? modelId },
 				{ type: "text-start", id: "0" },
 				{ type: "text-delta", id: "0", delta: text },

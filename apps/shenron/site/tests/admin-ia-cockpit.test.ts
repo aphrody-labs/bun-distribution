@@ -1,31 +1,42 @@
-import { beforeEach, describe, expect, mock, test } from "bun:test";
+import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import {
 	SourceNotConfiguredError,
 	resolveRagBackend,
 	type IaCockpitFetchers,
-	type RagBackendInfo,
 	type SourceSpec,
 } from "../src/lib/ia-cockpit";
 
 // Hermetic route test: every I/O boundary is replaced. The route must not open
 // the bot SQLite database any more; it reads its sources through
 // `ia-cockpit-server` and delegates writes to the bot API.
+//
+// Retrieval is out of scope here, and nothing fakes it: the Aphrody RAG and the manga search
+// are guarded, so a test that reaches them fails instead of receiving invented hits. Their
+// runtime coverage (search, probe, evaluation, failures) is admin-ia-rag-live.test.ts, which
+// runs on the preloaded Shenron PostgreSQL/E5/Redis services.
 
 mock.module("server-only", () => ({}));
 
-let admin = true;
+type Caller = "admin" | "member" | "anonymous";
+let caller: Caller = "admin";
+const sessionUsers = {
+	admin: {
+		sessionUserId: "s",
+		discordId: "1527405876695142620",
+		user: { id: "admin-test-user", username: "AdminTest", roleAdmin: true, discordId: "1527405876695142620" },
+	},
+	member: {
+		sessionUserId: "s2",
+		discordId: "1527405876695142621",
+		user: { id: "member-test-user", username: "MemberTest", roleAdmin: false, discordId: "1527405876695142621" },
+	},
+	anonymous: null,
+} as const;
 mock.module("@/lib/session", () => ({
-	isCurrentUserAdmin: async () => admin,
-	getCurrentUser: async () =>
-		admin
-			? {
-					sessionUserId: "s",
-					discordId: "1527405876695142620",
-					user: { id: "admin-test-user", username: "AdminTest", roleAdmin: true, discordId: "1527405876695142620" },
-				}
-			: null,
+	isCurrentUserAdmin: async () => caller === "admin",
+	getCurrentUser: async () => sessionUsers[caller],
 	requireAdmin: async () => {},
 }));
 
@@ -35,10 +46,15 @@ mock.module("@/lib/canon-config", () => ({
 	saveCanonConfig: async (patch: unknown) => patch,
 }));
 mock.module("@/lib/canon-preuves", () => ({ canonPreuves: async () => ({ references: [] }) }));
-mock.module("@/lib/manga-api", () => ({
-	chercherPlanches: async () => [{ series: "db", tome: "2", planche: 14, extrait: "<mark>Kamehameha</mark>", score: 3.2 }],
-}));
 mock.module("@/lib/admin-lab", () => ({ sendAdminLabMessage: async () => ({ id: "m1", ok: true }) }));
+
+/** Retrieval entry points reached by a test of this suite; always empty when a test ends. */
+const retrievalCalls: string[] = [];
+const retrievalOutOfScope = (name: string) => async (): Promise<never> => {
+	retrievalCalls.push(name);
+	throw new Error(`${name} is retrieval: covered by admin-ia-rag-live.test.ts, not by this hermetic suite`);
+};
+mock.module("@/lib/manga-api", () => ({ chercherPlanches: retrievalOutOfScope("chercherPlanches") }));
 
 class FakeCockpitActionError extends Error {
 	constructor(
@@ -51,33 +67,28 @@ class FakeCockpitActionError extends Error {
 
 const botCalls: Array<{ path: string; body: unknown }> = [];
 let botFailure: FakeCockpitActionError | null = null;
-let evalCalls: Array<{ samples: number; backend: RagBackendInfo }> = [];
-let searchFailure: Error | null = null;
-let backend = resolveRagBackend(undefined);
+const backend = resolveRagBackend(undefined);
 
 const ok = <T>(label: string, data: T): SourceSpec<T> => ({ label, target: label, run: async () => data });
+const unconfigured = (label: string, reason: string): SourceSpec<never> => ({
+	label,
+	target: label,
+	run: async () => {
+		throw new SourceNotConfiguredError(reason);
+	},
+});
+/** Retrieval-backed sources report "not exercised" here rather than invented counters or hits. */
+const notExercised = (label: string) => unconfigured(label, "Récupération non exercée : voir admin-ia-rag-live.test.ts");
 
 function fakeFetchers(): IaCockpitFetchers {
 	return {
-		aphrodyHealth: ok("Aphrody AI — santé", { rag: true, llm: false, ocr: false }),
-		aphrodyRagStats: {
-			label: "Aphrody RAG — statistiques",
-			target: "GET /api/v1/shenron/rag/stats",
-			run: async () => {
-				throw new Error("Aphrody compute HTTP 404 on /api/v1/shenron/rag/stats");
-			},
-		},
-		aphrodyRagProbe: ok("Aphrody RAG — sonde", { query: "Son Goku", mode: "lexical", hits: 1 }),
-		aphrodyWeb: {
-			label: "Aphrody Web — crawl",
-			target: "GET /crawl/stats",
-			run: async () => {
-				throw new SourceNotConfiguredError("APHRODY_BXC_API_TOKEN absent de l'environnement du site");
-			},
-		},
-		botRag: ok("Bot Shenron — index local", { chunks: 59995, vectors: 59995, mode: "hybrid", builtAt: null, gatewayReady: true }),
+		aphrodyHealth: notExercised("Aphrody AI — santé"),
+		aphrodyRagStats: notExercised("Aphrody RAG — statistiques"),
+		aphrodyRagProbe: notExercised("Aphrody RAG — sonde"),
+		aphrodyWeb: unconfigured("Aphrody Web — crawl", "APHRODY_BXC_API_TOKEN absent de l'environnement du site"),
+		botRag: notExercised("Bot Shenron — index local"),
 		evalHistory: ok("Historique", []),
-		goldSet: ok("Jeu doré", { cases: 172, sample: [] }),
+		goldSet: ok("Jeu doré", { cases: 3, sample: [] }),
 		feedbacks: ok("Retours", { total: 0, pending: 0, rows: [] }),
 		goals: ok("Objectifs", { active: 0, rows: [] }),
 		labMessages: ok("Discord", []),
@@ -90,24 +101,8 @@ mock.module("@/lib/ia-cockpit-server", () => ({
 	currentRagBackend: () => backend,
 	createIaCockpitFetchers: fakeFetchers,
 	runAphrodyOcr: async (image: string, language: string) => ({ text: `${language}:${image.slice(0, 4)}` }),
-	searchConfiguredRag: async (query: string) => {
-		if (searchFailure) throw searchFailure;
-		return { mode: "lexical", results: [{ title: query, snippet: "Technique de Kamé Sennin", url: "/wiki/techniques/kamehameha", score: 0.85 }] };
-	},
-	evaluateConfiguredRag: async (samples: number, b: RagBackendInfo) => {
-		evalCalls.push({ samples, backend: b });
-		if (botFailure) throw botFailure;
-		return {
-			cases: samples || 172,
-			recall: { 1: 0.5, 3: 0.7, 5: 0.8, 10: 0.9 },
-			mrr: 0.6,
-			ndcg: 0.65,
-			durationMs: 12,
-			misses: [],
-			engine: b.engine,
-			persisted: b.value === "local",
-		};
-	},
+	searchConfiguredRag: retrievalOutOfScope("searchConfiguredRag"),
+	evaluateConfiguredRag: retrievalOutOfScope("evaluateConfiguredRag"),
 	// Typed cockpit client: each call is recorded with the bot route it targets.
 	botCockpit: {
 		createGoal: (body: unknown) => botWrite("/api/admin/goals", body),
@@ -138,12 +133,14 @@ function post(body: unknown) {
 }
 
 beforeEach(() => {
-	admin = true;
+	caller = "admin";
 	botCalls.length = 0;
 	botFailure = null;
-	evalCalls = [];
-	searchFailure = null;
-	backend = resolveRagBackend(undefined);
+	retrievalCalls.length = 0;
+});
+
+afterEach(() => {
+	expect(retrievalCalls).toEqual([]);
 });
 
 describe("Cockpit Admin IA — route /api/admin/ia", () => {
@@ -157,30 +154,41 @@ describe("Cockpit Admin IA — route /api/admin/ia", () => {
 		expect(server).not.toContain("sqlite-vec");
 	});
 
-	test("GET refuse un non-administrateur", async () => {
-		admin = false;
+	test("sans session : 401 ; session sans rôle administrateur : 403, aucune écriture", async () => {
+		caller = "anonymous";
+		expect((await GET()).status).toBe(401);
+		expect((await post({ action: "create_goal", title: "x" })).status).toBe(401);
+		caller = "member";
 		expect((await GET()).status).toBe(403);
 		expect((await post({ action: "create_goal", title: "x" })).status).toBe(403);
+		expect(botCalls).toEqual([]);
 	});
 
-	test("GET rend l'état de chaque source, le moteur servi et le RAG_BACKEND", async () => {
+	test("GET rend l'état de chaque source et le RAG_BACKEND sans exercer la récupération", async () => {
 		const res = await GET();
 		expect(res.status).toBe(200);
 		expect(res.headers.get("cache-control")).toContain("no-store");
 		const json = await res.json();
 
 		expect(json.backend).toEqual({ value: "local", raw: null, engine: "Bot Shenron (index local)" });
-		expect(json.sources.aphrodyHealth).toMatchObject({ status: "ok", data: { rag: true, llm: false, ocr: false } });
-		expect(json.sources.aphrodyRagStats).toMatchObject({
-			status: "unavailable",
-			data: null,
-			error: "Aphrody compute HTTP 404 on /api/v1/shenron/rag/stats",
-		});
+		for (const key of ["aphrodyHealth", "aphrodyRagStats", "aphrodyRagProbe", "botRag"]) {
+			expect(json.sources[key]).toMatchObject({ status: "unconfigured", data: null });
+		}
 		expect(json.sources.aphrodyWeb).toMatchObject({ status: "unconfigured", data: null });
+		expect(json.sources.goldSet).toMatchObject({ status: "ok", data: { cases: 3 } });
 		expect(json.summary.status).toBe("degraded");
-		expect(json.summary.serving).toMatchObject({ source: "botRag", status: "ok" });
-		expect(json.summary.documents).toBe(59995);
-		expect(json.summary.goldCases).toBe(172);
+		expect(json.summary.failing.map((f: { key: string }) => f.key)).toEqual([
+			"aphrodyHealth",
+			"aphrodyRagStats",
+			"aphrodyRagProbe",
+			"aphrodyWeb",
+			"botRag",
+		]);
+		// No retrieval answered: counters are unknown, never zero.
+		expect(json.summary.serving).toMatchObject({ source: "botRag", status: "unconfigured" });
+		expect(json.summary.documents).toBeNull();
+		expect(json.summary.mode).toBeNull();
+		expect(json.summary.goldCases).toBe(3);
 		expect(json.canonConfig).toEqual(canonConfig);
 		expect(json.canonDefaults).toBeDefined();
 		// Legacy fields that hid failures behind zeros are gone.
@@ -188,40 +196,30 @@ describe("Cockpit Admin IA — route /api/admin/ia", () => {
 		expect(json.services).toBeUndefined();
 	});
 
-	test("test_prompt : RAG du moteur actif, canon et manga", async () => {
-		const res = await post({ action: "test_prompt", query: "Kamehameha" });
-		expect(res.status).toBe(200);
-		const json = await res.json();
-		expect(json.ok).toBe(true);
-		expect(json.backend.value).toBe("local");
-		expect(json.rag).toMatchObject({ status: "ok", data: { mode: "lexical" } });
-		expect(json.rag.data.results[0].title).toBe("Kamehameha");
-		expect(json.manga).toMatchObject({ status: "ok" });
-		expect(json.manga.data).toHaveLength(1);
-		expect(json.canon).toBeDefined();
+	test("test_prompt sans requête : refusé avant toute recherche", async () => {
+		const answers = await Promise.all(
+			[undefined, "", "   "].map(async (query) => {
+				const res = await post({ action: "test_prompt", query });
+				return { status: res.status, error: (await res.json()).error as string };
+			})
+		);
+		for (const { status, error } of answers) {
+			expect(status).toBe(400);
+			expect(error).toContain("query");
+		}
 	});
 
-	test("test_prompt : une recherche en échec est signalée, pas remplacée par une liste vide", async () => {
-		searchFailure = new Error("Bot HTTP 429 sur /api/public/rag/search");
-		const json = await (await post({ action: "test_prompt", query: "Goku" })).json();
-		expect(json.rag).toMatchObject({ status: "unavailable", data: null, error: "Bot HTTP 429 sur /api/public/rag/search" });
-	});
-
-	test("evaluate_rag : échantillon transmis au moteur configuré", async () => {
-		backend = resolveRagBackend("aphrody");
-		const json = await (await post({ action: "evaluate_rag", samples: 3 })).json();
-		expect(evalCalls).toEqual([{ samples: 3, backend }]);
-		expect(json.metrics).toMatchObject({ cases: 3, engine: "Aphrody AI", persisted: false });
-
-		await post({ action: "evaluate_rag", samples: 0 });
-		expect(evalCalls[1]?.samples).toBe(0);
-	});
-
-	test("evaluate_rag : une panne du moteur renvoie son statut et son message", async () => {
-		botFailure = new FakeCockpitActionError(503, "Recherche Aphrody indisponible (cas « Qui est Goku ? ») : Délai de réponse dépassé");
-		const res = await post({ action: "evaluate_rag", samples: 10 });
-		expect(res.status).toBe(503);
-		expect((await res.json()).error).toContain("Recherche Aphrody indisponible");
+	test("evaluate_rag : taille d'échantillon invalide refusée avant toute évaluation", async () => {
+		const answers = await Promise.all(
+			[-1, 1.5, "abc", " ", true, []].map(async (samples) => {
+				const res = await post({ action: "evaluate_rag", samples });
+				return { status: res.status, error: (await res.json()).error as string };
+			})
+		);
+		for (const { status, error } of answers) {
+			expect(status).toBe(400);
+			expect(error).toContain("samples");
+		}
 	});
 
 	test("create_goal et complete_goal sont délégués au bot avec l'auteur de la session", async () => {
@@ -275,9 +273,10 @@ describe("Cockpit Admin IA — route /api/admin/ia", () => {
 		expect(source.split("revalidatePath(").length - 1).toBe(2);
 	});
 
-	test("ocr_probe délègue l'image au client Aphrody réel", async () => {
+	test("ocr_probe délègue l'image et la langue à runAphrodyOcr (substitut hermétique, hors récupération)", async () => {
 		const json = await (await post({ action: "ocr_probe", imageBase64: "aW1n", language: "ja" })).json();
 		expect(json).toMatchObject({ ok: true, engine: "Aphrody AI", language: "ja", result: { text: "ja:aW1n" } });
+		expect((await post({ action: "ocr_probe", imageBase64: "  " })).status).toBe(400);
 	});
 
 	test("action inconnue", async () => {

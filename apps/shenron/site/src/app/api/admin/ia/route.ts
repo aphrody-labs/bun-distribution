@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
-import { getCurrentUser, isCurrentUserAdmin } from "@/lib/session";
 import { getCanonConfig, saveCanonConfig } from "@/lib/canon-config";
 import { DEFAULT_CANON_CONFIG, analyzeCanon } from "@/lib/canon-engine";
 import { canonPreuves } from "@/lib/canon-preuves";
 import { chercherPlanches } from "@/lib/manga-api";
 import { sendAdminLabMessage } from "@/lib/admin-lab";
 import { collectIaCockpit, describeError, probeSource } from "@/lib/ia-cockpit";
+import { IA_NO_STORE as NO_STORE, parseEvalSamples, readJsonObject, requireIaAdmin } from "@/lib/ia-aphrody";
 import {
 	CompleteGoalBody,
 	CreateGoalBody,
@@ -26,14 +26,12 @@ import {
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const NO_STORE = { "Cache-Control": "private, no-store, max-age=0" };
 /** Writes land in the bot SQLite; the site reads the PostgreSQL mirror. */
 const MIRROR_NOTICE = "Enregistré par le bot : visible ici après la prochaine synchronisation du miroir PostgreSQL bot.*.";
 
 export async function GET() {
-	if (!(await isCurrentUserAdmin())) {
-		return NextResponse.json({ error: "Accès réservé aux administrateurs." }, { status: 403 });
-	}
+	const gate = await requireIaAdmin();
+	if (!gate.ok) return gate.response;
 
 	try {
 		const backend = currentRagBackend();
@@ -62,17 +60,16 @@ function positiveId(value: unknown): number | null {
 }
 
 export async function POST(req: NextRequest) {
-	const me = await getCurrentUser();
-	if (!me?.user?.roleAdmin) {
-		return NextResponse.json({ error: "Accès réservé aux administrateurs." }, { status: 403 });
-	}
+	const gate = await requireIaAdmin();
+	if (!gate.ok) return gate.response;
+	const me = gate.me;
 	const author = {
 		userId: me.discordId || me.user.id,
 		userTag: me.user.username || "Admin",
 	};
 
 	try {
-		const body = (await req.json().catch(() => ({}))) as Record<string, unknown>;
+		const body = await readJsonObject(req);
 		const action = String(body.action ?? "");
 		const backend = currentRagBackend();
 
@@ -135,8 +132,13 @@ export async function POST(req: NextRequest) {
 
 		// ── Live RAG evaluation on the gold set ───────────────────────────────
 		if (action === "evaluate_rag") {
-			const requested = Number(body.samples ?? 25);
-			const samples = Number.isSafeInteger(requested) && requested > 0 ? Math.min(requested, 1_000) : 0;
+			const samples = parseEvalSamples(body.samples);
+			if (samples === null) {
+				return NextResponse.json(
+					{ error: "Le paramètre 'samples' doit être un entier positif (0 = tout le jeu doré)." },
+					{ status: 400 }
+				);
+			}
 			const metrics = await evaluateConfiguredRag(samples, backend);
 			return NextResponse.json({ ok: true, metrics });
 		}

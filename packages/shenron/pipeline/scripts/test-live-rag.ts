@@ -18,6 +18,7 @@ const tests = [
   "apps/shenron/bot/tests/rag-ai-env.test.ts",
   "apps/shenron/bot/tests/rag-import-graph.test.ts",
   "apps/shenron/site/tests/site-rag-aphrody.test.ts",
+  "apps/shenron/site/tests/admin-ia-rag-live.test.ts",
   "apps/shenron/site/tests/rag-refonte-sources.test.ts",
   "packages/shenron/pipeline/scripts/_rag-aphrody-sync.test.ts",
   "packages/shenron/pipeline/scripts/_rag-corpus-sources.test.ts",

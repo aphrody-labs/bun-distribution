@@ -13,6 +13,8 @@ import { AGENT_SCOPES } from "@/db/schema";
 import { listAgentAudit, listAgentKeys } from "@/lib/agent-keys";
 import { SCOPE_DESCRIPTIONS } from "@/lib/agent-openapi";
 import { AgentKeysManager } from "./AgentKeysManager";
+import { AgentsLoadFailure } from "./AgentsLoadFailure";
+import { loadSource } from "./agents-load";
 
 export const dynamic = "force-dynamic";
 
@@ -26,9 +28,10 @@ const dateFormat = new Intl.DateTimeFormat("fr-FR", {
 });
 
 export default async function AdminAgentsPage() {
+	// Une lecture qui échoue n'est pas une liste vide : chaque source garde son état réel.
 	const [keys, audit] = await Promise.all([
-		listAgentKeys().catch(() => []),
-		listAgentAudit(60).catch(() => []),
+		loadSource("clés", listAgentKeys),
+		loadSource("journal", () => listAgentAudit(60)),
 	]);
 
 	return (
@@ -58,11 +61,19 @@ export default async function AdminAgentsPage() {
 				</div>
 			</header>
 
-			<AgentKeysManager
-				keys={keys}
-				scopes={AGENT_SCOPES}
-				scopeDescriptions={SCOPE_DESCRIPTIONS}
-			/>
+			{keys.ok ? (
+				<AgentKeysManager
+					keys={keys.data}
+					scopes={AGENT_SCOPES}
+					scopeDescriptions={SCOPE_DESCRIPTIONS}
+				/>
+			) : (
+				<AgentsLoadFailure
+					title="Clés d'agent indisponibles"
+					message="La lecture des clés a échoué : afficher une liste vide laisserait croire qu'aucune clé n'existe, et créer ou révoquer sans voir l'état réel serait risqué. Réessayez ; le détail est dans les journaux du serveur."
+					code={keys.code}
+				/>
+			)}
 
 			{/* ---- Journal des appels ------------------------------------------ */}
 			<section>
@@ -71,7 +82,15 @@ export default async function AdminAgentsPage() {
 					Chaque appel d&apos;agent est journalisé — y compris les refus (jeton invalide, portée
 					manquante, quota atteint). Aucun secret n&apos;y figure.
 				</p>
-				{audit.length === 0 ? (
+				{!audit.ok ? (
+					<div className="mt-3">
+						<AgentsLoadFailure
+							title="Journal indisponible"
+							message="La lecture du journal a échoué : l'absence d'appels affichée serait fausse. Réessayez ; le détail est dans les journaux du serveur."
+							code={audit.code}
+						/>
+					</div>
+				) : audit.data.length === 0 ? (
 					<p className="mt-3 text-[14px] text-white/45">Aucun appel pour l&apos;instant.</p>
 				) : (
 					<div className="mt-3 overflow-x-auto">
@@ -86,7 +105,7 @@ export default async function AdminAgentsPage() {
 								</tr>
 							</thead>
 							<tbody>
-								{audit.map((row) => (
+								{audit.data.map((row) => (
 									<tr key={row.id} className="border-b border-white/[0.06] text-white/70">
 										<td className="whitespace-nowrap py-2 pr-4 tabular-nums text-white/45">
 											{dateFormat.format(new Date(row.createdAt))}

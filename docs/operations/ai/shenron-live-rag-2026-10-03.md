@@ -104,3 +104,38 @@ réussis, lint des propriétaires sans erreur. Le format des fichiers existants
 est préservé ; oxfmt échouait déjà sur ces fichiers avant les changements.
 Aucun dataset privé n'a été modifié, aucun entraînement GPU ni promotion n'a
 été lancé. Les suites RAG restent conditionnées au préchargement complet réel.
+
+
+## IA et administration des agents
+
+L'adaptateur chat omet un identifiant de modèle vide et signale les réglages
+que le backend ne transmet pas. L'API IA distingue session absente (401) et
+compte non administrateur (403), refuse les corps non objets et les tailles
+d'évaluation invalides. Les lecteurs de clés/journal d'agents affichent leurs
+pannes de base avec nouvelle tentative, sans les convertir en listes vides.
+
+La console A2A utilise `/api/admin/a2a`, protégée par la session serveur ; elle
+n'expose aucun jeton au navigateur et refuse les clés d'agents éditoriales.
+Les ordres sont validés, les erreurs amont affichées et le polling sérialisé.
+Une relance en file attend le retour de l'onglet visible ; un test de régression
+a reproduit puis vérifié la correction de ce cas.
+
+Validation d'intégration : 41 tests du lot admin agents/A2A, 27 tests UI/IA et
+27 tests pipeline chat/provider/portabilité réussis ; 63 tests admin voisins
+avaient passé avant le dernier cas de régression (aucun échec). TypeScript
+site/tests et pipeline réussis ; lint ciblé sans erreur, formatage des nouveaux
+fichiers réussi. Aucun navigateur authentifié ni déploiement Next n'a été
+exercé. La route A2A des tests pointe sur un serveur Bun de contrat éphémère :
+aucun ordre réel n'a été émis. Les tests de retrieval admin sont en conversion
+vers le gate du RAG réel dans un lot distinct.
+
+
+La suite `admin-ia-rag-live.test.ts` exerce désormais les statistiques, la
+sonde, `test_prompt` et l'évaluation du cockpit avec le vrai transport et le
+renderer manga PostgreSQL. Elle est incluse dans `rag:test`, qui isole les
+suites dans des processus distincts. Les suites unitaires admin ne retournent
+plus de résultats retrieval fabriqués : une garde refuse tout appel de
+récupération ou d'évaluation dans ces suites. La dernière intégration unitaire
+passe 89 tests (421 assertions). La suite live reste en échec avant ses tests
+sur le gate « preload incomplete or stale » : aucun résultat live validé ni
+préchargement complet n'est revendiqué.

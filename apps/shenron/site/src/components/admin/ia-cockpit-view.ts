@@ -32,10 +32,10 @@ export function describeHttpFailure(status: number, serverMessage?: string | nul
     };
   }
   if (status === 403) {
-    // The cockpit routes answer 403 for both a missing session and a non-admin account.
+    // The API reports missing sessions as 401 and non-admin accounts as 403.
     return {
       kind: "forbidden",
-      text: `${detail || "Accès réservé aux administrateurs."} Session expirée ou droits insuffisants ?`,
+      text: detail || "Accès réservé aux administrateurs.",
     };
   }
   return { kind: "server", text: `HTTP ${status} : ${detail || "réponse illisible"}` };

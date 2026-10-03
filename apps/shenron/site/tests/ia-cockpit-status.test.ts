@@ -17,6 +17,11 @@ import {
 	type SourceSpec,
 } from "../src/lib/ia-cockpit";
 
+// Pure status aggregation, parsing and metric arithmetic over synthetic payloads. No retrieval runs
+// here and no fixture stands for a retrieval answer: the counters, modes and rankings below are
+// invented inputs to the aggregation rules. What the real Shenron RAG answers (health, statistics,
+// search probe, hit ranking, evaluation) is covered by admin-ia-rag-live.test.ts.
+
 /** Deterministic clock: every call advances by 7 ms. */
 function steppingClock(step = 7): () => number {
 	let now = 0;
@@ -52,27 +57,28 @@ const EVAL_ROW = {
 	created_at: "1790156651492",
 };
 
-function healthyFetchers(): IaCockpitFetchers {
+/** Every source answers with synthetic data; the two engines get distinct counters on purpose. */
+function syntheticFetchers(): IaCockpitFetchers {
 	return {
 		aphrodyHealth: ok("Aphrody AI — santé", { rag: true, llm: false, ocr: false }),
 		aphrodyRagStats: ok("Aphrody RAG — statistiques", {
-			chunks: 59_995,
-			vectors: 59_000,
-			vectorsStored: 59_995,
+			chunks: 1_000,
+			vectors: 900,
+			vectorsStored: 1_000,
 			sources: 2,
-			kinds: [{ kind: "technique", count: 59_995, vectors: 59_000 }],
+			kinds: [{ kind: "synthetic", count: 1_000, vectors: 900 }],
 		}),
-		aphrodyRagProbe: ok("Aphrody RAG — sonde", { query: "Son Goku", mode: "hybrid", hits: 1 }),
+		aphrodyRagProbe: ok("Aphrody RAG — sonde", { query: "synthetic query", mode: "hybrid", hits: 1 }),
 		aphrodyWeb: ok("Aphrody Web — crawl", {
 			queue: { pending: 1, locked: 0, done: 10, failed: 2, total: 13 },
 			jobs: 1,
 			runningJobs: 0,
 		}),
 		botRag: ok("Bot Shenron — index local", {
-			chunks: 60_000,
-			vectors: 60_000,
+			chunks: 2_000,
+			vectors: 2_000,
 			mode: "hybrid",
-			builtAt: "2026-09-16T05:28:53.630Z",
+			builtAt: "2026-01-01T00:00:00.000Z",
 			gatewayReady: true,
 		}),
 		evalHistory: ok("Historique", [mapEvalRow(EVAL_ROW)]),
@@ -127,9 +133,9 @@ describe("resolveRagBackend — même règle que usesAphrodyRag()", () => {
 	});
 });
 
-describe("collectIaCockpit — agrégation", () => {
-	test("toutes sources OK, RAG_BACKEND local : compteurs du bot, mode du bot", async () => {
-		const report = await collectIaCockpit(healthyFetchers(), resolveRagBackend(undefined), steppingClock());
+describe("collectIaCockpit — règles d'agrégation sur des rapports de sources synthétiques", () => {
+	test("toutes sources OK, backend local : compteurs et mode du bot", async () => {
+		const report = await collectIaCockpit(syntheticFetchers(), resolveRagBackend(undefined), steppingClock());
 		expect(report.summary.status).toBe("ok");
 		expect(report.summary.failing).toEqual([]);
 		expect(report.summary.serving).toEqual({
@@ -139,7 +145,7 @@ describe("collectIaCockpit — agrégation", () => {
 			error: null,
 		});
 		expect(report.summary.countsSource).toBe("botRag");
-		expect(report.summary.documents).toBe(60_000);
+		expect(report.summary.documents).toBe(2_000);
 		expect(report.summary.mode).toBe("hybrid");
 		expect(report.summary.goldCases).toBe(172);
 		expect(report.summary.latestEval?.recall5).toBe(0.8023);
@@ -147,19 +153,33 @@ describe("collectIaCockpit — agrégation", () => {
 		expect(report.summary.activeGoals).toBe(2);
 	});
 
-	test("RAG_BACKEND=aphrody : statistiques Aphrody, mode de la sonde de recherche", async () => {
-		const report = await collectIaCockpit(healthyFetchers(), resolveRagBackend("aphrody"));
+	test("backend aphrody : compteurs de la source statistiques, mode de la source sonde", async () => {
+		const report = await collectIaCockpit(syntheticFetchers(), resolveRagBackend("aphrody"));
 		expect(report.summary.serving.source).toBe("aphrodyRagProbe");
 		expect(report.summary.countsSource).toBe("aphrodyRagStats");
-		expect(report.summary.documents).toBe(59_995);
-		expect(report.summary.vectors).toBe(59_000);
+		expect(report.summary.documents).toBe(1_000);
+		expect(report.summary.vectors).toBe(900);
 		expect(report.summary.mode).toBe("hybrid");
 	});
 
-	test("état de production observé : stats Aphrody en 404, Web non configuré, aucune valeur inventée", async () => {
-		const fetchers = healthyFetchers();
+	test("backend aphrody, sonde en échec : moteur servi indisponible, compteurs conservés", async () => {
+		const fetchers = syntheticFetchers();
+		fetchers.aphrodyRagProbe = failing("Aphrody RAG — sonde", new Error("Aphrody compute HTTP 503 on /api/v1/shenron/rag/search"));
+		const report = await collectIaCockpit(fetchers, resolveRagBackend("aphrody"));
+		expect(report.summary.serving).toMatchObject({
+			source: "aphrodyRagProbe",
+			status: "unavailable",
+			error: "Aphrody compute HTTP 503 on /api/v1/shenron/rag/search",
+		});
+		expect(report.summary.documents).toBe(1_000);
+		expect(report.summary.mode).toBeNull();
+		expect(report.summary.status).toBe("degraded");
+	});
+
+	test("sources en échec ou non configurées : signalées une à une, jamais remplacées par une valeur", async () => {
+		const fetchers = syntheticFetchers();
 		fetchers.aphrodyRagStats = failing("Aphrody RAG — statistiques", new Error("Aphrody compute HTTP 404 on /api/v1/shenron/rag/stats"));
-		fetchers.aphrodyRagProbe = ok("Aphrody RAG — sonde", { query: "Son Goku", mode: "lexical", hits: 1 });
+		fetchers.aphrodyRagProbe = ok("Aphrody RAG — sonde", { query: "synthetic query", mode: "lexical", hits: 1 });
 		fetchers.aphrodyWeb = failing("Aphrody Web — crawl", new SourceNotConfiguredError("APHRODY_BXC_API_TOKEN absent de l'environnement du site"));
 		fetchers.feedbacks = failing("Retours", new Error("connect ECONNREFUSED"));
 
@@ -171,7 +191,7 @@ describe("collectIaCockpit — agrégation", () => {
 			["aphrodyWeb", "unconfigured"],
 			["feedbacks", "unavailable"],
 		]);
-		// The engine still answers searches: serving is ok, but its counters are unknown, not zero.
+		// The probe source still answers: serving is ok, but the counters of the failed source are unknown, not zero.
 		expect(report.summary.serving.status).toBe("ok");
 		expect(report.summary.documents).toBeNull();
 		expect(report.summary.vectors).toBeNull();
@@ -185,7 +205,7 @@ describe("collectIaCockpit — agrégation", () => {
 	});
 
 	test("moteur local en panne : le moteur servi est signalé indisponible", async () => {
-		const fetchers = healthyFetchers();
+		const fetchers = syntheticFetchers();
 		fetchers.botRag = failing("Bot Shenron — index local", new Error("Bot HTTP 502 sur /api/ia/status"));
 		const report = await collectIaCockpit(fetchers, resolveRagBackend(undefined));
 		expect(report.summary.serving).toMatchObject({ status: "unavailable", error: "Bot HTTP 502 sur /api/ia/status" });
@@ -194,7 +214,7 @@ describe("collectIaCockpit — agrégation", () => {
 	});
 
 	test("les sources sont interrogées en parallèle", async () => {
-		const fetchers = healthyFetchers();
+		const fetchers = syntheticFetchers();
 		let inFlight = 0;
 		let peak = 0;
 		for (const key of Object.keys(fetchers) as Array<keyof IaCockpitFetchers>) {
@@ -215,7 +235,7 @@ describe("collectIaCockpit — agrégation", () => {
 	});
 });
 
-describe("parseurs des réponses réelles", () => {
+describe("parseurs de charges utiles d'exemple", () => {
 	test("bot.rag_eval_history : colonnes bigint converties, date ISO", () => {
 		expect(mapEvalRow(EVAL_ROW)).toEqual({
 			id: 94,
@@ -248,17 +268,17 @@ describe("parseurs des réponses réelles", () => {
 		expect(() => parseBotIaStatus({ ok: true })).toThrow("Statut RAG du bot invalide");
 	});
 
-	test("Aphrody /rag/stats : regroupement par type", () => {
+	test("Aphrody /rag/stats : regroupement par type d'un relevé d'exemple", () => {
 		expect(
 			summarizeAphrodyRagStats({
 				chunks: 10,
 				vectors: 6,
 				vectorsStored: 8,
 				sources: [
-					{ sourceId: "db_characters", kind: "character", count: 4, vectors: 2 },
-					{ sourceId: "db_techniques", kind: "technique", count: 5, vectors: 4 },
-					{ sourceId: "shenron:1", kind: "character", count: 1 },
-				].map(({ kind, count, vectors }) => ({ kind, count, vectors })),
+					{ kind: "character", count: 4, vectors: 2 },
+					{ kind: "technique", count: 5, vectors: 4 },
+					{ kind: "character", count: 1, vectors: undefined },
+				],
 			})
 		).toEqual({
 			chunks: 10,
@@ -333,7 +353,7 @@ describe("fetchAphrodyWebCrawlStats — contrat du client Aphrody Web", () => {
 	});
 });
 
-describe("jeu doré et métriques de récupération (définitions de apps/shenron/bot/src/lib/rag-eval.ts)", () => {
+describe("jeu doré et arithmétique des métriques (classements synthétiques, aucune récupération ; définitions de apps/shenron/bot/src/lib/rag-eval.ts)", () => {
 	const gold = parseGoldSet(
 		[
 			'{"q":"Qui est Freezer ?","expectUrl":["/wiki/personnages/freezer"]}',
