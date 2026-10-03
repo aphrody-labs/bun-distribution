@@ -15,11 +15,14 @@
 #   SHENRON_SQLITE_BACKUP_DIR             Destination (default: $SHENRON_ROOT/data/backups/shenron-sqlite).
 #   SHENRON_SQLITE_BACKUP_RETENTION_DAYS  Age retention in days (default: 14).
 set -euo pipefail
+umask 077
 
 SHENRON_ROOT="${SHENRON_ROOT:-$PWD}"
 SRC="${SHENRON_SQLITE_SRC:-$SHENRON_ROOT/apps/bot/data/bot.db}"
 DEST_DIR="${SHENRON_SQLITE_BACKUP_DIR:-$SHENRON_ROOT/data/backups/shenron-sqlite}"
 RETENTION_DAYS="${SHENRON_SQLITE_BACKUP_RETENTION_DAYS:-14}"
+MAX_BYTES="${SHENRON_SQLITE_BACKUP_MAX_BYTES:-2147483648}"
+MIN_FREE_BYTES="${SHENRON_SQLITE_BACKUP_MIN_FREE_BYTES:-4294967296}"
 TS=$(date -u +%Y%m%d-%H%M%S)
 DEST="$DEST_DIR/bot-$TS.db"
 
@@ -33,9 +36,25 @@ if [[ ! -f "$SRC" ]]; then
 fi
 
 mkdir -p "$DEST_DIR"
+# Back up only this SQLite file; never recursively archive shared media.
+# Refuse growth before making a snapshot, preserving every existing archive
+# until its established offsite acknowledgement permits age retention.
+for limit in "$MAX_BYTES" "$MIN_FREE_BYTES"; do
+  [[ "$limit" =~ ^[1-9][0-9]{0,14}$ ]] || { echo 'invalid SQLite backup capacity limit' >&2; exit 1; }
+done
+SOURCE_BYTES="$(stat -c %s -- "$SRC")"
+WAL_BYTES=0
+if [[ -f "$SRC-wal" && ! -L "$SRC-wal" ]]; then WAL_BYTES="$(stat -c %s -- "$SRC-wal")"; fi
+USED_BYTES="$(du -sb -- "$DEST_DIR" | awk '{print $1}')"
+FREE_BYTES="$(df -PB1 -- "$DEST_DIR" | awk 'NR == 2 {print $4}')"
+SCRATCH_BYTES=$(( (SOURCE_BYTES + WAL_BYTES) * 2 + 1048576 ))
+if (( USED_BYTES + SCRATCH_BYTES > MAX_BYTES || FREE_BYTES < MIN_FREE_BYTES + SCRATCH_BYTES )); then
+  echo 'SQLite backup capacity gate failed; existing archives preserved; check offsite acknowledgements and host capacity' >&2
+  exit 1
+fi
 
 # VACUUM INTO produces a consistent snapshot even with WAL active (bun:sqlite open).
-sqlite3 "$SRC" "VACUUM INTO '$DEST';"
+sqlite3 -readonly "$SRC" "VACUUM INTO '$DEST';"
 gzip -9 "$DEST"
 DEST_GZ="$DEST.gz"
 gzip -t "$DEST_GZ"

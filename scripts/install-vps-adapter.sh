@@ -17,8 +17,10 @@ stack=all
 package_out=''
 source_manifest=''
 expected_revision=''
+include_backup=false
 while [[ $# -gt 0 ]]; do
   case "$1" in
+    --backup-owner) include_backup=true; shift ;;
     --stack) stack="${2:?missing stack}"; shift 2 ;;
     --package) package_out="${2:?missing package output}"; shift 2 ;;
     --source-manifest) source_manifest="${2:?missing source manifest}"; shift 2 ;;
@@ -36,6 +38,7 @@ import hashlib, json, pathlib, sys
 manifest_path, root, revision = pathlib.Path(sys.argv[1]), pathlib.Path(sys.argv[2]), sys.argv[3]
 m = json.loads(manifest_path.read_text())
 expected = {'scripts/install-vps-adapter.sh', 'scripts/atomic-deploy-shenron.sh', 'config/service-catalog.json', 'config/nginx-routes.json', 'config/secrets-contract.json'}
+if m.get('backupOwner') is True: expected.update({'scripts/ops/backup-shenron-sqlite.sh', 'systemd/shenron-sqlite-replica-backup.service'})
 if m.get('schemaVersion') != 1 or m.get('repository') != 'aphrody-labs/aphrody' or m.get('stack') != 'shenron' or m.get('sourceCommit') != revision or set(m.get('files', {})) != expected:
     raise SystemExit('sealed adapter source manifest differs from requested revision/files')
 for relative, digest in m['files'].items():
@@ -45,6 +48,11 @@ for relative, digest in m['files'].items():
 print(revision)
 PYVERIFY
 )" || exit 2
+  include_backup="$(python3 - "$source_manifest" <<'PYBACKUP'
+import json,sys
+print('true' if json.load(open(sys.argv[1])).get('backupOwner') is True else 'false')
+PYBACKUP
+)"
 else
   git_infra() { git -c safe.directory="$infra" -C "$infra" "$@"; }
   if [[ -n "$package_out" && -n "$expected_revision" ]]; then
@@ -61,16 +69,19 @@ else
 fi
 if [[ -n "$package_out" ]]; then
   [[ "$stack" = shenron ]] || { echo 'sealed source export currently supports --stack shenron' >&2; exit 2; }
-  python3 - "$infra" "$package_out" "$commit" "${expected_revision:+committed}" <<'PYPACKAGE'
+  python3 - "$infra" "$package_out" "$commit" "${expected_revision:+committed}" "$include_backup" <<'PYPACKAGE'
 import hashlib, json, pathlib, shutil, subprocess, sys, tempfile
 root, destination, revision = pathlib.Path(sys.argv[1]), pathlib.Path(sys.argv[2]).absolute(), sys.argv[3]
 committed = len(sys.argv) > 4 and sys.argv[4] == 'committed'
+backup_owner = len(sys.argv) > 5 and sys.argv[5] == 'true'
 if destination.exists(): raise SystemExit('adapter package destination already exists')
 destination.parent.mkdir(parents=True, exist_ok=True)
 stage = pathlib.Path(tempfile.mkdtemp(prefix='.adapter-package-', dir=destination.parent))
 try:
     files = {}
-    for relative in ['scripts/install-vps-adapter.sh', 'scripts/atomic-deploy-shenron.sh', 'config/service-catalog.json', 'config/nginx-routes.json', 'config/secrets-contract.json']:
+    selected = ['scripts/install-vps-adapter.sh', 'scripts/atomic-deploy-shenron.sh', 'config/service-catalog.json', 'config/nginx-routes.json', 'config/secrets-contract.json']
+    if backup_owner: selected += ['scripts/ops/backup-shenron-sqlite.sh', 'systemd/shenron-sqlite-replica-backup.service']
+    for relative in selected:
         source = root / relative
         target = stage / relative; target.parent.mkdir(parents=True, exist_ok=True)
         if committed:
@@ -84,7 +95,7 @@ try:
             if source.is_symlink() or not source.is_file(): raise ValueError('adapter source must be regular files')
             shutil.copy2(source, target)
         files[relative] = hashlib.sha256(target.read_bytes()).hexdigest()
-    (stage / 'SOURCE-MANIFEST.json').write_text(json.dumps({'schemaVersion': 1, 'repository': 'aphrody-labs/aphrody', 'stack': 'shenron', 'sourceCommit': revision, 'files': files}, indent=2) + '\n')
+    (stage / 'SOURCE-MANIFEST.json').write_text(json.dumps({'schemaVersion': 1, 'repository': 'aphrody-labs/aphrody', 'stack': 'shenron', 'sourceCommit': revision, 'backupOwner': backup_owner, 'files': files}, indent=2) + '\n')
     stage.rename(destination)
 except BaseException:
     shutil.rmtree(stage); raise
@@ -107,23 +118,38 @@ for name in "${!adapters[@]}"; do install -m 0755 "$infra/scripts/${adapters[$na
 for catalog in service-catalog nginx-routes secrets-contract; do
   install -m 0644 "$infra/config/$catalog.json" "$share/$catalog.json"
 done
+if $include_backup; then
+  libexec="${APHRODY_ADAPTER_LIBEXEC:-/usr/local/libexec/aphrody-infra}"
+  unit_dir="${APHRODY_ADAPTER_SYSTEMD:-/etc/systemd/system}"
+  install -d -m 0755 "$libexec" "$unit_dir"
+  install -m 0755 "$infra/scripts/ops/backup-shenron-sqlite.sh" "$libexec/backup-shenron-sqlite.sh"
+  install -m 0644 "$infra/systemd/shenron-sqlite-replica-backup.service" "$unit_dir/shenron-sqlite-replica-backup.service"
+  # The existing enabled timer is kept; lead reloads units as a separate gate.
+fi
 # The site-only adapter was replaced by the five-service one.
 if [[ "$stack" = all ]]; then rm -f -- "$sbin/aphrody-infra-deploy"; fi
-python3 - "$share/ADAPTER.json" "$commit" "$sbin" "$share" "${!adapters[@]}" <<'PY'
+python3 - "$share/ADAPTER.json" "$commit" "$sbin" "$share" "$include_backup" "${libexec:-}" "${unit_dir:-}" "${!adapters[@]}" <<'PY'
 import datetime
 import hashlib
 import json
 import pathlib
 import sys
 target, commit, sbin, share = sys.argv[1:5]
+backup_owner, libexec, unit_dir = sys.argv[5:8]
 digest = lambda path: hashlib.sha256(pathlib.Path(path).read_bytes()).hexdigest()
 manifest = {
     'schemaVersion': 1,
     'infraCommit': commit,
     'installedAt': datetime.datetime.now(datetime.timezone.utc).isoformat().replace('+00:00', 'Z'),
-    'adapters': {name: digest(f'{sbin}/{name}') for name in sorted(sys.argv[5:])},
+    'adapters': {name: digest(f'{sbin}/{name}') for name in sorted(sys.argv[8:])},
     'catalogs': {name: digest(f'{share}/{name}.json') for name in ('service-catalog', 'nginx-routes', 'secrets-contract')},
 }
+if backup_owner == 'true':
+    manifest['backupOwner'] = {
+        'script': digest(f'{libexec}/backup-shenron-sqlite.sh'),
+        'unit': digest(f'{unit_dir}/shenron-sqlite-replica-backup.service'),
+        'timer': 'shenron-sqlite-replica-backup.timer (existing, unchanged)',
+    }
 pathlib.Path(target).write_text(json.dumps(manifest, indent=2) + '\n')
 PY
 printf 'installed %s deploy adapters from aphrody-infra %s\n' "$stack" "$commit"

@@ -1,6 +1,6 @@
-# Host prerequisite: an aphrody-infra checkout at /home/ubuntu/aphrody-infra on DBFR.
-# Audit 2026-09-24: DBFR has no such checkout and the installed unit still runs
-# the frozen copy under /home/ubuntu/shenron/scripts/; see docs/SHENRON-MIGRATION.md.
+# Infra-owned active runtime SQLite backup on DBFR. Keep the existing timer
+# and offsite destination; install the committed owner script in libexec.
+# PostgreSQL remains protected by its separate existing timer.
 [Unit]
 Description=Backup of the Shenron SQLite replica on DBFR
 After=shenron-pg-backup.service
@@ -9,12 +9,15 @@ After=shenron-pg-backup.service
 Type=oneshot
 User=ubuntu
 Group=ubuntu
-WorkingDirectory=/home/ubuntu/shenron
+WorkingDirectory=/srv/shenron/current
 Environment=SHENRON_SQLITE_BACKUP_DIR=/home/ubuntu/shenron/data/backups/shenron-sqlite
 Environment=SHENRON_SQLITE_BACKUP_RETENTION_DAYS=14
-Environment=SHENRON_ROOT=/home/ubuntu/shenron
+Environment=SHENRON_ROOT=/srv/shenron/current
+Environment=SHENRON_SQLITE_SRC=/srv/shenron/shared/bot/data/bot.db
+Environment=SHENRON_SQLITE_BACKUP_MAX_BYTES=2147483648
+Environment=SHENRON_SQLITE_BACKUP_MIN_FREE_BYTES=4294967296
 ExecStartPre=+/bin/mkdir -p /home/ubuntu/shenron/data/backups/shenron-sqlite
-ExecStart=/bin/bash -c 'if [ -f /home/ubuntu/aphrody-infra/scripts/ops/backup-shenron-sqlite.sh ]; then exec /bin/bash /home/ubuntu/aphrody-infra/scripts/ops/backup-shenron-sqlite.sh; else exec /bin/bash /home/ubuntu/shenron/scripts/backup-shenron-sqlite.sh; fi'
+ExecStart=/bin/bash /usr/local/libexec/aphrody-infra/backup-shenron-sqlite.sh
 
 Nice=10
 IOSchedulingClass=idle
