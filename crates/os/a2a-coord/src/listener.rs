@@ -214,14 +214,15 @@ pub async fn serve_with_options(
         Ok(())
     };
     let unix = async {
-        match opts.unix.as_deref() {
+        let served: Result<(), Box<dyn std::error::Error + Send + Sync>> = match opts.unix.as_deref() {
             #[cfg(unix)]
             Some(path) => serve_unix(app.clone(), path).await,
             #[cfg(not(unix))]
             Some(_) => Err("--unix is not supported on this platform".into()),
             None if opts.no_tcp => Err("--no-tcp requires --unix".into()),
             None => std::future::pending().await,
-        }
+        };
+        served
     };
     tokio::try_join!(tcp, unix).map(|_| ())
 }
