@@ -70,8 +70,15 @@ write(os.path.join(out, "symlink.tgz"), tarfile.PAX_FORMAT, entries(long_name)[:
 let directory = "";
 beforeAll(async () => {
   directory = await mkdtemp(join(tmpdir(), "canonical-tar-"));
-  const oracle = Bun.spawnSync(["python3", "-I", "-c", ORACLE, directory], { stderr: "pipe" });
-  if (oracle.exitCode !== 0) throw new Error(oracle.stderr.toString());
+  // CPython is `python3` on POSIX; Windows has `python` (or uv's managed interpreter) instead.
+  const launchers = [["python3"], ["python"], ["uv", "run", "--no-project", "python"]];
+  let failure = "no CPython interpreter found";
+  for (const launcher of launchers) {
+    const oracle = Bun.spawnSync([...launcher, "-I", "-c", ORACLE, directory], { stderr: "pipe" });
+    if (oracle.exitCode === 0) return;
+    failure = oracle.stderr.toString();
+  }
+  throw new Error(failure);
 });
 afterAll(() => rm(directory, { recursive: true, force: true }));
 

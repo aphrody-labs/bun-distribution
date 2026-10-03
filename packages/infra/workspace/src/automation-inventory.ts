@@ -47,7 +47,7 @@ async function scripts(root: string, current = root): Promise<Script[]> {
       continue;
     }
     const ext = entry.name.slice(entry.name.lastIndexOf("."));
-    if (extensions.has(ext) && relative(root, full).split("/").includes("scripts")) {
+    if (extensions.has(ext) && relative(root, full).split(/[\\/]/).includes("scripts")) {
       const path = relative(root, full).replaceAll("\\", "/");
       result.push({ path, kind: classify(path) });
     }

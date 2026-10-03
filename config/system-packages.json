@@ -133,5 +133,42 @@
       "libvulkan-dev",
       "libxkbcommon-dev"
     ]
+  },
+  "windows": {
+    "note": "Windows 11 host prerequisites applied through winget (aphrody-ops system-packages --host windows). MSVC from Visual Studio Build Tools 2026 (v18) is the supported Windows target; ids and workload per Microsoft Learn (use-command-line-parameters-to-install-visual-studio, workload-component-id-vs-build-tools).",
+    "winget": [
+      {
+        "id": "Git.Git"
+      },
+      {
+        "id": "Oven-sh.Bun"
+      },
+      {
+        "id": "astral-sh.uv"
+      },
+      {
+        "id": "Microsoft.DotNet.SDK.10"
+      },
+      {
+        "id": "Microsoft.VisualStudio.BuildTools",
+        "override": "--quiet --wait --norestart --add Microsoft.VisualStudio.Workload.VCTools --includeRecommended"
+      }
+    ],
+    "installers": [
+      {
+        "name": "rustup",
+        "check": "rustup",
+        "url": "https://win.rustup.rs/x86_64",
+        "args": [
+          "-y",
+          "--default-toolchain",
+          "stable",
+          "--profile",
+          "minimal",
+          "--default-host",
+          "x86_64-pc-windows-msvc"
+        ]
+      }
+    ]
   }
 }

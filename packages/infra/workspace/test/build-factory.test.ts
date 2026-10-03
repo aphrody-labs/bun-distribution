@@ -36,7 +36,7 @@ test("execution-only hosts reject plans and never implicitly enable local builds
   expect(heavyBuildStatus(runtimeOnly, {}).reason).toContain("new factory host");
 });
 
-test("Infra propagates the factory command timeout per invocation without mutating global environment", async () => {
+test.skipIf(process.platform === "win32")("Infra propagates the factory command timeout per invocation without mutating global environment", async () => {
   const root = await mkdtemp(join(tmpdir(), "aphrody-infra-env-"));
   const original = process.env.APHRODY_SSH_COMMAND_TIMEOUT_SECS;
   try {
@@ -93,7 +93,7 @@ test("factory quotes owner arguments without expanding shell expressions", () =>
   expect(() => buildFactoryPlan(config, "aphrody", revision, ["bun", "\0"])).toThrow("NUL");
 });
 
-test("factory preserves literal shell-sensitive arguments and refuses changed source", async () => {
+test.skipIf(process.platform === "win32")("factory preserves literal shell-sensitive arguments and refuses changed source", async () => {
   const root = await mkdtemp(join(tmpdir(), "aphrody-factory-"));
   try {
     const git = async (...args: string[]) => {
