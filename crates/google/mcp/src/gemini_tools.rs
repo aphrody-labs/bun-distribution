@@ -153,12 +153,12 @@ fn parse_request(args: &Value) -> Result<(&str, &str, Option<&str>), String> {
 async fn run(args: &Value) -> Result<Value, String> {
     let (prompt, model_id, cookie_path) = parse_request(args)?;
     let mut path = resolve_cookie_path(cookie_path, &cookie_dir()?);
-    if cookie_path.is_none() && !path.is_file() {
-        if let Ok(default_path) = aphrody_gemini_web::Auth::default_cookie_path() {
-            if default_path.is_file() {
-                path = default_path;
-            }
-        }
+    if cookie_path.is_none()
+        && !path.is_file()
+        && let Ok(default_path) = aphrody_gemini_web::Auth::default_cookie_path()
+        && default_path.is_file()
+    {
+        path = default_path;
     }
     let model =
         GeminiModel::from_id(model_id).ok_or_else(|| "unsupported Gemini model".to_owned())?;
@@ -229,12 +229,11 @@ async fn run_chat(args: &Value) -> Result<Value, String> {
     let model =
         GeminiModel::from_id(model_id).ok_or_else(|| "unsupported Gemini model".to_owned())?;
     let mut path = resolve_cookie_path(None, &cookie_dir()?);
-    if !path.is_file() {
-        if let Ok(default_path) = aphrody_gemini_web::Auth::default_cookie_path() {
-            if default_path.is_file() {
-                path = default_path;
-            }
-        }
+    if !path.is_file()
+        && let Ok(default_path) = aphrody_gemini_web::Auth::default_cookie_path()
+        && default_path.is_file()
+    {
+        path = default_path;
     }
     let session = {
         let mut sessions = CHAT_SESSIONS.lock().await;

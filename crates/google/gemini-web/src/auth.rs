@@ -250,6 +250,11 @@ impl Auth {
     }
 
     /// Load a cookie jar from the default cookie path.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`GeminiError::Auth`] if the default path cannot be resolved or
+    /// the jar is malformed, and [`GeminiError::Network`] if reading it fails.
     #[cfg(not(target_arch = "wasm32"))]
     pub async fn from_default_cookie_file() -> Result<Self> {
         let path = Self::default_cookie_path()?;
