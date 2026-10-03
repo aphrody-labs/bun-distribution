@@ -1047,6 +1047,15 @@ smoke documenté. Une mise en production est une opération distincte.
   rag:prepare » (392 réussis, 3 échecs à cette heure, contre 426/0 plus tôt) ; non
   attribués à ce lot. Le smoke du binaire ne prouve pas une connexion Discord ;
   le bout en bout site, bot et pipeline sur corpus réel reste à établir.
+- Chargeur natif : le pipeline Shenron n'ouvre aucune bibliothèque lui-même ;
+  `src/aphrody/native.ts` passe par `@aphrody/bun/shenron`, qui partage la poignée
+  unique, la vérification d'artefact et les ABI de
+  `packages/interop/native/src/library.ts`. Avec `APHRODY_FFI_DEV=1` et l'artefact
+  release local, `test/aphrody/native.test.ts` réussit 6 sur 6 ; sans artefact les
+  cinq tests natifs sont ignorés ; avec `APHRODY_FFI_REQUIRE_NATIVE=1` le test de
+  persona exige en plus `APHRODY_FFI_TEST_PERSONA_PATH`. Artefact installé et
+  qualifié, Windows et calculs RAG qualifiés restent ouverts : l'item de la
+  section 7 reste à faire.
 
 ### Studio desktop Shenron × Koharu — 2026-10-03
 
