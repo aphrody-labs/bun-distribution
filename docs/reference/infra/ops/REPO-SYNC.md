@@ -112,26 +112,13 @@ agent, puis validée par `git diff --check` avant le checkpoint.
 
 ## Contrôle Git manuel sur le VPS
 
-`infra/systemd/rg-repo-sync.service` est un oneshot borné à 20 % CPU et 256 Mio
-de RAM. L'unité installée n'a volontairement ni `--commit` ni
-`REPO_SYNC_AUTOCOMMIT=1` : elle ne fait qu'un contrôle en lecture seule. Le
-timer est livré désactivé et ne doit pas être activé pour capturer des lots en
-cours ; un checkpoint reste une action manuelle explicite, après revue.
-
-Installation idempotente :
-
-```bash
-sudo install -m 0644 infra/systemd/rg-repo-sync.service /etc/systemd/system/
-sudo install -m 0644 infra/systemd/rg-repo-sync.timer /etc/systemd/system/
-sudo systemctl daemon-reload
-sudo systemctl disable --now rg-repo-sync.timer
-systemctl list-timers rg-repo-sync.timer
-systemctl status rg-repo-sync.service --no-pager
-```
-
-Le timer reste désactivé sans toucher aux services web :
-`sudo systemctl disable --now rg-repo-sync.timer`. Les journaux sont ceux de
-systemd (`journalctl -u rg-repo-sync.service`). Pour un checkpoint volontaire,
+L'ancienne unité `rg-repo-sync.service` est retirée dans le catalogue Infra.
+Le 2026-10-04, le VPS catalogué rapporte `LoadState=not-found` et
+`ActiveState=inactive`. Ses fichiers service/timer liés aux anciens checkouts
+ont été supprimés ; ne pas les réinstaller. Le contrôle utilise le propriétaire
+Infra (`aphrody-infra git --help`) avec les dépôts explicitement configurés.
+[Preuves de qualification hôte](../../../migration/host-portability-qualification-2026-10-04.json).
+Pour un checkpoint volontaire,
 lancer directement `bun scripts/ops/repo-sync.ts --repo all --commit` après
 vérification de l'arbre ; aucune unité ou variable d'environnement ne l'active
 automatiquement.

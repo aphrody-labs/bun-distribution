@@ -1,0 +1,17 @@
+{
+  "schema": "aphrody.host-portability-qualification/1",
+  "date": "2026-10-04",
+  "source_revision": "2791cbf2fdc7be06814285ce93e029d8eabcffc8",
+  "scope": "sudo isolated Shenron adapter tests and retired repo-sync cleanup",
+  "adapter_sha256": "7b8695dfc569cd1a9d7b271600acb34e77345724fbb2beea72624be626fa611b",
+  "test_sha256": "8701889f49d1fbfca13ea40d17434e512f17ad3395f34f19de97cc9a162dab3f",
+  "hosts": {
+    "wsl": {"sudo_noninteractive": true, "isolated_adapter_test_exit": 0},
+    "vps": {"sudo_noninteractive": true, "transfer": "Infra native SFTP", "sha256_verified": true, "isolated_adapter_test_exit": 0, "failed_systemd_units_observed": 0, "temporary_inputs_removed": true},
+    "dbfr": {"sudo_noninteractive": true, "transfer": "Infra native SFTP", "sha256_verified": true, "isolated_adapter_test_exit": 0, "failed_systemd_units_observed": 0, "temporary_inputs_removed": true}
+  },
+  "tested": ["assemble", "preflight", "simulated activation", "rollback", "restore", "monorepo layout", "DBFR local PostgreSQL validation"],
+  "retired_unit": {"name": "rg-repo-sync.service", "catalogued_retired": true, "vps_load_state": "not-found", "vps_active_state": "inactive", "source_service_and_timer_removed": true},
+  "path_audit": {"before": 36, "after": 33, "remaining_host": 26, "remaining_concurrently_owned_docs": 7, "ratchet_regressions": 0, "check_exit": 0},
+  "limits": ["No production release activated or protected store moved", "Installed adapter hashes differ from the tested source; no installed-adapter parity claimed", "Upstream CI and historical inventory preserved", "Concurrent documentation not rewritten", "Windows/macOS native execution and missing C cross-toolchains remain unqualified"]
+}
