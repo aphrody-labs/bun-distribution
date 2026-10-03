@@ -38,6 +38,7 @@ import {
   type InstallPlan,
   type Runner,
 } from "./agent-plugin-providers.ts";
+import { checkPluginFacts, refreshPluginFacts } from "./plugin-facts.ts";
 
 const help = `Usage: aphrody-workspace plugins <command> [options]
 
@@ -47,6 +48,8 @@ Commands:
   clean        Remove detached caches/doubles, recovering unique source files
   prepare      Repair references, generate provider manifests/catalogs and format
   validate     Check all plugins/skills/MCP and run installed native validators
+  facts        Check plugin knowledge against declared source code/docs receipts
+  refresh-facts Refresh receipts after reviewing source changes (--apply)
   install      Install --kind plugin|skill|mcp --name NAME using provider adapters
   uninstall    Remove a registration using the same provider adapters
 
@@ -165,6 +168,8 @@ export function parsePluginArgs(argv: string[]): Args {
       "clean",
       "prepare",
       "validate",
+      "facts",
+      "refresh-facts",
       "install",
       "uninstall",
     ].includes(result.command)
@@ -366,6 +371,13 @@ export async function pluginOperation(args: Args, runner: Runner = runCommand): 
         native,
         success: problems.length === 0 && !native.some((r) => r.status === "failed"),
       };
+    }
+    if (args.command === "facts" || args.command === "refresh-facts") {
+      const facts =
+        args.command === "refresh-facts"
+          ? refreshPluginFacts(args.store, args.name, args.apply)
+          : checkPluginFacts(args.store, args.name);
+      return { ...base, facts, success: facts.every((item) => item.status === "current") };
     }
     if (!args.name) throw new Error("Installation and removal require --name");
     const remove = args.command === "uninstall",

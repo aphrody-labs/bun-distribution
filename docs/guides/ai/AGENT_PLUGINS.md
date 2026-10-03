@@ -17,6 +17,7 @@ aphrody-workspace plugins fix-refs --scan-root /chemin/docs --apply
 aphrody-workspace plugins prepare --apply
 aphrody-workspace plugins validate
 aphrody-workspace plugins validate --name aphrody --provider claude
+aphrody-workspace plugins facts
 ```
 
 Sans `--apply`, les mutations produisent un plan. `prepare` synchronise les
@@ -25,6 +26,30 @@ locaux, répare les liens prouvés par la migration puis applique Oxfmt.
 `fix-refs` corrige les anciens chemins démontrés, les liens Markdown déplacés,
 les descriptions YAML invalides et le nom de la skill WinClean partagée.
 Les rapports historiques de migration restent des preuves inchangées.
+
+## Fidélité aux sources
+
+Chaque bundle maintient un `source-of-truth.json` avec les racines propriétaires,
+les fichiers de code ou docs qui font autorité (`sources[].evidence`) et les
+fichiers de connaissance du plugin (`knowledge`). `plugins facts` compare les
+SHA-256 courants au reçu `_state/facts-lock.json`: `stale` signifie que la source
+ou le contenu du plugin a bougé, `undocumented` qu'aucune source n'est déclarée.
+Cette empreinte détecte une dérive; elle ne prouve pas le sens d'une phrase.
+
+Après chaque changement source, le workflow relit l'implémentation et les docs
+liées, corrige les instructions et exemples du plugin, exécute les gates du
+propriétaire et les validateurs du plugin, puis actualise le reçu:
+
+```sh
+aphrody-workspace plugins facts --name NOM
+# Revue manuelle des écarts contre les chemins déclarés et mise à jour du bundle
+aphrody-workspace plugins refresh-facts --name NOM --apply
+aphrody-workspace plugins validate --name NOM
+```
+
+Sans `--apply`, `refresh-facts` ne fait qu'afficher le plan. YOLO doit effectuer
+ce contrôle pendant sa découverte, avant toute modification guidée par un skill;
+un reçu périmé impose une vérification des faits avant l'exécution autonome.
 
 `clean` cible seulement `_copies` et `_registrations` détachés dans le store.
 Il conserve chaque contenu unique dans `_recovered`, vérifie les SHA-256,

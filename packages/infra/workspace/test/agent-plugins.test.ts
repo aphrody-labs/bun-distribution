@@ -12,6 +12,7 @@ import {
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { applyAction, parsePluginArgs, pluginOperation, publicPlan } from "../src/agent-plugins.ts";
+import { checkPluginFacts, refreshPluginFacts } from "../src/plugin-facts.ts";
 import {
   cleanStore,
   fixReferences,
@@ -449,4 +450,25 @@ test("native validation failure prevents every installation command", async () =
     }),
   ).rejects.toThrow("Native validation failed");
   expect(called.some((cmd) => cmd.includes("mutate"))).toBe(false);
+});
+
+test("plugin facts receipts identify source and knowledge drift", () => {
+  const f = fixture();
+  const root = join(f.root, "source");
+  file(join(root, "docs.md"), "Verified provider contract v1\n");
+  const p = plugin(f.store);
+  file(join(p, "skills", "demo", "SKILL.md"), "Evidence-aligned workflow\n");
+  file(
+    join(p, "source-of-truth.json"),
+    JSON.stringify({
+      version: 1,
+      sources: [{ root, evidence: ["docs.md"] }],
+      knowledge: ["skills/demo/SKILL.md"],
+    }),
+  );
+  expect(checkPluginFacts(f.store)[0]?.status).toBe("stale");
+  refreshPluginFacts(f.store, undefined, true);
+  expect(checkPluginFacts(f.store)[0]?.status).toBe("current");
+  file(join(root, "docs.md"), "Verified provider contract v2\n");
+  expect(checkPluginFacts(f.store)[0]?.status).toBe("stale");
 });
