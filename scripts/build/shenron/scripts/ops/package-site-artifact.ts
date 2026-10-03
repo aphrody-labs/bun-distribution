@@ -1,8 +1,8 @@
 #!/usr/bin/env bun
 /** Emballe un `.next-build` produit hors VPS pour import bleu/vert vérifié. */
 import { existsSync } from "node:fs";
-import { mkdir, rm, readdir, lstat, readlink, unlink } from "node:fs/promises";
-import { join } from "node:path";
+import { mkdir, rm, readdir, lstat, readlink, unlink, cp } from "node:fs/promises";
+import { join, relative as relativePath } from "node:path";
 
 const repo = join(import.meta.dir, "..", "..", "..", "..", "..");
 const build = join(repo, "apps", "shenron", "site", ".next-build");
@@ -103,6 +103,46 @@ if (process.argv[3] === "--release-dir") {
         }
       }),
     );
+    const { dependencyBuildPlan } = await import(
+      join(repo, "packages/infra/workspace/src/bun-dependency-builds.ts")
+    );
+    const firstPartyArtifacts = await Promise.all(
+      (await dependencyBuildPlan(repo, ["@shenron/site", "@shenron/bot"])).map(async (owner) => {
+        const manifest = await Bun.file(join(owner.path, "package.json")).json();
+        const roots = new Set<string>();
+        const collect = (value: unknown) => {
+          if (typeof value === "string") {
+            const match = /^(?:\.\/)?(dist|build)\//.exec(value);
+            if (match) roots.add(match[1]!);
+          } else if (value !== null && typeof value === "object") {
+            for (const nested of Object.values(value)) collect(nested);
+          }
+        };
+        collect([manifest.exports, manifest.main, manifest.module, manifest.types, manifest.bin]);
+        const ownerRelative = relativePath(repo, owner.path);
+        if (ownerRelative.startsWith(".."))
+          throw new Error("compiled artifact owner outside monorepo");
+        await Promise.all(
+          [...roots].map(async (root) => {
+            const source = join(owner.path, root);
+            const destination = join(sourceStage, ownerRelative, root);
+            if (!existsSync(source) || !(await lstat(source)).isDirectory())
+              throw new Error(`missing owner-built artifact: ${owner.name}/${root}`);
+            if (existsSync(destination))
+              throw new Error(
+                `compiled artifact collides with tracked source: ${owner.name}/${root}`,
+              );
+            await cp(source, destination, {
+              recursive: true,
+              dereference: false,
+              errorOnExist: true,
+              force: false,
+            });
+          }),
+        );
+        return { name: owner.name, path: ownerRelative, roots: [...roots].toSorted() };
+      }),
+    );
     const pinnedPackageDir = join(repo, ".cache/iecode-packages");
     if (existsSync(join(pinnedPackageDir, "manifest.json"))) {
       const provenance = await Bun.file(join(pinnedPackageDir, "manifest.json")).json();
@@ -177,6 +217,7 @@ if (process.argv[3] === "--release-dir") {
           target: "dbfr",
           builtAt: new Date().toISOString(),
           services: ["shenron-site", "shenron-bot"],
+          firstPartyArtifacts,
           siteArtifact: { buildId },
         },
         null,
