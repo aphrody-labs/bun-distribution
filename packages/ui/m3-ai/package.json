@@ -39,6 +39,8 @@
     "test": "bun test"
   },
   "dependencies": {
+    "@aphrody/ag-ui": "workspace:*",
+    "@aphrody/mcp-ui": "workspace:*",
     "@aphrody/m3-motion": "workspace:*",
     "@aphrody/m3-primitives": "workspace:*",
     "clsx": "catalog:",

@@ -6,7 +6,7 @@ publicHoistPattern = ["@daybrush/utils", "framework-utils"]
 saveTextLockfile = true
 minimumReleaseAge = 259200
 # Security fixes (next, nodemailer, undici) and Tauri v3 alphas must track the Rust crates in real time (config/update, tauri sync).
-minimumReleaseAgeExcludes = ["next", "@next/env", "@next/swc-linux-x64-gnu", "@next/swc-linux-x64-musl", "@next/swc-win32-x64-msvc", "@next/swc-darwin-arm64", "@next/swc-darwin-x64", "@next/swc-linux-arm64-gnu", "@next/swc-linux-arm64-musl", "@next/swc-win32-arm64-msvc", "nodemailer", "undici", "@tauri-apps/cli", "@tauri-apps/api", "@tauri-apps/cli-linux-x64-gnu"]
+minimumReleaseAgeExcludes = ["next", "@next/env", "@next/swc-linux-x64-gnu", "@next/swc-linux-x64-musl", "@next/swc-win32-x64-msvc", "@next/swc-darwin-arm64", "@next/swc-darwin-x64", "@next/swc-linux-arm64-gnu", "@next/swc-linux-arm64-musl", "@next/swc-win32-arm64-msvc", "nodemailer", "undici", "@tauri-apps/cli", "@tauri-apps/api", "@tauri-apps/cli-linux-x64-gnu", "@modelcontextprotocol/sdk", "@modelcontextprotocol/ext-apps", "@modelcontextprotocol/client", "@modelcontextprotocol/core"]
 
 [jsx]
 runtime = "automatic"

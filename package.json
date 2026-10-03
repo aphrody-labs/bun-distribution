@@ -23,6 +23,7 @@
       "packages/koharu/*",
       "packages/fut/*",
       "packages/ui/*",
+      "packages/ui/ag-ui/*",
       "packages/interop/*"
     ],
     "catalog": {

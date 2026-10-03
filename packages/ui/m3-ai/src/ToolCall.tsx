@@ -7,6 +7,7 @@ import { AnimatePresence, motion } from "motion/react";
 import { Icon } from "@aphrody/m3-primitives";
 import type { ToolCallPair, ToolCallStatus } from "./types";
 import { CircularIndicator, StatusChip, expandMotion, focusRing } from "./internal";
+import { McpAppCard } from "./McpAppCard";
 
 // ---------------------------------------------------------------------------
 // Tool-specific rendering
@@ -665,6 +666,24 @@ function renderResult(pair: ToolCallPair, renderer: ToolRenderer): React.ReactNo
   }
 
   if (!pair.resultRaw) return null;
+
+  // Check if result contains an interactive MCP-UI resource or app
+  const mcpResourceUri = (pair.result?._meta as any)?.ui?.resourceUri || (pair.result?.ui as any)?.resourceUri;
+  const mcpHtml = (pair.result as any)?.html || (pair.result as any)?.uiHtml;
+  if (mcpResourceUri || mcpHtml) {
+    return (
+      <div className="p-1">
+        <McpAppCard
+          toolName={pair.name}
+          title={pair.title || pair.name}
+          html={typeof mcpHtml === "string" ? mcpHtml : undefined}
+          toolResourceUri={typeof mcpResourceUri === "string" ? mcpResourceUri : undefined}
+          toolInput={pair.args || undefined}
+          toolResult={pair.result || undefined}
+        />
+      </div>
+    );
+  }
 
   if (pair.result && Object.keys(pair.result).length > 0) {
     return (

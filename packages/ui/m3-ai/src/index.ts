@@ -79,3 +79,28 @@ export { TaskDetail } from "./TaskDetail";
 export type { TaskDetailProps } from "./TaskDetail";
 export { TaskCreateForm } from "./TaskCreateForm";
 export type { TaskCreateFormProps, TaskCreateFormData } from "./TaskCreateForm";
+
+// AG-UI Protocol & Agent-to-User (A2U) Bridge
+export {
+  AgUiEventAccumulator,
+  agUiEventsToTranscriptSteps,
+  agUiEventsToTranscriptItems,
+  coordEnvelopeToAgUiEvent,
+  agUiEventToCoordEnvelope,
+} from "./AgUiEventStream";
+export type {
+  CoordEnvelope,
+  EnvelopeKind,
+  SubagentTrace,
+  AgUiStreamState,
+} from "./AgUiEventStream";
+
+// Aphrody A2A (Agent-to-Agent) Fleet UI
+export { A2APeerInspector } from "./A2APeerInspector";
+export type { A2APeerInspectorProps, AgentPeer } from "./A2APeerInspector";
+export { A2ATaskTimeline } from "./A2ATaskTimeline";
+export type { A2ATaskTimelineProps, TimelineStep } from "./A2ATaskTimeline";
+
+// MCP-UI Generative Card
+export { McpAppCard } from "./McpAppCard";
+export type { McpAppCardProps } from "./McpAppCard";
