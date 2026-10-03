@@ -57,9 +57,14 @@ export class KernelClient {
     this.#socket = socket;
     socket.setEncoding("utf8");
     socket.on("data", (chunk: string) => this.#receive(chunk));
+    socket.on("error", (error: Error) => {
+      for (const { reject } of this.#pending.values()) reject(error);
+      this.#pending.clear();
+    });
     this.closed = new Promise((resolve) => {
       socket.on("close", () => {
-        for (const { reject } of this.#pending.values()) reject(new Error("kernel connection closed"));
+        for (const { reject } of this.#pending.values())
+          reject(new Error("kernel connection closed"));
         this.#pending.clear();
         resolve();
       });
@@ -67,10 +72,27 @@ export class KernelClient {
   }
 
   /** Connect and perform the MCP handshake. */
-  static async connect(endpoint = defaultEndpoint(), clientName = "aphrody-os-bun"): Promise<KernelClient> {
+  static async connect(
+    endpoint = defaultEndpoint(),
+    clientName = "aphrody-os-bun",
+    timeoutMs = 30_000,
+  ): Promise<KernelClient> {
+    if (!Number.isFinite(timeoutMs) || timeoutMs <= 0)
+      throw new Error("connect timeout must be positive");
     const socket = await new Promise<Socket>((resolve, reject) => {
-      const s = connect(endpoint, () => resolve(s));
-      s.once("error", reject);
+      const s = connect(endpoint);
+      const timer = setTimeout(
+        () => s.destroy(new Error("kernel connection timed out")),
+        timeoutMs,
+      );
+      s.once("connect", () => {
+        clearTimeout(timer);
+        resolve(s);
+      });
+      s.once("error", (error) => {
+        clearTimeout(timer);
+        reject(error);
+      });
     });
     const client = new KernelClient(socket);
     const initialize: { [key: string]: Json } = {
@@ -80,9 +102,14 @@ export class KernelClient {
     };
     const authToken = process.env.APHRODY_OS_AUTH_TOKEN;
     if (authToken) initialize.authToken = authToken;
-    await client.request("initialize", initialize);
-    client.notify("notifications/initialized", {});
-    return client;
+    try {
+      await client.request("initialize", initialize, timeoutMs);
+      client.notify("notifications/initialized", {});
+      return client;
+    } catch (error) {
+      client.close();
+      throw error;
+    }
   }
 
   #send(message: Message): void {
@@ -117,11 +144,14 @@ export class KernelClient {
         const waiter = this.#pending.get(String(message.id));
         this.#pending.delete(String(message.id));
         if (!waiter) continue;
-        if (message.error) waiter.reject(new KernelError(message.error.message, message.error.code));
+        if (message.error)
+          waiter.reject(new KernelError(message.error.message, message.error.code));
         else waiter.resolve(message);
       } else if (message.method !== undefined && message.id !== undefined && message.id !== null) {
         const id = message.id;
-        const handle = this.#onRequest ?? (async () => ({ content: [{ type: "text", text: "no handler" }], isError: true }));
+        const handle =
+          this.#onRequest ??
+          (async () => ({ content: [{ type: "text", text: "no handler" }], isError: true }));
         void handle(message).then(
           (result) => this.#send({ id, result }),
           (error: unknown) => this.#send({ id, error: { code: -32603, message: String(error) } }),
@@ -133,12 +163,23 @@ export class KernelClient {
   }
 
   /** Send a request; resolves with its `result`. */
-  request(method: string, params: Json = {}): Promise<Json> {
+  request(method: string, params: Json = {}, timeoutMs = 0): Promise<Json> {
+    if (!Number.isFinite(timeoutMs) || timeoutMs < 0)
+      return Promise.reject(new Error("request timeout must be nonnegative"));
+    if (this.#socket.destroyed) return Promise.reject(new Error("kernel connection closed"));
     const id = String(this.#nextId++);
+    let timer: ReturnType<typeof setTimeout> | undefined;
     return new Promise<Message>((resolve, reject) => {
       this.#pending.set(id, { resolve, reject });
+      if (timeoutMs > 0)
+        timer = setTimeout(() => {
+          this.#pending.delete(id);
+          reject(new Error(`kernel ${method} timed out`));
+        }, timeoutMs);
       this.#send({ id, method, params });
-    }).then((message) => message.result ?? null);
+    })
+      .then((message) => message.result ?? null)
+      .finally(() => clearTimeout(timer));
   }
 
   notify(method: string, params: Json = {}): void {
@@ -146,12 +187,21 @@ export class KernelClient {
   }
 
   /** Call an OS tool; resolves with its structured value, rejects when the tool failed. */
-  async call(tool: string, args: Record<string, Json> = {}): Promise<Json> {
-    const result = (await this.request("tools/call", { name: tool, arguments: args })) as Record<string, Json>;
-    const text = ((result.content as Array<Record<string, Json>>) ?? []).map((part) => part.text ?? "").join("\n");
+  async call(tool: string, args: Record<string, Json> = {}, timeoutMs = 0): Promise<Json> {
+    const result = (await this.request(
+      "tools/call",
+      { name: tool, arguments: args },
+      timeoutMs,
+    )) as Record<string, Json>;
+    const text = ((result.content as Array<Record<string, Json>>) ?? [])
+      .map((part) => part.text ?? "")
+      .join("\n");
     if (result.isError) throw new KernelError(text, -32000);
     const structured = result.structuredContent as Record<string, Json> | undefined;
-    if (structured) return Object.keys(structured).length === 1 && "result" in structured ? structured.result : structured;
+    if (structured)
+      return Object.keys(structured).length === 1 && "result" in structured
+        ? structured.result
+        : structured;
     return text;
   }
 
@@ -164,7 +214,7 @@ export class KernelClient {
   }
 
   close(): void {
-    this.#socket.end();
+    this.#socket.destroy();
   }
 }
 
@@ -186,7 +236,8 @@ export interface SubsystemSpec {
 function toCallResult(value: unknown): Json {
   const json = (value ?? null) as Json;
   const text = typeof json === "string" ? json : JSON.stringify(json, null, 2);
-  const structured = json !== null && typeof json === "object" && !Array.isArray(json) ? json : { result: json };
+  const structured =
+    json !== null && typeof json === "object" && !Array.isArray(json) ? json : { result: json };
   return { content: [{ type: "text", text }], structuredContent: structured, isError: false };
 }
 
@@ -194,19 +245,27 @@ function toCallResult(value: unknown): Json {
  * Join the kernel as a subsystem. The returned client stays connected; closing it (or the
  * process exiting) unregisters the subsystem.
  */
-export async function registerSubsystem(spec: SubsystemSpec, endpoint = defaultEndpoint()): Promise<KernelClient> {
+export async function registerSubsystem(
+  spec: SubsystemSpec,
+  endpoint = defaultEndpoint(),
+): Promise<KernelClient> {
   const client = await KernelClient.connect(endpoint, `bun/${spec.name}`);
   const handlers = new Map(spec.tools.map((tool) => [tool.name, tool.handler]));
   client.onRequest(async (message) => {
     if (message.method === "ping") return {};
-    if (message.method !== "tools/call") return { content: [{ type: "text", text: `unsupported: ${message.method}` }], isError: true };
+    if (message.method !== "tools/call")
+      return { content: [{ type: "text", text: `unsupported: ${message.method}` }], isError: true };
     const params = (message.params ?? {}) as Record<string, Json>;
     const handler = handlers.get(String(params.name));
-    if (!handler) return { content: [{ type: "text", text: `unknown tool: ${params.name}` }], isError: true };
+    if (!handler)
+      return { content: [{ type: "text", text: `unknown tool: ${params.name}` }], isError: true };
     try {
       return toCallResult(await handler((params.arguments ?? {}) as Record<string, Json>));
     } catch (error) {
-      return { content: [{ type: "text", text: error instanceof Error ? error.message : String(error) }], isError: true };
+      return {
+        content: [{ type: "text", text: error instanceof Error ? error.message : String(error) }],
+        isError: true,
+      };
     }
   });
   await client.request("system/register_subsystem", {
@@ -238,4 +297,3 @@ export {
   SyslogPriority,
   type SyslogLevel,
 } from "./systemd.ts";
-

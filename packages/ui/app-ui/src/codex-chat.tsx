@@ -1972,6 +1972,19 @@ export function CodexChatRoute() {
         turnId: params?.turnId,
         itemId: params?.itemId,
       };
+
+      // NHITL / YOLO auto-approval: if accessMode is full, automatically approve and reply
+      if (accessMode === "full") {
+        approval.status = "approved";
+        setTurns((items) => [...items, { id: `approval-${reqId}`, role: "approval", approval }]);
+        void aphrodyReply({
+          id: reqId,
+          result: { decision: "accept" },
+          backendGeneration: notification.backendGeneration,
+        }).catch((err) => console.warn("Auto-approval failed:", err));
+        return;
+      }
+
       setTurns((items) => [...items, { id: `approval-${reqId}`, role: "approval", approval }]);
       return;
     }
@@ -2104,6 +2117,14 @@ export function CodexChatRoute() {
         toast.error(params.turn.error?.message ?? "Le tour a échoué : relancez le message ou consultez les logs app-server");
       }
       void loadThreads();
+
+      // Auto-compact context (NHITL / YOLO continuous mode)
+      // When turns accumulate (>= 25), trigger compact to maintain fast inference & low memory.
+      if (activeThreadId && turns.length >= 25) {
+        void chatRpc("thread/compact/start", { threadId: activeThreadId }).catch((err) =>
+          console.warn("Auto-compact context skipped:", err)
+        );
+      }
     }
   };
 

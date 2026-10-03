@@ -26,6 +26,9 @@ if (operation === "docs") {
 if (operation === "discord") {
   process.exit(await (await import("./discord.ts")).runDiscord(rest));
 }
+if (operation === "agent-sync") {
+  process.exit(await (await import("./agent-sync.ts")).runAgentSync(rest));
+}
 if (operation === "agent-live") {
   process.exit(await (await import("./agent-live.ts")).runAgentLive(rest));
 }

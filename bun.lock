@@ -605,9 +605,11 @@
       "version": "0.1.0",
       "bin": {
         "aphrody-ops": "./src/ops.ts",
+        "aphrody-optimize": "./src/optimize.ts",
         "aphrody-workspace": "./src/cli.ts",
       },
       "dependencies": {
+        "@aphrody/os": "workspace:*",
         "@aphrody/paths": "workspace:*",
         "@aphrody/update": "workspace:*",
         "@typescript/typescript6": "^6.0.2",

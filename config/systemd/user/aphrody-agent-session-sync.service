@@ -1,10 +1,10 @@
 [Unit]
-Description=Claude Codex agy global session mirror without cross-domain memory
+Description=Aphrody domain native MCP session and memory ingestion
 
 [Service]
 Type=simple
 WorkingDirectory=/home/aphro/aphrody
-ExecStart=/home/aphro/.local/bin/aphrody ai sync-sessions --watch --interval-secs 30 --json --no-memory
+ExecStart=/home/aphro/.bun/bin/bun /home/aphro/aphrody/packages/infra/workspace/src/ops.ts agent-sync --domain aphrody --watch --interval-secs 2
 Restart=on-failure
 RestartSec=10
 UMask=0077

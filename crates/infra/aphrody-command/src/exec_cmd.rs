@@ -399,11 +399,20 @@ pub(crate) async fn run(args: ExecArgs, mut overrides: CliOverrides) -> miette::
         tokio::select! {
             event = events.recv() => {
                 let Some(event) = event else { break };
+                let auto_approve = yolo
+                    || std::env::var_os("APHRODY_AUTO_APPROVE").is_some()
+                    || std::env::var_os("APHRODY_NHITL").is_some()
+                    || std::env::var_os("APHRODY_YOLO").is_some();
+                let approval_decision = if auto_approve {
+                    ReviewDecision::Approved
+                } else {
+                    ReviewDecision::Denied
+                };
                 if let EventMsg::ExecApprovalRequest { id, .. } = &event.msg {
-                    let _ = handle.submit(Op::ExecApproval { id: id.clone(), decision: ReviewDecision::Denied });
+                    let _ = handle.submit(Op::ExecApproval { id: id.clone(), decision: approval_decision.clone() });
                 }
                 if let EventMsg::ApplyPatchApprovalRequest { id, .. } = &event.msg {
-                    let _ = handle.submit(Op::PatchApproval { id: id.clone(), decision: ReviewDecision::Denied });
+                    let _ = handle.submit(Op::PatchApproval { id: id.clone(), decision: approval_decision });
                 }
                 if let EventMsg::Error { message } = &event.msg {
                     failure = Some(message.clone());

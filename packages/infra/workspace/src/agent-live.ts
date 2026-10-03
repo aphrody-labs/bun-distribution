@@ -3,6 +3,7 @@
 import { open, readdir, mkdir, rename, writeFile } from "node:fs/promises";
 import { dirname, join, relative, resolve, isAbsolute } from "node:path";
 import { homedir } from "node:os";
+import { KernelClient } from "@aphrody/os";
 
 type Json = Record<string, any>;
 export type PackageOwner = { name: string; path: string; kind: "rust" | "bun" };
@@ -126,32 +127,18 @@ export function actionMetadata(record: Json, root: string, owners: PackageOwner[
   return result;
 }
 
-async function command(argv: string[], root: string): Promise<Json> {
-  const child = Bun.spawn(argv, { cwd: root, stdout: "pipe", stderr: "pipe" });
-  const timer = setTimeout(() => child.kill(), 60_000);
+async function kernel(tool: string, args: Json): Promise<Json> {
+  const client = await KernelClient.connect(undefined, "aphrody-agent-live");
   try {
-    const [stdout, stderr, exit] = await Promise.all([
-      new Response(child.stdout).text(),
-      new Response(child.stderr).text(),
-      child.exited,
-    ]);
-    if (exit !== 0)
-      throw new Error(`${argv[0]} ${argv[1]} failed (${exit}): ${stderr.slice(-500)}`);
-    return JSON.parse(stdout);
+    const result = await client.call(tool, args, 60_000);
+    const value = typeof result === "string" ? JSON.parse(result) : result;
+    if (!value || typeof value !== "object" || Array.isArray(value))
+      throw new Error(`Kernel ${tool} returned a non-object result`);
+    if (value.error) throw new Error(`Kernel ${tool} returned an error: ${value.error}`);
+    return value;
   } finally {
-    clearTimeout(timer);
+    client.close();
   }
-}
-
-async function kernel(tool: string, args: Json, root: string): Promise<Json> {
-  const value = await command(
-    [join(homedir(), ".local/bin/aphrody-kernel"), "call", tool, JSON.stringify(args)],
-    root,
-  );
-  if (value.isError) throw new Error(`Kernel ${tool} returned an error`);
-  if (value.structuredContent) return value.structuredContent;
-  const text = value.content?.find((item: Json) => item.type === "text")?.text;
-  return typeof text === "string" ? JSON.parse(text) : value;
 }
 
 export async function collectAgentLive(root: string): Promise<Json> {
@@ -166,23 +153,20 @@ export async function collectAgentLive(root: string): Promise<Json> {
     }
   };
   const [git, sync, models, owners] = await Promise.all([
-    attempt("kernel.git", () => kernel("github_status", { repo_path: root }, root)),
-    attempt("session.sync", () =>
-      command(
-        [join(homedir(), ".local/bin/aphrody"), "ai", "sync-sessions", "--json", "--no-memory"],
-        root,
-      ),
-    ),
+    attempt("kernel.git", () => kernel("github_status", { repo_path: root })),
+    attempt("session.sync", async () => {
+      const status = await Bun.file(join(root, ".coord/shared/AGENT-SYNC.json")).json();
+      if (!status.report) throw new Error("native agent-sync has no successful pass");
+      if (Date.now() - Date.parse(status.last_success_at) > 120_000)
+        issues.push("session.sync: last successful pass is older than 120 seconds");
+      return status.report;
+    }),
     attempt("kernel.processes", () =>
-      kernel(
-        "nu_eval",
-        {
-          code: "ps --long | select pid ppid name cpu mem start_time cwd",
-          cwd: root,
-          timeout_secs: 10,
-        },
-        root,
-      ),
+      kernel("nu_eval", {
+        code: "ps --long | select pid ppid name cpu mem start_time cwd",
+        cwd: root,
+        timeout_secs: 10,
+      }),
     ),
     liveOwners(root),
   ]);

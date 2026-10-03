@@ -69,7 +69,8 @@
     "./pipeline-catalog": "./src/pipeline-catalog.ts",
     "./agent-live": "./src/agent-live.ts",
     "./stack-dedup": "./src/stack-dedup.ts",
-    "./documentation": "./src/documentation.ts"
+    "./documentation": "./src/documentation.ts",
+    "./agent-sync": "./src/agent-sync.ts"
   },
   "scripts": {
     "build": "bun build ./src/cli.ts ./src/ops.ts --target=bun --outdir dist --sourcemap=linked",
@@ -80,6 +81,7 @@
     "test": "bun test test"
   },
   "dependencies": {
+    "@aphrody/os": "workspace:*",
     "@aphrody/paths": "workspace:*",
     "@aphrody/update": "workspace:*",
     "@typescript/typescript6": "^6.0.2",
